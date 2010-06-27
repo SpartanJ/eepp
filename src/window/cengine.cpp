@@ -2,6 +2,7 @@
 #include "cinput.hpp"
 #include "../graphics/ctexturefactory.hpp"
 #include "../graphics/cglobalbatchrenderer.hpp"
+#include "../graphics/cshaderprogrammanager.hpp"
 #include "../ui/cuimanager.hpp"
 
 using namespace EE::Graphics;
@@ -75,10 +76,10 @@ cEngine::~cEngine() {
 	if ( mCursor != NULL ) {
 		SDL_FreeCursor(mCursor);
 	}
-	
+
 	cGlobalBatchRenderer::DestroySingleton();
 	cTextureFactory::DestroySingleton();
-	
+
 	cInput::DestroySingleton();
 	SDL_Quit();
 	cLog::DestroySingleton();
@@ -148,7 +149,7 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 
 		mInitialWidth = mVideoInfo.Width;
 		mInitialHeight = mVideoInfo.Height;
-		
+
 		mVideoInfo.WWidth = mVideoInfo.Width;
 		mVideoInfo.WHeight = mVideoInfo.Height;
 
@@ -187,22 +188,22 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 			mOldWinPos = GetWindowPosition();
 
 		mVideoInfo.SupARB_point = ( GetExtension("GL_ARB_point_parameters") && GetExtension("GL_ARB_point_sprite") );
-		
+
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-		
+
 		mDefaultView.SetView( 0, 0, mVideoInfo.Width, mVideoInfo.Height );
 		mCurrentView = &mDefaultView;
-		
+
 		ResetGL2D();
-		
+
 		#ifdef EE_SHADERS
 		mVideoInfo.SupShaders = GetExtension("GL_ARB_shading_language_100") && GetExtension("GL_ARB_shader_objects") && GetExtension("GL_ARB_vertex_shader") && GetExtension("GL_ARB_fragment_shader");
-		
+
 		if ( mVideoInfo.SupShaders ) {
 			glewInit();
 		}
 		#endif
-		
+
 		SetWindowCaption("EEPP");
 
 		cLog::Instance()->Write( "Engine Initialized Succesfully.\nGL Vendor: " + GetVendor() + "\nGL Renderer: " + GetRenderer() + "\nGL Version: " + GetVersion() );
@@ -227,7 +228,7 @@ void cEngine::SetViewport( const Int32& x, const Int32& y, const Uint32& Width, 
 
 void cEngine::SetView( const cView& View ) {
 	mCurrentView = &View;
-	
+
 	eeRecti RView = mCurrentView->GetView();
 	SetViewport( RView.Left, RView.Top, RView.Right, RView.Bottom );
 }
@@ -243,24 +244,24 @@ const cView& cEngine::GetView() const {
 void cEngine::ResetGL2D() {
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
-	
+
 	SetBackColor( mBackColor );
-	
+
 	glShadeModel( GL_SMOOTH );
 	SetLineSmooth( mVideoInfo.LineSmooth );
-	
+
 	glEnable( GL_TEXTURE_2D ); 						// Enable Textures
-	
+
 	SetView( mDefaultView );
-	
+
 	glDisable( GL_DEPTH_TEST );
 	glDisable( GL_LIGHTING );
-	
+
 	cTextureFactory::instance()->SetBlendFunc( ALPHA_BLENDONE );  // This is to fix a little bug on windows when the resolution change. I don't know why it happens, but this line fix it.
 	cTextureFactory::instance()->SetBlendFunc( ALPHA_NORMAL );
-	
+
 	glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
-	
+
 	glEnableClientState( GL_VERTEX_ARRAY );
 	glEnableClientState( GL_TEXTURE_COORD_ARRAY );
 	glEnableClientState( GL_COLOR_ARRAY );
@@ -298,10 +299,10 @@ void cEngine::LimitFps() {
 
 void cEngine::Display() {
 	cGlobalBatchRenderer::instance()->Draw();
-	
+
 	if ( mCurrentView->NeedUpdate() )
 		SetView( *mCurrentView );
-	
+
 	glFlush();
 	SDL_GL_SwapBuffers();
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -332,7 +333,7 @@ void cEngine::ChangeRes( const Uint16& width, const Uint16& height, const bool& 
 		}
 
 		mDefaultView.SetView( 0, 0, mVideoInfo.Width, mVideoInfo.Height );
-		
+
 		SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 16 ); 	// Depth
 		SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, (mVideoInfo.DoubleBuffering ? 1 : 0) );
 		SDL_GL_SetAttribute( SDL_GL_SWAP_CONTROL, (mVideoInfo.VSync ? 1 : 0)  );  // VSync
@@ -343,12 +344,14 @@ void cEngine::ChangeRes( const Uint16& width, const Uint16& height, const bool& 
 			mVideoInfo.Screen = SDL_SetVideoMode( mVideoInfo.Width, mVideoInfo.Height, mVideoInfo.ColorDepth, mVideoInfo.Flags | SDL_FULLSCREEN );
 
 		ResetGL2D();
-		
+
 		#if EE_PLATFORM == EE_PLATFORM_WIN32 || EE_PLATFORM == EE_PLATFORM_APPLE
-		if ( Reload )
+		if ( Reload ) {
 			cTextureFactory::instance()->ReloadAllTextures();
+			cShaderProgramManager::instance()->Reload();
+		}
 		#endif
-		
+
 		if ( UI::cUIManager::Instance() != NULL )
 			UI::cUIManager::instance()->ResizeControl();
 
@@ -595,7 +598,7 @@ void cEngine::SetCursor( const Uint32& TexId, const eeVector2i& HotSpot ) {
 
 bool cEngine::SetIcon( const Uint32& FromTexId ) {
 	cTexture* Tex = cTextureFactory::instance()->GetTexture( FromTexId );
-	
+
 	if ( Tex ) {
 		Int32 W = static_cast<Int32>( Tex->Width() );
 		Int32 H = static_cast<Int32>( Tex->Height() );
@@ -932,7 +935,7 @@ std::string cEngine::GetClipboardText() {
 
 	if ( scrap )
 		eeSAFE_DELETE_ARRAY( scrap );
-	
+
 	return tStr;
 }
 
@@ -963,7 +966,7 @@ std::wstring cEngine::GetClipboardTextWStr() {
 
 	if ( scrap )
 		eeSAFE_DELETE_ARRAY( scrap );
-	
+
 	return tStr;
 }
 

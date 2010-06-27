@@ -1,7 +1,6 @@
 #include "../ee.h"
 
 /**
-@TODO Add a Shader Manager.
 @TODO Create a basic UI system.
 @TODO Add some Surface Grid class, to create special effects. ( waved texture, and stuff like that )
 @TODO Add a generic Pak class (done), and add a cZip class for handling zip files (pending).
@@ -172,7 +171,7 @@ void cEETest::Init() {
 
 	cIniFile Ini( MyPath + "data/ee.ini" );
 	Ini.ReadFile();
-	
+
 	mWidth 			= Ini.GetValueI( "EEPP", "Width", 800 );
 	mHeight 		= Ini.GetValueI( "EEPP", "Height", 600 );
 	int BitColor 	= Ini.GetValueI( "EEPP", "BitColor", 32);

@@ -1,15 +1,22 @@
 #include "cshaderprogram.hpp"
 #include "../window/cengine.hpp"
+#include "cshaderprogrammanager.hpp"
 
 using namespace EE::Window;
 
 namespace EE { namespace Graphics {
 
-cShaderProgram::cShaderProgram() {
+cShaderProgram::cShaderProgram( const std::string& name ) :
+	mGLId(0)
+{
+	AddToManager( name );
 	Init();
 }
 
-cShaderProgram::cShaderProgram( const std::vector<cShader*>& Shaders ) {
+cShaderProgram::cShaderProgram( const std::vector<cShader*>& Shaders, const std::string& name ) :
+	mGLId(0)
+{
+	AddToManager( name );
 	Init();
 
 	AddShaders( Shaders );
@@ -17,8 +24,10 @@ cShaderProgram::cShaderProgram( const std::vector<cShader*>& Shaders ) {
 	Link();
 }
 
-
-cShaderProgram::cShaderProgram( const std::string& VertexShaderFile, const std::string& FragmentShaderFile ) {
+cShaderProgram::cShaderProgram( const std::string& VertexShaderFile, const std::string& FragmentShaderFile, const std::string& name ) :
+	mGLId(0)
+{
+	AddToManager( name );
 	Init();
 
 	cVertexShader vs( VertexShaderFile );
@@ -39,10 +48,22 @@ cShaderProgram::~cShaderProgram() {
 
     mUniformLocations.clear();
     mAttributeLocations.clear();
+
+    RemoveFromManager();
+}
+
+void cShaderProgram::AddToManager( const std::string& name ) {
+	Name( name );
+
+	cShaderProgramManager::Instance()->Add( this );
+}
+
+void cShaderProgram::RemoveFromManager() {
+	cShaderProgramManager::Instance()->Remove( this );
 }
 
 void cShaderProgram::Init() {
-	if ( cEngine::instance()->ShadersSupported() ) {
+	if ( cEngine::instance()->ShadersSupported() && 0 == GetId() ) {
 		mGLId = glCreateProgram();
 		mValid = false;
 		mUniformLocations.clear();
@@ -50,12 +71,32 @@ void cShaderProgram::Init() {
 	}
 }
 
+void cShaderProgram::Reload() {
+	mGLId = 0;
+
+	Init();
+
+	std::vector<cShader*> tmpShader = mShaders;
+
+	mShaders.clear();
+
+	for ( eeUint i = 0; i < tmpShader.size(); i++ )
+		AddShader( tmpShader[i] );
+
+	Link();
+}
+
 void cShaderProgram::AddShader( cShader* Shader ) {
 	if ( !Shader->IsValid() ) {
 		cLog::instance()->Write( "cShaderProgram::AddShader(): Cannot add invalid shader" );
 		return;
 	}
-	glAttachShader( GetId(), Shader->GetId() );
+
+	if ( 0 != GetId() ) {
+		glAttachShader( GetId(), Shader->GetId() );
+
+		mShaders.push_back( Shader );
+	}
 }
 
 void cShaderProgram::AddShaders( const std::vector<cShader*>& Shaders ) {
@@ -82,6 +123,7 @@ bool cShaderProgram::Link() {
 		mUniformLocations.clear();
 		mAttributeLocations.clear();
 	}
+
 	return mValid;
 }
 
@@ -156,6 +198,20 @@ bool cShaderProgram::SetUniform( const std::string& Name, Int32 Value ) {
 		glUniform1i( Location, Value );
 
 	return ( Location >= 0 );
+}
+
+const std::string& cShaderProgram::Name() const {
+	return mName;
+}
+
+void cShaderProgram::Name( const std::string& name ) {
+	mName = name;
+
+	Uint32 NameCount = cShaderProgramManager::instance()->ExistsName( mName );
+
+	if ( 0 != NameCount || 0 == name.size() ) {
+		Name( name + intToStr( NameCount + 1 ) );
+	}
 }
 
 }}

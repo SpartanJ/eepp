@@ -41,10 +41,10 @@ bool FileExists(const std::string& filepath) {
 }
 
 Uint32 eeGetTicks() {
-	return SDL_GetTicks(); 
+	return SDL_GetTicks();
 }
 
-void eeSleep( const Uint32& ms ) { 
+void eeSleep( const Uint32& ms ) {
 	SDL_Delay(ms);
 }
 
@@ -83,7 +83,7 @@ std::string AppPath() {
 		char szFilename[_MAX_DIR];
 		char szExt[_MAX_DIR];
 		std::wstring dllName( _MAX_DIR, 0 );
-		
+
 		GetModuleFileName(0, &dllName[0], _MAX_PATH);
 
 		std::string dllstrName( wstringTostring( dllName ) );
@@ -119,7 +119,7 @@ std::vector<std::string> GetFilesInPath( const std::string& path ) {
 	std::vector<std::string> files;
 
 #ifdef EE_COMPILER_MSVC
-	#ifdef UNICODE 
+	#ifdef UNICODE
 		std::wstring mPath( stringTowstring( path ) );
 
 		if ( mPath[ mPath.size() - 1 ] == L'/' || mPath[ mPath.size() - 1 ] == L'\\' ) {
@@ -130,16 +130,16 @@ std::vector<std::string> GetFilesInPath( const std::string& path ) {
 
 		WIN32_FIND_DATA findFileData;
 		HANDLE hFind = FindFirstFile( mPath.c_str(), &findFileData );
-	   
+
 		if( hFind != INVALID_HANDLE_VALUE ) {
 			std::wstring tmpstr( findFileData.cFileName );
 
 			if ( tmpstr != L"." && tmpstr != L".." )
 				files.push_back( wstringTostring( tmpstr ) );
-			
+
 			while( FindNextFile(hFind, &findFileData ) ) {
 				tmpstr = std::wstring( findFileData.cFileName );
-				
+
 				if ( tmpstr != L"." && tmpstr != L".." )
 					files.push_back( std::string( wstringTostring( findFileData.cFileName ) ) );
 			}
@@ -157,16 +157,16 @@ std::vector<std::string> GetFilesInPath( const std::string& path ) {
 
         WIN32_FIND_DATA findFileData;
         HANDLE hFind = FindFirstFile( (LPCTSTR) mPath.c_str(), &findFileData );
-   
+
         if( hFind != INVALID_HANDLE_VALUE ) {
                 std::string tmpstr( findFileData.cFileName );
 
                 if ( tmpstr != "." && tmpstr != ".." )
                         files.push_back( tmpstr );
-                
+
                 while( FindNextFile(hFind, &findFileData ) ) {
                         tmpstr = std::string( findFileData.cFileName );
-                        
+
                         if ( tmpstr != "." && tmpstr != ".." )
                                 files.push_back( std::string( findFileData.cFileName ) );
                 }
@@ -276,13 +276,13 @@ Uint32 MakeHash( const std::string& str ) {
 
 Uint32 MakeHash( const Int8* str ) {
 	Uint32 hash = 5381 + *str;
-	
+
 	while( *str ) {
 		hash = *str + ( hash << 6 ) + ( hash << 16 ) - hash;
 		str++;
 	}
 	hash += *( str - 1 );
-	
+
 	return hash;
 }
 

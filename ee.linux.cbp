@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="ee" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="eetest" prefix_auto="1" extension_auto="1" />
+				<Option object_output="." />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-pg" />
+					<Add option="-g" />
+				</Compiler>
+				<Linker>
+					<Add option="-pg" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="eetest" prefix_auto="1" extension_auto="1" />
+				<Option object_output="." />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-march=core2" />
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+		</Compiler>
+		<Linker>
+			<Add library="GL" />
+			<Add library="GLU" />
+			<Add library="freetype" />
+			<Add library="sndfile" />
+			<Add library="X11" />
+			<Add library="SDL" />
+			<Add library="openal" />
+		</Linker>
+		<Unit filename="src/audio/base.hpp" />
+		<Unit filename="src/audio/caudiodevice.cpp" />
+		<Unit filename="src/audio/caudiodevice.hpp" />
+		<Unit filename="src/audio/caudiolistener.cpp" />
+		<Unit filename="src/audio/caudiolistener.hpp" />
+		<Unit filename="src/audio/caudioresource.cpp" />
+		<Unit filename="src/audio/caudioresource.hpp" />
+		<Unit filename="src/audio/cmusic.cpp" />
+		<Unit filename="src/audio/cmusic.hpp" />
+		<Unit filename="src/audio/csound.cpp" />
+		<Unit filename="src/audio/csound.hpp" />
+		<Unit filename="src/audio/csoundbuffer.cpp" />
+		<Unit filename="src/audio/csoundbuffer.hpp" />
+		<Unit filename="src/audio/csoundfile.cpp" />
+		<Unit filename="src/audio/csoundfile.hpp" />
+		<Unit filename="src/audio/csoundfiledefault.cpp" />
+		<Unit filename="src/audio/csoundfiledefault.hpp" />
+		<Unit filename="src/audio/csoundfileogg.cpp" />
+		<Unit filename="src/audio/csoundfileogg.hpp" />
+		<Unit filename="src/audio/csoundstream.cpp" />
+		<Unit filename="src/audio/csoundstream.hpp" />
+		<Unit filename="src/audio/openal.hpp" />
+		<Unit filename="src/audio/tsoundmanager.hpp" />
+		<Unit filename="src/base.hpp" />
+		<Unit filename="src/ee.h" />
+		<Unit filename="src/gaming/base.hpp" />
+		<Unit filename="src/gaming/cisomap.cpp" />
+		<Unit filename="src/gaming/cisomap.hpp" />
+		<Unit filename="src/gaming/clight.cpp" />
+		<Unit filename="src/gaming/clight.hpp" />
+		<Unit filename="src/graphics/base.hpp" />
+		<Unit filename="src/graphics/cbatchrenderer.cpp" />
+		<Unit filename="src/graphics/cbatchrenderer.hpp" />
+		<Unit filename="src/graphics/cconsole.cpp" />
+		<Unit filename="src/graphics/cconsole.hpp" />
+		<Unit filename="src/graphics/cfont.cpp" />
+		<Unit filename="src/graphics/cfont.hpp" />
+		<Unit filename="src/graphics/cglobalbatchrenderer.cpp" />
+		<Unit filename="src/graphics/cglobalbatchrenderer.hpp" />
+		<Unit filename="src/graphics/cparticle.cpp" />
+		<Unit filename="src/graphics/cparticle.hpp" />
+		<Unit filename="src/graphics/cparticlesystem.cpp" />
+		<Unit filename="src/graphics/cparticlesystem.hpp" />
+		<Unit filename="src/graphics/cprimitives.cpp" />
+		<Unit filename="src/graphics/cprimitives.hpp" />
+		<Unit filename="src/graphics/cscrollparallax.cpp" />
+		<Unit filename="src/graphics/cscrollparallax.hpp" />
+		<Unit filename="src/graphics/cshader.cpp" />
+		<Unit filename="src/graphics/cshader.hpp" />
+		<Unit filename="src/graphics/cshaderprogram.cpp" />
+		<Unit filename="src/graphics/cshaderprogram.hpp" />
+		<Unit filename="src/graphics/cshaderprogrammanager.cpp" />
+		<Unit filename="src/graphics/cshaderprogrammanager.hpp" />
+		<Unit filename="src/graphics/cshape.cpp" />
+		<Unit filename="src/graphics/cshape.hpp" />
+		<Unit filename="src/graphics/cshapemanager.cpp" />
+		<Unit filename="src/graphics/cshapemanager.hpp" />
+		<Unit filename="src/graphics/csprite.cpp" />
+		<Unit filename="src/graphics/csprite.hpp" />
+		<Unit filename="src/graphics/ctextcache.cpp" />
+		<Unit filename="src/graphics/ctextcache.hpp" />
+		<Unit filename="src/graphics/ctexture.cpp" />
+		<Unit filename="src/graphics/ctexture.hpp" />
+		<Unit filename="src/graphics/ctexturefactory.cpp" />
+		<Unit filename="src/graphics/ctexturefactory.hpp" />
+		<Unit filename="src/graphics/ctexturefont.cpp" />
+		<Unit filename="src/graphics/ctexturefont.hpp" />
+		<Unit filename="src/graphics/cttffont.cpp" />
+		<Unit filename="src/graphics/cttffont.hpp" />
+		<Unit filename="src/graphics/fonthelper.hpp" />
+		<Unit filename="src/graphics/pixelperfect.cpp" />
+		<Unit filename="src/graphics/pixelperfect.hpp" />
+		<Unit filename="src/graphics/renders.hpp" />
+		<Unit filename="src/helper/SDL_ttf/SDL_ttf.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/SDL_ttf/SDL_ttf.h" />
+		<Unit filename="src/helper/SOIL/SOIL.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/SOIL/SOIL.h" />
+		<Unit filename="src/helper/SOIL/image_DXT.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/SOIL/image_DXT.h" />
+		<Unit filename="src/helper/SOIL/image_helper.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/SOIL/image_helper.h" />
+		<Unit filename="src/helper/SOIL/stb_image_aug.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/SOIL/stb_image_aug.h" />
+		<Unit filename="src/helper/SOIL/stbi_DDS_aug.h" />
+		<Unit filename="src/helper/SOIL/stbi_DDS_aug_c.h" />
+		<Unit filename="src/helper/fastevents/fastevents.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/fastevents/fastevents.h" />
+		<Unit filename="src/helper/glew/glew.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/glew/glew.h" />
+		<Unit filename="src/helper/glew/glxew.h" />
+		<Unit filename="src/helper/glew/wglew.h" />
+		<Unit filename="src/helper/stb_vorbis/stb_vorbis.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/stb_vorbis/stb_vorbis.h" />
+		<Unit filename="src/math/base.hpp" />
+		<Unit filename="src/math/math.cpp" />
+		<Unit filename="src/math/math.hpp" />
+		<Unit filename="src/system/base.hpp" />
+		<Unit filename="src/system/cinifile.cpp" />
+		<Unit filename="src/system/cinifile.hpp" />
+		<Unit filename="src/system/clog.cpp" />
+		<Unit filename="src/system/clog.hpp" />
+		<Unit filename="src/system/cmutex.cpp" />
+		<Unit filename="src/system/cmutex.hpp" />
+		<Unit filename="src/system/cpack.cpp" />
+		<Unit filename="src/system/cpack.hpp" />
+		<Unit filename="src/system/cpak.cpp" />
+		<Unit filename="src/system/cpak.hpp" />
+		<Unit filename="src/system/crc4.cpp" />
+		<Unit filename="src/system/crc4.hpp" />
+		<Unit filename="src/system/cthread.cpp" />
+		<Unit filename="src/system/cthread.hpp" />
+		<Unit filename="src/system/ctimeelapsed.cpp" />
+		<Unit filename="src/system/ctimeelapsed.hpp" />
+		<Unit filename="src/system/ctimer.cpp" />
+		<Unit filename="src/system/ctimer.hpp" />
+		<Unit filename="src/system/singleton.hpp" />
+		<Unit filename="src/test/ee.cpp" />
+		<Unit filename="src/ui/base.hpp" />
+		<Unit filename="src/ui/cuicontrol.cpp" />
+		<Unit filename="src/ui/cuicontrol.hpp" />
+		<Unit filename="src/ui/cuicontrolanim.cpp" />
+		<Unit filename="src/ui/cuicontrolanim.hpp" />
+		<Unit filename="src/ui/cuidragable.cpp" />
+		<Unit filename="src/ui/cuidragable.hpp" />
+		<Unit filename="src/ui/cuievent.cpp" />
+		<Unit filename="src/ui/cuievent.hpp" />
+		<Unit filename="src/ui/cuieventkey.cpp" />
+		<Unit filename="src/ui/cuieventkey.hpp" />
+		<Unit filename="src/ui/cuigfx.cpp" />
+		<Unit filename="src/ui/cuigfx.hpp" />
+		<Unit filename="src/ui/cuimanager.cpp" />
+		<Unit filename="src/ui/cuimanager.hpp" />
+		<Unit filename="src/ui/cuimessage.cpp" />
+		<Unit filename="src/ui/cuimessage.hpp" />
+		<Unit filename="src/ui/cuitextbox.cpp" />
+		<Unit filename="src/ui/cuitextbox.hpp" />
+		<Unit filename="src/ui/cuitextinput.cpp" />
+		<Unit filename="src/ui/cuitextinput.hpp" />
+		<Unit filename="src/ui/uihelper.cpp" />
+		<Unit filename="src/ui/uihelper.hpp" />
+		<Unit filename="src/utils/base.hpp" />
+		<Unit filename="src/utils/cinterpolation.cpp" />
+		<Unit filename="src/utils/cinterpolation.hpp" />
+		<Unit filename="src/utils/colors.hpp" />
+		<Unit filename="src/utils/cperlinnoise.cpp" />
+		<Unit filename="src/utils/cperlinnoise.hpp" />
+		<Unit filename="src/utils/cwaypoints.cpp" />
+		<Unit filename="src/utils/cwaypoints.hpp" />
+		<Unit filename="src/utils/easing.cpp" />
+		<Unit filename="src/utils/easing.hpp" />
+		<Unit filename="src/utils/helper.hpp" />
+		<Unit filename="src/utils/polygon2.hpp" />
+		<Unit filename="src/utils/rect.hpp" />
+		<Unit filename="src/utils/string.cpp" />
+		<Unit filename="src/utils/string.hpp" />
+		<Unit filename="src/utils/utils.cpp" />
+		<Unit filename="src/utils/utils.hpp" />
+		<Unit filename="src/utils/vector2.hpp" />
+		<Unit filename="src/utils/vector3.hpp" />
+		<Unit filename="src/window/base.hpp" />
+		<Unit filename="src/window/cengine.cpp" />
+		<Unit filename="src/window/cengine.hpp" />
+		<Unit filename="src/window/cinput.cpp" />
+		<Unit filename="src/window/cinput.hpp" />
+		<Unit filename="src/window/cinputtextbuffer.cpp" />
+		<Unit filename="src/window/cinputtextbuffer.hpp" />
+		<Unit filename="src/window/cview.cpp" />
+		<Unit filename="src/window/cview.hpp" />
+		<Extensions>
+			<envvars />
+			<code_completion />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>
