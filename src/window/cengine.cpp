@@ -80,6 +80,12 @@ cEngine::~cEngine() {
 	cGlobalBatchRenderer::DestroySingleton();
 	cTextureFactory::DestroySingleton();
 
+	#ifdef EE_SHADERS
+	cShaderProgramManager::DestroySingleton();
+	#endif
+
+	UI::cUIManager::DestroySingleton();
+
 	cInput::DestroySingleton();
 	SDL_Quit();
 	cLog::DestroySingleton();
@@ -133,7 +139,7 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 
 		SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 16 ); 	// Depth
 		SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, (mVideoInfo.DoubleBuffering ? 1 : 0) ); 	// Double Buffering
-
+		SDL_GL_SetAttribute( SDL_GL_STENCIL_SIZE, 1 );
 		SDL_GL_SetAttribute( SDL_GL_SWAP_CONTROL, (mVideoInfo.VSync ? 1 : 0)  );  // VSync
 
 		Uint32 mTmpFlags = mVideoInfo.Flags;
@@ -189,7 +195,7 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 
 		mVideoInfo.SupARB_point = ( GetExtension("GL_ARB_point_parameters") && GetExtension("GL_ARB_point_sprite") );
 
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 
 		mDefaultView.SetView( 0, 0, mVideoInfo.Width, mVideoInfo.Height );
 		mCurrentView = &mDefaultView;

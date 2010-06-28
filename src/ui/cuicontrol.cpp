@@ -19,7 +19,7 @@ cUIControl::cUIControl( const CreateParams& Params ) :
 	mBlend( Params.Blend )
 {
 	mType |= UI_TYPE_GET(UI_TYPE_CONTROL);
-	
+
 	if ( NULL != mParentCtrl )
 		mParentCtrl->ChildAdd( this );
 
@@ -412,27 +412,73 @@ void cUIControl::CheckClose() {
 	}
 }
 
+void cUIControl::ClipTo() {
+	if ( !IsClipped() && NULL != Parent() ) {
+
+		cUIControl * parent = Parent();
+
+		while ( NULL != parent ) {
+			if ( parent->IsClipped() ) {
+				Parent()->ClipMe();
+				parent = NULL;
+			} else {
+				parent = Parent()->Parent();
+			}
+		}
+	}
+}
+
+void cUIControl::DrawChilds() {
+	cUIControl * ChildLoop = mChild;
+
+	while ( NULL != ChildLoop ) {
+		if ( ChildLoop->Visible() ) {
+			ChildLoop->InternalDraw();
+		}
+
+		ChildLoop = ChildLoop->NextGet();
+	}
+}
+
 void cUIControl::InternalDraw() {
 	if ( mVisible ) {
-		if ( IsClipped() ) {
-			eeVector2i Pos( mPos );
-			ControlToScreen( Pos );
-			cEngine::instance()->ClipEnable( Pos.x, Pos.y, mSize.Width(), mSize.Height() );
-		}
+		ClipTo();
+
+		MatrixSet();
+
+		ClipMe();
 
 		Draw();
 
-		cUIControl * ChildLoop = mChild;
-		while ( NULL != ChildLoop ) {
-			if ( ChildLoop->Visible() )
-				ChildLoop->InternalDraw();
+		DrawChilds();
 
-			ChildLoop = ChildLoop->NextGet();
-		}
+		ClipDisable();
 
-		if ( IsClipped() )
-			cEngine::instance()->ClipDisable();
+		MatrixUnset();
 	}
+}
+
+void cUIControl::ClipMe() {
+	if ( IsClipped() )
+		cUIManager::instance()->ClipEnable( mScreenPos.x, mScreenPos.y, mSize.Width(), mSize.Height() );
+}
+
+void cUIControl::ClipDisable() {
+	if ( IsClipped() )
+		cUIManager::instance()->ClipDisable();
+}
+
+void cUIControl::MatrixSet() {
+	if ( IsClipped() ) {
+		eeVector2i Pos( mPos );
+
+		ControlToScreen( Pos );
+
+		mScreenPos = Pos;
+	}
+}
+
+void cUIControl::MatrixUnset() {
 }
 
 void cUIControl::ChildDeleteAll() {

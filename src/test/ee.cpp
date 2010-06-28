@@ -31,7 +31,7 @@ class cUITest : public cUIControlAnim {
 
 class cUITest2 : public cUIControl {
 	public:
-		cUITest2( cUIControl::CreateParams& Params ) : cUIControl( Params ) 			{ mOldColor = mBackground.Color(); }
+		cUITest2( cUIControl::CreateParams& Params ) : cUIControl( Params ) 		{ mOldColor = mBackground.Color(); }
 		virtual Uint32 OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags )	{ mBackground.Color( eeColorA( mOldColor.R(), mOldColor.G(), mOldColor.B(), 200 ) ); return 1; }
 		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags )		{ mBackground.Color( mOldColor ); return 1; }
 	protected:
@@ -245,20 +245,18 @@ void cEETest::Init() {
 		cUIManager::instance()->Init();
 
 		cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 320, 240 ), UI_FILL_BACKGROUND );
-		Params.Background.Color( eeColorA( 0x66CC0000 ) );
 
 		Params.Flags |= UI_CLIP_ENABLE;
+
+		Params.Background.Color( eeColorA( 0x66CC0000 ) );
 		cUIControlAnim * C = new cUITest( Params );
 		C->Visible( true );
 		C->Enabled( true );
 		C->Pos( 320, 240 );
-		//C->Angle( 50.f );
-		//C->Scale( 2.f );
-		C->StartRotation( 0.f, 360.f * 10.f, 5000.f * 10.f );
+		C->DragEnable( true );
+		C->StartRotation( 0.f, 360.f, 2500.f );
 
 		Params.Flags &= ~UI_CLIP_ENABLE;
-		Params.Flags &= ~UI_BORDER;
-
 		Params.Background.Color( eeColorA( 0x7700FF00 ) );
 		Params.Parent( C );
 		Params.Size = eeSize( 50, 50 );
@@ -266,8 +264,6 @@ void cEETest::Init() {
 		Child->Pos( 25, 50 );
 		Child->Visible( true );
 		Child->Enabled( true );
-		Child->Angle( 150 );
-		Child->Scale( 2.f );
 		Child->StartRotation( 0.f, 360.f * 10.f, 5000.f * 10.f );
 
 		Params.Background.Color( eeColorA( 0x77FFFF00 ) );
@@ -277,7 +273,6 @@ void cEETest::Init() {
 		Child2->Pos( 15, 15 );
 		Child2->Visible( true );
 		Child2->Enabled( true );
-		Child2->Angle( 120 );
 		Child2->StartRotation( 0.f, 360.f * 10.f, 5000.f * 10.f );
 
 		cUIControl::CreateParams Params2;
@@ -286,12 +281,10 @@ void cEETest::Init() {
 		Params2.Border.Width( 4 );
 		Params2.Parent( C );
 		Params2.PosSet( 320 - 25, 240 - 45 );
-		Params2.Size = eeSize( 25, 25 );
-		cUITest2 * Ctrl = new cUITest2( Params2 );
+		Params2.Size = eeSize( 50, 50 );
+		cUITest * Ctrl = new cUITest( Params2 );
 		Ctrl->Visible( true );
 		Ctrl->Enabled( true );
-
-		C->DragEnable( true );
 
 		cUIGfx::CreateParams GfxParams;
 		GfxParams.Parent( C );
@@ -300,13 +293,21 @@ void cEETest::Init() {
 		GfxParams.Size = eeSize( 64, 64 );
 		GfxParams.Shape = cShapeManager::instance()->Add( TN[2] );
 		cUIGfx * Gfx = new cUIGfx( GfxParams );
-		//Gfx->Scale( 2.f );
 		Gfx->Angle( 45.f );
 		Gfx->Visible( true );
 		Gfx->Enabled( true );
 		Gfx->StartAlphaAnim( 100.f, 255.f, 1000.f );
-		Gfx->AlphaInterpolation().Loop( true );
-		Gfx->AlphaInterpolation().SetTotalTime( 1000.f );
+		Gfx->AlphaInterpolation()->Loop( true );
+		Gfx->AlphaInterpolation()->SetTotalTime( 1000.f );
+
+		Params2.Parent( Gfx );
+		Params2.PosSet( -25, -25 );
+		Params2.Size = eeSize( 50, 50 );
+		Params2.Background.Color( eeColorA( 0x7700F0FF ) );
+		Params2.Flags &= ~UI_BORDER;
+		Ctrl = new cUITest( Params2 );
+		Ctrl->Visible( true );
+		Ctrl->Enabled( true );
 
 		cUITextBox::CreateParams TextParams;
 		TextParams.Parent( C );

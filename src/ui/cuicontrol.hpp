@@ -131,31 +131,31 @@ class EE_API cUIControl {
 		void Parent( cUIControl * parent );
 
 		void CenterHorizontal();
-		
+
 		void CenterVertical();
-		
+
 		void Center();
-		
+
 		void Close();
-		
+
 		virtual void Draw();
-		
+
 		virtual void Update();
-		
+
 		virtual Uint32 OnKeyDown( const cUIEventKey& _Event );
-		
+
 		virtual Uint32 OnKeyUp( const cUIEventKey& _Event );
-		
+
 		virtual Uint32 OnMouseMove( const eeVector2i& Pos, const Uint32 Flags );
-		
+
 		virtual Uint32 OnMouseDown( const eeVector2i& Pos, const Uint32 Flags );
-		
+
 		virtual Uint32 OnMouseClick( const eeVector2i& Pos, const Uint32 Flags );
-		
+
 		virtual Uint32 OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags );
-		
+
 		virtual Uint32 OnMouseUp( const eeVector2i& Pos, const Uint32 Flags );
-		
+
 		virtual Uint32 OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags );
 
 		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags );
@@ -213,6 +213,7 @@ class EE_API cUIControl {
 		bool			mVisible;
 		bool			mEnabled;
 		eeVector2i		mPos;
+		eeVector2i		mScreenPos;
 		eeSize			mSize;
 		cUIControl *	mParentCtrl;
 		Uint32			mFlags;
@@ -270,6 +271,18 @@ class EE_API cUIControl {
 		virtual cUIControl * OverFind( const eeVector2i& Point );
 
 		virtual void UpdateQuad();
+
+		void ClipMe();
+
+		void ClipDisable();
+
+		virtual void MatrixSet();
+
+		virtual void MatrixUnset();
+
+		virtual void ClipTo();
+
+		virtual void DrawChilds();
 };
 
 }}

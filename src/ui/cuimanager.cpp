@@ -110,16 +110,16 @@ void cUIManager::Update() {
 	if ( mKM->ReleaseTrigger() ) {
 		if ( NULL != mFocusControl ) {
 			mFocusControl->OnMouseUp( mKM->GetMousePos(), mKM->ReleaseTrigger() );
-			
+
 			if ( mKM->ClickTrigger() ) {
 					mFocusControl->OnMouseClick( mKM->GetMousePos(), mKM->ClickTrigger() );
-					
+
 					if ( mKM->DoubleClickTrigger() )
 						mFocusControl->OnMouseDoubleClick( mKM->GetMousePos(), mKM->DoubleClickTrigger() );
 			}
 		}
 	}
-	
+
 	cUIControl * pOver = mControl->OverFind( mKM->GetMousePos() );
 
 	if ( pOver != mOverControl ) {
@@ -128,9 +128,9 @@ void cUIManager::Update() {
 			cUIMessage Msg( mOverControl, cUIMessage::MouseExit );
 			mOverControl->MessagePost( &Msg );
 		}
-		
+
 		mOverControl = pOver;
-		
+
 		if ( NULL != mOverControl ) {
 			mOverControl->OnMouseEnter( mKM->GetMousePos(), 0 );
 			cUIMessage Msg( mOverControl, cUIMessage::MouseEnter );
@@ -140,16 +140,16 @@ void cUIManager::Update() {
 		if ( NULL != mOverControl )
 			mOverControl->OnMouseMove( mKM->GetMousePos(), mKM->PressTrigger() );
 	}
-	
+
 	if ( mKM->PressTrigger() ) {
 		if ( NULL != mOverControl ) {
 			if ( mOverControl != mFocusControl ) {
 				mOverControl->OnFocus();
 				mFocusControl->OnFocusLoss();
-				
+
 				mFocusControl = mOverControl;
 			}
-			
+
 			mOverControl->OnMouseDown( mKM->GetMousePos(), mKM->PressTrigger() );
 		}
 	}
@@ -175,28 +175,29 @@ void cUIManager::ClipEnable( const Int32& x, const Int32& y, const Int32& Width,
 	GLdouble tY = (GLdouble)y;
 	GLdouble tW = (GLdouble)Width;
 	GLdouble tH = (GLdouble)Height;
-	
+
 	GLdouble clip_left[] = { 1.0, 0.0, 0.0, 0.0 };
 	clip_left[3] = -tX;
 
 	GLdouble clip_right[] = { -1.0, 0.0, 0.0, 0.0 };
 	clip_right[3] = tX + tW;
-	
+
 	GLdouble clip_top[] = { 0.0, 1.0, 0.0, 0.0 };
 	clip_top[3] = -tY;
 
 	GLdouble clip_bottom[] = { 0.0, -1.0, 0.0, 0.0 };
 	clip_bottom[3] = tY + tH;
-	
-	glClipPlane(GL_CLIP_PLANE0, clip_left);
-	glClipPlane(GL_CLIP_PLANE1, clip_right);
-	glClipPlane(GL_CLIP_PLANE2, clip_top);
-	glClipPlane(GL_CLIP_PLANE3, clip_bottom);
-	
+
 	glEnable(GL_CLIP_PLANE0);
 	glEnable(GL_CLIP_PLANE1);
 	glEnable(GL_CLIP_PLANE2);
 	glEnable(GL_CLIP_PLANE3);
+
+	glClipPlane(GL_CLIP_PLANE0, clip_left);
+	glClipPlane(GL_CLIP_PLANE1, clip_right);
+	glClipPlane(GL_CLIP_PLANE2, clip_top);
+	glClipPlane(GL_CLIP_PLANE3, clip_bottom);
+
 }
 
 void cUIManager::ClipDisable() {

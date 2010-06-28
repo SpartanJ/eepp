@@ -8,6 +8,10 @@ cShaderProgramManager::cShaderProgramManager()
 
 cShaderProgramManager::~cShaderProgramManager()
 {
+	std::map<std::string, cShaderProgram*>::iterator it;
+
+	for ( it = mShaders.begin(); it != mShaders.end(); it++ )
+		delete it->second;
 }
 
 void cShaderProgramManager::Add( cShaderProgram * ShaderProgram ) {

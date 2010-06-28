@@ -33,9 +33,9 @@ class EE_API cUIManager : public cSingleton<cUIManager> {
 		void Draw();
 
 		const eeFloat& Elapsed() const;
-		
+
 		void ClipEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height );
-		
+
 		void ClipDisable();
 
 		void ResizeControl();
