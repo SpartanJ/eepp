@@ -277,8 +277,6 @@ void cIsoMap::SetJointHeight( const eeUint& MapTileX, const eeUint& MapTileY, co
 			}
 			break;
 	}
-
-	T->Box = Quad2toAABB( T->Q );
 }
 
 void cIsoMap::VertexChangeHeight( const eeInt& MapTileX, const eeInt& MapTileY, const eeUint& JointNum, const eeFloat& Height, const eeFloat& NewJointHeight, const bool& JointUp ) {
@@ -287,6 +285,7 @@ void cIsoMap::VertexChangeHeight( const eeInt& MapTileX, const eeInt& MapTileY, 
 
 		if ( ( JointUp && T->Q.V[JointNum].y >= NewJointHeight ) || ( !JointUp && T->Q.V[JointNum].y <= NewJointHeight ) ) {
 			T->Q.V[JointNum].y += Height;
+			T->Box = Quad2toAABB( T->Q );
 		}
 	}
 }
