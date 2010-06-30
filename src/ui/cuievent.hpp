@@ -9,15 +9,44 @@ class cUIControl;
 
 class EE_API cUIEvent {
 	public:
-		cUIEvent( cUIControl * Ctrl );
-		
+		enum UIEvent {
+			EventKeyDown = 0,
+			EventKeyUp,
+			EventMouseMove,
+			EventMouseDown,
+			EventMouseClick,
+			EventMouseDoubleClick,
+			EventMouseUp,
+			EventMouseEnter,
+			EventMouseExit,
+			EventOnFocus,
+			EventOnFocusLoss,
+			EventOnVisibleChange,
+			EventOnEnabledChange,
+			EventOnPosChange,
+			EventOnSizeChange,
+			EventOnAngleChange,
+			EventOnScaleChange,
+			EventOnAlphaChange,
+			EventOnTextChanged,
+			EventOnFontChanged,
+			EventOnPressEnter,
+			EventUser,
+			EventForceDWord = 0xFFFFFFFF
+		};
+
+		cUIEvent( cUIControl * Ctrl, const Uint32& EventType = EventForceDWord );
+
 		~cUIEvent();
-		
+
 		cUIControl * Ctrl() const;
+
+		const Uint32& EventType() const;
 	protected:
-		cUIControl	* mCtrl;
+		cUIControl	* 	mCtrl;
+		Uint32 			mEventType;
 };
 
 }}
 
-#endif 
+#endif

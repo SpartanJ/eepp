@@ -60,12 +60,11 @@ void cUIManager::InputCallback( EE_Event * Event ) {
 
 void cUIManager::ResizeControl() {
 	mControl->Size( mEE->GetWidth(), mEE->GetHeight() );
-	cUIMessage Msg( mControl, cUIMessage::WindowResize );
-	mControl->MessagePost( &Msg );
+	SendMsg( mControl, cUIMessage::MsgWindowResize );
 }
 
 void cUIManager::SendKeyUp( EE_Event * Event ) {
-	cUIEventKey	KeyEvent	= cUIEventKey( mFocusControl, Event->key.keysym.sym, Event->key.keysym.unicode );
+	cUIEventKey	KeyEvent	= cUIEventKey( mFocusControl, cUIEvent::EventKeyUp, Event->key.keysym.sym, Event->key.keysym.unicode );
 	cUIControl * CtrlLoop	= mFocusControl;
 
 	while( NULL != CtrlLoop ) {
@@ -77,7 +76,7 @@ void cUIManager::SendKeyUp( EE_Event * Event ) {
 }
 
 void cUIManager::SendKeyDown( EE_Event * Event ) {
-	cUIEventKey	KeyEvent	= cUIEventKey( mFocusControl, Event->key.keysym.sym, Event->key.keysym.unicode );
+	cUIEventKey	KeyEvent	= cUIEventKey( mFocusControl, cUIEvent::EventKeyDown, Event->key.keysym.sym, Event->key.keysym.unicode );
 	cUIControl * CtrlLoop	= mFocusControl;
 
 	while( NULL != CtrlLoop ) {
@@ -104,6 +103,12 @@ void cUIManager::OverControl( cUIControl * Ctrl ) {
 	mOverControl = Ctrl;
 }
 
+void cUIManager::SendMsg( cUIControl * Ctrl, const Uint32& Msg ) {
+	cUIMessage tMsg( Ctrl, Msg );
+
+	Ctrl->MessagePost( &tMsg );
+}
+
 void cUIManager::Update() {
 	mElapsed = mEE->Elapsed();
 
@@ -114,8 +119,13 @@ void cUIManager::Update() {
 			if ( mKM->ClickTrigger() ) {
 					mFocusControl->OnMouseClick( mKM->GetMousePos(), mKM->ClickTrigger() );
 
-					if ( mKM->DoubleClickTrigger() )
+					SendMsg( mFocusControl, cUIMessage::MsgClick );
+
+					if ( mKM->DoubleClickTrigger() ) {
 						mFocusControl->OnMouseDoubleClick( mKM->GetMousePos(), mKM->DoubleClickTrigger() );
+
+						SendMsg( mFocusControl, cUIMessage::MsgDoubleClick );
+					}
 			}
 		}
 	}
@@ -125,16 +135,14 @@ void cUIManager::Update() {
 	if ( pOver != mOverControl ) {
 		if ( NULL != mOverControl ) {
 			mOverControl->OnMouseExit( mKM->GetMousePos(), 0 );
-			cUIMessage Msg( mOverControl, cUIMessage::MouseExit );
-			mOverControl->MessagePost( &Msg );
+			SendMsg( mOverControl, cUIMessage::MsgMouseExit );
 		}
 
 		mOverControl = pOver;
 
 		if ( NULL != mOverControl ) {
 			mOverControl->OnMouseEnter( mKM->GetMousePos(), 0 );
-			cUIMessage Msg( mOverControl, cUIMessage::MouseEnter );
-			mOverControl->MessagePost( &Msg );
+			SendMsg( mOverControl, cUIMessage::MsgMouseEnter );
 		}
 	} else {
 		if ( NULL != mOverControl )

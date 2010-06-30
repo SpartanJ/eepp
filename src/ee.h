@@ -35,11 +35,11 @@
 	#include "utils/easing.hpp"
 	using namespace EE::Utils;
 	using namespace EE::Utils::easing;
-	
+
 	// Math
 	#include "math/math.hpp"
 	using namespace EE::Math;
-	
+
 	// System
 	#include "system/singleton.hpp"
 	#include "system/cthread.hpp"
@@ -67,13 +67,13 @@
 	#include "audio/cmusic.hpp"
 	#include "audio/tsoundmanager.hpp"
 	using namespace EE::Audio;
-	
+
 	// Window
 	#include "window/cinput.hpp"
 	#include "window/cinputtextbuffer.hpp"
 	#include "window/cview.hpp"
 	#include "window/cengine.hpp"
-	
+
 	// Graphics
 	#include "graphics/renders.hpp"
 	#include "graphics/ctexture.hpp"
@@ -93,7 +93,7 @@
 	#include "graphics/cglobalbatchrenderer.hpp"
 	#include "graphics/ctextcache.hpp"
 	#include "graphics/pixelperfect.hpp"
-	
+
 	#ifdef EE_SHADERS
 	#include "graphics/cshader.hpp"
 	#include "graphics/cshaderprogram.hpp"
@@ -107,6 +107,12 @@
 	using namespace EE::Gaming;
 
 	// UI
+	#include "ui/cuibackground.hpp"
+	#include "ui/cuiborder.hpp"
+	#include "ui/cuievent.hpp"
+	#include "ui/cuieventkey.hpp"
+	#include "ui/cuieventmouse.hpp"
+	#include "ui/cuimessage.hpp"
 	#include "ui/cuicontrol.hpp"
 	#include "ui/cuidragable.hpp"
 	#include "ui/cuicontrolanim.hpp"

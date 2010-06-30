@@ -82,9 +82,9 @@ class EE_API cUIControlAnim : public cUIDragable {
 
 		virtual void OnAlphaChange();
 
-		void MatrixSet();
+		virtual void MatrixSet();
 
-		void MatrixUnset();
+		virtual void MatrixUnset();
 };
 
 }}

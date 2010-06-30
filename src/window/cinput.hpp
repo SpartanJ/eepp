@@ -34,7 +34,7 @@ typedef SDL_Event EE_Event;
 int EE_API convertKeyCharacter(EE_Event* event);
 
 /** @enum EE_KEY Enum of keyboard keys. */
-typedef enum {
+enum EE_KEY {
 	KEY_UNKNOWN= SDLK_UNKNOWN,
 	KEY_FIRST= SDLK_FIRST,
 	KEY_BACKSPACE= SDLK_BACKSPACE,
@@ -286,14 +286,14 @@ typedef enum {
 	KEY_WORLD_93=	SDLK_WORLD_93,
 	KEY_WORLD_94=	SDLK_WORLD_94,
 	KEY_WORLD_95=	SDLK_WORLD_95
-} EE_KEY;
+};
 
 /** @enum EE_KEY_STATE Differents States of a Key */
-typedef enum {
+enum EE_KEY_STATE {
 	EE_KEYOFF = 0,
 	EE_KEYDOWN = 1,
 	EE_KEYUP = 2
-} EE_KEY_STATE;
+};
 
 /** @brief The basic input class. For mouse and keyboard. */
 class EE_API cInput : public cSingleton<cInput> {
@@ -402,25 +402,25 @@ class EE_API cInput : public cSingleton<cInput> {
 
 		/** @return The Mouse Speed */
 		const eeFloat& MouseSpeed() const;
-		
+
 		/** @return The bitflags of the last pressed trigger (before the current state of press trigger) */
 		const Uint32& LastPressTrigger() const;
-		
+
 		/** @return The current state as flags of the mouse press trigger */
 		const Uint32& PressTrigger() const;
-		
+
 		/** @return The current state as flags of the mouse release trigger */
 		const Uint32& ReleaseTrigger() const;
-		
+
 		/** @return The current state as flags of the mouse click trigger */
 		const Uint32& ClickTrigger() const;
-		
+
 		/** @return The current state as flags of the mouse double click trigger */
 		const Uint32& DoubleClickTrigger() const;
-		
+
 		/** @return The double click interval in milliseconds ( default 500 ms ) */
 		const Uint32& DoubleClickInterval() const;
-		
+
 		/** Set the double click interval in milliseconds */
 		void DoubleClickInterval( const Uint32& Interval );
 	protected:
@@ -431,7 +431,7 @@ class EE_API cInput : public cSingleton<cInput> {
 		EE_Event mEvent;
 		std::map<Uint16, EE_KEY_STATE> mKeystates;
 		std::map<Uint32, InputCallback> mCallbacks;
-		
+
 		Uint32 mPressTrigger;
 		Uint32 mReleaseTrigger;
 		Uint32 mLastPressTrigger;
@@ -441,10 +441,10 @@ class EE_API cInput : public cSingleton<cInput> {
 		Uint32 mDoubleClickInterval; //!< Determine the double click inverval in milliseconds ( default 500 ms )
 		Uint32 mLastButtonLeftClicked, mLastButtonRightClicked, mLastButtonMiddleClicked;
 		Uint32 mLastButtonLeftClick, mLastButtonRightClick, mLastButtonMiddleClick;
-		
+
 		Uint32 mTClick;
 		eeVector2i mMousePos;
-		
+
 		VideoResizeCallback mVRCall;
 		Uint32 mNumCallBacks;
 

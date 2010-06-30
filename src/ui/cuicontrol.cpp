@@ -16,7 +16,8 @@ cUIControl::cUIControl( const CreateParams& Params ) :
 	mBackground( Params.Background ),
 	mBorder( Params.Border ),
 	mControlFlags( 0 ),
-	mBlend( Params.Blend )
+	mBlend( Params.Blend ),
+	mNumCallBacks(0)
 {
 	mType |= UI_TYPE_GET(UI_TYPE_CONTROL);
 
@@ -210,47 +211,68 @@ void cUIControl::Update() {
 	}
 }
 
-Uint32 cUIControl::OnKeyDown( const cUIEventKey& _Event ) {
+void cUIControl::SendMouseEvent( const Uint32& Event, const eeVector2i& Pos, const Uint32& Flags ) {
+	cUIEventMouse MouseEvent( this, Event, Pos, Flags );
+	SendEvent( &MouseEvent );
+}
+
+void cUIControl::SendCommonEvent( const Uint32& Event ) {
+	cUIEvent CommonEvent( this, Event );
+	SendEvent( &CommonEvent );
+}
+
+Uint32 cUIControl::OnKeyDown( const cUIEventKey& Event ) {
+	SendEvent( &Event );
 	return 0;
 }
 
-Uint32 cUIControl::OnKeyUp( const cUIEventKey& _Event ) {
+Uint32 cUIControl::OnKeyUp( const cUIEventKey& Event ) {
+	SendEvent( &Event );
 	return 0;
 }
 
 Uint32 cUIControl::OnMouseMove( const eeVector2i& Pos, const Uint32 Flags ) {
+	SendMouseEvent( cUIEvent::EventMouseMove, Pos, Flags );
 	return 0;
 }
 
 Uint32 cUIControl::OnMouseDown( const eeVector2i& Pos, const Uint32 Flags ) {
+	SendMouseEvent( cUIEvent::EventMouseDown, Pos, Flags );
 	return 0;
 }
 
 Uint32 cUIControl::OnMouseUp( const eeVector2i& Pos, const Uint32 Flags ) {
+	SendMouseEvent( cUIEvent::EventMouseUp, Pos, Flags );
 	return 0;
 }
 
 Uint32 cUIControl::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
+	SendMouseEvent( cUIEvent::EventMouseClick, Pos, Flags );
 	return 0;
 }
 
 Uint32 cUIControl::OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags ) {
+	SendMouseEvent( cUIEvent::EventMouseDoubleClick, Pos, Flags );
 	return 0;
 }
 
 Uint32 cUIControl::OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags ) {
+	SendMouseEvent( cUIEvent::EventMouseEnter, Pos, Flags );
 	return 1;
 }
 
 Uint32 cUIControl::OnMouseExit( const eeVector2i& Pos, const Uint32 Flags ) {
+	SendMouseEvent( cUIEvent::EventMouseExit, Pos, Flags );
 	return 1;
 }
 
 Uint32 cUIControl::OnFocus() {
+	SendCommonEvent( cUIEvent::EventOnFocus );
 	return 0;
 }
 
 Uint32 cUIControl::OnFocusLoss() {
+	SendCommonEvent( cUIEvent::EventOnFocusLoss );
 	return 0;
 }
 
@@ -356,6 +378,7 @@ void cUIControl::ToPos( const Uint32& Pos ) {
 }
 
 void cUIControl::OnVisibleChange() {
+	SendCommonEvent( cUIEvent::EventOnVisibleChange );
 }
 
 void cUIControl::OnEnabledChange() {
@@ -364,12 +387,16 @@ void cUIControl::OnEnabledChange() {
 			cUIManager::instance()->FocusControl( NULL );
 		}
 	}
+
+	SendCommonEvent( cUIEvent::EventOnEnabledChange );
 }
 
 void cUIControl::OnPosChange() {
+	SendCommonEvent( cUIEvent::EventOnPosChange );
 }
 
 void cUIControl::OnSizeChange() {
+	SendCommonEvent( cUIEvent::EventOnSizeChange );
 }
 
 void cUIControl::BackgroundDraw() {
@@ -668,6 +695,49 @@ void cUIControl::UpdateQuad() {
 
 		tParent = tParent->Parent();
 	};
+}
+
+eeFloat cUIControl::Elapsed() {
+	return cUIManager::instance()->Elapsed();
+}
+
+Uint32 cUIControl::AddEventListener( const Uint32& EventType, const UIEventCallback& Callback ) {
+	mNumCallBacks++;
+
+	mEvents[ EventType ][ mNumCallBacks ] = Callback;
+
+	return mNumCallBacks;
+}
+
+void cUIControl::RemoveEventListener( const Uint32& CallbackId ) {
+	std::map< Uint32, std::map<Uint32, UIEventCallback> >::iterator it;
+
+	for ( it = mEvents.begin(); it != mEvents.end(); ++it ) {
+		std::map<Uint32, UIEventCallback> event = it->second;
+
+		if ( event.erase( CallbackId ) )
+			break;
+	}
+}
+
+void cUIControl::SendEvent( const cUIEvent * Event ) {
+	if ( 0 != mEvents.count( Event->EventType() ) ) {
+		std::map<Uint32, UIEventCallback>			event = mEvents[ Event->EventType() ];
+		std::map<Uint32, UIEventCallback>::iterator it;
+
+		if ( event.begin() != event.end() ) {
+			for ( it = event.begin(); it != event.end(); ++it )
+				it->second( Event );
+		}
+	}
+}
+
+cUIBackground * cUIControl::Background() {
+	return &mBackground;
+}
+
+cUIBorder * cUIControl::Border() {
+	return &mBorder;
 }
 
 }}

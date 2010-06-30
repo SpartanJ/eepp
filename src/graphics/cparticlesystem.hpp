@@ -11,7 +11,7 @@ using namespace EE::Window;
 namespace EE { namespace Graphics {
 
 /** @enum EE_PARTICLE_EFFECT Predefined effects for the particle system. Use Callback when wan't to create a new effect, o set the parameters using NoFx, but it's much more limited. */
-typedef enum {
+enum EE_PARTICLE_EFFECT {
 	Nofx = 0, //!< User defined effect
 	BlueBall = 1,
 	Fire = 2,
@@ -32,13 +32,13 @@ typedef enum {
 	BT = 17,
 	Atomic = 18,
 	Callback = 19 //!< Callback defined effect. Set the callback before creating the effect.
-} EE_PARTICLE_EFFECT;
+};
 
 /** @brief Basic but powerfull Particle System */
 class EE_API cParticleSystem {
 	public:
 		typedef boost::function2<void, cParticle*, cParticleSystem*> ParticleCallback;
-		
+
 		cParticleSystem();
 		~cParticleSystem();
 
@@ -65,7 +65,7 @@ class EE_API cParticleSystem {
 		/** Draw the particles effect */
 		void Draw();
 
-		/** Update the particles effect 
+		/** Update the particles effect
 		* @param Time The time transcurred between the last update. If -1 will take the cEngine::Elapsed()
 		*/
 		void Update( const eeFloat& Time = -99999.f );
@@ -126,20 +126,20 @@ class EE_API cParticleSystem {
 	private:
 		cEngine* EE;
 		cTextureFactory* TF;
-		
+
 		std::vector<cParticle> mParticle;
 		EE_PARTICLE_EFFECT mEffect;
 		eeColorAf mColor;
-		
+
 		Uint32 mTexId, mPCount, mPLeft, mLoops;
 		int mProgression, mDirection;
 		bool mLoop, mUsed, mPointsSup;
-		
+
 		eeFloat mX, mY, mXAcc, mYAcc, mXSpeed, mYSpeed, mAlphaDecay, mSize, mHSize, mTime, mX2, mY2;
-		
+
 		void Begin();
 		void Reset( cParticle* P );
-		
+
 		bool mIsCallback;
 		ParticleCallback mPC;
 };

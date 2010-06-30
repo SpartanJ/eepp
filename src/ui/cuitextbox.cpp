@@ -125,12 +125,16 @@ void cUITextBox::OnSizeChange() {
 	AutoShrink();
 	AutoSize();
 	AutoAlign();
+
+	cUIControlAnim::OnSizeChange();
 }
 
 void cUITextBox::OnTextChanged() {
+	SendCommonEvent( cUIEvent::EventOnTextChanged );
 }
 
 void cUITextBox::OnFontChanged() {
+	SendCommonEvent( cUIEvent::EventOnFontChanged );
 }
 
 }}

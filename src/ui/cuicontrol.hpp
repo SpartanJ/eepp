@@ -3,9 +3,12 @@
 
 #include "base.hpp"
 #include "uihelper.hpp"
+#include "cuibackground.hpp"
+#include "cuiborder.hpp"
 #include "cuimessage.hpp"
 #include "cuievent.hpp"
 #include "cuieventkey.hpp"
+#include "cuieventmouse.hpp"
 
 namespace EE { namespace UI {
 
@@ -13,35 +16,7 @@ class cUIManager;
 
 class EE_API cUIControl {
 	public:
-		class cUIBackground {
-			public:
-				cUIBackground() : mColor( 0xFF404040 ), mBlendMode( ALPHA_NORMAL ) {}
-				cUIBackground( const cUIBackground& Back ) : mColor( Back.Color() ), mBlendMode( ALPHA_NORMAL ) {}
-
-				const eeColorA&	Color() const				{ return	mColor;		}
-				void Color( const eeColorA& Col )			{ mColor = Col;			}
-
-				const EE_RENDERALPHAS& Blend() const		{ return mBlendMode;	}
-				void Blend( const EE_RENDERALPHAS& blend )	{ mBlendMode = blend;	}
-			protected:
-				eeColorA			mColor;
-				EE_RENDERALPHAS		mBlendMode;
-		};
-
-		class cUIBorder {
-			public:
-				cUIBorder() :  mColor( 0xFF404040 ), mWidth( 1 ) {}
-				cUIBorder( const cUIBorder& border ) : mColor( border.Color() ), mWidth( border.Width() ) {}
-
-				const eeColorA&	Color() const		{ return	mColor; }
-				void Color( const eeColorA& Col )	{	mColor = Col;	}
-
-				const eeUint&	Width() const		{ return	mWidth; }
-				void Width( const eeUint& width )	{	mWidth = width;	}
-			protected:
-				eeColorA		mColor;
-				eeUint			mWidth;
-		};
+		typedef boost::function1<void, const cUIEvent*> UIEventCallback;
 
 		class CreateParams {
 			public:
@@ -142,9 +117,9 @@ class EE_API cUIControl {
 
 		virtual void Update();
 
-		virtual Uint32 OnKeyDown( const cUIEventKey& _Event );
+		virtual Uint32 OnKeyDown( const cUIEventKey& Event );
 
-		virtual Uint32 OnKeyUp( const cUIEventKey& _Event );
+		virtual Uint32 OnKeyUp( const cUIEventKey& Event );
 
 		virtual Uint32 OnMouseMove( const eeVector2i& Pos, const Uint32 Flags );
 
@@ -205,6 +180,14 @@ class EE_API cUIControl {
 		Uint32 IsAnimated();
 
 		Uint32 IsClipped();
+
+		Uint32 AddEventListener( const Uint32& EventType, const UIEventCallback& Callback );
+
+		void RemoveEventListener( const Uint32& CallbackId );
+
+		cUIBackground * Background();
+
+		cUIBorder * Border();
 	protected:
 		friend class cUIManager;
 		friend class cUIDragable;
@@ -231,6 +214,9 @@ class EE_API cUIControl {
 
 		eeQuad2f 		mQuad;
 		eeVector2f 		mCenter;
+
+		std::map< Uint32, std::map<Uint32, UIEventCallback> > mEvents;
+		Uint32			mNumCallBacks;
 
 		virtual ~cUIControl();
 
@@ -283,6 +269,14 @@ class EE_API cUIControl {
 		virtual void ClipTo();
 
 		virtual void DrawChilds();
+
+		virtual eeFloat Elapsed();
+
+		virtual void SendEvent( const cUIEvent * Event );
+
+		void SendMouseEvent( const Uint32& Event, const eeVector2i& Pos, const Uint32& Flags );
+
+		void SendCommonEvent( const Uint32& Event );
 };
 
 }}

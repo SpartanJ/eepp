@@ -8,9 +8,9 @@ namespace EE { namespace UI {
 class EE_API cUIDragable : public cUIControl {
 	public:
     	cUIDragable( const cUIControl::CreateParams& Params );
-		
+
 		virtual Uint32		OnMouseDown( const eeVector2i& Pos, const Uint32 Flags );
-		virtual Uint32 		OnMouseUp( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 	OnMouseUp( const eeVector2i& Pos, const Uint32 Flags );
 
 		bool				Dragging() const;
 		void				Dragging( const bool& dragging );
@@ -22,15 +22,15 @@ class EE_API cUIDragable : public cUIControl {
 		void				DraggingPoint( const eeVector2i& Point );
 
 		virtual void		Update();
-		
-		const bool&			DragEnable() const;
+
+		const bool&		DragEnable() const;
 		void 				DragEnable( const bool& enable );
-		
+
 		void 				DragButton( const Uint32& Button );
 		const Uint32& 		DragButton() const;
 	protected:
  	   virtual ~cUIDragable();
- 	   
+
  	   bool 		mDragEnable;
  	   bool 		mDragging;
  	   eeVector2i 	mDragPoint;

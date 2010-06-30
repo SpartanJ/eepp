@@ -9,14 +9,15 @@ class cUIControl;
 
 class EE_API cUIMessage {
 	public:
-		enum
+		enum UIMessage
 		{
-			ClickMsg = 0,
-			MouseEnter,
-			MouseExit,
-			WindowResize,
-			UserMsg,
-			ForceDWord = 0xFFFFFFFF,
+			MsgClick = 0,
+			MsgDoubleClick,
+			MsgMouseEnter,
+			MsgMouseExit,
+			MsgWindowResize,
+			MsgUser,
+			MsgForceDWord = 0xFFFFFFFF,
 		};
 
 		cUIMessage( cUIControl * Ctrl, const Uint32& Msg );

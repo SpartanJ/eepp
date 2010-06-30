@@ -1,6 +1,3 @@
-export DEBUGBUILD = yes
-export STATIC     = yes
-
 ifeq ($(DEBUGBUILD), yes)
     DEBUGFLAGS = -g -DDEBUG
 else

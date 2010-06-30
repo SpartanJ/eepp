@@ -19,6 +19,7 @@ Uint32 cUIDragable::OnMouseDown( const eeVector2i& Pos, const Uint32 Flags ) {
 		mDragPoint = mDraggingPoint = Pos;
 	}
 
+	cUIControl::OnMouseDown( Pos, Flags );
 	return 1;
 }
 
@@ -26,6 +27,7 @@ Uint32 cUIDragable::OnMouseUp( const eeVector2i& Pos, const Uint32 Flags ) {
 	if ( mDragEnable && mDragging && ( Flags & mDragButton ) )
 		mDragging = false;
 
+	cUIControl::OnMouseUp( Pos, Flags );
 	return 1;
 }
 
@@ -55,18 +57,18 @@ void cUIDragable::DraggingPoint( const eeVector2i& Point ) {
 
 void cUIDragable::Update() {
 	cUIControl::Update();
-	
+
 	if ( !mDragEnable )
 		return;
-	
+
 	if ( mDragging ) {
 		if ( !( cInput::instance()->PressTrigger() & mDragButton ) ) {
 			mDragging = false;
 			return;
 		}
-		
+
 		eeVector2i Pos( cInput::instance()->GetMousePos() );
-		
+
 		if ( mDraggingPoint.x != Pos.x || mDraggingPoint.y != Pos.y ) {
 			mDragPoint 		= mDraggingPoint;
 			mDraggingPoint 	= Pos;
@@ -77,7 +79,7 @@ void cUIDragable::Update() {
 	}
 }
 
-const bool&	cUIDragable::DragEnable() const {
+const bool& cUIDragable::DragEnable() const {
 	return mDragEnable;
 }
 

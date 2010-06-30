@@ -10,13 +10,13 @@ class cUIControl;
 
 class EE_API cUIEventKey : public cUIEvent {
 	public:
-		cUIEventKey( cUIControl * Ctrl, const Uint32& KeyCode, const Uint16& Char );
+		cUIEventKey( cUIControl * Ctrl, const Uint32& EventNum, const Uint32& KeyCode, const Uint16& Char );
 
 		~cUIEventKey();
 
-		Uint32 KeyCode() const;
+		const Uint32& KeyCode() const;
 
-		Uint16 Char() const;
+		const Uint16& Char() const;
 	protected:
 		Uint32	mKeyCode;
 		Uint16	mChar;
@@ -24,4 +24,4 @@ class EE_API cUIEventKey : public cUIEvent {
 
 }}
 
-#endif 
+#endif

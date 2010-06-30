@@ -12,8 +12,9 @@
 class cUITest : public cUIControlAnim {
 	public:
 		cUITest( cUIControlAnim::CreateParams& Params ) : cUIControlAnim( Params ) 	{ mOldColor = mBackground.Color(); }
+
 		virtual Uint32 OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags )	{ mBackground.Color( eeColorA( mOldColor.R(), mOldColor.G(), mOldColor.B(), 200 ) ); return 1; }
-		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags )		{ mBackground.Color( mOldColor ); return 1; }
+		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags )	{ mBackground.Color( mOldColor ); return 1; }
 
 		virtual Uint32 OnMouseUp( const eeVector2i& Pos, const Uint32 Flags ) {
 			cUIDragable::OnMouseUp( Pos, Flags );
@@ -25,15 +26,8 @@ class cUITest : public cUIControlAnim {
 
 			return 1;
 		}
-	protected:
-		eeColorA mOldColor;
-};
 
-class cUITest2 : public cUIControl {
-	public:
-		cUITest2( cUIControl::CreateParams& Params ) : cUIControl( Params ) 		{ mOldColor = mBackground.Color(); }
-		virtual Uint32 OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags )	{ mBackground.Color( eeColorA( mOldColor.R(), mOldColor.G(), mOldColor.B(), 200 ) ); return 1; }
-		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags )		{ mBackground.Color( mOldColor ); return 1; }
+		const eeColorA& OldColor() { return mOldColor; }
 	protected:
 		eeColorA mOldColor;
 };
@@ -147,6 +141,7 @@ class cEETest : private cThread {
 
 		std::wstring mBuda;
 };
+
 
 void cEETest::Init() {
 	EE = cEngine::instance();
@@ -926,12 +921,6 @@ void cEETest::End() {
 	MySong.clear();
 
 	cLog::instance()->Save();
-
-	#ifdef EE_SHADERS
-	if ( mShaderProgram != NULL )
-		delete mShaderProgram;
-	#endif
-
 	cEngine::DestroySingleton();
 	cUIManager::DestroySingleton();
 }

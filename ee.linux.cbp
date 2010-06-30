@@ -175,6 +175,10 @@
 		<Unit filename="src/system/singleton.hpp" />
 		<Unit filename="src/test/ee.cpp" />
 		<Unit filename="src/ui/base.hpp" />
+		<Unit filename="src/ui/cuibackground.cpp" />
+		<Unit filename="src/ui/cuibackground.hpp" />
+		<Unit filename="src/ui/cuiborder.cpp" />
+		<Unit filename="src/ui/cuiborder.hpp" />
 		<Unit filename="src/ui/cuicontrol.cpp" />
 		<Unit filename="src/ui/cuicontrol.hpp" />
 		<Unit filename="src/ui/cuicontrolanim.cpp" />
@@ -185,6 +189,8 @@
 		<Unit filename="src/ui/cuievent.hpp" />
 		<Unit filename="src/ui/cuieventkey.cpp" />
 		<Unit filename="src/ui/cuieventkey.hpp" />
+		<Unit filename="src/ui/cuieventmouse.cpp" />
+		<Unit filename="src/ui/cuieventmouse.hpp" />
 		<Unit filename="src/ui/cuigfx.cpp" />
 		<Unit filename="src/ui/cuigfx.hpp" />
 		<Unit filename="src/ui/cuimanager.cpp" />

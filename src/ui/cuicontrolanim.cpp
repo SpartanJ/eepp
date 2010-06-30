@@ -111,22 +111,22 @@ void cUIControlAnim::Update() {
 	cUIDragable::Update();
 
 	if ( NULL != mMoveAnim && mMoveAnim->Enabled() ) {
-		mMoveAnim->Update( cUIManager::instance()->Elapsed() );
+		mMoveAnim->Update( Elapsed() );
 		Pos( (eeInt)mMoveAnim->GetPos().x, (eeInt)mMoveAnim->GetPos().y );
 	}
 
 	if ( NULL != mAlphaAnim && mAlphaAnim->Enabled() ) {
-		mAlphaAnim->Update( cUIManager::instance()->Elapsed() );
+		mAlphaAnim->Update( Elapsed() );
 		Alpha( mAlphaAnim->GetRealPos() );
 	}
 
 	if ( NULL != mScaleAnim && mScaleAnim->Enabled() ) {
-		mScaleAnim->Update( cUIManager::instance()->Elapsed() );
+		mScaleAnim->Update( Elapsed() );
 		Scale( mScaleAnim->GetRealPos() );
 	}
 
 	if ( NULL != mAngleAnim && mAngleAnim->Enabled() ) {
-		mAngleAnim->Update( cUIManager::instance()->Elapsed() );
+		mAngleAnim->Update( Elapsed() );
 		Angle( mAngleAnim->GetRealPos() );
 	}
 
@@ -286,12 +286,15 @@ cWaypoints * cUIControlAnim::MovementInterpolation() {
 }
 
 void cUIControlAnim::OnAngleChange() {
+	SendCommonEvent( cUIEvent::EventOnAngleChange );
 }
 
 void cUIControlAnim::OnScaleChange() {
+	SendCommonEvent( cUIEvent::EventOnScaleChange );
 }
 
 void cUIControlAnim::OnAlphaChange() {
+	SendCommonEvent( cUIEvent::EventOnAlphaChange );
 }
 
 }}

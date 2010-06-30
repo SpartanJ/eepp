@@ -6,10 +6,10 @@
 namespace EE { namespace Gaming {
 
 /** @enum LIGHT_TYPE Define the light spot type */
-typedef enum {
+enum LIGHT_TYPE {
 	LIGHT_NORMAL = 0,
 	LIGHT_ISOMETRIC = 1
-} LIGHT_TYPE;
+};
 
 class EE_API cLight {
 	public:

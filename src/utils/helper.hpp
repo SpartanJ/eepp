@@ -4,7 +4,7 @@
 namespace EE { namespace Utils {
 
 /** @enum EE_INTERPOLATION Define the type of interpolation used. */
-typedef enum {
+enum EE_INTERPOLATION {
 	LINEAR,
 	QUADRATICIN,
 	QUADRATICOUT,
@@ -37,8 +37,8 @@ typedef enum {
 	ELASTICOUT,
 	ELASTICINOUT,
 	COUNT
-} EE_INTERPOLATION;
+};
 
 }}
 
-#endif 
+#endif

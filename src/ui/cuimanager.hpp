@@ -39,6 +39,8 @@ class EE_API cUIManager : public cSingleton<cUIManager> {
 		void ClipDisable();
 
 		void ResizeControl();
+
+		void SendMsg( cUIControl * Ctrl, const Uint32& Msg );
 	protected:
 		cEngine *			mEE;
 		cInput *			mKM;

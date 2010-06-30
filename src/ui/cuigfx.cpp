@@ -2,17 +2,17 @@
 
 namespace EE { namespace UI {
 
-cUIGfx::cUIGfx( const cUIGfx::CreateParams& Params ) : 
+cUIGfx::cUIGfx( const cUIGfx::CreateParams& Params ) :
 	cUIControlAnim( Params ),
 	mShape( Params.Shape ),
 	mColor( Params.ShapeColor ),
 	mRender( Params.ShapeRender )
 {
 	mType |= UI_TYPE_GET(UI_TYPE_GFX);
-	
+
 	if ( Flags() & UI_AUTO_SIZE || ( Params.Size.x == -1 && Params.Size.y == -1 ) )
 		Size( mShape->Size() );
-	
+
 	if ( mColor.voidRGB ) {
 		mColor.Alpha = (Uint8)mAlpha;
 		mColor.voidRGB = false;
@@ -24,11 +24,11 @@ cUIGfx::~cUIGfx() {
 
 void cUIGfx::Draw() {
 	cUIControlAnim::Draw();
-	
+
 	if ( mVisible ) {
 		eeVector2i Pos = mPos;
 		ControlToScreen( Pos );
-		
+
 		mShape->Draw( (eeFloat)Pos.x, (eeFloat)Pos.y, mColor, 0.f, 1.f, mBlend, mRender );
 	}
 }
@@ -64,6 +64,8 @@ void cUIGfx::OnSizeChange() {
 		mShape->DestWidth( (eeFloat)mSize.x );
 		mShape->DestHeight( (eeFloat)mSize.y );
 	}
+
+	cUIControlAnim::OnSizeChange();
 }
 
 }}
