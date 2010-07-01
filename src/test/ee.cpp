@@ -11,10 +11,31 @@
 
 class cUITest : public cUIControlAnim {
 	public:
-		cUITest( cUIControlAnim::CreateParams& Params ) : cUIControlAnim( Params ) 	{ mOldColor = mBackground.Color(); }
+		cUITest( cUIControlAnim::CreateParams& Params ) : cUIControlAnim( Params ) 	{ mOldColor = mBackground.Colors(); }
 
-		virtual Uint32 OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags )	{ mBackground.Color( eeColorA( mOldColor.R(), mOldColor.G(), mOldColor.B(), 200 ) ); return 1; }
-		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags )	{ mBackground.Color( mOldColor ); return 1; }
+		virtual Uint32 OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags )	{
+			if ( 4 == mOldColor.size() ) {
+				mBackground.Colors( eeColorA( mOldColor[0].R(), mOldColor[0].G(), mOldColor[0].B(), 200 ),
+									eeColorA( mOldColor[1].R(), mOldColor[1].G(), mOldColor[1].B(), 200 ),
+									eeColorA( mOldColor[2].R(), mOldColor[2].G(), mOldColor[2].B(), 200 ),
+									eeColorA( mOldColor[3].R(), mOldColor[3].G(), mOldColor[3].B(), 200 )
+								);
+			} else {
+				mBackground.Color( eeColorA( mOldColor[0].R(), mOldColor[0].G(), mOldColor[0].B(), 200 ) );
+			}
+
+			return 1;
+		}
+
+		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags )	{
+			if ( 4 == mOldColor.size() ) {
+				mBackground.Colors( mOldColor[0], mOldColor[1], mOldColor[2], mOldColor[3] );
+			} else {
+				mBackground.Color( mOldColor[0] );
+			}
+
+			return 1;
+		}
 
 		virtual Uint32 OnMouseUp( const eeVector2i& Pos, const Uint32 Flags ) {
 			cUIDragable::OnMouseUp( Pos, Flags );
@@ -27,10 +48,11 @@ class cUITest : public cUIControlAnim {
 			return 1;
 		}
 
-		const eeColorA& OldColor() { return mOldColor; }
+		const std::vector<eeColorA>& OldColor() { return mOldColor; }
 	protected:
-		eeColorA mOldColor;
+		std::vector<eeColorA> mOldColor;
 };
+
 
 class cEETest : private cThread {
 	public:
@@ -177,6 +199,7 @@ void cEETest::Init() {
 	mUseShaders 	= Ini.GetValueB( "EEPP", "UseShaders", false );
 
 	run = EE->Init(mWidth, mHeight, BitColor, Windowed, Resizeable, VSync);
+
 	PAK.Open( MyPath + "data/ee.pak" );
 
 	run = ( run && PAK.IsOpen() );
@@ -239,11 +262,12 @@ void cEETest::Init() {
 
 		cUIManager::instance()->Init();
 
-		cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 320, 240 ), UI_FILL_BACKGROUND );
+		cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 320, 240 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
-		Params.Flags |= UI_CLIP_ENABLE;
-
-		Params.Background.Color( eeColorA( 0x66CC0000 ) );
+		Params.Border.Width( 2.f );
+		Params.Border.Color( 0xFF979797 );
+		Params.Background.Corners(5);
+		Params.Background.Colors( eeColorA( 0x66FAFAFA ), eeColorA( 0xCCFAFAFA ), eeColorA( 0xCCFAFAFA ), eeColorA( 0x66FAFAFA ) );
 		cUIControlAnim * C = new cUITest( Params );
 		C->Visible( true );
 		C->Enabled( true );
@@ -252,7 +276,8 @@ void cEETest::Init() {
 		C->StartRotation( 0.f, 360.f, 2500.f );
 
 		Params.Flags &= ~UI_CLIP_ENABLE;
-		Params.Background.Color( eeColorA( 0x7700FF00 ) );
+		Params.Background.Corners(0);
+		Params.Background.Colors( eeColorA( 0x7700FF00 ), eeColorA( 0x7700CC00 ), eeColorA( 0x7700CC00 ), eeColorA( 0x7700FF00 ) );
 		Params.Parent( C );
 		Params.Size = eeSize( 50, 50 );
 		cUITest * Child = new cUITest( Params );
@@ -261,7 +286,7 @@ void cEETest::Init() {
 		Child->Enabled( true );
 		Child->StartRotation( 0.f, 360.f * 10.f, 5000.f * 10.f );
 
-		Params.Background.Color( eeColorA( 0x77FFFF00 ) );
+		Params.Background.Colors( eeColorA( 0x77FFFF00 ), eeColorA( 0x77CCCC00 ), eeColorA( 0x77CCCC00 ), eeColorA( 0x77FFFF00 ) );
 		Params.Parent( Child );
 		Params.Size = eeSize( 25, 25 );
 		cUITest * Child2 = new cUITest( Params );
@@ -269,17 +294,6 @@ void cEETest::Init() {
 		Child2->Visible( true );
 		Child2->Enabled( true );
 		Child2->StartRotation( 0.f, 360.f * 10.f, 5000.f * 10.f );
-
-		cUIControl::CreateParams Params2;
-		Params2.Flags = UI_FILL_BACKGROUND | UI_BORDER;
-		Params2.Background.Color( eeColorA( 0x770000FF ) );
-		Params2.Border.Width( 4 );
-		Params2.Parent( C );
-		Params2.PosSet( 320 - 25, 240 - 45 );
-		Params2.Size = eeSize( 50, 50 );
-		cUITest * Ctrl = new cUITest( Params2 );
-		Ctrl->Visible( true );
-		Ctrl->Enabled( true );
 
 		cUIGfx::CreateParams GfxParams;
 		GfxParams.Parent( C );
@@ -295,15 +309,6 @@ void cEETest::Init() {
 		Gfx->AlphaInterpolation()->Loop( true );
 		Gfx->AlphaInterpolation()->SetTotalTime( 1000.f );
 
-		Params2.Parent( Gfx );
-		Params2.PosSet( -25, -25 );
-		Params2.Size = eeSize( 50, 50 );
-		Params2.Background.Color( eeColorA( 0x7700F0FF ) );
-		Params2.Flags &= ~UI_BORDER;
-		Ctrl = new cUITest( Params2 );
-		Ctrl->Visible( true );
-		Ctrl->Enabled( true );
-
 		cUITextBox::CreateParams TextParams;
 		TextParams.Parent( C );
 		TextParams.PosSet( 0, 0 );
@@ -317,10 +322,12 @@ void cEETest::Init() {
 
 		cUITextInput::CreateParams InputParams;
 		InputParams.Parent( C );
-		InputParams.Background.Color( eeColorA( 0x7744FF00 ) );
-		InputParams.PosSet( 0, 220 );
-		InputParams.Size = eeSize( 320, 20 );
-		InputParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_FILL_BACKGROUND | UI_CLIP_ENABLE;
+		InputParams.Background.Corners(6);
+		InputParams.Border.Color(0xFF979797);
+		InputParams.Background.Colors( eeColorA(0x99AAAAAA), eeColorA(0x99CCCCCC), eeColorA(0x99CCCCCC), eeColorA(0x99AAAAAA) );
+		InputParams.PosSet( 10, 220 );
+		InputParams.Size = eeSize( 300, 18 );
+		InputParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER;
 		InputParams.Font = &TTF;
 		InputParams.SupportNewLine = false;
 		cUITextInput * Input = new cUITextInput( InputParams );
@@ -658,11 +665,6 @@ void cEETest::Screen3() {
 		Batch.BatchLineLoop( HWidth + 350 * sinAng(j), HHeight + 350 * cosAng(j), HWidth + AnimVal * sinAng(j+1), HHeight + AnimVal * cosAng(j+1) );
 	}
 	Batch.Draw();
-
-	#ifdef EE_SHADERS
-	if ( mUseShaders )
-		mBlurFactor = ( ( scale - 1.0f ) * 0.5f );
-	#endif
 }
 
 void cEETest::Render() {
@@ -704,8 +706,19 @@ void cEETest::Render() {
 
 	TTF.SetText( L"Entropia Engine++\nEE++ Support TTF Fonts and they look beautifull. :)\nCTRL + 1 = Screen 1 - CTRL + 2 = Screen 2" );
 
+	eeColorA ColRR1( 150, 150, 150, 220 );
+	eeColorA ColRR4( 150, 150, 150, 220 );
+	eeColorA ColRR2( 100, 100, 100, 220 );
+	eeColorA ColRR3( 100, 100, 100, 220 );
+
 	PR.SetColor( eeColorA(150, 150, 150, 220) );
-	PR.DrawRectangle( 0.f, (eeFloat)EE->GetHeight() - (eeFloat)TTF.GetNumLines() * (eeFloat)TTF.GetFontSize(), (eeFloat)TTF.GetTextWidth(), (eeFloat)TTF.GetNumLines() * (eeFloat)TTF.GetFontSize() );
+	PR.DrawRectangle(
+					0.f,
+					(eeFloat)EE->GetHeight() - (eeFloat)TTF.GetNumLines() * (eeFloat)TTF.GetFontSize(),
+					(eeFloat)TTF.GetTextWidth(),
+					(eeFloat)TTF.GetNumLines() * (eeFloat)TTF.GetFontSize(),
+					ColRR1, ColRR2, ColRR3, ColRR4
+	);
 
 	TTF.Draw( 0.f, (eeFloat)EE->GetHeight() - TTF.GetTextHeight(), FONT_DRAW_CENTER, 1.f, Ang );
 
@@ -724,16 +737,16 @@ void cEETest::Render() {
 		FF2.Draw( L"_", 6.f + FF2.GetTextWidth(), 24.f + (eeFloat)LineNum * (eeFloat)FF2.GetFontSize() );
 	}
 
-	cUIManager::instance()->Update();
-	cUIManager::instance()->Draw();
-
 	TTF.SetText( mBuda );
 	TTF.Draw( 0.f, 50.f );
 
-	Con.Draw();
-
 	FF2.SetText( L"FPS: " + toWStr( EE->FPS() ) );
 	FF2.Draw( EE->GetWidth() - FF2.GetTextWidth() - 15, 0 );
+
+	cUIManager::instance()->Update();
+	cUIManager::instance()->Draw();
+
+	Con.Draw();
 
 	if ( Screen < 2 )
 		TF->Draw( Cursor[ Screen ], Mousef.x, Mousef.y );

@@ -1,4 +1,5 @@
 #include "cprimitives.hpp"
+#include "../utils/polygon2.hpp"
 
 namespace EE { namespace Graphics {
 
@@ -10,16 +11,96 @@ cPrimitives::cPrimitives() {
 
 cPrimitives::~cPrimitives() {}
 
-void cPrimitives::DrawRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeFloat& Scale, const EE_FILLMODE& fillmode, const  EE_RENDERALPHAS& blend, const eeFloat& lineWidth) {
+void cPrimitives::DrawRoundedRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeFloat& Scale, const EE_FILLMODE& fillmode, const  EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeUint& Corners ) {
+	BR->SetTexture( 0 );
+	BR->SetBlendFunc( blend );
+
+	eeUint i;
+	eeFloat xscalediff = width * Scale - width;
+	eeFloat yscalediff = height * Scale - height;
+	eeVector2f poly;
+	eeVector2f Center( x + width * 0.5f + xscalediff, y + height * 0.5f + yscalediff );
+
+	eePolygon2f Poly = CreateRoundedPolygon( x - xscalediff, y - yscalediff, width + xscalediff, height + yscalediff, Corners );
+	Poly.Rotate( Angle, Center );
+
+	switch(fillmode) {
+		case DRAW_FILL: {
+			if ( TopLeft == BottomLeft && BottomLeft == BottomRight && BottomRight == TopRight ) {
+				BR->PolygonSetColor( TopLeft );
+
+				BR->BatchPolygon( Poly );
+			} else {
+				for ( i = 0; i < Poly.Size(); i++ ) {
+					poly = Poly[i];
+
+					if ( poly.x <= Center.x && poly.y <= Center.y )
+						BR->PolygonSetColor( TopLeft );
+					else if ( poly.x <= Center.x && poly.y >= Center.y )
+						BR->PolygonSetColor( BottomLeft );
+					else if ( poly.x > Center.x && poly.y > Center.y )
+						BR->PolygonSetColor( BottomRight );
+					else if ( poly.x > Center.x && poly.y < Center.y )
+						BR->PolygonSetColor( TopRight );
+					else
+						BR->PolygonSetColor( TopLeft );
+
+					BR->BatchPolygonByPoint( Poly[i] );
+				}
+			}
+
+			break;
+		}
+		case DRAW_LINE:
+			BR->SetLineWidth( lineWidth );
+
+			BR->LineLoopBegin();
+			BR->LineLoopSetColor( TopLeft );
+
+			if ( TopLeft == BottomLeft && BottomLeft == BottomRight && BottomRight == TopRight ) {
+				for ( i = 0; i < Poly.Size(); i+=2 )
+					BR->BatchLineLoop( Poly[i], Poly[i+1] );
+			} else {
+				for ( eeUint i = 0; i < Poly.Size(); i++ ) {
+					poly = Poly[i];
+
+					if ( poly.x <= Center.x && poly.y <= Center.y )
+						BR->LineLoopSetColor( TopLeft );
+					else if ( poly.x < Center.x && poly.y > Center.y )
+						BR->LineLoopSetColor( BottomLeft );
+					else if ( poly.x > Center.x && poly.y > Center.y )
+						BR->LineLoopSetColor( BottomRight );
+					else if ( poly.x > Center.x && poly.y < Center.y )
+						BR->LineLoopSetColor( TopRight );
+					else
+						BR->LineLoopSetColor( TopLeft );
+
+					BR->BatchLineLoop( Poly[i] );
+				}
+			}
+
+			break;
+	}
+
+	BR->Draw();
+}
+
+void cPrimitives::DrawRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeFloat& Scale, const EE_FILLMODE& fillmode, const  EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeUint& Corners) {
+	if ( 0 != Corners ) {
+		DrawRoundedRectangle( x, y, width, height, TopLeft, BottomLeft, BottomRight, TopRight, Angle, Scale, fillmode, blend, lineWidth, Corners );
+		return;
+	}
+
 	BR->SetTexture( 0 );
 	BR->SetBlendFunc( blend );
 
 	switch(fillmode) {
-		case DRAW_FILL:
+		case DRAW_FILL: {
 			BR->QuadsBegin();
 			BR->QuadsSetColorFree( TopLeft, BottomLeft, BottomRight, TopRight );
 			BR->BatchQuadEx( x, y, width, height, Angle, Scale );
 			break;
+		}
 		case DRAW_LINE:
 			BR->SetLineWidth( lineWidth );
 
@@ -32,7 +113,7 @@ void cPrimitives::DrawRectangle(const eeFloat& x, const eeFloat& y, const eeFloa
 				Q.V[1].x = x, Q.V[1].y = y + height;
 				Q.V[2].x = x + width; Q.V[2].y = y + height;
 				Q.V[3].x = x + width; Q.V[3].y = y;
-				
+
 				Q.Scale( Scale );
 				Q.Rotate( Angle, eeVector2f( x + width * 0.5f, y + height * 0.5f ) );
 
@@ -179,16 +260,28 @@ void cPrimitives::DrawPolygon(const eePolygon2f& p, const EE_FILLMODE& fillmode,
 	BR->Draw();
 }
 
-void cPrimitives::DrawRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeFloat& Scale, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth) {
-	DrawRectangle( R.Left, R.Top, R.Right - R.Left, R.Bottom - R.Top, TopLeft, BottomLeft, BottomRight, TopRight, Angle, Scale, fillmode, blend, lineWidth);
+void cPrimitives::DrawRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeFloat& Scale, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeUint& Corners) {
+	DrawRectangle( R.Left, R.Top, R.Right - R.Left, R.Bottom - R.Top, TopLeft, BottomLeft, BottomRight, TopRight, Angle, Scale, fillmode, blend, lineWidth, Corners);
 }
 
-void cPrimitives::DrawRectangle( const eeRectf& R, const eeFloat& Angle, const eeFloat& Scale, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth) {
-	DrawRectangle( R.Left, R.Top, R.Right - R.Left, R.Bottom - R.Top, mColor, mColor, mColor, mColor, Angle, Scale, fillmode, blend, lineWidth);
+void cPrimitives::DrawRectangle( const eeRectf& R, const eeFloat& Angle, const eeFloat& Scale, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeUint& Corners) {
+	DrawRectangle( R.Left, R.Top, R.Right - R.Left, R.Bottom - R.Top, mColor, mColor, mColor, mColor, Angle, Scale, fillmode, blend, lineWidth, Corners);
 }
 
-void cPrimitives::DrawRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& Angle, const eeFloat& Scale, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth) {
-	DrawRectangle(x, y, width, height, mColor, mColor, mColor, mColor, Angle, Scale, fillmode, blend, lineWidth);
+void cPrimitives::DrawRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& Angle, const eeFloat& Scale, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeUint& Corners) {
+	DrawRectangle(x, y, width, height, mColor, mColor, mColor, mColor, Angle, Scale, fillmode, blend, lineWidth, Corners);
+}
+
+void cPrimitives::DrawRoundedRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeFloat& Scale, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeUint& Corners ) {
+	DrawRoundedRectangle( R.Left, R.Top, R.Right - R.Left, R.Bottom - R.Top, TopLeft, BottomLeft, BottomRight, TopRight, Angle, Scale, fillmode, blend, lineWidth, Corners);
+}
+
+void cPrimitives::DrawRoundedRectangle( const eeRectf& R, const eeFloat& Angle, const eeFloat& Scale, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeUint& Corners) {
+	DrawRoundedRectangle( R.Left, R.Top, R.Right - R.Left, R.Bottom - R.Top, mColor, mColor, mColor, mColor, Angle, Scale, fillmode, blend, lineWidth, Corners);
+}
+
+void cPrimitives::DrawRoundedRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& Angle, const eeFloat& Scale, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeUint& Corners ) {
+	DrawRoundedRectangle(x, y, width, height, mColor, mColor, mColor, mColor, Angle, Scale, fillmode, blend, lineWidth, Corners);
 }
 
 void cPrimitives::DrawLine(const eeVector2f& p1, const eeVector2f& p2, const eeFloat& lineWidth) {

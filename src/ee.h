@@ -24,6 +24,10 @@
 	// Utils
 	#include "utils/vector2.hpp"
 	#include "utils/vector3.hpp"
+	#include "utils/size.hpp"
+	#include "utils/line2.hpp"
+	#include "utils/triangle2.hpp"
+	#include "utils/quad2.hpp"
 	#include "utils/colors.hpp"
 	#include "utils/polygon2.hpp"
 	#include "utils/rect.hpp"

@@ -301,6 +301,59 @@ bool IntersectPolygon2( const Polygon2<T>& p0, const Polygon2<T>& p1 ) {
 	return true;
 }
 
+template<typename T>
+Polygon2<T> CreateRoundedPolygon( const T& x, const T& y, const T& width, const T& height, const eeUint& Radius = 8 ) {
+	eeFloat PI05 = PI * 0.5f;
+	eeFloat PI15 = PI * 1.5f;
+	eeFloat PI20 = PI * 2.0f;
+	eeFloat sx, sy;
+	eeFloat t;
+
+	Polygon2<T> Poly;
+
+	Poly.PushBack( Vector2<T>( x, y + height - Radius) );
+	Poly.PushBack( Vector2<T>( x, y + Radius ) );
+
+	for( t = PI; t < PI15; t += 0.1f ) {
+		sx = x + Radius + (eeFloat)cosf(t) * Radius;
+		sy = y + Radius + (eeFloat)sinf(t) * Radius;
+
+		Poly.PushBack( Vector2<T> (sx, sy) );
+	}
+
+	Poly.PushBack( Vector2<T>( x + Radius, y ) );
+	Poly.PushBack( Vector2<T>( x + width - Radius, y ) );
+
+	for( t = PI15; t < PI20; t += 0.1f ) {
+		sx = x + width - Radius + (eeFloat)cosf(t) * Radius;
+		sy = y + Radius + (eeFloat)sinf(t) * Radius;
+
+		Poly.PushBack( Vector2<T> (sx, sy) );
+	}
+
+	Poly.PushBack( Vector2<T> ( x + width, y + Radius ) );
+	Poly.PushBack( Vector2<T> ( x + width, y + height - Radius ) );
+
+	for( t = 0; t < PI05; t += 0.1f ){
+		sx = x + width - Radius + (eeFloat)cosf(t) * Radius;
+		sy = y + height -Radius + (eeFloat)sinf(t) * Radius;
+
+		Poly.PushBack( Vector2<T> (sx, sy) );
+	}
+
+	Poly.PushBack( Vector2<T> ( x + width - Radius, y + height ) );
+	Poly.PushBack( Vector2<T> ( x + Radius, y + height ) );
+
+	for( t = PI05; t < PI; t += 0.1f ) {
+		sx = x + Radius + (eeFloat)cosf(t) * Radius;
+		sy = y + height - Radius + (eeFloat)sinf(t) * Radius;
+
+		Poly.PushBack( Vector2<T> (sx, sy) );
+	}
+
+	return Poly;
+}
+
 /* A very fast function to calculate the approximate inverse square root of a
 * floating point value and a helper function that uses it for getting the
 * normal squareroot. For an explanation of the inverse squareroot function

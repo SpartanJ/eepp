@@ -204,7 +204,12 @@ void cUIControlAnim::BackgroundDraw() {
 
 	cPrimitives P;
 	P.SetColor( GetColor( mBackground.Color() ) );
-	P.DrawRectangle( (eeFloat)Pos.x, (eeFloat)Pos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, DRAW_FILL, mBackground.Blend() );
+
+	if ( 4 == mBackground.Colors().size() ) {
+		P.DrawRectangle( (eeFloat)Pos.x, (eeFloat)Pos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), GetColor( mBackground.Colors()[0] ), GetColor( mBackground.Colors()[1] ), GetColor( mBackground.Colors()[2] ), GetColor( mBackground.Colors()[3] ), 0.f, 1.f, DRAW_FILL, mBackground.Blend(), 1.0f, mBackground.Corners() );
+	} else {
+		P.DrawRectangle( (eeFloat)Pos.x, (eeFloat)Pos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, DRAW_FILL, mBackground.Blend(), 1.0f, mBackground.Corners() );
+	}
 }
 
 void cUIControlAnim::BorderDraw() {
@@ -213,7 +218,7 @@ void cUIControlAnim::BorderDraw() {
 
 	cPrimitives P;
 	P.SetColor( GetColor( mBorder.Color() ) );
-	P.DrawRectangle( (eeFloat)Pos.x, (eeFloat)Pos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, DRAW_LINE, mBlend, (eeFloat)mBorder.Width() );
+	P.DrawRectangle( (eeFloat)Pos.x, (eeFloat)Pos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, DRAW_LINE, mBlend, (eeFloat)mBorder.Width(), mBackground.Corners() );
 }
 
 eeColorA cUIControlAnim::GetColor( const eeColorA& Col ) {

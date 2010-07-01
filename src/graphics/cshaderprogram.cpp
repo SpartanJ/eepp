@@ -48,18 +48,16 @@ cShaderProgram::~cShaderProgram() {
 
     mUniformLocations.clear();
     mAttributeLocations.clear();
-
-    RemoveFromManager();
 }
 
 void cShaderProgram::AddToManager( const std::string& name ) {
 	Name( name );
 
-	cShaderProgramManager::Instance()->Add( this );
+	cShaderProgramManager::instance()->Add( this );
 }
 
 void cShaderProgram::RemoveFromManager() {
-	cShaderProgramManager::Instance()->Remove( this );
+	cShaderProgramManager::instance()->Remove( this );
 }
 
 void cShaderProgram::Init() {

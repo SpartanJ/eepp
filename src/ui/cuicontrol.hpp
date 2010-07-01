@@ -25,14 +25,19 @@ class EE_API cUIControl {
 					const eeVector2i& pos = eeVector2i( 0, 0 ),
 					const eeSize& size = eeSize( -1, -1 ),
 					const Uint32& flags = UI_HALIGN_LEFT | UI_VALIGN_CENTER,
-					const EE_RENDERALPHAS& blend = ALPHA_NORMAL
+					const EE_RENDERALPHAS& blend = ALPHA_NORMAL,
+					const cUIBackground& Back = cUIBackground(),
+					const cUIBorder& Bord = cUIBorder()
 				) :
 					ParentCtrl( parentCtrl ),
 					Pos( pos ),
 					Size( size ),
 					Flags( flags ),
 					Blend( blend )
-				{}
+				{
+					Background = Back;
+					Border = Bord;
+				}
 
 				CreateParams() {
 					ParentCtrl		= NULL;

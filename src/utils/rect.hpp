@@ -2,6 +2,7 @@
 #define EE_UTILSCRECT_H
 
 #include "vector2.hpp"
+#include "size.hpp"
 
 namespace EE { namespace Utils {
 
