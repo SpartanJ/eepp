@@ -115,7 +115,7 @@ std::string AppPath() {
 #endif
 }
 
-std::vector<std::string> GetFilesInPath( const std::string& path ) {
+std::vector<std::string> FilesGetInPath( const std::string& path ) {
 	std::vector<std::string> files;
 
 #ifdef EE_COMPILER_MSVC
@@ -284,6 +284,41 @@ Uint32 MakeHash( const Int8* str ) {
 	hash += *( str - 1 );
 
 	return hash;
+}
+
+bool FileGet( const std::string& path, std::vector<Uint8>& data ) {
+	if ( FileExists( path ) ) {
+		std::fstream fs ( path.c_str() , std::ios::in | std::ios::binary );
+		Uint32 fsize = FileSize( path );
+
+		data.clear();
+		data.resize( fsize );
+
+		fs.read( reinterpret_cast<char*> (&data[0]), fsize  );
+
+		fs.close();
+
+		return true;
+	}
+	return false;
+}
+
+bool FileCopy( const std::string& src, const std::string& dst ) {
+	if ( FileExists( src ) ) {
+		ifstream in( src.c_str() );
+		ofstream out( dst.c_str() );
+
+		if ( in.is_open() && out.is_open() ) {
+			out << in.rdbuf();
+
+			in.close();
+			out.close();
+
+			return true;
+		}
+	}
+
+	return false;
 }
 
 }}

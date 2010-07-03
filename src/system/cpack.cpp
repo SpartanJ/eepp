@@ -2,7 +2,7 @@
 
 namespace EE { namespace System {
 
-cPack::cPack() : 
+cPack::cPack() :
 	mIsOpen(false)
 {
 }
@@ -14,4 +14,4 @@ bool cPack::IsOpen() const {
 	return mIsOpen;
 }
 
-}} 
+}}

@@ -2,7 +2,7 @@
 
 namespace EE { namespace System {
 
-cPak::cPak() : 
+cPak::cPak() :
 	cPack()
 {
 }
@@ -32,7 +32,10 @@ bool cPak::Create( const std::string& path ) {
 		Open( path );
 
 		return true;
+	} else {
+		return Open( path );
 	}
+
 	return false;
 }
 
@@ -67,9 +70,9 @@ bool cPak::Close() {
 		myPak.fs.close();
 
 		pakFiles.clear();
-		
+
 		mIsOpen = false;
-		
+
 		return true;
 	}
 	return false;
@@ -123,24 +126,23 @@ bool cPak::ExtractFileToMemory( const std::string& path, std::vector<Uint8>& dat
 	return false;
 }
 
-bool cPak::AddFile( const std::string& path, const std::string& inpack ) {
-	if ( path.size() > 56 )
+bool cPak::AddFile( std::vector<Uint8>& data, const std::string& inpack ) {
+	if ( data.size() < 1 )
 		return false;
 
-	Uint32 fsize = FileSize( path );
+	Uint32 fsize = data.size();
 
-	if ( myPak.fs.is_open() && FileExists( path ) ) {
+	if ( myPak.fs.is_open() ) {
 		if ( myPak.header.dir_length == 1 ) {
 			myPak.header.dir_offset = sizeof(pakHeader) + fsize;
 			myPak.header.dir_length = sizeof(pakEntry);
+			myPak.pakFilesNum = 1;
 
 			myPak.fs.seekg( 4 , ios::beg ); // seek after head (PACK)
 			myPak.fs.write( reinterpret_cast<const char*> (&myPak.header.dir_offset), sizeof( myPak.header.dir_offset ) );
 			myPak.fs.write( reinterpret_cast<const char*> (&myPak.header.dir_length), sizeof( myPak.header.dir_length ) );
 
-			std::vector<Uint8> file;
-			GetFile( path, file );
-			myPak.fs.write( reinterpret_cast<const char*> (&file[0]), fsize );
+			myPak.fs.write( reinterpret_cast<const char*> (&data[0]), fsize );
 
 			pakEntry newFile;
 			StrCopy( newFile.filename, inpack.c_str(), 56 );
@@ -149,7 +151,9 @@ bool cPak::AddFile( const std::string& path, const std::string& inpack ) {
 
 			myPak.fs.write( reinterpret_cast<const char*> (&newFile), sizeof( pakEntry ) );
 
-			file.clear();
+			pakFiles.push_back( newFile );
+
+			data.clear();
 
 			return true;
 		} else {
@@ -172,15 +176,12 @@ bool cPak::AddFile( const std::string& path, const std::string& inpack ) {
 			myPak.fs.write( reinterpret_cast<const char*> (&myPak.header.dir_offset), sizeof( myPak.header.dir_offset ) );
 			myPak.fs.write( reinterpret_cast<const char*> (&myPak.header.dir_length), sizeof( myPak.header.dir_length ) );
 
-			std::vector<Uint8> file;
-			GetFile( path, file );
-
 			myPak.fs.seekg( (myPak.header.dir_offset - fsize), ios::beg ); // Seek to the file allocation zone
-			myPak.fs.write( reinterpret_cast<const char*> (&file[0]), fsize ); // Alloc the file
+			myPak.fs.write( reinterpret_cast<const char*> (&data[0]), fsize ); // Alloc the file
 
 			// Fill the new file data on the pakEntry
 			StrCopy (pakE[ myPak.pakFilesNum ].filename, inpack.c_str(), 56 );
-			
+
 			pakE[ myPak.pakFilesNum ].file_position = myPak.header.dir_offset - fsize;
 			pakE[ myPak.pakFilesNum ].file_length = fsize;
 
@@ -190,7 +191,7 @@ bool cPak::AddFile( const std::string& path, const std::string& inpack ) {
 			pakFiles.push_back( pakE[ myPak.pakFilesNum ] );
 			myPak.pakFilesNum += 1;
 
-			file.clear();
+			data.clear();
 			pakE.clear();
 
 			return true;
@@ -199,28 +200,22 @@ bool cPak::AddFile( const std::string& path, const std::string& inpack ) {
 	return false;
 }
 
+bool cPak::AddFile( const std::string& path, const std::string& inpack ) {
+	if ( path.size() > 56 )
+		return false;
+
+	std::vector<Uint8> file;
+
+	FileGet( path, file );
+
+	return AddFile( file, inpack );
+}
+
 bool cPak::AddFiles( std::map<std::string, std::string> paths ) {
 	for( std::map<std::string, std::string>::iterator itr = paths.begin(); itr != paths.end(); itr++)
 		if ( !AddFile( itr->first, itr->second ) )
 			return false;
     return true;
-}
-
-bool cPak::GetFile( const std::string& path, std::vector<Uint8>& data ) {
-	if ( FileExists( path ) ) {
-		std::fstream fs ( path.c_str() , std::ios::in | std::ios::binary );
-		Uint32 fsize = FileSize( path );
-
-		data.clear();
-		data.resize( fsize );
-
-		fs.read( reinterpret_cast<char*> (&data[0]), fsize  );
-
-		fs.close();
-
-		return true;
-	}
-	return false;
 }
 
 bool cPak::EraseFile( const std::string& path ) {

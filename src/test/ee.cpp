@@ -3,7 +3,6 @@
 /**
 @TODO Create a basic UI system.
 @TODO Add some Surface Grid class, to create special effects. ( waved texture, and stuff like that )
-@TODO Add a generic Pak class (done), and add a cZip class for handling zip files (pending).
 @TODO Support multitexturing.
 @TODO Create a asynchronous resource loader - Check if this is posible right now
 @TODO Support color cursors ( not only black and white cursors, that really sucks ) - Imposible with SDL 1.2
@@ -132,7 +131,8 @@ class cEETest : private cThread {
 		void Screen2();
 		void Screen3();
 
-		cPak PAK;
+		cZip PAK;
+
 		std::vector<Uint8> tmpv;
 		std::vector<Uint8> MySong;
 
@@ -200,7 +200,7 @@ void cEETest::Init() {
 
 	run = EE->Init(mWidth, mHeight, BitColor, Windowed, Resizeable, VSync);
 
-	PAK.Open( MyPath + "data/ee.pak" );
+	PAK.Open( MyPath + "data/ee.zip" );
 
 	run = ( run && PAK.IsOpen() );
 
@@ -266,7 +266,7 @@ void cEETest::Init() {
 
 		Params.Border.Width( 2.f );
 		Params.Border.Color( 0xFF979797 );
-		Params.Background.Corners(5);
+		//Params.Background.Corners(5);
 		Params.Background.Colors( eeColorA( 0x66FAFAFA ), eeColorA( 0xCCFAFAFA ), eeColorA( 0xCCFAFAFA ), eeColorA( 0x66FAFAFA ) );
 		cUIControlAnim * C = new cUITest( Params );
 		C->Visible( true );
@@ -322,7 +322,7 @@ void cEETest::Init() {
 
 		cUITextInput::CreateParams InputParams;
 		InputParams.Parent( C );
-		InputParams.Background.Corners(6);
+		//InputParams.Background.Corners(6);
 		InputParams.Border.Color(0xFF979797);
 		InputParams.Background.Colors( eeColorA(0x99AAAAAA), eeColorA(0x99CCCCCC), eeColorA(0x99CCCCCC), eeColorA(0x99AAAAAA) );
 		InputParams.PosSet( 10, 220 );
@@ -973,5 +973,6 @@ void cEETest::Particles() {
 int main (int argc, char * argv []) {
 	cEETest Test;
 	Test.Process();
+
 	return 0;
 }

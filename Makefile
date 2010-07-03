@@ -1,5 +1,5 @@
 ifeq ($(DEBUGBUILD), yes)
-    DEBUGFLAGS = -g -DDEBUG
+    DEBUGFLAGS = -g -DDEBUG -DEE_DEBUG
 else
     DEBUGFLAGS = -O2 -DNDEBUG
 endif
@@ -36,6 +36,7 @@ SRCSDLTTF 			= $(wildcard ./src/helper/SDL_ttf/*.c)
 SRCSOIL 			= $(wildcard ./src/helper/SOIL/*.c)
 SRCFE 				= $(wildcard ./src/helper/fastevents/*.c)
 SRCSTBVORBIS 		= $(wildcard ./src/helper/stb_vorbis/*.c)
+SRCZIPUTILS			= $(wildcard ./src/helper/zip_utils/*.cpp)
 
 SRCAUDIO			= $(wildcard ./src/audio/*.cpp)
 SRCGAMING			= $(wildcard ./src/gaming/*.cpp)
@@ -54,6 +55,7 @@ OBJFE 				= $(SRCFE:.c=.o)
 OBJSDLTTF 			= $(SRCSDLTTF:.c=.o)
 OBJSOIL 			= $(SRCSOIL:.c=.o)
 OBJSTBVORBIS 		= $(SRCSTBVORBIS:.c=.o) 
+OBJZIPUTILS 		= $(SRCZIPUTILS:.cpp=.o) 
 
 OBJAUDIO 			= $(SRCAUDIO:.cpp=.o)
 OBJGAMING 			= $(SRCGAMING:.cpp=.o)
@@ -64,7 +66,7 @@ OBJUI 				= $(SRCUI:.cpp=.o)
 OBJUTILS			= $(SRCUTILS:.cpp=.o)
 OBJWINDOW			= $(SRCWINDOW:.cpp=.o)
 
-OBJHELPERS			= $(OBJGLEW) $(OBJFE) $(OBJSDLTTF) $(OBJSOIL) $(OBJSTBVORBIS)
+OBJHELPERS			= $(OBJGLEW) $(OBJFE) $(OBJSDLTTF) $(OBJSOIL) $(OBJSTBVORBIS) $(OBJZIPUTILS)
 OBJMODULES			= $(OBJUTILS) $(OBJMATH) $(OBJSYSTEM) $(OBJAUDIO) $(OBJWINDOW) $(OBJGRAPHICS) $(OBJGAMING) $(OBJUI)
 
 OBJTEST     		= $(SRCTEST:.cpp=.o)
@@ -88,10 +90,10 @@ libeepp-s.a: $(OBJHELPERS) $(OBJMODULES)
 libeepp.so: $(OBJHELPERS) $(OBJMODULES)
 	$(CPP) $(LDFLAGS) -Wl,-soname,$(LIB).$(VERSION) -o $(LIBNAME) $(OBJHELPERS) $(OBJMODULES) -lfreetype -lSDL -lsndfile -lopenal -lGL -lGLU
 
-$(OBJMODULES): %.o: %.cpp
+$(OBJMODULES) $(OBJZIPUTILS): %.o: %.cpp
 	$(CPP) -o $@ -c $< $(CFLAGS) -I/usr/include/freetype2
 
-$(OBJHELPERS): %.o: %.c
+$(OBJGLEW) $(OBJFE) $(OBJSDLTTF) $(OBJSOIL) $(OBJSTBVORBIS): %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGSEXT) -DSTBI_FAILURE_USERMSG -I/usr/include/freetype2
 
 test: $(EXE)
@@ -115,6 +117,9 @@ docs:
 
 clean:
 	@rm -rf $(OBJHELPERS) $(OBJMODULES) $(OBJTEST) $(OBJEEIV)
+
+cleantemp:
+	@rm -rf $(OBJMODULES) $(OBJTEST) $(OBJEEIV)
 	
 cleanall: clean
 	@rm -rf $(LIBNAME)

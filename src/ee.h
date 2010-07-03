@@ -54,6 +54,7 @@
 	#include "system/cinifile.hpp"
 	#include "system/cpack.hpp"
 	#include "system/cpak.hpp"
+	#include "system/czip.hpp"
 	#include "system/crc4.hpp"
 	using namespace EE::System;
 

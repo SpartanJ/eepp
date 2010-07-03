@@ -19,7 +19,7 @@ cConsole::~cConsole() {
 	mCallbacks.clear();
 	mCmdLog.clear();
 	mLastCommands.clear();
-	
+
 	if ( mMyCallback && NULL != cInput::Instance() )
 		cInput::Instance()->PopCallback( mMyCallback );
 }
@@ -76,9 +76,9 @@ void cConsole::PrivCreate( const bool& MakeDefaultCommands, const eeRGBA& Consol
 	mTBuf.Start();
 	mTBuf.SupportNewLine( false );
 	mTBuf.Active( false );
-	
+
 	mCon.ConModif = 0;
-	
+
 	CmdGetLog();
 }
 
@@ -124,9 +124,9 @@ void cConsole::Draw() {
 			for (eeInt i = mCon.ConMax - mCon.ConModif; i >= mCon.ConMin - mCon.ConModif; i-- ) {
 				if ( i < static_cast<Int16>( mCmdLog.size() ) && i >= 0 ) {
 					CurY = mTempY + mY + mCurHeight - Pos * mFontSize - mFontSize * 2;
-	
+
 					mFont->Draw( mCmdLog[i], mFontSize, CurY );
-	
+
 					Pos++;
 				}
 			}
@@ -146,7 +146,7 @@ void cConsole::Draw() {
 			}
 		}
 	}
-	
+
 	if ( mShowFps ) {
 		mFont->Color( eeColorA () );
 		mFont->SetText( L"FPS: " + toWStr( cEngine::instance()->FPS() ) );
@@ -212,41 +212,41 @@ void cConsole::PushText( const std::string& str ) {
 
 void cConsole::PushText( const char* format, ... ) {
 	char buf[256];
-	
+
 	va_list( args );
-	
+
 	va_start( args, format );
-	
+
 	#ifdef EE_COMPILER_MSVC
 	int nb = _vsnprintf_s( buf, 256, 256, format, args );
 	#else
 	int nb = vsnprintf(buf, 256, format, args);
 	#endif
-	
+
 	va_end( args );
-	
+
 	if ( nb < 256 ) {
 		PrivPushText( toWStr( std::string( buf ) ) );
 		return;
 	}
-	
+
 	// The static size was not big enough, try again with a dynamic allocation.
 	++nb;
-	
+
 	char * buf2 = new char[nb];
-	
+
 	va_start( args, format );
-	
+
 	#ifdef EE_COMPILER_MSVC
 	_vsnprintf_s( buf2, nb, nb, format, args );
 	#else
 	vsnprintf( buf2, nb, format, args );
 	#endif
-	
+
 	va_end( args );
-	
+
 	PrivPushText( toWStr( std::string( buf2 ) ) );
-	
+
 	delete [] buf2;
 }
 
@@ -318,7 +318,7 @@ void cConsole::PrivInputCallback( EE_Event* Event ) {
 								PushText( tVec[i] );
 						}
 						tStr = tVec[ tVec.size() - 1 ];
-						
+
 						if ( (eeUint)mTBuf.CurPos() != mTBuf.Buffer().size() ) {
 							std::wstring part1 = mTBuf.Buffer().substr( 0, mTBuf.CurPos() );
 							std::wstring part2 = mTBuf.Buffer().substr( mTBuf.CurPos(), mTBuf.Buffer().size()-mTBuf.CurPos() );
@@ -349,7 +349,7 @@ void cConsole::PrivInputCallback( EE_Event* Event ) {
 						}
 					}
 				}
-				
+
 				if ( Event->key.keysym.sym == SDLK_PAGEUP ) {
 					if ( mCon.ConMin - mCon.ConModif > 0 )
 						mCon.ConModif++;
@@ -359,7 +359,7 @@ void cConsole::PrivInputCallback( EE_Event* Event ) {
 					if ( mCon.ConModif > 0 )
 						mCon.ConModif--;
 				}
-				
+
 				if ( Event->key.keysym.sym == SDLK_HOME ) {
 					Int16 LinesInScreen = static_cast<Int16> ( (mCurHeight / mFontSize) - 1 );
 					if ( static_cast<Int16>( mCmdLog.size() ) > LinesInScreen )
@@ -457,12 +457,12 @@ void cConsole::CmdGetTextureMemory ( const std::vector < std::wstring >& params 
 	std::wstring size = L" bytes";
 	eeDouble mem = static_cast<eeDouble>( cTextureFactory::instance()->MemorySize() );
 	Uint8 c = 0;
-	
+
 	while ( mem > 1024 ) {
 		c++;
 		mem = mem / 1024;
 	}
-	
+
 	switch (c) {
 		case 1: size = L" KB"; break;
 		case 2: size = L" MB"; break;
@@ -470,7 +470,7 @@ void cConsole::CmdGetTextureMemory ( const std::vector < std::wstring >& params 
 		case 4: size = L" TB"; break;
 		default: size = L" WTF";
 	}
-	
+
 	PushText( L"Total texture memory used: "+ toWStr( mem ) + size );
 }
 
@@ -577,7 +577,7 @@ void cConsole::CmdDir( const std::vector < std::wstring >& params ) {
 			#endif
 			std::string myPath = wstringTostring( params[1] );
 			std::string myOrder;
-			
+
 			if ( params.size() > 2 ) {
 				for ( eeUint i = 2; i < params.size(); i++ ) {
 					if ( i + 1 == params.size() ) {
@@ -590,19 +590,19 @@ void cConsole::CmdDir( const std::vector < std::wstring >& params ) {
 					}
 				}
 			}
-			
+
 			if ( IsDirectory( myPath ) ) {
 				eeUint i;
-				
-				std::vector<std::string> mFiles = GetFilesInPath( myPath );
+
+				std::vector<std::string> mFiles = FilesGetInPath( myPath );
 				std::sort( mFiles.begin(), mFiles.end() );
-				
+
 				PushText( "Directory: " + myPath );
-				
+
 				if ( myOrder == "ff" ) {
 					std::vector<std::string> mFolders;
 					std::vector<std::string> mFile;
-					
+
 					for ( i = 0; i < mFiles.size(); i++ ) {
 						if ( IsDirectory( myPath + Slash + mFiles[i] ) ) {
 							mFolders.push_back( mFiles[i] );
@@ -613,16 +613,16 @@ void cConsole::CmdDir( const std::vector < std::wstring >& params ) {
 
 					if ( mFolders.size() )
 						PushText( L"Folders: " );
-					
+
 					for ( i = 0; i < mFolders.size(); i++ )
 						PushText( "	" + mFolders[i] );
-					
+
 					if ( mFolders.size() )
 						PushText( L"Files: " );
-					
+
 					for ( i = 0; i < mFile.size(); i++ )
 						PushText( "	" + mFile[i] );
-					
+
 				} else {
 					for ( i = 0; i < mFiles.size(); i++ )
 						PushText( "	" + mFiles[i] );

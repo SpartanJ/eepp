@@ -150,6 +150,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/helper/stb_vorbis/stb_vorbis.h" />
+		<Unit filename="src/helper/zip_utils/unzip.cpp" />
+		<Unit filename="src/helper/zip_utils/unzip.h" />
+		<Unit filename="src/helper/zip_utils/zip.cpp" />
+		<Unit filename="src/helper/zip_utils/zip.h" />
 		<Unit filename="src/math/base.hpp" />
 		<Unit filename="src/math/math.cpp" />
 		<Unit filename="src/math/math.hpp" />
@@ -172,6 +176,8 @@
 		<Unit filename="src/system/ctimeelapsed.hpp" />
 		<Unit filename="src/system/ctimer.cpp" />
 		<Unit filename="src/system/ctimer.hpp" />
+		<Unit filename="src/system/czip.cpp" />
+		<Unit filename="src/system/czip.hpp" />
 		<Unit filename="src/system/singleton.hpp" />
 		<Unit filename="src/test/ee.cpp" />
 		<Unit filename="src/ui/base.hpp" />
