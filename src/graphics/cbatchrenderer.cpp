@@ -7,12 +7,12 @@ void cBatchRenderer::Init() {
 	QuadsBegin();
 }
 
-cBatchRenderer::cBatchRenderer() : mNumVertex(0), mTexture(0), mBlend(ALPHA_NORMAL), mCurrentMode(EE_GL_QUADS), mRotation(0.0f), mScale(1.0f), mPosition(0.0f, 0.0f), mCenter(0.0f, 0.0f), mForceRendering(true) {
+cBatchRenderer::cBatchRenderer() : mNumVertex(0), mTexture(NULL), mBlend(ALPHA_NORMAL), mCurrentMode(EE_GL_QUADS), mRotation(0.0f), mScale(1.0f), mPosition(0.0f, 0.0f), mCenter(0.0f, 0.0f), mForceRendering(true) {
 	AllocVertexs( 4 );
 	Init();
 }
 
-cBatchRenderer::cBatchRenderer( const eeUint& Prealloc ) : mNumVertex(0), mTexture(0), mBlend(ALPHA_NORMAL), mCurrentMode(EE_GL_QUADS), mRotation(0.0f), mScale(1.0f), mPosition(0.0f, 0.0f), mCenter(0.0f, 0.0f), mForceRendering(true) {
+cBatchRenderer::cBatchRenderer( const eeUint& Prealloc ) : mNumVertex(0), mTexture(NULL), mBlend(ALPHA_NORMAL), mCurrentMode(EE_GL_QUADS), mRotation(0.0f), mScale(1.0f), mPosition(0.0f, 0.0f), mCenter(0.0f, 0.0f), mForceRendering(true) {
 	AllocVertexs( Prealloc );
 	Init();
 }
@@ -34,11 +34,11 @@ void cBatchRenderer::Draw() {
 	Flush();
 }
 
-void cBatchRenderer::SetTexture( const Uint32& TexId ) {
-	if ( mTexture != TexId )
+void cBatchRenderer::SetTexture( const cTexture * Tex ) {
+	if ( mTexture != Tex )
 		Flush();
 
-	mTexture = TexId;
+	mTexture = Tex;
 }
 
 void cBatchRenderer::SetBlendFunc( const EE_RENDERALPHAS& Blend ) {
@@ -64,17 +64,17 @@ void cBatchRenderer::Flush() {
 
 	bool CreateMatrix = ( mRotation || mScale != 1.0f || mPosition.x || mPosition.y );
 
-	if ( mTexture > 0 )
+	if ( NULL != mTexture )
 		cTextureFactory::instance()->Bind( mTexture );
 	else
 		glDisable( GL_TEXTURE_2D );
 
 	cTextureFactory::instance()->SetBlendFunc( mBlend );
 
-	if ( mCurrentMode == EE_GL_POINTS && mTexture > 0 ) {
+	if ( mCurrentMode == EE_GL_POINTS && NULL != mTexture ) {
 		glEnable( GL_POINT_SPRITE_ARB );
 		glTexEnvf( GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE );
-		glPointSize( cTextureFactory::instance()->GetTextureWidth( mTexture ) );
+		glPointSize( mTexture->Width() );
 	}
 
 	if ( CreateMatrix ) {

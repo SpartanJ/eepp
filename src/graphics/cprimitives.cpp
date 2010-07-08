@@ -12,7 +12,7 @@ cPrimitives::cPrimitives() {
 cPrimitives::~cPrimitives() {}
 
 void cPrimitives::DrawRoundedRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeFloat& Scale, const EE_FILLMODE& fillmode, const  EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeUint& Corners ) {
-	BR->SetTexture( 0 );
+	BR->SetTexture( NULL );
 	BR->SetBlendFunc( blend );
 
 	eeUint i;
@@ -91,7 +91,7 @@ void cPrimitives::DrawRectangle(const eeFloat& x, const eeFloat& y, const eeFloa
 		return;
 	}
 
-	BR->SetTexture( 0 );
+	BR->SetTexture( NULL );
 	BR->SetBlendFunc( blend );
 
 	switch(fillmode) {
@@ -134,7 +134,7 @@ void cPrimitives::DrawRectangle(const eeFloat& x, const eeFloat& y, const eeFloa
 void cPrimitives::DrawLine(const eeFloat& x, const eeFloat& y, const eeFloat& x2, const eeFloat& y2, const eeFloat& lineWidth) {
 	BR->SetLineWidth( lineWidth );
 
-	BR->SetTexture( 0 );
+	BR->SetTexture( NULL );
 	BR->LinesBegin();
 	BR->LinesSetColor( mColor );
 
@@ -146,7 +146,7 @@ void cPrimitives::DrawLine(const eeFloat& x, const eeFloat& y, const eeFloat& x2
 void cPrimitives::DrawPoint( const eeFloat& x, const eeFloat& y, const eeFloat& pointSize ) {
 	BR->SetPointSize( pointSize );
 
-	BR->SetTexture( 0 );
+	BR->SetTexture( NULL );
 	BR->PointsBegin();
 	BR->PointSetColor( mColor );
 
@@ -159,7 +159,7 @@ void cPrimitives::DrawCircle( const eeFloat& x, const eeFloat& y, const eeFloat&
 	if(points < 6) points = 6;
     eeFloat angle_shift =  360 / static_cast<eeFloat>(points);
 
-	BR->SetTexture( 0 );
+	BR->SetTexture( NULL );
 
 	switch( fillmode ) {
 		case DRAW_LINE:
@@ -185,7 +185,7 @@ void cPrimitives::DrawCircle( const eeFloat& x, const eeFloat& y, const eeFloat&
 }
 
 void cPrimitives::DrawTriangle(const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth) {
-	BR->SetTexture( 0 );
+	BR->SetTexture( NULL );
 	BR->SetBlendFunc( blend );
 
 	switch(fillmode) {
@@ -213,7 +213,7 @@ void cPrimitives::DrawTriangle(const eeFloat& x1, const eeFloat& y1, const eeFlo
 }
 
 void cPrimitives::DrawQuad( const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const eeFloat& x4, const eeFloat& y4, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const eeColorA& Color4, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeFloat& OffsetX, const eeFloat& OffsetY ) {
-	BR->SetTexture( 0 );
+	BR->SetTexture( NULL );
 	BR->SetBlendFunc( blend );
 
 	switch(fillmode) {
@@ -237,7 +237,7 @@ void cPrimitives::DrawQuad( const eeFloat& x1, const eeFloat& y1, const eeFloat&
 }
 
 void cPrimitives::DrawPolygon(const eePolygon2f& p, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth) {
-	BR->SetTexture( 0 );
+	BR->SetTexture( NULL );
 	BR->SetBlendFunc( blend );
 
 	switch(fillmode) {

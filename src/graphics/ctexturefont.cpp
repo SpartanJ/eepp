@@ -10,9 +10,11 @@ cTextureFont::~cTextureFont() {
 }
 
 bool cTextureFont::Load( const Uint32& TexId, const eeUint& StartChar, const eeUint& Spacing, const bool& VerticalDraw, const eeUint& TexColumns, const eeUint& TexRows, const Uint16& NumChars ) {
+	cTexture * Tex = TF->GetTexture( TexId );
+
 	mTexId = TexId;
-	
-	if ( TF->TextureIdExists( TexId ) ) {
+
+	if ( NULL != Tex ) {
 		mTexColumns = TexColumns;
 		mTexRows = TexRows;
 		mStartChar = StartChar;
@@ -21,8 +23,8 @@ bool cTextureFont::Load( const Uint32& TexId, const eeUint& StartChar, const eeU
 		mtX = ( 1 / static_cast<eeFloat>( mTexColumns ) );
 		mtY = ( 1 / static_cast<eeFloat>( mTexRows ) );
 
-		mFWidth = ( TF->GetTextureWidth(mTexId) / mTexColumns );
-		mFHeight = ( TF->GetTextureHeight(mTexId) / mTexRows );
+		mFWidth = ( Tex->Width() / mTexColumns );
+		mFHeight = ( Tex->Height() / mTexRows );
 		mHeight = mSize = (eeUint)mFHeight;
 
 		mVerticalDraw = VerticalDraw;
@@ -33,30 +35,32 @@ bool cTextureFont::Load( const Uint32& TexId, const eeUint& StartChar, const eeU
 			mSpacing = Spacing;
 
 		BuildFont();
-		cLog::instance()->Write( "Texture Font " + TF->GetTexturePath( TexId ) + " loaded." );
+
+		cLog::instance()->Write( "Texture Font " + Tex->Filepath() + " loaded." );
+
 		return true;
 	}
-	
-	cLog::instance()->Write( "Failed to load Texture Font " + TF->GetTexturePath( TexId ) );
-	
+
+	cLog::instance()->Write( "Failed to load Texture Font " );
+
 	return false;
 }
 
 void cTextureFont::BuildFont() {
 	eeFloat cX = 0, cY = 0;
-	
+
 	mTexCoords.resize( mNumChars );
 	mGlyphs.resize( mNumChars );
 
 	TF->Bind( mTexId );
-	
+
 	for (eeUint i = 0; i < mNumChars; i++) {
 		if ( i >= mStartChar ) {
 			cX = (eeFloat)( (i-mStartChar) % mTexColumns ) / (eeFloat)mTexColumns;
 			cY = (eeFloat)( (i-mStartChar) / mTexColumns ) / (eeFloat)mTexRows;
-			
+
 			mGlyphs[i].Advance = mSpacing;
-		
+
 			mTexCoords[i].TexCoords[0] = cX;
 			mTexCoords[i].TexCoords[1] = cY;
 			mTexCoords[i].TexCoords[2] = cX;
@@ -80,21 +84,23 @@ void cTextureFont::BuildFont() {
 void cTextureFont::BuildFontFromDat() {
 	eeFloat Top, Bottom;
 	eeRectf tR;
-	
-	mTexCoords.resize( mNumChars );
-	
-	TF->Bind( mTexId );
-	
-	for (eeUint i = 0; i < mNumChars; i++) {
-		tR.Left = (eeFloat)mGlyphs[i].CurX / TF->GetTextureWidth(mTexId);
-		tR.Top = (eeFloat)mGlyphs[i].CurY / TF->GetTextureHeight(mTexId);
 
-		tR.Right = (eeFloat)(mGlyphs[i].CurX + mGlyphs[i].CurW) / TF->GetTextureWidth(mTexId);
-		tR.Bottom = (eeFloat)(mGlyphs[i].CurY + mGlyphs[i].CurH) / TF->GetTextureHeight(mTexId);
+	mTexCoords.resize( mNumChars );
+
+	cTexture * Tex = TF->GetTexture( mTexId );
+
+	TF->Bind( Tex );
+
+	for (eeUint i = 0; i < mNumChars; i++) {
+		tR.Left = (eeFloat)mGlyphs[i].CurX / Tex->Width();
+		tR.Top = (eeFloat)mGlyphs[i].CurY / Tex->Height();
+
+		tR.Right = (eeFloat)(mGlyphs[i].CurX + mGlyphs[i].CurW) / Tex->Width();
+		tR.Bottom = (eeFloat)(mGlyphs[i].CurY + mGlyphs[i].CurH) / Tex->Height();
 
 		Top = 		mFHeight 	- mGlyphs[i].GlyphH - mGlyphs[i].MinY;
 		Bottom = 	mFHeight 	+ mGlyphs[i].GlyphH - mGlyphs[i].MaxY;
-		
+
 		mTexCoords[i].TexCoords[0] = tR.Left;
 		mTexCoords[i].TexCoords[1] = tR.Top;
 		mTexCoords[i].TexCoords[2] = tR.Left;
@@ -153,35 +159,35 @@ bool cTextureFont::Load( const Uint32& TexId, const std::string& CoordinatesDatP
 
 bool cTextureFont::LoadFromPack( cPack* Pack, const std::string& FilePackPath, const Uint32& TexId, const bool& VerticalDraw ) {
 	std::vector<Uint8> TmpData;
-	
+
 	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, TmpData ) )
 		return LoadFromMemory( TexId, reinterpret_cast<const Uint8*> (&TmpData[0]), TmpData.size(), VerticalDraw );
-	
+
 	return false;
 }
 
 bool cTextureFont::LoadFromMemory( const Uint32& TexId, const Uint8* CoordData, const eeUint& CoordDataSize, const bool& VerticalDraw ) {
 	mTexId = TexId;
-	
+
 	if ( mTexId>0 ) {
 		mVerticalDraw = VerticalDraw;
-		
+
 		if ( CoordData != NULL ) {
 			mNumChars = static_cast<Uint16> ( ( CoordDataSize - 2 ) / 32 );
-		
+
 			mGlyphs.resize( mNumChars );
-		
+
 			// Read the number of the first char represented on the texture
 			mStartChar = CoordData[0];
-		
+
 			// Read the default size of every char
 			mFWidth = CoordData[1];
 			mFHeight = CoordData[1];
 			mHeight = mSize = (Uint32)mFHeight;
-			
+
 			// Read every char coordinates
 			memcpy( reinterpret_cast<void*> (&mGlyphs[0]), reinterpret_cast<const void*> (&CoordData[2]), sizeof(eeGlyph) * mNumChars );
-			
+
 			BuildFontFromDat();
 			mLoadedCoords = true;
 			return true;

@@ -3,6 +3,7 @@
 
 #if EE_PLATFORM == EE_PLATFORM_APPLE
 	#include <CoreFoundation/CoreFoundation.h>
+	#include <sys/sysctl.h>
 #elif EE_PLATFORM == EE_PLATFORM_WIN32
 	#ifndef WIN32_LEAN_AND_MEAN
 		#define WIN32_LEAN_AND_MEAN
@@ -10,6 +11,7 @@
 	#include <windows.h>
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
 	#include <libgen.h>
+	#include <unistd.h>
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_WIN32
@@ -275,15 +277,20 @@ Uint32 MakeHash( const std::string& str ) {
 }
 
 Uint32 MakeHash( const Int8* str ) {
-	Uint32 hash = 5381 + *str;
+	if ( NULL != str ) {
+		Uint32 hash = 5381 + *str;
 
-	while( *str ) {
-		hash = *str + ( hash << 6 ) + ( hash << 16 ) - hash;
-		str++;
+		while( *str ) {
+			hash = *str + ( hash << 6 ) + ( hash << 16 ) - hash;
+			str++;
+		}
+
+		hash += *( str - 1 );
+
+		return hash;
 	}
-	hash += *( str - 1 );
 
-	return hash;
+	return 0;
 }
 
 bool FileGet( const std::string& path, std::vector<Uint8>& data ) {
@@ -319,6 +326,40 @@ bool FileCopy( const std::string& src, const std::string& dst ) {
 	}
 
 	return false;
+}
+
+eeInt GetNumCPUs() {
+	eeInt nprocs = -1;
+
+	#if EE_PLATFORM == EE_PLATFORM_WIN32
+		SYSTEM_INFO info;
+		GetSystemInfo(&info);
+
+		nprocs = (eeInt) info.dwNumberOfProcessors;
+	#elif EE_PLATFORM == EE_PLATFORM_LINUX
+		nprocs = sysconf(_SC_NPROCESSORS_ONLN);
+	#elif EE_PLATFORM == EE_PLATFORM_APPLE
+		int mib[2];
+		size_t len;
+		int maxproc = 1;
+
+		mib[0] = CTL_HW;
+		mib[1] = HW_NCPU;
+		len = sizeof(maxproc);
+
+		// sysctl != 0 == error
+		if ( sysctl(mib, 2, &maxproc, &len, NULL, NULL == -1) )
+			return 1;
+
+		nprocs = maxproc;
+	#else
+		#warning GetNumCPUs not implemented for this platform
+	#endif
+
+	if ( nprocs < 0 )
+		nprocs = 1;
+
+	return nprocs;
 }
 
 }}

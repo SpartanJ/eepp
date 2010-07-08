@@ -64,7 +64,7 @@ cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& Dest
 {
 }
 
-cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeFloat& OffsetX, const eeFloat& OffsetY, const std::string& Name ) : 
+cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeFloat& OffsetX, const eeFloat& OffsetY, const std::string& Name ) :
 	mName( Name ),
 	mId( MakeHash( mName ) ),
 	mTexId( TexId ),
@@ -156,11 +156,13 @@ void cShape::OffsetY( const eeFloat& offsety ) {
 }
 
 void cShape::Draw( const eeFloat& X, const eeFloat& Y, const eeRGBA& Color, const eeFloat& Angle, const eeFloat& Scale, const EE_RENDERALPHAS& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
-	cTextureFactory::Instance()->DrawEx( mTexId, X + mOffSetX, Y + mOffSetY, mDestWidth, mDestHeight, Angle, Scale, Color, Color, Color, Color, Blend, Effect, ScaleRendered, mSrcRect );
+	if ( NULL != mTexture )
+		mTexture->DrawEx( X + mOffSetX, Y + mOffSetY, mDestWidth, mDestHeight, Angle, Scale, Color, Color, Color, Color, Blend, Effect, ScaleRendered, mSrcRect );
 }
 
 void cShape::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeRGBA& Color0, const eeRGBA& Color1, const eeRGBA& Color2, const eeRGBA& Color3, const EE_RENDERALPHAS& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
-	cTextureFactory::Instance()->DrawEx( mTexId, X + mOffSetX, Y + mOffSetY, mDestWidth, mDestHeight, Angle, Scale, Color0, Color1, Color2, Color3, Blend, Effect, ScaleRendered, mSrcRect );
+	if ( NULL != mTexture )
+		mTexture->DrawEx( X + mOffSetX, Y + mOffSetY, mDestWidth, mDestHeight, Angle, Scale, Color0, Color1, Color2, Color3, Blend, Effect, ScaleRendered, mSrcRect );
 }
 
 cTexture * cShape::GetTexture() {
@@ -169,7 +171,7 @@ cTexture * cShape::GetTexture() {
 
 void cShape::ReplaceColor(eeColorA ColorKey, eeColorA NewColor) {
 	mTexture->Lock();
-	
+
 	for ( eeInt y = mSrcRect.Top; y < mSrcRect.Bottom; y++ ) {
 		for ( eeInt x = mSrcRect.Left; x < mSrcRect.Right; x++ ) {
 			if ( mTexture->GetPixel( x, y ) == ColorKey )
@@ -194,7 +196,7 @@ void cShape::CacheAlphaMask() {
 	mAlpha = new Uint8[ ( mSrcRect.Right - mSrcRect.Left ) * ( mSrcRect.Bottom - mSrcRect.Top ) ];
 
 	mTexture->Lock();
-	
+
 	eeInt rY = 0;
 	eeInt rX = 0;
 	eeInt rW = mSrcRect.Right - mSrcRect.Left;
@@ -218,7 +220,7 @@ void cShape::CacheColors() {
 	mPixels = new eeColorA[ ( mSrcRect.Right - mSrcRect.Left ) * ( mSrcRect.Bottom - mSrcRect.Top ) ];
 
 	mTexture->Lock();
-	
+
 	eeInt rY = 0;
 	eeInt rX = 0;
 	eeInt rW = mSrcRect.Right - mSrcRect.Left;

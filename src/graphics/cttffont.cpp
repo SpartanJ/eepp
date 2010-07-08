@@ -17,12 +17,12 @@ cTTFFont::~cTTFFont() {
 
 bool cTTFFont::LoadFromPack( cPack* Pack, const std::string& FilePackPath, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor ) {
 	std::vector<Uint8> TmpData;
-	
+
 	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, TmpData ) )
 		return LoadFromMemory( reinterpret_cast<Uint8*> (&TmpData[0]), TmpData.size(), Size, Style, VerticalDraw, NumCharsToGen, FontColor, OutlineSize, OutlineColor );
-	
+
 	TmpData.clear();
-	
+
 	return false;
 }
 
@@ -95,7 +95,7 @@ bool cTTFFont::iLoad(const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ver
 			amask = 0xff000000;
 		#endif
 		SDL_Surface* TempGlyphSheet = SDL_CreateRGBSurface(SDL_SWSURFACE, (eeInt)mTexWidth, (eeInt)mTexHeight, 32, bmask, gmask, rmask, amask);
-		
+
 		CurrentPos.x = OutlineSize;
 		CurrentPos.y = OutlineSize;
 
@@ -139,10 +139,10 @@ bool cTTFFont::iLoad(const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ver
 
 			GlyphRect.h += OutlineSize;
 			TempGlyph.Advance += OutlineSize;
-			
+
 			Top = static_cast<eeFloat> ( mSize 	- GlyphRect.h - TempGlyph.MinY );
 			Bottom = static_cast<eeFloat> ( mSize 	+ GlyphRect.h - TempGlyph.MaxY );
-			
+
 			// Translate the Glyph coordinates to the new texture coordinates
 			TempGlyph.MinX -= OutlineSize;
 			TempGlyph.MinY -= OutlineSize;
@@ -174,16 +174,16 @@ bool cTTFFont::iLoad(const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ver
 
 		// Recover the Alpha channel
 		SDL_LockSurface(TempGlyphSheet);
-		
+
 		eeUint ssize = TempGlyphSheet->w * TempGlyphSheet->h * 4;
-		
+
 		for (eeUint i=0; i<ssize; i+=4) {
 			(static_cast<Uint8*>(TempGlyphSheet->pixels))[i+3] = (static_cast<Uint8*>(TempGlyphSheet->pixels))[i+2];
 			(static_cast<Uint8*>(TempGlyphSheet->pixels))[i+2] = FontColor.B();
 			(static_cast<Uint8*>(TempGlyphSheet->pixels))[i+1] = FontColor.G();
 			(static_cast<Uint8*>(TempGlyphSheet->pixels))[i+0] = FontColor.R();
 		}
-		
+
 		SDL_UnlockSurface(TempGlyphSheet);
 
 		const unsigned char* Ptr = reinterpret_cast<const unsigned char*>(TempGlyphSheet->pixels);
@@ -193,7 +193,7 @@ bool cTTFFont::iLoad(const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ver
 
 		// Check if need to create the outline
 		cTexture* Tex = TF->GetTexture( mTexId );
-		
+
 		if ( OutlineSize && Tex ) {
 			eeColorA P, R;
 			Uint32 Pos = 0;
@@ -247,9 +247,9 @@ bool cTTFFont::iLoad(const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ver
 
 		//Close the font
 		TTF_CloseFont(mFont);
-		
+
 		RebuildFromGlyphs();
-		
+
 		cLog::instance()->Write( "TTF Font " + mFilepath + " loaded." );
 		return true;
 	} catch (...) {
@@ -261,21 +261,23 @@ bool cTTFFont::iLoad(const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ver
 void cTTFFont::RebuildFromGlyphs() {
 	eeFloat Top, Bottom;
 	eeRectf tR;
-	
-	mTexCoords.resize( mNumChars );
-	
-	TF->Bind( mTexId );
-	
-	for (eeUint i = 0; i < mNumChars; i++) {
-		tR.Left = (eeFloat)mGlyphs[i].CurX / TF->GetTextureWidth(mTexId);
-		tR.Top = (eeFloat)mGlyphs[i].CurY / TF->GetTextureHeight(mTexId);
 
-		tR.Right = (eeFloat)(mGlyphs[i].CurX + mGlyphs[i].CurW) / TF->GetTextureWidth(mTexId);
-		tR.Bottom = (eeFloat)(mGlyphs[i].CurY + mGlyphs[i].CurH) / TF->GetTextureHeight(mTexId);
+	mTexCoords.resize( mNumChars );
+
+	cTexture * Tex = TF->GetTexture( mTexId );
+
+	TF->Bind( Tex );
+
+	for (eeUint i = 0; i < mNumChars; i++) {
+		tR.Left = (eeFloat)mGlyphs[i].CurX / Tex->Width();
+		tR.Top = (eeFloat)mGlyphs[i].CurY / Tex->Height();
+
+		tR.Right = (eeFloat)(mGlyphs[i].CurX + mGlyphs[i].CurW) / Tex->Width();
+		tR.Bottom = (eeFloat)(mGlyphs[i].CurY + mGlyphs[i].CurH) / Tex->Height();
 
 		Top = 		(eeFloat)mSize 	- mGlyphs[i].GlyphH - mGlyphs[i].MinY;
 		Bottom = 	(eeFloat)mSize 	+ mGlyphs[i].GlyphH - mGlyphs[i].MaxY;
-		
+
 		mTexCoords[i].TexCoords[0] = tR.Left;
 		mTexCoords[i].TexCoords[1] = tR.Top;
 		mTexCoords[i].TexCoords[2] = tR.Left;
@@ -351,7 +353,7 @@ void cTTFFont::MakeOutline( Uint8 *in, Uint8 *out, Int16 w, Int16 h) {
 							c = in[index];
 					}
 				}
-				
+
 				out[ y * w + x ] = c;
 			}
 		}

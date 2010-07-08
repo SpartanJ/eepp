@@ -2,6 +2,7 @@
 #define EE_GRAPHICSCSCROLLPARALLAX_H
 
 #include "base.hpp"
+#include "ctexture.hpp"
 #include "ctexturefactory.hpp"
 #include "csprite.hpp"
 
@@ -50,7 +51,7 @@ class EE_API cScrollParallax {
 		*/
 		void Draw( const eeFloat& XDirVel, const eeFloat& YDirVel );
 	private:
-		cTextureFactory* TF;
+		cTextureFactory * TF;
 
 		cSprite mSpr;
 		eeRecti mSrcRECT;

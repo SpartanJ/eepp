@@ -94,13 +94,18 @@ void cConsole::AddCommand( const std::string& Command, ConsoleCallback CB ) {
 void cConsole::Draw() {
 	if ( mEnabled ) {
 		Fade();
+
 		if ( mY > 0.0f ) {
 			if ( mTexId == 0 ) {
 				mPri.SetColor( eeColorA( mConColor.R(), mConColor.G(), mConColor.B(), static_cast<Uint8>(mA) ) );
 				mPri.DrawRectangle( 0.0f, 0.0f, mWidth, mY );
 			} else {
 				eeRGBA C( mConColor.R(), mConColor.G(), mConColor.B(), static_cast<Uint8>(mA) );
-				cTextureFactory::instance()->DrawEx( mTexId, 0.0f, 0.0f, mWidth, mY, 0.0f, 1.0f, C, C, C, C );
+
+				cTexture * Tex = cTextureFactory::instance()->GetTexture( mTexId );
+
+				if ( NULL != Tex )
+					Tex->DrawEx( 0.0f, 0.0f, mWidth, mY, 0.0f, 1.0f, C, C, C, C );
 			}
 			mPri.SetColor( eeColorA( mConLineColor.R(), mConLineColor.G(), mConLineColor.B(), static_cast<Uint8>(mA) ) );
 			mPri.DrawRectangle( 0.0f, mY, mWidth, 4.0f );

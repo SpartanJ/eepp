@@ -165,7 +165,7 @@ void cIsoMap::Draw() {
 					}
 				} else {
 					if ( T->Layers[L] > 0 ) {
-						cTexture* Tex = TF->GetTexture( T->Layers[L] );
+						cTexture * Tex = TF->GetTexture( T->Layers[L] );
 
 						if ( T != NULL ) {
 							eeVector2f TileCenter( T->Q.V[1].x + (T->Q.V[3].x - T->Q.V[1].x) * 0.5f, T->Q.V[0].y + (T->Q.V[2].y - T->Q.V[0].y) * 0.5f );
@@ -177,11 +177,11 @@ void cIsoMap::Draw() {
 							if ( Intersect( ScreenAABB, ShadowAABB ) ) {
 								//AABB ShadowAABB_RECT( OffsetX + ObjPos.x, OffsetY + TileCenter.y - Tex->Height(), OffsetX + TileCenter.x + Tex->Width(), OffsetY + TileCenter.y );
 								//PR.DrawRectangle( ShadowAABB_RECT, 0, 1, DRAW_LINE );
-								TF->DrawEx( T->Layers[L], OffsetX + ObjPos.x, OffsetY + ObjPos.y, (eeFloat)Tex->ImgWidth(), (eeFloat)Tex->ImgHeight(), 0, 1, SC, SC, SC, SC, ALPHA_NORMAL, RN_ISOMETRIC );
+								Tex->DrawEx( OffsetX + ObjPos.x, OffsetY + ObjPos.y, (eeFloat)Tex->ImgWidth(), (eeFloat)Tex->ImgHeight(), 0, 1, SC, SC, SC, SC, ALPHA_NORMAL, RN_ISOMETRIC );
 							}
 
 							if ( Intersect( ScreenAABB, LayerAABB )  ) {
-								TF->DrawEx( T->Layers[L], OffsetX + TileCenter.x - (eeFloat)Tex->ImgWidth() * 0.5f, OffsetY + TileCenter.y - (eeFloat)Tex->ImgHeight(), (eeFloat)Tex->ImgWidth(), (eeFloat)Tex->ImgHeight(), 0, 1, eeColorA(T->Color[0]), eeColorA(T->Color[1]), eeColorA(T->Color[2]), eeColorA(T->Color[3]) );
+								Tex->DrawEx( OffsetX + TileCenter.x - (eeFloat)Tex->ImgWidth() * 0.5f, OffsetY + TileCenter.y - (eeFloat)Tex->ImgHeight(), (eeFloat)Tex->ImgWidth(), (eeFloat)Tex->ImgHeight(), 0, 1, eeColorA(T->Color[0]), eeColorA(T->Color[1]), eeColorA(T->Color[2]), eeColorA(T->Color[3]) );
 							}
 						}
 					}

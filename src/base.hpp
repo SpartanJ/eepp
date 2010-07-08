@@ -94,10 +94,10 @@ namespace EE {
 	typedef float				eeFloat; 	//! The internal floating point used on EE++. \n This can help to improve compatibility with some platforms. \n And helps for an easy change from single precision to double precision.
 	typedef double				eeDouble; 	//! The internal double floating point. It's only used when the engine needs some very high precision floating point ( for example the timer )
 	typedef unsigned long		eeUint;
-	typedef signed long			eeInt;
+	typedef signed long		eeInt;
 
 	const eeFloat PI			= 3.141592654f;
-	const eeFloat TwoPI			= 6.283185308f;
+	const eeFloat TwoPI		= 6.283185308f;
 	const eeFloat PId180		= PI / 180.f;
 	const eeFloat d180PI		= 180.f / PI;
 

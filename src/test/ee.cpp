@@ -1,10 +1,16 @@
 #include "../ee.h"
 
 /**
-@TODO Create a basic UI system.
-@TODO Add some Surface Grid class, to create special effects. ( waved texture, and stuff like that )
+@TODO Create a asynchronous resource loader ( at least for textures ).
+@TODO Create a basic UI system ( add basic controls, add skinning support ).
+@TODO Add support for Joysticks.
+@TODO Create a Vertex Buffer Object class ( with and without GL_ARB_vertex_buffer_object ).
+@TODO Add support for Frame Buffer Object and to switch rendering to FBO and Screen.
 @TODO Support multitexturing.
-@TODO Create a asynchronous resource loader - Check if this is posible right now
+@TODO Create a texture packer tool ( pack various textures into one texture ).
+@TODO Remove SDL_ttf dependency, use Free Type directly.
+@TODO Encapsulate SDL and OpenGL ( and remove unnecessary dependencies ).
+@TODO Add some Surface Grid class, to create special effects ( waved texture, and stuff like that ).
 @TODO Support color cursors ( not only black and white cursors, that really sucks ) - Imposible with SDL 1.2
 */
 
@@ -88,7 +94,10 @@ class cEETest : private cThread {
 		Uint32 lasttick;
 
 		std::vector<Uint32> TN;
+		std::vector<cTexture *> TNP;
+
 		std::vector<Uint32> Tiles;
+
 		eeVector2i Mouse;
 		eeVector2f Mousef;
 
@@ -139,6 +148,7 @@ class cEETest : private cThread {
 		cWaypoints WP;
 		Int32 PartsNum;
 		Uint32 Cursor[2];
+		cTexture * CursorP[2];
 		std::string mInfo;
 
 		bool MultiViewportMode;
@@ -364,15 +374,21 @@ void cEETest::CmdSetPartsNum ( const std::vector < std::wstring >& params ) {
 void cEETest::LoadTextures() {
 	Uint32 i;
 
-	TF->Allocate(0);
+	TF->Allocate(40);
+
 	TN.resize(12);
+	TNP.resize(12);
+
 	Tiles.resize(10);
 
-	for ( i = 0; i <= 7; i++ )
+	for ( i = 0; i <= 7; i++ ) {
 		TN[i] = TF->LoadFromPack( &PAK, toStr(i+1) + ".png", ( (i+1) == 7 ) ? true : false, eeRGB(true), ( (i+1) == 4 ) ? EE_CLAMP_REPEAT : EE_CLAMP_TO_EDGE );
+		TNP[i] = TF->GetTexture( TN[i] );
+	}
 
-	for ( i = 0; i <= 6; i++ )
+	for ( i = 0; i <= 6; i++ ) {
 		Tiles[i] = TF->LoadFromPack( &PAK, "tiles/" + toStr(i+1) + ".png", true );
+	}
 
 	Tiles[7] = TF->LoadFromPack( &PAK, "tiles/8.png", false, eeRGB(0,0,0) );
 
@@ -383,10 +399,12 @@ void cEETest::LoadTextures() {
 			SP.AddFrame( TN[4], 0, 0, 0, 0, eeRecti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
 
 	TN[8] = TF->LoadFromPack( &PAK, "conchars.png", false, eeRGB(0,0,0) );
+	TNP[8] = TF->GetTexture( TN[8] );
 
 	FF.Load( TN[8], 32 );
 
 	TN[9] = TF->LoadFromPack( &PAK, "ProggySquareSZ.png" );
+	TNP[9] = TF->GetTexture( TN[9] );
 
 	FF2.LoadFromPack( &PAK, "ProggySquareSZ.dat", TN[9] );
 
@@ -417,7 +435,9 @@ void cEETest::LoadTextures() {
 	Tex->Unlock(false, true);
 
 	Cursor[0] = TF->LoadFromPack( &PAK, "cursor.png" );
+	CursorP[0] = TF->GetTexture( Cursor[0] );
 	Cursor[1] = TF->LoadFromPack( &PAK, "cursor.tga" );
+	CursorP[1] = TF->GetTexture( Cursor[1] );
 
 	EE->ShowCursor(false);
 
@@ -499,12 +519,11 @@ void cEETest::ParticlesThread() {
 }
 
 void cEETest::Screen2() {
-	eeFloat PlanetX = HWidth  - TF->GetTextureWidth(TN[6]) * 0.5f;
-	eeFloat PlanetY = HHeight - TF->GetTextureHeight(TN[6]) * 0.5f;
+	eeFloat PlanetX = HWidth  - TNP[6]->Width() * 0.5f;
+	eeFloat PlanetY = HHeight - TNP[6]->Height() * 0.5f;
 
 	ang+=et * 0.1f;
 	ang = (ang>=360) ? ang = 0 : ang;
-
 
 	if (scale>=1.5f) {
 		scale = 1.5f;
@@ -515,7 +534,7 @@ void cEETest::Screen2() {
 	}
 	scale = (!side) ? scale+=et * 0.00025f : scale -=et * 0.00025f;
 
-	Batch.SetTexture( TN[2] );
+	Batch.SetTexture( TNP[2] );
 	Batch.QuadsBegin();
 	Batch.QuadsSetColor( eeColorA(150,150,150,100) );
 	Batch.QuadsSetSubset( 0.0f, 0.0f, 0.5f, 0.5f );
@@ -556,17 +575,17 @@ void cEETest::Screen2() {
 	}
 	#endif
 
-	TF->DrawFast(TN[6], PlanetX, PlanetY, ang, scale);
+	TNP[6]->DrawFast( PlanetX, PlanetY, ang, scale);
 
 	#ifdef EE_SHADERS
 	if ( mUseShaders )
 		mShaderProgram->Unbind();
 	#endif
 
-	TF->Draw(TN[3], HWidth - 128, HHeight, 0, 1, eeColorA(255,255,255,150), ALPHA_NORMAL, RN_ISOMETRIC);
-	TF->Draw(TN[3], HWidth - 128, HHeight - 128, 0, 1, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRIC);
-	TF->Draw(TN[3], HWidth - 128, HHeight, 0, 1, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICAL);
-	TF->Draw(TN[3], HWidth, HHeight, 0, 1, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICALNEGATIVE);
+	TNP[3]->Draw( HWidth - 128, HHeight, 0, 1, eeColorA(255,255,255,150), ALPHA_NORMAL, RN_ISOMETRIC);
+	TNP[3]->Draw( HWidth - 128, HHeight - 128, 0, 1, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRIC);
+	TNP[3]->Draw( HWidth - 128, HHeight, 0, 1, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICAL);
+	TNP[3]->Draw( HWidth, HHeight, 0, 1, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICALNEGATIVE);
 
 	alpha = (!aside) ? alpha+=et * 0.1f : alpha -=et * 0.1f;
 	if (alpha>=255) {
@@ -578,7 +597,7 @@ void cEETest::Screen2() {
 	}
 
 	eeColorA Col(255,255,255,(int)alpha);
-	TF->DrawEx(TN[1], (eeFloat)EE->GetWidth() - 128.f, (eeFloat)EE->GetHeight() - 128.f, 128.f, 128.f, ang, 1, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
+	TNP[1]->DrawEx( (eeFloat)EE->GetWidth() - 128.f, (eeFloat)EE->GetHeight() - 128.f, 128.f, 128.f, ang, 1, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
 
 	SP.UpdatePos(alpha,alpha);
 	SP.Draw();
@@ -638,7 +657,7 @@ void cEETest::Screen2() {
 	PR.DrawRectangle(Mousef.x - 80.f, Mousef.y - 80.f, 160.f, 160.f, 45.f, 1.f, DRAW_LINE);
 	PR.DrawLine( eeVector2f(0.f, 0.f), eeVector2f( (eeFloat)EE->GetWidth(), (eeFloat)EE->GetHeight() ) );
 
-	TF->DrawQuadEx( TN[3], eeQuad2f( eeVector2f(0.f, 0.f), eeVector2f(0.f, 100.f), eeVector2f(150.f, 150.f), eeVector2f(200.f, 150.f) ), 0.0f, 0.0f, ang, scale, eeColorA(220, 240, 0, 125), eeColorA(100, 0, 240, 125), eeColorA(250, 50, 25, 125), eeColorA(50, 150, 150, 125) );
+	TNP[3]->DrawQuadEx( eeQuad2f( eeVector2f(0.f, 0.f), eeVector2f(0.f, 100.f), eeVector2f(150.f, 150.f), eeVector2f(200.f, 150.f) ), 0.0f, 0.0f, ang, scale, eeColorA(220, 240, 0, 125), eeColorA(100, 0, 240, 125), eeColorA(250, 50, 25, 125), eeColorA(50, 150, 150, 125) );
 
 	WP.Update( et );
 	PR.SetColor( eeColorA(0, 255, 0, 255) );
@@ -659,7 +678,7 @@ void cEETest::Screen3() {
 	}
 	AnimVal = (!AnimSide) ? AnimVal+=et * 0.1f : AnimVal -=et * 0.1f;
 
-	Batch.SetTexture( TN[3] );
+	Batch.SetTexture( TNP[3] );
 	Batch.LineLoopBegin();
 	for ( eeFloat j = 0; j < 360; j++ ) {
 		Batch.BatchLineLoop( HWidth + 350 * sinAng(j), HHeight + 350 * cosAng(j), HWidth + AnimVal * sinAng(j+1), HHeight + AnimVal * cosAng(j+1) );
@@ -749,7 +768,7 @@ void cEETest::Render() {
 	Con.Draw();
 
 	if ( Screen < 2 )
-		TF->Draw( Cursor[ Screen ], Mousef.x, Mousef.y );
+		CursorP[ Screen ]->Draw( Mousef.x, Mousef.y );
 }
 
 void cEETest::Input() {
@@ -890,7 +909,7 @@ void cEETest::Input() {
 				SP.ReverseAnim( !SP.ReverseAnim() );
 
 			if ( KM->MouseLeftPressed() )
-				TF->DrawEx( TN[3], 0.f, 0.f, (eeFloat)EE->GetWidth(), (eeFloat)EE->GetHeight() );
+				TNP[3]->DrawEx( 0.f, 0.f, (eeFloat)EE->GetWidth(), (eeFloat)EE->GetHeight() );
 
 			if ( !KM->MouseRightPressed() )
 				DrawBack = false;

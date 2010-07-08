@@ -165,7 +165,7 @@ void cSprite::Update( const eeFloat& x, const eeFloat& y, const eeFloat& Scale, 
 Uint32 cSprite::GetTexture(const eeUint& FrameNum, const eeUint& SubFrameNum) {
 	if ( FrameNum < Frame.size() && SubFrameNum < mFrameData.SubFrames )
 		return Frame[FrameNum].Spr[SubFrameNum]->Texture();
-	
+
 	return 0;
 }
 
@@ -180,7 +180,7 @@ bool cSprite::CreateStatic(const Uint32& TexId, const eeFloat& DestWidth, const 
 		mFrameData.SubFrames = 1;
 		mAnimated = false;
 		eeUint id = FramePos();
-		
+
 		return AddSubFrame(TexId, id, 0, DestWidth, DestHeight, offSetX, offSetY, TexSector);
 	}
 
@@ -208,6 +208,11 @@ eeUint cSprite::AddFrame(const Uint32& TexId, const eeFloat& DestWidth, const ee
 }
 
 bool cSprite::AddSubFrame(const Uint32& TexId, const eeUint& NumFrame, const eeUint& NumSubFrame, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeFloat& offSetX, const eeFloat& offSetY, const eeRecti& TexSector) {
+	cTexture * Tex = cTextureFactory::instance()->GetTexture( TexId );
+
+	if ( NULL == Tex )
+		return false;
+
 	eeUint NF, NSF;
 
 	if ( NumFrame >= Frame.size() )
@@ -232,8 +237,8 @@ bool cSprite::AddSubFrame(const Uint32& TexId, const eeUint& NumFrame, const eeU
 		if ( TexSector.Right > 0 && TexSector.Bottom > 0 )
 			S->SrcRect( TexSector );
 		else
-			S->SrcRect( eeRecti( 0, 0, (Int32)cTextureFactory::instance()->GetTextureWidth(TexId), (Int32)cTextureFactory::instance()->GetTextureHeight(TexId) ) );
-		
+			S->SrcRect( eeRecti( 0, 0, (Int32)Tex->Width(), (Int32)Tex->Height() ) );
+
 		if ( DestWidth > 0 )
 			S->DestWidth( DestWidth );
 		else
@@ -246,7 +251,7 @@ bool cSprite::AddSubFrame(const Uint32& TexId, const eeUint& NumFrame, const eeU
 
 		S->OffsetX( offSetX );
 		S->OffsetY( offSetY );
-		
+
 		return true;
 	}
 

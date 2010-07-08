@@ -14,13 +14,18 @@ cScrollParallax::cScrollParallax( const Uint32& TexId, const eeFloat& DestX, con
 }
 
 bool cScrollParallax::Create(const Uint32& TexId, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeRecti& SrcRECT, const eeRGBA& Color, const Uint8& Alpha, const EE_RENDERALPHAS& Effect ) {
+	cTexture * Tex = TF->GetTexture( TexId );
+
+	if ( NULL == Tex )
+		return false;
+
 	mSrcRECT = SrcRECT;
 
 	if ( mSrcRECT.Bottom == 0 && mSrcRECT.Right == 0 ) {
 		mSrcRECT.Left = 0;
 		mSrcRECT.Top = 0;
-		mSrcRECT.Right = (Int32)TF->GetTextureWidth( TexId );
-		mSrcRECT.Bottom = (Int32)TF->GetTextureHeight( TexId );
+		mSrcRECT.Right = (Int32)Tex->Width();
+		mSrcRECT.Bottom = (Int32)Tex->Height();
 	}
 
 	mWidth = static_cast<eeFloat> ( mSrcRECT.Right - mSrcRECT.Left );
@@ -40,6 +45,7 @@ bool cScrollParallax::Create(const Uint32& TexId, const eeFloat& DestX, const ee
 	mSpr.Color( Color );
 	mSpr.Alpha( Alpha );
 	mSpr.SetRenderAlphas( Effect );
+
 	return true;
 }
 

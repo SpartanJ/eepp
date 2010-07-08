@@ -2,6 +2,7 @@
 #define EE_GRAPHICSCBATCHRENDERER_H
 
 #include "base.hpp"
+#include "ctexture.hpp"
 
 namespace EE { namespace Graphics {
 
@@ -29,7 +30,7 @@ class cBatchRenderer {
 		void AllocVertexs( const eeUint& size );
 
 		/** Set the current texture to render on the batch ( if you change the texture and you have batched something, this will be renderer immediately ) */
-		void SetTexture( const Uint32& TexId );
+		void SetTexture( const cTexture * Tex );
 
 		/** Set the blending functions to use on the batch */
 		void SetBlendFunc( const EE_RENDERALPHAS& Blend );
@@ -186,7 +187,7 @@ class cBatchRenderer {
 		eeVertex * mTVertex;
 		eeUint mNumVertex;
 
-		Uint32 mTexture;
+		const cTexture * mTexture;
 		EE_RENDERALPHAS mBlend;
 
 		eeTexCoord mTexCoord[4];
