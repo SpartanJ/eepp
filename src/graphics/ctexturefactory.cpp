@@ -8,10 +8,12 @@ namespace EE { namespace Graphics {
 cTextureFactory::cTextureFactory() :
 	mCurrentTexture(0),
 	mIsCalcPowOfTwo(false),
-	mNextKey(0),
+	mNextKey(1),
 	mMemSize(0)
 {
 	mTextures.clear();
+	mTextures.push_back( NULL );
+
 	Log = cLog::instance();
 
 	mTextures.resize( 1, NULL );
@@ -106,9 +108,13 @@ Uint32 cTextureFactory::iLoad( const std::string& filepath, const bool& mipmap, 
 	if ( FileExists( filepath ) ) {
 		unsigned char * PixelsPtr = SOIL_load_image(filepath.c_str(), &ImgWidth, &ImgHeight, &ImgChannels, SOIL_LOAD_AUTO);
 
-		if ( NULL != PixelsPtr )
-			return iLoadFromPixels( PixelsPtr, ImgWidth, ImgHeight, ImgChannels, mipmap, ColorKey, ClampMode, CompressTexture, KeepLocalCopy, filepath, TexPos );
-		else
+		if ( NULL != PixelsPtr ) {
+			Uint32 Result = iLoadFromPixels( PixelsPtr, ImgWidth, ImgHeight, ImgChannels, mipmap, ColorKey, ClampMode, CompressTexture, KeepLocalCopy, filepath, TexPos );
+
+			SOIL_free_image_data( PixelsPtr );
+
+			return Result;
+		} else
 			Log->Write( SOIL_last_result() );
 	}
 
@@ -195,10 +201,11 @@ bool cTextureFactory::Remove( const Uint32& TexId ) {
 	if ( TexId < mTextures.size() && TexId > 0 ) {
 		mMemSize -= GetTexMemSize( TexId );
 
-		delete mTextures[ TexId ];
-		mTextures[ TexId ] = NULL;
+		GLint glTexId = mTextures[ TexId ]->Texture();
 
-		if ( mCurrentTexture == (Int32)TexId )
+		eeSAFE_DELETE( mTextures[ TexId ] );
+
+		if ( mCurrentTexture == (Int32)glTexId )
 			mCurrentTexture = 0;
 
 		return true;
@@ -339,7 +346,7 @@ cTexture * cTextureFactory::GetTexture( const Uint32& TexId ) {
 
 void cTextureFactory::Allocate( const eeUint& size ) {
 	if ( size > mTextures.size() ) {
-		mTextures.resize( size, NULL );
+		mTextures.resize( size + 1, NULL );
 	}
 }
 

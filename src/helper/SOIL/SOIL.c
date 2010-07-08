@@ -181,7 +181,7 @@ unsigned int
 		return 0;
 	}
 	/*	try to load the image (only the HDR type) */
-	img = stbi_hdr_load_rgbe( filename, &width, &height, &channels, 4 );
+	img = stbi_load( filename, &width, &height, &channels, 4 );
 	/*	channels holds the original number of channels, which may have been forced	*/
 	if( NULL == img )
 	{
