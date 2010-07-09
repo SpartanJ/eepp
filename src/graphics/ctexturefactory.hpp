@@ -7,6 +7,8 @@
 
 namespace EE { namespace Graphics {
 
+#define TEXTURE_NONE 0xFFFFFFFF
+
 class cGlobalBatchRenderer;
 
 /** @brief The Texture Manager Class. Here we do all the textures stuff. (Singleton Class) */
@@ -180,14 +182,16 @@ class EE_API cTextureFactory: public cSingleton<cTextureFactory> {
 		cLog* Log;
 
 		GLint mCurrentTexture;
+
 		EE_RENDERALPHAS mLastBlend;
 
 		bool mPowOfTwo, mIsCalcPowOfTwo;
 
 		std::vector<cTexture*> mTextures;
 
-		Uint32 mNextKey;
 		eeUint mMemSize;
+
+		std::queue<Uint32> mVectorFreeSlots;
 
 		cGlobalBatchRenderer* BR;
 
@@ -203,7 +207,7 @@ class EE_API cTextureFactory: public cSingleton<cTextureFactory> {
 
 		void BindPrev( const GLint& Prev );
 
-
+		Uint32 FindFreeSlot();
 };
 
 }}

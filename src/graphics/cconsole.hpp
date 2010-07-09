@@ -18,7 +18,7 @@ class EE_API cConsole{
 		typedef boost::function1<void, std::vector < std::wstring > > ConsoleCallback;
 
 		cConsole();
-		
+
 		~cConsole();
 
 		/** Set the Console Height when it's Minimized ( Not Maximized ) */
@@ -80,7 +80,7 @@ class EE_API cConsole{
 
 		/** @return The fading speed in ms */
 		eeFloat FadeSpeed() const { return mFadeSpeed; }
-		
+
 		/** Creates the new console
 		* @param Font The cFont pointer to class
 		* @param MakeDefaultCommands Register the default commands provided by the class?
@@ -90,7 +90,7 @@ class EE_API cConsole{
 		* @param FontLineColor The Console Line Font Color ( The Client Input )
 		*/
 		void Create( cFont* Font, const bool& MakeDefaultCommands = true, const eeRGBA& ConsoleColor = eeRGBA(true), const eeRGBA& ConsoleLineColor = eeRGBA(true), const eeRGBA& FontColor = eeRGBA(true), const eeRGBA& FontLineColor = eeRGBA(true), const Uint32& TextureId = 0, const eeUint& MaxLogLines = 1024 );
-		
+
 		/** Creates the new console
 		* @param TTFFont The cTTFFont pointer to class
 		* @param MakeDefaultCommands Register the default commands provided by the class?
@@ -116,7 +116,7 @@ class EE_API cConsole{
 
 		/** Add Text to Console */
 		void PushText( const std::string& str );
-		
+
 		/** Add formated Text to console */
 		void PushText( const char* format, ... );
 
@@ -137,7 +137,7 @@ class EE_API cConsole{
 
 		/** Set the line height ( distance between lines ) */
 		void SetLineHeight( const eeFloat& LineHeight ) { mFontSize = LineHeight; }
-		
+
 		/** Use this if you need to ignore some char to activate the console, for example '~'. A common char to activate a console. */
 		void IgnoreCharOnPrompt( const Uint32& ch );
 	protected:
@@ -153,9 +153,9 @@ class EE_API cConsole{
 		Uint32 mMyCallback, mEx, mMaxLogLines;
 
 		cInputTextBuffer mTBuf;
-		
+
 		cFont* mFont;
-		
+
 		cPrimitives mPri;
 		Uint32 mTexId;
 
@@ -168,11 +168,11 @@ class EE_API cConsole{
 
 		eeFloat mCurAlpha;
 		bool mCurSide;
-		
+
 		void CreateDefaultCommands();
-		
+
 		void PrivCreate( const bool& MakeDefaultCommands, const eeRGBA& ConsoleColor, const eeRGBA& ConsoleLineColor, const eeRGBA& FontColor, const eeRGBA& FontLineColor, const Uint32& TextureId, const eeUint& MaxLogLines );
-		
+
 		void Fade();
 
 		/** Internal Callback for default command ( clear ) */
@@ -207,7 +207,7 @@ class EE_API cConsole{
 
         /** Internal Callback for default command ( getgpuextensions ) */
 		void CmdGetGpuExtensions( const std::vector < std::wstring >& params );
-		
+
 		/** Internal Callback for default command ( dir and ls ) */
 		void CmdDir( const std::vector < std::wstring >& params );
 
@@ -219,7 +219,7 @@ class EE_API cConsole{
 
 		/** The Default Commands Callbacks for the Console ( don't call it ) */
 		void PrivInputCallback( EE_Event* Event );
-		
+
 		/** Clear the Console */
 		void CmdClear();
 
@@ -231,7 +231,7 @@ class EE_API cConsole{
 
 		/** Internal Callback to Process the new line ( when return pressed ) */
 		void ProcessLine();
-		
+
 		void PrivPushText( const std::wstring& str );
 };
 

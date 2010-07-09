@@ -8,15 +8,12 @@ namespace EE { namespace Graphics {
 cTextureFactory::cTextureFactory() :
 	mCurrentTexture(0),
 	mIsCalcPowOfTwo(false),
-	mNextKey(1),
 	mMemSize(0)
 {
 	mTextures.clear();
 	mTextures.push_back( NULL );
 
 	Log = cLog::instance();
-
-	mTextures.resize( 1, NULL );
 
 	BR = cGlobalBatchRenderer::instance();
 }
@@ -127,7 +124,7 @@ Uint32 cTextureFactory::PushTexture( const std::string& filepath, const Uint32& 
 
 Uint32 cTextureFactory::iPushTexture( const std::string& filepath, const Uint32& TexId, const eeUint& Width, const eeUint& Height, const eeUint& ImgWidth, const eeUint& ImgHeight, const bool& Mipmap, const eeUint& Channels, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy, const Uint32& TexPos ) {
 	cTexture * Tex 		= NULL;
-	Uint32 Pos 			= mNextKey;
+	Uint32 Pos;
 	eeInt MyWidth 		= ImgWidth;
 	eeInt MyHeight 		= ImgHeight;
 
@@ -146,16 +143,11 @@ Uint32 cTextureFactory::iPushTexture( const std::string& filepath, const Uint32&
 			mMemSize -= GetTexMemSize( TexPos );
 		}
 	} else {
-		mNextKey++;
+		Pos = FindFreeSlot();
+
+		Tex = mTextures[ Pos ] = new cTexture();
 	}
 
-	if ( Pos == mTextures.size() ) {
-		mTextures.push_back( new cTexture() );
-	} else if ( mTextures[ Pos ] == NULL ) {
-		mTextures[ Pos ] = new cTexture();
-	}
-
-	Tex = GetTexture( Pos );
 	Tex->Create( TexId, Width, Height, MyWidth, MyHeight, Mipmap, Channels, filepath, ColorKey, ClampMode, CompressTexture );
 	Tex->TexId( Pos );
 
@@ -170,6 +162,20 @@ Uint32 cTextureFactory::iPushTexture( const std::string& filepath, const Uint32&
 	mMemSize += GetTexMemSize( Pos );
 
 	return Pos;
+}
+
+Uint32 cTextureFactory::FindFreeSlot() {
+	if ( mVectorFreeSlots.size() ) {
+		Uint32 Pos = mVectorFreeSlots.front();
+
+		mVectorFreeSlots.pop();
+
+		return Pos;
+	}
+
+	mTextures.push_back( NULL );
+
+	return mTextures.size() - 1;
 }
 
 void cTextureFactory::Bind( const cTexture* Tex ) {
@@ -198,7 +204,7 @@ void cTextureFactory::UnloadTextures() {
 }
 
 bool cTextureFactory::Remove( const Uint32& TexId ) {
-	if ( TexId < mTextures.size() && TexId > 0 ) {
+	if ( TexId < mTextures.size() && NULL != mTextures[ TexId ] ) {
 		mMemSize -= GetTexMemSize( TexId );
 
 		GLint glTexId = mTextures[ TexId ]->Texture();
@@ -208,8 +214,11 @@ bool cTextureFactory::Remove( const Uint32& TexId ) {
 		if ( mCurrentTexture == (Int32)glTexId )
 			mCurrentTexture = 0;
 
+		mVectorFreeSlots.push( TexId );
+
 		return true;
 	}
+
 	return false;
 }
 
@@ -347,6 +356,9 @@ cTexture * cTextureFactory::GetTexture( const Uint32& TexId ) {
 void cTextureFactory::Allocate( const eeUint& size ) {
 	if ( size > mTextures.size() ) {
 		mTextures.resize( size + 1, NULL );
+
+		for ( eeUint i = 1; i < mTextures.size(); i++ )
+			mVectorFreeSlots.push( i );
 	}
 }
 

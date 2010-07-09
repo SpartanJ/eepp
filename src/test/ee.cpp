@@ -1,6 +1,7 @@
 #include "../ee.h"
 
 /**
+@TODO Remove SDL_ttf dependency, use Free Type directly ( the license is restrictive ).
 @TODO Create a asynchronous resource loader ( at least for textures ).
 @TODO Create a basic UI system ( add basic controls, add skinning support ).
 @TODO Add support for Joysticks.
@@ -8,7 +9,6 @@
 @TODO Add support for Frame Buffer Object and to switch rendering to FBO and Screen.
 @TODO Support multitexturing.
 @TODO Create a texture packer tool ( pack various textures into one texture ).
-@TODO Remove SDL_ttf dependency, use Free Type directly.
 @TODO Encapsulate SDL and OpenGL ( and remove unnecessary dependencies ).
 @TODO Add some Surface Grid class, to create special effects ( waved texture, and stuff like that ).
 @TODO Support color cursors ( not only black and white cursors, that really sucks ) - Imposible with SDL 1.2

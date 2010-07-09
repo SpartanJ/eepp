@@ -121,39 +121,14 @@ void cTextureFont::BuildFontFromDat() {
 }
 
 bool cTextureFont::Load( const Uint32& TexId, const std::string& CoordinatesDatPath, const bool& VerticalDraw ) {
-	mTexId = TexId;
-	if (mTexId>0) {
-		mVerticalDraw = VerticalDraw;
+	if ( FileExists( CoordinatesDatPath ) ) {
+		std::vector<Uint8> TmpData;
 
-		if ( FileExists( CoordinatesDatPath ) ) {
-			mNumChars = static_cast<Uint16> ( ( FileSize( CoordinatesDatPath ) - 2 ) / 32 );
+		FileGet( CoordinatesDatPath, TmpData );
 
-			std::fstream fs ( CoordinatesDatPath.c_str() , std::ios::in | std::ios::binary );
-			mGlyphs.resize(mNumChars);
-
-			// Read the number of the first char represented on the texture
-			Uint8 chars;
-
-			fs.read( reinterpret_cast<char*> (&chars), sizeof(Uint8) );
-			mStartChar = chars;
-
-			// Read the default size of every char
-			fs.read( reinterpret_cast<char*> (&chars), sizeof(Uint8) );
-			mFWidth = chars;
-			mFHeight = chars;
-			mHeight = mSize = (eeUint)mFHeight;
-
-			// Read every char coordinates
-			for (eeUint i = 0; i < mNumChars - mStartChar; i++)
-				fs.read( reinterpret_cast<char*> (&mGlyphs[i]), sizeof(eeGlyph) );
-
-			fs.close();
-
-			BuildFontFromDat();
-			mLoadedCoords = true;
-			return true;
-		}
+		return LoadFromMemory( TexId, reinterpret_cast<Uint8*> ( &TmpData[0] ), TmpData.size(), VerticalDraw );
 	}
+
 	return false;
 }
 
@@ -169,7 +144,7 @@ bool cTextureFont::LoadFromPack( cPack* Pack, const std::string& FilePackPath, c
 bool cTextureFont::LoadFromMemory( const Uint32& TexId, const Uint8* CoordData, const eeUint& CoordDataSize, const bool& VerticalDraw ) {
 	mTexId = TexId;
 
-	if ( mTexId>0 ) {
+	if ( mTexId > 0 ) {
 		mVerticalDraw = VerticalDraw;
 
 		if ( CoordData != NULL ) {
