@@ -19,9 +19,11 @@ cTexture::cTexture() :
 	mFilter( TEX_LINEAR ),
 	mCompressedTexture(false),
 	mLocked(false),
-	mGrabed(false),
-	mPixels(NULL)
+	mGrabed(false)
 {
+	#ifndef ALLOC_VECTORS
+	mPixels = NULL;
+	#endif
 }
 
 cTexture::cTexture( const cTexture& Copy ) :
@@ -42,7 +44,7 @@ cTexture::cTexture( const cTexture& Copy ) :
 	mLocked( Copy.mLocked ),
 	mGrabed ( Copy.mGrabed )
 {
-	Pixels( reinterpret_cast<const Uint8*>( Copy.mPixels ) );
+	Pixels( reinterpret_cast<const Uint8*>( &Copy.mPixels[0] ) );
 }
 
 cTexture::~cTexture() {
@@ -68,7 +70,7 @@ cTexture& cTexture::operator =(const cTexture& Other) {
 	std::swap(mCompressedTexture, Temp.mCompressedTexture);
 	std::swap(mGrabed, Temp.mGrabed);
 	std::swap(mChannels, Temp.mChannels);
-	Pixels( reinterpret_cast<const Uint8*>( Temp.mPixels ) );
+	Pixels( reinterpret_cast<const Uint8*>( &Temp.mPixels[0] ) );
 
     return *this;
 }
@@ -83,7 +85,7 @@ void cTexture::DeleteTexture() {
 		mLocked = false;
 		mGrabed = false;
 
-		eeSAFE_DELETE_ARRAY( mPixels );
+		ClearCache();
 	}
 }
 
@@ -117,12 +119,11 @@ void cTexture::Create( const Uint32& texture, const eeInt& width, const eeInt& h
 
 void cTexture::Pixels( const Uint8* data ) {
 	if ( data != NULL ) {
-		eeSAFE_DELETE_ARRAY( mPixels );
-
 		eeUint size = (eeUint)mWidth * (eeUint)mHeight;
-		mPixels = new eeColorA[ size ];
 
-		memcpy( reinterpret_cast<void*>( mPixels ), reinterpret_cast<const void*> ( data ), size );
+		Allocate( size );
+
+		memcpy( reinterpret_cast<void*>( &mPixels[0] ), reinterpret_cast<const void*> ( data ), size );
 	}
 }
 
@@ -140,11 +141,14 @@ eeColorA* cTexture::Lock() {
 
 		mWidth = (eeInt)width;
 		mHeight = (eeInt)height;
+		eeUint size = (eeUint)mWidth * (eeUint)mHeight;
 
-		if ( !( eeARRAY_SIZE( mPixels ) >= (eeUint)width  * (eeUint)height ) ) {
-			eeSAFE_DELETE_ARRAY( mPixels );
-			eeUint size = (eeUint)mWidth * (eeUint)mHeight;
-			mPixels = new eeColorA[ size ];
+		#ifndef ALLOC_VECTORS
+		if ( eeARRAY_SIZE( mPixels ) != size ) {
+		#else
+		if ( mPixels.size() != size ) {
+		#endif
+			Allocate( size );
 		}
 
 		glGetTexImage( GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<Uint8*> (&mPixels[0]) );
@@ -154,6 +158,7 @@ eeColorA* cTexture::Lock() {
 
 		mLocked = true;
 	}
+
 	return &mPixels[0];
 }
 
@@ -186,8 +191,9 @@ bool cTexture::Unlock(const bool& KeepData, const bool& Modified) {
 			mModified = false;
 		}
 
-		if (!KeepData)
-			eeSAFE_DELETE_ARRAY( mPixels );
+		if (!KeepData) {
+			ClearCache();
+		}
 
 		mLocked = false;
 
@@ -198,7 +204,7 @@ bool cTexture::Unlock(const bool& KeepData, const bool& Modified) {
 }
 
 const Uint8* cTexture::GetPixelsPtr() {
-	if ( mPixels == NULL ) {
+	if ( !LocalCopy() ) {
 		Lock();
 		Unlock(true);
 	}
@@ -207,21 +213,30 @@ const Uint8* cTexture::GetPixelsPtr() {
 }
 
 const eeColorA& cTexture::GetPixel(const eeUint& x, const eeUint& y) {
-	#ifdef EE_DEBUG
-	if ( mPixels == NULL || (eeInt)x > mWidth || (eeInt)y > mHeight )
-		return eeColorA::Black;
+	#ifndef ALLOC_VECTORS
+	if ( mPixels == NULL || (eeInt)x > mWidth || (eeInt)y > mHeight ) {
+	#else
+	if ( !mPixels.size() || (eeInt)x > mWidth || (eeInt)y > mHeight ) {
 	#endif
+		return eeColorA::Black;
+	}
+
 
 	return mPixels[ x + y * (Uint32)mWidth ];
 }
 
 void cTexture::SetPixel(const eeUint& x, const eeUint& y, const eeColorA& Color) {
-	#ifdef EE_DEBUG
-	if ( mPixels == NULL || (eeInt)x > mWidth || (eeInt)y > mHeight )
-		return;
+	#ifndef ALLOC_VECTORS
+	if ( mPixels == NULL || (eeInt)x > mWidth || (eeInt)y > mHeight ) {
+	#else
+	if ( !mPixels.size() || (eeInt)x > mWidth || (eeInt)y > mHeight ) {
 	#endif
+		return;
+	}
 
-	mPixels[ x + y * (eeUint)mWidth ] = Color;
+	eeUint Pos = x + y * (eeUint)mWidth;
+
+	mPixels[ Pos ] = Color;
 
 	mModified = true;
 }
@@ -282,7 +297,11 @@ void cTexture::CreateMaskFromColor(eeColor ColorKey, Uint8 Alpha) {
 }
 
 bool cTexture::LocalCopy() {
+	#ifndef ALLOC_VECTORS
 	return ( mPixels != NULL );
+	#else
+	return mPixels.size() != 0;
+	#endif
 }
 
 void cTexture::ClampMode( const EE_CLAMP_MODE& clampmode ) {
@@ -315,7 +334,11 @@ void cTexture::ApplyClampMode() {
 }
 
 void cTexture::ClearCache() {
+	#ifndef ALLOC_VECTORS
 	eeSAFE_DELETE_ARRAY( mPixels );
+	#else
+	mPixels.clear();
+	#endif
 }
 
 void cTexture::Draw( const eeFloat &x, const eeFloat &y, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color, const EE_RENDERALPHAS &blend, const EE_RENDERTYPE &Effect, const bool &ScaleCentered, const eeRecti& texSector) {
@@ -529,6 +552,16 @@ void cTexture::TexId( const Uint32& id ) {
 
 const Uint32& cTexture::TexId() const {
 	return mTexId;
+}
+
+void cTexture::Allocate( const Uint32& size ) {
+	ClearCache();
+
+	#ifndef ALLOC_VECTORS
+	mPixels = new eeColorA[ size ];
+	#else
+	mPixels.resize( size );
+	#endif
 }
 
 }}

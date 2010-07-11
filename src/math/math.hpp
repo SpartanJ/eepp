@@ -47,7 +47,7 @@ T NextPowOfTwo( T Size ) {
 
 template <typename T>
 T LineAngle( const T& X1, const T& Y1, const T& X2, const T& Y2 ) {
-	return atan2(Y2 - Y1, X2 - X1) * d180PI;
+	return atan2( (eeFloat)(Y2 - Y1), (eeFloat)(X2 - X1) ) * d180PI;
 }
 eeFloat EE_API LineAngle( const eeVector2f& p1, const eeVector2f& p2 );
 
@@ -75,7 +75,7 @@ void EE_API RotateVectorCentered( eeVector2f* p, const eeFloat& Angle, const eeV
 
 template <typename T>
 T Distance( T x1, T y1, T x2, T y2 ) {
-	return  sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2));
+	return  sqrt( (eeFloat)( (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2) ) );
 }
 eeFloat EE_API Distance( const eeVector2f& p1, const eeVector2f& p2);
 

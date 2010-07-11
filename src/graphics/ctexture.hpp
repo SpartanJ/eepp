@@ -240,9 +240,14 @@ class EE_API cTexture {
 		bool 			mLocked;
 		bool 			mGrabed;
 
-		eeColorA* 		mPixels;
+		#ifndef ALLOC_VECTORS
+		eeColorA *		mPixels;
+		#else
+		std::vector<eeColorA> mPixels;
+		#endif
 
 		void ApplyClampMode();
+		void Allocate( const Uint32& size );
 };
 
 }}

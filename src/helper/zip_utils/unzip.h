@@ -10,8 +10,11 @@
 #endif
 typedef unsigned long DWORD;
 typedef char TCHAR;
-typedef FILE* HANDLE;
-typedef time_t FILETIME;
+typedef FILE* ZIPHANDLE;
+typedef time_t ZIPFILETIME;
+#else
+typedef HANDLE ZIPHANDLE;
+typedef FILETIME ZIPFILETIME;
 #endif
 
 // UNZIPPING functions -- for unzipping.
@@ -34,7 +37,7 @@ typedef struct
 { int index;                 // index of this file within the zip
   TCHAR name[MAX_PATH];      // filename within the zip
   DWORD attr;                // attributes, as in GetFileAttributes.
-  FILETIME atime,ctime,mtime;// access, create, modify filetimes
+  ZIPFILETIME atime,ctime,mtime;// access, create, modify filetimes
   long comp_size;            // sizes of item, compressed and uncompressed. These
   long unc_size;             // may be -1 if not yet known (e.g. being streamed in)
 } ZIPENTRY;
@@ -42,7 +45,7 @@ typedef struct
 
 HZIP OpenZip(const TCHAR *fn, const char *password);
 HZIP OpenZip(void *z,unsigned int len, const char *password);
-HZIP OpenZipHandle(HANDLE h, const char *password);
+HZIP OpenZipHandle(ZIPHANDLE h, const char *password);
 // OpenZip - opens a zip file and returns a handle with which you can
 // subsequently examine its contents. You can open a zip file from:
 // from a pipe:             OpenZipHandle(hpipe_read,0);
@@ -82,7 +85,7 @@ ZRESULT FindZipItem(HZIP hz, const TCHAR *name, bool ic, int *index, ZIPENTRY *z
 
 ZRESULT UnzipItem(HZIP hz, int index, const TCHAR *fn);
 ZRESULT UnzipItem(HZIP hz, int index, void *z,unsigned int len);
-ZRESULT UnzipItemHandle(HZIP hz, int index, HANDLE h);
+ZRESULT UnzipItemHandle(HZIP hz, int index, ZIPHANDLE h);
 // UnzipItem - given an index to an item, unzips it. You can unzip to:
 // to a pipe:             UnzipItemHandle(hz,i, hpipe_write);
 // to a file (by handle): UnzipItemHandle(hz,i, hfile);

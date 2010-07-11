@@ -10,8 +10,8 @@
 #endif
 typedef unsigned long DWORD;
 typedef char TCHAR;
-typedef FILE* HANDLE;
-typedef time_t FILETIME;
+typedef FILE* ZIPHANDLE;
+typedef time_t ZIPFILETIME;
 #endif
 
 // ZIP functions -- for creating zip files
@@ -33,7 +33,7 @@ typedef DWORD ZRESULT;
 
 HZIP CreateZip(const TCHAR *fn, const char *password);
 HZIP CreateZip(void *buf,unsigned int len, const char *password);
-HZIP CreateZipHandle(HANDLE h, const char *password);
+HZIP CreateZipHandle(ZIPHANDLE h, const char *password);
 // CreateZip - call this to start the creation of a zip file.
 // As the zip is being created, it will be stored somewhere:
 // to a pipe:              CreateZipHandle(hpipe_write);
@@ -67,8 +67,8 @@ HZIP CreateZipHandle(HANDLE h, const char *password);
 
 ZRESULT ZipAdd(HZIP hz,const TCHAR *dstzn, const TCHAR *fn);
 ZRESULT ZipAdd(HZIP hz,const TCHAR *dstzn, void *src,unsigned int len);
-ZRESULT ZipAddHandle(HZIP hz,const TCHAR *dstzn, HANDLE h);
-ZRESULT ZipAddHandle(HZIP hz,const TCHAR *dstzn, HANDLE h, unsigned int len);
+ZRESULT ZipAddHandle(HZIP hz,const TCHAR *dstzn, ZIPHANDLE h);
+ZRESULT ZipAddHandle(HZIP hz,const TCHAR *dstzn, ZIPHANDLE h, unsigned int len);
 ZRESULT ZipAddFolder(HZIP hz,const TCHAR *dstzn);
 // ZipAdd - call this for each file to be added to the zip.
 // dstzn is the name that the file will be stored as in the zip file.

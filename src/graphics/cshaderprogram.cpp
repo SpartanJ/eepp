@@ -30,14 +30,17 @@ cShaderProgram::cShaderProgram( const std::string& VertexShaderFile, const std::
 	AddToManager( name );
 	Init();
 
-	cVertexShader vs( VertexShaderFile );
-	cFragmentShader fs( FragmentShaderFile );
+	cVertexShader * vs = new cVertexShader( VertexShaderFile );
+	cFragmentShader * fs = new cFragmentShader( FragmentShaderFile );
 
-	if ( !vs.IsValid() || !fs.IsValid() )
+	if ( !vs->IsValid() || !fs->IsValid() ) {
+		delete vs;
+		delete fs;
 		return;
+	}
 
-	AddShader( &vs );
-	AddShader( &fs );
+	AddShader( vs );
+	AddShader( fs );
 
 	Link();
 }
@@ -48,6 +51,9 @@ cShaderProgram::~cShaderProgram() {
 
     mUniformLocations.clear();
     mAttributeLocations.clear();
+
+	for ( eeUint i = 0; i < mShaders.size(); i++ )
+		delete mShaders[i];
 }
 
 void cShaderProgram::AddToManager( const std::string& name ) {

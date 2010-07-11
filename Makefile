@@ -1,3 +1,5 @@
+export DEBUGBUILD=yes
+
 ifeq ($(DEBUGBUILD), yes)
     DEBUGFLAGS = -g -DDEBUG -DEE_DEBUG
 else
@@ -14,6 +16,12 @@ endif
 
 export CC         	= gcc
 export CPP        	= g++
+
+ifeq ($(LLVM_BUILD), yes)
+export CC         	= llvm-gcc
+export CPP        	= llvm-g++
+endif
+
 export CFLAGS     	= -Wall $(DEBUGFLAGS) $(BUILDFLAGS)
 export CFLAGSEXT  	= $(DEBUGFLAGS) $(BUILDFLAGS)
 export LDFLAGS    	= $(LINKFLAGS)
@@ -32,10 +40,10 @@ EXE     			= eetest
 EXEIV				= eeiv
 
 SRCGLEW 			= $(wildcard ./src/helper/glew/*.c)
-SRCSDLTTF 			= $(wildcard ./src/helper/SDL_ttf/*.c)
 SRCSOIL 			= $(wildcard ./src/helper/SOIL/*.c)
 SRCFE 				= $(wildcard ./src/helper/fastevents/*.c)
 SRCSTBVORBIS 		= $(wildcard ./src/helper/stb_vorbis/*.c)
+SRCHAIKUTTF 		= $(wildcard ./src/helper/haikuttf/*.cpp)
 SRCZIPUTILS			= $(wildcard ./src/helper/zip_utils/*.cpp)
 
 SRCAUDIO			= $(wildcard ./src/audio/*.cpp)
@@ -52,7 +60,7 @@ SRCEEIV     		= $(wildcard ./src/eeiv/*.cpp)
 
 OBJGLEW 			= $(SRCGLEW:.c=.o)
 OBJFE 				= $(SRCFE:.c=.o)
-OBJSDLTTF 			= $(SRCSDLTTF:.c=.o)
+OBJHAIKUTTF 		= $(SRCHAIKUTTF:.cpp=.o)
 OBJSOIL 			= $(SRCSOIL:.c=.o)
 OBJSTBVORBIS 		= $(SRCSTBVORBIS:.c=.o) 
 OBJZIPUTILS 		= $(SRCZIPUTILS:.cpp=.o) 
@@ -66,7 +74,7 @@ OBJUI 				= $(SRCUI:.cpp=.o)
 OBJUTILS			= $(SRCUTILS:.cpp=.o)
 OBJWINDOW			= $(SRCWINDOW:.cpp=.o)
 
-OBJHELPERS			= $(OBJGLEW) $(OBJFE) $(OBJSDLTTF) $(OBJSOIL) $(OBJSTBVORBIS) $(OBJZIPUTILS)
+OBJHELPERS			= $(OBJGLEW) $(OBJFE) $(OBJHAIKUTTF) $(OBJSOIL) $(OBJSTBVORBIS) $(OBJZIPUTILS)
 OBJMODULES			= $(OBJUTILS) $(OBJMATH) $(OBJSYSTEM) $(OBJAUDIO) $(OBJWINDOW) $(OBJGRAPHICS) $(OBJGAMING) $(OBJUI)
 
 OBJTEST     		= $(SRCTEST:.cpp=.o)
@@ -90,10 +98,10 @@ libeepp-s.a: $(OBJHELPERS) $(OBJMODULES)
 libeepp.so: $(OBJHELPERS) $(OBJMODULES)
 	$(CPP) $(LDFLAGS) -Wl,-soname,$(LIB).$(VERSION) -o $(LIBNAME) $(OBJHELPERS) $(OBJMODULES) -lfreetype -lSDL -lsndfile -lopenal -lGL -lGLU
 
-$(OBJMODULES) $(OBJZIPUTILS): %.o: %.cpp
+$(OBJMODULES) $(OBJZIPUTILS) $(OBJHAIKUTTF): %.o: %.cpp
 	$(CPP) -o $@ -c $< $(CFLAGS) -I/usr/include/freetype2
 
-$(OBJGLEW) $(OBJFE) $(OBJSDLTTF) $(OBJSOIL) $(OBJSTBVORBIS): %.o: %.c
+$(OBJGLEW) $(OBJFE) $(OBJSOIL) $(OBJSTBVORBIS): %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGSEXT) -DSTBI_FAILURE_USERMSG -I/usr/include/freetype2
 
 test: $(EXE)

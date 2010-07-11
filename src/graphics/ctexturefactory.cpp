@@ -35,12 +35,7 @@ void cTextureFactory::BindPrev( const GLint& PreviousTexture ) {
 
 Uint32 cTextureFactory::CreateEmptyTexture( const eeUint& Width, const eeUint& Height, const eeColorA& DefaultColor, const bool& mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
 	std::vector<eeColorA> tmpTex( Width * Height, DefaultColor );
-
-	Uint32 TexId = LoadFromPixels( reinterpret_cast<unsigned char*> ( &tmpTex[0] ), Width, Height, 4, mipmap, eeRGB(true), ClampMode, CompressTexture, KeepLocalCopy );
-
-	tmpTex.clear();
-
-	return TexId;
+	return LoadFromPixels( reinterpret_cast<unsigned char*> ( &tmpTex[0] ), Width, Height, 4, mipmap, eeRGB(true), ClampMode, CompressTexture, KeepLocalCopy );
 }
 
 Uint32 cTextureFactory::LoadFromPixels( const unsigned char* Surface, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const bool& mipmap, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy, const std::string& FileName ) {

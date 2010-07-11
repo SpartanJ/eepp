@@ -1,7 +1,6 @@
 #include "../ee.h"
 
 /**
-@TODO Remove SDL_ttf dependency, use Free Type directly ( the license is restrictive ).
 @TODO Create a asynchronous resource loader ( at least for textures ).
 @TODO Create a basic UI system ( add basic controls, add skinning support ).
 @TODO Add support for Joysticks.

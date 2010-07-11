@@ -633,7 +633,7 @@ struct TState
 // ----------------------------------------------------------------------
 // some windows<->linux portability things
 #ifdef ZIP_STD
-void filetime2dosdatetime(const FILETIME ft, WORD *dosdate, WORD *dostime)
+void filetime2dosdatetime(const ZIPFILETIME ft, WORD *dosdate, WORD *dostime)
 { struct tm *st=gmtime(&ft);
   *dosdate = (ush)(((st->tm_year+1900 -1980)&0x7f) << 9);
   *dosdate |= (ush)((st->tm_mon&0xf) << 5);
@@ -649,8 +649,8 @@ void GetNow(lutime_t *ft, WORD *dosdate, WORD *dostime)
   *ft = (lutime_t)tm;
 }
 
-DWORD GetFilePosZ(HANDLE hfout)
-{ struct stat st; fstat(fileno(hfout),&st); 
+DWORD GetFilePosZ(ZIPHANDLE hfout)
+{ struct stat st; fstat(fileno(hfout),&st);
   if ((st.st_mode&S_IFREG)==0) return 0xFFFFFFFF;
   return ftell(hfout);
 }
@@ -686,7 +686,7 @@ ZRESULT GetFileInfo(FILE *hf, ulg *attr, long *size, iztimes *times, ulg *timest
 
 // ----------------------------------------------------------------------
 #else
-void filetime2dosdatetime(const FILETIME ft, WORD *dosdate,WORD *dostime)
+void filetime2dosdatetime(const ZIPFILETIME ft, WORD *dosdate,WORD *dostime)
 { // date: bits 0-4 are day of month 1-31. Bits 5-8 are month 1..12. Bits 9-15 are year-1980
   // time: bits 0-4 are seconds/2, bits 5-10 are minute 0..59. Bits 11-15 are hour 0..23
   SYSTEMTIME st; FileTimeToSystemTime(&ft,&st);
@@ -698,24 +698,24 @@ void filetime2dosdatetime(const FILETIME ft, WORD *dosdate,WORD *dostime)
   *dostime |= (WORD)((st.wSecond*2)&0x1f);
 }
 
-lutime_t filetime2timet(const FILETIME ft)
-{ LONGLONG i = *(LONGLONG*)&ft; 
+lutime_t filetime2timet(const ZIPFILETIME ft)
+{ LONGLONG i = *(LONGLONG*)&ft;
   return (lutime_t)((i-116444736000000000LL)/10000000LL);
 }
 
 void GetNow(lutime_t *pft, WORD *dosdate, WORD *dostime)
 { SYSTEMTIME st; GetLocalTime(&st);
-  FILETIME ft;   SystemTimeToFileTime(&st,&ft);
+  ZIPFILETIME ft;   SystemTimeToFileTime(&st,&ft);
   filetime2dosdatetime(ft,dosdate,dostime);
   *pft = filetime2timet(ft);
 }
 
-DWORD GetFilePosZ(HANDLE hfout)
+DWORD GetFilePosZ(ZIPHANDLE hfout)
 { return SetFilePointer(hfout,0,0,FILE_CURRENT);
 }
 
 
-ZRESULT GetFileInfo(HANDLE hf, ulg *attr, long *size, iztimes *times, ulg *timestamp)
+ZRESULT GetFileInfo(ZIPHANDLE hf, ulg *attr, long *size, iztimes *times, ulg *timestamp)
 { // The handle must be a handle to a file
   // The date and time is returned in a long with the date most significant to allow
   // unsigned integer comparison of absolute times. The attributes have two
@@ -776,8 +776,8 @@ void Assert(TState &state,bool cond, const char *msg)
 { if (cond) return;
   state.err=msg;
 }
-void Trace(const char *x, ...) {va_list paramList; va_start(paramList, x); paramList; va_end(paramList);}
-void Tracec(bool ,const char *x, ...) {va_list paramList; va_start(paramList, x); paramList; va_end(paramList);}
+void Trace(const char *x, ...) {va_list paramList; va_start(paramList, x); va_end(paramList);}
+void Tracec(bool ,const char *x, ...) {va_list paramList; va_start(paramList, x); va_end(paramList);}
 
 
 
@@ -1314,7 +1314,7 @@ void send_all_trees(TState &state,int lcodes, int dcodes, int blcodes)
     for (rank = 0; rank < blcodes; rank++) {
         Trace("\nbl code %2d ", bl_order[rank]);
         send_bits(state,state.ts.bl_tree[bl_order[rank]].dl.len, 3);
-    }    
+    }
     Trace("\nbl tree: sent %ld", state.bs.bits_sent);
 
     send_tree(state,(ct_data *)state.ts.dyn_ltree, lcodes-1); /* send the literal tree */
@@ -1811,7 +1811,7 @@ int longest_match(TState &state,IPos cur_match)
                  scan < strend);
 
         Assert(state,scan <= state.ds.window+(unsigned)(state.ds.window_size-1), "wild scan");
-                          
+
         len = MAX_MATCH - (int)(strend - scan);
         scan = strend - MAX_MATCH;
 
@@ -2340,15 +2340,15 @@ bool HasZipSuffix(const TCHAR *fn)
 
 class TZip
 { public:
-  TZip(const char *pwd) : hfout(0),mustclosehfout(false),hmapout(0),zfis(0),obuf(0),hfin(0),writ(0),oerr(false),hasputcen(false),ooffset(0),encwriting(false),encbuf(0),password(0), state(0) {if (pwd!=0 && *pwd!=0) {password=new char[strlen(pwd)+1]; strcpy(password,pwd);}}
+  TZip(const char *pwd) : password(0),hfout(0),mustclosehfout(false),hmapout(0),ooffset(0),oerr(false),writ(0),obuf(0),hasputcen(false),encwriting(false),encbuf(0),zfis(0),state(0),hfin(0) {if (pwd!=0 && *pwd!=0) {password=new char[strlen(pwd)+1]; strcpy(password,pwd);}}
   ~TZip() {if (state!=0) delete state; state=0; if (encbuf!=0) delete[] encbuf; encbuf=0; if (password!=0) delete[] password; password=0;}
 
   // These variables say about the file we're writing into
   // We can write to pipe, file-by-handle, file-by-name, memory-to-memmapfile
   char *password;           // keep a copy of the password
-  HANDLE hfout;             // if valid, we'll write here (for files or pipes)
+  ZIPHANDLE hfout;             // if valid, we'll write here (for files or pipes)
   bool mustclosehfout;      // if true, we are responsible for closing hfout
-  HANDLE hmapout;           // otherwise, we'll write here (for memmap)
+  ZIPHANDLE hmapout;           // otherwise, we'll write here (for memmap)
   unsigned ooffset;         // for hfout, this is where the pointer was initially
   ZRESULT oerr;             // did a write operation give rise to an error?
   unsigned writ;            // how far have we written. This is maintained by Add, not write(), to avoid confusion over seeks
@@ -2379,7 +2379,7 @@ class TZip
   ulg attr; iztimes times; ulg timestamp;  // all open_* methods set these
   bool iseekable; long isize,ired;         // size is not set until close() on pips
   ulg crc;                                 // crc is not set until close(). iwrit is cumulative
-  HANDLE hfin; bool selfclosehf;           // for input files and pipes
+  ZIPHANDLE hfin; bool selfclosehf;           // for input files and pipes
   const char *bufin; unsigned int lenin,posin; // for memory
   // and a variable for what we've done with the input: (i.e. compressed it!)
   ulg csize;                               // compressed size, set by the compression routines
@@ -2388,7 +2388,7 @@ class TZip
 
 
   ZRESULT open_file(const TCHAR *fn);
-  ZRESULT open_handle(HANDLE hf,unsigned int len);
+  ZRESULT open_handle(ZIPHANDLE hf,unsigned int len);
   ZRESULT open_mem(void *src,unsigned int len);
   ZRESULT open_dir();
   static unsigned sread(TState &s,char *buf,unsigned size);
@@ -2409,7 +2409,7 @@ ZRESULT TZip::Create(void *z,unsigned int len,DWORD flags)
 { if (hfout!=0 || hmapout!=0 || obuf!=0 || writ!=0 || oerr!=ZR_OK || hasputcen) return ZR_NOTINITED;
   //
   if (flags==ZIP_HANDLE)
-  { HANDLE hf = (HANDLE)z;
+  { ZIPHANDLE hf = (ZIPHANDLE)z;
     hfout=hf; mustclosehfout=false;
 #ifdef DuplicateHandle
     BOOL res = DuplicateHandle(GetCurrentProcess(),hf,GetCurrentProcess(),&hfout,0,FALSE,DUPLICATE_SAME_ACCESS);
@@ -2506,7 +2506,7 @@ bool TZip::oseek(unsigned int pos)
     return true;
   }
   else if (hfout!=0)
-  { 
+  {
 #ifdef ZIP_STD
     fseek(hfout,pos+ooffset,SEEK_SET);
 #else
@@ -2549,12 +2549,12 @@ ZRESULT TZip::open_file(const TCHAR *fn)
 { hfin=0; bufin=0; selfclosehf=false; crc=CRCVAL_INITIAL; isize=0; csize=0; ired=0;
   if (fn==0) return ZR_ARGS;
 #ifdef ZIP_STD
-  HANDLE hf = fopen(fn,"rb");
+  ZIPHANDLE hf = fopen(fn,"rb");
   if (hf==0) return ZR_NOFILE;
   ZRESULT res = open_handle(hf,0);
   if (res!=ZR_OK) {fclose(hf); return res;}
 #else
-  HANDLE hf = CreateFile(fn,GENERIC_READ,FILE_SHARE_READ,NULL,OPEN_EXISTING,0,NULL);
+  ZIPHANDLE hf = CreateFile(fn,GENERIC_READ,FILE_SHARE_READ,NULL,OPEN_EXISTING,0,NULL);
   if (hf==INVALID_HANDLE_VALUE) return ZR_NOFILE;
   ZRESULT res = open_handle(hf,0);
   if (res!=ZR_OK) {CloseHandle(hf); return res;}
@@ -2562,7 +2562,7 @@ ZRESULT TZip::open_file(const TCHAR *fn)
   selfclosehf=true;
   return ZR_OK;
 }
-ZRESULT TZip::open_handle(HANDLE hf,unsigned int len)
+ZRESULT TZip::open_handle(ZIPHANDLE hf,unsigned int len)
 { hfin=0; bufin=0; selfclosehf=false; crc=CRCVAL_INITIAL; isize=0; csize=0; ired=0;
   if (hf==0 || hf==INVALID_HANDLE_VALUE) return ZR_ARGS;
   bool canseek;
@@ -2655,7 +2655,7 @@ unsigned TZip::read(char *buf, unsigned size)
 }
 
 ZRESULT TZip::iclose()
-{ 
+{
 #ifdef ZIP_STD
   if (selfclosehf && hfin!=0) fclose(hfin); hfin=0;
 #else
@@ -2725,7 +2725,7 @@ ZRESULT TZip::Add(const TCHAR *odstzn, void *src,unsigned int len, DWORD flags)
   // now open whatever was our input source:
   ZRESULT openres;
   if (flags==ZIP_FILENAME) openres=open_file((const TCHAR*)src);
-  else if (flags==ZIP_HANDLE) openres=open_handle((HANDLE)src,len);
+  else if (flags==ZIP_HANDLE) openres=open_handle((ZIPHANDLE)src,len);
   else if (flags==ZIP_MEMORY) openres=open_mem(src,len);
   else if (flags==ZIP_FOLDER) openres=open_dir();
   else return ZR_ARGS;
@@ -2942,7 +2942,7 @@ HZIP CreateZipInternal(void *z,unsigned int len,DWORD flags, const char *passwor
   TZipHandleData *han = new TZipHandleData;
   han->flag=2; han->zip=zip; return (HZIP)han;
 }
-HZIP CreateZipHandle(HANDLE h, const char *password) {return CreateZipInternal(h,0,ZIP_HANDLE,password);}
+HZIP CreateZipHandle(ZIPHANDLE h, const char *password) {return CreateZipInternal(h,0,ZIP_HANDLE,password);}
 HZIP CreateZip(const TCHAR *fn, const char *password) {return CreateZipInternal((void*)fn,0,ZIP_FILENAME,password);}
 HZIP CreateZip(void *z,unsigned int len, const char *password) {return CreateZipInternal(z,len,ZIP_MEMORY,password);}
 
@@ -2957,8 +2957,8 @@ ZRESULT ZipAddInternal(HZIP hz,const TCHAR *dstzn, void *src,unsigned int len, D
 }
 ZRESULT ZipAdd(HZIP hz,const TCHAR *dstzn, const TCHAR *fn) {return ZipAddInternal(hz,dstzn,(void*)fn,0,ZIP_FILENAME);}
 ZRESULT ZipAdd(HZIP hz,const TCHAR *dstzn, void *src,unsigned int len) {return ZipAddInternal(hz,dstzn,src,len,ZIP_MEMORY);}
-ZRESULT ZipAddHandle(HZIP hz,const TCHAR *dstzn, HANDLE h) {return ZipAddInternal(hz,dstzn,h,0,ZIP_HANDLE);}
-ZRESULT ZipAddHandle(HZIP hz,const TCHAR *dstzn, HANDLE h, unsigned int len) {return ZipAddInternal(hz,dstzn,h,len,ZIP_HANDLE);}
+ZRESULT ZipAddHandle(HZIP hz,const TCHAR *dstzn, ZIPHANDLE h) {return ZipAddInternal(hz,dstzn,h,0,ZIP_HANDLE);}
+ZRESULT ZipAddHandle(HZIP hz,const TCHAR *dstzn, ZIPHANDLE h, unsigned int len) {return ZipAddInternal(hz,dstzn,h,len,ZIP_HANDLE);}
 ZRESULT ZipAddFolder(HZIP hz,const TCHAR *dstzn) {return ZipAddInternal(hz,dstzn,0,0,ZIP_FOLDER);}
 
 

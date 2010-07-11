@@ -66,7 +66,7 @@ bool cIniFile::ReadFile() {
 		// Note that the '\r' will be written to INI files from
 		// Unix so that the created INI file can be read under Win32
 		// without change.
-		if ( line[line.length() - 1] == '\r' )
+		if ( line.length() && line[line.length() - 1] == '\r' )
 			line = line.substr ( 0, line.length() - 1 );
 
 		if ( line.length() ) {

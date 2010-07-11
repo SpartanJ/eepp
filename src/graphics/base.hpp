@@ -6,7 +6,6 @@
 #include <SDL/SDL_syswm.h>
 
 #include "../helper/SOIL/SOIL.h"
-#include "../helper/SDL_ttf/SDL_ttf.h"
 
 #include "../utils/colors.hpp"
 #include "../utils/rect.hpp"
@@ -27,5 +26,7 @@ using namespace EE::Math;
 using namespace EE::System;
 
 #include "renders.hpp"
+
+#define ALLOC_VECTORS
 
 #endif

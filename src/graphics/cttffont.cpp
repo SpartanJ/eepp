@@ -5,14 +5,14 @@ namespace EE { namespace Graphics {
 cTTFFont::cTTFFont() : cFont(), mFont(0) {
 	TF = cTextureFactory::instance();
 
-	if ( TTF_Init() == -1 )
+	if ( hkFontManager::instance()->Init() )
 		mTTFInit = false;
 	else
 		mTTFInit = true;
 }
 
 cTTFFont::~cTTFFont() {
-	TTF_Quit();
+	hkFontManager::instance()->Destroy();
 }
 
 bool cTTFFont::LoadFromPack( cPack* Pack, const std::string& FilePackPath, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor ) {
@@ -30,8 +30,7 @@ bool cTTFFont::LoadFromMemory( Uint8* TTFData, const eeUint& TTFDataSize, const 
 	mFilepath = "from memory";
 	mLoadedFromMemory = true;
 
-    SDL_RWops *rw = SDL_RWFromMem( reinterpret_cast<void*>(&TTFData[0]), TTFDataSize );
-    mFont = TTF_OpenFontIndexRW( rw, 1, Size, 0 );
+	mFont = hkFontManager::instance()->OpenFromMemory( reinterpret_cast<uint8_t*>(&TTFData[0]), TTFDataSize, Size, 0, NumCharsToGen );
 
 	return iLoad( Size, Style, VerticalDraw, NumCharsToGen, FontColor, OutlineSize, OutlineColor );
 }
@@ -40,7 +39,7 @@ bool cTTFFont::Load(const std::string& Filepath, const eeUint& Size, EE_TTF_FONT
 	mFilepath = Filepath;
 	mLoadedFromMemory = false;
 
-    mFont = TTF_OpenFont(mFilepath.c_str(), Size);
+	mFont = hkFontManager::instance()->OpenFromFile( Filepath.c_str(), Size, 0, NumCharsToGen );
 
 	return iLoad( Size, Style, VerticalDraw, NumCharsToGen, FontColor, OutlineSize, OutlineColor );
 }
@@ -48,19 +47,20 @@ bool cTTFFont::Load(const std::string& Filepath, const eeUint& Size, EE_TTF_FONT
 bool cTTFFont::iLoad(const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor ) {
 	SDL_Rect CurrentPos = {0, 0, 0, 0};
 	SDL_Rect GlyphRect = {0, 0, 0, 0};
-	SDL_Color GlyphColor = {255, 255, 255, 255};
-	SDL_Surface *TempGlyphSurface;
+
+	unsigned char * TempGlyphSurface;
+
 	eeFloat Top, Bottom;
 	Uint8 OutlineTotal = OutlineSize * 2;
 
-	if (!mTTFInit)
+	if ( !mTTFInit )
 		return false;
 
 	try {
-		if (mFont == NULL)
+		if ( mFont == NULL )
 			return false;
 
-		TTF_SetFontStyle(mFont, Style);
+		mFont->Style( Style );
 
 		mVerticalDraw = VerticalDraw;
 		mSize = Size;
@@ -80,46 +80,34 @@ bool cTTFFont::iLoad(const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ver
 		if ( ( mSize >= 60 && mNumChars > 256 ) || ( OutlineSize > 2 && mNumChars >= 512 && mSize >= 24 ) )
 			mTexHeight *= 2;
 
-		mHeight = TTF_FontHeight( mFont ) + OutlineTotal;
+		mHeight = mFont->Height() + OutlineTotal;
 
-		Uint32 rmask, gmask, bmask, amask;
-		#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-			rmask = 0xff000000;
-			gmask = 0x00ff0000;
-			bmask = 0x0000ff00;
-			amask = 0x000000ff;
-		#else
-			rmask = 0x000000ff;
-			gmask = 0x0000ff00;
-			bmask = 0x00ff0000;
-			amask = 0xff000000;
-		#endif
-		SDL_Surface* TempGlyphSheet = SDL_CreateRGBSurface(SDL_SWSURFACE, (eeInt)mTexWidth, (eeInt)mTexHeight, 32, bmask, gmask, rmask, amask);
+		Uint32 TexId = TF->CreateEmptyTexture( mTexWidth, mTexHeight, eeColorA(0x00000000) );
+
+		cTexture * Tex = TF->GetTexture( TexId );
+
+		Tex->Lock();
 
 		CurrentPos.x = OutlineSize;
 		CurrentPos.y = OutlineSize;
 
 		//Loop through all chars
 		for ( eeUint i = 0; i < mNumChars; i++) {
-			//Clear the surface
-			TempGlyphSurface = NULL;
-
-			//Render the glyph onto the SDL surface, in white
-			TempGlyphSurface = TTF_RenderGlyph_Blended(mFont, i, GlyphColor);
+			TempGlyphSurface = mFont->GlyphRender( i, 0x00000000 );
 
 			//New temp glyph
 			eeGlyph TempGlyph;
 
 			//Get the glyph attributes
-			TTF_GlyphMetrics(mFont, i, &TempGlyph.MinX, &TempGlyph.MaxX, &TempGlyph.MinY, &TempGlyph.MaxY, &TempGlyph.Advance);
+			mFont->GlyphMetrics( i, &TempGlyph.MinX, &TempGlyph.MaxX, &TempGlyph.MinY, &TempGlyph.MaxY, &TempGlyph.Advance );
 
 			//Set size of glyph rect
-			GlyphRect.w = TempGlyphSurface->w;
-			GlyphRect.h = TempGlyphSurface->h;
+			GlyphRect.w = mFont->Current()->Pixmap()->width;
+			GlyphRect.h = mFont->Current()->Pixmap()->rows;
 
 			//Set size of current position rect
 			CurrentPos.w = CurrentPos.x + TempGlyph.MaxX;
-			CurrentPos.h = CurrentPos.y +  TempGlyph.MaxY;
+			CurrentPos.h = CurrentPos.y + TempGlyph.MaxY;
 
 			if (CurrentPos.w >= mTexWidth) {
 				CurrentPos.x = 0 + OutlineSize;
@@ -127,7 +115,27 @@ bool cTTFFont::iLoad(const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ver
 			}
 
 			//Blit the glyph onto the glyph sheet
-			SDL_BlitSurface(TempGlyphSurface, &GlyphRect, TempGlyphSheet, &CurrentPos);
+			Uint32 * TexGlyph = reinterpret_cast<Uint32 *> ( TempGlyphSurface );
+			Uint32 Alpha;
+			Uint32 w = Tex->Width();
+			Uint32 h = Tex->Height();
+			Uint32 px, py;
+
+			for (int y = 0; y < GlyphRect.h; ++y ) {
+				for (int x = 0; x < GlyphRect.w; ++x ) {
+					Alpha = ( TexGlyph[ x + y * GlyphRect.w ] >> 24 ) & 0xFF;
+					
+					px = CurrentPos.x + x;
+					py = CurrentPos.y + y;
+
+					if ( px < w && py < h )
+						Tex->SetPixel( px, py, eeColorA( FontColor.R(), FontColor.G(), FontColor.B(), Alpha ) );
+				}
+			}
+
+			// Fixes the width and height of the current pos
+			CurrentPos.w = GlyphRect.w;
+			CurrentPos.h = GlyphRect.h;
 
 			// Set texture coordinates to te list
 			eeRectf tR;
@@ -167,32 +175,13 @@ bool cTTFFont::iLoad(const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ver
 			mGlyphs[i] = TempGlyph;
 
 			//Free surface
-			SDL_FreeSurface(TempGlyphSurface);
+			eeSAFE_DELETE_ARRAY( TempGlyphSurface );
 		}
 
         if ( !mTexId ) {
 
 		// Recover the Alpha channel
-		SDL_LockSurface(TempGlyphSheet);
-
-		eeUint ssize = TempGlyphSheet->w * TempGlyphSheet->h * 4;
-
-		for (eeUint i=0; i<ssize; i+=4) {
-			(static_cast<Uint8*>(TempGlyphSheet->pixels))[i+3] = (static_cast<Uint8*>(TempGlyphSheet->pixels))[i+2];
-			(static_cast<Uint8*>(TempGlyphSheet->pixels))[i+2] = FontColor.B();
-			(static_cast<Uint8*>(TempGlyphSheet->pixels))[i+1] = FontColor.G();
-			(static_cast<Uint8*>(TempGlyphSheet->pixels))[i+0] = FontColor.R();
-		}
-
-		SDL_UnlockSurface(TempGlyphSheet);
-
-		const unsigned char* Ptr = reinterpret_cast<const unsigned char*>(TempGlyphSheet->pixels);
-
-		//Convert the SDL glyph sheet to an OpenGL texture
-		mTexId = TF->LoadFromPixels( Ptr, TempGlyphSheet->w, TempGlyphSheet->h, 4 );
-
-		// Check if need to create the outline
-		cTexture* Tex = TF->GetTexture( mTexId );
+		mTexId = TexId;
 
 		if ( OutlineSize && Tex ) {
 			eeColorA P, R;
@@ -201,8 +190,6 @@ bool cTTFFont::iLoad(const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ver
 			std::vector<Uint8> TexO( (Uint32)Tex->Width() * (Uint32)Tex->Height(), 0 );
 			std::vector<Uint8> TexN( (Uint32)Tex->Width() * (Uint32)Tex->Height(), 0 );
 			std::vector<Uint8> TexI( (Uint32)Tex->Width() * (Uint32)Tex->Height(), 0 );
-
-			Tex->Lock();
 
 			// Fill the TexO ( the default font alpha channels ) and the TexN ( the new outline )
 			for ( Int32 y = 0; y < Tex->Height(); y++ ) {
@@ -237,16 +224,13 @@ bool cTTFFont::iLoad(const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ver
 						Tex->SetPixel( x, y, eeColorA( FontColor.R(), FontColor.G(), FontColor.B(), TexO[ Pos ] ) );
 				}
 			}
-
-			Tex->Unlock( false, true );
 		}
+
+		Tex->Unlock( false, true );
 
         }
 
-		SDL_FreeSurface(TempGlyphSheet);
-
-		//Close the font
-		TTF_CloseFont(mFont);
+		hkFontManager::instance()->CloseFont( mFont );
 
 		RebuildFromGlyphs();
 

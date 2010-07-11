@@ -5,6 +5,9 @@
 #include "ctexturefactory.hpp"
 #include "cfont.hpp"
 
+#include "../helper/haikuttf/haikuttf.hpp"
+using namespace HaikuTTF;
+
 namespace EE { namespace Graphics {
 
 /** @brief This class loads True Type Font and then draw strings to the screen. */
@@ -25,10 +28,10 @@ class EE_API cTTFFont : public cFont {
 		* @return If success
 		*/
 		bool Load( const std::string& Filepath, const eeUint& Size, EE_TTF_FONTSTYLE Style = EE_TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0) );
-		
+
 		/** Load Font from pack
 		* @param Pack Pointer to the pack instance
-		* @param FilePackPath The path of the file inside the pack 
+		* @param FilePackPath The path of the file inside the pack
 		* @param Size The Size of the Font
 		* @param Style The Font Style
 		* @param VerticalDraw If draw in vertical instead of horizontal
@@ -39,7 +42,7 @@ class EE_API cTTFFont : public cFont {
 		* @return If success
 		*/
 		bool LoadFromPack( cPack* Pack, const std::string& FilePackPath, const eeUint& Size, EE_TTF_FONTSTYLE Style = EE_TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0)  );
-		
+
 		/** Load a True Type Font from memory
 		* @param TTFData The pointer to the data
 		* @param TTFDataSize The size of the data
@@ -64,7 +67,7 @@ class EE_API cTTFFont : public cFont {
 		bool Save( const std::string& TexturePath, const std::string& CoordinatesDatPath, const EE_SAVETYPE& Format = EE_SAVE_TYPE_TGA );
 	private:
 		cTextureFactory* TF;
-		TTF_Font* mFont;
+		hkFont * mFont;
 
 		std::string mFilepath;
 		Uint32 mBase;

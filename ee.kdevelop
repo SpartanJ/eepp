@@ -7,7 +7,7 @@
     <projectmanagement>KDevCustomProject</projectmanagement>
     <primarylanguage>C++</primarylanguage>
     <ignoreparts/>
-    <projectname>EE</projectname>
+    <projectname>ee</projectname>
     <projectdirectory>.</projectdirectory>
     <absoluteprojectpath>false</absoluteprojectpath>
     <description/>
@@ -17,7 +17,7 @@
   <kdevcustomproject>
     <run>
       <directoryradio>executable</directoryradio>
-      <mainprogram>./eetest</mainprogram>
+      <mainprogram>eeiv</mainprogram>
       <programargs/>
       <globaldebugarguments/>
       <globalcwd>./</globalcwd>
