@@ -4,6 +4,9 @@
 namespace EE { namespace Graphics {
 
 cTexture::cTexture() :
+	#ifndef ALLOC_VECTORS
+	mPixels(NULL),
+	#endif
 	mFilepath(""),
 	mId(0),
 	mTexture(0),
@@ -21,9 +24,6 @@ cTexture::cTexture() :
 	mLocked(false),
 	mGrabed(false)
 {
-	#ifndef ALLOC_VECTORS
-	mPixels = NULL;
-	#endif
 }
 
 cTexture::cTexture( const cTexture& Copy ) :

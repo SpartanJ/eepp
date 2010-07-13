@@ -18,14 +18,15 @@ hkGlyph::hkGlyph() :
 }
 
 hkGlyph::~hkGlyph() {
+	Flush();
 }
 
 void hkGlyph::Flush() {
 	mStored = 0;
 	mIndex = 0;
 
-	hkSAFE_DELETE_ARRAY( mBitmap.buffer );
-	//hkSAFE_DELETE_ARRAY( mPixmap.buffer );
+	hkSAFE_FREE( mBitmap.buffer );
+	hkSAFE_FREE( mPixmap.buffer );
 
 	mCached = 0;
 }

@@ -216,6 +216,12 @@ class EE_API cTexture {
 		/** @return The texture factory internal id of the texture */
 		const Uint32& TexId() const;
 	protected:
+		#ifndef ALLOC_VECTORS
+		eeColorA *		mPixels;
+		#else
+		std::vector<eeColorA> mPixels;
+		#endif
+		
 		std::string 	mFilepath;
 
 		Uint32 			mId;
@@ -239,12 +245,6 @@ class EE_API cTexture {
 
 		bool 			mLocked;
 		bool 			mGrabed;
-
-		#ifndef ALLOC_VECTORS
-		eeColorA *		mPixels;
-		#else
-		std::vector<eeColorA> mPixels;
-		#endif
 
 		void ApplyClampMode();
 		void Allocate( const Uint32& size );

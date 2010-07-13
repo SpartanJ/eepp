@@ -82,9 +82,13 @@ Uint32 cTextureFactory::LoadFromMemory( const unsigned char* Surface, const eeUi
 
 	unsigned char * PixelsPtr = SOIL_load_image_from_memory(Surface, Size, &ImgWidth, &ImgHeight, &ImgChannels, SOIL_LOAD_AUTO);
 
-	if ( NULL != PixelsPtr )
-		return LoadFromPixels( PixelsPtr, ImgWidth, ImgHeight, ImgChannels, mipmap, ColorKey, ClampMode, CompressTexture, KeepLocalCopy );
-	else
+	if ( NULL != PixelsPtr ) {
+		Uint32 Result = LoadFromPixels( PixelsPtr, ImgWidth, ImgHeight, ImgChannels, mipmap, ColorKey, ClampMode, CompressTexture, KeepLocalCopy );
+		
+		SOIL_free_image_data( PixelsPtr );
+		
+		return Result;
+	} else
 		Log->Write( SOIL_last_result() );
 
 	return 0;

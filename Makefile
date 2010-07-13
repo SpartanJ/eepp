@@ -1,5 +1,3 @@
-export DEBUGBUILD=yes
-
 ifeq ($(DEBUGBUILD), yes)
     DEBUGFLAGS = -g -DDEBUG -DEE_DEBUG
 else

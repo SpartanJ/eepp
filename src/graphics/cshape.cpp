@@ -5,6 +5,10 @@
 namespace EE { namespace Graphics {
 
 cShape::cShape() :
+	#ifndef ALLOC_VECTORS
+	mPixels(NULL),
+	mAlpha(NULL),
+	#endif
 	mId(0),
 	mTexId(0),
 	mTexture(NULL),
@@ -14,14 +18,14 @@ cShape::cShape() :
 	mOffSetX(0),
 	mOffSetY(0)
 {
-	#ifndef ALLOC_VECTORS
-	mPixels = NULL;
-	mAlpha = NULL;
-	#endif
 	CreateUnnamed();
 }
 
 cShape::cShape( const Uint32& TexId, const std::string& Name ) :
+	#ifndef ALLOC_VECTORS
+	mPixels(NULL),
+	mAlpha(NULL),
+	#endif
 	mName( Name ),
 	mId( MakeHash( mName ) ),
 	mTexId( TexId ),
@@ -32,13 +36,13 @@ cShape::cShape( const Uint32& TexId, const std::string& Name ) :
 	mOffSetX(0),
 	mOffSetY(0)
 {
-	#ifndef ALLOC_VECTORS
-	mPixels = NULL;
-	mAlpha = NULL;
-	#endif
 }
 
 cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const std::string& Name ) :
+	#ifndef ALLOC_VECTORS
+	mPixels(NULL),
+	mAlpha(NULL),
+	#endif
 	mName( Name ),
 	mId( MakeHash( mName ) ),
 	mTexId( TexId ),
@@ -49,13 +53,13 @@ cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const std::string& 
 	mOffSetX(0),
 	mOffSetY(0)
 {
-	#ifndef ALLOC_VECTORS
-	mPixels = NULL;
-	mAlpha = NULL;
-	#endif
 }
 
 cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const std::string& Name ) :
+	#ifndef ALLOC_VECTORS
+	mPixels(NULL),
+	mAlpha(NULL),
+	#endif
 	mName( Name ),
 	mId( MakeHash( mName ) ),
 	mTexId( TexId ),
@@ -66,13 +70,13 @@ cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& Dest
 	mOffSetX(0),
 	mOffSetY(0)
 {
-	#ifndef ALLOC_VECTORS
-	mPixels = NULL;
-	mAlpha = NULL;
-	#endif
 }
 
 cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeFloat& OffsetX, const eeFloat& OffsetY, const std::string& Name ) :
+	#ifndef ALLOC_VECTORS
+	mPixels(NULL),
+	mAlpha(NULL),
+	#endif
 	mName( Name ),
 	mId( MakeHash( mName ) ),
 	mTexId( TexId ),
@@ -83,10 +87,6 @@ cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& Dest
 	mOffSetX(OffsetX),
 	mOffSetY(OffsetY)
 {
-	#ifndef ALLOC_VECTORS
-	mPixels = NULL;
-	mAlpha = NULL;
-	#endif
 }
 
 cShape::~cShape() {

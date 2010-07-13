@@ -41,6 +41,7 @@ namespace HaikuTTF {
 
 #define hkARRAY_SIZE(__array)	( sizeof(__array) / sizeof(__array[0]) )
 #define hkSAFE_DELETE(p)		{ if(p) { delete (p);		(p)=NULL; } }
+#define hkSAFE_FREE(p)			{ if(p) { free (p);			(p)=NULL; } }
 #define hkSAFE_DELETE_ARRAY(p)  { if(p) { delete[](p);		(p)=NULL; } }
 
 #define HK_GETSET( __TYPE, __NAME )	\
