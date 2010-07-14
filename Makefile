@@ -39,7 +39,6 @@ EXEIV				= eeiv
 
 SRCGLEW 			= $(wildcard ./src/helper/glew/*.c)
 SRCSOIL 			= $(wildcard ./src/helper/SOIL/*.c)
-SRCFE 				= $(wildcard ./src/helper/fastevents/*.c)
 SRCSTBVORBIS 		= $(wildcard ./src/helper/stb_vorbis/*.c)
 SRCHAIKUTTF 		= $(wildcard ./src/helper/haikuttf/*.cpp)
 SRCZIPUTILS			= $(wildcard ./src/helper/zip_utils/*.cpp)
@@ -57,7 +56,6 @@ SRCTEST     		= $(wildcard ./src/test/*.cpp)
 SRCEEIV     		= $(wildcard ./src/eeiv/*.cpp)
 
 OBJGLEW 			= $(SRCGLEW:.c=.o)
-OBJFE 				= $(SRCFE:.c=.o)
 OBJHAIKUTTF 		= $(SRCHAIKUTTF:.cpp=.o)
 OBJSOIL 			= $(SRCSOIL:.c=.o)
 OBJSTBVORBIS 		= $(SRCSTBVORBIS:.c=.o) 
@@ -72,7 +70,7 @@ OBJUI 				= $(SRCUI:.cpp=.o)
 OBJUTILS			= $(SRCUTILS:.cpp=.o)
 OBJWINDOW			= $(SRCWINDOW:.cpp=.o)
 
-OBJHELPERS			= $(OBJGLEW) $(OBJFE) $(OBJHAIKUTTF) $(OBJSOIL) $(OBJSTBVORBIS) $(OBJZIPUTILS)
+OBJHELPERS			= $(OBJGLEW) $(OBJHAIKUTTF) $(OBJSOIL) $(OBJSTBVORBIS) $(OBJZIPUTILS)
 OBJMODULES			= $(OBJUTILS) $(OBJMATH) $(OBJSYSTEM) $(OBJAUDIO) $(OBJWINDOW) $(OBJGRAPHICS) $(OBJGAMING) $(OBJUI)
 
 OBJTEST     		= $(SRCTEST:.cpp=.o)
@@ -99,7 +97,7 @@ libeepp.so: $(OBJHELPERS) $(OBJMODULES)
 $(OBJMODULES) $(OBJZIPUTILS) $(OBJHAIKUTTF): %.o: %.cpp
 	$(CPP) -o $@ -c $< $(CFLAGS) -I/usr/include/freetype2
 
-$(OBJGLEW) $(OBJFE) $(OBJSOIL) $(OBJSTBVORBIS): %.o: %.c
+$(OBJGLEW) $(OBJSOIL) $(OBJSTBVORBIS): %.o: %.c
 	$(CC) -o $@ -c $< $(CFLAGSEXT) -DSTBI_FAILURE_USERMSG -I/usr/include/freetype2
 
 test: $(EXE)

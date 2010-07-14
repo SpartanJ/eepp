@@ -5,8 +5,6 @@
 
 #include <SDL/SDL_syswm.h>
 
-#include "../helper/fastevents/fastevents.h"
-
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 #include <X11/Xlib.h>
 typedef Window X11Window;

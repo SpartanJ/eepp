@@ -2,11 +2,12 @@
 #define EE_SYSTEMCPACK_HPP
 
 #include "base.hpp"
+#include "cmutex.hpp"
 
 namespace EE { namespace System {
 
 /** @brief Base class for al packing classes */
-class EE_API cPack {
+class EE_API cPack : protected cMutex {
 	public:
 		cPack();
 

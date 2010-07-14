@@ -103,20 +103,17 @@ cInput::cInput() :
 {
 	EE = cEngine::instance();
 
-	FE_Init();
-	
 	eeVector2if mTempMouse;
 	SDL_GetMouseState( &mTempMouse.x, &mTempMouse.y );
 	mMousePos.x = (eeInt)mTempMouse.x;
 	mMousePos.y = (eeInt)mTempMouse.y;
-	
+
 	SDL_EnableUNICODE(1);
 	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
 }
 
 cInput::~cInput() {
 	mCallbacks.clear();
-	FE_Quit();
 }
 
 void cInput::Update() {
@@ -124,14 +121,14 @@ void cInput::Update() {
 		if ( itr->second == EE_KEYUP )
 			itr->second = EE_KEYOFF;
 	}
-	
+
 	mReleaseTrigger 	= 0;
 	mLastPressTrigger 	= mPressTrigger;
 	mClickTrigger 		= 0;
 	mDoubleClickTrigger = 0;
 	mInputMod 			= 0;
-	
-	while ( FE_PollEvent(&mEvent) ) {
+
+	while ( SDL_PollEvent(&mEvent) ) {
 		switch(mEvent.type) {
 			case SDL_KEYDOWN:
 				mKeystates[mEvent.key.keysym.sym] = EE_KEYDOWN;
@@ -142,7 +139,7 @@ void cInput::Update() {
 				mInputMod = mEvent.key.keysym.mod;
 				break;
 			case SDL_MOUSEMOTION:
-			{	
+			{
 				if ( !mInputGrabed ) {
 					mMousePos.x = mEvent.motion.x;
 					mMousePos.y = mEvent.motion.y;
@@ -150,28 +147,28 @@ void cInput::Update() {
 					mMousePos.x += static_cast<Int32>( (eeFloat)mEvent.motion.xrel * mMouseSpeed );
 					mMousePos.y += static_cast<Int32>( (eeFloat)mEvent.motion.yrel * mMouseSpeed );
 				}
-				
+
 				bool bInject = false;
-				
+
 				if ( mMousePos.x >= (eeInt)EE->GetWidth() )
 					mMousePos.x = EE->GetWidth();
 				else if ( mMousePos.x < 0 ) {
 					mMousePos.x = 0;
 					bInject = true;
 				}
-				
+
 				if ( mMousePos.y >= (eeInt)EE->GetHeight() )
 					mMousePos.y = EE->GetHeight();
 				else if ( mMousePos.y < 0 ) {
 					mMousePos.y = 0;
 					bInject = true;
 				}
-				
+
 				#if EE_PLATFORM == EE_PLATFORM_WIN32
 				if ( bInject )
 					InjectMousePos( mMousePos.x, mMousePos.y );
 				#endif
-				
+
 				break;
 			}
 			case SDL_MOUSEBUTTONDOWN:
@@ -181,11 +178,11 @@ void cInput::Update() {
 				mPressTrigger &= ~EE_BUTTON( mEvent.button.button );
 				mReleaseTrigger |= EE_BUTTON( mEvent.button.button );
 				mClickTrigger |= EE_BUTTON( mEvent.button.button );
-				
+
 				if ( mEvent.button.button == EE_BUTTON_LEFT ) {
 					mLastButtonLeftClicked = mLastButtonLeftClick;
 					mLastButtonLeftClick = eeGetTicks();
-					
+
 					mTClick = mLastButtonLeftClick - mLastButtonLeftClicked;
 					if (mTClick < mDoubleClickInterval && mTClick > 0) {
 						mDoubleClickTrigger |= EE_BUTTON(EE_BUTTON_LEFT);
@@ -195,7 +192,7 @@ void cInput::Update() {
 				} else if ( mEvent.button.button == EE_BUTTON_RIGHT ) {
 					mLastButtonRightClicked = mLastButtonRightClick;
 					mLastButtonRightClick = eeGetTicks();
-					
+
 					mTClick = mLastButtonRightClick - mLastButtonRightClicked;
 					if (mTClick < mDoubleClickInterval && mTClick > 0) {
 						mDoubleClickTrigger |= EE_BUTTON(EE_BUTTON_RIGHT);
@@ -205,7 +202,7 @@ void cInput::Update() {
 				} else if( mEvent.button.button == EE_BUTTON_MIDDLE ) {
 					mLastButtonMiddleClicked = mLastButtonMiddleClick;
 					mLastButtonMiddleClick = eeGetTicks();
-					
+
 					mTClick = mLastButtonMiddleClick - mLastButtonMiddleClicked;
 					if (mTClick < mDoubleClickInterval && mTClick > 0) {
 						mDoubleClickTrigger |= EE_BUTTON(EE_BUTTON_MIDDLE);
@@ -213,20 +210,20 @@ void cInput::Update() {
 						mLastButtonMiddleClicked = 0;
 					}
 				}
-				
-				break;	
+
+				break;
 			case SDL_VIDEORESIZE:
 				EE->ChangeRes(mEvent.resize.w, mEvent.resize.h, EE->Windowed() );
-				
+
 				if ( NULL != mVRCall )
 					mVRCall();
-				
+
 				break;
 			case SDL_QUIT:
 				EE->Running(false);
 				break;
 		}
-		
+
 		for ( std::map<Uint32, InputCallback>::iterator i = mCallbacks.begin(); i != mCallbacks.end(); i++ ) {
 			i->second( &mEvent );
 		}

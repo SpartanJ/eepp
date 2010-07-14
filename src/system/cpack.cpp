@@ -3,6 +3,7 @@
 namespace EE { namespace System {
 
 cPack::cPack() :
+	cMutex(),
 	mIsOpen(false)
 {
 }

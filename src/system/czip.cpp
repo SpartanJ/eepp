@@ -205,19 +205,28 @@ bool cZip::EraseFiles( const std::vector<std::string>& paths ) {
 }
 
 bool cZip::ExtractFile( const std::string& path , const std::string& dest ) {
+	Lock();
+
+	bool Ret = false;
+
 	ChangeState( ZIP_OPEN );
 
 	Int32 index = Exists( path );
 
 	if ( 0 == CheckPack() && -1 != index ) {
 		if ( ZR_OK == UnzipItem( mZip, index, dest.c_str() ) )
-			return true;
+			 Ret = true;
 	}
 
-	return false;
+	Unlock();
+
+	return  Ret;
 }
 
 bool cZip::ExtractFileToMemory( const std::string& path, std::vector<Uint8>& data ) {
+	Lock();
+
+	bool Ret = false;
 	Int32 Pos = Exists( path );
 	Uint32 Result = 0;
 
@@ -228,11 +237,13 @@ bool cZip::ExtractFileToMemory( const std::string& path, std::vector<Uint8>& dat
 		Result = UnzipItem( mZip, Pos, reinterpret_cast<void*> (&data[0]), (unsigned int)zipFiles[Pos].unc_size );
 
 		if ( ZR_OK == Result ) {
-			return true;
+			Ret = true;
 		}
 	}
 
-	return false;
+	Unlock();
+
+	return Ret;
 }
 
 Int32 cZip::Exists( const std::string& path ) {

@@ -98,6 +98,10 @@ Int32 cPak::Exists( const std::string& path ) {
 }
 
 bool cPak::ExtractFile( const std::string& path , const std::string& dest ) {
+	Lock();
+
+	bool Ret = false;
+
 	Int32 Pos = Exists( path );
 	if ( Pos != -1 ) {
 		fstream fs ( dest.c_str() , std::ios::out | std::ios::binary );
@@ -107,13 +111,21 @@ bool cPak::ExtractFile( const std::string& path , const std::string& dest ) {
 			fs.write( reinterpret_cast<const char*> (&tmpv[0]), pakFiles[Pos].file_length );
 
 		fs.close();
-		return true;
+		Ret = true;
 	}
-	return false;
+
+	Unlock();
+
+	return Ret;
 }
 
 bool cPak::ExtractFileToMemory( const std::string& path, std::vector<Uint8>& data ) {
+	Lock();
+
+	bool Ret = false;
+
 	Int32 Pos = Exists( path );
+
 	if ( Pos != -1 ) {
 		data.clear();
 		data.resize( pakFiles[Pos].file_length );
@@ -121,9 +133,12 @@ bool cPak::ExtractFileToMemory( const std::string& path, std::vector<Uint8>& dat
 		myPak.fs.seekg( pakFiles[Pos].file_position, ios::beg );
 		myPak.fs.read( reinterpret_cast<char*> (&data[0]), pakFiles[Pos].file_length );
 
-		return true;
+		Ret = true;
 	}
-	return false;
+
+	Unlock();
+
+	return Ret;
 }
 
 bool cPak::AddFile( std::vector<Uint8>& data, const std::string& inpack ) {
