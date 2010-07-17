@@ -26,11 +26,11 @@ hkFont::hkFont( hkFontManager * FontManager, unsigned int CacheSize ) :
 	mFm = FontManager;
 
 	mCacheSize = CacheSize;
-	mCache.resize( mCacheSize );
+	mCache = new hkGlyph[ mCacheSize ];
 }
 
 hkFont::~hkFont() {
-	mCache.clear();
+	hkSAFE_DELETE_ARRAY( mCache );
 }
 
 void hkFont::Outline( int outline ) {

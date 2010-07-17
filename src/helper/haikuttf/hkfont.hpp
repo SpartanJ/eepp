@@ -59,7 +59,8 @@ class hkFont {
 	protected:
 		hkFontManager * mFm;
 
-		std::vector<hkGlyph> mCache;
+		hkGlyph * mCache;
+
 		unsigned int mCacheSize;
 
 		int mStyle;

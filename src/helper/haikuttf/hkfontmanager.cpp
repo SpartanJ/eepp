@@ -46,10 +46,10 @@ void hkFontManager::CloseFont( hkFont * Font ) {
 	if ( NULL != Font ) {
 		Font->CacheFlush();
 
-		/*if ( Font->Face() ) {
+		if ( NULL != Font->Face() ) {
 			FT_Done_Face( Font->Face() );
 			Font->Face( NULL );
-		}*/
+		}
 
 		hkSAFE_DELETE( Font );
 	}

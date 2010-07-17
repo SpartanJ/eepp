@@ -110,44 +110,33 @@ void StrFormat( char * Buffer, int BufferSize, const char * format, ... ) {
 	va_end( args );
 }
 
-std::string StrFormated( const char* format, ... ) {
-	char buf[256];
-
-	va_list( args );
-
-	va_start( args, format );
-
-	#ifdef EE_COMPILER_MSVC
-	int nb = _vsnprintf_s( buf, 256, 256, format, args );
-	#else
-	int nb = vsnprintf( buf, 256, format, args );
-	#endif
-
-	va_end( args );
-
-	if ( nb < 256 )
-		return buf;
-
-	// The static size was not big enough, try again with a dynamic allocation.
-	++nb;
-
-	char * buf2 = new char[nb];
-
-	va_start( args, format );
-
-	#ifdef EE_COMPILER_MSVC
-	_vsnprintf_s( buf2, nb, nb, format, args );
-	#else
-	vsnprintf( buf2, nb, format, args );
-	#endif
-
-	va_end( args );
-
-	std::string res( buf2 );
-
-	delete [] buf2;
-
-	return res;
+std::string StrFormated( const char * format, ... ) {
+	int n, size = 256;
+	std::string tstr( size, '\0' );
+	
+	va_list args;
+	
+	while (1) {
+		va_start( args, format );
+		
+		#ifdef EE_COMPILER_MSVC
+			n = _vsnprintf_s( &tstr[0], size, size, format, args );
+		#else
+			n = vsnprintf( &tstr[0], size, format, args );
+		#endif
+		
+		va_end( args );
+		
+		if ( n > -1 && n < size )
+			return tstr;
+		
+		if ( n > -1 )	// glibc 2.1 
+			size = n+1; // precisely what is needed 
+		else			// glibc 2.0 
+			size *= 2;	// twice the old size
+		
+		tstr.resize( size, '\0' );
+	}
 }
 
 std::string LTrim( const std::string & str ) {

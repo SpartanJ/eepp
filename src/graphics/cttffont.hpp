@@ -68,6 +68,7 @@ class EE_API cTTFFont : public cFont {
 	private:
 		cTextureFactory* TF;
 		hkFont * mFont;
+		eeColorA * mPixels;
 
 		std::string mFilepath;
 		Uint32 mBase;

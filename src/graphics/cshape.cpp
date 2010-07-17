@@ -94,7 +94,7 @@ cShape::~cShape() {
 }
 
 void cShape::CreateUnnamed() {
-	Name( StrFormated( "unnamed%d", cShapeManager::instance()->Count() - 1 ) );
+	Name( std::string( "unnamed" ) + toStr( cShapeManager::instance()->Count() ) );
 }
 
 const Uint32& cShape::Id() const {

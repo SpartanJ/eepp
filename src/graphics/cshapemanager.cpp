@@ -115,7 +115,7 @@ void cShapeManager::Clear() {
 }
 
 Uint32 cShapeManager::Count() {
-	return mShapes.size();
+	return mCount;
 }
 
 }}

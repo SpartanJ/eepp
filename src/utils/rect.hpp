@@ -68,6 +68,7 @@ typedef tRECT<eeUint>		eeRectu;
 typedef tRECT<eeFloat>		eeRectf;
 typedef tRECT<eeFloat>		eeAABB; // Axis-Aligned Bounding Box
 typedef tRECT<eeInt>		eeRecti;
+typedef tRECT<Int32>		eeRect;
 
 }}
 
