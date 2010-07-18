@@ -132,6 +132,10 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/helper/SOIL/stb_image.h" />
+		<Unit filename="src/helper/SOIL/stb_image_write.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/SOIL/stb_image_write.h" />
 		<Unit filename="src/helper/SOIL/stbi_DDS.h" />
 		<Unit filename="src/helper/SOIL/stbi_DDS_c.h" />
 		<Unit filename="src/helper/glew/glew.c">

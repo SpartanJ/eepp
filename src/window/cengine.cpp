@@ -452,6 +452,7 @@ bool cEngine::TakeScreenshot( std::string filepath, const EE_SAVETYPE& Format ) 
 		switch ( Format ) {
 			case EE_SAVE_TYPE_TGA:	Ext = ".tga";	break;
 			case EE_SAVE_TYPE_BMP:	Ext = ".bmp";	break;
+			case EE_SAVE_TYPE_PNG:	Ext = ".png";	break;
 			case EE_SAVE_TYPE_DDS:	Ext = ".dds";	break;
 		}
 

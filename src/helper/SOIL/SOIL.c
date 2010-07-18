@@ -32,6 +32,7 @@
 
 #include "SOIL.h"
 #include "stb_image.h"
+#include "stb_image_write.h"
 #include "image_helper.h"
 #include "image_DXT.h"
 
@@ -39,7 +40,7 @@
 #include <string.h>
 
 /*	error reporting	*/
-char *result_string_pointer = "SOIL initialized";
+const char *result_string_pointer = "SOIL initialized";
 
 /*	for loading cube maps	*/
 enum{
@@ -1522,6 +1523,15 @@ int
 	{
 		save_result = 0;
 	}
+	if( image_type == SOIL_SAVE_TYPE_PNG )
+	{
+		save_result = stbi_write_png( filename,
+				width, height, channels, (const unsigned char *const)data, 0 );
+	} else
+	{
+		save_result = 0;
+	}
+
 	if( save_result == 0 )
 	{
 		result_string_pointer = "Saving the image failed";
