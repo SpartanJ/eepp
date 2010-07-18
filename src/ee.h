@@ -56,6 +56,7 @@
 	#include "system/cpak.hpp"
 	#include "system/czip.hpp"
 	#include "system/crc4.hpp"
+	#include "system/cobjectloader.hpp"
 	using namespace EE::System;
 
 	// Audio
@@ -82,6 +83,7 @@
 	// Graphics
 	#include "graphics/renders.hpp"
 	#include "graphics/ctexture.hpp"
+	#include "graphics/ctextureloader.hpp"
 	#include "graphics/ctexturefactory.hpp"
 	#include "graphics/cshape.hpp"
 	#include "graphics/cshapemanager.hpp"

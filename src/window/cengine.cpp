@@ -212,11 +212,11 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 
 		SetWindowCaption("EEPP");
 
-		cLog::Instance()->Write( "Engine Initialized Succesfully.\nGL Vendor: " + GetVendor() + "\nGL Renderer: " + GetRenderer() + "\nGL Version: " + GetVersion() );
+		cLog::instance()->Write( "Engine Initialized Succesfully.\nGL Vendor: " + GetVendor() + "\nGL Renderer: " + GetRenderer() + "\nGL Version: " + GetVersion() );
 		mInit = true;
 		return true;
 	} catch (...) {
-		cLog::Instance()->Write( "Error on cEngine::Init" );
+		cLog::instance()->Write( "Error on cEngine::Init" );
 		return false;
 	}
 }

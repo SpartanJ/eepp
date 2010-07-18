@@ -215,13 +215,12 @@ class EE_API cTexture {
 
 		/** @return The texture factory internal id of the texture */
 		const Uint32& TexId() const;
+
+		/** Reload the texture from the current local copy. */
+		void Reload();
 	protected:
-		#ifndef ALLOC_VECTORS
 		eeColorA *		mPixels;
-		#else
-		std::vector<eeColorA> mPixels;
-		#endif
-		
+
 		std::string 	mFilepath;
 
 		Uint32 			mId;

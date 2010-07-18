@@ -4,6 +4,7 @@
 #include "base.hpp"
 #include "ctexture.hpp"
 #include "cglobalbatchrenderer.hpp"
+#include "../system/cmutex.hpp"
 
 namespace EE { namespace Graphics {
 
@@ -12,7 +13,7 @@ namespace EE { namespace Graphics {
 class cGlobalBatchRenderer;
 
 /** @brief The Texture Manager Class. Here we do all the textures stuff. (Singleton Class) */
-class EE_API cTextureFactory: public cSingleton<cTextureFactory> {
+class EE_API cTextureFactory: public cSingleton<cTextureFactory>, protected cMutex {
 	friend class cSingleton<cTextureFactory>;
 	public:
 		/** Create an empty texture
@@ -25,14 +26,14 @@ class EE_API cTextureFactory: public cSingleton<cTextureFactory> {
 		* @param KeepLocalCopy Keep the array data copy. ( usefull if want to reload the texture )
 		* @return Internal Texture Id
 		*/
-		Uint32 CreateEmptyTexture( const eeUint& Width, const eeUint& Height, const eeColorA& DefaultColor = eeColorA(0,0,0,255), const bool& mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 CreateEmptyTexture( const eeUint& Width, const eeUint& Height, const eeColorA& DefaultColor = eeColorA(0,0,0,255), const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Loads a RAW Texture from Memory
-		* @param Surface The Texture array
+		* @param Pixels The Texture array
 		* @param Width Texture Width
 		* @param Height Texture Height
 		* @param Channels Texture Number of Channels (in bytes)
-		* @param mipmap Create Mipmap?
+		* @param Mipmap Create Mipmap?
 		* @param ColorKey Color key for the texture ( eeRGB(true) for none )
 		* @param ClampMode Defines the CLAMP MODE
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
@@ -40,30 +41,30 @@ class EE_API cTextureFactory: public cSingleton<cTextureFactory> {
 		* @param FileName A filename to recognize the texture ( the path in case that was loaded from outside the texture factory ).
 		* @return Internal Texture Id
 		*/
-		Uint32 LoadFromPixels( const unsigned char* Surface, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const bool& mipmap = false, const eeRGB& ColorKey = eeRGB(true), const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const std::string& FileName = std::string("") );
+		Uint32 LoadFromPixels( const unsigned char * Pixels, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const bool& Mipmap = false, const eeRGB& ColorKey = eeRGB(true), const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const std::string& FileName = std::string("") );
 
 		/** Load a texture from Pack
 		* @param Pack Pointer to the pack instance
 		* @param FilePackPath The path of the file inside the pack
-		* @param mipmap Create Mipmap?
+		* @param Mipmap Create Mipmap?
 		* @param ClampMode Defines the CLAMP MODE
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
 		* @param KeepLocalCopy Keep the array data copy. ( usefull if want to reload the texture )
 		* @return Internal Texture Id
 		*/
-		Uint32 LoadFromPack( cPack* Pack, const std::string& FilePackPath, const bool& mipmap = false, const eeRGB& ColorKey = eeRGB(true), const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 LoadFromPack( cPack* Pack, const std::string& FilePackPath, const bool& Mipmap = false, const eeRGB& ColorKey = eeRGB(true), const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Load a texture from memory (RGBA Format)
-		* @param Surface The image data in RAM just as if it were still in a file
+		* @param ImagePtr The image data in RAM just as if it were still in a file
 		* @param Size The size of the texture ( Width * Height * BytesPerPixel )
-		* @param mipmap Use mipmaps?
+		* @param Mipmap Use mipmaps?
 		* @param ColorKey The ColorKey for the texture
 		* @param ClampMode Defines the CLAMP MODE
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
 		* @param KeepLocalCopy Keep the array data copy. ( usefull if want to reload the texture )
 		* @return The internal Texture Id
 		*/
-		Uint32 LoadFromMemory( const unsigned char* Surface, const eeUint& Size, const bool& mipmap = false, const eeRGB& ColorKey = eeRGB(true), const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 LoadFromMemory( const unsigned char* ImagePtr, const eeUint& Size, const bool& Mipmap = false, const eeRGB& ColorKey = eeRGB(true), const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Load a Texture from a file path
 		* @param filepath The path for the texture
@@ -74,18 +75,7 @@ class EE_API cTextureFactory: public cSingleton<cTextureFactory> {
 		* @param KeepLocalCopy Keep the array data copy. ( usefull if want to reload the texture )
 		* @return The internal Texture Id
 		*/
-		Uint32 Load( const std::string& filepath, const bool& mipmap = false, const eeRGB& ColorKey  = eeRGB(true), const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
-
-		/** Reload a Texture Id
-		* @param TexId The internal Texture Id
-		* @param filepath If filepath is empty reload the same texture, otherwise loads a new texture on the Texture Id slot
-		* @param mipmap Use mipmaps?
-		* @param ColorKey  The ColorKey for the texture
-		* @param ClampMode Defines the CLAMP MODE
-		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
-		* @return Returns the Texture Id
-		*/
-		Uint32 Reload( const Uint32& TexId, const std::string& filepath = "", const bool& mipmap = false, const eeRGB& ColorKey = eeRGB(true), const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false );
+		Uint32 Load( const std::string& Filepath, const bool& mipmap = false, const eeRGB& ColorKey  = eeRGB(true), const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Remove and Unload the Texture Id
 		* @param TexId
@@ -161,7 +151,7 @@ class EE_API cTextureFactory: public cSingleton<cTextureFactory> {
 		eeUint GetTexMemSize( const eeUint& TexId );
 
 		/** It's possible to create textures outside the texture factory loader, but the library will need to know of this texture, so it's necessary to push the texture to the factory.
-		* @param filepath The Texture path ( if exists )
+		* @param Filepath The Texture path ( if exists )
 		* @param TexId The OpenGL Texture Id
 		* @param Width Texture Width
 		* @param Height Texture Height
@@ -174,12 +164,10 @@ class EE_API cTextureFactory: public cSingleton<cTextureFactory> {
 		* @param CompressTexture The texture is compressed?
 		* @param LocalCopy If keep a local copy in memory of the texture
 		*/
-		Uint32 PushTexture( const std::string& filepath, const Uint32& TexId, const eeUint& Width, const eeUint& Height, const eeUint& ImgWidth, const eeUint& ImgHeight, const bool& Mipmap, const eeUint& Channels, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy = false );
+		Uint32 PushTexture( const std::string& Filepath, const Uint32& TexId, const eeUint& Width, const eeUint& Height, const eeUint& ImgWidth, const eeUint& ImgHeight, const bool& Mipmap, const eeUint& Channels, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy = false );
 	protected:
 		cTextureFactory();
 		~cTextureFactory();
-
-		cLog* Log;
 
 		GLint mCurrentTexture;
 
@@ -193,19 +181,7 @@ class EE_API cTextureFactory: public cSingleton<cTextureFactory> {
 
 		std::queue<Uint32> mVectorFreeSlots;
 
-		cGlobalBatchRenderer* BR;
-
-		Uint32 iLoadFromPixels( const unsigned char* Surface, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const bool& mipmap, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy, const std::string& FileName, const Uint32& TexPos = 0 );
-
-		Uint32 iLoad( const std::string& filepath, const bool& mipmap, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy, const Uint32& TexPos = 0 );
-
-		Uint32 iPushTexture( const std::string& filepath, const Uint32& TexId, const eeUint& Width, const eeUint& Height, const eeUint& ImgWidth, const eeUint& ImgHeight, const bool& Mipmap, const eeUint& Channels, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy = false, const Uint32& TexPos = 0 );
-
 		void UnloadTextures();
-
-		GLint GetPrevTex();
-
-		void BindPrev( const GLint& Prev );
 
 		Uint32 FindFreeSlot();
 };

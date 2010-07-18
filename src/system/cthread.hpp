@@ -14,7 +14,7 @@ class EE_API cThread {
 		virtual ~cThread();
 
 		/** Launch the thread */
-		void Launch();
+		virtual void Launch();
 
 		/** Wait the thread until end */
 		void Wait();

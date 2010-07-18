@@ -27,6 +27,4 @@ using namespace EE::System;
 
 #include "renders.hpp"
 
-//#define ALLOC_VECTORS
-
 #endif

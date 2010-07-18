@@ -87,14 +87,8 @@ class EE_API cShape {
 
 		bool SaveToFile(const std::string& filepath, const EE_SAVETYPE& Format);
 	protected:
-		#ifndef ALLOC_VECTORS
 		eeColorA *	mPixels;
 		Uint8 *		mAlpha;
-		#else
-		std::vector<eeColorA> mPixels;
-		std::vector<Uint8> mAlpha;
-		#endif
-		
 		std::string mName;
 		Uint32		mId;
 		Uint32 		mTexId;

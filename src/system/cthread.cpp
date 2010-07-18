@@ -40,7 +40,7 @@ void cThread::Run() {
 }
 
 int cThread::ThreadFunc(void* UserData) {
-	// The sfThread instance is stored in the user data
+	// The cThread instance is stored in the user data
 	cThread* ThreadToRun = reinterpret_cast<cThread*>(UserData);
 	
 	// Forward to the instance

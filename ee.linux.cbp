@@ -108,6 +108,8 @@
 		<Unit filename="src/graphics/ctexturefactory.hpp" />
 		<Unit filename="src/graphics/ctexturefont.cpp" />
 		<Unit filename="src/graphics/ctexturefont.hpp" />
+		<Unit filename="src/graphics/ctextureloader.cpp" />
+		<Unit filename="src/graphics/ctextureloader.hpp" />
 		<Unit filename="src/graphics/cttffont.cpp" />
 		<Unit filename="src/graphics/cttffont.hpp" />
 		<Unit filename="src/graphics/fonthelper.hpp" />
@@ -146,6 +148,7 @@
 		<Unit filename="src/helper/haikuttf/hkfontmanager.hpp" />
 		<Unit filename="src/helper/haikuttf/hkglyph.cpp" />
 		<Unit filename="src/helper/haikuttf/hkglyph.hpp" />
+		<Unit filename="src/helper/haikuttf/stdint.h" />
 		<Unit filename="src/helper/stb_vorbis/stb_vorbis.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -164,6 +167,8 @@
 		<Unit filename="src/system/clog.hpp" />
 		<Unit filename="src/system/cmutex.cpp" />
 		<Unit filename="src/system/cmutex.hpp" />
+		<Unit filename="src/system/cobjectloader.cpp" />
+		<Unit filename="src/system/cobjectloader.hpp" />
 		<Unit filename="src/system/cpack.cpp" />
 		<Unit filename="src/system/cpack.hpp" />
 		<Unit filename="src/system/cpak.cpp" />
@@ -220,10 +225,14 @@
 		<Unit filename="src/utils/easing.cpp" />
 		<Unit filename="src/utils/easing.hpp" />
 		<Unit filename="src/utils/helper.hpp" />
+		<Unit filename="src/utils/line2.hpp" />
 		<Unit filename="src/utils/polygon2.hpp" />
+		<Unit filename="src/utils/quad2.hpp" />
 		<Unit filename="src/utils/rect.hpp" />
+		<Unit filename="src/utils/size.hpp" />
 		<Unit filename="src/utils/string.cpp" />
 		<Unit filename="src/utils/string.hpp" />
+		<Unit filename="src/utils/triangle2.hpp" />
 		<Unit filename="src/utils/utils.cpp" />
 		<Unit filename="src/utils/utils.hpp" />
 		<Unit filename="src/utils/vector2.hpp" />

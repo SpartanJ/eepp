@@ -5,10 +5,8 @@
 namespace EE { namespace Graphics {
 
 cShape::cShape() :
-	#ifndef ALLOC_VECTORS
 	mPixels(NULL),
 	mAlpha(NULL),
-	#endif
 	mId(0),
 	mTexId(0),
 	mTexture(NULL),
@@ -22,10 +20,8 @@ cShape::cShape() :
 }
 
 cShape::cShape( const Uint32& TexId, const std::string& Name ) :
-	#ifndef ALLOC_VECTORS
 	mPixels(NULL),
 	mAlpha(NULL),
-	#endif
 	mName( Name ),
 	mId( MakeHash( mName ) ),
 	mTexId( TexId ),
@@ -39,10 +35,8 @@ cShape::cShape( const Uint32& TexId, const std::string& Name ) :
 }
 
 cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const std::string& Name ) :
-	#ifndef ALLOC_VECTORS
 	mPixels(NULL),
 	mAlpha(NULL),
-	#endif
 	mName( Name ),
 	mId( MakeHash( mName ) ),
 	mTexId( TexId ),
@@ -56,10 +50,8 @@ cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const std::string& 
 }
 
 cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const std::string& Name ) :
-	#ifndef ALLOC_VECTORS
 	mPixels(NULL),
 	mAlpha(NULL),
-	#endif
 	mName( Name ),
 	mId( MakeHash( mName ) ),
 	mTexId( TexId ),
@@ -73,10 +65,8 @@ cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& Dest
 }
 
 cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeFloat& OffsetX, const eeFloat& OffsetY, const std::string& Name ) :
-	#ifndef ALLOC_VECTORS
 	mPixels(NULL),
 	mAlpha(NULL),
-	#endif
 	mName( Name ),
 	mId( MakeHash( mName ) ),
 	mTexId( TexId ),
@@ -126,18 +116,10 @@ eeRecti cShape::SrcRect() const {
 void cShape::SrcRect( const eeRecti& Rect ) {
 	mSrcRect = Rect;
 
-	#ifndef ALLOC_VECTORS
 	if ( NULL != mPixels )
-	#else
-	if ( mPixels.size() )
-	#endif
 		CacheColors();
 
-	#ifndef ALLOC_VECTORS
 	if ( NULL != mAlpha )
-	#else
-	if ( mAlpha.size() )
-	#endif
 		CacheAlphaMask();
 }
 
@@ -211,13 +193,8 @@ void cShape::CreateMaskFromColor(eeColor ColorKey, Uint8 Alpha) {
 void cShape::CacheAlphaMask() {
 	Uint32 size = ( mSrcRect.Right - mSrcRect.Left ) * ( mSrcRect.Bottom - mSrcRect.Top );
 
-	#ifndef ALLOC_VECTORS
 	eeSAFE_DELETE_ARRAY( mAlpha );
 	mAlpha = new Uint8[ size ];
-	#else
-	mAlpha.clear();
-	mAlpha.resize( size );
-	#endif
 
 	mTexture->Lock();
 
@@ -241,13 +218,8 @@ void cShape::CacheAlphaMask() {
 void cShape::CacheColors() {
 	Uint32 size =  ( mSrcRect.Right - mSrcRect.Left ) * ( mSrcRect.Bottom - mSrcRect.Top ) ;
 
-	#ifndef ALLOC_VECTORS
 	eeSAFE_DELETE_ARRAY( mPixels );
 	mPixels = new eeColorA[ size ];
-	#else
-	mPixels.clear();
-	mPixels.resize( size );
-	#endif
 
 	mTexture->Lock();
 
@@ -272,18 +244,10 @@ Uint8 cShape::GetAlphaAt( const Int32& X, const Int32& Y ) {
 	if ( mTexture->LocalCopy() )
 		return mTexture->GetPixel( mSrcRect.Left + X, mSrcRect.Right + Y ).A();
 
-	#ifndef ALLOC_VECTORS
 	if ( NULL != mAlpha )
-	#else
-	if ( mAlpha.size() )
-	#endif
 		return mAlpha[ X + Y * ( mSrcRect.Right - mSrcRect.Left ) ];
 
-	#ifndef ALLOC_VECTORS
 	if ( NULL != mPixels )
-	#else
-	if ( mPixels.size() )
-	#endif
 		return mPixels[ X + Y * ( mSrcRect.Right - mSrcRect.Left ) ].A();
 
 	CacheAlphaMask();
@@ -295,11 +259,7 @@ eeColorA cShape::GetColorAt( const Int32& X, const Int32& Y ) {
 	if ( mTexture->LocalCopy() )
 		return mTexture->GetPixel( mSrcRect.Left + X, mSrcRect.Right + Y );
 
-	#ifndef ALLOC_VECTORS
 	if ( NULL != mPixels )
-	#else
-	if ( mPixels.size() )
-	#endif
 		return mPixels[ X + Y * ( mSrcRect.Right - mSrcRect.Left ) ];
 
 	CacheColors();
@@ -308,11 +268,7 @@ eeColorA cShape::GetColorAt( const Int32& X, const Int32& Y ) {
 }
 
 void cShape::SetColorAt( const Int32& X, const Int32& Y, const eeColorA& Color ) {
-	#ifndef ALLOC_VECTORS
 	if ( NULL != mPixels )
-	#else
-	if ( mPixels.size() )
-	#endif
 		mPixels[ X + Y * ( mSrcRect.Right - mSrcRect.Left ) ] = Color;
 	else {
 		CacheColors();
@@ -321,13 +277,8 @@ void cShape::SetColorAt( const Int32& X, const Int32& Y, const eeColorA& Color )
 }
 
 void cShape::ClearCache() {
-	#ifndef ALLOC_VECTORS
 	eeSAFE_DELETE_ARRAY( mPixels );
 	eeSAFE_DELETE_ARRAY( mAlpha );
-	#else
-	mPixels.clear();
-	mAlpha.clear();
-	#endif
 }
 
 eeColorA * cShape::Lock() {
@@ -337,11 +288,7 @@ eeColorA * cShape::Lock() {
 }
 
 bool cShape::Unlock( const bool& KeepData, const bool& Modified ) {
-	#ifndef ALLOC_VECTORS
 	if ( NULL != mPixels ) {
-	#else
-	if ( mPixels.size() ) {
-	#endif
 		if ( Modified ) {
 			GLint PreviousTexture;
 			glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
@@ -356,11 +303,7 @@ bool cShape::Unlock( const bool& KeepData, const bool& Modified ) {
 		}
 
 		if ( !KeepData ) {
-			#ifndef ALLOC_VECTORS
 			eeSAFE_DELETE_ARRAY( mPixels );
-			#else
-			mPixels.clear();
-			#endif
 		}
 
 		return true;
@@ -378,11 +321,7 @@ eeSize cShape::Size() {
 }
 
 const Uint8* cShape::GetPixelsPtr() {
-	#ifndef ALLOC_VECTORS
 	if ( mPixels == NULL ) {
-	#else
-	if ( !mPixels.size() ) {
-	#endif
 		Lock();
 		Unlock(true);
 	}

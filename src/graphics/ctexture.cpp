@@ -4,9 +4,7 @@
 namespace EE { namespace Graphics {
 
 cTexture::cTexture() :
-	#ifndef ALLOC_VECTORS
 	mPixels(NULL),
-	#endif
 	mFilepath(""),
 	mId(0),
 	mTexture(0),
@@ -143,11 +141,7 @@ eeColorA* cTexture::Lock() {
 		mHeight = (eeInt)height;
 		eeUint size = (eeUint)mWidth * (eeUint)mHeight;
 
-		#ifndef ALLOC_VECTORS
 		if ( eeARRAY_SIZE( mPixels ) != size ) {
-		#else
-		if ( mPixels.size() != size ) {
-		#endif
 			Allocate( size );
 		}
 
@@ -180,7 +174,7 @@ bool cTexture::Unlock(const bool& KeepData, const bool& Modified) {
 			Uint32 flags = mMipmap ? SOIL_FLAG_MIPMAPS : 0;
 			flags = (mClampMode == EE_CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 
-			NTexId = SOIL_create_OGL_texture( reinterpret_cast<const Uint8*>(&mPixels[0]), &width, &height, SOIL_LOAD_RGBA, mTexture, flags);
+			NTexId = SOIL_create_OGL_texture( reinterpret_cast<Uint8*>(&mPixels[0]), &width, &height, SOIL_LOAD_RGBA, mTexture, flags);
 			mChannels = 4;
 
 			SetTextureFilter(mFilter);
@@ -213,24 +207,15 @@ const Uint8* cTexture::GetPixelsPtr() {
 }
 
 const eeColorA& cTexture::GetPixel(const eeUint& x, const eeUint& y) {
-	#ifndef ALLOC_VECTORS
 	if ( mPixels == NULL || (eeInt)x > mWidth || (eeInt)y > mHeight ) {
-	#else
-	if ( !mPixels.size() || (eeInt)x > mWidth || (eeInt)y > mHeight ) {
-	#endif
 		return eeColorA::Black;
 	}
-
 
 	return mPixels[ x + y * (Uint32)mWidth ];
 }
 
 void cTexture::SetPixel(const eeUint& x, const eeUint& y, const eeColorA& Color) {
-	#ifndef ALLOC_VECTORS
 	if ( mPixels == NULL || (eeInt)x > mWidth || (eeInt)y > mHeight ) {
-	#else
-	if ( !mPixels.size() || (eeInt)x > mWidth || (eeInt)y > mHeight ) {
-	#endif
 		return;
 	}
 
@@ -297,11 +282,7 @@ void cTexture::CreateMaskFromColor(eeColor ColorKey, Uint8 Alpha) {
 }
 
 bool cTexture::LocalCopy() {
-	#ifndef ALLOC_VECTORS
 	return ( mPixels != NULL );
-	#else
-	return mPixels.size() != 0;
-	#endif
 }
 
 void cTexture::ClampMode( const EE_CLAMP_MODE& clampmode ) {
@@ -334,11 +315,7 @@ void cTexture::ApplyClampMode() {
 }
 
 void cTexture::ClearCache() {
-	#ifndef ALLOC_VECTORS
 	eeSAFE_DELETE_ARRAY( mPixels );
-	#else
-	mPixels.clear();
-	#endif
 }
 
 void cTexture::Draw( const eeFloat &x, const eeFloat &y, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color, const EE_RENDERALPHAS &blend, const EE_RENDERTYPE &Effect, const bool &ScaleCentered, const eeRecti& texSector) {
@@ -557,11 +534,25 @@ const Uint32& cTexture::TexId() const {
 void cTexture::Allocate( const Uint32& size ) {
 	ClearCache();
 
-	#ifndef ALLOC_VECTORS
 	mPixels = new eeColorA[ size ];
-	#else
-	mPixels.resize( size );
-	#endif
+}
+
+void cTexture::Reload()  {
+	if ( LocalCopy() ) {
+		Int32 width = mWidth;
+		Int32 height = mHeight;
+
+		GLint PreviousTexture;
+		glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
+
+		Uint32 flags = mMipmap ? SOIL_FLAG_MIPMAPS : 0;
+		flags = (mClampMode == EE_CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
+		flags = (mCompressedTexture) ? ( flags | SOIL_FLAG_COMPRESS_TO_DXT ) : flags;
+
+		mTexture = SOIL_create_OGL_texture( reinterpret_cast<unsigned char *> ( &mPixels[0] ), &width, &height, mChannels, mTexture, flags );
+
+		glBindTexture(GL_TEXTURE_2D, PreviousTexture);
+	}
 }
 
 }}

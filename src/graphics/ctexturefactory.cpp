@@ -1,5 +1,6 @@
 #include "ctexturefactory.hpp"
 #include "../window/cengine.hpp"
+#include "ctextureloader.hpp"
 
 using namespace EE::Window;
 
@@ -12,142 +13,53 @@ cTextureFactory::cTextureFactory() :
 {
 	mTextures.clear();
 	mTextures.push_back( NULL );
-
-	Log = cLog::instance();
-
-	BR = cGlobalBatchRenderer::instance();
 }
 
 cTextureFactory::~cTextureFactory() {
 	UnloadTextures();
 }
 
-GLint cTextureFactory::GetPrevTex() {
-	GLint PreviousTexture;
-	glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
-	return PreviousTexture;
-}
-
-void cTextureFactory::BindPrev( const GLint& PreviousTexture ) {
-	glBindTexture(GL_TEXTURE_2D, PreviousTexture);
-	mCurrentTexture = PreviousTexture;
-}
-
-Uint32 cTextureFactory::CreateEmptyTexture( const eeUint& Width, const eeUint& Height, const eeColorA& DefaultColor, const bool& mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+Uint32 cTextureFactory::CreateEmptyTexture( const eeUint& Width, const eeUint& Height, const eeColorA& DefaultColor, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
 	std::vector<eeColorA> tmpTex( Width * Height, DefaultColor );
-	return LoadFromPixels( reinterpret_cast<unsigned char*> ( &tmpTex[0] ), Width, Height, 4, mipmap, eeRGB(true), ClampMode, CompressTexture, KeepLocalCopy );
+	return LoadFromPixels( reinterpret_cast<unsigned char*> ( &tmpTex[0] ), Width, Height, 4, Mipmap, eeRGB(true), ClampMode, CompressTexture, KeepLocalCopy );
 }
 
-Uint32 cTextureFactory::LoadFromPixels( const unsigned char* Surface, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const bool& mipmap, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy, const std::string& FileName ) {
-	return iLoadFromPixels( Surface, Width, Height, Channels, mipmap, ColorKey, ClampMode, CompressTexture, KeepLocalCopy, FileName );
+Uint32 cTextureFactory::LoadFromPixels( const unsigned char * Pixels, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const bool& Mipmap, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy, const std::string& FileName ) {
+	cTextureLoader myTex( Pixels, Width, Height, Channels, Mipmap, ColorKey, ClampMode, CompressTexture, KeepLocalCopy, FileName );
+	myTex.Load();
+	return myTex.TexId();
 }
 
-Uint32 cTextureFactory::iLoadFromPixels( const unsigned char* Surface, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const bool& mipmap, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy, const std::string& FileName, const Uint32& TexPos ) {
-	Uint32 tTexId = 0;
-
-	if ( NULL != Surface ) {
-		int width = Width;
-		int height = Height;
-
-		Uint32 flags = mipmap ? SOIL_FLAG_MIPMAPS : 0;
-
-		flags = (ClampMode == EE_CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
-		flags = (CompressTexture) ? ( flags | SOIL_FLAG_COMPRESS_TO_DXT ) : flags;
-
-		GLint PreviousTexture = GetPrevTex();
-		tTexId = SOIL_create_OGL_texture(Surface, &width, &height, Channels, ( ( TexPos==0 ) ? SOIL_CREATE_NEW_ID : GetTexture(TexPos)->Texture() ), flags);
-		BindPrev( PreviousTexture );
-
-		if ( tTexId )
-			return iPushTexture( FileName, tTexId, Width, Height, width, height, mipmap, static_cast<Uint8>( Channels ), ColorKey, ClampMode, CompressTexture, KeepLocalCopy, TexPos );
-
-	} else {
-		Log->Write( SOIL_last_result() );
-	}
-
-	return 0;
+Uint32 cTextureFactory::LoadFromPack( cPack* Pack, const std::string& FilePackPath, const bool& Mipmap, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy  ) {
+	cTextureLoader myTex( Pack, FilePackPath, Mipmap, ColorKey, ClampMode, CompressTexture, KeepLocalCopy );
+	myTex.Load();
+	return myTex.TexId();
 }
 
-Uint32 cTextureFactory::LoadFromPack( cPack* Pack, const std::string& FilePackPath, const bool& mipmap, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy  ) {
-	std::vector<Uint8> TmpData;
-
-	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, TmpData ) )
-		return LoadFromMemory( reinterpret_cast<const Uint8*> (&TmpData[0]), TmpData.size(), mipmap, ColorKey, ClampMode, CompressTexture, KeepLocalCopy );
-
-	return 0;
+Uint32 cTextureFactory::LoadFromMemory( const unsigned char * ImagePtr, const eeUint& Size, const bool& Mipmap, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+	cTextureLoader myTex( ImagePtr, Size, Mipmap, ColorKey, ClampMode, CompressTexture, KeepLocalCopy );
+	myTex.Load();
+	return myTex.TexId();
 }
 
-Uint32 cTextureFactory::LoadFromMemory( const unsigned char* Surface, const eeUint& Size, const bool& mipmap, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
-	int ImgWidth, ImgHeight, ImgChannels;
-
-	unsigned char * PixelsPtr = SOIL_load_image_from_memory(Surface, Size, &ImgWidth, &ImgHeight, &ImgChannels, SOIL_LOAD_AUTO);
-
-	if ( NULL != PixelsPtr ) {
-		Uint32 Result = LoadFromPixels( PixelsPtr, ImgWidth, ImgHeight, ImgChannels, mipmap, ColorKey, ClampMode, CompressTexture, KeepLocalCopy );
-		
-		SOIL_free_image_data( PixelsPtr );
-		
-		return Result;
-	} else
-		Log->Write( SOIL_last_result() );
-
-	return 0;
+Uint32 cTextureFactory::Load( const std::string& Filepath, const bool& Mipmap, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+	cTextureLoader myTex( Filepath, Mipmap, ColorKey, ClampMode, CompressTexture, KeepLocalCopy );
+	myTex.Load();
+	return myTex.TexId();
 }
 
-Uint32 cTextureFactory::Load( const std::string& filepath, const bool& mipmap, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
-	return iLoad( filepath, mipmap, ColorKey, ClampMode, CompressTexture, KeepLocalCopy, 0 );
-}
+Uint32 cTextureFactory::PushTexture( const std::string& Filepath, const Uint32& TexId, const eeUint& Width, const eeUint& Height, const eeUint& ImgWidth, const eeUint& ImgHeight, const bool& Mipmap, const eeUint& Channels, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy ) {
+	Lock();
 
-Uint32 cTextureFactory::iLoad( const std::string& filepath, const bool& mipmap, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy, const Uint32& TexPos ) {
-	int ImgWidth, ImgHeight, ImgChannels;
-
-	if ( FileExists( filepath ) ) {
-		unsigned char * PixelsPtr = SOIL_load_image(filepath.c_str(), &ImgWidth, &ImgHeight, &ImgChannels, SOIL_LOAD_AUTO);
-
-		if ( NULL != PixelsPtr ) {
-			Uint32 Result = iLoadFromPixels( PixelsPtr, ImgWidth, ImgHeight, ImgChannels, mipmap, ColorKey, ClampMode, CompressTexture, KeepLocalCopy, filepath, TexPos );
-
-			SOIL_free_image_data( PixelsPtr );
-
-			return Result;
-		} else
-			Log->Write( SOIL_last_result() );
-	}
-
-	return 0;
-}
-
-Uint32 cTextureFactory::PushTexture( const std::string& filepath, const Uint32& TexId, const eeUint& Width, const eeUint& Height, const eeUint& ImgWidth, const eeUint& ImgHeight, const bool& Mipmap, const eeUint& Channels, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy ) {
-	return iPushTexture( filepath, TexId, Width, Height, ImgWidth, ImgHeight, Mipmap, Channels, ColorKey, ClampMode, CompressTexture, LocalCopy );
-}
-
-Uint32 cTextureFactory::iPushTexture( const std::string& filepath, const Uint32& TexId, const eeUint& Width, const eeUint& Height, const eeUint& ImgWidth, const eeUint& ImgHeight, const bool& Mipmap, const eeUint& Channels, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy, const Uint32& TexPos ) {
 	cTexture * Tex 		= NULL;
 	Uint32 Pos;
 	eeInt MyWidth 		= ImgWidth;
 	eeInt MyHeight 		= ImgHeight;
 
-	if ( TexPos != 0 ) {
-		Pos = TexPos;
-		Tex = GetTexture( TexPos );
+	Pos = FindFreeSlot();
+	Tex = mTextures[ Pos ] = new cTexture();
 
-		// Recover the real image size
-		if ( NULL != Tex && TexId == Tex->Texture() ) {
-			Tex->Width( Width );
-			Tex->Height( Height );
-
-			MyWidth = Tex->ImgWidth();
-			MyHeight = Tex->ImgHeight();
-
-			mMemSize -= GetTexMemSize( TexPos );
-		}
-	} else {
-		Pos = FindFreeSlot();
-
-		Tex = mTextures[ Pos ] = new cTexture();
-	}
-
-	Tex->Create( TexId, Width, Height, MyWidth, MyHeight, Mipmap, Channels, filepath, ColorKey, ClampMode, CompressTexture );
+	Tex->Create( TexId, Width, Height, MyWidth, MyHeight, Mipmap, Channels, Filepath, ColorKey, ClampMode, CompressTexture );
 	Tex->TexId( Pos );
 
 	if ( !ColorKey.voidRGB )
@@ -159,6 +71,8 @@ Uint32 cTextureFactory::iPushTexture( const std::string& filepath, const Uint32&
 	}
 
 	mMemSize += GetTexMemSize( Pos );
+
+	Unlock();
 
 	return Pos;
 }
@@ -191,14 +105,13 @@ void cTextureFactory::Bind( const Uint32& TexId ) {
 void cTextureFactory::UnloadTextures() {
 	try {
 		for ( Uint32 i = 1; i < mTextures.size(); i++ )
-			if ( mTextures[i] != NULL )
-				delete mTextures[i];
+			eeSAFE_DELETE( mTextures[i] );
 
 		mTextures.clear();
 
-		Log->Write( "Textures Unloaded." );
+		cLog::instance()->Write( "Textures Unloaded." );
 	} catch (...) {
-		Log->Write("An error ocurred on: UnloadTextures.");
+		cLog::instance()->Write("An error ocurred on: UnloadTextures.");
 	}
 }
 
@@ -221,23 +134,6 @@ bool cTextureFactory::Remove( const Uint32& TexId ) {
 	return false;
 }
 
-Uint32 cTextureFactory::Reload( const Uint32& TexId, const std::string& filepath, const bool& mipmap, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture ) {
-	Uint32 Id = 0;
-	if ( !filepath.empty() ) {
-		Id = iLoad(filepath, mipmap, ColorKey, ClampMode, CompressTexture, TexId);
-		return Id;
-	} else {
-		cTexture* Tex = GetTexture(TexId);
-
-		if ( Tex->LocalCopy() )
-			Id = iLoadFromPixels( Tex->GetPixelsPtr(), (int)Tex->Width(), (int)Tex->Height(), SOIL_LOAD_RGBA, Tex->Mipmap(), Tex->ColorKey(), Tex->ClampMode(), Tex->Compressed(), ( Tex->LocalCopy() && !Tex->Grabed() ), Tex->Filepath(), TexId );
-		else
-			Id = iLoad( Tex->Filepath(), Tex->Mipmap(), Tex->ColorKey(), Tex->ClampMode(), Tex->Compressed(), TexId );
-
-		return Id;
-	}
-}
-
 GLint cTextureFactory::GetCurrentTexture() const {
 	return mCurrentTexture;
 }
@@ -250,27 +146,29 @@ void cTextureFactory::ReloadAllTextures() {
 	try {
 		for ( Uint32 i = 1; i < mTextures.size(); i++ ) {
 			cTexture* Tex = GetTexture(i);
+
 			if ( Tex ) {
-				if ( ( Tex->Filepath() != "" && FileExists( Tex->Filepath() ) ) || Tex->LocalCopy() )
-					Reload(i);
+				if ( Tex->LocalCopy() )
+					Tex->Reload();
 				else {
 					Tex->Lock();
-					Reload(i);
+					Tex->Reload();
 					Tex->Unlock(false, false);
 				}
 			}
 		}
-		Log->Write("Textures Reloaded.");
+		cLog::instance()->Write("Textures Reloaded.");
 	} catch (...) {
-		Log->Write("An error ocurred on: ReloadAllTextures.");
+		cLog::instance()->Write("An error ocurred on: ReloadAllTextures.");
 	}
 }
 
 void cTextureFactory::GrabTextures() {
 	for ( Uint32 i = 1; i < mTextures.size(); i++ ) {
 		cTexture* Tex = GetTexture(i);
+
 		if ( Tex ) {
-			if ( !( Tex->Filepath() != "" || Tex->LocalCopy() ) ) {
+			if ( !Tex->LocalCopy() ) {
 				Tex->Lock();
 				Tex->Unlock(true, false);
 				Tex->Grabed(true);
