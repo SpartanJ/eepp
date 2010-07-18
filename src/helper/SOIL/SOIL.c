@@ -990,13 +990,17 @@ unsigned int
 	)
 {
 	/*	variables	*/
-	unsigned char* img;
+	unsigned char* img = NULL;
 	unsigned int tex_id;
 	unsigned int internal_texture_format = 0, original_texture_format = 0;
 	int DXT_mode = SOIL_CAPABILITY_UNKNOWN;
 	int max_supported_size;
 	int iwidth = *width;
 	int iheight = *height;
+
+	/*	how large of a texture can this OpenGL implementation handle?	*/
+	/*	texture_check_size_enum will be GL_MAX_TEXTURE_SIZE or SOIL_MAX_CUBE_MAP_TEXTURE_SIZE	*/
+	glGetIntegerv( texture_check_size_enum, &max_supported_size );
 
 	/*	If the user wants to use the texture rectangle I kill a few flags	*/
 	if( flags & SOIL_FLAG_TEXTURE_RECTANGLE )
@@ -1028,9 +1032,17 @@ unsigned int
 			return 0;
 		}
 	}
-	/*	create a copy the image data	*/
-	img = (unsigned char*)malloc( iwidth*iheight*channels );
-	memcpy( img, data, iwidth*iheight*channels );
+
+	int needCopy = ( flags & SOIL_FLAG_INVERT_Y ) || ( flags & SOIL_FLAG_NTSC_SAFE_RGB ) || ( flags & SOIL_FLAG_MULTIPLY_ALPHA ) || ( ( flags & SOIL_FLAG_POWER_OF_TWO ) || ( flags & SOIL_FLAG_MIPMAPS ) || ( iwidth > max_supported_size ) || ( iheight > max_supported_size ) ) || ( flags & SOIL_FLAG_CoCg_Y ) || ( flags & SOIL_FLAG_COMPRESS_TO_DXT );
+
+	/*	create a copy the image data
+	*	only if needed
+	*/
+	if ( needCopy ) {
+		img = (unsigned char*)malloc( iwidth*iheight*channels );
+		memcpy( img, data, iwidth*iheight*channels );
+	}
+
 	/*	does the user want me to invert the image?	*/
 	if( flags & SOIL_FLAG_INVERT_Y )
 	{
@@ -1087,9 +1099,7 @@ unsigned int
 		/*	add in the POT flag */
 		flags |= SOIL_FLAG_POWER_OF_TWO;
 	}
-	/*	how large of a texture can this OpenGL implementation handle?	*/
-	/*	texture_check_size_enum will be GL_MAX_TEXTURE_SIZE or SOIL_MAX_CUBE_MAP_TEXTURE_SIZE	*/
-	glGetIntegerv( texture_check_size_enum, &max_supported_size );
+
 	/*	do I need to make it a power of 2?	*/
 	if(
 		(flags & SOIL_FLAG_POWER_OF_TWO) ||	/*	user asked for it	*/
@@ -1115,12 +1125,7 @@ unsigned int
 			up_scale_image(
 					img, iwidth, iheight, channels,
 					resampled, new_width, new_height );
-			/*	OJO	this is for debug only!	*/
-			/*
-			SOIL_save_image( "\\showme.bmp", SOIL_SAVE_TYPE_BMP,
-							new_width, new_height, channels,
-							resampled );
-			*/
+
 			/*	nuke the old guy, then point it at the new guy	*/
 			SOIL_free_image_data( img );
 			img = resampled;
@@ -1165,9 +1170,6 @@ unsigned int
 	{
 		/*	this will only work with RGB and RGBA images */
 		convert_RGB_to_YCoCg( img, iwidth, iheight, channels );
-		/*
-		save_image_as_DDS( "CoCg_Y.dds", iwidth, iheight, channels, img );
-		*/
 	}
 	/*	create the OpenGL texture ID handle
     	(note: allowing a forced texture ID lets me reload a texture)	*/
@@ -1255,10 +1257,19 @@ unsigned int
 		} else
 		{
 			/*	user want OpenGL to do all the work!	*/
-			glTexImage2D(
-				opengl_texture_target, 0,
-				internal_texture_format, iwidth, iheight, 0,
-				original_texture_format, GL_UNSIGNED_BYTE, img );
+
+			if ( needCopy ) {
+				glTexImage2D(
+					opengl_texture_target, 0,
+					internal_texture_format, iwidth, iheight, 0,
+					original_texture_format, GL_UNSIGNED_BYTE, img );
+			} else {
+				glTexImage2D(
+					opengl_texture_target, 0,
+					internal_texture_format, iwidth, iheight, 0,
+					original_texture_format, GL_UNSIGNED_BYTE, data );
+			}
+
 			check_for_GL_errors( "glTexImage2D" );
 			/*printf( "OpenGL DXT compressor\n" );	*/
 		}
@@ -1367,7 +1378,10 @@ unsigned int
 		/*	failed	*/
 		result_string_pointer = "Failed to generate an OpenGL texture name; missing OpenGL context?";
 	}
-	SOIL_free_image_data( img );
+
+	if ( needCopy )
+		SOIL_free_image_data( img );
+
 	return tex_id;
 }
 
