@@ -320,7 +320,7 @@ void cEngine::Display() {
 
 void cEngine::ChangeRes( const Uint16& width, const Uint16& height, const bool& Windowed ) {
 	try {
-		cLog::Instance()->Write( StrFormated( "Switching from %s to %s. Width: %d Height %d.", mVideoInfo.Windowed == true ? "windowed" : "fullscreen", Windowed == true ? "windowed" : "fullscreen", width, height ) );
+		cLog::Instance()->Write( "Switching from %s to %s. Width: %d Height %d.", mVideoInfo.Windowed == true ? "windowed" : "fullscreen", Windowed == true ? "windowed" : "fullscreen", width, height );
 
 		#if EE_PLATFORM == EE_PLATFORM_WIN32 || EE_PLATFORM == EE_PLATFORM_APPLE
 		bool Reload = mVideoInfo.Windowed != Windowed;

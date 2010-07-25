@@ -705,7 +705,7 @@ void cEETest::Render() {
 
 	if ( eeGetTicks() - lasttick >= 100 ) {
 		lasttick = eeGetTicks();
-		mInfo = StrFormated( 	"EE - FPS: %d Elapsed Time: %4.8f\nMouse X: %d Mouse Y: %d\nTexture Memory Size: %d",
+		mInfo = StrFormated( "EE - FPS: %d Elapsed Time: %4.8f\nMouse X: %d Mouse Y: %d\nTexture Memory Size: %d",
 							EE->FPS(),
 							et,
 							(Int32)Mouse.x,

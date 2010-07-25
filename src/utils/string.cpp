@@ -112,30 +112,32 @@ void StrFormat( char * Buffer, int BufferSize, const char * format, ... ) {
 
 std::string StrFormated( const char * format, ... ) {
 	int n, size = 256;
-	std::string tstr( size, '\0' );
-	
+	std::string tstr( size, NULL );
+
 	va_list args;
-	
+
 	while (1) {
 		va_start( args, format );
-		
+
 		#ifdef EE_COMPILER_MSVC
 			n = _vsnprintf_s( &tstr[0], size, size, format, args );
 		#else
 			n = vsnprintf( &tstr[0], size, format, args );
 		#endif
-		
+
 		va_end( args );
-		
-		if ( n > -1 && n < size )
+
+		if ( n > -1 && n < size ) {
+			tstr.resize( n );
 			return tstr;
-		
-		if ( n > -1 )	// glibc 2.1 
-			size = n+1; // precisely what is needed 
-		else			// glibc 2.0 
+		}
+
+		if ( n > -1 )	// glibc 2.1
+			size = n+1; // precisely what is needed
+		else			// glibc 2.0
 			size *= 2;	// twice the old size
-		
-		tstr.resize( size, '\0' );
+
+		tstr.resize( size, NULL );
 	}
 }
 

@@ -10,7 +10,7 @@ cLog::cLog() : mSave(false) {
 cLog::~cLog() {
 	Write( "\nUnloaded on " + GetDateTimeStr(), false );
 	Write( "...::: Entropia Engine++ Unloaded :::..." );
-	
+
 	if ( !mFilePath.empty() )
 		mFilePath = AppPath();
 
@@ -33,47 +33,41 @@ void cLog::Save(const std::string& filepath) {
 void cLog::Write(const std::string& Text, const bool& newLine) {
 	mData += Text;
 	if ( newLine )
-		mData += "\n";
+		mData += '\n';
 }
 
 void cLog::Write( const char* format, ... ) {
-	char buf[256];
-	
-	va_list( args );
-	
-	va_start( args, format );
-	
-	#ifdef EE_COMPILER_MSVC
-	int nb = _vsnprintf_s( buf, 256, 256, format, args );
-	#else
-	int nb = vsnprintf(buf, 256, format, args);
-	#endif
-	
-	va_end( args );
-	
-	if ( nb < 256 ) {
-		Write( std::string( buf ) );
-		return;
+	int n, size = 256;
+	std::string tstr( size, NULL );
+
+	va_list args;
+
+	while (1) {
+		va_start( args, format );
+
+		#ifdef EE_COMPILER_MSVC
+			n = _vsnprintf_s( &tstr[0], size, size, format, args );
+		#else
+			n = vsnprintf( &tstr[0], size, format, args );
+		#endif
+
+		va_end( args );
+
+		if ( n > -1 && n < size ) {
+			tstr.resize( n );
+
+			mData += tstr + '\n';
+
+			return;
+		}
+
+		if ( n > -1 )	// glibc 2.1
+			size = n+1; // precisely what is needed
+		else			// glibc 2.0
+			size *= 2;	// twice the old size
+
+		tstr.resize( size, NULL );
 	}
-	
-	// The static size was not big enough, try again with a dynamic allocation.
-	++nb;
-	
-	char * buf2 = new char[nb];
-	
-	va_start( args, format );
-	
-	#ifdef EE_COMPILER_MSVC
-	_vsnprintf_s( buf2, nb, nb, format, args );
-	#else
-	vsnprintf( buf2, nb, format, args );
-	#endif
-	
-	va_end( args );
-	
-	Write( std::string( buf2 ) );
-	
-	delete [] buf2;
 }
 
 }}

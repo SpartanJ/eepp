@@ -84,32 +84,14 @@ class EE_API cConsole{
 		/** Creates the new console
 		* @param Font The cFont pointer to class
 		* @param MakeDefaultCommands Register the default commands provided by the class?
+		* @param MaxLogLines Maximun number of lines stored on the console
+		* @param Background texture ( 0 if don't want a texture )
 		* @param ConsoleColor The Console Background Color
 		* @param ConsoleLineColor The Console Line Background Color
 		* @param FontColor The Console Font Color
 		* @param FontLineColor The Console Line Font Color ( The Client Input )
 		*/
-		void Create( cFont* Font, const bool& MakeDefaultCommands = true, const eeRGBA& ConsoleColor = eeRGBA(true), const eeRGBA& ConsoleLineColor = eeRGBA(true), const eeRGBA& FontColor = eeRGBA(true), const eeRGBA& FontLineColor = eeRGBA(true), const Uint32& TextureId = 0, const eeUint& MaxLogLines = 1024 );
-
-		/** Creates the new console
-		* @param TTFFont The cTTFFont pointer to class
-		* @param MakeDefaultCommands Register the default commands provided by the class?
-		* @param ConsoleColor The Console Background Color
-		* @param ConsoleLineColor The Console Line Background Color
-		* @param FontColor The Console Font Color
-		* @param FontLineColor The Console Line Font Color ( The Client Input )
-		*/
-		void Create( cTTFFont* TTFFont, const bool& MakeDefaultCommands = true, const eeRGBA& ConsoleColor = eeRGBA(true), const eeRGBA& ConsoleLineColor = eeRGBA(true), const eeRGBA& FontColor = eeRGBA(true), const eeRGBA& FontLineColor = eeRGBA(true), const Uint32& TextureId = 0, const eeUint& MaxLogLines = 1024 );
-
-		/** Creates the new console
-		* @param TexFont The cTextureFont pointer to class
-		* @param MakeDefaultCommands Register the default commands provided by the class?
-		* @param ConsoleColor The Console Background Color
-		* @param ConsoleLineColor The Console Line Background Color
-		* @param FontColor The Console Font Color
-		* @param FontLineColor The Console Line Font Color ( The Client Input )
-		*/
-		void Create( cTextureFont* TexFont, const bool& MakeDefaultCommands = true, const eeRGBA& ConsoleColor = eeRGBA(true), const eeRGBA& ConsoleLineColor = eeRGBA(true), const eeRGBA& FontColor = eeRGBA(true), const eeRGBA& FontLineColor = eeRGBA(true), const Uint32& TextureId = 0, const eeUint& MaxLogLines = 1024 );
+		void Create( cFont* Font, const bool& MakeDefaultCommands = true, const eeUint& MaxLogLines = 1024, const Uint32& TextureId = 0, const eeRGBA& ConsoleColor = eeRGBA(true), const eeRGBA& ConsoleLineColor = eeRGBA(true), const eeRGBA& FontColor = eeRGBA(true), const eeRGBA& FontLineColor = eeRGBA(true) );
 
 		/** Add Text to Console */
 		void PushText( const std::wstring& str );
@@ -170,8 +152,6 @@ class EE_API cConsole{
 		bool mCurSide;
 
 		void CreateDefaultCommands();
-
-		void PrivCreate( const bool& MakeDefaultCommands, const eeRGBA& ConsoleColor, const eeRGBA& ConsoleLineColor, const eeRGBA& FontColor, const eeRGBA& FontLineColor, const Uint32& TextureId, const eeUint& MaxLogLines );
 
 		void Fade();
 

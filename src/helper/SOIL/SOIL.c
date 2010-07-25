@@ -32,7 +32,7 @@
 
 #include "SOIL.h"
 #include "stb_image.h"
-//#include "stb_image_write.h"
+#include "stb_image_write.h"
 #include "image_helper.h"
 #include "image_DXT.h"
 
@@ -1522,9 +1522,8 @@ int
 	} else
 	if( image_type == SOIL_SAVE_TYPE_PNG )
 	{
-		/*save_result = stbi_write_png( filename,
-				width, height, channels, (const unsigned char *const)data, 0 );*/
-		save_result = 0;
+		save_result = stbi_write_png( filename,
+				width, height, channels, (const unsigned char *const)data, 0 );
 	} else
 	{
 		save_result = 0;

@@ -24,22 +24,9 @@ cConsole::~cConsole() {
 		cInput::Instance()->PopCallback( mMyCallback );
 }
 
-void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const eeRGBA& ConsoleColor, const eeRGBA& ConsoleLineColor, const eeRGBA& FontColor, const eeRGBA& FontLineColor, const Uint32& TextureId, const eeUint& MaxLogLines ) {
+void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const eeUint& MaxLogLines, const Uint32& TextureId, const eeRGBA& ConsoleColor, const eeRGBA& ConsoleLineColor, const eeRGBA& FontColor, const eeRGBA& FontLineColor ) {
 	mFont = Font;
-	PrivCreate( MakeDefaultCommands, ConsoleColor, ConsoleLineColor, FontColor, FontLineColor, TextureId, MaxLogLines );
-}
 
-void cConsole::Create( cTTFFont* TTFFont, const bool& MakeDefaultCommands, const eeRGBA& ConsoleColor, const eeRGBA& ConsoleLineColor, const eeRGBA& FontColor, const eeRGBA& FontLineColor, const Uint32& TextureId, const eeUint& MaxLogLines ) {
-	mFont = reinterpret_cast<cFont*> (TTFFont);
-	PrivCreate( MakeDefaultCommands, ConsoleColor, ConsoleLineColor, FontColor, FontLineColor, TextureId, MaxLogLines );
-}
-
-void cConsole::Create( cTextureFont* TexFont, const bool& MakeDefaultCommands, const eeRGBA& ConsoleColor, const eeRGBA& ConsoleLineColor, const eeRGBA& FontColor, const eeRGBA& FontLineColor, const Uint32& TextureId, const eeUint& MaxLogLines ) {
-	mFont = reinterpret_cast<cFont*> (TexFont);
-	PrivCreate( MakeDefaultCommands, ConsoleColor, ConsoleLineColor, FontColor, FontLineColor, TextureId, MaxLogLines );
-}
-
-void cConsole::PrivCreate( const bool& MakeDefaultCommands, const eeRGBA& ConsoleColor, const eeRGBA& ConsoleLineColor, const eeRGBA& FontColor, const eeRGBA& FontLineColor, const Uint32& TextureId, const eeUint& MaxLogLines ) {
 	mFontSize = (eeFloat)mFont->GetFontSize();
 
 	if ( !FontColor.voidRGB )

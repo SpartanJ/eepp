@@ -165,6 +165,10 @@ class EE_API cTextureFactory: public cSingleton<cTextureFactory>, protected cMut
 		* @param LocalCopy If keep a local copy in memory of the texture
 		*/
 		Uint32 PushTexture( const std::string& Filepath, const Uint32& TexId, const eeUint& Width, const eeUint& Height, const eeUint& ImgWidth, const eeUint& ImgHeight, const bool& Mipmap, const eeUint& Channels, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy = false );
+
+		cTexture * GetByName( const std::string& Name );
+
+		cTexture * GetByHash( const Uint32& Hash );
 	protected:
 		cTextureFactory();
 		~cTextureFactory();

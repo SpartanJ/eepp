@@ -39,6 +39,9 @@ class EE_API cTexture {
 		/** @return The Texture Size on Memory (in bytes) */
 		eeUint Size() const { return (eeUint)mWidth * (eeUint)mHeight * 4; }
 
+		/** @return The id of the texture ( that is the hash of the filename ) */
+		const Uint32& Id() const;
+
 		/** Set the Texture File Path */
 		void Filepath( const std::string& filepath ) { mFilepath = filepath; }
 

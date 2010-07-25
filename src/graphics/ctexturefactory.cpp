@@ -147,15 +147,8 @@ void cTextureFactory::ReloadAllTextures() {
 		for ( Uint32 i = 1; i < mTextures.size(); i++ ) {
 			cTexture* Tex = GetTexture(i);
 
-			if ( Tex ) {
-				if ( Tex->LocalCopy() )
-					Tex->Reload();
-				else {
-					Tex->Lock();
-					Tex->Reload();
-					Tex->Unlock(false, false);
-				}
-			}
+			if ( Tex )
+				Tex->Reload();
 		}
 		cLog::instance()->Write("Textures Reloaded.");
 	} catch (...) {
@@ -283,6 +276,23 @@ eeUint cTextureFactory::GetTexMemSize( const eeUint& TexId ) {
 	}
 
 	return 0;
+}
+
+cTexture * cTextureFactory::GetByName( const std::string& Name ) {
+	return GetByHash( MakeHash( Name ) );
+}
+
+cTexture * cTextureFactory::GetByHash( const Uint32& Hash ) {
+	cTexture * tTex = NULL;
+
+	for ( Uint32 i = mTextures.size() - 1; i > 0; i-- ) {
+		tTex = mTextures[ i ];
+
+		if ( NULL != tTex && tTex->Id() == Hash )
+			return mTextures[ i ];
+	}
+
+	return NULL;
 }
 
 }}
