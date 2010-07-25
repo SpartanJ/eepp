@@ -339,4 +339,3 @@ extern int      stbi_gif_info_from_file   (FILE *f,                  int *x, int
 //
 ////   end header file   /////////////////////////////////////////////////////
 #endif // STBI_INCLUDE_STB_IMAGE_H
- 
