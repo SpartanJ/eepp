@@ -107,7 +107,19 @@ void EE_API InsertChar( std::wstring& str, const eeUint& pos, const Uint32& tcha
 /** @return A storage path for config files for every platform */
 std::string EE_API StoragePath( std::string appname );
 
+/** Copy a string to another
+* @param Dst Destination String
+* @param Src Source String
+* @param DstSize Destination Size
+*/
 void EE_API StrCopy( char * Dst, const char * Src, eeUint DstSize );
+
+/** Compare two strings from its beginning.
+* @param Start String start
+* @param Str String to compare
+* @return The position of the last char compared ( -1 if fails )
+*/
+Int32 StrStartsWith( const std::string& Start, const std::string Str );
 
 }}
 

@@ -75,7 +75,7 @@ class EE_API cShape {
 
 		void ClearCache();
 
-		eeColorA * Lock();
+		Uint8 * Lock();
 
 		bool Unlock( const bool& KeepData = false, const bool& Modified = false );
 
@@ -87,7 +87,7 @@ class EE_API cShape {
 
 		bool SaveToFile(const std::string& filepath, const EE_SAVETYPE& Format);
 	protected:
-		eeColorA *	mPixels;
+		Uint8 *		mPixels;
 		Uint8 *		mAlpha;
 		std::string mName;
 		Uint32		mId;

@@ -13,6 +13,8 @@ cTextureFactory::cTextureFactory() :
 {
 	mTextures.clear();
 	mTextures.push_back( NULL );
+
+	mAppPath = AppPath();
 }
 
 cTextureFactory::~cTextureFactory() {
@@ -56,10 +58,17 @@ Uint32 cTextureFactory::PushTexture( const std::string& Filepath, const Uint32& 
 	eeInt MyWidth 		= ImgWidth;
 	eeInt MyHeight 		= ImgHeight;
 
+	std::string FPath = Filepath;
+
+	Int32 pos = StrStartsWith( mAppPath, FPath );
+
+	if ( -1 != pos && (Uint32)(pos + 1) < FPath.size() )
+		FPath = FPath.substr( pos + 1 );
+
 	Pos = FindFreeSlot();
 	Tex = mTextures[ Pos ] = new cTexture();
 
-	Tex->Create( TexId, Width, Height, MyWidth, MyHeight, Mipmap, Channels, Filepath, ColorKey, ClampMode, CompressTexture );
+	Tex->Create( TexId, Width, Height, MyWidth, MyHeight, Mipmap, Channels, FPath, ColorKey, ClampMode, CompressTexture );
 	Tex->TexId( Pos );
 
 	if ( !ColorKey.voidRGB )
@@ -201,7 +210,7 @@ void cTextureFactory::SetBlendFunc( const EE_RENDERALPHAS& blend, const bool& fo
 					glBlendFunc(GL_DST_COLOR,GL_ZERO);
 					break;
 				case ALPHA_NONE:
-					// COMPILER WARNING MY BALLS
+					// AVOID COMPILER WARNING
 					break;
 			}
 

@@ -38,7 +38,7 @@ cShape * cShapeManager::GetAt( const Uint32& Index ) {
 
 cShape * cShapeManager::Get( const Uint32& Hash ) {
 	if ( 0 != Hash ) {
-		for ( Uint32 i = 0; i < mShapes.size(); i++ ) {
+		for ( Uint32 i = mShapes.size() - 1; i >= 0; i-- ) {
 			if ( NULL != mShapes[i] && mShapes[i]->Id() == Hash )
 				return mShapes[i];
 		}

@@ -166,8 +166,16 @@ class EE_API cTextureFactory: public cSingleton<cTextureFactory>, protected cMut
 		*/
 		Uint32 PushTexture( const std::string& Filepath, const Uint32& TexId, const eeUint& Width, const eeUint& Height, const eeUint& ImgWidth, const eeUint& ImgHeight, const bool& Mipmap, const eeUint& Channels, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy = false );
 
+		/** Return a texture by it file path name
+		* @param Name File path name
+		* @return The texture, NULL if not exists.
+		*/
 		cTexture * GetByName( const std::string& Name );
-
+		
+		/** Return a texture by it hash path name
+		* @param Hash The file path hash
+		* @return The texture, NULL if not exists
+		*/
 		cTexture * GetByHash( const Uint32& Hash );
 	protected:
 		cTextureFactory();
@@ -182,6 +190,8 @@ class EE_API cTextureFactory: public cSingleton<cTextureFactory>, protected cMut
 		std::vector<cTexture*> mTextures;
 
 		eeUint mMemSize;
+		
+		std::string mAppPath;
 
 		std::queue<Uint32> mVectorFreeSlots;
 

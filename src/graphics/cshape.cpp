@@ -216,16 +216,20 @@ void cShape::CacheAlphaMask() {
 }
 
 void cShape::CacheColors() {
-	Uint32 size =  ( mSrcRect.Right - mSrcRect.Left ) * ( mSrcRect.Bottom - mSrcRect.Top ) ;
+	mTexture->Lock();
+
+	Uint32 size =  ( mSrcRect.Right - mSrcRect.Left ) * ( mSrcRect.Bottom - mSrcRect.Top ) * mTexture->Channels();
 
 	eeSAFE_DELETE_ARRAY( mPixels );
-	mPixels = new eeColorA[ size ];
 
-	mTexture->Lock();
+	mPixels = new Uint8[ size ];
 
 	eeInt rY = 0;
 	eeInt rX = 0;
 	eeInt rW = mSrcRect.Right - mSrcRect.Left;
+	eeColorA tColor;
+	Uint32 Channels = mTexture->Channels();
+	eeInt Pos;
 
 	for ( eeInt y = mSrcRect.Top; y < mSrcRect.Bottom; y++ ) {
 		rY = y - mSrcRect.Top;
@@ -233,7 +237,14 @@ void cShape::CacheColors() {
 		for ( eeInt x = mSrcRect.Left; x < mSrcRect.Right; x++ ) {
 			rX = x - mSrcRect.Left;
 
-			mPixels[ rX + rY * rW ] = mTexture->GetPixel( x, y );
+			tColor = mTexture->GetPixel( x, y );
+
+			Pos = ( rX + rY * rW ) * Channels;
+
+			if ( Channels >= 1 ) mPixels[ Pos ]		= tColor.R();
+			if ( Channels >= 2 ) mPixels[ Pos + 1 ]	= tColor.G();
+			if ( Channels >= 3 ) mPixels[ Pos + 2 ]	= tColor.B();
+			if ( Channels >= 4 ) mPixels[ Pos + 3 ]	= tColor.A();
 		}
 	}
 
@@ -248,7 +259,7 @@ Uint8 cShape::GetAlphaAt( const Int32& X, const Int32& Y ) {
 		return mAlpha[ X + Y * ( mSrcRect.Right - mSrcRect.Left ) ];
 
 	if ( NULL != mPixels )
-		return mPixels[ X + Y * ( mSrcRect.Right - mSrcRect.Left ) ].A();
+		return mPixels[ ( X + Y * ( mSrcRect.Right - mSrcRect.Left ) ) * mTexture->Channels() + 3 ];
 
 	CacheAlphaMask();
 
@@ -259,8 +270,19 @@ eeColorA cShape::GetColorAt( const Int32& X, const Int32& Y ) {
 	if ( mTexture->LocalCopy() )
 		return mTexture->GetPixel( mSrcRect.Left + X, mSrcRect.Right + Y );
 
-	if ( NULL != mPixels )
-		return mPixels[ X + Y * ( mSrcRect.Right - mSrcRect.Left ) ];
+	if ( NULL != mPixels ) {
+		Uint32 Channels = mTexture->Channels();
+		eeUint Pos = ( X + Y * ( mSrcRect.Right - mSrcRect.Left ) ) * Channels;
+
+		if ( 4 == Channels )
+			return eeColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], mPixels[ Pos + 2 ], mPixels[ Pos + 3 ] );
+		else if ( 3 == Channels )
+			return eeColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], mPixels[ Pos + 2 ], 255 );
+		else if ( 2 == Channels )
+			return eeColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], 255, 255 );
+		else
+			return eeColorA( mPixels[ Pos ], 255, 255, 255 );
+	}
 
 	CacheColors();
 
@@ -268,11 +290,17 @@ eeColorA cShape::GetColorAt( const Int32& X, const Int32& Y ) {
 }
 
 void cShape::SetColorAt( const Int32& X, const Int32& Y, const eeColorA& Color ) {
-	if ( NULL != mPixels )
-		mPixels[ X + Y * ( mSrcRect.Right - mSrcRect.Left ) ] = Color;
-	else {
+	if ( NULL != mPixels ) {
+		Uint32 Channels = mTexture->Channels();
+		eeUint Pos = ( X + Y * ( mSrcRect.Right - mSrcRect.Left ) ) * Channels;
+
+		if ( Channels >= 1 ) mPixels[ Pos ]		= Color.R();
+		if ( Channels >= 2 ) mPixels[ Pos + 1 ]	= Color.G();
+		if ( Channels >= 3 ) mPixels[ Pos + 2 ]	= Color.B();
+		if ( Channels >= 4 ) mPixels[ Pos + 3 ]	= Color.A();
+	} else {
 		CacheColors();
-		mPixels[ X + Y * ( mSrcRect.Right - mSrcRect.Left ) ] = Color;
+		SetColorAt( X, Y, Color );
 	}
 }
 
@@ -281,7 +309,7 @@ void cShape::ClearCache() {
 	eeSAFE_DELETE_ARRAY( mAlpha );
 }
 
-eeColorA * cShape::Lock() {
+Uint8 * cShape::Lock() {
 	CacheColors();
 
 	return &mPixels[0];
@@ -296,7 +324,17 @@ bool cShape::Unlock( const bool& KeepData, const bool& Modified ) {
 			if ( PreviousTexture != (Int32)mTexture->Texture() )
 				glBindTexture(GL_TEXTURE_2D, mTexture->Texture() );
 
-			glTexSubImage2D( GL_TEXTURE_2D, 0, mSrcRect.Left, mSrcRect.Top, mSrcRect.Size().Width(), mSrcRect.Size().Height(), GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<const void *> ( &mPixels[0] ) );
+			Uint32 Channels = mTexture->Channels();
+			Uint32 Channel = GL_RGBA;
+
+			if ( 3 == Channels )
+				Channel = GL_RGB;
+			else if ( 2 == Channels )
+				Channel = GL_LUMINANCE_ALPHA;
+			else if ( 1 == Channels )
+				Channel = GL_ALPHA;
+
+			glTexSubImage2D( GL_TEXTURE_2D, 0, mSrcRect.Left, mSrcRect.Top, mSrcRect.Size().Width(), mSrcRect.Size().Height(), Channel, GL_UNSIGNED_BYTE, reinterpret_cast<const void *> ( &mPixels[0] ) );
 
 			if ( PreviousTexture != (Int32)mTexture->Texture() )
 				glBindTexture(GL_TEXTURE_2D, PreviousTexture);

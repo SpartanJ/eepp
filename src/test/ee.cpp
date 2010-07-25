@@ -348,10 +348,6 @@ void cEETest::Init() {
 		mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.\nPowered by Text Shrinker =)";
 		TTF.ShrinkText( mBuda, 400 );
 
-		mTexLoader = new cTextureLoader( MyPath + "data/test.jpg" );
-		mTexLoader->Threaded(true);
-		mTexLoader->Load();
-
 		Launch();
 	} else {
 		cout << "Failed to start EE++" << endl;
@@ -380,6 +376,10 @@ void cEETest::LoadTextures() {
 	Uint32 i;
 
 	TF->Allocate(40);
+
+	mTexLoader = new cTextureLoader( MyPath + "data/test.jpg" );
+	mTexLoader->Threaded(true);
+	mTexLoader->Load();
 
 	TN.resize(12);
 	TNP.resize(12);
@@ -701,8 +701,9 @@ void cEETest::Render() {
 
 	if ( mTexLoader->IsLoaded() ) {
 		cTexture * TexLoaded = TF->GetTexture( mTexLoader->TexId() );
-
-		TexLoaded->Draw( 0, 0 );
+		
+		if ( NULL != TexLoaded )
+			TexLoaded->Draw( 0, 0 );
 	}
 
 	HWidth = EE->GetWidth() * 0.5f;

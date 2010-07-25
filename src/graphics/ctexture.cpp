@@ -129,7 +129,7 @@ Uint8 * cTexture::Lock( const bool& ForceRGBA ) {
 	if ( !mLocked ) {
 		if ( ForceRGBA )
 			mChannels = 4;
-		
+
 		GLint PreviousTexture;
 		glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
 
@@ -223,7 +223,7 @@ eeColorA cTexture::GetPixel( const eeUint& x, const eeUint& y ) {
 	}
 
 	eeUint Pos = ( x + y * mWidth ) * mChannels;
-	
+
 	if ( 4 == mChannels )
 		return eeColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], mPixels[ Pos + 2 ], mPixels[ Pos + 3 ] );
 	else if ( 3 == mChannels )
@@ -241,16 +241,10 @@ void cTexture::SetPixel(const eeUint& x, const eeUint& y, const eeColorA& Color)
 
 	eeUint Pos = ( x + y * mWidth ) * mChannels;
 
-	for ( Uint32 i = 0; i < mChannels; i++ ) {
-		if ( 0 == i )
-			mPixels[ Pos + i ] = Color.R();
-		else if ( 1 == i )
-			mPixels[ Pos + i ] = Color.G();
-		else if ( 2 == i )
-			mPixels[ Pos + i ] = Color.B();
-		else if ( 3 == i )
-			mPixels[ Pos + i ] = Color.A();
-	}
+	if ( mChannels >= 1 ) mPixels[ Pos ]		= Color.R();
+	if ( mChannels >= 2 ) mPixels[ Pos + 1 ]	= Color.G();
+	if ( mChannels >= 3 ) mPixels[ Pos + 2 ]	= Color.B();
+	if ( mChannels >= 4 ) mPixels[ Pos + 3 ]	= Color.A();
 
 	mModified = true;
 }
@@ -368,7 +362,7 @@ const Uint32& cTexture::TexId() const {
 void cTexture::Allocate( const Uint32& size ) {
 	if ( eeARRAY_SIZE( mPixels ) != size ) {
 		ClearCache();
-	
+
 		mPixels = new unsigned char[ size * mChannels ];
 	}
 }
