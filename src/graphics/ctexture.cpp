@@ -121,61 +121,15 @@ void cTexture::Pixels( const Uint8* data ) {
 
 		Allocate( size );
 
-		memcpy( reinterpret_cast<void*>( &mPixels[0] ), reinterpret_cast<const void*> ( data ), size );
+		memcpy( reinterpret_cast<void*>( &mPixels[0] ), reinterpret_cast<const void*> ( data ), size * mChannels );
 	}
 }
 
-void cTexture::Reload()  {
-	Int32 width = mWidth;
-	Int32 height = mHeight;
-
-	GLint PreviousTexture;
-	glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
-
-	Uint32 flags = mMipmap ? SOIL_FLAG_MIPMAPS : 0;
-	flags = (mClampMode == EE_CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
-	flags = (mCompressedTexture) ? ( flags | SOIL_FLAG_COMPRESS_TO_DXT ) : flags;
-
-	if ( LocalCopy() ) {
-		mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8*> (&mPixels[0]), &width, &height, mChannels, mTexture, flags );
-	} else {
-		if ( PreviousTexture != (GLint)mTexture )
-			glBindTexture(GL_TEXTURE_2D, mTexture);
-
-		Int32 width = 0, height = 0;
-		glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
-		glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
-
-		mWidth = (eeInt)width;
-		mHeight = (eeInt)height;
-		eeUint size = (eeUint)mWidth * (eeUint)mHeight * mChannels;
-
-		Uint8 * tPixels = new Uint8[ size ];
-
-		Uint32 Channel = GL_RGBA;
-
-		if ( 3 == mChannels )
-			Channel = GL_RGB;
-		else if ( 2 == mChannels )
-			Channel = GL_LUMINANCE_ALPHA;
-		else if ( 1 == mChannels )
-			Channel = GL_ALPHA;
-
-		glGetTexImage( GL_TEXTURE_2D, 0, Channel, GL_UNSIGNED_BYTE, reinterpret_cast<Uint8*> (&tPixels[0]) );
-
-		if ( PreviousTexture != (GLint)mTexture )
-			glBindTexture(GL_TEXTURE_2D, PreviousTexture);
-
-		mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8*> (&tPixels[0]), &width, &height, mChannels, mTexture, flags );
-
-		eeSAFE_DELETE_ARRAY( tPixels );
-	}
-
-	glBindTexture( GL_TEXTURE_2D, PreviousTexture );
-}
-
-eeColorA* cTexture::Lock() {
+Uint8 * cTexture::Lock( const bool& ForceRGBA ) {
 	if ( !mLocked ) {
+		if ( ForceRGBA )
+			mChannels = 4;
+		
 		GLint PreviousTexture;
 		glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
 
@@ -190,13 +144,18 @@ eeColorA* cTexture::Lock() {
 		mHeight = (eeInt)height;
 		eeUint size = (eeUint)mWidth * (eeUint)mHeight;
 
-		if ( eeARRAY_SIZE( mPixels ) != size ) {
-			Allocate( size );
-		}
+		Allocate( size );
 
-		glGetTexImage( GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, reinterpret_cast<Uint8*> (&mPixels[0]) );
+		Uint32 Channel = GL_RGBA;
 
-		mChannels = 4;
+		if ( 3 == mChannels )
+			Channel = GL_RGB;
+		else if ( 2 == mChannels )
+			Channel = GL_LUMINANCE_ALPHA;
+		else if ( 1 == mChannels )
+			Channel = GL_ALPHA;
+
+		glGetTexImage( GL_TEXTURE_2D, 0, Channel, GL_UNSIGNED_BYTE, reinterpret_cast<Uint8*> (&mPixels[0]) );
 
 		if ( PreviousTexture != (GLint)mTexture )
 			glBindTexture(GL_TEXTURE_2D, PreviousTexture);
@@ -207,7 +166,7 @@ eeColorA* cTexture::Lock() {
 	return &mPixels[0];
 }
 
-bool cTexture::Unlock(const bool& KeepData, const bool& Modified) {
+bool cTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 	if ( mLocked ) {
 		Int32 width = 0, height = 0;
 		GLuint NTexId = 0;
@@ -226,7 +185,7 @@ bool cTexture::Unlock(const bool& KeepData, const bool& Modified) {
 			flags = (mClampMode == EE_CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 			flags = (mCompressedTexture) ? ( flags | SOIL_FLAG_COMPRESS_TO_DXT ) : flags;
 
-			NTexId = SOIL_create_OGL_texture( reinterpret_cast<Uint8*>(&mPixels[0]), &width, &height, SOIL_LOAD_RGBA, mTexture, flags);
+			NTexId = SOIL_create_OGL_texture( reinterpret_cast<Uint8*>(&mPixels[0]), &width, &height, mChannels, mTexture, flags );
 
 			SetTextureFilter(mFilter);
 
@@ -245,6 +204,7 @@ bool cTexture::Unlock(const bool& KeepData, const bool& Modified) {
 		if ( (eeInt)NTexId == mTexture || !Modified )
 			return true;
 	}
+
 	return false;
 }
 
@@ -257,12 +217,21 @@ const Uint8* cTexture::GetPixelsPtr() {
 	return reinterpret_cast<const Uint8*> (&mPixels[0]);
 }
 
-const eeColorA& cTexture::GetPixel(const eeUint& x, const eeUint& y) {
+eeColorA cTexture::GetPixel( const eeUint& x, const eeUint& y ) {
 	if ( mPixels == NULL || (eeInt)x > mWidth || (eeInt)y > mHeight ) {
 		return eeColorA::Black;
 	}
 
-	return mPixels[ x + y * (Uint32)mWidth ];
+	eeUint Pos = ( x + y * mWidth ) * mChannels;
+	
+	if ( 4 == mChannels )
+		return eeColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], mPixels[ Pos + 2 ], mPixels[ Pos + 3 ] );
+	else if ( 3 == mChannels )
+		return eeColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], mPixels[ Pos + 2 ], 255 );
+	else if ( 2 == mChannels )
+		return eeColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], 255, 255 );
+	else
+		return eeColorA( mPixels[ Pos ], 255, 255, 255 );
 }
 
 void cTexture::SetPixel(const eeUint& x, const eeUint& y, const eeColorA& Color) {
@@ -270,9 +239,18 @@ void cTexture::SetPixel(const eeUint& x, const eeUint& y, const eeColorA& Color)
 		return;
 	}
 
-	eeUint Pos = x + y * (eeUint)mWidth;
+	eeUint Pos = ( x + y * mWidth ) * mChannels;
 
-	mPixels[ Pos ] = Color;
+	for ( Uint32 i = 0; i < mChannels; i++ ) {
+		if ( 0 == i )
+			mPixels[ Pos + i ] = Color.R();
+		else if ( 1 == i )
+			mPixels[ Pos + i ] = Color.G();
+		else if ( 2 == i )
+			mPixels[ Pos + i ] = Color.B();
+		else if ( 3 == i )
+			mPixels[ Pos + i ] = Color.A();
+	}
 
 	mModified = true;
 }
@@ -315,11 +293,20 @@ void cTexture::SetTextureFilter(const EE_TEX_FILTER& filter) {
 }
 
 void cTexture::ReplaceColor(eeColorA ColorKey, eeColorA NewColor) {
-	Lock();
+	Lock( true );
 
-	for ( eeInt i = 0; i < mWidth * mHeight; i++ )
-		if ( mPixels[i] == ColorKey )
-			mPixels[i] = NewColor;
+	eeUint Pos = 0;
+
+	for ( eeInt i = 0; i < mWidth * mHeight; i++ ) {
+		Pos = i * mChannels;
+
+		if ( mPixels[ Pos ] == ColorKey.R() && mPixels[ Pos + 1 ] == ColorKey.G() && mPixels[ Pos + 2 ] == ColorKey.B() && mPixels[ Pos + 3 ] == ColorKey.A() ) {
+			mPixels[ Pos ] 		= NewColor.R();
+			mPixels[ Pos + 1 ]	= NewColor.G();
+			mPixels[ Pos + 2 ]	= NewColor.B();
+			mPixels[ Pos + 3 ]	= NewColor.A();
+		}
+	}
 
 	Unlock(false, true);
 }
@@ -369,9 +356,6 @@ void cTexture::ClearCache() {
 	eeSAFE_DELETE_ARRAY( mPixels );
 }
 
-const Uint32& cTexture::Id() const {
-	return mId;
-}
 
 void cTexture::TexId( const Uint32& id ) {
 	mTexId = id;
@@ -382,9 +366,37 @@ const Uint32& cTexture::TexId() const {
 }
 
 void cTexture::Allocate( const Uint32& size ) {
-	ClearCache();
+	if ( eeARRAY_SIZE( mPixels ) != size ) {
+		ClearCache();
+	
+		mPixels = new unsigned char[ size * mChannels ];
+	}
+}
 
-	mPixels = new eeColorA[ size ];
+void cTexture::Reload()  {
+	if ( LocalCopy() ) {
+		Int32 width = mWidth;
+		Int32 height = mHeight;
+
+		GLint PreviousTexture;
+		glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
+
+		Uint32 flags = mMipmap ? SOIL_FLAG_MIPMAPS : 0;
+		flags = (mClampMode == EE_CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
+		flags = (mCompressedTexture) ? ( flags | SOIL_FLAG_COMPRESS_TO_DXT ) : flags;
+
+		mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8 *> ( &mPixels[0] ), &width, &height, mChannels, mTexture, flags );
+
+		glBindTexture(GL_TEXTURE_2D, PreviousTexture);
+	} else {
+		Lock();
+		Reload();
+		Unlock();
+	}
+}
+
+const Uint32& cTexture::Id() const {
+	return mId;
 }
 
 void cTexture::Draw( const eeFloat &x, const eeFloat &y, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color, const EE_RENDERALPHAS &blend, const EE_RENDERTYPE &Effect, const bool &ScaleCentered, const eeRecti& texSector) {

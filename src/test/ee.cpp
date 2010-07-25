@@ -426,11 +426,16 @@ void cEETest::LoadTextures() {
 	PS[3].Create(Fire, 350, TN[5], -50.f, -50.f, 32, true);
 	PS[4].Create(Fire, 350, TN[5], -50.f, -50.f, 32, true);
 
-	cTexture* Tex = TF->GetTexture(TN[2]);
+	cTexture * Tex = TF->GetTexture(TN[2]);
+	
 	Tex->Lock();
-	for ( y = 0; y < Tex->Height(); y++) {
-		for ( x = 0; x < Tex->Width(); x++) {
+	eeInt w = Tex->Width();
+	eeInt h = Tex->Height();
+	
+	for ( y = 0; y < h; y++) {
+		for ( x = 0; x < w; x++) {
 			eeColorA C = Tex->GetPixel(x, y);
+			
 			if ( C.R() > 200 && C.G() > 200 && C.B() > 200 )
 				Tex->SetPixel(x, y, eeColorA( eeRandi(0, 255), eeRandi(0, 255), eeRandi(0, 255), C.A() ) );
 			else

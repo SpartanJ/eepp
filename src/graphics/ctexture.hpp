@@ -85,10 +85,10 @@ class EE_API cTexture {
 		EE_CLAMP_MODE ClampMode() const { return mClampMode; }
 
 		/** Lock the Texture for direct access */
-		eeColorA* Lock();
+		Uint8 * Lock( const bool& ForceRGBA = false );
 
 		/** Return the pixel color from the texture. \n You must have a copy of the texture on local memory. For that you need to Lock the texture first. */
-		const eeColorA& GetPixel(const eeUint& x, const eeUint& y);
+		eeColorA GetPixel(const eeUint& x, const eeUint& y);
 
 		/** Set the pixel color to the texture. \n You must have a copy of the texture on local memory. For that you need to Lock the texture first. */
 		void SetPixel(const eeUint& x, const eeUint& y, const eeColorA& Color);
@@ -222,7 +222,7 @@ class EE_API cTexture {
 		/** Reload the texture from the current local copy. */
 		void Reload();
 	protected:
-		eeColorA *		mPixels;
+		Uint8 *			mPixels;
 
 		std::string 	mFilepath;
 

@@ -168,7 +168,7 @@ void cTextureLoader::LoadFromMemory() {
 }
 
 void cTextureLoader::LoadFromPixels() {
-	if ( mTexLoaded && !mLoaded ) {
+	if ( !mLoaded && mTexLoaded ) {
 		Uint32 tTexId = 0;
 
 		if ( NULL != mPixels ) {
