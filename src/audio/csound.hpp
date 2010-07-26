@@ -108,8 +108,8 @@ class EE_API cSound : public cAudioResource {
 	private :
 		friend class cSoundStream;
 
-		unsigned int	   mySource; 	///< OpenAL source identifier
-		const cSoundBuffer* myBuffer; 	///< Sound buffer bound to the source
+		unsigned int			mSource; 	///< OpenAL source identifier
+		const cSoundBuffer *	mBuffer; 	///< Sound buffer bound to the source
 };
 
 }}

@@ -2,20 +2,24 @@
 
 namespace EE { namespace Audio {
 
-cSoundFileOgg::cSoundFileOgg() : myStream (NULL), myChannelsCount(0) {}
-
-cSoundFileOgg::~cSoundFileOgg() {
-	if (myStream)
-		stb_vorbis_close(myStream);
+cSoundFileOgg::cSoundFileOgg() :
+	mStream (NULL),
+	mChannelsCount(0)
+{
 }
 
-bool cSoundFileOgg::IsFileSupported(const std::string& Filename, bool Read) {
-	if (Read) {
-		// Open the vorbis stream
-		stb_vorbis* Stream = stb_vorbis_open_filename(const_cast<char*>(Filename.c_str()), NULL, NULL);
+cSoundFileOgg::~cSoundFileOgg() {
+	if ( NULL != mStream )
+		stb_vorbis_close( mStream );
+}
 
-		if (Stream) {
-			stb_vorbis_close(Stream);
+bool cSoundFileOgg::IsFileSupported( const std::string& Filename, bool Read ) {
+	if ( Read ) {
+		// Open the vorbis stream
+		stb_vorbis* Stream = stb_vorbis_open_filename( const_cast<char*>( Filename.c_str() ), NULL, NULL );
+
+		if ( NULL != Stream ) {
+			stb_vorbis_close( Stream );
 			return true;
 		} else
 			return false;
@@ -23,70 +27,80 @@ bool cSoundFileOgg::IsFileSupported(const std::string& Filename, bool Read) {
 		return false;
 }
 
-bool cSoundFileOgg::IsFileSupported(const char* Data, std::size_t SizeInBytes) {
+bool cSoundFileOgg::IsFileSupported( const char* Data, std::size_t SizeInBytes ) {
 	// Open the vorbis stream
-	unsigned char* Buffer = reinterpret_cast<unsigned char*>(const_cast<char*>(Data));
-	int Length = static_cast<int>(SizeInBytes);
-	stb_vorbis* Stream = stb_vorbis_open_memory(Buffer, Length, NULL, NULL);
+	unsigned char* Buffer = reinterpret_cast<unsigned char*>( const_cast<char*>( Data ) );
+	int Length = static_cast<int>( SizeInBytes );
 
-	if (Stream) {
+	stb_vorbis * Stream = stb_vorbis_open_memory( Buffer, Length, NULL, NULL );
+
+	if ( NULL != Stream ) {
 		stb_vorbis_close(Stream);
 		return true;
 	} else
 		return false;
-
 }
 
-bool cSoundFileOgg::OpenRead(const std::string& Filename, std::size_t& NbSamples, unsigned int& ChannelsCount, unsigned int& SampleRate) {
+bool cSoundFileOgg::OpenRead( const std::string& Filename, std::size_t& NbSamples, unsigned int& ChannelsCount, unsigned int& SampleRate ) {
 	// Close the file if already opened
-	if (myStream)
-		stb_vorbis_close(myStream);
-	
+	if ( NULL != mStream )
+		stb_vorbis_close( mStream );
+
 	// Open the vorbis stream
-	myStream = stb_vorbis_open_filename(const_cast<char*>(Filename.c_str()), NULL, NULL);
-	if (myStream == NULL) {
+	mStream = stb_vorbis_open_filename( const_cast<char*>( Filename.c_str() ), NULL, NULL );
+
+	if ( NULL == mStream ) {
 		cLog::instance()->Write( "Failed to read sound file \"" + Filename + "\" (cannot open the file)" );
 		return false;
 	}
 
 	// Get the music parameters
-	stb_vorbis_info Infos = stb_vorbis_get_info(myStream);
-	ChannelsCount = myChannelsCount = Infos.channels;
-	SampleRate	= Infos.sample_rate;
-	NbSamples	 = static_cast<std::size_t>(stb_vorbis_stream_length_in_samples(myStream) * ChannelsCount);
+	stb_vorbis_info Infos = stb_vorbis_get_info( mStream );
+	ChannelsCount	= mChannelsCount = Infos.channels;
+	SampleRate		= Infos.sample_rate;
+	NbSamples		= static_cast<std::size_t>(stb_vorbis_stream_length_in_samples(mStream) * ChannelsCount);
 
 	return true;
 }
 
-bool cSoundFileOgg::OpenRead(const char* Data, std::size_t SizeInBytes, std::size_t& NbSamples, unsigned int& ChannelsCount, unsigned int& SampleRate) {
+bool cSoundFileOgg::OpenRead( const char* Data, std::size_t SizeInBytes, std::size_t& NbSamples, unsigned int& ChannelsCount, unsigned int& SampleRate ) {
 	// Close the file if already opened
-	if (myStream)
-		stb_vorbis_close(myStream);
+	if ( NULL != mStream )
+		stb_vorbis_close( mStream );
 
 	// Open the vorbis stream
-	unsigned char* Buffer = reinterpret_cast<unsigned char*>(const_cast<char*>(Data));
-	int Length = static_cast<int>(SizeInBytes);
-	myStream = stb_vorbis_open_memory(Buffer, Length, NULL, NULL);
-	if (myStream == NULL) {
+	unsigned char* Buffer = reinterpret_cast<unsigned char*>( const_cast<char*>( Data ) );
+	int Length = static_cast<int>( SizeInBytes );
+
+	mStream = stb_vorbis_open_memory( Buffer, Length, NULL, NULL );
+
+	if ( NULL == mStream ) {
 		cLog::instance()->Write( "Failed to read sound file from memory (cannot open the file)" );
 		return false;
 	}
 
 	// Get the music parameters
-	stb_vorbis_info Infos = stb_vorbis_get_info(myStream);
-	ChannelsCount = myChannelsCount = Infos.channels;
-	SampleRate	= Infos.sample_rate;
-	NbSamples	 = static_cast<std::size_t>(stb_vorbis_stream_length_in_samples(myStream));
+	stb_vorbis_info Infos = stb_vorbis_get_info( mStream );
+	ChannelsCount	= mChannelsCount = Infos.channels;
+	SampleRate		= Infos.sample_rate;
+	NbSamples		= static_cast<std::size_t>( stb_vorbis_stream_length_in_samples( mStream ) );
 
 	return true;
 }
 
-std::size_t cSoundFileOgg::Read(Int16* Data, std::size_t NbSamples) {
-	if (myStream && Data && NbSamples) {
-		int Read = stb_vorbis_get_samples_short_interleaved(myStream, myChannelsCount, Data, static_cast<int>(NbSamples));
-		return static_cast<std::size_t>(Read * myChannelsCount);
+std::size_t cSoundFileOgg::Read( Int16 * Data, std::size_t NbSamples ) {
+	if ( NULL != mStream && Data && NbSamples ) {
+		int Read = stb_vorbis_get_samples_short_interleaved( mStream, mChannelsCount, Data, static_cast<int>( NbSamples ) );
+		return static_cast<std::size_t>( Read * mChannelsCount );
 	} else
 		return 0;
+}
+
+void cSoundFileOgg::Seek(float timeOffset) {
+    if ( NULL != mStream ) {
+        unsigned int frameOffset = static_cast<unsigned int>( timeOffset * mSampleRate );
+        stb_vorbis_seek( mStream, frameOffset );
+    }
 }
 
 }}

@@ -80,9 +80,7 @@ cEngine::~cEngine() {
 	cGlobalBatchRenderer::DestroySingleton();
 	cTextureFactory::DestroySingleton();
 
-	#ifdef EE_SHADERS
 	cShaderProgramManager::DestroySingleton();
-	#endif
 
 	UI::cUIManager::DestroySingleton();
 
@@ -173,9 +171,6 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 		/* Enable the special window hook events */
 		SDL_EventState(SDL_SYSWMEVENT, SDL_ENABLE);
 		SDL_SetEventFilter(clipboard_filter);
-		/*#elif EE_PLATFORM == EE_PLATFORM_WIN32
-		if ( mVideoInfo.Windowed )
-			ChangeRes(mVideoInfo.Width, mVideoInfo.Height, mVideoInfo.Windowed );*/
 		#endif
 
 		if ( mVideoInfo.ColorDepth == 16 ) {
@@ -193,7 +188,14 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 		if ( mVideoInfo.Windowed )
 			mOldWinPos = GetWindowPosition();
 
-		mVideoInfo.SupARB_point = ( GetExtension("GL_ARB_point_parameters") && GetExtension("GL_ARB_point_sprite") );
+		mGLEWinit = glewInit();
+
+		if ( GLEW_OK == mGLEWinit ) {
+			mVideoInfo.SupARB_point = GL_VERSION_1_4 && GLEW_ARB_point_parameters && GLEW_ARB_point_sprite;
+			mVideoInfo.SupShaders 	= GLEW_ARB_shading_language_100 && GLEW_ARB_shader_objects && GLEW_ARB_vertex_shader && GLEW_ARB_fragment_shader;
+		} else {
+			// die
+		}
 
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 
@@ -201,14 +203,6 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 		mCurrentView = &mDefaultView;
 
 		ResetGL2D();
-
-		#ifdef EE_SHADERS
-		mVideoInfo.SupShaders = GetExtension("GL_ARB_shading_language_100") && GetExtension("GL_ARB_shader_objects") && GetExtension("GL_ARB_vertex_shader") && GetExtension("GL_ARB_fragment_shader");
-
-		if ( mVideoInfo.SupShaders ) {
-			glewInit();
-		}
-		#endif
 
 		SetWindowCaption("EEPP");
 
@@ -542,12 +536,7 @@ std::string cEngine::GetVersion() {
 }
 
 bool cEngine::GetExtension( const std::string& Ext ) {
-	char *Exts = (char *)glGetString(GL_EXTENSIONS);
-
-	if ( strstr( Exts, Ext.c_str() ) )
-		return true;
-
-	return false;
+	return (bool)glewIsSupported( Ext.c_str() );
 }
 
 SDL_Cursor* cEngine::CreateCursor( const Uint32& TexId, const eeVector2i& HotSpot ) {

@@ -158,11 +158,9 @@ class cEETest : private cThread {
 
 		cView Views[2];
 
-		#ifdef EE_SHADERS
-		cShaderProgram* mShaderProgram;
+		cShaderProgram * mShaderProgram;
     	eeFloat mBlurFactor;
     	bool mUseShaders;
-    	#endif
 
     	Uint32 mLastFPSLimit;
     	bool mWasMinimized;
@@ -260,7 +258,6 @@ void cEETest::Init() {
 		Batch.AllocVertexs( 1024 );
 		Batch.SetBlendFunc( ALPHA_BLENDONE );
 
-		#ifdef EE_SHADERS
 		mUseShaders = mUseShaders && EE->ShadersSupported();
 
 		mShaderProgram = NULL;
@@ -269,7 +266,6 @@ void cEETest::Init() {
 			mBlurFactor = 0.01f;
 			mShaderProgram = new cShaderProgram( MyPath + "data/shader/blur.vert", MyPath + "data/shader/blur.frag" );
 		}
-		#endif
 
 		cUIManager::instance()->Init();
 
@@ -427,15 +423,15 @@ void cEETest::LoadTextures() {
 	PS[4].Create(Fire, 350, TN[5], -50.f, -50.f, 32, true);
 
 	cTexture * Tex = TF->GetTexture(TN[2]);
-	
+
 	Tex->Lock();
 	eeInt w = Tex->Width();
 	eeInt h = Tex->Height();
-	
+
 	for ( y = 0; y < h; y++) {
 		for ( x = 0; x < w; x++) {
 			eeColorA C = Tex->GetPixel(x, y);
-			
+
 			if ( C.R() > 200 && C.G() > 200 && C.B() > 200 )
 				Tex->SetPixel(x, y, eeColorA( eeRandi(0, 255), eeRandi(0, 255), eeRandi(0, 255), C.A() ) );
 			else
@@ -577,20 +573,16 @@ void cEETest::Screen2() {
 	Batch.BatchScale( 1.0f );
     Batch.BatchCenter( eeVector2f( 0, 0 ) );
 
-	#ifdef EE_SHADERS
 	if ( mUseShaders ) {
 		mBlurFactor = scale * 0.01f;
 		mShaderProgram->Bind();
 		mShaderProgram->SetUniform( "blurfactor" , mBlurFactor );
 	}
-	#endif
 
 	TNP[6]->DrawFast( PlanetX, PlanetY, ang, scale);
 
-	#ifdef EE_SHADERS
 	if ( mUseShaders )
 		mShaderProgram->Unbind();
-	#endif
 
 	TNP[3]->Draw( HWidth - 128, HHeight, 0, 1, eeColorA(255,255,255,150), ALPHA_NORMAL, RN_ISOMETRIC);
 	TNP[3]->Draw( HWidth - 128, HHeight - 128, 0, 1, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRIC);
@@ -701,7 +693,7 @@ void cEETest::Render() {
 
 	if ( mTexLoader->IsLoaded() ) {
 		cTexture * TexLoaded = TF->GetTexture( mTexLoader->TexId() );
-		
+
 		if ( NULL != TexLoaded )
 			TexLoaded->Draw( 0, 0 );
 	}

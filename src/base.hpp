@@ -29,11 +29,8 @@
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
 
-#define EE_SHADERS
-#ifdef EE_SHADERS
-    #define GLEW_STATIC
-	#include "helper/glew/glew.h"
-#endif
+#define GLEW_STATIC
+#include "helper/glew/glew.h"
 #include <GL/gl.h>
 
 #define Int8 Sint8
@@ -89,12 +86,13 @@
 
 #define eeARRAY_SIZE(__array)	( sizeof(__array) / sizeof(__array[0]) )
 #define eeSAFE_DELETE(p)		{ if(p) { delete (p);		(p)=NULL; } }
+#define eeSAFE_FREE(p)			{ if(p) { free (p);			(p)=NULL; } }
 #define eeSAFE_DELETE_ARRAY(p)  { if(p) { delete[](p);		(p)=NULL; } }
 
 namespace EE {
 	typedef float				eeFloat; 	//! The internal floating point used on EE++. \n This can help to improve compatibility with some platforms. \n And helps for an easy change from single precision to double precision.
-	typedef double				eeDouble; 	//! The internal double floating point. It's only used when the engine needs some very high precision floating point ( for example the timer )
-	typedef unsigned long		eeUint;
+	typedef double			eeDouble; 	//! The internal double floating point. It's only used when the engine needs some very high precision floating point ( for example the timer )
+	typedef unsigned long	eeUint;
 	typedef signed long		eeInt;
 
 	const eeFloat PI			= 3.141592654f;

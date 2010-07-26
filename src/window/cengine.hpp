@@ -84,10 +84,10 @@ class EE_API cEngine : public cSingleton<cEngine> {
 
 		/** Set a frame per second limit. It's not 100 % accurate. */
 		void SetFrameRateLimit(const Uint32& FrameRateLimit);
-		
+
 		/** Get a frame per second limit. */
 		Uint32 GetFrameRateLimit() { return static_cast<Uint32>( mFrames.FPS.Limit ); }
-		
+
 		/** Set to show or not the curson on the main screen */
 		void ShowCursor(const bool& showcursor);
 
@@ -125,7 +125,7 @@ class EE_API cEngine : public cSingleton<cEngine> {
 
 		/** @return True if shaders are supported by the GPU */
 		bool ShadersSupported() const { return mVideoInfo.SupShaders; }
-		
+
 		/** Set a Cursor from a Texture (B/W Cursor) */
 		void SetCursor( const Uint32& TexId, const eeVector2i& HotSpot = eeVector2i() );
 
@@ -146,13 +146,13 @@ class EE_API cEngine : public cSingleton<cEngine> {
 
 		/** This will attempt to show the window */
 		void ShowWindow();
-		
+
 		/** This will attemp to move the window over the desktop to the position */
 		void SetWindowPosition(Int16 Left, Int16 Top);
-		
+
 		/**  Set the current Viewport ( and create a new ortho proyection ) */
 		void SetViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
-		
+
 		/** The Video Info Struct */
 		typedef struct {
 			Uint32 Width;
@@ -173,7 +173,7 @@ class EE_API cEngine : public cSingleton<cEngine> {
 			bool SupARB_point;
 			bool LineSmooth;
 			bool SupShaders;
-			
+
 			Int32 WWidth;
 			Int32 WHeight;
 			bool Maximized;
@@ -185,45 +185,45 @@ class EE_API cEngine : public cSingleton<cEngine> {
 
 		/** @return The internal video info */
 		const VideoInfo* GetVideoInfo() const { return &mVideoInfo; }
-		
+
 		/** @return The Clipboard Text if available */
 		std::string GetClipboardText();
-		
+
 		/** @return The Clipboard Text if available ( as std::wstring ) */
 		std::wstring GetClipboardTextWStr();
-		
+
 		/** Set the current Clipping area ( default the entire window ) */
 		void ClipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
-		
+
 		/** Disable the Clipping area */
 		void ClipDisable();
-		
+
 		/** @return If the current window is active */
 		bool WindowActive();
-		
+
 		/** @return If the current window is visible */
 		bool WindowVisible();
-		
+
 		/** This will set the default rendering states and view to render in 2D mode */
 		void ResetGL2D();
-		
+
 		/** Set the current active view
 		@param View New view to use (pass GetDefaultView() to set the default view)
 		*/
 		void SetView( const cView& View );
-		
+
 		/** Get the current view */
 		const cView& GetView() const;
-		
+
 		/** Get the default view of the window */
 		const cView& GetDefaultView() const;
-		
+
 		/** @return The company responsible for this GL implementation. */
 		std::string GetVendor();
-		
+
 		/** @return The name of the renderer.\n This name is typically specific to a particular configuration of a hardware platform. */
 		std::string GetRenderer();
-		
+
 		/** @return A GL version or release number. */
 		std::string GetVersion();
 
@@ -254,16 +254,18 @@ class EE_API cEngine : public cSingleton<cEngine> {
 			cTimeElapsed FrameElapsed;
 			eeFloat ElapsedTime;
 		} mFrames;
-		
+
 		Uint32 mInitialWidth, mInitialHeight;
-		
+
 		cView mDefaultView;
 		const cView* mCurrentView;
-		
+
+		GLenum mGLEWinit;
+
 		void CalculateFps();
 		void LimitFps();
 		void GetElapsedTime();
-		
+
 		SDL_Cursor * CreateCursor( const Uint32& TexId, const eeVector2i& HotSpot );
 
 		eeScrapType clipboard_convert_format(int type);

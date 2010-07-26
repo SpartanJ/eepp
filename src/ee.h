@@ -100,12 +100,9 @@
 	#include "graphics/cglobalbatchrenderer.hpp"
 	#include "graphics/ctextcache.hpp"
 	#include "graphics/pixelperfect.hpp"
-
-	#ifdef EE_SHADERS
 	#include "graphics/cshader.hpp"
 	#include "graphics/cshaderprogram.hpp"
 	#include "graphics/cshaderprogrammanager.hpp"
-	#endif
 	using namespace EE::Graphics;
 
 	// Gaming

@@ -2,78 +2,90 @@
 
 namespace EE { namespace Audio {
 
-cMusic::cMusic(std::size_t BufferSize) : myFile (NULL), myDuration(0.f), mySamples (BufferSize) {}
+cMusic::cMusic(std::size_t BufferSize) :
+	mFile (NULL),
+	mDuration(0.f),
+	mSamples (BufferSize)
+{
+}
 
 cMusic::~cMusic() {
 	Stop();
-	delete myFile;
+	eeSAFE_DELETE( mFile );
 }
 
 bool cMusic::OpenFromPack( cPack* Pack, const std::string& FilePackPath ) {
-	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, myData ) )
-		return OpenFromMemory( reinterpret_cast<const char*> (&myData[0]), myData.size() );
-	
+	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, mData ) )
+		return OpenFromMemory( reinterpret_cast<const char*> (&mData[0]), mData.size() );
+
 	return false;
 }
 
 bool cMusic::OpenFromFile(const std::string& Filename) {
 	// Create the sound file implementation, and open it in read mode
 	Stop();
-	delete myFile;
-	
-	myFile = cSoundFile::CreateRead(Filename);
-	if (!myFile) {
+	eeSAFE_DELETE( mFile );
+
+	mFile = cSoundFile::CreateRead(Filename);
+	if (!mFile) {
 		cLog::instance()->Write( "Failed to open \"" + Filename + "\" for reading" );
 		return false;
 	}
-	
+
 	// Compute the duration
-	myDuration = static_cast<eeFloat>(myFile->GetSamplesCount()) / myFile->GetSampleRate() / myFile->GetChannelsCount();
-	
+	mDuration = static_cast<eeFloat>(mFile->GetSamplesCount()) / mFile->GetSampleRate() / mFile->GetChannelsCount();
+
 	// Initialize the stream
-	Initialize(myFile->GetChannelsCount(), myFile->GetSampleRate());
-	
+	Initialize(mFile->GetChannelsCount(), mFile->GetSampleRate());
+
 	cLog::instance()->Write( "Music file " + Filename + " loaded." );
 	return true;
 }
 
 bool cMusic::OpenFromMemory(const char* Data, std::size_t SizeInBytes) {
 	Stop();
-	delete myFile;
-	
+	eeSAFE_DELETE( mFile );
+
 	// Create the sound file implementation, and open it in read mode
-	myFile = cSoundFile::CreateRead(Data, SizeInBytes);
-	if (!myFile) {
+	mFile = cSoundFile::CreateRead(Data, SizeInBytes);
+
+	if ( NULL == mFile ) {
 		cLog::instance()->Write( "Failed to open music from memory for reading" );
 		return false;
 	}
-	
-	myDuration = static_cast<eeFloat>(myFile->GetSamplesCount()) / myFile->GetSampleRate(); // Compute the duration
 
-	Initialize(myFile->GetChannelsCount(), myFile->GetSampleRate()); // Initialize the stream
-	
+	mDuration = static_cast<eeFloat>(mFile->GetSamplesCount()) / mFile->GetSampleRate(); // Compute the duration
+
+	Initialize(mFile->GetChannelsCount(), mFile->GetSampleRate()); // Initialize the stream
+
 	cLog::instance()->Write( "Music file loaded from memory." );
 	return true;
 }
 
 bool cMusic::OnStart() {
-	return myFile && myFile->Restart();
+	return mFile && mFile->Restart();
 }
 
 bool cMusic::OnGetData(cSoundStream::Chunk& Data) {
-	if ( myFile ) {
+	if ( NULL != mFile ) {
 		// Fill the chunk parameters
-		Data.Samples   = &mySamples[0];
-		Data.NbSamples = myFile->Read(&mySamples[0], mySamples.size());
-		
+		Data.Samples   = &mSamples[0];
+		Data.NbSamples = mFile->Read(&mSamples[0], mSamples.size());
+
 		// Check if we have reached the end of the audio file
-		return Data.NbSamples == mySamples.size();
+		return Data.NbSamples == mSamples.size();
 	}
+
 	return false;
 }
 
 eeFloat cMusic::GetDuration() const {
-	return myDuration;
+	return mDuration;
+}
+
+void cMusic::OnSeek( float timeOffset ) {
+	if ( NULL != mFile )
+		mFile->Seek( timeOffset );
 }
 
 }}

@@ -3,19 +3,23 @@
 
 namespace EE { namespace Audio {
 
-cAudioDevice* cAudioDevice::ourInstance;
+cAudioDevice * cAudioDevice::mInstance = NULL;
 
-cAudioDevice::cAudioDevice() : myRefCount(0) {
+cAudioDevice::cAudioDevice() :
+	mDevice(NULL),
+	mContext(NULL),
+	mRefCount(0)
+{
 	// Create the device
-	myDevice = alcOpenDevice(NULL);
+	mDevice = alcOpenDevice( NULL );
 
-	if (myDevice) {
-		myContext = alcCreateContext(myDevice, NULL);
-		
-		if (myContext) {
+	if ( mDevice ) {
+		mContext = alcCreateContext( mDevice, NULL );
+
+		if ( mContext ) {
 			// Set the context as the current one (we'll only need one)
-			alcMakeContextCurrent(myContext);
-			
+			alcMakeContextCurrent( mContext );
+
 			// Initialize the listener, located at the origin and looking along the Z axis
 			cAudioListener::instance()->SetPosition(0.f, 0.f, 0.f);
 			cAudioListener::instance()->SetTarget(0.f, 0.f, -1.f);
@@ -27,59 +31,62 @@ cAudioDevice::cAudioDevice() : myRefCount(0) {
 
 cAudioDevice::~cAudioDevice() {
 	// Destroy the context
-	alcMakeContextCurrent(NULL);
-	if (myContext)
-		alcDestroyContext(myContext);
-	
+	alcMakeContextCurrent( NULL );
+
+	if ( mContext )
+		alcDestroyContext( mContext );
+
 	// Destroy the device
-	if (myDevice)
-		alcCloseDevice(myDevice);
+	if ( mDevice )
+		alcCloseDevice( mDevice );
 }
 
 bool cAudioDevice::isCreated() {
-	return myContext && myDevice;
+	return mContext && mDevice;
 }
 
-cAudioDevice& cAudioDevice::GetInstance() {
+cAudioDevice * cAudioDevice::instance() {
 	// Create the audio device if it doesn't exist
-	if (!ourInstance)
-		ourInstance = new cAudioDevice;
-	
-	return *ourInstance;
-}
+	if ( NULL == mInstance )
+		mInstance = new cAudioDevice;
 
-cAudioDevice& cAudioDevice::instance() {
-	if (!ourInstance)
-		return cAudioDevice::GetInstance();
-	
-	return *ourInstance;
+	return mInstance;
 }
 
 void cAudioDevice::AddReference() {
-	// Create the audio device if it doesn't exist
-	if (!ourInstance)
-		ourInstance = new cAudioDevice;
-	
+	cAudioDevice::instance();
+
 	// Increase the references count
-	ourInstance->myRefCount++;
+	mInstance->mRefCount++;
 }
 
 void cAudioDevice::RemoveReference() {
 	// Decrease the references count
-	ourInstance->myRefCount--;
+	mInstance->mRefCount--;
 
 	// Destroy the audio device if the references count reaches 0
-	if (ourInstance->myRefCount == 0) {
-		delete ourInstance;
-		ourInstance = NULL;
+	if (mInstance->mRefCount == 0) {
+		delete mInstance;
+		mInstance = NULL;
 	}
 }
 
-ALCdevice* cAudioDevice::GetDevice() const {
-	return myDevice;
+ALCdevice * cAudioDevice::GetDevice() const {
+	return mDevice;
+}
+
+bool cAudioDevice::IsExtensionSupported( const std::string& extension ) {
+    cAudioDevice::instance();
+
+    if ( ( extension.length() > 2 ) && ( extension.substr(0, 3) == "ALC" ) )
+        return alcIsExtensionPresent( mDevice, extension.c_str() ) != AL_FALSE;
+    else
+        return alIsExtensionPresent( extension.c_str() ) != AL_FALSE;
 }
 
 ALenum cAudioDevice::GetFormatFromChannelsCount(unsigned int ChannelsCount) const {
+	cAudioDevice::instance();
+
 	switch (ChannelsCount) {
 		case 1 : return AL_FORMAT_MONO16;
 		case 2 : return AL_FORMAT_STEREO16;

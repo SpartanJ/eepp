@@ -4,6 +4,8 @@
 namespace HaikuTTF {
 
 hkFont::hkFont( hkFontManager * FontManager, unsigned int CacheSize ) :
+	mFm(NULL),
+	mCache(NULL),
 	mFace(NULL),
 	mHeight(0),
 	mAscent(0),
@@ -17,8 +19,6 @@ hkFont::hkFont( hkFontManager * FontManager, unsigned int CacheSize ) :
 	mUnderlineHeight(0),
 	mCurrent(NULL),
 	mFontSizeFamily(0),
-	mFm(NULL),
-	mCache(NULL),
 	mStyle(0),
 	mOutline(0),
 	mHinting(0)

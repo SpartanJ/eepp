@@ -2,7 +2,6 @@
 #define HAIKUTTF_HKBASE_HPP
 
 #include <cmath>
-#include <vector>
 
 #ifdef _MSC_VER
 #include "stdint.h"
@@ -26,10 +25,6 @@
 #define CACHED_BITMAP	0x01
 #define CACHED_PIXMAP	0x02
 
-namespace HaikuTTF {
-	using namespace std;
-}
-
 /* Handle a style only if the font does not already handle it */
 #define TTF_HANDLE_STYLE_BOLD(font) 			( ( (font)->Style() & TTF_STYLE_BOLD ) && !( (font)->FaceStyle() & TTF_STYLE_BOLD ) )
 #define TTF_HANDLE_STYLE_ITALIC(font) 			( ( (font)->Style() & TTF_STYLE_ITALIC ) && !( (font)->FaceStyle() & TTF_STYLE_ITALIC ) )
@@ -43,13 +38,6 @@ namespace HaikuTTF {
 #define hkSAFE_DELETE(p)		{ if(p) { delete (p);		(p)=NULL; } }
 #define hkSAFE_FREE(p)			{ if(p) { free (p);			(p)=NULL; } }
 #define hkSAFE_DELETE_ARRAY(p)  { if(p) { delete[](p);		(p)=NULL; } }
-
-#define HK_GETSET( __TYPE, __NAME )	\
-	protected:																	\
-		__TYPE	m##__NAME;														\
-	public:																	\
-		inline __TYPE 	__NAME() const			{ return m##__NAME;	}		\
-		inline void 	__NAME( __TYPE value )	{ m##__NAME = value;	}
 
 #define TTF_STYLE_NORMAL	0x00
 #define TTF_STYLE_BOLD		0x01
