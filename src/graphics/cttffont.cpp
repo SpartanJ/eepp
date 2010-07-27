@@ -78,7 +78,7 @@ bool cTTFFont::iLoad(const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ver
 		mTexWidth = (eeFloat)NextPowOfTwo( mSize * 16 );
 		mTexHeight = mTexWidth;
 
-		TexSize = mTexWidth * mTexHeight;
+		TexSize = (Uint32)mTexWidth * (Uint32)mTexHeight;
 
 		if ( ( mSize >= 60 && mNumChars > 256 ) || ( OutlineSize > 2 && mNumChars >= 512 && mSize >= 24 ) )
 			mTexHeight *= 2;
@@ -117,8 +117,8 @@ bool cTTFFont::iLoad(const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ver
 			//Blit the glyph onto the glyph sheet
 			Uint32 * TexGlyph = reinterpret_cast<Uint32 *> ( TempGlyphSurface );
 			Uint32 Alpha;
-			Uint32 w = mTexWidth;
-			Uint32 h = mTexHeight;
+			Uint32 w = (Uint32)mTexWidth;
+			Uint32 h = (Uint32)mTexHeight;
 			Uint32 px, py;
 
 			for (int y = 0; y < GlyphRect.y; ++y ) {
@@ -190,7 +190,7 @@ bool cTTFFont::iLoad(const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ver
 			// Fill the TexO ( the default font alpha channels ) and the TexN ( the new outline )
 			for ( Int32 y = 0; y < mTexHeight; y++ ) {
 				for( Int32 x = 0; x < mTexWidth; x++) {
-					Pos = x + y * mTexWidth;
+					Pos = x + y * (Uint32)mTexWidth;
 					TexO[ Pos ] = mPixels[ Pos ].A();
 					TexN[ Pos ] = TexO[ Pos ];
 				}
@@ -210,7 +210,7 @@ bool cTTFFont::iLoad(const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ver
 
 			for ( Int32 y = 0; y < mTexHeight; y++ ) {
 				for( Int32 x = 0; x < mTexWidth; x++) {
-					Pos = x + y * mTexWidth;
+					Pos = x + y * (Uint32)mTexWidth;
 
 					// Fill the outline color
 					mPixels[ Pos ] = eeColorA( OutlineColor.R(), OutlineColor.G(), OutlineColor.B(), alpha[ Pos ] );
@@ -224,7 +224,7 @@ bool cTTFFont::iLoad(const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ver
 
 		hkFontManager::instance()->CloseFont( mFont );
 
-		mTexId = TF->LoadFromPixels( reinterpret_cast<unsigned char *> ( &mPixels[0] ), mTexWidth, mTexHeight, 4 );
+		mTexId = TF->LoadFromPixels( reinterpret_cast<unsigned char *> ( &mPixels[0] ), (Uint32)mTexWidth, (Uint32)mTexHeight, 4 );
 
 		eeSAFE_DELETE_ARRAY( mPixels );
 

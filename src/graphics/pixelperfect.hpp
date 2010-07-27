@@ -1,4 +1,4 @@
-#ifndef EE_GRAPHICS_PIXELPERFECT_H 
+#ifndef EE_GRAPHICS_PIXELPERFECT_H
 #define EE_GRAPHICS_PIXELPERFECT_H
 
 #include "ctexturefactory.hpp"

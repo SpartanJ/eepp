@@ -274,7 +274,7 @@ void cEETest::Init() {
 
 		cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 320, 240 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
-		Params.Border.Width( 2.f );
+		Params.Border.Width( 2 );
 		Params.Border.Color( 0xFF979797 );
 		//Params.Background.Corners(5);
 		Params.Background.Colors( eeColorA( 0x66FAFAFA ), eeColorA( 0xCCFAFAFA ), eeColorA( 0xCCFAFAFA ), eeColorA( 0x66FAFAFA ) );

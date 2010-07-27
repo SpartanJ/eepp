@@ -38,7 +38,7 @@ void cLog::Write(const std::string& Text, const bool& newLine) {
 
 void cLog::Write( const char* format, ... ) {
 	int n, size = 256;
-	std::string tstr( size, NULL );
+	std::string tstr( size, '\0' );
 
 	va_list args;
 
@@ -66,7 +66,7 @@ void cLog::Write( const char* format, ... ) {
 		else			// glibc 2.0
 			size *= 2;	// twice the old size
 
-		tstr.resize( size, NULL );
+		tstr.resize( size, '\0' );
 	}
 }
 

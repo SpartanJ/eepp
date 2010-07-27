@@ -15,7 +15,7 @@ class cResourceLoader {
 		/** @param MaxThreads Set the maximun simultaneous threads to load resources, if not value is seted it will use Num Cores - 1 or 1 thread if single core. */
 		cResourceLoader( const Uint32& MaxThreads = THREADS_AUTO );
 
-		~cResourceLoader();
+		virtual ~cResourceLoader();
 
 		void			Add( cObjectLoader * Object );
 
@@ -49,6 +49,3 @@ class cResourceLoader {
 }}
 
 #endif
-
-
-

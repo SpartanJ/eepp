@@ -3,8 +3,8 @@
 
 namespace EE { namespace UI {
 
-cUIMessage::cUIMessage( cUIControl * Ctrl, const Uint32& Msg ) : 
-	mCtrl( Ctrl ), 
+cUIMessage::cUIMessage( cUIControl * Ctrl, const Uint32& Msg ) :
+	mCtrl( Ctrl ),
 	mMsg( Msg )
 {
 }

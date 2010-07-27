@@ -84,8 +84,10 @@ void cShaderProgram::Reload() {
 
 	mShaders.clear();
 
-	for ( eeUint i = 0; i < tmpShader.size(); i++ )
+	for ( eeUint i = 0; i < tmpShader.size(); i++ ) {
+	    tmpShader[i]->Reload();
 		AddShader( tmpShader[i] );
+    }
 
 	Link();
 }

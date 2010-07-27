@@ -29,7 +29,6 @@
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
 
-#define GLEW_STATIC
 #include "helper/glew/glew.h"
 #include <GL/gl.h>
 

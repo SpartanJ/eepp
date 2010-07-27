@@ -101,7 +101,7 @@ Quad2<T>::Quad2( const Vector2<T>& v1, const Vector2<T>& v2, const Vector2<T>& v
 	V[3] = v4;
 }
 
-typedef Quad2<eeFloat> eeQuad2f; 
+typedef Quad2<eeFloat> eeQuad2f;
 
 }}
 

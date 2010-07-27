@@ -70,7 +70,7 @@ std::vector < std::wstring > SplitString ( const std::wstring& str, const Uint32
 	std::wstring tmpstr;
 
 	for ( eeUint i = 0; i < str.size(); i++ ) {
-		if ( str[i] == (eeInt)splitchar ) {
+		if ( str[i] == splitchar ) {
 			tmp.push_back(tmpstr);
 			tmpstr = L"";
 		} else {
@@ -112,7 +112,7 @@ void StrFormat( char * Buffer, int BufferSize, const char * format, ... ) {
 
 std::string StrFormated( const char * format, ... ) {
 	int n, size = 256;
-	std::string tstr( size, NULL );
+	std::string tstr( size, '\0' );
 
 	va_list args;
 
@@ -137,7 +137,7 @@ std::string StrFormated( const char * format, ... ) {
 		else			// glibc 2.0
 			size *= 2;	// twice the old size
 
-		tstr.resize( size, NULL );
+		tstr.resize( size, '\0' );
 	}
 }
 

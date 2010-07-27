@@ -39,6 +39,16 @@ void cShader::Init( const Uint32& Type ) {
 	mGLId = glCreateShader( mType );
 }
 
+void cShader::Reload() {
+	mValid = false;
+	mCompiled = false;
+	mGLId = glCreateShader( mType );
+
+	SetSource( mSource );
+
+	Compile();
+}
+
 void cShader::SetSource( const std::string& Source ) {
 	std::vector<char> _dst( Source.size(), 0 );
 	std::string _src( Source.size(), 0 );
@@ -54,6 +64,8 @@ void cShader::SetSource( const std::vector<char>& Source ) {
 		cLog::instance()->Write( "Can't set source for compiled shaders" );
 		return;
 	}
+
+    mSource = Source;
 
 	const char* src = &Source[0];
 
