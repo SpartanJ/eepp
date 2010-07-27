@@ -63,6 +63,7 @@ void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const eeUin
 	mTBuf.Start();
 	mTBuf.SupportNewLine( false );
 	mTBuf.Active( false );
+	IgnoreCharOnPrompt( 9 );
 
 	mCon.ConModif = 0;
 
@@ -297,8 +298,30 @@ void cConsole::Fade() {
 	if ( mA < 0.0f ) mA = 0.0f;
 }
 
+void cConsole::PrintCommandsStartingWith( const std::wstring& start ) {
+	std::list<std::wstring> cmds;
+	std::map < std::wstring, ConsoleCallback >::iterator it;
+
+	for ( it = mCallbacks.begin(); it != mCallbacks.end(); it++ ) {
+		if ( -1 != StrStartsWith( start, it->first ) ) {
+			cmds.push_back( it->first );
+		}
+	}
+
+	if ( cmds.size() > 1 ) {
+		std::list<std::wstring>::iterator ite;
+
+		for ( ite = cmds.begin(); ite != cmds.end(); ite++ )
+			PushText( (*ite) );
+
+	} else if ( cmds.size() ) {
+		mTBuf.Buffer( cmds.front() );
+		mTBuf.CurPos( cmds.front().size() );
+	}
+}
+
 void cConsole::PrivInputCallback( EE_Event* Event ) {
-	switch(Event->type) {
+	switch( Event->type ) {
 		case SDL_KEYUP:
 			if ( mVisible ) {
 				if ( ( ( Event->key.keysym.mod & KMOD_SHIFT ) && Event->key.keysym.sym == SDLK_INSERT ) || ( ( Event->key.keysym.mod & KMOD_CTRL ) && Event->key.keysym.sym == SDLK_v ) ) {
@@ -321,11 +344,13 @@ void cConsole::PrivInputCallback( EE_Event* Event ) {
 							mTBuf.Buffer( Str + tStr );
 						}
 					}
+				} else if ( ( Event->key.keysym.sym == SDLK_TAB ) && (eeUint)mTBuf.CurPos() == mTBuf.Buffer().size() ) {
+					PrintCommandsStartingWith( mTBuf.Buffer() );
 				}
 			}
 			break;
 		case SDL_KEYDOWN:
-			if (mVisible) {
+			if ( mVisible ) {
 				if ( mLastCommands.size() > 0 ) {
 					if ( Event->key.keysym.sym == SDLK_UP && mLastLogPos > 0 )
 						mLastLogPos--;

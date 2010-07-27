@@ -253,8 +253,8 @@ void StrCopy( char * Dst, const char * Src, eeUint DstSize ) {
 }
 
 Int32 StrStartsWith( const std::string& Start, const std::string Str ) {
-	Int32 Pos = 0;
-	
+	Int32 Pos = -1;
+
 	if ( Str.size() >= Start.size() ) {
 		for ( Uint32 i = 0; i < Start.size(); i++ ) {
 			if ( Start[i] == Str[i] ) {
@@ -265,7 +265,24 @@ Int32 StrStartsWith( const std::string& Start, const std::string Str ) {
 			}
 		}
 	}
-	
+
+	return Pos;
+}
+
+Int32 StrStartsWith( const std::wstring& Start, const std::wstring Str ) {
+	Int32 Pos = -1;
+
+	if ( Str.size() >= Start.size() ) {
+		for ( Uint32 i = 0; i < Start.size(); i++ ) {
+			if ( Start[i] == Str[i] ) {
+				Pos = (Int32)i;
+			} else {
+				Pos = -1;
+				break;
+			}
+		}
+	}
+
 	return Pos;
 }
 

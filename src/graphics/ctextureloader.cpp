@@ -9,7 +9,7 @@ cTextureLoader::cTextureLoader( const std::string& Filepath,
 	const EE_CLAMP_MODE& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
-) : cObjectLoader(),
+) : cObjectLoader( cObjectLoader::TextureLoader ),
 	mLoadType(TEX_LT_PATH),
 	mPixels(NULL),
 	mTexId(0),
@@ -38,7 +38,7 @@ cTextureLoader::cTextureLoader( const unsigned char * ImagePtr,
 	const EE_CLAMP_MODE& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
-) : cObjectLoader(),
+) : cObjectLoader( cObjectLoader::TextureLoader ),
 	mLoadType(TEX_LT_MEM),
 	mPixels(NULL),
 	mTexId(0),
@@ -67,7 +67,7 @@ cTextureLoader::cTextureLoader( cPack * Pack,
 	const EE_CLAMP_MODE& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
-) : cObjectLoader(),
+) : cObjectLoader( cObjectLoader::TextureLoader ),
 	mLoadType(TEX_LT_PACK),
 	mPixels(NULL),
 	mTexId(0),
@@ -99,7 +99,7 @@ cTextureLoader::cTextureLoader( const unsigned char * Pixels,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy,
 	const std::string& FileName
-) : cObjectLoader(),
+) : cObjectLoader( cObjectLoader::TextureLoader ),
 	mLoadType(TEX_LT_PIXELS),
 	mPixels( const_cast<unsigned char *> ( Pixels ) ),
 	mTexId(0),
@@ -122,11 +122,13 @@ cTextureLoader::cTextureLoader( const unsigned char * Pixels,
 }
 
 cTextureLoader::~cTextureLoader() {
-	if ( NULL != mPixels )
-		SOIL_free_image_data( mPixels );
+	if ( TEX_LT_PIXELS != mLoadType )
+		eeSAFE_FREE( mPixels );
 }
 
 void cTextureLoader::Start() {
+	cObjectLoader::Start();
+	
 	if ( TEX_LT_PATH == mLoadType )
 		LoadFromPath();
 	else if ( TEX_LT_MEM == mLoadType )
@@ -191,14 +193,14 @@ void cTextureLoader::LoadFromPixels() {
 				mTexId = cTextureFactory::instance()->PushTexture( mFilepath, tTexId, mImgWidth, mImgHeight, width, height, mMipmap, mChannels, mColorKey, mClampMode, mCompressTexture, mLocalCopy );
 
 			if ( TEX_LT_PIXELS != mLoadType )
-				SOIL_free_image_data( mPixels );
+				eeSAFE_FREE( mPixels );
 
 			mPixels = NULL;
 
 		} else
 			cLog::instance()->Write( SOIL_last_result() );
 
-		mLoaded = true;
+		SetLoaded();
 	}
 }
 

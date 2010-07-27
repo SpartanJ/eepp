@@ -1,4 +1,5 @@
 #include "csoundfiledefault.hpp"
+#ifndef EE_NO_SNDFILE
 
 namespace EE { namespace Audio {
 
@@ -267,3 +268,6 @@ sf_count_t cSoundFileDefault::MemoryIO::Write( const void*, sf_count_t, void* ) 
 }
 
 }}
+
+#endif
+

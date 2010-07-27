@@ -213,6 +213,8 @@ class EE_API cConsole{
 		void ProcessLine();
 
 		void PrivPushText( const std::wstring& str );
+
+		void PrintCommandsStartingWith( const std::wstring& start );
 };
 
 }}

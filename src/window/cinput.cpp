@@ -16,73 +16,73 @@ Int32 convertKeyCharacter( EE_Event* event ) {
 		return value;
 
 	switch (keysym.sym) {
-		case SDLK_TAB: 			value = SDLK_TAB; 		break;
-		case SDLK_LALT: 		value = SDLK_LALT; 		break;
-		case SDLK_RALT: 		value = SDLK_RALT;		break;
-		case SDLK_LSHIFT:		value = SDLK_LSHIFT;	break;
-		case SDLK_RSHIFT:		value = SDLK_RSHIFT;	break;
-		case SDLK_LCTRL:		value = SDLK_RSHIFT;	break;
-		case SDLK_RCTRL:		value = SDLK_LCTRL;		break;
-		case SDLK_BACKSPACE:	value = SDLK_BACKSPACE; break;
-		case SDLK_PAUSE:		value = SDLK_PAUSE;		break;
-		case SDLK_SPACE:
-			// Special characters like ~ (tilde) ends up with the keysym.sym SDLK_SPACE which
+		case KEY_TAB: 			value = KEY_TAB; 		break;
+		case KEY_LALT: 			value = KEY_LALT; 		break;
+		case KEY_RALT: 			value = KEY_RALT;		break;
+		case KEY_LSHIFT:		value = KEY_LSHIFT;		break;
+		case KEY_RSHIFT:		value = KEY_RSHIFT;		break;
+		case KEY_LCTRL:			value = KEY_RSHIFT;		break;
+		case KEY_RCTRL:			value = KEY_LCTRL;		break;
+		case KEY_BACKSPACE:		value = KEY_BACKSPACE; 	break;
+		case KEY_PAUSE:			value = KEY_PAUSE;		break;
+		case KEY_SPACE:
+			// Special characters like ~ (tilde) ends up with the keysym.sym KEY_SPACE which
 			// without this check would be lost. The check is only valid on key down events in SDL.
 			if (event->type == SDL_KEYUP || keysym.unicode == ' ')
-				value = SDLK_SPACE;
+				value = KEY_SPACE;
 			break;
-		case SDLK_ESCAPE:		value = SDLK_ESCAPE;	break;
-		case SDLK_DELETE:		value = SDLK_DELETE;	break;
-		case SDLK_INSERT:		value = SDLK_INSERT;	break;
-		case SDLK_HOME:			value = SDLK_HOME;		break;
-		case SDLK_END:			value = SDLK_END;		break;
-		case SDLK_PAGEUP:		value = SDLK_PAGEUP;	break;
-		case SDLK_PRINT:		value = SDLK_PRINT;		break;
-		case SDLK_PAGEDOWN:		value = SDLK_PAGEDOWN;	break;
-		case SDLK_F1:			value = SDLK_F1;		break;
-		case SDLK_F2:			value = SDLK_F2;		break;
-		case SDLK_F3:			value = SDLK_F3;		break;
-		case SDLK_F4:			value = SDLK_F4;		break;
-		case SDLK_F5:			value = SDLK_F5;		break;
-		case SDLK_F6:			value = SDLK_F6;		break;
-		case SDLK_F7:			value = SDLK_F7;		break;
-		case SDLK_F8:			value = SDLK_F8;		break;
-		case SDLK_F9:			value = SDLK_F9;		break;
-		case SDLK_F10:			value = SDLK_F10;		break;
-		case SDLK_F11:			value = SDLK_F11;		break;
-		case SDLK_F12:			value = SDLK_F12;		break;
-		case SDLK_F13:			value = SDLK_F13;		break;
-		case SDLK_F14:			value = SDLK_F14;		break;
-		case SDLK_F15:			value = SDLK_F15;		break;
-		case SDLK_NUMLOCK:		value = SDLK_NUMLOCK;	break;
-		case SDLK_CAPSLOCK:		value = SDLK_CAPSLOCK;	break;
-		case SDLK_SCROLLOCK:	value = SDLK_SCROLLOCK;	break;
-		case SDLK_RMETA:		value = SDLK_RMETA;		break;
-		case SDLK_LMETA:		value = SDLK_LMETA;		break;
-		case SDLK_LSUPER:		value = SDLK_LSUPER;	break;
-		case SDLK_RSUPER:		value = SDLK_RSUPER;	break;
-		case SDLK_MODE:			value = SDLK_MODE;		break;
-		case SDLK_UP:			value = SDLK_UP;		break;
-		case SDLK_DOWN:			value = SDLK_DOWN;		break;
-		case SDLK_LEFT:			value = SDLK_LEFT;		break;
-		case SDLK_RIGHT:		value = SDLK_RIGHT;		break;
-		case SDLK_RETURN:		value = SDLK_RETURN;	break;
-		case SDLK_KP_ENTER:		value = SDLK_KP_ENTER;	break;
+		case KEY_ESCAPE:		value = KEY_ESCAPE;		break;
+		case KEY_DELETE:		value = KEY_DELETE;		break;
+		case KEY_INSERT:		value = KEY_INSERT;		break;
+		case KEY_HOME:			value = KEY_HOME;		break;
+		case KEY_END:			value = KEY_END;		break;
+		case KEY_PAGEUP:		value = KEY_PAGEUP;		break;
+		case KEY_PRINT:			value = KEY_PRINT;		break;
+		case KEY_PAGEDOWN:		value = KEY_PAGEDOWN;	break;
+		case KEY_F1:			value = KEY_F1;			break;
+		case KEY_F2:			value = KEY_F2;			break;
+		case KEY_F3:			value = KEY_F3;			break;
+		case KEY_F4:			value = KEY_F4;			break;
+		case KEY_F5:			value = KEY_F5;			break;
+		case KEY_F6:			value = KEY_F6;			break;
+		case KEY_F7:			value = KEY_F7;			break;
+		case KEY_F8:			value = KEY_F8;			break;
+		case KEY_F9:			value = KEY_F9;			break;
+		case KEY_F10:			value = KEY_F10;		break;
+		case KEY_F11:			value = KEY_F11;		break;
+		case KEY_F12:			value = KEY_F12;		break;
+		case KEY_F13:			value = KEY_F13;		break;
+		case KEY_F14:			value = KEY_F14;		break;
+		case KEY_F15:			value = KEY_F15;		break;
+		case KEY_NUMLOCK:		value = KEY_NUMLOCK;	break;
+		case KEY_CAPSLOCK:		value = KEY_CAPSLOCK;	break;
+		case KEY_SCROLLOCK:		value = KEY_SCROLLOCK;	break;
+		case KEY_RMETA:			value = KEY_RMETA;		break;
+		case KEY_LMETA:			value = KEY_LMETA;		break;
+		case KEY_LSUPER:		value = KEY_LSUPER;		break;
+		case KEY_RSUPER:		value = KEY_RSUPER;		break;
+		case KEY_MODE:			value = KEY_MODE;		break;
+		case KEY_UP:			value = KEY_UP;			break;
+		case KEY_DOWN:			value = KEY_DOWN;		break;
+		case KEY_LEFT:			value = KEY_LEFT;		break;
+		case KEY_RIGHT:			value = KEY_RIGHT;		break;
+		case KEY_RETURN:		value = KEY_RETURN;		break;
+		case KEY_KP_ENTER:		value = KEY_KP_ENTER;	break;
 		default:				break;
 	}
 
 	if (! (keysym.mod & KMOD_NUM) ) {
 		switch (keysym.sym) {
-			case SDLK_KP0:		value = SDLK_INSERT;	break;
-			case SDLK_KP1:		value = SDLK_END;		break;
-			case SDLK_KP2:		value = SDLK_DOWN;		break;
-			case SDLK_KP3:		value = SDLK_PAGEDOWN;	break;
-			case SDLK_KP4:		value = SDLK_LEFT;		break;
-			case SDLK_KP5:		value = 0;				break;
-			case SDLK_KP6:		value = SDLK_RIGHT;		break;
-			case SDLK_KP7:		value = SDLK_HOME;		break;
-			case SDLK_KP8:		value = SDLK_UP;		break;
-			case SDLK_KP9:		value = SDLK_PAGEUP;	break;
+			case KEY_KP0:		value = KEY_INSERT;		break;
+			case KEY_KP1:		value = KEY_END;		break;
+			case KEY_KP2:		value = KEY_DOWN;		break;
+			case KEY_KP3:		value = KEY_PAGEDOWN;	break;
+			case KEY_KP4:		value = KEY_LEFT;		break;
+			case KEY_KP5:		value = 0;				break;
+			case KEY_KP6:		value = KEY_RIGHT;		break;
+			case KEY_KP7:		value = KEY_HOME;		break;
+			case KEY_KP8:		value = KEY_UP;			break;
+			case KEY_KP9:		value = KEY_PAGEUP;		break;
 			default:			break;
 		}
 	}
@@ -110,6 +110,9 @@ cInput::cInput() :
 
 	SDL_EnableUNICODE(1);
 	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
+
+	memset( mKeysDown	, 0, EE_KEYS_SPACE );
+	memset( mKeysUp		, 0, EE_KEYS_SPACE );
 }
 
 cInput::~cInput() {
@@ -117,10 +120,7 @@ cInput::~cInput() {
 }
 
 void cInput::Update() {
-	for( std::map<Uint16, EE_KEY_STATE>::iterator itr = mKeystates.begin(); itr != mKeystates.end(); itr++) {
-		if ( itr->second == EE_KEYUP )
-			itr->second = EE_KEYOFF;
-	}
+	memset( mKeysUp, 0, EE_KEYS_SPACE );
 
 	mReleaseTrigger 	= 0;
 	mLastPressTrigger 	= mPressTrigger;
@@ -131,12 +131,15 @@ void cInput::Update() {
 	while ( SDL_PollEvent(&mEvent) ) {
 		switch(mEvent.type) {
 			case SDL_KEYDOWN:
-				mKeystates[mEvent.key.keysym.sym] = EE_KEYDOWN;
 				mInputMod = mEvent.key.keysym.mod;
+
+				PushKey( &mKeysDown	[ mEvent.key.keysym.sym / 8 ], mEvent.key.keysym.sym % 8, true );
 				break;
 			case SDL_KEYUP:
-				mKeystates[mEvent.key.keysym.sym] = EE_KEYUP;
 				mInputMod = mEvent.key.keysym.mod;
+
+				PushKey( &mKeysDown	[ mEvent.key.keysym.sym / 8 ], mEvent.key.keysym.sym % 8, false );
+				PushKey( &mKeysUp	[ mEvent.key.keysym.sym / 8 ], mEvent.key.keysym.sym % 8, true );
 				break;
 			case SDL_MOUSEMOTION:
 			{
@@ -230,20 +233,36 @@ void cInput::Update() {
 	}
 }
 
-bool cInput::IsKeyDown(const EE_KEY& Key) {
-	return mKeystates[Key] == EE_KEYDOWN;
+bool cInput::GetKey( Uint8 * Key, Uint8 Pos ) {
+	if ( ( * Key ) & ( 1 << Pos ) )
+		return true;
+
+	return false;
 }
 
-bool cInput::IsKeyUp(const EE_KEY& Key) {
-	return mKeystates[Key] == EE_KEYUP;
+void cInput::PushKey( Uint8 * Key, Uint8 Pos, bool BitWrite ) {
+	if ( BitWrite )
+		( * Key ) |= ( 1 << Pos );
+	else {
+		if ( ( * Key ) & ( 1 << Pos ) )
+			( * Key ) &= ~( 1 << Pos );
+	}
 }
 
-void cInput::InjectKeyDown(const EE_KEY& Key) {
-	mKeystates[Key] = EE_KEYDOWN;
+bool cInput::IsKeyDown( const EE_KEY& Key ) {
+	return GetKey( &mKeysDown[ Key / 8 ], Key % 8 );
 }
 
-void cInput::InjectKeyUp(const EE_KEY& Key) {
-	mKeystates[Key] = EE_KEYUP;
+bool cInput::IsKeyUp( const EE_KEY& Key ) {
+	return GetKey( &mKeysUp[ Key / 8 ], Key % 8 );
+}
+
+void cInput::InjectKeyDown( const EE_KEY& Key ) {
+	PushKey( &mKeysDown	[ Key / 8 ], Key % 8, true );
+}
+
+void cInput::InjectKeyUp( const EE_KEY& Key ) {
+	PushKey( &mKeysUp	[ Key / 8 ], Key % 8, true );
 }
 
 eeVector2i cInput::GetMousePos() const {

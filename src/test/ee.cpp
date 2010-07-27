@@ -2,10 +2,10 @@
 
 /**
 @TODO Create a asynchronous resource loader ( at least for textures ).
-@TODO Create a basic UI system ( add basic controls, add skinning support ).
 @TODO Add support for Joysticks.
 @TODO Create a Vertex Buffer Object class ( with and without GL_ARB_vertex_buffer_object ).
 @TODO Add support for Frame Buffer Object and to switch rendering to FBO and Screen.
+@TODO Create a basic UI system ( add basic controls, add skinning support ).
 @TODO Support multitexturing.
 @TODO Create a texture packer tool ( pack various textures into one texture ).
 @TODO Encapsulate SDL and OpenGL ( and remove unnecessary dependencies ).
@@ -140,6 +140,7 @@ class cEETest : private cThread {
 		void Screen3();
 
 		cZip PAK;
+		cZip PakTest;
 
 		std::vector<Uint8> tmpv;
 		std::vector<Uint8> MySong;
@@ -170,7 +171,9 @@ class cEETest : private cThread {
 
 		std::wstring mBuda;
 
-		cTextureLoader * mTexLoader;
+		bool mTextureLoaded;
+		cResourceLoader mResLoad;
+		void OnTextureLoaded( cResourceLoader * ObjLoaded );
 };
 
 
@@ -368,14 +371,25 @@ void cEETest::CmdSetPartsNum ( const std::vector < std::wstring >& params ) {
 
 }
 
+void cEETest::OnTextureLoaded( cResourceLoader * ResLoaded ) {
+	mTextureLoaded = true;
+}
+
 void cEETest::LoadTextures() {
 	Uint32 i;
 
 	TF->Allocate(40);
 
-	mTexLoader = new cTextureLoader( MyPath + "data/test.jpg" );
-	mTexLoader->Threaded(true);
-	mTexLoader->Load();
+	mTextureLoaded = false;
+
+	PakTest.Open( MyPath + "data/test.zip" );
+
+	std::vector<std::string> files = PakTest.GetFileList();
+
+	for ( i = 0; i < files.size(); i++ )
+		mResLoad.Add( new cTextureLoader( &PakTest, files[i] ) );
+
+	mResLoad.Load( boost::bind( &cEETest::OnTextureLoaded, this, _1 ) );
 
 	TN.resize(12);
 	TNP.resize(12);
@@ -689,14 +703,13 @@ void cEETest::Screen3() {
 }
 
 void cEETest::Render() {
-	mTexLoader->Update();
-
-	if ( mTexLoader->IsLoaded() ) {
-		cTexture * TexLoaded = TF->GetTexture( mTexLoader->TexId() );
+	if ( mTextureLoaded ) {
+		cTexture * TexLoaded = TF->GetByName( "1.jpg" );
 
 		if ( NULL != TexLoaded )
 			TexLoaded->Draw( 0, 0 );
-	}
+	} else
+		mResLoad.Update();
 
 	HWidth = EE->GetWidth() * 0.5f;
 	HHeight = EE->GetHeight() * 0.5f;
@@ -954,8 +967,6 @@ void cEETest::Process() {
 }
 
 void cEETest::End() {
-	delete mTexLoader;
-
 	Wait();
 
 	Mus.Stop();

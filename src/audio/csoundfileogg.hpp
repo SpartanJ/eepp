@@ -2,6 +2,7 @@
 #define EE_AUDIOCSOUNDFILEOGG_H
 
 #include "base.hpp"
+#include "../helper/stb_vorbis/stb_vorbis.h"
 #include "csoundfile.hpp"
 
 namespace EE { namespace Audio {

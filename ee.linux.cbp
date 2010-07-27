@@ -179,6 +179,8 @@
 		<Unit filename="src/system/cpak.hpp" />
 		<Unit filename="src/system/crc4.cpp" />
 		<Unit filename="src/system/crc4.hpp" />
+		<Unit filename="src/system/cresourceloader.cpp" />
+		<Unit filename="src/system/cresourceloader.hpp" />
 		<Unit filename="src/system/cthread.cpp" />
 		<Unit filename="src/system/cthread.hpp" />
 		<Unit filename="src/system/ctimeelapsed.cpp" />

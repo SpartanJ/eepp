@@ -8,7 +8,7 @@
 
 namespace EE { namespace System {
 
-/** @brief Base class for al packing classes */
+/** @brief Zip files package manager. */
 class EE_API cZip : public cPack {
 	public:
 		cZip();

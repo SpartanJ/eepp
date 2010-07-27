@@ -28,6 +28,8 @@ class cView;
 #define EE_BUTTONS_WUWD		EE_BUTTON(EE_BUTTON_WHEELUP) | EE_BUTTON(EE_BUTTON_WHEELDOWN)
 #define EE_BUTTONS_ALL 		(0xFFffFFff)
 
+#define EE_KEYS_SPACE 		(336/8)
+
 /** EE_Event is just an SDL_Event */
 typedef SDL_Event EE_Event;
 
@@ -167,7 +169,7 @@ enum EE_KEY {
 	KEY_CAPSLOCK= SDLK_CAPSLOCK,
 	KEY_SCROLLOCK= SDLK_SCROLLOCK,
 	KEY_RSHIFT= SDLK_RSHIFT,
-	KEY_LSHFIT= SDLK_LSHIFT,
+	KEY_LSHIFT= SDLK_LSHIFT,
 	KEY_RCTRL= SDLK_RCTRL,
 	KEY_LCTRL= SDLK_LCTRL,
 	KEY_RALT= SDLK_RALT,
@@ -286,13 +288,6 @@ enum EE_KEY {
 	KEY_WORLD_93=	SDLK_WORLD_93,
 	KEY_WORLD_94=	SDLK_WORLD_94,
 	KEY_WORLD_95=	SDLK_WORLD_95
-};
-
-/** @enum EE_KEY_STATE Differents States of a Key */
-enum EE_KEY_STATE {
-	EE_KEYOFF = 0,
-	EE_KEYDOWN = 1,
-	EE_KEYUP = 2
 };
 
 /** @brief The basic input class. For mouse and keyboard. */
@@ -429,7 +424,10 @@ class EE_API cInput : public cSingleton<cInput> {
 
 		cEngine* EE;
 		EE_Event mEvent;
-		std::map<Uint16, EE_KEY_STATE> mKeystates;
+
+		Uint8 mKeysDown	[EE_KEYS_SPACE];
+		Uint8 mKeysUp	[EE_KEYS_SPACE];
+
 		std::map<Uint32, InputCallback> mCallbacks;
 
 		Uint32 mPressTrigger;
@@ -450,6 +448,9 @@ class EE_API cInput : public cSingleton<cInput> {
 
 		bool mInputGrabed;
 		eeFloat mMouseSpeed;
+
+		bool GetKey( Uint8 * Key, Uint8 Pos );
+		void PushKey( Uint8 * Key, Uint8 Pos, bool BitWrite );
 };
 
 }}

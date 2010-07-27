@@ -121,6 +121,8 @@ void EE_API StrCopy( char * Dst, const char * Src, eeUint DstSize );
 */
 Int32 StrStartsWith( const std::string& Start, const std::string Str );
 
+Int32 StrStartsWith( const std::wstring& Start, const std::wstring Str );
+
 }}
 
 #endif

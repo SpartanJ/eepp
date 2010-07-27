@@ -2,11 +2,11 @@
 
 namespace EE { namespace Window {
 
-cInputTextBuffer::cInputTextBuffer( const bool& Active, const bool& SupportNewLine, const bool& SupportFreeEditing, const Uint32& MaxLenght ) : 
-	mChangeSinceLastUpdate(false), 
-	mCallback(0), 
-	mPromptPos(0), 
-	mPromptAutoPos(true), 
+cInputTextBuffer::cInputTextBuffer( const bool& Active, const bool& SupportNewLine, const bool& SupportFreeEditing, const Uint32& MaxLenght ) :
+	mChangeSinceLastUpdate(false),
+	mCallback(0),
+	mPromptPos(0),
+	mPromptAutoPos(true),
 	mEnter(false)
 {
 	mActive = Active;
@@ -16,13 +16,13 @@ cInputTextBuffer::cInputTextBuffer( const bool& Active, const bool& SupportNewLi
 	SetAutoPromp();
 }
 
-cInputTextBuffer::cInputTextBuffer() : 
-	mActive(true), 
-	mSupportNewLine(true), 
+cInputTextBuffer::cInputTextBuffer() :
+	mActive(true),
+	mSupportNewLine(true),
 	mChangeSinceLastUpdate(false),
-	mCallback(0), 
-	mPromtPosSupport(true), 
-	mEnter(false), 
+	mCallback(0),
+	mPromtPosSupport(true),
+	mEnter(false),
 	mMaxLenght(0xFFFFFFFF)
 {
 	SetAutoPromp();
@@ -31,7 +31,7 @@ cInputTextBuffer::cInputTextBuffer() :
 cInputTextBuffer::~cInputTextBuffer() {
 	if ( mCallback && NULL != cInput::Instance() )
 		cInput::Instance()->PopCallback( mCallback );
-	
+
 	mText.clear();
 }
 
@@ -43,14 +43,14 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 	if ( mActive ) {
 		mChangeSinceLastUpdate = false;
 		Int32 c = convertKeyCharacter( Event );
-		
+
 		if ( mPromtPosSupport ) {
 			switch(Event->type) {
 				case SDL_KEYDOWN:
 					if ( ( c == KEY_BACKSPACE || c == KEY_DELETE ) ) {
 						if ( mText.size() ) {
 							mChangeSinceLastUpdate = true;
-							
+
 							if ( mPromptPos < (eeInt)mText.size() ) {
 								if ( c == KEY_BACKSPACE ) {
 									if ( mPromptPos > 0 ) {
@@ -69,10 +69,10 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 							InsertChar( mText, mPromptPos, L'\n' );
 							mPromptPos++;
 						}
-						
+
 						if ( mEnter )
 							mEnterCall();
-						
+
  					} else if ( c == KEY_LEFT ) {
 						if ( ( mPromptPos - 1 ) >= 0 ) {
 							mPromptPos--;
@@ -87,17 +87,17 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 						}
 					} else if ( CanAdd() && isCharacter(c) && !cInput::instance()->MetaPressed() && !cInput::instance()->AltPressed() && !cInput::instance()->ControlPressed() ) {
 						bool Ignored = false;
-						
+
 						if ( mIgnoredChars.size() ) {
 							for ( eeUint i = 0; i < mIgnoredChars.size(); i++ ) {
 								if ( mIgnoredChars[i] == (Uint32)c )
 									Ignored = true;
 							}
 						}
-						
+
 						if ( !Ignored ) {
 							mChangeSinceLastUpdate = true;
-							
+
 							if ( mPromptAutoPos ) {
 								mText += c;
 								mPromptPos = mText.size();
@@ -107,13 +107,13 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 							}
 						}
 					}
-					
+
 					break;
 				case SDL_KEYUP:
 					if ( Event->key.keysym.sym == SDLK_END ) {
 						SetAutoPromp();
 					}
-					
+
 					if ( Event->key.keysym.sym == SDLK_HOME ) {
 						mPromptPos = 0;
 						SetAutoPromp(false);
@@ -123,13 +123,13 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 		} else {
 			if (Event->type == SDL_KEYDOWN) {
 				mChangeSinceLastUpdate = true;
-				
+
 				if ( c == KEY_BACKSPACE && mText.size() > 0 ) {
 					mText.resize( mText.size() - 1 );
 				} else if ( (c == KEY_RETURN || c == KEY_KP_ENTER) && !cInput::instance()->MetaPressed() && !cInput::instance()->AltPressed() && !cInput::instance()->ControlPressed() ) {
 					if ( mSupportNewLine && CanAdd() )
 						mText += L'\n';
-					
+
 					if ( mEnter )
 						mEnterCall();
 				} else if ( CanAdd() && isCharacter(c) && !cInput::instance()->MetaPressed() && !cInput::instance()->AltPressed() && !cInput::instance()->ControlPressed() ) {
@@ -166,7 +166,7 @@ void cInputTextBuffer::SetAutoPromp( const bool& set ) {
 void cInputTextBuffer::Buffer( const std::wstring& str ) {
 	mText = str;
 	mChangeSinceLastUpdate = true;
-	
+
 	if ( mPromtPosSupport )
 		SetAutoPromp();
 }
@@ -207,7 +207,7 @@ bool cInputTextBuffer::CanAdd() {
 
 void cInputTextBuffer::MaxLenght( const Uint32& Max ) {
 	mMaxLenght = Max;
-	
+
 	if ( mText.size() > mMaxLenght )
 		mText.resize( mMaxLenght );
 }

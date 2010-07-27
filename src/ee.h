@@ -57,6 +57,7 @@
 	#include "system/czip.hpp"
 	#include "system/crc4.hpp"
 	#include "system/cobjectloader.hpp"
+	#include "system/cresourceloader.hpp"
 	using namespace EE::System;
 
 	// Audio
@@ -79,6 +80,7 @@
 	#include "window/cinputtextbuffer.hpp"
 	#include "window/cview.hpp"
 	#include "window/cengine.hpp"
+	using namespace EE::Window;
 
 	// Graphics
 	#include "graphics/renders.hpp"

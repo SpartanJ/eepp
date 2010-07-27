@@ -1,5 +1,7 @@
 #include "csoundfile.hpp"
+#ifndef EE_NO_SNDFILE
 #include "csoundfiledefault.hpp"
+#endif
 #include "csoundfileogg.hpp"
 
 namespace EE { namespace Audio {
@@ -20,7 +22,9 @@ cSoundFile * cSoundFile::CreateRead( const std::string& Filename ) {
 	cSoundFile * File = NULL;
 
 	if 			( cSoundFileOgg::IsFileSupported(Filename, true) )	 	File = new cSoundFileOgg;
+	#ifndef EE_NO_SNDFILE
 	else if 	( cSoundFileDefault::IsFileSupported(Filename, true) ) 	File = new cSoundFileDefault;
+	#endif
 
 	// Open it for reading
 	if ( NULL != File ) {
@@ -49,7 +53,9 @@ cSoundFile * cSoundFile::CreateRead( const char* Data, std::size_t SizeInMemory 
 	cSoundFile * File = NULL;
 
 	if			( cSoundFileOgg::IsFileSupported(Data, SizeInMemory))	 	File = new cSoundFileOgg;
+	#ifndef EE_NO_SNDFILE
 	else if 	( cSoundFileDefault::IsFileSupported(Data, SizeInMemory) ) 	File = new cSoundFileDefault;
+	#endif
 
 	// Open it for reading
 	if ( NULL != File ) {
@@ -78,7 +84,9 @@ cSoundFile * cSoundFile::CreateWrite( const std::string& Filename, unsigned int 
 	cSoundFile * File = NULL;
 
 	if			( cSoundFileOgg::IsFileSupported(Filename, false) )		File = new cSoundFileOgg;
+	#ifndef EE_NO_SNDFILE
 	else if	( cSoundFileDefault::IsFileSupported(Filename, false) )	File = new cSoundFileDefault;
+	#endif
 
 	// Open it for writing
 	if ( NULL != File ) {
@@ -94,6 +102,7 @@ cSoundFile * cSoundFile::CreateWrite( const std::string& Filename, unsigned int 
 			File = NULL;
 		}
 	}
+
 	return File;
 }
 
