@@ -78,14 +78,14 @@ bool cShapeManager::Remove( const std::string& Name ) {
 }
 
 cShape * cShapeManager::Add( cShape * Shape ) {
-	//assert null shape
-
-	if ( mCount < mShapes.size() ) {
-		mShapes[ mCount ] = Shape;
-		mCount++;
-	} else {
-		mShapes.push_back( Shape );
-		mCount++;
+	if ( NULL != Shape ) {
+		if ( mCount < mShapes.size() ) {
+			mShapes[ mCount ] = Shape;
+			mCount++;
+		} else {
+			mShapes.push_back( Shape );
+			mCount++;
+		}
 	}
 
 	return Shape;

@@ -12,6 +12,7 @@ class cObjectLoader : cThread {
 
 		enum ObjLoaderType {
 			TextureLoader = 1,
+			SoundLoader = 2,
 			UserObjLoader
 		};
 

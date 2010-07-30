@@ -32,7 +32,7 @@ class EE_API cShapeManager : public cSingleton<cShapeManager> {
 		bool Remove( const std::string& Name );
 
 		cShape * Add( cShape * Shape );
-		
+
 		cShape * Add( const Uint32& TexId, const std::string& Name = "" );
 
 		cShape * Add( const Uint32& TexId, const eeRecti& SrcRect, const std::string& Name = "" );
@@ -46,6 +46,7 @@ class EE_API cShapeManager : public cSingleton<cShapeManager> {
 		Uint32 Count();
 	protected:
 		std::vector<cShape*> mShapes;
+
 		Uint32 mCount;
 };
 

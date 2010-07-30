@@ -70,7 +70,11 @@ std::vector < std::wstring > SplitString ( const std::wstring& str, const Uint32
 	std::wstring tmpstr;
 
 	for ( eeUint i = 0; i < str.size(); i++ ) {
+		#ifdef EE_COMPILER_MSVC
 		if ( str[i] == splitchar ) {
+		#else
+		if ( str[i] == (Int32)splitchar ) {
+		#endif
 			tmp.push_back(tmpstr);
 			tmpstr = L"";
 		} else {

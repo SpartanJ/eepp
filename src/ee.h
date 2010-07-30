@@ -72,6 +72,7 @@
 	#include "audio/csoundbuffer.hpp"
 	#include "audio/csoundstream.hpp"
 	#include "audio/cmusic.hpp"
+	#include "audio/tsoundloader.hpp"
 	#include "audio/tsoundmanager.hpp"
 	using namespace EE::Audio;
 

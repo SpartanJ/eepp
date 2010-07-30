@@ -75,7 +75,7 @@ void cSound::Position( const eeFloat& X, const eeFloat& Y, const eeFloat& Z ) {
 }
 
 void cSound::Position( const Vector3AL& Position ) {
-	this->Position(Position.x, Position.y, Position.z);
+	this->Position( Position.x, Position.y, Position.z );
 }
 
 void cSound::MinDistance( const eeFloat& MinDistance ) {

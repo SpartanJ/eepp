@@ -29,6 +29,12 @@ class EE_API cPack : protected cMutex {
 		*/
 		virtual bool AddFile( const std::string& path, const std::string& inpack ) = 0;
 
+		/** Add a new file from memory */
+		virtual bool AddFile( std::vector<Uint8>& data, const std::string& inpack ) = 0;
+
+		/** Add a new file from memory */
+		virtual bool AddFile( const Uint8 * data, const Uint32& dataSize, const std::string& inpack ) = 0;
+
 		/** Add a map of files to the pack file ( myMap[ myFilepath ] = myInPackFilepath ) */
 		virtual bool AddFiles( std::map<std::string, std::string> paths ) = 0;
 
@@ -44,6 +50,9 @@ class EE_API cPack : protected cMutex {
 		/** Extract a file to memory from the pack file */
 		virtual bool ExtractFileToMemory( const std::string& path, std::vector<Uint8>& data ) = 0;
 
+		/** Extract a file to memory from the pack file */
+		virtual bool ExtractFileToMemory( const std::string& path, Uint8** data, Uint32* dataSize ) = 0;
+
 		/** Check if a file exists in the pack file and return the number of the file, otherwise return -1. */
 		virtual Int32 Exists( const std::string& path ) = 0;
 
@@ -55,9 +64,6 @@ class EE_API cPack : protected cMutex {
 
 		/** @return If the pack file is open */
 		virtual bool IsOpen() const;
-
-		/** Add a new file from memory */
-		virtual bool AddFile( std::vector<Uint8>& data, const std::string& inpack ) = 0;
 	protected:
 		bool mIsOpen;
 };

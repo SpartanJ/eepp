@@ -87,10 +87,10 @@ bool cZip::AddFile( const std::string& path, const std::string& inpack ) {
 	return AddFile( file, inpack );
 }
 
-bool cZip::AddFile( std::vector<Uint8>& data, const std::string& inpack ) {
+bool cZip::AddFile( const Uint8 * data, const Uint32& dataSize, const std::string& inpack ) {
 	if ( 0 == CheckPack() ) {
 		if ( ZIP_CREATED == mState ) {
-			Int32 Result = ZipAdd( mZip , inpack.c_str(), reinterpret_cast<void*> (&data[0]), (unsigned int)data.size() );
+			Int32 Result = ZipAdd( mZip , inpack.c_str(), const_cast<Uint8*>( data ), (unsigned int)dataSize );
 
 			if ( ZR_OK == Result )
 				return true;
@@ -107,7 +107,7 @@ bool cZip::AddFile( std::vector<Uint8>& data, const std::string& inpack ) {
 					Zip.AddFile( tdata, zipFiles[i].name );
 				}
 
-				Zip.AddFile( data, inpack );
+				Zip.AddFile( data, dataSize, inpack );
 
 				Zip.Close();
 
@@ -128,6 +128,10 @@ bool cZip::AddFile( std::vector<Uint8>& data, const std::string& inpack ) {
 	}
 
 	return false;
+}
+
+bool cZip::AddFile( std::vector<Uint8>& data, const std::string& inpack ) {
+	return AddFile( reinterpret_cast<const Uint8*> ( &data[0] ), (Uint32)data.size(), inpack );
 }
 
 bool cZip::AddFiles( std::map<std::string, std::string> paths ) {
@@ -235,6 +239,29 @@ bool cZip::ExtractFileToMemory( const std::string& path, std::vector<Uint8>& dat
 		data.resize( zipFiles[Pos].unc_size );
 
 		Result = UnzipItem( mZip, Pos, reinterpret_cast<void*> (&data[0]), (unsigned int)zipFiles[Pos].unc_size );
+
+		if ( ZR_OK == Result ) {
+			Ret = true;
+		}
+	}
+
+	Unlock();
+
+	return Ret;
+}
+
+bool cZip::ExtractFileToMemory( const std::string& path, Uint8** data, Uint32* dataSize ) {
+	Lock();
+
+	bool Ret = false;
+	Int32 Pos = Exists( path );
+	Uint32 Result = 0;
+
+	if ( 0 == CheckPack() && -1 != Pos ) {
+		*dataSize = zipFiles[Pos].unc_size;
+		*data = new Uint8[ (*dataSize) ];
+
+		Result = UnzipItem( mZip, Pos, reinterpret_cast<void*> ( *data ), (unsigned int)zipFiles[Pos].unc_size );
 
 		if ( ZR_OK == Result ) {
 			Ret = true;

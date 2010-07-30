@@ -1,7 +1,8 @@
 #include "../ee.h"
 
 /**
-@TODO Create a asynchronous resource loader ( at least for textures ).
+@TODO Add async loader for fonts.
+@TODO Create a Global Shape Manager containing one default shape manager and with the possibility to add new shape managers.
 @TODO Add support for Joysticks.
 @TODO Create a Vertex Buffer Object class ( with and without GL_ARB_vertex_buffer_object ).
 @TODO Add support for Frame Buffer Object and to switch rendering to FBO and Screen.
@@ -11,6 +12,8 @@
 @TODO Encapsulate SDL and OpenGL ( and remove unnecessary dependencies ).
 @TODO Add some Surface Grid class, to create special effects ( waved texture, and stuff like that ).
 @TODO Support color cursors ( not only black and white cursors, that really sucks ) - Imposible with SDL 1.2
+@TODO Add Scripting support.
+@TODO Add 2D physics support ( Box2D or Chipmunk wrapper ).
 */
 
 class cUITest : public cUIControlAnim {
@@ -237,10 +240,6 @@ void cEETest::Init() {
 
 		LoadTextures();
 
-		if ( SndMng.LoadFromPack( "mysound", &PAK, "sound.ogg" ) )
-			SndMng["mysound"].Play();
-
-
 		if ( Mus.OpenFromPack( &PAK, "music.ogg" ) ) {
 			Mus.Loop(true);
 			Mus.Play();
@@ -373,6 +372,7 @@ void cEETest::CmdSetPartsNum ( const std::vector < std::wstring >& params ) {
 
 void cEETest::OnTextureLoaded( cResourceLoader * ResLoaded ) {
 	mTextureLoaded = true;
+	SndMng.Play( "mysound" );
 }
 
 void cEETest::LoadTextures() {
@@ -386,8 +386,12 @@ void cEETest::LoadTextures() {
 
 	std::vector<std::string> files = PakTest.GetFileList();
 
-	for ( i = 0; i < files.size(); i++ )
-		mResLoad.Add( new cTextureLoader( &PakTest, files[i] ) );
+	for ( i = 0; i < files.size(); i++ ) {
+		if ( "jpg" == FileExtension( files[i] ) )
+			mResLoad.Add( new cTextureLoader( &PakTest, files[i] ) );
+	}
+
+	mResLoad.Add( new cSoundLoader( &SndMng, "mysound", &PAK, "sound.ogg" ) );
 
 	mResLoad.Load( boost::bind( &cEETest::OnTextureLoaded, this, _1 ) );
 

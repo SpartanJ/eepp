@@ -14,6 +14,9 @@ class EE_API cShader {
     	/** Create a type of shader and load the shader from a file, and compile it. */
     	cShader( const Uint32& Type, const std::string& Filename );
 
+    	/** Create a type of shader from memory, and compile it. */
+    	cShader( const Uint32& Type, const Uint8 * Data, const Uint32& DataSize );
+
     	virtual ~cShader();
 
     	/** Set the shader source */
@@ -21,6 +24,9 @@ class EE_API cShader {
 
     	/** Set the shader source */
     	void SetSource( const std::vector<char>& Source );
+
+    	/** Set the shader source */
+    	void SetSource( const Uint8 * Data, const Uint32& DataSize );
 
     	/** Compile the shader */
     	bool Compile();
@@ -43,12 +49,12 @@ class EE_API cShader {
     	/** Reloads the Shader. */
     	void Reload();
     protected:
-    	GLuint mGLId;
-    	GLenum mType;
-    	bool mValid;
-    	bool mCompiled;
-    	std::string mCompileLog;
-        std::vector<char> mSource;
+    	GLuint 				mGLId;
+    	GLenum 				mType;
+    	bool 				mValid;
+    	bool 				mCompiled;
+    	std::string 		mCompileLog;
+        std::vector<char> 	mSource;
 
     	void Init( const Uint32& Type );
 };
@@ -58,6 +64,7 @@ class EE_API cVertexShader : public cShader {
 	public:
     	cVertexShader();
     	cVertexShader( const std::string& Filename );
+    	cVertexShader( const Uint8 * Data, const Uint32& DataSize );
 };
 
 /** @brief Prebuild Fragment Shader class */
@@ -65,6 +72,7 @@ class EE_API cFragmentShader : public cShader {
 	public:
     	cFragmentShader();
     	cFragmentShader( const std::string& Filename );
+    	cFragmentShader( const Uint8 * Data, const Uint32& DataSize );
 };
 
 }}

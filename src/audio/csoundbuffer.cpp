@@ -85,7 +85,7 @@ bool cSoundBuffer::LoadFromMemory( const char* Data, std::size_t SizeInBytes ) {
 			cLog::instance()->Write( "Failed to read audio data from file in memory" );
 			return false;
 		}
-	}else {
+	} else {
 		cLog::instance()->Write( "Failed to load sound buffer from file in memory" );
 		return false;
 	}

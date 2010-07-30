@@ -328,6 +328,12 @@ bool FileCopy( const std::string& src, const std::string& dst ) {
 	return false;
 }
 
+std::string FileExtension( const std::string& filepath ) {
+	std::string tstr( filepath.substr( filepath.find_last_of(".") + 1 ) );
+	toLower( tstr );
+	return tstr;
+}
+
 eeInt GetNumCPUs() {
 	eeInt nprocs = -1;
 

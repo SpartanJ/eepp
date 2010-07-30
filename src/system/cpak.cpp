@@ -141,11 +141,33 @@ bool cPak::ExtractFileToMemory( const std::string& path, std::vector<Uint8>& dat
 	return Ret;
 }
 
-bool cPak::AddFile( std::vector<Uint8>& data, const std::string& inpack ) {
-	if ( data.size() < 1 )
+bool cPak::ExtractFileToMemory( const std::string& path, Uint8** data, Uint32* dataSize ) {
+	Lock();
+
+	bool Ret = false;
+
+	Int32 Pos = Exists( path );
+
+	if ( Pos != -1 ) {
+		*dataSize = pakFiles[Pos].file_length;
+		*data = new Uint8[ (*dataSize) ];
+
+		myPak.fs.seekg( pakFiles[Pos].file_position, ios::beg );
+		myPak.fs.read( reinterpret_cast<char*> ( *data ), pakFiles[Pos].file_length );
+
+		Ret = true;
+	}
+
+	Unlock();
+
+	return Ret;
+}
+
+bool cPak::AddFile( const Uint8 * data, const Uint32& dataSize, const std::string& inpack ) {
+	if ( dataSize < 1 )
 		return false;
 
-	Uint32 fsize = data.size();
+	Uint32 fsize = dataSize;
 
 	if ( myPak.fs.is_open() ) {
 		if ( myPak.header.dir_length == 1 ) {
@@ -167,8 +189,6 @@ bool cPak::AddFile( std::vector<Uint8>& data, const std::string& inpack ) {
 			myPak.fs.write( reinterpret_cast<const char*> (&newFile), sizeof( pakEntry ) );
 
 			pakFiles.push_back( newFile );
-
-			data.clear();
 
 			return true;
 		} else {
@@ -206,13 +226,17 @@ bool cPak::AddFile( std::vector<Uint8>& data, const std::string& inpack ) {
 			pakFiles.push_back( pakE[ myPak.pakFilesNum ] );
 			myPak.pakFilesNum += 1;
 
-			data.clear();
 			pakE.clear();
 
 			return true;
 		}
 	}
+
 	return false;
+}
+
+bool cPak::AddFile( std::vector<Uint8>& data, const std::string& inpack ) {
+	return AddFile( reinterpret_cast<const Uint8*> ( &data[0] ), (Uint32)data.size(), inpack );
 }
 
 bool cPak::AddFile( const std::string& path, const std::string& inpack ) {

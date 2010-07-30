@@ -13,6 +13,7 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-g" />
+					<Add option="-DEE_DEBUG" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
@@ -63,6 +64,7 @@
 		<Unit filename="src/audio/csoundstream.cpp" />
 		<Unit filename="src/audio/csoundstream.hpp" />
 		<Unit filename="src/audio/openal.hpp" />
+		<Unit filename="src/audio/tsoundloader.hpp" />
 		<Unit filename="src/audio/tsoundmanager.hpp" />
 		<Unit filename="src/base.hpp" />
 		<Unit filename="src/ee.h" />

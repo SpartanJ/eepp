@@ -203,44 +203,38 @@ void cConsole::PushText( const std::string& str ) {
 	PrivPushText( toWStr( str ) );
 }
 
-void cConsole::PushText( const char* format, ... ) {
-	char buf[256];
+void cConsole::PushText( const char * format, ... ) {
+	int n, size = 256;
+	std::string tstr( size, '\0' );
 
-	va_list( args );
+	va_list args;
 
-	va_start( args, format );
+	while (1) {
+		va_start( args, format );
 
-	#ifdef EE_COMPILER_MSVC
-	int nb = _vsnprintf_s( buf, 256, 256, format, args );
-	#else
-	int nb = vsnprintf(buf, 256, format, args);
-	#endif
+		#ifdef EE_COMPILER_MSVC
+			n = _vsnprintf_s( &tstr[0], size, size, format, args );
+		#else
+			n = vsnprintf( &tstr[0], size, format, args );
+		#endif
 
-	va_end( args );
+		va_end( args );
 
-	if ( nb < 256 ) {
-		PrivPushText( toWStr( std::string( buf ) ) );
-		return;
+		if ( n > -1 && n < size ) {
+			tstr.resize( n );
+
+			PushText( tstr );
+
+			return;
+		}
+
+		if ( n > -1 )	// glibc 2.1
+			size = n+1; // precisely what is needed
+		else			// glibc 2.0
+			size *= 2;	// twice the old size
+
+		tstr.resize( size, '\0' );
 	}
-
-	// The static size was not big enough, try again with a dynamic allocation.
-	++nb;
-
-	char * buf2 = new char[nb];
-
-	va_start( args, format );
-
-	#ifdef EE_COMPILER_MSVC
-	_vsnprintf_s( buf2, nb, nb, format, args );
-	#else
-	vsnprintf( buf2, nb, format, args );
-	#endif
-
-	va_end( args );
-
-	PrivPushText( toWStr( std::string( buf2 ) ) );
-
-	delete [] buf2;
 }
 
 void cConsole::Toggle() {

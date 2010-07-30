@@ -208,7 +208,7 @@ void cTextureLoader::Update() {
 	LoadFromPixels();
 }
 
-const Uint32& cTextureLoader::TexId() const {
+const Uint32& cTextureLoader::Id() const {
 	return mTexId;
 }
 

@@ -17,8 +17,11 @@ class EE_API cShaderProgram {
 		/** Construct a program shader with a vector of shaders and link them. */
 		cShaderProgram( const std::vector<cShader*>& Shaders, const std::string& name = "" );
 
-		/** Constructor that creates a VertexShader from file and a Fragment Shader from file, and Link them. */
+		/** Constructor that creates a VertexShader from file and a Fragment Shader from file, and link them. */
 		cShaderProgram( const std::string& VertexShaderFile, const std::string& FragmentShaderFile, const std::string& name = "" );
+
+		/** Constructor that creates a VertexShader from memory and a Fragment Shader from memory, and link them. */
+		cShaderProgram( const Uint8 * VertexShaderData, const Uint32& VertexShaderDataSize, const Uint8 * FragmentShaderData, const Uint32& FragmentShaderDataSize, const std::string& name = "" );
 
 		virtual ~cShaderProgram();
 

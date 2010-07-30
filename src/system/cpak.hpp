@@ -32,6 +32,9 @@ class EE_API cPak : public cPack {
 		/** Add a new file from memory */
 		bool AddFile( std::vector<Uint8>& data, const std::string& inpack );
 
+		/** Add a new file from memory */
+		bool AddFile( const Uint8 * data, const Uint32& dataSize, const std::string& inpack );
+
 		/** Add a map of files to the pakFile ( myMap[ myFilepath ] = myInPakFilepath ) */
 		bool AddFiles( std::map<std::string, std::string> paths );
 
@@ -46,6 +49,9 @@ class EE_API cPak : public cPack {
 
 		/** Extract a file to memory from the pakFile */
 		bool ExtractFileToMemory( const std::string& path, std::vector<Uint8>& data );
+
+		/** Extract a file to memory from the pakFile */
+		bool ExtractFileToMemory( const std::string& path, Uint8** data, Uint32* dataSize );
 
 		/** Check if a file exists in the pakFile and return the number of the file, otherwise return -1. */
 		Int32 Exists( const std::string& path );

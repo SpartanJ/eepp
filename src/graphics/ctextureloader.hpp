@@ -25,7 +25,7 @@ class cTextureLoader : public cObjectLoader {
 
 		void 			Update();
 
-		const Uint32& 	TexId() const;
+		const Uint32& 	Id() const;
 	protected:
 		Uint32			mLoadType; 	// From memory, from path, from pack
 		Uint8 * 		mPixels;	// Texture Info

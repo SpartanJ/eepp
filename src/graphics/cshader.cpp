@@ -28,21 +28,28 @@ cShader::cShader( const Uint32& Type, const std::string& Filename ) {
     Compile();
 }
 
+cShader::cShader( const Uint32& Type, const Uint8 * Data, const Uint32& DataSize ) {
+	Init( Type );
+
+	SetSource( Data, DataSize );
+
+	Compile();
+}
+
 cShader::~cShader() {
-	glDeleteShader( GetId() );
+	if ( 0 != mGLId )
+		glDeleteShader( mGLId );
 }
 
 void cShader::Init( const Uint32& Type ) {
-	mType = Type;
-	mValid = false;
-	mCompiled = false;
-	mGLId = glCreateShader( mType );
+	mType 		= Type;
+	mValid 		= false;
+	mCompiled 	= false;
+	mGLId 		= glCreateShader( mType );
 }
 
 void cShader::Reload() {
-	mValid = false;
-	mCompiled = false;
-	mGLId = glCreateShader( mType );
+	Init( mType );
 
 	SetSource( mSource );
 
@@ -51,12 +58,18 @@ void cShader::Reload() {
 
 void cShader::SetSource( const std::string& Source ) {
 	std::vector<char> _dst( Source.size(), 0 );
-	std::string _src( Source.size(), 0 );
-	_src = Source;
 
-	memcpy( reinterpret_cast<char*>( &_dst[0] ), reinterpret_cast<char*>( &_src[0] ), Source.size() );
+	memcpy( reinterpret_cast<char*>( &_dst[0] ), reinterpret_cast<const void*>( &Source[0] ), Source.size() );
 
-	SetSource( _src );
+	SetSource( _dst );
+}
+
+void cShader::SetSource( const Uint8 * Data, const Uint32& DataSize ) {
+	std::vector<char> _dst( DataSize, 0 );
+
+	memcpy( reinterpret_cast<char*>( &_dst[0] ), reinterpret_cast<const void*>( &Data[0] ), DataSize );
+
+	SetSource( _dst );
 }
 
 void cShader::SetSource( const std::vector<char>& Source ) {
@@ -67,9 +80,9 @@ void cShader::SetSource( const std::vector<char>& Source ) {
 
     mSource = Source;
 
-	const char* src = &Source[0];
+	const char * src = &Source[0];
 
-	glShaderSource( GetId(), 1, &src, NULL );
+	glShaderSource( mGLId, 1, &src, NULL );
 }
 
 bool cShader::Compile() {
@@ -102,9 +115,34 @@ bool cShader::Compile() {
 	return mValid;
 }
 
-cVertexShader::cVertexShader() : cShader( GL_VERTEX_SHADER ) {}
-cVertexShader::cVertexShader( const std::string& Filename ) : cShader( GL_VERTEX_SHADER, Filename ) {}
-cFragmentShader::cFragmentShader() : cShader(GL_FRAGMENT_SHADER) {}
-cFragmentShader::cFragmentShader( const std::string& Filename ) : cShader( GL_FRAGMENT_SHADER, Filename ) {}
+cVertexShader::cVertexShader() :
+	cShader( GL_VERTEX_SHADER )
+{
+}
+
+cVertexShader::cVertexShader( const std::string& Filename ) :
+	cShader( GL_VERTEX_SHADER, Filename )
+{
+}
+
+cVertexShader::cVertexShader( const Uint8 * Data, const Uint32& DataSize ) :
+	cShader( GL_VERTEX_SHADER, Data, DataSize )
+{
+}
+
+cFragmentShader::cFragmentShader() :
+	cShader(GL_FRAGMENT_SHADER)
+{
+}
+
+cFragmentShader::cFragmentShader( const std::string& Filename ) :
+	cShader( GL_FRAGMENT_SHADER, Filename )
+{
+}
+
+cFragmentShader::cFragmentShader( const Uint8 * Data, const Uint32& DataSize ) :
+	cShader( GL_FRAGMENT_SHADER, Data, DataSize )
+{
+}
 
 }}

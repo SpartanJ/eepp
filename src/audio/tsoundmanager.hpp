@@ -15,7 +15,7 @@ class EE_API tSoundManager{
 		bool LoadFromMemory( const T& id, const char* Data, std::size_t SizeInBytes );
 		bool LoadFromSamples( const T& id, const Int16* Samples, std::size_t SamplesCount, unsigned int ChannelsCount, unsigned int SampleRate );
 		bool LoadFromPack( const T& id, cPack* Pack, const std::string& FilePackPath );
-		
+
 		cSoundBuffer& GetBuffer( const T& id );
 
 		/** This method will open a new channel if the channel seted for the sound is playing. */
@@ -37,44 +37,56 @@ class EE_API tSoundManager{
 template <typename T>
 bool tSoundManager<T>::LoadFromPack( const T& id, cPack* Pack, const std::string& FilePackPath ) {
 	if ( tSounds.find( id ) == tSounds.end() ) { // if id doesn't exists
-		if ( tSounds[id].Buf.LoadFromPack( Pack, FilePackPath ) ) {
-			tSounds[id].Snd.push_back( cSound( tSounds[id].Buf ) );
+		sSound * tSound = &tSounds[id];
+
+		if ( tSound->Buf.LoadFromPack( Pack, FilePackPath ) ) {
+			tSound->Snd.push_back( cSound( tSound->Buf ) );
 			return true;
 		}
 	}
+
 	return false;
 }
 
 template <typename T>
 bool tSoundManager<T>::LoadFromFile( const T& id, const std::string& filepath ) {
 	if ( tSounds.find( id ) == tSounds.end() ) { // if id doesn't exists
-		if ( tSounds[id].Buf.LoadFromFile( filepath ) ) {
-			tSounds[id].Snd.push_back( cSound( tSounds[id].Buf ) );
+		sSound * tSound = &tSounds[id];
+
+		if ( tSound->Buf.LoadFromFile( filepath ) ) {
+			tSound->Snd.push_back( cSound( tSound->Buf ) );
 			return true;
 		}
 	}
+
 	return false;
 }
 
 template <typename T>
 bool tSoundManager<T>::LoadFromMemory( const T& id, const char* Data, std::size_t SizeInBytes ) {
 	if ( tSounds.find( id ) == tSounds.end() ) { // if id doesn't exists
-		if ( tSounds[id].Buf.LoadFromMemory( Data, SizeInBytes ) ) {
-			tSounds[id].Snd.push_back( cSound( tSounds[id].Buf ) );
+		sSound * tSound = &tSounds[id];
+
+		if ( tSound->Buf.LoadFromMemory( Data, SizeInBytes ) ) {
+			tSound->Snd.push_back( cSound( tSound->Buf ) );
 			return true;
 		}
 	}
+
 	return false;
 }
 
 template <typename T>
 bool tSoundManager<T>::LoadFromSamples( const T& id, const Int16* Samples, std::size_t SamplesCount, unsigned int ChannelsCount, unsigned int SampleRate ) {
 	if ( tSounds.find( id ) == tSounds.end() ) { // if id doesn't exists
-		if ( tSounds[id].Buf.LoadFromSamples( Samples, SamplesCount, ChannelsCount, SampleRate ) ) {
-			tSounds[id].Snd.push_back( cSound( tSounds[id].Buf ) );
+		sSound * tSound = &tSounds[id];
+
+		if ( tSound->Buf.LoadFromSamples( Samples, SamplesCount, ChannelsCount, SampleRate ) ) {
+			tSound->Snd.push_back( cSound( tSound->Buf ) );
 			return true;
 		}
 	}
+
 	return false;
 }
 
@@ -94,24 +106,30 @@ cSound& tSoundManager<T>::operator[] ( const T& id ) {
 
 template <typename T>
 void tSoundManager<T>::Play( const T& id ) {
-	if ( tSounds.find( id ) != tSounds.end() ) {
-		for ( Uint32 i = 0; i < tSounds[id].Snd.size(); i++ ) {
+	typename std::map<T, sSound>::iterator it = tSounds.find( id );
+
+	if ( it != tSounds.end() ) {
+		sSound * tSound = &it->second;
+		Uint32 tSize = tSound->Snd.size();
+
+		for ( Uint32 i = 0; i < tSize; i++ ) {
 			// If there is a free slot, use it.
-			if ( tSounds[id].Snd[i].GetState() != SOUND_PLAYING ) {
-				tSounds[id].Snd[i].Play();
+			if ( tSound->Snd[i].GetState() != SOUND_PLAYING ) {
+				tSound->Snd[i].Play();
 				return;
 			}
 		}
 
 		// Otherwise create a new one and play it.
-		tSounds[id].Snd.push_back( cSound( tSounds[id].Buf ) );
-		tSounds[id].Snd[ tSounds[id].Snd.size() - 1 ].Play();
+		tSound->Snd.push_back( cSound( tSound->Buf ) );
+		tSound->Snd[ tSize ].Play();
 	}
 }
 
 template <typename T>
 tSoundManager<T>::~tSoundManager() {
 	typename std::map<T, sSound>::iterator itr;
+
 	for (itr = tSounds.begin(); itr != tSounds.end(); itr++)
 		itr->second.Snd.clear();
 
@@ -124,10 +142,12 @@ bool tSoundManager<T>::Remove( const T& id ) {
 		tSounds.erase( id );
 		return true;
 	}
+
 	return false;
 }
 
 typedef tSoundManager<std::string> cSoundManager;
+
 }}
 
 #endif
