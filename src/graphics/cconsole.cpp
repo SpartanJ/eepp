@@ -303,6 +303,8 @@ void cConsole::PrintCommandsStartingWith( const std::wstring& start ) {
 	}
 
 	if ( cmds.size() > 1 ) {
+		PushText( L"> " + mTBuf.Buffer() );
+
 		std::list<std::wstring>::iterator ite;
 
 		for ( ite = cmds.begin(); ite != cmds.end(); ite++ )
