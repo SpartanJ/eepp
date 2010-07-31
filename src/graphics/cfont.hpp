@@ -8,10 +8,14 @@
 
 namespace EE { namespace Graphics {
 
+#define FONT_TYPE_TTF (1)
+#define FONT_TYPE_TEX (2)
+
 /** @brief Font interface class. */
 class EE_API cFont {
 	public:
-		cFont();
+		cFont( const Uint32& Type, const std::string& Name );
+		
 		virtual ~cFont();
 
 		/** Set a text to render
@@ -123,24 +127,36 @@ class EE_API cFont {
 
 		/** @return The font texture id */
 		const Uint32& GetTexId() const;
+		
+		const Uint32& Type() const;
+		
+		const std::string& 		Name() const;
+		
+		void						Name( const std::string& name );
+		
+		const Uint32&				Id();
 	protected:
-		std::wstring mText;
-		bool mCacheData;
-		eeColorA mColor;
-		eeColorA mShadowColor;
-		eeInt mNumLines;
-		bool mVerticalDraw;
-		Uint32 mTexId;
-		eeFloat mCachedWidth;
-		Uint32 mHeight;
-		Uint32 mSize;
+		Uint32 						mType;
+		std::string					mFontName;
+		Uint32						mFontHash;
+		
+		std::wstring 				mText;
+		bool 						mCacheData;
+		eeColorA 					mColor;
+		eeColorA 					mShadowColor;
+		eeInt 						mNumLines;
+		bool 						mVerticalDraw;
+		Uint32 						mTexId;
+		eeFloat 					mCachedWidth;
+		Uint32 						mHeight;
+		Uint32 						mSize;
 
-		std::vector<eeFloat> mLinesWidth;
-		std::vector<eeGlyph> mGlyphs;
-		std::vector<eeTexCoords> mTexCoords;
+		std::vector<eeFloat> 		mLinesWidth;
+		std::vector<eeGlyph> 		mGlyphs;
+		std::vector<eeTexCoords> 	mTexCoords;
 
 		std::vector<eeVertexCoords> mRenderCoords;
-		std::vector<eeColorA> mColors;
+		std::vector<eeColorA> 		mColors;
 
 		void CacheWidth();
 		void CacheNumLines();

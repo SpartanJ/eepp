@@ -9,7 +9,7 @@ namespace EE { namespace Audio {
 
 /** @brief A basic template to hold sounds and the respective buffer. */
 template <typename T>
-class EE_API tSoundManager{
+class tSoundManager{
 	public:
 		bool LoadFromFile( const T& id, const std::string& filepath );
 		bool LoadFromMemory( const T& id, const char* Data, std::size_t SizeInBytes );

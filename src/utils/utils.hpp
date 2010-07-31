@@ -57,8 +57,11 @@ namespace EE { namespace Utils {
 	*/
 	bool FileCopy( const std::string& src, const std::string& dst );
 
-	/** @return The file extension */
-	std::string FileExtension( const std::string& filepath );
+	/** @return The file extension
+	* @param filepath The file path or name
+	* @param lowerExt Lowercase the extension obtained? ( true by default )
+	*/
+	std::string FileExtension( const std::string& filepath, const bool& lowerExt = true );
 
 	/** @return The Number of CPUs of the system. */
 	eeInt GetNumCPUs();

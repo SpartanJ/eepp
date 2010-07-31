@@ -13,7 +13,7 @@ namespace EE { namespace Graphics {
 /** @brief This class loads True Type Font and then draw strings to the screen. */
 class EE_API cTTFFont : public cFont {
 	public:
-		cTTFFont();
+		cTTFFont( const std::string FontName );
 		~cTTFFont();
 
 		/** Load a True Type Font from path
@@ -58,15 +58,23 @@ class EE_API cTTFFont : public cFont {
 		bool LoadFromMemory( Uint8* TTFData, const eeUint& TTFDataSize, const eeUint& Size, EE_TTF_FONTSTYLE Style = EE_TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0) );
 
 		/** Save the texture generated from the TTF file to disk */
-		bool SaveTexture( const std::string& Filepath, const EE_SAVETYPE& Format = EE_SAVE_TYPE_TGA );
+		bool SaveTexture( const std::string& Filepath, const EE_SAVETYPE& Format = EE_SAVE_TYPE_PNG );
 
 		/** Save the characters coordinates to use it later to load the Texture Font */
 		bool SaveCoordinates( const std::string& Filepath );
 
 		/** Save the texture generated from the TTF file and the character coordinates. */
-		bool Save( const std::string& TexturePath, const std::string& CoordinatesDatPath, const EE_SAVETYPE& Format = EE_SAVE_TYPE_TGA );
+		bool Save( const std::string& TexturePath, const std::string& CoordinatesDatPath, const EE_SAVETYPE& Format = EE_SAVE_TYPE_PNG );
+	
+	protected:
+		friend class cTTFFontLoader;
+		
+		bool ThreadedLoading() const { return mThreadedLoading; }
+		
+		void ThreadedLoading( const bool& isThreaded ) { mThreadedLoading = isThreaded; }
+		
+		void UpdateLoading();
 	private:
-		cTextureFactory* TF;
 		hkFont * mFont;
 		eeColorA * mPixels;
 
@@ -82,6 +90,9 @@ class EE_API cTTFFont : public cFont {
 		bool mTTFInit;
 
 		bool mLoadedFromMemory;
+		
+		bool mThreadedLoading;
+		bool mTexReady;
 
 		bool iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor );
 		void MakeOutline( Uint8 *in, Uint8 *out, Int16 w, Int16 h);

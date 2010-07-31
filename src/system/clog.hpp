@@ -11,7 +11,7 @@ class EE_API cLog : public cSingleton<cLog> {
 	public:
 		void Save(const std::string& filepath = "./");
 		void Write(const std::string& Text, const bool& newLine = true);
-		void Write( const char* format, ... );
+		void Writef( const char* format, ... );
 		std::string Buffer() const { return mData; }
 	protected:
 		cLog();

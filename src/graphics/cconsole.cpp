@@ -11,7 +11,7 @@ namespace EE { namespace Graphics {
 cConsole::cConsole() : 	mLastLogPos(0), mEnabled(false), mVisible(false), mFadeIn(false), mFadeOut(false), mExpand(false), mFading(false), mShowFps(false),
 						mConColor(35, 47, 73, 230), mConLineColor(55, 67, 93, 230), mFontColor(153, 153, 179, 230), mFontLineColor(255, 255, 255, 230),
 						mWidth(0), mHeight(0), mHeightMin(0), mY(0.0f), mA(0.0f), mFadeSpeed(250.f),
-						mMaxLogLines(1024),  mTexId(0), mCurAlpha(0), mCurSide(false)
+						mMaxLogLines(1024), mFont(NULL), mTexId(0), mCurAlpha(0), mCurSide(false)
 {
 }
 
@@ -80,7 +80,7 @@ void cConsole::AddCommand( const std::string& Command, ConsoleCallback CB ) {
 }
 
 void cConsole::Draw() {
-	if ( mEnabled ) {
+	if ( mEnabled && NULL != mFont ) {
 		Fade();
 
 		if ( mY > 0.0f ) {

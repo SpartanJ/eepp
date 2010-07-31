@@ -80,6 +80,8 @@
 		<Unit filename="src/graphics/cconsole.hpp" />
 		<Unit filename="src/graphics/cfont.cpp" />
 		<Unit filename="src/graphics/cfont.hpp" />
+		<Unit filename="src/graphics/cfontmanager.cpp" />
+		<Unit filename="src/graphics/cfontmanager.hpp" />
 		<Unit filename="src/graphics/cglobalbatchrenderer.cpp" />
 		<Unit filename="src/graphics/cglobalbatchrenderer.hpp" />
 		<Unit filename="src/graphics/cparticle.cpp" />
@@ -110,10 +112,14 @@
 		<Unit filename="src/graphics/ctexturefactory.hpp" />
 		<Unit filename="src/graphics/ctexturefont.cpp" />
 		<Unit filename="src/graphics/ctexturefont.hpp" />
+		<Unit filename="src/graphics/ctexturefontloader.cpp" />
+		<Unit filename="src/graphics/ctexturefontloader.hpp" />
 		<Unit filename="src/graphics/ctextureloader.cpp" />
 		<Unit filename="src/graphics/ctextureloader.hpp" />
 		<Unit filename="src/graphics/cttffont.cpp" />
 		<Unit filename="src/graphics/cttffont.hpp" />
+		<Unit filename="src/graphics/cttffontloader.cpp" />
+		<Unit filename="src/graphics/cttffontloader.hpp" />
 		<Unit filename="src/graphics/fonthelper.hpp" />
 		<Unit filename="src/graphics/pixelperfect.cpp" />
 		<Unit filename="src/graphics/pixelperfect.hpp" />
@@ -192,6 +198,7 @@
 		<Unit filename="src/system/czip.cpp" />
 		<Unit filename="src/system/czip.hpp" />
 		<Unit filename="src/system/singleton.hpp" />
+		<Unit filename="src/system/tresourcemanager.hpp" />
 		<Unit filename="src/test/ee.cpp" />
 		<Unit filename="src/ui/base.hpp" />
 		<Unit filename="src/ui/cuibackground.cpp" />

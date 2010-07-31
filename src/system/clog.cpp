@@ -36,7 +36,7 @@ void cLog::Write(const std::string& Text, const bool& newLine) {
 		mData += '\n';
 }
 
-void cLog::Write( const char* format, ... ) {
+void cLog::Writef( const char* format, ... ) {
 	int n, size = 256;
 	std::string tstr( size, '\0' );
 

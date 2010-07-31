@@ -67,8 +67,8 @@ cShaderProgram::cShaderProgram( const Uint8 * VertexShaderData, const Uint32& Ve
 }
 
 cShaderProgram::~cShaderProgram() {
-	if ( GetId() > 0 )
-    	glDeleteProgram( GetId() );
+	if ( Id() > 0 )
+    	glDeleteProgram( Id() );
 
     mUniformLocations.clear();
     mAttributeLocations.clear();
@@ -88,7 +88,7 @@ void cShaderProgram::RemoveFromManager() {
 }
 
 void cShaderProgram::Init() {
-	if ( cEngine::instance()->ShadersSupported() && 0 == GetId() ) {
+	if ( cEngine::instance()->ShadersSupported() && 0 == Id() ) {
 		mGLId = glCreateProgram();
 		mValid = false;
 		mUniformLocations.clear();
@@ -119,8 +119,8 @@ void cShaderProgram::AddShader( cShader* Shader ) {
 		return;
 	}
 
-	if ( 0 != GetId() ) {
-		glAttachShader( GetId(), Shader->GetId() );
+	if ( 0 != Id() ) {
+		glAttachShader( Id(), Shader->GetId() );
 
 		mShaders.push_back( Shader );
 	}
@@ -132,17 +132,17 @@ void cShaderProgram::AddShaders( const std::vector<cShader*>& Shaders ) {
 }
 
 bool cShaderProgram::Link() {
-	glLinkProgram( GetId() );
+	glLinkProgram( Id() );
 
 	Int32 linked;
-	glGetProgramiv( GetId(), GL_LINK_STATUS, &linked );
+	glGetProgramiv( Id(), GL_LINK_STATUS, &linked );
 	mValid = 0 != linked;
 
 	GLsizei logsize, logarraysize;
-	glGetProgramiv( GetId(), GL_INFO_LOG_LENGTH, &logarraysize );
+	glGetProgramiv( Id(), GL_INFO_LOG_LENGTH, &logarraysize );
 	mLinkLog.resize(logarraysize);
 
-	glGetProgramInfoLog( GetId(), logarraysize, &logsize, reinterpret_cast<GLchar*>( &mLinkLog[0] ) );
+	glGetProgramInfoLog( Id(), logarraysize, &logsize, reinterpret_cast<GLchar*>( &mLinkLog[0] ) );
 
 	if ( !mValid ) {
 		cLog::instance()->Write( "cShaderProgram::Link(): Couldn't link program. Log follows:" + mLinkLog );
@@ -155,7 +155,7 @@ bool cShaderProgram::Link() {
 }
 
 void cShaderProgram::Bind() const {
-	glUseProgram( GetId() );
+	glUseProgram( Id() );
 }
 
 void cShaderProgram::Unbind() const {
@@ -168,7 +168,7 @@ Int32 cShaderProgram::UniformLocation( const std::string& Name ) {
 
 	std::map<std::string, Int32>::iterator it = mUniformLocations.find( Name );
 	if ( it == mUniformLocations.end() ) {
-		Int32 Location = glGetUniformLocation( GetId(), Name.c_str() );
+		Int32 Location = glGetUniformLocation( Id(), Name.c_str() );
 		mUniformLocations[Name] = Location;
 	}
 	return mUniformLocations[Name];
@@ -180,7 +180,7 @@ Int32 cShaderProgram::AttributeLocation( const std::string& Name ) {
 
 	std::map<std::string, Int32>::iterator it = mAttributeLocations.find( Name );
 	if ( it == mAttributeLocations.end() ) {
-		Int32 Location = glGetAttribLocation( GetId(), Name.c_str() );
+		Int32 Location = glGetAttribLocation( Id(), Name.c_str() );
 		mAttributeLocations[Name] = Location;
 	}
 	return mAttributeLocations[Name];
@@ -234,7 +234,7 @@ const std::string& cShaderProgram::Name() const {
 void cShaderProgram::Name( const std::string& name ) {
 	mName = name;
 
-	Uint32 NameCount = cShaderProgramManager::instance()->ExistsName( mName );
+	Uint32 NameCount = cShaderProgramManager::instance()->Exists( mName );
 
 	if ( 0 != NameCount || 0 == name.size() ) {
 		Name( name + intToStr( NameCount + 1 ) );

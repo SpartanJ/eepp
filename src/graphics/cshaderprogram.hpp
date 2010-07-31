@@ -70,7 +70,7 @@ class EE_API cShaderProgram {
 		bool SetUniform( const std::string& Name, Int32 Value );
 
 		/** @return The id of the program (the handle) */
-		Uint32 GetId() const { return mGLId; }
+		const Uint32& Id() const { return mGLId; }
 
 		/** Reloads the shaders */
 		void Reload();

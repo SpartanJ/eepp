@@ -58,6 +58,7 @@
 	#include "system/crc4.hpp"
 	#include "system/cobjectloader.hpp"
 	#include "system/cresourceloader.hpp"
+	#include "system/tresourcemanager.hpp"
 	using namespace EE::System;
 
 	// Audio
@@ -96,6 +97,9 @@
 	#include "graphics/cfont.hpp"
 	#include "graphics/ctexturefont.hpp"
 	#include "graphics/cttffont.hpp"
+	#include "graphics/ctexturefontloader.hpp"
+	#include "graphics/cttffontloader.hpp"
+	#include "graphics/cfontmanager.hpp"
 	#include "graphics/cprimitives.hpp"
 	#include "graphics/cscrollparallax.hpp"
 	#include "graphics/cconsole.hpp"

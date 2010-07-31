@@ -1,7 +1,6 @@
 #include "../ee.h"
 
 /**
-@TODO Add async loader for fonts.
 @TODO Create a Global Shape Manager containing one default shape manager and with the possibility to add new shape managers.
 @TODO Add support for Joysticks.
 @TODO Create a Vertex Buffer Object class ( with and without GL_ARB_vertex_buffer_object ).
@@ -105,8 +104,9 @@ class cEETest : private cThread {
 
 		cSprite SP;
 		cSprite CL1, CL2;
-		cTextureFont FF, FF2;
-		cTTFFont TTF;
+		cTextureFont * FF;
+		cTextureFont * FF2;
+		cTTFFont * TTF;
 		cPrimitives PR;
 		bool iL1, iL2;
 		eeFloat HWidth, HHeight;
@@ -177,6 +177,15 @@ class cEETest : private cThread {
 		bool mTextureLoaded;
 		cResourceLoader mResLoad;
 		void OnTextureLoaded( cResourceLoader * ObjLoaded );
+
+		void CreateUI();
+		void CreateShaders();
+
+		void LoadFonts();
+
+		bool mFontsLoaded;
+		cResourceLoader mFontLoader;
+		void OnFontLoaded( cResourceLoader * ObjLoaded );
 };
 
 
@@ -198,6 +207,9 @@ void cEETest::Init() {
 	AnimVal 			= 0.5f;
 	mLastFPSLimit 		= 0;
 	mWasMinimized 		= false;
+
+	mFontsLoaded		= false;
+	mTextureLoaded		= false;
 
 	MyPath 				= AppPath();
 
@@ -222,6 +234,7 @@ void cEETest::Init() {
 	if ( run ) {
 		EE->SetWindowCaption( "EE++ Test Application" );
 		TF = cTextureFactory::instance();
+		TF->Allocate(40);
 
 		Log = cLog::instance();
 		KM = cInput::instance();
@@ -238,7 +251,11 @@ void cEETest::Init() {
 
 		SetRandomSeed();
 
+		LoadFonts();
+
 		LoadTextures();
+
+		CreateShaders();
 
 		if ( Mus.OpenFromPack( &PAK, "music.ogg" ) ) {
 			Mus.Loop(true);
@@ -260,98 +277,124 @@ void cEETest::Init() {
 		Batch.AllocVertexs( 1024 );
 		Batch.SetBlendFunc( ALPHA_BLENDONE );
 
-		mUseShaders = mUseShaders && EE->ShadersSupported();
-
-		mShaderProgram = NULL;
-
-		if ( mUseShaders ) {
-			mBlurFactor = 0.01f;
-			mShaderProgram = new cShaderProgram( MyPath + "data/shader/blur.vert", MyPath + "data/shader/blur.frag" );
-		}
-
-		cUIManager::instance()->Init();
-
-		cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 320, 240 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
-
-		Params.Border.Width( 2 );
-		Params.Border.Color( 0xFF979797 );
-		//Params.Background.Corners(5);
-		Params.Background.Colors( eeColorA( 0x66FAFAFA ), eeColorA( 0xCCFAFAFA ), eeColorA( 0xCCFAFAFA ), eeColorA( 0x66FAFAFA ) );
-		cUIControlAnim * C = new cUITest( Params );
-		C->Visible( true );
-		C->Enabled( true );
-		C->Pos( 320, 240 );
-		C->DragEnable( true );
-		C->StartRotation( 0.f, 360.f, 2500.f );
-
-		Params.Flags &= ~UI_CLIP_ENABLE;
-		Params.Background.Corners(0);
-		Params.Background.Colors( eeColorA( 0x7700FF00 ), eeColorA( 0x7700CC00 ), eeColorA( 0x7700CC00 ), eeColorA( 0x7700FF00 ) );
-		Params.Parent( C );
-		Params.Size = eeSize( 50, 50 );
-		cUITest * Child = new cUITest( Params );
-		Child->Pos( 25, 50 );
-		Child->Visible( true );
-		Child->Enabled( true );
-		Child->StartRotation( 0.f, 360.f * 10.f, 5000.f * 10.f );
-
-		Params.Background.Colors( eeColorA( 0x77FFFF00 ), eeColorA( 0x77CCCC00 ), eeColorA( 0x77CCCC00 ), eeColorA( 0x77FFFF00 ) );
-		Params.Parent( Child );
-		Params.Size = eeSize( 25, 25 );
-		cUITest * Child2 = new cUITest( Params );
-		Child2->Pos( 15, 15 );
-		Child2->Visible( true );
-		Child2->Enabled( true );
-		Child2->StartRotation( 0.f, 360.f * 10.f, 5000.f * 10.f );
-
-		cUIGfx::CreateParams GfxParams;
-		GfxParams.Parent( C );
-		GfxParams.PosSet( 160, 100 );
-		GfxParams.Flags |= UI_CLIP_ENABLE;
-		GfxParams.Size = eeSize( 64, 64 );
-		GfxParams.Shape = cShapeManager::instance()->Add( TN[2] );
-		cUIGfx * Gfx = new cUIGfx( GfxParams );
-		Gfx->Angle( 45.f );
-		Gfx->Visible( true );
-		Gfx->Enabled( true );
-		Gfx->StartAlphaAnim( 100.f, 255.f, 1000.f );
-		Gfx->AlphaInterpolation()->Loop( true );
-		Gfx->AlphaInterpolation()->SetTotalTime( 1000.f );
-
-		cUITextBox::CreateParams TextParams;
-		TextParams.Parent( C );
-		TextParams.PosSet( 0, 0 );
-		TextParams.Size = eeSize( 320, 240 );
-		TextParams.Flags = UI_VALIGN_TOP | UI_HALIGN_RIGHT;
-		TextParams.Font = &TTF;
-		cUITextBox * Text = new cUITextBox( TextParams );
-		Text->Visible( true );
-		Text->Enabled( false );
-		Text->Text( L"Turn around\nJust Turn Around\nAround!" );
-
-		cUITextInput::CreateParams InputParams;
-		InputParams.Parent( C );
-		//InputParams.Background.Corners(6);
-		InputParams.Border.Color(0xFF979797);
-		InputParams.Background.Colors( eeColorA(0x99AAAAAA), eeColorA(0x99CCCCCC), eeColorA(0x99CCCCCC), eeColorA(0x99AAAAAA) );
-		InputParams.PosSet( 10, 220 );
-		InputParams.Size = eeSize( 300, 18 );
-		InputParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER;
-		InputParams.Font = &TTF;
-		InputParams.SupportNewLine = false;
-		cUITextInput * Input = new cUITextInput( InputParams );
-		Input->Visible( true );
-		Input->Enabled( true );
-
-		mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.\nPowered by Text Shrinker =)";
-		TTF.ShrinkText( mBuda, 400 );
-
 		Launch();
 	} else {
 		cout << "Failed to start EE++" << endl;
 		cEngine::DestroySingleton();
 		exit(0);
 	}
+}
+
+void cEETest::LoadFonts() {
+	mFontLoader.Add( new cTextureFontLoader( "conchars", new cTextureLoader( &PAK, "conchars.png", false, eeRGB(0,0,0) ), (eeUint)32 ) );
+	mFontLoader.Add( new cTextureFontLoader( "ProggySquareSZ", new cTextureLoader( &PAK, "ProggySquareSZ.png" ), &PAK, "ProggySquareSZ.dat" ) );
+	mFontLoader.Add( new cTTFFontLoader( "arial", &PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 512, eeColor(255,255,255), 1, eeColor(0,0,0) ) );
+	mFontLoader.Load( boost::bind( &cEETest::OnFontLoaded, this, _1 ) );
+}
+
+void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
+	FF 	= reinterpret_cast<cTextureFont*> ( cFontManager::instance()->GetByName( "conchars" ) );
+	FF2 = reinterpret_cast<cTextureFont*> ( cFontManager::instance()->GetByName( "ProggySquareSZ" ) );
+	TTF = reinterpret_cast<cTTFFont*> ( cFontManager::instance()->GetByName( "arial" ) );
+
+	TF->GetTexture( TTF->GetTexId() )->SetTextureFilter( TEX_NEAREST );
+
+	Con.Create( FF, true );
+	Con.IgnoreCharOnPrompt( 186 ); // L'º'
+
+	CreateUI();
+
+	mFontsLoaded = true;
+}
+
+void cEETest::CreateShaders() {
+	mUseShaders = mUseShaders && EE->ShadersSupported();
+
+	mShaderProgram = NULL;
+
+	if ( mUseShaders ) {
+		mBlurFactor = 0.01f;
+		mShaderProgram = new cShaderProgram( MyPath + "data/shader/blur.vert", MyPath + "data/shader/blur.frag" );
+	}
+}
+
+void cEETest::CreateUI() {
+	cUIManager::instance()->Init();
+
+	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 320, 240 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
+
+	Params.Border.Width( 2 );
+	Params.Border.Color( 0xFF979797 );
+	//Params.Background.Corners(5);
+	Params.Background.Colors( eeColorA( 0x66FAFAFA ), eeColorA( 0xCCFAFAFA ), eeColorA( 0xCCFAFAFA ), eeColorA( 0x66FAFAFA ) );
+	cUIControlAnim * C = new cUITest( Params );
+	C->Visible( true );
+	C->Enabled( true );
+	C->Pos( 320, 240 );
+	C->DragEnable( true );
+	C->StartRotation( 0.f, 360.f, 2500.f );
+
+	Params.Flags &= ~UI_CLIP_ENABLE;
+	Params.Background.Corners(0);
+	Params.Background.Colors( eeColorA( 0x7700FF00 ), eeColorA( 0x7700CC00 ), eeColorA( 0x7700CC00 ), eeColorA( 0x7700FF00 ) );
+	Params.Parent( C );
+	Params.Size = eeSize( 50, 50 );
+	cUITest * Child = new cUITest( Params );
+	Child->Pos( 25, 50 );
+	Child->Visible( true );
+	Child->Enabled( true );
+	Child->StartRotation( 0.f, 360.f * 10.f, 5000.f * 10.f );
+
+	Params.Background.Colors( eeColorA( 0x77FFFF00 ), eeColorA( 0x77CCCC00 ), eeColorA( 0x77CCCC00 ), eeColorA( 0x77FFFF00 ) );
+	Params.Parent( Child );
+	Params.Size = eeSize( 25, 25 );
+	cUITest * Child2 = new cUITest( Params );
+	Child2->Pos( 15, 15 );
+	Child2->Visible( true );
+	Child2->Enabled( true );
+	Child2->StartRotation( 0.f, 360.f * 10.f, 5000.f * 10.f );
+
+	cUIGfx::CreateParams GfxParams;
+	GfxParams.Parent( C );
+	GfxParams.PosSet( 160, 100 );
+	GfxParams.Flags |= UI_CLIP_ENABLE;
+	GfxParams.Size = eeSize( 64, 64 );
+	GfxParams.Shape = cShapeManager::instance()->Add( TN[2] );
+	cUIGfx * Gfx = new cUIGfx( GfxParams );
+	Gfx->Angle( 45.f );
+	Gfx->Visible( true );
+	Gfx->Enabled( true );
+	Gfx->StartAlphaAnim( 100.f, 255.f, 1000.f );
+	Gfx->AlphaInterpolation()->Loop( true );
+	Gfx->AlphaInterpolation()->SetTotalTime( 1000.f );
+
+	cUITextBox::CreateParams TextParams;
+	TextParams.Parent( C );
+	TextParams.PosSet( 0, 0 );
+	TextParams.Size = eeSize( 320, 240 );
+	TextParams.Flags = UI_VALIGN_TOP | UI_HALIGN_RIGHT;
+	TextParams.Font = TTF;
+	cUITextBox * Text = new cUITextBox( TextParams );
+	Text->Visible( true );
+	Text->Enabled( false );
+	Text->Text( L"Turn around\nJust Turn Around\nAround!" );
+
+	cUITextInput::CreateParams InputParams;
+	InputParams.Parent( C );
+	//InputParams.Background.Corners(6);
+	InputParams.Border.Color(0xFF979797);
+	InputParams.Background.Colors( eeColorA(0x99AAAAAA), eeColorA(0x99CCCCCC), eeColorA(0x99CCCCCC), eeColorA(0x99AAAAAA) );
+	InputParams.PosSet( 10, 220 );
+	InputParams.Size = eeSize( 300, 18 );
+	InputParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER;
+	InputParams.Font = TTF;
+	InputParams.SupportNewLine = false;
+	cUITextInput * Input = new cUITextInput( InputParams );
+	Input->Visible( true );
+	Input->Enabled( true );
+
+	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.\nPowered by Text Shrinker =)";
+	TTF->ShrinkText( mBuda, 400 );
 }
 
 void cEETest::CmdSetPartsNum ( const std::vector < std::wstring >& params ) {
@@ -377,8 +420,6 @@ void cEETest::OnTextureLoaded( cResourceLoader * ResLoaded ) {
 
 void cEETest::LoadTextures() {
 	Uint32 i;
-
-	TF->Allocate(40);
 
 	mTextureLoaded = false;
 
@@ -416,19 +457,6 @@ void cEETest::LoadTextures() {
 	for ( Int32 my = 0; my < 4; my++ )
 		for( Int32 mx = 0; mx < 8; mx++ )
 			SP.AddFrame( TN[4], 0, 0, 0, 0, eeRecti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
-
-	TN[8] = TF->LoadFromPack( &PAK, "conchars.png", false, eeRGB(0,0,0) );
-	TNP[8] = TF->GetTexture( TN[8] );
-
-	FF.Load( TN[8], 32 );
-
-	TN[9] = TF->LoadFromPack( &PAK, "ProggySquareSZ.png" );
-	TNP[9] = TF->GetTexture( TN[9] );
-
-	FF2.LoadFromPack( &PAK, "ProggySquareSZ.dat", TN[9] );
-
-	TTF.LoadFromPack( &PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 512, eeColor(255,255,255), 1, eeColor(0,0,0) );
-	TF->GetTexture( TTF.GetTexId() )->SetTextureFilter( TEX_NEAREST );
 
 	PS[0].SetCallbackReset( boost::bind( &cEETest::ParticlesCallback, this, _1, _2) );
 	PS[0].Create(Callback, 500, TN[5], 0, 0, 16, true);
@@ -471,9 +499,6 @@ void cEETest::LoadTextures() {
 
 	CL2.CreateStatic(TN[0], 96, 96);
 	CL2.Color( eeRGBA( 255, 255, 255, 255 ) );
-
-	Con.Create( &FF, true );
-	Con.IgnoreCharOnPrompt( 186 ); // L'º'
 
 	Map.myFont = reinterpret_cast<cFont*> ( &FF );
 
@@ -751,7 +776,7 @@ void cEETest::Render() {
 		EE->ClipDisable();
 	}
 
-	TTF.SetText( L"Entropia Engine++\nEE++ Support TTF Fonts and they look beautifull. :)\nCTRL + 1 = Screen 1 - CTRL + 2 = Screen 2" );
+	TTF->SetText( L"Entropia Engine++\nEE++ Support TTF Fonts and they look beautifull. :)\nCTRL + 1 = Screen 1 - CTRL + 2 = Screen 2" );
 
 	eeColorA ColRR1( 150, 150, 150, 220 );
 	eeColorA ColRR4( 150, 150, 150, 220 );
@@ -761,34 +786,34 @@ void cEETest::Render() {
 	PR.SetColor( eeColorA(150, 150, 150, 220) );
 	PR.DrawRectangle(
 					0.f,
-					(eeFloat)EE->GetHeight() - (eeFloat)TTF.GetNumLines() * (eeFloat)TTF.GetFontSize(),
-					(eeFloat)TTF.GetTextWidth(),
-					(eeFloat)TTF.GetNumLines() * (eeFloat)TTF.GetFontSize(),
+					(eeFloat)EE->GetHeight() - (eeFloat)TTF->GetNumLines() * (eeFloat)TTF->GetFontSize(),
+					(eeFloat)TTF->GetTextWidth(),
+					(eeFloat)TTF->GetNumLines() * (eeFloat)TTF->GetFontSize(),
 					ColRR1, ColRR2, ColRR3, ColRR4
 	);
 
-	TTF.Draw( 0.f, (eeFloat)EE->GetHeight() - TTF.GetTextHeight(), FONT_DRAW_CENTER, 1.f, Ang );
+	TTF->Draw( 0.f, (eeFloat)EE->GetHeight() - TTF->GetTextHeight(), FONT_DRAW_CENTER, 1.f, Ang );
 
-	FF.Color( eeColorA(255,255,255,200) );
-	FF.Draw( mInfo, 6, 6 );
+	FF->Color( eeColorA(255,255,255,200) );
+	FF->Draw( mInfo, 6, 6 );
 
-	FF2.SetText( InBuf.Buffer() );
-	FF2.Draw( 6, 24, FONT_DRAW_SHADOW );
+	FF2->SetText( InBuf.Buffer() );
+	FF2->Draw( 6, 24, FONT_DRAW_SHADOW );
 
 	Uint32 NLPos = 0;
 	Uint32 LineNum = InBuf.GetCurPosLinePos( NLPos );
 	if ( InBuf.CurPos() == (eeInt)InBuf.Buffer().size() && !LineNum ) {
-		FF2.Draw( L"_", 6.f + FF2.GetTextWidth(), 24.f );
+		FF2->Draw( L"_", 6.f + FF2->GetTextWidth(), 24.f );
 	} else {
-		FF2.SetText( InBuf.Buffer().substr( NLPos, InBuf.CurPos() - NLPos ) );
-		FF2.Draw( L"_", 6.f + FF2.GetTextWidth(), 24.f + (eeFloat)LineNum * (eeFloat)FF2.GetFontSize() );
+		FF2->SetText( InBuf.Buffer().substr( NLPos, InBuf.CurPos() - NLPos ) );
+		FF2->Draw( L"_", 6.f + FF2->GetTextWidth(), 24.f + (eeFloat)LineNum * (eeFloat)FF2->GetFontSize() );
 	}
 
-	TTF.SetText( mBuda );
-	TTF.Draw( 0.f, 50.f );
+	TTF->SetText( mBuda );
+	TTF->Draw( 0.f, 50.f );
 
-	FF2.SetText( L"FPS: " + toWStr( EE->FPS() ) );
-	FF2.Draw( EE->GetWidth() - FF2.GetTextWidth() - 15, 0 );
+	FF2->SetText( L"FPS: " + toWStr( EE->FPS() ) );
+	FF2->Draw( EE->GetWidth() - FF2->GetTextWidth() - 15, 0 );
 
 	cUIManager::instance()->Update();
 	cUIManager::instance()->Draw();
@@ -960,7 +985,11 @@ void cEETest::Process() {
 			et = EE->Elapsed();
 
 			Input();
-			Render();
+
+			if ( mFontsLoaded )
+				Render();
+			else
+				mFontLoader.Update();
 
 			if ( KM->IsKeyUp(KEY_F12) ) EE->TakeScreenshot( MyPath + "data/screenshots/" ); //After render and before Display
 

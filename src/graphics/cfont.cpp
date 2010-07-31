@@ -1,8 +1,10 @@
 #include "cfont.hpp"
+#include "cfontmanager.hpp"
 
 namespace EE { namespace Graphics {
 
-cFont::cFont() :
+cFont::cFont( const Uint32& Type, const std::string& Name ) :
+	mType( Type ),
 	mCacheData(true),
 	mColor(0xFFFFFFFF),
 	mShadowColor(0xFF000000),
@@ -12,6 +14,8 @@ cFont::cFont() :
 	mHeight(0),
 	mSize(0)
 {
+	this->Name( Name );
+	cFontManager::instance()->Add( this );
 }
 
 cFont::~cFont() {
@@ -527,6 +531,23 @@ void cFont::ShrinkText( std::wstring& Str, const Uint32& MaxWidth ) {
 
 const Uint32& cFont::GetTexId() const {
 	return mTexId;
+}
+
+const Uint32& cFont::Type() const {
+	return mType;
+}
+
+const std::string& cFont::Name() const {
+	return mFontName;
+}
+
+void cFont::Name( const std::string& name ) {
+	mFontName = name;
+	mFontHash = MakeHash( mFontName );
+}
+
+const Uint32& cFont::Id() {
+	return mFontHash;	
 }
 
 }}

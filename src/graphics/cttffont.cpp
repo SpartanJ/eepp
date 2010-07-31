@@ -2,9 +2,13 @@
 
 namespace EE { namespace Graphics {
 
-cTTFFont::cTTFFont() : cFont(), mFont(0), mPixels(NULL) {
-	TF = cTextureFactory::instance();
-
+cTTFFont::cTTFFont( const std::string FontName ) :
+	cFont( FONT_TYPE_TTF, FontName ),
+	mFont(0),
+	mPixels(NULL),
+	mThreadedLoading(false),
+	mTexReady(false)
+{
 	if ( hkFontManager::instance()->Init() )
 		mTTFInit = false;
 	else
@@ -35,7 +39,7 @@ bool cTTFFont::LoadFromMemory( Uint8* TTFData, const eeUint& TTFDataSize, const 
 	return iLoad( Size, Style, VerticalDraw, NumCharsToGen, FontColor, OutlineSize, OutlineColor );
 }
 
-bool cTTFFont::Load(const std::string& Filepath, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor ) {
+bool cTTFFont::Load( const std::string& Filepath, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor ) {
 	mFilepath = Filepath;
 	mLoadedFromMemory = false;
 
@@ -44,7 +48,7 @@ bool cTTFFont::Load(const std::string& Filepath, const eeUint& Size, EE_TTF_FONT
 	return iLoad( Size, Style, VerticalDraw, NumCharsToGen, FontColor, OutlineSize, OutlineColor );
 }
 
-bool cTTFFont::iLoad(const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor ) {
+bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor ) {
 	eeRect CurrentPos;
 	eeSize GlyphRect;
 
@@ -224,17 +228,26 @@ bool cTTFFont::iLoad(const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ver
 
 		hkFontManager::instance()->CloseFont( mFont );
 
-		mTexId = TF->LoadFromPixels( reinterpret_cast<unsigned char *> ( &mPixels[0] ), (Uint32)mTexWidth, (Uint32)mTexHeight, 4 );
+		mTexReady = true;
+
+		if ( !mThreadedLoading )
+			UpdateLoading();
+		return true;
+	} catch (...) {
+		cLog::instance()->Write( "Failed to load TTF Font " + mFilepath + "." );
+		return false;
+	}
+}
+
+void cTTFFont::UpdateLoading() {
+	if ( mTexReady && NULL != mPixels ) {
+		mTexId = cTextureFactory::instance()->LoadFromPixels( reinterpret_cast<unsigned char *> ( &mPixels[0] ), (Uint32)mTexWidth, (Uint32)mTexHeight, 4 );
 
 		eeSAFE_DELETE_ARRAY( mPixels );
 
 		RebuildFromGlyphs();
 
 		cLog::instance()->Write( "TTF Font " + mFilepath + " loaded." );
-		return true;
-	} catch (...) {
-		cLog::instance()->Write( "Failed to load TTF Font " + mFilepath + "." );
-		return false;
 	}
 }
 
@@ -244,9 +257,9 @@ void cTTFFont::RebuildFromGlyphs() {
 
 	mTexCoords.resize( mNumChars );
 
-	cTexture * Tex = TF->GetTexture( mTexId );
+	cTexture * Tex = cTextureFactory::instance()->GetTexture( mTexId );
 
-	TF->Bind( Tex );
+	cTextureFactory::instance()->Bind( Tex );
 
 	for (eeUint i = 0; i < mNumChars; i++) {
 		tR.Left = (eeFloat)mGlyphs[i].CurX / Tex->Width();
@@ -278,7 +291,7 @@ void cTTFFont::RebuildFromGlyphs() {
 }
 
 bool cTTFFont::SaveTexture( const std::string& Filepath, const EE_SAVETYPE& Format ) {
-	cTexture* Tex = TF->GetTexture(mTexId);
+	cTexture* Tex = cTextureFactory::instance()->GetTexture(mTexId);
 
 	if ( Tex != NULL )
 		return Tex->SaveToFile( Filepath, Format );

@@ -2,15 +2,19 @@
 
 namespace EE { namespace Graphics {
 
-cTextureFont::cTextureFont() : cFont(), mStartChar(0), mNumChars(256), mLoadedCoords(false) {
-	TF = cTextureFactory::instance();
+cTextureFont::cTextureFont( const std::string FontName ) :
+	cFont( FONT_TYPE_TEX, FontName ),
+	mStartChar(0),
+	mNumChars(256),
+	mLoadedCoords(false)
+{
 }
 
 cTextureFont::~cTextureFont() {
 }
 
 bool cTextureFont::Load( const Uint32& TexId, const eeUint& StartChar, const eeUint& Spacing, const bool& VerticalDraw, const eeUint& TexColumns, const eeUint& TexRows, const Uint16& NumChars ) {
-	cTexture * Tex = TF->GetTexture( TexId );
+	cTexture * Tex = cTextureFactory::instance()->GetTexture( TexId );
 
 	mTexId = TexId;
 
@@ -52,7 +56,7 @@ void cTextureFont::BuildFont() {
 	mTexCoords.resize( mNumChars );
 	mGlyphs.resize( mNumChars );
 
-	TF->Bind( mTexId );
+	cTextureFactory::instance()->Bind( mTexId );
 
 	for (eeUint i = 0; i < mNumChars; i++) {
 		if ( i >= mStartChar ) {
@@ -87,9 +91,9 @@ void cTextureFont::BuildFontFromDat() {
 
 	mTexCoords.resize( mNumChars );
 
-	cTexture * Tex = TF->GetTexture( mTexId );
+	cTexture * Tex = cTextureFactory::instance()->GetTexture( mTexId );
 
-	TF->Bind( Tex );
+	cTextureFactory::instance()->Bind( Tex );
 
 	for (eeUint i = 0; i < mNumChars; i++) {
 		tR.Left = (eeFloat)mGlyphs[i].CurX / Tex->Width();
@@ -132,7 +136,7 @@ bool cTextureFont::Load( const Uint32& TexId, const std::string& CoordinatesDatP
 	return false;
 }
 
-bool cTextureFont::LoadFromPack( cPack* Pack, const std::string& FilePackPath, const Uint32& TexId, const bool& VerticalDraw ) {
+bool cTextureFont::LoadFromPack( const Uint32& TexId, cPack* Pack, const std::string& FilePackPath, const bool& VerticalDraw ) {
 	std::vector<Uint8> TmpData;
 
 	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, TmpData ) )
@@ -141,7 +145,7 @@ bool cTextureFont::LoadFromPack( cPack* Pack, const std::string& FilePackPath, c
 	return false;
 }
 
-bool cTextureFont::LoadFromMemory( const Uint32& TexId, const Uint8* CoordData, const eeUint& CoordDataSize, const bool& VerticalDraw ) {
+bool cTextureFont::LoadFromMemory( const Uint32& TexId, const Uint8* CoordData, const Uint32& CoordDataSize, const bool& VerticalDraw ) {
 	mTexId = TexId;
 
 	if ( mTexId > 0 ) {

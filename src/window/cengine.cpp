@@ -1,6 +1,7 @@
 #include "cengine.hpp"
 #include "cinput.hpp"
 #include "../graphics/ctexturefactory.hpp"
+#include "../graphics/cfontmanager.hpp"
 #include "../graphics/cglobalbatchrenderer.hpp"
 #include "../graphics/cshaderprogrammanager.hpp"
 #include "../ui/cuimanager.hpp"
@@ -78,14 +79,19 @@ cEngine::~cEngine() {
 	}
 
 	cGlobalBatchRenderer::DestroySingleton();
+
 	cTextureFactory::DestroySingleton();
+
+	cFontManager::DestroySingleton();
 
 	cShaderProgramManager::DestroySingleton();
 
 	UI::cUIManager::DestroySingleton();
 
 	cInput::DestroySingleton();
+
 	SDL_Quit();
+
 	cLog::DestroySingleton();
 }
 
@@ -314,7 +320,7 @@ void cEngine::Display() {
 
 void cEngine::ChangeRes( const Uint16& width, const Uint16& height, const bool& Windowed ) {
 	try {
-		cLog::Instance()->Write( "Switching from %s to %s. Width: %d Height %d.", mVideoInfo.Windowed == true ? "windowed" : "fullscreen", Windowed == true ? "windowed" : "fullscreen", width, height );
+		cLog::Instance()->Writef( "Switching from %s to %s. Width: %d Height %d.", mVideoInfo.Windowed == true ? "windowed" : "fullscreen", Windowed == true ? "windowed" : "fullscreen", width, height );
 
 		#if EE_PLATFORM == EE_PLATFORM_WIN32 || EE_PLATFORM == EE_PLATFORM_APPLE
 		bool Reload = mVideoInfo.Windowed != Windowed;

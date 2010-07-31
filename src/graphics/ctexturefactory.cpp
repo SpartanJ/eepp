@@ -137,6 +137,8 @@ bool cTextureFactory::Remove( const Uint32& TexId ) {
 
 		mVectorFreeSlots.push( TexId );
 
+		cLog::instance()->Write( "Texture Removed " + toStr( TexId ) );
+
 		return true;
 	}
 
