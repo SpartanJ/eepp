@@ -63,6 +63,12 @@ namespace EE { namespace Utils {
 	*/
 	std::string FileExtension( const std::string& filepath, const bool& lowerExt = true );
 
+	/** Write a file in binary mode and close it. */
+	bool FileWrite( const std::string& filepath, const Uint8* data, const Uint32& dataSize );
+
+	/** Write a file in binary mode and close it. */
+	bool FileWrite( const std::string& filepath, const std::vector<Uint8>& data );
+
 	/** @return The Number of CPUs of the system. */
 	eeInt GetNumCPUs();
 }

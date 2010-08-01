@@ -371,4 +371,22 @@ eeInt GetNumCPUs() {
 	return nprocs;
 }
 
+bool FileWrite( const std::string& filepath, const Uint8* data, const Uint32& dataSize ) {
+	std::fstream fs( filepath.c_str() , std::ios::out | std::ios::binary );
+
+	if ( fs.is_open() ) {
+		fs.write( reinterpret_cast<const char*> (data), dataSize );
+
+		fs.close();
+
+		return true;
+	}
+
+	return false;
+}
+
+bool FileWrite( const std::string& filepath, const std::vector<Uint8>& data ) {
+	return FileWrite( filepath, reinterpret_cast<const Uint8*> ( &data[0] ), data.size() );
+}
+
 }}
