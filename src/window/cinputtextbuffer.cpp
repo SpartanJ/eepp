@@ -29,8 +29,8 @@ cInputTextBuffer::cInputTextBuffer() :
 }
 
 cInputTextBuffer::~cInputTextBuffer() {
-	if ( mCallback && NULL != cInput::Instance() )
-		cInput::Instance()->PopCallback( mCallback );
+	if ( mCallback && NULL != cInput::ExistsSingleton() )
+		cInput::instance()->PopCallback( mCallback );
 
 	mText.clear();
 }

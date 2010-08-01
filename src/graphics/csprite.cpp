@@ -1,5 +1,5 @@
 #include "csprite.hpp"
-#include "cshapemanager.hpp"
+#include "cglobalshapegroup.hpp"
 
 namespace EE { namespace Graphics {
 
@@ -228,7 +228,7 @@ bool cSprite::AddSubFrame(const Uint32& TexId, const eeUint& NumFrame, const eeU
 	if ( Frame[NF].Spr.size() != (eeUint)mFrameData.SubFrames )
 		Frame[NF].Spr.resize( mFrameData.SubFrames );
 
-	cShape * S = cShapeManager::instance()->Add( new cShape() );
+	cShape * S = cGlobalShapeGroup::instance()->Add( new cShape() );
 	Frame[NF].Spr[NSF] = S;
 
 	if ( TexId ) {

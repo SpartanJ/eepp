@@ -14,6 +14,7 @@ namespace EE { namespace Graphics {
 class EE_API cSprite {
 	public:
 		cSprite();
+		
 		~cSprite();
 
 		/** Set the x axis position */

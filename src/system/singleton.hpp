@@ -7,36 +7,26 @@ namespace EE { namespace System {
 template<typename T>
 class cSingleton {
 	static T* ms_singleton;
-	
+
 	public:
 		/** Get the singleton pointer */
-		static T* Singleton() {
+		static T* CreateSingleton() {
 			if (ms_singleton == 0)
 				ms_singleton = new T;
-			
+
 			return ms_singleton;
 		}
-		
-		/** Get the singleton reference */
-		static T& GetSingleton() {
-			return *Singleton();
-		}
-		
-		/** Get the singleton pointer */
-		static T* GetSingletonPtr() {
-			return Singleton();
-		}
-		
+
 		/** Get the singleton pointer (without instance verification) */
-		static T* Instance() {
+		static T* ExistsSingleton() {
 			return ms_singleton;
 		}
-		
+
 		/** Get the singleton pointer */
 		static T* instance() {
-			return Singleton();
+			return CreateSingleton();
 		}
-		
+
 		/** Destroy the singleton instance */
 		static void DestroySingleton() {
 			if( ms_singleton != 0 ) {

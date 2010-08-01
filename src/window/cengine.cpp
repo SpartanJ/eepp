@@ -4,6 +4,7 @@
 #include "../graphics/cfontmanager.hpp"
 #include "../graphics/cglobalbatchrenderer.hpp"
 #include "../graphics/cshaderprogrammanager.hpp"
+#include "../graphics/cshapegroupmanager.hpp"
 #include "../ui/cuimanager.hpp"
 
 using namespace EE::Graphics;
@@ -64,23 +65,31 @@ static int clipboard_filter(const SDL_Event *event) {
 }
 #endif
 
-cEngine::cEngine() : mInit(false), mBackColor(0, 0, 0), mCursor(NULL), mShowCursor(true) {
+cEngine::cEngine() :
+	mInit(false),
+	mBackColor(0, 0, 0),
+	mCursor(NULL),
+	mShowCursor(true)
+{
 	mFrames.FPS.LastCheck = 0;
 	mFrames.FPS.Current = 0;
 	mFrames.FPS.Count = 0;
 	mFrames.FPS.Limit = 0;
 	mFrames.FPS.Error = 0;
 	mFrames.ElapsedTime = 0;
+
+	cShapeGroupManager::instance();
 }
 
 cEngine::~cEngine() {
-	if ( mCursor != NULL ) {
+	if ( NULL != mCursor )
 		SDL_FreeCursor(mCursor);
-	}
 
 	cGlobalBatchRenderer::DestroySingleton();
 
 	cTextureFactory::DestroySingleton();
+
+	cShapeGroupManager::DestroySingleton();
 
 	cFontManager::DestroySingleton();
 
@@ -112,7 +121,7 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 		mOldWinPos = eeVector2i( 0, 0 );
 
 		if ( SDL_Init(SDL_INIT_VIDEO) != 0 ) {
-			cLog::Instance()->Write( "Unable to initialize SDL: " + std::string( SDL_GetError() ) );
+			cLog::instance()->Write( "Unable to initialize SDL: " + std::string( SDL_GetError() ) );
 			return false;
 		}
 
@@ -153,7 +162,7 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 		if ( SDL_VideoModeOK(mVideoInfo.Width, mVideoInfo.Height, mVideoInfo.ColorDepth, mTmpFlags) )
 			mVideoInfo.Screen = SDL_SetVideoMode(mVideoInfo.Width, mVideoInfo.Height, mVideoInfo.ColorDepth, mTmpFlags);
 		else {
-			cLog::Instance()->Write( "Video Mode Unsopported for this videocard: " );
+			cLog::instance()->Write( "Video Mode Unsopported for this videocard: " );
 			return false;
 		}
 
@@ -166,7 +175,7 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 		mVideoInfo.Maximized = false;
 
 		if ( mVideoInfo.Screen == NULL ) {
-			cLog::Instance()->Write( "Unable to set video mode: " + std::string( SDL_GetError() ) );
+			cLog::instance()->Write( "Unable to set video mode: " + std::string( SDL_GetError() ) );
 			return false;
 		}
 
@@ -320,7 +329,7 @@ void cEngine::Display() {
 
 void cEngine::ChangeRes( const Uint16& width, const Uint16& height, const bool& Windowed ) {
 	try {
-		cLog::Instance()->Writef( "Switching from %s to %s. Width: %d Height %d.", mVideoInfo.Windowed == true ? "windowed" : "fullscreen", Windowed == true ? "windowed" : "fullscreen", width, height );
+		cLog::instance()->Writef( "Switching from %s to %s. Width: %d Height %d.", mVideoInfo.Windowed == true ? "windowed" : "fullscreen", Windowed == true ? "windowed" : "fullscreen", width, height );
 
 		#if EE_PLATFORM == EE_PLATFORM_WIN32 || EE_PLATFORM == EE_PLATFORM_APPLE
 		bool Reload = mVideoInfo.Windowed != Windowed;
@@ -358,14 +367,14 @@ void cEngine::ChangeRes( const Uint16& width, const Uint16& height, const bool& 
 		}
 		#endif
 
-		if ( UI::cUIManager::Instance() != NULL )
+		if ( UI::cUIManager::ExistsSingleton() != NULL )
 			UI::cUIManager::instance()->ResizeControl();
 
 		if ( !mVideoInfo.Screen )
 			mInit = false;
 	} catch (...) {
-		cLog::Instance()->Write( "Unable to change resolution: " + std::string( SDL_GetError() ) );
-        cLog::Instance()->Save();
+		cLog::instance()->Write( "Unable to change resolution: " + std::string( SDL_GetError() ) );
+        cLog::instance()->Save();
 		mInit = false;
 	}
 }
@@ -490,7 +499,7 @@ std::vector< std::pair<unsigned int, unsigned int> > cEngine::GetPossibleResolut
 	SDL_Rect **modes = SDL_ListModes( NULL, SDL_OPENGL | SDL_HWPALETTE | SDL_HWACCEL | SDL_FULLSCREEN );
 
 	if(modes == (SDL_Rect **)0)
-		cLog::Instance()->Write("No VideoMode Found");
+		cLog::instance()->Write("No VideoMode Found");
 
 	std::vector< std::pair<unsigned int, unsigned int> > result;
 	if( modes != (SDL_Rect **)-1 )

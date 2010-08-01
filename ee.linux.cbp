@@ -84,6 +84,8 @@
 		<Unit filename="src/graphics/cfontmanager.hpp" />
 		<Unit filename="src/graphics/cglobalbatchrenderer.cpp" />
 		<Unit filename="src/graphics/cglobalbatchrenderer.hpp" />
+		<Unit filename="src/graphics/cglobalshapegroup.cpp" />
+		<Unit filename="src/graphics/cglobalshapegroup.hpp" />
 		<Unit filename="src/graphics/cparticle.cpp" />
 		<Unit filename="src/graphics/cparticle.hpp" />
 		<Unit filename="src/graphics/cparticlesystem.cpp" />
@@ -100,8 +102,10 @@
 		<Unit filename="src/graphics/cshaderprogrammanager.hpp" />
 		<Unit filename="src/graphics/cshape.cpp" />
 		<Unit filename="src/graphics/cshape.hpp" />
-		<Unit filename="src/graphics/cshapemanager.cpp" />
-		<Unit filename="src/graphics/cshapemanager.hpp" />
+		<Unit filename="src/graphics/cshapegroup.cpp" />
+		<Unit filename="src/graphics/cshapegroup.hpp" />
+		<Unit filename="src/graphics/cshapegroupmanager.cpp" />
+		<Unit filename="src/graphics/cshapegroupmanager.hpp" />
 		<Unit filename="src/graphics/csprite.cpp" />
 		<Unit filename="src/graphics/csprite.hpp" />
 		<Unit filename="src/graphics/ctextcache.cpp" />

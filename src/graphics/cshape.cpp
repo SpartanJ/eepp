@@ -1,6 +1,5 @@
 #include "cshape.hpp"
 #include "ctexturefactory.hpp"
-#include "cshapemanager.hpp"
 
 namespace EE { namespace Graphics {
 
@@ -25,13 +24,14 @@ cShape::cShape( const Uint32& TexId, const std::string& Name ) :
 	mName( Name ),
 	mId( MakeHash( mName ) ),
 	mTexId( TexId ),
-	mTexture( cTextureFactory::Instance()->GetTexture( TexId ) ),
+	mTexture( cTextureFactory::instance()->GetTexture( TexId ) ),
 	mSrcRect( eeRecti( 0, 0, mTexture->Width(), mTexture->Height() ) ),
 	mDestWidth( (eeFloat)mTexture->Width() ),
 	mDestHeight( (eeFloat)mTexture->Height() ),
 	mOffSetX(0),
 	mOffSetY(0)
 {
+	CreateUnnamed();
 }
 
 cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const std::string& Name ) :
@@ -40,13 +40,14 @@ cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const std::string& 
 	mName( Name ),
 	mId( MakeHash( mName ) ),
 	mTexId( TexId ),
-	mTexture( cTextureFactory::Instance()->GetTexture( TexId ) ),
+	mTexture( cTextureFactory::instance()->GetTexture( TexId ) ),
 	mSrcRect(SrcRect),
 	mDestWidth( (eeFloat)( mSrcRect.Right - mSrcRect.Left ) ),
 	mDestHeight( (eeFloat)( mSrcRect.Bottom - mSrcRect.Top ) ),
 	mOffSetX(0),
 	mOffSetY(0)
 {
+	CreateUnnamed();
 }
 
 cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const std::string& Name ) :
@@ -55,13 +56,14 @@ cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& Dest
 	mName( Name ),
 	mId( MakeHash( mName ) ),
 	mTexId( TexId ),
-	mTexture( cTextureFactory::Instance()->GetTexture( TexId ) ),
+	mTexture( cTextureFactory::instance()->GetTexture( TexId ) ),
 	mSrcRect(SrcRect),
 	mDestWidth(DestWidth),
 	mDestHeight(DestHeight),
 	mOffSetX(0),
 	mOffSetY(0)
 {
+	CreateUnnamed();
 }
 
 cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeFloat& OffsetX, const eeFloat& OffsetY, const std::string& Name ) :
@@ -70,13 +72,14 @@ cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& Dest
 	mName( Name ),
 	mId( MakeHash( mName ) ),
 	mTexId( TexId ),
-	mTexture( cTextureFactory::Instance()->GetTexture( TexId ) ),
+	mTexture( cTextureFactory::instance()->GetTexture( TexId ) ),
 	mSrcRect(SrcRect),
 	mDestWidth(DestWidth),
 	mDestHeight(DestHeight),
 	mOffSetX(OffsetX),
 	mOffSetY(OffsetY)
 {
+	CreateUnnamed();
 }
 
 cShape::~cShape() {
@@ -84,7 +87,8 @@ cShape::~cShape() {
 }
 
 void cShape::CreateUnnamed() {
-	Name( std::string( "unnamed" ) + toStr( cShapeManager::instance()->Count() ) );
+	if ( !mName.size() )
+		Name( std::string( "unnamed" ) );
 }
 
 const Uint32& cShape::Id() const {
@@ -106,7 +110,7 @@ const Uint32 cShape::Texture() {
 
 void cShape::Texture( const Uint32& TexId ) {
 	mTexId = TexId;
-	mTexture = cTextureFactory::Instance()->GetTexture( TexId );
+	mTexture = cTextureFactory::instance()->GetTexture( TexId );
 }
 
 eeRecti cShape::SrcRect() const {

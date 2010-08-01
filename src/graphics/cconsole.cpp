@@ -20,8 +20,8 @@ cConsole::~cConsole() {
 	mCmdLog.clear();
 	mLastCommands.clear();
 
-	if ( mMyCallback && NULL != cInput::Instance() )
-		cInput::Instance()->PopCallback( mMyCallback );
+	if ( mMyCallback && NULL != cInput::ExistsSingleton() )
+		cInput::instance()->PopCallback( mMyCallback );
 }
 
 void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const eeUint& MaxLogLines, const Uint32& TextureId, const eeRGBA& ConsoleColor, const eeRGBA& ConsoleLineColor, const eeRGBA& FontColor, const eeRGBA& FontLineColor ) {

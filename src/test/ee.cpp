@@ -1,7 +1,6 @@
 #include "../ee.h"
 
 /**
-@TODO Create a Global Shape Manager containing one default shape manager and with the possibility to add new shape managers.
 @TODO Add support for Joysticks.
 @TODO Create a Vertex Buffer Object class ( with and without GL_ARB_vertex_buffer_object ).
 @TODO Add support for Frame Buffer Object and to switch rendering to FBO and Screen.
@@ -359,7 +358,7 @@ void cEETest::CreateUI() {
 	GfxParams.PosSet( 160, 100 );
 	GfxParams.Flags |= UI_CLIP_ENABLE;
 	GfxParams.Size = eeSize( 64, 64 );
-	GfxParams.Shape = cShapeManager::instance()->Add( TN[2] );
+	GfxParams.Shape = cGlobalShapeGroup::instance()->Add( TN[2] );
 	cUIGfx * Gfx = new cUIGfx( GfxParams );
 	Gfx->Angle( 45.f );
 	Gfx->Visible( true );
