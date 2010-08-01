@@ -2,9 +2,9 @@
 
 namespace EE { namespace Graphics {
 
-cFontManager::cFontManager() {	
+cFontManager::cFontManager() {
 }
-		
+
 cFontManager::~cFontManager() {
 }
 

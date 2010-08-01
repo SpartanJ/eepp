@@ -23,6 +23,7 @@ using namespace EE::Math;
 #include "../system/singleton.hpp"
 #include "../system/clog.hpp"
 #include "../system/cpack.hpp"
+#include "../system/tresourcemanager.hpp"
 using namespace EE::System;
 
 #include "renders.hpp"

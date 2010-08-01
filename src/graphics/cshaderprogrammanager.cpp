@@ -11,13 +11,10 @@ cShaderProgramManager::~cShaderProgramManager()
 }
 
 void cShaderProgramManager::Reload() {
-	std::map<std::string, cShaderProgram*>::iterator it;
+	std::list<cShaderProgram*>::iterator it;
 
-	for ( it = mResources.begin(); it != mResources.end(); it++ ) {
-		cShaderProgram * sp = reinterpret_cast< cShaderProgram* > ( it->second );
-
-		sp->Reload();
-	}
+	for ( it = mResources.begin(); it != mResources.end(); it++ )
+		(*it)->Reload();
 }
 
 }}

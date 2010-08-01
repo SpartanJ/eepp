@@ -4,7 +4,7 @@
 namespace EE { namespace Graphics {
 
 cGlobalShapeGroup::cGlobalShapeGroup() :
-	cShapeGroup( "global", 64 )
+	cShapeGroup( "global" )
 {
 }
 

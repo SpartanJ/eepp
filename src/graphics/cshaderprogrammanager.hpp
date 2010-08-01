@@ -3,7 +3,6 @@
 
 #include "base.hpp"
 #include "cshaderprogram.hpp"
-#include "../system/tresourcemanager.hpp"
 
 namespace EE { namespace Graphics {
 

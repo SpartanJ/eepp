@@ -9,12 +9,14 @@
 	The project aims to provide a simple and powerfull framework that takes advantage of C++, OpenGL, OpenAL, SDL and more.
 
 	Thanks to: \n
+		* Sean Barrett for the stb_vorbis and stb_image libraries. \n
+		* Sam Latinga for Simple DirectMedia Layer library. \n
+		* Lucian Wischik for ziputils library. \n
 		* Jonathan Dummer for the Simple OpenGL Image Library. \n
-		* SFML staff, a great library that use as reference for the development. \n
+		* Laurent Gomila for the SFML library ( eepp audio module is based on the SFML audio module ) \n
 		* OGRE staff for the Timer implementation \n
-		* Sean Barrett for the stb_vorbis library. \n
-		* Amir 'Genjix' Taaki for the information of SDL_Collide.h.
-		* And a lot more people! :P
+		* Amir 'Genjix' Taaki for the information of SDL_Collide.h. \n
+		* And a lot more people!
 **/
 
 	// General includes and declarations
@@ -42,6 +44,7 @@
 
 	// Math
 	#include "math/math.hpp"
+	#include "math/cmtrand.hpp"
 	using namespace EE::Math;
 
 	// System
