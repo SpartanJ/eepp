@@ -1,4 +1,4 @@
-/* stbi-1.27 - public domain JPEG/PNG reader - http://nothings.org/stb_image.c
+/* stbi-1.28 - public domain JPEG/PNG reader - http://nothings.org/stb_image.c
    when you control the images you're loading
                                      no warranty implied; use at your own risk
 
@@ -21,6 +21,7 @@
       - supports installable dequantizing-IDCT, YCbCr-to-RGB conversion (define STBI_SIMD)
 
    Latest revisions:
+      1.28 (2010-08-01) fix bug in GIF palette transparency (SpartanJ)
       1.27 (2010-08-01) cast-to-uint8 to fix warnings (Laurent Gomila)
                         allow trailing 0s at end of image data (Laurent Gomila)
       1.26 (2010-07-24) fix bug in file buffering for PNG reported by SpartanJ
@@ -4149,7 +4150,7 @@ static uint8 *stbi_gif_load_next(stbi *s, stbi_gif *g, int *comp, int req_comp)
                for (i=0; i < 256; ++i)  // @OPTIMIZE: reset only the previous transparent
                   g->pal[i][3] = 255; 
                if (g->transparent >= 0 && (g->eflags & 0x01))
-                  g->pal[i][3] = 0;
+                  g->pal[g->transparent][3] = 0;
                g->color_table = (uint8 *) g->pal;
             } else
                return epuc("missing color table", "Corrupt GIF");
@@ -4540,6 +4541,7 @@ int stbi_info_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *c
 
 /*
    revision history:
+      1.28 (2010-08-01) fix bug in GIF palette transparency (SpartanJ)
       1.27 (2010-08-01)
              cast-to-uint8 to fix warnings
       1.26 (2010-07-24)

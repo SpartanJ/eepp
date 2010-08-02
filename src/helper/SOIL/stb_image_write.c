@@ -1,5 +1,5 @@
 //#ifdef STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
+
 #include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -439,4 +439,3 @@ int stbi_write_png(char const *filename, int x, int y, int comp, const void *dat
              first public release
       0.90   first internal release
 */
- 

@@ -29,7 +29,7 @@ USAGE:
      int stbi_write_tga(char const *filename, int w, int h, int comp, const void *data);
 
    Each function returns 0 on failure and non-0 on success.
-
+   
    The functions create an image file defined by the parameters. The image
    is a rectangle of pixels stored from left-to-right, top-to-bottom.
    Each pixel contains 'comp' channels of data stored interleaved with 8-bits
@@ -42,7 +42,7 @@ USAGE:
    PNG creates output files with the same number of components as the input.
    The BMP and TGA formats expand Y to RGB in the file format. BMP does not
    output alpha.
-
+   
    PNG supports writing rectangles of data even when the bytes storing rows of
    data are not consecutive in memory (e.g. sub-rectangles of a larger image),
    by supplying the stride between the beginning of adjacent rows. The other
@@ -61,7 +61,6 @@ extern "C" {
 extern int stbi_write_png(char const *filename, int w, int h, int comp, const void *data, int stride_in_bytes);
 extern int stbi_write_bmp(char const *filename, int w, int h, int comp, const void *data);
 extern int stbi_write_tga(char const *filename, int w, int h, int comp, const void *data);
-extern unsigned char * stbi_zlib_compress(unsigned char *data, int data_len, int *out_len, int quality);
 
 #ifdef __cplusplus
 }

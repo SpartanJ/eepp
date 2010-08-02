@@ -29,9 +29,6 @@
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include "helper/glew/glew.h"
-#include <GL/gl.h>
-
 #define Int8 Sint8
 #define Int16 Sint16
 #define Int32 Sint32
@@ -79,6 +76,13 @@
 	// Other platforms don't need to define anything
 	#define EE_API
 	#define EE_CALL
+#endif
+
+#include "helper/glew/glew.h"
+#if EE_PLATFORM == EE_PLATFORM_APPLE
+#include <OpenGL/gl.h>
+#else
+#include <GL/gl.h>
 #endif
 
 namespace EE {
