@@ -265,6 +265,10 @@
 		<Unit filename="src/window/cinput.hpp" />
 		<Unit filename="src/window/cinputtextbuffer.cpp" />
 		<Unit filename="src/window/cinputtextbuffer.hpp" />
+		<Unit filename="src/window/cjoystick.cpp" />
+		<Unit filename="src/window/cjoystick.hpp" />
+		<Unit filename="src/window/cjoystickmanager.cpp" />
+		<Unit filename="src/window/cjoystickmanager.hpp" />
 		<Unit filename="src/window/cview.cpp" />
 		<Unit filename="src/window/cview.hpp" />
 		<Extensions>

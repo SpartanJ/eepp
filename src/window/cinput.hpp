@@ -318,6 +318,12 @@ class EE_API cInput : public cSingleton<cInput> {
 		/** Inject the mouse position given */
 		void InjectMousePos( const eeVector2i& Pos );
 
+		/** Inject the mouse button as pressed */
+		void InjectButtonPress( const Uint32& Button );
+
+		/** Inject the mouse button as released */
+		void InjectButtonRelease( const Uint32& Button );
+
 		/** @return If the Control Key is pressed */
 		bool ControlPressed() const;
 

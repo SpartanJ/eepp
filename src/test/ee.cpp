@@ -1,7 +1,6 @@
 #include "../ee.h"
 
 /**
-@TODO Add support for Joysticks.
 @TODO Create a Vertex Buffer Object class ( with and without GL_ARB_vertex_buffer_object ).
 @TODO Add support for Frame Buffer Object and to switch rendering to FBO and Screen.
 @TODO Create a basic UI system ( add basic controls, add skinning support ).
@@ -185,6 +184,10 @@ class cEETest : private cThread {
 		bool mFontsLoaded;
 		cResourceLoader mFontLoader;
 		void OnFontLoaded( cResourceLoader * ObjLoaded );
+
+		cJoystickManager * JM;
+		eeFloat mAxisX;
+		eeFloat mAxisY;
 };
 
 
@@ -209,6 +212,8 @@ void cEETest::Init() {
 
 	mFontsLoaded		= false;
 	mTextureLoaded		= false;
+	mAxisX				= 0;
+	mAxisY				= 0;
 
 	MyPath 				= AppPath();
 
@@ -237,6 +242,7 @@ void cEETest::Init() {
 
 		Log = cLog::instance();
 		KM = cInput::instance();
+		JM = cJoystickManager::instance();
 
 		PS.resize(5);
 
@@ -825,6 +831,8 @@ void cEETest::Render() {
 
 void cEETest::Input() {
 	KM->Update();
+	JM->Update();
+
 	Mouse = KM->GetMousePos();
 	Mousef = eeVector2f( (eeFloat)Mouse.x, (eeFloat)Mouse.y );
 
@@ -905,8 +913,63 @@ void cEETest::Input() {
 	if ( KM->IsKeyUp(KEY_3) && KM->ControlPressed() )
 		Screen = 2;
 
+	cJoystick * Joy = JM->GetJoystick(0);
+
+	if ( NULL != Joy ) {
+		if ( Joy->IsButtonDown(0) )		KM->InjectButtonPress(EE_BUTTON_LEFT);
+		if ( Joy->IsButtonDown(1) )		KM->InjectButtonPress(EE_BUTTON_RIGHT);
+		if ( Joy->IsButtonDown(2) )		KM->InjectButtonPress(EE_BUTTON_MIDDLE);
+		if ( Joy->IsButtonUp(0) )		KM->InjectButtonRelease(EE_BUTTON_LEFT);
+		if ( Joy->IsButtonUp(1) )		KM->InjectButtonRelease(EE_BUTTON_RIGHT);
+		if ( Joy->IsButtonUp(2) )		KM->InjectButtonRelease(EE_BUTTON_WHEELUP);
+		if ( Joy->IsButtonUp(3) )		KM->InjectButtonRelease(EE_BUTTON_WHEELDOWN);
+		if ( Joy->IsButtonUp(4) )		Screen = 0;
+		if ( Joy->IsButtonUp(5) )		Screen = 1;
+		if ( Joy->IsButtonUp(6) )		Screen = 2;
+		if ( Joy->IsButtonUp(7) )		KM->InjectButtonRelease(EE_BUTTON_MIDDLE);
+
+		Int16 aX = Joy->GetAxis( AXIS_X );
+		Int16 aY = Joy->GetAxis( AXIS_Y );
+
+		if ( 0 != aX || 0 != aY ) {
+			eeFloat rE = EE->Elapsed();
+
+			if ( aX < 0 )	mAxisX -= ( (eeFloat)aX / (eeFloat)AXIS_MIN ) * rE;
+			else 			mAxisX += ( (eeFloat)aX / (eeFloat)AXIS_MAX ) * rE;
+
+			if ( aY < 0 )	mAxisY -= ( (eeFloat)aY / (eeFloat)AXIS_MIN ) * rE;
+			else 			mAxisY += ( (eeFloat)aY / (eeFloat)AXIS_MAX ) * rE;
+		}
+
+		if ( ( mAxisX != 0 && ( mAxisX >= 1.f || mAxisX <= -1.f ) ) || ( mAxisY != 0 && ( mAxisY >= 1.f || mAxisY <= -1.f )  ) ) {
+			eeFloat nmX = Mousef.x + mAxisX;
+			eeFloat nmY = Mousef.y + mAxisY;
+
+			KM->InjectMousePos( (Int32)nmX, (Int32)nmY );
+
+			mAxisX 		= 0;
+			mAxisY	 	= 0;
+		}
+	}
+
 	switch (Screen) {
 		case 0:
+			if ( NULL != Joy ) {
+				Uint8 hat = Joy->GetHat();
+
+				if ( HAT_LEFT == hat || HAT_LEFTDOWN == hat || HAT_LEFTUP == hat )
+					Map.Move( (EE->Elapsed() * 0.2f), 0 );
+
+				if ( HAT_RIGHT == hat || HAT_RIGHTDOWN == hat || HAT_RIGHTUP == hat )
+					Map.Move( -EE->Elapsed() * 0.2f, 0 );
+
+				if ( HAT_UP == hat || HAT_LEFTUP == hat || HAT_RIGHTUP == hat )
+					Map.Move( 0, (EE->Elapsed() * 0.2f) );
+
+				if ( HAT_DOWN == hat || HAT_LEFTDOWN == hat || HAT_RIGHTDOWN == hat )
+					Map.Move( 0, -EE->Elapsed() * 0.2f );
+			}
+
 			if ( KM->IsKeyDown(KEY_LEFT) )
 				Map.Move( (EE->Elapsed() * 0.2f), 0 );
 

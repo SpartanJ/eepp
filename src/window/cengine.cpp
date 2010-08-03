@@ -1,5 +1,6 @@
 #include "cengine.hpp"
 #include "cinput.hpp"
+#include "cjoystickmanager.hpp"
 #include "../graphics/ctexturefactory.hpp"
 #include "../graphics/cfontmanager.hpp"
 #include "../graphics/cglobalbatchrenderer.hpp"
@@ -96,6 +97,8 @@ cEngine::~cEngine() {
 	cShaderProgramManager::DestroySingleton();
 
 	UI::cUIManager::DestroySingleton();
+
+	cJoystickManager::DestroySingleton();
 
 	cInput::DestroySingleton();
 

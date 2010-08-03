@@ -265,6 +265,25 @@ void cInput::InjectKeyUp( const EE_KEY& Key ) {
 	PushKey( &mKeysUp	[ Key / 8 ], Key % 8, true );
 }
 
+void cInput::InjectButtonPress( const Uint32& Button ) {
+	if ( Button < 8 )
+		if ( !( mPressTrigger & EE_BUTTON( Button )  ) )
+			mPressTrigger |= EE_BUTTON( Button );
+}
+
+void cInput::InjectButtonRelease( const Uint32& Button ) {
+	if ( Button < 8 ) {
+		if ( mPressTrigger & EE_BUTTON( Button )  )
+			mPressTrigger &= ~EE_BUTTON( Button );
+
+		if ( !( mReleaseTrigger & EE_BUTTON( Button )  ) )
+			mReleaseTrigger |= EE_BUTTON( Button );
+
+		if ( !( mClickTrigger & EE_BUTTON( Button )  ) )
+			mClickTrigger |= EE_BUTTON( Button );
+	}
+}
+
 eeVector2i cInput::GetMousePos() const {
 	return mMousePos;
 }

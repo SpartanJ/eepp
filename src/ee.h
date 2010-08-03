@@ -84,6 +84,8 @@
 	#include "window/cinput.hpp"
 	#include "window/cinputtextbuffer.hpp"
 	#include "window/cview.hpp"
+	#include "window/cjoystick.hpp"
+	#include "window/cjoystickmanager.hpp"
 	#include "window/cengine.hpp"
 	using namespace EE::Window;
 
