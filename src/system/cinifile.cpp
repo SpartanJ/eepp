@@ -160,7 +160,7 @@ long cIniFile::FindValue ( unsigned const keyID, std::string const valuename ) c
 unsigned cIniFile::AddKeyName ( std::string const keyname ) {
 	mNames.resize ( mNames.size() + 1, keyname );
 	mKeys.resize ( mKeys.size() + 1 );
-	return mNames.size() - 1;
+	return (unsigned int)(mNames.size() - 1);
 }
 
 std::string cIniFile::KeyName ( unsigned const keyID ) const {
@@ -172,7 +172,7 @@ std::string cIniFile::KeyName ( unsigned const keyID ) const {
 
 unsigned cIniFile::NumValues ( unsigned const keyID ) {
 	if ( keyID < mKeys.size() )
-		return mKeys[keyID].names.size();
+		return (unsigned int)mKeys[keyID].names.size();
 	return 0;
 }
 
@@ -180,7 +180,7 @@ unsigned cIniFile::NumValues ( std::string const keyname ) {
 	long keyID = FindKey ( keyname );
 	if ( keyID == noID )
 		return 0;
-	return mKeys[keyID].names.size();
+	return (unsigned int)mKeys[keyID].names.size();
 }
 
 std::string cIniFile::ValueName ( unsigned const keyID, unsigned const valueID ) const {
@@ -203,7 +203,7 @@ bool cIniFile::SetValue ( unsigned const keyID, unsigned const valueID, std::str
 	return false;
 }
 
-bool cIniFile::SetValue ( std::string const keyname, std::string const valuename, std::string const value, bool const create ) {
+bool cIniFile::SetValue ( std::string const keyname, std::string const valuename, std::string const value, bool create ) {
 	long keyID = FindKey ( keyname );
 	if ( keyID == noID ) {
 		if ( create )
@@ -224,18 +224,18 @@ bool cIniFile::SetValue ( std::string const keyname, std::string const valuename
 	return true;
 }
 
-bool cIniFile::SetValueI ( std::string const keyname, std::string const valuename, int const value, bool const create ) {
+bool cIniFile::SetValueI ( std::string const keyname, std::string const valuename, int const value, bool create ) {
 	char svalue[MAX_VALUEDATA];
 
 	StrFormat( svalue, MAX_VALUEDATA, "%d", value );
-	return SetValue ( keyname, valuename, svalue );
+	return SetValue ( keyname, valuename, svalue, create );
 }
 
-bool cIniFile::SetValueF ( std::string const keyname, std::string const valuename, double const value, bool const create ) {
+bool cIniFile::SetValueF ( std::string const keyname, std::string const valuename, double const value, bool create ) {
 	char svalue[MAX_VALUEDATA];
 
 	StrFormat ( svalue, MAX_VALUEDATA, "%f", value );
-	return SetValue ( keyname, valuename, svalue );
+	return SetValue ( keyname, valuename, svalue, create );
 }
 
 bool cIniFile::SetValueV ( std::string const keyname, std::string const valuename, char *format, ... ) {
@@ -387,7 +387,7 @@ bool cIniFile::DeleteHeaderComment ( unsigned commentID ) {
 
 unsigned cIniFile::NumKeyComments ( unsigned const keyID ) const {
 	if ( keyID < mKeys.size() )
-		return mKeys[keyID].comments.size();
+		return (unsigned int)mKeys[keyID].comments.size();
 	return 0;
 }
 
@@ -395,7 +395,7 @@ unsigned cIniFile::NumKeyComments ( std::string const keyname ) const {
 	long keyID = FindKey ( keyname );
 	if ( keyID == noID )
 		return 0;
-	return mKeys[keyID].comments.size();
+	return (unsigned int)mKeys[keyID].comments.size();
 }
 
 bool cIniFile::KeyComment ( unsigned const keyID, std::string const comment ) {

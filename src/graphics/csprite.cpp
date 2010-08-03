@@ -171,7 +171,7 @@ Uint32 cSprite::GetTexture(const eeUint& FrameNum, const eeUint& SubFrameNum) {
 
 eeUint cSprite::FramePos() {
 	Frame.push_back( cFrame() );
-	return Frame.size() - 1;
+	return (eeUint)Frame.size() - 1;
 }
 
 bool cSprite::CreateStatic(const Uint32& TexId, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeFloat& offSetX, const eeFloat& offSetY, const eeRecti& TexSector) {
@@ -260,7 +260,7 @@ bool cSprite::AddSubFrame(const Uint32& TexId, const eeUint& NumFrame, const eeU
 
 void cSprite::Animate( const eeFloat& ElapsedTime ) {
 	if ( mAnimated && mAutoAnim && !mAnimPaused ) {
-		eeUint Size = Frame.size() - 1;
+		eeUint Size = (eeUint)Frame.size() - 1;
 		eeFloat Elapsed = ( ElapsedTime != -99999.f ) ? (eeFloat)ElapsedTime : (eeFloat)cEngine::instance()->Elapsed();
 
 		if ( mRepeations == 0 )
@@ -321,13 +321,13 @@ eeUint cSprite::GetEndFrame() {
 	if ( mReverseAnim ) {
 		return 0;
 	} else {
-		return Frame.size() - 1;
+		return (eeUint)Frame.size() - 1;
 	}
 }
 
 void cSprite::SetReverseFromStart() {
 	mReverseAnim = true;
-	eeUint Size = Frame.size() - 1;
+	eeUint Size = (eeUint)Frame.size() - 1;
 
 	mFrameData.fCurrentFrame = (eeFloat)Size;
 	mFrameData.CurrentFrame = Size;
@@ -381,7 +381,7 @@ eeUint cSprite::GetSubFrame( const eeUint& SubFrame ) {
 	return SFN;
 }
 
-const eeFloat cSprite::OffSetX() {
+eeFloat cSprite::OffSetX() {
 	cShape* S = GetCurrentShape();
 
 	if ( S != NULL )
@@ -397,7 +397,7 @@ void cSprite::OffSetX( const eeFloat& offsetx ) {
 		S->OffsetX( offsetx );
 }
 
-const eeFloat cSprite::OffSetY() {
+eeFloat cSprite::OffSetY() {
 	cShape* S = GetCurrentShape();
 
 	if ( S != NULL )

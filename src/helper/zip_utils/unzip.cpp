@@ -11,7 +11,11 @@
 #endif
 #if defined(_MSC_VER) || defined(__BORLANDC__) || defined(__MINGW32__)
 #include <direct.h>
+#if (defined (_MSCVER) || defined (_MSC_VER))
+#define lumkdir(t) (_mkdir(t))
+#else
 #define lumkdir(t) (mkdir(t))
+#endif
 #else
 #include <unistd.h>
 #define lumkdir(t) (mkdir(t,0755))
@@ -171,7 +175,13 @@ typedef struct tm_unz_s
 // some windows<->linux portability things
 #ifdef ZIP_STD
 DWORD GetFilePosU(ZIPHANDLE hfout)
-{ struct stat st; fstat(fileno(hfout),&st);
+{
+  struct stat st;
+  #if (defined (_MSCVER) || defined (_MSC_VER))
+  fstat(_fileno(hfout),&st);
+  #else
+  fstat(fileno(hfout),&st);
+  #endif
   if ((st.st_mode&S_IFREG)==0) return 0xFFFFFFFF;
   return ftell(hfout);
 }
@@ -3895,7 +3905,11 @@ ZRESULT TUnzip::Open(void *z,unsigned int len,DWORD flags)
 { if (uf!=0 || currentfile!=-1) return ZR_NOTINITED;
   //
 #ifdef ZIP_STD
+  #if (defined (_MSCVER) || defined (_MSC_VER))
+  _getcwd(rootdir,MAX_PATH-1);
+  #else
   getcwd(rootdir,MAX_PATH-1);
+  #endif
 #else
 #ifdef GetCurrentDirectory
   GetCurrentDirectory(MAX_PATH-1,rootdir);
@@ -4109,7 +4123,7 @@ void EnsureDirectory(const TCHAR *rootdir, const TCHAR *dir)
   TCHAR cd[MAX_PATH]; *cd=0; if (rootdir!=0) _tcsncpy(cd,rootdir,MAX_PATH); cd[MAX_PATH-1]=0;
   size_t len=_tcslen(cd); _tcsncpy(cd+len,dir,MAX_PATH-len); cd[MAX_PATH-1]=0;
 #ifdef ZIP_STD
-  if (!FileExists(cd)) lumkdir(cd);
+  if (!FileExists(cd))lumkdir(cd);
 #else
   if (!FileExists(cd))
   { CreateDirectory(cd,0);

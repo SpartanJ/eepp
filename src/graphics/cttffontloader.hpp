@@ -12,7 +12,7 @@ namespace EE { namespace Graphics {
 #define TTF_LT_MEM 		(2)
 #define TTF_LT_PACK 	(3)
 
-class cTTFFontLoader : public cObjectLoader {
+class EE_API cTTFFontLoader : public cObjectLoader {
 	public:
 		cTTFFontLoader( const std::string& FontName, const std::string& Filepath, const eeUint& Size, EE_TTF_FONTSTYLE Style = EE_TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0) );
 

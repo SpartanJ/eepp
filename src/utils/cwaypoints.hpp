@@ -72,16 +72,16 @@ class EE_API cWaypoints {
 		cWaypoint* GetCurrentNext() const { return mNexP; }
 
 		/** @return The Current Position in the vector */
-		const Uint32 GetCurrentPos() const { return mCurPoint; }
+		const Uint32& GetCurrentPos() const { return mCurPoint; }
 
 		/** @return the vector of waypoints */
-		const std::vector<cWaypoint>* const GetWaypoints() { return &mPoints; }
+		const std::vector<cWaypoint>* GetWaypoints() { return &mPoints; }
 
 		/** Set the current interpolation speed ( This will destroy the time of the interpolation and create one depending on the speed ) */
 		void Speed( const eeFloat& Speed );
 
 		/** Get the current interpolation speed */
-		const eeFloat Speed() const { return mSpeed; }
+		const eeFloat& Speed() const { return mSpeed; }
 
 		/** @return If enabled */
 		bool& Enabled() { return mEnable; }
@@ -93,7 +93,7 @@ class EE_API cWaypoints {
 		void Type( EE_INTERPOLATION InterpolationType );
 
 		/** @return The type of the interpolation */
-		const eeInt Type() const;
+		const eeInt& Type() const;
 	protected:
 		eeInt mType;
 		bool mEnable;

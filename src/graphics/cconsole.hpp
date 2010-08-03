@@ -127,7 +127,7 @@ class EE_API cConsole{
 		std::deque < std::wstring > mCmdLog;
 		std::deque < std::wstring > mLastCommands;
 
-		Int16 mLastLogPos;
+		eeInt mLastLogPos;
 
 		bool mEnabled, mVisible, mFadeIn, mFadeOut, mExpand, mFading, mShowFps;
 		eeRGBA mConColor, mConLineColor, mFontColor, mFontLineColor;

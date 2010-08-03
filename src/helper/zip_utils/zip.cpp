@@ -650,7 +650,13 @@ void GetNow(lutime_t *ft, WORD *dosdate, WORD *dostime)
 }
 
 DWORD GetFilePosZ(ZIPHANDLE hfout)
-{ struct stat st; fstat(fileno(hfout),&st);
+{
+  struct stat st;
+  #if (defined (_MSCVER) || defined (_MSC_VER))
+  fstat(_fileno(hfout),&st);
+  #else
+  fstat(fileno(hfout),&st);
+  #endif
   if ((st.st_mode&S_IFREG)==0) return 0xFFFFFFFF;
   return ftell(hfout);
 }
@@ -660,7 +666,14 @@ ZRESULT GetFileInfo(FILE *hf, ulg *attr, long *size, iztimes *times, ulg *timest
   // The date and time is returned in a long with the date most significant to allow
   // unsigned integer comparison of absolute times. The attributes have two
   // high bytes unix attr, and two low bytes a mapping of that to DOS attr.
-  struct stat bhi; int res=fstat(fileno(hf),&bhi); if (res==-1) return ZR_NOFILE;
+  struct stat bhi;
+  #if (defined (_MSCVER) || defined (_MSC_VER))
+  int res=fstat(_fileno(hf),&bhi);
+  #else
+  int res=fstat(fileno(hf),&bhi);
+  #endif
+  if (res==-1) return ZR_NOFILE;
+
   ulg fa=bhi.st_mode; ulg a=0;
   // Zip uses the lower word for its interpretation of windows stuff
   if ((fa&S_IWUSR)==0) a|=0x01;
@@ -2567,7 +2580,14 @@ ZRESULT TZip::open_handle(ZIPHANDLE hf,unsigned int len)
   if (hf==0 || hf==INVALID_HANDLE_VALUE) return ZR_ARGS;
   bool canseek;
 #ifdef ZIP_STD
-    struct stat st; fstat(fileno(hf),&st); canseek = S_ISREG(st.st_mode);
+    struct stat st;
+    #if (defined (_MSCVER) || defined (_MSC_VER))
+	fstat(_fileno(hf),&st);
+    #else
+    fstat(fileno(hf),&st);
+    #endif
+	
+	canseek = S_ISREG(st.st_mode);
 #else
   DWORD res = SetFilePointer(hfout,0,0,FILE_CURRENT);
   canseek = (res!=0xFFFFFFFF);

@@ -23,7 +23,7 @@ bool cTTFFont::LoadFromPack( cPack* Pack, const std::string& FilePackPath, const
 	std::vector<Uint8> TmpData;
 
 	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, TmpData ) )
-		return LoadFromMemory( reinterpret_cast<Uint8*> (&TmpData[0]), TmpData.size(), Size, Style, VerticalDraw, NumCharsToGen, FontColor, OutlineSize, OutlineColor );
+		return LoadFromMemory( reinterpret_cast<Uint8*> (&TmpData[0]), (eeUint)TmpData.size(), Size, Style, VerticalDraw, NumCharsToGen, FontColor, OutlineSize, OutlineColor );
 
 	TmpData.clear();
 

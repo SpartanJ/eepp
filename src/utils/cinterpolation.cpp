@@ -4,18 +4,18 @@ using namespace EE::Utils::easing;
 
 namespace EE { namespace Utils {
 
-cInterpolation::cInterpolation() : 
+cInterpolation::cInterpolation() :
 	mType(LINEAR),
-	mEnable(false), 
-	mUpdate(true), 
-	mLoop(false), 
-	mEnded(false), 
+	mEnable(false),
+	mUpdate(true),
+	mLoop(false),
+	mEnded(false),
 	mTotDist(0.f),
-	mCurPoint(0), 
-	mCurTime(0), 
-	mSpeed(1.3f), 
-	mActP(NULL), 
-	mNexP(NULL), 
+	mCurPoint(0),
+	mCurTime(0),
+	mSpeed(1.3f),
+	mActP(NULL),
+	mNexP(NULL),
 	mOnPathEndCallback(NULL)
 {
 }
@@ -97,7 +97,7 @@ bool cInterpolation::EraseWaypoint( const eeUint PointNum ) {
 			mTotDist -= fabs( mPoints[ PointNum ].p - mPoints[ PointNum - 1 ].p );
 
 		mPoints.erase( mPoints.begin() + PointNum );
-		
+
 		return true;
 	}
 	return false;
@@ -126,7 +126,7 @@ void cInterpolation::Update( const eeFloat& Elapsed ) {
 			else {
 				if ( mLoop ) {
 					mNexP = &mPoints[ 0 ];
-					
+
 					if ( NULL != mOnPathEndCallback )
 						mOnPathEndCallback();
 				} else {
@@ -144,9 +144,9 @@ void cInterpolation::Update( const eeFloat& Elapsed ) {
 		}
 
 		mCurTime += Elapsed;
-		
+
 		mCurPos = easingCb[ mType ]( mCurTime, mActP->p, ( mNexP->p - mActP->p ), mActP->t );
-		
+
 		if ( mCurTime >= mActP->t ) {
 			mCurPos = mNexP->p;
 
@@ -167,12 +167,12 @@ void cInterpolation::SetTotalTime( const eeFloat TotTime ) {
 		mPoints.clear();
 		return;
 	}
-	
+
 	if ( mLoop ) {
 		tdist += fabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p );
 		mPoints[ mPoints.size() - 1 ].t = abs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p ) * TotTime / tdist;
 	}
-	
+
 	for ( eeUint i = 0; i < mPoints.size() - 1; i++) {
 		eeFloat CurDist = fabs( mPoints[i].p - mPoints[i + 1].p );
 		mPoints[i].t = CurDist * TotTime / tdist;
@@ -195,7 +195,7 @@ void cInterpolation::Speed( const eeFloat speed ) {
 			mPoints[ mPoints.size() - 1 ].t = fabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p ) * TotTime / tdist;
 			TotTime = tdist * mSpeed;
 		}
-		
+
 		for ( eeUint i = 0; i < mPoints.size() - 1; i++) {
 			eeFloat CurDist = fabs( mPoints[i].p - mPoints[i + 1].p );
 			mPoints[i].t = CurDist * TotTime / tdist;
@@ -207,7 +207,7 @@ void cInterpolation::Type( EE_INTERPOLATION InterpolationType ) {
 	mType = InterpolationType;
 }
 
-const eeInt cInterpolation::Type() const {
+const eeInt& cInterpolation::Type() const {
 	return mType;
 }
 

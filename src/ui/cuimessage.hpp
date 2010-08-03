@@ -17,7 +17,7 @@ class EE_API cUIMessage {
 			MsgMouseExit,
 			MsgWindowResize,
 			MsgUser,
-			MsgForceDWord = 0xFFFFFFFF,
+			MsgForceDWord = 0xFFFFFFFF
 		};
 
 		cUIMessage( cUIControl * Ctrl, const Uint32& Msg );

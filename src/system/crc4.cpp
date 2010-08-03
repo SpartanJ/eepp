@@ -69,18 +69,18 @@ bool cRC4::EncryptFile( const std::string& SourceFile, const std::string& DestFi
 	tmpv.resize( FileSize( SourceFile ) );
 
 	fs.open( SourceFile.c_str() , std::ios::in | std::ios::out | std::ios::binary );
-	fs.read( reinterpret_cast<char*>(&tmpv[0]), tmpv.size() );
+	fs.read( reinterpret_cast<char*>(&tmpv[0]), (std::streamsize)tmpv.size() );
 
 	EncryptByte( tmpv );
 
 	if ( SourceFile != DestFile ) {
 		std::fstream fs2;
 		fs2.open( DestFile.c_str() , std::ios::out | std::ios::binary );
-		fs2.write( reinterpret_cast<const char*>( &tmpv[0] ), tmpv.size() );
+		fs2.write( reinterpret_cast<const char*>( &tmpv[0] ), (std::streamsize)tmpv.size() );
 		fs2.close();
 	} else {
 		fs.seekg( 0, ios::beg );
-		fs.write( reinterpret_cast<const char*>( &tmpv[0] ), tmpv.size() );
+		fs.write( reinterpret_cast<const char*>( &tmpv[0] ), (std::streamsize)tmpv.size() );
 	}
 
 	fs.close();

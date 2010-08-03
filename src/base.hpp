@@ -65,8 +65,10 @@
 			#define EE_API __declspec(dllimport)
 		#endif
 
-		#ifdef _MSC_VER
+		#ifdef EE_COMPILER_MSVC
 			#pragma warning(disable : 4251)
+			#pragma warning(disable : 4244)
+			#pragma warning(disable : 4996)
 		#endif
 	#else
 		// No specific directive needed for static build

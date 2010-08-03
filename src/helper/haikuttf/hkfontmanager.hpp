@@ -28,19 +28,19 @@ class hkFontManager {
 
 		~hkFontManager();
 
-		int Init();
+		int 				Init();
 
-		void Destroy();
+		void 				Destroy();
 
-		int WasInit();
+		int 				WasInit();
 
-		void CloseFont( hkFont * Font );
+		void 				CloseFont( hkFont * Font );
 
-		hkFont * OpenFromMemory( const uint8_t* data, unsigned long size, int ptsize, long index = 0, unsigned int glyphCacheSize = 256 );
+		hkFont * 			OpenFromMemory( const uint8_t* data, unsigned long size, int ptsize, long index = 0, unsigned int glyphCacheSize = 256 );
 
-		hkFont * OpenFromFile( const char* filename, int ptsize, long index = 0, unsigned int glyphCacheSize = 256 );
+		hkFont * 			OpenFromFile( const char* filename, int ptsize, long index = 0, unsigned int glyphCacheSize = 256 );
 
-		const FT_Library Library() const { return mLibrary; }
+		FT_Library 			Library() const { return mLibrary; }
 	protected:
 		FT_Library 			mLibrary;
 		int 				mInitialized;

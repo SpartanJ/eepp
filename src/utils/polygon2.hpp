@@ -74,7 +74,7 @@ void Polygon2<T>::Reset() {
 template <typename T>
 Uint32 Polygon2<T>::PushBack( const Vector2<T>& V ) {
 	Vector.push_back( V );
-	return Vector.size() - 1;
+	return (Uint32)Vector.size() - 1;
 }
 
 template <typename T>

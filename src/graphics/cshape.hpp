@@ -27,27 +27,27 @@ class EE_API cShape {
 
 		void Name( const std::string& name );
 
-		const Uint32 Texture();
+		const Uint32& Texture();
 
 		void Texture( const Uint32& TexId );
 
-		eeRecti SrcRect() const;
+		const eeRecti& SrcRect() const;
 
 		void SrcRect( const eeRecti& Rect );
 
-		const eeFloat DestWidth() const;
+		const eeFloat& DestWidth() const;
 
 		void DestWidth( const eeFloat& width );
 
-		const eeFloat DestHeight() const;
+		const eeFloat& DestHeight() const;
 
 		void DestHeight( const eeFloat& height );
 
-		const eeFloat OffsetX() const;
+		const eeFloat& OffsetX() const;
 
 		void OffsetX( const eeFloat& offsetx );
 
-		const eeFloat OffsetY() const;
+		const eeFloat& OffsetY() const;
 
 		void OffsetY( const eeFloat& offsety );
 

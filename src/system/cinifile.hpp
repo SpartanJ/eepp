@@ -37,16 +37,16 @@ class EE_API cIniFile {
 		vector<std::string> mNames;
 		vector<std::string> mComments;
 		std::string CheckCase ( std::string s ) const;
-		
+
 		std::vector <std::string> mLines;
 	public:
 		enum errors { noID = -1};
 		cIniFile ( std::string const iniPath = "" );
 		cIniFile ( const Uint8* RAWData, const Uint32& size );
-		
+
 		bool LoadFromFile( const std::string& iniPath );
 		bool LoadFromMemory( const Uint8* RAWData, const Uint32& size );
-		
+
 		virtual ~cIniFile()                            {}
 
 		// Sets whether or not keynames and valuenames should be case sensitive.
@@ -78,7 +78,7 @@ class EE_API cIniFile {
 		long FindValue ( unsigned const keyID, std::string const valuename ) const;
 
 		// Returns number of mKeys currently in the ini.
-		unsigned NumKeys() const                       {return mNames.size();}
+		unsigned NumKeys() const                       {return (unsigned int)mNames.size();}
 		unsigned GetNumKeys() const                    {return NumKeys();}
 
 		// Add a key name.
@@ -128,12 +128,12 @@ class EE_API cIniFile {
 		// the key if it doesn't exist. Returns true if data entered, false otherwise.
 		// Overloaded to accept std::string, int, and double.
 		bool SetValue ( unsigned const keyID, unsigned const valueID, std::string const value );
-		bool SetValue ( std::string const keyname, std::string const valuename, std::string const value, bool const create = true );
-		bool SetValueI ( std::string const keyname, std::string const valuename, int const value, bool const create = true );
-		bool SetValueB ( std::string const keyname, std::string const valuename, bool const value, bool const create = true ) {
+		bool SetValue ( std::string const keyname, std::string const valuename, std::string const value, bool create = true );
+		bool SetValueI ( std::string const keyname, std::string const valuename, int const value, bool create = true );
+		bool SetValueB ( std::string const keyname, std::string const valuename, bool const value, bool create = true ) {
 			return SetValueI ( keyname, valuename, int ( value ), create );
 		}
-		bool SetValueF ( std::string const keyname, std::string const valuename, double const value, bool const create = true );
+		bool SetValueF ( std::string const keyname, std::string const valuename, double const value, bool create = true );
 		bool SetValueV ( std::string const keyname, std::string const valuename, char *format, ... );
 
 		// Deletes specified value.
@@ -148,7 +148,7 @@ class EE_API cIniFile {
 		// Header comments are those comments before the first key.
 		//
 		// Number of header comments.
-		unsigned NumHeaderComments()                  {return mComments.size();}
+		unsigned NumHeaderComments()                  {return (unsigned int)mComments.size();}
 		// Add a header comment.
 		void     HeaderComment ( std::string const comment );
 		// Return a header comment.

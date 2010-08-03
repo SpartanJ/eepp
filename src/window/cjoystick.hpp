@@ -23,7 +23,7 @@ namespace EE { namespace Window {
 #define AXIS_MAX		(32768)
 #define AXIS_MIN		(-32768)
 
-class cJoystick {
+class EE_API cJoystick {
 	public:
 		cJoystick( const Uint32& index );
 

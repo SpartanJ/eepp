@@ -156,7 +156,7 @@ void cTextureLoader::LoadFromPack() {
 
 	if ( NULL != mPack && mPack->IsOpen() && mPack->ExtractFileToMemory( mFilepath, TmpData ) ) {
 		mImagePtr 	= reinterpret_cast<const Uint8*> (&TmpData[0]);
-		mSize 		= TmpData.size();
+		mSize 		= (Uint32)TmpData.size();
 
 		LoadFromMemory();
 	}

@@ -113,7 +113,7 @@ class EE_API cTextureFactory: public cSingleton<cTextureFactory>, protected cMut
 		void SetCurrentTexture( const GLint& TexId );
 
 		/** Returns the number of textures loaded */
-		Uint32 GetNumTextures() const { return mTextures.size(); }
+		Uint32 GetNumTextures() const { return (Uint32)mTextures.size(); }
 
 		/** Set the Blend Function
 		* @param blend The Blend Mode

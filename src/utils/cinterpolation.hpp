@@ -20,9 +20,9 @@ typedef Point1d<eeFloat> cPoint1df;
 class cInterpolation {
 	public:
 		cInterpolation();
-		
+
 		~cInterpolation();
-		
+
 		typedef boost::function0<void> OnPathEndCallback;
 
 		/** Add a new point */
@@ -66,7 +66,7 @@ class cInterpolation {
 
 		/** Set the current interpolation speed */
 		void Speed( const eeFloat speed );
-		
+
 		/** Get the current interpolation speed */
 		const eeFloat& Speed() const { return mSpeed; }
 
@@ -80,10 +80,10 @@ class cInterpolation {
 
 		/** @return the vector of points */
 		const std::vector<cPoint1df>& GetPoints() const { return mPoints; }
-		
+
 		/** @return The Current Node */
 		cPoint1df* GetCurrentActual() const	{ return mActP; }
-		
+
 		/** @return The Next Node */
 		cPoint1df* GetCurrentNext() const { return mNexP; }
 
@@ -97,14 +97,14 @@ class cInterpolation {
 		void Type( EE_INTERPOLATION InterpolationType );
 
 		/** @return The type of the interpolation */
-		const eeInt Type() const;
+		const eeInt& Type() const;
 	protected:
 		eeInt mType;
 		bool mEnable;
 		bool mUpdate;
 		bool mLoop;
 		bool mEnded;
-		
+
 		eeFloat mTotDist;
 		eeFloat mCurPos;
 		eeUint mCurPoint;

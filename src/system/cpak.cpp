@@ -221,7 +221,7 @@ bool cPak::AddFile( const Uint8 * data, const Uint32& dataSize, const std::strin
 			pakE[ myPak.pakFilesNum ].file_length = fsize;
 
 			// Update the new pakEntrys on pakFile
-			myPak.fs.write( reinterpret_cast<const char*>(&pakE[0]), ( sizeof(pakEntry) * pakE.size() ) );
+			myPak.fs.write( reinterpret_cast<const char*>(&pakE[0]), (std::streamsize)( sizeof(pakEntry) * pakE.size() ) );
 
 			pakFiles.push_back( pakE[ myPak.pakFilesNum ] );
 			myPak.pakFilesNum += 1;
@@ -298,10 +298,10 @@ bool cPak::EraseFiles( const std::vector<std::string>& paths ) {
 		}
 	}
 
-	nPf.pakFilesNum = uEntry.size();
+	nPf.pakFilesNum = (Uint32)uEntry.size();
 	nPf.header.head[0] = 'P'; nPf.header.head[1] = 'A'; nPf.header.head[2] = 'C'; nPf.header.head[3] = 'K';
 	nPf.header.dir_offset = total_offset + sizeof(pakHeader);
-	nPf.header.dir_length = uEntry.size() * sizeof( pakEntry );
+	nPf.header.dir_length = (Uint32)uEntry.size() * sizeof( pakEntry );
 
 	nPf.fs.write( reinterpret_cast<const char*>(&nPf.header), sizeof(pakHeader) );
 
@@ -309,11 +309,11 @@ bool cPak::EraseFiles( const std::vector<std::string>& paths ) {
 	for ( i = 0; i < uEntry.size(); i++ )
 		if ( ExtractFileToMemory( std::string( uEntry[i].filename ), data ) ) {
 			uEntry[i].file_position = nPf.fs.tellg();
-			uEntry[i].file_length = data.size();
-			nPf.fs.write( reinterpret_cast<const char*>(&data[0]), data.size() );
+			uEntry[i].file_length = (Uint32)data.size();
+			nPf.fs.write( reinterpret_cast<const char*>(&data[0]), (std::streamsize)data.size() );
 		}
 
-	nPf.fs.write( reinterpret_cast<const char*>(&uEntry[0]), sizeof(pakEntry) * uEntry.size() );
+	nPf.fs.write( reinterpret_cast<const char*>(&uEntry[0]), (std::streamsize)( sizeof(pakEntry) * uEntry.size() ) );
 
 	nPf.fs.close();
 

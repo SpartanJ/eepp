@@ -200,7 +200,7 @@ void cWaypoints::Type( EE_INTERPOLATION InterpolationType ) {
 	mType = InterpolationType;
 }
 
-const eeInt cWaypoints::Type() const {
+const eeInt& cWaypoints::Type() const {
 	return mType;
 }
 

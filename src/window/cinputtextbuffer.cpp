@@ -100,7 +100,7 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 
 							if ( mPromptAutoPos ) {
 								mText += c;
-								mPromptPos = mText.size();
+								mPromptPos = (eeInt)mText.size();
 							} else {
 								InsertChar( mText, mPromptPos, c );
 								mPromptPos++;
@@ -157,7 +157,7 @@ bool cInputTextBuffer::ChangedSinceLastUpdate() {
 void cInputTextBuffer::SetAutoPromp( const bool& set ) {
 	if ( set ) {
 		mPromptAutoPos = true;
-		mPromptPos = mText.size();
+		mPromptPos = (eeInt)mText.size();
 	} else {
 		mPromptAutoPos = false;
 	}

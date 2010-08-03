@@ -104,7 +104,7 @@ void cShape::Name( const std::string& name ) {
 	mId = MakeHash( mName );
 }
 
-const Uint32 cShape::Texture() {
+const Uint32& cShape::Texture() {
 	return mTexId;
 }
 
@@ -113,7 +113,7 @@ void cShape::Texture( const Uint32& TexId ) {
 	mTexture = cTextureFactory::instance()->GetTexture( TexId );
 }
 
-eeRecti cShape::SrcRect() const {
+const eeRecti& cShape::SrcRect() const {
 	return mSrcRect;
 }
 
@@ -127,7 +127,7 @@ void cShape::SrcRect( const eeRecti& Rect ) {
 		CacheAlphaMask();
 }
 
-const eeFloat cShape::DestWidth() const {
+const eeFloat& cShape::DestWidth() const {
 	return mDestWidth;
 }
 
@@ -135,7 +135,7 @@ void cShape::DestWidth( const eeFloat& width ) {
 	mDestWidth = width;
 }
 
-const eeFloat cShape::DestHeight() const {
+const eeFloat& cShape::DestHeight() const {
 	return mDestHeight;
 }
 
@@ -143,7 +143,7 @@ void cShape::DestHeight( const eeFloat& height ) {
 	mDestHeight = height;
 }
 
-const eeFloat cShape::OffsetX() const {
+const eeFloat& cShape::OffsetX() const {
 	return mOffSetX;
 }
 
@@ -151,7 +151,7 @@ void cShape::OffsetX( const eeFloat& offsetx ) {
 	mOffSetX = offsetx;
 }
 
-const eeFloat cShape::OffsetY() const {
+const eeFloat& cShape::OffsetY() const {
 	return mOffSetY;
 }
 

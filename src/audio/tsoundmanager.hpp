@@ -110,7 +110,7 @@ void tSoundManager<T>::Play( const T& id ) {
 
 	if ( it != tSounds.end() ) {
 		sSound * tSound = &it->second;
-		Uint32 tSize = tSound->Snd.size();
+		Uint32 tSize = (Uint32)tSound->Snd.size();
 
 		for ( Uint32 i = 0; i < tSize; i++ ) {
 			// If there is a free slot, use it.

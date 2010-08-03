@@ -97,7 +97,7 @@ Uint32 cTextureFactory::FindFreeSlot() {
 
 	mTextures.push_back( NULL );
 
-	return mTextures.size() - 1;
+	return (Uint32)mTextures.size() - 1;
 }
 
 void cTextureFactory::Bind( const cTexture* Tex ) {
@@ -294,7 +294,7 @@ cTexture * cTextureFactory::GetByName( const std::string& Name ) {
 cTexture * cTextureFactory::GetByHash( const Uint32& Hash ) {
 	cTexture * tTex = NULL;
 
-	for ( Uint32 i = mTextures.size() - 1; i > 0; i-- ) {
+	for ( Uint32 i = (Uint32)mTextures.size() - 1; i > 0; i-- ) {
 		tTex = mTextures[ i ];
 
 		if ( NULL != tTex && tTex->Id() == Hash )

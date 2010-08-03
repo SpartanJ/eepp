@@ -57,7 +57,7 @@ void cParticleSystem::Create(const EE_PARTICLE_EFFECT& Effect, const Uint32& Num
 }
 
 void cParticleSystem::Begin() {
-	mPLeft = mParticle.size();
+	mPLeft = (Uint32)mParticle.size();
 
 	if ( mParticle.max_size() > mParticle.size() )
 		mParticle.resize( mPCount );
@@ -245,7 +245,7 @@ void cParticleSystem::Draw() {
 		glColorPointer( 4, GL_FLOAT, sizeof(cParticle), reinterpret_cast<char*>( &mParticle[0] ) + sizeof(eeFloat) * 2 );
 		glVertexPointer( 2, GL_FLOAT, sizeof(cParticle), reinterpret_cast<char*>( &mParticle[0] ) );
 		
-		glDrawArrays( GL_POINTS, 0, mParticle.size() );
+		glDrawArrays( GL_POINTS, 0, (GLsizei)mParticle.size() );
 		
 		glDisable( GL_POINT_SPRITE_ARB );
 	} else {

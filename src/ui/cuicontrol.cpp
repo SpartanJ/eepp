@@ -622,7 +622,7 @@ cUIControl * cUIControl::ChildPrev( cUIControl * Ctrl, bool Loop ) const {
 
 				ChildLoop = ChildLoop->NextGet();
 			}
-		} else {
+		} else if ( Loop ) {
 			ChildLoop = mChild;
 
 			while ( NULL != ChildLoop->NextGet() )

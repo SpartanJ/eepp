@@ -101,7 +101,7 @@ void cConsole::Draw() {
 			Int16 LinesInScreen = (Int16) ( (mCurHeight / mFontSize) - 1 );
 
 			if ( static_cast<Int16>( mCmdLog.size() ) > LinesInScreen )
-				mEx = mCmdLog.size() - LinesInScreen;
+				mEx = (Uint32) ( mCmdLog.size() - LinesInScreen );
 			else
 				mEx = 0;
 			mTempY = -mCurHeight;
@@ -110,7 +110,7 @@ void cConsole::Draw() {
 			eeFloat CurY;
 
 			mCon.ConMin = mEx;
-			mCon.ConMax = mCmdLog.size() - 1;
+			mCon.ConMax = (eeInt)mCmdLog.size() - 1;
 
 			mFont->Color( eeColorA ( mFontColor.R(), mFontColor.G(), mFontColor.B(), static_cast<Uint8>(mA) ) );
 
@@ -171,7 +171,7 @@ void cConsole::ProcessLine() {
 	std::vector < std::wstring > params = SplitString( wstr, L' ' );
 
 	mLastCommands.push_back( wstr );
-	mLastLogPos = mLastCommands.size();
+	mLastLogPos = (eeInt)mLastCommands.size();
 
 	if ( mLastCommands.size() > 20 )
 		mLastCommands.pop_front();
@@ -312,7 +312,7 @@ void cConsole::PrintCommandsStartingWith( const std::wstring& start ) {
 
 	} else if ( cmds.size() ) {
 		mTBuf.Buffer( cmds.front() );
-		mTBuf.CurPos( cmds.front().size() );
+		mTBuf.CurPos( (Uint32)cmds.front().size() );
 	}
 }
 
@@ -334,7 +334,7 @@ void cConsole::PrivInputCallback( EE_Event* Event ) {
 							std::wstring part1 = mTBuf.Buffer().substr( 0, mTBuf.CurPos() );
 							std::wstring part2 = mTBuf.Buffer().substr( mTBuf.CurPos(), mTBuf.Buffer().size()-mTBuf.CurPos() );
 							mTBuf.Buffer( part1 + tStr + part2 );
-							mTBuf.CurPos( part1.size() );
+							mTBuf.CurPos( (Uint32)part1.size() );
 						} else {
 							std::wstring Str = mTBuf.Buffer();
 							mTBuf.Buffer( Str + tStr );
@@ -351,11 +351,11 @@ void cConsole::PrivInputCallback( EE_Event* Event ) {
 					if ( Event->key.keysym.sym == SDLK_UP && mLastLogPos > 0 )
 						mLastLogPos--;
 
-					if ( Event->key.keysym.sym == SDLK_DOWN && mLastLogPos < static_cast<Int16>( mLastCommands.size() ) )
+					if ( Event->key.keysym.sym == SDLK_DOWN && mLastLogPos < static_cast<eeInt>( mLastCommands.size() ) )
 						mLastLogPos++;
 
 					if ( Event->key.keysym.sym == SDLK_UP ||  Event->key.keysym.sym == SDLK_DOWN ) {
-						if ( mLastLogPos == static_cast<Int16>( mLastCommands.size() ) ) {
+						if ( mLastLogPos == static_cast<eeInt>( mLastCommands.size() ) ) {
 							mTBuf.Buffer( L"" );
 						} else {
 							mTBuf.Buffer( mLastCommands[mLastLogPos] );

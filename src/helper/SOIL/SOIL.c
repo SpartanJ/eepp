@@ -998,6 +998,7 @@ unsigned int
 	int max_supported_size;
 	int iwidth = *width;
 	int iheight = *height;
+	int needCopy;
 
 	/*	how large of a texture can this OpenGL implementation handle?	*/
 	/*	texture_check_size_enum will be GL_MAX_TEXTURE_SIZE or SOIL_MAX_CUBE_MAP_TEXTURE_SIZE	*/
@@ -1034,7 +1035,7 @@ unsigned int
 		}
 	}
 
-	int needCopy = ( flags & SOIL_FLAG_INVERT_Y ) || ( flags & SOIL_FLAG_NTSC_SAFE_RGB ) || ( flags & SOIL_FLAG_MULTIPLY_ALPHA ) || ( ( flags & SOIL_FLAG_POWER_OF_TWO ) || ( flags & SOIL_FLAG_MIPMAPS ) || ( iwidth > max_supported_size ) || ( iheight > max_supported_size ) ) || ( flags & SOIL_FLAG_CoCg_Y ) || ( flags & SOIL_FLAG_COMPRESS_TO_DXT );
+	needCopy = ( ( flags & SOIL_FLAG_INVERT_Y ) || ( flags & SOIL_FLAG_NTSC_SAFE_RGB ) || ( flags & SOIL_FLAG_MULTIPLY_ALPHA ) || ( ( flags & SOIL_FLAG_POWER_OF_TWO ) || ( flags & SOIL_FLAG_MIPMAPS ) || ( iwidth > max_supported_size ) || ( iheight > max_supported_size ) ) || ( flags & SOIL_FLAG_CoCg_Y ) || ( flags & SOIL_FLAG_COMPRESS_TO_DXT ) );
 
 	/*	create a copy the image data
 	*	only if needed
@@ -1892,7 +1893,7 @@ unsigned int SOIL_direct_load_DDS(
 	}
 	/*	now try to do the loading	*/
 	tex_ID = SOIL_direct_load_DDS_from_memory(
-		(const unsigned char *const)buffer, buffer_length,
+		(const unsigned char *const)buffer, (int)buffer_length,
 		reuse_texture_ID, flags, loading_as_cubemap );
 	SOIL_free_image_data( buffer );
 	return tex_ID;

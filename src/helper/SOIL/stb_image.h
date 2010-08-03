@@ -17,7 +17,7 @@
 // Basic usage (see HDR discussion below):
 //    int x,y,n;
 //    unsigned char *data = stbi_load(filename, &x, &y, &n, 0);
-//    // ... process data if not NULL ... 
+//    // ... process data if not NULL ...
 //    // ... x = width, y = height, n = # 8-bit components per pixel ...
 //    // ... replace '0' with '1'..'4' to force that many components per pixel
 //    stbi_image_free(data)
@@ -92,7 +92,7 @@
 // (linear) floats to preserve the full dynamic range:
 //
 //    float *data = stbi_loadf(filename, &x, &y, &n, 0);
-// 
+//
 // If you load LDR images through this interface, those images will
 // be promoted to floating point values, run through the inverse of
 // constants corresponding to the above:
@@ -120,7 +120,7 @@ enum
    STBI_grey       = 1,
    STBI_grey_alpha = 2,
    STBI_rgb        = 3,
-   STBI_rgb_alpha  = 4,
+   STBI_rgb_alpha  = 4
 };
 
 typedef unsigned char stbi_uc;
@@ -157,7 +157,7 @@ extern stbi_uc *stbi_load_from_file  (FILE *f,                  int *x, int *y, 
 
 // get a VERY brief reason for failure
 // NOT THREADSAFE
-extern const char *stbi_failure_reason  (void); 
+extern const char *stbi_failure_reason  (void);
 
 // free the loaded image -- this is just free()
 extern void     stbi_image_free      (void *retval_from_stbi_load);

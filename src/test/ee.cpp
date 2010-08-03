@@ -537,7 +537,7 @@ void cEETest::RandomizeHeights() {
 }
 
 void cEETest::CreateTiling( const bool& Wire ) {
-	for ( x = 0; x < static_cast<Int32>( Map.Width() ); x++ )
+	for ( x = 0; x < static_cast<Int32>( Map.Width() ); x++ ) {
 		for ( y = 0; y < static_cast<Int32>( Map.Height() ); y++ ) {
 			if (Wire)
 				Map.Layer(x, y, 0, Tiles[6] );
@@ -547,6 +547,7 @@ void cEETest::CreateTiling( const bool& Wire ) {
 			if ( !TreeTilingCreated )
 				Map.Layer(x, y, 1, 0);
 		}
+	}
 
 	if ( !TreeTilingCreated ) {
 		for ( x = 0; x < 100; x++ )
@@ -570,6 +571,10 @@ void cEETest::ParticlesThread() {
 		}
 		eeSleep(10);
 	}
+}
+
+void cEETest::Screen1() {
+	Map.Draw();
 }
 
 void cEETest::Screen2() {
@@ -714,10 +719,6 @@ void cEETest::Screen2() {
 	PR.DrawPoint( WP.GetPos(), 10.f );
 }
 
-void cEETest::Screen1() {
-	Map.Draw();
-}
-
 void cEETest::Screen3() {
 	if (AnimVal>=300.0f) {
 		AnimVal = 300.0f;
@@ -748,7 +749,7 @@ void cEETest::Render() {
 	HWidth = EE->GetWidth() * 0.5f;
 	HHeight = EE->GetHeight() * 0.5f;
 
-	if ( eeGetTicks() - lasttick >= 100 ) {
+	if ( eeGetTicks() - lasttick >= 50 ) {
 		lasttick = eeGetTicks();
 		mInfo = StrFormated( "EE - FPS: %d Elapsed Time: %4.8f\nMouse X: %d Mouse Y: %d\nTexture Memory Size: %d",
 							EE->FPS(),
@@ -857,18 +858,18 @@ void cEETest::Input() {
 			Mus.Play();
 	}
 
+	if ( KM->IsKeyDown(KEY_ESCAPE) )
+		EE->Running(false);
+
 	if ( KM->IsKeyUp(KEY_F1) )
 		MultiViewportMode = !MultiViewportMode;
 
 	if ( KM->AltPressed() && KM->IsKeyUp(KEY_M) && !Con.Active() )
 		EE->MaximizeWindow();
-
-	if ( KM->IsKeyDown(KEY_ESCAPE) )
-		EE->Running(false);
-
+/*
 	if ( KM->IsKeyUp(KEY_F4) )
 		TF->ReloadAllTextures();
-
+*/
 	if ( KM->AltPressed() && KM->IsKeyUp(KEY_RETURN) ) {
 		if ( EE->Windowed() ) {
 			EE->ChangeRes( EE->GetDeskWidth(), EE->GetDeskHeight(), false );

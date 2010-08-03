@@ -27,8 +27,8 @@ bool cTextureFont::Load( const Uint32& TexId, const eeUint& StartChar, const eeU
 		mtX = ( 1 / static_cast<eeFloat>( mTexColumns ) );
 		mtY = ( 1 / static_cast<eeFloat>( mTexRows ) );
 
-		mFWidth = ( Tex->Width() / mTexColumns );
-		mFHeight = ( Tex->Height() / mTexRows );
+		mFWidth = (eeFloat)( Tex->Width() / mTexColumns );
+		mFHeight = (eeFloat)( Tex->Height() / mTexRows );
 		mHeight = mSize = (eeUint)mFHeight;
 
 		mVerticalDraw = VerticalDraw;
@@ -130,7 +130,7 @@ bool cTextureFont::Load( const Uint32& TexId, const std::string& CoordinatesDatP
 
 		FileGet( CoordinatesDatPath, TmpData );
 
-		return LoadFromMemory( TexId, reinterpret_cast<Uint8*> ( &TmpData[0] ), TmpData.size(), VerticalDraw );
+		return LoadFromMemory( TexId, reinterpret_cast<Uint8*> ( &TmpData[0] ), (Uint32)TmpData.size(), VerticalDraw );
 	}
 
 	return false;
@@ -140,7 +140,7 @@ bool cTextureFont::LoadFromPack( const Uint32& TexId, cPack* Pack, const std::st
 	std::vector<Uint8> TmpData;
 
 	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, TmpData ) )
-		return LoadFromMemory( TexId, reinterpret_cast<const Uint8*> (&TmpData[0]), TmpData.size(), VerticalDraw );
+		return LoadFromMemory( TexId, reinterpret_cast<const Uint8*> (&TmpData[0]), (Uint32)TmpData.size(), VerticalDraw );
 
 	return false;
 }

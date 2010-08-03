@@ -554,7 +554,7 @@ std::string cEngine::GetVersion() {
 }
 
 bool cEngine::GetExtension( const std::string& Ext ) {
-	return (bool)glewIsSupported( Ext.c_str() );
+	return 0 != glewIsSupported( Ext.c_str() );
 }
 
 SDL_Cursor* cEngine::CreateCursor( const Uint32& TexId, const eeVector2i& HotSpot ) {
@@ -601,7 +601,7 @@ SDL_Cursor* cEngine::CreateCursor( const Uint32& TexId, const eeVector2i& HotSpo
 	}
 	Tex->Unlock( false, false );
 
-	return SDL_CreateCursor( &data[0], &mask[0], cursor_width, static_cast<Int16>( Tex->Height() ), HotSpot.x, HotSpot.y );
+	return SDL_CreateCursor( &data[0], &mask[0], (int)cursor_width, static_cast<Int16>( Tex->Height() ), HotSpot.x, HotSpot.y );
 }
 
 void cEngine::SetCursor( const Uint32& TexId, const eeVector2i& HotSpot ) {
@@ -778,7 +778,7 @@ int cEngine::clipboard_convert_scrap(int type, char *dst, char *src, int srclen)
 	switch (type) {
 		case T('T', 'E', 'X', 'T'):
 			if ( srclen == 0 )
-				srclen = strlen(src);
+				srclen = (int)strlen(src);
 
 			if ( dst ) {
 				while ( --srclen >= 0 ) {

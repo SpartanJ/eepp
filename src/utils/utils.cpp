@@ -386,7 +386,7 @@ bool FileWrite( const std::string& filepath, const Uint8* data, const Uint32& da
 }
 
 bool FileWrite( const std::string& filepath, const std::vector<Uint8>& data ) {
-	return FileWrite( filepath, reinterpret_cast<const Uint8*> ( &data[0] ), data.size() );
+	return FileWrite( filepath, reinterpret_cast<const Uint8*> ( &data[0] ), (Uint32)data.size() );
 }
 
 }}

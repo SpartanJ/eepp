@@ -74,7 +74,7 @@ void cBatchRenderer::Flush() {
 	if ( mCurrentMode == EE_GL_POINTS && NULL != mTexture ) {
 		glEnable( GL_POINT_SPRITE_ARB );
 		glTexEnvf( GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE );
-		glPointSize( mTexture->Width() );
+		glPointSize( (GLfloat)mTexture->Width() );
 	}
 
 	if ( CreateMatrix ) {
