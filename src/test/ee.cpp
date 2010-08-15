@@ -9,7 +9,7 @@
 @TODO Encapsulate SDL and OpenGL ( and remove unnecessary dependencies ).
 @TODO Add some Surface Grid class, to create special effects ( waved texture, and stuff like that ).
 @TODO Support color cursors ( not only black and white cursors, that really sucks ) - Imposible with SDL 1.2
-@TODO Add Scripting support.
+@TODO Add Scripting support ( lua or squirrel ).
 @TODO Add 2D physics support ( Box2D or Chipmunk wrapper ).
 */
 
@@ -188,6 +188,8 @@ class cEETest : private cThread {
 		cJoystickManager * JM;
 		eeFloat mAxisX;
 		eeFloat mAxisY;
+
+		Uint32 mFace;
 };
 
 
@@ -319,7 +321,7 @@ void cEETest::CreateShaders() {
 
 	if ( mUseShaders ) {
 		mBlurFactor = 0.01f;
-		mShaderProgram = new cShaderProgram( MyPath + "data/shader/blur.vert", MyPath + "data/shader/blur.frag" );
+		mShaderProgram = new cShaderProgram( &PAK, "shader/blur.vert", "shader/blur.frag" );
 	}
 }
 
@@ -457,6 +459,34 @@ void cEETest::LoadTextures() {
 
 	Tiles[7] = TF->LoadFromPack( &PAK, "tiles/8.png", false, eeRGB(0,0,0) );
 
+	eeInt w, h;
+
+	mFace = TF->LoadFromPack( &PakTest, "adjutantportrait_l_static.dds" );
+	/** // DDS Lock/Unlock Test
+	cTexture * mFacePtr = TF->GetTexture( mFace );
+
+	if ( NULL != mFacePtr ) {
+		w = (eeInt)mFacePtr->Width();
+		h = (eeInt)mFacePtr->Height();
+
+		mFacePtr->Lock();
+
+		for ( y = 0; y < h; y++ ) {
+			for ( x = 0; x < w; x++ ) {
+				eeColorA tempC = mFacePtr->GetPixel( x, y );
+
+				tempC.Red = std::min( tempC.Red + 50, 255 );
+				tempC.Green = std::min( tempC.Green + 50, 255 );
+				tempC.Blue = std::min( tempC.Blue + 50, 255 );
+
+				eeColorA newC( tempC.R(), tempC.G(), tempC.B(), 255 );
+				mFacePtr->SetPixel( x, y, newC );
+			}
+		}
+
+		mFacePtr->Unlock(false,true);
+	}*/
+
 	SP.CreateAnimation();
 
 	for ( Int32 my = 0; my < 4; my++ )
@@ -476,8 +506,8 @@ void cEETest::LoadTextures() {
 	cTexture * Tex = TF->GetTexture(TN[2]);
 
 	Tex->Lock();
-	eeInt w = Tex->Width();
-	eeInt h = Tex->Height();
+	w = (eeInt)Tex->Width();
+	h = (eeInt)Tex->Height();
 
 	for ( y = 0; y < h; y++) {
 		for ( x = 0; x < w; x++) {
@@ -818,6 +848,10 @@ void cEETest::Render() {
 	TTF->SetText( mBuda );
 	TTF->Draw( 0.f, 50.f );
 
+	cTexture * TexFace = TF->GetTexture( mFace );
+	if ( TexFace )
+		TexFace->Draw( EE->GetWidth() - TexFace->Width() , EE->GetHeight() - TexFace->Height(), 0.f, 1.f, eeColorA(), ALPHA_DESTALPHA, RN_MIRROR );
+
 	FF2->SetText( L"FPS: " + toWStr( EE->FPS() ) );
 	FF2->Draw( EE->GetWidth() - FF2->GetTextWidth() - 15, 0 );
 
@@ -866,10 +900,10 @@ void cEETest::Input() {
 
 	if ( KM->AltPressed() && KM->IsKeyUp(KEY_M) && !Con.Active() )
 		EE->MaximizeWindow();
-/*
+
 	if ( KM->IsKeyUp(KEY_F4) )
 		TF->ReloadAllTextures();
-*/
+
 	if ( KM->AltPressed() && KM->IsKeyUp(KEY_RETURN) ) {
 		if ( EE->Windowed() ) {
 			EE->ChangeRes( EE->GetDeskWidth(), EE->GetDeskHeight(), false );
@@ -1073,8 +1107,8 @@ void cEETest::End() {
 	MySong.clear();
 
 	cLog::instance()->Save();
+
 	cEngine::DestroySingleton();
-	cUIManager::DestroySingleton();
 }
 
 void cEETest::InputCallback(EE_Event* event) {

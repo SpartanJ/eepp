@@ -83,6 +83,17 @@ static int dds_test(stbi *s)
 	return 1;
 }
 #ifndef STBI_NO_STDIO
+
+int      stbi_dds_test_filename        		(char const *filename)
+{
+   int r;
+   FILE *f = fopen(filename, "rb");
+   if (!f) return 0;
+   r = stbi_dds_test_file(f);
+   fclose(f);
+   return r;
+}
+
 int      stbi_dds_test_file        (FILE *f)
 {
    stbi s;
@@ -265,6 +276,74 @@ void stbi_decode_DXT_color_block(
 	}
 	//	done
 }
+
+static int dds_get_info( stbi *s, int *x, int *y, int *comp, int *iscompressed ) {
+	int flags;
+	DDS_header header;
+
+	if( sizeof( DDS_header ) != 128 )
+	{
+		return 0;
+	}
+
+	getn( s, (stbi_uc*)(&header), 128 );
+
+	if( header.dwMagic != (('D' << 0) | ('D' << 8) | ('S' << 16) | (' ' << 24)) ) return 0;
+	if( header.dwSize != 124 ) return 0;
+	flags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT;
+	if( (header.dwFlags & flags) != flags ) return 0;
+	if( header.sPixelFormat.dwSize != 32 ) return 0;
+	flags = DDPF_FOURCC | DDPF_RGB;
+	if( (header.sPixelFormat.dwFlags & flags) == 0 ) return 0;
+	if( (header.sCaps.dwCaps1 & DDSCAPS_TEXTURE) == 0 ) return 0;
+
+	int is_compressed = (header.sPixelFormat.dwFlags & DDPF_FOURCC) / DDPF_FOURCC;
+	int has_alpha = (header.sPixelFormat.dwFlags & DDPF_ALPHAPIXELS) / DDPF_ALPHAPIXELS;
+
+	*x = header.dwWidth;
+	*y = header.dwHeight;
+
+	if ( !is_compressed ) {
+		*comp = 3;
+
+		if ( has_alpha )
+			*comp = 4;
+	}
+	else
+		*comp = 4;
+
+	if ( iscompressed )
+		*iscompressed = is_compressed;
+
+	return 1;
+}
+
+int stbi_dds_info_from_memory (stbi_uc const *buffer, int len, int *x, int *y, int *comp, int *iscompressed)
+{
+	stbi s;
+	start_mem(&s,buffer, len);
+	return dds_get_info( &s, x, y, comp, iscompressed );
+}
+
+#ifndef STBI_NO_STDIO
+int stbi_dds_info(char const *filename,     int *x, int *y, int *comp, int *iscompressed)
+{
+   int res;
+   FILE *f = fopen(filename, "rb");
+   if (!f) return 0;
+   res = stbi_dds_info_from_file( f, x, y, comp, iscompressed );
+   fclose(f);
+   return res;
+}
+
+int stbi_dds_info_from_file(FILE *f,                  int *x, int *y, int *comp, int *iscompressed)
+{
+	stbi s;
+	start_file(&s, f);
+	return dds_get_info( &s, x, y, comp, iscompressed );
+}
+#endif
+
 static stbi_uc *dds_load(stbi *s, int *x, int *y, int *comp, int req_comp)
 {
 	//	all variables go up front

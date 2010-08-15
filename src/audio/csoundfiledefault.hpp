@@ -1,7 +1,7 @@
+#ifndef EE_NO_SNDFILE
+
 #ifndef EE_AUDIOCSOUNDFILEDEFAULT_H
 #define EE_AUDIOCSOUNDFILEDEFAULT_H
-
-#ifndef EE_NO_SNDFILE
 
 #include "base.hpp"
 #include <sndfile.h>

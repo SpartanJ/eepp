@@ -4,23 +4,16 @@
 namespace EE { namespace Graphics {
 
 cTexture::cTexture() :
-	mPixels(NULL),
+	cImage(),
 	mFilepath(""),
 	mId(0),
 	mTexture(0),
-	mWidth(0),
-	mHeight(0),
 	mImgWidth(0),
 	mImgHeight(0),
-	mChannels(4),
-	mMipmap(true),
-	mModified(false),
-	mColorKey(true),
+	mFlags(0),
+	mColorKey(eeRGB(true)),
 	mClampMode( EE_CLAMP_TO_EDGE ),
-	mFilter( TEX_LINEAR ),
-	mCompressedTexture(false),
-	mLocked(false),
-	mGrabed(false)
+	mFilter( TEX_LINEAR )
 {
 }
 
@@ -28,21 +21,19 @@ cTexture::cTexture( const cTexture& Copy ) :
 	mFilepath( Copy.mFilepath ),
 	mId( Copy.mId ),
 	mTexture( Copy.mTexture ),
-	mWidth( Copy.mWidth ),
-	mHeight( Copy.mHeight ),
 	mImgWidth( Copy.mImgWidth ),
 	mImgHeight( Copy.mImgHeight ),
-	mChannels( Copy.mChannels ),
-	mMipmap( Copy.mMipmap ),
-	mModified( Copy.mModified ),
+	mFlags( Copy.mFlags ),
 	mColorKey( Copy.mColorKey ),
 	mClampMode( Copy.mClampMode ),
-	mFilter( Copy.mFilter ),
-	mCompressedTexture( Copy.mCompressedTexture ),
-	mLocked( Copy.mLocked ),
-	mGrabed ( Copy.mGrabed )
+	mFilter( Copy.mFilter )
 {
-	Pixels( reinterpret_cast<const Uint8*>( &Copy.mPixels[0] ) );
+	mWidth 		= Copy.mWidth;
+	mHeight 	= Copy.mHeight;
+	mChannels 	= Copy.mChannels;
+	mSize 		= Copy.mSize;
+
+	SetPixels( reinterpret_cast<const Uint8*>( &Copy.mPixels[0] ) );
 }
 
 cTexture::~cTexture() {
@@ -52,23 +43,21 @@ cTexture::~cTexture() {
 cTexture& cTexture::operator =(const cTexture& Other) {
     cTexture Temp(Other);
 
+	std::swap(mWidth, Temp.mWidth);
+	std::swap(mHeight, Temp.mHeight);
+	std::swap(mChannels, Temp.mChannels);
+	std::swap(mSize, Temp.mSize);
 	std::swap(mFilepath, Temp.mFilepath);
 	std::swap(mId, Temp.mId);
     std::swap(mTexture, Temp.mTexture);
-	std::swap(mWidth, Temp.mWidth);
-	std::swap(mHeight, Temp.mHeight);
 	std::swap(mImgWidth, Temp.mImgWidth);
 	std::swap(mImgHeight, Temp.mImgHeight);
-	std::swap(mMipmap, Temp.mMipmap);
-	std::swap(mModified, Temp.mModified);
+	std::swap(mFlags, Temp.mFlags);
 	std::swap(mColorKey, Temp.mColorKey);
-	std::swap(mLocked, Temp.mLocked);
 	std::swap(mFilter, Temp.mFilter);
 	std::swap(mClampMode, Temp.mClampMode);
-	std::swap(mCompressedTexture, Temp.mCompressedTexture);
-	std::swap(mGrabed, Temp.mGrabed);
-	std::swap(mChannels, Temp.mChannels);
-	Pixels( reinterpret_cast<const Uint8*>( &Temp.mPixels[0] ) );
+
+	SetPixels( reinterpret_cast<const Uint8*>( &Temp.mPixels[0] ) );
 
     return *this;
 }
@@ -79,54 +68,41 @@ void cTexture::DeleteTexture() {
 		glDeleteTextures(1, &Texture);
 
 		mTexture = 0;
-		mModified = false;
-		mLocked = false;
-		mGrabed = false;
+		mFlags = 0;
 
 		ClearCache();
 	}
 }
 
-cTexture::cTexture( const Uint32& texture, const eeInt& width, const eeInt& height, const eeInt& imgwidth, const eeInt& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint8* data ) {
-	Create( texture, width, height, imgwidth, imgheight, UseMipmap, Channels, filepath, ColorKey, ClampMode, CompressedTexture, data );
+cTexture::cTexture( const Uint32& texture, const eeUint& width, const eeUint& height, const eeUint& imgwidth, const eeUint& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) {
+	Create( texture, width, height, imgwidth, imgheight, UseMipmap, Channels, filepath, ColorKey, ClampMode, CompressedTexture, MemSize, data );
 }
 
-void cTexture::Create( const Uint32& texture, const eeInt& width, const eeInt& height, const eeInt& imgwidth, const eeInt& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint8* data ) {
-	mFilepath = filepath;
-	mId = MakeHash( mFilepath );
+void cTexture::Create( const Uint32& texture, const eeUint& width, const eeUint& height, const eeUint& imgwidth, const eeUint& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) {
+	mFilepath 	= filepath;
+	mId 		= MakeHash( mFilepath );
+	mTexture 	= texture;
+	mWidth 		= width;
+	mHeight 	= height;
+	mChannels 	= Channels;
+	mImgWidth 	= imgwidth;
+	mImgHeight 	= imgheight;
+	mSize 		= MemSize;
+	mColorKey 	= ColorKey;
+	mClampMode 	= ClampMode;
+	mFilter 	= TEX_LINEAR;
 
-	mTexture = texture;
-	mWidth = width;
-	mHeight = height;
-	mImgWidth = imgwidth;
-	mImgHeight = imgheight;
-	mMipmap = UseMipmap;
+	if ( UseMipmap )
+		mFlags |= TEX_FLAG_MIPMAP;
 
-	mColorKey = ColorKey;
-	mClampMode = ClampMode;
-	mCompressedTexture = CompressedTexture;
-	mChannels = Channels;
+	if ( CompressedTexture )
+		mFlags |= TEX_FLAG_COMPRESSED;
 
-	mLocked = false;
-	mGrabed = false;
-
-	mFilter = TEX_LINEAR;
-
-	Pixels(data);
+	SetPixels( data );
 }
 
-void cTexture::Pixels( const Uint8* data ) {
-	if ( data != NULL ) {
-		eeUint size = (eeUint)mWidth * (eeUint)mHeight;
-
-		Allocate( size );
-
-		memcpy( reinterpret_cast<void*>( &mPixels[0] ), reinterpret_cast<const void*> ( data ), size * mChannels );
-	}
-}
-
-Uint8 * cTexture::Lock( const bool& ForceRGBA ) {
-	if ( !mLocked ) {
+Uint8 * cTexture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
+	if ( !( mFlags & TEX_FLAG_LOCKED ) ) {
 		if ( ForceRGBA )
 			mChannels = 4;
 
@@ -140,38 +116,51 @@ Uint8 * cTexture::Lock( const bool& ForceRGBA ) {
 		glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
 		glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
 
-		mWidth = (eeInt)width;
-		mHeight = (eeInt)height;
-		eeUint size = (eeUint)mWidth * (eeUint)mHeight;
+		mWidth = (eeUint)width;
+		mHeight = (eeUint)height;
+		GLint size = mWidth * mHeight * mChannels;
 
-		Allocate( size );
+		if ( KeepFormat && ( mFlags & TEX_FLAG_COMPRESSED ) ) {
+			glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &mInternalFormat );
+			glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &size );
+		}
 
-		Uint32 Channel = GL_RGBA;
+		Allocate( (eeUint)size );
 
-		if ( 3 == mChannels )
-			Channel = GL_RGB;
-		else if ( 2 == mChannels )
-			Channel = GL_LUMINANCE_ALPHA;
-		else if ( 1 == mChannels )
-			Channel = GL_ALPHA;
+		if ( KeepFormat && ( mFlags & TEX_FLAG_COMPRESSED ) ) {
+			glGetCompressedTexImage( GL_TEXTURE_2D, 0, reinterpret_cast<Uint8*> (&mPixels[0]) );
+		} else {
+            Uint32 Channel = GL_RGBA;
 
-		glGetTexImage( GL_TEXTURE_2D, 0, Channel, GL_UNSIGNED_BYTE, reinterpret_cast<Uint8*> (&mPixels[0]) );
+            if ( 3 == mChannels )
+                Channel = GL_RGB;
+            else if ( 2 == mChannels )
+                Channel = GL_LUMINANCE_ALPHA;
+            else if ( 1 == mChannels )
+                Channel = GL_ALPHA;
+
+			glGetTexImage( GL_TEXTURE_2D, 0, Channel, GL_UNSIGNED_BYTE, reinterpret_cast<Uint8*> (&mPixels[0]) );
+		}
 
 		if ( PreviousTexture != (GLint)mTexture )
 			glBindTexture(GL_TEXTURE_2D, PreviousTexture);
 
-		mLocked = true;
+		mFlags |= TEX_FLAG_LOCKED;
 	}
 
 	return &mPixels[0];
 }
 
+Uint8 * cTexture::Lock( const bool& ForceRGBA ) {
+	return iLock( ForceRGBA, false );
+}
+
 bool cTexture::Unlock( const bool& KeepData, const bool& Modified ) {
-	if ( mLocked ) {
+	if ( ( mFlags & TEX_FLAG_LOCKED ) ) {
 		Int32 width = 0, height = 0;
 		GLuint NTexId = 0;
 
-		if ( Modified || mModified )	{
+		if ( Modified || ( mFlags & TEX_FLAG_MODIFIED ) )	{
 			GLint PreviousTexture;
 			glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
 
@@ -181,9 +170,8 @@ bool cTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 			glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
 			glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
 
-			Uint32 flags = mMipmap ? SOIL_FLAG_MIPMAPS : 0;
+			Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
 			flags = (mClampMode == EE_CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
-			flags = (mCompressedTexture) ? ( flags | SOIL_FLAG_COMPRESS_TO_DXT ) : flags;
 
 			NTexId = SOIL_create_OGL_texture( reinterpret_cast<Uint8*>(&mPixels[0]), &width, &height, mChannels, mTexture, flags );
 
@@ -192,14 +180,16 @@ bool cTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 			if ( PreviousTexture != (GLint)mTexture )
 				glBindTexture(GL_TEXTURE_2D, PreviousTexture);
 
-			mModified = false;
+			mFlags &= ~TEX_FLAG_MODIFIED;
+
+			if ( mFlags & TEX_FLAG_COMPRESSED )
+				mFlags &= ~TEX_FLAG_COMPRESSED;
 		}
 
-		if (!KeepData) {
+		if ( !KeepData )
 			ClearCache();
-		}
 
-		mLocked = false;
+		mFlags &= ~TEX_FLAG_LOCKED;
 
 		if ( (eeInt)NTexId == mTexture || !Modified )
 			return true;
@@ -208,56 +198,31 @@ bool cTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 	return false;
 }
 
-const Uint8* cTexture::GetPixelsPtr() {
+const Uint8 * cTexture::GetPixelsPtr() {
 	if ( !LocalCopy() ) {
 		Lock();
 		Unlock(true);
 	}
 
-	return reinterpret_cast<const Uint8*> (&mPixels[0]);
+	return cImage::GetPixelsPtr();
 }
 
-eeColorA cTexture::GetPixel( const eeUint& x, const eeUint& y ) {
-	if ( mPixels == NULL || (eeInt)x > mWidth || (eeInt)y > mHeight ) {
-		return eeColorA::Black;
-	}
+void cTexture::SetPixel( const eeUint& x, const eeUint& y, const eeColorA& Color ) {
+	cImage::SetPixel( x, y, Color );
 
-	eeUint Pos = ( x + y * mWidth ) * mChannels;
-
-	if ( 4 == mChannels )
-		return eeColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], mPixels[ Pos + 2 ], mPixels[ Pos + 3 ] );
-	else if ( 3 == mChannels )
-		return eeColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], mPixels[ Pos + 2 ], 255 );
-	else if ( 2 == mChannels )
-		return eeColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], 255, 255 );
-	else
-		return eeColorA( mPixels[ Pos ], 255, 255, 255 );
+	mFlags |= TEX_FLAG_MODIFIED;
 }
 
-void cTexture::SetPixel(const eeUint& x, const eeUint& y, const eeColorA& Color) {
-	if ( mPixels == NULL || (eeInt)x > mWidth || (eeInt)y > mHeight ) {
-		return;
-	}
-
-	eeUint Pos = ( x + y * mWidth ) * mChannels;
-
-	if ( mChannels >= 1 ) mPixels[ Pos ]		= Color.R();
-	if ( mChannels >= 2 ) mPixels[ Pos + 1 ]	= Color.G();
-	if ( mChannels >= 3 ) mPixels[ Pos + 2 ]	= Color.B();
-	if ( mChannels >= 4 ) mPixels[ Pos + 3 ]	= Color.A();
-
-	mModified = true;
-}
-
-bool cTexture::SaveToFile(const std::string& filepath, const EE_SAVETYPE& Format) {
+bool cTexture::SaveToFile( const std::string& filepath, const EE_SAVETYPE& Format ) {
 	bool Res = false;
 
-	Lock();
+	if ( mTexture ) {
+		Lock();
 
-	if (mTexture)
-		Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, (Int32)mWidth, (Int32)mHeight, 4, GetPixelsPtr() ) );
+		Res = cImage::SaveToFile( filepath, Format );
 
-	Unlock();
+		Unlock();
+	}
 
 	return Res;
 }
@@ -275,7 +240,7 @@ void cTexture::SetTextureFilter(const EE_TEX_FILTER& filter) {
 
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (mFilter == TEX_LINEAR) ? GL_LINEAR : GL_NEAREST);
 
-			if ( mMipmap )
+			if ( mFlags & TEX_FLAG_MIPMAP )
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEX_LINEAR) ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
 			else
 				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEX_LINEAR) ? GL_LINEAR : GL_NEAREST);
@@ -291,7 +256,7 @@ void cTexture::ReplaceColor(eeColorA ColorKey, eeColorA NewColor) {
 
 	eeUint Pos = 0;
 
-	for ( eeInt i = 0; i < mWidth * mHeight; i++ ) {
+	for ( eeUint i = 0; i < mWidth * mHeight; i++ ) {
 		Pos = i * mChannels;
 
 		if ( mPixels[ Pos ] == ColorKey.R() && mPixels[ Pos + 1 ] == ColorKey.G() && mPixels[ Pos + 2 ] == ColorKey.B() && mPixels[ Pos + 3 ] == ColorKey.A() ) {
@@ -346,11 +311,6 @@ void cTexture::ApplyClampMode() {
 	}
 }
 
-void cTexture::ClearCache() {
-	eeSAFE_DELETE_ARRAY( mPixels );
-}
-
-
 void cTexture::TexId( const Uint32& id ) {
 	mTexId = id;
 }
@@ -359,31 +319,32 @@ const Uint32& cTexture::TexId() const {
 	return mTexId;
 }
 
-void cTexture::Allocate( const Uint32& size ) {
-	if ( eeARRAY_SIZE( mPixels ) != size ) {
-		ClearCache();
-
-		mPixels = new unsigned char[ size * mChannels ];
-	}
-}
-
 void cTexture::Reload()  {
 	if ( LocalCopy() ) {
-		Int32 width = mWidth;
-		Int32 height = mHeight;
+		Int32 width = (Int32)mWidth;
+		Int32 height = (Int32)mHeight;
 
 		GLint PreviousTexture;
 		glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
 
-		Uint32 flags = mMipmap ? SOIL_FLAG_MIPMAPS : 0;
+		Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
 		flags = (mClampMode == EE_CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
-		flags = (mCompressedTexture) ? ( flags | SOIL_FLAG_COMPRESS_TO_DXT ) : flags;
 
-		mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8 *> ( &mPixels[0] ), &width, &height, mChannels, mTexture, flags );
+		if ( ( mFlags & TEX_FLAG_COMPRESSED ) ) {
+			if ( mTexture != PreviousTexture )
+				glBindTexture( GL_TEXTURE_2D, mTexture );
 
-		glBindTexture(GL_TEXTURE_2D, PreviousTexture);
+            if ( Grabed() )
+                mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8 *> ( &mPixels[0] ), &width, &height, mChannels, mTexture, flags | SOIL_FLAG_COMPRESS_TO_DXT );
+            else
+                glCompressedTexImage2D( mTexture, 0, mInternalFormat, width, height, 0, mSize, &mPixels[0] );
+		} else
+			mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8 *> ( &mPixels[0] ), &width, &height, mChannels, mTexture, flags );
+
+		if ( mTexture != PreviousTexture )
+			glBindTexture(GL_TEXTURE_2D, PreviousTexture);
 	} else {
-		Lock();
+		iLock(false,true);
 		Reload();
 		Unlock();
 	}
@@ -391,6 +352,38 @@ void cTexture::Reload()  {
 
 const Uint32& cTexture::Id() const {
 	return mId;
+}
+
+void cTexture::Mipmap( const bool& UseMipmap ) {
+	if ( mFlags & TEX_FLAG_MIPMAP ) {
+		if ( !UseMipmap )
+			mFlags &= ~TEX_FLAG_MIPMAP;
+	} else {
+		if ( UseMipmap )
+			mFlags |= TEX_FLAG_MIPMAP;
+	}
+}
+
+bool cTexture::Mipmap() const {
+	return mFlags & TEX_FLAG_MIPMAP;
+}
+
+void cTexture::Grabed( const bool& isGrabed ) {
+	if ( mFlags & TEX_FLAG_GRABED ) {
+		if ( !isGrabed )
+			mFlags &= ~TEX_FLAG_GRABED;
+	} else {
+		if ( isGrabed )
+			mFlags |= TEX_FLAG_GRABED;
+	}
+}
+
+bool cTexture::Grabed() const {
+	return mFlags & TEX_FLAG_GRABED;
+}
+
+bool cTexture::Compressed() const {
+	return mFlags & TEX_FLAG_COMPRESSED;
 }
 
 void cTexture::Draw( const eeFloat &x, const eeFloat &y, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color, const EE_RENDERALPHAS &blend, const EE_RENDERTYPE &Effect, const bool &ScaleCentered, const eeRecti& texSector) {

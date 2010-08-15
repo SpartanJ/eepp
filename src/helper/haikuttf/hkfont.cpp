@@ -77,7 +77,7 @@ void hkFont::CacheFlush() {
 		mScratch.Flush();
 }
 
-FT_Error hkFont::GlyphFind( uint16_t ch, int want ) {
+FT_Error hkFont::GlyphFind( u16 ch, int want ) {
 	int retval = 0;
 
 	if( ch < mCacheSize ) {
@@ -95,7 +95,7 @@ FT_Error hkFont::GlyphFind( uint16_t ch, int want ) {
 	return retval;
 }
 
-FT_Error hkFont::GlyphLoad( uint16_t ch, hkGlyph * cached, int want ) {
+FT_Error hkFont::GlyphLoad( u16 ch, hkGlyph * cached, int want ) {
 	FT_Face face;
 	FT_Error error;
 	FT_GlyphSlot glyph;
@@ -340,10 +340,10 @@ FT_Error hkFont::GlyphLoad( uint16_t ch, hkGlyph * cached, int want ) {
 			int col;
 			int offset;
 			int pixel;
-			uint8_t* pixmap;
+			u8* pixmap;
 
 			for( row = dst->rows - 1; row >= 0; --row ) {
-				pixmap = (uint8_t*) dst->buffer + row * dst->pitch;
+				pixmap = (u8*) dst->buffer + row * dst->pitch;
 				for( offset=1; offset <= mGlyphOverhang; ++offset ) {
 					for( col = dst->width - 1; col > 0; --col ) {
 						if( mono ) {
@@ -353,7 +353,7 @@ FT_Error hkFont::GlyphLoad( uint16_t ch, hkGlyph * cached, int want ) {
 							if( pixel > NUM_GRAYS - 1 ) {
 								pixel = NUM_GRAYS - 1;
 							}
-							pixmap[col] = (uint8_t) pixel;
+							pixmap[col] = (u8) pixel;
 						}
 					}
 				}
@@ -376,7 +376,7 @@ FT_Error hkFont::GlyphLoad( uint16_t ch, hkGlyph * cached, int want ) {
 	return 0;
 }
 
-unsigned char * hkFont::GlyphRender( uint16_t ch, uint32_t fg ) {
+unsigned char * hkFont::GlyphRender( u16 ch, u32 fg ) {
 	unsigned char * textbuf = NULL;
 	int row;
 	FT_Error error;
@@ -396,15 +396,15 @@ unsigned char * hkFont::GlyphRender( uint16_t ch, uint32_t fg ) {
 	if ( NULL == textbuf )
 		return NULL;
 
-	uint32_t * buffu32 = reinterpret_cast<uint32_t*> ( &textbuf[0] );
+	u32 * buffu32 = reinterpret_cast<u32*> ( &textbuf[0] );
 
 	memset( buffu32, fg, bitmap->width * bitmap->rows );
 
-	const uint8_t* pixels = bitmap->buffer;
+	const u8* pixels = bitmap->buffer;
 
 	for ( int y = 0; y < bitmap->rows; y++ ) {
 		for ( int x = 0; x < bitmap->width; x++ ) {
-			uint32_t index = (x + y * bitmap->width) * 4 + 3;
+			u32 index = (x + y * bitmap->width) * 4 + 3;
 
 			textbuf[ index ] = pixels[ x ];
 		}
@@ -425,7 +425,7 @@ unsigned char * hkFont::GlyphRender( uint16_t ch, uint32_t fg ) {
 	return textbuf;
 }
 
-int hkFont::GlyphMetrics( uint16_t ch, int* minx, int* maxx, int* miny, int* maxy, int* advance ) {
+int hkFont::GlyphMetrics( u16 ch, int* minx, int* maxx, int* miny, int* maxy, int* advance ) {
 	FT_Error error;
 
 	error = GlyphFind( ch, CACHED_METRICS );
@@ -459,11 +459,11 @@ int hkFont::GlyphMetrics( uint16_t ch, int* minx, int* maxx, int* miny, int* max
 	return 0;
 }
 
-void hkFont::InitLineMectrics( const unsigned char * textbuf, const int row, uint8_t **pdst, int *pheight, FT_Bitmap * bitmap ) {
-	uint8_t *dst;
+void hkFont::InitLineMectrics( const unsigned char * textbuf, const int row, u8 **pdst, int *pheight, FT_Bitmap * bitmap ) {
+	u8 *dst;
 	int height;
 
-	dst = (uint8_t *)textbuf;
+	dst = (u8 *)textbuf;
 
 	if( row > 0 )
 		dst += row * bitmap->pitch;
@@ -477,18 +477,18 @@ void hkFont::InitLineMectrics( const unsigned char * textbuf, const int row, uin
 	*pheight = height;
 }
 
-void hkFont::DrawLine( const unsigned char * textbuf, const int row, const uint32_t color, FT_Bitmap * bitmap ) {
+void hkFont::DrawLine( const unsigned char * textbuf, const int row, const u32 color, FT_Bitmap * bitmap ) {
 	int line;
-	uint32_t * dst_check = (uint32_t*)textbuf + bitmap->pitch / 4 * bitmap->rows;
-	uint8_t * dst8; /* destination, byte version */
-	uint32_t * dst;
+	u32 * dst_check = (u32*)textbuf + bitmap->pitch / 4 * bitmap->rows;
+	u8 * dst8; /* destination, byte version */
+	u32 * dst;
 	int height;
 	int col;
 
-	uint32_t pixel = color | 0xFF000000;
+	u32 pixel = color | 0xFF000000;
 
 	InitLineMectrics( textbuf, row, &dst8, &height, bitmap );
-	dst = (uint32_t *) dst8;
+	dst = (u32 *) dst8;
 
 	for ( line = height; line > 0 && dst < dst_check; --line ) {
 		for ( col = 0; col < bitmap->width; ++col )

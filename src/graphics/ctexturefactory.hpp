@@ -141,6 +141,9 @@ class EE_API cTextureFactory: public cSingleton<cTextureFactory>, protected cMut
 		/** Get a local copy for all the textures */
 		void GrabTextures();
 
+		/** Reload all the grabed textures */
+		void UngrabTextures();
+
 		/** Allocate space for Textures (only works if EE_ALLOC_TEXTURES_ON_VECTOR is defined) */
 		void Allocate( const eeUint& size );
 
@@ -163,15 +166,16 @@ class EE_API cTextureFactory: public cSingleton<cTextureFactory>, protected cMut
 		* @param ClampMode The Texture Clamp Mode
 		* @param CompressTexture The texture is compressed?
 		* @param LocalCopy If keep a local copy in memory of the texture
+		* @param MemSize The size of the texture in memory ( just if you need to specify the real size in memory, just usefull to calculate the total texture memory ).
 		*/
-		Uint32 PushTexture( const std::string& Filepath, const Uint32& TexId, const eeUint& Width, const eeUint& Height, const eeUint& ImgWidth, const eeUint& ImgHeight, const bool& Mipmap, const eeUint& Channels, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy = false );
+		Uint32 PushTexture( const std::string& Filepath, const Uint32& TexId, const eeUint& Width, const eeUint& Height, const eeUint& ImgWidth, const eeUint& ImgHeight, const bool& Mipmap, const eeUint& Channels, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy = false, const Uint32& MemSize = 0 );
 
 		/** Return a texture by it file path name
 		* @param Name File path name
 		* @return The texture, NULL if not exists.
 		*/
 		cTexture * GetByName( const std::string& Name );
-		
+
 		/** Return a texture by it hash path name
 		* @param Hash The file path hash
 		* @return The texture, NULL if not exists
@@ -190,7 +194,7 @@ class EE_API cTextureFactory: public cSingleton<cTextureFactory>, protected cMut
 		std::vector<cTexture*> mTextures;
 
 		eeUint mMemSize;
-		
+
 		std::string mAppPath;
 
 		std::queue<Uint32> mVectorFreeSlots;

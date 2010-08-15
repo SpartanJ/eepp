@@ -81,17 +81,7 @@ int query_DXT_capability( void );
 #define SOIL_RGBA_S3TC_DXT5		0x83F3
 typedef void (APIENTRY * P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC) (GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid * data);
 P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC soilGlCompressedTexImage2D = NULL;
-unsigned int SOIL_direct_load_DDS(
-		const char *filename,
-		unsigned int reuse_texture_ID,
-		int flags,
-		int loading_as_cubemap );
-unsigned int SOIL_direct_load_DDS_from_memory(
-		const unsigned char *const buffer,
-		int buffer_length,
-		unsigned int reuse_texture_ID,
-		int flags,
-		int loading_as_cubemap );
+
 /*	other functions	*/
 unsigned int
 	SOIL_internal_create_OGL_texture

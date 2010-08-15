@@ -102,9 +102,9 @@ cEngine::~cEngine() {
 
 	cInput::DestroySingleton();
 
-	SDL_Quit();
-
 	cLog::DestroySingleton();
+
+	SDL_Quit();
 }
 
 bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitColor, const bool& Windowed, const bool& Resizeable, const bool& VSync, const bool& DoubleBuffering, const bool& UseDesktopResolution, const bool& NoFrame ) {
@@ -209,7 +209,7 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 		mGLEWinit = glewInit();
 
 		if ( GLEW_OK == mGLEWinit ) {
-			mVideoInfo.SupARB_point = GL_VERSION_1_4 && GLEW_ARB_point_parameters && GLEW_ARB_point_sprite;
+			mVideoInfo.SupARB_point = GLEW_ARB_point_parameters && GLEW_ARB_point_sprite;
 			mVideoInfo.SupShaders 	= GLEW_ARB_shading_language_100 && GLEW_ARB_shader_objects && GLEW_ARB_vertex_shader && GLEW_ARB_fragment_shader;
 		} else {
 			// die
@@ -335,19 +335,23 @@ void cEngine::ChangeRes( const Uint16& width, const Uint16& height, const bool& 
 		cLog::instance()->Writef( "Switching from %s to %s. Width: %d Height %d.", mVideoInfo.Windowed == true ? "windowed" : "fullscreen", Windowed == true ? "windowed" : "fullscreen", width, height );
 
 		#if EE_PLATFORM == EE_PLATFORM_WIN32 || EE_PLATFORM == EE_PLATFORM_APPLE
+		#if EE_PLATFORM == EE_PLATFORM_WIN32
 		bool Reload = mVideoInfo.Windowed != Windowed;
+		#else
+		bool Reload = true;
+		#endif
 
 		if ( Reload )
 			cTextureFactory::instance()->GrabTextures();
 		#endif
 
 		mVideoInfo.Windowed = Windowed;
-		mVideoInfo.Width = width;
-		mVideoInfo.Height = height;
+		mVideoInfo.Width    = width;
+		mVideoInfo.Height   = height;
 
 		if ( Windowed ) {
-			mVideoInfo.WWidth = width;
-			mVideoInfo.WHeight = height;
+			mVideoInfo.WWidth   = width;
+			mVideoInfo.WHeight  = height;
 		}
 
 		mDefaultView.SetView( 0, 0, mVideoInfo.Width, mVideoInfo.Height );
@@ -365,7 +369,7 @@ void cEngine::ChangeRes( const Uint16& width, const Uint16& height, const bool& 
 
 		#if EE_PLATFORM == EE_PLATFORM_WIN32 || EE_PLATFORM == EE_PLATFORM_APPLE
 		if ( Reload ) {
-			cTextureFactory::instance()->ReloadAllTextures();
+			cTextureFactory::instance()->UngrabTextures();
 			cShaderProgramManager::instance()->Reload();
 		}
 		#endif
@@ -469,15 +473,7 @@ bool cEngine::TakeScreenshot( std::string filepath, const EE_SAVETYPE& Format ) 
 		}
 
 		while ( !find && FileNum < 10000 ) {
-			if ( FileNum < 10 ) {
-				TmpPath = filepath + "000" + intToStr(FileNum) + Ext;
-			} else if ( FileNum < 100 ) {
-				TmpPath = filepath + "00" + intToStr(FileNum) + Ext;
-			} else if ( FileNum < 1000 ) {
-				TmpPath = filepath + "0" + intToStr(FileNum) + Ext;
-			} else {
-				TmpPath = intToStr(FileNum) + Ext;
-			}
+			TmpPath = StrFormated( "%s%05d%s", filepath.c_str(), FileNum, Ext.c_str() );
 
 			FileNum++;
 
@@ -579,8 +575,8 @@ SDL_Cursor* cEngine::CreateCursor( const Uint32& TexId, const eeVector2i& HotSpo
 	//see http://sdldoc.csn.ul.ie/sdlcreatecursor.php for documentation on
 	//the format that data has to be in to pass to SDL_CreateCursor
 	Tex->Lock();
-	for( Int32 y = 0; y != Tex->Height(); ++y) {
-		for( Int32 x = 0; x != Tex->Width(); ++x) {
+	for( eeUint y = 0; y != Tex->Height(); ++y) {
+		for( eeUint x = 0; x != Tex->Width(); ++x) {
 			Uint8 trans = 0;
 			Uint8 black = 0;
 
@@ -613,9 +609,10 @@ void cEngine::SetCursor( const Uint32& TexId, const eeVector2i& HotSpot ) {
 bool cEngine::SetIcon( const Uint32& FromTexId ) {
 	cTexture* Tex = cTextureFactory::instance()->GetTexture( FromTexId );
 
-	if ( Tex ) {
+	if ( NULL != Tex ) {
 		Int32 W = static_cast<Int32>( Tex->Width() );
 		Int32 H = static_cast<Int32>( Tex->Height() );
+
 		if ( ( W  % 8 ) == 0 && ( H % 8 ) == 0 ) {
 			Tex->Lock();
 			const Uint8* Ptr = Tex->GetPixelsPtr();
@@ -647,6 +644,7 @@ bool cEngine::SetIcon( const Uint32& FromTexId ) {
 			SDL_WM_SetIcon(TempGlyphSheet, NULL);
 
 			SDL_FreeSurface(TempGlyphSheet);
+
 			return true;
 		}
 	}
@@ -943,12 +941,11 @@ std::string cEngine::GetClipboardText() {
 
 		tStr.assign( scrap, scraplen-1 );
 	}
+
+	eeSAFE_DELETE_ARRAY( scrap );
 	#elif EE_PLATFORM == EE_PLATFORM_APPLE
 		#warning cEngine::GetClipboardText() not implemented on Apple
 	#endif
-
-	if ( scrap )
-		eeSAFE_DELETE_ARRAY( scrap );
 
 	return tStr;
 }
@@ -974,12 +971,11 @@ std::wstring cEngine::GetClipboardTextWStr() {
 			tStr[i] = y;
 		}
 	}
+
+	eeSAFE_DELETE_ARRAY( scrap );
 	#elif EE_PLATFORM == EE_PLATFORM_APPLE
 		#warning cEngine::GetClipboardTextWStr() not implemented on Apple
 	#endif
-
-	if ( scrap )
-		eeSAFE_DELETE_ARRAY( scrap );
 
 	return tStr;
 }

@@ -34,7 +34,7 @@ void cParticleSystem::Create(const EE_PARTICLE_EFFECT& Effect, const Uint32& Num
 		mSize = PartSize;
 
 	mHSize = mSize * 0.5f;
-	
+
 	mAlphaDecay = AlphaDecay;
 	mXSpeed = XSpeed;
 	mYSpeed = YSpeed;
@@ -241,41 +241,41 @@ void cParticleSystem::Draw() {
 		glEnable( GL_POINT_SPRITE_ARB );
 		glTexEnvf( GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE );
 		glPointSize( mSize );
-		
+
 		glColorPointer( 4, GL_FLOAT, sizeof(cParticle), reinterpret_cast<char*>( &mParticle[0] ) + sizeof(eeFloat) * 2 );
 		glVertexPointer( 2, GL_FLOAT, sizeof(cParticle), reinterpret_cast<char*>( &mParticle[0] ) );
-		
+
 		glDrawArrays( GL_POINTS, 0, (GLsizei)mParticle.size() );
-		
+
 		glDisable( GL_POINT_SPRITE_ARB );
 	} else {
+		cTexture * Tex = TF->GetTexture( mTexId );
+
+		if ( NULL == Tex )
+			return;
+
 		cParticle* P;
-		
+
+		cBatchRenderer * BR = cGlobalBatchRenderer::instance();
+		BR->SetTexture( Tex );
+		BR->SetBlendFunc( ALPHA_BLENDONE );
+		BR->QuadsBegin();
+
 		for ( Uint32 i = 0; i < mParticle.size(); i++ ) {
 			P = &mParticle[i];
 			eeVector2f TL;
-			
+
 			if ( P->Used() ) {
 				TL.x = P->X() - mHSize;
 				TL.y = P->Y() - mHSize;
 				
-				glBegin(GL_QUADS);
-					glColor4f( P->R(), P->G(), P->B(), P->A() );
-					
-					glTexCoord2f(0, 0);
-					glVertex2d( TL.x, TL.y );
-					
-					glTexCoord2f(0, 1);
-					glVertex2d( TL.x, TL.y + mSize );
-	
-					glTexCoord2f(1, 1);
-					glVertex2d( TL.x + mSize, TL.y + mSize );
-	
-					glTexCoord2f(1, 0);
-					glVertex2d( TL.x + mSize, TL.y );
-				glEnd();
+				/** FIXME: Optimize */
+				BR->QuadsSetColor( eeColorA( static_cast<Uint8> ( P->R() * 255 ), static_cast<Uint8> ( P->G() * 255 ), static_cast<Uint8>( P->B() * 255 ), static_cast<Uint8>( P->A() * 255 ) ) );
+				BR->BatchQuad( TL.x, TL.y, mSize, mSize );
 			}
 		}
+
+		BR->DrawOpt();
 	}
 }
 
@@ -290,7 +290,7 @@ void cParticleSystem::Update( const eeFloat& Time ) {
 			P->Update(Elapsed * mTime);
 
 			// If not alive
-			if ( P->A() <= 0.f || P->X() < -mSize || P->Y() < -mSize || P->X() > EE->GetWidth() || P->Y() > EE->GetHeight() ) {
+			if ( P->A() <= 0.f ) {
 				if ( !mLoop ) { // If not loop
 					if ( mLoops == 1 ) { // If left only one loop
 						P->Used(false);

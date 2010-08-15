@@ -11,8 +11,16 @@ extern int      stbi_dds_test_memory      (stbi_uc const *buffer, int len);
 extern stbi_uc *stbi_dds_load             (char *filename,           int *x, int *y, int *comp, int req_comp);
 extern stbi_uc *stbi_dds_load_from_memory (stbi_uc const *buffer, int len, int *x, int *y, int *comp, int req_comp);
 #ifndef STBI_NO_STDIO
+extern int      stbi_dds_test_filename    (char const *filename);
 extern int      stbi_dds_test_file        (FILE *f);
 extern stbi_uc *stbi_dds_load_from_file   (FILE *f,                  int *x, int *y, int *comp, int req_comp);
+#endif
+
+extern int      stbi_dds_info_from_memory (stbi_uc const *buffer, int len, int *x, int *y, int *comp, int *iscompressed);
+
+#ifndef STBI_NO_STDIO
+extern int      stbi_dds_info             (char const *filename,     int *x, int *y, int *comp, int *iscompressed);
+extern int      stbi_dds_info_from_file   (FILE *f,                  int *x, int *y, int *comp, int *iscompressed);
 #endif
 
 /*

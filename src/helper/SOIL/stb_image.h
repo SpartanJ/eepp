@@ -328,8 +328,9 @@ extern int      stbi_gif_info_from_file   (FILE *f,                  int *x, int
 
 #endif//STBI_TYPE_SPECIFIC_FUNCTIONS
 
-
-
+#ifndef STBI_NO_DDS
+#include "stbi_DDS.h"
+#endif
 
 #ifdef __cplusplus
 }

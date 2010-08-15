@@ -86,6 +86,8 @@
 		<Unit filename="src/graphics/cglobalbatchrenderer.hpp" />
 		<Unit filename="src/graphics/cglobalshapegroup.cpp" />
 		<Unit filename="src/graphics/cglobalshapegroup.hpp" />
+		<Unit filename="src/graphics/cimage.cpp" />
+		<Unit filename="src/graphics/cimage.hpp" />
 		<Unit filename="src/graphics/cparticle.cpp" />
 		<Unit filename="src/graphics/cparticle.hpp" />
 		<Unit filename="src/graphics/cparticlesystem.cpp" />
@@ -164,7 +166,7 @@
 		<Unit filename="src/helper/haikuttf/hkfontmanager.hpp" />
 		<Unit filename="src/helper/haikuttf/hkglyph.cpp" />
 		<Unit filename="src/helper/haikuttf/hkglyph.hpp" />
-		<Unit filename="src/helper/haikuttf/stdint.h" />
+		<Unit filename="src/helper/haikuttf/sophist.h" />
 		<Unit filename="src/helper/stb_vorbis/stb_vorbis.c">
 			<Option compilerVar="CC" />
 		</Unit>

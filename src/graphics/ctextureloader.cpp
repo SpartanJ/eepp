@@ -1,5 +1,7 @@
 #include "ctextureloader.hpp"
 #include "ctexturefactory.hpp"
+#include "../helper/SOIL/stb_image.h"
+#include "../helper/SOIL/SOIL.h"
 
 namespace EE { namespace Graphics {
 
@@ -27,7 +29,9 @@ cTextureLoader::cTextureLoader( const std::string& Filepath,
 	mPack(NULL),
 	mImagePtr(NULL),
 	mSize(0),
-	mTexLoaded(false)
+	mTexLoaded(false),
+	mIsDDS(false),
+	mIsDDSCompressed(0)
 {
 }
 
@@ -56,7 +60,9 @@ cTextureLoader::cTextureLoader( const unsigned char * ImagePtr,
 	mPack(NULL),
 	mImagePtr(ImagePtr),
 	mSize(Size),
-	mTexLoaded(false)
+	mTexLoaded(false),
+	mIsDDS(false),
+	mIsDDSCompressed(0)
 {
 }
 
@@ -85,7 +91,9 @@ cTextureLoader::cTextureLoader( cPack * Pack,
 	mPack(Pack),
 	mImagePtr(NULL),
 	mSize(0),
-	mTexLoaded(false)
+	mTexLoaded(false),
+	mIsDDS(false),
+	mIsDDSCompressed(0)
 {
 }
 
@@ -117,7 +125,9 @@ cTextureLoader::cTextureLoader( const unsigned char * Pixels,
 	mPack(NULL),
 	mImagePtr(NULL),
 	mSize(0),
-	mTexLoaded(false)
+	mTexLoaded(false),
+	mIsDDS(false),
+	mIsDDSCompressed(0)
 {
 }
 
@@ -128,7 +138,7 @@ cTextureLoader::~cTextureLoader() {
 
 void cTextureLoader::Start() {
 	cObjectLoader::Start();
-	
+
 	if ( TEX_LT_PATH == mLoadType )
 		LoadFromPath();
 	else if ( TEX_LT_MEM == mLoadType )
@@ -144,7 +154,20 @@ void cTextureLoader::Start() {
 
 void cTextureLoader::LoadFromPath() {
 	if ( FileExists( mFilepath ) ) {
-		mPixels = SOIL_load_image( mFilepath.c_str(), &mImgWidth, &mImgHeight, &mChannels, SOIL_LOAD_AUTO );
+		if ( GLEW_EXT_texture_compression_s3tc )
+			mIsDDS = 0 != stbi_dds_test_filename( mFilepath.c_str() );
+
+		if ( mIsDDS ) {
+			std::fstream fs ( mFilepath.c_str() , std::ios::in | std::ios::binary );
+			mSize = FileSize( mFilepath );
+			mPixels = (Uint8*) malloc( mSize );
+			fs.read( reinterpret_cast<char*> ( mPixels ), mSize );
+			fs.close();
+
+			stbi_dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsDDSCompressed );
+		} else {
+			mPixels = SOIL_load_image( mFilepath.c_str(), &mImgWidth, &mImgHeight, &mChannels, SOIL_LOAD_AUTO );
+		}
 
 		if ( NULL == mPixels )
 			cLog::instance()->Write( SOIL_last_result() );
@@ -163,7 +186,16 @@ void cTextureLoader::LoadFromPack() {
 }
 
 void cTextureLoader::LoadFromMemory() {
-	mPixels = SOIL_load_image_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels, SOIL_LOAD_AUTO );
+	if ( GLEW_EXT_texture_compression_s3tc )
+		mIsDDS = 0 != stbi_dds_test_memory( mImagePtr, mSize );
+
+	if ( mIsDDS ) {
+		mPixels = (Uint8*) malloc( mSize );
+		memcpy( mPixels, mImagePtr, mSize );
+		stbi_dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsDDSCompressed );
+	} else {
+		mPixels = SOIL_load_image_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels, SOIL_LOAD_AUTO );
+	}
 
 	if ( NULL == mPixels )
 		cLog::instance()->Write( SOIL_last_result() );
@@ -185,12 +217,21 @@ void cTextureLoader::LoadFromPixels() {
 			GLint PreviousTexture;
 			glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
 
-			tTexId = SOIL_create_OGL_texture( mPixels, &width, &height, mChannels, SOIL_CREATE_NEW_ID, flags );
+			if ( mIsDDS )
+				tTexId = SOIL_direct_load_DDS_from_memory( mPixels, mSize, SOIL_CREATE_NEW_ID, flags, 0 );
+			else
+				tTexId = SOIL_create_OGL_texture( mPixels, &width, &height, mChannels, SOIL_CREATE_NEW_ID, flags );
 
 			glBindTexture(GL_TEXTURE_2D, PreviousTexture);
 
-			if ( tTexId )
-				mTexId = cTextureFactory::instance()->PushTexture( mFilepath, tTexId, mImgWidth, mImgHeight, width, height, mMipmap, mChannels, mColorKey, mClampMode, mCompressTexture, mLocalCopy );
+			if ( tTexId ) {
+				if ( mIsDDS && mIsDDSCompressed && mSize > 128 )
+					mSize -= 128; // Remove the header size
+				else
+					mSize = mWidth * mHeight * mChannels;
+
+				mTexId = cTextureFactory::instance()->PushTexture( mFilepath, tTexId, mImgWidth, mImgHeight, width, height, mMipmap, mChannels, mColorKey, mClampMode, mCompressTexture || mIsDDSCompressed, mLocalCopy, mSize );
+			}
 
 			if ( TEX_LT_PIXELS != mLoadType )
 				eeSAFE_FREE( mPixels );

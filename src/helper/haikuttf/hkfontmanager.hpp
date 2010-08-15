@@ -36,7 +36,7 @@ class hkFontManager {
 
 		void 				CloseFont( hkFont * Font );
 
-		hkFont * 			OpenFromMemory( const uint8_t* data, unsigned long size, int ptsize, long index = 0, unsigned int glyphCacheSize = 256 );
+		hkFont * 			OpenFromMemory( const u8* data, unsigned long size, int ptsize, long index = 0, unsigned int glyphCacheSize = 256 );
 
 		hkFont * 			OpenFromFile( const char* filename, int ptsize, long index = 0, unsigned int glyphCacheSize = 256 );
 

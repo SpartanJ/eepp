@@ -2,17 +2,27 @@
 #define EE_GRAPHICSCTEXTURE_H
 
 #include "base.hpp"
+#include "cimage.hpp"
 
 namespace EE { namespace Graphics {
 
-class EE_API cTexture {
+#define TEX_FLAG_MIPMAP 	( 1 << 0 )
+#define TEX_FLAG_MODIFIED	( 1 << 1 )
+#define TEX_FLAG_COMPRESSED ( 1 << 2 )
+#define TEX_FLAG_LOCKED 	( 1 << 3 )
+#define TEX_FLAG_GRABED		( 1 << 4 )
+
+class EE_API cTexture : public cImage {
 	public:
 		cTexture();
-		~cTexture();
 
-		cTexture( const Uint32& texture, const eeInt& width, const eeInt& height, const eeInt& imgwidth, const eeInt& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint8* data = NULL );
+		cTexture( const Uint32& texture, const eeUint& width, const eeUint& height, const eeUint& imgwidth, const eeUint& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize = 0, const Uint8* data = NULL );
+
 		cTexture( const cTexture& Copy );
+
 		cTexture& operator =(const cTexture& Other);
+
+		virtual ~cTexture();
 
 		/** Create the Texture
 		* @param texture The OpenGL Texture Id (texture handler)
@@ -28,16 +38,13 @@ class EE_API cTexture {
 		* @param CompressedTexture The Texture was compressed on loading
 		* @param data The Texture (raw texture)
 		*/
-		void Create( const Uint32& texture, const eeInt& width, const eeInt& height, const eeInt& imgwidth, const eeInt& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint8* data = NULL );
+		void Create( const Uint32& texture, const eeUint& width, const eeUint& height, const eeUint& imgwidth, const eeUint& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize = 0, const Uint8* data = NULL );
 
 		/** Set the OpenGL Texture Id (texture handler) */
 		void Texture( const Uint32& texture ) { mTexture = texture; }
 
 		/** @return The OpenGL Texture Id (texture handler) */
 		Uint32 Texture() const { return mTexture; }
-
-		/** @return The Texture Size on Memory (in bytes) */
-		eeUint Size() const { return (eeUint)mWidth * (eeUint)mHeight * 4; }
 
 		/** @return The id of the texture ( that is the hash of the filename ) */
 		const Uint32& Id() const;
@@ -48,29 +55,17 @@ class EE_API cTexture {
 		/** @return The Texture File Path */
 		std::string Filepath() const { return mFilepath; }
 
-		/** Set the Texture Width */
-		void Width( const eeInt& width ) { mWidth = width; }
-
-		/** @return The Texture Width */
-		eeInt Width() const { return mWidth; }
-
-		/** Set the Texture Height */
-		void Height( const eeInt& height ) { mHeight = height; }
-
-		/** @return The Texture Height */
-		eeInt Height() const { return mHeight; }
-
 		/** @return The Image Width */
-		eeInt ImgWidth() const { return mImgWidth; }
+		eeUint ImgWidth() const { return mImgWidth; }
 
 		/** @return The Image Height */
-		eeInt ImgHeight() const { return mImgHeight; }
+		eeUint ImgHeight() const { return mImgHeight; }
 
 		/** Set if the Texture use Mipmaps */
-		void Mipmap( const bool& UseMipmap ) { mMipmap = UseMipmap; }
+		void Mipmap( const bool& UseMipmap );
 
 		/** @return If the texture use Mipmaps */
-		bool Mipmap() const { return mMipmap; }
+		bool Mipmap() const;
 
 		/** Set the Texture Color Key */
 		void ColorKey( const eeRGB& colorkey ) { mColorKey = colorkey; }
@@ -87,26 +82,17 @@ class EE_API cTexture {
 		/** Lock the Texture for direct access */
 		Uint8 * Lock( const bool& ForceRGBA = false );
 
-		/** Return the pixel color from the texture. \n You must have a copy of the texture on local memory. For that you need to Lock the texture first. */
-		eeColorA GetPixel(const eeUint& x, const eeUint& y);
-
-		/** Set the pixel color to the texture. \n You must have a copy of the texture on local memory. For that you need to Lock the texture first. */
-		void SetPixel(const eeUint& x, const eeUint& y, const eeColorA& Color);
-
 		/** Unlock the previously locked Texture */
 		bool Unlock(const bool& KeepData = false, const bool& Modified = false);
 
 		/** @return A pointer to the first pixel of the texture ( keeped with a local copy ). \n You must have a copy of the texture on local memory. For that you need to Lock the texture first. */
 		const Uint8* GetPixelsPtr();
 
-		/** Assign a new array of pixels to the texture in local memory ( it has to be exactly of the same size of the texture ) */
-		void Pixels( const Uint8* data );
-
 		/** Set the Texture Filter Mode */
 		void SetTextureFilter(const EE_TEX_FILTER& filter);
 
 		/** Save the Texture to a new File */
-		bool SaveToFile(const std::string& filepath, const EE_SAVETYPE& Format);
+		bool SaveToFile( const std::string& filepath, const EE_SAVETYPE& Format );
 
 		/** Create an Alpha mask from a Color */
 		void CreateMaskFromColor(eeColorA ColorKey, Uint8 Alpha);
@@ -124,22 +110,16 @@ class EE_API cTexture {
 		void DeleteTexture();
 
 		/** Set if the Texture is Grabed */
-		void Grabed( const bool& isGrabed ) { mGrabed = isGrabed; }
+		void Grabed( const bool& isGrabed );
 
 		/** @return If the texture is Grabed */
-		bool Grabed() const { return mGrabed; }
+		bool Grabed() const;
 
 		/** @return The current texture filter */
 		EE_TEX_FILTER Filter() const { return mFilter; }
 
 		/** @return If the texture was compressed on load (DXT compression) */
-		bool Compressed() const { return mCompressedTexture; };
-
-		/** @return The number of channels used by the image */
-		eeUint Channels() const { return mChannels; }
-
-		/** Clears the current texture cache if exists */
-		void ClearCache();
+		bool Compressed() const;
 
 		/** Render the texture on screen ( with less internal mess, a little bit faster way )
 		* @param x The x position on screen
@@ -221,35 +201,29 @@ class EE_API cTexture {
 
 		/** Reload the texture from the current local copy. */
 		void Reload();
-	protected:
-		Uint8 *			mPixels;
 
+		void SetPixel( const eeUint& x, const eeUint& y, const eeColorA& Color );
+	protected:
 		std::string 	mFilepath;
 
 		Uint32 			mId;
 		Uint32 			mTexId;
 		GLint 			mTexture;
 
-		eeInt 			mWidth;
-		eeInt 			mHeight;
-		eeInt 			mImgWidth;
-		eeInt 			mImgHeight;
+		eeUint 			mImgWidth;
+		eeUint 			mImgHeight;
 
-		eeUint 			mChannels;
-
-		bool 			mMipmap;
-		bool 			mModified;
+		Uint32			mFlags;
 		eeRGB 			mColorKey;
 
 		EE_CLAMP_MODE 	mClampMode;
 		EE_TEX_FILTER 	mFilter;
-		bool 			mCompressedTexture;
 
-		bool 			mLocked;
-		bool 			mGrabed;
+		GLint			mInternalFormat;
 
-		void ApplyClampMode();
-		void Allocate( const Uint32& size );
+		void 			ApplyClampMode();
+
+		Uint8 * 		iLock( const bool& ForceRGBA, const bool& KeepFormat );
 };
 
 }}

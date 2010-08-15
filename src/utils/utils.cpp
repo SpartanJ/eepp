@@ -66,7 +66,7 @@ std::string AppPath() {
 		}
 	}
 
-	throw CL_Error("get_exe_path failed");
+	return "./";
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
 	char exe_file[PATH_MAX + 1];
 	int size;

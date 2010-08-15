@@ -41,8 +41,8 @@ class hkGlyph {
 		inline int			Advance() const 					{	return mAdvance;			}
 		inline void		Advance( int advance ) 				{	mAdvance = advance;			}
 
-		inline uint16_t	Cached() const 					{	return mCached;			}
-		inline void		Cached( uint16_t cached ) 			{	mCached = cached;			}
+		inline u16	Cached() const 					{	return mCached;			}
+		inline void		Cached( u16 cached ) 			{	mCached = cached;			}
 
 		void 				Flush();
 	protected:
@@ -56,7 +56,7 @@ class hkGlyph {
 		int			mMaxY;
 		int			mOffsetY;
 		int			mAdvance;
-		uint16_t	mCached;
+		u16	mCached;
 };
 
 }

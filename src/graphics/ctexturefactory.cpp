@@ -50,7 +50,7 @@ Uint32 cTextureFactory::Load( const std::string& Filepath, const bool& Mipmap, c
 	return myTex.Id();
 }
 
-Uint32 cTextureFactory::PushTexture( const std::string& Filepath, const Uint32& TexId, const eeUint& Width, const eeUint& Height, const eeUint& ImgWidth, const eeUint& ImgHeight, const bool& Mipmap, const eeUint& Channels, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy ) {
+Uint32 cTextureFactory::PushTexture( const std::string& Filepath, const Uint32& TexId, const eeUint& Width, const eeUint& Height, const eeUint& ImgWidth, const eeUint& ImgHeight, const bool& Mipmap, const eeUint& Channels, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy, const Uint32& MemSize ) {
 	Lock();
 
 	cTexture * Tex 		= NULL;
@@ -68,7 +68,7 @@ Uint32 cTextureFactory::PushTexture( const std::string& Filepath, const Uint32& 
 	Pos = FindFreeSlot();
 	Tex = mTextures[ Pos ] = new cTexture();
 
-	Tex->Create( TexId, Width, Height, MyWidth, MyHeight, Mipmap, Channels, FPath, ColorKey, ClampMode, CompressTexture );
+	Tex->Create( TexId, Width, Height, MyWidth, MyHeight, Mipmap, Channels, FPath, ColorKey, ClampMode, CompressTexture, MemSize );
 	Tex->TexId( Pos );
 
 	if ( !ColorKey.voidRGB )
@@ -169,12 +169,21 @@ void cTextureFactory::GrabTextures() {
 	for ( Uint32 i = 1; i < mTextures.size(); i++ ) {
 		cTexture* Tex = GetTexture(i);
 
-		if ( Tex ) {
-			if ( !Tex->LocalCopy() ) {
-				Tex->Lock();
-				Tex->Unlock(true, false);
-				Tex->Grabed(true);
-			}
+		if ( Tex && !Tex->LocalCopy() ) {
+            Tex->Lock();
+            Tex->Grabed(true);
+		}
+	}
+}
+
+void cTextureFactory::UngrabTextures() {
+	for ( Uint32 i = 1; i < mTextures.size(); i++ ) {
+		cTexture* Tex = GetTexture(i);
+
+		if ( NULL != Tex && Tex->Grabed() ) {
+            Tex->Reload();
+            Tex->Unlock();
+            Tex->Grabed(false);
 		}
 	}
 }
@@ -268,15 +277,20 @@ eeUint cTextureFactory::GetTexMemSize( const eeUint& TexId ) {
 		cTexture* Tex = mTextures[ TexId ];
 
 		if ( Tex != NULL ) {
-			eeUint w = static_cast<eeUint>( Tex->Width() );
-			eeUint h = static_cast<eeUint>( Tex->Height() );
-			Size = ( w * h * Tex->Channels() );
+			eeUint w = Tex->Width();
+			eeUint h = Tex->Height();
+			eeUint c = Tex->Channels();
+
+			if ( 0 != Tex->Size() )
+				Size = Tex->Size();
+			else
+				Size = ( w * h * c );
 
 			if( Tex->Mipmap() ) {
-				while(w > 2 && h > 2) {
+				while( w > 2 && h > 2 ) {
 					w>>=1;
 					h>>=1;
-					Size += ( w * h * Tex->Channels() );
+					Size += ( w * h * c );
 				}
 			}
 		}

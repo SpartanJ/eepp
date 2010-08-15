@@ -45,6 +45,29 @@ cShaderProgram::cShaderProgram( const std::string& VertexShaderFile, const std::
 	Link();
 }
 
+cShaderProgram::cShaderProgram( cPack * Pack, const std::string& VertexShaderPath, const std::string& FragmentShaderPath, const std::string& name ) :
+	mGLId(0)
+{
+	AddToManager( name );
+	Init();
+
+	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( VertexShaderPath ) && -1 != Pack->Exists( FragmentShaderPath ) ) {
+		cVertexShader * vs = new cVertexShader( Pack, VertexShaderPath );
+		cFragmentShader * fs = new cFragmentShader( Pack, FragmentShaderPath );
+
+		if ( !vs->IsValid() || !fs->IsValid() ) {
+			eeSAFE_DELETE( vs );
+			eeSAFE_DELETE( fs );
+			return;
+		}
+
+		AddShader( vs );
+		AddShader( fs );
+
+		Link();
+	}
+}
+
 cShaderProgram::cShaderProgram( const Uint8 * VertexShaderData, const Uint32& VertexShaderDataSize, const Uint8 * FragmentShaderData, const Uint32& FragmentShaderDataSize, const std::string& name ) :
 	mGLId(0)
 {

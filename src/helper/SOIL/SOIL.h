@@ -426,6 +426,18 @@ const char*
 		void
 	);
 
+unsigned int SOIL_direct_load_DDS(
+		const char *filename,
+		unsigned int reuse_texture_ID,
+		int flags,
+		int loading_as_cubemap );
+
+unsigned int SOIL_direct_load_DDS_from_memory(
+		const unsigned char *const buffer,
+		int buffer_length,
+		unsigned int reuse_texture_ID,
+		int flags,
+		int loading_as_cubemap );
 
 #ifdef __cplusplus
 }

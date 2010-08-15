@@ -55,7 +55,7 @@ void hkFontManager::CloseFont( hkFont * Font ) {
 	}
 }
 
-hkFont * hkFontManager::OpenFromMemory( const uint8_t* data, unsigned long size, int ptsize, long index, unsigned int glyphCacheSize ) {
+hkFont * hkFontManager::OpenFromMemory( const u8* data, unsigned long size, int ptsize, long index, unsigned int glyphCacheSize ) {
     if ( Init() != 0)
 		return NULL;
 

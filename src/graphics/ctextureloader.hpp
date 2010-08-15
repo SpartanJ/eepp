@@ -50,6 +50,8 @@ class EE_API cTextureLoader : public cObjectLoader {
 		void 			Start();
 	private:
 		bool			mTexLoaded;
+		bool			mIsDDS;
+		int				mIsDDSCompressed;
 
 		void 			LoadFromPath();
 		void			LoadFromMemory();

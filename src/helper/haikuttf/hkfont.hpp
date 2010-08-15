@@ -67,13 +67,13 @@ class hkFont {
 
 		hkFontManager * 	Manager() const 							{ return mFm; 							}
 
-		FT_Error 			GlyphFind( uint16_t ch, int want );
+		FT_Error 			GlyphFind( u16 ch, int want );
 
-		FT_Error 			GlyphLoad( uint16_t ch, hkGlyph * cached, int want );
+		FT_Error 			GlyphLoad( u16 ch, hkGlyph * cached, int want );
 
-		unsigned char * 	GlyphRender( uint16_t ch, uint32_t fg );
+		unsigned char * 	GlyphRender( u16 ch, u32 fg );
 
-		int 				GlyphMetrics( uint16_t ch, int* minx, int* maxx, int* miny, int* maxy, int* advance );
+		int 				GlyphMetrics( u16 ch, int* minx, int* maxx, int* miny, int* maxy, int* advance );
 
 		void 				CacheFlush();
 	protected:
@@ -103,9 +103,9 @@ class hkFont {
 
 		int 				StrikeThroughTopRow();
 
-		void 				DrawLine( const unsigned char * textbuf, const int row, const uint32_t color, FT_Bitmap * bitmap );
+		void 				DrawLine( const unsigned char * textbuf, const int row, const u32 color, FT_Bitmap * bitmap );
 
-		void 				InitLineMectrics( const unsigned char * textbuf, const int row, uint8_t **pdst, int *pheight, FT_Bitmap * bitmap );
+		void 				InitLineMectrics( const unsigned char * textbuf, const int row, u8 **pdst, int *pheight, FT_Bitmap * bitmap );
 };
 
 }
