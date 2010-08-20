@@ -65,7 +65,7 @@
 
 namespace EE { namespace Math {
 
-class MTRand {
+class EE_API MTRand {
 	public:
 		static const Uint32 M		= 397;
 		static const Int32 N		= 624;

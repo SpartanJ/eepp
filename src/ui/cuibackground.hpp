@@ -5,7 +5,7 @@
 
 namespace EE { namespace UI {
 
-class cUIBackground {
+class EE_API cUIBackground {
 	public:
 		cUIBackground();
 		cUIBackground( const eeColorA& Color, const eeUint& Corners = 0, const EE_RENDERALPHAS& BlendMode = ALPHA_NORMAL );

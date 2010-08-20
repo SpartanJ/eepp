@@ -1,4 +1,4 @@
-/* sophist.h - 0.2 - public domain - Sean Barrett 2010
+/* sophist.h - 0.3 - public domain - Sean Barrett 2010
 ** Knowledge drawn from Brian Hook's posh.h and http://predef.sourceforge.net
 ** Sophist provides portable types; you typedef/#define them to your own names
 **
@@ -47,38 +47,40 @@ typedef unsigned short SOPHIST_uint16;
   typedef unsigned  int SOPHIST_uint32;
 #endif
 
-#if defined(_MSC_VER) || defined(__WATCOMC__) || defined(__BORLANDC__)     \
-    || (defined(__alpha) && defined(__DECC))
+#ifndef SOPHIST_NO_64
+   #if defined(_MSC_VER) || defined(__WATCOMC__) || defined(__BORLANDC__)     \
+       || (defined(__alpha) && defined(__DECC))
 
-  typedef   signed __int64 SOPHIST_int64;
-  typedef unsigned __int64 SOPHIST_uint64;
-  #define SOPHIST_has_64              1
-  #define SOPHIST_int64_constant(x)   (x##i64)
-  #define SOPHIST_uint64_constant(x)  (x##ui64)
-  #define SOPHIST_printf_format64     "I64"
+     typedef   signed __int64 SOPHIST_int64;
+     typedef unsigned __int64 SOPHIST_uint64;
+     #define SOPHIST_has_64              1
+     #define SOPHIST_int64_constant(x)   (x##i64)
+     #define SOPHIST_uint64_constant(x)  (x##ui64)
+     #define SOPHIST_printf_format64     "I64"
 
-#elif defined(__LP64__) || defined(__powerpc64__) || defined(SOPHIST_sparc64)
+   #elif defined(__LP64__) || defined(__powerpc64__) || defined(SOPHIST_sparc64)
 
-  typedef   signed long    SOPHIST_int64;
-  typedef unsigned long    SOPHIST_uint64;
+     typedef   signed long    SOPHIST_int64;
+     typedef unsigned long    SOPHIST_uint64;
 
-  #define SOPHIST_has_64              1
-  #define SOPHIST_int64_constant(x)   ((SOPHIST_int64) x)
-  #define SOPHIST_uint64_constant(x)  ((SOPHIST_uint64) x)
-  #define SOPHIST_printf_format64     "l"
+     #define SOPHIST_has_64              1
+     #define SOPHIST_int64_constant(x)   ((SOPHIST_int64) x)
+     #define SOPHIST_uint64_constant(x)  ((SOPHIST_uint64) x)
+     #define SOPHIST_printf_format64     "l"
 
-#elif defined(_LONG_LONG) || defined(__SUNPRO_C) || defined(__SUNPRO_CC)  \
-    || defined(__GNUC__)  || defined(__MWERKS__) || defined(__APPLE_CC__) \
-    || defined(sgi)       || defined (__sgi)     || defined(__sgi__)      \
-    || defined(_CRAYC)
+   #elif defined(_LONG_LONG) || defined(__SUNPRO_C) || defined(__SUNPRO_CC)  \
+       || defined(__GNUC__)  || defined(__MWERKS__) || defined(__APPLE_CC__) \
+       || defined(sgi)       || defined (__sgi)     || defined(__sgi__)      \
+       || defined(_CRAYC)
 
-  typedef   signed long long SOPHIST_int64;
-  typedef unsigned long long SOPHIST_uint64;
+     typedef   signed long long SOPHIST_int64;
+     typedef unsigned long long SOPHIST_uint64;
 
-  #define SOPHIST_has_64              1
-  #define SOPHIST_int64_constant(x)   (x##LL)
-  #define SOPHIST_uint64_constant(x)  (x##ULL)
-  #define SOPHIST_printf_format64     "ll"
+     #define SOPHIST_has_64              1
+     #define SOPHIST_int64_constant(x)   (x##LL)
+     #define SOPHIST_uint64_constant(x)  (x##ULL)
+     #define SOPHIST_printf_format64     "ll"
+   #endif
 #endif
 
 #ifndef SOPHIST_has_64
@@ -142,7 +144,7 @@ SOPHIST_compiletime_assert(intptr, sizeof(SOPHIST_intptr) == sizeof(char *));
   #define SOPHIST_endian  SOPHIST_big_endian
 #endif
 
-#endif // __INCLUDE_SOPHIST_H__
+#endif /* __INCLUDE_SOPHIST_H__ */
 
 #ifdef SOPHIST_selftest
 #include <stdio.h>
@@ -154,6 +156,7 @@ int main(int argc, char **argv)
       SOPHIST_uint8 bytes[4];
       SOPHIST_uint32 num;
    } x;
+
    #if SOPHIST_has_64
    char buffer[32];
    sprintf(buffer, "%016" SOPHIST_printf_format64 "x",
@@ -175,6 +178,10 @@ int main(int argc, char **argv)
    }
 
    fputs(fail ? "Failed.\n" : "Passed.\n", stdout);
+
+   argc = argc; /* attempt to suppress unused variable warnings */
+   argv = argv;
+
    return 0;
 }
 #endif

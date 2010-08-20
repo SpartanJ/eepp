@@ -17,7 +17,7 @@ class Point1d {
 typedef Point1d<eeFloat> cPoint1df;
 
 /** @brief A interpolation movement manager, used for movement interpolations. */
-class cInterpolation {
+class EE_API cInterpolation {
 	public:
 		cInterpolation();
 

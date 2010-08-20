@@ -6,7 +6,7 @@
 namespace EE { namespace System {
 
 /** @brief RC4 Encryption Class. For more information check Wikipedia: http://en.wikipedia.org/wiki/RC4. \n All the Decrypting functions call the Encrypting functions, there are there only for clarity, not really usefull. Use them as you wish.  */
-class cRC4 {
+class EE_API cRC4 {
 	public:
 		cRC4();
 		~cRC4();

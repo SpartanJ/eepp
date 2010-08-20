@@ -88,8 +88,6 @@
 #endif
 
 namespace EE {
-	#define EE_CLOCKS_PER_SEC 1000000l
-
 	#define eeARRAY_SIZE(__array)	( sizeof(__array) / sizeof(__array[0]) )
 	#define eeSAFE_DELETE(p)		{ if(p) { delete (p);		(p)=NULL; } }
 	#define eeSAFE_FREE(p)			{ if(p) { free ( (void*)p );(p)=NULL; } }

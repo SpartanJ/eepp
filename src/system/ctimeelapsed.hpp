@@ -13,17 +13,17 @@ class EE_API cTimeElapsed : private cTimer {
 		~cTimeElapsed();
 
 		/** Time elapsed between this call and the last call to Elapsed() */
-		eeDouble Elapsed();
+		eeDouble 	Elapsed();
 
 		/** Time elapsed between the last Reset ( First Reset is when the class is instantiated ) */
-		eeDouble ElapsedSinceStart();
+		eeDouble 	ElapsedSinceStart();
 
 		/** Restart the initial counter. ( set it as now ) */
-		void Reset();
+		void 		Reset();
 	protected:
-		eeUint mFirstCheck;
-		eeUint mLastCheck;
-		eeDouble mElapsed;
+		eeUint 		mFirstCheck;
+		eeUint 		mLastCheck;
+		eeDouble 	mElapsed;
 };
 
 }}

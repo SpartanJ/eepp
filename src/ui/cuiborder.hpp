@@ -5,7 +5,7 @@
 
 namespace EE { namespace UI {
 
-class cUIBorder {
+class EE_API cUIBorder {
 	public:
 		cUIBorder();
 		cUIBorder( const cUIBorder& border );

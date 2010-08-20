@@ -251,31 +251,44 @@ void cTexture::SetTextureFilter(const EE_TEX_FILTER& filter) {
 	}
 }
 
-void cTexture::ReplaceColor(eeColorA ColorKey, eeColorA NewColor) {
+void cTexture::ReplaceColor( const eeColorA& ColorKey, const eeColorA& NewColor ) {
+	Lock();
+
+	cImage::ReplaceColor( ColorKey, NewColor );
+
+	Unlock( false, true );
+}
+
+void cTexture::CreateMaskFromColor( const eeColorA& ColorKey, Uint8 Alpha ) {
 	Lock( true );
 
-	eeUint Pos = 0;
+	cImage::ReplaceColor( ColorKey, eeColorA( ColorKey.R(), ColorKey.G(), ColorKey.B(), Alpha ) );
 
-	for ( eeUint i = 0; i < mWidth * mHeight; i++ ) {
-		Pos = i * mChannels;
-
-		if ( mPixels[ Pos ] == ColorKey.R() && mPixels[ Pos + 1 ] == ColorKey.G() && mPixels[ Pos + 2 ] == ColorKey.B() && mPixels[ Pos + 3 ] == ColorKey.A() ) {
-			mPixels[ Pos ] 		= NewColor.R();
-			mPixels[ Pos + 1 ]	= NewColor.G();
-			mPixels[ Pos + 2 ]	= NewColor.B();
-			mPixels[ Pos + 3 ]	= NewColor.A();
-		}
-	}
-
-	Unlock(false, true);
+	Unlock( false, true );
 }
 
-void cTexture::CreateMaskFromColor(eeColorA ColorKey, Uint8 Alpha) {
-	ReplaceColor( ColorKey, eeColorA( ColorKey.R(), ColorKey.G(), ColorKey.B(), Alpha ) );
+void cTexture::FillWithColor( const eeColorA& Color ) {
+	Lock();
+
+	cImage::FillWithColor( Color );
+
+	Unlock( false, true );
 }
 
-void cTexture::CreateMaskFromColor(eeColor ColorKey, Uint8 Alpha) {
-	CreateMaskFromColor( eeColorA( ColorKey.R(), ColorKey.G(), ColorKey.B(), 255 ), Alpha );
+void cTexture::Resize( const eeUint& new_width, const eeUint& new_height ) {
+	Lock();
+
+	cImage::Resize( new_width, new_height );
+
+	Unlock( false, true );
+}
+
+void cTexture::CopyImage( cImage * Img, const eeUint& x, const eeUint& y ) {
+	Lock();
+
+	cImage::CopyImage( Img, x, y );
+
+	Unlock( false, true );
 }
 
 bool cTexture::LocalCopy() {

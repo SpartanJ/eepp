@@ -6,7 +6,7 @@
 
 namespace EE { namespace System {
 
-class cObjectLoader : cThread {
+class EE_API cObjectLoader : cThread {
 	public:
 		typedef boost::function1<void, cObjectLoader *> ObjLoadCallback;
 

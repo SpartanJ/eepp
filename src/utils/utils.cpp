@@ -16,9 +16,8 @@
 
 #if EE_PLATFORM == EE_PLATFORM_WIN32
     #include <direct.h>
-#else
-	#include <sys/stat.h>
 #endif
+#include <sys/stat.h>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN32
 	#include <sys/utime.h>
@@ -32,14 +31,9 @@
 
 namespace EE { namespace Utils {
 
-bool FileExists(const std::string& filepath) {
-	std::fstream fs;
-	fs.open( filepath.c_str(), std::ios::in );
-	if( fs.is_open() ) {
-		fs.close();
-		return true;
-	}
-	return false;
+bool FileExists( const std::string& Filepath ) {
+	struct stat st;
+	return ( stat( Filepath.c_str(), &st ) == 0 );
 }
 
 Uint32 eeGetTicks() {
@@ -197,13 +191,13 @@ std::vector<std::string> FilesGetInPath( const std::string& path ) {
 }
 
 Uint32 FileSize( const std::string& Filepath ) {
-  std::ifstream f;
-  f.open(Filepath.c_str(), std::ios_base::binary | std::ios_base::in);
-  if (!f.good() || f.eof() || !f.is_open()) { return 0; }
-  f.seekg(0, std::ios_base::beg);
-  std::ifstream::pos_type begin_pos = f.tellg();
-  f.seekg(0, std::ios_base::end);
-  return static_cast<Uint32>(f.tellg() - begin_pos);
+	struct stat st;
+	int res = stat( Filepath.c_str(), &st );
+
+	if ( 0 == res )
+		return st.st_size;
+
+	return 0;
 }
 
 eeDouble GetSystemTime() {
@@ -337,6 +331,18 @@ std::string FileExtension( const std::string& filepath, const bool& lowerExt ) {
 	return tstr;
 }
 
+std::string FileRemoveExtension( const std::string& filepath ) {
+	return filepath.substr( 0, filepath.find_last_of(".") );
+}
+
+std::string FileNameFromPath( const std::string& filepath ) {
+	return filepath.substr( filepath.find_last_of("/\\") + 1 );
+}
+
+std::string FileRemoveFileName( const std::string& filepath ) {
+	return filepath.substr( 0, filepath.find_last_of("/\\") + 1 );
+}
+
 eeInt GetNumCPUs() {
 	eeInt nprocs = -1;
 
@@ -387,6 +393,16 @@ bool FileWrite( const std::string& filepath, const Uint8* data, const Uint32& da
 
 bool FileWrite( const std::string& filepath, const std::vector<Uint8>& data ) {
 	return FileWrite( filepath, reinterpret_cast<const Uint8*> ( &data[0] ), (Uint32)data.size() );
+}
+
+Uint32 FileGetModificationDate( const std::string& Filepath ) {
+	struct stat st;
+	int res = stat( Filepath.c_str(), &st );
+
+	if ( 0 == res )
+		return st.st_mtime;
+
+	return 0;
 }
 
 }}

@@ -5,7 +5,7 @@
 
 namespace EE { namespace Utils {
 	/** @return True if the file exists */
-	bool EE_API FileExists(const std::string& filepath);
+	bool EE_API FileExists( const std::string& Filepath );
 
 	/** @return The number of milliseconds since the EE++ library initialization. Note that this value wraps if the program runs for more than ~49 days. */
 	Uint32 EE_API eeGetTicks();
@@ -63,6 +63,15 @@ namespace EE { namespace Utils {
 	*/
 	std::string FileExtension( const std::string& filepath, const bool& lowerExt = true );
 
+	/** @return The file name of a file path */
+	std::string FileNameFromPath( const std::string& filepath );
+
+	/** @return Removes the file name from a path, and return the path. */
+	std::string FileRemoveFileName( const std::string& filepath );
+
+	/** @return Removes the extension of a filepath */
+	std::string FileRemoveExtension( const std::string& filepath );
+
 	/** Write a file in binary mode and close it. */
 	bool FileWrite( const std::string& filepath, const Uint8* data, const Uint32& dataSize );
 
@@ -71,6 +80,9 @@ namespace EE { namespace Utils {
 
 	/** @return The Number of CPUs of the system. */
 	eeInt GetNumCPUs();
+
+	/** @return The modification date of the file */
+	Uint32 FileGetModificationDate( const std::string& Filepath );
 }
 
 }

@@ -1,11 +1,12 @@
 #include "../ee.h"
 
 /**
+@TODO Load Animated Sprites from Shape Groups.
+@TODO Create a texture packer tool ( texture atlas ).
 @TODO Create a Vertex Buffer Object class ( with and without GL_ARB_vertex_buffer_object ).
 @TODO Add support for Frame Buffer Object and to switch rendering to FBO and Screen.
 @TODO Create a basic UI system ( add basic controls, add skinning support ).
 @TODO Support multitexturing.
-@TODO Create a texture packer tool ( pack various textures into one texture ).
 @TODO Encapsulate SDL and OpenGL ( and remove unnecessary dependencies ).
 @TODO Add some Surface Grid class, to create special effects ( waved texture, and stuff like that ).
 @TODO Support color cursors ( not only black and white cursors, that really sucks ) - Imposible with SDL 1.2
@@ -190,6 +191,8 @@ class cEETest : private cThread {
 		eeFloat mAxisY;
 
 		Uint32 mFace;
+
+		cTextureGroupLoader * mTGL;
 };
 
 
@@ -253,6 +256,8 @@ void cEETest::Init() {
 		Scenes[0] = boost::bind( &cEETest::Screen1, this );
 		Scenes[1] = boost::bind( &cEETest::Screen2, this );
 		Scenes[2] = boost::bind( &cEETest::Screen3, this );
+
+		mTGL = new cTextureGroupLoader( MyPath + "res/1.etg", true );
 
 		InBuf.Start();
 
@@ -408,11 +413,11 @@ void cEETest::CmdSetPartsNum ( const std::vector < std::wstring >& params ) {
 	if ( params.size() >= 2 ) {
 		try {
 			Int32 tInt = boost::lexical_cast<Int32>( wstringTostring( params[1] ) );
-			if ( tInt >= 0 && tInt <= 10000 ) {
+			if ( tInt >= 0 && tInt <= 100000 ) {
 				PS[2].Create(WormHole, tInt, TN[5], EE->GetWidth() * 0.5f, EE->GetHeight() * 0.5f, 32, true);
 				Con.PushText( L"Wormhole Particles Number Changed to: " + toWStr(tInt) );
 			} else
-				Con.PushText( L"Valid parameters are between 0 and 10000 (0 = no limit)." );
+				Con.PushText( L"Valid parameters are between 0 and 100000 (0 = no limit)." );
 		} catch (boost::bad_lexical_cast&) {
 			Con.PushText( L"Invalid Parameter. Expected int value from '" + params[1] + L"'." );
 		}
@@ -1088,6 +1093,19 @@ void cEETest::Process() {
 			else
 				mFontLoader.Update();
 
+			if ( !mTGL->IsLoaded() )
+				mTGL->Update();
+			else {
+				cShapeGroup * tSG = cShapeGroupManager::instance()->GetByName( "1.png" );
+
+				if ( NULL != tSG ) {
+					cShape * tS = tSG->GetByName( "rn01.png" );
+
+					if ( NULL != tS )
+						tS->Draw( 320, 0 );
+				}
+			}
+
 			if ( KM->IsKeyUp(KEY_F12) ) EE->TakeScreenshot( MyPath + "data/screenshots/" ); //After render and before Display
 
 			EE->Display();
@@ -1107,6 +1125,8 @@ void cEETest::End() {
 	MySong.clear();
 
 	cLog::instance()->Save();
+
+	delete mTGL;
 
 	cEngine::DestroySingleton();
 }
@@ -1146,6 +1166,19 @@ void cEETest::Particles() {
 int main (int argc, char * argv []) {
 	cEETest Test;
 	Test.Process();
+/*
+	cTexturePacker tp;
 
+	std::string Path = "/home/downloads/files/temp/bnb/allin/";
+
+	if ( argc > 1 )
+		Path = std::string( argv[1] );
+
+	tp.AddTexturesPath( Path );
+
+	tp.PackTextures( 256, 256 );
+
+	tp.Save( AppPath() + "res/1.png", EE_SAVE_TYPE_PNG );
+*/
 	return 0;
 }

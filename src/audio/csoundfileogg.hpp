@@ -7,7 +7,7 @@
 
 namespace EE { namespace Audio {
 
-class cSoundFileOgg : public cSoundFile {
+class EE_API cSoundFileOgg : public cSoundFile {
 	public:
 		cSoundFileOgg();
 		~cSoundFileOgg();

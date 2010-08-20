@@ -39,10 +39,17 @@ eeFloat EE_API Degrees( const eeFloat& Radians );
 
 template <typename T>
 T NextPowOfTwo( T Size ) {
-	T PowerOfTwo = 1;
-	while (PowerOfTwo < Size)
-		PowerOfTwo *= 2;
-	return PowerOfTwo;
+	T p = 1;
+
+	while ( p < Size )
+		p <<= 1;
+
+	return p;
+}
+
+template <typename T>
+T IsPow2( T v ) {
+	return ( ( v & ( v - 1 ) ) == 0 );
 }
 
 template <typename T>

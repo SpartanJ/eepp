@@ -1,4 +1,4 @@
-/* stbi-1.28 - public domain JPEG/PNG reader - http://nothings.org/stb_image.c
+/* stbi-1.29 - public domain JPEG/PNG reader - http://nothings.org/stb_image.c
    when you control the images you're loading
                                      no warranty implied; use at your own risk
 
@@ -21,6 +21,8 @@
       - supports installable dequantizing-IDCT, YCbCr-to-RGB conversion (define STBI_SIMD)
 
    Latest revisions:
+      1.30 (2010-08-18) added stbi_info support for BMP,PSD,HDR,PIC by Martin Golini
+      1.29 (2010-08-16) various warning fixes from Aurelien Pocheville
       1.28 (2010-08-01) fix bug in GIF palette transparency (SpartanJ)
       1.27 (2010-08-01) cast-to-uint8 to fix warnings (Laurent Gomila)
                         allow trailing 0s at end of image data (Laurent Gomila)
@@ -42,7 +44,6 @@
    See end of file for full revision history.
 
    TODO:
-      stbi_info support for BMP,PSD,HDR,PIC
       rewrite stbi_info and load_file variations to share file handling code
            (current system allows individual functions to be called directly,
            since each does all the work, but I doubt anyone uses this in practice)
@@ -62,6 +63,8 @@
  Extensions, features                            Janez Zemva
     Jetro Lauha (stbi_info)                      Jonathan Blow
     James "moose2000" Brown (iPhone PNG)         Laurent Gomila
+                                                 Aruelien Pocheville
+                                                 Martin Golini
 
  If your name should be here but isn't, let Sean know.
 
@@ -106,10 +109,6 @@ typedef unsigned char validate_uint32[sizeof(uint32)==4 ? 1 : -1];
 
 #if defined(STBI_NO_STDIO) && !defined(STBI_NO_WRITE)
 #define STBI_NO_WRITE
-#endif
-
-#ifndef STBI_NO_DDS
-#include "stbi_DDS.h"
 #endif
 
 #define STBI_NOTUSED(v)  v=v
@@ -163,9 +162,14 @@ extern int      stbi_bmp_test_memory      (stbi_uc const *buffer, int len);
 
 extern stbi_uc *stbi_bmp_load             (char const *filename,     int *x, int *y, int *comp, int req_comp);
 extern stbi_uc *stbi_bmp_load_from_memory (stbi_uc const *buffer, int len, int *x, int *y, int *comp, int req_comp);
+extern int      stbi_bmp_info_from_memory (stbi_uc const *buffer, int len, int *x, int *y, int *comp);
+
 #ifndef STBI_NO_STDIO
 extern int      stbi_bmp_test_file        (FILE *f);
 extern stbi_uc *stbi_bmp_load_from_file   (FILE *f,                  int *x, int *y, int *comp, int req_comp);
+
+extern int      stbi_bmp_info            (char const *filename,     int *x, int *y, int *comp);
+extern int      stbi_bmp_info_from_file  (FILE *f,                  int *x, int *y, int *comp);
 #endif
 
 // is it a tga?
@@ -183,9 +187,14 @@ extern int      stbi_psd_test_memory      (stbi_uc const *buffer, int len);
 
 extern stbi_uc *stbi_psd_load             (char const *filename,     int *x, int *y, int *comp, int req_comp);
 extern stbi_uc *stbi_psd_load_from_memory (stbi_uc const *buffer, int len, int *x, int *y, int *comp, int req_comp);
+extern int      stbi_psd_info_from_memory (stbi_uc const *buffer, int len, int *x, int *y, int *comp);
+
 #ifndef STBI_NO_STDIO
 extern int      stbi_psd_test_file        (FILE *f);
 extern stbi_uc *stbi_psd_load_from_file   (FILE *f,                  int *x, int *y, int *comp, int req_comp);
+
+extern int      stbi_psd_info            (char const *filename,     int *x, int *y, int *comp);
+extern int      stbi_psd_info_from_file  (FILE *f,                  int *x, int *y, int *comp);
 #endif
 
 // is it an hdr?
@@ -193,9 +202,14 @@ extern int      stbi_hdr_test_memory      (stbi_uc const *buffer, int len);
 
 extern float *  stbi_hdr_load             (char const *filename,     int *x, int *y, int *comp, int req_comp);
 extern float *  stbi_hdr_load_from_memory (stbi_uc const *buffer, int len, int *x, int *y, int *comp, int req_comp);
+extern int      stbi_hdr_info_from_memory (stbi_uc const *buffer, int len, int *x, int *y, int *comp);
+
 #ifndef STBI_NO_STDIO
 extern int      stbi_hdr_test_file        (FILE *f);
 extern float *  stbi_hdr_load_from_file   (FILE *f,                  int *x, int *y, int *comp, int req_comp);
+
+extern int      stbi_hdr_info            (char const *filename,     int *x, int *y, int *comp);
+extern int      stbi_hdr_info_from_file  (FILE *f,                  int *x, int *y, int *comp);
 #endif
 
 // is it a pic?
@@ -203,9 +217,14 @@ extern int      stbi_pic_test_memory      (stbi_uc const *buffer, int len);
 
 extern stbi_uc *stbi_pic_load             (char const *filename,     int *x, int *y, int *comp, int req_comp);
 extern stbi_uc *stbi_pic_load_from_memory (stbi_uc const *buffer, int len, int *x, int *y, int *comp, int req_comp);
+extern int      stbi_pic_info_from_memory (stbi_uc const *buffer, int len, int *x, int *y, int *comp);
+
 #ifndef STBI_NO_STDIO
 extern int      stbi_pic_test_file        (FILE *f);
 extern stbi_uc *stbi_pic_load_from_file   (FILE *f,                  int *x, int *y, int *comp, int req_comp);
+
+extern int      stbi_pic_info            (char const *filename,     int *x, int *y, int *comp);
+extern int      stbi_pic_info_from_file  (FILE *f,                  int *x, int *y, int *comp);
 #endif
 
 // is it a gif?
@@ -222,6 +241,9 @@ extern int      stbi_gif_info             (char const *filename,     int *x, int
 extern int      stbi_gif_info_from_file   (FILE *f,                  int *x, int *y, int *comp);
 #endif
 
+#ifndef STBI_NO_DDS
+#include "stbi_DDS.h"
+#endif
 
 // this is not threadsafe
 static const char *failure_reason;
@@ -400,6 +422,8 @@ int stbi_is_hdr_from_memory(stbi_uc const *buffer, int len)
    #ifndef STBI_NO_HDR
    return stbi_hdr_test_memory(buffer, len);
    #else
+   STBI_NOTUSED(buffer);
+   STBI_NOTUSED(len);
    return 0;
    #endif
 }
@@ -489,7 +513,7 @@ static void start_mem(stbi *s, uint8 const *buffer, int len)
 #ifndef STBI_NO_STDIO
 static void refill_buffer(stbi *s)
 {
-   int n = (int)fread(s->buffer_start, 1, s->buflen, s->img_file);
+   int n = fread(s->buffer_start, 1, s->buflen, s->img_file);
    if (n == 0) {
       s->from_file = 0;
       s->img_buffer = s->img_buffer_end-1;
@@ -536,7 +560,7 @@ static void skip(stbi *s, int n)
 {
 #ifndef STBI_NO_STDIO
    if (s->img_file) {
-      int blen = (int)( s->img_buffer_end - s->img_buffer );
+      int blen = s->img_buffer_end - s->img_buffer;
       if (blen < n) {
          s->img_buffer = s->img_buffer_end;
          fseek(s->img_file, n - blen, SEEK_CUR);
@@ -551,7 +575,7 @@ static int getn(stbi *s, stbi_uc *buffer, int n)
 {
 #ifndef STBI_NO_STDIO
    if (s->img_file) {
-      int blen = (int)( s->img_buffer_end - s->img_buffer );
+      int blen = s->img_buffer_end - s->img_buffer;
       if (blen < n) {
          int res;
          memcpy(buffer, s->img_buffer, blen);
@@ -741,7 +765,7 @@ typedef struct
 
 typedef struct
 {
-   #if STBI_SIMD
+   #ifdef STBI_SIMD
    unsigned short dequant2[4][64];
    #endif
    stbi s;
@@ -1020,7 +1044,7 @@ __forceinline static uint8 clamp(int x)
    t1 += p2+p4;                                \
    t0 += p1+p3;
 
-#if STBI_SIMD
+#ifdef STBI_SIMD
 typedef unsigned short stbi_dequantize_t;
 #else
 typedef uint8 stbi_dequantize_t;
@@ -1135,7 +1159,7 @@ static int parse_entropy_coded_data(jpeg *z)
    reset(z);
    if (z->scan_n == 1) {
       int i,j;
-      #if STBI_SIMD
+      #ifdef STBI_SIMD
       __declspec(align(16))
       #endif
       short data[64];
@@ -1149,7 +1173,7 @@ static int parse_entropy_coded_data(jpeg *z)
       for (j=0; j < h; ++j) {
          for (i=0; i < w; ++i) {
             if (!decode_block(z, data, z->huff_dc+z->img_comp[n].hd, z->huff_ac+z->img_comp[n].ha, n)) return 0;
-            #if STBI_SIMD
+            #ifdef STBI_SIMD
             stbi_idct_installed(z->img_comp[n].data+z->img_comp[n].w2*j*8+i*8, z->img_comp[n].w2, data, z->dequant2[z->img_comp[n].tq]);
             #else
             idct_block(z->img_comp[n].data+z->img_comp[n].w2*j*8+i*8, z->img_comp[n].w2, data, z->dequant[z->img_comp[n].tq]);
@@ -1179,7 +1203,7 @@ static int parse_entropy_coded_data(jpeg *z)
                      int x2 = (i*z->img_comp[n].h + x)*8;
                      int y2 = (j*z->img_comp[n].v + y)*8;
                      if (!decode_block(z, data, z->huff_dc+z->img_comp[n].hd, z->huff_ac+z->img_comp[n].ha, n)) return 0;
-                     #if STBI_SIMD
+                     #ifdef STBI_SIMD
                      stbi_idct_installed(z->img_comp[n].data+z->img_comp[n].w2*y2+x2, z->img_comp[n].w2, data, z->dequant2[z->img_comp[n].tq]);
                      #else
                      idct_block(z->img_comp[n].data+z->img_comp[n].w2*y2+x2, z->img_comp[n].w2, data, z->dequant[z->img_comp[n].tq]);
@@ -1227,7 +1251,7 @@ static int process_marker(jpeg *z, int m)
             if (t > 3) return e("bad DQT table","Corrupt JPEG");
             for (i=0; i < 64; ++i)
                z->dequant[t][dezigzag[i]] = get8u(&z->s);
-            #if STBI_SIMD
+            #ifdef STBI_SIMD
             for (i=0; i < 64; ++i)
                z->dequant2[t][i] = z->dequant[t][i];
             #endif
@@ -1547,7 +1571,7 @@ static void YCbCr_to_RGB_row(uint8 *out, const uint8 *y, const uint8 *pcb, const
    }
 }
 
-#if STBI_SIMD
+#ifdef STBI_SIMD
 static stbi_YCbCr_to_RGB_run stbi_YCbCr_installed = YCbCr_to_RGB_row;
 
 void stbi_install_YCbCr_to_RGB(stbi_YCbCr_to_RGB_run func)
@@ -1656,7 +1680,7 @@ static uint8 *load_jpeg_image(jpeg *z, int *out_x, int *out_y, int *comp, int re
          if (n >= 3) {
             uint8 *y = coutput[0];
             if (z->s.img_n == 3) {
-               #if STBI_SIMD
+               #ifdef STBI_SIMD
                stbi_YCbCr_installed(out, y, coutput[1], coutput[2], z->s.img_x, n);
                #else
                YCbCr_to_RGB_row(out, y, coutput[1], coutput[2], z->s.img_x, n);
@@ -1704,9 +1728,18 @@ unsigned char *stbi_jpeg_load(char const *filename, int *x, int *y, int *comp, i
 
 unsigned char *stbi_jpeg_load_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *comp, int req_comp)
 {
+   #ifdef STBI_SMALL_STACK
+   unsigned char *result;
+   jpeg *j = (jpeg *) malloc(sizeof(*j));
+   start_mem(&j->s, buffer, len);
+   result = load_jpeg_image(j,x,y,comp,req_comp);
+   free(j);
+   return result;
+   #else
    jpeg j;
    start_mem(&j.s, buffer,len);
    return load_jpeg_image(&j, x,y,comp,req_comp);
+   #endif
 }
 
 static int stbi_jpeg_info_raw(jpeg *j, int *x, int *y, int *comp)
@@ -3076,11 +3109,8 @@ static int tga_info(stbi *s, int *x, int *y, int *comp)
     sz = get8u(s);              // image type
     // only RGB or grey allowed, +/- RLE
     if ((sz != 1) && (sz != 2) && (sz != 3) && (sz != 9) && (sz != 10) && (sz != 11)) return 0;
-    get16le(s);                 // discard palette start
-    get16le(s);                 // discard palette length
-    get8(s);                    // discard bits per palette color entry
-    get16le(s);                 // discard x origin
-    get16le(s);                 // discard y origin
+    skip(s,9);
+
     tga_w = get16le(s);
     if( tga_w < 1 ) return 0;   // test width
     tga_h = get16le(s);
@@ -3095,6 +3125,7 @@ static int tga_info(stbi *s, int *x, int *y, int *comp)
     return 1;                   // seems to have passed everything
 }
 
+#ifndef STBI_NO_STDIO
 int stbi_tga_info_from_file(FILE *f, int *x, int *y, int *comp)
 {
     stbi s;
@@ -3105,6 +3136,7 @@ int stbi_tga_info_from_file(FILE *f, int *x, int *y, int *comp)
     fseek(f, n, SEEK_SET);
     return r;
 }
+#endif
 
 int stbi_tga_info_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *comp)
 {
@@ -4501,10 +4533,19 @@ int stbi_info_from_file(FILE *f, int *x, int *y, int *comp)
        return 1;
    if (stbi_gif_info_from_file(f, x, y, comp))
        return 1;
-   // @TODO: stbi_bmp_info_from_file
-   // @TODO: stbi_psd_info_from_file
+   if (stbi_bmp_info_from_file(f, x, y, comp))
+       return 1;
+   if (stbi_psd_info_from_file(f, x, y, comp))
+       return 1;
+   if (stbi_pic_info_from_file(f, x, y, comp))
+       return 1;
+   #ifndef STBI_NO_DDS
+   if (stbi_dds_info_from_file(f, x, y, comp, NULL))
+       return 1;
+   #endif
    #ifndef STBI_NO_HDR
-   // @TODO: stbi_hdr_info_from_file
+   if (stbi_hdr_info_from_file(f, x, y, comp))
+       return 1;
    #endif
    // test tga last because it's a crappy test!
    if (stbi_tga_info_from_file(f, x, y, comp))
@@ -4521,10 +4562,19 @@ int stbi_info_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *c
        return 1;
    if (stbi_gif_info_from_memory(buffer, len, x, y, comp))
        return 1;
-   // @TODO: stbi_bmp_info_from_memory
-   // @TODO: stbi_psd_info_from_memory
+   if(stbi_bmp_info_from_memory(buffer, len, x, y, comp))
+       return 1;
+   if(stbi_psd_info_from_memory(buffer, len, x, y, comp))
+       return 1;
+   if(stbi_pic_info_from_memory(buffer, len, x, y, comp))
+       return 1;
+   #ifndef STBI_NO_DDS
+   if (stbi_dds_info_from_memory(buffer, len, x, y, comp, NULL))
+       return 1;
+   #endif
    #ifndef STBI_NO_HDR
-   // @TODO: stbi_hdr_info_from_memory
+   if(stbi_hdr_info_from_memory(buffer, len, x, y, comp))
+       return 1;
    #endif
    // test tga last because it's a crappy test!
    if (stbi_tga_info_from_memory(buffer, len, x, y, comp))
@@ -4537,10 +4587,231 @@ int stbi_info_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *c
 #include "stbi_DDS_c.h"
 #endif
 
+static int bmp_info(stbi *s, int *x, int *y, int *comp) {
+   int hsz;
+   if (get8(s) != 'B' || get8(s) != 'M') return 0;
+   skip(s,12);
+   hsz = get32le(s);
+   if (hsz != 12 && hsz != 40 && hsz != 56 && hsz != 108) return 0;
+   if (hsz == 12) {
+      *x = get16le(s);
+      *y = get16le(s);
+   } else {
+      *x = get32le(s);
+      *y = get32le(s);
+   }
+   if (get16le(s) != 1) return 0;
+   *comp = get16le(s) / 8;
+   return 1;
+}
+
+int stbi_bmp_info_from_memory (stbi_uc const *buffer, int len, int *x, int *y, int *comp)
+{
+	stbi s;
+	start_mem(&s,buffer, len);
+	return bmp_info( &s, x, y, comp );
+}
+
+#ifndef STBI_NO_STDIO
+int stbi_bmp_info(char const *filename, int *x, int *y, int *comp)
+{
+   int res;
+   FILE *f = fopen(filename, "rb");
+   if (!f) return 0;
+   res = stbi_bmp_info_from_file( f, x, y, comp );
+   fclose(f);
+   return res;
+}
+
+int stbi_bmp_info_from_file(FILE *f, int *x, int *y, int *comp)
+{
+   stbi s;
+   int res;
+   long n = ftell(f);
+   start_file(&s, f);
+   res = bmp_info(&s, x, y, comp);
+   fseek(f, n, SEEK_SET);
+   return res;
+}
+#endif
+
+static int psd_info(stbi *s, int *x, int *y, int *comp)
+{
+   int channelCount;
+   if (get32(s) != 0x38425053) return 0;
+   if (get16(s) != 1) return 0;
+   skip(s, 6);
+   channelCount = get16(s);
+   if (channelCount < 0 || channelCount > 16) return 0;
+   *y = get32(s);
+   *x = get32(s);
+   if (get16(s) != 8) return 0;
+   if (get16(s) != 3) return 0;
+   *comp = 4;
+   return 1;
+}
+
+int stbi_psd_info_from_memory (stbi_uc const *buffer, int len, int *x, int *y, int *comp)
+{
+	stbi s;
+	start_mem(&s,buffer, len);
+	return psd_info( &s, x, y, comp );
+}
+
+#ifndef STBI_NO_STDIO
+int stbi_psd_info(char const *filename, int *x, int *y, int *comp)
+{
+   int res;
+   FILE *f = fopen(filename, "rb");
+   if (!f) return 0;
+   res = stbi_psd_info_from_file( f, x, y, comp );
+   fclose(f);
+   return res;
+}
+
+int stbi_psd_info_from_file(FILE *f, int *x, int *y, int *comp)
+{
+   stbi s;
+   int res;
+   long n = ftell(f);
+   start_file(&s, f);
+   res = psd_info(&s, x, y, comp);
+   fseek(f, n, SEEK_SET);
+   return res;
+}
+#endif
+
+static int pic_info(stbi *s, int *x, int *y, int *comp)
+{
+   skip(s, 92);
+
+   *x = get16(s);
+   *y = get16(s);
+   if (at_eof(s))  return 0;
+   if ((1 << 28) / (*x) < (*y)) return 0;
+
+   skip(s, 8);
+
+   int act_comp=0,num_packets=0,chained;
+   pic_packet_t packets[10];
+
+   do {
+      pic_packet_t *packet;
+
+      if (num_packets==sizeof(packets)/sizeof(packets[0]))
+         return 0;
+
+      packet = &packets[num_packets++];
+      chained = get8(s);
+      packet->size    = get8u(s);
+      packet->type    = get8u(s);
+      packet->channel = get8u(s);
+      act_comp |= packet->channel;
+
+      if (at_eof(s))          return 0;
+      if (packet->size != 8)  return 0;
+   } while (chained);
+
+   *comp = (act_comp & 0x10 ? 4 : 3);
+
+   return 1;
+}
+
+int stbi_pic_info_from_memory (stbi_uc const *buffer, int len, int *x, int *y, int *comp)
+{
+	stbi s;
+	start_mem(&s,buffer, len);
+	return pic_info( &s, x, y, comp );
+}
+
+#ifndef STBI_NO_STDIO
+int stbi_pic_info(char const *filename, int *x, int *y, int *comp)
+{
+   int res;
+   FILE *f = fopen(filename, "rb");
+   if (!f) return 0;
+   res = stbi_pic_info_from_file( f, x, y, comp );
+   fclose(f);
+   return res;
+}
+
+int stbi_pic_info_from_file(FILE *f, int *x, int *y, int *comp)
+{
+   stbi s;
+   int res;
+   long n = ftell(f);
+   start_file(&s, f);
+   res = pic_info(&s, x, y, comp);
+   fseek(f, n, SEEK_SET);
+   return res;
+}
+#endif
+
+#ifndef STBI_NO_HDR
+static int hdr_info(stbi *s, int *x, int *y, int *comp)
+{
+   char buffer[HDR_BUFLEN];
+   char *token;
+   int valid = 0;
+
+   if (strcmp(hdr_gettoken(s,buffer), "#?RADIANCE") != 0) return 0;
+
+   for(;;) {
+      token = hdr_gettoken(s,buffer);
+      if (token[0] == 0) break;
+      if (strcmp(token, "FORMAT=32-bit_rle_rgbe") == 0) valid = 1;
+   }
+
+   if (!valid)    return 0;
+   token = hdr_gettoken(s,buffer);
+   if (strncmp(token, "-Y ", 3))  return 0;
+   token += 3;
+   *y = strtol(token, &token, 10);
+   while (*token == ' ') ++token;
+   if (strncmp(token, "+X ", 3))  return 0;
+   token += 3;
+   *x = strtol(token, NULL, 10);
+   *comp = 3;
+   return 1;
+}
+
+int stbi_hdr_info_from_memory (stbi_uc const *buffer, int len, int *x, int *y, int *comp)
+{
+	stbi s;
+	start_mem(&s,buffer, len);
+	return hdr_info( &s, x, y, comp );
+}
+
+#ifndef STBI_NO_STDIO
+int stbi_hdr_info(char const *filename, int *x, int *y, int *comp)
+{
+   int res;
+   FILE *f = fopen(filename, "rb");
+   if (!f) return 0;
+   res = stbi_hdr_info_from_file( f, x, y, comp );
+   fclose(f);
+   return res;
+}
+
+int stbi_hdr_info_from_file(FILE *f, int *x, int *y, int *comp)
+{
+   stbi s;
+   int res;
+   long n = ftell(f);
+   start_file(&s, f);
+   res = hdr_info(&s, x, y, comp);
+   fseek(f, n, SEEK_SET);
+   return res;
+}
+#endif
+#endif
+
 #endif // STBI_HEADER_FILE_ONLY
 
 /*
    revision history:
+      1.30 (2010-08-18) added stbi_info support for BMP,PSD,HDR,PIC by Martin Golini
+      1.29 (2010-08-16) various warning fixes from Aurelien Pocheville
       1.28 (2010-08-01) fix bug in GIF palette transparency (SpartanJ)
       1.27 (2010-08-01)
              cast-to-uint8 to fix warnings

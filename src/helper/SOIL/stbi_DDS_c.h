@@ -338,9 +338,13 @@ int stbi_dds_info(char const *filename,     int *x, int *y, int *comp, int *isco
 
 int stbi_dds_info_from_file(FILE *f,                  int *x, int *y, int *comp, int *iscompressed)
 {
-	stbi s;
-	start_file(&s, f);
-	return dds_get_info( &s, x, y, comp, iscompressed );
+   stbi s;
+   int res;
+   long n = ftell(f);
+   start_file(&s, f);
+   res = dds_get_info(&s, x, y, comp, iscompressed);
+   fseek(f, n, SEEK_SET);
+   return res;
 }
 #endif
 

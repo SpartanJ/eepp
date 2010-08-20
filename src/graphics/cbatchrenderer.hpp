@@ -18,7 +18,7 @@ typedef struct {
 } eeVertex;
 
 /** @brief A batch rendering class. */
-class cBatchRenderer {
+class EE_API cBatchRenderer {
 	public:
 		cBatchRenderer();
 		~cBatchRenderer();

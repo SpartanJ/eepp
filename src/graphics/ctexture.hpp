@@ -94,14 +94,20 @@ class EE_API cTexture : public cImage {
 		/** Save the Texture to a new File */
 		bool SaveToFile( const std::string& filepath, const EE_SAVETYPE& Format );
 
-		/** Create an Alpha mask from a Color */
-		void CreateMaskFromColor(eeColorA ColorKey, Uint8 Alpha);
-
-		/** Create an Alpha mask from a Color */
-		void CreateMaskFromColor(eeColor ColorKey, Uint8 Alpha);
-
 		/** Replace a color on the texture */
-		void ReplaceColor(eeColorA ColorKey, eeColorA NewColor);
+		void ReplaceColor( const eeColorA& ColorKey, const eeColorA& NewColor);
+
+		/** Create an Alpha mask from a Color */
+		void CreateMaskFromColor( const eeColorA& ColorKey, Uint8 Alpha );
+
+		/** Fill a texture with a color */
+		void FillWithColor( const eeColorA& Color );
+
+		/** Resize the texture */
+		void Resize( const eeUint& new_width, const eeUint& new_height );
+
+		/** Copy an image inside the texture */
+		void CopyImage( cImage * Img, const eeUint& x, const eeUint& y );
 
 		/** @return If the Texture has a copy on the local memory */
 		bool LocalCopy();

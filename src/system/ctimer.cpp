@@ -21,7 +21,7 @@ bool cTimer::setOption( const std::string key, const void * val ) {
 		// Get the current process core mask
 		DWORD procMask;
 		DWORD sysMask;
-		
+
 		#if _MSC_VER >= 1400 && defined (_M_X64)
 		GetProcessAffinityMask(GetCurrentProcess(), (PDWORD_PTR)&procMask, (PDWORD_PTR)&sysMask);
 		#else
@@ -45,7 +45,7 @@ void cTimer::reset() {
 	// Get the current process core mask
 	DWORD procMask;
 	DWORD sysMask;
-	
+
 	#if _MSC_VER >= 1400 && defined (_M_X64)
 	GetProcessAffinityMask(GetCurrentProcess(), (PDWORD_PTR)&procMask, (PDWORD_PTR)&sysMask);
 	#else
@@ -80,7 +80,7 @@ void cTimer::reset() {
 	mLastTime = 0;
 	mZeroClock = clock();
 #else
-	zeroClock = clock();
+	mZeroClock = clock();
 	gettimeofday(&start, NULL);
 #endif
 }
@@ -177,20 +177,12 @@ unsigned long cTimer::getMicroseconds() {
 
 unsigned long cTimer::getMillisecondsCPU() {
 	clock_t newClock = clock();
-	#if EE_PLATFORM == EE_PLATFORM_WIN32
-	return (unsigned long)( (eeFloat)( newClock - mZeroClock ) / ( (eeFloat)CLOCKS_PER_SEC / 1000.0 ) );
-	#else
-	return (unsigned long)( (eeFloat)( newClock - zeroClock ) / ( (eeFloat)EE_CLOCKS_PER_SEC / 1000.0) );
-	#endif
+	return (unsigned long)( (eeDouble)( newClock - mZeroClock ) / ( (eeDouble)CLOCKS_PER_SEC / 1000.0 ) );
 }
 
 unsigned long cTimer::getMicrosecondsCPU() {
 	clock_t newClock = clock();
-	#if EE_PLATFORM == EE_PLATFORM_WIN32
-	return (unsigned long)( (eeFloat)( newClock - mZeroClock ) / ( (eeFloat)CLOCKS_PER_SEC / 1000000.0 ) );
-	#else
-	return (unsigned long)( (eeFloat)( newClock - zeroClock ) / ((eeFloat)EE_CLOCKS_PER_SEC / 1000000.0) );
-	#endif
+	return (unsigned long)( (eeDouble)( newClock - mZeroClock ) / ( (eeDouble)CLOCKS_PER_SEC / 1000000.0 ) );
 }
 
 }}

@@ -27,9 +27,8 @@ namespace EE { namespace System {
 
 class EE_API cTimer {
 	private:
+		clock_t mZeroClock;
 		#if EE_PLATFORM == EE_PLATFORM_WIN32
-			clock_t mZeroClock;
-
 			unsigned long mStartTick;
 			LONGLONG mLastTime;
 			LARGE_INTEGER mStartTime;
@@ -42,7 +41,6 @@ class EE_API cTimer {
 			}
 		#else
 			struct timeval start;
-			clock_t zeroClock;
 		#endif
 	public:
 		/** Timer constructor.  MUST be called on same thread that calls getMilliseconds() */

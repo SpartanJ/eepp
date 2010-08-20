@@ -5,7 +5,7 @@
 
 namespace EE { namespace Audio {
 
-class cAudioDevice {
+class EE_API cAudioDevice {
 	public :
 		static cAudioDevice * 	instance();
 

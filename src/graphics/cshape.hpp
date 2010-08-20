@@ -53,7 +53,7 @@ class EE_API cShape {
 
 		void Draw( const eeFloat& X, const eeFloat& Y, const eeRGBA& Color = eeRGBA(), const eeFloat& Angle = 0.f, const eeFloat& Scale = 1.f, const EE_RENDERALPHAS& Blend = ALPHA_NORMAL, const EE_RENDERTYPE& Effect = RN_NORMAL, const bool& ScaleRendered = true );
 
-		void Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle = 0.f, const eeFloat& Scale = 1.f, const eeRGBA& Color0 = eeRGBA(), const eeRGBA& Color1 = eeRGBA(), const eeRGBA& Color2 = eeRGBA(), const eeRGBA& Color3 = eeRGBA(), const EE_RENDERALPHAS& Blend = ALPHA_NORMAL, const EE_RENDERTYPE& Effect = RN_NORMAL, const bool& ScaleRendered = true );
+		void Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeRGBA& Color0 = eeRGBA(), const eeRGBA& Color1 = eeRGBA(), const eeRGBA& Color2 = eeRGBA(), const eeRGBA& Color3 = eeRGBA(), const EE_RENDERALPHAS& Blend = ALPHA_NORMAL, const EE_RENDERTYPE& Effect = RN_NORMAL, const bool& ScaleRendered = true );
 
 		cTexture * GetTexture();
 

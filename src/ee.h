@@ -91,9 +91,11 @@
 
 	// Graphics
 	#include "graphics/renders.hpp"
+	#include "graphics/cimage.hpp"
 	#include "graphics/ctexture.hpp"
 	#include "graphics/ctextureloader.hpp"
 	#include "graphics/ctexturefactory.hpp"
+	#include "graphics/ctexturepacker.hpp"
 	#include "graphics/cshape.hpp"
 	#include "graphics/cshapegroup.hpp"
 	#include "graphics/cglobalshapegroup.hpp"
@@ -117,6 +119,7 @@
 	#include "graphics/cshader.hpp"
 	#include "graphics/cshaderprogram.hpp"
 	#include "graphics/cshaderprogrammanager.hpp"
+	#include "graphics/ctexturegrouploader.hpp"
 	using namespace EE::Graphics;
 
 	// Gaming

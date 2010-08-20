@@ -5,7 +5,7 @@
 
 namespace EE { namespace Audio {
 
-class cSoundFile {
+class EE_API cSoundFile {
 	public:
 		static cSoundFile* CreateRead(const std::string& Filename);
 		static cSoundFile* CreateRead(const char* Data, std::size_t SizeInBytes);

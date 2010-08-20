@@ -9,7 +9,7 @@
 
 namespace EE { namespace Audio {
 
-class cSoundFileDefault : public cSoundFile {
+class EE_API cSoundFileDefault : public cSoundFile {
 	public :
 		cSoundFileDefault();
 		~cSoundFileDefault();

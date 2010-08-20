@@ -8,7 +8,7 @@ namespace EE { namespace System {
 
 #define THREADS_AUTO (0xFFFFFFFF)
 
-class cResourceLoader {
+class EE_API cResourceLoader {
 	public:
 		typedef boost::function1<void, cResourceLoader *> ResLoadCallback;
 
@@ -32,6 +32,8 @@ class cResourceLoader {
 		void			Threaded( const bool& threaded );
 
 		bool			Clear( const bool& ClearObjectsLoaded = true );
+
+		eeFloat			Progress();
 	protected:
 		bool			mLoaded;
 		bool			mLoading;

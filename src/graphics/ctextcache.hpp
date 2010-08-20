@@ -9,7 +9,7 @@ namespace EE { namespace Graphics {
 class cFont;
 
 /** @brief Cached text for a fast font rendering. */
-class cTextCache {
+class EE_API cTextCache {
 	public:
 		cTextCache( cFont * font, const std::wstring& text = L"", eeColorA FontColor = eeColorA(0xFFFFFFFF), eeColorA ShadowColor = eeColorA(0xFF000000) );
 

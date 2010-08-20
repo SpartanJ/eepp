@@ -5,9 +5,12 @@
 
 namespace EE { namespace Graphics {
 
-class cImage {
+class EE_API cImage {
 	public:
 		cImage();
+
+		/** Use an existing image */
+		cImage( Uint8* data, const eeUint& Width, const eeUint& Height, const eeUint& Channels );
 
 		/** Copy a image data to create the image */
 		cImage( const Uint8* data, const eeUint& Width, const eeUint& Height, const eeUint& Channels );
@@ -61,12 +64,40 @@ class cImage {
 
 		/** Save the Image to a new File in a specific format */
 		virtual bool SaveToFile( const std::string& filepath, const EE_SAVETYPE& Format );
+
+		/** Create an Alpha mask from a Color */
+		virtual void CreateMaskFromColor( const eeColorA& ColorKey, Uint8 Alpha );
+
+		/** Create an Alpha mask from a Color */
+		void CreateMaskFromColor( const eeColor& ColorKey, Uint8 Alpha );
+
+		/** Replace a color on the image */
+		virtual void ReplaceColor( const eeColorA& ColorKey, const eeColorA& NewColor );
+
+		/** Fill the image with a color */
+		virtual void FillWithColor( const eeColorA& Color );
+
+		/** Copy the image to this image data, starting from the position x,y */
+		virtual void CopyImage( cImage * Img, const eeUint& x, const eeUint& y );
+
+		/** Scale the image */
+		virtual void Scale( const eeFloat& scale );
+
+		/** Resize the image */
+		virtual void Resize( const eeUint& new_width, const eeUint& new_height );
+
+		/** Create a thumnail of the image */
+		cImage * Thumbnail( const eeUint& max_width, const eeUint& max_height );
+
+		/** Set as true if you dont want to free the image data ( false as default ). */
+		void AvoidFreeImage( const bool& AvoidFree ) { mAvoidFree = AvoidFree; }
 	protected:
 		Uint8 *			mPixels;
 		eeUint 			mWidth;
 		eeUint 			mHeight;
 		eeUint 			mChannels;
 		Uint32			mSize;
+		bool			mAvoidFree;
 
 		void 			Allocate( const Uint32& size );
 };
