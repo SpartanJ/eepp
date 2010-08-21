@@ -547,7 +547,7 @@ void cFont::Name( const std::string& name ) {
 }
 
 const Uint32& cFont::Id() {
-	return mFontHash;	
+	return mFontHash;
 }
 
 }}

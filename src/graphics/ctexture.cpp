@@ -157,7 +157,7 @@ Uint8 * cTexture::Lock( const bool& ForceRGBA ) {
 
 bool cTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 	if ( ( mFlags & TEX_FLAG_LOCKED ) ) {
-		Int32 width = 0, height = 0;
+		Int32 width = mWidth, height = mHeight;
 		GLuint NTexId = 0;
 
 		if ( Modified || ( mFlags & TEX_FLAG_MODIFIED ) )	{
@@ -166,9 +166,6 @@ bool cTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 
 			if ( PreviousTexture != (GLint)mTexture )
 				glBindTexture(GL_TEXTURE_2D, mTexture);
-
-			glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
-			glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
 
 			Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
 			flags = (mClampMode == EE_CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
@@ -289,6 +286,17 @@ void cTexture::CopyImage( cImage * Img, const eeUint& x, const eeUint& y ) {
 	cImage::CopyImage( Img, x, y );
 
 	Unlock( false, true );
+}
+
+void cTexture::Flip() {
+	Lock();
+
+	cImage::Flip();
+
+	Unlock( false, true );
+
+	mImgWidth 	= mWidth;
+	mImgHeight 	= mHeight;
 }
 
 bool cTexture::LocalCopy() {

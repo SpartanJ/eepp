@@ -2,7 +2,6 @@
 
 /**
 @TODO Load Animated Sprites from Shape Groups.
-@TODO Create a texture packer tool ( texture atlas ).
 @TODO Create a Vertex Buffer Object class ( with and without GL_ARB_vertex_buffer_object ).
 @TODO Add support for Frame Buffer Object and to switch rendering to FBO and Screen.
 @TODO Create a basic UI system ( add basic controls, add skinning support ).
@@ -774,10 +773,10 @@ void cEETest::Screen3() {
 
 void cEETest::Render() {
 	if ( mTextureLoaded ) {
-		cTexture * TexLoaded = TF->GetByName( "1.jpg" );
+		/*cTexture * TexLoaded = TF->GetByName( "1.jpg" );
 
 		if ( NULL != TexLoaded )
-			TexLoaded->Draw( 0, 0 );
+			TexLoaded->Draw( 0, 0 );*/
 	} else
 		mResLoad.Update();
 
@@ -1164,10 +1163,7 @@ void cEETest::Particles() {
 }
 
 int main (int argc, char * argv []) {
-	cEETest Test;
-	Test.Process();
-/*
-	cTexturePacker tp;
+/*	cTexturePacker tp( 512, 512 );
 
 	std::string Path = "/home/downloads/files/temp/bnb/allin/";
 
@@ -1176,9 +1172,12 @@ int main (int argc, char * argv []) {
 
 	tp.AddTexturesPath( Path );
 
-	tp.PackTextures( 256, 256 );
+	tp.PackTextures();
 
 	tp.Save( AppPath() + "res/1.png", EE_SAVE_TYPE_PNG );
 */
+	cEETest Test;
+	Test.Process();
+
 	return 0;
 }

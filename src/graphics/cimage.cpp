@@ -280,4 +280,22 @@ cImage * cImage::Thumbnail( const eeUint& max_width, const eeUint& max_height ) 
 	return NULL;
 }
 
+void cImage::Flip() {
+	if ( NULL != mPixels ) {
+		cImage tImg( mHeight, mWidth, mChannels );
+
+		for ( eeUint y = 0; y < mHeight; y++ )
+			for ( eeUint x = 0; x < mWidth; x++ )
+				tImg.SetPixel( y, x, GetPixel( x, y ) );
+
+		ClearCache();
+
+		mPixels = tImg.GetPixels();
+		mWidth 	= tImg.Width();
+		mHeight = tImg.Height();
+
+		tImg.AvoidFreeImage( true );
+	}
+}
+
 }}

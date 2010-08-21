@@ -123,6 +123,7 @@ void cIsoMap::Draw() {
 	Ty2 = ( Ty + TilesRange + (eeInt)(EE->GetHeight() / (eeFloat)TileHeight) + TilesRange );
 
 	eeFloat TexCoords[8] = { 0, 0, 0, 1, 1, 1, 1, 0 };
+
 	eeColorA SC(50,50,50,100);
 
 	glLoadIdentity();

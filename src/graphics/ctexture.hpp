@@ -109,6 +109,9 @@ class EE_API cTexture : public cImage {
 		/** Copy an image inside the texture */
 		void CopyImage( cImage * Img, const eeUint& x, const eeUint& y );
 
+		/** Flip the texture ( rotate the texture 90º ). Warning: This is flipped in memory, a real flipping. */
+		void Flip();
+
 		/** @return If the Texture has a copy on the local memory */
 		bool LocalCopy();
 

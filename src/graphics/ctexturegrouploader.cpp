@@ -102,7 +102,12 @@ void cTextureGroupLoader::CreateShapes() {
 				std::string ShapeName( &tSh->Name[0] );
 				eeRecti tRect( tSh->X, tSh->Y, tSh->X + tSh->Width, tSh->Y + tSh->Height );
 
-				tSG->Add( new cShape( tTex->TexId(), tRect, tSh->DestWidth, tSh->DestHeight, tSh->OffsetX, tSh->OffsetY, ShapeName ) );
+				cShape * tShape = new cShape( tTex->TexId(), tRect, tSh->DestWidth, tSh->DestHeight, tSh->OffsetX, tSh->OffsetY, ShapeName );
+
+				//if ( tSh->Flags & HDR_SHAPE_FLAG_FLIPED )
+					// Should rotate the shape, but.. shape rotation is not stored.
+
+				tSG->Add( tShape );
 			}
 		} else {
 			/** @TODO: Error Report */

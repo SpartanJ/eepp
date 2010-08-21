@@ -86,6 +86,9 @@ class EE_API cImage {
 		/** Resize the image */
 		virtual void Resize( const eeUint& new_width, const eeUint& new_height );
 
+		/** Flip the image ( rotate the image 90º ) */
+		virtual void Flip();
+
 		/** Create a thumnail of the image */
 		cImage * Thumbnail( const eeUint& max_width, const eeUint& max_height );
 

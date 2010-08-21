@@ -182,6 +182,10 @@ class EE_API cBatchRenderer {
 		void BatchPolygonByPoint( const eeFloat& x, const eeFloat& y );
 
 		void BatchPolygonByPoint( const eeVector2f& Vector );
+
+		void ForceBlendModeChange( const bool& Force );
+
+		const bool& ForceBlendModeChange() const;
 	protected:
 		std::vector<eeVertex> mVertex;
 		eeVertex * mTVertex;
@@ -199,12 +203,13 @@ class EE_API cBatchRenderer {
 		eeVector2f mPosition, mCenter;
 
 		bool mForceRendering;
+		bool mForceBlendMode;
 
 		void Flush();
 		void Init();
 		void AddVertexs( const eeUint& num );
 		void Rotate( const eeVector2f& center, eeVector2f* point, const eeFloat& angle );
-		void SetBlendMode( EE_BATCH_RENDER_METHOD Mode );
+		void SetBlendMode( EE_BATCH_RENDER_METHOD Mode, const bool& Force );
 };
 
 }}

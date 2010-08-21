@@ -19,7 +19,10 @@ typedef struct sShapeHdrS {
 	Int32	OffsetY;
 	Int32	DestWidth;
 	Int32	DestHeight;
+	Uint32	Flags;
 } sShapeHdr;
+
+#define HDR_SHAPE_FLAG_FLIPED ( 1 << 0 )
 
 typedef struct sTextureHdrS {
 	char	Name[ HDR_NAME_SIZE ];

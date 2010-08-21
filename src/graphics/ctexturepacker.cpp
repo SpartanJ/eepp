@@ -4,6 +4,25 @@
 
 namespace EE { namespace Graphics {
 
+cTexturePacker::cTexturePacker( const Uint32& MaxWidth, const Uint32& MaxHeight, const bool& ForcePowOfTwo, const Uint32& PixelBorder, const bool& AllowFlipping ) :
+	mLongestEdge(0),
+	mTotalArea(0),
+	mFreeList(NULL),
+	mWidth(0),
+	mHeight(0),
+	mPacked(false),
+	mAllowFlipping(false),
+	mChild(NULL),
+	mStrategy(PackBig),
+	mCount(0),
+	mParent(NULL),
+	mPlacedCount(0),
+	mForcePowOfTwo(true),
+	mPixelBorder(0)
+{
+	SetOptions( MaxWidth, MaxHeight, ForcePowOfTwo, PixelBorder, AllowFlipping );
+}
+
 cTexturePacker::cTexturePacker() :
 	mLongestEdge(0),
 	mTotalArea(0),
@@ -16,7 +35,9 @@ cTexturePacker::cTexturePacker() :
 	mStrategy(PackBig),
 	mCount(0),
 	mParent(NULL),
-	mPlacedCount(0)
+	mPlacedCount(0),
+	mForcePowOfTwo(true),
+	mPixelBorder(0)
 {
 }
 
@@ -44,6 +65,23 @@ void cTexturePacker::Close() {
 	}
 
 	eeSAFE_DELETE( mChild );
+}
+
+void cTexturePacker::SetOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const bool& ForcePowOfTwo, const Uint32& PixelBorder, const bool& AllowFlipping ) {
+	if ( !mTextures.size() ) { // only can change the dimensions before adding any texture
+		mWidth 	= MaxWidth;
+		mHeight = MaxHeight;
+
+		if ( ForcePowOfTwo && !IsPow2( mWidth ) )
+			mWidth = NextPowOfTwo( mWidth );
+
+		if ( ForcePowOfTwo && !IsPow2( mHeight ) )
+			mHeight = NextPowOfTwo( mHeight );
+
+		mForcePowOfTwo 	= ForcePowOfTwo;
+		mAllowFlipping 	= AllowFlipping;
+		mPixelBorder	= PixelBorder;
+	}
 }
 
 void cTexturePacker::NewFree( Int32 x, Int32 y, Int32 width, Int32 height ) {
@@ -289,8 +327,8 @@ void cTexturePacker::InsertTexture( cTexturePackerTex * t, cTexturePackerNode * 
 	}
 }
 
-void cTexturePacker::CreateChild( const Uint32& MaxWidth, const Uint32& MaxHeight, const bool& ForcePowOfTwo, const Uint32& PixelBorder, const bool& AllowFlipping ) {
-	mChild = new cTexturePacker();
+void cTexturePacker::CreateChild() {
+	mChild = new cTexturePacker( mWidth, mHeight, mForcePowOfTwo, mPixelBorder, mAllowFlipping );
 
 	std::list<cTexturePackerTex>::iterator it;
 	cTexturePackerTex * t = NULL;
@@ -308,7 +346,7 @@ void cTexturePacker::CreateChild( const Uint32& MaxWidth, const Uint32& MaxHeigh
 		}
 	}
 
-	mChild->PackTextures( MaxWidth, MaxHeight, ForcePowOfTwo, PixelBorder, AllowFlipping );
+	mChild->PackTextures();
 }
 
 bool cTexturePacker::AddTexturesPath( std::string TexturesPath ) {
@@ -337,31 +375,31 @@ bool cTexturePacker::AddTexture( const std::string& TexturePath ) {
 		cTexturePackerTex TPack( TexturePath );
 
 		if ( TPack.LoadedInfo() ) {
-			if ( TPack.Width() > mLongestEdge )
-				mLongestEdge = TPack.Width();
+			// Only add the texture if can fit inside the atlas, otherwise it will ignore it
+			if ( ( TPack.Width() + mPixelBorder <= mWidth && TPack.Height() + mPixelBorder <= mHeight ) ||
+				( mAllowFlipping && ( TPack.Width() + mPixelBorder <= mHeight && TPack.Height() + mPixelBorder <= mWidth ) )
+			)
+			{
+				mTotalArea += TPack.Area();
 
-			if ( TPack.Height() > mLongestEdge )
-				mLongestEdge = TPack.Height();
+				// Insert ordered
+				std::list<cTexturePackerTex>::iterator it;
 
-			mTotalArea += TPack.Area();
+				bool Added = false;
 
-			// Insert ordered
-			std::list<cTexturePackerTex>::iterator it;
-
-			bool Added = false;
-
-			for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
-				if ( (*it).Area() < TPack.Area() ) {
-					mTextures.insert( it, TPack );
-					Added = true;
-					break;
+				for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+					if ( (*it).Area() < TPack.Area() ) {
+						mTextures.insert( it, TPack );
+						Added = true;
+						break;
+					}
 				}
-			}
 
-			if ( !Added ) {
-				mTextures.push_back( TPack );
+				if ( !Added ) {
+					mTextures.push_back( TPack );
 
-				return true;
+					return true;
+				}
 			}
 		}
 	}
@@ -369,21 +407,15 @@ bool cTexturePacker::AddTexture( const std::string& TexturePath ) {
 	return false;
 }
 
-Int32 cTexturePacker::PackTextures( const Uint32& MaxWidth, const Uint32& MaxHeight, const bool& ForcePowOfTwo, const Uint32& PixelBorder, const bool& AllowFlipping ) { // pack the textures, the return code is the amount of wasted/unused area.
-	mAllowFlipping			= AllowFlipping;
-	Int32 Width 			= MaxWidth;
-	Int32 Height			= MaxHeight;
+Int32 cTexturePacker::PackTextures() { // pack the textures, the return code is the amount of wasted/unused area.
+	if ( mWidth <= 0 || mHeight <= 0 )
+		return 0;
+
 	cTexturePackerTex * t 	= NULL;
 
-	AddBorderToTextures( (Int32)PixelBorder );
+	AddBorderToTextures( (Int32)mPixelBorder );
 
-	if ( ForcePowOfTwo && !IsPow2( Width ) )
-		Width = NextPowOfTwo( Width );
-
-	if ( ForcePowOfTwo && !IsPow2( Height ) )
-		Height = NextPowOfTwo( Height );
-
-	NewFree( 0, 0, Width, Height );
+	NewFree( 0, 0, mWidth, mHeight );
 
 	mCount = mTextures.size();
 
@@ -425,7 +457,7 @@ Int32 cTexturePacker::PackTextures( const Uint32& MaxWidth, const Uint32& MaxHei
 			#ifdef EE_DEBUG
 			printf( "Creating a new image as a child.\n" );
 			#endif
-			CreateChild( MaxWidth, MaxHeight, ForcePowOfTwo, PixelBorder, AllowFlipping );
+			CreateChild();
 			break;
 		}
 	}
@@ -434,16 +466,11 @@ Int32 cTexturePacker::PackTextures( const Uint32& MaxWidth, const Uint32& MaxHei
 		#ifdef EE_DEBUG
 		printf( "Creating a new image as a child. Some textures couldn't get it: %d\n", mCount );
 		#endif
-		CreateChild( MaxWidth, MaxHeight, ForcePowOfTwo, PixelBorder, AllowFlipping );
+		CreateChild();
 	}
 
-	AddBorderToTextures( -( (Int32)PixelBorder ) );
+	AddBorderToTextures( -( (Int32)mPixelBorder ) );
 
-	if ( ForcePowOfTwo )
-		Height = NextPowOfTwo( Height );
-
-	mWidth 	= Width;
-	mHeight = Height;
 	mPacked = true;
 
 	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
@@ -455,10 +482,16 @@ Int32 cTexturePacker::PackTextures( const Uint32& MaxWidth, const Uint32& MaxHei
 	printf( "Total Area Used: %d. This represents the %4.2f percent \n", mTotalArea, ( (eeDouble)mTotalArea / (eeDouble)( mWidth * mHeight ) ) * 100.0 );
 	#endif
 
-	return ( Width * Height ) - mTotalArea;
+	return ( mWidth * mHeight ) - mTotalArea;
 }
 
 void cTexturePacker::Save( const std::string& Filepath, const EE_SAVETYPE& Format ) {
+	if ( !mPacked )
+		PackTextures();
+
+	if ( !mTextures.size() )
+		return;
+
 	mFilepath = Filepath;
 
 	cImage Img( (Uint32)mWidth, (Uint32)mHeight, (Uint32)4 );
@@ -477,6 +510,9 @@ void cTexturePacker::Save( const std::string& Filepath, const EE_SAVETYPE& Forma
 
 			if ( NULL != data && t->Width() == w && t->Height() == h ) {
 				cImage * ImgCopy = new cImage( data, w, h, c );
+
+				if ( t->Flipped() )
+					Img.Flip();
 
 				Img.CopyImage( ImgCopy, t->X(), t->Y() );
 
@@ -595,6 +631,10 @@ void cTexturePacker::CreateShapesHdr( cTexturePacker * Packer, std::vector<sShap
 			tShapeHdr.X				= tTex->X();
 			tShapeHdr.Y				= tTex->Y();
 			tShapeHdr.Date			= FileGetModificationDate( tTex->Name() );
+			tShapeHdr.Flags			= 0;
+
+			if ( tTex->Flipped() )
+				tShapeHdr.Flags |= HDR_SHAPE_FLAG_FLIPED;
 
 			fs->write( reinterpret_cast<const char*> (&tShapeHdr), sizeof(sShapeHdr) );
 		}
