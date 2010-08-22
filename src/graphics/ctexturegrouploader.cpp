@@ -91,6 +91,9 @@ void cTextureGroupLoader::CreateShapes() {
 
 		// Create the Shape Group with the name of the real texture, not the Childs ( example load 1.png and not 1_ch1.png )
 		if ( 0 == z ) {
+			if ( tTexHdr->Flags & HDR_TEXTURE_FLAG_REMOVE_EXTENSION )
+				name = FileRemoveExtension( name );
+
 			tSG = new cShapeGroup( name );
 			cShapeGroupManager::instance()->Add( tSG );
 		}
@@ -100,6 +103,10 @@ void cTextureGroupLoader::CreateShapes() {
 				sShapeHdr * tSh = &tTexGroup->Shapes[i];
 
 				std::string ShapeName( &tSh->Name[0] );
+
+				if ( tSh->Flags & HDR_SHAPE_FLAG_REMOVE_EXTENSION )
+					ShapeName = FileRemoveExtension( ShapeName );
+
 				eeRecti tRect( tSh->X, tSh->Y, tSh->X + tSh->Width, tSh->Y + tSh->Height );
 
 				cShape * tShape = new cShape( tTex->TexId(), tRect, tSh->DestWidth, tSh->DestHeight, tSh->OffsetX, tSh->OffsetY, ShapeName );

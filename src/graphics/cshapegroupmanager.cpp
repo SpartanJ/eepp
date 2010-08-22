@@ -31,4 +31,48 @@ cShape * cShapeGroupManager::GetShapeById( const Uint32& Id ) {
 	return NULL;
 }
 
+std::vector<cShape*> cShapeGroupManager::GetShapesByPattern( const std::string& name, const std::string& extension, cShapeGroup * SearchInShapeGroup ) {
+	std::vector<cShape*> 	Shapes;
+	std::string 			search;
+	bool 					found 	= true;
+	cShape *				tShape 	= NULL;
+	std::string				realext = "";
+	eeInt 					c 		= 0;
+	if ( extension.size() )
+		realext = "." + extension;
+
+	do {
+		if ( c < 100 )
+			search = StrFormated( "%s%02d%s", name.c_str(), c, realext.c_str() );
+		else if ( c < 1000 )
+			search = StrFormated( "%s%03d%s", name.c_str(), c, realext.c_str() );
+		else if ( c < 10000 )
+			search = StrFormated( "%s%04d%s", name.c_str(), c, realext.c_str() );
+		else
+			found = false;
+
+		if ( found ) {
+			if ( NULL == SearchInShapeGroup )
+				tShape = GetShapeByName( search );
+			else
+				tShape = SearchInShapeGroup->GetByName( search );
+
+			if ( NULL != tShape ) {
+				Shapes.push_back( tShape );
+
+				found = true;
+			} else {
+				if ( 0 == c ) // if didn't found "00", will search at least for "01"
+					found = true;
+				else
+					found = false;
+			}
+		}
+
+		c++;
+	} while ( found );
+
+	return Shapes;
+}
+
 }}

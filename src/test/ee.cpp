@@ -1,7 +1,6 @@
 #include "../ee.h"
 
 /**
-@TODO Load Animated Sprites from Shape Groups.
 @TODO Create a Vertex Buffer Object class ( with and without GL_ARB_vertex_buffer_object ).
 @TODO Add support for Frame Buffer Object and to switch rendering to FBO and Screen.
 @TODO Create a basic UI system ( add basic controls, add skinning support ).
@@ -192,6 +191,7 @@ class cEETest : private cThread {
 		Uint32 mFace;
 
 		cTextureGroupLoader * mTGL;
+		cSprite mBlindy;
 };
 
 
@@ -255,8 +255,6 @@ void cEETest::Init() {
 		Scenes[0] = boost::bind( &cEETest::Screen1, this );
 		Scenes[1] = boost::bind( &cEETest::Screen2, this );
 		Scenes[2] = boost::bind( &cEETest::Screen3, this );
-
-		mTGL = new cTextureGroupLoader( MyPath + "res/1.etg", true );
 
 		InBuf.Start();
 
@@ -491,8 +489,6 @@ void cEETest::LoadTextures() {
 		mFacePtr->Unlock(false,true);
 	}*/
 
-	SP.CreateAnimation();
-
 	for ( Int32 my = 0; my < 4; my++ )
 		for( Int32 mx = 0; mx < 8; mx++ )
 			SP.AddFrame( TN[4], 0, 0, 0, 0, eeRecti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
@@ -532,12 +528,17 @@ void cEETest::LoadTextures() {
 
 	EE->ShowCursor(false);
 
-	CL1.CreateStatic(TN[2]);
+	CL1.AddFrame(TN[2]);
 	CL1.UpdatePos(500,400);
 	CL1.Scale(0.5f);
 
-	CL2.CreateStatic(TN[0], 96, 96);
+	CL2.AddFrame(TN[0], 96, 96);
 	CL2.Color( eeRGBA( 255, 255, 255, 255 ) );
+
+	mTGL = new cTextureGroupLoader( MyPath + "res/1.etg", false );
+
+	mBlindy.AddFramesByPattern( "rn" );
+	mBlindy.UpdatePos( 320.f, 0.f );
 
 	Map.myFont = reinterpret_cast<cFont*> ( &FF );
 
@@ -612,6 +613,16 @@ void cEETest::Screen1() {
 }
 
 void cEETest::Screen2() {
+	if ( mTextureLoaded ) {
+		cTexture * TexLoaded = TF->GetByName( "1.jpg" );
+
+		if ( NULL != TexLoaded )
+			TexLoaded->Draw( 0, 0 );
+	}
+
+	if ( KM->MouseLeftPressed() )
+		TNP[3]->DrawEx( 0.f, 0.f, (eeFloat)EE->GetWidth(), (eeFloat)EE->GetHeight() );
+
 	eeFloat PlanetX = HWidth  - TNP[6]->Width() * 0.5f;
 	eeFloat PlanetY = HHeight - TNP[6]->Height() * 0.5f;
 
@@ -772,12 +783,7 @@ void cEETest::Screen3() {
 }
 
 void cEETest::Render() {
-	if ( mTextureLoaded ) {
-		/*cTexture * TexLoaded = TF->GetByName( "1.jpg" );
-
-		if ( NULL != TexLoaded )
-			TexLoaded->Draw( 0, 0 );*/
-	} else
+	if ( !mTextureLoaded )
 		mResLoad.Update();
 
 	HWidth = EE->GetWidth() * 0.5f;
@@ -858,6 +864,8 @@ void cEETest::Render() {
 
 	FF2->SetText( L"FPS: " + toWStr( EE->FPS() ) );
 	FF2->Draw( EE->GetWidth() - FF2->GetTextWidth() - 15, 0 );
+
+	mBlindy.Draw();
 
 	cUIManager::instance()->Update();
 	cUIManager::instance()->Draw();
@@ -1062,9 +1070,6 @@ void cEETest::Input() {
 			if ( KM->IsKeyUp(KEY_D) )
 				SP.ReverseAnim( !SP.ReverseAnim() );
 
-			if ( KM->MouseLeftPressed() )
-				TNP[3]->DrawEx( 0.f, 0.f, (eeFloat)EE->GetWidth(), (eeFloat)EE->GetHeight() );
-
 			if ( !KM->MouseRightPressed() )
 				DrawBack = false;
 
@@ -1091,19 +1096,6 @@ void cEETest::Process() {
 				Render();
 			else
 				mFontLoader.Update();
-
-			if ( !mTGL->IsLoaded() )
-				mTGL->Update();
-			else {
-				cShapeGroup * tSG = cShapeGroupManager::instance()->GetByName( "1.png" );
-
-				if ( NULL != tSG ) {
-					cShape * tS = tSG->GetByName( "rn01.png" );
-
-					if ( NULL != tS )
-						tS->Draw( 320, 0 );
-				}
-			}
 
 			if ( KM->IsKeyUp(KEY_F12) ) EE->TakeScreenshot( MyPath + "data/screenshots/" ); //After render and before Display
 

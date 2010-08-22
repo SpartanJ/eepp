@@ -5,6 +5,7 @@
 #include "../window/cengine.hpp"
 #include "ctexturefactory.hpp"
 #include "cshape.hpp"
+#include "cshapegroup.hpp"
 
 using namespace EE::Window;
 
@@ -171,6 +172,12 @@ class EE_API cSprite {
 		Uint32 GetTexture( const eeUint& FrameNum = 0, const eeUint& SubFrameNum = 0 );
 
 		/** Creates an static sprite (no animation)
+		* @param Shape The sprite shape
+		* @return True if success
+		*/
+		bool CreateStatic( cShape * Shape );
+
+		/** Creates an static sprite (no animation)
 		* @param TexId The internal Texture Id
 		* @param DestWidth The default destination width of the sprite
 		* @param DestHeight The default destination height of the sprite
@@ -197,6 +204,20 @@ class EE_API cSprite {
 		*/
 		eeUint AddFrame( const Uint32& TexId, const eeFloat& DestWidth = 0, const eeFloat& DestHeight = 0, const eeFloat& offSetX = 0, const eeFloat& offSetY = 0, const eeRecti& TexSector = eeRecti(0,0,0,0) );
 
+		/** Add a frame to the sprite (on the current sub frame)
+		* @param Shape The Shape used in the frame
+		* @return The frame position or 0 if fails
+		*/
+		eeUint AddFrame( cShape * Shape );
+
+		/** Add a vector of shapes as an animation.
+		* @param Shapes The Frames
+		*/
+		bool AddFrames( const std::vector<cShape*> Shapes );
+
+		/** @see cShapeGroupManager::GetShapesByPattern */
+		bool AddFramesByPattern( const std::string& name, const std::string& extension = "", cShapeGroup * SearchInShapeGroup = NULL );
+
 		/** Add a frame on an specific subframe to the sprite
 		* @param TexId The internal Texture Id
 		* @param NumFrame The Frame Number
@@ -209,6 +230,14 @@ class EE_API cSprite {
 		* @return True if success
 		*/
 		bool AddSubFrame( const Uint32& TexId, const eeUint& NumFrame, const eeUint& NumSubFrame, const eeFloat& DestWidth = 0, const eeFloat& DestHeight = 0, const eeFloat& offSetX = 0, const eeFloat& offSetY = 0, const eeRecti& TexSector = eeRecti(0,0,0,0) );
+
+		/** Add a frame on an specific subframe to the sprite
+		* @param Shape The Shape used in the frame
+		* @param NumFrame The Frame Number
+		* @param NumSubFrame The Sub Frame Number
+		* @return True if success
+		*/
+		bool AddSubFrame( cShape * Shape, const eeUint& NumFrame, const eeUint& NumSubFrame );
 
 		/** Draw the sprite to the screen */
 		void Draw();
@@ -232,8 +261,8 @@ class EE_API cSprite {
 
 		/** Update the Frame Number SrcRECT
 		* @param R The new SrcRECT
-		* @param FrameNum The Frame Number to change the SrcRECT. Default change the Current Frame.
-		* @param SubFrame The Sub Frame Number to change the SrcRECT. Default change the Current Sub Frame.
+		* @param FrameNum The Frame Number to change the SrcRECT. Default change the Current mFrames.
+		* @param SubFrame The Sub Frame Number to change the SrcRECT. Default change the Current Sub mFrames.
 		*/
 		void UpdateSprRECT( const eeRecti& R, const eeUint& FrameNum = 0, const eeUint& SubFrame = 0 );
 
@@ -261,7 +290,7 @@ class EE_API cSprite {
 		/** Set the OffSet of the current frame */
 		void OffSet( const eeVector2f& offset );
 
-		/** Reverse the animation from last frame to first frame. */
+		/** Reverse the animation from last frame to first mFrames. */
 		void ReverseAnim( const bool& Reverse ) { mReverseAnim = Reverse; }
 
 		/** @return If the animation is reversed */
@@ -271,7 +300,7 @@ class EE_API cSprite {
 		eeUint GetEndFrame();
 
 		/** @return The number of frames */
-		eeUint GetNumFrames() { return (eeUint)Frame.size(); }
+		eeUint GetNumFrames() { return (eeUint)mFrames.size(); }
 
 		/** Will set Reverse active and set the first frame as the last frame */
 		void SetReverseFromStart();
@@ -286,7 +315,8 @@ class EE_API cSprite {
 		cShape* GetShape( const eeUint& frame, const eeUint& SubFrame );
 	protected:
 		eeFloat mX, mY, mAngle, mScale, mAnimSpeed;
-		bool mAutoAnim, mAnimated, mScaleCentered;
+		bool mAutoAnim;
+		bool mScaleCentered;
 		EE_RENDERALPHAS mBlend;
 		EE_RENDERTYPE mEffect;
 
@@ -307,7 +337,7 @@ class EE_API cSprite {
 			public:
 				std::vector<cShape *> Spr;
 		};
-		std::vector<cFrame> Frame;
+		std::vector<cFrame> mFrames;
 
 		eeUint FramePos();
 		void ClearFrame();

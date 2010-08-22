@@ -22,7 +22,8 @@ typedef struct sShapeHdrS {
 	Uint32	Flags;
 } sShapeHdr;
 
-#define HDR_SHAPE_FLAG_FLIPED ( 1 << 0 )
+#define HDR_SHAPE_FLAG_FLIPED 					( 1 << 0 )
+#define HDR_SHAPE_FLAG_REMOVE_EXTENSION			( 1 << 1 )
 
 typedef struct sTextureHdrS {
 	char	Name[ HDR_NAME_SIZE ];
@@ -31,7 +32,10 @@ typedef struct sTextureHdrS {
 	Int32	Width;
 	Int32	Height;
 	Int32	ShapeCount;
+	Uint32	Flags;
 } sTextureHdr;
+
+#define HDR_TEXTURE_FLAG_REMOVE_EXTENSION		( 1 << 1 )
 
 typedef struct sTextureGroupHdrS {
 	Uint32	Magic;

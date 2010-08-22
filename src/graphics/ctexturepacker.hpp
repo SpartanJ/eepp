@@ -54,7 +54,7 @@ class EE_API cTexturePacker {
 
 		Int32 PackTextures();
 
-		void Save( const std::string& Filepath, const EE_SAVETYPE& Format = EE_SAVE_TYPE_DDS );
+		void Save( const std::string& Filepath, const EE_SAVETYPE& Format = EE_SAVE_TYPE_DDS, const bool& SaveExtensions = false );
 
 		void Close();
 
@@ -88,6 +88,7 @@ class EE_API cTexturePacker {
 		Int32							mPlacedCount;
 		bool							mForcePowOfTwo;
 		Int32							mPixelBorder;
+		bool							mSaveExtensions;
 
 		cTexturePacker * 				GetChild() const;
 

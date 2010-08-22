@@ -485,7 +485,7 @@ Int32 cTexturePacker::PackTextures() { // pack the textures, the return code is 
 	return ( mWidth * mHeight ) - mTotalArea;
 }
 
-void cTexturePacker::Save( const std::string& Filepath, const EE_SAVETYPE& Format ) {
+void cTexturePacker::Save( const std::string& Filepath, const EE_SAVETYPE& Format, const bool& SaveExtensions ) {
 	if ( !mPacked )
 		PackTextures();
 
@@ -493,6 +493,7 @@ void cTexturePacker::Save( const std::string& Filepath, const EE_SAVETYPE& Forma
 		return;
 
 	mFilepath = Filepath;
+	mSaveExtensions = SaveExtensions;
 
 	cImage Img( (Uint32)mWidth, (Uint32)mHeight, (Uint32)4 );
 
@@ -616,9 +617,10 @@ void cTexturePacker::CreateShapesHdr( cTexturePacker * Packer, std::vector<sShap
 		tTex = &(*it);
 
 		if ( tTex->Placed() ) {
-			std::string name = FileNameFromPath(tTex->Name() );
+			std::string name = FileNameFromPath( tTex->Name() );
 
 			memset( tShapeHdr.Name, 0, HDR_NAME_SIZE );
+
 			StrCopy( tShapeHdr.Name, name.c_str(), HDR_NAME_SIZE );
 
 			tShapeHdr.ResourceID	= MakeHash( name );
@@ -636,6 +638,9 @@ void cTexturePacker::CreateShapesHdr( cTexturePacker * Packer, std::vector<sShap
 			if ( tTex->Flipped() )
 				tShapeHdr.Flags |= HDR_SHAPE_FLAG_FLIPED;
 
+			if ( !mSaveExtensions )
+				tShapeHdr.Flags |= HDR_SHAPE_FLAG_REMOVE_EXTENSION;
+
 			fs->write( reinterpret_cast<const char*> (&tShapeHdr), sizeof(sShapeHdr) );
 		}
 	}
@@ -647,6 +652,7 @@ sTextureHdr	cTexturePacker::CreateTextureHdr( cTexturePacker * Packer ) {
 	std::string name( FileNameFromPath( Packer->GetFilepath() ) );
 
 	memset( TexHdr.Name, 0, HDR_NAME_SIZE );
+
 	StrCopy( TexHdr.Name, name.c_str(), HDR_NAME_SIZE );
 
 	TexHdr.ResourceID 	= MakeHash( name );
@@ -654,6 +660,10 @@ sTextureHdr	cTexturePacker::CreateTextureHdr( cTexturePacker * Packer ) {
 	TexHdr.Width 		= Packer->GetWidth();
 	TexHdr.Height		= Packer->GetHeight();
 	TexHdr.ShapeCount 	= Packer->GetPlacedCount();
+	TexHdr.Flags		= 0;
+
+	if ( !mSaveExtensions )
+		TexHdr.Flags |= HDR_TEXTURE_FLAG_REMOVE_EXTENSION;
 
 	return TexHdr;
 }
@@ -675,7 +685,7 @@ void cTexturePacker::ChildSave( const EE_SAVETYPE& Format ) {
 		std::string fExt	= FileExtension( LastParent->GetFilepath() );
 		std::string fName	= fFpath + "_ch" + toStr( ParentCount ) + "." + fExt;
 
-		mChild->Save( fName, Format );
+		mChild->Save( fName, Format, mSaveExtensions );
 	}
 }
 
