@@ -155,7 +155,11 @@ void cIsoMap::Draw() {
 						glVertexPointer( 2, GL_FLOAT, 0, reinterpret_cast<char*>( T ) + sizeof(eeColor) * 4 );
 						glTexCoordPointer( 2, GL_FLOAT, 0, reinterpret_cast<char*>( &TexCoords[0] ) );
 
+						#ifndef EE_GLES
 						glDrawArrays( GL_QUADS, 0, 4 );
+						#else
+						glDrawElements( GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_BYTE, EE_GLES_INDICES );
+						#endif
 
 						if ( TileAABB.Contains( MouseMapPos ) ) {
 							if ( IntersectQuad2( T->Q, eeQuad2f( MouseMapPos, MouseMapPos, MouseMapPos, MouseMapPos ) ) ) {

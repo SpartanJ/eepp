@@ -141,6 +141,7 @@ void cBatchRenderer::BatchQuad( const eeFloat& x, const eeFloat& y, const eeFloa
 		center.y = y + height * 0.5f;
 	}
 
+#ifndef EE_GLES
 	SetBlendMode( EE_GL_QUADS, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
@@ -170,6 +171,37 @@ void cBatchRenderer::BatchQuad( const eeFloat& x, const eeFloat& y, const eeFloa
 	mTVertex->tex 	= mTexCoord[3];
 	mTVertex->color = mVerColor[3];
 	Rotate(center, &mTVertex->pos, angle);
+#else
+	SetBlendMode( EE_GL_TRIANGLE_STRIP, mForceBlendMode );
+
+	mTVertex 		= &mVertex[ mNumVertex ];
+	mTVertex->pos.x = x;
+	mTVertex->pos.y = y;
+	mTVertex->tex 	= mTexCoord[0];
+	mTVertex->color = mVerColor[0];
+	Rotate(center, &mTVertex->pos, angle);
+
+	mTVertex 		= &mVertex[ mNumVertex + 1 ];
+	mTVertex->pos.x = x + width;
+	mTVertex->pos.y = y;
+	mTVertex->tex 	= mTexCoord[3];
+	mTVertex->color = mVerColor[3];
+	Rotate(center, &mTVertex->pos, angle);
+
+	mTVertex 		= &mVertex[ mNumVertex + 2 ];
+	mTVertex->pos.x = x;
+	mTVertex->pos.y = y + height;
+	mTVertex->tex 	= mTexCoord[1];
+	mTVertex->color = mVerColor[1];
+	Rotate(center, &mTVertex->pos, angle);
+
+	mTVertex 		= &mVertex[ mNumVertex + 3 ];
+	mTVertex->pos.x = x + width;
+	mTVertex->pos.y = y + height;
+	mTVertex->tex 	= mTexCoord[2];
+	mTVertex->color = mVerColor[2];
+	Rotate(center, &mTVertex->pos, angle);
+#endif
 
 	AddVertexs(4);
 }
@@ -199,6 +231,7 @@ void cBatchRenderer::BatchQuadEx( const eeFloat& x, const eeFloat& y, const eeFl
 	center.x += x;
 	center.y += y;
 
+#ifndef EE_GLES
 	SetBlendMode( EE_GL_QUADS, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
@@ -228,6 +261,37 @@ void cBatchRenderer::BatchQuadEx( const eeFloat& x, const eeFloat& y, const eeFl
 	mTVertex->tex 	= mTexCoord[3];
 	mTVertex->color = mVerColor[3];
 	Rotate(center, &mTVertex->pos, angle);
+#else
+	SetBlendMode( EE_GL_TRIANGLE_STRIP, mForceBlendMode );
+
+	mTVertex 		= &mVertex[ mNumVertex ];
+	mTVertex->pos.x = mx;
+	mTVertex->pos.y = my;
+	mTVertex->tex 	= mTexCoord[0];
+	mTVertex->color = mVerColor[0];
+	Rotate(center, &mTVertex->pos, angle);
+
+	mTVertex 		= &mVertex[ mNumVertex + 1 ];
+	mTVertex->pos.x = mx + mwidth;
+	mTVertex->pos.y = my;
+	mTVertex->tex 	= mTexCoord[3];
+	mTVertex->color = mVerColor[3];
+	Rotate(center, &mTVertex->pos, angle);
+
+	mTVertex 		= &mVertex[ mNumVertex + 2 ];
+	mTVertex->pos.x = mx;
+	mTVertex->pos.y = my + mheight;
+	mTVertex->tex 	= mTexCoord[1];
+	mTVertex->color = mVerColor[1];
+	Rotate(center, &mTVertex->pos, angle);
+
+	mTVertex 		= &mVertex[ mNumVertex + 3 ];
+	mTVertex->pos.x = mx + mwidth;
+	mTVertex->pos.y = my + mheight;
+	mTVertex->tex 	= mTexCoord[2];
+	mTVertex->color = mVerColor[2];
+	Rotate(center, &mTVertex->pos, angle);
+#endif
 
 	AddVertexs(4);
 }
@@ -236,6 +300,7 @@ void cBatchRenderer::BatchQuadFree( const eeFloat& x0, const eeFloat& y0, const 
 	if ( mNumVertex + 3 >= mVertex.size() )
 		return;
 
+#ifndef EE_GLES
 	SetBlendMode( EE_GL_QUADS, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
@@ -261,6 +326,33 @@ void cBatchRenderer::BatchQuadFree( const eeFloat& x0, const eeFloat& y0, const 
 	mTVertex->pos.y = y3;
 	mTVertex->tex 	= mTexCoord[3];
 	mTVertex->color = mVerColor[3];
+#else
+	SetBlendMode( EE_GL_TRIANGLE_STRIP, mForceBlendMode );
+
+	mTVertex 		= &mVertex[ mNumVertex ];
+	mTVertex->pos.x = x0;
+	mTVertex->pos.y = y0;
+	mTVertex->tex 	= mTexCoord[0];
+	mTVertex->color = mVerColor[0];
+
+	mTVertex 		= &mVertex[ mNumVertex + 1 ];
+	mTVertex->pos.x = x3;
+	mTVertex->pos.y = y3;
+	mTVertex->tex 	= mTexCoord[3];
+	mTVertex->color = mVerColor[3];
+
+	mTVertex 		= &mVertex[ mNumVertex + 2 ];
+	mTVertex->pos.x = x1;
+	mTVertex->pos.y = y1;
+	mTVertex->tex 	= mTexCoord[1];
+	mTVertex->color = mVerColor[1];
+
+	mTVertex 		= &mVertex[ mNumVertex + 3 ];
+	mTVertex->pos.x = x2;
+	mTVertex->pos.y = y2;
+	mTVertex->tex 	= mTexCoord[2];
+	mTVertex->color = mVerColor[2];
+#endif
 
 	AddVertexs(4);
 }
@@ -304,6 +396,7 @@ void cBatchRenderer::BatchQuadFreeEx( const eeFloat& x0, const eeFloat& y0, cons
 	if ( Angle != 0 )
 		mQ = RotateQuadCentered( mQ, Angle, QCenter );
 
+#ifndef EE_GLES
 	SetBlendMode( EE_GL_QUADS, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
@@ -329,6 +422,33 @@ void cBatchRenderer::BatchQuadFreeEx( const eeFloat& x0, const eeFloat& y0, cons
 	mTVertex->pos.y = mQ[3].y;
 	mTVertex->tex 	= mTexCoord[3];
 	mTVertex->color = mVerColor[3];
+#else
+	SetBlendMode( EE_GL_TRIANGLE_STRIP, mForceBlendMode );
+
+	mTVertex 		= &mVertex[ mNumVertex ];
+	mTVertex->pos.x = mQ[0].x;
+	mTVertex->pos.y = mQ[0].y;
+	mTVertex->tex 	= mTexCoord[0];
+	mTVertex->color = mVerColor[0];
+
+	mTVertex 		= &mVertex[ mNumVertex + 1 ];
+	mTVertex->pos.x = mQ[3].x;
+	mTVertex->pos.y = mQ[3].y;
+	mTVertex->tex 	= mTexCoord[3];
+	mTVertex->color = mVerColor[3];
+
+	mTVertex 		= &mVertex[ mNumVertex + 2 ];
+	mTVertex->pos.x = mQ[1].x;
+	mTVertex->pos.y = mQ[1].y;
+	mTVertex->tex 	= mTexCoord[1];
+	mTVertex->color = mVerColor[1];
+
+	mTVertex 		= &mVertex[ mNumVertex + 3 ];
+	mTVertex->pos.x = mQ[2].x;
+	mTVertex->pos.y = mQ[2].y;
+	mTVertex->tex 	= mTexCoord[2];
+	mTVertex->color = mVerColor[2];
+#endif
 
 	AddVertexs(4);
 }

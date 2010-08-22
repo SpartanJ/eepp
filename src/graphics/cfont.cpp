@@ -225,6 +225,14 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 					numvert++;
 				}
 
+				#ifdef EE_GLES
+					glColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<char*>( &Colors[0] ) );
+					glTexCoordPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[ numvert - 4 ] ) );
+					glVertexPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[ numvert - 4 ] ) + sizeof(eeFloat) * 2 );
+
+					glDrawElements( GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_BYTE, EE_GLES_INDICES );
+				#endif
+
 				if (mVerticalDraw)
 					nY += GetFontHeight();
 				else
@@ -232,11 +240,13 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 		}
 	}
 
+	#ifndef EE_GLES
 	glColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<char*>( &Colors[0] ) );
 	glTexCoordPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] ) );
 	glVertexPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] ) + sizeof(eeFloat) * 2 );
 
 	glDrawArrays( GL_QUADS, 0, numvert );
+	#endif
 
 	if ( Angle != 0.0f || Scale != 1.0f )
 		glPopMatrix();
@@ -336,12 +346,20 @@ void cFont::SubDraw( const std::wstring& Text, const eeFloat& X, const eeFloat& 
 				break;
 			default:
 				for ( Uint8 z = 0; z < 8; z+=2 ) {
-					mRenderCoords[ numvert ].TexCoords[0] = C->TexCoords[z];
-					mRenderCoords[ numvert ].TexCoords[1] = C->TexCoords[ z + 1 ];
-					mRenderCoords[ numvert ].Vertex[0] = cX + C->Vertex[z] + nX;
-					mRenderCoords[ numvert ].Vertex[1] = cY + C->Vertex[ z + 1 ] + nY;
+					mRenderCoords[ numvert ].TexCoords[0] 	= C->TexCoords[z];
+					mRenderCoords[ numvert ].TexCoords[1] 	= C->TexCoords[ z + 1 ];
+					mRenderCoords[ numvert ].Vertex[0] 		= cX + C->Vertex[z] + nX;
+					mRenderCoords[ numvert ].Vertex[1]		= cY + C->Vertex[ z + 1 ] + nY;
 					numvert++;
 				}
+
+				#ifdef EE_GLES
+					glColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<char*>( &mColors[0] ) );
+					glTexCoordPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &mRenderCoords[ numvert - 4 ] ) );
+					glVertexPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &mRenderCoords[ numvert - 4 ] ) + sizeof(eeFloat) * 2 );
+
+					glDrawElements( GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_BYTE, EE_GLES_INDICES );
+				#endif
 
 				if (mVerticalDraw)
 					nY += GetFontHeight();
@@ -350,11 +368,13 @@ void cFont::SubDraw( const std::wstring& Text, const eeFloat& X, const eeFloat& 
 		}
 	}
 
+	#ifndef EE_GLES
 	glColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<char*>( &mColors[0] ) );
 	glTexCoordPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &mRenderCoords[0] ) );
 	glVertexPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &mRenderCoords[0] ) + sizeof(eeFloat) * 2 );
 
 	glDrawArrays( GL_QUADS, 0, numvert );
+	#endif
 
 	if ( Angle != 0.0f || Scale != 1.0f )
 		glPopMatrix();
