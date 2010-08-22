@@ -188,7 +188,9 @@ bool cSprite::CreateStatic( const Uint32& TexId, const eeFloat& DestWidth, const
 	if ( cTextureFactory::instance()->TextureIdExists( TexId ) ) {
 		Reset();
 
-		return 0 != AddFrame( TexId, DestWidth, DestHeight, offSetX, offSetY, TexSector );
+		AddFrame( TexId, DestWidth, DestHeight, offSetX, offSetY, TexSector );
+
+		return true;
 	}
 
 	return false;
