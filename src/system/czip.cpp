@@ -13,12 +13,11 @@ cZip::~cZip() {
 
 bool cZip::Create( const std::string& path ) {
 	if ( !FileExists(path) ) {
-		mZip = CreateZip( path.c_str(), 0 );
+		int err;
+		mZip = zip_open( path.c_str(), ZIP_CREATE, &err );
 
 		if ( 0 == CheckPack() ) {
 			mZipPath = path;
-
-			mState = ZIP_CREATED;
 
 			mIsOpen = true;
 
@@ -32,32 +31,19 @@ bool cZip::Create( const std::string& path ) {
 }
 
 bool cZip::Open( const std::string& path ) {
-	if ( FileExists(path) ) {
-		mZip = OpenZip( path.c_str(), 0 );
+	if ( FileExists( path ) ) {
+		int err;
+		mZip = zip_open( path.c_str(), 0, &err );
 
 		if ( 0 == CheckPack() ) {
-			ZIPENTRY ze;
-
-			GetZipItem( mZip, -1 , &ze );
-
-			Uint32 numitems = ze.index;
-
-			for ( Uint32 zi = 0; zi < numitems; zi++ ) {
-				GetZipItem( mZip, zi, &ze );
-
-				ZIPENTRY zet = ze;
-
-				zipFiles.push_back( zet );
-			}
-
 			mZipPath = path;
-
-			mState = ZIP_OPEN;
 
 			mIsOpen = true;
 
 			return true;
 		}
+	} else {
+		return Create( path );
 	}
 
 	return false;
@@ -65,13 +51,13 @@ bool cZip::Open( const std::string& path ) {
 
 bool cZip::Close() {
 	if ( 0 == CheckPack() ) {
-		CloseZip( mZip );
-
-		zipFiles.clear();
+		zip_close( mZip );
 
 		mIsOpen = false;
 
 		mZipPath = "";
+
+		mZip = NULL;
 
 		return true;
 	}
@@ -89,42 +75,19 @@ bool cZip::AddFile( const std::string& path, const std::string& inpack ) {
 
 bool cZip::AddFile( const Uint8 * data, const Uint32& dataSize, const std::string& inpack ) {
 	if ( 0 == CheckPack() ) {
-		if ( ZIP_CREATED == mState ) {
-			Int32 Result = ZipAdd( mZip , inpack.c_str(), const_cast<Uint8*>( data ), (unsigned int)dataSize );
+		struct zip_source * zs = zip_source_buffer( mZip, (const void*)data, dataSize, 0 );
 
-			if ( ZR_OK == Result )
+		if ( NULL != zs ) {
+			Int32 Result = zip_add( mZip, inpack.c_str(), zs );
+
+			std::string path = mZipPath;
+			Close();
+			Open( path );
+
+			if ( -1 != Result )
 				return true;
-		} else {
-			std::string ZipNewPath = mZipPath + ".temp";
-
-			cZip Zip;
-
-			if ( Zip.Create( ZipNewPath ) ) {
-				for ( eeUint i = 0; i < zipFiles.size(); i++ ) {
-					std::vector<Uint8> tdata;
-
-					ExtractFileToMemory( zipFiles[i].name, tdata );
-					Zip.AddFile( tdata, zipFiles[i].name );
-				}
-
-				Zip.AddFile( data, dataSize, inpack );
-
-				Zip.Close();
-
-				std::string ZPath = mZipPath;
-
-				Close();
-
-				remove( ZPath.c_str() );
-				rename( ZipNewPath.c_str(), ZPath.c_str() );
-
-				Open( ZPath );
-
-				return true;
-			}
-
-			return false;
-		}
+		} else
+			zip_source_free( zs );
 	}
 
 	return false;
@@ -152,57 +115,17 @@ bool cZip::EraseFiles( const std::vector<std::string>& paths ) {
 	std::vector<Int32> files;
 	Int32 Ex;
 	Uint32 i = 0;
-	std::vector<ZIPENTRY> uEntry;
-	bool Remove;
-
-	ChangeState( ZIP_OPEN );
+	std::vector<struct zip_stat> uEntry;
 
 	for ( i = 0; i < paths.size(); i++ ) {
 		Ex = Exists( paths[i] );
 
 		if ( Ex  == -1 )
 			return false;
-		else
-			files.push_back( Ex );
-	}
-
-	for ( i = 0; i < zipFiles.size(); i++ ) {
-		Remove = false;
-
-		for ( Uint32 u = 0; u < files.size(); u++ ) {
-			if ( files[u] == static_cast<Int32>(i) )
-				Remove = true;
+		else {
+			if ( zip_delete( mZip, Ex ) == -1 )
+				return false;
 		}
-
-		if ( !Remove ) {
-			uEntry.push_back( zipFiles[i] );
-		}
-	}
-
-	std::string ZipNewPath = mZipPath + ".temp";
-
-	cZip Zip;
-
-	if ( Zip.Create( ZipNewPath ) ) {
-		for ( i = 0; i < uEntry.size(); i++ ) {
-			std::vector<Uint8> data;
-
-			ExtractFileToMemory( uEntry[i].name, data );
-			Zip.AddFile( data, uEntry[i].name );
-		}
-
-		Zip.Close();
-
-		std::string ZPath = mZipPath;
-
-		Close();
-
-		remove( ZPath.c_str() );
-		rename( ZipNewPath.c_str(), ZPath.c_str() );
-
-		Open( ZPath );
-
-		return true;
 	}
 
 	return false;
@@ -213,14 +136,12 @@ bool cZip::ExtractFile( const std::string& path , const std::string& dest ) {
 
 	bool Ret = false;
 
-	ChangeState( ZIP_OPEN );
+	std::vector<Uint8> data;
 
-	Int32 index = Exists( path );
+	Ret = ExtractFileToMemory( path, data );
 
-	if ( 0 == CheckPack() && -1 != index ) {
-		if ( ZR_OK == UnzipItem( mZip, index, dest.c_str() ) )
-			 Ret = true;
-	}
+	if ( Ret )
+		FileWrite( dest, data );
 
 	Unlock();
 
@@ -232,16 +153,22 @@ bool cZip::ExtractFileToMemory( const std::string& path, std::vector<Uint8>& dat
 
 	bool Ret = false;
 	Int32 Pos = Exists( path );
-	Uint32 Result = 0;
+	int Result = 0;
 
 	if ( 0 == CheckPack() && -1 != Pos ) {
 		data.clear();
-		data.resize( zipFiles[Pos].unc_size );
 
-		Result = UnzipItem( mZip, Pos, reinterpret_cast<void*> (&data[0]), (unsigned int)zipFiles[Pos].unc_size );
+		struct zip_file * zf = zip_fopen( mZip, path.c_str(), 0 );
 
-		if ( ZR_OK == Result ) {
-			Ret = true;
+		if ( NULL != zf ) {
+			data.resize( zf->bytes_left );
+
+			Result = zip_fread( zf, reinterpret_cast<void*> (&data[0]), zf->bytes_left );
+
+			zip_fclose(zf);
+
+			if ( -1 != Result )
+				Ret = true;
 		}
 	}
 
@@ -255,16 +182,21 @@ bool cZip::ExtractFileToMemory( const std::string& path, Uint8** data, Uint32* d
 
 	bool Ret = false;
 	Int32 Pos = Exists( path );
-	Uint32 Result = 0;
+	Int32 Result = 0;
 
 	if ( 0 == CheckPack() && -1 != Pos ) {
-		*dataSize = zipFiles[Pos].unc_size;
-		*data = new Uint8[ (*dataSize) ];
+		struct zip_file * zf = zip_fopen( mZip, path.c_str(), 0 );
 
-		Result = UnzipItem( mZip, Pos, reinterpret_cast<void*> ( *data ), (unsigned int)zipFiles[Pos].unc_size );
+		if ( NULL != zf ) {
+			*dataSize = zf->bytes_left;
+			*data = new Uint8[ (*dataSize) ];
 
-		if ( ZR_OK == Result ) {
-			Ret = true;
+			Result = zip_fread( zf, reinterpret_cast<void*> (&data[0]), zf->bytes_left );
+
+			zip_fclose(zf);
+
+			if ( -1 != Result )
+				Ret = true;
 		}
 	}
 
@@ -274,11 +206,7 @@ bool cZip::ExtractFileToMemory( const std::string& path, Uint8** data, Uint32* d
 }
 
 Int32 cZip::Exists( const std::string& path ) {
-	for ( Uint32 i = 0; i < zipFiles.size(); i++ )
-		if ( strcmp( path.c_str(), zipFiles[i].name ) == 0 )
-			return i;
-
-	return -1;
+	return zip_name_locate( mZip, path.c_str(), 0 );
 }
 
 Int8 cZip::CheckPack() {
@@ -288,22 +216,18 @@ Int8 cZip::CheckPack() {
 std::vector<std::string> cZip::GetFileList() {
 	std::vector<std::string> tmpv;
 
-	tmpv.resize( zipFiles.size() );
+	Int32 numfiles = zip_get_num_files( mZip );
 
-	for ( Uint32 i = 0; i < zipFiles.size(); i++ )
-		tmpv[i] = std::string ( zipFiles[i].name );
+	tmpv.resize( numfiles );
+
+	for ( Int32 i = 0; i < numfiles; i++ ) {
+		struct zip_stat zs;
+
+		if ( -1 != zip_stat_index( mZip, i, 0, &zs ) )
+			tmpv[i] = std::string ( zs.name );
+	}
 
 	return tmpv;
-}
-
-void cZip::ChangeState( const Uint32& State ) {
-	if ( State == ZIP_OPEN ) {
-		if ( ZIP_CREATED == mState ) {
-			std::string path = mZipPath;
-			Close();
-			Open( path );
-		}
-	}
 }
 
 }}

@@ -17,9 +17,6 @@ class hkGlyph {
 		inline FT_UInt		Index() const 						{	return mIndex;				}
 		inline void		Index( FT_UInt index ) 				{	mIndex = index;				}
 
-		inline FT_Bitmap *	Bitmap()							{	return &mBitmap;			}
-		inline void		Bitmap( const FT_Bitmap& bitmap ) 	{	mBitmap = bitmap;			}
-
 		inline FT_Bitmap *	Pixmap()							{	return &mPixmap;			}
 		inline void		Pixmap( const FT_Bitmap& pixmap ) 	{	mPixmap = pixmap;			}
 
@@ -41,14 +38,13 @@ class hkGlyph {
 		inline int			Advance() const 					{	return mAdvance;			}
 		inline void		Advance( int advance ) 				{	mAdvance = advance;			}
 
-		inline u16	Cached() const 					{	return mCached;			}
-		inline void		Cached( u16 cached ) 			{	mCached = cached;			}
+		inline u16	Cached() const 							{	return mCached;			}
+		inline void		Cached( u16 cached ) 				{	mCached = cached;			}
 
 		void 				Flush();
 	protected:
 		int			mStored;
 		FT_UInt		mIndex;
-		FT_Bitmap	mBitmap;
 		FT_Bitmap	mPixmap;
 		int			mMinX;
 		int			mMaxX;

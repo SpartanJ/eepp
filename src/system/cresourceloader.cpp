@@ -1,4 +1,5 @@
 #include "cresourceloader.hpp"
+#include "clog.hpp"
 
 namespace EE { namespace System {
 

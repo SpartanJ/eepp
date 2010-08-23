@@ -13,7 +13,6 @@ hkGlyph::hkGlyph() :
 	mAdvance(0),
 	mCached(0)
 {
-	memset( &mBitmap, 0, sizeof(mBitmap) );
 	memset( &mPixmap, 0, sizeof(mPixmap) );
 }
 
@@ -25,7 +24,6 @@ void hkGlyph::Flush() {
 	mStored = 0;
 	mIndex = 0;
 
-	hkSAFE_FREE( mBitmap.buffer );
 	hkSAFE_FREE( mPixmap.buffer );
 
 	mCached = 0;

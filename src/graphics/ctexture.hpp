@@ -211,6 +211,7 @@ class EE_API cTexture : public cImage {
 		/** Reload the texture from the current local copy. */
 		void Reload();
 
+		/** Set a pixel to the locked texture. */
 		void SetPixel( const eeUint& x, const eeUint& y, const eeColorA& Color );
 	protected:
 		std::string 	mFilepath;

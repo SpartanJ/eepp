@@ -1,8 +1,8 @@
 #include "../ee.h"
 
 /**
-@TODO Create a Vertex Buffer Object class ( with and without GL_ARB_vertex_buffer_object ).
 @TODO Add support for Frame Buffer Object and to switch rendering to FBO and Screen.
+@TODO Create a Vertex Buffer Object class ( with and without GL_ARB_vertex_buffer_object ).
 @TODO Create a basic UI system ( add basic controls, add skinning support ).
 @TODO Support multitexturing.
 @TODO Encapsulate SDL and OpenGL ( and remove unnecessary dependencies ).
@@ -66,7 +66,6 @@ class cEETest : private cThread {
 		void Process();
 		void Render();
 		void Input();
-		void InputCallback(EE_Event* event);
 		void ParticlesCallback(cParticle* P, cParticleSystem* Me);
 
 		void ParticlesThread();
@@ -249,8 +248,6 @@ void cEETest::Init() {
 		JM = cJoystickManager::instance();
 
 		PS.resize(5);
-
-		KM->PushCallback( std::bind1st( std::mem_fun( &cEETest::InputCallback ), this) );
 
 		Scenes[0] = boost::bind( &cEETest::Screen1, this );
 		Scenes[1] = boost::bind( &cEETest::Screen2, this );
@@ -437,8 +434,11 @@ void cEETest::LoadTextures() {
 	std::vector<std::string> files = PakTest.GetFileList();
 
 	for ( i = 0; i < files.size(); i++ ) {
-		if ( "jpg" == FileExtension( files[i] ) )
-			mResLoad.Add( new cTextureLoader( &PakTest, files[i] ) );
+		std::string name( files[i] );
+
+		if ( "jpg" == FileExtension( name ) ) {
+			mResLoad.Add( new cTextureLoader( &PakTest, name ) );
+		}
 	}
 
 	mResLoad.Add( new cSoundLoader( &SndMng, "mysound", &PAK, "sound.ogg" ) );
@@ -1070,7 +1070,9 @@ void cEETest::Input() {
 			if ( KM->IsKeyUp(KEY_D) )
 				SP.ReverseAnim( !SP.ReverseAnim() );
 
-			if ( !KM->MouseRightPressed() )
+			if ( KM->MouseRightPressed() )
+				DrawBack = true;
+			else
 				DrawBack = false;
 
 			if ( KM->IsKeyUp( KEY_P ) )
@@ -1120,15 +1122,6 @@ void cEETest::End() {
 	delete mTGL;
 
 	cEngine::DestroySingleton();
-}
-
-void cEETest::InputCallback(EE_Event* event) {
-	switch(event->type) {
-		case SDL_MOUSEBUTTONDOWN:
-			if (event->button.button == SDL_BUTTON_RIGHT)
-				DrawBack = true;
-			break;
-	}
 }
 
 void cEETest::ParticlesCallback(cParticle* P, cParticleSystem* Me) {

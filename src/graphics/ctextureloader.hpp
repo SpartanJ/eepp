@@ -25,6 +25,8 @@ class EE_API cTextureLoader : public cObjectLoader {
 
 		void 			Update();
 
+		const std::string& Filepath() const { return mFilepath; }
+
 		const Uint32& 	Id() const;
 	protected:
 		Uint32			mLoadType; 	// From memory, from path, from pack

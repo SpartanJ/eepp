@@ -176,14 +176,231 @@
 		<Unit filename="src/helper/haikuttf/hkglyph.cpp" />
 		<Unit filename="src/helper/haikuttf/hkglyph.hpp" />
 		<Unit filename="src/helper/haikuttf/sophist.h" />
+		<Unit filename="src/helper/libzip/config.h" />
+		<Unit filename="src/helper/libzip/mkstemp.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip.h" />
+		<Unit filename="src/helper/libzip/zip_add.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_add_dir.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_close.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_delete.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_dirent.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_entry_free.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_entry_new.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_err_str.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_error.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_error_clear.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_error_get.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_error_get_sys_type.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_error_strerror.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_error_to_str.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_fclose.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_file_error_clear.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_file_error_get.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_file_get_offset.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_file_strerror.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_filerange_crc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_fopen.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_fopen_index.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_fread.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_free.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_get_archive_comment.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_get_archive_flag.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_get_file_comment.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_get_name.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_get_num_files.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_memdup.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_name_locate.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_new.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_open.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_rename.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_replace.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_set_archive_comment.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_set_archive_flag.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_set_file_comment.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_set_name.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_source_buffer.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_source_file.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_source_filep.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_source_free.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_source_function.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_source_zip.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_stat.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_stat_index.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_stat_init.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_strerror.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_unchange.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_unchange_all.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_unchange_archive.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zip_unchange_data.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/libzip/zipint.h" />
 		<Unit filename="src/helper/stb_vorbis/stb_vorbis.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src/helper/stb_vorbis/stb_vorbis.h" />
-		<Unit filename="src/helper/zip_utils/unzip.cpp" />
-		<Unit filename="src/helper/zip_utils/unzip.h" />
-		<Unit filename="src/helper/zip_utils/zip.cpp" />
-		<Unit filename="src/helper/zip_utils/zip.h" />
+		<Unit filename="src/helper/zlib/adler32.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/zlib/compress.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/zlib/crc32.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/zlib/crc32.h" />
+		<Unit filename="src/helper/zlib/deflate.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/zlib/deflate.h" />
+		<Unit filename="src/helper/zlib/gzclose.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/zlib/gzguts.h" />
+		<Unit filename="src/helper/zlib/gzlib.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/zlib/gzread.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/zlib/gzwrite.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/zlib/infback.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/zlib/inffast.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/zlib/inffast.h" />
+		<Unit filename="src/helper/zlib/inffixed.h" />
+		<Unit filename="src/helper/zlib/inflate.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/zlib/inflate.h" />
+		<Unit filename="src/helper/zlib/inftrees.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/zlib/inftrees.h" />
+		<Unit filename="src/helper/zlib/trees.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/zlib/trees.h" />
+		<Unit filename="src/helper/zlib/uncompr.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/zlib/zconf.h" />
+		<Unit filename="src/helper/zlib/zlib.h" />
+		<Unit filename="src/helper/zlib/zutil.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src/helper/zlib/zutil.h" />
 		<Unit filename="src/math/base.hpp" />
 		<Unit filename="src/math/cmtrand.cpp" />
 		<Unit filename="src/math/cmtrand.hpp" />

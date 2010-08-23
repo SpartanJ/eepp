@@ -3,8 +3,8 @@
 
 #include "base.hpp"
 #include "cpack.hpp"
-#include "../helper/zip_utils/unzip.h"
-#include "../helper/zip_utils/zip.h"
+#include "../helper/libzip/zip.h"
+#include "../helper/libzip/zipint.h"
 
 namespace EE { namespace System {
 
@@ -64,21 +64,9 @@ class EE_API cZip : public cPack {
 		/** Add a new file from memory */
 		bool AddFile( std::vector<Uint8>& data, const std::string& inpack );
 	protected:
-		HZIP mZip;
-
-		std::vector<ZIPENTRY> zipFiles;
+		struct zip * mZip;
 
 		std::string mZipPath;
-
-		Uint32 mState;
-
-		enum ZIP_FILE_STATE {
-			ZIP_CLOSED = 0,
-			ZIP_CREATED,
-			ZIP_OPEN
-		};
-
-		void ChangeState( const Uint32& State = ZIP_OPEN );
 };
 
 }}

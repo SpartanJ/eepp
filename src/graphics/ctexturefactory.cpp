@@ -83,6 +83,8 @@ Uint32 cTextureFactory::PushTexture( const std::string& Filepath, const Uint32& 
 
 	Unlock();
 
+	cLog::instance()->Write( "Texture " + Filepath + " loaded." );
+
 	return Pos;
 }
 

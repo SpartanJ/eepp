@@ -145,7 +145,7 @@ FT_Error hkFont::GlyphLoad( u16 ch, hkGlyph * cached, int want ) {
 		cached->Stored( cached->Stored() | CACHED_METRICS );
 	}
 
-	if ( ( ( want & CACHED_BITMAP ) && !( cached->Stored() & CACHED_BITMAP ) ) || ( ( want & CACHED_PIXMAP ) && !( cached->Stored() & CACHED_PIXMAP) ) ) {
+	if ( ( want & CACHED_PIXMAP ) && !( cached->Stored() & CACHED_PIXMAP) ) {
 		int mono = ( want & CACHED_BITMAP );
 		int i;
 		FT_Bitmap* src;
@@ -193,21 +193,9 @@ FT_Error hkFont::GlyphLoad( u16 ch, hkGlyph * cached, int want ) {
 			src = &glyph->bitmap;
 		}
 
-		if ( mono ) {
-			dst = cached->Bitmap();
-		} else {
-			dst = cached->Pixmap();
-		}
+		dst = cached->Pixmap();
 
 		memcpy( dst, src, sizeof( *dst ) );
-
-		if ( src->pixel_mode == FT_PIXEL_MODE_MONO ) {
-			dst->pitch *= 8;
-		} else if ( src->pixel_mode == FT_PIXEL_MODE_GRAY2 ) {
-			dst->pitch *= 4;
-		} else if ( src->pixel_mode == FT_PIXEL_MODE_GRAY4 ) {
-			dst->pitch *= 2;
-		}
 
 		if( TTF_HANDLE_STYLE_BOLD(this) ) {
 			int bump = mGlyphOverhang;
@@ -233,105 +221,7 @@ FT_Error hkFont::GlyphLoad( u16 ch, hkGlyph * cached, int want ) {
 				int soffset = i * src->pitch;
 				int doffset = i * dst->pitch;
 
-				if ( mono ) {
-					unsigned char *srcp = src->buffer + soffset;
-					unsigned char *dstp = dst->buffer + doffset;
-					int j;
-					if ( src->pixel_mode == FT_PIXEL_MODE_MONO ) {
-						for ( j = 0; j < src->width; j += 8 ) {
-							unsigned char ch = *srcp++;
-							*dstp++ = (ch&0x80) >> 7;
-							ch <<= 1;
-							*dstp++ = (ch&0x80) >> 7;
-							ch <<= 1;
-							*dstp++ = (ch&0x80) >> 7;
-							ch <<= 1;
-							*dstp++ = (ch&0x80) >> 7;
-							ch <<= 1;
-							*dstp++ = (ch&0x80) >> 7;
-							ch <<= 1;
-							*dstp++ = (ch&0x80) >> 7;
-							ch <<= 1;
-							*dstp++ = (ch&0x80) >> 7;
-							ch <<= 1;
-							*dstp++ = (ch&0x80) >> 7;
-						}
-					}  else if ( src->pixel_mode == FT_PIXEL_MODE_GRAY2 ) {
-						for ( j = 0; j < src->width; j += 4 ) {
-							unsigned char ch = *srcp++;
-							*dstp++ = (((ch&0xA0) >> 6) >= 0x2) ? 1 : 0;
-							ch <<= 2;
-							*dstp++ = (((ch&0xA0) >> 6) >= 0x2) ? 1 : 0;
-							ch <<= 2;
-							*dstp++ = (((ch&0xA0) >> 6) >= 0x2) ? 1 : 0;
-							ch <<= 2;
-							*dstp++ = (((ch&0xA0) >> 6) >= 0x2) ? 1 : 0;
-						}
-					} else if ( src->pixel_mode == FT_PIXEL_MODE_GRAY4 ) {
-						for ( j = 0; j < src->width; j += 2 ) {
-							unsigned char ch = *srcp++;
-							*dstp++ = (((ch&0xF0) >> 4) >= 0x8) ? 1 : 0;
-							ch <<= 4;
-							*dstp++ = (((ch&0xF0) >> 4) >= 0x8) ? 1 : 0;
-						}
-					} else {
-						for ( j = 0; j < src->width; j++ ) {
-							unsigned char ch = *srcp++;
-							*dstp++ = (ch >= 0x80) ? 1 : 0;
-						}
-					}
-				} else if ( src->pixel_mode == FT_PIXEL_MODE_MONO ) {
-					unsigned char *srcp = src->buffer + soffset;
-					unsigned char *dstp = dst->buffer + doffset;
-					unsigned char ch;
-					int j, k;
-					for ( j = 0; j < src->width; j += 8) {
-						ch = *srcp++;
-						for (k = 0; k < 8; ++k) {
-							if ((ch&0x80) >> 7) {
-								*dstp++ = NUM_GRAYS - 1;
-							} else {
-								*dstp++ = 0x00;
-							}
-							ch <<= 1;
-						}
-					}
-				} else if ( src->pixel_mode == FT_PIXEL_MODE_GRAY2 ) {
-					unsigned char *srcp = src->buffer + soffset;
-					unsigned char *dstp = dst->buffer + doffset;
-					unsigned char ch;
-					int j, k;
-					for ( j = 0; j < src->width; j += 4 ) {
-						ch = *srcp++;
-						for ( k = 0; k < 4; ++k ) {
-							if ((ch&0xA0) >> 6) {
-								*dstp++ = NUM_GRAYS * ((ch&0xA0) >> 6) / 3 - 1;
-							} else {
-								*dstp++ = 0x00;
-							}
-							ch <<= 2;
-						}
-					}
-				} else if ( src->pixel_mode == FT_PIXEL_MODE_GRAY4 ) {
-					unsigned char *srcp = src->buffer + soffset;
-					unsigned char *dstp = dst->buffer + doffset;
-					unsigned char ch;
-					int j, k;
-					for ( j = 0; j < src->width; j += 2 ) {
-						ch = *srcp++;
-						for ( k = 0; k < 2; ++k ) {
-							if ((ch&0xF0) >> 4) {
-							    *dstp++ = NUM_GRAYS * ((ch&0xF0) >> 4) / 15 - 1;
-							} else {
-								*dstp++ = 0x00;
-							}
-							ch <<= 4;
-						}
-					}
-				} else {
-					memcpy(dst->buffer+doffset,
-					       src->buffer+soffset, src->pitch);
-				}
+				memcpy(dst->buffer+doffset, src->buffer+soffset, src->pitch);
 			}
 		}
 
@@ -344,27 +234,22 @@ FT_Error hkFont::GlyphLoad( u16 ch, hkGlyph * cached, int want ) {
 
 			for( row = dst->rows - 1; row >= 0; --row ) {
 				pixmap = (u8*) dst->buffer + row * dst->pitch;
+
 				for( offset=1; offset <= mGlyphOverhang; ++offset ) {
 					for( col = dst->width - 1; col > 0; --col ) {
-						if( mono ) {
-							pixmap[col] |= pixmap[col-1];
-						} else {
-							pixel = (pixmap[col] + pixmap[col-1]);
-							if( pixel > NUM_GRAYS - 1 ) {
-								pixel = NUM_GRAYS - 1;
-							}
-							pixmap[col] = (u8) pixel;
+						pixel = (pixmap[col] + pixmap[col-1]);
+
+						if( pixel > NUM_GRAYS - 1 ) {
+							pixel = NUM_GRAYS - 1;
 						}
+
+						pixmap[col] = (u8) pixel;
 					}
 				}
 			}
 		}
 
-		if ( mono ) {
-			cached->Stored( cached->Stored() | CACHED_BITMAP );
-		} else {
-			cached->Stored( cached->Stored() | CACHED_PIXMAP );
-		}
+		cached->Stored( cached->Stored() | CACHED_PIXMAP );
 
 		if( bitmap_glyph ) {
 			FT_Done_Glyph( bitmap_glyph );

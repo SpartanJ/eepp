@@ -5,8 +5,6 @@
 #include "../window/cinputtextbuffer.hpp"
 #include "cprimitives.hpp"
 #include "cfont.hpp"
-#include "ctexturefont.hpp"
-#include "cttffont.hpp"
 
 using namespace EE::Window;
 

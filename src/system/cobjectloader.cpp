@@ -73,4 +73,8 @@ void cObjectLoader::SetLoaded() {
 	}
 }
 
+const Uint32& cObjectLoader::Type() const {
+	return mObjType;
+}
+
 }}

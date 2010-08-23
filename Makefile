@@ -1,15 +1,15 @@
 ifeq ($(DEBUGBUILD), yes)
     DEBUGFLAGS = -g -DDEBUG -DEE_DEBUG
 else
-    DEBUGFLAGS = -O2 -DNDEBUG
+    DEBUGFLAGS = -O2 -s -DNDEBUG
 endif
 
-ifeq ($(STATIC), no)
-    BUILDFLAGS = -fPIC
-    LINKFLAGS  = -shared
-else
+ifeq ($(STATIC), yes)
     BUILDFLAGS = 
     LINKFLAGS  = 
+else
+    BUILDFLAGS = -fPIC
+    LINKFLAGS  = -shared
 endif
 
 export CC         	= gcc
@@ -24,7 +24,7 @@ export CFLAGS     	= -Wall $(DEBUGFLAGS) $(BUILDFLAGS)
 export CFLAGSEXT  	= $(DEBUGFLAGS) $(BUILDFLAGS)
 export LDFLAGS    	= $(LINKFLAGS)
 export LIBPATH    	= ./
-export VERSION    	= 0.6svn
+export VERSION    	= 0.7
 export CP         	= cp
 export LN         	= ln
 export LNFLAGS    	= -s -f
@@ -40,9 +40,10 @@ EXEIV				= eeiv
 SRCGLEW 			= $(wildcard ./src/helper/glew/*.c)
 SRCSOIL 			= $(wildcard ./src/helper/SOIL/*.c)
 SRCSTBVORBIS 		= $(wildcard ./src/helper/stb_vorbis/*.c)
-SRCHAIKUTTF 		= $(wildcard ./src/helper/haikuttf/*.cpp)
-SRCZIPUTILS			= $(wildcard ./src/helper/zip_utils/*.cpp)
+SRCZLIB				= $(wildcard ./src/helper/zlib/*.c)
+SRCLIBZIP			= $(wildcard ./src/helper/libzip/*.c)
 
+SRCHAIKUTTF 		= $(wildcard ./src/helper/haikuttf/*.cpp)
 SRCAUDIO			= $(wildcard ./src/audio/*.cpp)
 SRCGAMING			= $(wildcard ./src/gaming/*.cpp)
 SRCGRAPHICS			= $(wildcard ./src/graphics/*.cpp)
@@ -56,11 +57,12 @@ SRCTEST     		= $(wildcard ./src/test/*.cpp)
 SRCEEIV     		= $(wildcard ./src/eeiv/*.cpp)
 
 OBJGLEW 			= $(SRCGLEW:.c=.o)
-OBJHAIKUTTF 		= $(SRCHAIKUTTF:.cpp=.o)
 OBJSOIL 			= $(SRCSOIL:.c=.o)
 OBJSTBVORBIS 		= $(SRCSTBVORBIS:.c=.o) 
-OBJZIPUTILS 		= $(SRCZIPUTILS:.cpp=.o) 
+OBJZLIB 			= $(SRCZLIB:.c=.o) 
+OBJLIBZIP 			= $(SRCLIBZIP:.c=.o) 
 
+OBJHAIKUTTF 		= $(SRCHAIKUTTF:.cpp=.o)
 OBJAUDIO 			= $(SRCAUDIO:.cpp=.o)
 OBJGAMING 			= $(SRCGAMING:.cpp=.o)
 OBJGRAPHICS 		= $(SRCGRAPHICS:.cpp=.o)
@@ -70,8 +72,8 @@ OBJUI 				= $(SRCUI:.cpp=.o)
 OBJUTILS			= $(SRCUTILS:.cpp=.o)
 OBJWINDOW			= $(SRCWINDOW:.cpp=.o)
 
-OBJHELPERS			= $(OBJGLEW) $(OBJHAIKUTTF) $(OBJSOIL) $(OBJSTBVORBIS) $(OBJZIPUTILS)
-OBJMODULES			= $(OBJUTILS) $(OBJMATH) $(OBJSYSTEM) $(OBJAUDIO) $(OBJWINDOW) $(OBJGRAPHICS) $(OBJGAMING) $(OBJUI)
+OBJHELPERS			= $(OBJGLEW) $(OBJSOIL) $(OBJSTBVORBIS) $(OBJZLIB) $(OBJLIBZIP)
+OBJMODULES			= $(OBJHAIKUTTF) $(OBJUTILS) $(OBJMATH) $(OBJSYSTEM) $(OBJAUDIO) $(OBJWINDOW) $(OBJGRAPHICS) $(OBJGAMING) $(OBJUI)
 
 OBJTEST     		= $(SRCTEST:.cpp=.o)
 OBJEEIV     		= $(SRCEEIV:.cpp=.o)
@@ -94,11 +96,11 @@ libeepp-s.a: $(OBJHELPERS) $(OBJMODULES)
 libeepp.so: $(OBJHELPERS) $(OBJMODULES)
 	$(CPP) $(LDFLAGS) -Wl,-soname,$(LIB).$(VERSION) -o $(LIBNAME) $(OBJHELPERS) $(OBJMODULES) -lfreetype -lSDL -lsndfile -lopenal -lGL -lGLU
 
-$(OBJMODULES) $(OBJZIPUTILS) $(OBJHAIKUTTF): %.o: %.cpp
+$(OBJMODULES): %.o: %.cpp
 	$(CPP) -o $@ -c $< $(CFLAGS) -I/usr/include/freetype2
 
-$(OBJGLEW) $(OBJSOIL) $(OBJSTBVORBIS): %.o: %.c
-	$(CC) -o $@ -c $< $(CFLAGSEXT) -DSTBI_FAILURE_USERMSG -I/usr/include/freetype2
+$(OBJHELPERS): %.o: %.c
+	$(CC) -o $@ -c $< $(CFLAGSEXT) -DSTBI_FAILURE_USERMSG
 
 test: $(EXE)
 

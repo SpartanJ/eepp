@@ -35,6 +35,8 @@ class EE_API cObjectLoader : cThread {
 		bool			Threaded() const;
 
 		void			Threaded( const bool& threaded );
+
+		const Uint32&	Type() const;
 	protected:
 		Uint32			mObjType;	// Texture Loader Object Type
 		bool			mLoaded;
