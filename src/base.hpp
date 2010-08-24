@@ -52,6 +52,10 @@
 #   define EE_PLATFORM EE_PLATFORM_LINUX
 #endif
 
+#ifdef EE_PLATFORM
+#define EE_SUPPORTED_PLATFORM
+#endif
+
 #if EE_PLATFORM == EE_PLATFORM_WIN32
 	#define EE_CALL _stdcall
 

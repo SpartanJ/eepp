@@ -82,6 +82,12 @@
 		<Unit filename="src/graphics/cfont.hpp" />
 		<Unit filename="src/graphics/cfontmanager.cpp" />
 		<Unit filename="src/graphics/cfontmanager.hpp" />
+		<Unit filename="src/graphics/cframebuffer.cpp" />
+		<Unit filename="src/graphics/cframebuffer.hpp" />
+		<Unit filename="src/graphics/cframebufferfbo.cpp" />
+		<Unit filename="src/graphics/cframebufferfbo.hpp" />
+		<Unit filename="src/graphics/cframebufferpbuffer.cpp" />
+		<Unit filename="src/graphics/cframebufferpbuffer.hpp" />
 		<Unit filename="src/graphics/cglobalbatchrenderer.cpp" />
 		<Unit filename="src/graphics/cglobalbatchrenderer.hpp" />
 		<Unit filename="src/graphics/cglobalshapegroup.cpp" />

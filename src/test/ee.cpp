@@ -191,6 +191,8 @@ class cEETest : private cThread {
 
 		cTextureGroupLoader * mTGL;
 		cSprite mBlindy;
+
+		cFrameBuffer * mFB;
 };
 
 
@@ -282,6 +284,11 @@ void cEETest::Init() {
 
 		Batch.AllocVertexs( 1024 );
 		Batch.SetBlendFunc( ALPHA_BLENDONE );
+
+		mFB = cFrameBuffer::CreateNew( 256, 256, false );
+
+		if ( NULL != mFB )
+			mFB->ClearColor( eeColorAf( 0, 0, 0, 0.5f ) );
 
 		Launch();
 	} else {
@@ -830,6 +837,7 @@ void cEETest::Render() {
 	eeColorA ColRR3( 100, 100, 100, 220 );
 
 	PR.SetColor( eeColorA(150, 150, 150, 220) );
+
 	PR.DrawRectangle(
 					0.f,
 					(eeFloat)EE->GetHeight() - (eeFloat)TTF->GetNumLines() * (eeFloat)TTF->GetFontSize(),
@@ -865,7 +873,17 @@ void cEETest::Render() {
 	FF2->SetText( L"FPS: " + toWStr( EE->FPS() ) );
 	FF2->Draw( EE->GetWidth() - FF2->GetTextWidth() - 15, 0 );
 
-	mBlindy.Draw();
+	if ( NULL != mFB ) {
+		mFB->Bind();
+
+		mBlindy.UpdatePos( 128-16, 128-16 );
+		mBlindy.Draw();
+
+		mFB->Unbind();
+
+		if ( NULL != mFB->GetTexture() )
+			mFB->GetTexture()->Draw( EE->GetWidth() - 256, 240, Ang );
+	}
 
 	cUIManager::instance()->Update();
 	cUIManager::instance()->Draw();
@@ -1104,6 +1122,7 @@ void cEETest::Process() {
 			EE->Display();
 		} while( EE->Running() );
 	}
+
 	End();
 }
 
@@ -1119,7 +1138,8 @@ void cEETest::End() {
 
 	cLog::instance()->Save();
 
-	delete mTGL;
+	eeSAFE_DELETE( mTGL );
+	eeSAFE_DELETE( mFB );
 
 	cEngine::DestroySingleton();
 }

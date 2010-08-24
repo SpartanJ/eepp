@@ -120,6 +120,9 @@
 	#include "graphics/cshaderprogram.hpp"
 	#include "graphics/cshaderprogrammanager.hpp"
 	#include "graphics/ctexturegrouploader.hpp"
+	#include "graphics/cframebuffer.hpp"
+	#include "graphics/cframebufferfbo.hpp"
+	#include "graphics/cframebufferpbuffer.hpp"
 	using namespace EE::Graphics;
 
 	// Gaming

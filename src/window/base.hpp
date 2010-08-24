@@ -5,6 +5,14 @@
 
 #include <SDL/SDL_syswm.h>
 
+#if EE_PLATFORM == EE_PLATFORM_WIN32
+#include "../helper/glew/wglew.h"
+#elif EE_PLATFORM == EE_PLATFORM_LINUX
+#include "../helper/glew/glxew.h"
+#elif EE_PLATFORM == EE_PLATFORM_APPLE
+#include <AGL/agl.h>
+#endif
+
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 #include <X11/Xlib.h>
 typedef Window X11Window;

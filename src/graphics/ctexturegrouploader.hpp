@@ -23,6 +23,10 @@ class EE_API cTextureGroupLoader {
 
 		void				Load( const std::string& TextureGroupPath = "" );
 
+		void				LoadFromMemory( const Uint8* Data, const Uint32& DataSize, const std::string& TextureGroupName );
+
+		void				LoadFromPack( cPack * Pack, const std::string& FilePackPath );
+
 		bool				Threaded() const;
 
 		void				Threaded( const bool& threaded );

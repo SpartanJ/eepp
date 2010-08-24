@@ -72,6 +72,60 @@ void cTextureGroupLoader::Load( const std::string& TextureGroupPath ) {
 	}
 }
 
+void cTextureGroupLoader::LoadFromPack( cPack * Pack, const std::string& FilePackPath ) {
+	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( FilePackPath ) ) {
+		std::vector<Uint8> TempData;
+
+		Pack->ExtractFileToMemory( FilePackPath, TempData );
+
+		LoadFromMemory( reinterpret_cast<const Uint8*> ( &TempData[0] ), TempData.size(), FilePackPath );
+	}
+}
+
+void cTextureGroupLoader::LoadFromMemory( const Uint8* Data, const Uint32& DataSize, const std::string& TextureGroupName ) {
+	mRL.Threaded( mThreaded );
+
+	if ( TextureGroupName.size() )
+		mTextureGroupPath = TextureGroupName;
+
+	sTextureGroupHdr TexGrHdr;
+
+	const Uint8* dataPtr = Data;
+
+	if ( NULL != dataPtr ) {
+		memcpy( (void*)&TexGrHdr, dataPtr, sizeof(sTextureGroupHdr) );
+		dataPtr += sizeof(sTextureGroupHdr);
+
+		if ( TexGrHdr.Magic == ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'T' << 16 ) | ( 'G' << 24 ) ) ) {
+			for ( Uint32 i = 0; i < TexGrHdr.TextureCount; i++ ) {
+				sTextureHdr tTextureHdr;
+				sTempTexGroup tTexGroup;
+
+				memcpy( (void*)&tTextureHdr, dataPtr, sizeof(sTextureHdr) );
+				dataPtr += sizeof(sTextureHdr);
+
+				tTexGroup.Texture = tTextureHdr;
+				tTexGroup.Shapes.resize( tTextureHdr.ShapeCount );
+
+				std::string name( &tTextureHdr.Name[0] );
+				std::string path( FileRemoveFileName( mTextureGroupPath ) + name );
+
+				mRL.Add( new cTextureLoader( path ) );
+
+				memcpy( (void*)(&tTexGroup.Shapes[0]), dataPtr, sizeof(sShapeHdr) * tTextureHdr.ShapeCount );
+				dataPtr += sizeof(sShapeHdr) * tTextureHdr.ShapeCount;
+
+				mTempGroups.push_back( tTexGroup );
+			}
+		}
+
+		mRL.Load();
+
+		if ( !mThreaded )
+			CreateShapes();
+	}
+}
+
 void cTextureGroupLoader::CreateShapes() {
 	cShapeGroup * tSG = NULL;
 

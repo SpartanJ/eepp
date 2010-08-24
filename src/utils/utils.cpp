@@ -271,7 +271,7 @@ Uint32 MakeHash( const std::string& str ) {
 }
 
 Uint32 MakeHash( const Int8* str ) {
-	if ( NULL != str ) {
+	if ( NULL != str && *str ) {
 		Uint32 hash = 5381 + *str;
 
 		while( *str ) {

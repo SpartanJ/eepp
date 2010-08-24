@@ -217,6 +217,8 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 
+		GetMainContext();
+
 		mDefaultView.SetView( 0, 0, mVideoInfo.Width, mVideoInfo.Height );
 		mCurrentView = &mDefaultView;
 
@@ -259,7 +261,7 @@ const cView& cEngine::GetView() const {
     return *mCurrentView;
 }
 
-void cEngine::ResetGL2D() {
+void cEngine::ResetGL2D( const bool& KeepView ) {
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
@@ -270,7 +272,8 @@ void cEngine::ResetGL2D() {
 
 	glEnable( GL_TEXTURE_2D ); 						// Enable Textures
 
-	SetView( mDefaultView );
+	if ( !KeepView )
+		SetView( mDefaultView );
 
 	glDisable( GL_DEPTH_TEST );
 	glDisable( GL_LIGHTING );
@@ -978,6 +981,52 @@ std::wstring cEngine::GetClipboardTextWStr() {
 	#endif
 
 	return tStr;
+}
+
+#if EE_PLATFORM == EE_PLATFORM_WIN32
+void cEngine::SetCurrentContext( HGLRC Context ) {
+    if ( mInit ) {
+        wglMakeCurrent( GetDC( mVideoInfo.info.window ), Context );
+    }
+}
+
+HGLRC cEngine::GetContext() const {
+	return mContext;
+}
+#elif EE_PLATFORM == EE_PLATFORM_LINUX
+void cEngine::SetCurrentContext( GLXContext Context ) {
+	if ( mInit ) {
+		mVideoInfo.info.info.x11.lock_func();
+		glXMakeCurrent( mVideoInfo.info.info.x11.display, mVideoInfo.info.info.x11.window, Context );
+		mVideoInfo.info.info.x11.unlock_func();
+	}
+}
+
+GLXContext cEngine::GetContext() const {
+	return mContext;
+}
+#elif EE_PLATFORM == EE_PLATFORM_APPLE
+void cEngine::SetCurrentContext( AGLContext Context ) {
+	aglSetCurrentContext( Context );
+}
+
+AGLContext cEngine::GetContext() const {
+	return mContext;
+}
+#endif
+
+void cEngine::GetMainContext() {
+#if EE_PLATFORM == EE_PLATFORM_WIN32
+	mContext = wglGetCurrentContext();
+#elif EE_PLATFORM == EE_PLATFORM_LINUX
+	mContext = glXGetCurrentContext();
+#elif EE_PLATFORM == EE_PLATFORM_APPLE
+	mContext = aglGetCurrentContext();
+#endif
+}
+
+void cEngine::SetDefaultContext() {
+	SetCurrentContext( mContext );
 }
 
 }}

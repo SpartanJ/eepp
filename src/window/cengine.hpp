@@ -205,7 +205,7 @@ class EE_API cEngine : public cSingleton<cEngine> {
 		bool WindowVisible();
 
 		/** This will set the default rendering states and view to render in 2D mode */
-		void ResetGL2D();
+		void ResetGL2D( const bool& KeepView = false );
 
 		/** Set the current active view
 		@param View New view to use (pass GetDefaultView() to set the default view)
@@ -232,16 +232,29 @@ class EE_API cEngine : public cSingleton<cEngine> {
 
 		/** Set the size of the window for a windowed window */
 		void SetWindowSize( const Uint32& Width, const Uint32& Height );
+
+		#if EE_PLATFORM == EE_PLATFORM_WIN32
+		void SetCurrentContext( HGLRC Context );
+		HGLRC GetContext() const;
+		#elif EE_PLATFORM == EE_PLATFORM_LINUX
+		void SetCurrentContext( GLXContext Context );
+		GLXContext GetContext() const;
+		#elif EE_PLATFORM == EE_PLATFORM_APPLE
+		void SetCurrentContext( AGLContext Context );
+		AGLContext GetContext() const;
+		#endif
+
+		void SetDefaultContext();
 	protected:
 		cEngine();
 		~cEngine();
 	private:
-		bool mInit;
-		VideoInfo mVideoInfo;
-		eeColor mBackColor;
-		SDL_Cursor * mCursor;
-		bool mShowCursor;
-		eeVector2i mOldWinPos;
+		bool 			mInit;
+		VideoInfo 		mVideoInfo;
+		eeColor 		mBackColor;
+		SDL_Cursor * 	mCursor;
+		bool 			mShowCursor;
+		eeVector2i 		mOldWinPos;
 
 		struct _Frames {
 			struct _FPS {
@@ -255,12 +268,21 @@ class EE_API cEngine : public cSingleton<cEngine> {
 			eeFloat ElapsedTime;
 		} mFrames;
 
-		Uint32 mInitialWidth, mInitialHeight;
+		Uint32			mInitialWidth;
+		Uint32			mInitialHeight;
 
-		cView mDefaultView;
-		const cView* mCurrentView;
+		cView			mDefaultView;
+		const cView *	mCurrentView;
 
-		GLenum mGLEWinit;
+		GLenum			mGLEWinit;
+
+		#if EE_PLATFORM == EE_PLATFORM_WIN32
+		HGLRC		mContext;
+		#elif EE_PLATFORM == EE_PLATFORM_LINUX
+		GLXContext	mContext;
+		#elif EE_PLATFORM == EE_PLATFORM_APPLE
+		AGLContext	mContext
+		#endif
 
 		void CalculateFps();
 		void LimitFps();
@@ -273,6 +295,8 @@ class EE_API cEngine : public cSingleton<cEngine> {
 		int clipboard_convert_scrap(int type, char *dst, char *src, int srclen);
 
 		void clipboard_get_scrap(int type, int *dstlen, char **dst);
+
+		void GetMainContext();
 };
 
 }}
