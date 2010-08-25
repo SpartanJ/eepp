@@ -36,7 +36,7 @@
 
 #define EE_PLATFORM_WIN32 1
 #define EE_PLATFORM_LINUX 2
-#define EE_PLATFORM_APPLE 3
+#define EE_PLATFORM_MACOSX 3
 
 #if defined( __WIN32__ ) || defined( _WIN32 )
 #   define EE_PLATFORM EE_PLATFORM_WIN32
@@ -46,7 +46,7 @@
 	#endif
 
 #elif defined( __APPLE_CC__) || defined ( __APPLE__ )
-#   define EE_PLATFORM EE_PLATFORM_APPLE
+#   define EE_PLATFORM EE_PLATFORM_MACOSX
 
 #else
 #   define EE_PLATFORM EE_PLATFORM_LINUX
@@ -85,7 +85,7 @@
 #endif
 
 #include "helper/glew/glew.h"
-#if EE_PLATFORM == EE_PLATFORM_APPLE
+#if EE_PLATFORM == EE_PLATFORM_MACOSX
 #include <OpenGL/gl.h>
 #else
 #include <GL/gl.h>

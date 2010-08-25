@@ -1,7 +1,7 @@
 #include "utils.hpp"
 #include "string.hpp"
 
-#if EE_PLATFORM == EE_PLATFORM_APPLE
+#if EE_PLATFORM == EE_PLATFORM_MACOSX
 	#include <CoreFoundation/CoreFoundation.h>
 	#include <sys/sysctl.h>
 #elif EE_PLATFORM == EE_PLATFORM_WIN32
@@ -45,7 +45,7 @@ void eeSleep( const Uint32& ms ) {
 }
 
 std::string AppPath() {
-#if EE_PLATFORM == EE_PLATFORM_APPLE
+#if EE_PLATFORM == EE_PLATFORM_MACOSX
 	char exe_file[PATH_MAX + 1];
 	CFBundleRef mainBundle = CFBundleGetMainBundle();
 	if (mainBundle) {
@@ -66,7 +66,7 @@ std::string AppPath() {
 	int size;
 	size = readlink("/proc/self/exe", exe_file, PATH_MAX);
 	if (size < 0) {
-		return "";
+		return "./";
 	} else {
 		exe_file[size] = '\0';
 		return std::string(dirname(exe_file)) + "/";
@@ -108,6 +108,9 @@ std::string AppPath() {
 
         return std::string(szDrive) + std::string(szDir);
 	#endif
+#else
+	#warning AppPath() not implemented on this platform. ( will return "./" )
+	return "./";
 #endif
 }
 
@@ -353,7 +356,7 @@ eeInt GetNumCPUs() {
 		nprocs = (eeInt) info.dwNumberOfProcessors;
 	#elif EE_PLATFORM == EE_PLATFORM_LINUX
 		nprocs = sysconf(_SC_NPROCESSORS_ONLN);
-	#elif EE_PLATFORM == EE_PLATFORM_APPLE
+	#elif EE_PLATFORM == EE_PLATFORM_MACOSX
 		int mib[2];
 		size_t len;
 		int maxproc = 1;
@@ -368,7 +371,7 @@ eeInt GetNumCPUs() {
 
 		nprocs = maxproc;
 	#else
-		#warning GetNumCPUs not implemented for this platform
+		#warning GetNumCPUs not implemented on this platform.
 	#endif
 
 	if ( nprocs < 0 )

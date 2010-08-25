@@ -239,9 +239,9 @@ class EE_API cEngine : public cSingleton<cEngine> {
 		#elif EE_PLATFORM == EE_PLATFORM_LINUX
 		void SetCurrentContext( GLXContext Context );
 		GLXContext GetContext() const;
-		#elif EE_PLATFORM == EE_PLATFORM_APPLE
-		void SetCurrentContext( AGLContext Context );
-		AGLContext GetContext() const;
+		#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+		//void SetCurrentContext( AGLContext Context );
+		//AGLContext GetContext() const;
 		#endif
 
 		void SetDefaultContext();
@@ -280,8 +280,8 @@ class EE_API cEngine : public cSingleton<cEngine> {
 		HGLRC		mContext;
 		#elif EE_PLATFORM == EE_PLATFORM_LINUX
 		GLXContext	mContext;
-		#elif EE_PLATFORM == EE_PLATFORM_APPLE
-		AGLContext	mContext
+		#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+		//AGLContext	mContext;
 		#endif
 
 		void CalculateFps();

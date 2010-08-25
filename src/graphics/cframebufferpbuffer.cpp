@@ -4,30 +4,36 @@
 
 namespace EE { namespace Graphics {
 
-cFrameBufferPBuffer::cFrameBufferPBuffer() :
-	cFrameBuffer(),
+cFrameBufferPBuffer::cFrameBufferPBuffer()
 #if EE_PLATFORM == EE_PLATFORM_WIN32
+	: cFrameBuffer(),
 	mDeviceContext( NULL ),
-#elif EE_PLATFORM == EE_PLATFORM_LINUX
-	mDisplay( NULL ),
-#endif
 	mPBuffer( NULL ),
 	mContext( NULL )
+#elif EE_PLATFORM == EE_PLATFORM_LINUX
+	: cFrameBuffer(),
+	mDisplay( NULL ),
+	mPBuffer( NULL ),
+	mContext( NULL )
+#endif
 {
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 	mDisplay = XOpenDisplay(NULL);
 #endif
 }
 
-cFrameBufferPBuffer::cFrameBufferPBuffer( const Uint32& Width, const Uint32& Height, bool DepthBuffer ) :
-	cFrameBuffer(),
+cFrameBufferPBuffer::cFrameBufferPBuffer( const Uint32& Width, const Uint32& Height, bool DepthBuffer )
 #if EE_PLATFORM == EE_PLATFORM_WIN32
+	: cFrameBuffer(),
 	mDeviceContext( NULL ),
-#elif EE_PLATFORM == EE_PLATFORM_LINUX
-	mDisplay( NULL ),
-#endif
 	mPBuffer( NULL ),
 	mContext( NULL )
+#elif EE_PLATFORM == EE_PLATFORM_LINUX
+	: cFrameBuffer(),
+	mDisplay( NULL ),
+	mPBuffer( NULL ),
+	mContext( NULL )
+#endif
 {
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 	mDisplay = XOpenDisplay(NULL);

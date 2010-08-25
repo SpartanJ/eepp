@@ -23,7 +23,7 @@
 //
 // 3. This notice may not be removed or altered from any source distribution.
 *
-* NOTE by Martin Golini: This is not the original version, so differs from SFML implementation.
+* NOTE by Martin Lucas Golini: This is not the original version, so differs from SFML implementation.
 */
 
 #include "base.hpp"
@@ -34,8 +34,8 @@
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
 #include "../helper/glew/glxew.h"
 #include <X11/Xlib.h>
-#elif EE_PLATFORM == EE_PLATFORM_APPLE
-#include <AGL/agl.h>
+#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+//#include <AGL/agl.h>
 #warning No PBuffer implemented on MAC
 #else
 #warning No PBuffer implemented on this platform

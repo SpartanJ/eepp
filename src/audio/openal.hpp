@@ -1,7 +1,7 @@
 #ifndef EE_OPENAL_H
 #define EE_OPENAL_H
 
-#if EE_PLATFORM == EE_PLATFORM_APPLE
+#if EE_PLATFORM == EE_PLATFORM_MACOSX
 #include <OpenAL/al.h>
 #include <OpenAL/alc.h>
 #else

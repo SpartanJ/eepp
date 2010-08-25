@@ -94,7 +94,7 @@ libeepp-s.a: $(OBJHELPERS) $(OBJMODULES)
 	$(AR) $(ARFLAGS) $(LIBNAME) $(OBJHELPERS) $(OBJMODULES)
 
 libeepp.so: $(OBJHELPERS) $(OBJMODULES)
-	$(CPP) $(LDFLAGS) -Wl,-soname,$(LIB).$(VERSION) -o $(LIBNAME) $(OBJHELPERS) $(OBJMODULES) -lfreetype -lSDL -lsndfile -framework OpenGL -framework GLUT -framework OpenAL -framework Cocoa -framework CoreFoundation
+	$(CPP) $(LDFLAGS) -Wl -o $(LIBNAME) $(OBJHELPERS) $(OBJMODULES) -lfreetype -lSDL -lsndfile -framework OpenGL -framework GLUT -framework OpenAL -framework Cocoa -framework CoreFoundation
 
 $(OBJMODULES): %.o: %.cpp
 	$(CPP) -o $@ -c $< $(CFLAGS) -I/usr/include/freetype2

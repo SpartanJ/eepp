@@ -337,7 +337,7 @@ void cEngine::ChangeRes( const Uint16& width, const Uint16& height, const bool& 
 	try {
 		cLog::instance()->Writef( "Switching from %s to %s. Width: %d Height %d.", mVideoInfo.Windowed == true ? "windowed" : "fullscreen", Windowed == true ? "windowed" : "fullscreen", width, height );
 
-		#if EE_PLATFORM == EE_PLATFORM_WIN32 || EE_PLATFORM == EE_PLATFORM_APPLE
+		#if EE_PLATFORM == EE_PLATFORM_WIN32 || EE_PLATFORM == EE_PLATFORM_MACOSX
 		#if EE_PLATFORM == EE_PLATFORM_WIN32
 		bool Reload = mVideoInfo.Windowed != Windowed;
 		#else
@@ -370,10 +370,11 @@ void cEngine::ChangeRes( const Uint16& width, const Uint16& height, const bool& 
 
 		ResetGL2D();
 
-		#if EE_PLATFORM == EE_PLATFORM_WIN32 || EE_PLATFORM == EE_PLATFORM_APPLE
+		#if EE_PLATFORM == EE_PLATFORM_WIN32 || EE_PLATFORM == EE_PLATFORM_MACOSX
 		if ( Reload ) {
-			cTextureFactory::instance()->UngrabTextures();
-			cShaderProgramManager::instance()->Reload();
+			cTextureFactory::instance()->UngrabTextures(); // Reload all textures
+			cShaderProgramManager::instance()->Reload(); // Reload all shaders
+			GetMainContext(); // Recover the context
 		}
 		#endif
 
@@ -563,7 +564,7 @@ SDL_Cursor* cEngine::CreateCursor( const Uint32& TexId, const eeVector2i& HotSpo
 		return NULL;
 
 	//the width must be a multiple of 8 (SDL requirement)
-	#if EE_PLATFORM == EE_PLATFORM_APPLE
+	#if EE_PLATFORM == EE_PLATFORM_MACOSX
 	size_t cursor_width = 16;
 	#else
 	size_t cursor_width = static_cast<size_t>(Tex->Width());
@@ -684,8 +685,8 @@ void cEngine::MaximizeWindow() {
 		XFlush(mVideoInfo.info.info.x11.display);
 
 		mVideoInfo.info.info.x11.unlock_func();
-	#elif EE_PLATFORM == EE_PLATFORM_APPLE
-		#warning cEngine::MaximizeWindow() not implemented on Apple
+	#else
+		#warning cEngine::MaximizeWindow() not implemented on this platform.
 	#endif
 }
 
@@ -696,8 +697,8 @@ void cEngine::HideWindow() {
 	mVideoInfo.info.info.x11.unlock_func();
 #elif EE_PLATFORM == EE_PLATFORM_WIN32
     WIN_ShowWindow( mVideoInfo.info.window, SW_HIDE );
-#elif EE_PLATFORM == EE_PLATFORM_APPLE
-	#warning cEngine::HideWindow() not implemented on Apple
+#else
+	#warning cEngine::HideWindow() not implemented on this platform.
 #endif
 }
 
@@ -715,8 +716,8 @@ void cEngine::RaiseWindow() {
         top = HWND_NOTOPMOST;
 
     SetWindowPos( mVideoInfo.info.window, top, 0, 0, 0, 0, (SWP_NOMOVE | SWP_NOSIZE) );
-#elif EE_PLATFORM == EE_PLATFORM_APPLE
-	#warning cEngine::RaiseWindow() not implemented on Apple
+#else
+	#warning cEngine::RaiseWindow() not implemented on this platform.
 #endif
 }
 
@@ -727,8 +728,8 @@ void cEngine::ShowWindow() {
 	mVideoInfo.info.info.x11.unlock_func();
 #elif EE_PLATFORM == EE_PLATFORM_WIN32
 	WIN_ShowWindow( mVideoInfo.info.window, SW_SHOW );
-#elif EE_PLATFORM == EE_PLATFORM_APPLE
-	#warning cEngine::RaiseWindow() not implemented on Apple
+#else
+	#warning cEngine::RaiseWindow() not implemented on this platform.
 #endif
 }
 
@@ -738,8 +739,8 @@ void cEngine::SetWindowPosition(Int16 Left, Int16 Top) {
     XFlush( mVideoInfo.info.info.x11.display );
 #elif EE_PLATFORM == EE_PLATFORM_WIN32
 	SetWindowPos( mVideoInfo.info.window, NULL, Left, Top, 0, 0, SWP_NOSIZE | SWP_NOZORDER );
-#elif EE_PLATFORM == EE_PLATFORM_APPLE
-	#warning cEngine::SetWindowPosition() not implemented on Apple
+#else
+	#warning cEngine::SetWindowPosition() not implemented on this platform.
 #endif
 }
 
@@ -753,9 +754,9 @@ eeVector2i cEngine::GetWindowPosition() {
 	RECT r;
 	GetWindowRect( mVideoInfo.info.window, &r );
 	return eeVector2i( r.left, r.top );
-#elif EE_PLATFORM == EE_PLATFORM_APPLE
+#else
+	#warning cEngine::GetWindowPos() not implemented on this platform.
 	return eeVector2i( 0, 0 );
-	//#warning cEngine::GetWindowPos() not implemented on Apple
 #endif
 }
 
@@ -946,8 +947,8 @@ std::string cEngine::GetClipboardText() {
 	}
 
 	eeSAFE_DELETE_ARRAY( scrap );
-	#elif EE_PLATFORM == EE_PLATFORM_APPLE
-		#warning cEngine::GetClipboardText() not implemented on Apple
+	#else
+		#warning cEngine::GetClipboardText() not implemented on this platform.
 	#endif
 
 	return tStr;
@@ -976,8 +977,8 @@ std::wstring cEngine::GetClipboardTextWStr() {
 	}
 
 	eeSAFE_DELETE_ARRAY( scrap );
-	#elif EE_PLATFORM == EE_PLATFORM_APPLE
-		#warning cEngine::GetClipboardTextWStr() not implemented on Apple
+	#else
+		#warning cEngine::GetClipboardTextWStr() not implemented on this platform.
 	#endif
 
 	return tStr;
@@ -1005,14 +1006,14 @@ void cEngine::SetCurrentContext( GLXContext Context ) {
 GLXContext cEngine::GetContext() const {
 	return mContext;
 }
-#elif EE_PLATFORM == EE_PLATFORM_APPLE
-void cEngine::SetCurrentContext( AGLContext Context ) {
+#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+/*void cEngine::SetCurrentContext( AGLContext Context ) {
 	aglSetCurrentContext( Context );
 }
 
 AGLContext cEngine::GetContext() const {
 	return mContext;
-}
+}*/
 #endif
 
 void cEngine::GetMainContext() {
@@ -1020,13 +1021,15 @@ void cEngine::GetMainContext() {
 	mContext = wglGetCurrentContext();
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
 	mContext = glXGetCurrentContext();
-#elif EE_PLATFORM == EE_PLATFORM_APPLE
-	mContext = aglGetCurrentContext();
+#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+	//mContext = aglGetCurrentContext();
 #endif
 }
 
 void cEngine::SetDefaultContext() {
+	#if EE_PLATFORM == EE_PLATFORM_WIN32 || EE_PLATFORM == EE_PLATFORM_LINUX
 	SetCurrentContext( mContext );
+	#endif
 }
 
 }}

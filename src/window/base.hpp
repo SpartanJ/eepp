@@ -9,8 +9,8 @@
 #include "../helper/glew/wglew.h"
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
 #include "../helper/glew/glxew.h"
-#elif EE_PLATFORM == EE_PLATFORM_APPLE
-#include <AGL/agl.h>
+#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+//#include <AGL/agl.h>
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX

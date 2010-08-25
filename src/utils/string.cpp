@@ -226,13 +226,13 @@ std::string StoragePath( std::string appname ) {
 	#else
         char *home = getenv("HOME");
 
-        #if EE_PLATFORM != EE_PLATFORM_APPLE
+        #if EE_PLATFORM != EE_PLATFORM_MACOSX
         int i;
         #endif
         if(!home)
             return std::string();
 
-        #if EE_PLATFORM == EE_PLATFORM_APPLE
+        #if EE_PLATFORM == EE_PLATFORM_MACOSX
             snprintf(path, 256, "%s/Library/Application Support/%s", home, appname.c_str() );
         #else
             snprintf(path, 256, "%s/.%s", home, appname.c_str() );

@@ -1,15 +1,14 @@
 #include "../ee.h"
 
 /**
-@TODO Add support for Frame Buffer Object and to switch rendering to FBO and Screen.
 @TODO Create a Vertex Buffer Object class ( with and without GL_ARB_vertex_buffer_object ).
-@TODO Create a basic UI system ( add basic controls, add skinning support ).
 @TODO Support multitexturing.
-@TODO Encapsulate SDL and OpenGL ( and remove unnecessary dependencies ).
+@TODO Create a basic UI system ( add basic controls, add skinning support ).
 @TODO Add some Surface Grid class, to create special effects ( waved texture, and stuff like that ).
-@TODO Support color cursors ( not only black and white cursors, that really sucks ) - Imposible with SDL 1.2
 @TODO Add Scripting support ( lua or squirrel ).
 @TODO Add 2D physics support ( Box2D or Chipmunk wrapper ).
+@TODO Encapsulate SDL and OpenGL ( and remove unnecessary dependencies ).
+@TODO Support color cursors ( not only black and white cursors, that really sucks ) - Imposible with SDL 1.2
 */
 
 class cUITest : public cUIControlAnim {
