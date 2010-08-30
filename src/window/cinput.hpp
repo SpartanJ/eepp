@@ -291,8 +291,8 @@ enum EE_KEY {
 };
 
 /** @brief The basic input class. For mouse and keyboard. */
-class EE_API cInput : public cSingleton<cInput> {
-	friend class cSingleton<cInput>;
+class EE_API cInput : public tSingleton<cInput> {
+	friend class tSingleton<cInput>;
 	public:
 		typedef boost::function1<void, EE_Event*> InputCallback;
 		typedef boost::function0<void> VideoResizeCallback;

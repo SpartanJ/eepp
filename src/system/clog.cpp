@@ -18,9 +18,9 @@ cLog::~cLog() {
 		std::string str = mFilePath;
 		str += "log.log";
 
-		ofstream fs(str.c_str(), ios::app);
+		std::ofstream fs(str.c_str(), std::ios::app);
 
-		fs << mData << endl;
+		fs << mData << std::endl;
 		fs.close();
 	}
 }

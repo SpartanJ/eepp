@@ -6,8 +6,8 @@
 
 namespace EE { namespace Graphics {
 
-class EE_API cGlobalShapeGroup : public cShapeGroup, public cSingleton<cGlobalShapeGroup> {
-	friend class cSingleton<cGlobalShapeGroup>;
+class EE_API cGlobalShapeGroup : public cShapeGroup, public tSingleton<cGlobalShapeGroup> {
+	friend class tSingleton<cGlobalShapeGroup>;
 	public:
 		cGlobalShapeGroup();
 

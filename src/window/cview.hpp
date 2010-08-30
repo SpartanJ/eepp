@@ -6,7 +6,7 @@
 namespace EE { namespace Window {
 
 /** @brief The class defines a view like a 2D camera ( position, size, move, scale ). \nBasically is a 2D proyection in pixels seted over a viewport. */
-class cView {
+class EE_API cView {
 	public:
 		cView();
 		cView( const eeInt& X, const eeInt& Y, const eeInt& Width, const eeInt& Height );

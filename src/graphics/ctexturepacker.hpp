@@ -89,6 +89,7 @@ class EE_API cTexturePacker {
 		bool							mForcePowOfTwo;
 		Int32							mPixelBorder;
 		bool							mSaveExtensions;
+		EE_SAVETYPE						mFormat;
 
 		cTexturePacker * 				GetChild() const;
 

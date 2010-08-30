@@ -352,8 +352,7 @@ void cTexturePacker::CreateChild() {
 bool cTexturePacker::AddTexturesPath( std::string TexturesPath ) {
 	if ( IsDirectory( TexturesPath ) ) {
 
-		if ( TexturesPath[ TexturesPath.size() - 1 ] != '/' && TexturesPath[ TexturesPath.size() - 1 ] != '\\' )
-			TexturesPath += "/";
+		DirPathAddSlashAtEnd( TexturesPath );
 
 		std::vector<std::string > files = FilesGetInPath( TexturesPath );
 		std::sort( files.begin(), files.end() );
@@ -528,6 +527,8 @@ void cTexturePacker::Save( const std::string& Filepath, const EE_SAVETYPE& Forma
 		}
 	}
 
+	mFormat = Format;
+
 	Img.SaveToFile( Filepath, Format );
 
 	ChildSave( Format );
@@ -555,6 +556,20 @@ void cTexturePacker::SaveShapes() {
 
 	TexGrHdr.Magic 			= ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'T' << 16 ) | ( 'G' << 24 ) );
 	TexGrHdr.TextureCount 	= 1 + GetChildCount();
+	TexGrHdr.Format			= mFormat;
+	TexGrHdr.Width			= mWidth;
+	TexGrHdr.Height			= mHeight;
+	TexGrHdr.PixelBorder	= mPixelBorder;
+	TexGrHdr.Flags			= 0;
+
+	if ( mAllowFlipping )
+		TexGrHdr.Flags |= HDR_TEXTURE_GROUP_ALLOW_FLIPPING;
+
+	if ( !mSaveExtensions )
+		TexGrHdr.Flags |= HDR_TEXTURE_GROUP_REMOVE_EXTENSION;
+
+	if ( mForcePowOfTwo )
+		TexGrHdr.Flags |= HDR_TEXTURE_GROUP_POW_OF_TWO;
 
 	sTextureHdr TexHdr[ TexGrHdr.TextureCount ];
 
@@ -626,6 +641,7 @@ void cTexturePacker::CreateShapesHdr( cTexturePacker * Packer, std::vector<sShap
 			tShapeHdr.ResourceID	= MakeHash( name );
 			tShapeHdr.Width 		= tTex->Width();
 			tShapeHdr.Height 		= tTex->Height();
+			tShapeHdr.Channels		= tTex->Channels();
 			tShapeHdr.DestWidth 	= tTex->Width();
 			tShapeHdr.DestHeight 	= tTex->Height();
 			tShapeHdr.OffsetX		= 0;
@@ -637,9 +653,6 @@ void cTexturePacker::CreateShapesHdr( cTexturePacker * Packer, std::vector<sShap
 
 			if ( tTex->Flipped() )
 				tShapeHdr.Flags |= HDR_SHAPE_FLAG_FLIPED;
-
-			if ( !mSaveExtensions )
-				tShapeHdr.Flags |= HDR_SHAPE_FLAG_REMOVE_EXTENSION;
 
 			fs->write( reinterpret_cast<const char*> (&tShapeHdr), sizeof(sShapeHdr) );
 		}
@@ -657,13 +670,7 @@ sTextureHdr	cTexturePacker::CreateTextureHdr( cTexturePacker * Packer ) {
 
 	TexHdr.ResourceID 	= MakeHash( name );
 	TexHdr.Size			= FileSize( Packer->GetFilepath() );
-	TexHdr.Width 		= Packer->GetWidth();
-	TexHdr.Height		= Packer->GetHeight();
 	TexHdr.ShapeCount 	= Packer->GetPlacedCount();
-	TexHdr.Flags		= 0;
-
-	if ( !mSaveExtensions )
-		TexHdr.Flags |= HDR_TEXTURE_FLAG_REMOVE_EXTENSION;
 
 	return TexHdr;
 }

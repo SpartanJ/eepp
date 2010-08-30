@@ -43,7 +43,7 @@
 
 namespace EE { namespace Graphics {
 
-class cFrameBufferPBuffer : public cFrameBuffer {
+class EE_API cFrameBufferPBuffer : public cFrameBuffer {
 	public:
 		cFrameBufferPBuffer();
 

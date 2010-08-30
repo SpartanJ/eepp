@@ -6,8 +6,8 @@
 
 namespace EE { namespace System {
 
-class EE_API cLog : public cSingleton<cLog> {
-	friend class cSingleton<cLog>;
+class EE_API cLog : public tSingleton<cLog> {
+	friend class tSingleton<cLog>;
 	public:
 		void Save(const std::string& filepath = "./");
 		void Write(const std::string& Text, const bool& newLine = true);

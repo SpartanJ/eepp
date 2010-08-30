@@ -16,9 +16,9 @@ cShader::cShader( const Uint32& Type, const std::string& Filename ) {
 		cLog::instance()->Write( std::string( "Couldn't open shader object: " ) + Filename );
 	}
 
-	fs.seekg ( 0, ios::end );
+	fs.seekg ( 0, std::ios::end );
 	Int32 Length = fs.tellg();
-	fs.seekg ( 0, ios::beg );
+	fs.seekg ( 0, std::ios::beg );
 	std::string Buffer( Length + 1, 0 );
 	fs.read( reinterpret_cast<char*> ( &Buffer[0] ), Length );
 	fs.close();

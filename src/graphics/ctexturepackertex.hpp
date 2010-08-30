@@ -17,6 +17,8 @@ class cTexturePackerTex {
 
 		inline const Int32& 	Y() const 			{ return mY; }
 
+		inline const Int32&	Channels()			{ return mChannels; }
+
 		inline void			X( const Int32& x ) { mX = x; }
 
 		inline void			Y( const Int32& y ) { mY = y; }
@@ -46,6 +48,7 @@ class cTexturePackerTex {
 		std::string mName;
 		Int32 		mWidth;
 		Int32 		mHeight;
+		Int32		mChannels;
 		Int32 		mX;
 		Int32 		mY;
 		Int32 		mLongestEdge;

@@ -50,7 +50,7 @@ bool cPak::Open( const std::string& path ) {
 		if ( CheckPack() == 0 ) {
 			myPak.pakFilesNum = myPak.header.dir_length / 64; // Number of files in the PAK
 
-			myPak.fs.seekg( myPak.header.dir_offset, ios::beg ); // Seek to read the pakEntrys
+			myPak.fs.seekg( myPak.header.dir_offset, std::ios::beg ); // Seek to read the pakEntrys
 
 			for ( Uint32 i = 0; i < myPak.pakFilesNum; i++ ) { // Read all the pakEntrys
 				pakEntry Entry;
@@ -104,7 +104,7 @@ bool cPak::ExtractFile( const std::string& path , const std::string& dest ) {
 
 	Int32 Pos = Exists( path );
 	if ( Pos != -1 ) {
-		fstream fs ( dest.c_str() , std::ios::out | std::ios::binary );
+		std::fstream fs ( dest.c_str() , std::ios::out | std::ios::binary );
 
 		std::vector<Uint8> tmpv;
 		if ( ExtractFileToMemory( path, tmpv ) )
@@ -130,7 +130,7 @@ bool cPak::ExtractFileToMemory( const std::string& path, std::vector<Uint8>& dat
 		data.clear();
 		data.resize( pakFiles[Pos].file_length );
 
-		myPak.fs.seekg( pakFiles[Pos].file_position, ios::beg );
+		myPak.fs.seekg( pakFiles[Pos].file_position, std::ios::beg );
 		myPak.fs.read( reinterpret_cast<char*> (&data[0]), pakFiles[Pos].file_length );
 
 		Ret = true;
@@ -152,7 +152,7 @@ bool cPak::ExtractFileToMemory( const std::string& path, Uint8** data, Uint32* d
 		*dataSize = pakFiles[Pos].file_length;
 		*data = new Uint8[ (*dataSize) ];
 
-		myPak.fs.seekg( pakFiles[Pos].file_position, ios::beg );
+		myPak.fs.seekg( pakFiles[Pos].file_position, std::ios::beg );
 		myPak.fs.read( reinterpret_cast<char*> ( *data ), pakFiles[Pos].file_length );
 
 		Ret = true;
@@ -175,7 +175,7 @@ bool cPak::AddFile( const Uint8 * data, const Uint32& dataSize, const std::strin
 			myPak.header.dir_length = sizeof(pakEntry);
 			myPak.pakFilesNum = 1;
 
-			myPak.fs.seekg( 4 , ios::beg ); // seek after head (PACK)
+			myPak.fs.seekg( 4 , std::ios::beg ); // seek after head (PACK)
 			myPak.fs.write( reinterpret_cast<const char*> (&myPak.header.dir_offset), sizeof( myPak.header.dir_offset ) );
 			myPak.fs.write( reinterpret_cast<const char*> (&myPak.header.dir_length), sizeof( myPak.header.dir_length ) );
 
@@ -201,17 +201,17 @@ bool cPak::AddFile( const Uint8 * data, const Uint32& dataSize, const std::strin
 			std::vector<pakEntry> pakE;
 			pakE.resize( myPak.pakFilesNum + 1 );	// Alloc space for all the pakEntrys and the new one
 
-			myPak.fs.seekg( myPak.header.dir_offset, ios::beg ); 	// seek to the file pakEntrys
+			myPak.fs.seekg( myPak.header.dir_offset, std::ios::beg ); 	// seek to the file pakEntrys
 			myPak.fs.read( reinterpret_cast<char*> (&pakE[0]), sizeof(pakEntry) * myPak.pakFilesNum ); 	// get all the pakEntrys
 
 			myPak.header.dir_offset = myPak.header.dir_offset + fsize; 	// Update the new dir_offset
 			myPak.header.dir_length = myPak.header.dir_length + sizeof(pakEntry); // Update the new dir_length
 
-			myPak.fs.seekg( 4 , ios::beg ); // Update the new dir_offset and dir_length to the pakFile
+			myPak.fs.seekg( 4 , std::ios::beg ); // Update the new dir_offset and dir_length to the pakFile
 			myPak.fs.write( reinterpret_cast<const char*> (&myPak.header.dir_offset), sizeof( myPak.header.dir_offset ) );
 			myPak.fs.write( reinterpret_cast<const char*> (&myPak.header.dir_length), sizeof( myPak.header.dir_length ) );
 
-			myPak.fs.seekg( (myPak.header.dir_offset - fsize), ios::beg ); // Seek to the file allocation zone
+			myPak.fs.seekg( (myPak.header.dir_offset - fsize), std::ios::beg ); // Seek to the file allocation zone
 			myPak.fs.write( reinterpret_cast<const char*> (&data[0]), fsize ); // Alloc the file
 
 			// Fill the new file data on the pakEntry

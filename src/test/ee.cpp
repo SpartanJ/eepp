@@ -291,7 +291,7 @@ void cEETest::Init() {
 
 		Launch();
 	} else {
-		cout << "Failed to start EE++" << endl;
+		std::cout << "Failed to start EE++" << std::endl;
 		cEngine::DestroySingleton();
 		exit(0);
 	}
@@ -541,7 +541,7 @@ void cEETest::LoadTextures() {
 	CL2.AddFrame(TN[0], 96, 96);
 	CL2.Color( eeRGBA( 255, 255, 255, 255 ) );
 
-	mTGL = new cTextureGroupLoader( MyPath + "res/1.etg", false );
+	mTGL = new cTextureGroupLoader( MyPath + "data/bnb/bnb.etg" );
 
 	mBlindy.AddFramesByPattern( "rn" );
 	mBlindy.UpdatePos( 320.f, 0.f );
@@ -1167,9 +1167,15 @@ void cEETest::Particles() {
 }
 
 int main (int argc, char * argv []) {
-/*	cTexturePacker tp( 512, 512 );
-
-	std::string Path = "/home/downloads/files/temp/bnb/allin/";
+/*	std::string Path( "/home/downloads/files/temp/bnb/allin/" );
+*/
+/*
+	cTextureGroupLoader * tgl = new cTextureGroupLoader();
+	tgl->UpdateTextureAtlas( AppPath() + "data/bnb/bnb.etg", Path );
+	delete tgl;
+*/
+/*
+	cTexturePacker tp( 512, 512 );
 
 	if ( argc > 1 )
 		Path = std::string( argv[1] );
@@ -1178,7 +1184,7 @@ int main (int argc, char * argv []) {
 
 	tp.PackTextures();
 
-	tp.Save( AppPath() + "res/1.png", EE_SAVE_TYPE_PNG );
+	tp.Save( AppPath() + "data/bnb/bnb.png", EE_SAVE_TYPE_PNG );
 */
 	cEETest Test;
 	Test.Process();

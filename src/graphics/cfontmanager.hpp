@@ -6,8 +6,8 @@
 
 namespace EE { namespace Graphics {
 
-class EE_API cFontManager : public tResourceManager<cFont>, public cSingleton<cFontManager> {
-	friend class cSingleton<cFontManager>;
+class EE_API cFontManager : public tResourceManager<cFont>, public tSingleton<cFontManager> {
+	friend class tSingleton<cFontManager>;
 	public:
 		cFontManager();
 

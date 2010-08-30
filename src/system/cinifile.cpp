@@ -3,9 +3,9 @@
 namespace EE { namespace System {
 
 #if EE_PLATFORM == EE_PLATFORM_WIN32
-#define iniEOL endl
+#define iniEOL std::endl
 #else
-#define iniEOL '\r' << endl
+#define iniEOL '\r' << std::endl
 #endif
 
 cIniFile::cIniFile ( std::string const iniPath ) {
@@ -30,12 +30,12 @@ bool cIniFile::LoadFromMemory( const Uint8* RAWData, const Uint32& size ) {
 bool cIniFile::LoadFromFile( const std::string& iniPath ) {
 	// Normally you would use ifstream, but the SGI CC compiler has
 	// a few bugs with ifstream. So ... fstream used.
-	fstream f;
+	std::fstream f;
 	std::string   line;
 
 	Path ( iniPath );
 
-	f.open ( mPath.c_str(), ios::in );
+	f.open ( mPath.c_str(), std::ios::in );
 
 	if ( f.fail() )
 		return false;
@@ -112,9 +112,9 @@ bool cIniFile::WriteFile() {
 	unsigned commentID, keyID, valueID;
 	// Normally you would use ofstream, but the SGI CC compiler has
 	// a few bugs with ofstream. So ... fstream used.
-	fstream f;
+	std::fstream f;
 
-	f.open ( mPath.c_str(), ios::out );
+	f.open ( mPath.c_str(), std::ios::out );
 	if ( f.fail() )
 		return false;
 
@@ -326,8 +326,8 @@ bool cIniFile::DeleteValue ( std::string const keyname, std::string const valuen
 		return false;
 
 	// This looks strange, but is neccessary.
-	vector<std::string>::iterator npos = mKeys[keyID].names.begin() + valueID;
-	vector<std::string>::iterator vpos = mKeys[keyID].values.begin() + valueID;
+	std::vector<std::string>::iterator npos = mKeys[keyID].names.begin() + valueID;
+	std::vector<std::string>::iterator vpos = mKeys[keyID].values.begin() + valueID;
 	mKeys[keyID].names.erase ( npos, npos + 1 );
 	mKeys[keyID].values.erase ( vpos, vpos + 1 );
 
@@ -346,8 +346,8 @@ bool cIniFile::DeleteKey ( std::string const keyname ) {
 	//mKeys[keyID].names.clear();
 	//mKeys[keyID].values.clear();
 
-	vector<std::string>::iterator npos = mNames.begin() + keyID;
-	vector<key>::iterator    kpos = mKeys.begin() + keyID;
+	std::vector<std::string>::iterator npos = mNames.begin() + keyID;
+	std::vector<key>::iterator    kpos = mKeys.begin() + keyID;
 	mNames.erase ( npos, npos + 1 );
 	mKeys.erase ( kpos, kpos + 1 );
 
@@ -378,7 +378,7 @@ std::string cIniFile::HeaderComment ( unsigned const commentID ) const {
 
 bool cIniFile::DeleteHeaderComment ( unsigned commentID ) {
 	if ( commentID < mComments.size() ) {
-		vector<std::string>::iterator cpos = mComments.begin() + commentID;
+		std::vector<std::string>::iterator cpos = mComments.begin() + commentID;
 		mComments.erase ( cpos, cpos + 1 );
 		return true;
 	}
@@ -428,7 +428,7 @@ std::string cIniFile::KeyComment ( std::string const keyname, unsigned const com
 
 bool cIniFile::DeleteKeyComment ( unsigned const keyID, unsigned const commentID ) {
 	if ( keyID < mKeys.size() && commentID < mKeys[keyID].comments.size() ) {
-		vector<std::string>::iterator cpos = mKeys[keyID].comments.begin() + commentID;
+		std::vector<std::string>::iterator cpos = mKeys[keyID].comments.begin() + commentID;
 		mKeys[keyID].comments.erase ( cpos, cpos + 1 );
 		return true;
 	}

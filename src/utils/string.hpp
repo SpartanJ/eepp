@@ -119,9 +119,9 @@ void EE_API StrCopy( char * Dst, const char * Src, eeUint DstSize );
 * @param Str String to compare
 * @return The position of the last char compared ( -1 if fails )
 */
-Int32 StrStartsWith( const std::string& Start, const std::string Str );
+Int32 EE_API StrStartsWith( const std::string& Start, const std::string Str );
 
-Int32 StrStartsWith( const std::wstring& Start, const std::wstring Str );
+Int32 EE_API StrStartsWith( const std::wstring& Start, const std::wstring Str );
 
 }}
 

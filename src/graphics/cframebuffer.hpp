@@ -9,7 +9,7 @@ using namespace EE::Window;
 
 namespace EE { namespace Graphics {
 
-class cFrameBuffer {
+class EE_API cFrameBuffer {
 	public:
 		static cFrameBuffer * CreateNew( const Uint32& Width, const Uint32& Height, bool DepthBuffer = false );
 

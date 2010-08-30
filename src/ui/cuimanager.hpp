@@ -8,8 +8,8 @@ namespace EE { namespace UI {
 
 class cUIControl;
 
-class EE_API cUIManager : public cSingleton<cUIManager> {
-	friend class cSingleton<cUIManager>;
+class EE_API cUIManager : public tSingleton<cUIManager> {
+	friend class tSingleton<cUIManager>;
 	public:
 		cUIManager();
 		~cUIManager();

@@ -98,7 +98,7 @@ namespace EE {
 	#define eeSAFE_DELETE_ARRAY(p)  { if(p) { delete[](p);		(p)=NULL; } }
 
 	typedef float				eeFloat; 	//! The internal floating point used on EE++. \n This can help to improve compatibility with some platforms. \n And helps for an easy change from single precision to double precision.
-	typedef double				eeDouble; 	//! The internal double floating point. It's only used when the engine needs some very high precision floating point ( for example the timer )
+	typedef double			eeDouble; 	//! The internal double floating point. It's only used when the engine needs some very high precision floating point ( for example the timer )
 	typedef unsigned int		eeUint;
 	typedef signed int		eeInt;
 
@@ -110,8 +110,6 @@ namespace EE {
 	#ifdef EE_GLES
 	const GLubyte EE_GLES_INDICES [] = {0, 3, 1, 2};
 	#endif
-
-	using namespace std;
 }
 
 #endif

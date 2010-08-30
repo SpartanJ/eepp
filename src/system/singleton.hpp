@@ -5,7 +5,7 @@ namespace EE { namespace System {
 
 /** @brief Template class for only one instance classes. */
 template<typename T>
-class cSingleton {
+class tSingleton {
 	static T* ms_singleton;
 
 	public:
@@ -35,7 +35,7 @@ class cSingleton {
 			}
 		}
 };
-template <typename T> T* cSingleton <T>::ms_singleton = 0;
+template <typename T> T* tSingleton <T>::ms_singleton = 0;
 
 }}
 #endif

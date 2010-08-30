@@ -79,7 +79,7 @@ bool cRC4::EncryptFile( const std::string& SourceFile, const std::string& DestFi
 		fs2.write( reinterpret_cast<const char*>( &tmpv[0] ), (std::streamsize)tmpv.size() );
 		fs2.close();
 	} else {
-		fs.seekg( 0, ios::beg );
+		fs.seekg( 0, std::ios::beg );
 		fs.write( reinterpret_cast<const char*>( &tmpv[0] ), (std::streamsize)tmpv.size() );
 	}
 

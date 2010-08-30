@@ -6,8 +6,8 @@
 
 namespace EE { namespace Graphics {
 
-class EE_API cShaderProgramManager : public tResourceManager<cShaderProgram>, public cSingleton<cShaderProgramManager> {
-	friend class cSingleton<cShaderProgramManager>;
+class EE_API cShaderProgramManager : public tResourceManager<cShaderProgram>, public tSingleton<cShaderProgramManager> {
+	friend class tSingleton<cShaderProgramManager>;
 	public:
 		cShaderProgramManager();
 

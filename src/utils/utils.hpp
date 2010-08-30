@@ -48,41 +48,47 @@ namespace EE { namespace Utils {
 	* @param data The vector to allocate the file in memory
 	* @return True if returned the file to the vector.
 	*/
-	bool FileGet( const std::string& path, std::vector<Uint8>& data );
+	bool EE_API FileGet( const std::string& path, std::vector<Uint8>& data );
 
 	/** Copy a file to location.
 	* @param src Source File Path
 	* @param dst Destination File Path
 	* @return If success.
 	*/
-	bool FileCopy( const std::string& src, const std::string& dst );
+	bool EE_API FileCopy( const std::string& src, const std::string& dst );
 
 	/** @return The file extension
 	* @param filepath The file path or name
 	* @param lowerExt Lowercase the extension obtained? ( true by default )
 	*/
-	std::string FileExtension( const std::string& filepath, const bool& lowerExt = true );
+	std::string EE_API FileExtension( const std::string& filepath, const bool& lowerExt = true );
 
 	/** @return The file name of a file path */
-	std::string FileNameFromPath( const std::string& filepath );
+	std::string EE_API FileNameFromPath( const std::string& filepath );
 
 	/** @return Removes the file name from a path, and return the path. */
-	std::string FileRemoveFileName( const std::string& filepath );
+	std::string EE_API FileRemoveFileName( const std::string& filepath );
 
 	/** @return Removes the extension of a filepath */
-	std::string FileRemoveExtension( const std::string& filepath );
+	std::string EE_API FileRemoveExtension( const std::string& filepath );
 
 	/** Write a file in binary mode and close it. */
-	bool FileWrite( const std::string& filepath, const Uint8* data, const Uint32& dataSize );
+	bool EE_API FileWrite( const std::string& filepath, const Uint8* data, const Uint32& dataSize );
 
 	/** Write a file in binary mode and close it. */
-	bool FileWrite( const std::string& filepath, const std::vector<Uint8>& data );
+	bool EE_API FileWrite( const std::string& filepath, const std::vector<Uint8>& data );
 
 	/** @return The Number of CPUs of the system. */
-	eeInt GetNumCPUs();
+	eeInt EE_API GetNumCPUs();
 
 	/** @return The modification date of the file */
-	Uint32 FileGetModificationDate( const std::string& Filepath );
+	Uint32 EE_API FileGetModificationDate( const std::string& Filepath );
+
+	/** @return The File Extension of a Save Type */
+	std::string EE_API SaveTypeToExtension( const Uint32& Format );
+
+	/** If the directory path not end with a slash, it will add it. */
+	void DirPathAddSlashAtEnd( std::string& path );
 }
 
 }

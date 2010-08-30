@@ -8,8 +8,8 @@ namespace EE { namespace Window {
 
 #define MAX_JOYSTICKS (16)
 
-class EE_API cJoystickManager : public cSingleton<cJoystickManager> {
-	friend class cSingleton<cJoystickManager>;
+class EE_API cJoystickManager : public tSingleton<cJoystickManager> {
+	friend class tSingleton<cJoystickManager>;
 	friend class cJoystick;
 	public:
 		cJoystickManager();

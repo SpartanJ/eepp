@@ -29,13 +29,13 @@ class EE_API cIniFile {
 		bool   mCaseInsensitive;
 		std::string mPath;
 		struct key {
-			vector<std::string> names;
-			vector<std::string> values;
-			vector<std::string> comments;
+			std::vector<std::string> names;
+			std::vector<std::string> values;
+			std::vector<std::string> comments;
 		};
-		vector<key>    mKeys;
-		vector<std::string> mNames;
-		vector<std::string> mComments;
+		std::vector<key>    mKeys;
+		std::vector<std::string> mNames;
+		std::vector<std::string> mComments;
 		std::string CheckCase ( std::string s ) const;
 
 		std::vector <std::string> mLines;

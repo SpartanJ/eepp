@@ -7,6 +7,7 @@ cTexturePackerTex::cTexturePackerTex( const std::string& Name ) :
 	mName(Name),
 	mWidth(0),
 	mHeight(0),
+	mChannels(0),
 	mX(0),
 	mY(0),
 	mLongestEdge(0),
@@ -16,9 +17,7 @@ cTexturePackerTex::cTexturePackerTex( const std::string& Name ) :
 	mLoadedInfo(false),
 	mDisabled(false)
 {
-	Int32 c;
-
-	if ( stbi_info( Name.c_str(), &mWidth, &mHeight, &c ) ) {
+	if ( stbi_info( Name.c_str(), &mWidth, &mHeight, &mChannels ) ) {
 		mArea 			= mWidth * mHeight;
 		mLongestEdge 	= ( mWidth >= mHeight ) ? mWidth : mHeight;
 		mLoadedInfo 	= true;

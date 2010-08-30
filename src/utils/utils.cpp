@@ -309,8 +309,8 @@ bool FileGet( const std::string& path, std::vector<Uint8>& data ) {
 
 bool FileCopy( const std::string& src, const std::string& dst ) {
 	if ( FileExists( src ) ) {
-		ifstream in( src.c_str() );
-		ofstream out( dst.c_str() );
+		std::ifstream in( src.c_str() );
+		std::ofstream out( dst.c_str() );
 
 		if ( in.is_open() && out.is_open() ) {
 			out << in.rdbuf();
@@ -406,6 +406,28 @@ Uint32 FileGetModificationDate( const std::string& Filepath ) {
 		return st.st_mtime;
 
 	return 0;
+}
+
+
+std::string SaveTypeToExtension( const Uint32& Format ) {
+	switch( Format ) { // I dont use the save types to avoid including something from EE::Graphics
+		case 0: return "tga"; 	// EE_SAVE_TYPE_TGA
+		case 1: return "bmp";	// EE_SAVE_TYPE_BMP
+		case 2: return "png";	// EE_SAVE_TYPE_PNG
+		case 3: return "dds";	// EE_SAVE_TYPE_DDS
+	}
+
+	return "";
+}
+
+void DirPathAddSlashAtEnd( std::string& path ) {
+	if ( path[ path.size() - 1 ] != '/' && path[ path.size() - 1 ] != '\\' ) {
+	#if EE_PLATFORM == EE_PLATFORM_WIN32
+		path += '\\';
+	#else
+    	path += '/';
+	#endif
+	}
 }
 
 }}

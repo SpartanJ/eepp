@@ -21,8 +21,8 @@ inline BOOL WIN_ShowWindow( HWND hWnd, int nCmdShow ) {
 #endif
 
 /** @brief The basic Graphics class. Here Init the context and render to screen. (Singleton Class). */
-class EE_API cEngine : public cSingleton<cEngine> {
-	friend class cSingleton<cEngine>;
+class EE_API cEngine : public tSingleton<cEngine> {
+	friend class tSingleton<cEngine>;
 	public:
 		/** Init the opengl context and the screen
 		* @param Width Screen Width
