@@ -424,9 +424,10 @@ class EE_API cInput : public tSingleton<cInput> {
 
 		/** Set the double click interval in milliseconds */
 		void DoubleClickInterval( const Uint32& Interval );
+
+		~cInput();
 	protected:
 		cInput();
-		~cInput();
 
 		cEngine* EE;
 		EE_Event mEvent;

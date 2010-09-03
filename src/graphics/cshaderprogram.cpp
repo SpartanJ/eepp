@@ -30,8 +30,8 @@ cShaderProgram::cShaderProgram( const std::string& VertexShaderFile, const std::
 	AddToManager( name );
 	Init();
 
-	cVertexShader * vs = new cVertexShader( VertexShaderFile );
-	cFragmentShader * fs = new cFragmentShader( FragmentShaderFile );
+	cVertexShader * vs = eeNew( cVertexShader, ( VertexShaderFile ) );
+	cFragmentShader * fs = eeNew( cFragmentShader, ( FragmentShaderFile ) );
 
 	if ( !vs->IsValid() || !fs->IsValid() ) {
 		eeSAFE_DELETE( vs );
@@ -52,8 +52,8 @@ cShaderProgram::cShaderProgram( cPack * Pack, const std::string& VertexShaderPat
 	Init();
 
 	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( VertexShaderPath ) && -1 != Pack->Exists( FragmentShaderPath ) ) {
-		cVertexShader * vs = new cVertexShader( Pack, VertexShaderPath );
-		cFragmentShader * fs = new cFragmentShader( Pack, FragmentShaderPath );
+		cVertexShader * vs = eeNew( cVertexShader, ( Pack, VertexShaderPath ) );
+		cFragmentShader * fs = eeNew( cFragmentShader, ( Pack, FragmentShaderPath ) );
 
 		if ( !vs->IsValid() || !fs->IsValid() ) {
 			eeSAFE_DELETE( vs );
@@ -74,8 +74,8 @@ cShaderProgram::cShaderProgram( const Uint8 * VertexShaderData, const Uint32& Ve
 	AddToManager( name );
 	Init();
 
-	cVertexShader * vs = new cVertexShader( VertexShaderData, VertexShaderDataSize );
-	cFragmentShader * fs = new cFragmentShader( FragmentShaderData, FragmentShaderDataSize );
+	cVertexShader * vs = eeNew( cVertexShader, ( VertexShaderData, VertexShaderDataSize ) );
+	cFragmentShader * fs = eeNew( cFragmentShader, ( FragmentShaderData, FragmentShaderDataSize ) );
 
 	if ( !vs->IsValid() || !fs->IsValid() ) {
 		eeSAFE_DELETE( vs );

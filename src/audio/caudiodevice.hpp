@@ -20,10 +20,10 @@ class EE_API cAudioDevice {
 		bool IsExtensionSupported( const std::string& extension );
 
 		bool isCreated();
-	private :
-		cAudioDevice();
 
 		~cAudioDevice();
+	private :
+		cAudioDevice();
 
 		static cAudioDevice * mInstance;
 

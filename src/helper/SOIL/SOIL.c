@@ -1536,7 +1536,8 @@ void
 		unsigned char *img_data
 	)
 {
-	free( (void*)img_data );
+	if ( img_data )
+		free( (void*)img_data );
 }
 
 const char*

@@ -58,21 +58,21 @@ class EE_API cTTFFont : public cFont {
 		bool LoadFromMemory( Uint8* TTFData, const eeUint& TTFDataSize, const eeUint& Size, EE_TTF_FONTSTYLE Style = EE_TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0) );
 
 		/** Save the texture generated from the TTF file to disk */
-		bool SaveTexture( const std::string& Filepath, const EE_SAVETYPE& Format = EE_SAVE_TYPE_PNG );
+		bool SaveTexture( const std::string& Filepath, const EE_SAVE_TYPE& Format = EE_SAVE_TYPE_PNG );
 
 		/** Save the characters coordinates to use it later to load the Texture Font */
 		bool SaveCoordinates( const std::string& Filepath );
 
 		/** Save the texture generated from the TTF file and the character coordinates. */
-		bool Save( const std::string& TexturePath, const std::string& CoordinatesDatPath, const EE_SAVETYPE& Format = EE_SAVE_TYPE_PNG );
-	
+		bool Save( const std::string& TexturePath, const std::string& CoordinatesDatPath, const EE_SAVE_TYPE& Format = EE_SAVE_TYPE_PNG );
+
 	protected:
 		friend class cTTFFontLoader;
-		
+
 		bool ThreadedLoading() const { return mThreadedLoading; }
-		
+
 		void ThreadedLoading( const bool& isThreaded ) { mThreadedLoading = isThreaded; }
-		
+
 		void UpdateLoading();
 	private:
 		hkFont * mFont;
@@ -90,7 +90,7 @@ class EE_API cTTFFont : public cFont {
 		bool mTTFInit;
 
 		bool mLoadedFromMemory;
-		
+
 		bool mThreadedLoading;
 		bool mTexReady;
 

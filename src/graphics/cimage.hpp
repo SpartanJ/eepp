@@ -63,7 +63,7 @@ class EE_API cImage {
 		eeUint Size() const;
 
 		/** Save the Image to a new File in a specific format */
-		virtual bool SaveToFile( const std::string& filepath, const EE_SAVETYPE& Format );
+		virtual bool SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format );
 
 		/** Create an Alpha mask from a Color */
 		virtual void CreateMaskFromColor( const eeColorA& ColorKey, Uint8 Alpha );

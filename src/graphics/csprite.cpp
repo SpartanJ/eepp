@@ -274,7 +274,7 @@ bool cSprite::AddSubFrame(const Uint32& TexId, const eeUint& NumFrame, const eeU
 		return false;
 
 	cTexture * Tex = cTextureFactory::instance()->GetTexture( TexId );
-	cShape * S = cGlobalShapeGroup::instance()->Add( new cShape() );
+	cShape * S = cGlobalShapeGroup::instance()->Add( eeNew( cShape, () ) );
 
 	S->Texture( TexId );
 

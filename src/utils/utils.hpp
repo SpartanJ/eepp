@@ -88,7 +88,15 @@ namespace EE { namespace Utils {
 	std::string EE_API SaveTypeToExtension( const Uint32& Format );
 
 	/** If the directory path not end with a slash, it will add it. */
-	void DirPathAddSlashAtEnd( std::string& path );
+	void EE_API DirPathAddSlashAtEnd( std::string& path );
+
+	/** @return The default slash path code of the current OS */
+	std::string EE_API GetOSlash();
+
+	/** Convert a size represented in bytes, to a string converted in byes/kb/mb/tb.
+	* @example 10485760 -> "10.0 MB"
+	*/
+	std::string SizeToString( const Uint32& MemSize );
 }
 
 }

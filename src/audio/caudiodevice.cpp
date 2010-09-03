@@ -48,7 +48,7 @@ bool cAudioDevice::isCreated() {
 cAudioDevice * cAudioDevice::instance() {
 	// Create the audio device if it doesn't exist
 	if ( NULL == mInstance )
-		mInstance = new cAudioDevice;
+		mInstance = eeNew( cAudioDevice, () );
 
 	return mInstance;
 }
@@ -66,7 +66,7 @@ void cAudioDevice::RemoveReference() {
 
 	// Destroy the audio device if the references count reaches 0
 	if (mInstance->mRefCount == 0) {
-		delete mInstance;
+		eeDelete( mInstance );
 		mInstance = NULL;
 	}
 }

@@ -198,7 +198,7 @@ void cShape::CacheAlphaMask() {
 	Uint32 size = ( mSrcRect.Right - mSrcRect.Left ) * ( mSrcRect.Bottom - mSrcRect.Top );
 
 	eeSAFE_DELETE_ARRAY( mAlpha );
-	mAlpha = new Uint8[ size ];
+	mAlpha = eeNewArray( Uint8, size );
 
 	mTexture->Lock();
 
@@ -226,7 +226,7 @@ void cShape::CacheColors() {
 
 	eeSAFE_DELETE_ARRAY( mPixels );
 
-	mPixels = new Uint8[ size ];
+	mPixels = eeNewArray( Uint8, size );
 
 	eeInt rY = 0;
 	eeInt rX = 0;
@@ -371,7 +371,7 @@ const Uint8* cShape::GetPixelsPtr() {
 	return reinterpret_cast<const Uint8*> (&mPixels[0]);
 }
 
-bool cShape::SaveToFile(const std::string& filepath, const EE_SAVETYPE& Format) {
+bool cShape::SaveToFile(const std::string& filepath, const EE_SAVE_TYPE& Format) {
 	bool Res = false;
 
 	Lock();

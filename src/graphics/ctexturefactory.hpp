@@ -130,7 +130,7 @@ class EE_API cTextureFactory: public tSingleton<cTextureFactory>, protected cMut
 		/**	Saves an image from an array of unsigned chars to disk
 		* @return False if failed, otherwise returns True
 		*/
-		bool SaveImage( const std::string& filepath, const EE_SAVETYPE& Format, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const unsigned char* data );
+		bool SaveImage( const std::string& filepath, const EE_SAVE_TYPE& Format, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const unsigned char* data );
 
 		/** Determine if the TextureId passed exists */
 		bool TextureIdExists( const Uint32& TexId );
@@ -181,9 +181,10 @@ class EE_API cTextureFactory: public tSingleton<cTextureFactory>, protected cMut
 		* @return The texture, NULL if not exists
 		*/
 		cTexture * GetByHash( const Uint32& Hash );
+
+		~cTextureFactory();
 	protected:
 		cTextureFactory();
-		~cTextureFactory();
 
 		GLint mCurrentTexture;
 

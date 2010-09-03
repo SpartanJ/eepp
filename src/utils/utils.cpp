@@ -421,13 +421,38 @@ std::string SaveTypeToExtension( const Uint32& Format ) {
 }
 
 void DirPathAddSlashAtEnd( std::string& path ) {
-	if ( path[ path.size() - 1 ] != '/' && path[ path.size() - 1 ] != '\\' ) {
+	if ( path[ path.size() - 1 ] != '/' && path[ path.size() - 1 ] != '\\' )
+		path += GetOSlash();
+}
+
+std::string GetOSlash() {
 	#if EE_PLATFORM == EE_PLATFORM_WIN32
-		path += '\\';
+		return std::string( "\\" );
 	#else
-    	path += '/';
+    	return std::string( "/" );
 	#endif
+}
+
+std::string SizeToString( const Uint32& MemSize ) {
+	std::string size = " bytes";
+	eeDouble mem = static_cast<eeDouble>( MemSize );
+	Uint8 c = 0;
+
+	while ( mem > 1024 ) {
+		c++;
+		mem = mem / 1024;
 	}
+
+	switch (c) {
+		case 0: size = " bytes"; break;
+		case 1: size = " KB"; break;
+		case 2: size = " MB"; break;
+		case 3: size = " GB"; break;
+		case 4: size = " TB"; break;
+		default: size = " WTF";
+	}
+
+	return std::string( toStr( mem ) + size );
 }
 
 }}

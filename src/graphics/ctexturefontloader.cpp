@@ -113,7 +113,7 @@ void cTextureFontLoader::LoadFromTex() {
 }
 
 void cTextureFontLoader::LoadFont() {
-	mFont = new cTextureFont( mFontName );
+	mFont = eeNew( cTextureFont, ( mFontName ) );
 
 	if ( TEF_LT_PATH == mLoadType )
 		LoadFromPath();

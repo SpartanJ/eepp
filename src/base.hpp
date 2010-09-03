@@ -7,6 +7,14 @@
 #include <cwchar>
 #include <cstdarg>
 #include <ctime>
+#include <cctype>
+
+#include <memory>
+#include <algorithm>
+
+#include <iostream>
+#include <fstream>
+#include <sstream>
 
 #include <string>
 #include <vector>
@@ -14,20 +22,13 @@
 #include <deque>
 #include <queue>
 #include <list>
-#include <memory>
-#include <algorithm>
-#include <cctype>
+#include <set>
 
-#include <iostream>
-#include <fstream>
-#include <sstream>
-
-#include <SDL/SDL.h>
-
-// Templates needed by the library
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
+
+#include <SDL/SDL.h>
 
 #define Int8 Sint8
 #define Int16 Sint16
@@ -84,6 +85,12 @@
 	#define EE_CALL
 #endif
 
+#if ( __GNUC__ >= 4 ) && defined( EE_DYNAMIC ) && defined( EE_EXPORTS )
+#define EE_API __attribute__ ((visibility("default")))
+#else
+#define EE_API
+#endif
+
 #include "helper/glew/glew.h"
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 #include <OpenGL/gl.h>
@@ -91,14 +98,16 @@
 #include <GL/gl.h>
 #endif
 
+#include "base/base.hpp"
+
 namespace EE {
 	#define eeARRAY_SIZE(__array)	( sizeof(__array) / sizeof(__array[0]) )
-	#define eeSAFE_DELETE(p)		{ if(p) { delete (p);		(p)=NULL; } }
-	#define eeSAFE_FREE(p)			{ if(p) { free ( (void*)p );(p)=NULL; } }
-	#define eeSAFE_DELETE_ARRAY(p)  { if(p) { delete[](p);		(p)=NULL; } }
+	#define eeSAFE_DELETE(p)		{ if(p) { eeDelete (p);			(p)=NULL; } }
+	#define eeSAFE_FREE(p)			{ if(p) { eeFree ( (void*)p );	(p)=NULL; } }
+	#define eeSAFE_DELETE_ARRAY(p)  { if(p) { eeDeleteArray(p);		(p)=NULL; } }
 
 	typedef float				eeFloat; 	//! The internal floating point used on EE++. \n This can help to improve compatibility with some platforms. \n And helps for an easy change from single precision to double precision.
-	typedef double			eeDouble; 	//! The internal double floating point. It's only used when the engine needs some very high precision floating point ( for example the timer )
+	typedef double				eeDouble; 	//! The internal double floating point. It's only used when the engine needs some very high precision floating point ( for example the timer )
 	typedef unsigned int		eeUint;
 	typedef signed int		eeInt;
 

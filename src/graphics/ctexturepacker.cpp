@@ -85,7 +85,7 @@ void cTexturePacker::SetOptions( const Uint32& MaxWidth, const Uint32& MaxHeight
 }
 
 void cTexturePacker::NewFree( Int32 x, Int32 y, Int32 width, Int32 height ) {
-	cTexturePackerNode * node = new cTexturePackerNode( x, y, width, height );
+	cTexturePackerNode * node = eeNew( cTexturePackerNode, ( x, y, width, height ) );
 	node->SetNext( mFreeList );
 	mFreeList = node;
 }
@@ -328,7 +328,7 @@ void cTexturePacker::InsertTexture( cTexturePackerTex * t, cTexturePackerNode * 
 }
 
 void cTexturePacker::CreateChild() {
-	mChild = new cTexturePacker( mWidth, mHeight, mForcePowOfTwo, mPixelBorder, mAllowFlipping );
+	mChild = eeNew( cTexturePacker, ( mWidth, mHeight, mForcePowOfTwo, mPixelBorder, mAllowFlipping ) );
 
 	std::list<cTexturePackerTex>::iterator it;
 	cTexturePackerTex * t = NULL;
@@ -484,7 +484,7 @@ Int32 cTexturePacker::PackTextures() { // pack the textures, the return code is 
 	return ( mWidth * mHeight ) - mTotalArea;
 }
 
-void cTexturePacker::Save( const std::string& Filepath, const EE_SAVETYPE& Format, const bool& SaveExtensions ) {
+void cTexturePacker::Save( const std::string& Filepath, const EE_SAVE_TYPE& Format, const bool& SaveExtensions ) {
 	if ( !mPacked )
 		PackTextures();
 
@@ -509,7 +509,7 @@ void cTexturePacker::Save( const std::string& Filepath, const EE_SAVETYPE& Forma
 			Uint8 * data = SOIL_load_image( t->Name().c_str(), &w, &h, &c, 0 );
 
 			if ( NULL != data && t->Width() == w && t->Height() == h ) {
-				cImage * ImgCopy = new cImage( data, w, h, c );
+				cImage * ImgCopy = eeNew( cImage, ( data, w, h, c ) );
 
 				if ( t->Flipped() )
 					Img.Flip();
@@ -675,7 +675,7 @@ sTextureHdr	cTexturePacker::CreateTextureHdr( cTexturePacker * Packer ) {
 	return TexHdr;
 }
 
-void cTexturePacker::ChildSave( const EE_SAVETYPE& Format ) {
+void cTexturePacker::ChildSave( const EE_SAVE_TYPE& Format ) {
 	if ( NULL != mChild ) {
 		cTexturePacker * Parent 	= mChild->GetParent();
 		cTexturePacker * LastParent	= NULL;

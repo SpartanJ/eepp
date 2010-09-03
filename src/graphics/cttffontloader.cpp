@@ -58,7 +58,7 @@ cTTFFontLoader::~cTTFFontLoader() {
 void cTTFFontLoader::Start() {
 	cObjectLoader::Start();
 
-	mFont = new cTTFFont( mFontName );
+	mFont = eeNew( cTTFFont, ( mFontName ) );
 
 	mFont->ThreadedLoading( mThreaded );
 

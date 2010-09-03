@@ -150,7 +150,7 @@ bool cPak::ExtractFileToMemory( const std::string& path, Uint8** data, Uint32* d
 
 	if ( Pos != -1 ) {
 		*dataSize = pakFiles[Pos].file_length;
-		*data = new Uint8[ (*dataSize) ];
+		*data = eeNew( Uint8, (*dataSize) );
 
 		myPak.fs.seekg( pakFiles[Pos].file_position, std::ios::beg );
 		myPak.fs.read( reinterpret_cast<char*> ( *data ), pakFiles[Pos].file_length );

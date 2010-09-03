@@ -8,10 +8,10 @@ namespace EE { namespace Graphics {
 
 cFrameBuffer * cFrameBuffer::CreateNew( const Uint32& Width, const Uint32& Height, bool DepthBuffer ) {
 	if ( cFrameBufferFBO::IsSupported() )
-		return new cFrameBufferFBO( Width, Height, DepthBuffer );
+		return eeNew( cFrameBufferFBO, ( Width, Height, DepthBuffer ) );
 
 	if ( cFrameBufferPBuffer::IsSupported() )
-		return new cFrameBufferPBuffer( Width, Height, DepthBuffer );
+		return eeNew( cFrameBufferPBuffer, ( Width, Height, DepthBuffer ) );
 
 	return NULL;
 }

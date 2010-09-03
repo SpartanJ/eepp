@@ -64,10 +64,10 @@ bool cSoundBuffer::LoadFromPack( cPack* Pack, const std::string& FilePackPath ) 
 
 bool cSoundBuffer::LoadFromMemory( const char* Data, std::size_t SizeInBytes ) {
 	// Create the sound file
-	std::auto_ptr<cSoundFile> File( cSoundFile::CreateRead( Data, SizeInBytes ) );
+	cSoundFile * File = cSoundFile::CreateRead( Data, SizeInBytes );
 
 	// Open the sound file
-	if ( File.get() ) {
+	if ( NULL != File ) {
 		// Get the sound parameters
 		std::size_t  NbSamples		= File->GetSamplesCount();
 		unsigned int ChannelsCount	= File->GetChannelsCount();
@@ -80,9 +80,14 @@ bool cSoundBuffer::LoadFromMemory( const char* Data, std::size_t SizeInBytes ) {
 			cLog::instance()->Write( "Sound file loaded from memory." );
 
 			// Update the internal buffer with the new samples
+			eeDelete( File );
+
 			return Update( ChannelsCount, SampleRate );
 		} else {
 			cLog::instance()->Write( "Failed to read audio data from file in memory" );
+
+			eeDelete( File );
+
 			return false;
 		}
 	} else {

@@ -85,7 +85,7 @@ class EE_API cShape {
 
 		const Uint8* GetPixelsPtr();
 
-		bool SaveToFile(const std::string& filepath, const EE_SAVETYPE& Format);
+		bool SaveToFile(const std::string& filepath, const EE_SAVE_TYPE& Format);
 	protected:
 		Uint8 *		mPixels;
 		Uint8 *		mAlpha;

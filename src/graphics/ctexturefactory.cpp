@@ -66,7 +66,7 @@ Uint32 cTextureFactory::PushTexture( const std::string& Filepath, const Uint32& 
 		FPath = FPath.substr( pos + 1 );
 
 	Pos = FindFreeSlot();
-	Tex = mTextures[ Pos ] = new cTexture();
+	Tex = mTextures[ Pos ] = eeNew( cTexture, () );
 
 	Tex->Create( TexId, Width, Height, MyWidth, MyHeight, Mipmap, Channels, FPath, ColorKey, ClampMode, CompressTexture, MemSize );
 	Tex->TexId( Pos );
@@ -251,7 +251,7 @@ eeUint cTextureFactory::GetValidTextureSize(const eeUint& Size) {
 		return NextPowOfTwo(Size);
 }
 
-bool cTextureFactory::SaveImage( const std::string& filepath, const EE_SAVETYPE& Format, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const unsigned char* data ) {
+bool cTextureFactory::SaveImage( const std::string& filepath, const EE_SAVE_TYPE& Format, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const unsigned char* data ) {
 	return 0 != SOIL_save_image ( filepath.c_str(), Format, Width, Height, Channels, data );
 }
 

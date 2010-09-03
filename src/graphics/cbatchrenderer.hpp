@@ -71,16 +71,16 @@ class EE_API cBatchRenderer {
 		/** @return The batch center position */
 		eeVector2f BatchCenter() const { return mCenter; }
 
-		/** Add to the batch a quad ( this will change your batch rendering method to GL_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
+		/** Add to the batch a quad ( this will change your batch rendering method to EE_DT_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
 		void BatchQuadEx( const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& angle = 0.0f, const eeFloat& scale = 1.0f, const bool& scalefromcenter = true );
 
-		/** Add to the batch a quad ( this will change your batch rendering method to GL_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
+		/** Add to the batch a quad ( this will change your batch rendering method to EE_DT_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
 		void BatchQuad( const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& angle = 0.0f );
 
-		/** Add to the batch a quad with the vertex freely seted ( this will change your batch rendering method to GL_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
+		/** Add to the batch a quad with the vertex freely seted ( this will change your batch rendering method to EE_DT_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
 		void BatchQuadFree( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3 );
 
-		/** Add to the batch a quad with the vertex freely seted ( this will change your batch rendering method to GL_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
+		/** Add to the batch a quad with the vertex freely seted ( this will change your batch rendering method to EE_DT_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
 		void BatchQuadFreeEx( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const eeFloat& Angle = 0.0f, const eeFloat& Scale = 1.0f );
 
 		/** This will set as the default batch rendering to GL_QUADS. WIll reset the texture subset rendering to the whole texture. Will reset the default color rendering to eeColorA(255,255,255,255). */
@@ -98,16 +98,16 @@ class EE_API cBatchRenderer {
 		/** Set the quad color per vertex */
 		void QuadsSetColorFree( const eeColorA Color0, const eeColorA Color1, const eeColorA Color2, const eeColorA Color3 );
 
-		/** This will set as the default batch rendering to GL_POINTS. And will reset the point color to eeColorA(255,255,255,255). */
+		/** This will set as the default batch rendering to EE_DT_POINTS. And will reset the point color to eeColorA(255,255,255,255). */
 		void PointsBegin();
 
 		/** Set the point color */
 		void PointSetColor( const eeColorA Color );
 
-		/** Add to the batch a point ( this will change your batch rendering method to GL_POINTS, so if you were using another one will Draw all the batched vertexs first ) */
+		/** Add to the batch a point ( this will change your batch rendering method to EE_DT_POINTS, so if you were using another one will Draw all the batched vertexs first ) */
 		void BatchPoint( const eeFloat& x, const eeFloat& y );
 
-		/** This will set as the default batch rendering to GL_LINES. And will reset the line color to eeColorA(255,255,255,255). */
+		/** This will set as the default batch rendering to EE_DT_LINES. And will reset the line color to eeColorA(255,255,255,255). */
 		void LinesBegin();
 
 		/** Set the line color */
@@ -116,7 +116,7 @@ class EE_API cBatchRenderer {
 		/** Set the line color, per vertex */
 		void LinesSetColorFree( const eeColorA Color0, const eeColorA Color1 );
 
-		/** Add to the batch a line ( this will change your batch rendering method to GL_LINES, so if you were using another one will Draw all the batched vertexs first ) */
+		/** Add to the batch a line ( this will change your batch rendering method to EE_DT_LINES, so if you were using another one will Draw all the batched vertexs first ) */
 		void BatchLine( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1 );
 
 		/** This will set as the default batch rendering to GL_LINE_LOOP. And will reset the line color to eeColorA(255,255,255,255). */
@@ -128,7 +128,7 @@ class EE_API cBatchRenderer {
 		/** Set the line color, per vertex */
 		void LineLoopSetColorFree( const eeColorA Color0, const eeColorA Color1 );
 
-		/** Add to the batch a line ( this will change your batch rendering method to GL_LINE_LOOP, so if you were using another one will Draw all the batched vertexs first ) */
+		/** Add to the batch a line ( this will change your batch rendering method to EE_DT_LINE_LOOP, so if you were using another one will Draw all the batched vertexs first ) */
 		void BatchLineLoop( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1 );
 
 		void BatchLineLoop( const eeFloat& x0, const eeFloat& y0);
@@ -137,7 +137,7 @@ class EE_API cBatchRenderer {
 
 		void BatchLineLoop( const eeVector2f& vector1 );
 
-		/** This will set as the default batch rendering to GL_TRIANGLE_FAN. And will reset the line color to eeColorA(255,255,255,255). */
+		/** This will set as the default batch rendering to EE_DT_TRIANGLE_FAN. And will reset the line color to eeColorA(255,255,255,255). */
 		void TriangleFanBegin();
 
 		/** Set the triangle fan color */
@@ -149,10 +149,10 @@ class EE_API cBatchRenderer {
 		/** Set the texture sector to be rendered but freely seted */
 		void TriangleFanSetSubset( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2 );
 
-		/** Add to the batch a triangle fan ( this will change your batch rendering method to GL_TRIANGLE_FAN, so if you were using another one will Draw all the batched vertexs first ) */
+		/** Add to the batch a triangle fan ( this will change your batch rendering method to EE_DT_TRIANGLE_FAN, so if you were using another one will Draw all the batched vertexs first ) */
 		void BatchTriangleFan( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2 );
 
-		/** This will set as the default batch rendering to GL_TRIANGLES. And will reset the line color to eeColorA(255,255,255,255). */
+		/** This will set as the default batch rendering to EE_DT_TRIANGLES. And will reset the line color to eeColorA(255,255,255,255). */
 		void TrianglesBegin();
 
 		/** Set the triangles color */
@@ -164,13 +164,13 @@ class EE_API cBatchRenderer {
 		/** Set the texture sector to be rendered but freely seted */
 		void TrianglesSetSubset( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2 );
 
-		/** Add to the batch a triangle ( this will change your batch rendering method to GL_TRIANGLES, so if you were using another one will Draw all the batched vertexs first ) */
+		/** Add to the batch a triangle ( this will change your batch rendering method to EE_DT_TRIANGLES, so if you were using another one will Draw all the batched vertexs first ) */
 		void BatchTriangle( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2 );
 
 		/** Set the polygon color */
 		void PolygonSetColor( const eeColorA& Color );
 
-		/** Add to the batch a polygon ( this will change your batch rendering method to GL_POLYGON, so if you were using another one will Draw all the batched vertexs first ) */
+		/** Add to the batch a polygon ( this will change your batch rendering method to EE_DT_POLYGON, so if you were using another one will Draw all the batched vertexs first ) */
 		void BatchPolygon( const eePolygon2f& Polygon );
 
 		/** Set the line width */
@@ -197,7 +197,7 @@ class EE_API cBatchRenderer {
 		eeTexCoord mTexCoord[4];
 		eeColorA mVerColor[4];
 
-		EE_BATCH_RENDER_METHOD mCurrentMode;
+		EE_DRAW_TYPE mCurrentMode;
 
 		eeFloat mRotation, mScale;
 		eeVector2f mPosition, mCenter;
@@ -209,7 +209,7 @@ class EE_API cBatchRenderer {
 		void Init();
 		void AddVertexs( const eeUint& num );
 		void Rotate( const eeVector2f& center, eeVector2f* point, const eeFloat& angle );
-		void SetBlendMode( EE_BATCH_RENDER_METHOD Mode, const bool& Force );
+		void SetBlendMode( EE_DRAW_TYPE Mode, const bool& Force );
 };
 
 }}

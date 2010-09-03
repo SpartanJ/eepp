@@ -109,7 +109,7 @@ Uint8* cImage::GetPixels() const {
 void cImage::Allocate( const Uint32& size ) {
 	ClearCache();
 
-	mPixels = new unsigned char[ size ];
+	mPixels = eeNewArray( unsigned char, size );
 	mSize 	= size;
 }
 
@@ -145,7 +145,7 @@ eeUint cImage::Channels() const {
 	return mChannels;
 }
 
-bool cImage::SaveToFile( const std::string& filepath, const EE_SAVETYPE& Format ) {
+bool cImage::SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format ) {
 	bool Res = false;
 
 	if ( NULL != mPixels && 0 != mWidth && 0 != mHeight && 0 != mChannels ) {
@@ -233,7 +233,7 @@ void cImage::CopyImage( cImage * Img, const eeUint& x, const eeUint& y ) {
 
 void cImage::Resize( const eeUint& new_width, const eeUint& new_height ) {
 	if ( NULL != mPixels && mWidth != new_width && mHeight != new_height ) {
-		unsigned char * resampled = new unsigned char[ mChannels * new_width * new_height ];
+		unsigned char * resampled = eeNewArray( unsigned char, mChannels * new_width * new_height );
 
 		int res = up_scale_image( reinterpret_cast<const unsigned char*> ( mPixels ), mWidth, mHeight, mChannels, resampled, new_width, new_height );
 
@@ -266,12 +266,12 @@ cImage * cImage::Thumbnail( const eeUint& max_width, const eeUint& max_height ) 
 		Int32 new_width 	= (Int32)( (eeFloat)mWidth * iScale );
 		Int32 new_height 	= (Int32)( (eeFloat)mHeight * iScale );
 
-		unsigned char * resampled = new unsigned char[ mChannels * new_width * new_height ];
+		unsigned char * resampled = eeNewArray( unsigned char, mChannels * new_width * new_height );
 
 		int res = up_scale_image( reinterpret_cast<const unsigned char*> ( mPixels ), mWidth, mHeight, mChannels, resampled, new_width, new_height );
 
 		if ( res ) {
-			return new cImage( (Uint8*)resampled, new_width, new_height, mChannels );
+			return eeNew( cImage, ( (Uint8*)resampled, new_width, new_height, mChannels ) );
 		} else {
 			eeSAFE_DELETE_ARRAY( resampled );
 		}

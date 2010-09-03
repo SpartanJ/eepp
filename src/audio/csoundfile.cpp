@@ -21,9 +21,9 @@ cSoundFile * cSoundFile::CreateRead( const std::string& Filename ) {
 	// Create the file according to its type
 	cSoundFile * File = NULL;
 
-	if 			( cSoundFileOgg::IsFileSupported(Filename, true) )	 	File = new cSoundFileOgg;
+	if 			( cSoundFileOgg::IsFileSupported(Filename, true) )	 	File = eeNew( cSoundFileOgg, () );
 	#ifndef EE_NO_SNDFILE
-	else if 	( cSoundFileDefault::IsFileSupported(Filename, true) ) 	File = new cSoundFileDefault;
+	else if 	( cSoundFileDefault::IsFileSupported(Filename, true) ) 	File = eeNew( cSoundFileDefault, () );
 	#endif
 
 	// Open it for reading
@@ -40,7 +40,7 @@ cSoundFile * cSoundFile::CreateRead( const std::string& Filename ) {
 			File->mChannelsCount	= ChannelsCount;
 			File->mSampleRate		= SampleRate;
 		} else {
-			delete File;
+			eeDelete( File );
 			File = NULL;
 		}
 	}
@@ -52,9 +52,9 @@ cSoundFile * cSoundFile::CreateRead( const char* Data, std::size_t SizeInMemory 
 	// Create the file according to its type
 	cSoundFile * File = NULL;
 
-	if			( cSoundFileOgg::IsFileSupported(Data, SizeInMemory))	 	File = new cSoundFileOgg;
+	if			( cSoundFileOgg::IsFileSupported(Data, SizeInMemory))	 	File = eeNew( cSoundFileOgg, () );
 	#ifndef EE_NO_SNDFILE
-	else if 	( cSoundFileDefault::IsFileSupported(Data, SizeInMemory) ) 	File = new cSoundFileDefault;
+	else if 	( cSoundFileDefault::IsFileSupported(Data, SizeInMemory) ) 	File = eeNew( cSoundFileDefault, () );
 	#endif
 
 	// Open it for reading
@@ -71,7 +71,7 @@ cSoundFile * cSoundFile::CreateRead( const char* Data, std::size_t SizeInMemory 
 			File->mChannelsCount = ChannelsCount;
 			File->mSampleRate	= SampleRate;
 		} else {
-			delete File;
+			eeDelete( File );
 			File = NULL;
 		}
 	}
@@ -83,9 +83,9 @@ cSoundFile * cSoundFile::CreateWrite( const std::string& Filename, unsigned int 
 	// Create the file according to its type
 	cSoundFile * File = NULL;
 
-	if			( cSoundFileOgg::IsFileSupported(Filename, false) )		File = new cSoundFileOgg;
+	if			( cSoundFileOgg::IsFileSupported(Filename, false) )		File = eeNew( cSoundFileOgg, () );
 	#ifndef EE_NO_SNDFILE
-	else if	( cSoundFileDefault::IsFileSupported(Filename, false) )	File = new cSoundFileDefault;
+	else if	( cSoundFileDefault::IsFileSupported(Filename, false) )	File = eeNew( cSoundFileDefault, () );
 	#endif
 
 	// Open it for writing
@@ -98,7 +98,7 @@ cSoundFile * cSoundFile::CreateWrite( const std::string& Filename, unsigned int 
 			File->mChannelsCount = ChannelsCount;
 			File->mSampleRate	= SampleRate;
 		} else {
-			delete File;
+			eeDelete( File );
 			File = NULL;
 		}
 	}

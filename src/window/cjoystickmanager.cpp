@@ -50,7 +50,7 @@ void cJoystickManager::Create( const Uint32& index ) {
 	if ( NULL != mJoysticks[ index ] )
 		mJoysticks[ index ]->ReOpen();
 	else
-		mJoysticks[ index ] = new cJoystick( index );
+		mJoysticks[ index ] = eeNew( cJoystick, ( index ) );
 }
 
 void cJoystickManager::Close() {

@@ -140,7 +140,7 @@ bool cUIControlAnim::Animating() {
 
 void cUIControlAnim::StartAlphaAnim( const eeFloat& From, const eeFloat& To, const eeFloat& TotalTime, cInterpolation::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mAlphaAnim )
-		mAlphaAnim = new cInterpolation();
+		mAlphaAnim = eeNew( cInterpolation, () );
 
 	mAlphaAnim->ClearWaypoints();
 	mAlphaAnim->AddWaypoint( From );
@@ -153,7 +153,7 @@ void cUIControlAnim::StartAlphaAnim( const eeFloat& From, const eeFloat& To, con
 
 void cUIControlAnim::StartScaleAnim( const eeFloat& From, const eeFloat& To, const eeFloat& TotalTime, cInterpolation::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mScaleAnim )
-		mScaleAnim = new cInterpolation();
+		mScaleAnim = eeNew( cInterpolation, () );
 
 	mScaleAnim->ClearWaypoints();
 	mScaleAnim->AddWaypoint( From );
@@ -166,7 +166,7 @@ void cUIControlAnim::StartScaleAnim( const eeFloat& From, const eeFloat& To, con
 
 void cUIControlAnim::StartMovement( const eeVector2i& From, const eeVector2i& To, const eeFloat& TotalTime, cWaypoints::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mMoveAnim )
-		mMoveAnim = new cWaypoints();
+		mMoveAnim = eeNew( cWaypoints, () );
 
 	mMoveAnim->ClearWaypoints();
 	mMoveAnim->AddWaypoint( eeVector2f( (eeFloat)From.x, (eeFloat)From.y ) );
@@ -179,7 +179,7 @@ void cUIControlAnim::StartMovement( const eeVector2i& From, const eeVector2i& To
 
 void cUIControlAnim::StartRotation( const eeFloat& From, const eeFloat& To, const eeFloat& TotalTime, cInterpolation::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mAngleAnim )
-		mAngleAnim = new cInterpolation();
+		mAngleAnim = eeNew( cInterpolation, () );
 
 	mAngleAnim->ClearWaypoints();
 	mAngleAnim->AddWaypoint( From );
@@ -264,28 +264,28 @@ void cUIControlAnim::UpdateQuad() {
 
 cInterpolation * cUIControlAnim::AngleInterpolation() {
 	if ( NULL == mAngleAnim )
-		mAngleAnim = new cInterpolation();
+		mAngleAnim = eeNew( cInterpolation, () );
 
 	return mAngleAnim;
 }
 
 cInterpolation * cUIControlAnim::ScaleInterpolation() {
 	if ( NULL == mScaleAnim )
-		mScaleAnim = new cInterpolation();
+		mScaleAnim = eeNew( cInterpolation, () );
 
 	return mScaleAnim;
 }
 
 cInterpolation * cUIControlAnim::AlphaInterpolation() {
 	if ( NULL == mAlphaAnim )
-		mAlphaAnim = new cInterpolation();
+		mAlphaAnim = eeNew( cInterpolation, () );
 
 	return mAlphaAnim;
 }
 
 cWaypoints * cUIControlAnim::MovementInterpolation() {
 	if ( NULL == mMoveAnim )
-		mMoveAnim = new cWaypoints();
+		mMoveAnim = eeNew( cWaypoints, () );
 
 	return mMoveAnim;
 }

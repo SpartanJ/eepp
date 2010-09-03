@@ -94,7 +94,7 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ve
 
 		mHeight = mFont->Height() + OutlineTotal;
 
-		mPixels = new eeColorA[ TexSize ];
+		mPixels = eeNewArray( eeColorA, TexSize );
 		memset( mPixels, 0x00000000, TexSize * 4 );
 
 		CurrentPos.Left = OutlineSize;
@@ -185,7 +185,7 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ve
 			mGlyphs[i] = TempGlyph;
 
 			//Free surface
-			eeSAFE_DELETE_ARRAY( TempGlyphSurface );
+			hkSAFE_DELETE_ARRAY( TempGlyphSurface );
 		}
 
 		if ( OutlineSize ) {
@@ -297,7 +297,7 @@ void cTTFFont::RebuildFromGlyphs() {
 	}
 }
 
-bool cTTFFont::SaveTexture( const std::string& Filepath, const EE_SAVETYPE& Format ) {
+bool cTTFFont::SaveTexture( const std::string& Filepath, const EE_SAVE_TYPE& Format ) {
 	cTexture* Tex = cTextureFactory::instance()->GetTexture(mTexId);
 
 	if ( Tex != NULL )
@@ -332,7 +332,7 @@ bool cTTFFont::SaveCoordinates( const std::string& Filepath ) {
 	return false;
 }
 
-bool cTTFFont::Save( const std::string& TexturePath, const std::string& CoordinatesDatPath, const EE_SAVETYPE& Format ) {
+bool cTTFFont::Save( const std::string& TexturePath, const std::string& CoordinatesDatPath, const EE_SAVE_TYPE& Format ) {
 	return SaveTexture(TexturePath, Format) && SaveCoordinates( CoordinatesDatPath );
 }
 

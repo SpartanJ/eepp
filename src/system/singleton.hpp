@@ -1,6 +1,8 @@
 #ifndef EE_SYSTEMSINGLETON_H
 #define EE_SYSTEMSINGLETON_H
 
+#include "../base.hpp"
+
 namespace EE { namespace System {
 
 /** @brief Template class for only one instance classes. */
@@ -12,7 +14,7 @@ class tSingleton {
 		/** Get the singleton pointer */
 		static T* CreateSingleton() {
 			if (ms_singleton == 0)
-				ms_singleton = new T;
+				ms_singleton = eeNew( T, () );
 
 			return ms_singleton;
 		}
@@ -30,7 +32,7 @@ class tSingleton {
 		/** Destroy the singleton instance */
 		static void DestroySingleton() {
 			if( ms_singleton != 0 ) {
-				delete ms_singleton;
+				eeDelete( ms_singleton );
 				ms_singleton = 0;
 			}
 		}

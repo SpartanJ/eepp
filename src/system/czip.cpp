@@ -189,7 +189,7 @@ bool cZip::ExtractFileToMemory( const std::string& path, Uint8** data, Uint32* d
 
 		if ( NULL != zf ) {
 			*dataSize = zf->bytes_left;
-			*data = new Uint8[ (*dataSize) ];
+			*data = eeNew( Uint8, (*dataSize) );
 
 			Result = zip_fread( zf, reinterpret_cast<void*> (&data[0]), zf->bytes_left );
 

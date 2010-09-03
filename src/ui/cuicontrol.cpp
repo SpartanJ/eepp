@@ -29,7 +29,7 @@ cUIControl::cUIControl( const CreateParams& Params ) :
 
 cUIControl::~cUIControl() {
 	while( NULL != mChild )
-		delete mChild;
+		eeDelete( mChild );
 
 	if ( NULL != mParentCtrl )
 		mParentCtrl->ChildRemove( this );
@@ -431,7 +431,7 @@ void cUIControl::CheckClose() {
 
 	while( NULL != ChildLoop ) {
 		if ( ChildLoop->ControlFlags() & UI_CTRL_FLAG_CLOSE ) {
-			delete ChildLoop;
+			eeDelete( ChildLoop );
 
 			ChildLoop = mChild;
 
@@ -515,7 +515,7 @@ void cUIControl::MatrixUnset() {
 
 void cUIControl::ChildDeleteAll() {
 	while( NULL != mChild )
-		delete mChild;
+		eeDelete( mChild );
 }
 
 void cUIControl::ChildAdd( cUIControl * ChildCtrl ) {

@@ -210,7 +210,7 @@ void cTexture::SetPixel( const eeUint& x, const eeUint& y, const eeColorA& Color
 	mFlags |= TEX_FLAG_MODIFIED;
 }
 
-bool cTexture::SaveToFile( const std::string& filepath, const EE_SAVETYPE& Format ) {
+bool cTexture::SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format ) {
 	bool Res = false;
 
 	if ( mTexture ) {

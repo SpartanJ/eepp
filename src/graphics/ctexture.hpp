@@ -92,7 +92,7 @@ class EE_API cTexture : public cImage {
 		void SetTextureFilter(const EE_TEX_FILTER& filter);
 
 		/** Save the Texture to a new File */
-		bool SaveToFile( const std::string& filepath, const EE_SAVETYPE& Format );
+		bool SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format );
 
 		/** Replace a color on the texture */
 		void ReplaceColor( const eeColorA& ColorKey, const eeColorA& NewColor);

@@ -1,15 +1,15 @@
 ifeq ($(DEBUGBUILD), yes)
-    DEBUGFLAGS = -g -DDEBUG -DEE_DEBUG
+    DEBUGFLAGS = -g -DDEBUG -DEE_DEBUG -DEE_MEMORY_MANAGER
 else
     DEBUGFLAGS = -O2 -s -DNDEBUG
 endif
 
-ifeq ($(STATIC), yes)
-    BUILDFLAGS = 
-    LINKFLAGS  = 
-else
+ifeq ($(DYNAMIC), yes)
     BUILDFLAGS = -fPIC
     LINKFLAGS  = -shared
+else
+    BUILDFLAGS = 
+    LINKFLAGS  = 
 endif
 
 export CC         	= gcc
@@ -44,6 +44,7 @@ SRCZLIB				= $(wildcard ./src/helper/zlib/*.c)
 SRCLIBZIP			= $(wildcard ./src/helper/libzip/*.c)
 
 SRCHAIKUTTF 		= $(wildcard ./src/helper/haikuttf/*.cpp)
+SRCBASE				= $(wildcard ./src/base/*.cpp)
 SRCAUDIO			= $(wildcard ./src/audio/*.cpp)
 SRCGAMING			= $(wildcard ./src/gaming/*.cpp)
 SRCGRAPHICS			= $(wildcard ./src/graphics/*.cpp)
@@ -63,6 +64,7 @@ OBJZLIB 			= $(SRCZLIB:.c=.o)
 OBJLIBZIP 			= $(SRCLIBZIP:.c=.o) 
 
 OBJHAIKUTTF 		= $(SRCHAIKUTTF:.cpp=.o)
+OBJBASE 			= $(SRCBASE:.cpp=.o)
 OBJAUDIO 			= $(SRCAUDIO:.cpp=.o)
 OBJGAMING 			= $(SRCGAMING:.cpp=.o)
 OBJGRAPHICS 		= $(SRCGRAPHICS:.cpp=.o)
@@ -73,19 +75,19 @@ OBJUTILS			= $(SRCUTILS:.cpp=.o)
 OBJWINDOW			= $(SRCWINDOW:.cpp=.o)
 
 OBJHELPERS			= $(OBJGLEW) $(OBJSOIL) $(OBJSTBVORBIS) $(OBJZLIB) $(OBJLIBZIP)
-OBJMODULES			= $(OBJHAIKUTTF) $(OBJUTILS) $(OBJMATH) $(OBJSYSTEM) $(OBJAUDIO) $(OBJWINDOW) $(OBJGRAPHICS) $(OBJGAMING) $(OBJUI)
+OBJMODULES			= $(OBJHAIKUTTF) $(OBJBASE) $(OBJUTILS) $(OBJMATH) $(OBJSYSTEM) $(OBJAUDIO) $(OBJWINDOW) $(OBJGRAPHICS) $(OBJGAMING) $(OBJUI)
 
 OBJTEST     		= $(SRCTEST:.cpp=.o)
 OBJEEIV     		= $(SRCEEIV:.cpp=.o)
 
-ifeq ($(STATIC), yes)
-    LIB     = libeepp-s.a
-    LIBNAME = $(LIBPATH)/$(LIB)
-    INSTALL = 
-else
+ifeq ($(DYNAMIC), yes)
     LIB     = libeepp.so
     LIBNAME = $(LIBPATH)/$(LIB).$(VERSION)
     INSTALL = && $(LN) $(LNFLAGS) $(DESTLIBDIR)/$(LIB).$(VERSION) $(DESTLIBDIR)/$(LIB)
+else
+    LIB     = libeepp-s.a
+    LIBNAME = $(LIBPATH)/$(LIB)
+    INSTALL = 
 endif
 
 all: $(LIB)

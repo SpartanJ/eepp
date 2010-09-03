@@ -123,6 +123,9 @@
 	#include "graphics/cframebuffer.hpp"
 	#include "graphics/cframebufferfbo.hpp"
 	#include "graphics/cframebufferpbuffer.hpp"
+	#include "graphics/cvertexbuffer.hpp"
+	#include "graphics/cvertexbufferogl.hpp"
+	#include "graphics/cvertexbuffervbo.hpp"
 	using namespace EE::Graphics;
 
 	// Gaming

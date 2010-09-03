@@ -193,6 +193,8 @@ class EE_API cUIControl {
 		cUIBackground * Background();
 
 		cUIBorder * Border();
+
+		virtual ~cUIControl();
 	protected:
 		friend class cUIManager;
 		friend class cUIDragable;
@@ -222,8 +224,6 @@ class EE_API cUIControl {
 
 		std::map< Uint32, std::map<Uint32, UIEventCallback> > mEvents;
 		Uint32			mNumCallBacks;
-
-		virtual ~cUIControl();
 
 		virtual void OnVisibleChange();
 

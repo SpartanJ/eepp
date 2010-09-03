@@ -24,7 +24,7 @@ void cUIManager::Init() {
 		Shutdown();
 
 	mInit			= true;
-	mControl		= new cUIControlAnim( cUIControl::CreateParams( NULL, eeVector2i( 0, 0 ), eeSize( cEngine::instance()->GetWidth(), cEngine::instance()->GetHeight() ) ) );
+	mControl		= eeNew( cUIControlAnim, ( cUIControl::CreateParams( NULL, eeVector2i( 0, 0 ), eeSize( cEngine::instance()->GetWidth(), cEngine::instance()->GetHeight() ) ) ) );
 	mControl->Visible( true );
 	mControl->Enabled( true );
 

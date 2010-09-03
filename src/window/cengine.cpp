@@ -7,6 +7,7 @@
 #include "../graphics/cshaderprogrammanager.hpp"
 #include "../graphics/cshapegroupmanager.hpp"
 #include "../ui/cuimanager.hpp"
+#include "../audio/caudiolistener.hpp"
 
 using namespace EE::Graphics;
 
@@ -101,6 +102,8 @@ cEngine::~cEngine() {
 	cJoystickManager::DestroySingleton();
 
 	cInput::DestroySingleton();
+
+	Audio::cAudioListener::DestroySingleton();
 
 	cLog::DestroySingleton();
 
@@ -446,7 +449,7 @@ void cEngine::SetFrameRateLimit(const Uint32& FrameRateLimit) {
 	mFrames.FPS.Limit = (eeFloat)FrameRateLimit;
 }
 
-bool cEngine::TakeScreenshot( std::string filepath, const EE_SAVETYPE& Format ) {
+bool cEngine::TakeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format ) {
 	bool CreateNewFile = false;
 	std::string File, Ext;
 
@@ -469,12 +472,7 @@ bool cEngine::TakeScreenshot( std::string filepath, const EE_SAVETYPE& Format ) 
 		if ( !IsDirectory( filepath ) )
 			MakeDir( filepath );
 
-		switch ( Format ) {
-			case EE_SAVE_TYPE_TGA:	Ext = ".tga";	break;
-			case EE_SAVE_TYPE_BMP:	Ext = ".bmp";	break;
-			case EE_SAVE_TYPE_PNG:	Ext = ".png";	break;
-			case EE_SAVE_TYPE_DDS:	Ext = ".dds";	break;
-		}
+		Ext = "." + SaveTypeToExtension( Format );
 
 		while ( !find && FileNum < 10000 ) {
 			TmpPath = StrFormated( "%s%05d%s", filepath.c_str(), FileNum, Ext.c_str() );

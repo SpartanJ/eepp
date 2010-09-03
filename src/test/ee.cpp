@@ -1,7 +1,7 @@
 #include "../ee.h"
 
 /**
-@TODO Create a Vertex Buffer Object class ( with and without GL_ARB_vertex_buffer_object ).
+@TODO Add a memory manager ( and a STL Allocator implemented in all the engine ).
 @TODO Support multitexturing.
 @TODO Create a basic UI system ( add basic controls, add skinning support ).
 @TODO Add some Surface Grid class, to create special effects ( waved texture, and stuff like that ).
@@ -72,7 +72,7 @@ class cEETest : private cThread {
 		void LoadTextures();
 		void CmdSetPartsNum ( const std::vector < std::wstring >& params );
 
-		std::vector<cParticleSystem> PS;
+		std::vector<cParticleSystem, eeAllocator< cParticleSystem > > PS;
 
 		cTimeElapsed cElapsed;
 		eeFloat PSElapsed;
@@ -192,6 +192,7 @@ class cEETest : private cThread {
 		cSprite mBlindy;
 
 		cFrameBuffer * mFB;
+		cVertexBuffer * mVBO;
 };
 
 
@@ -289,6 +290,18 @@ void cEETest::Init() {
 		if ( NULL != mFB )
 			mFB->ClearColor( eeColorAf( 0, 0, 0, 0.5f ) );
 
+
+		eePolygon2f Poly = CreateRoundedPolygon( 0.f, 0.f, 250.f, 50.f );
+
+		mVBO = cVertexBuffer::Create( VERTEX_FLAG_GET( VERTEX_FLAG_POSITION ) | VERTEX_FLAG_GET( VERTEX_FLAG_COLOR ), EE_DT_POLYGON );
+
+		for ( Uint32 i = 0; i < Poly.Size(); i++ ) {
+			mVBO->AddVertex( Poly[i] );
+			mVBO->AddColor( eeColorA( 100 + i, 255 - i, 150 + i, 200 ) );
+		}
+
+		mVBO->Compile();
+
 		Launch();
 	} else {
 		std::cout << "Failed to start EE++" << std::endl;
@@ -298,9 +311,9 @@ void cEETest::Init() {
 }
 
 void cEETest::LoadFonts() {
-	mFontLoader.Add( new cTextureFontLoader( "conchars", new cTextureLoader( &PAK, "conchars.png", false, eeRGB(0,0,0) ), (eeUint)32 ) );
-	mFontLoader.Add( new cTextureFontLoader( "ProggySquareSZ", new cTextureLoader( &PAK, "ProggySquareSZ.png" ), &PAK, "ProggySquareSZ.dat" ) );
-	mFontLoader.Add( new cTTFFontLoader( "arial", &PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 512, eeColor(255,255,255), 1, eeColor(0,0,0) ) );
+	mFontLoader.Add( eeNew( cTextureFontLoader, ( "conchars", eeNew( cTextureLoader, ( &PAK, "conchars.png", false, eeRGB(0,0,0) ) ), (eeUint)32 ) ) );
+	mFontLoader.Add( eeNew( cTextureFontLoader, ( "ProggySquareSZ", eeNew( cTextureLoader, ( &PAK, "ProggySquareSZ.png" ) ), &PAK, "ProggySquareSZ.dat" ) ) );
+	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", &PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 512, eeColor(255,255,255), 1, eeColor(0,0,0) ) ) );
 	mFontLoader.Load( boost::bind( &cEETest::OnFontLoaded, this, _1 ) );
 }
 
@@ -326,7 +339,7 @@ void cEETest::CreateShaders() {
 
 	if ( mUseShaders ) {
 		mBlurFactor = 0.01f;
-		mShaderProgram = new cShaderProgram( &PAK, "shader/blur.vert", "shader/blur.frag" );
+		mShaderProgram = eeNew( cShaderProgram, ( &PAK, "shader/blur.vert", "shader/blur.frag" ) );
 	}
 }
 
@@ -339,7 +352,7 @@ void cEETest::CreateUI() {
 	Params.Border.Color( 0xFF979797 );
 	//Params.Background.Corners(5);
 	Params.Background.Colors( eeColorA( 0x66FAFAFA ), eeColorA( 0xCCFAFAFA ), eeColorA( 0xCCFAFAFA ), eeColorA( 0x66FAFAFA ) );
-	cUIControlAnim * C = new cUITest( Params );
+	cUIControlAnim * C = eeNew( cUITest, ( Params ) );
 	C->Visible( true );
 	C->Enabled( true );
 	C->Pos( 320, 240 );
@@ -351,7 +364,7 @@ void cEETest::CreateUI() {
 	Params.Background.Colors( eeColorA( 0x7700FF00 ), eeColorA( 0x7700CC00 ), eeColorA( 0x7700CC00 ), eeColorA( 0x7700FF00 ) );
 	Params.Parent( C );
 	Params.Size = eeSize( 50, 50 );
-	cUITest * Child = new cUITest( Params );
+	cUITest * Child = eeNew( cUITest, ( Params ) );
 	Child->Pos( 25, 50 );
 	Child->Visible( true );
 	Child->Enabled( true );
@@ -360,7 +373,7 @@ void cEETest::CreateUI() {
 	Params.Background.Colors( eeColorA( 0x77FFFF00 ), eeColorA( 0x77CCCC00 ), eeColorA( 0x77CCCC00 ), eeColorA( 0x77FFFF00 ) );
 	Params.Parent( Child );
 	Params.Size = eeSize( 25, 25 );
-	cUITest * Child2 = new cUITest( Params );
+	cUITest * Child2 = eeNew( cUITest, ( Params ) );
 	Child2->Pos( 15, 15 );
 	Child2->Visible( true );
 	Child2->Enabled( true );
@@ -372,7 +385,7 @@ void cEETest::CreateUI() {
 	GfxParams.Flags |= UI_CLIP_ENABLE;
 	GfxParams.Size = eeSize( 64, 64 );
 	GfxParams.Shape = cGlobalShapeGroup::instance()->Add( TN[2] );
-	cUIGfx * Gfx = new cUIGfx( GfxParams );
+	cUIGfx * Gfx = eeNew( cUIGfx, ( GfxParams ) );
 	Gfx->Angle( 45.f );
 	Gfx->Visible( true );
 	Gfx->Enabled( true );
@@ -386,7 +399,7 @@ void cEETest::CreateUI() {
 	TextParams.Size = eeSize( 320, 240 );
 	TextParams.Flags = UI_VALIGN_TOP | UI_HALIGN_RIGHT;
 	TextParams.Font = TTF;
-	cUITextBox * Text = new cUITextBox( TextParams );
+	cUITextBox * Text = eeNew( cUITextBox, ( TextParams ) );
 	Text->Visible( true );
 	Text->Enabled( false );
 	Text->Text( L"Turn around\nJust Turn Around\nAround!" );
@@ -401,7 +414,7 @@ void cEETest::CreateUI() {
 	InputParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER;
 	InputParams.Font = TTF;
 	InputParams.SupportNewLine = false;
-	cUITextInput * Input = new cUITextInput( InputParams );
+	cUITextInput * Input = eeNew( cUITextInput, ( InputParams ) );
 	Input->Visible( true );
 	Input->Enabled( true );
 
@@ -443,11 +456,11 @@ void cEETest::LoadTextures() {
 		std::string name( files[i] );
 
 		if ( "jpg" == FileExtension( name ) ) {
-			mResLoad.Add( new cTextureLoader( &PakTest, name ) );
+			mResLoad.Add( eeNew( cTextureLoader, ( &PakTest, name ) ) );
 		}
 	}
 
-	mResLoad.Add( new cSoundLoader( &SndMng, "mysound", &PAK, "sound.ogg" ) );
+	mResLoad.Add( eeNew( cSoundLoader, ( &SndMng, "mysound", &PAK, "sound.ogg" ) ) );
 
 	mResLoad.Load( boost::bind( &cEETest::OnTextureLoaded, this, _1 ) );
 
@@ -541,7 +554,7 @@ void cEETest::LoadTextures() {
 	CL2.AddFrame(TN[0], 96, 96);
 	CL2.Color( eeRGBA( 255, 255, 255, 255 ) );
 
-	mTGL = new cTextureGroupLoader( MyPath + "data/bnb/bnb.etg" );
+	mTGL = eeNew( cTextureGroupLoader, ( MyPath + "data/bnb/bnb.etg" ) );
 
 	mBlindy.AddFramesByPattern( "rn" );
 	mBlindy.UpdatePos( 320.f, 0.f );
@@ -878,6 +891,10 @@ void cEETest::Render() {
 		mBlindy.UpdatePos( 128-16, 128-16 );
 		mBlindy.Draw();
 
+		mVBO->Bind();
+		mVBO->Draw();
+		mVBO->Unbind();
+
 		mFB->Unbind();
 
 		if ( NULL != mFB->GetTexture() )
@@ -1139,6 +1156,7 @@ void cEETest::End() {
 
 	eeSAFE_DELETE( mTGL );
 	eeSAFE_DELETE( mFB );
+	eeSAFE_DELETE( mVBO );
 
 	cEngine::DestroySingleton();
 }
@@ -1170,9 +1188,9 @@ int main (int argc, char * argv []) {
 /*	std::string Path( "/home/downloads/files/temp/bnb/allin/" );
 */
 /*
-	cTextureGroupLoader * tgl = new cTextureGroupLoader();
+	cTextureGroupLoader * tgl = eeNew( cTextureGroupLoader, () );
 	tgl->UpdateTextureAtlas( AppPath() + "data/bnb/bnb.etg", Path );
-	delete tgl;
+	eeDelete( tgl );
 */
 /*
 	cTexturePacker tp( 512, 512 );
@@ -1186,8 +1204,13 @@ int main (int argc, char * argv []) {
 
 	tp.Save( AppPath() + "data/bnb/bnb.png", EE_SAVE_TYPE_PNG );
 */
-	cEETest Test;
-	Test.Process();
+	cEETest * Test = eeNew( cEETest, () );
+
+	Test->Process();
+
+	eeDelete( Test );
+
+	EE::MemoryManager::LogResults();
 
 	return 0;
 }

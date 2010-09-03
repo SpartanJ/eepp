@@ -84,7 +84,7 @@ void cTextureGroupLoader::Load( const std::string& TextureGroupPath ) {
 				std::string path( FileRemoveFileName( mTextureGroupPath ) + name );
 
 				if ( !mSkipResourceLoad )
-					mRL.Add( new cTextureLoader( path ) );
+					mRL.Add( eeNew( cTextureLoader, ( path ) ) );
 
 				fs.read( reinterpret_cast<char*> (&tTexGroup.Shapes[0]), sizeof(sShapeHdr) * tTextureHdr.ShapeCount );
 
@@ -139,9 +139,9 @@ void cTextureGroupLoader::LoadFromMemory( const Uint8* Data, const Uint32& DataS
 				std::string path( FileRemoveFileName( mTextureGroupPath ) + name );
 
 				if ( NULL != mPack )
-					mRL.Add( new cTextureLoader( mPack, path ) );
+					mRL.Add( eeNew( cTextureLoader, ( mPack, path ) ) );
 				else
-					mRL.Add( new cTextureLoader( mAppPath + path ) );
+					mRL.Add( eeNew( cTextureLoader, ( mAppPath + path ) ) );
 
 				memcpy( (void*)(&tTexGroup.Shapes[0]), dataPtr, sizeof(sShapeHdr) * tTextureHdr.ShapeCount );
 				dataPtr += sizeof(sShapeHdr) * tTextureHdr.ShapeCount;
@@ -179,7 +179,7 @@ void cTextureGroupLoader::CreateShapes() {
 			if ( mTexGrHdr.Flags & HDR_TEXTURE_GROUP_REMOVE_EXTENSION )
 				name = FileRemoveExtension( name );
 
-			tSG = new cShapeGroup( name );
+			tSG = eeNew( cShapeGroup, ( name ) );
 			cShapeGroupManager::instance()->Add( tSG );
 		}
 
@@ -194,7 +194,7 @@ void cTextureGroupLoader::CreateShapes() {
 
 				eeRecti tRect( tSh->X, tSh->Y, tSh->X + tSh->Width, tSh->Y + tSh->Height );
 
-				cShape * tShape = new cShape( tTex->TexId(), tRect, tSh->DestWidth, tSh->DestHeight, tSh->OffsetX, tSh->OffsetY, ShapeName );
+				cShape * tShape = eeNew( cShape, ( tTex->TexId(), tRect, tSh->DestWidth, tSh->DestHeight, tSh->OffsetX, tSh->OffsetY, ShapeName ) );
 
 				//if ( tSh->Flags & HDR_SHAPE_FLAG_FLIPED )
 					// Should rotate the shape, but.. shape rotation is not stored.
@@ -306,7 +306,7 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 
 			tp.PackTextures();
 
-			tp.Save( tapath, (EE_SAVETYPE)mTexGrHdr.Format );
+			tp.Save( tapath, (EE_SAVE_TYPE)mTexGrHdr.Format );
 		} else if ( 1 == NeedUpdate ) {
 			std::string etgpath = FileRemoveExtension( tapath ) + ".etg";
 			std::fstream fs ( etgpath.c_str() , std::ios::out | std::ios::binary );
@@ -358,7 +358,7 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 
 					fs.write( reinterpret_cast<const char*> (&tTexGroup->Shapes[0]), sizeof(sShapeHdr) * tTexHdr->ShapeCount );
 
-					Img.SaveToFile( tapath, (EE_SAVETYPE)mTexGrHdr.Format );
+					Img.SaveToFile( tapath, (EE_SAVE_TYPE)mTexGrHdr.Format );
 
 					SOIL_free_image_data( imgPtr );
 				}

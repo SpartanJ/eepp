@@ -161,7 +161,7 @@ void cTextureLoader::LoadFromPath() {
 		if ( mIsDDS ) {
 			std::fstream fs ( mFilepath.c_str() , std::ios::in | std::ios::binary );
 			mSize = FileSize( mFilepath );
-			mPixels = (Uint8*) malloc( mSize );
+			mPixels = (Uint8*) eeMalloc( mSize );
 			fs.read( reinterpret_cast<char*> ( mPixels ), mSize );
 			fs.close();
 
@@ -191,7 +191,7 @@ void cTextureLoader::LoadFromMemory() {
 		mIsDDS = 0 != stbi_dds_test_memory( mImagePtr, mSize );
 
 	if ( mIsDDS ) {
-		mPixels = (Uint8*) malloc( mSize );
+		mPixels = (Uint8*) eeMalloc( mSize );
 		memcpy( mPixels, mImagePtr, mSize );
 		stbi_dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsDDSCompressed );
 	} else {
@@ -234,8 +234,13 @@ void cTextureLoader::LoadFromPixels() {
 				mTexId = cTextureFactory::instance()->PushTexture( mFilepath, tTexId, mImgWidth, mImgHeight, width, height, mMipmap, mChannels, mColorKey, mClampMode, mCompressTexture || mIsDDSCompressed, mLocalCopy, mSize );
 			}
 
-			if ( TEX_LT_PIXELS != mLoadType )
-				eeSAFE_FREE( mPixels );
+			if ( TEX_LT_PIXELS != mLoadType ) {
+				if ( mIsDDS ) {
+					eeFree( mPixels );
+				} else {
+					SOIL_free_image_data( mPixels );
+				}
+			}
 
 			mPixels = NULL;
 
