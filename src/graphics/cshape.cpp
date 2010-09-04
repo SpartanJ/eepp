@@ -159,12 +159,12 @@ void cShape::OffsetY( const eeFloat& offsety ) {
 	mOffSetY = offsety;
 }
 
-void cShape::Draw( const eeFloat& X, const eeFloat& Y, const eeRGBA& Color, const eeFloat& Angle, const eeFloat& Scale, const EE_RENDERALPHAS& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
+void cShape::Draw( const eeFloat& X, const eeFloat& Y, const eeRGBA& Color, const eeFloat& Angle, const eeFloat& Scale, const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
 	if ( NULL != mTexture )
 		mTexture->DrawEx( X + mOffSetX, Y + mOffSetY, mDestWidth, mDestHeight, Angle, Scale, Color, Color, Color, Color, Blend, Effect, ScaleRendered, mSrcRect );
 }
 
-void cShape::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeRGBA& Color0, const eeRGBA& Color1, const eeRGBA& Color2, const eeRGBA& Color3, const EE_RENDERALPHAS& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
+void cShape::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeRGBA& Color0, const eeRGBA& Color1, const eeRGBA& Color2, const eeRGBA& Color3, const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
 	if ( NULL != mTexture )
 		mTexture->DrawEx( X + mOffSetX, Y + mOffSetY, mDestWidth, mDestHeight, Angle, Scale, Color0, Color1, Color2, Color3, Blend, Effect, ScaleRendered, mSrcRect );
 }
@@ -325,8 +325,8 @@ bool cShape::Unlock( const bool& KeepData, const bool& Modified ) {
 			GLint PreviousTexture;
 			glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
 
-			if ( PreviousTexture != (Int32)mTexture->Texture() )
-				glBindTexture(GL_TEXTURE_2D, mTexture->Texture() );
+			if ( PreviousTexture != (Int32)mTexture->Handle() )
+				glBindTexture(GL_TEXTURE_2D, mTexture->Handle() );
 
 			Uint32 Channels = mTexture->Channels();
 			Uint32 Channel = GL_RGBA;
@@ -340,7 +340,7 @@ bool cShape::Unlock( const bool& KeepData, const bool& Modified ) {
 
 			glTexSubImage2D( GL_TEXTURE_2D, 0, mSrcRect.Left, mSrcRect.Top, mSrcRect.Size().Width(), mSrcRect.Size().Height(), Channel, GL_UNSIGNED_BYTE, reinterpret_cast<const void *> ( &mPixels[0] ) );
 
-			if ( PreviousTexture != (Int32)mTexture->Texture() )
+			if ( PreviousTexture != (Int32)mTexture->Handle() )
 				glBindTexture(GL_TEXTURE_2D, PreviousTexture);
 		}
 

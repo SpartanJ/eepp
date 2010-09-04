@@ -1,17 +1,20 @@
 #include "cvertexbuffer.hpp"
 #include "cvertexbufferogl.hpp"
 #include "cvertexbuffervbo.hpp"
+#include "glhelper.hpp"
+
+using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
-cVertexBuffer * cVertexBuffer::Create( const Uint32& VertexFlags, EE_DRAW_TYPE DrawType, const Int32& ReserveVertexSize, const Int32& ReserveIndexSize, EE_VBO_USAGE_TYPE UsageType ) {
-	if ( GLEW_ARB_vertex_buffer_object )
+cVertexBuffer * cVertexBuffer::Create( const Uint32& VertexFlags, EE_DRAW_MODE DrawType, const Int32& ReserveVertexSize, const Int32& ReserveIndexSize, EE_VBO_USAGE_TYPE UsageType ) {
+	if ( cGL::instance()->IsExtension( GLEW_ARB_vertex_buffer_object ) )
 		return eeNew( cVertexBufferVBO, ( VertexFlags, DrawType, ReserveVertexSize, ReserveIndexSize, UsageType ) );
 
 	return eeNew( cVertexBufferOGL, ( VertexFlags, DrawType, ReserveVertexSize, ReserveIndexSize, UsageType ) );
 }
 
-cVertexBuffer::cVertexBuffer( const Uint32& VertexFlags, EE_DRAW_TYPE DrawType, const Int32& ReserveVertexSize, const Int32& ReserveIndexSize, EE_VBO_USAGE_TYPE UsageType ) :
+cVertexBuffer::cVertexBuffer( const Uint32& VertexFlags, EE_DRAW_MODE DrawType, const Int32& ReserveVertexSize, const Int32& ReserveIndexSize, EE_VBO_USAGE_TYPE UsageType ) :
 	mVertexFlags( VertexFlags ),
 	mDrawType( DrawType ),
 	mUsageType( UsageType ),
@@ -140,15 +143,15 @@ const Int32& cVertexBuffer::GetElementNum() const {
 
 void cVertexBuffer::Unbind() {
 	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
-		glEnableClientState( GL_VERTEX_ARRAY );
+		//glEnableClientState( GL_VERTEX_ARRAY );
 	}
 
 	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) ) {
-		glEnableClientState( GL_COLOR_ARRAY );
+		//glEnableClientState( GL_COLOR_ARRAY );
 	}
 
 	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 ) ) {
-		glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+		//glEnableClientState( GL_TEXTURE_COORD_ARRAY );
 		glEnable( GL_TEXTURE_2D );
 	}
 }

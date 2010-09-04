@@ -117,7 +117,7 @@ class EE_API cSprite {
 		void SetRenderType( const EE_RENDERTYPE& Effect ) { mEffect = Effect; }
 
 		/** Set the Blend Mode */
-		void SetRenderAlphas( const EE_RENDERALPHAS& Blend ) { mBlend = Blend; }
+		void SetRenderAlphas( const EE_PRE_BLEND_FUNC& Blend ) { mBlend = Blend; }
 
 		/** Reset the sprite as a new one. */
 		void Reset();
@@ -247,12 +247,12 @@ class EE_API cSprite {
 		* @param Effect The Render Type
 		* @param ElapsedTime The Elapsed Time for the animation ( -99999.f will take the elapsed time counted by the engine )
 		*/
-		void Draw( const EE_RENDERALPHAS& Blend, const EE_RENDERTYPE& Effect, const eeFloat& ElapsedTime = -99999.f );
+		void Draw( const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect, const eeFloat& ElapsedTime = -99999.f );
 
 		/** Draw the sprite to the screen forcing the Blend Mode
 		* @param Blend The Blend Mode
 		*/
-		void Draw( const EE_RENDERALPHAS& Blend );
+		void Draw( const EE_PRE_BLEND_FUNC& Blend );
 
 		/** Draw the sprite to the screen forcing the Render Type
 		* @param Effect The Render Type
@@ -317,7 +317,7 @@ class EE_API cSprite {
 		eeFloat mX, mY, mAngle, mScale, mAnimSpeed;
 		bool mAutoAnim;
 		bool mScaleCentered;
-		EE_RENDERALPHAS mBlend;
+		EE_PRE_BLEND_FUNC mBlend;
 		EE_RENDERTYPE mEffect;
 
 		eeRGBA mColor, mColor0, mColor1, mColor2, mColor3;

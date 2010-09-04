@@ -1,4 +1,7 @@
 #include "cparticlesystem.hpp"
+#include "glhelper.hpp"
+
+using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
@@ -13,7 +16,7 @@ cParticleSystem::~cParticleSystem() {
 
 void cParticleSystem::Create(const EE_PARTICLE_EFFECT& Effect, const Uint32& NumParticles, const Uint32& TexId, const eeFloat& X, const eeFloat& Y, const eeFloat& PartSize, const bool& AnimLoop, const Uint32& NumLoops, const eeColorAf& Color, const eeFloat& X2, const eeFloat& Y2, const eeFloat& AlphaDecay, const eeFloat& XSpeed, const eeFloat& YSpeed, const eeFloat& XAcceleration, const eeFloat& YAcceleration) {
 	mParticle.clear();
-	mPointsSup = EE->PointSpriteSuppported();
+	mPointsSup = cGL::instance()->PointSpriteSupported();
 
 	mEffect = Effect;
 	mX = X;
@@ -235,7 +238,7 @@ void cParticleSystem::Reset(cParticle* P) {
 
 void cParticleSystem::Draw() {
 	TF->Bind( mTexId );
-    TF->SetBlendFunc( ALPHA_BLENDONE );
+    TF->SetPreBlendFunc( ALPHA_BLENDONE );
 
 	if ( mPointsSup ) {
 		glEnable( GL_POINT_SPRITE_ARB );
@@ -258,7 +261,7 @@ void cParticleSystem::Draw() {
 
 		cBatchRenderer * BR = cGlobalBatchRenderer::instance();
 		BR->SetTexture( Tex );
-		BR->SetBlendFunc( ALPHA_BLENDONE );
+		BR->SetPreBlendFunc( ALPHA_BLENDONE );
 		BR->QuadsBegin();
 
 		for ( Uint32 i = 0; i < mParticle.size(); i++ ) {
@@ -268,7 +271,7 @@ void cParticleSystem::Draw() {
 			if ( P->Used() ) {
 				TL.x = P->X() - mHSize;
 				TL.y = P->Y() - mHSize;
-				
+
 				/** FIXME: Optimize */
 				BR->QuadsSetColor( eeColorA( static_cast<Uint8> ( P->R() * 255 ), static_cast<Uint8> ( P->G() * 255 ), static_cast<Uint8>( P->B() * 255 ), static_cast<Uint8>( P->A() * 255 ) ) );
 				BR->BatchQuad( TL.x, TL.y, mSize, mSize );

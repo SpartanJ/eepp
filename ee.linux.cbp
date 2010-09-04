@@ -152,6 +152,8 @@
 		<Unit filename="src/graphics/cvertexbuffervbo.cpp" />
 		<Unit filename="src/graphics/cvertexbuffervbo.hpp" />
 		<Unit filename="src/graphics/fonthelper.hpp" />
+		<Unit filename="src/graphics/glhelper.cpp" />
+		<Unit filename="src/graphics/glhelper.hpp" />
 		<Unit filename="src/graphics/packerhelper.hpp" />
 		<Unit filename="src/graphics/pixelperfect.cpp" />
 		<Unit filename="src/graphics/pixelperfect.hpp" />

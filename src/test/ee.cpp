@@ -1,8 +1,6 @@
 #include "../ee.h"
 
 /**
-@TODO Add a memory manager ( and a STL Allocator implemented in all the engine ).
-@TODO Support multitexturing.
 @TODO Create a basic UI system ( add basic controls, add skinning support ).
 @TODO Add some Surface Grid class, to create special effects ( waved texture, and stuff like that ).
 @TODO Add Scripting support ( lua or squirrel ).
@@ -168,6 +166,7 @@ class cEETest : private cThread {
 		eeInt mHeight;
 
 		std::wstring mBuda;
+		cTextCache * mBudaTC;
 
 		bool mTextureLoaded;
 		cResourceLoader mResLoad;
@@ -283,7 +282,7 @@ void cEETest::Init() {
 		WP.Start();
 
 		Batch.AllocVertexs( 1024 );
-		Batch.SetBlendFunc( ALPHA_BLENDONE );
+		Batch.SetPreBlendFunc( ALPHA_BLENDONE );
 
 		mFB = cFrameBuffer::CreateNew( 256, 256, false );
 
@@ -293,7 +292,7 @@ void cEETest::Init() {
 
 		eePolygon2f Poly = CreateRoundedPolygon( 0.f, 0.f, 250.f, 50.f );
 
-		mVBO = cVertexBuffer::Create( VERTEX_FLAG_GET( VERTEX_FLAG_POSITION ) | VERTEX_FLAG_GET( VERTEX_FLAG_COLOR ), EE_DT_POLYGON );
+		mVBO = cVertexBuffer::Create( VERTEX_FLAG_GET( VERTEX_FLAG_POSITION ) | VERTEX_FLAG_GET( VERTEX_FLAG_COLOR ), DM_POLYGON );
 
 		for ( Uint32 i = 0; i < Poly.Size(); i++ ) {
 			mVBO->AddVertex( Poly[i] );
@@ -313,7 +312,7 @@ void cEETest::Init() {
 void cEETest::LoadFonts() {
 	mFontLoader.Add( eeNew( cTextureFontLoader, ( "conchars", eeNew( cTextureLoader, ( &PAK, "conchars.png", false, eeRGB(0,0,0) ) ), (eeUint)32 ) ) );
 	mFontLoader.Add( eeNew( cTextureFontLoader, ( "ProggySquareSZ", eeNew( cTextureLoader, ( &PAK, "ProggySquareSZ.png" ) ), &PAK, "ProggySquareSZ.dat" ) ) );
-	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", &PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 512, eeColor(255,255,255), 1, eeColor(0,0,0) ) ) );
+	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", &PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255), 1, eeColor(0,0,0), true ) ) );
 	mFontLoader.Load( boost::bind( &cEETest::OnFontLoaded, this, _1 ) );
 }
 
@@ -321,8 +320,6 @@ void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
 	FF 	= reinterpret_cast<cTextureFont*> ( cFontManager::instance()->GetByName( "conchars" ) );
 	FF2 = reinterpret_cast<cTextureFont*> ( cFontManager::instance()->GetByName( "ProggySquareSZ" ) );
 	TTF = reinterpret_cast<cTTFFont*> ( cFontManager::instance()->GetByName( "arial" ) );
-
-	TF->GetTexture( TTF->GetTexId() )->SetTextureFilter( TEX_NEAREST );
 
 	Con.Create( FF, true );
 	Con.IgnoreCharOnPrompt( 186 ); // L'º'
@@ -420,6 +417,8 @@ void cEETest::CreateUI() {
 
 	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.\nPowered by Text Shrinker =)";
 	TTF->ShrinkText( mBuda, 400 );
+
+	mBudaTC = eeNew( cTextCache, ( TTF, mBuda, eeColorA(255,255,255,255) ) );
 }
 
 void cEETest::CmdSetPartsNum ( const std::vector < std::wstring >& params ) {
@@ -743,9 +742,9 @@ void cEETest::Screen2() {
 	CL1.Draw();
 	CL2.Draw();
 
-	PR.DrawRectangle( CL1.GetAABB(), 0.0f, 1.0f, DRAW_LINE );
+	PR.DrawRectangle( CL1.GetAABB(), 0.0f, 1.0f, EE_DRAW_LINE );
 
-	PR.DrawQuad( CL1.GetQuad(), DRAW_LINE );
+	PR.DrawQuad( CL1.GetQuad(), EE_DRAW_LINE );
 
 	Ang = Ang + EE->Elapsed() * 0.1f;
 	if (Ang > 360.f) Ang = 1.f;
@@ -766,14 +765,14 @@ void cEETest::Screen2() {
 	else if (iL2)
 		PR.SetColor( eeColorA(255, 255, 0, 255) );
 
-	PR.DrawCircle(Mousef.x, Mousef.y, 80.f, (Uint32)(Ang/3), DRAW_LINE);
+	PR.DrawCircle(Mousef.x, Mousef.y, 80.f, (Uint32)(Ang/3), EE_DRAW_LINE);
 
-	PR.DrawTriangle( eeVector2f( Mousef.x, Mousef.y - 10.f ), eeVector2f( Mousef.x - 10.f, Mousef.y + 10.f ), eeVector2f( Mousef.x + 10.f, Mousef.y + 10.f ), DRAW_LINE );
+	PR.DrawTriangle( eeVector2f( Mousef.x, Mousef.y - 10.f ), eeVector2f( Mousef.x - 10.f, Mousef.y + 10.f ), eeVector2f( Mousef.x + 10.f, Mousef.y + 10.f ), EE_DRAW_LINE );
 	PR.DrawLine( eeVector2f(Mousef.x - 80.f, Mousef.y - 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y + 80.f) );
 	PR.DrawLine( eeVector2f(Mousef.x - 80.f, Mousef.y + 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y - 80.f) );
 	PR.DrawLine( eeVector2f((eeFloat)EE->GetWidth(), 0.f), eeVector2f( 0.f, (eeFloat)EE->GetHeight() ) );
 	PR.DrawQuad( eeVector2f(0.f, 0.f), eeVector2f(0.f, 100.f), eeVector2f(150.f, 150.f), eeVector2f(200.f, 150.f), eeColorA(220, 240, 0, 125), eeColorA(100, 0, 240, 125), eeColorA(250, 50, 25, 125), eeColorA(50, 150, 150, 125) );
-	PR.DrawRectangle(Mousef.x - 80.f, Mousef.y - 80.f, 160.f, 160.f, 45.f, 1.f, DRAW_LINE);
+	PR.DrawRectangle(Mousef.x - 80.f, Mousef.y - 80.f, 160.f, 160.f, 45.f, 1.f, EE_DRAW_LINE);
 	PR.DrawLine( eeVector2f(0.f, 0.f), eeVector2f( (eeFloat)EE->GetWidth(), (eeFloat)EE->GetHeight() ) );
 
 	TNP[3]->DrawQuadEx( eeQuad2f( eeVector2f(0.f, 0.f), eeVector2f(0.f, 100.f), eeVector2f(150.f, 150.f), eeVector2f(200.f, 150.f) ), 0.0f, 0.0f, ang, scale, eeColorA(220, 240, 0, 125), eeColorA(100, 0, 240, 125), eeColorA(250, 50, 25, 125), eeColorA(50, 150, 150, 125) );
@@ -810,12 +809,12 @@ void cEETest::Render() {
 
 	if ( eeGetTicks() - lasttick >= 50 ) {
 		lasttick = eeGetTicks();
-		mInfo = StrFormated( "EE - FPS: %d Elapsed Time: %4.8f\nMouse X: %d Mouse Y: %d\nTexture Memory Size: %d",
+		mInfo = StrFormated( "EE - FPS: %d Elapsed Time: %4.8f\nMouse X: %d Mouse Y: %d\nTexture Memory Size: %s",
 							EE->FPS(),
 							et,
 							(Int32)Mouse.x,
 							(Int32)Mouse.y,
-							(Int32)TF->MemorySize()
+							SizeToString( TF->MemorySize() ).c_str()
 						);
 	}
 
@@ -875,8 +874,7 @@ void cEETest::Render() {
 		FF2->Draw( L"_", 6.f + FF2->GetTextWidth(), 24.f + (eeFloat)LineNum * (eeFloat)FF2->GetFontSize() );
 	}
 
-	TTF->SetText( mBuda );
-	TTF->Draw( 0.f, 50.f );
+	mBudaTC->Draw( 0.f, 50.f );
 
 	cTexture * TexFace = TF->GetTexture( mFace );
 	if ( TexFace )
@@ -1157,6 +1155,7 @@ void cEETest::End() {
 	eeSAFE_DELETE( mTGL );
 	eeSAFE_DELETE( mFB );
 	eeSAFE_DELETE( mVBO );
+	eeSAFE_DELETE( mBudaTC );
 
 	cEngine::DestroySingleton();
 }

@@ -149,7 +149,6 @@ void cIsoMap::Draw() {
 						}
 
 						TF->Bind( T->Layers[L] );
-						TF->SetBlendFunc(ALPHA_NORMAL);
 
 						glColorPointer( 3, GL_UNSIGNED_BYTE, 0, reinterpret_cast<char*>( T ) );
 						glVertexPointer( 2, GL_FLOAT, 0, reinterpret_cast<char*>( T ) + sizeof(eeColor) * 4 );
@@ -181,7 +180,7 @@ void cIsoMap::Draw() {
 
 							if ( Intersect( ScreenAABB, ShadowAABB ) ) {
 								//AABB ShadowAABB_RECT( OffsetX + ObjPos.x, OffsetY + TileCenter.y - Tex->Height(), OffsetX + TileCenter.x + Tex->Width(), OffsetY + TileCenter.y );
-								//PR.DrawRectangle( ShadowAABB_RECT, 0, 1, DRAW_LINE );
+								//PR.DrawRectangle( ShadowAABB_RECT, 0, 1, EE_DRAW_LINE );
 								Tex->DrawEx( OffsetX + ObjPos.x, OffsetY + ObjPos.y, (eeFloat)Tex->ImgWidth(), (eeFloat)Tex->ImgHeight(), 0, 1, SC, SC, SC, SC, ALPHA_NORMAL, RN_ISOMETRIC );
 							}
 
@@ -207,7 +206,7 @@ void cIsoMap::Draw() {
 		}
 	}
 
-	PR.DrawQuad( Tile( MouseTilePos.x, MouseTilePos.y ).Q, DRAW_LINE, ALPHA_NORMAL, 1.0f, OffsetX, OffsetY );
+	PR.DrawQuad( Tile( MouseTilePos.x, MouseTilePos.y ).Q, EE_DRAW_LINE, ALPHA_NORMAL, 1.0f, OffsetX, OffsetY );
 }
 
 void cIsoMap::Move( const eeFloat& offsetx, const eeFloat& offsety ) {

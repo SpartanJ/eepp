@@ -53,6 +53,10 @@
 #   define EE_PLATFORM EE_PLATFORM_LINUX
 #endif
 
+#if EE_PLATFORM == EE_PLATFORM_WIN32 || EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_LINUX
+#define EE_GLEW_AVAILABLE
+#endif
+
 #ifdef EE_PLATFORM
 #define EE_SUPPORTED_PLATFORM
 #endif
@@ -91,14 +95,15 @@
 #define EE_API
 #endif
 
+#ifdef EE_GLEW_AVAILABLE
 #include "helper/glew/glew.h"
+#endif
+
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 #include <OpenGL/gl.h>
 #else
 #include <GL/gl.h>
 #endif
-
-#include "base/base.hpp"
 
 namespace EE {
 	#define eeARRAY_SIZE(__array)	( sizeof(__array) / sizeof(__array[0]) )
@@ -120,5 +125,7 @@ namespace EE {
 	const GLubyte EE_GLES_INDICES [] = {0, 3, 1, 2};
 	#endif
 }
+
+#include "base/base.hpp"
 
 #endif

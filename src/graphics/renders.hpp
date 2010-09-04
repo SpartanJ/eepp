@@ -3,28 +3,31 @@
 
 namespace EE { namespace Graphics {
 
-/** @enum EE_FILLMODE Defines the fill mode for the primitives. */
-enum EE_FILLMODE {
-	DRAW_LINE, 				//!< Draw only lines
-	DRAW_FILL 				//!< Draw filled objects
+#define EE_MAX_TEXTURE_UNITS 8
+
+/** @enum EE_FILL_MODE Defines the fill mode for the primitives. */
+enum EE_FILL_MODE {
+	EE_DRAW_LINE, 				//!< Draw only lines
+	EE_DRAW_FILL 				//!< Draw filled objects
 };
 
 /** @enum EE_TEX_FILTER Defines the texture filter used. */
 enum EE_TEX_FILTER {
-	TEX_LINEAR, 			//!< Linear filtering (Smoothed Zoom)
-	TEX_NEAREST 			//!< No filtering (Pixeled Zoom)
+	EE_TEX_LINEAR, 			//!< Linear filtering (Smoothed Zoom)
+	EE_TEX_NEAREST 			//!< No filtering (Pixeled Zoom)
 };
 
-/** @enum EE_RENDERALPHAS Defines the Blend Function to use */
-enum EE_RENDERALPHAS {
-	ALPHA_NONE, 			//!< Disable the GL_BLEND
-	ALPHA_NORMAL, 			//!< glBlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA);
-	ALPHA_BLENDONE, 		//!< glBlendFunc(GL_SRC_ALPHA , GL_ONE);
-	ALPHA_BLENDTWO, 		//!< glBlendFunc(GL_SRC_ALPHA , GL_SRC_ALPHA); \n glBlendFunc(GL_DST_ALPHA , GL_ONE);
-	ALPHA_BLENDTHREE, 		//!< glBlendFunc(GL_SRC_ALPHA , GL_ONE); \n glBlendFunc(GL_DST_ALPHA , GL_SRC_ALPHA);
-	ALPHA_ALPHACHANNELS, 	//!< glBlendFunc(GL_SRC_ALPHA , GL_SRC_ALPHA);
-	ALPHA_DESTALPHA, 		//!< glBlendFunc(GL_SRC_ALPHA , GL_DST_ALPHA);
-	ALPHA_MULTIPLY 			//!< glBlendFunc(GL_DST_COLOR,GL_ZERO);
+/** @enum EE_PRE_BLEND_FUNC Predefined blend functions */
+enum EE_PRE_BLEND_FUNC {
+	ALPHA_NONE, 			//!< Disable the blend
+	ALPHA_NORMAL, 			//!< src SRC_ALPHA dst ONE_MINUS_SRC_ALPHA
+	ALPHA_BLENDONE, 		//!< src SRC_ALPHA dst ONE
+	ALPHA_BLENDTWO, 		//!< src SRC_ALPHA dst SRC_ALPHA \n src DST_ALPHA dst ONE
+	ALPHA_BLENDTHREE, 		//!< src SRC_ALPHA dst ONE \n src DST_ALPHA dst SRC_ALPHA
+	ALPHA_ALPHACHANNELS, 	//!< src SRC_ALPHA dst SRC_ALPHA
+	ALPHA_DESTALPHA, 		//!< src SRC_ALPHA dst DST_ALPHA
+	ALPHA_MULTIPLY, 		//!< src DST_COLOR dst ZERO
+	ALPHA_CUSTOM			//!< Disable the Predefined blend function for the use of custom blend funcs.
 };
 
 /** @enum EE_RENDERTYPE Defines the method to use to render a texture. */
@@ -60,22 +63,95 @@ enum EE_CLAMP_MODE {
 	EE_CLAMP_REPEAT
 };
 
-/** @enum EE_DRAW_TYPE The batch renderer, rendering methods */
-enum EE_DRAW_TYPE {
-	EE_DT_POINTS 			= 0x0000,
-	EE_DT_LINES 			= 0x0001,
-	EE_DT_LINE_LOOP 		= 0x0002,
-	EE_DT_LINE_STRIP 		= 0x0003,
-	EE_DT_TRIANGLES 		= 0x0004,
-	EE_DT_TRIANGLE_STRIP 	= 0x0005,
-	EE_DT_TRIANGLE_FAN 		= 0x0006,
-	EE_DT_QUADS 			= 0x0007,
-	EE_DT_QUAD_STRIP 		= 0x0008,
-	EE_DT_POLYGON 			= 0x0009
+/** @enum EE_DRAW_MODE The batch renderer, rendering methods */
+enum EE_DRAW_MODE {
+	DM_POINTS 			= 0x0000,
+	DM_LINES 			= 0x0001,
+	DM_LINE_LOOP 		= 0x0002,
+	DM_LINE_STRIP 		= 0x0003,
+	DM_TRIANGLES 		= 0x0004,
+	DM_TRIANGLE_STRIP 	= 0x0005,
+	DM_TRIANGLE_FAN 	= 0x0006,
+	DM_QUADS 			= 0x0007,
+	DM_QUAD_STRIP 		= 0x0008,
+	DM_POLYGON 			= 0x0009
 };
 
-}
+/** @enum EE_BLEND_FUNC Blend functions */
+enum EE_BLEND_FUNC {
+	BF_ZERO					= 0,
+	BF_ONE					= 1,
+	BF_SRC_COLOR			= 0x0300,
+	BF_ONE_MINUS_SRC_COLOR	= 0x0301,
+	BF_SRC_ALPHA			= 0x0302,
+	BF_ONE_MINUS_SRC_ALPHA	= 0x0303,
+	BF_DST_ALPHA			= 0x0304,
+	BF_ONE_MINUS_DST_ALPHA	= 0x0305,
+	BF_DST_COLOR			= 0x0306,
+	BF_ONE_MINUS_DST_COLOR	= 0x0307,
+	BF_SRC_ALPHA_SATURATE	= 0x0308
+};
 
-}
+/** @enum EE_TEXTURE_PARAM Texture Params */
+enum EE_TEXTURE_PARAM {
+	TEX_PARAM_COLOR_FUNC,
+	TEX_PARAM_ALPHA_FUNC,
+	TEX_PARAM_COLOR_SOURCE_0,
+	TEX_PARAM_COLOR_SOURCE_1,
+	TEX_PARAM_COLOR_SOURCE_2,
+	TEX_PARAM_ALPHA_SOURCE_0,
+	TEX_PARAM_ALPHA_SOURCE_1,
+	TEX_PARAM_ALPHA_SOURCE_2,
+	TEX_PARAM_COLOR_OP_0,
+	TEX_PARAM_COLOR_OP_1,
+	TEX_PARAM_COLOR_OP_2,
+	TEX_PARAM_ALPHA_OP_0,
+	TEX_PARAM_ALPHA_OP_1,
+	TEX_PARAM_ALPHA_OP_2,
+	TEX_PARAM_COLOR_SCALE,
+	TEX_PARAM_ALPHA_SCALE
+};
+
+/** @enum EE_TEXTURE_OP Texture Env Op */
+enum EE_TEXTURE_OP {
+	TEX_OP_COLOR,
+	TEX_OP_ONE_MINUS_COLOR,
+	TEX_OP_ALPHA,
+	TEX_OP_ONE_MINUS_ALPHA
+};
+
+/** @enum EE_TEXTURE_FUNC Texture functions */
+enum EE_TEXTURE_FUNC {
+	TEX_FUNC_MODULATE,
+	TEX_FUNC_REPLACE,
+	TEX_FUNC_ADD,
+	TEX_FUNC_SUBSTRACT,
+	TEX_FUNC_ADD_SIGNED,
+	TEX_FUNC_INTERPOLATE,
+	TEX_FUNC_DOT3_RGB,
+	TEX_FUNC_DOT3_RGBA
+};
+
+/** @enum EE_ALPHA_TEST_FUNC Alpha test functions */
+enum EE_ALPHA_TEST_FUNC {
+	ALPHA_FUNC_NEVER,
+	ALPHA_FUNC_LESS,
+	ALPHA_FUNC_LEQUAL,
+	ALPHA_FUNC_GREATER,
+	ALPHA_FUNC_GEQUAL,
+	ALPHA_FUNC_EQUAL,
+	ALPHA_FUNC_NOTEQUAL,
+	ALPHA_FUNC_ALWAYS
+};
+
+/** @enum EE_TEXTURE_SOURCE The Texture Source */
+enum EE_TEXTURE_SOURCE {
+	TEX_SRC_TEXTURE,
+	TEX_SRC_CONSTANT,
+	TEX_SRC_PRIMARY,
+	TEX_SRC_PREVIOUS
+};
+
+}}
 
 #endif

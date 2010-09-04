@@ -7,7 +7,7 @@ cBatchRenderer::cBatchRenderer() :
 	mNumVertex(0),
 	mTexture(NULL),
 	mBlend(ALPHA_NORMAL),
-	mCurrentMode(EE_DT_QUADS),
+	mCurrentMode(DM_QUADS),
 	mRotation(0.0f),
 	mScale(1.0f),
 	mPosition(0.0f, 0.0f),
@@ -23,7 +23,7 @@ cBatchRenderer::cBatchRenderer( const eeUint& Prealloc ) :
 	mNumVertex(0),
 	mTexture(NULL),
 	mBlend(ALPHA_NORMAL),
-	mCurrentMode(EE_DT_QUADS),
+	mCurrentMode(DM_QUADS),
 	mRotation(0.0f),
 	mScale(1.0f),
 	mPosition(0.0f, 0.0f),
@@ -63,7 +63,7 @@ void cBatchRenderer::SetTexture( const cTexture * Tex ) {
 	mTexture = Tex;
 }
 
-void cBatchRenderer::SetBlendFunc( const EE_RENDERALPHAS& Blend ) {
+void cBatchRenderer::SetPreBlendFunc( const EE_PRE_BLEND_FUNC& Blend ) {
 	mBlend = Blend;
 }
 
@@ -73,7 +73,7 @@ void cBatchRenderer::AddVertexs( const eeUint& num ) {
 		Flush();
 }
 
-void cBatchRenderer::SetBlendMode( EE_DRAW_TYPE Mode, const bool& Force ) {
+void cBatchRenderer::SetBlendMode( EE_DRAW_MODE Mode, const bool& Force ) {
 	if ( Force && mCurrentMode != Mode ) {
 		Flush();
 		mCurrentMode = Mode;
@@ -91,9 +91,9 @@ void cBatchRenderer::Flush() {
 	else
 		glDisable( GL_TEXTURE_2D );
 
-	cTextureFactory::instance()->SetBlendFunc( mBlend );
+	cTextureFactory::instance()->SetPreBlendFunc( mBlend );
 
-	if ( mCurrentMode == EE_DT_POINTS && NULL != mTexture ) {
+	if ( mCurrentMode == DM_POINTS && NULL != mTexture ) {
 		glEnable( GL_POINT_SPRITE_ARB );
 		glTexEnvf( GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE );
 		glPointSize( (GLfloat)mTexture->Width() );
@@ -120,7 +120,7 @@ void cBatchRenderer::Flush() {
 	if ( CreateMatrix )
 		glPopMatrix();
 
-	if ( mCurrentMode == EE_DT_POINTS && mTexture > 0 ) {
+	if ( mCurrentMode == DM_POINTS && mTexture > 0 ) {
 		glDisable( GL_POINT_SPRITE_ARB );
 	}
 
@@ -142,7 +142,7 @@ void cBatchRenderer::BatchQuad( const eeFloat& x, const eeFloat& y, const eeFloa
 	}
 
 #ifndef EE_GLES
-	SetBlendMode( EE_DT_QUADS, mForceBlendMode );
+	SetBlendMode( DM_QUADS, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x;
@@ -172,7 +172,7 @@ void cBatchRenderer::BatchQuad( const eeFloat& x, const eeFloat& y, const eeFloa
 	mTVertex->color = mVerColor[3];
 	Rotate(center, &mTVertex->pos, angle);
 #else
-	SetBlendMode( EE_DT_TRIANGLE_STRIP, mForceBlendMode );
+	SetBlendMode( DM_TRIANGLE_STRIP, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x;
@@ -232,7 +232,7 @@ void cBatchRenderer::BatchQuadEx( const eeFloat& x, const eeFloat& y, const eeFl
 	center.y += y;
 
 #ifndef EE_GLES
-	SetBlendMode( EE_DT_QUADS, mForceBlendMode );
+	SetBlendMode( DM_QUADS, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = mx;
@@ -262,7 +262,7 @@ void cBatchRenderer::BatchQuadEx( const eeFloat& x, const eeFloat& y, const eeFl
 	mTVertex->color = mVerColor[3];
 	Rotate(center, &mTVertex->pos, angle);
 #else
-	SetBlendMode( EE_DT_TRIANGLE_STRIP, mForceBlendMode );
+	SetBlendMode( DM_TRIANGLE_STRIP, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = mx;
@@ -301,7 +301,7 @@ void cBatchRenderer::BatchQuadFree( const eeFloat& x0, const eeFloat& y0, const 
 		return;
 
 #ifndef EE_GLES
-	SetBlendMode( EE_DT_QUADS, mForceBlendMode );
+	SetBlendMode( DM_QUADS, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x0;
@@ -327,7 +327,7 @@ void cBatchRenderer::BatchQuadFree( const eeFloat& x0, const eeFloat& y0, const 
 	mTVertex->tex 	= mTexCoord[3];
 	mTVertex->color = mVerColor[3];
 #else
-	SetBlendMode( EE_DT_TRIANGLE_STRIP, mForceBlendMode );
+	SetBlendMode( DM_TRIANGLE_STRIP, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x0;
@@ -397,7 +397,7 @@ void cBatchRenderer::BatchQuadFreeEx( const eeFloat& x0, const eeFloat& y0, cons
 		mQ = RotateQuadCentered( mQ, Angle, QCenter );
 
 #ifndef EE_GLES
-	SetBlendMode( EE_DT_QUADS, mForceBlendMode );
+	SetBlendMode( DM_QUADS, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = mQ[0].x;
@@ -423,7 +423,7 @@ void cBatchRenderer::BatchQuadFreeEx( const eeFloat& x0, const eeFloat& y0, cons
 	mTVertex->tex 	= mTexCoord[3];
 	mTVertex->color = mVerColor[3];
 #else
-	SetBlendMode( EE_DT_TRIANGLE_STRIP, mForceBlendMode );
+	SetBlendMode( DM_TRIANGLE_STRIP, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = mQ[0].x;
@@ -454,7 +454,7 @@ void cBatchRenderer::BatchQuadFreeEx( const eeFloat& x0, const eeFloat& y0, cons
 }
 
 void cBatchRenderer::QuadsBegin() {
-	SetBlendMode( EE_DT_QUADS, true );
+	SetBlendMode( DM_QUADS, true );
 	QuadsSetSubset( 0, 0, 1, 1 );
 	QuadsSetColor( eeColorA() );
 }
@@ -495,7 +495,7 @@ void cBatchRenderer::Rotate( const eeVector2f& center, eeVector2f* point, const 
 }
 
 void cBatchRenderer::PointsBegin() {
-	SetBlendMode( EE_DT_POINTS, true );
+	SetBlendMode( DM_POINTS, true );
 	QuadsSetSubset( 0, 0, 1, 1 );
 	PointSetColor( eeColorA() );
 }
@@ -508,7 +508,7 @@ void cBatchRenderer::BatchPoint( const eeFloat& x, const eeFloat& y ) {
 	if ( mNumVertex + 1 >= mVertex.size() )
 		return;
 
-	SetBlendMode( EE_DT_POINTS, mForceBlendMode );
+	SetBlendMode( DM_POINTS, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x;
@@ -520,7 +520,7 @@ void cBatchRenderer::BatchPoint( const eeFloat& x, const eeFloat& y ) {
 }
 
 void cBatchRenderer::LinesBegin() {
-	SetBlendMode( EE_DT_LINES, true );
+	SetBlendMode( DM_LINES, true );
 	QuadsSetSubset( 0, 0, 1, 1 );
 	PointSetColor( eeColorA() );
 }
@@ -537,7 +537,7 @@ void cBatchRenderer::BatchLine( const eeFloat& x0, const eeFloat& y0, const eeFl
 	if ( mNumVertex + 1 >= mVertex.size() )
 		return;
 
-	SetBlendMode( EE_DT_LINES, mForceBlendMode );
+	SetBlendMode( DM_LINES, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x0;
@@ -555,7 +555,7 @@ void cBatchRenderer::BatchLine( const eeFloat& x0, const eeFloat& y0, const eeFl
 }
 
 void cBatchRenderer::LineLoopBegin() {
-	SetBlendMode( EE_DT_LINE_LOOP, true );
+	SetBlendMode( DM_LINE_LOOP, true );
 	QuadsSetSubset( 0, 0, 1, 1 );
 	PointSetColor( eeColorA() );
 }
@@ -572,7 +572,7 @@ void cBatchRenderer::BatchLineLoop( const eeFloat& x0, const eeFloat& y0, const 
 	if ( mNumVertex + 1 >= mVertex.size() )
 		return;
 
-	SetBlendMode( EE_DT_LINE_LOOP, mForceBlendMode );
+	SetBlendMode( DM_LINE_LOOP, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x0;
@@ -597,7 +597,7 @@ void cBatchRenderer::BatchLineLoop( const eeFloat& x0, const eeFloat& y0 ) {
 	if ( mNumVertex + 1 >= mVertex.size() )
 		return;
 
-	SetBlendMode( EE_DT_LINE_LOOP, mForceBlendMode );
+	SetBlendMode( DM_LINE_LOOP, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x0;
@@ -613,7 +613,7 @@ void cBatchRenderer::BatchLineLoop( const eeVector2f& vector1 ) {
 }
 
 void cBatchRenderer::TriangleFanBegin() {
-	SetBlendMode( EE_DT_TRIANGLE_FAN, true );
+	SetBlendMode( DM_TRIANGLE_FAN, true );
 	TriangleFanSetSubset( 0, 0, 0, 1, 1, 1 );
 	TriangleFanSetColor( eeColorA() );
 }
@@ -637,7 +637,7 @@ void cBatchRenderer::BatchTriangleFan( const eeFloat& x0, const eeFloat& y0, con
 	if ( mNumVertex + 2 >= mVertex.size() )
 		return;
 
-	SetBlendMode( EE_DT_TRIANGLE_FAN, mForceBlendMode );
+	SetBlendMode( DM_TRIANGLE_FAN, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x0;
@@ -661,7 +661,7 @@ void cBatchRenderer::BatchTriangleFan( const eeFloat& x0, const eeFloat& y0, con
 }
 
 void cBatchRenderer::TrianglesBegin() {
-	SetBlendMode( EE_DT_TRIANGLES, true );
+	SetBlendMode( DM_TRIANGLES, true );
 	TrianglesSetSubset( 0, 0, 0, 1, 1, 1 );
 	TrianglesSetColor( eeColorA() );
 }
@@ -685,7 +685,7 @@ void cBatchRenderer::BatchTriangle( const eeFloat& x0, const eeFloat& y0, const 
 	if ( mNumVertex + 2 >= mVertex.size() )
 		return;
 
-	SetBlendMode( EE_DT_TRIANGLES, mForceBlendMode );
+	SetBlendMode( DM_TRIANGLES, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x0;
@@ -716,7 +716,7 @@ void cBatchRenderer::BatchPolygon( const eePolygon2f& Polygon ) {
 	if ( Polygon.Size() > mVertex.size() )
 		return;
 
-	SetBlendMode( EE_DT_POLYGON, mForceBlendMode );
+	SetBlendMode( DM_POLYGON, mForceBlendMode );
 
 	for ( Uint32 i = 0; i < Polygon.Size(); i++ ) {
 		mTVertex = &mVertex[ mNumVertex ];
@@ -734,7 +734,7 @@ void cBatchRenderer::BatchPolygonByPoint( const eeFloat& x, const eeFloat& y ) {
 	if ( mNumVertex + 1 >= mVertex.size() )
 		return;
 
-	SetBlendMode( EE_DT_POLYGON, mForceBlendMode );
+	SetBlendMode( DM_POLYGON, mForceBlendMode );
 
 	mTVertex 		= &mVertex[ mNumVertex ];
 	mTVertex->pos.x = x;

@@ -1,8 +1,8 @@
 #include "cshaderprogram.hpp"
-#include "../window/cengine.hpp"
 #include "cshaderprogrammanager.hpp"
+#include "glhelper.hpp"
 
-using namespace EE::Window;
+using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
@@ -111,7 +111,7 @@ void cShaderProgram::RemoveFromManager() {
 }
 
 void cShaderProgram::Init() {
-	if ( cEngine::instance()->ShadersSupported() && 0 == Id() ) {
+	if ( cGL::instance()->ShadersSupported() && 0 == Id() ) {
 		mGLId = glCreateProgram();
 		mValid = false;
 		mUniformLocations.clear();

@@ -13,7 +13,7 @@ cTexture::cTexture() :
 	mFlags(0),
 	mColorKey(eeRGB(true)),
 	mClampMode( EE_CLAMP_TO_EDGE ),
-	mFilter( TEX_LINEAR )
+	mFilter( EE_TEX_LINEAR )
 {
 }
 
@@ -90,7 +90,7 @@ void cTexture::Create( const Uint32& texture, const eeUint& width, const eeUint&
 	mSize 		= MemSize;
 	mColorKey 	= ColorKey;
 	mClampMode 	= ClampMode;
-	mFilter 	= TEX_LINEAR;
+	mFilter 	= EE_TEX_LINEAR;
 
 	if ( UseMipmap )
 		mFlags |= TEX_FLAG_MIPMAP;
@@ -235,12 +235,12 @@ void cTexture::SetTextureFilter(const EE_TEX_FILTER& filter) {
 			if ( PreviousTexture != (GLint)mTexture )
 				glBindTexture(GL_TEXTURE_2D, mTexture);
 
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (mFilter == TEX_LINEAR) ? GL_LINEAR : GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (mFilter == EE_TEX_LINEAR) ? GL_LINEAR : GL_NEAREST);
 
 			if ( mFlags & TEX_FLAG_MIPMAP )
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEX_LINEAR) ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == EE_TEX_LINEAR) ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
 			else
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEX_LINEAR) ? GL_LINEAR : GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == EE_TEX_LINEAR) ? GL_LINEAR : GL_NEAREST);
 
 			if ( PreviousTexture != (GLint)mTexture )
 				glBindTexture(GL_TEXTURE_2D, PreviousTexture);
@@ -332,11 +332,11 @@ void cTexture::ApplyClampMode() {
 	}
 }
 
-void cTexture::TexId( const Uint32& id ) {
+void cTexture::Id( const Uint32& id ) {
 	mTexId = id;
 }
 
-const Uint32& cTexture::TexId() const {
+const Uint32& cTexture::Id() const {
 	return mTexId;
 }
 
@@ -371,7 +371,7 @@ void cTexture::Reload()  {
 	}
 }
 
-const Uint32& cTexture::Id() const {
+const Uint32& cTexture::HashName() const {
 	return mId;
 }
 
@@ -407,11 +407,11 @@ bool cTexture::Compressed() const {
 	return mFlags & TEX_FLAG_COMPRESSED;
 }
 
-void cTexture::Draw( const eeFloat &x, const eeFloat &y, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color, const EE_RENDERALPHAS &blend, const EE_RENDERTYPE &Effect, const bool &ScaleCentered, const eeRecti& texSector) {
+void cTexture::Draw( const eeFloat &x, const eeFloat &y, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color, const EE_PRE_BLEND_FUNC &blend, const EE_RENDERTYPE &Effect, const bool &ScaleCentered, const eeRecti& texSector) {
 	DrawEx( x, y, 0, 0, Angle, Scale, Color, Color, Color, Color, blend, Effect, ScaleCentered, texSector);
 }
 
-void cTexture::DrawFast( const eeFloat& x, const eeFloat& y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color, const EE_RENDERALPHAS &blend, const eeFloat &width, const eeFloat &height ) {
+void cTexture::DrawFast( const eeFloat& x, const eeFloat& y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color, const EE_PRE_BLEND_FUNC &blend, const eeFloat &width, const eeFloat &height ) {
 	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
 
 	eeFloat w = width, h = height;
@@ -419,7 +419,7 @@ void cTexture::DrawFast( const eeFloat& x, const eeFloat& y, const eeFloat& Angl
 	if (!h) h = (eeFloat)ImgHeight();
 
 	BR->SetTexture( this );
-	BR->SetBlendFunc( blend );
+	BR->SetPreBlendFunc( blend );
 
 	BR->QuadsBegin();
 	BR->QuadsSetColor( Color );
@@ -432,7 +432,7 @@ void cTexture::DrawFast( const eeFloat& x, const eeFloat& y, const eeFloat& Angl
 	BR->DrawOpt();
 }
 
-void cTexture::DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width, const eeFloat &height, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_RENDERALPHAS &blend, const EE_RENDERTYPE &Effect, const bool &ScaleCentered, const eeRecti& texSector) {
+void cTexture::DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width, const eeFloat &height, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_PRE_BLEND_FUNC &blend, const EE_RENDERTYPE &Effect, const bool &ScaleCentered, const eeRecti& texSector) {
 	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
 
 	bool renderdiv = true;
@@ -475,7 +475,7 @@ void cTexture::DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width,
 		renderdiv = false;
 
 	BR->SetTexture( this );
-	BR->SetBlendFunc( blend );
+	BR->SetPreBlendFunc( blend );
 
 	BR->QuadsBegin();
 	BR->QuadsSetColorFree( Color0, Color1, Color2, Color3 );
@@ -540,11 +540,11 @@ void cTexture::DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width,
 	BR->DrawOpt();
 }
 
-void cTexture::DrawQuad( const eeQuad2f& Q, const eeFloat &offsetx, const eeFloat &offsety, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color, const EE_RENDERALPHAS &blend, const eeRecti& texSector) {
+void cTexture::DrawQuad( const eeQuad2f& Q, const eeFloat &offsetx, const eeFloat &offsety, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color, const EE_PRE_BLEND_FUNC &blend, const eeRecti& texSector) {
 	DrawQuadEx( Q, offsetx, offsety, Angle, Scale, Color, Color, Color, Color, blend, texSector);
 }
 
-void cTexture::DrawQuadEx( const eeQuad2f& Q, const eeFloat &offsetx, const eeFloat &offsety, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_RENDERALPHAS &blend, const eeRecti& texSector ) {
+void cTexture::DrawQuadEx( const eeQuad2f& Q, const eeFloat &offsetx, const eeFloat &offsety, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_PRE_BLEND_FUNC &blend, const eeRecti& texSector ) {
 	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
 
 	bool renderdiv = true;
@@ -568,7 +568,7 @@ void cTexture::DrawQuadEx( const eeQuad2f& Q, const eeFloat &offsetx, const eeFl
 		renderdiv = false;
 
 	BR->SetTexture( this );
-	BR->SetBlendFunc( blend );
+	BR->SetPreBlendFunc( blend );
 
 	BR->QuadsBegin();
 	BR->QuadsSetColorFree( Color0, Color1, Color2, Color3 );

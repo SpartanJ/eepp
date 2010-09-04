@@ -112,7 +112,7 @@ class EE_API cEngine : public tSingleton<cEngine> {
 		void SetLineSmooth( const bool& Enable );
 
 		/** Set the polygon fill mode ( wireframe or filled ) */
-		void SetPolygonMode( const EE_FILLMODE& Mode );
+		void SetPolygonMode( const EE_FILL_MODE& Mode );
 
 		/** @return If the screen is windowed */
 		bool Windowed() const;
@@ -120,11 +120,8 @@ class EE_API cEngine : public tSingleton<cEngine> {
 		/** @return If the extension passed is supported by the GPU */
 		bool GetExtension( const std::string& Ext );
 
-		/** @return If "GL_ARB_point_parameters" is supported (added for Particle System, faster way to get this. */
-		bool PointSpriteSuppported() const { return mVideoInfo.SupARB_point; };
-
 		/** @return True if shaders are supported by the GPU */
-		bool ShadersSupported() const { return mVideoInfo.SupShaders; }
+		bool ShadersSupported() const;
 
 		/** Set a Cursor from a Texture (B/W Cursor) */
 		void SetCursor( const Uint32& TexId, const eeVector2i& HotSpot = eeVector2i() );
@@ -170,9 +167,7 @@ class EE_API cEngine : public tSingleton<cEngine> {
 			bool Windowed;
 			bool DoubleBuffering;
 			bool VSync;
-			bool SupARB_point;
 			bool LineSmooth;
-			bool SupShaders;
 
 			Int32 WWidth;
 			Int32 WHeight;
@@ -205,7 +200,7 @@ class EE_API cEngine : public tSingleton<cEngine> {
 		bool WindowVisible();
 
 		/** This will set the default rendering states and view to render in 2D mode */
-		void ResetGL2D( const bool& KeepView = false );
+		void Setup2D( const bool& KeepView = false );
 
 		/** Set the current active view
 		@param View New view to use (pass GetDefaultView() to set the default view)
@@ -274,8 +269,6 @@ class EE_API cEngine : public tSingleton<cEngine> {
 
 		cView			mDefaultView;
 		const cView *	mCurrentView;
-
-		GLenum			mGLEWinit;
 
 		#if EE_PLATFORM == EE_PLATFORM_WIN32
 		HGLRC		mContext;

@@ -467,24 +467,7 @@ void cConsole::CmdQuit ( const std::vector < std::wstring >& params ) {
 }
 
 void cConsole::CmdGetTextureMemory ( const std::vector < std::wstring >& params ) {
-	std::wstring size = L" bytes";
-	eeDouble mem = static_cast<eeDouble>( cTextureFactory::instance()->MemorySize() );
-	Uint8 c = 0;
-
-	while ( mem > 1024 ) {
-		c++;
-		mem = mem / 1024;
-	}
-
-	switch (c) {
-		case 1: size = L" KB"; break;
-		case 2: size = L" MB"; break;
-		case 3: size = L" GB"; break;
-		case 4: size = L" TB"; break;
-		default: size = L" WTF";
-	}
-
-	PushText( L"Total texture memory used: "+ toWStr( mem ) + size );
+	PushText( L"Total texture memory used: " + SizeToWString( cTextureFactory::instance()->MemorySize() ) );
 }
 
 void cConsole::CmdCmdList ( const std::vector < std::wstring >& params ) {

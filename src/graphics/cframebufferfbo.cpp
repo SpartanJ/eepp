@@ -1,8 +1,15 @@
 #include "cframebufferfbo.hpp"
 #include "ctexturefactory.hpp"
 #include "../window/cengine.hpp"
+#include "glhelper.hpp"
+
+using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
+
+bool cFrameBufferFBO::IsSupported() {
+	return 0 != cGL::instance()->IsExtension( EEGL_EXT_framebuffer_object );
+}
 
 cFrameBufferFBO::cFrameBufferFBO() :
 	cFrameBuffer(),
@@ -37,10 +44,6 @@ cFrameBufferFBO::~cFrameBufferFBO() {
         GLuint frameBuffer = static_cast<GLuint>( mFrameBuffer );
         glDeleteFramebuffersEXT( 1, &frameBuffer );
     }
-}
-
-bool cFrameBufferFBO::IsSupported() {
-	return 0 != GLEW_EXT_framebuffer_object;
 }
 
 bool cFrameBufferFBO::Create( const Uint32& Width, const Uint32& Height ) {
@@ -87,7 +90,7 @@ bool cFrameBufferFBO::Create( const Uint32& Width, const Uint32& Height, bool De
 		return false;
 	}
 
-	glFramebufferTexture2DEXT( GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, mTexture->Texture(), 0 );
+	glFramebufferTexture2DEXT( GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, mTexture->Handle(), 0 );
 
 	if ( glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT ) {
 		glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, 0 );

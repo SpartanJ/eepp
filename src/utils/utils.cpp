@@ -455,4 +455,26 @@ std::string SizeToString( const Uint32& MemSize ) {
 	return std::string( toStr( mem ) + size );
 }
 
+std::wstring SizeToWString( const Uint32& MemSize ) {
+	std::wstring size = L" bytes";
+	eeDouble mem = static_cast<eeDouble>( MemSize );
+	Uint8 c = 0;
+
+	while ( mem > 1024 ) {
+		c++;
+		mem = mem / 1024;
+	}
+
+	switch (c) {
+		case 0: size = L" bytes"; break;
+		case 1: size = L" KB"; break;
+		case 2: size = L" MB"; break;
+		case 3: size = L" GB"; break;
+		case 4: size = L" TB"; break;
+		default: size = L" WTF";
+	}
+
+	return std::wstring( toWStr( mem ) + size );
+}
+
 }}

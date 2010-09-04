@@ -8,9 +8,9 @@ namespace EE { namespace Graphics {
 
 class cVertexBuffer {
 	public:
-		static cVertexBuffer * Create( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT, EE_DRAW_TYPE DrawType = EE_DT_QUADS, const Int32& ReserveVertexSize = 0, const Int32& ReserveIndexSize = 0, EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
+		static cVertexBuffer * Create( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT, EE_DRAW_MODE DrawType = DM_QUADS, const Int32& ReserveVertexSize = 0, const Int32& ReserveIndexSize = 0, EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
 
-		cVertexBuffer( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT, EE_DRAW_TYPE DrawType = EE_DT_QUADS, const Int32& ReserveVertexSize = 0, const Int32& ReserveIndexSize = 0, EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
+		cVertexBuffer( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT, EE_DRAW_MODE DrawType = DM_QUADS, const Int32& ReserveVertexSize = 0, const Int32& ReserveIndexSize = 0, EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
 
 		virtual ~cVertexBuffer();
 
@@ -57,7 +57,7 @@ class cVertexBuffer {
 		virtual bool Compile() = 0;
 	protected:
 		Uint32 					mVertexFlags;
-		EE_DRAW_TYPE			mDrawType;
+		EE_DRAW_MODE			mDrawType;
 		EE_VBO_USAGE_TYPE		mUsageType;
 		Int32					mElemDraw;
 		std::vector<eeFloat>	mVertexArray[ VERTEX_FLAGS_COUNT - 1 ];

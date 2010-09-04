@@ -8,9 +8,9 @@ namespace EE { namespace UI {
 class EE_API cUIBackground {
 	public:
 		cUIBackground();
-		cUIBackground( const eeColorA& Color, const eeUint& Corners = 0, const EE_RENDERALPHAS& BlendMode = ALPHA_NORMAL );
+		cUIBackground( const eeColorA& Color, const eeUint& Corners = 0, const EE_PRE_BLEND_FUNC& BlendMode = ALPHA_NORMAL );
 		cUIBackground( const cUIBackground& Back );
-		cUIBackground( const eeColorA& TopLeftColor, const eeColorA& BottomLeftColor, const eeColorA& BottomRightColor, const eeColorA& TopRightColor, const eeUint& Corners, const EE_RENDERALPHAS& BlendMode );
+		cUIBackground( const eeColorA& TopLeftColor, const eeColorA& BottomLeftColor, const eeColorA& BottomRightColor, const eeColorA& TopRightColor, const eeUint& Corners, const EE_PRE_BLEND_FUNC& BlendMode );
 
 		eeColorA& Color( const eeUint& index = 0 );
 
@@ -22,15 +22,15 @@ class EE_API cUIBackground {
 
 		void ColorsTo( const eeColorA& Color );
 
-		const EE_RENDERALPHAS& Blend() const;
-		void Blend( const EE_RENDERALPHAS& blend );
+		const EE_PRE_BLEND_FUNC& Blend() const;
+		void Blend( const EE_PRE_BLEND_FUNC& blend );
 
 		const eeUint& Corners() const;
 		void Corners( const eeUint& corners );
 	protected:
 		std::vector<eeColorA>	mColor;
 
-		EE_RENDERALPHAS			mBlendMode;
+		EE_PRE_BLEND_FUNC			mBlendMode;
 		eeUint					mCorners;
 };
 

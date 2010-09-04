@@ -1,20 +1,23 @@
 #include "ctexturefactory.hpp"
 #include "../window/cengine.hpp"
 #include "ctextureloader.hpp"
+#include "glhelper.hpp"
+
+using namespace EE::Graphics::Private;
 
 using namespace EE::Window;
 
 namespace EE { namespace Graphics {
 
 cTextureFactory::cTextureFactory() :
-	mCurrentTexture(0),
-	mIsCalcPowOfTwo(false),
 	mMemSize(0)
 {
 	mTextures.clear();
 	mTextures.push_back( NULL );
 
 	mAppPath = AppPath();
+
+	memset( &mCurrentTexture[0], 0, EE_MAX_TEXTURE_UNITS );
 }
 
 cTextureFactory::~cTextureFactory() {
@@ -69,7 +72,7 @@ Uint32 cTextureFactory::PushTexture( const std::string& Filepath, const Uint32& 
 	Tex = mTextures[ Pos ] = eeNew( cTexture, () );
 
 	Tex->Create( TexId, Width, Height, MyWidth, MyHeight, Mipmap, Channels, FPath, ColorKey, ClampMode, CompressTexture, MemSize );
-	Tex->TexId( Pos );
+	Tex->Id( Pos );
 
 	if ( !ColorKey.voidRGB )
 		Tex->CreateMaskFromColor( eeColor( ColorKey.R(), ColorKey.G(), ColorKey.B() ) , 0 );
@@ -102,15 +105,22 @@ Uint32 cTextureFactory::FindFreeSlot() {
 	return (Uint32)mTextures.size() - 1;
 }
 
-void cTextureFactory::Bind( const cTexture* Tex ) {
-	if( NULL != Tex && mCurrentTexture != (Int32)Tex->Texture() ) {
-		glBindTexture( GL_TEXTURE_2D, Tex->Texture() );
-		mCurrentTexture = Tex->Texture();
+void cTextureFactory::Bind( const cTexture* Tex, const Uint32& TextureUnit ) {
+	if( NULL != Tex && mCurrentTexture[ TextureUnit ] != (Int32)Tex->Handle() ) {
+		if ( cGL::instance()->IsExtension( EEGL_ARB_multitexture ) )
+			glActiveTextureARB( GL_TEXTURE0_ARB + TextureUnit );
+
+		glBindTexture( GL_TEXTURE_2D, Tex->Handle() );
+
+		mCurrentTexture[ TextureUnit ] = Tex->Handle();
+
+		if ( cGL::instance()->IsExtension( EEGL_ARB_multitexture ) )
+			glActiveTextureARB( GL_TEXTURE0_ARB );
 	}
 }
 
-void cTextureFactory::Bind( const Uint32& TexId ) {
-	Bind( GetTexture( TexId ) );
+void cTextureFactory::Bind( const Uint32& TexId, const Uint32& TextureUnit ) {
+	Bind( GetTexture( TexId ), TextureUnit );
 }
 
 void cTextureFactory::UnloadTextures() {
@@ -130,12 +140,14 @@ bool cTextureFactory::Remove( const Uint32& TexId ) {
 	if ( TexId < mTextures.size() && NULL != mTextures[ TexId ] ) {
 		mMemSize -= GetTexMemSize( TexId );
 
-		GLint glTexId = mTextures[ TexId ]->Texture();
+		GLint glTexId = mTextures[ TexId ]->Handle();
 
 		eeSAFE_DELETE( mTextures[ TexId ] );
 
-		if ( mCurrentTexture == (Int32)glTexId )
-			mCurrentTexture = 0;
+		for ( Uint32 i = 0; i < EE_MAX_TEXTURE_UNITS; i++ ) {
+			if ( mCurrentTexture[ i ] == (Int32)glTexId )
+				mCurrentTexture[ i ] = 0;
+		}
 
 		mVectorFreeSlots.push( TexId );
 
@@ -145,12 +157,14 @@ bool cTextureFactory::Remove( const Uint32& TexId ) {
 	return false;
 }
 
-GLint cTextureFactory::GetCurrentTexture() const {
-	return mCurrentTexture;
+GLint cTextureFactory::GetCurrentTexture( const Uint32& TextureUnit ) const {
+	//assert( TextureUnit < MAX_TEXTURE_UNITS );
+	return mCurrentTexture[ TextureUnit ];
 }
 
-void cTextureFactory::SetCurrentTexture( const GLint& TexId ) {
-	mCurrentTexture = TexId;
+void cTextureFactory::SetCurrentTexture( const GLint& TexId, const Uint32& TextureUnit ) {
+	//assert( TextureUnit < MAX_TEXTURE_UNITS );
+	mCurrentTexture[ TextureUnit ] = TexId;
 }
 
 void cTextureFactory::ReloadAllTextures() {
@@ -190,12 +204,21 @@ void cTextureFactory::UngrabTextures() {
 	}
 }
 
-void cTextureFactory::SetBlendFunc( const EE_RENDERALPHAS& blend, const bool& force ) {
+void cTextureFactory::SetBlendFunc( const EE_BLEND_FUNC& SrcFactor, const EE_BLEND_FUNC& DestFactor ) {
+	glEnable( GL_BLEND );
+
+	glBlendFunc( (GLenum)SrcFactor, (GLenum)DestFactor );
+
+	mLastBlend = ALPHA_CUSTOM;
+}
+
+void cTextureFactory::SetPreBlendFunc( const EE_PRE_BLEND_FUNC& blend, bool force ) {
 	if ( mLastBlend != blend || force ) {
-		if (blend == ALPHA_NONE)
+		if (blend == ALPHA_NONE) {
 			glDisable( GL_BLEND );
-		else {
+		} else {
 			glEnable( GL_BLEND );
+
 			switch (blend) {
 				case ALPHA_NORMAL:
 					glBlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA);
@@ -223,29 +246,50 @@ void cTextureFactory::SetBlendFunc( const EE_RENDERALPHAS& blend, const bool& fo
 				case ALPHA_NONE:
 					// AVOID COMPILER WARNING
 					break;
+				case ALPHA_CUSTOM:
+					break;
 			}
 
 		}
+
 		mLastBlend = blend;
 	}
 }
 
-eeUint cTextureFactory::GetValidTextureSize(const eeUint& Size) {
-	if (!mIsCalcPowOfTwo) {
-		if ( cEngine::instance()->Running() ) { // This need the GL context initialized
-			char *extensions = (char *)glGetString(GL_EXTENSIONS);
+void cTextureFactory::SetActiveTextureUnit( const Uint32& Unit ) {
+	glActiveTextureARB( GL_TEXTURE0_ARB + Unit );
+}
 
-			if ( strstr(extensions, "GL_ARB_texture_non_power_of_two") )
-				mPowOfTwo = false;
-			else
-				mPowOfTwo = true;
+void cTextureFactory::SetTextureConstantColor( const eeColorA& Color ) {
+	SetTextureConstantColor( eeColorAf( (eeFloat)Color.R() / 255.f, (eeFloat)Color.G() / 255.f, (eeFloat)Color.B() / 255.f, (eeFloat)Color.A() / 255.f ) );
+}
 
-			mIsCalcPowOfTwo = true;
-		} else
-			mPowOfTwo = false;
+void cTextureFactory::SetTextureConstantColor( const eeColorAf& Color ) {
+	glTexEnvfv( GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, (const GLfloat*)(&Color.Red) );
+}
+
+void cTextureFactory::SetTextureEnv( const EE_TEXTURE_PARAM& Param, const Int32& Val ) {
+	GLenum lParam = (GLenum)cGL::instance()->GetTextureParamEnum( Param );
+
+	glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB );
+
+	if( Param == TEX_PARAM_COLOR_FUNC || Param == TEX_PARAM_ALPHA_FUNC ) {
+		glTexEnvi( GL_TEXTURE_ENV, lParam, cGL::instance()->GetTextureFuncEnum( (EE_TEXTURE_FUNC)Val ) );
+	} else if( Param >= TEX_PARAM_COLOR_SOURCE_0 && Param <= TEX_PARAM_ALPHA_SOURCE_2 ) {
+		glTexEnvi( GL_TEXTURE_ENV, lParam, cGL::instance()->GetTextureSourceEnum( (EE_TEXTURE_SOURCE)Val ) );
+	} else if( Param >= TEX_PARAM_COLOR_OP_0 && Param <= TEX_PARAM_ALPHA_OP_2 ) {
+		glTexEnvi( GL_TEXTURE_ENV, lParam, cGL::instance()->GetTextureOpEnum( (EE_TEXTURE_OP)Val ) );
+	} else {
+		glTexEnvi( GL_TEXTURE_ENV, lParam, Val );
 	}
+}
 
-	if ( !mPowOfTwo )
+const EE_PRE_BLEND_FUNC& cTextureFactory::GetPreBlendFunc() const {
+	return mLastBlend;
+}
+
+eeUint cTextureFactory::GetValidTextureSize(const eeUint& Size) {
+	if ( cGL::instance()->IsExtension( EEGL_ARB_texture_non_power_of_two ) )
 		return Size;
 	else
 		return NextPowOfTwo(Size);
@@ -313,7 +357,7 @@ cTexture * cTextureFactory::GetByHash( const Uint32& Hash ) {
 	for ( Uint32 i = (Uint32)mTextures.size() - 1; i > 0; i-- ) {
 		tTex = mTextures[ i ];
 
-		if ( NULL != tTex && tTex->Id() == Hash )
+		if ( NULL != tTex && tTex->HashName() == Hash )
 			return mTextures[ i ];
 	}
 

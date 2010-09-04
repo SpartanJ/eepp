@@ -27,7 +27,7 @@ class EE_API cTTFFont : public cFont {
 		* @param OutlineColor The Outline Color
 		* @return If success
 		*/
-		bool Load( const std::string& Filepath, const eeUint& Size, EE_TTF_FONTSTYLE Style = EE_TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0) );
+		bool Load( const std::string& Filepath, const eeUint& Size, EE_TTF_FONTSTYLE Style = EE_TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true );
 
 		/** Load Font from pack
 		* @param Pack Pointer to the pack instance
@@ -41,7 +41,7 @@ class EE_API cTTFFont : public cFont {
 		* @param OutlineColor The Outline Color
 		* @return If success
 		*/
-		bool LoadFromPack( cPack* Pack, const std::string& FilePackPath, const eeUint& Size, EE_TTF_FONTSTYLE Style = EE_TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0)  );
+		bool LoadFromPack( cPack* Pack, const std::string& FilePackPath, const eeUint& Size, EE_TTF_FONTSTYLE Style = EE_TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true  );
 
 		/** Load a True Type Font from memory
 		* @param TTFData The pointer to the data
@@ -55,7 +55,7 @@ class EE_API cTTFFont : public cFont {
 		* @param OutlineColor The Outline Color
 		* @return If success
 		*/
-		bool LoadFromMemory( Uint8* TTFData, const eeUint& TTFDataSize, const eeUint& Size, EE_TTF_FONTSTYLE Style = EE_TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0) );
+		bool LoadFromMemory( Uint8* TTFData, const eeUint& TTFDataSize, const eeUint& Size, EE_TTF_FONTSTYLE Style = EE_TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true );
 
 		/** Save the texture generated from the TTF file to disk */
 		bool SaveTexture( const std::string& Filepath, const EE_SAVE_TYPE& Format = EE_SAVE_TYPE_PNG );
@@ -94,7 +94,7 @@ class EE_API cTTFFont : public cFont {
 		bool mThreadedLoading;
 		bool mTexReady;
 
-		bool iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor );
+		bool iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, Uint8 OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator );
 		void MakeOutline( Uint8 *in, Uint8 *out, Int16 w, Int16 h);
 		void RebuildFromGlyphs();
 };

@@ -8,8 +8,10 @@
 #include "../graphics/cshapegroupmanager.hpp"
 #include "../ui/cuimanager.hpp"
 #include "../audio/caudiolistener.hpp"
+#include "../graphics/glhelper.hpp"
 
 using namespace EE::Graphics;
+using namespace EE::Graphics::Private;
 
 #define T(A, B, C, D)	(int)((A<<24)|(B<<16)|(C<<8)|(D<<0))
 #define FORMAT_PREFIX	"SDL_scrap_0x"
@@ -105,6 +107,8 @@ cEngine::~cEngine() {
 
 	Audio::cAudioListener::DestroySingleton();
 
+	Graphics::Private::cGL::DestroySingleton();
+
 	cLog::DestroySingleton();
 
 	SDL_Quit();
@@ -123,7 +127,6 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 		mVideoInfo.VSync = VSync;
 		mVideoInfo.NoFrame = NoFrame;
 		mVideoInfo.LineSmooth = true;
-		mVideoInfo.SupShaders = false;
 		mOldWinPos = eeVector2i( 0, 0 );
 
 		if ( SDL_Init(SDL_INIT_VIDEO) != 0 ) {
@@ -209,14 +212,7 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 		if ( mVideoInfo.Windowed )
 			mOldWinPos = GetWindowPosition();
 
-		mGLEWinit = glewInit();
-
-		if ( GLEW_OK == mGLEWinit ) {
-			mVideoInfo.SupARB_point = GLEW_ARB_point_parameters && GLEW_ARB_point_sprite;
-			mVideoInfo.SupShaders 	= GLEW_ARB_shading_language_100 && GLEW_ARB_shader_objects && GLEW_ARB_vertex_shader && GLEW_ARB_fragment_shader;
-		} else {
-			// die
-		}
+		cGL::instance()->Init();
 
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 
@@ -225,7 +221,7 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 		mDefaultView.SetView( 0, 0, mVideoInfo.Width, mVideoInfo.Height );
 		mCurrentView = &mDefaultView;
 
-		ResetGL2D();
+		Setup2D();
 
 		SetWindowCaption("EEPP");
 
@@ -264,7 +260,7 @@ const cView& cEngine::GetView() const {
     return *mCurrentView;
 }
 
-void cEngine::ResetGL2D( const bool& KeepView ) {
+void cEngine::Setup2D( const bool& KeepView ) {
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
@@ -281,8 +277,8 @@ void cEngine::ResetGL2D( const bool& KeepView ) {
 	glDisable( GL_DEPTH_TEST );
 	glDisable( GL_LIGHTING );
 
-	cTextureFactory::instance()->SetBlendFunc( ALPHA_BLENDONE );  // This is to fix a little bug on windows when the resolution change. I don't know why it happens, but this line fix it.
-	cTextureFactory::instance()->SetBlendFunc( ALPHA_NORMAL );
+	cTextureFactory::instance()->SetPreBlendFunc( ALPHA_BLENDONE );  // This is to fix a little bug on windows when the resolution change. I don't know why it happens, but this line fix it.
+	cTextureFactory::instance()->SetPreBlendFunc( ALPHA_NORMAL );
 
 	glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
 
@@ -371,7 +367,7 @@ void cEngine::ChangeRes( const Uint16& width, const Uint16& height, const bool& 
 		else
 			mVideoInfo.Screen = SDL_SetVideoMode( mVideoInfo.Width, mVideoInfo.Height, mVideoInfo.ColorDepth, mVideoInfo.Flags | SDL_FULLSCREEN );
 
-		ResetGL2D();
+		Setup2D();
 
 		#if EE_PLATFORM == EE_PLATFORM_WIN32 || EE_PLATFORM == EE_PLATFORM_MACOSX
 		if ( Reload ) {
@@ -510,6 +506,10 @@ std::vector< std::pair<unsigned int, unsigned int> > cEngine::GetPossibleResolut
 	return result;
 }
 
+bool cEngine::ShadersSupported() const {
+	return cGL::instance()->ShadersSupported();
+}
+
 void cEngine::SetGamma( const eeFloat& Red, const eeFloat& Green, const eeFloat& Blue ) {
 	if ( Red >= 0.1f && Red <= 10.0f && Green >= 0.1f && Green <= 10.0f && Blue >= 0.1f && Blue <= 10.0f )
 		SDL_SetGamma( Red, Green, Blue );
@@ -523,8 +523,8 @@ void cEngine::SetLineSmooth( const bool& Enable ) {
 		glDisable( GL_LINE_SMOOTH );
 }
 
-void cEngine::SetPolygonMode( const EE_FILLMODE& Mode ) {
-	if ( Mode == DRAW_FILL )
+void cEngine::SetPolygonMode( const EE_FILL_MODE& Mode ) {
+	if ( Mode == EE_DRAW_FILL )
 		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 	else
 		glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
@@ -552,7 +552,7 @@ std::string cEngine::GetVersion() {
 }
 
 bool cEngine::GetExtension( const std::string& Ext ) {
-	return 0 != glewIsSupported( Ext.c_str() );
+	return 0 != cGL::instance()->GetExtension( Ext.c_str() );
 }
 
 SDL_Cursor* cEngine::CreateCursor( const Uint32& TexId, const eeVector2i& HotSpot ) {

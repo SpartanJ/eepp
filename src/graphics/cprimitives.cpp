@@ -11,9 +11,9 @@ cPrimitives::cPrimitives() {
 
 cPrimitives::~cPrimitives() {}
 
-void cPrimitives::DrawRoundedRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeFloat& Scale, const EE_FILLMODE& fillmode, const  EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeUint& Corners ) {
+void cPrimitives::DrawRoundedRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeFloat& Scale, const EE_FILL_MODE& fillmode, const  EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth, const eeUint& Corners ) {
 	BR->SetTexture( NULL );
-	BR->SetBlendFunc( blend );
+	BR->SetPreBlendFunc( blend );
 
 	eeUint i;
 	eeFloat xscalediff = width * Scale - width;
@@ -25,7 +25,7 @@ void cPrimitives::DrawRoundedRectangle(const eeFloat& x, const eeFloat& y, const
 	Poly.Rotate( Angle, Center );
 
 	switch(fillmode) {
-		case DRAW_FILL: {
+		case EE_DRAW_FILL: {
 			if ( TopLeft == BottomLeft && BottomLeft == BottomRight && BottomRight == TopRight ) {
 				BR->PolygonSetColor( TopLeft );
 
@@ -51,7 +51,7 @@ void cPrimitives::DrawRoundedRectangle(const eeFloat& x, const eeFloat& y, const
 
 			break;
 		}
-		case DRAW_LINE:
+		case EE_DRAW_LINE:
 			BR->SetLineWidth( lineWidth );
 
 			BR->LineLoopBegin();
@@ -85,23 +85,23 @@ void cPrimitives::DrawRoundedRectangle(const eeFloat& x, const eeFloat& y, const
 	BR->Draw();
 }
 
-void cPrimitives::DrawRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeFloat& Scale, const EE_FILLMODE& fillmode, const  EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeUint& Corners) {
+void cPrimitives::DrawRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeFloat& Scale, const EE_FILL_MODE& fillmode, const  EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth, const eeUint& Corners) {
 	if ( 0 != Corners ) {
 		DrawRoundedRectangle( x, y, width, height, TopLeft, BottomLeft, BottomRight, TopRight, Angle, Scale, fillmode, blend, lineWidth, Corners );
 		return;
 	}
 
 	BR->SetTexture( NULL );
-	BR->SetBlendFunc( blend );
+	BR->SetPreBlendFunc( blend );
 
 	switch(fillmode) {
-		case DRAW_FILL: {
+		case EE_DRAW_FILL: {
 			BR->QuadsBegin();
 			BR->QuadsSetColorFree( TopLeft, BottomLeft, BottomRight, TopRight );
 			BR->BatchQuadEx( x, y, width, height, Angle, Scale );
 			break;
 		}
-		case DRAW_LINE:
+		case EE_DRAW_LINE:
 			BR->SetLineWidth( lineWidth );
 
 			BR->LineLoopBegin();
@@ -155,14 +155,14 @@ void cPrimitives::DrawPoint( const eeFloat& x, const eeFloat& y, const eeFloat& 
 	BR->Draw();
 }
 
-void cPrimitives::DrawCircle( const eeFloat& x, const eeFloat& y, const eeFloat& radius, Uint32 points, const EE_FILLMODE& fillmode, const eeFloat& lineWidth ) {
+void cPrimitives::DrawCircle( const eeFloat& x, const eeFloat& y, const eeFloat& radius, Uint32 points, const EE_FILL_MODE& fillmode, const eeFloat& lineWidth ) {
 	if(points < 6) points = 6;
     eeFloat angle_shift =  360 / static_cast<eeFloat>(points);
 
 	BR->SetTexture( NULL );
 
 	switch( fillmode ) {
-		case DRAW_LINE:
+		case EE_DRAW_LINE:
 			BR->SetLineWidth( lineWidth );
 			BR->LineLoopBegin();
 			BR->LineLoopSetColor( mColor );
@@ -171,7 +171,7 @@ void cPrimitives::DrawCircle( const eeFloat& x, const eeFloat& y, const eeFloat&
 				BR->BatchLineLoop( x + radius * sinAng(i), y + radius * cosAng(i), x + radius * sinAng( i + angle_shift ), y + radius * cosAng( i + angle_shift ) );
 
 			break;
-		case DRAW_FILL:
+		case EE_DRAW_FILL:
 			BR->TriangleFanBegin();
 			BR->TriangleFanSetColor( mColor );
 
@@ -184,12 +184,12 @@ void cPrimitives::DrawCircle( const eeFloat& x, const eeFloat& y, const eeFloat&
 	BR->Draw();
 }
 
-void cPrimitives::DrawTriangle(const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth) {
+void cPrimitives::DrawTriangle(const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth) {
 	BR->SetTexture( NULL );
-	BR->SetBlendFunc( blend );
+	BR->SetPreBlendFunc( blend );
 
 	switch(fillmode) {
-		case DRAW_LINE:
+		case EE_DRAW_LINE:
 			BR->SetLineWidth( lineWidth );
 
 			BR->LineLoopBegin();
@@ -200,7 +200,7 @@ void cPrimitives::DrawTriangle(const eeFloat& x1, const eeFloat& y1, const eeFlo
 			BR->BatchLineLoop( x2, y2, x3, y3 );
 			break;
 		default:
-		case DRAW_FILL:
+		case EE_DRAW_FILL:
 			BR->TrianglesBegin();
 
 			BR->TrianglesSetColorFree( Color1, Color2, Color3 );
@@ -212,12 +212,12 @@ void cPrimitives::DrawTriangle(const eeFloat& x1, const eeFloat& y1, const eeFlo
 	BR->Draw();
 }
 
-void cPrimitives::DrawQuad( const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const eeFloat& x4, const eeFloat& y4, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const eeColorA& Color4, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeFloat& OffsetX, const eeFloat& OffsetY ) {
+void cPrimitives::DrawQuad( const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const eeFloat& x4, const eeFloat& y4, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const eeColorA& Color4, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth, const eeFloat& OffsetX, const eeFloat& OffsetY ) {
 	BR->SetTexture( NULL );
-	BR->SetBlendFunc( blend );
+	BR->SetPreBlendFunc( blend );
 
 	switch(fillmode) {
-		case DRAW_LINE:
+		case EE_DRAW_LINE:
 			BR->SetLineWidth( lineWidth );
 
 			BR->LineLoopBegin();
@@ -226,7 +226,7 @@ void cPrimitives::DrawQuad( const eeFloat& x1, const eeFloat& y1, const eeFloat&
 			BR->LineLoopSetColorFree( Color2, Color3 );
 			BR->BatchLineLoop( OffsetX + x3, OffsetY + y3, OffsetX + x4, OffsetY + y4 );
 			break;
-		case DRAW_FILL:
+		case EE_DRAW_FILL:
 			BR->QuadsBegin();
 			BR->QuadsSetColorFree( Color1, Color2, Color3, Color4 );
 			BR->BatchQuadFree( OffsetX + x1, OffsetY + y1, OffsetX + x2, OffsetY + y2, OffsetX + x3, OffsetY + y3, OffsetX + x4, OffsetY + y4 );
@@ -236,12 +236,12 @@ void cPrimitives::DrawQuad( const eeFloat& x1, const eeFloat& y1, const eeFloat&
 	BR->Draw();
 }
 
-void cPrimitives::DrawPolygon(const eePolygon2f& p, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth) {
+void cPrimitives::DrawPolygon(const eePolygon2f& p, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth) {
 	BR->SetTexture( NULL );
-	BR->SetBlendFunc( blend );
+	BR->SetPreBlendFunc( blend );
 
 	switch(fillmode) {
-		case DRAW_LINE:
+		case EE_DRAW_LINE:
 			BR->SetLineWidth( lineWidth );
 
 			BR->LineLoopBegin();
@@ -251,7 +251,7 @@ void cPrimitives::DrawPolygon(const eePolygon2f& p, const EE_FILLMODE& fillmode,
 				BR->BatchLineLoop( p[i].x, p[i].y, p[i+1].x, p[i+1].y );
 
 			break;
-		case DRAW_FILL:
+		case EE_DRAW_FILL:
 			BR->PolygonSetColor( mColor );
 			BR->BatchPolygon( p );
 			break;
@@ -260,27 +260,27 @@ void cPrimitives::DrawPolygon(const eePolygon2f& p, const EE_FILLMODE& fillmode,
 	BR->Draw();
 }
 
-void cPrimitives::DrawRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeFloat& Scale, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeUint& Corners) {
+void cPrimitives::DrawRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeFloat& Scale, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth, const eeUint& Corners) {
 	DrawRectangle( R.Left, R.Top, R.Right - R.Left, R.Bottom - R.Top, TopLeft, BottomLeft, BottomRight, TopRight, Angle, Scale, fillmode, blend, lineWidth, Corners);
 }
 
-void cPrimitives::DrawRectangle( const eeRectf& R, const eeFloat& Angle, const eeFloat& Scale, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeUint& Corners) {
+void cPrimitives::DrawRectangle( const eeRectf& R, const eeFloat& Angle, const eeFloat& Scale, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth, const eeUint& Corners) {
 	DrawRectangle( R.Left, R.Top, R.Right - R.Left, R.Bottom - R.Top, mColor, mColor, mColor, mColor, Angle, Scale, fillmode, blend, lineWidth, Corners);
 }
 
-void cPrimitives::DrawRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& Angle, const eeFloat& Scale, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeUint& Corners) {
+void cPrimitives::DrawRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& Angle, const eeFloat& Scale, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth, const eeUint& Corners) {
 	DrawRectangle(x, y, width, height, mColor, mColor, mColor, mColor, Angle, Scale, fillmode, blend, lineWidth, Corners);
 }
 
-void cPrimitives::DrawRoundedRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeFloat& Scale, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeUint& Corners ) {
+void cPrimitives::DrawRoundedRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeFloat& Scale, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth, const eeUint& Corners ) {
 	DrawRoundedRectangle( R.Left, R.Top, R.Right - R.Left, R.Bottom - R.Top, TopLeft, BottomLeft, BottomRight, TopRight, Angle, Scale, fillmode, blend, lineWidth, Corners);
 }
 
-void cPrimitives::DrawRoundedRectangle( const eeRectf& R, const eeFloat& Angle, const eeFloat& Scale, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeUint& Corners) {
+void cPrimitives::DrawRoundedRectangle( const eeRectf& R, const eeFloat& Angle, const eeFloat& Scale, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth, const eeUint& Corners) {
 	DrawRoundedRectangle( R.Left, R.Top, R.Right - R.Left, R.Bottom - R.Top, mColor, mColor, mColor, mColor, Angle, Scale, fillmode, blend, lineWidth, Corners);
 }
 
-void cPrimitives::DrawRoundedRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& Angle, const eeFloat& Scale, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeUint& Corners ) {
+void cPrimitives::DrawRoundedRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& Angle, const eeFloat& Scale, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth, const eeUint& Corners ) {
 	DrawRoundedRectangle(x, y, width, height, mColor, mColor, mColor, mColor, Angle, Scale, fillmode, blend, lineWidth, Corners);
 }
 
@@ -292,7 +292,7 @@ void cPrimitives::DrawPoint(const eeVector2f& p, const eeFloat& pointSize) {
 	DrawPoint(p.x, p.y, pointSize);
 }
 
-void cPrimitives::DrawCircle(const eeVector2f& p, const eeFloat& radius, Uint32 points, const EE_FILLMODE& fillmode, const eeFloat& lineWidth) {
+void cPrimitives::DrawCircle(const eeVector2f& p, const eeFloat& radius, Uint32 points, const EE_FILL_MODE& fillmode, const eeFloat& lineWidth) {
 	DrawCircle(p.x, p.y, radius, points, fillmode, lineWidth);
 }
 
@@ -301,39 +301,39 @@ void cPrimitives::SetColor( const eeColorA& Color ) {
 	glColor4ub( mColor.R(), mColor.G(), mColor.B(), mColor.A() );
 }
 
-void cPrimitives::DrawTriangle(const eeTriangle2f& t, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth) {
+void cPrimitives::DrawTriangle(const eeTriangle2f& t, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth) {
 	DrawTriangle( t.V[0], t.V[1], t.V[2], mColor, mColor, mColor, fillmode, blend, lineWidth );
 }
 
-void cPrimitives::DrawTriangle(const eeTriangle2f& t, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth) {
+void cPrimitives::DrawTriangle(const eeTriangle2f& t, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth) {
 	DrawTriangle( t.V[0], t.V[1], t.V[2], Color1, Color2, Color3, fillmode, blend, lineWidth );
 }
 
-void cPrimitives::DrawTriangle(const eeVector2f& p1, const eeVector2f& p2, const eeVector2f& p3, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth) {
+void cPrimitives::DrawTriangle(const eeVector2f& p1, const eeVector2f& p2, const eeVector2f& p3, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth) {
 	DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, Color1, Color2, Color3, fillmode, blend, lineWidth);
 }
 
-void cPrimitives::DrawTriangle(const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth) {
+void cPrimitives::DrawTriangle(const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth) {
 	DrawTriangle(x1, y1, x2, y2, x3, y3, mColor, mColor, mColor, fillmode, blend, lineWidth);
 }
 
-void cPrimitives::DrawTriangle(const eeVector2f& p1, const eeVector2f& p2, const eeVector2f& p3, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth) {
+void cPrimitives::DrawTriangle(const eeVector2f& p1, const eeVector2f& p2, const eeVector2f& p3, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth) {
 	DrawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, mColor, mColor, mColor, fillmode, blend, lineWidth);
 }
 
-void cPrimitives::DrawQuad(const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const eeFloat& x4, const eeFloat& y4, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeFloat& OffsetX, const eeFloat& OffsetY ) {
+void cPrimitives::DrawQuad(const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const eeFloat& x4, const eeFloat& y4, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth, const eeFloat& OffsetX, const eeFloat& OffsetY ) {
 	DrawQuad(x1, y1, x2, y2, x3, y3, x4, y4, mColor, mColor, mColor, mColor, fillmode, blend, lineWidth, OffsetX, OffsetY);
 }
 
-void cPrimitives::DrawQuad(const eeVector2f& p1, const eeVector2f& p2, const eeVector2f& p3, const eeVector2f& p4, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const eeColorA& Color4, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeFloat& OffsetX, const eeFloat& OffsetY ) {
+void cPrimitives::DrawQuad(const eeVector2f& p1, const eeVector2f& p2, const eeVector2f& p3, const eeVector2f& p4, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const eeColorA& Color4, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth, const eeFloat& OffsetX, const eeFloat& OffsetY ) {
 	DrawQuad(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y, Color1, Color2, Color3, Color4, fillmode, blend, lineWidth, OffsetX, OffsetY);
 }
 
-void cPrimitives::DrawQuad(const eeVector2f& p1, const eeVector2f& p2, const eeVector2f& p3, const eeVector2f& p4, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeFloat& OffsetX, const eeFloat& OffsetY ) {
+void cPrimitives::DrawQuad(const eeVector2f& p1, const eeVector2f& p2, const eeVector2f& p3, const eeVector2f& p4, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth, const eeFloat& OffsetX, const eeFloat& OffsetY ) {
 	DrawQuad(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y, mColor, mColor, mColor, mColor, fillmode, blend, lineWidth, OffsetX, OffsetY);
 }
 
-void cPrimitives::DrawQuad(const eeQuad2f& q, const EE_FILLMODE& fillmode, const EE_RENDERALPHAS& blend, const eeFloat& lineWidth, const eeFloat& OffsetX, const eeFloat& OffsetY ) {
+void cPrimitives::DrawQuad(const eeQuad2f& q, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth, const eeFloat& OffsetX, const eeFloat& OffsetY ) {
 	DrawQuad(q.V[0].x, q.V[0].y, q.V[1].x, q.V[1].y, q.V[2].x, q.V[2].y, q.V[3].x, q.V[3].y, mColor, mColor, mColor, mColor, fillmode, blend, lineWidth, OffsetX, OffsetY);
 }
 

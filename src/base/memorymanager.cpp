@@ -4,6 +4,7 @@
 
 namespace EE {
 
+#ifdef EE_MEMORY_MANAGER
 static std::string SizeToString( const unsigned int& MemSize ) {
 	std::string size = " bytes";
 	double mem = static_cast<double>( MemSize );
@@ -28,6 +29,7 @@ static std::string SizeToString( const unsigned int& MemSize ) {
 
 	return std::string( ss.str() + size );
 }
+#endif
 
 tAllocatedPointerMap MemoryManager::mMapPointers;
 size_t MemoryManager::mTotalMemoryUsage = 0;

@@ -224,7 +224,7 @@ void cFrameBufferPBuffer::Bind() {
 	#endif
 
 	if ( ChangeContext ) {
-		Window::cEngine::instance()->ResetGL2D( true );
+		Window::cEngine::instance()->Setup2D( true );
 		SetBufferView();
 	}
 }
@@ -233,7 +233,7 @@ void cFrameBufferPBuffer::Unbind() {
 	GLint previousTexture;
 	glGetIntegerv( GL_TEXTURE_BINDING_2D, &previousTexture );
 
-	glBindTexture( GL_TEXTURE_2D, (GLint)mTexture->Texture() );
+	glBindTexture( GL_TEXTURE_2D, (GLint)mTexture->Handle() );
 	glCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, 0, 0, mWidth, mHeight );
 
 	glBindTexture( GL_TEXTURE_2D, previousTexture );

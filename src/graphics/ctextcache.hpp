@@ -37,7 +37,7 @@ class EE_API cTextCache {
 
 		std::vector<eeColorA>& Colors();
 
-		void Draw( const eeFloat& X, const eeFloat& Y, const Uint32& Flags = 0, const eeFloat& Scale = 1.0f, const eeFloat& Angle = 0, const EE_RENDERALPHAS& Effect = ALPHA_NORMAL );
+		void Draw( const eeFloat& X, const eeFloat& Y, const Uint32& Flags = 0, const eeFloat& Scale = 1.0f, const eeFloat& Angle = 0, const EE_PRE_BLEND_FUNC& Effect = ALPHA_NORMAL );
 
 		void Cache();
 
@@ -53,6 +53,8 @@ class EE_API cTextCache {
 		/** Set the shadow color of the string rendered */
 		void ShadowColor(const eeColorA& Color);
 	protected:
+		friend class cFont;
+
 		std::wstring 				mText;
 		cFont * 					mFont;
 		std::vector<eeFloat> 		mLinesWidth;
@@ -64,8 +66,14 @@ class EE_API cTextCache {
 
 		std::vector<eeVertexCoords>	mRenderCoords;
 		std::vector<eeColorA>		mColors;
+		bool						mCachedCoords;
+		Uint32						mFlags;
 
 		void UpdateCoords();
+
+		const bool& CachedCoords() const;
+
+		void CachedCoords( const bool& cached );
 };
 
 }}

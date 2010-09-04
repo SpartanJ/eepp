@@ -1,8 +1,11 @@
 #include "cvertexbufferogl.hpp"
+#include "glhelper.hpp"
+
+using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
-cVertexBufferOGL::cVertexBufferOGL( const Uint32& VertexFlags, EE_DRAW_TYPE DrawType, const Int32& ReserveVertexSize, const Int32& ReserveIndexSize, EE_VBO_USAGE_TYPE UsageType ) :
+cVertexBufferOGL::cVertexBufferOGL( const Uint32& VertexFlags, EE_DRAW_MODE DrawType, const Int32& ReserveVertexSize, const Int32& ReserveIndexSize, EE_VBO_USAGE_TYPE UsageType ) :
 	cVertexBuffer( VertexFlags, DrawType, ReserveVertexSize, ReserveIndexSize, UsageType )
 {
 }
@@ -37,7 +40,7 @@ void cVertexBufferOGL::SetVertexStates() {
 		glEnableClientState( GL_VERTEX_ARRAY );
 		glVertexPointer( eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FLOAT, sizeof(float) * eeVertexElements[ VERTEX_FLAG_POSITION ], &mVertexArray[ VERTEX_FLAG_POSITION ][0] );
 	} else {
-		glDisableClientState( GL_VERTEX_ARRAY );
+		//glDisableClientState( GL_VERTEX_ARRAY );
 	}
 
 	/// COLOR
@@ -45,22 +48,34 @@ void cVertexBufferOGL::SetVertexStates() {
 		glEnableClientState( GL_COLOR_ARRAY );
 		glColorPointer( eeVertexElements[ VERTEX_FLAG_COLOR ], GL_UNSIGNED_BYTE, sizeof(Uint8) * eeVertexElements[ VERTEX_FLAG_COLOR ], &mColorArray[0] );
 	} else {
-		glDisableClientState( GL_COLOR_ARRAY );
+		//glDisableClientState( GL_COLOR_ARRAY );
 	}
 
 	/// TEXTURES
-	for ( Int32 i = 0; i < 5; i++ ) {
-		if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 + i ) ) {
-			glClientActiveTextureARB( GL_TEXTURE0_ARB );
-			glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+	if ( cGL::instance()->IsExtension( EEGL_ARB_multitexture ) ) {
+		for ( Int32 i = 0; i < 5; i++ ) {
+			if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 + i ) ) {
+				glClientActiveTextureARB( GL_TEXTURE0_ARB + i );
+				glEnableClientState( GL_TEXTURE_COORD_ARRAY );
 
-			glTexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], GL_FLOAT, sizeof(float) * eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], &mVertexArray[ VERTEX_FLAG_TEXTURE0 + i ][0] );
+				glTexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], GL_FLOAT, sizeof(float) * eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], &mVertexArray[ VERTEX_FLAG_TEXTURE0 + i ][0] );
+			} else {
+				//glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+				glDisable( GL_TEXTURE_2D );
+			}
+		}
+	} else {
+		if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 ) ) {
+			glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+			glTexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], GL_FLOAT, sizeof(float) * eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], &mVertexArray[ VERTEX_FLAG_TEXTURE0 ][0] );
 		} else {
-			//glClientActiveTextureARB( GL_TEXTURE0_ARB );
-			glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+			//glDisableClientState( GL_TEXTURE_COORD_ARRAY );
 			glDisable( GL_TEXTURE_2D );
 		}
 	}
+
+	glActiveTextureARB( GL_TEXTURE0_ARB );
+	glClientActiveTextureARB( GL_TEXTURE0_ARB );
 }
 
 }}

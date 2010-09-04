@@ -8,7 +8,9 @@ cTextCache::cTextCache() :
 	mCachedWidth(0.f),
 	mNumLines(1),
 	mFontColor(0xFFFFFFFF),
-	mFontShadowColor(0xFF000000)
+	mFontShadowColor(0xFF000000),
+	mCachedCoords(false),
+	mFlags(0)
 {
 }
 
@@ -96,6 +98,8 @@ void cTextCache::Cache() {
 		mFont->CacheWidth( mText, mLinesWidth, mCachedWidth, mNumLines );
 	else
 		mCachedWidth = 0;
+
+	mCachedCoords = false;
 }
 
 eeFloat cTextCache::GetTextWidth() {
@@ -110,7 +114,7 @@ const std::vector<eeFloat>& cTextCache::LinesWidth() {
 	return mLinesWidth;
 }
 
-void cTextCache::Draw( const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, const EE_RENDERALPHAS& Effect ) {
+void cTextCache::Draw( const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, const EE_PRE_BLEND_FUNC& Effect ) {
 	if ( NULL != mFont ) {
 		eeColorA FontColor = mFont->Color();
 		eeColorA FontShadowColor = mFont->ShadowColor();
@@ -118,11 +122,28 @@ void cTextCache::Draw( const eeFloat& X, const eeFloat& Y, const Uint32& Flags, 
 		mFont->Color( mFontColor );
 		mFont->ShadowColor( mFontShadowColor );
 
-		mFont->Draw( *this, X, Y, Flags, Scale, Angle, Effect );
+		if ( mFlags != Flags ) {
+			mFlags = Flags;
+			mCachedCoords = false;
+		}
+
+		glTranslatef( X, Y, 0.f );
+
+		mFont->Draw( *this, 0, 0, Flags, Scale, Angle, Effect );
+
+		glTranslatef( -X, -Y, 0.f );
 
 		mFont->Color( FontColor );
 		mFont->ShadowColor( FontShadowColor );
 	}
+}
+
+const bool& cTextCache::CachedCoords() const {
+	return mCachedCoords;
+}
+
+void cTextCache::CachedCoords( const bool& cached ) {
+	mCachedCoords = cached;
 }
 
 }}

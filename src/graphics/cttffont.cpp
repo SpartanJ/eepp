@@ -19,13 +19,13 @@ cTTFFont::~cTTFFont() {
 	hkFontManager::instance()->Destroy();
 }
 
-bool cTTFFont::LoadFromPack( cPack* Pack, const std::string& FilePackPath, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor ) {
+bool cTTFFont::LoadFromPack( cPack* Pack, const std::string& FilePackPath, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) {
 	std::vector<Uint8> TmpData;
 
 	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, TmpData ) ) {
 		mFilepath = FilePackPath;
 
-		return LoadFromMemory( reinterpret_cast<Uint8*> (&TmpData[0]), (eeUint)TmpData.size(), Size, Style, VerticalDraw, NumCharsToGen, FontColor, OutlineSize, OutlineColor );
+		return LoadFromMemory( reinterpret_cast<Uint8*> (&TmpData[0]), (eeUint)TmpData.size(), Size, Style, VerticalDraw, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
 	}
 
 	TmpData.clear();
@@ -33,7 +33,7 @@ bool cTTFFont::LoadFromPack( cPack* Pack, const std::string& FilePackPath, const
 	return false;
 }
 
-bool cTTFFont::LoadFromMemory( Uint8* TTFData, const eeUint& TTFDataSize, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor ) {
+bool cTTFFont::LoadFromMemory( Uint8* TTFData, const eeUint& TTFDataSize, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) {
 	if ( !mFilepath.size() )
 		mFilepath = "from memory";
 
@@ -41,25 +41,32 @@ bool cTTFFont::LoadFromMemory( Uint8* TTFData, const eeUint& TTFDataSize, const 
 
 	mFont = hkFontManager::instance()->OpenFromMemory( reinterpret_cast<uint8_t*>(&TTFData[0]), TTFDataSize, Size, 0, NumCharsToGen );
 
-	return iLoad( Size, Style, VerticalDraw, NumCharsToGen, FontColor, OutlineSize, OutlineColor );
+	return iLoad( Size, Style, VerticalDraw, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
 }
 
-bool cTTFFont::Load( const std::string& Filepath, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor ) {
+bool cTTFFont::Load( const std::string& Filepath, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) {
 	mFilepath = Filepath;
 	mLoadedFromMemory = false;
 
 	mFont = hkFontManager::instance()->OpenFromFile( Filepath.c_str(), Size, 0, NumCharsToGen );
 
-	return iLoad( Size, Style, VerticalDraw, NumCharsToGen, FontColor, OutlineSize, OutlineColor );
+	return iLoad( Size, Style, VerticalDraw, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
 }
 
-bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor ) {
+bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, Uint8 OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) {
 	eeRect CurrentPos;
 	eeSize GlyphRect;
 
 	unsigned char * TempGlyphSurface;
 
 	eeFloat Top, Bottom;
+
+	// Change the outline size to add a pixel separating the character from the around characters to prevent ugly zooming of characters
+	Uint32 PixelSep = 0;
+
+	if ( AddPixelSeparator )
+		PixelSep = 1;
+
 	Uint8 OutlineTotal = OutlineSize * 2;
 	Uint32 TexSize;
 
@@ -72,33 +79,49 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ve
 
 		mFont->Style( Style );
 
-		mVerticalDraw = VerticalDraw;
-		mSize = Size;
-		mNumChars = NumCharsToGen;
-
-		mFontColor = FontColor;
-		mOutlineColor = OutlineColor;
-
-		mStyle = Style;
+		mVerticalDraw 	= VerticalDraw;
+		mSize 			= Size;
+		mHeight 		= mFont->Height() + OutlineTotal;
+		mNumChars 		= NumCharsToGen;
+		mFontColor 		= FontColor;
+		mOutlineColor 	= OutlineColor;
+		mStyle 			= Style;
+		mTexWidth 		= 128;
+		mTexHeight 		= 128;
 
         mGlyphs.clear();
 		mGlyphs.resize( mNumChars );
 
-		mTexWidth = (eeFloat)NextPowOfTwo( mSize * 16 );
-		mTexHeight = mTexWidth;
+		bool lastWasWidth = false;
+		Uint32 ReqSize;
+
+		// Find the best size for the texture ( aprox )
+
+		mSize += PixelSep;
+
+		do {
+			ReqSize = mNumChars * mSize * mSize;
+			TexSize = (Uint32)mTexWidth * (Uint32)mTexHeight;
+
+			if ( TexSize < ReqSize ) {
+				if ( !lastWasWidth )
+					mTexWidth *= 2;
+				else
+					mTexHeight *= 2;
+
+				lastWasWidth = !lastWasWidth;
+			}
+		} while ( TexSize < ReqSize  );
+
+		mSize -= PixelSep;
 
 		TexSize = (Uint32)mTexWidth * (Uint32)mTexHeight;
-
-		if ( ( mSize >= 60 && mNumChars > 256 ) || ( OutlineSize > 2 && mNumChars >= 512 && mSize >= 24 ) )
-			mTexHeight *= 2;
-
-		mHeight = mFont->Height() + OutlineTotal;
 
 		mPixels = eeNewArray( eeColorA, TexSize );
 		memset( mPixels, 0x00000000, TexSize * 4 );
 
 		CurrentPos.Left = OutlineSize;
-		CurrentPos.Top = OutlineSize;
+		CurrentPos.Top 	= OutlineSize;
 
 		//Loop through all chars
 		for ( eeUint i = 0; i < mNumChars; i++) {
@@ -115,10 +138,10 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ve
 			GlyphRect.y = mFont->Current()->Pixmap()->rows;
 
 			//Set size of current position rect
-			CurrentPos.Right = CurrentPos.Left + TempGlyph.MaxX;
-			CurrentPos.Bottom = CurrentPos.Top + TempGlyph.MaxY;
+			CurrentPos.Right 	= CurrentPos.Left + TempGlyph.MaxX;
+			CurrentPos.Bottom 	= CurrentPos.Top + TempGlyph.MaxY;
 
-			if (CurrentPos.Right >= mTexWidth) {
+			if ( CurrentPos.Right >= mTexWidth ) {
 				CurrentPos.Left = 0 + OutlineSize;
 				CurrentPos.Top += mHeight;
 			}
@@ -144,8 +167,8 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ve
 			}
 
 			// Fixes the width and height of the current pos
-			CurrentPos.Right = GlyphRect.x;
-			CurrentPos.Bottom = GlyphRect.y;
+			CurrentPos.Right 	= GlyphRect.x;
+			CurrentPos.Bottom 	= GlyphRect.y;
 
 			// Set texture coordinates to te list
 			eeRectf tR;
@@ -173,10 +196,10 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ve
 			TempGlyph.GlyphH = GlyphRect.y + OutlineSize;
 
 			//Position xpos ready for next glyph
-			CurrentPos.Left += GlyphRect.x + OutlineTotal;
+			CurrentPos.Left += GlyphRect.x + OutlineTotal + PixelSep;
 
 			//If the next character will run off the edge of the glyph sheet, advance to next row
-			if (CurrentPos.Left + CurrentPos.Right > mTexWidth) {
+			if ( CurrentPos.Left + CurrentPos.Right > mTexWidth ) {
 				CurrentPos.Left = 0 + OutlineSize;
 				CurrentPos.Top += mHeight;
 			}

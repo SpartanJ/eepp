@@ -3,6 +3,9 @@
 #define STBI_TYPE_SPECIFIC_FUNCTIONS
 #include "../helper/SOIL/stb_image.h"
 #include "../helper/SOIL/SOIL.h"
+#include "glhelper.hpp"
+
+using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
@@ -155,7 +158,7 @@ void cTextureLoader::Start() {
 
 void cTextureLoader::LoadFromPath() {
 	if ( FileExists( mFilepath ) ) {
-		if ( GLEW_EXT_texture_compression_s3tc )
+		if ( cGL::instance()->IsExtension( EEGL_EXT_texture_compression_s3tc ) )
 			mIsDDS = 0 != stbi_dds_test_filename( mFilepath.c_str() );
 
 		if ( mIsDDS ) {
@@ -187,7 +190,7 @@ void cTextureLoader::LoadFromPack() {
 }
 
 void cTextureLoader::LoadFromMemory() {
-	if ( GLEW_EXT_texture_compression_s3tc )
+	if ( cGL::instance()->IsExtension( EEGL_EXT_texture_compression_s3tc ) )
 		mIsDDS = 0 != stbi_dds_test_memory( mImagePtr, mSize );
 
 	if ( mIsDDS ) {

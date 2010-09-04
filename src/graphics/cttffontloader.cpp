@@ -2,7 +2,7 @@
 
 namespace EE { namespace Graphics {
 
-cTTFFontLoader::cTTFFontLoader( const std::string& FontName, const std::string& Filepath, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor ) :
+cTTFFontLoader::cTTFFontLoader( const std::string& FontName, const std::string& Filepath, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) :
 	cObjectLoader( FontTTFLoader ),
 	mLoadType( TTF_LT_PATH ),
 	mFontName( FontName ),
@@ -14,11 +14,12 @@ cTTFFontLoader::cTTFFontLoader( const std::string& FontName, const std::string& 
 	mFontColor( FontColor ),
 	mOutlineSize( OutlineSize ),
 	mOutlineColor( OutlineColor ),
+	mAddPixelSeparator( AddPixelSeparator ),
 	mFontLoaded( false )
 {
 }
 
-cTTFFontLoader::cTTFFontLoader( const std::string& FontName, cPack * Pack, const std::string& FilePackPath, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor ) :
+cTTFFontLoader::cTTFFontLoader( const std::string& FontName, cPack * Pack, const std::string& FilePackPath, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) :
 	cObjectLoader( FontTTFLoader ),
 	mLoadType( TTF_LT_PACK ),
 	mFontName( FontName ),
@@ -30,12 +31,13 @@ cTTFFontLoader::cTTFFontLoader( const std::string& FontName, cPack * Pack, const
 	mFontColor( FontColor ),
 	mOutlineSize( OutlineSize ),
 	mOutlineColor( OutlineColor ),
+	mAddPixelSeparator( AddPixelSeparator ),
 	mPack( Pack ),
 	mFontLoaded( false )
 {
 }
 
-cTTFFontLoader::cTTFFontLoader( const std::string& FontName, Uint8* TTFData, const eeUint& TTFDataSize, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor ) :
+cTTFFontLoader::cTTFFontLoader( const std::string& FontName, Uint8* TTFData, const eeUint& TTFDataSize, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) :
 	cObjectLoader( FontTTFLoader ),
 	mLoadType( TTF_LT_MEM ),
 	mFontName( FontName ),
@@ -46,6 +48,7 @@ cTTFFontLoader::cTTFFontLoader( const std::string& FontName, Uint8* TTFData, con
 	mFontColor( FontColor ),
 	mOutlineSize( OutlineSize ),
 	mOutlineColor( OutlineColor ),
+	mAddPixelSeparator( AddPixelSeparator ),
 	mData( TTFData ),
 	mDataSize( TTFDataSize ),
 	mFontLoaded( false )
@@ -88,15 +91,15 @@ const std::string& cTTFFontLoader::Id() const {
 }
 
 void cTTFFontLoader::LoadFromPath() {
-	mFont->Load( mFilepath, mSize, mStyle, mVerticalDraw, mNumCharsToGen, mFontColor, mOutlineSize, mOutlineColor );
+	mFont->Load( mFilepath, mSize, mStyle, mVerticalDraw, mNumCharsToGen, mFontColor, mOutlineSize, mOutlineColor, mAddPixelSeparator );
 }
 
 void cTTFFontLoader::LoadFromMemory() {
-	mFont->LoadFromMemory( mData, mDataSize, mSize, mStyle, mVerticalDraw, mNumCharsToGen, mFontColor, mOutlineSize, mOutlineColor );
+	mFont->LoadFromMemory( mData, mDataSize, mSize, mStyle, mVerticalDraw, mNumCharsToGen, mFontColor, mOutlineSize, mOutlineColor, mAddPixelSeparator );
 }
 
 void cTTFFontLoader::LoadFromPack() {
-	mFont->LoadFromPack( mPack, mFilepath, mSize, mStyle, mVerticalDraw, mNumCharsToGen, mFontColor, mOutlineSize, mOutlineColor );
+	mFont->LoadFromPack( mPack, mFilepath, mSize, mStyle, mVerticalDraw, mNumCharsToGen, mFontColor, mOutlineSize, mOutlineColor, mAddPixelSeparator );
 }
 
 cFont * cTTFFontLoader::Font() const {

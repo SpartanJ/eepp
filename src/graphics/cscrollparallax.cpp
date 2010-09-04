@@ -8,12 +8,12 @@ cScrollParallax::cScrollParallax() {
 
 cScrollParallax::~cScrollParallax() {}
 
-cScrollParallax::cScrollParallax( const Uint32& TexId, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeRecti& SrcRECT, const eeRGBA& Color, const Uint8& Alpha, const EE_RENDERALPHAS& Effect ) {
+cScrollParallax::cScrollParallax( const Uint32& TexId, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeRecti& SrcRECT, const eeRGBA& Color, const Uint8& Alpha, const EE_PRE_BLEND_FUNC& Effect ) {
 	TF = cTextureFactory::instance();
 	Create( TexId, DestX, DestY, DestWidth, DestHeight, SrcRECT, Color, Alpha, Effect );
 }
 
-bool cScrollParallax::Create(const Uint32& TexId, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeRecti& SrcRECT, const eeRGBA& Color, const Uint8& Alpha, const EE_RENDERALPHAS& Effect ) {
+bool cScrollParallax::Create(const Uint32& TexId, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeRecti& SrcRECT, const eeRGBA& Color, const Uint8& Alpha, const EE_PRE_BLEND_FUNC& Effect ) {
 	cTexture * Tex = TF->GetTexture( TexId );
 
 	if ( NULL == Tex )

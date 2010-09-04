@@ -49,7 +49,7 @@ class EE_API cPrimitives {
 		* @param fillmode Draw filled or only lines
 		* @param lineWidth The line width ( default 1.0f )
 		*/
-		void DrawCircle(const eeVector2f& p, const eeFloat& radius, Uint32 points = 360, const EE_FILLMODE& fillmode = DRAW_FILL, const eeFloat& lineWidth = 1.0f);
+		void DrawCircle(const eeVector2f& p, const eeFloat& radius, Uint32 points = 360, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const eeFloat& lineWidth = 1.0f);
 
 		/** Draw a circle on the screen
 		* @param x Point x axis
@@ -59,7 +59,7 @@ class EE_API cPrimitives {
 		* @param fillmode Draw filled or only lines
 		* @param lineWidth The line width ( default 1.0f )
 		*/
-		void DrawCircle(const eeFloat& x, const eeFloat& y, const eeFloat& radius, Uint32 points = 360, const EE_FILLMODE& fillmode = DRAW_FILL, const eeFloat& lineWidth = 1.0f);
+		void DrawCircle(const eeFloat& x, const eeFloat& y, const eeFloat& radius, Uint32 points = 360, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const eeFloat& lineWidth = 1.0f);
 
 		/** Draw a triangle on the screen
 		* @param x1 First Point x axis
@@ -75,7 +75,7 @@ class EE_API cPrimitives {
 		* @param blend The Blend Mode
 		* @param lineWidth The line width ( default 1.0f )
 		*/
-		void DrawTriangle(const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_FILLMODE& fillmode = DRAW_FILL, const EE_RENDERALPHAS& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f);
+		void DrawTriangle(const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f);
 
 		/** Draw a triangle on the screen
 		* @param x1 First Point x axis
@@ -88,7 +88,7 @@ class EE_API cPrimitives {
 		* @param blend The Blend Mode
 		* @param lineWidth The line width ( default 1.0f )
 		*/
-		void DrawTriangle(const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const EE_FILLMODE& fillmode = DRAW_FILL, const EE_RENDERALPHAS& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f);
+		void DrawTriangle(const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f);
 
 		/** Draw a triangle on the screen
 		* @param p1 First Point axis
@@ -101,7 +101,7 @@ class EE_API cPrimitives {
 		* @param blend The Blend Mode
 		* @param lineWidth The line width ( default 1.0f )
 		*/
-		void DrawTriangle(const eeVector2f& p1, const eeVector2f& p2, const eeVector2f& p3, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_FILLMODE& fillmode = DRAW_FILL, const EE_RENDERALPHAS& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f);
+		void DrawTriangle(const eeVector2f& p1, const eeVector2f& p2, const eeVector2f& p3, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f);
 
 		/** Draw a triangle on the screen
 		* @param p1 First Point axis
@@ -111,7 +111,7 @@ class EE_API cPrimitives {
 		* @param blend The Blend Mode
 		* @param lineWidth The line width ( default 1.0f )
 		*/
-		void DrawTriangle(const eeVector2f& p1, const eeVector2f& p2, const eeVector2f& p3, const EE_FILLMODE& fillmode = DRAW_FILL, const EE_RENDERALPHAS& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f);
+		void DrawTriangle(const eeVector2f& p1, const eeVector2f& p2, const eeVector2f& p3, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f);
 
 		/** Draw a triangle on the screen
 		* @param t The Triangle (eeTriangle2f)
@@ -119,7 +119,7 @@ class EE_API cPrimitives {
 		* @param blend The Blend Mode
 		* @param lineWidth The line width ( default 1.0f )
 		*/
-		void DrawTriangle(const eeTriangle2f& t, const EE_FILLMODE& fillmode = DRAW_FILL, const EE_RENDERALPHAS& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f);
+		void DrawTriangle(const eeTriangle2f& t, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f);
 
 		/** Draw a triangle on the screen
 		* @param t The Triangle (eeTriangle2f)
@@ -130,7 +130,7 @@ class EE_API cPrimitives {
 		* @param blend The Blend Mode
 		* @param lineWidth The line width ( default 1.0f )
 		*/
-		void DrawTriangle(const eeTriangle2f& t, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_FILLMODE& fillmode = DRAW_FILL, const EE_RENDERALPHAS& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f);
+		void DrawTriangle(const eeTriangle2f& t, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f);
 
 		/** Draw a rectangle on the screen
 		* @param x Screen x axis
@@ -143,9 +143,9 @@ class EE_API cPrimitives {
 		* @param blend The Blend Mode
 		* @param lineWidth The line width ( default 1.0f )
 		*/
-		void DrawRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& Angle = 0, const eeFloat& Scale = 1, const EE_FILLMODE& fillmode = DRAW_FILL, const EE_RENDERALPHAS& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeUint& Corners = 0 );
+		void DrawRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& Angle = 0, const eeFloat& Scale = 1, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeUint& Corners = 0 );
 
-		void DrawRoundedRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& Angle = 0, const eeFloat& Scale = 1, const EE_FILLMODE& fillmode = DRAW_FILL, const EE_RENDERALPHAS& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeUint& Corners = 8 );
+		void DrawRoundedRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& Angle = 0, const eeFloat& Scale = 1, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeUint& Corners = 8 );
 
 		/** Draw a rectangle on the screen
 		* @param x Screen x axis
@@ -162,9 +162,9 @@ class EE_API cPrimitives {
 		* @param blend The Blend Mode
 		* @param lineWidth The line width ( default 1.0f )
 		*/
-		void DrawRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle = 0, const eeFloat& Scale = 1, const EE_FILLMODE& fillmode = DRAW_FILL, const EE_RENDERALPHAS& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeUint& Corners = 0 );
+		void DrawRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle = 0, const eeFloat& Scale = 1, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeUint& Corners = 0 );
 
-		void DrawRoundedRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle = 0, const eeFloat& Scale = 1, const EE_FILLMODE& fillmode = DRAW_FILL, const EE_RENDERALPHAS& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeUint& Corners = 8 );
+		void DrawRoundedRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle = 0, const eeFloat& Scale = 1, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeUint& Corners = 8 );
 
 		/** Draw a rectangle on the screen
 		* @param R The Rectangle eeRectf
@@ -174,9 +174,9 @@ class EE_API cPrimitives {
 		* @param blend The Blend Mode
 		* @param lineWidth The line width ( default 1.0f )
 		*/
-		void DrawRectangle( const eeRectf& R, const eeFloat& Angle = 0, const eeFloat& Scale = 1, const EE_FILLMODE& fillmode = DRAW_FILL, const EE_RENDERALPHAS& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeUint& Corners = 0 );
+		void DrawRectangle( const eeRectf& R, const eeFloat& Angle = 0, const eeFloat& Scale = 1, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeUint& Corners = 0 );
 
-		void DrawRoundedRectangle( const eeRectf& R, const eeFloat& Angle = 0, const eeFloat& Scale = 1, const EE_FILLMODE& fillmode = DRAW_FILL, const EE_RENDERALPHAS& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeUint& Corners = 8 );
+		void DrawRoundedRectangle( const eeRectf& R, const eeFloat& Angle = 0, const eeFloat& Scale = 1, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeUint& Corners = 8 );
 
 		/** Draw a rectangle on the screen
 		* @param R The Rectangle eeRectf
@@ -190,9 +190,9 @@ class EE_API cPrimitives {
 		* @param blend The Blend Mode
 		* @param lineWidth The line width ( default 1.0f )
 		*/
-		void DrawRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle = 0, const eeFloat& Scale = 1, const EE_FILLMODE& fillmode = DRAW_FILL, const EE_RENDERALPHAS& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeUint& Corners = 0 );
+		void DrawRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle = 0, const eeFloat& Scale = 1, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeUint& Corners = 0 );
 
-		void DrawRoundedRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle = 0, const eeFloat& Scale = 1, const EE_FILLMODE& fillmode = DRAW_FILL, const EE_RENDERALPHAS& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeUint& Corners = 8 );
+		void DrawRoundedRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle = 0, const eeFloat& Scale = 1, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeUint& Corners = 8 );
 
 		/** Draw a four edges polygon on screen
 		* @param x1 First Point x axis
@@ -211,7 +211,7 @@ class EE_API cPrimitives {
 		* @param blend The Blend Mode
 		* @param lineWidth The line width ( default 1.0f )
 		*/
-		void DrawQuad(const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const eeFloat& x4, const eeFloat& y4, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const eeColorA& Color4, const EE_FILLMODE& fillmode = DRAW_FILL, const EE_RENDERALPHAS& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeFloat& OffsetX = 0, const eeFloat& OffsetY = 0);
+		void DrawQuad(const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const eeFloat& x4, const eeFloat& y4, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const eeColorA& Color4, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeFloat& OffsetX = 0, const eeFloat& OffsetY = 0);
 
 		/** Draw a four edges polygon on screen
 		* @param x1 First Point x axis
@@ -226,7 +226,7 @@ class EE_API cPrimitives {
 		* @param blend The Blend Mode
 		* @param lineWidth The line width ( default 1.0f )
 		*/
-		void DrawQuad(const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const eeFloat& x4, const eeFloat& y4, const EE_FILLMODE& fillmode = DRAW_FILL, const EE_RENDERALPHAS& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeFloat& OffsetX = 0, const eeFloat& OffsetY = 0);
+		void DrawQuad(const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const eeFloat& x4, const eeFloat& y4, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeFloat& OffsetX = 0, const eeFloat& OffsetY = 0);
 
 		/** Draw a four edges polygon on screen
 		* @param p1 First Point
@@ -241,7 +241,7 @@ class EE_API cPrimitives {
 		* @param blend The Blend Mode
 		* @param lineWidth The line width ( default 1.0f )
 		*/
-		void DrawQuad(const eeVector2f& p1, const eeVector2f& p2, const eeVector2f& p3, const eeVector2f& p4, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const eeColorA& Color4, const EE_FILLMODE& fillmode = DRAW_FILL, const EE_RENDERALPHAS& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeFloat& OffsetX = 0, const eeFloat& OffsetY = 0);
+		void DrawQuad(const eeVector2f& p1, const eeVector2f& p2, const eeVector2f& p3, const eeVector2f& p4, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const eeColorA& Color4, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeFloat& OffsetX = 0, const eeFloat& OffsetY = 0);
 
 		/** Draw a four edges polygon on screen
 		* @param p1 First Point
@@ -252,7 +252,7 @@ class EE_API cPrimitives {
 		* @param blend The Blend Mode
 		* @param lineWidth The line width ( default 1.0f )
 		*/
-		void DrawQuad(const eeVector2f& p1, const eeVector2f& p2, const eeVector2f& p3, const eeVector2f& p4, const EE_FILLMODE& fillmode = DRAW_FILL, const EE_RENDERALPHAS& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeFloat& OffsetX = 0, const eeFloat& OffsetY = 0);
+		void DrawQuad(const eeVector2f& p1, const eeVector2f& p2, const eeVector2f& p3, const eeVector2f& p4, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeFloat& OffsetX = 0, const eeFloat& OffsetY = 0);
 
 		/** Draw a four edges polygon on screen
 		* @param q The Quad
@@ -260,7 +260,7 @@ class EE_API cPrimitives {
 		* @param blend The Blend Mode
 		* @param lineWidth The line width ( default 1.0f )
 		*/
-		void DrawQuad(const eeQuad2f& q, const EE_FILLMODE& fillmode = DRAW_FILL, const EE_RENDERALPHAS& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeFloat& OffsetX = 0, const eeFloat& OffsetY = 0);
+		void DrawQuad(const eeQuad2f& q, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f, const eeFloat& OffsetX = 0, const eeFloat& OffsetY = 0);
 
 		/** Draw a polygon on screen
 		* @param p The Polygon
@@ -268,7 +268,7 @@ class EE_API cPrimitives {
 		* @param blend The Blend Mode
 		* @param lineWidth The line width ( default 1.0f )
 		*/
-		void DrawPolygon(const eePolygon2f& p, const EE_FILLMODE& fillmode = DRAW_FILL, const EE_RENDERALPHAS& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f);
+		void DrawPolygon(const eePolygon2f& p, const EE_FILL_MODE& fillmode = EE_DRAW_FILL, const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL, const eeFloat& lineWidth = 1.0f);
 
 		/** Set the current color for drawing primitives */
 		void SetColor( const eeColorA& Color );

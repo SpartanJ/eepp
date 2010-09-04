@@ -14,7 +14,7 @@ class EE_API cScrollParallax {
 		~cScrollParallax();
 
 		/** Constructor that create's the Scroll Parallax */
-		cScrollParallax(const Uint32& TexId, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeRecti& SrcRECT = eeRecti(0, 0, 0, 0), const eeRGBA& Color = eeRGBA(255, 255, 255, 255), const Uint8& Alpha = 255, const EE_RENDERALPHAS& Effect = ALPHA_NORMAL);
+		cScrollParallax(const Uint32& TexId, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeRecti& SrcRECT = eeRecti(0, 0, 0, 0), const eeRGBA& Color = eeRGBA(255, 255, 255, 255), const Uint8& Alpha = 255, const EE_PRE_BLEND_FUNC& Effect = ALPHA_NORMAL);
 
 		/** Create's the Scroll Parallax
 		* @param TexId The Internal Texture Id
@@ -28,7 +28,7 @@ class EE_API cScrollParallax {
 		* @param Effect The Blend Mode ( default ALPHA_NORMAL )
 		* @return True if success
 		*/
-		bool Create(const Uint32& TexId, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeRecti& SrcRECT = eeRecti(0, 0, 0, 0), const eeRGBA& Color = eeRGBA(255, 255, 255, 255), const Uint8& Alpha = 255, const EE_RENDERALPHAS& Effect = ALPHA_NORMAL);
+		bool Create(const Uint32& TexId, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeRecti& SrcRECT = eeRecti(0, 0, 0, 0), const eeRGBA& Color = eeRGBA(255, 255, 255, 255), const Uint8& Alpha = 255, const EE_PRE_BLEND_FUNC& Effect = ALPHA_NORMAL);
 
 		/** Set the Alpha */
 		void Alpha( const Uint8& Alpha ) { mSpr.Alpha( Alpha ); }
@@ -43,7 +43,7 @@ class EE_API cScrollParallax {
 		eeRGBA Color() const { return mSpr.Color(); }
 
 		/** Set the Blend Mode */
-		void SetRenderAlphas( const EE_RENDERALPHAS& Effect ) { mSpr.SetRenderAlphas( Effect ); }
+		void SetRenderAlphas( const EE_PRE_BLEND_FUNC& Effect ) { mSpr.SetRenderAlphas( Effect ); }
 
 		/** Draw the Scroll Parallax
 		* @param XDirVel X Direction Speed to move the parallax.

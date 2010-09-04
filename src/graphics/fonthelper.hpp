@@ -26,17 +26,17 @@ inline Uint32 FontVAlignGet( Uint32 Flags ) {
 
 
 /** Basic Glyph structure used by the engine */
-typedef struct {
+typedef struct eeGlyphS {
 	Int32 MinX, MaxX, MinY, MaxY, Advance;
 	Uint16 CurX, CurY, CurW, CurH, GlyphH;
 } eeGlyph;
 
-typedef struct {
+typedef struct eeVertexCoordsS {
 	eeFloat TexCoords[2];
 	eeFloat Vertex[2];
 } eeVertexCoords;
 
-typedef struct {
+typedef struct eeTexCoordsS {
 	eeFloat TexCoords[8];
 	eeFloat Vertex[8];
 } eeTexCoords;

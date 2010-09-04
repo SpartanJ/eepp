@@ -97,6 +97,11 @@ namespace EE { namespace Utils {
 	* @example 10485760 -> "10.0 MB"
 	*/
 	std::string SizeToString( const Uint32& MemSize );
+
+	/** Convert a size represented in bytes, to a wstring converted in byes/kb/mb/tb.
+	* @example 10485760 -> "10.0 MB"
+	*/
+	std::wstring SizeToWString( const Uint32& MemSize );
 }
 
 }

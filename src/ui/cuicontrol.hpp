@@ -25,7 +25,7 @@ class EE_API cUIControl {
 					const eeVector2i& pos = eeVector2i( 0, 0 ),
 					const eeSize& size = eeSize( -1, -1 ),
 					const Uint32& flags = UI_HALIGN_LEFT | UI_VALIGN_CENTER,
-					const EE_RENDERALPHAS& blend = ALPHA_NORMAL,
+					const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL,
 					const cUIBackground& Back = cUIBackground(),
 					const cUIBorder& Bord = cUIBorder()
 				) :
@@ -61,7 +61,7 @@ class EE_API cUIControl {
 				Uint32			Flags;
 				cUIBackground 	Background;
 				cUIBorder		Border;
-				EE_RENDERALPHAS	Blend;
+				EE_PRE_BLEND_FUNC	Blend;
 		};
 
 		cUIControl( const CreateParams& Params );
@@ -170,9 +170,9 @@ class EE_API cUIControl {
 
 		void Flags( const Uint32& flags );
 
-		void Blend( const EE_RENDERALPHAS& blend );
+		void Blend( const EE_PRE_BLEND_FUNC& blend );
 
-		EE_RENDERALPHAS& Blend();
+		EE_PRE_BLEND_FUNC& Blend();
 
 		void ToFront();
 
@@ -217,7 +217,7 @@ class EE_API cUIControl {
 		cUIBorder		mBorder;
 
 		Uint32			mControlFlags;
-		EE_RENDERALPHAS	mBlend;
+		EE_PRE_BLEND_FUNC	mBlend;
 
 		eeQuad2f 		mQuad;
 		eeVector2f 		mCenter;

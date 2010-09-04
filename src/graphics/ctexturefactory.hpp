@@ -88,13 +88,15 @@ class EE_API cTextureFactory: public tSingleton<cTextureFactory>, protected cMut
 
 		/** Bind the the internal Texture Id indicated. This is usefull if you are rendering a texture outside this class.
 		* @param TexId The internal Texture Id
+		* @param TextureUnit The Texture Unit binded
 		*/
-		void Bind( const Uint32& TexId );
+		void Bind( const Uint32& TexId, const Uint32& TextureUnit = 0 );
 
 		/** Bind the the Texture indicated. This is usefull if you are rendering a texture outside this class.
 		* @param Tex The Texture Pointer
+		* @param TextureUnit The Texture Unit binded
 		*/
-		void Bind( const cTexture* Tex );
+		void Bind( const cTexture* Tex, const Uint32& TextureUnit = 0 );
 
 		/**
 		* @param TexId The internal Texture Id
@@ -104,22 +106,48 @@ class EE_API cTextureFactory: public tSingleton<cTextureFactory>, protected cMut
 
 		/**
 		* @return The real current texture id (OpenGL Texture Id)
+		* @param TextureUnit The Texture Unit binded
 		*/
-		GLint GetCurrentTexture() const;
+		GLint GetCurrentTexture( const Uint32& TextureUnit = 0 ) const;
 
 		/** Set the current internal texture id. This will set the TexId as the current texture binded.
 		* @param TexId The internal Texture Id
+		* @param TextureUnit The Texture Unit binded
 		*/
-		void SetCurrentTexture( const GLint& TexId );
+		void SetCurrentTexture( const GLint& TexId, const Uint32& TextureUnit );
 
 		/** Returns the number of textures loaded */
 		Uint32 GetNumTextures() const { return (Uint32)mTextures.size(); }
 
-		/** Set the Blend Function
+		/** Set a blend function.
+		* @SrcFactor Source Factor
+		* @DestFactor Destination Factor
+		*/
+		void SetBlendFunc( const EE_BLEND_FUNC& SrcFactor, const EE_BLEND_FUNC& DestFactor );
+
+		/** Set a Predefined Blend Function
 		* @param blend The Blend Mode
 		* @param force If force to apply the blend ( no matters if the last blend was the same blend )
 		*/
-		void SetBlendFunc( const EE_RENDERALPHAS& blend, const bool& force = false );
+		void SetPreBlendFunc( const EE_PRE_BLEND_FUNC& blend, bool force = false );
+
+		/** @return The last used predefined blend func */
+		const EE_PRE_BLEND_FUNC& GetPreBlendFunc() const;
+
+		/** Set the texture enviroment
+		* @Param The texture param
+		* @Val The EE_TEXTURE_OP or EE_TEXTURE_FUNC or EE_TEXTURE_SOURCE
+		*/
+		void SetTextureEnv( const EE_TEXTURE_PARAM& Param, const Int32& Val );
+
+		/** Active a texture unit */
+		void SetActiveTextureUnit( const Uint32& Unit );
+
+		/** Set a texture constant ( env ) color */
+		void SetTextureConstantColor( const eeColorAf& Color );
+
+		/** Set a texture constant ( env ) color */
+		void SetTextureConstantColor( const eeColorA& Color );
 
 		/**
 		* @param Size
@@ -186,11 +214,9 @@ class EE_API cTextureFactory: public tSingleton<cTextureFactory>, protected cMut
 	protected:
 		cTextureFactory();
 
-		GLint mCurrentTexture;
+		GLint mCurrentTexture[ EE_MAX_TEXTURE_UNITS ];
 
-		EE_RENDERALPHAS mLastBlend;
-
-		bool mPowOfTwo, mIsCalcPowOfTwo;
+		EE_PRE_BLEND_FUNC mLastBlend;
 
 		std::vector<cTexture*> mTextures;
 

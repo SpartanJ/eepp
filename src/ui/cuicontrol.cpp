@@ -353,11 +353,11 @@ void cUIControl::Flags( const Uint32& flags ) {
 	mFlags |= flags;
 }
 
-void cUIControl::Blend( const EE_RENDERALPHAS& blend ) {
+void cUIControl::Blend( const EE_PRE_BLEND_FUNC& blend ) {
 	mBlend = blend;
 }
 
-EE_RENDERALPHAS& cUIControl::Blend() {
+EE_PRE_BLEND_FUNC& cUIControl::Blend() {
 	return mBlend;
 }
 
@@ -407,9 +407,9 @@ void cUIControl::BackgroundDraw() {
 	P.SetColor( mBackground.Color() );
 
 	if ( 4 == mBackground.Colors().size() ) {
-		P.DrawRectangle( (eeFloat)Pos.x, (eeFloat)Pos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), mBackground.Colors()[0], mBackground.Colors()[1], mBackground.Colors()[2], mBackground.Colors()[3], 0.f, 1.f, DRAW_FILL, mBackground.Blend(), 1.0f, mBackground.Corners() );
+		P.DrawRectangle( (eeFloat)Pos.x, (eeFloat)Pos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), mBackground.Colors()[0], mBackground.Colors()[1], mBackground.Colors()[2], mBackground.Colors()[3], 0.f, 1.f, EE_DRAW_FILL, mBackground.Blend(), 1.0f, mBackground.Corners() );
 	} else {
-		P.DrawRectangle( (eeFloat)Pos.x, (eeFloat)Pos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, DRAW_FILL, mBackground.Blend(), 1.0f, mBackground.Corners() );
+		P.DrawRectangle( (eeFloat)Pos.x, (eeFloat)Pos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_FILL, mBackground.Blend(), 1.0f, mBackground.Corners() );
 	}
 }
 
@@ -419,7 +419,11 @@ void cUIControl::BorderDraw() {
 
 	cPrimitives P;
 	P.SetColor( mBorder.Color() );
-	P.DrawRectangle( (eeFloat)Pos.x, (eeFloat)Pos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, DRAW_LINE, mBlend, (eeFloat)mBorder.Width(), mBackground.Corners() );
+
+	if ( IsClipped() )
+		P.DrawRectangle( (eeFloat)Pos.x + 0.1f, (eeFloat)Pos.y + 0.1f, (eeFloat)mSize.Width() - 0.1f, (eeFloat)mSize.Height() - 0.1f, 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder.Width(), mBackground.Corners() );
+	else
+		P.DrawRectangle( (eeFloat)Pos.x, (eeFloat)Pos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder.Width(), mBackground.Corners() );
 }
 
 const Uint32& cUIControl::ControlFlags() const {
@@ -491,8 +495,12 @@ void cUIControl::InternalDraw() {
 }
 
 void cUIControl::ClipMe() {
-	if ( IsClipped() )
-		cUIManager::instance()->ClipEnable( mScreenPos.x, mScreenPos.y, mSize.Width(), mSize.Height() );
+	if ( IsClipped() ) {
+		if ( mFlags & UI_BORDER )
+			cUIManager::instance()->ClipEnable( mScreenPos.x, mScreenPos.y, mSize.Width(), mSize.Height() + 1 );
+		else
+			cUIManager::instance()->ClipEnable( mScreenPos.x, mScreenPos.y, mSize.Width(), mSize.Height() );
+	}
 }
 
 void cUIControl::ClipDisable() {

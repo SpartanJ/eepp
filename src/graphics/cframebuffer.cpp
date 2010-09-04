@@ -25,7 +25,7 @@ cFrameBuffer::cFrameBuffer() :
 
 cFrameBuffer::~cFrameBuffer() {
 	if ( NULL != mTexture )
-		cTextureFactory::instance()->Remove( mTexture->TexId() );
+		cTextureFactory::instance()->Remove( mTexture->Id() );
 }
 
 cTexture * cFrameBuffer::GetTexture() const {

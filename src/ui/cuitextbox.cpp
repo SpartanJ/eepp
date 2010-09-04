@@ -84,8 +84,9 @@ void cUITextBox::Alpha( const eeFloat& alpha ) {
 }
 
 void cUITextBox::AutoShrink() {
-	if ( Flags() & UI_AUTO_SHRINK_TEXT )
+	if ( Flags() & UI_AUTO_SHRINK_TEXT ) {
 		mTextCache.Font()->ShrinkText( mTextCache.Text(), mSize.Width() );
+	}
 }
 
 void cUITextBox::AutoSize() {
@@ -127,6 +128,8 @@ void cUITextBox::OnSizeChange() {
 	AutoAlign();
 
 	cUIControlAnim::OnSizeChange();
+
+	mTextCache.Cache();
 }
 
 void cUITextBox::OnTextChanged() {

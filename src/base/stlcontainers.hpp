@@ -57,12 +57,13 @@ namespace EE {
 		#endif
 	};
 
-	typedef eeVector<Uint8>::type eeVectorUint8;
-	typedef eeVector<Uint16>::type eeVectorUint16;
-	typedef eeVector<Uint32>::type eeVectorUint32;
-	typedef eeVector<Int8>::type eeVectorInt8;
-	typedef eeVector<Int16>::type eeVectorInt16;
-	typedef eeVector<Int32>::type eeVectorInt32;
+	typedef eeVector<Uint8>::type 		eeVectorUint8;
+	typedef eeVector<Uint16>::type 	eeVectorUint16;
+	typedef eeVector<Uint32>::type 	eeVectorUint32;
+	typedef eeVector<Int8>::type 		eeVectorInt8;
+	typedef eeVector<Int16>::type 		eeVectorInt16;
+	typedef eeVector<Int32>::type 		eeVectorInt32;
+	typedef eeVector<eeFloat>::type 	eeVectorFloat;
 }
 
 #endif

@@ -166,7 +166,7 @@ void cSprite::Update( const eeFloat& x, const eeFloat& y, const eeFloat& Scale, 
 
 Uint32 cSprite::GetTexture(const eeUint& FrameNum, const eeUint& SubFrameNum) {
 	if ( FrameNum < mFrames.size() && SubFrameNum < mFrameData.SubFrames )
-		return mFrames[FrameNum].Spr[SubFrameNum]->Texture();
+		return mFrames[FrameNum].Spr[SubFrameNum]->Id();
 
 	return 0;
 }
@@ -316,7 +316,7 @@ void cSprite::Animate( const eeFloat& ElapsedTime ) {
 
 		mFrameData.CurrentFrame = (eeUint)mFrameData.fCurrentFrame;
 
-		if ( !mReverseAnim && mFrameData.fCurrentFrame > Size + 1.0f ) {
+		if ( !mReverseAnim && mFrameData.fCurrentFrame >= Size + 1.0f ) {
 			if ( mRepeations < 0 ) {
 				mFrameData.fCurrentFrame = 0.0f;
 				mFrameData.CurrentFrame = 0;
@@ -376,7 +376,7 @@ void cSprite::SetReverseFromStart() {
 	mFrameData.CurrentFrame = Size;
 }
 
-void cSprite::Draw( const EE_RENDERALPHAS& Blend, const EE_RENDERTYPE& Effect, const eeFloat& ElapsedTime ) {
+void cSprite::Draw( const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect, const eeFloat& ElapsedTime ) {
 	Animate( ElapsedTime );
 
 	cShape * S = GetCurrentShape();
@@ -394,7 +394,7 @@ void cSprite::Draw() {
 	Draw(mBlend, mEffect);
 }
 
-void cSprite::Draw( const EE_RENDERALPHAS& Blend ) {
+void cSprite::Draw( const EE_PRE_BLEND_FUNC& Blend ) {
 	Draw(Blend, mEffect);
 }
 

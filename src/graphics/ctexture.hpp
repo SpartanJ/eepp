@@ -40,14 +40,14 @@ class EE_API cTexture : public cImage {
 		*/
 		void Create( const Uint32& texture, const eeUint& width, const eeUint& height, const eeUint& imgwidth, const eeUint& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize = 0, const Uint8* data = NULL );
 
-		/** Set the OpenGL Texture Id (texture handler) */
-		void Texture( const Uint32& texture ) { mTexture = texture; }
+		/** Set the OpenGL Texture Id (texture handle) */
+		void Handle( const Uint32& texture ) { mTexture = texture; }
 
-		/** @return The OpenGL Texture Id (texture handler) */
-		Uint32 Texture() const { return mTexture; }
+		/** @return The OpenGL Texture Id (texture handle) */
+		Uint32 Handle() const { return mTexture; }
 
-		/** @return The id of the texture ( that is the hash of the filename ) */
-		const Uint32& Id() const;
+		/** @return The hash of the filename */
+		const Uint32& HashName() const;
 
 		/** Set the Texture File Path */
 		void Filepath( const std::string& filepath ) { mFilepath = filepath; }
@@ -140,7 +140,7 @@ class EE_API cTexture : public cImage {
 		* @param width The width of the texture rendered
 		* @param height The height of the texture rendered
 		*/
-		void DrawFast( const eeFloat& x, const eeFloat& y, const eeFloat& Angle = 0.0f, const eeFloat& Scale = 1.0f, const eeColorA& Color = eeColorA(), const EE_RENDERALPHAS &blend = ALPHA_NORMAL, const eeFloat &width = 0, const eeFloat &height = 0 );
+		void DrawFast( const eeFloat& x, const eeFloat& y, const eeFloat& Angle = 0.0f, const eeFloat& Scale = 1.0f, const eeColorA& Color = eeColorA(), const EE_PRE_BLEND_FUNC &blend = ALPHA_NORMAL, const eeFloat &width = 0, const eeFloat &height = 0 );
 
 		/** Render the texture on screen
 		* @param x The x position on screen
@@ -155,7 +155,7 @@ class EE_API cTexture : public cImage {
 		* @param ScaleCentered If true the texture will be scaled centered, otherwise will be scale from the Top - Left Corner
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
-		void Draw( const eeFloat &x, const eeFloat &y, const eeFloat &Angle = 0, const eeFloat &Scale = 1.0f, const eeColorA& Color = eeColorA(255,255,255,255), const EE_RENDERALPHAS &blend = ALPHA_NORMAL, const EE_RENDERTYPE &Effect = RN_NORMAL, const bool &ScaleCentered = true, const eeRecti& texSector = eeRecti(0,0,0,0) );
+		void Draw( const eeFloat &x, const eeFloat &y, const eeFloat &Angle = 0, const eeFloat &Scale = 1.0f, const eeColorA& Color = eeColorA(255,255,255,255), const EE_PRE_BLEND_FUNC &blend = ALPHA_NORMAL, const EE_RENDERTYPE &Effect = RN_NORMAL, const bool &ScaleCentered = true, const eeRecti& texSector = eeRecti(0,0,0,0) );
 
 		/** Render the texture on screen. Extended because can set the vertex colors individually
 		* @param x The x position on screen
@@ -173,7 +173,7 @@ class EE_API cTexture : public cImage {
 		* @param ScaleCentered If true the texture will be scaled centered, otherwise will be scale from the Top - Left Corner
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
-		void DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width = 0.0f, const eeFloat &height = 0.0f, const eeFloat &Angle = 0, const eeFloat &Scale = 1.0f, const eeColorA& Color0 = eeColorA(255,255,255,255), const eeColorA& Color1 = eeColorA(255,255,255,255), const eeColorA& Color2 = eeColorA(255,255,255,255), const eeColorA& Color3 = eeColorA(255,255,255,255), const EE_RENDERALPHAS &blend = ALPHA_NORMAL, const EE_RENDERTYPE &Effect = RN_NORMAL, const bool &ScaleCentered = true, const eeRecti& texSector = eeRecti(0,0,0,0) );
+		void DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width = 0.0f, const eeFloat &height = 0.0f, const eeFloat &Angle = 0, const eeFloat &Scale = 1.0f, const eeColorA& Color0 = eeColorA(255,255,255,255), const eeColorA& Color1 = eeColorA(255,255,255,255), const eeColorA& Color2 = eeColorA(255,255,255,255), const eeColorA& Color3 = eeColorA(255,255,255,255), const EE_PRE_BLEND_FUNC &blend = ALPHA_NORMAL, const EE_RENDERTYPE &Effect = RN_NORMAL, const bool &ScaleCentered = true, const eeRecti& texSector = eeRecti(0,0,0,0) );
 
 		/** Render a GL_QUAD on Screen
 		* @param Q The eeQuad2f
@@ -185,7 +185,7 @@ class EE_API cTexture : public cImage {
 		* @param blend Set the Blend Mode ( default ALPHA_NORMAL )
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
-		void DrawQuad( const eeQuad2f& Q, const eeFloat &offsetx = 0.0f, const eeFloat &offsety = 0.0f, const eeFloat &Angle = 0.0f, const eeFloat &Scale = 1.0f, const eeColorA& Color = eeColorA(255,255,255,255), const EE_RENDERALPHAS &blend = ALPHA_NORMAL, const eeRecti& texSector = eeRecti(0,0,0,0) );
+		void DrawQuad( const eeQuad2f& Q, const eeFloat &offsetx = 0.0f, const eeFloat &offsety = 0.0f, const eeFloat &Angle = 0.0f, const eeFloat &Scale = 1.0f, const eeColorA& Color = eeColorA(255,255,255,255), const EE_PRE_BLEND_FUNC &blend = ALPHA_NORMAL, const eeRecti& texSector = eeRecti(0,0,0,0) );
 
 		/** Render a GL_QUAD on Screen
 		* @param Q The eeQuad2f
@@ -200,13 +200,13 @@ class EE_API cTexture : public cImage {
 		* @param blend Set the Blend Mode ( default ALPHA_NORMAL )
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
-		void DrawQuadEx( const eeQuad2f& Q, const eeFloat &offsetx = 0.0f, const eeFloat &offsety = 0.0f, const eeFloat &Angle = 0.0f, const eeFloat &Scale = 1.0f, const eeColorA& Color0 = eeColorA(255,255,255,255), const eeColorA& Color1 = eeColorA(255,255,255,255), const eeColorA& Color2 = eeColorA(255,255,255,255), const eeColorA& Color3 = eeColorA(255,255,255,255), const EE_RENDERALPHAS &blend = ALPHA_NORMAL, const eeRecti& texSector = eeRecti(0,0,0,0) );
+		void DrawQuadEx( const eeQuad2f& Q, const eeFloat &offsetx = 0.0f, const eeFloat &offsety = 0.0f, const eeFloat &Angle = 0.0f, const eeFloat &Scale = 1.0f, const eeColorA& Color0 = eeColorA(255,255,255,255), const eeColorA& Color1 = eeColorA(255,255,255,255), const eeColorA& Color2 = eeColorA(255,255,255,255), const eeColorA& Color3 = eeColorA(255,255,255,255), const EE_PRE_BLEND_FUNC &blend = ALPHA_NORMAL, const eeRecti& texSector = eeRecti(0,0,0,0) );
 
 		/** Set the texture factory internal id of the texture */
-		void TexId( const Uint32& id );
+		void Id( const Uint32& id );
 
 		/** @return The texture factory internal id of the texture */
-		const Uint32& TexId() const;
+		const Uint32& Id() const;
 
 		/** Reload the texture from the current local copy. */
 		void Reload();
