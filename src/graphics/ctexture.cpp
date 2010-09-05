@@ -13,7 +13,7 @@ cTexture::cTexture() :
 	mFlags(0),
 	mColorKey(eeRGB(true)),
 	mClampMode( EE_CLAMP_TO_EDGE ),
-	mFilter( EE_TEX_LINEAR )
+	mFilter( TEX_FILTER_LINEAR )
 {
 }
 
@@ -90,7 +90,7 @@ void cTexture::Create( const Uint32& texture, const eeUint& width, const eeUint&
 	mSize 		= MemSize;
 	mColorKey 	= ColorKey;
 	mClampMode 	= ClampMode;
-	mFilter 	= EE_TEX_LINEAR;
+	mFilter 	= TEX_FILTER_LINEAR;
 
 	if ( UseMipmap )
 		mFlags |= TEX_FLAG_MIPMAP;
@@ -235,12 +235,12 @@ void cTexture::SetTextureFilter(const EE_TEX_FILTER& filter) {
 			if ( PreviousTexture != (GLint)mTexture )
 				glBindTexture(GL_TEXTURE_2D, mTexture);
 
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (mFilter == EE_TEX_LINEAR) ? GL_LINEAR : GL_NEAREST);
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (mFilter == TEX_FILTER_LINEAR) ? GL_LINEAR : GL_NEAREST);
 
 			if ( mFlags & TEX_FLAG_MIPMAP )
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == EE_TEX_LINEAR) ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEX_FILTER_LINEAR) ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
 			else
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == EE_TEX_LINEAR) ? GL_LINEAR : GL_NEAREST);
+				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEX_FILTER_LINEAR) ? GL_LINEAR : GL_NEAREST);
 
 			if ( PreviousTexture != (GLint)mTexture )
 				glBindTexture(GL_TEXTURE_2D, PreviousTexture);

@@ -8,7 +8,7 @@
 		<Build>
 			<Target title="Debug">
 				<Option output="eetest" prefix_auto="1" extension_auto="1" />
-				<Option object_output="." />
+				<Option object_output=".\obj\win\debug\" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
@@ -19,7 +19,7 @@
 			</Target>
 			<Target title="Release">
 				<Option output="eetest" prefix_auto="1" extension_auto="1" />
-				<Option object_output="." />
+				<Option object_output=".\obj\win\release\" />
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
@@ -69,6 +69,11 @@
 		<Unit filename="src\audio\tsoundloader.hpp" />
 		<Unit filename="src\audio\tsoundmanager.hpp" />
 		<Unit filename="src\base.hpp" />
+		<Unit filename="src\base\allocator.hpp" />
+		<Unit filename="src\base\base.hpp" />
+		<Unit filename="src\base\memorymanager.cpp" />
+		<Unit filename="src\base\memorymanager.hpp" />
+		<Unit filename="src\base\stlcontainers.hpp" />
 		<Unit filename="src\ee.h" />
 		<Unit filename="src\gaming\base.hpp" />
 		<Unit filename="src\gaming\cisomap.cpp" />
@@ -142,11 +147,20 @@
 		<Unit filename="src\graphics\cttffont.hpp" />
 		<Unit filename="src\graphics\cttffontloader.cpp" />
 		<Unit filename="src\graphics\cttffontloader.hpp" />
+		<Unit filename="src\graphics\cvertexbuffer.cpp" />
+		<Unit filename="src\graphics\cvertexbuffer.hpp" />
+		<Unit filename="src\graphics\cvertexbufferogl.cpp" />
+		<Unit filename="src\graphics\cvertexbufferogl.hpp" />
+		<Unit filename="src\graphics\cvertexbuffervbo.cpp" />
+		<Unit filename="src\graphics\cvertexbuffervbo.hpp" />
 		<Unit filename="src\graphics\fonthelper.hpp" />
+		<Unit filename="src\graphics\glhelper.cpp" />
+		<Unit filename="src\graphics\glhelper.hpp" />
 		<Unit filename="src\graphics\packerhelper.hpp" />
 		<Unit filename="src\graphics\pixelperfect.cpp" />
 		<Unit filename="src\graphics\pixelperfect.hpp" />
 		<Unit filename="src\graphics\renders.hpp" />
+		<Unit filename="src\graphics\vbohelper.hpp" />
 		<Unit filename="src\helper\SOIL\SOIL.c">
 			<Option compilerVar="CC" />
 		</Unit>

@@ -590,12 +590,14 @@ void cEETest::RandomizeHeights() {
 }
 
 void cEETest::CreateTiling( const bool& Wire ) {
+	cMTRand Rand( 0xFF00FF00 );
+
 	for ( x = 0; x < static_cast<Int32>( Map.Width() ); x++ ) {
 		for ( y = 0; y < static_cast<Int32>( Map.Height() ); y++ ) {
-			if (Wire)
+			if ( Wire )
 				Map.Layer(x, y, 0, Tiles[6] );
 			else
-				Map.Layer(x, y, 0, Tiles[ eeRandi( 0, 5 ) ] );
+				Map.Layer(x, y, 0, Tiles[ Rand.RandRange( 0, 5 ) ] );
 
 			if ( !TreeTilingCreated )
 				Map.Layer(x, y, 1, 0);
@@ -604,7 +606,7 @@ void cEETest::CreateTiling( const bool& Wire ) {
 
 	if ( !TreeTilingCreated ) {
 		for ( x = 0; x < 100; x++ )
-			Map.Layer( eeRandi(Map.Width()-1), eeRandi(Map.Height()-1), 1, Tiles[7] );
+			Map.Layer( Rand.RandRange( 0, Map.Width() - 1 ), Rand.RandRange( 0, Map.Height() -1 ), 1, Tiles[7] );
 
 		TreeTilingCreated = true;
 	}

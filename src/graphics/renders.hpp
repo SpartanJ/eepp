@@ -13,8 +13,8 @@ enum EE_FILL_MODE {
 
 /** @enum EE_TEX_FILTER Defines the texture filter used. */
 enum EE_TEX_FILTER {
-	EE_TEX_LINEAR, 			//!< Linear filtering (Smoothed Zoom)
-	EE_TEX_NEAREST 			//!< No filtering (Pixeled Zoom)
+	TEX_FILTER_LINEAR, 			//!< Linear filtering (Smoothed Zoom)
+	TEX_FILTER_NEAREST 			//!< No filtering (Pixeled Zoom)
 };
 
 /** @enum EE_PRE_BLEND_FUNC Predefined blend functions */

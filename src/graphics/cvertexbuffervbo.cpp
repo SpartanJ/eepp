@@ -58,10 +58,10 @@ bool cVertexBufferVBO::Compile() {
 			} else {
 				return false;
 			}
-
-			glBindBufferARB( GL_ARRAY_BUFFER_ARB, 0 );
 		}
 	}
+
+	glBindBufferARB( GL_ARRAY_BUFFER_ARB, 0 );
 
 	//Create the VBO index array
 	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) ) {
@@ -146,6 +146,35 @@ void cVertexBufferVBO::SetVertexStates() {
 	glClientActiveTextureARB( GL_TEXTURE0_ARB );
 
 	glBindBufferARB( GL_ARRAY_BUFFER_ARB, 0 );
+}
+
+void cVertexBufferVBO::Update( const Uint32& Types, bool Indices ) {
+	GLenum usageType = GL_STATIC_DRAW_ARB;
+	if( mUsageType== VBO_USAGE_TYPE_DYNAMIC ) usageType = GL_DYNAMIC_DRAW_ARB;
+	else if( mUsageType== VBO_USAGE_TYPE_STREAM ) usageType = GL_STREAM_DRAW_ARB;
+
+	for( Int32 i = 0; i < VERTEX_FLAGS_COUNT; i++ ) {
+		if ( VERTEX_FLAG_QUERY( mVertexFlags, i ) && VERTEX_FLAG_QUERY( Types, i ) ) {
+			glBindBufferARB( GL_ARRAY_BUFFER_ARB, mArrayHandle[i] );
+
+			if ( mArrayHandle[i] ) {
+				if ( i != VERTEX_FLAG_COLOR )
+					glBufferDataARB( GL_ARRAY_BUFFER_ARB, mVertexArray[i].size() * sizeof(eeFloat), &( mVertexArray[i][0] ), usageType );
+				else
+					glBufferDataARB( GL_ARRAY_BUFFER_ARB, mColorArray.size(), &mColorArray[0], usageType );
+			}
+		}
+	}
+
+	glBindBufferARB( GL_ARRAY_BUFFER_ARB, 0 );
+
+	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) && Indices ) {
+		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, mElementHandle );
+
+		glBufferDataARB( GL_ELEMENT_ARRAY_BUFFER_ARB, GetIndexCount() * sizeof(Uint32), &mIndexArray[0], usageType );
+
+		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );
+	}
 }
 
 }}

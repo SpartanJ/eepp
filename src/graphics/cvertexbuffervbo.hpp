@@ -16,6 +16,8 @@ class cVertexBufferVBO : public cVertexBuffer {
 		void Draw();
 
 		bool Compile();
+
+		void Update( const Uint32& Types, bool Indices );
 	protected:
 		void SetVertexStates();
 

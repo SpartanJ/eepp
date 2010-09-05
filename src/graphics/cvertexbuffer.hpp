@@ -55,6 +55,8 @@ class cVertexBuffer {
 		virtual void Draw() = 0;
 
 		virtual bool Compile() = 0;
+
+		virtual void Update( const Uint32& Types, bool Indices ) = 0;
 	protected:
 		Uint32 					mVertexFlags;
 		EE_DRAW_MODE			mDrawType;

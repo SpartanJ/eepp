@@ -65,20 +65,20 @@
 
 namespace EE { namespace Math {
 
-class EE_API MTRand {
+class EE_API cMTRand {
 	public:
 		static const Uint32 M		= 397;
 		static const Int32 N		= 624;
 		static const Uint32 SAVE	= N + 1;
 
-		MTRand( const Uint32 oneSeed );
+		cMTRand( const Uint32 oneSeed );
 
 		/** Initialize with a predefined seed */
-		MTRand();
+		cMTRand();
 
-		MTRand( const MTRand& o );
+		cMTRand( const cMTRand& o );
 
-		MTRand& operator=( const MTRand& o );
+		cMTRand& operator=( const cMTRand& o );
 
 		/** @return integer in [0,2^32-1] */
 		Uint32				Randi();

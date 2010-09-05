@@ -78,4 +78,7 @@ void cVertexBufferOGL::SetVertexStates() {
 	glClientActiveTextureARB( GL_TEXTURE0_ARB );
 }
 
+void cVertexBufferOGL::Update( const Uint32& Types, bool Indices ) {
+}
+
 }}
