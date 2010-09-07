@@ -159,7 +159,7 @@ void cSoundStream::Run() {
 
 		// Leave some time for the other threads if the stream is still playing
 		if ( cSound::GetState() != SOUND_STOPPED )
-			eeSleep(100);
+			eeSleep(10);
 	}
 
 	// Stop the playback
