@@ -247,7 +247,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 
 		TextCache.CachedCoords( true );
 	} else {
-		numvert = TextCache.Text().size() * 4;
+		numvert = (eeUint)TextCache.Text().size() * 4;
 	}
 
 	#ifndef EE_GLES

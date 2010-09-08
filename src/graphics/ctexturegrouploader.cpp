@@ -108,7 +108,7 @@ void cTextureGroupLoader::LoadFromPack( cPack * Pack, const std::string& FilePac
 
 		Pack->ExtractFileToMemory( FilePackPath, TempData );
 
-		LoadFromMemory( reinterpret_cast<const Uint8*> ( &TempData[0] ), TempData.size(), FilePackPath );
+		LoadFromMemory( reinterpret_cast<const Uint8*> ( &TempData[0] ), (Uint32)TempData.size(), FilePackPath );
 	}
 }
 
@@ -194,7 +194,7 @@ void cTextureGroupLoader::CreateShapes() {
 
 				eeRecti tRect( tSh->X, tSh->Y, tSh->X + tSh->Width, tSh->Y + tSh->Height );
 
-				cShape * tShape = eeNew( cShape, ( tTex->Id(), tRect, tSh->DestWidth, tSh->DestHeight, tSh->OffsetX, tSh->OffsetY, ShapeName ) );
+				cShape * tShape = eeNew( cShape, ( tTex->Id(), tRect, (eeFloat)tSh->DestWidth, (eeFloat)tSh->DestHeight, (eeFloat)tSh->OffsetX, (eeFloat)tSh->OffsetY, ShapeName ) );
 
 				//if ( tSh->Flags & HDR_SHAPE_FLAG_FLIPED )
 					// Should rotate the shape, but.. shape rotation is not stored.
@@ -300,7 +300,7 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 		std::string tapath( FileRemoveExtension( TextureAtlasPath ) + "." + SaveTypeToExtension( mTexGrHdr.Format ) );
 
 		if ( 2 == NeedUpdate ) {
-			cTexturePacker tp( mTexGrHdr.Width, mTexGrHdr.Height, mTexGrHdr.Flags & HDR_TEXTURE_GROUP_POW_OF_TWO, mTexGrHdr.PixelBorder, mTexGrHdr.Flags & HDR_TEXTURE_GROUP_ALLOW_FLIPPING );
+			cTexturePacker tp( mTexGrHdr.Width, mTexGrHdr.Height, 0 != ( mTexGrHdr.Flags & HDR_TEXTURE_GROUP_POW_OF_TWO ), mTexGrHdr.PixelBorder, mTexGrHdr.Flags & HDR_TEXTURE_GROUP_ALLOW_FLIPPING );
 
 			tp.AddTexturesPath( ImagesPath );
 

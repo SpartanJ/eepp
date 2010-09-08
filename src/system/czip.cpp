@@ -78,7 +78,7 @@ bool cZip::AddFile( const Uint8 * data, const Uint32& dataSize, const std::strin
 		struct zip_source * zs = zip_source_buffer( mZip, (const void*)data, dataSize, 0 );
 
 		if ( NULL != zs ) {
-			Int32 Result = zip_add( mZip, inpack.c_str(), zs );
+			Int32 Result = (Int32)zip_add( mZip, inpack.c_str(), zs );
 
 			std::string path = mZipPath;
 			Close();
@@ -158,17 +158,22 @@ bool cZip::ExtractFileToMemory( const std::string& path, std::vector<Uint8>& dat
 	if ( 0 == CheckPack() && -1 != Pos ) {
 		data.clear();
 
-		struct zip_file * zf = zip_fopen( mZip, path.c_str(), 0 );
+		struct zip_stat zs;
+		int err = zip_stat( mZip, path.c_str(), 0, &zs );
 
-		if ( NULL != zf ) {
-			data.resize( zf->bytes_left );
+		if ( !err ) {
+			struct zip_file * zf = zip_fopen_index( mZip, zs.index, 0 );
 
-			Result = zip_fread( zf, reinterpret_cast<void*> (&data[0]), zf->bytes_left );
+			if ( NULL != zf ) {
+				data.resize( zs.size );
 
-			zip_fclose(zf);
+				Result = (Int32)zip_fread( zf, reinterpret_cast<void*> (&data[0]), data.size() );
 
-			if ( -1 != Result )
-				Ret = true;
+				zip_fclose(zf);
+
+				if ( -1 != Result )
+					Ret = true;
+			}
 		}
 	}
 
@@ -184,19 +189,25 @@ bool cZip::ExtractFileToMemory( const std::string& path, Uint8** data, Uint32* d
 	Int32 Pos = Exists( path );
 	Int32 Result = 0;
 
+
 	if ( 0 == CheckPack() && -1 != Pos ) {
-		struct zip_file * zf = zip_fopen( mZip, path.c_str(), 0 );
+		struct zip_stat zs;
+		int err = zip_stat( mZip, path.c_str(), 0, &zs );
 
-		if ( NULL != zf ) {
-			*dataSize = zf->bytes_left;
-			*data = eeNew( Uint8, (*dataSize) );
+		if ( !err ) {
+			struct zip_file * zf = zip_fopen_index( mZip, zs.index, 0 );
 
-			Result = zip_fread( zf, reinterpret_cast<void*> (&data[0]), zf->bytes_left );
+			if ( NULL != zf ) {
+				*dataSize = (Uint32)zs.size;
+				*data = eeNew( Uint8, (*dataSize) );
 
-			zip_fclose(zf);
+				Result = (Int32)zip_fread( zf, reinterpret_cast<void*> (&data[0]), (*dataSize) );
 
-			if ( -1 != Result )
-				Ret = true;
+				zip_fclose(zf);
+
+				if ( -1 != Result )
+					Ret = true;
+			}
 		}
 	}
 

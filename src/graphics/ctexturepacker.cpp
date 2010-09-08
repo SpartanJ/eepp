@@ -416,7 +416,7 @@ Int32 cTexturePacker::PackTextures() { // pack the textures, the return code is 
 
 	NewFree( 0, 0, mWidth, mHeight );
 
-	mCount = mTextures.size();
+	mCount = (Int32)mTextures.size();
 
 	// We must place each texture
 	std::list<cTexturePackerTex>::iterator it;
@@ -571,7 +571,8 @@ void cTexturePacker::SaveShapes() {
 	if ( mForcePowOfTwo )
 		TexGrHdr.Flags |= HDR_TEXTURE_GROUP_POW_OF_TWO;
 
-	sTextureHdr TexHdr[ TexGrHdr.TextureCount ];
+	std::vector<sTextureHdr> TexHdr( TexGrHdr.TextureCount );
+	//sTextureHdr TexHdr[  ];
 
 	TexHdr[ 0 ] = CreateTextureHdr( this );
 
@@ -597,7 +598,7 @@ void cTexturePacker::SaveShapes() {
 		CreateShapesHdr( this, tShapesHdr, &fs );
 
 		if ( tShapesHdr.size() )
-			fs.write( reinterpret_cast<const char*> (&tShapesHdr[ 0 ]), sizeof(sShapeHdr) * tShapesHdr.size() );
+			fs.write( reinterpret_cast<const char*> (&tShapesHdr[ 0 ]), sizeof(sShapeHdr) * (std::streamsize)tShapesHdr.size() );
 
 		Int32 HdrPos 				= 1;
 		cTexturePacker * Child 		= mChild;
@@ -608,7 +609,7 @@ void cTexturePacker::SaveShapes() {
 			CreateShapesHdr( Child, tShapesHdr, &fs );
 
 			if ( tShapesHdr.size() )
-				fs.write( reinterpret_cast<const char*> (&tShapesHdr[ 0 ]), sizeof(sShapeHdr) * tShapesHdr.size() );
+				fs.write( reinterpret_cast<const char*> (&tShapesHdr[ 0 ]), sizeof(sShapeHdr) * (std::streamsize)tShapesHdr.size() );
 
 			Child 				= Child->GetChild();
 

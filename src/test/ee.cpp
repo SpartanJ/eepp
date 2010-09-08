@@ -880,7 +880,7 @@ void cEETest::Render() {
 
 	cTexture * TexFace = TF->GetTexture( mFace );
 	if ( TexFace )
-		TexFace->Draw( EE->GetWidth() - TexFace->Width() , EE->GetHeight() - TexFace->Height(), 0.f, 1.f, eeColorA(), ALPHA_DESTALPHA, RN_MIRROR );
+		TexFace->Draw( (eeFloat)EE->GetWidth() - (eeFloat)TexFace->Width() , (eeFloat)EE->GetHeight() - (eeFloat)TexFace->Height(), 0.f, 1.f, eeColorA(), ALPHA_DESTALPHA, RN_MIRROR );
 
 	FF2->SetText( L"FPS: " + toWStr( EE->FPS() ) );
 	FF2->Draw( EE->GetWidth() - FF2->GetTextWidth() - 15, 0 );
@@ -898,7 +898,7 @@ void cEETest::Render() {
 		mFB->Unbind();
 
 		if ( NULL != mFB->GetTexture() )
-			mFB->GetTexture()->Draw( EE->GetWidth() - 256, 240, Ang );
+			mFB->GetTexture()->Draw( (eeFloat)EE->GetWidth() - 256.f, 240.f, Ang );
 	}
 
 	cUIManager::instance()->Update();
@@ -1152,12 +1152,12 @@ void cEETest::End() {
 	tmpv.clear();
 	MySong.clear();
 
-	cLog::instance()->Save();
-
 	eeSAFE_DELETE( mTGL );
 	eeSAFE_DELETE( mFB );
 	eeSAFE_DELETE( mVBO );
 	eeSAFE_DELETE( mBudaTC );
+	
+	cLog::instance()->Save();
 
 	cEngine::DestroySingleton();
 }

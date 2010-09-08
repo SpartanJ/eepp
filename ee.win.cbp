@@ -15,6 +15,7 @@
 					<Add option="-Wall" />
 					<Add option="-g" />
 					<Add option="-DEE_DEBUG" />
+					<Add option="-DEE_MEMORY_MANAGER" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
@@ -248,6 +249,9 @@
 		<Unit filename="src\helper\libzip\zip_fclose.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="src\helper\libzip\zip_fdopen.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="src\helper\libzip\zip_file_error_clear.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -266,7 +270,13 @@
 		<Unit filename="src\helper\libzip\zip_fopen.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="src\helper\libzip\zip_fopen_encrypted.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="src\helper\libzip\zip_fopen_index.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\libzip\zip_fopen_index_encrypted.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src\helper\libzip\zip_fread.c">
@@ -279,6 +289,12 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src\helper\libzip\zip_get_archive_flag.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\libzip\zip_get_compression_implementation.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\libzip\zip_get_encryption_implementation.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src\helper\libzip\zip_get_file_comment.c">
@@ -314,6 +330,9 @@
 		<Unit filename="src\helper\libzip\zip_set_archive_flag.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="src\helper\libzip\zip_set_default_password.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="src\helper\libzip\zip_set_file_comment.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -321,6 +340,18 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src\helper\libzip\zip_source_buffer.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\libzip\zip_source_close.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\libzip\zip_source_crc.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\libzip\zip_source_deflate.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\libzip\zip_source_error.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src\helper\libzip\zip_source_file.c">
@@ -333,6 +364,24 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src\helper\libzip\zip_source_function.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\libzip\zip_source_layered.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\libzip\zip_source_open.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\libzip\zip_source_pkware.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\libzip\zip_source_pop.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\libzip\zip_source_read.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\libzip\zip_source_stat.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src\helper\libzip\zip_source_zip.c">
@@ -362,6 +411,7 @@
 		<Unit filename="src\helper\libzip\zip_unchange_data.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="src\helper\libzip\zipconf.h" />
 		<Unit filename="src\helper\libzip\zipint.h" />
 		<Unit filename="src\helper\stb_vorbis\stb_vorbis.c">
 			<Option compilerVar="CC" />
@@ -381,19 +431,7 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src\helper\zlib\deflate.h" />
-		<Unit filename="src\helper\zlib\gzclose.c">
-			<Option compilerVar="CC" />
-		</Unit>
 		<Unit filename="src\helper\zlib\gzguts.h" />
-		<Unit filename="src\helper\zlib\gzlib.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src\helper\zlib\gzread.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="src\helper\zlib\gzwrite.c">
-			<Option compilerVar="CC" />
-		</Unit>
 		<Unit filename="src\helper\zlib\infback.c">
 			<Option compilerVar="CC" />
 		</Unit>

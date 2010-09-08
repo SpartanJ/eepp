@@ -17,7 +17,7 @@
   <kdevcustomproject>
     <run>
       <directoryradio>executable</directoryradio>
-      <mainprogram>eeiv</mainprogram>
+      <mainprogram>eetest</mainprogram>
       <programargs/>
       <globaldebugarguments/>
       <globalcwd>./</globalcwd>

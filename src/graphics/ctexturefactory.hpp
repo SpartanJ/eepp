@@ -81,7 +81,7 @@ class EE_API cTextureFactory: public tSingleton<cTextureFactory>, protected cMut
 		* @param TexId
 		* @return True if was removed
 		*/
-		bool Remove( const Uint32& TexId );
+		bool Remove( Uint32 TexId );
 
 		/** Reload all loaded textures to recover the OpenGL context */
 		void ReloadAllTextures();

@@ -1,5 +1,3 @@
-/* $NiH: mkstemp.c,v 1.3 2006/04/23 14:51:45 wiz Exp $ */
-
 /* Adapted from NetBSB libc by Dieter Baron */
 
 /*	NetBSD: gettemp.c,v 1.13 2003/12/05 00:57:36 uebayasi Exp 	*/
@@ -32,7 +30,6 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
-
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -42,10 +39,21 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 #ifndef O_BINARY
 #define O_BINARY 0
+#endif
+
+#if ( defined (_MSCVER) || defined (_MSC_VER) )
+typedef int pid_t;
+
+# define _IFMT		0170000 // type of file
+# define _IFDIR		0040000 // directory
+# define S_ISDIR(m) (((m)&_IFMT) == _IFDIR)
+#endif
+
+#if !defined( __WIN32__ ) && !defined( _WIN32 )
+#include <unistd.h>
 #endif
 
 
@@ -117,7 +125,11 @@ _zip_mkstemp(char *path)
 	}
 
 	for (;;) {
-		if ((fd=open(path, O_CREAT|O_EXCL|O_RDWR|O_BINARY, 0600)) >= 0)
+#if ( defined (_MSCVER) || defined (_MSC_VER) )
+        if ((fd=_open(path, O_CREAT|O_EXCL|O_RDWR|O_BINARY)) >= 0)
+#else
+        if ((fd=open(path, O_CREAT|O_EXCL|O_RDWR|O_BINARY, 0600)) >= 0)
+#endif
 			return (fd);
 		if (errno != EEXIST)
 			return (0);

@@ -278,7 +278,7 @@ void stbi_decode_DXT_color_block(
 }
 
 static int dds_get_info( stbi *s, int *x, int *y, int *comp, int *iscompressed ) {
-	int flags;
+	int flags,is_compressed,has_alpha;
 	DDS_header header;
 
 	if( sizeof( DDS_header ) != 128 )
@@ -297,8 +297,8 @@ static int dds_get_info( stbi *s, int *x, int *y, int *comp, int *iscompressed )
 	if( (header.sPixelFormat.dwFlags & flags) == 0 ) return 0;
 	if( (header.sCaps.dwCaps1 & DDSCAPS_TEXTURE) == 0 ) return 0;
 
-	int is_compressed = (header.sPixelFormat.dwFlags & DDPF_FOURCC) / DDPF_FOURCC;
-	int has_alpha = (header.sPixelFormat.dwFlags & DDPF_ALPHAPIXELS) / DDPF_ALPHAPIXELS;
+	is_compressed = (header.sPixelFormat.dwFlags & DDPF_FOURCC) / DDPF_FOURCC;
+	has_alpha = (header.sPixelFormat.dwFlags & DDPF_ALPHAPIXELS) / DDPF_ALPHAPIXELS;
 
 	*x = header.dwWidth;
 	*y = header.dwHeight;

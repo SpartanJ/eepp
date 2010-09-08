@@ -44,7 +44,7 @@ cShader::cShader( const Uint32& Type, cPack * Pack, const std::string& Filename 
 
 		Pack->ExtractFileToMemory( Filename, TempData );
 
-		SetSource( reinterpret_cast<Uint8*> ( &TempData[0] ), TempData.size() );
+		SetSource( reinterpret_cast<Uint8*> ( &TempData[0] ), (Uint32)TempData.size() );
 	}
 
 	Compile();

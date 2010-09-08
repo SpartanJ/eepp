@@ -400,11 +400,11 @@ void cTexture::Grabed( const bool& isGrabed ) {
 }
 
 bool cTexture::Grabed() const {
-	return mFlags & TEX_FLAG_GRABED;
+	return 0 != ( mFlags & TEX_FLAG_GRABED );
 }
 
 bool cTexture::Compressed() const {
-	return mFlags & TEX_FLAG_COMPRESSED;
+	return 0 != ( mFlags & TEX_FLAG_COMPRESSED );
 }
 
 void cTexture::Draw( const eeFloat &x, const eeFloat &y, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color, const EE_PRE_BLEND_FUNC &blend, const EE_RENDERTYPE &Effect, const bool &ScaleCentered, const eeRecti& texSector) {

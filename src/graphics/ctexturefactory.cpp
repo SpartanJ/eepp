@@ -136,13 +136,17 @@ void cTextureFactory::UnloadTextures() {
 	}
 }
 
-bool cTextureFactory::Remove( const Uint32& TexId ) {
+bool cTextureFactory::Remove( Uint32 TexId ) {
 	if ( TexId < mTextures.size() && NULL != mTextures[ TexId ] ) {
+		cTexture * Tex = mTextures[ TexId ];
+
 		mMemSize -= GetTexMemSize( TexId );
 
-		GLint glTexId = mTextures[ TexId ]->Handle();
+		GLint glTexId = Tex->Handle();
 
-		eeSAFE_DELETE( mTextures[ TexId ] );
+		eeDelete( Tex );
+
+		mTextures[ TexId ] = NULL;
 
 		for ( Uint32 i = 0; i < EE_MAX_TEXTURE_UNITS; i++ ) {
 			if ( mCurrentTexture[ i ] == (Int32)glTexId )

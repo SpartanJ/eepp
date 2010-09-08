@@ -101,11 +101,11 @@ Uint32 * cVertexBuffer::GetIndices() {
 }
 
 Uint32 cVertexBuffer::GetVertexCount() {
-	return mVertexArray[ VERTEX_FLAG_POSITION ].size() / eeVertexElements[ VERTEX_FLAG_POSITION ];
+	return (Uint32)mVertexArray[ VERTEX_FLAG_POSITION ].size() / eeVertexElements[ VERTEX_FLAG_POSITION ];
 }
 
 Uint32 cVertexBuffer::GetIndexCount() {
-	return mIndexArray.size();
+	return (Uint32)mIndexArray.size();
 }
 
 eeVector2f cVertexBuffer::GetVector2( const Uint32& Type, const Uint32& Index ) {

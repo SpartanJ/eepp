@@ -513,7 +513,7 @@ static void start_mem(stbi *s, uint8 const *buffer, int len)
 #ifndef STBI_NO_STDIO
 static void refill_buffer(stbi *s)
 {
-   int n = fread(s->buffer_start, 1, s->buflen, s->img_file);
+   int n = (int)fread(s->buffer_start, 1, s->buflen, s->img_file);
    if (n == 0) {
       s->from_file = 0;
       s->img_buffer = s->img_buffer_end-1;
@@ -560,7 +560,7 @@ static void skip(stbi *s, int n)
 {
 #ifndef STBI_NO_STDIO
    if (s->img_file) {
-      int blen = s->img_buffer_end - s->img_buffer;
+      int blen = (int)( s->img_buffer_end - s->img_buffer );
       if (blen < n) {
          s->img_buffer = s->img_buffer_end;
          fseek(s->img_file, n - blen, SEEK_CUR);
@@ -575,7 +575,7 @@ static int getn(stbi *s, stbi_uc *buffer, int n)
 {
 #ifndef STBI_NO_STDIO
    if (s->img_file) {
-      int blen = s->img_buffer_end - s->img_buffer;
+      int blen = (int)(s->img_buffer_end - s->img_buffer);
       if (blen < n) {
          int res;
          memcpy(buffer, s->img_buffer, blen);
@@ -4683,6 +4683,9 @@ int stbi_psd_info_from_file(FILE *f, int *x, int *y, int *comp)
 
 static int pic_info(stbi *s, int *x, int *y, int *comp)
 {
+   int act_comp=0,num_packets=0,chained;
+   pic_packet_t packets[10];
+
    skip(s, 92);
 
    *x = get16(s);
@@ -4691,9 +4694,6 @@ static int pic_info(stbi *s, int *x, int *y, int *comp)
    if ((1 << 28) / (*x) < (*y)) return 0;
 
    skip(s, 8);
-
-   int act_comp=0,num_packets=0,chained;
-   pic_packet_t packets[10];
 
    do {
       pic_packet_t *packet;
