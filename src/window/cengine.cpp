@@ -6,6 +6,8 @@
 #include "../graphics/cglobalbatchrenderer.hpp"
 #include "../graphics/cshaderprogrammanager.hpp"
 #include "../graphics/cshapegroupmanager.hpp"
+#include "../graphics/cvertexbuffermanager.hpp"
+#include "../graphics/cframebuffermanager.hpp"
 #include "../ui/cuimanager.hpp"
 #include "../audio/caudiolistener.hpp"
 #include "../graphics/glhelper.hpp"
@@ -88,6 +90,10 @@ cEngine::cEngine() :
 cEngine::~cEngine() {
 	if ( NULL != mCursor )
 		SDL_FreeCursor(mCursor);
+
+	cFrameBufferManager::DestroySingleton();
+
+	cVertexBufferManager::DestroySingleton();
 
 	cGlobalBatchRenderer::DestroySingleton();
 
@@ -371,8 +377,10 @@ void cEngine::ChangeRes( const Uint16& width, const Uint16& height, const bool& 
 
 		#if EE_PLATFORM == EE_PLATFORM_WIN32 || EE_PLATFORM == EE_PLATFORM_MACOSX
 		if ( Reload ) {
-			cTextureFactory::instance()->UngrabTextures(); // Reload all textures
-			cShaderProgramManager::instance()->Reload(); // Reload all shaders
+			cTextureFactory::instance()->UngrabTextures(); 	// Reload all textures
+			cShaderProgramManager::instance()->Reload(); 	// Reload all shaders
+			cFrameBufferManager::instance()->Reload(); 		// Reload all frame buffers
+			cVertexBufferManager::instance()->Reload(); 	// Reload all vertex buffers
 			GetMainContext(); // Recover the context
 		}
 		#endif

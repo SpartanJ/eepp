@@ -83,8 +83,9 @@ bool cFrameBufferPBuffer::Create( const Uint32& Width, const Uint32& Height, boo
 	if ( !IsSupported() )
 		return false;
 
-	mWidth 	= Width;
-	mHeight = Height;
+	mWidth 			= Width;
+	mHeight 		= Height;
+	mHasDepthBuffer = DepthBuffer;
 
 #if EE_PLATFORM == EE_PLATFORM_WIN32
 	HDC currentDC = wglGetCurrentDC();
@@ -193,12 +194,14 @@ bool cFrameBufferPBuffer::Create( const Uint32& Width, const Uint32& Height, boo
 	XFree(visual);
 #endif
 
-	Uint32 TexId = cTextureFactory::instance()->CreateEmptyTexture( Width, Height, eeColorA(0,0,0,0) );
+	if ( NULL == mTexture ) {
+		Uint32 TexId = cTextureFactory::instance()->CreateEmptyTexture( Width, Height, eeColorA(0,0,0,0) );
 
-	if ( cTextureFactory::instance()->TextureIdExists( TexId ) ) {
-		mTexture = 	cTextureFactory::instance()->GetTexture( TexId );
-	} else {
-		return false;
+		if ( cTextureFactory::instance()->TextureIdExists( TexId ) ) {
+			mTexture = 	cTextureFactory::instance()->GetTexture( TexId );
+		} else {
+			return false;
+		}
 	}
 
 	return true;
@@ -240,6 +243,11 @@ void cFrameBufferPBuffer::Unbind() {
 
 	Window::cEngine::instance()->SetDefaultContext();
 	RecoverView();
+}
+
+
+void cFrameBufferPBuffer::Reload() {
+	Create( mWidth, mHeight, mHasDepthBuffer );
 }
 
 }}

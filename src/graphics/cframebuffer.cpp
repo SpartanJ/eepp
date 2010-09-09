@@ -3,6 +3,9 @@
 #include "../window/cengine.hpp"
 #include "cframebufferfbo.hpp"
 #include "cframebufferpbuffer.hpp"
+#include "cframebuffermanager.hpp"
+
+using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
@@ -19,13 +22,18 @@ cFrameBuffer * cFrameBuffer::CreateNew( const Uint32& Width, const Uint32& Heigh
 cFrameBuffer::cFrameBuffer() :
 	mWidth(0),
 	mHeight(0),
+	mHasDepthBuffer(false),
 	mTexture(NULL),
 	mClearColor(0,0,0,0)
-{}
+{
+	cFrameBufferManager::instance()->Add( this );
+}
 
 cFrameBuffer::~cFrameBuffer() {
 	if ( NULL != mTexture )
 		cTextureFactory::instance()->Remove( mTexture->Id() );
+
+	cFrameBufferManager::instance()->Remove( this );
 }
 
 cTexture * cFrameBuffer::GetTexture() const {

@@ -59,6 +59,8 @@ class EE_API cFrameBufferPBuffer : public cFrameBuffer {
 
 		void Unbind();
 
+		void Reload();
+
 		static bool IsSupported();
 	protected:
 		#if EE_PLATFORM == EE_PLATFORM_WIN32

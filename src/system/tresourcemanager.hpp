@@ -30,8 +30,6 @@ class tResourceManager {
 
 		Uint32 Count( const Uint32& Id );
 
-		void Reload();
-
 		Uint32 Exists( const std::string& Name );
 
 		Uint32 Exists( const Uint32& Id );

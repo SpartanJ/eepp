@@ -23,6 +23,8 @@ class EE_API cFrameBufferFBO : public cFrameBuffer {
 
 		void Unbind();
 
+		void Reload();
+
 		static bool IsSupported();
 	protected:
 		Int32 		mFrameBuffer;

@@ -79,10 +79,10 @@ bool cInterpolation::EditWaypoint( const eeUint PointNum, const eeFloat NewPos, 
 
 		if ( 0 == PointNum ) {
 			if ( PointNum + (eeUint)1 < mPoints.size() )
-				mTotDist += abs( mPoints[ PointNum ].p - mPoints[ PointNum + 1 ].p );
+				mTotDist += std::abs( mPoints[ PointNum ].p - mPoints[ PointNum + 1 ].p );
 		}
 		else
-			mTotDist += abs( mPoints[ PointNum ].p - mPoints[ PointNum - 1 ].p );
+			mTotDist += std::abs( mPoints[ PointNum ].p - mPoints[ PointNum - 1 ].p );
 
 		return true;
 	}
@@ -170,7 +170,7 @@ void cInterpolation::SetTotalTime( const eeFloat TotTime ) {
 
 	if ( mLoop ) {
 		tdist += fabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p );
-		mPoints[ mPoints.size() - 1 ].t = abs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p ) * TotTime / tdist;
+		mPoints[ mPoints.size() - 1 ].t = std::abs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p ) * TotTime / tdist;
 	}
 
 	for ( eeUint i = 0; i < mPoints.size() - 1; i++) {

@@ -177,4 +177,9 @@ void cVertexBufferVBO::Update( const Uint32& Types, bool Indices ) {
 	}
 }
 
+void cVertexBufferVBO::Reload() {
+	mCompiled = false;
+	Compile();
+}
+
 }}

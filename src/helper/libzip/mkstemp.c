@@ -56,6 +56,11 @@ typedef int pid_t;
 #include <unistd.h>
 #endif
 
+#if defined( _WIN32 )
+#include <process.h>
+#include <io.h>
+#endif
+
 
 
 int
@@ -72,7 +77,11 @@ _zip_mkstemp(char *path)
 	static char xtra[2] = "aa";
 	int xcnt = 0;
 
+	#if ( defined (_MSCVER) || defined (_MSC_VER) )
+	pid = _getpid();
+	#else
 	pid = getpid();
+	#endif
 
 	/* Move to end of path and count trailing X's. */
 	for (trv = path; *trv; ++trv)

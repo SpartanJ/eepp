@@ -3,15 +3,16 @@
 
 #if !defined( __WIN32__ ) && !defined( _WIN32 )
 
+#define HAVE_MKSTEMP
 #define HAVE_FSEEKO
 #define HAVE_FTELLO
-#define HAVE_UNISTD_H
+
+#endif
 
 #if (!defined (_MSCVER) && !defined (_MSC_VER))
-#define HAVE_MKSTEMP
+#define HAVE_UNISTD_H
 #endif
 
-#endif
 
 #define PACKAGE "libzip"
 #define VERSION "0.9.3a"

@@ -73,7 +73,10 @@ class EE_API cShaderProgram {
 		bool SetUniform( const std::string& Name, Int32 Value );
 
 		/** @return The id of the program (the handle) */
-		const Uint32& Id() const { return mGLId; }
+		const Uint32& Handler() const { return mHandler; }
+
+		/** @return The Id of the program ( hash of the program name ) */
+		const Uint32& Id() const { return mId; }
 
 		/** Reloads the shaders */
 		void Reload();
@@ -85,7 +88,9 @@ class EE_API cShaderProgram {
 		void Name( const std::string& name );
     protected:
 		std::string mName;
-		Uint32 mGLId;
+		Uint32 mHandler;
+		Uint32 mId;
+
 		bool mValid;
 		std::string mLinkLog;
 

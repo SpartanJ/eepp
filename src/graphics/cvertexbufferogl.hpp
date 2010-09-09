@@ -18,6 +18,8 @@ class cVertexBufferOGL : public cVertexBuffer {
 		bool Compile();
 
 		void Update( const Uint32& Types, bool Indices );
+
+		void Reload();
 	protected:
 		void SetVertexStates();
 

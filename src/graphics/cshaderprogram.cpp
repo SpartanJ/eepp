@@ -7,14 +7,16 @@ using namespace EE::Graphics::Private;
 namespace EE { namespace Graphics {
 
 cShaderProgram::cShaderProgram( const std::string& name ) :
-	mGLId(0)
+	mHandler(0),
+	mId(0)
 {
 	AddToManager( name );
 	Init();
 }
 
 cShaderProgram::cShaderProgram( const std::vector<cShader*>& Shaders, const std::string& name ) :
-	mGLId(0)
+	mHandler(0),
+	mId(0)
 {
 	AddToManager( name );
 	Init();
@@ -25,7 +27,8 @@ cShaderProgram::cShaderProgram( const std::vector<cShader*>& Shaders, const std:
 }
 
 cShaderProgram::cShaderProgram( const std::string& VertexShaderFile, const std::string& FragmentShaderFile, const std::string& name ) :
-	mGLId(0)
+	mHandler(0),
+	mId(0)
 {
 	AddToManager( name );
 	Init();
@@ -46,7 +49,8 @@ cShaderProgram::cShaderProgram( const std::string& VertexShaderFile, const std::
 }
 
 cShaderProgram::cShaderProgram( cPack * Pack, const std::string& VertexShaderPath, const std::string& FragmentShaderPath, const std::string& name ) :
-	mGLId(0)
+	mHandler(0),
+	mId(0)
 {
 	AddToManager( name );
 	Init();
@@ -69,7 +73,8 @@ cShaderProgram::cShaderProgram( cPack * Pack, const std::string& VertexShaderPat
 }
 
 cShaderProgram::cShaderProgram( const Uint8 * VertexShaderData, const Uint32& VertexShaderDataSize, const Uint8 * FragmentShaderData, const Uint32& FragmentShaderDataSize, const std::string& name ) :
-	mGLId(0)
+	mHandler(0),
+	mId(0)
 {
 	AddToManager( name );
 	Init();
@@ -112,7 +117,7 @@ void cShaderProgram::RemoveFromManager() {
 
 void cShaderProgram::Init() {
 	if ( cGL::instance()->ShadersSupported() && 0 == Id() ) {
-		mGLId = glCreateProgram();
+		mHandler = glCreateProgram();
 		mValid = false;
 		mUniformLocations.clear();
 		mAttributeLocations.clear();
@@ -120,7 +125,7 @@ void cShaderProgram::Init() {
 }
 
 void cShaderProgram::Reload() {
-	mGLId = 0;
+	mHandler = 0;
 
 	Init();
 
@@ -256,6 +261,7 @@ const std::string& cShaderProgram::Name() const {
 
 void cShaderProgram::Name( const std::string& name ) {
 	mName = name;
+	mId = MakeHash( mName );
 
 	Uint32 NameCount = cShaderProgramManager::instance()->Exists( mName );
 

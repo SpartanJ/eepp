@@ -24,6 +24,7 @@ using namespace EE::Math;
 #include "../system/clog.hpp"
 #include "../system/cpack.hpp"
 #include "../system/tresourcemanager.hpp"
+#include "../system/tcontainer.hpp"
 using namespace EE::System;
 
 #include "renders.hpp"

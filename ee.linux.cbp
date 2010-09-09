@@ -91,6 +91,8 @@
 		<Unit filename="src/graphics/cframebuffer.hpp" />
 		<Unit filename="src/graphics/cframebufferfbo.cpp" />
 		<Unit filename="src/graphics/cframebufferfbo.hpp" />
+		<Unit filename="src/graphics/cframebuffermanager.cpp" />
+		<Unit filename="src/graphics/cframebuffermanager.hpp" />
 		<Unit filename="src/graphics/cframebufferpbuffer.cpp" />
 		<Unit filename="src/graphics/cframebufferpbuffer.hpp" />
 		<Unit filename="src/graphics/cglobalbatchrenderer.cpp" />
@@ -147,6 +149,8 @@
 		<Unit filename="src/graphics/cttffontloader.hpp" />
 		<Unit filename="src/graphics/cvertexbuffer.cpp" />
 		<Unit filename="src/graphics/cvertexbuffer.hpp" />
+		<Unit filename="src/graphics/cvertexbuffermanager.cpp" />
+		<Unit filename="src/graphics/cvertexbuffermanager.hpp" />
 		<Unit filename="src/graphics/cvertexbufferogl.cpp" />
 		<Unit filename="src/graphics/cvertexbufferogl.hpp" />
 		<Unit filename="src/graphics/cvertexbuffervbo.cpp" />
@@ -489,6 +493,7 @@
 		<Unit filename="src/system/czip.cpp" />
 		<Unit filename="src/system/czip.hpp" />
 		<Unit filename="src/system/singleton.hpp" />
+		<Unit filename="src/system/tcontainer.hpp" />
 		<Unit filename="src/system/tresourcemanager.hpp" />
 		<Unit filename="src/test/ee.cpp" />
 		<Unit filename="src/ui/base.hpp" />

@@ -81,4 +81,7 @@ void cVertexBufferOGL::SetVertexStates() {
 void cVertexBufferOGL::Update( const Uint32& Types, bool Indices ) {
 }
 
+void cVertexBufferOGL::Reload() {
+}
+
 }}

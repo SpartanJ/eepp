@@ -23,6 +23,8 @@ class EE_API cFrameBuffer {
 
 		virtual void Unbind() = 0;
 
+		virtual void Reload() = 0;
+
 		cTexture * GetTexture() const;
 
 		void ClearColor( eeColorAf Color );
@@ -31,6 +33,7 @@ class EE_API cFrameBuffer {
 	protected:
 		Int32		mWidth;
 		Int32		mHeight;
+		bool		mHasDepthBuffer;
 		cTexture *	mTexture;
 		eeColorAf	mClearColor;
 		cView 		mPrevView;

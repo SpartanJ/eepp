@@ -2,6 +2,7 @@
 #include "cvertexbufferogl.hpp"
 #include "cvertexbuffervbo.hpp"
 #include "glhelper.hpp"
+#include "cvertexbuffermanager.hpp"
 
 using namespace EE::Graphics::Private;
 
@@ -20,24 +21,28 @@ cVertexBuffer::cVertexBuffer( const Uint32& VertexFlags, EE_DRAW_MODE DrawType, 
 	mUsageType( UsageType ),
 	mElemDraw(-1)
 {
-		if( ReserveVertexSize > 0 ) {
-			for( Int32 i = 0; i < VERTEX_FLAGS_COUNT; i++ ) {
-				if( VERTEX_FLAG_QUERY( mVertexFlags, i ) ) {
-					if ( i != VERTEX_FLAG_COLOR )
-						mVertexArray[ i ].reserve( ReserveVertexSize * eeVertexElements[ i ] );
-					else
-						mColorArray.reserve( ReserveVertexSize * eeVertexElements[ i ] );
-				}
+	if( ReserveVertexSize > 0 ) {
+		for( Int32 i = 0; i < VERTEX_FLAGS_COUNT; i++ ) {
+			if( VERTEX_FLAG_QUERY( mVertexFlags, i ) ) {
+				if ( i != VERTEX_FLAG_COLOR )
+					mVertexArray[ i ].reserve( ReserveVertexSize * eeVertexElements[ i ] );
+				else
+					mColorArray.reserve( ReserveVertexSize * eeVertexElements[ i ] );
 			}
 		}
+	}
+
+	cVertexBufferManager::instance()->Add( this );
 }
 
 cVertexBuffer::~cVertexBuffer() {
-		for( Int32 i = 0; i < VERTEX_FLAGS_COUNT_ARR; i++ )
-			mVertexArray[ i ].clear();
+	for( Int32 i = 0; i < VERTEX_FLAGS_COUNT_ARR; i++ )
+		mVertexArray[ i ].clear();
 
-		mColorArray.clear();
-		mIndexArray.clear();
+	mColorArray.clear();
+	mIndexArray.clear();
+
+	cVertexBufferManager::instance()->Remove( this );
 }
 
 void cVertexBuffer::AddVertex( const Uint32& Type, const eeVector2f& Vertex ) {
