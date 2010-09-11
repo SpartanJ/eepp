@@ -95,8 +95,8 @@ cShaderProgram::cShaderProgram( const Uint8 * VertexShaderData, const Uint32& Ve
 }
 
 cShaderProgram::~cShaderProgram() {
-	if ( Id() > 0 )
-    	glDeleteProgram( Id() );
+	if ( Handler() > 0 )
+    	glDeleteProgram( Handler() );
 
     mUniformLocations.clear();
     mAttributeLocations.clear();
@@ -116,7 +116,7 @@ void cShaderProgram::RemoveFromManager() {
 }
 
 void cShaderProgram::Init() {
-	if ( cGL::instance()->ShadersSupported() && 0 == Id() ) {
+	if ( cGL::instance()->ShadersSupported() && 0 == Handler() ) {
 		mHandler = glCreateProgram();
 		mValid = false;
 		mUniformLocations.clear();
@@ -147,8 +147,8 @@ void cShaderProgram::AddShader( cShader* Shader ) {
 		return;
 	}
 
-	if ( 0 != Id() ) {
-		glAttachShader( Id(), Shader->GetId() );
+	if ( 0 != Handler() ) {
+		glAttachShader( Handler(), Shader->GetId() );
 
 		mShaders.push_back( Shader );
 	}
@@ -160,17 +160,17 @@ void cShaderProgram::AddShaders( const std::vector<cShader*>& Shaders ) {
 }
 
 bool cShaderProgram::Link() {
-	glLinkProgram( Id() );
+	glLinkProgram( Handler() );
 
 	Int32 linked;
-	glGetProgramiv( Id(), GL_LINK_STATUS, &linked );
+	glGetProgramiv( Handler(), GL_LINK_STATUS, &linked );
 	mValid = 0 != linked;
 
 	GLsizei logsize, logarraysize;
-	glGetProgramiv( Id(), GL_INFO_LOG_LENGTH, &logarraysize );
+	glGetProgramiv( Handler(), GL_INFO_LOG_LENGTH, &logarraysize );
 	mLinkLog.resize(logarraysize);
 
-	glGetProgramInfoLog( Id(), logarraysize, &logsize, reinterpret_cast<GLchar*>( &mLinkLog[0] ) );
+	glGetProgramInfoLog( Handler(), logarraysize, &logsize, reinterpret_cast<GLchar*>( &mLinkLog[0] ) );
 
 	if ( !mValid ) {
 		cLog::instance()->Write( "cShaderProgram::Link(): Couldn't link program. Log follows:" + mLinkLog );
@@ -183,7 +183,7 @@ bool cShaderProgram::Link() {
 }
 
 void cShaderProgram::Bind() const {
-	glUseProgram( Id() );
+	glUseProgram( Handler() );
 }
 
 void cShaderProgram::Unbind() const {
@@ -196,7 +196,7 @@ Int32 cShaderProgram::UniformLocation( const std::string& Name ) {
 
 	std::map<std::string, Int32>::iterator it = mUniformLocations.find( Name );
 	if ( it == mUniformLocations.end() ) {
-		Int32 Location = glGetUniformLocation( Id(), Name.c_str() );
+		Int32 Location = glGetUniformLocation( Handler(), Name.c_str() );
 		mUniformLocations[Name] = Location;
 	}
 	return mUniformLocations[Name];
@@ -208,7 +208,7 @@ Int32 cShaderProgram::AttributeLocation( const std::string& Name ) {
 
 	std::map<std::string, Int32>::iterator it = mAttributeLocations.find( Name );
 	if ( it == mAttributeLocations.end() ) {
-		Int32 Location = glGetAttribLocation( Id(), Name.c_str() );
+		Int32 Location = glGetAttribLocation( Handler(), Name.c_str() );
 		mAttributeLocations[Name] = Location;
 	}
 	return mAttributeLocations[Name];
