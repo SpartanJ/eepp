@@ -166,7 +166,7 @@ void cSprite::Update( const eeFloat& x, const eeFloat& y, const eeFloat& Scale, 
 
 Uint32 cSprite::GetTexture(const eeUint& FrameNum, const eeUint& SubFrameNum) {
 	if ( FrameNum < mFrames.size() && SubFrameNum < mFrameData.SubFrames )
-		return mFrames[FrameNum].Spr[SubFrameNum]->Id();
+		return mFrames[FrameNum].Spr[SubFrameNum]->GetTexture()->Id();
 
 	return 0;
 }

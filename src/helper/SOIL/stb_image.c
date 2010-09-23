@@ -4691,7 +4691,7 @@ static int pic_info(stbi *s, int *x, int *y, int *comp)
    *x = get16(s);
    *y = get16(s);
    if (at_eof(s))  return 0;
-   if ((1 << 28) / (*x) < (*y)) return 0;
+   if ( (*x) != 0 && (1 << 28) / (*x) < (*y)) return 0;
 
    skip(s, 8);
 
