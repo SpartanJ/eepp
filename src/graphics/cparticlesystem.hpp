@@ -37,7 +37,7 @@ enum EE_PARTICLE_EFFECT {
 /** @brief Basic but powerfull Particle System */
 class EE_API cParticleSystem {
 	public:
-		typedef boost::function2<void, cParticle*, cParticleSystem*> ParticleCallback;
+		typedef cb::Callback2<void, cParticle*, cParticleSystem*> ParticleCallback;
 
 		cParticleSystem();
 		~cParticleSystem();
@@ -140,7 +140,6 @@ class EE_API cParticleSystem {
 		void Begin();
 		void Reset( cParticle* P );
 
-		bool mIsCallback;
 		ParticleCallback mPC;
 };
 

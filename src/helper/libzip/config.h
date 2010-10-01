@@ -10,7 +10,7 @@
 #endif
 
 #if (!defined (_MSCVER) && !defined (_MSC_VER))
-#define HAVE_UNISTD_H
+#define ZIP_HAVE_UNISTD_H
 #endif
 
 

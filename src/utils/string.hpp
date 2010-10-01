@@ -48,15 +48,15 @@ std::wstring toWStr(const T& i) {
 /** Converts from a string to type */
 template <class T>
 bool fromString(T& t, const std::string& s, std::ios_base& (*f)(std::ios_base&) = std::dec  ) {
-  std::istringstream iss(s);
-  return !(iss >> f >> t).fail();
+	std::istringstream iss(s);
+	return !(iss >> f >> t).fail();
 }
 
 /** Converts from a wstring to type */
 template <class T>
 bool fromWString(T& t, const std::wstring& s, std::ios_base& (*f)(std::ios_base&) = std::dec ) {
-  std::istringstream iss(s);
-  return !(iss >> f >> t).fail();
+	std::istringstream iss( wstringTostring( s ) );
+	return !(iss >> f >> t).fail();
 }
 
 /** Split a wstring and hold it on a vector */

@@ -114,6 +114,97 @@ std::string AppPath() {
 #endif
 }
 
+std::vector<std::wstring> FilesGetInPath( const std::wstring& path ) {
+	std::vector<std::wstring> files;
+
+#ifdef EE_COMPILER_MSVC
+	#ifdef UNICODE
+		std::wstring mPath( path );
+
+		if ( mPath[ mPath.size() - 1 ] == L'/' || mPath[ mPath.size() - 1 ] == L'\\' ) {
+			mPath += L"*";
+		} else {
+			mPath += L"\\*";
+		}
+
+		WIN32_FIND_DATA findFileData;
+		HANDLE hFind = FindFirstFile( mPath.c_str(), &findFileData );
+
+		if( hFind != INVALID_HANDLE_VALUE ) {
+			std::wstring tmpstr( findFileData.cFileName );
+
+			if ( tmpstr != L"." && tmpstr != L".." )
+				files.push_back( tmpstr );
+
+			while( FindNextFile( hFind, &findFileData ) ) {
+				tmpstr = std::wstring( findFileData.cFileName );
+
+				if ( tmpstr != L"." && tmpstr != L".." )
+					files.push_back( findFileData.cFileName );
+			}
+
+			FindClose( hFind );
+		}
+	#else
+        std::wstring mPath( path );
+
+        if ( mPath[ mPath.size() - 1 ] == L'/' || mPath[ mPath.size() - 1 ] == L'\\' ) {
+                mPath += L"*";
+        } else {
+                mPath += L"\\*";
+        }
+
+        WIN32_FIND_DATA findFileData;
+        HANDLE hFind = FindFirstFile( (LPCTSTR) mPath.c_str(), &findFileData );
+
+        if( hFind != INVALID_HANDLE_VALUE ) {
+			std::wstring tmpstr( findFileData.cFileName );
+
+			if ( tmpstr != L"." && tmpstr != L".." )
+					files.push_back( tmpstr );
+
+			while( FindNextFile( hFind, &findFileData ) ) {
+					tmpstr = std::wstring( findFileData.cFileName );
+
+					if ( tmpstr != "." && tmpstr != ".." )
+							files.push_back( std::wstring( findFileData.cFileName ) );
+			}
+
+			FindClose( hFind );
+        }
+	#endif
+
+	return files;
+#else
+	DIR *dp;
+	struct dirent *dirp;
+
+	if( ( dp = opendir( wstringTostring( path.c_str() ).c_str() ) ) == NULL)
+		return files;
+
+	while ( ( dirp = readdir(dp) ) != NULL) {
+		if ( strcmp( dirp->d_name, ".." ) != 0 && strcmp( dirp->d_name, "." ) != 0 ) {
+
+			char * p = &dirp->d_name[0];
+			std::wstring tmp;
+
+			while ( *p ) {
+				unsigned char y = *p;
+				tmp.push_back( y );
+				p++;
+			}
+
+			files.push_back( tmp );
+		}
+	}
+
+	closedir(dp);
+
+	return files;
+#endif
+}
+
+
 std::vector<std::string> FilesGetInPath( const std::string& path ) {
 	std::vector<std::string> files;
 
@@ -222,6 +313,10 @@ eeDouble GetSystemTime() {
 
 	return Time.tv_sec + Time.tv_usec / 1000000.;
 #endif
+}
+
+bool IsDirectory( const std::wstring& path ) {
+	return IsDirectory( wstringTostring( path ) );
 }
 
 bool IsDirectory( const std::string& path ) {

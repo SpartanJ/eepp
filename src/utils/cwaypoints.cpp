@@ -141,13 +141,13 @@ void cWaypoints::Update( const eeFloat& Elapsed ) {
 				if ( mLoop ) {
 					mNexP = &mPoints[ 0 ];
 
-					if ( NULL != mOnPathEndCallback )
+					if ( mOnPathEndCallback.IsSet() )
 						mOnPathEndCallback();
 				} else {
 					mEnable = false;
 					mEnded = true;
 
-					if ( NULL != mOnPathEndCallback ) {
+					if ( mOnPathEndCallback.IsSet() ) {
 						mOnPathEndCallback();
 						mOnPathEndCallback = NULL;
 					}

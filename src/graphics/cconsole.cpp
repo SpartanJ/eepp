@@ -57,9 +57,9 @@ void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const eeUin
 	mHeight = (eeFloat) cEngine::instance()->GetHeight();
 	mHeightMin = (eeFloat) cEngine::instance()->GetHeight() * 0.4f;
 
-	mMyCallback = cInput::instance()->PushCallback( boost::bind( &cConsole::PrivInputCallback, this, _1) );
+	mMyCallback = cInput::instance()->PushCallback( cb::Make1( this, &cConsole::PrivInputCallback ) );
 
-	mTBuf.SetReturnCallback( boost::bind( &cConsole::ProcessLine, this ) );
+	mTBuf.SetReturnCallback( cb::Make0( this, &cConsole::ProcessLine ) );
 	mTBuf.Start();
 	mTBuf.SupportNewLine( false );
 	mTBuf.Active( false );
@@ -416,22 +416,22 @@ void cConsole::PrivInputCallback( EE_Event* Event ) {
 }
 
 void cConsole::CreateDefaultCommands() {
-	AddCommand( L"clear", boost::bind( &cConsole::CmdClear, this, _1) );
-	AddCommand( L"quit", boost::bind( &cConsole::CmdQuit, this, _1) );
-	AddCommand( L"maximize", boost::bind( &cConsole::CmdMaximize, this, _1) );
-	AddCommand( L"minimize", boost::bind( &cConsole::CmdMinimize, this, _1) );
-	AddCommand( L"cmdlist", boost::bind( &cConsole::CmdCmdList, this, _1) );
-	AddCommand( L"help", boost::bind( &cConsole::CmdCmdList, this, _1) );
-	AddCommand( L"showcursor", boost::bind( &cConsole::CmdShowCursor, this, _1) );
-	AddCommand( L"setframelimit", boost::bind( &cConsole::CmdFrameLimit, this, _1) );
-	AddCommand( L"getlog", boost::bind( &cConsole::CmdGetLog, this, _1) );
-	AddCommand( L"setgamma", boost::bind( &cConsole::CmdSetGamma, this, _1) );
-	AddCommand( L"setvolume", boost::bind( &cConsole::CmdSetVolume, this, _1) );
-	AddCommand( L"getgpuextensions", boost::bind( &cConsole::CmdGetGpuExtensions, this, _1) );
-	AddCommand( L"dir", boost::bind( &cConsole::CmdDir, this, _1) );
-	AddCommand( L"ls", boost::bind( &cConsole::CmdDir, this, _1) );
-	AddCommand( L"showfps", boost::bind( &cConsole::CmdShowFps, this, _1) );
-	AddCommand( L"gettexturememory", boost::bind( &cConsole::CmdGetTextureMemory, this, _1) );
+	AddCommand( L"clear", cb::Make1( this, &cConsole::CmdClear) );
+	AddCommand( L"quit", cb::Make1( this, &cConsole::CmdQuit) );
+	AddCommand( L"maximize", cb::Make1( this, &cConsole::CmdMaximize) );
+	AddCommand( L"minimize", cb::Make1( this, &cConsole::CmdMinimize) );
+	AddCommand( L"cmdlist", cb::Make1( this, &cConsole::CmdCmdList) );
+	AddCommand( L"help", cb::Make1( this, &cConsole::CmdCmdList) );
+	AddCommand( L"showcursor", cb::Make1( this, &cConsole::CmdShowCursor) );
+	AddCommand( L"setframelimit", cb::Make1( this, &cConsole::CmdFrameLimit) );
+	AddCommand( L"getlog", cb::Make1( this, &cConsole::CmdGetLog) );
+	AddCommand( L"setgamma", cb::Make1( this, &cConsole::CmdSetGamma) );
+	AddCommand( L"setvolume", cb::Make1( this, &cConsole::CmdSetVolume) );
+	AddCommand( L"getgpuextensions", cb::Make1( this, &cConsole::CmdGetGpuExtensions) );
+	AddCommand( L"dir", cb::Make1( this, &cConsole::CmdDir) );
+	AddCommand( L"ls", cb::Make1( this, &cConsole::CmdDir) );
+	AddCommand( L"showfps", cb::Make1( this, &cConsole::CmdShowFps) );
+	AddCommand( L"gettexturememory", cb::Make1( this, &cConsole::CmdGetTextureMemory) );
 }
 
 void cConsole::CmdClear	() {
@@ -480,13 +480,16 @@ void cConsole::CmdCmdList ( const std::vector < std::wstring >& params ) {
 void cConsole::CmdShowCursor ( const std::vector < std::wstring >& params ) {
 	if ( params.size() >= 2 ) {
 		try {
-			Int32 tInt = boost::lexical_cast<Int32>( wstringTostring( params[1] ) );
-			if ( tInt == 0 || tInt == 1 ) {
+			Int32 tInt = 0;
+
+			bool Res = fromWString<Int32>( tInt, params[1] );
+
+			if ( Res && ( tInt == 0 || tInt == 1 ) ) {
 				cEngine::instance()->ShowCursor( 0 != tInt );
 				PushText( L"showcursor " + toWStr(tInt) );
 			} else
 				PushText( L"Valid parameters are 0 or 1." );
-		} catch (boost::bad_lexical_cast&) {
+		} catch (...) {
 			PushText( L"Invalid Parameter. Expected int value from '" + params[1] + L"'." );
 		}
 	}
@@ -495,13 +498,16 @@ void cConsole::CmdShowCursor ( const std::vector < std::wstring >& params ) {
 void cConsole::CmdFrameLimit ( const std::vector < std::wstring >& params ) {
 	if ( params.size() >= 2 ) {
 		try {
-			Int32 tInt = boost::lexical_cast<Int32>( wstringTostring( params[1] ) );
-			if ( tInt >= 0 && tInt <= 10000 ) {
+			Int32 tInt = 0;
+
+			bool Res = fromWString<Int32>( tInt, params[1] );
+
+			if ( Res && ( tInt >= 0 && tInt <= 10000 ) ) {
 				cEngine::instance()->SetFrameRateLimit( tInt );
 				PushText( L"setframelimit " + toWStr(tInt) );
 			} else
 				PushText( L"Valid parameters are between 0 and 10000 (0 = no limit)." );
-		} catch (boost::bad_lexical_cast&) {
+		} catch (...) {
 			PushText( L"Invalid Parameter. Expected int value from '" + params[1] + L"'." );
 		}
 	}
@@ -535,13 +541,16 @@ void cConsole::CmdGetGpuExtensions( const std::vector < std::wstring >& params )
 void cConsole::CmdSetGamma( const std::vector < std::wstring >& params ) {
 	if ( params.size() >= 2 ) {
 		try {
-			eeFloat tFloat = boost::lexical_cast<eeFloat>( wstringTostring( params[1] ) );
-			if ( tFloat > 0.1f && tFloat <= 10.0f ) {
+			eeFloat tFloat = 0.f;
+
+			bool Res = fromWString<eeFloat>( tFloat, params[1] );
+
+			if ( Res && ( tFloat > 0.1f && tFloat <= 10.0f ) ) {
 				cEngine::instance()->SetGamma( tFloat, tFloat, tFloat );
 				PushText( L"setgamma " + toWStr(tFloat) );
 			} else
 				PushText( L"Valid parameters are between 0.1 and 10." );
-		} catch (boost::bad_lexical_cast&) {
+		} catch (...) {
 			PushText( L"Invalid Parameter. Expected float value." );
 		}
 	}
@@ -550,13 +559,16 @@ void cConsole::CmdSetGamma( const std::vector < std::wstring >& params ) {
 void cConsole::CmdSetVolume( const std::vector < std::wstring >& params ) {
 	if ( params.size() >= 2 ) {
 		try {
-			eeFloat tFloat = boost::lexical_cast<eeFloat>( wstringTostring( params[1] ) );
-			if ( tFloat >= 0.0f && tFloat <= 100.0f ) {
+			eeFloat tFloat = 0.f;
+
+			bool Res = fromWString<eeFloat>( tFloat, params[1] );
+
+			if ( Res && ( tFloat >= 0.0f && tFloat <= 100.0f ) ) {
 				EE::Audio::cAudioListener::instance()->SetGlobalVolume( tFloat );
 				PushText( L"setvolume " + toWStr(tFloat) );
 			} else
 				PushText( L"Valid parameters are between 0 and 100." );
-		} catch (boost::bad_lexical_cast&) {
+		} catch (...) {
 			PushText( L"Invalid Parameter. Expected eeFloat value." );
 		}
 	}
@@ -567,22 +579,22 @@ void cConsole::CmdDir( const std::vector < std::wstring >& params ) {
 	if ( params.size() >= 2 ) {
 		try {
 			#if EE_PLATFORM == EE_PLATFORM_WIN32
-			std::string Slash( "/\\" );
+			std::wstring Slash( L"/\\" );
 			#else
-			std::string Slash( "/" );
+			std::wstring Slash( L"/" );
 			#endif
-			std::string myPath = wstringTostring( params[1] );
-			std::string myOrder;
+			std::wstring myPath = params[1];
+			std::wstring myOrder;
 
 			if ( params.size() > 2 ) {
 				for ( eeUint i = 2; i < params.size(); i++ ) {
 					if ( i + 1 == params.size() ) {
 						if ( params[i] == L"ff" )
-							myOrder = wstringTostring( params[i] );
+							myOrder = params[i];
 						else
-							myPath += " " + wstringTostring( params[i] );
+							myPath += L" " + params[i];
 					} else {
-						myPath += " " + wstringTostring( params[i] );
+						myPath += L" " + params[i];
 					}
 				}
 			}
@@ -590,14 +602,14 @@ void cConsole::CmdDir( const std::vector < std::wstring >& params ) {
 			if ( IsDirectory( myPath ) ) {
 				eeUint i;
 
-				std::vector<std::string> mFiles = FilesGetInPath( myPath );
+				std::vector<std::wstring> mFiles = FilesGetInPath( myPath );
 				std::sort( mFiles.begin(), mFiles.end() );
 
-				PushText( "Directory: " + myPath );
+				PushText( L"Directory: " + myPath );
 
-				if ( myOrder == "ff" ) {
-					std::vector<std::string> mFolders;
-					std::vector<std::string> mFile;
+				if ( myOrder == L"ff" ) {
+					std::vector<std::wstring> mFolders;
+					std::vector<std::wstring> mFile;
 
 					for ( i = 0; i < mFiles.size(); i++ ) {
 						if ( IsDirectory( myPath + Slash + mFiles[i] ) ) {
@@ -611,23 +623,23 @@ void cConsole::CmdDir( const std::vector < std::wstring >& params ) {
 						PushText( L"Folders: " );
 
 					for ( i = 0; i < mFolders.size(); i++ )
-						PushText( "	" + mFolders[i] );
+						PushText( L"	" + mFolders[i] );
 
 					if ( mFolders.size() )
 						PushText( L"Files: " );
 
 					for ( i = 0; i < mFile.size(); i++ )
-						PushText( "	" + mFile[i] );
+						PushText( L"	" + mFile[i] );
 
 				} else {
 					for ( i = 0; i < mFiles.size(); i++ )
-						PushText( "	" + mFiles[i] );
+						PushText( L"	" + mFiles[i] );
 				}
 			} else {
-				if ( myPath == "help" )
-					PushText( "You can use a third parameter to show folders first, the parameter is ff." );
+				if ( myPath == L"help" )
+					PushText( L"You can use a third parameter to show folders first, the parameter is ff." );
 				else
-					PushText( "Path is not a directory." );
+					PushText( L"Path is not a directory." );
 			}
 		} catch (...) {
 			PushText( L"Invalid Parameter." );
@@ -638,13 +650,16 @@ void cConsole::CmdDir( const std::vector < std::wstring >& params ) {
 void cConsole::CmdShowFps( const std::vector < std::wstring >& params ) {
 	if ( params.size() >= 2 ) {
 		try {
-			Int32 tInt = boost::lexical_cast<Int32>( wstringTostring( params[1] ) );
-			if ( tInt == 0 || tInt == 1 ) {
+			Int32 tInt = 0;
+
+			bool Res = fromWString<Int32>( tInt, params[1] );
+
+			if ( Res && ( tInt == 0 || tInt == 1 ) ) {
 				mShowFps = 0 != tInt;
 				PushText( L"showfps " + toWStr(tInt) );
 			} else
 				PushText( L"Valid parameters are 0 or 1." );
-		} catch (boost::bad_lexical_cast&) {
+		} catch (...) {
 			PushText( L"Invalid Parameter. Expected int value from '" + params[1] + L"'." );
 		}
 	}

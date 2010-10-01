@@ -23,7 +23,7 @@ class EE_API cWaypoints {
 		cWaypoints();
 		~cWaypoints();
 
-		typedef boost::function0<void> OnPathEndCallback;
+		typedef cb::Callback0<void> OnPathEndCallback;
 
 		/** Add a new waypoint */
 		void AddWaypoint( const eeVector2f& Pos, const eeFloat& Time = 0.f );
@@ -37,7 +37,7 @@ class EE_API cWaypoints {
 		/** Start the animation ( will reset the current state, and start from the beginning )
 		@param PathEndCallback An optional callback fired when the animation ends.
 		*/
-		void Start( OnPathEndCallback PathEndCallback = NULL );
+		void Start( OnPathEndCallback PathEndCallback = OnPathEndCallback() );
 
 		/** Stop the animation ( Enable = false ) */
 		void Stop();

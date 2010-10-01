@@ -904,7 +904,7 @@ void cEngine::clipboard_get_scrap(int type, int *dstlen, char **dst) {
     if ( XGetWindowProperty( mVideoInfo.info.info.x11.display, owner, selection, 0, INT_MAX/4, False, format, &seln_type, &seln_format, &nbytes, &overflow, (unsigned char **)&src) == Success ) {
 		if ( seln_type == format ) {
 			*dstlen = clipboard_convert_scrap(type, NULL, src, nbytes);
-			*dst = (char *)realloc(*dst, *dstlen);
+			*dst = (char *)eeMalloc( *dstlen );
 
 			if ( *dst == NULL )
 				*dstlen = 0;
@@ -922,7 +922,7 @@ void cEngine::clipboard_get_scrap(int type, int *dstlen, char **dst) {
 		if ( hMem != NULL ) {
 			src = (char *)GlobalLock(hMem);
 			*dstlen = clipboard_convert_scrap(type, NULL, src, 0);
-			*dst = (char *)realloc(*dst, *dstlen);
+			*dst = (char *)eeMalloc( *dstlen );
 			if ( *dst == NULL )
 			*dstlen = 0;
 			else
@@ -944,7 +944,8 @@ std::string cEngine::GetClipboardText() {
 	if ( scraplen != 0 && strcmp(scrap,"SDL-\r-scrap") ) {
 		char *cp;
 		int   i;
-		for ( cp=scrap, i=0; i<scraplen; ++cp, ++i ) {
+
+		for ( cp = scrap, i = 0; i < scraplen; ++cp, ++i ) {
 			if ( *cp == '\r' )
 				*cp = '\n';
 		}

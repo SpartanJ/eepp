@@ -31,7 +31,7 @@ void cUIManager::Init() {
 	mFocusControl	= mControl;
 	mOverControl	= mControl;
 
-	mCbId = cInput::instance()->PushCallback( boost::bind( &cUIManager::InputCallback, this, _1 ) );
+	mCbId = cInput::instance()->PushCallback( cb::Make1( this, &cUIManager::InputCallback ) );
 }
 
 void cUIManager::Shutdown() {

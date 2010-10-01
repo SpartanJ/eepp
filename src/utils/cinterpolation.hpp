@@ -23,7 +23,7 @@ class EE_API cInterpolation {
 
 		~cInterpolation();
 
-		typedef boost::function0<void> OnPathEndCallback;
+		typedef cb::Callback0<void> OnPathEndCallback;
 
 		/** Add a new point */
 		void AddWaypoint( const eeFloat Pos, const eeFloat Time = 0 );
@@ -35,7 +35,7 @@ class EE_API cInterpolation {
 		bool EraseWaypoint( const eeUint PointNum );
 
 		/** Start the animation */
-		void Start( OnPathEndCallback PathEndCallback = NULL );
+		void Start( OnPathEndCallback PathEndCallback = OnPathEndCallback() );
 
 		/** Stop the animation */
 		void Stop();

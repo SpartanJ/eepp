@@ -29,13 +29,13 @@ class EE_API cUIControlAnim : public cUIDragable {
 
  		bool Animating();
 
-		void StartAlphaAnim( const eeFloat& From, const eeFloat& To, const eeFloat& TotalTime, cInterpolation::OnPathEndCallback PathEndCallback = 0 );
+		void StartAlphaAnim( const eeFloat& From, const eeFloat& To, const eeFloat& TotalTime, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
 
-		void StartScaleAnim( const eeFloat& From, const eeFloat& To, const eeFloat& TotalTime, cInterpolation::OnPathEndCallback PathEndCallback = 0 );
+		void StartScaleAnim( const eeFloat& From, const eeFloat& To, const eeFloat& TotalTime, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
 
-		void StartMovement( const eeVector2i& From, const eeVector2i& To, const eeFloat& TotalTime, cWaypoints::OnPathEndCallback PathEndCallback = 0 );
+		void StartMovement( const eeVector2i& From, const eeVector2i& To, const eeFloat& TotalTime, cWaypoints::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
 
-		void StartRotation( const eeFloat& From, const eeFloat& To, const eeFloat& TotalTime, cInterpolation::OnPathEndCallback PathEndCallback = 0 );
+		void StartRotation( const eeFloat& From, const eeFloat& To, const eeFloat& TotalTime, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
 
 		void CreateFadeIn( const eeFloat& Time );
 

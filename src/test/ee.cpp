@@ -56,7 +56,7 @@ class cUITest : public cUIControlAnim {
 
 class cEETest : private cThread {
 	public:
-		typedef boost::function0<void> SceneCb;
+		typedef cb::Callback0<void> SceneCb;
 
 		void Init();
 		void End();
@@ -250,9 +250,9 @@ void cEETest::Init() {
 
 		PS.resize(5);
 
-		Scenes[0] = boost::bind( &cEETest::Screen1, this );
-		Scenes[1] = boost::bind( &cEETest::Screen2, this );
-		Scenes[2] = boost::bind( &cEETest::Screen3, this );
+		Scenes[0] = cb::Make0( this, &cEETest::Screen1 );
+		Scenes[1] = cb::Make0( this, &cEETest::Screen2 );
+		Scenes[2] = cb::Make0( this, &cEETest::Screen3 );
 
 		InBuf.Start();
 
@@ -266,6 +266,7 @@ void cEETest::Init() {
 
 		if ( Mus.OpenFromPack( &PAK, "music.ogg" ) ) {
 			Mus.Loop(true);
+			Mus.Volume( 10.f );
 			Mus.Play();
 		}
 
@@ -313,7 +314,7 @@ void cEETest::LoadFonts() {
 	mFontLoader.Add( eeNew( cTextureFontLoader, ( "conchars", eeNew( cTextureLoader, ( &PAK, "conchars.png", false, eeRGB(0,0,0) ) ), (eeUint)32 ) ) );
 	mFontLoader.Add( eeNew( cTextureFontLoader, ( "ProggySquareSZ", eeNew( cTextureLoader, ( &PAK, "ProggySquareSZ.png" ) ), &PAK, "ProggySquareSZ.dat" ) ) );
 	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", &PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255), 1, eeColor(0,0,0), true ) ) );
-	mFontLoader.Load( boost::bind( &cEETest::OnFontLoaded, this, _1 ) );
+	mFontLoader.Load( cb::Make1( this, &cEETest::OnFontLoaded ) );
 }
 
 void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
@@ -424,13 +425,16 @@ void cEETest::CreateUI() {
 void cEETest::CmdSetPartsNum ( const std::vector < std::wstring >& params ) {
 	if ( params.size() >= 2 ) {
 		try {
-			Int32 tInt = boost::lexical_cast<Int32>( wstringTostring( params[1] ) );
-			if ( tInt >= 0 && tInt <= 100000 ) {
+			Int32 tInt = 0;
+
+			bool Res = fromWString<Int32>( tInt, params[1] );
+
+			if ( Res && ( tInt >= 0 && tInt <= 100000 ) ) {
 				PS[2].Create(WormHole, tInt, TN[5], EE->GetWidth() * 0.5f, EE->GetHeight() * 0.5f, 32, true);
 				Con.PushText( L"Wormhole Particles Number Changed to: " + toWStr(tInt) );
 			} else
 				Con.PushText( L"Valid parameters are between 0 and 100000 (0 = no limit)." );
-		} catch (boost::bad_lexical_cast&) {
+		} catch (...) {
 			Con.PushText( L"Invalid Parameter. Expected int value from '" + params[1] + L"'." );
 		}
 	}
@@ -461,7 +465,7 @@ void cEETest::LoadTextures() {
 
 	mResLoad.Add( eeNew( cSoundLoader, ( &SndMng, "mysound", &PAK, "sound.ogg" ) ) );
 
-	mResLoad.Load( boost::bind( &cEETest::OnTextureLoaded, this, _1 ) );
+	mResLoad.Load( cb::Make1( this, &cEETest::OnTextureLoaded ) );
 
 	TN.resize(12);
 	TNP.resize(12);
@@ -511,12 +515,12 @@ void cEETest::LoadTextures() {
 		for( Int32 mx = 0; mx < 8; mx++ )
 			SP.AddFrame( TN[4], 0, 0, 0, 0, eeRecti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
 
-	PS[0].SetCallbackReset( boost::bind( &cEETest::ParticlesCallback, this, _1, _2) );
+	PS[0].SetCallbackReset( cb::Make2( this, &cEETest::ParticlesCallback ) );
 	PS[0].Create(Callback, 500, TN[5], 0, 0, 16, true);
 	PS[1].Create(Heal, 250, TN[5], EE->GetWidth() * 0.5f, EE->GetHeight() * 0.5f, 16, true);
 
 	PS[2].Create(WormHole, PartsNum, TN[5], EE->GetWidth() * 0.5f, EE->GetHeight() * 0.5f, 32, true);
-	Con.AddCommand( L"setparticlesnum", boost::bind( &cEETest::CmdSetPartsNum, this, _1) );
+	Con.AddCommand( L"setparticlesnum", cb::Make1( this, &cEETest::CmdSetPartsNum ) );
 
 	PS[3].Create(Fire, 350, TN[5], -50.f, -50.f, 32, true);
 	PS[4].Create(Fire, 350, TN[5], -50.f, -50.f, 32, true);
@@ -1156,7 +1160,7 @@ void cEETest::End() {
 	eeSAFE_DELETE( mFB );
 	eeSAFE_DELETE( mVBO );
 	eeSAFE_DELETE( mBudaTC );
-	
+
 	cLog::instance()->Save();
 
 	cEngine::DestroySingleton();

@@ -20,13 +20,13 @@ std::wstring stringTowstring(const std::string& s) {
 	return temp;
 }
 
-std::string wstringTostring(const std::wstring& s) {
+std::string wstringTostring( const std::wstring& s ) {
 	std::string temp(s.length(), ' ');
 	std::copy(s.begin(), s.end(), temp.begin());
 	return temp;
 }
 
-std::string intToStr(Int32 n) {
+std::string intToStr( Int32 n ) {
 	char buf[10];
 
 #ifdef EE_COMPILER_MSVC
@@ -38,7 +38,7 @@ std::string intToStr(Int32 n) {
 	return std::string( buf );
 }
 
-std::string floatToStr(eeFloat n) {
+std::string floatToStr( eeFloat n ) {
 	char buf[24];
 #ifdef EE_COMPILER_MSVC
 	_snprintf_s( &buf[0], 24, 24, "%f", n );

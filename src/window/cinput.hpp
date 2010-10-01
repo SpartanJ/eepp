@@ -294,8 +294,8 @@ enum EE_KEY {
 class EE_API cInput : public tSingleton<cInput> {
 	friend class tSingleton<cInput>;
 	public:
-		typedef boost::function1<void, EE_Event*> InputCallback;
-		typedef boost::function0<void> VideoResizeCallback;
+		typedef cb::Callback1<void, EE_Event*> InputCallback;
+		typedef cb::Callback0<void> VideoResizeCallback;
 
 		/** Update the Input */
 		void Update();

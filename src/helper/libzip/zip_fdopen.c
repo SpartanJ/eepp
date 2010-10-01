@@ -34,7 +34,7 @@
 
 
 #include "zipint.h"
-#ifdef HAVE_UNISTD_H
+#ifdef ZIP_HAVE_UNISTD_H
 #include <unistd.h>
 #endif
 

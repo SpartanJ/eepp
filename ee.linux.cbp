@@ -163,6 +163,7 @@
 		<Unit filename="src/graphics/pixelperfect.hpp" />
 		<Unit filename="src/graphics/renders.hpp" />
 		<Unit filename="src/graphics/vbohelper.hpp" />
+		<Unit filename="src/helper/PlusCallback/callback.hpp" />
 		<Unit filename="src/helper/SOIL/SOIL.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -566,6 +567,15 @@
 			<code_completion />
 			<debugger />
 			<lib_finder disable_auto="1" />
+			<DoxyBlocks>
+				<comment_style block="0" line="0" />
+				<doxyfile_project />
+				<doxyfile_build />
+				<doxyfile_warnings />
+				<doxyfile_output />
+				<doxyfile_dot />
+				<general />
+			</DoxyBlocks>
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>

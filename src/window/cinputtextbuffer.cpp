@@ -6,8 +6,7 @@ cInputTextBuffer::cInputTextBuffer( const bool& Active, const bool& SupportNewLi
 	mChangeSinceLastUpdate(false),
 	mCallback(0),
 	mPromptPos(0),
-	mPromptAutoPos(true),
-	mEnter(false)
+	mPromptAutoPos(true)
 {
 	mActive = Active;
 	mSupportNewLine = SupportNewLine;
@@ -22,7 +21,6 @@ cInputTextBuffer::cInputTextBuffer() :
 	mChangeSinceLastUpdate(false),
 	mCallback(0),
 	mPromtPosSupport(true),
-	mEnter(false),
 	mMaxLenght(0xFFFFFFFF)
 {
 	SetAutoPromp();
@@ -36,7 +34,7 @@ cInputTextBuffer::~cInputTextBuffer() {
 }
 
 void cInputTextBuffer::Start() {
-	mCallback = cInput::instance()->PushCallback( std::bind1st( std::mem_fun(&cInputTextBuffer::Update), this) );
+	mCallback = cInput::instance()->PushCallback( cb::Make1( this, &cInputTextBuffer::Update ) );
 }
 
 void cInputTextBuffer::Update( EE_Event* Event ) {
@@ -70,7 +68,7 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 							mPromptPos++;
 						}
 
-						if ( mEnter )
+						if ( mEnterCall.IsSet() )
 							mEnterCall();
 
  					} else if ( c == KEY_LEFT ) {
@@ -130,7 +128,7 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 					if ( mSupportNewLine && CanAdd() )
 						mText += L'\n';
 
-					if ( mEnter )
+					if ( mEnterCall.IsSet() )
 						mEnterCall();
 				} else if ( CanAdd() && isCharacter(c) && !cInput::instance()->MetaPressed() && !cInput::instance()->AltPressed() && !cInput::instance()->ControlPressed() ) {
 					mText += c;
@@ -146,7 +144,6 @@ void cInputTextBuffer::Clear() {
 }
 
 void cInputTextBuffer::SetReturnCallback( EnterCallback EC ) {
-	mEnter = true;
 	mEnterCall = EC;
 }
 

@@ -65,9 +65,13 @@ bool cResourceLoader::Clear( const bool& ClearObjectsLoaded ) {
 }
 
 void cResourceLoader::Load( ResLoadCallback Cb ) {
-	if ( NULL != Cb )
+	if ( Cb.IsSet() )
 		mLoadCbs.push_back( Cb );
 
+	Load();
+}
+
+void cResourceLoader::Load() {
 	if ( mLoaded )
 		return;
 

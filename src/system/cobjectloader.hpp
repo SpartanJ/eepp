@@ -8,7 +8,7 @@ namespace EE { namespace System {
 
 class EE_API cObjectLoader : cThread {
 	public:
-		typedef boost::function1<void, cObjectLoader *> ObjLoadCallback;
+		typedef cb::Callback1<void, cObjectLoader *> ObjLoadCallback;
 
 		enum ObjLoaderType {
 			TextureLoader = 1,
@@ -22,7 +22,9 @@ class EE_API cObjectLoader : cThread {
 
 		~cObjectLoader();
 
-		void 			Load( ObjLoadCallback Cb = NULL );
+		void 			Load();
+
+		void 			Load( ObjLoadCallback Cb );
 
 		virtual void 	Update();
 
@@ -55,5 +57,3 @@ class EE_API cObjectLoader : cThread {
 }}
 
 #endif
-
-

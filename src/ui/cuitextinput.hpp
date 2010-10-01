@@ -15,28 +15,28 @@ class EE_API cUITextInput : public cUITextBox {
 					SupportFreeEditing = true;
 					MaxLenght = 256;
 				}
-				
+
 				inline ~CreateParams() {}
-				
+
 				bool SupportNewLine;
 				bool SupportFreeEditing;
 				Uint32 MaxLenght;
 		};
-		
+
 		cUITextInput( const cUITextInput::CreateParams& Params );
-		
+
 		~cUITextInput();
-		
+
 		virtual void Update();
-		
+
 		virtual void Draw();
-		
+
 		virtual Uint32 OnFocus();
 
 		virtual Uint32 OnFocusLoss();
-		
+
 		virtual Uint32 OnPressEnter();
-		
+
 		void PushIgnoredChar( const Uint32& ch );
 	protected:
 		cInputTextBuffer mTextBuffer;
@@ -44,9 +44,10 @@ class EE_API cUITextInput : public cUITextBox {
 		eeFloat mWaitCursorTime;
 		eeVector2f mCurPos;
 		eeInt mCursorPos;
-		
+
 		void ResetWaitCursor();
 		void AlignFix();
+		void PrivOnPressEnter();
 };
 
 }}

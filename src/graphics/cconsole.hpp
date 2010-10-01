@@ -13,7 +13,7 @@ namespace EE { namespace Graphics {
 class EE_API cConsole{
 	public:
 		//! The Console Callback return a vector of parameters ( wstring )
-		typedef boost::function1<void, std::vector < std::wstring > > ConsoleCallback;
+		typedef cb::Callback1<void, const std::vector < std::wstring >& > ConsoleCallback;
 
 		cConsole();
 

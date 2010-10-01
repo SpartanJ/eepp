@@ -94,7 +94,7 @@ cInput::cInput() :
 	mDoubleClickInterval(500),
 	mLastButtonLeftClicked(0), 		mLastButtonRightClicked(0), 	mLastButtonMiddleClicked(0),
 	mLastButtonLeftClick(0), 		mLastButtonRightClick(0), 		mLastButtonMiddleClick(0),
-	mTClick(0), mVRCall(NULL), mNumCallBacks(0), mInputGrabed(false),
+	mTClick(0), mVRCall(), mNumCallBacks(0), mInputGrabed(false),
 	#if EE_PLATFORM == EE_PLATFORM_LINUX
 	mMouseSpeed(2.0f)
 	#else
@@ -218,7 +218,7 @@ void cInput::Update() {
 			case SDL_VIDEORESIZE:
 				EE->ChangeRes(mEvent.resize.w, mEvent.resize.h, EE->Windowed() );
 
-				if ( NULL != mVRCall )
+				if ( mVRCall.IsSet() )
 					mVRCall();
 
 				break;

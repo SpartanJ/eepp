@@ -5,7 +5,7 @@ using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
-cParticleSystem::cParticleSystem() : mPointsSup(false), mTime(0.01f), mIsCallback(false) {
+cParticleSystem::cParticleSystem() : mPointsSup(false), mTime(0.01f) {
 	EE = cEngine::instance();
 	TF = cTextureFactory::instance();
 }
@@ -76,7 +76,6 @@ void cParticleSystem::Begin() {
 }
 
 void cParticleSystem::SetCallbackReset( const ParticleCallback& pc ) {
-	mIsCallback = true;
 	mPC = pc;
 }
 
@@ -230,7 +229,7 @@ void cParticleSystem::Reset(cParticle* P) {
 			P->SetColor( eeColorAf(0.4f, 0.25f, 1.f, 1.f), 0.3f + eeRandf() * 0.2f + eeRandf() * 0.3f );
 			break;
 		case Callback:
-			if (mIsCallback)
+			if ( mPC.IsSet() )
 				mPC(P, this);
 			break;
 	}

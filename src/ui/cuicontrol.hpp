@@ -16,7 +16,7 @@ class cUIManager;
 
 class EE_API cUIControl {
 	public:
-		typedef boost::function1<void, const cUIEvent*> UIEventCallback;
+		typedef cb::Callback1<void, const cUIEvent*> UIEventCallback;
 
 		class CreateParams {
 			public:

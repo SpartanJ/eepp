@@ -14,14 +14,18 @@ cObjectLoader::~cObjectLoader()
 {
 }
 
-void cObjectLoader::Load( ObjLoadCallback Cb ) {
-	if ( NULL != Cb )
-		mLoadCbs.push_back( Cb );
-
+void cObjectLoader::Load() {
 	if ( mLoaded )
 		SetLoaded();
 
 	Launch();
+}
+
+void cObjectLoader::Load( ObjLoadCallback Cb ) {
+	if ( Cb.IsSet() )
+		mLoadCbs.push_back( Cb );
+
+	Load();
 }
 
 void cObjectLoader::Launch() {

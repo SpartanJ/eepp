@@ -181,67 +181,77 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 				break;
 		}
 
+		Int16 tGlyphSize = mGlyphs.size();
+
 		for ( eeUint i = 0; i < TextCache.Text().size(); i++ ) {
 			Char = static_cast<Int32>( TextCache.Text().at(i) );
-			eeTexCoords* C = &mTexCoords[ Char ];
 
-			switch(Char) {
-				case L'\v':
-					if (mVerticalDraw)
-						nY += GetFontHeight();
-					else
-						nX += mGlyphs[ Char ].Advance;
-					break;
-				case L'\t':
-					if (mVerticalDraw)
-						nY += GetFontHeight() * 4;
-					else
-						nX += mGlyphs[ Char ].Advance * 4;
-					break;
-				case L'\n':
-					if (mVerticalDraw) {
-						nX += (GetFontSize() * Scale);
-						nY = 0;
-					} else {
-						if ( i + 1 < TextCache.Text().size() ) {
-							switch ( FontHAlignGet( Flags ) ) {
-								case FONT_DRAW_CENTER:
-									nX = (eeFloat)( (Int32)( ( TextCache.GetTextWidth() - TextCache.LinesWidth()[ Line ] ) * 0.5f ) );
-									break;
-								case FONT_DRAW_RIGHT:
-									nX = TextCache.GetTextWidth() - TextCache.LinesWidth()[ Line ];
-									break;
-								default:
-									nX = 0;
+			if ( Char < 0 && Char > -128 )
+				Char = 256 + Char;
+
+			if ( Char >= 0 && Char < tGlyphSize ) {
+				eeTexCoords* C = &mTexCoords[ Char ];
+
+				switch(Char) {
+					case L'\v':
+						if (mVerticalDraw)
+							nY += GetFontHeight();
+						else
+							nX += mGlyphs[ Char ].Advance;
+						break;
+					case L'\t':
+						if (mVerticalDraw)
+							nY += GetFontHeight() * 4;
+						else
+							nX += mGlyphs[ Char ].Advance * 4;
+						break;
+					case L'\n':
+						if (mVerticalDraw) {
+							nX += (GetFontSize() * Scale);
+							nY = 0;
+						} else {
+							if ( i + 1 < TextCache.Text().size() ) {
+								switch ( FontHAlignGet( Flags ) ) {
+									case FONT_DRAW_CENTER:
+										nX = (eeFloat)( (Int32)( ( TextCache.GetTextWidth() - TextCache.LinesWidth()[ Line ] ) * 0.5f ) );
+										break;
+									case FONT_DRAW_RIGHT:
+										nX = TextCache.GetTextWidth() - TextCache.LinesWidth()[ Line ];
+										break;
+									default:
+										nX = 0;
+								}
 							}
+
+							nY += (GetFontSize() * Scale);
+							Line++;
 						}
 
-						nY += (GetFontSize() * Scale);
-						Line++;
-					}
+						break;
+					default:
+						if ( Char >= 0 && Char < tGlyphSize ) {
+							for ( Uint8 z = 0; z < 8; z+=2 ) {
+								RenderCoords[ numvert ].TexCoords[0] = C->TexCoords[z];
+								RenderCoords[ numvert ].TexCoords[1] = C->TexCoords[ z + 1 ];
+								RenderCoords[ numvert ].Vertex[0] = cX + C->Vertex[z] + nX;
+								RenderCoords[ numvert ].Vertex[1] = cY + C->Vertex[ z + 1 ] + nY;
+								numvert++;
+							}
 
-					break;
-				default:
-					for ( Uint8 z = 0; z < 8; z+=2 ) {
-						RenderCoords[ numvert ].TexCoords[0] = C->TexCoords[z];
-						RenderCoords[ numvert ].TexCoords[1] = C->TexCoords[ z + 1 ];
-						RenderCoords[ numvert ].Vertex[0] = cX + C->Vertex[z] + nX;
-						RenderCoords[ numvert ].Vertex[1] = cY + C->Vertex[ z + 1 ] + nY;
-						numvert++;
-					}
+							#ifdef EE_GLES
+								glColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<char*>( &Colors[0] ) );
+								glTexCoordPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[ numvert - 4 ] ) );
+								glVertexPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[ numvert - 4 ] ) + sizeof(eeFloat) * 2 );
 
-					#ifdef EE_GLES
-						glColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<char*>( &Colors[0] ) );
-						glTexCoordPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[ numvert - 4 ] ) );
-						glVertexPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[ numvert - 4 ] ) + sizeof(eeFloat) * 2 );
+								glDrawElements( GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_BYTE, EE_GLES_INDICES );
+							#endif
 
-						glDrawElements( GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_BYTE, EE_GLES_INDICES );
-					#endif
-
-					if (mVerticalDraw)
-						nY += GetFontHeight();
-					else
-						nX += mGlyphs[ Char ].Advance;
+							if (mVerticalDraw)
+								nY += GetFontHeight();
+							else
+								nX += mGlyphs[ Char ].Advance;
+						}
+				}
 			}
 		}
 
@@ -314,67 +324,75 @@ void cFont::SubDraw( const std::wstring& Text, const eeFloat& X, const eeFloat& 
 			break;
 	}
 
+	Int16 tGlyphSize = mGlyphs.size();
+
 	for ( eeUint i = 0; i < Text.size(); i++ ) {
 		Char = static_cast<Int32>( Text.at(i) );
-		eeTexCoords* C = &mTexCoords[ Char ];
 
-		switch(Char) {
-			case L'\v':
-				if (mVerticalDraw)
-					nY += GetFontHeight();
-				else
-					nX += mGlyphs[ Char ].Advance;
-				break;
-			case L'\t':
-				if (mVerticalDraw)
-					nY += GetFontHeight() * 4;
-				else
-					nX += mGlyphs[ Char ].Advance * 4;
-				break;
-			case L'\n':
-				if (mVerticalDraw) {
-					nX += (GetFontSize() * Scale);
-					nY = 0;
-				} else {
-					if ( i + 1 < Text.size() ) {
-						switch ( FontHAlignGet( Flags ) ) {
-							case FONT_DRAW_CENTER:
-								nX = (eeFloat)( (Int32)( ( mCachedWidth - mLinesWidth[ Line ] ) * 0.5f ) );
-								break;
-							case FONT_DRAW_RIGHT:
-								nX = mCachedWidth - mLinesWidth[ Line ];
-								break;
-							default:
-								nX = 0;
+		if ( Char < 0 && Char > -128 )
+			Char = 256 + Char;
+
+		if ( Char >= 0 && Char < tGlyphSize ) {
+			eeTexCoords * C = &mTexCoords[ Char ];
+
+			switch( Char ) {
+				case L'\v':
+					if (mVerticalDraw)
+						nY += GetFontHeight();
+					else
+						nX += mGlyphs[ Char ].Advance;
+					break;
+				case L'\t':
+					if (mVerticalDraw)
+						nY += GetFontHeight() * 4;
+					else
+						nX += mGlyphs[ Char ].Advance * 4;
+					break;
+				case L'\n':
+					if (mVerticalDraw) {
+						nX += (GetFontSize() * Scale);
+						nY = 0;
+					} else {
+						if ( i + 1 < Text.size() ) {
+							switch ( FontHAlignGet( Flags ) ) {
+								case FONT_DRAW_CENTER:
+									nX = (eeFloat)( (Int32)( ( mCachedWidth - mLinesWidth[ Line ] ) * 0.5f ) );
+									break;
+								case FONT_DRAW_RIGHT:
+									nX = mCachedWidth - mLinesWidth[ Line ];
+									break;
+								default:
+									nX = 0;
+							}
 						}
+
+						nY += (GetFontSize() * Scale);
+						Line++;
 					}
 
-					nY += (GetFontSize() * Scale);
-					Line++;
-				}
+					break;
+				default:
+					for ( Uint8 z = 0; z < 8; z+=2 ) {
+						mRenderCoords[ numvert ].TexCoords[0] 	= C->TexCoords[z];
+						mRenderCoords[ numvert ].TexCoords[1] 	= C->TexCoords[ z + 1 ];
+						mRenderCoords[ numvert ].Vertex[0] 		= cX + C->Vertex[z] + nX;
+						mRenderCoords[ numvert ].Vertex[1]		= cY + C->Vertex[ z + 1 ] + nY;
+						numvert++;
+					}
 
-				break;
-			default:
-				for ( Uint8 z = 0; z < 8; z+=2 ) {
-					mRenderCoords[ numvert ].TexCoords[0] 	= C->TexCoords[z];
-					mRenderCoords[ numvert ].TexCoords[1] 	= C->TexCoords[ z + 1 ];
-					mRenderCoords[ numvert ].Vertex[0] 		= cX + C->Vertex[z] + nX;
-					mRenderCoords[ numvert ].Vertex[1]		= cY + C->Vertex[ z + 1 ] + nY;
-					numvert++;
-				}
+					#ifdef EE_GLES
+						glColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<char*>( &mColors[0] ) );
+						glTexCoordPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &mRenderCoords[ numvert - 4 ] ) );
+						glVertexPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &mRenderCoords[ numvert - 4 ] ) + sizeof(eeFloat) * 2 );
 
-				#ifdef EE_GLES
-					glColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<char*>( &mColors[0] ) );
-					glTexCoordPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &mRenderCoords[ numvert - 4 ] ) );
-					glVertexPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &mRenderCoords[ numvert - 4 ] ) + sizeof(eeFloat) * 2 );
+						glDrawElements( GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_BYTE, EE_GLES_INDICES );
+					#endif
 
-					glDrawElements( GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_BYTE, EE_GLES_INDICES );
-				#endif
-
-				if (mVerticalDraw)
-					nY += GetFontHeight();
-				else
-					nX += mGlyphs[ Char ].Advance;
+					if ( mVerticalDraw )
+						nY += GetFontHeight();
+					else
+						nX += mGlyphs[ Char ].Advance;
+			}
 		}
 	}
 
@@ -394,26 +412,28 @@ void cFont::CacheWidth( const std::wstring& Text, std::vector<eeFloat>& LinesWid
 	LinesWidth.clear();
 
 	eeFloat Width = 0, MaxWidth = 0;
-	Uint16 CharID;
+	Int32 CharID;
 	Int32 Lines = 1;
 
 	for (std::size_t i = 0; i < Text.size(); ++i) {
-		CharID = static_cast<Uint16>( Text.at(i) );
+		CharID = static_cast<Int32>( Text.at(i) );
 
-		Width += mGlyphs[CharID].Advance;
+		if ( CharID >= 0 && CharID < (Int32)mGlyphs.size() ) {
+			Width += mGlyphs[CharID].Advance;
 
-		if ( CharID == L'\t' )
-			Width += mGlyphs[CharID].Advance * 3;
+			if ( CharID == L'\t' )
+				Width += mGlyphs[CharID].Advance * 3;
 
-		if ( CharID == L'\n' ) {
-			Lines++;
-			eeFloat lWidth = ( CharID == L'\t' ) ? mGlyphs[CharID].Advance * 4.f : mGlyphs[CharID].Advance;
-			LinesWidth.push_back( Width - lWidth );
-			Width = 0;
+			if ( CharID == L'\n' ) {
+				Lines++;
+				eeFloat lWidth = ( CharID == L'\t' ) ? mGlyphs[CharID].Advance * 4.f : mGlyphs[CharID].Advance;
+				LinesWidth.push_back( Width - lWidth );
+				Width = 0;
+			}
+
+			if ( Width > MaxWidth )
+				MaxWidth = Width;
 		}
-
-		if ( Width > MaxWidth )
-			MaxWidth = Width;
 	}
 
 	if ( Text.size() && Text.at( Text.size() - 1 ) != '\n' ) {

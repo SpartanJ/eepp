@@ -19,14 +19,20 @@ namespace EE { namespace Utils {
 	/** @return The files and sub directories contained by a directory */
 	std::vector<std::string> EE_API FilesGetInPath( const std::string& path );
 
+	/** @return The files and sub directories contained by a directory */
+	std::vector<std::wstring> EE_API FilesGetInPath( const std::wstring& path );
+
 	/** @return The size of a file */
-	Uint32 EE_API FileSize( const std::string& Filepath);
+	Uint32 EE_API FileSize( const std::string& Filepath );
 
 	/** @return The System Time */
 	eeDouble EE_API GetSystemTime();
 
 	/** @return If directory exists, and is a directory */
 	bool EE_API IsDirectory( const std::string& path );
+
+	/** @return If directory exists, and is a directory */
+	bool EE_API IsDirectory( const std::wstring& path );
 
 	/** Creates a new directory */
 	bool EE_API MakeDir( const std::string& path, const Uint16& mode = 0770 );

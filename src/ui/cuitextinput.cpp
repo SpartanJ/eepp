@@ -12,7 +12,7 @@ cUITextInput::cUITextInput( const cUITextInput::CreateParams& Params ) :
 	mTextBuffer.SupportNewLine( Params.SupportNewLine );
 	mTextBuffer.SupportFreeEditing( Params.SupportFreeEditing );
 	mTextBuffer.MaxLenght( Params.MaxLenght );
-	mTextBuffer.SetReturnCallback( boost::bind( &cUITextInput::OnPressEnter, this ) );
+	mTextBuffer.SetReturnCallback( cb::Make0( this, &cUITextInput::PrivOnPressEnter ) );
 }
 
 cUITextInput::~cUITextInput() {
@@ -96,6 +96,10 @@ Uint32 cUITextInput::OnFocusLoss() {
 Uint32 cUITextInput::OnPressEnter() {
 	SendCommonEvent( cUIEvent::EventOnPressEnter );
 	return 0;
+}
+
+void cUITextInput::PrivOnPressEnter() {
+	OnPressEnter();
 }
 
 void cUITextInput::PushIgnoredChar( const Uint32& ch ) {

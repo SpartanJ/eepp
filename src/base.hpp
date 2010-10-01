@@ -8,6 +8,7 @@
 #include <cstdarg>
 #include <ctime>
 #include <cctype>
+#include <cassert>
 
 #include <memory>
 #include <algorithm>
@@ -24,9 +25,7 @@
 #include <list>
 #include <set>
 
-#include <boost/function.hpp>
-#include <boost/bind.hpp>
-#include <boost/lexical_cast.hpp>
+#include "helper/PlusCallback/callback.hpp"
 
 #include <SDL/SDL.h>
 
