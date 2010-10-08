@@ -25,6 +25,8 @@ class EE_API cShapeGroupManager : public tResourceManager<cShapeGroup>, public t
 		* @example Search for name "car" with extensions "png", i will try to find car00.png car01.png car02.png, and so on, it will continue if find something, otherwise it will stop ( it will always search at least for car00.png and car01.png )
 		*/
 		std::vector<cShape*> GetShapesByPattern( const std::string& name, const std::string& extension = "", cShapeGroup * SearchInShapeGroup = NULL );
+
+		void PrintResources();
 };
 
 }}

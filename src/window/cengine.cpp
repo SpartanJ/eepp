@@ -901,7 +901,7 @@ void cEngine::clipboard_get_scrap(int type, int *dstlen, char **dst) {
 	}
 
 	mVideoInfo.info.info.x11.lock_func();
-    if ( XGetWindowProperty( mVideoInfo.info.info.x11.display, owner, selection, 0, INT_MAX/4, False, format, &seln_type, &seln_format, &nbytes, &overflow, (unsigned char **)&src) == Success ) {
+    if ( XGetWindowProperty( mVideoInfo.info.info.x11.display, owner, selection, 0, INT_MAX/4, False, format, &seln_type, &seln_format, &nbytes, &overflow, (unsigned char **)&src ) == Success ) {
 		if ( seln_type == format ) {
 			*dstlen = clipboard_convert_scrap(type, NULL, src, nbytes);
 			*dst = (char *)eeMalloc( *dstlen );

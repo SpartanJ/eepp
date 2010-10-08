@@ -572,4 +572,17 @@ std::wstring SizeToWString( const Uint32& MemSize ) {
 	return std::wstring( toWStr( mem ) + size );
 }
 
+void Write32BitKey( Uint32 * Key, Uint32 Pos, Uint32 BitWrite ) {
+	if ( BitWrite )
+		( * Key ) |= ( 1 << Pos );
+	else {
+		if ( ( * Key ) & ( 1 << Pos ) )
+			( * Key ) &= ~( 1 << Pos );
+	}
+}
+
+bool Read32BitKey( Uint32 * Key, Uint32 Pos ) {
+	return 0 != ( ( * Key ) & ( 1 << Pos ) );
+}
+
 }}

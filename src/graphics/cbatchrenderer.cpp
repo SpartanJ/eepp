@@ -459,11 +459,11 @@ void cBatchRenderer::QuadsBegin() {
 	QuadsSetColor( eeColorA() );
 }
 
-void cBatchRenderer::QuadsSetColor( const eeColorA Color ) {
+void cBatchRenderer::QuadsSetColor( const eeColorA& Color ) {
 	mVerColor[0] = mVerColor[1] = mVerColor[2] = mVerColor[3] = Color;
 }
 
-void cBatchRenderer::QuadsSetColorFree( const eeColorA Color0, const eeColorA Color1, const eeColorA Color2, const eeColorA Color3 ) {
+void cBatchRenderer::QuadsSetColorFree( const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3 ) {
 	mVerColor[0] = Color0;
 	mVerColor[1] = Color1;
 	mVerColor[2] = Color2;
@@ -500,7 +500,7 @@ void cBatchRenderer::PointsBegin() {
 	PointSetColor( eeColorA() );
 }
 
-void cBatchRenderer::PointSetColor( const eeColorA Color ) {
+void cBatchRenderer::PointSetColor( const eeColorA& Color ) {
 	QuadsSetColor( Color );
 }
 
@@ -525,11 +525,11 @@ void cBatchRenderer::LinesBegin() {
 	PointSetColor( eeColorA() );
 }
 
-void cBatchRenderer::LinesSetColor( const eeColorA Color ) {
+void cBatchRenderer::LinesSetColor( const eeColorA& Color ) {
 	QuadsSetColor( Color );
 }
 
-void cBatchRenderer::LinesSetColorFree( const eeColorA Color0, const eeColorA Color1 ) {
+void cBatchRenderer::LinesSetColorFree( const eeColorA& Color0, const eeColorA& Color1 ) {
 	QuadsSetColorFree( Color0, Color1, Color0, Color0 );
 }
 
@@ -560,11 +560,11 @@ void cBatchRenderer::LineLoopBegin() {
 	PointSetColor( eeColorA() );
 }
 
-void cBatchRenderer::LineLoopSetColor( const eeColorA Color ) {
+void cBatchRenderer::LineLoopSetColor( const eeColorA& Color ) {
 	QuadsSetColor( Color );
 }
 
-void cBatchRenderer::LineLoopSetColorFree( const eeColorA Color0, const eeColorA Color1 ) {
+void cBatchRenderer::LineLoopSetColorFree( const eeColorA& Color0, const eeColorA& Color1 ) {
 	QuadsSetColorFree( Color0, Color1, Color0, Color0 );
 }
 
@@ -618,11 +618,11 @@ void cBatchRenderer::TriangleFanBegin() {
 	TriangleFanSetColor( eeColorA() );
 }
 
-void cBatchRenderer::TriangleFanSetColor( const eeColorA Color ) {
+void cBatchRenderer::TriangleFanSetColor( const eeColorA& Color ) {
 	QuadsSetColor( Color );
 }
 
-void cBatchRenderer::TriangleFanSetColorFree( const eeColorA Color0, const eeColorA Color1, const eeColorA Color2 ) {
+void cBatchRenderer::TriangleFanSetColorFree( const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2 ) {
 	QuadsSetColorFree( Color0, Color1, Color2, Color0 );
 }
 
@@ -666,11 +666,11 @@ void cBatchRenderer::TrianglesBegin() {
 	TrianglesSetColor( eeColorA() );
 }
 
-void cBatchRenderer::TrianglesSetColor( const eeColorA Color ) {
+void cBatchRenderer::TrianglesSetColor( const eeColorA& Color ) {
 	QuadsSetColor( Color );
 }
 
-void cBatchRenderer::TrianglesSetColorFree( const eeColorA Color0, const eeColorA Color1, const eeColorA Color2 ) {
+void cBatchRenderer::TrianglesSetColorFree( const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2 ) {
 	QuadsSetColorFree( Color0, Color1, Color2, Color0 );
 }
 

@@ -1,4 +1,5 @@
 #include "cuitextbox.hpp"
+#include "cuimanager.hpp"
 
 namespace EE { namespace UI {
 
@@ -27,7 +28,13 @@ void cUITextBox::Draw() {
 		eeVector2i Pos = mPos;
 		ControlToScreen( Pos );
 
-		mTextCache.Draw( (eeFloat)Pos.x + mAlignOffset.x, (eeFloat)Pos.y + mAlignOffset.y, Flags(), 1.f, 0.f, mBlend );
+		if ( mTextCache.GetTextWidth() ) {
+			cUIManager::instance()->ClipEnable( (eeFloat)Pos.x + mPadding.Left, (eeFloat)Pos.y + mPadding.Top, (eeFloat)mSize.Width() + mPadding.Right, (eeFloat)mSize.Height() + mPadding.Bottom );
+
+			mTextCache.Draw( (eeFloat)Pos.x + mAlignOffset.x + mPadding.Left + 1, (eeFloat)Pos.y + mAlignOffset.y + mPadding.Top, Flags(), 1.f, 0.f, mBlend );
+
+			cUIManager::instance()->ClipDisable();
+		}
 	}
 }
 
@@ -138,6 +145,14 @@ void cUITextBox::OnTextChanged() {
 
 void cUITextBox::OnFontChanged() {
 	SendCommonEvent( cUIEvent::EventOnFontChanged );
+}
+
+void cUITextBox::Padding( const eeRectf& padding ) {
+	mPadding = padding;
+}
+
+const eeRectf& cUITextBox::Padding() const {
+	return mPadding;
 }
 
 }}

@@ -85,11 +85,11 @@ cUIControl * cUIControlAnim::OverFind( const eeVector2i& Point ) {
 void cUIControlAnim::MatrixSet() {
 	eeVector2i Pos( mPos );
 
-	if ( mScale != 1.f || mAngle != 0.f || IsClipped() ) {
+	//if ( mScale != 1.f || mAngle != 0.f || IsClipped() ) {
 		ControlToScreen( Pos );
 
 		mScreenPos = Pos;
-	}
+	//}
 
 	if ( mScale != 1.f || mAngle != 0.f ) {
 		glPushMatrix();
@@ -199,30 +199,24 @@ void cUIControlAnim::CreateFadeOut( const eeFloat& Time ) {
 }
 
 void cUIControlAnim::BackgroundDraw() {
-	eeVector2i Pos( mPos.x, mPos.y );
-	ControlToScreen( Pos );
-
 	cPrimitives P;
 	P.SetColor( GetColor( mBackground.Color() ) );
 
 	if ( 4 == mBackground.Colors().size() ) {
-		P.DrawRectangle( (eeFloat)Pos.x, (eeFloat)Pos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), GetColor( mBackground.Colors()[0] ), GetColor( mBackground.Colors()[1] ), GetColor( mBackground.Colors()[2] ), GetColor( mBackground.Colors()[3] ), 0.f, 1.f, EE_DRAW_FILL, mBackground.Blend(), 1.0f, mBackground.Corners() );
+		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), GetColor( mBackground.Colors()[0] ), GetColor( mBackground.Colors()[1] ), GetColor( mBackground.Colors()[2] ), GetColor( mBackground.Colors()[3] ), 0.f, 1.f, EE_DRAW_FILL, mBackground.Blend(), 1.0f, mBackground.Corners() );
 	} else {
-		P.DrawRectangle( (eeFloat)Pos.x, (eeFloat)Pos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_FILL, mBackground.Blend(), 1.0f, mBackground.Corners() );
+		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_FILL, mBackground.Blend(), 1.0f, mBackground.Corners() );
 	}
 }
 
 void cUIControlAnim::BorderDraw() {
-	eeVector2i Pos( mPos.x, mPos.y );
-	ControlToScreen( Pos );
-
 	cPrimitives P;
 	P.SetColor( GetColor( mBorder.Color() ) );
 
 	if ( IsClipped() )
-		P.DrawRectangle( (eeFloat)Pos.x + 0.1f, (eeFloat)Pos.y + 0.1f, (eeFloat)mSize.Width() - 0.1f, (eeFloat)mSize.Height() - 0.1f, 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder.Width(), mBackground.Corners() );
+		P.DrawRectangle( (eeFloat)mScreenPos.x + 0.1f, (eeFloat)mScreenPos.y + 0.1f, (eeFloat)mSize.Width() - 0.1f, (eeFloat)mSize.Height() - 0.1f, 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder.Width(), mBackground.Corners() );
 	else
-		P.DrawRectangle( (eeFloat)Pos.x, (eeFloat)Pos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder.Width(), mBackground.Corners() );
+		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder.Width(), mBackground.Corners() );
 }
 
 eeColorA cUIControlAnim::GetColor( const eeColorA& Col ) {

@@ -9,6 +9,9 @@
 #include "cuievent.hpp"
 #include "cuieventkey.hpp"
 #include "cuieventmouse.hpp"
+#include "cuiskin.hpp"
+#include "cuitheme.hpp"
+#include "cuithememanager.hpp"
 
 namespace EE { namespace UI {
 
@@ -195,6 +198,12 @@ class EE_API cUIControl {
 		cUIBorder * Border();
 
 		virtual ~cUIControl();
+
+		void SetTheme( const std::string& Theme );
+
+		virtual void SetTheme( cUITheme * Theme );
+
+		void SetTheme( cUITheme * Theme, const std::string& ControlName );
 	protected:
 		friend class cUIManager;
 		friend class cUIDragable;
@@ -224,6 +233,8 @@ class EE_API cUIControl {
 
 		std::map< Uint32, std::map<Uint32, UIEventCallback> > mEvents;
 		Uint32			mNumCallBacks;
+
+		cUISkin	*		mSkin;
 
 		virtual void OnVisibleChange();
 
@@ -282,6 +293,8 @@ class EE_API cUIControl {
 		void SendMouseEvent( const Uint32& Event, const eeVector2i& Pos, const Uint32& Flags );
 
 		void SendCommonEvent( const Uint32& Event );
+
+		void SetSkinState( const Uint32& State );
 };
 
 }}

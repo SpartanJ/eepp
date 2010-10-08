@@ -147,5 +147,10 @@
 	#include "ui/cuitextbox.hpp"
 	#include "ui/cuitextinput.hpp"
 	#include "ui/cuimanager.hpp"
+	#include "ui/cuiskin.hpp"
+	#include "ui/cuiskinsimple.hpp"
+	#include "ui/cuiskincomplex.hpp"
+	#include "ui/cuitheme.hpp"
+	#include "ui/cuithememanager.hpp"
 	using namespace EE::UI;
 #endif

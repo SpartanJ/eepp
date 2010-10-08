@@ -102,12 +102,26 @@ namespace EE { namespace Utils {
 	/** Convert a size represented in bytes, to a string converted in byes/kb/mb/tb.
 	* @example 10485760 -> "10.0 MB"
 	*/
-	std::string SizeToString( const Uint32& MemSize );
+	std::string EE_API SizeToString( const Uint32& MemSize );
 
 	/** Convert a size represented in bytes, to a wstring converted in byes/kb/mb/tb.
 	* @example 10485760 -> "10.0 MB"
 	*/
-	std::wstring SizeToWString( const Uint32& MemSize );
+	std::wstring EE_API SizeToWString( const Uint32& MemSize );
+
+	/** Write a bit into the Key in the position defined.
+	* @param Key The Key to write
+	* @param Pos The Position of the bit
+	* @param BitWrite 0 for write 0, any other to write 1.
+	*/
+	void Write32BitKey( Uint32 * Key, Uint32 Pos, Uint32 BitWrite );
+
+	/** Read a bit from a 32 bit key, in the position defined
+	* @param Key The Key to read
+	* @param Pos The Position in the key to read
+	* @return True if the bit is 1
+	*/
+	bool Read32BitKey( Uint32 * Key, Uint32 Pos );
 }
 
 }

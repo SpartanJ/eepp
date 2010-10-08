@@ -2,15 +2,6 @@
 
 namespace EE { namespace Graphics { namespace Private {
 
-static void _WriteBit( Uint32 * Key, Uint8 Pos, Uint32 BitWrite ) {
-	if ( BitWrite )
-		( * Key ) |= ( 1 << Pos );
-	else {
-		if ( ( * Key ) & ( 1 << Pos ) )
-			( * Key ) &= ~( 1 << Pos );
-	}
-}
-
 cGL::cGL() :
 	mExtensions(0)
 {
@@ -22,7 +13,7 @@ cGL::~cGL() {
 }
 
 void cGL::WriteExtension( Uint8 Pos, Uint32 BitWrite ) {
-	_WriteBit( &mExtensions, Pos, BitWrite );
+	Write32BitKey( &mExtensions, Pos, BitWrite );
 }
 
 void cGL::Init() {

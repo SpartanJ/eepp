@@ -159,12 +159,12 @@ void cShape::OffsetY( const eeFloat& offsety ) {
 	mOffSetY = offsety;
 }
 
-void cShape::Draw( const eeFloat& X, const eeFloat& Y, const eeRGBA& Color, const eeFloat& Angle, const eeFloat& Scale, const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
+void cShape::Draw( const eeFloat& X, const eeFloat& Y, const eeColorA& Color, const eeFloat& Angle, const eeFloat& Scale, const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
 	if ( NULL != mTexture )
 		mTexture->DrawEx( X + mOffSetX, Y + mOffSetY, mDestWidth, mDestHeight, Angle, Scale, Color, Color, Color, Color, Blend, Effect, ScaleRendered, mSrcRect );
 }
 
-void cShape::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeRGBA& Color0, const eeRGBA& Color1, const eeRGBA& Color2, const eeRGBA& Color3, const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
+void cShape::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
 	if ( NULL != mTexture )
 		mTexture->DrawEx( X + mOffSetX, Y + mOffSetY, mDestWidth, mDestHeight, Angle, Scale, Color0, Color1, Color2, Color3, Blend, Effect, ScaleRendered, mSrcRect );
 }
@@ -173,7 +173,7 @@ cTexture * cShape::GetTexture() {
 	return mTexture;
 }
 
-void cShape::ReplaceColor(eeColorA ColorKey, eeColorA NewColor) {
+void cShape::ReplaceColor( eeColorA ColorKey, eeColorA NewColor ) {
 	mTexture->Lock();
 
 	for ( eeInt y = mSrcRect.Top; y < mSrcRect.Bottom; y++ ) {
@@ -382,6 +382,12 @@ bool cShape::SaveToFile(const std::string& filepath, const EE_SAVE_TYPE& Format)
 	Unlock();
 
 	return Res;
+}
+
+void cShape::ResetDestWidthAndHeight() {
+	eeSize Size = mSrcRect.Size();
+	mDestWidth 	= Size.Width();
+	mDestHeight = Size.Height();
 }
 
 }}

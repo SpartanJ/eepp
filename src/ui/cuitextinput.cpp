@@ -7,6 +7,8 @@ cUITextInput::cUITextInput( const cUITextInput::CreateParams& Params ) :
 	cUITextBox( Params ),
 	mCursorPos(0)
 {
+	mType |= UI_TYPE_GET(UI_TYPE_TEXTINPUT);
+
 	mTextBuffer.Start();
 	mTextBuffer.Active( false );
 	mTextBuffer.SupportNewLine( Params.SupportNewLine );
@@ -44,7 +46,7 @@ void cUITextInput::Update() {
 void cUITextInput::Draw() {
 	cUITextBox::Draw();
 
-	if ( Visible() && mTextBuffer.Active() && mTextBuffer.SupportFreeEditing() ) {
+	if ( mVisible && mTextBuffer.Active() && mTextBuffer.SupportFreeEditing() ) {
 		mWaitCursorTime += cUIManager::instance()->Elapsed();
 
 		if ( mShowingWait ) {
@@ -59,8 +61,8 @@ void cUITextInput::Draw() {
 			eeVector2i Pos = mPos;
 			ControlToScreen( Pos );
 
-			eeFloat CurPosX = Pos.x + mAlignOffset.x + mCurPos.x + 1;
-			eeFloat CurPosY = Pos.y + mAlignOffset.y + mCurPos.y;
+			eeFloat CurPosX = Pos.x + mAlignOffset.x + mCurPos.x + 1 + mPadding.Left;
+			eeFloat CurPosY = Pos.y + mAlignOffset.y + mCurPos.y + mPadding.Top;
 
 			if ( CurPosX > (eeFloat)Pos.x + (eeFloat)mSize.x )
 				CurPosX = (eeFloat)Pos.x + (eeFloat)mSize.x;
@@ -83,6 +85,7 @@ Uint32 cUITextInput::OnFocus() {
 	ResetWaitCursor();
 
 	cUITextBox::OnFocus();
+
 	return 1;
 }
 
@@ -90,6 +93,7 @@ Uint32 cUITextInput::OnFocusLoss() {
 	mTextBuffer.Active( false );
 
 	cUITextBox::OnFocusLoss();
+
 	return 1;
 }
 
@@ -128,9 +132,13 @@ void cUITextInput::AlignFix() {
 
 	if ( tX < 0.f )
 		mAlignOffset.x = -( mAlignOffset.x + ( tW - mAlignOffset.x ) );
-	else if ( tX > mSize.Width() )
-		mAlignOffset.x = mSize.Width() - ( mAlignOffset.x + ( tW - mAlignOffset.x ) );
+	else if ( tX > mSize.Width() + mPadding.Right )
+		mAlignOffset.x = mSize.Width() + mPadding.Right - ( mAlignOffset.x + ( tW - mAlignOffset.x ) );
 
+}
+
+void cUITextInput::SetTheme( cUITheme * Theme ) {
+	cUIControl::SetTheme( Theme, "textinput" );
 }
 
 }}

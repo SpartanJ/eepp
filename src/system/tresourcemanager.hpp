@@ -35,6 +35,8 @@ class tResourceManager {
 		Uint32 Exists( const Uint32& Id );
 
 		void Destroy();
+
+		void PrintNames();
 	protected:
 		std::list<T*> mResources;
 		bool mUniqueId;
@@ -70,7 +72,12 @@ T * tResourceManager<T>::Add( T * Resource ) {
 
 				return Resource;
 			} else {
-				Resource->Name( Resource->Name() + intToStr( c + 1 ) );
+				std::string RealName( Resource->Name() );
+
+				while ( Count( Resource->Id() ) ) {
+					c++;
+					Resource->Name( RealName + intToStr( c ) );
+				}
 
 				return Add( Resource );
 			}
@@ -137,6 +144,19 @@ T * tResourceManager<T>::GetById( const Uint32& id ) {
 	}
 
 	return NULL;
+}
+
+template <class T>
+void tResourceManager<T>::PrintNames() {
+	typename std::list<T*>::reverse_iterator it;
+
+	T * sp = NULL;
+
+	for ( it = mResources.rbegin(); it != mResources.rend(); it++ ) {
+		sp = (*it);
+
+		printf( "'%s'\n", sp->Name().c_str() );
+	}
 }
 
 template <class T>

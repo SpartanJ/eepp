@@ -12,55 +12,60 @@ class EE_API cUITextBox : public cUIControlAnim {
 				inline CreateParams() : cUIControl::CreateParams() {
 					Font = NULL;
 				}
-				
+
 				inline ~CreateParams() {}
-				
+
 				cFont * 	Font;
 				eeColorA 	FontColor;
 				eeColorA 	FontShadowColor;
 		};
-		
+
 		cUITextBox( const cUITextBox::CreateParams& Params );
-		
+
 		~cUITextBox();
-		
+
 		virtual void Draw();
-		
+
 		virtual void Alpha( const eeFloat& alpha );
-		
+
 		cFont * Font() const;
-		
+
 		void Font( cFont * font );
-		
+
 		const std::wstring& Text();
-		
+
 		void Text( const std::wstring& text );
-		
+
 		void Text( const std::string& text );
-		
+
 		const eeColorA& Color() const;
-		
+
 		void Color( const eeColorA& color );
-		
+
 		const eeColorA& ShadowColor() const;
-		
+
 		void ShadowColor( const eeColorA& color );
-		
+
 		virtual void OnTextChanged();
-		
+
 		virtual void OnFontChanged();
+
+		void Padding( const eeRectf& padding );
+
+		const eeRectf& Padding() const;
 	protected:
 		cTextCache 		mTextCache;
 		eeColorA 		mFontColor;
 		eeColorA 		mFontShadowColor;
 		eeVector2f 		mAlignOffset;
-		
+		eeRectf			mPadding;
+
 		virtual void OnSizeChange();
-		
+
 		void AutoShrink();
-		
+
 		void AutoSize();
-		
+
 		void AutoAlign();
 };
 

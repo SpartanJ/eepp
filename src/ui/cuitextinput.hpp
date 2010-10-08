@@ -38,6 +38,8 @@ class EE_API cUITextInput : public cUITextBox {
 		virtual Uint32 OnPressEnter();
 
 		void PushIgnoredChar( const Uint32& ch );
+
+		virtual void SetTheme( cUITheme * Theme );
 	protected:
 		cInputTextBuffer mTextBuffer;
 		bool mShowingWait;

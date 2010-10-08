@@ -407,9 +407,9 @@ void cEETest::CreateUI() {
 	//InputParams.Background.Corners(6);
 	InputParams.Border.Color(0xFF979797);
 	InputParams.Background.Colors( eeColorA(0x99AAAAAA), eeColorA(0x99CCCCCC), eeColorA(0x99CCCCCC), eeColorA(0x99AAAAAA) );
-	InputParams.PosSet( 10, 220 );
-	InputParams.Size = eeSize( 300, 18 );
-	InputParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER;
+	InputParams.PosSet( 10, 216 );
+	InputParams.Size = eeSize( 300, 22 );
+	InputParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE; // | UI_BORDER | UI_FILL_BACKGROUND
 	InputParams.Font = TTF;
 	InputParams.SupportNewLine = false;
 	cUITextInput * Input = eeNew( cUITextInput, ( InputParams ) );
@@ -418,6 +418,36 @@ void cEETest::CreateUI() {
 
 	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.\nPowered by Text Shrinker =)";
 	TTF->ShrinkText( mBuda, 400 );
+
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_normal.png" ), "aqua_textinput_normal" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_focus.png" ), "aqua_textinput_focus" ) ) );
+
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_normal_dl.png" ), "aqua_textinput_normal_dl" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_normal_dr.png" ), "aqua_textinput_normal_dr" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_normal_ml.png" ), "aqua_textinput_normal_ml" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_normal_mr.png" ), "aqua_textinput_normal_mr" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_normal_u.png" ), "aqua_textinput_normal_u" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_normal_d.png" ), "aqua_textinput_normal_d" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_normal_ul.png" ), "aqua_textinput_normal_ul" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_normal_ur.png" ), "aqua_textinput_normal_ur" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_normal_m.png" ), "aqua_textinput_normal_m" ) ) );
+
+	cUITheme * AquaTheme = eeNew( cUITheme, ( "aqua", "aqua" ) );
+
+	cUISkinComplex * AquaTextInput = eeNew( cUISkinComplex, ( "aqua_textinput" ) );
+
+	AquaTextInput->SetColor( cUISkin::StateNormal	, eeColorA( 240, 240, 255, 255 ) );
+	AquaTextInput->SetColor( cUISkin::StateFocus	, eeColorA( 250, 250, 255, 255 ) );
+
+	AquaTheme->Add( AquaTextInput );
+
+	cUIThemeManager::instance()->Add( AquaTheme );
+
+	Input->SetTheme( cUIThemeManager::instance()->GetByName( "aqua" ) );
+
+	Input->Padding( eeRectf( 4, -2, -8, 0 ) );
+
+	Child->SetTheme( cUIThemeManager::instance()->GetByName( "aqua" ), "textinput" );
 
 	mBudaTC = eeNew( cTextCache, ( TTF, mBuda, eeColorA(255,255,255,255) ) );
 }
@@ -438,7 +468,6 @@ void cEETest::CmdSetPartsNum ( const std::vector < std::wstring >& params ) {
 			Con.PushText( L"Invalid Parameter. Expected int value from '" + params[1] + L"'." );
 		}
 	}
-
 }
 
 void cEETest::OnTextureLoaded( cResourceLoader * ResLoaded ) {

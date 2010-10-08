@@ -31,6 +31,13 @@ cShape * cShapeGroupManager::GetShapeById( const Uint32& Id ) {
 	return NULL;
 }
 
+void cShapeGroupManager::PrintResources() {
+	std::list<cShapeGroup*>::iterator it;
+
+	for ( it = mResources.begin(); it != mResources.end(); it++ )
+		(*it)->PrintNames();
+}
+
 std::vector<cShape*> cShapeGroupManager::GetShapesByPattern( const std::string& name, const std::string& extension, cShapeGroup * SearchInShapeGroup ) {
 	std::vector<cShape*> 	Shapes;
 	std::string 			search;

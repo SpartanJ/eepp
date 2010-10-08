@@ -43,8 +43,11 @@ void cUIManager::Shutdown() {
 		mFocusControl = NULL;
 
 		eeSAFE_DELETE( mControl );
+
 		mInit = false;
 	}
+
+	cUIThemeManager::DestroySingleton();
 }
 
 void cUIManager::InputCallback( EE_Event * Event ) {

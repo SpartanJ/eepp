@@ -30,7 +30,7 @@ class EE_API cUIBackground {
 	protected:
 		std::vector<eeColorA>	mColor;
 
-		EE_PRE_BLEND_FUNC			mBlendMode;
+		EE_PRE_BLEND_FUNC		mBlendMode;
 		eeUint					mCorners;
 };
 

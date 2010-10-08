@@ -17,7 +17,8 @@ cUIControl::cUIControl( const CreateParams& Params ) :
 	mBorder( Params.Border ),
 	mControlFlags( 0 ),
 	mBlend( Params.Blend ),
-	mNumCallBacks(0)
+	mNumCallBacks(0),
+	mSkin(NULL)
 {
 	mType |= UI_TYPE_GET(UI_TYPE_CONTROL);
 
@@ -195,11 +196,16 @@ void cUIControl::Close() {
 }
 
 void cUIControl::Draw() {
-	if ( mFlags & UI_FILL_BACKGROUND )
-		BackgroundDraw();
+	if ( mVisible ) {
+		if ( mFlags & UI_FILL_BACKGROUND )
+			BackgroundDraw();
 
-	if ( mFlags & UI_BORDER )
-		BorderDraw();
+		if ( mFlags & UI_BORDER )
+			BorderDraw();
+
+		if ( NULL != mSkin )
+			mSkin->Draw( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height() );
+	}
 }
 
 void cUIControl::Update() {
@@ -238,6 +244,9 @@ Uint32 cUIControl::OnMouseMove( const eeVector2i& Pos, const Uint32 Flags ) {
 
 Uint32 cUIControl::OnMouseDown( const eeVector2i& Pos, const Uint32 Flags ) {
 	SendMouseEvent( cUIEvent::EventMouseDown, Pos, Flags );
+
+	SetSkinState( cUISkin::StateMouseDown );
+
 	return 0;
 }
 
@@ -258,21 +267,33 @@ Uint32 cUIControl::OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags
 
 Uint32 cUIControl::OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags ) {
 	SendMouseEvent( cUIEvent::EventMouseEnter, Pos, Flags );
+
+	SetSkinState( cUISkin::StateMouseEnter );
+
 	return 1;
 }
 
 Uint32 cUIControl::OnMouseExit( const eeVector2i& Pos, const Uint32 Flags ) {
 	SendMouseEvent( cUIEvent::EventMouseExit, Pos, Flags );
+
+	SetSkinState( cUISkin::StateMouseExit );
+
 	return 1;
 }
 
 Uint32 cUIControl::OnFocus() {
 	SendCommonEvent( cUIEvent::EventOnFocus );
+
+	SetSkinState( cUISkin::StateFocus );
+
 	return 0;
 }
 
 Uint32 cUIControl::OnFocusLoss() {
 	SendCommonEvent( cUIEvent::EventOnFocusLoss );
+
+	SetSkinState( cUISkin::StateLostFocus );
+
 	return 0;
 }
 
@@ -400,30 +421,24 @@ void cUIControl::OnSizeChange() {
 }
 
 void cUIControl::BackgroundDraw() {
-	eeVector2i Pos( mPos.x, mPos.y );
-	ControlToScreen( Pos );
-
 	cPrimitives P;
 	P.SetColor( mBackground.Color() );
 
 	if ( 4 == mBackground.Colors().size() ) {
-		P.DrawRectangle( (eeFloat)Pos.x, (eeFloat)Pos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), mBackground.Colors()[0], mBackground.Colors()[1], mBackground.Colors()[2], mBackground.Colors()[3], 0.f, 1.f, EE_DRAW_FILL, mBackground.Blend(), 1.0f, mBackground.Corners() );
+		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), mBackground.Colors()[0], mBackground.Colors()[1], mBackground.Colors()[2], mBackground.Colors()[3], 0.f, 1.f, EE_DRAW_FILL, mBackground.Blend(), 1.0f, mBackground.Corners() );
 	} else {
-		P.DrawRectangle( (eeFloat)Pos.x, (eeFloat)Pos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_FILL, mBackground.Blend(), 1.0f, mBackground.Corners() );
+		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_FILL, mBackground.Blend(), 1.0f, mBackground.Corners() );
 	}
 }
 
 void cUIControl::BorderDraw() {
-	eeVector2i Pos( mPos.x, mPos.y );
-	ControlToScreen( Pos );
-
 	cPrimitives P;
 	P.SetColor( mBorder.Color() );
 
 	if ( IsClipped() )
-		P.DrawRectangle( (eeFloat)Pos.x + 0.1f, (eeFloat)Pos.y + 0.1f, (eeFloat)mSize.Width() - 0.1f, (eeFloat)mSize.Height() - 0.1f, 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder.Width(), mBackground.Corners() );
+		P.DrawRectangle( (eeFloat)mScreenPos.x + 0.1f, (eeFloat)mScreenPos.y + 0.1f, (eeFloat)mSize.Width() - 0.1f, (eeFloat)mSize.Height() - 0.1f, 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder.Width(), mBackground.Corners() );
 	else
-		P.DrawRectangle( (eeFloat)Pos.x, (eeFloat)Pos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder.Width(), mBackground.Corners() );
+		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder.Width(), mBackground.Corners() );
 }
 
 const Uint32& cUIControl::ControlFlags() const {
@@ -509,13 +524,13 @@ void cUIControl::ClipDisable() {
 }
 
 void cUIControl::MatrixSet() {
-	if ( IsClipped() ) {
+	//if ( IsClipped() ) {
 		eeVector2i Pos( mPos );
 
 		ControlToScreen( Pos );
 
 		mScreenPos = Pos;
-	}
+	//}
 }
 
 void cUIControl::MatrixUnset() {
@@ -751,6 +766,24 @@ cUIBackground * cUIControl::Background() {
 
 cUIBorder * cUIControl::Border() {
 	return &mBorder;
+}
+
+void cUIControl::SetTheme( const std::string& Theme ) {
+	SetTheme( cUIThemeManager::instance()->GetByName( Theme ) );
+}
+
+void cUIControl::SetTheme( cUITheme * Theme ) {
+	SetTheme( Theme, "control" );
+}
+
+void cUIControl::SetTheme( cUITheme * Theme, const std::string& ControlName ) {
+	if ( NULL != Theme )
+		mSkin = Theme->GetByName( Theme->Abbr() + "_" + ControlName );
+}
+
+void cUIControl::SetSkinState( const Uint32& State ) {
+	if ( NULL != mSkin )
+		mSkin->SetState( State );
 }
 
 }}

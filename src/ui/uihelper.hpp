@@ -1,5 +1,5 @@
-#ifndef EE_UIHELPER_HPP 
-#define EE_UIHELPER_HPP 
+#ifndef EE_UIHELPER_HPP
+#define EE_UIHELPER_HPP
 
 #include "base.hpp"
 
@@ -37,6 +37,7 @@ Uint32 EE_API VAlignGet( Uint32 Flags );
 #define UI_TYPE_CONTROL_ANIM 	(1)
 #define UI_TYPE_GFX 		 	(2)
 #define UI_TYPE_TEXTBOX 	 	(3)
+#define UI_TYPE_TEXTINPUT		(4)
 
 #define UI_TYPE_GET(X) 			( 1 << (X) )
 

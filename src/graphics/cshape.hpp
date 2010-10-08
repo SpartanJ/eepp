@@ -51,9 +51,9 @@ class EE_API cShape {
 
 		void OffsetY( const eeFloat& offsety );
 
-		void Draw( const eeFloat& X, const eeFloat& Y, const eeRGBA& Color = eeRGBA(), const eeFloat& Angle = 0.f, const eeFloat& Scale = 1.f, const EE_PRE_BLEND_FUNC& Blend = ALPHA_NORMAL, const EE_RENDERTYPE& Effect = RN_NORMAL, const bool& ScaleRendered = true );
+		void Draw( const eeFloat& X, const eeFloat& Y, const eeColorA& Color = eeColorA(), const eeFloat& Angle = 0.f, const eeFloat& Scale = 1.f, const EE_PRE_BLEND_FUNC& Blend = ALPHA_NORMAL, const EE_RENDERTYPE& Effect = RN_NORMAL, const bool& ScaleRendered = true );
 
-		void Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeRGBA& Color0 = eeRGBA(), const eeRGBA& Color1 = eeRGBA(), const eeRGBA& Color2 = eeRGBA(), const eeRGBA& Color3 = eeRGBA(), const EE_PRE_BLEND_FUNC& Blend = ALPHA_NORMAL, const EE_RENDERTYPE& Effect = RN_NORMAL, const bool& ScaleRendered = true );
+		void Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color0 = eeColorA(), const eeColorA& Color1 = eeColorA(), const eeColorA& Color2 = eeColorA(), const eeColorA& Color3 = eeColorA(), const EE_PRE_BLEND_FUNC& Blend = ALPHA_NORMAL, const EE_RENDERTYPE& Effect = RN_NORMAL, const bool& ScaleRendered = true );
 
 		cTexture * GetTexture();
 
@@ -86,6 +86,8 @@ class EE_API cShape {
 		const Uint8* GetPixelsPtr();
 
 		bool SaveToFile(const std::string& filepath, const EE_SAVE_TYPE& Format);
+
+		void ResetDestWidthAndHeight();
 	protected:
 		Uint8 *		mPixels;
 		Uint8 *		mAlpha;
