@@ -5,7 +5,7 @@
 namespace EE { namespace Graphics {
 
 cFrameBufferPBuffer::cFrameBufferPBuffer()
-#if EE_PLATFORM == EE_PLATFORM_WIN32
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	: cFrameBuffer(),
 	mDeviceContext( NULL ),
 	mPBuffer( NULL ),
@@ -23,7 +23,7 @@ cFrameBufferPBuffer::cFrameBufferPBuffer()
 }
 
 cFrameBufferPBuffer::cFrameBufferPBuffer( const Uint32& Width, const Uint32& Height, bool DepthBuffer )
-#if EE_PLATFORM == EE_PLATFORM_WIN32
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	: cFrameBuffer(),
 	mDeviceContext( NULL ),
 	mPBuffer( NULL ),
@@ -42,7 +42,7 @@ cFrameBufferPBuffer::cFrameBufferPBuffer( const Uint32& Width, const Uint32& Hei
 }
 
 cFrameBufferPBuffer::~cFrameBufferPBuffer() {
-#if EE_PLATFORM == EE_PLATFORM_WIN32
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	if ( mContext )
 		wglDeleteContext( mContext );
 
@@ -66,7 +66,7 @@ cFrameBufferPBuffer::~cFrameBufferPBuffer() {
 }
 
 bool cFrameBufferPBuffer::IsSupported() {
-#if EE_PLATFORM == EE_PLATFORM_WIN32
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	return WGLEW_ARB_pbuffer && WGLEW_ARB_pixel_format;
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
 	return glxewIsSupported("GLX_SGIX_pbuffer");
@@ -87,7 +87,7 @@ bool cFrameBufferPBuffer::Create( const Uint32& Width, const Uint32& Height, boo
 	mHeight 		= Height;
 	mHasDepthBuffer = DepthBuffer;
 
-#if EE_PLATFORM == EE_PLATFORM_WIN32
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	HDC currentDC = wglGetCurrentDC();
 
 	int attributes[] =
@@ -210,7 +210,7 @@ bool cFrameBufferPBuffer::Create( const Uint32& Width, const Uint32& Height, boo
 void cFrameBufferPBuffer::Bind() {
 	bool ChangeContext = false;
 
-	#if EE_PLATFORM == EE_PLATFORM_WIN32
+	#if EE_PLATFORM == EE_PLATFORM_WIN
 	if ( mDeviceContext && mContext ) {
 		if ( wglGetCurrentContext() != mContext ) {
 			ChangeContext = true;

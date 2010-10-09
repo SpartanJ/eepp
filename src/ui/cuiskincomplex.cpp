@@ -115,7 +115,7 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 }
 
 void cUISkinComplex::SetSkin( const Uint32& State ) {
-	//eeASSERT ( State < UISkinStates::StateCount );
+	eeASSERT ( State < cUISkin::StateCount );
 
 	for ( Uint32 Side = 0; Side < SideCount; Side++ ) {
 
@@ -127,18 +127,22 @@ void cUISkinComplex::SetSkin( const Uint32& State ) {
 }
 
 cShape * cUISkinComplex::GetSkin( const Uint32& State ) const {
-	//eeASSERT ( State < UISkinStates::StateCount );
+	eeASSERT ( State < cUISkin::StateCount );
 
 	return mShape[ State ][ 0 ];
 }
 
 void cUISkinComplex::SetState( const Uint32& State ) {
-	//eeASSERT ( State < UISkinStates::StateCount );
+	eeASSERT ( State < cUISkin::StateCount );
+
+	if ( mCurState == State )
+		return;
 
 	if ( !Read32BitKey( &mColorDefault, State ) || NULL != mShape[ State ][ 0 ] ) {
 		StateNormalToState( State );
 
-		mCurState = State;
+		mLastState 	= mCurState;
+		mCurState 	= State;
 	} else
 		StateBack( State );
 }
@@ -149,6 +153,20 @@ void cUISkinComplex::StateNormalToState( const Uint32& State ) {
 			mShape[ State ][ Side ] = mShape[ StateNormal ][ Side ];
 		}
 	}
+}
+
+cUISkinComplex * cUISkinComplex::Copy( const std::string& NewName, const bool& CopyColorsState ) {
+	cUISkinComplex * SkinC = eeNew( cUISkinComplex, ( NewName ) );
+
+	if ( CopyColorsState ) {
+		SkinC->mColorDefault = mColorDefault;
+
+		memcpy( &SkinC->mColor[0], &mColor[0], StateCount * sizeof(eeColorA) );
+	}
+
+	memcpy( &SkinC->mShape[0], &mShape[0], StateCount * SideCount * sizeof(cShape*) );
+
+	return SkinC;
 }
 
 }}

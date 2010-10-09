@@ -18,7 +18,8 @@ const char * cUISkin::GetSkinStateName( const Uint32& State ) {
 cUISkin::cUISkin( const std::string& Name ) :
 	mName( Name ),
 	mNameHash( MakeHash( mName ) ),
-	mCurState(0)
+	mCurState(0),
+	mLastState(0)
 {
 	mColorDefault	= 0xFFFFFFFF;
 
@@ -30,7 +31,7 @@ cUISkin::~cUISkin() {
 }
 
 void cUISkin::SetColor( const Uint32& State, const eeColorA& Color ) {
-	//eeASSERT ( State < StateCount );
+	eeASSERT ( State < StateCount );
 
 	Write32BitKey( &mColorDefault, State, 0 );
 
@@ -38,13 +39,13 @@ void cUISkin::SetColor( const Uint32& State, const eeColorA& Color ) {
 }
 
 const eeColorA& cUISkin::GetColor( const Uint32& State ) const {
-	//eeASSERT ( State < StateCount );
+	eeASSERT ( State < StateCount );
 
 	return mColor[ State ];
 }
 
 void cUISkin::SetState( const Uint32& State ) {
-	//eeASSERT ( State < StateCount );
+	eeASSERT ( State < StateCount );
 
 	if ( !Read32BitKey( &mColorDefault, State ) )
 		mCurState = State;
@@ -75,8 +76,21 @@ void cUISkin::SetSkins() {
 }
 
 void cUISkin::StateBack( const Uint32& State ) {
+	if ( StateFocus == State && StateMouseEnter == mCurState && StateNormal == mLastState ) {
+		return;
+	}
+
 	if ( !( mCurState == StateFocus && ( State == StateMouseEnter || State == StateMouseExit || State == StateMouseDown ) ) ) {
-		mCurState = StateNormal;
+		mLastState 	= mCurState;
+		mCurState 	= StateNormal;
+	}
+}
+
+void cUISkin::SetPrevState() {
+	if ( StateMouseDown == mCurState ) {
+		Uint32 State = mCurState;
+		mCurState = mLastState;
+		mLastState = State;
 	}
 }
 

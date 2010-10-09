@@ -62,7 +62,7 @@ void cUIDragable::Update() {
 		return;
 
 	if ( mDragging ) {
-		if ( !( cInput::instance()->PressTrigger() & mDragButton ) ) {
+		if ( !( cInput::instance()->PressTrigger() & EE_BUTTON( mDragButton ) ) ) {
 			mDragging = false;
 			return;
 		}
@@ -74,6 +74,8 @@ void cUIDragable::Update() {
 			mDraggingPoint 	= Pos;
 
 			mPos += ( mDragPoint - mDraggingPoint ) * (eeInt)-1;
+
+			OnPosChange();
 		} else
 			mDragPoint = mDraggingPoint;
 	}

@@ -70,7 +70,7 @@ std::vector < std::wstring > SplitString ( const std::wstring& str, const Uint32
 	std::wstring tmpstr;
 
 	for ( eeUint i = 0; i < str.size(); i++ ) {
-		#if EE_PLATFORM == EE_PLATFORM_WIN32
+		#if EE_PLATFORM == EE_PLATFORM_WIN
 		if ( str[i] == splitchar ) {
 		#else
 		if ( str[i] == (Int32)splitchar ) {
@@ -199,7 +199,7 @@ void InsertChar( std::wstring& str, const eeUint& pos, const Uint32& tchar ) {
 std::string StoragePath( std::string appname ) {
 	char path[256];
 
-	#if EE_PLATFORM == EE_PLATFORM_WIN32
+	#if EE_PLATFORM == EE_PLATFORM_WIN
 		#ifdef EE_COMPILER_MSVC
 
 		char * ppath;

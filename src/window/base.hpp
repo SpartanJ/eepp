@@ -5,7 +5,7 @@
 
 #include <SDL/SDL_syswm.h>
 
-#if EE_PLATFORM == EE_PLATFORM_WIN32
+#if EE_PLATFORM == EE_PLATFORM_WIN
 #include "../helper/glew/wglew.h"
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
 #include "../helper/glew/glxew.h"

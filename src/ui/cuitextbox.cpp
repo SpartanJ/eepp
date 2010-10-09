@@ -25,15 +25,14 @@ void cUITextBox::Draw() {
 	if ( mVisible ) {
 		cUIControl::Draw();
 
-		eeVector2i Pos = mPos;
-		ControlToScreen( Pos );
-
 		if ( mTextCache.GetTextWidth() ) {
-			cUIManager::instance()->ClipEnable( (eeFloat)Pos.x + mPadding.Left, (eeFloat)Pos.y + mPadding.Top, (eeFloat)mSize.Width() + mPadding.Right, (eeFloat)mSize.Height() + mPadding.Bottom );
+			if ( IsClipped() )
+				cUIManager::instance()->ClipEnable( mScreenPos.x + (Int32)mPadding.Left, mScreenPos.y + (Int32)mPadding.Top, mSize.Width() + (Int32)mPadding.Right, mSize.Height() + (Int32)mPadding.Bottom );
 
-			mTextCache.Draw( (eeFloat)Pos.x + mAlignOffset.x + mPadding.Left + 1, (eeFloat)Pos.y + mAlignOffset.y + mPadding.Top, Flags(), 1.f, 0.f, mBlend );
+			mTextCache.Draw( (eeFloat)mScreenPos.x + mAlignOffset.x + mPadding.Left + 1, (eeFloat)mScreenPos.y + mAlignOffset.y + mPadding.Top, Flags(), 1.f, 0.f, mBlend );
 
-			cUIManager::instance()->ClipDisable();
+			if ( IsClipped() )
+				cUIManager::instance()->ClipDisable();
 		}
 	}
 }

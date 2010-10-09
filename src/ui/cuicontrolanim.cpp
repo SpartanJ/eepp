@@ -15,7 +15,6 @@ cUIControlAnim::cUIControlAnim( const CreateParams& Params ) :
 {
 	mType |= UI_TYPE_GET(UI_TYPE_CONTROL_ANIM);
 	mControlFlags |= UI_CTRL_FLAG_ANIM;
-	UpdateQuad();
 }
 
 cUIControlAnim::~cUIControlAnim() {
@@ -83,14 +82,6 @@ cUIControl * cUIControlAnim::OverFind( const eeVector2i& Point ) {
 }
 
 void cUIControlAnim::MatrixSet() {
-	eeVector2i Pos( mPos );
-
-	//if ( mScale != 1.f || mAngle != 0.f || IsClipped() ) {
-		ControlToScreen( Pos );
-
-		mScreenPos = Pos;
-	//}
-
 	if ( mScale != 1.f || mAngle != 0.f ) {
 		glPushMatrix();
 		eeVector2f Center( mScreenPos.x + mSize.Width() * 0.5f, mScreenPos.y + mSize.Height() * 0.5f );

@@ -8,13 +8,13 @@ namespace EE { namespace Window {
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX
 typedef Atom eeScrapType;
-#elif EE_PLATFORM == EE_PLATFORM_WIN32
+#elif EE_PLATFORM == EE_PLATFORM_WIN
 typedef UINT eeScrapType;
 #else
 typedef Uint32 eeScrapType;
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_WIN32
+#if EE_PLATFORM == EE_PLATFORM_WIN
 inline BOOL WIN_ShowWindow( HWND hWnd, int nCmdShow ) {
     return ShowWindow( hWnd, nCmdShow );
 }
@@ -228,7 +228,7 @@ class EE_API cEngine : public tSingleton<cEngine> {
 		/** Set the size of the window for a windowed window */
 		void SetWindowSize( const Uint32& Width, const Uint32& Height );
 
-		#if EE_PLATFORM == EE_PLATFORM_WIN32
+		#if EE_PLATFORM == EE_PLATFORM_WIN
 		void SetCurrentContext( HGLRC Context );
 		HGLRC GetContext() const;
 		#elif EE_PLATFORM == EE_PLATFORM_LINUX
@@ -270,7 +270,7 @@ class EE_API cEngine : public tSingleton<cEngine> {
 		cView			mDefaultView;
 		const cView *	mCurrentView;
 
-		#if EE_PLATFORM == EE_PLATFORM_WIN32
+		#if EE_PLATFORM == EE_PLATFORM_WIN
 		HGLRC		mContext;
 		#elif EE_PLATFORM == EE_PLATFORM_LINUX
 		GLXContext	mContext;

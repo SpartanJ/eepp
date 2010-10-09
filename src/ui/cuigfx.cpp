@@ -8,9 +8,12 @@ cUIGfx::cUIGfx( const cUIGfx::CreateParams& Params ) :
 	mColor( Params.ShapeColor ),
 	mRender( Params.ShapeRender )
 {
+	if ( NULL == mShape)
+		Close();
+
 	mType |= UI_TYPE_GET(UI_TYPE_GFX);
 
-	if ( Flags() & UI_AUTO_SIZE || ( Params.Size.x == -1 && Params.Size.y == -1 ) )
+	if ( NULL != mShape && ( ( Flags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) )
 		Size( mShape->Size() );
 
 	if ( mColor.voidRGB ) {
@@ -26,10 +29,8 @@ void cUIGfx::Draw() {
 	cUIControlAnim::Draw();
 
 	if ( mVisible ) {
-		eeVector2i Pos = mPos;
-		ControlToScreen( Pos );
-
-		mShape->Draw( (eeFloat)Pos.x, (eeFloat)Pos.y, mColor, 0.f, 1.f, mBlend, mRender );
+		if ( NULL != mShape )
+			mShape->Draw( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, mColor, 0.f, 1.f, mBlend, mRender );
 	}
 }
 
@@ -60,7 +61,7 @@ void cUIGfx::RenderType( const EE_RENDERTYPE& render ) {
 }
 
 void cUIGfx::OnSizeChange() {
-	if ( Flags() & UI_FIT_TO_CONTROL ) {
+	if ( NULL != mShape && Flags() & UI_FIT_TO_CONTROL ) {
 		mShape->DestWidth( (eeFloat)mSize.x );
 		mShape->DestHeight( (eeFloat)mSize.y );
 	}

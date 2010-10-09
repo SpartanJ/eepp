@@ -4,7 +4,7 @@
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 	#include <CoreFoundation/CoreFoundation.h>
 	#include <sys/sysctl.h>
-#elif EE_PLATFORM == EE_PLATFORM_WIN32
+#elif EE_PLATFORM == EE_PLATFORM_WIN
 	#ifndef WIN32_LEAN_AND_MEAN
 		#define WIN32_LEAN_AND_MEAN
 	#endif
@@ -14,12 +14,12 @@
 	#include <unistd.h>
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_WIN32
+#if EE_PLATFORM == EE_PLATFORM_WIN
     #include <direct.h>
 #endif
 #include <sys/stat.h>
 
-#if EE_PLATFORM == EE_PLATFORM_WIN32
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	#include <sys/utime.h>
 #else
 	#include <sys/time.h>
@@ -71,7 +71,7 @@ std::string AppPath() {
 		exe_file[size] = '\0';
 		return std::string(dirname(exe_file)) + "/";
 	}
-#elif EE_PLATFORM == EE_PLATFORM_WIN32
+#elif EE_PLATFORM == EE_PLATFORM_WIN
 	#ifdef UNICODE
 		// Get path to executable:
 		char szDrive[_MAX_DRIVE];
@@ -295,7 +295,7 @@ Uint32 FileSize( const std::string& Filepath ) {
 }
 
 eeDouble GetSystemTime() {
-#if EE_PLATFORM == EE_PLATFORM_WIN32
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	static LARGE_INTEGER Frequency;
 	static BOOL          UseHighPerformanceTimer = QueryPerformanceFrequency(&Frequency);
 
@@ -332,7 +332,7 @@ bool IsDirectory( const std::string& path ) {
 
 bool MakeDir( const std::string& path, const Uint16& mode ) {
     Int16 v;
-#if EE_PLATFORM == EE_PLATFORM_WIN32
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	#ifdef EE_COMPILER_MSVC
 	v = _mkdir( path.c_str() );
 	#else
@@ -345,7 +345,7 @@ bool MakeDir( const std::string& path, const Uint16& mode ) {
 }
 
 std::string GetWindowsPath() {
-#if EE_PLATFORM == EE_PLATFORM_WIN32
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	#ifdef UNICODE
  		wchar_t Buffer[1024];
  		GetWindowsDirectory( Buffer, 1024 );
@@ -444,7 +444,7 @@ std::string FileRemoveFileName( const std::string& filepath ) {
 eeInt GetNumCPUs() {
 	eeInt nprocs = -1;
 
-	#if EE_PLATFORM == EE_PLATFORM_WIN32
+	#if EE_PLATFORM == EE_PLATFORM_WIN
 		SYSTEM_INFO info;
 		GetSystemInfo(&info);
 
@@ -521,7 +521,7 @@ void DirPathAddSlashAtEnd( std::string& path ) {
 }
 
 std::string GetOSlash() {
-	#if EE_PLATFORM == EE_PLATFORM_WIN32
+	#if EE_PLATFORM == EE_PLATFORM_WIN
 		return std::string( "\\" );
 	#else
     	return std::string( "/" );

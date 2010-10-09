@@ -120,15 +120,15 @@ void cUIManager::Update() {
 			mFocusControl->OnMouseUp( mKM->GetMousePos(), mKM->ReleaseTrigger() );
 
 			if ( mKM->ClickTrigger() ) {
-					mFocusControl->OnMouseClick( mKM->GetMousePos(), mKM->ClickTrigger() );
+				mFocusControl->OnMouseClick( mKM->GetMousePos(), mKM->ClickTrigger() );
 
-					SendMsg( mFocusControl, cUIMessage::MsgClick );
+				SendMsg( mFocusControl, cUIMessage::MsgClick );
 
-					if ( mKM->DoubleClickTrigger() ) {
-						mFocusControl->OnMouseDoubleClick( mKM->GetMousePos(), mKM->DoubleClickTrigger() );
+				if ( mKM->DoubleClickTrigger() ) {
+					mFocusControl->OnMouseDoubleClick( mKM->GetMousePos(), mKM->DoubleClickTrigger() );
 
-						SendMsg( mFocusControl, cUIMessage::MsgDoubleClick );
-					}
+					SendMsg( mFocusControl, cUIMessage::MsgDoubleClick );
+				}
 			}
 		}
 	}
@@ -216,6 +216,17 @@ void cUIManager::ClipDisable() {
 	glDisable(GL_CLIP_PLANE1);
 	glDisable(GL_CLIP_PLANE2);
 	glDisable(GL_CLIP_PLANE3);
+}
+
+void cUIManager::SetTheme( const std::string& Theme ) {
+	SetTheme( cUIThemeManager::instance()->GetByName( Theme ) );
+}
+
+void cUIManager::SetTheme( cUITheme * Theme ) {
+	if ( NULL != mControl ) {
+		mControl->SetTheme( Theme );
+		mControl->SetThemeToChilds( Theme );
+	}
 }
 
 }}

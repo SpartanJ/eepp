@@ -167,7 +167,7 @@ void cInput::Update() {
 					bInject = true;
 				}
 
-				#if EE_PLATFORM == EE_PLATFORM_WIN32
+				#if EE_PLATFORM == EE_PLATFORM_WIN
 				if ( bInject )
 					InjectMousePos( mMousePos.x, mMousePos.y );
 				#endif

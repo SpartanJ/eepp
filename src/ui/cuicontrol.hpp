@@ -204,6 +204,8 @@ class EE_API cUIControl {
 		virtual void SetTheme( cUITheme * Theme );
 
 		void SetTheme( cUITheme * Theme, const std::string& ControlName );
+
+		void SetThemeToChilds( cUITheme * Theme );
 	protected:
 		friend class cUIManager;
 		friend class cUIDragable;
@@ -295,6 +297,12 @@ class EE_API cUIControl {
 		void SendCommonEvent( const Uint32& Event );
 
 		void SetSkinState( const Uint32& State );
+
+		void SetPrevSkinState();
+
+		void UpdateScreenPos();
+
+		void UpdateChildsScreenPos();
 };
 
 }}

@@ -114,9 +114,7 @@ Uint32 cVertexBuffer::GetIndexCount() {
 }
 
 eeVector2f cVertexBuffer::GetVector2( const Uint32& Type, const Uint32& Index ) {
-	/// assert
-	if( Type < VERTEX_FLAGS_COUNT_ARR && !VERTEX_FLAG_QUERY( mVertexFlags, Type ) )
-		return eeVector2f(0.f,0.f);
+	eeASSERT( Type < VERTEX_FLAGS_COUNT_ARR && !VERTEX_FLAG_QUERY( mVertexFlags, Type ) )
 
 	Int32 pos = Index * eeVertexElements[ Type ];
 
@@ -124,9 +122,7 @@ eeVector2f cVertexBuffer::GetVector2( const Uint32& Type, const Uint32& Index ) 
 }
 
 eeColorA cVertexBuffer::GetColor( const Uint32& Index ) {
-	/// assert
-	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) )
-		return eeColorA();
+	eeASSERT( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) );
 
 	Int32 pos = Index * eeVertexElements[ VERTEX_FLAG_COLOR ];
 
@@ -134,7 +130,7 @@ eeColorA cVertexBuffer::GetColor( const Uint32& Index ) {
 }
 
 Uint32 cVertexBuffer::GetIndex( const Uint32& Index ) {
-	/// assert
+	eeASSERT( Index < mIndexArray.size() );
 	return mIndexArray[ Index ];
 }
 

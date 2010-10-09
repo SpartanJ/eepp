@@ -41,6 +41,10 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 		void ResizeControl();
 
 		void SendMsg( cUIControl * Ctrl, const Uint32& Msg );
+
+		void SetTheme( const std::string& Theme );
+
+		void SetTheme( cUITheme * Theme );
 	protected:
 		cEngine *			mEE;
 		cInput *			mKM;

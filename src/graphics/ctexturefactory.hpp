@@ -120,8 +120,8 @@ class EE_API cTextureFactory: public tSingleton<cTextureFactory>, protected cMut
 		Uint32 GetNumTextures() const { return (Uint32)mTextures.size(); }
 
 		/** Set a blend function.
-		* @SrcFactor Source Factor
-		* @DestFactor Destination Factor
+		* @param SrcFactor Source Factor
+		* @param DestFactor Destination Factor
 		*/
 		void SetBlendFunc( const EE_BLEND_FUNC& SrcFactor, const EE_BLEND_FUNC& DestFactor );
 
@@ -135,8 +135,8 @@ class EE_API cTextureFactory: public tSingleton<cTextureFactory>, protected cMut
 		const EE_PRE_BLEND_FUNC& GetPreBlendFunc() const;
 
 		/** Set the texture enviroment
-		* @Param The texture param
-		* @Val The EE_TEXTURE_OP or EE_TEXTURE_FUNC or EE_TEXTURE_SOURCE
+		* @param Param The texture param
+		* @param Val The EE_TEXTURE_OP or EE_TEXTURE_FUNC or EE_TEXTURE_SOURCE
 		*/
 		void SetTextureEnv( const EE_TEXTURE_PARAM& Param, const Int32& Val );
 

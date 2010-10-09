@@ -45,13 +45,18 @@ class EE_API cUISkin {
 
 		const Uint32& Id() const;
 	protected:
+		friend class cUIControl;
+
 		std::string mName;
 		Uint32		mNameHash;
 		Uint32 		mCurState;
+		Uint32		mLastState;
 		Uint32		mColorDefault;
 		eeColorA 	mColor[ StateCount ];
 
 		void StateBack( const Uint32& State );
+
+		void SetPrevState();
 };
 
 }}

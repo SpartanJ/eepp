@@ -2,7 +2,7 @@
 
 namespace EE { namespace System {
 
-#if EE_PLATFORM == EE_PLATFORM_WIN32
+#if EE_PLATFORM == EE_PLATFORM_WIN
 #define iniEOL std::endl
 #else
 #define iniEOL '\r' << std::endl

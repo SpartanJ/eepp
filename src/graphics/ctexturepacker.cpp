@@ -100,7 +100,7 @@ bool cTexturePacker::MergeNodes() {
 		while ( c ) {
 			if ( f != c ) {
 				if ( f->Merge( *c ) ) {
-					assert( prev );
+					eeASSERT( prev );
 
 					prev->SetNext( c->GetNext() );
 
@@ -251,7 +251,7 @@ void cTexturePacker::InsertTexture( cTexturePackerTex * t, cTexturePackerNode * 
 							flipped = true;
 						}
 					} else {
-						assert( t->LongestEdge() <= bestFit->Height() );
+						eeASSERT( t->LongestEdge() <= bestFit->Height() );
 
 						if ( h < w ) {
 							w 		= t->Height();

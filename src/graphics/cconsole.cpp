@@ -578,7 +578,7 @@ void cConsole::CmdSetVolume( const std::vector < std::wstring >& params ) {
 void cConsole::CmdDir( const std::vector < std::wstring >& params ) {
 	if ( params.size() >= 2 ) {
 		try {
-			#if EE_PLATFORM == EE_PLATFORM_WIN32
+			#if EE_PLATFORM == EE_PLATFORM_WIN
 			std::wstring Slash( L"/\\" );
 			#else
 			std::wstring Slash( L"/" );

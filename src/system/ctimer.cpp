@@ -2,7 +2,7 @@
 
 namespace EE { namespace System {
 
-#if EE_PLATFORM == EE_PLATFORM_WIN32
+#if EE_PLATFORM == EE_PLATFORM_WIN
 cTimer::cTimer() : mTimerMask( 0 ) {
 #else
 cTimer::cTimer() {
@@ -14,7 +14,7 @@ cTimer::~cTimer() {
 }
 
 bool cTimer::setOption( const std::string key, const void * val ) {
-	#if EE_PLATFORM == EE_PLATFORM_WIN32
+	#if EE_PLATFORM == EE_PLATFORM_WIN
 	if ( key.compare("QueryAffinityMask") == 0 ) {		// Telling timer what core to use for a timer read
 		DWORD newTimerMask = * static_cast < const DWORD * > ( val );
 
@@ -41,7 +41,7 @@ bool cTimer::setOption( const std::string key, const void * val ) {
 }
 
 void cTimer::reset() {
-#if EE_PLATFORM == EE_PLATFORM_WIN32
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	// Get the current process core mask
 	DWORD procMask;
 	DWORD sysMask;
@@ -86,7 +86,7 @@ void cTimer::reset() {
 }
 
 unsigned long cTimer::getMilliseconds() {
-#if EE_PLATFORM == EE_PLATFORM_WIN32
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	LARGE_INTEGER curTime;
 
 	HANDLE thread = GetCurrentThread();
@@ -131,7 +131,7 @@ unsigned long cTimer::getMilliseconds() {
 }
 
 unsigned long cTimer::getMicroseconds() {
-#if EE_PLATFORM == EE_PLATFORM_WIN32
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	LARGE_INTEGER curTime;
 
 	HANDLE thread = GetCurrentThread();

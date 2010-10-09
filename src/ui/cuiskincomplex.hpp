@@ -32,6 +32,8 @@ class EE_API cUISkinComplex : public cUISkin {
 		cShape * GetSkin( const Uint32& State ) const;
 
 		virtual void SetState( const Uint32& State );
+
+		cUISkinComplex * Copy( const std::string& NewName, const bool& CopyColorsState = true );
 	protected:
 		cShape * 	mShape[ StateCount ][ SideCount ];
 

@@ -34,12 +34,12 @@
 #define Int32 Sint32
 #define Int64 Sint64
 
-#define EE_PLATFORM_WIN32 1
+#define EE_PLATFORM_WIN 1
 #define EE_PLATFORM_LINUX 2
 #define EE_PLATFORM_MACOSX 3
 
-#if defined( __WIN32__ ) || defined( _WIN32 )
-#   define EE_PLATFORM EE_PLATFORM_WIN32
+#if defined( __WIN32__ ) || defined( _WIN32 ) || defined( _WIN64 )
+#   define EE_PLATFORM EE_PLATFORM_WIN
 
 	#if (defined (_MSCVER) || defined (_MSC_VER))
 #	define EE_COMPILER_MSVC
@@ -52,7 +52,20 @@
 #   define EE_PLATFORM EE_PLATFORM_LINUX
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_WIN32 || EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_LINUX
+#if defined(__GNUC__)
+#define EE_COMPILER_GCC
+#endif
+
+#if defined(__x86_64__) || \
+	(defined(_WIN64) && !defined(_XBOX)) || \
+	defined(__64BIT__) || defined(__LP64)  || defined(__LP64__) || defined(_LP64) || defined(_ADDR64) || defined(_CRAYC) || defined(__arch64__) || \
+	defined(__sparcv9) || defined(__sparc_v9__)
+#define EE_64BIT
+#else
+#define EE_32BIT
+#endif
+
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_LINUX
 #define EE_GLEW_AVAILABLE
 #endif
 
@@ -60,7 +73,7 @@
 #define EE_SUPPORTED_PLATFORM
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_WIN32
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	#define EE_CALL _stdcall
 
 	#ifdef EE_DYNAMIC

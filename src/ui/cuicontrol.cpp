@@ -25,6 +25,7 @@ cUIControl::cUIControl( const CreateParams& Params ) :
 	if ( NULL != mParentCtrl )
 		mParentCtrl->ChildAdd( this );
 
+	UpdateScreenPos();
 	UpdateQuad();
 }
 
@@ -252,6 +253,9 @@ Uint32 cUIControl::OnMouseDown( const eeVector2i& Pos, const Uint32 Flags ) {
 
 Uint32 cUIControl::OnMouseUp( const eeVector2i& Pos, const Uint32 Flags ) {
 	SendMouseEvent( cUIEvent::EventMouseUp, Pos, Flags );
+
+	SetPrevSkinState();
+
 	return 0;
 }
 
@@ -413,6 +417,10 @@ void cUIControl::OnEnabledChange() {
 }
 
 void cUIControl::OnPosChange() {
+	UpdateScreenPos();
+
+	UpdateChildsScreenPos();
+
 	SendCommonEvent( cUIEvent::EventOnPosChange );
 }
 
@@ -524,13 +532,6 @@ void cUIControl::ClipDisable() {
 }
 
 void cUIControl::MatrixSet() {
-	//if ( IsClipped() ) {
-		eeVector2i Pos( mPos );
-
-		ControlToScreen( Pos );
-
-		mScreenPos = Pos;
-	//}
 }
 
 void cUIControl::MatrixUnset() {
@@ -660,8 +661,7 @@ cUIControl * cUIControl::ChildPrev( cUIControl * Ctrl, bool Loop ) const {
 cUIControl * cUIControl::ChildNext( cUIControl * Ctrl, bool Loop ) const {
 	cUIControl * Return = Ctrl->NextGet();
 
-	if ( NULL == Return && Loop ) // ???
-	{
+	if ( NULL == Return && Loop ) {
 		Return = mChild;
 	}
 
@@ -784,6 +784,41 @@ void cUIControl::SetTheme( cUITheme * Theme, const std::string& ControlName ) {
 void cUIControl::SetSkinState( const Uint32& State ) {
 	if ( NULL != mSkin )
 		mSkin->SetState( State );
+}
+
+void cUIControl::SetPrevSkinState() {
+	if ( NULL != mSkin )
+		mSkin->SetPrevState();
+}
+
+void cUIControl::SetThemeToChilds( cUITheme * Theme ) {
+	cUIControl * ChildLoop = mChild;
+
+	while ( NULL != ChildLoop ) {
+		ChildLoop->SetTheme( Theme );
+		ChildLoop->SetThemeToChilds( Theme );
+
+		ChildLoop = ChildLoop->mNext;
+	}
+}
+
+void cUIControl::UpdateChildsScreenPos() {
+	cUIControl * ChildLoop = mChild;
+
+	while ( NULL != ChildLoop ) {
+		ChildLoop->UpdateScreenPos();
+		ChildLoop->UpdateChildsScreenPos();
+
+		ChildLoop = ChildLoop->mNext;
+	}
+}
+
+void cUIControl::UpdateScreenPos() {
+	eeVector2i Pos( mPos );
+
+	ControlToScreen( Pos );
+
+	mScreenPos = Pos;
 }
 
 }}

@@ -3,7 +3,7 @@
 
 #include "base.hpp"
 
-#if EE_PLATFORM == EE_PLATFORM_WIN32
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	#ifndef WIN32_LEAN_AND_MEAN
 		#define WIN32_LEAN_AND_MEAN
 	#endif
@@ -28,7 +28,7 @@ namespace EE { namespace System {
 class EE_API cTimer {
 	private:
 		clock_t mZeroClock;
-		#if EE_PLATFORM == EE_PLATFORM_WIN32
+		#if EE_PLATFORM == EE_PLATFORM_WIN
 			unsigned long mStartTick;
 			LONGLONG mLastTime;
 			LARGE_INTEGER mStartTime;

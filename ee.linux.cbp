@@ -69,6 +69,8 @@
 		<Unit filename="src/base.hpp" />
 		<Unit filename="src/base/allocator.hpp" />
 		<Unit filename="src/base/base.hpp" />
+		<Unit filename="src/base/debug.cpp" />
+		<Unit filename="src/base/debug.hpp" />
 		<Unit filename="src/base/memorymanager.cpp" />
 		<Unit filename="src/base/memorymanager.hpp" />
 		<Unit filename="src/base/stlcontainers.hpp" />
@@ -520,6 +522,8 @@
 		<Unit filename="src/ui/cuimanager.hpp" />
 		<Unit filename="src/ui/cuimessage.cpp" />
 		<Unit filename="src/ui/cuimessage.hpp" />
+		<Unit filename="src/ui/cuipushbutton.cpp" />
+		<Unit filename="src/ui/cuipushbutton.hpp" />
 		<Unit filename="src/ui/cuiskin.cpp" />
 		<Unit filename="src/ui/cuiskin.hpp" />
 		<Unit filename="src/ui/cuiskincomplex.cpp" />

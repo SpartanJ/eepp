@@ -192,6 +192,8 @@ class cEETest : private cThread {
 
 		cFrameBuffer * mFB;
 		cVertexBuffer * mVBO;
+
+		void ButtonClick( const cUIEvent * Event );
 };
 
 
@@ -413,43 +415,69 @@ void cEETest::CreateUI() {
 	InputParams.Font = TTF;
 	InputParams.SupportNewLine = false;
 	cUITextInput * Input = eeNew( cUITextInput, ( InputParams ) );
+	Input->Padding( eeRectf( 4, -2, -8, 0 ) );
 	Input->Visible( true );
 	Input->Enabled( true );
+
+	TextParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
+	TextParams.PosSet( 10, 20 );
+	TextParams.Size = eeSize( 80, 22 );
+	cUIPushButton * Button = eeNew( cUIPushButton, ( TextParams ) );
+	Button->Visible( true );
+	Button->Enabled( true );
+	Button->Text( L"Click Me" );
+	Button->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::ButtonClick ) );
 
 	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.\nPowered by Text Shrinker =)";
 	TTF->ShrinkText( mBuda, 400 );
 
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_normal.png" ), "aqua_textinput_normal" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_focus.png" ), "aqua_textinput_focus" ) ) );
-
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_normal_dl.png" ), "aqua_textinput_normal_dl" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_normal_dr.png" ), "aqua_textinput_normal_dr" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_normal_ml.png" ), "aqua_textinput_normal_ml" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_normal_mr.png" ), "aqua_textinput_normal_mr" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_normal_u.png" ), "aqua_textinput_normal_u" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_normal_d.png" ), "aqua_textinput_normal_d" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_normal_ul.png" ), "aqua_textinput_normal_ul" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_normal_ur.png" ), "aqua_textinput_normal_ur" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( "data/aqua_textinput_normal_m.png" ), "aqua_textinput_normal_m" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_normal.png" ), "aqua_textinput_normal" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_focus.png" ), "aqua_textinput_focus" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_normal_dl.png" ), "aqua_textinput_normal_dl" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_normal_dr.png" ), "aqua_textinput_normal_dr" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_normal_ml.png" ), "aqua_textinput_normal_ml" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_normal_mr.png" ), "aqua_textinput_normal_mr" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_normal_u.png" ), "aqua_textinput_normal_u" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_normal_d.png" ), "aqua_textinput_normal_d" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_normal_ul.png" ), "aqua_textinput_normal_ul" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_normal_ur.png" ), "aqua_textinput_normal_ur" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_normal_m.png" ), "aqua_textinput_normal_m" ) ) );
 
 	cUITheme * AquaTheme = eeNew( cUITheme, ( "aqua", "aqua" ) );
 
-	cUISkinComplex * AquaTextInput = eeNew( cUISkinComplex, ( "aqua_textinput" ) );
+	cUISkinComplex * AquaTextInput 	= eeNew( cUISkinComplex, ( "aqua_textinput" ) );
+	cUISkinComplex * AquaButton		= AquaTextInput->Copy( "aqua_button" );
 
-	AquaTextInput->SetColor( cUISkin::StateNormal	, eeColorA( 240, 240, 255, 255 ) );
-	AquaTextInput->SetColor( cUISkin::StateFocus	, eeColorA( 250, 250, 255, 255 ) );
+	AquaTextInput->SetColor	( cUISkin::StateNormal		, eeColorA( 240, 240, 255, 255 ) );
+	AquaTextInput->SetColor	( cUISkin::StateFocus		, eeColorA( 250, 250, 255, 255 ) );
+	AquaButton->SetColor	( cUISkin::StateMouseEnter	, eeColorA( 200, 255, 200, 255 ) );
+	AquaButton->SetColor	( cUISkin::StateMouseDown	, eeColorA( 150, 255, 150, 255 ) );
 
 	AquaTheme->Add( AquaTextInput );
+	AquaTheme->Add( AquaButton );
 
 	cUIThemeManager::instance()->Add( AquaTheme );
 
-	Input->SetTheme( cUIThemeManager::instance()->GetByName( "aqua" ) );
-
-	Input->Padding( eeRectf( 4, -2, -8, 0 ) );
-
-	Child->SetTheme( cUIThemeManager::instance()->GetByName( "aqua" ), "textinput" );
+	cUIManager::instance()->SetTheme( "aqua" );
 
 	mBudaTC = eeNew( cTextCache, ( TTF, mBuda, eeColorA(255,255,255,255) ) );
+}
+
+void cEETest::ButtonClick( const cUIEvent * Event ) {
+	const cUIEventMouse * MouseEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
+
+	if ( MouseEvent->Flags() & EE_BUTTONS_LRM ) {
+		cUIGfx::CreateParams GfxParams;
+		GfxParams.Parent( cUIManager::instance()->MainControl() );
+		GfxParams.Shape = cShapeGroupManager::instance()->GetShapeByName( "aqua_textinput_normal" );
+		cUIGfx * Gfx = eeNew( cUIGfx, ( GfxParams ) );
+		Gfx->Visible( true );
+		Gfx->Enabled( false );
+
+		Gfx->StartRotation( 0, 2500, 2500 );
+		Gfx->StartMovement( eeVector2i( eeRandi( 0, EE->GetWidth() ), -64 ), eeVector2i( eeRandi( 0, EE->GetWidth() ), EE->GetHeight() + 64 ), 2500 );
+		Gfx->CloseFadeOut( 3500 );
+	}
 }
 
 void cEETest::CmdSetPartsNum ( const std::vector < std::wstring >& params ) {

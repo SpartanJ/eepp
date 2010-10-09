@@ -58,14 +58,11 @@ void cUITextInput::Draw() {
 			cPrimitives P;
 			P.SetColor( mFontColor );
 
-			eeVector2i Pos = mPos;
-			ControlToScreen( Pos );
+			eeFloat CurPosX = mScreenPos.x + mAlignOffset.x + mCurPos.x + 1 + mPadding.Left;
+			eeFloat CurPosY = mScreenPos.y + mAlignOffset.y + mCurPos.y + mPadding.Top;
 
-			eeFloat CurPosX = Pos.x + mAlignOffset.x + mCurPos.x + 1 + mPadding.Left;
-			eeFloat CurPosY = Pos.y + mAlignOffset.y + mCurPos.y + mPadding.Top;
-
-			if ( CurPosX > (eeFloat)Pos.x + (eeFloat)mSize.x )
-				CurPosX = (eeFloat)Pos.x + (eeFloat)mSize.x;
+			if ( CurPosX > (eeFloat)mScreenPos.x + (eeFloat)mSize.x )
+				CurPosX = (eeFloat)mScreenPos.x + (eeFloat)mSize.x;
 
 			P.DrawLine( CurPosX, CurPosY, CurPosX, CurPosY + mTextCache.Font()->GetFontHeight(), 1.f );
 

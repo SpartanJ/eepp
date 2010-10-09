@@ -342,8 +342,8 @@ void cEngine::ChangeRes( const Uint16& width, const Uint16& height, const bool& 
 	try {
 		cLog::instance()->Writef( "Switching from %s to %s. Width: %d Height %d.", mVideoInfo.Windowed == true ? "windowed" : "fullscreen", Windowed == true ? "windowed" : "fullscreen", width, height );
 
-		#if EE_PLATFORM == EE_PLATFORM_WIN32 || EE_PLATFORM == EE_PLATFORM_MACOSX
-		#if EE_PLATFORM == EE_PLATFORM_WIN32
+		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
+		#if EE_PLATFORM == EE_PLATFORM_WIN
 		bool Reload = mVideoInfo.Windowed != Windowed;
 		#else
 		bool Reload = true;
@@ -375,7 +375,7 @@ void cEngine::ChangeRes( const Uint16& width, const Uint16& height, const bool& 
 
 		Setup2D();
 
-		#if EE_PLATFORM == EE_PLATFORM_WIN32 || EE_PLATFORM == EE_PLATFORM_MACOSX
+		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
 		if ( Reload ) {
 			cTextureFactory::instance()->UngrabTextures(); 	// Reload all textures
 			cShaderProgramManager::instance()->Reload(); 	// Reload all shaders
@@ -423,7 +423,7 @@ bool cEngine::Windowed() const {
 }
 
 void cEngine::ToggleFullscreen() {
-	#if EE_PLATFORM == EE_PLATFORM_WIN32
+	#if EE_PLATFORM == EE_PLATFORM_WIN
 		bool WasMaximized = mVideoInfo.Maximized;
 
 		if ( mVideoInfo.Windowed )
@@ -666,7 +666,7 @@ void cEngine::MinimizeWindow() {
 }
 
 void cEngine::MaximizeWindow() {
-	#if EE_PLATFORM == EE_PLATFORM_WIN32
+	#if EE_PLATFORM == EE_PLATFORM_WIN
 		WIN_ShowWindow(mVideoInfo.info.window, SW_MAXIMIZE);
 	#elif EE_PLATFORM == EE_PLATFORM_LINUX
 		// coded by Rafał Maj, idea from Måns Rullgård http://tinyurl.com/68mvk3
@@ -701,7 +701,7 @@ void cEngine::HideWindow() {
 	mVideoInfo.info.info.x11.lock_func();
     XUnmapWindow( mVideoInfo.info.info.x11.display, mVideoInfo.info.info.x11.wmwindow );
 	mVideoInfo.info.info.x11.unlock_func();
-#elif EE_PLATFORM == EE_PLATFORM_WIN32
+#elif EE_PLATFORM == EE_PLATFORM_WIN
     WIN_ShowWindow( mVideoInfo.info.window, SW_HIDE );
 #else
 	#warning cEngine::HideWindow() not implemented on this platform.
@@ -713,7 +713,7 @@ void cEngine::RaiseWindow() {
 	mVideoInfo.info.info.x11.lock_func();
     XRaiseWindow( mVideoInfo.info.info.x11.display, mVideoInfo.info.info.x11.wmwindow );
 	mVideoInfo.info.info.x11.unlock_func();
-#elif EE_PLATFORM == EE_PLATFORM_WIN32
+#elif EE_PLATFORM == EE_PLATFORM_WIN
     HWND top;
 
     if ( !mVideoInfo.Windowed )
@@ -732,7 +732,7 @@ void cEngine::ShowWindow() {
 	mVideoInfo.info.info.x11.lock_func();
 	XMapRaised( mVideoInfo.info.info.x11.display, mVideoInfo.info.info.x11.wmwindow );
 	mVideoInfo.info.info.x11.unlock_func();
-#elif EE_PLATFORM == EE_PLATFORM_WIN32
+#elif EE_PLATFORM == EE_PLATFORM_WIN
 	WIN_ShowWindow( mVideoInfo.info.window, SW_SHOW );
 #else
 	#warning cEngine::RaiseWindow() not implemented on this platform.
@@ -743,7 +743,7 @@ void cEngine::SetWindowPosition(Int16 Left, Int16 Top) {
 #if EE_PLATFORM == EE_PLATFORM_LINUX
     XMoveWindow( mVideoInfo.info.info.x11.display, mVideoInfo.info.info.x11.wmwindow, Left, Top);
     XFlush( mVideoInfo.info.info.x11.display );
-#elif EE_PLATFORM == EE_PLATFORM_WIN32
+#elif EE_PLATFORM == EE_PLATFORM_WIN
 	SetWindowPos( mVideoInfo.info.window, NULL, Left, Top, 0, 0, SWP_NOSIZE | SWP_NOZORDER );
 #else
 	#warning cEngine::SetWindowPosition() not implemented on this platform.
@@ -756,7 +756,7 @@ eeVector2i cEngine::GetWindowPosition() {
 	XGetWindowAttributes( mVideoInfo.info.info.x11.display, mVideoInfo.info.info.x11.wmwindow, &Attrs );
 
 	return eeVector2i( Attrs.x, Attrs.y );
-#elif EE_PLATFORM == EE_PLATFORM_WIN32
+#elif EE_PLATFORM == EE_PLATFORM_WIN
 	RECT r;
 	GetWindowRect( mVideoInfo.info.window, &r );
 	return eeVector2i( r.left, r.top );
@@ -790,7 +790,7 @@ int cEngine::clipboard_convert_scrap(int type, char *dst, char *src, int srclen)
 
 			if ( dst ) {
 				while ( --srclen >= 0 ) {
-					#if EE_PLATFORM == EE_PLATFORM_WIN32
+					#if EE_PLATFORM == EE_PLATFORM_WIN
 					if ( *src == '\r' )
 					/* drop extraneous '\r' */;
 					else
@@ -808,7 +808,7 @@ int cEngine::clipboard_convert_scrap(int type, char *dst, char *src, int srclen)
 				++dstlen;
 			} else {
 				while ( --srclen >= 0 ) {
-					#if EE_PLATFORM == EE_PLATFORM_WIN32
+					#if EE_PLATFORM == EE_PLATFORM_WIN
 					if ( *src == '\r' )
 					/* drop unspected '\r' */;
 					else
@@ -837,7 +837,7 @@ eeScrapType cEngine::clipboard_convert_format(int type) {
 		case T('T', 'E', 'X', 'T'):
 			#if EE_PLATFORM == EE_PLATFORM_LINUX
 			return XA_STRING;
-			#elif EE_PLATFORM == EE_PLATFORM_WIN32
+			#elif EE_PLATFORM == EE_PLATFORM_WIN
 			return CF_TEXT;
 			#endif
 		default: {
@@ -846,7 +846,7 @@ eeScrapType cEngine::clipboard_convert_format(int type) {
 
 			#if EE_PLATFORM == EE_PLATFORM_LINUX
 			return XInternAtom( mVideoInfo.info.info.x11.display, format, False );
-			#elif EE_PLATFORM == EE_PLATFORM_WIN32
+			#elif EE_PLATFORM == EE_PLATFORM_WIN
 				#ifdef UNICODE
 				return RegisterClipboardFormat( reinterpret_cast<LPCWSTR>( format ) );
 				#else
@@ -914,7 +914,7 @@ void cEngine::clipboard_get_scrap(int type, int *dstlen, char **dst) {
 		XFree(src);
 	}
     mVideoInfo.info.info.x11.unlock_func();
-#elif EE_PLATFORM == EE_PLATFORM_WIN32
+#elif EE_PLATFORM == EE_PLATFORM_WIN
 	if ( IsClipboardFormatAvailable(format) && OpenClipboard( mVideoInfo.info.window ) ) {
 		HANDLE hMem;
 		char *src;
@@ -936,7 +936,7 @@ void cEngine::clipboard_get_scrap(int type, int *dstlen, char **dst) {
 
 std::string cEngine::GetClipboardText() {
 	std::string tStr;
-	#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_WIN32
+	#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_WIN
 	char *scrap = NULL;
 	int scraplen;
 
@@ -963,7 +963,7 @@ std::string cEngine::GetClipboardText() {
 
 std::wstring cEngine::GetClipboardTextWStr() {
 	std::wstring tStr;
-	#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_WIN32
+	#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_WIN
 	char * scrap = NULL;
 	int scraplen;
 
@@ -991,7 +991,7 @@ std::wstring cEngine::GetClipboardTextWStr() {
 	return tStr;
 }
 
-#if EE_PLATFORM == EE_PLATFORM_WIN32
+#if EE_PLATFORM == EE_PLATFORM_WIN
 void cEngine::SetCurrentContext( HGLRC Context ) {
     if ( mInit ) {
         wglMakeCurrent( GetDC( mVideoInfo.info.window ), Context );
@@ -1024,7 +1024,7 @@ AGLContext cEngine::GetContext() const {
 #endif
 
 void cEngine::GetMainContext() {
-#if EE_PLATFORM == EE_PLATFORM_WIN32
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	mContext = wglGetCurrentContext();
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
 	mContext = glXGetCurrentContext();
@@ -1034,7 +1034,7 @@ void cEngine::GetMainContext() {
 }
 
 void cEngine::SetDefaultContext() {
-	#if EE_PLATFORM == EE_PLATFORM_WIN32 || EE_PLATFORM == EE_PLATFORM_LINUX
+	#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX
 	SetCurrentContext( mContext );
 	#endif
 }

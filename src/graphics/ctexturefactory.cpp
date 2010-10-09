@@ -162,12 +162,12 @@ bool cTextureFactory::Remove( Uint32 TexId ) {
 }
 
 GLint cTextureFactory::GetCurrentTexture( const Uint32& TextureUnit ) const {
-	//assert( TextureUnit < MAX_TEXTURE_UNITS );
+	eeASSERT( TextureUnit < EE_MAX_TEXTURE_UNITS );
 	return mCurrentTexture[ TextureUnit ];
 }
 
 void cTextureFactory::SetCurrentTexture( const GLint& TexId, const Uint32& TextureUnit ) {
-	//assert( TextureUnit < MAX_TEXTURE_UNITS );
+	eeASSERT( TextureUnit < EE_MAX_TEXTURE_UNITS );
 	mCurrentTexture[ TextureUnit ] = TexId;
 }
 
