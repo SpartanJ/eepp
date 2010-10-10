@@ -31,4 +31,10 @@ const std::string& cUITheme::Abbr() const {
 	return mAbbr;
 }
 
+cUISkin * cUITheme::Add( cUISkin * Resource ) {
+	Resource->Theme( this );
+
+	return tResourceManager<cUISkin>::Add( Resource );
+}
+
 }}

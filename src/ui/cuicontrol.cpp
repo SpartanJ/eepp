@@ -668,6 +668,10 @@ cUIControl * cUIControl::ChildNext( cUIControl * Ctrl, bool Loop ) const {
 	return Return;
 }
 
+cUIControl * cUIControl::ChildGetFirst() const {
+	return mChild;
+}
+
 cUIControl * cUIControl::OverFind( const eeVector2i& Point ) {
 	cUIControl * pOver = NULL;
 
@@ -768,7 +772,7 @@ cUIBorder * cUIControl::Border() {
 	return &mBorder;
 }
 
-void cUIControl::SetTheme( const std::string& Theme ) {
+void cUIControl::SetThemeByName( const std::string& Theme ) {
 	SetTheme( cUIThemeManager::instance()->GetByName( Theme ) );
 }
 
@@ -777,8 +781,19 @@ void cUIControl::SetTheme( cUITheme * Theme ) {
 }
 
 void cUIControl::SetTheme( cUITheme * Theme, const std::string& ControlName ) {
-	if ( NULL != Theme )
-		mSkin = Theme->GetByName( Theme->Abbr() + "_" + ControlName );
+	if ( NULL != Theme ) {
+		if ( mSkinForcedName.size() && NULL != mSkin && mSkin->Theme() == Theme ) {
+			mSkin = Theme->GetByName( Theme->Abbr() + "_" + mSkinForcedName );
+		} else {
+			mSkin = Theme->GetByName( Theme->Abbr() + "_" + ControlName );
+		}
+	}
+}
+
+void cUIControl::ForceThemeSkin( cUITheme * Theme, const std::string& ControlName ) {
+	mSkinForcedName = ControlName;
+
+	SetTheme( Theme, ControlName );
 }
 
 void cUIControl::SetSkinState( const Uint32& State ) {
@@ -819,6 +834,10 @@ void cUIControl::UpdateScreenPos() {
 	ControlToScreen( Pos );
 
 	mScreenPos = Pos;
+}
+
+cUISkin * cUIControl::GetSkin() {
+	return mSkin;
 }
 
 }}

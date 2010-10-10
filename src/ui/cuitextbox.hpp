@@ -50,7 +50,7 @@ class EE_API cUITextBox : public cUIControlAnim {
 
 		virtual void OnFontChanged();
 
-		void Padding( const eeRectf& padding );
+		virtual void Padding( const eeRectf& padding );
 
 		const eeRectf& Padding() const;
 	protected:

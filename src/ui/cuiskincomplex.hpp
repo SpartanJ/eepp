@@ -29,7 +29,7 @@ class EE_API cUISkinComplex : public cUISkin {
 
 		void SetSkin( const Uint32& State );
 
-		cShape * GetSkin( const Uint32& State ) const;
+		cShape * GetShape( const Uint32& State ) const;
 
 		virtual void SetState( const Uint32& State );
 

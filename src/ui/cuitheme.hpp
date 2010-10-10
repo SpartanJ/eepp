@@ -19,6 +19,8 @@ class EE_API cUITheme : public tResourceManager<cUISkin> {
 		const Uint32& Id() const;
 
 		const std::string& Abbr() const;
+
+		virtual cUISkin * Add( cUISkin * Resource );
 	protected:
 		std::string 		mName;
 		Uint32				mNameHash;

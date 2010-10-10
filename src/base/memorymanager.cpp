@@ -1,6 +1,7 @@
 #include "memorymanager.hpp"
 #include <iostream>
 #include <sstream>
+#include "debug.hpp"
 
 namespace EE {
 
@@ -71,7 +72,7 @@ bool MemoryManager::RemovePointer( void * Data ) {
 
 
 	if ( !Found ) {
-		printf( "Trying to delete pointer %p created that does not exist!\n", Data );
+		eePRINT( "Trying to delete pointer %p created that does not exist!\n", Data );
 
 		return false;
 	}
@@ -85,16 +86,16 @@ bool MemoryManager::RemovePointer( void * Data ) {
 
 void MemoryManager::LogResults() {
 	#ifdef EE_MEMORY_MANAGER
-	printf("\n|--Memory Manager Report-------------------------------|\n");
-	printf("|\n");
+	eePRINT("\n|--Memory Manager Report-------------------------------|\n");
+	eePRINT("|\n");
 
 	if( mMapPointers.empty() ) {
-		printf( "| No memory leaks detected.\n" );
+		eePRINT( "| No memory leaks detected.\n" );
 	} else {
-		printf( "| Memory leaks detected: \n" );
-		printf( "|\n");
+		eePRINT( "| Memory leaks detected: \n" );
+		eePRINT( "|\n");
 
-		printf( "| address\t file" );
+		eePRINT( "| address\t file" );
 
 		//Get max length of file name
 		int lMax =0;
@@ -110,30 +111,30 @@ void MemoryManager::LogResults() {
 		lMax += 5;
 
 		for( int i = 0; i < lMax - 4; ++i )
-			printf(" ");
+			eePRINT(" ");
 
-		printf( "line\t\t memory usage\t  \n" );
+		eePRINT( "line\t\t memory usage\t  \n" );
 
-		printf( "|------------------------------------------------------------\n" );
+		eePRINT( "|------------------------------------------------------------\n" );
 
 		it = mMapPointers.begin();
 
 		for( ; it != mMapPointers.end(); ++it ) {
 			cAllocatedPointer &ap = it->second;
 
-			printf( "| %p\t %s", ap.mData, ap.mFile.c_str() );
+			eePRINT( "| %p\t %s", ap.mData, ap.mFile.c_str() );
 
 			for ( int i=0; i < lMax - (int)ap.mFile.length(); ++i )
-				printf(" ");
+				eePRINT(" ");
 
-			printf( "%d\t\t %d\t\n", ap.mLine, ap.mMemory );
+			eePRINT( "%d\t\t %d\t\n", ap.mLine, ap.mMemory );
 		}
 	}
 
-	printf( "|\n" );
-	printf( "| Memory left: %s\n", SizeToString( mTotalMemoryUsage ).c_str() );
-	printf( "| Peak Memory Usage: %s\n", SizeToString( mPeakMemoryUsage ).c_str() );
-	printf( "|------------------------------------------------------|\n\n" );
+	eePRINT( "|\n" );
+	eePRINT( "| Memory left: %s\n", SizeToString( mTotalMemoryUsage ).c_str() );
+	eePRINT( "| Peak Memory Usage: %s\n", SizeToString( mPeakMemoryUsage ).c_str() );
+	eePRINT( "|------------------------------------------------------|\n\n" );
 	#endif
 }
 

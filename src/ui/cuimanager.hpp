@@ -40,7 +40,7 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 
 		void ResizeControl();
 
-		void SendMsg( cUIControl * Ctrl, const Uint32& Msg );
+		void SendMsg( cUIControl * Ctrl, const Uint32& Msg, const Uint32& Flags = 0 );
 
 		void SetTheme( const std::string& Theme );
 

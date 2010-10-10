@@ -19,7 +19,8 @@ cUISkin::cUISkin( const std::string& Name ) :
 	mName( Name ),
 	mNameHash( MakeHash( mName ) ),
 	mCurState(0),
-	mLastState(0)
+	mLastState(0),
+	mTheme(NULL)
 {
 	mColorDefault	= 0xFFFFFFFF;
 
@@ -92,6 +93,14 @@ void cUISkin::SetPrevState() {
 		mCurState = mLastState;
 		mLastState = State;
 	}
+}
+
+cUITheme * cUISkin::Theme() const {
+	return mTheme;
+}
+
+void cUISkin::Theme( cUITheme * theme ) {
+	mTheme = theme;
 }
 
 }}

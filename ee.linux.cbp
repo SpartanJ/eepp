@@ -504,6 +504,8 @@
 		<Unit filename="src/ui/cuibackground.hpp" />
 		<Unit filename="src/ui/cuiborder.cpp" />
 		<Unit filename="src/ui/cuiborder.hpp" />
+		<Unit filename="src/ui/cuicheckbox.cpp" />
+		<Unit filename="src/ui/cuicheckbox.hpp" />
 		<Unit filename="src/ui/cuicontrol.cpp" />
 		<Unit filename="src/ui/cuicontrol.hpp" />
 		<Unit filename="src/ui/cuicontrolanim.cpp" />
@@ -524,6 +526,8 @@
 		<Unit filename="src/ui/cuimessage.hpp" />
 		<Unit filename="src/ui/cuipushbutton.cpp" />
 		<Unit filename="src/ui/cuipushbutton.hpp" />
+		<Unit filename="src/ui/cuiradiobutton.cpp" />
+		<Unit filename="src/ui/cuiradiobutton.hpp" />
 		<Unit filename="src/ui/cuiskin.cpp" />
 		<Unit filename="src/ui/cuiskin.hpp" />
 		<Unit filename="src/ui/cuiskincomplex.cpp" />

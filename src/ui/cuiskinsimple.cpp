@@ -36,7 +36,7 @@ void cUISkinSimple::SetSkin( const Uint32& State ) {
 	mShape[ State ] = cShapeGroupManager::instance()->GetShapeByName( Name );
 }
 
-cShape * cUISkinSimple::GetSkin( const Uint32& State ) const {
+cShape * cUISkinSimple::GetShape( const Uint32& State ) const {
 	eeASSERT ( State < StateCount );
 
 	return mShape[ State ];

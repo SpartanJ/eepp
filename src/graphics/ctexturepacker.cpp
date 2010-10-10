@@ -438,14 +438,10 @@ Int32 cTexturePacker::PackTextures() { // pack the textures, the return code is 
 		if ( NULL == bestFit ) {
 			if ( PackBig == mStrategy ) {
 				mStrategy = PackTiny;
-				#ifdef EE_DEBUG
-				printf( "Chaging Strategy to Tiny. %s faults.\n", t->Name().c_str() );
-				#endif
+				eePRINT( "Chaging Strategy to Tiny. %s faults.\n", t->Name().c_str() );
 			} else if ( PackTiny == mStrategy ) {
 				mStrategy = PackFail;
-				#ifdef EE_DEBUG
-				printf( "Strategy fail, must create a new image. %s faults.\n", t->Name().c_str() );
-				#endif
+				eePRINT( "Strategy fail, must create a new image. %s faults.\n", t->Name().c_str() );
 			}
 		} else {
 			InsertTexture( t, bestFit, edgeCount, previousBestFit );
@@ -453,18 +449,14 @@ Int32 cTexturePacker::PackTextures() { // pack the textures, the return code is 
 		}
 
 		if ( PackFail == mStrategy ) {
-			#ifdef EE_DEBUG
-			printf( "Creating a new image as a child.\n" );
-			#endif
+			eePRINT( "Creating a new image as a child.\n" );
 			CreateChild();
 			break;
 		}
 	}
 
 	if ( mCount > 0 ) {
-		#ifdef EE_DEBUG
-		printf( "Creating a new image as a child. Some textures couldn't get it: %d\n", mCount );
-		#endif
+		eePRINT( "Creating a new image as a child. Some textures couldn't get it: %d\n", mCount );
 		CreateChild();
 	}
 
@@ -477,9 +469,7 @@ Int32 cTexturePacker::PackTextures() { // pack the textures, the return code is 
 			mTotalArea -= (*it).Area();
 	}
 
-	#ifdef EE_DEBUG
-	printf( "Total Area Used: %d. This represents the %4.2f percent \n", mTotalArea, ( (eeDouble)mTotalArea / (eeDouble)( mWidth * mHeight ) ) * 100.0 );
-	#endif
+	eePRINT( "Total Area Used: %d. This represents the %4.2f percent \n", mTotalArea, ( (eeDouble)mTotalArea / (eeDouble)( mWidth * mHeight ) ) * 100.0 );
 
 	return ( mWidth * mHeight ) - mTotalArea;
 }

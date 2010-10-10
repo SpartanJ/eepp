@@ -50,8 +50,11 @@ class MemoryManager {
 			return Data;
 		}
 
+		static size_t					GetPeakMemoryUsage() { return mPeakMemoryUsage; }
+		static size_t					GetTotalMemoryUsage() { return mTotalMemoryUsage; }
+
 		static tAllocatedPointerMap 	mMapPointers;
-		static size_t 					mTotalMemoryUsage;
+		static size_t 				mTotalMemoryUsage;
 		static size_t					mPeakMemoryUsage;
 };
 

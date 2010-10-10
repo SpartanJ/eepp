@@ -12,7 +12,7 @@ class tResourceManager {
 
 		virtual ~tResourceManager();
 
-		T * Add( T * Resource );
+		virtual T * Add( T * Resource );
 
 		bool Remove( T * Resource, bool Delete = true );
 
@@ -155,7 +155,7 @@ void tResourceManager<T>::PrintNames() {
 	for ( it = mResources.rbegin(); it != mResources.rend(); it++ ) {
 		sp = (*it);
 
-		printf( "'%s'\n", sp->Name().c_str() );
+		eePRINT( "'%s'\n", sp->Name().c_str() );
 	}
 }
 

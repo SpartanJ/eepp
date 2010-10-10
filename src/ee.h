@@ -153,5 +153,7 @@
 	#include "ui/cuitextbox.hpp"
 	#include "ui/cuitextinput.hpp"
 	#include "ui/cuipushbutton.hpp"
+	#include "ui/cuicheckbox.hpp"
+	#include "ui/cuiradiobutton.hpp"
 	using namespace EE::UI;
 #endif

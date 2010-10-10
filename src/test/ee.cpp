@@ -268,7 +268,7 @@ void cEETest::Init() {
 
 		if ( Mus.OpenFromPack( &PAK, "music.ogg" ) ) {
 			Mus.Loop(true);
-			Mus.Volume( 10.f );
+			Mus.Volume( 0.f );
 			Mus.Play();
 		}
 
@@ -428,25 +428,56 @@ void cEETest::CreateUI() {
 	Button->Text( L"Click Me" );
 	Button->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::ButtonClick ) );
 
+	TextParams.PosSet( 120, 20 );
+	TextParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT;
+	cUICheckBox * Checkbox = eeNew( cUICheckBox, ( TextParams ) );
+	Checkbox->Visible( true );
+	Checkbox->Text( L"Check Me" );
+	Checkbox->Enabled( true );
+
+	TextParams.PosSet( 120, 40 );
+	cUIRadioButton * RadioButton = eeNew( cUIRadioButton, ( TextParams ) );
+	RadioButton->Visible( true );
+	RadioButton->Text( L"Check Me" );
+	RadioButton->Enabled( true );
+
+	TextParams.PosSet( 120, 60 );
+	RadioButton = eeNew( cUIRadioButton, ( TextParams ) );
+	RadioButton->Visible( true );
+	RadioButton->Text( L"Check Me" );
+	RadioButton->Enabled( true );
+
 	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.\nPowered by Text Shrinker =)";
 	TTF->ShrinkText( mBuda, 400 );
 
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_normal.png" ), "aqua_textinput_normal" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_focus.png" ), "aqua_textinput_focus" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_normal_dl.png" ), "aqua_textinput_normal_dl" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_normal_dr.png" ), "aqua_textinput_normal_dr" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_normal_ml.png" ), "aqua_textinput_normal_ml" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_normal_mr.png" ), "aqua_textinput_normal_mr" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_normal_u.png" ), "aqua_textinput_normal_u" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_normal_d.png" ), "aqua_textinput_normal_d" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_normal_ul.png" ), "aqua_textinput_normal_ul" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_normal_ur.png" ), "aqua_textinput_normal_ur" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua_textinput_normal_m.png" ), "aqua_textinput_normal_m" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal.png" ), "aqua_textinput_normal" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_focus.png" ), "aqua_textinput_focus" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal_dl.png" ), "aqua_textinput_normal_dl" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal_dr.png" ), "aqua_textinput_normal_dr" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal_ml.png" ), "aqua_textinput_normal_ml" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal_mr.png" ), "aqua_textinput_normal_mr" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal_u.png" ), "aqua_textinput_normal_u" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal_d.png" ), "aqua_textinput_normal_d" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal_ul.png" ), "aqua_textinput_normal_ul" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal_ur.png" ), "aqua_textinput_normal_ur" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal_m.png" ), "aqua_textinput_normal_m" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_checkbox_active_menter.png" ), "aqua_checkbox_active_menter" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_checkbox_active_normal.png" ), "aqua_checkbox_active_normal" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_checkbox_inactive_menter.png" ), "aqua_checkbox_inactive_menter" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_checkbox_inactive_normal.png" ), "aqua_checkbox_inactive_normal" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_radiobutton_active_menter.png" ), "aqua_radiobutton_active_menter" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_radiobutton_active_normal.png" ), "aqua_radiobutton_active_normal" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_radiobutton_inactive_menter.png" ), "aqua_radiobutton_inactive_menter" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_radiobutton_inactive_normal.png" ), "aqua_radiobutton_inactive_normal" ) ) );
 
 	cUITheme * AquaTheme = eeNew( cUITheme, ( "aqua", "aqua" ) );
 
-	cUISkinComplex * AquaTextInput 	= eeNew( cUISkinComplex, ( "aqua_textinput" ) );
-	cUISkinComplex * AquaButton		= AquaTextInput->Copy( "aqua_button" );
+	cUISkinComplex * AquaTextInput 			= eeNew( cUISkinComplex, ( "aqua_textinput" ) );
+	cUISkinComplex * AquaButton				= AquaTextInput->Copy( "aqua_button" );
+	cUISkinSimple * AquaCheckboxActive 		= eeNew( cUISkinSimple, ( "aqua_checkbox_active" ) );
+	cUISkinSimple * AquaCheckboxInactive	= eeNew( cUISkinSimple, ( "aqua_checkbox_inactive" ) );
+	cUISkinSimple * AquaRadioButtonActive 	= eeNew( cUISkinSimple, ( "aqua_radiobutton_active" ) );
+	cUISkinSimple * AquaRadioButtonInactive	= eeNew( cUISkinSimple, ( "aqua_radiobutton_inactive" ) );
 
 	AquaTextInput->SetColor	( cUISkin::StateNormal		, eeColorA( 240, 240, 255, 255 ) );
 	AquaTextInput->SetColor	( cUISkin::StateFocus		, eeColorA( 250, 250, 255, 255 ) );
@@ -455,6 +486,10 @@ void cEETest::CreateUI() {
 
 	AquaTheme->Add( AquaTextInput );
 	AquaTheme->Add( AquaButton );
+	AquaTheme->Add( AquaCheckboxActive );
+	AquaTheme->Add( AquaCheckboxInactive );
+	AquaTheme->Add( AquaRadioButtonActive );
+	AquaTheme->Add( AquaRadioButtonInactive );
 
 	cUIThemeManager::instance()->Add( AquaTheme );
 
@@ -872,13 +907,25 @@ void cEETest::Render() {
 
 	if ( eeGetTicks() - lasttick >= 50 ) {
 		lasttick = eeGetTicks();
-		mInfo = StrFormated( "EE - FPS: %d Elapsed Time: %4.8f\nMouse X: %d Mouse Y: %d\nTexture Memory Size: %s",
+		#ifdef EE_DEBUG
+		mInfo = StrFormated( "EE - FPS: %d Elapsed Time: %4.8f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s\nApp Memory Usage: %s\nApp Peak Memory Usage: %s",
+							EE->FPS(),
+							et,
+							(Int32)Mouse.x,
+							(Int32)Mouse.y,
+							SizeToString( TF->MemorySize() ).c_str(),
+							SizeToString( MemoryManager::GetTotalMemoryUsage() ).c_str(),
+							SizeToString( MemoryManager::GetPeakMemoryUsage() ).c_str()
+						);
+		#else
+		mInfo = StrFormated( "EE - FPS: %d Elapsed Time: %4.8f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s",
 							EE->FPS(),
 							et,
 							(Int32)Mouse.x,
 							(Int32)Mouse.y,
 							SizeToString( TF->MemorySize() ).c_str()
 						);
+		#endif
 	}
 
 	if ( !MultiViewportMode ) {
@@ -926,15 +973,15 @@ void cEETest::Render() {
 	FF->Draw( mInfo, 6, 6 );
 
 	FF2->SetText( InBuf.Buffer() );
-	FF2->Draw( 6, 24, FONT_DRAW_SHADOW );
+	FF2->Draw( 6, 180, FONT_DRAW_SHADOW );
 
 	Uint32 NLPos = 0;
 	Uint32 LineNum = InBuf.GetCurPosLinePos( NLPos );
 	if ( InBuf.CurPos() == (eeInt)InBuf.Buffer().size() && !LineNum ) {
-		FF2->Draw( L"_", 6.f + FF2->GetTextWidth(), 24.f );
+		FF2->Draw( L"_", 6.f + FF2->GetTextWidth(), 180.f );
 	} else {
 		FF2->SetText( InBuf.Buffer().substr( NLPos, InBuf.CurPos() - NLPos ) );
-		FF2->Draw( L"_", 6.f + FF2->GetTextWidth(), 24.f + (eeFloat)LineNum * (eeFloat)FF2->GetFontSize() );
+		FF2->Draw( L"_", 6.f + FF2->GetTextWidth(), 180.f + (eeFloat)LineNum * (eeFloat)FF2->GetFontSize() );
 	}
 
 	mBudaTC->Draw( 0.f, 50.f );

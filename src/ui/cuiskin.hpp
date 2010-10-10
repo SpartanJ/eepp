@@ -5,6 +5,8 @@
 
 namespace EE { namespace UI {
 
+class cUITheme;
+
 class EE_API cUISkin {
 	public:
 		enum UISkinStates {
@@ -27,7 +29,7 @@ class EE_API cUISkin {
 
 		virtual void SetSkin( const Uint32& State ) = 0;
 
-		virtual cShape * GetSkin( const Uint32& State ) const = 0;
+		virtual cShape * GetShape( const Uint32& State ) const = 0;
 
 		virtual void SetColor( const Uint32& State, const eeColorA& Color );
 
@@ -44,6 +46,10 @@ class EE_API cUISkin {
 		void Name( const std::string& name );
 
 		const Uint32& Id() const;
+
+		cUITheme * Theme() const;
+
+		void Theme( cUITheme * theme );
 	protected:
 		friend class cUIControl;
 
@@ -53,6 +59,7 @@ class EE_API cUISkin {
 		Uint32		mLastState;
 		Uint32		mColorDefault;
 		eeColorA 	mColor[ StateCount ];
+		cUITheme * 	mTheme;
 
 		void StateBack( const Uint32& State );
 

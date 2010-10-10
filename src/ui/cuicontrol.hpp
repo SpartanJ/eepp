@@ -199,13 +199,19 @@ class EE_API cUIControl {
 
 		virtual ~cUIControl();
 
-		void SetTheme( const std::string& Theme );
+		void SetThemeByName( const std::string& Theme );
 
 		virtual void SetTheme( cUITheme * Theme );
 
 		void SetTheme( cUITheme * Theme, const std::string& ControlName );
 
 		void SetThemeToChilds( cUITheme * Theme );
+
+		cUISkin * GetSkin();
+
+		void ForceThemeSkin( cUITheme * Theme, const std::string& ControlName );
+
+		cUIControl * ChildGetFirst() const;
 	protected:
 		friend class cUIManager;
 		friend class cUIDragable;
@@ -237,6 +243,7 @@ class EE_API cUIControl {
 		Uint32			mNumCallBacks;
 
 		cUISkin	*		mSkin;
+		std::string		mSkinForcedName;
 
 		virtual void OnVisibleChange();
 

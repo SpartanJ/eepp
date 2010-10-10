@@ -126,7 +126,7 @@ void cUISkinComplex::SetSkin( const Uint32& State ) {
 	}
 }
 
-cShape * cUISkinComplex::GetSkin( const Uint32& State ) const {
+cShape * cUISkinComplex::GetShape( const Uint32& State ) const {
 	eeASSERT ( State < cUISkin::StateCount );
 
 	return mShape[ State ][ 0 ];

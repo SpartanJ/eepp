@@ -20,16 +20,19 @@ class EE_API cUIMessage {
 			MsgForceDWord = 0xFFFFFFFF
 		};
 
-		cUIMessage( cUIControl * Ctrl, const Uint32& Msg );
+		cUIMessage( cUIControl * Ctrl, const Uint32& Msg, const Uint32& Flags );
 
 		~cUIMessage();
 
 		cUIControl * Sender() const;
 
-		Uint32 Msg( void ) const;
+		const Uint32& Msg() const;
+
+		const Uint32& Flags() const;
 	private:
 		cUIControl *	mCtrl;
 		Uint32			mMsg;
+		Uint32			mFlags;
 };
 
 }}

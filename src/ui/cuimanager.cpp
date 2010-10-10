@@ -106,8 +106,8 @@ void cUIManager::OverControl( cUIControl * Ctrl ) {
 	mOverControl = Ctrl;
 }
 
-void cUIManager::SendMsg( cUIControl * Ctrl, const Uint32& Msg ) {
-	cUIMessage tMsg( Ctrl, Msg );
+void cUIManager::SendMsg( cUIControl * Ctrl, const Uint32& Msg, const Uint32& Flags ) {
+	cUIMessage tMsg( Ctrl, Msg, Flags );
 
 	Ctrl->MessagePost( &tMsg );
 }
@@ -120,14 +120,12 @@ void cUIManager::Update() {
 			mFocusControl->OnMouseUp( mKM->GetMousePos(), mKM->ReleaseTrigger() );
 
 			if ( mKM->ClickTrigger() ) {
+				SendMsg( mFocusControl, cUIMessage::MsgClick, mKM->ClickTrigger() );
 				mFocusControl->OnMouseClick( mKM->GetMousePos(), mKM->ClickTrigger() );
 
-				SendMsg( mFocusControl, cUIMessage::MsgClick );
-
 				if ( mKM->DoubleClickTrigger() ) {
+					SendMsg( mFocusControl, cUIMessage::MsgDoubleClick, mKM->DoubleClickTrigger() );
 					mFocusControl->OnMouseDoubleClick( mKM->GetMousePos(), mKM->DoubleClickTrigger() );
-
-					SendMsg( mFocusControl, cUIMessage::MsgDoubleClick );
 				}
 			}
 		}
@@ -137,15 +135,15 @@ void cUIManager::Update() {
 
 	if ( pOver != mOverControl ) {
 		if ( NULL != mOverControl ) {
+			SendMsg( mOverControl, cUIMessage::MsgMouseEnter );
 			mOverControl->OnMouseExit( mKM->GetMousePos(), 0 );
-			SendMsg( mOverControl, cUIMessage::MsgMouseExit );
 		}
 
 		mOverControl = pOver;
 
 		if ( NULL != mOverControl ) {
-			mOverControl->OnMouseEnter( mKM->GetMousePos(), 0 );
 			SendMsg( mOverControl, cUIMessage::MsgMouseEnter );
+			mOverControl->OnMouseEnter( mKM->GetMousePos(), 0 );
 		}
 	} else {
 		if ( NULL != mOverControl )
