@@ -212,6 +212,8 @@ class EE_API cUIControl {
 		void ForceThemeSkin( cUITheme * Theme, const std::string& ControlName );
 
 		cUIControl * ChildGetFirst() const;
+		
+		bool IsMouseOver();
 	protected:
 		friend class cUIManager;
 		friend class cUIDragable;

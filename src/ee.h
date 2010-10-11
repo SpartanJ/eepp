@@ -155,5 +155,6 @@
 	#include "ui/cuipushbutton.hpp"
 	#include "ui/cuicheckbox.hpp"
 	#include "ui/cuiradiobutton.hpp"
+	#include "ui/cuislider.hpp"
 	using namespace EE::UI;
 #endif

@@ -10,7 +10,8 @@ cUIControl::cUIControl( const CreateParams& Params ) :
 	mSize( Params.Size ),
 	mParentCtrl( Params.ParentCtrl ),
 	mFlags( Params.Flags ),
-	mData( 0xFFFFFFFF ),
+	mType( 0 ),
+	mData( 0 ),
 	mChild( NULL ),
 	mNext( NULL ),
 	mBackground( Params.Background ),
@@ -230,17 +231,17 @@ void cUIControl::SendCommonEvent( const Uint32& Event ) {
 
 Uint32 cUIControl::OnKeyDown( const cUIEventKey& Event ) {
 	SendEvent( &Event );
-	return 0;
+	return 1;
 }
 
 Uint32 cUIControl::OnKeyUp( const cUIEventKey& Event ) {
 	SendEvent( &Event );
-	return 0;
+	return 1;
 }
 
 Uint32 cUIControl::OnMouseMove( const eeVector2i& Pos, const Uint32 Flags ) {
 	SendMouseEvent( cUIEvent::EventMouseMove, Pos, Flags );
-	return 0;
+	return 1;
 }
 
 Uint32 cUIControl::OnMouseDown( const eeVector2i& Pos, const Uint32 Flags ) {
@@ -248,7 +249,7 @@ Uint32 cUIControl::OnMouseDown( const eeVector2i& Pos, const Uint32 Flags ) {
 
 	SetSkinState( cUISkin::StateMouseDown );
 
-	return 0;
+	return 1;
 }
 
 Uint32 cUIControl::OnMouseUp( const eeVector2i& Pos, const Uint32 Flags ) {
@@ -256,20 +257,26 @@ Uint32 cUIControl::OnMouseUp( const eeVector2i& Pos, const Uint32 Flags ) {
 
 	SetPrevSkinState();
 
-	return 0;
+	return 1;
 }
 
 Uint32 cUIControl::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
 	SendMouseEvent( cUIEvent::EventMouseClick, Pos, Flags );
-	return 0;
+	return 1;
+}
+
+bool cUIControl::IsMouseOver() {
+	return 0 != Read32BitKey( &mControlFlags, UI_CTRL_FLAG_MOUSEOVER_POS );
 }
 
 Uint32 cUIControl::OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags ) {
 	SendMouseEvent( cUIEvent::EventMouseDoubleClick, Pos, Flags );
-	return 0;
+	return 1;
 }
 
 Uint32 cUIControl::OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags ) {
+	Write32BitKey( &mControlFlags, UI_CTRL_FLAG_MOUSEOVER_POS, 1 );
+	
 	SendMouseEvent( cUIEvent::EventMouseEnter, Pos, Flags );
 
 	SetSkinState( cUISkin::StateMouseEnter );
@@ -278,6 +285,8 @@ Uint32 cUIControl::OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags ) {
 }
 
 Uint32 cUIControl::OnMouseExit( const eeVector2i& Pos, const Uint32 Flags ) {
+	Write32BitKey( &mControlFlags, UI_CTRL_FLAG_MOUSEOVER_POS, 0 );
+	
 	SendMouseEvent( cUIEvent::EventMouseExit, Pos, Flags );
 
 	SetSkinState( cUISkin::StateMouseExit );
@@ -290,7 +299,7 @@ Uint32 cUIControl::OnFocus() {
 
 	SetSkinState( cUISkin::StateFocus );
 
-	return 0;
+	return 1;
 }
 
 Uint32 cUIControl::OnFocusLoss() {
@@ -298,7 +307,7 @@ Uint32 cUIControl::OnFocusLoss() {
 
 	SetSkinState( cUISkin::StateLostFocus );
 
-	return 0;
+	return 1;
 }
 
 Uint32 cUIControl::HAlign() const {

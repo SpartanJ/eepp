@@ -6,7 +6,7 @@ cUIDragable::cUIDragable( const cUIControl::CreateParams& Params ) :
 	cUIControl( Params ),
 	mDragEnable( false ),
 	mDragging( false ),
-	mDragButton(EE_BUTTON_LEFT)
+	mDragButton( EE_BUTTON_LMASK )
 {
 }
 
@@ -62,7 +62,7 @@ void cUIDragable::Update() {
 		return;
 
 	if ( mDragging ) {
-		if ( !( cInput::instance()->PressTrigger() & EE_BUTTON( mDragButton ) ) ) {
+		if ( !( cInput::instance()->PressTrigger() & mDragButton ) ) {
 			mDragging = false;
 			return;
 		}

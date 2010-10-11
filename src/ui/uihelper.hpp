@@ -19,28 +19,37 @@ Uint32 EE_API HAlignGet( Uint32 Flags );
 
 Uint32 EE_API VAlignGet( Uint32 Flags );
 
-#define UI_CTRL_FLAG_CLOSE		(1 << 0)
-#define UI_CTRL_FLAG_CLOSE_FO	(1 << 1)
-#define UI_CTRL_FLAG_ANIM		(1 << 2)
+#define UI_CTRL_FLAG_CLOSE_POS		(0)
+#define UI_CTRL_FLAG_CLOSE			(1 << UI_CTRL_FLAG_CLOSE_POS)
 
-#define UI_TEXT_DRAW_SHADOW 	FONT_DRAW_SHADOW
-#define UI_AUTO_SIZE			(1 << 6)
-#define UI_INGORE_FOCUS			(1 << 7)
-#define UI_FILL_BACKGROUND		(1 << 8)
-#define UI_BORDER				(1 << 9)
-#define UI_TAB_STOP				(1 << 10)
-#define UI_FIT_TO_CONTROL 		(1 << 11)
-#define UI_CLIP_ENABLE 			(1 << 12)
-#define UI_AUTO_SHRINK_TEXT 	(1 << 13)
+#define UI_CTRL_FLAG_CLOSE_FO_POS	(1)
+#define UI_CTRL_FLAG_CLOSE_FO		(1 << UI_CTRL_FLAG_CLOSE_FO_POS)
 
-#define UI_TYPE_CONTROL		 	(0)
-#define UI_TYPE_CONTROL_ANIM 	(1)
-#define UI_TYPE_GFX 		 	(2)
+#define UI_CTRL_FLAG_ANIM_POS		(2)
+#define UI_CTRL_FLAG_ANIM			(1 << UI_CTRL_FLAG_ANIM_POS)
+
+#define UI_CTRL_FLAG_MOUSEOVER_POS	(3)
+#define UI_CTRL_FLAG_MOUSEOVER		(1 << UI_CTRL_FLAG_MOUSEOVER_POS)
+
+#define UI_TEXT_DRAW_SHADOW 		FONT_DRAW_SHADOW
+#define UI_AUTO_SIZE				(1 << 6)
+#define UI_INGORE_FOCUS				(1 << 7)
+#define UI_FILL_BACKGROUND			(1 << 8)
+#define UI_BORDER					(1 << 9)
+#define UI_TAB_STOP					(1 << 10)
+#define UI_FIT_TO_CONTROL 			(1 << 11)
+#define UI_CLIP_ENABLE 				(1 << 12)
+#define UI_AUTO_SHRINK_TEXT 		(1 << 13)
+
+#define UI_TYPE_CONTROL		 		(0)
+#define UI_TYPE_CONTROL_ANIM 		(1)
+#define UI_TYPE_GFX 		 		(2)
 #define UI_TYPE_TEXTBOX 	 	(3)
-#define UI_TYPE_TEXTINPUT		(4)
-#define UI_TYPE_PUSHBUTTON		(5)
-#define UI_TYPE_CHECKBOX		(6)
-#define UI_TYPE_RADIOBUTTON		(7)
+#define UI_TYPE_TEXTINPUT			(4)
+#define UI_TYPE_PUSHBUTTON			(5)
+#define UI_TYPE_CHECKBOX			(6)
+#define UI_TYPE_RADIOBUTTON			(7)
+#define UI_TYPE_SLIDER				(8)
 
 #define UI_TYPE_GET(X) 			( 1 << (X) )
 

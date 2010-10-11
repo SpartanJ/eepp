@@ -1,5 +1,5 @@
-#ifndef EE_UICUIPUSHBUTTON_H
-#define EE_UICUIPUSHBUTTON_H
+#ifndef EE_UICUIPUSHBUTTON_HPP
+#define EE_UICUIPUSHBUTTON_HPP
 
 #include "cuitextbox.hpp"
 

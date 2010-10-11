@@ -70,6 +70,9 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 		tShape->Draw( X, Y + uls.Height(), mColor[ mCurState ] );
 
 		tShape->ResetDestWidthAndHeight();
+
+		if ( uls.Width() == 0 )
+			uls.x = tShape->RealSize().Width();
 	}
 
 	tShape = mShape[ mCurState ][ Up ];
@@ -80,11 +83,20 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 		tShape->Draw( X + uls.Width(), Y, mColor[ mCurState ] );
 
 		tShape->ResetDestWidthAndHeight();
+
+		if ( urs.Height() == 0 )
+			urs.y = tShape->RealSize().Height();
+
+		if ( uls.Height() == 0 )
+			uls.y = tShape->RealSize().Height();
 	}
 
 	tShape = mShape[ mCurState ][ Right ];
 
 	if ( NULL != tShape ) {
+		if ( urs.Width() == 0 )
+			urs.x = tShape->RealSize().Width();
+
 		tShape->DestHeight( Height - urs.Height() - drs.Height() );
 
 		tShape->Draw( X + Width - urs.Width(), Y + urs.Height(), mColor[ mCurState ] );
@@ -129,7 +141,7 @@ void cUISkinComplex::SetSkin( const Uint32& State ) {
 cShape * cUISkinComplex::GetShape( const Uint32& State ) const {
 	eeASSERT ( State < cUISkin::StateCount );
 
-	return mShape[ State ][ 0 ];
+	return mShape[ State ][ Center ];
 }
 
 void cUISkinComplex::SetState( const Uint32& State ) {

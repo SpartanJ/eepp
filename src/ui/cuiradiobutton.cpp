@@ -4,6 +4,8 @@ namespace EE { namespace UI {
 
 cUIRadioButton::cUIRadioButton( const cUITextBox::CreateParams& Params ) :
 	cUITextBox( Params ),
+	mActiveButton(NULL),
+	mInactiveButton(NULL),
 	mActive( false )
 {
 	mType |= UI_TYPE_GET(UI_TYPE_RADIOBUTTON);
@@ -21,7 +23,7 @@ cUIRadioButton::cUIRadioButton( const cUITextBox::CreateParams& Params ) :
 	mInactiveButton = eeNew( cUIPushButton, ( ButtonParams ) );
 	mInactiveButton->Visible( true );
 	mInactiveButton->Enabled( true );
-
+	
 	Padding( eeRectf(0,0,0,0) );
 
 	AutoActivate();
@@ -134,6 +136,8 @@ bool cUIRadioButton::CheckActives() {
 }
 
 void cUIRadioButton::AutoActivate() {
+	eeASSERT( NULL != mParentCtrl );
+	
 	if ( NULL != mParentCtrl ) {
 		cUIControl * tChild = mParentCtrl->ChildGetFirst();
 
@@ -141,12 +145,13 @@ void cUIRadioButton::AutoActivate() {
 			if ( tChild->Type() & UI_TYPE_GET( UI_TYPE_RADIOBUTTON ) ) {
 				if ( tChild != this ) {
 					cUIRadioButton * tRB = reinterpret_cast<cUIRadioButton*> ( tChild );
-
-					if ( tRB->Active() )
+					
+					if ( tRB->Active() ) {
 						return;
+					}
 				}
 			}
-
+			
 			tChild = tChild->NextGet();
 		}
 	}

@@ -8,7 +8,7 @@ cUITextInput::cUITextInput( const cUITextInput::CreateParams& Params ) :
 	mCursorPos(0)
 {
 	mType |= UI_TYPE_GET(UI_TYPE_TEXTINPUT);
-
+	
 	mTextBuffer.Start();
 	mTextBuffer.Active( false );
 	mTextBuffer.SupportNewLine( Params.SupportNewLine );

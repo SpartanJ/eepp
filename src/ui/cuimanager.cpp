@@ -179,6 +179,10 @@ const eeFloat& cUIManager::Elapsed() const {
 	return mElapsed;
 }
 
+eeVector2i cUIManager::GetMousePos() {
+	return mKM->GetMousePos();
+}
+
 void cUIManager::ClipEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
 	GLdouble tX = (GLdouble)x;
 	GLdouble tY = (GLdouble)y;
@@ -225,6 +229,10 @@ void cUIManager::SetTheme( cUITheme * Theme ) {
 		mControl->SetTheme( Theme );
 		mControl->SetThemeToChilds( Theme );
 	}
+}
+
+cInput * cUIManager::GetInput() const {
+	return mKM;
 }
 
 }}
