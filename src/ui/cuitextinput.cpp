@@ -8,10 +8,9 @@ cUITextInput::cUITextInput( const cUITextInput::CreateParams& Params ) :
 	mCursorPos(0)
 {
 	mType |= UI_TYPE_GET(UI_TYPE_TEXTINPUT);
-	
+
 	mTextBuffer.Start();
 	mTextBuffer.Active( false );
-	mTextBuffer.SupportNewLine( Params.SupportNewLine );
 	mTextBuffer.SupportFreeEditing( Params.SupportFreeEditing );
 	mTextBuffer.MaxLenght( Params.MaxLenght );
 	mTextBuffer.SetReturnCallback( cb::Make0( this, &cUITextInput::PrivOnPressEnter ) );
@@ -136,6 +135,24 @@ void cUITextInput::AlignFix() {
 
 void cUITextInput::SetTheme( cUITheme * Theme ) {
 	cUIControl::SetTheme( Theme, "textinput" );
+}
+
+cInputTextBuffer * cUITextInput::GetInputTextBuffer() {
+	return &mTextBuffer;
+}
+
+void cUITextInput::Text( const std::wstring& text ) {
+	cUITextBox::Text( text );
+
+	mTextBuffer.Buffer( text );
+}
+
+void cUITextInput::Text( const std::string& text ) {
+	cUITextBox::Text( text );
+}
+
+const std::wstring& cUITextInput::Text() {
+	return cUITextBox::Text();
 }
 
 }}

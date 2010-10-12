@@ -10,15 +10,15 @@ class EE_API cUITextInput : public cUITextBox {
 	public:
 		class CreateParams : public cUITextBox::CreateParams {
 			public:
-				inline CreateParams() : cUITextBox::CreateParams() {
-					SupportNewLine = true;
-					SupportFreeEditing = true;
-					MaxLenght = 256;
+				inline CreateParams() :
+					cUITextBox::CreateParams(),
+					SupportFreeEditing( true ),
+					MaxLenght( 256 )
+				{
 				}
 
 				inline ~CreateParams() {}
 
-				bool SupportNewLine;
 				bool SupportFreeEditing;
 				Uint32 MaxLenght;
 		};
@@ -37,9 +37,17 @@ class EE_API cUITextInput : public cUITextBox {
 
 		virtual Uint32 OnPressEnter();
 
+		virtual void Text( const std::wstring& text );
+
+		virtual void Text( const std::string& text );
+
+		virtual const std::wstring& Text();
+
 		void PushIgnoredChar( const Uint32& ch );
 
 		virtual void SetTheme( cUITheme * Theme );
+
+		cInputTextBuffer * GetInputTextBuffer();
 	protected:
 		cInputTextBuffer mTextBuffer;
 		bool mShowingWait;

@@ -88,19 +88,23 @@ void cUIRadioButton::Active( const bool& active ) {
 			mInactiveButton->Visible( true );
 
 			mActive = false;
+			
+			OnValueChange();
 		}
 	} else {
 		mActiveButton->Visible( true );
 		mInactiveButton->Visible( false );
 
 		mActive = true;
+		
+		OnValueChange();
 	}
 
 	if ( active && NULL != mParentCtrl ) {
 		cUIControl * tChild = mParentCtrl->ChildGetFirst();
 
 		while ( NULL != tChild ) {
-			if ( tChild->Type() & UI_TYPE_GET( UI_TYPE_RADIOBUTTON ) ) {
+			if ( tChild->IsType( UI_TYPE_RADIOBUTTON ) ) {
 				if ( tChild != this ) {
 					cUIRadioButton * tRB = reinterpret_cast<cUIRadioButton*> ( tChild );
 
@@ -119,7 +123,7 @@ bool cUIRadioButton::CheckActives() {
 		cUIControl * tChild = mParentCtrl->ChildGetFirst();
 
 		while ( NULL != tChild ) {
-			if ( tChild->Type() & UI_TYPE_GET( UI_TYPE_RADIOBUTTON ) ) {
+			if ( tChild->IsType( UI_TYPE_RADIOBUTTON ) ) {
 				if ( tChild != this ) {
 					cUIRadioButton * tRB = reinterpret_cast<cUIRadioButton*> ( tChild );
 
@@ -142,7 +146,7 @@ void cUIRadioButton::AutoActivate() {
 		cUIControl * tChild = mParentCtrl->ChildGetFirst();
 
 		while ( NULL != tChild ) {
-			if ( tChild->Type() & UI_TYPE_GET( UI_TYPE_RADIOBUTTON ) ) {
+			if ( tChild->IsType( UI_TYPE_RADIOBUTTON ) ) {
 				if ( tChild != this ) {
 					cUIRadioButton * tRB = reinterpret_cast<cUIRadioButton*> ( tChild );
 					

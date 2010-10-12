@@ -146,6 +146,8 @@ class EE_API cUIControl {
 		virtual Uint32 OnFocus();
 
 		virtual Uint32 OnFocusLoss();
+		
+		virtual Uint32 OnValueChange();
 
 		Uint32 HAlign() const;
 

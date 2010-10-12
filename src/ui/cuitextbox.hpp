@@ -32,11 +32,11 @@ class EE_API cUITextBox : public cUIControlAnim {
 
 		void Font( cFont * font );
 
-		const std::wstring& Text();
+		virtual const std::wstring& Text();
 
-		void Text( const std::wstring& text );
+		virtual void Text( const std::wstring& text );
 
-		void Text( const std::string& text );
+		virtual void Text( const std::string& text );
 
 		const eeColorA& Color() const;
 

@@ -6,6 +6,10 @@
 
 namespace EE { namespace Window {
 
+#define INPUT_TB_SUPPORT_NEW_LINE 		(0)
+#define INPUT_TB_ALLOW_ONLY_NUMBERS 	(1)
+#define INPUT_TB_ALLOW_DOT_IN_NUMBERS	(2)
+
 class EE_API cInputTextBuffer {
 	public:
 		typedef cb::Callback0<void> EnterCallback;
@@ -15,28 +19,37 @@ class EE_API cInputTextBuffer {
 		~cInputTextBuffer();
 
 		/** @return The current buffer */
-		std::wstring Buffer() const { return mText; };
+		std::wstring Buffer() const;
 
 		/** Set a new current buffer */
 		void Buffer( const std::wstring& str );
 
 		/** @return If input buffer is active */
-		bool Active() const { return mActive; }
+		bool Active() const;
 
 		/** Set the state of the input buffer */
-		void Active( const bool& Active ) { mActive = Active; }
+		void Active( const bool& Active );
 
 		/** @return If new line is supported */
-		bool SupportNewLine() const { return mSupportNewLine; }
+		bool SupportNewLine();
 
 		/** Support new line consist of allowing to add a new line when key return is pressed. */
-		void SupportNewLine( const bool& SupportNewLine ) { mSupportNewLine = SupportNewLine; }
+		void SupportNewLine( const bool& SupportNewLine );
 
 		/** @return If Free Editing is enabled */
-		bool SupportFreeEditing() const { return mPromtPosSupport; }
+		bool SupportFreeEditing() const;
 
 		/** Free editing consist on the capability of moving the cursor position over the buffer, to write over the buffer, and not only after the last character. */
-		void SupportFreeEditing( const bool& SupportNewLine ) { mPromtPosSupport = SupportNewLine; }
+		void SupportFreeEditing( const bool& SupportNewLine );
+
+		/** Block all the inserts, allow only numeric characters. */
+		void AllowOnlyNumbers( const bool& onlynums, const bool& allowdots = false );
+
+		/** @return If is only allowing numbers */
+		bool AllowOnlyNumbers();
+
+		/** @return If is only allowing numbers, it allow floating point numbers? */
+		bool AllowDotsInNumbers();
 
 		/** Start the input buffer */
 		void Start();
@@ -78,7 +91,7 @@ class EE_API cInputTextBuffer {
 
 		std::wstring mText;
 		bool mActive;
-		bool mSupportNewLine;
+		Uint32 mFlags;
 		bool mChangeSinceLastUpdate;
 		Uint32 mCallback;
 

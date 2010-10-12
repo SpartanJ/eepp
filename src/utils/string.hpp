@@ -9,7 +9,7 @@ namespace EE { namespace Utils {
 bool EE_API isCharacter( const eeInt& mValue );
 
 /** @return If the value passed is a number */
-bool EE_API isNumber( const eeInt& mValue );
+bool EE_API isNumber( const eeInt& mValue, bool AllowDot = false );
 
 /** @return If the value passed is a letter */
 bool EE_API isLetter( const eeInt& mValue );

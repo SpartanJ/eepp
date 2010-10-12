@@ -141,6 +141,8 @@ void cUISlider::Value( const eeFloat& Val ) {
 			else
 				mSlider->Pos( mSlider->Pos().x, mBackSlider->Size().Height() * ( Val - mMinValue ) );
 		}
+		
+		OnValueChange();
 	}
 }
 

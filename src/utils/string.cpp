@@ -6,7 +6,10 @@ bool isCharacter( const eeInt& mValue ) {
 	return (mValue >= 32 && mValue <= 126) || (mValue >= 161 && mValue <= 255) || (mValue == 9);
 }
 
-bool isNumber( const eeInt& mValue ) {
+bool isNumber( const eeInt& mValue, bool AllowDot ) {
+	if ( AllowDot )
+		return ( mValue >= 48 && mValue <= 57 ) || mValue == 46;
+
 	return mValue >= 48 && mValue <= 57;
 }
 

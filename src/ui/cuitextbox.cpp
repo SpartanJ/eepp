@@ -29,7 +29,7 @@ void cUITextBox::Draw() {
 			if ( IsClipped() )
 				cUIManager::instance()->ClipEnable( mScreenPos.x + (Int32)mPadding.Left, mScreenPos.y + (Int32)mPadding.Top, mSize.Width() + (Int32)mPadding.Right, mSize.Height() + (Int32)mPadding.Bottom );
 
-			mTextCache.Draw( (eeFloat)mScreenPos.x + mAlignOffset.x + mPadding.Left + 1, (eeFloat)mScreenPos.y + mAlignOffset.y + mPadding.Top, Flags(), 1.f, 0.f, mBlend );
+			mTextCache.Draw( (eeFloat)mScreenPos.x + mAlignOffset.x + mPadding.Left + 1.f, (eeFloat)mScreenPos.y + mAlignOffset.y + mPadding.Top, Flags(), 1.f, 0.f, mBlend );
 
 			if ( IsClipped() )
 				cUIManager::instance()->ClipDisable();
@@ -105,7 +105,7 @@ void cUITextBox::AutoSize() {
 void cUITextBox::AutoAlign() {
 	switch ( FontHAlignGet( Flags() ) ) {
 		case UI_HALIGN_CENTER:
-			mAlignOffset.x = ( (eeFloat)mSize.x - (eeFloat)mTextCache.GetTextWidth() ) * 0.5f;
+			mAlignOffset.x = (eeFloat)( (Int32)( mSize.x - mTextCache.GetTextWidth() ) / 2 );
 			break;
 		case UI_HALIGN_RIGHT:
 			mAlignOffset.x = ( (eeFloat)mSize.x - (eeFloat)mTextCache.GetTextWidth() );
@@ -117,7 +117,7 @@ void cUITextBox::AutoAlign() {
 
 	switch ( FontVAlignGet( Flags() ) ) {
 		case UI_VALIGN_CENTER:
-			mAlignOffset.y = ( (eeFloat)mSize.y - (eeFloat)mTextCache.GetTextHeight() ) * 0.5f;
+			mAlignOffset.y = (eeFloat)( ( (Int32)( mSize.y - mTextCache.GetTextHeight() ) ) / 2 );
 			break;
 		case UI_VALIGN_BOTTOM:
 			mAlignOffset.y = ( (eeFloat)mSize.y - (eeFloat)mTextCache.GetTextHeight() );

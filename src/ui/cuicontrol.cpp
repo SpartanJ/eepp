@@ -310,6 +310,14 @@ Uint32 cUIControl::OnFocusLoss() {
 	return 1;
 }
 
+
+Uint32 cUIControl::OnValueChange() {
+	SendCommonEvent( cUIEvent::EventOnValueChange );
+	
+	return 1;
+}
+
+
 Uint32 cUIControl::HAlign() const {
 	return mFlags & UI_HALIGN_MASK;
 }

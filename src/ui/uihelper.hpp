@@ -44,12 +44,13 @@ Uint32 EE_API VAlignGet( Uint32 Flags );
 #define UI_TYPE_CONTROL		 		(0)
 #define UI_TYPE_CONTROL_ANIM 		(1)
 #define UI_TYPE_GFX 		 		(2)
-#define UI_TYPE_TEXTBOX 	 	(3)
+#define UI_TYPE_TEXTBOX 	 		(3)
 #define UI_TYPE_TEXTINPUT			(4)
 #define UI_TYPE_PUSHBUTTON			(5)
 #define UI_TYPE_CHECKBOX			(6)
 #define UI_TYPE_RADIOBUTTON			(7)
 #define UI_TYPE_SLIDER				(8)
+#define UI_TYPE_SPINBOX				(9)
 
 #define UI_TYPE_GET(X) 			( 1 << (X) )
 

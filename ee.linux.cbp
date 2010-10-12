@@ -538,6 +538,8 @@
 		<Unit filename="src/ui/cuislider.hpp" />
 		<Unit filename="src/ui/cuisliderbutton.cpp" />
 		<Unit filename="src/ui/cuisliderbutton.hpp" />
+		<Unit filename="src/ui/cuispinbox.cpp" />
+		<Unit filename="src/ui/cuispinbox.hpp" />
 		<Unit filename="src/ui/cuitextbox.cpp" />
 		<Unit filename="src/ui/cuitextbox.hpp" />
 		<Unit filename="src/ui/cuitextinput.cpp" />

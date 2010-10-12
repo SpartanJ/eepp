@@ -89,6 +89,8 @@ void cUICheckBox::Active( const bool& active ) {
 
 		mActive = true;
 	}
+	
+	OnValueChange();
 }
 
 const bool& cUICheckBox::Active() const {

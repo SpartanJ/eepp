@@ -3,13 +3,15 @@
 namespace EE { namespace Window {
 
 cInputTextBuffer::cInputTextBuffer( const bool& Active, const bool& SupportNewLine, const bool& SupportFreeEditing, const Uint32& MaxLenght ) :
+	mActive( Active ),
+	mFlags(0),
 	mChangeSinceLastUpdate(false),
 	mCallback(0),
 	mPromptPos(0),
 	mPromptAutoPos(true)
 {
-	mActive = Active;
-	mSupportNewLine = SupportNewLine;
+	this->SupportNewLine( SupportNewLine );
+
 	mPromtPosSupport = SupportFreeEditing;
 	mMaxLenght = MaxLenght;
 	SetAutoPromp();
@@ -17,12 +19,13 @@ cInputTextBuffer::cInputTextBuffer( const bool& Active, const bool& SupportNewLi
 
 cInputTextBuffer::cInputTextBuffer() :
 	mActive(true),
-	mSupportNewLine(true),
+	mFlags(0),
 	mChangeSinceLastUpdate(false),
 	mCallback(0),
 	mPromtPosSupport(true),
 	mMaxLenght(0xFFFFFFFF)
 {
+	SupportNewLine( false );
 	SetAutoPromp();
 }
 
@@ -63,7 +66,7 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 							}
 						}
 					} else if ( ( c == KEY_RETURN || c == KEY_KP_ENTER ) && !cInput::instance()->MetaPressed() && !cInput::instance()->AltPressed() && !cInput::instance()->ControlPressed() ) {
-						if ( mSupportNewLine && CanAdd() ) {
+						if ( SupportNewLine() && CanAdd() ) {
 							InsertChar( mText, mPromptPos, L'\n' );
 							mPromptPos++;
 						}
@@ -85,6 +88,10 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 						}
 					} else if ( CanAdd() && isCharacter(c) && !cInput::instance()->MetaPressed() && !cInput::instance()->AltPressed() && !cInput::instance()->ControlPressed() ) {
 						bool Ignored = false;
+
+						if ( AllowOnlyNumbers() && !isNumber( c, AllowDotsInNumbers() ) ) {
+							Ignored = true;
+						}
 
 						if ( mIgnoredChars.size() ) {
 							for ( eeUint i = 0; i < mIgnoredChars.size(); i++ ) {
@@ -125,13 +132,15 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 				if ( c == KEY_BACKSPACE && mText.size() > 0 ) {
 					mText.resize( mText.size() - 1 );
 				} else if ( (c == KEY_RETURN || c == KEY_KP_ENTER) && !cInput::instance()->MetaPressed() && !cInput::instance()->AltPressed() && !cInput::instance()->ControlPressed() ) {
-					if ( mSupportNewLine && CanAdd() )
+					if ( SupportNewLine() && CanAdd() )
 						mText += L'\n';
 
 					if ( mEnterCall.IsSet() )
 						mEnterCall();
 				} else if ( CanAdd() && isCharacter(c) && !cInput::instance()->MetaPressed() && !cInput::instance()->AltPressed() && !cInput::instance()->ControlPressed() ) {
-					mText += c;
+					if ( !( AllowOnlyNumbers() && !isNumber( c, AllowDotsInNumbers() ) ) ) {
+						mText += c;
+					}
 				}
 			}
 		}
@@ -161,9 +170,11 @@ void cInputTextBuffer::SetAutoPromp( const bool& set ) {
 }
 
 void cInputTextBuffer::Buffer( const std::wstring& str ) {
-	mText = str;
-	mChangeSinceLastUpdate = true;
-
+	if ( mText != str ) {
+		mText = str;
+		mChangeSinceLastUpdate = true;
+	}
+	
 	if ( mPromtPosSupport )
 		SetAutoPromp();
 }
@@ -211,6 +222,47 @@ void cInputTextBuffer::MaxLenght( const Uint32& Max ) {
 
 const Uint32& cInputTextBuffer::MaxLenght() const {
 	return mMaxLenght;
+}
+
+std::wstring cInputTextBuffer::Buffer() const {
+	return mText;
+}
+
+bool cInputTextBuffer::Active() const {
+	return mActive;
+}
+
+void cInputTextBuffer::Active( const bool& Active ) {
+	mActive = Active;
+}
+
+bool cInputTextBuffer::SupportNewLine() {
+	return 0 != ( mFlags & ( 1 << INPUT_TB_SUPPORT_NEW_LINE ) );
+}
+
+void cInputTextBuffer::SupportNewLine( const bool& SupportNewLine ) {
+	Write32BitKey( &mFlags, INPUT_TB_SUPPORT_NEW_LINE, SupportNewLine == true );
+}
+
+void cInputTextBuffer::AllowOnlyNumbers( const bool& onlynums, const bool& allowdots ) {
+	Write32BitKey( &mFlags, INPUT_TB_ALLOW_ONLY_NUMBERS, onlynums == true );
+	Write32BitKey( &mFlags, INPUT_TB_ALLOW_DOT_IN_NUMBERS, allowdots == true );
+}
+
+bool cInputTextBuffer::AllowOnlyNumbers() {
+	return 0 != ( mFlags & ( 1 << INPUT_TB_ALLOW_ONLY_NUMBERS ) );
+}
+
+bool cInputTextBuffer::AllowDotsInNumbers() {
+	return 0 != ( mFlags & ( 1 << INPUT_TB_ALLOW_DOT_IN_NUMBERS ) );
+}
+
+bool cInputTextBuffer::SupportFreeEditing() const {
+	return mPromtPosSupport;
+}
+
+void cInputTextBuffer::SupportFreeEditing( const bool& SupportNewLine ) {
+	mPromtPosSupport = SupportNewLine;
 }
 
 }}
