@@ -137,9 +137,9 @@ void cUISlider::Value( const eeFloat& Val ) {
 
 		if ( !mOnPosChange ) {
 			if ( !mVertical )
-				mSlider->Pos( mBackSlider->Size().Width() * (Int32)( Val - mMinValue ), mSlider->Pos().y );
+				mSlider->Pos( (Int32)( (eeFloat)mBackSlider->Size().Width() * ( Val - mMinValue ) ), mSlider->Pos().y );
 			else
-				mSlider->Pos( mSlider->Pos().x, mBackSlider->Size().Height() * (Int32)( Val - mMinValue ) );
+				mSlider->Pos( mSlider->Pos().x, (Int32)( (eeFloat)mBackSlider->Size().Height() * ( Val - mMinValue ) ) );
 		}
 
 		OnValueChange();
@@ -204,20 +204,20 @@ void cUISlider::ManageClick( const Uint32& Flags ) {
 		if ( Flags & EE_BUTTON_LMASK && !mSlider->IsMouseOver()  ) {
 			if ( !mVertical ) {
 				if ( ControlPos.x < 0 )
-					Value( Value() - ClickStep() );
+					Value( mValue - mClickStep );
 				else
-					Value( Value() + ClickStep() );
+					Value( mValue + mClickStep );
 			} else {
 				if ( ControlPos.y < 0 )
-					Value( Value() - ClickStep() );
+					Value( mValue - mClickStep );
 				else
-					Value( Value() + ClickStep() );
+					Value( mValue + mClickStep );
 			}
 		} else if ( Flags & EE_BUTTONS_WUWD ) {
 			if ( Flags & EE_BUTTON( EE_BUTTON_WHEELUP ) )
-				Value( Value() - ClickStep() );
+				Value( mValue - mClickStep );
 			else
-				Value( Value() + ClickStep() );
+				Value( mValue + mClickStep );
 		}
 	}
 }

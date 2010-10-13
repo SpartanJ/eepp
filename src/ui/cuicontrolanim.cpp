@@ -53,34 +53,6 @@ void cUIControlAnim::Alpha( const eeFloat& alpha ) {
 	OnAlphaChange();
 }
 
-cUIControl * cUIControlAnim::OverFind( const eeVector2i& Point ) {
-	cUIControl * pOver = NULL;
-
-	if ( mVisible && mEnabled ) {
-		UpdateQuad();
-
-		eeVector2f Localf( (eeFloat)Point.x, (eeFloat)Point.y );
-
-		if ( IntersectQuad2( mQuad, eeQuad2f( Localf, Localf, Localf, Localf ) ) ) {
-			cUIControl * ChildLoop = mChild;
-
-			while ( NULL != ChildLoop ) {
-				cUIControl * ChildOver = ChildLoop->OverFind( Point );
-
-				if ( NULL != ChildOver )
-					pOver = ChildOver;
-
-				ChildLoop = ChildLoop->mNext;
-			}
-
-			if ( NULL == pOver )
-				pOver = const_cast<cUIControl *>( reinterpret_cast<const cUIControl *>( this ) );
-		}
-	}
-
-	return pOver;
-}
-
 void cUIControlAnim::MatrixSet() {
 	if ( mScale != 1.f || mAngle != 0.f ) {
 		glPushMatrix();

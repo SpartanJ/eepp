@@ -66,8 +66,6 @@ class EE_API cUIControlAnim : public cUIDragable {
 		cInterpolation * 	mAlphaAnim;
 		cWaypoints * 		mMoveAnim;
 
-		virtual cUIControl * OverFind( const eeVector2i& Point );
-
 		virtual void BackgroundDraw();
 
 		virtual void BorderDraw();

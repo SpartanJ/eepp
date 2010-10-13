@@ -373,8 +373,8 @@ void cEETest::CreateUI() {
 	C->Enabled( true );
 	C->Pos( 320, 240 );
 	C->DragEnable( true );
-	//C->StartRotation( 0.f, 360.f, 2500.f );
-/*
+	C->StartRotation( 0.f, 360.f, 2500.f );
+
 	Params.Flags &= ~UI_CLIP_ENABLE;
 	Params.Background.Corners(0);
 	Params.Background.Colors( eeColorA( 0x7700FF00 ), eeColorA( 0x7700CC00 ), eeColorA( 0x7700CC00 ), eeColorA( 0x7700FF00 ) );
@@ -394,7 +394,7 @@ void cEETest::CreateUI() {
 	Child2->Visible( true );
 	Child2->Enabled( true );
 	Child2->StartRotation( 0.f, 360.f * 10.f, 5000.f * 10.f );
-
+/*
 	cUIGfx::CreateParams GfxParams;
 	GfxParams.Parent( C );
 	GfxParams.PosSet( 160, 100 );
