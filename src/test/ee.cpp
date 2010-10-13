@@ -201,7 +201,7 @@ void cEETest::CreateAquaTextureAtlas() {
 	std::string Path( MyPath + "data/aqua" );
 
 	if ( !FileExists( Path + ".etg" ) ) {
-		cTexturePacker tp( 512, 512, true, 2 );
+		cTexturePacker tp( 512, 512, true, 0 );
 		tp.AddTexturesPath( Path );
 		tp.PackTextures();
 		tp.Save( Path + ".png", EE_SAVE_TYPE_PNG );
@@ -374,7 +374,7 @@ void cEETest::CreateUI() {
 	C->Pos( 320, 240 );
 	C->DragEnable( true );
 	//C->StartRotation( 0.f, 360.f, 2500.f );
-
+/*
 	Params.Flags &= ~UI_CLIP_ENABLE;
 	Params.Background.Corners(0);
 	Params.Background.Colors( eeColorA( 0x7700FF00 ), eeColorA( 0x7700CC00 ), eeColorA( 0x7700CC00 ), eeColorA( 0x7700FF00 ) );
@@ -408,7 +408,7 @@ void cEETest::CreateUI() {
 	Gfx->StartAlphaAnim( 100.f, 255.f, 1000.f );
 	Gfx->AlphaInterpolation()->Loop( true );
 	Gfx->AlphaInterpolation()->SetTotalTime( 1000.f );
-
+*/
 	cUITextBox::CreateParams TextParams;
 	TextParams.Parent( C );
 	TextParams.PosSet( 0, 0 );
@@ -493,102 +493,13 @@ void cEETest::CreateUI() {
 	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.\nPowered by Text Shrinker =)";
 	TTF->ShrinkText( mBuda, 400 );
 
-	/** Replace this with the texture atlas and an auto theme loader */
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_button_normal_ml.png" ), "aqua_button_normal_ml" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_button_normal_mr.png" ), "aqua_button_normal_mr" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_button_normal_m.png" ), "aqua_button_normal_m" ) ) );
-
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_button_menter_ml.png" ), "aqua_button_menter_ml" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_button_menter_mr.png" ), "aqua_button_menter_mr" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_button_menter_m.png" ), "aqua_button_menter_m" ) ) );
-
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_button_mdown_ml.png" ), "aqua_button_mdown_ml" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_button_mdown_mr.png" ), "aqua_button_mdown_mr" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_button_mdown_m.png" ), "aqua_button_mdown_m" ) ) );
-
 	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal.png" ), "aqua_textinput_normal" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_focus.png" ), "aqua_textinput_focus" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal_dl.png" ), "aqua_textinput_normal_dl" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal_dr.png" ), "aqua_textinput_normal_dr" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal_ml.png" ), "aqua_textinput_normal_ml" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal_mr.png" ), "aqua_textinput_normal_mr" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal_u.png" ), "aqua_textinput_normal_u" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal_d.png" ), "aqua_textinput_normal_d" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal_ul.png" ), "aqua_textinput_normal_ul" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal_ur.png" ), "aqua_textinput_normal_ur" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal_m.png" ), "aqua_textinput_normal_m" ) ) );
-
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_checkbox_active_menter.png" ), "aqua_checkbox_active_menter" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_checkbox_active_normal.png" ), "aqua_checkbox_active_normal" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_checkbox_inactive_menter.png" ), "aqua_checkbox_inactive_menter" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_checkbox_inactive_normal.png" ), "aqua_checkbox_inactive_normal" ) ) );
-
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_radiobutton_active_menter.png" ), "aqua_radiobutton_active_menter" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_radiobutton_active_normal.png" ), "aqua_radiobutton_active_normal" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_radiobutton_inactive_menter.png" ), "aqua_radiobutton_inactive_menter" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_radiobutton_inactive_normal.png" ), "aqua_radiobutton_inactive_normal" ) ) );
-
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_hslider_button_normal.png" ), "aqua_hslider_button_normal" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_hslider_button_menter.png" ), "aqua_hslider_button_menter" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_hslider_bg_normal_m.png" ), "aqua_hslider_bg_normal_m" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_hslider_bg_normal_ml.png" ), "aqua_hslider_bg_normal_ml" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_hslider_bg_normal_mr.png" ), "aqua_hslider_bg_normal_mr" ) ) );
-
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_vslider_button_normal.png" ), "aqua_vslider_button_normal" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_vslider_button_menter.png" ), "aqua_vslider_button_menter" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_vslider_bg_normal_m.png" ), "aqua_vslider_bg_normal_m" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_vslider_bg_normal_u.png" ), "aqua_vslider_bg_normal_u" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_vslider_bg_normal_d.png" ), "aqua_vslider_bg_normal_d" ) ) );
-
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_spinbox_input_normal_ml.png" ), "aqua_spinbox_input_normal_ml" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_spinbox_input_normal_m.png" ), "aqua_spinbox_input_normal_m" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_spinbox_input_normal_d.png" ), "aqua_spinbox_input_normal_d" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_spinbox_input_normal_dl.png" ), "aqua_spinbox_input_normal_dl" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_spinbox_input_normal_u.png" ), "aqua_spinbox_input_normal_u" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_spinbox_input_normal_ul.png" ), "aqua_spinbox_input_normal_ul" ) ) );
-
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_spinbox_btnup_normal.png" ), "aqua_spinbox_btnup_normal" ) ) );
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_spinbox_btndown_normal.png" ), "aqua_spinbox_btndown_normal" ) ) );
-
-	cUITheme * AquaTheme = eeNew( cUITheme, ( "aqua", "aqua" ) );
-
-	cUISkinComplex * AquaTextInput 			= eeNew( cUISkinComplex, ( "aqua_textinput" ) );
-	cUISkinComplex * AquaButton				= eeNew( cUISkinComplex, ( "aqua_button" ) );
-	cUISkinSimple * AquaCheckboxActive 		= eeNew( cUISkinSimple, ( "aqua_checkbox_active" ) );
-	cUISkinSimple * AquaCheckboxInactive	= eeNew( cUISkinSimple, ( "aqua_checkbox_inactive" ) );
-	cUISkinSimple * AquaRadioButtonActive 	= eeNew( cUISkinSimple, ( "aqua_radiobutton_active" ) );
-	cUISkinSimple * AquaRadioButtonInactive	= eeNew( cUISkinSimple, ( "aqua_radiobutton_inactive" ) );
-	cUISkinComplex * AquaSliderBg 			= eeNew( cUISkinComplex, ( "aqua_hslider_bg" ) );
-	cUISkinSimple * AquaSliderButton		= eeNew( cUISkinSimple, ( "aqua_hslider_button" ) );
-	cUISkinComplex * AquaVSliderBg 			= eeNew( cUISkinComplex, ( "aqua_vslider_bg" ) );
-	cUISkinSimple * AquaVSliderButton		= eeNew( cUISkinSimple, ( "aqua_vslider_button" ) );
-	cUISkinComplex * AquaSpinBox 			= eeNew( cUISkinComplex, ( "aqua_spinbox_input" ) );
-	cUISkinSimple * AquaSpinBoxBtnUp 		= eeNew( cUISkinSimple, ( "aqua_spinbox_btnup" ) );
-	cUISkinSimple * AquaSpinBoxBtnDown 		= eeNew( cUISkinSimple, ( "aqua_spinbox_btndown" ) );
-
-
-	AquaTextInput->SetColor	( cUISkin::StateNormal		, eeColorA( 240, 240, 255, 255 ) );
-	AquaTextInput->SetColor	( cUISkin::StateFocus		, eeColorA( 250, 250, 255, 255 ) );
-	//AquaButton->SetColor	( cUISkin::StateMouseEnter	, eeColorA( 200, 255, 200, 255 ) );
-	//AquaButton->SetColor	( cUISkin::StateMouseDown	, eeColorA( 150, 255, 150, 255 ) );
-
-	AquaTheme->Add( AquaTextInput );
-	AquaTheme->Add( AquaButton );
-	AquaTheme->Add( AquaCheckboxActive );
-	AquaTheme->Add( AquaCheckboxInactive );
-	AquaTheme->Add( AquaRadioButtonActive );
-	AquaTheme->Add( AquaRadioButtonInactive );
-	AquaTheme->Add( AquaSliderBg );
-	AquaTheme->Add( AquaSliderButton );
-	AquaTheme->Add( AquaVSliderBg );
-	AquaTheme->Add( AquaVSliderButton );
-	AquaTheme->Add( AquaSpinBox );
-	AquaTheme->Add( AquaSpinBoxBtnUp );
-	AquaTheme->Add( AquaSpinBoxBtnDown );
-	/***************/
-
-	cUIThemeManager::instance()->Add( AquaTheme );
-
+	cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
+/*
+	cTextureGroupLoader tgl( MyPath + "data/aqua.etg" );
+	TF->GetByName( "data/aqua.png" )->ClampMode( EE_CLAMP_REPEAT );
+	cUIThemeManager::instance()->Add( cUITheme::LoadFromShapeGroup( cShapeGroupManager::instance()->GetByName( "aqua" ), "aqua", "aqua" ) );
+*/
 	cUIManager::instance()->SetTheme( "aqua" );
 
 	mBudaTC = eeNew( cTextCache, ( TTF, mBuda, eeColorA(255,255,255,255) ) );
@@ -1081,11 +992,11 @@ void cEETest::Render() {
 	}
 
 	mBudaTC->Draw( 0.f, 50.f );
-
+/*
 	cTexture * TexFace = TF->GetTexture( mFace );
 	if ( TexFace )
 		TexFace->Draw( (eeFloat)EE->GetWidth() - (eeFloat)TexFace->Width() , (eeFloat)EE->GetHeight() - (eeFloat)TexFace->Height(), 0.f, 1.f, eeColorA(), ALPHA_DESTALPHA, RN_MIRROR );
-
+*/
 	FF2->SetText( L"FPS: " + toWStr( EE->FPS() ) );
 	FF2->Draw( EE->GetWidth() - FF2->GetTextWidth() - 15, 0 );
 

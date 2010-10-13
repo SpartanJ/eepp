@@ -17,12 +17,12 @@ cUISpinBox::cUISpinBox( const cUISpinBox::CreateParams& Params ) :
 
 	mInput		= eeNew( cUITextInput, ( InputParams ) );
 
-	cUIPushButton::CreateParams BtnParams( Params );
+	cUIControlAnim::CreateParams BtnParams( Params );
 	BtnParams.Parent( this );
 	BtnParams.Size = eeSize( 16, 16 );
 
-	mPushUp		= eeNew( cUIPushButton, ( BtnParams ) );
-	mPushDown 	= eeNew( cUIPushButton, ( BtnParams ) );
+	mPushUp		= eeNew( cUIControlAnim, ( BtnParams ) );
+	mPushDown 	= eeNew( cUIControlAnim, ( BtnParams ) );
 
 	mInput->Visible		( true );
 	mInput->Enabled		( true );
@@ -199,6 +199,18 @@ void cUISpinBox::Update() {
 			}
 		}
 	}
+}
+
+cUIControlAnim * cUISpinBox::ButtonPushUp() const {
+	return mPushUp;
+}
+
+cUIControlAnim * cUISpinBox::ButtonPushDown() const {
+	return mPushDown;
+}
+
+cUITextInput * cUISpinBox::TextInput() const {
+	return mInput;
 }
 
 }}

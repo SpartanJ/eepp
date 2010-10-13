@@ -29,6 +29,8 @@ class EE_API cShapeGroup : public tResourceManager<cShape> {
 		void Name( const std::string& name );
 
 		const Uint32& Id() const;
+		
+		Uint32 Count();
 	protected:
 		std::string 	mName;
 		Uint32 			mId;

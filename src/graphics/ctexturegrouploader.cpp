@@ -11,7 +11,8 @@ cTextureGroupLoader::cTextureGroupLoader() :
 	mThreaded(false),
 	mLoaded(false),
 	mAppPath( AppPath() ),
-	mSkipResourceLoad(false)
+	mSkipResourceLoad(false),
+	mIsLoading(false)
 {
 }
 
@@ -21,7 +22,8 @@ cTextureGroupLoader::cTextureGroupLoader( const std::string& TextureGroupPath, c
 	mLoaded(false),
 	mAppPath( AppPath() ),
 	mPack(NULL),
-	mSkipResourceLoad(false)
+	mSkipResourceLoad(false),
+	mIsLoading(false)
 {
 	Load();
 }
@@ -32,7 +34,8 @@ cTextureGroupLoader::cTextureGroupLoader( const Uint8* Data, const Uint32& DataS
 	mLoaded(false),
 	mAppPath( AppPath() ),
 	mPack(NULL),
-	mSkipResourceLoad(false)
+	mSkipResourceLoad(false),
+	mIsLoading(false)
 {
 	LoadFromMemory( Data, DataSize, TextureGroupName );
 }
@@ -43,7 +46,8 @@ cTextureGroupLoader::cTextureGroupLoader( cPack * Pack, const std::string& FileP
 	mLoaded(false),
 	mAppPath( AppPath() ),
 	mPack(NULL),
-	mSkipResourceLoad(false)
+	mSkipResourceLoad(false),
+	mIsLoading(false)
 {
 	LoadFromPack( Pack, FilePackPath );
 }
@@ -92,9 +96,11 @@ void cTextureGroupLoader::Load( const std::string& TextureGroupPath ) {
 			}
 		}
 
-		if ( !mSkipResourceLoad )
+		if ( !mSkipResourceLoad ) {
+			mIsLoading = true;
 			mRL.Load();
-
+		}
+		
 		if ( !mThreaded )
 			CreateShapes();
 	}
@@ -149,7 +155,8 @@ void cTextureGroupLoader::LoadFromMemory( const Uint8* Data, const Uint32& DataS
 				mTempGroups.push_back( tTexGroup );
 			}
 		}
-
+		
+		mIsLoading = true;
 		mRL.Load();
 
 		if ( !mThreaded )
@@ -158,6 +165,8 @@ void cTextureGroupLoader::LoadFromMemory( const Uint8* Data, const Uint32& DataS
 }
 
 void cTextureGroupLoader::CreateShapes() {
+	mIsLoading = false;
+	
 	cShapeGroup * tSG = NULL;
 
 	for ( Uint32 z = 0; z < mTempGroups.size(); z++ ) {
@@ -220,6 +229,10 @@ void cTextureGroupLoader::Threaded( const bool& threaded ) {
 
 const bool& cTextureGroupLoader::IsLoaded() const {
 	return mLoaded;
+}
+
+const bool& cTextureGroupLoader::IsLoading() const {
+	return mIsLoading;
 }
 
 bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std::string ImagesPath ) {

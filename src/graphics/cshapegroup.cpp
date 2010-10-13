@@ -44,4 +44,8 @@ cShape * cShapeGroup::Add( const Uint32& TexId, const eeRecti& SrcRect, const ee
 	return Add( eeNew ( cShape, ( TexId, SrcRect, DestWidth, DestHeight, OffsetX, OffsetY, Name ) ) );
 }
 
+Uint32 cShapeGroup::Count() {
+	return tResourceManager<cShape>::Count();
+}
+
 }}

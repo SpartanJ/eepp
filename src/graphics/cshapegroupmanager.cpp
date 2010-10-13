@@ -13,16 +13,23 @@ cShapeGroupManager::~cShapeGroupManager() {
 }
 
 cShape * cShapeGroupManager::GetShapeByName( const std::string& Name ) {
-	return GetShapeById( MakeHash( Name ) );
+	cShape * tShape = GetShapeById( MakeHash( Name ) );
+	
+	eePRINTC( NULL == tShape, "cShapeGroupManager::GetShapeByName shape '%s' not found\n", Name.c_str() );
+	
+	return tShape;
 }
 
 cShape * cShapeGroupManager::GetShapeById( const Uint32& Id ) {
 	std::list<cShapeGroup*>::iterator it;
-
+	
+	cShapeGroup * tSG = NULL;
 	cShape * tShape = NULL;
 
 	for ( it = mResources.begin(); it != mResources.end(); it++ ) {
-		tShape = (*it)->GetById( Id );
+		tSG = (*it);
+		
+		tShape = tSG->GetById( Id );
 
 		if ( NULL != tShape )
 			return tShape;

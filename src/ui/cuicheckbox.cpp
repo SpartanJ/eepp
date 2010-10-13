@@ -8,17 +8,17 @@ cUICheckBox::cUICheckBox( const cUITextBox::CreateParams& Params ) :
 {
 	mType |= UI_TYPE_GET(UI_TYPE_CHECKBOX);
 
-	cUITextBox::CreateParams ButtonParams( Params );
+	cUIControlAnim::CreateParams ButtonParams( Params );
 
 	ButtonParams.Parent( this );
 	ButtonParams.PosSet( eeVector2i( 0, 0 ) );
 	ButtonParams.Size = eeSize( 16, 16 );
 
-	mActiveButton 	= eeNew( cUIPushButton, ( ButtonParams ) );
+	mActiveButton 	= eeNew( cUIControlAnim, ( ButtonParams ) );
 	mActiveButton->Visible( false );
 	mActiveButton->Enabled( true );
 
-	mInactiveButton = eeNew( cUIPushButton, ( ButtonParams ) );
+	mInactiveButton = eeNew( cUIControlAnim, ( ButtonParams ) );
 	mInactiveButton->Visible( true );
 	mInactiveButton->Enabled( true );
 
@@ -104,6 +104,14 @@ const bool& cUICheckBox::IsActive() const {
 void cUICheckBox::Padding( const eeRectf& padding ) {
 	mPadding = padding;
 	mPadding.Left = mPadding.Left + mActiveButton->Size().Width();
+}
+
+cUIControlAnim * cUICheckBox::ActiveButton() const {
+	return mActiveButton;
+}
+
+cUIControlAnim * cUICheckBox::InactiveButton() const {
+	return mInactiveButton;
 }
 
 }}

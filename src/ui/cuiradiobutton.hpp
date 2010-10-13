@@ -23,10 +23,14 @@ class EE_API cUIRadioButton : public cUITextBox {
 		const bool& Active() const;
 
 		virtual void Padding( const eeRectf& padding );
+		
+		cUIControlAnim * ActiveButton() const;
+		
+		cUIControlAnim * InactiveButton() const;
 	protected:
-		cUIPushButton *	mActiveButton;
-		cUIPushButton *	mInactiveButton;
-		bool			mActive;
+		cUIControlAnim *	mActiveButton;
+		cUIControlAnim *	mInactiveButton;
+		bool				mActive;
 
 		void SwitchState();
 

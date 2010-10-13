@@ -8,6 +8,8 @@ namespace EE { namespace UI {
 
 class EE_API cUISkinComplex : public cUISkin {
 	public:
+		static std::string GetSideSuffix( const Uint32& Side );
+		
 		enum UISkinComplexSides {
 			Left = 0,
 			Right,

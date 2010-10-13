@@ -54,10 +54,16 @@ class EE_API cUISpinBox : public cUIControlAnim {
 		const eeFloat& Value() const;
 		
 		virtual void Update();
+		
+		cUIControlAnim * ButtonPushUp() const;
+		
+		cUIControlAnim * ButtonPushDown() const;
+		
+		cUITextInput * TextInput() const;
 	protected:
 		cUITextInput * 		mInput;
-		cUIPushButton * 	mPushUp;
-		cUIPushButton * 	mPushDown;
+		cUIControlAnim * 	mPushUp;
+		cUIControlAnim * 	mPushDown;
 		eeFloat				mMinValue;
 		eeFloat				mMaxValue;
 		eeFloat				mValue;

@@ -483,7 +483,51 @@ void cTexture::DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width,
 	if ( Effect <= 3 ) {
 		if ( ClampMode() == EE_CLAMP_REPEAT ) {
 			if ( Effect == RN_NORMAL )
-				BR->QuadsSetSubsetFree( 0, 0, 0, height / h, width / w, height / h, width / w, 0 );
+				if ( renderdiv ) {
+					BR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
+
+					eeFloat sw = Sector.Right - Sector.Left;
+					eeFloat sh = Sector.Bottom - Sector.Top;
+					eeFloat tx = width / sw;
+					eeFloat ty = height / sh;
+					Int32 ttx = (Int32)tx;
+					Int32 tty = (Int32)ty;
+					Int32 tmpY;
+					Int32 tmpX;
+
+					for ( tmpY = 0; tmpY < tty; tmpY++ ) {
+						for ( tmpX = 0; tmpX < ttx; tmpX++ ) {
+							BR->BatchQuad( mx + tmpX * sw, my + tmpY * sh, sw, sh );
+						}
+					}
+
+					if ( (eeFloat)ttx != tx ) {
+						eeFloat swn = ( Sector.Right - Sector.Left ) * ( tx - (eeFloat)ttx );
+						eeFloat tor = Sector.Left + swn ;
+
+						BR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, tor / w, Sector.Bottom / h, tor / w, Sector.Top / h );
+
+						for ( Int32 tmpY = 0; tmpY < tty; tmpY++ ) {
+							BR->BatchQuad( mx + ttx * sw, my + tmpY * sh, swn, sh );
+						}
+					}
+
+					if ( (eeFloat)tty != ty ) {
+						eeFloat shn = ( Sector.Bottom - Sector.Top ) * ( ty - (eeFloat)tty );
+						eeFloat tob = Sector.Top + shn;
+
+						BR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, tob / h, Sector.Right / w, tob / h, Sector.Right / w, Sector.Top / h );
+
+						for ( Int32 tmpX = 0; tmpX < ttx; tmpX++ ) {
+							BR->BatchQuad( mx + tmpX * sw, my + tty * sh, sw, shn );
+						}
+					}
+
+					BR->DrawOpt();
+
+					return;
+				} else
+					BR->QuadsSetSubsetFree( 0, 0, 0, height / h, width / w, height / h, width / w, 0 );
 			else if ( Effect == RN_MIRROR )
 				BR->QuadsSetSubsetFree( width / w, 0, width / w, height / h, 0, height / h, 0, 0 );
 			else if ( RN_FLIP )

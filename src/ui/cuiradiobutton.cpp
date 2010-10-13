@@ -10,17 +10,17 @@ cUIRadioButton::cUIRadioButton( const cUITextBox::CreateParams& Params ) :
 {
 	mType |= UI_TYPE_GET(UI_TYPE_RADIOBUTTON);
 
-	cUITextBox::CreateParams ButtonParams( Params );
+	cUIControlAnim::CreateParams ButtonParams( Params );
 
 	ButtonParams.Parent( this );
 	ButtonParams.PosSet( eeVector2i( 0, 0 ) );
 	ButtonParams.Size = eeSize( 16, 16 );
 
-	mActiveButton 	= eeNew( cUIPushButton, ( ButtonParams ) );
+	mActiveButton 	= eeNew( cUIControlAnim, ( ButtonParams ) );
 	mActiveButton->Visible( false );
 	mActiveButton->Enabled( true );
 
-	mInactiveButton = eeNew( cUIPushButton, ( ButtonParams ) );
+	mInactiveButton = eeNew( cUIControlAnim, ( ButtonParams ) );
 	mInactiveButton->Visible( true );
 	mInactiveButton->Enabled( true );
 	
@@ -174,6 +174,14 @@ const bool& cUIRadioButton::IsActive() const {
 void cUIRadioButton::Padding( const eeRectf& padding ) {
 	mPadding = padding;
 	mPadding.Left = mPadding.Left + mActiveButton->Size().Width();
+}
+
+cUIControlAnim * cUIRadioButton::ActiveButton() const {
+	return mActiveButton;
+}
+
+cUIControlAnim * cUIRadioButton::InactiveButton() const {
+	return mInactiveButton;
 }
 
 }}

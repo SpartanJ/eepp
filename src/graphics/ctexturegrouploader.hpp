@@ -35,7 +35,9 @@ class EE_API cTextureGroupLoader {
 
 		void				Threaded( const bool& threaded );
 
-		const bool&		IsLoaded() const;
+		const bool&			IsLoaded() const;
+		
+		const bool&			IsLoading() const;
 
 		/** Will check if the texture atlas is updated ( all the image of the path are inside the texture atlas, and are the same version, otherwise it will recreate or update the texture atlas. */
 		bool				UpdateTextureAtlas( std::string TextureAtlasPath, std::string ImagesPath );
@@ -47,6 +49,7 @@ class EE_API cTextureGroupLoader {
 		std::string			mAppPath;
 		cPack *				mPack;
 		bool				mSkipResourceLoad;
+		bool				mIsLoading;
 
 		typedef struct sTempTexGroupS {
 			sTextureHdr 			Texture;

@@ -32,7 +32,7 @@ class tResourceManager {
 
 		Uint32 Exists( const std::string& Name );
 
-		Uint32 Exists( const Uint32& Id );
+		Uint32 ExistsId( const Uint32& Id );
 
 		void Destroy();
 
@@ -121,7 +121,7 @@ Uint32 tResourceManager<T>::Exists( const std::string& Name ) {
 }
 
 template <class T>
-Uint32 tResourceManager<T>::Exists( const Uint32& Id ) {
+Uint32 tResourceManager<T>::ExistsId( const Uint32& Id ) {
 	return Count( Id );
 }
 

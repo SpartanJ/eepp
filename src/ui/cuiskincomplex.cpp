@@ -7,6 +7,12 @@ static const char SideSuffix[ cUISkinComplex::SideCount ][4] = {
 	"ml", "mr","d","u","ul","ur","dl","dr","m"
 };
 
+std::string cUISkinComplex::GetSideSuffix( const Uint32& Side ) {
+	eeASSERT( Side < cUISkinComplex::SideCount );
+	
+	return std::string( SideSuffix[ Side ] );
+}
+
 cUISkinComplex::cUISkinComplex( const std::string& Name ) :
 	cUISkin( Name )
 {

@@ -137,11 +137,11 @@ void cUISlider::Value( const eeFloat& Val ) {
 
 		if ( !mOnPosChange ) {
 			if ( !mVertical )
-				mSlider->Pos( mBackSlider->Size().Width() * ( Val - mMinValue ), mSlider->Pos().y );
+				mSlider->Pos( mBackSlider->Size().Width() * (Int32)( Val - mMinValue ), mSlider->Pos().y );
 			else
-				mSlider->Pos( mSlider->Pos().x, mBackSlider->Size().Height() * ( Val - mMinValue ) );
+				mSlider->Pos( mSlider->Pos().x, mBackSlider->Size().Height() * (Int32)( Val - mMinValue ) );
 		}
-		
+
 		OnValueChange();
 	}
 }
@@ -190,7 +190,7 @@ const bool& cUISlider::IsVertical() const {
 
 void cUISlider::Update() {
 	cUIControlAnim::Update();
-	
+
 	if ( IsMouseOver() || mBackSlider->IsMouseOver() || mSlider->IsMouseOver() ) {
 		ManageClick( cUIManager::instance()->GetInput()->ClickTrigger() );
 	}
@@ -200,7 +200,7 @@ void cUISlider::ManageClick( const Uint32& Flags ) {
 	if ( Flags ) {
 		eeVector2i ControlPos = cUIManager::instance()->GetMousePos();
 		mSlider->ScreenToControl( ControlPos );
-	
+
 		if ( Flags & EE_BUTTON_LMASK && !mSlider->IsMouseOver()  ) {
 			if ( !mVertical ) {
 				if ( ControlPos.x < 0 )
