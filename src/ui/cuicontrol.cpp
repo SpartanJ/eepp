@@ -19,7 +19,7 @@ cUIControl::cUIControl( const CreateParams& Params ) :
 	mControlFlags( 0 ),
 	mBlend( Params.Blend ),
 	mNumCallBacks(0),
-	mSkin(NULL)
+	mSkinState(NULL)
 {
 	mType |= UI_TYPE_GET(UI_TYPE_CONTROL);
 
@@ -31,6 +31,8 @@ cUIControl::cUIControl( const CreateParams& Params ) :
 }
 
 cUIControl::~cUIControl() {
+	eeSAFE_DELETE( mSkinState );
+
 	while( NULL != mChild )
 		eeDelete( mChild );
 
@@ -205,8 +207,8 @@ void cUIControl::Draw() {
 		if ( mFlags & UI_BORDER )
 			BorderDraw();
 
-		if ( NULL != mSkin )
-			mSkin->Draw( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height() );
+		if ( NULL != mSkinState )
+			mSkinState->Draw( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height() );
 	}
 }
 
@@ -247,7 +249,7 @@ Uint32 cUIControl::OnMouseMove( const eeVector2i& Pos, const Uint32 Flags ) {
 Uint32 cUIControl::OnMouseDown( const eeVector2i& Pos, const Uint32 Flags ) {
 	SendMouseEvent( cUIEvent::EventMouseDown, Pos, Flags );
 
-	SetSkinState( cUISkin::StateMouseDown );
+	SetSkinState( cUISkinState::StateMouseDown );
 
 	return 1;
 }
@@ -275,21 +277,21 @@ Uint32 cUIControl::OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags
 }
 
 Uint32 cUIControl::OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags ) {
-	Write32BitKey( &mControlFlags, UI_CTRL_FLAG_MOUSEOVER_POS, 1 );
-	
+	WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_POS, 1 );
+
 	SendMouseEvent( cUIEvent::EventMouseEnter, Pos, Flags );
 
-	SetSkinState( cUISkin::StateMouseEnter );
+	SetSkinState( cUISkinState::StateMouseEnter );
 
 	return 1;
 }
 
 Uint32 cUIControl::OnMouseExit( const eeVector2i& Pos, const Uint32 Flags ) {
-	Write32BitKey( &mControlFlags, UI_CTRL_FLAG_MOUSEOVER_POS, 0 );
-	
+	WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_POS, 0 );
+
 	SendMouseEvent( cUIEvent::EventMouseExit, Pos, Flags );
 
-	SetSkinState( cUISkin::StateMouseExit );
+	SetSkinState( cUISkinState::StateMouseExit );
 
 	return 1;
 }
@@ -297,7 +299,7 @@ Uint32 cUIControl::OnMouseExit( const eeVector2i& Pos, const Uint32 Flags ) {
 Uint32 cUIControl::OnFocus() {
 	SendCommonEvent( cUIEvent::EventOnFocus );
 
-	SetSkinState( cUISkin::StateFocus );
+	SetSkinState( cUISkinState::StateFocus );
 
 	return 1;
 }
@@ -305,7 +307,7 @@ Uint32 cUIControl::OnFocus() {
 Uint32 cUIControl::OnFocusLoss() {
 	SendCommonEvent( cUIEvent::EventOnFocusLoss );
 
-	SetSkinState( cUISkin::StateLostFocus );
+	SetSkinState( cUISkinState::StateLostFocus );
 
 	return 1;
 }
@@ -313,7 +315,7 @@ Uint32 cUIControl::OnFocusLoss() {
 
 Uint32 cUIControl::OnValueChange() {
 	SendCommonEvent( cUIEvent::EventOnValueChange );
-	
+
 	return 1;
 }
 
@@ -498,7 +500,7 @@ void cUIControl::ClipTo() {
 				Parent()->ClipMe();
 				parent = NULL;
 			} else {
-				parent = Parent()->Parent();
+				parent = parent->Parent();
 			}
 		}
 	}
@@ -726,11 +728,8 @@ Uint32 cUIControl::IsClipped() {
 }
 
 void cUIControl::UpdateQuad() {
-	eeVector2i Pos = mPos;
-	ControlToScreen( Pos );
-
-	mQuad 	= AABBtoQuad2( eeAABB( (eeFloat)Pos.x, (eeFloat)Pos.y, (eeFloat)Pos.x + mSize.Width(), (eeFloat)Pos.y + mSize.Height() ) );
-	mCenter = eeVector2f( (eeFloat)Pos.x + (eeFloat)mSize.Width() * 0.5f, (eeFloat)Pos.y + (eeFloat)mSize.Height() * 0.5f );
+	mQuad 	= AABBtoQuad2( eeAABB( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mScreenPos.x + mSize.Width(), (eeFloat)mScreenPos.y + mSize.Height() ) );
+	mCenter = eeVector2f( (eeFloat)mScreenPos.x + (eeFloat)mSize.Width() * 0.5f, (eeFloat)mScreenPos.y + (eeFloat)mSize.Height() * 0.5f );
 
 	cUIControl * tParent = Parent();
 
@@ -799,10 +798,17 @@ void cUIControl::SetTheme( cUITheme * Theme ) {
 
 void cUIControl::SetTheme( cUITheme * Theme, const std::string& ControlName ) {
 	if ( NULL != Theme ) {
-		if ( mSkinForcedName.size() && NULL != mSkin && mSkin->Theme() == Theme ) {
-			mSkin = Theme->GetByName( Theme->Abbr() + "_" + mSkinForcedName );
-		} else {
-			mSkin = Theme->GetByName( Theme->Abbr() + "_" + ControlName );
+		cUISkin * tSkin = NULL;
+
+		if ( mSkinForcedName.size() )
+			tSkin = Theme->GetByName( Theme->Abbr() + "_" + mSkinForcedName );
+		else
+			tSkin = Theme->GetByName( Theme->Abbr() + "_" + ControlName );
+
+		if ( NULL != tSkin ) {
+			eeSAFE_DELETE( mSkinState );
+
+			mSkinState = eeNew( cUISkinState, ( tSkin ) );
 		}
 	}
 }
@@ -814,21 +820,21 @@ void cUIControl::ForceThemeSkin( cUITheme * Theme, const std::string& ControlNam
 }
 
 void cUIControl::SetSkinState( const Uint32& State ) {
-	if ( NULL != mSkin )
-		mSkin->SetState( State );
+	if ( NULL != mSkinState )
+		mSkinState->SetState( State );
 }
 
 void cUIControl::SetPrevSkinState() {
-	if ( NULL != mSkin )
-		mSkin->SetPrevState();
+	if ( NULL != mSkinState )
+		mSkinState->SetPrevState();
 }
 
 void cUIControl::SetThemeToChilds( cUITheme * Theme ) {
 	cUIControl * ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
-		ChildLoop->SetTheme( Theme );
 		ChildLoop->SetThemeToChilds( Theme );
+		ChildLoop->SetTheme( Theme );	// First set the theme to childs to let the father override the childs forced themes
 
 		ChildLoop = ChildLoop->mNext;
 	}
@@ -854,7 +860,11 @@ void cUIControl::UpdateScreenPos() {
 }
 
 cUISkin * cUIControl::GetSkin() {
-	return mSkin;
+	return mSkinState->GetSkin();
+}
+
+void cUIControl::WriteCtrlFlag( const Uint32& Pos, const Uint32& Val ) {
+	Write32BitKey( &mControlFlags, Pos, Val );
 }
 
 }}

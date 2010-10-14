@@ -12,11 +12,15 @@ class EE_API cUISlider : public cUIControlAnim {
 			public:
 				inline CreateParams() : cUIControl::CreateParams() {
 					VerticalSlider = false;
+					AllowHalfSliderOut = true;
+					ExpandBackground = false;
 				}
 
 				inline ~CreateParams() {}
 
 				bool 	VerticalSlider;
+				bool	AllowHalfSliderOut;
+				bool	ExpandBackground;
 		};
 
 		cUISlider( const cUISlider::CreateParams& Params );
@@ -25,7 +29,7 @@ class EE_API cUISlider : public cUIControlAnim {
 
 		virtual void SetTheme( cUITheme * Theme );
 
-		virtual void Value( const eeFloat& Val );
+		virtual void Value( eeFloat Val );
 
 		const eeFloat& Value() const;
 
@@ -44,10 +48,22 @@ class EE_API cUISlider : public cUIControlAnim {
 		const bool& IsVertical() const;
 		
 		virtual void Update();
+		
+		cUIControl * GetBackSlider() const;
+		
+		cUIDragable * GetSliderButton() const;
+		
+		void AdjustChilds();
+		
+		const bool& AllowHalfSliderOut() const;
+		
+		const bool& ExpandBackground() const;
 	protected:
 		friend class Private::cUISliderButton;
 
 		bool				mVertical;
+		bool				mAllowHalfSliderOut;
+		bool				mExpandBackground;
 		cUIControl *		mBackSlider;
 		cUIDragable * 		mSlider;
 		eeFloat				mMinValue;

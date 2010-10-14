@@ -528,6 +528,8 @@
 		<Unit filename="src/ui/cuipushbutton.hpp" />
 		<Unit filename="src/ui/cuiradiobutton.cpp" />
 		<Unit filename="src/ui/cuiradiobutton.hpp" />
+		<Unit filename="src/ui/cuiscrollbar.cpp" />
+		<Unit filename="src/ui/cuiscrollbar.hpp" />
 		<Unit filename="src/ui/cuiskin.cpp" />
 		<Unit filename="src/ui/cuiskin.hpp" />
 		<Unit filename="src/ui/cuiskincomplex.cpp" />

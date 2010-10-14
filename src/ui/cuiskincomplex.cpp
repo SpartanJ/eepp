@@ -9,14 +9,14 @@ static const char SideSuffix[ cUISkinComplex::SideCount ][4] = {
 
 std::string cUISkinComplex::GetSideSuffix( const Uint32& Side ) {
 	eeASSERT( Side < cUISkinComplex::SideCount );
-	
+
 	return std::string( SideSuffix[ Side ] );
 }
 
 cUISkinComplex::cUISkinComplex( const std::string& Name ) :
-	cUISkin( Name )
+	cUISkin( Name, UISkinComplex )
 {
-	for ( Int32 x = 0; x < StateCount; x++ )
+	for ( Int32 x = 0; x < cUISkinState::StateCount; x++ )
 		for ( Int32 y = 0; y < SideCount; y++ )
 			mShape[ x ][ y ] = NULL;
 
@@ -27,53 +27,53 @@ cUISkinComplex::~cUISkinComplex() {
 
 }
 
-void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Width, const eeFloat& Height ) {
-	cShape * tShape = mShape[ mCurState ][ UpLeft ];
+void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Width, const eeFloat& Height, const Uint32& State ) {
+	cShape * tShape = mShape[ State ][ UpLeft ];
 
 	eeSize uls;
 
 	if ( NULL != tShape ) {
 		uls = tShape->RealSize();
 
-		tShape->Draw( X, Y, mColor[ mCurState ] );
+		tShape->Draw( X, Y, mColor[ State ] );
 	}
 
-	tShape = mShape[ mCurState ][ DownLeft ];
+	tShape = mShape[ State ][ DownLeft ];
 
 	eeSize dls;
 
 	if ( NULL != tShape ) {
 		dls = tShape->RealSize();
 
-		tShape->Draw( X, Y + Height - dls.Height(), mColor[ mCurState ] );
+		tShape->Draw( X, Y + Height - dls.Height(), mColor[ State ] );
 	}
 
-	tShape = mShape[ mCurState ][ UpRight ];
+	tShape = mShape[ State ][ UpRight ];
 
 	eeSize urs;
 
 	if ( NULL != tShape ) {
 		urs = tShape->RealSize();
 
-		tShape->Draw( X + Width - urs.Width(), Y, mColor[ mCurState ] );
+		tShape->Draw( X + Width - urs.Width(), Y, mColor[ State ] );
 	}
 
-	tShape = mShape[ mCurState ][ DownRight ];
+	tShape = mShape[ State ][ DownRight ];
 
 	eeSize drs;
 
 	if ( NULL != tShape ) {
 		drs = tShape->RealSize();
 
-		tShape->Draw( X + Width - drs.Width(), Y + Height - drs.Height(), mColor[ mCurState ] );
+		tShape->Draw( X + Width - drs.Width(), Y + Height - drs.Height(), mColor[ State ] );
 	}
 
-	tShape = mShape[ mCurState ][ Left ];
+	tShape = mShape[ State ][ Left ];
 
 	if ( NULL != tShape ) {
 		tShape->DestHeight( Height - uls.Height() - dls.Height() );
 
-		tShape->Draw( X, Y + uls.Height(), mColor[ mCurState ] );
+		tShape->Draw( X, Y + uls.Height(), mColor[ State ] );
 
 		tShape->ResetDestWidthAndHeight();
 
@@ -81,12 +81,12 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 			uls.x = tShape->RealSize().Width();
 	}
 
-	tShape = mShape[ mCurState ][ Up ];
+	tShape = mShape[ State ][ Up ];
 
 	if ( NULL != tShape ) {
 		tShape->DestWidth( Width - uls.Width() - urs.Width() );
 
-		tShape->Draw( X + uls.Width(), Y, mColor[ mCurState ] );
+		tShape->Draw( X + uls.Width(), Y, mColor[ State ] );
 
 		tShape->ResetDestWidthAndHeight();
 
@@ -97,7 +97,7 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 			uls.y = tShape->RealSize().Height();
 	}
 
-	tShape = mShape[ mCurState ][ Right ];
+	tShape = mShape[ State ][ Right ];
 
 	if ( NULL != tShape ) {
 		if ( urs.Width() == 0 )
@@ -105,35 +105,35 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 
 		tShape->DestHeight( Height - urs.Height() - drs.Height() );
 
-		tShape->Draw( X + Width - urs.Width(), Y + urs.Height(), mColor[ mCurState ] );
+		tShape->Draw( X + Width - urs.Width(), Y + urs.Height(), mColor[ State ] );
 
 		tShape->ResetDestWidthAndHeight();
 	}
 
-	tShape = mShape[ mCurState ][ Down ];
+	tShape = mShape[ State ][ Down ];
 
 	if ( NULL != tShape ) {
 		tShape->DestWidth( Width - dls.Width() - drs.Width() );
 
-		tShape->Draw( X + dls.Width(), Y + Height - tShape->RealSize().Height(), mColor[ mCurState ] );
+		tShape->Draw( X + dls.Width(), Y + Height - tShape->RealSize().Height(), mColor[ State ] );
 
 		tShape->ResetDestWidthAndHeight();
 	}
 
-	tShape = mShape[ mCurState ][ Center ];
+	tShape = mShape[ State ][ Center ];
 
 	if ( NULL != tShape ) {
 		tShape->DestWidth( Width - uls.Width() - urs.Width() );
 		tShape->DestHeight( Height - uls.Height() - urs.Height() );
 
-		tShape->Draw( X + uls.Width(), Y + uls.Height(), mColor[ mCurState ] );
+		tShape->Draw( X + uls.Width(), Y + uls.Height(), mColor[ State ] );
 
 		tShape->ResetDestWidthAndHeight();
 	}
 }
 
 void cUISkinComplex::SetSkin( const Uint32& State ) {
-	eeASSERT ( State < cUISkin::StateCount );
+	eeASSERT ( State < cUISkinState::StateCount );
 
 	for ( Uint32 Side = 0; Side < SideCount; Side++ ) {
 
@@ -145,30 +145,15 @@ void cUISkinComplex::SetSkin( const Uint32& State ) {
 }
 
 cShape * cUISkinComplex::GetShape( const Uint32& State ) const {
-	eeASSERT ( State < cUISkin::StateCount );
+	eeASSERT ( State < cUISkinState::StateCount );
 
 	return mShape[ State ][ Center ];
-}
-
-void cUISkinComplex::SetState( const Uint32& State ) {
-	eeASSERT ( State < cUISkin::StateCount );
-
-	if ( mCurState == State )
-		return;
-
-	if ( !Read32BitKey( &mColorDefault, State ) || NULL != mShape[ State ][ 0 ] ) {
-		StateNormalToState( State );
-
-		mLastState 	= mCurState;
-		mCurState 	= State;
-	} else
-		StateBack( State );
 }
 
 void cUISkinComplex::StateNormalToState( const Uint32& State ) {
 	if ( NULL == mShape[ State ][ 0 ] ) {
 		for ( Uint32 Side = 0; Side < SideCount; Side++ ) {
-			mShape[ State ][ Side ] = mShape[ StateNormal ][ Side ];
+			mShape[ State ][ Side ] = mShape[ cUISkinState::StateNormal ][ Side ];
 		}
 	}
 }
@@ -179,12 +164,16 @@ cUISkinComplex * cUISkinComplex::Copy( const std::string& NewName, const bool& C
 	if ( CopyColorsState ) {
 		SkinC->mColorDefault = mColorDefault;
 
-		memcpy( &SkinC->mColor[0], &mColor[0], StateCount * sizeof(eeColorA) );
+		memcpy( &SkinC->mColor[0], &mColor[0], cUISkinState::StateCount * sizeof(eeColorA) );
 	}
 
-	memcpy( &SkinC->mShape[0], &mShape[0], StateCount * SideCount * sizeof(cShape*) );
+	memcpy( &SkinC->mShape[0], &mShape[0], cUISkinState::StateCount * SideCount * sizeof(cShape*) );
 
 	return SkinC;
+}
+
+cUISkin * cUISkinComplex::Copy() {
+	return Copy( mName, true );
 }
 
 }}

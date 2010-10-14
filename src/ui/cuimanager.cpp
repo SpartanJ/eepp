@@ -114,7 +114,9 @@ void cUIManager::SendMsg( cUIControl * Ctrl, const Uint32& Msg, const Uint32& Fl
 
 void cUIManager::Update() {
 	mElapsed = mEE->Elapsed();
-
+	
+	mControl->Update();
+	
 	if ( mKM->ReleaseTrigger() ) {
 		if ( NULL != mFocusControl ) {
 			mFocusControl->OnMouseUp( mKM->GetMousePos(), mKM->ReleaseTrigger() );
@@ -162,8 +164,7 @@ void cUIManager::Update() {
 			mOverControl->OnMouseDown( mKM->GetMousePos(), mKM->PressTrigger() );
 		}
 	}
-
-	mControl->Update();
+	
 	mControl->CheckClose();
 }
 

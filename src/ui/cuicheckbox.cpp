@@ -38,7 +38,7 @@ void cUICheckBox::SetTheme( cUITheme * Theme ) {
 	cUISkin * tSkin = mActiveButton->GetSkin();
 
 	if ( tSkin ) {
-		tShape = tSkin->GetShape( cUISkin::StateNormal );
+		tShape = tSkin->GetShape( cUISkinState::StateNormal );
 
 		if ( NULL != tShape ) {
 			mActiveButton->Size( tShape->RealSize() );
@@ -49,7 +49,7 @@ void cUICheckBox::SetTheme( cUITheme * Theme ) {
 	tSkin = mInactiveButton->GetSkin();
 
 	if ( NULL != tSkin ) {
-		tShape = tSkin->GetShape( cUISkin::StateNormal );
+		tShape = tSkin->GetShape( cUISkinState::StateNormal );
 
 		if ( NULL != tShape ) {
 			mInactiveButton->Size( tShape->RealSize() );

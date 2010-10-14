@@ -55,7 +55,7 @@ void cUISpinBox::SetTheme( cUITheme * Theme ) {
 	tSkin = mPushUp->GetSkin();
 
 	if ( NULL != tSkin ) {
-		tShape = tSkin->GetShape( cUISkin::StateNormal );
+		tShape = tSkin->GetShape( cUISkinState::StateNormal );
 
 		if ( NULL != tShape ) {
 			mPushUp->Size( tShape->RealSize() );
@@ -65,7 +65,7 @@ void cUISpinBox::SetTheme( cUITheme * Theme ) {
 	tSkin = mPushDown->GetSkin();
 
 	if ( NULL != tSkin ) {
-		tShape = tSkin->GetShape( cUISkin::StateNormal );
+		tShape = tSkin->GetShape( cUISkinState::StateNormal );
 
 		if ( NULL != tShape ) {
 			mPushDown->Size( tShape->RealSize() );

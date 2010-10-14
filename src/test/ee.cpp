@@ -194,7 +194,12 @@ class cEETest : private cThread {
 		cVertexBuffer * mVBO;
 
 		void ButtonClick( const cUIEvent * Event );
+		void OnValueChange( const cUIEvent * Event );
 		void CreateAquaTextureAtlas();
+
+		cUIScrollBar * mScrollBar;
+		cUITextBox * mTextBoxValue;
+		cUISlider * mSlider;
 };
 
 void cEETest::CreateAquaTextureAtlas() {
@@ -381,7 +386,7 @@ void cEETest::CreateUI() {
 	Params.Parent( C );
 	Params.Size = eeSize( 50, 50 );
 	cUITest * Child = eeNew( cUITest, ( Params ) );
-	Child->Pos( 25, 50 );
+	Child->Pos( 240, 130 );
 	Child->Visible( true );
 	Child->Enabled( true );
 	Child->StartRotation( 0.f, 360.f * 10.f, 5000.f * 10.f );
@@ -394,7 +399,7 @@ void cEETest::CreateUI() {
 	Child2->Visible( true );
 	Child2->Enabled( true );
 	Child2->StartRotation( 0.f, 360.f * 10.f, 5000.f * 10.f );
-/*
+
 	cUIGfx::CreateParams GfxParams;
 	GfxParams.Parent( C );
 	GfxParams.PosSet( 160, 100 );
@@ -408,7 +413,7 @@ void cEETest::CreateUI() {
 	Gfx->StartAlphaAnim( 100.f, 255.f, 1000.f );
 	Gfx->AlphaInterpolation()->Loop( true );
 	Gfx->AlphaInterpolation()->SetTotalTime( 1000.f );
-*/
+
 	cUITextBox::CreateParams TextParams;
 	TextParams.Parent( C );
 	TextParams.PosSet( 0, 0 );
@@ -425,8 +430,8 @@ void cEETest::CreateUI() {
 	//InputParams.Background.Corners(6);
 	InputParams.Border.Color(0xFF979797);
 	InputParams.Background.Colors( eeColorA(0x99AAAAAA), eeColorA(0x99CCCCCC), eeColorA(0x99CCCCCC), eeColorA(0x99AAAAAA) );
-	InputParams.PosSet( 10, 216 );
-	InputParams.Size = eeSize( 300, 22 );
+	InputParams.PosSet( 20, 216 );
+	InputParams.Size = eeSize( 200, 22 );
 	InputParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE; // | UI_BORDER | UI_FILL_BACKGROUND
 	InputParams.Font = TTF;
 	cUITextInput * Input = eeNew( cUITextInput, ( InputParams ) );
@@ -435,7 +440,7 @@ void cEETest::CreateUI() {
 	Input->Enabled( true );
 
 	TextParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
-	TextParams.PosSet( 10, 20 );
+	TextParams.PosSet( 230, 216 );
 	TextParams.Size = eeSize( 80, 22 );
 	cUIPushButton * Button = eeNew( cUIPushButton, ( TextParams ) );
 	Button->Visible( true );
@@ -467,28 +472,48 @@ void cEETest::CreateUI() {
 	SliderParams.Parent( C );
 	SliderParams.PosSet( 220, 80 );
 	SliderParams.Size = eeSize( 80, 24 );
-	cUISlider * mSlider = eeNew( cUISlider, ( SliderParams ) );
+	mSlider = eeNew( cUISlider, ( SliderParams ) );
 	mSlider->Visible( true );
 	mSlider->Enabled( true );
 
-	SliderParams.PosSet( 60, 120 );
+	SliderParams.PosSet( 40, 120 );
 	SliderParams.Size = eeSize( 24, 80 );
 	SliderParams.VerticalSlider = true;
 	mSlider = eeNew( cUISlider, ( SliderParams ) );
 	mSlider->Visible( true );
 	mSlider->Enabled( true );
-
+	
+	SliderParams.PosSet( 60, 120 );
+	mSlider = eeNew( cUISlider, ( SliderParams ) );
+	mSlider->Visible( true );
+	mSlider->Enabled( true );
+	
 	cUISpinBox::CreateParams SpinBoxParams;
 	SpinBoxParams.Parent( C );
 	SpinBoxParams.PosSet( 80, 150 );
 	SpinBoxParams.Size = eeSize( 80, 23 );
-	SpinBoxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE; // | UI_BORDER | UI_FILL_BACKGROUND
+	SpinBoxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE;
 	SpinBoxParams.Font = TTF;
 	SpinBoxParams.AllowDotsInNumbers = true;
 	cUISpinBox * mSpinBox = eeNew( cUISpinBox, ( SpinBoxParams ) );
 	mSpinBox->Visible( true );
 	mSpinBox->Enabled( true );
 	mSpinBox->Padding( eeRectf( 2, 0, -2, 0 ) );
+
+	cUIScrollBar::CreateParams ScrollBarP;
+	ScrollBarP.Parent( C );
+	ScrollBarP.PosSet( 0, 0 );
+	ScrollBarP.Size = eeSize( 15, 240 );
+	ScrollBarP.Flags = UI_AUTO_SIZE;
+	ScrollBarP.VerticalScrollBar = true;
+	mScrollBar = eeNew( cUIScrollBar, ( ScrollBarP ) );
+	mScrollBar->Visible( true );
+	mScrollBar->Enabled( true );
+	mScrollBar->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cEETest::OnValueChange ) );
+	
+	TextParams.PosSet( 20, 5 );
+	mTextBoxValue = eeNew( cUITextBox, ( TextParams ) );
+	mTextBoxValue->Visible( true );
 
 	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.\nPowered by Text Shrinker =)";
 	TTF->ShrinkText( mBuda, 400 );
@@ -498,11 +523,16 @@ void cEETest::CreateUI() {
 /*
 	cTextureGroupLoader tgl( MyPath + "data/aqua.etg" );
 	TF->GetByName( "data/aqua.png" )->ClampMode( EE_CLAMP_REPEAT );
+	TF->GetByName( "data/aqua.png" )->SetTextureFilter( TEX_FILTER_NEAREST );
 	cUIThemeManager::instance()->Add( cUITheme::LoadFromShapeGroup( cShapeGroupManager::instance()->GetByName( "aqua" ), "aqua", "aqua" ) );
 */
 	cUIManager::instance()->SetTheme( "aqua" );
 
 	mBudaTC = eeNew( cTextCache, ( TTF, mBuda, eeColorA(255,255,255,255) ) );
+}
+
+void cEETest::OnValueChange( const cUIEvent * Event ) {
+	mTextBoxValue->Text( L"Scroll Value:\n" + toWStr( mScrollBar->Value() ) );
 }
 
 void cEETest::ButtonClick( const cUIEvent * Event ) {

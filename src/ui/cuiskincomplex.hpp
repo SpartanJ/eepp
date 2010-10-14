@@ -9,7 +9,7 @@ namespace EE { namespace UI {
 class EE_API cUISkinComplex : public cUISkin {
 	public:
 		static std::string GetSideSuffix( const Uint32& Side );
-		
+
 		enum UISkinComplexSides {
 			Left = 0,
 			Right,
@@ -27,17 +27,17 @@ class EE_API cUISkinComplex : public cUISkin {
 
 		virtual ~cUISkinComplex();
 
-		virtual void Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Width, const eeFloat& Height );
+		virtual void Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Width, const eeFloat& Height, const Uint32& State );
 
 		void SetSkin( const Uint32& State );
 
 		cShape * GetShape( const Uint32& State ) const;
 
-		virtual void SetState( const Uint32& State );
-
 		cUISkinComplex * Copy( const std::string& NewName, const bool& CopyColorsState = true );
+
+		virtual cUISkin * Copy();
 	protected:
-		cShape * 	mShape[ StateCount ][ SideCount ];
+		cShape * 	mShape[ cUISkinState::StateCount ][ SideCount ];
 
 		void StateNormalToState( const Uint32& State );
 };

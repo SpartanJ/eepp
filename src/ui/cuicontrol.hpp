@@ -10,6 +10,7 @@
 #include "cuieventkey.hpp"
 #include "cuieventmouse.hpp"
 #include "cuiskin.hpp"
+#include "cuiskinstate.hpp"
 #include "cuitheme.hpp"
 #include "cuithememanager.hpp"
 
@@ -246,7 +247,7 @@ class EE_API cUIControl {
 		std::map< Uint32, std::map<Uint32, UIEventCallback> > mEvents;
 		Uint32			mNumCallBacks;
 
-		cUISkin	*		mSkin;
+		cUISkinState *	mSkinState;
 		std::string		mSkinForcedName;
 
 		virtual void OnVisibleChange();
@@ -314,6 +315,8 @@ class EE_API cUIControl {
 		void UpdateScreenPos();
 
 		void UpdateChildsScreenPos();
+		
+		void WriteCtrlFlag( const Uint32& Pos, const Uint32& Val );
 };
 
 }}

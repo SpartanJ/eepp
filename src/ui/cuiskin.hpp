@@ -2,6 +2,7 @@
 #define EE_UICUISKIN_HPP
 
 #include "base.hpp"
+#include "cuiskinstate.hpp"
 
 namespace EE { namespace UI {
 
@@ -9,23 +10,19 @@ class cUITheme;
 
 class EE_API cUISkin {
 	public:
-		enum UISkinStates {
-			StateNormal = 0,
-			StateFocus,
-			StateLostFocus,
-			StateMouseEnter,
-			StateMouseExit,
-			StateMouseDown,
-			StateCount
+		enum UISkinType {
+			UISkinSimple,
+			UISkinComplex,
+			UISkinTypeCount
 		};
 
 		static const char * GetSkinStateName( const Uint32& State );
 
-		cUISkin( const std::string& Name );
+		cUISkin( const std::string& Name, const Uint32& Type );
 
 		virtual ~cUISkin();
 
-		virtual void Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Width, const eeFloat& Height ) = 0;
+		virtual void Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Width, const eeFloat& Height, const Uint32& State ) = 0;
 
 		virtual void SetSkin( const Uint32& State ) = 0;
 
@@ -35,11 +32,7 @@ class EE_API cUISkin {
 
 		virtual const eeColorA& GetColor( const Uint32& State ) const;
 
-		virtual void SetState( const Uint32& State );
-
 		virtual void SetSkins();
-
-		const Uint32& GetState() const;
 
 		const std::string& Name() const;
 
@@ -50,20 +43,28 @@ class EE_API cUISkin {
 		cUITheme * Theme() const;
 
 		void Theme( cUITheme * theme );
+
+		virtual cUISkin * Copy() = 0;
+
+		const Uint32& GetType() const;
 	protected:
 		friend class cUIControl;
+		friend class cUISkinState;
 
+		Uint32		mType;
 		std::string mName;
 		Uint32		mNameHash;
-		Uint32 		mCurState;
-		Uint32		mLastState;
 		Uint32		mColorDefault;
-		eeColorA 	mColor[ StateCount ];
+		eeColorA 	mColor[ cUISkinState::StateCount ];
 		cUITheme * 	mTheme;
 
 		void StateBack( const Uint32& State );
 
 		void SetPrevState();
+
+		bool GetColorDefault( const Uint32& State );
+
+		virtual void StateNormalToState( const Uint32& State ) = 0;
 };
 
 }}

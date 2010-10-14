@@ -10,7 +10,7 @@ class EE_API cUIDragable : public cUIControl {
     	cUIDragable( const cUIControl::CreateParams& Params );
 
 		virtual Uint32		OnMouseDown( const eeVector2i& Pos, const Uint32 Flags );
-		virtual Uint32 	OnMouseUp( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 		OnMouseUp( const eeVector2i& Pos, const Uint32 Flags );
 
 		bool				Dragging() const;
 		void				Dragging( const bool& dragging );
@@ -23,7 +23,7 @@ class EE_API cUIDragable : public cUIControl {
 
 		virtual void		Update();
 
-		const bool&		DragEnable() const;
+		const bool&			DragEnable() const;
 		void 				DragEnable( const bool& enable );
 
 		void 				DragButton( const Uint32& Button );

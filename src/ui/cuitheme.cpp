@@ -26,7 +26,19 @@ static const char * UI_THEME_ELEMENTS[] = {
 	"spinbox",
 	"spinbox_input",
 	"spinbox_btnup",
-	"spinbox_btndown"
+	"spinbox_btndown",
+	"hscrollbar",
+	"hscrollbar_slider",
+	"hscrollbar_bg",
+	"hscrollbar_button",
+	"hscrollbar_btnup",
+	"hscrollbar_btndown",
+	"vscrollbar",
+	"vscrollbar_slider",
+	"vscrollbar_bg",
+	"vscrollbar_button",
+	"vscrollbar_btnup",
+	"vscrollbar_btndown"
 };
 
 cUITheme * cUITheme::LoadFromPath( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt ) {
@@ -120,7 +132,7 @@ bool cUITheme::SearchFilesInGroup( cShapeGroup * SG, std::string Element, Uint32
 	IsComplex = false;
 
 	// Search Complex Skin
-	for ( i = 0; i < cUISkin::StateCount; i++ ) {
+	for ( i = 0; i < cUISkinState::StateCount; i++ ) {
 		for ( s = 0; s < cUISkinComplex::SideCount; s++ ) {
 			ElemName = Element + "_" + cUISkin::GetSkinStateName( i ) + "_" + cUISkinComplex::GetSideSuffix( s );
 
@@ -134,7 +146,7 @@ bool cUITheme::SearchFilesInGroup( cShapeGroup * SG, std::string Element, Uint32
 
 	// Seach Simple Skin
 	if ( !IsComplex ) {
-		for ( i = 0; i < cUISkin::StateCount; i++ ) {
+		for ( i = 0; i < cUISkinState::StateCount; i++ ) {
 			ElemName = Element + "_" + cUISkin::GetSkinStateName( i );
 			
 			if ( SG->GetByName( ElemName ) ) { // only load PNG's FTM
@@ -156,7 +168,7 @@ bool cUITheme::SearchFilesOfElement( cShapeGroup * SG, const std::string& Path, 
 	IsComplex = false;
 
 	// Search Complex Skin
-	for ( i = 0; i < cUISkin::StateCount; i++ ) {
+	for ( i = 0; i < cUISkinState::StateCount; i++ ) {
 		for ( s = 0; s < cUISkinComplex::SideCount; s++ ) {
 			ElemName = Element + "_" + cUISkin::GetSkinStateName( i ) + "_" + cUISkinComplex::GetSideSuffix( s );
 			ElemPath = Path + ElemName;
@@ -173,7 +185,7 @@ bool cUITheme::SearchFilesOfElement( cShapeGroup * SG, const std::string& Path, 
 
 	// Seach Simple Skin
 	if ( !IsComplex ) {
-		for ( i = 0; i < cUISkin::StateCount; i++ ) {
+		for ( i = 0; i < cUISkinState::StateCount; i++ ) {
 			ElemName = Element + "_" + cUISkin::GetSkinStateName( i );
 			ElemPath = Path + ElemName;
 			ElemFullPath = ElemPath + "." + ImgExt;

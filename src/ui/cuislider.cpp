@@ -6,6 +6,8 @@ namespace EE { namespace UI {
 cUISlider::cUISlider( const cUISlider::CreateParams& Params ) :
 	cUIControlAnim( Params ),
 	mVertical( Params.VerticalSlider ),
+	mAllowHalfSliderOut( Params.AllowHalfSliderOut ),
+	mExpandBackground( Params.ExpandBackground ),
 	mBackSlider( NULL ),
 	mSlider( NULL ),
 	mMinValue( 0.f ),
@@ -49,25 +51,33 @@ cUISlider::~cUISlider() {
 }
 
 void cUISlider::SetTheme( cUITheme * Theme ) {
-	if ( !mVertical ) {
-		cUIControl::SetTheme( Theme, "hslider" );
-
-		mBackSlider->ForceThemeSkin( Theme, "hslider_bg" );
-		mSlider->ForceThemeSkin( Theme, "hslider_button" );
-	} else {
-		cUIControl::SetTheme( Theme, "vslider" );
-
-		mBackSlider->ForceThemeSkin( Theme, "vslider_bg" );
-		mSlider->ForceThemeSkin( Theme, "vslider_button" );
+	if ( NULL == mSkinState ) {
+		if ( !mVertical ) {
+			cUIControl::SetTheme( Theme, "hslider" );
+	
+			mBackSlider->ForceThemeSkin( Theme, "hslider_bg" );
+			mSlider->ForceThemeSkin( Theme, "hslider_button" );
+		} else {
+			cUIControl::SetTheme( Theme, "vslider" );
+	
+			mBackSlider->ForceThemeSkin( Theme, "vslider_bg" );
+			mSlider->ForceThemeSkin( Theme, "vslider_button" );
+		}
 	}
+	
+	AdjustChilds();
 
+	Value( mValue );
+}
+
+void cUISlider::AdjustChilds() {
 	cShape * tShape = NULL;
 	cUISkin * tSkin = NULL;
 
 	tSkin = mSlider->GetSkin();
 
 	if ( NULL != tSkin ) {
-		tShape = tSkin->GetShape( cUISkin::StateNormal );
+		tShape = tSkin->GetShape( cUISkinState::StateNormal );
 
 		if ( NULL != tShape ) {
 			mSlider->Size( tShape->RealSize() );
@@ -82,19 +92,38 @@ void cUISlider::SetTheme( cUITheme * Theme ) {
 	tSkin = mBackSlider->GetSkin();
 
 	if ( NULL != tSkin ) {
-		tShape = tSkin->GetShape( cUISkin::StateNormal );
+		tShape = tSkin->GetShape( cUISkinState::StateNormal );
 
 		if ( NULL != tShape ) {
-			if ( !mVertical )
-				mBackSlider->Size( eeSize( mSize.Width() - mSlider->Size().Width(), tShape->RealSize().Height() ) );
-			else
-				mBackSlider->Size( eeSize( tShape->RealSize().Width(), mSize.Height() - mSlider->Size().Height() ) );
-
+			if ( !mVertical ) {
+				Int32 Height;
+				
+				if ( mExpandBackground )
+					Height = mSize.Height();
+				else
+					Height = tShape->RealSize().Height();
+				
+				if ( mAllowHalfSliderOut )
+					mBackSlider->Size( eeSize( mSize.Width() - mSlider->Size().Width(), Height ) );
+				else
+					mBackSlider->Size( eeSize( mSize.Width(), Height ) );
+			} else {
+				Int32 Width;
+				
+				if ( mExpandBackground )
+					Width = mSize.Width();
+				else
+					Width = tShape->RealSize().Width();
+				
+				if ( mAllowHalfSliderOut )
+					mBackSlider->Size( eeSize( Width, mSize.Height() - mSlider->Size().Height() ) );
+				else
+					mBackSlider->Size( eeSize( Width, mSize.Height() ) );
+			}
+			
 			mBackSlider->Center();
 		}
 	}
-
-	Value( mValue );
 }
 
 void cUISlider::FixSliderPos() {
@@ -106,40 +135,70 @@ void cUISlider::FixSliderPos() {
 
 			if ( mSlider->Pos().x < 0 )
 				mSlider->Pos( 0, 0 );
-
-			if ( mSlider->Pos().x > mBackSlider->Size().Width() )
-				mSlider->Pos( mBackSlider->Size().Width(), 0 );
-
+			
+			if ( mAllowHalfSliderOut ) {
+				if ( mSlider->Pos().x > mBackSlider->Size().Width() )
+					mSlider->Pos( mBackSlider->Size().Width(), 0 );
+			} else {
+				if ( mSlider->Pos().x > mBackSlider->Size().Width() - mSlider->Size().Width() )
+					mSlider->Pos( mBackSlider->Size().Width() - mSlider->Size().Width(), 0 );
+			}
+			
 			mSlider->CenterVertical();
-
-			Value( mMinValue + (eeFloat)mSlider->Pos().x * ( mMaxValue - mMinValue ) / (eeFloat)mBackSlider->Size().Width() );
+			
+			if ( mAllowHalfSliderOut )
+				Value( mMinValue + (eeFloat)mSlider->Pos().x * ( mMaxValue - mMinValue ) / (eeFloat)mBackSlider->Size().Width() );
+			else
+				Value( mMinValue + (eeFloat)mSlider->Pos().x * ( mMaxValue - mMinValue ) / ( (eeFloat)mSize.Width() - mSlider->Size().Width() ) );
 		} else {
 			mSlider->Pos( 0, mSlider->Pos().y );
 
 			if ( mSlider->Pos().y < 0 )
 				mSlider->Pos( 0, 0 );
-
-			if ( mSlider->Pos().y > mBackSlider->Size().Height() )
-				mSlider->Pos( 0, mBackSlider->Size().Height() );
-
+			
+			if ( mAllowHalfSliderOut ) {
+				if ( mSlider->Pos().y > mBackSlider->Size().Height() )
+					mSlider->Pos( 0, mBackSlider->Size().Height() );
+			} else {
+				if ( mSlider->Pos().y > mBackSlider->Size().Height() - mSlider->Size().Height() )
+					mSlider->Pos( 0, mBackSlider->Size().Height() - mSlider->Size().Height() );
+			}
+			
 			mSlider->CenterHorizontal();
-
-			Value( mMinValue + (eeFloat)mSlider->Pos().y * ( mMaxValue - mMinValue ) / (eeFloat)mBackSlider->Size().Height() );
+			
+			if ( mAllowHalfSliderOut )
+				Value( mMinValue + (eeFloat)mSlider->Pos().y * ( mMaxValue - mMinValue ) / (eeFloat)mBackSlider->Size().Height() );
+			else
+				Value( mMinValue + (eeFloat)mSlider->Pos().y * ( mMaxValue - mMinValue ) / ( (eeFloat)mSize.Height() - mSlider->Size().Height() ) );
 		}
 
 		mOnPosChange = false;
 	}
 }
 
-void cUISlider::Value( const eeFloat& Val ) {
+void cUISlider::Value( eeFloat Val ) {
+	if ( Val < mMinValue ) Val = mMinValue;
+	if ( Val > mMaxValue ) Val = mMaxValue;
+	
 	if ( Val >= mMinValue && Val <= mMaxValue ) {
 		mValue = Val;
 
 		if ( !mOnPosChange ) {
-			if ( !mVertical )
-				mSlider->Pos( (Int32)( (eeFloat)mBackSlider->Size().Width() * ( Val - mMinValue ) ), mSlider->Pos().y );
-			else
-				mSlider->Pos( mSlider->Pos().x, (Int32)( (eeFloat)mBackSlider->Size().Height() * ( Val - mMinValue ) ) );
+			mOnPosChange = true;
+			
+			if ( !mVertical ) {
+				if ( mAllowHalfSliderOut )
+					mSlider->Pos( (Int32)( (eeFloat)mBackSlider->Size().Width() * ( Val - mMinValue ) ), mSlider->Pos().y );
+				else
+					mSlider->Pos( (Int32)( ( (eeFloat)mSize.Width() - mSlider->Size().Width() ) * ( Val - mMinValue ) ), mSlider->Pos().y );
+			} else {
+				if ( mAllowHalfSliderOut )
+					mSlider->Pos( mSlider->Pos().x, (Int32)( (eeFloat)mBackSlider->Size().Height() * ( Val - mMinValue ) ) );
+				else
+					mSlider->Pos( mSlider->Pos().x, (Int32)( ( (eeFloat)mSize.Height() - mSlider->Size().Height() ) * ( Val - mMinValue ) ) );
+			}
+			
+			mOnPosChange = false;
 		}
 
 		OnValueChange();
@@ -220,6 +279,22 @@ void cUISlider::ManageClick( const Uint32& Flags ) {
 				Value( mValue + mClickStep );
 		}
 	}
+}
+
+cUIControl * cUISlider::GetBackSlider() const {
+	return mBackSlider;
+}
+
+cUIDragable * cUISlider::GetSliderButton() const {
+	return mSlider;
+}
+
+const bool& cUISlider::AllowHalfSliderOut() const {
+	return mAllowHalfSliderOut;
+}
+
+const bool& cUISlider::ExpandBackground() const {
+	return mExpandBackground;
 }
 
 }}

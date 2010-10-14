@@ -200,11 +200,8 @@ const eeVector2f& cUIControlAnim::GetQuadCenter() const {
 }
 
 void cUIControlAnim::UpdateQuad() {
-	eeVector2i Pos = mPos;
-	ControlToScreen( Pos );
-
-	mQuad 	= AABBtoQuad2( eeAABB( (eeFloat)Pos.x, (eeFloat)Pos.y, (eeFloat)Pos.x + mSize.Width(), (eeFloat)Pos.y + mSize.Height() ) );
-	mCenter = eeVector2f( (eeFloat)Pos.x + (eeFloat)mSize.Width() * 0.5f, (eeFloat)Pos.y + (eeFloat)mSize.Height() * 0.5f );
+	mQuad 	= AABBtoQuad2( eeAABB( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mScreenPos.x + mSize.Width(), (eeFloat)mScreenPos.y + mSize.Height() ) );
+	mCenter = eeVector2f( (eeFloat)mScreenPos.x + (eeFloat)mSize.Width() * 0.5f, (eeFloat)mScreenPos.y + (eeFloat)mSize.Height() * 0.5f );
 
 	mQuad.Rotate( mAngle, mCenter );
 	mQuad.Scale( mScale, mCenter );
