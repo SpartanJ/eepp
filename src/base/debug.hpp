@@ -19,8 +19,14 @@ void eePRINTC	( unsigned int cond, const char * format, ... );
 
 #define eeASSERT( expr )
 #define eeASSERTM( expr, msg )
+
+#ifdef EE_COMPILER_GCC
+#define eePRINT( format, args... ) {}
+#define eePRINTC( cond, format, args... ) {}
+#else
 #define eePRINT
 #define eePRINTC
+#endif
 
 #endif
 

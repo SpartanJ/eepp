@@ -482,23 +482,23 @@ void cEETest::CreateUI() {
 	mSlider = eeNew( cUISlider, ( SliderParams ) );
 	mSlider->Visible( true );
 	mSlider->Enabled( true );
-	
+
 	SliderParams.PosSet( 60, 120 );
 	mSlider = eeNew( cUISlider, ( SliderParams ) );
 	mSlider->Visible( true );
 	mSlider->Enabled( true );
-	
+
 	cUISpinBox::CreateParams SpinBoxParams;
 	SpinBoxParams.Parent( C );
 	SpinBoxParams.PosSet( 80, 150 );
-	SpinBoxParams.Size = eeSize( 80, 23 );
+	SpinBoxParams.Size = eeSize( 80, 24 );
 	SpinBoxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE;
 	SpinBoxParams.Font = TTF;
 	SpinBoxParams.AllowDotsInNumbers = true;
 	cUISpinBox * mSpinBox = eeNew( cUISpinBox, ( SpinBoxParams ) );
 	mSpinBox->Visible( true );
 	mSpinBox->Enabled( true );
-	mSpinBox->Padding( eeRectf( 2, 0, -2, 0 ) );
+	mSpinBox->Padding( eeRectf( 3, -1, 0, 0 ) );
 
 	cUIScrollBar::CreateParams ScrollBarP;
 	ScrollBarP.Parent( C );
@@ -510,7 +510,7 @@ void cEETest::CreateUI() {
 	mScrollBar->Visible( true );
 	mScrollBar->Enabled( true );
 	mScrollBar->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cEETest::OnValueChange ) );
-	
+
 	TextParams.PosSet( 20, 5 );
 	mTextBoxValue = eeNew( cUITextBox, ( TextParams ) );
 	mTextBoxValue->Visible( true );

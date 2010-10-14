@@ -56,6 +56,12 @@
 #define EE_COMPILER_GCC
 #endif
 
+#ifndef EE_DEBUG
+	#if defined( DEBUG ) || defined( _DEBUG ) || defined( __DEBUG )
+	#define EE_DEBUG
+	#endif
+#endif
+
 #if defined(__x86_64__) || \
 	(defined(_WIN64) && !defined(_XBOX)) || \
 	defined(__64BIT__) || defined(__LP64)  || defined(__LP64__) || defined(_LP64) || defined(_ADDR64) || defined(_CRAYC) || defined(__arch64__) || \

@@ -2016,7 +2016,11 @@ int query_DXT_capability( void )
 				CFRelease( bundle );
 			#else
 				ext_addr = (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)
+						#if !defined(GLX_VERSION_1_4)
 						glXGetProcAddressARB
+						#else
+						glXGetProcAddress
+						#endif
 						(
 							(const GLubyte *)"glCompressedTexImage2DARB"
 						);

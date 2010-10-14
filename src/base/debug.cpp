@@ -2,6 +2,8 @@
 
 namespace EE {
 
+#ifdef EE_DEBUG
+
 void eeREPORT_ASSERT( const char * File, int Line, const char * Exp ) {
 	#ifdef EE_COMPILER_MSVC
 
@@ -66,5 +68,7 @@ void eePRINTC( unsigned int cond, const char * format, ...) {
 	printf("%s", buf );
 	#endif
 }
+
+#endif
 
 }
