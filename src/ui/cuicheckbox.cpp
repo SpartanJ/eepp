@@ -60,6 +60,13 @@ void cUICheckBox::SetTheme( cUITheme * Theme ) {
 	Padding( eeRectf(0,0,0,0) );
 }
 
+void cUICheckBox::OnSizeChange() {
+	cUITextBox::OnSizeChange();
+	
+	mActiveButton->CenterVertical();
+	mInactiveButton->CenterVertical();
+}
+
 Uint32 cUICheckBox::OnMessage( const cUIMessage * Msg ) {
 	switch ( Msg->Msg() ) {
 		case cUIMessage::MsgClick: {

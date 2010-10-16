@@ -860,7 +860,10 @@ void cUIControl::UpdateScreenPos() {
 }
 
 cUISkin * cUIControl::GetSkin() {
-	return mSkinState->GetSkin();
+	if ( NULL != mSkinState )
+		return mSkinState->GetSkin();
+
+	return NULL;
 }
 
 void cUIControl::WriteCtrlFlag( const Uint32& Pos, const Uint32& Val ) {

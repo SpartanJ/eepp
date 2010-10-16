@@ -89,7 +89,9 @@ class EE_API cTexture : public cImage {
 		const Uint8* GetPixelsPtr();
 
 		/** Set the Texture Filter Mode */
-		void SetTextureFilter(const EE_TEX_FILTER& filter);
+		void TextureFilter( const EE_TEX_FILTER& filter );
+
+		const EE_TEX_FILTER& TextureFilter() const;
 
 		/** Save the Texture to a new File */
 		bool SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format );

@@ -9,8 +9,10 @@ class EE_API cUITextBox : public cUIControlAnim {
 	public:
 		class CreateParams : public cUIControl::CreateParams {
 			public:
-				inline CreateParams() : cUIControl::CreateParams() {
-					Font = NULL;
+				inline CreateParams() :
+					cUIControl::CreateParams(),
+					Font( NULL )
+				{
 				}
 
 				inline ~CreateParams() {}

@@ -89,6 +89,10 @@ void cUIScrollBar::SetTheme( cUITheme * Theme ) {
 	mSlider->AdjustChilds();
 }
 
+void cUIScrollBar::OnSizeChange() {
+	AdjustChilds();
+}
+
 void cUIScrollBar::AdjustChilds() {
 	mBtnUp->Pos( 0, 0 );
 	

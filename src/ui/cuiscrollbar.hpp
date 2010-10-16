@@ -51,6 +51,8 @@ class cUIScrollBar : public cUIControlAnim {
 		cUIControlAnim *	mBtnUp;
 		cUIControlAnim * 	mBtnDown;
 		
+		virtual void OnSizeChange();
+		
 		void AdjustChilds();
 		
 		void ManageClick( const Uint32& Flags );

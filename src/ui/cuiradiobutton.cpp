@@ -64,6 +64,13 @@ void cUIRadioButton::SetTheme( cUITheme * Theme ) {
 	Padding( eeRectf(0,0,0,0) );
 }
 
+void cUIRadioButton::OnSizeChange() {
+	cUITextBox::OnSizeChange();
+	
+	mActiveButton->CenterVertical();
+	mInactiveButton->CenterVertical();
+}
+
 Uint32 cUIRadioButton::OnMessage( const cUIMessage * Msg ) {
 	switch ( Msg->Msg() ) {
 		case cUIMessage::MsgClick: {

@@ -70,6 +70,10 @@ void cUISlider::SetTheme( cUITheme * Theme ) {
 	Value( mValue );
 }
 
+void cUISlider::OnSizeChange() {
+	AdjustChilds();
+}
+
 void cUISlider::AdjustChilds() {
 	cShape * tShape = NULL;
 	cUISkin * tSkin = NULL;

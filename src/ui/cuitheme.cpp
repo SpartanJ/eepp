@@ -38,7 +38,9 @@ static const char * UI_THEME_ELEMENTS[] = {
 	"vscrollbar_bg",
 	"vscrollbar_button",
 	"vscrollbar_btnup",
-	"vscrollbar_btndown"
+	"vscrollbar_btndown",
+	"progressbar",
+	"progressbar_filler"
 };
 
 cUITheme * cUITheme::LoadFromPath( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt ) {

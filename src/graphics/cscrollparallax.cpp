@@ -2,104 +2,157 @@
 
 namespace EE { namespace Graphics {
 
-cScrollParallax::cScrollParallax() {
-	TF = cTextureFactory::instance();
+cScrollParallax::cScrollParallax() :
+	mShape( NULL ),
+	mBlend( ALPHA_NORMAL ),
+	mColor( 0xFFFFFFFF )
+{
 }
 
 cScrollParallax::~cScrollParallax() {}
 
-cScrollParallax::cScrollParallax( const Uint32& TexId, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeRecti& SrcRECT, const eeRGBA& Color, const Uint8& Alpha, const EE_PRE_BLEND_FUNC& Effect ) {
-	TF = cTextureFactory::instance();
-	Create( TexId, DestX, DestY, DestWidth, DestHeight, SrcRECT, Color, Alpha, Effect );
+cScrollParallax::cScrollParallax( cShape * Shape, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeVector2f& Speed, const eeRGBA& Color, const EE_PRE_BLEND_FUNC& Blend ) {
+	Create( Shape, DestX, DestY, DestWidth, DestHeight, Speed, Color, Blend );
 }
 
-bool cScrollParallax::Create(const Uint32& TexId, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeRecti& SrcRECT, const eeRGBA& Color, const Uint8& Alpha, const EE_PRE_BLEND_FUNC& Effect ) {
-	cTexture * Tex = TF->GetTexture( TexId );
+cShape * cScrollParallax::Shape() const {
+	return mShape;
+}
 
-	if ( NULL == Tex )
-		return false;
+void cScrollParallax::Shape( cShape * shape ) {
+	mShape = shape;
 
-	mSrcRECT = SrcRECT;
+	SetShape();
+}
 
-	if ( mSrcRECT.Bottom == 0 && mSrcRECT.Right == 0 ) {
-		mSrcRECT.Left = 0;
-		mSrcRECT.Top = 0;
-		mSrcRECT.Right = (Int32)Tex->Width();
-		mSrcRECT.Bottom = (Int32)Tex->Height();
+void cScrollParallax::SetShape() {
+	if ( NULL != mShape ) {
+		mRect		= mShape->SrcRect();
+		mRealSize	= eeVector2f( mShape->RealSize().Width(), mShape->RealSize().Height() );
+
+		mTiles.x	= ( (Int32)mSize.Width() / mShape->RealSize().Width() ) + 1;
+		mTiles.y	= ( (Int32)mSize.Height() / mShape->RealSize().Height() ) + 1;
 	}
+}
 
-	mWidth = static_cast<eeFloat> ( mSrcRECT.Right - mSrcRECT.Left );
-	mHeight = static_cast<eeFloat> ( mSrcRECT.Bottom - mSrcRECT.Top );
+void cScrollParallax::SetAABB() {
+	mAABB		= eeRectf( mInitPos.x, mInitPos.y, mInitPos.x + mSize.Width(), mInitPos.y + mSize.Height() );
+}
 
-	mTilerWidth = DestWidth + DestX;
-	mTilerHeight = DestHeight + DestY;
+bool cScrollParallax::Create( cShape * Shape, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeVector2f& Speed, const eeRGBA& Color, const EE_PRE_BLEND_FUNC& Blend ) {
+	mShape		= Shape;
+	mPos		= eeVector2f( DestX, DestY );
+	mSize 		= eeSizef( DestWidth, DestHeight );
+	mInitPos	= mPos;
+	mSpeed		= Speed;
+	mColor		= Color;
+	mBlend		= Blend;
 
-	if (DestX <= mTilerWidth) mPomSx = DestX;
-	if (DestY <= mTilerHeight) mPomSy = DestY;
-
-	mX = (Int16) ( ( mTilerWidth - mPomSx ) / mWidth ) + 1;
-	mY = (Int16) ( ( mTilerHeight - mPomSy ) / mHeight ) + 1;
-
-	mSpr.CreateStatic( TexId, mWidth, mHeight, 0, 0, mSrcRECT );
-
-	mSpr.Color( Color );
-	mSpr.Alpha( Alpha );
-	mSpr.SetRenderAlphas( Effect );
+	SetAABB();
+	SetShape();
 
 	return true;
 }
 
-void cScrollParallax::Draw( const eeFloat& XDirVel, const eeFloat& YDirVel ) {
-	Int16 tX, tY;
-	eeFloat tPomSx, tPomSy, tWidth, tHeight;
-	eeRectf tSrcRECT( (eeFloat)mSrcRECT.Left, (eeFloat)mSrcRECT.Top, (eeFloat)mSrcRECT.Right, (eeFloat)mSrcRECT.Bottom );
+void cScrollParallax::Size( const eeFloat& DestWidth, const eeFloat& DestHeight ) {
+	mSize = eeSizef( DestWidth, DestHeight );
 
-	mSx = mSx + XDirVel;
-	if (mSx > mWidth) mSx = 0;
-	if (mSx < -mWidth) mSx = 0;
+	SetShape();
+	SetAABB();
+}
 
-	mSy = mSy + YDirVel;
-	if (mSy > mHeight) mSy = 0;
-	if (mSy < -mHeight) mSy = 0;
+void cScrollParallax::Position( const eeVector2f& Pos ) {
+	eeVector2f Diff = mPos - mInitPos;
 
-	for (tY = -1; tY <= mY; tY++ ) {
-		for (tX = -1; tX <= mX; tX++) {
-			tPomSx = mPomSx + ( (eeFloat)tX * mWidth ) + mSx;
-			tPomSy = mPomSy + ( (eeFloat)tY * mHeight ) + mSy;
+	mInitPos = Pos;
 
-			if ( (tPomSx + mWidth) > mPomSx && (tPomSy + mHeight) > mPomSy && tPomSx < mTilerWidth && tPomSy < mTilerHeight ) {
-				tWidth = mWidth;
-				tHeight = mHeight;
+	mPos = Pos + Diff;
 
-				if ( tPomSy + mHeight > mTilerHeight && tPomSy < mTilerHeight ) {
-					tSrcRECT.Bottom = tSrcRECT.Bottom - ((tPomSy + mHeight) - mTilerHeight);
-					tHeight = tSrcRECT.Bottom - tSrcRECT.Top;
+	SetAABB();
+}
+
+const eeSizef& cScrollParallax::Size() const {
+	return mSize;
+}
+
+const eeVector2f& cScrollParallax::Position() const {
+	return mInitPos;
+}
+
+void cScrollParallax::Draw() {
+	if ( NULL != mShape && mAABB.Left != mAABB.Right && mAABB.Top != mAABB.Bottom ) {
+		mPos += ( ( mSpeed * (eeFloat)mElapsed.Elapsed() ) / 1000.f );
+
+		if ( mPos.x > mAABB.Left + mRealSize.Width() || mPos.x < mAABB.Left - mRealSize.Width() )
+			mPos.x = mAABB.Left;
+
+		if ( mPos.y > mAABB.Top + mRealSize.Height() || mPos.y < mAABB.Top - mRealSize.Height() )
+			mPos.y = mAABB.Top;
+
+		eeVector2f Pos 	= mPos;
+
+		Pos.x = (eeFloat)(Int32)Pos.x;
+		Pos.y = (eeFloat)(Int32)Pos.y;
+
+		if ( mSpeed.x > 0.f )
+			Pos.x -= mRealSize.Width();
+
+		if ( mSpeed.y > 0.f )
+			Pos.y -= mRealSize.Height();
+
+		for ( Int32 y = -1; y < mTiles.y; y++ ) {
+			for ( Int32 x = -1; x < mTiles.x; x++ ) {
+				eeRecti Rect 	= mRect;
+				eeRectf AABB( Pos.x, Pos.y, Pos.x + mRealSize.Width(), Pos.y + mRealSize.Height() );
+
+				if ( AABB.Intersect( mAABB ) ) {
+					if ( Pos.x < mAABB.Left ) {
+						Rect.Left += ( mAABB.Left - Pos.x );
+						AABB.Left = mAABB.Left;
+					}
+
+					if ( Pos.x + mRealSize.Width() > mAABB.Right ) {
+						Rect.Right -= ( ( Pos.x + mRealSize.Width() ) - mAABB.Right );
+					}
+
+					if ( Pos.y < mAABB.Top ) {
+						Rect.Top += ( mAABB.Top - Pos.y );
+						AABB.Top = mAABB.Top;
+					}
+
+					if ( Pos.y + mRealSize.Height() > mAABB.Bottom ) {
+						Rect.Bottom -= ( ( Pos.y + mRealSize.Height() ) - mAABB.Bottom );
+					}
+
+					mShape->SrcRect( Rect );
+					mShape->ResetDestWidthAndHeight();
+
+					if ( !( Rect.Right == 0 || Rect.Bottom == 0 ) )
+						mShape->Draw( AABB.Left, AABB.Top, mColor, 0.f, 1.f, mBlend );
 				}
 
-				if ( tPomSx < mPomSx ) {
-					tSrcRECT.Left = tSrcRECT.Left + mPomSx - tPomSx;
-					tPomSx = mPomSx;
-					tWidth = tSrcRECT.Right - tSrcRECT.Left;
-				}
-
-				if ( (tPomSx + mWidth) > mTilerWidth && tPomSx < mTilerWidth ) {
-					tSrcRECT.Right = tSrcRECT.Right - ((tPomSx + mWidth) - mTilerWidth);
-					tWidth = tSrcRECT.Right - tSrcRECT.Left;
-				}
-
-				if (tPomSy < mPomSy) {
-					tSrcRECT.Top = tSrcRECT.Top + mPomSy - tPomSy;
-					tPomSy = mPomSy;
-					tHeight = tSrcRECT.Bottom - tSrcRECT.Top;
-				}
-
-				mSpr.UpdateSize( tWidth, tHeight );
-				mSpr.UpdateSprRECT( eeRecti( (Int32)tSrcRECT.Left, (Int32)tSrcRECT.Top, (Int32)tSrcRECT.Right, (Int32)tSrcRECT.Bottom ) );
-				mSpr.UpdatePos( tPomSx, tPomSy );
-				mSpr.Draw();
+				Pos.x += mRealSize.Width();
 			}
+
+			Pos.x = (eeFloat)(Int32)mPos.x;
+
+			if ( mSpeed.x > 0.f )
+				Pos.x -= mRealSize.Width();
+
+			Pos.y += mRealSize.Height();
 		}
+
+		mShape->SrcRect( mRect );
+		mShape->ResetDestWidthAndHeight();
 	}
+}
+
+void cScrollParallax::Speed( const eeVector2f& speed ) {
+	mSpeed = speed;
+}
+
+const eeVector2f& cScrollParallax::Speed() const {
+	return mSpeed;
 }
 
 }}

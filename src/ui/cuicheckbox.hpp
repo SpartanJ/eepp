@@ -31,7 +31,9 @@ class EE_API cUICheckBox : public cUITextBox {
 		cUIControlAnim *	mActiveButton;
 		cUIControlAnim *	mInactiveButton;
 		bool				mActive;
-
+		
+		virtual void OnSizeChange();
+		
 		void SwitchState();
 };
 

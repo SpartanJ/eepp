@@ -72,6 +72,8 @@ class EE_API cUISlider : public cUIControlAnim {
 		eeFloat				mClickStep;
 
 		bool				mOnPosChange;
+		
+		virtual void OnSizeChange();
 
 		void FixSliderPos();
 		

@@ -63,6 +63,7 @@ void tSize<T>::Height( const T& height ) {
 }
 
 typedef tSize<eeInt> eeSize;
+typedef tSize<eeFloat> eeSizef;
 
 }}
 

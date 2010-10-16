@@ -200,6 +200,7 @@ class cEETest : private cThread {
 		cUIScrollBar * mScrollBar;
 		cUITextBox * mTextBoxValue;
 		cUISlider * mSlider;
+		cUIProgressBar * mProgressBar;
 };
 
 void cEETest::CreateAquaTextureAtlas() {
@@ -378,7 +379,7 @@ void cEETest::CreateUI() {
 	C->Enabled( true );
 	C->Pos( 320, 240 );
 	C->DragEnable( true );
-	C->StartRotation( 0.f, 360.f, 2500.f );
+	//C->StartRotation( 0.f, 360.f, 2500.f );
 
 	Params.Flags &= ~UI_CLIP_ENABLE;
 	Params.Background.Corners(0);
@@ -511,6 +512,17 @@ void cEETest::CreateUI() {
 	mScrollBar->Enabled( true );
 	mScrollBar->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cEETest::OnValueChange ) );
 
+	cUIProgressBar::CreateParams PBParams;
+	PBParams.Parent( C );
+	PBParams.PosSet( 20, 197 );
+	PBParams.Size = eeSize( 150, 16 );
+	PBParams.DisplayPercent = true;
+	PBParams.Font = TTF;
+	mProgressBar = eeNew( cUIProgressBar, ( PBParams ) );
+	mProgressBar->Visible( true );
+	mProgressBar->Enabled( true );
+	mProgressBar->TextBox()->Padding( eeRectf( 0, -1, 0, 0 ) );
+
 	TextParams.PosSet( 20, 5 );
 	mTextBoxValue = eeNew( cUITextBox, ( TextParams ) );
 	mTextBoxValue->Visible( true );
@@ -523,7 +535,7 @@ void cEETest::CreateUI() {
 /*
 	cTextureGroupLoader tgl( MyPath + "data/aqua.etg" );
 	TF->GetByName( "data/aqua.png" )->ClampMode( EE_CLAMP_REPEAT );
-	TF->GetByName( "data/aqua.png" )->SetTextureFilter( TEX_FILTER_NEAREST );
+	TF->GetByName( "data/aqua.png" )->TextureFilter( TEX_FILTER_NEAREST );
 	cUIThemeManager::instance()->Add( cUITheme::LoadFromShapeGroup( cShapeGroupManager::instance()->GetByName( "aqua" ), "aqua", "aqua" ) );
 */
 	cUIManager::instance()->SetTheme( "aqua" );
@@ -533,6 +545,8 @@ void cEETest::CreateUI() {
 
 void cEETest::OnValueChange( const cUIEvent * Event ) {
 	mTextBoxValue->Text( L"Scroll Value:\n" + toWStr( mScrollBar->Value() ) );
+
+	mProgressBar->Progress( mScrollBar->Value() * 100.f );
 }
 
 void cEETest::ButtonClick( const cUIEvent * Event ) {

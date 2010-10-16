@@ -524,6 +524,8 @@
 		<Unit filename="src/ui/cuimanager.hpp" />
 		<Unit filename="src/ui/cuimessage.cpp" />
 		<Unit filename="src/ui/cuimessage.hpp" />
+		<Unit filename="src/ui/cuiprogressbar.cpp" />
+		<Unit filename="src/ui/cuiprogressbar.hpp" />
 		<Unit filename="src/ui/cuipushbutton.cpp" />
 		<Unit filename="src/ui/cuipushbutton.hpp" />
 		<Unit filename="src/ui/cuiradiobutton.cpp" />

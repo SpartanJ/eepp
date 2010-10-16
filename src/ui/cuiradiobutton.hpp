@@ -31,6 +31,8 @@ class EE_API cUIRadioButton : public cUITextBox {
 		cUIControlAnim *	mActiveButton;
 		cUIControlAnim *	mInactiveButton;
 		bool				mActive;
+		
+		virtual void OnSizeChange();
 
 		void SwitchState();
 

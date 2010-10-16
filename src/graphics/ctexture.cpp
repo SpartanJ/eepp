@@ -172,7 +172,7 @@ bool cTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 
 			NTexId = SOIL_create_OGL_texture( reinterpret_cast<Uint8*>(&mPixels[0]), &width, &height, mChannels, mTexture, flags );
 
-			SetTextureFilter(mFilter);
+			TextureFilter(mFilter);
 
 			if ( PreviousTexture != (GLint)mTexture )
 				glBindTexture(GL_TEXTURE_2D, PreviousTexture);
@@ -224,7 +224,7 @@ bool cTexture::SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Form
 	return Res;
 }
 
-void cTexture::SetTextureFilter(const EE_TEX_FILTER& filter) {
+void cTexture::TextureFilter(const EE_TEX_FILTER& filter) {
 	if (mTexture) {
 		if ( mFilter != filter ) {
 			mFilter = filter;
@@ -246,6 +246,10 @@ void cTexture::SetTextureFilter(const EE_TEX_FILTER& filter) {
 				glBindTexture(GL_TEXTURE_2D, PreviousTexture);
 		}
 	}
+}
+
+const EE_TEX_FILTER& cTexture::TextureFilter() const {
+	return mFilter;
 }
 
 void cTexture::ReplaceColor( const eeColorA& ColorKey, const eeColorA& NewColor ) {
