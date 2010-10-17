@@ -490,8 +490,8 @@ void cTexture::DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width,
 				if ( renderdiv ) {
 					BR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
 
-					eeFloat sw = Sector.Right - Sector.Left;
-					eeFloat sh = Sector.Bottom - Sector.Top;
+					eeFloat sw = (eeFloat)( Sector.Right - Sector.Left );
+					eeFloat sh = (eeFloat)( Sector.Bottom - Sector.Top );
 					eeFloat tx = width / sw;
 					eeFloat ty = height / sh;
 					Int32 ttx = (Int32)tx;

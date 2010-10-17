@@ -140,7 +140,7 @@ std::vector<std::wstring> FilesGetInPath( const std::wstring& path ) {
 				tmpstr = std::wstring( findFileData.cFileName );
 
 				if ( tmpstr != L"." && tmpstr != L".." )
-					files.push_back( findFileData.cFileName );
+					files.push_back( tmpstr );
 			}
 
 			FindClose( hFind );
@@ -158,16 +158,16 @@ std::vector<std::wstring> FilesGetInPath( const std::wstring& path ) {
         HANDLE hFind = FindFirstFile( (LPCTSTR) mPath.c_str(), &findFileData );
 
         if( hFind != INVALID_HANDLE_VALUE ) {
-			std::wstring tmpstr( findFileData.cFileName );
+			std::wstring tmpstr( stringTowstring( findFileData.cFileName ) );
 
 			if ( tmpstr != L"." && tmpstr != L".." )
 					files.push_back( tmpstr );
 
 			while( FindNextFile( hFind, &findFileData ) ) {
-					tmpstr = std::wstring( findFileData.cFileName );
+					tmpstr = std::wstring( stringTowstring( findFileData.cFileName ) );
 
-					if ( tmpstr != "." && tmpstr != ".." )
-							files.push_back( std::wstring( findFileData.cFileName ) );
+					if ( tmpstr != L"." && tmpstr != L".." )
+							files.push_back( tmpstr );
 			}
 
 			FindClose( hFind );
@@ -498,7 +498,7 @@ Uint32 FileGetModificationDate( const std::string& Filepath ) {
 	int res = stat( Filepath.c_str(), &st );
 
 	if ( 0 == res )
-		return st.st_mtime;
+		return (Uint32)st.st_mtime;
 
 	return 0;
 }

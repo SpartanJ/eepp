@@ -29,6 +29,15 @@ cTextCache::cTextCache( cFont * font, const std::wstring& text, eeColorA FontCol
 cTextCache::~cTextCache() {
 }
 
+void cTextCache::Create( cFont * font, const std::wstring& text, eeColorA FontColor, eeColorA FontShadowColor ) {
+	mFont = font;
+	mText = text;
+	Color( FontColor );
+	ShadowColor( FontShadowColor );
+	Cache();
+	UpdateCoords();
+}
+
 cFont * cTextCache::Font() const {
 	return mFont;
 }
@@ -110,6 +119,10 @@ eeFloat cTextCache::GetTextHeight() {
 	return (eeFloat)mFont->GetFontSize() * (eeFloat)mNumLines;
 }
 
+const eeInt& cTextCache::GetNumLines() const {
+	return mNumLines;
+}
+
 const std::vector<eeFloat>& cTextCache::LinesWidth() {
 	return mLinesWidth;
 }
@@ -144,6 +157,10 @@ const bool& cTextCache::CachedCoords() const {
 
 void cTextCache::CachedCoords( const bool& cached ) {
 	mCachedCoords = cached;
+}
+
+cFont * cTextCache::GetFont() const {
+	return mFont;
 }
 
 }}

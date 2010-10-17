@@ -95,7 +95,11 @@ cUIControl * cUIManager::FocusControl() const {
 }
 
 void cUIManager::FocusControl( cUIControl * Ctrl ) {
-	mFocusControl = Ctrl;
+	if ( NULL != Ctrl && Ctrl != mFocusControl ) {
+		mFocusControl->OnFocusLoss();
+		mFocusControl = Ctrl;
+		mFocusControl->OnFocus();
+	}
 }
 
 cUIControl * cUIManager::OverControl() const {

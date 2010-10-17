@@ -51,18 +51,16 @@ cUISlider::~cUISlider() {
 }
 
 void cUISlider::SetTheme( cUITheme * Theme ) {
-	if ( NULL == mSkinState ) {
-		if ( !mVertical ) {
-			cUIControl::SetTheme( Theme, "hslider" );
-	
-			mBackSlider->ForceThemeSkin( Theme, "hslider_bg" );
-			mSlider->ForceThemeSkin( Theme, "hslider_button" );
-		} else {
-			cUIControl::SetTheme( Theme, "vslider" );
-	
-			mBackSlider->ForceThemeSkin( Theme, "vslider_bg" );
-			mSlider->ForceThemeSkin( Theme, "vslider_button" );
-		}
+	if ( !mVertical ) {
+		cUIControl::SetTheme( Theme, "hslider" );
+
+		mBackSlider->ForceThemeSkin( Theme, "hslider_bg" );
+		mSlider->ForceThemeSkin( Theme, "hslider_button" );
+	} else {
+		cUIControl::SetTheme( Theme, "vslider" );
+
+		mBackSlider->ForceThemeSkin( Theme, "vslider_bg" );
+		mSlider->ForceThemeSkin( Theme, "vslider_button" );
 	}
 	
 	AdjustChilds();

@@ -201,6 +201,8 @@ class cEETest : private cThread {
 		cUITextBox * mTextBoxValue;
 		cUISlider * mSlider;
 		cUIProgressBar * mProgressBar;
+
+		cTextCache mEEText;
 };
 
 void cEETest::CreateAquaTextureAtlas() {
@@ -477,14 +479,14 @@ void cEETest::CreateUI() {
 	mSlider->Visible( true );
 	mSlider->Enabled( true );
 
-	SliderParams.PosSet( 40, 120 );
+	SliderParams.PosSet( 40, 110 );
 	SliderParams.Size = eeSize( 24, 80 );
 	SliderParams.VerticalSlider = true;
 	mSlider = eeNew( cUISlider, ( SliderParams ) );
 	mSlider->Visible( true );
 	mSlider->Enabled( true );
 
-	SliderParams.PosSet( 60, 120 );
+	SliderParams.PosSet( 60, 110 );
 	mSlider = eeNew( cUISlider, ( SliderParams ) );
 	mSlider->Visible( true );
 	mSlider->Enabled( true );
@@ -527,20 +529,22 @@ void cEETest::CreateUI() {
 	mTextBoxValue = eeNew( cUITextBox, ( TextParams ) );
 	mTextBoxValue->Visible( true );
 
-	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.\nPowered by Text Shrinker =)";
+	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.";
 	TTF->ShrinkText( mBuda, 400 );
 
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal.png" ), "aqua_textinput_normal" ) ) );
-	cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
-/*
+	//cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal.png" ), "aqua_textinput_normal" ) ) );
+	//cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
+
 	cTextureGroupLoader tgl( MyPath + "data/aqua.etg" );
 	TF->GetByName( "data/aqua.png" )->ClampMode( EE_CLAMP_REPEAT );
 	TF->GetByName( "data/aqua.png" )->TextureFilter( TEX_FILTER_NEAREST );
 	cUIThemeManager::instance()->Add( cUITheme::LoadFromShapeGroup( cShapeGroupManager::instance()->GetByName( "aqua" ), "aqua", "aqua" ) );
-*/
+
 	cUIManager::instance()->SetTheme( "aqua" );
 
 	mBudaTC = eeNew( cTextCache, ( TTF, mBuda, eeColorA(255,255,255,255) ) );
+
+	mEEText.Create( TTF, L"Entropia Engine++\nCTRL + 1 = Screen 1 - CTRL + 2 = Screen 2\nCTRL + 3 = Screen 3" );
 }
 
 void cEETest::OnValueChange( const cUIEvent * Event ) {
@@ -965,8 +969,8 @@ void cEETest::Render() {
 							(Int32)Mouse.x,
 							(Int32)Mouse.y,
 							SizeToString( TF->MemorySize() ).c_str(),
-							SizeToString( MemoryManager::GetTotalMemoryUsage() ).c_str(),
-							SizeToString( MemoryManager::GetPeakMemoryUsage() ).c_str()
+							SizeToString( (Uint32)MemoryManager::GetTotalMemoryUsage() ).c_str(),
+							SizeToString( (Uint32)MemoryManager::GetPeakMemoryUsage() ).c_str()
 						);
 		#else
 		mInfo = StrFormated( "EE - FPS: %d Elapsed Time: %4.8f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s",
@@ -1001,8 +1005,6 @@ void cEETest::Render() {
 		EE->ClipDisable();
 	}
 
-	TTF->SetText( L"Entropia Engine++\nEE++ Support TTF Fonts and they look beautifull. :)\nCTRL + 1 = Screen 1 - CTRL + 2 = Screen 2" );
-
 	eeColorA ColRR1( 150, 150, 150, 220 );
 	eeColorA ColRR4( 150, 150, 150, 220 );
 	eeColorA ColRR2( 100, 100, 100, 220 );
@@ -1012,13 +1014,13 @@ void cEETest::Render() {
 
 	PR.DrawRectangle(
 					0.f,
-					(eeFloat)EE->GetHeight() - (eeFloat)TTF->GetNumLines() * (eeFloat)TTF->GetFontSize(),
-					(eeFloat)TTF->GetTextWidth(),
-					(eeFloat)TTF->GetNumLines() * (eeFloat)TTF->GetFontSize(),
+					(eeFloat)EE->GetHeight() - (eeFloat)mEEText.GetNumLines() * (eeFloat)mEEText.GetFont()->GetFontSize(),
+					mEEText.GetTextWidth(),
+					mEEText.GetTextHeight(),
 					ColRR1, ColRR2, ColRR3, ColRR4
 	);
 
-	TTF->Draw( 0.f, (eeFloat)EE->GetHeight() - TTF->GetTextHeight(), FONT_DRAW_CENTER, 1.f, Ang );
+	mEEText.Draw( 0.f, (eeFloat)EE->GetHeight() - mEEText.GetTextHeight(), FONT_DRAW_CENTER, 1.f, Ang );
 
 	FF->Color( eeColorA(255,255,255,200) );
 	FF->Draw( mInfo, 6, 6 );
@@ -1035,7 +1037,7 @@ void cEETest::Render() {
 		FF2->Draw( L"_", 6.f + FF2->GetTextWidth(), 180.f + (eeFloat)LineNum * (eeFloat)FF2->GetFontSize() );
 	}
 
-	mBudaTC->Draw( 0.f, 50.f );
+	mBudaTC->Draw( 5.f, 50.f );
 /*
 	cTexture * TexFace = TF->GetTexture( mFace );
 	if ( TexFace )

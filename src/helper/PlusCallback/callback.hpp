@@ -145,7 +145,7 @@ namespace cb
                     ///Returns true if the callback has been set, or false if the callback is not set and is invalid.
                     bool IsSet() const
                     {
-                        return mCallback;
+                        return 0 != mCallback;
                     }
 
                     ///Invokes the callback.
@@ -385,7 +385,7 @@ namespace cb
                     ///Returns true if the callback has been set, or false if the callback is not set and is invalid.
                     bool IsSet() const
                     {
-                        return mCallback;
+                        return 0 != mCallback;
                     }
 
                     ///Invokes the callback.
@@ -625,7 +625,7 @@ namespace cb
                     ///Returns true if the callback has been set, or false if the callback is not set and is invalid.
                     bool IsSet() const
                     {
-                        return mCallback;
+                        return 0 != mCallback;
                     }
 
                     ///Invokes the callback.
@@ -865,7 +865,7 @@ namespace cb
                     ///Returns true if the callback has been set, or false if the callback is not set and is invalid.
                     bool IsSet() const
                     {
-                        return mCallback;
+                        return 0 != mCallback;
                     }
 
                     ///Invokes the callback.
@@ -1105,7 +1105,7 @@ namespace cb
                     ///Returns true if the callback has been set, or false if the callback is not set and is invalid.
                     bool IsSet() const
                     {
-                        return mCallback;
+                        return 0 != mCallback;
                     }
 
                     ///Invokes the callback.
@@ -1345,7 +1345,7 @@ namespace cb
                     ///Returns true if the callback has been set, or false if the callback is not set and is invalid.
                     bool IsSet() const
                     {
-                        return mCallback;
+                        return 0 != mCallback;
                     }
 
                     ///Invokes the callback.
@@ -1585,7 +1585,7 @@ namespace cb
                     ///Returns true if the callback has been set, or false if the callback is not set and is invalid.
                     bool IsSet() const
                     {
-                        return mCallback;
+                        return 0 != mCallback;
                     }
 
                     ///Invokes the callback.
@@ -1825,7 +1825,7 @@ namespace cb
                     ///Returns true if the callback has been set, or false if the callback is not set and is invalid.
                     bool IsSet() const
                     {
-                        return mCallback;
+                        return 0 != mCallback;
                     }
 
                     ///Invokes the callback.
@@ -2065,7 +2065,7 @@ namespace cb
                     ///Returns true if the callback has been set, or false if the callback is not set and is invalid.
                     bool IsSet() const
                     {
-                        return mCallback;
+                        return 0 != mCallback;
                     }
 
                     ///Invokes the callback.
@@ -2305,7 +2305,7 @@ namespace cb
                     ///Returns true if the callback has been set, or false if the callback is not set and is invalid.
                     bool IsSet() const
                     {
-                        return mCallback;
+                        return 0 != mCallback;
                     }
 
                     ///Invokes the callback.

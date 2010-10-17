@@ -11,11 +11,13 @@ class cFont;
 /** @brief Cached text for a fast font rendering. */
 class EE_API cTextCache {
 	public:
-		cTextCache( cFont * font, const std::wstring& text = L"", eeColorA FontColor = eeColorA(0xFFFFFFFF), eeColorA ShadowColor = eeColorA(0xFF000000) );
+		cTextCache( cFont * font, const std::wstring& text = L"", eeColorA FontColor = eeColorA(0xFFFFFFFF), eeColorA FontShadowColor = eeColorA(0xFF000000) );
 
 		cTextCache();
 
 		~cTextCache();
+
+		void Create( cFont * font, const std::wstring& text = L"", eeColorA FontColor = eeColorA(0xFFFFFFFF), eeColorA FontShadowColor = eeColorA(0xFF000000) );
 
 		cFont * Font() const;
 
@@ -52,6 +54,10 @@ class EE_API cTextCache {
 
 		/** Set the shadow color of the string rendered */
 		void ShadowColor(const eeColorA& Color);
+
+		const eeInt& GetNumLines() const;
+
+		cFont * GetFont() const;
 	protected:
 		friend class cFont;
 

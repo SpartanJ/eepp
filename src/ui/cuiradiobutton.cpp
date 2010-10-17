@@ -175,7 +175,7 @@ const bool& cUIRadioButton::Active() const {
 }
 
 const bool& cUIRadioButton::IsActive() const {
-	return IsActive();
+	return Active();
 }
 
 void cUIRadioButton::Padding( const eeRectf& padding ) {

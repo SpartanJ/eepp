@@ -28,7 +28,7 @@ void cScrollParallax::Shape( cShape * shape ) {
 void cScrollParallax::SetShape() {
 	if ( NULL != mShape ) {
 		mRect		= mShape->SrcRect();
-		mRealSize	= eeVector2f( mShape->RealSize().Width(), mShape->RealSize().Height() );
+		mRealSize	= eeVector2f( (eeFloat)mShape->RealSize().Width(), (eeFloat)mShape->RealSize().Height() );
 
 		mTiles.x	= ( (Int32)mSize.Width() / mShape->RealSize().Width() ) + 1;
 		mTiles.y	= ( (Int32)mSize.Height() / mShape->RealSize().Height() ) + 1;
@@ -107,21 +107,21 @@ void cScrollParallax::Draw() {
 
 				if ( AABB.Intersect( mAABB ) ) {
 					if ( Pos.x < mAABB.Left ) {
-						Rect.Left += ( mAABB.Left - Pos.x );
+						Rect.Left += (Int32)( mAABB.Left - Pos.x );
 						AABB.Left = mAABB.Left;
 					}
 
 					if ( Pos.x + mRealSize.Width() > mAABB.Right ) {
-						Rect.Right -= ( ( Pos.x + mRealSize.Width() ) - mAABB.Right );
+						Rect.Right -= (Int32)( ( Pos.x + mRealSize.Width() ) - mAABB.Right );
 					}
 
 					if ( Pos.y < mAABB.Top ) {
-						Rect.Top += ( mAABB.Top - Pos.y );
+						Rect.Top += (Int32)( mAABB.Top - Pos.y );
 						AABB.Top = mAABB.Top;
 					}
 
 					if ( Pos.y + mRealSize.Height() > mAABB.Bottom ) {
-						Rect.Bottom -= ( ( Pos.y + mRealSize.Height() ) - mAABB.Bottom );
+						Rect.Bottom -= (Int32)( ( Pos.y + mRealSize.Height() ) - mAABB.Bottom );
 					}
 
 					mShape->SrcRect( Rect );

@@ -1,5 +1,12 @@
 #include "debug.hpp"
 
+#ifdef EE_COMPILER_MSVC
+#ifndef WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#endif
+
 namespace EE {
 
 #ifdef EE_DEBUG
@@ -55,7 +62,7 @@ void eePRINTC( unsigned int cond, const char * format, ...) {
 	va_start( args, format );
 
 	#ifdef EE_COMPILER_MSVC
-	_vsnprintf_s( buf, sizeof( buf ), sizeof( buf ) / sizeof( buf[0]), 8format, args );
+	_vsnprintf_s( buf, eeARRAY_SIZE( buf ), eeARRAY_SIZE( buf ), format, args );
 	#else
 	vsnprintf( buf, sizeof( buf ) / sizeof( buf[0]), format, args );
 	#endif

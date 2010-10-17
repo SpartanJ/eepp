@@ -181,7 +181,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 				break;
 		}
 
-		Int16 tGlyphSize = mGlyphs.size();
+		Int32 tGlyphSize = (Int32)mGlyphs.size();
 
 		for ( eeUint i = 0; i < TextCache.Text().size(); i++ ) {
 			Char = static_cast<Int32>( TextCache.Text().at(i) );
@@ -324,7 +324,7 @@ void cFont::SubDraw( const std::wstring& Text, const eeFloat& X, const eeFloat& 
 			break;
 	}
 
-	Int16 tGlyphSize = mGlyphs.size();
+	Int32 tGlyphSize = (Int32)mGlyphs.size();
 
 	for ( eeUint i = 0; i < Text.size(); i++ ) {
 		Char = static_cast<Int32>( Text.at(i) );

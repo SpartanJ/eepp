@@ -131,7 +131,7 @@ void cUISpinBox::AddValue( const eeFloat& value ) {
 void cUISpinBox::InternalValue( const eeFloat& Val, const bool& Force ) {
 	if ( Force || Val != mValue ) {
 		if ( Val >= mMinValue && Val <= mMaxValue ) {
-			eeFloat iValN	= (Int32) Val;
+			eeFloat iValN	= (eeFloat)(Int32) Val;
 			eeFloat fValN 	= (eeFloat)iValN;
 
 			if ( fValN == Val ) {
@@ -187,7 +187,7 @@ void cUISpinBox::Update() {
 			eeFloat Val = mValue;
 
 			if ( L'.' == mInput->Text()[ mInput->Text().size() - 1 ] ) {
-				Uint32 pos = mInput->Text().find_first_of( L"." );
+				Uint32 pos = (Uint32)mInput->Text().find_first_of( L"." );
 
 				if ( pos != mInput->Text().size() - 1 )
 					mInput->Text( mInput->Text().substr( 0, mInput->Text().size() - 1 ) );

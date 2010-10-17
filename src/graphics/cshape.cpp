@@ -386,8 +386,8 @@ bool cShape::SaveToFile(const std::string& filepath, const EE_SAVE_TYPE& Format)
 
 void cShape::ResetDestWidthAndHeight() {
 	eeSize Size = mSrcRect.Size();
-	mDestWidth 	= Size.Width();
-	mDestHeight = Size.Height();
+	mDestWidth 	= (eeFloat)Size.Width();
+	mDestHeight = (eeFloat)Size.Height();
 }
 
 }}

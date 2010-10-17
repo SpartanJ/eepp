@@ -161,7 +161,7 @@ void tResourceManager<T>::PrintNames() {
 
 template <class T>
 Uint32 tResourceManager<T>::Count() {
-	return mResources.size();
+	return (Uint32)mResources.size();
 }
 
 template <class T>

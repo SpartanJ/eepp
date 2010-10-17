@@ -105,7 +105,7 @@ const bool& cUICheckBox::Active() const {
 }
 
 const bool& cUICheckBox::IsActive() const {
-	return IsActive();
+	return Active();
 }
 
 void cUICheckBox::Padding( const eeRectf& padding ) {

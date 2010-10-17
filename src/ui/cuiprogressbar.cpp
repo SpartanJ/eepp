@@ -48,10 +48,10 @@ void cUIProgressBar::SetTheme( cUITheme * Theme ) {
 		if ( NULL != tShape ) {
 			eeSAFE_DELETE( mParallax );
 
-			eeFloat Height = mSize.Height();
+			eeFloat Height = (eeFloat)mSize.Height();
 
 			if ( !mVerticalExpand )
-				Height = tShape->RealSize().Height();
+				Height = (eeFloat)tShape->RealSize().Height();
 
 			mParallax = eeNew( cScrollParallax, ( tShape, mScreenPos.x + mFillerMargin.Left, mScreenPos.y + mFillerMargin.Top, ( ( mSize.Width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom, mSpeed ) );
 		}
@@ -68,10 +68,10 @@ Uint32 cUIProgressBar::OnValueChange() {
 
 void cUIProgressBar::OnSizeChange() {
 	if ( NULL != mParallax ) {
-		eeFloat Height = mSize.Height();
+		eeFloat Height = (eeFloat)mSize.Height();
 
 		if ( !mVerticalExpand && mParallax->Shape() )
-			Height = mParallax->Shape()->RealSize().Height();
+			Height = (eeFloat)mParallax->Shape()->RealSize().Height();
 
 		mParallax->Size( ( ( mSize.Width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom );
 	}
