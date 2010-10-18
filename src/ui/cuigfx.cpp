@@ -8,9 +8,6 @@ cUIGfx::cUIGfx( const cUIGfx::CreateParams& Params ) :
 	mColor( Params.ShapeColor ),
 	mRender( Params.ShapeRender )
 {
-	if ( NULL == mShape)
-		Close();
-
 	mType |= UI_TYPE_GET(UI_TYPE_GFX);
 
 	if ( NULL != mShape && ( ( Flags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) )
@@ -23,6 +20,13 @@ cUIGfx::cUIGfx( const cUIGfx::CreateParams& Params ) :
 }
 
 cUIGfx::~cUIGfx() {
+}
+
+void cUIGfx::Shape( cShape * shape ) {
+	mShape = shape;
+	
+	if ( NULL != mShape && ( ( Flags() & UI_AUTO_SIZE ) ) )
+		Size( mShape->Size() );
 }
 
 void cUIGfx::Draw() {

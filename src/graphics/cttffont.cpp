@@ -9,10 +9,6 @@ cTTFFont::cTTFFont( const std::string FontName ) :
 	mThreadedLoading(false),
 	mTexReady(false)
 {
-	if ( hkFontManager::instance()->Init() )
-		mTTFInit = false;
-	else
-		mTTFInit = true;
 }
 
 cTTFFont::~cTTFFont() {
@@ -69,9 +65,6 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ve
 
 	Uint8 OutlineTotal = OutlineSize * 2;
 	Uint32 TexSize;
-
-	if ( !mTTFInit )
-		return false;
 
 	try {
 		if ( mFont == NULL )

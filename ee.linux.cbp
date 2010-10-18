@@ -202,6 +202,8 @@
 		<Unit filename="src/helper/haikuttf/hkfontmanager.hpp" />
 		<Unit filename="src/helper/haikuttf/hkglyph.cpp" />
 		<Unit filename="src/helper/haikuttf/hkglyph.hpp" />
+		<Unit filename="src/helper/haikuttf/hkmutex.cpp" />
+		<Unit filename="src/helper/haikuttf/hkmutex.hpp" />
 		<Unit filename="src/helper/haikuttf/sophist.h" />
 		<Unit filename="src/helper/libzip/config.h" />
 		<Unit filename="src/helper/libzip/mkstemp.c">

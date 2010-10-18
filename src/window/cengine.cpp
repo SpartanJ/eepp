@@ -11,6 +11,7 @@
 #include "../ui/cuimanager.hpp"
 #include "../audio/caudiolistener.hpp"
 #include "../graphics/glhelper.hpp"
+#include "../helper/haikuttf/hkfontmanager.hpp"
 
 using namespace EE::Graphics;
 using namespace EE::Graphics::Private;
@@ -116,6 +117,8 @@ cEngine::~cEngine() {
 	Graphics::Private::cGL::DestroySingleton();
 
 	cLog::DestroySingleton();
+
+	HaikuTTF::hkFontManager::DestroySingleton();
 
 	SDL_Quit();
 }

@@ -32,6 +32,8 @@ class EE_API cUIGfx : public cUIControlAnim {
 		
 		cShape * Shape() const;
 		
+		void Shape( cShape * shape );
+		
 		const eeRGBA& Color() const;
 		
 		void Color( const eeRGBA& color );

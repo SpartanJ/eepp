@@ -32,10 +32,10 @@ cTextCache::~cTextCache() {
 void cTextCache::Create( cFont * font, const std::wstring& text, eeColorA FontColor, eeColorA FontShadowColor ) {
 	mFont = font;
 	mText = text;
+	UpdateCoords();
 	Color( FontColor );
 	ShadowColor( FontShadowColor );
 	Cache();
-	UpdateCoords();
 }
 
 cFont * cTextCache::Font() const {
@@ -52,8 +52,10 @@ std::wstring& cTextCache::Text() {
 }
 
 void cTextCache::UpdateCoords() {
-	mRenderCoords.resize( mText.size() * 4 );
-	mColors.resize( mText.size() * 4, mFontColor );
+	Uint32 size = (Uint32)mText.size() * 4;
+	
+	mRenderCoords.resize( size );
+	mColors.resize( size, mFontColor );
 }
 
 void cTextCache::Text( const std::wstring& text ) {
@@ -103,10 +105,11 @@ void cTextCache::Text( const std::string& text ) {
 }
 
 void cTextCache::Cache() {
-	if ( NULL != mFont && mText.size() )
+	if ( NULL != mFont && mText.size() ) {
 		mFont->CacheWidth( mText, mLinesWidth, mCachedWidth, mNumLines );
-	else
+	}else {
 		mCachedWidth = 0;
+	}
 
 	mCachedCoords = false;
 }
@@ -129,25 +132,20 @@ const std::vector<eeFloat>& cTextCache::LinesWidth() {
 
 void cTextCache::Draw( const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, const EE_PRE_BLEND_FUNC& Effect ) {
 	if ( NULL != mFont ) {
-		eeColorA FontColor = mFont->Color();
-		eeColorA FontShadowColor = mFont->ShadowColor();
-
-		mFont->Color( mFontColor );
-		mFont->ShadowColor( mFontShadowColor );
-
 		if ( mFlags != Flags ) {
 			mFlags = Flags;
 			mCachedCoords = false;
 		}
-
-		glTranslatef( X, Y, 0.f );
-
-		mFont->Draw( *this, 0, 0, Flags, Scale, Angle, Effect );
-
-		glTranslatef( -X, -Y, 0.f );
-
-		mFont->Color( FontColor );
-		mFont->ShadowColor( FontShadowColor );
+		
+		if ( Angle != 0.0f || Scale != 1.0f ) {
+			mFont->Draw( *this, X, Y, Flags, Scale, Angle, Effect );
+		} else {
+			glTranslatef( X, Y, 0.f );
+	
+			mFont->Draw( *this, 0, 0, Flags, Scale, Angle, Effect );
+	
+			glTranslatef( -X, -Y, 0.f );
+		}
 	}
 }
 
@@ -161,6 +159,14 @@ void cTextCache::CachedCoords( const bool& cached ) {
 
 cFont * cTextCache::GetFont() const {
 	return mFont;
+}
+
+const eeUint& cTextCache::CachedVerts() const {
+	return mVertexNumCached;
+}
+
+void cTextCache::CachedVerts( const eeUint& num ) {
+	mVertexNumCached = num;
 }
 
 }}

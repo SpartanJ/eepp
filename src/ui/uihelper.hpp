@@ -52,6 +52,7 @@ Uint32 EE_API VAlignGet( Uint32 Flags );
 #define UI_TYPE_SLIDER				(8)
 #define UI_TYPE_SPINBOX				(9)
 #define UI_TYPE_SCROLLBAR			(10)
+#define UI_TYPE_PROGRESSBAR			(11)
 
 #define UI_TYPE_GET(X) 			( 1 << (X) )
 

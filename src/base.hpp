@@ -48,7 +48,7 @@
 #elif defined( __APPLE_CC__) || defined ( __APPLE__ )
 #   define EE_PLATFORM EE_PLATFORM_MACOSX
 
-#else
+#elif defined ( linux ) || defined( __linux__ )
 #   define EE_PLATFORM EE_PLATFORM_LINUX
 #endif
 

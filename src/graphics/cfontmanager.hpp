@@ -12,6 +12,8 @@ class EE_API cFontManager : public tResourceManager<cFont>, public tSingleton<cF
 		cFontManager();
 
 		virtual ~cFontManager();
+
+		cFont * Add( cFont * Font );
 	protected:
 };
 

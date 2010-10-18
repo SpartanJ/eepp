@@ -11,17 +11,11 @@ cMutex::~cMutex() {
 }
 
 bool cMutex::Lock() {
-	int ret = SDL_LockMutex(mMutex);
-	if (ret == 0)
-		return true;
-	return false;
+	return 0 == SDL_LockMutex(mMutex);
 }
 
 bool cMutex::Unlock() {
-	int ret = SDL_UnlockMutex(mMutex);
-	if (ret == 0)
-		return true;
-	return false;
+	return 0 == SDL_UnlockMutex(mMutex);
 }
 
 }}

@@ -4,10 +4,11 @@
 #include "hkbase.hpp"
 #include "hkglyph.hpp"
 #include "hkfont.hpp"
+#include "hkmutex.hpp"
 
 namespace HaikuTTF {
 
-class hkFontManager {
+class hkFontManager : private hkMutex {
 	static hkFontManager * mSingleton;
 	public:
 		static hkFontManager * instance() {
@@ -42,12 +43,18 @@ class hkFontManager {
 
 		FT_Library 			Library() const { return mLibrary; }
 	protected:
+		friend class hkFont;
+		
 		FT_Library 			mLibrary;
 		int 				mInitialized;
 
 		hkFont * 			FontPrepare( hkFont * font, int ptsize );
+		
+		void MutexLock();
+		
+		void MutexUnlock();
 	private:
-
+		//SDL_mutex * mMutex;
 };
 
 }

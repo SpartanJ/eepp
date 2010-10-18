@@ -141,6 +141,8 @@ void cUISpinBox::InternalValue( const eeFloat& Val, const bool& Force ) {
 			}
 
 			mValue = Val;
+			
+			mInput->GetInputTextBuffer()->ChangedSinceLastUpdate( false );
 
 			OnValueChange();
 		}

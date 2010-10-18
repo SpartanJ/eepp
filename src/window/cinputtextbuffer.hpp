@@ -66,6 +66,9 @@ class EE_API cInputTextBuffer {
 		/** @return If something changed since last update */
 		bool ChangedSinceLastUpdate();
 
+		/** Set if changed since last update */
+		void ChangedSinceLastUpdate( const bool& Changed );
+
 		/** @return The Cursor Position (where is the cursor editing) */
 		eeInt CurPos() const;
 

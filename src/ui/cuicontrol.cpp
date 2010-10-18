@@ -306,9 +306,7 @@ Uint32 cUIControl::OnFocus() {
 
 Uint32 cUIControl::OnFocusLoss() {
 	SendCommonEvent( cUIEvent::EventOnFocusLoss );
-
-	SetSkinState( cUISkinState::StateLostFocus );
-
+	
 	return 1;
 }
 

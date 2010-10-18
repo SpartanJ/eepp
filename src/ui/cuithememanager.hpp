@@ -12,6 +12,12 @@ class EE_API cUIThemeManager : public tResourceManager<cUITheme>, public tSingle
 		cUIThemeManager();
 
 		virtual ~cUIThemeManager();
+		
+		void DefaultFont( cFont * Font );
+		
+		cFont * DefaultFont() const;
+	protected:
+		cFont * 	mFont;
 };
 
 }}

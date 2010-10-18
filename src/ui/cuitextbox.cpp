@@ -1,5 +1,6 @@
 #include "cuitextbox.hpp"
 #include "cuimanager.hpp"
+#include "cuithememanager.hpp"
 
 namespace EE { namespace UI {
 
@@ -9,11 +10,17 @@ cUITextBox::cUITextBox( const cUITextBox::CreateParams& Params ) :
 	mFontShadowColor( Params.FontShadowColor ),
 	mAlignOffset( 0.f, 0.f )
 {
+	mType |= UI_TYPE_GET(UI_TYPE_TEXTBOX);
+	
 	mTextCache.Font( Params.Font );
 	mTextCache.Color( mFontColor );
 	mTextCache.ShadowColor( mFontShadowColor );
-
-	mType |= UI_TYPE_GET(UI_TYPE_TEXTBOX);
+	
+	if ( NULL == Params.Font && NULL != cUIThemeManager::instance()->DefaultFont() ) {
+		mTextCache.Font( cUIThemeManager::instance()->DefaultFont() );
+	} else {
+		eePRINT( "cUITextBox::cUITextBox : Created a UI TextBox without a defined font." );
+	}
 
 	AutoAlign();
 }
@@ -27,7 +34,7 @@ void cUITextBox::Draw() {
 
 		if ( mTextCache.GetTextWidth() ) {
 			if ( IsClipped() )
-				cUIManager::instance()->ClipEnable( mScreenPos.x + (Int32)mPadding.Left, mScreenPos.y + (Int32)mPadding.Top, mSize.Width() + (Int32)mPadding.Right, mSize.Height() + (Int32)mPadding.Bottom );
+				cUIManager::instance()->ClipEnable( mScreenPos.x + (Int32)mPadding.Left, mScreenPos.y + (Int32)mPadding.Top, mSize.Width() - (Int32)mPadding.Right, mSize.Height() - (Int32)mPadding.Bottom );
 
 			mTextCache.Draw( (eeFloat)mScreenPos.x + mAlignOffset.x + mPadding.Left + 1.f, (eeFloat)mScreenPos.y + mAlignOffset.y + mPadding.Top, Flags(), 1.f, 0.f, mBlend );
 
@@ -152,6 +159,14 @@ void cUITextBox::Padding( const eeRectf& padding ) {
 
 const eeRectf& cUITextBox::Padding() const {
 	return mPadding;
+}
+
+void cUITextBox::SetTheme( cUITheme * Theme ) {
+	cUIControlAnim::SetTheme( Theme );
+	
+	if ( NULL == mTextCache.Font() && NULL != Theme->DefaultFont() ) {
+		mTextCache.Font( Theme->DefaultFont() );
+	}
 }
 
 }}

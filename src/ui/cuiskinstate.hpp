@@ -12,7 +12,7 @@ class cUISkinState {
 		enum UISkinStates {
 			StateNormal = 0,
 			StateFocus,
-			StateLostFocus,
+			StateSelected,
 			StateMouseEnter,
 			StateMouseExit,
 			StateMouseDown,

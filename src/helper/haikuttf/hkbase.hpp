@@ -14,6 +14,34 @@ typedef SOPHIST_int32		s32;
 typedef SOPHIST_uint32		u32;
 }
 
+#define HK_PLATFORM_WIN 	(1)
+#define HK_PLATFORM_LINUX 	(2)
+#define HK_PLATFORM_MACOSX 	(3)
+
+#if defined( __WIN32__ ) || defined( _WIN32 ) || defined( _WIN64 )
+#   define HK_PLATFORM HK_PLATFORM_WIN
+#elif defined( __APPLE_CC__) || defined ( __APPLE__ )
+#   define HK_PLATFORM HK_PLATFORM_MACOSX
+#elif defined( LINUX ) || defined( __linux__ )
+#   define HK_PLATFORM HK_PLATFORM_LINUX
+#endif
+
+#if HK_PLATFORM == HK_PLATFORM_LINUX || HK_PLATFORM == HK_PLATFORM_MACOSX
+#define HK_PLATFORM_UNIX
+#endif
+
+#if HK_PLATFORM == HK_PLATFORM_WIN
+#ifndef WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#elif defined( HK_PLATFORM_UNIX )
+#include <pthread.h>
+#else
+// Fallback to SDL mutex
+#include <SDL/SDL.h>
+#endif
+
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_OUTLINE_H

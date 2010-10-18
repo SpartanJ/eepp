@@ -203,11 +203,12 @@ bool cUITheme::SearchFilesOfElement( cShapeGroup * SG, const std::string& Path, 
 	return Found;
 }
 
-cUITheme::cUITheme( const std::string& Name, const std::string& Abbr ) :
+cUITheme::cUITheme( const std::string& Name, const std::string& Abbr, cFont * DefaultFont ) :
 	tResourceManager<cUISkin> ( false ),
 	mName( Name ),
 	mNameHash( MakeHash( mName ) ),
-	mAbbr( Abbr )
+	mAbbr( Abbr ),
+	mFont( DefaultFont )
 {
 }
 
@@ -236,6 +237,14 @@ cUISkin * cUITheme::Add( cUISkin * Resource ) {
 	Resource->Theme( this );
 
 	return tResourceManager<cUISkin>::Add( Resource );
+}
+
+void cUITheme::DefaultFont( cFont * Font ) {
+	mFont = Font;
+}
+
+cFont * cUITheme::DefaultFont() const {
+	return mFont;
 }
 
 }}

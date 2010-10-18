@@ -5,7 +5,7 @@ namespace EE { namespace UI {
 const char * UISkinStatesNames[] = {
 	"normal",
 	"focus",
-	"unfocus",
+	"selected",
 	"menter",
 	"mexit",
 	"mdown"

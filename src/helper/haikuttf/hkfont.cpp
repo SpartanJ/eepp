@@ -106,12 +106,15 @@ FT_Error hkFont::GlyphLoad( u16 ch, hkGlyph * cached, int want ) {
 		return FT_Err_Invalid_Handle;
 
 	face = mFace;
-
+	
+	mFm->MutexLock();
+	
 	if ( !cached->Index() )
 		cached->Index( FT_Get_Char_Index( face, ch ) );
-
+	
+	
 	error = FT_Load_Glyph( face, cached->Index(), FT_LOAD_DEFAULT | mHinting );
-
+	
 	if( error )
 		return error;
 
@@ -255,6 +258,8 @@ FT_Error hkFont::GlyphLoad( u16 ch, hkGlyph * cached, int want ) {
 			FT_Done_Glyph( bitmap_glyph );
 		}
 	}
+	
+	mFm->MutexUnlock();
 
 	cached->Cached( ch );
 

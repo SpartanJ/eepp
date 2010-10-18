@@ -100,6 +100,8 @@ class cEETest : private cThread {
 		cTextureFont * FF;
 		cTextureFont * FF2;
 		cTTFFont * TTF;
+		cTTFFont * TTFB;
+
 		cPrimitives PR;
 		bool iL1, iL2;
 		eeFloat HWidth, HHeight;
@@ -166,7 +168,7 @@ class cEETest : private cThread {
 		eeInt mHeight;
 
 		std::wstring mBuda;
-		cTextCache * mBudaTC;
+		cTextCache mBudaTC;
 
 		bool mTextureLoaded;
 		cResourceLoader mResLoad;
@@ -185,8 +187,6 @@ class cEETest : private cThread {
 		eeFloat mAxisX;
 		eeFloat mAxisY;
 
-		Uint32 mFace;
-
 		cTextureGroupLoader * mTGL;
 		cSprite mBlindy;
 
@@ -203,6 +203,8 @@ class cEETest : private cThread {
 		cUIProgressBar * mProgressBar;
 
 		cTextCache mEEText;
+		cTextCache mFBOText;
+		cTextCache mInfoText;
 };
 
 void cEETest::CreateAquaTextureAtlas() {
@@ -245,8 +247,6 @@ void cEETest::Init() {
 
 	MyPath 				= AppPath();
 
-	CreateAquaTextureAtlas();
-
 	cIniFile Ini( MyPath + "data/ee.ini" );
 	Ini.ReadFile();
 
@@ -284,9 +284,9 @@ void cEETest::Init() {
 
 		SetRandomSeed();
 
-		LoadFonts();
-
 		LoadTextures();
+
+		LoadFonts();
 
 		CreateShaders();
 
@@ -317,7 +317,7 @@ void cEETest::Init() {
 			mFB->ClearColor( eeColorAf( 0, 0, 0, 0.5f ) );
 
 
-		eePolygon2f Poly = CreateRoundedPolygon( 0.f, 0.f, 250.f, 50.f );
+		eePolygon2f Poly = CreateRoundedPolygon( 0.f, 0.f, 256.f, 50.f );
 
 		mVBO = cVertexBuffer::Create( VERTEX_FLAG_GET( VERTEX_FLAG_POSITION ) | VERTEX_FLAG_GET( VERTEX_FLAG_COLOR ), DM_POLYGON );
 
@@ -337,16 +337,21 @@ void cEETest::Init() {
 }
 
 void cEETest::LoadFonts() {
+	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arialb", &PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255), 1, eeColor(0,0,0), true ) ) );
+	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", &PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255) ) ) );
 	mFontLoader.Add( eeNew( cTextureFontLoader, ( "conchars", eeNew( cTextureLoader, ( &PAK, "conchars.png", false, eeRGB(0,0,0) ) ), (eeUint)32 ) ) );
 	mFontLoader.Add( eeNew( cTextureFontLoader, ( "ProggySquareSZ", eeNew( cTextureLoader, ( &PAK, "ProggySquareSZ.png" ) ), &PAK, "ProggySquareSZ.dat" ) ) );
-	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", &PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255), 1, eeColor(0,0,0), true ) ) );
+	
 	mFontLoader.Load( cb::Make1( this, &cEETest::OnFontLoaded ) );
 }
 
 void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
-	FF 	= reinterpret_cast<cTextureFont*> ( cFontManager::instance()->GetByName( "conchars" ) );
-	FF2 = reinterpret_cast<cTextureFont*> ( cFontManager::instance()->GetByName( "ProggySquareSZ" ) );
-	TTF = reinterpret_cast<cTTFFont*> ( cFontManager::instance()->GetByName( "arial" ) );
+	FF 		= reinterpret_cast<cTextureFont*> ( cFontManager::instance()->GetByName( "conchars" ) );
+	FF2 	= reinterpret_cast<cTextureFont*> ( cFontManager::instance()->GetByName( "ProggySquareSZ" ) );
+	TTF 	= reinterpret_cast<cTTFFont*> ( cFontManager::instance()->GetByName( "arial" ) );
+	TTFB 	= reinterpret_cast<cTTFFont*> ( cFontManager::instance()->GetByName( "arialb" ) );
+
+	eeASSERT( TTFB != NULL );
 
 	Con.Create( FF, true );
 	Con.IgnoreCharOnPrompt( 186 ); // L'º'
@@ -369,6 +374,7 @@ void cEETest::CreateShaders() {
 
 void cEETest::CreateUI() {
 	cUIManager::instance()->Init();
+	cUIThemeManager::instance()->DefaultFont( TTF );
 
 	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 320, 240 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
@@ -422,7 +428,6 @@ void cEETest::CreateUI() {
 	TextParams.PosSet( 0, 0 );
 	TextParams.Size = eeSize( 320, 240 );
 	TextParams.Flags = UI_VALIGN_TOP | UI_HALIGN_RIGHT;
-	TextParams.Font = TTF;
 	cUITextBox * Text = eeNew( cUITextBox, ( TextParams ) );
 	Text->Visible( true );
 	Text->Enabled( false );
@@ -436,16 +441,18 @@ void cEETest::CreateUI() {
 	InputParams.PosSet( 20, 216 );
 	InputParams.Size = eeSize( 200, 22 );
 	InputParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE; // | UI_BORDER | UI_FILL_BACKGROUND
-	InputParams.Font = TTF;
 	cUITextInput * Input = eeNew( cUITextInput, ( InputParams ) );
-	Input->Padding( eeRectf( 4, -2, -8, 0 ) );
+	Input->Padding( eeRectf( 4, -2, 8, 0 ) );
 	Input->Visible( true );
 	Input->Enabled( true );
 
-	TextParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
-	TextParams.PosSet( 230, 216 );
-	TextParams.Size = eeSize( 80, 22 );
-	cUIPushButton * Button = eeNew( cUIPushButton, ( TextParams ) );
+	cUIPushButton::CreateParams ButtonParams;
+	ButtonParams.Parent( C );
+	ButtonParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
+	ButtonParams.PosSet( 225, 216 );
+	ButtonParams.Size = eeSize( 90, 22 );
+	ButtonParams.SetIcon( cGlobalShapeGroup::instance()->GetByName( "aqua_button_ok" ) );
+	cUIPushButton * Button = eeNew( cUIPushButton, ( ButtonParams ) );
 	Button->Visible( true );
 	Button->Enabled( true );
 	Button->Text( L"Click Me" );
@@ -453,6 +460,7 @@ void cEETest::CreateUI() {
 	Button->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::ButtonClick ) );
 
 	TextParams.PosSet( 120, 20 );
+	TextParams.Size = eeSize( 80, 22 );
 	TextParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT;
 	cUICheckBox * Checkbox = eeNew( cUICheckBox, ( TextParams ) );
 	Checkbox->Visible( true );
@@ -496,7 +504,6 @@ void cEETest::CreateUI() {
 	SpinBoxParams.PosSet( 80, 150 );
 	SpinBoxParams.Size = eeSize( 80, 24 );
 	SpinBoxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE;
-	SpinBoxParams.Font = TTF;
 	SpinBoxParams.AllowDotsInNumbers = true;
 	cUISpinBox * mSpinBox = eeNew( cUISpinBox, ( SpinBoxParams ) );
 	mSpinBox->Visible( true );
@@ -517,9 +524,8 @@ void cEETest::CreateUI() {
 	cUIProgressBar::CreateParams PBParams;
 	PBParams.Parent( C );
 	PBParams.PosSet( 20, 197 );
-	PBParams.Size = eeSize( 150, 16 );
+	PBParams.Size = eeSize( 200, 16 );
 	PBParams.DisplayPercent = true;
-	PBParams.Font = TTF;
 	mProgressBar = eeNew( cUIProgressBar, ( PBParams ) );
 	mProgressBar->Visible( true );
 	mProgressBar->Enabled( true );
@@ -530,21 +536,24 @@ void cEETest::CreateUI() {
 	mTextBoxValue->Visible( true );
 
 	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.";
-	TTF->ShrinkText( mBuda, 400 );
+	TTFB->ShrinkText( mBuda, 400 );
 
-	//cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal.png" ), "aqua_textinput_normal" ) ) );
-	//cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal.png" ), "aqua_textinput_normal" ) ) );
+	cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
+/*
+	CreateAquaTextureAtlas();
 
 	cTextureGroupLoader tgl( MyPath + "data/aqua.etg" );
-	TF->GetByName( "data/aqua.png" )->ClampMode( EE_CLAMP_REPEAT );
 	TF->GetByName( "data/aqua.png" )->TextureFilter( TEX_FILTER_NEAREST );
 	cUIThemeManager::instance()->Add( cUITheme::LoadFromShapeGroup( cShapeGroupManager::instance()->GetByName( "aqua" ), "aqua", "aqua" ) );
+*/
 
 	cUIManager::instance()->SetTheme( "aqua" );
 
-	mBudaTC = eeNew( cTextCache, ( TTF, mBuda, eeColorA(255,255,255,255) ) );
-
-	mEEText.Create( TTF, L"Entropia Engine++\nCTRL + 1 = Screen 1 - CTRL + 2 = Screen 2\nCTRL + 3 = Screen 3" );
+	mBudaTC.Create( TTFB, mBuda, eeColorA(255,255,255,255) );
+	mEEText.Create( TTFB, L"Entropia Engine++\nCTRL + 1 = Screen 1 - CTRL + 2 = Screen 2\nCTRL + 3 = Screen 3" );
+	mFBOText.Create( TTFB, L"This is a VBO\nInside of a FBO" );
+	mInfoText.Create( FF, L"", eeColorA(255,255,255,150) );
 }
 
 void cEETest::OnValueChange( const cUIEvent * Event ) {
@@ -632,32 +641,6 @@ void cEETest::LoadTextures() {
 
 	eeInt w, h;
 
-	mFace = TF->LoadFromPack( &PakTest, "adjutantportrait_l_static.dds" );
-	/** // DDS Lock/Unlock Test
-	cTexture * mFacePtr = TF->GetTexture( mFace );
-
-	if ( NULL != mFacePtr ) {
-		w = (eeInt)mFacePtr->Width();
-		h = (eeInt)mFacePtr->Height();
-
-		mFacePtr->Lock();
-
-		for ( y = 0; y < h; y++ ) {
-			for ( x = 0; x < w; x++ ) {
-				eeColorA tempC = mFacePtr->GetPixel( x, y );
-
-				tempC.Red = std::min( tempC.Red + 50, 255 );
-				tempC.Green = std::min( tempC.Green + 50, 255 );
-				tempC.Blue = std::min( tempC.Blue + 50, 255 );
-
-				eeColorA newC( tempC.R(), tempC.G(), tempC.B(), 255 );
-				mFacePtr->SetPixel( x, y, newC );
-			}
-		}
-
-		mFacePtr->Unlock(false,true);
-	}*/
-
 	for ( Int32 my = 0; my < 4; my++ )
 		for( Int32 mx = 0; mx < 8; mx++ )
 			SP.AddFrame( TN[4], 0, 0, 0, 0, eeRecti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
@@ -717,6 +700,8 @@ void cEETest::LoadTextures() {
 
 	TreeTilingCreated = false;
 	CreateTiling(Wireframe);
+
+	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_button_ok.png" ), "aqua_button_ok" ) ) );
 }
 
 void cEETest::RandomizeHeights() {
@@ -981,6 +966,8 @@ void cEETest::Render() {
 							SizeToString( TF->MemorySize() ).c_str()
 						);
 		#endif
+
+		mInfoText.Text( mInfo );
 	}
 
 	if ( !MultiViewportMode ) {
@@ -1019,14 +1006,10 @@ void cEETest::Render() {
 					mEEText.GetTextHeight(),
 					ColRR1, ColRR2, ColRR3, ColRR4
 	);
-
+	
 	mEEText.Draw( 0.f, (eeFloat)EE->GetHeight() - mEEText.GetTextHeight(), FONT_DRAW_CENTER, 1.f, Ang );
-
-	FF->Color( eeColorA(255,255,255,200) );
-	FF->Draw( mInfo, 6, 6 );
-
-	FF2->SetText( InBuf.Buffer() );
-	FF2->Draw( 6, 180, FONT_DRAW_SHADOW );
+	mInfoText.Draw( 6.f, 6.f );
+	mBudaTC.Draw( 5.f, 60.f );
 
 	Uint32 NLPos = 0;
 	Uint32 LineNum = InBuf.GetCurPosLinePos( NLPos );
@@ -1037,14 +1020,11 @@ void cEETest::Render() {
 		FF2->Draw( L"_", 6.f + FF2->GetTextWidth(), 180.f + (eeFloat)LineNum * (eeFloat)FF2->GetFontSize() );
 	}
 
-	mBudaTC->Draw( 5.f, 50.f );
-/*
-	cTexture * TexFace = TF->GetTexture( mFace );
-	if ( TexFace )
-		TexFace->Draw( (eeFloat)EE->GetWidth() - (eeFloat)TexFace->Width() , (eeFloat)EE->GetHeight() - (eeFloat)TexFace->Height(), 0.f, 1.f, eeColorA(), ALPHA_DESTALPHA, RN_MIRROR );
-*/
 	FF2->SetText( L"FPS: " + toWStr( EE->FPS() ) );
 	FF2->Draw( EE->GetWidth() - FF2->GetTextWidth() - 15, 0 );
+	
+	FF2->SetText( InBuf.Buffer() );
+	FF2->Draw( 6, 180, FONT_DRAW_SHADOW );
 
 	if ( NULL != mFB ) {
 		mFB->Bind();
@@ -1055,6 +1035,8 @@ void cEETest::Render() {
 		mVBO->Bind();
 		mVBO->Draw();
 		mVBO->Unbind();
+		
+		mFBOText.Draw( 128.f - (eeFloat)(Int32)( mFBOText.GetTextWidth() * 0.5f ), 25.f - (eeFloat)(Int32)( mFBOText.GetTextHeight() * 0.5f ), FONT_DRAW_CENTER );
 
 		mFB->Unbind();
 
@@ -1316,7 +1298,6 @@ void cEETest::End() {
 	eeSAFE_DELETE( mTGL );
 	eeSAFE_DELETE( mFB );
 	eeSAFE_DELETE( mVBO );
-	eeSAFE_DELETE( mBudaTC );
 
 	cLog::instance()->Save();
 

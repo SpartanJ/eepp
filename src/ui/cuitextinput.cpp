@@ -128,8 +128,8 @@ void cUITextInput::AlignFix() {
 
 	if ( tX < 0.f )
 		mAlignOffset.x = -( mAlignOffset.x + ( tW - mAlignOffset.x ) );
-	else if ( tX > mSize.Width() + mPadding.Right )
-		mAlignOffset.x = mSize.Width() + mPadding.Right - ( mAlignOffset.x + ( tW - mAlignOffset.x ) );
+	else if ( tX > mSize.Width() - mPadding.Right )
+		mAlignOffset.x = mSize.Width() - mPadding.Right - ( mAlignOffset.x + ( tW - mAlignOffset.x ) );
 
 }
 

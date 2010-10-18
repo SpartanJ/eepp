@@ -74,12 +74,17 @@ class EE_API cTextCache {
 		std::vector<eeColorA>		mColors;
 		bool						mCachedCoords;
 		Uint32						mFlags;
+		Uint32						mVertexNumCached;
 
 		void UpdateCoords();
 
 		const bool& CachedCoords() const;
 
 		void CachedCoords( const bool& cached );
+		
+		const eeUint& CachedVerts() const;
+
+		void CachedVerts( const eeUint& num );
 };
 
 }}

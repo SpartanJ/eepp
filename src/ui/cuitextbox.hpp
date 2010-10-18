@@ -11,7 +11,9 @@ class EE_API cUITextBox : public cUIControlAnim {
 			public:
 				inline CreateParams() :
 					cUIControl::CreateParams(),
-					Font( NULL )
+					Font( NULL ),
+					FontColor( 0, 0, 0, 255 ),
+					FontShadowColor( 255, 255, 255, 150 )
 				{
 				}
 
@@ -55,6 +57,8 @@ class EE_API cUITextBox : public cUIControlAnim {
 		virtual void Padding( const eeRectf& padding );
 
 		const eeRectf& Padding() const;
+		
+		virtual void SetTheme( cUITheme * Theme );
 	protected:
 		cTextCache 		mTextCache;
 		eeColorA 		mFontColor;

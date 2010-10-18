@@ -160,6 +160,10 @@ bool cInputTextBuffer::ChangedSinceLastUpdate() {
 	return mChangeSinceLastUpdate;
 }
 
+void cInputTextBuffer::ChangedSinceLastUpdate( const bool& Changed ) {
+	mChangeSinceLastUpdate = Changed;
+}
+
 void cInputTextBuffer::SetAutoPromp( const bool& set ) {
 	if ( set ) {
 		mPromptAutoPos = true;

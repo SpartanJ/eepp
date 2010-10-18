@@ -87,7 +87,6 @@ class EE_API cTTFFont : public cFont {
 		EE_TTF_FONTSTYLE mStyle;
 
 		eeFloat mTexWidth, mTexHeight;
-		bool mTTFInit;
 
 		bool mLoadedFromMemory;
 

@@ -33,8 +33,9 @@ int hkFontManager::Init() {
 
 void hkFontManager::Destroy() {
 	if ( mInitialized ) {
-		if ( --mInitialized == 0 )
+		if ( --mInitialized == 0 ) {
 			FT_Done_FreeType( mLibrary );
+		}
 	}
 }
 
@@ -56,17 +57,21 @@ void hkFontManager::CloseFont( hkFont * Font ) {
 }
 
 hkFont * hkFontManager::OpenFromMemory( const u8* data, unsigned long size, int ptsize, long index, unsigned int glyphCacheSize ) {
-    if ( Init() != 0)
+    if ( Init() != 0 )
 		return NULL;
 
     FT_Face face = NULL;
-
+	
+	MutexLock();
+	
 	if ( FT_New_Memory_Face( mLibrary, reinterpret_cast<const FT_Byte*>(data), static_cast<FT_Long>(size), index, &face ) != 0  )
 		return NULL;
 
 	if ( FT_Select_Charmap( face, FT_ENCODING_UNICODE ) != 0 )
 		return NULL;
-
+	
+	MutexUnlock();
+	
     hkFont * Font = new hkFont( this, glyphCacheSize );
 
 	Font->Face( face );
@@ -79,7 +84,9 @@ hkFont * hkFontManager::OpenFromFile( const char* filename, int ptsize, long ind
 		return NULL;
 
     FT_Face face;
-
+	
+	MutexLock();
+	
     if ( FT_New_Face( mLibrary, filename, index, &face ) != 0 )
 		return NULL;
 
@@ -87,6 +94,8 @@ hkFont * hkFontManager::OpenFromFile( const char* filename, int ptsize, long ind
     if ( FT_Select_Charmap(face, FT_ENCODING_UNICODE) != 0 )
 		return NULL;
 
+	MutexUnlock();
+	
     hkFont * Font = new hkFont( this, glyphCacheSize );
 
 	Font->Face( face );
@@ -102,12 +111,19 @@ hkFont * hkFontManager::FontPrepare( hkFont * font, int ptsize ) {
 	face = font->Face();
 
 	if ( FT_IS_SCALABLE( face ) ) {
+		MutexLock();
+		
 		error = FT_Set_Char_Size( font->Face(), 0, ptsize * 64, 0, 0 );
-
+		
 		if( error ) {
 	    	CloseFont( font );
+	    	
+	    	MutexUnlock();
+	    	
 	    	return NULL;
 	  	}
+	  	
+	  	MutexUnlock();
 
 	  	scale = face->size->metrics.y_scale;
 	  	font->Ascent( FT_CEIL( FT_MulFix( face->ascender, scale) ) );
@@ -150,6 +166,14 @@ hkFont * hkFontManager::FontPrepare( hkFont * font, int ptsize ) {
 	font->GlyphItalics( font->GlyphItalics() * font->Height() );
 
 	return font;
+}
+
+void hkFontManager::MutexLock() {
+	Lock();
+}
+
+void hkFontManager::MutexUnlock() {
+	Unlock();
 }
 
 }
