@@ -61,17 +61,17 @@ hkFont * hkFontManager::OpenFromMemory( const u8* data, unsigned long size, int 
 		return NULL;
 
     FT_Face face = NULL;
-	
+
 	MutexLock();
-	
+
 	if ( FT_New_Memory_Face( mLibrary, reinterpret_cast<const FT_Byte*>(data), static_cast<FT_Long>(size), index, &face ) != 0  )
 		return NULL;
 
 	if ( FT_Select_Charmap( face, FT_ENCODING_UNICODE ) != 0 )
 		return NULL;
-	
+
 	MutexUnlock();
-	
+
     hkFont * Font = new hkFont( this, glyphCacheSize );
 
 	Font->Face( face );
@@ -84,9 +84,9 @@ hkFont * hkFontManager::OpenFromFile( const char* filename, int ptsize, long ind
 		return NULL;
 
     FT_Face face;
-	
+
 	MutexLock();
-	
+
     if ( FT_New_Face( mLibrary, filename, index, &face ) != 0 )
 		return NULL;
 
@@ -95,7 +95,7 @@ hkFont * hkFontManager::OpenFromFile( const char* filename, int ptsize, long ind
 		return NULL;
 
 	MutexUnlock();
-	
+
     hkFont * Font = new hkFont( this, glyphCacheSize );
 
 	Font->Face( face );
@@ -112,17 +112,17 @@ hkFont * hkFontManager::FontPrepare( hkFont * font, int ptsize ) {
 
 	if ( FT_IS_SCALABLE( face ) ) {
 		MutexLock();
-		
+
 		error = FT_Set_Char_Size( font->Face(), 0, ptsize * 64, 0, 0 );
-		
+
 		if( error ) {
 	    	CloseFont( font );
-	    	
+
 	    	MutexUnlock();
-	    	
+
 	    	return NULL;
 	  	}
-	  	
+
 	  	MutexUnlock();
 
 	  	scale = face->size->metrics.y_scale;
@@ -150,13 +150,13 @@ hkFont * hkFontManager::FontPrepare( hkFont * font, int ptsize ) {
 	if ( font->UnderlineHeight() < 1 )
 		font->UnderlineHeight( 1 );
 
-	font->FaceStyle( TTF_STYLE_NORMAL );
+	font->FaceStyle( HK_TTF_STYLE_NORMAL );
 
 	if ( face->style_flags & FT_STYLE_FLAG_BOLD )
-		font->FaceStyle( font->FaceStyle() | TTF_STYLE_BOLD );
+		font->FaceStyle( font->FaceStyle() | HK_TTF_STYLE_BOLD );
 
 	if ( face->style_flags & FT_STYLE_FLAG_ITALIC )
-		font->FaceStyle( font->FaceStyle() | TTF_STYLE_ITALIC );
+		font->FaceStyle( font->FaceStyle() | HK_TTF_STYLE_ITALIC );
 
 	font->Style( font->FaceStyle() );
 	font->Outline( 0 );

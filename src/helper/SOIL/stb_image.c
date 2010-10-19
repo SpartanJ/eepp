@@ -2546,6 +2546,9 @@ static int parse_png_file(png *z, int scan, int req_comp)
    uint32 ioff=0, idata_limit=0, i, pal_len=0;
    int first=1,k,interlace=0, iphone=0;
    stbi *s = &z->s;
+   z->expanded = NULL;
+   z->idata = NULL;
+   z->out = NULL;
 
    if (!check_png_header(s)) return 0;
 
@@ -2691,9 +2694,6 @@ static int parse_png_file(png *z, int scan, int req_comp)
 static unsigned char *do_png(png *p, int *x, int *y, int *n, int req_comp)
 {
    unsigned char *result=NULL;
-   p->expanded = NULL;
-   p->idata = NULL;
-   p->out = NULL;
    if (req_comp < 0 || req_comp > 4) return epuc("bad req_comp", "Internal error");
    if (parse_png_file(p, SCAN_load, req_comp)) {
       result = p->out;
@@ -2796,6 +2796,7 @@ int stbi_png_info_from_file(FILE *f, int *x, int *y, int *comp)
 int stbi_png_info_from_memory(stbi_uc const *buffer, int len, int *x, int *y, int *comp)
 {
    png p;
+   memset( &p, 0, sizeof(png) );
    start_mem(&p.s, buffer, len);
    return stbi_png_info_raw(&p, x, y, comp);
 }

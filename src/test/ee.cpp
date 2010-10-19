@@ -211,7 +211,7 @@ void cEETest::CreateAquaTextureAtlas() {
 	std::string Path( MyPath + "data/aqua" );
 
 	if ( !FileExists( Path + ".etg" ) ) {
-		cTexturePacker tp( 512, 512, true, 0 );
+		cTexturePacker tp( 512, 512, true, 2 );
 		tp.AddTexturesPath( Path );
 		tp.PackTextures();
 		tp.Save( Path + ".png", EE_SAVE_TYPE_PNG );
@@ -337,11 +337,11 @@ void cEETest::Init() {
 }
 
 void cEETest::LoadFonts() {
-	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arialb", &PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255), 1, eeColor(0,0,0), true ) ) );
-	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", &PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255) ) ) );
 	mFontLoader.Add( eeNew( cTextureFontLoader, ( "conchars", eeNew( cTextureLoader, ( &PAK, "conchars.png", false, eeRGB(0,0,0) ) ), (eeUint)32 ) ) );
 	mFontLoader.Add( eeNew( cTextureFontLoader, ( "ProggySquareSZ", eeNew( cTextureLoader, ( &PAK, "ProggySquareSZ.png" ) ), &PAK, "ProggySquareSZ.dat" ) ) );
-	
+	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", &PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255) ) ) );
+	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arialb", &PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255), 1, eeColor(0,0,0), true ) ) );
+
 	mFontLoader.Load( cb::Make1( this, &cEETest::OnFontLoaded ) );
 }
 
@@ -538,11 +538,10 @@ void cEETest::CreateUI() {
 	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.";
 	TTFB->ShrinkText( mBuda, 400 );
 
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_textinput_normal.png" ), "aqua_textinput_normal" ) ) );
 	cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
-/*
-	CreateAquaTextureAtlas();
 
+	CreateAquaTextureAtlas();
+/*
 	cTextureGroupLoader tgl( MyPath + "data/aqua.etg" );
 	TF->GetByName( "data/aqua.png" )->TextureFilter( TEX_FILTER_NEAREST );
 	cUIThemeManager::instance()->Add( cUITheme::LoadFromShapeGroup( cShapeGroupManager::instance()->GetByName( "aqua" ), "aqua", "aqua" ) );
@@ -568,7 +567,7 @@ void cEETest::ButtonClick( const cUIEvent * Event ) {
 	if ( MouseEvent->Flags() & EE_BUTTONS_LRM ) {
 		cUIGfx::CreateParams GfxParams;
 		GfxParams.Parent( cUIManager::instance()->MainControl() );
-		GfxParams.Shape = cShapeGroupManager::instance()->GetShapeByName( "aqua_textinput_normal" );
+		GfxParams.Shape = cShapeGroupManager::instance()->GetShapeByName( "aqua_button_ok" );
 		cUIGfx * Gfx = eeNew( cUIGfx, ( GfxParams ) );
 		Gfx->Visible( true );
 		Gfx->Enabled( false );
@@ -1006,7 +1005,7 @@ void cEETest::Render() {
 					mEEText.GetTextHeight(),
 					ColRR1, ColRR2, ColRR3, ColRR4
 	);
-	
+
 	mEEText.Draw( 0.f, (eeFloat)EE->GetHeight() - mEEText.GetTextHeight(), FONT_DRAW_CENTER, 1.f, Ang );
 	mInfoText.Draw( 6.f, 6.f );
 	mBudaTC.Draw( 5.f, 60.f );
@@ -1022,7 +1021,7 @@ void cEETest::Render() {
 
 	FF2->SetText( L"FPS: " + toWStr( EE->FPS() ) );
 	FF2->Draw( EE->GetWidth() - FF2->GetTextWidth() - 15, 0 );
-	
+
 	FF2->SetText( InBuf.Buffer() );
 	FF2->Draw( 6, 180, FONT_DRAW_SHADOW );
 
@@ -1035,7 +1034,7 @@ void cEETest::Render() {
 		mVBO->Bind();
 		mVBO->Draw();
 		mVBO->Unbind();
-		
+
 		mFBOText.Draw( 128.f - (eeFloat)(Int32)( mFBOText.GetTextWidth() * 0.5f ), 25.f - (eeFloat)(Int32)( mFBOText.GetTextHeight() * 0.5f ), FONT_DRAW_CENTER );
 
 		mFB->Unbind();
@@ -1327,6 +1326,7 @@ void cEETest::Particles() {
 		PS[i].Draw();
 }
 
+#include "../helper/SOIL/stb_image.h"
 int main (int argc, char * argv []) {
 	cEETest * Test = eeNew( cEETest, () );
 
@@ -1335,6 +1335,15 @@ int main (int argc, char * argv []) {
 	eeDelete( Test );
 
 	EE::MemoryManager::LogResults();
-
+	/*
+	int x, y, comp;
+	
+	int res = stbi_info( "/home/programming/Projects/EE/data/aqua/aqua_button_ok.png", &x, &y, &comp );
+	
+	unsigned char * data = stbi_load( "/home/programming/Projects/EE/data/aqua/aqua_button_ok.png", &x, &y, &comp, 0 );
+	
+	if ( data )
+		free( data );
+	*/
 	return 0;
 }

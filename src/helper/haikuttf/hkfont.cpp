@@ -39,11 +39,11 @@ void hkFont::Outline( int outline ) {
 }
 
 void hkFont::Hinting( int hinting ) {
-	if (hinting == TTF_HINTING_LIGHT)
+	if ( hinting == HK_TTF_HINTING_LIGHT )
 		mHinting = FT_LOAD_TARGET_LIGHT;
-	else if (hinting == TTF_HINTING_MONO)
+	else if ( hinting == HK_TTF_HINTING_MONO )
 		mHinting= FT_LOAD_TARGET_MONO;
-	else if (hinting == TTF_HINTING_NONE)
+	else if ( hinting == HK_TTF_HINTING_NONE )
 		mHinting = FT_LOAD_NO_HINTING;
 	else
 		mHinting = 0;
@@ -55,7 +55,7 @@ void hkFont::Style( int style ) {
 	int prev_style = mFaceStyle;
 	mStyle = style | mFaceStyle;
 
-	if ( ( mStyle | TTF_STYLE_NO_GLYPH_CHANGE ) != ( prev_style | TTF_STYLE_NO_GLYPH_CHANGE ) )
+	if ( ( mStyle | HK_TTF_STYLE_NO_GLYPH_CHANGE ) != ( prev_style | HK_TTF_STYLE_NO_GLYPH_CHANGE ) )
 		CacheFlush();
 }
 
@@ -106,15 +106,15 @@ FT_Error hkFont::GlyphLoad( u16 ch, hkGlyph * cached, int want ) {
 		return FT_Err_Invalid_Handle;
 
 	face = mFace;
-	
+
 	mFm->MutexLock();
-	
+
 	if ( !cached->Index() )
 		cached->Index( FT_Get_Char_Index( face, ch ) );
-	
-	
+
+
 	error = FT_Load_Glyph( face, cached->Index(), FT_LOAD_DEFAULT | mHinting );
-	
+
 	if( error )
 		return error;
 
@@ -139,10 +139,10 @@ FT_Error hkFont::GlyphLoad( u16 ch, hkGlyph * cached, int want ) {
 			cached->Advance( FT_CEIL( metrics->horiAdvance ) );
 		}
 
-		if( TTF_HANDLE_STYLE_BOLD(this) )
+		if( HK_TTF_HANDLE_STYLE_BOLD(this) )
 			cached->MaxX( cached->MaxX() + mGlyphOverhang );
 
-		if( TTF_HANDLE_STYLE_ITALIC(this) )
+		if( HK_TTF_HANDLE_STYLE_ITALIC(this) )
 			cached->MaxX( cached->MaxX() + (int)ceil( mGlyphItalics ) );
 
 		cached->Stored( cached->Stored() | CACHED_METRICS );
@@ -155,7 +155,7 @@ FT_Error hkFont::GlyphLoad( u16 ch, hkGlyph * cached, int want ) {
 		FT_Bitmap* dst;
 		FT_Glyph bitmap_glyph = NULL;
 
-		if( TTF_HANDLE_STYLE_ITALIC(this) ) {
+		if( HK_TTF_HANDLE_STYLE_ITALIC(this) ) {
 			FT_Matrix shear;
 
 			shear.xx = 1 << 16;
@@ -200,13 +200,13 @@ FT_Error hkFont::GlyphLoad( u16 ch, hkGlyph * cached, int want ) {
 
 		memcpy( dst, src, sizeof( *dst ) );
 
-		if( TTF_HANDLE_STYLE_BOLD(this) ) {
+		if( HK_TTF_HANDLE_STYLE_BOLD(this) ) {
 			int bump = mGlyphOverhang;
 			dst->pitch += bump;
 			dst->width += bump;
 		}
 
-		if( TTF_HANDLE_STYLE_ITALIC(this) ) {
+		if( HK_TTF_HANDLE_STYLE_ITALIC(this) ) {
 			int bump = (int)ceil( mGlyphItalics );
 			dst->pitch += bump;
 			dst->width += bump;
@@ -228,7 +228,7 @@ FT_Error hkFont::GlyphLoad( u16 ch, hkGlyph * cached, int want ) {
 			}
 		}
 
-		if ( TTF_HANDLE_STYLE_BOLD(this) ) {
+		if ( HK_TTF_HANDLE_STYLE_BOLD(this) ) {
 			int row;
 			int col;
 			int offset;
@@ -258,7 +258,7 @@ FT_Error hkFont::GlyphLoad( u16 ch, hkGlyph * cached, int want ) {
 			FT_Done_Glyph( bitmap_glyph );
 		}
 	}
-	
+
 	mFm->MutexUnlock();
 
 	cached->Cached( ch );
@@ -302,12 +302,12 @@ unsigned char * hkFont::GlyphRender( u16 ch, u32 fg ) {
 		pixels += bitmap->pitch;
 	}
 
-	if( TTF_HANDLE_STYLE_UNDERLINE(this) ) {
+	if( HK_TTF_HANDLE_STYLE_UNDERLINE(this) ) {
 		row = UnderlineTopRow();
 		DrawLine( textbuf, row, fg, bitmap );
 	}
 
-	if( TTF_HANDLE_STYLE_STRIKETHROUGH(this) ) {
+	if( HK_TTF_HANDLE_STYLE_STRIKETHROUGH(this) ) {
 		row = StrikeThroughTopRow();
 		DrawLine( textbuf, row, fg, bitmap );
 	}
@@ -329,7 +329,7 @@ int hkFont::GlyphMetrics( u16 ch, int* minx, int* maxx, int* miny, int* maxy, in
 	if ( NULL !=maxx ) {
 		*maxx = mCurrent->MaxX();
 
-		if( TTF_HANDLE_STYLE_BOLD(this) )
+		if( HK_TTF_HANDLE_STYLE_BOLD(this) )
 			*maxx += mGlyphOverhang;
 	}
 
@@ -342,7 +342,7 @@ int hkFont::GlyphMetrics( u16 ch, int* minx, int* maxx, int* miny, int* maxy, in
 	if ( advance ) {
 		*advance = mCurrent->Advance();
 
-		if( TTF_HANDLE_STYLE_BOLD(this) )
+		if( HK_TTF_HANDLE_STYLE_BOLD(this) )
 			*advance += mGlyphOverhang;
 	}
 

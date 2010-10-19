@@ -17,12 +17,15 @@ cResourceLoader::~cResourceLoader() {
 
 void cResourceLoader::SetThreads() {
 	if ( THREADS_AUTO == mThreads ) {
+		mThreads = GetNumCPUs();
+		/**
 		eeInt NumCpus = GetNumCPUs() - 1;
 
 		if ( NumCpus > 1 )
 			mThreads = NumCpus;
 		else
 			mThreads = 1;
+		*/
 	}
 }
 

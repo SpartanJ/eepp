@@ -58,28 +58,28 @@ typedef SOPHIST_uint32		u32;
 #define CACHED_BITMAP	0x01
 #define CACHED_PIXMAP	0x02
 
-/* Handle a style only if the font does not already handle it */
-#define TTF_HANDLE_STYLE_BOLD(font) 			( ( (font)->Style() & TTF_STYLE_BOLD ) && !( (font)->FaceStyle() & TTF_STYLE_BOLD ) )
-#define TTF_HANDLE_STYLE_ITALIC(font) 			( ( (font)->Style() & TTF_STYLE_ITALIC ) && !( (font)->FaceStyle() & TTF_STYLE_ITALIC ) )
-#define TTF_HANDLE_STYLE_UNDERLINE(font) 		( (font)->Style() & TTF_STYLE_UNDERLINE )
-#define TTF_HANDLE_STYLE_STRIKETHROUGH(font) 	( (font)->Style() & TTF_STYLE_STRIKETHROUGH )
+#define HK_TTF_STYLE_NORMAL			(0x00)
+#define HK_TTF_STYLE_BOLD			(0x01)
+#define HK_TTF_STYLE_ITALIC			(0x02)
+#define HK_TTF_STYLE_UNDERLINE		(0x04)
+#define HK_TTF_STYLE_STRIKETHROUGH	(0x08)
 
-/* Font styles that does not impact glyph drawing */
-#define TTF_STYLE_NO_GLYPH_CHANGE	(TTF_STYLE_UNDERLINE | TTF_STYLE_STRIKETHROUGH)
+#define HK_TTF_HINTING_NORMAL    	(0)
+#define HK_TTF_HINTING_LIGHT     	(1)
+#define HK_TTF_HINTING_MONO      	(2)
+#define HK_TTF_HINTING_NONE      	(3)
+
+#define HK_TTF_HANDLE_STYLE_BOLD(font) 				( ( (font)->Style() & HK_TTF_STYLE_BOLD ) && !( (font)->FaceStyle() & HK_TTF_STYLE_BOLD ) )
+#define HK_TTF_HANDLE_STYLE_ITALIC(font) 			( ( (font)->Style() & HK_TTF_STYLE_ITALIC ) && !( (font)->FaceStyle() & HK_TTF_STYLE_ITALIC ) )
+#define HK_TTF_HANDLE_STYLE_UNDERLINE(font) 		( (font)->Style() & HK_TTF_STYLE_UNDERLINE )
+#define HK_TTF_HANDLE_STYLE_STRIKETHROUGH(font) 	( (font)->Style() & HK_TTF_STYLE_STRIKETHROUGH )
+
+#define HK_TTF_STYLE_NO_GLYPH_CHANGE				( HK_TTF_STYLE_UNDERLINE | HK_TTF_STYLE_STRIKETHROUGH )
 
 #define hkARRAY_SIZE(__array)	( sizeof(__array) / sizeof(__array[0]) )
 #define hkSAFE_DELETE(p)		{ if(p) { delete (p);		(p)=NULL; } }
 #define hkSAFE_FREE(p)			{ if(p) { free (p);			(p)=NULL; } }
 #define hkSAFE_DELETE_ARRAY(p)  { if(p) { delete[](p);		(p)=NULL; } }
 
-#define TTF_STYLE_NORMAL	0x00
-#define TTF_STYLE_BOLD		0x01
-#define TTF_STYLE_ITALIC	0x02
-#define TTF_STYLE_UNDERLINE	0x04
-#define TTF_STYLE_STRIKETHROUGH	0x08
 
-#define TTF_HINTING_NORMAL    0
-#define TTF_HINTING_LIGHT     1
-#define TTF_HINTING_MONO      2
-#define TTF_HINTING_NONE      3
 #endif
