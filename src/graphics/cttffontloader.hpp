@@ -53,6 +53,7 @@ class EE_API cTTFFontLoader : public cObjectLoader {
 		void 				LoadFromPath();
 		void				LoadFromMemory();
 		void				LoadFromPack();
+		void 				Create();
 };
 
 }}

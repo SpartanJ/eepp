@@ -7,9 +7,14 @@
 #include <windows.h>
 #endif
 
+#include "../system/clog.hpp"
+using namespace EE::System;
+
 namespace EE {
 
 #ifdef EE_DEBUG
+
+bool PrintDebugInLog = true;
 
 void eeREPORT_ASSERT( const char * File, int Line, const char * Exp ) {
 	#ifdef EE_COMPILER_MSVC
@@ -20,7 +25,10 @@ void eeREPORT_ASSERT( const char * File, int Line, const char * Exp ) {
 
 	#else
 
-	printf("ASSERT: %s file:%s line:%d", Exp, File, Line );
+	printf( "ASSERT: %s file:%s line:%d", Exp, File, Line );
+
+	if ( PrintDebugInLog )
+		cLog::instance()->Writef( "ASSERT: %s file:%s line:%d", Exp, File, Line );
 
 	#if defined(EE_COMPILER_GCC) && defined(EE_32BIT)
 	asm("int3");
@@ -50,6 +58,9 @@ void eePRINT( const char * format, ... ) {
 	#else
 	printf("%s", buf );
 	#endif
+
+	if ( PrintDebugInLog )
+		cLog::instance()->Write( std::string( buf ) );
 }
 
 void eePRINTC( unsigned int cond, const char * format, ...) {
@@ -74,6 +85,9 @@ void eePRINTC( unsigned int cond, const char * format, ...) {
 	#else
 	printf("%s", buf );
 	#endif
+
+	if ( PrintDebugInLog )
+		cLog::instance()->Write( std::string( buf ) );
 }
 
 #endif

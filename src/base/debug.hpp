@@ -5,6 +5,8 @@
 
 namespace EE {
 
+extern bool PrintDebugInLog;
+
 #ifdef EE_DEBUG
 
 void eeREPORT_ASSERT( const char * File, const int Line, const char * Exp );

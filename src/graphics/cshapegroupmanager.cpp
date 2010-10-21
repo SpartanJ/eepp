@@ -15,7 +15,7 @@ cShapeGroupManager::~cShapeGroupManager() {
 cShape * cShapeGroupManager::GetShapeByName( const std::string& Name ) {
 	cShape * tShape = GetShapeById( MakeHash( Name ) );
 
-	eePRINTC( NULL == tShape, "cShapeGroupManager::GetShapeByName shape '%s' not found\n", Name.c_str() );
+	//eePRINTC( NULL == tShape, "cShapeGroupManager::GetShapeByName shape '%s' not found\n", Name.c_str() );
 
 	return tShape;
 }

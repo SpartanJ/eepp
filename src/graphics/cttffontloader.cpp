@@ -17,6 +17,7 @@ cTTFFontLoader::cTTFFontLoader( const std::string& FontName, const std::string& 
 	mAddPixelSeparator( AddPixelSeparator ),
 	mFontLoaded( false )
 {
+	Create();
 }
 
 cTTFFontLoader::cTTFFontLoader( const std::string& FontName, cPack * Pack, const std::string& FilePackPath, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) :
@@ -35,6 +36,7 @@ cTTFFontLoader::cTTFFontLoader( const std::string& FontName, cPack * Pack, const
 	mPack( Pack ),
 	mFontLoaded( false )
 {
+	Create();
 }
 
 cTTFFontLoader::cTTFFontLoader( const std::string& FontName, Uint8* TTFData, const eeUint& TTFDataSize, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) :
@@ -53,15 +55,18 @@ cTTFFontLoader::cTTFFontLoader( const std::string& FontName, Uint8* TTFData, con
 	mDataSize( TTFDataSize ),
 	mFontLoaded( false )
 {
+	Create();
 }
 
 cTTFFontLoader::~cTTFFontLoader() {
 }
 
+void cTTFFontLoader::Create() {
+	mFont = eeNew( cTTFFont, ( mFontName ) );
+}
+
 void cTTFFontLoader::Start() {
 	cObjectLoader::Start();
-
-	mFont = eeNew( cTTFFont, ( mFontName ) );
 
 	mFont->ThreadedLoading( mThreaded );
 

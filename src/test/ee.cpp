@@ -351,6 +351,7 @@ void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
 	TTF 	= reinterpret_cast<cTTFFont*> ( cFontManager::instance()->GetByName( "arial" ) );
 	TTFB 	= reinterpret_cast<cTTFFont*> ( cFontManager::instance()->GetByName( "arialb" ) );
 
+	eeASSERT( TTF != NULL );
 	eeASSERT( TTFB != NULL );
 
 	Con.Create( FF, true );
@@ -1337,11 +1338,11 @@ int main (int argc, char * argv []) {
 	EE::MemoryManager::LogResults();
 	/*
 	int x, y, comp;
-	
+
 	int res = stbi_info( "/home/programming/Projects/EE/data/aqua/aqua_button_ok.png", &x, &y, &comp );
-	
+
 	unsigned char * data = stbi_load( "/home/programming/Projects/EE/data/aqua/aqua_button_ok.png", &x, &y, &comp, 0 );
-	
+
 	if ( data )
 		free( data );
 	*/

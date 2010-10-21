@@ -3,6 +3,9 @@
 #include <sstream>
 #include "debug.hpp"
 
+#include "../system/clog.hpp"
+using namespace EE::System;
+
 namespace EE {
 
 #ifdef EE_MEMORY_MANAGER
@@ -86,6 +89,14 @@ bool MemoryManager::RemovePointer( void * Data ) {
 
 void MemoryManager::LogResults() {
 	#ifdef EE_MEMORY_MANAGER
+
+	#ifdef EE_DEBUG
+	if ( EE::PrintDebugInLog ) {
+		cLog::DestroySingleton();
+		EE::PrintDebugInLog = false;
+	}
+	#endif
+
 	eePRINT("\n|--Memory Manager Report-------------------------------|\n");
 	eePRINT("|\n");
 
