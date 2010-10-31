@@ -9,6 +9,8 @@ cUIManager::cUIManager() :
 	mControl( NULL ),
 	mFocusControl( NULL ),
 	mOverControl( NULL ),
+	mDownControl( NULL ),
+	mFirstPress( false ),
 	mCbId(-1)
 {
 	mEE = cEngine::instance();
@@ -118,14 +120,33 @@ void cUIManager::SendMsg( cUIControl * Ctrl, const Uint32& Msg, const Uint32& Fl
 
 void cUIManager::Update() {
 	mElapsed = mEE->Elapsed();
-	
+
 	mControl->Update();
-	
+
+	if ( mKM->PressTrigger() ) {
+		if ( NULL != mOverControl ) {
+			if ( mOverControl != mFocusControl ) {
+				mOverControl->OnFocus();
+				mFocusControl->OnFocusLoss();
+
+				mFocusControl = mOverControl;
+			}
+
+			mOverControl->OnMouseDown( mKM->GetMousePos(), mKM->PressTrigger() );
+		}
+
+		if ( !mFirstPress ) {
+			mDownControl = mOverControl;
+
+			mFirstPress = true;
+		}
+	}
+
 	if ( mKM->ReleaseTrigger() ) {
 		if ( NULL != mFocusControl ) {
 			mFocusControl->OnMouseUp( mKM->GetMousePos(), mKM->ReleaseTrigger() );
 
-			if ( mKM->ClickTrigger() ) {
+			if ( mDownControl == mOverControl && mKM->ClickTrigger() ) {
 				SendMsg( mFocusControl, cUIMessage::MsgClick, mKM->ClickTrigger() );
 				mFocusControl->OnMouseClick( mKM->GetMousePos(), mKM->ClickTrigger() );
 
@@ -135,6 +156,8 @@ void cUIManager::Update() {
 				}
 			}
 		}
+
+		mFirstPress = false;
 	}
 
 	cUIControl * pOver = mControl->OverFind( mKM->GetMousePos() );
@@ -156,19 +179,6 @@ void cUIManager::Update() {
 			mOverControl->OnMouseMove( mKM->GetMousePos(), mKM->PressTrigger() );
 	}
 
-	if ( mKM->PressTrigger() ) {
-		if ( NULL != mOverControl ) {
-			if ( mOverControl != mFocusControl ) {
-				mOverControl->OnFocus();
-				mFocusControl->OnFocusLoss();
-
-				mFocusControl = mOverControl;
-			}
-
-			mOverControl->OnMouseDown( mKM->GetMousePos(), mKM->PressTrigger() );
-		}
-	}
-	
 	mControl->CheckClose();
 }
 

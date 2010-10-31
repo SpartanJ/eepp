@@ -76,11 +76,9 @@ void cUITextInput::Draw() {
 	}
 }
 
-Uint32 cUITextInput::OnFocus() {
+Uint32 cUITextInput::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
 	mTextBuffer.Active( true );
 	ResetWaitCursor();
-
-	cUITextBox::OnFocus();
 
 	return 1;
 }

@@ -292,7 +292,7 @@ void cEETest::Init() {
 
 		if ( Mus.OpenFromPack( &PAK, "music.ogg" ) ) {
 			Mus.Loop(true);
-			Mus.Volume( 0.f );
+			//Mus.Volume( 0.f );
 			Mus.Play();
 		}
 

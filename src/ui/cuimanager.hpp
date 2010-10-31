@@ -45,9 +45,9 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 		void SetTheme( const std::string& Theme );
 
 		void SetTheme( cUITheme * Theme );
-		
+
 		eeVector2i GetMousePos();
-		
+
 		cInput * GetInput() const;
 	protected:
 		cEngine *			mEE;
@@ -57,6 +57,8 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 		cUIControlAnim *	mControl;
 		cUIControl *		mFocusControl;
 		cUIControl *		mOverControl;
+		cUIControl * 		mDownControl;
+		bool 				mFirstPress;
 
 		eeFloat 			mElapsed;
 
