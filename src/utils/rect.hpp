@@ -24,6 +24,16 @@ class tRECT {
 };
 
 template <typename T>
+bool operator ==(const tRECT<T>& R1, const tRECT<T>& R2) {
+	return ( R1.Left == R2.Left ) && ( R1.Right == R2.Right ) && ( R1.Top == R2.Top ) && ( R1.Bottom == R2.Bottom );
+}
+
+template <typename T>
+bool operator !=(const tRECT<T>& R1, const tRECT<T>& R2) {
+	return ( R1.Left != R2.Left ) || ( R1.Right != R2.Right ) || ( R1.Top != R2.Top ) || ( R1.Bottom != R2.Bottom );
+}
+
+template <typename T>
 tRECT<T>::tRECT(T left, T top, T right, T bottom) {
 	Left = left; Right = right; Top = top; Bottom = bottom;
 }

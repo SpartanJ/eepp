@@ -201,6 +201,7 @@ class cEETest : private cThread {
 		cUITextBox * mTextBoxValue;
 		cUISlider * mSlider;
 		cUIProgressBar * mProgressBar;
+		cUIListBox * mListBox;
 
 		cTextCache mEEText;
 		cTextCache mFBOText;
@@ -376,8 +377,8 @@ void cEETest::CreateShaders() {
 void cEETest::CreateUI() {
 	cUIManager::instance()->Init();
 	cUIThemeManager::instance()->DefaultFont( TTF );
-
-	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 530, 240 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
+	//eeSize( 530, 240 )
+	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 640, 480 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
 	Params.Border.Width( 2 );
 	Params.Border.Color( 0xFF979797 );
@@ -388,7 +389,7 @@ void cEETest::CreateUI() {
 	C->Enabled( true );
 	C->Pos( 320, 240 );
 	C->DragEnable( true );
-	//C->StartRotation( 0.f, 360.f, 2500.f );
+	//C->StartRotation( 0.f, 360.f, 5000.f );
 
 	Params.Flags &= ~UI_CLIP_ENABLE;
 	Params.Background.Corners(0);
@@ -543,12 +544,12 @@ void cEETest::CreateUI() {
 	LBParams.Flags = UI_CLIP_ENABLE | UI_MULTI_SELECT;
 	LBParams.PaddingContainer = eeRecti( 2, 2, 2, 2 );
 	LBParams.FontSelectedColor = eeColorA( 255, 255, 255, 255 );
-	cUIListBox * ListBox = eeNew( cUIListBox, ( LBParams ) );
-	ListBox->Visible( true );
-	ListBox->Enabled( true );
+	mListBox = eeNew( cUIListBox, ( LBParams ) );
+	mListBox->Visible( true );
+	mListBox->Enabled( true );
 
-	for ( Int32 i = 1; i <= 50; i++ )
-		ListBox->AddListBoxItem( L"Test ListBox " + toWStr(i) );
+	for ( Int32 i = 1; i <= 15; i++ )
+		mListBox->AddListBoxItem( L"Test ListBox " + toWStr(i) + L" testing it right now!" );
 
 	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.";
 	TTFB->ShrinkText( mBuda, 400 );
@@ -556,11 +557,11 @@ void cEETest::CreateUI() {
 	cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
 
 	CreateAquaTextureAtlas();
-/*
+
 	cTextureGroupLoader tgl( MyPath + "data/aqua.etg" );
 	TF->GetByName( "data/aqua.png" )->TextureFilter( TEX_FILTER_NEAREST );
 	cUIThemeManager::instance()->Add( cUITheme::LoadFromShapeGroup( cShapeGroupManager::instance()->GetByName( "aqua" ), "aqua", "aqua" ) );
-*/
+
 
 	cUIManager::instance()->SetTheme( "aqua" );
 
@@ -1022,7 +1023,9 @@ void cEETest::Render() {
 	);
 
 	mEEText.Draw( 0.f, (eeFloat)EE->GetHeight() - mEEText.GetTextHeight(), FONT_DRAW_CENTER, 1.f, Ang );
+
 	mInfoText.Draw( 6.f, 6.f );
+
 	mBudaTC.Draw( 5.f, 60.f );
 
 	Uint32 NLPos = 0;

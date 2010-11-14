@@ -16,6 +16,7 @@ class EE_API cUIListBox : public cUIControlAnim {
 					RowHeight( 0 ),
 					ScrollAlwaysVisible( false ),
 					SoftScroll( true ),
+					AllowHorizontalScroll( true ),
 					PaddingContainer(),
 					Font( NULL ),
 					FontColor( 0, 0, 0, 255 ),
@@ -29,6 +30,7 @@ class EE_API cUIListBox : public cUIControlAnim {
 				Uint32		RowHeight;
 				bool		ScrollAlwaysVisible;
 				bool		SoftScroll;
+				bool		AllowHorizontalScroll;
 				eeRecti		PaddingContainer;
 				cFont * 	Font;
 				eeColorA 	FontColor;
@@ -62,6 +64,8 @@ class EE_API cUIListBox : public cUIControlAnim {
 
 		cUIScrollBar * ScrollBar() const;
 
+		cUIScrollBar * HScrollBar() const;
+
 		cUIListBoxItem * GetItem( const Uint32& Index ) const;
 
 		Uint32 GetItemIndex( cUIListBoxItem * Item );
@@ -73,29 +77,71 @@ class EE_API cUIListBox : public cUIControlAnim {
 		std::list<Uint32> GetItemsSelectedIndex() const;
 
 		std::list<cUIListBoxItem *> GetItemsSelected();
+
+		void FontColor( const eeColorA& Color );
+
+		const eeColorA& FontColor() const;
+
+		void FontOverColor( const eeColorA& Color );
+
+		const eeColorA& FontOverColor() const;
+
+		void FontSelectedColor( const eeColorA& Color );
+
+		const eeColorA& FontSelectedColor() const;
+
+		void Font( cFont * Font );
+
+		cFont * Font() const;
+
+		void PaddingContainer( const eeRecti& Padding );
+
+		const eeRecti& PaddingContainer() const;
+
+		void SoftScroll( const bool& soft );
+
+		const bool& SoftScroll() const;
+
+		void ScrollAlwaysVisible( const bool& visible );
+
+		const bool& ScrollAlwaysVisible() const;
+
+		void RowHeight( const Uint32& height );
+
+		const Uint32& RowHeight() const;
+
+		void AllowHorizontalScroll( const bool& allow );
+
+		const bool& AllowHorizontalScroll() const;
 	protected:
 		friend class cUIListBoxItem;
 
-		Uint32 mRowHeight;
-		bool mScrollAlwaysVisible;
-		bool mSoftScroll;
-		eeRecti mPaddingContainer;
-		cUIControl * mContainer;
-		cUIScrollBar * mScrollBar;
-		cFont * mFont;
-		eeColorA mFontColor;
-		eeColorA mFontOverColor;
-		eeColorA mFontSelectedColor;
-
+		Uint32 				mRowHeight;
+		bool 				mScrollAlwaysVisible;
+		bool 				mSoftScroll;
+		eeRecti 			mPaddingContainer;
+		cUIControl * 		mContainer;
+		cUIScrollBar * 		mScrollBar;
+		cUIScrollBar * 		mHScrollBar;
+		cFont * 			mFont;
+		eeColorA 			mFontColor;
+		eeColorA 			mFontOverColor;
+		eeColorA 			mFontSelectedColor;
+		Uint32 				mLastPos;
+		bool 				mDisableScrollUpdate;
+		Uint32 				mMaxTextWidth;
+		bool 				mAllowHorizontalScroll;
+		Int32 				mHScrollInit;
+		Int32 				mItemsNotVisible;
+		std::list<Uint32>	mSelected;
 		std::vector<cUIListBoxItem *> 	mItems;
-		std::list<Uint32>				mSelected;
-
-		Uint32 mLastPos;
-
-		bool mDisableScrollUpdate;
 
 		void UpdateScroll( bool FromScrollChange = false );
+
 		void OnScrollValueChange( const cUIEvent * Event );
+
+		void OnHScrollValueChange( const cUIEvent * Event );
+
 		virtual void OnSizeChange();
 
 		void SetRowHeight();
@@ -109,6 +155,12 @@ class EE_API cUIListBox : public cUIControlAnim {
 		void ItemClicked( cUIListBoxItem * Item );
 
 		void ResetItemsStates();
+
+		virtual Uint32 OnSelected();
+
+		void ContainerResize();
+
+		void ItemUpdateSize( cUIListBoxItem * Item );
 };
 
 }}

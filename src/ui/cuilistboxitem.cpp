@@ -34,6 +34,8 @@ Uint32 cUIListBoxItem::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags )
 				mSelected = true;
 
 				LBParent->mSelected.push_back( LBParent->GetItemIndex( this ) );
+
+				LBParent->OnSelected();
 			} else {
 				mSelected = false;
 
@@ -46,6 +48,7 @@ Uint32 cUIListBoxItem::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags )
 
 			LBParent->mSelected.clear();
 			LBParent->mSelected.push_back( LBParent->GetItemIndex( this ) );
+			LBParent->OnSelected();
 		}
 	}
 
@@ -87,11 +90,11 @@ void cUIListBoxItem::OnStateChange() {
 	cUIListBox * LBParent = reinterpret_cast<cUIListBox*> ( Parent()->Parent() );
 
 	if ( mSkinState->GetState() == cUISkinState::StateSelected ) {
-		Color( LBParent->mFontSelectedColor );
+		Color( LBParent->FontSelectedColor() );
 	} else if ( mSkinState->GetState() == cUISkinState::StateMouseEnter ) {
-		Color( LBParent->mFontOverColor );
+		Color( LBParent->FontOverColor() );
 	} else {
-		Color( LBParent->mFontColor );
+		Color( LBParent->FontColor() );
 	}
 }
 

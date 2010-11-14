@@ -33,12 +33,12 @@ void cUITextBox::Draw() {
 		cUIControl::Draw();
 
 		if ( mTextCache.GetTextWidth() ) {
-			if ( IsClipped() )
+			if ( mFlags & UI_CLIP_ENABLE )
 				cUIManager::instance()->ClipEnable( mScreenPos.x + (Int32)mPadding.Left, mScreenPos.y + (Int32)mPadding.Top, mSize.Width() - (Int32)mPadding.Right, mSize.Height() - (Int32)mPadding.Bottom );
 
 			mTextCache.Draw( (eeFloat)mScreenPos.x + mAlignOffset.x + mPadding.Left + 1.f, (eeFloat)mScreenPos.y + mAlignOffset.y + mPadding.Top, Flags(), 1.f, 0.f, mBlend );
 
-			if ( IsClipped() )
+			if ( mFlags & UI_CLIP_ENABLE )
 				cUIManager::instance()->ClipDisable();
 		}
 	}
@@ -168,6 +168,10 @@ void cUITextBox::SetTheme( cUITheme * Theme ) {
 	if ( NULL == mTextCache.Font() && NULL != Theme->DefaultFont() ) {
 		mTextCache.Font( Theme->DefaultFont() );
 	}
+}
+
+cTextCache& cUITextBox::GetTextCache() {
+	return mTextCache;
 }
 
 }}

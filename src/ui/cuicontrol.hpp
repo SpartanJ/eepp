@@ -243,7 +243,7 @@ class EE_API cUIControl {
 		Uint32			mControlFlags;
 		EE_PRE_BLEND_FUNC	mBlend;
 
-		eePolygon2f 	mQuad;
+		eePolygon2f 	mPoly;
 		eeVector2f 		mCenter;
 
 		std::map< Uint32, std::map<Uint32, UIEventCallback> > mEvents;

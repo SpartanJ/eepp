@@ -464,7 +464,7 @@ void cUIControl::BorderDraw() {
 	cPrimitives P;
 	P.SetColor( mBorder.Color() );
 
-	if ( IsClipped() )
+	if ( mFlags & UI_CLIP_ENABLE )
 		P.DrawRectangle( (eeFloat)mScreenPos.x + 0.1f, (eeFloat)mScreenPos.y + 0.1f, (eeFloat)mSize.Width() - 0.1f, (eeFloat)mSize.Height() - 0.1f, 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder.Width(), mBackground.Corners() );
 	else
 		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder.Width(), mBackground.Corners() );
@@ -493,12 +493,12 @@ void cUIControl::CheckClose() {
 }
 
 void cUIControl::ClipTo() {
-	if ( !IsClipped() && NULL != Parent() ) {
+	if ( !mFlags & UI_CLIP_ENABLE && NULL != Parent() ) {
 
 		cUIControl * parent = Parent();
 
 		while ( NULL != parent ) {
-			if ( parent->IsClipped() ) {
+			if ( parent->mFlags & UI_CLIP_ENABLE ) {
 				Parent()->ClipMe();
 				parent = NULL;
 			} else {
@@ -539,7 +539,7 @@ void cUIControl::InternalDraw() {
 }
 
 void cUIControl::ClipMe() {
-	if ( IsClipped() ) {
+	if ( mFlags & UI_CLIP_ENABLE ) {
 		if ( mFlags & UI_BORDER )
 			cUIManager::instance()->ClipEnable( mScreenPos.x, mScreenPos.y, mSize.Width(), mSize.Height() + 1 );
 		else
@@ -548,7 +548,7 @@ void cUIControl::ClipMe() {
 }
 
 void cUIControl::ClipDisable() {
-	if ( IsClipped() )
+	if ( mFlags & UI_CLIP_ENABLE )
 		cUIManager::instance()->ClipDisable();
 }
 
@@ -699,7 +699,7 @@ cUIControl * cUIControl::OverFind( const eeVector2f& Point ) {
 	if ( mVisible && mEnabled ) {
 		UpdateQuad();
 
-		if ( PointInsidePolygon2( mQuad, Point ) ) {
+		if ( PointInsidePolygon2( mPoly, Point ) ) {
 			cUIControl * ChildLoop = mChild;
 
 			while ( NULL != ChildLoop ) {
@@ -729,7 +729,7 @@ Uint32 cUIControl::IsClipped() {
 
 
 const eePolygon2f& cUIControl::GetPolygon() const {
-	return mQuad;
+	return mPoly;
 }
 
 const eeVector2f& cUIControl::GetPolygonCenter() const {
@@ -737,7 +737,7 @@ const eeVector2f& cUIControl::GetPolygonCenter() const {
 }
 
 void cUIControl::UpdateQuad() {
-	mQuad 	= eePolygon2f( eeAABB( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mScreenPos.x + mSize.Width(), (eeFloat)mScreenPos.y + mSize.Height() ) );
+	mPoly 	= eePolygon2f( eeAABB( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mScreenPos.x + mSize.Width(), (eeFloat)mScreenPos.y + mSize.Height() ) );
 	mCenter = eeVector2f( (eeFloat)mScreenPos.x + (eeFloat)mSize.Width() * 0.5f, (eeFloat)mScreenPos.y + (eeFloat)mSize.Height() * 0.5f );
 
 	cUIControl * tParent = Parent();
@@ -746,8 +746,11 @@ void cUIControl::UpdateQuad() {
 		if ( tParent->IsAnimated() ) {
 			cUIControlAnim * tP = reinterpret_cast<cUIControlAnim *> ( tParent );
 
-			mQuad.Rotate( tP->Angle(), tP->GetPolygonCenter() );
-			mQuad.Scale( tP->Scale(), tP->GetPolygonCenter() );
+			if ( tP->Angle() != 0.f )
+				mPoly.Rotate( tP->Angle(), tP->GetPolygonCenter() );
+
+			if ( tP->Scale() != 1.f )
+				mPoly.Scale( tP->Scale(), tP->GetPolygonCenter() );
 		}
 
 		tParent = tParent->Parent();

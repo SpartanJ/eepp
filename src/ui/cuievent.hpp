@@ -32,6 +32,7 @@ class EE_API cUIEvent {
 			EventOnFontChanged,
 			EventOnPressEnter,
 			EventOnValueChange,
+			EventOnSelected,
 			EventUser,
 			EventForceDWord = 0xFFFFFFFF
 		};

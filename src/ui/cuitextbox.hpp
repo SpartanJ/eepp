@@ -57,8 +57,10 @@ class EE_API cUITextBox : public cUIControlAnim {
 		virtual void Padding( const eeRectf& padding );
 
 		const eeRectf& Padding() const;
-		
+
 		virtual void SetTheme( cUITheme * Theme );
+
+		cTextCache& GetTextCache();
 	protected:
 		cTextCache 		mTextCache;
 		eeColorA 		mFontColor;

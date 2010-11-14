@@ -176,7 +176,7 @@ void cUIControlAnim::BorderDraw() {
 	cPrimitives P;
 	P.SetColor( GetColor( mBorder.Color() ) );
 
-	if ( IsClipped() )
+	if ( mFlags & UI_CLIP_ENABLE )
 		P.DrawRectangle( (eeFloat)mScreenPos.x + 0.1f, (eeFloat)mScreenPos.y + 0.1f, (eeFloat)mSize.Width() - 0.1f, (eeFloat)mSize.Height() - 0.1f, 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder.Width(), mBackground.Corners() );
 	else
 		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder.Width(), mBackground.Corners() );
@@ -192,11 +192,11 @@ void cUIControlAnim::CloseFadeOut( const eeFloat& Time ) {
 }
 
 void cUIControlAnim::UpdateQuad() {
-	mQuad 	= eePolygon2f( eeAABB( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mScreenPos.x + mSize.Width(), (eeFloat)mScreenPos.y + mSize.Height() ) );
+	mPoly 	= eePolygon2f( eeAABB( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mScreenPos.x + mSize.Width(), (eeFloat)mScreenPos.y + mSize.Height() ) );
 	mCenter = eeVector2f( (eeFloat)mScreenPos.x + (eeFloat)mSize.Width() * 0.5f, (eeFloat)mScreenPos.y + (eeFloat)mSize.Height() * 0.5f );
 
-	mQuad.Rotate( mAngle, mCenter );
-	mQuad.Scale( mScale, mCenter );
+	mPoly.Rotate( mAngle, mCenter );
+	mPoly.Scale( mScale, mCenter );
 
 	cUIControl * tParent = Parent();
 
@@ -204,8 +204,11 @@ void cUIControlAnim::UpdateQuad() {
 		if ( tParent->IsAnimated() ) {
 			cUIControlAnim * tP = reinterpret_cast<cUIControlAnim *> ( tParent );
 
-			mQuad.Rotate( tP->Angle(), tP->GetPolygonCenter() );
-			mQuad.Scale( tP->Scale(), tP->GetPolygonCenter() );
+			if ( tP->Angle() != 0.f )
+				mPoly.Rotate( tP->Angle(), tP->GetPolygonCenter() );
+
+			if ( tP->Scale() != 1.f )
+				mPoly.Scale( tP->Scale(), tP->GetPolygonCenter() );
 		}
 
 		tParent = tParent->Parent();

@@ -241,8 +241,8 @@ void cUIManager::SetTheme( const std::string& Theme ) {
 
 void cUIManager::SetTheme( cUITheme * Theme ) {
 	if ( NULL != mControl ) {
-		mControl->SetTheme( Theme );
 		mControl->SetThemeToChilds( Theme );
+		mControl->SetTheme( Theme );
 	}
 }
 
