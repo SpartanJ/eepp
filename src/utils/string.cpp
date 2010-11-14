@@ -78,13 +78,17 @@ std::vector < std::wstring > SplitString ( const std::wstring& str, const Uint32
 		#else
 		if ( str[i] == (Int32)splitchar ) {
 		#endif
-			tmp.push_back(tmpstr);
-			tmpstr = L"";
+			if ( tmpstr.size() ) {
+				tmp.push_back(tmpstr);
+				tmpstr = L"";
+			}
 		} else {
 			tmpstr += str[i];
 		}
 	}
-	tmp.push_back(tmpstr);
+
+	if ( tmpstr.size() )
+		tmp.push_back(tmpstr);
 
 	return tmp;
 }
@@ -95,13 +99,17 @@ std::vector < std::string > SplitString ( const std::string& str, const Int8& sp
 
 	for ( eeUint i = 0; i < str.size(); i++ ) {
 		if ( str[i] == splitchar ) {
-			tmp.push_back(tmpstr);
-			tmpstr = "";
+			if ( tmpstr.size() ) {
+				tmp.push_back(tmpstr);
+				tmpstr = "";
+			}
 		} else {
 			tmpstr += str[i];
 		}
 	}
-	tmp.push_back(tmpstr);
+
+	if ( tmpstr.size() )
+		tmp.push_back( tmpstr );
 
 	return tmp;
 }

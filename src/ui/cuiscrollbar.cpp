@@ -7,19 +7,19 @@ cUIScrollBar::cUIScrollBar( const cUIScrollBar::CreateParams& Params ) :
 	cUIControlAnim( Params )
 {
 	mType |= UI_TYPE_GET( UI_TYPE_SCROLLBAR );
-	
+
 	cUIControlAnim::CreateParams CParams = Params;
 	CParams.Size = eeSize( 16, 16 );
 	CParams.Parent( this );
 
 	mBtnDown	= eeNew( cUIControlAnim, ( CParams ) );
 	mBtnUp		= eeNew( cUIControlAnim, ( CParams ) );
-	
+
 	mBtnDown->Visible( true );
 	mBtnDown->Enabled( true );
 	mBtnUp->Visible( true );
 	mBtnUp->Enabled( true );
-	
+
 	cUISlider::CreateParams SParams;
 	SParams.Background = Params.Background;
 	SParams.Blend = Params.Blend;
@@ -35,9 +35,9 @@ cUIScrollBar::cUIScrollBar( const cUIScrollBar::CreateParams& Params ) :
 	mSlider		= eeNew( cUISlider, ( SParams ) );
 	mSlider->Visible( true );
 	mSlider->Enabled( true );
-	
+
 	mSlider->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cUIScrollBar::OnValueChangeCb ) );
-	
+
 	AdjustChilds();
 }
 
@@ -60,7 +60,7 @@ void cUIScrollBar::SetTheme( cUITheme * Theme ) {
 		mBtnUp->ForceThemeSkin( Theme, "vscrollbar_btnup" );
 		mBtnDown->ForceThemeSkin( Theme, "vscrollbar_btndown" );
 	}
-	
+
 	cShape * tShape = NULL;
 	cUISkin * tSkin = NULL;
 
@@ -83,9 +83,9 @@ void cUIScrollBar::SetTheme( cUITheme * Theme ) {
 			mBtnDown->Size( tShape->RealSize() );
 		}
 	}
-	
+
 	AdjustChilds();
-	
+
 	mSlider->AdjustChilds();
 }
 
@@ -95,12 +95,12 @@ void cUIScrollBar::OnSizeChange() {
 
 void cUIScrollBar::AdjustChilds() {
 	mBtnUp->Pos( 0, 0 );
-	
+
 	if ( !IsVertical() ) {
 		mBtnDown->Pos( mSize.Width() - mBtnDown->Size().Width(), 0 );
 		mSlider->Size( mSize.Width() - mBtnDown->Size().Width() - mBtnUp->Size().Width(), mSlider->Size().Height() );
 		mSlider->Pos( mBtnUp->Size().Width(), 0 );
-		
+
 		mBtnDown->CenterVertical();
 		mBtnUp->CenterVertical();
 		mSlider->CenterVertical();
@@ -108,7 +108,7 @@ void cUIScrollBar::AdjustChilds() {
 		mBtnDown->Pos( 0, mSize.Height() - mBtnDown->Size().Height() );
 		mSlider->Size( mSlider->Size().Width(), mSize.Height() - mBtnDown->Size().Height() - mBtnUp->Size().Height() );
 		mSlider->Pos( 0, mBtnUp->Size().Height() );
-		
+
 		mBtnDown->CenterHorizontal();
 		mBtnUp->CenterHorizontal();
 		mSlider->CenterHorizontal();
@@ -189,6 +189,18 @@ const bool& cUIScrollBar::IsVertical() const {
 
 void cUIScrollBar::OnValueChangeCb( const cUIEvent * Event ) {
 	OnValueChange();
+}
+
+cUISlider * cUIScrollBar::Slider() const {
+	return mSlider;
+}
+
+cUIControlAnim * cUIScrollBar::ButtonUp() const {
+	return mBtnUp;
+}
+
+cUIControlAnim * cUIScrollBar::ButtonDown() const {
+	return mBtnDown;
 }
 
 }}

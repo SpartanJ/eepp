@@ -23,7 +23,8 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
-					<Add option="-O2" />
+					<Add option="-O3" />
+					<Add option="-fno-strict-aliasing" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -522,6 +523,10 @@
 		<Unit filename="src/ui/cuieventmouse.hpp" />
 		<Unit filename="src/ui/cuigfx.cpp" />
 		<Unit filename="src/ui/cuigfx.hpp" />
+		<Unit filename="src/ui/cuilistbox.cpp" />
+		<Unit filename="src/ui/cuilistbox.hpp" />
+		<Unit filename="src/ui/cuilistboxitem.cpp" />
+		<Unit filename="src/ui/cuilistboxitem.hpp" />
 		<Unit filename="src/ui/cuimanager.cpp" />
 		<Unit filename="src/ui/cuimanager.hpp" />
 		<Unit filename="src/ui/cuimessage.cpp" />

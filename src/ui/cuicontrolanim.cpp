@@ -191,16 +191,8 @@ void cUIControlAnim::CloseFadeOut( const eeFloat& Time ) {
 	mControlFlags |= UI_CTRL_FLAG_CLOSE_FO;
 }
 
-const eeQuad2f& cUIControlAnim::GetQuad() const {
-	return mQuad;
-}
-
-const eeVector2f& cUIControlAnim::GetQuadCenter() const {
-	return mCenter;
-}
-
 void cUIControlAnim::UpdateQuad() {
-	mQuad 	= AABBtoQuad2( eeAABB( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mScreenPos.x + mSize.Width(), (eeFloat)mScreenPos.y + mSize.Height() ) );
+	mQuad 	= eePolygon2f( eeAABB( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mScreenPos.x + mSize.Width(), (eeFloat)mScreenPos.y + mSize.Height() ) );
 	mCenter = eeVector2f( (eeFloat)mScreenPos.x + (eeFloat)mSize.Width() * 0.5f, (eeFloat)mScreenPos.y + (eeFloat)mSize.Height() * 0.5f );
 
 	mQuad.Rotate( mAngle, mCenter );
@@ -212,8 +204,8 @@ void cUIControlAnim::UpdateQuad() {
 		if ( tParent->IsAnimated() ) {
 			cUIControlAnim * tP = reinterpret_cast<cUIControlAnim *> ( tParent );
 
-			mQuad.Rotate( tP->Angle(), tP->GetQuadCenter() );
-			mQuad.Scale( tP->Scale(), tP->GetQuadCenter() );
+			mQuad.Rotate( tP->Angle(), tP->GetPolygonCenter() );
+			mQuad.Scale( tP->Scale(), tP->GetPolygonCenter() );
 		}
 
 		tParent = tParent->Parent();

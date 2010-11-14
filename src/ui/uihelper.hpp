@@ -40,6 +40,7 @@ Uint32 EE_API VAlignGet( Uint32 Flags );
 #define UI_FIT_TO_CONTROL 			(1 << 11)
 #define UI_CLIP_ENABLE 				(1 << 12)
 #define UI_AUTO_SHRINK_TEXT 		(1 << 13)
+#define UI_MULTI_SELECT				(1 << 14)
 
 #define UI_TYPE_CONTROL		 		(0)
 #define UI_TYPE_CONTROL_ANIM 		(1)
@@ -53,6 +54,8 @@ Uint32 EE_API VAlignGet( Uint32 Flags );
 #define UI_TYPE_SPINBOX				(9)
 #define UI_TYPE_SCROLLBAR			(10)
 #define UI_TYPE_PROGRESSBAR			(11)
+#define UI_TYPE_LISTBOX				(12)
+#define UI_TYPE_LISTBOXITEM			(13)
 
 #define UI_TYPE_GET(X) 			( 1 << (X) )
 

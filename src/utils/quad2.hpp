@@ -22,8 +22,8 @@ class Quad2 {
 
 		void Rotate( const T& Angle, const Vector2<T>& Center );
 		void Rotate( const T& Angle );
-		void Scale( const eeFloat& scale );
-		void Scale( const eeFloat& scale, const Vector2<T>& Center );
+		void Scale( const T& scale );
+		void Scale( const T& scale, const Vector2<T>& Center );
 };
 
 template <typename T>
@@ -43,7 +43,7 @@ void Quad2<T>::Rotate( const T& Angle, const Vector2<T>& Center ) {
 }
 
 template <typename T>
-void Quad2<T>::Scale( const eeFloat& scale, const Vector2<T>& Center ) {
+void Quad2<T>::Scale( const T& scale, const Vector2<T>& Center ) {
 	if ( scale == 1.0f )
 		return;
 
@@ -61,7 +61,7 @@ void Quad2<T>::Scale( const eeFloat& scale, const Vector2<T>& Center ) {
 }
 
 template <typename T>
-void Quad2<T>::Scale( const eeFloat& scale ) {
+void Quad2<T>::Scale( const T& scale ) {
 	Scale( scale, GetCenter() );
 }
 

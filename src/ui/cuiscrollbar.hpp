@@ -42,21 +42,27 @@ class cUIScrollBar : public cUIControlAnim {
 		virtual void SetTheme( cUITheme * Theme );
 
 		const bool& IsVertical() const;
-		
+
 		virtual Uint32 OnMessage( const cUIMessage * Msg );
-		
+
 		virtual void Update();
+
+		void ManageClick( const Uint32& Flags );
+
+		cUISlider * Slider() const;
+
+		cUIControlAnim * ButtonUp() const;
+
+		cUIControlAnim * ButtonDown() const;
 	protected:
 		cUISlider * 		mSlider;
 		cUIControlAnim *	mBtnUp;
 		cUIControlAnim * 	mBtnDown;
-		
+
 		virtual void OnSizeChange();
-		
+
 		void AdjustChilds();
-		
-		void ManageClick( const Uint32& Flags );
-		
+
 		void OnValueChangeCb( const cUIEvent * Event );
 };
 

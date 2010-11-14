@@ -70,6 +70,8 @@ class EE_API cUIControl {
 
 		cUIControl( const CreateParams& Params );
 
+		virtual ~cUIControl();
+
 		void ScreenToControl( eeVector2i& Pos ) const;
 
 		void ControlToScreen( eeVector2i& Pos ) const;
@@ -147,7 +149,7 @@ class EE_API cUIControl {
 		virtual Uint32 OnFocus();
 
 		virtual Uint32 OnFocusLoss();
-		
+
 		virtual Uint32 OnValueChange();
 
 		Uint32 HAlign() const;
@@ -200,8 +202,6 @@ class EE_API cUIControl {
 
 		cUIBorder * Border();
 
-		virtual ~cUIControl();
-
 		void SetThemeByName( const std::string& Theme );
 
 		virtual void SetTheme( cUITheme * Theme );
@@ -215,13 +215,15 @@ class EE_API cUIControl {
 		void ForceThemeSkin( cUITheme * Theme, const std::string& ControlName );
 
 		cUIControl * ChildGetFirst() const;
-		
-		bool IsMouseOver();
-	protected:
-		friend class cUIManager;
-		friend class cUIDragable;
-		friend class cUIControlAnim;
 
+		bool IsMouseOver();
+
+		const eePolygon2f& GetPolygon() const;
+
+		const eeVector2f& GetPolygonCenter() const;
+
+		void SetSkinState( const Uint32& State );
+	protected:
 		bool			mVisible;
 		bool			mEnabled;
 		eeVector2i		mPos;
@@ -241,7 +243,7 @@ class EE_API cUIControl {
 		Uint32			mControlFlags;
 		EE_PRE_BLEND_FUNC	mBlend;
 
-		eeQuad2f 		mQuad;
+		eePolygon2f 	mQuad;
 		eeVector2f 		mCenter;
 
 		std::map< Uint32, std::map<Uint32, UIEventCallback> > mEvents;
@@ -257,6 +259,8 @@ class EE_API cUIControl {
 		virtual void OnPosChange();
 
 		virtual void OnSizeChange();
+
+		virtual void OnStateChange();
 
 		virtual void BackgroundDraw();
 
@@ -284,7 +288,7 @@ class EE_API cUIControl {
 
 		cUIControl * ChildNext( cUIControl * Ctrl, bool Loop = false ) const;
 
-		virtual cUIControl * OverFind( const eeVector2i& Point );
+		cUIControl * OverFind( const eeVector2f& Point );
 
 		virtual void UpdateQuad();
 
@@ -296,26 +300,24 @@ class EE_API cUIControl {
 
 		virtual void MatrixUnset();
 
-		virtual void ClipTo();
+		void ClipTo();
 
-		virtual void DrawChilds();
+		void DrawChilds();
 
-		virtual eeFloat Elapsed();
+		eeFloat Elapsed();
 
-		virtual void SendEvent( const cUIEvent * Event );
+		void SendEvent( const cUIEvent * Event );
 
 		void SendMouseEvent( const Uint32& Event, const eeVector2i& Pos, const Uint32& Flags );
 
 		void SendCommonEvent( const Uint32& Event );
-
-		void SetSkinState( const Uint32& State );
 
 		void SetPrevSkinState();
 
 		void UpdateScreenPos();
 
 		void UpdateChildsScreenPos();
-		
+
 		void WriteCtrlFlag( const Uint32& Pos, const Uint32& Val );
 };
 

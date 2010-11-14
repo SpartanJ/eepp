@@ -40,7 +40,9 @@ static const char * UI_THEME_ELEMENTS[] = {
 	"vscrollbar_btnup",
 	"vscrollbar_btndown",
 	"progressbar",
-	"progressbar_filler"
+	"progressbar_filler",
+	"listbox",
+	"listboxitem"
 };
 
 cUITheme * cUITheme::LoadFromPath( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt ) {
@@ -97,9 +99,9 @@ cUITheme * cUITheme::LoadFromShapeGroup( cShapeGroup * ShapeGroup, const std::st
 	std::string Element;
 	std::vector<std::string> 	ElemFound;
 	std::vector<Uint32> 		ElemType;
-	
+
 	cUITheme * tTheme = eeNew( cUITheme, ( Name, NameAbbr ) );
-	
+
 	Uint32 Count = eeARRAY_SIZE( UI_THEME_ELEMENTS );
 
 	for ( i = 0; i < Count; i++ ) {
@@ -114,14 +116,14 @@ cUITheme * cUITheme::LoadFromShapeGroup( cShapeGroup * ShapeGroup, const std::st
 			ElemType.push_back( IsComplex );
 		}
 	}
-	
+
 	for ( i = 0; i < ElemFound.size(); i++ ) {
 		if ( ElemType[i] )
 			tTheme->Add( eeNew( cUISkinComplex, ( ElemFound[i] ) ) );
 		else
 			tTheme->Add( eeNew( cUISkinSimple, ( ElemFound[i] ) ) );
 	}
-	
+
 	return tTheme;
 }
 
@@ -150,7 +152,7 @@ bool cUITheme::SearchFilesInGroup( cShapeGroup * SG, std::string Element, Uint32
 	if ( !IsComplex ) {
 		for ( i = 0; i < cUISkinState::StateCount; i++ ) {
 			ElemName = Element + "_" + cUISkin::GetSkinStateName( i );
-			
+
 			if ( SG->GetByName( ElemName ) ) { // only load PNG's FTM
 				Found = true;
 				break;

@@ -43,10 +43,6 @@ class EE_API cUIControlAnim : public cUIDragable {
 
 		void CloseFadeOut( const eeFloat& Time );
 
-		const eeQuad2f& GetQuad() const;
-
-		const eeVector2f& GetQuadCenter() const;
-
 		cInterpolation * AngleInterpolation();
 
 		cInterpolation * ScaleInterpolation();

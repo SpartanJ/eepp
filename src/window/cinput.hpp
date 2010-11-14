@@ -386,6 +386,9 @@ class EE_API cInput : public tSingleton<cInput> {
 		/** @return The Mouse position vector */
 		eeVector2i GetMousePos() const;
 
+		/** @return The position vector converted to float */
+		eeVector2f GetMousePosf();
+
 		/** @return The mouse position over the current view */
 		eeVector2i GetMousePosFromView( const cView& View );
 

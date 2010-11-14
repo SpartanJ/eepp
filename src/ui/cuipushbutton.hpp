@@ -20,44 +20,45 @@ class EE_API cUIPushButton : public cUIControlAnim {
 				inline ~CreateParams() {}
 
 				cShape * Icon;
-				
+
 				inline void SetIcon( cShape * icon ) {
 					Icon = icon;
-					
+
 					if ( !IconHorizontalMargin )
 						IconHorizontalMargin = 4;
 				}
-				
+
 				Int32 IconHorizontalMargin;
 		};
+
 		cUIPushButton( const cUIPushButton::CreateParams& Params );
 
 		~cUIPushButton();
 
 		virtual void SetTheme( cUITheme * Theme );
-		
+
 		void Icon( cShape * Icon );
-		
+
 		cUIGfx * Icon() const;
-		
+
 		void Text( const std::wstring& text );
 
 		void Text( const std::string& text );
-		
+
 		void Padding( const eeRectf& padding );
 
 		const eeRectf& Padding() const;
-		
+
 		void IconHorizontalMargin( Int32 margin );
-		
+
 		const Int32& IconHorizontalMargin() const;
-		
+
 		cUITextBox * TextBox() const;
 	protected:
 		cUIGfx * 		mIcon;
 		cUITextBox * 	mTextBox;
 		Int32			mIconSpace;
-		
+
 		virtual void OnSizeChange();
 };
 

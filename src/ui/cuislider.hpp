@@ -46,18 +46,20 @@ class EE_API cUISlider : public cUIControlAnim {
 		const eeFloat& ClickStep() const;
 
 		const bool& IsVertical() const;
-		
+
 		virtual void Update();
-		
+
 		cUIControl * GetBackSlider() const;
-		
+
 		cUIDragable * GetSliderButton() const;
-		
+
 		void AdjustChilds();
-		
+
 		const bool& AllowHalfSliderOut() const;
-		
+
 		const bool& ExpandBackground() const;
+
+		void ManageClick( const Uint32& Flags );
 	protected:
 		friend class Private::cUISliderButton;
 
@@ -72,12 +74,10 @@ class EE_API cUISlider : public cUIControlAnim {
 		eeFloat				mClickStep;
 
 		bool				mOnPosChange;
-		
+
 		virtual void OnSizeChange();
 
 		void FixSliderPos();
-		
-		void ManageClick( const Uint32& Flags );
 };
 
 }}

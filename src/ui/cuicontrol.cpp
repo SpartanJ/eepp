@@ -23,6 +23,10 @@ cUIControl::cUIControl( const CreateParams& Params ) :
 {
 	mType |= UI_TYPE_GET(UI_TYPE_CONTROL);
 
+	if ( NULL == mParentCtrl && NULL != cUIManager::instance()->MainControl() ) {
+		mParentCtrl = cUIManager::instance()->MainControl();
+	}
+
 	if ( NULL != mParentCtrl )
 		mParentCtrl->ChildAdd( this );
 
@@ -306,7 +310,7 @@ Uint32 cUIControl::OnFocus() {
 
 Uint32 cUIControl::OnFocusLoss() {
 	SendCommonEvent( cUIEvent::EventOnFocusLoss );
-	
+
 	return 1;
 }
 
@@ -689,15 +693,13 @@ cUIControl * cUIControl::ChildGetFirst() const {
 	return mChild;
 }
 
-cUIControl * cUIControl::OverFind( const eeVector2i& Point ) {
+cUIControl * cUIControl::OverFind( const eeVector2f& Point ) {
 	cUIControl * pOver = NULL;
 
 	if ( mVisible && mEnabled ) {
 		UpdateQuad();
 
-		eeVector2f Localf( (eeFloat)Point.x, (eeFloat)Point.y );
-
-		if ( IntersectQuad2( mQuad, eeQuad2f( Localf, Localf, Localf, Localf ) ) ) {
+		if ( PointInsidePolygon2( mQuad, Point ) ) {
 			cUIControl * ChildLoop = mChild;
 
 			while ( NULL != ChildLoop ) {
@@ -725,8 +727,17 @@ Uint32 cUIControl::IsClipped() {
 	return mFlags & UI_CLIP_ENABLE;
 }
 
+
+const eePolygon2f& cUIControl::GetPolygon() const {
+	return mQuad;
+}
+
+const eeVector2f& cUIControl::GetPolygonCenter() const {
+	return mCenter;
+}
+
 void cUIControl::UpdateQuad() {
-	mQuad 	= AABBtoQuad2( eeAABB( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mScreenPos.x + mSize.Width(), (eeFloat)mScreenPos.y + mSize.Height() ) );
+	mQuad 	= eePolygon2f( eeAABB( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mScreenPos.x + mSize.Width(), (eeFloat)mScreenPos.y + mSize.Height() ) );
 	mCenter = eeVector2f( (eeFloat)mScreenPos.x + (eeFloat)mSize.Width() * 0.5f, (eeFloat)mScreenPos.y + (eeFloat)mSize.Height() * 0.5f );
 
 	cUIControl * tParent = Parent();
@@ -735,8 +746,8 @@ void cUIControl::UpdateQuad() {
 		if ( tParent->IsAnimated() ) {
 			cUIControlAnim * tP = reinterpret_cast<cUIControlAnim *> ( tParent );
 
-			mQuad.Rotate( tP->Angle(), tP->GetQuadCenter() );
-			mQuad.Scale( tP->Scale(), tP->GetQuadCenter() );
+			mQuad.Rotate( tP->Angle(), tP->GetPolygonCenter() );
+			mQuad.Scale( tP->Scale(), tP->GetPolygonCenter() );
 		}
 
 		tParent = tParent->Parent();
@@ -817,14 +828,23 @@ void cUIControl::ForceThemeSkin( cUITheme * Theme, const std::string& ControlNam
 	SetTheme( Theme, ControlName );
 }
 
+void cUIControl::OnStateChange() {
+}
+
 void cUIControl::SetSkinState( const Uint32& State ) {
-	if ( NULL != mSkinState )
+	if ( NULL != mSkinState ) {
 		mSkinState->SetState( State );
+
+		OnStateChange();
+	}
 }
 
 void cUIControl::SetPrevSkinState() {
-	if ( NULL != mSkinState )
+	if ( NULL != mSkinState ) {
 		mSkinState->SetPrevState();
+
+		OnStateChange();
+	}
 }
 
 void cUIControl::SetThemeToChilds( cUITheme * Theme ) {

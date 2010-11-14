@@ -160,7 +160,7 @@ void cUIManager::Update() {
 		mFirstPress = false;
 	}
 
-	cUIControl * pOver = mControl->OverFind( mKM->GetMousePos() );
+	cUIControl * pOver = mControl->OverFind( mKM->GetMousePosf() );
 
 	if ( pOver != mOverControl ) {
 		if ( NULL != mOverControl ) {

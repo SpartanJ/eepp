@@ -3,6 +3,7 @@
 
 #include "triangle2.hpp"
 #include "quad2.hpp"
+#include "rect.hpp"
 
 namespace EE { namespace Utils {
 
@@ -13,6 +14,7 @@ class Polygon2 {
 		~Polygon2();
 		Polygon2( const Triangle2<T>& fromTrig );
 		Polygon2( const Quad2<T>& fromQuad );
+		Polygon2( const tRECT<T>& fromRect );
 		Polygon2( const std::vector< Vector2<T> >& theVecs );
 
 		Uint32 PushBack( const Vector2<T>& V );
@@ -33,6 +35,8 @@ class Polygon2 {
 		T Y( const T& y ) { cOffsetY = y; }
 
 		void Rotate( const T& Angle, const Vector2<T>& Center );
+
+		void Scale( const T& scale, const Vector2<T>& Center );
 	private:
 		std::deque< Vector2<T> > Vector;
 		T cOffsetX, cOffsetY;
@@ -59,6 +63,14 @@ template <typename T>
 Polygon2<T>::Polygon2( const Quad2<T>& fromQuad ) : cOffsetX(0), cOffsetY(0) {
 	for (Uint8 i = 0; i < 4; i++)
 		PushBack ( fromQuad.V[i] );
+}
+
+template<typename T>
+Polygon2<T>::Polygon2( const tRECT<T>& fromRect ) : cOffsetX(0), cOffsetY(0) {
+	Vector.push_back( Vector2<T>( fromRect.Left, fromRect.Top ) );
+	Vector.push_back( Vector2<T>( fromRect.Left, fromRect.Bottom ) );
+	Vector.push_back( Vector2<T>( fromRect.Right, fromRect.Bottom ) );
+	Vector.push_back( Vector2<T>( fromRect.Right, fromRect.Top ) );
 }
 
 template <typename T>
@@ -101,6 +113,24 @@ void Polygon2<T>::Rotate( const T& Angle, const Vector2<T>& Center ) {
 
 	for ( eeUint i = 0; i < Vector.size(); i++ )
 		Vector[ i ].RotateVectorCentered( Angle, Center );
+}
+
+template <typename T>
+void Polygon2<T>::Scale( const T& scale, const Vector2<T>& Center ) {
+	if ( scale == 1.0f )
+		return;
+
+	for ( Uint32 i = 0; i < Vector.size(); i++ ) {
+		if ( Vector[i].x < Center.x )
+			Vector[i].x = Center.x - fabs( Center.x - Vector[i].x ) * scale;
+		else
+			Vector[i].x = Center.x + fabs( Center.x - Vector[i].x ) * scale;
+
+		if ( Vector[i].y < Center.y )
+			Vector[i].y = Center.y - fabs( Center.y - Vector[i].y ) * scale;
+		else
+			Vector[i].y = Center.y + fabs( Center.y - Vector[i].y ) * scale;
+	}
 }
 
 typedef Polygon2<eeFloat> eePolygon2f;

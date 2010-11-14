@@ -20,7 +20,7 @@ void cUISkinState::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Widt
 }
 
 void cUISkinState::StateBack( const Uint32& State ) {
-	if ( StateFocus == State && StateMouseEnter == mCurState && StateNormal == mLastState ) {
+	if ( ( StateFocus == State ) && StateMouseEnter == mCurState && StateNormal == mLastState ) {
 		return;
 	}
 

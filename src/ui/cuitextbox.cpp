@@ -11,11 +11,11 @@ cUITextBox::cUITextBox( const cUITextBox::CreateParams& Params ) :
 	mAlignOffset( 0.f, 0.f )
 {
 	mType |= UI_TYPE_GET(UI_TYPE_TEXTBOX);
-	
+
 	mTextCache.Font( Params.Font );
 	mTextCache.Color( mFontColor );
 	mTextCache.ShadowColor( mFontShadowColor );
-	
+
 	if ( NULL == Params.Font && NULL != cUIThemeManager::instance()->DefaultFont() ) {
 		mTextCache.Font( cUIThemeManager::instance()->DefaultFont() );
 	} else {
@@ -79,6 +79,7 @@ const eeColorA& cUITextBox::Color() const {
 void cUITextBox::Color( const eeColorA& color ) {
 	mFontColor = color;
 	Alpha( color.A() );
+	mTextCache.Color( mFontColor );
 }
 
 const eeColorA& cUITextBox::ShadowColor() const {
@@ -163,7 +164,7 @@ const eeRectf& cUITextBox::Padding() const {
 
 void cUITextBox::SetTheme( cUITheme * Theme ) {
 	cUIControlAnim::SetTheme( Theme );
-	
+
 	if ( NULL == mTextCache.Font() && NULL != Theme->DefaultFont() ) {
 		mTextCache.Font( Theme->DefaultFont() );
 	}

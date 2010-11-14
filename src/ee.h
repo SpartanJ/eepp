@@ -159,5 +159,6 @@
 	#include "ui/cuispinbox.hpp"
 	#include "ui/cuiscrollbar.hpp"
 	#include "ui/cuiprogressbar.hpp"
+	#include "ui/cuilistbox.hpp"
 	using namespace EE::UI;
 #endif

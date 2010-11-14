@@ -288,6 +288,10 @@ eeVector2i cInput::GetMousePos() const {
 	return mMousePos;
 }
 
+eeVector2f cInput::GetMousePosf() {
+	return eeVector2f( (eeFloat)mMousePos.x, (eeFloat)mMousePos.y );
+}
+
 eeVector2i cInput::GetMousePosFromView( const cView& View ) {
 	eeVector2i RealMousePos = GetMousePos();
 	eeRecti RView = View.GetView();
