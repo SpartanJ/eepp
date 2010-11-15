@@ -555,7 +555,7 @@ void cEETest::CreateUI() {
 	mListBox->Visible( true );
 	mListBox->Enabled( true );
 
-	for ( Int32 i = 1; i <= 25; i++ )
+	for ( Int32 i = 1; i <= 12; i++ )
 		mListBox->AddListBoxItem( L"Test ListBox " + toWStr(i) + L" testing it right now!" );
 
 	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.";
@@ -587,6 +587,8 @@ void cEETest::ButtonClick( const cUIEvent * Event ) {
 		Gfx->StartRotation( 0, 2500, 2500 );
 		Gfx->StartMovement( eeVector2i( eeRandi( 0, EE->GetWidth() ), -64 ), eeVector2i( eeRandi( 0, EE->GetWidth() ), EE->GetHeight() + 64 ), 2500 );
 		Gfx->CloseFadeOut( 3500 );
+
+		mListBox->AddListBoxItem( L"Test ListBox " + toWStr( mListBox->Size()+1 ) + L" testing it right now!" );
 	}
 }
 

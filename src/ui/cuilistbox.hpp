@@ -113,6 +113,8 @@ class EE_API cUIListBox : public cUIControlAnim {
 		void AllowHorizontalScroll( const bool& allow );
 
 		const bool& AllowHorizontalScroll() const;
+
+		Uint32 Size();
 	protected:
 		friend class cUIListBoxItem;
 
@@ -163,6 +165,8 @@ class EE_API cUIListBox : public cUIControlAnim {
 		void ItemUpdateSize( cUIListBoxItem * Item );
 
 		void AutoPadding();
+
+		void FindMaxWidth();
 };
 
 }}

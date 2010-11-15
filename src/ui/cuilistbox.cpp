@@ -110,10 +110,16 @@ Uint32 cUIListBox::AddListBoxItem( cUIListBoxItem * Item ) {
 	if ( !mDisableScrollUpdate )
 		UpdateScroll();
 
+	Uint32 tMaxTextWidth = mMaxTextWidth;
+
 	ItemUpdateSize( Item );
 
-	Item->Visible( false );
-	Item->Enabled( false );
+	if ( tMaxTextWidth != mMaxTextWidth ) {
+		UpdateListBoxItemsSize();
+
+		if ( !mDisableScrollUpdate )
+			UpdateScroll();
+	}
 
 	return mItems.size() - 1;
 }
@@ -178,6 +184,7 @@ void cUIListBox::RemoveListBoxItems( std::vector<Uint32> ItemsIndex ) {
 		mItems = ItemsCpy;
 
 		UpdateScroll();
+		FindMaxWidth();
 		UpdateListBoxItemsSize();
 	}
 }
@@ -262,10 +269,22 @@ void cUIListBox::SetRowHeight() {
 	}
 }
 
-void cUIListBox::UpdateListBoxItemsSize() {
+void cUIListBox::FindMaxWidth() {
 	Uint32 size = mItems.size();
+	Int32 width;
 
 	mMaxTextWidth = 0;
+
+	for ( Uint32 i = 0; i < size; i++ ) {
+		width = mItems[i]->GetTextCache().GetTextWidth();
+
+		if ( width > (Int32)mMaxTextWidth )
+			mMaxTextWidth = (Uint32)width;
+	}
+}
+
+void cUIListBox::UpdateListBoxItemsSize() {
+	Uint32 size = mItems.size();
 
 	for ( Uint32 i = 0; i < size; i++ ) {
 		ItemUpdateSize( mItems[i] );
@@ -276,7 +295,7 @@ void cUIListBox::ItemUpdateSize( cUIListBoxItem * Item ) {
 	Int32 width = Item->GetTextCache().GetTextWidth();
 
 	if ( width > (Int32)mMaxTextWidth )
-		mMaxTextWidth = width;
+		mMaxTextWidth = (Uint32)width;
 
 	if ( !mHScrollBar->Visible() ) {
 		if ( width < mContainer->Size().Width() )
@@ -284,6 +303,8 @@ void cUIListBox::ItemUpdateSize( cUIListBoxItem * Item ) {
 
 		if ( ( mItemsNotVisible > 0 || mScrollAlwaysVisible ) )
 			width -= mScrollBar->Size().Width();
+	} else {
+		width = mMaxTextWidth;
 	}
 
 	Item->Size( width, mRowHeight );
@@ -520,6 +541,7 @@ void cUIListBox::Font( cFont * Font ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ )
 		mItems[i]->Font( mFont );
 
+	FindMaxWidth();
 	UpdateListBoxItemsSize();
 	UpdateScroll();
 }
@@ -589,6 +611,10 @@ void cUIListBox::AllowHorizontalScroll( const bool& allow ) {
 
 const bool& cUIListBox::AllowHorizontalScroll() const {
 	return mAllowHorizontalScroll;
+}
+
+Uint32 cUIListBox::Size() {
+	return mItems.size();
 }
 
 }}
