@@ -18,7 +18,7 @@ class EE_API cUISpinBox : public cUIControlAnim {
 				}
 
 				inline ~CreateParams() {}
-				
+
 				eeFloat DefaultValue;
 				bool AllowDotsInNumbers;
 		};
@@ -28,19 +28,19 @@ class EE_API cUISpinBox : public cUIControlAnim {
 		~cUISpinBox();
 
 		virtual void SetTheme( cUITheme * Theme );
-		
-		virtual void Padding( const eeRectf& padding );
 
-		const eeRectf& Padding() const;
-		
+		virtual void Padding( const eeRecti& padding );
+
+		const eeRecti& Padding() const;
+
 		virtual void ClickStep( const eeFloat& step );
 
 		const eeFloat& ClickStep() const;
-		
+
 		virtual Uint32 OnMessage( const cUIMessage * Msg );
-		
+
 		void AddValue( const eeFloat& value );
-		
+
 		virtual void MinValue( const eeFloat& MinVal );
 
 		const eeFloat& MinValue() const;
@@ -48,17 +48,17 @@ class EE_API cUISpinBox : public cUIControlAnim {
 		virtual void MaxValue( const eeFloat& MaxVal );
 
 		const eeFloat& MaxValue() const;
-		
+
 		virtual void Value( const eeFloat& Val );
 
 		const eeFloat& Value() const;
-		
+
 		virtual void Update();
-		
+
 		cUIControlAnim * ButtonPushUp() const;
-		
+
 		cUIControlAnim * ButtonPushDown() const;
-		
+
 		cUITextInput * TextInput() const;
 	protected:
 		cUITextInput * 		mInput;
@@ -68,9 +68,9 @@ class EE_API cUISpinBox : public cUIControlAnim {
 		eeFloat				mMaxValue;
 		eeFloat				mValue;
 		eeFloat				mClickStep;
-		
+
 		void AdjustChilds();
-		
+
 		void InternalValue( const eeFloat& Val, const bool& Force = false );
 
 };

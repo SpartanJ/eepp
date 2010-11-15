@@ -49,6 +49,18 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 		eeVector2i GetMousePos();
 
 		cInput * GetInput() const;
+
+		void DefaultTheme( cUITheme * Theme );
+
+		void DefaultTheme( const std::string& Theme );
+
+		cUITheme * DefaultTheme() const;
+
+		void ApplyDefaultTheme( cUIControl * Control );
+
+		void AutoApplyDefaultTheme( const bool& apply );
+
+		const bool& AutoApplyDefaultTheme() const;
 	protected:
 		cEngine *			mEE;
 		cInput *			mKM;
@@ -63,6 +75,9 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 		eeFloat 			mElapsed;
 
 		Int32 				mCbId;
+
+		cUITheme * 			mThemeDefault;
+		bool				mAutoApplyDefaultTheme;
 
 		void				InputCallback( EE_Event * Event );
 		void				SendKeyUp( EE_Event * Event );

@@ -39,6 +39,8 @@ cUIScrollBar::cUIScrollBar( const cUIScrollBar::CreateParams& Params ) :
 	mSlider->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cUIScrollBar::OnValueChangeCb ) );
 
 	AdjustChilds();
+
+	ApplyDefaultTheme();
 }
 
 cUIScrollBar::~cUIScrollBar() {

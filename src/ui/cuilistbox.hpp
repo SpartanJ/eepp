@@ -161,6 +161,8 @@ class EE_API cUIListBox : public cUIControlAnim {
 		void ContainerResize();
 
 		void ItemUpdateSize( cUIListBoxItem * Item );
+
+		void AutoPadding();
 };
 
 }}

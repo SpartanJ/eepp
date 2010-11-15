@@ -891,4 +891,52 @@ void cUIControl::WriteCtrlFlag( const Uint32& Pos, const Uint32& Val ) {
 	Write32BitKey( &mControlFlags, Pos, Val );
 }
 
+void cUIControl::ApplyDefaultTheme() {
+	cUIManager::instance()->ApplyDefaultTheme( this );
+}
+
+eeRecti cUIControl::MakePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBottom ) {
+	eeRecti tPadding( 0, 0, 0, 0 );
+
+	if ( mFlags & UI_AUTO_PADDING ) {
+		if ( NULL != mSkinState && NULL != mSkinState->GetSkin() ) {
+			if ( mSkinState->GetSkin()->GetType() == cUISkin::UISkinComplex ) {
+				cUISkinComplex * tComplex = reinterpret_cast<cUISkinComplex*> ( mSkinState->GetSkin() );
+
+				cShape * tShape = NULL;
+
+				if ( PadLeft ) {
+					tShape = tComplex->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Left );
+
+					if ( NULL != tShape )
+						tPadding.Left = tShape->RealSize().Width();
+				}
+
+				if ( PadRight ) {
+					tShape = tComplex->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Right );
+
+					if ( NULL != tShape )
+						tPadding.Right = tShape->RealSize().Width();
+				}
+
+				if ( PadTop ) {
+					tShape = tComplex->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Up );
+
+					if ( NULL != tShape )
+						tPadding.Top = tShape->RealSize().Height();
+				}
+
+				if ( PadBottom ) {
+					tShape = tComplex->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Down );
+
+					if ( NULL != tShape )
+						tPadding.Bottom = tShape->RealSize().Height();
+				}
+			}
+		}
+	}
+
+	return tPadding;
+}
+
 }}

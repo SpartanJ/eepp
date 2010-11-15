@@ -37,27 +37,27 @@ class EE_API cUITextInput : public cUITextBox {
 
 		virtual Uint32 OnPressEnter();
 
-		virtual void Text( const std::wstring& text );
-
-		virtual void Text( const std::string& text );
-
-		virtual const std::wstring& Text();
-
 		void PushIgnoredChar( const Uint32& ch );
 
 		virtual void SetTheme( cUITheme * Theme );
 
 		cInputTextBuffer * GetInputTextBuffer();
+
+		void AllowEditing( const bool& allow );
+
+		const bool& AllowEditing() const;
 	protected:
 		cInputTextBuffer mTextBuffer;
 		bool mShowingWait;
 		eeFloat mWaitCursorTime;
 		eeVector2f mCurPos;
 		eeInt mCursorPos;
+		bool mAllowEditing;
 
 		void ResetWaitCursor();
 		void AlignFix();
 		void PrivOnPressEnter();
+		void AutoPadding();
 };
 
 }}

@@ -22,7 +22,9 @@ cUICheckBox::cUICheckBox( const cUITextBox::CreateParams& Params ) :
 	mInactiveButton->Visible( true );
 	mInactiveButton->Enabled( true );
 
-	Padding( eeRectf(0,0,0,0) );
+	Padding( eeRecti(0,0,0,0) );
+
+	ApplyDefaultTheme();
 }
 
 cUICheckBox::~cUICheckBox() {
@@ -57,12 +59,12 @@ void cUICheckBox::SetTheme( cUITheme * Theme ) {
 		}
 	}
 
-	Padding( eeRectf(0,0,0,0) );
+	Padding( eeRecti(0,0,0,0) );
 }
 
 void cUICheckBox::OnSizeChange() {
 	cUITextBox::OnSizeChange();
-	
+
 	mActiveButton->CenterVertical();
 	mInactiveButton->CenterVertical();
 }
@@ -96,7 +98,7 @@ void cUICheckBox::Active( const bool& active ) {
 
 		mActive = true;
 	}
-	
+
 	OnValueChange();
 }
 
@@ -108,7 +110,7 @@ const bool& cUICheckBox::IsActive() const {
 	return Active();
 }
 
-void cUICheckBox::Padding( const eeRectf& padding ) {
+void cUICheckBox::Padding( const eeRecti& padding ) {
 	mPadding = padding;
 	mPadding.Left = mPadding.Left + mActiveButton->Size().Width();
 }

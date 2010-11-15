@@ -377,8 +377,20 @@ void cEETest::CreateShaders() {
 void cEETest::CreateUI() {
 	cUIManager::instance()->Init();
 	cUIThemeManager::instance()->DefaultFont( TTF );
-	//eeSize( 530, 240 )
-	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 640, 480 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
+
+	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 530, 240 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
+
+
+	cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
+
+	CreateAquaTextureAtlas();
+
+	cTextureGroupLoader tgl( MyPath + "data/aqua.etg" );
+	TF->GetByName( "data/aqua.png" )->TextureFilter( TEX_FILTER_NEAREST );
+	cUIThemeManager::instance()->Add( cUITheme::LoadFromShapeGroup( cShapeGroupManager::instance()->GetByName( "aqua" ), "aqua", "aqua" ) );
+
+	//cUIManager::instance()->SetTheme( "aqua" );
+	cUIManager::instance()->DefaultTheme( "aqua" );
 
 	Params.Border.Width( 2 );
 	Params.Border.Color( 0xFF979797 );
@@ -442,9 +454,8 @@ void cEETest::CreateUI() {
 	InputParams.Background.Colors( eeColorA(0x99AAAAAA), eeColorA(0x99CCCCCC), eeColorA(0x99CCCCCC), eeColorA(0x99AAAAAA) );
 	InputParams.PosSet( 20, 216 );
 	InputParams.Size = eeSize( 200, 22 );
-	InputParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE; // | UI_BORDER | UI_FILL_BACKGROUND
+	InputParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE | UI_AUTO_PADDING;
 	cUITextInput * Input = eeNew( cUITextInput, ( InputParams ) );
-	Input->Padding( eeRectf( 4, -2, 8, 0 ) );
 	Input->Visible( true );
 	Input->Enabled( true );
 
@@ -458,7 +469,6 @@ void cEETest::CreateUI() {
 	Button->Visible( true );
 	Button->Enabled( true );
 	Button->Text( L"Click Me" );
-	Button->Padding( eeRectf( 0, -1, 0, 0 ) );
 	Button->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::ButtonClick ) );
 
 	TextParams.PosSet( 120, 20 );
@@ -510,7 +520,6 @@ void cEETest::CreateUI() {
 	cUISpinBox * mSpinBox = eeNew( cUISpinBox, ( SpinBoxParams ) );
 	mSpinBox->Visible( true );
 	mSpinBox->Enabled( true );
-	mSpinBox->Padding( eeRectf( 3, -1, 0, 0 ) );
 
 	cUIScrollBar::CreateParams ScrollBarP;
 	ScrollBarP.Parent( C );
@@ -531,7 +540,6 @@ void cEETest::CreateUI() {
 	mProgressBar = eeNew( cUIProgressBar, ( PBParams ) );
 	mProgressBar->Visible( true );
 	mProgressBar->Enabled( true );
-	mProgressBar->TextBox()->Padding( eeRectf( 0, -1, 0, 0 ) );
 
 	TextParams.PosSet( 20, 5 );
 	mTextBoxValue = eeNew( cUITextBox, ( TextParams ) );
@@ -541,29 +549,17 @@ void cEETest::CreateUI() {
 	LBParams.Parent( C );
 	LBParams.PosSet( 325, 8 );
 	LBParams.Size = eeSize( 200, 240-16 );
-	LBParams.Flags = UI_CLIP_ENABLE | UI_MULTI_SELECT;
-	LBParams.PaddingContainer = eeRecti( 2, 2, 2, 2 );
+	LBParams.Flags = UI_CLIP_ENABLE | UI_MULTI_SELECT | UI_AUTO_PADDING;
 	LBParams.FontSelectedColor = eeColorA( 255, 255, 255, 255 );
 	mListBox = eeNew( cUIListBox, ( LBParams ) );
 	mListBox->Visible( true );
 	mListBox->Enabled( true );
 
-	for ( Int32 i = 1; i <= 15; i++ )
+	for ( Int32 i = 1; i <= 25; i++ )
 		mListBox->AddListBoxItem( L"Test ListBox " + toWStr(i) + L" testing it right now!" );
 
 	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.";
 	TTFB->ShrinkText( mBuda, 400 );
-
-	cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
-
-	CreateAquaTextureAtlas();
-
-	cTextureGroupLoader tgl( MyPath + "data/aqua.etg" );
-	TF->GetByName( "data/aqua.png" )->TextureFilter( TEX_FILTER_NEAREST );
-	cUIThemeManager::instance()->Add( cUITheme::LoadFromShapeGroup( cShapeGroupManager::instance()->GetByName( "aqua" ), "aqua", "aqua" ) );
-
-
-	cUIManager::instance()->SetTheme( "aqua" );
 
 	mBudaTC.Create( TTFB, mBuda, eeColorA(255,255,255,255) );
 	mEEText.Create( TTFB, L"Entropia Engine++\nCTRL + 1 = Screen 1 - CTRL + 2 = Screen 2\nCTRL + 3 = Screen 3" );

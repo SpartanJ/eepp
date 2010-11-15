@@ -28,6 +28,8 @@ cUIPushButton::cUIPushButton( const cUIPushButton::CreateParams& Params ) :
 	mTextBox->Enabled( false );
 
 	OnSizeChange();
+
+	ApplyDefaultTheme();
 }
 
 void cUIPushButton::OnSizeChange() {
@@ -42,6 +44,14 @@ cUIPushButton::~cUIPushButton() {
 
 void cUIPushButton::SetTheme( cUITheme * Theme ) {
 	cUIControl::SetTheme( Theme, "button" );
+
+	AutoPadding();
+}
+
+void cUIPushButton::AutoPadding() {
+	if ( mFlags & UI_AUTO_PADDING ) {
+		Padding( MakePadding( true, false, true, false ) );
+	}
 }
 
 void cUIPushButton::Icon( cShape * Icon ) {
@@ -64,11 +74,11 @@ void cUIPushButton::Text( const std::string& text ) {
 	OnSizeChange();
 }
 
-void cUIPushButton::Padding( const eeRectf& padding ) {
+void cUIPushButton::Padding( const eeRecti& padding ) {
 	mTextBox->Padding( padding );
 }
 
-const eeRectf& cUIPushButton::Padding() const {
+const eeRecti& cUIPushButton::Padding() const {
 	return mTextBox->Padding();
 }
 

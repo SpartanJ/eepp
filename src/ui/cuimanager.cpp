@@ -11,7 +11,9 @@ cUIManager::cUIManager() :
 	mOverControl( NULL ),
 	mDownControl( NULL ),
 	mFirstPress( false ),
-	mCbId(-1)
+	mCbId(-1),
+	mThemeDefault( NULL ),
+	mAutoApplyDefaultTheme( true )
 {
 	mEE = cEngine::instance();
 	mKM = cInput::instance();
@@ -248,6 +250,31 @@ void cUIManager::SetTheme( cUITheme * Theme ) {
 
 cInput * cUIManager::GetInput() const {
 	return mKM;
+}
+
+void cUIManager::DefaultTheme( cUITheme * Theme ) {
+	mThemeDefault = Theme;
+}
+
+void cUIManager::DefaultTheme( const std::string& Theme ) {
+	DefaultTheme( cUIThemeManager::instance()->GetByName( Theme ) );
+}
+
+cUITheme * cUIManager::DefaultTheme() const {
+	return mThemeDefault;
+}
+
+void cUIManager::ApplyDefaultTheme( cUIControl * Control ) {
+	if ( mAutoApplyDefaultTheme && NULL != mThemeDefault && NULL != Control )
+		Control->SetTheme( mThemeDefault );
+}
+
+void cUIManager::AutoApplyDefaultTheme( const bool& apply ) {
+	mAutoApplyDefaultTheme = apply;
+}
+
+const bool& cUIManager::AutoApplyDefaultTheme() const {
+	return mAutoApplyDefaultTheme;
 }
 
 }}

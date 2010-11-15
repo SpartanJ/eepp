@@ -6,6 +6,7 @@ namespace EE { namespace UI { namespace Private {
 cUISliderButton::cUISliderButton( const cUIDragable::CreateParams& Params ) :
 	cUIDragable( Params )
 {
+	ApplyDefaultTheme();
 }
 
 cUISliderButton::~cUISliderButton() {

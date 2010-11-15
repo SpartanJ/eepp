@@ -11,6 +11,8 @@
 #include "cuieventmouse.hpp"
 #include "cuiskin.hpp"
 #include "cuiskinstate.hpp"
+#include "cuiskinsimple.hpp"
+#include "cuiskincomplex.hpp"
 #include "cuitheme.hpp"
 #include "cuithememanager.hpp"
 
@@ -319,6 +321,10 @@ class EE_API cUIControl {
 		void UpdateChildsScreenPos();
 
 		void WriteCtrlFlag( const Uint32& Pos, const Uint32& Val );
+
+		void ApplyDefaultTheme();
+
+		eeRecti MakePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true );
 };
 
 }}

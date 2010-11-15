@@ -14,6 +14,7 @@ cUISpinBox::cUISpinBox( const cUISpinBox::CreateParams& Params ) :
 	cUITextInput::CreateParams InputParams( Params );
 	InputParams.PosSet( 0, 0 );
 	InputParams.Parent( this );
+	InputParams.Flags |= UI_AUTO_PADDING;
 
 	mInput		= eeNew( cUITextInput, ( InputParams ) );
 
@@ -36,6 +37,8 @@ cUISpinBox::cUISpinBox( const cUISpinBox::CreateParams& Params ) :
 	InternalValue( mValue, true );
 
 	AdjustChilds();
+
+	ApplyDefaultTheme();
 }
 
 cUISpinBox::~cUISpinBox() {
@@ -81,11 +84,11 @@ void cUISpinBox::AdjustChilds() {
 	mInput->Size( mSize.Width() - mPushUp->Size().Width(), mSize.Height() );
 }
 
-void cUISpinBox::Padding( const eeRectf& padding ) {
+void cUISpinBox::Padding( const eeRecti& padding ) {
 	mInput->Padding( padding );
 }
 
-const eeRectf& cUISpinBox::Padding() const {
+const eeRecti& cUISpinBox::Padding() const {
 	return mInput->Padding();
 }
 
@@ -141,7 +144,7 @@ void cUISpinBox::InternalValue( const eeFloat& Val, const bool& Force ) {
 			}
 
 			mValue = Val;
-			
+
 			mInput->GetInputTextBuffer()->ChangedSinceLastUpdate( false );
 
 			OnValueChange();

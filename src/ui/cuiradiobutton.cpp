@@ -23,10 +23,12 @@ cUIRadioButton::cUIRadioButton( const cUITextBox::CreateParams& Params ) :
 	mInactiveButton = eeNew( cUIControlAnim, ( ButtonParams ) );
 	mInactiveButton->Visible( true );
 	mInactiveButton->Enabled( true );
-	
-	Padding( eeRectf(0,0,0,0) );
+
+	Padding( eeRecti(0,0,0,0) );
 
 	AutoActivate();
+
+	ApplyDefaultTheme();
 }
 
 cUIRadioButton::~cUIRadioButton() {
@@ -61,12 +63,12 @@ void cUIRadioButton::SetTheme( cUITheme * Theme ) {
 		}
 	}
 
-	Padding( eeRectf(0,0,0,0) );
+	Padding( eeRecti(0,0,0,0) );
 }
 
 void cUIRadioButton::OnSizeChange() {
 	cUITextBox::OnSizeChange();
-	
+
 	mActiveButton->CenterVertical();
 	mInactiveButton->CenterVertical();
 }
@@ -95,7 +97,7 @@ void cUIRadioButton::Active( const bool& active ) {
 			mInactiveButton->Visible( true );
 
 			mActive = false;
-			
+
 			OnValueChange();
 		}
 	} else {
@@ -103,7 +105,7 @@ void cUIRadioButton::Active( const bool& active ) {
 		mInactiveButton->Visible( false );
 
 		mActive = true;
-		
+
 		OnValueChange();
 	}
 
@@ -148,7 +150,7 @@ bool cUIRadioButton::CheckActives() {
 
 void cUIRadioButton::AutoActivate() {
 	eeASSERT( NULL != mParentCtrl );
-	
+
 	if ( NULL != mParentCtrl ) {
 		cUIControl * tChild = mParentCtrl->ChildGetFirst();
 
@@ -156,13 +158,13 @@ void cUIRadioButton::AutoActivate() {
 			if ( tChild->IsType( UI_TYPE_RADIOBUTTON ) ) {
 				if ( tChild != this ) {
 					cUIRadioButton * tRB = reinterpret_cast<cUIRadioButton*> ( tChild );
-					
+
 					if ( tRB->Active() ) {
 						return;
 					}
 				}
 			}
-			
+
 			tChild = tChild->NextGet();
 		}
 	}
@@ -178,7 +180,7 @@ const bool& cUIRadioButton::IsActive() const {
 	return Active();
 }
 
-void cUIRadioButton::Padding( const eeRectf& padding ) {
+void cUIRadioButton::Padding( const eeRecti& padding ) {
 	mPadding = padding;
 	mPadding.Left = mPadding.Left + mActiveButton->Size().Width();
 }

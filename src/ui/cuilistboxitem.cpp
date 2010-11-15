@@ -9,6 +9,8 @@ cUIListBoxItem::cUIListBoxItem( cUITextBox::CreateParams& Params ) :
 	mSelected( false )
 {
 	mType |= UI_TYPE_LISTBOXITEM;
+
+	ApplyDefaultTheme();
 }
 
 cUIListBoxItem::~cUIListBoxItem() {

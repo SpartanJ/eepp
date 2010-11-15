@@ -61,6 +61,8 @@ cUIListBox::cUIListBox( cUIListBox::CreateParams& Params ) :
 	mHScrollBar->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cUIListBox::OnHScrollValueChange ) );
 
 	SetRowHeight();
+
+	ApplyDefaultTheme();
 }
 
 cUIListBox::~cUIListBox() {
@@ -69,7 +71,15 @@ cUIListBox::~cUIListBox() {
 void cUIListBox::SetTheme( cUITheme * Theme ) {
 	cUIControl::SetTheme( Theme, "listbox" );
 
+	AutoPadding();
+
 	OnSizeChange();
+}
+
+void cUIListBox::AutoPadding() {
+	if ( mFlags & UI_AUTO_PADDING ) {
+		mPaddingContainer = MakePadding();
+	}
 }
 
 cUIScrollBar * cUIListBox::ScrollBar() const {
@@ -280,6 +290,8 @@ void cUIListBox::ItemUpdateSize( cUIListBoxItem * Item ) {
 }
 
 void cUIListBox::ContainerResize() {
+	mContainer->Pos( mPaddingContainer.Left, mPaddingContainer.Top );
+
 	if( mHScrollBar->Visible() )
 		mContainer->Size( mSize.Width() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.Height() - mPaddingContainer.Top - mPaddingContainer.Bottom - mHScrollBar->Size().Height() );
 	else

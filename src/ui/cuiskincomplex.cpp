@@ -150,6 +150,12 @@ cShape * cUISkinComplex::GetShape( const Uint32& State ) const {
 	return mShape[ State ][ Center ];
 }
 
+cShape * cUISkinComplex::GetShapeSide( const Uint32& State, const Uint32& Side ) {
+	eeASSERT ( State < cUISkinState::StateCount && Side < cUISkinComplex::SideCount );
+
+	return mShape[ State ][ Side ];
+}
+
 void cUISkinComplex::StateNormalToState( const Uint32& State ) {
 	if ( NULL == mShape[ State ][ 0 ] ) {
 		for ( Uint32 Side = 0; Side < SideCount; Side++ ) {

@@ -34,9 +34,9 @@ void cUITextBox::Draw() {
 
 		if ( mTextCache.GetTextWidth() ) {
 			if ( mFlags & UI_CLIP_ENABLE )
-				cUIManager::instance()->ClipEnable( mScreenPos.x + (Int32)mPadding.Left, mScreenPos.y + (Int32)mPadding.Top, mSize.Width() - (Int32)mPadding.Right, mSize.Height() - (Int32)mPadding.Bottom );
+				cUIManager::instance()->ClipEnable( mScreenPos.x + mPadding.Left, mScreenPos.y + mPadding.Top, mSize.Width() - mPadding.Left - mPadding.Right, mSize.Height() - mPadding.Bottom );
 
-			mTextCache.Draw( (eeFloat)mScreenPos.x + mAlignOffset.x + mPadding.Left + 1.f, (eeFloat)mScreenPos.y + mAlignOffset.y + mPadding.Top, Flags(), 1.f, 0.f, mBlend );
+			mTextCache.Draw( (eeFloat)mScreenPos.x + mAlignOffset.x + (eeFloat)mPadding.Left + 1.f, (eeFloat)mScreenPos.y + mAlignOffset.y + (eeFloat)mPadding.Top, Flags(), 1.f, 0.f, mBlend );
 
 			if ( mFlags & UI_CLIP_ENABLE )
 				cUIManager::instance()->ClipDisable();
@@ -154,11 +154,11 @@ void cUITextBox::OnFontChanged() {
 	SendCommonEvent( cUIEvent::EventOnFontChanged );
 }
 
-void cUITextBox::Padding( const eeRectf& padding ) {
+void cUITextBox::Padding( const eeRecti& padding ) {
 	mPadding = padding;
 }
 
-const eeRectf& cUITextBox::Padding() const {
+const eeRecti& cUITextBox::Padding() const {
 	return mPadding;
 }
 

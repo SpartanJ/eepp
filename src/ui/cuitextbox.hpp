@@ -54,9 +54,9 @@ class EE_API cUITextBox : public cUIControlAnim {
 
 		virtual void OnFontChanged();
 
-		virtual void Padding( const eeRectf& padding );
+		virtual void Padding( const eeRecti& padding );
 
-		const eeRectf& Padding() const;
+		const eeRecti& Padding() const;
 
 		virtual void SetTheme( cUITheme * Theme );
 
@@ -66,7 +66,7 @@ class EE_API cUITextBox : public cUIControlAnim {
 		eeColorA 		mFontColor;
 		eeColorA 		mFontShadowColor;
 		eeVector2f 		mAlignOffset;
-		eeRectf			mPadding;
+		eeRecti			mPadding;
 
 		virtual void OnSizeChange();
 

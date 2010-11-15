@@ -5,7 +5,8 @@ namespace EE { namespace UI {
 
 cUITextInput::cUITextInput( const cUITextInput::CreateParams& Params ) :
 	cUITextBox( Params ),
-	mCursorPos(0)
+	mCursorPos(0),
+	mAllowEditing( true )
 {
 	mType |= UI_TYPE_GET(UI_TYPE_TEXTINPUT);
 
@@ -14,6 +15,8 @@ cUITextInput::cUITextInput( const cUITextInput::CreateParams& Params ) :
 	mTextBuffer.SupportFreeEditing( Params.SupportFreeEditing );
 	mTextBuffer.MaxLenght( Params.MaxLenght );
 	mTextBuffer.SetReturnCallback( cb::Make0( this, &cUITextInput::PrivOnPressEnter ) );
+
+	ApplyDefaultTheme();
 }
 
 cUITextInput::~cUITextInput() {
@@ -32,6 +35,8 @@ void cUITextInput::Update() {
 		ResetWaitCursor();
 
 		AlignFix();
+
+		mCursorPos = mTextBuffer.CurPos();
 
 		return;
 	}
@@ -126,31 +131,36 @@ void cUITextInput::AlignFix() {
 
 	if ( tX < 0.f )
 		mAlignOffset.x = -( mAlignOffset.x + ( tW - mAlignOffset.x ) );
-	else if ( tX > mSize.Width() - mPadding.Right )
-		mAlignOffset.x = mSize.Width() - mPadding.Right - ( mAlignOffset.x + ( tW - mAlignOffset.x ) );
+	else if ( tX > mSize.Width() - mPadding.Left - mPadding.Right )
+		mAlignOffset.x = mSize.Width() - mPadding.Left - mPadding.Right - ( mAlignOffset.x + ( tW - mAlignOffset.x ) );
 
 }
 
 void cUITextInput::SetTheme( cUITheme * Theme ) {
 	cUIControl::SetTheme( Theme, "textinput" );
+
+	AutoPadding();
+}
+
+void cUITextInput::AutoPadding() {
+	if ( mFlags & UI_AUTO_PADDING ) {
+		mPadding = MakePadding( true, true, false, false );
+	}
 }
 
 cInputTextBuffer * cUITextInput::GetInputTextBuffer() {
 	return &mTextBuffer;
 }
 
-void cUITextInput::Text( const std::wstring& text ) {
-	cUITextBox::Text( text );
+void cUITextInput::AllowEditing( const bool& allow ) {
+	mAllowEditing = allow;
 
-	mTextBuffer.Buffer( text );
+	if ( !mAllowEditing && mTextBuffer.Active() )
+		mTextBuffer.Active( false );
 }
 
-void cUITextInput::Text( const std::string& text ) {
-	cUITextBox::Text( text );
-}
-
-const std::wstring& cUITextInput::Text() {
-	return cUITextBox::Text();
+const bool& cUITextInput::AllowEditing() const {
+	return mAllowEditing;
 }
 
 }}

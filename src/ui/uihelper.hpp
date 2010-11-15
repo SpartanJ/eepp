@@ -41,6 +41,7 @@ Uint32 EE_API VAlignGet( Uint32 Flags );
 #define UI_CLIP_ENABLE 				(1 << 12)
 #define UI_AUTO_SHRINK_TEXT 		(1 << 13)
 #define UI_MULTI_SELECT				(1 << 14)
+#define UI_AUTO_PADDING				(1 << 15)
 
 #define UI_TYPE_CONTROL		 		(0)
 #define UI_TYPE_CONTROL_ANIM 		(1)

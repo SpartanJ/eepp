@@ -45,9 +45,9 @@ class EE_API cUIPushButton : public cUIControlAnim {
 
 		void Text( const std::string& text );
 
-		void Padding( const eeRectf& padding );
+		void Padding( const eeRecti& padding );
 
-		const eeRectf& Padding() const;
+		const eeRecti& Padding() const;
 
 		void IconHorizontalMargin( Int32 margin );
 
@@ -60,6 +60,8 @@ class EE_API cUIPushButton : public cUIControlAnim {
 		Int32			mIconSpace;
 
 		virtual void OnSizeChange();
+
+		void AutoPadding();
 };
 
 }}
