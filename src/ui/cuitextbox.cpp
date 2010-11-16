@@ -174,4 +174,16 @@ cTextCache& cUITextBox::GetTextCache() {
 	return mTextCache;
 }
 
+eeFloat cUITextBox::GetTextWidth() {
+	return mTextCache.GetTextWidth();
+}
+
+eeFloat cUITextBox::GetTextHeight() {
+	return mTextCache.GetTextHeight();
+}
+
+const eeInt& cUITextBox::GetNumLines() const {
+	return mTextCache.GetNumLines();
+}
+
 }}

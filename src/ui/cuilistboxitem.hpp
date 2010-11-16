@@ -19,12 +19,12 @@ class EE_API cUIListBoxItem : public cUITextBox {
 
 		virtual void Update();
 
-		const bool& Selected() const;
+		bool Selected() const;
 
 		void Unselect();
-	protected:
-		bool mSelected;
 
+		void Select();
+	protected:
 		virtual void OnStateChange();
 };
 

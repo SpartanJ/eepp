@@ -4,6 +4,7 @@
 #include "cuicontrolanim.hpp"
 #include "cuiscrollbar.hpp"
 #include "cuilistboxitem.hpp"
+#include "cuilistboxcontainer.hpp"
 
 namespace EE { namespace UI {
 
@@ -15,7 +16,7 @@ class EE_API cUIListBox : public cUIControlAnim {
 					cUIControl::CreateParams(),
 					RowHeight( 0 ),
 					ScrollAlwaysVisible( false ),
-					SoftScroll( true ),
+					SmoothScroll( true ),
 					AllowHorizontalScroll( true ),
 					PaddingContainer(),
 					Font( NULL ),
@@ -29,7 +30,7 @@ class EE_API cUIListBox : public cUIControlAnim {
 
 				Uint32		RowHeight;
 				bool		ScrollAlwaysVisible;
-				bool		SoftScroll;
+				bool		SmoothScroll;
 				bool		AllowHorizontalScroll;
 				eeRecti		PaddingContainer;
 				cFont * 	Font;
@@ -98,9 +99,9 @@ class EE_API cUIListBox : public cUIControlAnim {
 
 		const eeRecti& PaddingContainer() const;
 
-		void SoftScroll( const bool& soft );
+		void SmoothScroll( const bool& soft );
 
-		const bool& SoftScroll() const;
+		const bool& SmoothScroll() const;
 
 		void ScrollAlwaysVisible( const bool& visible );
 
@@ -117,12 +118,13 @@ class EE_API cUIListBox : public cUIControlAnim {
 		Uint32 Size();
 	protected:
 		friend class cUIListBoxItem;
+		friend class cUIListBoxContainer;
 
 		Uint32 				mRowHeight;
 		bool 				mScrollAlwaysVisible;
-		bool 				mSoftScroll;
+		bool 				mSmoothScroll;
 		eeRecti 			mPaddingContainer;
-		cUIControl * 		mContainer;
+		cUIListBoxContainer * mContainer;
 		cUIScrollBar * 		mScrollBar;
 		cUIScrollBar * 		mHScrollBar;
 		cFont * 			mFont;
@@ -135,6 +137,11 @@ class EE_API cUIListBox : public cUIControlAnim {
 		bool 				mAllowHorizontalScroll;
 		Int32 				mHScrollInit;
 		Int32 				mItemsNotVisible;
+		Uint32				mLastTickMove;
+
+		Uint32				mVisibleFirst;
+		Uint32				mVisibleLast;
+
 		std::list<Uint32>	mSelected;
 		std::vector<cUIListBoxItem *> 	mItems;
 
@@ -167,6 +174,8 @@ class EE_API cUIListBox : public cUIControlAnim {
 		void AutoPadding();
 
 		void FindMaxWidth();
+
+		void ManageKeyboard();
 };
 
 }}

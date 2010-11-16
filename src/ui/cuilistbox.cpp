@@ -7,7 +7,7 @@ cUIListBox::cUIListBox( cUIListBox::CreateParams& Params ) :
 	cUIControlAnim( Params ),
 	mRowHeight( Params.RowHeight ),
 	mScrollAlwaysVisible( Params.ScrollAlwaysVisible ),
-	mSoftScroll( Params.SoftScroll ),
+	mSmoothScroll( Params.SmoothScroll ),
 	mPaddingContainer( Params.PaddingContainer ),
 	mContainer( NULL ),
 	mScrollBar( NULL ),
@@ -21,7 +21,10 @@ cUIListBox::cUIListBox( cUIListBox::CreateParams& Params ) :
 	mMaxTextWidth(0),
 	mAllowHorizontalScroll( Params.AllowHorizontalScroll ),
 	mHScrollInit(0),
-	mItemsNotVisible(0)
+	mItemsNotVisible(0),
+	mLastTickMove(0),
+	mVisibleFirst(0),
+	mVisibleLast(0)
 {
 	mType |= UI_TYPE_LISTBOX;
 
@@ -30,7 +33,7 @@ cUIListBox::cUIListBox( cUIListBox::CreateParams& Params ) :
 	CParams.PosSet( mPaddingContainer.Left, mPaddingContainer.Top );
 	CParams.Size = eeSize( mSize.Width() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.Height() - mPaddingContainer.Top - mPaddingContainer.Bottom );
 	CParams.Flags = Params.Flags;
-	mContainer = eeNew( cUIControl, ( CParams ) );
+	mContainer = eeNew( cUIListBoxContainer, ( CParams ) );
 	mContainer->Visible( true );
 	mContainer->Enabled( true );
 
@@ -131,10 +134,10 @@ Uint32 cUIListBox::AddListBoxItem( const std::string& Text ) {
 Uint32 cUIListBox::AddListBoxItem( const std::wstring& Text ) {
 	cUITextBox::CreateParams TextParams;
 	TextParams.Parent( mContainer );
-	TextParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT;
-	TextParams.Font = mFont;
-	TextParams.FontColor = mFontColor;
-	cUIListBoxItem * tItem = eeNew( cUIListBoxItem, ( TextParams ) );
+	TextParams.Flags 		= UI_VALIGN_CENTER | UI_HALIGN_LEFT;
+	TextParams.Font 		= mFont;
+	TextParams.FontColor 	= mFontColor;
+	cUIListBoxItem * tItem 	= eeNew( cUIListBoxItem, ( TextParams ) );
 	tItem->Text( Text );
 
 	return AddListBoxItem( tItem );
@@ -177,7 +180,7 @@ void cUIListBox::RemoveListBoxItems( std::vector<Uint32> ItemsIndex ) {
 			if ( !erase ) {
 				ItemsCpy.push_back( mItems[i] );
 			} else {
-				mItems[i]->Close();
+				eeDelete( mItems[i] ); // doesn't call to mItems[i]->Close(); because is not checking for close.
 			}
 		}
 
@@ -276,7 +279,7 @@ void cUIListBox::FindMaxWidth() {
 	mMaxTextWidth = 0;
 
 	for ( Uint32 i = 0; i < size; i++ ) {
-		width = mItems[i]->GetTextCache().GetTextWidth();
+		width = mItems[i]->GetTextWidth();
 
 		if ( width > (Int32)mMaxTextWidth )
 			mMaxTextWidth = (Uint32)width;
@@ -292,7 +295,7 @@ void cUIListBox::UpdateListBoxItemsSize() {
 }
 
 void cUIListBox::ItemUpdateSize( cUIListBoxItem * Item ) {
-	Int32 width = Item->GetTextCache().GetTextWidth();
+	Int32 width = Item->GetTextWidth();
 
 	if ( width > (Int32)mMaxTextWidth )
 		mMaxTextWidth = (Uint32)width;
@@ -324,9 +327,8 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 		return;
 
 	cUIListBoxItem * Item;
-	Uint32 i, RelPos = 0;
-	Int32 ItemPos;
-
+	Uint32 i, RelPos = 0, RelPosMax;
+	Int32 ItemPos, ItemPosMax;
 	Int32 tHLastScroll 		= mHScrollInit;
 
 	Uint32 VisibleItems 	= mContainer->Size().Height() / mRowHeight;
@@ -383,9 +385,11 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 	Uint32 Scrolleable 	= mItems.size() * mRowHeight - mContainer->Size().Height();
 	bool isScrollVisible = mScrollBar->Visible();
 	bool isHScrollVisible = mHScrollBar->Visible();
+	bool FirstVisible = false;
 
-	if ( Clipped && mSoftScroll ) {
-		RelPos = (Uint32)( mScrollBar->Value() * Scrolleable );
+	if ( Clipped && mSmoothScroll ) {
+		RelPos 		= (Uint32)( mScrollBar->Value() * Scrolleable );
+		RelPosMax 	= RelPos + mContainer->Size().Height() + mRowHeight;
 
 		if ( ( FromScrollChange && 0xFFFFFFFF != mLastPos && mLastPos == RelPos ) && ( tHLastScroll == mHScrollInit ) )
 			return;
@@ -395,11 +399,19 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 		for ( i = 0; i < mItems.size(); i++ ) {
 			Item = mItems[i];
 			ItemPos = mRowHeight * i;
+			ItemPosMax = ItemPos + mRowHeight;
 
-			if ( ItemPos >= (Int32)RelPos || ItemPos + mRowHeight >= RelPos ) {
+			if ( ( ItemPos >= (Int32)RelPos || ItemPosMax >= (Int32)RelPos ) && ( ItemPos <= (Int32)RelPosMax ) ) {
 				Item->Pos( mHScrollInit, ItemPos - RelPos );
 				Item->Enabled( true );
 				Item->Visible( true );
+
+				if ( !FirstVisible ) {
+					mVisibleFirst = i;
+					FirstVisible = true;
+				}
+
+				mVisibleLast = i;
 			} else {
 				Item->Enabled( false );
 				Item->Visible( false );
@@ -409,7 +421,7 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 				ItemUpdateSize( Item );
 		}
 	} else {
-		Uint32 RelPosMax		= mItems.size();
+		RelPosMax		= mItems.size();
 
 		if ( mItemsNotVisible > 0 ) {
 			RelPos 				= (Uint32)( mScrollBar->Value() * mItemsNotVisible );
@@ -433,6 +445,13 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 
 				Item->Enabled( true );
 				Item->Visible( true );
+
+				if ( !FirstVisible ) {
+					mVisibleFirst = i;
+					FirstVisible = true;
+				}
+
+				mVisibleLast = i;
 			} else {
 				Item->Enabled( false );
 				Item->Visible( false );
@@ -563,16 +582,16 @@ const eeRecti& cUIListBox::PaddingContainer() const {
 	return mPaddingContainer;
 }
 
-void cUIListBox::SoftScroll( const bool& soft ) {
-	if ( soft != mSoftScroll ) {
-		mSoftScroll = soft;
+void cUIListBox::SmoothScroll( const bool& soft ) {
+	if ( soft != mSmoothScroll ) {
+		mSmoothScroll = soft;
 
 		UpdateScroll();
 	}
 }
 
-const bool& cUIListBox::SoftScroll() const {
-	return mSoftScroll;
+const bool& cUIListBox::SmoothScroll() const {
+	return mSmoothScroll;
 }
 
 void cUIListBox::ScrollAlwaysVisible( const bool& visible ) {
@@ -615,6 +634,78 @@ const bool& cUIListBox::AllowHorizontalScroll() const {
 
 Uint32 cUIListBox::Size() {
 	return mItems.size();
+}
+
+void cUIListBox::ManageKeyboard() {
+	if ( !mSelected.size() || mFlags & UI_MULTI_SELECT )
+		return;
+
+	cInput * KM 	= cUIManager::instance()->GetInput();
+	Int32 SelIndex 	= 0;
+
+	if ( eeGetTicks() - mLastTickMove > 100 ) {
+		if ( KM->IsKeyDown( KEY_DOWN ) ) {
+			mLastTickMove = eeGetTicks();
+
+			SelIndex = mSelected.front() + 1;
+
+			if ( SelIndex < (Int32)mItems.size() ) {
+				mItems[ mSelected.front() 		]->Unselect();
+
+				if ( ScrollBar()->Visible() ) {
+					if ( mItems[ SelIndex ]->Pos().y + (Int32)RowHeight() > mContainer->Size().Height() ) {
+						ScrollBar()->Value( (eeFloat)( SelIndex * mRowHeight ) / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) );
+
+						cUIManager::instance()->FocusControl( mItems[ SelIndex ] );
+					}
+				}
+
+				mItems[ SelIndex 	]->Select();
+			}
+		} else if ( KM->IsKeyDown( KEY_UP ) ) {
+			mLastTickMove = eeGetTicks();
+
+			SelIndex = mSelected.front() - 1;
+
+			if ( SelIndex >= 0 ) {
+				mItems[ mSelected.front() 		]->Unselect();
+
+				if ( ScrollBar()->Visible() ) {
+					if ( mItems[ SelIndex ]->Pos().y < 0 ) {
+						ScrollBar()->Value( (eeFloat)( SelIndex * mRowHeight ) / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) );
+
+						cUIManager::instance()->FocusControl( mItems[ SelIndex ] );
+					}
+				}
+
+				mItems[ mSelected.front() - 1 	]->Select();
+			}
+		} else if ( KM->IsKeyDown( KEY_PAGEUP ) ) {
+			mLastTickMove = eeGetTicks();
+
+			if ( mSelected.front() != 0 ) {
+				mItems[ mSelected.front() ]->Unselect();
+
+				ScrollBar()->Value( 0 );
+
+				cUIManager::instance()->FocusControl( mItems[ 0 ] );
+
+				mItems[ 0 ]->Select();
+			}
+		} else if ( KM->IsKeyDown( KEY_PAGEDOWN ) ) {
+			mLastTickMove = eeGetTicks();
+
+			if ( mSelected.front() != Size() - 1 ) {
+				mItems[ mSelected.front() ]->Unselect();
+
+				ScrollBar()->Value( 1 );
+
+				cUIManager::instance()->FocusControl( mItems[ Size() - 1 ] );
+
+				mItems[ Size() - 1 ]->Select();
+			}
+		}
+	}
 }
 
 }}

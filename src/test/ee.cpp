@@ -549,14 +549,20 @@ void cEETest::CreateUI() {
 	LBParams.Parent( C );
 	LBParams.PosSet( 325, 8 );
 	LBParams.Size = eeSize( 200, 240-16 );
-	LBParams.Flags = UI_CLIP_ENABLE | UI_MULTI_SELECT | UI_AUTO_PADDING;
+	LBParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING; // | UI_MULTI_SELECT
 	LBParams.FontSelectedColor = eeColorA( 255, 255, 255, 255 );
 	mListBox = eeNew( cUIListBox, ( LBParams ) );
 	mListBox->Visible( true );
 	mListBox->Enabled( true );
 
-	for ( Int32 i = 1; i <= 12; i++ )
-		mListBox->AddListBoxItem( L"Test ListBox " + toWStr(i) + L" testing it right now!" );
+	Int32 wsize = 100;
+
+	std::vector<std::wstring> wstr(wsize);
+
+	for ( Int32 i = 1; i <= wsize; i++ )
+		wstr[i-1] = L"Test ListBox " + toWStr(i) + L" testing it right now!";
+
+	mListBox->AddListBoxItems( wstr );
 
 	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.";
 	TTFB->ShrinkText( mBuda, 400 );

@@ -1,32 +1,16 @@
-#ifndef EE_UICUITEXTBOX_H
-#define EE_UICUITEXTBOX_H
+#ifndef EE_UICUITEXTBOXSIMPLE_H
+#define EE_UICUITEXTBOXSIMPLE_H
 
-#include "cuicontrolanim.hpp"
+#include "cuicontrol.hpp"
+#include "cuitextbox.hpp"
 
 namespace EE { namespace UI {
 
-class EE_API cUITextBox : public cUIControlAnim {
+class EE_API cUITextBoxSimple : public cUIControl {
 	public:
-		class CreateParams : public cUIControl::CreateParams {
-			public:
-				inline CreateParams() :
-					cUIControl::CreateParams(),
-					Font( NULL ),
-					FontColor( 0, 0, 0, 255 ),
-					FontShadowColor( 255, 255, 255, 150 )
-				{
-				}
+		cUITextBoxSimple( const cUITextBox::CreateParams& Params );
 
-				inline ~CreateParams() {}
-
-				cFont * 	Font;
-				eeColorA 	FontColor;
-				eeColorA 	FontShadowColor;
-		};
-
-		cUITextBox( const cUITextBox::CreateParams& Params );
-
-		~cUITextBox();
+		~cUITextBoxSimple();
 
 		virtual void Draw();
 
@@ -60,15 +44,17 @@ class EE_API cUITextBox : public cUIControlAnim {
 
 		virtual void SetTheme( cUITheme * Theme );
 
-		cTextCache& GetTextCache();
-
 		eeFloat GetTextWidth();
 
 		eeFloat GetTextHeight();
 
 		const eeInt& GetNumLines() const;
 	protected:
-		cTextCache 		mTextCache;
+		std::wstring	mText;
+		cFont *			mFont;
+		eeFloat 		mCachedWidth;
+		eeInt			mNumLines;
+
 		eeColorA 		mFontColor;
 		eeColorA 		mFontShadowColor;
 		eeVector2f 		mAlignOffset;

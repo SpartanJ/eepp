@@ -5,8 +5,7 @@
 namespace EE { namespace UI {
 
 cUIListBoxItem::cUIListBoxItem( cUITextBox::CreateParams& Params ) :
-	cUITextBox( Params ),
-	mSelected( false )
+	cUITextBox( Params )
 {
 	mType |= UI_TYPE_LISTBOXITEM;
 
@@ -22,70 +21,81 @@ void cUIListBoxItem::SetTheme( cUITheme * Theme ) {
 }
 
 Uint32 cUIListBoxItem::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
-	cUIListBox * LBParent = reinterpret_cast<cUIListBox*> ( Parent()->Parent() );
-
 	if ( Flags & EE_BUTTONS_LRM ) {
-		bool wasSelected = mSelected;
-
-		LBParent->ItemClicked( this );
-
-		if ( LBParent->IsMultiSelect() ) {
-			if ( !wasSelected ) {
-				SetSkinState( cUISkinState::StateSelected );
-
-				mSelected = true;
-
-				LBParent->mSelected.push_back( LBParent->GetItemIndex( this ) );
-
-				LBParent->OnSelected();
-			} else {
-				mSelected = false;
-
-				LBParent->mSelected.remove( LBParent->GetItemIndex( this ) );
-			}
-		} else {
-			SetSkinState( cUISkinState::StateSelected );
-
-			mSelected = true;
-
-			LBParent->mSelected.clear();
-			LBParent->mSelected.push_back( LBParent->GetItemIndex( this ) );
-			LBParent->OnSelected();
-		}
+		Select();
 	}
 
 	return 1;
 }
 
-void cUIListBoxItem::Update() {
-	if ( mEnabled && mVisible && IsMouseOver() ) {
-		Uint32 Flags = cUIManager::instance()->GetInput()->ClickTrigger();
+void cUIListBoxItem::Select() {
+	cUIListBox * LBParent = reinterpret_cast<cUIListBox*> ( Parent()->Parent() );
 
-		if ( Flags & EE_BUTTONS_WUWD ) {
-			cUIListBox * LBParent = reinterpret_cast<cUIListBox*> ( Parent()->Parent() );
+	bool wasSelected = mControlFlags & UI_CTRL_FLAG_SELECTED;
 
-			LBParent->ScrollBar()->Slider()->ManageClick( Flags );
+	LBParent->ItemClicked( this );
+
+	if ( LBParent->IsMultiSelect() ) {
+		if ( !wasSelected ) {
+			SetSkinState( cUISkinState::StateSelected );
+
+			mControlFlags |= UI_CTRL_FLAG_SELECTED;
+
+			LBParent->mSelected.push_back( LBParent->GetItemIndex( this ) );
+
+			LBParent->OnSelected();
+		} else {
+			mControlFlags &= ~UI_CTRL_FLAG_SELECTED;
+
+			LBParent->mSelected.remove( LBParent->GetItemIndex( this ) );
+		}
+	} else {
+		SetSkinState( cUISkinState::StateSelected );
+
+		mControlFlags |= UI_CTRL_FLAG_SELECTED;
+
+		LBParent->mSelected.clear();
+		LBParent->mSelected.push_back( LBParent->GetItemIndex( this ) );
+
+		if ( !wasSelected ) {
+			LBParent->OnSelected();
 		}
 	}
 }
 
-Uint32 cUIListBoxItem::OnMouseExit( const eeVector2i& Pos, const Uint32 Flags ) {
-	cUITextBox::OnMouseExit( Pos, Flags );
+void cUIListBoxItem::Update() {
+	if ( mEnabled && mVisible ) {
+		cUIListBox * LBParent 	= reinterpret_cast<cUIListBox*> ( Parent()->Parent() );
+		Uint32 Flags 			= cUIManager::instance()->GetInput()->ClickTrigger();
 
-	if ( mSelected )
+		if ( IsMouseOver() ) {
+			if ( Flags & EE_BUTTONS_WUWD )
+				LBParent->ScrollBar()->Slider()->ManageClick( Flags );
+		}
+
+		if ( ( mControlFlags & UI_CTRL_FLAG_HAS_FOCUS ) )
+			LBParent->ManageKeyboard();
+	}
+}
+
+Uint32 cUIListBoxItem::OnMouseExit( const eeVector2i& Pos, const Uint32 Flags ) {
+	cUIControl::OnMouseExit( Pos, Flags );
+
+	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
 		SetSkinState( cUISkinState::StateSelected );
 
 	return 1;
 }
 
 void cUIListBoxItem::Unselect() {
-	mSelected = false;
+	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
+		mControlFlags &= ~UI_CTRL_FLAG_SELECTED;
 
 	SetSkinState( cUISkinState::StateNormal );
 }
 
-const bool& cUIListBoxItem::Selected() const {
-	return mSelected;
+bool cUIListBoxItem::Selected() const {
+	return mControlFlags & UI_CTRL_FLAG_SELECTED;
 }
 
 void cUIListBoxItem::OnStateChange() {

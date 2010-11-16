@@ -168,6 +168,8 @@ class EE_API cUIControl {
 
 		cUIControl * NextGet() const;
 
+		cUIControl * PrevGet() const;
+
 		cUIControl * NextGetLoop() const;
 
 		void Data( const Uint32& data );
@@ -218,6 +220,8 @@ class EE_API cUIControl {
 
 		cUIControl * ChildGetFirst() const;
 
+		cUIControl * ChildGetLast() const;
+
 		bool IsMouseOver();
 
 		const eePolygon2f& GetPolygon() const;
@@ -225,7 +229,11 @@ class EE_API cUIControl {
 		const eeVector2f& GetPolygonCenter() const;
 
 		void SetSkinState( const Uint32& State );
+
+		void DisableChildCloseCheck();
 	protected:
+		friend class cUIListBoxContainer;
+
 		bool			mVisible;
 		bool			mEnabled;
 		eeVector2i		mPos;
@@ -236,8 +244,10 @@ class EE_API cUIControl {
 		Uint32			mType;
 		Uint32 			mData;
 
-		cUIControl *	mChild;			// Pointer to the first child of the control
-		cUIControl *	mNext;			// Pointer to the next child
+		cUIControl *	mChild;			//! Pointer to the first child of the control
+		cUIControl * 	mChildLast;		//! Pointer to the last child added
+		cUIControl *	mNext;			//! Pointer to the next child of the father
+		cUIControl * 	mPrev;			//! Pointer to the prev child of the father
 
 		cUIBackground 	mBackground;
 		cUIBorder		mBorder;
@@ -270,7 +280,7 @@ class EE_API cUIControl {
 
 		void CheckClose();
 
-		virtual void InternalDraw();
+		void InternalDraw();
 
 		void ChildDeleteAll();
 
@@ -290,7 +300,7 @@ class EE_API cUIControl {
 
 		cUIControl * ChildNext( cUIControl * Ctrl, bool Loop = false ) const;
 
-		cUIControl * OverFind( const eeVector2f& Point );
+		virtual cUIControl * OverFind( const eeVector2f& Point );
 
 		virtual void UpdateQuad();
 
@@ -304,7 +314,7 @@ class EE_API cUIControl {
 
 		void ClipTo();
 
-		void DrawChilds();
+		virtual void DrawChilds();
 
 		eeFloat Elapsed();
 

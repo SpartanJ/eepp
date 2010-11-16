@@ -13,7 +13,9 @@ cUIControl::cUIControl( const CreateParams& Params ) :
 	mType( 0 ),
 	mData( 0 ),
 	mChild( NULL ),
+	mChildLast( NULL ),
 	mNext( NULL ),
+	mPrev( NULL ),
 	mBackground( Params.Background ),
 	mBorder( Params.Border ),
 	mControlFlags( 0 ),
@@ -103,10 +105,7 @@ Uint32 cUIControl::OnMessage( const cUIMessage * Msg ) {
 }
 
 bool cUIControl::IsInside( const eeVector2i& Pos ) const {
-	if ( Pos.x >= 0 && Pos.y >= 0 && Pos.x < mSize.Width() && Pos.y < mSize.Height() )
-		return true;
-
-	return false;
+	return ( Pos.x >= 0 && Pos.y >= 0 && Pos.x < mSize.Width() && Pos.y < mSize.Height() );
 }
 
 void cUIControl::Pos( const eeVector2i& Pos ) {
@@ -221,7 +220,7 @@ void cUIControl::Update() {
 
 	while ( NULL != ChildLoop ) {
 		ChildLoop->Update();
-		ChildLoop = ChildLoop->NextGet();
+		ChildLoop = ChildLoop->mNext;
 	}
 }
 
@@ -301,6 +300,8 @@ Uint32 cUIControl::OnMouseExit( const eeVector2i& Pos, const Uint32 Flags ) {
 }
 
 Uint32 cUIControl::OnFocus() {
+	mControlFlags |= UI_CTRL_FLAG_HAS_FOCUS;
+
 	SendCommonEvent( cUIEvent::EventOnFocus );
 
 	SetSkinState( cUISkinState::StateFocus );
@@ -309,18 +310,18 @@ Uint32 cUIControl::OnFocus() {
 }
 
 Uint32 cUIControl::OnFocusLoss() {
+	mControlFlags &= ~UI_CTRL_FLAG_HAS_FOCUS;
+
 	SendCommonEvent( cUIEvent::EventOnFocusLoss );
 
 	return 1;
 }
-
 
 Uint32 cUIControl::OnValueChange() {
 	SendCommonEvent( cUIEvent::EventOnValueChange );
 
 	return 1;
 }
-
 
 Uint32 cUIControl::HAlign() const {
 	return mFlags & UI_HALIGN_MASK;
@@ -356,9 +357,13 @@ cUIControl * cUIControl::NextGet() const {
 	return mNext;
 }
 
+cUIControl * cUIControl::PrevGet() const {
+	return mPrev;
+}
+
 cUIControl * cUIControl::NextGetLoop() const {
 	if ( NULL == mNext )
-		return Parent()->ChildAt( 0 );
+		return Parent()->ChildGetFirst();
 	else
 		return mNext;
 }
@@ -369,26 +374,6 @@ void cUIControl::Data( const Uint32& data ) {
 
 const Uint32& cUIControl::Data() const {
 	return mData;
-}
-
-cUIControl * cUIControl::ChildGetAt( eeVector2i CtrlPos, eeUint RecursiveLevel ) {
-	cUIControl * Ctrl = NULL;
-
-	for( cUIControl * pLoop = mChild; NULL != pLoop && NULL == Ctrl; pLoop = pLoop->NextGet() )
-	{
-		if ( !pLoop->Visible() )
-			continue;
-
-		if ( pLoop->Rect().Contains( CtrlPos ) ) {
-			if ( RecursiveLevel )
-				Ctrl = ChildGetAt( CtrlPos - pLoop->Pos(), RecursiveLevel - 1 );
-
-			if ( NULL == Ctrl )
-				Ctrl = pLoop;
-		}
-	}
-
-	return Ctrl;
 }
 
 const Uint32& cUIControl::Flags() const {
@@ -475,20 +460,21 @@ const Uint32& cUIControl::ControlFlags() const {
 }
 
 void cUIControl::CheckClose() {
+	if ( mControlFlags & UI_CTRL_FLAG_DISABLE_CHECK_CLOSE_CHILDS )
+		return;
+
 	cUIControl * ChildLoop = mChild;
 
 	while( NULL != ChildLoop ) {
-		if ( ChildLoop->ControlFlags() & UI_CTRL_FLAG_CLOSE ) {
+		if ( ChildLoop->mControlFlags & UI_CTRL_FLAG_CLOSE ) {
 			eeDelete( ChildLoop );
 
 			ChildLoop = mChild;
-
-			continue;
 		}
 
 		ChildLoop->CheckClose();
 
-		ChildLoop = ChildLoop->NextGet();
+		ChildLoop = ChildLoop->mNext;
 	}
 }
 
@@ -512,11 +498,11 @@ void cUIControl::DrawChilds() {
 	cUIControl * ChildLoop = mChild;
 
 	while ( NULL != ChildLoop ) {
-		if ( ChildLoop->Visible() ) {
+		if ( ChildLoop->mVisible ) {
 			ChildLoop->InternalDraw();
 		}
 
-		ChildLoop = ChildLoop->NextGet();
+		ChildLoop = ChildLoop->mNext;
 	}
 }
 
@@ -564,15 +550,22 @@ void cUIControl::ChildDeleteAll() {
 }
 
 void cUIControl::ChildAdd( cUIControl * ChildCtrl ) {
-	if ( NULL == mChild )
-		mChild = ChildCtrl;
-	else {
+	if ( NULL == mChild ) {
+		mChild 		= ChildCtrl;
+		mChildLast 	= ChildCtrl;
+	} else {
+		/*
 		cUIControl * ChildLoop = mChild;
 
-		while ( NULL != ChildLoop->NextGet() )
-			ChildLoop = ChildLoop->NextGet();
+		while ( NULL != ChildLoop->mNext )
+			ChildLoop = ChildLoop->mNext;
 
 		ChildLoop->mNext = ChildCtrl;
+		*/
+
+		mChildLast->mNext 		= ChildCtrl;
+		ChildCtrl->mPrev		= mChildLast;
+		mChildLast 				= ChildCtrl;
 	}
 }
 
@@ -580,12 +573,16 @@ void cUIControl::ChildAddAt( cUIControl * ChildCtrl, Uint32 Pos ) {
 	cUIControl * ChildLoop = mChild;
 
 	if( Pos == 0 ) {
-		if( mChild == NULL) {
-			mChild = ChildCtrl;
-			ChildCtrl->mNext = NULL;
+		if ( mChild == NULL ) {
+			mChild 				= ChildCtrl;
+			mChildLast			= ChildCtrl;
+			ChildCtrl->mNext 	= NULL;
+			ChildCtrl->mPrev 	= NULL;
 		} else {
-			ChildCtrl->mNext = mChild;
-			mChild = ChildCtrl;
+			mChild->mPrev		= ChildCtrl;
+			ChildCtrl->mNext 	= mChild;
+			ChildCtrl->mPrev	= NULL;
+			mChild 				= ChildCtrl;
 		}
 	} else {
 		Uint32 i = 0;
@@ -596,15 +593,22 @@ void cUIControl::ChildAddAt( cUIControl * ChildCtrl, Uint32 Pos ) {
 		}
 
 		cUIControl * ChildTmp = ChildLoop->mNext;
-		ChildLoop->mNext = ChildCtrl;
-		ChildCtrl->mNext = ChildTmp;
+		ChildLoop->mNext 	= ChildCtrl;
+		ChildCtrl->mPrev 	= ChildLoop;
+
+		ChildCtrl->mNext 	= ChildTmp;
+		ChildTmp->mPrev 	= ChildCtrl;
 	}
 }
 
 void cUIControl::ChildRemove( cUIControl * ChildCtrl ) {
-	if ( ChildCtrl == mChild )
-		mChild = mChild->mNext;
-	else {
+	if ( ChildCtrl == mChild ) {
+		mChild 			= mChild->mNext;
+
+		if ( NULL != mChild )
+			mChild->mPrev 	= NULL;
+	} else {
+		/*
 		cUIControl * ChildLoop = mChild;
 
 		while ( NULL != ChildLoop->mNext ) {
@@ -615,6 +619,15 @@ void cUIControl::ChildRemove( cUIControl * ChildCtrl ) {
 
 			ChildLoop = ChildLoop->mNext;
 		}
+		*/
+
+		if ( mChildLast == ChildCtrl )
+			mChildLast = mChildLast->mPrev;
+
+		ChildCtrl->mPrev->mNext = ChildCtrl->mNext;
+
+		if ( NULL != ChildCtrl->mNext )
+			ChildCtrl->mNext->mPrev = ChildCtrl->mPrev;
 	}
 }
 
@@ -646,7 +659,7 @@ Uint32 cUIControl::ChildCount() const {
 cUIControl * cUIControl::ChildAt( Uint32 Index ) const {
 	cUIControl * ChildLoop = mChild;
 
-	while( NULL != ChildLoop && Index) {
+	while( NULL != ChildLoop && Index ) {
 		ChildLoop = ChildLoop->mNext;
 		Index--;
 	}
@@ -655,6 +668,7 @@ cUIControl * cUIControl::ChildAt( Uint32 Index ) const {
 }
 
 cUIControl * cUIControl::ChildPrev( cUIControl * Ctrl, bool Loop ) const {
+	/*
 	cUIControl * ChildLoop = NULL;
 
 	if ( NULL != mChild ) {
@@ -662,35 +676,42 @@ cUIControl * cUIControl::ChildPrev( cUIControl * Ctrl, bool Loop ) const {
 			ChildLoop = mChild;
 
 			while ( NULL != ChildLoop ) {
-				if ( ChildLoop->NextGet() == Ctrl )
+				if ( ChildLoop->mNext == Ctrl )
 					break;
 
-				ChildLoop = ChildLoop->NextGet();
+				ChildLoop = ChildLoop->mNext;
 			}
 		} else if ( Loop ) {
 			ChildLoop = mChild;
 
-			while ( NULL != ChildLoop->NextGet() )
-				ChildLoop = ChildLoop->NextGet();
+			while ( NULL != ChildLoop->mNext )
+				ChildLoop = ChildLoop->mNext;
 
 		}
 	}
 
 	return ChildLoop;
+	*/
+
+	if ( Loop && Ctrl == mChild && NULL != mChild->mNext )
+		return mChildLast;
+
+	return Ctrl->mPrev;
 }
 
 cUIControl * cUIControl::ChildNext( cUIControl * Ctrl, bool Loop ) const {
-	cUIControl * Return = Ctrl->NextGet();
+	if ( NULL == Ctrl->mNext && Loop )
+		return mChild;
 
-	if ( NULL == Return && Loop ) {
-		Return = mChild;
-	}
-
-	return Return;
+	return Ctrl->mNext;
 }
 
 cUIControl * cUIControl::ChildGetFirst() const {
 	return mChild;
+}
+
+cUIControl * cUIControl::ChildGetLast() const {
+	return mChildLast;
 }
 
 cUIControl * cUIControl::OverFind( const eeVector2f& Point ) {
@@ -700,6 +721,7 @@ cUIControl * cUIControl::OverFind( const eeVector2f& Point ) {
 		UpdateQuad();
 
 		if ( PointInsidePolygon2( mPoly, Point ) ) {
+			/*
 			cUIControl * ChildLoop = mChild;
 
 			while ( NULL != ChildLoop ) {
@@ -710,6 +732,21 @@ cUIControl * cUIControl::OverFind( const eeVector2f& Point ) {
 
 				ChildLoop = ChildLoop->mNext;
 			}
+			*/
+
+			cUIControl * ChildLoop = mChildLast;
+
+			while ( NULL != ChildLoop ) {
+				cUIControl * ChildOver = ChildLoop->OverFind( Point );
+
+				if ( NULL != ChildOver ) {
+					pOver = ChildOver;
+
+					break; // Search from top to bottom, so the first over will be the topmost
+				}
+
+				ChildLoop = ChildLoop->mPrev;
+			}
 
 			if ( NULL == pOver )
 				pOver = const_cast<cUIControl *>( reinterpret_cast<const cUIControl *>( this ) );
@@ -717,6 +754,26 @@ cUIControl * cUIControl::OverFind( const eeVector2f& Point ) {
 	}
 
 	return pOver;
+}
+
+cUIControl * cUIControl::ChildGetAt( eeVector2i CtrlPos, eeUint RecursiveLevel ) {
+	cUIControl * Ctrl = NULL;
+
+	for( cUIControl * pLoop = mChild; NULL != pLoop && NULL == Ctrl; pLoop = pLoop->mNext )
+	{
+		if ( !pLoop->Visible() )
+			continue;
+
+		if ( pLoop->Rect().Contains( CtrlPos ) ) {
+			if ( RecursiveLevel )
+				Ctrl = ChildGetAt( CtrlPos - pLoop->Pos(), RecursiveLevel - 1 );
+
+			if ( NULL == Ctrl )
+				Ctrl = pLoop;
+		}
+	}
+
+	return Ctrl;
 }
 
 Uint32 cUIControl::IsAnimated() {
@@ -937,6 +994,11 @@ eeRecti cUIControl::MakePadding( bool PadLeft, bool PadRight, bool PadTop, bool 
 	}
 
 	return tPadding;
+}
+
+void cUIControl::DisableChildCloseCheck() {
+	if ( !( mControlFlags & UI_CTRL_FLAG_DISABLE_CHECK_CLOSE_CHILDS ) )
+		mControlFlags |= UI_CTRL_FLAG_DISABLE_CHECK_CLOSE_CHILDS;
 }
 
 }}
