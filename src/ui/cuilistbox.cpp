@@ -124,7 +124,7 @@ Uint32 cUIListBox::AddListBoxItem( cUIListBoxItem * Item ) {
 			UpdateScroll();
 	}
 
-	return mItems.size() - 1;
+	return (Uint32)(mItems.size() - 1);
 }
 
 Uint32 cUIListBox::AddListBoxItem( const std::string& Text ) {
@@ -199,7 +199,7 @@ Uint32 cUIListBox::RemoveListBoxItem( Uint32 ItemIndex ) {
 }
 
 Uint32 cUIListBox::GetListBoxItemIndex( const std::wstring& Name ) {
-	Uint32 size = mItems.size();
+	Uint32 size = (Uint32)mItems.size();
 
 	for ( Uint32 i = 0; i < size; i++ ) {
 		if ( Name == mItems[i]->Text() )
@@ -210,7 +210,7 @@ Uint32 cUIListBox::GetListBoxItemIndex( const std::wstring& Name ) {
 }
 
 Uint32 cUIListBox::GetListBoxItemIndex( cUIListBoxItem * Item ) {
-	Uint32 size = mItems.size();
+	Uint32 size = (Uint32)mItems.size();
 
 	for ( Uint32 i = 0; i < size; i++ ) {
 		if ( Item == mItems[i] )
@@ -273,13 +273,13 @@ void cUIListBox::SetRowHeight() {
 }
 
 void cUIListBox::FindMaxWidth() {
-	Uint32 size = mItems.size();
+	Uint32 size = (Uint32)mItems.size();
 	Int32 width;
 
 	mMaxTextWidth = 0;
 
 	for ( Uint32 i = 0; i < size; i++ ) {
-		width = mItems[i]->GetTextWidth();
+		width = (Int32)mItems[i]->GetTextWidth();
 
 		if ( width > (Int32)mMaxTextWidth )
 			mMaxTextWidth = (Uint32)width;
@@ -287,7 +287,7 @@ void cUIListBox::FindMaxWidth() {
 }
 
 void cUIListBox::UpdateListBoxItemsSize() {
-	Uint32 size = mItems.size();
+	Uint32 size = (Uint32)mItems.size();
 
 	for ( Uint32 i = 0; i < size; i++ ) {
 		ItemUpdateSize( mItems[i] );
@@ -295,7 +295,7 @@ void cUIListBox::UpdateListBoxItemsSize() {
 }
 
 void cUIListBox::ItemUpdateSize( cUIListBoxItem * Item ) {
-	Int32 width = Item->GetTextWidth();
+	Int32 width = (Int32)Item->GetTextWidth();
 
 	if ( width > (Int32)mMaxTextWidth )
 		mMaxTextWidth = (Uint32)width;
@@ -332,12 +332,12 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 	Int32 tHLastScroll 		= mHScrollInit;
 
 	Uint32 VisibleItems 	= mContainer->Size().Height() / mRowHeight;
-	mItemsNotVisible 		= mItems.size() - VisibleItems;
+	mItemsNotVisible 		= (Int32)mItems.size() - VisibleItems;
 
 	bool wasScrollVisible 	= mScrollBar->Visible();
 	bool wasHScrollVisible 	= mHScrollBar->Visible();
 
-	bool Clipped 			= mContainer->IsClipped();
+	bool Clipped 			= 0 != mContainer->IsClipped();
 
 	if ( mItemsNotVisible <= 0 ) {
 		if ( mScrollAlwaysVisible ) {
@@ -381,8 +381,8 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 	}
 
 	VisibleItems 		= mContainer->Size().Height() / mRowHeight;
-	mItemsNotVisible 	= mItems.size() - VisibleItems;
-	Uint32 Scrolleable 	= mItems.size() * mRowHeight - mContainer->Size().Height();
+	mItemsNotVisible 	= (Uint32)mItems.size() - VisibleItems;
+	Uint32 Scrolleable 	= (Uint32)mItems.size() * mRowHeight - mContainer->Size().Height();
 	bool isScrollVisible = mScrollBar->Visible();
 	bool isHScrollVisible = mHScrollBar->Visible();
 	bool FirstVisible = false;
@@ -421,7 +421,7 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 				ItemUpdateSize( Item );
 		}
 	} else {
-		RelPosMax		= mItems.size();
+		RelPosMax		= (Uint32)mItems.size();
 
 		if ( mItemsNotVisible > 0 ) {
 			RelPos 				= (Uint32)( mScrollBar->Value() * mItemsNotVisible );
@@ -633,7 +633,7 @@ const bool& cUIListBox::AllowHorizontalScroll() const {
 }
 
 Uint32 cUIListBox::Size() {
-	return mItems.size();
+	return (Uint32)mItems.size();
 }
 
 void cUIListBox::ManageKeyboard() {

@@ -24,7 +24,8 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
-					<Add option="-O2" />
+					<Add option="-O3" />
+					<Add option="-fno-strict-aliasing" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -205,6 +206,8 @@
 		<Unit filename="src\helper\haikuttf\hkfontmanager.hpp" />
 		<Unit filename="src\helper\haikuttf\hkglyph.cpp" />
 		<Unit filename="src\helper\haikuttf\hkglyph.hpp" />
+		<Unit filename="src\helper\haikuttf\hkmutex.cpp" />
+		<Unit filename="src\helper\haikuttf\hkmutex.hpp" />
 		<Unit filename="src\helper\haikuttf\sophist.h" />
 		<Unit filename="src\helper\libzip\config.h" />
 		<Unit filename="src\helper\libzip\inttypes.h" />
@@ -525,20 +528,32 @@
 		<Unit filename="src\ui\cuieventmouse.hpp" />
 		<Unit filename="src\ui\cuigfx.cpp" />
 		<Unit filename="src\ui\cuigfx.hpp" />
+		<Unit filename="src\ui\cuilistbox.cpp" />
+		<Unit filename="src\ui\cuilistbox.hpp" />
+		<Unit filename="src\ui\cuilistboxcontainer.cpp" />
+		<Unit filename="src\ui\cuilistboxcontainer.hpp" />
+		<Unit filename="src\ui\cuilistboxitem.cpp" />
+		<Unit filename="src\ui\cuilistboxitem.hpp" />
 		<Unit filename="src\ui\cuimanager.cpp" />
 		<Unit filename="src\ui\cuimanager.hpp" />
 		<Unit filename="src\ui\cuimessage.cpp" />
 		<Unit filename="src\ui\cuimessage.hpp" />
+		<Unit filename="src\ui\cuiprogressbar.cpp" />
+		<Unit filename="src\ui\cuiprogressbar.hpp" />
 		<Unit filename="src\ui\cuipushbutton.cpp" />
 		<Unit filename="src\ui\cuipushbutton.hpp" />
 		<Unit filename="src\ui\cuiradiobutton.cpp" />
 		<Unit filename="src\ui\cuiradiobutton.hpp" />
+		<Unit filename="src\ui\cuiscrollbar.cpp" />
+		<Unit filename="src\ui\cuiscrollbar.hpp" />
 		<Unit filename="src\ui\cuiskin.cpp" />
 		<Unit filename="src\ui\cuiskin.hpp" />
 		<Unit filename="src\ui\cuiskincomplex.cpp" />
 		<Unit filename="src\ui\cuiskincomplex.hpp" />
 		<Unit filename="src\ui\cuiskinsimple.cpp" />
 		<Unit filename="src\ui\cuiskinsimple.hpp" />
+		<Unit filename="src\ui\cuiskinstate.cpp" />
+		<Unit filename="src\ui\cuiskinstate.hpp" />
 		<Unit filename="src\ui\cuislider.cpp" />
 		<Unit filename="src\ui\cuislider.hpp" />
 		<Unit filename="src\ui\cuisliderbutton.cpp" />
@@ -547,6 +562,8 @@
 		<Unit filename="src\ui\cuispinbox.hpp" />
 		<Unit filename="src\ui\cuitextbox.cpp" />
 		<Unit filename="src\ui\cuitextbox.hpp" />
+		<Unit filename="src\ui\cuitextboxsimple.cpp" />
+		<Unit filename="src\ui\cuitextboxsimple.hpp" />
 		<Unit filename="src\ui\cuitextinput.cpp" />
 		<Unit filename="src\ui\cuitextinput.hpp" />
 		<Unit filename="src\ui\cuitheme.cpp" />
@@ -596,6 +613,15 @@
 			<code_completion />
 			<debugger />
 			<lib_finder disable_auto="1" />
+			<DoxyBlocks>
+				<comment_style block="0" line="0" />
+				<doxyfile_project />
+				<doxyfile_build />
+				<doxyfile_warnings />
+				<doxyfile_output />
+				<doxyfile_dot />
+				<general />
+			</DoxyBlocks>
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>

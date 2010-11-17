@@ -31,7 +31,7 @@ Uint32 cUIListBoxItem::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags )
 void cUIListBoxItem::Select() {
 	cUIListBox * LBParent = reinterpret_cast<cUIListBox*> ( Parent()->Parent() );
 
-	bool wasSelected = mControlFlags & UI_CTRL_FLAG_SELECTED;
+	bool wasSelected = 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
 
 	LBParent->ItemClicked( this );
 
@@ -95,7 +95,7 @@ void cUIListBoxItem::Unselect() {
 }
 
 bool cUIListBoxItem::Selected() const {
-	return mControlFlags & UI_CTRL_FLAG_SELECTED;
+	return 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
 }
 
 void cUIListBoxItem::OnStateChange() {

@@ -249,8 +249,8 @@ class EE_API cUIControl {
 		cUIControl *	mNext;			//! Pointer to the next child of the father
 		cUIControl * 	mPrev;			//! Pointer to the prev child of the father
 
-		cUIBackground 	mBackground;
-		cUIBorder		mBorder;
+		cUIBackground *	mBackground;
+		cUIBorder *		mBorder;
 
 		Uint32			mControlFlags;
 		EE_PRE_BLEND_FUNC	mBlend;

@@ -2,6 +2,7 @@
 #define EE_UICUILISTBOXITEM_HPP
 
 #include "cuitextbox.hpp"
+#include "cuitextboxsimple.hpp"
 
 namespace EE { namespace UI {
 

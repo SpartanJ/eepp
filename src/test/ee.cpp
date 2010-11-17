@@ -11,17 +11,17 @@
 
 class cUITest : public cUIControlAnim {
 	public:
-		cUITest( cUIControlAnim::CreateParams& Params ) : cUIControlAnim( Params ) 	{ mOldColor = mBackground.Colors(); }
+		cUITest( cUIControlAnim::CreateParams& Params ) : cUIControlAnim( Params ) 	{ mOldColor = mBackground->Colors(); }
 
 		virtual Uint32 OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags )	{
 			if ( 4 == mOldColor.size() ) {
-				mBackground.Colors( eeColorA( mOldColor[0].R(), mOldColor[0].G(), mOldColor[0].B(), 200 ),
+				mBackground->Colors( eeColorA( mOldColor[0].R(), mOldColor[0].G(), mOldColor[0].B(), 200 ),
 									eeColorA( mOldColor[1].R(), mOldColor[1].G(), mOldColor[1].B(), 200 ),
 									eeColorA( mOldColor[2].R(), mOldColor[2].G(), mOldColor[2].B(), 200 ),
 									eeColorA( mOldColor[3].R(), mOldColor[3].G(), mOldColor[3].B(), 200 )
 								);
 			} else {
-				mBackground.Color( eeColorA( mOldColor[0].R(), mOldColor[0].G(), mOldColor[0].B(), 200 ) );
+				mBackground->Color( eeColorA( mOldColor[0].R(), mOldColor[0].G(), mOldColor[0].B(), 200 ) );
 			}
 
 			return 1;
@@ -29,9 +29,9 @@ class cUITest : public cUIControlAnim {
 
 		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags )	{
 			if ( 4 == mOldColor.size() ) {
-				mBackground.Colors( mOldColor[0], mOldColor[1], mOldColor[2], mOldColor[3] );
+				mBackground->Colors( mOldColor[0], mOldColor[1], mOldColor[2], mOldColor[3] );
 			} else {
-				mBackground.Color( mOldColor[0] );
+				mBackground->Color( mOldColor[0] );
 			}
 
 			return 1;
@@ -544,6 +544,7 @@ void cEETest::CreateUI() {
 	TextParams.PosSet( 20, 5 );
 	mTextBoxValue = eeNew( cUITextBox, ( TextParams ) );
 	mTextBoxValue->Visible( true );
+	OnValueChange( NULL );
 
 	cUIListBox::CreateParams LBParams;
 	LBParams.Parent( C );
@@ -557,12 +558,14 @@ void cEETest::CreateUI() {
 
 	Int32 wsize = 100;
 
-	std::vector<std::wstring> wstr(wsize);
+	if ( wsize ) {
+		std::vector<std::wstring> wstr(wsize);
 
-	for ( Int32 i = 1; i <= wsize; i++ )
-		wstr[i-1] = L"Test ListBox " + toWStr(i) + L" testing it right now!";
+		for ( Int32 i = 1; i <= wsize; i++ )
+			wstr[i-1] = L"Test ListBox " + toWStr(i) + L" testing it right now!";
 
-	mListBox->AddListBoxItems( wstr );
+		mListBox->AddListBoxItems( wstr );
+	}
 
 	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.";
 	TTFB->ShrinkText( mBuda, 400 );
@@ -802,7 +805,7 @@ void cEETest::Screen2() {
 	eeFloat PlanetY = HHeight - TNP[6]->Height() * 0.5f;
 
 	ang+=et * 0.1f;
-	ang = (ang>=360) ? ang = 0 : ang;
+	ang = (ang>=360) ? 0 : ang;
 
 	if (scale>=1.5f) {
 		scale = 1.5f;
@@ -811,7 +814,7 @@ void cEETest::Screen2() {
 		side = false;
 		scale = 0.5f;
 	}
-	scale = (!side) ? scale+=et * 0.00025f : scale -=et * 0.00025f;
+	scale = (!side) ? scale+et * 0.00025f : scale-et * 0.00025f;
 
 	Batch.SetTexture( TNP[2] );
 	Batch.QuadsBegin();
@@ -862,7 +865,7 @@ void cEETest::Screen2() {
 	TNP[3]->Draw( HWidth - 128, HHeight, 0, 1, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICAL);
 	TNP[3]->Draw( HWidth, HHeight, 0, 1, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICALNEGATIVE);
 
-	alpha = (!aside) ? alpha+=et * 0.1f : alpha -=et * 0.1f;
+	alpha = (!aside) ? alpha+et * 0.1f : alpha-et * 0.1f;
 	if (alpha>=255) {
 		aside = true;
 		alpha = 255;
@@ -947,7 +950,7 @@ void cEETest::Screen3() {
 		AnimVal = 0.5f;
 		AnimSide = false;
 	}
-	AnimVal = (!AnimSide) ? AnimVal+=et * 0.1f : AnimVal -=et * 0.1f;
+	AnimVal = (!AnimSide) ? AnimVal+et * 0.1f : AnimVal-et * 0.1f;
 
 	Batch.SetTexture( TNP[3] );
 	Batch.LineLoopBegin();

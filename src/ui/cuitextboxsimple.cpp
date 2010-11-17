@@ -7,7 +7,7 @@ namespace EE { namespace UI {
 cUITextBoxSimple::cUITextBoxSimple( const cUITextBox::CreateParams& Params ) :
 	cUIControl( Params ),
 	mFont( NULL ),
-	mCachedWidth( NULL ),
+	mCachedWidth( 0 ),
 	mNumLines( 1 ),
 	mFontColor( Params.FontColor ),
 	mFontShadowColor( Params.FontShadowColor ),
@@ -122,8 +122,8 @@ void cUITextBoxSimple::AutoShrink() {
 
 void cUITextBoxSimple::AutoSize() {
 	if ( Flags() & UI_AUTO_SIZE ) {
-		mSize.Width( mCachedWidth );
-		mSize.Height( (eeFloat)mFont->GetFontSize() * (eeFloat)mNumLines );
+		mSize.Width( (Int32)mCachedWidth );
+		mSize.Height( (Int32)mFont->GetFontSize() * mNumLines );
 	}
 }
 

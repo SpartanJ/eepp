@@ -16,8 +16,8 @@ cUIControl::cUIControl( const CreateParams& Params ) :
 	mChildLast( NULL ),
 	mNext( NULL ),
 	mPrev( NULL ),
-	mBackground( Params.Background ),
-	mBorder( Params.Border ),
+	mBackground( NULL ),
+	mBorder( NULL ),
 	mControlFlags( 0 ),
 	mBlend( Params.Blend ),
 	mNumCallBacks(0),
@@ -32,12 +32,20 @@ cUIControl::cUIControl( const CreateParams& Params ) :
 	if ( NULL != mParentCtrl )
 		mParentCtrl->ChildAdd( this );
 
+	if ( mFlags & UI_FILL_BACKGROUND )
+		mBackground = eeNew( cUIBackground, ( Params.Background ) );
+
+	if ( mFlags & UI_BORDER )
+		mBorder = eeNew( cUIBorder, ( Params.Border ) );
+
 	UpdateScreenPos();
 	UpdateQuad();
 }
 
 cUIControl::~cUIControl() {
 	eeSAFE_DELETE( mSkinState );
+	eeSAFE_DELETE( mBackground );
+	eeSAFE_DELETE( mBorder );
 
 	while( NULL != mChild )
 		eeDelete( mChild );
@@ -436,23 +444,23 @@ void cUIControl::OnSizeChange() {
 
 void cUIControl::BackgroundDraw() {
 	cPrimitives P;
-	P.SetColor( mBackground.Color() );
+	P.SetColor( mBackground->Color() );
 
-	if ( 4 == mBackground.Colors().size() ) {
-		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), mBackground.Colors()[0], mBackground.Colors()[1], mBackground.Colors()[2], mBackground.Colors()[3], 0.f, 1.f, EE_DRAW_FILL, mBackground.Blend(), 1.0f, mBackground.Corners() );
+	if ( 4 == mBackground->Colors().size() ) {
+		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), mBackground->Colors()[0], mBackground->Colors()[1], mBackground->Colors()[2], mBackground->Colors()[3], 0.f, 1.f, EE_DRAW_FILL, mBackground->Blend(), 1.0f, mBackground->Corners() );
 	} else {
-		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_FILL, mBackground.Blend(), 1.0f, mBackground.Corners() );
+		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_FILL, mBackground->Blend(), 1.0f, mBackground->Corners() );
 	}
 }
 
 void cUIControl::BorderDraw() {
 	cPrimitives P;
-	P.SetColor( mBorder.Color() );
+	P.SetColor( mBorder->Color() );
 
 	if ( mFlags & UI_CLIP_ENABLE )
-		P.DrawRectangle( (eeFloat)mScreenPos.x + 0.1f, (eeFloat)mScreenPos.y + 0.1f, (eeFloat)mSize.Width() - 0.1f, (eeFloat)mSize.Height() - 0.1f, 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder.Width(), mBackground.Corners() );
+		P.DrawRectangle( (eeFloat)mScreenPos.x + 0.1f, (eeFloat)mScreenPos.y + 0.1f, (eeFloat)mSize.Width() - 0.1f, (eeFloat)mSize.Height() - 0.1f, 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder->Width(), mBackground->Corners() );
 	else
-		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder.Width(), mBackground.Corners() );
+		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder->Width(), mBackground->Corners() );
 }
 
 const Uint32& cUIControl::ControlFlags() const {
@@ -479,8 +487,7 @@ void cUIControl::CheckClose() {
 }
 
 void cUIControl::ClipTo() {
-	if ( !mFlags & UI_CLIP_ENABLE && NULL != Parent() ) {
-
+	if ( !(mFlags & UI_CLIP_ENABLE) && NULL != Parent() ) {
 		cUIControl * parent = Parent();
 
 		while ( NULL != parent ) {
@@ -850,11 +857,11 @@ void cUIControl::SendEvent( const cUIEvent * Event ) {
 }
 
 cUIBackground * cUIControl::Background() {
-	return &mBackground;
+	return mBackground;
 }
 
 cUIBorder * cUIControl::Border() {
-	return &mBorder;
+	return mBorder;
 }
 
 void cUIControl::SetThemeByName( const std::string& Theme ) {
