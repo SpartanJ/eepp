@@ -224,7 +224,7 @@ class EE_API cTextureFactory: public tSingleton<cTextureFactory>, protected cMut
 
 		std::string mAppPath;
 
-		std::queue<Uint32> mVectorFreeSlots;
+		std::list<Uint32> mVectorFreeSlots;
 
 		void UnloadTextures();
 

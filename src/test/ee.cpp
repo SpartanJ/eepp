@@ -556,7 +556,7 @@ void cEETest::CreateUI() {
 	mListBox->Visible( true );
 	mListBox->Enabled( true );
 
-	Int32 wsize = 100;
+	Int32 wsize = 10000;
 
 	if ( wsize ) {
 		std::vector<std::wstring> wstr(wsize);

@@ -10,13 +10,12 @@
 #include <cctype>
 #include <cassert>
 
-#include <memory>
-#include <algorithm>
-
 #include <iostream>
 #include <fstream>
 #include <sstream>
 
+#include <memory>
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <map>

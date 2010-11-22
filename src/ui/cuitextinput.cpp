@@ -68,7 +68,7 @@ void cUITextInput::Draw() {
 			if ( CurPosX > (eeFloat)mScreenPos.x + (eeFloat)mSize.x )
 				CurPosX = (eeFloat)mScreenPos.x + (eeFloat)mSize.x;
 
-			P.DrawLine( CurPosX, CurPosY, CurPosX, CurPosY + mTextCache.Font()->GetFontHeight(), 1.f );
+			P.DrawLine( CurPosX, CurPosY, CurPosX, CurPosY + mTextCache->Font()->GetFontHeight(), 1.f );
 
 			if ( disableSmooth )
 				cEngine::instance()->SetLineSmooth( true );
@@ -121,13 +121,13 @@ void cUITextInput::AlignFix() {
 	Uint32 NLPos = 0;
 	Uint32 LineNum = mTextBuffer.GetCurPosLinePos( NLPos );
 
-	mTextCache.Font()->SetText( mTextBuffer.Buffer().substr( NLPos, mTextBuffer.CurPos() - NLPos ) );
+	mTextCache->Font()->SetText( mTextBuffer.Buffer().substr( NLPos, mTextBuffer.CurPos() - NLPos ) );
 
-	eeFloat tW = mTextCache.Font()->GetTextWidth();
+	eeFloat tW = mTextCache->Font()->GetTextWidth();
 	eeFloat tX = mAlignOffset.x + tW;
 
 	mCurPos.x = tW;
-	mCurPos.y = (eeFloat)LineNum * (eeFloat)mTextCache.GetTextHeight();
+	mCurPos.y = (eeFloat)LineNum * (eeFloat)mTextCache->GetTextHeight();
 
 	if ( tX < 0.f )
 		mAlignOffset.x = -( mAlignOffset.x + ( tW - mAlignOffset.x ) );

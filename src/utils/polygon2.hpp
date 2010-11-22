@@ -38,7 +38,7 @@ class Polygon2 {
 
 		void Scale( const T& scale, const Vector2<T>& Center );
 	private:
-		std::deque< Vector2<T> > Vector;
+		std::vector< Vector2<T> > Vector;
 		T cOffsetX, cOffsetY;
 };
 

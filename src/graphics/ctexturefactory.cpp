@@ -95,7 +95,7 @@ Uint32 cTextureFactory::FindFreeSlot() {
 	if ( mVectorFreeSlots.size() ) {
 		Uint32 Pos = mVectorFreeSlots.front();
 
-		mVectorFreeSlots.pop();
+		mVectorFreeSlots.pop_front();
 
 		return Pos;
 	}
@@ -153,7 +153,7 @@ bool cTextureFactory::Remove( Uint32 TexId ) {
 				mCurrentTexture[ i ] = 0;
 		}
 
-		mVectorFreeSlots.push( TexId );
+		mVectorFreeSlots.push_back( TexId );
 
 		return true;
 	}
@@ -316,7 +316,7 @@ void cTextureFactory::Allocate( const eeUint& size ) {
 		mTextures.resize( size + 1, NULL );
 
 		for ( eeUint i = 1; i < mTextures.size(); i++ )
-			mVectorFreeSlots.push( i );
+			mVectorFreeSlots.push_back( i );
 	}
 }
 

@@ -60,7 +60,7 @@ class EE_API cUITextBox : public cUIControlAnim {
 
 		virtual void SetTheme( cUITheme * Theme );
 
-		cTextCache& GetTextCache();
+		cTextCache * GetTextCache();
 
 		eeFloat GetTextWidth();
 
@@ -68,7 +68,7 @@ class EE_API cUITextBox : public cUIControlAnim {
 
 		const eeInt& GetNumLines() const;
 	protected:
-		cTextCache 		mTextCache;
+		cTextCache *	mTextCache;
 		eeColorA 		mFontColor;
 		eeColorA 		mFontShadowColor;
 		eeVector2f 		mAlignOffset;

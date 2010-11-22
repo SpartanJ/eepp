@@ -142,8 +142,9 @@ class EE_API cUIListBox : public cUIControlAnim {
 		Uint32				mVisibleFirst;
 		Uint32				mVisibleLast;
 
-		std::list<Uint32>	mSelected;
+		std::list<Uint32>				mSelected;
 		std::vector<cUIListBoxItem *> 	mItems;
+		std::vector<std::wstring>		mTexts;
 
 		void UpdateScroll( bool FromScrollChange = false );
 
@@ -176,6 +177,10 @@ class EE_API cUIListBox : public cUIControlAnim {
 		void FindMaxWidth();
 
 		void ManageKeyboard();
+
+		cUIListBoxItem * CreateListBoxItem( const std::wstring& Name );
+
+		void CreateItemIndex( const Uint32& i );
 };
 
 }}

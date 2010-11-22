@@ -96,8 +96,10 @@ cUIScrollBar * cUIListBox::HScrollBar() const {
 void cUIListBox::AddListBoxItems( std::vector<std::wstring> Texts ) {
 	mDisableScrollUpdate = true;
 
-	for ( Uint32 i = 0; i < Texts.size(); i++ )
-		AddListBoxItem( Texts[i] );
+	for ( Uint32 i = 0; i < Texts.size(); i++ ) {
+		mTexts.push_back( Texts[i] );
+		mItems.push_back( NULL );
+	}
 
 	mDisableScrollUpdate = false;
 
@@ -106,6 +108,7 @@ void cUIListBox::AddListBoxItems( std::vector<std::wstring> Texts ) {
 
 Uint32 cUIListBox::AddListBoxItem( cUIListBoxItem * Item ) {
 	mItems.push_back( Item );
+	mTexts.push_back( Item->Text() );
 
 	if ( Item->Parent() != mContainer )
 		Item->Parent( mContainer );
@@ -132,15 +135,19 @@ Uint32 cUIListBox::AddListBoxItem( const std::string& Text ) {
 }
 
 Uint32 cUIListBox::AddListBoxItem( const std::wstring& Text ) {
+	return AddListBoxItem( CreateListBoxItem( Text ) );
+}
+
+cUIListBoxItem * cUIListBox::CreateListBoxItem( const std::wstring& Name ) {
 	cUITextBox::CreateParams TextParams;
 	TextParams.Parent( mContainer );
 	TextParams.Flags 		= UI_VALIGN_CENTER | UI_HALIGN_LEFT;
 	TextParams.Font 		= mFont;
 	TextParams.FontColor 	= mFontColor;
 	cUIListBoxItem * tItem 	= eeNew( cUIListBoxItem, ( TextParams ) );
-	tItem->Text( Text );
+	tItem->Text( Name );
 
-	return AddListBoxItem( tItem );
+	return tItem;
 }
 
 Uint32 cUIListBox::RemoveListBoxItem( const std::wstring& Text ) {
@@ -154,7 +161,8 @@ Uint32 cUIListBox::RemoveListBoxItem( cUIListBoxItem * Item ) {
 void cUIListBox::RemoveListBoxItems( std::vector<Uint32> ItemsIndex ) {
 	if ( ItemsIndex.size() && 0xFFFFFFFF != ItemsIndex[0] ) {
 		std::vector<cUIListBoxItem*> ItemsCpy;
-		bool erase = false;
+		bool erase;
+		mTexts.clear();
 
 		for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 			erase = false;
@@ -179,8 +187,9 @@ void cUIListBox::RemoveListBoxItems( std::vector<Uint32> ItemsIndex ) {
 
 			if ( !erase ) {
 				ItemsCpy.push_back( mItems[i] );
+				mTexts.push_back( mItems[i]->Text() );
 			} else {
-				eeDelete( mItems[i] ); // doesn't call to mItems[i]->Close(); because is not checking for close.
+				eeSAFE_DELETE( mItems[i] ); // doesn't call to mItems[i]->Close(); because is not checking for close.
 			}
 		}
 
@@ -322,6 +331,22 @@ void cUIListBox::ContainerResize() {
 		mContainer->Size( mSize.Width() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.Height() - mPaddingContainer.Top - mPaddingContainer.Bottom );
 }
 
+void cUIListBox::CreateItemIndex( const Uint32& i ) {
+	if ( NULL == mItems[i] ) {
+		mItems[i] = CreateListBoxItem( mTexts[i] );
+
+		ItemUpdateSize( mItems[i] );
+
+		for ( std::list<Uint32>::iterator it = mSelected.begin(); it != mSelected.end(); it++ ) {
+			if ( *it == i ) {
+				mItems[i]->Select();
+
+				break;
+			}
+		}
+	}
+}
+
 void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 	if ( !mItems.size() )
 		return;
@@ -380,12 +405,12 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 		}
 	}
 
-	VisibleItems 		= mContainer->Size().Height() / mRowHeight;
-	mItemsNotVisible 	= (Uint32)mItems.size() - VisibleItems;
-	Uint32 Scrolleable 	= (Uint32)mItems.size() * mRowHeight - mContainer->Size().Height();
-	bool isScrollVisible = mScrollBar->Visible();
-	bool isHScrollVisible = mHScrollBar->Visible();
-	bool FirstVisible = false;
+	VisibleItems 			= mContainer->Size().Height() / mRowHeight;
+	mItemsNotVisible 		= (Uint32)mItems.size() - VisibleItems;
+	Uint32 Scrolleable 		= (Uint32)mItems.size() * mRowHeight - mContainer->Size().Height();
+	bool isScrollVisible 	= mScrollBar->Visible();
+	bool isHScrollVisible 	= mHScrollBar->Visible();
+	bool FirstVisible 		= false;
 
 	if ( Clipped && mSmoothScroll ) {
 		RelPos 		= (Uint32)( mScrollBar->Value() * Scrolleable );
@@ -402,6 +427,11 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 			ItemPosMax = ItemPos + mRowHeight;
 
 			if ( ( ItemPos >= (Int32)RelPos || ItemPosMax >= (Int32)RelPos ) && ( ItemPos <= (Int32)RelPosMax ) ) {
+				if ( NULL == Item ) {
+					CreateItemIndex( i );
+					Item = mItems[i];
+				}
+
 				Item->Pos( mHScrollInit, ItemPos - RelPos );
 				Item->Enabled( true );
 				Item->Visible( true );
@@ -413,12 +443,17 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 
 				mVisibleLast = i;
 			} else {
-				Item->Enabled( false );
-				Item->Visible( false );
+				//Item->Enabled( false );
+				//Item->Visible( false );
+
+				eeSAFE_DELETE( mItems[i] );
+				Item = NULL;
 			}
 
-			if ( ( !wasScrollVisible && isScrollVisible ) || ( wasScrollVisible && !isScrollVisible ) ||( !wasHScrollVisible && isHScrollVisible ) || ( wasHScrollVisible && !isHScrollVisible ) )
-				ItemUpdateSize( Item );
+			if ( NULL != Item ) {
+				if ( ( !wasScrollVisible && isScrollVisible ) || ( wasScrollVisible && !isScrollVisible ) ||( !wasHScrollVisible && isHScrollVisible ) || ( wasHScrollVisible && !isHScrollVisible ) )
+					ItemUpdateSize( Item );
+			}
 		}
 	} else {
 		RelPosMax		= (Uint32)mItems.size();
@@ -438,6 +473,11 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 			ItemPos = mRowHeight * ( i - RelPos );
 
 			if ( i >= RelPos && i < RelPosMax ) {
+				if ( NULL == Item ) {
+					CreateItemIndex( i );
+					Item = mItems[i];
+				}
+
 				if ( Clipped )
 					Item->Pos( mHScrollInit, ItemPos );
 				else
@@ -453,12 +493,17 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 
 				mVisibleLast = i;
 			} else {
-				Item->Enabled( false );
-				Item->Visible( false );
+				//Item->Enabled( false );
+				//Item->Visible( false );
+
+				eeSAFE_DELETE( mItems[i] );
+				Item = NULL;
 			}
 
-			if ( ( !wasScrollVisible && isScrollVisible ) || ( wasScrollVisible && !isScrollVisible ) ||( !wasHScrollVisible && isHScrollVisible ) || ( wasHScrollVisible && !isHScrollVisible ) )
-				ItemUpdateSize( Item );
+			if ( NULL != Item ) {
+				if ( ( !wasScrollVisible && isScrollVisible ) || ( wasScrollVisible && !isScrollVisible ) ||( !wasHScrollVisible && isHScrollVisible ) || ( wasHScrollVisible && !isHScrollVisible ) )
+					ItemUpdateSize( Item );
+			}
 		}
 	}
 }
@@ -476,7 +521,8 @@ Uint32 cUIListBox::OnSelected() {
 
 void cUIListBox::ResetItemsStates() {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
-		mItems[i]->Unselect();
+		if ( NULL != mItems[i] )
+			mItems[i]->Unselect();
 	}
 }
 
@@ -491,8 +537,12 @@ cUIListBoxItem * cUIListBox::GetItem( const Uint32& Index ) const {
 }
 
 cUIListBoxItem * cUIListBox::GetItemSelected() {
-	if ( mSelected.size() )
+	if ( mSelected.size() ) {
+		if ( NULL == mItems[ mSelected.front() ] )
+			CreateItemIndex( mSelected.front() );
+
 		return mItems[ mSelected.front() ];
+	}
 
 	return NULL;
 }
@@ -512,8 +562,12 @@ std::list<cUIListBoxItem *> cUIListBox::GetItemsSelected() {
 	std::list<cUIListBoxItem *> tItems;
 	std::list<Uint32>::iterator it;
 
-	for ( it = mSelected.begin(); it != mSelected.end(); it++ )
+	for ( it = mSelected.begin(); it != mSelected.end(); it++ ) {
+		if ( NULL == mItems[ *it ] )
+			CreateItemIndex( *it );
+
 		tItems.push_back( mItems[ *it ] );
+	}
 
 	return tItems;
 }

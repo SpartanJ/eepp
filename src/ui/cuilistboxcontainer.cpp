@@ -19,7 +19,8 @@ void cUIListBoxContainer::Update() {
 
 	if ( LBParent->mItems.size() ) {
 		for ( Uint32 i = LBParent->mVisibleFirst; i <= LBParent->mVisibleLast; i++ )
-			LBParent->mItems[i]->Update();
+			if ( NULL != LBParent->mItems[i] )
+				LBParent->mItems[i]->Update();
 	}
 }
 
@@ -28,7 +29,8 @@ void cUIListBoxContainer::DrawChilds() {
 
 	if ( LBParent->mItems.size() ) {
 		for ( Uint32 i = LBParent->mVisibleFirst; i <= LBParent->mVisibleLast; i++ )
-			LBParent->mItems[i]->InternalDraw();
+			if ( NULL != LBParent->mItems[i] )
+				LBParent->mItems[i]->InternalDraw();
 	}
 }
 
@@ -42,12 +44,14 @@ cUIControl * cUIListBoxContainer::OverFind( const eeVector2f& Point ) {
 
 		if ( PointInsidePolygon2( mPoly, Point ) ) {
 			for ( Uint32 i = LBParent->mVisibleFirst; i <= LBParent->mVisibleLast; i++ ) {
-				cUIControl * ChildOver = LBParent->mItems[i]->OverFind( Point );
+				if ( NULL != LBParent->mItems[i] ) {
+					cUIControl * ChildOver = LBParent->mItems[i]->OverFind( Point );
 
-				if ( NULL != ChildOver ) {
-					pOver = ChildOver;
+					if ( NULL != ChildOver ) {
+						pOver = ChildOver;
 
-					break;
+						break;
+					}
 				}
 			}
 

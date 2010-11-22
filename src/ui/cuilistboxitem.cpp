@@ -13,8 +13,12 @@ cUIListBoxItem::cUIListBoxItem( cUITextBox::CreateParams& Params ) :
 }
 
 cUIListBoxItem::~cUIListBoxItem() {
-}
+	if ( cUIManager::instance()->FocusControl() == this )
+		cUIManager::instance()->FocusControl( mParentCtrl );
 
+	if ( cUIManager::instance()->OverControl() == this )
+		cUIManager::instance()->OverControl( mParentCtrl );
+}
 
 void cUIListBoxItem::SetTheme( cUITheme * Theme ) {
 	cUIControl::SetTheme( Theme, "listboxitem" );

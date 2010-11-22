@@ -12,12 +12,13 @@ cUITextBox::cUITextBox( const cUITextBox::CreateParams& Params ) :
 {
 	mType |= UI_TYPE_GET(UI_TYPE_TEXTBOX);
 
-	mTextCache.Font( Params.Font );
-	mTextCache.Color( mFontColor );
-	mTextCache.ShadowColor( mFontShadowColor );
+	mTextCache = eeNew( cTextCache, () );
+	mTextCache->Font( Params.Font );
+	mTextCache->Color( mFontColor );
+	mTextCache->ShadowColor( mFontShadowColor );
 
 	if ( NULL == Params.Font && NULL != cUIThemeManager::instance()->DefaultFont() ) {
-		mTextCache.Font( cUIThemeManager::instance()->DefaultFont() );
+		mTextCache->Font( cUIThemeManager::instance()->DefaultFont() );
 	} else {
 		eePRINT( "cUITextBox::cUITextBox : Created a UI TextBox without a defined font." );
 	}
@@ -26,17 +27,18 @@ cUITextBox::cUITextBox( const cUITextBox::CreateParams& Params ) :
 }
 
 cUITextBox::~cUITextBox() {
+	eeSAFE_DELETE( mTextCache );
 }
 
 void cUITextBox::Draw() {
 	if ( mVisible ) {
 		cUIControl::Draw();
 
-		if ( mTextCache.GetTextWidth() ) {
+		if ( mTextCache->GetTextWidth() ) {
 			if ( mFlags & UI_CLIP_ENABLE )
 				cUIManager::instance()->ClipEnable( mScreenPos.x + mPadding.Left, mScreenPos.y + mPadding.Top, mSize.Width() - mPadding.Left - mPadding.Right, mSize.Height() - mPadding.Bottom );
 
-			mTextCache.Draw( (eeFloat)mScreenPos.x + mAlignOffset.x + (eeFloat)mPadding.Left + 1.f, (eeFloat)mScreenPos.y + mAlignOffset.y + (eeFloat)mPadding.Top, Flags(), 1.f, 0.f, mBlend );
+			mTextCache->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x + (eeFloat)mPadding.Left + 1.f, (eeFloat)mScreenPos.y + mAlignOffset.y + (eeFloat)mPadding.Top, Flags(), 1.f, 0.f, mBlend );
 
 			if ( mFlags & UI_CLIP_ENABLE )
 				cUIManager::instance()->ClipDisable();
@@ -45,11 +47,11 @@ void cUITextBox::Draw() {
 }
 
 cFont * cUITextBox::Font() const {
-	return mTextCache.Font();
+	return mTextCache->Font();
 }
 
 void cUITextBox::Font( cFont * font ) {
-	mTextCache.Font( font );
+	mTextCache->Font( font );
 	AutoShrink();
 	AutoSize();
 	AutoAlign();
@@ -57,7 +59,7 @@ void cUITextBox::Font( cFont * font ) {
 }
 
 const std::wstring& cUITextBox::Text() {
-	return mTextCache.Text();
+	return mTextCache->Text();
 }
 
 void cUITextBox::Text( const std::string& text ) {
@@ -65,7 +67,7 @@ void cUITextBox::Text( const std::string& text ) {
 }
 
 void cUITextBox::Text( const std::wstring& text ) {
-	mTextCache.Text( text );
+	mTextCache->Text( text );
 	AutoShrink();
 	AutoSize();
 	AutoAlign();
@@ -79,7 +81,7 @@ const eeColorA& cUITextBox::Color() const {
 void cUITextBox::Color( const eeColorA& color ) {
 	mFontColor = color;
 	Alpha( color.A() );
-	mTextCache.Color( mFontColor );
+	mTextCache->Color( mFontColor );
 }
 
 const eeColorA& cUITextBox::ShadowColor() const {
@@ -99,24 +101,24 @@ void cUITextBox::Alpha( const eeFloat& alpha ) {
 
 void cUITextBox::AutoShrink() {
 	if ( Flags() & UI_AUTO_SHRINK_TEXT ) {
-		mTextCache.Font()->ShrinkText( mTextCache.Text(), mSize.Width() );
+		mTextCache->Font()->ShrinkText( mTextCache->Text(), mSize.Width() );
 	}
 }
 
 void cUITextBox::AutoSize() {
 	if ( Flags() & UI_AUTO_SIZE ) {
-		mSize.Width( (eeInt)mTextCache.GetTextWidth() );
-		mSize.Height( (eeInt)mTextCache.GetTextHeight() );
+		mSize.Width( (eeInt)mTextCache->GetTextWidth() );
+		mSize.Height( (eeInt)mTextCache->GetTextHeight() );
 	}
 }
 
 void cUITextBox::AutoAlign() {
 	switch ( FontHAlignGet( Flags() ) ) {
 		case UI_HALIGN_CENTER:
-			mAlignOffset.x = (eeFloat)( (Int32)( mSize.x - mTextCache.GetTextWidth() ) / 2 );
+			mAlignOffset.x = (eeFloat)( (Int32)( mSize.x - mTextCache->GetTextWidth() ) / 2 );
 			break;
 		case UI_HALIGN_RIGHT:
-			mAlignOffset.x = ( (eeFloat)mSize.x - (eeFloat)mTextCache.GetTextWidth() );
+			mAlignOffset.x = ( (eeFloat)mSize.x - (eeFloat)mTextCache->GetTextWidth() );
 			break;
 		case UI_HALIGN_LEFT:
 			mAlignOffset.x = 0.f;
@@ -125,10 +127,10 @@ void cUITextBox::AutoAlign() {
 
 	switch ( FontVAlignGet( Flags() ) ) {
 		case UI_VALIGN_CENTER:
-			mAlignOffset.y = (eeFloat)( ( (Int32)( mSize.y - mTextCache.GetTextHeight() ) ) / 2 );
+			mAlignOffset.y = (eeFloat)( ( (Int32)( mSize.y - mTextCache->GetTextHeight() ) ) / 2 );
 			break;
 		case UI_VALIGN_BOTTOM:
-			mAlignOffset.y = ( (eeFloat)mSize.y - (eeFloat)mTextCache.GetTextHeight() );
+			mAlignOffset.y = ( (eeFloat)mSize.y - (eeFloat)mTextCache->GetTextHeight() );
 			break;
 		case UI_VALIGN_TOP:
 			mAlignOffset.y = 0.f;
@@ -143,7 +145,7 @@ void cUITextBox::OnSizeChange() {
 
 	cUIControlAnim::OnSizeChange();
 
-	mTextCache.Cache();
+	mTextCache->Cache();
 }
 
 void cUITextBox::OnTextChanged() {
@@ -165,25 +167,25 @@ const eeRecti& cUITextBox::Padding() const {
 void cUITextBox::SetTheme( cUITheme * Theme ) {
 	cUIControlAnim::SetTheme( Theme );
 
-	if ( NULL == mTextCache.Font() && NULL != Theme->DefaultFont() ) {
-		mTextCache.Font( Theme->DefaultFont() );
+	if ( NULL == mTextCache->Font() && NULL != Theme->DefaultFont() ) {
+		mTextCache->Font( Theme->DefaultFont() );
 	}
 }
 
-cTextCache& cUITextBox::GetTextCache() {
+cTextCache * cUITextBox::GetTextCache() {
 	return mTextCache;
 }
 
 eeFloat cUITextBox::GetTextWidth() {
-	return mTextCache.GetTextWidth();
+	return mTextCache->GetTextWidth();
 }
 
 eeFloat cUITextBox::GetTextHeight() {
-	return mTextCache.GetTextHeight();
+	return mTextCache->GetTextHeight();
 }
 
 const eeInt& cUITextBox::GetNumLines() const {
-	return mTextCache.GetNumLines();
+	return mTextCache->GetNumLines();
 }
 
 }}
