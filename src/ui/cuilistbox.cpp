@@ -17,7 +17,6 @@ cUIListBox::cUIListBox( cUIListBox::CreateParams& Params ) :
 	mFontOverColor( Params.FontOverColor ),
 	mFontSelectedColor( Params.FontSelectedColor ),
 	mLastPos( 0xFFFFFFFF ),
-	mDisableScrollUpdate( false ),
 	mMaxTextWidth(0),
 	mAllowHorizontalScroll( Params.AllowHorizontalScroll ),
 	mHScrollInit(0),
@@ -27,6 +26,12 @@ cUIListBox::cUIListBox( cUIListBox::CreateParams& Params ) :
 	mVisibleLast(0)
 {
 	mType |= UI_TYPE_LISTBOX;
+
+	if ( NULL == Params.Font && NULL != cUIThemeManager::instance()->DefaultFont() )
+		mFont = cUIThemeManager::instance()->DefaultFont();
+
+	if ( NULL == mFont && NULL != mSkinState && NULL != mSkinState->GetSkin() && NULL != mSkinState->GetSkin()->Theme() && NULL != mSkinState->GetSkin()->Theme()->DefaultFont() )
+		mFont = mSkinState->GetSkin()->Theme()->DefaultFont();
 
 	cUIControl::CreateParams CParams;
 	CParams.Parent( this );
@@ -94,14 +99,9 @@ cUIScrollBar * cUIListBox::HScrollBar() const {
 }
 
 void cUIListBox::AddListBoxItems( std::vector<std::wstring> Texts ) {
-	mDisableScrollUpdate = true;
-
 	for ( Uint32 i = 0; i < Texts.size(); i++ ) {
-		mTexts.push_back( Texts[i] );
-		mItems.push_back( NULL );
+		AddListBoxItem( Texts[i] );
 	}
-
-	mDisableScrollUpdate = false;
 
 	UpdateScroll();
 }
@@ -113,8 +113,8 @@ Uint32 cUIListBox::AddListBoxItem( cUIListBoxItem * Item ) {
 	if ( Item->Parent() != mContainer )
 		Item->Parent( mContainer );
 
-	if ( !mDisableScrollUpdate )
-		UpdateScroll();
+
+	UpdateScroll();
 
 	Uint32 tMaxTextWidth = mMaxTextWidth;
 
@@ -122,9 +122,7 @@ Uint32 cUIListBox::AddListBoxItem( cUIListBoxItem * Item ) {
 
 	if ( tMaxTextWidth != mMaxTextWidth ) {
 		UpdateListBoxItemsSize();
-
-		if ( !mDisableScrollUpdate )
-			UpdateScroll();
+		UpdateScroll();
 	}
 
 	return (Uint32)(mItems.size() - 1);
@@ -135,7 +133,21 @@ Uint32 cUIListBox::AddListBoxItem( const std::string& Text ) {
 }
 
 Uint32 cUIListBox::AddListBoxItem( const std::wstring& Text ) {
-	return AddListBoxItem( CreateListBoxItem( Text ) );
+	mTexts.push_back( Text );
+	mItems.push_back( NULL );
+
+	if ( NULL != mFont ) {
+		Uint32 twidth = mFont->GetTextWidth( Text );
+
+		if ( twidth > mMaxTextWidth ) {
+			mMaxTextWidth = twidth;
+
+			UpdateListBoxItemsSize();
+			UpdateScroll();
+		}
+	}
+
+	return (Uint32)(mItems.size() - 1);
 }
 
 cUIListBoxItem * cUIListBox::CreateListBoxItem( const std::wstring& Name ) {
@@ -288,7 +300,10 @@ void cUIListBox::FindMaxWidth() {
 	mMaxTextWidth = 0;
 
 	for ( Uint32 i = 0; i < size; i++ ) {
-		width = (Int32)mItems[i]->GetTextWidth();
+		if ( NULL != mItems[i] )
+			width = (Int32)mItems[i]->GetTextWidth();
+		else
+			width = mFont->GetTextWidth( mTexts[i] );
 
 		if ( width > (Int32)mMaxTextWidth )
 			mMaxTextWidth = (Uint32)width;
@@ -298,28 +313,29 @@ void cUIListBox::FindMaxWidth() {
 void cUIListBox::UpdateListBoxItemsSize() {
 	Uint32 size = (Uint32)mItems.size();
 
-	for ( Uint32 i = 0; i < size; i++ ) {
+	for ( Uint32 i = 0; i < size; i++ )
 		ItemUpdateSize( mItems[i] );
-	}
 }
 
 void cUIListBox::ItemUpdateSize( cUIListBoxItem * Item ) {
-	Int32 width = (Int32)Item->GetTextWidth();
+	if ( NULL != Item ) {
+		Int32 width = (Int32)Item->GetTextWidth();
 
-	if ( width > (Int32)mMaxTextWidth )
-		mMaxTextWidth = (Uint32)width;
+		if ( width > (Int32)mMaxTextWidth )
+			mMaxTextWidth = (Uint32)width;
 
-	if ( !mHScrollBar->Visible() ) {
-		if ( width < mContainer->Size().Width() )
-			width = mContainer->Size().Width();
+		if ( !mHScrollBar->Visible() ) {
+			if ( width < mContainer->Size().Width() )
+				width = mContainer->Size().Width();
 
-		if ( ( mItemsNotVisible > 0 || mScrollAlwaysVisible ) )
-			width -= mScrollBar->Size().Width();
-	} else {
-		width = mMaxTextWidth;
+			if ( ( mItemsNotVisible > 0 || mScrollAlwaysVisible ) )
+				width -= mScrollBar->Size().Width();
+		} else {
+			width = mMaxTextWidth;
+		}
+
+		Item->Size( width, mRowHeight );
 	}
-
-	Item->Size( width, mRowHeight );
 }
 
 void cUIListBox::ContainerResize() {

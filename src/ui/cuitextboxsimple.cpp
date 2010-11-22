@@ -17,12 +17,12 @@ cUITextBoxSimple::cUITextBoxSimple( const cUITextBox::CreateParams& Params ) :
 
 	mFont = Params.Font;
 
-	if ( NULL == Params.Font && NULL != cUIThemeManager::instance()->DefaultFont() ) {
-		mFont = cUIThemeManager::instance()->DefaultFont();
-	} else {
-		eePRINT( "cUITextBoxSimple::cUITextBoxSimple : Created a UI TextBox without a defined font." );
+	if ( NULL == Params.Font ) {
+		if ( NULL != cUIThemeManager::instance()->DefaultFont() )
+			mFont = cUIThemeManager::instance()->DefaultFont();
+		else
+			eePRINT( "cUITextBoxSimple::cUITextBoxSimple : Created a UI TextBox without a defined font.\n" );
 	}
-
 	AutoAlign();
 }
 

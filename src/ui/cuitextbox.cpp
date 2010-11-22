@@ -17,10 +17,11 @@ cUITextBox::cUITextBox( const cUITextBox::CreateParams& Params ) :
 	mTextCache->Color( mFontColor );
 	mTextCache->ShadowColor( mFontShadowColor );
 
-	if ( NULL == Params.Font && NULL != cUIThemeManager::instance()->DefaultFont() ) {
-		mTextCache->Font( cUIThemeManager::instance()->DefaultFont() );
-	} else {
-		eePRINT( "cUITextBox::cUITextBox : Created a UI TextBox without a defined font." );
+	if ( NULL == Params.Font ) {
+		if ( NULL != cUIThemeManager::instance()->DefaultFont() )
+			mTextCache->Font( cUIThemeManager::instance()->DefaultFont() );
+		else
+			eePRINT( "cUITextBox::cUITextBox : Created a UI TextBox without a defined font.\n" );
 	}
 
 	AutoAlign();

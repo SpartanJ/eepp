@@ -132,7 +132,6 @@ class EE_API cUIListBox : public cUIControlAnim {
 		eeColorA 			mFontOverColor;
 		eeColorA 			mFontSelectedColor;
 		Uint32 				mLastPos;
-		bool 				mDisableScrollUpdate;
 		Uint32 				mMaxTextWidth;
 		bool 				mAllowHorizontalScroll;
 		Int32 				mHScrollInit;
