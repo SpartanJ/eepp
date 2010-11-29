@@ -15,14 +15,19 @@ cUISkinSimple::cUISkinSimple( const std::string& Name ) :
 cUISkinSimple::~cUISkinSimple() {
 }
 
-void cUISkinSimple::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Width, const eeFloat& Height, const Uint32& State ) {
+void cUISkinSimple::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Width, const eeFloat& Height, const Uint32& Alpha, const Uint32& State ) {
 	cShape * tShape = mShape[ State ];
+	mTempColor		= mColor[ State ];
 
 	if ( NULL != tShape ) {
 		tShape->DestWidth( Width );
 		tShape->DestHeight( Height );
 
-		tShape->Draw( X, Y, mColor[ State ] );
+		if ( mTempColor.Alpha != Alpha ) {
+			mTempColor.Alpha = (Uint8)( (eeFloat)mTempColor.Alpha * ( (eeFloat)Alpha / 255.f ) );
+		}
+
+		tShape->Draw( X, Y, mTempColor );
 
 		tShape->ResetDestWidthAndHeight();
 	}

@@ -73,6 +73,8 @@ class EE_API cUIListBox : public cUIControlAnim {
 
 		cUIListBoxItem * GetItemSelected();
 
+		std::wstring GetItemSelectedText() const;
+
 		Uint32 GetItemSelectedIndex() const;
 
 		std::list<Uint32> GetItemsSelectedIndex() const;
@@ -115,10 +117,19 @@ class EE_API cUIListBox : public cUIControlAnim {
 
 		const bool& AllowHorizontalScroll() const;
 
-		Uint32 Size();
+		Uint32 Count();
+
+		virtual Uint32 OnMessage( const cUIMessage * Msg );
+
+		void SetSelected( Uint32 Index );
+
+		void SelectPrev();
+
+		void SelectNext();
 	protected:
 		friend class cUIListBoxItem;
 		friend class cUIListBoxContainer;
+		friend class cUIDropDownList;
 
 		Uint32 				mRowHeight;
 		bool 				mScrollAlwaysVisible;

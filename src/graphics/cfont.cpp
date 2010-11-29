@@ -160,13 +160,13 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 		glRotatef( Angle, 0.0f, 0.0f, 1.0f );
 		glScalef( Scale, Scale, 1.0f );
 		glTranslatef( -Center.x, -Center.y, 0.f );
-		
+
 		glTranslatef( X, Y, 0.f );
 	}
 
 	std::vector<eeVertexCoords>& RenderCoords = TextCache.VertextCoords();
 	std::vector<eeColorA>& Colors = TextCache.Colors();
-	
+
 	#ifndef EE_GLES
 	if ( !TextCache.CachedCoords() ) {
 	#else
@@ -193,7 +193,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 
 			if ( Char >= 0 && Char < tGlyphSize ) {
 				eeTexCoords* C = &mTexCoords[ Char ];
-				
+
 				switch(Char) {
 					case L'\v':
 					{
@@ -245,7 +245,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 							RenderCoords[ numvert ].Vertex[1] = cY + C->Vertex[ z + 1 ] + nY;
 							numvert++;
 						}
-						
+
 						#ifdef EE_GLES
 							glColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<char*>( &Colors[0] ) );
 							glTexCoordPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[ numvert - 4 ] ) );
@@ -424,9 +424,9 @@ void cFont::CacheWidth( const std::wstring& Text, std::vector<eeFloat>& LinesWid
 	eeFloat Width = 0, MaxWidth = 0;
 	Int32 CharID;
 	Int32 Lines = 1;
-	
+
 	Int32 tGlyphSize = (Int32)mGlyphs.size();
-	
+
 	for (std::size_t i = 0; i < Text.size(); ++i) {
 		CharID = static_cast<Int32>( Text.at(i) );
 
@@ -471,7 +471,7 @@ void cFont::ShrinkText( std::string& Str, const Uint32& MaxWidth ) {
 	char *		tStringLoop		= &Str[0];
 	char *		tLastSpace		= NULL;
 	Uint32 		tGlyphSize 		= (Uint32)mGlyphs.size();
-	
+
 	while ( *tStringLoop ) {
 		if ( (Uint32)( *tStringLoop ) < tGlyphSize ) {
 			eeGlyph * pChar = &mGlyphs[ ( *tStringLoop ) ];

@@ -50,6 +50,8 @@ class EE_API cUIControlAnim : public cUIDragable {
 		cInterpolation * AlphaInterpolation();
 
 		cWaypoints * MovementInterpolation();
+
+		virtual void Draw();
     protected:
     	friend class cUIManager;
 

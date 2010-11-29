@@ -27,15 +27,20 @@ cUISkinComplex::~cUISkinComplex() {
 
 }
 
-void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Width, const eeFloat& Height, const Uint32& State ) {
+void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Width, const eeFloat& Height, const Uint32& Alpha, const Uint32& State ) {
 	cShape * tShape = mShape[ State ][ UpLeft ];
+	mTempColor		= mColor[ State ];
+
+	if ( mTempColor.Alpha != Alpha ) {
+		mTempColor.Alpha = (Uint8)( (eeFloat)mTempColor.Alpha * ( (eeFloat)Alpha / 255.f ) );
+	}
 
 	eeSize uls;
 
 	if ( NULL != tShape ) {
 		uls = tShape->RealSize();
 
-		tShape->Draw( X, Y, mColor[ State ] );
+		tShape->Draw( X, Y, mTempColor );
 	}
 
 	tShape = mShape[ State ][ DownLeft ];
@@ -45,7 +50,7 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 	if ( NULL != tShape ) {
 		dls = tShape->RealSize();
 
-		tShape->Draw( X, Y + Height - dls.Height(), mColor[ State ] );
+		tShape->Draw( X, Y + Height - dls.Height(), mTempColor );
 	}
 
 	tShape = mShape[ State ][ UpRight ];
@@ -55,7 +60,7 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 	if ( NULL != tShape ) {
 		urs = tShape->RealSize();
 
-		tShape->Draw( X + Width - urs.Width(), Y, mColor[ State ] );
+		tShape->Draw( X + Width - urs.Width(), Y, mTempColor );
 	}
 
 	tShape = mShape[ State ][ DownRight ];
@@ -65,7 +70,7 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 	if ( NULL != tShape ) {
 		drs = tShape->RealSize();
 
-		tShape->Draw( X + Width - drs.Width(), Y + Height - drs.Height(), mColor[ State ] );
+		tShape->Draw( X + Width - drs.Width(), Y + Height - drs.Height(), mTempColor );
 	}
 
 	tShape = mShape[ State ][ Left ];
@@ -73,7 +78,7 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 	if ( NULL != tShape ) {
 		tShape->DestHeight( Height - uls.Height() - dls.Height() );
 
-		tShape->Draw( X, Y + uls.Height(), mColor[ State ] );
+		tShape->Draw( X, Y + uls.Height(), mTempColor );
 
 		tShape->ResetDestWidthAndHeight();
 
@@ -86,7 +91,7 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 	if ( NULL != tShape ) {
 		tShape->DestWidth( Width - uls.Width() - urs.Width() );
 
-		tShape->Draw( X + uls.Width(), Y, mColor[ State ] );
+		tShape->Draw( X + uls.Width(), Y, mTempColor );
 
 		tShape->ResetDestWidthAndHeight();
 
@@ -105,7 +110,7 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 
 		tShape->DestHeight( Height - urs.Height() - drs.Height() );
 
-		tShape->Draw( X + Width - urs.Width(), Y + urs.Height(), mColor[ State ] );
+		tShape->Draw( X + Width - urs.Width(), Y + urs.Height(), mTempColor );
 
 		tShape->ResetDestWidthAndHeight();
 	}
@@ -115,7 +120,7 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 	if ( NULL != tShape ) {
 		tShape->DestWidth( Width - dls.Width() - drs.Width() );
 
-		tShape->Draw( X + dls.Width(), Y + Height - tShape->RealSize().Height(), mColor[ State ] );
+		tShape->Draw( X + dls.Width(), Y + Height - tShape->RealSize().Height(), mTempColor );
 
 		tShape->ResetDestWidthAndHeight();
 	}
@@ -126,7 +131,7 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 		tShape->DestWidth( Width - uls.Width() - urs.Width() );
 		tShape->DestHeight( Height - uls.Height() - urs.Height() );
 
-		tShape->Draw( X + uls.Width(), Y + uls.Height(), mColor[ State ] );
+		tShape->Draw( X + uls.Width(), Y + uls.Height(), mTempColor );
 
 		tShape->ResetDestWidthAndHeight();
 	}

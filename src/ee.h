@@ -161,5 +161,7 @@
 	#include "ui/cuiprogressbar.hpp"
 	#include "ui/cuilistbox.hpp"
 	#include "ui/cuilistboxitem.hpp"
+	#include "ui/cuidropdownlist.hpp"
+	#include "ui/cuicombobox.hpp"
 	using namespace EE::UI;
 #endif

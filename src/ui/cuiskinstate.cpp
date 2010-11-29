@@ -14,9 +14,9 @@ cUISkinState::cUISkinState( cUISkin * Skin ) :
 cUISkinState::~cUISkinState() {
 }
 
-void cUISkinState::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Width, const eeFloat& Height ) {
+void cUISkinState::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Width, const eeFloat& Height, const Uint32& Alpha ) {
 	if ( NULL != mSkin )
-		mSkin->Draw( X, Y, Width, Height, mCurState );
+		mSkin->Draw( X, Y, Width, Height, Alpha, mCurState );
 }
 
 void cUISkinState::StateBack( const Uint32& State ) {

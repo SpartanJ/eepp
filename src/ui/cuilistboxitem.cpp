@@ -7,7 +7,7 @@ namespace EE { namespace UI {
 cUIListBoxItem::cUIListBoxItem( cUITextBox::CreateParams& Params ) :
 	cUITextBox( Params )
 {
-	mType |= UI_TYPE_LISTBOXITEM;
+	mType |= UI_TYPE_GET( UI_TYPE_LISTBOXITEM );
 
 	ApplyDefaultTheme();
 }
@@ -72,6 +72,9 @@ void cUIListBoxItem::Update() {
 		cUIListBox * LBParent 	= reinterpret_cast<cUIListBox*> ( Parent()->Parent() );
 		Uint32 Flags 			= cUIManager::instance()->GetInput()->ClickTrigger();
 
+		if ( NULL != LBParent && LBParent->Alpha() != mAlpha )
+			Alpha( LBParent->Alpha() );
+		
 		if ( IsMouseOver() ) {
 			if ( Flags & EE_BUTTONS_WUWD )
 				LBParent->ScrollBar()->Slider()->ManageClick( Flags );

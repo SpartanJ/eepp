@@ -42,7 +42,9 @@ static const char * UI_THEME_ELEMENTS[] = {
 	"progressbar",
 	"progressbar_filler",
 	"listbox",
-	"listboxitem"
+	"listboxitem",
+	"dropdownlist",
+	"combobox"
 };
 
 cUITheme * cUITheme::LoadFromPath( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt ) {

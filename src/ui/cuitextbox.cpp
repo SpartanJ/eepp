@@ -33,7 +33,7 @@ cUITextBox::~cUITextBox() {
 
 void cUITextBox::Draw() {
 	if ( mVisible ) {
-		cUIControl::Draw();
+		cUIControlAnim::Draw();
 
 		if ( mTextCache->GetTextWidth() ) {
 			if ( mFlags & UI_CLIP_ENABLE )
@@ -82,7 +82,6 @@ const eeColorA& cUITextBox::Color() const {
 void cUITextBox::Color( const eeColorA& color ) {
 	mFontColor = color;
 	Alpha( color.A() );
-	mTextCache->Color( mFontColor );
 }
 
 const eeColorA& cUITextBox::ShadowColor() const {
@@ -92,12 +91,15 @@ const eeColorA& cUITextBox::ShadowColor() const {
 void cUITextBox::ShadowColor( const eeColorA& color ) {
 	mFontShadowColor = color;
 	Alpha( color.A() );
+	mTextCache->ShadowColor( mFontColor );
 }
 
 void cUITextBox::Alpha( const eeFloat& alpha ) {
 	cUIControlAnim::Alpha( alpha );
 	mFontColor.Alpha = (Uint8)alpha;
 	mFontShadowColor.Alpha = (Uint8)alpha;
+
+	mTextCache->Color( mFontColor );
 }
 
 void cUITextBox::AutoShrink() {

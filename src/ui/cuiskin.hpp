@@ -22,7 +22,7 @@ class EE_API cUISkin {
 
 		virtual ~cUISkin();
 
-		virtual void Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Width, const eeFloat& Height, const Uint32& State ) = 0;
+		virtual void Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Width, const eeFloat& Height, const Uint32& Alpha, const Uint32& State ) = 0;
 
 		virtual void SetSkin( const Uint32& State ) = 0;
 

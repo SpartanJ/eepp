@@ -33,6 +33,7 @@ class EE_API cUIEvent {
 			EventOnPressEnter,
 			EventOnValueChange,
 			EventOnSelected,
+			EventOnComplexControlFocusLoss,
 			EventUser,
 			EventForceDWord = 0xFFFFFFFF
 		};

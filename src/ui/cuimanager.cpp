@@ -100,9 +100,15 @@ cUIControl * cUIManager::FocusControl() const {
 
 void cUIManager::FocusControl( cUIControl * Ctrl ) {
 	if ( NULL != Ctrl && Ctrl != mFocusControl ) {
-		mFocusControl->OnFocusLoss();
+		cUIControl * CtrlFocusLoss = mFocusControl;
+
 		mFocusControl = Ctrl;
+
+		CtrlFocusLoss->OnFocusLoss();
+		SendMsg( CtrlFocusLoss, cUIMessage::MsgFocusLoss );
+
 		mFocusControl->OnFocus();
+		SendMsg( mFocusControl, cUIMessage::MsgFocus );
 	}
 }
 
@@ -127,12 +133,8 @@ void cUIManager::Update() {
 
 	if ( mKM->PressTrigger() ) {
 		if ( NULL != mOverControl ) {
-			if ( mOverControl != mFocusControl ) {
-				mOverControl->OnFocus();
-				mFocusControl->OnFocusLoss();
-
-				mFocusControl = mOverControl;
-			}
+			if ( mOverControl != mFocusControl )
+				FocusControl( mOverControl );
 
 			mOverControl->OnMouseDown( mKM->GetMousePos(), mKM->PressTrigger() );
 		}

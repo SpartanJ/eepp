@@ -16,6 +16,8 @@ class EE_API cUIMessage {
 			MsgMouseEnter,
 			MsgMouseExit,
 			MsgWindowResize,
+			MsgFocus,
+			MsgFocusLoss,
 			MsgUser,
 			MsgForceDWord = 0xFFFFFFFF
 		};

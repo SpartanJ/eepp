@@ -25,7 +25,7 @@ cUIListBox::cUIListBox( cUIListBox::CreateParams& Params ) :
 	mVisibleFirst(0),
 	mVisibleLast(0)
 {
-	mType |= UI_TYPE_LISTBOX;
+	mType |= UI_TYPE_GET( UI_TYPE_LISTBOX );
 
 	if ( NULL == Params.Font && NULL != cUIThemeManager::instance()->DefaultFont() )
 		mFont = cUIThemeManager::instance()->DefaultFont();
@@ -459,9 +459,6 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 
 				mVisibleLast = i;
 			} else {
-				//Item->Enabled( false );
-				//Item->Visible( false );
-
 				eeSAFE_DELETE( mItems[i] );
 				Item = NULL;
 			}
@@ -509,9 +506,6 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 
 				mVisibleLast = i;
 			} else {
-				//Item->Enabled( false );
-				//Item->Visible( false );
-
 				eeSAFE_DELETE( mItems[i] );
 				Item = NULL;
 			}
@@ -568,6 +562,15 @@ Uint32 cUIListBox::GetItemSelectedIndex() const {
 		return mSelected.front();
 
 	return 0xFFFFFFFF;
+}
+
+std::wstring cUIListBox::GetItemSelectedText() const {
+	std::wstring tstr;
+
+	if ( mSelected.size() )
+		return mTexts[ mSelected.front() ];
+
+	return tstr;
 }
 
 std::list<Uint32> cUIListBox::GetItemsSelectedIndex() const {
@@ -702,8 +705,82 @@ const bool& cUIListBox::AllowHorizontalScroll() const {
 	return mAllowHorizontalScroll;
 }
 
-Uint32 cUIListBox::Size() {
+Uint32 cUIListBox::Count() {
 	return (Uint32)mItems.size();
+}
+
+void cUIListBox::SetSelected( Uint32 Index ) {
+	if ( Index < mItems.size() ) {
+		if ( IsMultiSelect() ) {
+			for ( std::list<Uint32>::iterator it = mSelected.begin(); it != mSelected.end(); it++ ) {
+				if ( *it == Index )
+					return;
+			}
+		} else {
+			if ( mSelected.size() )
+				mSelected.clear();
+		}
+
+		mSelected.push_back( Index );
+
+		if ( NULL != mItems[ Index ] ) {
+			mItems[ Index ]->Select();
+		} else {
+			UpdateScroll();
+		}
+	}
+}
+
+void cUIListBox::SelectPrev() {
+	if ( !IsMultiSelect() && mSelected.size() ) {
+		Int32 SelIndex = mSelected.front() - 1;
+
+		if ( SelIndex >= 0 ) {
+			if ( NULL == mItems[ mSelected.front() ] )
+				CreateItemIndex( mSelected.front() );
+
+			if ( NULL == mItems[ SelIndex ] )
+				CreateItemIndex( SelIndex );
+
+			mItems[ mSelected.front() 		]->Unselect();
+
+			if ( ScrollBar()->Visible() ) {
+				if ( mItems[ SelIndex ]->Pos().y < 0 ) {
+					ScrollBar()->Value( (eeFloat)( SelIndex * mRowHeight ) / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) );
+
+					cUIManager::instance()->FocusControl( mItems[ SelIndex ] );
+				}
+			}
+
+			mItems[ SelIndex ]->Select();
+		}
+	}
+}
+
+void cUIListBox::SelectNext() {
+	if ( !IsMultiSelect() && mSelected.size() ) {
+		Int32 SelIndex = mSelected.front() + 1;
+
+		if ( SelIndex < (Int32)mItems.size() ) {
+			if ( NULL == mItems[ mSelected.front() ] )
+				CreateItemIndex( mSelected.front() );
+
+			if ( NULL == mItems[ SelIndex ] )
+				CreateItemIndex( SelIndex );
+
+			mItems[ mSelected.front() 		]->Unselect();
+
+			if ( ScrollBar()->Visible() ) {
+				if ( mItems[ SelIndex ]->Pos().y + (Int32)RowHeight() > mContainer->Size().Height() ) {
+					ScrollBar()->Value( (eeFloat)( SelIndex * mRowHeight ) / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) );
+
+					cUIManager::instance()->FocusControl( mItems[ SelIndex ] );
+				}
+			}
+
+			mItems[ SelIndex 	]->Select();
+		}
+	}
 }
 
 void cUIListBox::ManageKeyboard() {
@@ -711,45 +788,16 @@ void cUIListBox::ManageKeyboard() {
 		return;
 
 	cInput * KM 	= cUIManager::instance()->GetInput();
-	Int32 SelIndex 	= 0;
 
 	if ( eeGetTicks() - mLastTickMove > 100 ) {
 		if ( KM->IsKeyDown( KEY_DOWN ) ) {
 			mLastTickMove = eeGetTicks();
 
-			SelIndex = mSelected.front() + 1;
-
-			if ( SelIndex < (Int32)mItems.size() ) {
-				mItems[ mSelected.front() 		]->Unselect();
-
-				if ( ScrollBar()->Visible() ) {
-					if ( mItems[ SelIndex ]->Pos().y + (Int32)RowHeight() > mContainer->Size().Height() ) {
-						ScrollBar()->Value( (eeFloat)( SelIndex * mRowHeight ) / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) );
-
-						cUIManager::instance()->FocusControl( mItems[ SelIndex ] );
-					}
-				}
-
-				mItems[ SelIndex 	]->Select();
-			}
+			SelectNext();
 		} else if ( KM->IsKeyDown( KEY_UP ) ) {
 			mLastTickMove = eeGetTicks();
 
-			SelIndex = mSelected.front() - 1;
-
-			if ( SelIndex >= 0 ) {
-				mItems[ mSelected.front() 		]->Unselect();
-
-				if ( ScrollBar()->Visible() ) {
-					if ( mItems[ SelIndex ]->Pos().y < 0 ) {
-						ScrollBar()->Value( (eeFloat)( SelIndex * mRowHeight ) / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) );
-
-						cUIManager::instance()->FocusControl( mItems[ SelIndex ] );
-					}
-				}
-
-				mItems[ mSelected.front() - 1 	]->Select();
-			}
+			SelectPrev();
 		} else if ( KM->IsKeyDown( KEY_PAGEUP ) ) {
 			mLastTickMove = eeGetTicks();
 
@@ -765,17 +813,33 @@ void cUIListBox::ManageKeyboard() {
 		} else if ( KM->IsKeyDown( KEY_PAGEDOWN ) ) {
 			mLastTickMove = eeGetTicks();
 
-			if ( mSelected.front() != Size() - 1 ) {
+			if ( mSelected.front() != Count() - 1 ) {
 				mItems[ mSelected.front() ]->Unselect();
 
 				ScrollBar()->Value( 1 );
 
-				cUIManager::instance()->FocusControl( mItems[ Size() - 1 ] );
+				cUIManager::instance()->FocusControl( mItems[ Count() - 1 ] );
 
-				mItems[ Size() - 1 ]->Select();
+				mItems[ Count() - 1 ]->Select();
 			}
 		}
 	}
+}
+
+Uint32 cUIListBox::OnMessage( const cUIMessage * Msg ) {
+	switch ( Msg->Msg() ) {
+		case cUIMessage::MsgFocusLoss:
+		{
+			cUIControl * FocusCtrl = cUIManager::instance()->FocusControl();
+
+			if ( this != FocusCtrl && !IsParentOf( FocusCtrl ) )
+				SendCommonEvent( cUIEvent::EventOnComplexControlFocusLoss );
+
+			return 1;
+		}
+	}
+
+	return 0;
 }
 
 }}

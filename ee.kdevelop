@@ -193,10 +193,7 @@
       <orientation>Vertical</orientation>
     </splitheadersource>
     <references>
-      <pcs>std</pcs>
-      <pcs>automatic_%2Fhome%2Fprogramacion%2FEE</pcs>
-      <pcs>automatic_%2Fhome%2Fdownloads%2Ffiles%2FEE</pcs>
-      <pcs>automatic_%2Fhome%2Fprogramming%2FProjects%2FEE</pcs>
+      <pcs>automatic_%2Fhome%2Fprogramming%2Fprojects%2FEE</pcs>
     </references>
   </kdevcppsupport>
   <cppsupportpart>

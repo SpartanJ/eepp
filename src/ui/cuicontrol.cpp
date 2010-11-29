@@ -135,7 +135,7 @@ void cUIControl::Size( const eeSize& Size ) {
 	OnSizeChange();
 }
 
-void cUIControl::Size( const Int32 Width, const Int32 Height ) {
+void cUIControl::Size( const Int32& Width, const Int32& Height ) {
 	Size( eeSize( Width, Height ) );
 }
 
@@ -178,13 +178,26 @@ cUIControl * cUIControl::Parent() const {
 }
 
 void cUIControl::Parent( cUIControl * parent ) {
-	if ( NULL != Parent() )
-		Parent()->ChildRemove( this );
+	if ( NULL != mParentCtrl )
+		mParentCtrl->ChildRemove( this );
 
 	mParentCtrl = parent;
 
 	if ( NULL != mParentCtrl )
 		mParentCtrl->ChildAdd( this );
+}
+
+bool cUIControl::IsParentOf( cUIControl * Ctrl ) {
+	cUIControl * tParent = Ctrl->Parent();
+
+	while ( NULL != tParent ) {
+		if ( this == tParent )
+			return true;
+
+		tParent = tParent->Parent();
+	}
+
+	return false;
 }
 
 void cUIControl::CenterHorizontal() {
@@ -219,7 +232,7 @@ void cUIControl::Draw() {
 			BorderDraw();
 
 		if ( NULL != mSkinState )
-			mSkinState->Draw( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height() );
+			mSkinState->Draw( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 255 );
 	}
 }
 
@@ -401,19 +414,18 @@ EE_PRE_BLEND_FUNC& cUIControl::Blend() {
 }
 
 void cUIControl::ToFront() {
-	Parent()->ChildRemove( this );
-	mNext = NULL;
-	Parent()->ChildAdd( this );
+	mParentCtrl->ChildRemove( this );
+	mParentCtrl->ChildAdd( this );
 }
 
 void cUIControl::ToBack() {
-	Parent()->ChildRemove( this );
-	Parent()->ChildAddAt( this, 0 );
+	mParentCtrl->ChildRemove( this );
+	mParentCtrl->ChildAddAt( this, 0 );
 }
 
 void cUIControl::ToPos( const Uint32& Pos ) {
-	Parent()->ChildRemove( this );
-	Parent()->ChildAddAt( this, Pos );
+	mParentCtrl->ChildRemove( this );
+	mParentCtrl->ChildAddAt( this, Pos );
 }
 
 void cUIControl::OnVisibleChange() {
@@ -561,17 +573,9 @@ void cUIControl::ChildAdd( cUIControl * ChildCtrl ) {
 		mChild 		= ChildCtrl;
 		mChildLast 	= ChildCtrl;
 	} else {
-		/*
-		cUIControl * ChildLoop = mChild;
-
-		while ( NULL != ChildLoop->mNext )
-			ChildLoop = ChildLoop->mNext;
-
-		ChildLoop->mNext = ChildCtrl;
-		*/
-
 		mChildLast->mNext 		= ChildCtrl;
 		ChildCtrl->mPrev		= mChildLast;
+		ChildCtrl->mNext		= NULL;
 		mChildLast 				= ChildCtrl;
 	}
 }
@@ -615,26 +619,17 @@ void cUIControl::ChildRemove( cUIControl * ChildCtrl ) {
 		if ( NULL != mChild )
 			mChild->mPrev 	= NULL;
 	} else {
-		/*
-		cUIControl * ChildLoop = mChild;
-
-		while ( NULL != ChildLoop->mNext ) {
-			if ( ChildCtrl == ChildLoop->mNext ) {
-				ChildLoop->mNext = ChildLoop->mNext->mNext;
-				return;
-			}
-
-			ChildLoop = ChildLoop->mNext;
-		}
-		*/
-
 		if ( mChildLast == ChildCtrl )
 			mChildLast = mChildLast->mPrev;
 
 		ChildCtrl->mPrev->mNext = ChildCtrl->mNext;
 
-		if ( NULL != ChildCtrl->mNext )
+		if ( NULL != ChildCtrl->mNext ) {
 			ChildCtrl->mNext->mPrev = ChildCtrl->mPrev;
+			ChildCtrl->mNext = NULL;
+		}
+
+		ChildCtrl->mPrev = NULL;
 	}
 }
 
@@ -675,31 +670,6 @@ cUIControl * cUIControl::ChildAt( Uint32 Index ) const {
 }
 
 cUIControl * cUIControl::ChildPrev( cUIControl * Ctrl, bool Loop ) const {
-	/*
-	cUIControl * ChildLoop = NULL;
-
-	if ( NULL != mChild ) {
-		if ( mChild != Ctrl ) {
-			ChildLoop = mChild;
-
-			while ( NULL != ChildLoop ) {
-				if ( ChildLoop->mNext == Ctrl )
-					break;
-
-				ChildLoop = ChildLoop->mNext;
-			}
-		} else if ( Loop ) {
-			ChildLoop = mChild;
-
-			while ( NULL != ChildLoop->mNext )
-				ChildLoop = ChildLoop->mNext;
-
-		}
-	}
-
-	return ChildLoop;
-	*/
-
 	if ( Loop && Ctrl == mChild && NULL != mChild->mNext )
 		return mChildLast;
 
@@ -728,19 +698,6 @@ cUIControl * cUIControl::OverFind( const eeVector2f& Point ) {
 		UpdateQuad();
 
 		if ( PointInsidePolygon2( mPoly, Point ) ) {
-			/*
-			cUIControl * ChildLoop = mChild;
-
-			while ( NULL != ChildLoop ) {
-				cUIControl * ChildOver = ChildLoop->OverFind( Point );
-
-				if ( NULL != ChildOver )
-					pOver = ChildOver;
-
-				ChildLoop = ChildLoop->mNext;
-			}
-			*/
-
 			cUIControl * ChildLoop = mChildLast;
 
 			while ( NULL != ChildLoop ) {
@@ -754,6 +711,7 @@ cUIControl * cUIControl::OverFind( const eeVector2f& Point ) {
 
 				ChildLoop = ChildLoop->mPrev;
 			}
+
 
 			if ( NULL == pOver )
 				pOver = const_cast<cUIControl *>( reinterpret_cast<const cUIControl *>( this ) );

@@ -96,7 +96,7 @@ class EE_API cUIControl {
 
 		void Size( const eeSize& Size );
 
-		void Size( const Int32 Width, const Int32 Height );
+		void Size( const Int32& Width, const Int32& Height );
 
 		eeRecti Rect() const;
 
@@ -299,6 +299,8 @@ class EE_API cUIControl {
 		cUIControl * ChildPrev( cUIControl * Ctrl, bool Loop = false ) const;
 
 		cUIControl * ChildNext( cUIControl * Ctrl, bool Loop = false ) const;
+		
+		bool IsParentOf( cUIControl * Ctrl );
 
 		virtual cUIControl * OverFind( const eeVector2f& Point );
 

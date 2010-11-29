@@ -24,6 +24,20 @@ cUIControlAnim::~cUIControlAnim() {
 	eeSAFE_DELETE( mMoveAnim );
 }
 
+
+void cUIControlAnim::Draw() {
+	if ( mVisible ) {
+		if ( mFlags & UI_FILL_BACKGROUND )
+			BackgroundDraw();
+
+		if ( mFlags & UI_BORDER )
+			BorderDraw();
+
+		if ( NULL != mSkinState )
+			mSkinState->Draw( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), (Uint32)mAlpha );
+	}
+}
+
 const eeFloat& cUIControlAnim::Angle() const {
 	return mAngle;
 }

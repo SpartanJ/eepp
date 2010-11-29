@@ -385,11 +385,12 @@ void cEETest::CreateUI() {
 
 	CreateAquaTextureAtlas();
 
+	/*
 	cTextureGroupLoader tgl( MyPath + "data/aqua.etg" );
 	TF->GetByName( "data/aqua.png" )->TextureFilter( TEX_FILTER_NEAREST );
 	cUIThemeManager::instance()->Add( cUITheme::LoadFromShapeGroup( cShapeGroupManager::instance()->GetByName( "aqua" ), "aqua", "aqua" ) );
+	*/
 
-	//cUIManager::instance()->SetTheme( "aqua" );
 	cUIManager::instance()->DefaultTheme( "aqua" );
 
 	Params.Border.Width( 2 );
@@ -422,7 +423,7 @@ void cEETest::CreateUI() {
 	Child2->Visible( true );
 	Child2->Enabled( true );
 	Child2->StartRotation( 0.f, 360.f * 10.f, 5000.f * 10.f );
-
+/*
 	cUIGfx::CreateParams GfxParams;
 	GfxParams.Parent( C );
 	GfxParams.PosSet( 160, 100 );
@@ -436,7 +437,7 @@ void cEETest::CreateUI() {
 	Gfx->StartAlphaAnim( 100.f, 255.f, 1000.f );
 	Gfx->AlphaInterpolation()->Loop( true );
 	Gfx->AlphaInterpolation()->SetTotalTime( 1000.f );
-
+*/
 	cUITextBox::CreateParams TextParams;
 	TextParams.Parent( C );
 	TextParams.PosSet( 0, 0 );
@@ -471,7 +472,7 @@ void cEETest::CreateUI() {
 	Button->Text( L"Click Me" );
 	Button->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::ButtonClick ) );
 
-	TextParams.PosSet( 120, 20 );
+	TextParams.PosSet( 130, 20 );
 	TextParams.Size = eeSize( 80, 22 );
 	TextParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT;
 	cUICheckBox * Checkbox = eeNew( cUICheckBox, ( TextParams ) );
@@ -479,13 +480,13 @@ void cEETest::CreateUI() {
 	Checkbox->Text( L"Check Me" );
 	Checkbox->Enabled( true );
 
-	TextParams.PosSet( 120, 40 );
+	TextParams.PosSet( 130, 40 );
 	cUIRadioButton * RadioButton = eeNew( cUIRadioButton, ( TextParams ) );
 	RadioButton->Visible( true );
 	RadioButton->Text( L"Check Me" );
 	RadioButton->Enabled( true );
 
-	TextParams.PosSet( 120, 60 );
+	TextParams.PosSet( 130, 60 );
 	RadioButton = eeNew( cUIRadioButton, ( TextParams ) );
 	RadioButton->Visible( true );
 	RadioButton->Text( L"Check Me 2" );
@@ -567,6 +568,36 @@ void cEETest::CreateUI() {
 		mListBox->AddListBoxItems( wstr );
 	}
 
+	cUIDropDownList::CreateParams DDLParams;
+	DDLParams.Parent( C );
+	DDLParams.PosSet( 20, 55 );
+	DDLParams.Size = eeSize( 100, 19 );
+	DDLParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
+	cUIDropDownList * mDropDownList = eeNew( cUIDropDownList, ( DDLParams ) );
+	mDropDownList->Visible( true );
+	mDropDownList->Enabled( true );
+
+	std::vector<std::wstring> combostrs;
+	combostrs.push_back( L"Plane" );
+	combostrs.push_back( L"Car" );
+	combostrs.push_back( L"Bus" );
+	combostrs.push_back( L"Train" );
+
+	mDropDownList->ListBox()->AddListBoxItems( combostrs );
+	mDropDownList->ListBox()->SetSelected( 0 );
+
+	cUIComboBox::CreateParams ComboParams;
+	ComboParams.Parent( C );
+	ComboParams.PosSet( 20, 80 );
+	ComboParams.Size = eeSize( 100, 19 );
+	DDLParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
+	cUIComboBox * mComboBox = eeNew( cUIComboBox, ( ComboParams ) );
+	mComboBox->Visible( true );
+	mComboBox->Enabled( true );
+
+	mComboBox->ListBox()->AddListBoxItems( combostrs );
+	mComboBox->ListBox()->SetSelected( 0 );
+
 	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.";
 	TTFB->ShrinkText( mBuda, 400 );
 
@@ -597,7 +628,7 @@ void cEETest::ButtonClick( const cUIEvent * Event ) {
 		Gfx->StartMovement( eeVector2i( eeRandi( 0, EE->GetWidth() ), -64 ), eeVector2i( eeRandi( 0, EE->GetWidth() ), EE->GetHeight() + 64 ), 2500 );
 		Gfx->CloseFadeOut( 3500 );
 
-		mListBox->AddListBoxItem( L"Test ListBox " + toWStr( mListBox->Size()+1 ) + L" testing it right now!" );
+		mListBox->AddListBoxItem( L"Test ListBox " + toWStr( mListBox->Count() + 1 ) + L" testing it right now!" );
 	}
 }
 

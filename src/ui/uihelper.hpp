@@ -66,6 +66,8 @@ Uint32 EE_API VAlignGet( Uint32 Flags );
 #define UI_TYPE_PROGRESSBAR			(11)
 #define UI_TYPE_LISTBOX				(12)
 #define UI_TYPE_LISTBOXITEM			(13)
+#define UI_TYPE_DROPDOWNLIST		(14)
+#define UI_TYPE_COMBOBOX			(15)
 
 #define UI_TYPE_GET(X) 				( 1 << (X) )
 

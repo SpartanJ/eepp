@@ -29,7 +29,7 @@ class cUISkinState {
 
 		cUISkin * GetSkin() const;
 
-		void Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Width, const eeFloat& Height );
+		void Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Width, const eeFloat& Height, const Uint32& Alpha );
 	protected:
 		friend class cUIControl;
 

@@ -33,6 +33,7 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
+			<Add directory="/usr/include/freetype2" />
 		</Compiler>
 		<Linker>
 			<Add library="GL" />
@@ -509,12 +510,16 @@
 		<Unit filename="src/ui/cuiborder.hpp" />
 		<Unit filename="src/ui/cuicheckbox.cpp" />
 		<Unit filename="src/ui/cuicheckbox.hpp" />
+		<Unit filename="src/ui/cuicombobox.cpp" />
+		<Unit filename="src/ui/cuicombobox.hpp" />
 		<Unit filename="src/ui/cuicontrol.cpp" />
 		<Unit filename="src/ui/cuicontrol.hpp" />
 		<Unit filename="src/ui/cuicontrolanim.cpp" />
 		<Unit filename="src/ui/cuicontrolanim.hpp" />
 		<Unit filename="src/ui/cuidragable.cpp" />
 		<Unit filename="src/ui/cuidragable.hpp" />
+		<Unit filename="src/ui/cuidropdownlist.cpp" />
+		<Unit filename="src/ui/cuidropdownlist.hpp" />
 		<Unit filename="src/ui/cuievent.cpp" />
 		<Unit filename="src/ui/cuievent.hpp" />
 		<Unit filename="src/ui/cuieventkey.cpp" />

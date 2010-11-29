@@ -18,9 +18,10 @@ void cUIListBoxContainer::Update() {
 	cUIListBox * LBParent = reinterpret_cast<cUIListBox*> ( Parent() );
 
 	if ( LBParent->mItems.size() ) {
-		for ( Uint32 i = LBParent->mVisibleFirst; i <= LBParent->mVisibleLast; i++ )
+		for ( Uint32 i = LBParent->mVisibleFirst; i <= LBParent->mVisibleLast; i++ ) {
 			if ( NULL != LBParent->mItems[i] )
 				LBParent->mItems[i]->Update();
+		}
 	}
 }
 
