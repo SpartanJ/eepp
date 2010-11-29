@@ -6,7 +6,8 @@ namespace EE { namespace UI {
 cUIDropDownList::cUIDropDownList( cUIDropDownList::CreateParams& Params ) :
 	cUITextInput( Params ),
 	mListBox( Params.ListBox ),
-	mMinNumVisibleItems( Params.MinNumVisibleItems )
+	mMinNumVisibleItems( Params.MinNumVisibleItems ),
+	mPopUpToMainControl( Params.PopUpToMainControl )
 {
 	mType |= UI_TYPE_GET( UI_TYPE_DROPDOWNLIST );
 
@@ -53,11 +54,17 @@ Uint32 cUIDropDownList::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags 
 
 void cUIDropDownList::ShowListBox() {
 	if ( !mListBox->Visible() ) {
-		mListBox->Parent( cUIManager::instance()->MainControl() );
+		if ( !mPopUpToMainControl )
+			mListBox->Parent( Parent() );
+		else
+			mListBox->Parent( cUIManager::instance()->MainControl() );
+
+		mListBox->ToFront();
 
 		eeVector2i Pos = mScreenPos;
 		Pos.y += mSize.Height();
 
+		mListBox->Parent()->ScreenToControl( Pos );
 		mListBox->Pos( Pos );
 
 		eeRecti tPadding = mListBox->PaddingContainer();

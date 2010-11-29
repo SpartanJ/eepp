@@ -15,7 +15,13 @@ class cUIComboBox : public cUIDropDownList {
 
 		Uint32 OnMouseClick( const eeVector2i& Pos, const Uint32 Flags );
 	protected:
+		cUIControl * mButton;
+
 		virtual void OnItemSelected( const cUIEvent * Event );
+
+		void OnButtonClick( const cUIEvent * Event );
+
+		void CreateButton();
 };
 
 }}

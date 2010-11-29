@@ -23,6 +23,8 @@ class EE_API cFrameBuffer {
 
 		virtual void Unbind() = 0;
 
+		void Clear();
+
 		virtual void Reload() = 0;
 
 		cTexture * GetTexture() const;

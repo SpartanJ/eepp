@@ -48,10 +48,12 @@ eeColorAf cFrameBuffer::ClearColor() const {
 	return mClearColor;
 }
 
-void cFrameBuffer::SetBufferView() {
+void cFrameBuffer::Clear() {
 	glClearColor( mClearColor.R(), mClearColor.G(), mClearColor.B(), mClearColor.A() );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+}
 
+void cFrameBuffer::SetBufferView() {
 	mPrevView = Window::cEngine::instance()->GetView();
 
 	glMatrixMode( GL_PROJECTION );

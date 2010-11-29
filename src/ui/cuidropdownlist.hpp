@@ -13,7 +13,8 @@ class EE_API cUIDropDownList : public cUITextInput {
 				inline CreateParams() :
 					cUITextInput::CreateParams(),
 					ListBox( NULL ),
-					MinNumVisibleItems( 6 )
+					MinNumVisibleItems( 6 ),
+					PopUpToMainControl( false )
 				{
 				}
 
@@ -21,6 +22,7 @@ class EE_API cUIDropDownList : public cUITextInput {
 
 				cUIListBox * 	ListBox;
 				Uint32			MinNumVisibleItems;
+				bool			PopUpToMainControl;
 		};
 
 		cUIDropDownList( cUIDropDownList::CreateParams& Params );
@@ -37,6 +39,7 @@ class EE_API cUIDropDownList : public cUITextInput {
 	protected:
 		cUIListBox *	mListBox;
 		Uint32			mMinNumVisibleItems;
+		bool			mPopUpToMainControl;
 
 		void ShowListBox();
 

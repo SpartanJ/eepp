@@ -396,13 +396,13 @@ void cEETest::CreateUI() {
 	Params.Border.Width( 2 );
 	Params.Border.Color( 0xFF979797 );
 	//Params.Background.Corners(5);
-	Params.Background.Colors( eeColorA( 0x66FAFAFA ), eeColorA( 0xCCFAFAFA ), eeColorA( 0xCCFAFAFA ), eeColorA( 0x66FAFAFA ) );
+	Params.Background.Colors( eeColorA( 0x66EDEDED ), eeColorA( 0xCCEDEDED ), eeColorA( 0xCCEDEDED ), eeColorA( 0x66EDEDED ) );
 	cUIControlAnim * C = eeNew( cUITest, ( Params ) );
 	C->Visible( true );
 	C->Enabled( true );
 	C->Pos( 320, 240 );
 	C->DragEnable( true );
-	//C->StartRotation( 0.f, 360.f, 5000.f );
+	C->StartRotation( 0.f, 360.f, 5000.f );
 
 	Params.Flags &= ~UI_CLIP_ENABLE;
 	Params.Background.Corners(0);
@@ -1083,6 +1083,7 @@ void cEETest::Render() {
 
 	if ( NULL != mFB ) {
 		mFB->Bind();
+		mFB->Clear();
 
 		mBlindy.UpdatePos( 128-16, 128-16 );
 		mBlindy.Draw();
