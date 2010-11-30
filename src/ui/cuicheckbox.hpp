@@ -27,10 +27,13 @@ class EE_API cUICheckBox : public cUITextBox {
 		cUIControlAnim * ActiveButton() const;
 
 		cUIControlAnim * InactiveButton() const;
+
+		virtual Uint32 OnKeyDown( const cUIEventKey& Event );
 	protected:
 		cUIControlAnim *	mActiveButton;
 		cUIControlAnim *	mInactiveButton;
 		bool				mActive;
+		Uint32				mLastTick;
 
 		virtual void OnSizeChange();
 

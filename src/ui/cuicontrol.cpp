@@ -338,6 +338,10 @@ Uint32 cUIControl::OnFocusLoss() {
 	return 1;
 }
 
+bool cUIControl::HasFocus() const {
+	return 0 != ( mControlFlags & UI_CTRL_FLAG_HAS_FOCUS );
+}
+
 Uint32 cUIControl::OnValueChange() {
 	SendCommonEvent( cUIEvent::EventOnValueChange );
 
@@ -546,15 +550,15 @@ void cUIControl::InternalDraw() {
 void cUIControl::ClipMe() {
 	if ( mFlags & UI_CLIP_ENABLE ) {
 		if ( mFlags & UI_BORDER )
-			cUIManager::instance()->ClipEnable( mScreenPos.x, mScreenPos.y, mSize.Width(), mSize.Height() + 1 );
+			cEngine::instance()->ClipPlaneEnable( mScreenPos.x, mScreenPos.y, mSize.Width(), mSize.Height() + 1 );
 		else
-			cUIManager::instance()->ClipEnable( mScreenPos.x, mScreenPos.y, mSize.Width(), mSize.Height() );
+			cEngine::instance()->ClipPlaneEnable( mScreenPos.x, mScreenPos.y, mSize.Width(), mSize.Height() );
 	}
 }
 
 void cUIControl::ClipDisable() {
 	if ( mFlags & UI_CLIP_ENABLE )
-		cUIManager::instance()->ClipDisable();
+		cEngine::instance()->ClipPlaneDisable();
 }
 
 void cUIControl::MatrixSet() {

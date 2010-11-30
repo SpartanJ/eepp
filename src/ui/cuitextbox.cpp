@@ -37,12 +37,12 @@ void cUITextBox::Draw() {
 
 		if ( mTextCache->GetTextWidth() ) {
 			if ( mFlags & UI_CLIP_ENABLE )
-				cUIManager::instance()->ClipEnable( mScreenPos.x + mPadding.Left, mScreenPos.y + mPadding.Top, mSize.Width() - mPadding.Left - mPadding.Right, mSize.Height() - mPadding.Bottom );
+				cEngine::instance()->ClipPlaneEnable( mScreenPos.x + mPadding.Left, mScreenPos.y + mPadding.Top, mSize.Width() - mPadding.Left - mPadding.Right, mSize.Height() - mPadding.Bottom );
 
 			mTextCache->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x + (eeFloat)mPadding.Left + 1.f, (eeFloat)mScreenPos.y + mAlignOffset.y + (eeFloat)mPadding.Top, Flags(), 1.f, 0.f, mBlend );
 
 			if ( mFlags & UI_CLIP_ENABLE )
-				cUIManager::instance()->ClipDisable();
+				cEngine::instance()->ClipPlaneDisable();
 		}
 	}
 }

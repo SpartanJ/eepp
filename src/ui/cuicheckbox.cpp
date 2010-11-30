@@ -123,4 +123,18 @@ cUIControlAnim * cUICheckBox::InactiveButton() const {
 	return mInactiveButton;
 }
 
+Uint32 cUICheckBox::OnKeyDown( const cUIEventKey& Event ) {
+	cUITextBox::OnKeyDown( Event );
+
+	if ( Event.KeyCode() == KEY_SPACE ) {
+		if ( eeGetTicks() - mLastTick > 250 ) {
+			mLastTick = eeGetTicks();
+
+			Active( !mActive );
+		}
+	}
+
+	return 1;
+}
+
 }}

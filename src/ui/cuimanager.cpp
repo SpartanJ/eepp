@@ -202,43 +202,6 @@ eeVector2i cUIManager::GetMousePos() {
 	return mKM->GetMousePos();
 }
 
-void cUIManager::ClipEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
-	GLdouble tX = (GLdouble)x;
-	GLdouble tY = (GLdouble)y;
-	GLdouble tW = (GLdouble)Width;
-	GLdouble tH = (GLdouble)Height;
-
-	GLdouble clip_left[] = { 1.0, 0.0, 0.0, 0.0 };
-	clip_left[3] = -tX;
-
-	GLdouble clip_right[] = { -1.0, 0.0, 0.0, 0.0 };
-	clip_right[3] = tX + tW;
-
-	GLdouble clip_top[] = { 0.0, 1.0, 0.0, 0.0 };
-	clip_top[3] = -tY;
-
-	GLdouble clip_bottom[] = { 0.0, -1.0, 0.0, 0.0 };
-	clip_bottom[3] = tY + tH;
-
-	glEnable(GL_CLIP_PLANE0);
-	glEnable(GL_CLIP_PLANE1);
-	glEnable(GL_CLIP_PLANE2);
-	glEnable(GL_CLIP_PLANE3);
-
-	glClipPlane(GL_CLIP_PLANE0, clip_left);
-	glClipPlane(GL_CLIP_PLANE1, clip_right);
-	glClipPlane(GL_CLIP_PLANE2, clip_top);
-	glClipPlane(GL_CLIP_PLANE3, clip_bottom);
-
-}
-
-void cUIManager::ClipDisable() {
-	glDisable(GL_CLIP_PLANE0);
-	glDisable(GL_CLIP_PLANE1);
-	glDisable(GL_CLIP_PLANE2);
-	glDisable(GL_CLIP_PLANE3);
-}
-
 void cUIManager::SetTheme( const std::string& Theme ) {
 	SetTheme( cUIThemeManager::instance()->GetByName( Theme ) );
 }

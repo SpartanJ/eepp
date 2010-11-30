@@ -402,7 +402,7 @@ void cEETest::CreateUI() {
 	C->Enabled( true );
 	C->Pos( 320, 240 );
 	C->DragEnable( true );
-	C->StartRotation( 0.f, 360.f, 5000.f );
+	//C->StartRotation( 0.f, 360.f, 5000.f );
 
 	Params.Flags &= ~UI_CLIP_ENABLE;
 	Params.Background.Corners(0);

@@ -20,37 +20,37 @@ Uint32 EE_API HAlignGet( Uint32 Flags );
 Uint32 EE_API VAlignGet( Uint32 Flags );
 
 #define UI_CTRL_FLAG_CLOSE_POS						(0)
-#define UI_CTRL_FLAG_CLOSE							(1 << UI_CTRL_FLAG_CLOSE_POS)
+#define UI_CTRL_FLAG_CLOSE							(1)		//(1 << UI_CTRL_FLAG_CLOSE_POS)
 
 #define UI_CTRL_FLAG_CLOSE_FO_POS					(1)
-#define UI_CTRL_FLAG_CLOSE_FO						(1 << UI_CTRL_FLAG_CLOSE_FO_POS)
+#define UI_CTRL_FLAG_CLOSE_FO						(2)		//(1 << UI_CTRL_FLAG_CLOSE_FO_POS)
 
 #define UI_CTRL_FLAG_ANIM_POS						(2)
-#define UI_CTRL_FLAG_ANIM							(1 << UI_CTRL_FLAG_ANIM_POS)
+#define UI_CTRL_FLAG_ANIM							(4)		//(1 << UI_CTRL_FLAG_ANIM_POS)
 
 #define UI_CTRL_FLAG_MOUSEOVER_POS					(3)
-#define UI_CTRL_FLAG_MOUSEOVER						(1 << UI_CTRL_FLAG_MOUSEOVER_POS)
+#define UI_CTRL_FLAG_MOUSEOVER						(8)		//(1 << UI_CTRL_FLAG_MOUSEOVER_POS)
 
 #define UI_CTRL_FLAG_HAS_FOCUS_POS					(4)
-#define UI_CTRL_FLAG_HAS_FOCUS						(1 << UI_CTRL_FLAG_HAS_FOCUS_POS)
+#define UI_CTRL_FLAG_HAS_FOCUS						(16)	//(1 << UI_CTRL_FLAG_HAS_FOCUS_POS)
 
 #define UI_CTRL_FLAG_SELECTED_POS					(5)
-#define UI_CTRL_FLAG_SELECTED						(1 << UI_CTRL_FLAG_SELECTED_POS)
+#define UI_CTRL_FLAG_SELECTED						(32)	//(1 << UI_CTRL_FLAG_SELECTED_POS)
 
 #define UI_CTRL_FLAG_DISABLE_CHECK_CLOSE_CHILDS_POS	(6)
-#define UI_CTRL_FLAG_DISABLE_CHECK_CLOSE_CHILDS		(1 << UI_CTRL_FLAG_DISABLE_CHECK_CLOSE_CHILDS_POS)
+#define UI_CTRL_FLAG_DISABLE_CHECK_CLOSE_CHILDS		(64)	//(1 << UI_CTRL_FLAG_DISABLE_CHECK_CLOSE_CHILDS_POS)
 
 #define UI_TEXT_DRAW_SHADOW 		FONT_DRAW_SHADOW
-#define UI_AUTO_SIZE				(1 << 6)
-#define UI_INGORE_FOCUS				(1 << 7)
-#define UI_FILL_BACKGROUND			(1 << 8)
-#define UI_BORDER					(1 << 9)
-#define UI_TAB_STOP					(1 << 10)
-#define UI_FIT_TO_CONTROL 			(1 << 11)
-#define UI_CLIP_ENABLE 				(1 << 12)
-#define UI_AUTO_SHRINK_TEXT 		(1 << 13)
-#define UI_MULTI_SELECT				(1 << 14)
-#define UI_AUTO_PADDING				(1 << 15)
+#define UI_AUTO_SIZE				(64)		//(1 << 6)
+#define UI_INGORE_FOCUS				(128)		//(1 << 7)
+#define UI_FILL_BACKGROUND			(256)		//(1 << 8)
+#define UI_BORDER					(512)		//(1 << 9)
+#define UI_TAB_STOP					(1024)		//(1 << 10)
+#define UI_FIT_TO_CONTROL 			(2048)		//(1 << 11)
+#define UI_CLIP_ENABLE 				(4096)		//(1 << 12)
+#define UI_AUTO_SHRINK_TEXT 		(8192)		//(1 << 13)
+#define UI_MULTI_SELECT				(16384)		//(1 << 14)
+#define UI_AUTO_PADDING				(32768)		//(1 << 15)
 
 #define UI_TYPE_CONTROL		 		(0)
 #define UI_TYPE_CONTROL_ANIM 		(1)

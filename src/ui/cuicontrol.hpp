@@ -231,6 +231,8 @@ class EE_API cUIControl {
 		void SetSkinState( const Uint32& State );
 
 		void DisableChildCloseCheck();
+
+		bool HasFocus() const;
 	protected:
 		friend class cUIListBoxContainer;
 
@@ -299,7 +301,7 @@ class EE_API cUIControl {
 		cUIControl * ChildPrev( cUIControl * Ctrl, bool Loop = false ) const;
 
 		cUIControl * ChildNext( cUIControl * Ctrl, bool Loop = false ) const;
-		
+
 		bool IsParentOf( cUIControl * Ctrl );
 
 		virtual cUIControl * OverFind( const eeVector2f& Point );

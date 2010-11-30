@@ -34,10 +34,6 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 
 		const eeFloat& Elapsed() const;
 
-		void ClipEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height );
-
-		void ClipDisable();
-
 		void ResizeControl();
 
 		void SendMsg( cUIControl * Ctrl, const Uint32& Msg, const Uint32& Flags = 0 );

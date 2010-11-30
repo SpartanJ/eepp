@@ -13,7 +13,7 @@ cFrameBufferPBuffer::cFrameBufferPBuffer()
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
 	: cFrameBuffer(),
 	mDisplay( NULL ),
-	mPBuffer( NULL ),
+	mPBuffer( 0 ),
 	mContext( NULL )
 #endif
 {
@@ -31,7 +31,7 @@ cFrameBufferPBuffer::cFrameBufferPBuffer( const Uint32& Width, const Uint32& Hei
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
 	: cFrameBuffer(),
 	mDisplay( NULL ),
-	mPBuffer( NULL ),
+	mPBuffer( 0 ),
 	mContext( NULL )
 #endif
 {
@@ -176,7 +176,7 @@ bool cFrameBufferPBuffer::Create( const Uint32& Width, const Uint32& Height, boo
 	GLXContext currentContext = glXGetCurrentContext();
 
 	if ( currentContext )
-		glXMakeCurrent( mDisplay, NULL, NULL );
+		glXMakeCurrent( mDisplay, 0, NULL );
 
 	XVisualInfo* visual = glXGetVisualFromFBConfig( mDisplay, configs[0] );
 	mContext = glXCreateContext( mDisplay, visual, currentContext, true );

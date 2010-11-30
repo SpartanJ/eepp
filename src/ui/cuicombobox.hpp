@@ -5,7 +5,7 @@
 
 namespace EE { namespace UI {
 
-class cUIComboBox : public cUIDropDownList {
+class EE_API cUIComboBox : public cUIDropDownList {
 	public:
 		cUIComboBox( cUIComboBox::CreateParams& Params );
 

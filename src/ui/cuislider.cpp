@@ -257,6 +257,33 @@ void cUISlider::Update() {
 	if ( IsMouseOver() || mBackSlider->IsMouseOver() || mSlider->IsMouseOver() ) {
 		ManageClick( cUIManager::instance()->GetInput()->ClickTrigger() );
 	}
+
+	if ( mSlider->HasFocus() )
+		ManageKeyboard();
+}
+
+void cUISlider::ManageKeyboard() {
+	if ( eeGetTicks() - mLastTickMove > 100 ) {
+		cInput * KM 	= cUIManager::instance()->GetInput();
+
+		if ( KM->IsKeyDown( KEY_DOWN ) ) {
+			mLastTickMove = eeGetTicks();
+
+			Value( mValue + mClickStep );
+		} else if ( KM->IsKeyDown( KEY_UP ) ) {
+			mLastTickMove = eeGetTicks();
+
+			Value( mValue - mClickStep );
+		} else if ( KM->IsKeyDown( KEY_PAGEUP ) ) {
+			mLastTickMove = eeGetTicks();
+
+			Value( mMinValue );
+		} else if ( KM->IsKeyDown( KEY_PAGEDOWN ) ) {
+			mLastTickMove = eeGetTicks();
+
+			Value( mMaxValue );
+		}
+	}
 }
 
 void cUISlider::ManageClick( const Uint32& Flags ) {
