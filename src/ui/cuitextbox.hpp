@@ -15,6 +15,17 @@ class EE_API cUITextBox : public cUIControlAnim {
 					FontColor( 0, 0, 0, 255 ),
 					FontShadowColor( 255, 255, 255, 150 )
 				{
+					cUITheme * Theme = cUIThemeManager::instance()->DefaultTheme();
+
+					if ( NULL != Theme ) {
+						Font			= Theme->Font();
+						
+						if ( NULL == Font )
+							Font = cUIThemeManager::instance()->DefaultFont();
+						
+						FontColor		= Theme->FontColor();
+						FontShadowColor	= Theme->FontShadowColor();
+					}
 				}
 
 				inline ~CreateParams() {}
@@ -67,6 +78,8 @@ class EE_API cUITextBox : public cUIControlAnim {
 		eeFloat GetTextHeight();
 
 		const eeInt& GetNumLines() const;
+
+		const eeVector2f& AlignOffset() const;
 	protected:
 		cTextCache *	mTextCache;
 		eeColorA 		mFontColor;

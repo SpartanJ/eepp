@@ -30,9 +30,6 @@ cUIListBox::cUIListBox( cUIListBox::CreateParams& Params ) :
 	if ( NULL == Params.Font && NULL != cUIThemeManager::instance()->DefaultFont() )
 		mFont = cUIThemeManager::instance()->DefaultFont();
 
-	if ( NULL == mFont && NULL != mSkinState && NULL != mSkinState->GetSkin() && NULL != mSkinState->GetSkin()->Theme() && NULL != mSkinState->GetSkin()->Theme()->DefaultFont() )
-		mFont = mSkinState->GetSkin()->Theme()->DefaultFont();
-
 	cUIControl::CreateParams CParams;
 	CParams.Parent( this );
 	CParams.PosSet( mPaddingContainer.Left, mPaddingContainer.Top );
@@ -78,6 +75,9 @@ cUIListBox::~cUIListBox() {
 
 void cUIListBox::SetTheme( cUITheme * Theme ) {
 	cUIControl::SetTheme( Theme, "listbox" );
+
+	if ( NULL == mFont && NULL != mSkinState && NULL != mSkinState->GetSkin() && NULL != mSkinState->GetSkin()->Theme() && NULL != mSkinState->GetSkin()->Theme()->Font() )
+		mFont = mSkinState->GetSkin()->Theme()->Font();
 
 	AutoPadding();
 
@@ -278,8 +278,8 @@ void cUIListBox::SetRowHeight() {
 		if ( NULL != cUIThemeManager::instance()->DefaultFont() )
 			FontSize = cUIThemeManager::instance()->DefaultFont()->GetFontSize();
 
-		if ( NULL != mSkinState && NULL != mSkinState->GetSkin() && NULL != mSkinState->GetSkin()->Theme() && NULL != mSkinState->GetSkin()->Theme()->DefaultFont() )
-			FontSize = mSkinState->GetSkin()->Theme()->DefaultFont()->GetFontSize();
+		if ( NULL != mSkinState && NULL != mSkinState->GetSkin() && NULL != mSkinState->GetSkin()->Theme() && NULL != mSkinState->GetSkin()->Theme()->Font() )
+			FontSize = mSkinState->GetSkin()->Theme()->Font()->GetFontSize();
 
 		if ( NULL != mFont )
 			FontSize = mFont->GetFontSize();
@@ -832,14 +832,23 @@ Uint32 cUIListBox::OnMessage( const cUIMessage * Msg ) {
 		{
 			cUIControl * FocusCtrl = cUIManager::instance()->FocusControl();
 
-			if ( this != FocusCtrl && !IsParentOf( FocusCtrl ) )
+			if ( this != FocusCtrl && !IsParentOf( FocusCtrl ) ) {
 				SendCommonEvent( cUIEvent::EventOnComplexControlFocusLoss );
-
+				OnComplexControlFocusLoss();
+			}
+			
 			return 1;
 		}
 	}
 
 	return 0;
+}
+
+void cUIListBox::OnAlphaChange() {
+	cUIControlAnim::OnAlphaChange();
+
+	mScrollBar->Alpha( mAlpha );
+	mHScrollBar->Alpha( mAlpha );
 }
 
 }}

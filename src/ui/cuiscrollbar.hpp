@@ -43,11 +43,7 @@ class cUIScrollBar : public cUIControlAnim {
 
 		const bool& IsVertical() const;
 
-		virtual Uint32 OnMessage( const cUIMessage * Msg );
-
 		virtual void Update();
-
-		void ManageClick( const Uint32& Flags );
 
 		cUISlider * Slider() const;
 
@@ -64,6 +60,12 @@ class cUIScrollBar : public cUIControlAnim {
 		void AdjustChilds();
 
 		void OnValueChangeCb( const cUIEvent * Event );
+
+		virtual void OnAlphaChange();
+
+		virtual Uint32 OnMessage( const cUIMessage * Msg );
+
+		void ManageClick( const Uint32& Flags );
 };
 
 }}

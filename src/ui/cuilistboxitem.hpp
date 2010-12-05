@@ -13,10 +13,6 @@ class EE_API cUIListBoxItem : public cUITextBox {
 
 		virtual void SetTheme( cUITheme * Theme );
 
-		virtual Uint32 OnMouseClick( const eeVector2i& Pos, const Uint32 Flags );
-
-		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags );
-
 		virtual void Update();
 
 		bool Selected() const;
@@ -26,6 +22,10 @@ class EE_API cUIListBoxItem : public cUITextBox {
 		void Select();
 	protected:
 		virtual void OnStateChange();
+
+		virtual Uint32 OnMouseClick( const eeVector2i& Pos, const Uint32 Flags );
+
+		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags );
 };
 
 }}

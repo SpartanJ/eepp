@@ -137,4 +137,11 @@ Uint32 cUICheckBox::OnKeyDown( const cUIEventKey& Event ) {
 	return 1;
 }
 
+void cUICheckBox::OnAlphaChange() {
+	cUITextBox::OnAlphaChange();
+	
+	mActiveButton->Alpha( mAlpha );
+	mInactiveButton->Alpha( mAlpha );
+}
+
 }}

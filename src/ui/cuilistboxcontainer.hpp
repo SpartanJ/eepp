@@ -14,7 +14,7 @@ class cUIListBoxContainer : public cUIControl {
 		void Update();
 
 		void DrawChilds();
-
+	protected:
 		cUIControl * OverFind( const eeVector2f& Point );
 };
 

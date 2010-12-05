@@ -193,6 +193,8 @@ class cEETest : private cThread {
 		cFrameBuffer * mFB;
 		cVertexBuffer * mVBO;
 
+		void MainClick( const cUIEvent * Event );
+		void QuitClick( const cUIEvent * Event );
 		void ButtonClick( const cUIEvent * Event );
 		void OnValueChange( const cUIEvent * Event );
 		void CreateAquaTextureAtlas();
@@ -202,6 +204,7 @@ class cEETest : private cThread {
 		cUISlider * mSlider;
 		cUIProgressBar * mProgressBar;
 		cUIListBox * mListBox;
+		cUIPopUpMenu * Menu;
 
 		cTextCache mEEText;
 		cTextCache mFBOText;
@@ -376,10 +379,8 @@ void cEETest::CreateShaders() {
 
 void cEETest::CreateUI() {
 	cUIManager::instance()->Init();
-	cUIThemeManager::instance()->DefaultFont( TTF );
 
 	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 530, 240 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
-
 
 	cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
 
@@ -391,7 +392,9 @@ void cEETest::CreateUI() {
 	cUIThemeManager::instance()->Add( cUITheme::LoadFromShapeGroup( cShapeGroupManager::instance()->GetByName( "aqua" ), "aqua", "aqua" ) );
 	*/
 
-	cUIManager::instance()->DefaultTheme( "aqua" );
+	cUIThemeManager::instance()->DefaultEffectsEnabled( true );
+	cUIThemeManager::instance()->DefaultFont( TTF );
+	cUIThemeManager::instance()->DefaultTheme( "aqua" );
 
 	Params.Border.Width( 2 );
 	Params.Border.Color( 0xFF979797 );
@@ -413,7 +416,8 @@ void cEETest::CreateUI() {
 	Child->Pos( 240, 130 );
 	Child->Visible( true );
 	Child->Enabled( true );
-	Child->StartRotation( 0.f, 360.f * 10.f, 5000.f * 10.f );
+	Child->StartRotation( 0.f, 360.f, 5000.f );
+	Child->AngleInterpolation()->Loop( true );
 
 	Params.Background.Colors( eeColorA( 0x77FFFF00 ), eeColorA( 0x77CCCC00 ), eeColorA( 0x77CCCC00 ), eeColorA( 0x77FFFF00 ) );
 	Params.Parent( Child );
@@ -422,7 +426,9 @@ void cEETest::CreateUI() {
 	Child2->Pos( 15, 15 );
 	Child2->Visible( true );
 	Child2->Enabled( true );
-	Child2->StartRotation( 0.f, 360.f * 10.f, 5000.f * 10.f );
+	Child2->StartRotation( 0.f, 360.f, 5000.f );
+	Child2->AngleInterpolation()->Loop( true );
+
 /*
 	cUIGfx::CreateParams GfxParams;
 	GfxParams.Parent( C );
@@ -438,6 +444,7 @@ void cEETest::CreateUI() {
 	Gfx->AlphaInterpolation()->Loop( true );
 	Gfx->AlphaInterpolation()->SetTotalTime( 1000.f );
 */
+
 	cUITextBox::CreateParams TextParams;
 	TextParams.Parent( C );
 	TextParams.PosSet( 0, 0 );
@@ -598,6 +605,29 @@ void cEETest::CreateUI() {
 	mComboBox->ListBox()->AddListBoxItems( combostrs );
 	mComboBox->ListBox()->SetSelected( 0 );
 
+	cUIPopUpMenu::CreateParams MenuParams;
+	MenuParams. Parent( cUIManager::instance()->MainControl() );
+	MenuParams.Flags = UI_AUTO_SIZE | UI_AUTO_PADDING;
+	MenuParams.Size = eeSize( 0, 200 );
+	MenuParams.MinWidth = 100;
+	MenuParams.PosSet( 0, 0 );
+	MenuParams.FontOverColor = eeColorA( 255, 255, 255, 255 );
+	Menu = eeNew( cUIPopUpMenu, ( MenuParams ) );
+	Menu->Add( L"New", cGlobalShapeGroup::instance()->GetByName( "aqua_button_ok" ) );
+	Menu->Add( L"Open..." );
+	Menu->AddSeparator();
+	Menu->Add( L"Save" );
+	Menu->Add( L"Save As..." );
+	Menu->Add( L"Save All" );
+	Menu->AddSeparator();
+	Menu->Add( L"Quit" );
+
+	Menu->GetItem( L"Quit" )->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::QuitClick ) );
+	cUIManager::instance()->MainControl()->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::MainClick ) );
+
+	C->StartScaleAnim( 0.f, 1.f, 500.f, SINEOUT );
+	C->StartAlphaAnim( 0.f, 255.f, 500.f );
+
 	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.";
 	TTFB->ShrinkText( mBuda, 400 );
 
@@ -611,6 +641,23 @@ void cEETest::OnValueChange( const cUIEvent * Event ) {
 	mTextBoxValue->Text( L"Scroll Value:\n" + toWStr( mScrollBar->Value() ) );
 
 	mProgressBar->Progress( mScrollBar->Value() * 100.f );
+}
+
+void cEETest::QuitClick( const cUIEvent * Event ) {
+	const cUIEventMouse * MouseEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
+
+	if ( MouseEvent->Flags() & EE_BUTTON_LMASK ) {
+		EE->Running(false);
+	}
+}
+
+void cEETest::MainClick( const cUIEvent * Event ) {
+	const cUIEventMouse * MouseEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
+
+	if ( MouseEvent->Flags() & EE_BUTTON_RMASK ) {
+		Menu->Pos( MouseEvent->Pos() );
+		Menu->Show();
+	}
 }
 
 void cEETest::ButtonClick( const cUIEvent * Event ) {
@@ -1383,7 +1430,6 @@ void cEETest::Particles() {
 		PS[i].Draw();
 }
 
-#include "../helper/SOIL/stb_image.h"
 int main (int argc, char * argv []) {
 	cEETest * Test = eeNew( cEETest, () );
 
@@ -1392,15 +1438,6 @@ int main (int argc, char * argv []) {
 	eeDelete( Test );
 
 	EE::MemoryManager::LogResults();
-	/*
-	int x, y, comp;
 
-	int res = stbi_info( "/home/programming/Projects/EE/data/aqua/aqua_button_ok.png", &x, &y, &comp );
-
-	unsigned char * data = stbi_load( "/home/programming/Projects/EE/data/aqua/aqua_button_ok.png", &x, &y, &comp, 0 );
-
-	if ( data )
-		free( data );
-	*/
 	return 0;
 }

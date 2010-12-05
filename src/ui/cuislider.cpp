@@ -26,7 +26,7 @@ cUISlider::cUISlider( const cUISlider::CreateParams& Params ) :
 	else
 		BgParams.Size = eeSize( 8, mSize.Width() - 16 );
 
-	mBackSlider = eeNew( cUIControl, ( BgParams ) );
+	mBackSlider = eeNew( cUIControlAnim, ( BgParams ) );
 	mBackSlider->Visible( true );
 	mBackSlider->Enabled( true );
 	mBackSlider->Center();
@@ -326,6 +326,13 @@ const bool& cUISlider::AllowHalfSliderOut() const {
 
 const bool& cUISlider::ExpandBackground() const {
 	return mExpandBackground;
+}
+
+void cUISlider::OnAlphaChange() {
+	cUIControlAnim::OnAlphaChange();
+	
+	mBackSlider->Alpha( mAlpha );
+	mSlider->Alpha( mAlpha );
 }
 
 }}

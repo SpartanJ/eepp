@@ -11,9 +11,7 @@ cUIManager::cUIManager() :
 	mOverControl( NULL ),
 	mDownControl( NULL ),
 	mFirstPress( false ),
-	mCbId(-1),
-	mThemeDefault( NULL ),
-	mAutoApplyDefaultTheme( true )
+	mCbId(-1)
 {
 	mEE = cEngine::instance();
 	mKM = cInput::instance();
@@ -202,44 +200,8 @@ eeVector2i cUIManager::GetMousePos() {
 	return mKM->GetMousePos();
 }
 
-void cUIManager::SetTheme( const std::string& Theme ) {
-	SetTheme( cUIThemeManager::instance()->GetByName( Theme ) );
-}
-
-void cUIManager::SetTheme( cUITheme * Theme ) {
-	if ( NULL != mControl ) {
-		mControl->SetThemeToChilds( Theme );
-		mControl->SetTheme( Theme );
-	}
-}
-
 cInput * cUIManager::GetInput() const {
 	return mKM;
-}
-
-void cUIManager::DefaultTheme( cUITheme * Theme ) {
-	mThemeDefault = Theme;
-}
-
-void cUIManager::DefaultTheme( const std::string& Theme ) {
-	DefaultTheme( cUIThemeManager::instance()->GetByName( Theme ) );
-}
-
-cUITheme * cUIManager::DefaultTheme() const {
-	return mThemeDefault;
-}
-
-void cUIManager::ApplyDefaultTheme( cUIControl * Control ) {
-	if ( mAutoApplyDefaultTheme && NULL != mThemeDefault && NULL != Control )
-		Control->SetTheme( mThemeDefault );
-}
-
-void cUIManager::AutoApplyDefaultTheme( const bool& apply ) {
-	mAutoApplyDefaultTheme = apply;
-}
-
-const bool& cUIManager::AutoApplyDefaultTheme() const {
-	return mAutoApplyDefaultTheme;
 }
 
 }}

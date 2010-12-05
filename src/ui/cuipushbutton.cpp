@@ -4,6 +4,8 @@ namespace EE { namespace UI {
 
 cUIPushButton::cUIPushButton( const cUIPushButton::CreateParams& Params ) :
 	cUIControlAnim( Params ),
+	mFontColor( Params.FontColor ),
+	mFontOverColor( Params.FontOverColor ),
 	mIcon( NULL ),
 	mTextBox( NULL ),
 	mIconSpace( Params.IconHorizontalMargin )
@@ -22,10 +24,20 @@ cUIPushButton::cUIPushButton( const cUIPushButton::CreateParams& Params ) :
 
 	cUITextBox::CreateParams TxtParams = Params;
 	TxtParams.Parent( this );
-	TxtParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
+	TxtParams.Flags 			= Params.Flags;
+	TxtParams.Font				= Params.Font;
+	TxtParams.FontColor 		= Params.FontColor;
+	TxtParams.FontShadowColor 	= Params.FontShadowColor;
+
+	if ( TxtParams.Flags & UI_CLIP_ENABLE )
+		TxtParams.Flags &= ~UI_CLIP_ENABLE;
+
 	mTextBox = eeNew( cUITextBox, ( TxtParams ) );
 	mTextBox->Visible( true );
 	mTextBox->Enabled( false );
+
+	if ( Params.IconAutoMargin )
+		mControlFlags |= UI_CTRL_FLAG_FREE_USE;
 
 	OnSizeChange();
 
@@ -33,10 +45,30 @@ cUIPushButton::cUIPushButton( const cUIPushButton::CreateParams& Params ) :
 }
 
 void cUIPushButton::OnSizeChange() {
-	mTextBox->Size( mSize.Width(), mSize.Height() );
-	mTextBox->Pos( 0, 0 );
+	if ( NULL != mTextBox ) {
+		mTextBox->Size( mSize.Width(), mSize.Height() );
+		mTextBox->Pos( 0, 0 );
+	}
+
 	mIcon->Pos( mIconSpace, 0 );
 	mIcon->CenterVertical();
+
+	if ( NULL != mTextBox ) {
+		switch ( FontHAlignGet( Flags() ) ) {
+			case UI_HALIGN_LEFT:
+				mTextBox->Pos( mIcon->Pos().x + mIcon->Size().Width(), 0 );
+				mTextBox->Size( mSize.Width() - mIcon->Pos().x + mIcon->Size().Width(), mSize.Height() );
+				break;
+			case UI_HALIGN_CENTER:
+				if ( NULL != mIcon->Shape() ) {
+					if ( mIcon->Pos().x + mIcon->Size().Width() >= mTextBox->AlignOffset().x ) {
+						mTextBox->Pos( mIcon->Pos().x + mIcon->Size().Width() + 1 - mTextBox->AlignOffset().x, mTextBox->Pos().y );
+					}
+				}
+
+				break;
+		}
+	}
 }
 
 cUIPushButton::~cUIPushButton() {
@@ -44,8 +76,21 @@ cUIPushButton::~cUIPushButton() {
 
 void cUIPushButton::SetTheme( cUITheme * Theme ) {
 	cUIControl::SetTheme( Theme, "button" );
+	DoAfterSetTheme();
+}
+
+void cUIPushButton::DoAfterSetTheme() {
+	if ( NULL == mTextBox->Font() && NULL != mSkinState && NULL != mSkinState->GetSkin() && NULL != mSkinState->GetSkin()->Theme() && NULL != mSkinState->GetSkin()->Theme()->Font() )
+		mTextBox->Font( mSkinState->GetSkin()->Theme()->Font() );
+
+	if ( mControlFlags & UI_CTRL_FLAG_FREE_USE ) {
+		eeRecti RMargin = MakePadding( true, false, false, false, true );
+		mIconSpace = RMargin.Left;
+	}
 
 	AutoPadding();
+
+	OnSizeChange();
 }
 
 void cUIPushButton::AutoPadding() {
@@ -56,8 +101,7 @@ void cUIPushButton::AutoPadding() {
 
 void cUIPushButton::Icon( cShape * Icon ) {
 	mIcon->Shape( Icon );
-	mIcon->Pos( mIconSpace, 0 );
-	mIcon->CenterVertical();
+	OnSizeChange();
 }
 
 cUIGfx * cUIPushButton::Icon() const {
@@ -72,6 +116,10 @@ void cUIPushButton::Text( const std::wstring& text ) {
 void cUIPushButton::Text( const std::string& text ) {
 	mTextBox->Text( text );
 	OnSizeChange();
+}
+
+const std::wstring& cUIPushButton::Text() {
+	return mTextBox->Text();
 }
 
 void cUIPushButton::Padding( const eeRecti& padding ) {
@@ -93,6 +141,21 @@ const Int32& cUIPushButton::IconHorizontalMargin() const {
 
 cUITextBox * cUIPushButton::TextBox() const {
 	return mTextBox;
+}
+
+void cUIPushButton::OnAlphaChange() {
+	cUIControlAnim::OnAlphaChange();
+
+	mIcon->Alpha( mAlpha );
+	mTextBox->Alpha( mAlpha );
+}
+
+void cUIPushButton::OnStateChange() {
+	if ( mSkinState->GetState() == cUISkinState::StateMouseEnter ) {
+		mTextBox->Color( mFontOverColor );
+	} else {
+		mTextBox->Color( mFontColor );
+	}
 }
 
 }}

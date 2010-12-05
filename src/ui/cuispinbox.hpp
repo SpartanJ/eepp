@@ -72,7 +72,8 @@ class EE_API cUISpinBox : public cUIControlAnim {
 		void AdjustChilds();
 
 		void InternalValue( const eeFloat& Val, const bool& Force = false );
-
+		
+		virtual void OnAlphaChange();
 };
 
 }}

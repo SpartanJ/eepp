@@ -31,12 +31,6 @@ class EE_API cUITextInput : public cUITextBox {
 
 		virtual void Draw();
 
-		virtual Uint32 OnMouseClick( const eeVector2i& Pos, const Uint32 Flags );
-
-		virtual Uint32 OnFocusLoss();
-
-		virtual Uint32 OnPressEnter();
-
 		void PushIgnoredChar( const Uint32& ch );
 
 		virtual void SetTheme( cUITheme * Theme );
@@ -55,9 +49,18 @@ class EE_API cUITextInput : public cUITextBox {
 		bool mAllowEditing;
 
 		void ResetWaitCursor();
+
 		void AlignFix();
+
 		void PrivOnPressEnter();
+
 		void AutoPadding();
+
+		virtual Uint32 OnMouseClick( const eeVector2i& Pos, const Uint32 Flags );
+
+		virtual Uint32 OnFocusLoss();
+
+		virtual Uint32 OnPressEnter();
 };
 
 }}

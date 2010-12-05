@@ -74,30 +74,43 @@ void cUIDropDownList::ShowListBox() {
 		else
 			mListBox->Size( mSize.Width(), (Int32)( mListBox->Count() * mSize.Height() ) + tPadding.Top );
 
-		mListBox->Enabled( true );
-		mListBox->Visible( true );
+		Show();
 
 		cUIManager::instance()->FocusControl( mListBox );
 	} else {
-		mListBox->Enabled( false );
-		mListBox->Visible( false );
+		Hide();
 	}
 }
 
 void cUIDropDownList::OnListBoxFocusLoss( const cUIEvent * Event ) {
 	if ( cUIManager::instance()->FocusControl() != this ) {
-		mListBox->Enabled( false );
-		mListBox->Visible( false );
+		Hide();
 	}
 }
 
 void cUIDropDownList::OnItemSelected( const cUIEvent * Event ) {
-	if ( mListBox->Visible() ) {
+	Hide();
+
+	Text( mListBox->GetItemSelectedText() );
+}
+
+void cUIDropDownList::Show() {
+	mListBox->Enabled( true );
+	mListBox->Visible( true );
+
+	if ( 255.f == mListBox->Alpha() )
+		mListBox->StartAlphaAnim( 0.f, 255.f, cUIThemeManager::instance()->ControlsFadeInTime() );
+	else
+		mListBox->CreateFadeIn( cUIThemeManager::instance()->ControlsFadeInTime() );
+}
+
+void cUIDropDownList::Hide() {
+	if ( cUIThemeManager::instance()->DefaultEffectsEnabled() ) {
+		mListBox->DisableFadeOut( cUIThemeManager::instance()->ControlsFadeOutTime() );
+	} else {
 		mListBox->Enabled( false );
 		mListBox->Visible( false );
 	}
-
-	Text( mListBox->GetItemSelectedText() );
 }
 
 void cUIDropDownList::Update() {

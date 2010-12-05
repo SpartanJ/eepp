@@ -52,11 +52,13 @@ cFont * cUITextBox::Font() const {
 }
 
 void cUITextBox::Font( cFont * font ) {
-	mTextCache->Font( font );
-	AutoShrink();
-	AutoSize();
-	AutoAlign();
-	OnFontChanged();
+	if ( mTextCache->Font() != font ) {
+		mTextCache->Font( font );
+		AutoShrink();
+		AutoSize();
+		AutoAlign();
+		OnFontChanged();
+	}
 }
 
 const std::wstring& cUITextBox::Text() {
@@ -170,8 +172,8 @@ const eeRecti& cUITextBox::Padding() const {
 void cUITextBox::SetTheme( cUITheme * Theme ) {
 	cUIControlAnim::SetTheme( Theme );
 
-	if ( NULL == mTextCache->Font() && NULL != Theme->DefaultFont() ) {
-		mTextCache->Font( Theme->DefaultFont() );
+	if ( NULL == mTextCache->Font() && NULL != Theme->Font() ) {
+		mTextCache->Font( Theme->Font() );
 	}
 }
 
@@ -189,6 +191,10 @@ eeFloat cUITextBox::GetTextHeight() {
 
 const eeInt& cUITextBox::GetNumLines() const {
 	return mTextCache->GetNumLines();
+}
+
+const eeVector2f& cUITextBox::AlignOffset() const {
+	return mAlignOffset;
 }
 
 }}

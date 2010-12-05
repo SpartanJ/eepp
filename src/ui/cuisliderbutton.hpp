@@ -1,13 +1,13 @@
 #ifndef EE_UICUISLIDERBUTTON_HPP
 #define EE_UICUISLIDERBUTTON_HPP
 
-#include "cuidragable.hpp"
+#include "cuicontrolanim.hpp"
 
 namespace EE { namespace UI { namespace Private {
 
-class cUISliderButton : public cUIDragable {
+class cUISliderButton : public cUIControlAnim {
 	public:
-		cUISliderButton( const cUIDragable::CreateParams& Params );
+		cUISliderButton( const cUIControlAnim::CreateParams& Params );
 
 		~cUISliderButton();
 	protected:

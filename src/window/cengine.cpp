@@ -332,7 +332,6 @@ void cEngine::Display() {
 	if ( mCurrentView->NeedUpdate() )
 		SetView( *mCurrentView );
 
-	glFlush();
 	SDL_GL_SwapBuffers();
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 

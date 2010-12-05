@@ -84,8 +84,6 @@ class EE_API cUIControl {
 
 		virtual void MessagePost( const cUIMessage * Msg );
 
-		virtual Uint32 OnMessage( const cUIMessage * Msg );
-
 		bool IsInside( const eeVector2i& Pos ) const;
 
 		void Pos( const eeVector2i& Pos );
@@ -129,30 +127,6 @@ class EE_API cUIControl {
 		virtual void Draw();
 
 		virtual void Update();
-
-		virtual Uint32 OnKeyDown( const cUIEventKey& Event );
-
-		virtual Uint32 OnKeyUp( const cUIEventKey& Event );
-
-		virtual Uint32 OnMouseMove( const eeVector2i& Pos, const Uint32 Flags );
-
-		virtual Uint32 OnMouseDown( const eeVector2i& Pos, const Uint32 Flags );
-
-		virtual Uint32 OnMouseClick( const eeVector2i& Pos, const Uint32 Flags );
-
-		virtual Uint32 OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags );
-
-		virtual Uint32 OnMouseUp( const eeVector2i& Pos, const Uint32 Flags );
-
-		virtual Uint32 OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags );
-
-		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags );
-
-		virtual Uint32 OnFocus();
-
-		virtual Uint32 OnFocusLoss();
-
-		virtual Uint32 OnValueChange();
 
 		Uint32 HAlign() const;
 
@@ -233,7 +207,11 @@ class EE_API cUIControl {
 		void DisableChildCloseCheck();
 
 		bool HasFocus() const;
+
+		bool IsParentOf( cUIControl * Ctrl );
 	protected:
+		friend class cUIManager;
+		friend class cUIControlAnim;
 		friend class cUIListBoxContainer;
 
 		bool			mVisible;
@@ -266,6 +244,32 @@ class EE_API cUIControl {
 		cUISkinState *	mSkinState;
 		std::string		mSkinForcedName;
 
+		virtual Uint32 OnMessage( const cUIMessage * Msg );
+
+		virtual Uint32 OnKeyDown( const cUIEventKey& Event );
+
+		virtual Uint32 OnKeyUp( const cUIEventKey& Event );
+
+		virtual Uint32 OnMouseMove( const eeVector2i& Pos, const Uint32 Flags );
+
+		virtual Uint32 OnMouseDown( const eeVector2i& Pos, const Uint32 Flags );
+
+		virtual Uint32 OnMouseClick( const eeVector2i& Pos, const Uint32 Flags );
+
+		virtual Uint32 OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags );
+
+		virtual Uint32 OnMouseUp( const eeVector2i& Pos, const Uint32 Flags );
+
+		virtual Uint32 OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags );
+
+		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags );
+
+		virtual Uint32 OnFocus();
+
+		virtual Uint32 OnFocusLoss();
+
+		virtual Uint32 OnValueChange();
+
 		virtual void OnVisibleChange();
 
 		virtual void OnEnabledChange();
@@ -275,10 +279,22 @@ class EE_API cUIControl {
 		virtual void OnSizeChange();
 
 		virtual void OnStateChange();
+		
+		virtual void OnComplexControlFocusLoss();
 
 		virtual void BackgroundDraw();
 
 		virtual void BorderDraw();
+
+		virtual void UpdateQuad();
+
+		virtual void MatrixSet();
+
+		virtual void MatrixUnset();
+
+		virtual void DrawChilds();
+
+		virtual cUIControl * OverFind( const eeVector2f& Point );
 
 		void CheckClose();
 
@@ -302,25 +318,11 @@ class EE_API cUIControl {
 
 		cUIControl * ChildNext( cUIControl * Ctrl, bool Loop = false ) const;
 
-		bool IsParentOf( cUIControl * Ctrl );
-
-		virtual cUIControl * OverFind( const eeVector2f& Point );
-
-		virtual void UpdateQuad();
-
 		void ClipMe();
 
 		void ClipDisable();
 
-		virtual void MatrixSet();
-
-		virtual void MatrixUnset();
-
 		void ClipTo();
-
-		virtual void DrawChilds();
-
-		eeFloat Elapsed();
 
 		void SendEvent( const cUIEvent * Event );
 
@@ -338,7 +340,9 @@ class EE_API cUIControl {
 
 		void ApplyDefaultTheme();
 
-		eeRecti MakePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true );
+		eeFloat Elapsed();
+
+		eeRecti MakePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
 };
 
 }}

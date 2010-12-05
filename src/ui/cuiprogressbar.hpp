@@ -60,6 +60,7 @@ class cUIProgressBar : public cUIControlAnim {
 		const bool& DisplayPercent() const;
 		
 		cUITextBox * TextBox() const;
+		
 	protected:
 		bool				mVerticalExpand;
 		eeVector2f			mSpeed;
@@ -78,7 +79,8 @@ class cUIProgressBar : public cUIControlAnim {
 		virtual void OnSizeChange();
 		
 		void UpdateTextBox();
-
+		
+		virtual void OnAlphaChange();
 };
 
 }}

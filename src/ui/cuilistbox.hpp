@@ -24,6 +24,18 @@ class EE_API cUIListBox : public cUIControlAnim {
 					FontOverColor( 0, 0, 0, 255 ),
 					FontSelectedColor( 0, 0, 0, 255 )
 				{
+					cUITheme * Theme = cUIThemeManager::instance()->DefaultTheme();
+
+					if ( NULL != Theme ) {
+						Font				= Theme->Font();
+						
+						if ( NULL == Font )
+							Font = cUIThemeManager::instance()->DefaultFont();
+						
+						FontColor			= Theme->FontColor();
+						FontOverColor		= Theme->FontOverColor();
+						FontSelectedColor	= Theme->FontSelectedColor();
+					}
 				}
 
 				inline ~CreateParams() {}
@@ -119,8 +131,6 @@ class EE_API cUIListBox : public cUIControlAnim {
 
 		Uint32 Count();
 
-		virtual Uint32 OnMessage( const cUIMessage * Msg );
-
 		void SetSelected( Uint32 Index );
 
 		void SelectPrev();
@@ -191,6 +201,10 @@ class EE_API cUIListBox : public cUIControlAnim {
 		cUIListBoxItem * CreateListBoxItem( const std::wstring& Name );
 
 		void CreateItemIndex( const Uint32& i );
+
+		virtual void OnAlphaChange();
+
+		virtual Uint32 OnMessage( const cUIMessage * Msg );
 };
 
 }}

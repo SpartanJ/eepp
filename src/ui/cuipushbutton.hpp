@@ -12,14 +12,29 @@ class EE_API cUIPushButton : public cUIControlAnim {
 			public:
 				inline CreateParams() :
 					cUITextBox::CreateParams(),
+					Font( NULL ),
+					FontColor( 0, 0, 0, 255 ),
+					FontShadowColor( 0, 0, 0, 255 ),
+					FontOverColor( 0, 0, 0, 255 ),
 					Icon( NULL ),
-					IconHorizontalMargin( 0 )
+					IconHorizontalMargin( 0 ),
+					IconAutoMargin( true )
 				{
+					cUITheme * Theme = cUIThemeManager::instance()->DefaultTheme();
+
+					if ( NULL != Theme ) {
+						Font			= Theme->Font();
+
+						if ( NULL == Font )
+							Font = cUIThemeManager::instance()->DefaultFont();
+
+						FontColor		= Theme->FontColor();
+						FontShadowColor	= Theme->FontShadowColor();
+						FontOverColor	= Theme->FontOverColor();
+					}
 				}
 
 				inline ~CreateParams() {}
-
-				cShape * Icon;
 
 				inline void SetIcon( cShape * icon ) {
 					Icon = icon;
@@ -28,7 +43,13 @@ class EE_API cUIPushButton : public cUIControlAnim {
 						IconHorizontalMargin = 4;
 				}
 
-				Int32 IconHorizontalMargin;
+				cFont * 	Font;
+				eeColorA 	FontColor;
+				eeColorA	FontShadowColor;
+				eeColorA 	FontOverColor;
+				cShape * 	Icon;
+				Int32 		IconHorizontalMargin;
+				bool 		IconAutoMargin;
 		};
 
 		cUIPushButton( const cUIPushButton::CreateParams& Params );
@@ -45,6 +66,8 @@ class EE_API cUIPushButton : public cUIControlAnim {
 
 		void Text( const std::string& text );
 
+		const std::wstring& Text();
+
 		void Padding( const eeRecti& padding );
 
 		const eeRecti& Padding() const;
@@ -55,6 +78,8 @@ class EE_API cUIPushButton : public cUIControlAnim {
 
 		cUITextBox * TextBox() const;
 	protected:
+		eeColorA		mFontColor;
+		eeColorA		mFontOverColor;
 		cUIGfx * 		mIcon;
 		cUITextBox * 	mTextBox;
 		Int32			mIconSpace;
@@ -62,6 +87,12 @@ class EE_API cUIPushButton : public cUIControlAnim {
 		virtual void OnSizeChange();
 
 		void AutoPadding();
+
+		virtual void OnAlphaChange();
+
+		virtual void OnStateChange();
+
+		void DoAfterSetTheme();
 };
 
 }}

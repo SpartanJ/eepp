@@ -14,8 +14,6 @@ class EE_API cUICheckBox : public cUITextBox {
 
 		virtual void SetTheme( cUITheme * Theme );
 
-		virtual Uint32 OnMessage( const cUIMessage * Msg );
-
 		const bool& IsActive() const;
 
 		void Active( const bool& active );
@@ -27,8 +25,6 @@ class EE_API cUICheckBox : public cUITextBox {
 		cUIControlAnim * ActiveButton() const;
 
 		cUIControlAnim * InactiveButton() const;
-
-		virtual Uint32 OnKeyDown( const cUIEventKey& Event );
 	protected:
 		cUIControlAnim *	mActiveButton;
 		cUIControlAnim *	mInactiveButton;
@@ -38,6 +34,12 @@ class EE_API cUICheckBox : public cUITextBox {
 		virtual void OnSizeChange();
 
 		void SwitchState();
+
+		virtual void OnAlphaChange();
+
+		virtual Uint32 OnKeyDown( const cUIEventKey& Event );
+
+		virtual Uint32 OnMessage( const cUIMessage * Msg );
 };
 
 }}

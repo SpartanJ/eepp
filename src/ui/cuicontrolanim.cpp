@@ -90,32 +90,52 @@ void cUIControlAnim::Update() {
 	if ( NULL != mMoveAnim && mMoveAnim->Enabled() ) {
 		mMoveAnim->Update( Elapsed() );
 		Pos( (eeInt)mMoveAnim->GetPos().x, (eeInt)mMoveAnim->GetPos().y );
+
+		if ( mMoveAnim->Ended() )
+			eeSAFE_DELETE( mMoveAnim );
 	}
 
 	if ( NULL != mAlphaAnim && mAlphaAnim->Enabled() ) {
 		mAlphaAnim->Update( Elapsed() );
 		Alpha( mAlphaAnim->GetRealPos() );
+
+		if ( mAlphaAnim->Ended() ) {
+			if ( ( mControlFlags & UI_CTRL_FLAG_CLOSE_FO )  )
+				Close();
+
+
+			if ( ( mControlFlags & UI_CTRL_FLAG_DISABLE_FADE_OUT ) ) {
+				mControlFlags &= ~UI_CTRL_FLAG_DISABLE_FADE_OUT;
+
+				Visible( false );
+			}
+
+			eeSAFE_DELETE( mAlphaAnim );
+		}
 	}
 
 	if ( NULL != mScaleAnim && mScaleAnim->Enabled() ) {
 		mScaleAnim->Update( Elapsed() );
 		Scale( mScaleAnim->GetRealPos() );
+
+		if ( mScaleAnim->Ended() )
+			eeSAFE_DELETE( mScaleAnim );
 	}
 
 	if ( NULL != mAngleAnim && mAngleAnim->Enabled() ) {
 		mAngleAnim->Update( Elapsed() );
 		Angle( mAngleAnim->GetRealPos() );
-	}
 
-	if ( ( mControlFlags & UI_CTRL_FLAG_CLOSE_FO ) && ( NULL != mAlphaAnim && mAlphaAnim->Ended() ) )
-		Close();
+		if ( mAngleAnim->Ended() )
+			eeSAFE_DELETE( mAngleAnim );
+	}
 }
 
 bool cUIControlAnim::Animating() {
 	return ( NULL != mAlphaAnim && mAlphaAnim->Enabled() ) || ( NULL != mAngleAnim && mAngleAnim->Enabled() ) || ( NULL != mScaleAnim && mScaleAnim->Enabled() ) || ( NULL != mMoveAnim && mMoveAnim->Enabled() );
 }
 
-void cUIControlAnim::StartAlphaAnim( const eeFloat& From, const eeFloat& To, const eeFloat& TotalTime, cInterpolation::OnPathEndCallback PathEndCallback ) {
+void cUIControlAnim::StartAlphaAnim( const eeFloat& From, const eeFloat& To, const eeFloat& TotalTime, const bool& AlphaChilds, const EE_INTERPOLATION& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mAlphaAnim )
 		mAlphaAnim = eeNew( cInterpolation, () );
 
@@ -126,9 +146,24 @@ void cUIControlAnim::StartAlphaAnim( const eeFloat& From, const eeFloat& To, con
 	mAlphaAnim->Start( PathEndCallback );
 
 	Alpha( From );
+
+	if ( AlphaChilds ) {
+		cUIControlAnim * AnimChild;
+		cUIControl * CurChild = mChild;
+
+		while ( NULL != CurChild ) {
+			if ( CurChild->IsAnimated() ) {
+				AnimChild = reinterpret_cast<cUIControlAnim*> ( CurChild );
+
+				AnimChild->StartAlphaAnim( From, To, TotalTime, AlphaChilds );
+			}
+
+			CurChild = CurChild->mNext;
+		}
+	}
 }
 
-void cUIControlAnim::StartScaleAnim( const eeFloat& From, const eeFloat& To, const eeFloat& TotalTime, cInterpolation::OnPathEndCallback PathEndCallback ) {
+void cUIControlAnim::StartScaleAnim( const eeFloat& From, const eeFloat& To, const eeFloat& TotalTime, const EE_INTERPOLATION& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mScaleAnim )
 		mScaleAnim = eeNew( cInterpolation, () );
 
@@ -137,11 +172,12 @@ void cUIControlAnim::StartScaleAnim( const eeFloat& From, const eeFloat& To, con
 	mScaleAnim->AddWaypoint( To );
 	mScaleAnim->SetTotalTime( TotalTime );
 	mScaleAnim->Start( PathEndCallback );
+	mScaleAnim->Type( Type );
 
 	Scale( From );
 }
 
-void cUIControlAnim::StartMovement( const eeVector2i& From, const eeVector2i& To, const eeFloat& TotalTime, cWaypoints::OnPathEndCallback PathEndCallback ) {
+void cUIControlAnim::StartMovement( const eeVector2i& From, const eeVector2i& To, const eeFloat& TotalTime, const EE_INTERPOLATION& Type, cWaypoints::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mMoveAnim )
 		mMoveAnim = eeNew( cWaypoints, () );
 
@@ -150,11 +186,12 @@ void cUIControlAnim::StartMovement( const eeVector2i& From, const eeVector2i& To
 	mMoveAnim->AddWaypoint( eeVector2f( (eeFloat)To.x, (eeFloat)To.y ) );
 	mMoveAnim->SetTotalTime( TotalTime );
 	mMoveAnim->Start( PathEndCallback );
+	mMoveAnim->Type( Type );
 
 	Pos( From );
 }
 
-void cUIControlAnim::StartRotation( const eeFloat& From, const eeFloat& To, const eeFloat& TotalTime, cInterpolation::OnPathEndCallback PathEndCallback ) {
+void cUIControlAnim::StartRotation( const eeFloat& From, const eeFloat& To, const eeFloat& TotalTime, const EE_INTERPOLATION& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mAngleAnim )
 		mAngleAnim = eeNew( cInterpolation, () );
 
@@ -163,16 +200,30 @@ void cUIControlAnim::StartRotation( const eeFloat& From, const eeFloat& To, cons
 	mAngleAnim->AddWaypoint( To );
 	mAngleAnim->SetTotalTime( TotalTime );
 	mAngleAnim->Start( PathEndCallback );
+	mAngleAnim->Type( Type );
 
 	Angle( From );
 }
 
-void cUIControlAnim::CreateFadeIn( const eeFloat& Time ) {
-	StartAlphaAnim( mAlpha, 255.f, Time );
+void cUIControlAnim::CreateFadeIn( const eeFloat& Time, const bool& AlphaChilds, const EE_INTERPOLATION& Type ) {
+	StartAlphaAnim( mAlpha, 255.f, Time, AlphaChilds, Type );
 }
 
-void cUIControlAnim::CreateFadeOut( const eeFloat& Time ) {
-	StartAlphaAnim( 255.f, mAlpha, Time );
+void cUIControlAnim::CreateFadeOut( const eeFloat& Time, const bool& AlphaChilds, const EE_INTERPOLATION& Type ) {
+	StartAlphaAnim( 255.f, mAlpha, Time, AlphaChilds, Type );
+}
+
+void cUIControlAnim::CloseFadeOut( const eeFloat& Time, const bool& AlphaChilds, const EE_INTERPOLATION& Type ) {
+	StartAlphaAnim	( mAlpha, 0.f, Time, AlphaChilds, Type );
+	mControlFlags |= UI_CTRL_FLAG_CLOSE_FO;
+}
+
+void cUIControlAnim::DisableFadeOut( const eeFloat& Time, const bool& AlphaChilds, const EE_INTERPOLATION& Type ) {
+	Enabled( false );
+
+	StartAlphaAnim	( mAlpha, 0.f, Time, AlphaChilds, Type );
+
+	mControlFlags |= UI_CTRL_FLAG_DISABLE_FADE_OUT;
 }
 
 void cUIControlAnim::BackgroundDraw() {
@@ -198,11 +249,6 @@ void cUIControlAnim::BorderDraw() {
 
 eeColorA cUIControlAnim::GetColor( const eeColorA& Col ) {
 	return eeColorA( Col.R(), Col.G(), Col.B(), static_cast<Uint8>( (eeFloat)Col.A() * ( mAlpha / 255.f ) ) );
-}
-
-void cUIControlAnim::CloseFadeOut( const eeFloat& Time ) {
-	StartAlphaAnim	( mAlpha, 0.f, Time );
-	mControlFlags |= UI_CTRL_FLAG_CLOSE_FO;
 }
 
 void cUIControlAnim::UpdateQuad() {

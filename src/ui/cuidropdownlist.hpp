@@ -33,8 +33,6 @@ class EE_API cUIDropDownList : public cUITextInput {
 
 		cUIListBox * ListBox() const;
 
-		Uint32 OnMouseClick( const eeVector2i& Pos, const Uint32 Flags );
-
 		virtual void Update();
 	protected:
 		cUIListBox *	mListBox;
@@ -46,6 +44,12 @@ class EE_API cUIDropDownList : public cUITextInput {
 		void OnListBoxFocusLoss( const cUIEvent * Event );
 
 		virtual void OnItemSelected( const cUIEvent * Event );
+
+		virtual void Show();
+
+		virtual void Hide();
+
+		Uint32 OnMouseClick( const eeVector2i& Pos, const Uint32 Flags );
 };
 
 }}

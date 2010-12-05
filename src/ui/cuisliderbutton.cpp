@@ -3,8 +3,8 @@
 
 namespace EE { namespace UI { namespace Private {
 
-cUISliderButton::cUISliderButton( const cUIDragable::CreateParams& Params ) :
-	cUIDragable( Params )
+cUISliderButton::cUISliderButton( const cUIControlAnim::CreateParams& Params ) :
+	cUIControlAnim( Params )
 {
 	ApplyDefaultTheme();
 }
@@ -13,7 +13,7 @@ cUISliderButton::~cUISliderButton() {
 }
 
 void cUISliderButton::OnPosChange() {
-	cUIDragable::OnPosChange();
+	cUIControlAnim::OnPosChange();
 
 	cUISlider * Slider = reinterpret_cast<cUISlider*> ( mParentCtrl );
 	Slider->FixSliderPos();

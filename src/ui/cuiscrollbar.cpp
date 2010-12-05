@@ -205,4 +205,12 @@ cUIControlAnim * cUIScrollBar::ButtonDown() const {
 	return mBtnDown;
 }
 
+void cUIScrollBar::OnAlphaChange() {
+	cUIControlAnim::OnAlphaChange();
+	
+	mSlider->Alpha( mAlpha );
+	mBtnUp->Alpha( mAlpha );
+	mBtnDown->Alpha( mAlpha );
+}
+
 }}

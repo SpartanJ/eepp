@@ -163,5 +163,9 @@
 	#include "ui/cuilistboxitem.hpp"
 	#include "ui/cuidropdownlist.hpp"
 	#include "ui/cuicombobox.hpp"
+	#include "ui/cuimenu.hpp"
+	#include "ui/cuimenuitem.hpp"
+	#include "ui/cuiseparator.hpp"
+	#include "ui/cuipopupmenu.hpp"
 	using namespace EE::UI;
 #endif

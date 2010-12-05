@@ -207,4 +207,11 @@ Uint32 cUIRadioButton::OnKeyDown( const cUIEventKey& Event ) {
 	return 1;
 }
 
+void cUIRadioButton::OnAlphaChange() {
+	cUITextBox::OnAlphaChange();
+	
+	mActiveButton->Alpha( mAlpha );
+	mInactiveButton->Alpha( mAlpha );
+}
+
 }}

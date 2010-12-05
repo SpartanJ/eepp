@@ -14,39 +14,39 @@ class EE_API cUIGfx : public cUIControlAnim {
 					ShapeColor 	= eeRGBA( true );
 					ShapeRender = RN_NORMAL;
 				}
-				
+
 				inline ~CreateParams() {}
-				
+
 				cShape * 		Shape;
 				eeRGBA 			ShapeColor;
 				EE_RENDERTYPE 	ShapeRender;
 		};
-		
+
 		cUIGfx( const cUIGfx::CreateParams& Params );
-		
+
 		~cUIGfx();
-		
+
 		virtual void Draw();
-		
+
 		virtual void Alpha( const eeFloat& alpha );
-		
+
 		cShape * Shape() const;
-		
+
 		void Shape( cShape * shape );
-		
+
 		const eeRGBA& Color() const;
-		
+
 		void Color( const eeRGBA& color );
-		
+
 		const EE_RENDERTYPE& RenderType() const;
-		
+
 		void RenderType( const EE_RENDERTYPE& render );
-		
-		virtual void OnSizeChange();
 	protected:
 		cShape * 		mShape;
 		eeRGBA 			mColor;
 		EE_RENDERTYPE 	mRender;
+
+		virtual void OnSizeChange();
 };
 
 }}

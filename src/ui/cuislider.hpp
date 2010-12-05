@@ -65,8 +65,8 @@ class EE_API cUISlider : public cUIControlAnim {
 		bool				mVertical;
 		bool				mAllowHalfSliderOut;
 		bool				mExpandBackground;
-		cUIControl *		mBackSlider;
-		cUIDragable * 		mSlider;
+		cUIControlAnim *	mBackSlider;
+		cUIControlAnim * 	mSlider;
 		eeFloat				mMinValue;
 		eeFloat				mMaxValue;
 		eeFloat				mValue;
@@ -83,6 +83,8 @@ class EE_API cUISlider : public cUIControlAnim {
 		void ManageClick( const Uint32& Flags );
 
 		void ManageKeyboard();
+		
+		virtual void OnAlphaChange();
 };
 
 }}

@@ -159,4 +159,10 @@ cUITextBox * cUIProgressBar::TextBox() const {
 	return mTextBox;
 }
 
+void cUIProgressBar::OnAlphaChange() {
+	cUIControlAnim::OnAlphaChange();
+	
+	mTextBox->Alpha( mAlpha );
+}
+
 }}

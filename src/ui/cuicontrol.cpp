@@ -338,6 +338,9 @@ Uint32 cUIControl::OnFocusLoss() {
 	return 1;
 }
 
+void cUIControl::OnComplexControlFocusLoss() {
+}
+
 bool cUIControl::HasFocus() const {
 	return 0 != ( mControlFlags & UI_CTRL_FLAG_HAS_FOCUS );
 }
@@ -586,7 +589,11 @@ void cUIControl::ChildAdd( cUIControl * ChildCtrl ) {
 
 void cUIControl::ChildAddAt( cUIControl * ChildCtrl, Uint32 Pos ) {
 	cUIControl * ChildLoop = mChild;
-
+	
+	ChildCtrl->Parent( this );
+	ChildRemove( ChildCtrl );
+	ChildCtrl->mParentCtrl = this;
+	
 	if( Pos == 0 ) {
 		if ( mChild == NULL ) {
 			mChild 				= ChildCtrl;
@@ -918,13 +925,13 @@ void cUIControl::WriteCtrlFlag( const Uint32& Pos, const Uint32& Val ) {
 }
 
 void cUIControl::ApplyDefaultTheme() {
-	cUIManager::instance()->ApplyDefaultTheme( this );
+	cUIThemeManager::instance()->ApplyDefaultTheme( this );
 }
 
-eeRecti cUIControl::MakePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBottom ) {
+eeRecti cUIControl::MakePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBottom, bool SkipFlags ) {
 	eeRecti tPadding( 0, 0, 0, 0 );
 
-	if ( mFlags & UI_AUTO_PADDING ) {
+	if ( mFlags & UI_AUTO_PADDING || SkipFlags ) {
 		if ( NULL != mSkinState && NULL != mSkinState->GetSkin() ) {
 			if ( mSkinState->GetSkin()->GetType() == cUISkin::UISkinComplex ) {
 				cUISkinComplex * tComplex = reinterpret_cast<cUISkinComplex*> ( mSkinState->GetSkin() );

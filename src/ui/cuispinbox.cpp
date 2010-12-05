@@ -218,4 +218,12 @@ cUITextInput * cUISpinBox::TextInput() const {
 	return mInput;
 }
 
+void cUISpinBox::OnAlphaChange() {
+	cUIControlAnim::OnAlphaChange();
+	
+	mInput->Alpha( mAlpha );
+	mPushUp->Alpha( mAlpha );
+	mPushDown->Alpha( mAlpha );
+}
+
 }}

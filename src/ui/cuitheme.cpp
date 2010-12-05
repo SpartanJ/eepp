@@ -44,7 +44,10 @@ static const char * UI_THEME_ELEMENTS[] = {
 	"listbox",
 	"listboxitem",
 	"dropdownlist",
-	"combobox"
+	"combobox",
+	"menu",
+	"menuitem",
+	"separator"
 };
 
 cUITheme * cUITheme::LoadFromPath( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt ) {
@@ -142,7 +145,7 @@ bool cUITheme::SearchFilesInGroup( cShapeGroup * SG, std::string Element, Uint32
 		for ( s = 0; s < cUISkinComplex::SideCount; s++ ) {
 			ElemName = Element + "_" + cUISkin::GetSkinStateName( i ) + "_" + cUISkinComplex::GetSideSuffix( s );
 
-			if ( SG->GetByName( ElemName ) ) { // only load PNG's FTM
+			if ( SG->GetByName( ElemName ) ) {
 				IsComplex = true;
 				Found = true;
 				break;
@@ -155,7 +158,7 @@ bool cUITheme::SearchFilesInGroup( cShapeGroup * SG, std::string Element, Uint32
 		for ( i = 0; i < cUISkinState::StateCount; i++ ) {
 			ElemName = Element + "_" + cUISkin::GetSkinStateName( i );
 
-			if ( SG->GetByName( ElemName ) ) { // only load PNG's FTM
+			if ( SG->GetByName( ElemName ) ) {
 				Found = true;
 				break;
 			}
@@ -180,7 +183,7 @@ bool cUITheme::SearchFilesOfElement( cShapeGroup * SG, const std::string& Path, 
 			ElemPath = Path + ElemName;
 			ElemFullPath = ElemPath + "." + ImgExt;
 
-			if ( FileExists( ElemFullPath ) ) { // only load PNG's FTM
+			if ( FileExists( ElemFullPath ) ) {
 				SG->Add( eeNew( cShape, ( cTextureFactory::instance()->Load( ElemFullPath ), ElemName ) ) );
 
 				IsComplex = true;
@@ -196,7 +199,7 @@ bool cUITheme::SearchFilesOfElement( cShapeGroup * SG, const std::string& Path, 
 			ElemPath = Path + ElemName;
 			ElemFullPath = ElemPath + "." + ImgExt;
 
-			if ( FileExists( ElemFullPath ) ) { // only load PNG's FTM
+			if ( FileExists( ElemFullPath ) ) {
 				SG->Add( eeNew( cShape, ( cTextureFactory::instance()->Load( ElemFullPath ), ElemName ) ) );
 
 				Found = true;
@@ -212,7 +215,11 @@ cUITheme::cUITheme( const std::string& Name, const std::string& Abbr, cFont * De
 	mName( Name ),
 	mNameHash( MakeHash( mName ) ),
 	mAbbr( Abbr ),
-	mFont( DefaultFont )
+	mFont( DefaultFont ),
+	mFontColor( 0, 0, 0, 255 ),
+	mFontShadowColor( 255, 255, 255, 200 ),
+	mFontOverColor( 0, 0, 0, 255 ),
+	mFontSelectedColor( 0, 0, 0, 255 )
 {
 }
 
@@ -243,12 +250,44 @@ cUISkin * cUITheme::Add( cUISkin * Resource ) {
 	return tResourceManager<cUISkin>::Add( Resource );
 }
 
-void cUITheme::DefaultFont( cFont * Font ) {
+void cUITheme::Font( cFont * Font ) {
 	mFont = Font;
 }
 
-cFont * cUITheme::DefaultFont() const {
+cFont * cUITheme::Font() const {
 	return mFont;
+}
+
+const eeColorA& cUITheme::FontColor() const {
+	return mFontColor;
+}
+
+const eeColorA& cUITheme::FontShadowColor() const {
+	return mFontShadowColor;
+}
+
+const eeColorA& cUITheme::FontOverColor() const {
+	return mFontOverColor;
+}
+
+const eeColorA& cUITheme::FontSelectedColor() const {
+	return mFontSelectedColor;
+}
+
+void cUITheme::FontColor( const eeColorA& Color ) {
+	mFontColor = Color;
+}
+
+void cUITheme::FontShadowColor( const eeColorA& Color ) {
+	mFontShadowColor = Color;
+}
+
+void cUITheme::FontOverColor( const eeColorA& Color ) {
+	mFontOverColor = Color;
+}
+
+void cUITheme::FontSelectedColor( const eeColorA& Color ) {
+	mFontSelectedColor = Color;
 }
 
 }}

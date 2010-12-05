@@ -536,8 +536,14 @@
 		<Unit filename="src/ui/cuilistboxitem.hpp" />
 		<Unit filename="src/ui/cuimanager.cpp" />
 		<Unit filename="src/ui/cuimanager.hpp" />
+		<Unit filename="src/ui/cuimenu.cpp" />
+		<Unit filename="src/ui/cuimenu.hpp" />
+		<Unit filename="src/ui/cuimenuitem.cpp" />
+		<Unit filename="src/ui/cuimenuitem.hpp" />
 		<Unit filename="src/ui/cuimessage.cpp" />
 		<Unit filename="src/ui/cuimessage.hpp" />
+		<Unit filename="src/ui/cuipopupmenu.cpp" />
+		<Unit filename="src/ui/cuipopupmenu.hpp" />
 		<Unit filename="src/ui/cuiprogressbar.cpp" />
 		<Unit filename="src/ui/cuiprogressbar.hpp" />
 		<Unit filename="src/ui/cuipushbutton.cpp" />
@@ -546,6 +552,8 @@
 		<Unit filename="src/ui/cuiradiobutton.hpp" />
 		<Unit filename="src/ui/cuiscrollbar.cpp" />
 		<Unit filename="src/ui/cuiscrollbar.hpp" />
+		<Unit filename="src/ui/cuiseparator.cpp" />
+		<Unit filename="src/ui/cuiseparator.hpp" />
 		<Unit filename="src/ui/cuiskin.cpp" />
 		<Unit filename="src/ui/cuiskin.hpp" />
 		<Unit filename="src/ui/cuiskincomplex.cpp" />
@@ -562,8 +570,6 @@
 		<Unit filename="src/ui/cuispinbox.hpp" />
 		<Unit filename="src/ui/cuitextbox.cpp" />
 		<Unit filename="src/ui/cuitextbox.hpp" />
-		<Unit filename="src/ui/cuitextboxsimple.cpp" />
-		<Unit filename="src/ui/cuitextboxsimple.hpp" />
 		<Unit filename="src/ui/cuitextinput.cpp" />
 		<Unit filename="src/ui/cuitextinput.hpp" />
 		<Unit filename="src/ui/cuitheme.cpp" />

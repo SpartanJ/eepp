@@ -11,9 +11,9 @@ namespace EE { namespace UI {
 class EE_API cUITheme : public tResourceManager<cUISkin> {
 	public:
 		static cUITheme * LoadFromPath( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt = "png" );
-		
+
 		static cUITheme * LoadFromShapeGroup( cShapeGroup * ShapeGroup, const std::string& Name, const std::string NameAbbr );
-		
+
 		cUITheme( const std::string& Name, const std::string& Abbr, cFont * DefaultFont = NULL );
 
 		virtual ~cUITheme();
@@ -27,19 +27,38 @@ class EE_API cUITheme : public tResourceManager<cUISkin> {
 		const std::string& Abbr() const;
 
 		virtual cUISkin * Add( cUISkin * Resource );
-		
-		void DefaultFont( cFont * Font );
-		
-		cFont * DefaultFont() const;
+
+		void Font( cFont * Font );
+
+		cFont * Font() const;
+
+		const eeColorA& FontColor() const;
+
+		const eeColorA& FontShadowColor() const;
+
+		const eeColorA& FontOverColor() const;
+
+		const eeColorA& FontSelectedColor() const;
+
+		void FontColor( const eeColorA& Color );
+
+		void FontShadowColor( const eeColorA& Color );
+
+		void FontOverColor( const eeColorA& Color );
+
+		void FontSelectedColor( const eeColorA& Color );
 	protected:
 		std::string 		mName;
 		Uint32				mNameHash;
 		std::string			mAbbr;
 		cFont * 			mFont;
-
+		eeColorA			mFontColor;
+		eeColorA			mFontShadowColor;
+		eeColorA			mFontOverColor;
+		eeColorA			mFontSelectedColor;
 	private:
 		static bool SearchFilesOfElement( cShapeGroup * SG, const std::string& Path, std::string Element, Uint32& IsComplex, const std::string ImgExt );
-		
+
 		static bool SearchFilesInGroup( cShapeGroup * SG, std::string Element, Uint32& IsComplex );
 };
 
