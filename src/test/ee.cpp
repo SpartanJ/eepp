@@ -655,8 +655,8 @@ void cEETest::MainClick( const cUIEvent * Event ) {
 	const cUIEventMouse * MouseEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
 
 	if ( MouseEvent->Flags() & EE_BUTTON_RMASK ) {
-		Menu->Pos( MouseEvent->Pos() );
-		Menu->Show();
+		if ( Menu->Show() )
+			Menu->Pos( MouseEvent->Pos() );
 	}
 }
 

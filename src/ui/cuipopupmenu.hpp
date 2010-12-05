@@ -8,17 +8,17 @@ namespace EE { namespace UI {
 class cUIPopUpMenu : public cUIMenu {
 	public:
 		cUIPopUpMenu( cUIPopUpMenu::CreateParams Params );
-		
+
 		~cUIPopUpMenu();
-		
+
 		virtual void SetTheme( cUITheme * Theme );
-		
-		void Show();
-		
-		void Hide();
+
+		bool Show();
+
+		bool Hide();
 	protected:
 		virtual void OnComplexControlFocusLoss();
-		
+
 		virtual Uint32 OnMessage( const cUIMessage * Msg );
 };
 

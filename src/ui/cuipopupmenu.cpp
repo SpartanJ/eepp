@@ -17,7 +17,7 @@ void cUIPopUpMenu::SetTheme( cUITheme * Theme ) {
 	DoAfterSetTheme();
 }
 
-void cUIPopUpMenu::Show() {
+bool cUIPopUpMenu::Show() {
 	if ( !Visible() ) {
 		Enabled( true );
 		Visible( true );
@@ -28,16 +28,26 @@ void cUIPopUpMenu::Show() {
 			CreateFadeIn( cUIThemeManager::instance()->ControlsFadeInTime() );
 
 		cUIManager::instance()->FocusControl( this );
+
+		return true;
 	}
+
+	return false;
 }
 
-void cUIPopUpMenu::Hide() {
-	if ( cUIThemeManager::instance()->DefaultEffectsEnabled() ) {
-		DisableFadeOut( cUIThemeManager::instance()->ControlsFadeOutTime() );
-	} else {
-		Enabled( false );
-		Visible( false );
+bool cUIPopUpMenu::Hide() {
+	if ( Visible() ) {
+		if ( cUIThemeManager::instance()->DefaultEffectsEnabled() ) {
+			DisableFadeOut( cUIThemeManager::instance()->ControlsFadeOutTime() );
+		} else {
+			Enabled( false );
+			Visible( false );
+		}
+
+		return true;
 	}
+
+	return false;
 }
 
 void cUIPopUpMenu::OnComplexControlFocusLoss() {
@@ -49,7 +59,7 @@ Uint32 cUIPopUpMenu::OnMessage( const cUIMessage * Msg ) {
 		case cUIMessage::MsgClick:
 		{
 			Hide();
-			
+
 			return 1;
 		}
 	}
