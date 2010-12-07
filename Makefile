@@ -1,7 +1,33 @@
+export CFLAGS     	= -Wall $(DEBUGFLAGS) $(BUILDFLAGS)
+export CFLAGSEXT  	= $(DEBUGFLAGS) $(BUILDFLAGS)
+export LDFLAGS    	= $(LINKFLAGS)
+export LIBPATH    	= ./
+export VERSION    	= 0.7
+export CP         	= cp
+export LN         	= ln
+export LNFLAGS    	= -s -f
+export AR         	= ar
+export ARFLAGS    	= rcs
+export DESTDIR    	= /usr
+export DESTLIBDIR 	= $(DESTDIR)/lib
+export DESTINCDIR 	= $(DESTDIR)/include
+
+ifeq ($(DYNAMIC), yes)
+    LIB     = libeepp.so
+    LIBNAME = $(LIBPATH)/$(LIB).$(VERSION)
+    INSTALL = && $(LN) $(LNFLAGS) $(DESTLIBDIR)/$(LIB).$(VERSION) $(DESTLIBDIR)/$(LIB)
+else
+    LIB     = libeepp-s.a
+    LIBNAME = $(LIBPATH)/$(LIB)
+    INSTALL = 
+endif
+
 ifeq ($(DEBUGBUILD), yes)
     DEBUGFLAGS = -g -DDEBUG -DEE_DEBUG -DEE_MEMORY_MANAGER
+    RELEASETYPE = debug
 else
     DEBUGFLAGS = -O2 -s -DNDEBUG
+    RELEASETYPE = release
 endif
 
 ifeq ($(DYNAMIC), yes)
@@ -20,19 +46,8 @@ export CC         	= llvm-gcc
 export CPP        	= llvm-g++
 endif
 
-export CFLAGS     	= -Wall $(DEBUGFLAGS) $(BUILDFLAGS)
-export CFLAGSEXT  	= $(DEBUGFLAGS) $(BUILDFLAGS)
-export LDFLAGS    	= $(LINKFLAGS)
-export LIBPATH    	= ./
-export VERSION    	= 0.7
-export CP         	= cp
-export LN         	= ln
-export LNFLAGS    	= -s -f
-export AR         	= ar
-export ARFLAGS    	= rcs
-export DESTDIR    	= /usr
-export DESTLIBDIR 	= $(DESTDIR)/lib
-export DESTINCDIR 	= $(DESTDIR)/include
+STRLOWERCASE 		= $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(subst F,f,$(subst G,g,$(subst H,h,$(subst I,i,$(subst J,j,$(subst K,k,$(subst L,l,$(subst M,m,$(subst N,n,$(subst O,o,$(subst P,p,$(subst Q,q,$(subst R,r,$(subst S,s,$(subst T,t,$(subst U,u,$(subst V,v,$(subst W,w,$(subst X,x,$(subst Y,y,$(subst Z,z,$1))))))))))))))))))))))))))
+OS 					= $(strip $(call STRLOWERCASE, $(shell uname) ) )
 
 EXE     			= eetest
 EXEIV				= eeiv
@@ -57,6 +72,12 @@ SRCWINDOW     		= $(wildcard ./src/window/*.cpp)
 SRCTEST     		= $(wildcard ./src/test/*.cpp)
 SRCEEIV     		= $(wildcard ./src/eeiv/*.cpp)
 
+SRCHELPERS			= $(SRCGLEW) $(SRCSOIL) $(SRCSTBVORBIS) $(SRCZLIB) $(SRCLIBZIP)
+SRCMODULES			= $(SRCHAIKUTTF) $(SRCBASE) $(SRCAUDIO) $(SRCGAMING) $(SRCGRAPHICS) $(SRCMATH) $(SRCSYSTEM) $(SRCUI) $(SRCUTILS) $(SRCWINDOW)
+SRCALL				= $(SRCMODULES) $(SRCHELPERS) $(SRCTEST) $(SRCEEIV)
+SRCHPPALL			= $(SRCALL:.cpp=.hpp)
+SRCHALL				= $(SRCALL:.c=.h)
+
 OBJGLEW 			= $(SRCGLEW:.c=.o)
 OBJSOIL 			= $(SRCSOIL:.c=.o)
 OBJSTBVORBIS 		= $(SRCSTBVORBIS:.c=.o) 
@@ -80,55 +101,63 @@ OBJMODULES			= $(OBJHAIKUTTF) $(OBJBASE) $(OBJUTILS) $(OBJMATH) $(OBJSYSTEM) $(O
 OBJTEST     		= $(SRCTEST:.cpp=.o)
 OBJEEIV     		= $(SRCEEIV:.cpp=.o)
 
-ifeq ($(DYNAMIC), yes)
-    LIB     = libeepp.so
-    LIBNAME = $(LIBPATH)/$(LIB).$(VERSION)
-    INSTALL = && $(LN) $(LNFLAGS) $(DESTLIBDIR)/$(LIB).$(VERSION) $(DESTLIBDIR)/$(LIB)
-else
-    LIB     = libeepp-s.a
-    LIBNAME = $(LIBPATH)/$(LIB)
-    INSTALL = 
-endif
+OBJDIR				= obj/$(OS)/$(RELEASETYPE)/
 
-all: $(LIB)
+FOBJHELPERS			= $(patsubst ./%, $(OBJDIR)%, $(OBJGLEW) $(OBJSOIL) $(OBJSTBVORBIS) $(OBJZLIB) $(OBJLIBZIP) )
+FOBJMODULES			= $(patsubst ./%, $(OBJDIR)%, $(OBJHAIKUTTF) $(OBJBASE) $(OBJUTILS) $(OBJMATH) $(OBJSYSTEM) $(OBJAUDIO) $(OBJWINDOW) $(OBJGRAPHICS) $(OBJGAMING) $(OBJUI) )
 
-libeepp-s.a: $(OBJHELPERS) $(OBJMODULES)
-	$(AR) $(ARFLAGS) $(LIBNAME) $(OBJHELPERS) $(OBJMODULES)
+FOBJTEST     		= $(patsubst ./%, $(OBJDIR)%, $(SRCTEST:.cpp=.o) )
+FOBJEEIV     		= $(patsubst ./%, $(OBJDIR)%, $(SRCEEIV:.cpp=.o) )
 
-libeepp.so: $(OBJHELPERS) $(OBJMODULES)
-	$(CPP) $(LDFLAGS) -Wl,-soname,$(LIB).$(VERSION) -o $(LIBNAME) $(OBJHELPERS) $(OBJMODULES) -lfreetype -lSDL -lsndfile -lopenal -lGL -lGLU
+FOBJEEPP			= $(FOBJMODULES) $(FOBJTEST) $(FOBJEEIV)
+FOBJALL 			= $(FOBJHELPERS) $(FOBJEEPP)
 
-$(OBJMODULES): %.o: %.cpp
-	$(CPP) -o $@ -c $< $(CFLAGS) -I/usr/include/freetype2
+DEPSEEPP			= $(FOBJEEPP:.o=.d)
+DEPSALL				= $(FOBJALL:.o=.d)
 
-$(OBJHELPERS): %.o: %.c
-	$(CC) -o $@ -c $< $(CFLAGSEXT) -DSTBI_FAILURE_USERMSG
+lib: $(LIB)
+
+$(FOBJMODULES):
+	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) -I/usr/include/freetype2
+	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) -I/usr/include/freetype2 > $(patsubst %.o,%.d,$@)
+
+$(FOBJHELPERS):
+	$(CC) -o $@ -c $(patsubst $(OBJDIR)%.o,%.c,$@) $(CFLAGSEXT) -DSTBI_FAILURE_USERMSG
+	@$(CC) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.c,$@)  -DSTBI_FAILURE_USERMSG > $(patsubst %.o,%.d,$@)
+
+$(FOBJTEST):
+	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) -I/usr/include/freetype2
+	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) -I/usr/include/freetype2 > $(patsubst %.o,%.d,$@)
+
+$(FOBJEEIV):
+	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) -I/usr/include/freetype2
+	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) -I/usr/include/freetype2 > $(patsubst %.o,%.d,$@)
+
+$(EXEIV): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJEEIV)
+	$(CPP) -o ./$(EXEIV) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJEEIV) $(LDFLAGS) -lfreetype -lSDL -lsndfile -lopenal -lGL -lGLU -lX11 -lXcursor
+
+$(EXE): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJTEST)
+	$(CPP) -o ./$(EXE) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJTEST) $(LDFLAGS) -lfreetype -lSDL -lsndfile -lopenal -lGL -lGLU
+
+libeepp-s.a: $(FOBJHELPERS) $(FOBJMODULES)
+	$(AR) $(ARFLAGS) $(LIBNAME) $(FOBJHELPERS) $(FOBJMODULES)
+
+libeepp.so: $(FOBJHELPERS) $(FOBJMODULES)
+	$(CPP) $(LDFLAGS) -Wl,-soname,$(LIB).$(VERSION) -o $(LIBNAME) $(FOBJHELPERS) $(FOBJMODULES) -lfreetype -lSDL -lsndfile -lopenal -lGL -lGLU
 
 test: $(EXE)
 
-$(EXE): $(OBJHELPERS) $(OBJMODULES) $(OBJTEST)
-	$(CPP) -o ./$(EXE) $(OBJHELPERS) $(OBJMODULES) $(OBJTEST) $(LDFLAGS) -lfreetype -lSDL -lsndfile -lopenal -lGL -lGLU
-
-$(OBJTEST): %.o: %.cpp
-	$(CPP) -o $@ -c $< $(CFLAGS) -I/usr/include/freetype2
-
 eeiv: $(EXEIV)
-
-$(EXEIV): $(OBJHELPERS) $(OBJMODULES) $(OBJEEIV)
-	$(CPP) -o ./$(EXEIV) $(OBJHELPERS) $(OBJMODULES) $(OBJEEIV) $(LDFLAGS) -lfreetype -lSDL -lsndfile -lopenal -lGL -lGLU -lX11 -lXcursor
-
-$(OBJEEIV): %.o: %.cpp
-	$(CPP) -o $@ -c $< $(CFLAGS) -I/usr/include/freetype2
 
 docs:
 	doxygen ./Doxyfile
 
 clean:
-	@rm -rf $(OBJHELPERS) $(OBJMODULES) $(OBJTEST) $(OBJEEIV)
+	@rm -rf $(FOBJALL) $(DEPSALL)
 
 cleantemp:
-	@rm -rf $(OBJMODULES) $(OBJTEST) $(OBJEEIV)
-	
+	@rm -rf $(FOBJEEPP) $(DEPSEEPP)
+
 cleanall: clean
 	@rm -rf $(LIBNAME)
 	@rm -rf ./$(EXE)
@@ -137,3 +166,5 @@ cleanall: clean
 
 install:
 	@($(CP) $(LIBNAME) $(DESTLIBDIR) $(INSTALL))
+
+-include $(DEPSALL)

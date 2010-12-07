@@ -59,8 +59,6 @@ Uint32 cUIPopUpMenu::OnMessage( const cUIMessage * Msg ) {
 		case cUIMessage::MsgClick:
 		{
 			Hide();
-
-			return 1;
 		}
 	}
 

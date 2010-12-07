@@ -363,6 +363,8 @@ void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
 
 	CreateUI();
 
+	EE->Display();
+
 	mFontsLoaded = true;
 }
 

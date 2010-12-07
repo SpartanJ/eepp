@@ -197,6 +197,13 @@ void cUIMenu::Insert( cUIControl * Control, const Uint32& Index ) {
 
 Uint32 cUIMenu::OnMessage( const cUIMessage * Msg ) {
 	switch ( Msg->Msg() ) {
+		case cUIMessage::MsgClick:
+		{
+			cUIEvent ItemEvent( Msg->Sender(), cUIEvent::EventOnItemClicked );
+			SendEvent( &ItemEvent );
+			
+			return 1;
+		}
 		case cUIMessage::MsgFocusLoss:
 		{
 			cUIControl * FocusCtrl = cUIManager::instance()->FocusControl();
@@ -272,15 +279,6 @@ void cUIMenu::ReposControls() {
 
 void cUIMenu::ResizeMe() {
 	Size( mSize.Width(), mNextPosY + mPadding.Top + mPadding.Bottom );
-}
-
-void cUIMenu::OnAlphaChange() {
-	cUIControlAnim::OnAlphaChange();
-
-	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
-		if ( mItems[i]->IsType( UI_TYPE_CONTROL_ANIM ) )
-			reinterpret_cast<cUIControlAnim*>( mItems[i] )->Alpha( mAlpha );
-	}
 }
 
 }}

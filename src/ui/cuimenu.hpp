@@ -103,8 +103,6 @@ class EE_API cUIMenu : public cUIControlAnim {
 		cUIMenuItem * CreateMenuItem( const std::wstring& Text, cShape * Icon );
 		
 		void DoAfterSetTheme();
-		
-		virtual void OnAlphaChange();
 };
 
 }}

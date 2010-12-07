@@ -383,7 +383,7 @@ void cEngine::ChangeRes( const Uint16& width, const Uint16& height, const bool& 
 			cShaderProgramManager::instance()->Reload(); 	// Reload all shaders
 			cFrameBufferManager::instance()->Reload(); 		// Reload all frame buffers
 			cVertexBufferManager::instance()->Reload(); 	// Reload all vertex buffers
-			GetMainContext(); // Recover the context
+			GetMainContext();								// Recover the context
 		}
 		#endif
 
