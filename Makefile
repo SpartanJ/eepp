@@ -1,17 +1,3 @@
-export CFLAGS     	= -Wall $(DEBUGFLAGS) $(BUILDFLAGS)
-export CFLAGSEXT  	= $(DEBUGFLAGS) $(BUILDFLAGS)
-export LDFLAGS    	= $(LINKFLAGS)
-export LIBPATH    	= ./
-export VERSION    	= 0.7
-export CP         	= cp
-export LN         	= ln
-export LNFLAGS    	= -s -f
-export AR         	= ar
-export ARFLAGS    	= rcs
-export DESTDIR    	= /usr
-export DESTLIBDIR 	= $(DESTDIR)/lib
-export DESTINCDIR 	= $(DESTDIR)/include
-
 ifeq ($(DYNAMIC), yes)
     LIB     = libeepp.so
     LIBNAME = $(LIBPATH)/$(LIB).$(VERSION)
@@ -26,7 +12,7 @@ ifeq ($(DEBUGBUILD), yes)
     DEBUGFLAGS = -g -DDEBUG -DEE_DEBUG -DEE_MEMORY_MANAGER
     RELEASETYPE = debug
 else
-    DEBUGFLAGS = -O2 -s -DNDEBUG
+    DEBUGFLAGS = -fno-strict-aliasing -O3 -s -DNDEBUG
     RELEASETYPE = release
 endif
 
@@ -45,6 +31,20 @@ ifeq ($(LLVM_BUILD), yes)
 export CC         	= llvm-gcc
 export CPP        	= llvm-g++
 endif
+
+export CFLAGS     	= -Wall $(DEBUGFLAGS) $(BUILDFLAGS)
+export CFLAGSEXT  	= $(DEBUGFLAGS) $(BUILDFLAGS)
+export LDFLAGS    	= $(LINKFLAGS)
+export LIBPATH    	= ./
+export VERSION    	= 0.7
+export CP         	= cp
+export LN         	= ln
+export LNFLAGS    	= -s -f
+export AR         	= ar
+export ARFLAGS    	= rcs
+export DESTDIR    	= /usr
+export DESTLIBDIR 	= $(DESTDIR)/lib
+export DESTINCDIR 	= $(DESTDIR)/include
 
 STRLOWERCASE 		= $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(subst F,f,$(subst G,g,$(subst H,h,$(subst I,i,$(subst J,j,$(subst K,k,$(subst L,l,$(subst M,m,$(subst N,n,$(subst O,o,$(subst P,p,$(subst Q,q,$(subst R,r,$(subst S,s,$(subst T,t,$(subst U,u,$(subst V,v,$(subst W,w,$(subst X,x,$(subst Y,y,$(subst Z,z,$1))))))))))))))))))))))))))
 OS 					= $(strip $(call STRLOWERCASE, $(shell uname) ) )

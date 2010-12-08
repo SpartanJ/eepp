@@ -80,7 +80,7 @@ void cUIPushButton::SetTheme( cUITheme * Theme ) {
 }
 
 void cUIPushButton::DoAfterSetTheme() {
-	if ( NULL == mTextBox->Font() && NULL != mSkinState && NULL != mSkinState->GetSkin() && NULL != mSkinState->GetSkin()->Theme() && NULL != mSkinState->GetSkin()->Theme()->Font() )
+	if ( NULL != mTextBox && NULL == mTextBox->Font() && NULL != mSkinState && NULL != mSkinState->GetSkin() && NULL != mSkinState->GetSkin()->Theme() && NULL != mSkinState->GetSkin()->Theme()->Font() )
 		mTextBox->Font( mSkinState->GetSkin()->Theme()->Font() );
 
 	if ( mControlFlags & UI_CTRL_FLAG_FREE_USE ) {

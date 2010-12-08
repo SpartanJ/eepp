@@ -17,6 +17,5 @@ void cUIMenuItem::SetTheme( cUITheme * Theme ) {
 	cUIControl::SetTheme( Theme, "menuitem" );
 	DoAfterSetTheme();
 }
-	
+
 }}
- 

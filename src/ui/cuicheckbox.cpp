@@ -36,6 +36,10 @@ void cUICheckBox::SetTheme( cUITheme * Theme ) {
 	mActiveButton->ForceThemeSkin	( Theme, "checkbox_active" );
 	mInactiveButton->ForceThemeSkin	( Theme, "checkbox_inactive" );
 
+	DoAfterSetTheme();
+}
+
+void cUICheckBox::DoAfterSetTheme() {
 	cShape * tShape = NULL;
 	cUISkin * tSkin = mActiveButton->GetSkin();
 

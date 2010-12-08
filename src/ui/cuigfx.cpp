@@ -25,8 +25,13 @@ cUIGfx::~cUIGfx() {
 void cUIGfx::Shape( cShape * shape ) {
 	mShape = shape;
 	
-	if ( NULL != mShape && ( ( Flags() & UI_AUTO_SIZE ) ) )
-		Size( mShape->Size() );
+	if ( Flags() & UI_AUTO_SIZE ) {
+		if ( NULL != mShape ) {
+			Size( mShape->Size() );
+		} else {
+			Size( eeSize( 0, 0 ) );
+		}
+	}
 }
 
 void cUIGfx::Draw() {

@@ -1,8 +1,9 @@
-#ifndef EE_UICUIMENU
-#define EE_UICUIMENU
+#ifndef EE_UICUIMENU_HPP
+#define EE_UICUIMENU_HPP
 
 #include "cuicontrolanim.hpp"
 #include "cuimenuitem.hpp"
+#include "cuimenucheckbox.hpp"
 #include "cuiseparator.hpp"
 
 namespace EE { namespace UI {
@@ -52,9 +53,11 @@ class EE_API cUIMenu : public cUIControlAnim {
 
 		Uint32 Add( const std::wstring& Text, cShape * Icon = NULL );
 
-		Uint32 Add( cUIMenuItem * Control );
+		Uint32 Add( cUIControl * Control );
 
 		Uint32 AddSeparator();
+
+		Uint32 AddCheckBox( const std::wstring& Text );
 
 		cUIControl * GetItem( const Uint32& Index );
 		
@@ -74,6 +77,8 @@ class EE_API cUIMenu : public cUIControlAnim {
 
 		virtual void SetTheme( cUITheme * Theme );
 	protected:
+		friend class cUIMenuCheckBox;
+
 		std::deque<cUIControl *> mItems;
 		eeRecti				mPadding;
 		cFont * 			mFont;
@@ -101,8 +106,12 @@ class EE_API cUIMenu : public cUIControlAnim {
 		void ResizeMe();
 		
 		cUIMenuItem * CreateMenuItem( const std::wstring& Text, cShape * Icon );
+
+		cUIMenuCheckBox * CreateMenuCheckBox( const std::wstring& Text );
 		
 		void DoAfterSetTheme();
+
+		bool CheckControlSize( cUIControl * Control, const bool& Resize = true );
 };
 
 }}

@@ -63,23 +63,58 @@ Uint32 cUIMenu::Add( const std::wstring& Text, cShape * Icon ) {
 	return Add( CreateMenuItem( Text, Icon ) );
 }
 
-Uint32 cUIMenu::Add( cUIMenuItem * Control ) {
-	if ( this != Control->Parent() )
-		Control->Parent( this );
+cUIMenuCheckBox * cUIMenu::CreateMenuCheckBox( const std::wstring& Text ) {
+	cUIMenuCheckBox::CreateParams Params;
+	Params.Parent( this );
+	Params.Font 			= mFont;
+	Params.FontColor 		= mFontColor;
+	Params.FontShadowColor 	= mFontShadowColor;
+	Params.FontOverColor	= mFontOverColor;
+	Params.Flags			= UI_CLIP_ENABLE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
+	Params.Size				= eeSize( 0, mRowHeight );
 
-	if ( mFlags & UI_AUTO_SIZE ) {
-		if ( Control->TextBox()->GetTextWidth() > (Int32)mMaxWidth - mPadding.Left - mPadding.Right ) {
-			mMaxWidth = Control->TextBox()->GetTextWidth() + mPadding.Left + mPadding.Right;
+	cUIMenuCheckBox * tCtrl 	= eeNew( cUIMenuCheckBox, ( Params ) );
 
-			Size( mMaxWidth, mSize.Height() );
+	tCtrl->Text( Text );
+	tCtrl->Visible( true );
+	tCtrl->Enabled( true );
 
-			ResizeControls();
+	return tCtrl;
+}
+
+Uint32 cUIMenu::AddCheckBox( const std::wstring& Text ) {
+	return Add( CreateMenuCheckBox( Text ) );
+}
+
+bool cUIMenu::CheckControlSize( cUIControl * Control, const bool& Resize ) {
+	if ( Control->IsType( UI_TYPE_MENUITEM ) ) {
+		cUIMenuItem * tItem = reinterpret_cast<cUIMenuItem*> ( Control );
+
+		if ( NULL != tItem->Icon() && tItem->IconHorizontalMargin() + tItem->Icon()->Size().Width() > (Int32)mBiggestIcon ) {
+			mBiggestIcon = tItem->IconHorizontalMargin() + tItem->Icon()->Size().Width();
+		}
+
+		if ( mFlags & UI_AUTO_SIZE ) {
+			if ( tItem->TextBox()->GetTextWidth() + mBiggestIcon > (Int32)mMaxWidth - mPadding.Left - mPadding.Right ) {
+				mMaxWidth = tItem->TextBox()->GetTextWidth() + mBiggestIcon + mPadding.Left + mPadding.Right;
+
+				if ( Resize ) {
+					ResizeControls();
+
+					return true;
+				}
+			}
 		}
 	}
 
-	if ( NULL != Control->Icon() && Control->IconHorizontalMargin() + Control->Icon()->Size().Width() > (Int32)mBiggestIcon ) {
-		mBiggestIcon = Control->IconHorizontalMargin() + Control->Icon()->Size().Width();
-	}
+	return false;
+}
+
+Uint32 cUIMenu::Add( cUIControl * Control ) {
+	if ( this != Control->Parent() )
+		Control->Parent( this );
+
+	CheckControlSize( Control );
 
 	SetControlSize( Control, Count() );
 
@@ -102,6 +137,8 @@ void cUIMenu::SetControlSize( cUIControl * Control, const Uint32& Pos ) {
 
 		if ( NULL == tItem->Icon()->Shape() ) {
 			tItem->Padding( eeRecti( mBiggestIcon, 0, 0, 0 ) );
+		} else {
+			tItem->Padding( eeRecti( 0, 0, 0, 0 ) );
 		}
 	} else {
 		Control->Size( mSize.Width() - mPadding.Left - mPadding.Right, Control->Size().Height() );
@@ -226,7 +263,7 @@ void cUIMenu::OnSizeChange() {
 	}
 
 	if ( 0 != mMinWidth && mSize.Width() < (Int32)mMinWidth ) {
-		Size( mMinWidth, mItems.size() * mRowHeight + mPadding.Top + mPadding.Bottom );
+		Size( mMinWidth, mNextPosY + mPadding.Top + mPadding.Bottom );
 	}
 }
 
@@ -251,20 +288,9 @@ void cUIMenu::ReposControls() {
 
 	if ( mFlags & UI_AUTO_SIZE ) {
 		mMaxWidth = 0;
-		cUIMenuItem * tMenu;
 
 		for ( i = 0; i < mItems.size(); i++ ) {
-			if ( mItems[i]->IsType( UI_TYPE_MENUITEM ) ) {
-				tMenu = reinterpret_cast<cUIMenuItem*> ( mItems[i] );
-
-				if ( tMenu->TextBox()->GetTextWidth() > (Int32)mMaxWidth - mPadding.Left - mPadding.Right ) {
-					mMaxWidth = tMenu->TextBox()->GetTextWidth() + mPadding.Left + mPadding.Right;
-				}
-
-				if ( NULL != tMenu->Icon() && tMenu->IconHorizontalMargin() + tMenu->Icon()->Size().Width() > (Int32)mBiggestIcon ) {
-					mBiggestIcon = tMenu->IconHorizontalMargin() + tMenu->Icon()->Size().Width();
-				}
-			}
+			CheckControlSize( mItems[i], false );
 		}
 	}
 
@@ -278,7 +304,11 @@ void cUIMenu::ReposControls() {
 }
 
 void cUIMenu::ResizeMe() {
-	Size( mSize.Width(), mNextPosY + mPadding.Top + mPadding.Bottom );
+	if ( mFlags & UI_AUTO_SIZE ) {
+		Size( mMaxWidth, mNextPosY + mPadding.Top + mPadding.Bottom );
+	} else {
+		Size( mSize.Width(), mNextPosY + mPadding.Top + mPadding.Bottom );
+	}
 }
 
 }}

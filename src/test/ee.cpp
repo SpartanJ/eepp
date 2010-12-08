@@ -384,15 +384,12 @@ void cEETest::CreateUI() {
 
 	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 530, 240 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
-	cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
-
+	//cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
 	CreateAquaTextureAtlas();
 
-	/*
 	cTextureGroupLoader tgl( MyPath + "data/aqua.etg" );
 	TF->GetByName( "data/aqua.png" )->TextureFilter( TEX_FILTER_NEAREST );
 	cUIThemeManager::instance()->Add( cUITheme::LoadFromShapeGroup( cShapeGroupManager::instance()->GetByName( "aqua" ), "aqua", "aqua" ) );
-	*/
 
 	cUIThemeManager::instance()->DefaultEffectsEnabled( true );
 	cUIThemeManager::instance()->DefaultFont( TTF );
@@ -400,14 +397,12 @@ void cEETest::CreateUI() {
 
 	Params.Border.Width( 2 );
 	Params.Border.Color( 0xFF979797 );
-	//Params.Background.Corners(5);
 	Params.Background.Colors( eeColorA( 0x66EDEDED ), eeColorA( 0xCCEDEDED ), eeColorA( 0xCCEDEDED ), eeColorA( 0x66EDEDED ) );
 	cUIControlAnim * C = eeNew( cUITest, ( Params ) );
 	C->Visible( true );
 	C->Enabled( true );
 	C->Pos( 320, 240 );
 	C->DragEnable( true );
-	//C->StartRotation( 0.f, 360.f, 5000.f );
 
 	Params.Flags &= ~UI_CLIP_ENABLE;
 	Params.Background.Corners(0);
@@ -459,7 +454,6 @@ void cEETest::CreateUI() {
 
 	cUITextInput::CreateParams InputParams;
 	InputParams.Parent( C );
-	//InputParams.Background.Corners(6);
 	InputParams.Border.Color(0xFF979797);
 	InputParams.Background.Colors( eeColorA(0x99AAAAAA), eeColorA(0x99CCCCCC), eeColorA(0x99CCCCCC), eeColorA(0x99AAAAAA) );
 	InputParams.PosSet( 20, 216 );
@@ -621,6 +615,7 @@ void cEETest::CreateUI() {
 	Menu->Add( L"Save" );
 	Menu->Add( L"Save As..." );
 	Menu->Add( L"Save All" );
+	Menu->AddCheckBox( L"Check Me" );
 	Menu->AddSeparator();
 	Menu->Add( L"Quit" );
 

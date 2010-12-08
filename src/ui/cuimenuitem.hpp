@@ -1,5 +1,5 @@
-#ifndef EE_UICUIMENUITEM
-#define EE_UICUIMENUITEM
+#ifndef EE_UICUIMENUITEM_HPP
+#define EE_UICUIMENUITEM_HPP
 
 #include "cuipushbutton.hpp"
 
