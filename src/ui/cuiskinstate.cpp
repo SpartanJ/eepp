@@ -24,6 +24,10 @@ void cUISkinState::StateBack( const Uint32& State ) {
 		return;
 	}
 
+	if ( mCurState == StateSelected && ( State == StateMouseDown || State == StateFocus ) ) {
+		return;
+	}
+
 	if ( !( mCurState == StateFocus && ( State == StateMouseEnter || State == StateMouseExit || State == StateMouseDown ) ) ) {
 		mLastState 	= mCurState;
 		mCurState 	= StateNormal;

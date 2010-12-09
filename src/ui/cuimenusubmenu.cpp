@@ -51,7 +51,7 @@ void cUIMenuSubMenu::OnStateChange() {
 	cUIMenuItem::OnStateChange();
 
 	if ( NULL != mSkinArrow ) {
-		if ( mSkinState->GetState() == cUISkinState::StateMouseEnter )
+		if ( mSkinState->GetState() == cUISkinState::StateSelected )
 			mArrow->Shape( mSkinArrow->GetShape( cUISkinState::StateMouseEnter ) );
 		else
 			mArrow->Shape( mSkinArrow->GetShape( cUISkinState::StateNormal ) );

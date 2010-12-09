@@ -42,7 +42,7 @@ void cUIMenuCheckBox::Active( const bool& active ) {
 
 	if ( mActive ) {
 		if ( NULL != mSkinActive ) {
-			if ( mSkinState->GetState() == cUISkinState::StateMouseEnter )
+			if ( mSkinState->GetState() == cUISkinState::StateSelected )
 				Icon( mSkinActive->GetShape( cUISkinState::StateMouseEnter ) );
 			else
 				Icon( mSkinActive->GetShape( cUISkinState::StateNormal ) );
@@ -50,7 +50,7 @@ void cUIMenuCheckBox::Active( const bool& active ) {
 			mIcon->Shape( NULL );
 	} else {
 		if ( NULL != mSkinInactive )
-			if ( mSkinState->GetState() == cUISkinState::StateMouseEnter )
+			if ( mSkinState->GetState() == cUISkinState::StateSelected )
 				Icon( mSkinInactive->GetShape( cUISkinState::StateMouseEnter ) );
 			else
 				Icon( mSkinInactive->GetShape( cUISkinState::StateNormal ) );
