@@ -20,6 +20,7 @@ class EE_API cUIMenu : public cUIControlAnim {
 					Font( NULL ),
 					FontColor( 0, 0, 0, 255 ),
 					FontOverColor( 0, 0, 0, 255 ),
+					FontSelectedColor( 0, 0, 0, 255 ),
 					MinWidth( 0 ),
 					MinSpaceForIcons( 0 )
 				{
@@ -31,9 +32,10 @@ class EE_API cUIMenu : public cUIControlAnim {
 						if ( NULL == Font )
 							Font = cUIThemeManager::instance()->DefaultFont();
 
-						FontColor		= Theme->FontColor();
-						FontShadowColor	= Theme->FontShadowColor();
-						FontOverColor	= Theme->FontOverColor();
+						FontColor			= Theme->FontColor();
+						FontShadowColor		= Theme->FontShadowColor();
+						FontOverColor		= Theme->FontOverColor();
+						FontSelectedColor	= Theme->FontSelectedColor();
 					}
 				}
 
@@ -45,6 +47,7 @@ class EE_API cUIMenu : public cUIControlAnim {
 				eeColorA 	FontColor;
 				eeColorA	FontShadowColor;
 				eeColorA 	FontOverColor;
+				eeColorA	FontSelectedColor;
 				Uint32		MinWidth;
 				Uint32		MinSpaceForIcons;
 
@@ -67,6 +70,8 @@ class EE_API cUIMenu : public cUIControlAnim {
 		cUIControl * GetItem( const Uint32& Index );
 		
 		cUIControl * GetItem( const std::wstring& Text );
+
+		Uint32 GetItemIndex( cUIControl * Item );
 
 		Uint32 Count() const;
 
@@ -96,14 +101,17 @@ class EE_API cUIMenu : public cUIControlAnim {
 		eeColorA 			mFontColor;
 		eeColorA			mFontShadowColor;
 		eeColorA 			mFontOverColor;
+		eeColorA			mFontSelectedColor;
 		Uint32				mMinWidth;
 		Uint32				mMinSpaceForIcons;
 		Uint32				mMaxWidth;
 		Uint32				mRowHeight;
 		Uint32				mNextPosY;
 		Uint32				mBiggestIcon;
-		cUIMenuItem *		mItemSelected;
+		cUIControl *		mItemSelected;
+		Uint32				mItemSelectedIndex;
 		bool				mClickHide;
+		Uint32				mLastTickMove;
 
 		virtual void OnSizeChange();
 
@@ -131,7 +139,15 @@ class EE_API cUIMenu : public cUIControlAnim {
 
 		bool IsSubMenu( cUIControl * Ctrl );
 
-		void SetItemSelected( cUIMenuItem * Item );
+		void SetItemSelected( cUIControl * Item );
+
+		virtual Uint32 OnKeyDown( const cUIEventKey& Event );
+
+		void PrevSel();
+
+		void NextSel();
+
+		void TrySelect( cUIControl * Ctrl, bool Up );
 };
 
 }}

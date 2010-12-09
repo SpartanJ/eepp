@@ -27,4 +27,16 @@ Uint32 cUIMenuItem::OnMouseEnter( const eeVector2i &Pos, Uint32 Flags ) {
 	return 1;
 }
 
+void cUIMenuItem::OnStateChange() {
+	cUIMenu * tMenu = reinterpret_cast<cUIMenu*> ( Parent() );
+
+	if ( mSkinState->GetState() == cUISkinState::StateSelected ) {
+		mTextBox->Color( tMenu->mFontSelectedColor );
+	} else if ( mSkinState->GetState() == cUISkinState::StateMouseEnter ) {
+		mTextBox->Color( tMenu->mFontOverColor );
+	} else {
+		mTextBox->Color( tMenu->mFontColor );
+	}
+}
+
 }}

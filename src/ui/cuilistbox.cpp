@@ -518,7 +518,15 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 	}
 }
 
+void cUIListBox::ItemKeyEvent( const cUIEventKey &Event ) {
+	cUIEventKey ItemEvent( Event.Ctrl(), cUIEvent::EventOnItemKeyDown, Event.KeyCode(), Event.Char() );
+	SendEvent( &ItemEvent );
+}
+
 void cUIListBox::ItemClicked( cUIListBoxItem * Item ) {
+	cUIEvent ItemEvent( Item, cUIEvent::EventOnItemClicked );
+	SendEvent( &ItemEvent );
+
 	if ( !( IsMultiSelect() && cUIManager::instance()->GetInput()->IsKeyDown( KEY_LCTRL ) ) )
 		ResetItemsStates();
 }
@@ -748,7 +756,7 @@ void cUIListBox::SelectPrev() {
 				if ( mItems[ SelIndex ]->Pos().y < 0 ) {
 					ScrollBar()->Value( (eeFloat)( SelIndex * mRowHeight ) / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) );
 
-					cUIManager::instance()->FocusControl( mItems[ SelIndex ] );
+					mItems[ SelIndex ]->SetFocus();
 				}
 			}
 
@@ -774,13 +782,21 @@ void cUIListBox::SelectNext() {
 				if ( mItems[ SelIndex ]->Pos().y + (Int32)RowHeight() > mContainer->Size().Height() ) {
 					ScrollBar()->Value( (eeFloat)( SelIndex * mRowHeight ) / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) );
 
-					cUIManager::instance()->FocusControl( mItems[ SelIndex ] );
+					mItems[ SelIndex ]->SetFocus();
 				}
 			}
 
 			mItems[ SelIndex 	]->Select();
 		}
 	}
+}
+
+Uint32 cUIListBox::OnKeyDown( const cUIEventKey &Event ) {
+	cUIControlAnim::OnKeyDown( Event );
+
+	ManageKeyboard();
+
+	return 1;
 }
 
 void cUIListBox::ManageKeyboard() {
@@ -806,7 +822,7 @@ void cUIListBox::ManageKeyboard() {
 
 				ScrollBar()->Value( 0 );
 
-				cUIManager::instance()->FocusControl( mItems[ 0 ] );
+				mItems[ 0 ]->SetFocus();
 
 				mItems[ 0 ]->Select();
 			}
@@ -818,7 +834,7 @@ void cUIListBox::ManageKeyboard() {
 
 				ScrollBar()->Value( 1 );
 
-				cUIManager::instance()->FocusControl( mItems[ Count() - 1 ] );
+				mItems[ Count() - 1 ]->SetFocus();
 
 				mItems[ Count() - 1 ]->Select();
 			}

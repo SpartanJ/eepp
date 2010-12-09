@@ -14,7 +14,7 @@ cUIListBoxItem::cUIListBoxItem( cUITextBox::CreateParams& Params ) :
 
 cUIListBoxItem::~cUIListBoxItem() {
 	if ( cUIManager::instance()->FocusControl() == this )
-		cUIManager::instance()->FocusControl( mParentCtrl );
+		mParentCtrl->SetFocus();
 
 	if ( cUIManager::instance()->OverControl() == this )
 		cUIManager::instance()->OverControl( mParentCtrl );
@@ -26,8 +26,16 @@ void cUIListBoxItem::SetTheme( cUITheme * Theme ) {
 
 Uint32 cUIListBoxItem::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
 	if ( Flags & EE_BUTTONS_LRM ) {
+		reinterpret_cast<cUIListBox*> ( Parent()->Parent() )->ItemClicked( this );
+
 		Select();
 	}
+
+	return 1;
+}
+
+Uint32 cUIListBoxItem::OnKeyDown( const cUIEventKey &Event ) {
+	reinterpret_cast<cUIListBox*> ( Parent()->Parent() )->ItemKeyEvent( Event );
 
 	return 1;
 }
@@ -36,8 +44,6 @@ void cUIListBoxItem::Select() {
 	cUIListBox * LBParent = reinterpret_cast<cUIListBox*> ( Parent()->Parent() );
 
 	bool wasSelected = 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
-
-	LBParent->ItemClicked( this );
 
 	if ( LBParent->IsMultiSelect() ) {
 		if ( !wasSelected ) {
@@ -76,7 +82,7 @@ void cUIListBoxItem::Update() {
 			Alpha( LBParent->Alpha() );
 		
 		if ( IsMouseOver() ) {
-			if ( Flags & EE_BUTTONS_WUWD )
+			if ( Flags & EE_BUTTONS_WUWD && LBParent->ScrollBar()->Visible() )
 				LBParent->ScrollBar()->Slider()->ManageClick( Flags );
 		}
 

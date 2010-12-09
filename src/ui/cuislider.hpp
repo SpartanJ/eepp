@@ -82,7 +82,7 @@ class EE_API cUISlider : public cUIControlAnim {
 
 		void ManageClick( const Uint32& Flags );
 
-		void ManageKeyboard();
+		virtual Uint32 OnKeyDown( const cUIEventKey &Event );
 		
 		virtual void OnAlphaChange();
 };

@@ -27,7 +27,7 @@ bool cUIPopUpMenu::Show() {
 		else
 			CreateFadeIn( cUIThemeManager::instance()->ControlsFadeInTime() );
 
-		cUIManager::instance()->FocusControl( this );
+		SetFocus();
 
 		return true;
 	}
@@ -43,6 +43,12 @@ bool cUIPopUpMenu::Hide() {
 			Enabled( false );
 			Visible( false );
 		}
+
+		if ( NULL != mItemSelected )
+			mItemSelected->SetSkinState( cUISkinState::StateNormal );
+
+		mItemSelected		= NULL;
+		mItemSelectedIndex	= 0xFFFFFFFF;
 
 		return true;
 	}

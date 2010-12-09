@@ -35,6 +35,8 @@ class cUIMenuSubMenu : public cUIMenuItem {
 		cUIMenu * SubMenu() const;
 
 		cUIGfx * Arrow() const;
+
+		void ShowSubMenu();
 	protected:
 		cUIMenu *	mSubMenu;
 		cUISkin *	mSkinArrow;
@@ -55,8 +57,6 @@ class cUIMenuSubMenu : public cUIMenuItem {
 		void OnSubMenuFocusLoss( const cUIEvent * Event );
 
 		void OnHideByClick( const cUIEvent * Event );
-
-		void ShowSubMenu();
 };
 
 }}

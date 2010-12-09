@@ -10,6 +10,7 @@ cUIMenu::cUIMenu( cUIMenu::CreateParams& Params ) :
 	mFontColor( Params.FontColor ),
 	mFontShadowColor( Params.FontShadowColor ),
 	mFontOverColor( Params.FontOverColor ),
+	mFontSelectedColor( Params.FontSelectedColor ),
 	mMinWidth( Params.MinWidth ),
 	mMinSpaceForIcons( Params.MinSpaceForIcons ),
 	mMaxWidth( 0 ),
@@ -17,7 +18,9 @@ cUIMenu::cUIMenu( cUIMenu::CreateParams& Params ) :
 	mNextPosY( 0 ),
 	mBiggestIcon( mMinSpaceForIcons ),
 	mItemSelected( NULL ),
-	mClickHide( false )
+	mItemSelectedIndex( 0xFFFFFFFF ),
+	mClickHide( false ),
+	mLastTickMove( 0 )
 {
 	mType |= UI_TYPE_GET( UI_TYPE_MENU );
 
@@ -228,6 +231,15 @@ cUIControl * cUIMenu::GetItem( const std::wstring& Text ) {
 	return NULL;
 }
 
+Uint32 cUIMenu::GetItemIndex( cUIControl * Item ) {
+	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
+		if ( mItems[i] == Item )
+			return i;
+	}
+
+	return 0xFFFFFFFF;
+}
+
 Uint32 cUIMenu::Count() const {
 	return mItems.size();
 }
@@ -378,10 +390,17 @@ bool cUIMenu::Show() {
 bool cUIMenu::Hide() {
 	Enabled( false );
 	Visible( false );
+
+	if ( NULL != mItemSelected )
+		mItemSelected->SetSkinState( cUISkinState::StateNormal );
+
+	mItemSelected		= NULL;
+	mItemSelectedIndex	= 0xFFFFFFFF;
+
 	return true;
 }
 
-void cUIMenu::SetItemSelected( cUIMenuItem * Item ) {
+void cUIMenu::SetItemSelected( cUIControl * Item ) {
 	if ( NULL != mItemSelected ) {
 		if ( mItemSelected->IsType( UI_TYPE_MENUSUBMENU ) ) {
 			cUIMenuSubMenu * tMenu = reinterpret_cast<cUIMenuSubMenu*> ( mItemSelected );
@@ -389,9 +408,123 @@ void cUIMenu::SetItemSelected( cUIMenuItem * Item ) {
 			if ( NULL != tMenu->SubMenu() )
 				tMenu->SubMenu()->Hide();
 		}
+
+		mItemSelected->SetSkinState( cUISkinState::StateNormal );
 	}
 
-	mItemSelected = Item;
+	if ( NULL != Item )
+		Item->SetSkinState( cUISkinState::StateSelected );
+
+	if ( mItemSelected != Item ) {
+		mItemSelected		= Item;
+		mItemSelectedIndex	= GetItemIndex( mItemSelected );
+	}
+}
+
+void cUIMenu::TrySelect( cUIControl * Ctrl, bool Up ) {
+	if ( mItems.size() ) {
+		if ( !Ctrl->IsType( UI_TYPE_SEPARATOR ) ) {
+			SetItemSelected( Ctrl );
+		} else {
+			Uint32 Index = GetItemIndex( Ctrl );
+
+			if ( Index != 0xFFFFFFFF ) {
+				if ( Up ) {
+					if ( Index > 0 ) {
+						for ( Uint32 i = Index - 1; i >= 0; i-- ) {
+							if ( !mItems[i]->IsType( UI_TYPE_SEPARATOR ) ) {
+								SetItemSelected( mItems[i] );
+								return;
+							}
+						}
+					}
+
+					SetItemSelected( mItems[ mItems.size() ] );
+				} else {
+					for ( Uint32 i = Index + 1; i < mItems.size(); i++ ) {
+						if ( !mItems[i]->IsType( UI_TYPE_SEPARATOR ) ) {
+							SetItemSelected( mItems[i] );
+							return;
+						}
+					}
+
+					SetItemSelected( mItems[0] );
+				}
+			}
+		}
+	}
+}
+
+void cUIMenu::NextSel() {
+	if ( mItems.size() ) {
+		if ( mItemSelectedIndex != 0xFFFFFFFF ) {
+			if ( mItemSelectedIndex + 1 < mItems.size() ) {
+				TrySelect( mItems[ mItemSelectedIndex + 1 ], false );
+			} else {
+				TrySelect( mItems[0], false );
+			}
+		} else {
+			TrySelect( mItems[0], false );
+		}
+	}
+}
+
+void cUIMenu::PrevSel() {
+	if ( mItems.size() ) {
+		if (  mItemSelectedIndex != 0xFFFFFFFF  ) {
+			if ( mItemSelectedIndex >= 1 ) {
+				TrySelect( mItems[ mItemSelectedIndex - 1 ], true );
+			} else {
+				TrySelect( mItems[ mItems.size() - 1 ], true );
+			}
+		} else {
+			TrySelect( mItems[0], true );
+		}
+	}
+}
+
+Uint32 cUIMenu::OnKeyDown( const cUIEventKey& Event ) {
+	if ( eeGetTicks() - mLastTickMove > 50 ) {
+		switch ( Event.KeyCode() ) {
+			case KEY_DOWN:
+				mLastTickMove = eeGetTicks();
+				NextSel();
+
+				break;
+			case KEY_UP:
+				mLastTickMove = eeGetTicks();
+				PrevSel();
+
+				break;
+			case KEY_RIGHT:
+				if ( NULL != mItemSelected && mItemSelected->IsType( UI_TYPE_MENUSUBMENU ) ) {
+					cUIMenuSubMenu * tMenu = reinterpret_cast<cUIMenuSubMenu*> ( mItemSelected );
+
+					tMenu->ShowSubMenu();
+				}
+
+				break;
+			case KEY_LEFT:
+				Hide();
+
+				break;
+			case KEY_ESCAPE:
+				Hide();
+
+				break;
+			case KEY_RETURN:
+				if ( NULL != mItemSelected ) {
+					mItemSelected->SendMouseEvent(cUIEvent::EventMouseClick, cUIManager::instance()->GetMousePos(), 0xFFFFFFFF );
+
+					cUIMessage Msg( mItemSelected, cUIMessage::MsgClick, 0xFFFFFFFF );
+					mItemSelected->MessagePost( &Msg );
+				}
+
+				break;
+		}
+	}
+
+	return 1;
 }
 
 }}

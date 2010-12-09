@@ -124,7 +124,7 @@ void cUIMenuSubMenu::OnSubMenuFocusLoss( const cUIEvent * Event ) {
 	cUIControl * FocusCtrl = cUIManager::instance()->FocusControl();
 
 	if ( Parent() != FocusCtrl && !Parent()->IsParentOf( FocusCtrl ) ) {
-		cUIManager::instance()->FocusControl( Parent() );
+		Parent()->SetFocus();
 	}
 
 	if ( mSubMenu->mClickHide ) {

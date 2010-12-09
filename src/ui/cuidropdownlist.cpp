@@ -28,6 +28,9 @@ cUIDropDownList::cUIDropDownList( cUIDropDownList::CreateParams& Params ) :
 
 	mListBox->AddEventListener( cUIEvent::EventOnComplexControlFocusLoss, cb::Make1( this, &cUIDropDownList::OnListBoxFocusLoss ) );
 	mListBox->AddEventListener( cUIEvent::EventOnSelected, cb::Make1( this, &cUIDropDownList::OnItemSelected ) );
+	mListBox->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cUIDropDownList::OnItemClicked ) );
+	mListBox->AddEventListener( cUIEvent::EventOnItemKeyDown, cb::Make1( this, &cUIDropDownList::OnItemKeyDown ) );
+	mListBox->AddEventListener( cUIEvent::EventKeyDown, cb::Make1( this, &cUIDropDownList::OnItemKeyDown ) );
 }
 
 cUIDropDownList::~cUIDropDownList() {
@@ -76,10 +79,17 @@ void cUIDropDownList::ShowListBox() {
 
 		Show();
 
-		cUIManager::instance()->FocusControl( mListBox );
+		mListBox->SetFocus();
 	} else {
 		Hide();
 	}
+}
+
+void cUIDropDownList::OnItemKeyDown( const cUIEvent * Event ) {
+	const cUIEventKey * KEvent = reinterpret_cast<const cUIEventKey*> ( Event );
+
+	if ( KEvent->KeyCode() == KEY_RETURN )
+		OnItemClicked( Event );
 }
 
 void cUIDropDownList::OnListBoxFocusLoss( const cUIEvent * Event ) {
@@ -88,9 +98,12 @@ void cUIDropDownList::OnListBoxFocusLoss( const cUIEvent * Event ) {
 	}
 }
 
-void cUIDropDownList::OnItemSelected( const cUIEvent * Event ) {
+void cUIDropDownList::OnItemClicked( const cUIEvent * Event ) {
 	Hide();
+	SetFocus();
+}
 
+void cUIDropDownList::OnItemSelected( const cUIEvent * Event ) {
 	Text( mListBox->GetItemSelectedText() );
 }
 

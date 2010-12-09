@@ -257,12 +257,12 @@ void cUIControl::SendCommonEvent( const Uint32& Event ) {
 
 Uint32 cUIControl::OnKeyDown( const cUIEventKey& Event ) {
 	SendEvent( &Event );
-	return 1;
+	return 0;
 }
 
 Uint32 cUIControl::OnKeyUp( const cUIEventKey& Event ) {
 	SendEvent( &Event );
-	return 1;
+	return 0;
 }
 
 Uint32 cUIControl::OnMouseMove( const eeVector2i& Pos, const Uint32 Flags ) {
@@ -979,6 +979,10 @@ eeRecti cUIControl::MakePadding( bool PadLeft, bool PadRight, bool PadTop, bool 
 void cUIControl::DisableChildCloseCheck() {
 	if ( !( mControlFlags & UI_CTRL_FLAG_DISABLE_CHECK_CLOSE_CHILDS ) )
 		mControlFlags |= UI_CTRL_FLAG_DISABLE_CHECK_CLOSE_CHILDS;
+}
+
+void cUIControl::SetFocus() {
+	cUIManager::instance()->FocusControl( this );
 }
 
 }}

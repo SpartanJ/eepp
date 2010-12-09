@@ -205,6 +205,10 @@ class EE_API cUIListBox : public cUIControlAnim {
 		virtual void OnAlphaChange();
 
 		virtual Uint32 OnMessage( const cUIMessage * Msg );
+
+		virtual Uint32 OnKeyDown( const cUIEventKey &Event );
+
+		void ItemKeyEvent( const cUIEventKey &Event );
 };
 
 }}

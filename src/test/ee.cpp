@@ -608,7 +608,7 @@ void cEETest::CreateUI() {
 	MenuParams.MinWidth = 100;
 	MenuParams.MinSpaceForIcons = 16;
 	MenuParams.PosSet( 0, 0 );
-	MenuParams.FontOverColor = eeColorA( 255, 255, 255, 255 );
+	MenuParams.FontSelectedColor = eeColorA( 255, 255, 255, 255 );
 	Menu = eeNew( cUIPopUpMenu, ( MenuParams ) );
 	Menu->Add( L"New", cGlobalShapeGroup::instance()->GetByName( "aqua_button_ok" ) );
 	Menu->Add( L"Open..." );

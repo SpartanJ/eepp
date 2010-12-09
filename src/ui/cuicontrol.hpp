@@ -211,7 +211,15 @@ class EE_API cUIControl {
 
 		bool HasFocus() const;
 
+		void SetFocus();
+
 		bool IsParentOf( cUIControl * Ctrl );
+
+		void SendEvent( const cUIEvent * Event );
+
+		void SendMouseEvent( const Uint32& Event, const eeVector2i& Pos, const Uint32& Flags );
+
+		void SendCommonEvent( const Uint32& Event );
 	protected:
 		friend class cUIManager;
 		friend class cUIControlAnim;
@@ -326,12 +334,6 @@ class EE_API cUIControl {
 		void ClipDisable();
 
 		void ClipTo();
-
-		void SendEvent( const cUIEvent * Event );
-
-		void SendMouseEvent( const Uint32& Event, const eeVector2i& Pos, const Uint32& Flags );
-
-		void SendCommonEvent( const Uint32& Event );
 
 		void SetPrevSkinState();
 
