@@ -24,12 +24,12 @@ else
     LINKFLAGS  = 
 endif
 
-export CC         	= gcc
-export CPP        	= g++
-
 ifeq ($(LLVM_BUILD), yes)
 export CC         	= llvm-gcc
 export CPP        	= llvm-g++
+else
+export CC         	= gcc
+export CPP        	= g++
 endif
 
 export CFLAGS     	= -Wall $(DEBUGFLAGS) $(BUILDFLAGS)
@@ -144,6 +144,9 @@ libeepp-s.a: $(FOBJHELPERS) $(FOBJMODULES)
 
 libeepp.so: $(FOBJHELPERS) $(FOBJMODULES)
 	$(CPP) $(LDFLAGS) -Wl,-soname,$(LIB).$(VERSION) -o $(LIBNAME) $(FOBJHELPERS) $(FOBJMODULES) -lfreetype -lSDL -lsndfile -lopenal -lGL -lGLU
+
+os:
+	@echo $(OS)
 
 test: $(EXE)
 

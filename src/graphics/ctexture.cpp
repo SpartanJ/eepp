@@ -172,7 +172,7 @@ bool cTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 
 			NTexId = SOIL_create_OGL_texture( reinterpret_cast<Uint8*>(&mPixels[0]), &width, &height, mChannels, mTexture, flags );
 
-			TextureFilter(mFilter);
+			iTextureFilter(mFilter);
 
 			if ( PreviousTexture != (GLint)mTexture )
 				glBindTexture(GL_TEXTURE_2D, PreviousTexture);
@@ -225,26 +225,30 @@ bool cTexture::SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Form
 }
 
 void cTexture::TextureFilter(const EE_TEX_FILTER& filter) {
+	if ( mFilter != filter ) {
+		iTextureFilter( filter );
+	}
+}
+
+void cTexture::iTextureFilter( const EE_TEX_FILTER& filter ) {
 	if (mTexture) {
-		if ( mFilter != filter ) {
-			mFilter = filter;
+		mFilter = filter;
 
-			GLint PreviousTexture;
-			glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
+		GLint PreviousTexture;
+		glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
 
-			if ( PreviousTexture != (GLint)mTexture )
-				glBindTexture(GL_TEXTURE_2D, mTexture);
+		if ( PreviousTexture != (GLint)mTexture )
+			glBindTexture(GL_TEXTURE_2D, mTexture);
 
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (mFilter == TEX_FILTER_LINEAR) ? GL_LINEAR : GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (mFilter == TEX_FILTER_LINEAR) ? GL_LINEAR : GL_NEAREST);
 
-			if ( mFlags & TEX_FLAG_MIPMAP )
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEX_FILTER_LINEAR) ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
-			else
-				glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEX_FILTER_LINEAR) ? GL_LINEAR : GL_NEAREST);
+		if ( mFlags & TEX_FLAG_MIPMAP )
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEX_FILTER_LINEAR) ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
+		else
+			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEX_FILTER_LINEAR) ? GL_LINEAR : GL_NEAREST);
 
-			if ( PreviousTexture != (GLint)mTexture )
-				glBindTexture(GL_TEXTURE_2D, PreviousTexture);
-		}
+		if ( PreviousTexture != (GLint)mTexture )
+			glBindTexture(GL_TEXTURE_2D, PreviousTexture);
 	}
 }
 
@@ -365,6 +369,8 @@ void cTexture::Reload()  {
                 glCompressedTexImage2D( mTexture, 0, mInternalFormat, width, height, 0, mSize, &mPixels[0] );
 		} else
 			mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8 *> ( &mPixels[0] ), &width, &height, mChannels, mTexture, flags );
+
+		iTextureFilter( mFilter );
 
 		if ( mTexture != PreviousTexture )
 			glBindTexture(GL_TEXTURE_2D, PreviousTexture);

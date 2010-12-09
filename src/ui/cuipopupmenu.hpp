@@ -13,9 +13,9 @@ class cUIPopUpMenu : public cUIMenu {
 
 		virtual void SetTheme( cUITheme * Theme );
 
-		bool Show();
+		virtual bool Show();
 
-		bool Hide();
+		virtual bool Hide();
 	protected:
 		virtual void OnComplexControlFocusLoss();
 

@@ -12,6 +12,8 @@ class EE_API cUIMenuItem : public cUIPushButton {
 		~cUIMenuItem();
 
 		virtual void SetTheme( cUITheme * Theme );
+	protected:
+		virtual Uint32 OnMouseEnter( const eeVector2i &Pos, Uint32 Flags );
 };
 
 }}

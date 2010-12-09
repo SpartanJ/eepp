@@ -49,7 +49,8 @@ static const char * UI_THEME_ELEMENTS[] = {
 	"menuitem",
 	"separator",
 	"menucheckbox_active",
-	"menucheckbox_inactive"
+	"menucheckbox_inactive",
+	"menuarrow"
 };
 
 cUITheme * cUITheme::LoadFromPath( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt ) {

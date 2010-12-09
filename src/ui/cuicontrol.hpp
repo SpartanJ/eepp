@@ -168,6 +168,9 @@ class EE_API cUIControl {
 
 		const Uint32& ControlFlags() const;
 
+		/** Use it at your own risk */
+		void ControlFlags( const Uint32& Flags );
+
 		Uint32 IsAnimated();
 
 		Uint32 IsClipped();

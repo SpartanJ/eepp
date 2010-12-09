@@ -78,6 +78,7 @@ Uint32 EE_API VAlignGet( Uint32 Flags );
 #define UI_TYPE_MENU				(17)
 #define UI_TYPE_MENUITEM			(18)
 #define UI_TYPE_MENUCHECKBOX		(19)
+#define UI_TYPE_MENUSUBMENU			(20)
 
 #define UI_TYPE_GET(X) 				( 1 << (X) )
 

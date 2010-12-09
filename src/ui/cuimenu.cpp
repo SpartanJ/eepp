@@ -11,10 +11,13 @@ cUIMenu::cUIMenu( cUIMenu::CreateParams& Params ) :
 	mFontShadowColor( Params.FontShadowColor ),
 	mFontOverColor( Params.FontOverColor ),
 	mMinWidth( Params.MinWidth ),
+	mMinSpaceForIcons( Params.MinSpaceForIcons ),
 	mMaxWidth( 0 ),
 	mRowHeight( Params.RowHeight ),
 	mNextPosY( 0 ),
-	mBiggestIcon( 0 )
+	mBiggestIcon( mMinSpaceForIcons ),
+	mItemSelected( NULL ),
+	mClickHide( false )
 {
 	mType |= UI_TYPE_GET( UI_TYPE_MENU );
 
@@ -86,6 +89,33 @@ Uint32 cUIMenu::AddCheckBox( const std::wstring& Text ) {
 	return Add( CreateMenuCheckBox( Text ) );
 }
 
+cUIMenuSubMenu * cUIMenu::CreateSubMenu( const std::wstring& Text, cShape * Icon, cUIMenu * SubMenu ) {
+	cUIMenuSubMenu::CreateParams Params;
+	Params.Parent( this );
+	Params.Font 			= mFont;
+	Params.FontColor 		= mFontColor;
+	Params.FontShadowColor 	= mFontShadowColor;
+	Params.FontOverColor 	= mFontOverColor;
+	Params.SubMenu			= SubMenu;
+	Params.Flags			= UI_CLIP_ENABLE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
+
+	cUIMenuSubMenu * tCtrl 	= eeNew( cUIMenuSubMenu, ( Params ) );
+
+	tCtrl->Text( Text );
+
+	if ( NULL != Icon )
+		tCtrl->Icon( Icon );
+
+	tCtrl->Visible( true );
+	tCtrl->Enabled( true );
+
+	return tCtrl;
+}
+
+Uint32 cUIMenu::AddSubMenu( const std::wstring& Text, cShape * Icon, cUIMenu * SubMenu ) {
+	return Add( CreateSubMenu( Text, Icon, SubMenu ) );
+}
+
 bool cUIMenu::CheckControlSize( cUIControl * Control, const bool& Resize ) {
 	if ( Control->IsType( UI_TYPE_MENUITEM ) ) {
 		cUIMenuItem * tItem = reinterpret_cast<cUIMenuItem*> ( Control );
@@ -95,13 +125,28 @@ bool cUIMenu::CheckControlSize( cUIControl * Control, const bool& Resize ) {
 		}
 
 		if ( mFlags & UI_AUTO_SIZE ) {
-			if ( tItem->TextBox()->GetTextWidth() + mBiggestIcon > (Int32)mMaxWidth - mPadding.Left - mPadding.Right ) {
-				mMaxWidth = tItem->TextBox()->GetTextWidth() + mBiggestIcon + mPadding.Left + mPadding.Right;
+			if ( Control->IsType( UI_TYPE_MENUSUBMENU ) ) {
+				cUIMenuSubMenu * tMenu = reinterpret_cast<cUIMenuSubMenu*> ( tItem );
 
-				if ( Resize ) {
-					ResizeControls();
+				if ( tMenu->TextBox()->GetTextWidth() + mBiggestIcon + tMenu->Arrow()->Size().Width() > (Int32)mMaxWidth - mPadding.Left - mPadding.Right ) {
+					mMaxWidth = tMenu->TextBox()->GetTextWidth() + mBiggestIcon + mPadding.Left + mPadding.Right + tMenu->Arrow()->Size().Width();
 
-					return true;
+					if ( Resize ) {
+						ResizeControls();
+
+						return true;
+					}
+				}
+			}
+			else {
+				if ( tItem->TextBox()->GetTextWidth() + mBiggestIcon > (Int32)mMaxWidth - mPadding.Left - mPadding.Right ) {
+					mMaxWidth = tItem->TextBox()->GetTextWidth() + mBiggestIcon + mPadding.Left + mPadding.Right;
+
+					if ( Resize ) {
+						ResizeControls();
+
+						return true;
+					}
 				}
 			}
 		}
@@ -232,6 +277,19 @@ void cUIMenu::Insert( cUIControl * Control, const Uint32& Index ) {
 	ResizeControls();
 }
 
+bool cUIMenu::IsSubMenu( cUIControl * Ctrl ) {
+	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
+		if ( mItems[i]->IsType( UI_TYPE_MENUSUBMENU ) ) {
+			cUIMenuSubMenu * tMenu = reinterpret_cast<cUIMenuSubMenu*> ( mItems[i] );
+
+			if ( tMenu->SubMenu() == Ctrl )
+				return true;
+		}
+	}
+
+	return false;
+}
+
 Uint32 cUIMenu::OnMessage( const cUIMessage * Msg ) {
 	switch ( Msg->Msg() ) {
 		case cUIMessage::MsgClick:
@@ -245,7 +303,7 @@ Uint32 cUIMenu::OnMessage( const cUIMessage * Msg ) {
 		{
 			cUIControl * FocusCtrl = cUIManager::instance()->FocusControl();
 
-			if ( this != FocusCtrl && !IsParentOf( FocusCtrl ) ) {
+			if ( this != FocusCtrl && !IsParentOf( FocusCtrl )  && !IsSubMenu( FocusCtrl ) ) {
 				SendCommonEvent( cUIEvent::EventOnComplexControlFocusLoss );
 				OnComplexControlFocusLoss();
 			}
@@ -274,17 +332,17 @@ void cUIMenu::AutoPadding() {
 }
 
 void cUIMenu::ResizeControls() {
+	ResizeMe();
+
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		SetControlSize( mItems[i], i );
 	}
-
-	ResizeMe();
 }
 
 void cUIMenu::ReposControls() {
 	Uint32 i;
 	mNextPosY = 0;
-	mBiggestIcon = 0;
+	mBiggestIcon = mMinSpaceForIcons;
 
 	if ( mFlags & UI_AUTO_SIZE ) {
 		mMaxWidth = 0;
@@ -309,6 +367,31 @@ void cUIMenu::ResizeMe() {
 	} else {
 		Size( mSize.Width(), mNextPosY + mPadding.Top + mPadding.Bottom );
 	}
+}
+
+bool cUIMenu::Show() {
+	Enabled( true );
+	Visible( true );
+	return true;
+}
+
+bool cUIMenu::Hide() {
+	Enabled( false );
+	Visible( false );
+	return true;
+}
+
+void cUIMenu::SetItemSelected( cUIMenuItem * Item ) {
+	if ( NULL != mItemSelected ) {
+		if ( mItemSelected->IsType( UI_TYPE_MENUSUBMENU ) ) {
+			cUIMenuSubMenu * tMenu = reinterpret_cast<cUIMenuSubMenu*> ( mItemSelected );
+
+			if ( NULL != tMenu->SubMenu() )
+				tMenu->SubMenu()->Hide();
+		}
+	}
+
+	mItemSelected = Item;
 }
 
 }}

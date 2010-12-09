@@ -606,6 +606,7 @@ void cEETest::CreateUI() {
 	MenuParams.Flags = UI_AUTO_SIZE | UI_AUTO_PADDING;
 	MenuParams.Size = eeSize( 0, 200 );
 	MenuParams.MinWidth = 100;
+	MenuParams.MinSpaceForIcons = 16;
 	MenuParams.PosSet( 0, 0 );
 	MenuParams.FontOverColor = eeColorA( 255, 255, 255, 255 );
 	Menu = eeNew( cUIPopUpMenu, ( MenuParams ) );
@@ -616,6 +617,22 @@ void cEETest::CreateUI() {
 	Menu->Add( L"Save As..." );
 	Menu->Add( L"Save All" );
 	Menu->AddCheckBox( L"Check Me" );
+
+	cUIPopUpMenu * Menu3 = eeNew( cUIPopUpMenu, ( MenuParams ) );
+	Menu3->Add( L"Hello World 1" );
+	Menu3->Add( L"Hello World 2" );
+	Menu3->Add( L"Hello World 3" );
+	Menu3->Add( L"Hello World 4" );
+
+	cUIPopUpMenu * Menu2 = eeNew( cUIPopUpMenu, ( MenuParams ) );
+	Menu2->Add( L"Test 1" );
+	Menu2->Add( L"Test 2" );
+	Menu2->Add( L"Test 3" );
+	Menu2->Add( L"Test 4" );
+	Menu2->AddSubMenu( L"Hello World", NULL, Menu3 );
+
+	Menu->AddSubMenu( L"Teh Menuh", NULL, Menu2 ) ;
+
 	Menu->AddSeparator();
 	Menu->Add( L"Quit" );
 

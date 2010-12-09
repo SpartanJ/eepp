@@ -236,6 +236,8 @@ class EE_API cTexture : public cImage {
 		void 			ApplyClampMode();
 
 		Uint8 * 		iLock( const bool& ForceRGBA, const bool& KeepFormat );
+
+		void			iTextureFilter( const EE_TEX_FILTER& filter );
 };
 
 }}

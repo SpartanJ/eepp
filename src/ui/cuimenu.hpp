@@ -4,6 +4,7 @@
 #include "cuicontrolanim.hpp"
 #include "cuimenuitem.hpp"
 #include "cuimenucheckbox.hpp"
+#include "cuimenusubmenu.hpp"
 #include "cuiseparator.hpp"
 
 namespace EE { namespace UI {
@@ -19,7 +20,8 @@ class EE_API cUIMenu : public cUIControlAnim {
 					Font( NULL ),
 					FontColor( 0, 0, 0, 255 ),
 					FontOverColor( 0, 0, 0, 255 ),
-					MinWidth( 0 )
+					MinWidth( 0 ),
+					MinSpaceForIcons( 0 )
 				{
 					cUITheme * Theme = cUIThemeManager::instance()->DefaultTheme();
 
@@ -44,6 +46,7 @@ class EE_API cUIMenu : public cUIControlAnim {
 				eeColorA	FontShadowColor;
 				eeColorA 	FontOverColor;
 				Uint32		MinWidth;
+				Uint32		MinSpaceForIcons;
 
 		};
 
@@ -58,6 +61,8 @@ class EE_API cUIMenu : public cUIControlAnim {
 		Uint32 AddSeparator();
 
 		Uint32 AddCheckBox( const std::wstring& Text );
+
+		Uint32 AddSubMenu( const std::wstring& Text, cShape * Icon = NULL, cUIMenu * SubMenu = NULL );
 
 		cUIControl * GetItem( const Uint32& Index );
 		
@@ -76,8 +81,14 @@ class EE_API cUIMenu : public cUIControlAnim {
 		void Insert( cUIControl * Control, const Uint32& Index );
 
 		virtual void SetTheme( cUITheme * Theme );
+
+		virtual bool Show();
+
+		virtual bool Hide();
 	protected:
+		friend class cUIMenuItem;
 		friend class cUIMenuCheckBox;
+		friend class cUIMenuSubMenu;
 
 		std::deque<cUIControl *> mItems;
 		eeRecti				mPadding;
@@ -86,10 +97,13 @@ class EE_API cUIMenu : public cUIControlAnim {
 		eeColorA			mFontShadowColor;
 		eeColorA 			mFontOverColor;
 		Uint32				mMinWidth;
+		Uint32				mMinSpaceForIcons;
 		Uint32				mMaxWidth;
 		Uint32				mRowHeight;
 		Uint32				mNextPosY;
 		Uint32				mBiggestIcon;
+		cUIMenuItem *		mItemSelected;
+		bool				mClickHide;
 
 		virtual void OnSizeChange();
 
@@ -108,10 +122,16 @@ class EE_API cUIMenu : public cUIControlAnim {
 		cUIMenuItem * CreateMenuItem( const std::wstring& Text, cShape * Icon );
 
 		cUIMenuCheckBox * CreateMenuCheckBox( const std::wstring& Text );
+
+		cUIMenuSubMenu * CreateSubMenu( const std::wstring& Text, cShape * Icon, cUIMenu * SubMenu );
 		
 		void DoAfterSetTheme();
 
 		bool CheckControlSize( cUIControl * Control, const bool& Resize = true );
+
+		bool IsSubMenu( cUIControl * Ctrl );
+
+		void SetItemSelected( cUIMenuItem * Item );
 };
 
 }}

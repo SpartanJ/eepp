@@ -486,6 +486,10 @@ const Uint32& cUIControl::ControlFlags() const {
 	return mControlFlags;
 }
 
+void cUIControl::ControlFlags( const Uint32& Flags ) {
+	mControlFlags = Flags;
+}
+
 void cUIControl::CheckClose() {
 	if ( mControlFlags & UI_CTRL_FLAG_DISABLE_CHECK_CLOSE_CHILDS )
 		return;
