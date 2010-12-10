@@ -115,7 +115,29 @@ FOBJALL 			= $(FOBJHELPERS) $(FOBJEEPP)
 DEPSEEPP			= $(FOBJEEPP:.o=.d)
 DEPSALL				= $(FOBJALL:.o=.d)
 
-lib: $(LIB)
+all: lib
+
+dirs:
+	@mkdir -p $(OBJDIR)/src
+	@mkdir -p $(OBJDIR)/src/helper/glew
+	@mkdir -p $(OBJDIR)/src/helper/SOIL
+	@mkdir -p $(OBJDIR)/src/helper/stb_vorbis
+	@mkdir -p $(OBJDIR)/src/helper/zlib
+	@mkdir -p $(OBJDIR)/src/helper/libzip
+	@mkdir -p $(OBJDIR)/src/helper/haikuttf
+	@mkdir -p $(OBJDIR)/src/base
+	@mkdir -p $(OBJDIR)/src/audio
+	@mkdir -p $(OBJDIR)/src/gaming
+	@mkdir -p $(OBJDIR)/src/graphics
+	@mkdir -p $(OBJDIR)/src/math
+	@mkdir -p $(OBJDIR)/src/system
+	@mkdir -p $(OBJDIR)/src/ui
+	@mkdir -p $(OBJDIR)/src/utils
+	@mkdir -p $(OBJDIR)/src/window
+	@mkdir -p $(OBJDIR)/src/test
+	@mkdir -p $(OBJDIR)/src/eeiv
+
+lib: dirs $(LIB)
 
 $(FOBJMODULES):
 	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) -I/usr/include/freetype2
@@ -148,9 +170,9 @@ libeepp.so: $(FOBJHELPERS) $(FOBJMODULES)
 os:
 	@echo $(OS)
 
-test: $(EXE)
+test: dirs $(EXE)
 
-eeiv: $(EXEIV)
+eeiv: dirs $(EXEIV)
 
 docs:
 	doxygen ./Doxyfile
