@@ -5,17 +5,42 @@ using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
-cParticleSystem::cParticleSystem() : mPointsSup(false), mTime(0.01f) {
+cParticleSystem::cParticleSystem() :
+	mParticle( NULL ),
+	mPCount( 0 ),
+	mTexId( 0 ),
+	mPLeft( 0 ),
+	mLoops( 0 ),
+	mEffect( Nofx ),
+	mColor(),
+	mProgression( 0 ),
+	mDirection( 0 ),
+	mLoop( false ),
+	mUsed( false ),
+	mPointsSup( false ),
+	mX( 0.f ),
+	mY( 0.f ),
+	mXAcc( 0.f ),
+	mYAcc( 0.f ),
+	mXSpeed( 0.f ),
+	mYSpeed( 0.f ),
+	mAlphaDecay( 0.f ),
+	mSize( 0.f ),
+	mHSize( 0.f ),
+	mTime( 0.01f ),
+	mX2( 0.f ),
+	mY2( 0.f )
+
+{
 	EE = cEngine::instance();
 	TF = cTextureFactory::instance();
 }
 
 cParticleSystem::~cParticleSystem() {
-	mParticle.clear();
+	eeSAFE_DELETE_ARRAY( mParticle );
 }
 
 void cParticleSystem::Create(const EE_PARTICLE_EFFECT& Effect, const Uint32& NumParticles, const Uint32& TexId, const eeFloat& X, const eeFloat& Y, const eeFloat& PartSize, const bool& AnimLoop, const Uint32& NumLoops, const eeColorAf& Color, const eeFloat& X2, const eeFloat& Y2, const eeFloat& AlphaDecay, const eeFloat& XSpeed, const eeFloat& YSpeed, const eeFloat& XAcceleration, const eeFloat& YAcceleration) {
-	mParticle.clear();
 	mPointsSup = cGL::instance()->PointSpriteSupported();
 
 	mEffect = Effect;
@@ -56,19 +81,19 @@ void cParticleSystem::Create(const EE_PARTICLE_EFFECT& Effect, const Uint32& Num
 	}
 
 	mUsed = true;
+
 	Begin();
 }
 
 void cParticleSystem::Begin() {
-	mPLeft = (Uint32)mParticle.size();
+	mPLeft = mPCount;
 
-	if ( mParticle.max_size() > mParticle.size() )
-		mParticle.resize( mPCount );
-	else
-		mParticle.resize( mParticle.max_size() );
+	eeSAFE_DELETE_ARRAY( mParticle );
 
-	for ( Uint32 i=0; i < mParticle.size(); i++ ) {
-		cParticle* P = &mParticle[i];
+	mParticle = eeNewArray( cParticle, mPCount );
+
+	for ( Uint32 i=0; i < mPCount; i++ ) {
+		cParticle * P = &mParticle[i];
 		P->Used(true);
 		P->Id(i+1);
 		Reset(P);
@@ -247,7 +272,7 @@ void cParticleSystem::Draw() {
 		glColorPointer( 4, GL_FLOAT, sizeof(cParticle), reinterpret_cast<char*>( &mParticle[0] ) + sizeof(eeFloat) * 2 );
 		glVertexPointer( 2, GL_FLOAT, sizeof(cParticle), reinterpret_cast<char*>( &mParticle[0] ) );
 
-		glDrawArrays( GL_POINTS, 0, (GLsizei)mParticle.size() );
+		glDrawArrays( GL_POINTS, 0, (GLsizei)mPCount );
 
 		glDisable( GL_POINT_SPRITE_ARB );
 	} else {
@@ -263,7 +288,7 @@ void cParticleSystem::Draw() {
 		BR->SetPreBlendFunc( ALPHA_BLENDONE );
 		BR->QuadsBegin();
 
-		for ( Uint32 i = 0; i < mParticle.size(); i++ ) {
+		for ( Uint32 i = 0; i < mPCount; i++ ) {
 			P = &mParticle[i];
 			eeVector2f TL;
 
@@ -285,7 +310,7 @@ void cParticleSystem::Update( const eeFloat& Time ) {
 	eeFloat Elapsed = ( Time == -99999.f ) ? EE->Elapsed() : Time;
 	Uint32 i;
 
-	for ( i = 0; i < mParticle.size(); i++ ) {
+	for ( i = 0; i < mPCount; i++ ) {
 		cParticle* P = &mParticle[i];
 
 		if ( P->Used() || P->A() > 0.f ) {
@@ -323,7 +348,7 @@ void cParticleSystem::ReUse() {
 	mLoop = true;
 	mLoops = 0;
 
-	for ( i=0; i < mParticle.size(); i++ )
+	for ( i=0; i < mPCount; i++ )
 		mParticle[i].Used( true );
 }
 

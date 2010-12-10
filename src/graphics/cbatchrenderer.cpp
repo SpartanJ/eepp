@@ -4,6 +4,7 @@
 namespace EE { namespace Graphics {
 
 cBatchRenderer::cBatchRenderer() :
+	mVertex( NULL ),
 	mNumVertex(0),
 	mTexture(NULL),
 	mBlend(ALPHA_NORMAL),
@@ -15,7 +16,7 @@ cBatchRenderer::cBatchRenderer() :
 	mForceRendering(true),
 	mForceBlendMode(true)
 {
-	AllocVertexs( 4 );
+	AllocVertexs( 1024 );
 	Init();
 }
 
@@ -36,7 +37,7 @@ cBatchRenderer::cBatchRenderer( const eeUint& Prealloc ) :
 }
 
 cBatchRenderer::~cBatchRenderer() {
-	mVertex.clear();
+	eeSAFE_DELETE_ARRAY( mVertex );
 }
 
 void cBatchRenderer::Init() {
@@ -44,7 +45,10 @@ void cBatchRenderer::Init() {
 }
 
 void cBatchRenderer::AllocVertexs( const eeUint& size ) {
-	mVertex.resize( size );
+	eeSAFE_DELETE_ARRAY( mVertex );
+	mVertex		= eeNewArray( eeVertex, size );
+	mVertexSize = size;
+	mNumVertex	= 0;
 }
 
 void cBatchRenderer::DrawOpt() {
@@ -69,7 +73,8 @@ void cBatchRenderer::SetPreBlendFunc( const EE_PRE_BLEND_FUNC& Blend ) {
 
 void cBatchRenderer::AddVertexs( const eeUint& num ) {
 	mNumVertex += num;
-	if ( ( mNumVertex + num ) >= mVertex.size() )
+
+	if ( ( mNumVertex + num ) >= mVertexSize )
 		Flush();
 }
 
@@ -131,7 +136,7 @@ void cBatchRenderer::Flush() {
 }
 
 void cBatchRenderer::BatchQuad( const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& angle ) {
-	if ( mNumVertex + 3 >= mVertex.size() )
+	if ( mNumVertex + 3 >= mVertexSize )
 			return;
 
 	eeVector2f center;
@@ -207,7 +212,7 @@ void cBatchRenderer::BatchQuad( const eeFloat& x, const eeFloat& y, const eeFloa
 }
 
 void cBatchRenderer::BatchQuadEx( const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& angle, const eeFloat& scale, const bool& scalefromcenter ) {
-	if ( mNumVertex + 3 >= mVertex.size() )
+	if ( mNumVertex + 3 >= mVertexSize )
 		return;
 
 	eeVector2f center;
@@ -297,7 +302,7 @@ void cBatchRenderer::BatchQuadEx( const eeFloat& x, const eeFloat& y, const eeFl
 }
 
 void cBatchRenderer::BatchQuadFree( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3 ) {
-	if ( mNumVertex + 3 >= mVertex.size() )
+	if ( mNumVertex + 3 >= mVertexSize )
 		return;
 
 #ifndef EE_GLES
@@ -358,7 +363,7 @@ void cBatchRenderer::BatchQuadFree( const eeFloat& x0, const eeFloat& y0, const 
 }
 
 void cBatchRenderer::BatchQuadFreeEx( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const eeFloat& Angle, const eeFloat& Scale ) {
-	if ( mNumVertex + 3 >= mVertex.size() )
+	if ( mNumVertex + 3 >= mVertexSize )
 		return;
 
 	eeQuad2f mQ;
@@ -505,7 +510,7 @@ void cBatchRenderer::PointSetColor( const eeColorA& Color ) {
 }
 
 void cBatchRenderer::BatchPoint( const eeFloat& x, const eeFloat& y ) {
-	if ( mNumVertex + 1 >= mVertex.size() )
+	if ( mNumVertex + 1 >= mVertexSize )
 		return;
 
 	SetBlendMode( DM_POINTS, mForceBlendMode );
@@ -534,7 +539,7 @@ void cBatchRenderer::LinesSetColorFree( const eeColorA& Color0, const eeColorA& 
 }
 
 void cBatchRenderer::BatchLine( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1 ) {
-	if ( mNumVertex + 1 >= mVertex.size() )
+	if ( mNumVertex + 1 >= mVertexSize )
 		return;
 
 	SetBlendMode( DM_LINES, mForceBlendMode );
@@ -569,7 +574,7 @@ void cBatchRenderer::LineLoopSetColorFree( const eeColorA& Color0, const eeColor
 }
 
 void cBatchRenderer::BatchLineLoop( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1 ) {
-	if ( mNumVertex + 1 >= mVertex.size() )
+	if ( mNumVertex + 1 >= mVertexSize )
 		return;
 
 	SetBlendMode( DM_LINE_LOOP, mForceBlendMode );
@@ -594,7 +599,7 @@ void cBatchRenderer::BatchLineLoop( const eeVector2f& vector1, const eeVector2f&
 }
 
 void cBatchRenderer::BatchLineLoop( const eeFloat& x0, const eeFloat& y0 ) {
-	if ( mNumVertex + 1 >= mVertex.size() )
+	if ( mNumVertex + 1 >= mVertexSize )
 		return;
 
 	SetBlendMode( DM_LINE_LOOP, mForceBlendMode );
@@ -634,7 +639,7 @@ void cBatchRenderer::TriangleFanSetSubset( const eeFloat& x0, const eeFloat& y0,
 
 void cBatchRenderer::BatchTriangleFan( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2 ) {
 
-	if ( mNumVertex + 2 >= mVertex.size() )
+	if ( mNumVertex + 2 >= mVertexSize )
 		return;
 
 	SetBlendMode( DM_TRIANGLE_FAN, mForceBlendMode );
@@ -682,7 +687,7 @@ void cBatchRenderer::TrianglesSetSubset( const eeFloat& x0, const eeFloat& y0, c
 
 void cBatchRenderer::BatchTriangle( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2 ) {
 
-	if ( mNumVertex + 2 >= mVertex.size() )
+	if ( mNumVertex + 2 >= mVertexSize )
 		return;
 
 	SetBlendMode( DM_TRIANGLES, mForceBlendMode );
@@ -713,7 +718,7 @@ void cBatchRenderer::PolygonSetColor( const eeColorA& Color ) {
 }
 
 void cBatchRenderer::BatchPolygon( const eePolygon2f& Polygon ) {
-	if ( Polygon.Size() > mVertex.size() )
+	if ( Polygon.Size() > mVertexSize )
 		return;
 
 	SetBlendMode( DM_POLYGON, mForceBlendMode );
@@ -731,7 +736,7 @@ void cBatchRenderer::BatchPolygon( const eePolygon2f& Polygon ) {
 }
 
 void cBatchRenderer::BatchPolygonByPoint( const eeFloat& x, const eeFloat& y ) {
-	if ( mNumVertex + 1 >= mVertex.size() )
+	if ( mNumVertex + 1 >= mVertexSize )
 		return;
 
 	SetBlendMode( DM_POLYGON, mForceBlendMode );

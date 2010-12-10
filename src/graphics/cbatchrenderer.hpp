@@ -179,31 +179,38 @@ class EE_API cBatchRenderer {
 		/** Set the point size */
 		void SetPointSize( const eeFloat& pointSize );
 
+		/** Batch a poligon adding one by one vector */
 		void BatchPolygonByPoint( const eeFloat& x, const eeFloat& y );
 
+		/** Batch a poligon adding one by one vector */
 		void BatchPolygonByPoint( const eeVector2f& Vector );
 
+		/** Foce the blending mode change, ignoring if it's the same that before ( so you can change the blend mode and restore it without problems ) */
 		void ForceBlendModeChange( const bool& Force );
 
+		/** @return If the blending mode switch is forced */
 		const bool& ForceBlendModeChange() const;
 	protected:
-		std::vector<eeVertex> mVertex;
-		eeVertex * mTVertex;
-		eeUint mNumVertex;
+		eeVertex *			mVertex;
+		eeUint				mVertexSize;
+		eeVertex *			mTVertex;
+		eeUint				mNumVertex;
 
-		const cTexture * mTexture;
-		EE_PRE_BLEND_FUNC mBlend;
+		const cTexture *	mTexture;
+		EE_PRE_BLEND_FUNC	mBlend;
 
-		eeTexCoord mTexCoord[4];
-		eeColorA mVerColor[4];
+		eeTexCoord			mTexCoord[4];
+		eeColorA			mVerColor[4];
 
-		EE_DRAW_MODE mCurrentMode;
+		EE_DRAW_MODE		mCurrentMode;
 
-		eeFloat mRotation, mScale;
-		eeVector2f mPosition, mCenter;
+		eeFloat				mRotation;
+		eeFloat				mScale;
+		eeVector2f			mPosition;
+		eeVector2f			mCenter;
 
-		bool mForceRendering;
-		bool mForceBlendMode;
+		bool				mForceRendering;
+		bool				mForceBlendMode;
 
 		void Flush();
 		void Init();

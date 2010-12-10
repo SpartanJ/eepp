@@ -1,5 +1,5 @@
 /*
- * PlusCallback 1.5
+ * PlusCallback 1.7
  * Copyright (c) 2009-2010 Lewis Van Winkle
  *
  * This software is provided 'as-is', without any express or implied
@@ -30,16 +30,17 @@
 #include <stdexcept>
 
 
-//PlusCallback 1.5
-//This library was built on 10.03.2010 to support
+//PlusCallback 1.7
+//This library was built on 12.10.2010 to support
 //functions with a maximum of 9 parameters.
-#define CALLBACK_VERSION 1.5
+#define CALLBACK_VERSION 1.7
 
 
 namespace cb
 {
 
         static const std::string unset_call_error("Attempting to invoke null callback.");
+
 
 
         ///Stores a callback for a function taking 0 parameters.
@@ -262,7 +263,10 @@ namespace cb
                                 R (C::* const mFunc)();
                         };
 
-                    char mMem[sizeof(ChildMethod<std::string>)]; //Reserve memory for creating useful objects later.
+                    ///This class is only to find the worst case method pointer size.
+                    class unknown;
+
+                    char mMem[sizeof(ChildMethod<unknown>)]; //Reserve memory for creating useful objects later.
                     Base* mCallback;
             };
 
@@ -502,7 +506,10 @@ namespace cb
                                 R (C::* const mFunc)(T0 t0);
                         };
 
-                    char mMem[sizeof(ChildMethod<std::string>)]; //Reserve memory for creating useful objects later.
+                    ///This class is only to find the worst case method pointer size.
+                    class unknown;
+
+                    char mMem[sizeof(ChildMethod<unknown>)]; //Reserve memory for creating useful objects later.
                     Base* mCallback;
             };
 
@@ -742,7 +749,10 @@ namespace cb
                                 R (C::* const mFunc)(T0 t0, T1 t1);
                         };
 
-                    char mMem[sizeof(ChildMethod<std::string>)]; //Reserve memory for creating useful objects later.
+                    ///This class is only to find the worst case method pointer size.
+                    class unknown;
+
+                    char mMem[sizeof(ChildMethod<unknown>)]; //Reserve memory for creating useful objects later.
                     Base* mCallback;
             };
 
@@ -982,7 +992,10 @@ namespace cb
                                 R (C::* const mFunc)(T0 t0, T1 t1, T2 t2);
                         };
 
-                    char mMem[sizeof(ChildMethod<std::string>)]; //Reserve memory for creating useful objects later.
+                    ///This class is only to find the worst case method pointer size.
+                    class unknown;
+
+                    char mMem[sizeof(ChildMethod<unknown>)]; //Reserve memory for creating useful objects later.
                     Base* mCallback;
             };
 
@@ -1222,7 +1235,10 @@ namespace cb
                                 R (C::* const mFunc)(T0 t0, T1 t1, T2 t2, T3 t3);
                         };
 
-                    char mMem[sizeof(ChildMethod<std::string>)]; //Reserve memory for creating useful objects later.
+                    ///This class is only to find the worst case method pointer size.
+                    class unknown;
+
+                    char mMem[sizeof(ChildMethod<unknown>)]; //Reserve memory for creating useful objects later.
                     Base* mCallback;
             };
 
@@ -1462,7 +1478,10 @@ namespace cb
                                 R (C::* const mFunc)(T0 t0, T1 t1, T2 t2, T3 t3, T4 t4);
                         };
 
-                    char mMem[sizeof(ChildMethod<std::string>)]; //Reserve memory for creating useful objects later.
+                    ///This class is only to find the worst case method pointer size.
+                    class unknown;
+
+                    char mMem[sizeof(ChildMethod<unknown>)]; //Reserve memory for creating useful objects later.
                     Base* mCallback;
             };
 
@@ -1702,7 +1721,10 @@ namespace cb
                                 R (C::* const mFunc)(T0 t0, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5);
                         };
 
-                    char mMem[sizeof(ChildMethod<std::string>)]; //Reserve memory for creating useful objects later.
+                    ///This class is only to find the worst case method pointer size.
+                    class unknown;
+
+                    char mMem[sizeof(ChildMethod<unknown>)]; //Reserve memory for creating useful objects later.
                     Base* mCallback;
             };
 
@@ -1942,7 +1964,10 @@ namespace cb
                                 R (C::* const mFunc)(T0 t0, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6);
                         };
 
-                    char mMem[sizeof(ChildMethod<std::string>)]; //Reserve memory for creating useful objects later.
+                    ///This class is only to find the worst case method pointer size.
+                    class unknown;
+
+                    char mMem[sizeof(ChildMethod<unknown>)]; //Reserve memory for creating useful objects later.
                     Base* mCallback;
             };
 
@@ -2182,7 +2207,10 @@ namespace cb
                                 R (C::* const mFunc)(T0 t0, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7);
                         };
 
-                    char mMem[sizeof(ChildMethod<std::string>)]; //Reserve memory for creating useful objects later.
+                    ///This class is only to find the worst case method pointer size.
+                    class unknown;
+
+                    char mMem[sizeof(ChildMethod<unknown>)]; //Reserve memory for creating useful objects later.
                     Base* mCallback;
             };
 
@@ -2422,7 +2450,10 @@ namespace cb
                                 R (C::* const mFunc)(T0 t0, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8);
                         };
 
-                    char mMem[sizeof(ChildMethod<std::string>)]; //Reserve memory for creating useful objects later.
+                    ///This class is only to find the worst case method pointer size.
+                    class unknown;
+
+                    char mMem[sizeof(ChildMethod<unknown>)]; //Reserve memory for creating useful objects later.
                     Base* mCallback;
             };
 

@@ -124,18 +124,36 @@ class EE_API cParticleSystem {
 		/** Set a callback function for the reset effect of the particles. \n The reset it's where do you create the effect for every single particle. */
 		void SetCallbackReset( const ParticleCallback& pc );
 	private:
-		cEngine* EE;
-		cTextureFactory* TF;
+		cEngine *			EE;
+		cTextureFactory *	TF;
 
-		std::vector<cParticle> mParticle;
-		EE_PARTICLE_EFFECT mEffect;
-		eeColorAf mColor;
+		cParticle *			mParticle;
+		Uint32				mPCount;
+		Uint32				mTexId;
+		Uint32				mPLeft;
+		Uint32				mLoops;
 
-		Uint32 mTexId, mPCount, mPLeft, mLoops;
-		int mProgression, mDirection;
-		bool mLoop, mUsed, mPointsSup;
+		EE_PARTICLE_EFFECT	mEffect;
+		eeColorAf			mColor;
 
-		eeFloat mX, mY, mXAcc, mYAcc, mXSpeed, mYSpeed, mAlphaDecay, mSize, mHSize, mTime, mX2, mY2;
+		eeInt				mProgression;
+		eeInt				mDirection;
+		bool				mLoop;
+		bool				mUsed;
+		bool				mPointsSup;
+
+		eeFloat				mX;
+		eeFloat				mY;
+		eeFloat				mXAcc;
+		eeFloat				mYAcc;
+		eeFloat				mXSpeed;
+		eeFloat				mYSpeed;
+		eeFloat				mAlphaDecay;
+		eeFloat				mSize;
+		eeFloat				mHSize;
+		eeFloat				mTime;
+		eeFloat				mX2;
+		eeFloat				mY2;
 
 		void Begin();
 		void Reset( cParticle* P );

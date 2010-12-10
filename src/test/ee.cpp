@@ -384,12 +384,14 @@ void cEETest::CreateUI() {
 
 	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 530, 240 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
-	//cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
+	cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
 	CreateAquaTextureAtlas();
 
+/*
 	cTextureGroupLoader tgl( MyPath + "data/aqua.etg" );
 	TF->GetByName( "data/aqua.png" )->TextureFilter( TEX_FILTER_NEAREST );
 	cUIThemeManager::instance()->Add( cUITheme::LoadFromShapeGroup( cShapeGroupManager::instance()->GetByName( "aqua" ), "aqua", "aqua" ) );
+*/
 
 	cUIThemeManager::instance()->DefaultEffectsEnabled( true );
 	cUIThemeManager::instance()->DefaultFont( TTF );
