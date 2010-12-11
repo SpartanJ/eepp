@@ -3,21 +3,35 @@
 
 #include "base.hpp"
 
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#ifndef WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#elif defined( EE_PLATFORM_UNIX )
+#include <pthread.h>
+#endif
+
 namespace EE { namespace System {
 
 /** Simple mutex class */
 class EE_API cMutex {
 	public:
 		cMutex();
+
 		~cMutex();
 
 		/** Lock the mutex */
-		bool Lock();
+		void Lock();
 
 		/** Unlock the mutex */
-		bool Unlock();
+		void Unlock();
 	private:
-		SDL_mutex* mMutex;
+		#if EE_PLATFORM == EE_PLATFORM_WIN
+		CRITICAL_SECTION mMutex;
+		#elif defined( EE_PLATFORM_UNIX )
+		pthread_mutex_t mMutex;
+		#endif
 };
 
 }}

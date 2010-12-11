@@ -19,8 +19,6 @@ class hkMutex {
 		CRITICAL_SECTION mMutex;
 		#elif defined( HK_PLATFORM_UNIX )
 		pthread_mutex_t mMutex;
-		#else
-		SDL_mutex * mMutex;
 		#endif
 };
 

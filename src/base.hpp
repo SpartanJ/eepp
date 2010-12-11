@@ -51,6 +51,10 @@
 #   define EE_PLATFORM EE_PLATFORM_LINUX
 #endif
 
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOSX
+#define EE_PLATFORM_UNIX
+#endif
+
 #if defined(__GNUC__)
 #define EE_COMPILER_GCC
 #endif
@@ -72,6 +76,8 @@
 
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_LINUX
 #define EE_GLEW_AVAILABLE
+#else
+#warning Platform not supported.
 #endif
 
 #ifdef EE_PLATFORM
@@ -128,15 +134,15 @@ namespace EE {
 	#define eeSAFE_FREE(p)			{ if(p) { eeFree ( (void*)p );	(p)=NULL; } }
 	#define eeSAFE_DELETE_ARRAY(p)  { if(p) { eeDeleteArray(p);		(p)=NULL; } }
 
-	typedef float				eeFloat; 	//! The internal floating point used on EE++. \n This can help to improve compatibility with some platforms. \n And helps for an easy change from single precision to double precision.
-	typedef double				eeDouble; 	//! The internal double floating point. It's only used when the engine needs some very high precision floating point ( for example the timer )
-	typedef unsigned int		eeUint;
+	typedef float			eeFloat; 	//! The internal floating point used on EE++. \n This can help to improve compatibility with some platforms. \n And helps for an easy change from single precision to double precision.
+	typedef double			eeDouble; 	//! The internal double floating point. It's only used when the engine needs some very high precision floating point ( for example the timer )
+	typedef unsigned int	eeUint;
 	typedef signed int		eeInt;
 
-	const eeFloat PI			= 3.141592654f;
+	const eeFloat PI		= 3.141592654f;
 	const eeFloat TwoPI		= 6.283185308f;
-	const eeFloat PId180		= PI / 180.f;
-	const eeFloat d180PI		= 180.f / PI;
+	const eeFloat PId180	= PI / 180.f;
+	const eeFloat d180PI	= 180.f / PI;
 
 	#ifdef EE_GLES
 	const GLubyte EE_GLES_INDICES [] = {0, 3, 1, 2};

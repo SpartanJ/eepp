@@ -22,6 +22,9 @@ cUISpinBox::cUISpinBox( const cUISpinBox::CreateParams& Params ) :
 	BtnParams.Parent( this );
 	BtnParams.Size = eeSize( 16, 16 );
 
+	if ( BtnParams.Flags & UI_CLIP_ENABLE )
+		BtnParams.Flags &= ~UI_CLIP_ENABLE;
+
 	mPushUp		= eeNew( cUIControlAnim, ( BtnParams ) );
 	mPushDown 	= eeNew( cUIControlAnim, ( BtnParams ) );
 

@@ -527,4 +527,27 @@ Uint32 cUIMenu::OnKeyDown( const cUIEventKey& Event ) {
 	return 1;
 }
 
+void cUIMenu::FixMenuPos( eeVector2i& Pos, cUIMenu * Menu ) {
+	eeAABB qScreen( 0.f, 0.f, cUIManager::instance()->MainControl()->Size().Width(), cUIManager::instance()->MainControl()->Size().Height() );
+	eeAABB qPos( Pos.x, Pos.y, Pos.x + Menu->Size().Width(), Pos.y + Menu->Size().Height() );
+
+	if ( !qScreen.Contains( qPos ) ) {
+		Pos.y		-= Menu->Size().Height();
+		qPos.Top	-= Menu->Size().Height();
+		qPos.Bottom	-= Menu->Size().Height();
+
+		if ( !qScreen.Contains( qPos ) ) {
+			Pos.x		-= Menu->Size().Width();
+			qPos.Left	-= Menu->Size().Width();
+			qPos.Right	-= Menu->Size().Width();
+
+			if ( !qScreen.Contains( qPos ) ) {
+				Pos.y		+= Menu->Size().Height() * 2;
+				//qPos.Top	+= Menu->Size().Height() * 2;
+				//qPos.Bottom	+= Menu->Size().Height() * 2;
+			}
+		}
+	}
+}
+
 }}

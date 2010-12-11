@@ -96,11 +96,12 @@ void cUIMenuSubMenu::ShowSubMenu() {
 	mSubMenu->Parent( Parent()->Parent() );
 
 	eeVector2i Pos = this->Pos();
-
 	ControlToScreen( Pos );
-
 	Pos.x += mSize.Width();
 
+	cUIMenu::FixMenuPos( Pos, mSubMenu );
+
+	mSubMenu->Parent()->ScreenToControl( Pos );
 	mSubMenu->Pos( Pos );
 
 	if ( !mSubMenu->Visible() ) {

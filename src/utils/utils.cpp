@@ -5,9 +5,6 @@
 	#include <CoreFoundation/CoreFoundation.h>
 	#include <sys/sysctl.h>
 #elif EE_PLATFORM == EE_PLATFORM_WIN
-	#ifndef WIN32_LEAN_AND_MEAN
-		#define WIN32_LEAN_AND_MEAN
-	#endif
 	#include <windows.h>
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
 	#include <libgen.h>
@@ -29,6 +26,29 @@
 	#include <dirent.h>
 #endif
 
+static bool TickStarted = false;
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+
+#define TIME_WRAP_VALUE (~(DWORD)0)
+/* The first high-resolution ticks value of the application */
+static LARGE_INTEGER hires_start_ticks;
+/* The number of ticks per second of the high-resolution performance counter */
+static LARGE_INTEGER hires_ticks_per_second;
+#endif
+
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOSX
+#define HAVE_CLOCK_GETTIME
+#endif
+
+#ifdef EE_PLATFORM_UNIX
+#ifdef HAVE_CLOCK_GETTIME
+static struct timespec start;
+#else
+static struct timeval start;
+#endif
+#endif
+
 namespace EE { namespace Utils {
 
 bool FileExists( const std::string& Filepath ) {
@@ -36,12 +56,68 @@ bool FileExists( const std::string& Filepath ) {
 	return ( stat( Filepath.c_str(), &st ) == 0 );
 }
 
+static void eeStartTicks() {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+    QueryPerformanceFrequency(&hires_ticks_per_second);
+    QueryPerformanceCounter(&hires_start_ticks);
+#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOSX
+	#ifdef HAVE_CLOCK_GETTIME
+	clock_gettime(CLOCK_MONOTONIC, &start);
+	#else
+	gettimeofday(&start, NULL);
+	#endif
+#else
+	#warning eeStartTicks not implemented in this platform.
+#endif
+
+	TickStarted = true;
+}
+
 Uint32 eeGetTicks() {
-	return SDL_GetTicks();
+	if ( !TickStarted )
+		eeStartTicks();
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	LARGE_INTEGER hires_now;
+
+    QueryPerformanceCounter(&hires_now);
+
+    hires_now.QuadPart -= hires_start_ticks.QuadPart;
+    hires_now.QuadPart *= 1000;
+    hires_now.QuadPart /= hires_ticks_per_second.QuadPart;
+
+    return (DWORD) hires_now.QuadPart;
+#elif defined( EE_PLATFORM_UNIX )
+	#ifdef HAVE_CLOCK_GETTIME
+	Uint32 ticks;
+	struct timespec now;
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	ticks =
+		(now.tv_sec - start.tv_sec) * 1000 + (now.tv_nsec -
+											  start.tv_nsec) / 1000000;
+	return (ticks);
+	#else
+	Uint32 ticks;
+	struct timeval now;
+	gettimeofday(&now, NULL);
+	ticks =
+		(now.tv_sec - start.tv_sec) * 1000 + (now.tv_usec -
+											  start.tv_usec) / 1000;
+	return (ticks);
+	#endif
+#else
+	#warning eeGetTicks not implemented in this platform.
+#endif
 }
 
 void eeSleep( const Uint32& ms ) {
-	SDL_Delay(ms);
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	Sleep( ms );
+#elif defined( EE_PLATFORM_UNIX )
+	usleep( static_cast<unsigned long>( ms * 1000 ) );
+#else
+	#warning eeSleep not implemented in this platform.
+#endif
 }
 
 std::string AppPath() {

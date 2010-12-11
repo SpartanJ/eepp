@@ -189,6 +189,7 @@ class cEETest : private cThread {
 
 		cTextureGroupLoader * mTGL;
 		cSprite mBlindy;
+		cSprite * mBlindyPtr;
 
 		cFrameBuffer * mFB;
 		cVertexBuffer * mVBO;
@@ -444,6 +445,18 @@ void cEETest::CreateUI() {
 	Gfx->AlphaInterpolation()->SetTotalTime( 1000.f );
 */
 
+	mBlindyPtr = eeNew( cSprite, () );
+	mBlindyPtr->AddFramesByPattern( "gn" );
+
+	cUISprite::CreateParams SpriteParams;
+	SpriteParams.Parent( C );
+	SpriteParams.PosSet( 160, 100 );
+	SpriteParams.Flags |= UI_AUTO_SIZE;
+	SpriteParams.Sprite = mBlindyPtr;
+	cUISprite * Spr = eeNew( cUISprite, ( SpriteParams ) );
+	Spr->Visible( true );
+	Spr->Enabled( true );
+
 	cUITextBox::CreateParams TextParams;
 	TextParams.Parent( C );
 	TextParams.PosSet( 0, 0 );
@@ -671,8 +684,11 @@ void cEETest::MainClick( const cUIEvent * Event ) {
 	const cUIEventMouse * MouseEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
 
 	if ( MouseEvent->Flags() & EE_BUTTON_RMASK ) {
-		if ( Menu->Show() )
-			Menu->Pos( MouseEvent->Pos() );
+		if ( Menu->Show() ) {
+			eeVector2i Pos = MouseEvent->Pos();
+			cUIMenu::FixMenuPos( Pos , Menu );
+			Menu->Pos( Pos );
+		}
 	}
 }
 
@@ -1170,6 +1186,8 @@ void cEETest::Render() {
 
 	if ( Screen < 2 )
 		CursorP[ Screen ]->Draw( Mousef.x, Mousef.y );
+	else
+		CursorP[ 1 ]->Draw( Mousef.x, Mousef.y );
 }
 
 void cEETest::Input() {
@@ -1417,6 +1435,7 @@ void cEETest::End() {
 	eeSAFE_DELETE( mTGL );
 	eeSAFE_DELETE( mFB );
 	eeSAFE_DELETE( mVBO );
+	eeSAFE_DELETE( mBlindyPtr );
 
 	cLog::instance()->Save();
 

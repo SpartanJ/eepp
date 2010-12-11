@@ -546,6 +546,8 @@
 		<Unit filename="src\ui\cuimenucheckbox.hpp" />
 		<Unit filename="src\ui\cuimenuitem.cpp" />
 		<Unit filename="src\ui\cuimenuitem.hpp" />
+		<Unit filename="src\ui\cuimenusubmenu.cpp" />
+		<Unit filename="src\ui\cuimenusubmenu.hpp" />
 		<Unit filename="src\ui\cuimessage.cpp" />
 		<Unit filename="src\ui\cuimessage.hpp" />
 		<Unit filename="src\ui\cuipopupmenu.cpp" />
@@ -574,6 +576,8 @@
 		<Unit filename="src\ui\cuisliderbutton.hpp" />
 		<Unit filename="src\ui\cuispinbox.cpp" />
 		<Unit filename="src\ui\cuispinbox.hpp" />
+		<Unit filename="src\ui\cuisprite.cpp" />
+		<Unit filename="src\ui\cuisprite.hpp" />
 		<Unit filename="src\ui\cuitextbox.cpp" />
 		<Unit filename="src\ui\cuitextbox.hpp" />
 		<Unit filename="src\ui\cuitextinput.cpp" />

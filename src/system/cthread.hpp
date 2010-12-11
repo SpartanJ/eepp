@@ -3,6 +3,16 @@
 
 #include "base.hpp"
 
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#ifndef WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <process.h>
+#elif defined( EE_PLATFORM_UNIX )
+#include <pthread.h>
+#endif
+
 namespace EE { namespace System {
 
 /** @brief Thread manager class */
@@ -10,28 +20,43 @@ class EE_API cThread {
 	public:
 		typedef void (*FuncType)(void*);
 
-		cThread(FuncType Function, void* UserData = NULL);
+		cThread( FuncType Function, void* UserData = NULL );
+
 		virtual ~cThread();
 
 		/** Launch the thread */
-		virtual void Launch();
+		virtual void	Launch();
 
 		/** Wait the thread until end */
-		void Wait();
+		void			Wait();
 
 		/** Terminate the thread */
-		void Terminate();
+		void			Terminate();
 	protected:
 		cThread();
-		bool mIsActive;
+
+		bool			mIsActive;
 	private:
 		/** The virtual function to run in the thread */
-		virtual void Run();
-		static int ThreadFunc(void* UserData);
+		virtual void	Run();
 
-		SDL_Thread* mThreadPtr;
-		FuncType mFunction;
-		void* mUserData;
+		#if EE_PLATFORM == EE_PLATFORM_WIN
+
+		static unsigned int __stdcall EntryPoint(void* userData);
+
+		HANDLE			mThread;
+
+		#elif defined( EE_PLATFORM_UNIX )
+
+		static void* EntryPoint(void* userData);
+
+		pthread_t		mThread;
+
+		#endif
+
+		FuncType		mFunction;
+
+		void *			mUserData;
 };
 
 }}

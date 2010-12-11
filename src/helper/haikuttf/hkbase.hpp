@@ -37,9 +37,6 @@ typedef SOPHIST_uint32		u32;
 #include <windows.h>
 #elif defined( HK_PLATFORM_UNIX )
 #include <pthread.h>
-#else
-// Fallback to SDL mutex
-#include <SDL/SDL.h>
 #endif
 
 #include <ft2build.h>
@@ -80,6 +77,5 @@ typedef SOPHIST_uint32		u32;
 #define hkSAFE_DELETE(p)		{ if(p) { delete (p);		(p)=NULL; } }
 #define hkSAFE_FREE(p)			{ if(p) { free (p);			(p)=NULL; } }
 #define hkSAFE_DELETE_ARRAY(p)  { if(p) { delete[](p);		(p)=NULL; } }
-
 
 #endif

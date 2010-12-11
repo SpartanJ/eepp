@@ -167,5 +167,6 @@
 	#include "ui/cuimenuitem.hpp"
 	#include "ui/cuiseparator.hpp"
 	#include "ui/cuipopupmenu.hpp"
+	#include "ui/cuisprite.hpp"
 	using namespace EE::UI;
 #endif

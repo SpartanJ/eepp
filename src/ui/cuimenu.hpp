@@ -53,6 +53,8 @@ class EE_API cUIMenu : public cUIControlAnim {
 
 		};
 
+		static void FixMenuPos( eeVector2i& Pos, cUIMenu * Menu );
+
 		cUIMenu( cUIMenu::CreateParams& Params );
 
 		~cUIMenu();

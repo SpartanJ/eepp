@@ -538,7 +538,7 @@ void cUIControl::DrawChilds() {
 
 void cUIControl::InternalDraw() {
 	if ( mVisible ) {
-		ClipTo();
+		//ClipTo();
 
 		MatrixSet();
 

@@ -3,8 +3,6 @@
 
 #include "../base.hpp"
 
-#include <SDL/SDL_syswm.h>
-
 #include "../helper/SOIL/SOIL.h"
 
 #include "../utils/colors.hpp"

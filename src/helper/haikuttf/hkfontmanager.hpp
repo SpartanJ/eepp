@@ -53,8 +53,6 @@ class hkFontManager : private hkMutex {
 		void MutexLock();
 		
 		void MutexUnlock();
-	private:
-		//SDL_mutex * mMutex;
 };
 
 }

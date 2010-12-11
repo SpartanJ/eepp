@@ -24,6 +24,7 @@ using namespace EE::Window;
 
 #include "../graphics/renders.hpp"
 #include "../graphics/cshape.hpp"
+#include "../graphics/csprite.hpp"
 #include "../graphics/cfont.hpp"
 #include "../graphics/cprimitives.hpp"
 using namespace EE::Graphics;
