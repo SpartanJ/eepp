@@ -22,7 +22,8 @@ class EE_API cUIMenu : public cUIControlAnim {
 					FontOverColor( 0, 0, 0, 255 ),
 					FontSelectedColor( 0, 0, 0, 255 ),
 					MinWidth( 0 ),
-					MinSpaceForIcons( 0 )
+					MinSpaceForIcons( 0 ),
+					MinRightMargin( 0 )
 				{
 					cUITheme * Theme = cUIThemeManager::instance()->DefaultTheme();
 
@@ -50,10 +51,11 @@ class EE_API cUIMenu : public cUIControlAnim {
 				eeColorA	FontSelectedColor;
 				Uint32		MinWidth;
 				Uint32		MinSpaceForIcons;
+				Uint32		MinRightMargin;
 
 		};
 
-		static void FixMenuPos( eeVector2i& Pos, cUIMenu * Menu );
+		static void FixMenuPos( eeVector2i& Pos, cUIMenu * Menu, cUIMenu * Parent = NULL, cUIMenuSubMenu * SubMenu = NULL );
 
 		cUIMenu( cUIMenu::CreateParams& Params );
 
@@ -92,6 +94,8 @@ class EE_API cUIMenu : public cUIControlAnim {
 		virtual bool Show();
 
 		virtual bool Hide();
+
+		const eeRecti& Padding() const;
 	protected:
 		friend class cUIMenuItem;
 		friend class cUIMenuCheckBox;
@@ -106,6 +110,7 @@ class EE_API cUIMenu : public cUIControlAnim {
 		eeColorA			mFontSelectedColor;
 		Uint32				mMinWidth;
 		Uint32				mMinSpaceForIcons;
+		Uint32				mMinRightMargin;
 		Uint32				mMaxWidth;
 		Uint32				mRowHeight;
 		Uint32				mNextPosY;

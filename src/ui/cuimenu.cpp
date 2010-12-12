@@ -13,6 +13,7 @@ cUIMenu::cUIMenu( cUIMenu::CreateParams& Params ) :
 	mFontSelectedColor( Params.FontSelectedColor ),
 	mMinWidth( Params.MinWidth ),
 	mMinSpaceForIcons( Params.MinSpaceForIcons ),
+	mMinRightMargin( Params.MinRightMargin ),
 	mMaxWidth( 0 ),
 	mRowHeight( Params.RowHeight ),
 	mNextPosY( 0 ),
@@ -131,8 +132,8 @@ bool cUIMenu::CheckControlSize( cUIControl * Control, const bool& Resize ) {
 			if ( Control->IsType( UI_TYPE_MENUSUBMENU ) ) {
 				cUIMenuSubMenu * tMenu = reinterpret_cast<cUIMenuSubMenu*> ( tItem );
 
-				if ( tMenu->TextBox()->GetTextWidth() + mBiggestIcon + tMenu->Arrow()->Size().Width() > (Int32)mMaxWidth - mPadding.Left - mPadding.Right ) {
-					mMaxWidth = tMenu->TextBox()->GetTextWidth() + mBiggestIcon + mPadding.Left + mPadding.Right + tMenu->Arrow()->Size().Width();
+				if ( tMenu->TextBox()->GetTextWidth() + mBiggestIcon + tMenu->Arrow()->Size().Width() + mMinRightMargin > (Int32)mMaxWidth - mPadding.Left - mPadding.Right ) {
+					mMaxWidth = tMenu->TextBox()->GetTextWidth() + mBiggestIcon + mPadding.Left + mPadding.Right + tMenu->Arrow()->Size().Width() + mMinRightMargin;
 
 					if ( Resize ) {
 						ResizeControls();
@@ -142,8 +143,8 @@ bool cUIMenu::CheckControlSize( cUIControl * Control, const bool& Resize ) {
 				}
 			}
 			else {
-				if ( tItem->TextBox()->GetTextWidth() + mBiggestIcon > (Int32)mMaxWidth - mPadding.Left - mPadding.Right ) {
-					mMaxWidth = tItem->TextBox()->GetTextWidth() + mBiggestIcon + mPadding.Left + mPadding.Right;
+				if ( tItem->TextBox()->GetTextWidth() + mBiggestIcon + mMinRightMargin > (Int32)mMaxWidth - mPadding.Left - mPadding.Right ) {
+					mMaxWidth = tItem->TextBox()->GetTextWidth() + mBiggestIcon + mPadding.Left + mPadding.Right + mMinRightMargin;
 
 					if ( Resize ) {
 						ResizeControls();
@@ -527,24 +528,72 @@ Uint32 cUIMenu::OnKeyDown( const cUIEventKey& Event ) {
 	return 1;
 }
 
-void cUIMenu::FixMenuPos( eeVector2i& Pos, cUIMenu * Menu ) {
+const eeRecti& cUIMenu::Padding() const {
+	return mPadding;
+}
+
+void cUIMenu::FixMenuPos( eeVector2i& Pos, cUIMenu * Menu, cUIMenu * Parent, cUIMenuSubMenu * SubMenu ) {
 	eeAABB qScreen( 0.f, 0.f, cUIManager::instance()->MainControl()->Size().Width(), cUIManager::instance()->MainControl()->Size().Height() );
 	eeAABB qPos( Pos.x, Pos.y, Pos.x + Menu->Size().Width(), Pos.y + Menu->Size().Height() );
 
-	if ( !qScreen.Contains( qPos ) ) {
-		Pos.y		-= Menu->Size().Height();
-		qPos.Top	-= Menu->Size().Height();
-		qPos.Bottom	-= Menu->Size().Height();
+	if ( NULL != Parent && NULL != SubMenu ) {
+		eeVector2i addToPos( 0, 0 );
+
+		if ( NULL != SubMenu ) {
+			addToPos.y = SubMenu->Size().Height();
+		}
+
+		eeVector2i sPos = SubMenu->Pos();
+		SubMenu->ControlToScreen( sPos );
+
+		eeVector2i pPos = Parent->Pos();
+		Parent->ControlToScreen( pPos );
+
+		eeAABB qParent( pPos.x, pPos.y, pPos.x + Parent->Size().Width(), pPos.y + Parent->Size().Height() );
+
+		Pos.x		= qParent.Right;
+		Pos.y		= sPos.y;
+		qPos.Left	= Pos.x;
+		qPos.Right	= qPos.Left + Menu->Size().Width();
+		qPos.Top	= Pos.y;
+		qPos.Bottom	= qPos.Top + Menu->Size().Height();
 
 		if ( !qScreen.Contains( qPos ) ) {
-			Pos.x		-= Menu->Size().Width();
-			qPos.Left	-= Menu->Size().Width();
-			qPos.Right	-= Menu->Size().Width();
+			Pos.y		= sPos.y + SubMenu->Size().Height() - Menu->Size().Height();
+			qPos.Top	= Pos.y;
+			qPos.Bottom	= qPos.Top + Menu->Size().Height();
 
 			if ( !qScreen.Contains( qPos ) ) {
-				Pos.y		+= Menu->Size().Height() * 2;
-				//qPos.Top	+= Menu->Size().Height() * 2;
-				//qPos.Bottom	+= Menu->Size().Height() * 2;
+				Pos.x 		= qParent.Left - Menu->Size().Width();
+				Pos.y 		= sPos.y;
+				qPos.Left	= Pos.x;
+				qPos.Right	= qPos.Left + Menu->Size().Width();
+				qPos.Top	= Pos.y;
+				qPos.Bottom	= qPos.Top + Menu->Size().Height();
+
+				if ( !qScreen.Contains( qPos ) ) {
+					Pos.y		= sPos.y + SubMenu->Size().Height() - Menu->Size().Height();
+					qPos.Top	= Pos.y;
+					qPos.Bottom	= qPos.Top + Menu->Size().Height();
+				}
+			}
+		}
+	} else {
+		if ( !qScreen.Contains( qPos ) ) {
+			Pos.y		-= Menu->Size().Height();
+			qPos.Top	-= Menu->Size().Height();
+			qPos.Bottom	-= Menu->Size().Height();
+
+			if ( !qScreen.Contains( qPos ) ) {
+				Pos.x		-= Menu->Size().Width();
+				qPos.Left	-= Menu->Size().Width();
+				qPos.Right	-= Menu->Size().Width();
+
+				if ( !qScreen.Contains( qPos ) ) {
+					Pos.y		+= Menu->Size().Height();
+					qPos.Top	+= Menu->Size().Height();
+					qPos.Bottom	+= Menu->Size().Height();
+				}
 			}
 		}
 	}

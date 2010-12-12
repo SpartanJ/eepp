@@ -26,7 +26,7 @@ cUIControlAnim::~cUIControlAnim() {
 
 
 void cUIControlAnim::Draw() {
-	if ( mVisible ) {
+	if ( mVisible && 0.f != mAlpha ) {
 		if ( mFlags & UI_FILL_BACKGROUND )
 			BackgroundDraw();
 

@@ -97,9 +97,9 @@ void cUIMenuSubMenu::ShowSubMenu() {
 
 	eeVector2i Pos = this->Pos();
 	ControlToScreen( Pos );
-	Pos.x += mSize.Width();
+	Pos.x += mSize.Width() + reinterpret_cast<cUIMenu*> ( Parent() )->Padding().Right;
 
-	cUIMenu::FixMenuPos( Pos, mSubMenu );
+	cUIMenu::FixMenuPos( Pos, mSubMenu, reinterpret_cast<cUIMenu*> ( Parent() ), this );
 
 	mSubMenu->Parent()->ScreenToControl( Pos );
 	mSubMenu->Pos( Pos );

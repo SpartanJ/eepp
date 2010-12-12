@@ -38,7 +38,7 @@ void cUIGfx::Draw() {
 	cUIControlAnim::Draw();
 
 	if ( mVisible ) {
-		if ( NULL != mShape )
+		if ( NULL != mShape && 0.f != mAlpha )
 			mShape->Draw( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, mColor, 0.f, 1.f, mBlend, mRender );
 	}
 }

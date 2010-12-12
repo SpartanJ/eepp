@@ -29,7 +29,7 @@ void cUISprite::Draw() {
 	cUIControlAnim::Draw();
 
 	if ( mVisible ) {
-		if ( NULL != mSprite ) {
+		if ( NULL != mSprite && 0.f != mAlpha ) {
 			UpdateSize();
 			mSprite->UpdatePos( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y );
 			mSprite->Draw( mBlend, mRender );

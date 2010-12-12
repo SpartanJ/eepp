@@ -194,12 +194,14 @@ class cEETest : private cThread {
 		cFrameBuffer * mFB;
 		cVertexBuffer * mVBO;
 
+		void ItemClick( const cUIEvent * Event );
 		void MainClick( const cUIEvent * Event );
 		void QuitClick( const cUIEvent * Event );
 		void ButtonClick( const cUIEvent * Event );
 		void OnValueChange( const cUIEvent * Event );
 		void CreateAquaTextureAtlas();
 
+		cUIControlAnim * C;
 		cUIScrollBar * mScrollBar;
 		cUITextBox * mTextBoxValue;
 		cUISlider * mSlider;
@@ -401,7 +403,7 @@ void cEETest::CreateUI() {
 	Params.Border.Width( 2 );
 	Params.Border.Color( 0xFF979797 );
 	Params.Background.Colors( eeColorA( 0x66EDEDED ), eeColorA( 0xCCEDEDED ), eeColorA( 0xCCEDEDED ), eeColorA( 0x66EDEDED ) );
-	cUIControlAnim * C = eeNew( cUITest, ( Params ) );
+	C = eeNew( cUITest, ( Params ) );
 	C->Visible( true );
 	C->Enabled( true );
 	C->Pos( 320, 240 );
@@ -624,14 +626,18 @@ void cEETest::CreateUI() {
 	MenuParams.MinSpaceForIcons = 16;
 	MenuParams.PosSet( 0, 0 );
 	MenuParams.FontSelectedColor = eeColorA( 255, 255, 255, 255 );
+	MenuParams.MinRightMargin = 8;
 	Menu = eeNew( cUIPopUpMenu, ( MenuParams ) );
 	Menu->Add( L"New", cGlobalShapeGroup::instance()->GetByName( "aqua_button_ok" ) );
 	Menu->Add( L"Open..." );
 	Menu->AddSeparator();
-	Menu->Add( L"Save" );
-	Menu->Add( L"Save As..." );
-	Menu->Add( L"Save All" );
-	Menu->AddCheckBox( L"Check Me" );
+	Menu->Add( L"Show Screen 1" );
+	Menu->Add( L"Show Screen 2" );
+	Menu->Add( L"Show Screen 3" );
+	Menu->AddSeparator();
+	Menu->AddCheckBox( L"Show Window" );
+	Menu->AddCheckBox( L"Multi Viewport" );
+	reinterpret_cast<cUIMenuCheckBox*> ( Menu->GetItem( L"Show Window" ) )->Active( true );
 
 	cUIPopUpMenu * Menu3 = eeNew( cUIPopUpMenu, ( MenuParams ) );
 	Menu3->Add( L"Hello World 1" );
@@ -646,11 +652,13 @@ void cEETest::CreateUI() {
 	Menu2->Add( L"Test 4" );
 	Menu2->AddSubMenu( L"Hello World", NULL, Menu3 );
 
+	Menu->AddSeparator();
 	Menu->AddSubMenu( L"Teh Menuh", NULL, Menu2 ) ;
 
 	Menu->AddSeparator();
 	Menu->Add( L"Quit" );
 
+	Menu->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cEETest::ItemClick ) );
 	Menu->GetItem( L"Quit" )->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::QuitClick ) );
 	cUIManager::instance()->MainControl()->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::MainClick ) );
 
@@ -664,6 +672,33 @@ void cEETest::CreateUI() {
 	mEEText.Create( TTFB, L"Entropia Engine++\nCTRL + 1 = Screen 1 - CTRL + 2 = Screen 2\nCTRL + 3 = Screen 3" );
 	mFBOText.Create( TTFB, L"This is a VBO\nInside of a FBO" );
 	mInfoText.Create( FF, L"", eeColorA(255,255,255,150) );
+}
+
+void cEETest::ItemClick( const cUIEvent * Event ) {
+	if ( !Event->Ctrl()->IsType( UI_TYPE_MENUITEM ) )
+		return;
+
+	const std::wstring& txt = reinterpret_cast<cUIMenuItem*> ( Event->Ctrl() )->Text();
+
+	if ( L"Show Screen 1" == txt ) {
+		Screen = 0;
+	} else if ( L"Show Screen 2" == txt ) {
+		Screen = 1;
+	} else if ( L"Show Screen 3" == txt ) {
+		Screen = 2;
+	} else if ( L"Show Window" == txt ) {
+		cUIMenuCheckBox * Chk = reinterpret_cast<cUIMenuCheckBox*> ( Event->Ctrl() );
+
+		if ( !Chk->Active() ) {
+			C->StartScaleAnim( C->Scale(), 1.f, 500.f, SINEOUT );
+			C->StartAlphaAnim( C->Alpha(), 255.f, 500.f );
+		} else {
+			C->StartScaleAnim( C->Scale(), 0.f, 500.f, SINEIN );
+			C->StartAlphaAnim( C->Alpha(), 0.f, 500.f );
+		}
+	} else if ( L"Multi Viewport" == txt ) {
+		MultiViewportMode = !MultiViewportMode;
+	}
 }
 
 void cEETest::OnValueChange( const cUIEvent * Event ) {

@@ -32,7 +32,7 @@ cUITextBox::~cUITextBox() {
 }
 
 void cUITextBox::Draw() {
-	if ( mVisible ) {
+	if ( mVisible && 0.f != mAlpha ) {
 		cUIControlAnim::Draw();
 
 		if ( mTextCache->GetTextWidth() ) {

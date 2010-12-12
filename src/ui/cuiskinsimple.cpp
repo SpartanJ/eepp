@@ -16,6 +16,9 @@ cUISkinSimple::~cUISkinSimple() {
 }
 
 void cUISkinSimple::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Width, const eeFloat& Height, const Uint32& Alpha, const Uint32& State ) {
+	if ( 0 == Alpha )
+		return;
+
 	cShape * tShape = mShape[ State ];
 	mTempColor		= mColor[ State ];
 

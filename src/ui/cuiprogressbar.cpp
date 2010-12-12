@@ -35,7 +35,7 @@ cUIProgressBar::~cUIProgressBar() {
 void cUIProgressBar::Draw() {
 	cUIControlAnim::Draw();
 
-	if ( NULL != mParallax ) {
+	if ( NULL != mParallax && 0.f != mAlpha ) {
 		mParallax->Position( eeVector2f( mScreenPos.x + mFillerMargin.Left, mScreenPos.y + mFillerMargin.Top ) );
 		mParallax->Draw();
 	}

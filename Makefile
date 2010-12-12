@@ -49,6 +49,18 @@ export DESTINCDIR 	= $(DESTDIR)/include
 STRLOWERCASE 		= $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(subst F,f,$(subst G,g,$(subst H,h,$(subst I,i,$(subst J,j,$(subst K,k,$(subst L,l,$(subst M,m,$(subst N,n,$(subst O,o,$(subst P,p,$(subst Q,q,$(subst R,r,$(subst S,s,$(subst T,t,$(subst U,u,$(subst V,v,$(subst W,w,$(subst X,x,$(subst Y,y,$(subst Z,z,$1))))))))))))))))))))))))))
 OS 					= $(strip $(call STRLOWERCASE, $(shell uname) ) )
 
+ifeq ($(OS), linux)
+LIBS 		= -lfreetype -lSDL -lsndfile -lopenal -lGL -lGLU
+LIBSIV 		= -lX11 -lXcursor
+OTHERINC	= -I/usr/include/freetype2
+else
+ifeq ($(OS), darwin)
+LIBS 		= -lfreetype -lSDL -lSDLmain -lsndfile -framework OpenGL -framework GLUT -framework OpenAL -framework Cocoa -framework CoreFoundation
+LIBSIV 		= 
+OTHERINC	= -I/usr/include/freetype2
+endif
+endif
+
 EXE     			= eetest-$(RELEASETYPE)
 EXEIV				= eeiv-$(RELEASETYPE)
 
@@ -140,32 +152,32 @@ dirs:
 lib: dirs $(LIB)
 
 $(FOBJMODULES):
-	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) -I/usr/include/freetype2
-	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) -I/usr/include/freetype2 > $(patsubst %.o,%.d,$@)
+	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
+	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
 
 $(FOBJHELPERS):
 	$(CC) -o $@ -c $(patsubst $(OBJDIR)%.o,%.c,$@) $(CFLAGSEXT) -DSTBI_FAILURE_USERMSG
 	@$(CC) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.c,$@)  -DSTBI_FAILURE_USERMSG > $(patsubst %.o,%.d,$@)
 
 $(FOBJTEST):
-	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) -I/usr/include/freetype2
-	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) -I/usr/include/freetype2 > $(patsubst %.o,%.d,$@)
+	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
+	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
 
 $(FOBJEEIV):
-	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) -I/usr/include/freetype2
-	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) -I/usr/include/freetype2 > $(patsubst %.o,%.d,$@)
+	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
+	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
 
 $(EXEIV): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJEEIV)
-	$(CPP) -o ./$(EXEIV) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJEEIV) $(LDFLAGS) -lfreetype -lSDL -lsndfile -lopenal -lGL -lGLU -lX11 -lXcursor
+	$(CPP) -o ./$(EXEIV) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJEEIV) $(LDFLAGS) $(LIBS) $(LIBSIV)
 
 $(EXE): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJTEST)
-	$(CPP) -o ./$(EXE) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJTEST) $(LDFLAGS) -lfreetype -lSDL -lsndfile -lopenal -lGL -lGLU
+	$(CPP) -o ./$(EXE) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJTEST) $(LDFLAGS) $(LIBS)
 
 libeepp-s.a: $(FOBJHELPERS) $(FOBJMODULES)
 	$(AR) $(ARFLAGS) $(LIBNAME) $(FOBJHELPERS) $(FOBJMODULES)
 
 libeepp.so: $(FOBJHELPERS) $(FOBJMODULES)
-	$(CPP) $(LDFLAGS) -Wl,-soname,$(LIB).$(VERSION) -o $(LIBNAME) $(FOBJHELPERS) $(FOBJMODULES) -lfreetype -lSDL -lsndfile -lopenal -lGL -lGLU
+	$(CPP) $(LDFLAGS) -Wl,-soname,$(LIB).$(VERSION) -o $(LIBNAME) $(FOBJHELPERS) $(FOBJMODULES) $(LIBS)
 
 os:
 	@echo $(OS)
