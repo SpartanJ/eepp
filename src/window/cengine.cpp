@@ -12,6 +12,7 @@
 #include "../audio/caudiolistener.hpp"
 #include "../graphics/glhelper.hpp"
 #include "../helper/haikuttf/hkfontmanager.hpp"
+#include "../helper/SOIL/stb_image.h"
 
 using namespace EE::Graphics;
 using namespace EE::Graphics::Private;
@@ -143,6 +144,12 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 			return false;
 		}
 
+		if ( "" != mIcon ) {
+			mInit = true;
+			SetIcon( mIcon );
+			mInit = false;
+		}
+
 		mVideoInfo.Flags = SDL_OPENGL | SDL_HWPALETTE;
 		const SDL_VideoInfo* videoInfo = SDL_GetVideoInfo();
 
@@ -235,7 +242,9 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 		SetWindowCaption("EEPP");
 
 		cLog::instance()->Write( "Engine Initialized Succesfully.\nGL Vendor: " + GetVendor() + "\nGL Renderer: " + GetRenderer() + "\nGL Version: " + GetVersion() );
+
 		mInit = true;
+
 		return true;
 	} catch (...) {
 		cLog::instance()->Write( "Error on cEngine::Init" );
@@ -618,17 +627,29 @@ void cEngine::SetCursor( const Uint32& TexId, const eeVector2i& HotSpot ) {
 		SDL_SetCursor( mCursor );
 }
 
-bool cEngine::SetIcon( const Uint32& FromTexId ) {
-	cTexture* Tex = cTextureFactory::instance()->GetTexture( FromTexId );
+bool cEngine::SetIcon( const std::string& Path ) {
+	int x, y, c;
 
-	if ( NULL != Tex ) {
-		Int32 W = static_cast<Int32>( Tex->Width() );
-		Int32 H = static_cast<Int32>( Tex->Height() );
+	if ( !FileExists( Path  ) )
+		return false;
+
+	if ( !mInit ) {
+		if ( stbi_info( Path.c_str(), &x, &y, &c ) ) {
+			mIcon 	= Path;
+
+			return true;
+		}
+
+		return false;
+	}
+
+	unsigned char * Ptr = stbi_load( Path.c_str(), &x, &y, &c, 0 );
+
+	if ( NULL != Ptr ) {
+		Int32 W = x;
+		Int32 H = y;
 
 		if ( ( W  % 8 ) == 0 && ( H % 8 ) == 0 ) {
-			Tex->Lock();
-			const Uint8* Ptr = Tex->GetPixelsPtr();
-
 			Uint32 rmask, gmask, bmask, amask;
 			#if SDL_BYTEORDER == SDL_BIG_ENDIAN
 				rmask = 0xff000000;
@@ -641,25 +662,30 @@ bool cEngine::SetIcon( const Uint32& FromTexId ) {
 				bmask = 0x00ff0000;
 				amask = 0xff000000;
 			#endif
-			SDL_Surface* TempGlyphSheet = SDL_CreateRGBSurface(SDL_SWSURFACE, W, H, 32, rmask, gmask, bmask, amask);
-			SDL_LockSurface(TempGlyphSheet);
+			SDL_Surface* TempGlyphSheet = SDL_CreateRGBSurface(SDL_SWSURFACE, W, H, c * 8, rmask, gmask, bmask, amask);
 
-			Uint32 ssize = TempGlyphSheet->w * TempGlyphSheet->h * 4;
-			for (Uint32 i=0; i<ssize; i++) {
-				(static_cast<Uint8*>(TempGlyphSheet->pixels))[i+0] = (Ptr)[i];
+			SDL_LockSurface( TempGlyphSheet );
+
+			Uint32 ssize = TempGlyphSheet->w * TempGlyphSheet->h * c;
+
+			for ( Uint32 i=0; i < ssize; i++ ) {
+				( static_cast<Uint8*>( TempGlyphSheet->pixels ) )[i+0] = (Ptr)[i];
 			}
 
-			SDL_UnlockSurface(TempGlyphSheet);
+			SDL_UnlockSurface( TempGlyphSheet );
 
-			Tex->Unlock();
+			SDL_WM_SetIcon( TempGlyphSheet, NULL );
 
-			SDL_WM_SetIcon(TempGlyphSheet, NULL);
+			SDL_FreeSurface( TempGlyphSheet );
 
-			SDL_FreeSurface(TempGlyphSheet);
+			free( Ptr );
 
 			return true;
 		}
+
+		free( Ptr );
 	}
+
 	return false;
 }
 

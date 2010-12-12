@@ -127,7 +127,7 @@ class EE_API cEngine : public tSingleton<cEngine> {
 		void SetCursor( const Uint32& TexId, const eeVector2i& HotSpot = eeVector2i() );
 
 		/** Set the Window icon */
-		bool SetIcon( const Uint32& FromTexId );
+		bool SetIcon( const std::string& Path );
 
 		/** This will attempt to iconify/minimize the window. */
 		void MinimizeWindow();
@@ -283,6 +283,8 @@ class EE_API cEngine : public tSingleton<cEngine> {
 		#elif EE_PLATFORM == EE_PLATFORM_MACOSX
 		//AGLContext	mContext;
 		#endif
+
+		std::string		mIcon;
 
 		void CalculateFps();
 		void LimitFps();
