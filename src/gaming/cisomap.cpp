@@ -84,7 +84,7 @@ cIsoTile& cIsoMap::Tile( const eeUint& MapTileX, const eeUint& MapTileY ) {
 	return Map[ MapTileX + MapTileY * MapWidth ];
 }
 
-void cIsoMap::Layer( const eeUint& MapTileX, const eeUint& MapTileY, const eeUint& LayerNum, const eeUint& LayerData ) {
+void cIsoMap::Layer( const eeUint& MapTileX, const eeUint& MapTileY, const eeUint& LayerNum, cShape * LayerData ) {
 	if( LayerNum < MapLayers )
 		Tile(MapTileX, MapTileY).Layers[LayerNum] = LayerData;
 }
@@ -122,10 +122,9 @@ void cIsoMap::Draw() {
 	Tx2 = ( Tx + TilesRange + (eeInt)( EE->GetWidth() / (eeFloat)TileHeight ) + TilesRange );
 	Ty2 = ( Ty + TilesRange + (eeInt)(EE->GetHeight() / (eeFloat)TileHeight) + TilesRange );
 
-	eeFloat TexCoords[8] = { 0, 0, 0, 1, 1, 1, 1, 0 };
-
 	eeColorA SC(50,50,50,100);
 
+	cGlobalBatchRenderer::instance()->Draw();
 	glLoadIdentity();
 	glPushMatrix();
 	glTranslatef( OffsetX, OffsetY, 0.0f );
@@ -148,17 +147,7 @@ void cIsoMap::Draw() {
 							T->Color[3] = Light.ProcessVertex( T->Q.V[3].x, T->Q.V[3].y, T->Color[3], T->Color[3] );	// Right - Top Vertex
 						}
 
-						TF->Bind( T->Layers[L] );
-
-						glColorPointer( 3, GL_UNSIGNED_BYTE, 0, reinterpret_cast<char*>( T ) );
-						glVertexPointer( 2, GL_FLOAT, 0, reinterpret_cast<char*>( T ) + sizeof(eeColor) * 4 );
-						glTexCoordPointer( 2, GL_FLOAT, 0, reinterpret_cast<char*>( &TexCoords[0] ) );
-
-						#ifndef EE_GLES
-						glDrawArrays( GL_QUADS, 0, 4 );
-						#else
-						glDrawElements( GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_BYTE, EE_GLES_INDICES );
-						#endif
+						T->Layers[L]->Draw( T->Q, 0.f, 0.f, 0.f, 1.f, T->Color[0], T->Color[1], T->Color[2], T->Color[3] );
 
 						if ( TileAABB.Contains( MouseMapPos ) ) {
 							if ( IntersectQuad2( T->Q, eeQuad2f( MouseMapPos, MouseMapPos, MouseMapPos, MouseMapPos ) ) ) {
@@ -168,33 +157,31 @@ void cIsoMap::Draw() {
 						}
 					}
 				} else {
-					if ( T->Layers[L] > 0 ) {
-						cTexture * Tex = TF->GetTexture( T->Layers[L] );
+					if ( T->Layers[L] != NULL ) {
+						cShape * Shape = T->Layers[L];
 
 						if ( T != NULL ) {
 							eeVector2f TileCenter( T->Q.V[1].x + (T->Q.V[3].x - T->Q.V[1].x) * 0.5f, T->Q.V[0].y + (T->Q.V[2].y - T->Q.V[0].y) * 0.5f );
-							eeVector2f ObjPos( TileCenter.x - Tex->ImgWidth() * 0.5f, TileCenter.y - Tex->ImgHeight() * 0.80f );
+							eeVector2f ObjPos( TileCenter.x - Shape->DestWidth() * 0.5f, TileCenter.y - Shape->DestHeight() * 0.80f );
 
-							eeAABB LayerAABB( TileCenter.x - Tex->Width() * 0.5f, TileCenter.y - Tex->Height(), TileCenter.x + Tex->Width() * 0.5f, TileCenter.y  );
-							eeAABB ShadowAABB( ObjPos.x, TileCenter.y - Tex->ImgHeight(), TileCenter.x + Tex->ImgWidth(), TileCenter.y );
+							eeAABB LayerAABB( TileCenter.x - Shape->DestWidth() * 0.5f, TileCenter.y - Shape->DestHeight(), TileCenter.x + Shape->DestWidth() * 0.5f, TileCenter.y  );
+							eeAABB ShadowAABB( ObjPos.x, TileCenter.y - Shape->DestHeight(), TileCenter.x + Shape->DestWidth(), TileCenter.y );
 
-							if ( Intersect( ScreenAABB, ShadowAABB ) ) {
-								//AABB ShadowAABB_RECT( OffsetX + ObjPos.x, OffsetY + TileCenter.y - Tex->Height(), OffsetX + TileCenter.x + Tex->Width(), OffsetY + TileCenter.y );
-								//PR.DrawRectangle( ShadowAABB_RECT, 0, 1, EE_DRAW_LINE );
-								Tex->DrawEx( OffsetX + ObjPos.x, OffsetY + ObjPos.y, (eeFloat)Tex->ImgWidth(), (eeFloat)Tex->ImgHeight(), 0, 1, SC, SC, SC, SC, ALPHA_NORMAL, RN_ISOMETRIC );
-							}
+							if ( Intersect( ScreenAABB, ShadowAABB ) )
+								Shape->Draw( OffsetX + ObjPos.x, OffsetY + ObjPos.y, 0, 1, SC, SC, SC, SC, ALPHA_NORMAL, RN_ISOMETRIC );
 
-							if ( Intersect( ScreenAABB, LayerAABB )  ) {
-								Tex->DrawEx( OffsetX + TileCenter.x - (eeFloat)Tex->ImgWidth() * 0.5f, OffsetY + TileCenter.y - (eeFloat)Tex->ImgHeight(), (eeFloat)Tex->ImgWidth(), (eeFloat)Tex->ImgHeight(), 0, 1, eeColorA(T->Color[0]), eeColorA(T->Color[1]), eeColorA(T->Color[2]), eeColorA(T->Color[3]) );
-							}
+							if ( Intersect( ScreenAABB, LayerAABB )  )
+								Shape->Draw( OffsetX + TileCenter.x - (eeFloat)Shape->DestWidth() * 0.5f, OffsetY + TileCenter.y - (eeFloat)Shape->DestHeight(), 0, 1, eeColorA(T->Color[0]), eeColorA(T->Color[1]), eeColorA(T->Color[2]), eeColorA(T->Color[3]) );
 						}
 					}
 				}
 			}
 		}
 
-		if ( L == 0 )
+		if ( L == 0 ) {
+			cGlobalBatchRenderer::instance()->Draw();
 			glPopMatrix();
+		}
 	}
 
 	if ( DrawFont ) {

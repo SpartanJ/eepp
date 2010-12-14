@@ -550,11 +550,13 @@ void cEngine::SetPolygonMode( const EE_FILL_MODE& Mode ) {
 }
 
 void cEngine::ClipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
+	cGlobalBatchRenderer::instance()->Draw();
 	glScissor( x, GetHeight() - Height - y, Width, Height );
 	glEnable( GL_SCISSOR_TEST );
 }
 
 void cEngine::ClipDisable() {
+	cGlobalBatchRenderer::instance()->Draw();
 	glDisable( GL_SCISSOR_TEST );
 }
 
@@ -1068,6 +1070,8 @@ void cEngine::SetDefaultContext() {
 }
 
 void cEngine::ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
+	cGlobalBatchRenderer::instance()->Draw();
+
 	GLdouble tX = (GLdouble)x;
 	GLdouble tY = (GLdouble)y;
 	GLdouble tW = (GLdouble)Width;
@@ -1090,6 +1094,8 @@ void cEngine::ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Widt
 }
 
 void cEngine::ClipPlaneDisable() {
+	cGlobalBatchRenderer::instance()->Draw();
+
 	glDisable(GL_CLIP_PLANE0);
 	glDisable(GL_CLIP_PLANE1);
 	glDisable(GL_CLIP_PLANE2);

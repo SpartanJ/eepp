@@ -151,6 +151,8 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 	eeUint Line = 0;
 	eeUint numvert = 0;
 
+	cGlobalBatchRenderer::instance()->Draw();
+
 	if ( Angle != 0.0f || Scale != 1.0f ) {
 		glLoadIdentity();
 		glPushMatrix();
@@ -339,6 +341,8 @@ void cFont::SubDraw( const std::wstring& Text, const eeFloat& X, const eeFloat& 
 	Int16 Char = 0;
 	eeUint Line = 0;
 	eeUint numvert = 0;
+
+	cGlobalBatchRenderer::instance()->Draw();
 
 	if ( Angle != 0.0f || Scale != 1.0f ) {
 		glLoadIdentity();

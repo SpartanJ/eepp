@@ -71,9 +71,9 @@ eeColorA cImage::GetPixel( const eeUint& x, const eeUint& y ) {
 
 	eeUint Pos = ( x + y * mWidth ) * mChannels;
 
-	if ( 4 == mChannels )
+	if ( 4 == mChannels ) {
 		return eeColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], mPixels[ Pos + 2 ], mPixels[ Pos + 3 ] );
-	else if ( 3 == mChannels )
+	} else if ( 3 == mChannels )
 		return eeColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], mPixels[ Pos + 2 ], 255 );
 	else if ( 2 == mChannels )
 		return eeColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], 255, 255 );
@@ -110,6 +110,9 @@ void cImage::Allocate( const Uint32& size ) {
 	ClearCache();
 
 	mPixels = eeNewArray( unsigned char, size );
+
+	memset( mPixels, 0, size );
+
 	mSize 	= size;
 }
 

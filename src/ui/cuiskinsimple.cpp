@@ -1,5 +1,6 @@
 #include "cuiskinsimple.hpp"
 #include "../graphics/cshapegroupmanager.hpp"
+#include "../graphics/cglobalbatchrenderer.hpp"
 
 namespace EE { namespace UI {
 

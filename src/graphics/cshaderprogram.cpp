@@ -1,5 +1,6 @@
 #include "cshaderprogram.hpp"
 #include "cshaderprogrammanager.hpp"
+#include "cglobalbatchrenderer.hpp"
 #include "glhelper.hpp"
 
 using namespace EE::Graphics::Private;
@@ -183,10 +184,12 @@ bool cShaderProgram::Link() {
 }
 
 void cShaderProgram::Bind() const {
+	cGlobalBatchRenderer::instance()->Draw();
 	glUseProgram( Handler() );
 }
 
 void cShaderProgram::Unbind() const {
+	cGlobalBatchRenderer::instance()->Draw();
 	glUseProgram( 0 );
 }
 

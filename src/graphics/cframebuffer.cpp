@@ -1,5 +1,6 @@
 #include "cframebuffer.hpp"
 #include "ctexturefactory.hpp"
+#include "cglobalbatchrenderer.hpp"
 #include "../window/cengine.hpp"
 #include "cframebufferfbo.hpp"
 #include "cframebufferpbuffer.hpp"
@@ -54,6 +55,8 @@ void cFrameBuffer::Clear() {
 }
 
 void cFrameBuffer::SetBufferView() {
+	cGlobalBatchRenderer::instance()->Draw();
+
 	mPrevView = Window::cEngine::instance()->GetView();
 
 	glMatrixMode( GL_PROJECTION );
@@ -65,6 +68,8 @@ void cFrameBuffer::SetBufferView() {
 }
 
 void cFrameBuffer::RecoverView() {
+	cGlobalBatchRenderer::instance()->Draw();
+
 	cEngine::instance()->SetView( mPrevView );
 }
 

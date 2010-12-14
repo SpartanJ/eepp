@@ -96,7 +96,7 @@ cInput::cInput() :
 	mLastButtonLeftClick(0), 		mLastButtonRightClick(0), 		mLastButtonMiddleClick(0),
 	mTClick(0), mVRCall(), mNumCallBacks(0), mInputGrabed(false),
 	#if EE_PLATFORM == EE_PLATFORM_LINUX
-	mMouseSpeed(2.0f)
+	mMouseSpeed(1.75f)
 	#else
 	mMouseSpeed(1.0f)
 	#endif

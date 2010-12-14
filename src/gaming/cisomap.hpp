@@ -10,7 +10,7 @@ class EE_API cIsoTile {
 	public:
 		eeColor Color[4];	//! Color of every vertex stored
 		eeQuad2f Q; 			//! Vertex Buffer Data
-		std::vector<eeUint> Layers;
+		std::vector<cShape*> Layers;
 		std::wstring TilePosStr;
 		eeAABB Box;
 };
@@ -22,7 +22,7 @@ class EE_API cIsoMap{
 
 		void Create( const eeUint& MapTilesX, const eeUint& MapTilesY, const eeUint& NumLayers = 1, const eeUint TilesWidth = 64, const eeUint TilesHeight = 32, const eeColor& AmbientCol = eeColor(255,255,255) );
 		cIsoTile& Tile( const eeUint& MapTileX, const eeUint& MapTileY );
-		void Layer( const eeUint& MapTileX, const eeUint& MapTileY, const eeUint& LayerNum, const eeUint& LayerData );
+		void Layer( const eeUint& MapTileX, const eeUint& MapTileY, const eeUint& LayerNum, cShape * LayerData );
 		void Draw();
 		void Move( const eeFloat& offsetx, const eeFloat& offsety );
 

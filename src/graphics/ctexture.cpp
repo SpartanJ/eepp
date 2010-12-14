@@ -568,6 +568,9 @@ void cTexture::DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width,
 
 		BR->BatchQuad( mx, my, iwidth, iheight, Angle );
 	} else {
+		if ( renderdiv )
+			BR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
+
 		eeRectf TmpR( mx, my, mx + iwidth, my + iheight );
 		eeQuad2f Q = eeQuad2f( eeVector2f( TmpR.Left, TmpR.Top ), eeVector2f( TmpR.Left, TmpR.Bottom ), eeVector2f( TmpR.Right, TmpR.Bottom ), eeVector2f( TmpR.Right, TmpR.Top ) );
 

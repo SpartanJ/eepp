@@ -13,7 +13,7 @@ cBatchRenderer::cBatchRenderer() :
 	mScale(1.0f),
 	mPosition(0.0f, 0.0f),
 	mCenter(0.0f, 0.0f),
-	mForceRendering(true),
+	mForceRendering(false),
 	mForceBlendMode(true)
 {
 	AllocVertexs( 1024 );
@@ -29,7 +29,7 @@ cBatchRenderer::cBatchRenderer( const eeUint& Prealloc ) :
 	mScale(1.0f),
 	mPosition(0.0f, 0.0f),
 	mCenter(0.0f, 0.0f),
-	mForceRendering(true),
+	mForceRendering(false),
 	mForceBlendMode(true)
 {
 	AllocVertexs( Prealloc );

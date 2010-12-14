@@ -233,6 +233,8 @@ void cFrameBufferPBuffer::Bind() {
 }
 
 void cFrameBufferPBuffer::Unbind() {
+	RecoverView();
+
 	GLint previousTexture;
 	glGetIntegerv( GL_TEXTURE_BINDING_2D, &previousTexture );
 
@@ -242,7 +244,6 @@ void cFrameBufferPBuffer::Unbind() {
 	glBindTexture( GL_TEXTURE_2D, previousTexture );
 
 	Window::cEngine::instance()->SetDefaultContext();
-	RecoverView();
 }
 
 

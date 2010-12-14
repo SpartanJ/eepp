@@ -169,6 +169,11 @@ void cShape::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, con
 		mTexture->DrawEx( X + mOffSetX, Y + mOffSetY, mDestWidth, mDestHeight, Angle, Scale, Color0, Color1, Color2, Color3, Blend, Effect, ScaleRendered, mSrcRect );
 }
 
+void cShape::Draw( const eeQuad2f Q, const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_PRE_BLEND_FUNC& Blend ) {
+	if ( NULL != mTexture )
+		mTexture->DrawQuadEx( Q, X, Y, Angle, Scale, Color0, Color1, Color2, Color3, Blend, mSrcRect );
+}
+
 cTexture * cShape::GetTexture() {
 	return mTexture;
 }

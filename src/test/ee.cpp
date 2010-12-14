@@ -90,7 +90,7 @@ class cEETest : private cThread {
 		std::vector<Uint32> TN;
 		std::vector<cTexture *> TNP;
 
-		std::vector<Uint32> Tiles;
+		std::vector<cShape*> Tiles;
 
 		eeVector2i Mouse;
 		eeVector2f Mousef;
@@ -215,16 +215,17 @@ class cEETest : private cThread {
 };
 
 void cEETest::CreateAquaTextureAtlas() {
+	std::string tgpath( MyPath + "data/aquatg/aqua" );
 	std::string Path( MyPath + "data/aqua" );
 
-	if ( !FileExists( Path + ".etg" ) ) {
+	if ( !FileExists( tgpath + ".etg" ) ) {
 		cTexturePacker tp( 512, 512, true, 2 );
 		tp.AddTexturesPath( Path );
 		tp.PackTextures();
-		tp.Save( Path + ".png", EE_SAVE_TYPE_PNG );
+		tp.Save( tgpath + ".png", EE_SAVE_TYPE_PNG );
 	} else {
 		cTextureGroupLoader tgl;
-		tgl.UpdateTextureAtlas( Path + ".etg", Path );
+		tgl.UpdateTextureAtlas( tgpath + ".etg", Path );
 	}
 }
 
@@ -378,7 +379,7 @@ void cEETest::CreateShaders() {
 
 	if ( mUseShaders ) {
 		mBlurFactor = 0.01f;
-		mShaderProgram = eeNew( cShaderProgram, ( &PAK, "shader/blur.vert", "shader/blur.frag" ) );
+		mShaderProgram = eeNew( cShaderProgram, ( MyPath + "data/shader/blur.vert", MyPath + "data/shader/blur.frag" ) );
 	}
 }
 
@@ -390,8 +391,8 @@ void cEETest::CreateUI() {
 	//cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
 	CreateAquaTextureAtlas();
 
-	cTextureGroupLoader tgl( MyPath + "data/aqua.etg" );
-	TF->GetByName( "data/aqua.png" )->TextureFilter( TEX_FILTER_NEAREST );
+	cTextureGroupLoader tgl( MyPath + "data/aquatg/aqua.etg" );
+	TF->GetByName( "data/aquatg/aqua.png" )->TextureFilter( TEX_FILTER_NEAREST );
 	cUIThemeManager::instance()->Add( cUITheme::LoadFromShapeGroup( cShapeGroupManager::instance()->GetByName( "aqua" ), "aqua", "aqua" ) );
 
 	cUIThemeManager::instance()->DefaultEffectsEnabled( true );
@@ -428,22 +429,6 @@ void cEETest::CreateUI() {
 	Child2->Enabled( true );
 	Child2->StartRotation( 0.f, 360.f, 5000.f );
 	Child2->AngleInterpolation()->Loop( true );
-
-/*
-	cUIGfx::CreateParams GfxParams;
-	GfxParams.Parent( C );
-	GfxParams.PosSet( 160, 100 );
-	GfxParams.Flags |= UI_CLIP_ENABLE;
-	GfxParams.Size = eeSize( 64, 64 );
-	GfxParams.Shape = cGlobalShapeGroup::instance()->Add( TN[2] );
-	cUIGfx * Gfx = eeNew( cUIGfx, ( GfxParams ) );
-	Gfx->Angle( 45.f );
-	Gfx->Visible( true );
-	Gfx->Enabled( true );
-	Gfx->StartAlphaAnim( 100.f, 255.f, 1000.f );
-	Gfx->AlphaInterpolation()->Loop( true );
-	Gfx->AlphaInterpolation()->SetTotalTime( 1000.f );
-*/
 
 	mBlindyPtr = eeNew( cSprite, () );
 	mBlindyPtr->AddFramesByPattern( "gn" );
@@ -791,18 +776,22 @@ void cEETest::LoadTextures() {
 	TN.resize(12);
 	TNP.resize(12);
 
-	Tiles.resize(10);
-
 	for ( i = 0; i <= 7; i++ ) {
-		TN[i] = TF->LoadFromPack( &PAK, toStr(i+1) + ".png", ( (i+1) == 7 ) ? true : false, eeRGB(true), ( (i+1) == 4 ) ? EE_CLAMP_REPEAT : EE_CLAMP_TO_EDGE );
+		TN[i] = TF->LoadFromPack( &PAK, "t" + toStr(i+1) + ".png", ( (i+1) == 7 ) ? true : false, eeRGB(true), ( (i+1) == 4 ) ? EE_CLAMP_REPEAT : EE_CLAMP_TO_EDGE );
 		TNP[i] = TF->GetTexture( TN[i] );
 	}
 
-	for ( i = 0; i <= 6; i++ ) {
-		Tiles[i] = TF->LoadFromPack( &PAK, "tiles/" + toStr(i+1) + ".png", true );
+	Tiles.resize(10);
+
+	cTextureGroupLoader tgl( &PAK, "tiles.etg" );
+	cShapeGroup * SG = cShapeGroupManager::instance()->GetByName( "tiles" );
+
+	for ( i = 0; i < 6; i++ ) {
+		Tiles[i] = SG->GetByName( toStr( i+1 ) );
 	}
 
-	Tiles[7] = TF->LoadFromPack( &PAK, "tiles/8.png", false, eeRGB(0,0,0) );
+	Tiles[6] = SG->Add( TF->LoadFromPack( &PAK, "objects/1.png" ), "7" );
+	Tiles[7] = SG->Add( TF->LoadFromPack( &PAK, "objects/2.png", false, eeColor(0,0,0) ), "8" );
 
 	eeInt w, h;
 
@@ -986,6 +975,7 @@ void cEETest::Screen2() {
 			Batch.BatchQuadFree( TmpQuad[0].x + tmpx, TmpQuad[0].y + tmpy, TmpQuad[1].x + tmpx, TmpQuad[1].y + tmpy, TmpQuad[2].x + tmpx, TmpQuad[2].y + tmpy, TmpQuad[3].x + tmpx, TmpQuad[3].y + tmpy );
 		}
 	}
+	
 	Batch.Draw();
 
     Batch.BatchRotation( 0.0f );
@@ -1052,9 +1042,11 @@ void cEETest::Screen2() {
 	Ang = Ang + EE->Elapsed() * 0.1f;
 	if (Ang > 360.f) Ang = 1.f;
 
-	if (ShowParticles)
+	if ( ShowParticles )
 		Particles();
+
 	PR.SetColor( eeColorA(0, 255, 0, 50) );
+
 	if (IntersectLines( eeVector2f(0.f, 0.f), eeVector2f( (eeFloat)EE->GetWidth(), (eeFloat)EE->GetHeight() ), eeVector2f(Mousef.x - 80.f, Mousef.y - 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y + 80.f) ) )
 		iL1 = true; else iL1 = false;
 
@@ -1157,7 +1149,6 @@ void cEETest::Render() {
 		EE->ClipDisable();
 	}
 
-
 	eeColorA ColRR1( 150, 150, 150, 220 );
 	eeColorA ColRR4( 150, 150, 150, 220 );
 	eeColorA ColRR2( 100, 100, 100, 220 );
@@ -1209,8 +1200,10 @@ void cEETest::Render() {
 
 		mFB->Unbind();
 
-		if ( NULL != mFB->GetTexture() )
+		if ( NULL != mFB->GetTexture() ) {
 			mFB->GetTexture()->Draw( (eeFloat)EE->GetWidth() - 256.f, 240.f, Ang );
+			cGlobalBatchRenderer::instance()->Draw();
+		}
 	}
 
 	cUIManager::instance()->Update();
@@ -1460,11 +1453,6 @@ void cEETest::End() {
 	Wait();
 
 	Mus.Stop();
-
-	TN.clear();
-	Tiles.clear();
-	tmpv.clear();
-	MySong.clear();
 
 	eeSAFE_DELETE( mTGL );
 	eeSAFE_DELETE( mFB );

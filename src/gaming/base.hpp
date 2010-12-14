@@ -18,6 +18,7 @@ using namespace EE::Window;
 
 #include "../graphics/ctexture.hpp"
 #include "../graphics/ctexturefactory.hpp"
+#include "../graphics/cshape.hpp"
 #include "../graphics/cfont.hpp"
 #include "../graphics/cprimitives.hpp"
 using namespace EE::Graphics;

@@ -118,8 +118,8 @@ void cFrameBufferFBO::Bind() {
 
 void cFrameBufferFBO::Unbind() {
 	if ( mFrameBuffer ) {
-		glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, 0 );
 		RecoverView();
+		glBindFramebufferEXT( GL_FRAMEBUFFER_EXT, 0 );
 	}
 }
 
