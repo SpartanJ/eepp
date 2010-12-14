@@ -52,7 +52,7 @@ std::wstring& cTextCache::Text() {
 }
 
 void cTextCache::UpdateCoords() {
-	Uint32 size = (Uint32)mText.size() * 4;
+	Uint32 size = (Uint32)mText.size() * EE_QUAD_VERTEX;
 	
 	mRenderCoords.resize( size );
 	mColors.resize( size, mFontColor );
@@ -80,7 +80,7 @@ void cTextCache::Color(const eeColorA& Color) {
 	if ( mFontColor != Color ) {
 		mFontColor = Color;
 
-		mColors.assign( mText.size() * 4, mFontColor );
+		mColors.assign( mText.size() * EE_QUAD_VERTEX, mFontColor );
 	}
 }
 

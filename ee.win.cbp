@@ -503,7 +503,7 @@
 		<Unit filename="src\system\ctimer.hpp" />
 		<Unit filename="src\system\czip.cpp" />
 		<Unit filename="src\system\czip.hpp" />
-		<Unit filename="src\system\singleton.hpp" />
+		<Unit filename="src\system\tsingleton.hpp" />
 		<Unit filename="src\system\tcontainer.hpp" />
 		<Unit filename="src\system\tresourcemanager.hpp" />
 		<Unit filename="src\test\ee.cpp" />

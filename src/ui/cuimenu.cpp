@@ -305,7 +305,7 @@ bool cUIMenu::IsSubMenu( cUIControl * Ctrl ) {
 
 Uint32 cUIMenu::OnMessage( const cUIMessage * Msg ) {
 	switch ( Msg->Msg() ) {
-		case cUIMessage::MsgClick:
+		case cUIMessage::MsgMouseUp:
 		{
 			cUIEvent ItemEvent( Msg->Sender(), cUIEvent::EventOnItemClicked );
 			SendEvent( &ItemEvent );
@@ -517,7 +517,7 @@ Uint32 cUIMenu::OnKeyDown( const cUIEventKey& Event ) {
 				if ( NULL != mItemSelected ) {
 					mItemSelected->SendMouseEvent(cUIEvent::EventMouseClick, cUIManager::instance()->GetMousePos(), 0xFFFFFFFF );
 
-					cUIMessage Msg( mItemSelected, cUIMessage::MsgClick, 0xFFFFFFFF );
+					cUIMessage Msg( mItemSelected, cUIMessage::MsgMouseUp, 0xFFFFFFFF );
 					mItemSelected->MessagePost( &Msg );
 				}
 

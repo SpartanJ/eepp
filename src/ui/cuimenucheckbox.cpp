@@ -75,8 +75,8 @@ void cUIMenuCheckBox::SwitchActive() {
 	Active( !mActive );
 }
 
-Uint32 cUIMenuCheckBox::OnMouseClick( const eeVector2i &Pos, Uint32 Flags ) {
-	cUIMenuItem::OnMouseClick( Pos, Flags );
+Uint32 cUIMenuCheckBox::OnMouseUp( const eeVector2i &Pos, Uint32 Flags ) {
+	cUIMenuItem::OnMouseUp( Pos, Flags );
 
 	SwitchActive();
 

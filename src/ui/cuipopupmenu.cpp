@@ -62,7 +62,7 @@ void cUIPopUpMenu::OnComplexControlFocusLoss() {
 
 Uint32 cUIPopUpMenu::OnMessage( const cUIMessage * Msg ) {
 	switch ( Msg->Msg() ) {
-		case cUIMessage::MsgClick:
+		case cUIMessage::MsgMouseUp:
 		{
 			if ( !Msg->Sender()->IsType( UI_TYPE_MENUSUBMENU ) ) {
 				SendCommonEvent( cUIEvent::EventOnHideByClick );

@@ -25,8 +25,8 @@ cFont::~cFont() {
 
 void cFont::SetText( const std::wstring& Text ) {
 	if ( mText.size() != Text.size() ) {
-		mRenderCoords.resize( Text.size() * 4 );
-		mColors.resize( Text.size() * 4, mColor );
+		mRenderCoords.resize( Text.size() * EE_QUAD_VERTEX );
+		mColors.resize( Text.size() * EE_QUAD_VERTEX, mColor );
 	}
 
 	mText = Text;
@@ -47,7 +47,7 @@ void cFont::Color(const eeColorA& Color) {
 	if ( mColor != Color ) {
 		mColor = Color;
 
-		mColors.assign( mText.size() * 4, mColor );
+		mColors.assign( mText.size() * EE_QUAD_VERTEX, mColor );
 	}
 }
 
@@ -167,11 +167,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 	std::vector<eeVertexCoords>& RenderCoords = TextCache.VertextCoords();
 	std::vector<eeColorA>& Colors = TextCache.Colors();
 
-	#ifndef EE_GLES
 	if ( !TextCache.CachedCoords() ) {
-	#else
-	if ( true ) {
-	#endif
 		switch ( FontHAlignGet( Flags ) ) {
 			case FONT_DRAW_CENTER:
 				nX = (eeFloat)( (Int32)( ( TextCache.GetTextWidth() - TextCache.LinesWidth()[ Line ] ) * 0.5f ) );
@@ -238,20 +234,50 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 					}
 					default:
 					{
+						#ifndef EE_GLES
 						for ( Uint8 z = 0; z < 8; z+=2 ) {
-							RenderCoords[ numvert ].TexCoords[0] = C->TexCoords[z];
-							RenderCoords[ numvert ].TexCoords[1] = C->TexCoords[ z + 1 ];
-							RenderCoords[ numvert ].Vertex[0] = cX + C->Vertex[z] + nX;
-							RenderCoords[ numvert ].Vertex[1] = cY + C->Vertex[ z + 1 ] + nY;
+							RenderCoords[ numvert ].TexCoords[0]	= C->TexCoords[z];
+							RenderCoords[ numvert ].TexCoords[1]	= C->TexCoords[ z + 1 ];
+							RenderCoords[ numvert ].Vertex[0]		= cX + C->Vertex[z] + nX;
+							RenderCoords[ numvert ].Vertex[1]		= cY + C->Vertex[ z + 1 ] + nY;
 							numvert++;
 						}
+						#else
+							RenderCoords[ numvert ].TexCoords[0]	= C->TexCoords[2];
+							RenderCoords[ numvert ].TexCoords[1]	= C->TexCoords[ 2 + 1 ];
+							RenderCoords[ numvert ].Vertex[0]		= cX + C->Vertex[2] + nX;
+							RenderCoords[ numvert ].Vertex[1]		= cY + C->Vertex[ 2 + 1 ] + nY;
+							numvert++;
 
-						#ifdef EE_GLES
-							glColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<char*>( &Colors[0] ) );
-							glTexCoordPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[ numvert - 4 ] ) );
-							glVertexPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[ numvert - 4 ] ) + sizeof(eeFloat) * 2 );
+							RenderCoords[ numvert ].TexCoords[0]	= C->TexCoords[0];
+							RenderCoords[ numvert ].TexCoords[1]	= C->TexCoords[ 0 + 1 ];
+							RenderCoords[ numvert ].Vertex[0]		= cX + C->Vertex[0] + nX;
+							RenderCoords[ numvert ].Vertex[1]		= cY + C->Vertex[ 0 + 1 ] + nY;
+							numvert++;
 
-							glDrawElements( GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_BYTE, EE_GLES_INDICES );
+							RenderCoords[ numvert ].TexCoords[0]	= C->TexCoords[6];
+							RenderCoords[ numvert ].TexCoords[1]	= C->TexCoords[ 6 + 1 ];
+							RenderCoords[ numvert ].Vertex[0]		= cX + C->Vertex[6] + nX;
+							RenderCoords[ numvert ].Vertex[1]		= cY + C->Vertex[ 6 + 1 ] + nY;
+							numvert++;
+
+							RenderCoords[ numvert ].TexCoords[0]	= C->TexCoords[2];
+							RenderCoords[ numvert ].TexCoords[1]	= C->TexCoords[ 2 + 1 ];
+							RenderCoords[ numvert ].Vertex[0]		= cX + C->Vertex[2] + nX;
+							RenderCoords[ numvert ].Vertex[1]		= cY + C->Vertex[ 2 + 1 ] + nY;
+							numvert++;
+
+							RenderCoords[ numvert ].TexCoords[0]	= C->TexCoords[4];
+							RenderCoords[ numvert ].TexCoords[1]	= C->TexCoords[ 4 + 1 ];
+							RenderCoords[ numvert ].Vertex[0]		= cX + C->Vertex[4] + nX;
+							RenderCoords[ numvert ].Vertex[1]		= cY + C->Vertex[ 4 + 1 ] + nY;
+							numvert++;
+
+							RenderCoords[ numvert ].TexCoords[0]	= C->TexCoords[6];
+							RenderCoords[ numvert ].TexCoords[1]	= C->TexCoords[ 6 + 1 ];
+							RenderCoords[ numvert ].Vertex[0]		= cX + C->Vertex[6] + nX;
+							RenderCoords[ numvert ].Vertex[1]		= cY + C->Vertex[ 6 + 1 ] + nY;
+							numvert++;
 						#endif
 
 						if (mVerticalDraw)
@@ -269,12 +295,14 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 		numvert = TextCache.CachedVerts();
 	}
 
-	#ifndef EE_GLES
 	glColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<char*>( &Colors[0] ) );
 	glTexCoordPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] ) );
 	glVertexPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] ) + sizeof(eeFloat) * 2 );
 
+	#ifndef EE_GLES
 	glDrawArrays( GL_QUADS, 0, numvert );
+	#else
+	glDrawArrays( GL_TRIANGLES, 0, numvert );
 	#endif
 
 	if ( Angle != 0.0f || Scale != 1.0f ) {
@@ -382,6 +410,7 @@ void cFont::SubDraw( const std::wstring& Text, const eeFloat& X, const eeFloat& 
 
 					break;
 				default:
+					#ifndef EE_GLES
 					for ( Uint8 z = 0; z < 8; z+=2 ) {
 						mRenderCoords[ numvert ].TexCoords[0] 	= C->TexCoords[z];
 						mRenderCoords[ numvert ].TexCoords[1] 	= C->TexCoords[ z + 1 ];
@@ -389,13 +418,42 @@ void cFont::SubDraw( const std::wstring& Text, const eeFloat& X, const eeFloat& 
 						mRenderCoords[ numvert ].Vertex[1]		= cY + C->Vertex[ z + 1 ] + nY;
 						numvert++;
 					}
+					#else
+					mRenderCoords[ numvert ].TexCoords[0]	= C->TexCoords[2];
+					mRenderCoords[ numvert ].TexCoords[1]	= C->TexCoords[ 2 + 1 ];
+					mRenderCoords[ numvert ].Vertex[0]		= cX + C->Vertex[2] + nX;
+					mRenderCoords[ numvert ].Vertex[1]		= cY + C->Vertex[ 2 + 1 ] + nY;
+					numvert++;
 
-					#ifdef EE_GLES
-						glColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<char*>( &mColors[0] ) );
-						glTexCoordPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &mRenderCoords[ numvert - 4 ] ) );
-						glVertexPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &mRenderCoords[ numvert - 4 ] ) + sizeof(eeFloat) * 2 );
+					mRenderCoords[ numvert ].TexCoords[0]	= C->TexCoords[0];
+					mRenderCoords[ numvert ].TexCoords[1]	= C->TexCoords[ 0 + 1 ];
+					mRenderCoords[ numvert ].Vertex[0]		= cX + C->Vertex[0] + nX;
+					mRenderCoords[ numvert ].Vertex[1]		= cY + C->Vertex[ 0 + 1 ] + nY;
+					numvert++;
 
-						glDrawElements( GL_TRIANGLE_STRIP, 4, GL_UNSIGNED_BYTE, EE_GLES_INDICES );
+					mRenderCoords[ numvert ].TexCoords[0]	= C->TexCoords[6];
+					mRenderCoords[ numvert ].TexCoords[1]	= C->TexCoords[ 6 + 1 ];
+					mRenderCoords[ numvert ].Vertex[0]		= cX + C->Vertex[6] + nX;
+					mRenderCoords[ numvert ].Vertex[1]		= cY + C->Vertex[ 6 + 1 ] + nY;
+					numvert++;
+
+					mRenderCoords[ numvert ].TexCoords[0]	= C->TexCoords[2];
+					mRenderCoords[ numvert ].TexCoords[1]	= C->TexCoords[ 2 + 1 ];
+					mRenderCoords[ numvert ].Vertex[0]		= cX + C->Vertex[2] + nX;
+					mRenderCoords[ numvert ].Vertex[1]		= cY + C->Vertex[ 2 + 1 ] + nY;
+					numvert++;
+
+					mRenderCoords[ numvert ].TexCoords[0]	= C->TexCoords[4];
+					mRenderCoords[ numvert ].TexCoords[1]	= C->TexCoords[ 4 + 1 ];
+					mRenderCoords[ numvert ].Vertex[0]		= cX + C->Vertex[4] + nX;
+					mRenderCoords[ numvert ].Vertex[1]		= cY + C->Vertex[ 4 + 1 ] + nY;
+					numvert++;
+
+					mRenderCoords[ numvert ].TexCoords[0]	= C->TexCoords[6];
+					mRenderCoords[ numvert ].TexCoords[1]	= C->TexCoords[ 6 + 1 ];
+					mRenderCoords[ numvert ].Vertex[0]		= cX + C->Vertex[6] + nX;
+					mRenderCoords[ numvert ].Vertex[1]		= cY + C->Vertex[ 6 + 1 ] + nY;
+					numvert++;
 					#endif
 
 					if ( mVerticalDraw )
@@ -406,12 +464,14 @@ void cFont::SubDraw( const std::wstring& Text, const eeFloat& X, const eeFloat& 
 		}
 	}
 
-	#ifndef EE_GLES
 	glColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<char*>( &mColors[0] ) );
 	glTexCoordPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &mRenderCoords[0] ) );
 	glVertexPointer( 2, GL_FLOAT, sizeof(eeVertexCoords), reinterpret_cast<char*>( &mRenderCoords[0] ) + sizeof(eeFloat) * 2 );
 
+	#ifndef EE_GLES
 	glDrawArrays( GL_QUADS, 0, numvert );
+	#else
+	glDrawArrays( GL_TRIANGLES, 0, numvert );
 	#endif
 
 	if ( Angle != 0.0f || Scale != 1.0f )

@@ -26,7 +26,7 @@ typedef Window X11Window;
 using namespace EE::Utils;
 
 #include "../system/ctimeelapsed.hpp"
-#include "../system/singleton.hpp"
+#include "../system/tsingleton.hpp"
 #include "../system/clog.hpp"
 using namespace EE::System;
 

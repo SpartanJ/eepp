@@ -387,14 +387,12 @@ void cEETest::CreateUI() {
 
 	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 530, 240 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
-	cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
+	//cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
 	CreateAquaTextureAtlas();
 
-/*
 	cTextureGroupLoader tgl( MyPath + "data/aqua.etg" );
 	TF->GetByName( "data/aqua.png" )->TextureFilter( TEX_FILTER_NEAREST );
 	cUIThemeManager::instance()->Add( cUITheme::LoadFromShapeGroup( cShapeGroupManager::instance()->GetByName( "aqua" ), "aqua", "aqua" ) );
-*/
 
 	cUIThemeManager::instance()->DefaultEffectsEnabled( true );
 	cUIThemeManager::instance()->DefaultFont( TTF );
@@ -689,7 +687,7 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 	} else if ( L"Show Window" == txt ) {
 		cUIMenuCheckBox * Chk = reinterpret_cast<cUIMenuCheckBox*> ( Event->Ctrl() );
 
-		if ( !Chk->Active() ) {
+		if ( Chk->Active() ) {
 			C->StartScaleAnim( C->Scale(), 1.f, 500.f, SINEOUT );
 			C->StartAlphaAnim( C->Alpha(), 255.f, 500.f );
 		} else {
@@ -1158,6 +1156,7 @@ void cEETest::Render() {
 		Screen3();
 		EE->ClipDisable();
 	}
+
 
 	eeColorA ColRR1( 150, 150, 150, 220 );
 	eeColorA ColRR4( 150, 150, 150, 220 );

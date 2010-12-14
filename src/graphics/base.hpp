@@ -18,7 +18,7 @@ using namespace EE::Utils;
 using namespace EE::Math;
 
 #include "../system/ctimeelapsed.hpp"
-#include "../system/singleton.hpp"
+#include "../system/tsingleton.hpp"
 #include "../system/clog.hpp"
 #include "../system/cpack.hpp"
 #include "../system/tresourcemanager.hpp"
@@ -26,5 +26,12 @@ using namespace EE::Math;
 using namespace EE::System;
 
 #include "renders.hpp"
+
+#ifdef EE_GLES
+	const GLubyte EE_GLES_INDICES [] = {0, 3, 1, 2};
+	#define EE_QUAD_VERTEX 6
+#else
+	#define EE_QUAD_VERTEX 4
+#endif
 
 #endif

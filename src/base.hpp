@@ -143,10 +143,6 @@ namespace EE {
 	const eeFloat TwoPI		= 6.283185308f;
 	const eeFloat PId180	= PI / 180.f;
 	const eeFloat d180PI	= 180.f / PI;
-
-	#ifdef EE_GLES
-	const GLubyte EE_GLES_INDICES [] = {0, 3, 1, 2};
-	#endif
 }
 
 #include "base/base.hpp"

@@ -2,7 +2,7 @@
 #define EECLOG_H
 
 #include "base.hpp"
-#include "singleton.hpp"
+#include "tsingleton.hpp"
 
 namespace EE { namespace System {
 

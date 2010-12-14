@@ -48,7 +48,7 @@
 	using namespace EE::Math;
 
 	// System
-	#include "system/singleton.hpp"
+	#include "system/tsingleton.hpp"
 	#include "system/cthread.hpp"
 	#include "system/cmutex.hpp"
 	#include "system/clog.hpp"

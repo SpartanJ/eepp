@@ -1,11 +1,8 @@
 #include "ctexturefactory.hpp"
-#include "../window/cengine.hpp"
 #include "ctextureloader.hpp"
 #include "glhelper.hpp"
 
 using namespace EE::Graphics::Private;
-
-using namespace EE::Window;
 
 namespace EE { namespace Graphics {
 

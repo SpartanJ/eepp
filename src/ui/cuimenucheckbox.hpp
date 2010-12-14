@@ -25,7 +25,7 @@ class cUIMenuCheckBox : public cUIMenuItem {
 		cUISkin *	mSkinActive;
 		cUISkin *	mSkinInactive;
 
-		virtual Uint32 OnMouseClick( const eeVector2i &Pos, Uint32 Flags );
+		virtual Uint32 OnMouseUp( const eeVector2i &Pos, Uint32 Flags );
 
 		virtual void OnStateChange();
 };
