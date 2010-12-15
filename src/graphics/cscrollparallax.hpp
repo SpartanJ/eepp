@@ -29,10 +29,10 @@ class EE_API cScrollParallax {
 		bool Create( cShape * Shape, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeVector2f& Speed, const eeRGBA& Color = eeRGBA(255, 255, 255, 255), const EE_PRE_BLEND_FUNC& Blend = ALPHA_NORMAL );
 
 		/** Set the Color */
-		void Color( const eeRGBA& Color ) { mColor = Color; }
+		void Color( const eeColorA& Color ) { mColor = Color; }
 
 		/** Get the color */
-		eeRGBA Color() const { return mColor; }
+		eeColorA Color() const { return mColor; }
 
 		/** Set the Blend Mode */
 		void BlendMode( const EE_PRE_BLEND_FUNC& Blend ) { mBlend = Blend; }

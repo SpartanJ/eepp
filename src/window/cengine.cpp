@@ -645,7 +645,7 @@ bool cEngine::SetIcon( const std::string& Path ) {
 		return false;
 	}
 
-	unsigned char * Ptr = stbi_load( Path.c_str(), &x, &y, &c, 0 );
+	unsigned char * Ptr = SOIL_load_image( Path.c_str(), &x, &y, &c, SOIL_LOAD_AUTO );
 
 	if ( NULL != Ptr ) {
 		Int32 W = x;

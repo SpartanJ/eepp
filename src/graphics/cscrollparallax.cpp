@@ -80,7 +80,7 @@ const eeVector2f& cScrollParallax::Position() const {
 }
 
 void cScrollParallax::Draw() {
-	if ( NULL != mShape && mAABB.Left != mAABB.Right && mAABB.Top != mAABB.Bottom ) {
+	if ( NULL != mShape && mAABB.Left != mAABB.Right && mAABB.Top != mAABB.Bottom && 0 != mColor.Alpha ) {
 		mPos += ( ( mSpeed * (eeFloat)mElapsed.Elapsed() ) / 1000.f );
 
 		if ( mPos.x > mAABB.Left + mRealSize.Width() || mPos.x < mAABB.Left - mRealSize.Width() )

@@ -3,6 +3,7 @@
 
 #include "../base.hpp"
 
+#include "../utils/helper.hpp"
 #include "../utils/rect.hpp"
 #include "../utils/utils.hpp"
 #include "../utils/colors.hpp"

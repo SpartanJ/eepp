@@ -36,6 +36,10 @@ void cUIProgressBar::Draw() {
 	cUIControlAnim::Draw();
 
 	if ( NULL != mParallax && 0.f != mAlpha ) {
+		eeColorA C( mParallax->Color() );
+		C.Alpha = (Uint8)mAlpha;
+
+		mParallax->Color( C );
 		mParallax->Position( eeVector2f( mScreenPos.x + mFillerMargin.Left, mScreenPos.y + mFillerMargin.Top ) );
 		mParallax->Draw();
 	}

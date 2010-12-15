@@ -647,6 +647,7 @@ void cEETest::CreateUI() {
 
 	C->StartScaleAnim( 0.f, 1.f, 500.f, SINEOUT );
 	C->StartAlphaAnim( 0.f, 255.f, 500.f );
+	C->StartRotation( 0, 360, 500.f, SINEOUT );
 
 	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.";
 	TTFB->ShrinkText( mBuda, 400 );
@@ -675,9 +676,11 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 		if ( Chk->Active() ) {
 			C->StartScaleAnim( C->Scale(), 1.f, 500.f, SINEOUT );
 			C->StartAlphaAnim( C->Alpha(), 255.f, 500.f );
+			C->StartRotation( 0, 360, 500.f, SINEOUT );
 		} else {
 			C->StartScaleAnim( C->Scale(), 0.f, 500.f, SINEIN );
 			C->StartAlphaAnim( C->Alpha(), 0.f, 500.f );
+			C->StartRotation( 0, 360, 500.f, SINEIN );
 		}
 	} else if ( L"Multi Viewport" == txt ) {
 		MultiViewportMode = !MultiViewportMode;
@@ -725,7 +728,7 @@ void cEETest::ButtonClick( const cUIEvent * Event ) {
 		Gfx->StartMovement( eeVector2i( eeRandi( 0, EE->GetWidth() ), -64 ), eeVector2i( eeRandi( 0, EE->GetWidth() ), EE->GetHeight() + 64 ), 2500 );
 		Gfx->CloseFadeOut( 3500 );
 
-		mListBox->AddListBoxItem( L"Test ListBox " + toWStr( mListBox->Count() + 1 ) + L" testing it right now!" );
+		//mListBox->AddListBoxItem( L"Test ListBox " + toWStr( mListBox->Count() + 1 ) + L" testing it right now!" );
 	}
 }
 

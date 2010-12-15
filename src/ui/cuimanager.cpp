@@ -187,6 +187,7 @@ void cUIManager::Update() {
 
 void cUIManager::Draw() {
 	mControl->InternalDraw();
+	cGlobalBatchRenderer::instance()->Draw();
 }
 
 cUIControlAnim * cUIManager::MainControl() const {

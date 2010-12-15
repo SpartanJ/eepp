@@ -127,6 +127,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 	if ( !TextCache.Text().size() )
 		return;
 
+	cGlobalBatchRenderer::instance()->Draw();
 	cTextureFactory::instance()->Bind( mTexId );
 	cTextureFactory::instance()->SetPreBlendFunc( Effect );
 
@@ -150,8 +151,6 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 	Int16 Char = 0;
 	eeUint Line = 0;
 	eeUint numvert = 0;
-
-	cGlobalBatchRenderer::instance()->Draw();
 
 	if ( Angle != 0.0f || Scale != 1.0f ) {
 		glLoadIdentity();
@@ -316,6 +315,7 @@ void cFont::SubDraw( const std::wstring& Text, const eeFloat& X, const eeFloat& 
 	if ( !Text.size() )
 		return;
 
+	cGlobalBatchRenderer::instance()->Draw();
 	cTextureFactory::instance()->Bind( mTexId );
 	cTextureFactory::instance()->SetPreBlendFunc( Effect );
 
@@ -341,8 +341,6 @@ void cFont::SubDraw( const std::wstring& Text, const eeFloat& X, const eeFloat& 
 	Int16 Char = 0;
 	eeUint Line = 0;
 	eeUint numvert = 0;
-
-	cGlobalBatchRenderer::instance()->Draw();
 
 	if ( Angle != 0.0f || Scale != 1.0f ) {
 		glLoadIdentity();

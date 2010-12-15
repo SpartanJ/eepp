@@ -69,6 +69,29 @@ void cUIPushButton::OnSizeChange() {
 				break;
 		}
 	}
+
+	if ( mFlags & UI_AUTO_SIZE ) {
+		if ( NULL != mTextBox ) {
+			eeRecti P = MakePadding( true, true, true, true, true );
+
+			mSize.Height( mIcon->Size().Height()	+ P.Top		+ P.Bottom );
+
+			if ( 0 == mTextBox->Text().size() ) {
+				mSize.Width	( mIcon->Size().Width()		+ P.Left	+ P.Right );
+
+				mIcon->Center();
+			} else {
+				mSize.Width( mIconSpace + mIcon->Pos().x + mIcon->Size().Width() + mTextBox->Size().Width() );
+
+				if ( mSize.Height() < P.Top + P.Bottom + mTextBox->GetTextHeight() )
+					mSize.Height( P.Top + P.Bottom + mTextBox->GetTextHeight() );
+			}
+		}
+	} else {
+		if ( NULL != mTextBox && 0 == mTextBox->Text().size() ) {
+			mIcon->Center();
+		}
+	}
 }
 
 cUIPushButton::~cUIPushButton() {

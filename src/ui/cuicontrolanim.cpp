@@ -81,8 +81,8 @@ void cUIControlAnim::MatrixSet() {
 
 void cUIControlAnim::MatrixUnset() {
 	if ( mScale != 1.f || mAngle != 0.f ) {
-		glPopMatrix();
 		cGlobalBatchRenderer::instance()->Draw();
+		glPopMatrix();
 	}
 }
 

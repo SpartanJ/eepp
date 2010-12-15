@@ -212,8 +212,6 @@ class EE_API cTextureFactory: public tSingleton<cTextureFactory>, protected cMut
 
 		~cTextureFactory();
 	protected:
-		friend class cBatchRenderer;
-
 		cTextureFactory();
 
 		GLint mCurrentTexture[ EE_MAX_TEXTURE_UNITS ];
