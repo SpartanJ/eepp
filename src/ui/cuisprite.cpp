@@ -31,7 +31,7 @@ void cUISprite::Draw() {
 	if ( mVisible ) {
 		if ( NULL != mSprite && 0.f != mAlpha ) {
 			UpdateSize();
-			mSprite->UpdatePos( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y );
+			mSprite->Position( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y );
 			mSprite->Draw( mBlend, mRender );
 		}
 	}

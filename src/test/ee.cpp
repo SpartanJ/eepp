@@ -838,8 +838,8 @@ void cEETest::LoadTextures() {
 	EE->ShowCursor(false);
 
 	CL1.AddFrame(TN[2]);
-	CL1.UpdatePos(500,400);
-	CL1.Scale(0.5f);
+	CL1.Position( 500, 400 );
+	CL1.Scale( 0.5f );
 
 	CL2.AddFrame(TN[0], 96, 96);
 	CL2.Color( eeRGBA( 255, 255, 255, 255 ) );
@@ -847,7 +847,7 @@ void cEETest::LoadTextures() {
 	mTGL = eeNew( cTextureGroupLoader, ( MyPath + "data/bnb/bnb.etg" ) );
 
 	mBlindy.AddFramesByPattern( "rn" );
-	mBlindy.UpdatePos( 320.f, 0.f );
+	mBlindy.Position( 320.f, 0.f );
 
 	Map.myFont = reinterpret_cast<cFont*> ( &FF );
 
@@ -1013,12 +1013,12 @@ void cEETest::Screen2() {
 	eeColorA Col(255,255,255,(int)alpha);
 	TNP[1]->DrawEx( (eeFloat)EE->GetWidth() - 128.f, (eeFloat)EE->GetHeight() - 128.f, 128.f, 128.f, ang, 1, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
 
-	SP.UpdatePos(alpha,alpha);
+	SP.Position( alpha, alpha );
 	SP.Draw();
 
 	CL1.SetRenderType( RN_ISOMETRIC );
 
-	if (IntersectRectCircle( CL1.SprDestRectf(), Mousef.x, Mousef.y, 80.f ))
+	if (IntersectRectCircle( CL1.GetAABB(), Mousef.x, Mousef.y, 80.f ))
 		CL1.Color( eeRGBA(255, 0, 0, 200) );
 	else
 		CL1.Color( eeRGBA(255, 255, 255, 200) );
@@ -1032,7 +1032,7 @@ void cEETest::Screen2() {
 	CL1.Angle(ang);
 	CL1.Scale(scale * 0.5f);
 
-	CL2.UpdatePos( (eeFloat)Mousef.x - 64.f, (eeFloat)Mousef.y + 128.f );
+	CL2.Position( (eeFloat)Mousef.x - 64.f, (eeFloat)Mousef.y + 128.f );
 	CL2.Angle(-ang);
 
 	CL1.Draw();
@@ -1192,7 +1192,7 @@ void cEETest::Render() {
 		mFB->Bind();
 		mFB->Clear();
 
-		mBlindy.UpdatePos( 128-16, 128-16 );
+		mBlindy.Position( 128-16, 128-16 );
 		mBlindy.Draw();
 
 		mVBO->Bind();

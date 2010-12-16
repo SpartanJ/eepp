@@ -2,45 +2,52 @@
 #define EECSPRITE_H
 
 #include "base.hpp"
-#include "../window/cengine.hpp"
 #include "ctexturefactory.hpp"
 #include "cshape.hpp"
 #include "cshapegroup.hpp"
-
-using namespace EE::Window;
 
 namespace EE { namespace Graphics {
 
 /** @brief A Sprite controller class, can hold and control sprites animations. */
 class EE_API cSprite {
 	public:
+		typedef cb::Callback2< void, Uint32, cSprite * > SpriteCallback;
+
+		enum SpriteEvents {
+			SPRITE_EVENT_LAST_FRAME,
+			SPRITE_EVENT_FIRST_FRAME,
+			SPRITE_EVENT_END_ANIM_TO
+		};
+
 		cSprite();
 
 		~cSprite();
 
+		cSprite& operator =( const cSprite& Other );
+
 		/** Set the x axis position */
-		void X(const eeFloat &X) { mX = X; }
+		void X( const eeFloat& X );
 
 		/** Get the x axis position */
-		eeFloat X() const { return mX; }
+		eeFloat X() const;
 
 		/** Set the y axis position */
-		void Y(const eeFloat& Y) { mY = Y; }
+		void Y( const eeFloat& Y );
 
 		/** Get the y axis position */
-		eeFloat Y() const { return mY; }
+		eeFloat Y() const;
 
 		/** Set the Angle for the rendered sprite */
-		void Angle( const eeFloat &Angle) { mAngle = Angle; }
+		void Angle( const eeFloat& Angle );
 
 		/** Get the Angle for the rendered sprite */
-		eeFloat Angle() const { return mAngle; }
+		eeFloat Angle() const;
 
 		/** Set the Scale for the rendered sprite */
-		void Scale( const eeFloat &Scale) { mScale = Scale; }
+		void Scale( const eeFloat& Scale );
 
 		/** Get the Scale for the rendered sprite */
-		eeFloat Scale() const { return mScale; }
+		eeFloat Scale() const;
 
 		/** Set the Frame Number Sprite Width
 		* @param FrameNum If the Frame Number is 0 use the Current Frame Number
@@ -60,91 +67,79 @@ class EE_API cSprite {
 		/** Get the Frame Number Sprite Height */
 		eeFloat Height( const eeUint& FrameNum = 0, const eeUint& SubFrame = 0 );
 
-		/** Set the sprite animation speed */
-		void AnimSpeed( const eeFloat& AnimSpeed) { mAnimSpeed = AnimSpeed; }
+		/** Set the sprite animation speed ( AnimSpeed equals to Animation Frames per Second ) */
+		void AnimSpeed( const eeFloat& AnimSpeed );
 
-		/** Get the sprite animation speed */
-		eeFloat AnimSpeed() const { return mAnimSpeed; }
+		/** Get the sprite animation speed ( AnimSpeed equals to Animation Frames per Second ) */
+		eeFloat AnimSpeed() const;
 
 		/** @return If the animation is paused */
-		bool AnimPause() const { return mAnimPaused; }
+		bool AnimPaused() const;
 
 		/** Set the animation paused or not */
-		void AnimPause( const bool& Pause )	{ mAnimPaused = Pause; }
+		void AnimPaused( const bool& Pause );
 
 		/** Set the sprite color */
-		void Color( const eeRGBA& Color) { mColor = Color; };
+		void Color( const eeColorA& Color);
 
 		/** Get the sprite color */
-		eeRGBA Color() const { return mColor; }
+		const eeColorA& Color() const;
 
 		/** Set the sprite Color Alpha */
-		void Alpha( const Uint8& Alpha) {
-			mAlpha = Alpha;
-			mColor.Alpha = (Uint8)mAlpha;
-		}
+		void Alpha( const Uint8& Alpha );
 
 		/** Get the sprite Color Alpha */
-		eeFloat Alpha() const { return mAlpha; }
+		const Uint8& Alpha() const;
 
 		/** Get if the sprite it's scaled from the center */
-		bool ScaleCentered() const { return mScaleCentered; }
+		bool ScaleCentered() const;
 
 		/** Set if the sprite it's scaled centered or scaled from the Left - Top position of the sprite ( default True ) */
-		void ScaleCentered(const bool &ScaleCentered) { mScaleCentered = ScaleCentered; }
+		void ScaleCentered(const bool& ScaleCentered );
 
 		/** Set the Current Frame */
 		void CurrentFrame( const eeFloat& CurFrame );
 
 		/** Get the Current Frame */
-		eeUint CurrentFrame() const { return mFrameData.CurrentFrame; }
+		const eeUint& CurrentFrame() const;
 
 		/** Get the Exact Current FrameData
 		* @return The eeFloat fpoint of the current frame, the exact position of the interpolation.
 		*/
-		eeFloat ExactCurrentFrame() const { return mFrameData.fCurrentFrame; }
+		const eeFloat& ExactCurrentFrame() const;
 
 		/** Set the exact current FrameData */
-		void ExactCurrentFrame( const eeFloat& CurrentFrame ) { mFrameData.fCurrentFrame = CurrentFrame; }
+		void ExactCurrentFrame( const eeFloat& CurrentFrame );
 
 		/** Set the Current Sub Frame */
 		void CurrentSubFrame( const eeUint &CurSubFrame );
 
 		/** Get the Current Sub Frame */
-		eeUint CurrentSubFrame() const { return mFrameData.CurrentSubFrame; }
+		const eeUint& CurrentSubFrame() const;
 
 		/** Set the Render Type */
-		void SetRenderType( const EE_RENDERTYPE& Effect ) { mEffect = Effect; }
+		void SetRenderType( const EE_RENDERTYPE& Effect );
 
 		/** Set the Blend Mode */
-		void SetRenderAlphas( const EE_PRE_BLEND_FUNC& Blend ) { mBlend = Blend; }
+		void SetRenderAlphas( const EE_PRE_BLEND_FUNC& Blend );
 
 		/** Reset the sprite as a new one. */
 		void Reset();
-
-		/** Get the current Source RECT of the sprite. The texture coordinates of the sprite. */
-		eeRecti SprSrcRect();
-
-		/** Get the current Destination RECT of the sprite. The sprite coordinates on the screen. (the AABB, axis-aligned bounding box) */
-		eeRectf SprDestRectf();
-
-		/** Get the current Destination RECT of the sprite. The sprite coordinates on the screen (the AABB, axis-aligned bounding box). */
-		eeRecti SprDestRECT();
 
 		/** @return The AABB (axis-aligned bounding box) */
 		eeAABB GetAABB();
 
 		/** Update the sprite position */
-		void UpdatePos( const eeFloat& x, const eeFloat& y );
+		void Position( const eeFloat& x, const eeFloat& y );
 
 		/** Update the sprite position from a Vector */
-		void UpdatePos( const eeVector2f& NewPos );
+		void Position( const eeVector2f& NewPos );
+
+		/** @return The Position of the sprite */
+		const eeVector2f Position() const;
 
 		/** Update the sprite size of a frame number */
 		void UpdateSize( const eeFloat& Width, const eeFloat& Height, const eeUint& FrameNum = 0 );
-
-		/** Update the scale of the sprite */
-		void UpdateScale( const eeFloat& Scale ) { if(Scale>0) mScale = Scale; }
 
 		/** Update the colors of every vertex rendered of the sprite ( this will override the default color )
 		* @param Color0 The Left - Top vertex color
@@ -152,7 +147,10 @@ class EE_API cSprite {
 		* @param Color2 The Right - Bottom vertex color
 		* @param Color3 The Right - Top vertex color
 		*/
-		void UpdateVertexColors( const eeRGBA& Color0, const eeRGBA& Color1, const eeRGBA& Color2, const eeRGBA& Color3 );
+		void UpdateVertexColors( const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3 );
+
+		/** This will disable the vertex colors */
+		void DisableVertexColors();
 
 		/** Update the sprite
 		* @param x Set the x axis position
@@ -291,16 +289,16 @@ class EE_API cSprite {
 		void OffSet( const eeVector2f& offset );
 
 		/** Reverse the animation from last frame to first mFrames. */
-		void ReverseAnim( const bool& Reverse ) { mReverseAnim = Reverse; }
+		void ReverseAnim( const bool& Reverse );
 
 		/** @return If the animation is reversed */
-		bool ReverseAnim() const { return mReverseAnim; }
+		bool ReverseAnim() const;
 
 		/** @return The current last frame */
 		eeUint GetEndFrame();
 
 		/** @return The number of frames */
-		eeUint GetNumFrames() { return (eeUint)mFrames.size(); }
+		Uint32 GetNumFrames();
 
 		/** Will set Reverse active and set the first frame as the last frame */
 		void SetReverseFromStart();
@@ -309,29 +307,63 @@ class EE_API cSprite {
 		cShape * GetCurrentShape();
 
 		/** @return The Shape Frame from the current sub frame */
-		cShape* GetShape( const eeUint& frame );
+		cShape * GetShape( const eeUint& frame );
 
 		/** @return The Shape Frame from the SubFrame */
-		cShape* GetShape( const eeUint& frame, const eeUint& SubFrame );
+		cShape * GetShape( const eeUint& frame, const eeUint& SubFrame );
+
+		/** Start playing from
+		** @param GoTo Frame that goes from 1 to Number of Frames
+		*/
+		void GoToAndPlay( Uint32 GoTo );
+
+		/** Go to a frame and stop
+		** @param GoTo Frame that goes from 1 to Number of Frames
+		*/
+		void GoToAndStop( Uint32 GoTo );
+
+		/** Animate to frame and when reach the frame stops */
+		void AnimToFrameAndStop( Uint32 GoTo );
+
+		/** Set the sprite events callback */
+		void SetEventsCallback( const SpriteCallback& Cb );
+
+		/** Removes the current callback */
+		void ClearCallback();
+
+		/** Creates a copy of the current sprite and returned it */
+		cSprite * Copy();
 	protected:
-		eeFloat mX, mY, mAngle, mScale, mAnimSpeed;
-		bool mAutoAnim;
-		bool mScaleCentered;
-		EE_PRE_BLEND_FUNC mBlend;
-		EE_RENDERTYPE mEffect;
+		enum SpriteFlags {
+			SPRITE_FLAG_AUTO_ANIM				= ( 1 << 0 ),
+			SPRITE_FLAG_SCALE_CENTERED			= ( 1 << 1 ),
+			SPRITE_FLAG_REVERSE_ANIM			= ( 1 << 2 ),
+			SPRITE_FLAG_ANIM_PAUSED				= ( 1 << 3 ),
+			SPRITE_FLAG_ANIM_TO_FRAME_AND_STOP	= ( 1 << 4 ),
+			SPRITE_FLAG_EVENTS_ENABLED			= ( 1 << 5 )
+		};
 
-		eeRGBA mColor, mColor0, mColor1, mColor2, mColor3;
-		Uint8 mAlpha;
-		Int16 mRepeations; //!< Number of repetions of the animation, default -1 that equals to loop.
-		bool mReverseAnim;
-		bool mAnimPaused;
+		Uint32				mFlags;
+		eeVector2f			mPos;
+		eeFloat				mAngle;
+		eeFloat				mScale;
+		eeFloat				mAnimSpeed;
 
-		struct FrameData {
-			eeUint CurrentFrame;
-			eeFloat fCurrentFrame;
-			eeUint CurrentSubFrame;
-			eeUint SubFrames;
-		} mFrameData;
+		eeColorA			mColor;
+		eeColorA *			mVertexColors;
+
+		eeInt				mRepeations; //!< Number of repetions of the animation, default -1 that equals to loop.
+
+		EE_PRE_BLEND_FUNC	mBlend;
+		EE_RENDERTYPE		mEffect;
+
+		SpriteCallback		mCb;
+
+		eeUint				mCurrentFrame;
+		eeFloat				mfCurrentFrame;
+		eeUint				mCurrentSubFrame;
+		eeUint				mSubFrames;
+		eeUint				mAnimTo;
 
 		class cFrame {
 			public:
@@ -340,13 +372,18 @@ class EE_API cSprite {
 		std::vector<cFrame> mFrames;
 
 		eeUint FramePos();
+
 		void ClearFrame();
+
 		void Animate( const eeFloat& ElapsedTime = -99999.f );
 
 		eeVector2f GetRotationCenter( const eeRectf& DestRECT );
 
 		eeUint GetFrame( const eeUint& FrameNum );
+
 		eeUint GetSubFrame( const eeUint& SubFrame );
+
+		void FireEvent( const Uint32& Event );
 };
 
 }}
