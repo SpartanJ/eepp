@@ -32,9 +32,9 @@ class EE_API cUISprite : public cUIControlAnim {
 
 		void Sprite( cSprite * sprite );
 
-		eeRGBA Color() const;
+		eeColorA Color() const;
 
-		void Color( const eeRGBA& color );
+		void Color( const eeColorA& color );
 
 		const EE_RENDERTYPE& RenderType() const;
 

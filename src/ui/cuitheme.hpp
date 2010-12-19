@@ -14,6 +14,8 @@ class EE_API cUITheme : public tResourceManager<cUISkin> {
 
 		static cUITheme * LoadFromShapeGroup( cShapeGroup * ShapeGroup, const std::string& Name, const std::string NameAbbr );
 
+		static void AddThemeElement( const std::string& Element );
+
 		cUITheme( const std::string& Name, const std::string& Abbr, cFont * DefaultFont = NULL );
 
 		virtual ~cUITheme();

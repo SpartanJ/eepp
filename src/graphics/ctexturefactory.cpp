@@ -23,34 +23,34 @@ cTextureFactory::~cTextureFactory() {
 
 Uint32 cTextureFactory::CreateEmptyTexture( const eeUint& Width, const eeUint& Height, const eeColorA& DefaultColor, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
 	std::vector<eeColorA> tmpTex( Width * Height, DefaultColor );
-	return LoadFromPixels( reinterpret_cast<unsigned char*> ( &tmpTex[0] ), Width, Height, 4, Mipmap, eeRGB(true), ClampMode, CompressTexture, KeepLocalCopy );
+	return LoadFromPixels( reinterpret_cast<unsigned char*> ( &tmpTex[0] ), Width, Height, 4, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
 }
 
-Uint32 cTextureFactory::LoadFromPixels( const unsigned char * Pixels, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const bool& Mipmap, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy, const std::string& FileName ) {
-	cTextureLoader myTex( Pixels, Width, Height, Channels, Mipmap, ColorKey, ClampMode, CompressTexture, KeepLocalCopy, FileName );
+Uint32 cTextureFactory::LoadFromPixels( const unsigned char * Pixels, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy, const std::string& FileName ) {
+	cTextureLoader myTex( Pixels, Width, Height, Channels, Mipmap, ClampMode, CompressTexture, KeepLocalCopy, FileName );
 	myTex.Load();
 	return myTex.Id();
 }
 
-Uint32 cTextureFactory::LoadFromPack( cPack* Pack, const std::string& FilePackPath, const bool& Mipmap, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy  ) {
-	cTextureLoader myTex( Pack, FilePackPath, Mipmap, ColorKey, ClampMode, CompressTexture, KeepLocalCopy );
+Uint32 cTextureFactory::LoadFromPack( cPack* Pack, const std::string& FilePackPath, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy  ) {
+	cTextureLoader myTex( Pack, FilePackPath, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
 	myTex.Load();
 	return myTex.Id();
 }
 
-Uint32 cTextureFactory::LoadFromMemory( const unsigned char * ImagePtr, const eeUint& Size, const bool& Mipmap, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
-	cTextureLoader myTex( ImagePtr, Size, Mipmap, ColorKey, ClampMode, CompressTexture, KeepLocalCopy );
+Uint32 cTextureFactory::LoadFromMemory( const unsigned char * ImagePtr, const eeUint& Size, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+	cTextureLoader myTex( ImagePtr, Size, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
 	myTex.Load();
 	return myTex.Id();
 }
 
-Uint32 cTextureFactory::Load( const std::string& Filepath, const bool& Mipmap, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
-	cTextureLoader myTex( Filepath, Mipmap, ColorKey, ClampMode, CompressTexture, KeepLocalCopy );
+Uint32 cTextureFactory::Load( const std::string& Filepath, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+	cTextureLoader myTex( Filepath, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
 	myTex.Load();
 	return myTex.Id();
 }
 
-Uint32 cTextureFactory::PushTexture( const std::string& Filepath, const Uint32& TexId, const eeUint& Width, const eeUint& Height, const eeUint& ImgWidth, const eeUint& ImgHeight, const bool& Mipmap, const eeUint& Channels, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy, const Uint32& MemSize ) {
+Uint32 cTextureFactory::PushTexture( const std::string& Filepath, const Uint32& TexId, const eeUint& Width, const eeUint& Height, const eeUint& ImgWidth, const eeUint& ImgHeight, const bool& Mipmap, const eeUint& Channels, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy, const Uint32& MemSize ) {
 	Lock();
 
 	cTexture * Tex 		= NULL;
@@ -68,11 +68,8 @@ Uint32 cTextureFactory::PushTexture( const std::string& Filepath, const Uint32& 
 	Pos = FindFreeSlot();
 	Tex = mTextures[ Pos ] = eeNew( cTexture, () );
 
-	Tex->Create( TexId, Width, Height, MyWidth, MyHeight, Mipmap, Channels, FPath, ColorKey, ClampMode, CompressTexture, MemSize );
+	Tex->Create( TexId, Width, Height, MyWidth, MyHeight, Mipmap, Channels, FPath, ClampMode, CompressTexture, MemSize );
 	Tex->Id( Pos );
-
-	if ( !ColorKey.voidRGB )
-		Tex->CreateMaskFromColor( eeColor( ColorKey.R(), ColorKey.G(), ColorKey.B() ) , 0 );
 
 	if ( LocalCopy ) {
 		Tex->Lock();

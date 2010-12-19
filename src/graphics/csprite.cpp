@@ -226,7 +226,7 @@ void cSprite::DisableVertexColors() {
 	eeSAFE_DELETE_ARRAY( mVertexColors );
 }
 
-void cSprite::Update( const eeFloat& x, const eeFloat& y, const eeFloat& Scale, const eeFloat& Angle, const Uint8& Alpha, const eeRGBA& Color ) {
+void cSprite::Update( const eeFloat& x, const eeFloat& y, const eeFloat& Scale, const eeFloat& Angle, const Uint8& Alpha, const eeColorA& Color ) {
 	mPos.x = x;
 	mPos.y = y;
 	mScale = Scale;

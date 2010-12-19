@@ -11,7 +11,6 @@ cTexture::cTexture() :
 	mImgWidth(0),
 	mImgHeight(0),
 	mFlags(0),
-	mColorKey(eeRGB(true)),
 	mClampMode( EE_CLAMP_TO_EDGE ),
 	mFilter( TEX_FILTER_LINEAR )
 {
@@ -24,7 +23,6 @@ cTexture::cTexture( const cTexture& Copy ) :
 	mImgWidth( Copy.mImgWidth ),
 	mImgHeight( Copy.mImgHeight ),
 	mFlags( Copy.mFlags ),
-	mColorKey( Copy.mColorKey ),
 	mClampMode( Copy.mClampMode ),
 	mFilter( Copy.mFilter )
 {
@@ -53,7 +51,6 @@ cTexture& cTexture::operator =(const cTexture& Other) {
 	std::swap(mImgWidth, Temp.mImgWidth);
 	std::swap(mImgHeight, Temp.mImgHeight);
 	std::swap(mFlags, Temp.mFlags);
-	std::swap(mColorKey, Temp.mColorKey);
 	std::swap(mFilter, Temp.mFilter);
 	std::swap(mClampMode, Temp.mClampMode);
 
@@ -74,11 +71,11 @@ void cTexture::DeleteTexture() {
 	}
 }
 
-cTexture::cTexture( const Uint32& texture, const eeUint& width, const eeUint& height, const eeUint& imgwidth, const eeUint& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) {
-	Create( texture, width, height, imgwidth, imgheight, UseMipmap, Channels, filepath, ColorKey, ClampMode, CompressedTexture, MemSize, data );
+cTexture::cTexture( const Uint32& texture, const eeUint& width, const eeUint& height, const eeUint& imgwidth, const eeUint& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) {
+	Create( texture, width, height, imgwidth, imgheight, UseMipmap, Channels, filepath, ClampMode, CompressedTexture, MemSize, data );
 }
 
-void cTexture::Create( const Uint32& texture, const eeUint& width, const eeUint& height, const eeUint& imgwidth, const eeUint& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) {
+void cTexture::Create( const Uint32& texture, const eeUint& width, const eeUint& height, const eeUint& imgwidth, const eeUint& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) {
 	mFilepath 	= filepath;
 	mId 		= MakeHash( mFilepath );
 	mTexture 	= texture;
@@ -88,7 +85,6 @@ void cTexture::Create( const Uint32& texture, const eeUint& width, const eeUint&
 	mImgWidth 	= imgwidth;
 	mImgHeight 	= imgheight;
 	mSize 		= MemSize;
-	mColorKey 	= ColorKey;
 	mClampMode 	= ClampMode;
 	mFilter 	= TEX_FILTER_LINEAR;
 

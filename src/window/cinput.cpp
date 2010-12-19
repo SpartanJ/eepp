@@ -218,8 +218,7 @@ void cInput::Update() {
 			case SDL_VIDEORESIZE:
 				EE->ChangeRes(mEvent.resize.w, mEvent.resize.h, EE->Windowed() );
 
-				if ( mVRCall.IsSet() )
-					mVRCall();
+				CallVideoResize();
 
 				break;
 			case SDL_QUIT:
@@ -231,6 +230,11 @@ void cInput::Update() {
 			i->second( &mEvent );
 		}
 	}
+}
+
+void cInput::CallVideoResize() {
+	if ( mVRCall.IsSet() )
+		mVRCall();
 }
 
 bool cInput::GetKey( Uint8 * Key, Uint8 Pos ) {

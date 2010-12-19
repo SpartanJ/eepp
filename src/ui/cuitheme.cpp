@@ -6,54 +6,65 @@
 
 namespace EE { namespace UI {
 
-static const char * UI_THEME_ELEMENTS[] = {
-	"control",
-	"button",
-	"textinput",
-	"checkbox",
-	"checkbox_active",
-	"checkbox_inactive",
-	"button",
-	"radiobutton",
-	"radiobutton_active",
-	"radiobutton_inactive",
-	"hslider",
-	"hslider_bg",
-	"hslider_button",
-	"vslider",
-	"vslider_bg",
-	"vslider_button",
-	"spinbox",
-	"spinbox_input",
-	"spinbox_btnup",
-	"spinbox_btndown",
-	"hscrollbar",
-	"hscrollbar_slider",
-	"hscrollbar_bg",
-	"hscrollbar_button",
-	"hscrollbar_btnup",
-	"hscrollbar_btndown",
-	"vscrollbar",
-	"vscrollbar_slider",
-	"vscrollbar_bg",
-	"vscrollbar_button",
-	"vscrollbar_btnup",
-	"vscrollbar_btndown",
-	"progressbar",
-	"progressbar_filler",
-	"listbox",
-	"listboxitem",
-	"dropdownlist",
-	"combobox",
-	"menu",
-	"menuitem",
-	"separator",
-	"menucheckbox_active",
-	"menucheckbox_inactive",
-	"menuarrow"
-};
+static std::vector<std::string> UI_THEME_ELEMENTS;
+
+static void LoadThemeElements() {
+	if ( !UI_THEME_ELEMENTS.size() ) {
+		UI_THEME_ELEMENTS.reserve( 50 );
+		UI_THEME_ELEMENTS.push_back( "control" );
+		UI_THEME_ELEMENTS.push_back( "button" );
+		UI_THEME_ELEMENTS.push_back( "textinput" );
+		UI_THEME_ELEMENTS.push_back( "checkbox" );
+		UI_THEME_ELEMENTS.push_back( "checkbox_active" );
+		UI_THEME_ELEMENTS.push_back( "checkbox_inactive" );
+		UI_THEME_ELEMENTS.push_back( "button" );
+		UI_THEME_ELEMENTS.push_back( "radiobutton" );
+		UI_THEME_ELEMENTS.push_back( "radiobutton_active" );
+		UI_THEME_ELEMENTS.push_back( "radiobutton_inactive" );
+		UI_THEME_ELEMENTS.push_back( "hslider" );
+		UI_THEME_ELEMENTS.push_back( "hslider_bg" );
+		UI_THEME_ELEMENTS.push_back( "hslider_button" );
+		UI_THEME_ELEMENTS.push_back( "vslider" );
+		UI_THEME_ELEMENTS.push_back( "vslider_bg" );
+		UI_THEME_ELEMENTS.push_back( "vslider_button" );
+		UI_THEME_ELEMENTS.push_back( "spinbox" );
+		UI_THEME_ELEMENTS.push_back( "spinbox_input" );
+		UI_THEME_ELEMENTS.push_back( "spinbox_btnup" );
+		UI_THEME_ELEMENTS.push_back( "spinbox_btndown" );
+		UI_THEME_ELEMENTS.push_back( "hscrollbar" );
+		UI_THEME_ELEMENTS.push_back( "hscrollbar_slider" );
+		UI_THEME_ELEMENTS.push_back( "hscrollbar_bg" );
+		UI_THEME_ELEMENTS.push_back( "hscrollbar_button" );
+		UI_THEME_ELEMENTS.push_back( "hscrollbar_btnup" );
+		UI_THEME_ELEMENTS.push_back( "hscrollbar_btndown" );
+		UI_THEME_ELEMENTS.push_back( "vscrollbar" );
+		UI_THEME_ELEMENTS.push_back( "vscrollbar_slider" );
+		UI_THEME_ELEMENTS.push_back( "vscrollbar_bg" );
+		UI_THEME_ELEMENTS.push_back( "vscrollbar_button" );
+		UI_THEME_ELEMENTS.push_back( "vscrollbar_btnup" );
+		UI_THEME_ELEMENTS.push_back( "vscrollbar_btndown" );
+		UI_THEME_ELEMENTS.push_back( "progressbar" );
+		UI_THEME_ELEMENTS.push_back( "progressbar_filler" );
+		UI_THEME_ELEMENTS.push_back( "listbox" );
+		UI_THEME_ELEMENTS.push_back( "listboxitem" );
+		UI_THEME_ELEMENTS.push_back( "dropdownlist" );
+		UI_THEME_ELEMENTS.push_back( "combobox" );
+		UI_THEME_ELEMENTS.push_back( "menu" );
+		UI_THEME_ELEMENTS.push_back( "menuitem" );
+		UI_THEME_ELEMENTS.push_back( "separator" );
+		UI_THEME_ELEMENTS.push_back( "menucheckbox_active" );
+		UI_THEME_ELEMENTS.push_back( "menucheckbox_inactive" );
+		UI_THEME_ELEMENTS.push_back( "menuarrow" );
+	}
+}
+
+void cUITheme::AddThemeElement( const std::string& Element ) {
+	UI_THEME_ELEMENTS.push_back( Element );
+}
 
 cUITheme * cUITheme::LoadFromPath( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt ) {
+	LoadThemeElements();
+
 	Uint32 i;
 	bool Found;
 	std::string Element;
@@ -71,7 +82,7 @@ cUITheme * cUITheme::LoadFromPath( const std::string& Path, const std::string& N
 
 	cUITheme * tTheme = eeNew( cUITheme, ( Name, NameAbbr ) );
 
-	Uint32 Count = eeARRAY_SIZE( UI_THEME_ELEMENTS );
+	Uint32 Count = UI_THEME_ELEMENTS.size();
 
 	for ( i = 0; i < Count; i++ ) {
 		Uint32 IsComplex = 0;
@@ -102,6 +113,8 @@ cUITheme * cUITheme::LoadFromPath( const std::string& Path, const std::string& N
 }
 
 cUITheme * cUITheme::LoadFromShapeGroup( cShapeGroup * ShapeGroup, const std::string& Name, const std::string NameAbbr ) {
+	LoadThemeElements();
+
 	Uint32 i;
 	bool Found;
 	std::string Element;
@@ -110,7 +123,7 @@ cUITheme * cUITheme::LoadFromShapeGroup( cShapeGroup * ShapeGroup, const std::st
 
 	cUITheme * tTheme = eeNew( cUITheme, ( Name, NameAbbr ) );
 
-	Uint32 Count = eeARRAY_SIZE( UI_THEME_ELEMENTS );
+	Uint32 Count = UI_THEME_ELEMENTS.size();
 
 	for ( i = 0; i < Count; i++ ) {
 		Uint32 IsComplex = 0;

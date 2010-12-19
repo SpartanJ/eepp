@@ -160,7 +160,7 @@ class EE_API cSprite {
 		* @param Alpha Set the Color Alpha
 		* @param Color Set the Color
 		*/
-		void Update( const eeFloat& x, const eeFloat& y, const eeFloat& Scale = 1.0f, const eeFloat& Angle = 0.0f, const Uint8& Alpha = 255, const eeRGBA& Color = eeRGBA(255,255,255,255) );
+		void Update( const eeFloat& x, const eeFloat& y, const eeFloat& Scale = 1.0f, const eeFloat& Angle = 0.0f, const Uint8& Alpha = 255, const eeColorA& Color = eeColorA() );
 
 		/** Get the internal texture id from a frame number and a sub frame number
 		* @param FrameNum The Frame Number

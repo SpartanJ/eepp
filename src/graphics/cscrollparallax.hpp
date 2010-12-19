@@ -13,7 +13,7 @@ class EE_API cScrollParallax {
 		~cScrollParallax();
 
 		/** Constructor that create's the Scroll Parallax */
-		cScrollParallax( cShape * Shape, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeVector2f& Speed, const eeRGBA& Color = eeRGBA(255, 255, 255, 255), const EE_PRE_BLEND_FUNC& Blend = ALPHA_NORMAL );
+		cScrollParallax( cShape * Shape, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeVector2f& Speed, const eeColorA& Color = eeColorA(), const EE_PRE_BLEND_FUNC& Blend = ALPHA_NORMAL );
 
 		/** Create's the Scroll Parallax
 		* @param Shape The Shape to Draw
@@ -26,7 +26,7 @@ class EE_API cScrollParallax {
 		* @param Effect The Blend Mode ( default ALPHA_NORMAL )
 		* @return True if success
 		*/
-		bool Create( cShape * Shape, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeVector2f& Speed, const eeRGBA& Color = eeRGBA(255, 255, 255, 255), const EE_PRE_BLEND_FUNC& Blend = ALPHA_NORMAL );
+		bool Create( cShape * Shape, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeVector2f& Speed, const eeColorA& Color = eeColorA(), const EE_PRE_BLEND_FUNC& Blend = ALPHA_NORMAL );
 
 		/** Set the Color */
 		void Color( const eeColorA& Color ) { mColor = Color; }

@@ -48,14 +48,14 @@ cSprite * cUISprite::Sprite() const {
 	return mSprite;
 }
 
-eeRGBA cUISprite::Color() const {
+eeColorA cUISprite::Color() const {
 	if ( NULL != mSprite )
 		return mSprite->Color();
 
-	return eeRGBA();
+	return eeColorA();
 }
 
-void cUISprite::Color( const eeRGBA& color ) {
+void cUISprite::Color( const eeColorA& color ) {
 	if ( NULL != mSprite )
 		mSprite->Color( color );
 	

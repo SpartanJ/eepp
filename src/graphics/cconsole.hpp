@@ -32,28 +32,28 @@ class EE_API cConsole{
 		Uint32 TextureId() const { return mTexId; }
 
 		/** Set the Console Background Color */
-		void BackgroundColor( const eeRGBA& BackColor ) { mConColor = BackColor; }
+		void BackgroundColor( const eeColorA& BackColor ) { mConColor = BackColor; }
 
 		/** Get the Console Background Color */
-		eeRGBA BackgroundColor() const { return mConColor; }
+		const eeColorA& BackgroundColor() const { return mConColor; }
 
 		/** Set the Console Border Line Background Color */
-		void BackgroundLineColor( const eeRGBA& BackColor ) { mConLineColor = BackColor; }
+		void BackgroundLineColor( const eeColorA& BackColor ) { mConLineColor = BackColor; }
 
 		/** Get the Console Border Line Background Color */
-		eeRGBA BackgroundLineColor() const { return mConLineColor; }
+		const eeColorA& BackgroundLineColor() const { return mConLineColor; }
 
 		/** Set the Console Font Color */
-		void FontColor( const eeRGBA& FntColor ) { mFontColor = FntColor; }
+		void FontColor( const eeColorA& FntColor ) { mFontColor = FntColor; }
 
 		/** Get the Console Font Color */
-		eeRGBA FontColor() const { return mFontColor; }
+		const eeColorA& FontColor() const { return mFontColor; }
 
 		/** Set the Console Client Input ( Writeable Line ) Font Color */
-		void FontLineColor( const eeRGBA& FntColor ) { mFontLineColor = FntColor; }
+		void FontLineColor( const eeColorA& FntColor ) { mFontLineColor = FntColor; }
 
 		/** Get the Console Client Input ( Writeable Line ) Font Color */
-		eeRGBA FontLineColor() const { return mFontLineColor; }
+		const eeColorA& FontLineColor() const { return mFontLineColor; }
 
 		/** Toogle the console between visible and hided with Fade In or Fade Out effect. */
 		void Toggle();
@@ -89,7 +89,7 @@ class EE_API cConsole{
 		* @param FontColor The Console Font Color
 		* @param FontLineColor The Console Line Font Color ( The Client Input )
 		*/
-		void Create( cFont* Font, const bool& MakeDefaultCommands = true, const eeUint& MaxLogLines = 1024, const Uint32& TextureId = 0, const eeRGBA& ConsoleColor = eeRGBA(true), const eeRGBA& ConsoleLineColor = eeRGBA(true), const eeRGBA& FontColor = eeRGBA(true), const eeRGBA& FontLineColor = eeRGBA(true) );
+		void Create( cFont* Font, const bool& MakeDefaultCommands = true, const eeUint& MaxLogLines = 1024, const Uint32& TextureId = 0 );
 
 		/** Add Text to Console */
 		void PushText( const std::wstring& str );
@@ -120,6 +120,12 @@ class EE_API cConsole{
 
 		/** Use this if you need to ignore some char to activate the console, for example '~'. A common char to activate a console. */
 		void IgnoreCharOnPrompt( const Uint32& ch );
+
+		/** @return If the console is rendering the FPS count. */
+		const bool& IsShowingFps() const;
+
+		/** Activate/Deactive fps rendering */
+		void ShowFps( const bool& Show );
 	protected:
 		std::map < std::wstring, ConsoleCallback > mCallbacks;
 		std::deque < std::wstring > mCmdLog;
@@ -128,7 +134,7 @@ class EE_API cConsole{
 		eeInt mLastLogPos;
 
 		bool mEnabled, mVisible, mFadeIn, mFadeOut, mExpand, mFading, mShowFps;
-		eeRGBA mConColor, mConLineColor, mFontColor, mFontLineColor;
+		eeColorA mConColor, mConLineColor, mFontColor, mFontLineColor;
 		eeFloat mWidth, mHeight, mHeightMin, mCurHeight, mY, mA, mMaxAlpha, mTempY, mFontSize, mFadeSpeed;
 		Uint32 mMyCallback, mEx, mMaxLogLines;
 

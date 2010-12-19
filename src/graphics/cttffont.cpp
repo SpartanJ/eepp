@@ -264,7 +264,7 @@ void cTTFFont::UpdateLoading() {
 	if ( mTexReady && NULL != mPixels ) {
 		std::string name( FileRemoveExtension( FileNameFromPath( mFilepath ) ) );
 
-		mTexId = cTextureFactory::instance()->LoadFromPixels( reinterpret_cast<unsigned char *> ( &mPixels[0] ), (Uint32)mTexWidth, (Uint32)mTexHeight, 4, false, eeRGB(true), EE_CLAMP_TO_EDGE, false, false, name );
+		mTexId = cTextureFactory::instance()->LoadFromPixels( reinterpret_cast<unsigned char *> ( &mPixels[0] ), (Uint32)mTexWidth, (Uint32)mTexHeight, 4, false, EE_CLAMP_TO_EDGE, false, false, name );
 
 		eeSAFE_DELETE_ARRAY( mPixels );
 

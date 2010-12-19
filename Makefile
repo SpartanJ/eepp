@@ -55,7 +55,7 @@ LIBSIV 		= -lX11 -lXcursor
 OTHERINC	= -I/usr/include/freetype2
 else
 ifeq ($(OS), darwin)
-LIBS 		= -lfreetype -lSDL -lSDLmain -lsndfile -framework OpenGL -framework GLUT -framework OpenAL -framework Cocoa -framework CoreFoundation
+LIBS 		= -lfreetype -lSDL -lSDLmain -lsndfile -framework OpenGL -framework GLUT -framework OpenAL -framework Cocoa -framework CoreFoundation -framework AGL
 LIBSIV 		= 
 OTHERINC	= -I/usr/include/freetype2
 endif
@@ -63,6 +63,7 @@ endif
 
 EXE     			= eetest-$(RELEASETYPE)
 EXEIV				= eeiv-$(RELEASETYPE)
+EXEFLUID			= eefluid-$(RELEASETYPE)
 
 SRCGLEW 			= $(wildcard ./src/helper/glew/*.c)
 SRCSOIL 			= $(wildcard ./src/helper/SOIL/*.c)
@@ -83,6 +84,7 @@ SRCWINDOW     		= $(wildcard ./src/window/*.cpp)
 
 SRCTEST     		= $(wildcard ./src/test/*.cpp)
 SRCEEIV     		= $(wildcard ./src/eeiv/*.cpp)
+SRCFLUID     		= $(wildcard ./src/fluid/*.cpp)
 
 SRCHELPERS			= $(SRCGLEW) $(SRCSOIL) $(SRCSTBVORBIS) $(SRCZLIB) $(SRCLIBZIP)
 SRCMODULES			= $(SRCHAIKUTTF) $(SRCBASE) $(SRCAUDIO) $(SRCGAMING) $(SRCGRAPHICS) $(SRCMATH) $(SRCSYSTEM) $(SRCUI) $(SRCUTILS) $(SRCWINDOW)
@@ -112,6 +114,7 @@ OBJMODULES			= $(OBJHAIKUTTF) $(OBJBASE) $(OBJUTILS) $(OBJMATH) $(OBJSYSTEM) $(O
 
 OBJTEST     		= $(SRCTEST:.cpp=.o)
 OBJEEIV     		= $(SRCEEIV:.cpp=.o)
+OBJFLUID     		= $(SRCFLUID:.cpp=.o)
 
 OBJDIR				= obj/$(OS)/$(RELEASETYPE)/
 
@@ -120,8 +123,9 @@ FOBJMODULES			= $(patsubst ./%, $(OBJDIR)%, $(OBJHAIKUTTF) $(OBJBASE) $(OBJUTILS
 
 FOBJTEST     		= $(patsubst ./%, $(OBJDIR)%, $(SRCTEST:.cpp=.o) )
 FOBJEEIV     		= $(patsubst ./%, $(OBJDIR)%, $(SRCEEIV:.cpp=.o) )
+FOBJFLUID     		= $(patsubst ./%, $(OBJDIR)%, $(SRCFLUID:.cpp=.o) )
 
-FOBJEEPP			= $(FOBJMODULES) $(FOBJTEST) $(FOBJEEIV)
+FOBJEEPP			= $(FOBJMODULES) $(FOBJTEST) $(FOBJEEIV) $(FOBJFLUID)
 FOBJALL 			= $(FOBJHELPERS) $(FOBJEEPP)
 
 DEPSEEPP			= $(FOBJEEPP:.o=.d)
@@ -148,6 +152,7 @@ dirs:
 	@mkdir -p $(OBJDIR)/src/window
 	@mkdir -p $(OBJDIR)/src/test
 	@mkdir -p $(OBJDIR)/src/eeiv
+	@mkdir -p $(OBJDIR)/src/fluid
 
 lib: dirs $(LIB)
 
@@ -157,7 +162,7 @@ $(FOBJMODULES):
 
 $(FOBJHELPERS):
 	$(CC) -o $@ -c $(patsubst $(OBJDIR)%.o,%.c,$@) $(CFLAGSEXT) -DSTBI_FAILURE_USERMSG
-	@$(CC) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.c,$@)  -DSTBI_FAILURE_USERMSG > $(patsubst %.o,%.d,$@)
+	@$(CC) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.c,$@) -DSTBI_FAILURE_USERMSG > $(patsubst %.o,%.d,$@)
 
 $(FOBJTEST):
 	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
@@ -166,6 +171,13 @@ $(FOBJTEST):
 $(FOBJEEIV):
 	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
 	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
+
+$(FOBJFLUID):
+	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
+	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
+
+$(EXEFLUID): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJFLUID)
+	$(CPP) -o ./$(EXEFLUID) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJFLUID) $(LDFLAGS) $(LIBS)
 
 $(EXEIV): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJEEIV)
 	$(CPP) -o ./$(EXEIV) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJEEIV) $(LDFLAGS) $(LIBS) $(LIBSIV)
@@ -185,6 +197,8 @@ os:
 test: dirs $(EXE)
 
 eeiv: dirs $(EXEIV)
+
+fluid: dirs $(EXEFLUID)
 
 docs:
 	doxygen ./Doxyfile

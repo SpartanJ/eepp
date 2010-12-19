@@ -345,7 +345,10 @@ void cEETest::Init() {
 }
 
 void cEETest::LoadFonts() {
-	mFontLoader.Add( eeNew( cTextureFontLoader, ( "conchars", eeNew( cTextureLoader, ( &PAK, "conchars.png", false, eeRGB(0,0,0) ) ), (eeUint)32 ) ) );
+	cTextureLoader * tl = eeNew( cTextureLoader, ( &PAK, "conchars.png" ) );
+	tl->SetColorKey( eeColor(0,0,0) );
+
+	mFontLoader.Add( eeNew( cTextureFontLoader, ( "conchars", tl, (eeUint)32 ) ) );
 	mFontLoader.Add( eeNew( cTextureFontLoader, ( "ProggySquareSZ", eeNew( cTextureLoader, ( &PAK, "ProggySquareSZ.png" ) ), &PAK, "ProggySquareSZ.dat" ) ) );
 	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", &PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255) ) ) );
 	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arialb", &PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255), 1, eeColor(0,0,0), true ) ) );
@@ -780,7 +783,7 @@ void cEETest::LoadTextures() {
 	TNP.resize(12);
 
 	for ( i = 0; i <= 7; i++ ) {
-		TN[i] = TF->LoadFromPack( &PAK, "t" + toStr(i+1) + ".png", ( (i+1) == 7 ) ? true : false, eeRGB(true), ( (i+1) == 4 ) ? EE_CLAMP_REPEAT : EE_CLAMP_TO_EDGE );
+		TN[i] = TF->LoadFromPack( &PAK, "t" + toStr(i+1) + ".png", ( (i+1) == 7 ) ? true : false, ( (i+1) == 4 ) ? EE_CLAMP_REPEAT : EE_CLAMP_TO_EDGE );
 		TNP[i] = TF->GetTexture( TN[i] );
 	}
 
@@ -794,7 +797,8 @@ void cEETest::LoadTextures() {
 	}
 
 	Tiles[6] = SG->Add( TF->LoadFromPack( &PAK, "objects/1.png" ), "7" );
-	Tiles[7] = SG->Add( TF->LoadFromPack( &PAK, "objects/2.png", false, eeColor(0,0,0) ), "8" );
+	Tiles[7] = SG->Add( TF->LoadFromPack( &PAK, "objects/2.png" ), "8" );
+	Tiles[7]->GetTexture()->CreateMaskFromColor( eeColorA(0,0,0,255), 0 );
 
 	eeInt w, h;
 
@@ -842,7 +846,7 @@ void cEETest::LoadTextures() {
 	CL1.Scale( 0.5f );
 
 	CL2.AddFrame(TN[0], 96, 96);
-	CL2.Color( eeRGBA( 255, 255, 255, 255 ) );
+	CL2.Color( eeColorA( 255, 255, 255, 255 ) );
 
 	mTGL = eeNew( cTextureGroupLoader, ( MyPath + "data/bnb/bnb.etg" ) );
 
@@ -1019,15 +1023,15 @@ void cEETest::Screen2() {
 	CL1.SetRenderType( RN_ISOMETRIC );
 
 	if (IntersectRectCircle( CL1.GetAABB(), Mousef.x, Mousef.y, 80.f ))
-		CL1.Color( eeRGBA(255, 0, 0, 200) );
+		CL1.Color( eeColorA(255, 0, 0, 200) );
 	else
-		CL1.Color( eeRGBA(255, 255, 255, 200) );
+		CL1.Color( eeColorA(255, 255, 255, 200) );
 
 	if ( IntersectQuad2( CL1.GetQuad() , CL2.GetQuad() ) ) {
-		CL1.Color( eeRGBA(0, 255, 0, 255) );
-		CL2.Color( eeRGBA(0, 255, 0, 255) );
+		CL1.Color( eeColorA(0, 255, 0, 255) );
+		CL2.Color( eeColorA(0, 255, 0, 255) );
 	} else
-		CL2.Color( eeRGBA(255, 255, 255, 255) );
+		CL2.Color( eeColorA(255, 255, 255, 255) );
 
 	CL1.Angle(ang);
 	CL1.Scale(scale * 0.5f);

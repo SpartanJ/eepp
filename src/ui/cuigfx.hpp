@@ -11,14 +11,14 @@ class EE_API cUIGfx : public cUIControlAnim {
 			public:
 				inline CreateParams() : cUIControl::CreateParams() {
 					Shape		= NULL;
-					ShapeColor 	= eeRGBA( true );
+					ShapeColor 	= eeColorA();
 					ShapeRender = RN_NORMAL;
 				}
 
 				inline ~CreateParams() {}
 
 				cShape * 		Shape;
-				eeRGBA 			ShapeColor;
+				eeColorA 		ShapeColor;
 				EE_RENDERTYPE 	ShapeRender;
 		};
 
@@ -34,16 +34,16 @@ class EE_API cUIGfx : public cUIControlAnim {
 
 		void Shape( cShape * shape );
 
-		const eeRGBA& Color() const;
+		const eeColorA& Color() const;
 
-		void Color( const eeRGBA& color );
+		void Color( const eeColorA& color );
 
 		const EE_RENDERTYPE& RenderType() const;
 
 		void RenderType( const EE_RENDERTYPE& render );
 	protected:
 		cShape * 		mShape;
-		eeRGBA 			mColor;
+		eeColorA 		mColor;
 		EE_RENDERTYPE 	mRender;
 
 		virtual void OnSizeChange();

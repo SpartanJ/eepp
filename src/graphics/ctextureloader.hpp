@@ -13,15 +13,17 @@ namespace EE { namespace Graphics {
 
 class EE_API cTextureLoader : public cObjectLoader {
 	public:
-		cTextureLoader( const std::string& Filepath, const bool& Mipmap = false, const eeRGB& ColorKey  = eeRGB(true), const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		cTextureLoader( const std::string& Filepath, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
-		cTextureLoader( const unsigned char * ImagePtr, const eeUint& Size, const bool& Mipmap = false, const eeRGB& ColorKey = eeRGB(true), const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		cTextureLoader( const unsigned char * ImagePtr, const eeUint& Size, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
-		cTextureLoader( cPack * Pack, const std::string& FilePackPath, const bool& Mipmap = false, const eeRGB& ColorKey = eeRGB(true), const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		cTextureLoader( cPack * Pack, const std::string& FilePackPath, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
-		cTextureLoader( const unsigned char * Pixels, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const bool& Mipmap = false, const eeRGB& ColorKey = eeRGB(true), const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const std::string& FileName = std::string("") );
+		cTextureLoader( const unsigned char * Pixels, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const std::string& FileName = std::string("") );
 
 		~cTextureLoader();
+
+		void			SetColorKey( eeColor Color );
 
 		void 			Update();
 
@@ -40,7 +42,6 @@ class EE_API cTextureLoader : public cObjectLoader {
 		eeUint 			mHeight;
 		bool 			mMipmap;
 		Int32 			mChannels;
-		eeRGB 			mColorKey;
 		EE_CLAMP_MODE 	mClampMode;
 		bool 			mCompressTexture;
 		bool 			mLocalCopy;
@@ -48,6 +49,8 @@ class EE_API cTextureLoader : public cObjectLoader {
 
 		const Uint8 *	mImagePtr;
 		Uint32			mSize;
+
+		eeColor *		mColorKey;
 
 		void 			Start();
 	private:
@@ -64,4 +67,3 @@ class EE_API cTextureLoader : public cObjectLoader {
 }}
 
 #endif
-

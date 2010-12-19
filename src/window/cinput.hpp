@@ -429,6 +429,8 @@ class EE_API cInput : public tSingleton<cInput> {
 		void DoubleClickInterval( const Uint32& Interval );
 
 		~cInput();
+
+		void CallVideoResize();
 	protected:
 		cInput();
 

@@ -24,22 +24,10 @@ cConsole::~cConsole() {
 		cInput::instance()->PopCallback( mMyCallback );
 }
 
-void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const eeUint& MaxLogLines, const Uint32& TextureId, const eeRGBA& ConsoleColor, const eeRGBA& ConsoleLineColor, const eeRGBA& FontColor, const eeRGBA& FontLineColor ) {
+void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const eeUint& MaxLogLines, const Uint32& TextureId ) {
 	mFont = Font;
 
 	mFontSize = (eeFloat)mFont->GetFontSize();
-
-	if ( !FontColor.voidRGB )
-		mFontColor = FontColor;
-
-	if ( !FontLineColor.voidRGB )
-		mFontLineColor = FontLineColor;
-
-	if ( !ConsoleColor.voidRGB )
-		mConColor = ConsoleColor;
-
-	if ( !ConsoleLineColor.voidRGB )
-		mConLineColor = ConsoleLineColor;
 
 	if ( TextureId > 0 )
 		mTexId = TextureId;
@@ -88,7 +76,7 @@ void cConsole::Draw() {
 				mPri.SetColor( eeColorA( mConColor.R(), mConColor.G(), mConColor.B(), static_cast<Uint8>(mA) ) );
 				mPri.DrawRectangle( 0.0f, 0.0f, mWidth, mY );
 			} else {
-				eeRGBA C( mConColor.R(), mConColor.G(), mConColor.B(), static_cast<Uint8>(mA) );
+				eeColorA C( mConColor.R(), mConColor.G(), mConColor.B(), static_cast<Uint8>(mA) );
 
 				cTexture * Tex = cTextureFactory::instance()->GetTexture( mTexId );
 
@@ -667,6 +655,14 @@ void cConsole::CmdShowFps( const std::vector < std::wstring >& params ) {
 
 void cConsole::IgnoreCharOnPrompt( const Uint32& ch ) {
 	mTBuf.PushIgnoredChar( ch );
+}
+
+const bool& cConsole::IsShowingFps() const {
+	return mShowFps;
+}
+
+void cConsole::ShowFps( const bool& Show ) {
+	mShowFps = Show;
 }
 
 }}

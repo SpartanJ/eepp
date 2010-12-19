@@ -16,7 +16,7 @@ class EE_API cTexture : public cImage {
 	public:
 		cTexture();
 
-		cTexture( const Uint32& texture, const eeUint& width, const eeUint& height, const eeUint& imgwidth, const eeUint& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize = 0, const Uint8* data = NULL );
+		cTexture( const Uint32& texture, const eeUint& width, const eeUint& height, const eeUint& imgwidth, const eeUint& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize = 0, const Uint8* data = NULL );
 
 		cTexture( const cTexture& Copy );
 
@@ -38,7 +38,7 @@ class EE_API cTexture : public cImage {
 		* @param CompressedTexture The Texture was compressed on loading
 		* @param data The Texture (raw texture)
 		*/
-		void Create( const Uint32& texture, const eeUint& width, const eeUint& height, const eeUint& imgwidth, const eeUint& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const eeRGB& ColorKey, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize = 0, const Uint8* data = NULL );
+		void Create( const Uint32& texture, const eeUint& width, const eeUint& height, const eeUint& imgwidth, const eeUint& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize = 0, const Uint8* data = NULL );
 
 		/** Set the OpenGL Texture Id (texture handle) */
 		void Handle( const Uint32& texture ) { mTexture = texture; }
@@ -66,12 +66,6 @@ class EE_API cTexture : public cImage {
 
 		/** @return If the texture use Mipmaps */
 		bool Mipmap() const;
-
-		/** Set the Texture Color Key */
-		void ColorKey( const eeRGB& colorkey ) { mColorKey = colorkey; }
-
-		/** @return The Texture Color Key */
-		eeRGB ColorKey() const { return mColorKey; }
 
 		/** Set the Texture Clamp Mode */
 		void ClampMode( const EE_CLAMP_MODE& clampmode );
@@ -226,7 +220,6 @@ class EE_API cTexture : public cImage {
 		eeUint 			mImgHeight;
 
 		Uint32			mFlags;
-		eeRGB 			mColorKey;
 
 		EE_CLAMP_MODE 	mClampMode;
 		EE_TEX_FILTER 	mFilter;

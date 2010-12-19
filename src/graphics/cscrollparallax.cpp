@@ -11,7 +11,7 @@ cScrollParallax::cScrollParallax() :
 
 cScrollParallax::~cScrollParallax() {}
 
-cScrollParallax::cScrollParallax( cShape * Shape, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeVector2f& Speed, const eeRGBA& Color, const EE_PRE_BLEND_FUNC& Blend ) {
+cScrollParallax::cScrollParallax( cShape * Shape, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeVector2f& Speed, const eeColorA& Color, const EE_PRE_BLEND_FUNC& Blend ) {
 	Create( Shape, DestX, DestY, DestWidth, DestHeight, Speed, Color, Blend );
 }
 
@@ -39,7 +39,7 @@ void cScrollParallax::SetAABB() {
 	mAABB		= eeRectf( mInitPos.x, mInitPos.y, mInitPos.x + mSize.Width(), mInitPos.y + mSize.Height() );
 }
 
-bool cScrollParallax::Create( cShape * Shape, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeVector2f& Speed, const eeRGBA& Color, const EE_PRE_BLEND_FUNC& Blend ) {
+bool cScrollParallax::Create( cShape * Shape, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeVector2f& Speed, const eeColorA& Color, const EE_PRE_BLEND_FUNC& Blend ) {
 	mShape		= Shape;
 	mPos		= eeVector2f( DestX, DestY );
 	mSize 		= eeSizef( DestWidth, DestHeight );

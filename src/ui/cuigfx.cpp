@@ -13,10 +13,7 @@ cUIGfx::cUIGfx( const cUIGfx::CreateParams& Params ) :
 	if ( NULL != mShape && ( ( Flags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) )
 		Size( mShape->Size() );
 
-	if ( mColor.voidRGB ) {
-		mColor.Alpha = (Uint8)mAlpha;
-		mColor.voidRGB = false;
-	}
+	mColor.Alpha = (Uint8)mAlpha;
 }
 
 cUIGfx::~cUIGfx() {
@@ -52,11 +49,11 @@ cShape * cUIGfx::Shape() const {
 	return mShape;
 }
 
-const eeRGBA& cUIGfx::Color() const {
+const eeColorA& cUIGfx::Color() const {
 	return mColor;
 }
 
-void cUIGfx::Color( const eeRGBA& color ) {
+void cUIGfx::Color( const eeColorA& color ) {
 	mColor = color;
 	Alpha( color.A() );
 }

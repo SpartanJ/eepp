@@ -25,8 +25,10 @@ cFont::~cFont() {
 
 void cFont::SetText( const std::wstring& Text ) {
 	if ( mText.size() != Text.size() ) {
-		mRenderCoords.resize( Text.size() * EE_QUAD_VERTEX );
-		mColors.resize( Text.size() * EE_QUAD_VERTEX, mColor );
+		Int32 size = Text.size() * EE_QUAD_VERTEX;
+
+		mRenderCoords.resize( size );
+		mColors.resize( size, mColor );
 	}
 
 	mText = Text;

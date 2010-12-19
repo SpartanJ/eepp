@@ -11,7 +11,6 @@ namespace EE { namespace Graphics {
 
 cTextureLoader::cTextureLoader( const std::string& Filepath,
 	const bool& Mipmap,
-	const eeRGB& ColorKey,
 	const EE_CLAMP_MODE& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
@@ -26,13 +25,13 @@ cTextureLoader::cTextureLoader( const std::string& Filepath,
 	mHeight(0),
 	mMipmap(Mipmap),
 	mChannels(0),
-	mColorKey(ColorKey),
 	mClampMode(ClampMode),
 	mCompressTexture(CompressTexture),
 	mLocalCopy(KeepLocalCopy),
 	mPack(NULL),
 	mImagePtr(NULL),
 	mSize(0),
+	mColorKey(NULL),
 	mTexLoaded(false),
 	mIsDDS(false),
 	mIsDDSCompressed(0)
@@ -42,7 +41,6 @@ cTextureLoader::cTextureLoader( const std::string& Filepath,
 cTextureLoader::cTextureLoader( const unsigned char * ImagePtr,
 	const eeUint& Size,
 	const bool& Mipmap,
-	const eeRGB& ColorKey,
 	const EE_CLAMP_MODE& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
@@ -57,13 +55,13 @@ cTextureLoader::cTextureLoader( const unsigned char * ImagePtr,
 	mHeight(0),
 	mMipmap(Mipmap),
 	mChannels(0),
-	mColorKey(ColorKey),
 	mClampMode(ClampMode),
 	mCompressTexture(CompressTexture),
 	mLocalCopy(KeepLocalCopy),
 	mPack(NULL),
 	mImagePtr(ImagePtr),
 	mSize(Size),
+	mColorKey(NULL),
 	mTexLoaded(false),
 	mIsDDS(false),
 	mIsDDSCompressed(0)
@@ -73,7 +71,6 @@ cTextureLoader::cTextureLoader( const unsigned char * ImagePtr,
 cTextureLoader::cTextureLoader( cPack * Pack,
 	const std::string& FilePackPath,
 	const bool& Mipmap ,
-	const eeRGB& ColorKey,
 	const EE_CLAMP_MODE& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
@@ -88,13 +85,13 @@ cTextureLoader::cTextureLoader( cPack * Pack,
 	mHeight(0),
 	mMipmap(Mipmap),
 	mChannels(0),
-	mColorKey(ColorKey),
 	mClampMode(ClampMode),
 	mCompressTexture(CompressTexture),
 	mLocalCopy(KeepLocalCopy),
 	mPack(Pack),
 	mImagePtr(NULL),
 	mSize(0),
+	mColorKey(NULL),
 	mTexLoaded(false),
 	mIsDDS(false),
 	mIsDDSCompressed(0)
@@ -106,7 +103,6 @@ cTextureLoader::cTextureLoader( const unsigned char * Pixels,
 	const eeUint& Height,
 	const eeUint& Channels,
 	const bool& Mipmap,
-	const eeRGB& ColorKey,
 	const EE_CLAMP_MODE& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy,
@@ -122,13 +118,13 @@ cTextureLoader::cTextureLoader( const unsigned char * Pixels,
 	mHeight(0),
 	mMipmap(Mipmap),
 	mChannels(Channels),
-	mColorKey(ColorKey),
 	mClampMode(ClampMode),
 	mCompressTexture(CompressTexture),
 	mLocalCopy(KeepLocalCopy),
 	mPack(NULL),
 	mImagePtr(NULL),
 	mSize(0),
+	mColorKey(NULL),
 	mTexLoaded(false),
 	mIsDDS(false),
 	mIsDDSCompressed(0)
@@ -234,7 +230,10 @@ void cTextureLoader::LoadFromPixels() {
 				else
 					mSize = mWidth * mHeight * mChannels;
 
-				mTexId = cTextureFactory::instance()->PushTexture( mFilepath, tTexId, mImgWidth, mImgHeight, width, height, mMipmap, mChannels, mColorKey, mClampMode, mCompressTexture || mIsDDSCompressed, mLocalCopy, mSize );
+				mTexId = cTextureFactory::instance()->PushTexture( mFilepath, tTexId, mImgWidth, mImgHeight, width, height, mMipmap, mChannels, mClampMode, mCompressTexture || mIsDDSCompressed, mLocalCopy, mSize );
+
+				if ( NULL != mColorKey && 0 != mTexId )
+					cTextureFactory::instance()->GetTexture( mTexId )->CreateMaskFromColor( eeColorA( mColorKey->R(), mColorKey->G(), mColorKey->B(), 255 ), 0 );
 			}
 
 			if ( TEX_LT_PIXELS != mLoadType ) {
@@ -260,6 +259,11 @@ void cTextureLoader::Update() {
 
 const Uint32& cTextureLoader::Id() const {
 	return mTexId;
+}
+
+void cTextureLoader::SetColorKey( eeColor Color ) {
+	eeSAFE_DELETE( mColorKey );
+	mColorKey = eeNew( eeColor, ( Color.R(), Color.G(), Color.B() ) );
 }
 
 }}
