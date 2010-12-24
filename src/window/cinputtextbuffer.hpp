@@ -109,6 +109,10 @@ class EE_API cInputTextBuffer {
 		std::vector<Uint32> mIgnoredChars;
 
 		bool CanAdd();
+
+		void MovePromptRowDown( const bool& breakit );
+
+		void MovePromptRowUp( const bool& breakit );
 };
 
 }}

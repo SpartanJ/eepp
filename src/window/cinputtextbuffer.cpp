@@ -89,6 +89,14 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 						} else if ( ( mPromptPos + 1 ) == (eeInt)mText.size() ) {
 							SetAutoPromp();
 						}
+					} else if ( c == KEY_UP ) {
+						MovePromptRowUp( false );
+					} else if ( c == KEY_DOWN ) {
+						MovePromptRowDown( true );
+					} else if ( c == KEY_PAGEUP ) {
+						MovePromptRowUp( true );
+					} else if ( c == KEY_PAGEDOWN ) {
+						MovePromptRowDown( false );
 					} else if ( CanAdd() && isCharacter(c) && !cInput::instance()->MetaPressed() && !cInput::instance()->AltPressed() && !cInput::instance()->ControlPressed() ) {
 						bool Ignored = false;
 
@@ -118,13 +126,49 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 
 					break;
 				case SDL_KEYUP:
-					if ( Event->key.keysym.sym == SDLK_END ) {
-						SetAutoPromp();
-					}
+					if ( SupportNewLine() ) {
+						if ( Event->key.keysym.sym == SDLK_END ) {
+							for ( Uint32 i = mPromptPos; i < mText.size(); i++ )  {
+								if ( mText[i] == L'\n' ) {
+									mPromptPos = i;
+									SetAutoPromp( false );
+									break;
+								}
 
-					if ( Event->key.keysym.sym == SDLK_HOME ) {
-						mPromptPos = 0;
-						SetAutoPromp(false);
+								if ( i == ( mText.size() - 1 ) ) {
+									mPromptPos = mText.size();
+									SetAutoPromp( false );
+								}
+							}
+						}
+
+						if ( Event->key.keysym.sym == SDLK_HOME ) {
+							if ( 0 != mPromptPos ) {
+								for ( Int32 i = (Int32)mPromptPos - 1; i >= 0; i-- )  {
+									if ( i >= 0 ) {
+										if ( mText[i] == L'\n' ) {
+											mPromptPos = i + 1;
+											SetAutoPromp( false );
+											break;
+										}
+
+										if ( i == 0 ) {
+											mPromptPos = 0;
+											SetAutoPromp( false );
+										}
+									}
+								}
+							}
+						}
+					} else {
+						if ( Event->key.keysym.sym == SDLK_END ) {
+							SetAutoPromp();
+						}
+
+						if ( Event->key.keysym.sym == SDLK_HOME ) {
+							mPromptPos = 0;
+							SetAutoPromp(false);
+						}
 					}
 					break;
 			}
@@ -146,6 +190,83 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 					}
 				}
 			}
+		}
+	}
+}
+
+void cInputTextBuffer::MovePromptRowDown( const bool& breakit ) {
+	if ( SupportFreeEditing() && SupportNewLine() ) {
+		Uint32 dNLPos	= 0;
+		GetCurPosLinePos( dNLPos );
+		Uint32 dCharsTo = mPromptPos - dNLPos;
+
+		Uint32 dLastLinePos		= 0;
+		Uint32 dCharLineCount	= 0;
+
+		for ( Uint32 i = mPromptPos; i < mText.size(); i++ )  {
+			if ( mText[i] == L'\n' ) {
+				if ( breakit ) {
+					if ( 0 == dLastLinePos ) {
+						dLastLinePos = i + 1;
+
+						dCharLineCount = 0;
+					} else {
+						break;
+					}
+				} else {
+					dLastLinePos = i + 1;
+
+					dCharLineCount = 0;
+				}
+			} else {
+				dCharLineCount++;
+			}
+		}
+
+		if ( 0 != dLastLinePos ) {
+			if ( dCharLineCount < dCharsTo ) {
+				mPromptPos = dLastLinePos + dCharLineCount;
+			} else {
+				mPromptPos = dLastLinePos + dCharsTo;
+			}
+
+			SetAutoPromp( false );
+		}
+	}
+}
+
+void cInputTextBuffer::MovePromptRowUp( const bool& breakit ) {
+	if ( SupportFreeEditing() && SupportNewLine() ) {
+		Uint32 uNLPos	= 0;
+		Uint32 uLineNum	= GetCurPosLinePos( uNLPos );
+		Uint32 uCharsTo = mPromptPos - uNLPos;
+
+		if ( uLineNum >= 1 ) {
+			Uint32 uLastLinePos		= 0;
+			Uint32 uCharLineCount	= 0;
+			uNLPos					= ( uNLPos - 1 );
+
+			for ( Uint32 i = 0; i < uNLPos; i++ )  {
+				if ( mText[i] == L'\n' ) {
+					if ( !breakit ) {
+						uLastLinePos = i + 1;
+
+						uCharLineCount = 0;
+					} else {
+						break;
+					}
+				} else {
+					uCharLineCount++;
+				}
+			}
+
+			if ( uCharLineCount < uCharsTo ) {
+				mPromptPos = uLastLinePos + uCharLineCount;
+			} else {
+				mPromptPos = uLastLinePos + uCharsTo;
+			}
+
+			SetAutoPromp( false );
 		}
 	}
 }
