@@ -38,6 +38,7 @@ class EE_API cUIEvent {
 			EventOnHideByClick,
 			EventOnItemKeyDown,
 			EventOnItemKeyUp,
+			EventOnCursorPosChange,
 			EventUser,
 			EventForceDWord = 0xFFFFFFFF
 		};

@@ -342,9 +342,9 @@ void cUIListBox::ContainerResize() {
 	mContainer->Pos( mPaddingContainer.Left, mPaddingContainer.Top );
 
 	if( mHScrollBar->Visible() )
-		mContainer->Size( mSize.Width() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.Height() - mPaddingContainer.Top - mPaddingContainer.Bottom - mHScrollBar->Size().Height() );
+		mContainer->Size( mSize.Width() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.Height() - mPaddingContainer.Top - mHScrollBar->Size().Height() );
 	else
-		mContainer->Size( mSize.Width() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.Height() - mPaddingContainer.Top - mPaddingContainer.Bottom );
+		mContainer->Size( mSize.Width() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.Height() - mPaddingContainer.Bottom - mPaddingContainer.Top );
 }
 
 void cUIListBox::CreateItemIndex( const Uint32& i ) {

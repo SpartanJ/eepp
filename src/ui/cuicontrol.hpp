@@ -307,6 +307,8 @@ class EE_API cUIControl {
 
 		virtual cUIControl * OverFind( const eeVector2f& Point );
 
+		void ClipMe();
+
 		void CheckClose();
 
 		void InternalDraw();
@@ -328,8 +330,6 @@ class EE_API cUIControl {
 		cUIControl * ChildPrev( cUIControl * Ctrl, bool Loop = false ) const;
 
 		cUIControl * ChildNext( cUIControl * Ctrl, bool Loop = false ) const;
-
-		void ClipMe();
 
 		void ClipDisable();
 

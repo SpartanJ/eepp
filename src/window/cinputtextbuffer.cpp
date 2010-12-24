@@ -68,7 +68,10 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 					} else if ( ( c == KEY_RETURN || c == KEY_KP_ENTER ) && !cInput::instance()->MetaPressed() && !cInput::instance()->AltPressed() && !cInput::instance()->ControlPressed() ) {
 						if ( SupportNewLine() && CanAdd() ) {
 							InsertChar( mText, mPromptPos, L'\n' );
+
 							mPromptPos++;
+
+							mChangeSinceLastUpdate = true;
 						}
 
 						if ( mEnterCall.IsSet() )

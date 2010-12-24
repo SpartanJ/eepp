@@ -55,6 +55,8 @@ static void LoadThemeElements() {
 		UI_THEME_ELEMENTS.push_back( "menucheckbox_active" );
 		UI_THEME_ELEMENTS.push_back( "menucheckbox_inactive" );
 		UI_THEME_ELEMENTS.push_back( "menuarrow" );
+		UI_THEME_ELEMENTS.push_back( "textedit" );
+		UI_THEME_ELEMENTS.push_back( "textedit_box" );
 	}
 }
 

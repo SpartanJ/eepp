@@ -19,13 +19,12 @@ class EE_API cUITextBox : public cUIControlAnim {
 
 					if ( NULL != Theme ) {
 						Font			= Theme->Font();
-						
-						if ( NULL == Font )
-							Font = cUIThemeManager::instance()->DefaultFont();
-						
 						FontColor		= Theme->FontColor();
 						FontShadowColor	= Theme->FontShadowColor();
 					}
+
+					if ( NULL == Font )
+						Font = cUIThemeManager::instance()->DefaultFont();
 				}
 
 				inline ~CreateParams() {}
@@ -80,6 +79,8 @@ class EE_API cUITextBox : public cUIControlAnim {
 		const eeInt& GetNumLines() const;
 
 		const eeVector2f& AlignOffset() const;
+
+		virtual void ShrinkText( const Uint32& MaxWidth );
 	protected:
 		cTextCache *	mTextCache;
 		eeColorA 		mFontColor;
@@ -89,11 +90,11 @@ class EE_API cUITextBox : public cUIControlAnim {
 
 		virtual void OnSizeChange();
 
-		void AutoShrink();
+		virtual void AutoShrink();
 
-		void AutoSize();
+		virtual void AutoSize();
 
-		void AutoAlign();
+		virtual void AutoAlign();
 };
 
 }}

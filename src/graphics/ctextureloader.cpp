@@ -132,6 +132,8 @@ cTextureLoader::cTextureLoader( const unsigned char * Pixels,
 }
 
 cTextureLoader::~cTextureLoader() {
+	eeSAFE_DELETE( mColorKey );
+
 	if ( TEX_LT_PIXELS != mLoadType )
 		eeSAFE_FREE( mPixels );
 }

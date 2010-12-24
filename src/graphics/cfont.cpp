@@ -562,6 +562,9 @@ void cFont::ShrinkText( std::string& Str, const Uint32& MaxWidth ) {
 						*tStringLoop	= '\n';
 					}
 
+					if ( L'\0' == *( tStringLoop + 1 ) )
+						tStringLoop++;
+
 					tLastSpace		= NULL;
 					tCurWidth		= 0.f;
 					tPrev			= -1;
@@ -626,6 +629,9 @@ void cFont::ShrinkText( std::wstring& Str, const Uint32& MaxWidth ) {
 					} else {	// The word is larger than the current possible width
 						*tStringLoop	= L'\n';
 					}
+
+					if ( L'\0' == *( tStringLoop + 1 ) )
+						tStringLoop++;
 
 					// Set the last spaces as null, because is a new line
 					tLastSpace		= NULL;

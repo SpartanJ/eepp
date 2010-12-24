@@ -159,10 +159,6 @@ void cTextCache::CachedCoords( const bool& cached ) {
 	mCachedCoords = cached;
 }
 
-cFont * cTextCache::GetFont() const {
-	return mFont;
-}
-
 const eeUint& cTextCache::CachedVerts() const {
 	return mVertexNumCached;
 }

@@ -289,6 +289,7 @@ void cEETest::Init() {
 		Scenes[2] = cb::Make0( this, &cEETest::Screen3 );
 
 		InBuf.Start();
+		InBuf.SupportNewLine( true );
 
 		SetRandomSeed();
 
@@ -389,15 +390,15 @@ void cEETest::CreateShaders() {
 void cEETest::CreateUI() {
 	cUIManager::instance()->Init();
 
-	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 530, 240 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
+	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
-	//cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
+	cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
 	CreateAquaTextureAtlas();
-
+/*
 	cTextureGroupLoader tgl( MyPath + "data/aquatg/aqua.etg" );
 	TF->GetByName( "data/aquatg/aqua.png" )->TextureFilter( TEX_FILTER_NEAREST );
 	cUIThemeManager::instance()->Add( cUITheme::LoadFromShapeGroup( cShapeGroupManager::instance()->GetByName( "aqua" ), "aqua", "aqua" ) );
-
+*/
 	cUIThemeManager::instance()->DefaultEffectsEnabled( true );
 	cUIThemeManager::instance()->DefaultFont( TTF );
 	cUIThemeManager::instance()->DefaultTheme( "aqua" );
@@ -457,8 +458,6 @@ void cEETest::CreateUI() {
 
 	cUITextInput::CreateParams InputParams;
 	InputParams.Parent( C );
-	InputParams.Border.Color(0xFF979797);
-	InputParams.Background.Colors( eeColorA(0x99AAAAAA), eeColorA(0x99CCCCCC), eeColorA(0x99CCCCCC), eeColorA(0x99AAAAAA) );
 	InputParams.PosSet( 20, 216 );
 	InputParams.Size = eeSize( 200, 22 );
 	InputParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE | UI_AUTO_PADDING;
@@ -596,7 +595,7 @@ void cEETest::CreateUI() {
 	ComboParams.Parent( C );
 	ComboParams.PosSet( 20, 80 );
 	ComboParams.Size = eeSize( 100, 19 );
-	DDLParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
+	ComboParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
 	cUIComboBox * mComboBox = eeNew( cUIComboBox, ( ComboParams ) );
 	mComboBox->Visible( true );
 	mComboBox->Enabled( true );
@@ -652,7 +651,20 @@ void cEETest::CreateUI() {
 	C->StartAlphaAnim( 0.f, 255.f, 500.f );
 	C->StartRotation( 0, 360, 500.f, SINEOUT );
 
+	cUITextEdit::CreateParams TEParams;
+	TEParams.Parent( C );
+	TEParams.PosSet( 5, 245 );
+	TEParams.Size	= eeSize( 315, 130 );
+	TEParams.Flags = UI_AUTO_PADDING | UI_CLIP_ENABLE;
+	TEParams.WordWrap = false;
+	cUITextEdit * TextEdit = eeNew( cUITextEdit, ( TEParams ) );
+	TextEdit->Visible( true );
+	TextEdit->Enabled( true );
+
 	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.";
+
+	//TextEdit->Text( mBuda );
+
 	TTFB->ShrinkText( mBuda, 400 );
 
 	mBudaTC.Create( TTFB, mBuda, eeColorA(255,255,255,255) );
@@ -1165,7 +1177,7 @@ void cEETest::Render() {
 
 	PR.DrawRectangle(
 					0.f,
-					(eeFloat)EE->GetHeight() - (eeFloat)mEEText.GetNumLines() * (eeFloat)mEEText.GetFont()->GetFontSize(),
+					(eeFloat)EE->GetHeight() - (eeFloat)mEEText.GetNumLines() * (eeFloat)mEEText.Font()->GetFontSize(),
 					mEEText.GetTextWidth(),
 					mEEText.GetTextHeight(),
 					ColRR1, ColRR2, ColRR3, ColRR4

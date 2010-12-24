@@ -30,6 +30,8 @@ class EE_API cAudioDevice {
 		ALCdevice *		mDevice;
 		ALCcontext *	mContext;
 		unsigned int	mRefCount;
+
+		void PrintInfo();
 };
 
 }}

@@ -28,14 +28,13 @@ class EE_API cUIListBox : public cUIControlAnim {
 
 					if ( NULL != Theme ) {
 						Font				= Theme->Font();
-						
-						if ( NULL == Font )
-							Font = cUIThemeManager::instance()->DefaultFont();
-						
 						FontColor			= Theme->FontColor();
 						FontOverColor		= Theme->FontOverColor();
 						FontSelectedColor	= Theme->FontSelectedColor();
 					}
+
+					if ( NULL == Font )
+						Font = cUIThemeManager::instance()->DefaultFont();
 				}
 
 				inline ~CreateParams() {}

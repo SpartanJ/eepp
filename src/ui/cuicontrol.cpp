@@ -131,8 +131,10 @@ const eeVector2i& cUIControl::Pos() const {
 }
 
 void cUIControl::Size( const eeSize& Size ) {
-	mSize = Size;
-	OnSizeChange();
+	if ( Size != mSize ) {
+		mSize = Size;
+		OnSizeChange();
+	}
 }
 
 void cUIControl::Size( const Int32& Width, const Int32& Height ) {

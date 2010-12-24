@@ -28,16 +28,15 @@ class EE_API cUIMenu : public cUIControlAnim {
 					cUITheme * Theme = cUIThemeManager::instance()->DefaultTheme();
 
 					if ( NULL != Theme ) {
-						Font			= Theme->Font();
-
-						if ( NULL == Font )
-							Font = cUIThemeManager::instance()->DefaultFont();
-
+						Font				= Theme->Font();
 						FontColor			= Theme->FontColor();
 						FontShadowColor		= Theme->FontShadowColor();
 						FontOverColor		= Theme->FontOverColor();
 						FontSelectedColor	= Theme->FontSelectedColor();
 					}
+
+					if ( NULL == Font )
+						Font = cUIThemeManager::instance()->DefaultFont();
 				}
 
 				inline ~CreateParams() {}

@@ -28,7 +28,7 @@ void cUITextInput::Update() {
 	if ( mTextBuffer.ChangedSinceLastUpdate() ) {
 		eeVector2f offSet = mAlignOffset;
 
-		Text( mTextBuffer.Buffer() );
+		cUITextBox::Text( mTextBuffer.Buffer() );
 
 		mAlignOffset = offSet;
 
@@ -38,13 +38,20 @@ void cUITextInput::Update() {
 
 		mCursorPos = mTextBuffer.CurPos();
 
+		mTextBuffer.ChangedSinceLastUpdate( false );
+
 		return;
 	}
 
 	if ( mCursorPos != mTextBuffer.CurPos() ) {
 		AlignFix();
 		mCursorPos = mTextBuffer.CurPos();
+		OnCursorPosChange();
 	}
+}
+
+void cUITextInput::OnCursorPosChange() {
+	SendCommonEvent( cUIEvent::EventOnCursorPosChange );
 }
 
 void cUITextInput::Draw() {
@@ -63,7 +70,7 @@ void cUITextInput::Draw() {
 			P.SetColor( mFontColor );
 
 			eeFloat CurPosX = mScreenPos.x + mAlignOffset.x + mCurPos.x + 1 + mPadding.Left;
-			eeFloat CurPosY = mScreenPos.y + mAlignOffset.y + mCurPos.y + mPadding.Top;
+			eeFloat CurPosY = mScreenPos.y + mAlignOffset.y + mCurPos.y		+ mPadding.Top;
 
 			if ( CurPosX > (eeFloat)mScreenPos.x + (eeFloat)mSize.x )
 				CurPosX = (eeFloat)mScreenPos.x + (eeFloat)mSize.x;
@@ -120,25 +127,25 @@ void cUITextInput::ResetWaitCursor() {
 }
 
 void cUITextInput::AlignFix() {
-	if ( !( FontHAlignGet( Flags() ) == UI_HALIGN_LEFT && !mTextBuffer.SupportNewLine() ) )
-		return;
+	if ( FontHAlignGet( Flags() ) == UI_HALIGN_LEFT ) {
+		Uint32 NLPos	= 0;
+		Uint32 LineNum	= mTextBuffer.GetCurPosLinePos( NLPos );
 
-	Uint32 NLPos = 0;
-	Uint32 LineNum = mTextBuffer.GetCurPosLinePos( NLPos );
+		mTextCache->Font()->SetText( mTextBuffer.Buffer().substr( NLPos, mTextBuffer.CurPos() - NLPos ) );
 
-	mTextCache->Font()->SetText( mTextBuffer.Buffer().substr( NLPos, mTextBuffer.CurPos() - NLPos ) );
+		eeFloat tW	= mTextCache->Font()->GetTextWidth();
+		eeFloat tX	= mAlignOffset.x + tW;
 
-	eeFloat tW = mTextCache->Font()->GetTextWidth();
-	eeFloat tX = mAlignOffset.x + tW;
+		mCurPos.x	= tW;
+		mCurPos.y	= (eeFloat)LineNum * (eeFloat)mTextCache->Font()->GetFontSize();
 
-	mCurPos.x = tW;
-	mCurPos.y = (eeFloat)LineNum * (eeFloat)mTextCache->GetTextHeight();
-
-	if ( tX < 0.f )
-		mAlignOffset.x = -( mAlignOffset.x + ( tW - mAlignOffset.x ) );
-	else if ( tX > mSize.Width() - mPadding.Left - mPadding.Right )
-		mAlignOffset.x = mSize.Width() - mPadding.Left - mPadding.Right - ( mAlignOffset.x + ( tW - mAlignOffset.x ) );
-
+		if ( !mTextBuffer.SupportNewLine() ) {
+			if ( tX < 0.f )
+				mAlignOffset.x = -( mAlignOffset.x + ( tW - mAlignOffset.x ) );
+			else if ( tX > mSize.Width() - mPadding.Left - mPadding.Right )
+				mAlignOffset.x = mSize.Width() - mPadding.Left - mPadding.Right - ( mAlignOffset.x + ( tW - mAlignOffset.x ) );
+		}
+	}
 }
 
 void cUITextInput::SetTheme( cUITheme * Theme ) {
@@ -166,6 +173,30 @@ void cUITextInput::AllowEditing( const bool& allow ) {
 
 const bool& cUITextInput::AllowEditing() const {
 	return mAllowEditing;
+}
+
+void cUITextInput::Text( const std::wstring& text ) {
+	cUITextBox::Text( text );
+
+	mTextBuffer.Buffer( text );
+}
+
+const std::wstring& cUITextInput::Text() {
+	return cUITextBox::Text();
+}
+
+void cUITextInput::Text( const std::string& text ) {
+	Text( stringTowstring( text ) );
+}
+
+void cUITextInput::ShrinkText( const Uint32& MaxWidth ) {
+	mTextCache->Text( mTextBuffer.Buffer() );
+
+	cUITextBox::ShrinkText( MaxWidth );
+
+	mTextBuffer.Buffer( mTextCache->Text() );
+
+	AlignFix();
 }
 
 }}

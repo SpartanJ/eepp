@@ -72,7 +72,7 @@ void cUIPushButton::OnSizeChange() {
 
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( NULL != mTextBox ) {
-			eeRecti P = MakePadding( true, true, true, true, true );
+			eeRecti P = MakePadding();
 
 			mSize.Height( mIcon->Size().Height()	+ P.Top		+ P.Bottom );
 

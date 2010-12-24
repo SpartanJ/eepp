@@ -36,13 +36,20 @@ void cUITextBox::Draw() {
 		cUIControlAnim::Draw();
 
 		if ( mTextCache->GetTextWidth() ) {
-			if ( mFlags & UI_CLIP_ENABLE )
-				cEngine::instance()->ClipPlaneEnable( mScreenPos.x + mPadding.Left, mScreenPos.y + mPadding.Top, mSize.Width() - mPadding.Left - mPadding.Right, mSize.Height() - mPadding.Bottom );
+			if ( mFlags & UI_CLIP_ENABLE ) {
+				cEngine::instance()->ClipPlaneEnable(
+						mScreenPos.x + mPadding.Left,
+						mScreenPos.y + mPadding.Top,
+						mSize.Width() - mPadding.Left - mPadding.Right,
+						mSize.Height() - mPadding.Top - mPadding.Bottom
+				);
+			}
 
 			mTextCache->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x + (eeFloat)mPadding.Left + 1.f, (eeFloat)mScreenPos.y + mAlignOffset.y + (eeFloat)mPadding.Top, Flags(), 1.f, 0.f, mBlend );
 
-			if ( mFlags & UI_CLIP_ENABLE )
+			if ( mFlags & UI_CLIP_ENABLE ) {
 				cEngine::instance()->ClipPlaneDisable();
+			}
 		}
 	}
 }
@@ -105,13 +112,17 @@ void cUITextBox::Alpha( const eeFloat& alpha ) {
 }
 
 void cUITextBox::AutoShrink() {
-	if ( Flags() & UI_AUTO_SHRINK_TEXT ) {
-		mTextCache->Font()->ShrinkText( mTextCache->Text(), mSize.Width() );
+	if ( mFlags & UI_AUTO_SHRINK_TEXT ) {
+		ShrinkText( mSize.Width() );
 	}
 }
 
+void cUITextBox::ShrinkText( const Uint32& MaxWidth ) {
+	mTextCache->Font()->ShrinkText( mTextCache->Text(), MaxWidth );
+}
+
 void cUITextBox::AutoSize() {
-	if ( Flags() & UI_AUTO_SIZE ) {
+	if ( mFlags & UI_AUTO_SIZE ) {
 		mSize.Width( (eeInt)mTextCache->GetTextWidth() );
 		mSize.Height( (eeInt)mTextCache->GetTextHeight() );
 	}

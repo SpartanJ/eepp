@@ -56,8 +56,6 @@ class EE_API cTextCache {
 		void ShadowColor(const eeColorA& Color);
 
 		const eeInt& GetNumLines() const;
-
-		cFont * GetFont() const;
 	protected:
 		friend class cFont;
 

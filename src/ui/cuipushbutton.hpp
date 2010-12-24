@@ -24,14 +24,13 @@ class EE_API cUIPushButton : public cUIControlAnim {
 
 					if ( NULL != Theme ) {
 						Font			= Theme->Font();
-
-						if ( NULL == Font )
-							Font = cUIThemeManager::instance()->DefaultFont();
-
 						FontColor		= Theme->FontColor();
 						FontShadowColor	= Theme->FontShadowColor();
 						FontOverColor	= Theme->FontOverColor();
 					}
+
+					if ( NULL == Font )
+						Font = cUIThemeManager::instance()->DefaultFont();
 				}
 
 				inline ~CreateParams() {}

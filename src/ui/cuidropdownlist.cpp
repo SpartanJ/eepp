@@ -104,7 +104,7 @@ void cUIDropDownList::OnItemClicked( const cUIEvent * Event ) {
 }
 
 void cUIDropDownList::OnItemSelected( const cUIEvent * Event ) {
-	Text( mListBox->GetItemSelectedText() );
+	mTextBuffer.Buffer( mListBox->GetItemSelectedText() );
 }
 
 void cUIDropDownList::Show() {

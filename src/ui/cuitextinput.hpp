@@ -40,13 +40,21 @@ class EE_API cUITextInput : public cUITextBox {
 		void AllowEditing( const bool& allow );
 
 		const bool& AllowEditing() const;
+
+		virtual const std::wstring& Text();
+
+		virtual void Text( const std::wstring& text );
+
+		virtual void Text( const std::string& text );
+
+		virtual void ShrinkText( const Uint32& MaxWidth );
 	protected:
-		cInputTextBuffer mTextBuffer;
-		bool mShowingWait;
-		eeFloat mWaitCursorTime;
-		eeVector2f mCurPos;
-		eeInt mCursorPos;
-		bool mAllowEditing;
+		cInputTextBuffer	mTextBuffer;
+		bool				mShowingWait;
+		eeFloat				mWaitCursorTime;
+		eeVector2f			mCurPos;
+		eeInt				mCursorPos;
+		bool				mAllowEditing;
 
 		void ResetWaitCursor();
 
@@ -61,6 +69,8 @@ class EE_API cUITextInput : public cUITextBox {
 		virtual Uint32 OnFocusLoss();
 
 		virtual Uint32 OnPressEnter();
+
+		virtual void OnCursorPosChange();
 };
 
 }}
