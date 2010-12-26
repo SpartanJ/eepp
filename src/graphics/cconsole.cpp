@@ -306,33 +306,6 @@ void cConsole::PrintCommandsStartingWith( const std::wstring& start ) {
 
 void cConsole::PrivInputCallback( EE_Event* Event ) {
 	switch( Event->type ) {
-		case SDL_KEYUP:
-			if ( mVisible ) {
-				if ( ( ( Event->key.keysym.mod & KMOD_SHIFT ) && Event->key.keysym.sym == SDLK_INSERT ) || ( ( Event->key.keysym.mod & KMOD_CTRL ) && Event->key.keysym.sym == SDLK_v ) ) {
-					std::wstring tStr = cEngine::instance()->GetClipboardTextWStr();
-					if ( tStr.size() ) {
-						std::vector<std::wstring> tVec = SplitString( tStr );
-						if ( tVec.size() > 1 ) {
-							for (eeUint i = 0; i < tVec.size() - 1; i++)
-								PushText( tVec[i] );
-						}
-						tStr = tVec[ tVec.size() - 1 ];
-
-						if ( (eeUint)mTBuf.CurPos() != mTBuf.Buffer().size() ) {
-							std::wstring part1 = mTBuf.Buffer().substr( 0, mTBuf.CurPos() );
-							std::wstring part2 = mTBuf.Buffer().substr( mTBuf.CurPos(), mTBuf.Buffer().size()-mTBuf.CurPos() );
-							mTBuf.Buffer( part1 + tStr + part2 );
-							mTBuf.CurPos( (Uint32)part1.size() );
-						} else {
-							std::wstring Str = mTBuf.Buffer();
-							mTBuf.Buffer( Str + tStr );
-						}
-					}
-				} else if ( ( Event->key.keysym.sym == SDLK_TAB ) && (eeUint)mTBuf.CurPos() == mTBuf.Buffer().size() ) {
-					PrintCommandsStartingWith( mTBuf.Buffer() );
-				}
-			}
-			break;
 		case SDL_KEYDOWN:
 			if ( mVisible ) {
 				if ( mLastCommands.size() > 0 ) {

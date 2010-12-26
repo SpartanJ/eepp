@@ -106,7 +106,7 @@ class cEETest : private cThread {
 		bool iL1, iL2;
 		eeFloat HWidth, HHeight;
 
-		cMusic Mus;
+		cMusic * Mus;
 		cSoundManager SndMng;
 
 		bool DrawBack;
@@ -299,10 +299,11 @@ void cEETest::Init() {
 
 		CreateShaders();
 
-		if ( Mus.OpenFromPack( &PAK, "music.ogg" ) ) {
-			Mus.Loop(true);
+		Mus = eeNew( cMusic, () );
+		if ( Mus->OpenFromPack( &PAK, "music.ogg" ) ) {
+			Mus->Loop(true);
 			//Mus.Volume( 0.f );
-			Mus.Play();
+			Mus->Play();
 		}
 
 		WP.Type( QUARTICINOUT );
@@ -656,14 +657,14 @@ void cEETest::CreateUI() {
 	TEParams.PosSet( 5, 245 );
 	TEParams.Size	= eeSize( 315, 130 );
 	TEParams.Flags = UI_AUTO_PADDING | UI_CLIP_ENABLE;
-	TEParams.WordWrap = false;
+	//TEParams.WordWrap = false;
 	cUITextEdit * TextEdit = eeNew( cUITextEdit, ( TEParams ) );
 	TextEdit->Visible( true );
 	TextEdit->Enabled( true );
 
 	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.";
 
-	//TextEdit->Text( mBuda );
+	TextEdit->Text( mBuda );
 
 	TTFB->ShrinkText( mBuda, 400 );
 
@@ -1248,8 +1249,8 @@ void cEETest::Input() {
 
 		EE->SetFrameRateLimit( 10 );
 
-		if ( Mus.State() == SOUND_PLAYING )
-			Mus.Pause();
+		if ( Mus->State() == SOUND_PLAYING )
+			Mus->Pause();
 
 	} else {
 		if ( mLastFPSLimit != EE->GetFrameRateLimit() && !mWasMinimized )
@@ -1260,8 +1261,8 @@ void cEETest::Input() {
 
 		EE->SetFrameRateLimit( mLastFPSLimit );
 
-		if ( Mus.State() == SOUND_PAUSED )
-			Mus.Play();
+		if ( Mus->State() == SOUND_PAUSED )
+			Mus->Play();
 	}
 
 	if ( KM->IsKeyDown(KEY_ESCAPE) )
@@ -1471,8 +1472,8 @@ void cEETest::Process() {
 void cEETest::End() {
 	Wait();
 
-	Mus.Stop();
-
+	Mus->Stop();
+	eeSAFE_DELETE( Mus );
 	eeSAFE_DELETE( mTGL );
 	eeSAFE_DELETE( mFB );
 	eeSAFE_DELETE( mVBO );

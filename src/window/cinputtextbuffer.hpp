@@ -6,16 +6,25 @@
 
 namespace EE { namespace Window {
 
-#define INPUT_TB_SUPPORT_NEW_LINE 		(0)
-#define INPUT_TB_ALLOW_ONLY_NUMBERS 	(1)
-#define INPUT_TB_ALLOW_DOT_IN_NUMBERS	(2)
+enum INPUT_TEXTBUFFER_FLAGS {
+	INPUT_TB_SUPPORT_NEW_LINE			= 0,
+	INPUT_TB_ALLOW_ONLY_NUMBERS			= 1,
+	INPUT_TB_ALLOW_DOT_IN_NUMBERS		= 2,
+	INPUT_TB_ACTIVE						= 3,
+	INPUT_TB_CHANGE_SINCE_LAST_UPDATE	= 4,
+	INPUT_TB_FREE_EDITING				= 5,
+	INPUT_TB_PROMPT_AUTO_POS			= 6,
+	INPUT_TB_SUPPORT_COPY_PASTE			= 7
+};
 
 class EE_API cInputTextBuffer {
 	public:
 		typedef cb::Callback0<void> EnterCallback;
 
-		cInputTextBuffer( const bool& Active, const bool& SupportNewLine, const bool& SupportFreeEditing, const Uint32& MaxLenght = 0xFFFFFFFF );
+		cInputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, const Uint32& maxLenght = 0xFFFFFFFF );
+
 		cInputTextBuffer();
+
 		~cInputTextBuffer();
 
 		/** @return The current buffer */
@@ -40,7 +49,7 @@ class EE_API cInputTextBuffer {
 		bool SupportFreeEditing() const;
 
 		/** Free editing consist on the capability of moving the cursor position over the buffer, to write over the buffer, and not only after the last character. */
-		void SupportFreeEditing( const bool& SupportNewLine );
+		void SupportFreeEditing( const bool& Support);
 
 		/** Block all the inserts, allow only numeric characters. */
 		void AllowOnlyNumbers( const bool& onlynums, const bool& allowdots = false );
@@ -89,24 +98,27 @@ class EE_API cInputTextBuffer {
 
 		/** @return The Max Lenght */
 		const Uint32& MaxLenght() const;
+
+		/** Support copy paste */
+		void SupportCopyPaste( const bool& support );
+
+		/** @return Support copy paste */
+		bool SupportCopyPaste();
+
+		/** Set the cursor to the last character of the buffer. */
+		void CursorToEnd();
 	protected:
-		void SetAutoPromp( const bool& set = true );
+		std::wstring		mText;
+		Uint32				mFlags;
+		Uint32				mCallback;
+		eeInt				mPromptPos;
+		EnterCallback		mEnterCall;
+		Uint32				mMaxLenght;
+		std::vector<Uint32>	mIgnoredChars;
 
-		std::wstring mText;
-		bool mActive;
-		Uint32 mFlags;
-		bool mChangeSinceLastUpdate;
-		Uint32 mCallback;
+		void AutoPrompt( const bool& set );
 
-		bool mPromtPosSupport;
-		eeInt mPromptPos;
-		bool mPromptAutoPos;
-
-		EnterCallback mEnterCall;
-
-		Uint32 mMaxLenght;
-
-		std::vector<Uint32> mIgnoredChars;
+		bool AutoPrompt();
 
 		bool CanAdd();
 

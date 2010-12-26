@@ -186,7 +186,7 @@ void cUITextEdit::ScrollbarsSet() {
 		}
 	}
 
-	if ( ( mFlags & UI_AUTO_SHRINK_TEXT ) ) {
+	if ( mFlags & UI_AUTO_SHRINK_TEXT ) {
 		mVScrollBar->Visible( true );
 		mVScrollBar->Enabled( true );
 	}
@@ -254,9 +254,11 @@ void cUITextEdit::OnInputSizeChange( const cUIEvent * Event ) {
 	if ( mVScrollBar->Visible() )
 		Width	-= mVScrollBar->Size().Width();
 
+	ShrinkText( Width );
 
-	if ( Flags() & UI_AUTO_SHRINK_TEXT ) {
-		mTextInput->ShrinkText( Width );
+	if ( ( mFlags & UI_AUTO_SHRINK_TEXT ) && mTextInput->GetTextHeight() < Height ) {
+		mVScrollBar->Visible( false );
+		mVScrollBar->Enabled( false );
 	}
 
 	if ( mTextInput->Size().Width() < Width || mTextInput->Size().Height() < Height ) {
@@ -334,6 +336,12 @@ void cUITextEdit::FixScrollToCursor() {
 		mVScrollBar->Value( tH / mTextInput->Size().Height() );
 
 		mSkipValueChange = false;
+	}
+}
+
+void cUITextEdit::ShrinkText( const Uint32& Width ) {
+	if ( Flags() & UI_AUTO_SHRINK_TEXT ) {
+		mTextInput->ShrinkText( Width );
 	}
 }
 

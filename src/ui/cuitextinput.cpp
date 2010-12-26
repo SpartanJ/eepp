@@ -179,6 +179,8 @@ void cUITextInput::Text( const std::wstring& text ) {
 	cUITextBox::Text( text );
 
 	mTextBuffer.Buffer( text );
+
+	mTextBuffer.CursorToEnd();
 }
 
 const std::wstring& cUITextInput::Text() {

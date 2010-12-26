@@ -69,6 +69,8 @@ class EE_API cUITextEdit : public cUIControlAnim {
 		void FixScroll();
 
 		void FixScrollToCursor();
+
+		void ShrinkText( const Uint32& Width );
 };
 
 }}

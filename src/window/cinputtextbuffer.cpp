@@ -1,36 +1,46 @@
 #include "cinputtextbuffer.hpp"
+#include "cengine.hpp"
 
 namespace EE { namespace Window {
 
-cInputTextBuffer::cInputTextBuffer( const bool& Active, const bool& SupportNewLine, const bool& SupportFreeEditing, const Uint32& MaxLenght ) :
-	mActive( Active ),
+cInputTextBuffer::cInputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, const Uint32& maxLenght ) :
 	mFlags(0),
-	mChangeSinceLastUpdate(false),
 	mCallback(0),
 	mPromptPos(0),
-	mPromptAutoPos(true)
+	mMaxLenght(0xFFFFFFFF)
 {
-	this->SupportNewLine( SupportNewLine );
+	Active( active );
 
-	mPromtPosSupport = SupportFreeEditing;
-	mMaxLenght = MaxLenght;
-	SetAutoPromp();
+	SupportFreeEditing( supportFreeEditing );
+
+	SupportNewLine( supportNewLine );
+
+	AutoPrompt( true );
+
+	SupportCopyPaste( true );
+
+	mMaxLenght = maxLenght;
 }
 
 cInputTextBuffer::cInputTextBuffer() :
-	mActive(true),
 	mFlags(0),
-	mChangeSinceLastUpdate(false),
 	mCallback(0),
-	mPromtPosSupport(true),
+	mPromptPos(0),
 	mMaxLenght(0xFFFFFFFF)
 {
+	Active( true );
+
+	SupportFreeEditing( true );
+
 	SupportNewLine( false );
-	SetAutoPromp();
+
+	AutoPrompt( true );
+
+	SupportCopyPaste( true );
 }
 
 cInputTextBuffer::~cInputTextBuffer() {
-	if ( mCallback && NULL != cInput::ExistsSingleton() )
+	if ( 0 != mCallback && NULL != cInput::ExistsSingleton() )
 		cInput::instance()->PopCallback( mCallback );
 
 	mText.clear();
@@ -41,16 +51,49 @@ void cInputTextBuffer::Start() {
 }
 
 void cInputTextBuffer::Update( EE_Event* Event ) {
-	if ( mActive ) {
-		mChangeSinceLastUpdate = false;
+	if ( Active() ) {
+		ChangedSinceLastUpdate( false );
 		Int32 c = convertKeyCharacter( Event );
 
-		if ( mPromtPosSupport ) {
-			switch(Event->type) {
+		if ( SupportFreeEditing() ) {
+			switch ( Event->type ) {
 				case SDL_KEYDOWN:
+					if ( cInput::instance()->ShiftPressed() || cInput::instance()->ControlPressed() ) {
+						if ( !AllowOnlyNumbers() &&
+							(	( ( Event->key.keysym.mod & KMOD_SHIFT ) && Event->key.keysym.sym == SDLK_INSERT ) ||
+								( ( Event->key.keysym.mod & KMOD_CTRL ) && Event->key.keysym.sym == SDLK_v ) )
+							)
+						{
+							std::wstring txt = cEngine::instance()->GetClipboardTextWStr();
+
+							if ( !SupportNewLine() ) {
+								Uint32 pos = txt.find_first_of( L'\n' );
+
+								if ( pos != std::string::npos )
+									txt = txt.substr( 0, pos );
+							}
+
+							if ( txt.size() ) {
+								ChangedSinceLastUpdate( true );
+
+								if ( mText.size() + txt.size() < mMaxLenght ) {
+									if ( AutoPrompt() ) {
+										mText += txt;
+										mPromptPos = (eeInt)mText.size();
+									} else {
+										mText.insert( mPromptPos, txt );
+										mPromptPos += txt.size();
+									}
+
+									AutoPrompt( false );
+								}
+							}
+						}
+					}
+
 					if ( ( c == KEY_BACKSPACE || c == KEY_DELETE ) ) {
 						if ( mText.size() ) {
-							mChangeSinceLastUpdate = true;
+							ChangedSinceLastUpdate( true );
 
 							if ( mPromptPos < (eeInt)mText.size() ) {
 								if ( c == KEY_BACKSPACE ) {
@@ -62,16 +105,16 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 									mText.erase(mPromptPos,1);
 							} else if ( c == KEY_BACKSPACE ) {
 								mText.resize( mText.size() - 1 );
-								SetAutoPromp();
+								AutoPrompt( true );
 							}
 						}
-					} else if ( ( c == KEY_RETURN || c == KEY_KP_ENTER ) && !cInput::instance()->MetaPressed() && !cInput::instance()->AltPressed() && !cInput::instance()->ControlPressed() ) {
+					} else if ( ( c == KEY_RETURN || c == KEY_KP_ENTER ) ) {
 						if ( SupportNewLine() && CanAdd() ) {
 							InsertChar( mText, mPromptPos, L'\n' );
 
 							mPromptPos++;
 
-							mChangeSinceLastUpdate = true;
+							ChangedSinceLastUpdate( true );
 						}
 
 						if ( mEnterCall.IsSet() )
@@ -80,14 +123,14 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
  					} else if ( c == KEY_LEFT ) {
 						if ( ( mPromptPos - 1 ) >= 0 ) {
 							mPromptPos--;
-							SetAutoPromp( false );
+							AutoPrompt( false );
 						}
 					} else if ( c == KEY_RIGHT ) {
 						if ( ( mPromptPos + 1 ) < (eeInt)mText.size() ) {
 							mPromptPos++;
-							SetAutoPromp(false);
+							AutoPrompt(false);
 						} else if ( ( mPromptPos + 1 ) == (eeInt)mText.size() ) {
-							SetAutoPromp();
+							AutoPrompt( true );
 						}
 					} else if ( c == KEY_UP ) {
 						MovePromptRowUp( false );
@@ -97,7 +140,7 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 						MovePromptRowUp( true );
 					} else if ( c == KEY_PAGEDOWN ) {
 						MovePromptRowDown( false );
-					} else if ( CanAdd() && isCharacter(c) && !cInput::instance()->MetaPressed() && !cInput::instance()->AltPressed() && !cInput::instance()->ControlPressed() ) {
+					} else if ( CanAdd() && isCharacter(c) ) {
 						bool Ignored = false;
 
 						if ( AllowOnlyNumbers() && !isNumber( c, AllowDotsInNumbers() ) ) {
@@ -112,9 +155,9 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 						}
 
 						if ( !Ignored ) {
-							mChangeSinceLastUpdate = true;
+							ChangedSinceLastUpdate( true );
 
-							if ( mPromptAutoPos ) {
+							if ( AutoPrompt() ) {
 								mText += c;
 								mPromptPos = (eeInt)mText.size();
 							} else {
@@ -131,13 +174,13 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 							for ( Uint32 i = mPromptPos; i < mText.size(); i++ )  {
 								if ( mText[i] == L'\n' ) {
 									mPromptPos = i;
-									SetAutoPromp( false );
+									AutoPrompt( false );
 									break;
 								}
 
 								if ( i == ( mText.size() - 1 ) ) {
 									mPromptPos = mText.size();
-									SetAutoPromp( false );
+									AutoPrompt( false );
 								}
 							}
 						}
@@ -148,13 +191,13 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 									if ( i >= 0 ) {
 										if ( mText[i] == L'\n' ) {
 											mPromptPos = i + 1;
-											SetAutoPromp( false );
+											AutoPrompt( false );
 											break;
 										}
 
 										if ( i == 0 ) {
 											mPromptPos = 0;
-											SetAutoPromp( false );
+											AutoPrompt( false );
 										}
 									}
 								}
@@ -162,23 +205,23 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 						}
 					} else {
 						if ( Event->key.keysym.sym == SDLK_END ) {
-							SetAutoPromp();
+							AutoPrompt( true );
 						}
 
 						if ( Event->key.keysym.sym == SDLK_HOME ) {
 							mPromptPos = 0;
-							SetAutoPromp(false);
+							AutoPrompt(false);
 						}
 					}
 					break;
 			}
 		} else {
-			if (Event->type == SDL_KEYDOWN) {
-				mChangeSinceLastUpdate = true;
+			if ( Event->type == SDL_KEYDOWN ) {
+				ChangedSinceLastUpdate( true );
 
 				if ( c == KEY_BACKSPACE && mText.size() > 0 ) {
 					mText.resize( mText.size() - 1 );
-				} else if ( (c == KEY_RETURN || c == KEY_KP_ENTER) && !cInput::instance()->MetaPressed() && !cInput::instance()->AltPressed() && !cInput::instance()->ControlPressed() ) {
+				} else if ( ( c == KEY_RETURN || c == KEY_KP_ENTER ) && !cInput::instance()->MetaPressed() && !cInput::instance()->AltPressed() && !cInput::instance()->ControlPressed() ) {
 					if ( SupportNewLine() && CanAdd() )
 						mText += L'\n';
 
@@ -230,7 +273,7 @@ void cInputTextBuffer::MovePromptRowDown( const bool& breakit ) {
 				mPromptPos = dLastLinePos + dCharsTo;
 			}
 
-			SetAutoPromp( false );
+			AutoPrompt( false );
 		}
 	}
 }
@@ -266,45 +309,25 @@ void cInputTextBuffer::MovePromptRowUp( const bool& breakit ) {
 				mPromptPos = uLastLinePos + uCharsTo;
 			}
 
-			SetAutoPromp( false );
+			AutoPrompt( false );
 		}
 	}
 }
 
 void cInputTextBuffer::Clear() {
 	mText.clear();
-	SetAutoPromp();
+	AutoPrompt( true );
 }
 
 void cInputTextBuffer::SetReturnCallback( EnterCallback EC ) {
 	mEnterCall = EC;
 }
 
-bool cInputTextBuffer::ChangedSinceLastUpdate() {
-	return mChangeSinceLastUpdate;
-}
-
-void cInputTextBuffer::ChangedSinceLastUpdate( const bool& Changed ) {
-	mChangeSinceLastUpdate = Changed;
-}
-
-void cInputTextBuffer::SetAutoPromp( const bool& set ) {
-	if ( set ) {
-		mPromptAutoPos = true;
-		mPromptPos = (eeInt)mText.size();
-	} else {
-		mPromptAutoPos = false;
-	}
-}
-
 void cInputTextBuffer::Buffer( const std::wstring& str ) {
 	if ( mText != str ) {
 		mText = str;
-		mChangeSinceLastUpdate = true;
+		ChangedSinceLastUpdate( true );
 	}
-	
-	if ( mPromtPosSupport )
-		SetAutoPromp();
 }
 
 eeInt cInputTextBuffer::CurPos() const {
@@ -312,14 +335,14 @@ eeInt cInputTextBuffer::CurPos() const {
 }
 
 void cInputTextBuffer::CurPos( const Uint32& pos ) {
-	if ( mPromtPosSupport && pos < mText.size() ) {
+	if ( SupportFreeEditing() && pos < mText.size() ) {
 		mPromptPos = pos;
-		SetAutoPromp(false);
+		AutoPrompt( false );
 	}
 }
 
 Uint32 cInputTextBuffer::GetCurPosLinePos( Uint32& LastNewLinePos ) {
-	if ( mPromtPosSupport ) {
+	if ( SupportFreeEditing() ) {
 		Uint32 nl = 0;
 		LastNewLinePos = 0;
 		for ( eeInt i = 0; i < mPromptPos; i++ )  {
@@ -356,12 +379,32 @@ std::wstring cInputTextBuffer::Buffer() const {
 	return mText;
 }
 
+bool cInputTextBuffer::ChangedSinceLastUpdate() {
+	return 0 != ( mFlags & ( 1 << INPUT_TB_CHANGE_SINCE_LAST_UPDATE ) );
+}
+
+void cInputTextBuffer::ChangedSinceLastUpdate( const bool& Changed ) {
+	Write32BitKey( &mFlags, INPUT_TB_CHANGE_SINCE_LAST_UPDATE, Changed == true );
+}
+
+void cInputTextBuffer::AutoPrompt( const bool& set ) {
+	Write32BitKey( &mFlags, INPUT_TB_PROMPT_AUTO_POS, set == true );
+
+	if ( set ) {
+		mPromptPos		= (eeInt)mText.size();
+	}
+}
+
+bool cInputTextBuffer::AutoPrompt() {
+	return 0 != ( mFlags & ( 1 << INPUT_TB_PROMPT_AUTO_POS ) );
+}
+
 bool cInputTextBuffer::Active() const {
-	return mActive;
+	return 0 != ( mFlags & ( 1 << INPUT_TB_ACTIVE ) );;
 }
 
 void cInputTextBuffer::Active( const bool& Active ) {
-	mActive = Active;
+	Write32BitKey( &mFlags, INPUT_TB_ACTIVE, Active == true );
 }
 
 bool cInputTextBuffer::SupportNewLine() {
@@ -386,11 +429,23 @@ bool cInputTextBuffer::AllowDotsInNumbers() {
 }
 
 bool cInputTextBuffer::SupportFreeEditing() const {
-	return mPromtPosSupport;
+	return 0 != ( mFlags & ( 1 << INPUT_TB_FREE_EDITING ) );
 }
 
-void cInputTextBuffer::SupportFreeEditing( const bool& SupportNewLine ) {
-	mPromtPosSupport = SupportNewLine;
+void cInputTextBuffer::SupportFreeEditing( const bool& Support ) {
+	Write32BitKey( &mFlags, INPUT_TB_FREE_EDITING, Support == true );
+}
+
+void cInputTextBuffer::SupportCopyPaste( const bool& support ) {
+	Write32BitKey( &mFlags, INPUT_TB_SUPPORT_COPY_PASTE, support == true );
+}
+
+bool cInputTextBuffer::SupportCopyPaste() {
+	return 0 != ( mFlags & ( 1 << INPUT_TB_SUPPORT_COPY_PASTE ) );
+}
+
+void cInputTextBuffer::CursorToEnd() {
+	mPromptPos = mText.size();
 }
 
 }}
