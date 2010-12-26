@@ -15,9 +15,9 @@ class EE_API cUIListBox : public cUIControlAnim {
 				inline CreateParams() :
 					cUIControl::CreateParams(),
 					RowHeight( 0 ),
-					ScrollAlwaysVisible( false ),
 					SmoothScroll( true ),
-					AllowHorizontalScroll( true ),
+					VScrollMode( UI_SCROLLBAR_AUTO ),
+					HScrollMode( UI_SCROLLBAR_AUTO ),
 					PaddingContainer(),
 					Font( NULL ),
 					FontColor( 0, 0, 0, 255 ),
@@ -39,15 +39,15 @@ class EE_API cUIListBox : public cUIControlAnim {
 
 				inline ~CreateParams() {}
 
-				Uint32		RowHeight;
-				bool		ScrollAlwaysVisible;
-				bool		SmoothScroll;
-				bool		AllowHorizontalScroll;
-				eeRecti		PaddingContainer;
-				cFont * 	Font;
-				eeColorA 	FontColor;
-				eeColorA 	FontOverColor;
-				eeColorA	FontSelectedColor;
+				Uint32				RowHeight;
+				bool				SmoothScroll;
+				UI_SCROLLBAR_MODE	VScrollMode;
+				UI_SCROLLBAR_MODE	HScrollMode;
+				eeRecti				PaddingContainer;
+				cFont *				Font;
+				eeColorA			FontColor;
+				eeColorA			FontOverColor;
+				eeColorA			FontSelectedColor;
 		};
 
 		cUIListBox( cUIListBox::CreateParams& Params );
@@ -124,10 +124,6 @@ class EE_API cUIListBox : public cUIControlAnim {
 
 		const Uint32& RowHeight() const;
 
-		void AllowHorizontalScroll( const bool& allow );
-
-		const bool& AllowHorizontalScroll() const;
-
 		Uint32 Count();
 
 		void SetSelected( Uint32 Index );
@@ -135,17 +131,26 @@ class EE_API cUIListBox : public cUIControlAnim {
 		void SelectPrev();
 
 		void SelectNext();
+
+		void VerticalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+
+		const UI_SCROLLBAR_MODE& VerticalScrollMode();
+
+		void HorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode );
+
+		const UI_SCROLLBAR_MODE& HorizontalScrollMode();
 	protected:
 		friend class cUIListBoxItem;
 		friend class cUIListBoxContainer;
 		friend class cUIDropDownList;
 
 		Uint32 				mRowHeight;
-		bool 				mScrollAlwaysVisible;
+		UI_SCROLLBAR_MODE	mVScrollMode;
+		UI_SCROLLBAR_MODE	mHScrollMode;
 		bool 				mSmoothScroll;
 		eeRecti 			mPaddingContainer;
 		cUIListBoxContainer * mContainer;
-		cUIScrollBar * 		mScrollBar;
+		cUIScrollBar * 		mVScrollBar;
 		cUIScrollBar * 		mHScrollBar;
 		cFont * 			mFont;
 		eeColorA 			mFontColor;
@@ -153,7 +158,6 @@ class EE_API cUIListBox : public cUIControlAnim {
 		eeColorA 			mFontSelectedColor;
 		Uint32 				mLastPos;
 		Uint32 				mMaxTextWidth;
-		bool 				mAllowHorizontalScroll;
 		Int32 				mHScrollInit;
 		Int32 				mItemsNotVisible;
 		Uint32				mLastTickMove;

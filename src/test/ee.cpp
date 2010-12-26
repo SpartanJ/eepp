@@ -743,7 +743,7 @@ void cEETest::ButtonClick( const cUIEvent * Event ) {
 		Gfx->StartMovement( eeVector2i( eeRandi( 0, EE->GetWidth() ), -64 ), eeVector2i( eeRandi( 0, EE->GetWidth() ), EE->GetHeight() + 64 ), 2500 );
 		Gfx->CloseFadeOut( 3500 );
 
-		//mListBox->AddListBoxItem( L"Test ListBox " + toWStr( mListBox->Count() + 1 ) + L" testing it right now!" );
+		mListBox->AddListBoxItem( L"Test ListBox " + toWStr( mListBox->Count() + 1 ) + L" testing it right now!" );
 	}
 }
 

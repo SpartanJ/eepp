@@ -6,11 +6,12 @@ namespace EE { namespace UI {
 cUIListBox::cUIListBox( cUIListBox::CreateParams& Params ) :
 	cUIControlAnim( Params ),
 	mRowHeight( Params.RowHeight ),
-	mScrollAlwaysVisible( Params.ScrollAlwaysVisible ),
+	mVScrollMode( Params.VScrollMode ),
+	mHScrollMode( Params.HScrollMode ),
 	mSmoothScroll( Params.SmoothScroll ),
 	mPaddingContainer( Params.PaddingContainer ),
 	mContainer( NULL ),
-	mScrollBar( NULL ),
+	mVScrollBar( NULL ),
 	mHScrollBar( NULL ),
 	mFont( Params.Font ),
 	mFontColor( Params.FontColor ),
@@ -18,7 +19,6 @@ cUIListBox::cUIListBox( cUIListBox::CreateParams& Params ) :
 	mFontSelectedColor( Params.FontSelectedColor ),
 	mLastPos( 0xFFFFFFFF ),
 	mMaxTextWidth(0),
-	mAllowHorizontalScroll( Params.AllowHorizontalScroll ),
 	mHScrollInit(0),
 	mItemsNotVisible(0),
 	mLastTickMove(0),
@@ -48,21 +48,24 @@ cUIListBox::cUIListBox( cUIListBox::CreateParams& Params ) :
 	ScrollBarP.PosSet( mSize.Width() - 15, 0 );
 	ScrollBarP.Flags = UI_AUTO_SIZE;
 	ScrollBarP.VerticalScrollBar = true;
-	mScrollBar = eeNew( cUIScrollBar, ( ScrollBarP ) );
+	mVScrollBar = eeNew( cUIScrollBar, ( ScrollBarP ) );
 
-	ScrollBarP.Size = eeSize( mSize.Width() - mScrollBar->Size().Width(), 15 );
+	ScrollBarP.Size = eeSize( mSize.Width() - mVScrollBar->Size().Width(), 15 );
 	ScrollBarP.PosSet( 0, mSize.Height() - 15 );
 	ScrollBarP.VerticalScrollBar = false;
 	mHScrollBar = eeNew( cUIScrollBar, ( ScrollBarP ) );
-	mHScrollBar->Visible( false );
-	mHScrollBar->Enabled( false );
 
-	if ( mScrollAlwaysVisible ) {
-		mScrollBar->Visible( true );
-		mScrollBar->Enabled( true );
+	if ( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) {
+		mHScrollBar->Visible( true );
+		mHScrollBar->Enabled( true );
 	}
 
-	mScrollBar->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cUIListBox::OnScrollValueChange ) );
+	if ( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode ) {
+		mVScrollBar->Visible( true );
+		mVScrollBar->Enabled( true );
+	}
+
+	mVScrollBar->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cUIListBox::OnScrollValueChange ) );
 	mHScrollBar->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cUIListBox::OnHScrollValueChange ) );
 
 	SetRowHeight();
@@ -91,7 +94,7 @@ void cUIListBox::AutoPadding() {
 }
 
 cUIScrollBar * cUIListBox::ScrollBar() const {
-	return mScrollBar;
+	return mVScrollBar;
 }
 
 cUIScrollBar * cUIListBox::HScrollBar() const {
@@ -143,9 +146,10 @@ Uint32 cUIListBox::AddListBoxItem( const std::wstring& Text ) {
 			mMaxTextWidth = twidth;
 
 			UpdateListBoxItemsSize();
-			UpdateScroll();
 		}
 	}
+
+	UpdateScroll();
 
 	return (Uint32)(mItems.size() - 1);
 }
@@ -250,13 +254,13 @@ void cUIListBox::OnHScrollValueChange( const cUIEvent * Event ) {
 }
 
 void cUIListBox::OnSizeChange() {
-	mScrollBar->Pos( mSize.Width() - mScrollBar->Size().Width(), 0 );
-	mScrollBar->Size( mScrollBar->Size().Width(), mSize.Height() );
+	mVScrollBar->Pos( mSize.Width() - mVScrollBar->Size().Width(), 0 );
+	mVScrollBar->Size( mVScrollBar->Size().Width(), mSize.Height() );
 
 	mHScrollBar->Pos( 0, mSize.Height() - mHScrollBar->Size().Height() );
-	mHScrollBar->Size( mSize.Width() - mScrollBar->Size().Width(), mHScrollBar->Size().Height() );
+	mHScrollBar->Size( mSize.Width() - mVScrollBar->Size().Width(), mHScrollBar->Size().Height() );
 
-	if ( mContainer->IsClipped() && mAllowHorizontalScroll ) {
+	if ( mContainer->IsClipped() && UI_SCROLLBAR_AUTO == mHScrollMode ) {
 		if ( (Int32)mMaxTextWidth <= mContainer->Size().Width() ) {
 			mHScrollBar->Visible( false );
 			mHScrollBar->Enabled( false );
@@ -328,8 +332,8 @@ void cUIListBox::ItemUpdateSize( cUIListBoxItem * Item ) {
 			if ( width < mContainer->Size().Width() )
 				width = mContainer->Size().Width();
 
-			if ( ( mItemsNotVisible > 0 || mScrollAlwaysVisible ) )
-				width -= mScrollBar->Size().Width();
+			if ( ( mItemsNotVisible > 0 && UI_SCROLLBAR_AUTO == mVScrollMode ) || UI_SCROLLBAR_ALWAYS_ON == mVScrollMode )
+				width -= mVScrollBar->Size().Width();
 		} else {
 			width = mMaxTextWidth;
 		}
@@ -375,27 +379,32 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 	Uint32 VisibleItems 	= mContainer->Size().Height() / mRowHeight;
 	mItemsNotVisible 		= (Int32)mItems.size() - VisibleItems;
 
-	bool wasScrollVisible 	= mScrollBar->Visible();
+	bool wasScrollVisible 	= mVScrollBar->Visible();
 	bool wasHScrollVisible 	= mHScrollBar->Visible();
 
 	bool Clipped 			= 0 != mContainer->IsClipped();
 
 	if ( mItemsNotVisible <= 0 ) {
-		if ( mScrollAlwaysVisible ) {
-			mScrollBar->Visible( true );
-			mScrollBar->Enabled( true );
+		if ( UI_SCROLLBAR_ALWAYS_ON == mVScrollMode ) {
+			mVScrollBar->Visible( true );
+			mVScrollBar->Enabled( true );
 		} else {
-			mScrollBar->Visible( false );
-			mScrollBar->Enabled( false );
+			mVScrollBar->Visible( false );
+			mVScrollBar->Enabled( false );
 		}
 	} else {
-		mScrollBar->Visible( true );
-		mScrollBar->Enabled( true );
+		if ( UI_SCROLLBAR_AUTO == mVScrollMode || UI_SCROLLBAR_ALWAYS_ON == mVScrollMode ) {
+			mVScrollBar->Visible( true );
+			mVScrollBar->Enabled( true );
+		} else {
+			mVScrollBar->Visible( false );
+			mVScrollBar->Enabled( false );
+		}
 	}
 
-	if ( Clipped && mAllowHorizontalScroll ) {
-		if ( ( mScrollBar->Visible() && mContainer->Size().Width() - mScrollBar->Size().Width() < (Int32)mMaxTextWidth ) ||
-			( !mScrollBar->Visible() && mContainer->Size().Width() < (Int32)mMaxTextWidth ) ) {
+	if ( Clipped && ( UI_SCROLLBAR_AUTO == mHScrollMode || UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) ) {
+		if ( ( mVScrollBar->Visible() && mContainer->Size().Width() - mVScrollBar->Size().Width() < (Int32)mMaxTextWidth ) ||
+			( !mVScrollBar->Visible() && mContainer->Size().Width() < (Int32)mMaxTextWidth ) ) {
 				mHScrollBar->Visible( true );
 				mHScrollBar->Enabled( true );
 
@@ -403,8 +412,8 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 
 				Int32 ScrollH;
 
-				if ( mScrollBar->Visible() )
-					ScrollH = mMaxTextWidth - mContainer->Size().Width() + mScrollBar->Size().Width();
+				if ( mVScrollBar->Visible() )
+					ScrollH = mMaxTextWidth - mContainer->Size().Width() + mVScrollBar->Size().Width();
 				else
 					ScrollH = mMaxTextWidth - mContainer->Size().Width();
 
@@ -412,24 +421,30 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 
 				mHScrollInit = -HScrolleable;
 		} else {
-			mHScrollBar->Visible( false );
-			mHScrollBar->Enabled( false );
+			if ( UI_SCROLLBAR_AUTO == mHScrollMode ) {
+				mHScrollBar->Visible( false );
+				mHScrollBar->Enabled( false );
 
-			mHScrollInit = 0;
+				mHScrollInit = 0;
 
-			ContainerResize();
+				ContainerResize();
+			}
 		}
 	}
 
 	VisibleItems 			= mContainer->Size().Height() / mRowHeight;
 	mItemsNotVisible 		= (Uint32)mItems.size() - VisibleItems;
-	Uint32 Scrolleable 		= (Uint32)mItems.size() * mRowHeight - mContainer->Size().Height();
-	bool isScrollVisible 	= mScrollBar->Visible();
+	Int32 Scrolleable 		= (Int32)mItems.size() * mRowHeight - mContainer->Size().Height();
+	bool isScrollVisible 	= mVScrollBar->Visible();
 	bool isHScrollVisible 	= mHScrollBar->Visible();
 	bool FirstVisible 		= false;
 
 	if ( Clipped && mSmoothScroll ) {
-		RelPos 		= (Uint32)( mScrollBar->Value() * Scrolleable );
+		if ( Scrolleable >= 0 )
+			RelPos 		= (Uint32)( mVScrollBar->Value() * Scrolleable );
+		else
+			RelPos		= 0;
+
 		RelPosMax 	= RelPos + mContainer->Size().Height() + mRowHeight;
 
 		if ( ( FromScrollChange && 0xFFFFFFFF != mLastPos && mLastPos == RelPos ) && ( tHLastScroll == mHScrollInit ) )
@@ -472,7 +487,7 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 		RelPosMax		= (Uint32)mItems.size();
 
 		if ( mItemsNotVisible > 0 ) {
-			RelPos 				= (Uint32)( mScrollBar->Value() * mItemsNotVisible );
+			RelPos 				= (Uint32)( mVScrollBar->Value() * mItemsNotVisible );
 			RelPosMax			= RelPos + VisibleItems;
 		}
 
@@ -515,6 +530,15 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 					ItemUpdateSize( Item );
 			}
 		}
+	}
+	
+	
+	if ( mHScrollBar->Visible() && !mVScrollBar->Visible() ) {
+		mHScrollBar->Pos( 0, mSize.Height() - mHScrollBar->Size().Height() );
+		mHScrollBar->Size( mSize.Width(), mHScrollBar->Size().Height() );
+	} else {
+		mHScrollBar->Pos( 0, mSize.Height() - mHScrollBar->Size().Height() );
+		mHScrollBar->Size( mSize.Width() - mVScrollBar->Size().Width(), mHScrollBar->Size().Height() );
 	}
 }
 
@@ -675,18 +699,6 @@ const bool& cUIListBox::SmoothScroll() const {
 	return mSmoothScroll;
 }
 
-void cUIListBox::ScrollAlwaysVisible( const bool& visible ) {
-	if ( visible != mScrollAlwaysVisible ) {
-		mScrollAlwaysVisible = visible;
-
-		UpdateScroll();
-	}
-}
-
-const bool& cUIListBox::ScrollAlwaysVisible() const {
-	return mScrollAlwaysVisible;
-}
-
 void cUIListBox::RowHeight( const Uint32& height ) {
 	if ( mRowHeight != height ) {
 		mRowHeight = height;
@@ -698,19 +710,6 @@ void cUIListBox::RowHeight( const Uint32& height ) {
 
 const Uint32& cUIListBox::RowHeight() const {
 	return mRowHeight;
-}
-
-
-void cUIListBox::AllowHorizontalScroll( const bool& allow ) {
-	if ( allow != mAllowHorizontalScroll ) {
-		mAllowHorizontalScroll = allow;
-
-		UpdateScroll();
-	}
-}
-
-const bool& cUIListBox::AllowHorizontalScroll() const {
-	return mAllowHorizontalScroll;
 }
 
 Uint32 cUIListBox::Count() {
@@ -752,12 +751,10 @@ void cUIListBox::SelectPrev() {
 
 			mItems[ mSelected.front() 		]->Unselect();
 
-			if ( ScrollBar()->Visible() ) {
-				if ( mItems[ SelIndex ]->Pos().y < 0 ) {
-					ScrollBar()->Value( (eeFloat)( SelIndex * mRowHeight ) / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) );
+			if ( mItems[ SelIndex ]->Pos().y < 0 ) {
+				ScrollBar()->Value( (eeFloat)( SelIndex * mRowHeight ) / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) );
 
-					mItems[ SelIndex ]->SetFocus();
-				}
+				mItems[ SelIndex ]->SetFocus();
 			}
 
 			mItems[ SelIndex ]->Select();
@@ -778,12 +775,10 @@ void cUIListBox::SelectNext() {
 
 			mItems[ mSelected.front() 		]->Unselect();
 
-			if ( ScrollBar()->Visible() ) {
-				if ( mItems[ SelIndex ]->Pos().y + (Int32)RowHeight() > mContainer->Size().Height() ) {
-					ScrollBar()->Value( (eeFloat)( SelIndex * mRowHeight ) / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) );
+			if ( mItems[ SelIndex ]->Pos().y + (Int32)RowHeight() > mContainer->Size().Height() ) {
+				ScrollBar()->Value( (eeFloat)( SelIndex * mRowHeight ) / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) );
 
-					mItems[ SelIndex ]->SetFocus();
-				}
+				mItems[ SelIndex ]->SetFocus();
 			}
 
 			mItems[ SelIndex 	]->Select();
@@ -863,8 +858,42 @@ Uint32 cUIListBox::OnMessage( const cUIMessage * Msg ) {
 void cUIListBox::OnAlphaChange() {
 	cUIControlAnim::OnAlphaChange();
 
-	mScrollBar->Alpha( mAlpha );
+	mVScrollBar->Alpha( mAlpha );
 	mHScrollBar->Alpha( mAlpha );
+}
+
+void cUIListBox::VerticalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
+	if ( Mode != mVScrollMode ) {
+		mVScrollMode = Mode;
+
+		UpdateScroll();
+	}
+}
+
+const UI_SCROLLBAR_MODE& cUIListBox::VerticalScrollMode() {
+	return mVScrollMode;
+}
+
+void cUIListBox::HorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
+	if ( Mode != mHScrollMode ) {
+		mHScrollMode = Mode;
+
+		if ( UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) {
+			mHScrollBar->Visible( true );
+			mHScrollBar->Enabled( true );
+			ContainerResize();
+		} else if ( UI_SCROLLBAR_ALWAYS_OFF == mHScrollMode ) {
+			mHScrollBar->Visible( false );
+			mHScrollBar->Enabled( false );
+			ContainerResize();
+		}
+
+		UpdateScroll();
+	}
+}
+
+const UI_SCROLLBAR_MODE& cUIListBox::HorizontalScrollMode() {
+	return mHScrollMode;
 }
 
 }}
