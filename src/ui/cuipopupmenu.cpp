@@ -64,7 +64,7 @@ Uint32 cUIPopUpMenu::OnMessage( const cUIMessage * Msg ) {
 	switch ( Msg->Msg() ) {
 		case cUIMessage::MsgMouseUp:
 		{
-			if ( !Msg->Sender()->IsType( UI_TYPE_MENUSUBMENU ) ) {
+			if ( !Msg->Sender()->IsType( UI_TYPE_MENUSUBMENU ) && ( Msg->Flags() & EE_BUTTONS_LRM ) ) {
 				SendCommonEvent( cUIEvent::EventOnHideByClick );
 
 				Hide();

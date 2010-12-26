@@ -307,9 +307,11 @@ Uint32 cUIMenu::OnMessage( const cUIMessage * Msg ) {
 	switch ( Msg->Msg() ) {
 		case cUIMessage::MsgMouseUp:
 		{
-			cUIEvent ItemEvent( Msg->Sender(), cUIEvent::EventOnItemClicked );
-			SendEvent( &ItemEvent );
-			
+			if ( Msg->Sender()->Parent() == this && Msg->Sender()->Parent()->Visible() && ( Msg->Flags() & EE_BUTTONS_LRM ) ) {
+				cUIEvent ItemEvent( Msg->Sender(), cUIEvent::EventOnItemClicked );
+				SendEvent( &ItemEvent );
+			}
+
 			return 1;
 		}
 		case cUIMessage::MsgFocusLoss:

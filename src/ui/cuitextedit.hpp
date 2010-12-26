@@ -42,6 +42,12 @@ class EE_API cUITextEdit : public cUIControlAnim {
 		cUIScrollBar * HScrollBar() const;
 
 		cUIScrollBar * VScrollBar() const;
+
+		virtual void Update();
+
+		void AllowEditing( const bool& allow );
+
+		const bool& AllowEditing() const;
 	protected:
 		cUITextInput *		mTextInput;
 		cUIScrollBar *		mHScrollBar;

@@ -78,7 +78,8 @@ void cUIMenuCheckBox::SwitchActive() {
 Uint32 cUIMenuCheckBox::OnMouseUp( const eeVector2i &Pos, Uint32 Flags ) {
 	cUIMenuItem::OnMouseUp( Pos, Flags );
 
-	SwitchActive();
+	if ( Parent()->Visible() && ( Flags & EE_BUTTONS_LRM ) )
+		SwitchActive();
 
 	return 1;
 }

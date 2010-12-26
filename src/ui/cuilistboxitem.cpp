@@ -74,6 +74,8 @@ void cUIListBoxItem::Select() {
 }
 
 void cUIListBoxItem::Update() {
+	cUITextBox::Update();
+
 	if ( mEnabled && mVisible ) {
 		cUIListBox * LBParent 	= reinterpret_cast<cUIListBox*> ( Parent()->Parent() );
 		Uint32 Flags 			= cUIManager::instance()->GetInput()->ClickTrigger();

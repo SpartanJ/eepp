@@ -58,9 +58,10 @@ class EE_API cUISlider : public cUIControlAnim {
 		const bool& AllowHalfSliderOut() const;
 
 		const bool& ExpandBackground() const;
+
+		void ManageClick( const Uint32& Flags );
 	protected:
 		friend class Private::cUISliderButton;
-		friend class cUIListBoxItem;
 
 		bool				mVertical;
 		bool				mAllowHalfSliderOut;
@@ -79,8 +80,6 @@ class EE_API cUISlider : public cUIControlAnim {
 		virtual void OnSizeChange();
 
 		void FixSliderPos();
-
-		void ManageClick( const Uint32& Flags );
 
 		virtual Uint32 OnKeyDown( const cUIEventKey &Event );
 		

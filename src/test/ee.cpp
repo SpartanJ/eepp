@@ -657,7 +657,6 @@ void cEETest::CreateUI() {
 	TEParams.PosSet( 5, 245 );
 	TEParams.Size	= eeSize( 315, 130 );
 	TEParams.Flags = UI_AUTO_PADDING | UI_CLIP_ENABLE;
-	//TEParams.WordWrap = false;
 	cUITextEdit * TextEdit = eeNew( cUITextEdit, ( TEParams ) );
 	TextEdit->Visible( true );
 	TextEdit->Enabled( true );

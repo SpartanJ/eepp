@@ -1,9 +1,9 @@
 #include "cuitextedit.hpp"
+#include "cuimanager.hpp"
 
 namespace EE { namespace UI {
 
 cUITextEdit::cUITextEdit( cUITextEdit::CreateParams& Params ) :
-
 	cUIControlAnim( Params ),
 	mTextInput( NULL ),
 	mHScrollBar( NULL ),
@@ -343,6 +343,25 @@ void cUITextEdit::ShrinkText( const Uint32& Width ) {
 	if ( Flags() & UI_AUTO_SHRINK_TEXT ) {
 		mTextInput->ShrinkText( Width );
 	}
+}
+
+void cUITextEdit::Update() {
+	cUIControlAnim::Update();
+
+	if ( mTextInput->Enabled() && mTextInput->Visible() && mTextInput->IsMouseOver() && mVScrollBar->Visible() ) {
+		Uint32 Flags 			= cUIManager::instance()->GetInput()->ClickTrigger();
+
+		if ( Flags & EE_BUTTONS_WUWD )
+			mVScrollBar->Slider()->ManageClick( Flags );
+	}
+}
+
+void cUITextEdit::AllowEditing( const bool& allow ) {
+	mTextInput->AllowEditing( allow );
+}
+
+const bool& cUITextEdit::AllowEditing() const {
+	return mTextInput->AllowEditing();
 }
 
 }}

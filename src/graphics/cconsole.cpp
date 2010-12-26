@@ -51,7 +51,7 @@ void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const eeUin
 	mTBuf.Start();
 	mTBuf.SupportNewLine( false );
 	mTBuf.Active( false );
-	IgnoreCharOnPrompt( 9 );
+	IgnoreCharOnPrompt( KEY_TAB );
 
 	mCon.ConModif = 0;
 
@@ -300,12 +300,18 @@ void cConsole::PrintCommandsStartingWith( const std::wstring& start ) {
 
 	} else if ( cmds.size() ) {
 		mTBuf.Buffer( cmds.front() );
-		mTBuf.CurPos( (Uint32)cmds.front().size() );
+		mTBuf.CursorToEnd();
 	}
 }
 
 void cConsole::PrivInputCallback( EE_Event* Event ) {
 	switch( Event->type ) {
+		case SDL_KEYUP:
+			if ( mVisible ) {
+				if ( ( Event->key.keysym.sym == SDLK_TAB ) && (eeUint)mTBuf.CurPos() == mTBuf.Buffer().size() ) {
+					PrintCommandsStartingWith( mTBuf.Buffer() );
+				}
+			}
 		case SDL_KEYDOWN:
 			if ( mVisible ) {
 				if ( mLastCommands.size() > 0 ) {
