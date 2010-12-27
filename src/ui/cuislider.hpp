@@ -1,19 +1,21 @@
 #ifndef EE_UIcUISlider_HPP
 #define EE_UIcUISlider_HPP
 
-#include "cuicontrolanim.hpp"
+#include "cuicomplexcontrol.hpp"
 #include "cuisliderbutton.hpp"
 
 namespace EE { namespace UI {
 
-class EE_API cUISlider : public cUIControlAnim {
+class EE_API cUISlider : public cUIComplexControl {
 	public:
-		class CreateParams : public cUIControl::CreateParams {
+		class CreateParams : public cUIComplexControl::CreateParams {
 			public:
-				inline CreateParams() : cUIControl::CreateParams() {
-					VerticalSlider = false;
-					AllowHalfSliderOut = true;
-					ExpandBackground = false;
+				inline CreateParams() :
+					cUIComplexControl::CreateParams(),
+					VerticalSlider( false ),
+					AllowHalfSliderOut( true ),
+					ExpandBackground( false )
+				{
 				}
 
 				inline ~CreateParams() {}

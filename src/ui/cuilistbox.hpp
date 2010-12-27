@@ -8,12 +8,12 @@
 
 namespace EE { namespace UI {
 
-class EE_API cUIListBox : public cUIControlAnim {
+class EE_API cUIListBox : public cUIComplexControl {
 	public:
-		class CreateParams : public cUIControlAnim::CreateParams {
+		class CreateParams : public cUIComplexControl::CreateParams {
 			public:
 				inline CreateParams() :
-					cUIControl::CreateParams(),
+					cUIComplexControl::CreateParams(),
 					RowHeight( 0 ),
 					SmoothScroll( true ),
 					VScrollMode( UI_SCROLLBAR_AUTO ),

@@ -9,12 +9,12 @@
 
 namespace EE { namespace UI {
 
-class EE_API cUIMenu : public cUIControlAnim {
+class EE_API cUIMenu : public cUIComplexControl {
 	public:
-		class CreateParams : public cUIControlAnim::CreateParams {
+		class CreateParams : public cUIComplexControl::CreateParams {
 			public:
 				inline CreateParams() :
-					cUIControl::CreateParams(),
+					cUIComplexControl::CreateParams(),
 					RowHeight( 0 ),
 					PaddingContainer(),
 					Font( NULL ),

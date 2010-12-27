@@ -5,7 +5,7 @@
 namespace EE { namespace UI {
 
 cUITextBox::cUITextBox( const cUITextBox::CreateParams& Params ) :
-	cUIControlAnim( Params ),
+	cUIComplexControl( Params ),
 	mFontColor( Params.FontColor ),
 	mFontShadowColor( Params.FontShadowColor ),
 	mAlignOffset( 0.f, 0.f )

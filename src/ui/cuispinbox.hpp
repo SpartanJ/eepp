@@ -6,7 +6,7 @@
 
 namespace EE { namespace UI {
 
-class EE_API cUISpinBox : public cUIControlAnim {
+class EE_API cUISpinBox : public cUIComplexControl {
 	public:
 		class CreateParams : public cUITextInput::CreateParams {
 			public:

@@ -1,17 +1,19 @@
 #ifndef EE_UICUISCROLLBAR_HPP
 #define EE_UICUISCROLLBAR_HPP
 
-#include "cuicontrolanim.hpp"
+#include "cuicomplexcontrol.hpp"
 #include "cuislider.hpp"
 
 namespace EE { namespace UI {
 
-class cUIScrollBar : public cUIControlAnim {
+class cUIScrollBar : public cUIComplexControl {
 	public:
-		class CreateParams : public cUIControl::CreateParams {
+		class CreateParams : public cUIComplexControl::CreateParams {
 			public:
-				inline CreateParams() : cUIControl::CreateParams() {
-					VerticalScrollBar = false;
+				inline CreateParams() :
+					cUIComplexControl::CreateParams(),
+					VerticalScrollBar( false )
+				{
 				}
 
 				inline ~CreateParams() {}

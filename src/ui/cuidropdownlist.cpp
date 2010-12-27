@@ -111,10 +111,12 @@ void cUIDropDownList::Show() {
 	mListBox->Enabled( true );
 	mListBox->Visible( true );
 
-	if ( 255.f == mListBox->Alpha() )
-		mListBox->StartAlphaAnim( 0.f, 255.f, cUIThemeManager::instance()->ControlsFadeInTime() );
-	else
-		mListBox->CreateFadeIn( cUIThemeManager::instance()->ControlsFadeInTime() );
+	if ( cUIThemeManager::instance()->DefaultEffectsEnabled() ) {
+		if ( 255.f == mListBox->Alpha() )
+			mListBox->StartAlphaAnim( 0.f, 255.f, cUIThemeManager::instance()->ControlsFadeInTime() );
+		else
+			mListBox->CreateFadeIn( cUIThemeManager::instance()->ControlsFadeInTime() );
+	}
 }
 
 void cUIDropDownList::Hide() {

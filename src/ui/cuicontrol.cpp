@@ -23,8 +23,6 @@ cUIControl::cUIControl( const CreateParams& Params ) :
 	mNumCallBacks(0),
 	mSkinState(NULL)
 {
-	mType |= UI_TYPE_GET(UI_TYPE_CONTROL);
-
 	if ( NULL == mParentCtrl && NULL != cUIManager::instance()->MainControl() ) {
 		mParentCtrl = cUIManager::instance()->MainControl();
 	}
@@ -245,6 +243,9 @@ void cUIControl::Update() {
 		ChildLoop->Update();
 		ChildLoop = ChildLoop->mNext;
 	}
+
+	if ( mControlFlags & UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD )
+		WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD_POS, 0 );
 }
 
 void cUIControl::SendMouseEvent( const Uint32& Event, const eeVector2i& Pos, const Uint32& Flags ) {
@@ -295,6 +296,10 @@ Uint32 cUIControl::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
 
 bool cUIControl::IsMouseOver() {
 	return 0 != Read32BitKey( &mControlFlags, UI_CTRL_FLAG_MOUSEOVER_POS );
+}
+
+bool cUIControl::IsMouseOverMeOrChilds() {
+	return 0 != Read32BitKey( &mControlFlags, UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD_POS );
 }
 
 Uint32 cUIControl::OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags ) {
@@ -715,6 +720,8 @@ cUIControl * cUIControl::OverFind( const eeVector2f& Point ) {
 		UpdateQuad();
 
 		if ( PointInsidePolygon2( mPoly, Point ) ) {
+			WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD_POS, 1 );
+
 			cUIControl * ChildLoop = mChildLast;
 
 			while ( NULL != ChildLoop ) {

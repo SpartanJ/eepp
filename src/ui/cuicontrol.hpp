@@ -58,15 +58,15 @@ class EE_API cUIControl {
 				void PosSet( const eeVector2i& pos )						{ Pos.x = pos.x; Pos.y = pos.y; }
 				void PosSet( const Int32& X, const Int32& Y )				{ Pos.x = X; Pos.y = Y; }
 				void Parent( cUIControl * Ctrl )							{ ParentCtrl = Ctrl; }
-				void SizeGet( const eeSize& size )							{ Size.x = size.x; Size.y = size.y;	}
-				void SizeGet( const Int32& Width, const Int32& Height )		{ Size.x = Width; Size.y = Height;	}
+				void SizeSet( const eeSize& size )							{ Size.x = size.x; Size.y = size.y;	}
+				void SizeSet( const Int32& Width, const Int32& Height )		{ Size.x = Width; Size.y = Height;	}
 
-				cUIControl *	ParentCtrl;
-				eeVector2i		Pos;
-				eeSize			Size;
-				Uint32			Flags;
-				cUIBackground 	Background;
-				cUIBorder		Border;
+				cUIControl *		ParentCtrl;
+				eeVector2i			Pos;
+				eeSize				Size;
+				Uint32				Flags;
+				cUIBackground		Background;
+				cUIBorder			Border;
 				EE_PRE_BLEND_FUNC	Blend;
 		};
 
@@ -200,6 +200,8 @@ class EE_API cUIControl {
 		cUIControl * ChildGetLast() const;
 
 		bool IsMouseOver();
+
+		bool IsMouseOverMeOrChilds();
 
 		const eePolygon2f& GetPolygon() const;
 

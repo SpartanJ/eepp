@@ -44,6 +44,8 @@ cUIControl * cUIListBoxContainer::OverFind( const eeVector2f& Point ) {
 		UpdateQuad();
 
 		if ( PointInsidePolygon2( mPoly, Point ) ) {
+			WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD_POS, 1 );
+
 			for ( Uint32 i = LBParent->mVisibleFirst; i <= LBParent->mVisibleLast; i++ ) {
 				if ( NULL != LBParent->mItems[i] ) {
 					cUIControl * ChildOver = LBParent->mItems[i]->OverFind( Point );

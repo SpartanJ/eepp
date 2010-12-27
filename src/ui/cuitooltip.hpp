@@ -1,16 +1,16 @@
-#ifndef EE_UICUITEXTBOX_H
-#define EE_UICUITEXTBOX_H
+#ifndef EE_UICUITOOLTIP_HPP
+#define EE_UICUITOOLTIP_HPP
 
-#include "cuicomplexcontrol.hpp"
+#include "cuicontrolanim.hpp"
 
 namespace EE { namespace UI {
 
-class EE_API cUITextBox : public cUIComplexControl {
+class EE_API cUITooltip : public cUIControlAnim {
 	public:
-		class CreateParams : public cUIComplexControl::CreateParams {
+		class CreateParams : public cUIControlAnim::CreateParams {
 			public:
 				inline CreateParams() :
-					cUIComplexControl::CreateParams(),
+					cUIControlAnim::CreateParams(),
 					Font( NULL ),
 					FontColor( 0, 0, 0, 255 ),
 					FontShadowColor( 255, 255, 255, 150 )
@@ -34,9 +34,15 @@ class EE_API cUITextBox : public cUIComplexControl {
 				eeColorA 	FontShadowColor;
 		};
 
-		cUITextBox( const cUITextBox::CreateParams& Params );
+		cUITooltip( cUITooltip::CreateParams& Params );
 
-		~cUITextBox();
+		~cUITooltip();
+
+		virtual void SetTheme( cUITheme * Theme );
+
+		void Show();
+
+		void Hide();
 
 		virtual void Draw();
 
@@ -68,8 +74,6 @@ class EE_API cUITextBox : public cUIComplexControl {
 
 		const eeRecti& Padding() const;
 
-		virtual void SetTheme( cUITheme * Theme );
-
 		cTextCache * GetTextCache();
 
 		eeFloat GetTextWidth();
@@ -80,21 +84,26 @@ class EE_API cUITextBox : public cUIComplexControl {
 
 		const eeVector2f& AlignOffset() const;
 
-		virtual void ShrinkText( const Uint32& MaxWidth );
+		void TooltipTime( const eeFloat& Time );
+
+		void TooltipTimeAdd( const eeFloat& Time );
+
+		const eeFloat& TooltipTime() const;
 	protected:
 		cTextCache *	mTextCache;
 		eeColorA 		mFontColor;
 		eeColorA 		mFontShadowColor;
 		eeVector2f 		mAlignOffset;
 		eeRecti			mPadding;
+		eeFloat			mTooltipTime;
 
 		virtual void OnSizeChange();
-
-		virtual void AutoShrink();
 
 		virtual void AutoSize();
 
 		virtual void AutoAlign();
+
+		virtual void AutoPadding();
 };
 
 }}

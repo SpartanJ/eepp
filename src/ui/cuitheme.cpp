@@ -57,6 +57,7 @@ static void LoadThemeElements() {
 		UI_THEME_ELEMENTS.push_back( "menuarrow" );
 		UI_THEME_ELEMENTS.push_back( "textedit" );
 		UI_THEME_ELEMENTS.push_back( "textedit_box" );
+		UI_THEME_ELEMENTS.push_back( "tooltip" );
 	}
 }
 

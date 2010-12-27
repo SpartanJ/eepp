@@ -4,7 +4,7 @@
 namespace EE { namespace UI {
 
 cUIMenu::cUIMenu( cUIMenu::CreateParams& Params ) :
-	cUIControlAnim( Params ),
+	cUIComplexControl( Params ),
 	mPadding( Params.PaddingContainer ),
 	mFont( Params.Font ),
 	mFontColor( Params.FontColor ),

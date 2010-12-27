@@ -3,7 +3,7 @@
 namespace EE { namespace UI {
 
 cUIProgressBar::cUIProgressBar( const cUIProgressBar::CreateParams& Params ) :
-	cUIControlAnim( Params ),
+	cUIComplexControl( Params ),
 	mVerticalExpand( Params.VerticalExpand ),
 	mSpeed( Params.MovementSpeed ),
 	mFillerMargin( Params.FillerMargin ),

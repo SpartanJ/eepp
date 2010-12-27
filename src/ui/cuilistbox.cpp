@@ -4,7 +4,7 @@
 namespace EE { namespace UI {
 
 cUIListBox::cUIListBox( cUIListBox::CreateParams& Params ) :
-	cUIControlAnim( Params ),
+	cUIComplexControl( Params ),
 	mRowHeight( Params.RowHeight ),
 	mVScrollMode( Params.VScrollMode ),
 	mHScrollMode( Params.HScrollMode ),

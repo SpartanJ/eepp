@@ -477,6 +477,7 @@ void cEETest::CreateUI() {
 	Button->Enabled( true );
 	Button->Text( L"Click Me" );
 	Button->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::ButtonClick ) );
+	Button->TooltipText( L"Click and see what happens..." );
 
 	TextParams.PosSet( 130, 20 );
 	TextParams.Size = eeSize( 80, 22 );

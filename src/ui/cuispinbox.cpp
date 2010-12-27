@@ -3,7 +3,7 @@
 namespace EE { namespace UI {
 
 cUISpinBox::cUISpinBox( const cUISpinBox::CreateParams& Params ) :
-	cUIControlAnim( Params ),
+	cUIComplexControl( Params ),
 	mMinValue( 0.f ),
 	mMaxValue( 1024.f ),
 	mValue( Params.DefaultValue ),

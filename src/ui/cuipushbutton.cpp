@@ -3,7 +3,7 @@
 namespace EE { namespace UI {
 
 cUIPushButton::cUIPushButton( const cUIPushButton::CreateParams& Params ) :
-	cUIControlAnim( Params ),
+	cUIComplexControl( Params ),
 	mFontColor( Params.FontColor ),
 	mFontOverColor( Params.FontOverColor ),
 	mIcon( NULL ),

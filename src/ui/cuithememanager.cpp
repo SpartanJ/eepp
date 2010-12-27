@@ -11,7 +11,10 @@ cUIThemeManager::cUIThemeManager() :
 	mAutoApplyDefaultTheme( true ),
 	mEnableDefaultEffects( false ),
 	mFadeInTime( 100.f ),
-	mFadeOutTime( 100.f )
+	mFadeOutTime( 100.f ),
+	mTooltipTimeToShow( 200 ),
+	mTooltipFollowMouse( true ),
+	mCursorSize( 16, 16 )
 {
 }
 
@@ -86,6 +89,30 @@ const eeFloat& cUIThemeManager::ControlsFadeOutTime() const {
 
 void cUIThemeManager::ControlsFadeOutTime( const eeFloat& Time ) {
 	mFadeOutTime = Time;
+}
+
+void cUIThemeManager::TooltipTimeToShow( const Uint32& Time ) {
+	mTooltipTimeToShow = Time;
+}
+
+const Uint32& cUIThemeManager::TooltipTimeToShow() const {
+	return mTooltipTimeToShow;
+}
+
+void cUIThemeManager::TooltipFollowMouse( const bool& Follow ) {
+	mTooltipFollowMouse = Follow;
+}
+
+const bool& cUIThemeManager::TooltipFollowMouse() const {
+	return mTooltipFollowMouse;
+}
+
+void cUIThemeManager::CursorSize( const eeSize& Size ) {
+	mCursorSize = Size;
+}
+
+const eeSize& cUIThemeManager::CursorSize() const {
+	return mCursorSize;
 }
 
 }}

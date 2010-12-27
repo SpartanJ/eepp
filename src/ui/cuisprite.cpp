@@ -3,7 +3,7 @@
 namespace EE { namespace UI {
 
 cUISprite::cUISprite( const cUISprite::CreateParams& Params ) :
-	cUIControlAnim( Params ),
+	cUIComplexControl( Params ),
 	mSprite( Params.Sprite ),
 	mRender( Params.SpriteRender )
 {

@@ -3,7 +3,7 @@
 namespace EE { namespace UI {
 
 cUIGfx::cUIGfx( const cUIGfx::CreateParams& Params ) :
-	cUIControlAnim( Params ),
+	cUIComplexControl( Params ),
 	mShape( Params.Shape ),
 	mColor( Params.ShapeColor ),
 	mRender( Params.ShapeRender )

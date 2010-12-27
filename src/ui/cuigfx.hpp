@@ -1,18 +1,20 @@
 #ifndef EE_UICUIGFX_H
 #define EE_UICUIGFX_H
 
-#include "cuicontrolanim.hpp"
+#include "cuicomplexcontrol.hpp"
 
 namespace EE { namespace UI {
 
-class EE_API cUIGfx : public cUIControlAnim {
+class EE_API cUIGfx : public cUIComplexControl {
 	public:
-		class CreateParams : public cUIControl::CreateParams {
+		class CreateParams : public cUIComplexControl::CreateParams {
 			public:
-				inline CreateParams() : cUIControl::CreateParams() {
-					Shape		= NULL;
-					ShapeColor 	= eeColorA();
-					ShapeRender = RN_NORMAL;
+				inline CreateParams() :
+					cUIComplexControl::CreateParams(),
+					Shape( NULL ),
+					ShapeColor(),
+					ShapeRender( RN_NORMAL )
+				{
 				}
 
 				inline ~CreateParams() {}

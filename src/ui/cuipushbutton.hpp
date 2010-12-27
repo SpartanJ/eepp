@@ -1,12 +1,13 @@
 #ifndef EE_UICUIPUSHBUTTON_HPP
 #define EE_UICUIPUSHBUTTON_HPP
 
+#include "cuicomplexcontrol.hpp"
 #include "cuitextbox.hpp"
 #include "cuigfx.hpp"
 
 namespace EE { namespace UI {
 
-class EE_API cUIPushButton : public cUIControlAnim {
+class EE_API cUIPushButton : public cUIComplexControl {
 	public:
 		class CreateParams : public cUITextBox::CreateParams {
 			public:

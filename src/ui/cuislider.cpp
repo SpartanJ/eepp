@@ -4,7 +4,7 @@
 namespace EE { namespace UI {
 
 cUISlider::cUISlider( const cUISlider::CreateParams& Params ) :
-	cUIControlAnim( Params ),
+	cUIComplexControl( Params ),
 	mVertical( Params.VerticalSlider ),
 	mAllowHalfSliderOut( Params.AllowHalfSliderOut ),
 	mExpandBackground( Params.ExpandBackground ),
