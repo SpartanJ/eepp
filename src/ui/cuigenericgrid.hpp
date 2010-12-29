@@ -44,6 +44,10 @@ class EE_API cUIGenericGrid : public cUIControlAnim {
 
 		void Remove( cUIGridCell * Cell );
 
+		void Remove( std::vector<Uint32> ItemsIndex );
+
+		void Remove( Uint32 ItemIndex );
+
 		void CollumnWidth( const Uint32& CollumnIndex, const Uint32& CollumnWidth );
 
 		Uint32 Count() const;

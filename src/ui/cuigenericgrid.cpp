@@ -325,7 +325,47 @@ void cUIGenericGrid::Add( cUIGridCell * Cell ) {
 }
 
 void cUIGenericGrid::Remove( cUIGridCell * Cell ) {
+	return Remove( GetItemIndex( Cell ) );
+}
 
+void cUIGenericGrid::Remove( std::vector<Uint32> ItemsIndex ) {
+	if ( ItemsIndex.size() && 0xFFFFFFFF != ItemsIndex[0] ) {
+		std::vector<cUIGridCell*> ItemsCpy;
+		bool erase;
+
+		for ( Uint32 i = 0; i < mItems.size(); i++ ) {
+			erase = false;
+
+			for ( Uint32 z = 0; z < ItemsIndex.size(); z++ ) {
+				if ( ItemsIndex[z] == i ) {
+					if ( (Int32)ItemsIndex[z] == mSelected )
+						mSelected = -1;
+
+					ItemsIndex.erase( ItemsIndex.begin() + z );
+
+					erase = true;
+
+					break;
+				}
+			}
+
+			if ( !erase ) {
+				ItemsCpy.push_back( mItems[i] );
+			} else {
+				eeSAFE_DELETE( mItems[i] ); // doesn't call to mItems[i]->Close(); because is not checking for close.
+			}
+		}
+
+		mItems = ItemsCpy;
+
+		SetDefaultCollumnsWidth();
+		UpdateSize();
+		UpdateScroll();
+	}
+}
+
+void cUIGenericGrid::Remove( Uint32 ItemIndex ) {
+	Remove( std::vector<Uint32> ( 1, ItemIndex ) );
 }
 
 void cUIGenericGrid::CollumnWidth( const Uint32& CollumnIndex, const Uint32& CollumnWidth ) {
