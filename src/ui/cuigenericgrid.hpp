@@ -130,6 +130,8 @@ class EE_API cUIGenericGrid : public cUIControlAnim {
 		virtual Uint32 OnSelected();
 
 		void UpdateVScroll();
+
+		void UpdateHScroll();
 };
 
 }}

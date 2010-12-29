@@ -51,9 +51,7 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 		cUIControl *		mOverControl;
 		cUIControl * 		mDownControl;
 		bool 				mFirstPress;
-
 		eeFloat 			mElapsed;
-
 		Int32 				mCbId;
 
 		void				InputCallback( EE_Event * Event );

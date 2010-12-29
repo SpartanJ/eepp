@@ -173,22 +173,8 @@ void cUIGenericGrid::UpdateVScroll() {
 	ContainerResize();
 }
 
-void cUIGenericGrid::UpdateScroll( bool FromScrollChange ) {
-	if ( !mItems.size() )
-		return;
-
-	cUIGridCell * Item;
-	Uint32 i, RelPos = 0, RelPosMax;
-	Int32 ItemPos, ItemPosMax;
-	Int32 tHLastScroll 		= mHScrollInit;
-
-	Uint32 VisibleItems 	= mContainer->Size().Height() / mRowHeight;
-	mItemsNotVisible 		= (Int32)mItems.size() - VisibleItems;
-	bool Clipped 			= 0 != mContainer->IsClipped();
-
-	UpdateVScroll();
-
-	if ( Clipped && ( UI_SCROLLBAR_AUTO == mHScrollMode || UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) ) {
+void cUIGenericGrid::UpdateHScroll() {
+	if ( mContainer->IsClipped() && ( UI_SCROLLBAR_AUTO == mHScrollMode || UI_SCROLLBAR_ALWAYS_ON == mHScrollMode ) ) {
 		if ( mContainer->Size().Width() < (Int32)mTotalWidth ) {
 				mHScrollBar->Visible( true );
 				mHScrollBar->Enabled( true );
@@ -211,6 +197,24 @@ void cUIGenericGrid::UpdateScroll( bool FromScrollChange ) {
 			}
 		}
 	}
+}
+
+void cUIGenericGrid::UpdateScroll( bool FromScrollChange ) {
+	if ( !mItems.size() )
+		return;
+
+	cUIGridCell * Item;
+	Uint32 i, RelPos = 0, RelPosMax;
+	Int32 ItemPos, ItemPosMax;
+	Int32 tHLastScroll 		= mHScrollInit;
+
+	Uint32 VisibleItems 	= mContainer->Size().Height() / mRowHeight;
+	mItemsNotVisible 		= (Int32)mItems.size() - VisibleItems;
+	bool Clipped 			= 0 != mContainer->IsClipped();
+
+	UpdateVScroll();
+
+	UpdateHScroll();
 
 	VisibleItems 			= mContainer->Size().Height() / mRowHeight;
 	mItemsNotVisible 		= (Uint32)mItems.size() - VisibleItems;
@@ -393,7 +397,6 @@ void cUIGenericGrid::UpdateCollumnsPos() {
 
 	mTotalWidth = Pos;
 }
-
 
 void cUIGenericGrid::OnAlphaChange() {
 	cUIControlAnim::OnAlphaChange();

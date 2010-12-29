@@ -32,12 +32,6 @@ Uint32 cUIListBoxItem::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags )
 	return 1;
 }
 
-Uint32 cUIListBoxItem::OnKeyDown( const cUIEventKey &Event ) {
-	reinterpret_cast<cUIListBox*> ( Parent()->Parent() )->ItemKeyEvent( Event );
-
-	return 1;
-}
-
 void cUIListBoxItem::Select() {
 	cUIListBox * LBParent = reinterpret_cast<cUIListBox*> ( Parent()->Parent() );
 
@@ -72,8 +66,6 @@ void cUIListBoxItem::Select() {
 }
 
 void cUIListBoxItem::Update() {
-	cUITextBox::Update();
-
 	if ( mEnabled && mVisible ) {
 		cUIListBox * LBParent 	= reinterpret_cast<cUIListBox*> ( Parent()->Parent() );
 		Uint32 Flags 			= cUIManager::instance()->GetInput()->ClickTrigger();
@@ -85,10 +77,9 @@ void cUIListBoxItem::Update() {
 			if ( Flags & EE_BUTTONS_WUWD && LBParent->VerticalScrollBar()->Visible() )
 				LBParent->VerticalScrollBar()->Slider()->ManageClick( Flags );
 		}
-
-		if ( ( mControlFlags & UI_CTRL_FLAG_HAS_FOCUS ) )
-			LBParent->ManageKeyboard();
 	}
+
+	cUITextBox::Update();
 }
 
 Uint32 cUIListBoxItem::OnMouseExit( const eeVector2i& Pos, const Uint32 Flags ) {

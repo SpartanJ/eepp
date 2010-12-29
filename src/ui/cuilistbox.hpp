@@ -199,8 +199,6 @@ class EE_API cUIListBox : public cUIComplexControl {
 
 		void FindMaxWidth();
 
-		void ManageKeyboard();
-
 		cUIListBoxItem * CreateListBoxItem( const std::wstring& Name );
 
 		void CreateItemIndex( const Uint32& i );

@@ -1,11 +1,10 @@
 #include "cuidragable.hpp"
+#include "cuimanager.hpp"
 
 namespace EE { namespace UI {
 
 cUIDragable::cUIDragable( const cUIControl::CreateParams& Params ) :
 	cUIControl( Params ),
-	mDragEnable( false ),
-	mDragging( false ),
 	mDragButton( EE_BUTTON_LMASK )
 {
 	mType |= UI_TYPE_CONTROL_DRAGABLE;
@@ -15,9 +14,9 @@ cUIDragable::~cUIDragable() {
 }
 
 Uint32 cUIDragable::OnMouseDown( const eeVector2i& Pos, const Uint32 Flags ) {
-	if ( !( cInput::instance()->LastPressTrigger() & mDragButton ) && ( Flags & mDragButton ) && mDragEnable && !mDragging ) {
-		mDragging = true;
-		mDragPoint = mDraggingPoint = Pos;
+	if ( !( cInput::instance()->LastPressTrigger() & mDragButton ) && ( Flags & mDragButton ) && DragEnable() && !Dragging() ) {
+		Dragging( true );
+		mDragPoint = Pos;
 	}
 
 	cUIControl::OnMouseDown( Pos, Flags );
@@ -25,19 +24,12 @@ Uint32 cUIDragable::OnMouseDown( const eeVector2i& Pos, const Uint32 Flags ) {
 }
 
 Uint32 cUIDragable::OnMouseUp( const eeVector2i& Pos, const Uint32 Flags ) {
-	if ( mDragEnable && mDragging && ( Flags & mDragButton ) )
-		mDragging = false;
+	if ( DragEnable() && Dragging() && ( Flags & mDragButton ) ) {
+		Dragging( false );
+	}
 
 	cUIControl::OnMouseUp( Pos, Flags );
 	return 1;
-}
-
-bool cUIDragable::Dragging() const {
-	return mDragging;
-}
-
-void cUIDragable::Dragging( const bool& dragging ) {
-	mDragging = dragging;
 }
 
 const eeVector2i& cUIDragable::DragPoint() const {
@@ -48,46 +40,44 @@ void cUIDragable::DragPoint( const eeVector2i& Point ) {
 	mDragPoint = Point;
 }
 
-const eeVector2i& cUIDragable::DraggingPoint() const {
-	return mDraggingPoint;
-}
-
-void cUIDragable::DraggingPoint( const eeVector2i& Point ) {
-	mDraggingPoint = Point;
-}
-
 void cUIDragable::Update() {
 	cUIControl::Update();
 
-	if ( !mDragEnable )
+	if ( !DragEnable() )
 		return;
 
-	if ( mDragging ) {
+	if ( Dragging() ) {
 		if ( !( cInput::instance()->PressTrigger() & mDragButton ) ) {
-			mDragging = false;
+			Dragging( false );
 			return;
 		}
 
-		eeVector2i Pos( cInput::instance()->GetMousePos() );
+		eeVector2i Pos( cUIManager::instance()->GetMousePos() );
 
-		if ( mDraggingPoint.x != Pos.x || mDraggingPoint.y != Pos.y ) {
-			mDragPoint 		= mDraggingPoint;
-			mDraggingPoint 	= Pos;
+		if ( mDragPoint != Pos ) {
+			mPos += -( mDragPoint - Pos );
 
-			mPos += ( mDragPoint - mDraggingPoint ) * (eeInt)-1;
+			mDragPoint = Pos;
 
 			OnPosChange();
-		} else
-			mDragPoint = mDraggingPoint;
+		}
 	}
 }
 
-const bool& cUIDragable::DragEnable() const {
-	return mDragEnable;
+bool cUIDragable::DragEnable() const {
+	return 0 != ( mFlags & UI_DRAG_ENABLE );
 }
 
 void cUIDragable::DragEnable( const bool& enable ) {
-	mDragEnable = enable;
+	WriteFlag( UI_DRAG_ENABLE, true == enable );
+}
+
+bool cUIDragable::Dragging() const {
+	return 0 != ( mControlFlags & UI_CTRL_FLAG_DRAGGING );
+}
+
+void cUIDragable::Dragging( const bool& dragging ) {
+	WriteCtrlFlag( UI_CTRL_FLAG_DRAGGING_POS, true == dragging );
 }
 
 void cUIDragable::DragButton( const Uint32& Button ) {

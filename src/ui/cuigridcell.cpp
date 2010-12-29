@@ -81,14 +81,10 @@ void cUIGridCell::Update() {
 			if ( Flags & EE_BUTTONS_WUWD && MyParent->VerticalScrollBar()->Visible() )
 				MyParent->VerticalScrollBar()->Slider()->ManageClick( Flags );
 		}
-
-		/*if ( ( mControlFlags & UI_CTRL_FLAG_HAS_FOCUS ) )
-			LBParent->ManageKeyboard();*/
 	}
 
 	cUIComplexControl::Update();
 }
-
 
 void cUIGridCell::Select() {
 	cUIGenericGrid * MyParent 	= reinterpret_cast<cUIGenericGrid*> ( Parent()->Parent() );

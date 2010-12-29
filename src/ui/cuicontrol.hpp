@@ -343,6 +343,8 @@ class EE_API cUIControl {
 
 		void WriteCtrlFlag( const Uint32& Pos, const Uint32& Val );
 
+		void WriteFlag( const Uint32& Flag, const Uint32& Val );
+
 		void ApplyDefaultTheme();
 
 		eeFloat Elapsed();

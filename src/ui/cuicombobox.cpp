@@ -66,21 +66,11 @@ Uint32 cUIComboBox::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
 		cUITextInput::OnMouseClick( Pos, Flags );
 
 		if ( mListBox->Visible() ) {
-			mListBox->Enabled( false );
-			mListBox->Visible( false );
+			Hide();
 		}
 	}
 
 	return 1;
-}
-
-void cUIComboBox::OnItemSelected( const cUIEvent * Event ) {
-	if ( mListBox->Visible() ) {
-		mListBox->Enabled( false );
-		mListBox->Visible( false );
-	}
-
-	mTextBuffer.Buffer( mListBox->GetItemSelectedText() );
 }
 
 }}

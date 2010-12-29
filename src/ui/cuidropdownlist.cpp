@@ -27,10 +27,10 @@ cUIDropDownList::cUIDropDownList( cUIDropDownList::CreateParams& Params ) :
 	ApplyDefaultTheme();
 
 	mListBox->AddEventListener( cUIEvent::EventOnComplexControlFocusLoss, cb::Make1( this, &cUIDropDownList::OnListBoxFocusLoss ) );
-	mListBox->AddEventListener( cUIEvent::EventOnSelected, cb::Make1( this, &cUIDropDownList::OnItemSelected ) );
+	mListBox->AddEventListener( cUIEvent::EventOnSelected	, cb::Make1( this, &cUIDropDownList::OnItemSelected ) );
 	mListBox->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cUIDropDownList::OnItemClicked ) );
 	mListBox->AddEventListener( cUIEvent::EventOnItemKeyDown, cb::Make1( this, &cUIDropDownList::OnItemKeyDown ) );
-	mListBox->AddEventListener( cUIEvent::EventKeyDown, cb::Make1( this, &cUIDropDownList::OnItemKeyDown ) );
+	mListBox->AddEventListener( cUIEvent::EventKeyDown		, cb::Make1( this, &cUIDropDownList::OnItemKeyDown ) );
 }
 
 cUIDropDownList::~cUIDropDownList() {
@@ -93,7 +93,7 @@ void cUIDropDownList::OnItemKeyDown( const cUIEvent * Event ) {
 }
 
 void cUIDropDownList::OnListBoxFocusLoss( const cUIEvent * Event ) {
-	if ( cUIManager::instance()->FocusControl() != this ) {
+	if ( cUIManager::instance()->FocusControl() != this && !IsChild( cUIManager::instance()->FocusControl() ) ) {
 		Hide();
 	}
 }
@@ -104,7 +104,7 @@ void cUIDropDownList::OnItemClicked( const cUIEvent * Event ) {
 }
 
 void cUIDropDownList::OnItemSelected( const cUIEvent * Event ) {
-	mTextBuffer.Buffer( mListBox->GetItemSelectedText() );
+	Text( mListBox->GetItemSelectedText() );
 }
 
 void cUIDropDownList::Show() {
@@ -129,12 +129,7 @@ void cUIDropDownList::Hide() {
 }
 
 void cUIDropDownList::Update() {
-	cUITextInput::Update();
-
 	if ( mEnabled && mVisible ) {
-		if ( ( mControlFlags & UI_CTRL_FLAG_HAS_FOCUS ) )
-			mListBox->ManageKeyboard();
-
 		if ( IsMouseOver() ) {
 			Uint32 Flags 			= cUIManager::instance()->GetInput()->ClickTrigger();
 
@@ -147,6 +142,14 @@ void cUIDropDownList::Update() {
 			}
 		}
 	}
+
+	cUITextInput::Update();
+}
+
+Uint32 cUIDropDownList::OnKeyDown( const cUIEventKey &Event ) {
+	mListBox->OnKeyDown( Event );
+
+	return 1;
 }
 
 }}

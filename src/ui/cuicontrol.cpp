@@ -937,6 +937,15 @@ void cUIControl::WriteCtrlFlag( const Uint32& Pos, const Uint32& Val ) {
 	Write32BitKey( &mControlFlags, Pos, Val );
 }
 
+void cUIControl::WriteFlag( const Uint32& Flag, const Uint32& Val ) {
+	if ( Val )
+		mFlags |= Flag;
+	else {
+		if ( mFlags & Flag )
+			mFlags &= ~Flag;
+	}
+}
+
 void cUIControl::ApplyDefaultTheme() {
 	cUIThemeManager::instance()->ApplyDefaultTheme( this );
 }

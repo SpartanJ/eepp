@@ -15,8 +15,6 @@ class EE_API cUIComboBox : public cUIDropDownList {
 	protected:
 		cUIControl * mButton;
 
-		virtual void OnItemSelected( const cUIEvent * Event );
-
 		void OnButtonClick( const cUIEvent * Event );
 
 		Uint32 OnMouseClick( const eeVector2i& Pos, const Uint32 Flags );

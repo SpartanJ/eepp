@@ -31,8 +31,6 @@ class EE_API cUIListBoxItem : public cUITextBox {
 		virtual Uint32 OnMouseClick( const eeVector2i& Pos, const Uint32 Flags );
 
 		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags );
-
-		virtual Uint32 OnKeyDown( const cUIEventKey &Event );
 };
 
 }}

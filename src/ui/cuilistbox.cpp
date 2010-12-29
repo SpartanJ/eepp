@@ -104,6 +104,9 @@ cUIScrollBar * cUIListBox::HorizontalScrollBar() const {
 }
 
 void cUIListBox::AddListBoxItems( std::vector<std::wstring> Texts ) {
+	mItems.reserve( mItems.size() + Texts.size() );
+	mTexts.reserve( mTexts.size() + Texts.size() );
+
 	for ( Uint32 i = 0; i < Texts.size(); i++ ) {
 		AddListBoxItem( Texts[i] );
 	}
@@ -791,27 +794,19 @@ void cUIListBox::SelectNext() {
 Uint32 cUIListBox::OnKeyDown( const cUIEventKey &Event ) {
 	cUIControlAnim::OnKeyDown( Event );
 
-	ManageKeyboard();
-
-	return 1;
-}
-
-void cUIListBox::ManageKeyboard() {
 	if ( !mSelected.size() || mFlags & UI_MULTI_SELECT )
-		return;
-
-	cInput * KM 	= cUIManager::instance()->GetInput();
+		return 0;
 
 	if ( eeGetTicks() - mLastTickMove > 100 ) {
-		if ( KM->IsKeyDown( KEY_DOWN ) ) {
+		if ( KEY_DOWN == Event.KeyCode() ) {
 			mLastTickMove = eeGetTicks();
 
 			SelectNext();
-		} else if ( KM->IsKeyDown( KEY_UP ) ) {
+		} else if ( KEY_UP == Event.KeyCode() ) {
 			mLastTickMove = eeGetTicks();
 
 			SelectPrev();
-		} else if ( KM->IsKeyDown( KEY_PAGEUP ) ) {
+		} else if ( KEY_PAGEUP == Event.KeyCode() ) {
 			mLastTickMove = eeGetTicks();
 
 			if ( mSelected.front() != 0 ) {
@@ -823,7 +818,7 @@ void cUIListBox::ManageKeyboard() {
 
 				mItems[ 0 ]->Select();
 			}
-		} else if ( KM->IsKeyDown( KEY_PAGEDOWN ) ) {
+		} else if ( KEY_PAGEDOWN == Event.KeyCode() ) {
 			mLastTickMove = eeGetTicks();
 
 			if ( mSelected.front() != Count() - 1 ) {
@@ -837,6 +832,10 @@ void cUIListBox::ManageKeyboard() {
 			}
 		}
 	}
+
+	ItemKeyEvent( Event );
+
+	return 1;
 }
 
 Uint32 cUIListBox::OnMessage( const cUIMessage * Msg ) {
