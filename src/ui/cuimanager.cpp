@@ -167,7 +167,7 @@ void cUIManager::Update() {
 
 	if ( pOver != mOverControl ) {
 		if ( NULL != mOverControl ) {
-			SendMsg( mOverControl, cUIMessage::MsgMouseEnter );
+			SendMsg( mOverControl, cUIMessage::MsgMouseExit );
 			mOverControl->OnMouseExit( mKM->GetMousePos(), 0 );
 		}
 

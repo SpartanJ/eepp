@@ -160,7 +160,7 @@ void cUIControlAnim::StartAlphaAnim( const eeFloat& From, const eeFloat& To, con
 				AnimChild->StartAlphaAnim( From, To, TotalTime, AlphaChilds );
 			}
 
-			CurChild = CurChild->mNext;
+			CurChild = CurChild->NextGet();
 		}
 	}
 }

@@ -3,8 +3,8 @@
 
 #include "cuicontrolanim.hpp"
 #include "cuiscrollbar.hpp"
+#include "tuiitemcontainer.hpp"
 #include "cuilistboxitem.hpp"
-#include "cuilistboxcontainer.hpp"
 
 namespace EE { namespace UI {
 
@@ -74,9 +74,9 @@ class EE_API cUIListBox : public cUIComplexControl {
 
 		bool IsMultiSelect() const;
 
-		cUIScrollBar * ScrollBar() const;
+		cUIScrollBar * VerticalScrollBar() const;
 
-		cUIScrollBar * HScrollBar() const;
+		cUIScrollBar * HorizontalScrollBar() const;
 
 		cUIListBoxItem * GetItem( const Uint32& Index ) const;
 
@@ -141,7 +141,7 @@ class EE_API cUIListBox : public cUIComplexControl {
 		const UI_SCROLLBAR_MODE& HorizontalScrollMode();
 	protected:
 		friend class cUIListBoxItem;
-		friend class cUIListBoxContainer;
+		friend class tUIItemContainer<cUIListBox>;
 		friend class cUIDropDownList;
 
 		Uint32 				mRowHeight;
@@ -149,7 +149,7 @@ class EE_API cUIListBox : public cUIComplexControl {
 		UI_SCROLLBAR_MODE	mHScrollMode;
 		bool 				mSmoothScroll;
 		eeRecti 			mPaddingContainer;
-		cUIListBoxContainer * mContainer;
+		tUIItemContainer<cUIListBox> * mContainer;
 		cUIScrollBar * 		mVScrollBar;
 		cUIScrollBar * 		mHScrollBar;
 		cFont * 			mFont;

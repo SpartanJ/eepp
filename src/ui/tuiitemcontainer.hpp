@@ -1,21 +1,39 @@
-#include "cuilistboxcontainer.hpp"
-#include "cuilistbox.hpp"
-#include "cuilistboxitem.hpp"
+#ifndef EE_UITUIITEMCONTAINER_HPP
+#define EE_UITUIITEMCONTAINER_HPP
+
+#include "cuicontrol.hpp"
 
 namespace EE { namespace UI {
 
-cUIListBoxContainer::cUIListBoxContainer( cUIControl::CreateParams& Params ) :
+template<class TContainer>
+class tUIItemContainer : public cUIControl {
+	public:
+		tUIItemContainer( cUIControl::CreateParams& Params );
+
+		~tUIItemContainer();
+
+		void Update();
+
+		void DrawChilds();
+	protected:
+		cUIControl * OverFind( const eeVector2f& Point );
+};
+
+template<class TContainer>
+tUIItemContainer<TContainer>::tUIItemContainer( cUIControl::CreateParams& Params ) :
 	cUIControl( Params )
 {
 	DisableChildCloseCheck();
 }
 
-cUIListBoxContainer::~cUIListBoxContainer()
+template<class TContainer>
+tUIItemContainer<TContainer>::~tUIItemContainer()
 {
 }
 
-void cUIListBoxContainer::Update() {
-	cUIListBox * LBParent = reinterpret_cast<cUIListBox*> ( Parent() );
+template<class TContainer>
+void tUIItemContainer<TContainer>::Update() {
+	TContainer * LBParent = reinterpret_cast<TContainer*> ( Parent() );
 
 	if ( LBParent->mItems.size() ) {
 		for ( Uint32 i = LBParent->mVisibleFirst; i <= LBParent->mVisibleLast; i++ ) {
@@ -25,8 +43,9 @@ void cUIListBoxContainer::Update() {
 	}
 }
 
-void cUIListBoxContainer::DrawChilds() {
-	cUIListBox * LBParent = reinterpret_cast<cUIListBox*> ( Parent() );
+template<class TContainer>
+void tUIItemContainer<TContainer>::DrawChilds() {
+	TContainer * LBParent = reinterpret_cast<TContainer*> ( Parent() );
 
 	if ( LBParent->mItems.size() ) {
 		for ( Uint32 i = LBParent->mVisibleFirst; i <= LBParent->mVisibleLast; i++ )
@@ -35,8 +54,9 @@ void cUIListBoxContainer::DrawChilds() {
 	}
 }
 
-cUIControl * cUIListBoxContainer::OverFind( const eeVector2f& Point ) {
-	cUIListBox * LBParent = reinterpret_cast<cUIListBox*> ( Parent() );
+template<class TContainer>
+cUIControl * tUIItemContainer<TContainer>::OverFind( const eeVector2f& Point ) {
+	TContainer * LBParent = reinterpret_cast<TContainer*> ( Parent() );
 
 	cUIControl * pOver = NULL;
 
@@ -67,3 +87,5 @@ cUIControl * cUIListBoxContainer::OverFind( const eeVector2f& Point ) {
 }
 
 }}
+
+#endif

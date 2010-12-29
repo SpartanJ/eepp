@@ -82,8 +82,8 @@ void cUIListBoxItem::Update() {
 			Alpha( LBParent->Alpha() );
 		
 		if ( IsMouseOver() ) {
-			if ( Flags & EE_BUTTONS_WUWD && LBParent->ScrollBar()->Visible() )
-				LBParent->ScrollBar()->Slider()->ManageClick( Flags );
+			if ( Flags & EE_BUTTONS_WUWD && LBParent->VerticalScrollBar()->Visible() )
+				LBParent->VerticalScrollBar()->Slider()->ManageClick( Flags );
 		}
 
 		if ( ( mControlFlags & UI_CTRL_FLAG_HAS_FOCUS ) )

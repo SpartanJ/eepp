@@ -43,12 +43,21 @@ class EE_API cUIGfx : public cUIComplexControl {
 		const EE_RENDERTYPE& RenderType() const;
 
 		void RenderType( const EE_RENDERTYPE& render );
+
+		const eeVector2i& AlignOffset() const;
 	protected:
 		cShape * 		mShape;
 		eeColorA 		mColor;
 		EE_RENDERTYPE 	mRender;
+		eeVector2i		mAlignOffset;
 
 		virtual void OnSizeChange();
+
+		void AutoSize();
+
+		void FitToControl();
+
+		void AutoAlign();
 };
 
 }}

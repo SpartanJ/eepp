@@ -58,6 +58,8 @@ static void LoadThemeElements() {
 		UI_THEME_ELEMENTS.push_back( "textedit" );
 		UI_THEME_ELEMENTS.push_back( "textedit_box" );
 		UI_THEME_ELEMENTS.push_back( "tooltip" );
+		UI_THEME_ELEMENTS.push_back( "genericgrid" );
+		UI_THEME_ELEMENTS.push_back( "gridcell" );
 	}
 }
 

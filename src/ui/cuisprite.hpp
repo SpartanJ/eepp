@@ -41,11 +41,21 @@ class EE_API cUISprite : public cUIComplexControl {
 		const EE_RENDERTYPE& RenderType() const;
 
 		void RenderType( const EE_RENDERTYPE& render );
+
+		const eeVector2i& AlignOffset() const;
 	protected:
 		cSprite * 			mSprite;
 		EE_RENDERTYPE 		mRender;
+		eeVector2i			mAlignOffset;
+		cShape *			mShapeLast;
 
 		void UpdateSize();
+
+		void AutoAlign();
+
+		void CheckShapeUpdate();
+
+		virtual void OnSizeChange();
 };
 
 }}

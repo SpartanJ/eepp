@@ -374,7 +374,7 @@ bool cSprite::AddSubFrame(const Uint32& TexId, const eeUint& NumFrame, const eeU
 }
 
 void cSprite::Animate( const eeFloat& ElapsedTime ) {
-	if ( mFrames.size() > 1 && SPR_FGET( SPRITE_FLAG_AUTO_ANIM ) && !SPR_FGET( SPRITE_FLAG_ANIM_PAUSED ) ) {
+	if ( mFrames.size() > 1 && SPR_FGET( SPRITE_FLAG_AUTO_ANIM ) && !SPR_FGET( SPRITE_FLAG_ANIM_PAUSED ) && 0.f != ElapsedTime ) {
 		eeUint Size		= (eeUint)mFrames.size() - 1;
 		eeFloat Elapsed = ( ElapsedTime != -99999.f ) ? (eeFloat)ElapsedTime : (eeFloat)cEngine::instance()->Elapsed();
 

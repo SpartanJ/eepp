@@ -1,5 +1,7 @@
 #include "cuilistbox.hpp"
 #include "cuimanager.hpp"
+#include "cuilistboxitem.hpp"
+#include "tuiitemcontainer.hpp"
 
 namespace EE { namespace UI {
 
@@ -35,7 +37,7 @@ cUIListBox::cUIListBox( cUIListBox::CreateParams& Params ) :
 	CParams.PosSet( mPaddingContainer.Left, mPaddingContainer.Top );
 	CParams.Size = eeSize( mSize.Width() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.Height() - mPaddingContainer.Top - mPaddingContainer.Bottom );
 	CParams.Flags = Params.Flags;
-	mContainer = eeNew( cUIListBoxContainer, ( CParams ) );
+	mContainer = eeNew( tUIItemContainer<cUIListBox>, ( CParams ) );
 	mContainer->Visible( true );
 	mContainer->Enabled( true );
 
@@ -93,11 +95,11 @@ void cUIListBox::AutoPadding() {
 	}
 }
 
-cUIScrollBar * cUIListBox::ScrollBar() const {
+cUIScrollBar * cUIListBox::VerticalScrollBar() const {
 	return mVScrollBar;
 }
 
-cUIScrollBar * cUIListBox::HScrollBar() const {
+cUIScrollBar * cUIListBox::HorizontalScrollBar() const {
 	return mHScrollBar;
 }
 
@@ -752,7 +754,7 @@ void cUIListBox::SelectPrev() {
 			mItems[ mSelected.front() 		]->Unselect();
 
 			if ( mItems[ SelIndex ]->Pos().y < 0 ) {
-				ScrollBar()->Value( (eeFloat)( SelIndex * mRowHeight ) / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) );
+				mVScrollBar->Value( (eeFloat)( SelIndex * mRowHeight ) / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) );
 
 				mItems[ SelIndex ]->SetFocus();
 			}
@@ -776,7 +778,7 @@ void cUIListBox::SelectNext() {
 			mItems[ mSelected.front() 		]->Unselect();
 
 			if ( mItems[ SelIndex ]->Pos().y + (Int32)RowHeight() > mContainer->Size().Height() ) {
-				ScrollBar()->Value( (eeFloat)( SelIndex * mRowHeight ) / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) );
+				mVScrollBar->Value( (eeFloat)( SelIndex * mRowHeight ) / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) );
 
 				mItems[ SelIndex ]->SetFocus();
 			}
@@ -815,7 +817,7 @@ void cUIListBox::ManageKeyboard() {
 			if ( mSelected.front() != 0 ) {
 				mItems[ mSelected.front() ]->Unselect();
 
-				ScrollBar()->Value( 0 );
+				mVScrollBar->Value( 0 );
 
 				mItems[ 0 ]->SetFocus();
 
@@ -827,7 +829,7 @@ void cUIListBox::ManageKeyboard() {
 			if ( mSelected.front() != Count() - 1 ) {
 				mItems[ mSelected.front() ]->Unselect();
 
-				ScrollBar()->Value( 1 );
+				mVScrollBar->Value( 1 );
 
 				mItems[ Count() - 1 ]->SetFocus();
 

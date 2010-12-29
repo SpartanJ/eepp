@@ -19,11 +19,12 @@ class EE_API cUIMessage {
 			MsgWindowResize,
 			MsgFocus,
 			MsgFocusLoss,
+			MsgCellClicked,
 			MsgUser,
 			MsgForceDWord = 0xFFFFFFFF
 		};
 
-		cUIMessage( cUIControl * Ctrl, const Uint32& Msg, const Uint32& Flags );
+		cUIMessage( cUIControl * Ctrl, const Uint32& Msg, const Uint32& Flags = MsgForceDWord );
 
 		~cUIMessage();
 

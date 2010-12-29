@@ -224,8 +224,6 @@ class EE_API cUIControl {
 		void SendCommonEvent( const Uint32& Event );
 	protected:
 		friend class cUIManager;
-		friend class cUIControlAnim;
-		friend class cUIListBoxContainer;
 
 		bool			mVisible;
 		bool			mEnabled;

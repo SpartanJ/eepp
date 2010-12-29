@@ -302,7 +302,7 @@ void cEETest::Init() {
 		Mus = eeNew( cMusic, () );
 		if ( Mus->OpenFromPack( &PAK, "music.ogg" ) ) {
 			Mus->Loop(true);
-			//Mus.Volume( 0.f );
+			Mus->Volume( 0.f );
 			Mus->Play();
 		}
 
@@ -662,12 +662,52 @@ void cEETest::CreateUI() {
 	TextEdit->Visible( true );
 	TextEdit->Enabled( true );
 
+	cUIGenericGrid::CreateParams GridParams;
+	GridParams.Parent( C );
+	GridParams.PosSet( 325, 245 );
+	GridParams.SizeSet( 200, 130 );
+	GridParams.Flags = UI_AUTO_PADDING;
+	GridParams.RowHeight = 24;
+	GridParams.CollumnsCount = 3;
+	cUIGenericGrid * mGenGrid = eeNew( cUIGenericGrid, ( GridParams ) );
+	mGenGrid->Visible( true );
+	mGenGrid->Enabled( true );
+
+	cUIGridCell::CreateParams CellParams;
+	CellParams.Parent( mGenGrid->Container() );
+
+	cUITextBox::CreateParams TxtBoxParams;
+	cUITextInput::CreateParams TxtInputParams;
+	TxtInputParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER;
+
+	cUIGfx::CreateParams TxtGfxParams;
+	TxtGfxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
+	TxtGfxParams.Shape = cGlobalShapeGroup::instance()->GetByName( "aqua_button_ok" );
+
+	for ( Uint32 i = 0; i < 10; i++ ) {
+		cUIGridCell * Cell			= eeNew( cUIGridCell, ( CellParams ) );
+		cUITextBox * TxtBox			= eeNew( cUITextBox, ( TxtBoxParams ) );
+		cUITextInput * TxtInput		= eeNew( cUITextInput, ( TxtInputParams ) );
+		cUIGfx * TxtGfx				= eeNew( cUIGfx, ( TxtGfxParams )  );
+
+		TxtBox->Text( L"Test " + toWStr( i+1 ) );
+
+		Cell->Cell( 0, TxtBox );
+		Cell->Cell( 1, TxtGfx );
+		Cell->Cell( 2, TxtInput );
+
+		mGenGrid->Add( Cell );
+	}
+
+	mGenGrid->CollumnWidth( 0, 50 );
+	mGenGrid->CollumnWidth( 1, 24 );
+	mGenGrid->CollumnWidth( 2, 100 );
+
 	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.";
 
 	TextEdit->Text( mBuda );
 
 	TTFB->ShrinkText( mBuda, 400 );
-
 	mBudaTC.Create( TTFB, mBuda, eeColorA(255,255,255,255) );
 	mEEText.Create( TTFB, L"Entropia Engine++\nCTRL + 1 = Screen 1 - CTRL + 2 = Screen 2\nCTRL + 3 = Screen 3" );
 	mFBOText.Create( TTFB, L"This is a VBO\nInside of a FBO" );

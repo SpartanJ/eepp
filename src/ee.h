@@ -169,5 +169,7 @@
 	#include "ui/cuipopupmenu.hpp"
 	#include "ui/cuisprite.hpp"
 	#include "ui/cuitextedit.hpp"
+	#include "ui/cuigridcell.hpp"
+	#include "ui/cuigenericgrid.hpp"
 	using namespace EE::UI;
 #endif
