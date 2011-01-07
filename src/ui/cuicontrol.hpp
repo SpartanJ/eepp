@@ -92,7 +92,7 @@ class EE_API cUIControl {
 
 		const eeVector2i& Pos() const;
 
-		void Size( const eeSize& Size );
+		virtual void Size( const eeSize& Size );
 
 		void Size( const Int32& Width, const Int32& Height );
 
@@ -222,6 +222,8 @@ class EE_API cUIControl {
 		void SendMouseEvent( const Uint32& Event, const eeVector2i& Pos, const Uint32& Flags );
 
 		void SendCommonEvent( const Uint32& Event );
+
+		eeSize GetSkinShapeSize();
 	protected:
 		friend class cUIManager;
 
@@ -289,6 +291,8 @@ class EE_API cUIControl {
 
 		virtual void OnSizeChange();
 
+		virtual void OnParentSizeChange();
+
 		virtual void OnStateChange();
 		
 		virtual void OnComplexControlFocusLoss();
@@ -346,6 +350,8 @@ class EE_API cUIControl {
 		void WriteFlag( const Uint32& Flag, const Uint32& Val );
 
 		void ApplyDefaultTheme();
+
+		void SendParentSizeChange();
 
 		eeFloat Elapsed();
 

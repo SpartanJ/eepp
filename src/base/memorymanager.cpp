@@ -60,21 +60,11 @@ void * MemoryManager::AddPointer( const cAllocatedPointer& aAllocatedPointer ) {
 bool MemoryManager::RemovePointer( void * Data ) {
 	bool Found = false;
 
-	tAllocatedPointerMapIt it = mMapPointers.upper_bound( Data );
+	tAllocatedPointerMapIt it = mMapPointers.find( Data );
 
-	it--;
-
-	if( it != mMapPointers.end() ) {
-		char * Test = (char*)it->second.mData;
-
-		size_t testSize = it->second.mMemory;
-
-		if( Data >= Test && Data < Test + testSize )
-			Found = true;
-	}
-
-
-	if ( !Found ) {
+	if ( it != mMapPointers.end() ) {
+		Found = true;
+	} else {
 		eePRINT( "Trying to delete pointer %p created that does not exist!\n", Data );
 
 		return false;
@@ -145,7 +135,8 @@ void MemoryManager::LogResults() {
 	eePRINT( "|\n" );
 	eePRINT( "| Memory left: %s\n", SizeToString( mTotalMemoryUsage ).c_str() );
 	eePRINT( "| Peak Memory Usage: %s\n", SizeToString( mPeakMemoryUsage ).c_str() );
-	eePRINT( "|------------------------------------------------------|\n\n" );
+	eePRINT( "|------------------------------------------------------------\n\n" );
+
 	#endif
 }
 

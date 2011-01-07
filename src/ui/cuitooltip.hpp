@@ -34,7 +34,7 @@ class EE_API cUITooltip : public cUIControlAnim {
 				eeColorA 	FontShadowColor;
 		};
 
-		cUITooltip( cUITooltip::CreateParams& Params );
+		cUITooltip( cUITooltip::CreateParams& Params, cUIControl * TooltipOf );
 
 		~cUITooltip();
 
@@ -96,6 +96,7 @@ class EE_API cUITooltip : public cUIControlAnim {
 		eeVector2f 		mAlignOffset;
 		eeRecti			mPadding;
 		eeFloat			mTooltipTime;
+		cUIControl *	mTooltipOf;
 
 		virtual void OnSizeChange();
 

@@ -2,20 +2,36 @@
 #define EE_WINDOW_BASE
 
 #include "../base.hpp"
-
 #include <SDL/SDL_syswm.h>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
+inline BOOL WIN_ShowWindow( HWND hWnd, int nCmdShow ) {
+	return ShowWindow( hWnd, nCmdShow );
+}
+
 #include "../helper/glew/wglew.h"
+
+typedef HGLRC			eeWindowContex;
+typedef HWND			eeWindowHandler;
+typedef UINT			eeScrapType;
+
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
+
 #include "../helper/glew/glxew.h"
+#include <X11/Xlib.h>
+
+typedef Window			X11Window;
+
+typedef GLXContext		eeWindowContex;
+typedef Display	*		eeWindowHandler;
+typedef Atom			eeScrapType;
+
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
 //#include <AGL/agl.h>
-#endif
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX
-#include <X11/Xlib.h>
-typedef Window X11Window;
+//typedef AGLContext	eeWindowContex;
+//typedef NSWindow *	eeWindowHandler;
+typedef Uint32			eeScrapType;
 #endif
 
 #include "../utils/colors.hpp"

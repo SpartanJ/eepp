@@ -7,7 +7,7 @@ cUIComplexControl::cUIComplexControl( const cUIComplexControl::CreateParams& Par
 	cUIControlAnim( Params ),
 	mTooltip( NULL )
 {
-	mType	|= UI_TYPE_CONTROL_COMPLEX;
+	mType	|= UI_TYPE_GET( UI_TYPE_CONTROL_COMPLEX );
 
 	TooltipText( Params.TooltipText );
 }
@@ -73,7 +73,7 @@ void cUIComplexControl::CreateTooltip() {
 	cUITooltip::CreateParams Params;
 	Params.Parent( cUIManager::instance()->MainControl() );
 	Params.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_PADDING | UI_AUTO_SIZE;
-	mTooltip = eeNew( cUITooltip, ( Params ) );
+	mTooltip = eeNew( cUITooltip, ( Params, this ) );
 }
 
 void cUIComplexControl::TooltipText( const std::wstring& Text ) {
@@ -97,6 +97,10 @@ std::wstring cUIComplexControl::TooltipText() {
 		return mTooltip->Text();
 
 	return std::wstring();
+}
+
+void cUIComplexControl::TooltipRemove() {
+	mTooltip = NULL;
 }
 
 }}

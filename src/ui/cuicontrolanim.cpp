@@ -24,7 +24,6 @@ cUIControlAnim::~cUIControlAnim() {
 	eeSAFE_DELETE( mMoveAnim );
 }
 
-
 void cUIControlAnim::Draw() {
 	if ( mVisible && 0.f != mAlpha ) {
 		if ( mFlags & UI_FILL_BACKGROUND )
@@ -104,7 +103,6 @@ void cUIControlAnim::Update() {
 		if ( mAlphaAnim->Ended() ) {
 			if ( ( mControlFlags & UI_CTRL_FLAG_CLOSE_FO )  )
 				Close();
-
 
 			if ( ( mControlFlags & UI_CTRL_FLAG_DISABLE_FADE_OUT ) ) {
 				mControlFlags &= ~UI_CTRL_FLAG_DISABLE_FADE_OUT;

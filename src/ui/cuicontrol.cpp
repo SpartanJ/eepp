@@ -51,11 +51,13 @@ cUIControl::~cUIControl() {
 	if ( NULL != mParentCtrl )
 		mParentCtrl->ChildRemove( this );
 
-	if ( cUIManager::instance()->FocusControl() == this )
-		cUIManager::instance()->FocusControl( NULL );
+	if ( cUIManager::instance()->FocusControl() == this && cUIManager::instance()->MainControl() != this ) {
+		cUIManager::instance()->FocusControl( cUIManager::instance()->MainControl() );
+	}
 
-	if ( cUIManager::instance()->OverControl() == this )
-		cUIManager::instance()->OverControl( NULL );
+	if ( cUIManager::instance()->OverControl() == this && cUIManager::instance()->MainControl() != this ) {
+		cUIManager::instance()->OverControl( cUIManager::instance()->MainControl() );
+	}
 }
 
 void cUIControl::ScreenToControl( eeVector2i& Pos ) const {
@@ -178,6 +180,9 @@ cUIControl * cUIControl::Parent() const {
 }
 
 void cUIControl::Parent( cUIControl * parent ) {
+	if ( parent == mParentCtrl )
+		return;
+
 	if ( NULL != mParentCtrl )
 		mParentCtrl->ChildRemove( this );
 
@@ -433,12 +438,10 @@ void cUIControl::ToFront() {
 }
 
 void cUIControl::ToBack() {
-	mParentCtrl->ChildRemove( this );
 	mParentCtrl->ChildAddAt( this, 0 );
 }
 
 void cUIControl::ToPos( const Uint32& Pos ) {
-	mParentCtrl->ChildRemove( this );
 	mParentCtrl->ChildAddAt( this, Pos );
 }
 
@@ -466,6 +469,7 @@ void cUIControl::OnPosChange() {
 
 void cUIControl::OnSizeChange() {
 	SendCommonEvent( cUIEvent::EventOnSizeChange );
+	SendParentSizeChange();
 }
 
 void cUIControl::BackgroundDraw() {
@@ -602,6 +606,7 @@ void cUIControl::ChildAddAt( cUIControl * ChildCtrl, Uint32 Pos ) {
 	cUIControl * ChildLoop = mChild;
 	
 	ChildCtrl->Parent( this );
+
 	ChildRemove( ChildCtrl );
 	ChildCtrl->mParentCtrl = this;
 	
@@ -1001,6 +1006,64 @@ void cUIControl::DisableChildCloseCheck() {
 
 void cUIControl::SetFocus() {
 	cUIManager::instance()->FocusControl( this );
+}
+
+void cUIControl::SendParentSizeChange() {
+	if ( mFlags & UI_REPORT_SIZE_CHANGE_TO_CHILDS )	{
+		cUIControl * ChildLoop = mChild;
+
+		while( NULL != ChildLoop ) {
+			ChildLoop->OnParentSizeChange();
+			ChildLoop = ChildLoop->mNext;
+		}
+	}
+}
+
+void cUIControl::OnParentSizeChange() {
+	SendCommonEvent( cUIEvent::EventOnParentSizeChange );
+}
+
+eeSize cUIControl::GetSkinShapeSize() {
+	cUISkin *	tSkin = GetSkin();
+	eeSize		tSize;
+
+	if ( NULL != tSkin ) {
+		cShape * tShape = tSkin->GetShape( cUISkinState::StateNormal );
+
+		if ( NULL != tShape ) {
+			tSize = tShape->RealSize();
+		}
+
+		if ( tSkin->GetType() == cUISkin::UISkinComplex ) {
+			cUISkinComplex * tSkinC = reinterpret_cast<cUISkinComplex*> ( tSkin );
+
+			tShape = tSkinC->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Up );
+
+			if ( NULL != tShape ) {
+				tSize.y += tShape->RealSize().Height();
+			}
+
+			tShape = tSkinC->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Down );
+
+			if ( NULL != tShape ) {
+				tSize.y += tShape->RealSize().Height();
+			}
+
+			tShape = tSkinC->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Left );
+
+			if ( NULL != tShape ) {
+				tSize.x += tShape->RealSize().Width();
+			}
+
+			tShape = tSkinC->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Right );
+
+			if ( NULL != tShape ) {
+				tSize.y += tShape->RealSize().Width();
+			}
+		}
+	}
+
+	return tSize;
 }
 
 }}

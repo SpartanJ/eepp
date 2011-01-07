@@ -29,7 +29,7 @@ static int clipboard_filter(const SDL_Event *event) {
 		return(1);
 	}
 
-	Display* SDL_Display = cEngine::instance()->GetVideoInfo()->info.info.x11.display;
+	Display* curDisplay = cEngine::instance()->GetWindowHandler();
 
 	/* Handle window-manager specific clipboard events */
 	switch ( event->syswm.msg->event.xevent.type ) {
@@ -51,19 +51,19 @@ static int clipboard_filter(const SDL_Event *event) {
 			sevent.xselection.requestor = req->requestor;
 			sevent.xselection.time = req->time;
 
-			if ( XGetWindowProperty(SDL_Display, DefaultRootWindow(SDL_Display), XA_CUT_BUFFER0, 0, INT_MAX/4, False, req->target, &sevent.xselection.target, &seln_format, &nbytes, &overflow, &seln_data) == Success ) {
+			if ( XGetWindowProperty(curDisplay, DefaultRootWindow(curDisplay), XA_CUT_BUFFER0, 0, INT_MAX/4, False, req->target, &sevent.xselection.target, &seln_format, &nbytes, &overflow, &seln_data) == Success ) {
 				if ( sevent.xselection.target == req->target ) {
 					if ( sevent.xselection.target == XA_STRING ) {
 						if ( seln_data[nbytes-1] == '\0' )
 							--nbytes;
 					}
-					XChangeProperty(SDL_Display, req->requestor, req->property, sevent.xselection.target, seln_format, PropModeReplace, seln_data, nbytes);
+					XChangeProperty(curDisplay, req->requestor, req->property, sevent.xselection.target, seln_format, PropModeReplace, seln_data, nbytes);
 					sevent.xselection.property = req->property;
 				}
 				XFree(seln_data);
 			}
-			XSendEvent(SDL_Display,req->requestor, False, 0, &sevent);
-			XSync(SDL_Display, False);
+			XSendEvent(curDisplay,req->requestor, False, 0, &sevent);
+			XSync(curDisplay, False);
 		}
 		break;
 	}
@@ -126,20 +126,19 @@ cEngine::~cEngine() {
 
 bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitColor, const bool& Windowed, const bool& Resizeable, const bool& VSync, const bool& DoubleBuffering, const bool& UseDesktopResolution, const bool& NoFrame ) {
 	try {
-		mInit = false;
+		mInit						= false;
 
-		mVideoInfo.Width = Width;
-		mVideoInfo.Height = Height;
-		mVideoInfo.ColorDepth = BitColor;
-		mVideoInfo.Windowed = Windowed;
-		mVideoInfo.Resizeable = Resizeable;
-		mVideoInfo.DoubleBuffering = DoubleBuffering;
-		mVideoInfo.VSync = VSync;
-		mVideoInfo.NoFrame = NoFrame;
-		mVideoInfo.LineSmooth = true;
-		mOldWinPos = eeVector2i( 0, 0 );
-
-		if ( SDL_Init(SDL_INIT_VIDEO) != 0 ) {
+		mVideoInfo.Width			= Width;
+		mVideoInfo.Height			= Height;
+		mVideoInfo.ColorDepth		= BitColor;
+		mVideoInfo.Windowed			= Windowed;
+		mVideoInfo.Resizeable		= Resizeable;
+		mVideoInfo.DoubleBuffering	= DoubleBuffering;
+		mVideoInfo.VSync			= VSync;
+		mVideoInfo.NoFrame			= NoFrame;
+		mVideoInfo.LineSmooth		= true;
+		
+		if ( SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
 			cLog::instance()->Write( "Unable to initialize SDL: " + std::string( SDL_GetError() ) );
 			return false;
 		}
@@ -151,23 +150,16 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 		}
 
 		mVideoInfo.Flags = SDL_OPENGL | SDL_HWPALETTE;
+
 		const SDL_VideoInfo* videoInfo = SDL_GetVideoInfo();
 
-		mVideoInfo.DeskWidth = videoInfo->current_w;
-		mVideoInfo.DeskHeight = videoInfo->current_h;
+		mVideoInfo.DeskWidth	= videoInfo->current_w;
+		mVideoInfo.DeskHeight	= videoInfo->current_h;
 
 		if ( UseDesktopResolution ) {
-			mVideoInfo.Width = mVideoInfo.DeskWidth;
-			mVideoInfo.Height = mVideoInfo.DeskHeight;
+			mVideoInfo.Width	= mVideoInfo.DeskWidth;
+			mVideoInfo.Height	= mVideoInfo.DeskHeight;
 		}
-
-		if (videoInfo->hw_available)
-			mVideoInfo.Flags |= SDL_HWSURFACE;
-		else
-			mVideoInfo.Flags |= SDL_SWSURFACE;
-
-		if ( videoInfo->blit_hw ) 	// This checks if hardware blits can be done
-			mVideoInfo.Flags |= SDL_HWACCEL;
 
 		if ( mVideoInfo.Resizeable )
 			mVideoInfo.Flags |= SDL_RESIZABLE;
@@ -175,27 +167,25 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 		if ( mVideoInfo.NoFrame )
 			mVideoInfo.Flags |= SDL_NOFRAME;
 
-		SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 16 ); 	// Depth
-		SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, (mVideoInfo.DoubleBuffering ? 1 : 0) ); 	// Double Buffering
+		SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24 );											// Depth
+		SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, ( mVideoInfo.DoubleBuffering ? 1 : 0 ) ); 	// Double Buffering
 		SDL_GL_SetAttribute( SDL_GL_STENCIL_SIZE, 1 );
-		SDL_GL_SetAttribute( SDL_GL_SWAP_CONTROL, (mVideoInfo.VSync ? 1 : 0)  );  // VSync
+		SDL_GL_SetAttribute( SDL_GL_SWAP_CONTROL, ( mVideoInfo.VSync ? 1 : 0 )  );				// VSync
 
 		Uint32 mTmpFlags = mVideoInfo.Flags;
-    	if (!mVideoInfo.Windowed)
+
+		if ( !mVideoInfo.Windowed )
     		mTmpFlags |= SDL_FULLSCREEN;
 
-		if ( SDL_VideoModeOK(mVideoInfo.Width, mVideoInfo.Height, mVideoInfo.ColorDepth, mTmpFlags) )
-			mVideoInfo.Screen = SDL_SetVideoMode(mVideoInfo.Width, mVideoInfo.Height, mVideoInfo.ColorDepth, mTmpFlags);
-		else {
+		if ( SDL_VideoModeOK(mVideoInfo.Width, mVideoInfo.Height, mVideoInfo.ColorDepth, mTmpFlags ) ) {
+			mVideoInfo.Screen = SDL_SetVideoMode(mVideoInfo.Width, mVideoInfo.Height, mVideoInfo.ColorDepth, mTmpFlags );
+		} else {
 			cLog::instance()->Write( "Video Mode Unsopported for this videocard: " );
 			return false;
 		}
 
-		mInitialWidth = mVideoInfo.Width;
-		mInitialHeight = mVideoInfo.Height;
-
-		mVideoInfo.WWidth = mVideoInfo.Width;
-		mVideoInfo.WHeight = mVideoInfo.Height;
+		mVideoInfo.WWidth	= mVideoInfo.Width;
+		mVideoInfo.WHeight	= mVideoInfo.Height;
 
 		mVideoInfo.Maximized = false;
 
@@ -214,23 +204,18 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 		#endif
 
 		if ( mVideoInfo.ColorDepth == 16 ) {
-			SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 4);
-			SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 4);
-			SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 4);
-			SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 4);
+			SDL_GL_SetAttribute(SDL_GL_RED_SIZE		, 4);
+			SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE	, 4);
+			SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE	, 4);
+			SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE	, 4);
 		} else {
-			SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
-			SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
-			SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
-			SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+			SDL_GL_SetAttribute(SDL_GL_RED_SIZE		, 8);
+			SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE	, 8);
+			SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE	, 8);
+			SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE	, 8);
 		}
 
-		if ( mVideoInfo.Windowed )
-			mOldWinPos = GetWindowPosition();
-
 		cGL::instance()->Init();
-
-		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 
 		GetMainContext();
 
@@ -279,9 +264,6 @@ const cView& cEngine::GetView() const {
 }
 
 void cEngine::Setup2D( const bool& KeepView ) {
-	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-	glPixelStorei(GL_PACK_ALIGNMENT, 1);
-
 	SetBackColor( mBackColor );
 
 	glShadeModel( GL_SMOOTH );
@@ -342,10 +324,13 @@ void cEngine::Display() {
 		SetView( *mCurrentView );
 
 	SDL_GL_SwapBuffers();
-	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+
+	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 
 	GetElapsedTime();
+
 	CalculateFps();
+
 	LimitFps();
 }
 
@@ -375,9 +360,9 @@ void cEngine::ChangeRes( const Uint16& width, const Uint16& height, const bool& 
 
 		mDefaultView.SetView( 0, 0, mVideoInfo.Width, mVideoInfo.Height );
 
-		SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 16 ); 	// Depth
-		SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, (mVideoInfo.DoubleBuffering ? 1 : 0) );
-		SDL_GL_SetAttribute( SDL_GL_SWAP_CONTROL, (mVideoInfo.VSync ? 1 : 0)  );  // VSync
+		SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 16 );											// Depth
+		SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, ( mVideoInfo.DoubleBuffering ? 1 : 0 ) );		// Double Buffering
+		SDL_GL_SetAttribute( SDL_GL_SWAP_CONTROL, ( mVideoInfo.VSync ? 1 : 0 )  );				// VSync
 
 		if (Windowed)
 			mVideoInfo.Screen = SDL_SetVideoMode( mVideoInfo.Width, mVideoInfo.Height, mVideoInfo.ColorDepth, mVideoInfo.Flags );
@@ -966,12 +951,14 @@ void cEngine::clipboard_get_scrap(int type, int *dstlen, char **dst) {
 
 std::string cEngine::GetClipboardText() {
 	std::string tStr;
+
 	#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_WIN
 	char *scrap = NULL;
 	int scraplen;
 
-	clipboard_get_scrap(T('T','E','X','T'), &scraplen, &scrap);
-	if ( scraplen != 0 && strcmp(scrap,"SDL-\r-scrap") ) {
+	clipboard_get_scrap( T('T','E','X','T'), &scraplen, &scrap );
+
+	if ( scraplen != 0 && strcmp( scrap, "SDL-\r-scrap") ) {
 		char *cp;
 		int   i;
 
@@ -993,12 +980,14 @@ std::string cEngine::GetClipboardText() {
 
 std::wstring cEngine::GetClipboardTextWStr() {
 	std::wstring tStr;
+
 	#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_WIN
 	char * scrap = NULL;
 	int scraplen;
 
-	clipboard_get_scrap(T('T','E','X','T'), &scraplen, &scrap);
-	if ( scraplen != 0 && strcmp(scrap,"SDL-\r-scrap") ) {
+	clipboard_get_scrap( T('T','E','X','T'), &scraplen, &scrap );
+
+	if ( scraplen != 0 && strcmp( scrap, "SDL-\r-scrap" ) ) {
 		tStr.resize( scraplen-1, L' ' );
 
 		char *cp;
@@ -1021,37 +1010,25 @@ std::wstring cEngine::GetClipboardTextWStr() {
 	return tStr;
 }
 
-#if EE_PLATFORM == EE_PLATFORM_WIN
-void cEngine::SetCurrentContext( HGLRC Context ) {
+void cEngine::SetCurrentContext( eeWindowContex Context ) {
     if ( mInit ) {
-        wglMakeCurrent( GetDC( mVideoInfo.info.window ), Context );
+		#if EE_PLATFORM == EE_PLATFORM_WIN
+			wglMakeCurrent( GetDC( mVideoInfo.info.window ), Context );
+		#elif EE_PLATFORM == EE_PLATFORM_LINUX
+			mVideoInfo.info.info.x11.lock_func();
+			glXMakeCurrent( mVideoInfo.info.info.x11.display, mVideoInfo.info.info.x11.window, Context );
+			mVideoInfo.info.info.x11.unlock_func();
+		#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+			//aglSetCurrentContext( Context );
+		#else
+			#warning No context supported on this platform
+		#endif
     }
 }
 
-HGLRC cEngine::GetContext() const {
+eeWindowContex cEngine::GetContext() const {
 	return mContext;
 }
-#elif EE_PLATFORM == EE_PLATFORM_LINUX
-void cEngine::SetCurrentContext( GLXContext Context ) {
-	if ( mInit ) {
-		mVideoInfo.info.info.x11.lock_func();
-		glXMakeCurrent( mVideoInfo.info.info.x11.display, mVideoInfo.info.info.x11.window, Context );
-		mVideoInfo.info.info.x11.unlock_func();
-	}
-}
-
-GLXContext cEngine::GetContext() const {
-	return mContext;
-}
-#elif EE_PLATFORM == EE_PLATFORM_MACOSX
-/*void cEngine::SetCurrentContext( AGLContext Context ) {
-	aglSetCurrentContext( Context );
-}
-
-AGLContext cEngine::GetContext() const {
-	return mContext;
-}*/
-#endif
 
 void cEngine::GetMainContext() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -1060,6 +1037,16 @@ void cEngine::GetMainContext() {
 	mContext = glXGetCurrentContext();
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
 	//mContext = aglGetCurrentContext();
+#endif
+}
+
+eeWindowHandler	cEngine::GetWindowHandler() {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	return mVideoInfo.info.window;
+#elif EE_PLATFORM == EE_PLATFORM_LINUX
+	return mVideoInfo.info.info.x11.display;
+#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+	//return mVideoInfo.info.cocoa.window;
 #endif
 }
 

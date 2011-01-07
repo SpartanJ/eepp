@@ -1,14 +1,16 @@
 #include "cuitooltip.hpp"
 #include "cuimanager.hpp"
+#include "cuicomplexcontrol.hpp"
 
 namespace EE { namespace UI {
 
-cUITooltip::cUITooltip( cUITooltip::CreateParams& Params ) :
+cUITooltip::cUITooltip( cUITooltip::CreateParams& Params, cUIControl * TooltipOf ) :
 	cUIControlAnim( Params ),
 	mFontColor( Params.FontColor ),
 	mFontShadowColor( Params.FontShadowColor ),
 	mAlignOffset( 0.f, 0.f ),
-	mTooltipTime( 0.f )
+	mTooltipTime( 0.f ),
+	mTooltipOf( TooltipOf )
 {
 	mType |= UI_TYPE_TOOLTIP;
 
@@ -34,6 +36,10 @@ cUITooltip::cUITooltip( cUITooltip::CreateParams& Params ) :
 
 cUITooltip::~cUITooltip() {
 	eeSAFE_DELETE( mTextCache );
+
+	if ( NULL != mTooltipOf && mTooltipOf->IsType( UI_TYPE_CONTROL_COMPLEX ) ) {
+		reinterpret_cast<cUIComplexControl*>( mTooltipOf )->TooltipRemove();
+	}
 }
 
 void cUITooltip::SetTheme( cUITheme * Theme ) {

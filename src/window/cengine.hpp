@@ -6,20 +6,6 @@
 
 namespace EE { namespace Window {
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX
-typedef Atom eeScrapType;
-#elif EE_PLATFORM == EE_PLATFORM_WIN
-typedef UINT eeScrapType;
-#else
-typedef Uint32 eeScrapType;
-#endif
-
-#if EE_PLATFORM == EE_PLATFORM_WIN
-inline BOOL WIN_ShowWindow( HWND hWnd, int nCmdShow ) {
-    return ShowWindow( hWnd, nCmdShow );
-}
-#endif
-
 /** @brief The basic Graphics class. Here Init the context and render to screen. (Singleton Class). */
 class EE_API cEngine : public tSingleton<cEngine> {
 	friend class tSingleton<cEngine>;
@@ -234,15 +220,12 @@ class EE_API cEngine : public tSingleton<cEngine> {
 		/** Set the size of the window for a windowed window */
 		void SetWindowSize( const Uint32& Width, const Uint32& Height );
 
-		#if EE_PLATFORM == EE_PLATFORM_WIN
-		void SetCurrentContext( HGLRC Context );
-		HGLRC GetContext() const;
-		#elif EE_PLATFORM == EE_PLATFORM_LINUX
-		void SetCurrentContext( GLXContext Context );
-		GLXContext GetContext() const;
-		#elif EE_PLATFORM == EE_PLATFORM_MACOSX
-		//void SetCurrentContext( AGLContext Context );
-		//AGLContext GetContext() const;
+		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX
+		void SetCurrentContext( eeWindowContex Context );
+
+		eeWindowContex GetContext() const;
+
+		eeWindowHandler	GetWindowHandler();
 		#endif
 
 		void SetDefaultContext();
@@ -256,8 +239,6 @@ class EE_API cEngine : public tSingleton<cEngine> {
 		eeColor 		mBackColor;
 		SDL_Cursor * 	mCursor;
 		bool 			mShowCursor;
-		eeVector2i 		mOldWinPos;
-
 		struct _Frames {
 			struct _FPS {
 				Uint32 LastCheck;
@@ -270,24 +251,19 @@ class EE_API cEngine : public tSingleton<cEngine> {
 			eeFloat ElapsedTime;
 		} mFrames;
 
-		Uint32			mInitialWidth;
-		Uint32			mInitialHeight;
-
 		cView			mDefaultView;
 		const cView *	mCurrentView;
 
-		#if EE_PLATFORM == EE_PLATFORM_WIN
-		HGLRC		mContext;
-		#elif EE_PLATFORM == EE_PLATFORM_LINUX
-		GLXContext	mContext;
-		#elif EE_PLATFORM == EE_PLATFORM_MACOSX
-		//AGLContext	mContext;
+		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX
+		eeWindowContex	mContext;
 		#endif
 
 		std::string		mIcon;
 
 		void CalculateFps();
+
 		void LimitFps();
+
 		void GetElapsedTime();
 
 		SDL_Cursor * CreateCursor( const Uint32& TexId, const eeVector2i& HotSpot );

@@ -132,7 +132,7 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 
 	if ( NULL != tShape ) {
 		tShape->DestWidth( Width - uls.Width() - urs.Width() );
-		tShape->DestHeight( Height - uls.Height() - urs.Height() );
+		tShape->DestHeight( Height - uls.Height() - dls.Height() );
 
 		tShape->Draw( X + uls.Width(), Y + uls.Height(), mTempColor );
 

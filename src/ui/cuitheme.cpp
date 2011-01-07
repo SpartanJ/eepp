@@ -10,7 +10,7 @@ static std::vector<std::string> UI_THEME_ELEMENTS;
 
 static void LoadThemeElements() {
 	if ( !UI_THEME_ELEMENTS.size() ) {
-		UI_THEME_ELEMENTS.reserve( 50 );
+		UI_THEME_ELEMENTS.reserve( 60 );
 		UI_THEME_ELEMENTS.push_back( "control" );
 		UI_THEME_ELEMENTS.push_back( "button" );
 		UI_THEME_ELEMENTS.push_back( "textinput" );
@@ -60,6 +60,15 @@ static void LoadThemeElements() {
 		UI_THEME_ELEMENTS.push_back( "tooltip" );
 		UI_THEME_ELEMENTS.push_back( "genericgrid" );
 		UI_THEME_ELEMENTS.push_back( "gridcell" );
+		UI_THEME_ELEMENTS.push_back( "windeco" );
+		UI_THEME_ELEMENTS.push_back( "winback" );
+		UI_THEME_ELEMENTS.push_back( "winborderleft" );
+		UI_THEME_ELEMENTS.push_back( "winborderright" );
+		UI_THEME_ELEMENTS.push_back( "winborderbottom" );
+		UI_THEME_ELEMENTS.push_back( "winclose" );
+		UI_THEME_ELEMENTS.push_back( "winmax" );
+		UI_THEME_ELEMENTS.push_back( "winmin" );
+		UI_THEME_ELEMENTS.push_back( "winshade" );
 	}
 }
 
@@ -68,6 +77,8 @@ void cUITheme::AddThemeElement( const std::string& Element ) {
 }
 
 cUITheme * cUITheme::LoadFromPath( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt ) {
+	cTimeElapsed TE;
+
 	LoadThemeElements();
 
 	Uint32 i;
@@ -114,10 +125,14 @@ cUITheme * cUITheme::LoadFromPath( const std::string& Path, const std::string& N
 			tTheme->Add( eeNew( cUISkinSimple, ( ElemFound[i] ) ) );
 	}
 
+	cLog::instance()->Write( "UI Theme Loaded in: " + toStr( TE.ElapsedSinceStart() ) + " ( from path )" );
+
 	return tTheme;
 }
 
 cUITheme * cUITheme::LoadFromShapeGroup( cShapeGroup * ShapeGroup, const std::string& Name, const std::string NameAbbr ) {
+	cTimeElapsed TE;
+
 	LoadThemeElements();
 
 	Uint32 i;
@@ -149,6 +164,8 @@ cUITheme * cUITheme::LoadFromShapeGroup( cShapeGroup * ShapeGroup, const std::st
 		else
 			tTheme->Add( eeNew( cUISkinSimple, ( ElemFound[i] ) ) );
 	}
+
+	cLog::instance()->Write( "UI Theme Loaded in: " + toStr( TE.ElapsedSinceStart() ) + " ( from ShapeGroup )" );
 
 	return tTheme;
 }

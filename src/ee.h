@@ -171,5 +171,6 @@
 	#include "ui/cuitextedit.hpp"
 	#include "ui/cuigridcell.hpp"
 	#include "ui/cuigenericgrid.hpp"
+	#include "ui/cuiwindow.hpp"
 	using namespace EE::UI;
 #endif

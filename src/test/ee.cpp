@@ -48,6 +48,12 @@ class cUITest : public cUIControlAnim {
 			return 1;
 		}
 
+		virtual Uint32 OnFocus() {
+			ToFront();
+
+			return 1;
+		}
+
 		const std::vector<eeColorA>& OldColor() { return mOldColor; }
 	protected:
 		std::vector<eeColorA> mOldColor;
@@ -403,6 +409,7 @@ void cEETest::CreateUI() {
 	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
 	//cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
+
 	CreateAquaTextureAtlas();
 
 	cTextureGroupLoader tgl( MyPath + "data/aquatg/aqua.etg" );
@@ -658,10 +665,6 @@ void cEETest::CreateUI() {
 	Menu->GetItem( L"Quit" )->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::QuitClick ) );
 	cUIManager::instance()->MainControl()->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::MainClick ) );
 
-	C->StartScaleAnim( 0.f, 1.f, 500.f, SINEOUT );
-	C->StartAlphaAnim( 0.f, 255.f, 500.f );
-	C->StartRotation( 0, 360, 500.f, SINEOUT );
-
 	cUITextEdit::CreateParams TEParams;
 	TEParams.Parent( C );
 	TEParams.PosSet( 5, 245 );
@@ -712,6 +715,19 @@ void cEETest::CreateUI() {
 	mGenGrid->CollumnWidth( 0, 50 );
 	mGenGrid->CollumnWidth( 1, 24 );
 	mGenGrid->CollumnWidth( 2, 100 );
+
+	C->StartScaleAnim( 0.f, 1.f, 500.f, SINEOUT );
+	C->StartAlphaAnim( 0.f, 255.f, 500.f );
+	C->StartRotation( 0, 360, 500.f, SINEOUT );
+
+	cUIWindow::CreateParams WinParams;
+	WinParams.PosSet( 200, 50 );
+	WinParams.Size = eeSize( 530, 380 );
+	WinParams.ButtonsPositionFixer.x = -4;
+	WinParams.ButtonsPositionFixer.y = -2;
+	cUIWindow * mWindow = eeNew( cUIWindow, ( WinParams ) );
+	mWindow->ToBack();
+	mWindow->Show();
 }
 
 void cEETest::ItemClick( const cUIEvent * Event ) {
@@ -1296,8 +1312,12 @@ void cEETest::Input() {
 		if ( mLastFPSLimit != EE->GetFrameRateLimit() && !mWasMinimized )
 			mLastFPSLimit = EE->GetFrameRateLimit();
 
-		if ( mWasMinimized )
+		if ( mWasMinimized ) {
 			mWasMinimized = false;
+
+			if ( !EE->Windowed() )
+				KM->GrabInput( true );
+		}
 
 		EE->SetFrameRateLimit( mLastFPSLimit );
 
@@ -1328,11 +1348,11 @@ void cEETest::Input() {
 	}
 
 	if ( KM->GrabInput() ) {
-		if ( KM->AltPressed() && KM->IsKeyDown(KEY_TAB) ) {
+		if ( KM->AltPressed() && KM->IsKeyDown( KEY_TAB ) ) {
 			EE->MinimizeWindow();
 
 			if ( KM->GrabInput() )
-				KM->GrabInput(false);
+				KM->GrabInput( false );
 		}
 	}
 
@@ -1345,11 +1365,6 @@ void cEETest::Input() {
 			InBuf.Active( false );
 		else
 			InBuf.Active( true );
-	}
-
-	if ( InBuf.Active() && ( ( KM->ControlPressed() && KM->IsKeyUp(KEY_V) ) || ( KM->ShiftPressed() && KM->IsKeyUp(KEY_INSERT) ) ) ) {
-		std::wstring tmp = InBuf.Buffer();
-		InBuf.Buffer( tmp + EE->GetClipboardTextWStr() );
 	}
 
 	if ( KM->IsKeyUp(KEY_1) && KM->ControlPressed() )

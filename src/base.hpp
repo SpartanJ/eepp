@@ -33,9 +33,9 @@
 #define Int32 Sint32
 #define Int64 Sint64
 
-#define EE_PLATFORM_WIN 1
-#define EE_PLATFORM_LINUX 2
-#define EE_PLATFORM_MACOSX 3
+#define EE_PLATFORM_WIN		1
+#define EE_PLATFORM_LINUX	2
+#define EE_PLATFORM_MACOSX	3
 
 #if defined( __WIN32__ ) || defined( _WIN32 ) || defined( _WIN64 )
 #   define EE_PLATFORM EE_PLATFORM_WIN
@@ -72,6 +72,24 @@
 #define EE_64BIT
 #else
 #define EE_32BIT
+#endif
+
+
+#define EE_LITTLE_ENDIAN 1
+#define EE_BIG_ENDIAN 2
+
+#if    defined(__386__) || defined(i386)    || defined(__i386__)  \
+	|| defined(__X86)   || defined(_M_IX86)                       \
+	|| defined(_M_X64)  || defined(__x86_64__)                    \
+	|| defined(alpha)   || defined(__alpha) || defined(__alpha__) \
+	|| defined(_M_ALPHA)                                          \
+	|| defined(ARM)     || defined(_ARM)    || defined(__arm__)   \
+	|| defined(WIN32)   || defined(_WIN32)  || defined(__WIN32__) \
+	|| defined(_WIN32_WCE) || defined(__NT__)                     \
+	|| defined(__MIPSEL__)
+	#define EE_ENDIAN  EE_LITTLE_ENDIAN
+#else
+	#define EE_ENDIAN  EE_BIG_ENDIAN
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_LINUX
@@ -128,12 +146,12 @@
 #include <GL/gl.h>
 #endif
 
-namespace EE {
-	#define eeARRAY_SIZE(__array)	( sizeof(__array) / sizeof(__array[0]) )
-	#define eeSAFE_DELETE(p)		{ if(p) { eeDelete (p);			(p)=NULL; } }
-	#define eeSAFE_FREE(p)			{ if(p) { eeFree ( (void*)p );	(p)=NULL; } }
-	#define eeSAFE_DELETE_ARRAY(p)  { if(p) { eeDeleteArray(p);		(p)=NULL; } }
+#define eeARRAY_SIZE(__array)	( sizeof(__array) / sizeof(__array[0]) )
+#define eeSAFE_DELETE(p)		{ if(p) { eeDelete (p);			(p)=NULL; } }
+#define eeSAFE_FREE(p)			{ if(p) { eeFree ( (void*)p );	(p)=NULL; } }
+#define eeSAFE_DELETE_ARRAY(p)  { if(p) { eeDeleteArray(p);		(p)=NULL; } }
 
+namespace EE {
 	typedef float			eeFloat; 	//! The internal floating point used on EE++. \n This can help to improve compatibility with some platforms. \n And helps for an easy change from single precision to double precision.
 	typedef double			eeDouble; 	//! The internal double floating point. It's only used when the engine needs some very high precision floating point ( for example the timer )
 	typedef unsigned int	eeUint;

@@ -28,6 +28,8 @@ class EE_API cUIComplexControl : public cUIControlAnim {
 
 		cUITooltip * Tooltip();
 
+		void TooltipRemove();
+
 		void TooltipText( const std::wstring& Text );
 
 		void TooltipText( const std::string& Text );

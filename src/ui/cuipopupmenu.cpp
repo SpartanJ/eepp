@@ -21,6 +21,7 @@ bool cUIPopUpMenu::Show() {
 	if ( !Visible() ) {
 		Enabled( true );
 		Visible( true );
+		ToFront();
 
 		if ( 255.f == Alpha() )
 			StartAlphaAnim( 0.f, 255.f, cUIThemeManager::instance()->ControlsFadeInTime() );
