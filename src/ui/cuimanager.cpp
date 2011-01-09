@@ -135,6 +135,7 @@ void cUIManager::Update() {
 				FocusControl( mOverControl );
 
 			mOverControl->OnMouseDown( mKM->GetMousePos(), mKM->PressTrigger() );
+			SendMsg( mOverControl, cUIMessage::MsgMouseDown, mKM->PressTrigger() );
 		}
 
 		if ( !mFirstPress ) {
@@ -204,6 +205,10 @@ eeVector2i cUIManager::GetMousePos() {
 
 cInput * cUIManager::GetInput() const {
 	return mKM;
+}
+
+const Uint32& cUIManager::PressTrigger() const {
+	return mKM->PressTrigger();
 }
 
 }}

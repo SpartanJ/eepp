@@ -9,11 +9,15 @@ cUIWindow::cUIWindow( const cUIWindow::CreateParams& Params ) :
 	mButtonClose( NULL ),
 	mButtonMinimize( NULL ),
 	mButtonMaximize( NULL ),
+	mTitle( NULL ),
 	mDecoSize( Params.DecorationSize ),
 	mBorderSize( Params.BorderSize ),
 	mMinWindowSize( Params.MinWindowSize ),
 	mButtonsPositionFixer( Params.ButtonsPositionFixer ),
 	mButtonsSeparation( Params.ButtonsSeparation ),
+	mMinCornerDistance( Params.MinCornerDistance ),
+	mTitleFontColor( Params.TitleFontColor ),
+	mBaseAlpha( Params.BaseAlpha ),
 	mDecoAutoSize( Params.DecorationAutoSize ),
 	mBorderAutoSize( Params.BorderAutoSize )
 {
@@ -78,6 +82,8 @@ cUIWindow::cUIWindow( const cUIWindow::CreateParams& Params ) :
 			mButtonMinimize->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cUIWindow::ButtonMinimizeClick ) );
 		}
 	}
+
+	Alpha( mBaseAlpha );
 
 	DragEnable( true );
 
@@ -145,11 +151,40 @@ void cUIWindow::SetTheme( cUITheme *Theme ) {
 	}
 
 	FixChildsSize();
+	GetMinWinSize();
+}
+
+void cUIWindow::GetMinWinSize() {
+	eeSize tSize;
+
+	tSize.x = mBorderLeft->Size().Width() + mBorderRight->Size().Width() - mButtonsPositionFixer.x;
+	tSize.y = mWindowDecoration->Size().Height() + mBorderBottom->Size().Height();
+
+	if ( NULL != mButtonClose )
+		tSize.x += mButtonClose->Size().Width();
+
+	if ( NULL != mButtonMaximize )
+		tSize.x += mButtonMaximize->Size().Width();
+
+	if ( NULL != mButtonMinimize )
+		tSize.x += mButtonMinimize->Size().Width();
+
+	if ( mMinWindowSize.x < tSize.x )
+		mMinWindowSize.x = tSize.x;
+
+	if ( mMinWindowSize.y < tSize.y )
+		mMinWindowSize.y = tSize.y;
 }
 
 void cUIWindow::OnSizeChange() {
-	if ( ( 0 != mMinWindowSize.x && 0 != mMinWindowSize.y ) && ( mSize.x < mMinWindowSize.x || mSize.y < mMinWindowSize.y ) ) {
-		Size( mMinWindowSize );
+	if ( mSize.x < mMinWindowSize.x || mSize.y < mMinWindowSize.y ) {
+		if ( mSize.x < mMinWindowSize.x && mSize.y < mMinWindowSize.y ) {
+			Size( mMinWindowSize );
+		} else if ( mSize.x < mMinWindowSize.x ) {
+			Size( eeSize( mMinWindowSize.x, mSize.y ) );
+		} else {
+			Size( eeSize( mSize.x, mMinWindowSize.y ) );
+		}
 	} else {
 		FixChildsSize();
 
@@ -227,6 +262,8 @@ void cUIWindow::FixChildsSize() {
 			}
 		}
 	}
+
+	FixTitleSize();
 }
 
 Uint32 cUIWindow::OnMessage( const cUIMessage * Msg ) {
@@ -236,9 +273,233 @@ Uint32 cUIWindow::OnMessage( const cUIMessage * Msg ) {
 			ToFront();
 			break;
 		}
+		case cUIMessage::MsgMouseDown:
+		{
+			DoResize( Msg );
+			break;
+		}
 	}
 
 	return cUIComplexControl::OnMessage( Msg );
+}
+
+
+void cUIWindow::DoResize ( const cUIMessage * Msg ) {
+	if ( !( mWinFlags & UI_WIN_RESIZEABLE ) || !( Msg->Flags() & EE_BUTTON_LMASK ) || RESIZE_NONE != mResizeType )
+		return;
+
+	DecideResizeType( Msg->Sender() );
+}
+
+void cUIWindow::DecideResizeType( cUIControl * Control ) {
+	eeVector2i Pos = cUIManager::instance()->GetMousePos();
+
+	ScreenToControl( Pos );
+
+	if ( Control == this ) {
+		if ( Pos.x <= mBorderLeft->Size().Width() ) {
+			TryResize( RESIZE_TOPLEFT );
+		} else if ( Pos.x >= ( mSize.Width() - mBorderRight->Size().Width() ) ) {
+			TryResize( RESIZE_TOPRIGHT );
+		} else if ( Pos.y <= mBorderBottom->Size().Height() ) {
+			if ( Pos.x < mMinCornerDistance ) {
+				TryResize( RESIZE_TOPLEFT );
+			} else if ( Pos.x > mSize.Width() - mMinCornerDistance ) {
+				TryResize( RESIZE_TOPRIGHT );
+			} else {
+				TryResize( RESIZE_TOP );
+			}
+		}
+	} else if ( Control == mBorderBottom ) {
+		if ( Pos.x < mMinCornerDistance ) {
+			TryResize( RESIZE_LEFTBOTTOM );
+		} else if ( Pos.x > mSize.Width() - mMinCornerDistance ) {
+			TryResize( RESIZE_RIGHTBOTTOM );
+		} else {
+			TryResize( RESIZE_BOTTOM );
+		}
+	} else if ( Control == mBorderLeft )  {
+		if ( Pos.y >= mSize.Height() - mMinCornerDistance ) {
+			TryResize( RESIZE_LEFTBOTTOM );
+		} else {
+			TryResize( RESIZE_LEFT );
+		}
+	} else if ( Control == mBorderRight ) {
+		if ( Pos.y >= mSize.Height() - mMinCornerDistance ) {
+			TryResize( RESIZE_RIGHTBOTTOM );
+		} else {
+			TryResize( RESIZE_RIGHT );
+		}
+	}
+}
+
+void cUIWindow::TryResize( const UI_RESIZE_TYPE& Type ) {
+	if ( RESIZE_NONE != mResizeType )
+		return;
+
+	DragEnable( false );
+
+	eeVector2i Pos = cUIManager::instance()->GetMousePos();
+
+	ScreenToControl( Pos );
+	
+	mResizeType = Type;
+	
+	switch ( mResizeType )
+	{
+		case RESIZE_RIGHT:
+		{
+			mResizePos.x = mSize.Width() - Pos.x;
+			break;
+		}
+		case RESIZE_LEFT:
+		{
+			mResizePos.x = Pos.x;
+			break;
+		}
+		case RESIZE_TOP:
+		{
+			mResizePos.y = Pos.y;
+			break;
+		}
+		case RESIZE_BOTTOM:
+		{
+			mResizePos.y = mSize.Height() - Pos.y;
+			break;
+		}
+		case RESIZE_RIGHTBOTTOM:
+		{
+			mResizePos.x = mSize.Width() - Pos.x;
+			mResizePos.y = mSize.Height() - Pos.y;
+			break;
+		}
+		case RESIZE_LEFTBOTTOM:
+		{
+			mResizePos.x = Pos.x;
+			mResizePos.y = mSize.Height() - Pos.y;
+			break;
+		}
+		case RESIZE_TOPLEFT:
+		{
+			mResizePos.x = Pos.x;
+			mResizePos.y = Pos.y;
+			break;
+		}
+		case RESIZE_TOPRIGHT:
+		{
+			mResizePos.y = Pos.y;
+			mResizePos.x = mSize.Width() - Pos.x;
+			break;
+		}
+		case RESIZE_NONE:
+		{
+		}
+	}
+}
+
+void cUIWindow::EndResize() {
+	mResizeType = RESIZE_NONE;
+}
+
+void cUIWindow::UpdateResize() {
+	if ( RESIZE_NONE == mResizeType )
+		return;
+
+	if ( !( cUIManager::instance()->PressTrigger() & EE_BUTTON_LMASK ) ) {
+		EndResize();
+		DragEnable( true );
+		return;
+	}
+
+	eeVector2i Pos = cUIManager::instance()->GetMousePos();
+
+	ScreenToControl( Pos );
+
+	switch ( mResizeType ) {
+		case RESIZE_RIGHT:
+		{
+			InternalSize( Pos.x + mResizePos.x, mSize.Height() );
+			break;
+		}
+		case RESIZE_BOTTOM:
+		{
+			InternalSize( mSize.Width(), Pos.y + mResizePos.y );
+			break;
+		}
+		case RESIZE_LEFT:
+		{
+			Pos.x -= mResizePos.x;
+			cUIControl::Pos( mPos.x + Pos.x, mPos.y );
+			InternalSize( mSize.Width() - Pos.x, mSize.Height() );
+			break;
+		}
+		case RESIZE_TOP:
+		{
+			Pos.y -= mResizePos.y;
+			cUIControl::Pos( mPos.x, mPos.y + Pos.y );
+			InternalSize( mSize.Width(), mSize.Height() - Pos.y );
+			break;
+		}
+		case RESIZE_RIGHTBOTTOM:
+		{
+			Pos += mResizePos;
+			InternalSize( Pos.x, Pos.y );
+			break;
+		}
+		case RESIZE_TOPLEFT:
+		{
+			Pos -= mResizePos;
+			cUIControl::Pos( mPos.x + Pos.x, mPos.y + Pos.y );
+			InternalSize( mSize.Width() - Pos.x, mSize.Height() - Pos.y );
+			break;
+		}
+		case RESIZE_TOPRIGHT:
+		{
+			Pos.y -= mResizePos.y;
+			Pos.x += mResizePos.x;
+			cUIControl::Pos( mPos.x, mPos.y + Pos.y );
+			InternalSize( Pos.x, mSize.Height() - Pos.y );
+			break;
+		}
+		case RESIZE_LEFTBOTTOM:
+		{
+			Pos.x -= mResizePos.x;
+			Pos.y += mResizePos.y;
+			cUIControl::Pos( mPos.x + Pos.x, mPos.y );
+			InternalSize( mSize.Width() - Pos.x, Pos.y );
+			break;
+		}
+		case RESIZE_NONE:
+		{
+		}
+	}
+}
+
+void cUIWindow::InternalSize( const Int32& w, const Int32& h ) {
+	InternalSize( eeSize( w, h ) );
+}
+
+void cUIWindow::InternalSize( eeSize Size ) {
+	if ( Size.x < mMinWindowSize.x || Size.y < mMinWindowSize.y ) {
+		if ( Size.x < mMinWindowSize.x && Size.y < mMinWindowSize.y ) {
+			Size = mMinWindowSize;
+		} else if ( Size.x < mMinWindowSize.x ) {
+			Size.x = mMinWindowSize.x;
+		} else {
+			Size.y = mMinWindowSize.y;
+		}
+	}
+
+	if ( Size != mSize ) {
+		mSize = Size;
+		OnSizeChange();
+	}
+}
+
+void cUIWindow::Update() {
+	cUIComplexControl::Update();
+
+	UpdateResize();
 }
 
 cUIControlAnim * cUIWindow::Container() const {
@@ -262,10 +523,10 @@ bool cUIWindow::Show() {
 		Enabled( true );
 		Visible( true );
 
-		if ( 255.f == Alpha() ) {
-			StartAlphaAnim( 0.f, 255.f, cUIThemeManager::instance()->ControlsFadeInTime() );
+		if ( mBaseAlpha == Alpha() ) {
+			StartAlphaAnim( 0.f, mBaseAlpha, cUIThemeManager::instance()->ControlsFadeInTime() );
 		} else {
-			CreateFadeIn( cUIThemeManager::instance()->ControlsFadeInTime() );
+			StartAlphaAnim( mAlpha, mBaseAlpha, cUIThemeManager::instance()->ControlsFadeInTime() );
 		}
 
 		return true;
@@ -289,6 +550,73 @@ bool cUIWindow::Hide() {
 	}
 
 	return false;
+}
+
+
+void cUIWindow::OnAlphaChange() {
+	if ( mWinFlags & UI_WIN_SHARE_ALPHA_WITH_CHILDS ) {
+		cUIControlAnim * AnimChild;
+		cUIControl * CurChild = mChild;
+
+		while ( NULL != CurChild ) {
+			if ( CurChild->IsAnimated() ) {
+				AnimChild = reinterpret_cast<cUIControlAnim*> ( CurChild );
+				AnimChild->Alpha( mAlpha );
+			}
+
+			CurChild = CurChild->NextGet();
+		}
+	}
+}
+
+void cUIWindow::BaseAlpha( const Uint8& Alpha ) {
+	if ( mAlpha == mBaseAlpha ) {
+		cUIControlAnim::Alpha( Alpha );
+	}
+
+	mBaseAlpha = Alpha;
+}
+
+const Uint8& cUIWindow::BaseAlpha() const {
+	return mBaseAlpha;
+}
+
+void cUIWindow::Title( const std::wstring& Text ) {
+	if ( NULL == mTitle ) {
+		cUITextBox::CreateParams Params;
+		Params.Parent( this );
+		Params.Flags		= UI_CLIP_ENABLE | UI_VALIGN_CENTER;
+		Params.FontColor	= mTitleFontColor;
+
+		if ( mFlags & UI_HALIGN_CENTER )
+			Params.Flags |= UI_HALIGN_CENTER;
+
+		mTitle = eeNew( cUITextBox, ( Params ) );
+		mTitle->Enabled( false );
+		mTitle->Visible( true );
+	}
+
+	mTitle->Text( Text );
+
+	FixTitleSize();
+}
+
+void cUIWindow::FixTitleSize() {
+	if ( NULL != mTitle ) {
+		mTitle->Size( mWindowDecoration->Size().Width() - mBorderLeft->Size().Width() - mBorderRight->Size().Width(), mWindowDecoration->Size().Height() );
+		mTitle->Pos( mBorderLeft->Size().Width(), 0 );
+	}
+}
+
+std::wstring cUIWindow::Title() const {
+	if ( NULL != mTitle )
+		return mTitle->Text();
+
+	return std::wstring();
+}
+
+cUITextBox * cUIWindow::TitleTextBox() const {
+	return mTitle;
 }
 
 }}

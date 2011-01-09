@@ -15,6 +15,7 @@ class EE_API cUIMessage {
 			MsgDoubleClick,
 			MsgMouseEnter,
 			MsgMouseExit,
+			MsgMouseDown,
 			MsgMouseUp,
 			MsgWindowResize,
 			MsgFocus,

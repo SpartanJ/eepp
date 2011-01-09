@@ -656,13 +656,13 @@ void cEETest::CreateUI() {
 	Menu2->AddSubMenu( L"Hello World", NULL, Menu3 );
 
 	Menu->AddSeparator();
-	Menu->AddSubMenu( L"Teh Menuh", NULL, Menu2 ) ;
+	Menu->AddSubMenu( L"Sub-Menu", NULL, Menu2 ) ;
 
 	Menu->AddSeparator();
 	Menu->Add( L"Quit" );
 
 	Menu->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cEETest::ItemClick ) );
-	Menu->GetItem( L"Quit" )->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::QuitClick ) );
+	Menu->GetItem( L"Quit" )->AddEventListener( cUIEvent::EventMouseUp, cb::Make1( this, &cEETest::QuitClick ) );
 	cUIManager::instance()->MainControl()->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::MainClick ) );
 
 	cUITextEdit::CreateParams TEParams;
@@ -721,11 +721,16 @@ void cEETest::CreateUI() {
 	C->StartRotation( 0, 360, 500.f, SINEOUT );
 
 	cUIWindow::CreateParams WinParams;
+	WinParams.Flags = UI_HALIGN_CENTER;
 	WinParams.PosSet( 200, 50 );
 	WinParams.Size = eeSize( 530, 380 );
 	WinParams.ButtonsPositionFixer.x = -4;
 	WinParams.ButtonsPositionFixer.y = -2;
+	WinParams.BaseAlpha = 240;
+	//WinParams.BorderAutoSize = false;
+	//WinParams.BorderSize = eeSize( 8, 8 );
 	cUIWindow * mWindow = eeNew( cUIWindow, ( WinParams ) );
+	mWindow->Title( L"Test Window" );
 	mWindow->ToBack();
 	mWindow->Show();
 }

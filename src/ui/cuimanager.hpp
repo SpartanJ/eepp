@@ -41,6 +41,8 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 		eeVector2i GetMousePos();
 
 		cInput * GetInput() const;
+
+		const Uint32& PressTrigger() const;
 	protected:
 		cEngine *			mEE;
 		cInput *			mKM;

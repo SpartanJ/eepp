@@ -3,6 +3,7 @@
 
 #include "cuicomplexcontrol.hpp"
 #include "cuipushbutton.hpp"
+#include "cuitextbox.hpp"
 
 namespace EE { namespace UI {
 
@@ -15,15 +16,19 @@ class cUIWindow : public cUIComplexControl {
 			UI_WIN_MAXIMIZE_BUTTON				= ( 1 << 3 ),
 			UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS	= ( 1 << 4 ),
 			UI_WIN_RESIZEABLE					= ( 1 << 5 ),
-			UI_WIN_DRAGABLE_CONTAINER			= ( 1 << 6 )
+			UI_WIN_DRAGABLE_CONTAINER			= ( 1 << 6 ),
+			UI_WIN_SHARE_ALPHA_WITH_CHILDS		= ( 1 << 7 )
 		};
 
 		class CreateParams : public cUIComplexControl::CreateParams {
 			public:
 				inline CreateParams() :
 					cUIComplexControl::CreateParams(),
-					WinFlags( UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_RESIZEABLE ),
+					WinFlags( UI_WIN_CLOSE_BUTTON | UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS | UI_WIN_RESIZEABLE | UI_WIN_SHARE_ALPHA_WITH_CHILDS ),
 					ButtonsSeparation( 4 ),
+					MinCornerDistance( 24 ),
+					TitleFontColor( 255, 255, 255, 255),
+					BaseAlpha( 255 ),
 					DecorationAutoSize( true ),
 					BorderAutoSize( true )
 				{
@@ -37,6 +42,9 @@ class cUIWindow : public cUIComplexControl {
 				eeSize		MinWindowSize;
 				eeVector2i	ButtonsPositionFixer;
 				Uint32		ButtonsSeparation;
+				Int32		MinCornerDistance;
+				eeColorA	TitleFontColor;
+				Uint8		BaseAlpha;
 				bool		DecorationAutoSize;
 				bool		BorderAutoSize;
 		};
@@ -62,7 +70,31 @@ class cUIWindow : public cUIComplexControl {
 		virtual bool Show();
 
 		virtual bool Hide();
+
+		virtual void Update();
+
+		void BaseAlpha( const Uint8& Alpha );
+
+		const Uint8& BaseAlpha() const;
+
+		void Title( const std::wstring& Text );
+
+		std::wstring Title() const;
+
+		cUITextBox * TitleTextBox() const;
 	protected:
+		enum UI_RESIZE_TYPE {
+			RESIZE_NONE,
+			RESIZE_LEFT,
+			RESIZE_RIGHT,
+			RESIZE_TOP,
+			RESIZE_BOTTOM,
+			RESIZE_LEFTBOTTOM,
+			RESIZE_RIGHTBOTTOM,
+			RESIZE_TOPLEFT,
+			RESIZE_TOPRIGHT
+		};
+
 		Uint32				mWinFlags;
 
 		cUIControlAnim *	mWindowDecoration;
@@ -74,6 +106,7 @@ class cUIWindow : public cUIComplexControl {
 		cUIComplexControl *	mButtonClose;
 		cUIComplexControl *	mButtonMinimize;
 		cUIComplexControl *	mButtonMaximize;
+		cUITextBox *		mTitle;
 
 		eeSize				mDecoSize;
 		eeSize				mBorderSize;
@@ -82,10 +115,21 @@ class cUIWindow : public cUIComplexControl {
 		eeSize				mNonMaxSize;
 		eeVector2i			mButtonsPositionFixer;
 		Uint32				mButtonsSeparation;
+		Int32				mMinCornerDistance;
+
+		UI_RESIZE_TYPE		mResizeType;
+		eeVector2i			mResizePos;
+
+		eeColorA			mTitleFontColor;
+
+		Uint8				mBaseAlpha;
+
 		bool				mDecoAutoSize;
 		bool				mBorderAutoSize;
 
 		virtual void OnSizeChange();
+
+		virtual void OnAlphaChange();
 
 		void ButtonCloseClick( const cUIEvent * Event );
 
@@ -96,6 +140,24 @@ class cUIWindow : public cUIComplexControl {
 		void ContainerPosChange( const cUIEvent * Event );
 
 		void FixChildsSize();
+
+		void DoResize ( const cUIMessage * Msg );
+
+		void DecideResizeType( cUIControl * Control );
+
+		void TryResize( const UI_RESIZE_TYPE& Type );
+
+		void EndResize();
+
+		void UpdateResize();
+
+		void InternalSize( eeSize Size );
+
+		void InternalSize( const Int32& w, const Int32& h );
+
+		void GetMinWinSize();
+
+		void FixTitleSize();
 };
 
 }}
