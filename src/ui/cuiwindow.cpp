@@ -283,9 +283,12 @@ Uint32 cUIWindow::OnMessage( const cUIMessage * Msg ) {
 	return cUIComplexControl::OnMessage( Msg );
 }
 
-
 void cUIWindow::DoResize ( const cUIMessage * Msg ) {
-	if ( !( mWinFlags & UI_WIN_RESIZEABLE ) || !( Msg->Flags() & EE_BUTTON_LMASK ) || RESIZE_NONE != mResizeType )
+	if (	!( mWinFlags & UI_WIN_RESIZEABLE ) ||
+			!( Msg->Flags() & EE_BUTTON_LMASK ) ||
+			RESIZE_NONE != mResizeType ||
+			( cUIManager::instance()->LastPressTrigger() & EE_BUTTON_LMASK )
+	)
 		return;
 
 	DecideResizeType( Msg->Sender() );

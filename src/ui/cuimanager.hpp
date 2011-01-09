@@ -43,6 +43,8 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 		cInput * GetInput() const;
 
 		const Uint32& PressTrigger() const;
+
+		const Uint32& LastPressTrigger() const;
 	protected:
 		cEngine *			mEE;
 		cInput *			mKM;

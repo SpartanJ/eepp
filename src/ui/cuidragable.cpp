@@ -14,7 +14,7 @@ cUIDragable::~cUIDragable() {
 }
 
 Uint32 cUIDragable::OnMouseDown( const eeVector2i& Pos, const Uint32 Flags ) {
-	if ( !( cInput::instance()->LastPressTrigger() & mDragButton ) && ( Flags & mDragButton ) && DragEnable() && !Dragging() ) {
+	if ( !( cUIManager::instance()->LastPressTrigger() & mDragButton ) && ( Flags & mDragButton ) && DragEnable() && !Dragging() ) {
 		Dragging( true );
 		mDragPoint = Pos;
 	}

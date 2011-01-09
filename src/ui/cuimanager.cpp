@@ -211,4 +211,8 @@ const Uint32& cUIManager::PressTrigger() const {
 	return mKM->PressTrigger();
 }
 
+const Uint32& cUIManager::LastPressTrigger() const {
+	return mKM->LastPressTrigger();
+}
+
 }}
