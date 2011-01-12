@@ -12,7 +12,7 @@ ifeq ($(DEBUGBUILD), yes)
     DEBUGFLAGS = -g -DDEBUG -DEE_DEBUG -DEE_MEMORY_MANAGER
     RELEASETYPE = debug
 else
-    DEBUGFLAGS = -fno-strict-aliasing -O3 -s -DNDEBUG
+    DEBUGFLAGS = -fno-strict-aliasing -O3 -s -DNDEBUG -ffast-math
     RELEASETYPE = release
 endif
 
@@ -32,7 +32,7 @@ export CC         	= gcc
 export CPP        	= g++
 endif
 
-export CFLAGS     	= -Wall $(DEBUGFLAGS) $(BUILDFLAGS)
+export CFLAGS     	= -Wall -Wno-unknown-pragmas $(DEBUGFLAGS) $(BUILDFLAGS)
 export CFLAGSEXT  	= $(DEBUGFLAGS) $(BUILDFLAGS)
 export LDFLAGS    	= $(LINKFLAGS)
 export LIBPATH    	= ./
@@ -61,6 +61,8 @@ OTHERINC	= -I/usr/include/freetype2
 endif
 endif
 
+HELPERSINC	= -I./src/helper/chipmunk
+
 EXE     			= eetest-$(RELEASETYPE)
 EXEIV				= eeiv-$(RELEASETYPE)
 EXEFLUID			= eefluid-$(RELEASETYPE)
@@ -70,6 +72,7 @@ SRCSOIL 			= $(wildcard ./src/helper/SOIL/*.c)
 SRCSTBVORBIS 		= $(wildcard ./src/helper/stb_vorbis/*.c)
 SRCZLIB				= $(wildcard ./src/helper/zlib/*.c)
 SRCLIBZIP			= $(wildcard ./src/helper/libzip/*.c)
+SRCCHIPMUNK			= $(wildcard ./src/helper/chipmunk/*.c) $(wildcard ./src/helper/chipmunk/constraints/*.c)
 
 SRCHAIKUTTF 		= $(wildcard ./src/helper/haikuttf/*.cpp)
 SRCBASE				= $(wildcard ./src/base/*.cpp)
@@ -81,13 +84,14 @@ SRCSYSTEM			= $(wildcard ./src/system/*.cpp)
 SRCUI				= $(wildcard ./src/ui/*.cpp)
 SRCUTILS     		= $(wildcard ./src/utils/*.cpp)
 SRCWINDOW     		= $(wildcard ./src/window/*.cpp)
+SRCPHYSICS			= $(wildcard ./src/physics/*.cpp) $(wildcard ./src/physics/constraints/*.cpp)
 
 SRCTEST     		= $(wildcard ./src/test/*.cpp)
 SRCEEIV     		= $(wildcard ./src/eeiv/*.cpp)
 SRCFLUID     		= $(wildcard ./src/fluid/*.cpp)
 
-SRCHELPERS			= $(SRCGLEW) $(SRCSOIL) $(SRCSTBVORBIS) $(SRCZLIB) $(SRCLIBZIP)
-SRCMODULES			= $(SRCHAIKUTTF) $(SRCBASE) $(SRCAUDIO) $(SRCGAMING) $(SRCGRAPHICS) $(SRCMATH) $(SRCSYSTEM) $(SRCUI) $(SRCUTILS) $(SRCWINDOW)
+SRCHELPERS			= $(SRCGLEW) $(SRCSOIL) $(SRCSTBVORBIS) $(SRCZLIB) $(SRCLIBZIP) $(SRCCHIPMUNK)
+SRCMODULES			= $(SRCHAIKUTTF) $(SRCBASE) $(SRCAUDIO) $(SRCGAMING) $(SRCGRAPHICS) $(SRCMATH) $(SRCSYSTEM) $(SRCUI) $(SRCUTILS) $(SRCWINDOW) $(SRCPHYSICS)
 SRCALL				= $(SRCMODULES) $(SRCHELPERS) $(SRCTEST) $(SRCEEIV)
 SRCHPPALL			= $(SRCALL:.cpp=.hpp)
 SRCHALL				= $(SRCALL:.c=.h)
@@ -97,6 +101,7 @@ OBJSOIL 			= $(SRCSOIL:.c=.o)
 OBJSTBVORBIS 		= $(SRCSTBVORBIS:.c=.o) 
 OBJZLIB 			= $(SRCZLIB:.c=.o) 
 OBJLIBZIP 			= $(SRCLIBZIP:.c=.o) 
+OBJCHIPMUNK			= $(SRCCHIPMUNK:.c=.o)
 
 OBJHAIKUTTF 		= $(SRCHAIKUTTF:.cpp=.o)
 OBJBASE 			= $(SRCBASE:.cpp=.o)
@@ -108,9 +113,10 @@ OBJSYSTEM 			= $(SRCSYSTEM:.cpp=.o)
 OBJUI 				= $(SRCUI:.cpp=.o)
 OBJUTILS			= $(SRCUTILS:.cpp=.o)
 OBJWINDOW			= $(SRCWINDOW:.cpp=.o)
+OBJPHYSICS			= $(SRCPHYSICS:.cpp=.o)
 
-OBJHELPERS			= $(OBJGLEW) $(OBJSOIL) $(OBJSTBVORBIS) $(OBJZLIB) $(OBJLIBZIP)
-OBJMODULES			= $(OBJHAIKUTTF) $(OBJBASE) $(OBJUTILS) $(OBJMATH) $(OBJSYSTEM) $(OBJAUDIO) $(OBJWINDOW) $(OBJGRAPHICS) $(OBJGAMING) $(OBJUI)
+OBJHELPERS			= $(OBJGLEW) $(OBJSOIL) $(OBJSTBVORBIS) $(OBJZLIB) $(OBJLIBZIP) $(OBJCHIPMUNK)
+OBJMODULES			= $(OBJHAIKUTTF) $(OBJBASE) $(OBJUTILS) $(OBJMATH) $(OBJSYSTEM) $(OBJAUDIO) $(OBJWINDOW) $(OBJGRAPHICS) $(OBJGAMING) $(OBJUI) $(OBJPHYSICS)
 
 OBJTEST     		= $(SRCTEST:.cpp=.o)
 OBJEEIV     		= $(SRCEEIV:.cpp=.o)
@@ -118,8 +124,8 @@ OBJFLUID     		= $(SRCFLUID:.cpp=.o)
 
 OBJDIR				= obj/$(OS)/$(RELEASETYPE)/
 
-FOBJHELPERS			= $(patsubst ./%, $(OBJDIR)%, $(OBJGLEW) $(OBJSOIL) $(OBJSTBVORBIS) $(OBJZLIB) $(OBJLIBZIP) )
-FOBJMODULES			= $(patsubst ./%, $(OBJDIR)%, $(OBJHAIKUTTF) $(OBJBASE) $(OBJUTILS) $(OBJMATH) $(OBJSYSTEM) $(OBJAUDIO) $(OBJWINDOW) $(OBJGRAPHICS) $(OBJGAMING) $(OBJUI) )
+FOBJHELPERS			= $(patsubst ./%, $(OBJDIR)%, $(OBJGLEW) $(OBJSOIL) $(OBJSTBVORBIS) $(OBJZLIB) $(OBJLIBZIP) $(OBJCHIPMUNK) )
+FOBJMODULES			= $(patsubst ./%, $(OBJDIR)%, $(OBJHAIKUTTF) $(OBJBASE) $(OBJUTILS) $(OBJMATH) $(OBJSYSTEM) $(OBJAUDIO) $(OBJWINDOW) $(OBJGRAPHICS) $(OBJGAMING) $(OBJUI) $(OBJPHYSICS) )
 
 FOBJTEST     		= $(patsubst ./%, $(OBJDIR)%, $(SRCTEST:.cpp=.o) )
 FOBJEEIV     		= $(patsubst ./%, $(OBJDIR)%, $(SRCEEIV:.cpp=.o) )
@@ -140,6 +146,8 @@ dirs:
 	@mkdir -p $(OBJDIR)/src/helper/stb_vorbis
 	@mkdir -p $(OBJDIR)/src/helper/zlib
 	@mkdir -p $(OBJDIR)/src/helper/libzip
+	@mkdir -p $(OBJDIR)/src/helper/chipmunk
+	@mkdir -p $(OBJDIR)/src/helper/chipmunk/constraints
 	@mkdir -p $(OBJDIR)/src/helper/haikuttf
 	@mkdir -p $(OBJDIR)/src/base
 	@mkdir -p $(OBJDIR)/src/audio
@@ -150,6 +158,8 @@ dirs:
 	@mkdir -p $(OBJDIR)/src/ui
 	@mkdir -p $(OBJDIR)/src/utils
 	@mkdir -p $(OBJDIR)/src/window
+	@mkdir -p $(OBJDIR)/src/physics
+	@mkdir -p $(OBJDIR)/src/physics/constraints
 	@mkdir -p $(OBJDIR)/src/test
 	@mkdir -p $(OBJDIR)/src/eeiv
 	@mkdir -p $(OBJDIR)/src/fluid
@@ -161,8 +171,8 @@ $(FOBJMODULES):
 	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
 
 $(FOBJHELPERS):
-	$(CC) -o $@ -c $(patsubst $(OBJDIR)%.o,%.c,$@) $(CFLAGSEXT) -DSTBI_FAILURE_USERMSG
-	@$(CC) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.c,$@) -DSTBI_FAILURE_USERMSG > $(patsubst %.o,%.d,$@)
+	$(CC) -o $@ -c $(patsubst $(OBJDIR)%.o,%.c,$@) $(CFLAGSEXT) -DSTBI_FAILURE_USERMSG -std=gnu99 $(HELPERSINC)
+	@$(CC) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.c,$@) -DSTBI_FAILURE_USERMSG > $(patsubst %.o,%.d,$@) $(HELPERSINC)
 
 $(FOBJTEST):
 	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)

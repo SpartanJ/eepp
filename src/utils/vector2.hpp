@@ -208,6 +208,7 @@ T Vector2<T>::Distance( const Vector2<T>& Vec ) {
 typedef Vector2<Int32> eeVector2if;
 typedef Vector2<eeInt> eeVector2i;
 typedef Vector2<eeFloat> eeVector2f;
+typedef Vector2<eeDouble> eeVector2d;
 
 }}
 

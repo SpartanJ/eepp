@@ -158,6 +158,8 @@ class cUIWindow : public cUIComplexControl {
 		void GetMinWinSize();
 
 		void FixTitleSize();
+
+		Uint32 OnMouseDoubleClick( const eeVector2i &Pos, Uint32 Flags );
 };
 
 }}

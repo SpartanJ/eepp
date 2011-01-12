@@ -12,6 +12,7 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 	friend class tSingleton<cUIManager>;
 	public:
 		cUIManager();
+
 		~cUIManager();
 
 		cUIControlAnim * MainControl() const;

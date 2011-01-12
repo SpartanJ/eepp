@@ -173,4 +173,24 @@
 	#include "ui/cuigenericgrid.hpp"
 	#include "ui/cuiwindow.hpp"
 	using namespace EE::UI;
+
+	#include "physics/cphysicsmanager.hpp"
+	#include "physics/cshape.hpp"
+	#include "physics/cshapecircle.hpp"
+	#include "physics/cshapesegment.hpp"
+	#include "physics/cshapepoly.hpp"
+	#include "physics/cspace.hpp"
+	#include "physics/cbody.hpp"
+	#include "physics/constraints/cconstraint.hpp"
+	#include "physics/constraints/cdampedrotaryspring.hpp"
+	#include "physics/constraints/cdampedspring.hpp"
+	#include "physics/constraints/cgearjoint.hpp"
+	#include "physics/constraints/cgroovejoint.hpp"
+	#include "physics/constraints/cpinjoint.hpp"
+	#include "physics/constraints/cpivotjoint.hpp"
+	#include "physics/constraints/cratchetjoint.hpp"
+	#include "physics/constraints/crotarylimitjoint.hpp"
+	#include "physics/constraints/csimplemotor.hpp"
+	#include "physics/constraints/cslidejoint.hpp"
+	using namespace EE::Physics;
 #endif

@@ -96,7 +96,7 @@ class cEETest : private cThread {
 		std::vector<Uint32> TN;
 		std::vector<cTexture *> TNP;
 
-		std::vector<cShape*> Tiles;
+		std::vector<Graphics::cShape*> Tiles;
 
 		eeVector2i Mouse;
 		eeVector2f Mousef;
@@ -218,6 +218,15 @@ class cEETest : private cThread {
 		cTextCache mEEText;
 		cTextCache mFBOText;
 		cTextCache mInfoText;
+
+		cSpace * mSpace;
+		cBody * mMouseBody;
+		cpVect mMousePoint;
+		cpVect mMousePoint_last;
+		cConstraint * mMouseJoint;
+		void PhysicsCreate();
+		void PhysicsUpdate();
+		void PhysicsDestroy();
 };
 
 void cEETest::CreateAquaTextureAtlas() {
@@ -343,6 +352,8 @@ void cEETest::Init() {
 		}
 
 		mVBO->Compile();
+
+		PhysicsCreate();
 
 		Launch();
 	} else {
@@ -722,6 +733,7 @@ void cEETest::CreateUI() {
 
 	cUIWindow::CreateParams WinParams;
 	WinParams.Flags = UI_HALIGN_CENTER;
+	WinParams.WinFlags |= cUIWindow::UI_WIN_MAXIMIZE_BUTTON;
 	WinParams.PosSet( 200, 50 );
 	WinParams.Size = eeSize( 530, 380 );
 	WinParams.ButtonsPositionFixer.x = -4;
@@ -936,7 +948,7 @@ void cEETest::LoadTextures() {
 	TreeTilingCreated = false;
 	CreateTiling(Wireframe);
 
-	cGlobalShapeGroup::instance()->Add( eeNew( cShape, ( TF->Load( MyPath + "data/aqua/aqua_button_ok.png" ), "aqua_button_ok" ) ) );
+	cGlobalShapeGroup::instance()->Add( eeNew( Graphics::cShape, ( TF->Load( MyPath + "data/aqua/aqua_button_ok.png" ), "aqua_button_ok" ) ) );
 }
 
 void cEETest::RandomizeHeights() {
@@ -1287,6 +1299,8 @@ void cEETest::Render() {
 		}
 	}
 
+	PhysicsUpdate();
+
 	cUIManager::instance()->Update();
 	cUIManager::instance()->Draw();
 
@@ -1532,6 +1546,8 @@ void cEETest::Process() {
 void cEETest::End() {
 	Wait();
 
+	PhysicsDestroy();
+
 	Mus->Stop();
 	eeSAFE_DELETE( Mus );
 	eeSAFE_DELETE( mTGL );
@@ -1565,6 +1581,134 @@ void cEETest::Particles() {
 
 	for ( Uint8 i = 0; i < PS.size(); i++ )
 		PS[i].Draw();
+}
+
+#define GRABABLE_MASK_BIT (1<<31)
+#define NOT_GRABABLE_MASK (~GRABABLE_MASK_BIT)
+
+void cEETest::PhysicsCreate() {
+	cPhysicsManager::CreateSingleton();
+	cPhysicsManager::instance()->CollisionSlop( 0.2 );
+
+	mMouseJoint = NULL;
+
+	mMouseBody = eeNew( cBody, ( INFINITY, INFINITY ) );
+
+	// Create a space, a space is a simulation world. It simulates the motions of rigid bodies,
+	// handles collisions between them, and simulates the joints between them.
+	mSpace = eeNew( cSpace, () );
+
+	// Lets set some parameters of the space:
+	// More iterations make the simulation more accurate but slower
+	mSpace->Iterations( 10 );
+
+	// These parameters tune the efficiency of the collision detection.
+	// For more info: http://code.google.com/p/chipmunk-physics/wiki/cpSpace
+	mSpace->ResizeStaticHash( 30.0f, 1000 );
+	mSpace->ResizeActiveHash( 30.0f, 1000 );
+
+	// Give it some gravity
+	mSpace->Gravity( cpv(0, 1000) );
+	mSpace->SleepTimeThreshold( 0.5f );
+
+	// Create A ground segment along the bottom of the screen
+	// By attaching it to &space->staticBody instead of a body, we make it a static shape.
+	Physics::cShapeSegment * ground = eeNew( cShapeSegment, ( mSpace->StaticBody(), cpv(0,640), cpv(640, 640), 0.0f ) );
+
+	// Set some parameters of the shape.
+	// For more info: http://code.google.com/p/chipmunk-physics/wiki/cpShape
+	ground->e( 1.0f );
+	ground->u( 1.0f );
+	ground->Layers( NOT_GRABABLE_MASK ); // Used by the Demo mouse grabbing code
+
+	// Add the shape to the space as a static shape
+	// If a shape never changes position, add it as static so Chipmunk knows it only needs to
+	// calculate collision information for it once when it is added.
+	// Do not change the postion of a static shape after adding it.
+	mSpace->AddShape( ground );
+
+	// Add a moving circle object.
+	cpFloat radius = 15.0f;
+	cpFloat mass = 10.0f;
+
+	// This time we need to give a mass and moment of inertia when creating the circle.
+	cBody * ballBody = eeNew( cBody, ( mass, cpMomentForCircle(mass, 0.0f, radius, cpvzero) ) );
+
+	// Set some parameters of the body:
+	// For more info: http://code.google.com/p/chipmunk-physics/wiki/cpBody
+	ballBody->Pos( cpv(320, 240 + radius+50) );
+	ballBody->Vel( cpv(0, 20) );
+
+	// Add the body to the space so it will be simulated and move around.
+	mSpace->AddBody( ballBody );
+
+	// Add a circle shape for the ball.
+	// Shapes are always defined relative to the center of gravity of the body they are attached to.
+	// When the body moves or rotates, the shape will move with it.
+	// Additionally, all of the cpSpaceAdd*() functions return the thing they added so you can create and add in one go.
+	Physics::cShapeCircle * ballShape = eeNew( Physics::cShapeCircle, ( ballBody, radius, cpvzero ) );
+	mSpace->AddShape( ballShape );
+	ballShape->e( 0.0f );
+	ballShape->u( 0.9f );
+
+	ballBody = eeNew( cBody, ( mass, cpMomentForCircle( mass, 0.0f, radius, cpvzero ) ) );
+
+	// Set some parameters of the body:
+	// For more info: http://code.google.com/p/chipmunk-physics/wiki/cpBody
+	ballBody->Pos( cpv(320, 240 + radius + 50 + 200) );
+	ballBody->Vel( cpv(0, 20) );
+
+	// Add the body to the space so it will be simulated and move around.
+	mSpace->AddBody( ballBody );
+
+	// Add a circle shape for the ball.
+	// Shapes are always defined relative to the center of gravity of the body they are attached to.
+	// When the body moves or rotates, the shape will move with it.
+	// Additionally, all of the cpSpaceAdd*() functions return the thing they added so you can create and add in one go.
+	ballShape = eeNew( Physics::cShapeCircle, ( ballBody, radius, cpvzero ) );
+	ballShape->e( 0.0f );
+	ballShape->u( 0.9f );
+	mSpace->AddShape( ballShape );
+}
+
+void cEETest::PhysicsUpdate() {
+	cGlobalBatchRenderer::instance()->Draw();
+
+	mMousePoint = cpv( KM->GetMousePosf().x, KM->GetMousePosf().y );
+	cpVect newPoint = cpvlerp(mMousePoint_last, mMousePoint, 0.25f);
+	mMouseBody->Pos( newPoint );
+	mMouseBody->Vel( cpvmult( cpvsub( newPoint, mMousePoint_last ), 60.0f ) );
+	mMousePoint_last = newPoint;
+
+	if ( KM->MouseLeftPressed() ) {
+		if ( NULL == mMouseJoint ) {
+			cpVect point = cpv( KM->GetMousePosf().x, KM->GetMousePosf().y );
+
+			cpShape * shape = cpSpacePointQueryFirst( mSpace->Space(), point, GRABABLE_MASK_BIT, CP_NO_GROUP );
+
+			if( shape ){
+				cpBody * body = shape->body;
+				mMouseJoint = eeNew( cConstraint, ( cpPivotJointNew2( mMouseBody->Body(), body, cpvzero, cpBodyWorld2Local( body, point ) ) ) );
+				mMouseJoint->MaxForce( 50000.0f );
+				mMouseJoint->BiasCoef( 0.15f );
+				mSpace->AddConstraint( mMouseJoint );
+			}
+		}
+	} else if ( NULL != mMouseJoint ) {
+		mSpace->RemoveConstraint( mMouseJoint );
+		cpConstraintFree( mMouseJoint->Constraint() );
+		eeSAFE_DELETE( mMouseJoint );
+	}
+
+	mSpace->Update();
+	mSpace->Draw();
+}
+
+void cEETest::PhysicsDestroy() {
+	eeSAFE_DELETE( mSpace );
+	eeSAFE_DELETE( mMouseJoint );
+	eeSAFE_DELETE( mMouseBody );
+	cPhysicsManager::DestroySingleton();
 }
 
 int main (int argc, char * argv []) {

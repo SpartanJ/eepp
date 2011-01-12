@@ -110,15 +110,15 @@ void cUIWindow::ButtonCloseClick( const cUIEvent * Event ) {
 void cUIWindow::ButtonMaximizeClick( const cUIEvent * Event ) {
 	cUIControl * Ctrl = cUIManager::instance()->MainControl();
 
-	if ( Ctrl->Size() == cUIControl::Size() ) {
+	if ( Ctrl->Size() == mSize ) {
 		Pos( mNonMaxPos );
-		Size( mNonMaxSize );
+		InternalSize( mNonMaxSize );
 	} else {
 		mNonMaxPos	= mPos;
 		mNonMaxSize = mSize;
 
 		Pos( 0, 0 );
-		Size( cUIManager::instance()->MainControl()->Size() );
+		InternalSize( cUIManager::instance()->MainControl()->Size() );
 	}
 }
 
@@ -620,6 +620,14 @@ std::wstring cUIWindow::Title() const {
 
 cUITextBox * cUIWindow::TitleTextBox() const {
 	return mTitle;
+}
+
+Uint32 cUIWindow::OnMouseDoubleClick( const eeVector2i &Pos, Uint32 Flags ) {
+	if ( ( mWinFlags & UI_WIN_RESIZEABLE ) && ( NULL != mButtonMaximize ) && ( Flags & EE_BUTTON_LMASK ) ) {
+		ButtonMaximizeClick( NULL );
+	}
+
+	return 1;
 }
 
 }}
