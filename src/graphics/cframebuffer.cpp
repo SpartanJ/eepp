@@ -52,6 +52,7 @@ eeColorAf cFrameBuffer::ClearColor() const {
 void cFrameBuffer::Clear() {
 	glClearColor( mClearColor.R(), mClearColor.G(), mClearColor.B(), mClearColor.A() );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+	cEngine::instance()->SetBackColor( cEngine::instance()->GetBackColor() );
 }
 
 void cFrameBuffer::SetBufferView() {

@@ -3,21 +3,25 @@
 
 namespace EE { namespace Physics {
 
-cShapeSegment::cShapeSegment( cBody * body, cpVect a, cpVect b, cpFloat radius ) {
-	mShape = cpSegmentShapeNew( body->Body(), a, b, radius );
+cShapeSegment * cShapeSegment::New( cBody * body, cVect a, cVect b, cpFloat radius ) {
+	return eeNew( cShapeSegment, ( body, a, b, radius ) );
+}
+
+cShapeSegment::cShapeSegment( cBody * body, cVect a, cVect b, cpFloat radius ) {
+	mShape = cpSegmentShapeNew( body->Body(), tocpv( a ), tocpv( b ), radius );
 	SetData();
 }
 
-cpVect cShapeSegment::A() {
-	return cpSegmentShapeGetA( mShape );
+cVect cShapeSegment::A() {
+	return tovect( cpSegmentShapeGetA( mShape ) );
 }
 
-cpVect cShapeSegment::B() {
-	return cpSegmentShapeGetB( mShape );
+cVect cShapeSegment::B() {
+	return tovect( cpSegmentShapeGetB( mShape ) );
 }
 
-cpVect cShapeSegment::Normal() {
-	return cpSegmentShapeGetNormal( mShape );
+cVect cShapeSegment::Normal() {
+	return tovect( cpSegmentShapeGetNormal( mShape ) );
 }
 
 cpFloat cShapeSegment::Radius() {
@@ -28,64 +32,66 @@ void cShapeSegment::Radius( const cpFloat& radius ) {
 	cpSegmentShapeSetRadius( mShape, radius );
 }
 
-void cShapeSegment::Endpoints( const cpVect& a, const cpVect& b ) {
-	cpSegmentShapeSetEndpoints( mShape, a, b );
+void cShapeSegment::Endpoints( const cVect& a, const cVect& b ) {
+	cpSegmentShapeSetEndpoints( mShape, tocpv( a ), tocpv( b ) );
 }
 
-bool cShapeSegment::Query( cpVect a, cpVect b, cpSegmentQueryInfo * info ) {
-	return 0 != cpShapeSegmentQuery( mShape, a, b, info );
+bool cShapeSegment::Query( cVect a, cVect b, cpSegmentQueryInfo * info ) {
+	return 0 != cpShapeSegmentQuery( mShape, tocpv( a ), tocpv( b ), info );
 }
 
-cpVect cShapeSegment::HitPoint( const cpVect start, const cpVect end, const cpSegmentQueryInfo info ) {
-	return cpSegmentQueryHitPoint( start, end, info );
+cVect cShapeSegment::QueryHitPoint( const cVect start, const cVect end, const cpSegmentQueryInfo info ) {
+	return tovect( cpSegmentQueryHitPoint( tocpv( start ), tocpv( end ), info ) );
 }
 
-cpFloat cShapeSegment::HitDist( const cpVect start, const cpVect end, const cpSegmentQueryInfo info ) {
-	return cpSegmentQueryHitDist( start, end, info );
+cpFloat cShapeSegment::QueryHitDist( const cVect start, const cVect end, const cpSegmentQueryInfo info ) {
+	return cpSegmentQueryHitDist( tocpv( start ), tocpv( end ), info );
 }
 
 void cShapeSegment::Draw( cSpace * space ) {
-	cPrimitives p;
-
 	cpSegmentShape * seg = (cpSegmentShape *)mShape;
-	cpVect a = seg->ta;
-	cpVect b = seg->tb;
+	cVect a = tovect( seg->CP_PRIVATE(ta) );
+	cVect b = tovect( seg->CP_PRIVATE(tb) );
 
-	p.DrawLine( eeVector2f( a.x, a.y ), eeVector2f( b.x, b.y ) );
-	/*cpSegmentShape * seg = (cpSegmentShape *)mShape;
+	if ( seg->CP_PRIVATE(r) ) {
+		glDisable( GL_TEXTURE_2D );
+		glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+		glDisableClientState( GL_COLOR_ARRAY );
 
-	cpVect a = seg->ta;
-	cpVect b = seg->tb;
-
-	if(seg->r){
 		glVertexPointer(3, GL_FLOAT, 0, pillVAR);
-		glPushMatrix(); {
-			cpVect d = cpvsub(b, a);
-			cpVect r = cpvmult(d, seg->r/cpvlength(d));
+		glPushMatrix();
 
-			const GLfloat matrix[] = {
-				 r.x, r.y, 0.0f, 0.0f,
-				-r.y, r.x, 0.0f, 0.0f,
-				 d.x, d.y, 0.0f, 0.0f,
-				 a.x, a.y, 0.0f, 1.0f,
-			};
-			glMultMatrixf(matrix);
+		cVect d = b - a;
+		cVect r = d * ( seg->CP_PRIVATE(r) / cpvlength( tocpv( d ) ) );
 
-			if(!seg->shape.sensor){
-				glColor_for_shape((cpShape *)seg, space->Space());
-				glDrawArrays(GL_TRIANGLE_FAN, 0, pillVAR_count);
-			}
+		const GLfloat matrix[] = {
+			 r.x, r.y, 0.0f, 0.0f,
+			-r.y, r.x, 0.0f, 0.0f,
+			 d.x, d.y, 0.0f, 0.0f,
+			 a.x, a.y, 0.0f, 1.0f,
+		};
+		glMultMatrixf(matrix);
 
-			glColor3f(LINE_COLOR);
-			glDrawArrays(GL_LINE_LOOP, 0, pillVAR_count);
-		} glPopMatrix();
+		if( !seg->CP_PRIVATE(shape).sensor ){
+			eeColorA C = ColorForShape( mShape, space->Space() );
+
+			glColor3ub( C.R(), C.B(), C.B() );
+
+			glDrawArrays(GL_TRIANGLE_FAN, 0, pillVAR_count);
+		}
+
+		glColor3f( 0.4f, 0.4f, 0.4f );
+		glDrawArrays( GL_LINE_LOOP, 0, pillVAR_count );
+
+		glPopMatrix();
+
+		glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+		glEnableClientState( GL_COLOR_ARRAY );
+		glEnable( GL_TEXTURE_2D );
 	} else {
-		glColor3f(LINE_COLOR);
-		glBegin(GL_LINES); {
-			glVertex2f(a.x, a.y);
-			glVertex2f(b.x, b.y);
-		} glEnd();
-	}*/
+		cPrimitives p;
+		p.DrawLine( eeVector2f( a.x, a.y ), eeVector2f( b.x, b.y ) );
+	}
 }
 
 }}

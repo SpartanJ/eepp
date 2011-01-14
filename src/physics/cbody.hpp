@@ -7,6 +7,12 @@ namespace EE { namespace Physics {
 
 class cBody {
 	public:
+		static cBody * New( cpFloat m, cpFloat i );
+
+		static cBody * New( cpBody * body );
+
+		static cBody * New();
+
 		cBody( cpBody * body );
 
 		cBody( cpFloat m, cpFloat i );
@@ -37,17 +43,17 @@ class cBody {
 
 		void Moment( const cpFloat& i );
 
-		cpVect Pos() const;
+		cVect Pos() const;
 
-		void Pos( const cpVect& pos );
+		void Pos( const cVect& pos );
 
-		cpVect Vel() const;
+		cVect Vel() const;
 
-		void Vel( const cpVect& vel );
+		void Vel( const cVect& vel );
 
-		cpVect Force() const;
+		cVect Force() const;
 
-		void Force( const cpVect& force );
+		void Force( const cVect& force );
 
 		cpFloat Angle() const;
 
@@ -61,7 +67,7 @@ class cBody {
 
 		void AngVel( const cpFloat& angVel );
 
-		cpVect Rot() const;
+		cVect Rot() const;
 
 		cpFloat VelLimit() const;
 
@@ -71,21 +77,21 @@ class cBody {
 
 		void AngVelLimit( const cpFloat& speed );
 
-		void Slew( cpVect pos, cpFloat dt );
+		void Slew( cVect pos, cpFloat dt );
 
-		void UpdateVelocity( cpVect gravity, cpFloat damping, cpFloat dt );
+		void UpdateVelocity( cVect gravity, cpFloat damping, cpFloat dt );
 
 		void UpdatePosition( cpFloat dt );
 
-		cpVect Local2World( const cpVect v );
+		cVect Local2World( const cVect v );
 
-		cpVect World2Local( const cpVect v );
+		cVect World2Local( const cVect v );
 
-		void ApplyImpulse( const cpVect j, const cpVect r );
+		void ApplyImpulse( const cVect j, const cVect r );
 
 		void ResetForces();
 
-		void ApplyForce( const cpVect f, const cpVect r );
+		void ApplyForce( const cVect f, const cVect r );
 
 		cpFloat KineticEnergy();
 	protected:

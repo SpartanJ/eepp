@@ -2,25 +2,25 @@
 
 namespace EE { namespace Physics {
 
-cPinJoint::cPinJoint( cBody * a, cBody * b, cpVect anchr1, cpVect anchr2 ) {
-	mConstraint = cpPinJointNew( a->Body(), b->Body(), anchr1, anchr2 );
+cPinJoint::cPinJoint( cBody * a, cBody * b, cVect anchr1, cVect anchr2 ) {
+	mConstraint = cpPinJointNew( a->Body(), b->Body(), tocpv( anchr1 ), tocpv( anchr2 ) );
 	SetData();
 }
 
-cpVect cPinJoint::Anchr1() {
-	return cpPinJointGetAnchr1( mConstraint );
+cVect cPinJoint::Anchr1() {
+	return tovect( cpPinJointGetAnchr1( mConstraint ) );
 }
 
-void cPinJoint::Anchr1( const cpVect& anchr1 ) {
-	cpPinJointSetAnchr1( mConstraint, anchr1 );
+void cPinJoint::Anchr1( const cVect& anchr1 ) {
+	cpPinJointSetAnchr1( mConstraint, tocpv( anchr1 ) );
 }
 
-cpVect cPinJoint::Anchr2() {
-	return cpPinJointGetAnchr2( mConstraint );
+cVect cPinJoint::Anchr2() {
+	return tovect( cpPinJointGetAnchr2( mConstraint ) );
 }
 
-void cPinJoint::Anchr2( const cpVect& anchr2 ) {
-	cpPinJointSetAnchr2( mConstraint, anchr2 );
+void cPinJoint::Anchr2( const cVect& anchr2 ) {
+	cpPinJointSetAnchr2( mConstraint, tocpv( anchr2 ) );
 }
 
 cpFloat cPinJoint::Dist() {
@@ -32,23 +32,27 @@ void cPinJoint::Dist( const cpFloat& dist ) {
 }
 
 void cPinJoint::Draw() {
-	cpPinJoint *joint = (cpPinJoint *)mConstraint;
-	cpBody * body_a = mConstraint->a;
-	cpBody * body_b = mConstraint->b;
+	cpPinJoint *joint	= (cpPinJoint *)mConstraint;
+	cpBody * body_a		= mConstraint->a;
+	cpBody * body_b		= mConstraint->b;
+	cVect a				= tovect( cpvadd( body_a->p, cpvrotate( joint->anchr1, body_a->rot ) ) );
+	cVect b				= tovect( cpvadd( body_b->p, cpvrotate(joint->anchr2, body_b->rot ) ) );
+	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
 
-	cpVect a = cpvadd(body_a->p, cpvrotate(joint->anchr1, body_a->rot));
-	cpVect b = cpvadd(body_b->p, cpvrotate(joint->anchr2, body_b->rot));
+	cpFloat ps = BR->GetPointSize();
+	BR->SetPointSize( 5.0f );
+	BR->PointsBegin();
+	BR->PointSetColor( eeColorA( 128, 255, 128, 255 ) );
+	BR->BatchPoint( a.x, a.y );
+	BR->BatchPoint( b.x, b.y );
+	BR->Draw();
 
-	glPointSize(5.0f);
-	glBegin(GL_POINTS); {
-		glVertex2f(a.x, a.y);
-		glVertex2f(b.x, b.y);
-	} glEnd();
+	BR->LinesBegin();
+	BR->LinesSetColor( eeColorA( 128, 255, 128, 255 ) );
+	BR->BatchLine( a.x, a.y, b.x, b.y );
+	BR->Draw();
 
-	glBegin(GL_LINES); {
-		glVertex2f(a.x, a.y);
-		glVertex2f(b.x, b.y);
-	} glEnd();
+	BR->SetPointSize( ps );
 }
 
 }}

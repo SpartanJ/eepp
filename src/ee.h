@@ -192,5 +192,7 @@
 	#include "physics/constraints/crotarylimitjoint.hpp"
 	#include "physics/constraints/csimplemotor.hpp"
 	#include "physics/constraints/cslidejoint.hpp"
+	#include "physics/moment.hpp"
+	#include "physics/area.hpp"
 	using namespace EE::Physics;
 #endif

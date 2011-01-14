@@ -7,11 +7,13 @@ namespace EE { namespace Physics {
 
 class cShapeCircle : public cShape {
 	public:
-		cShapeCircle( cBody * body, cpFloat radius, cpVect offset );
+		static cShapeCircle * New( cBody * body, cpFloat radius, cVect offset );
 
-		cpVect Offset();
+		cShapeCircle( cBody * body, cpFloat radius, cVect offset );
 
-		void Offset( const cpVect& offset );
+		cVect Offset();
+
+		void Offset( const cVect& offset );
 
 		cpFloat Radius();
 

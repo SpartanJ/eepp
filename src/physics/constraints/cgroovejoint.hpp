@@ -7,19 +7,19 @@ namespace EE { namespace Physics {
 
 class cGrooveJoint : public cConstraint {
 	public:
-		cGrooveJoint( cBody * a, cBody * b, cpVect groove_a, cpVect groove_b, cpVect anchr2 );
+		cGrooveJoint( cBody * a, cBody * b, cVect groove_a, cVect groove_b, cVect anchr2 );
 
-		cpVect Anchr2();
+		cVect Anchr2();
 
-		void Anchr2( const cpVect& anchr2 );
+		void Anchr2( const cVect& anchr2 );
 
-		cpVect GrooveA();
+		cVect GrooveA();
 
-		void GrooveA( const cpVect& groove_a );
+		void GrooveA( const cVect& groove_a );
 
-		cpVect GrooveB();
+		cVect GrooveB();
 
-		void GrooveB( const cpVect& groove_b );
+		void GrooveB( const cVect& groove_b );
 
 		virtual void Draw();
 };

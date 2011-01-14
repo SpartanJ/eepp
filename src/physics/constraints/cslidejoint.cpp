@@ -2,25 +2,25 @@
 
 namespace EE { namespace Physics {
 
-cSlideJoint::cSlideJoint( cBody * a, cBody *b, cpVect anchr1, cpVect anchr2, cpFloat min, cpFloat max ) {
-	mConstraint = cpSlideJointNew( a->Body(), b->Body(), anchr1, anchr2, min, max );
+cSlideJoint::cSlideJoint( cBody * a, cBody *b, cVect anchr1, cVect anchr2, cpFloat min, cpFloat max ) {
+	mConstraint = cpSlideJointNew( a->Body(), b->Body(), tocpv( anchr1 ), tocpv( anchr2 ), min, max );
 	SetData();
 }
 
-cpVect cSlideJoint::Anchr1() {
-	return cpSlideJointGetAnchr1( mConstraint );
+cVect cSlideJoint::Anchr1() {
+	return tovect( cpSlideJointGetAnchr1( mConstraint ) );
 }
 
-void cSlideJoint::Anchr1( const cpVect& anchr1 ) {
-	cpSlideJointSetAnchr1( mConstraint, anchr1 );
+void cSlideJoint::Anchr1( const cVect& anchr1 ) {
+	cpSlideJointSetAnchr1( mConstraint, tocpv( anchr1 ) );
 }
 
-cpVect cSlideJoint::Anchr2() {
-	return cpSlideJointGetAnchr2( mConstraint );
+cVect cSlideJoint::Anchr2() {
+	return tovect( cpSlideJointGetAnchr2( mConstraint ) );
 }
 
-void cSlideJoint::Anchr2( const cpVect& anchr2 ) {
-	cpSlideJointSetAnchr2( mConstraint, anchr2 );
+void cSlideJoint::Anchr2( const cVect& anchr2 ) {
+	cpSlideJointSetAnchr2( mConstraint, tocpv( anchr2 ) );
 }
 
 cpFloat cSlideJoint::Min() {
@@ -40,23 +40,25 @@ void cSlideJoint::Max( const cpFloat& max ) {
 }
 
 void cSlideJoint::Draw() {
-	cpBody * body_a = mConstraint->a;
-	cpBody * body_b = mConstraint->b;
+	cpBody * body_a		= mConstraint->a;
+	cpBody * body_b		= mConstraint->b;
 	cpSlideJoint *joint = (cpSlideJoint *)mConstraint;
+	cVect a				= tovect( cpvadd( body_a->p, cpvrotate( joint->anchr1, body_a->rot ) ) );
+	cVect b				= tovect( cpvadd( body_b->p, cpvrotate( joint->anchr2, body_b->rot ) ) );
 
-	cpVect a = cpvadd(body_a->p, cpvrotate(joint->anchr1, body_a->rot));
-	cpVect b = cpvadd(body_b->p, cpvrotate(joint->anchr2, body_b->rot));
+	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
+	cpFloat ps			= BR->GetPointSize();
 
-	glPointSize(5.0f);
-	glBegin(GL_POINTS); {
-		glVertex2f(a.x, a.y);
-		glVertex2f(b.x, b.y);
-	} glEnd();
-
-	glBegin(GL_LINES); {
-		glVertex2f(a.x, a.y);
-		glVertex2f(b.x, b.y);
-	} glEnd();
+	BR->SetPointSize( 5.0f );
+	BR->PointsBegin();
+	BR->PointSetColor( eeColorA( 128, 255, 128, 255 ) );
+	BR->BatchPoint( a.x, a.y );
+	BR->BatchPoint( b.x, b.y );
+	BR->DrawOpt();
+	BR->LinesBegin();
+	BR->BatchLine( a.x, a.y, b.x, b.y );
+	BR->Draw();
+	BR->SetPointSize( ps );
 }
 
 }}

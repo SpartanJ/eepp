@@ -2,6 +2,18 @@
 
 namespace EE { namespace Physics {
 
+cBody * cBody::New( cpFloat m, cpFloat i ) {
+	return eeNew( cBody, ( m, i ) );
+}
+
+cBody * cBody::New( cpBody * body ) {
+	return eeNew( cBody, ( body ) );
+}
+
+cBody * cBody::New() {
+	return eeNew( cBody, () );
+}
+
 cBody::cBody( cpBody * body ) {
 	mBody = body;
 	mBody->data = (void*)this;
@@ -63,28 +75,28 @@ void cBody::Moment( const cpFloat& i ) {
 	cpBodySetMoment( mBody, i );
 }
 
-cpVect cBody::Pos() const {
-	return cpBodyGetPos( mBody );
+cVect cBody::Pos() const {
+	return tovect( cpBodyGetPos( mBody ) );
 }
 
-void cBody::Pos( const cpVect& pos ) {
-	cpBodySetPos( mBody, pos );
+void cBody::Pos( const cVect& pos ) {
+	cpBodySetPos( mBody, tocpv( pos ) );
 }
 
-cpVect cBody::Vel() const {
-	return cpBodyGetVel( mBody );
+cVect cBody::Vel() const {
+	return tovect( cpBodyGetVel( mBody ) );
 }
 
-void cBody::Vel( const cpVect& vel ) {
-	cpBodySetVel( mBody, vel );
+void cBody::Vel( const cVect& vel ) {
+	cpBodySetVel( mBody, tocpv( vel ) );
 }
 
-cpVect cBody::Force() const {
-	return cpBodyGetForce( mBody );
+cVect cBody::Force() const {
+	return tovect( cpBodyGetForce( mBody ) );
 }
 
-void cBody::Force( const cpVect& force ) {
-	cpBodySetForce( mBody, force );
+void cBody::Force( const cVect& force ) {
+	cpBodySetForce( mBody, tocpv( force ) );
 }
 
 cpFloat cBody::Angle() const {
@@ -111,8 +123,8 @@ void cBody::AngVel( const cpFloat& rotVel ) {
 	cpBodySetAngVel( mBody, rotVel );
 }
 
-cpVect cBody::Rot() const {
-	return cpBodyGetRot( mBody );
+cVect cBody::Rot() const {
+	return tovect( cpBodyGetRot( mBody ) );
 }
 
 cpFloat cBody::VelLimit() const {
@@ -131,36 +143,36 @@ void cBody::AngVelLimit( const cpFloat& speed ) {
 	cpBodySetAngVelLimit( mBody, speed );
 }
 
-void cBody::Slew( cpVect pos, cpFloat dt ) {
-	cpBodySlew( mBody, pos, dt );
+void cBody::Slew( cVect pos, cpFloat dt ) {
+	cpBodySlew( mBody, tocpv( pos ), dt );
 }
 
-void cBody::UpdateVelocity( cpVect gravity, cpFloat damping, cpFloat dt ) {
-	cpBodyUpdateVelocity( mBody, gravity, damping, dt );
+void cBody::UpdateVelocity( cVect gravity, cpFloat damping, cpFloat dt ) {
+	cpBodyUpdateVelocity( mBody, tocpv( gravity ), damping, dt );
 }
 
 void cBody::UpdatePosition( cpFloat dt ) {
 	cpBodyUpdatePosition( mBody, dt );
 }
 
-cpVect cBody::Local2World( const cpVect v ) {
-	return cpBodyLocal2World( mBody, v );
+cVect cBody::Local2World( const cVect v ) {
+	return tovect( cpBodyLocal2World( mBody, tocpv( v ) ) );
 }
 
-cpVect cBody::World2Local( const cpVect v ) {
-	return cpBodyWorld2Local( mBody, v );
+cVect cBody::World2Local( const cVect v ) {
+	return tovect( cpBodyWorld2Local( mBody, tocpv( v ) ) );
 }
 
-void cBody::ApplyImpulse( const cpVect j, const cpVect r ) {
-	cpBodyApplyImpulse( mBody, j, r );
+void cBody::ApplyImpulse( const cVect j, const cVect r ) {
+	cpBodyApplyImpulse( mBody, tocpv( j ), tocpv( r ) );
 }
 
 void cBody::ResetForces() {
 	cpBodyResetForces( mBody );
 }
 
-void cBody::ApplyForce( const cpVect f, const cpVect r ) {
-	cpBodyApplyForce( mBody, f, r );
+void cBody::ApplyForce( const cVect f, const cVect r ) {
+	cpBodyApplyForce( mBody, tocpv( f ), tocpv( r ) );
 }
 
 cpFloat cBody::KineticEnergy() {

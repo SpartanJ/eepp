@@ -151,8 +151,39 @@
 #define eeSAFE_FREE(p)			{ if(p) { eeFree ( (void*)p );	(p)=NULL; } }
 #define eeSAFE_DELETE_ARRAY(p)  { if(p) { eeDeleteArray(p);		(p)=NULL; } }
 
+#ifdef EE_64BIT
+#define EE_USE_DOUBLES 1
+#else
+#define EE_USE_DOUBLE 0
+#endif
+
 namespace EE {
-	typedef float			eeFloat; 	//! The internal floating point used on EE++. \n This can help to improve compatibility with some platforms. \n And helps for an easy change from single precision to double precision.
+#if EE_USE_DOUBLES
+	typedef double eeFloat;
+	#define eesqrt sqrt
+	#define eesin sin
+	#define eecos cos
+	#define eeacos acos
+	#define eeatan2 atan2
+	#define eemod fmod
+	#define eeexp exp
+	#define efow pow
+	#define eefloor floor
+	#define eeceil ceil
+#else
+	typedef float eeFloat; //! The internal floating point used on EE++. \n This can help to improve compatibility with some platforms. \n And helps for an easy change from single precision to double precision.
+	#define eesqrt sqrtf
+	#define eesin sinf
+	#define eecos cosf
+	#define eeacos acosf
+	#define eeatan2 atan2f
+	#define eemod fmodf
+	#define eeexp expf
+	#define eepow powf
+	#define eefloor floorf
+	#define eeceil ceilf
+#endif
+
 	typedef double			eeDouble; 	//! The internal double floating point. It's only used when the engine needs some very high precision floating point ( for example the timer )
 	typedef unsigned int	eeUint;
 	typedef signed int		eeInt;

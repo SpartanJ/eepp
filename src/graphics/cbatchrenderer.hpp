@@ -176,8 +176,14 @@ class EE_API cBatchRenderer {
 		/** Set the line width */
 		void SetLineWidth( const eeFloat& lineWidth );
 
+		/** @return The current line width */
+		eeFloat GetLineWidth();
+
 		/** Set the point size */
 		void SetPointSize( const eeFloat& pointSize );
+
+		/** @return The current point size */
+		eeFloat GetPointSize();
 
 		/** Batch a poligon adding one by one vector */
 		void BatchPolygonByPoint( const eeFloat& x, const eeFloat& y );

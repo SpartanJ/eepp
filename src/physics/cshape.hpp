@@ -35,13 +35,21 @@ class cShape {
 
 		void e( const cpFloat& e );
 
+		cpFloat Elasticity() const;
+
+		void Elasticity( const cpFloat& e );
+
 		cpFloat u() const;
 
 		void u( const cpFloat& u );
 
-		cpVect SurfaceVel() const;
+		cpFloat Friction() const;
 
-		void SurfaceVel( const cpVect& vel );
+		void Friction( const cpFloat& u );
+
+		cVect SurfaceVel() const;
+
+		void SurfaceVel( const cVect& vel );
 
 		cpCollisionType CollisionType()	 const;
 
@@ -57,9 +65,9 @@ class cShape {
 
 		cpBB CacheBB();
 
-		cpBB Update( cpVect pos, cpVect rot );
+		cpBB Update( cVect pos, cVect rot );
 
-		bool PointQuery( cpVect p );
+		bool PointQuery( cVect p );
 
 		cpShapeType Type() const;
 

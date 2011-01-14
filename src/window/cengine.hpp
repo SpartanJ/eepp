@@ -30,6 +30,9 @@ class EE_API cEngine : public tSingleton<cEngine> {
 		/** Set the window background color */
 		void SetBackColor(const eeColor& Color);
 
+		/** @return The background clear color */
+		const eeColor& GetBackColor() const;
+
 		/** Set the window caption */
 		void SetWindowCaption(const std::string& Caption);
 

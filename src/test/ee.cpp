@@ -138,7 +138,7 @@ class cEETest : private cThread {
 		Int32 NH;
 
 		Uint8 Screen;
-		SceneCb Scenes[3];
+		SceneCb Scenes[4];
 		void Screen1();
 		void Screen2();
 		void Screen3();
@@ -221,12 +221,14 @@ class cEETest : private cThread {
 
 		cSpace * mSpace;
 		cBody * mMouseBody;
-		cpVect mMousePoint;
-		cpVect mMousePoint_last;
+		cVect mMousePoint;
+		cVect mMousePoint_last;
 		cConstraint * mMouseJoint;
 		void PhysicsCreate();
 		void PhysicsUpdate();
 		void PhysicsDestroy();
+
+		void SetScreen( Uint32 num );
 };
 
 void cEETest::CreateAquaTextureAtlas() {
@@ -247,7 +249,7 @@ void cEETest::CreateAquaTextureAtlas() {
 void cEETest::Init() {
 	EE = cEngine::instance();
 
-	Screen 				= 0;
+	SetScreen( 0 );
 	run 				= false;
 	DrawBack 			= false;
 	MultiViewportMode 	= false;
@@ -299,9 +301,10 @@ void cEETest::Init() {
 
 		PS.resize(5);
 
-		Scenes[0] = cb::Make0( this, &cEETest::Screen1 );
-		Scenes[1] = cb::Make0( this, &cEETest::Screen2 );
-		Scenes[2] = cb::Make0( this, &cEETest::Screen3 );
+		Scenes[0] = cb::Make0( this, &cEETest::PhysicsUpdate );
+		Scenes[1] = cb::Make0( this, &cEETest::Screen1 );
+		Scenes[2] = cb::Make0( this, &cEETest::Screen2 );
+		Scenes[3] = cb::Make0( this, &cEETest::Screen3 );
 
 		InBuf.Start();
 		InBuf.SupportNewLine( true );
@@ -396,7 +399,7 @@ void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
 
 	TTFB->ShrinkText( mBuda, 400 );
 	mBudaTC.Create( TTFB, mBuda, eeColorA(255,255,255,255) );
-	mEEText.Create( TTFB, L"Entropia Engine++\nCTRL + 1 = Screen 1 - CTRL + 2 = Screen 2\nCTRL + 3 = Screen 3" );
+	mEEText.Create( TTFB, L"Entropia Engine++\nCTRL + 1 = Physics\nCTRL + 2 = Screen 2 - CTRL + 3 = Screen 3\nCTRL + 4 = Screen 4" );
 	mFBOText.Create( TTFB, L"This is a VBO\nInside of a FBO" );
 	mInfoText.Create( FF, L"", eeColorA(255,255,255,150) );
 
@@ -648,6 +651,7 @@ void cEETest::CreateUI() {
 	Menu->Add( L"Show Screen 1" );
 	Menu->Add( L"Show Screen 2" );
 	Menu->Add( L"Show Screen 3" );
+	Menu->Add( L"Show Screen 4" );
 	Menu->AddSeparator();
 	Menu->AddCheckBox( L"Show Window" );
 	Menu->AddCheckBox( L"Multi Viewport" );
@@ -754,11 +758,13 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 	const std::wstring& txt = reinterpret_cast<cUIMenuItem*> ( Event->Ctrl() )->Text();
 
 	if ( L"Show Screen 1" == txt ) {
-		Screen = 0;
+		SetScreen( 0 );
 	} else if ( L"Show Screen 2" == txt ) {
-		Screen = 1;
+		SetScreen( 1 );
 	} else if ( L"Show Screen 3" == txt ) {
-		Screen = 2;
+		SetScreen( 2 );
+	} else if ( L"Show Screen 4" == txt ) {
+		SetScreen( 3 );
 	} else if ( L"Show Window" == txt ) {
 		cUIMenuCheckBox * Chk = reinterpret_cast<cUIMenuCheckBox*> ( Event->Ctrl() );
 
@@ -819,6 +825,16 @@ void cEETest::ButtonClick( const cUIEvent * Event ) {
 
 		mListBox->AddListBoxItem( L"Test ListBox " + toWStr( mListBox->Count() + 1 ) + L" testing it right now!" );
 	}
+}
+
+void cEETest::SetScreen( Uint32 num ) {
+	if ( 0 == num )
+		EE->SetBackColor( eeColor( 240, 240, 240 ) );
+	else
+		EE->SetBackColor( eeColor( 0, 0, 0 ) );
+
+	if ( num < 4 )
+		Screen = num;
 }
 
 void cEETest::CmdSetPartsNum ( const std::vector < std::wstring >& params ) {
@@ -1001,7 +1017,7 @@ void cEETest::Run() {
 
 void cEETest::ParticlesThread() {
 	while ( cEngine::instance()->Running() ) {
-		if ( MultiViewportMode || Screen == 1 ) {
+		if ( MultiViewportMode || Screen == 2 ) {
 			PSElapsed = (eeFloat)cElapsed.Elapsed();
 
 			for ( Uint8 i = 0; i < PS.size(); i++ )
@@ -1299,8 +1315,6 @@ void cEETest::Render() {
 		}
 	}
 
-	PhysicsUpdate();
-
 	cUIManager::instance()->Update();
 	cUIManager::instance()->Draw();
 
@@ -1387,13 +1401,16 @@ void cEETest::Input() {
 	}
 
 	if ( KM->IsKeyUp(KEY_1) && KM->ControlPressed() )
-		Screen = 0;
+		SetScreen( 0 );
 
 	if ( KM->IsKeyUp(KEY_2) && KM->ControlPressed() )
-		Screen = 1;
+		SetScreen( 1 );
 
 	if ( KM->IsKeyUp(KEY_3) && KM->ControlPressed() )
-		Screen = 2;
+		SetScreen( 2 );
+
+	if ( KM->IsKeyUp(KEY_4) && KM->ControlPressed() )
+		SetScreen( 3 );
 
 	cJoystick * Joy = JM->GetJoystick(0);
 
@@ -1405,9 +1422,9 @@ void cEETest::Input() {
 		if ( Joy->IsButtonUp(1) )		KM->InjectButtonRelease(EE_BUTTON_RIGHT);
 		if ( Joy->IsButtonUp(2) )		KM->InjectButtonRelease(EE_BUTTON_WHEELUP);
 		if ( Joy->IsButtonUp(3) )		KM->InjectButtonRelease(EE_BUTTON_WHEELDOWN);
-		if ( Joy->IsButtonUp(4) )		Screen = 0;
-		if ( Joy->IsButtonUp(5) )		Screen = 1;
-		if ( Joy->IsButtonUp(6) )		Screen = 2;
+		if ( Joy->IsButtonUp(4) )		SetScreen( 0 );
+		if ( Joy->IsButtonUp(5) )		SetScreen( 1 );
+		if ( Joy->IsButtonUp(6) )		SetScreen( 2 );
 		if ( Joy->IsButtonUp(7) )		KM->InjectButtonRelease(EE_BUTTON_MIDDLE);
 
 		Int16 aX = Joy->GetAxis( AXIS_X );
@@ -1436,6 +1453,11 @@ void cEETest::Input() {
 
 	switch (Screen) {
 		case 0:
+			if ( KM->IsKeyUp( KEY_R ) ) {
+				PhysicsDestroy();
+				PhysicsCreate();
+			}
+		case 1:
 			if ( NULL != Joy ) {
 				Uint8 hat = Joy->GetHat();
 
@@ -1495,7 +1517,7 @@ void cEETest::Input() {
 				Map.SetTileHeight( P.x, P.y, 1, false );
 			}
 			break;
-		case 1:
+		case 2:
 			if ( KM->IsKeyUp(KEY_S) )
 				SP.SetRepeations(1);
 
@@ -1590,105 +1612,75 @@ void cEETest::PhysicsCreate() {
 	cPhysicsManager::CreateSingleton();
 	cPhysicsManager::instance()->CollisionSlop( 0.2 );
 
-	mMouseJoint = NULL;
+	mMouseJoint	= NULL;
+	mMouseBody	= eeNew( cBody, ( INFINITY, INFINITY ) );
 
-	mMouseBody = eeNew( cBody, ( INFINITY, INFINITY ) );
+	Physics::cShape::ResetShapeIdCounter();
 
-	// Create a space, a space is a simulation world. It simulates the motions of rigid bodies,
-	// handles collisions between them, and simulates the joints between them.
-	mSpace = eeNew( cSpace, () );
-
-	// Lets set some parameters of the space:
-	// More iterations make the simulation more accurate but slower
-	mSpace->Iterations( 10 );
-
-	// These parameters tune the efficiency of the collision detection.
-	// For more info: http://code.google.com/p/chipmunk-physics/wiki/cpSpace
-	mSpace->ResizeStaticHash( 30.0f, 1000 );
-	mSpace->ResizeActiveHash( 30.0f, 1000 );
-
-	// Give it some gravity
-	mSpace->Gravity( cpv(0, 1000) );
+	mSpace = Physics::cSpace::New();
+	mSpace->Iterations( 30 );
+	mSpace->ResizeStaticHash( 40.f, 1000 );
+	mSpace->ResizeActiveHash( 40.f, 1000 );
+	mSpace->Gravity( cVectNew( 0, 200 ) );
 	mSpace->SleepTimeThreshold( 0.5f );
 
-	// Create A ground segment along the bottom of the screen
-	// By attaching it to &space->staticBody instead of a body, we make it a static shape.
-	Physics::cShapeSegment * ground = eeNew( cShapeSegment, ( mSpace->StaticBody(), cpv(0,640), cpv(640, 640), 0.0f ) );
+	cBody *body, *staticBody = mSpace->StaticBody();
+	Physics::cShape * shape;
 
-	// Set some parameters of the shape.
-	// For more info: http://code.google.com/p/chipmunk-physics/wiki/cpShape
-	ground->e( 1.0f );
-	ground->u( 1.0f );
-	ground->Layers( NOT_GRABABLE_MASK ); // Used by the Demo mouse grabbing code
+	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( 0, EE->GetHeight() ), cVectNew( EE->GetWidth(), EE->GetHeight() ), 0.0f ) );
+	shape->e( 1.0f );
+	shape->u( 1.0f );
+	shape->Layers( NOT_GRABABLE_MASK );
 
-	// Add the shape to the space as a static shape
-	// If a shape never changes position, add it as static so Chipmunk knows it only needs to
-	// calculate collision information for it once when it is added.
-	// Do not change the postion of a static shape after adding it.
-	mSpace->AddShape( ground );
+	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( EE->GetWidth(), 100 ), cVectNew( EE->GetWidth(), EE->GetHeight() ), 0.0f ) );
+	shape->e( 1.0f );
+	shape->u( 1.0f );
+	shape->Layers( NOT_GRABABLE_MASK );
 
-	// Add a moving circle object.
+	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( 0, 100 ), cVectNew( 0, EE->GetHeight() ), 0.0f ) );
+	shape->e( 1.0f );
+	shape->u( 1.0f );
+	shape->Layers( NOT_GRABABLE_MASK );
+
+	eeFloat hw = EE->GetWidth() / 2;
+
+	for(int i=0; i<14; i++){
+		for(int j=0; j<=i; j++){
+			body = mSpace->AddBody( cBody::New( 1.0f, Moment::ForBox( 1.0f, 30.0f, 30.0f ) ) );
+			body->Pos( cVectNew( hw + j * 32 - i * 16, 100 + i * 32 ) );
+
+			shape = mSpace->AddShape( cShapePoly::New( body, 30.f, 30.f ) );
+			shape->e( 0.0f );
+			shape->u( 0.8f );
+		}
+	}
+
 	cpFloat radius = 15.0f;
-	cpFloat mass = 10.0f;
 
-	// This time we need to give a mass and moment of inertia when creating the circle.
-	cBody * ballBody = eeNew( cBody, ( mass, cpMomentForCircle(mass, 0.0f, radius, cpvzero) ) );
+	body = mSpace->AddBody( cBody::New( 10.0f, Moment::ForCircle( 10.0f, 0.0f, radius, cVectZero ) ) );
+	body->Pos( cVectNew( hw, EE->GetHeight() - radius - 5 ) );
 
-	// Set some parameters of the body:
-	// For more info: http://code.google.com/p/chipmunk-physics/wiki/cpBody
-	ballBody->Pos( cpv(320, 240 + radius+50) );
-	ballBody->Vel( cpv(0, 20) );
-
-	// Add the body to the space so it will be simulated and move around.
-	mSpace->AddBody( ballBody );
-
-	// Add a circle shape for the ball.
-	// Shapes are always defined relative to the center of gravity of the body they are attached to.
-	// When the body moves or rotates, the shape will move with it.
-	// Additionally, all of the cpSpaceAdd*() functions return the thing they added so you can create and add in one go.
-	Physics::cShapeCircle * ballShape = eeNew( Physics::cShapeCircle, ( ballBody, radius, cpvzero ) );
-	mSpace->AddShape( ballShape );
-	ballShape->e( 0.0f );
-	ballShape->u( 0.9f );
-
-	ballBody = eeNew( cBody, ( mass, cpMomentForCircle( mass, 0.0f, radius, cpvzero ) ) );
-
-	// Set some parameters of the body:
-	// For more info: http://code.google.com/p/chipmunk-physics/wiki/cpBody
-	ballBody->Pos( cpv(320, 240 + radius + 50 + 200) );
-	ballBody->Vel( cpv(0, 20) );
-
-	// Add the body to the space so it will be simulated and move around.
-	mSpace->AddBody( ballBody );
-
-	// Add a circle shape for the ball.
-	// Shapes are always defined relative to the center of gravity of the body they are attached to.
-	// When the body moves or rotates, the shape will move with it.
-	// Additionally, all of the cpSpaceAdd*() functions return the thing they added so you can create and add in one go.
-	ballShape = eeNew( Physics::cShapeCircle, ( ballBody, radius, cpvzero ) );
-	ballShape->e( 0.0f );
-	ballShape->u( 0.9f );
-	mSpace->AddShape( ballShape );
+	shape = mSpace->AddShape( cShapeCircle::New( body, radius, cVectZero ) );
+	shape->e( 0.0f );
+	shape->u( 0.9f );
 }
 
 void cEETest::PhysicsUpdate() {
-	cGlobalBatchRenderer::instance()->Draw();
-
-	mMousePoint = cpv( KM->GetMousePosf().x, KM->GetMousePosf().y );
-	cpVect newPoint = cpvlerp(mMousePoint_last, mMousePoint, 0.25f);
+	mMousePoint = cVectNew( KM->GetMousePosf().x, KM->GetMousePosf().y );
+	cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last ), tocpv( mMousePoint ), 0.25 ) );
 	mMouseBody->Pos( newPoint );
-	mMouseBody->Vel( cpvmult( cpvsub( newPoint, mMousePoint_last ), 60.0f ) );
+	mMouseBody->Vel( ( newPoint - mMousePoint_last ) * (cpFloat)EE->FPS() );
 	mMousePoint_last = newPoint;
 
 	if ( KM->MouseLeftPressed() ) {
 		if ( NULL == mMouseJoint ) {
-			cpVect point = cpv( KM->GetMousePosf().x, KM->GetMousePosf().y );
+			cVect point = cVectNew( KM->GetMousePosf().x, KM->GetMousePosf().y );
 
-			cpShape * shape = cpSpacePointQueryFirst( mSpace->Space(), point, GRABABLE_MASK_BIT, CP_NO_GROUP );
+			Physics::cShape * shape = mSpace->PointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
 
-			if( shape ){
-				cpBody * body = shape->body;
-				mMouseJoint = eeNew( cConstraint, ( cpPivotJointNew2( mMouseBody->Body(), body, cpvzero, cpBodyWorld2Local( body, point ) ) ) );
+			if( NULL != shape ){
+				mMouseJoint = eeNew( cPivotJoint, ( mMouseBody, shape->Body(), cVectZero, shape->Body()->World2Local( point ) ) );
+
 				mMouseJoint->MaxForce( 50000.0f );
 				mMouseJoint->BiasCoef( 0.15f );
 				mSpace->AddConstraint( mMouseJoint );
@@ -1696,7 +1688,6 @@ void cEETest::PhysicsUpdate() {
 		}
 	} else if ( NULL != mMouseJoint ) {
 		mSpace->RemoveConstraint( mMouseJoint );
-		cpConstraintFree( mMouseJoint->Constraint() );
 		eeSAFE_DELETE( mMouseJoint );
 	}
 

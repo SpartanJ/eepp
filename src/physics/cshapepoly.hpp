@@ -7,19 +7,27 @@ namespace EE { namespace Physics {
 
 class cShapePoly : public cShape {
 	public:
-		cShapePoly( cBody * body, int numVerts, cpVect *verts, cpVect offset );
+		static cShapePoly * New( cBody * body, int numVerts, cVect *verts, cVect offset );
+
+		static cShapePoly * New( cBody * body, cpFloat width, cpFloat height );
+
+		cShapePoly( cBody * body, int numVerts, cVect *verts, cVect offset );
 
 		cShapePoly( cBody * body, cpFloat width, cpFloat height );
 
-		static bool Validate( const cpVect * verts, const int numVerts );
+		static bool Validate( const cVect * verts, const int numVerts );
 
 		int GetNumVerts();
 
-		cpVect GetVert( int idx );
+		cVect GetVert( int idx );
 
-		void SetVerts( int numVerts, cpVect *verts, cpVect offset );
+		void SetVerts( int numVerts, cVect *verts, cVect offset );
 
 		virtual void Draw( cSpace * space );
+
+		static void Recenter( int numVerts, cVect * verts );
+
+		static cVect Centroid( int numVerts, const cVect * verts );
 };
 
 }}

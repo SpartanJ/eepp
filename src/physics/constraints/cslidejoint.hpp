@@ -7,15 +7,15 @@ namespace EE { namespace Physics {
 
 class cSlideJoint : public cConstraint {
 	public:
-		cSlideJoint( cBody * a, cBody *b, cpVect anchr1, cpVect anchr2, cpFloat min, cpFloat max );
+		cSlideJoint( cBody * a, cBody *b, cVect anchr1, cVect anchr2, cpFloat min, cpFloat max );
 
-		cpVect Anchr1();
+		cVect Anchr1();
 
-		void Anchr1( const cpVect& anchr1 );
+		void Anchr1( const cVect& anchr1 );
 
-		cpVect Anchr2();
+		cVect Anchr2();
 
-		void Anchr2( const cpVect& anchr2 );
+		void Anchr2( const cVect& anchr2 );
 
 		cpFloat Min();
 

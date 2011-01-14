@@ -1,41 +1,6 @@
 #ifndef EE_PHYSICS_HELPER
 #define EE_PHYSICS_HELPER
 
-#define LINE_COLOR 1.0f, 1.0f, 1.0f
-#define COLLISION_COLOR 1.0f, 0.0f, 0.0f
-#define BODY_COLOR 0.0f, 0.0f, 1.0f
-
-static const GLfloat circleVAR[] = {
-	 0.0000f,  1.0000f,
-	 0.2588f,  0.9659f,
-	 0.5000f,  0.8660f,
-	 0.7071f,  0.7071f,
-	 0.8660f,  0.5000f,
-	 0.9659f,  0.2588f,
-	 1.0000f,  0.0000f,
-	 0.9659f, -0.2588f,
-	 0.8660f, -0.5000f,
-	 0.7071f, -0.7071f,
-	 0.5000f, -0.8660f,
-	 0.2588f, -0.9659f,
-	 0.0000f, -1.0000f,
-	-0.2588f, -0.9659f,
-	-0.5000f, -0.8660f,
-	-0.7071f, -0.7071f,
-	-0.8660f, -0.5000f,
-	-0.9659f, -0.2588f,
-	-1.0000f, -0.0000f,
-	-0.9659f,  0.2588f,
-	-0.8660f,  0.5000f,
-	-0.7071f,  0.7071f,
-	-0.5000f,  0.8660f,
-	-0.2588f,  0.9659f,
-	 0.0000f,  1.0000f,
-	 0.0f, 0.0f, // For an extra line to see the rotation.
-};
-
-static const int circleVAR_count = sizeof(circleVAR)/sizeof(GLfloat)/2;
-
 static const GLfloat pillVAR[] = {
 	 0.0000f,  1.0000f, 1.0f,
 	 0.2588f,  0.9659f, 1.0f,
@@ -67,7 +32,7 @@ static const GLfloat pillVAR[] = {
 };
 static const int pillVAR_count = sizeof(pillVAR)/sizeof(GLfloat)/3;
 
-inline void glColor_from_pointer(void *ptr) {
+inline eeColorA ColorFromPointer(void *ptr) {
 	unsigned long val = (long)ptr;
 
 	// hash the pointer up nicely
@@ -90,24 +55,26 @@ inline void glColor_from_pointer(void *ptr) {
 	g = (g*mult)/max + add;
 	b = (b*mult)/max + add;
 
-	glColor3ub(r, g, b);
+	return eeColorA(r, g, b, 255);
 }
 
-inline void glColor_for_shape( cpShape *shape, cpSpace *space ) {
+inline eeColorA ColorForShape( cpShape *shape, cpSpace *space ) {
 	cpBody *body = shape->body;
+	int nc;
+
 	if(body){
 		if(cpBodyIsSleeping(body)){
 			GLfloat v = 0.25f;
-			glColor3f(v,v,v);
-			return;
-		} else if(body->node.idleTime > space->sleepTimeThreshold) {
+			nc = (int)( v * 255 );
+			return eeColorA( nc, nc, nc, 255 );
+		} else if(body->CP_PRIVATE(node).idleTime > space->sleepTimeThreshold) {
 			GLfloat v = 0.9f;
-			glColor3f(v,v,v);
-			return;
+			nc = (int)( v * 255 );
+			return eeColorA( nc, nc, nc, 255 );
 		}
 	}
 
-	glColor_from_pointer(shape);
+	return ColorFromPointer( shape );
 }
 
 static const GLfloat springVAR[] = {

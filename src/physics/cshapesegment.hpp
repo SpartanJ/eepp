@@ -7,25 +7,27 @@ namespace EE { namespace Physics {
 
 class cShapeSegment : public cShape {
 	public:
-		cShapeSegment( cBody * body, cpVect a, cpVect b, cpFloat radius );
+		static cShapeSegment * New( cBody * body, cVect a, cVect b, cpFloat radius );
 
-		cpVect A();
+		cShapeSegment( cBody * body, cVect a, cVect b, cpFloat radius );
 
-		cpVect B();
+		cVect A();
 
-		cpVect Normal();
+		cVect B();
+
+		cVect Normal();
 
 		cpFloat Radius();
 
 		void Radius( const cpFloat& radius );
 
-		void Endpoints( const cpVect& a, const cpVect& b );
+		void Endpoints( const cVect& a, const cVect& b );
 
-		bool Query( cpVect a, cpVect b, cpSegmentQueryInfo * info );
+		bool Query( cVect a, cVect b, cpSegmentQueryInfo * info );
 
-		static cpVect HitPoint( const cpVect start, const cpVect end, const cpSegmentQueryInfo info );
+		static cVect QueryHitPoint( const cVect start, const cVect end, const cpSegmentQueryInfo info );
 
-		static cpFloat HitDist( const cpVect start, const cpVect end, const cpSegmentQueryInfo info );
+		static cpFloat QueryHitDist( const cVect start, const cVect end, const cpSegmentQueryInfo info );
 
 		virtual void Draw( cSpace * space );
 };

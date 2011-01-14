@@ -402,6 +402,10 @@ void cEngine::SetBackColor(const eeColor& Color) {
 	glClearColor( static_cast<eeFloat>( mBackColor.R() ) / 255.0f, static_cast<eeFloat>( mBackColor.G() ) / 255.0f, static_cast<eeFloat>( mBackColor.B() ) / 255.0f, 255.0f );
 }
 
+const eeColor& cEngine::GetBackColor() const {
+	return mBackColor;
+}
+
 void cEngine::SetWindowCaption(const std::string& Caption) {
 	SDL_WM_SetCaption( Caption.c_str(), NULL );
 }

@@ -829,8 +829,24 @@ void cBatchRenderer::SetLineWidth( const eeFloat& lineWidth ) {
 	glLineWidth( lineWidth );
 }
 
+eeFloat cBatchRenderer::GetLineWidth() {
+	float lw;
+
+	glGetFloatv( GL_LINE_WIDTH, &lw );
+
+	return lw;
+}
+
 void cBatchRenderer::SetPointSize( const eeFloat& pointSize ) {
 	glPointSize( pointSize );
+}
+
+eeFloat cBatchRenderer::GetPointSize() {
+	float ps;
+
+	glGetFloatv( GL_POINT_SIZE, &ps );
+
+	return ps;
 }
 
 void cBatchRenderer::ForceBlendModeChange( const bool& Force ) {

@@ -2,53 +2,56 @@
 
 namespace EE { namespace Physics {
 
-cGrooveJoint::cGrooveJoint( cBody * a, cBody * b, cpVect groove_a, cpVect groove_b, cpVect anchr2 ) {
-	mConstraint = cpGrooveJointNew( a->Body(), b->Body(), groove_a, groove_b, anchr2 );
+cGrooveJoint::cGrooveJoint( cBody * a, cBody * b, cVect groove_a, cVect groove_b, cVect anchr2 ) {
+	mConstraint = cpGrooveJointNew( a->Body(), b->Body(), tocpv( groove_a ), tocpv( groove_b ), tocpv( anchr2 ) );
 	SetData();
 }
 
-cpVect cGrooveJoint::Anchr2() {
-	return cpGrooveJointGetAnchr2( mConstraint );
+cVect cGrooveJoint::Anchr2() {
+	return tovect( cpGrooveJointGetAnchr2( mConstraint ) );
 }
 
-void cGrooveJoint::Anchr2( const cpVect& anchr2 ) {
-	cpGrooveJointSetAnchr2( mConstraint, anchr2 );
+void cGrooveJoint::Anchr2( const cVect& anchr2 ) {
+	cpGrooveJointSetAnchr2( mConstraint, tocpv( anchr2 ) );
 }
 
-cpVect cGrooveJoint::GrooveA() {
-	return cpGrooveJointGetGrooveA( mConstraint );
+cVect cGrooveJoint::GrooveA() {
+	return tovect( cpGrooveJointGetGrooveA( mConstraint ) );
 }
 
-void cGrooveJoint::GrooveA( const cpVect& groove_a ) {
-	cpGrooveJointSetGrooveA( mConstraint, groove_a );
+void cGrooveJoint::GrooveA( const cVect& groove_a ) {
+	cpGrooveJointSetGrooveA( mConstraint, tocpv( groove_a ) );
 }
 
-cpVect cGrooveJoint::GrooveB() {
-	return cpGrooveJointGetGrooveB( mConstraint );
+cVect cGrooveJoint::GrooveB() {
+	return tovect( cpGrooveJointGetGrooveB( mConstraint ) );
 }
 
-void cGrooveJoint::GrooveB( const cpVect& groove_b ) {
-	cpGrooveJointSetGrooveB( mConstraint, groove_b );
+void cGrooveJoint::GrooveB( const cVect& groove_b ) {
+	cpGrooveJointSetGrooveB( mConstraint, tocpv( groove_b ) );
 }
 
 void cGrooveJoint::Draw() {
-	cpGrooveJoint *joint = (cpGrooveJoint *)mConstraint;
-	cpBody * body_a = mConstraint->a;
-	cpBody * body_b = mConstraint->b;
+	cpGrooveJoint *joint= (cpGrooveJoint *)mConstraint;
+	cpBody * body_a		= mConstraint->a;
+	cpBody * body_b		= mConstraint->b;
+	cVect a				= tovect( cpvadd(body_a->p, cpvrotate(joint->grv_a, body_a->rot)) );
+	cVect b				= tovect( cpvadd(body_a->p, cpvrotate(joint->grv_b, body_a->rot)) );
+	cVect c				= tovect( cpvadd(body_b->p, cpvrotate(joint->anchr2, body_b->rot)) );
+	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
 
-	cpVect a = cpvadd(body_a->p, cpvrotate(joint->grv_a, body_a->rot));
-	cpVect b = cpvadd(body_a->p, cpvrotate(joint->grv_b, body_a->rot));
-	cpVect c = cpvadd(body_b->p, cpvrotate(joint->anchr2, body_b->rot));
+	cpFloat ps = BR->GetPointSize();
+	BR->SetPointSize( 5.0f );
+	BR->PointsBegin();
+	BR->PointSetColor( eeColorA( 128, 255, 128, 255 ) );
+	BR->BatchPoint( c.x, c.y );
+	BR->Draw();
+	BR->LinesBegin();
+	BR->LinesSetColor( eeColorA( 128, 255, 128, 255 ) );
+	BR->BatchLine( a.x, a.y, b.x, b.y );
+	BR->Draw();
 
-	glPointSize(5.0f);
-	glBegin(GL_POINTS); {
-		glVertex2f(c.x, c.y);
-	} glEnd();
-
-	glBegin(GL_LINES); {
-		glVertex2f(a.x, a.y);
-		glVertex2f(b.x, b.y);
-	} glEnd();
+	BR->SetPointSize( ps );
 }
 
 }}

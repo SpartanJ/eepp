@@ -27,12 +27,12 @@ cpBB cShape::CacheBB() {
 	return cpShapeCacheBB( mShape );
 }
 
-cpBB cShape::Update( cpVect pos, cpVect rot ) {
-	return cpShapeUpdate( mShape, pos, rot );
+cpBB cShape::Update( cVect pos, cVect rot ) {
+	return cpShapeUpdate( mShape, tocpv( pos ), tocpv( rot ) );
 }
 
-bool cShape::PointQuery( cpVect p ) {
-	return 0 != cpShapePointQuery( mShape, p );
+bool cShape::PointQuery( cVect p ) {
+	return 0 != cpShapePointQuery( mShape, tocpv( p ) );
 }
 
 cBody * cShape::Body() const {
@@ -67,6 +67,14 @@ void cShape::e( const cpFloat& e ) {
 	mShape->e = e;
 }
 
+cpFloat cShape::Elasticity() const {
+	return e();
+}
+
+void cShape::Elasticity( const cpFloat& e ) {
+	this->e( e );
+}
+
 cpFloat cShape::u() const {
 	return mShape->u;
 }
@@ -75,12 +83,20 @@ void cShape::u( const cpFloat& u ) {
 	mShape->u = u;
 }
 
-cpVect cShape::SurfaceVel() const {
-	return mShape->surface_v;
+cpFloat cShape::Friction() const {
+	return u();
 }
 
-void cShape::SurfaceVel( const cpVect& vel ) {
-	mShape->surface_v = vel;
+void cShape::Friction( const cpFloat& u ) {
+	this->u( u );
+}
+
+cVect cShape::SurfaceVel() const {
+	return tovect( mShape->surface_v );
+}
+
+void cShape::SurfaceVel( const cVect& vel ) {
+	mShape->surface_v = tocpv( vel );
 }
 
 cpCollisionType cShape::CollisionType()	 const {
@@ -108,7 +124,7 @@ void cShape::Layers( const cpLayers& layers ) {
 }
 
 cpShapeType cShape::Type() const {
-	return mShape->klass->type;
+	return mShape->CP_PRIVATE(klass)->type;
 }
 
 cShapePoly * cShape::GetAsPoly() {
@@ -130,14 +146,12 @@ cShapeSegment * cShape::GetAsSegment() {
 }
 
 void cShape::DrawBB() {
-	glBegin(GL_LINE_LOOP);
-
-	glVertex2f(mShape->bb.l, mShape->bb.b);
-	glVertex2f(mShape->bb.l, mShape->bb.t);
-	glVertex2f(mShape->bb.r, mShape->bb.t);
-	glVertex2f(mShape->bb.r, mShape->bb.b);
-
-	glEnd();
+	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
+	BR->LineLoopBegin();
+	BR->LineLoopSetColor( eeColorA( 76, 128, 76, 255  ) );
+	BR->BatchLineLoop( mShape->bb.l, mShape->bb.b, mShape->bb.l, mShape->bb.t );
+	BR->BatchLineLoop( mShape->bb.r, mShape->bb.t, mShape->bb.r, mShape->bb.b );
+	BR->DrawOpt();
 }
 
 }}

@@ -3,8 +3,16 @@
 
 namespace EE { namespace Physics {
 
-cShapePoly::cShapePoly( cBody * body, int numVerts, cpVect *verts, cpVect offset ) {
-	mShape = cpPolyShapeNew( body->Body(), numVerts, verts, offset );
+cShapePoly * cShapePoly::New( cBody * body, int numVerts, cVect *verts, cVect offset ) {
+	return eeNew( cShapePoly, ( body, numVerts, verts, offset ) );
+}
+
+cShapePoly * cShapePoly::New( cBody * body, cpFloat width, cpFloat height ) {
+	return eeNew( cShapePoly, ( body, width, height ) );
+}
+
+cShapePoly::cShapePoly( cBody * body, int numVerts, cVect *verts, cVect offset ) {
+	mShape = cpPolyShapeNew( body->Body(), numVerts, casttocpv( verts ), tocpv( offset ) );
 	SetData();
 }
 
@@ -12,41 +20,61 @@ cShapePoly::cShapePoly( cBody * body, cpFloat width, cpFloat height ) :
 	cShape()
 {
 	mShape = cpBoxShapeNew( body->Body(), width, height );
+	SetData();
 }
 
-bool cShapePoly::Validate( const cpVect * verts, const int numVerts ) {
-	return 0 != cpPolyValidate( verts,  numVerts );
+bool cShapePoly::Validate( const cVect * verts, const int numVerts ) {
+	return 0 != cpPolyValidate( constcasttocpv( verts ),  numVerts );
 }
 
 int cShapePoly::GetNumVerts() {
 	return cpPolyShapeGetNumVerts( mShape );
 }
 
-cpVect cShapePoly::GetVert( int idx ) {
-	return cpPolyShapeGetVert( mShape, idx );
+cVect cShapePoly::GetVert( int idx ) {
+	return tovect( cpPolyShapeGetVert( mShape, idx ) );
 }
 
-void cShapePoly::SetVerts( int numVerts, cpVect *verts, cpVect offset ) {
-	cpPolyShapeSetVerts( mShape, numVerts, verts, offset );
+void cShapePoly::SetVerts( int numVerts, cVect *verts, cVect offset ) {
+	cpPolyShapeSetVerts( mShape, numVerts, casttocpv( verts ), tocpv( offset ) );
+}
+
+void cShapePoly::Recenter( int numVerts, cVect *verts ) {
+	cpRecenterPoly( numVerts, casttocpv( verts ) );
+}
+
+cVect cShapePoly::Centroid( int numVerts, const cVect * verts ) {
+	return tovect( cpCentroidForPoly( numVerts, constcasttocpv( verts ) ) );
 }
 
 void cShapePoly::Draw( cSpace * space ) {
-	cpPolyShape *poly = (cpPolyShape*)mShape;
+	cpPolyShape * poly = (cpPolyShape*)mShape;
 
-	int count = poly->numVerts;
-#if CP_USE_DOUBLES
-	glVertexPointer(2, GL_DOUBLE, 0, poly->tVerts);
-#else
-	glVertexPointer(2, GL_FLOAT, 0, poly->tVerts);
-#endif
+	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
 
-	if(!poly->shape.sensor){
-		glColor_for_shape((cpShape *)poly, space->Space());
-		glDrawArrays(GL_TRIANGLE_FAN, 0, count);
+	BR->SetTexture( NULL );
+
+	eeColorA Col = ColorForShape( (cpShape *)poly, space->Space() );
+
+	// Could be a triangle fan
+	BR->PointsBegin();
+	BR->PolygonSetColor( Col );
+
+	if( !poly->CP_PRIVATE(shape).sensor ){
+		for ( int i = 0; i < poly->CP_PRIVATE(numVerts); i++ ) {
+			BR->BatchPolygonByPoint( poly->CP_PRIVATE(tVerts)[i].x, poly->CP_PRIVATE(tVerts)[i].y );
+		}
+
+		BR->DrawOpt();
 	}
 
-	glColor3f(LINE_COLOR);
-	glDrawArrays(GL_LINE_LOOP, 0, count);
+	BR->LineLoopSetColor( Col );
+
+	for ( int i = 0; i < poly->CP_PRIVATE(numVerts); i++ ) {
+		BR->BatchLineLoop( poly->CP_PRIVATE(tVerts)[i].x, poly->CP_PRIVATE(tVerts)[i].y );
+	}
+
+	BR->DrawOpt();
 }
 
 }}

@@ -11,6 +11,7 @@ cConstraint::cConstraint() {
 }
 
 cConstraint::~cConstraint() {
+	cpConstraintFree( mConstraint );
 }
 
 void cConstraint::SetData() {
