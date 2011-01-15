@@ -14,12 +14,20 @@ cBody * cBody::New() {
 	return eeNew( cBody, () );
 }
 
-cBody::cBody( cpBody * body ) {
-	mBody = body;
+void cBody::Free( cBody * body ) {
+	eeSAFE_DELETE( body );
+}
+
+cBody::cBody( cpBody * body ) :
+	mBody( body ),
+	mData( NULL )
+{
 	mBody->data = (void*)this;
 }
 
-cBody::cBody( cpFloat m, cpFloat i ) {
+cBody::cBody( cpFloat m, cpFloat i ) :
+	mData( NULL )
+{
 	mBody = cpBodyNew( m, i );
 	mBody->data = (void*)this;
 }
@@ -29,6 +37,8 @@ cBody::cBody() {
 }
 
 cBody::~cBody() {
+	if ( NULL != mBody )
+		cpBodyFree( mBody );
 }
 
 void cBody::Activate() {
@@ -177,6 +187,14 @@ void cBody::ApplyForce( const cVect f, const cVect r ) {
 
 cpFloat cBody::KineticEnergy() {
 	return cpBodyKineticEnergy( mBody );
+}
+
+void * cBody::Data() const {
+	return mData;
+}
+
+void cBody::Data( void * data ) {
+	mData = data;
 }
 
 }}

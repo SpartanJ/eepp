@@ -8,6 +8,8 @@ namespace EE { namespace Physics {
 
 class cConstraint {
 	public:
+		static void Free( cConstraint * constraint );
+
 		cConstraint( cpConstraint * Constraint );
 
 		cConstraint();

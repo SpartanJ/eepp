@@ -2,6 +2,10 @@
 
 namespace EE { namespace Physics {
 
+void cConstraint::Free( cConstraint * constraint ) {
+	eeSAFE_DELETE( constraint );
+}
+
 cConstraint::cConstraint( cpConstraint * Constraint ) {
 	mConstraint = Constraint;
 	SetData();

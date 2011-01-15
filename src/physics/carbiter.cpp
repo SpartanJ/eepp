@@ -19,8 +19,8 @@ void cArbiter::Ignore() {
 }
 
 void cArbiter::GetShapes( cShape ** a, cShape ** b ) {
-	cpShape * tA = (*a)->Shape();
-	cpShape * tB = (*b)->Shape();
+	cpShape * tA;
+	cpShape * tB;
 
 	cpArbiterGetShapes( mArbiter, &tA, &tB );
 
@@ -36,8 +36,8 @@ void cArbiter::GetShapes( cShape ** a, cShape ** b ) {
 }
 
 void cArbiter::GetBodies( cBody ** a, cBody ** b) {
-	cpBody * tA = (*a)->Body();
-	cpBody * tB = (*b)->Body();
+	cpBody * tA;
+	cpBody * tB;
 
 	cpArbiterGetBodies( mArbiter, &tA, &tB );
 

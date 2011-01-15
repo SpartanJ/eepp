@@ -65,7 +65,7 @@ void cShapePoly::Draw( cSpace * space ) {
 			BR->BatchPolygonByPoint( poly->CP_PRIVATE(tVerts)[i].x, poly->CP_PRIVATE(tVerts)[i].y );
 		}
 
-		BR->DrawOpt();
+		BR->Draw();
 	}
 
 	BR->LineLoopSetColor( Col );
@@ -74,7 +74,7 @@ void cShapePoly::Draw( cSpace * space ) {
 		BR->BatchLineLoop( poly->CP_PRIVATE(tVerts)[i].x, poly->CP_PRIVATE(tVerts)[i].y );
 	}
 
-	BR->DrawOpt();
+	BR->Draw();
 }
 
 }}

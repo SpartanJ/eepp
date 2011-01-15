@@ -59,6 +59,17 @@ class cUITest : public cUIControlAnim {
 		std::vector<eeColorA> mOldColor;
 };
 
+enum CollisionTypes {
+	BALL_TYPE,
+	BLOCKING_SENSOR_TYPE,
+	CATCH_SENSOR_TYPE,
+};
+
+typedef struct Emitter {
+	int queue;
+	int blocked;
+	cVect position;
+} Emitter;
 
 class cEETest : private cThread {
 	public:
@@ -229,6 +240,32 @@ class cEETest : private cThread {
 		void PhysicsDestroy();
 
 		void SetScreen( Uint32 num );
+
+		cpBool blockerBegin( cArbiter *arb, cSpace *space, void *unused );
+		void blockerSeparate( cArbiter *arb, cSpace *space, void *unused );
+		void postStepRemove( cSpace *space, void * tshape, void *unused );
+		cpBool catcherBarBegin( cArbiter *arb, cSpace *space, void *unused );
+
+		void Demo1Create();
+		void Demo1Update();
+		void Demo1Destroy();
+
+		void Demo2Create();
+		void Demo2Update();
+		void Demo2Destroy();
+
+		Emitter emitterInstance;
+
+		void ChangeDemo( Uint32 num );
+
+		struct physicDemo {
+			SceneCb init;
+			SceneCb update;
+			SceneCb destroy;
+		};
+
+		std::vector<physicDemo> mDemo;
+		Int32					mCurDemo;
 };
 
 void cEETest::CreateAquaTextureAtlas() {
@@ -1320,8 +1357,8 @@ void cEETest::Render() {
 
 	Con.Draw();
 
-	if ( Screen < 2 )
-		CursorP[ Screen ]->Draw( Mousef.x, Mousef.y );
+	if ( Screen == 1 )
+		CursorP[ 0 ]->Draw( Mousef.x, Mousef.y );
 	else
 		CursorP[ 1 ]->Draw( Mousef.x, Mousef.y );
 }
@@ -1457,6 +1494,12 @@ void cEETest::Input() {
 				PhysicsDestroy();
 				PhysicsCreate();
 			}
+
+			if ( KM->IsKeyUp( KEY_1 ) )
+				ChangeDemo( 0 );
+
+			if ( KM->IsKeyUp( KEY_2 ) )
+				ChangeDemo( 1 );
 		case 1:
 			if ( NULL != Joy ) {
 				Uint8 hat = Joy->GetHat();
@@ -1608,20 +1651,15 @@ void cEETest::Particles() {
 #define GRABABLE_MASK_BIT (1<<31)
 #define NOT_GRABABLE_MASK (~GRABABLE_MASK_BIT)
 
-void cEETest::PhysicsCreate() {
-	cPhysicsManager::CreateSingleton();
-	cPhysicsManager::instance()->CollisionSlop( 0.2 );
-
+void cEETest::Demo1Create() {
 	mMouseJoint	= NULL;
 	mMouseBody	= eeNew( cBody, ( INFINITY, INFINITY ) );
 
 	Physics::cShape::ResetShapeIdCounter();
 
 	mSpace = Physics::cSpace::New();
-	mSpace->Iterations( 30 );
-	mSpace->ResizeStaticHash( 40.f, 1000 );
-	mSpace->ResizeActiveHash( 40.f, 1000 );
-	mSpace->Gravity( cVectNew( 0, 200 ) );
+	mSpace->ResizeActiveHash( 30.f, 1000 );
+	mSpace->Gravity( cVectNew( 0, 100 ) );
 	mSpace->SleepTimeThreshold( 0.5f );
 
 	cBody *body, *staticBody = mSpace->StaticBody();
@@ -1632,12 +1670,17 @@ void cEETest::PhysicsCreate() {
 	shape->u( 1.0f );
 	shape->Layers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( EE->GetWidth(), 100 ), cVectNew( EE->GetWidth(), EE->GetHeight() ), 0.0f ) );
+	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( EE->GetWidth(), 0 ), cVectNew( EE->GetWidth(), EE->GetHeight() ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
 	shape->Layers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( 0, 100 ), cVectNew( 0, EE->GetHeight() ), 0.0f ) );
+	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( 0, 0 ), cVectNew( 0, EE->GetHeight() ), 0.0f ) );
+	shape->e( 1.0f );
+	shape->u( 1.0f );
+	shape->Layers( NOT_GRABABLE_MASK );
+
+	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( 0, 0 ), cVectNew( EE->GetWidth(), 0 ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
 	shape->Layers( NOT_GRABABLE_MASK );
@@ -1665,7 +1708,166 @@ void cEETest::PhysicsCreate() {
 	shape->u( 0.9f );
 }
 
+void cEETest::Demo1Update() {
+
+}
+
+void cEETest::Demo1Destroy() {
+	eeSAFE_DELETE( mSpace );
+	eeSAFE_DELETE( mMouseJoint );
+	eeSAFE_DELETE( mMouseBody );
+}
+
+cpBool cEETest::blockerBegin( cArbiter *arb, cSpace *space, void *unused ) {
+	Physics::cShape * a, * b;
+	arb->GetShapes( &a, &b );
+
+	Emitter *emitter = (Emitter *) a->Data();
+
+	emitter->blocked++;
+
+	return cpFalse; // Return values from sensors callbacks are ignored,
+}
+
+void cEETest::blockerSeparate( cArbiter *arb, cSpace * space, void *unused ) {
+	Physics::cShape * a, * b;
+	arb->GetShapes( &a, &b );
+
+	Emitter *emitter = (Emitter *) a->Data();
+
+	emitter->blocked--;
+}
+
+void cEETest::postStepRemove( cSpace *space, void * tshape, void * unused ) {
+	Physics::cShape * shape = reinterpret_cast<Physics::cShape*>( tshape );
+
+	if ( NULL != mMouseJoint && ( mMouseJoint->A() == shape->Body() || mMouseJoint->B() == shape->Body() ) ) {
+		mSpace->RemoveConstraint( mMouseJoint );
+		eeSAFE_DELETE( mMouseJoint );
+	}
+
+	mSpace->RemoveBody( shape->Body() );
+	mSpace->RemoveShape( shape );
+	Physics::cShape::Free( shape, true );
+}
+
+cpBool cEETest::catcherBarBegin(cArbiter *arb, Physics::cSpace *space, void *unused) {
+	Physics::cShape * a, * b;
+	arb->GetShapes( &a, &b );
+
+	Emitter *emitter = (Emitter *) a->Data();
+
+	emitter->queue++;
+
+	mSpace->AddPostStepCallback( cb::Make3( this, &cEETest::postStepRemove ), b, NULL );
+
+	return cpFalse;
+}
+
+static cpFloat frand_unit(){return 2.0f*((cpFloat)rand()/(cpFloat)RAND_MAX) - 1.0f;}
+
+void cEETest::Demo2Create() {
+	mMouseJoint	= NULL;
+	mMouseBody	= eeNew( cBody, ( INFINITY, INFINITY ) );
+
+	Physics::cShape::ResetShapeIdCounter();
+
+	mSpace = Physics::cSpace::New();
+	mSpace->Iterations( 10 );
+	mSpace->Gravity( cVectNew( 0, 100 ) );
+
+	cBody * staticBody = mSpace->StaticBody();
+	Physics::cShape * shape;
+
+	emitterInstance.queue = 5;
+	emitterInstance.blocked = 0;
+	emitterInstance.position = cVectNew( EE->GetWidth() / 2 , 150);
+
+	shape = mSpace->AddShape( cShapeCircle::New( staticBody, 15.0f, emitterInstance.position ) );
+	shape->Sensor( 1 );
+	shape->CollisionType( BLOCKING_SENSOR_TYPE );
+	shape->Data( &emitterInstance );
+
+	// Create our catch sensor to requeue the balls when they reach the bottom of the screen
+	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew(-4000, 600), cVectNew(4000, 600), 15.0f ) );
+	shape->Sensor( 1 );
+	shape->CollisionType( CATCH_SENSOR_TYPE );
+	shape->Data( &emitterInstance );
+
+	cSpace::cCollisionHandler handler;
+	handler.a			= BLOCKING_SENSOR_TYPE;
+	handler.b			= BALL_TYPE;
+	handler.begin		= cb::Make3( this, &cEETest::blockerBegin );
+	handler.separate	= cb::Make3( this, &cEETest::blockerSeparate );
+	mSpace->AddCollisionHandler( handler );
+
+	handler.Reset(); // Reset all the values and the callbacks ( set the callbacks as !IsSet()
+
+	handler.a			= CATCH_SENSOR_TYPE;
+	handler.b			= BALL_TYPE;
+	handler.begin		= cb::Make3( this, &cEETest::catcherBarBegin );
+	mSpace->AddCollisionHandler( handler );
+}
+
+void cEETest::Demo2Update() {
+	if( !emitterInstance.blocked && emitterInstance.queue ){
+		emitterInstance.queue--;
+
+		cBody * body = mSpace->AddBody( cBody::New( 1.0f, Moment::ForCircle(1.0f, 15.0f, 0.0f, cVectZero ) ) );
+		body->Pos( emitterInstance.position );
+		body->Vel( cVectNew( frand_unit(), frand_unit() ) * (cpFloat)100 );
+
+		Physics::cShape *shape = mSpace->AddShape( cShapeCircle::New( body, 15.0f, cVectZero ) );
+		shape->CollisionType( BALL_TYPE );
+	}
+}
+
+void cEETest::Demo2Destroy() {
+	eeSAFE_DELETE( mSpace );
+	eeSAFE_DELETE( mMouseJoint );
+	eeSAFE_DELETE( mMouseBody );
+}
+
+void cEETest::ChangeDemo( Uint32 num ) {
+	if ( num < mDemo.size() ) {
+		mDemo[ mCurDemo ].destroy();
+
+		mCurDemo = num;
+
+		mDemo[ mCurDemo ].init();
+	}
+}
+
+void cEETest::PhysicsCreate() {
+	cPhysicsManager::CreateSingleton();
+	cPhysicsManager::instance()->CollisionSlop( 0.2 );
+	cPhysicsManager * PM = cPhysicsManager::instance();
+	PM->GetDrawOptions()->DrawHash			= 1;
+	PM->GetDrawOptions()->DrawBBs			= 1;
+	PM->GetDrawOptions()->DrawShapes		= 1;
+	PM->GetDrawOptions()->BodyPointSize		= 4;
+	PM->GetDrawOptions()->LineThickness		= 1;
+
+	mDemo.clear();
+
+	physicDemo demo;
+
+	demo.init		= cb::Make0( this, &cEETest::Demo1Create );
+	demo.update		= cb::Make0( this, &cEETest::Demo1Update );
+	demo.destroy	= cb::Make0( this, &cEETest::Demo1Destroy );
+	mDemo.push_back( demo );
+
+	demo.init		= cb::Make0( this, &cEETest::Demo2Create );
+	demo.update		= cb::Make0( this, &cEETest::Demo2Update );
+	demo.destroy	= cb::Make0( this, &cEETest::Demo2Destroy );
+	mDemo.push_back( demo );
+
+	ChangeDemo( 0 );
+}
+
 void cEETest::PhysicsUpdate() {
+	mDemo[ mCurDemo ].update();
+
 	mMousePoint = cVectNew( KM->GetMousePosf().x, KM->GetMousePosf().y );
 	cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last ), tocpv( mMousePoint ), 0.25 ) );
 	mMouseBody->Pos( newPoint );
@@ -1696,9 +1898,7 @@ void cEETest::PhysicsUpdate() {
 }
 
 void cEETest::PhysicsDestroy() {
-	eeSAFE_DELETE( mSpace );
-	eeSAFE_DELETE( mMouseJoint );
-	eeSAFE_DELETE( mMouseBody );
+	mDemo[ mCurDemo ].destroy();
 	cPhysicsManager::DestroySingleton();
 }
 

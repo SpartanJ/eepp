@@ -15,6 +15,8 @@ class cShape {
 	public:
 		static void ResetShapeIdCounter();
 
+		static void Free( cShape * shape, bool DeleteBody = false );
+
 		cpShape * Shape() const;
 
 		~cShape();
@@ -80,11 +82,15 @@ class cShape {
 		virtual void Draw( cSpace * space ) = 0;
 
 		virtual void DrawBB();
+
+		void * Data() const;
+
+		void Data( void * data );
 	protected:
 		cShape();
 
 		cpShape *		mShape;
-		cBody *			mBody;
+		void *			mData;
 
 		void SetData();
 };

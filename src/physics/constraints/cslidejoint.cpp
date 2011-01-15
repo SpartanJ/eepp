@@ -54,7 +54,7 @@ void cSlideJoint::Draw() {
 	BR->PointSetColor( eeColorA( 128, 255, 128, 255 ) );
 	BR->BatchPoint( a.x, a.y );
 	BR->BatchPoint( b.x, b.y );
-	BR->DrawOpt();
+	BR->Draw();
 	BR->LinesBegin();
 	BR->BatchLine( a.x, a.y, b.x, b.y );
 	BR->Draw();

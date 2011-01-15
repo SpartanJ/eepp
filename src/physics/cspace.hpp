@@ -17,7 +17,7 @@ class cSpace {
 		typedef cb::Callback3<void	, cArbiter *, cSpace *	, void * >				CollisionSeparateFunc;
 		typedef cb::Callback3<void	, cSpace *	, void *	, void * >				PostStepCallback;
 		typedef cb::Callback2<void	, cShape *	, void * >							BBQueryFunc;
-		typedef cb::Callback4<void	, cShape *	, cpFloat	, cVect	, void * >	SegmentQueryFunc;
+		typedef cb::Callback4<void	, cShape *	, cpFloat	, cVect	, void * >		SegmentQueryFunc;
 		typedef cb::Callback2<void	, cShape *	, void * >							PointQueryFunc;
 
 		class cCollisionHandler {
@@ -27,6 +27,16 @@ class cSpace {
 					b( 0  ),
 					data( NULL )
 				{
+				}
+
+				inline void Reset() {
+					a			= 0;
+					b			= 0;
+					data		= NULL;
+					begin		= CollisionBeginFunc();
+					preSolve	= CollisionPreSolveFunc();
+					postSolve	= CollisionPostSolveFunc();
+					separate	= CollisionSeparateFunc();
 				}
 
 				cpCollisionType a;
@@ -82,6 +92,8 @@ class cSpace {
 
 		static cSpace * New();
 
+		static void Free( cSpace * space );
+
 		cSpace();
 
 		~cSpace();
@@ -120,7 +132,7 @@ class cSpace {
 
 		cConstraint * AddConstraint( cConstraint * constraint );
 
-		void RemoveShape( cShape * shape);
+		void RemoveShape( cShape * shape );
 
 		void RemoveStaticShape( cShape * shape );
 
@@ -146,11 +158,11 @@ class cSpace {
 
 		cShape * SegmentQueryFirst( cVect start, cVect end, cpLayers layers, cpGroup group, cpSegmentQueryInfo * out );
 
-		void AddCollisionHandler( cpCollisionType a, cpCollisionType b, CollisionBeginFunc begin, CollisionPreSolveFunc preSolve, CollisionPostSolveFunc postSolve, CollisionSeparateFunc separate, void * data );
+		void AddCollisionHandler( const cCollisionHandler& handler );
 
 		void RemoveCollisionHandler( cpCollisionType a, cpCollisionType b );
 
-		void SetDefaultCollisionHandler( CollisionBeginFunc begin, CollisionPreSolveFunc preSolve, CollisionPostSolveFunc postSolve, CollisionSeparateFunc separate, void * data );
+		void SetDefaultCollisionHandler( const cCollisionHandler& handler );
 
 		void AddPostStepCallback( PostStepCallback postStep, void * obj, void * data );
 

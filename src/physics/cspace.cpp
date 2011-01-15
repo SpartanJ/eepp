@@ -7,6 +7,10 @@ cSpace * cSpace::New() {
 	return eeNew( cSpace, () );
 }
 
+void cSpace::Free( cSpace * space ) {
+	eeSAFE_DELETE( space );
+}
+
 cSpace::cSpace() {
 	mSpace = cpSpaceNew();
 	mSpace->data = (void*)this;
@@ -14,7 +18,6 @@ cSpace::cSpace() {
 }
 
 cSpace::~cSpace() {
-	cpSpaceFreeChildren( mSpace );
 	cpSpaceFree( mSpace );
 
 	std::list<cConstraint*>::iterator itc = mConstraints.begin();
@@ -29,6 +32,7 @@ cSpace::~cSpace() {
 	for ( ; itb != mBodys.end(); itb++ )
 		eeSAFE_DELETE( *itb );
 
+	mStaticBody->mBody = NULL;
 	eeSAFE_DELETE( mStaticBody );
 }
 
@@ -121,23 +125,31 @@ cConstraint * cSpace::AddConstraint( cConstraint * constraint ) {
 }
 
 void cSpace::RemoveShape( cShape * shape ) {
-	cpSpaceRemoveShape( mSpace, shape->Shape() );
-	mShapes.remove( shape );
+	if ( NULL != shape ) {
+		cpSpaceRemoveShape( mSpace, shape->Shape() );
+		mShapes.remove( shape );
+	}
 }
 
 void cSpace::RemoveStaticShape( cShape * shape ) {
-	cpSpaceRemoveStaticShape( mSpace, shape->Shape() );
-	mShapes.remove( shape );
+	if ( NULL != shape ) {
+		cpSpaceRemoveStaticShape( mSpace, shape->Shape() );
+		mShapes.remove( shape );
+	}
 }
 
 void cSpace::RemoveBody( cBody * body ) {
-	cpSpaceRemoveBody( mSpace, body->Body() );
-	mBodys.remove( body );
+	if ( NULL != body ) {
+		cpSpaceRemoveBody( mSpace, body->Body() );
+		mBodys.remove( body );
+	}
 }
 
 void cSpace::RemoveConstraint( cConstraint * constraint ) {
-	cpSpaceRemoveConstraint( mSpace, constraint->Constraint() );
-	mConstraints.remove( constraint );
+	if ( NULL != constraint ) {
+		cpSpaceRemoveConstraint( mSpace, constraint->Constraint() );
+		mConstraints.remove( constraint );
+	}
 }
 
 cShape * cSpace::PointQueryFirst( cVect point, cpLayers layers, cpGroup group ) {
@@ -186,6 +198,8 @@ static void drawConstraint( cpConstraint *constraint ) {
 
 void cSpace::Draw() {
 	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
+	BR->SetPreBlendFunc( ALPHA_NORMAL );
+
 	cPhysicsManager::cDrawSpaceOptions * options = cPhysicsManager::instance()->GetDrawOptions();
 
 	cpFloat lw = BR->GetLineWidth();
@@ -215,7 +229,7 @@ void cSpace::Draw() {
 
 	cpArray * constraints = mSpace->CP_PRIVATE(constraints);
 
-	for( int i=0, count = constraints->num; i<count; i++ ) {
+	for( int i=0, count = constraints->num; i < count; i++ ) {
 		drawConstraint( (cpConstraint *)constraints->arr[i] );
 	}
 
@@ -313,88 +327,120 @@ static void RecieverPointQueryFunc( cpShape * shape, void * data ) {
 }
 
 cpBool cSpace::OnCollisionBegin( cArbiter * arb, void * data ) {
-	std::map< cpHashValue, cCollisionHandler >::iterator it = mCollisions.find( arb->Arbiter()->CP_PRIVATE(contacts)->CP_PRIVATE(hash) );
-	cCollisionHandler handler = static_cast<cCollisionHandler>( it->second );
+	cpHashValue hash = (cpHashValue)data;
 
-	if ( it != mCollisions.end() && handler.begin.IsSet() )
-		return handler.begin( arb, this, data );
-	else if ( mCollisionsDefault.begin.IsSet() )
-		return mCollisionsDefault.begin( arb, this, data );
+	if ( NULL != data ) {
+		std::map< cpHashValue, cCollisionHandler >::iterator it = mCollisions.find( hash );
+		cCollisionHandler handler = static_cast<cCollisionHandler>( it->second );
+
+		if ( it != mCollisions.end() && handler.begin.IsSet() ) {
+			return handler.begin( arb, this, handler.data );
+		}
+	}
+
+	if ( mCollisionsDefault.begin.IsSet() ) {
+		return mCollisionsDefault.begin( arb, this, mCollisionsDefault.data );
+	}
 
 	return 1;
 }
 
 cpBool cSpace::OnCollisionPreSolve( cArbiter * arb, void * data ) {
-	std::map< cpHashValue, cCollisionHandler >::iterator it = mCollisions.find( arb->Arbiter()->CP_PRIVATE(contacts)->CP_PRIVATE(hash) );
-	cCollisionHandler handler = static_cast<cCollisionHandler>( it->second );
+	cpHashValue hash = (cpHashValue)data;
 
-	if ( it != mCollisions.end() && handler.preSolve.IsSet() )
-		return handler.preSolve( arb, this, data );
-	else if ( mCollisionsDefault.preSolve.IsSet() )
-		return mCollisionsDefault.preSolve( arb, this, data );
+	if ( NULL != data ) {
+		std::map< cpHashValue, cCollisionHandler >::iterator it = mCollisions.find( hash );
+		cCollisionHandler handler = static_cast<cCollisionHandler>( it->second );
+
+		if ( it != mCollisions.end() && handler.preSolve.IsSet() ) {
+			return handler.preSolve( arb, this, handler.data );
+		}
+	}
+
+	if ( mCollisionsDefault.preSolve.IsSet() ) {
+		return mCollisionsDefault.preSolve( arb, this, mCollisionsDefault.data );
+	}
 
 	return 1;
 }
 
 void cSpace::OnCollisionPostSolve( cArbiter * arb, void * data ) {
-	std::map< cpHashValue, cCollisionHandler >::iterator it = mCollisions.find( arb->Arbiter()->CP_PRIVATE(contacts)->CP_PRIVATE(hash) );
-	cCollisionHandler handler = static_cast<cCollisionHandler>( it->second );
+	cpHashValue hash = (cpHashValue)data;
 
-	if ( it != mCollisions.end() && handler.postSolve.IsSet() )
-		handler.postSolve( arb, this, data );
-	else if ( mCollisionsDefault.begin.IsSet() )
-		mCollisionsDefault.postSolve( arb, this, data );
+	if ( NULL != data ) {
+		std::map< cpHashValue, cCollisionHandler >::iterator it = mCollisions.find( hash );
+		cCollisionHandler handler = static_cast<cCollisionHandler>( it->second );
+
+		if ( it != mCollisions.end() && handler.postSolve.IsSet() ) {
+			handler.postSolve( arb, this, handler.data );
+			return;
+		}
+	}
+
+	if ( mCollisionsDefault.begin.IsSet() ) {
+		mCollisionsDefault.postSolve( arb, this, mCollisionsDefault.data );
+	}
 }
 
 void cSpace::OnCollisionSeparate( cArbiter * arb, void * data ) {
-	std::map< cpHashValue, cCollisionHandler >::iterator it = mCollisions.find( arb->Arbiter()->CP_PRIVATE(contacts)->CP_PRIVATE(hash) );
-	cCollisionHandler handler = static_cast<cCollisionHandler>( it->second );
+	cpHashValue hash = (cpHashValue)data;
 
-	if ( it != mCollisions.end() && handler.separate.IsSet() )
-		handler.separate( arb, this, data );
-	else if ( mCollisionsDefault.begin.IsSet() )
-		mCollisionsDefault.separate( arb, this, data );
+	if ( NULL != data ) {
+		std::map< cpHashValue, cCollisionHandler >::iterator it = mCollisions.find( hash );
+		cCollisionHandler handler = static_cast<cCollisionHandler>( it->second );
+
+		if ( it != mCollisions.end() && handler.separate.IsSet() ) {
+			handler.separate( arb, this, handler.data );
+			return;
+		}
+	}
+
+	if ( mCollisionsDefault.begin.IsSet() ) {
+		mCollisionsDefault.separate( arb, this, mCollisionsDefault.data );
+	}
 }
 
 void cSpace::OnPostStepCallback( void * obj, void * data ) {
 	cPostStepCallback * Cb = reinterpret_cast<cPostStepCallback *> ( data );
 
-	if ( Cb->Callback.IsSet() )
+	if ( Cb->Callback.IsSet() ) {
 		Cb->Callback( this, obj, Cb->Data );
+	}
 
 	mPostStepCallbacks.remove( Cb );
 	eeSAFE_DELETE( Cb );
 }
 
 void cSpace::OnBBQuery( cShape * shape, cBBQuery * query ) {
-	if ( query->Func.IsSet() )
+	if ( query->Func.IsSet() ) {
 		query->Func( shape, query->Data );
+	}
 }
 
 void cSpace::OnSegmentQuery( cShape * shape, cpFloat t, cVect n , cSegmentQuery * query ) {
-	if ( query->Func.IsSet() )
+	if ( query->Func.IsSet() ) {
 		query->Func( shape, t, n, query->Data );
+	}
 }
 
 void cSpace::OnPointQuery( cShape * shape, cPointQuery * query ) {
-	if ( query->Func.IsSet() )
+	if ( query->Func.IsSet() ) {
 		query->Func( shape, query->Data );
+	}
 }
 
-void cSpace::AddCollisionHandler( cpCollisionType a, cpCollisionType b, CollisionBeginFunc begin, CollisionPreSolveFunc preSolve, CollisionPostSolveFunc postSolve, CollisionSeparateFunc separate, void * data ) {
-	cpSpaceAddCollisionHandler( mSpace, a, b, &RecieverCollisionBeginFunc, &RecieverCollisionPreSolveFunc, &RecieverCollisionPostSolve, &RecieverCollisionSeparateFunc, data );
+void cSpace::AddCollisionHandler( const cCollisionHandler& handler ) {
+	cpHashValue hash = CP_HASH_PAIR( handler.a, handler.b );
 
-	cCollisionHandler handler;
-	handler.a			= a;
-	handler.b			= b;
-	handler.begin		= begin;
-	handler.preSolve	= preSolve;
-	handler.postSolve	= postSolve;
-	handler.separate	= separate;
-	handler.data		= data;
+	cpCollisionBeginFunc		f1 = ( handler.begin.IsSet() )		?	&RecieverCollisionBeginFunc		: NULL;
+	cpCollisionPreSolveFunc		f2 = ( handler.preSolve.IsSet() )	?	&RecieverCollisionPreSolveFunc	: NULL;
+	cpCollisionPostSolveFunc	f3 = ( handler.postSolve.IsSet() )	?	&RecieverCollisionPostSolve		: NULL;
+	cpCollisionSeparateFunc		f4 = ( handler.separate.IsSet() )	?	&RecieverCollisionSeparateFunc	: NULL;
 
-	mCollisions.erase( CP_HASH_PAIR( a, b ) );
-	mCollisions[ CP_HASH_PAIR( a, b ) ] = handler;
+	cpSpaceAddCollisionHandler( mSpace, handler.a, handler.b, f1, f2, f3, f4, (void*)hash );
+
+	mCollisions.erase( hash );
+	mCollisions[ hash ] = handler;
 }
 
 void cSpace::RemoveCollisionHandler( cpCollisionType a, cpCollisionType b ) {
@@ -403,14 +449,15 @@ void cSpace::RemoveCollisionHandler( cpCollisionType a, cpCollisionType b ) {
 	mCollisions.erase( CP_HASH_PAIR( a, b ) );
 }
 
-void cSpace::SetDefaultCollisionHandler( CollisionBeginFunc begin, CollisionPreSolveFunc preSolve, CollisionPostSolveFunc postSolve, CollisionSeparateFunc separate, void * data ) {
-	cpSpaceSetDefaultCollisionHandler( mSpace, &RecieverCollisionBeginFunc, &RecieverCollisionPreSolveFunc, &RecieverCollisionPostSolve, &RecieverCollisionSeparateFunc, data );
+void cSpace::SetDefaultCollisionHandler( const cCollisionHandler& handler ) {
+	cpCollisionBeginFunc		f1 = ( handler.begin.IsSet() )		?	&RecieverCollisionBeginFunc		: NULL;
+	cpCollisionPreSolveFunc		f2 = ( handler.preSolve.IsSet() )	?	&RecieverCollisionPreSolveFunc	: NULL;
+	cpCollisionPostSolveFunc	f3 = ( handler.postSolve.IsSet() )	?	&RecieverCollisionPostSolve		: NULL;
+	cpCollisionSeparateFunc		f4 = ( handler.separate.IsSet() )	?	&RecieverCollisionSeparateFunc	: NULL;
 
-	mCollisionsDefault.begin		= begin;
-	mCollisionsDefault.preSolve		= preSolve;
-	mCollisionsDefault.postSolve	= postSolve;
-	mCollisionsDefault.separate		= separate;
-	mCollisionsDefault.data			= data;
+	cpSpaceSetDefaultCollisionHandler( mSpace, f1, f2, f3, f4, NULL );
+
+	mCollisionsDefault	= handler;
 }
 
 void cSpace::AddPostStepCallback( PostStepCallback postStep, void * obj, void * data ) {

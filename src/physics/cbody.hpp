@@ -13,6 +13,8 @@ class cBody {
 
 		static cBody * New();
 
+		static void Free( cBody * body );
+
 		cBody( cpBody * body );
 
 		cBody( cpFloat m, cpFloat i );
@@ -94,8 +96,15 @@ class cBody {
 		void ApplyForce( const cVect f, const cVect r );
 
 		cpFloat KineticEnergy();
+
+		void * Data() const;
+
+		void Data( void * data );
 	protected:
+		friend class cSpace;
+
 		cpBody *		mBody;
+		void *			mData;
 };
 
 }}

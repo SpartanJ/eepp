@@ -9,10 +9,22 @@ void cShape::ResetShapeIdCounter() {
 	cpResetShapeIdCounter();
 }
 
-cShape::cShape() {
+void cShape::Free( cShape * shape, bool DeleteBody ) {
+	if ( DeleteBody ) {
+		cBody * b = shape->Body();
+		eeSAFE_DELETE( b );
+	}
+
+	eeSAFE_DELETE( shape );
+}
+
+cShape::cShape() :
+	mData( NULL )
+{
 }
 
 cShape::~cShape() {
+	cpShapeFree( mShape );
 }
 
 void cShape::SetData() {
@@ -146,12 +158,17 @@ cShapeSegment * cShape::GetAsSegment() {
 }
 
 void cShape::DrawBB() {
-	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
-	BR->LineLoopBegin();
-	BR->LineLoopSetColor( eeColorA( 76, 128, 76, 255  ) );
-	BR->BatchLineLoop( mShape->bb.l, mShape->bb.b, mShape->bb.l, mShape->bb.t );
-	BR->BatchLineLoop( mShape->bb.r, mShape->bb.t, mShape->bb.r, mShape->bb.b );
-	BR->DrawOpt();
+	cPrimitives P;
+	P.SetColor( eeColorA( 76, 128, 76, 255  ) );
+	P.DrawRectangle( eeRectf( mShape->bb.l, mShape->bb.t, mShape->bb.r, mShape->bb.b ), 0.f, 1.f, EE_DRAW_LINE );
+}
+
+void * cShape::Data() const {
+	return mData;
+}
+
+void cShape::Data( void * data ) {
+	mData = data;
 }
 
 }}
