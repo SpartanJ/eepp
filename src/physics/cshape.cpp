@@ -35,12 +35,12 @@ cpShape * cShape::Shape() const {
 	return mShape;
 }
 
-cpBB cShape::CacheBB() {
-	return cpShapeCacheBB( mShape );
+cBB cShape::CacheBB() {
+	return tocbb( cpShapeCacheBB( mShape ) );
 }
 
-cpBB cShape::Update( cVect pos, cVect rot ) {
-	return cpShapeUpdate( mShape, tocpv( pos ), tocpv( rot ) );
+cBB cShape::Update( cVect pos, cVect rot ) {
+	return tocbb( cpShapeUpdate( mShape, tocpv( pos ), tocpv( rot ) ) );
 }
 
 bool cShape::PointQuery( cVect p ) {
@@ -55,12 +55,12 @@ void cShape::Body( cBody * body ) {
 	mShape->body = body->Body();
 }
 
-cpBB cShape::BB() const {
-	return mShape->bb;
+cBB cShape::BB() const {
+	return tocbb( mShape->bb );
 }
 
-void cShape::BB( const cpBB& bb ) {
-	mShape->bb = bb;
+void cShape::BB( const cBB& bb ) {
+	mShape->bb = tocpbb( bb );
 }
 
 bool cShape::Sensor() {

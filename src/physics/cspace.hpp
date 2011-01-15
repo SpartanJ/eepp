@@ -182,7 +182,7 @@ class cSpace {
 
 		virtual void OnPointQuery( cShape * shape, cPointQuery * query );
 
-		void BBQuery( cpBB bb, cpLayers layers, cpGroup group, BBQueryFunc func, void * data );
+		void BBQuery( cBB bb, cpLayers layers, cpGroup group, BBQueryFunc func, void * data );
 
 		void SegmentQuery( cVect start, cVect end, cpLayers layers, cpGroup group, SegmentQueryFunc func, void * data );
 

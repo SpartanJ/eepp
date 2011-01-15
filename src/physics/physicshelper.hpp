@@ -1,6 +1,64 @@
 #ifndef EE_PHYSICS_HELPER
 #define EE_PHYSICS_HELPER
 
+#ifdef USE_EE_VECTOR
+
+typedef Vector2<cpFloat>		cVect;
+
+inline static cVect toVect( cpVect vect ) {
+	return cVect( vect.x, vect.y );
+}
+
+#define tocpv( vect )			cpv( vect.x, vect.y )
+#define tovect( vect )			toVect( vect )
+#define casttocpv( vect )		reinterpret_cast<cpVect*>( vect )
+#define constcasttocpv( vect )	reinterpret_cast<const cpVect*>( vect )
+#define cVectZero				cVect( 0, 0 )
+#define cVectNew( x, y )		cVect( x, y )
+
+#else
+
+typedef cpVect					cVect;
+#define tocpv( vect )			vect
+#define tovect( vect )			vect
+#define casttocpv( vect )		vect
+#define constcasttocpv( vect )	vect
+#define cVectZero				cpvzero
+#define cVectNew( x, y )		cpv( x, y )
+
+#endif
+
+#ifdef USE_EE_AABB
+
+typedef tRECT<cpFloat>			cBB;
+
+inline static cBB toAABB( cpBB bb ) {
+#ifdef BB_INVERT_Y_AXIS
+	return cBB( bb.l, bb.b, bb.r, bb.t );
+#else
+	return cBB( bb.l, bb.t, bb.r, bb.b );
+#endif
+}
+
+#define tocpbb( bb )			cpBBNew( bb.Left, bb.Top, bb.Right, bb.Bottom )
+#define tocbb( bb )				toAABB( bb )
+#define cBBNew( l, t, r, b )	cBB( l, t, r, b )
+
+#else
+
+typedef cpBB					cBB;
+
+#define tocpbb( bb )			bb
+#define tocbb( bb )				bb
+
+#ifdef BB_INVERT_Y_AXIS
+#define cBBNew( l, t, r, b )	cpBBNew( l, t, r, b ) //! Inverted Top/Bottom here too
+#else
+#define cBBNew( l, t, r, b )	cpBBNew( l, b, r, t )
+#endif
+
+#endif
+
 static const GLfloat pillVAR[] = {
 	 0.0000f,  1.0000f, 1.0f,
 	 0.2588f,  0.9659f, 1.0f,

@@ -1866,8 +1866,6 @@ void cEETest::PhysicsCreate() {
 }
 
 void cEETest::PhysicsUpdate() {
-	mDemo[ mCurDemo ].update();
-
 	mMousePoint = cVectNew( KM->GetMousePosf().x, KM->GetMousePosf().y );
 	cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last ), tocpv( mMousePoint ), 0.25 ) );
 	mMouseBody->Pos( newPoint );
@@ -1893,6 +1891,7 @@ void cEETest::PhysicsUpdate() {
 		eeSAFE_DELETE( mMouseJoint );
 	}
 
+	mDemo[ mCurDemo ].update();
 	mSpace->Update();
 	mSpace->Draw();
 }

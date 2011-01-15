@@ -25,9 +25,9 @@ class cShape {
 
 		void Body( cBody * body );
 
-		cpBB BB() const;
+		cBB BB() const;
 
-		void BB( const cpBB& bb );
+		void BB( const cBB& bb );
 
 		bool Sensor();
 
@@ -65,9 +65,9 @@ class cShape {
 
 		void Layers( const cpLayers& layers );
 
-		cpBB CacheBB();
+		cBB CacheBB();
 
-		cpBB Update( cVect pos, cVect rot );
+		cBB Update( cVect pos, cVect rot );
 
 		bool PointQuery( cVect p );
 

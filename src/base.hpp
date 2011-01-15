@@ -151,10 +151,14 @@
 #define eeSAFE_FREE(p)			{ if(p) { eeFree ( (void*)p );	(p)=NULL; } }
 #define eeSAFE_DELETE_ARRAY(p)  { if(p) { eeDeleteArray(p);		(p)=NULL; } }
 
+#ifndef EE_USE_DOUBLE
+
 #ifdef EE_64BIT
 #define EE_USE_DOUBLES 1
 #else
 #define EE_USE_DOUBLE 0
+#endif
+
 #endif
 
 namespace EE {
@@ -182,15 +186,29 @@ namespace EE {
 	#define eepow powf
 	#define eefloor floorf
 	#define eeceil ceilf
-#endif
+#endif		
+	template<typename T>
+	T eemax( T a, T b ) {
+		return (a > b) ? a : b;
+	}
+
+	template<typename T>
+	T eemin( T a, T b ) {
+		return (a < b) ? a : b;
+	}
+
+	template<typename T>
+	T eeabs( T n ) {
+		return ( n < 0 ) ? -n : n;
+	}
 
 	typedef double			eeDouble; 	//! The internal double floating point. It's only used when the engine needs some very high precision floating point ( for example the timer )
 	typedef unsigned int	eeUint;
 	typedef signed int		eeInt;
 
-	const eeFloat PI		= 3.141592654f;
-	const eeFloat TwoPI		= 6.283185308f;
-	const eeFloat PId180	= PI / 180.f;
+	const eeFloat PI		= 3.141592654;
+	const eeFloat TwoPI		= 6.283185308;
+	const eeFloat PId180	= PI / 180;
 	const eeFloat d180PI	= 180.f / PI;
 }
 

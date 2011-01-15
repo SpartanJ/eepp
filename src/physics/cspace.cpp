@@ -469,13 +469,13 @@ void cSpace::AddPostStepCallback( PostStepCallback postStep, void * obj, void * 
 	mPostStepCallbacks.push_back( PostStepCb );	
 }
 
-void cSpace::BBQuery( cpBB bb, cpLayers layers, cpGroup group, BBQueryFunc func, void * data ) {
+void cSpace::BBQuery( cBB bb, cpLayers layers, cpGroup group, BBQueryFunc func, void * data ) {
 	cBBQuery tBBQuery;
 	tBBQuery.Space	= this;
 	tBBQuery.Data	= data;
 	tBBQuery.Func	= func;
 
-	cpSpaceBBQuery( mSpace, bb, layers, group, &RecieverBBQueryFunc, reinterpret_cast<void*>( &tBBQuery ) );
+	cpSpaceBBQuery( mSpace, tocpbb( bb ), layers, group, &RecieverBBQueryFunc, reinterpret_cast<void*>( &tBBQuery ) );
 }
 
 void cSpace::SegmentQuery( cVect start, cVect end, cpLayers layers, cpGroup group, SegmentQueryFunc func, void * data ) {
