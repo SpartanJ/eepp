@@ -1,10 +1,10 @@
 #include "cshapecircle.hpp"
 #include "cspace.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
 cShapeCircle * cShapeCircle::New( cBody * body, cpFloat radius, cVect offset ) {
-	return eeNew( cShapeCircle, ( body, radius, offset ) );
+	return cpNew( cShapeCircle, ( body, radius, offset ) );
 }
 
 cShapeCircle::cShapeCircle( cBody * body, cpFloat radius, cVect offset ) {
@@ -29,12 +29,14 @@ void cShapeCircle::Radius( const cpFloat& radius ) {
 }
 
 void cShapeCircle::Draw( cSpace * space ) {
+	#ifdef PHYSICS_RENDERER_ENABLED
 	cPrimitives p;
 
 	cpCircleShape * cs = (cpCircleShape*)mShape;
 	p.SetColor( ColorForShape( mShape, space->Space() ) );
 
 	p.DrawCircle( cs->CP_PRIVATE(tc).x, cs->CP_PRIVATE(tc).y, cs->CP_PRIVATE(r) );
+	#endif
 }
 
-}}
+CP_NAMESPACE_END

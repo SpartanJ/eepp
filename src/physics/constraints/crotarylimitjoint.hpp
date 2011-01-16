@@ -3,9 +3,9 @@
 
 #include "cconstraint.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
-class cRotaryLimitJoint : public cConstraint {
+class CP_API cRotaryLimitJoint : public cConstraint {
 	public:
 		cRotaryLimitJoint( cBody * a, cBody * b, cpFloat min, cpFloat max );
 
@@ -20,6 +20,6 @@ class cRotaryLimitJoint : public cConstraint {
 		virtual void Draw();
 };
 
-}}
+CP_NAMESPACE_END
 
 #endif

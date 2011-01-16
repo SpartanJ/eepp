@@ -1,10 +1,10 @@
 #include "cshapesegment.hpp"
 #include "cspace.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
 cShapeSegment * cShapeSegment::New( cBody * body, cVect a, cVect b, cpFloat radius ) {
-	return eeNew( cShapeSegment, ( body, a, b, radius ) );
+	return cpNew( cShapeSegment, ( body, a, b, radius ) );
 }
 
 cShapeSegment::cShapeSegment( cBody * body, cVect a, cVect b, cpFloat radius ) {
@@ -49,6 +49,7 @@ cpFloat cShapeSegment::QueryHitDist( const cVect start, const cVect end, const c
 }
 
 void cShapeSegment::Draw( cSpace * space ) {
+	#ifdef PHYSICS_RENDERER_ENABLED
 	cpSegmentShape * seg = (cpSegmentShape *)mShape;
 	cVect a = tovect( seg->CP_PRIVATE(ta) );
 	cVect b = tovect( seg->CP_PRIVATE(tb) );
@@ -92,6 +93,7 @@ void cShapeSegment::Draw( cSpace * space ) {
 		cPrimitives p;
 		p.DrawLine( eeVector2f( a.x, a.y ), eeVector2f( b.x, b.y ) );
 	}
+	#endif
 }
 
-}}
+CP_NAMESPACE_END

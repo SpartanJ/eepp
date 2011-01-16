@@ -3,9 +3,9 @@
 
 #include "cconstraint.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
-class cSimpleMotor : public cConstraint {
+class CP_API cSimpleMotor : public cConstraint {
 	public:
 		cSimpleMotor( cBody * a, cBody * b, cpFloat rate );
 
@@ -16,6 +16,6 @@ class cSimpleMotor : public cConstraint {
 		virtual void Draw();
 };
 
-}}
+CP_NAMESPACE_END
 
 #endif

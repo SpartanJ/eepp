@@ -1,6 +1,6 @@
 #include "cgroovejoint.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
 cGrooveJoint::cGrooveJoint( cBody * a, cBody * b, cVect groove_a, cVect groove_b, cVect anchr2 ) {
 	mConstraint = cpGrooveJointNew( a->Body(), b->Body(), tocpv( groove_a ), tocpv( groove_b ), tocpv( anchr2 ) );
@@ -32,6 +32,7 @@ void cGrooveJoint::GrooveB( const cVect& groove_b ) {
 }
 
 void cGrooveJoint::Draw() {
+	#ifdef PHYSICS_RENDERER_ENABLED
 	cpGrooveJoint *joint= (cpGrooveJoint *)mConstraint;
 	cpBody * body_a		= mConstraint->a;
 	cpBody * body_b		= mConstraint->b;
@@ -52,6 +53,7 @@ void cGrooveJoint::Draw() {
 	BR->Draw();
 
 	BR->SetPointSize( ps );
+	#endif
 }
 
-}}
+CP_NAMESPACE_END

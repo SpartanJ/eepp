@@ -3,9 +3,9 @@
 
 #include "base.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
-class Area {
+class CP_API Area {
 	public:
 
 	inline static cpFloat ForCircle( cpFloat r1, cpFloat r2 ) {
@@ -21,7 +21,7 @@ class Area {
 	}
 };
 
-}}
+CP_NAMESPACE_END
 
 #endif
 

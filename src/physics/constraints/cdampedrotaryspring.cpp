@@ -1,6 +1,6 @@
 #include "cdampedrotaryspring.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
 cDampedRotarySpring::cDampedRotarySpring( cBody * a, cBody * b, cpFloat restAngle, cpFloat stiffness, cpFloat damping ) {
 	mConstraint = cpDampedRotarySpringNew( a->Body(), b->Body(), restAngle, stiffness, damping );
@@ -35,4 +35,4 @@ void cDampedRotarySpring::Draw() {
 	// Not implemented
 }
 
-}}
+CP_NAMESPACE_END

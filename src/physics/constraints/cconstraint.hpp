@@ -4,15 +4,13 @@
 #include "../base.hpp"
 #include "../cbody.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
-class cConstraint {
+class CP_API cConstraint {
 	public:
 		static void Free( cConstraint * constraint );
 
 		cConstraint( cpConstraint * Constraint );
-
-		cConstraint();
 
 		~cConstraint();
 
@@ -38,9 +36,11 @@ class cConstraint {
 	protected:
 		cpConstraint *		mConstraint;
 
+		cConstraint();
+
 		void SetData();
 };
 
-}}
+CP_NAMESPACE_END
 
 #endif

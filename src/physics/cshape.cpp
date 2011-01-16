@@ -2,8 +2,9 @@
 #include "cshapecircle.hpp"
 #include "cshapesegment.hpp"
 #include "cshapepoly.hpp"
+#include "cphysicsmanager.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
 void cShape::ResetShapeIdCounter() {
 	cpResetShapeIdCounter();
@@ -12,10 +13,10 @@ void cShape::ResetShapeIdCounter() {
 void cShape::Free( cShape * shape, bool DeleteBody ) {
 	if ( DeleteBody ) {
 		cBody * b = shape->Body();
-		eeSAFE_DELETE( b );
+		cpSAFE_DELETE( b );
 	}
 
-	eeSAFE_DELETE( shape );
+	cpSAFE_DELETE( shape );
 }
 
 cShape::cShape() :
@@ -25,10 +26,13 @@ cShape::cShape() :
 
 cShape::~cShape() {
 	cpShapeFree( mShape );
+
+	cPhysicsManager::instance()->RemoveShapeFree( this );
 }
 
 void cShape::SetData() {
 	mShape->data	= (void*)this;
+	cPhysicsManager::instance()->AddShapeFree( this );
 }
 
 cpShape * cShape::Shape() const {
@@ -158,9 +162,11 @@ cShapeSegment * cShape::GetAsSegment() {
 }
 
 void cShape::DrawBB() {
+	#ifdef PHYSICS_RENDERER_ENABLED
 	cPrimitives P;
 	P.SetColor( eeColorA( 76, 128, 76, 255  ) );
 	P.DrawRectangle( eeRectf( mShape->bb.l, mShape->bb.t, mShape->bb.r, mShape->bb.b ), 0.f, 1.f, EE_DRAW_LINE );
+	#endif
 }
 
 void * cShape::Data() const {
@@ -171,4 +177,4 @@ void cShape::Data( void * data ) {
 	mData = data;
 }
 
-}}
+CP_NAMESPACE_END

@@ -1,6 +1,6 @@
 #include "cratchetjoint.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
 cRatchetJoint::cRatchetJoint( cBody * a, cBody * b, cpFloat phase, cpFloat ratchet ) {
 	mConstraint = cpRatchetJointNew( a->Body(), b->Body(), phase, ratchet );
@@ -35,4 +35,4 @@ void cRatchetJoint::Draw() {
 	// Not implemented
 }
 
-}}
+CP_NAMESPACE_END

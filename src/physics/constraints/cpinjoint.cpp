@@ -1,6 +1,6 @@
 #include "cpinjoint.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
 cPinJoint::cPinJoint( cBody * a, cBody * b, cVect anchr1, cVect anchr2 ) {
 	mConstraint = cpPinJointNew( a->Body(), b->Body(), tocpv( anchr1 ), tocpv( anchr2 ) );
@@ -32,6 +32,7 @@ void cPinJoint::Dist( const cpFloat& dist ) {
 }
 
 void cPinJoint::Draw() {
+	#ifdef PHYSICS_RENDERER_ENABLED
 	cpPinJoint *joint	= (cpPinJoint *)mConstraint;
 	cpBody * body_a		= mConstraint->a;
 	cpBody * body_b		= mConstraint->b;
@@ -53,6 +54,7 @@ void cPinJoint::Draw() {
 	BR->Draw();
 
 	BR->SetPointSize( ps );
+	#endif
 }
 
-}}
+CP_NAMESPACE_END

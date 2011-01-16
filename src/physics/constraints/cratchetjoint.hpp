@@ -3,9 +3,9 @@
 
 #include "cconstraint.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
-class cRatchetJoint : public cConstraint {
+class CP_API cRatchetJoint : public cConstraint {
 	public:
 		cRatchetJoint( cBody * a, cBody * b, cpFloat phase, cpFloat ratchet );
 
@@ -24,6 +24,6 @@ class cRatchetJoint : public cConstraint {
 		virtual void Draw();
 };
 
-}}
+CP_NAMESPACE_END
 
 #endif

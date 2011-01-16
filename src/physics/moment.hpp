@@ -3,7 +3,9 @@
 
 #include "base.hpp"
 
-class Moment {
+CP_NAMESPACE_BEGIN
+
+class CP_API Moment {
 	public:
 		public:
 
@@ -23,5 +25,7 @@ class Moment {
 			return cpMomentForBox( m, width, height );
 		}
 };
+
+CP_NAMESPACE_END
 
 #endif

@@ -1,14 +1,14 @@
 #include "cshapepoly.hpp"
 #include "cspace.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
 cShapePoly * cShapePoly::New( cBody * body, int numVerts, cVect *verts, cVect offset ) {
-	return eeNew( cShapePoly, ( body, numVerts, verts, offset ) );
+	return cpNew( cShapePoly, ( body, numVerts, verts, offset ) );
 }
 
 cShapePoly * cShapePoly::New( cBody * body, cpFloat width, cpFloat height ) {
-	return eeNew( cShapePoly, ( body, width, height ) );
+	return cpNew( cShapePoly, ( body, width, height ) );
 }
 
 cShapePoly::cShapePoly( cBody * body, int numVerts, cVect *verts, cVect offset ) {
@@ -48,6 +48,7 @@ cVect cShapePoly::Centroid( int numVerts, const cVect * verts ) {
 }
 
 void cShapePoly::Draw( cSpace * space ) {
+	#ifdef PHYSICS_RENDERER_ENABLED
 	cpPolyShape * poly = (cpPolyShape*)mShape;
 
 	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
@@ -75,6 +76,7 @@ void cShapePoly::Draw( cSpace * space ) {
 	}
 
 	BR->Draw();
+	#endif
 }
 
-}}
+CP_NAMESPACE_END

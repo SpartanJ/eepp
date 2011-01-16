@@ -4,14 +4,14 @@
 #include "base.hpp"
 #include "cbody.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
 class cShapeCircle;
 class cShapeSegment;
 class cShapePoly;
 class cSpace;
 
-class cShape {
+class CP_API cShape {
 	public:
 		static void ResetShapeIdCounter();
 
@@ -95,6 +95,6 @@ class cShape {
 		void SetData();
 };
 
-}}
+CP_NAMESPACE_END
 
 #endif

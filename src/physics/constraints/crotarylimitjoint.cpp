@@ -1,6 +1,6 @@
 #include "crotarylimitjoint.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
 cRotaryLimitJoint::cRotaryLimitJoint( cBody * a, cBody * b, cpFloat min, cpFloat max ) {
 	mConstraint = cpRotaryLimitJointNew( a->Body(), b->Body(), min, max );
@@ -27,4 +27,4 @@ void cRotaryLimitJoint::Draw() {
 	// Not implemented
 }
 
-}}
+CP_NAMESPACE_END

@@ -3,9 +3,9 @@
 
 #include "cconstraint.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
-class cGrooveJoint : public cConstraint {
+class CP_API cGrooveJoint : public cConstraint {
 	public:
 		cGrooveJoint( cBody * a, cBody * b, cVect groove_a, cVect groove_b, cVect anchr2 );
 
@@ -24,6 +24,6 @@ class cGrooveJoint : public cConstraint {
 		virtual void Draw();
 };
 
-}}
+CP_NAMESPACE_END
 
 #endif

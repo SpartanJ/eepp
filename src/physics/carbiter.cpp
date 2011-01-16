@@ -1,6 +1,6 @@
 #include "carbiter.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
 cArbiter::cArbiter( cpArbiter * arbiter ) {
 	mArbiter = arbiter;
@@ -80,4 +80,4 @@ cpArbiter *	cArbiter::Arbiter() const {
 	return mArbiter;
 }
 
-}}
+CP_NAMESPACE_END

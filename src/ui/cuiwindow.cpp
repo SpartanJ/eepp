@@ -104,7 +104,12 @@ void cUIWindow::ContainerPosChange( const cUIEvent * Event ) {
 }
 
 void cUIWindow::ButtonCloseClick( const cUIEvent * Event ) {
-	CloseFadeOut( cUIThemeManager::instance()->ControlsFadeOutTime() );
+	if ( 0 != cUIThemeManager::instance()->ControlsFadeOutTime() )
+		CloseFadeOut( cUIThemeManager::instance()->ControlsFadeOutTime() );
+	else
+		Close();
+
+	SendCommonEvent( cUIEvent::EventOnWindowCloseClick );
 }
 
 void cUIWindow::ButtonMaximizeClick( const cUIEvent * Event ) {
@@ -120,10 +125,14 @@ void cUIWindow::ButtonMaximizeClick( const cUIEvent * Event ) {
 		Pos( 0, 0 );
 		InternalSize( cUIManager::instance()->MainControl()->Size() );
 	}
+
+	SendCommonEvent( cUIEvent::EventOnWindowMaximizeClick );
 }
 
 void cUIWindow::ButtonMinimizeClick( const cUIEvent * Event ) {
 	Hide();
+
+	SendCommonEvent( cUIEvent::EventOnWindowMinimizeClick );
 }
 
 void cUIWindow::SetTheme( cUITheme *Theme ) {

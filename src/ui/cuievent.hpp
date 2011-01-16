@@ -40,6 +40,9 @@ class EE_API cUIEvent {
 			EventOnItemKeyUp,
 			EventOnCursorPosChange,
 			EventOnParentSizeChange,
+			EventOnWindowCloseClick,
+			EventOnWindowMaximizeClick,
+			EventOnWindowMinimizeClick,
 			EventUser,
 			EventForceDWord = 0xFFFFFFFF
 		};

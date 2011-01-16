@@ -1,6 +1,6 @@
 #include "cpivotjoint.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
 cPivotJoint::cPivotJoint( cBody * a, cBody * b, cVect pivot ) {
 	mConstraint = cpPivotJointNew( a->Body(), b->Body(), tocpv( pivot ) );
@@ -29,6 +29,7 @@ void cPivotJoint::Anchr2( const cVect& anchr2 ) {
 }
 
 void cPivotJoint::Draw() {
+	#ifdef PHYSICS_RENDERER_ENABLED
 	cpBody * body_a		= mConstraint->a;
 	cpBody * body_b		= mConstraint->b;
 	cpPivotJoint* joint	= (cpPivotJoint *)mConstraint;
@@ -44,6 +45,7 @@ void cPivotJoint::Draw() {
 	BR->BatchPoint( b.x, b.y );
 	BR->Draw();
 	BR->SetPointSize( ps );
+	#endif
 }
 
-}}
+CP_NAMESPACE_END

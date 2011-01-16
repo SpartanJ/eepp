@@ -3,9 +3,9 @@
 
 #include "cconstraint.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
-class cDampedRotarySpring : public cConstraint {
+class CP_API cDampedRotarySpring : public cConstraint {
 	public:
 		cDampedRotarySpring( cBody * a, cBody * b, cpFloat restAngle, cpFloat stiffness, cpFloat damping );
 
@@ -24,6 +24,6 @@ class cDampedRotarySpring : public cConstraint {
 		virtual void Draw();
 };
 
-}}
+CP_NAMESPACE_END
 
 #endif

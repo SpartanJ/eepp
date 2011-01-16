@@ -1,6 +1,6 @@
 #include "cgearjoint.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
 cGearJoint::cGearJoint( cBody * a, cBody * b, cpFloat phase, cpFloat ratio ) {
 	mConstraint = cpGearJointNew( a->Body(), b->Body(), phase, ratio );
@@ -27,4 +27,4 @@ void cGearJoint::Draw() {
 	// Not implemented
 }
 
-}}
+CP_NAMESPACE_END

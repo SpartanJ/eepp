@@ -3,9 +3,9 @@
 
 #include "cconstraint.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
-class cSlideJoint : public cConstraint {
+class CP_API cSlideJoint : public cConstraint {
 	public:
 		cSlideJoint( cBody * a, cBody *b, cVect anchr1, cVect anchr2, cpFloat min, cpFloat max );
 
@@ -28,6 +28,6 @@ class cSlideJoint : public cConstraint {
 		virtual void Draw();
 };
 
-}}
+CP_NAMESPACE_END
 
 #endif

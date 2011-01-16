@@ -3,9 +3,9 @@
 
 #include "cshape.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
-class cShapePoly : public cShape {
+class CP_API cShapePoly : public cShape {
 	public:
 		static cShapePoly * New( cBody * body, int numVerts, cVect *verts, cVect offset );
 
@@ -30,6 +30,6 @@ class cShapePoly : public cShape {
 		static cVect Centroid( int numVerts, const cVect * verts );
 };
 
-}}
+CP_NAMESPACE_END
 
 #endif

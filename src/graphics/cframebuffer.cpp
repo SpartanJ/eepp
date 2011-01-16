@@ -74,4 +74,16 @@ void cFrameBuffer::RecoverView() {
 	cEngine::instance()->SetView( mPrevView );
 }
 
+const Int32& cFrameBuffer::GetWidth() const {
+	return mWidth;
+}
+
+const Int32& cFrameBuffer::GetHeight() const {
+	return mHeight;
+}
+
+const bool& cFrameBuffer::HasDepthBuffer() const {
+	return mHasDepthBuffer;
+}
+
 }}

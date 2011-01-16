@@ -1,6 +1,20 @@
 #ifndef EE_PHYSICS_HELPER
 #define EE_PHYSICS_HELPER
 
+CP_NAMESPACE_BEGIN
+
+const cpFloat cpPI		= 3.141592654;
+const cpFloat cpPId180	= cpPI / 180;
+const cpFloat cpd180PI	= 180 / cpPI;
+
+inline static cpFloat cpRadians( const cpFloat& Ang ) {
+	return Ang * cpPId180;
+}
+
+inline static cpFloat cpDegrees( const cpFloat& Radians ) {
+	return Radians * cpd180PI;
+}
+
 #ifdef USE_EE_VECTOR
 
 typedef Vector2<cpFloat>		cVect;
@@ -58,6 +72,8 @@ typedef cpBB					cBB;
 #endif
 
 #endif
+
+#ifdef PHYSICS_RENDERER_ENABLED
 
 static const GLfloat pillVAR[] = {
 	 0.0000f,  1.0000f, 1.0f,
@@ -153,5 +169,9 @@ static const GLfloat springVAR[] = {
 	1.00f, 0.0f,
 };
 static const int springVAR_count = sizeof(springVAR)/sizeof(GLfloat)/2;
+
+#endif
+
+CP_NAMESPACE_END
 
 #endif

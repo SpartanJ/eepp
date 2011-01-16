@@ -5,9 +5,9 @@
 #include "cshape.hpp"
 #include "cbody.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
-class cArbiter {
+class CP_API cArbiter {
 	public:
 		cArbiter( cpArbiter * arbiter );
 
@@ -38,6 +38,6 @@ class cArbiter {
 		cpArbiter *		mArbiter;
 };
 
-}}
+CP_NAMESPACE_END
 
 #endif

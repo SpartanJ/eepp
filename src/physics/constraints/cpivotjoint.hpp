@@ -3,9 +3,9 @@
 
 #include "cconstraint.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
-class cPivotJoint : public cConstraint {
+class CP_API cPivotJoint : public cConstraint {
 	public:
 		cPivotJoint( cBody * a, cBody * b, cVect pivot );
 
@@ -22,6 +22,6 @@ class cPivotJoint : public cConstraint {
 		virtual void Draw();
 };
 
-}}
+CP_NAMESPACE_END
 
 #endif

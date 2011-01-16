@@ -7,9 +7,9 @@
 #include "carbiter.hpp"
 #include "constraints/cconstraint.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
-class cSpace {
+class CP_API cSpace {
 	public:
 		typedef cb::Callback3<int	, cArbiter *, cSpace *	, void * >				CollisionBeginFunc;
 		typedef cb::Callback3<int	, cArbiter *, cSpace *	, void * >				CollisionPreSolveFunc;
@@ -198,6 +198,6 @@ class cSpace {
 		std::list< cPostStepCallback* >				mPostStepCallbacks;
 };
 
-}}
+CP_NAMESPACE_END
 
 #endif

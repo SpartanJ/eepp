@@ -1,9 +1,10 @@
 #include "cconstraint.hpp"
+#include "../cphysicsmanager.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
 void cConstraint::Free( cConstraint * constraint ) {
-	eeSAFE_DELETE( constraint );
+	cpSAFE_DELETE( constraint );
 }
 
 cConstraint::cConstraint( cpConstraint * Constraint ) {
@@ -16,10 +17,13 @@ cConstraint::cConstraint() {
 
 cConstraint::~cConstraint() {
 	cpConstraintFree( mConstraint );
+
+	cPhysicsManager::instance()->RemoveConstraintFree( this );
 }
 
 void cConstraint::SetData() {
 	mConstraint->data = (void*)this;
+	cPhysicsManager::instance()->AddConstraintFree( this );
 }
 
 cpConstraint * cConstraint::Constraint() const {
@@ -61,4 +65,4 @@ void cConstraint::MaxBias( const cpFloat& maxbias ) {
 void cConstraint::Draw() {
 }
 
-}}
+CP_NAMESPACE_END

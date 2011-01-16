@@ -1,39 +1,45 @@
 #include "cspace.hpp"
 #include "cphysicsmanager.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
 cSpace * cSpace::New() {
-	return eeNew( cSpace, () );
+	return cpNew( cSpace, () );
 }
 
 void cSpace::Free( cSpace * space ) {
-	eeSAFE_DELETE( space );
+	cpSAFE_DELETE( space );
 }
 
 cSpace::cSpace() {
 	mSpace = cpSpaceNew();
 	mSpace->data = (void*)this;
-	mStaticBody = eeNew( cBody, ( mSpace->staticBody ) );
+	mStaticBody = cpNew( cBody, ( mSpace->staticBody ) );
+
+	cPhysicsManager::instance()->RemoveBodyFree( mStaticBody );
+	cPhysicsManager::instance()->AddSpace( this );
 }
 
-cSpace::~cSpace() {
+cSpace::~cSpace() {	
 	cpSpaceFree( mSpace );
 
 	std::list<cConstraint*>::iterator itc = mConstraints.begin();
 	for ( ; itc != mConstraints.end(); itc++ )
-		eeSAFE_DELETE( *itc );
+		cpSAFE_DELETE( *itc );
 
 	std::list<cShape*>::iterator its = mShapes.begin();
 	for ( ; its != mShapes.end(); its++ )
-		eeSAFE_DELETE( *its );
+		cpSAFE_DELETE( *its );
 
 	std::list<cBody*>::iterator itb = mBodys.begin();
 	for ( ; itb != mBodys.end(); itb++ )
-		eeSAFE_DELETE( *itb );
+		cpSAFE_DELETE( *itb );
 
-	mStaticBody->mBody = NULL;
-	eeSAFE_DELETE( mStaticBody );
+	mStaticBody->mBody = NULL; // The body has been released by cpSpaceFree( mSpace )
+
+	cpSAFE_DELETE( mStaticBody );
+
+	cPhysicsManager::instance()->RemoveSpace( this );
 }
 
 void cSpace::Step( const cpFloat& dt ) {
@@ -41,7 +47,11 @@ void cSpace::Step( const cpFloat& dt ) {
 }
 
 void cSpace::Update() {
+	#ifdef PHYSICS_RENDERER_ENABLED
 	Step( cEngine::instance()->Elapsed() / 1000 );
+	#else
+	Step( 1 / 60 );
+	#endif
 }
 
 void cSpace::ResizeStaticHash( cpFloat dim, int count ) {
@@ -102,53 +112,81 @@ cBody * cSpace::StaticBody() const {
 
 cShape * cSpace::AddShape( cShape * shape ) {
 	cpSpaceAddShape( mSpace, shape->Shape() );
+
 	mShapes.push_back( shape );
+
+	cPhysicsManager::instance()->RemoveShapeFree( shape );
+
 	return shape;
 }
 
 cShape * cSpace::AddStaticShape( cShape * shape ) {
 	cpSpaceAddStaticShape( mSpace, shape->Shape() );
+
 	mShapes.push_back( shape );
+
+	cPhysicsManager::instance()->RemoveShapeFree( shape );
+
 	return shape;
 }
 
 cBody * cSpace::AddBody( cBody * body ) {
 	cpSpaceAddBody( mSpace, body->Body() );
+
 	mBodys.push_back( body );
+
+	cPhysicsManager::instance()->RemoveBodyFree( body );
+
 	return body;
 }
 
 cConstraint * cSpace::AddConstraint( cConstraint * constraint ) {
 	cpSpaceAddConstraint( mSpace, constraint->Constraint() );
+
 	mConstraints.push_back( constraint );
+
+	cPhysicsManager::instance()->RemoveConstraintFree( constraint );
+
 	return constraint;
 }
 
 void cSpace::RemoveShape( cShape * shape ) {
 	if ( NULL != shape ) {
 		cpSpaceRemoveShape( mSpace, shape->Shape() );
+
 		mShapes.remove( shape );
+
+		cPhysicsManager::instance()->AddShapeFree( shape );
 	}
 }
 
 void cSpace::RemoveStaticShape( cShape * shape ) {
 	if ( NULL != shape ) {
 		cpSpaceRemoveStaticShape( mSpace, shape->Shape() );
+
 		mShapes.remove( shape );
+
+		cPhysicsManager::instance()->AddShapeFree( shape );
 	}
 }
 
 void cSpace::RemoveBody( cBody * body ) {
 	if ( NULL != body ) {
 		cpSpaceRemoveBody( mSpace, body->Body() );
+
 		mBodys.remove( body );
+
+		cPhysicsManager::instance()->RemoveBodyFree( body );
 	}
 }
 
 void cSpace::RemoveConstraint( cConstraint * constraint ) {
 	if ( NULL != constraint ) {
 		cpSpaceRemoveConstraint( mSpace, constraint->Constraint() );
+
 		mConstraints.remove( constraint );
+
+		cPhysicsManager::instance()->AddConstraintFree( constraint );
 	}
 }
 
@@ -184,6 +222,7 @@ void cSpace::RehashShape( cShape * shape ) {
 	cpSpaceRehashShape( mSpace, shape->Shape() );
 }
 
+#ifdef PHYSICS_RENDERER_ENABLED
 static void drawObject( cpShape * shape, cpSpace * space ) {
 	reinterpret_cast<cShape*> ( shape->data )->Draw( reinterpret_cast<cSpace*>( space->data ) );
 }
@@ -195,8 +234,11 @@ static void drawBB( cpShape *shape, void * unused ) {
 static void drawConstraint( cpConstraint *constraint ) {
 	reinterpret_cast<cConstraint*> ( constraint->data )->Draw();
 }
+#endif
 
 void cSpace::Draw() {
+	#ifdef PHYSICS_RENDERER_ENABLED
+
 	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
 	BR->SetPreBlendFunc( ALPHA_NORMAL );
 
@@ -206,10 +248,7 @@ void cSpace::Draw() {
 	cpFloat ps = BR->GetPointSize();
 
 	if( options->DrawHash ) {
-		//glColor3f(0.5, 0.5, 0.5);
 		//cpBBTreeRenderDebug( mSpace->staticShapes );
-
-		//glColor3f(0, 1, 0);
 		//cpBBTreeRenderDebug( mSpace->activeShapes );
 	}
 
@@ -270,6 +309,8 @@ void cSpace::Draw() {
 
 	BR->SetLineWidth( lw );
 	BR->SetPointSize( ps );
+
+	#endif
 }
 
 /** Collision Handling */
@@ -408,7 +449,7 @@ void cSpace::OnPostStepCallback( void * obj, void * data ) {
 	}
 
 	mPostStepCallbacks.remove( Cb );
-	eeSAFE_DELETE( Cb );
+	cpSAFE_DELETE( Cb );
 }
 
 void cSpace::OnBBQuery( cShape * shape, cBBQuery * query ) {
@@ -461,7 +502,7 @@ void cSpace::SetDefaultCollisionHandler( const cCollisionHandler& handler ) {
 }
 
 void cSpace::AddPostStepCallback( PostStepCallback postStep, void * obj, void * data ) {
-	cPostStepCallback * PostStepCb	= eeNew( cPostStepCallback, () );
+	cPostStepCallback * PostStepCb	= cpNew( cPostStepCallback, () );
 	PostStepCb->Callback			= postStep,
 	PostStepCb->Data				= data;
 
@@ -497,4 +538,4 @@ void cSpace::PointQuery( cVect point, cpLayers layers, cpGroup group, PointQuery
 	cpSpacePointQuery( mSpace, tocpv( point ), layers, group, &RecieverPointQueryFunc, reinterpret_cast<void*>( &tPointQuery ) );
 }
 
-}}
+CP_NAMESPACE_END

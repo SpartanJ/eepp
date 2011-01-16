@@ -1,6 +1,6 @@
 #include "csimplemotor.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
 cSimpleMotor::cSimpleMotor( cBody * a, cBody * b, cpFloat rate ) {
 	mConstraint = cpSimpleMotorNew( a->Body(), b->Body(), rate );
@@ -19,4 +19,4 @@ void cSimpleMotor::Draw() {
 	// Not implemented
 }
 
-}}
+CP_NAMESPACE_END

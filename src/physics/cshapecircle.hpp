@@ -3,9 +3,9 @@
 
 #include "cshape.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
-class cShapeCircle : public cShape {
+class CP_API cShapeCircle : public cShape {
 	public:
 		static cShapeCircle * New( cBody * body, cpFloat radius, cVect offset );
 
@@ -22,6 +22,6 @@ class cShapeCircle : public cShape {
 		virtual void Draw( cSpace * space );
 };
 
-}}
+CP_NAMESPACE_END
 
 #endif

@@ -32,6 +32,12 @@ class EE_API cFrameBuffer {
 		void ClearColor( eeColorAf Color );
 
 		eeColorAf ClearColor() const;
+
+		const Int32& GetWidth() const;
+
+		const Int32& GetHeight() const;
+
+		const bool& HasDepthBuffer() const;
 	protected:
 		Int32		mWidth;
 		Int32		mHeight;

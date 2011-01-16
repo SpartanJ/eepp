@@ -3,9 +3,9 @@
 
 #include "base.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
-class cBody {
+class CP_API cBody {
 	public:
 		static cBody * New( cpFloat m, cpFloat i );
 
@@ -105,8 +105,10 @@ class cBody {
 
 		cpBody *		mBody;
 		void *			mData;
+
+		void SetData();
 };
 
-}}
+CP_NAMESPACE_END
 
 #endif

@@ -149,10 +149,12 @@ class cEETest : private cThread {
 		Int32 NH;
 
 		Uint8 Screen;
-		SceneCb Scenes[4];
+		SceneCb Scenes[6];
 		void Screen1();
 		void Screen2();
 		void Screen3();
+		void Screen4();
+		void Screen5();
 
 		cZip PAK;
 		cZip PakTest;
@@ -185,7 +187,6 @@ class cEETest : private cThread {
 		eeInt mHeight;
 
 		std::wstring mBuda;
-		cTextCache mBudaTC;
 
 		bool mTextureLoaded;
 		cResourceLoader mResLoad;
@@ -208,14 +209,16 @@ class cEETest : private cThread {
 		cSprite mBlindy;
 		cSprite * mBlindyPtr;
 
-		cFrameBuffer * mFB;
+		cFrameBuffer * mFBO;
 		cVertexBuffer * mVBO;
 
 		void ItemClick( const cUIEvent * Event );
 		void MainClick( const cUIEvent * Event );
 		void QuitClick( const cUIEvent * Event );
+		void CloseClick( const cUIEvent * Event );
 		void ButtonClick( const cUIEvent * Event );
 		void OnValueChange( const cUIEvent * Event );
+		void CreateDecoratedWindow();
 		void CreateAquaTextureAtlas();
 
 		cUIControlAnim * C;
@@ -225,6 +228,7 @@ class cEETest : private cThread {
 		cUIProgressBar * mProgressBar;
 		cUIListBox * mListBox;
 		cUIPopUpMenu * Menu;
+		cUIWindow * mWindow;
 
 		cTextCache mEEText;
 		cTextCache mFBOText;
@@ -342,6 +346,8 @@ void cEETest::Init() {
 		Scenes[1] = cb::Make0( this, &cEETest::Screen1 );
 		Scenes[2] = cb::Make0( this, &cEETest::Screen2 );
 		Scenes[3] = cb::Make0( this, &cEETest::Screen3 );
+		Scenes[4] = cb::Make0( this, &cEETest::Screen4 );
+		Scenes[5] = cb::Make0( this, &cEETest::Screen5 );
 
 		InBuf.Start();
 		InBuf.SupportNewLine( true );
@@ -376,10 +382,10 @@ void cEETest::Init() {
 		Batch.AllocVertexs( 1024 );
 		Batch.SetPreBlendFunc( ALPHA_BLENDONE );
 
-		mFB = cFrameBuffer::CreateNew( 256, 256, false );
+		mFBO = cFrameBuffer::CreateNew( 256, 256, false );
 
-		if ( NULL != mFB )
-			mFB->ClearColor( eeColorAf( 0, 0, 0, 0.5f ) );
+		if ( NULL != mFBO )
+			mFBO->ClearColor( eeColorAf( 0, 0, 0, 0.5f ) );
 
 
 		eePolygon2f Poly = CreateRoundedPolygon( 0.f, 0.f, 256.f, 50.f );
@@ -434,9 +440,7 @@ void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
 	CreateUI();
 	cLog::instance()->Writef( "CreateUI time: %f", TE.ElapsedSinceStart() );
 
-	TTFB->ShrinkText( mBuda, 400 );
-	mBudaTC.Create( TTFB, mBuda, eeColorA(255,255,255,255) );
-	mEEText.Create( TTFB, L"Entropia Engine++\nCTRL + 1 = Physics\nCTRL + 2 = Screen 2 - CTRL + 3 = Screen 3\nCTRL + 4 = Screen 4" );
+	mEEText.Create( TTFB, L"Entropia Engine++\nCTRL + Number to change Demo Screen" );
 	mFBOText.Create( TTFB, L"This is a VBO\nInside of a FBO" );
 	mInfoText.Create( FF, L"", eeColorA(255,255,255,150) );
 
@@ -475,8 +479,6 @@ void cEETest::CreateUI() {
 	Params.Border.Color( 0xFF979797 );
 	Params.Background.Colors( eeColorA( 0x66EDEDED ), eeColorA( 0xCCEDEDED ), eeColorA( 0xCCEDEDED ), eeColorA( 0x66EDEDED ) );
 	C = eeNew( cUITest, ( Params ) );
-	C->Visible( true );
-	C->Enabled( true );
 	C->Pos( 320, 240 );
 	C->DragEnable( true );
 
@@ -689,10 +691,12 @@ void cEETest::CreateUI() {
 	Menu->Add( L"Show Screen 2" );
 	Menu->Add( L"Show Screen 3" );
 	Menu->Add( L"Show Screen 4" );
+	Menu->Add( L"Show Screen 5" );
+	Menu->Add( L"Show Screen 6" );
 	Menu->AddSeparator();
 	Menu->AddCheckBox( L"Show Window" );
+	Menu->Add( L"Show Window 2" );
 	Menu->AddCheckBox( L"Multi Viewport" );
-	reinterpret_cast<cUIMenuCheckBox*> ( Menu->GetItem( L"Show Window" ) )->Active( true );
 
 	cUIPopUpMenu * Menu3 = eeNew( cUIPopUpMenu, ( MenuParams ) );
 	Menu3->Add( L"Hello World 1" );
@@ -767,11 +771,21 @@ void cEETest::CreateUI() {
 	mGenGrid->CollumnWidth( 0, 50 );
 	mGenGrid->CollumnWidth( 1, 24 );
 	mGenGrid->CollumnWidth( 2, 100 );
-
+/*
+	//reinterpret_cast<cUIMenuCheckBox*> ( Menu->GetItem( L"Show Window" ) )->Active( true );
+	C->Visible( true );
+	C->Enabled( true );
 	C->StartScaleAnim( 0.f, 1.f, 500.f, SINEOUT );
 	C->StartAlphaAnim( 0.f, 255.f, 500.f );
 	C->StartRotation( 0, 360, 500.f, SINEOUT );
+*/
+	C->Scale( 0 );
 
+	CreateDecoratedWindow();
+	//mWindow->Show();
+}
+
+void cEETest::CreateDecoratedWindow() {
 	cUIWindow::CreateParams WinParams;
 	WinParams.Flags = UI_HALIGN_CENTER;
 	WinParams.WinFlags |= cUIWindow::UI_WIN_MAXIMIZE_BUTTON;
@@ -782,10 +796,15 @@ void cEETest::CreateUI() {
 	WinParams.BaseAlpha = 240;
 	//WinParams.BorderAutoSize = false;
 	//WinParams.BorderSize = eeSize( 8, 8 );
-	cUIWindow * mWindow = eeNew( cUIWindow, ( WinParams ) );
+
+	mWindow = eeNew( cUIWindow, ( WinParams ) );
+	mWindow->AddEventListener( cUIEvent::EventOnWindowCloseClick, cb::Make1( this, &cEETest::CloseClick ) );
 	mWindow->Title( L"Test Window" );
 	mWindow->ToBack();
-	mWindow->Show();
+}
+
+void cEETest::CloseClick( const cUIEvent * Event ) {
+	mWindow = NULL;
 }
 
 void cEETest::ItemClick( const cUIEvent * Event ) {
@@ -802,8 +821,15 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 		SetScreen( 2 );
 	} else if ( L"Show Screen 4" == txt ) {
 		SetScreen( 3 );
+	} else if ( L"Show Screen 5" == txt ) {
+		SetScreen( 4 );
+	} else if ( L"Show Screen 6" == txt ) {
+		SetScreen( 5 );
 	} else if ( L"Show Window" == txt ) {
 		cUIMenuCheckBox * Chk = reinterpret_cast<cUIMenuCheckBox*> ( Event->Ctrl() );
+
+		C->Visible( true );
+		C->Enabled( true );
 
 		if ( Chk->Active() ) {
 			C->StartScaleAnim( C->Scale(), 1.f, 500.f, SINEOUT );
@@ -814,6 +840,12 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 			C->StartAlphaAnim( C->Alpha(), 0.f, 500.f );
 			C->StartRotation( 0, 360, 500.f, SINEIN );
 		}
+	} else if ( L"Show Window 2" == txt ) {
+		if ( NULL == mWindow ) {
+			CreateDecoratedWindow();
+		}
+
+		mWindow->Show();
 	} else if ( L"Multi Viewport" == txt ) {
 		MultiViewportMode = !MultiViewportMode;
 	}
@@ -870,7 +902,7 @@ void cEETest::SetScreen( Uint32 num ) {
 	else
 		EE->SetBackColor( eeColor( 0, 0, 0 ) );
 
-	if ( num < 4 )
+	if ( num < 6 )
 		Screen = num;
 }
 
@@ -1241,6 +1273,33 @@ void cEETest::Screen3() {
 	Batch.Draw();
 }
 
+void cEETest::Screen4() {
+	if ( NULL != mFBO ) {
+		mFBO->Bind();
+		mFBO->Clear();
+
+		mBlindy.Position( 128-16, 128-16 );
+		mBlindy.Draw();
+
+		mVBO->Bind();
+		mVBO->Draw();
+		mVBO->Unbind();
+
+		mFBOText.Draw( 128.f - (eeFloat)(Int32)( mFBOText.GetTextWidth() * 0.5f ), 25.f - (eeFloat)(Int32)( mFBOText.GetTextHeight() * 0.5f ), FONT_DRAW_CENTER );
+
+		mFBO->Unbind();
+
+		if ( NULL != mFBO->GetTexture() ) {
+			mFBO->GetTexture()->Draw( (eeFloat)EE->GetWidth() * 0.5f - (eeFloat)mFBO->GetWidth() * 0.5f, (eeFloat)EE->GetHeight() * 0.5f - (eeFloat)mFBO->GetHeight() * 0.5f, Ang );
+			cGlobalBatchRenderer::instance()->Draw();
+		}
+	}
+}
+
+void cEETest::Screen5() {
+
+}
+
 void cEETest::Render() {
 	if ( !mTextureLoaded )
 		mResLoad.Update();
@@ -1310,11 +1369,9 @@ void cEETest::Render() {
 					ColRR1, ColRR2, ColRR3, ColRR4
 	);
 
-	mEEText.Draw( 0.f, (eeFloat)EE->GetHeight() - mEEText.GetTextHeight(), FONT_DRAW_CENTER, 1.f, Ang );
+	mEEText.Draw( 0.f, (eeFloat)EE->GetHeight() - mEEText.GetTextHeight(), FONT_DRAW_CENTER );
 
 	mInfoText.Draw( 6.f, 6.f );
-
-	mBudaTC.Draw( 5.f, 60.f );
 
 	Uint32 NLPos = 0;
 	Uint32 LineNum = InBuf.GetCurPosLinePos( NLPos );
@@ -1330,27 +1387,6 @@ void cEETest::Render() {
 
 	FF2->SetText( InBuf.Buffer() );
 	FF2->Draw( 6, 180, FONT_DRAW_SHADOW );
-
-	if ( NULL != mFB ) {
-		mFB->Bind();
-		mFB->Clear();
-
-		mBlindy.Position( 128-16, 128-16 );
-		mBlindy.Draw();
-
-		mVBO->Bind();
-		mVBO->Draw();
-		mVBO->Unbind();
-
-		mFBOText.Draw( 128.f - (eeFloat)(Int32)( mFBOText.GetTextWidth() * 0.5f ), 25.f - (eeFloat)(Int32)( mFBOText.GetTextHeight() * 0.5f ), FONT_DRAW_CENTER );
-
-		mFB->Unbind();
-
-		if ( NULL != mFB->GetTexture() ) {
-			mFB->GetTexture()->Draw( (eeFloat)EE->GetWidth() - 256.f, 240.f, Ang );
-			cGlobalBatchRenderer::instance()->Draw();
-		}
-	}
 
 	cUIManager::instance()->Update();
 	cUIManager::instance()->Draw();
@@ -1448,6 +1484,12 @@ void cEETest::Input() {
 
 	if ( KM->IsKeyUp(KEY_4) && KM->ControlPressed() )
 		SetScreen( 3 );
+
+	if ( KM->IsKeyUp(KEY_5) && KM->ControlPressed() )
+		SetScreen( 4 );
+
+	if ( KM->IsKeyUp(KEY_6) && KM->ControlPressed() )
+		SetScreen( 5 );
 
 	cJoystick * Joy = JM->GetJoystick(0);
 
@@ -1616,7 +1658,7 @@ void cEETest::End() {
 	Mus->Stop();
 	eeSAFE_DELETE( Mus );
 	eeSAFE_DELETE( mTGL );
-	eeSAFE_DELETE( mFB );
+	eeSAFE_DELETE( mFBO );
 	eeSAFE_DELETE( mVBO );
 	eeSAFE_DELETE( mBlindyPtr );
 
@@ -1713,9 +1755,8 @@ void cEETest::Demo1Update() {
 }
 
 void cEETest::Demo1Destroy() {
-	eeSAFE_DELETE( mSpace );
-	eeSAFE_DELETE( mMouseJoint );
 	eeSAFE_DELETE( mMouseBody );
+	eeSAFE_DELETE( mSpace );
 }
 
 cpBool cEETest::blockerBegin( cArbiter *arb, cSpace *space, void *unused ) {
@@ -1823,9 +1864,8 @@ void cEETest::Demo2Update() {
 }
 
 void cEETest::Demo2Destroy() {
-	eeSAFE_DELETE( mSpace );
-	eeSAFE_DELETE( mMouseJoint );
 	eeSAFE_DELETE( mMouseBody );
+	eeSAFE_DELETE( mSpace );
 }
 
 void cEETest::ChangeDemo( Uint32 num ) {

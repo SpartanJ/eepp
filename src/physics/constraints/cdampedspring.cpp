@@ -1,6 +1,6 @@
 #include "cdampedspring.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
 cDampedSpring::cDampedSpring( cBody * a, cBody * b, cVect anchr1, cVect anchr2, cpFloat restLength, cpFloat stiffness, cpFloat damping ) {
 	mConstraint = cpDampedSpringNew( a->Body(), b->Body(), tocpv( anchr1 ), tocpv( anchr2 ), restLength, stiffness, damping );
@@ -48,6 +48,7 @@ void cDampedSpring::Damping( const cpFloat& damping ) {
 }
 
 void cDampedSpring::Draw() {
+	#ifdef PHYSICS_RENDERER_ENABLED
 	cpDampedSpring * spring = (cpDampedSpring*)mConstraint;
 	cpBody * body_a = mConstraint->a;
 	cpBody * body_b = mConstraint->b;
@@ -81,6 +82,7 @@ void cDampedSpring::Draw() {
 		glMultMatrixf(matrix);
 		glDrawArrays(GL_LINE_STRIP, 0, springVAR_count);
 	} glPopMatrix();
+	#endif
 }
 
-}}
+CP_NAMESPACE_END

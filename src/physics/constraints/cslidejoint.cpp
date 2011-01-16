@@ -1,6 +1,6 @@
 #include "cslidejoint.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
 cSlideJoint::cSlideJoint( cBody * a, cBody *b, cVect anchr1, cVect anchr2, cpFloat min, cpFloat max ) {
 	mConstraint = cpSlideJointNew( a->Body(), b->Body(), tocpv( anchr1 ), tocpv( anchr2 ), min, max );
@@ -40,6 +40,7 @@ void cSlideJoint::Max( const cpFloat& max ) {
 }
 
 void cSlideJoint::Draw() {
+	#ifdef PHYSICS_RENDERER_ENABLED
 	cpBody * body_a		= mConstraint->a;
 	cpBody * body_b		= mConstraint->b;
 	cpSlideJoint *joint = (cpSlideJoint *)mConstraint;
@@ -59,6 +60,7 @@ void cSlideJoint::Draw() {
 	BR->BatchLine( a.x, a.y, b.x, b.y );
 	BR->Draw();
 	BR->SetPointSize( ps );
+	#endif
 }
 
-}}
+CP_NAMESPACE_END

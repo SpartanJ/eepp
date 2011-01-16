@@ -1,44 +1,56 @@
 #include "cbody.hpp"
+#include "cphysicsmanager.hpp"
 
-namespace EE { namespace Physics {
+CP_NAMESPACE_BEGIN
 
 cBody * cBody::New( cpFloat m, cpFloat i ) {
-	return eeNew( cBody, ( m, i ) );
+	return cpNew( cBody, ( m, i ) );
 }
 
 cBody * cBody::New( cpBody * body ) {
-	return eeNew( cBody, ( body ) );
+	return cpNew( cBody, ( body ) );
 }
 
 cBody * cBody::New() {
-	return eeNew( cBody, () );
+	return cpNew( cBody, () );
 }
 
 void cBody::Free( cBody * body ) {
-	eeSAFE_DELETE( body );
+	cpSAFE_DELETE( body );
 }
 
 cBody::cBody( cpBody * body ) :
 	mBody( body ),
 	mData( NULL )
 {
-	mBody->data = (void*)this;
+	SetData();
 }
 
 cBody::cBody( cpFloat m, cpFloat i ) :
+	mBody( cpBodyNew( m, i ) ),
 	mData( NULL )
 {
-	mBody = cpBodyNew( m, i );
-	mBody->data = (void*)this;
+	SetData();
 }
 
-cBody::cBody() {
-	mBody = cpBodyNewStatic();
+cBody::cBody() :
+	mBody( cpBodyNewStatic() ),
+	mData( NULL )
+{
+	SetData();
 }
 
 cBody::~cBody() {
 	if ( NULL != mBody )
 		cpBodyFree( mBody );
+
+	cPhysicsManager::instance()->RemoveBodyFree( this );
+}
+
+void cBody::SetData() {
+	mBody->data = (void*)this;
+
+	cPhysicsManager::instance()->AddBodyFree( this );
 }
 
 void cBody::Activate() {
@@ -118,11 +130,11 @@ void cBody::Angle( const cpFloat& rads ) {
 }
 
 cpFloat cBody::AngleDeg() {
-	return Degrees( mBody->a );
+	return cpDegrees( mBody->a );
 }
 
 void cBody::AngleDeg( const cpFloat& angle ) {
-	Angle( Radians( angle ) );
+	Angle( cpRadians( angle ) );
 }
 
 cpFloat cBody::AngVel() const {
@@ -197,4 +209,4 @@ void cBody::Data( void * data ) {
 	mData = data;
 }
 
-}}
+CP_NAMESPACE_END
