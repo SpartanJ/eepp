@@ -30,6 +30,7 @@ using namespace EE::Window;
 #include "../graphics/cprimitives.hpp"
 #include "../graphics/cbatchrenderer.hpp"
 #include "../graphics/cglobalbatchrenderer.hpp"
+#include "../graphics/glhelper.hpp"
 
 #endif
 

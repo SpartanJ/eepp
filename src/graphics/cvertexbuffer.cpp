@@ -3,13 +3,12 @@
 #include "cvertexbuffervbo.hpp"
 #include "glhelper.hpp"
 #include "cvertexbuffermanager.hpp"
-
 using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
 cVertexBuffer * cVertexBuffer::Create( const Uint32& VertexFlags, EE_DRAW_MODE DrawType, const Int32& ReserveVertexSize, const Int32& ReserveIndexSize, EE_VBO_USAGE_TYPE UsageType ) {
-	if ( cGL::instance()->IsExtension( GLEW_ARB_vertex_buffer_object ) )
+	if ( GLi->IsExtension( EEGL_ARB_vertex_buffer_object ) )
 		return eeNew( cVertexBufferVBO, ( VertexFlags, DrawType, ReserveVertexSize, ReserveIndexSize, UsageType ) );
 
 	return eeNew( cVertexBufferOGL, ( VertexFlags, DrawType, ReserveVertexSize, ReserveIndexSize, UsageType ) );

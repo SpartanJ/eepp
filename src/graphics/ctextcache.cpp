@@ -137,16 +137,16 @@ void cTextCache::Draw( const eeFloat& X, const eeFloat& Y, const Uint32& Flags, 
 			mCachedCoords = false;
 		}
 		
+		cGlobalBatchRenderer::instance()->Draw();
+
 		if ( Angle != 0.0f || Scale != 1.0f ) {
 			mFont->Draw( *this, X, Y, Flags, Scale, Angle, Effect );
 		} else {
-			cGlobalBatchRenderer::instance()->Draw();
-
-			glTranslatef( X, Y, 0.f );
+			GLi->Translatef( X, Y, 0.f );
 	
 			mFont->Draw( *this, 0, 0, Flags, Scale, Angle, Effect );
 	
-			glTranslatef( -X, -Y, 0.f );
+			GLi->Translatef( -X, -Y, 0.f );
 		}
 	}
 }

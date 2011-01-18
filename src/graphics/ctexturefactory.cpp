@@ -2,8 +2,6 @@
 #include "ctextureloader.hpp"
 #include "glhelper.hpp"
 
-using namespace EE::Graphics::Private;
-
 namespace EE { namespace Graphics {
 
 cTextureFactory::cTextureFactory() :
@@ -101,15 +99,15 @@ Uint32 cTextureFactory::FindFreeSlot() {
 
 void cTextureFactory::Bind( const cTexture* Tex, const Uint32& TextureUnit ) {
 	if( NULL != Tex && mCurrentTexture[ TextureUnit ] != (Int32)Tex->Handle() ) {
-		if ( cGL::instance()->IsExtension( EEGL_ARB_multitexture ) )
-			glActiveTextureARB( GL_TEXTURE0_ARB + TextureUnit );
+		if ( GLi->IsExtension( EEGL_ARB_multitexture ) )
+			SetActiveTextureUnit( TextureUnit );
 
 		glBindTexture( GL_TEXTURE_2D, Tex->Handle() );
 
 		mCurrentTexture[ TextureUnit ] = Tex->Handle();
 
-		if ( cGL::instance()->IsExtension( EEGL_ARB_multitexture ) )
-			glActiveTextureARB( GL_TEXTURE0_ARB );
+		if ( GLi->IsExtension( EEGL_ARB_multitexture ) )
+			SetActiveTextureUnit( 0 );
 	}
 }
 
@@ -267,16 +265,16 @@ void cTextureFactory::SetTextureConstantColor( const eeColorAf& Color ) {
 }
 
 void cTextureFactory::SetTextureEnv( const EE_TEXTURE_PARAM& Param, const Int32& Val ) {
-	GLenum lParam = (GLenum)cGL::instance()->GetTextureParamEnum( Param );
+	GLenum lParam = (GLenum)GLi->GetTextureParamEnum( Param );
 
 	glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB );
 
 	if( Param == TEX_PARAM_COLOR_FUNC || Param == TEX_PARAM_ALPHA_FUNC ) {
-		glTexEnvi( GL_TEXTURE_ENV, lParam, cGL::instance()->GetTextureFuncEnum( (EE_TEXTURE_FUNC)Val ) );
+		glTexEnvi( GL_TEXTURE_ENV, lParam, GLi->GetTextureFuncEnum( (EE_TEXTURE_FUNC)Val ) );
 	} else if( Param >= TEX_PARAM_COLOR_SOURCE_0 && Param <= TEX_PARAM_ALPHA_SOURCE_2 ) {
-		glTexEnvi( GL_TEXTURE_ENV, lParam, cGL::instance()->GetTextureSourceEnum( (EE_TEXTURE_SOURCE)Val ) );
+		glTexEnvi( GL_TEXTURE_ENV, lParam, GLi->GetTextureSourceEnum( (EE_TEXTURE_SOURCE)Val ) );
 	} else if( Param >= TEX_PARAM_COLOR_OP_0 && Param <= TEX_PARAM_ALPHA_OP_2 ) {
-		glTexEnvi( GL_TEXTURE_ENV, lParam, cGL::instance()->GetTextureOpEnum( (EE_TEXTURE_OP)Val ) );
+		glTexEnvi( GL_TEXTURE_ENV, lParam, GLi->GetTextureOpEnum( (EE_TEXTURE_OP)Val ) );
 	} else {
 		glTexEnvi( GL_TEXTURE_ENV, lParam, Val );
 	}
@@ -287,7 +285,7 @@ const EE_PRE_BLEND_FUNC& cTextureFactory::GetPreBlendFunc() const {
 }
 
 eeUint cTextureFactory::GetValidTextureSize(const eeUint& Size) {
-	if ( cGL::instance()->IsExtension( EEGL_ARB_texture_non_power_of_two ) )
+	if ( GLi->IsExtension( EEGL_ARB_texture_non_power_of_two ) )
 		return Size;
 	else
 		return NextPowOfTwo(Size);

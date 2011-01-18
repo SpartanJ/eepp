@@ -69,19 +69,19 @@ void cUIControlAnim::Alpha( const eeFloat& alpha ) {
 void cUIControlAnim::MatrixSet() {
 	if ( mScale != 1.f || mAngle != 0.f ) {
 		cGlobalBatchRenderer::instance()->Draw();
-		glPushMatrix();
+		GLi->PushMatrix();
 		eeVector2f Center( mScreenPos.x + mSize.Width() * 0.5f, mScreenPos.y + mSize.Height() * 0.5f );
-		glTranslatef( Center.x , Center.y, 0.f );
-		glRotatef( mAngle, 0.0f, 0.0f, 1.0f );
-		glScalef( mScale, mScale, 1.0f );
-		glTranslatef( -Center.x, -Center.y, 0.f );
+		GLi->Translatef( Center.x , Center.y, 0.f );
+		GLi->Rotatef( mAngle, 0.0f, 0.0f, 1.0f );
+		GLi->Scalef( mScale, mScale, 1.0f );
+		GLi->Translatef( -Center.x, -Center.y, 0.f );
 	}
 }
 
 void cUIControlAnim::MatrixUnset() {
 	if ( mScale != 1.f || mAngle != 0.f ) {
 		cGlobalBatchRenderer::instance()->Draw();
-		glPopMatrix();
+		GLi->PopMatrix();
 	}
 }
 

@@ -155,16 +155,15 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 	eeUint numvert = 0;
 
 	if ( Angle != 0.0f || Scale != 1.0f ) {
-		glLoadIdentity();
-		glPushMatrix();
+		GLi->PushMatrix();
 
 		eeVector2f Center( cX + TextCache.GetTextWidth() * 0.5f, cY + TextCache.GetTextHeight() * 0.5f );
-		glTranslatef( Center.x , Center.y, 0.f );
-		glRotatef( Angle, 0.0f, 0.0f, 1.0f );
-		glScalef( Scale, Scale, 1.0f );
-		glTranslatef( -Center.x, -Center.y, 0.f );
+		GLi->Translatef( Center.x , Center.y, 0.f );
+		GLi->Rotatef( Angle, 0.0f, 0.0f, 1.0f );
+		GLi->Scalef( Scale, Scale, 1.0f );
+		GLi->Translatef( -Center.x, -Center.y, 0.f );
 
-		glTranslatef( X, Y, 0.f );
+		GLi->Translatef( X, Y, 0.f );
 	}
 
 	std::vector<eeVertexCoords>& RenderCoords = TextCache.VertextCoords();
@@ -309,7 +308,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 	#endif
 
 	if ( Angle != 0.0f || Scale != 1.0f ) {
-		glPopMatrix();
+		GLi->PopMatrix();
 	}
 }
 
@@ -345,14 +344,13 @@ void cFont::SubDraw( const std::wstring& Text, const eeFloat& X, const eeFloat& 
 	eeUint numvert = 0;
 
 	if ( Angle != 0.0f || Scale != 1.0f ) {
-		glLoadIdentity();
-		glPushMatrix();
+		GLi->PushMatrix();
 
 		eeVector2f Center( cX + GetTextWidth() * 0.5f, cY + GetTextHeight() * 0.5f );
-		glTranslatef( Center.x , Center.y, 0.f );
-		glRotatef( Angle, 0.0f, 0.0f, 1.0f );
-		glScalef( Scale, Scale, 1.0f );
-		glTranslatef( -Center.x, -Center.y, 0.f );
+		GLi->Translatef( Center.x , Center.y, 0.f );
+		GLi->Rotatef( Angle, 0.0f, 0.0f, 1.0f );
+		GLi->Scalef( Scale, Scale, 1.0f );
+		GLi->Translatef( -Center.x, -Center.y, 0.f );
 	}
 
 	switch ( FontHAlignGet( Flags ) ) {
@@ -479,7 +477,7 @@ void cFont::SubDraw( const std::wstring& Text, const eeFloat& X, const eeFloat& 
 	#endif
 
 	if ( Angle != 0.0f || Scale != 1.0f )
-		glPopMatrix();
+		GLi->PopMatrix();
 }
 
 void cFont::CacheWidth( const std::wstring& Text, std::vector<eeFloat>& LinesWidth, eeFloat& CachedWidth, eeInt& NumLines ) {

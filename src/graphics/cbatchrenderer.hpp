@@ -3,6 +3,7 @@
 
 #include "base.hpp"
 #include "ctexture.hpp"
+#include "glhelper.hpp"
 
 namespace EE { namespace Graphics {
 

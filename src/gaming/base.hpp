@@ -21,6 +21,7 @@ using namespace EE::Window;
 #include "../graphics/cshape.hpp"
 #include "../graphics/cfont.hpp"
 #include "../graphics/cprimitives.hpp"
+#include "../graphics/glhelper.hpp"
 using namespace EE::Graphics;
 
 #endif

@@ -17,7 +17,7 @@ cUIComplexControl::~cUIComplexControl() {
 }
 
 void cUIComplexControl::Update() {
-	if ( NULL != mTooltip && mTooltip->Text().size() ) {
+	if ( mVisible && NULL != mTooltip && mTooltip->Text().size() ) {
 		if ( IsMouseOverMeOrChilds() ) {
 			eeVector2i Pos = cUIManager::instance()->GetMousePos();
 			Pos.x += cUIThemeManager::instance()->CursorSize().x;

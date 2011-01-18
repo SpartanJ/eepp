@@ -60,7 +60,7 @@ void cShapeSegment::Draw( cSpace * space ) {
 		glDisableClientState( GL_COLOR_ARRAY );
 
 		glVertexPointer(3, GL_FLOAT, 0, pillVAR);
-		glPushMatrix();
+		GLi->PushMatrix();
 
 		cVect d = b - a;
 		cVect r = d * ( seg->CP_PRIVATE(r) / cpvlength( tocpv( d ) ) );
@@ -84,7 +84,7 @@ void cShapeSegment::Draw( cSpace * space ) {
 		glColor3f( 0.4f, 0.4f, 0.4f );
 		glDrawArrays( GL_LINE_LOOP, 0, pillVAR_count );
 
-		glPopMatrix();
+		GLi->PopMatrix();
 
 		glEnableClientState( GL_TEXTURE_COORD_ARRAY );
 		glEnableClientState( GL_COLOR_ARRAY );

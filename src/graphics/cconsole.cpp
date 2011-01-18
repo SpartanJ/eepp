@@ -1,5 +1,5 @@
 #include "cconsole.hpp"
-
+#include "glhelper.hpp"
 #include "../audio/caudiolistener.hpp"
 #include "../window/cinput.hpp"
 #include "../window/cengine.hpp"
@@ -493,7 +493,7 @@ void cConsole::CmdGetLog( const std::vector < std::wstring >& params ) {
 }
 
 void cConsole::CmdGetGpuExtensions() {
-    char *Exts = (char *)glGetString(GL_EXTENSIONS);
+	char *Exts = GLi->GetExtensions();
     std::vector < std::wstring > tvec = SplitString( toWStr( std::string( Exts ) ), L' ' );
 	if ( tvec.size() > 0 ) {
 		for ( eeUint i = 0; i < tvec.size(); i++ )

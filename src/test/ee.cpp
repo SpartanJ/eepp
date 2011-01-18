@@ -1,10 +1,8 @@
 #include "../ee.h"
 
 /**
-@TODO Create a basic UI system ( add basic controls, add skinning support ).
 @TODO Add some Surface Grid class, to create special effects ( waved texture, and stuff like that ).
 @TODO Add Scripting support ( lua or squirrel ).
-@TODO Add 2D physics support ( Box2D or Chipmunk wrapper ).
 @TODO Encapsulate SDL and OpenGL ( and remove unnecessary dependencies ).
 @TODO Support color cursors ( not only black and white cursors, that really sucks ) - Imposible with SDL 1.2
 */
@@ -1369,7 +1367,7 @@ void cEETest::Render() {
 					ColRR1, ColRR2, ColRR3, ColRR4
 	);
 
-	mEEText.Draw( 0.f, (eeFloat)EE->GetHeight() - mEEText.GetTextHeight(), FONT_DRAW_CENTER );
+	mEEText.Draw( 0.f, (eeFloat)EE->GetHeight() - mEEText.GetTextHeight(), FONT_DRAW_CENTER, 1.f, Ang );
 
 	mInfoText.Draw( 6.f, 6.f );
 

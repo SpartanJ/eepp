@@ -28,7 +28,6 @@ using namespace EE::System;
 #include "renders.hpp"
 
 #ifdef EE_GLES
-	const GLubyte EE_GLES_INDICES [] = {0, 3, 1, 2};
 	#define EE_QUAD_VERTEX 6
 #else
 	#define EE_QUAD_VERTEX 4

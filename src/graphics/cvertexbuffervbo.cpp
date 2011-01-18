@@ -1,8 +1,6 @@
 #include "cvertexbuffervbo.hpp"
 #include "glhelper.hpp"
 
-using namespace EE::Graphics::Private;
-
 namespace EE { namespace Graphics {
 
 cVertexBufferVBO::cVertexBufferVBO( const Uint32& VertexFlags, EE_DRAW_MODE DrawType, const Int32& ReserveVertexSize, const Int32& ReserveIndexSize, EE_VBO_USAGE_TYPE UsageType ) :
@@ -119,7 +117,7 @@ void cVertexBufferVBO::SetVertexStates() {
 	}
 
 	/// TEXTURES
-	if ( cGL::instance()->IsExtension( EEGL_ARB_multitexture ) ) {
+	if ( GLi->IsExtension( EEGL_ARB_multitexture ) ) {
 		for ( Int32 i = 0; i < 5; i++ ) {
 			if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 + i ) ) {
 				glClientActiveTextureARB( GL_TEXTURE0_ARB + i );

@@ -5,7 +5,6 @@
 #include "cframebufferfbo.hpp"
 #include "cframebufferpbuffer.hpp"
 #include "cframebuffermanager.hpp"
-
 using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
@@ -60,12 +59,12 @@ void cFrameBuffer::SetBufferView() {
 
 	mPrevView = Window::cEngine::instance()->GetView();
 
-	glMatrixMode( GL_PROJECTION );
-	glLoadIdentity();
-	glViewport( 0, 0, mWidth, mHeight );
-	glOrtho( 0.0f, mWidth, 0.f, mHeight, -1000.0f, 1000.0f );
-	glMatrixMode( GL_MODELVIEW );
-	glLoadIdentity();
+	GLi->MatrixMode( GL_PROJECTION );
+	GLi->LoadIdentity();
+	GLi->Viewport( 0, 0, mWidth, mHeight );
+	GLi->Ortho( 0.0f, mWidth, 0.f, mHeight, -1000.0f, 1000.0f );
+	GLi->MatrixMode( GL_MODELVIEW );
+	GLi->LoadIdentity();
 }
 
 void cFrameBuffer::RecoverView() {

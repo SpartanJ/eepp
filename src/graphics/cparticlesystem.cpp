@@ -1,8 +1,6 @@
 #include "cparticlesystem.hpp"
 #include "glhelper.hpp"
 
-using namespace EE::Graphics::Private;
-
 namespace EE { namespace Graphics {
 
 cParticleSystem::cParticleSystem() :
@@ -41,7 +39,7 @@ cParticleSystem::~cParticleSystem() {
 }
 
 void cParticleSystem::Create(const EE_PARTICLE_EFFECT& Effect, const Uint32& NumParticles, const Uint32& TexId, const eeFloat& X, const eeFloat& Y, const eeFloat& PartSize, const bool& AnimLoop, const Uint32& NumLoops, const eeColorAf& Color, const eeFloat& X2, const eeFloat& Y2, const eeFloat& AlphaDecay, const eeFloat& XSpeed, const eeFloat& YSpeed, const eeFloat& XAcceleration, const eeFloat& YAcceleration) {
-	mPointsSup = cGL::instance()->PointSpriteSupported();
+	mPointsSup = GLi->PointSpriteSupported();
 
 	mEffect = Effect;
 	mX = X;

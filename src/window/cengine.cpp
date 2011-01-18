@@ -115,7 +115,7 @@ cEngine::~cEngine() {
 
 	Audio::cAudioListener::DestroySingleton();
 
-	Graphics::Private::cGL::DestroySingleton();
+	Graphics::cGL::DestroySingleton();
 
 	cLog::DestroySingleton();
 
@@ -215,16 +215,16 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 			SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE	, 8);
 		}
 
-		cGL::instance()->Init();
+		SetWindowCaption("EEPP");
 
 		GetMainContext();
 
 		mDefaultView.SetView( 0, 0, mVideoInfo.Width, mVideoInfo.Height );
 		mCurrentView = &mDefaultView;
 
-		Setup2D();
+		cGL::instance()->Init();
 
-		SetWindowCaption("EEPP");
+		Setup2D();
 
 		cLog::instance()->Write( "Engine Initialized Succesfully.\nGL Vendor: " + GetVendor() + "\nGL Renderer: " + GetRenderer() + "\nGL Version: " + GetVersion() );
 
@@ -238,14 +238,14 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 }
 
 void cEngine::SetViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
-	glMatrixMode( GL_PROJECTION );
-	glLoadIdentity();
+	GLi->MatrixMode( GL_PROJECTION );
+	GLi->LoadIdentity();
 
-	glViewport( x, GetHeight() - Height - y, Width, Height );
-	glOrtho( 0.0f, Width, Height, 0.0f, -1000.0f, 1000.0f );
+	GLi->Viewport( x, GetHeight() - Height - y, Width, Height );
+	GLi->Ortho( 0.0f, Width, Height, 0.0f, -1000.0f, 1000.0f );
 
-	glMatrixMode( GL_MODELVIEW );
-	glLoadIdentity();
+	GLi->MatrixMode( GL_MODELVIEW );
+	GLi->LoadIdentity();
 }
 
 void cEngine::SetView( const cView& View ) {

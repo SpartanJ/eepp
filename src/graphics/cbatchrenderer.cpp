@@ -105,15 +105,15 @@ void cBatchRenderer::Flush() {
 	}
 
 	if ( CreateMatrix ) {
-		glLoadIdentity();
-		glPushMatrix();
+		GLi->LoadIdentity();
+		GLi->PushMatrix();
 
-		glTranslatef( mPosition.x, mPosition.y, 0.0f);
+		GLi->Translatef( mPosition.x, mPosition.y, 0.0f);
 
-		glTranslatef( mCenter.x, mCenter.y, 0.0f);
-		glRotatef( mRotation, 0.0f, 0.0f, 1.0f );
-		glScalef( mScale, mScale, 1.0f );
-		glTranslatef( -mCenter.x, -mCenter.y, 0.0f);
+		GLi->Translatef( mCenter.x, mCenter.y, 0.0f);
+		GLi->Rotatef( mRotation, 0.0f, 0.0f, 1.0f );
+		GLi->Scalef( mScale, mScale, 1.0f );
+		GLi->Translatef( -mCenter.x, -mCenter.y, 0.0f);
 	}
 
 	glVertexPointer(2, GL_FLOAT, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) );
@@ -130,7 +130,7 @@ void cBatchRenderer::Flush() {
 	}
 
 	if ( CreateMatrix )
-		glPopMatrix();
+		GLi->PopMatrix();
 
 	if ( mCurrentMode == DM_POINTS && mTexture > 0 ) {
 		glDisable( GL_POINT_SPRITE_ARB );

@@ -125,9 +125,9 @@ void cIsoMap::Draw() {
 	eeColorA SC(50,50,50,100);
 
 	cGlobalBatchRenderer::instance()->Draw();
-	glLoadIdentity();
-	glPushMatrix();
-	glTranslatef( OffsetX, OffsetY, 0.0f );
+	GLi->LoadIdentity();
+	GLi->PushMatrix();
+	GLi->Translatef( OffsetX, OffsetY, 0.0f );
 
 	for ( eeUint L = 0; L < MapLayers; L++ ) {
 		for ( eeInt y = Ty; y < Ty2; y++ ) {
@@ -180,7 +180,7 @@ void cIsoMap::Draw() {
 
 		if ( L == 0 ) {
 			cGlobalBatchRenderer::instance()->Draw();
-			glPopMatrix();
+			GLi->PopMatrix();
 		}
 	}
 

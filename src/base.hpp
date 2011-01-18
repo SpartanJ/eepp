@@ -23,6 +23,7 @@
 #include <queue>
 #include <list>
 #include <set>
+#include <stack>
 
 #include "helper/PlusCallback/callback.hpp"
 

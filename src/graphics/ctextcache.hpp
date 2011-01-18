@@ -3,6 +3,7 @@
 
 #include "base.hpp"
 #include "fonthelper.hpp"
+#include "glhelper.hpp"
 
 namespace EE { namespace Graphics {
 

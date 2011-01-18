@@ -72,6 +72,10 @@ class EE_API cShaderProgram {
 		/** @overload */
 		bool SetUniform( const std::string& Name, Int32 Value );
 
+		bool SetUniformMatrix( const std::string Name, const eeFloat * Value );
+
+		bool SetUniformMatrix( const Int32& Id, const eeFloat * Value );
+
 		/** @return The id of the program (the handle) */
 		const Uint32& Handler() const { return mHandler; }
 

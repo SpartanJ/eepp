@@ -3,8 +3,6 @@
 #include "cglobalbatchrenderer.hpp"
 #include "glhelper.hpp"
 
-using namespace EE::Graphics::Private;
-
 namespace EE { namespace Graphics {
 
 cShaderProgram::cShaderProgram( const std::string& name ) :
@@ -117,7 +115,7 @@ void cShaderProgram::RemoveFromManager() {
 }
 
 void cShaderProgram::Init() {
-	if ( cGL::instance()->ShadersSupported() && 0 == Handler() ) {
+	if ( GLi->ShadersSupported() && 0 == Handler() ) {
 		mHandler = glCreateProgram();
 		mValid = false;
 		mUniformLocations.clear();
@@ -254,6 +252,21 @@ bool cShaderProgram::SetUniform( const std::string& Name, Int32 Value ) {
 
 	if ( Location >= 0 )
 		glUniform1i( Location, Value );
+
+	return ( Location >= 0 );
+}
+
+bool SetUniformMatrix( const Int32& Id, const eeFloat * Value ) {
+	glUniformMatrix4fv( Id, 1, false, Value );
+
+	return true;
+}
+
+bool cShaderProgram::SetUniformMatrix( const std::string Name, const eeFloat * Value ) {
+	Int32 Location = UniformLocation( Name );
+
+	if ( Location >= 0 )
+		glUniformMatrix4fv( Location, 1, false, Value );
 
 	return ( Location >= 0 );
 }

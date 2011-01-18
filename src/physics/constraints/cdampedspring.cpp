@@ -65,23 +65,26 @@ void cDampedSpring::Draw() {
 	cVect delta = b - a;
 
 	glVertexPointer(2, GL_FLOAT, 0, springVAR);
-	glPushMatrix(); {
-		GLfloat x = a.x;
-		GLfloat y = a.y;
-		GLfloat cos = delta.x;
-		GLfloat sin = delta.y;
-		GLfloat s = 1.0f / cpvlength( tocpv( delta ) );
+	GLi->PushMatrix();
 
-		const GLfloat matrix[] = {
-				 cos,    sin, 0.0f, 0.0f,
-				-sin*s,  cos*s, 0.0f, 0.0f,
-				0.0f,   0.0f, 1.0f, 0.0f,
-					 x,      y, 0.0f, 1.0f,
-		};
+	GLfloat x = a.x;
+	GLfloat y = a.y;
+	GLfloat cos = delta.x;
+	GLfloat sin = delta.y;
+	GLfloat s = 1.0f / cpvlength( tocpv( delta ) );
 
-		glMultMatrixf(matrix);
-		glDrawArrays(GL_LINE_STRIP, 0, springVAR_count);
-	} glPopMatrix();
+	const GLfloat matrix[] = {
+			 cos,    sin, 0.0f, 0.0f,
+			-sin*s,  cos*s, 0.0f, 0.0f,
+			0.0f,   0.0f, 1.0f, 0.0f,
+				 x,      y, 0.0f, 1.0f,
+	};
+
+	glMultMatrixf(matrix);
+
+	glDrawArrays(GL_LINE_STRIP, 0, springVAR_count);
+
+	GLi->PopMatrix();
 	#endif
 }
 

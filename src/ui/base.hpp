@@ -28,6 +28,7 @@ using namespace EE::Window;
 #include "../graphics/csprite.hpp"
 #include "../graphics/cfont.hpp"
 #include "../graphics/cprimitives.hpp"
+#include "../graphics/glhelper.hpp"
 using namespace EE::Graphics;
 
 #endif

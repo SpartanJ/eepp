@@ -2,17 +2,12 @@
 
 namespace EE { namespace Graphics {
 
-#define COLLIDE_MAX(a,b)	((a > b) ? a : b)
-#define COLLIDE_MIN(a,b)	((a < b) ? a : b)
+bool PixelPerfectCollide( cTexture * Tex1, const Uint16& x1, const Uint16& y1, cTexture * Tex2, const Uint16& x2, const Uint16& y2, const eeRectu& Tex1_SrcRECT, const eeRectu& Tex2_SrcRECT ) {
+	eeASSERT( NULL != Tex1 && NULL != Tex2 );
 
-bool PixelPerfectCollide( const Uint32& TexId_1, const Uint16& x1, const Uint16& y1, const Uint32& TexId_2, const Uint16& x2, const Uint16& y2, const eeRectu& Tex1_SrcRECT, const eeRectu& Tex2_SrcRECT ) {
-	cTextureFactory* TF = cTextureFactory::instance();
 	Uint16 ax1, ay1, ax2, ay2, bx1, by1, bx2, by2;
 	bool Collide = false;
-	
-	cTexture* Tex1 = TF->GetTexture(TexId_1);
-	cTexture* Tex2 = TF->GetTexture(TexId_2);
-	
+
 	ax1 = x1;
 	ay1 = y1;
 	if (Tex1_SrcRECT.Right != 0 && Tex1_SrcRECT.Bottom != 0) {
@@ -39,10 +34,10 @@ bool PixelPerfectCollide( const Uint32& TexId_1, const Uint16& x1, const Uint16&
 		Tex1->Lock();
 		Tex2->Lock();
 		
-		inter_x0 = COLLIDE_MAX(ax1,bx1);
-		inter_x1 = COLLIDE_MIN(ax2,bx2);
-		inter_y0 = COLLIDE_MAX(ay1,by1);
-		inter_y1 = COLLIDE_MIN(ay2,by2);
+		inter_x0 = eemax(ax1,bx1);
+		inter_x1 = eemin(ax2,bx2);
+		inter_y0 = eemax(ay1,by1);
+		inter_y1 = eemin(ay2,by2);
 		eeColorA C1, C2;
 
 		for(Uint16 y = inter_y0 ; y <= inter_y1 ; y++) {
@@ -70,13 +65,12 @@ bool PixelPerfectCollide( const Uint32& TexId_1, const Uint16& x1, const Uint16&
 	return Collide;
 }
 
-bool PixelPerfectCollide( const Uint32& TexId_1, const Uint16& x1, const Uint16& y1, const Uint16& x2, const Uint16& y2, const eeRectu& Tex1_SrcRECT) {
-	cTextureFactory* TF = cTextureFactory::instance();
+bool PixelPerfectCollide( cTexture * Tex, const Uint16& x1, const Uint16& y1, const Uint16& x2, const Uint16& y2, const eeRectu& Tex1_SrcRECT) {
+	eeASSERT( NULL != Tex );
+
 	Uint16 ax1, ay1, ax2, ay2;
 	bool Collide = false;
-	
-	cTexture* Tex = TF->GetTexture(TexId_1);
-	
+
 	ax1 = x1;
 	ay1 = y1;
 	if (Tex1_SrcRECT.Right != 0 && Tex1_SrcRECT.Bottom != 0) {
@@ -104,5 +98,5 @@ bool PixelPerfectCollide( const Uint32& TexId_1, const Uint16& x1, const Uint16&
 	}
 	return Collide;
 }
- 
+
 }}

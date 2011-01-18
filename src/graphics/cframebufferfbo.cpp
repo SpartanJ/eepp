@@ -3,12 +3,10 @@
 #include "../window/cengine.hpp"
 #include "glhelper.hpp"
 
-using namespace EE::Graphics::Private;
-
 namespace EE { namespace Graphics {
 
 bool cFrameBufferFBO::IsSupported() {
-	return 0 != cGL::instance()->IsExtension( EEGL_EXT_framebuffer_object );
+	return 0 != GLi->IsExtension( EEGL_EXT_framebuffer_object );
 }
 
 cFrameBufferFBO::cFrameBufferFBO() :

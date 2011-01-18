@@ -5,8 +5,6 @@
 #include "../helper/SOIL/SOIL.h"
 #include "glhelper.hpp"
 
-using namespace EE::Graphics::Private;
-
 namespace EE { namespace Graphics {
 
 cTextureLoader::cTextureLoader( const std::string& Filepath,
@@ -156,7 +154,7 @@ void cTextureLoader::Start() {
 
 void cTextureLoader::LoadFromPath() {
 	if ( FileExists( mFilepath ) ) {
-		if ( cGL::instance()->IsExtension( EEGL_EXT_texture_compression_s3tc ) )
+		if ( GLi->IsExtension( EEGL_EXT_texture_compression_s3tc ) )
 			mIsDDS = 0 != stbi_dds_test_filename( mFilepath.c_str() );
 
 		if ( mIsDDS ) {
@@ -188,7 +186,7 @@ void cTextureLoader::LoadFromPack() {
 }
 
 void cTextureLoader::LoadFromMemory() {
-	if ( cGL::instance()->IsExtension( EEGL_EXT_texture_compression_s3tc ) )
+	if ( GLi->IsExtension( EEGL_EXT_texture_compression_s3tc ) )
 		mIsDDS = 0 != stbi_dds_test_memory( mImagePtr, mSize );
 
 	if ( mIsDDS ) {

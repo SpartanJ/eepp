@@ -151,7 +151,7 @@ cVertexShader::cVertexShader( cPack * Pack, const std::string& Filename ) :
 }
 
 cFragmentShader::cFragmentShader() :
-	cShader(GL_FRAGMENT_SHADER)
+	cShader( GL_FRAGMENT_SHADER )
 {
 }
 

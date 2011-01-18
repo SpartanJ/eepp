@@ -66,6 +66,8 @@ void cUIListBoxItem::Select() {
 }
 
 void cUIListBoxItem::Update() {
+	cUITextBox::Update();
+
 	if ( mEnabled && mVisible ) {
 		cUIListBox * LBParent 	= reinterpret_cast<cUIListBox*> ( Parent()->Parent() );
 		Uint32 Flags 			= cUIManager::instance()->GetInput()->ClickTrigger();
@@ -74,12 +76,12 @@ void cUIListBoxItem::Update() {
 			Alpha( LBParent->Alpha() );
 		
 		if ( IsMouseOver() ) {
-			if ( Flags & EE_BUTTONS_WUWD && LBParent->VerticalScrollBar()->Visible() )
+			if ( Flags & EE_BUTTONS_WUWD && LBParent->VerticalScrollBar()->Visible() ) {
 				LBParent->VerticalScrollBar()->Slider()->ManageClick( Flags );
+				//LBParent->UpdateScroll( true );
+			}
 		}
 	}
-
-	cUITextBox::Update();
 }
 
 Uint32 cUIListBoxItem::OnMouseExit( const eeVector2i& Pos, const Uint32 Flags ) {
