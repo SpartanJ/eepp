@@ -55,11 +55,11 @@ void cShapeSegment::Draw( cSpace * space ) {
 	cVect b = tovect( seg->CP_PRIVATE(tb) );
 
 	if ( seg->CP_PRIVATE(r) ) {
-		glDisable( GL_TEXTURE_2D );
-		glDisableClientState( GL_TEXTURE_COORD_ARRAY );
-		glDisableClientState( GL_COLOR_ARRAY );
+		GLi->Disable( GL_TEXTURE_2D );
+		GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
+		GLi->DisableClientState( GL_COLOR_ARRAY );
 
-		glVertexPointer(3, GL_FLOAT, 0, pillVAR);
+		GLi->VertexPointer( 3, GL_FLOAT, 0, pillVAR, pillVAR_count * sizeof(GLfloat) * 3 );
 		GLi->PushMatrix();
 
 		cVect d = b - a;
@@ -78,17 +78,17 @@ void cShapeSegment::Draw( cSpace * space ) {
 
 			glColor3ub( C.R(), C.B(), C.B() );
 
-			glDrawArrays(GL_TRIANGLE_FAN, 0, pillVAR_count);
+			GLi->DrawArrays(GL_TRIANGLE_FAN, 0, pillVAR_count);
 		}
 
 		glColor3f( 0.4f, 0.4f, 0.4f );
-		glDrawArrays( GL_LINE_LOOP, 0, pillVAR_count );
+		GLi->DrawArrays( GL_LINE_LOOP, 0, pillVAR_count );
 
 		GLi->PopMatrix();
 
-		glEnableClientState( GL_TEXTURE_COORD_ARRAY );
-		glEnableClientState( GL_COLOR_ARRAY );
-		glEnable( GL_TEXTURE_2D );
+		GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
+		GLi->EnableClientState( GL_COLOR_ARRAY );
+		GLi->Enable( GL_TEXTURE_2D );
 	} else {
 		cPrimitives p;
 		p.DrawLine( eeVector2f( a.x, a.y ), eeVector2f( b.x, b.y ) );

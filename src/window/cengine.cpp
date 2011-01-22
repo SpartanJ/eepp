@@ -86,7 +86,7 @@ cEngine::cEngine() :
 	mFrames.FPS.Error = 0;
 	mFrames.ElapsedTime = 0;
 
-	cShapeGroupManager::instance();
+	cShapeGroupManager::CreateSingleton();
 }
 
 cEngine::~cEngine() {
@@ -105,8 +105,6 @@ cEngine::~cEngine() {
 
 	cFontManager::DestroySingleton();
 
-	cShaderProgramManager::DestroySingleton();
-
 	UI::cUIManager::DestroySingleton();
 
 	cJoystickManager::DestroySingleton();
@@ -116,6 +114,8 @@ cEngine::~cEngine() {
 	Audio::cAudioListener::DestroySingleton();
 
 	Graphics::cGL::DestroySingleton();
+
+	cShaderProgramManager::DestroySingleton();
 
 	cLog::DestroySingleton();
 
@@ -266,25 +266,23 @@ const cView& cEngine::GetView() const {
 void cEngine::Setup2D( const bool& KeepView ) {
 	SetBackColor( mBackColor );
 
-	glShadeModel( GL_SMOOTH );
 	SetLineSmooth( mVideoInfo.LineSmooth );
 
-	glEnable( GL_TEXTURE_2D ); 						// Enable Textures
+	GLi->Enable( GL_TEXTURE_2D ); 						// Enable Textures
+	GLi->Disable( GL_DEPTH_TEST );
+	GLi->Disable( GL_LIGHTING );
 
 	if ( !KeepView )
 		SetView( mDefaultView );
-
-	glDisable( GL_DEPTH_TEST );
-	glDisable( GL_LIGHTING );
 
 	cTextureFactory::instance()->SetPreBlendFunc( ALPHA_BLENDONE );  // This is to fix a little bug on windows when the resolution change. I don't know why it happens, but this line fix it.
 	cTextureFactory::instance()->SetPreBlendFunc( ALPHA_NORMAL );
 
 	glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
-
-	glEnableClientState( GL_VERTEX_ARRAY );
-	glEnableClientState( GL_TEXTURE_COORD_ARRAY );
-	glEnableClientState( GL_COLOR_ARRAY );
+	glShadeModel( GL_SMOOTH );
+	GLi->EnableClientState( GL_VERTEX_ARRAY );
+	GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
+	GLi->EnableClientState( GL_COLOR_ARRAY );
 }
 
 void cEngine::CalculateFps() {
@@ -325,7 +323,7 @@ void cEngine::Display() {
 
 	SDL_GL_SwapBuffers();
 
-	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+	GLi->Clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 
 	GetElapsedTime();
 
@@ -399,7 +397,7 @@ Uint32 cEngine::FPS() const {
 
 void cEngine::SetBackColor(const eeColor& Color) {
 	mBackColor = Color;
-	glClearColor( static_cast<eeFloat>( mBackColor.R() ) / 255.0f, static_cast<eeFloat>( mBackColor.G() ) / 255.0f, static_cast<eeFloat>( mBackColor.B() ) / 255.0f, 255.0f );
+	GLi->ClearColor( static_cast<eeFloat>( mBackColor.R() ) / 255.0f, static_cast<eeFloat>( mBackColor.G() ) / 255.0f, static_cast<eeFloat>( mBackColor.B() ) / 255.0f, 255.0f );
 }
 
 const eeColor& cEngine::GetBackColor() const {
@@ -526,39 +524,39 @@ void cEngine::SetGamma( const eeFloat& Red, const eeFloat& Green, const eeFloat&
 void cEngine::SetLineSmooth( const bool& Enable ) {
 	mVideoInfo.LineSmooth = Enable;
 	if ( Enable )
-		glEnable( GL_LINE_SMOOTH );
+		GLi->Enable( GL_LINE_SMOOTH );
 	else
-		glDisable( GL_LINE_SMOOTH );
+		GLi->Disable( GL_LINE_SMOOTH );
 }
 
 void cEngine::SetPolygonMode( const EE_FILL_MODE& Mode ) {
 	if ( Mode == EE_DRAW_FILL )
-		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+		GLi->PolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 	else
-		glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+		GLi->PolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 }
 
 void cEngine::ClipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
 	cGlobalBatchRenderer::instance()->Draw();
-	glScissor( x, GetHeight() - Height - y, Width, Height );
-	glEnable( GL_SCISSOR_TEST );
+	GLi->Scissor( x, GetHeight() - Height - y, Width, Height );
+	GLi->Enable( GL_SCISSOR_TEST );
 }
 
 void cEngine::ClipDisable() {
 	cGlobalBatchRenderer::instance()->Draw();
-	glDisable( GL_SCISSOR_TEST );
+	GLi->Disable( GL_SCISSOR_TEST );
 }
 
 std::string cEngine::GetVendor() {
-	return std::string( reinterpret_cast<const char*> ( glGetString( GL_VENDOR ) ) );
+	return std::string( reinterpret_cast<const char*> ( cGL::instance()->GetString( GL_VENDOR ) ) );
 }
 
 std::string cEngine::GetRenderer() {
-	return std::string( reinterpret_cast<const char*> ( glGetString( GL_RENDERER ) ) );
+	return std::string( reinterpret_cast<const char*> ( cGL::instance()->GetString( GL_RENDERER ) ) );
 }
 
 std::string cEngine::GetVersion() {
-	return std::string( reinterpret_cast<const char*> ( glGetString( GL_VERSION ) ) );
+	return std::string( reinterpret_cast<const char*> ( cGL::instance()->GetString( GL_VERSION ) ) );
 }
 
 bool cEngine::GetExtension( const std::string& Ext ) {
@@ -1073,10 +1071,10 @@ void cEngine::ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Widt
 	GLdouble clip_top[] 	= { 0.0	, 1.0	, 0.0, -tY 		};
 	GLdouble clip_bottom[] 	= { 0.0	, -1.0	, 0.0, tY + tH 	};
 
-	glEnable(GL_CLIP_PLANE0);
-	glEnable(GL_CLIP_PLANE1);
-	glEnable(GL_CLIP_PLANE2);
-	glEnable(GL_CLIP_PLANE3);
+	GLi->Enable(GL_CLIP_PLANE0);
+	GLi->Enable(GL_CLIP_PLANE1);
+	GLi->Enable(GL_CLIP_PLANE2);
+	GLi->Enable(GL_CLIP_PLANE3);
 
 	glClipPlane(GL_CLIP_PLANE0, clip_left);
 	glClipPlane(GL_CLIP_PLANE1, clip_right);
@@ -1087,10 +1085,10 @@ void cEngine::ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Widt
 void cEngine::ClipPlaneDisable() {
 	cGlobalBatchRenderer::instance()->Draw();
 
-	glDisable(GL_CLIP_PLANE0);
-	glDisable(GL_CLIP_PLANE1);
-	glDisable(GL_CLIP_PLANE2);
-	glDisable(GL_CLIP_PLANE3);
+	GLi->Disable(GL_CLIP_PLANE0);
+	GLi->Disable(GL_CLIP_PLANE1);
+	GLi->Disable(GL_CLIP_PLANE2);
+	GLi->Disable(GL_CLIP_PLANE3);
 }
 
 }}

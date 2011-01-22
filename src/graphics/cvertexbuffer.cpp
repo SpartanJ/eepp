@@ -152,7 +152,7 @@ void cVertexBuffer::Unbind() {
 
 	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 ) ) {
 		//glEnableClientState( GL_TEXTURE_COORD_ARRAY );
-		glEnable( GL_TEXTURE_2D );
+		GLi->Enable( GL_TEXTURE_2D );
 	}
 }
 

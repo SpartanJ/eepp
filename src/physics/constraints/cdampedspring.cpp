@@ -56,7 +56,7 @@ void cDampedSpring::Draw() {
 	cVect a = tovect( cpvadd(body_a->p, cpvrotate(spring->anchr1, body_a->rot)) );
 	cVect b = tovect( cpvadd(body_b->p, cpvrotate(spring->anchr2, body_b->rot)) );
 
-	glPointSize(5.0f);
+	GLi->PointSize(5.0f);
 	glBegin(GL_POINTS); {
 		glVertex2f(a.x, a.y);
 		glVertex2f(b.x, b.y);
@@ -64,7 +64,7 @@ void cDampedSpring::Draw() {
 
 	cVect delta = b - a;
 
-	glVertexPointer(2, GL_FLOAT, 0, springVAR);
+	GLi->VertexPointer( 2, GL_FLOAT, 0, springVAR, springVAR_count * sizeof(GLfloat) * 2 );
 	GLi->PushMatrix();
 
 	GLfloat x = a.x;
@@ -82,7 +82,7 @@ void cDampedSpring::Draw() {
 
 	glMultMatrixf(matrix);
 
-	glDrawArrays(GL_LINE_STRIP, 0, springVAR_count);
+	GLi->DrawArrays(GL_LINE_STRIP, 0, springVAR_count);
 
 	GLi->PopMatrix();
 	#endif

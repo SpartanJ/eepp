@@ -21,10 +21,12 @@ class EE_API cShaderProgram {
 		cShaderProgram( const std::string& VertexShaderFile, const std::string& FragmentShaderFile, const std::string& name = "" );
 
 		/** Constructor that creates a VertexShader from memory and a Fragment Shader from memory, and link them. */
-		cShaderProgram( const Uint8 * VertexShaderData, const Uint32& VertexShaderDataSize, const Uint8 * FragmentShaderData, const Uint32& FragmentShaderDataSize, const std::string& name = "" );
+		cShaderProgram( const char * VertexShaderData, const Uint32& VertexShaderDataSize, const char * FragmentShaderData, const Uint32& FragmentShaderDataSize, const std::string& name = "" );
 
 		/** Constructor that creates the vertex shader and fragment shader from two files inside a pack */
 		cShaderProgram( cPack * Pack, const std::string& VertexShaderPath, const std::string& FragmentShaderPath, const std::string& name = "" );
+
+		cShaderProgram( const char ** VertexShaderData, const Uint32& NumLinesVS, const char ** FragmentShaderData, const Uint32& NumLinesFS, const std::string& name = "" );
 
 		virtual ~cShaderProgram();
 
@@ -72,9 +74,9 @@ class EE_API cShaderProgram {
 		/** @overload */
 		bool SetUniform( const std::string& Name, Int32 Value );
 
-		bool SetUniformMatrix( const std::string Name, const eeFloat * Value );
+		bool SetUniformMatrix( const std::string Name, const float * Value );
 
-		bool SetUniformMatrix( const Int32& Id, const eeFloat * Value );
+		bool SetUniformMatrix( const Int32& Id, const float * Value );
 
 		/** @return The id of the program (the handle) */
 		const Uint32& Handler() const { return mHandler; }

@@ -71,7 +71,7 @@ cShaderProgram::cShaderProgram( cPack * Pack, const std::string& VertexShaderPat
 	}
 }
 
-cShaderProgram::cShaderProgram( const Uint8 * VertexShaderData, const Uint32& VertexShaderDataSize, const Uint8 * FragmentShaderData, const Uint32& FragmentShaderDataSize, const std::string& name ) :
+cShaderProgram::cShaderProgram( const char * VertexShaderData, const Uint32& VertexShaderDataSize, const char * FragmentShaderData, const Uint32& FragmentShaderDataSize, const std::string& name ) :
 	mHandler(0),
 	mId(0)
 {
@@ -80,6 +80,28 @@ cShaderProgram::cShaderProgram( const Uint8 * VertexShaderData, const Uint32& Ve
 
 	cVertexShader * vs = eeNew( cVertexShader, ( VertexShaderData, VertexShaderDataSize ) );
 	cFragmentShader * fs = eeNew( cFragmentShader, ( FragmentShaderData, FragmentShaderDataSize ) );
+
+	if ( !vs->IsValid() || !fs->IsValid() ) {
+		eeSAFE_DELETE( vs );
+		eeSAFE_DELETE( fs );
+		return;
+	}
+
+	AddShader( vs );
+	AddShader( fs );
+
+	Link();
+}
+
+cShaderProgram::cShaderProgram( const char ** VertexShaderData, const Uint32& NumLinesVS, const char ** FragmentShaderData, const Uint32& NumLinesFS, const std::string& name ) :
+	mHandler(0),
+	mId(0)
+{
+	AddToManager( name );
+	Init();
+
+	cVertexShader * vs = eeNew( cVertexShader, ( VertexShaderData, NumLinesVS ) );
+	cFragmentShader * fs = eeNew( cFragmentShader, ( FragmentShaderData, NumLinesFS ) );
 
 	if ( !vs->IsValid() || !fs->IsValid() ) {
 		eeSAFE_DELETE( vs );
@@ -183,12 +205,14 @@ bool cShaderProgram::Link() {
 
 void cShaderProgram::Bind() const {
 	cGlobalBatchRenderer::instance()->Draw();
-	glUseProgram( Handler() );
+
+	GLi->SetShader( const_cast<cShaderProgram*>( this ) );
 }
 
 void cShaderProgram::Unbind() const {
 	cGlobalBatchRenderer::instance()->Draw();
-	glUseProgram( 0 );
+
+	GLi->SetShader( NULL );
 }
 
 Int32 cShaderProgram::UniformLocation( const std::string& Name ) {
@@ -256,13 +280,13 @@ bool cShaderProgram::SetUniform( const std::string& Name, Int32 Value ) {
 	return ( Location >= 0 );
 }
 
-bool SetUniformMatrix( const Int32& Id, const eeFloat * Value ) {
+bool cShaderProgram::SetUniformMatrix( const Int32& Id, const float * Value ) {
 	glUniformMatrix4fv( Id, 1, false, Value );
 
 	return true;
 }
 
-bool cShaderProgram::SetUniformMatrix( const std::string Name, const eeFloat * Value ) {
+bool cShaderProgram::SetUniformMatrix( const std::string Name, const float * Value ) {
 	Int32 Location = UniformLocation( Name );
 
 	if ( Location >= 0 )

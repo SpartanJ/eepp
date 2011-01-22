@@ -4,6 +4,6 @@
 #include "../base.hpp"
 #include "../renders.hpp"
 
-//#define EE_GL3_ENABLED
+#define EE_GL3_ENABLED 1
 
 #endif

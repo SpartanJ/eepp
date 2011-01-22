@@ -1698,7 +1698,9 @@ void cEETest::Demo1Create() {
 	Physics::cShape::ResetShapeIdCounter();
 
 	mSpace = Physics::cSpace::New();
-	mSpace->ResizeActiveHash( 30.f, 1000 );
+	mSpace->Iterations( 30 );
+	mSpace->ResizeStaticHash( 40.f, 1000 );
+	mSpace->ResizeActiveHash( 40.f, 1000 );
 	mSpace->Gravity( cVectNew( 0, 100 ) );
 	mSpace->SleepTimeThreshold( 0.5f );
 
@@ -1939,6 +1941,36 @@ void cEETest::PhysicsDestroy() {
 	cPhysicsManager::DestroySingleton();
 }
 
+void defineVertexArrayObject(GLuint vaoId, size_t NbytesV, size_t NbytesC, GLint size, GLenum type, GLfloat *vertices, GLfloat *colors, GLfloat * texCoords, GLuint shader_id ) {
+	//enable vertex array object to be defined
+	glBindVertexArray(vaoId);
+
+	//generate VBO foreach 'in'; dgl_Vertex dgl_Color dgl_TexCoord
+	GLuint m_vboId[3];
+	glGenBuffers(3, &m_vboId[0]);
+
+	//"in		 vec2 dgl_Vertex;",
+	glBindBuffer(GL_ARRAY_BUFFER, m_vboId[0] );											// enable the 1st VBO
+	glBufferData(GL_ARRAY_BUFFER, NbytesV, vertices, GL_STATIC_DRAW);					// fill the VBO with vertices data
+	const GLuint index_mPosition = glGetAttribLocation( shader_id, "dgl_Vertex" );		// get ID for "dgl_Vertex"
+	glVertexAttribPointer( index_mPosition, 2, type, GL_FALSE, 0, 0 );					// VBO point to the "dgl_Vertex" attribute
+	glEnableVertexAttribArray( index_mPosition );										// enable VBO vertex attribute ("dgl_Vertex")
+
+	//"in		 vec4 dgl_Color;",
+	glBindBuffer( GL_ARRAY_BUFFER, m_vboId[1] );										// enable the 2nd VBO
+	glBufferData( GL_ARRAY_BUFFER, NbytesC, colors, GL_STATIC_DRAW );					// fill the 2nd VBO with colors data
+	const GLuint index_mcolor = glGetAttribLocation( shader_id,"dgl_Color" );			// get ID for "dgl_Color"
+	glVertexAttribPointer( index_mcolor, 4, type, GL_FALSE, 0, 0 );						// VBO point to the "dgl_Color" attribute
+	glEnableVertexAttribArray( index_mcolor );											// enable VBO vertex attribute ("dgl_Color")
+
+	//"in		 vec2 dgl_TexCoord;",
+	glBindBuffer( GL_ARRAY_BUFFER, m_vboId[2] );										// enable the 3rd VBO
+	glBufferData( GL_ARRAY_BUFFER, NbytesV, texCoords, GL_STATIC_DRAW );				// fill the 3nd VBO with tex coords data
+	const GLuint index_mcoords = glGetAttribLocation( shader_id,"dgl_TexCoord" );		// get ID for "dgl_TexCoords"
+	glVertexAttribPointer( index_mcoords, 2, type, GL_FALSE, 0, 0 );					// VBO point to the "dgl_TexCoords" attribute
+	glEnableVertexAttribArray( index_mcoords );											// enable VBO vertex attribute ("dgl_TexCoords")
+}
+
 int main (int argc, char * argv []) {
 	cEETest * Test = eeNew( cEETest, () );
 
@@ -1946,6 +1978,80 @@ int main (int argc, char * argv []) {
 
 	eeDelete( Test );
 
+/*
+	cEngine *			EE		= cEngine::instance();
+	EE->Init( 800, 600, 32, true, true, true, true );
+	EE->SetBackColor( eeColor( 255, 255, 255 ) );
+
+	cInput *			KM		= cInput::instance();
+	cTextureFactory *	TF		= cTextureFactory::instance();
+	cTexture *			Tex		= TF->GetTexture( TF->Load( AppPath() + "data/bnb/bnb.png" ) );
+
+	cRendererGL3 * Ren = reinterpret_cast<cRendererGL3 *>( GLi );
+
+	GLfloat vertices0[] = { // dgl_Vertex
+		0.0		, 0.0, // xy
+		0.0		, 600,
+		800.0	, 600.0,
+		800.0	, 0.0
+	};
+
+	size_t Nbytes_vertices0=sizeof(vertices0);
+
+	GLfloat colors0[] = { // dgl_Color
+		1.0, 1.0, 1.0, 0.5, //rgba
+		1.0, 1.0, 1.0, 0.5,
+		1.0, 1.0, 1.0, 0.5,
+		1.0, 1.0, 1.0, 0.5
+	};
+	size_t Nbytes_colors0=sizeof(colors0);
+
+	GLfloat texCoords0[] = { // dgl_TexCoord
+		0.0		, 0.0, // xy
+		0.0		, 1.0,
+		1.0		, 1.0,
+		1.0		, 0.0
+	};
+
+	GLuint				vao_id;
+
+	glGenVertexArrays( 1, &vao_id );
+
+	glBindVertexArray( vao_id );
+
+	GLuint vao_elementcount = Nbytes_vertices0 / 2 / sizeof(GLfloat);
+
+	defineVertexArrayObject( vao_id, Nbytes_vertices0, Nbytes_colors0, 4, GL_FLOAT, vertices0, colors0, texCoords0, Ren->BaseShaderId() );
+
+	eeFloat ang = 0;
+
+	while( EE->Running() ) {
+		KM->Update();
+
+		ang += EE->Elapsed() * 0.1;
+
+		TF->Bind( Tex );
+		glBindVertexArray( vao_id );
+
+		GLi->DrawArrays( GL_QUADS, 0, vao_elementcount );
+
+		GLi->PushMatrix();
+
+		GLi->Translatef( 400, 300, 0 );
+		GLi->Rotatef( ang, 0, 0, 1 );
+		GLi->Translatef( -400, -300, 0 );
+
+		GLi->DrawArrays( GL_QUADS, 0, vao_elementcount );
+
+		GLi->PopMatrix();
+
+		EE->Display();
+
+		if ( KM->IsKeyDown( KEY_ESCAPE ) ) EE->Running( false );
+	};
+
+	cEngine::DestroySingleton();
+*/
 	EE::MemoryManager::LogResults();
 
 	return 0;

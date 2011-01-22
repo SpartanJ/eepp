@@ -102,7 +102,7 @@ void cTextureFactory::Bind( const cTexture* Tex, const Uint32& TextureUnit ) {
 		if ( GLi->IsExtension( EEGL_ARB_multitexture ) )
 			SetActiveTextureUnit( TextureUnit );
 
-		glBindTexture( GL_TEXTURE_2D, Tex->Handle() );
+		GLi->BindTexture( GL_TEXTURE_2D, Tex->Handle() );
 
 		mCurrentTexture[ TextureUnit ] = Tex->Handle();
 
@@ -201,9 +201,9 @@ void cTextureFactory::UngrabTextures() {
 }
 
 void cTextureFactory::SetBlendFunc( const EE_BLEND_FUNC& SrcFactor, const EE_BLEND_FUNC& DestFactor ) {
-	glEnable( GL_BLEND );
+	GLi->Enable( GL_BLEND );
 
-	glBlendFunc( (GLenum)SrcFactor, (GLenum)DestFactor );
+	GLi->BlendFunc( (GLenum)SrcFactor, (GLenum)DestFactor );
 
 	mLastBlend = ALPHA_CUSTOM;
 }
@@ -211,33 +211,33 @@ void cTextureFactory::SetBlendFunc( const EE_BLEND_FUNC& SrcFactor, const EE_BLE
 void cTextureFactory::SetPreBlendFunc( const EE_PRE_BLEND_FUNC& blend, bool force ) {
 	if ( mLastBlend != blend || force ) {
 		if (blend == ALPHA_NONE) {
-			glDisable( GL_BLEND );
+			GLi->Disable( GL_BLEND );
 		} else {
-			glEnable( GL_BLEND );
+			GLi->Enable( GL_BLEND );
 
 			switch (blend) {
 				case ALPHA_NORMAL:
-					glBlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA);
+					GLi->BlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA);
 					break;
 				case ALPHA_BLENDONE:
-					glBlendFunc(GL_SRC_ALPHA , GL_ONE);
+					GLi->BlendFunc(GL_SRC_ALPHA , GL_ONE);
 					break;
 				case ALPHA_BLENDTWO:
-					glBlendFunc(GL_SRC_ALPHA , GL_SRC_ALPHA);
-					glBlendFunc(GL_DST_ALPHA , GL_ONE);
+					GLi->BlendFunc(GL_SRC_ALPHA , GL_SRC_ALPHA);
+					GLi->BlendFunc(GL_DST_ALPHA , GL_ONE);
 					break;
 				case ALPHA_BLENDTHREE:
-					glBlendFunc(GL_SRC_ALPHA , GL_ONE);
-					glBlendFunc(GL_DST_ALPHA , GL_SRC_ALPHA);
+					GLi->BlendFunc(GL_SRC_ALPHA , GL_ONE);
+					GLi->BlendFunc(GL_DST_ALPHA , GL_SRC_ALPHA);
 					break;
 				case ALPHA_ALPHACHANNELS:
-					glBlendFunc(GL_SRC_ALPHA , GL_SRC_ALPHA);
+					GLi->BlendFunc(GL_SRC_ALPHA , GL_SRC_ALPHA);
 					break;
 				case ALPHA_DESTALPHA:
-					glBlendFunc(GL_SRC_ALPHA , GL_DST_ALPHA);
+					GLi->BlendFunc(GL_SRC_ALPHA , GL_DST_ALPHA);
 					break;
 				case ALPHA_MULTIPLY:
-					glBlendFunc(GL_DST_COLOR,GL_ZERO);
+					GLi->BlendFunc(GL_DST_COLOR,GL_ZERO);
 					break;
 				case ALPHA_NONE:
 					// AVOID COMPILER WARNING
@@ -253,7 +253,7 @@ void cTextureFactory::SetPreBlendFunc( const EE_PRE_BLEND_FUNC& blend, bool forc
 }
 
 void cTextureFactory::SetActiveTextureUnit( const Uint32& Unit ) {
-	glActiveTextureARB( GL_TEXTURE0_ARB + Unit );
+	GLi->ActiveTexture( GL_TEXTURE0_ARB + Unit );
 }
 
 void cTextureFactory::SetTextureConstantColor( const eeColorA& Color ) {

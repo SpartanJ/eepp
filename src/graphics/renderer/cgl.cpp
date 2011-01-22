@@ -12,9 +12,9 @@ cGL * cGL::CreateSingleton() {
 	if ( ms_singleton == 0 ) {
 		#ifdef EE_GL3_ENABLED
 		/** Implement an OpenGL3 compilant renderer */
-		if ( '3' == glGetString(GL_VERSION)[0] )
+		/*if ( '3' == glGetString(GL_VERSION)[0] )
 			ms_singleton = eeNew( cRendererGL3, () );
-		else
+		else*/
 		#endif
 			ms_singleton = eeNew( cRendererGL, () );
 	}
@@ -186,6 +186,58 @@ void cGL::Disable ( GLenum cap ) {
 
 void cGL::Enable( GLenum cap ) {
 	glEnable( cap );
+}
+
+char * cGL::GetString( GLenum name ) {
+	return (char*)glGetString( name );
+}
+
+void cGL::Clear ( GLbitfield mask ) {
+	glClear( mask );
+}
+
+void cGL::ClearColor( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha ) {
+	glClearColor( red, green, blue, alpha );
+}
+
+void cGL::Scissor ( GLint x, GLint y, GLsizei width, GLsizei height ) {
+	glScissor( x, y, width, height );
+}
+
+void cGL::PolygonMode( GLenum face, GLenum mode ) {
+	glPolygonMode( face, mode );
+}
+
+void cGL::PointSize( GLfloat size ) {
+	glPointSize( size );
+}
+
+void cGL::DrawArrays (GLenum mode, GLint first, GLsizei count) {
+	glDrawArrays( mode, first, count );
+}
+
+void cGL::DrawElements( GLenum mode, GLsizei count, GLenum type, const GLvoid *indices ) {
+	glDrawElements( mode, count, type, indices );
+}
+
+void cGL::BindTexture ( GLenum target, GLuint texture ) {
+	glBindTexture( target, texture );
+}
+
+void cGL::ActiveTexture( GLenum texture ) {
+	glActiveTexture( texture );
+}
+
+void cGL::BlendFunc ( GLenum sfactor, GLenum dfactor ) {
+	glBlendFunc( sfactor, dfactor );
+}
+
+void cGL::SetShader( cShaderProgram * Shader ) {
+	if ( NULL != Shader ) {
+		glUseProgram( Shader->Handler() );
+	} else {
+		glUseProgram( 0 );
+	}
 }
 
 }}

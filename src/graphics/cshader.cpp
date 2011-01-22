@@ -28,7 +28,7 @@ cShader::cShader( const Uint32& Type, const std::string& Filename ) {
     Compile();
 }
 
-cShader::cShader( const Uint32& Type, const Uint8 * Data, const Uint32& DataSize ) {
+cShader::cShader( const Uint32& Type, const char * Data, const Uint32& DataSize ) {
 	Init( Type );
 
 	SetSource( Data, DataSize );
@@ -44,8 +44,16 @@ cShader::cShader( const Uint32& Type, cPack * Pack, const std::string& Filename 
 
 		Pack->ExtractFileToMemory( Filename, TempData );
 
-		SetSource( reinterpret_cast<Uint8*> ( &TempData[0] ), (Uint32)TempData.size() );
+		SetSource( reinterpret_cast<char*> ( &TempData[0] ), (Uint32)TempData.size() );
 	}
+
+	Compile();
+}
+
+cShader::cShader( const Uint32& Type, const char ** Data, const Uint32& NumLines ) {
+	Init( Type );
+
+	SetSource( Data, NumLines );
 
 	Compile();
 }
@@ -83,7 +91,17 @@ void cShader::SetSource( const std::string& Source ) {
 	glShaderSource( mGLId, 1, &src, NULL );
 }
 
-void cShader::SetSource( const Uint8 * Data, const Uint32& DataSize ) {
+void cShader::SetSource( const char** Data, const Uint32& NumLines ) {
+	std::string tstr;
+
+	for ( Uint32 i = 0; i < NumLines; i++ ) {
+		tstr += std::string( Data[i] );
+	}
+
+	SetSource( tstr );
+}
+
+void cShader::SetSource( const char * Data, const Uint32& DataSize ) {
 	std::string _dst( DataSize, 0 );
 
 	memcpy( reinterpret_cast<void*>( &_dst[0] ), reinterpret_cast<const void*>( &Data[0] ), DataSize );
@@ -123,6 +141,12 @@ bool cShader::Compile() {
 		cLog::instance()->Write( "Couldn't compile shader. Log follows:" );
 		cLog::instance()->Write( mCompileLog );
 		cLog::instance()->Write( mSource );
+
+		#ifdef EE_DEBUG
+		std::cout << "Couldn't compile shader. Log follows:"  << std::endl;
+		std::cout << mCompileLog << std::endl;
+		std::cout << mSource << std::endl;
+		#endif
 	} else {
 		cLog::instance()->Write( "Shader Loaded Succesfully" );
 	}
@@ -140,13 +164,18 @@ cVertexShader::cVertexShader( const std::string& Filename ) :
 {
 }
 
-cVertexShader::cVertexShader( const Uint8 * Data, const Uint32& DataSize ) :
+cVertexShader::cVertexShader( const char * Data, const Uint32& DataSize ) :
 	cShader( GL_VERTEX_SHADER, Data, DataSize )
 {
 }
 
 cVertexShader::cVertexShader( cPack * Pack, const std::string& Filename ) :
 	cShader( GL_VERTEX_SHADER, Pack, Filename )
+{
+}
+
+cVertexShader::cVertexShader( const char ** Data, const Uint32& NumLines ) :
+	cShader( GL_VERTEX_SHADER, Data, NumLines )
 {
 }
 
@@ -160,13 +189,18 @@ cFragmentShader::cFragmentShader( const std::string& Filename ) :
 {
 }
 
-cFragmentShader::cFragmentShader( const Uint8 * Data, const Uint32& DataSize ) :
+cFragmentShader::cFragmentShader( const char * Data, const Uint32& DataSize ) :
 	cShader( GL_FRAGMENT_SHADER, Data, DataSize )
 {
 }
 
 cFragmentShader::cFragmentShader( cPack * Pack, const std::string& Filename ) :
 	cShader( GL_FRAGMENT_SHADER, Pack, Filename )
+{
+}
+
+cFragmentShader::cFragmentShader( const char ** Data, const Uint32& NumLines ) :
+	cShader( GL_FRAGMENT_SHADER, Data, NumLines )
 {
 }
 

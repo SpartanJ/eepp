@@ -89,11 +89,11 @@ void cVertexBufferVBO::Draw() {
 
 		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, mElementHandle );
 
-		glDrawElements( mDrawType, lSize, GL_UNSIGNED_INT, (char*)NULL );
+		GLi->DrawElements( mDrawType, lSize, GL_UNSIGNED_INT, (char*)NULL );
 
 		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );
 	} else {
-		glDrawArrays( mDrawType, 0, GetVertexCount() );
+		GLi->DrawArrays( mDrawType, 0, GetVertexCount() );
 	}
 }
 
@@ -136,7 +136,7 @@ void cVertexBufferVBO::SetVertexStates() {
 			glTexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], GL_FLOAT, 0, (char*)NULL );
 		} else {
 			//glDisableClientState( GL_TEXTURE_COORD_ARRAY );
-			glDisable( GL_TEXTURE_2D );
+			GLi->Disable( GL_TEXTURE_2D );
 		}
 	}
 

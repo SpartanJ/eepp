@@ -85,23 +85,27 @@ void cBatchRenderer::SetBlendMode( EE_DRAW_MODE Mode, const bool& Force ) {
 	}
 }
 
-void cBatchRenderer::Flush() {
+void cBatchRenderer::Flush() {	
 	if ( mNumVertex == 0 )
 		return;
 
+	Uint32 NumVertex = mNumVertex;
+	mNumVertex = 0;
+
 	bool CreateMatrix = ( mRotation || mScale != 1.0f || mPosition.x || mPosition.y );
 
-	if ( NULL != mTexture )
+	if ( NULL != mTexture ) {
 		cTextureFactory::instance()->Bind( mTexture );
-	else
-		glDisable( GL_TEXTURE_2D );
+	} else {
+		GLi->Disable( GL_TEXTURE_2D );
+	}
 
 	cTextureFactory::instance()->SetPreBlendFunc( mBlend );
 
 	if ( mCurrentMode == DM_POINTS && NULL != mTexture ) {
-		glEnable( GL_POINT_SPRITE_ARB );
+		GLi->Enable( GL_POINT_SPRITE_ARB );
 		glTexEnvf( GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE );
-		glPointSize( (GLfloat)mTexture->Width() );
+		GLi->PointSize( (GLfloat)mTexture->Width() );
 	}
 
 	if ( CreateMatrix ) {
@@ -116,30 +120,32 @@ void cBatchRenderer::Flush() {
 		GLi->Translatef( -mCenter.x, -mCenter.y, 0.0f);
 	}
 
-	glVertexPointer(2, GL_FLOAT, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) );
-	glTexCoordPointer(2, GL_FLOAT, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f) );
-	glColorPointer(4, GL_UNSIGNED_BYTE, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f) + sizeof(eeTexCoord) );
+	Uint32 alloc = sizeof(GLfloat) * NumVertex * 4 * 2;
+
+	GLi->VertexPointer	( 2, GL_FLOAT			, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] )												, alloc	);
+	GLi->TexCoordPointer( 2, GL_FLOAT			, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f)						, alloc	);
+	GLi->ColorPointer	( 4, GL_UNSIGNED_BYTE	, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f) + sizeof(eeTexCoord)	, alloc	);
 
 	#ifdef EE_GLES
 	if ( DM_QUADS == mCurrentMode ) {
-		glDrawArrays( DM_TRIANGLES, 0, mNumVertex );
+		GLi->DrawArrays( DM_TRIANGLES, 0, NumVertex );
 	} else
 	#endif
 	{
-		glDrawArrays( mCurrentMode, 0, mNumVertex );
+		GLi->DrawArrays( mCurrentMode, 0, NumVertex );
 	}
 
-	if ( CreateMatrix )
+	if ( CreateMatrix ) {
 		GLi->PopMatrix();
+	}
 
 	if ( mCurrentMode == DM_POINTS && mTexture > 0 ) {
-		glDisable( GL_POINT_SPRITE_ARB );
+		GLi->Disable( GL_POINT_SPRITE_ARB );
 	}
 
-	if ( mTexture == 0 )
-		glEnable( GL_TEXTURE_2D );
-
-	mNumVertex = 0;
+	if ( mTexture == 0 ) {
+		GLi->Enable( GL_TEXTURE_2D );
+	}
 }
 
 void cBatchRenderer::BatchQuad( const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& angle ) {
@@ -838,7 +844,7 @@ eeFloat cBatchRenderer::GetLineWidth() {
 }
 
 void cBatchRenderer::SetPointSize( const eeFloat& pointSize ) {
-	glPointSize( pointSize );
+	GLi->PointSize( pointSize );
 }
 
 eeFloat cBatchRenderer::GetPointSize() {

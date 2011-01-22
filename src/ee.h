@@ -90,6 +90,9 @@
 	using namespace EE::Window;
 
 	// Graphics
+	#include "graphics/renderer/cgl.hpp"
+	#include "graphics/renderer/crenderergl.hpp"
+	#include "graphics/renderer/crenderergl3.hpp"
 	#include "graphics/renders.hpp"
 	#include "graphics/cimage.hpp"
 	#include "graphics/ctexture.hpp"

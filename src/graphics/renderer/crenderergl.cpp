@@ -40,8 +40,36 @@ void cRendererGL::MatrixMode(GLenum mode) {
 	glMatrixMode( mode );
 }
 
-void cRendererGL::Ortho( GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar ) {
+void cRendererGL::Ortho( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar ) {
 	glOrtho( left, right, bottom, top, zNear, zFar );
 }
 
-}} 
+void cRendererGL::LookAt( GLfloat eyeX, GLfloat eyeY, GLfloat eyeZ, GLfloat centerX, GLfloat centerY, GLfloat centerZ, GLfloat upX, GLfloat upY, GLfloat upZ ) {
+	gluLookAt( eyeX, eyeY, eyeZ, centerX, centerY, centerZ, upX, upY, upZ );
+}
+
+void cRendererGL::Perspective ( GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar ) {
+	gluPerspective( fovy, aspect, zNear, zFar );
+}
+
+void cRendererGL::EnableClientState( GLenum array ) {
+	glEnableClientState( array );
+}
+
+void cRendererGL::DisableClientState( GLenum array ) {
+	glDisableClientState( array );
+}
+
+void cRendererGL::VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
+	glVertexPointer( size, type, stride, pointer );
+}
+
+void cRendererGL::ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
+	glColorPointer( size, type, stride, pointer );
+}
+
+void cRendererGL::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
+	glTexCoordPointer( size, type, stride, pointer );
+}
+
+}}

@@ -15,10 +15,13 @@ class EE_API cShader {
     	cShader( const Uint32& Type, const std::string& Filename );
 
     	/** Create a type of shader from memory, and compile it. */
-    	cShader( const Uint32& Type, const Uint8 * Data, const Uint32& DataSize );
+		cShader( const Uint32& Type, const char * Data, const Uint32& DataSize );
 
     	/** Create a type of shader loaded from a pack file */
     	cShader( const Uint32& Type, cPack * Pack, const std::string& Filename );
+
+		/** Create a type of shader from memory, and compile it. */
+		cShader( const Uint32& Type, const char ** Data, const Uint32& NumLines );
 
     	virtual ~cShader();
 
@@ -29,7 +32,10 @@ class EE_API cShader {
     	void SetSource( const std::vector<Uint8>& Source );
 
     	/** Set the shader source */
-    	void SetSource( const Uint8 * Data, const Uint32& DataSize );
+		void SetSource( const char * Data, const Uint32& DataSize );
+
+		/** Set the shader source */
+		void SetSource( const char** Data, const Uint32& NumLines );
 
     	/** Compile the shader */
     	bool Compile();
@@ -67,8 +73,9 @@ class EE_API cVertexShader : public cShader {
 	public:
     	cVertexShader();
     	cVertexShader( const std::string& Filename );
-    	cVertexShader( const Uint8 * Data, const Uint32& DataSize );
+		cVertexShader( const char * Data, const Uint32& DataSize );
     	cVertexShader( cPack * Pack, const std::string& Filename );
+		cVertexShader( const char ** Data, const Uint32& NumLines );
 };
 
 /** @brief Prebuild Fragment Shader class */
@@ -76,8 +83,9 @@ class EE_API cFragmentShader : public cShader {
 	public:
     	cFragmentShader();
     	cFragmentShader( const std::string& Filename );
-    	cFragmentShader( const Uint8 * Data, const Uint32& DataSize );
+		cFragmentShader( const char * Data, const Uint32& DataSize );
     	cFragmentShader( cPack * Pack, const std::string& Filename );
+		cFragmentShader( const char ** Data, const Uint32& NumLines );
 };
 
 }}

@@ -262,17 +262,19 @@ void cParticleSystem::Draw() {
 	TF->Bind( mTexId );
     TF->SetPreBlendFunc( ALPHA_BLENDONE );
 
-	if ( mPointsSup ) {
-		glEnable( GL_POINT_SPRITE_ARB );
+	if ( mPointsSup && GLi->Version() != GLv_3 ) {
+		GLi->Enable( GL_POINT_SPRITE_ARB );
 		glTexEnvf( GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE );
-		glPointSize( mSize );
+		GLi->PointSize( mSize );
 
-		glColorPointer( 4, GL_FLOAT, sizeof(cParticle), reinterpret_cast<char*>( &mParticle[0] ) + sizeof(eeFloat) * 2 );
-		glVertexPointer( 2, GL_FLOAT, sizeof(cParticle), reinterpret_cast<char*>( &mParticle[0] ) );
+		Uint32 alloc = mPCount * sizeof(GLfloat) * 4 * 2;
 
-		glDrawArrays( GL_POINTS, 0, (GLsizei)mPCount );
+		GLi->ColorPointer	( 4, GL_FLOAT, sizeof(cParticle), reinterpret_cast<char*>( &mParticle[0] ) + sizeof(eeFloat) * 2	, alloc );
+		GLi->VertexPointer	( 2, GL_FLOAT, sizeof(cParticle), reinterpret_cast<char*>( &mParticle[0] )							, alloc );
 
-		glDisable( GL_POINT_SPRITE_ARB );
+		GLi->DrawArrays( GL_POINTS, 0, (GLsizei)mPCount );
+
+		GLi->Disable( GL_POINT_SPRITE_ARB );
 	} else {
 		cTexture * Tex = TF->GetTexture( mTexId );
 

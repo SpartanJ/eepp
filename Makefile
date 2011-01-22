@@ -78,7 +78,7 @@ SRCHAIKUTTF 		= $(wildcard ./src/helper/haikuttf/*.cpp)
 SRCBASE				= $(wildcard ./src/base/*.cpp)
 SRCAUDIO			= $(wildcard ./src/audio/*.cpp)
 SRCGAMING			= $(wildcard ./src/gaming/*.cpp)
-SRCGRAPHICS			= $(wildcard ./src/graphics/*.cpp)
+SRCGRAPHICS			= $(wildcard ./src/graphics/*.cpp) $(wildcard ./src/graphics/renderer/*.cpp)
 SRCMATH				= $(wildcard ./src/math/*.cpp)
 SRCSYSTEM			= $(wildcard ./src/system/*.cpp)
 SRCUI				= $(wildcard ./src/ui/*.cpp)
@@ -153,6 +153,7 @@ dirs:
 	@mkdir -p $(OBJDIR)/src/audio
 	@mkdir -p $(OBJDIR)/src/gaming
 	@mkdir -p $(OBJDIR)/src/graphics
+	@mkdir -p $(OBJDIR)/src/graphics/renderer
 	@mkdir -p $(OBJDIR)/src/math
 	@mkdir -p $(OBJDIR)/src/system
 	@mkdir -p $(OBJDIR)/src/ui

@@ -27,8 +27,21 @@ class cRendererGL : public cGL {
 
 		void MatrixMode (GLenum mode);
 
-		void Ortho ( GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar );
+		void Ortho ( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar );
 
+		void LookAt( GLfloat eyeX, GLfloat eyeY, GLfloat eyeZ, GLfloat centerX, GLfloat centerY, GLfloat centerZ, GLfloat upX, GLfloat upY, GLfloat upZ );
+
+		void Perspective ( GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar );
+
+		void EnableClientState( GLenum array );
+
+		void DisableClientState( GLenum array );
+
+		void VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate );
+
+		void ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate );
+
+		void TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate );
 	protected:	
 		
 };

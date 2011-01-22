@@ -298,7 +298,6 @@ void cPrimitives::DrawCircle(const eeVector2f& p, const eeFloat& radius, Uint32 
 
 void cPrimitives::SetColor( const eeColorA& Color ) {
 	mColor = Color;
-	glColor4ub( mColor.R(), mColor.G(), mColor.B(), mColor.A() );
 }
 
 void cPrimitives::DrawTriangle(const eeTriangle2f& t, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth) {

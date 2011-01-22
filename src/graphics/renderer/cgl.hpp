@@ -2,6 +2,7 @@
 #define EE_GRAPHICS_CGL_HPP
 
 #include "base.hpp"
+#include "../cshaderprogram.hpp"
 
 namespace EE { namespace Graphics {
 
@@ -17,6 +18,17 @@ enum EEGL_extensions  {
 	EEGL_ARB_multitexture,
 	EEGL_EXT_texture_compression_s3tc,
 	EEGL_ARB_vertex_buffer_object
+};
+
+/** Just for reference */
+enum EEGL_ARRAY_STATES {
+	EEGL_VERTEX_ARRAY			= 0,
+	EEGL_NORMAL_ARRAY			= 1,
+	EEGL_COLOR_ARRAY			= 2,
+	EEGL_INDEX_ARRAY			= 3,
+	EEGL_TEXTURE_COORD_ARRAY	= 4,
+	EEGL_EDGE_FLAG_ARRAY		= 5,
+	EEGL_ARRAY_STATES_SIZE
 };
 
 enum EEGL_version {
@@ -58,13 +70,35 @@ class cGL {
 
 		Uint32 GetTextureOpEnum( const EE_TEXTURE_OP& Type );
 
+		void Clear ( GLbitfield mask );
+
+		void ClearColor ( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha );
+
+		void Scissor ( GLint x, GLint y, GLsizei width, GLsizei height );
+
+		void PolygonMode( GLenum face, GLenum mode );
+
 		char * GetExtensions();
+
+		char * GetString( GLenum name );
+
+		void PointSize( GLfloat size );
+
+		void DrawArrays (GLenum mode, GLint first, GLsizei count);
+
+		void DrawElements( GLenum mode, GLsizei count, GLenum type, const GLvoid *indices );
+
+		void BindTexture ( GLenum target, GLuint texture );
+
+		void ActiveTexture( GLenum texture );
+
+		void BlendFunc ( GLenum sfactor, GLenum dfactor );
 
 		void Viewport ( GLint x, GLint y, GLsizei width, GLsizei height );
 
-		void Disable ( GLenum cap );
+		virtual void Disable ( GLenum cap );
 
-		void Enable( GLenum cap );
+		virtual void Enable( GLenum cap );
 
 		virtual EEGL_version Version() = 0;
 
@@ -80,10 +114,25 @@ class cGL {
 
 		virtual void Scalef( GLfloat x, GLfloat y, GLfloat z ) = 0;
 
-		virtual void MatrixMode (GLenum mode) = 0;
+		virtual void MatrixMode ( GLenum mode ) = 0;
 
-		virtual void Ortho ( GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar ) = 0;
+		virtual void Ortho ( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar ) = 0;
 
+		virtual void LookAt( GLfloat eyeX, GLfloat eyeY, GLfloat eyeZ, GLfloat centerX, GLfloat centerY, GLfloat centerZ, GLfloat upX, GLfloat upY, GLfloat upZ ) = 0;
+
+		virtual void Perspective ( GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar ) = 0;
+
+		virtual void EnableClientState( GLenum array ) = 0;
+
+		virtual void DisableClientState( GLenum array ) = 0;
+
+		virtual void VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) = 0;
+
+		virtual void ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) = 0;
+
+		virtual void TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) = 0;
+
+		virtual void SetShader( cShaderProgram * Shader );
 	protected:
 		Uint32 mExtensions;
 	private:
