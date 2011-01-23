@@ -25,6 +25,8 @@ class cVertexBufferVBO : public cVertexBuffer {
 
 		bool mCompiled;
 
+		GLuint mVAO;
+
 		Uint32 mElementHandle;
 
 		Uint32 mArrayHandle[ VERTEX_FLAGS_COUNT ];

@@ -1,11 +1,13 @@
 #include "cvertexbuffervbo.hpp"
 #include "glhelper.hpp"
+#include "renderer/crenderergl3.hpp"
 
 namespace EE { namespace Graphics {
 
 cVertexBufferVBO::cVertexBufferVBO( const Uint32& VertexFlags, EE_DRAW_MODE DrawType, const Int32& ReserveVertexSize, const Int32& ReserveIndexSize, EE_VBO_USAGE_TYPE UsageType ) :
 	cVertexBuffer( VertexFlags, DrawType, ReserveVertexSize, ReserveIndexSize, UsageType ),
 	mCompiled( false ),
+	mVAO( 0 ),
 	mElementHandle( 0 )
 {
 }
@@ -19,6 +21,10 @@ cVertexBufferVBO::~cVertexBufferVBO() {
 
 	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) ) {
 		glDeleteBuffers( 1, (GLuint *)&mElementHandle );
+	}
+
+	if ( GLv_3 == GLi->Version() ) {
+		glDeleteVertexArrays( 1, &mVAO );
 	}
 }
 
@@ -37,39 +43,44 @@ bool cVertexBufferVBO::Compile() {
 	if( mCompiled )
 		return false;
 
-	GLenum usageType = GL_STATIC_DRAW_ARB;
-	if( mUsageType== VBO_USAGE_TYPE_DYNAMIC ) usageType = GL_DYNAMIC_DRAW_ARB;
-	else if( mUsageType== VBO_USAGE_TYPE_STREAM ) usageType = GL_STREAM_DRAW_ARB;
+	if ( GLv_3 == GLi->Version() ) {
+		glGenVertexArrays( 1, &mVAO );
+		glBindVertexArray( mVAO );
+	}
+
+	GLenum usageType = GL_STATIC_DRAW;
+	if( mUsageType== VBO_USAGE_TYPE_DYNAMIC ) usageType = GL_DYNAMIC_DRAW;
+	else if( mUsageType== VBO_USAGE_TYPE_STREAM ) usageType = GL_STREAM_DRAW;
 
 	//Create the VBO vertex arrays
 	for( Int32 i = 0; i < VERTEX_FLAGS_COUNT; i++ ) {
 		if( VERTEX_FLAG_QUERY( mVertexFlags, i ) ) {
-			glGenBuffersARB( 1,(GLuint *)&mArrayHandle[ i ] );
+			glGenBuffers( 1,(GLuint *)&mArrayHandle[ i ] );
 
-			glBindBufferARB( GL_ARRAY_BUFFER_ARB, mArrayHandle[i] );
+			glBindBuffer( GL_ARRAY_BUFFER, mArrayHandle[i] );
 
 			if ( mArrayHandle[i] ) {
 				if ( i != VERTEX_FLAG_COLOR )
-					glBufferDataARB( GL_ARRAY_BUFFER_ARB, mVertexArray[i].size() * sizeof(eeFloat), &( mVertexArray[i][0] ), usageType );
+					glBufferData( GL_ARRAY_BUFFER, mVertexArray[i].size() * sizeof(eeFloat), &( mVertexArray[i][0] ), usageType );
 				else
-					glBufferDataARB( GL_ARRAY_BUFFER_ARB, mColorArray.size(), &mColorArray[0], usageType );
+					glBufferData( GL_ARRAY_BUFFER, mColorArray.size(), &mColorArray[0], usageType );
 			} else {
 				return false;
 			}
 		}
 	}
 
-	glBindBufferARB( GL_ARRAY_BUFFER_ARB, 0 );
+	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 
 	//Create the VBO index array
 	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) ) {
-		glGenBuffersARB( 1, (GLuint *)&mElementHandle );
+		glGenBuffers( 1, (GLuint *)&mElementHandle );
 
-		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, mElementHandle );
+		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, mElementHandle );
 
-		glBufferDataARB( GL_ELEMENT_ARRAY_BUFFER_ARB, GetIndexCount() * sizeof(Uint32), &mIndexArray[0], usageType );
+		glBufferData( GL_ELEMENT_ARRAY_BUFFER, GetIndexCount() * sizeof(Uint32), &mIndexArray[0], usageType );
 
-		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );
+		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 	}
 
 	mCompiled = true;
@@ -81,97 +92,155 @@ void cVertexBufferVBO::Draw() {
 	if ( !mCompiled )
 		return;
 
+	if ( GLv_3 == GLi->Version() ) {
+		glBindVertexArray( mVAO );
+	}
+
 	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) ) {
 		Int32 lSize = mElemDraw;
 
 		if( mElemDraw < 0 )
 			lSize = GetIndexCount();
 
-		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, mElementHandle );
+		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, mElementHandle );
 
-		GLi->DrawElements( mDrawType, lSize, GL_UNSIGNED_INT, (char*)NULL );
+		glDrawElements( mDrawType, lSize, GL_UNSIGNED_INT, (char*)NULL );
 
-		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );
+		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 	} else {
-		GLi->DrawArrays( mDrawType, 0, GetVertexCount() );
+		glDrawArrays( mDrawType, 0, GetVertexCount() );
 	}
 }
 
 void cVertexBufferVBO::SetVertexStates() {
+	GLint index;
+
+	if ( GLv_3 == GLi->Version() ) {
+		glBindVertexArray( mVAO );
+	}
+
 	/// POSITION
 	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
-		glEnableClientState( GL_VERTEX_ARRAY );
-		glBindBufferARB( GL_ARRAY_BUFFER_ARB, mArrayHandle[ VERTEX_FLAG_POSITION ] );
-		glVertexPointer( eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FLOAT, 0, (char*)NULL );
+		GLi->EnableClientState( GL_VERTEX_ARRAY );
+		glBindBuffer( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_POSITION ] );
+
+		if ( GLv_3 == GLi->Version() ) {
+			index = GLi->GetRendererGL3()->GetStateIndex( EEGL_VERTEX_ARRAY );
+
+			if ( -1 != index )
+				glVertexAttribPointer( index, eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FLOAT, GL_FALSE, 0, 0 );
+		} else {
+			glVertexPointer( eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FLOAT, 0, (char*)NULL );
+		}
 	} else {
-		//glDisableClientState( GL_VERTEX_ARRAY );
+		if ( GLv_3 == GLi->Version() ) {
+			GLi->DisableClientState( GL_VERTEX_ARRAY );
+		}
 	}
 
 	/// COLOR
 	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) ) {
-		glEnableClientState( GL_COLOR_ARRAY );
-		glBindBufferARB( GL_ARRAY_BUFFER_ARB, mArrayHandle[ VERTEX_FLAG_COLOR ] );
-		glColorPointer( eeVertexElements[ VERTEX_FLAG_COLOR ], GL_UNSIGNED_BYTE, 0, (char*)NULL );
+		GLi->EnableClientState( GL_COLOR_ARRAY );
+		glBindBuffer( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_COLOR ] );
+
+		if ( GLv_3 == GLi->Version() ) {
+			index = GLi->GetRendererGL3()->GetStateIndex( EEGL_COLOR_ARRAY );
+
+			if ( -1 != index )
+				glVertexAttribPointer( index, eeVertexElements[ VERTEX_FLAG_COLOR ], GL_UNSIGNED_BYTE, GL_TRUE, 0, 0 );
+		} else {
+			glColorPointer( eeVertexElements[ VERTEX_FLAG_COLOR ], GL_UNSIGNED_BYTE, 0, (char*)NULL );
+		}
 	} else {
-		//glDisableClientState( GL_COLOR_ARRAY );
+		if ( GLv_3 == GLi->Version() ) {
+			GLi->DisableClientState( GL_COLOR_ARRAY );
+		}
 	}
 
 	/// TEXTURES
 	if ( GLi->IsExtension( EEGL_ARB_multitexture ) ) {
 		for ( Int32 i = 0; i < 5; i++ ) {
 			if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 + i ) ) {
-				glClientActiveTextureARB( GL_TEXTURE0_ARB + i );
-				glEnableClientState( GL_TEXTURE_COORD_ARRAY );
-				glBindBufferARB( GL_ARRAY_BUFFER_ARB, mArrayHandle[ VERTEX_FLAG_TEXTURE0 + i ] );
-				glTexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], GL_FLOAT, 0, (char*)NULL );
+				if ( GLv_3 != GLi->Version() ) {
+					glClientActiveTexture( GL_TEXTURE0 + i );
+				}
+
+				GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
+				glBindBuffer( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_TEXTURE0 + i ] );
+
+				if ( GLv_3 == GLi->Version() ) { /** FIXME: Give Support for multitexturing */
+					index = GLi->GetRendererGL3()->GetStateIndex( EEGL_TEXTURE_COORD_ARRAY );
+
+					if ( -1 != index && 0 == i )
+						glVertexAttribPointer( index, eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], GL_FLOAT, GL_FALSE, 0, 0 );
+				} else {
+					glTexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], GL_FLOAT, 0, (char*)NULL );
+				}
 			} else {
-				//glDisableClientState( GL_TEXTURE_COORD_ARRAY );
-				glDisable( GL_TEXTURE_2D );
+				if ( GLv_3 == GLi->Version() ) {
+					GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
+				}
+
+				GLi->Disable( GL_TEXTURE_2D );
 			}
 		}
 	} else {
 		if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 ) ) {
 			glEnableClientState( GL_TEXTURE_COORD_ARRAY );
-			glBindBufferARB( GL_ARRAY_BUFFER_ARB, mArrayHandle[ VERTEX_FLAG_TEXTURE0 ] );
-			glTexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], GL_FLOAT, 0, (char*)NULL );
+			glBindBuffer( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_TEXTURE0 ] );
+
+				if ( GLv_3 == GLi->Version() ) {
+					index = GLi->GetRendererGL3()->GetStateIndex( EEGL_TEXTURE_COORD_ARRAY );
+
+					if ( -1 != index ) // Give Support for multitexturing
+						glVertexAttribPointer( index, eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], GL_FLOAT, GL_FALSE, 0, 0 );
+				} else {
+					glTexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], GL_FLOAT, 0, (char*)NULL );
+				}
 		} else {
-			//glDisableClientState( GL_TEXTURE_COORD_ARRAY );
+			if ( GLv_3 == GLi->Version() ) {
+				GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
+			}
+
 			GLi->Disable( GL_TEXTURE_2D );
 		}
 	}
 
-	glActiveTextureARB( GL_TEXTURE0_ARB );
-	glClientActiveTextureARB( GL_TEXTURE0_ARB );
+	GLi->ActiveTexture( GL_TEXTURE0 );
 
-	glBindBufferARB( GL_ARRAY_BUFFER_ARB, 0 );
+	if ( GLv_3 != GLi->Version() ) {
+		glClientActiveTexture( GL_TEXTURE0 );
+	}
+
+	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 }
 
 void cVertexBufferVBO::Update( const Uint32& Types, bool Indices ) {
-	GLenum usageType = GL_STATIC_DRAW_ARB;
-	if( mUsageType== VBO_USAGE_TYPE_DYNAMIC ) usageType = GL_DYNAMIC_DRAW_ARB;
-	else if( mUsageType== VBO_USAGE_TYPE_STREAM ) usageType = GL_STREAM_DRAW_ARB;
+	GLenum usageType = GL_STATIC_DRAW;
+	if( mUsageType== VBO_USAGE_TYPE_DYNAMIC ) usageType = GL_DYNAMIC_DRAW;
+	else if( mUsageType== VBO_USAGE_TYPE_STREAM ) usageType = GL_STREAM_DRAW;
 
 	for( Int32 i = 0; i < VERTEX_FLAGS_COUNT; i++ ) {
 		if ( VERTEX_FLAG_QUERY( mVertexFlags, i ) && VERTEX_FLAG_QUERY( Types, i ) ) {
-			glBindBufferARB( GL_ARRAY_BUFFER_ARB, mArrayHandle[i] );
+			glBindBuffer( GL_ARRAY_BUFFER, mArrayHandle[i] );
 
 			if ( mArrayHandle[i] ) {
 				if ( i != VERTEX_FLAG_COLOR )
-					glBufferDataARB( GL_ARRAY_BUFFER_ARB, mVertexArray[i].size() * sizeof(eeFloat), &( mVertexArray[i][0] ), usageType );
+					glBufferData( GL_ARRAY_BUFFER, mVertexArray[i].size() * sizeof(eeFloat), &( mVertexArray[i][0] ), usageType );
 				else
-					glBufferDataARB( GL_ARRAY_BUFFER_ARB, mColorArray.size(), &mColorArray[0], usageType );
+					glBufferData( GL_ARRAY_BUFFER, mColorArray.size(), &mColorArray[0], usageType );
 			}
 		}
 	}
 
-	glBindBufferARB( GL_ARRAY_BUFFER_ARB, 0 );
+	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 
 	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) && Indices ) {
-		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, mElementHandle );
+		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, mElementHandle );
 
-		glBufferDataARB( GL_ELEMENT_ARRAY_BUFFER_ARB, GetIndexCount() * sizeof(Uint32), &mIndexArray[0], usageType );
+		glBufferData( GL_ELEMENT_ARRAY_BUFFER, GetIndexCount() * sizeof(Uint32), &mIndexArray[0], usageType );
 
-		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER_ARB, 0 );
+		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 	}
 }
 

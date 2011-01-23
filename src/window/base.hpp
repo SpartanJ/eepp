@@ -47,6 +47,7 @@ using namespace EE::Utils;
 using namespace EE::System;
 
 #include "../graphics/renders.hpp"
+#include "../graphics/renderer/cgl.hpp"
 using namespace EE::Graphics;
 
 #endif

@@ -31,16 +31,29 @@ enum EEGL_ARRAY_STATES {
 	EEGL_ARRAY_STATES_SIZE
 };
 
+enum EEGL_SHADERS_NUM {
+	EEGL_SHADER_BASE_TEX,
+	EEGL_SHADER_BASE,
+	EEGL_SHADER_POINT_SPRITE,
+	EEGL_SHADERS_COUNT
+};
+
 enum EEGL_version {
 	GLv_2,
 	GLv_3,
-	GLv_ES
+	GLv_ES,
+	GLv_default
 };
+
+class cRendererGL;
+class cRendererGL3;
 
 class cGL {
 	static cGL * ms_singleton;
 	public:
 		static cGL * CreateSingleton();
+
+		static cGL * CreateSingleton( EEGL_version ver );
 
 		static cGL * ExistsSingleton();
 
@@ -133,6 +146,10 @@ class cGL {
 		virtual void TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) = 0;
 
 		virtual void SetShader( cShaderProgram * Shader );
+
+		cRendererGL * GetRendererGL();
+
+		cRendererGL3 * GetRendererGL3();
 	protected:
 		Uint32 mExtensions;
 	private:

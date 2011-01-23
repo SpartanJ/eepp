@@ -34,7 +34,7 @@ void cVertexBufferOGL::Draw() {
 
 void cVertexBufferOGL::SetVertexStates() {
 	Uint32 alloc	= GetVertexCount() * sizeof(GLfloat) * 2;
-	Uint32 allocC	= GetVertexCount() * sizeof(GLfloat) * 4;
+	Uint32 allocC	= GetVertexCount() * sizeof(GL_UNSIGNED_BYTE) * 4;
 
 	/// POSITION
 	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {

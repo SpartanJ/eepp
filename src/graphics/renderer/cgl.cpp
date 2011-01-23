@@ -8,6 +8,23 @@ cGL * GLi = NULL;
 
 cGL * cGL::ms_singleton = NULL;
 
+cGL * cGL::CreateSingleton( EEGL_version ver ) {
+	switch ( ver ) {
+		case GLv_3:
+			#ifdef EE_GL3_ENABLED
+			ms_singleton = eeNew( cRendererGL3, () );
+			break;
+			#endif
+		case GLv_2:
+		case GLv_ES:
+		case GLv_default:
+		default:
+			ms_singleton = eeNew( cRendererGL, () );
+	}
+
+	return ms_singleton;
+}
+
 cGL * cGL::CreateSingleton() {
 	if ( ms_singleton == 0 ) {
 		#ifdef EE_GL3_ENABLED
@@ -45,6 +62,14 @@ cGL::cGL() :
 
 cGL::~cGL() {
 	GLi = NULL;
+}
+
+cRendererGL * cGL::GetRendererGL() {
+	return reinterpret_cast<cRendererGL*>( this );
+}
+
+cRendererGL3 * cGL::GetRendererGL3() {
+	return reinterpret_cast<cRendererGL3*>( this );
 }
 
 void cGL::WriteExtension( Uint8 Pos, Uint32 BitWrite ) {

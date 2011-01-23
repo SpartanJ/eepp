@@ -20,9 +20,10 @@ class EE_API cEngine : public tSingleton<cEngine> {
 		* @param DoubleBuffering Enable or Disable the Double Buffering
 		* @param UseDesktopResolution Instead of using Screen Width and Screen Height passed, will use the default desktop resolution
 		* @param NoFrame If create the window without window manager frame.
+		* @param ver Version of OpenGL to use for rendering ( experimental )
 		* @return True if success
 		*/
-		bool Init(const Uint32& Width = 640, const Uint32& Height = 480, const Uint8& BitColor = 32, const bool& Windowed = true, const bool& Resizeable = false, const bool& VSync = false, const bool& DoubleBuffering = true, const bool& UseDesktopResolution = false, const bool& NoFrame = false);
+		bool Init( const Uint32& Width = 640, const Uint32& Height = 480, const Uint8& BitColor = 32, const bool& Windowed = true, const bool& Resizeable = false, const bool& VSync = false, const bool& DoubleBuffering = true, const bool& UseDesktopResolution = false, const bool& NoFrame = false, EEGL_version ver = GLv_default );
 
 		/** Render the Scene to Screen */
 		void Display();

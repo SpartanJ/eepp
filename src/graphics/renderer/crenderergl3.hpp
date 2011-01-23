@@ -20,11 +20,6 @@
 
 namespace EE { namespace Graphics {
 
-enum EEGL_SHADERS_NUM {
-	EEGL_SHADER_BASE_TEX,
-	EEGL_SHADERS_COUNT
-};
-
 class cRendererGL3 : public cGL {
 	public:
 		cRendererGL3();
@@ -72,17 +67,22 @@ class cRendererGL3 : public cGL {
 		GLuint BaseShaderId();
 
 		void SetShader( cShaderProgram * Shader );
+
+		void SetShader( const EEGL_SHADERS_NUM& Shader );
+
+		GLint GetStateIndex( const Uint32& State );
 	protected:
-		std::stack<glm::mat4>	glm_ProjectionMatrix;		// cpu-side
-		GLint					glm_ProjectionMatrix_id;	// cpu-side hook to shader uniform
-		std::stack<glm::mat4>	glm_ModelViewMatrix;		// cpu-side
-		GLint					glm_ModelViewMatrix_id;		// cpu-side hook to shader uniform
+		std::stack<glm::mat4>	mProjectionMatrix;		// cpu-side
+		GLint					mProjectionMatrix_id;	// cpu-side hook to shader uniform
+		std::stack<glm::mat4>	mModelViewMatrix;		// cpu-side
+		GLint					mModelViewMatrix_id;	// cpu-side hook to shader uniform
 		GLenum					mCurrentMode;
 		std::stack<glm::mat4>*	mCurMatrix;
 		cShaderProgram *		mShaders[ EEGL_SHADERS_COUNT ];
 		cShaderProgram *		mCurShader;
 		GLuint					mVAO;
 		GLuint					mVBO[ EEGL_ARRAY_STATES_SIZE ];
+		GLint					mStates[ EEGL_ARRAY_STATES_SIZE ];
 
 		void UpdateMatrix();
 };

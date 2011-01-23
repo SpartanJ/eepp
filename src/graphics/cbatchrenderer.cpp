@@ -1,5 +1,6 @@
 #include "cbatchrenderer.hpp"
 #include "ctexturefactory.hpp"
+#include "cglobalbatchrenderer.hpp"
 
 namespace EE { namespace Graphics {
 
@@ -89,6 +90,9 @@ void cBatchRenderer::Flush() {
 	if ( mNumVertex == 0 )
 		return;
 
+	if ( cGlobalBatchRenderer::instance() != this )
+		cGlobalBatchRenderer::instance()->Draw();
+
 	Uint32 NumVertex = mNumVertex;
 	mNumVertex = 0;
 
@@ -120,7 +124,7 @@ void cBatchRenderer::Flush() {
 		GLi->Translatef( -mCenter.x, -mCenter.y, 0.0f);
 	}
 
-	Uint32 alloc = sizeof(GLfloat) * NumVertex * 4 * 2;
+	Uint32 alloc = sizeof(eeVertex) * NumVertex;
 
 	GLi->VertexPointer	( 2, GL_FLOAT			, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] )												, alloc	);
 	GLi->TexCoordPointer( 2, GL_FLOAT			, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f)						, alloc	);

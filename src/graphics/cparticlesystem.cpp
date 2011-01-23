@@ -1,5 +1,6 @@
 #include "cparticlesystem.hpp"
 #include "glhelper.hpp"
+#include "renderer/crenderergl3.hpp"
 
 namespace EE { namespace Graphics {
 
@@ -262,12 +263,18 @@ void cParticleSystem::Draw() {
 	TF->Bind( mTexId );
     TF->SetPreBlendFunc( ALPHA_BLENDONE );
 
-	if ( mPointsSup && GLi->Version() != GLv_3 ) {
+	if ( mPointsSup ) {
+		if ( GLi->Version() == GLv_3 ) {
+			GLi->GetRendererGL3()->SetShader( EEGL_SHADER_POINT_SPRITE );
+			GLi->Enable( GL_VERTEX_PROGRAM_POINT_SIZE );
+		}
+
 		GLi->Enable( GL_POINT_SPRITE_ARB );
-		glTexEnvf( GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE );
 		GLi->PointSize( mSize );
 
-		Uint32 alloc = mPCount * sizeof(GLfloat) * 4 * 2;
+		glTexEnvf( GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE );
+
+		Uint32 alloc = mPCount * sizeof(cParticle);
 
 		GLi->ColorPointer	( 4, GL_FLOAT, sizeof(cParticle), reinterpret_cast<char*>( &mParticle[0] ) + sizeof(eeFloat) * 2	, alloc );
 		GLi->VertexPointer	( 2, GL_FLOAT, sizeof(cParticle), reinterpret_cast<char*>( &mParticle[0] )							, alloc );
@@ -275,6 +282,10 @@ void cParticleSystem::Draw() {
 		GLi->DrawArrays( GL_POINTS, 0, (GLsizei)mPCount );
 
 		GLi->Disable( GL_POINT_SPRITE_ARB );
+
+		if ( GLi->Version() == GLv_3 ) {
+			GLi->GetRendererGL3()->SetShader( EEGL_SHADER_BASE_TEX );
+		}
 	} else {
 		cTexture * Tex = TF->GetTexture( mTexId );
 

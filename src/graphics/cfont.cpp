@@ -297,7 +297,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 		numvert = TextCache.CachedVerts();
 	}
 
-	Uint32 alloc = numvert * sizeof(GLfloat) * 4;
+	Uint32 alloc = numvert * sizeof(eeVertexCoords);
 
 	GLi->ColorPointer	( 4, GL_UNSIGNED_BYTE	, 0						, reinterpret_cast<char*>( &Colors[0] )								, alloc );
 	GLi->TexCoordPointer( 2, GL_FLOAT			, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] )						, alloc );
@@ -468,7 +468,7 @@ void cFont::SubDraw( const std::wstring& Text, const eeFloat& X, const eeFloat& 
 		}
 	}
 
-	Uint32 alloc = numvert * sizeof(GLfloat) * 4;
+	Uint32 alloc = numvert * sizeof(eeVertexCoords);
 
 	GLi->ColorPointer		( 4, GL_UNSIGNED_BYTE	, 0						, reinterpret_cast<char*>( &mColors[0] )								, alloc	);
 	GLi->TexCoordPointer	( 2, GL_FLOAT			, sizeof(eeVertexCoords), reinterpret_cast<char*>( &mRenderCoords[0] )							, alloc );

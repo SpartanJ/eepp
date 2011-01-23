@@ -124,7 +124,7 @@ cEngine::~cEngine() {
 	SDL_Quit();
 }
 
-bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitColor, const bool& Windowed, const bool& Resizeable, const bool& VSync, const bool& DoubleBuffering, const bool& UseDesktopResolution, const bool& NoFrame ) {
+bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitColor, const bool& Windowed, const bool& Resizeable, const bool& VSync, const bool& DoubleBuffering, const bool& UseDesktopResolution, const bool& NoFrame, EEGL_version ver ) {
 	try {
 		mInit						= false;
 
@@ -222,6 +222,7 @@ bool cEngine::Init(const Uint32& Width, const Uint32& Height, const Uint8& BitCo
 		mDefaultView.SetView( 0, 0, mVideoInfo.Width, mVideoInfo.Height );
 		mCurrentView = &mDefaultView;
 
+		cGL::CreateSingleton( ver );
 		cGL::instance()->Init();
 
 		Setup2D();
@@ -279,7 +280,11 @@ void cEngine::Setup2D( const bool& KeepView ) {
 	cTextureFactory::instance()->SetPreBlendFunc( ALPHA_NORMAL );
 
 	glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
-	glShadeModel( GL_SMOOTH );
+
+	if ( GLv_3 != GLi->Version() ) {
+		glShadeModel( GL_SMOOTH );
+	}
+
 	GLi->EnableClientState( GL_VERTEX_ARRAY );
 	GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
 	GLi->EnableClientState( GL_COLOR_ARRAY );

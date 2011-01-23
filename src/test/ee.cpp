@@ -322,8 +322,15 @@ void cEETest::Init() {
 	bool VSync 		= Ini.GetValueB( "EEPP", "VSync", true );
 	PartsNum 		= Ini.GetValueI( "EEPP", "ParticlesNum", 1000);
 	mUseShaders 	= Ini.GetValueB( "EEPP", "UseShaders", false );
+	Int32 GLVersion = Ini.GetValueI( "EEPP", "GLVersion", 2 );
+	EEGL_version GLVer;
 
-	run = EE->Init(mWidth, mHeight, BitColor, Windowed, Resizeable, VSync);
+	if ( 3 == GLVersion )
+		GLVer = GLv_3;
+	else
+		GLVer = GLv_2;
+
+	run = EE->Init(mWidth, mHeight, BitColor, Windowed, Resizeable, VSync, true, false, false, GLVer );
 
 	PAK.Open( MyPath + "data/ee.zip" );
 
@@ -377,7 +384,7 @@ void cEETest::Init() {
 		WP.SetTotalTime(5000);
 		WP.Start();
 
-		Batch.AllocVertexs( 1024 );
+		Batch.AllocVertexs( 2048 );
 		Batch.SetPreBlendFunc( ALPHA_BLENDONE );
 
 		mFBO = cFrameBuffer::CreateNew( 256, 256, false );
@@ -1109,21 +1116,6 @@ void cEETest::Screen2() {
 	if ( KM->MouseLeftPressed() )
 		TNP[3]->DrawEx( 0.f, 0.f, (eeFloat)EE->GetWidth(), (eeFloat)EE->GetHeight() );
 
-	eeFloat PlanetX = HWidth  - TNP[6]->Width() * 0.5f;
-	eeFloat PlanetY = HHeight - TNP[6]->Height() * 0.5f;
-
-	ang+=et * 0.1f;
-	ang = (ang>=360) ? 0 : ang;
-
-	if (scale>=1.5f) {
-		scale = 1.5f;
-		side = true;
-	} else if (scale<=0.5f) {
-		side = false;
-		scale = 0.5f;
-	}
-	scale = (!side) ? scale+et * 0.00025f : scale-et * 0.00025f;
-
 	Batch.SetTexture( TNP[2] );
 	Batch.QuadsBegin();
 	Batch.QuadsSetColor( eeColorA(150,150,150,100) );
@@ -1151,12 +1143,27 @@ void cEETest::Screen2() {
 			Batch.BatchQuadFree( TmpQuad[0].x + tmpx, TmpQuad[0].y + tmpy, TmpQuad[1].x + tmpx, TmpQuad[1].y + tmpy, TmpQuad[2].x + tmpx, TmpQuad[2].y + tmpy, TmpQuad[3].x + tmpx, TmpQuad[3].y + tmpy );
 		}
 	}
-	
+
 	Batch.Draw();
 
-    Batch.BatchRotation( 0.0f );
+	Batch.BatchRotation( 0.0f );
 	Batch.BatchScale( 1.0f );
-    Batch.BatchCenter( eeVector2f( 0, 0 ) );
+	Batch.BatchCenter( eeVector2f( 0, 0 ) );
+
+	eeFloat PlanetX = HWidth  - TNP[6]->Width() * 0.5f;
+	eeFloat PlanetY = HHeight - TNP[6]->Height() * 0.5f;
+
+	ang+=et * 0.1f;
+	ang = (ang>=360) ? 0 : ang;
+
+	if (scale>=1.5f) {
+		scale = 1.5f;
+		side = true;
+	} else if (scale<=0.5f) {
+		side = false;
+		scale = 0.5f;
+	}
+	scale = (!side) ? scale+et * 0.00025f : scale-et * 0.00025f;
 
 	if ( mUseShaders ) {
 		mBlurFactor = scale * 0.01f;
@@ -2024,6 +2031,8 @@ int main (int argc, char * argv []) {
 	defineVertexArrayObject( vao_id, Nbytes_vertices0, Nbytes_colors0, 4, GL_FLOAT, vertices0, colors0, texCoords0, Ren->BaseShaderId() );
 
 	eeFloat ang = 0;
+
+	GLi->Disable( GL_TEXTURE_2D );
 
 	while( EE->Running() ) {
 		KM->Update();
