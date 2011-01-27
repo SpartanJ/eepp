@@ -13,6 +13,8 @@ class cRendererGL : public cGL {
 
 		EEGL_version Version();
 
+		void ClientActiveTexture( GLenum texture );
+
 		void PushMatrix();
 
 		void PopMatrix();
@@ -42,6 +44,10 @@ class cRendererGL : public cGL {
 		void ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate );
 
 		void TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate );
+
+		void ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height );
+
+		void ClipPlaneDisable();
 	protected:	
 		
 };

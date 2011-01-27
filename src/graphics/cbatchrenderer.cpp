@@ -127,8 +127,14 @@ void cBatchRenderer::Flush() {
 	Uint32 alloc = sizeof(eeVertex) * NumVertex;
 
 	GLi->VertexPointer	( 2, GL_FLOAT			, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] )												, alloc	);
-	GLi->TexCoordPointer( 2, GL_FLOAT			, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f)						, alloc	);
 	GLi->ColorPointer	( 4, GL_UNSIGNED_BYTE	, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f) + sizeof(eeTexCoord)	, alloc	);
+
+	if ( GLv_3 == GLi->Version() ) {
+		if ( NULL != mTexture )
+			GLi->TexCoordPointer( 2, GL_FLOAT			, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f)				, alloc	);
+	} else {
+		GLi->TexCoordPointer( 2, GL_FLOAT			, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f)					, alloc	);
+	}
 
 	#ifdef EE_GLES
 	if ( DM_QUADS == mCurrentMode ) {

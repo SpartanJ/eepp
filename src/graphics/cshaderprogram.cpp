@@ -280,10 +280,51 @@ bool cShaderProgram::SetUniform( const std::string& Name, Int32 Value ) {
 	return ( Location >= 0 );
 }
 
-bool cShaderProgram::SetUniformMatrix( const Int32& Id, const float * Value ) {
-	glUniformMatrix4fv( Id, 1, false, Value );
+bool cShaderProgram::SetUniform( const Int32& Location, Int32 Value ) {
+	if ( -1 != Location ) {
+		glUniform1i( Location, Value );
 
-	return true;
+		return true;
+	}
+
+	return false;
+}
+
+bool cShaderProgram::SetUniform( const Int32& Location, eeFloat Value ) {
+	if ( -1 != Location ) {
+		glUniform1f( Location, Value );
+		return true;
+	}
+
+	return false;
+}
+
+bool cShaderProgram::SetUniform( const Int32& Location, eeVector2f Value ) {
+	if ( -1 != Location ) {
+		glUniform2fv( Location, 1, reinterpret_cast<eeFloat*>( &Value ) );
+		return true;
+	}
+
+	return false;
+}
+
+bool cShaderProgram::SetUniform( const Int32& Location, eeVector3f Value ) {
+	if ( -1 != Location ) {
+		glUniform3fv( Location, 1, reinterpret_cast<eeFloat*>( &Value ) );
+		return true;
+	}
+
+	return false;
+}
+
+bool cShaderProgram::SetUniformMatrix( const Int32& Location, const float * Value ) {
+	if ( -1 != Location ) {
+		glUniformMatrix4fv( Location, 1, false, Value );
+
+		return true;
+	}
+
+	return false;
 }
 
 bool cShaderProgram::SetUniformMatrix( const std::string Name, const float * Value ) {

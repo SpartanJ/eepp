@@ -29,9 +29,9 @@ cGL * cGL::CreateSingleton() {
 	if ( ms_singleton == 0 ) {
 		#ifdef EE_GL3_ENABLED
 		/** Implement an OpenGL3 compilant renderer */
-		/*if ( '3' == glGetString(GL_VERSION)[0] )
+		if ( '3' == glGetString(GL_VERSION)[0] )
 			ms_singleton = eeNew( cRendererGL3, () );
-		else*/
+		else
 		#endif
 			ms_singleton = eeNew( cRendererGL, () );
 	}

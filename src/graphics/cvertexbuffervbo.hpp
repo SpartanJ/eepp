@@ -25,6 +25,10 @@ class cVertexBufferVBO : public cVertexBuffer {
 
 		bool mCompiled;
 
+		bool mBuffersSet;
+
+		bool mTextured;
+
 		GLuint mVAO;
 
 		Uint32 mElementHandle;

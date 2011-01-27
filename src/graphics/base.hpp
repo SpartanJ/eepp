@@ -27,7 +27,6 @@ using namespace EE::System;
 
 #include "renders.hpp"
 
-//#define EE_GLES
 #ifdef EE_GLES
 	#define EE_QUAD_VERTEX 6
 #else

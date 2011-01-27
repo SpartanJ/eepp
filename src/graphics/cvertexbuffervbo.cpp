@@ -7,6 +7,8 @@ namespace EE { namespace Graphics {
 cVertexBufferVBO::cVertexBufferVBO( const Uint32& VertexFlags, EE_DRAW_MODE DrawType, const Int32& ReserveVertexSize, const Int32& ReserveIndexSize, EE_VBO_USAGE_TYPE UsageType ) :
 	cVertexBuffer( VertexFlags, DrawType, ReserveVertexSize, ReserveIndexSize, UsageType ),
 	mCompiled( false ),
+	mBuffersSet( false ),
+	mTextured( false ),
 	mVAO( 0 ),
 	mElementHandle( 0 )
 {
@@ -83,7 +85,8 @@ bool cVertexBufferVBO::Compile() {
 		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 	}
 
-	mCompiled = true;
+	mCompiled	= true;
+	mBuffersSet	= false;
 
 	return true;
 }
@@ -94,6 +97,10 @@ void cVertexBufferVBO::Draw() {
 
 	if ( GLv_3 == GLi->Version() ) {
 		glBindVertexArray( mVAO );
+
+		if ( !mTextured ) {
+			GLi->Disable( GL_TEXTURE_2D );
+		}
 	}
 
 	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) ) {
@@ -110,17 +117,31 @@ void cVertexBufferVBO::Draw() {
 	} else {
 		glDrawArrays( mDrawType, 0, GetVertexCount() );
 	}
+
+	if ( GLv_3 == GLi->Version() ) {
+		if ( !mTextured ) {
+			GLi->Enable( GL_TEXTURE_2D );
+		}
+	}
 }
 
 void cVertexBufferVBO::SetVertexStates() {
 	GLint index;
 
 	if ( GLv_3 == GLi->Version() ) {
+		if ( mBuffersSet ) {
+			if ( !mTextured ) {
+				GLi->Disable( GL_TEXTURE_2D );
+			}
+
+			return;
+		}
+
 		glBindVertexArray( mVAO );
 	}
 
 	/// POSITION
-	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
+	if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
 		GLi->EnableClientState( GL_VERTEX_ARRAY );
 		glBindBuffer( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_POSITION ] );
 
@@ -130,7 +151,7 @@ void cVertexBufferVBO::SetVertexStates() {
 			if ( -1 != index )
 				glVertexAttribPointer( index, eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FLOAT, GL_FALSE, 0, 0 );
 		} else {
-			glVertexPointer( eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FLOAT, 0, (char*)NULL );
+			GLi->VertexPointer( eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FLOAT, 0, (char*)NULL, 0 );
 		}
 	} else {
 		if ( GLv_3 == GLi->Version() ) {
@@ -139,7 +160,7 @@ void cVertexBufferVBO::SetVertexStates() {
 	}
 
 	/// COLOR
-	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) ) {
+	if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) ) {
 		GLi->EnableClientState( GL_COLOR_ARRAY );
 		glBindBuffer( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_COLOR ] );
 
@@ -149,7 +170,7 @@ void cVertexBufferVBO::SetVertexStates() {
 			if ( -1 != index )
 				glVertexAttribPointer( index, eeVertexElements[ VERTEX_FLAG_COLOR ], GL_UNSIGNED_BYTE, GL_TRUE, 0, 0 );
 		} else {
-			glColorPointer( eeVertexElements[ VERTEX_FLAG_COLOR ], GL_UNSIGNED_BYTE, 0, (char*)NULL );
+			GLi->ColorPointer( eeVertexElements[ VERTEX_FLAG_COLOR ], GL_UNSIGNED_BYTE, 0, (char*)NULL, 0 );
 		}
 	} else {
 		if ( GLv_3 == GLi->Version() ) {
@@ -162,57 +183,61 @@ void cVertexBufferVBO::SetVertexStates() {
 		for ( Int32 i = 0; i < 5; i++ ) {
 			if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 + i ) ) {
 				if ( GLv_3 != GLi->Version() ) {
-					glClientActiveTexture( GL_TEXTURE0 + i );
+					GLi->ClientActiveTexture( GL_TEXTURE0 + i );
 				}
 
 				GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
 				glBindBuffer( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_TEXTURE0 + i ] );
 
-				if ( GLv_3 == GLi->Version() ) { /** FIXME: Give Support for multitexturing */
+				if ( GLv_3 == GLi->Version() ) { /** FIXME: Support for multitexturing */
 					index = GLi->GetRendererGL3()->GetStateIndex( EEGL_TEXTURE_COORD_ARRAY );
 
 					if ( -1 != index && 0 == i )
 						glVertexAttribPointer( index, eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], GL_FLOAT, GL_FALSE, 0, 0 );
 				} else {
-					glTexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], GL_FLOAT, 0, (char*)NULL );
-				}
-			} else {
-				if ( GLv_3 == GLi->Version() ) {
-					GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
+					GLi->TexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], GL_FLOAT, 0, (char*)NULL, 0 );
 				}
 
+				mTextured = true;
+			} else {
 				GLi->Disable( GL_TEXTURE_2D );
+
+				mTextured = false;
+
+				break;
 			}
 		}
 	} else {
 		if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 ) ) {
-			glEnableClientState( GL_TEXTURE_COORD_ARRAY );
+			GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
 			glBindBuffer( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_TEXTURE0 ] );
 
-				if ( GLv_3 == GLi->Version() ) {
-					index = GLi->GetRendererGL3()->GetStateIndex( EEGL_TEXTURE_COORD_ARRAY );
-
-					if ( -1 != index ) // Give Support for multitexturing
-						glVertexAttribPointer( index, eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], GL_FLOAT, GL_FALSE, 0, 0 );
-				} else {
-					glTexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], GL_FLOAT, 0, (char*)NULL );
-				}
-		} else {
 			if ( GLv_3 == GLi->Version() ) {
-				GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
+				index = GLi->GetRendererGL3()->GetStateIndex( EEGL_TEXTURE_COORD_ARRAY );
+
+				if ( -1 != index ) /** FIXME: Support for multitexturing */
+					glVertexAttribPointer( index, eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], GL_FLOAT, GL_FALSE, 0, 0 );
+			} else {
+				GLi->TexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], GL_FLOAT, 0, (char*)NULL, 0 );
 			}
 
+			mTextured = true;
+		} else {
 			GLi->Disable( GL_TEXTURE_2D );
+
+			mTextured = false;
 		}
 	}
 
 	GLi->ActiveTexture( GL_TEXTURE0 );
 
 	if ( GLv_3 != GLi->Version() ) {
-		glClientActiveTexture( GL_TEXTURE0 );
+		GLi->ClientActiveTexture( GL_TEXTURE0 );
 	}
 
 	glBindBuffer( GL_ARRAY_BUFFER, 0 );
+
+	mBuffersSet = true;
 }
 
 void cVertexBufferVBO::Update( const Uint32& Types, bool Indices ) {
@@ -242,10 +267,14 @@ void cVertexBufferVBO::Update( const Uint32& Types, bool Indices ) {
 
 		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
 	}
+
+	mBuffersSet = false;
 }
 
 void cVertexBufferVBO::Reload() {
-	mCompiled = false;
+	mCompiled	= false;
+	mBuffersSet	= false;
+
 	Compile();
 }
 

@@ -72,4 +72,37 @@ void cRendererGL::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, con
 	glTexCoordPointer( size, type, stride, pointer );
 }
 
+void cRendererGL::ClientActiveTexture( GLenum texture ) {
+	glClientActiveTexture( texture );
+}
+
+void cRendererGL::ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
+	GLdouble tX = (GLdouble)x;
+	GLdouble tY = (GLdouble)y;
+	GLdouble tW = (GLdouble)Width;
+	GLdouble tH = (GLdouble)Height;
+
+	GLdouble clip_left[] 	= { 1.0	, 0.0	, 0.0, -tX 		};
+	GLdouble clip_right[] 	= { -1.0, 0.0	, 0.0, tX + tW 	};
+	GLdouble clip_top[] 	= { 0.0	, 1.0	, 0.0, -tY 		};
+	GLdouble clip_bottom[] 	= { 0.0	, -1.0	, 0.0, tY + tH 	};
+
+	GLi->Enable(GL_CLIP_PLANE0);
+	GLi->Enable(GL_CLIP_PLANE1);
+	GLi->Enable(GL_CLIP_PLANE2);
+	GLi->Enable(GL_CLIP_PLANE3);
+
+	glClipPlane(GL_CLIP_PLANE0, clip_left);
+	glClipPlane(GL_CLIP_PLANE1, clip_right);
+	glClipPlane(GL_CLIP_PLANE2, clip_top);
+	glClipPlane(GL_CLIP_PLANE3, clip_bottom);
+}
+
+void cRendererGL::ClipPlaneDisable() {
+	GLi->Disable(GL_CLIP_PLANE0);
+	GLi->Disable(GL_CLIP_PLANE1);
+	GLi->Disable(GL_CLIP_PLANE2);
+	GLi->Disable(GL_CLIP_PLANE3);
+}
+
 }}

@@ -1705,7 +1705,7 @@ void cEETest::Demo1Create() {
 	Physics::cShape::ResetShapeIdCounter();
 
 	mSpace = Physics::cSpace::New();
-	mSpace->Iterations( 30 );
+	//mSpace->Iterations( 30 );
 	mSpace->ResizeStaticHash( 40.f, 1000 );
 	mSpace->ResizeActiveHash( 40.f, 1000 );
 	mSpace->Gravity( cVectNew( 0, 100 ) );
@@ -1889,11 +1889,13 @@ void cEETest::PhysicsCreate() {
 	cPhysicsManager::CreateSingleton();
 	cPhysicsManager::instance()->CollisionSlop( 0.2 );
 	cPhysicsManager * PM = cPhysicsManager::instance();
-	PM->GetDrawOptions()->DrawHash			= 1;
-	PM->GetDrawOptions()->DrawBBs			= 1;
-	PM->GetDrawOptions()->DrawShapes		= 1;
-	PM->GetDrawOptions()->BodyPointSize		= 4;
-	PM->GetDrawOptions()->LineThickness		= 1;
+	cPhysicsManager::cDrawSpaceOptions * DSO = PM->GetDrawOptions();
+
+	DSO->DrawHash			= false;
+	DSO->DrawBBs			= false;
+	DSO->DrawShapes			= true;
+	DSO->BodyPointSize		= 4;
+	DSO->LineThickness		= 1;
 
 	mDemo.clear();
 

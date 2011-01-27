@@ -56,13 +56,13 @@ void cVertexBufferOGL::SetVertexStates() {
 	if ( GLi->IsExtension( EEGL_ARB_multitexture ) ) {
 		for ( Int32 i = 0; i < 5; i++ ) {
 			if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 + i ) ) {
-				glClientActiveTextureARB( GL_TEXTURE0_ARB + i );
+				GLi->ClientActiveTexture( GL_TEXTURE0 + i );
 				GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
 
 				GLi->TexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], GL_FLOAT, sizeof(float) * eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], &mVertexArray[ VERTEX_FLAG_TEXTURE0 + i ][0], alloc );
 			} else {
 				//GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
-				glDisable( GL_TEXTURE_2D );
+				GLi->Disable( GL_TEXTURE_2D );
 			}
 		}
 	} else {
@@ -75,8 +75,8 @@ void cVertexBufferOGL::SetVertexStates() {
 		}
 	}
 
-	GLi->ActiveTexture( GL_TEXTURE0_ARB );
-	glClientActiveTextureARB( GL_TEXTURE0_ARB );
+	GLi->ActiveTexture( GL_TEXTURE0 );
+	GLi->ClientActiveTexture( GL_TEXTURE0 );
 }
 
 void cVertexBufferOGL::Update( const Uint32& Types, bool Indices ) {

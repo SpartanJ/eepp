@@ -28,13 +28,14 @@ enum EEGL_ARRAY_STATES {
 	EEGL_INDEX_ARRAY			= 3,
 	EEGL_TEXTURE_COORD_ARRAY	= 4,
 	EEGL_EDGE_FLAG_ARRAY		= 5,
-	EEGL_ARRAY_STATES_SIZE
+	EEGL_ARRAY_STATES_COUNT
 };
 
-enum EEGL_SHADERS_NUM {
+enum EEGL_SHADERS {
 	EEGL_SHADER_BASE_TEX,
 	EEGL_SHADER_BASE,
 	EEGL_SHADER_POINT_SPRITE,
+	EEGL_SHADER_CLIP,
 	EEGL_SHADERS_COUNT
 };
 
@@ -109,6 +110,8 @@ class cGL {
 
 		void Viewport ( GLint x, GLint y, GLsizei width, GLsizei height );
 
+		virtual void ClientActiveTexture( GLenum texture ) = 0;
+
 		virtual void Disable ( GLenum cap );
 
 		virtual void Enable( GLenum cap );
@@ -146,6 +149,10 @@ class cGL {
 		virtual void TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) = 0;
 
 		virtual void SetShader( cShaderProgram * Shader );
+
+		virtual void ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) = 0;
+
+		virtual void ClipPlaneDisable() = 0;
 
 		cRendererGL * GetRendererGL();
 

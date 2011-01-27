@@ -279,9 +279,8 @@ void cEngine::Setup2D( const bool& KeepView ) {
 	cTextureFactory::instance()->SetPreBlendFunc( ALPHA_BLENDONE );  // This is to fix a little bug on windows when the resolution change. I don't know why it happens, but this line fix it.
 	cTextureFactory::instance()->SetPreBlendFunc( ALPHA_NORMAL );
 
-	glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
-
 	if ( GLv_3 != GLi->Version() ) {
+		glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
 		glShadeModel( GL_SMOOTH );
 	}
 
@@ -1066,34 +1065,13 @@ void cEngine::SetDefaultContext() {
 void cEngine::ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
 	cGlobalBatchRenderer::instance()->Draw();
 
-	GLdouble tX = (GLdouble)x;
-	GLdouble tY = (GLdouble)y;
-	GLdouble tW = (GLdouble)Width;
-	GLdouble tH = (GLdouble)Height;
-
-	GLdouble clip_left[] 	= { 1.0	, 0.0	, 0.0, -tX 		};
-	GLdouble clip_right[] 	= { -1.0, 0.0	, 0.0, tX + tW 	};
-	GLdouble clip_top[] 	= { 0.0	, 1.0	, 0.0, -tY 		};
-	GLdouble clip_bottom[] 	= { 0.0	, -1.0	, 0.0, tY + tH 	};
-
-	GLi->Enable(GL_CLIP_PLANE0);
-	GLi->Enable(GL_CLIP_PLANE1);
-	GLi->Enable(GL_CLIP_PLANE2);
-	GLi->Enable(GL_CLIP_PLANE3);
-
-	glClipPlane(GL_CLIP_PLANE0, clip_left);
-	glClipPlane(GL_CLIP_PLANE1, clip_right);
-	glClipPlane(GL_CLIP_PLANE2, clip_top);
-	glClipPlane(GL_CLIP_PLANE3, clip_bottom);
+	GLi->ClipPlaneEnable( x, y, Width, Height );
 }
 
 void cEngine::ClipPlaneDisable() {
 	cGlobalBatchRenderer::instance()->Draw();
 
-	GLi->Disable(GL_CLIP_PLANE0);
-	GLi->Disable(GL_CLIP_PLANE1);
-	GLi->Disable(GL_CLIP_PLANE2);
-	GLi->Disable(GL_CLIP_PLANE3);
+	GLi->ClipPlaneDisable();
 }
 
 }}

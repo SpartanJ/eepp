@@ -24,9 +24,9 @@ class CP_API cPhysicsManager : public tSingleton<cPhysicsManager> {
 					LineThickness( 1.5f )
 				{}
 
-				int		DrawHash;
-				int		DrawBBs;
-				int		DrawShapes;
+				bool	DrawHash;
+				bool	DrawBBs;
+				bool	DrawShapes;
 				cpFloat CollisionPointSize;
 				cpFloat BodyPointSize;
 				cpFloat LineThickness;
