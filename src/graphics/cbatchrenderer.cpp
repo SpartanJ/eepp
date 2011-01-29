@@ -107,9 +107,11 @@ void cBatchRenderer::Flush() {
 	cTextureFactory::instance()->SetPreBlendFunc( mBlend );
 
 	if ( mCurrentMode == DM_POINTS && NULL != mTexture ) {
-		GLi->Enable( GL_POINT_SPRITE_ARB );
-		glTexEnvf( GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE );
+		#ifndef EE_GLES2
+		GLi->Enable( GL_POINT_SPRITE );
+		glTexEnvf( GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE );
 		GLi->PointSize( (GLfloat)mTexture->Width() );
+		#endif
 	}
 
 	if ( CreateMatrix ) {
@@ -150,7 +152,9 @@ void cBatchRenderer::Flush() {
 	}
 
 	if ( mCurrentMode == DM_POINTS && mTexture > 0 ) {
-		GLi->Disable( GL_POINT_SPRITE_ARB );
+		#ifndef EE_GLES2
+		GLi->Disable( GL_POINT_SPRITE );
+		#endif
 	}
 
 	if ( mTexture == 0 ) {
@@ -846,7 +850,7 @@ void cBatchRenderer::SetLineWidth( const eeFloat& lineWidth ) {
 }
 
 eeFloat cBatchRenderer::GetLineWidth() {
-	float lw;
+	float lw = 1;
 
 	glGetFloatv( GL_LINE_WIDTH, &lw );
 
@@ -858,10 +862,10 @@ void cBatchRenderer::SetPointSize( const eeFloat& pointSize ) {
 }
 
 eeFloat cBatchRenderer::GetPointSize() {
-	float ps;
-
+	float ps = 1;
+	#ifndef EE_GLES2
 	glGetFloatv( GL_POINT_SIZE, &ps );
-
+	#endif
 	return ps;
 }
 

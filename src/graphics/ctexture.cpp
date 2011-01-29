@@ -98,6 +98,7 @@ void cTexture::Create( const Uint32& texture, const eeUint& width, const eeUint&
 }
 
 Uint8 * cTexture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
+	#ifndef EE_GLES
 	if ( !( mFlags & TEX_FLAG_LOCKED ) ) {
 		if ( ForceRGBA )
 			mChannels = 4;
@@ -109,8 +110,8 @@ Uint8 * cTexture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
 			glBindTexture(GL_TEXTURE_2D, mTexture);
 
 		Int32 width = 0, height = 0;
-		glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
-		glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+		glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width );
+		glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height );
 
 		mWidth = (eeUint)width;
 		mHeight = (eeUint)height;
@@ -145,6 +146,9 @@ Uint8 * cTexture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
 	}
 
 	return &mPixels[0];
+	#else
+	return NULL;
+	#endif
 }
 
 Uint8 * cTexture::Lock( const bool& ForceRGBA ) {
@@ -152,6 +156,7 @@ Uint8 * cTexture::Lock( const bool& ForceRGBA ) {
 }
 
 bool cTexture::Unlock( const bool& KeepData, const bool& Modified ) {
+	#ifndef EE_GLES
 	if ( ( mFlags & TEX_FLAG_LOCKED ) ) {
 		Int32 width = mWidth, height = mHeight;
 		GLuint NTexId = 0;
@@ -189,6 +194,9 @@ bool cTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 	}
 
 	return false;
+	#else
+	return false;
+	#endif
 }
 
 const Uint8 * cTexture::GetPixelsPtr() {

@@ -29,6 +29,8 @@
 #include "base.hpp"
 #include "cframebuffer.hpp"
 
+#ifdef EE_GLEW_AVAILABLE
+
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #include "../helper/glew/wglew.h"
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
@@ -39,6 +41,8 @@
 #warning No PBuffer implemented on MAC
 #else
 #warning No PBuffer implemented on this platform
+#endif
+
 #endif
 
 namespace EE { namespace Graphics {
@@ -63,6 +67,8 @@ class EE_API cFrameBufferPBuffer : public cFrameBuffer {
 
 		static bool IsSupported();
 	protected:
+		#ifdef EE_GLEW_AVAILABLE
+
 		#if EE_PLATFORM == EE_PLATFORM_WIN
 		HDC          mDeviceContext;
 		HPBUFFERARB  mPBuffer;
@@ -71,6 +77,8 @@ class EE_API cFrameBufferPBuffer : public cFrameBuffer {
 		::Display*   mDisplay;
 		GLXPbuffer   mPBuffer;
 		GLXContext   mContext;
+		#endif
+
 		#endif
 };
 

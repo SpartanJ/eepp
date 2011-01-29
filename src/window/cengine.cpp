@@ -29,7 +29,7 @@ static int clipboard_filter(const SDL_Event *event) {
 		return(1);
 	}
 
-	Display* curDisplay = cEngine::instance()->GetWindowHandler();
+	Display * curDisplay = cEngine::instance()->GetWindowHandler();
 
 	/* Handle window-manager specific clipboard events */
 	switch ( event->syswm.msg->event.xevent.type ) {
@@ -280,8 +280,10 @@ void cEngine::Setup2D( const bool& KeepView ) {
 	cTextureFactory::instance()->SetPreBlendFunc( ALPHA_NORMAL );
 
 	if ( GLv_3 != GLi->Version() ) {
+		#ifndef EE_GLES2
 		glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
 		glShadeModel( GL_SMOOTH );
+		#endif
 	}
 
 	GLi->EnableClientState( GL_VERTEX_ARRAY );
@@ -1018,6 +1020,8 @@ std::wstring cEngine::GetClipboardTextWStr() {
 
 void cEngine::SetCurrentContext( eeWindowContex Context ) {
     if ( mInit ) {
+		#ifdef EE_GLEW_AVAILABLE
+
 		#if EE_PLATFORM == EE_PLATFORM_WIN
 			wglMakeCurrent( GetDC( mVideoInfo.info.window ), Context );
 		#elif EE_PLATFORM == EE_PLATFORM_LINUX
@@ -1029,14 +1033,22 @@ void cEngine::SetCurrentContext( eeWindowContex Context ) {
 		#else
 			#warning No context supported on this platform
 		#endif
+
+		#endif
     }
 }
 
 eeWindowContex cEngine::GetContext() const {
+	#if defined( EE_GLEW_AVAILABLE  ) && ( EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX )
 	return mContext;
+	#else
+	return 0;
+	#endif
 }
 
 void cEngine::GetMainContext() {
+#ifdef EE_GLEW_AVAILABLE
+
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	mContext = wglGetCurrentContext();
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
@@ -1044,9 +1056,13 @@ void cEngine::GetMainContext() {
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
 	//mContext = aglGetCurrentContext();
 #endif
+
+#endif
 }
 
 eeWindowHandler	cEngine::GetWindowHandler() {
+#ifdef EE_GLEW_AVAILABLE
+
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	return mVideoInfo.info.window;
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
@@ -1054,10 +1070,14 @@ eeWindowHandler	cEngine::GetWindowHandler() {
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
 	//return mVideoInfo.info.cocoa.window;
 #endif
+
+#else
+	return 0;
+#endif
 }
 
 void cEngine::SetDefaultContext() {
-	#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX
+	#if defined( EE_GLEW_AVAILABLE ) && ( EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX )
 	SetCurrentContext( mContext );
 	#endif
 }

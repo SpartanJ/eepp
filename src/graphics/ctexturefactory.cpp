@@ -253,7 +253,7 @@ void cTextureFactory::SetPreBlendFunc( const EE_PRE_BLEND_FUNC& blend, bool forc
 }
 
 void cTextureFactory::SetActiveTextureUnit( const Uint32& Unit ) {
-	GLi->ActiveTexture( GL_TEXTURE0_ARB + Unit );
+	GLi->ActiveTexture( GL_TEXTURE0 + Unit );
 }
 
 void cTextureFactory::SetTextureConstantColor( const eeColorA& Color ) {
@@ -261,10 +261,13 @@ void cTextureFactory::SetTextureConstantColor( const eeColorA& Color ) {
 }
 
 void cTextureFactory::SetTextureConstantColor( const eeColorAf& Color ) {
+	#ifndef EE_GLES2
 	glTexEnvfv( GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, (const GLfloat*)(&Color.Red) );
+	#endif
 }
 
 void cTextureFactory::SetTextureEnv( const EE_TEXTURE_PARAM& Param, const Int32& Val ) {
+	#ifndef EE_GLES2
 	GLenum lParam = (GLenum)GLi->GetTextureParamEnum( Param );
 
 	glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB );
@@ -278,6 +281,7 @@ void cTextureFactory::SetTextureEnv( const EE_TEXTURE_PARAM& Param, const Int32&
 	} else {
 		glTexEnvi( GL_TEXTURE_ENV, lParam, Val );
 	}
+	#endif
 }
 
 const EE_PRE_BLEND_FUNC& cTextureFactory::GetPreBlendFunc() const {

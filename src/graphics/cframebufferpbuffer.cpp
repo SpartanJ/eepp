@@ -5,6 +5,8 @@
 namespace EE { namespace Graphics {
 
 cFrameBufferPBuffer::cFrameBufferPBuffer()
+#ifdef EE_GLEW_AVAILABLE
+
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	: cFrameBuffer(),
 	mDeviceContext( NULL ),
@@ -16,13 +18,17 @@ cFrameBufferPBuffer::cFrameBufferPBuffer()
 	mPBuffer( 0 ),
 	mContext( NULL )
 #endif
+
+#endif
 {
-#if EE_PLATFORM == EE_PLATFORM_LINUX
+#if defined( EE_GLEW_AVAILABLE ) && EE_PLATFORM == EE_PLATFORM_LINUX
 	mDisplay = XOpenDisplay(NULL);
 #endif
 }
 
 cFrameBufferPBuffer::cFrameBufferPBuffer( const Uint32& Width, const Uint32& Height, bool DepthBuffer )
+#ifdef EE_GLEW_AVAILABLE
+
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	: cFrameBuffer(),
 	mDeviceContext( NULL ),
@@ -34,14 +40,18 @@ cFrameBufferPBuffer::cFrameBufferPBuffer( const Uint32& Width, const Uint32& Hei
 	mPBuffer( 0 ),
 	mContext( NULL )
 #endif
+
+#endif
 {
-#if EE_PLATFORM == EE_PLATFORM_LINUX
+#if defined( EE_GLEW_AVAILABLE ) &&  EE_PLATFORM == EE_PLATFORM_LINUX
 	mDisplay = XOpenDisplay(NULL);
 #endif
 	Create( Width, Height, DepthBuffer );
 }
 
 cFrameBufferPBuffer::~cFrameBufferPBuffer() {
+#ifdef EE_GLEW_AVAILABLE
+
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	if ( mContext )
 		wglDeleteContext( mContext );
@@ -61,15 +71,22 @@ cFrameBufferPBuffer::~cFrameBufferPBuffer() {
 		XCloseDisplay( mDisplay );
 #endif
 
+#endif
 	if ( Window::cEngine::ExistsSingleton() )
 		Window::cEngine::instance()->SetDefaultContext();
 }
 
 bool cFrameBufferPBuffer::IsSupported() {
+#ifdef EE_GLEW_AVAILABLE
+
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	return WGLEW_ARB_pbuffer && WGLEW_ARB_pixel_format;
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
 	return glxewIsSupported("GLX_SGIX_pbuffer");
+#else
+	return false;
+#endif
+
 #else
 	return false;
 #endif
@@ -86,6 +103,8 @@ bool cFrameBufferPBuffer::Create( const Uint32& Width, const Uint32& Height, boo
 	mWidth 			= Width;
 	mHeight 		= Height;
 	mHasDepthBuffer = DepthBuffer;
+
+#ifdef EE_GLEW_AVAILABLE
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	HDC currentDC = wglGetCurrentDC();
@@ -194,6 +213,8 @@ bool cFrameBufferPBuffer::Create( const Uint32& Width, const Uint32& Height, boo
 	XFree(visual);
 #endif
 
+#endif
+
 	if ( NULL == mTexture ) {
 		Uint32 TexId = cTextureFactory::instance()->CreateEmptyTexture( Width, Height, eeColorA(0,0,0,0) );
 
@@ -210,6 +231,8 @@ bool cFrameBufferPBuffer::Create( const Uint32& Width, const Uint32& Height, boo
 void cFrameBufferPBuffer::Bind() {
 	bool ChangeContext = false;
 
+#ifdef EE_GLEW_AVAILABLE
+
 	#if EE_PLATFORM == EE_PLATFORM_WIN
 	if ( mDeviceContext && mContext ) {
 		if ( wglGetCurrentContext() != mContext ) {
@@ -225,6 +248,8 @@ void cFrameBufferPBuffer::Bind() {
 		}
 	}
 	#endif
+
+#endif
 
 	if ( ChangeContext ) {
 		Window::cEngine::instance()->Setup2D( true );

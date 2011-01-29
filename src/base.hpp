@@ -75,9 +75,8 @@
 #define EE_32BIT
 #endif
 
-
-#define EE_LITTLE_ENDIAN 1
-#define EE_BIG_ENDIAN 2
+#define EE_LITTLE_ENDIAN	1
+#define EE_BIG_ENDIAN		2
 
 #if    defined(__386__) || defined(i386)    || defined(__i386__)  \
 	|| defined(__X86)   || defined(_M_IX86)                       \
@@ -93,10 +92,8 @@
 	#define EE_ENDIAN  EE_BIG_ENDIAN
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_LINUX || !defined( EE_GLES )
+#if ( EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_LINUX ) && !defined( EE_GLES )
 #define EE_GLEW_AVAILABLE
-#else
-#warning Platform not supported.
 #endif
 
 #ifdef EE_PLATFORM
@@ -135,16 +132,6 @@
 #define EE_API __attribute__ ((visibility("default")))
 #else
 #define EE_API
-#endif
-
-#ifdef EE_GLEW_AVAILABLE
-#include "helper/glew/glew.h"
-#endif
-
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
-#include <OpenGL/gl.h>
-#else
-#include <GL/gl.h>
 #endif
 
 #define eeARRAY_SIZE(__array)	( sizeof(__array) / sizeof(__array[0]) )
@@ -210,7 +197,7 @@ namespace EE {
 	const eeFloat PI		= 3.141592654;
 	const eeFloat TwoPI		= 6.283185308;
 	const eeFloat PId180	= PI / 180;
-	const eeFloat d180PI	= 180.f / PI;
+	const eeFloat d180PI	= 180 / PI;
 }
 
 #include "base/base.hpp"

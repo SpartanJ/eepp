@@ -5,6 +5,9 @@
 
 namespace EE { namespace Graphics {
 
+//! Avoid compilling the fixed pipeline renderer for GLES2, because it's not supported.
+#ifndef EE_GLES2
+
 class cRendererGL : public cGL {
 	public:
 		cRendererGL();
@@ -51,6 +54,8 @@ class cRendererGL : public cGL {
 	protected:	
 		
 };
+
+#endif
 
 }}
 

@@ -42,7 +42,8 @@ enum EEGL_SHADERS {
 enum EEGL_version {
 	GLv_2,
 	GLv_3,
-	GLv_ES,
+	GLv_ES1,
+	GLv_ES2,
 	GLv_default
 };
 
@@ -52,9 +53,9 @@ class cRendererGL3;
 class cGL {
 	static cGL * ms_singleton;
 	public:
-		static cGL * CreateSingleton();
-
 		static cGL * CreateSingleton( EEGL_version ver );
+
+		static cGL * CreateSingleton();
 
 		static cGL * ExistsSingleton();
 

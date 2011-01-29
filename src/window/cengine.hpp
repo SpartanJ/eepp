@@ -224,7 +224,7 @@ class EE_API cEngine : public tSingleton<cEngine> {
 		/** Set the size of the window for a windowed window */
 		void SetWindowSize( const Uint32& Width, const Uint32& Height );
 
-		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX
+		#if ( EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX )
 		void SetCurrentContext( eeWindowContex Context );
 
 		eeWindowContex GetContext() const;
@@ -258,7 +258,7 @@ class EE_API cEngine : public tSingleton<cEngine> {
 		cView			mDefaultView;
 		const cView *	mCurrentView;
 
-		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX
+		#if defined( EE_GLEW_AVAILABLE ) && ( EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX )
 		eeWindowContex	mContext;
 		#endif
 

@@ -9,22 +9,25 @@ inline BOOL WIN_ShowWindow( HWND hWnd, int nCmdShow ) {
 	return ShowWindow( hWnd, nCmdShow );
 }
 
-#include "../helper/glew/wglew.h"
-
-typedef HGLRC			eeWindowContex;
-typedef HWND			eeWindowHandler;
 typedef UINT			eeScrapType;
+typedef HWND			eeWindowHandler;
+#elif EE_PLATFORM == EE_PLATFORM_LINUX
+#include <X11/Xlib.h>
+typedef Atom			eeScrapType;
+typedef Window			X11Window;
+typedef Display	*		eeWindowHandler;
+#endif
+
+#ifdef EE_GLEW_AVAILABLE
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#include "../helper/glew/wglew.h"
+typedef HGLRC			eeWindowContex;
 
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
 
 #include "../helper/glew/glxew.h"
-#include <X11/Xlib.h>
-
-typedef Window			X11Window;
-
 typedef GLXContext		eeWindowContex;
-typedef Display	*		eeWindowHandler;
-typedef Atom			eeScrapType;
 
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
 //#include <AGL/agl.h>
@@ -32,6 +35,12 @@ typedef Atom			eeScrapType;
 //typedef AGLContext	eeWindowContex;
 //typedef NSWindow *	eeWindowHandler;
 typedef Uint32			eeScrapType;
+#endif
+
+#else
+
+typedef Uint32			eeWindowContex;	//! Fallback
+
 #endif
 
 #include "../utils/colors.hpp"

@@ -1,6 +1,8 @@
 #ifndef EE_PHYSICS_HELPER
 #define EE_PHYSICS_HELPER
 
+#include "../graphics/base.hpp"
+
 CP_NAMESPACE_BEGIN
 
 const cpFloat cpPI		= 3.141592654;

@@ -2,6 +2,8 @@
 
 namespace EE { namespace Graphics {
 
+#ifndef EE_GLES2
+
 cRendererGL::cRendererGL() {
 }
 
@@ -104,5 +106,7 @@ void cRendererGL::ClipPlaneDisable() {
 	GLi->Disable(GL_CLIP_PLANE2);
 	GLi->Disable(GL_CLIP_PLANE3);
 }
+
+#endif
 
 }}

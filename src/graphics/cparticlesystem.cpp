@@ -266,13 +266,16 @@ void cParticleSystem::Draw() {
 	if ( mPointsSup ) {
 		if ( GLi->Version() == GLv_3 ) {
 			GLi->GetRendererGL3()->SetShader( EEGL_SHADER_POINT_SPRITE );
+			#ifndef EE_GLES2
 			GLi->Enable( GL_VERTEX_PROGRAM_POINT_SIZE );
+			#endif
 		}
 
-		GLi->Enable( GL_POINT_SPRITE_ARB );
+		#ifndef EE_GLES2
+		GLi->Enable( GL_POINT_SPRITE );
 		GLi->PointSize( mSize );
-
-		glTexEnvf( GL_POINT_SPRITE_ARB, GL_COORD_REPLACE_ARB, GL_TRUE );
+		glTexEnvf( GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE );
+		#endif
 
 		Uint32 alloc = mPCount * sizeof(cParticle);
 
@@ -281,7 +284,9 @@ void cParticleSystem::Draw() {
 
 		GLi->DrawArrays( GL_POINTS, 0, (GLsizei)mPCount );
 
-		GLi->Disable( GL_POINT_SPRITE_ARB );
+		#ifndef EE_GLES2
+		GLi->Disable( GL_POINT_SPRITE );
+		#endif
 
 		if ( GLi->Version() == GLv_3 ) {
 			GLi->GetRendererGL3()->SetShader( EEGL_SHADER_BASE_TEX );

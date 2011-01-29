@@ -9,17 +9,28 @@ cGL * GLi = NULL;
 cGL * cGL::ms_singleton = NULL;
 
 cGL * cGL::CreateSingleton( EEGL_version ver ) {
+	#ifndef EE_GLES2
+	if ( GLv_default == ver )
+		ver = GLv_2;
+	#else
+	if ( GLv_default == ver )
+		ver = GLv_3;
+	#endif
+
 	switch ( ver ) {
+		case GLv_ES2:
 		case GLv_3:
-			#ifdef EE_GL3_ENABLED
+			#if defined( EE_GL3_ENABLED ) || defined( EE_GLES2 )
 			ms_singleton = eeNew( cRendererGL3, () );
 			break;
 			#endif
 		case GLv_2:
-		case GLv_ES:
+		case GLv_ES1:
 		case GLv_default:
 		default:
+			#ifndef EE_GLES2
 			ms_singleton = eeNew( cRendererGL, () );
+			#endif
 	}
 
 	return ms_singleton;
@@ -27,13 +38,19 @@ cGL * cGL::CreateSingleton( EEGL_version ver ) {
 
 cGL * cGL::CreateSingleton() {
 	if ( ms_singleton == 0 ) {
-		#ifdef EE_GL3_ENABLED
-		/** Implement an OpenGL3 compilant renderer */
-		if ( '3' == glGetString(GL_VERSION)[0] )
+		#ifdef EE_GLES2
 			ms_singleton = eeNew( cRendererGL3, () );
-		else
-		#endif
+		#elif EE_GLES1
 			ms_singleton = eeNew( cRendererGL, () );
+		#else
+			#ifdef EE_GL3_ENABLED
+			/** Implement an OpenGL3 compilant renderer */
+			if ( '3' == glGetString(GL_VERSION)[0] )
+				ms_singleton = eeNew( cRendererGL3, () );
+			else
+			#endif
+				ms_singleton = eeNew( cRendererGL, () );
+		#endif
 	}
 
 	return ms_singleton;
@@ -109,6 +126,8 @@ void cGL::Init() {
 		WriteExtension( EEGL_ARB_multitexture				, GetExtension( "GL_ARB_multitexture" ) 			);
 		WriteExtension( EEGL_EXT_texture_compression_s3tc	, GetExtension( "GL_EXT_texture_compression_s3tc" ) );
 		WriteExtension( EEGL_ARB_vertex_buffer_object		, GetExtension( "GL_ARB_vertex_buffer_object" )	);
+
+		glewOn = false; /// avoid compiler warning
 	}
 }
 
