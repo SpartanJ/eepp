@@ -39,30 +39,30 @@
 #define EE_PLATFORM_MACOSX	3
 
 #if defined( __WIN32__ ) || defined( _WIN32 ) || defined( _WIN64 )
-#   define EE_PLATFORM EE_PLATFORM_WIN
+	#define EE_PLATFORM EE_PLATFORM_WIN
 
 	#if (defined (_MSCVER) || defined (_MSC_VER))
-#	define EE_COMPILER_MSVC
+		#define EE_COMPILER_MSVC
 	#endif
 
 #elif defined( __APPLE_CC__) || defined ( __APPLE__ )
-#   define EE_PLATFORM EE_PLATFORM_MACOSX
+	#define EE_PLATFORM EE_PLATFORM_MACOSX
 
 #elif defined ( linux ) || defined( __linux__ )
-#   define EE_PLATFORM EE_PLATFORM_LINUX
+	#define EE_PLATFORM EE_PLATFORM_LINUX
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOSX
-#define EE_PLATFORM_UNIX
+	#define EE_PLATFORM_UNIX
 #endif
 
 #if defined(__GNUC__)
-#define EE_COMPILER_GCC
+	#define EE_COMPILER_GCC
 #endif
 
 #ifndef EE_DEBUG
 	#if defined( DEBUG ) || defined( _DEBUG ) || defined( __DEBUG )
-	#define EE_DEBUG
+		#define EE_DEBUG
 	#endif
 #endif
 
@@ -70,9 +70,9 @@
 	(defined(_WIN64) && !defined(_XBOX)) || \
 	defined(__64BIT__) || defined(__LP64)  || defined(__LP64__) || defined(_LP64) || defined(_ADDR64) || defined(_CRAYC) || defined(__arch64__) || \
 	defined(__sparcv9) || defined(__sparc_v9__)
-#define EE_64BIT
+	#define EE_64BIT
 #else
-#define EE_32BIT
+	#define EE_32BIT
 #endif
 
 #define EE_LITTLE_ENDIAN	1
@@ -92,12 +92,8 @@
 	#define EE_ENDIAN  EE_BIG_ENDIAN
 #endif
 
-#if ( EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_LINUX ) && !defined( EE_GLES )
-#define EE_GLEW_AVAILABLE
-#endif
-
 #ifdef EE_PLATFORM
-#define EE_SUPPORTED_PLATFORM
+	#define EE_SUPPORTED_PLATFORM
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -129,9 +125,9 @@
 #endif
 
 #if ( __GNUC__ >= 4 ) && defined( EE_DYNAMIC ) && defined( EE_EXPORTS )
-#define EE_API __attribute__ ((visibility("default")))
+	#define EE_API __attribute__ ((visibility("default")))
 #else
-#define EE_API
+	#define EE_API
 #endif
 
 #define eeARRAY_SIZE(__array)	( sizeof(__array) / sizeof(__array[0]) )
@@ -140,13 +136,11 @@
 #define eeSAFE_DELETE_ARRAY(p)  { if(p) { eeDeleteArray(p);		(p)=NULL; } }
 
 #ifndef EE_USE_DOUBLE
-
-#ifdef EE_64BIT
-#define EE_USE_DOUBLES 1
-#else
-#define EE_USE_DOUBLE 0
-#endif
-
+	#ifdef EE_64BIT
+		#define EE_USE_DOUBLES 1
+	#else
+		#define EE_USE_DOUBLE 0
+	#endif
 #endif
 
 namespace EE {

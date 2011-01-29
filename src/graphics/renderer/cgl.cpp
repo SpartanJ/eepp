@@ -20,17 +20,21 @@ cGL * cGL::CreateSingleton( EEGL_version ver ) {
 	switch ( ver ) {
 		case GLv_ES2:
 		case GLv_3:
+		{
 			#if defined( EE_GL3_ENABLED ) || defined( EE_GLES2 )
 			ms_singleton = eeNew( cRendererGL3, () );
 			break;
 			#endif
+		}
 		case GLv_2:
 		case GLv_ES1:
 		case GLv_default:
 		default:
+		{
 			#ifndef EE_GLES2
 			ms_singleton = eeNew( cRendererGL, () );
 			#endif
+		}
 	}
 
 	return ms_singleton;
@@ -157,6 +161,7 @@ bool cGL::ShadersSupported() {
 }
 
 Uint32 cGL::GetTextureParamEnum( const EE_TEXTURE_PARAM& Type ) {
+	#ifndef EE_GLES2
 	switch( Type ) {
 		case TEX_PARAM_COLOR_FUNC:			return GL_COMBINE_RGB_ARB;
 		case TEX_PARAM_ALPHA_FUNC:			return GL_COMBINE_ALPHA_ARB;
@@ -175,11 +180,13 @@ Uint32 cGL::GetTextureParamEnum( const EE_TEXTURE_PARAM& Type ) {
 		case TEX_PARAM_COLOR_SCALE:			return GL_RGB_SCALE_ARB;
 		case TEX_PARAM_ALPHA_SCALE:			return GL_ALPHA_SCALE;
 	}
+	#endif
 
 	return 0;
 }
 
 Uint32 cGL::GetTextureFuncEnum( const EE_TEXTURE_FUNC& Type ) {
+	#ifndef EE_GLES2
 	switch( Type ) {
 		case TEX_FUNC_MODULATE:			return GL_MODULATE;
 		case TEX_FUNC_REPLACE:			return GL_REPLACE;
@@ -190,28 +197,32 @@ Uint32 cGL::GetTextureFuncEnum( const EE_TEXTURE_FUNC& Type ) {
 		case TEX_FUNC_DOT3_RGB:			return GL_DOT3_RGB_ARB;
 		case TEX_FUNC_DOT3_RGBA:		return GL_DOT3_RGBA_ARB;
 	}
-
+	#endif
 	return 0;
 }
 
 Uint32 cGL::GetTextureSourceEnum( const EE_TEXTURE_SOURCE& Type ) {
-	switch( Type) {
+	#ifndef EE_GLES2
+	switch ( Type ) {
 		case TEX_SRC_TEXTURE:	return GL_TEXTURE;
 		case TEX_SRC_CONSTANT:	return GL_CONSTANT_ARB;
 		case TEX_SRC_PRIMARY:	return GL_PRIMARY_COLOR_ARB;
 		case TEX_SRC_PREVIOUS:	return GL_PREVIOUS_ARB;
 	}
+	#endif
 
 	return 0;
 }
 
 Uint32 cGL::GetTextureOpEnum( const EE_TEXTURE_OP& Type ) {
-	switch( Type ) {
+	#ifndef EE_GLES2
+	switch ( Type ) {
 		case TEX_OP_COLOR:				return GL_SRC_COLOR;
 		case TEX_OP_ONE_MINUS_COLOR:	return GL_ONE_MINUS_SRC_COLOR;
 		case TEX_OP_ALPHA:				return GL_SRC_ALPHA;
 		case TEX_OP_ONE_MINUS_ALPHA:	return GL_ONE_MINUS_SRC_ALPHA;
 	}
+	#endif
 
 	return 0;
 }
@@ -249,11 +260,15 @@ void cGL::Scissor ( GLint x, GLint y, GLsizei width, GLsizei height ) {
 }
 
 void cGL::PolygonMode( GLenum face, GLenum mode ) {
+	#ifndef EE_GLES2
 	glPolygonMode( face, mode );
+	#endif
 }
 
 void cGL::PointSize( GLfloat size ) {
+	#ifndef EE_GLES2
 	glPointSize( size );
+	#endif
 }
 
 void cGL::DrawArrays (GLenum mode, GLint first, GLsizei count) {

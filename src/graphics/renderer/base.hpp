@@ -9,6 +9,7 @@
 #endif
 
 #ifdef EE_GLES2
+typedef char GLchar;
 #define GL_MODELVIEW 0x1700
 #define GL_PROJECTION 0x1701
 #define GL_TEXTURE 0x1702

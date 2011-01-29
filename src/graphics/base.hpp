@@ -7,6 +7,10 @@
 	#define EE_GLES
 #endif
 
+#if ( EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_LINUX ) && !defined( EE_GLES )
+	#define EE_GLEW_AVAILABLE
+#endif
+
 #ifndef EE_GLES
 	//! GL2 and GL3 ( PC platform )
 

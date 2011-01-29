@@ -418,12 +418,14 @@ void cRendererGL3::ClipPlaneEnable( const Int32& x, const Int32& y, const Int32&
 	GLfloat clip_right[] 	= { -1.0	, 0.0	, 0.0	, tX + tW 	};
 	GLfloat clip_top[]		= { 0.0		, 1.0	, 0.0	, -tY 		};
 	GLfloat clip_bottom[] 	= { 0.0		, -1.0	, 0.0	, tY + tH 	};
-
+	
+	#ifndef EE_GLES2
 	GLi->Enable(GL_CLIP_PLANE0);
 	GLi->Enable(GL_CLIP_PLANE1);
 	GLi->Enable(GL_CLIP_PLANE2);
 	GLi->Enable(GL_CLIP_PLANE3);
-
+	#endif
+	
 	SetShader( EEGL_SHADER_CLIP );
 
 	mCurShader->SetUniform( "TexActive", mTexActive );
@@ -435,11 +437,13 @@ void cRendererGL3::ClipPlaneEnable( const Int32& x, const Int32& y, const Int32&
 }
 
 void cRendererGL3::ClipPlaneDisable() {
+	#ifndef EE_GLES2
 	GLi->Disable(GL_CLIP_PLANE0);
 	GLi->Disable(GL_CLIP_PLANE1);
 	GLi->Disable(GL_CLIP_PLANE2);
 	GLi->Disable(GL_CLIP_PLANE3);
-
+	#endif
+	
 	SetShader( mShaderPrev );
 }
 
