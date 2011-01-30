@@ -1949,7 +1949,7 @@ void cEETest::PhysicsDestroy() {
 	mDemo[ mCurDemo ].destroy();
 	cPhysicsManager::DestroySingleton();
 }
-
+/*
 void defineVertexArrayObject(GLuint vaoId, size_t NbytesV, size_t NbytesC, GLint size, GLenum type, GLfloat *vertices, GLfloat *colors, GLfloat * texCoords, GLuint shader_id ) {
 	//enable vertex array object to be defined
 	glBindVertexArray(vaoId);
@@ -1962,34 +1962,33 @@ void defineVertexArrayObject(GLuint vaoId, size_t NbytesV, size_t NbytesC, GLint
 	glBindBuffer(GL_ARRAY_BUFFER, m_vboId[0] );											// enable the 1st VBO
 	glBufferData(GL_ARRAY_BUFFER, NbytesV, vertices, GL_STATIC_DRAW);					// fill the VBO with vertices data
 	const GLuint index_mPosition = glGetAttribLocation( shader_id, "dgl_Vertex" );		// get ID for "dgl_Vertex"
-	glVertexAttribPointer( index_mPosition, 2, type, GL_FALSE, 0, 0 );					// VBO point to the "dgl_Vertex" attribute
 	glEnableVertexAttribArray( index_mPosition );										// enable VBO vertex attribute ("dgl_Vertex")
+	glVertexAttribPointer( index_mPosition, 2, type, GL_FALSE, 0, 0 );					// VBO point to the "dgl_Vertex" attribute
 
 	//"in		 vec4 dgl_Color;",
 	glBindBuffer( GL_ARRAY_BUFFER, m_vboId[1] );										// enable the 2nd VBO
 	glBufferData( GL_ARRAY_BUFFER, NbytesC, colors, GL_STATIC_DRAW );					// fill the 2nd VBO with colors data
 	const GLuint index_mcolor = glGetAttribLocation( shader_id,"dgl_Color" );			// get ID for "dgl_Color"
-	glVertexAttribPointer( index_mcolor, 4, type, GL_FALSE, 0, 0 );						// VBO point to the "dgl_Color" attribute
 	glEnableVertexAttribArray( index_mcolor );											// enable VBO vertex attribute ("dgl_Color")
+	glVertexAttribPointer( index_mcolor, 4, type, GL_FALSE, 0, 0 );						// VBO point to the "dgl_Color" attribute
 
 	//"in		 vec2 dgl_TexCoord;",
 	glBindBuffer( GL_ARRAY_BUFFER, m_vboId[2] );										// enable the 3rd VBO
 	glBufferData( GL_ARRAY_BUFFER, NbytesV, texCoords, GL_STATIC_DRAW );				// fill the 3nd VBO with tex coords data
 	const GLuint index_mcoords = glGetAttribLocation( shader_id,"dgl_TexCoord" );		// get ID for "dgl_TexCoords"
-	glVertexAttribPointer( index_mcoords, 2, type, GL_FALSE, 0, 0 );					// VBO point to the "dgl_TexCoords" attribute
 	glEnableVertexAttribArray( index_mcoords );											// enable VBO vertex attribute ("dgl_TexCoords")
+	glVertexAttribPointer( index_mcoords, 2, type, GL_FALSE, 0, 0 );					// VBO point to the "dgl_TexCoords" attribute
 }
-
+*/
 int main (int argc, char * argv []) {
 	cEETest * Test = eeNew( cEETest, () );
 
 	Test->Process();
 
 	eeDelete( Test );
-
 /*
 	cEngine *			EE		= cEngine::instance();
-	EE->Init( 800, 600, 32, true, true, true, true );
+	EE->Init( 800, 600, 32, true, true, true, true, false, false, GLv_3 );
 	EE->SetBackColor( eeColor( 255, 255, 255 ) );
 
 	cInput *			KM		= cInput::instance();
@@ -2025,7 +2024,6 @@ int main (int argc, char * argv []) {
 	GLuint				vao_id;
 
 	glGenVertexArrays( 1, &vao_id );
-
 	glBindVertexArray( vao_id );
 
 	GLuint vao_elementcount = Nbytes_vertices0 / 2 / sizeof(GLfloat);
@@ -2034,17 +2032,15 @@ int main (int argc, char * argv []) {
 
 	eeFloat ang = 0;
 
-	GLi->Disable( GL_TEXTURE_2D );
-
 	while( EE->Running() ) {
 		KM->Update();
 
 		ang += EE->Elapsed() * 0.1;
 
 		TF->Bind( Tex );
-		glBindVertexArray( vao_id );
+		//glBindVertexArray( vao_id );
 
-		GLi->DrawArrays( GL_QUADS, 0, vao_elementcount );
+		GLi->DrawArrays( GL_TRIANGLE_FAN, 0, vao_elementcount );
 
 		GLi->PushMatrix();
 
@@ -2052,7 +2048,7 @@ int main (int argc, char * argv []) {
 		GLi->Rotatef( ang, 0, 0, 1 );
 		GLi->Translatef( -400, -300, 0 );
 
-		GLi->DrawArrays( GL_QUADS, 0, vao_elementcount );
+		GLi->DrawArrays( GL_TRIANGLE_FAN, 0, vao_elementcount );
 
 		GLi->PopMatrix();
 

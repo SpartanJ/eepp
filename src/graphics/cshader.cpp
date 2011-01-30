@@ -136,11 +136,7 @@ bool cShader::Compile() {
 
 		mCompileLog.resize( logarraysize - 1 );
 
-		#ifndef EE_GLES2
 		glGetShaderInfoLog( GetId(), logarraysize, &logsize, reinterpret_cast<GLchar*>( &mCompileLog[0] ) );
-		#else
-		glGetShaderInfoLog( GetId(), logarraysize, &logsize, reinterpret_cast<char*>( &mCompileLog[0] ) );
-		#endif
 
 		cLog::instance()->Write( "Couldn't compile shader. Log follows:" );
 		cLog::instance()->Write( mCompileLog );

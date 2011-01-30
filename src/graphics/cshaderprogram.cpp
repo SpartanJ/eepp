@@ -191,11 +191,7 @@ bool cShaderProgram::Link() {
 	glGetProgramiv( Handler(), GL_INFO_LOG_LENGTH, &logarraysize );
 	mLinkLog.resize(logarraysize);
 
-	#ifndef EE_GLES2
 	glGetProgramInfoLog( Handler(), logarraysize, &logsize, reinterpret_cast<GLchar*>( &mLinkLog[0] ) );
-	#else
-	glGetProgramInfoLog( Handler(), logarraysize, &logsize, reinterpret_cast<char*>( &mLinkLog[0] ) );
-	#endif
 
 	if ( !mValid ) {
 		cLog::instance()->Write( "cShaderProgram::Link(): Couldn't link program. Log follows:" + mLinkLog );

@@ -49,6 +49,7 @@ cpFloat cShapeSegment::QueryHitDist( const cVect start, const cVect end, const c
 }
 
 void cShapeSegment::Draw( cSpace * space ) {
+	//! FIXME: cShapeSegment::Draw
 	#ifdef PHYSICS_RENDERER_ENABLED
 	cpSegmentShape * seg = (cpSegmentShape *)mShape;
 	cVect a = tovect( seg->CP_PRIVATE(ta) );
@@ -71,17 +72,22 @@ void cShapeSegment::Draw( cSpace * space ) {
 			 d.x, d.y, 0.0f, 0.0f,
 			 a.x, a.y, 0.0f, 1.0f,
 		};
-		glMultMatrixf(matrix);
+		GLi->MultMatrixf(matrix);
 
 		if( !seg->CP_PRIVATE(shape).sensor ){
 			eeColorA C = ColorForShape( mShape, space->Space() );
 
+			#ifndef EE_GLES2
 			glColor3ub( C.R(), C.B(), C.B() );
+			#endif
 
 			GLi->DrawArrays(GL_TRIANGLE_FAN, 0, pillVAR_count);
 		}
 
+		#ifndef EE_GLES2
 		glColor3f( 0.4f, 0.4f, 0.4f );
+		#endif
+
 		GLi->DrawArrays( GL_LINE_LOOP, 0, pillVAR_count );
 
 		GLi->PopMatrix();

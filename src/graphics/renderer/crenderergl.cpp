@@ -107,6 +107,10 @@ void cRendererGL::ClipPlaneDisable() {
 	GLi->Disable(GL_CLIP_PLANE3);
 }
 
+void cRendererGL::MultMatrixf ( const GLfloat *m ) {
+	glMultMatrixf( m );
+}
+
 #endif
 
 }}

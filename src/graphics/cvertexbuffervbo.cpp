@@ -25,9 +25,11 @@ cVertexBufferVBO::~cVertexBufferVBO() {
 		glDeleteBuffers( 1, (GLuint *)&mElementHandle );
 	}
 
+	#ifndef EE_GLES2
 	if ( GLv_3 == GLi->Version() ) {
 		glDeleteVertexArrays( 1, &mVAO );
 	}
+	#endif
 }
 
 void cVertexBufferVBO::Bind() {
@@ -45,10 +47,12 @@ bool cVertexBufferVBO::Compile() {
 	if( mCompiled )
 		return false;
 
+	#ifndef EE_GLES2
 	if ( GLv_3 == GLi->Version() ) {
 		glGenVertexArrays( 1, &mVAO );
 		glBindVertexArray( mVAO );
 	}
+	#endif
 
 	GLenum usageType = GL_STATIC_DRAW;
 	if( mUsageType== VBO_USAGE_TYPE_DYNAMIC ) usageType = GL_DYNAMIC_DRAW;
@@ -96,11 +100,13 @@ void cVertexBufferVBO::Draw() {
 		return;
 
 	if ( GLv_3 == GLi->Version() ) {
-		glBindVertexArray( mVAO );
-
 		if ( !mTextured ) {
 			GLi->Disable( GL_TEXTURE_2D );
 		}
+
+		#ifndef EE_GLES2
+		glBindVertexArray( mVAO );
+		#endif
 	}
 
 	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) ) {
@@ -128,17 +134,15 @@ void cVertexBufferVBO::Draw() {
 void cVertexBufferVBO::SetVertexStates() {
 	GLint index;
 
+	#ifndef EE_GLES2
 	if ( GLv_3 == GLi->Version() ) {
 		if ( mBuffersSet ) {
-			if ( !mTextured ) {
-				GLi->Disable( GL_TEXTURE_2D );
-			}
-
 			return;
 		}
 
 		glBindVertexArray( mVAO );
 	}
+	#endif
 
 	/// POSITION
 	if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
@@ -148,8 +152,9 @@ void cVertexBufferVBO::SetVertexStates() {
 		if ( GLv_3 == GLi->Version() ) {
 			index = GLi->GetRendererGL3()->GetStateIndex( EEGL_VERTEX_ARRAY );
 
-			if ( -1 != index )
+			if ( -1 != index ) {
 				glVertexAttribPointer( index, eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FLOAT, GL_FALSE, 0, 0 );
+			}
 		} else {
 			GLi->VertexPointer( eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FLOAT, 0, (char*)NULL, 0 );
 		}

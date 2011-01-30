@@ -51,6 +51,8 @@ class cRendererGL : public cGL {
 		void ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height );
 
 		void ClipPlaneDisable();
+
+		void MultMatrixf ( const GLfloat *m );
 	protected:	
 		
 };

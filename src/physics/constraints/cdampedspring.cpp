@@ -48,6 +48,7 @@ void cDampedSpring::Damping( const cpFloat& damping ) {
 }
 
 void cDampedSpring::Draw() {
+	//! FIXME: cDampedSpring::Draw()
 	#ifdef PHYSICS_RENDERER_ENABLED
 	cpDampedSpring * spring = (cpDampedSpring*)mConstraint;
 	cpBody * body_a = mConstraint->a;
@@ -57,10 +58,13 @@ void cDampedSpring::Draw() {
 	cVect b = tovect( cpvadd(body_b->p, cpvrotate(spring->anchr2, body_b->rot)) );
 
 	GLi->PointSize(5.0f);
-	glBegin(GL_POINTS); {
-		glVertex2f(a.x, a.y);
-		glVertex2f(b.x, b.y);
-	} glEnd();
+
+	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
+	BR->SetTexture( NULL );
+	BR->PointsBegin();
+	BR->BatchPoint( a.x, a.y );
+	BR->BatchPoint( b.x, b.y );
+	BR->Draw();
 
 	cVect delta = b - a;
 
@@ -80,7 +84,7 @@ void cDampedSpring::Draw() {
 				 x,      y, 0.0f, 1.0f,
 	};
 
-	glMultMatrixf(matrix);
+	GLi->MultMatrixf(matrix);
 
 	GLi->DrawArrays(GL_LINE_STRIP, 0, springVAR_count);
 

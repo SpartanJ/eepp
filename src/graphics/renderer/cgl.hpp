@@ -33,7 +33,6 @@ enum EEGL_ARRAY_STATES {
 
 enum EEGL_SHADERS {
 	EEGL_SHADER_BASE_TEX,
-	EEGL_SHADER_BASE,
 	EEGL_SHADER_POINT_SPRITE,
 	EEGL_SHADER_CLIP,
 	EEGL_SHADERS_COUNT
@@ -154,6 +153,8 @@ class cGL {
 		virtual void ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) = 0;
 
 		virtual void ClipPlaneDisable() = 0;
+
+		virtual void MultMatrixf ( const GLfloat *m ) = 0;
 
 		cRendererGL * GetRendererGL();
 

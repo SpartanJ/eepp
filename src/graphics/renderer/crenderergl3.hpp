@@ -77,6 +77,8 @@ class cRendererGL3 : public cGL {
 		void ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height );
 
 		void ClipPlaneDisable();
+
+		void MultMatrixf ( const GLfloat *m );
 	protected:
 		std::stack<glm::mat4>	mProjectionMatrix;		// cpu-side
 		GLint					mProjectionMatrix_id;	// cpu-side hook to shader uniform
