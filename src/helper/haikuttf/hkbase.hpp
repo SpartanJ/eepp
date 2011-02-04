@@ -73,9 +73,43 @@ typedef SOPHIST_uint32		u32;
 
 #define HK_TTF_STYLE_NO_GLYPH_CHANGE				( HK_TTF_STYLE_UNDERLINE | HK_TTF_STYLE_STRIKETHROUGH )
 
+#ifdef EE_DEBUG
+#include "../../base/memorymanager.hpp"
+#define hkNew eeNew
+#define hkNewArray eeNewArray
+#define hkMalloc eeMalloc
+#define hkDelete eeDelete
+#define hkDeleteArray eeDeleteArray
+#define hkFree eeFree
+#endif
+
+#ifndef hkNew
+#define hkNew( classType, constructor ) new classType constructor
+#endif
+
+#ifndef hkNewArray
+#define hkNewArray( classType, amount ) new classType [ amount ]
+#endif
+
+#ifndef hkMalloc
+#define hkMalloc( amount ) malloc( amount )
+#endif
+
+#ifndef hkDelete
+#define hkDelete( data ) delete data;
+#endif
+
+#ifndef hkDeleteArray
+#define hkDeleteArray( data ) delete [] data;
+#endif
+
+#ifndef hkFree
+#define hkFree( data ) free(data);
+#endif
+
 #define hkARRAY_SIZE(__array)	( sizeof(__array) / sizeof(__array[0]) )
-#define hkSAFE_DELETE(p)		{ if(p) { delete (p);		(p)=NULL; } }
-#define hkSAFE_FREE(p)			{ if(p) { free (p);			(p)=NULL; } }
-#define hkSAFE_DELETE_ARRAY(p)  { if(p) { delete[](p);		(p)=NULL; } }
+#define hkSAFE_DELETE(p)		{ if(p) { hkDelete (p);		(p)=NULL; } }
+#define hkSAFE_FREE(p)			{ if(p) { hkFree (p);		(p)=NULL; } }
+#define hkSAFE_DELETE_ARRAY(p)  { if(p) { hkDeleteArray(p);	(p)=NULL; } }
 
 #endif

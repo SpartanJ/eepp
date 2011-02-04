@@ -2,7 +2,7 @@
 
 namespace HaikuTTF {
 
-hkFontManager * hkFontManager::mSingleton = 0;
+hkFontManager * hkFontManager::mSingleton = NULL;
 
 hkFontManager::hkFontManager() :
 	mLibrary(NULL),
@@ -72,7 +72,7 @@ hkFont * hkFontManager::OpenFromMemory( const u8* data, unsigned long size, int 
 
 	MutexUnlock();
 
-    hkFont * Font = new hkFont( this, glyphCacheSize );
+	hkFont * Font = hkNew( hkFont, ( this, glyphCacheSize ) );
 
 	Font->Face( face );
 
@@ -96,7 +96,7 @@ hkFont * hkFontManager::OpenFromFile( const char* filename, int ptsize, long ind
 
 	MutexUnlock();
 
-    hkFont * Font = new hkFont( this, glyphCacheSize );
+	hkFont * Font = hkNew( hkFont, ( this, glyphCacheSize ) );
 
 	Font->Face( face );
 

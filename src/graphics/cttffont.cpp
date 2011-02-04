@@ -35,7 +35,7 @@ bool cTTFFont::LoadFromMemory( Uint8* TTFData, const eeUint& TTFDataSize, const 
 
 	mLoadedFromMemory = true;
 
-	mFont = hkFontManager::instance()->OpenFromMemory( reinterpret_cast<uint8_t*>(&TTFData[0]), TTFDataSize, Size, 0, NumCharsToGen );
+	mFont = hkFontManager::instance()->OpenFromMemory( reinterpret_cast<Uint8*>(&TTFData[0]), TTFDataSize, Size, 0, NumCharsToGen );
 
 	return iLoad( Size, Style, VerticalDraw, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
 }

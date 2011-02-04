@@ -11,18 +11,19 @@ namespace HaikuTTF {
 class hkFontManager : private hkMutex {
 	static hkFontManager * mSingleton;
 	public:
+		static hkFontManager * exists() {
+			return mSingleton;
+		}
+
 		static hkFontManager * instance() {
 			if (mSingleton == 0)
-				mSingleton = new hkFontManager();
+				mSingleton = hkNew( hkFontManager, () );
 
 			return mSingleton;
 		}
 
 		static void DestroySingleton() {
-			if( mSingleton != 0 ) {
-				delete mSingleton;
-				mSingleton = 0;
-			}
+			hkSAFE_DELETE( mSingleton );
 		}
 
 		hkFontManager();

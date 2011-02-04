@@ -91,13 +91,13 @@ class MemoryManager {
 			malloc( amount )
 
 	#define eeDelete( data ) \
-		delete data;
+		delete data
 
 	#define eeDeleteArray( data ) \
-		delete [] data;
+		delete [] data
 
 	#define eeFree( data ) \
-		free(data);
+		free(data)
 #endif
 
 }

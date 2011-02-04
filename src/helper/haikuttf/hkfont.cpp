@@ -4,7 +4,7 @@
 namespace HaikuTTF {
 
 hkFont::hkFont( hkFontManager * FontManager, unsigned int CacheSize ) :
-	mFm(NULL),
+	mFm( FontManager ),
 	mCache(NULL),
 	mFace(NULL),
 	mHeight(0),
@@ -23,10 +23,8 @@ hkFont::hkFont( hkFontManager * FontManager, unsigned int CacheSize ) :
 	mOutline(0),
 	mHinting(0)
 {
-	mFm = FontManager;
-
-	mCacheSize = CacheSize;
-	mCache = new hkGlyph[ mCacheSize ];
+	mCacheSize	= CacheSize;
+	mCache		= hkNewArray( hkGlyph, mCacheSize );
 }
 
 hkFont::~hkFont() {
@@ -213,7 +211,7 @@ FT_Error hkFont::GlyphLoad( u16 ch, hkGlyph * cached, int want ) {
 		}
 
 		if (dst->rows != 0) {
-			dst->buffer = (unsigned char *)malloc( dst->pitch * dst->rows );
+			dst->buffer = (unsigned char*)hkMalloc( dst->pitch * dst->rows );
 
 			if( !dst->buffer ) {
 				return FT_Err_Out_Of_Memory;
@@ -224,7 +222,7 @@ FT_Error hkFont::GlyphLoad( u16 ch, hkGlyph * cached, int want ) {
 				int soffset = i * src->pitch;
 				int doffset = i * dst->pitch;
 
-				memcpy(dst->buffer+doffset, src->buffer+soffset, src->pitch);
+				memcpy( dst->buffer+doffset, src->buffer+soffset, src->pitch );
 			}
 		}
 
@@ -281,7 +279,7 @@ unsigned char * hkFont::GlyphRender( u16 ch, u32 fg ) {
 	glyph = mCurrent;
 	bitmap = glyph->Pixmap();
 
-	textbuf = new unsigned char[ bitmap->width * bitmap->rows * 4 ];
+	textbuf = hkNewArray( unsigned char, bitmap->width * bitmap->rows * 4 );
 
 	if ( NULL == textbuf )
 		return NULL;
