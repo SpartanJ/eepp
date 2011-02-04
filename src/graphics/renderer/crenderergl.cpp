@@ -78,7 +78,11 @@ void cRendererGL::ClientActiveTexture( GLenum texture ) {
 	glClientActiveTexture( texture );
 }
 
-void cRendererGL::ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
+void cRendererGL::PointSize( GLfloat size ) {
+	glPointSize( size );
+}
+
+void cRendererGL::Clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
 	GLdouble tX = (GLdouble)x;
 	GLdouble tY = (GLdouble)y;
 	GLdouble tW = (GLdouble)Width;
@@ -94,21 +98,37 @@ void cRendererGL::ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& 
 	GLi->Enable(GL_CLIP_PLANE2);
 	GLi->Enable(GL_CLIP_PLANE3);
 
-	glClipPlane(GL_CLIP_PLANE0, clip_left);
-	glClipPlane(GL_CLIP_PLANE1, clip_right);
-	glClipPlane(GL_CLIP_PLANE2, clip_top);
-	glClipPlane(GL_CLIP_PLANE3, clip_bottom);
+	ClipPlane(GL_CLIP_PLANE0, clip_left);
+	ClipPlane(GL_CLIP_PLANE1, clip_right);
+	ClipPlane(GL_CLIP_PLANE2, clip_top);
+	ClipPlane(GL_CLIP_PLANE3, clip_bottom);
 }
 
-void cRendererGL::ClipPlaneDisable() {
+void cRendererGL::Clip2DPlaneDisable() {
 	GLi->Disable(GL_CLIP_PLANE0);
 	GLi->Disable(GL_CLIP_PLANE1);
 	GLi->Disable(GL_CLIP_PLANE2);
 	GLi->Disable(GL_CLIP_PLANE3);
 }
 
+void cRendererGL::ClipPlane( GLenum plane, const GLdouble *equation ) {
+	glClipPlane( plane, equation );
+}
+
 void cRendererGL::MultMatrixf ( const GLfloat *m ) {
 	glMultMatrixf( m );
+}
+
+void cRendererGL::TexEnvi( GLenum target, GLenum pname, GLint param ) {
+	glTexEnvi( target, pname, param );
+}
+
+GLfloat cRendererGL::PointSize() {
+	float ps = 1;
+
+	glGetFloatv( GL_POINT_SIZE, &ps );
+
+	return ps;
 }
 
 #endif

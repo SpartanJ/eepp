@@ -331,7 +331,7 @@ class EE_API cSprite {
 		/** Removes the current callback */
 		void ClearCallback();
 
-		/** Creates a copy of the current sprite and returned it */
+		/** Creates a copy of the current sprite and return it */
 		cSprite * Copy();
 	protected:
 		enum SpriteFlags {

@@ -649,14 +649,14 @@ void cTexture::DrawQuadEx( const eeQuad2f& Q, const eeFloat &offsetx, const eeFl
 	if ( Scale != 1.0f ) {
 		for (Uint8 i = 0; i < 4; i++ ) {
 			if ( mQ.V[i].x < QCenter.x )
-				mQ.V[i].x = QCenter.x - fabs(QCenter.x - mQ.V[i].x) * Scale;
+				mQ.V[i].x = QCenter.x - eeabs(QCenter.x - mQ.V[i].x) * Scale;
 			else
-				mQ.V[i].x = QCenter.x + fabs(QCenter.x - mQ.V[i].x) * Scale;
+				mQ.V[i].x = QCenter.x + eeabs(QCenter.x - mQ.V[i].x) * Scale;
 
 			if ( mQ.V[i].y < QCenter.y )
-				mQ.V[i].y = QCenter.y - fabs(QCenter.y - mQ.V[i].y) * Scale;
+				mQ.V[i].y = QCenter.y - eeabs(QCenter.y - mQ.V[i].y) * Scale;
 			else
-				mQ.V[i].y = QCenter.y + fabs(QCenter.y - mQ.V[i].y) * Scale;
+				mQ.V[i].y = QCenter.y + eeabs(QCenter.y - mQ.V[i].y) * Scale;
 		}
 	}
 

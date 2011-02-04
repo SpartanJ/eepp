@@ -65,24 +65,24 @@ void cInterpolation::AddWaypoint( const eeFloat Pos, const eeFloat Time ) {
 	mPoints.push_back( cPoint1df( Pos, Time ) );
 
 	if ( mPoints.size() >= 2 )
-		mTotDist += fabs( mPoints[ mPoints.size() - 1 ].p - mPoints[ mPoints.size() - 2 ].p );
+		mTotDist += eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[ mPoints.size() - 2 ].p );
 }
 
 bool cInterpolation::EditWaypoint( const eeUint PointNum, const eeFloat NewPos, const eeFloat NewTime ) {
 	if ( PointNum < mPoints.size() ) {
 		if ( 0 == PointNum )
-			mTotDist -= fabs( mPoints[ PointNum ].p - mPoints[ PointNum + 1 ].p );
+			mTotDist -= eeabs( mPoints[ PointNum ].p - mPoints[ PointNum + 1 ].p );
 		else
-			mTotDist -= fabs( mPoints[ PointNum ].p - mPoints[ PointNum - 1 ].p );
+			mTotDist -= eeabs( mPoints[ PointNum ].p - mPoints[ PointNum - 1 ].p );
 
 		mPoints[ PointNum ] = cPoint1df( NewPos, NewTime );
 
 		if ( 0 == PointNum ) {
 			if ( PointNum + (eeUint)1 < mPoints.size() )
-				mTotDist += std::abs( mPoints[ PointNum ].p - mPoints[ PointNum + 1 ].p );
+				mTotDist += eeabs( mPoints[ PointNum ].p - mPoints[ PointNum + 1 ].p );
 		}
 		else
-			mTotDist += std::abs( mPoints[ PointNum ].p - mPoints[ PointNum - 1 ].p );
+			mTotDist += eeabs( mPoints[ PointNum ].p - mPoints[ PointNum - 1 ].p );
 
 		return true;
 	}
@@ -92,9 +92,9 @@ bool cInterpolation::EditWaypoint( const eeUint PointNum, const eeFloat NewPos, 
 bool cInterpolation::EraseWaypoint( const eeUint PointNum ) {
 	if ( PointNum < mPoints.size() && !mEnable ) {
 		if ( 0 == PointNum )
-			mTotDist -= fabs( mPoints[ PointNum ].p - mPoints[ PointNum + 1 ].p );
+			mTotDist -= eeabs( mPoints[ PointNum ].p - mPoints[ PointNum + 1 ].p );
 		else
-			mTotDist -= fabs( mPoints[ PointNum ].p - mPoints[ PointNum - 1 ].p );
+			mTotDist -= eeabs( mPoints[ PointNum ].p - mPoints[ PointNum - 1 ].p );
 
 		mPoints.erase( mPoints.begin() + PointNum );
 
@@ -169,12 +169,12 @@ void cInterpolation::SetTotalTime( const eeFloat TotTime ) {
 	}
 
 	if ( mLoop ) {
-		tdist += fabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p );
-		mPoints[ mPoints.size() - 1 ].t = std::abs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p ) * TotTime / tdist;
+		tdist += eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p );
+		mPoints[ mPoints.size() - 1 ].t = eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p ) * TotTime / tdist;
 	}
 
 	for ( eeUint i = 0; i < mPoints.size() - 1; i++) {
-		eeFloat CurDist = fabs( mPoints[i].p - mPoints[i + 1].p );
+		eeFloat CurDist = eeabs( mPoints[i].p - mPoints[i + 1].p );
 		mPoints[i].t = CurDist * TotTime / tdist;
 	}
 }
@@ -191,13 +191,13 @@ void cInterpolation::Speed( const eeFloat speed ) {
 
 		eeFloat TotTime = tdist * mSpeed;
 		if ( mLoop ) {
-			tdist += fabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p );
-			mPoints[ mPoints.size() - 1 ].t = fabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p ) * TotTime / tdist;
+			tdist += eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p );
+			mPoints[ mPoints.size() - 1 ].t = eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p ) * TotTime / tdist;
 			TotTime = tdist * mSpeed;
 		}
 
 		for ( eeUint i = 0; i < mPoints.size() - 1; i++) {
-			eeFloat CurDist = fabs( mPoints[i].p - mPoints[i + 1].p );
+			eeFloat CurDist = eeabs( mPoints[i].p - mPoints[i + 1].p );
 			mPoints[i].t = CurDist * TotTime / tdist;
 		}
 	}

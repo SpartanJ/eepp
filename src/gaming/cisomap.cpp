@@ -2,157 +2,141 @@
 
 namespace EE { namespace Gaming {
 
-cIsoMap::cIsoMap() : OffsetX(0), OffsetY(0) {
-	EE = cEngine::instance();
-	TF = cTextureFactory::instance();
+cIsoMap::cIsoMap() :
+	mOffsetX(0),
+	mOffsetY(0),
+	mFont(NULL)
+{
+	mEE = cEngine::instance();
 }
 
 cIsoMap::~cIsoMap() {
-	for ( eeUint x = 0; x < MapWidth; x++ )
-		for ( eeUint y = 0; y < MapHeight; y++ )
-			Tile(x, y).Layers.clear();
-
-	Map.clear();
 }
 
 void cIsoMap::Create( const eeUint& MapTilesX, const eeUint& MapTilesY, const eeUint& NumLayers, const eeUint TilesWidth, const eeUint TilesHeight, const eeColor& AmbientCol ) {
-	MapWidth = MapTilesX;
-	MapHeight = MapTilesY;
-	MapLayers = NumLayers;
+	mMapWidth = MapTilesX;
+	mMapHeight = MapTilesY;
+	mMapLayers = NumLayers;
 
-	TileWidth = TilesWidth;
-	TileHeight = TilesHeight;
+	mTileWidth = TilesWidth;
+	mTileHeight = TilesHeight;
 
-	TileHWidth = TileWidth * 0.5f;
-	TileHHeight = TileHeight * 0.5f;
-	TileAltitude = TileHeight * 0.25f;
+	mTileHWidth = mTileWidth * 0.5f;
+	mTileHHeight = mTileHeight * 0.5f;
+	mTileAltitude = mTileHeight * 0.25f;
 
-	MapAmbientColor = AmbientCol;
+	mMapAmbientColor = AmbientCol;
 
-	Map.resize( MapWidth * MapHeight );
+	Map.resize( mMapWidth * mMapHeight );
+
 	CreateBaseVertexBuffer();
 
-	TilesRange = 10;
+	mTilesRange = 10;
 
-	Light.Create( 250.0f, 0, 0, eeColor(255,255,255), LIGHT_ISOMETRIC );
+	mLight.Create( 250.0f, 0, 0, eeColor(255,255,255), LIGHT_ISOMETRIC );
 
-	DrawFont = false;
+	mDrawFont = false;
 }
 
 void cIsoMap::CreateBaseVertexBuffer() {
-	eeFloat dX, dY, pX, pY;
 	eeUint i;
 
-	for ( eeUint x = 0; x < MapWidth; x++ ) {
-		for ( eeUint y = 0; y < MapHeight; y++ ) {
+	for ( eeUint x = 0; x < mMapWidth; x++ ) {
+		for ( eeUint y = 0; y < mMapHeight; y++ ) {
 			cIsoTile * T = &Tile(x, y);
 
 			if ( T->Layers.size() < 1 )
-				T->Layers.resize( MapLayers );
+				T->Layers.resize( mMapLayers );
 
-			if ( (x % 2) == 0) {
-				dX = -TileHWidth;
-				dY = -TileHHeight;
-			} else {
-				dX = -TileHWidth;
-				dY = 0;
-			}
-			pX = x * TileHWidth + dX;
-			pY = y * TileHWidth + dY;
-
-			T->Q.V[0] = eeVector2f( pX + TileHWidth, pY );				// Left Top Vertex
-			T->Q.V[1] = eeVector2f( pX, pY + TileHHeight );				// Left Bottom Vertex
-			T->Q.V[2] = eeVector2f( pX + TileHWidth, pY + TileHeight );	// Top Left Vertex
-			T->Q.V[3] = eeVector2f( pX + TileWidth, pY + TileHHeight );	// Top Bottom Vertex
-
-			T->TilePosStr = stringTowstring( intToStr( x ) + "-" + intToStr( y ) );
-			T->Box = Quad2toAABB( T->Q );
+			T->Q			= TileQBaseCoords( x, y );
+			T->Box			= Quad2toAABB( T->Q );
+			T->TilePosStr	= stringTowstring( intToStr( x ) + "-" + intToStr( y ) );
 
 			for ( i = 0; i < 4; i++ )
-				T->Color[i] = MapAmbientColor;
+				T->Color[i] = mMapAmbientColor;
 
-			for ( i = 1; i < MapLayers; i++ )
-				Layer( x, y, i, 0 );
+			for ( i = 1; i < mMapLayers; i++ )
+				Layer( x, y, i, NULL );
 		}
 	}
 }
 
 cIsoTile& cIsoMap::Tile( const eeUint& MapTileX, const eeUint& MapTileY ) {
-	if ( MapTileX >= MapWidth || MapTileY >= MapHeight )
-		return Map[0];
-
-	return Map[ MapTileX + MapTileY * MapWidth ];
+	eeASSERT ( MapTileX < mMapWidth && MapTileY < mMapHeight );
+	return Map[ MapTileX + MapTileY * mMapWidth ];
 }
 
 void cIsoMap::Layer( const eeUint& MapTileX, const eeUint& MapTileY, const eeUint& LayerNum, cShape * LayerData ) {
-	if( LayerNum < MapLayers )
+	if( LayerNum < mMapLayers )
 		Tile(MapTileX, MapTileY).Layers[LayerNum] = LayerData;
 }
 
 void cIsoMap::Draw() {
 	eeAABB TileAABB;
+	cIsoTile * T;
 
-	ScreenAABB = eeAABB( -OffsetX, -OffsetY, EE->GetWidth() - OffsetX, EE->GetHeight() - OffsetY ); // Screen AABB to MAP AABB
+	mScreenAABB = eeAABB( -mOffsetX, -mOffsetY, mEE->GetWidth() - mOffsetX, mEE->GetHeight() - mOffsetY ); // Screen AABB to MAP AABB
 
-	MouseMapPos = eeVector2f( cInput::instance()->MouseX() - OffsetX, cInput::instance()->MouseY() - OffsetY );
+	mMouseMapPos = eeVector2f( cInput::instance()->MouseX() - mOffsetX, cInput::instance()->MouseY() - mOffsetY );
 
-	Light.UpdatePos( MouseMapPos );
+	mLight.UpdatePos( mMouseMapPos );
 
-	if (OffsetX > 0)
-		OffsetX = 0;
+	if (mOffsetX > 0)
+		mOffsetX = 0;
 
-	if (OffsetY > 0)
-		OffsetY = 0;
+	if (mOffsetY > 0)
+		mOffsetY = 0;
 
-	if ( -OffsetX > Tile( MapWidth-1, MapHeight-1 ).Q.V[1].x - EE->GetWidth() )
-		OffsetX = -(Tile( MapWidth-1, MapHeight-1 ).Q.V[1].x - EE->GetWidth());
+	if ( -mOffsetX > Tile( mMapWidth-1, mMapHeight-1 ).Q.V[1].x - mEE->GetWidth() )
+		mOffsetX = -(Tile( mMapWidth-1, mMapHeight-1 ).Q.V[1].x - mEE->GetWidth());
 
-	if ( -OffsetY > Tile( MapWidth-1, MapHeight-1 ).Q.V[1].y - EE->GetHeight() )
-		OffsetY = -(Tile( MapWidth-1, MapHeight-1 ).Q.V[1].y - EE->GetHeight());
+	if ( -mOffsetY > Tile( mMapWidth-1, mMapHeight-1 ).Q.V[1].y - mEE->GetHeight() )
+		mOffsetY = -(Tile( mMapWidth-1, mMapHeight-1 ).Q.V[1].y - mEE->GetHeight());
 
-	Tx = (Int32)( -OffsetX / (eeFloat)TileHeight ) - TilesRange;
-	Ty = (Int32)( -OffsetY / (eeFloat)TileHeight ) - TilesRange;
+	Tx = (Int32)( -mOffsetX / (eeFloat)mTileHeight ) - mTilesRange;
+	Ty = (Int32)( -mOffsetY / (eeFloat)mTileHeight ) - mTilesRange;
 
 	if (Tx < 0) Tx = 0;
-	if (Tx >= (eeInt)MapWidth) Tx = MapWidth-1;
+	if (Tx >= (eeInt)mMapWidth) Tx = mMapWidth-1;
 
 	if (Ty < 0) Ty = 0;
-	if (Ty >= (eeInt)MapHeight) Ty = MapHeight-1;
+	if (Ty >= (eeInt)mMapHeight) Ty = mMapHeight-1;
 
-	Tx2 = ( Tx + TilesRange + (eeInt)( EE->GetWidth() / (eeFloat)TileHeight ) + TilesRange );
-	Ty2 = ( Ty + TilesRange + (eeInt)(EE->GetHeight() / (eeFloat)TileHeight) + TilesRange );
+	Tx2 = ( Tx + mTilesRange + (eeInt)( mEE->GetWidth() / (eeFloat)mTileHeight ) + mTilesRange );
+	Ty2 = ( Ty + mTilesRange + (eeInt)( mEE->GetHeight() / (eeFloat)mTileHeight) + mTilesRange );
 
 	eeColorA SC(50,50,50,100);
 
 	cGlobalBatchRenderer::instance()->Draw();
+
 	GLi->LoadIdentity();
 	GLi->PushMatrix();
-	GLi->Translatef( OffsetX, OffsetY, 0.0f );
+	GLi->Translatef( mOffsetX, mOffsetY, 0.0f );
 
-	for ( eeUint L = 0; L < MapLayers; L++ ) {
+	for ( eeUint L = 0; L < mMapLayers; L++ ) {
 		for ( eeInt y = Ty; y < Ty2; y++ ) {
 			for ( eeInt x = Tx; x < Tx2; x++ ) {
-				cIsoTile* T = &Tile( (eeUint)x, (eeUint)y );
+				T = &Tile( (eeUint)x, (eeUint)y );
 
 				if ( L == 0 ) {
 					TileAABB = T->Box;
 
-					if ( Intersect( ScreenAABB, TileAABB )  ) {
-						T->Color[0] = T->Color[1] = T->Color[2] = T->Color[3] = MapAmbientColor;
+					if ( Intersect( mScreenAABB, TileAABB )  ) {
+						T->Color[0] = T->Color[1] = T->Color[2] = T->Color[3] = mMapAmbientColor;
 
-						if ( Intersect( Light.GetAABB(), TileAABB ) ) {
-							T->Color[0] = Light.ProcessVertex( T->Q.V[0].x, T->Q.V[0].y, T->Color[0], T->Color[0] ); 	// Left - Top Vertex
-							T->Color[1] = Light.ProcessVertex( T->Q.V[1].x, T->Q.V[1].y, T->Color[1], T->Color[1] ); 	// Left - Bottom Vertex
-							T->Color[2] = Light.ProcessVertex( T->Q.V[2].x, T->Q.V[2].y, T->Color[2], T->Color[2] );	// Right - Bottom Vertex
-							T->Color[3] = Light.ProcessVertex( T->Q.V[3].x, T->Q.V[3].y, T->Color[3], T->Color[3] );	// Right - Top Vertex
+						if ( Intersect( mLight.GetAABB(), TileAABB ) ) {
+							T->Color[0] = mLight.ProcessVertex( T->Q.V[0].x, T->Q.V[0].y, T->Color[0], T->Color[0] ); 	// Left - Top Vertex
+							T->Color[1] = mLight.ProcessVertex( T->Q.V[1].x, T->Q.V[1].y, T->Color[1], T->Color[1] ); 	// Left - Bottom Vertex
+							T->Color[2] = mLight.ProcessVertex( T->Q.V[2].x, T->Q.V[2].y, T->Color[2], T->Color[2] );	// Right - Bottom Vertex
+							T->Color[3] = mLight.ProcessVertex( T->Q.V[3].x, T->Q.V[3].y, T->Color[3], T->Color[3] );	// Right - Top Vertex
 						}
 
 						T->Layers[L]->Draw( T->Q, 0.f, 0.f, 0.f, 1.f, T->Color[0], T->Color[1], T->Color[2], T->Color[3] );
 
-						if ( TileAABB.Contains( MouseMapPos ) ) {
-							if ( IntersectQuad2( T->Q, eeQuad2f( MouseMapPos, MouseMapPos, MouseMapPos, MouseMapPos ) ) ) {
-								MouseTilePos.x = x;
-								MouseTilePos.y = y;
+						if ( TileAABB.Contains( mMouseMapPos ) ) {
+							if ( IntersectQuad2( T->Q, eeQuad2f( mMouseMapPos, mMouseMapPos, mMouseMapPos, mMouseMapPos ) ) ) {
+								mMouseTilePos.x = x;
+								mMouseTilePos.y = y;
 							}
 						}
 					}
@@ -167,38 +151,39 @@ void cIsoMap::Draw() {
 							eeAABB LayerAABB( TileCenter.x - Shape->DestWidth() * 0.5f, TileCenter.y - Shape->DestHeight(), TileCenter.x + Shape->DestWidth() * 0.5f, TileCenter.y  );
 							eeAABB ShadowAABB( ObjPos.x, TileCenter.y - Shape->DestHeight(), TileCenter.x + Shape->DestWidth(), TileCenter.y );
 
-							if ( Intersect( ScreenAABB, ShadowAABB ) )
-								Shape->Draw( OffsetX + ObjPos.x, OffsetY + ObjPos.y, 0, 1, SC, SC, SC, SC, ALPHA_NORMAL, RN_ISOMETRIC );
+							if ( Intersect( mScreenAABB, ShadowAABB ) )
+								Shape->Draw( mOffsetX + ObjPos.x, mOffsetY + ObjPos.y, 0, 1, SC, SC, SC, SC, ALPHA_NORMAL, RN_ISOMETRIC );
 
-							if ( Intersect( ScreenAABB, LayerAABB )  )
-								Shape->Draw( OffsetX + TileCenter.x - (eeFloat)Shape->DestWidth() * 0.5f, OffsetY + TileCenter.y - (eeFloat)Shape->DestHeight(), 0, 1, eeColorA(T->Color[0]), eeColorA(T->Color[1]), eeColorA(T->Color[2]), eeColorA(T->Color[3]) );
+							if ( Intersect( mScreenAABB, LayerAABB )  )
+								Shape->Draw( mOffsetX + TileCenter.x - (eeFloat)Shape->DestWidth() * 0.5f, mOffsetY + TileCenter.y - (eeFloat)Shape->DestHeight(), 0, 1, eeColorA(T->Color[0]), eeColorA(T->Color[1]), eeColorA(T->Color[2]), eeColorA(T->Color[3]) );
 						}
 					}
 				}
 			}
 		}
 
+		cGlobalBatchRenderer::instance()->Draw();
+
 		if ( L == 0 ) {
-			cGlobalBatchRenderer::instance()->Draw();
 			GLi->PopMatrix();
 		}
 	}
 
-	if ( DrawFont ) {
+	if ( mDrawFont ) {
 		for ( eeInt y = Ty; y < Ty2; y++ ) {
 			for ( eeInt x = Tx; x < Tx2; x++ ) {
-				cIsoTile* T = &Tile( (eeUint)x, (eeUint)y );
-				myFont->Draw( T->TilePosStr, OffsetX + T->Q.V[1].x + ( T->Q.V[3].x - T->Q.V[1].x ) * 0.5f - T->TilePosStr.size() * myFont->GetFontSize() * 0.5f, OffsetY + T->Q.V[0].y + ( T->Q.V[2].y - T->Q.V[0].y ) * 0.5f - myFont->GetFontHeight() * 0.5f );
+				T = &Tile( (eeUint)x, (eeUint)y );
+				mFont->Draw( T->TilePosStr, mOffsetX + T->Q.V[1].x + ( T->Q.V[3].x - T->Q.V[1].x ) * 0.5f - T->TilePosStr.size() * mFont->GetFontSize() * 0.5f, mOffsetY + T->Q.V[0].y + ( T->Q.V[2].y - T->Q.V[0].y ) * 0.5f - mFont->GetFontHeight() * 0.5f );
 			}
 		}
 	}
 
-	PR.DrawQuad( Tile( MouseTilePos.x, MouseTilePos.y ).Q, EE_DRAW_LINE, ALPHA_NORMAL, 1.0f, OffsetX, OffsetY );
+	mPR.DrawQuad( Tile( mMouseTilePos.x, mMouseTilePos.y ).Q, EE_DRAW_LINE, ALPHA_NORMAL, 1.0f, mOffsetX, mOffsetY );
 }
 
 void cIsoMap::Move( const eeFloat& offsetx, const eeFloat& offsety ) {
-	OffsetX += offsetx;
-	OffsetY += offsety;
+	mOffsetX += offsetx;
+	mOffsetY += offsety;
 }
 
 void cIsoMap::SetTileHeight( const eeUint& MapTileX, const eeUint& MapTileY, const eeUint& Level, const bool& JointUp ) {
@@ -210,10 +195,10 @@ void cIsoMap::SetTileHeight( const eeUint& MapTileX, const eeUint& MapTileY, con
 
 void cIsoMap::SetJointHeight( const eeUint& MapTileX, const eeUint& MapTileY, const eeUint& JointNum, const eeUint& Level, const bool& JointUp ) {
 	eeFloat AltitudeModif = ( JointUp ) ? -1.f : 1.f;
-	eeFloat VertexHeight = (TileAltitude * AltitudeModif) * (eeFloat)Level;
+	eeFloat VertexHeight = (mTileAltitude * AltitudeModif) * (eeFloat)Level;
 	eeFloat NJHeight;
 
-	if ( MapTileX >= MapWidth || MapTileY >= MapHeight )
+	if ( MapTileX >= mMapWidth || MapTileY >= mMapHeight )
 		return;
 
 	cIsoTile * T = &Tile( MapTileX, MapTileY );
@@ -271,7 +256,7 @@ void cIsoMap::SetJointHeight( const eeUint& MapTileX, const eeUint& MapTileY, co
 }
 
 void cIsoMap::VertexChangeHeight( const eeInt& MapTileX, const eeInt& MapTileY, const eeUint& JointNum, const eeFloat& Height, const eeFloat& NewJointHeight, const bool& JointUp ) {
-	if ( ( MapTileX >= 0 && MapTileX < (eeInt)MapWidth ) && ( MapTileY >= 0 && MapTileY < (eeInt)MapHeight ) ) {
+	if ( ( MapTileX >= 0 && MapTileX < (eeInt)mMapWidth ) && ( MapTileY >= 0 && MapTileY < (eeInt)mMapHeight ) ) {
 		cIsoTile * T = &Tile( MapTileX, MapTileY );
 
 		if ( ( JointUp && T->Q.V[JointNum].y >= NewJointHeight ) || ( !JointUp && T->Q.V[JointNum].y <= NewJointHeight ) ) {
@@ -285,28 +270,21 @@ eeVector2f cIsoMap::TileBaseCoords( const eeUint& MapTileX, const eeUint& MapTil
 	eeFloat dX, dY, pX, pY;
 
 	if ( (MapTileX % 2) == 0) {
-		dX = -TileHWidth;
-		dY = -TileHHeight;
+		dX = -mTileHWidth;
+		dY = -mTileHHeight;
 	} else {
-		dX = -TileHWidth;
+		dX = -mTileHWidth;
 		dY = 0;
 	}
-	pX = MapTileX * TileHWidth + dX;
-	pY = MapTileY * TileHWidth + dY;
+
+	pX = MapTileX * mTileHWidth + dX;
+	pY = MapTileY * mTileHWidth + dY;
 
 	switch( JointNum ) {
-		case 0:
-			return eeVector2f( pX + TileHWidth, pY );					// Left Top Vertex
-			break;
-		case 1:
-			return eeVector2f( pX, pY + TileHHeight );				// Left Bottom Vertex
-			break;
-		case 2:
-			return eeVector2f( pX + TileHWidth, pY + TileHeight );	// Top Left Vertex
-			break;
-		case 3:
-			return eeVector2f( pX + TileWidth, pY + TileHHeight );	// Top Bottom Vertex
-			break;
+		case 0:	return eeVector2f( pX + mTileHWidth, pY );				// Left Top Vertex
+		case 1:	return eeVector2f( pX, pY + mTileHHeight );				// Left Bottom Vertex
+		case 2:	return eeVector2f( pX + mTileHWidth, pY + mTileHeight );	// Top Left Vertex
+		case 3:	return eeVector2f( pX + mTileWidth, pY + mTileHHeight );	// Top Bottom Vertex
 	}
 
 	return eeVector2f(0,0);
@@ -318,6 +296,54 @@ eeQuad2f cIsoMap::TileQBaseCoords( const eeUint& MapTileX, const eeUint& MapTile
 
 void cIsoMap::Reset() {
 	CreateBaseVertexBuffer();
+}
+
+void cIsoMap::Font( cFont * font ) {
+	mFont = font;
+}
+
+cFont * cIsoMap::Font() const {
+	return mFont;
+}
+
+cLight& cIsoMap::BaseLight() {
+	return mLight;
+}
+
+void cIsoMap::DrawFont( bool draw ) {
+	mDrawFont = draw;
+}
+
+bool cIsoMap::DrawFont() const {
+	return mDrawFont;
+}
+
+Uint32 cIsoMap::Width() const {
+	return mMapWidth;
+}
+
+Uint32 cIsoMap::Height() const {
+	return mMapHeight;
+}
+
+void cIsoMap::AmbientColor( const eeColor& AC ) {
+	mMapAmbientColor = AC;
+}
+
+eeColor cIsoMap::AmbientColor() const {
+	return mMapAmbientColor;
+}
+
+eeVector2i cIsoMap::GetMouseTilePos() const {
+	return mMouseTilePos;
+}
+
+eeVector2f cIsoMap::GetMouseMapCoords() const {
+	return mMouseMapPos;
+}
+
+eeAABB cIsoMap::GetScreenMapCoords() const {
+	return mScreenAABB;
 }
 
 }}

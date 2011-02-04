@@ -107,11 +107,8 @@ void cBatchRenderer::Flush() {
 	cTextureFactory::instance()->SetPreBlendFunc( mBlend );
 
 	if ( mCurrentMode == DM_POINTS && NULL != mTexture ) {
-		#ifndef EE_GLES2
 		GLi->Enable( GL_POINT_SPRITE );
-		glTexEnvf( GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE );
 		GLi->PointSize( (GLfloat)mTexture->Width() );
-		#endif
 	}
 
 	if ( CreateMatrix ) {
@@ -152,9 +149,7 @@ void cBatchRenderer::Flush() {
 	}
 
 	if ( mCurrentMode == DM_POINTS && mTexture > 0 ) {
-		#ifndef EE_GLES2
 		GLi->Disable( GL_POINT_SPRITE );
-		#endif
 	}
 
 	if ( mTexture == 0 ) {
@@ -468,14 +463,14 @@ void cBatchRenderer::BatchQuadFreeEx( const eeFloat& x0, const eeFloat& y0, cons
 	if ( Scale != 1.0f ) {
 		for (Uint8 i = 0; i < 4; i++ ) {
 			if ( mQ.V[i].x < QCenter.x )
-				mQ.V[i].x = QCenter.x - fabs(QCenter.x - mQ.V[i].x) * Scale;
+				mQ.V[i].x = QCenter.x - eeabs(QCenter.x - mQ.V[i].x) * Scale;
 			else
-				mQ.V[i].x = QCenter.x + fabs(QCenter.x - mQ.V[i].x) * Scale;
+				mQ.V[i].x = QCenter.x + eeabs(QCenter.x - mQ.V[i].x) * Scale;
 
 			if ( mQ.V[i].y < QCenter.y )
-				mQ.V[i].y = QCenter.y - fabs(QCenter.y - mQ.V[i].y) * Scale;
+				mQ.V[i].y = QCenter.y - eeabs(QCenter.y - mQ.V[i].y) * Scale;
 			else
-				mQ.V[i].y = QCenter.y + fabs(QCenter.y - mQ.V[i].y) * Scale;
+				mQ.V[i].y = QCenter.y + eeabs(QCenter.y - mQ.V[i].y) * Scale;
 		}
 	}
 
@@ -862,11 +857,7 @@ void cBatchRenderer::SetPointSize( const eeFloat& pointSize ) {
 }
 
 eeFloat cBatchRenderer::GetPointSize() {
-	float ps = 1;
-	#ifndef EE_GLES2
-	glGetFloatv( GL_POINT_SIZE, &ps );
-	#endif
-	return ps;
+	return GLi->PointSize();
 }
 
 void cBatchRenderer::ForceBlendModeChange( const bool& Force ) {

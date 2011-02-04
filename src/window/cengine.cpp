@@ -280,9 +280,9 @@ void cEngine::Setup2D( const bool& KeepView ) {
 	cTextureFactory::instance()->SetPreBlendFunc( ALPHA_NORMAL );
 
 	if ( GLv_3 != GLi->Version() ) {
-		#ifndef EE_GLES2
-		glTexEnvf( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
-		glShadeModel( GL_SMOOTH );
+		#ifndef EE_GLES
+		GLi->TexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
+		GLi->TexEnvi( GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE );
 		#endif
 	}
 
@@ -1085,13 +1085,13 @@ void cEngine::SetDefaultContext() {
 void cEngine::ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
 	cGlobalBatchRenderer::instance()->Draw();
 
-	GLi->ClipPlaneEnable( x, y, Width, Height );
+	GLi->Clip2DPlaneEnable( x, y, Width, Height );
 }
 
 void cEngine::ClipPlaneDisable() {
 	cGlobalBatchRenderer::instance()->Draw();
 
-	GLi->ClipPlaneDisable();
+	GLi->Clip2DPlaneDisable();
 }
 
 }}

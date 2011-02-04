@@ -77,6 +77,7 @@ void cShapeSegment::Draw( cSpace * space ) {
 		if( !seg->CP_PRIVATE(shape).sensor ){
 			eeColorA C = ColorForShape( mShape, space->Space() );
 
+			/// TODO: Implement this fine
 			#ifndef EE_GLES2
 			glColor3ub( C.R(), C.B(), C.B() );
 			#endif

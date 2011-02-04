@@ -32,9 +32,7 @@ enum EEGL_ARRAY_STATES {
 };
 
 enum EEGL_SHADERS {
-	EEGL_SHADER_BASE_TEX,
-	EEGL_SHADER_POINT_SPRITE,
-	EEGL_SHADER_CLIP,
+	EEGL_SHADER_BASE,
 	EEGL_SHADERS_COUNT
 };
 
@@ -96,8 +94,6 @@ class cGL {
 
 		char * GetString( GLenum name );
 
-		void PointSize( GLfloat size );
-
 		void DrawArrays (GLenum mode, GLint first, GLsizei count);
 
 		void DrawElements( GLenum mode, GLsizei count, GLenum type, const GLvoid *indices );
@@ -109,6 +105,10 @@ class cGL {
 		void BlendFunc ( GLenum sfactor, GLenum dfactor );
 
 		void Viewport ( GLint x, GLint y, GLsizei width, GLsizei height );
+
+		virtual void PointSize( GLfloat size ) = 0;
+
+		virtual GLfloat PointSize() = 0;
 
 		virtual void ClientActiveTexture( GLenum texture ) = 0;
 
@@ -150,11 +150,15 @@ class cGL {
 
 		virtual void SetShader( cShaderProgram * Shader );
 
-		virtual void ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) = 0;
+		virtual void Clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) = 0;
 
-		virtual void ClipPlaneDisable() = 0;
+		virtual void Clip2DPlaneDisable() = 0;
 
 		virtual void MultMatrixf ( const GLfloat *m ) = 0;
+
+		virtual void ClipPlane( GLenum plane, const GLdouble *equation ) = 0;
+
+		virtual void TexEnvi( GLenum target, GLenum pname, GLint param ) = 0;
 
 		cRendererGL * GetRendererGL();
 

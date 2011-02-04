@@ -262,8 +262,8 @@ void cSpace::Draw() {
 	BR->SetLineWidth( lw );
 
 	if( options->DrawBBs ){
-		cpSpatialIndexEach(mSpace->CP_PRIVATE(activeShapes), (cpSpatialIndexIterator)drawBB, NULL);
-		cpSpatialIndexEach(mSpace->CP_PRIVATE(staticShapes), (cpSpatialIndexIterator)drawBB, NULL);
+		cpSpatialIndexEach( mSpace->CP_PRIVATE(activeShapes), (cpSpatialIndexIterator)drawBB, NULL );
+		cpSpatialIndexEach( mSpace->CP_PRIVATE(staticShapes), (cpSpatialIndexIterator)drawBB, NULL );
 	}
 
 	cpArray * constraints = mSpace->CP_PRIVATE(constraints);

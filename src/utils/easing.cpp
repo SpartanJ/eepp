@@ -64,23 +64,23 @@ eeFloat QuadraticInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 }
 
 eeFloat SineIn( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
-	return -c * cos( t / d * ( PI / 2 ) ) + c + b;
+	return -c * eecos( t / d * ( PI / 2 ) ) + c + b;
 }
 
 eeFloat SineOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
-	return c * sin( t / d * ( PI / 2 ) ) + b;
+	return c * eesin( t / d * ( PI / 2 ) ) + b;
 }
 
 eeFloat SineInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
-	return -c / 2 * ( cos( PI * t / d ) - 1 ) + b;
+	return -c / 2 * ( eecos( PI * t / d ) - 1 ) + b;
 }
 
 eeFloat ExponentialIn( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
-	return t == 0 ? b : c * pow( 2, 10 * ( t / d - 1 ) ) + b;
+	return t == 0 ? b : c * eepow( 2, 10 * ( t / d - 1 ) ) + b;
 }
 
 eeFloat ExponentialOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
-	return t == d ? b + c : c * ( -pow( 2, -10 * t / d ) + 1 ) + b;
+	return t == d ? b + c : c * ( -eepow( 2, -10 * t / d ) + 1 ) + b;
 }
 
 eeFloat ExponentialInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
@@ -91,9 +91,9 @@ eeFloat ExponentialInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 		return b + c;
 
 	if ( ( t /= d / 2 ) < 1 )
-		return c / 2 * pow( 2, 10 * (t - 1) ) + b;
+		return c / 2 * eepow( 2, 10 * (t - 1) ) + b;
 
-	return c / 2 * ( -pow( 2, -10 * --t ) + 2 ) + b;
+	return c / 2 * ( -eepow( 2, -10 * --t ) + 2 ) + b;
 }
 
 eeFloat QuarticIn( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
@@ -145,24 +145,24 @@ eeFloat QuinticInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 eeFloat CircularIn( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 	t /= d;
 
-	return -c * ( sqrt( 1 - t * t ) - 1) + b;
+	return -c * ( eesqrt( 1 - t * t ) - 1) + b;
 }
 
 eeFloat CircularOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 	t = t / d - 1;
 
-	return c * sqrt( 1 - t * t ) + b;
+	return c * eesqrt( 1 - t * t ) + b;
 }
 
 eeFloat CircularInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 	t /= d / 2;
 
 	if ( t < 1 )
-		return -c / 2 * ( sqrt( 1 - t * t ) - 1 ) + b;
+		return -c / 2 * ( eesqrt( 1 - t * t ) - 1 ) + b;
 
 	t -= 2;
 
-	return c / 2 * ( sqrt( 1 - t * t ) + 1) + b;
+	return c / 2 * ( eesqrt( 1 - t * t ) + 1) + b;
 }
 
 eeFloat CubicIn( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
@@ -264,7 +264,7 @@ eeFloat ElasticIn( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 
 	t -= 1.f;
 
-	return -( a * pow( 2.f , 10.f * t ) * sin( ( t * d - s ) * ( 2.f * PI ) / p ) ) + b;
+	return -( a * eepow( 2.f , 10.f * t ) * eesin( ( t * d - s ) * ( 2.f * PI ) / p ) ) + b;
 }
 
 eeFloat ElasticOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
@@ -280,7 +280,7 @@ eeFloat ElasticOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 	eeFloat s = p / 4.f;
 	eeFloat a = c;
 
-	return ( a * pow( 2.f, -10.f * t ) * sin( ( t * d - s ) * ( 2.f * PI ) / p ) + c + b );
+	return ( a * eepow( 2.f, -10.f * t ) * eesin( ( t * d - s ) * ( 2.f * PI ) / p ) + c + b );
 }
 
 eeFloat ElasticInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
@@ -299,12 +299,12 @@ eeFloat ElasticInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 	if ( t < 1 ) {
 		t -= 1.f;
 
-		return -0.5f * ( a * pow( 2.f, 10.f * t ) * sin( ( t * d - s ) * ( 2.f * PI ) / p ) ) + b;
+		return -0.5f * ( a * eepow( 2.f, 10.f * t ) * eesin( ( t * d - s ) * ( 2.f * PI ) / p ) ) + b;
 	}
 
 	t -= 1.f;
 
-	return a * pow( 2.f, -10.f * t ) * sin( ( t * d - s ) * ( 2.f * PI ) / p ) * 0.5f + c + b;
+	return a * eepow( 2.f, -10.f * t ) * eesin( ( t * d - s ) * ( 2.f * PI ) / p ) * 0.5f + c + b;
 }
 
 }}}

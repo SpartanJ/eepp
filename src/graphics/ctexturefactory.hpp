@@ -140,12 +140,6 @@ class EE_API cTextureFactory: public tSingleton<cTextureFactory>, protected cMut
 		/** Active a texture unit */
 		void SetActiveTextureUnit( const Uint32& Unit );
 
-		/** Set a texture constant ( env ) color */
-		void SetTextureConstantColor( const eeColorAf& Color );
-
-		/** Set a texture constant ( env ) color */
-		void SetTextureConstantColor( const eeColorA& Color );
-
 		/**
 		* @param Size
 		* @return A valid texture size for the video card (checks if support non power of two textures)

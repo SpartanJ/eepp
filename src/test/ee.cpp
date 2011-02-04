@@ -435,6 +435,8 @@ void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
 	eeASSERT( TTF != NULL );
 	eeASSERT( TTFB != NULL );
 
+	Map.Font( FF );
+
 	Con.Create( FF, true );
 	Con.IgnoreCharOnPrompt( 186 ); // L'º'
 
@@ -461,7 +463,11 @@ void cEETest::CreateShaders() {
 
 	if ( mUseShaders ) {
 		mBlurFactor = 0.01f;
-		mShaderProgram = eeNew( cShaderProgram, ( MyPath + "data/shader/blur.vert", MyPath + "data/shader/blur.frag" ) );
+
+		if ( GLv_3 == GLi->Version() || GLv_ES2 == GLi->Version() )
+			mShaderProgram = eeNew( cShaderProgram, ( MyPath + "data/shader/gl3_blur.vert", MyPath + "data/shader/gl3_blur.frag" ) );
+		else
+			mShaderProgram = eeNew( cShaderProgram, ( MyPath + "data/shader/blur.vert", MyPath + "data/shader/blur.frag" ) );
 	}
 }
 
@@ -1029,8 +1035,6 @@ void cEETest::LoadTextures() {
 	mBlindy.AddFramesByPattern( "rn" );
 	mBlindy.Position( 320.f, 0.f );
 
-	Map.myFont = reinterpret_cast<cFont*> ( &FF );
-
 	Map.Create( 100, 100, 2, 128, 64, eeColor(175,175,175) );
 
 	RandomizeHeights();
@@ -1577,10 +1581,10 @@ void cEETest::Input() {
 				Map.Move( 0, -EE->Elapsed() * 0.2f );
 
 			if ( KM->IsKeyDown(KEY_KP_MINUS) )
-				Map.Light.Radio( Map.Light.Radio() - EE->Elapsed() * 0.2f );
+				Map.BaseLight().Radius( Map.BaseLight().Radius() - EE->Elapsed() * 0.2f );
 
 			if ( KM->IsKeyDown(KEY_KP_PLUS) )
-				Map.Light.Radio( Map.Light.Radio() + EE->Elapsed() * 0.2f );
+				Map.BaseLight().Radius( Map.BaseLight().Radius() + EE->Elapsed() * 0.2f );
 
 			if ( KM->IsKeyUp(KEY_F6) ) {
 				Wireframe = !Wireframe;
@@ -1589,7 +1593,7 @@ void cEETest::Input() {
 			}
 
 			if ( KM->IsKeyUp(KEY_F7) )
-				Map.DrawFont = !Map.DrawFont;
+				Map.DrawFont( !Map.DrawFont() );
 
 			if ( KM->IsKeyUp(KEY_F8) )
 				Map.Reset();
@@ -1894,7 +1898,8 @@ void cEETest::PhysicsCreate() {
 	DSO->DrawHash			= false;
 	DSO->DrawBBs			= false;
 	DSO->DrawShapes			= true;
-	DSO->BodyPointSize		= 4;
+	DSO->CollisionPointSize	= 0;
+	DSO->BodyPointSize		= 0;
 	DSO->LineThickness		= 1;
 
 	mDemo.clear();
@@ -1950,7 +1955,7 @@ void cEETest::PhysicsDestroy() {
 	cPhysicsManager::DestroySingleton();
 }
 /*
-void defineVertexArrayObject(GLuint vaoId, size_t NbytesV, size_t NbytesC, GLint size, GLenum type, GLfloat *vertices, GLfloat *colors, GLfloat * texCoords, GLuint shader_id ) {
+static void defineVertexArrayObject(GLuint vaoId, size_t NbytesV, size_t NbytesC, GLint size, GLenum type, GLfloat *vertices, GLfloat *colors, GLfloat * texCoords, GLuint shader_id ) {
 	//enable vertex array object to be defined
 	glBindVertexArray(vaoId);
 

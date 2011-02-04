@@ -17,11 +17,11 @@ eeInt eeRandi( const eeInt& fMin, const eeInt& fMax ) {
 }
 
 eeFloat cosAng( const eeFloat& Ang ) {
-	return cos(Ang * PId180);
+	return eecos(Ang * PId180);
 }
 
 eeFloat sinAng( const eeFloat& Ang ) {
-	return sin(Ang * PId180);
+	return eesin(Ang * PId180);
 }
 
 eeFloat tanAng( const eeFloat& Ang ) {
@@ -100,14 +100,14 @@ eeQuad2f ScaleQuadCentered( const eeQuad2f& Quad, const eeFloat& Scale, const ee
 
 	for (Uint8 i = 0; i < 4; i++ ) {
 		if ( mQ.V[i].x < QCenter.x )
-			mQ.V[i].x = QCenter.x - fabs(QCenter.x - mQ.V[i].x) * Scale;
+			mQ.V[i].x = QCenter.x - eeabs(QCenter.x - mQ.V[i].x) * Scale;
 		else
-			mQ.V[i].x = QCenter.x + fabs(QCenter.x - mQ.V[i].x) * Scale;
+			mQ.V[i].x = QCenter.x + eeabs(QCenter.x - mQ.V[i].x) * Scale;
 
 		if ( mQ.V[i].y < QCenter.y )
-			mQ.V[i].y = QCenter.y - fabs(QCenter.y - mQ.V[i].y) * Scale;
+			mQ.V[i].y = QCenter.y - eeabs(QCenter.y - mQ.V[i].y) * Scale;
 		else
-			mQ.V[i].y = QCenter.y + fabs(QCenter.y - mQ.V[i].y) * Scale;
+			mQ.V[i].y = QCenter.y + eeabs(QCenter.y - mQ.V[i].y) * Scale;
 	}
 
 	return mQ;

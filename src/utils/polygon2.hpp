@@ -122,14 +122,14 @@ void Polygon2<T>::Scale( const T& scale, const Vector2<T>& Center ) {
 
 	for ( Uint32 i = 0; i < Vector.size(); i++ ) {
 		if ( Vector[i].x < Center.x )
-			Vector[i].x = Center.x - fabs( Center.x - Vector[i].x ) * scale;
+			Vector[i].x = Center.x - eeabs( Center.x - Vector[i].x ) * scale;
 		else
-			Vector[i].x = Center.x + fabs( Center.x - Vector[i].x ) * scale;
+			Vector[i].x = Center.x + eeabs( Center.x - Vector[i].x ) * scale;
 
 		if ( Vector[i].y < Center.y )
-			Vector[i].y = Center.y - fabs( Center.y - Vector[i].y ) * scale;
+			Vector[i].y = Center.y - eeabs( Center.y - Vector[i].y ) * scale;
 		else
-			Vector[i].y = Center.y + fabs( Center.y - Vector[i].y ) * scale;
+			Vector[i].y = Center.y + eeabs( Center.y - Vector[i].y ) * scale;
 	}
 }
 

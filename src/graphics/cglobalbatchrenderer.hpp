@@ -11,6 +11,7 @@ class EE_API cGlobalBatchRenderer : public tSingleton<cGlobalBatchRenderer>, pub
 	friend class tSingleton<cGlobalBatchRenderer>;
 	public:
     	cGlobalBatchRenderer();
+
     	~cGlobalBatchRenderer();
 };
 

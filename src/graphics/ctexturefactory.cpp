@@ -256,30 +256,20 @@ void cTextureFactory::SetActiveTextureUnit( const Uint32& Unit ) {
 	GLi->ActiveTexture( GL_TEXTURE0 + Unit );
 }
 
-void cTextureFactory::SetTextureConstantColor( const eeColorA& Color ) {
-	SetTextureConstantColor( eeColorAf( (eeFloat)Color.R() / 255.f, (eeFloat)Color.G() / 255.f, (eeFloat)Color.B() / 255.f, (eeFloat)Color.A() / 255.f ) );
-}
-
-void cTextureFactory::SetTextureConstantColor( const eeColorAf& Color ) {
-	#ifndef EE_GLES2
-	glTexEnvfv( GL_TEXTURE_ENV, GL_TEXTURE_ENV_COLOR, (const GLfloat*)(&Color.Red) );
-	#endif
-}
-
 void cTextureFactory::SetTextureEnv( const EE_TEXTURE_PARAM& Param, const Int32& Val ) {
 	#ifndef EE_GLES2
 	GLenum lParam = (GLenum)GLi->GetTextureParamEnum( Param );
 
-	glTexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB );
+	GLi->TexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB );
 
 	if( Param == TEX_PARAM_COLOR_FUNC || Param == TEX_PARAM_ALPHA_FUNC ) {
-		glTexEnvi( GL_TEXTURE_ENV, lParam, GLi->GetTextureFuncEnum( (EE_TEXTURE_FUNC)Val ) );
+		GLi->TexEnvi( GL_TEXTURE_ENV, lParam, GLi->GetTextureFuncEnum( (EE_TEXTURE_FUNC)Val ) );
 	} else if( Param >= TEX_PARAM_COLOR_SOURCE_0 && Param <= TEX_PARAM_ALPHA_SOURCE_2 ) {
-		glTexEnvi( GL_TEXTURE_ENV, lParam, GLi->GetTextureSourceEnum( (EE_TEXTURE_SOURCE)Val ) );
+		GLi->TexEnvi( GL_TEXTURE_ENV, lParam, GLi->GetTextureSourceEnum( (EE_TEXTURE_SOURCE)Val ) );
 	} else if( Param >= TEX_PARAM_COLOR_OP_0 && Param <= TEX_PARAM_ALPHA_OP_2 ) {
-		glTexEnvi( GL_TEXTURE_ENV, lParam, GLi->GetTextureOpEnum( (EE_TEXTURE_OP)Val ) );
+		GLi->TexEnvi( GL_TEXTURE_ENV, lParam, GLi->GetTextureOpEnum( (EE_TEXTURE_OP)Val ) );
 	} else {
-		glTexEnvi( GL_TEXTURE_ENV, lParam, Val );
+		GLi->TexEnvi( GL_TEXTURE_ENV, lParam, Val );
 	}
 	#endif
 }

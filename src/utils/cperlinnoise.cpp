@@ -54,8 +54,8 @@ eeFloat cPerlinNoise::SmoothedNoise2D(eeFloat x, eeFloat y) {
 }
 
 eeFloat cPerlinNoise::Interpolate(eeFloat a, eeFloat b, eeFloat x) {
-	eeFloat fac1 = 3*pow(1-x, 2) - 2*pow(1-x,3);
-	eeFloat fac2 = 3*pow(x, 2) - 2*pow(x, 3);
+	eeFloat fac1 = 3*eepow(1-x, 2) - 2*eepow(1-x,3);
+	eeFloat fac2 = 3*eepow(x, 2) - 2*eepow(x, 3);
 
 	return a*fac1 + b*fac2; //add the weighted factors
 

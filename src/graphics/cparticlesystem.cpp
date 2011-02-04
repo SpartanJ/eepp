@@ -163,8 +163,8 @@ void cParticleSystem::Reset(cParticle* P) {
 			mProgression = (int) eeRandf() * 10;
 			radio = (P->Id() * 0.125f) * mProgression;
 
-			x = mX + (radio * cos( (eeFloat)P->Id() ));
-			y = mY + (radio * sin( (eeFloat)P->Id() ));
+			x = mX + (radio * eecos( (eeFloat)P->Id() ));
+			y = mY + (radio * eesin( (eeFloat)P->Id() ));
 
 			P->Reset(x, y, VarB[0], VarB[1], VarB[2], VarB[3]);
 			P->SetColor( eeColorAf(1.f, 0.6f, 0.3f, 1.f), 0.02f + eeRandf() * 0.3f );
@@ -176,47 +176,47 @@ void cParticleSystem::Reset(cParticle* P) {
 			if (mProgression > 50) mDirection =-1;
 			if (mProgression < -50) mDirection = 1;
 			q = (P->Id() * 0.01f) + mProgression;
-			x = mX - w * sin((eeFloat)q * 2);
-			y = mY - z * cos((eeFloat)q * 2);
+			x = mX - w * eesin((eeFloat)q * 2);
+			y = mY - z * eecos((eeFloat)q * 2);
 
 			P->Reset(x, y, 1, 1, 0, 0);
 			P->SetColor( eeColorAf(1.f, 0.25f, 0.25f, 1), 0.6f + eeRandf() * 0.3f );
 			break;
 		case Flower:
-			radio = cos( 2 * ( (eeFloat)P->Id() * 0.1f ) ) * 50;
-			x = mX + radio * cos( (eeFloat)P->Id() * 0.1f );
-			y = mY + radio * sin( (eeFloat)P->Id() * 0.1f );
+			radio = eecos( 2 * ( (eeFloat)P->Id() * 0.1f ) ) * 50;
+			x = mX + radio * eecos( (eeFloat)P->Id() * 0.1f );
+			y = mY + radio * eesin( (eeFloat)P->Id() * 0.1f );
 
 			P->Reset(x, y, 1, 1, 0 , 0);
 			P->SetColor( eeColorAf(1.f, 0.25f, 0.1f, 0.1f), 0.3f + (0.2f * eeRandf()) + eeRandf() * 0.3f );
 			break;
 		case Galaxy:
-			radio = (eeRandf(1.f, 1.2f) + sin( 20.f / (eeFloat)P->Id() )) * 60;
-			x = mX + radio * cos( (eeFloat)P->Id() );
-			y = mY + radio * sin( (eeFloat)P->Id() );
+			radio = (eeRandf(1.f, 1.2f) + eesin( 20.f / (eeFloat)P->Id() )) * 60;
+			x = mX + radio * eecos( (eeFloat)P->Id() );
+			y = mY + radio * eesin( (eeFloat)P->Id() );
 			P->Reset(x, y, 0, 0, 0, 0);
 			P->SetColor( eeColorAf(0.2f, 0.2f, 0.6f + 0.4f * eeRandf(), 1.f), eeRandf(0.05f, 0.15f) );
 			break;
 		case Heart:
 			q = P->Id() * 0.01f;
-			x = mX - 50 * sin(q * 2) * sqrt( fabs( cos(q) ) );
-			y = mY - 50 * cos(q * 2) * sqrt( fabs( sin(q) ) );
+			x = mX - 50 * eesin(q * 2) * eesqrt( eeabs( eecos(q) ) );
+			y = mY - 50 * eecos(q * 2) * eesqrt( eeabs( eesin(q) ) );
 			P->Reset(x, y, 0.f, 0.f, 0.f, -(eeRandf() * 0.2f));
 			P->SetColor( eeColorAf(1.f, 0.5f, 0.2f, 0.6f + 0.2f * eeRandf()), 0.01f + eeRandf() * 0.08f );
 			break;
 		case BlueExplosion:
 			if ( P->Id() == 0 ) mProgression+=10;
 			radio = atan( static_cast<eeFloat>( P->Id() % 12 ) );
-			x = mX + (radio * cos( (eeFloat)P->Id() / mProgression ) * 30);
-			y = mY + (radio * sin( (eeFloat)P->Id() / mProgression ) * 30);
+			x = mX + (radio * eecos( (eeFloat)P->Id() / mProgression ) * 30);
+			y = mY + (radio * eesin( (eeFloat)P->Id() / mProgression ) * 30);
 
-			P->Reset(x, y, cos( (eeFloat)P->Id() ), sin( (eeFloat)P->Id() ), 0, 0 );
+			P->Reset(x, y, eecos( (eeFloat)P->Id() ), eesin( (eeFloat)P->Id() ), 0, 0 );
 			P->SetColor( eeColorAf(0.3f, 0.6f, 1.f, 1.f), 0.03f );
 			break;
 		case GP:
-			radio = 50 + eeRandf() * 15 * cos( (eeFloat)P->Id() * 3.5f );
-			x = mX + ( radio * cos( (eeFloat)P->Id() * (eeFloat)0.01428571428 ) );
-			y = mY + ( radio * sin( (eeFloat)P->Id() * (eeFloat)0.01428571428 ) );
+			radio = 50 + eeRandf() * 15 * eecos( (eeFloat)P->Id() * 3.5f );
+			x = mX + ( radio * eecos( (eeFloat)P->Id() * (eeFloat)0.01428571428 ) );
+			y = mY + ( radio * eesin( (eeFloat)P->Id() * (eeFloat)0.01428571428 ) );
 
 			P->Reset(x, y, 0, 0, 0, 0);
 			P->SetColor( eeColorAf(0.2f, 0.8f, 0.4f, 0.5f) , eeRandf() * 0.3f );
@@ -227,8 +227,8 @@ void cParticleSystem::Reset(cParticle* P) {
 			if (mProgression > 50) mDirection =-1;
 			if (mProgression < -50) mDirection = 1;
 			q = P->Id() * 0.01f + mProgression;
-			x = mX + w * sin((eeFloat)q * 2);
-			y = mY - w * cos((eeFloat)q * 2);
+			x = mX + w * eesin((eeFloat)q * 2);
+			y = mY - w * eecos((eeFloat)q * 2);
 
 			P->Reset(x, y, 1, 1, 0, 0);
 			P->SetColor( eeColorAf(0.25f, 0.25f, 1.f, 1.f), 0.1f + eeRandf() * 0.3f + eeRandf() * 0.3f );
@@ -239,16 +239,16 @@ void cParticleSystem::Reset(cParticle* P) {
 			if (mProgression > 50) mDirection =-1;
 			if (mProgression < -50) mDirection = 1;
 			q = P->Id() * 0.01f + mProgression;
-			x = mX + w * sin((eeFloat)q * 2);
-			y = mY - w * cos((eeFloat)q * 2);
+			x = mX + w * eesin((eeFloat)q * 2);
+			y = mY - w * eecos((eeFloat)q * 2);
 
 			P->Reset(x, y, -10, -1 * eeRandf(), 0, eeRandf());
 			P->SetColor( eeColorAf(0.25f, 0.25f, 1.f, 1.f), 0.1f + eeRandf() * 0.1f + eeRandf() * 0.3f );
 			break;
 		case Atomic:
-			radio = 10 + sin( 2 * ( (eeFloat)P->Id() * 0.1f ) ) * 50;
-			x = mX + radio * cos( (eeFloat)P->Id() * (eeFloat)0.033333 );
-			y = mY + radio * sin( (eeFloat)P->Id() * (eeFloat)0.033333 );
+			radio = 10 + eesin( 2 * ( (eeFloat)P->Id() * 0.1f ) ) * 50;
+			x = mX + radio * eecos( (eeFloat)P->Id() * (eeFloat)0.033333 );
+			y = mY + radio * eesin( (eeFloat)P->Id() * (eeFloat)0.033333 );
 			P->Reset(x, y, 1, 1, 0, 0);
 			P->SetColor( eeColorAf(0.4f, 0.25f, 1.f, 1.f), 0.3f + eeRandf() * 0.2f + eeRandf() * 0.3f );
 			break;
@@ -265,17 +265,11 @@ void cParticleSystem::Draw() {
 
 	if ( mPointsSup ) {
 		if ( GLi->Version() == GLv_3 ) {
-			GLi->GetRendererGL3()->SetShader( EEGL_SHADER_POINT_SPRITE );
-			#ifndef EE_GLES2
 			GLi->Enable( GL_VERTEX_PROGRAM_POINT_SIZE );
-			#endif
 		}
 
-		#ifndef EE_GLES2
 		GLi->Enable( GL_POINT_SPRITE );
 		GLi->PointSize( mSize );
-		glTexEnvf( GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE );
-		#endif
 
 		Uint32 alloc = mPCount * sizeof(cParticle);
 
@@ -284,12 +278,10 @@ void cParticleSystem::Draw() {
 
 		GLi->DrawArrays( GL_POINTS, 0, (GLsizei)mPCount );
 
-		#ifndef EE_GLES2
 		GLi->Disable( GL_POINT_SPRITE );
-		#endif
 
 		if ( GLi->Version() == GLv_3 ) {
-			GLi->GetRendererGL3()->SetShader( EEGL_SHADER_BASE_TEX );
+			GLi->Disable( GL_VERTEX_PROGRAM_POINT_SIZE );
 		}
 	} else {
 		cTexture * Tex = TF->GetTexture( mTexId );

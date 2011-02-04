@@ -13,11 +13,36 @@ const char * EEGL_STATES_NAME[] = {
 	"dgl_EdgeFlag"
 };
 
-const GLchar * EEGL_SHADER_BASE_TEX_VS[] = {
+const char * EEGL_PLANES_ENABLED_NAME[] = {
+	"dgl_ClipEnabled[0]",
+	"dgl_ClipEnabled[1]",
+	"dgl_ClipEnabled[2]",
+	"dgl_ClipEnabled[3]",
+	"dgl_ClipEnabled[4]",
+	"dgl_ClipEnabled[5]"
+};
+
+const char * EEGL_PLANES_NAME[] = {
+	"dgl_ClipPlane[0]",
+	"dgl_ClipPlane[1]",
+	"dgl_ClipPlane[2]",
+	"dgl_ClipPlane[3]",
+	"dgl_ClipPlane[4]",
+	"dgl_ClipPlane[5]"
+};
+
+const GLchar * EEGL_SHADER_BASE_VS[] = {
 	"#version 150\n",
 	"#extension GL_ARB_explicit_attrib_location : enable\n",
+	"#define MAX_CLIP_PLANES 6\n",
 	"uniform					mat4 dgl_ProjectionMatrix;\n",	// replaces deprecated gl_ProjectionMatrix
 	"uniform					mat4 dgl_ModelViewMatrix;\n",	// replaces deprecated gl_ModelViewMatrix
+	"uniform					int  dgl_ClippingEnabled = 0;\n",
+	"uniform					int	 dgl_ClipEnabled[ MAX_CLIP_PLANES ] = { 0, 0, 0, 0, 0, 0 };\n",
+	"uniform					vec4 dgl_ClipPlane[ MAX_CLIP_PLANES ];\n",
+	#ifdef EE_GLES2
+	"uniform					float dgl_PointSize = 1;\n",
+	#endif
 	"layout(location = 0) in	vec2 dgl_Vertex;\n",			// replaces deprecated gl_Vertex
 	"layout(location = 2) in	vec4 dgl_Color;\n",				// replaces deprecated gl_Color
 	"layout(location = 4) in	vec2 dgl_TexCoord;\n",			// replaces deprecated gl_TexCoord
@@ -25,97 +50,40 @@ const GLchar * EEGL_SHADER_BASE_TEX_VS[] = {
 	"invariant out				vec2 TexCoord;\n",				// to fragment shader
 	"void main(void)\n",
 	"{\n",
-	"	Color			= dgl_Color;\n",
-	"	TexCoord		= dgl_TexCoord;\n",
-	"	vec4 v4			= vec4( dgl_Vertex, 0.0, 1.0 );\n",
-	"	gl_Position		= dgl_ProjectionMatrix * dgl_ModelViewMatrix * v4;\n",
-	"}\n"
-};
-
-const GLchar * EEGL_SHADER_BASE_TEX_FS[] = {
-	"#version 150\n",
-	"uniform		sampler2D	textureUnit0;\n",
-	"uniform		int			TexActive = 1;\n",
-	"invariant in	vec4		Color;\n",
-	"invariant in	vec2		TexCoord;\n",
-	"out			vec4		dgl_FragColor;\n",
-	"void main(void)\n",
-	"{\n",
-	"	if ( 1 == TexActive )\n",
-	"		dgl_FragColor = Color * texture2D( textureUnit0, TexCoord );\n",
-	"	else\n",
-	"		dgl_FragColor = Color;\n",
-	"}\n"
-};
-
-const GLchar * EEGL_SHADER_POINT_SPRITE_VS[] = {
-	"#version 150\n",
-	"#extension GL_ARB_explicit_attrib_location : enable\n",
-	"uniform					mat4 dgl_ProjectionMatrix;\n",
-	"uniform					mat4 dgl_ModelViewMatrix;\n",
-	"layout(location = 0) in	vec2 dgl_Vertex;\n",
-	"layout(location = 2) in	vec4 dgl_Color;\n",
-	"invariant out				vec4 Color;\n",
-	"void main(void)\n",
-	"{\n",
-	"	Color			= dgl_Color;\n",
-	"	vec4 v4			= vec4( dgl_Vertex, 0.0, 1.0 );\n",
-	"	gl_Position		= dgl_ProjectionMatrix * dgl_ModelViewMatrix * v4;\n",
-	"}\n"
-};
-
-const GLchar * EEGL_SHADER_POINT_SPRITE_FS[] = {
-	"#version 150\n",
-	"invariant in	vec4		Color;\n",
-	"out			vec4		dgl_FragColor;\n",
-	"uniform		sampler2D	textureUnit0;\n",
-	"void main(void)\n",
-	"{\n",
-	"	dgl_FragColor = Color * texture2D( textureUnit0, gl_PointCoord );\n",
-	"}\n"
-};
-
-const GLchar * EEGL_SHADER_CLIP_VS[] = {
-	"#version 150\n",
-	"#extension GL_ARB_explicit_attrib_location : enable\n",
-	"uniform					mat4 dgl_ProjectionMatrix;\n",
-	"uniform					mat4 dgl_ModelViewMatrix;\n",
-	"uniform					int	 ClipEnabled = 0;\n"
-	"uniform					vec4 dgl_ClipPlane[ 4 ];\n",
-	"layout(location = 0) in	vec2 dgl_Vertex;\n",
-	"layout(location = 2) in	vec4 dgl_Color;\n",
-	"layout(location = 4) in	vec2 dgl_TexCoord;\n",
-	"invariant out				vec4 Color;\n",
-	"invariant out				vec2 TexCoord;\n",
-	"void main(void)\n",
-	"{\n",
+	#ifdef EE_GLES2
+	"	gl_PointSize	= dgl_PointSize;\n",
+	#endif
 	"	Color			= dgl_Color;\n",
 	"	TexCoord		= dgl_TexCoord;\n",
 	"	vec4 v4			= vec4( dgl_Vertex, 0.0, 1.0 );\n",
 	"	vec4 vEye		= dgl_ModelViewMatrix * v4;\n",
 	"	gl_Position		= dgl_ProjectionMatrix * vEye;\n",
-	"	if ( 1 == ClipEnabled ) {\n",
-	"		gl_ClipDistance[0] = dot( vEye, dgl_ClipPlane[0] );",
-	"		gl_ClipDistance[1] = dot( vEye, dgl_ClipPlane[1] );",
-	"		gl_ClipDistance[2] = dot( vEye, dgl_ClipPlane[2] );",
-	"		gl_ClipDistance[3] = dot( vEye, dgl_ClipPlane[3] );",
+	"	if ( 1 == dgl_ClippingEnabled ) {\n",
+	"		for ( int i = 0; i < MAX_CLIP_PLANES; i++ ) {\n",
+	"			if ( 1 == dgl_ClipEnabled[i] )\n",
+	"				gl_ClipDistance[i] = dot( vEye, dgl_ClipPlane[i] );\n",
+	"		}\n",
 	"	}\n",
 	"}\n"
 };
 
-const GLchar * EEGL_SHADER_CLIP_FS[] = {
+const GLchar * EEGL_SHADER_BASE_FS[] = {
 	"#version 150\n",
-	"uniform		int			TexActive = 1;\n",
+	"uniform		sampler2D	textureUnit0;\n",
+	"uniform		int			dgl_TexActive = 1;\n",
+	"uniform		int			dgl_PointSpriteActive = 0;\n",
 	"invariant in	vec4		Color;\n",
 	"invariant in	vec2		TexCoord;\n",
 	"out			vec4		dgl_FragColor;\n",
-	"uniform		sampler2D	textureUnit0;\n",
 	"void main(void)\n",
 	"{\n",
-	"	if ( 1 == TexActive )\n",
-	"		dgl_FragColor = Color * texture2D( textureUnit0, TexCoord );\n",
-	"	else\n",
-	"		dgl_FragColor = Color;\n",
+	"	if ( 0 == dgl_PointSpriteActive ) {\n",
+	"		if ( 1 == dgl_TexActive )\n",
+	"			dgl_FragColor = Color * texture2D( textureUnit0, TexCoord );\n",
+	"		else\n",
+	"			dgl_FragColor = Color;\n",
+	"	} else\n",
+	"		dgl_FragColor = Color * texture2D( textureUnit0, gl_PointCoord );\n",
 	"}\n"
 };
 
@@ -125,7 +93,10 @@ cRendererGL3::cRendererGL3() :
 	mCurrentMode(0),
 	mCurShader(NULL),
 	mShaderPrev(NULL),
-	mTexActive(1)
+	mTexActive(1),
+	mTexActiveLoc(-1),
+	mPointSpriteLoc(-1),
+	mPointSize(1.f)
 {
 	mProjectionMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
 	mModelViewMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
@@ -157,26 +128,29 @@ void cRendererGL3::SetShader( const EEGL_SHADERS& Shader ) {
 
 void cRendererGL3::SetShader( cShaderProgram * Shader ) {
 	if ( NULL == Shader ) {
-		Shader = mShaders[ EEGL_SHADER_BASE_TEX ];
+		Shader = mShaders[ EEGL_SHADER_BASE ];
 	}
 
 	if ( mCurShader == Shader ) {
 		return;
 	}
 
-	if ( mShaders[ EEGL_SHADER_CLIP ] != mCurShader ) {
-		mShaderPrev				= mCurShader;
-	}
-
+	mShaderPrev				= mCurShader;
 	mCurShader				= Shader;
 	mProjectionMatrix_id	= mCurShader->UniformLocation( "dgl_ProjectionMatrix" );
 	mModelViewMatrix_id		= mCurShader->UniformLocation( "dgl_ModelViewMatrix" );
+	mTexActiveLoc			= mCurShader->UniformLocation( "dgl_TexActive" );
+	mPointSpriteLoc			= mCurShader->UniformLocation( "dgl_PointSpriteActive" );
 
-	for ( Uint32 i = 0; i < EEGL_ARRAY_STATES_COUNT; i++ ) {
+	Uint32 i;
+
+	for ( i = 0; i < EEGL_ARRAY_STATES_COUNT; i++ ) {
 		mStates[ i ] = mCurShader->AttributeLocation( EEGL_STATES_NAME[ i ] );
 	}
 
-	mTexActiveLoc = mCurShader->UniformLocation( "TexActive" );
+	for ( i = 0; i < EE_MAX_PLANES; i++ ) {
+		mPlanes[ i ] = mCurShader->UniformLocation( EEGL_PLANES_NAME[ i ] );
+	}
 
 	glUseProgram( mCurShader->Handler() );
 
@@ -190,13 +164,42 @@ void cRendererGL3::SetShader( cShaderProgram * Shader ) {
 }
 
 void cRendererGL3::Disable ( GLenum cap ) {
-	if ( GL_TEXTURE_2D == cap ) {
-		if ( glIsEnabled( cap ) ) {
-			mTexActive = 0;
-			mCurShader->SetUniform( mTexActiveLoc, mTexActive );
+	switch ( cap ) {
+		case GL_TEXTURE_2D:
+		{
+			if ( glIsEnabled( cap ) ) {
+				mTexActive = 0;
+				mCurShader->SetUniform( mTexActiveLoc, mTexActive );
 
-			/// Reset the vertex attrib to zero to avoid crashes on draw calls
-			TexCoordPointer( 2, GL_FLOAT, 0, (const GLvoid*)NULL, 0 );
+				/// Reset the vertex attrib to zero to avoid crashes on draw calls
+				TexCoordPointer( 2, GL_FLOAT, 0, (const GLvoid*)NULL, 0 );
+			}
+
+			break;
+		}
+		case GL_CLIP_PLANE0:
+		case GL_CLIP_PLANE1:
+		case GL_CLIP_PLANE2:
+		case GL_CLIP_PLANE3:
+		case GL_CLIP_PLANE4:
+		case GL_CLIP_PLANE5:
+		{
+			GLint plane = cap - GL_CLIP_PLANE0;
+
+			mPlanesStates[ plane ] = 0;
+			PlaneStateCheck( false );
+			mCurShader->SetUniform( EEGL_PLANES_ENABLED_NAME[ plane ], 0 );
+
+			break;
+		}
+		case GL_POINT_SPRITE:
+		{
+			mCurShader->SetUniform( mPointSpriteLoc, 0 );
+			break;
+		}
+		case GL_VERTEX_PROGRAM_POINT_SIZE:
+		{	/// Point Sprite flag for the shader?
+			break;
 		}
 	}
 
@@ -204,24 +207,72 @@ void cRendererGL3::Disable ( GLenum cap ) {
 }
 
 void cRendererGL3::Enable( GLenum cap ) {
-	if ( GL_TEXTURE_2D == cap ) {
-		if ( !glIsEnabled( cap ) ) {
-			mTexActive = 1;
-			mCurShader->SetUniform( mTexActiveLoc, mTexActive );
+	switch ( cap ) {
+		case GL_TEXTURE_2D:
+		{
+			if ( !glIsEnabled( cap ) ) {
+				mTexActive = 1;
+				mCurShader->SetUniform( mTexActiveLoc, mTexActive );
+			}
+
+			break;
+		}
+		case GL_CLIP_PLANE0:
+		case GL_CLIP_PLANE1:
+		case GL_CLIP_PLANE2:
+		case GL_CLIP_PLANE3:
+		case GL_CLIP_PLANE4:
+		case GL_CLIP_PLANE5:
+		{
+			GLint plane = cap - GL_CLIP_PLANE0;
+
+			mPlanesStates[ plane ] = 1;
+			PlaneStateCheck( true );
+			mCurShader->SetUniform( EEGL_PLANES_ENABLED_NAME[ plane ], 1 );
+
+			break;
+		}
+		case GL_POINT_SPRITE:
+		{
+			mCurShader->SetUniform( mPointSpriteLoc, 1 );
+			break;
+		}
+		case GL_VERTEX_PROGRAM_POINT_SIZE:
+		{
+			break;
 		}
 	}
 
 	cGL::Enable( cap );
 }
 
+void cRendererGL3::PlaneStateCheck( bool tryEnable ) {
+	GLint i;
+
+	if (  tryEnable  ) {
+		for ( i = 0; i < EE_MAX_PLANES; i++ ) {
+			if ( 0 != mPlanesStates[ i ] ) {
+				mCurShader->SetUniform( "dgl_ClippingEnabled", 1 );
+				return;
+			}
+		}
+	} else {
+		for ( i = 0; i < EE_MAX_PLANES; i++) {
+			if ( 0 != mPlanesStates[ i ] ) {
+				return;
+			}
+		}
+
+		mCurShader->SetUniform( "dgl_ClippingEnabled", 0 );
+	}
+}
+
 void cRendererGL3::Init() {
 	cGL::Init();
 
-	mShaders[ EEGL_SHADER_BASE_TEX ]		= eeNew( cShaderProgram, ( (const char**)EEGL_SHADER_BASE_TEX_VS, sizeof(EEGL_SHADER_BASE_TEX_VS)/sizeof(const GLchar*), (const char**)EEGL_SHADER_BASE_TEX_FS, sizeof(EEGL_SHADER_BASE_TEX_FS)/sizeof(const GLchar*), "EEGL_SHADER_BASE_TEX" ) );
-	mShaders[ EEGL_SHADER_POINT_SPRITE ]	= eeNew( cShaderProgram, ( (const char**)EEGL_SHADER_POINT_SPRITE_VS, sizeof(EEGL_SHADER_POINT_SPRITE_VS)/sizeof(const GLchar*), (const char**)EEGL_SHADER_POINT_SPRITE_FS, sizeof(EEGL_SHADER_POINT_SPRITE_FS)/sizeof(const GLchar*), "EEGL_SHADER_POINT_SPRITE" ) );
-	mShaders[ EEGL_SHADER_CLIP ]			= eeNew( cShaderProgram, ( (const char**)EEGL_SHADER_CLIP_VS, sizeof(EEGL_SHADER_CLIP_VS)/sizeof(const GLchar*), (const char**)EEGL_SHADER_CLIP_FS, sizeof(EEGL_SHADER_CLIP_FS)/sizeof(const GLchar*), "EEGL_SHADER_CLIP" ) );
+	mShaders[ EEGL_SHADER_BASE ]			= eeNew( cShaderProgram, ( (const char**)EEGL_SHADER_BASE_VS, sizeof(EEGL_SHADER_BASE_VS)/sizeof(const GLchar*), (const char**)EEGL_SHADER_BASE_FS, sizeof(EEGL_SHADER_BASE_FS)/sizeof(const GLchar*), "EEGL_SHADER_BASE_TEX" ) );
 
-	SetShader( mShaders[ EEGL_SHADER_BASE_TEX ] );
+	SetShader( mShaders[ EEGL_SHADER_BASE ] );
 
 	#ifndef EE_GLES2
 	glGenVertexArrays( 1, &mVAO );
@@ -229,6 +280,9 @@ void cRendererGL3::Init() {
 	#endif
 
 	memset( mVBO, 0, eeARRAY_SIZE( mVBO ) );
+
+	memset( mPlanes, -1, EE_MAX_PLANES );
+	memset( mPlanesStates, 0, EE_MAX_PLANES );
 
 	glGenBuffers( EEGL_ARRAY_STATES_COUNT, &mVBO[0] );
 
@@ -398,53 +452,85 @@ GLint cRendererGL3::GetStateIndex( const Uint32& State ) {
 	return mStates[ State ];
 }
 
-void cRendererGL3::ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
+void cRendererGL3::Clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
 	GLfloat tX = (GLfloat)x;
 	GLfloat tY = (GLfloat)y;
 	GLfloat tW = (GLfloat)Width;
 	GLfloat tH = (GLfloat)Height;
 
-	GLfloat clip_left[] 	= { 1.0		, 0.0	, 0.0	, -tX 		};
-	GLfloat clip_right[] 	= { -1.0	, 0.0	, 0.0	, tX + tW 	};
-	GLfloat clip_top[]		= { 0.0		, 1.0	, 0.0	, -tY 		};
-	GLfloat clip_bottom[] 	= { 0.0		, -1.0	, 0.0	, tY + tH 	};
-	
-	#ifndef EE_GLES2
+	glm::vec4 vclip_left	( 1.0	, 0.0	, 0.0	, -tX		);
+	glm::vec4 vclip_right	( -1.0	, 0.0	, 0.0	, tX + tW	);
+	glm::vec4 vclip_top		( 0.0	, 1.0	, 0.0	, -tY		);
+	glm::vec4 vclip_bottom	( 0.0	, -1.0	, 0.0	, tY + tH	);
+
+	glm::mat4 invMV = glm::inverse( mModelViewMatrix.top() );
+
+	vclip_left		= vclip_left	* invMV;
+	vclip_right		= vclip_right	* invMV;
+	vclip_top		= vclip_top		* invMV;
+	vclip_bottom	= vclip_bottom	* invMV;
+
 	GLi->Enable(GL_CLIP_PLANE0);
 	GLi->Enable(GL_CLIP_PLANE1);
 	GLi->Enable(GL_CLIP_PLANE2);
 	GLi->Enable(GL_CLIP_PLANE3);
-	#endif
-	
-	SetShader( EEGL_SHADER_CLIP );
 
-	mCurShader->SetUniform( mTexActiveLoc, mTexActive );
-
-	mCurShader->SetUniform( "ClipEnabled", (Int32)1 );
-	glUniform4fv( glGetUniformLocation( mCurShader->Handler(), "dgl_ClipPlane[0]" ), 1, clip_left );
-	glUniform4fv( glGetUniformLocation( mCurShader->Handler(), "dgl_ClipPlane[1]" ), 1, clip_right );
-	glUniform4fv( glGetUniformLocation( mCurShader->Handler(), "dgl_ClipPlane[2]" ), 1, clip_top );
-	glUniform4fv( glGetUniformLocation( mCurShader->Handler(), "dgl_ClipPlane[3]" ), 1, clip_bottom );
+	glUniform4fv( mPlanes[0], 1, static_cast<const GLfloat*>( &vclip_left[0]	)	);
+	glUniform4fv( mPlanes[1], 1, static_cast<const GLfloat*>( &vclip_right[0]	)	);
+	glUniform4fv( mPlanes[2], 1, static_cast<const GLfloat*>( &vclip_top[0]		)	);
+	glUniform4fv( mPlanes[3], 1, static_cast<const GLfloat*>( &vclip_bottom[0]	)	);
 }
 
-void cRendererGL3::ClipPlaneDisable() {
-	#ifndef EE_GLES2
+void cRendererGL3::Clip2DPlaneDisable() {
 	GLi->Disable(GL_CLIP_PLANE0);
 	GLi->Disable(GL_CLIP_PLANE1);
 	GLi->Disable(GL_CLIP_PLANE2);
 	GLi->Disable(GL_CLIP_PLANE3);
+}
+
+void cRendererGL3::PointSize( GLfloat size ) {
+	#ifndef EE_GLES2
+	glPointSize( size );
+	#else
+	mCurShader->SetUniform( "dgl_PointSize", size );
 	#endif
-	mCurShader->SetUniform( "ClipEnabled", (Int32)0 );
-	
-	SetShader( mShaderPrev );
+
+	mPointSize = size;
+}
+
+void cRendererGL3::ClipPlane( GLenum plane, const GLdouble * equation ) {
+	Int32 nplane	= plane - GL_CLIP_PLANE0;
+	Int32 location;
+
+	if ( nplane < EE_MAX_PLANES ) {
+		location = mPlanes[ nplane ];
+	} else {
+		std::string planeNum( "dgl_ClipPlane[" + toStr( nplane ) + "]" );
+
+		location = glGetUniformLocation( mCurShader->Handler(), (GLchar*)&planeNum[0] );
+	}
+
+	glm::vec4 teq( equation[0], equation[1], equation[2], equation[3] );
+
+	teq = teq * glm::inverse( mModelViewMatrix.top() );		/// Apply the inverse of the model view matrix to the equation
+
+	glUniform4f( nplane, (GLfloat)teq[0], (GLfloat)teq[1], (GLfloat)teq[2], (GLfloat)teq[3] );
 }
 
 void cRendererGL3::MultMatrixf ( const GLfloat * m ) {
 	mCurMatrix->top() *= glm::mat4( *m );
 }
 
+GLfloat cRendererGL3::PointSize() {
+	return mPointSize;
+}
+
 void cRendererGL3::ClientActiveTexture( GLenum texture ) {
-	//! TODO: Implement multitexturing in GL3 renderer
+	/// TODO: Implement multitexturing in GL3 renderer
+}
+
+void cRendererGL3::TexEnvi( GLenum target, GLenum pname, GLint param ) {
+	/// TODO: Implement TexEnvi
 }
 
 }}

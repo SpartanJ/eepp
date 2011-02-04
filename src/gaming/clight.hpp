@@ -7,46 +7,58 @@ namespace EE { namespace Gaming {
 
 /** @enum LIGHT_TYPE Define the light spot type */
 enum LIGHT_TYPE {
-	LIGHT_NORMAL = 0,
+	LIGHT_NORMAL	= 0,
 	LIGHT_ISOMETRIC = 1
 };
 
 class EE_API cLight {
 	public:
 		cLight();
+
+		cLight( const eeFloat& Radius, const eeFloat& x, const eeFloat& y, const eeColor& Color = eeColor(255,255,255), LIGHT_TYPE Type = LIGHT_NORMAL );
+
 		virtual ~cLight();
 
-		cLight( const eeFloat& Radio, const eeFloat& x, const eeFloat& y, const eeColor& Color = eeColor(255,255,255), LIGHT_TYPE Type = LIGHT_NORMAL );
-		void Create( const eeFloat& Radio, const eeFloat& x, const eeFloat& y, const eeColor& Color = eeColor(255,255,255), LIGHT_TYPE Type = LIGHT_NORMAL );
+		void Create( const eeFloat& Radius, const eeFloat& x, const eeFloat& y, const eeColor& Color = eeColor(255,255,255), LIGHT_TYPE Type = LIGHT_NORMAL );
 
 		virtual eeColor ProcessVertex( const eeFloat& PointX, const eeFloat& PointY, const eeColor& VertexColor, const eeColor& BaseColor );
+
 		eeColor ProcessVertex( const eeVector2f& Pos, const eeColor& VertexColor, const eeColor& BaseColor );
 
 		void Move( const eeFloat& addtox, const eeFloat& addtoy );
+
 		void UpdatePos( const eeFloat& x, const eeFloat& y );
+
 		void UpdatePos( const eeVector2f& newPos );
 
-		eeFloat Radio() const { return mRadio; }
-		void Radio( const eeFloat& radio ) { mRadio = radio; }
+		const eeAABB& GetAABB() const;
 
-		bool Active() const { return mActive; }
-		void Active( const bool& active ) { mActive = active; }
+		const eeFloat& Radius() const;
 
-		void Color( const eeColor& color ) { mColor = color; }
-		eeColor Color() const { return mColor; }
+		void Radius( const eeFloat& radio );
 
-		void Type( const LIGHT_TYPE& type ) { mType = type; }
-		LIGHT_TYPE Type() const { return mType; }
+		const bool& Active() const;
 
-		eeAABB GetAABB();
+		void Active( const bool& active );
 
-		eeVector2f Position() const { return mPos; }
+		void Color( const eeColor& color );
+
+		const eeColor& Color() const;
+
+		void Type( const LIGHT_TYPE& type );
+
+		const LIGHT_TYPE& Type() const;
+
+		const eeVector2f& Position() const;
 	protected:
-		bool mActive, mCalculated;
-		eeFloat mRadio;
-		eeVector2f mPos;
-		eeColor mColor;
-		LIGHT_TYPE mType;
+		eeFloat		mRadius;
+		eeVector2f	mPos;
+		eeColor		mColor;
+		LIGHT_TYPE	mType;
+		eeAABB		mAABB;
+		bool		mActive;
+
+		void UpdateAABB();
 };
 
 }}

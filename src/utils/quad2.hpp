@@ -49,14 +49,14 @@ void Quad2<T>::Scale( const T& scale, const Vector2<T>& Center ) {
 
 	for ( Uint32 i = 0; i < 4; i++ ) {
 		if ( V[i].x < Center.x )
-			V[i].x = Center.x - fabs( Center.x - V[i].x ) * scale;
+			V[i].x = Center.x - eeabs( Center.x - V[i].x ) * scale;
 		else
-			V[i].x = Center.x + fabs( Center.x - V[i].x ) * scale;
+			V[i].x = Center.x + eeabs( Center.x - V[i].x ) * scale;
 
 		if ( V[i].y < Center.y )
-			V[i].y = Center.y - fabs( Center.y - V[i].y ) * scale;
+			V[i].y = Center.y - eeabs( Center.y - V[i].y ) * scale;
 		else
-			V[i].y = Center.y + fabs( Center.y - V[i].y ) * scale;
+			V[i].y = Center.y + eeabs( Center.y - V[i].y ) * scale;
 	}
 }
 

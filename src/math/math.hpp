@@ -54,7 +54,7 @@ T IsPow2( T v ) {
 
 template <typename T>
 T LineAngle( const T& X1, const T& Y1, const T& X2, const T& Y2 ) {
-	return atan2( (eeFloat)(Y2 - Y1), (eeFloat)(X2 - X1) ) * d180PI;
+	return eeatan2( (eeFloat)(Y2 - Y1), (eeFloat)(X2 - X1) ) * d180PI;
 }
 eeFloat EE_API LineAngle( const eeVector2f& p1, const eeVector2f& p2 );
 
@@ -82,7 +82,7 @@ void EE_API RotateVectorCentered( eeVector2f* p, const eeFloat& Angle, const eeV
 
 template <typename T>
 T Distance( T x1, T y1, T x2, T y2 ) {
-	return  sqrt( (eeFloat)( (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2) ) );
+	return  eesqrt( (eeFloat)( (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2) ) );
 }
 eeFloat EE_API Distance( const eeVector2f& p1, const eeVector2f& p2);
 
@@ -166,7 +166,7 @@ bool IntersectLines( T Ax, T Ay, T Bx, T By, T Cx, T Cy, T Dx, T Dy, T* X, T* Y 
 	Cx-=Ax; Cy-=Ay;
 	Dx-=Ax; Dy-=Ay;
 
-	distAB=sqrt(Bx*Bx+By*By);
+	distAB=eesqrt(Bx*Bx+By*By);
 
 	theCos=Bx/distAB;
 	theSin=By/distAB;

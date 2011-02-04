@@ -65,6 +65,15 @@ typedef char GLchar;
 #define GL_FILL 0x1B02
 #define GL_LINE_SMOOTH 0x0B20
 #define GL_LIGHTING 0x0B50
+#define GL_CLIP_PLANE0 0x3000
+#define GL_CLIP_PLANE1 0x3001
+#define GL_CLIP_PLANE2 0x3002
+#define GL_CLIP_PLANE3 0x3003
+#define GL_CLIP_PLANE4 0x3004
+#define GL_CLIP_PLANE5 0x3005
+#define GL_POINT_SPRITE 0x8861
+#define GL_VERTEX_PROGRAM_POINT_SIZE 0x8642
+typedef GLfloat		GLdouble;
 #endif
 
 #include "../helper/SOIL/SOIL.h"

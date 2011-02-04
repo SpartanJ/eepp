@@ -153,9 +153,10 @@ namespace EE {
 	#define eeatan2 atan2
 	#define eemod fmod
 	#define eeexp exp
-	#define efow pow
+	#define eepow pow
 	#define eefloor floor
 	#define eeceil ceil
+	#define eeabs abs
 #else
 	typedef float eeFloat; //! The internal floating point used on EE++. \n This can help to improve compatibility with some platforms. \n And helps for an easy change from single precision to double precision.
 	#define eesqrt sqrtf
@@ -168,6 +169,7 @@ namespace EE {
 	#define eepow powf
 	#define eefloor floorf
 	#define eeceil ceilf
+	#define eeabs fabs
 #endif		
 	template<typename T>
 	T eemax( T a, T b ) {

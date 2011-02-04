@@ -265,12 +265,6 @@ void cGL::PolygonMode( GLenum face, GLenum mode ) {
 	#endif
 }
 
-void cGL::PointSize( GLfloat size ) {
-	#ifndef EE_GLES2
-	glPointSize( size );
-	#endif
-}
-
 void cGL::DrawArrays (GLenum mode, GLint first, GLsizei count) {
 	glDrawArrays( mode, first, count );
 }

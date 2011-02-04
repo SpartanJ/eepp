@@ -18,6 +18,10 @@ class cRendererGL : public cGL {
 
 		void ClientActiveTexture( GLenum texture );
 
+		void PointSize( GLfloat size );
+
+		GLfloat PointSize();
+
 		void PushMatrix();
 
 		void PopMatrix();
@@ -48,9 +52,13 @@ class cRendererGL : public cGL {
 
 		void TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate );
 
-		void ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height );
+		void ClipPlane( GLenum plane, const GLdouble *equation );
 
-		void ClipPlaneDisable();
+		void Clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height );
+
+		void Clip2DPlaneDisable();
+
+		void TexEnvi( GLenum target, GLenum pname, GLint param );
 
 		void MultMatrixf ( const GLfloat *m );
 	protected:	
