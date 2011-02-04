@@ -76,6 +76,8 @@ typedef char GLchar;
 typedef GLfloat		GLdouble;
 #endif
 
+#define STBI_TYPE_SPECIFIC_FUNCTIONS
+#include "../helper/SOIL/stb_image.h"
 #include "../helper/SOIL/SOIL.h"
 
 #include "../utils/colors.hpp"

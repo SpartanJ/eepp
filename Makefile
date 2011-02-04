@@ -32,8 +32,18 @@ export CC         	= gcc
 export CPP        	= g++
 endif
 
-export CFLAGS     	= -Wall -Wno-unknown-pragmas $(DEBUGFLAGS) $(BUILDFLAGS)
-export CFLAGSEXT  	= $(DEBUGFLAGS) $(BUILDFLAGS)
+ifeq ($(GLES2), yes)
+	FINALFLAGS = $(DEBUGFLAGS) -DEE_GLES2 -DSOIL_GLES2
+else
+	ifeq ($(GLES1), yes)
+		FINALFLAGS = $(DEBUGFLAGS) -DEE_GLES1 -DSOIL_GLES1
+	else
+		FINALFLAGS = $(DEBUGFLAGS)
+	endif
+endif
+
+export CFLAGS     	= -Wall -Wno-unknown-pragmas $(FINALFLAGS) $(BUILDFLAGS)
+export CFLAGSEXT  	= $(FINALFLAGS) $(BUILDFLAGS)
 export LDFLAGS    	= $(LINKFLAGS)
 export LIBPATH    	= ./
 export VERSION    	= 0.7

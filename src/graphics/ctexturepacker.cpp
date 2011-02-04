@@ -1,6 +1,5 @@
 #include "ctexturepacker.hpp"
 #include "cimage.hpp"
-#include "../helper/SOIL/SOIL.h"
 
 namespace EE { namespace Graphics {
 
@@ -562,7 +561,6 @@ void cTexturePacker::SaveShapes() {
 		TexGrHdr.Flags |= HDR_TEXTURE_GROUP_POW_OF_TWO;
 
 	std::vector<sTextureHdr> TexHdr( TexGrHdr.TextureCount );
-	//sTextureHdr TexHdr[  ];
 
 	TexHdr[ 0 ] = CreateTextureHdr( this );
 

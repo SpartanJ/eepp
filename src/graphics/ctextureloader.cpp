@@ -1,8 +1,5 @@
 #include "ctextureloader.hpp"
 #include "ctexturefactory.hpp"
-#define STBI_TYPE_SPECIFIC_FUNCTIONS
-#include "../helper/SOIL/stb_image.h"
-#include "../helper/SOIL/SOIL.h"
 #include "glhelper.hpp"
 
 namespace EE { namespace Graphics {

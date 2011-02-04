@@ -15,6 +15,15 @@
 
 #define SOIL_CHECK_FOR_GL_ERRORS 0
 
+#if defined( SOIL_GLES2 )
+	#include <GLES2/gl2.h>
+	#include <GLES2/gl2ext.h>
+	#define APIENTRY GL_APIENTRY
+#elif defined( SOIL_GLES1 )
+	#include <GLES/gl.h>
+	#define APIENTRY GL_APIENTRY
+#else
+
 #if defined( __WIN32__ ) || defined( _WIN32 )
 	#define WIN32_LEAN_AND_MEAN
 	#include <windows.h>
@@ -25,9 +34,14 @@
 	#include <OpenGL/gl.h>
 	#include <Carbon/Carbon.h>
 	#define APIENTRY
+#elif defined ( linux ) || defined( __linux__ )
+	#include <GL/gl.h>
+	#include <GL/glx.h>
 #else
 	#include <GL/gl.h>
 	#include <GL/glx.h>
+#endif
+
 #endif
 
 #include "SOIL.h"
@@ -1984,7 +1998,12 @@ int query_DXT_capability( void )
 		{
 			/*	and find the address of the extension function	*/
 			P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC ext_addr = NULL;
-			#ifdef WIN32
+
+			#ifdef SOIL_GLES2
+				ext_addr = (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)&glCompressedTexImage2D;
+			#elif defined( SOIL_GLES1 )
+				ext_addr = (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)&glCompressedTexImage2D;
+			#elif defined( WIN32 )
 				ext_addr = (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)
 						wglGetProcAddress
 						(
@@ -2014,7 +2033,7 @@ int query_DXT_capability( void )
 				CFRelease( bundleURL );
 				CFRelease( extensionName );
 				CFRelease( bundle );
-			#else
+			#else // linux / freebsd / solaris
 				ext_addr = (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)
 						#if !defined(GLX_VERSION_1_4)
 						glXGetProcAddressARB
@@ -2025,6 +2044,7 @@ int query_DXT_capability( void )
 							(const GLubyte *)"glCompressedTexImage2DARB"
 						);
 			#endif
+
 			/*	Flag it so no checks needed later	*/
 			if( NULL == ext_addr )
 			{

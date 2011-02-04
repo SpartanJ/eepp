@@ -16,7 +16,7 @@
 //! Define this to use the template vector from EE
 #define USE_EE_VECTOR
 
-//! Define this to use the templace aabb from EE
+//! Define this to use the template AABB from EE
 #define USE_EE_AABB
 
 //! Define this if you want to invert the BB Y Axis ( by default BB.Top is the bigger y-axis instead of BB.Bottom )

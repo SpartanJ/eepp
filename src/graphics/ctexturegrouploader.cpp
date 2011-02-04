@@ -2,8 +2,6 @@
 #include "cshapegroup.hpp"
 #include "cshapegroupmanager.hpp"
 #include "ctexturepacker.hpp"
-#include "../helper/SOIL/stb_image.h"
-#include "../helper/SOIL/SOIL.h"
 
 namespace EE { namespace Graphics {
 

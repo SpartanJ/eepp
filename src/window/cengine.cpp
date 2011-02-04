@@ -12,6 +12,7 @@
 #include "../audio/caudiolistener.hpp"
 #include "../graphics/glhelper.hpp"
 #include "../helper/haikuttf/hkfontmanager.hpp"
+#include "../helper/SOIL/SOIL.h"
 #include "../helper/SOIL/stb_image.h"
 
 using namespace EE::Graphics;
