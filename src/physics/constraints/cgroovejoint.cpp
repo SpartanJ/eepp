@@ -1,5 +1,10 @@
 #include "cgroovejoint.hpp"
 
+#ifdef PHYSICS_RENDERER_ENABLED
+#include "../../graphics/cglobalbatchrenderer.hpp"
+using namespace EE::Graphics;
+#endif
+
 CP_NAMESPACE_BEGIN
 
 cGrooveJoint::cGrooveJoint( cBody * a, cBody * b, cVect groove_a, cVect groove_b, cVect anchr2 ) {

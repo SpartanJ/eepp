@@ -9,8 +9,11 @@ namespace EE { namespace Window {
 class EE_API cView {
 	public:
 		cView();
+
 		cView( const eeInt& X, const eeInt& Y, const eeInt& Width, const eeInt& Height );
+
 		cView( const eeRecti& View );
+
 		~cView();
 
 		/** Offset the position */

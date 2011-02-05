@@ -18,9 +18,7 @@ using namespace EE::Math;
 #include "../system/tsingleton.hpp"
 using namespace EE::System;
 
-#include "../window/cengine.hpp"
-#include "../window/cinputtextbuffer.hpp"
-#include "../window/cinput.hpp"
+#include "../window/inputhelper.hpp"
 using namespace EE::Window;
 
 #include "../graphics/renders.hpp"

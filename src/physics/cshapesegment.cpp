@@ -1,6 +1,12 @@
 #include "cshapesegment.hpp"
 #include "cspace.hpp"
 
+#ifdef PHYSICS_RENDERER_ENABLED
+#include "../graphics/glhelper.hpp"
+#include "../graphics/cprimitives.hpp"
+using namespace EE::Graphics;
+#endif
+
 CP_NAMESPACE_BEGIN
 
 cShapeSegment * cShapeSegment::New( cBody * body, cVect a, cVect b, cpFloat radius ) {

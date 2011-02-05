@@ -1,5 +1,10 @@
 #include "cpinjoint.hpp"
 
+#ifdef PHYSICS_RENDERER_ENABLED
+#include "../../graphics/cglobalbatchrenderer.hpp"
+using namespace EE::Graphics;
+#endif
+
 CP_NAMESPACE_BEGIN
 
 cPinJoint::cPinJoint( cBody * a, cBody * b, cVect anchr1, cVect anchr2 ) {

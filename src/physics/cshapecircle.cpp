@@ -1,6 +1,11 @@
 #include "cshapecircle.hpp"
 #include "cspace.hpp"
 
+#ifdef PHYSICS_RENDERER_ENABLED
+#include "../graphics/cprimitives.hpp"
+using namespace EE::Graphics;
+#endif
+
 CP_NAMESPACE_BEGIN
 
 cShapeCircle * cShapeCircle::New( cBody * body, cpFloat radius, cVect offset ) {

@@ -1,5 +1,6 @@
 #include "cuitextinput.hpp"
 #include "cuimanager.hpp"
+#include "../window/cengine.hpp"
 
 namespace EE { namespace UI {
 

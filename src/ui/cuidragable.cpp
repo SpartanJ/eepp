@@ -1,5 +1,6 @@
 #include "cuidragable.hpp"
 #include "cuimanager.hpp"
+#include "../window/cinput.hpp"
 
 namespace EE { namespace UI {
 

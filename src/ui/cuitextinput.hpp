@@ -3,6 +3,7 @@
 
 #include "cuicontrolanim.hpp"
 #include "cuitextbox.hpp"
+#include "../window/cinputtextbuffer.hpp"
 
 namespace EE { namespace UI {
 

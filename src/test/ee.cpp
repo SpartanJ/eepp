@@ -1710,8 +1710,8 @@ void cEETest::Demo1Create() {
 
 	mSpace = Physics::cSpace::New();
 	//mSpace->Iterations( 30 );
-	mSpace->ResizeStaticHash( 40.f, 1000 );
-	mSpace->ResizeActiveHash( 40.f, 1000 );
+	//mSpace->ResizeStaticHash( 40.f, 1000 );
+	//mSpace->ResizeActiveHash( 40.f, 1000 );
 	mSpace->Gravity( cVectNew( 0, 100 ) );
 	mSpace->SleepTimeThreshold( 0.5f );
 

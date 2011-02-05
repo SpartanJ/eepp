@@ -3,6 +3,7 @@
 
 #include "cuicontrol.hpp"
 #include "cuicontrolanim.hpp"
+#include "../window/cinput.hpp"
 
 namespace EE { namespace UI {
 
@@ -46,8 +47,11 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 		const Uint32& PressTrigger() const;
 
 		const Uint32& LastPressTrigger() const;
+
+		void ClipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
+
+		void ClipDisable();
 	protected:
-		cEngine *			mEE;
 		cInput *			mKM;
 
 		bool				mInit;

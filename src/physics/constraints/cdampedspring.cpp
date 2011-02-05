@@ -1,5 +1,12 @@
 #include "cdampedspring.hpp"
 
+#ifdef PHYSICS_RENDERER_ENABLED
+#include "../../graphics/glhelper.hpp"
+#include "../../graphics/cglobalbatchrenderer.hpp"
+using namespace EE::Graphics;
+#endif
+
+
 CP_NAMESPACE_BEGIN
 
 cDampedSpring::cDampedSpring( cBody * a, cBody * b, cVect anchr1, cVect anchr2, cpFloat restLength, cpFloat stiffness, cpFloat damping ) {

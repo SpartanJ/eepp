@@ -1,6 +1,11 @@
 #include "cshapepoly.hpp"
 #include "cspace.hpp"
 
+#ifdef PHYSICS_RENDERER_ENABLED
+#include "../graphics/cglobalbatchrenderer.hpp"
+using namespace EE::Graphics;
+#endif
+
 CP_NAMESPACE_BEGIN
 
 cShapePoly * cShapePoly::New( cBody * body, int numVerts, cVect *verts, cVect offset ) {

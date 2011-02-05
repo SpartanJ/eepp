@@ -568,15 +568,15 @@ void cUIControl::InternalDraw() {
 void cUIControl::ClipMe() {
 	if ( mFlags & UI_CLIP_ENABLE ) {
 		if ( mFlags & UI_BORDER )
-			cEngine::instance()->ClipPlaneEnable( mScreenPos.x, mScreenPos.y, mSize.Width(), mSize.Height() + 1 );
+			cUIManager::instance()->ClipEnable( mScreenPos.x, mScreenPos.y, mSize.Width(), mSize.Height() + 1 );
 		else
-			cEngine::instance()->ClipPlaneEnable( mScreenPos.x, mScreenPos.y, mSize.Width(), mSize.Height() );
+			cUIManager::instance()->ClipEnable( mScreenPos.x, mScreenPos.y, mSize.Width(), mSize.Height() );
 	}
 }
 
 void cUIControl::ClipDisable() {
 	if ( mFlags & UI_CLIP_ENABLE )
-		cEngine::instance()->ClipPlaneDisable();
+		cUIManager::instance()->ClipDisable();
 }
 
 void cUIControl::MatrixSet() {

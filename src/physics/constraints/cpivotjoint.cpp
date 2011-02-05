@@ -1,5 +1,10 @@
 #include "cpivotjoint.hpp"
 
+#ifdef PHYSICS_RENDERER_ENABLED
+#include "../../graphics/cglobalbatchrenderer.hpp"
+using namespace EE::Graphics;
+#endif
+
 CP_NAMESPACE_BEGIN
 
 cPivotJoint::cPivotJoint( cBody * a, cBody * b, cVect pivot ) {

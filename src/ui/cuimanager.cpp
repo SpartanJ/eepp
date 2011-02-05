@@ -1,9 +1,9 @@
 #include "cuimanager.hpp"
+#include "../window/cengine.hpp"
 
 namespace EE { namespace UI {
 
 cUIManager::cUIManager() :
-	mEE( NULL ),
 	mKM( NULL ),
 	mInit( false ),
 	mControl( NULL ),
@@ -13,7 +13,6 @@ cUIManager::cUIManager() :
 	mFirstPress( false ),
 	mCbId(-1)
 {
-	mEE = cEngine::instance();
 	mKM = cInput::instance();
 }
 
@@ -64,7 +63,7 @@ void cUIManager::InputCallback( EE_Event * Event ) {
 }
 
 void cUIManager::ResizeControl() {
-	mControl->Size( mEE->GetWidth(), mEE->GetHeight() );
+	mControl->Size( cEngine::instance()->GetWidth(), cEngine::instance()->GetHeight() );
 	SendMsg( mControl, cUIMessage::MsgWindowResize );
 }
 
@@ -125,7 +124,7 @@ void cUIManager::SendMsg( cUIControl * Ctrl, const Uint32& Msg, const Uint32& Fl
 }
 
 void cUIManager::Update() {
-	mElapsed = mEE->Elapsed();
+	mElapsed = cEngine::instance()->Elapsed();
 
 	mControl->Update();
 
@@ -213,6 +212,14 @@ const Uint32& cUIManager::PressTrigger() const {
 
 const Uint32& cUIManager::LastPressTrigger() const {
 	return mKM->LastPressTrigger();
+}
+
+void cUIManager::ClipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
+	cEngine::instance()->ClipPlaneEnable( x, y, Width, Height );
+}
+
+void cUIManager::ClipDisable() {
+	cEngine::instance()->ClipPlaneDisable();
 }
 
 }}

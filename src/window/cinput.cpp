@@ -101,8 +101,6 @@ cInput::cInput() :
 	mMouseSpeed(1.0f)
 	#endif
 {
-	EE = cEngine::instance();
-
 	eeVector2if mTempMouse;
 	SDL_GetMouseState( &mTempMouse.x, &mTempMouse.y );
 	mMousePos.x = (eeInt)mTempMouse.x;
@@ -153,15 +151,15 @@ void cInput::Update() {
 
 				bool bInject = false;
 
-				if ( mMousePos.x >= (eeInt)EE->GetWidth() )
-					mMousePos.x = EE->GetWidth();
+				if ( mMousePos.x >= (eeInt)cEngine::instance()->GetWidth() )
+					mMousePos.x = cEngine::instance()->GetWidth();
 				else if ( mMousePos.x < 0 ) {
 					mMousePos.x = 0;
 					bInject = true;
 				}
 
-				if ( mMousePos.y >= (eeInt)EE->GetHeight() )
-					mMousePos.y = EE->GetHeight();
+				if ( mMousePos.y >= (eeInt)cEngine::instance()->GetHeight() )
+					mMousePos.y = cEngine::instance()->GetHeight();
 				else if ( mMousePos.y < 0 ) {
 					mMousePos.y = 0;
 					bInject = true;
@@ -216,13 +214,13 @@ void cInput::Update() {
 
 				break;
 			case SDL_VIDEORESIZE:
-				EE->ChangeRes(mEvent.resize.w, mEvent.resize.h, EE->Windowed() );
+				cEngine::instance()->ChangeRes(mEvent.resize.w, mEvent.resize.h, cEngine::instance()->Windowed() );
 
 				CallVideoResize();
 
 				break;
 			case SDL_QUIT:
-				EE->Running(false);
+				cEngine::instance()->Running(false);
 				break;
 		}
 

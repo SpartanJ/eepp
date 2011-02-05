@@ -1,6 +1,12 @@
 #include "cspace.hpp"
 #include "cphysicsmanager.hpp"
 
+#ifdef PHYSICS_RENDERER_ENABLED
+#include "../window/cengine.hpp"
+#include "../graphics/cglobalbatchrenderer.hpp"
+using namespace EE::Graphics;
+#endif
+
 CP_NAMESPACE_BEGIN
 
 cSpace * cSpace::New() {
@@ -48,7 +54,7 @@ void cSpace::Step( const cpFloat& dt ) {
 
 void cSpace::Update() {
 	#ifdef PHYSICS_RENDERER_ENABLED
-	Step( cEngine::instance()->Elapsed() / 1000 );
+	Step( Window::cEngine::instance()->Elapsed() / 1000 );
 	#else
 	Step( 1 / 60 );
 	#endif

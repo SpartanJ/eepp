@@ -21,17 +21,4 @@ using namespace EE::System;
 //! Some helpers for the wrapper ( most of them can be disabled in the settings )
 #include "physicshelper.hpp"
 
-//! Dependencies in case that you want to use the EE renderer.
-#ifdef PHYSICS_RENDERER_ENABLED
-
-#include "../window/cengine.hpp"
-using namespace EE::Window;
-
-#include "../graphics/cprimitives.hpp"
-#include "../graphics/cbatchrenderer.hpp"
-#include "../graphics/cglobalbatchrenderer.hpp"
-#include "../graphics/glhelper.hpp"
-
-#endif
-
 #endif
