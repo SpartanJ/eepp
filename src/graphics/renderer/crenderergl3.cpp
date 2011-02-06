@@ -43,7 +43,7 @@ const GLchar * EEGL_SHADER_BASE_VS[] = {
 	#ifdef EE_GLES2
 	"uniform					float dgl_PointSize = 1;\n",
 	#endif
-	"layout(location = 0) in	vec2 dgl_Vertex;\n",			// replaces deprecated gl_Vertex
+	"layout(location = 0) in	vec4 dgl_Vertex;\n",			// replaces deprecated gl_Vertex
 	"layout(location = 2) in	vec4 dgl_Color;\n",				// replaces deprecated gl_Color
 	"layout(location = 4) in	vec2 dgl_TexCoord;\n",			// replaces deprecated gl_TexCoord
 	"invariant out				vec4 Color;\n",					// to fragment shader
@@ -55,8 +55,7 @@ const GLchar * EEGL_SHADER_BASE_VS[] = {
 	#endif
 	"	Color			= dgl_Color;\n",
 	"	TexCoord		= dgl_TexCoord;\n",
-	"	vec4 v4			= vec4( dgl_Vertex, 0.0, 1.0 );\n",
-	"	vec4 vEye		= dgl_ModelViewMatrix * v4;\n",
+	"	vec4 vEye		= dgl_ModelViewMatrix * dgl_Vertex;\n",
 	"	gl_Position		= dgl_ProjectionMatrix * vEye;\n",
 	"	if ( 1 == dgl_ClippingEnabled ) {\n",
 	"		for ( int i = 0; i < MAX_CLIP_PLANES; i++ ) {\n",
@@ -287,8 +286,8 @@ void cRendererGL3::Init() {
 	glGenBuffers( EEGL_ARRAY_STATES_COUNT, &mVBO[0] );
 
 	//"in		 vec2 dgl_Vertex;",
-	glBindBuffer(GL_ARRAY_BUFFER, mVBO[ EEGL_VERTEX_ARRAY ] );
-	glBufferData(GL_ARRAY_BUFFER, 131072, NULL, GL_STREAM_DRAW );
+	glBindBuffer( GL_ARRAY_BUFFER, mVBO[ EEGL_VERTEX_ARRAY ] );
+	glBufferData( GL_ARRAY_BUFFER, 131072, NULL, GL_STREAM_DRAW );
 
 	//"in		 vec4 dgl_Color;",
 	glBindBuffer( GL_ARRAY_BUFFER, mVBO[ EEGL_COLOR_ARRAY ] );
@@ -297,6 +296,27 @@ void cRendererGL3::Init() {
 	//"in		 vec2 dgl_TexCoord;",
 	glBindBuffer( GL_ARRAY_BUFFER, mVBO[ EEGL_TEXTURE_COORD_ARRAY ] );
 	glBufferData( GL_ARRAY_BUFFER, 131072, NULL, GL_STREAM_DRAW );
+}
+
+void cRendererGL3::UpdateMatrix() {
+	switch ( mCurrentMode ) {
+		case GL_PROJECTION:
+		{
+			if ( -1 != mProjectionMatrix_id ) {
+				mCurShader->SetUniformMatrix( mProjectionMatrix_id, &mProjectionMatrix.top()[0][0] );
+			}
+
+			break;
+		}
+		case GL_MODELVIEW:
+		{
+			if ( -1 != mModelViewMatrix_id ) {
+				mCurShader->SetUniformMatrix( mModelViewMatrix_id, &mModelViewMatrix.top()[0][0] );
+			}
+
+			break;
+		}
+	}
 }
 
 void cRendererGL3::PushMatrix() {
@@ -309,25 +329,13 @@ void cRendererGL3::PopMatrix() {
 	UpdateMatrix();
 }
 
-void cRendererGL3::UpdateMatrix() {
-	switch ( mCurrentMode ) {
-		case GL_PROJECTION:
-		{
-			if ( -1 != mProjectionMatrix_id )
-				mCurShader->SetUniformMatrix( mProjectionMatrix_id, &mProjectionMatrix.top()[0][0] );
-			break;
-		}
-		case GL_MODELVIEW:
-		{
-			if ( -1 != mModelViewMatrix_id )
-				mCurShader->SetUniformMatrix( mModelViewMatrix_id, &mModelViewMatrix.top()[0][0] );
-			break;
-		}
-	}
-}
-
 void cRendererGL3::LoadIdentity() {
 	mCurMatrix->top() = glm::mat4(1.0);
+	UpdateMatrix();
+}
+
+void cRendererGL3::MultMatrixf ( const GLfloat * m ) {
+	mCurMatrix->top() *= glm::mat4( m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], m[10], m[11], m[12], m[13], m[14], m[15] );
 	UpdateMatrix();
 }
 
@@ -346,6 +354,21 @@ void cRendererGL3::Scalef( GLfloat x, GLfloat y, GLfloat z ) {
 	UpdateMatrix();
 }
 
+void cRendererGL3::Ortho( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar ) {
+	mCurMatrix->top() *= glm::ortho( left, right, bottom, top , zNear, zFar );
+	UpdateMatrix();
+}
+
+void cRendererGL3::LookAt( GLfloat eyeX, GLfloat eyeY, GLfloat eyeZ, GLfloat centerX, GLfloat centerY, GLfloat centerZ, GLfloat upX, GLfloat upY, GLfloat upZ ) {
+	mCurMatrix->top() *= glm::lookAt( glm::vec3(eyeX, eyeY, eyeZ), glm::vec3(centerX, centerY, centerZ), glm::vec3(upX, upY, upZ) );
+	UpdateMatrix();
+}
+
+void cRendererGL3::Perspective ( GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar ) {
+	mCurMatrix->top() *= glm::perspective( fovy, aspect, zNear, zFar );
+	UpdateMatrix();
+}
+
 void cRendererGL3::MatrixMode(GLenum mode) {
 	mCurrentMode = mode;
 
@@ -361,21 +384,6 @@ void cRendererGL3::MatrixMode(GLenum mode) {
 			break;
 		}
 	}
-}
-
-void cRendererGL3::Ortho( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar ) {
-	mCurMatrix->top() *= glm::ortho( left, right, bottom, top , zNear, zFar );
-	UpdateMatrix();
-}
-
-void cRendererGL3::LookAt( GLfloat eyeX, GLfloat eyeY, GLfloat eyeZ, GLfloat centerX, GLfloat centerY, GLfloat centerZ, GLfloat upX, GLfloat upY, GLfloat upZ ) {
-	mCurMatrix->top() *= glm::lookAt( glm::vec3(eyeX, eyeY, eyeZ), glm::vec3(centerX, centerY, centerZ), glm::vec3(upX, upY, upZ) );
-	UpdateMatrix();
-}
-
-void cRendererGL3::Perspective ( GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar ) {
-	mCurMatrix->top() *= glm::perspective( fovy, aspect, zNear, zFar );
-	UpdateMatrix();
 }
 
 void cRendererGL3::EnableClientState( GLenum array ) {
@@ -515,10 +523,6 @@ void cRendererGL3::ClipPlane( GLenum plane, const GLdouble * equation ) {
 	teq = teq * glm::inverse( mModelViewMatrix.top() );		/// Apply the inverse of the model view matrix to the equation
 
 	glUniform4f( nplane, (GLfloat)teq[0], (GLfloat)teq[1], (GLfloat)teq[2], (GLfloat)teq[3] );
-}
-
-void cRendererGL3::MultMatrixf ( const GLfloat * m ) {
-	mCurMatrix->top() *= glm::mat4( *m );
 }
 
 GLfloat cRendererGL3::PointSize() {

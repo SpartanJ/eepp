@@ -268,6 +268,8 @@ class cEETest : private cThread {
 
 		std::vector<physicDemo> mDemo;
 		Int32					mCurDemo;
+		cSprite *				mBoxSprite;
+		cSprite *				mCircleSprite;
 };
 
 void cEETest::CreateAquaTextureAtlas() {
@@ -1043,6 +1045,11 @@ void cEETest::LoadTextures() {
 	CreateTiling(Wireframe);
 
 	cGlobalShapeGroup::instance()->Add( eeNew( Graphics::cShape, ( TF->Load( MyPath + "data/aqua/aqua_button_ok.png" ), "aqua_button_ok" ) ) );
+
+	mBoxSprite = eeNew( cSprite, () );
+	mBoxSprite->CreateStatic( cGlobalShapeGroup::instance()->Add( eeNew( Graphics::cShape, ( TN[3], "ilmare" ) ) ) );
+	mCircleSprite = eeNew( cSprite, () );
+	mCircleSprite->CreateStatic( cGlobalShapeGroup::instance()->Add( eeNew( Graphics::cShape, ( TN[1], "thecircle" ) ) ) );
 }
 
 void cEETest::RandomizeHeights() {
@@ -1670,6 +1677,8 @@ void cEETest::End() {
 	eeSAFE_DELETE( mFBO );
 	eeSAFE_DELETE( mVBO );
 	eeSAFE_DELETE( mBlindyPtr );
+	eeSAFE_DELETE( mBoxSprite );
+	eeSAFE_DELETE( mCircleSprite );
 
 	cLog::instance()->Save();
 
@@ -1745,7 +1754,7 @@ void cEETest::Demo1Create() {
 			body = mSpace->AddBody( cBody::New( 1.0f, Moment::ForBox( 1.0f, 30.0f, 30.0f ) ) );
 			body->Pos( cVectNew( hw + j * 32 - i * 16, 100 + i * 32 ) );
 
-			shape = mSpace->AddShape( cShapePoly::New( body, 30.f, 30.f ) );
+			shape = mSpace->AddShape( cShapePolySprite::New( body, 30.f, 30.f, mBoxSprite ) );
 			shape->e( 0.0f );
 			shape->u( 0.8f );
 		}
@@ -1756,7 +1765,7 @@ void cEETest::Demo1Create() {
 	body = mSpace->AddBody( cBody::New( 10.0f, Moment::ForCircle( 10.0f, 0.0f, radius, cVectZero ) ) );
 	body->Pos( cVectNew( hw, EE->GetHeight() - radius - 5 ) );
 
-	shape = mSpace->AddShape( cShapeCircle::New( body, radius, cVectZero ) );
+	shape = mSpace->AddShape( cShapeCircleSprite::New( body, radius, cVectZero, mCircleSprite ) );
 	shape->e( 0.0f );
 	shape->u( 0.9f );
 }

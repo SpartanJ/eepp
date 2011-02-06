@@ -13,11 +13,11 @@ class CP_API cShapeCircle : public cShape {
 
 		cVect Offset();
 
-		void Offset( const cVect& offset );
+		virtual void Offset( const cVect& offset );
 
 		cpFloat Radius();
 
-		void Radius( const cpFloat& radius );
+		virtual void Radius( const cpFloat& radius );
 
 		virtual void Draw( cSpace * space );
 };

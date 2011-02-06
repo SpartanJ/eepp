@@ -55,7 +55,6 @@ cpFloat cShapeSegment::QueryHitDist( const cVect start, const cVect end, const c
 }
 
 void cShapeSegment::Draw( cSpace * space ) {
-	//! FIXME: cShapeSegment::Draw
 	#ifdef PHYSICS_RENDERER_ENABLED
 	cpSegmentShape * seg = (cpSegmentShape *)mShape;
 	cVect a = tovect( seg->CP_PRIVATE(ta) );
@@ -64,9 +63,9 @@ void cShapeSegment::Draw( cSpace * space ) {
 	if ( seg->CP_PRIVATE(r) ) {
 		GLi->Disable( GL_TEXTURE_2D );
 		GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
-		GLi->DisableClientState( GL_COLOR_ARRAY );
 
-		GLi->VertexPointer( 3, GL_FLOAT, 0, pillVAR, pillVAR_count * sizeof(GLfloat) * 3 );
+		std::vector<eeColorA> tcolors( pillVAR_count * 4 );
+
 		GLi->PushMatrix();
 
 		cVect d = b - a;
@@ -78,29 +77,30 @@ void cShapeSegment::Draw( cSpace * space ) {
 			 d.x, d.y, 0.0f, 0.0f,
 			 a.x, a.y, 0.0f, 1.0f,
 		};
-		GLi->MultMatrixf(matrix);
 
-		if( !seg->CP_PRIVATE(shape).sensor ){
+		GLi->MultMatrixf( matrix );
+
+		GLi->VertexPointer( 3, GL_FLOAT, 0, pillVAR, pillVAR_count * sizeof(GLfloat) * 3 );
+
+		if( !seg->CP_PRIVATE(shape).sensor ) {
 			eeColorA C = ColorForShape( mShape, space->Space() );
 
-			/// TODO: Implement this fine
-			#ifndef EE_GLES2
-			glColor3ub( C.R(), C.B(), C.B() );
-			#endif
+			tcolors.assign( tcolors.size(), C );
 
-			GLi->DrawArrays(GL_TRIANGLE_FAN, 0, pillVAR_count);
+			GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const GLvoid*>( &tcolors[0] ), pillVAR_count * sizeof(GLfloat) * 4 );
+
+			GLi->DrawArrays( GL_TRIANGLE_FAN, 0, pillVAR_count );
 		}
 
-		#ifndef EE_GLES2
-		glColor3f( 0.4f, 0.4f, 0.4f );
-		#endif
+		tcolors.assign( tcolors.size(), eeColorA( 102, 102, 102, 255 ) );
+
+		GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const GLvoid*>( &tcolors[0] ), pillVAR_count * sizeof(GLfloat) * 4 );
 
 		GLi->DrawArrays( GL_LINE_LOOP, 0, pillVAR_count );
 
 		GLi->PopMatrix();
 
 		GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
-		GLi->EnableClientState( GL_COLOR_ARRAY );
 		GLi->Enable( GL_TEXTURE_2D );
 	} else {
 		cPrimitives p;

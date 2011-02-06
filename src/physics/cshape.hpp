@@ -19,7 +19,7 @@ class CP_API cShape {
 
 		cpShape * Shape() const;
 
-		~cShape();
+		virtual ~cShape();
 
 		cBody * Body() const;
 

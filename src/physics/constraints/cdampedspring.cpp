@@ -55,7 +55,6 @@ void cDampedSpring::Damping( const cpFloat& damping ) {
 }
 
 void cDampedSpring::Draw() {
-	//! FIXME: cDampedSpring::Draw()
 	#ifdef PHYSICS_RENDERER_ENABLED
 	cpDampedSpring * spring = (cpDampedSpring*)mConstraint;
 	cpBody * body_a = mConstraint->a;
@@ -64,7 +63,7 @@ void cDampedSpring::Draw() {
 	cVect a = tovect( cpvadd(body_a->p, cpvrotate(spring->anchr1, body_a->rot)) );
 	cVect b = tovect( cpvadd(body_b->p, cpvrotate(spring->anchr2, body_b->rot)) );
 
-	GLi->PointSize(5.0f);
+	GLi->PointSize( 5.0f );
 
 	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
 	BR->SetTexture( NULL );
@@ -75,7 +74,13 @@ void cDampedSpring::Draw() {
 
 	cVect delta = b - a;
 
+	GLi->Disable( GL_TEXTURE_2D );
+	GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
+
+	std::vector<eeColorA> tcolors( springVAR_count * 4, eeColorA( 0, 255, 0, 255 ) );
+	GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const GLvoid*>( &tcolors[0] ), pillVAR_count * sizeof(GLfloat) * 4 );
 	GLi->VertexPointer( 2, GL_FLOAT, 0, springVAR, springVAR_count * sizeof(GLfloat) * 2 );
+
 	GLi->PushMatrix();
 
 	GLfloat x = a.x;
@@ -85,15 +90,14 @@ void cDampedSpring::Draw() {
 	GLfloat s = 1.0f / cpvlength( tocpv( delta ) );
 
 	const GLfloat matrix[] = {
-			 cos,    sin, 0.0f, 0.0f,
-			-sin*s,  cos*s, 0.0f, 0.0f,
-			0.0f,   0.0f, 1.0f, 0.0f,
-				 x,      y, 0.0f, 1.0f,
+		cos		, sin		, 0.0f, 0.0f,
+		-sin * s, cos * s	, 0.0f, 0.0f,
+		0.0f	, 0.0f		, 1.0f, 0.0f,
+		 x		, y			, 0.0f, 1.0f,
 	};
+	GLi->MultMatrixf( matrix );
 
-	GLi->MultMatrixf(matrix);
-
-	GLi->DrawArrays(GL_LINE_STRIP, 0, springVAR_count);
+	GLi->DrawArrays( GL_LINE_STRIP, 0, springVAR_count );
 
 	GLi->PopMatrix();
 	#endif

@@ -43,6 +43,7 @@ void cPivotJoint::Draw() {
 	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
 
 	cpFloat ps = BR->GetPointSize();
+	BR->SetTexture( NULL );
 	BR->SetPointSize( 10.f );
 	BR->PointsBegin();
 	BR->PointSetColor( eeColorA( 128, 255, 128, 255 ) );

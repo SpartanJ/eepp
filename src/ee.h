@@ -197,5 +197,7 @@
 	#include "physics/constraints/cslidejoint.hpp"
 	#include "physics/moment.hpp"
 	#include "physics/area.hpp"
+	#include "physics/cshapepolysprite.hpp"
+	#include "physics/cshapecirclesprite.hpp"
 	using namespace EE::Physics;
 #endif
