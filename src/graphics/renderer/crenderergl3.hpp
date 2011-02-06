@@ -89,6 +89,18 @@ class cRendererGL3 : public cGL {
 		void ClipPlane( GLenum plane, const GLdouble *equation );
 
 		void TexEnvi( GLenum target, GLenum pname, GLint param );
+
+		void LoadMatrixf( const GLfloat *m );
+
+		void Frustum( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near_val, GLfloat far_val );
+
+		void GetCurrentMatrix( GLenum mode, GLfloat * m );
+
+		glm::mat4 toGLMmat4( const GLfloat * m );
+
+		void fromGLMmat4( glm::mat4 from, GLfloat * to );
+
+		GLenum GetCurrentMatrixMode();
 	protected:
 		std::stack<glm::mat4>	mProjectionMatrix;		// cpu-side
 		GLint					mProjectionMatrix_id;	// cpu-side hook to shader uniform

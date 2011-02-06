@@ -106,6 +106,10 @@ class cGL {
 
 		void Viewport ( GLint x, GLint y, GLsizei width, GLsizei height );
 
+		cRendererGL * GetRendererGL();
+
+		cRendererGL3 * GetRendererGL3();
+
 		virtual void PointSize( GLfloat size ) = 0;
 
 		virtual GLfloat PointSize() = 0;
@@ -160,9 +164,13 @@ class cGL {
 
 		virtual void TexEnvi( GLenum target, GLenum pname, GLint param ) = 0;
 
-		cRendererGL * GetRendererGL();
+		virtual void LoadMatrixf( const GLfloat *m ) = 0;
 
-		cRendererGL3 * GetRendererGL3();
+		virtual void Frustum( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near_val, GLfloat far_val ) = 0;
+
+		virtual void GetCurrentMatrix( GLenum mode, GLfloat * m ) = 0;
+
+		virtual GLenum GetCurrentMatrixMode() = 0;
 	protected:
 		Uint32 mExtensions;
 	private:

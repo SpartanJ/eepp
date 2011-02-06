@@ -61,6 +61,14 @@ class cRendererGL : public cGL {
 		void TexEnvi( GLenum target, GLenum pname, GLint param );
 
 		void MultMatrixf ( const GLfloat *m );
+
+		void LoadMatrixf( const GLfloat *m );
+
+		void Frustum( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near_val, GLfloat far_val );
+
+		void GetCurrentMatrix( GLenum mode, GLfloat * m );
+
+		GLenum GetCurrentMatrixMode();
 	protected:	
 		
 };

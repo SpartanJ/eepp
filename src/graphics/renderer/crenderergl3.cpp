@@ -269,6 +269,17 @@ void cRendererGL3::PlaneStateCheck( bool tryEnable ) {
 void cRendererGL3::Init() {
 	cGL::Init();
 
+	Uint32 i;
+
+	for ( i = 0; i < EEGL_ARRAY_STATES_COUNT; i++ ) {
+		mVBO[i] = 0;
+	}
+
+	for ( i = 0; i < EE_MAX_PLANES; i++ ) {
+		mPlanes[i]			= -1;
+		mPlanesStates[i]	= 0;
+	}
+
 	mShaders[ EEGL_SHADER_BASE ]			= eeNew( cShaderProgram, ( (const char**)EEGL_SHADER_BASE_VS, sizeof(EEGL_SHADER_BASE_VS)/sizeof(const GLchar*), (const char**)EEGL_SHADER_BASE_FS, sizeof(EEGL_SHADER_BASE_FS)/sizeof(const GLchar*), "EEGL_SHADER_BASE_TEX" ) );
 
 	SetShader( mShaders[ EEGL_SHADER_BASE ] );
@@ -277,11 +288,6 @@ void cRendererGL3::Init() {
 	glGenVertexArrays( 1, &mVAO );
 	glBindVertexArray( mVAO );
 	#endif
-
-	memset( mVBO, 0, eeARRAY_SIZE( mVBO ) );
-
-	memset( mPlanes, -1, EE_MAX_PLANES );
-	memset( mPlanesStates, 0, EE_MAX_PLANES );
 
 	glGenBuffers( EEGL_ARRAY_STATES_COUNT, &mVBO[0] );
 
@@ -334,8 +340,12 @@ void cRendererGL3::LoadIdentity() {
 	UpdateMatrix();
 }
 
+glm::mat4 cRendererGL3::toGLMmat4( const GLfloat * m ) {
+	return glm::mat4( m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], m[10], m[11], m[12], m[13], m[14], m[15] );
+}
+
 void cRendererGL3::MultMatrixf ( const GLfloat * m ) {
-	mCurMatrix->top() *= glm::mat4( m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], m[10], m[11], m[12], m[13], m[14], m[15] );
+	mCurMatrix->top() *= toGLMmat4( m );
 	UpdateMatrix();
 }
 
@@ -367,6 +377,48 @@ void cRendererGL3::LookAt( GLfloat eyeX, GLfloat eyeY, GLfloat eyeZ, GLfloat cen
 void cRendererGL3::Perspective ( GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar ) {
 	mCurMatrix->top() *= glm::perspective( fovy, aspect, zNear, zFar );
 	UpdateMatrix();
+}
+
+void cRendererGL3::LoadMatrixf( const GLfloat * m ) {
+	mCurMatrix->top() = toGLMmat4( m );
+	UpdateMatrix();
+}
+
+void cRendererGL3::Frustum( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near_val, GLfloat far_val ) {
+	mCurMatrix->top() *= glm::frustum( left, right, bottom, top, near_val, far_val );
+	UpdateMatrix();
+}
+
+void cRendererGL3::fromGLMmat4( glm::mat4 from, GLfloat * to ) {
+	Int32 i,p;
+
+	for ( i = 0; i < 4; i++ ) {
+		glm::vec4 v = from[i];
+		p		= i * 4;
+		to[p  ]	= v.x;
+		to[p+1]	= v.y;
+		to[p+2]	= v.z;
+		to[p+3]	= v.w;
+	}
+}
+
+void cRendererGL3::GetCurrentMatrix( GLenum mode, GLfloat * m ) {
+	switch ( mode ) {
+		case GL_PROJECTION:
+		{
+			fromGLMmat4( mProjectionMatrix.top(), m );
+			break;
+		}
+		case GL_MODELVIEW:
+		{
+			fromGLMmat4( mModelViewMatrix.top(), m );
+			break;
+		}
+	}
+}
+
+GLenum cRendererGL3::GetCurrentMatrixMode() {
+	return mCurrentMode;
 }
 
 void cRendererGL3::MatrixMode(GLenum mode) {

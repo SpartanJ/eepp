@@ -119,6 +119,10 @@ void cRendererGL::MultMatrixf ( const GLfloat *m ) {
 	glMultMatrixf( m );
 }
 
+void cRendererGL::LoadMatrixf( const GLfloat *m ) {
+	glLoadMatrixf( m );
+}
+
 void cRendererGL::TexEnvi( GLenum target, GLenum pname, GLint param ) {
 	glTexEnvi( target, pname, param );
 }
@@ -129,6 +133,22 @@ GLfloat cRendererGL::PointSize() {
 	glGetFloatv( GL_POINT_SIZE, &ps );
 
 	return ps;
+}
+
+void cRendererGL::Frustum( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near_val, GLfloat far_val ) {
+	glFrustum( left, right, bottom, top, near_val, far_val );
+}
+
+void cRendererGL::GetCurrentMatrix( GLenum mode, GLfloat * m ) {
+	glGetFloatv( mode, m );
+}
+
+GLenum cRendererGL::GetCurrentMatrixMode() {
+	GLint mode;
+
+	glGetIntegerv( GL_MATRIX_MODE, &mode );
+
+	return (GLenum)mode;
 }
 
 #endif

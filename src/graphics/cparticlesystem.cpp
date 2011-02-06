@@ -1,6 +1,5 @@
 #include "cparticlesystem.hpp"
 #include "glhelper.hpp"
-#include "renderer/crenderergl3.hpp"
 
 namespace EE { namespace Graphics {
 
