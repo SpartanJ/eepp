@@ -41,7 +41,7 @@ void cVertexBufferOGL::SetVertexStates() {
 		GLi->EnableClientState( GL_VERTEX_ARRAY );
 		GLi->VertexPointer( eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FLOAT, sizeof(float) * eeVertexElements[ VERTEX_FLAG_POSITION ], &mVertexArray[ VERTEX_FLAG_POSITION ][0], alloc );
 	} else {
-		//GLi->DisableClientState( GL_VERTEX_ARRAY );
+		GLi->DisableClientState( GL_VERTEX_ARRAY );
 	}
 
 	/// COLOR
@@ -49,7 +49,7 @@ void cVertexBufferOGL::SetVertexStates() {
 		GLi->EnableClientState( GL_COLOR_ARRAY );
 		GLi->ColorPointer( eeVertexElements[ VERTEX_FLAG_COLOR ], GL_UNSIGNED_BYTE, sizeof(Uint8) * eeVertexElements[ VERTEX_FLAG_COLOR ], &mColorArray[0], allocC );
 	} else {
-		//GLi->DisableClientState( GL_COLOR_ARRAY );
+		GLi->DisableClientState( GL_COLOR_ARRAY );
 	}
 
 	/// TEXTURES
@@ -61,8 +61,8 @@ void cVertexBufferOGL::SetVertexStates() {
 
 				GLi->TexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], GL_FLOAT, sizeof(float) * eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], &mVertexArray[ VERTEX_FLAG_TEXTURE0 + i ][0], alloc );
 			} else {
-				//GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
 				GLi->Disable( GL_TEXTURE_2D );
+				GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
 			}
 		}
 	} else {
@@ -70,13 +70,29 @@ void cVertexBufferOGL::SetVertexStates() {
 			GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
 			GLi->TexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], GL_FLOAT, sizeof(float) * eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], &mVertexArray[ VERTEX_FLAG_TEXTURE0 ][0], alloc );
 		} else {
-			//GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
 			GLi->Disable( GL_TEXTURE_2D );
+			GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
 		}
 	}
 
 	GLi->ActiveTexture( GL_TEXTURE0 );
 	GLi->ClientActiveTexture( GL_TEXTURE0 );
+}
+
+
+void cVertexBufferOGL::Unbind() {
+	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
+		GLi->EnableClientState( GL_VERTEX_ARRAY );
+	}
+
+	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) ) {
+		GLi->EnableClientState( GL_COLOR_ARRAY );
+	}
+
+	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 ) ) {
+		GLi->Enable( GL_TEXTURE_2D );
+		GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
+	}
 }
 
 void cVertexBufferOGL::Update( const Uint32& Types, bool Indices ) {

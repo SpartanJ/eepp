@@ -51,6 +51,10 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 		void ClipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
 
 		void ClipDisable();
+
+		void SendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod );
+
+		void SendKeyDown( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod );
 	protected:
 		cInput *			mKM;
 
@@ -64,8 +68,6 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 		Int32 				mCbId;
 
 		void				InputCallback( EE_Event * Event );
-		void				SendKeyUp( EE_Event * Event );
-		void				SendKeyDown( EE_Event * Event );
 };
 
 }}

@@ -19,12 +19,12 @@ using namespace EE::Graphics;
 using namespace EE::Graphics::Private;
 
 #define T(A, B, C, D)	(int)((A<<24)|(B<<16)|(C<<8)|(D<<0))
-#define FORMAT_PREFIX	"SDL_scrap_0x"
+#define FORMAT_PREFIX	"EE_scrap_0x"
 
 namespace EE { namespace Window {
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX
-static int clipboard_filter(const SDL_Event *event) {
+static int clipboard_filter( const SDL_Event *event ) {
 	/* Post all non-window manager specific events */
 	if ( event->type != SDL_SYSWMEVENT ) {
 		return(1);
@@ -270,7 +270,7 @@ void cEngine::Setup2D( const bool& KeepView ) {
 
 	SetLineSmooth( mVideoInfo.LineSmooth );
 
-	GLi->Enable( GL_TEXTURE_2D ); 						// Enable Textures
+	GLi->Enable	( GL_TEXTURE_2D ); 						// Enable Textures
 	GLi->Disable( GL_DEPTH_TEST );
 	GLi->Disable( GL_LIGHTING );
 
@@ -909,7 +909,7 @@ void cEngine::clipboard_get_scrap(int type, int *dstlen, char **dst) {
         owner = mVideoInfo.info.info.x11.wmwindow;
 		mVideoInfo.info.info.x11.lock_func();
 
-		selection = XInternAtom( mVideoInfo.info.info.x11.display, "SDL_SELECTION", False);
+		selection = XInternAtom( mVideoInfo.info.info.x11.display, "SELECTION", False);
 		XConvertSelection( mVideoInfo.info.info.x11.display, XA_PRIMARY, format, selection, owner, CurrentTime);
 
         mVideoInfo.info.info.x11.unlock_func();

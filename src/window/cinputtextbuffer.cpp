@@ -53,15 +53,16 @@ void cInputTextBuffer::Start() {
 void cInputTextBuffer::Update( EE_Event* Event ) {
 	if ( Active() ) {
 		ChangedSinceLastUpdate( false );
-		Int32 c = convertKeyCharacter( Event );
+		Int32 c = eeConvertKeyCharacter( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
 
 		if ( SupportFreeEditing() ) {
 			switch ( Event->type ) {
 				case SDL_KEYDOWN:
+				{
 					if ( cInput::instance()->ShiftPressed() || cInput::instance()->ControlPressed() ) {
 						if ( !AllowOnlyNumbers() &&
-							(	( ( Event->key.keysym.mod & KMOD_SHIFT ) && Event->key.keysym.sym == SDLK_INSERT ) ||
-								( ( Event->key.keysym.mod & KMOD_CTRL ) && Event->key.keysym.sym == SDLK_v ) )
+							(	( ( Event->key.keysym.mod & KEYMOD_SHIFT ) && c == KEY_INSERT ) ||
+								( ( Event->key.keysym.mod & KEYMOD_CTRL ) && Event->key.keysym.sym == SDLK_v ) )
 							)
 						{
 							std::wstring txt = cEngine::instance()->GetClipboardTextWStr();
@@ -120,7 +121,7 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 						if ( mEnterCall.IsSet() )
 							mEnterCall();
 
- 					} else if ( c == KEY_LEFT ) {
+					} else if ( c == KEY_LEFT ) {
 						if ( ( mPromptPos - 1 ) >= 0 ) {
 							mPromptPos--;
 							AutoPrompt( false );
@@ -168,9 +169,11 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 					}
 
 					break;
+				}
 				case SDL_KEYUP:
+				{
 					if ( SupportNewLine() ) {
-						if ( Event->key.keysym.sym == SDLK_END ) {
+						if ( c == KEY_END ) {
 							for ( Uint32 i = mPromptPos; i < mText.size(); i++ )  {
 								if ( mText[i] == L'\n' ) {
 									mPromptPos = i;
@@ -185,7 +188,7 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 							}
 						}
 
-						if ( Event->key.keysym.sym == SDLK_HOME ) {
+						if ( c == KEY_HOME ) {
 							if ( 0 != mPromptPos ) {
 								for ( Int32 i = (Int32)mPromptPos - 1; i >= 0; i-- )  {
 									if ( i >= 0 ) {
@@ -204,16 +207,17 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 							}
 						}
 					} else {
-						if ( Event->key.keysym.sym == SDLK_END ) {
+						if ( c == KEY_END ) {
 							AutoPrompt( true );
 						}
 
-						if ( Event->key.keysym.sym == SDLK_HOME ) {
+						if ( c == KEY_HOME ) {
 							mPromptPos = 0;
 							AutoPrompt(false);
 						}
 					}
 					break;
+				}
 			}
 		} else {
 			if ( Event->type == SDL_KEYDOWN ) {

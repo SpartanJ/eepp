@@ -1,12 +1,5 @@
 #include "../ee.h"
 
-/**
-@TODO Add some Surface Grid class, to create special effects ( waved texture, and stuff like that ).
-@TODO Add Scripting support ( lua or squirrel ).
-@TODO Encapsulate SDL and OpenGL ( and remove unnecessary dependencies ).
-@TODO Support color cursors ( not only black and white cursors, that really sucks ) - Imposible with SDL 1.2
-*/
-
 class cUITest : public cUIControlAnim {
 	public:
 		cUITest( cUIControlAnim::CreateParams& Params ) : cUIControlAnim( Params ) 	{ mOldColor = mBackground->Colors(); }
@@ -1177,7 +1170,7 @@ void cEETest::Screen2() {
 	scale = (!side) ? scale+et * 0.00025f : scale-et * 0.00025f;
 
 	if ( mUseShaders ) {
-		mBlurFactor = scale * 0.01f;
+		mBlurFactor = ( 1.5f * 0.01f ) - ( scale * 0.01f );
 		mShaderProgram->Bind();
 		mShaderProgram->SetUniform( "blurfactor" , mBlurFactor );
 	}
@@ -1754,7 +1747,8 @@ void cEETest::Demo1Create() {
 			body = mSpace->AddBody( cBody::New( 1.0f, Moment::ForBox( 1.0f, 30.0f, 30.0f ) ) );
 			body->Pos( cVectNew( hw + j * 32 - i * 16, 100 + i * 32 ) );
 
-			shape = mSpace->AddShape( cShapePolySprite::New( body, 30.f, 30.f, mBoxSprite ) );
+			//shape = mSpace->AddShape( cShapePolySprite::New( body, 30.f, 30.f, mBoxSprite ) );
+			shape = mSpace->AddShape( cShapePoly::New( body, 30.f, 30.f ) );
 			shape->e( 0.0f );
 			shape->u( 0.8f );
 		}
@@ -1765,7 +1759,8 @@ void cEETest::Demo1Create() {
 	body = mSpace->AddBody( cBody::New( 10.0f, Moment::ForCircle( 10.0f, 0.0f, radius, cVectZero ) ) );
 	body->Pos( cVectNew( hw, EE->GetHeight() - radius - 5 ) );
 
-	shape = mSpace->AddShape( cShapeCircleSprite::New( body, radius, cVectZero, mCircleSprite ) );
+	//shape = mSpace->AddShape( cShapeCircleSprite::New( body, radius, cVectZero, mCircleSprite ) );
+	shape = mSpace->AddShape( cShapeCircle::New( body, radius, cVectZero ) );
 	shape->e( 0.0f );
 	shape->u( 0.9f );
 }

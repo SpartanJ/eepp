@@ -48,7 +48,7 @@ void cUIDragable::Update() {
 		return;
 
 	if ( Dragging() ) {
-		if ( !( cInput::instance()->PressTrigger() & mDragButton ) ) {
+		if ( !( cUIManager::instance()->PressTrigger() & mDragButton ) ) {
 			Dragging( false );
 			return;
 		}

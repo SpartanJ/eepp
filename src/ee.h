@@ -11,13 +11,22 @@
 	Thanks to: \n
 		* Sean Barrett for the stb_vorbis and stb_image libraries. \n
 		* Sam Latinga for Simple DirectMedia Layer library. \n
-		* Lucian Wischik for ziputils library. \n
 		* Jonathan Dummer for the Simple OpenGL Image Library. \n
 		* Laurent Gomila for the SFML library ( eepp audio module is based on the SFML audio module ) \n
 		* OGRE staff for the Timer implementation \n
-		* Amir 'Genjix' Taaki for the information of SDL_Collide.h. \n
+		* Lewis Van Winkle for PlusCallback \n
+		* Dieter Baron and Thomas Klausner for libzip \n
+		* Jean-loup Gailly and Mark Adler for zlib \n
+		* Milan Ikits and Marcelo Magallon for GLEW \n
 		* And a lot more people!
 **/
+
+/**
+	@TODO Add some Surface Grid class, to create special effects ( waved texture, and stuff like that ).
+	@TODO Add Scripting support ( lua or squirrel ).
+	@TODO Encapsulate SDL and OpenGL ( and remove unnecessary dependencies ).
+	@TODO Support color cursors ( not only black and white cursors, that really sucks ) - Imposible with SDL 1.2
+*/
 
 	// General includes and declarations
 	#include "base.hpp"

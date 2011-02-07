@@ -161,9 +161,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 		GLi->Translatef( Center.x , Center.y, 0.f );
 		GLi->Rotatef( Angle, 0.0f, 0.0f, 1.0f );
 		GLi->Scalef( Scale, Scale, 1.0f );
-		GLi->Translatef( -Center.x, -Center.y, 0.f );
-
-		GLi->Translatef( X, Y, 0.f );
+		GLi->Translatef( -Center.x + X, -Center.y + Y, 0.f );
 	}
 
 	std::vector<eeVertexCoords>& RenderCoords = TextCache.VertextCoords();

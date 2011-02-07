@@ -263,10 +263,6 @@ void cParticleSystem::Draw() {
     TF->SetPreBlendFunc( ALPHA_BLENDONE );
 
 	if ( mPointsSup ) {
-		if ( GLi->Version() == GLv_3 ) {
-			GLi->Enable( GL_VERTEX_PROGRAM_POINT_SIZE );
-		}
-
 		GLi->Enable( GL_POINT_SPRITE );
 		GLi->PointSize( mSize );
 
@@ -278,10 +274,6 @@ void cParticleSystem::Draw() {
 		GLi->DrawArrays( GL_POINTS, 0, (GLsizei)mPCount );
 
 		GLi->Disable( GL_POINT_SPRITE );
-
-		if ( GLi->Version() == GLv_3 ) {
-			GLi->Disable( GL_VERTEX_PROGRAM_POINT_SIZE );
-		}
 	} else {
 		cTexture * Tex = TF->GetTexture( mTexId );
 

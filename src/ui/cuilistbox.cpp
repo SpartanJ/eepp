@@ -548,7 +548,7 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 }
 
 void cUIListBox::ItemKeyEvent( const cUIEventKey &Event ) {
-	cUIEventKey ItemEvent( Event.Ctrl(), cUIEvent::EventOnItemKeyDown, Event.KeyCode(), Event.Char() );
+	cUIEventKey ItemEvent( Event.Ctrl(), cUIEvent::EventOnItemKeyDown, Event.KeyCode(), Event.Char(), Event.Mod() );
 	SendEvent( &ItemEvent );
 }
 

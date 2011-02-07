@@ -73,18 +73,6 @@ typedef SOPHIST_uint32		u32;
 
 #define HK_TTF_STYLE_NO_GLYPH_CHANGE				( HK_TTF_STYLE_UNDERLINE | HK_TTF_STYLE_STRIKETHROUGH )
 
-/** Disable this until implement support for multi-threaded memory manager
-#ifdef EE_DEBUG
-#include "../../base/memorymanager.hpp"
-#define hkNew eeNew
-#define hkNewArray eeNewArray
-#define hkMalloc eeMalloc
-#define hkDelete eeDelete
-#define hkDeleteArray eeDeleteArray
-#define hkFree eeFree
-#endif
-*/
-
 #ifndef hkNew
 #define hkNew( classType, constructor ) new classType constructor
 #endif

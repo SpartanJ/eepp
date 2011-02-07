@@ -35,12 +35,6 @@ cVertexBuffer::cVertexBuffer( const Uint32& VertexFlags, EE_DRAW_MODE DrawType, 
 }
 
 cVertexBuffer::~cVertexBuffer() {
-	for( Int32 i = 0; i < VERTEX_FLAGS_COUNT_ARR; i++ )
-		mVertexArray[ i ].clear();
-
-	mColorArray.clear();
-	mIndexArray.clear();
-
 	cVertexBufferManager::instance()->Remove( this );
 }
 
@@ -139,24 +133,6 @@ void cVertexBuffer::SetElementNum( Int32 Num ) {
 
 const Int32& cVertexBuffer::GetElementNum() const {
 	return mElemDraw;
-}
-
-void cVertexBuffer::Unbind() {
-	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
-		if ( GLv_3 == GLi->Version() ) {
-			GLi->EnableClientState( GL_VERTEX_ARRAY );
-		}
-	}
-
-	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) ) {
-		if ( GLv_3 == GLi->Version() ) {
-			GLi->EnableClientState( GL_COLOR_ARRAY );
-		}
-	}
-
-	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 ) ) {
-		GLi->Enable( GL_TEXTURE_2D );
-	}
 }
 
 }}

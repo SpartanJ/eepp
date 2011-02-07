@@ -62,25 +62,32 @@ void cShapePoly::Draw( cSpace * space ) {
 
 	eeColorA Col = ColorForShape( (cpShape *)poly, space->Space() );
 
-	// Could be a triangle fan
-	BR->PointsBegin();
-	BR->PolygonSetColor( Col );
-
 	if( !poly->CP_PRIVATE(shape).sensor ){
-		for ( int i = 0; i < poly->CP_PRIVATE(numVerts); i++ ) {
-			BR->BatchPolygonByPoint( poly->CP_PRIVATE(tVerts)[i].x, poly->CP_PRIVATE(tVerts)[i].y );
+		if ( 4 != poly->CP_PRIVATE(numVerts) ) {
+			BR->PointsBegin();
+			BR->PolygonSetColor( Col );
+
+			for ( int i = 0; i < poly->CP_PRIVATE(numVerts); i++ ) {
+				BR->BatchPolygonByPoint( poly->CP_PRIVATE(tVerts)[i].x, poly->CP_PRIVATE(tVerts)[i].y );
+			}
+		} else {
+			BR->QuadsBegin();
+			BR->QuadsSetColor( Col );
+
+			BR->BatchQuadFreeEx(poly->CP_PRIVATE(tVerts)[0].x, poly->CP_PRIVATE(tVerts)[0].y, poly->CP_PRIVATE(tVerts)[1].x, poly->CP_PRIVATE(tVerts)[1].y, poly->CP_PRIVATE(tVerts)[2].x, poly->CP_PRIVATE(tVerts)[2].y, poly->CP_PRIVATE(tVerts)[3].x, poly->CP_PRIVATE(tVerts)[3].y );
 		}
 
-		BR->Draw();
+		BR->DrawOpt();
 	}
 
+	BR->LineLoopBegin();
 	BR->LineLoopSetColor( Col );
 
 	for ( int i = 0; i < poly->CP_PRIVATE(numVerts); i++ ) {
 		BR->BatchLineLoop( poly->CP_PRIVATE(tVerts)[i].x, poly->CP_PRIVATE(tVerts)[i].y );
 	}
 
-	BR->Draw();
+	BR->DrawOpt();
 	#endif
 }
 

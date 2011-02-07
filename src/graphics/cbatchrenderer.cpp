@@ -98,12 +98,6 @@ void cBatchRenderer::Flush() {
 
 	bool CreateMatrix = ( mRotation || mScale != 1.0f || mPosition.x || mPosition.y );
 
-	if ( NULL != mTexture ) {
-		cTextureFactory::instance()->Bind( mTexture );
-	} else {
-		GLi->Disable( GL_TEXTURE_2D );
-	}
-
 	cTextureFactory::instance()->SetPreBlendFunc( mBlend );
 
 	if ( mCurrentMode == DM_POINTS && NULL != mTexture ) {
@@ -115,9 +109,7 @@ void cBatchRenderer::Flush() {
 		GLi->LoadIdentity();
 		GLi->PushMatrix();
 
-		GLi->Translatef( mPosition.x, mPosition.y, 0.0f);
-
-		GLi->Translatef( mCenter.x, mCenter.y, 0.0f);
+		GLi->Translatef( mPosition.x + mCenter.x, mPosition.y + mCenter.y, 0.0f);
 		GLi->Rotatef( mRotation, 0.0f, 0.0f, 1.0f );
 		GLi->Scalef( mScale, mScale, 1.0f );
 		GLi->Translatef( -mCenter.x, -mCenter.y, 0.0f);
@@ -128,16 +120,19 @@ void cBatchRenderer::Flush() {
 	GLi->VertexPointer	( 2, GL_FLOAT			, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] )												, alloc	);
 	GLi->ColorPointer	( 4, GL_UNSIGNED_BYTE	, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f) + sizeof(eeTexCoord)	, alloc	);
 
-	if ( GLv_3 == GLi->Version() ) {
-		if ( NULL != mTexture )
-			GLi->TexCoordPointer( 2, GL_FLOAT			, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f)				, alloc	);
+	if ( NULL != mTexture ) {
+		cTextureFactory::instance()->Bind( mTexture );
+		GLi->TexCoordPointer( 2, GL_FLOAT		, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f)						, alloc	);
 	} else {
-		GLi->TexCoordPointer( 2, GL_FLOAT			, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f)					, alloc	);
+		GLi->Disable( GL_TEXTURE_2D );
+		GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
 	}
 
 	#ifdef EE_GLES
 	if ( DM_QUADS == mCurrentMode ) {
 		GLi->DrawArrays( DM_TRIANGLES, 0, NumVertex );
+	} else if ( DM_POLYGON == mCurrentMode ) {
+		GLi->DrawArrays( DM_TRIANGLE_FAN, 0, NumVertex );
 	} else
 	#endif
 	{
@@ -154,6 +149,7 @@ void cBatchRenderer::Flush() {
 
 	if ( mTexture == 0 ) {
 		GLi->Enable( GL_TEXTURE_2D );
+		GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
 	}
 }
 

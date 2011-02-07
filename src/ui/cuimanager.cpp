@@ -54,10 +54,10 @@ void cUIManager::Shutdown() {
 void cUIManager::InputCallback( EE_Event * Event ) {
 	switch( Event->type ) {
 		case SDL_KEYUP:
-			SendKeyUp( Event );
+			SendKeyUp( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
 			break;
 		case SDL_KEYDOWN:
-			SendKeyDown( Event );
+			SendKeyDown( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
 			break;
 	}
 }
@@ -67,8 +67,8 @@ void cUIManager::ResizeControl() {
 	SendMsg( mControl, cUIMessage::MsgWindowResize );
 }
 
-void cUIManager::SendKeyUp( EE_Event * Event ) {
-	cUIEventKey	KeyEvent	= cUIEventKey( mFocusControl, cUIEvent::EventKeyUp, Event->key.keysym.sym, Event->key.keysym.unicode );
+void cUIManager::SendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod ) {
+	cUIEventKey	KeyEvent	= cUIEventKey( mFocusControl, cUIEvent::EventKeyUp, KeyCode, Char, Mod );
 	cUIControl * CtrlLoop	= mFocusControl;
 
 	while( NULL != CtrlLoop ) {
@@ -79,8 +79,8 @@ void cUIManager::SendKeyUp( EE_Event * Event ) {
 	}
 }
 
-void cUIManager::SendKeyDown( EE_Event * Event ) {
-	cUIEventKey	KeyEvent	= cUIEventKey( mFocusControl, cUIEvent::EventKeyDown, Event->key.keysym.sym, Event->key.keysym.unicode );
+void cUIManager::SendKeyDown( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod ) {
+	cUIEventKey	KeyEvent	= cUIEventKey( mFocusControl, cUIEvent::EventKeyDown, KeyCode, Char, Mod );
 	cUIControl * CtrlLoop	= mFocusControl;
 
 	while( NULL != CtrlLoop ) {

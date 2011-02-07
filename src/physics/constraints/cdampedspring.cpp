@@ -100,6 +100,9 @@ void cDampedSpring::Draw() {
 	GLi->DrawArrays( GL_LINE_STRIP, 0, springVAR_count );
 
 	GLi->PopMatrix();
+
+	GLi->Enable( GL_TEXTURE_2D );
+	GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
 	#endif
 }
 

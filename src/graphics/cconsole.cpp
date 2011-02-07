@@ -304,81 +304,79 @@ void cConsole::PrintCommandsStartingWith( const std::wstring& start ) {
 	}
 }
 
-void cConsole::PrivInputCallback( EE_Event* Event ) {
-	switch( Event->type ) {
-		case SDL_KEYUP:
-			if ( mVisible ) {
-				if ( ( Event->key.keysym.sym == SDLK_TAB ) && (eeUint)mTBuf.CurPos() == mTBuf.Buffer().size() ) {
-					PrintCommandsStartingWith( mTBuf.Buffer() );
-				}
+void cConsole::PrivInputCallback( EE_Event * Event ) {
+	Uint8 etype = Event->type;
+
+	if ( mVisible ) {
+		Uint32 KeyCode	= (Uint32)Event->key.keysym.sym;
+		Uint32 Button	= Event->button.button;
+
+		if ( SDL_KEYDOWN == etype ) {
+			if ( ( KeyCode == KEY_TAB ) && (eeUint)mTBuf.CurPos() == mTBuf.Buffer().size() ) {
+				PrintCommandsStartingWith( mTBuf.Buffer() );
 			}
-		case SDL_KEYDOWN:
-			if ( mVisible ) {
-				if ( mLastCommands.size() > 0 ) {
-					if ( Event->key.keysym.sym == SDLK_UP && mLastLogPos > 0 )
-						mLastLogPos--;
 
-					if ( Event->key.keysym.sym == SDLK_DOWN && mLastLogPos < static_cast<eeInt>( mLastCommands.size() ) )
-						mLastLogPos++;
+			if ( mLastCommands.size() > 0 ) {
+				if ( KeyCode == KEY_UP && mLastLogPos > 0 ) {
+					mLastLogPos--;
+				}
 
-					if ( Event->key.keysym.sym == SDLK_UP ||  Event->key.keysym.sym == SDLK_DOWN ) {
-						if ( mLastLogPos == static_cast<eeInt>( mLastCommands.size() ) ) {
-							mTBuf.Buffer( L"" );
-						} else {
-							mTBuf.Buffer( mLastCommands[mLastLogPos] );
-						}
+				if ( KeyCode == KEY_DOWN && mLastLogPos < static_cast<eeInt>( mLastCommands.size() ) ) {
+					mLastLogPos++;
+				}
+
+				if ( KeyCode == KEY_UP || KeyCode == KEY_DOWN ) {
+					if ( mLastLogPos == static_cast<eeInt>( mLastCommands.size() ) ) {
+						mTBuf.Buffer( L"" );
+					} else {
+						mTBuf.Buffer( mLastCommands[mLastLogPos] );
 					}
 				}
-
-				if ( Event->key.keysym.sym == SDLK_PAGEUP ) {
-					if ( mCon.ConMin - mCon.ConModif > 0 )
-						mCon.ConModif++;
-				}
-
-				if ( Event->key.keysym.sym == SDLK_PAGEDOWN ) {
-					if ( mCon.ConModif > 0 )
-						mCon.ConModif--;
-				}
-
-				if ( Event->key.keysym.sym == SDLK_HOME ) {
-					Int16 LinesInScreen = static_cast<Int16> ( (mCurHeight / mFontSize) - 1 );
-					if ( static_cast<Int16>( mCmdLog.size() ) > LinesInScreen )
-						mCon.ConModif = mCon.ConMin;
-				}
-
-				if ( Event->key.keysym.sym == SDLK_END ) {
-					mCon.ConModif = 0;
-				}
 			}
-			break;
-		case SDL_VIDEOEXPOSE:
-		case SDL_VIDEORESIZE: // Fix the size of the console if the resolution change
-			mWidth = (eeFloat) cEngine::instance()->GetWidth();
-			mHeight = (eeFloat) cEngine::instance()->GetHeight();
-			mHeightMin = (eeFloat) cEngine::instance()->GetHeight() * 0.4f;
 
-			if (mVisible) {
-				if ( mExpand )
-					mCurHeight = mHeight;
-				else
-					mCurHeight = mHeightMin;
-
-				mY = mCurHeight;
+			if ( KeyCode == KEY_PAGEUP ) {
+				if ( mCon.ConMin - mCon.ConModif > 0 )
+					mCon.ConModif++;
 			}
-			break;
-		case SDL_MOUSEBUTTONDOWN:
-			if ( mVisible ) {
-				if ( Event->button.button == SDL_BUTTON_WHEELUP ) {
-					if ( mCon.ConMin - mCon.ConModif > 0 )
-						mCon.ConModif++;
-				}
 
-				if ( Event->button.button == SDL_BUTTON_WHEELDOWN ) {
-					if ( mCon.ConModif > 0 )
-						mCon.ConModif--;
-				}
+			if ( KeyCode == KEY_PAGEDOWN ) {
+				if ( mCon.ConModif > 0 )
+					mCon.ConModif--;
 			}
-			break;
+
+			if ( KeyCode == KEY_HOME ) {
+				Int16 LinesInScreen = static_cast<Int16> ( (mCurHeight / mFontSize) - 1 );
+				if ( static_cast<Int16>( mCmdLog.size() ) > LinesInScreen )
+					mCon.ConModif = mCon.ConMin;
+			}
+
+			if ( KeyCode == KEY_END ) {
+				mCon.ConModif = 0;
+			}
+		} else if ( SDL_MOUSEBUTTONDOWN == etype ) {
+			if ( Button == EE_BUTTON_WHEELUP ) {
+				if ( mCon.ConMin - mCon.ConModif > 0 )
+					mCon.ConModif++;
+			}
+
+			if ( Button == EE_BUTTON_WHEELDOWN ) {
+				if ( mCon.ConModif > 0 )
+					mCon.ConModif--;
+			}
+		}
+	} else if ( SDL_VIDEOEXPOSE == etype || SDL_VIDEORESIZE == etype ) {
+		mWidth		= (eeFloat) cEngine::instance()->GetWidth();
+		mHeight		= (eeFloat) cEngine::instance()->GetHeight();
+		mHeightMin	= (eeFloat) cEngine::instance()->GetHeight() * 0.4f;
+
+		if ( mVisible ) {
+			if ( mExpand )
+				mCurHeight = mHeight;
+			else
+				mCurHeight = mHeightMin;
+
+			mY = mCurHeight;
+		}
 	}
 }
 

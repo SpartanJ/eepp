@@ -101,6 +101,8 @@ class cRendererGL3 : public cGL {
 		void fromGLMmat4( glm::mat4 from, GLfloat * to );
 
 		GLenum GetCurrentMatrixMode();
+
+		void BindGlobalVAO();
 	protected:
 		std::stack<glm::mat4>	mProjectionMatrix;		// cpu-side
 		GLint					mProjectionMatrix_id;	// cpu-side hook to shader uniform

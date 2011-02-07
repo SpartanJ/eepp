@@ -100,8 +100,8 @@ void cShapeSegment::Draw( cSpace * space ) {
 
 		GLi->PopMatrix();
 
-		GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
 		GLi->Enable( GL_TEXTURE_2D );
+		GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
 	} else {
 		cPrimitives p;
 		p.DrawLine( eeVector2f( a.x, a.y ), eeVector2f( b.x, b.y ) );

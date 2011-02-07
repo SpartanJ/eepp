@@ -50,7 +50,7 @@ class cVertexBuffer {
 
 		virtual void Bind() = 0;
 
-		virtual void Unbind();
+		virtual void Unbind() = 0;
 
 		virtual void Draw() = 0;
 
