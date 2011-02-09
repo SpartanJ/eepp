@@ -8,11 +8,16 @@ using namespace EE::Window;
 
 namespace EE { namespace Graphics {
 
-cConsole::cConsole() : 	mLastLogPos(0), mEnabled(false), mVisible(false), mFadeIn(false), mFadeOut(false), mExpand(false), mFading(false), mShowFps(false),
-						mConColor(35, 47, 73, 230), mConLineColor(55, 67, 93, 230), mFontColor(153, 153, 179, 230), mFontLineColor(255, 255, 255, 230),
-						mWidth(0), mHeight(0), mHeightMin(0), mY(0.0f), mA(0.0f), mFadeSpeed(250.f),
-						mMaxLogLines(1024), mFont(NULL), mTexId(0), mCurAlpha(0), mCurSide(false)
+cConsole::cConsole( cWindow * window ) :
+	mWindow( window ),
+	mLastLogPos(0), mEnabled(false), mVisible(false), mFadeIn(false), mFadeOut(false), mExpand(false), mFading(false), mShowFps(false),
+	mConColor(35, 47, 73, 230), mConLineColor(55, 67, 93, 230), mFontColor(153, 153, 179, 230), mFontLineColor(255, 255, 255, 230),
+	mWidth(0), mHeight(0), mHeightMin(0), mY(0.0f), mA(0.0f), mFadeSpeed(250.f),
+	mMaxLogLines(1024), mFont(NULL), mTexId(0), mCurAlpha(0), mCurSide(false)
 {
+	if ( NULL == mWindow ) {
+		mWindow = cEngine::instance()->GetCurrentWindow();
+	}
 }
 
 cConsole::~cConsole() {
@@ -20,11 +25,20 @@ cConsole::~cConsole() {
 	mCmdLog.clear();
 	mLastCommands.clear();
 
-	if ( mMyCallback && NULL != cInput::ExistsSingleton() )
-		cInput::instance()->PopCallback( mMyCallback );
+	if ( mMyCallback &&
+		NULL != cEngine::ExistsSingleton() &&
+		cEngine::instance()->ExistsWindow( mWindow )
+	)
+	{
+		mWindow->GetInput()->PopCallback( mMyCallback );
+	}
 }
 
 void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const eeUint& MaxLogLines, const Uint32& TextureId ) {
+	if ( NULL == mWindow ) {
+		mWindow = cEngine::instance()->GetCurrentWindow();
+	}
+
 	mFont = Font;
 
 	mFontSize = (eeFloat)mFont->GetFontSize();
@@ -41,11 +55,15 @@ void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const eeUin
 	if ( MakeDefaultCommands )
 		CreateDefaultCommands();
 
-	mWidth = (eeFloat) cEngine::instance()->GetWidth();
-	mHeight = (eeFloat) cEngine::instance()->GetHeight();
-	mHeightMin = (eeFloat) cEngine::instance()->GetHeight() * 0.4f;
+	mWidth = (eeFloat) mWindow->GetWidth();
+	mHeight = (eeFloat) mWindow->GetHeight();
+	mHeightMin = (eeFloat) mWindow->GetHeight() * 0.4f;
 
-	mMyCallback = cInput::instance()->PushCallback( cb::Make1( this, &cConsole::PrivInputCallback ) );
+	if ( NULL != cEngine::ExistsSingleton() &&
+		cEngine::instance()->ExistsWindow( mWindow ) )
+	{
+		mMyCallback = mWindow->GetInput()->PushCallback( cb::Make1( this, &cConsole::PrivInputCallback ) );
+	}
 
 	mTBuf.SetReturnCallback( cb::Make0( this, &cConsole::ProcessLine ) );
 	mTBuf.Start();
@@ -130,8 +148,8 @@ void cConsole::Draw() {
 
 	if ( mShowFps ) {
 		mFont->Color( eeColorA () );
-		mFont->SetText( L"FPS: " + toWStr( cEngine::instance()->FPS() ) );
-		mFont->Draw( cEngine::instance()->GetWidth() - mFont->GetTextWidth() - 15, 6 );
+		mFont->SetText( L"FPS: " + toWStr( mWindow->FPS() ) );
+		mFont->Draw( mWindow->GetWidth() - mFont->GetTextWidth() - 15, 6 );
 	}
 }
 
@@ -234,13 +252,13 @@ void cConsole::Toggle() {
 
 void cConsole::Fade() {
 	if (mCurSide) {
-		mCurAlpha -= 255.f * cEngine::instance()->Elapsed() / mFadeSpeed;
+		mCurAlpha -= 255.f * mWindow->Elapsed() / mFadeSpeed;
 		if ( mCurAlpha <= 0.0f ) {
 			mCurAlpha = 0.0f;
 			mCurSide = !mCurSide;
 		}
 	} else {
-		mCurAlpha += 255.f * cEngine::instance()->Elapsed() / mFadeSpeed;
+		mCurAlpha += 255.f * mWindow->Elapsed() / mFadeSpeed;
 		if ( mCurAlpha >= 255.f ) {
 			mCurAlpha = 255.f;
 			mCurSide = !mCurSide;
@@ -254,7 +272,7 @@ void cConsole::Fade() {
 
 	if ( mFadeIn ) {
 		mFadeOut = false;
-		mY += mCurHeight * cEngine::instance()->Elapsed() / mFadeSpeed;
+		mY += mCurHeight * mWindow->Elapsed() / mFadeSpeed;
 
 		mA = ( mY * mMaxAlpha / mCurHeight ) ;
 		if ( mY > mCurHeight ) {
@@ -266,7 +284,7 @@ void cConsole::Fade() {
 
 	if ( mFadeOut ) {
 		mFadeIn = false;
-		mY -= mCurHeight * cEngine::instance()->Elapsed() / mFadeSpeed;
+		mY -= mCurHeight * mWindow->Elapsed() / mFadeSpeed;
 
 		mA = ( mY * mMaxAlpha / mCurHeight ) ;
 		if ( mY <= 0.0f ) {
@@ -304,14 +322,27 @@ void cConsole::PrintCommandsStartingWith( const std::wstring& start ) {
 	}
 }
 
-void cConsole::PrivInputCallback( EE_Event * Event ) {
-	Uint8 etype = Event->type;
+void cConsole::PrivInputCallback( InputEvent * Event ) {
+	Uint8 etype = Event->Type;
 
-	if ( mVisible ) {
+	if ( InputEvent::VideoExpose == etype || InputEvent::VideoResize == etype ) {
+		mWidth		= (eeFloat) mWindow->GetWidth();
+		mHeight		= (eeFloat) mWindow->GetHeight();
+		mHeightMin	= (eeFloat) mWindow->GetHeight() * 0.4f;
+
+		if ( mVisible ) {
+			if ( mExpand )
+				mCurHeight = mHeight;
+			else
+				mCurHeight = mHeightMin;
+
+			mY = mCurHeight;
+		}
+	} else if ( mVisible ) {
 		Uint32 KeyCode	= (Uint32)Event->key.keysym.sym;
 		Uint32 Button	= Event->button.button;
 
-		if ( SDL_KEYDOWN == etype ) {
+		if ( InputEvent::KeyDown == etype ) {
 			if ( ( KeyCode == KEY_TAB ) && (eeUint)mTBuf.CurPos() == mTBuf.Buffer().size() ) {
 				PrintCommandsStartingWith( mTBuf.Buffer() );
 			}
@@ -353,7 +384,7 @@ void cConsole::PrivInputCallback( EE_Event * Event ) {
 			if ( KeyCode == KEY_END ) {
 				mCon.ConModif = 0;
 			}
-		} else if ( SDL_MOUSEBUTTONDOWN == etype ) {
+		} else if ( InputEvent::MouseButtonDown == etype ) {
 			if ( Button == EE_BUTTON_WHEELUP ) {
 				if ( mCon.ConMin - mCon.ConModif > 0 )
 					mCon.ConModif++;
@@ -363,19 +394,6 @@ void cConsole::PrivInputCallback( EE_Event * Event ) {
 				if ( mCon.ConModif > 0 )
 					mCon.ConModif--;
 			}
-		}
-	} else if ( SDL_VIDEOEXPOSE == etype || SDL_VIDEORESIZE == etype ) {
-		mWidth		= (eeFloat) cEngine::instance()->GetWidth();
-		mHeight		= (eeFloat) cEngine::instance()->GetHeight();
-		mHeightMin	= (eeFloat) cEngine::instance()->GetHeight() * 0.4f;
-
-		if ( mVisible ) {
-			if ( mExpand )
-				mCurHeight = mHeight;
-			else
-				mCurHeight = mHeightMin;
-
-			mY = mCurHeight;
 		}
 	}
 }
@@ -428,7 +446,7 @@ void cConsole::CmdMinimize ( const std::vector < std::wstring >& params ) {
 }
 
 void cConsole::CmdQuit ( const std::vector < std::wstring >& params ) {
-	cEngine::instance()->Running(false);
+	cEngine::instance()->Close();
 }
 
 void cConsole::CmdGetTextureMemory ( const std::vector < std::wstring >& params ) {
@@ -450,7 +468,7 @@ void cConsole::CmdShowCursor ( const std::vector < std::wstring >& params ) {
 			bool Res = fromWString<Int32>( tInt, params[1] );
 
 			if ( Res && ( tInt == 0 || tInt == 1 ) ) {
-				cEngine::instance()->ShowCursor( 0 != tInt );
+				mWindow->ShowCursor( 0 != tInt );
 				PushText( L"showcursor " + toWStr(tInt) );
 			} else
 				PushText( L"Valid parameters are 0 or 1." );
@@ -468,7 +486,7 @@ void cConsole::CmdFrameLimit ( const std::vector < std::wstring >& params ) {
 			bool Res = fromWString<Int32>( tInt, params[1] );
 
 			if ( Res && ( tInt >= 0 && tInt <= 10000 ) ) {
-				cEngine::instance()->SetFrameRateLimit( tInt );
+				mWindow->FrameRateLimit( tInt );
 				PushText( L"setframelimit " + toWStr(tInt) );
 			} else
 				PushText( L"Valid parameters are between 0 and 10000 (0 = no limit)." );
@@ -511,7 +529,7 @@ void cConsole::CmdSetGamma( const std::vector < std::wstring >& params ) {
 			bool Res = fromWString<eeFloat>( tFloat, params[1] );
 
 			if ( Res && ( tFloat > 0.1f && tFloat <= 10.0f ) ) {
-				cEngine::instance()->SetGamma( tFloat, tFloat, tFloat );
+				mWindow->SetGamma( tFloat, tFloat, tFloat );
 				PushText( L"setgamma " + toWStr(tFloat) );
 			} else
 				PushText( L"Valid parameters are between 0.1 and 10." );

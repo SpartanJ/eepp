@@ -3,7 +3,8 @@
 
 namespace EE { namespace UI {
 
-cUIManager::cUIManager() :
+cUIManager::cUIManager( cWindow * window ) :
+	mWindow( window ),
 	mKM( NULL ),
 	mInit( false ),
 	mControl( NULL ),
@@ -11,9 +12,14 @@ cUIManager::cUIManager() :
 	mOverControl( NULL ),
 	mDownControl( NULL ),
 	mFirstPress( false ),
-	mCbId(-1)
+	mCbId(-1),
+	mResizeCb(0)
 {
-	mKM = cInput::instance();
+	if ( NULL == mWindow ) {
+		mWindow = cEngine::instance()->GetCurrentWindow();
+	}
+
+	mKM = mWindow->GetInput();
 }
 
 cUIManager::~cUIManager() {
@@ -32,13 +38,20 @@ void cUIManager::Init() {
 	mFocusControl	= mControl;
 	mOverControl	= mControl;
 
-	mCbId = cInput::instance()->PushCallback( cb::Make1( this, &cUIManager::InputCallback ) );
+	mCbId = mKM->PushCallback( cb::Make1( this, &cUIManager::InputCallback ) );
+	mResizeCb = mWindow->PushResizeCallback( cb::Make0( this, &cUIManager::ResizeControl ) );
 }
 
 void cUIManager::Shutdown() {
 	if ( mInit ) {
-		if ( -1 != mCbId )
-			cInput::instance()->PopCallback( mCbId );
+		if ( -1 != mCbId &&
+			NULL != cEngine::ExistsSingleton() &&
+			cEngine::instance()->ExistsWindow( mWindow )
+		)
+		{
+			mKM->PopCallback( mCbId );
+			mWindow->PopResizeCallback( mResizeCb );
+		}
 
 		mOverControl = NULL;
 		mFocusControl = NULL;
@@ -51,19 +64,19 @@ void cUIManager::Shutdown() {
 	cUIThemeManager::DestroySingleton();
 }
 
-void cUIManager::InputCallback( EE_Event * Event ) {
-	switch( Event->type ) {
-		case SDL_KEYUP:
+void cUIManager::InputCallback( InputEvent * Event ) {
+	switch( Event->Type ) {
+		case InputEvent::KeyUp:
 			SendKeyUp( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
 			break;
-		case SDL_KEYDOWN:
+		case InputEvent::KeyDown:
 			SendKeyDown( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
 			break;
 	}
 }
 
 void cUIManager::ResizeControl() {
-	mControl->Size( cEngine::instance()->GetWidth(), cEngine::instance()->GetHeight() );
+	mControl->Size( mWindow->GetWidth(), mWindow->GetHeight() );
 	SendMsg( mControl, cUIMessage::MsgWindowResize );
 }
 
@@ -124,7 +137,7 @@ void cUIManager::SendMsg( cUIControl * Ctrl, const Uint32& Msg, const Uint32& Fl
 }
 
 void cUIManager::Update() {
-	mElapsed = cEngine::instance()->Elapsed();
+	mElapsed = mWindow->Elapsed();
 
 	mControl->Update();
 
@@ -215,11 +228,11 @@ const Uint32& cUIManager::LastPressTrigger() const {
 }
 
 void cUIManager::ClipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
-	cEngine::instance()->ClipPlaneEnable( x, y, Width, Height );
+	mWindow->ClipPlaneEnable( x, y, Width, Height );
 }
 
 void cUIManager::ClipDisable() {
-	cEngine::instance()->ClipPlaneDisable();
+	mWindow->ClipPlaneDisable();
 }
 
 }}

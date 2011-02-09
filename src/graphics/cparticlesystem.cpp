@@ -1,5 +1,9 @@
 #include "cparticlesystem.hpp"
 #include "glhelper.hpp"
+#include "ctexturefactory.hpp"
+#include "../window/cengine.hpp"
+
+using namespace EE::Window;
 
 namespace EE { namespace Graphics {
 
@@ -30,8 +34,6 @@ cParticleSystem::cParticleSystem() :
 	mY2( 0.f )
 
 {
-	EE = cEngine::instance();
-	TF = cTextureFactory::instance();
 }
 
 cParticleSystem::~cParticleSystem() {
@@ -259,6 +261,8 @@ void cParticleSystem::Reset(cParticle* P) {
 }
 
 void cParticleSystem::Draw() {
+	cTextureFactory * TF = cTextureFactory::instance();
+
 	TF->Bind( mTexId );
     TF->SetPreBlendFunc( ALPHA_BLENDONE );
 
@@ -306,7 +310,7 @@ void cParticleSystem::Draw() {
 }
 
 void cParticleSystem::Update( const eeFloat& Time ) {
-	eeFloat Elapsed = ( Time == -99999.f ) ? EE->Elapsed() : Time;
+	eeFloat Elapsed = ( Time == -99999.f ) ? cEngine::instance()->Elapsed() : Time;
 	Uint32 i;
 
 	for ( i = 0; i < mPCount; i++ ) {

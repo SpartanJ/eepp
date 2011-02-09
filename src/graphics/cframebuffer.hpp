@@ -4,6 +4,7 @@
 #include "base.hpp"
 #include "ctexture.hpp"
 #include "../window/cview.hpp"
+#include "../window/cwindow.hpp"
 
 using namespace EE::Window;
 
@@ -11,9 +12,9 @@ namespace EE { namespace Graphics {
 
 class EE_API cFrameBuffer {
 	public:
-		static cFrameBuffer * CreateNew( const Uint32& Width, const Uint32& Height, bool DepthBuffer = false );
+		static cFrameBuffer * CreateNew( const Uint32& Width, const Uint32& Height, bool DepthBuffer = false, cWindow * window = NULL );
 
-		cFrameBuffer();
+		cFrameBuffer( cWindow * window );
 
 		virtual ~cFrameBuffer();
 
@@ -39,6 +40,7 @@ class EE_API cFrameBuffer {
 
 		const bool& HasDepthBuffer() const;
 	protected:
+		cWindow *	mWindow;
 		Int32		mWidth;
 		Int32		mHeight;
 		bool		mHasDepthBuffer;

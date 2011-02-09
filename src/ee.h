@@ -24,8 +24,8 @@
 /**
 	@TODO Add some Surface Grid class, to create special effects ( waved texture, and stuff like that ).
 	@TODO Add Scripting support ( lua or squirrel ).
-	@TODO Encapsulate SDL and OpenGL ( and remove unnecessary dependencies ).
 	@TODO Support color cursors ( not only black and white cursors, that really sucks ) - Imposible with SDL 1.2
+	@TODO Support for Android and iPhone
 */
 
 	// General includes and declarations
@@ -93,6 +93,8 @@
 	#include "window/cinput.hpp"
 	#include "window/cinputtextbuffer.hpp"
 	#include "window/cview.hpp"
+	#include "window/cwindow.hpp"
+	#include "window/cclipboard.hpp"
 	#include "window/cjoystick.hpp"
 	#include "window/cjoystickmanager.hpp"
 	#include "window/cengine.hpp"

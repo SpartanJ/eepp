@@ -2,36 +2,45 @@
 #define EE_WINDOWCINPUT_H
 
 #include "base.hpp"
+#include "cwindow.hpp"
 #include "inputhelper.hpp"
+#include "inputevent.hpp"
+#include "cjoystickmanager.hpp"
 
 namespace EE { namespace Window {
 
 class cView;
 
 /** @brief The basic input class. For mouse and keyboard. */
-class EE_API cInput : public tSingleton<cInput> {
-	friend class tSingleton<cInput>;
+class EE_API cInput {
 	public:
-		typedef cb::Callback1<void, EE_Event*> InputCallback;
-		typedef cb::Callback0<void> VideoResizeCallback;
+		typedef cb::Callback1<void, InputEvent*>	InputCallback;
+		
+		virtual ~cInput();
 
 		/** Update the Input */
-		void Update();
+		virtual void Update() = 0;
 
-		/** @return If keyboard key was released */
-		bool IsKeyUp(const EE_KEY& Key);
+		/** @return If the mouse and keyboard are grabed. */
+		virtual bool GrabInput() = 0;
 
-		/** @return If keyboard key it's pressed */
-		bool IsKeyDown(const EE_KEY& Key);
-
-		/** Inject the key state of a key as KEY UP or RELEASE */
-		void InjectKeyUp(const EE_KEY& Key);
-
-		/** Inject the key state of a key as KEY DOWN or PRESSED */
-		void InjectKeyDown(const EE_KEY& Key);
+		/** Grab or Ungrab the mouse and keyboard. */
+		virtual void GrabInput( const bool& Grab ) = 0;
 
 		/** Inject the mouse position given */
-		void InjectMousePos( const Uint16& x, const Uint16& y );
+		virtual void InjectMousePos( const Uint16& x, const Uint16& y ) = 0;
+
+		/** @return If keyboard key was released */
+		bool IsKeyUp( const EE_KEY& Key );
+
+		/** @return If keyboard key it's pressed */
+		bool IsKeyDown( const EE_KEY& Key );
+
+		/** Inject the key state of a key as KEY UP or RELEASE */
+		void InjectKeyUp( const EE_KEY& Key );
+
+		/** Inject the key state of a key as KEY DOWN or PRESSED */
+		void InjectKeyDown( const EE_KEY& Key );
 
 		/** Inject the mouse position given */
 		void InjectMousePos( const eeVector2i& Pos );
@@ -95,12 +104,6 @@ class EE_API cInput : public tSingleton<cInput> {
 		/** Pop the callback id indicated. */
 		void PopCallback( const Uint32& CallbackId );
 
-		/** @return If the mouse and keyboard are grabed. */
-		bool GrabInput();
-
-		/** Grab or Ungrab the mouse and keyboard. */
-		void GrabInput( const bool& Grab );
-
 		/** @return The Mouse position vector */
 		eeVector2i GetMousePos() const;
 
@@ -115,9 +118,6 @@ class EE_API cInput : public tSingleton<cInput> {
 
 		/** @return The Mouse Y axis position */
 		Uint16 MouseY() const;
-
-		/** Sets a callback for the video resize ( usefull on windows for reloading textures loaded from memory ) */
-		void SetVideoResizeCallback( const VideoResizeCallback& vrc );
 
 		/** Set the mouse speed ( only affects grabed windows ) */
 		void MouseSpeed( const eeFloat& Speed );
@@ -146,42 +146,51 @@ class EE_API cInput : public tSingleton<cInput> {
 		/** Set the double click interval in milliseconds */
 		void DoubleClickInterval( const Uint32& Interval );
 
-		~cInput();
-
-		void CallVideoResize();
+		void CleanStates();
+		
+		void SendEvent( InputEvent * Event );
+		
+		cJoystickManager * GetJoystickManager() const;
 	protected:
-		cInput();
+		friend class cWindow;
+		
+		cInput( cWindow * window, cJoystickManager * joystickmanager );
+		
+		virtual void Init() = 0;
 
-		EE_Event mEvent;
-
+		cWindow *	mWindow;
+		cJoystickManager * mJoystickManager;
 		Uint8 mKeysDown	[EE_KEYS_SPACE];
 		Uint8 mKeysUp	[EE_KEYS_SPACE];
-
+		Uint32		mPressTrigger;
+		Uint32		mReleaseTrigger;
+		Uint32		mLastPressTrigger;
+		Uint32		mClickTrigger;
+		Uint32		mDoubleClickTrigger;
+		Uint32		mInputMod;
+		Uint32		mDoubleClickInterval; //!< Determine the double click inverval in milliseconds ( default 500 ms )
+		Uint32		mLastButtonLeftClicked;
+		Uint32		mLastButtonRightClicked;
+		Uint32		mLastButtonMiddleClicked;
+		Uint32		mLastButtonLeftClick;
+		Uint32		mLastButtonRightClick;
+		Uint32		mLastButtonMiddleClick;
+		Uint32		mTClick;
+		eeVector2i	mMousePos;
+		Uint32		mNumCallBacks;
+		eeFloat		mMouseSpeed;
+		bool		mInputGrabed;
+		
 		std::map<Uint32, InputCallback> mCallbacks;
-
-		Uint32 mPressTrigger;
-		Uint32 mReleaseTrigger;
-		Uint32 mLastPressTrigger;
-		Uint32 mClickTrigger;
-		Uint32 mDoubleClickTrigger;
-		Uint32 mInputMod;
-		Uint32 mDoubleClickInterval; //!< Determine the double click inverval in milliseconds ( default 500 ms )
-		Uint32 mLastButtonLeftClicked, mLastButtonRightClicked, mLastButtonMiddleClicked;
-		Uint32 mLastButtonLeftClick, mLastButtonRightClick, mLastButtonMiddleClick;
-
-		Uint32 mTClick;
-		eeVector2i mMousePos;
-
-		VideoResizeCallback mVRCall;
-		Uint32 mNumCallBacks;
-
-		bool mInputGrabed;
-		eeFloat mMouseSpeed;
-
+		
 		bool GetKey( Uint8 * Key, Uint8 Pos );
+		
 		void PushKey( Uint8 * Key, Uint8 Pos, bool BitWrite );
+		
+		void ProcessEvent( InputEvent * Event );
 };
 
 }}
 
 #endif
+ 

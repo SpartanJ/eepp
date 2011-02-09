@@ -139,7 +139,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 
 		eeColorA Col = mColor;
 
-		//! FIXME: Cache shadows?
+		/** FIXME: Cache shadows? */
 		SetText( TextCache.Text() );
 		Color( mShadowColor );
 		Draw( TextCache, X + 1, Y + 1, f, Scale, Angle, Effect );

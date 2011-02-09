@@ -93,7 +93,7 @@ SRCMATH				= $(wildcard ./src/math/*.cpp)
 SRCSYSTEM			= $(wildcard ./src/system/*.cpp)
 SRCUI				= $(wildcard ./src/ui/*.cpp)
 SRCUTILS     		= $(wildcard ./src/utils/*.cpp)
-SRCWINDOW     		= $(wildcard ./src/window/*.cpp)
+SRCWINDOW     		= $(wildcard ./src/window/*.cpp) $(wildcard ./src/window/backend/SDL/*.cpp) $(wildcard ./src/window/backend/null/*.cpp)
 SRCPHYSICS			= $(wildcard ./src/physics/*.cpp) $(wildcard ./src/physics/constraints/*.cpp)
 
 SRCTEST     		= $(wildcard ./src/test/*.cpp)
@@ -169,6 +169,8 @@ dirs:
 	@mkdir -p $(OBJDIR)/src/ui
 	@mkdir -p $(OBJDIR)/src/utils
 	@mkdir -p $(OBJDIR)/src/window
+	@mkdir -p $(OBJDIR)/src/window/backend/SDL
+	@mkdir -p $(OBJDIR)/src/window/backend/null
 	@mkdir -p $(OBJDIR)/src/physics
 	@mkdir -p $(OBJDIR)/src/physics/constraints
 	@mkdir -p $(OBJDIR)/src/test

@@ -4,19 +4,21 @@
 
 namespace EE { namespace Graphics {
 
-cFrameBufferPBuffer::cFrameBufferPBuffer()
+cFrameBufferPBuffer::cFrameBufferPBuffer( cWindow * window )
 #ifdef EE_GLEW_AVAILABLE
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	: cFrameBuffer(),
+	: cFrameBuffer( window ),
 	mDeviceContext( NULL ),
 	mPBuffer( NULL ),
 	mContext( NULL )
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
-	: cFrameBuffer(),
+	: cFrameBuffer( window ),
 	mDisplay( NULL ),
 	mPBuffer( 0 ),
 	mContext( NULL )
+#else
+	: cFrameBuffer( window )
 #endif
 
 #endif
@@ -26,19 +28,21 @@ cFrameBufferPBuffer::cFrameBufferPBuffer()
 #endif
 }
 
-cFrameBufferPBuffer::cFrameBufferPBuffer( const Uint32& Width, const Uint32& Height, bool DepthBuffer )
+cFrameBufferPBuffer::cFrameBufferPBuffer( const Uint32& Width, const Uint32& Height, bool DepthBuffer, cWindow * window )
 #ifdef EE_GLEW_AVAILABLE
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	: cFrameBuffer(),
+	: cFrameBuffer( window ),
 	mDeviceContext( NULL ),
 	mPBuffer( NULL ),
 	mContext( NULL )
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
-	: cFrameBuffer(),
+	: cFrameBuffer( window ),
 	mDisplay( NULL ),
 	mPBuffer( 0 ),
 	mContext( NULL )
+#else
+	: cFrameBuffer( window )
 #endif
 
 #endif
@@ -72,8 +76,9 @@ cFrameBufferPBuffer::~cFrameBufferPBuffer() {
 #endif
 
 #endif
-	if ( Window::cEngine::ExistsSingleton() )
-		Window::cEngine::instance()->SetDefaultContext();
+	if ( Window::cEngine::instance()->ExistsWindow( mWindow ) ) {
+		mWindow->SetDefaultContext();
+	}
 }
 
 bool cFrameBufferPBuffer::IsSupported() {
@@ -99,6 +104,10 @@ bool cFrameBufferPBuffer::Create( const Uint32& Width, const Uint32& Height ) {
 bool cFrameBufferPBuffer::Create( const Uint32& Width, const Uint32& Height, bool DepthBuffer ) {
 	if ( !IsSupported() )
 		return false;
+
+	if ( NULL == mWindow ) {
+		mWindow = cEngine::instance()->GetCurrentWindow();
+	}
 
 	mWidth 			= Width;
 	mHeight 		= Height;
@@ -252,7 +261,7 @@ void cFrameBufferPBuffer::Bind() {
 #endif
 
 	if ( ChangeContext ) {
-		Window::cEngine::instance()->Setup2D( true );
+		mWindow->Setup2D( true );
 		SetBufferView();
 	}
 }
@@ -268,7 +277,7 @@ void cFrameBufferPBuffer::Unbind() {
 
 	glBindTexture( GL_TEXTURE_2D, previousTexture );
 
-	Window::cEngine::instance()->SetDefaultContext();
+	mWindow->SetDefaultContext();
 }
 
 

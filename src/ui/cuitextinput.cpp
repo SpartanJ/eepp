@@ -62,10 +62,10 @@ void cUITextInput::Draw() {
 		mWaitCursorTime += cUIManager::instance()->Elapsed();
 
 		if ( mShowingWait ) {
-			bool disableSmooth = mShowingWait && cEngine::instance()->GetVideoInfo()->LineSmooth;
+			bool disableSmooth = mShowingWait && GLi->IsLineSmooth();
 
 			if ( disableSmooth )
-				cEngine::instance()->SetLineSmooth( false );
+				GLi->LineSmooth( false );
 
 			cPrimitives P;
 			P.SetColor( mFontColor );
@@ -79,7 +79,7 @@ void cUITextInput::Draw() {
 			P.DrawLine( CurPosX, CurPosY, CurPosX, CurPosY + mTextCache->Font()->GetFontHeight(), 1.f );
 
 			if ( disableSmooth )
-				cEngine::instance()->SetLineSmooth( true );
+				GLi->LineSmooth( true );
 		}
 
 		if ( mWaitCursorTime >= 500.f ) {

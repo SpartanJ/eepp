@@ -2,6 +2,7 @@
 #define EE_GRAPHICSCCONSOLE_H
 
 #include "base.hpp"
+#include "../window/cwindow.hpp"
 #include "../window/cinputtextbuffer.hpp"
 #include "cprimitives.hpp"
 #include "cfont.hpp"
@@ -15,7 +16,7 @@ class EE_API cConsole{
 		//! The Console Callback return a vector of parameters ( wstring )
 		typedef cb::Callback1<void, const std::vector < std::wstring >& > ConsoleCallback;
 
-		cConsole();
+		cConsole( cWindow * window = NULL );
 
 		~cConsole();
 
@@ -131,6 +132,7 @@ class EE_API cConsole{
 		std::deque < std::wstring > mCmdLog;
 		std::deque < std::wstring > mLastCommands;
 
+		cWindow * mWindow;
 		eeInt mLastLogPos;
 
 		bool mEnabled, mVisible, mFadeIn, mFadeOut, mExpand, mFading, mShowFps;
@@ -202,7 +204,7 @@ class EE_API cConsole{
 		void CmdGetTextureMemory ( const std::vector < std::wstring >& params );
 
 		/** The Default Commands Callbacks for the Console ( don't call it ) */
-		void PrivInputCallback( EE_Event* Event );
+		void PrivInputCallback( InputEvent * Event );
 
 		/** Clear the Console */
 		void CmdClear();

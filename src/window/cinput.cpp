@@ -1,153 +1,159 @@
 #include "cinput.hpp"
-#include "cengine.hpp"
 #include "cview.hpp"
 
 namespace EE { namespace Window {
 
-cInput::cInput() :
+cInput::cInput( cWindow * window, cJoystickManager * joystickmanager ) :
+	mWindow( window ),
+	mJoystickManager( joystickmanager ),
 	mPressTrigger(0), mReleaseTrigger(0), mLastPressTrigger(0), mClickTrigger(0), mDoubleClickTrigger(0), mInputMod(0),
 	mDoubleClickInterval(500),
 	mLastButtonLeftClicked(0), 		mLastButtonRightClicked(0), 	mLastButtonMiddleClicked(0),
 	mLastButtonLeftClick(0), 		mLastButtonRightClick(0), 		mLastButtonMiddleClick(0),
-	mTClick(0), mVRCall(), mNumCallBacks(0), mInputGrabed(false),
+	mTClick(0), mNumCallBacks(0),
 	#if EE_PLATFORM == EE_PLATFORM_LINUX
-	mMouseSpeed(1.75f)
+	mMouseSpeed(1.75f),
 	#else
-	mMouseSpeed(1.0f)
+	mMouseSpeed(1.0f),
 	#endif
+	mInputGrabed( false )
 {
-	eeVector2if mTempMouse;
-	SDL_GetMouseState( &mTempMouse.x, &mTempMouse.y );
-	mMousePos.x = (eeInt)mTempMouse.x;
-	mMousePos.y = (eeInt)mTempMouse.y;
-
-	SDL_EnableUNICODE(1);
-	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
-
 	memset( mKeysDown	, 0, EE_KEYS_SPACE );
 	memset( mKeysUp		, 0, EE_KEYS_SPACE );
 }
 
 cInput::~cInput() {
-	mCallbacks.clear();
+	eeSAFE_DELETE( mJoystickManager );
 }
 
-void cInput::Update() {
+void cInput::CleanStates() {
 	memset( mKeysUp, 0, EE_KEYS_SPACE );
 
 	mReleaseTrigger 	= 0;
 	mLastPressTrigger 	= mPressTrigger;
 	mClickTrigger 		= 0;
 	mDoubleClickTrigger = 0;
-	mInputMod 			= 0;
+	mInputMod 			= 0;	
+}
 
-	while ( SDL_PollEvent( &mEvent ) ) {
-		switch( mEvent.type ) {
-			case SDL_KEYDOWN:
-				mInputMod = mEvent.key.keysym.mod;
-
-				PushKey( &mKeysDown	[ mEvent.key.keysym.sym / 8 ], mEvent.key.keysym.sym % 8, true );
-				break;
-			case SDL_KEYUP:
-				mInputMod = mEvent.key.keysym.mod;
-
-				PushKey( &mKeysDown	[ mEvent.key.keysym.sym / 8 ], mEvent.key.keysym.sym % 8, false );
-				PushKey( &mKeysUp	[ mEvent.key.keysym.sym / 8 ], mEvent.key.keysym.sym % 8, true );
-				break;
-			case SDL_MOUSEMOTION:
-			{
-				if ( !mInputGrabed ) {
-					mMousePos.x = mEvent.motion.x;
-					mMousePos.y = mEvent.motion.y;
-				} else {
-					mMousePos.x += static_cast<Int32>( (eeFloat)mEvent.motion.xrel * mMouseSpeed );
-					mMousePos.y += static_cast<Int32>( (eeFloat)mEvent.motion.yrel * mMouseSpeed );
-				}
-
-				bool bInject = false;
-
-				if ( mMousePos.x >= (eeInt)cEngine::instance()->GetWidth() )
-					mMousePos.x = cEngine::instance()->GetWidth();
-				else if ( mMousePos.x < 0 ) {
-					mMousePos.x = 0;
-					bInject = true;
-				}
-
-				if ( mMousePos.y >= (eeInt)cEngine::instance()->GetHeight() )
-					mMousePos.y = cEngine::instance()->GetHeight();
-				else if ( mMousePos.y < 0 ) {
-					mMousePos.y = 0;
-					bInject = true;
-				}
-
-				#if EE_PLATFORM == EE_PLATFORM_WIN
-				if ( bInject )
-					InjectMousePos( mMousePos.x, mMousePos.y );
-				#endif
-
-				break;
-			}
-			case SDL_MOUSEBUTTONDOWN:
-				mPressTrigger |= EE_BUTTON( mEvent.button.button );
-				break;
-			case SDL_MOUSEBUTTONUP:
-				mPressTrigger &= ~EE_BUTTON( mEvent.button.button );
-				mReleaseTrigger |= EE_BUTTON( mEvent.button.button );
-				mClickTrigger |= EE_BUTTON( mEvent.button.button );
-
-				if ( mEvent.button.button == EE_BUTTON_LEFT ) {
-					mLastButtonLeftClicked = mLastButtonLeftClick;
-					mLastButtonLeftClick = eeGetTicks();
-
-					mTClick = mLastButtonLeftClick - mLastButtonLeftClicked;
-					if (mTClick < mDoubleClickInterval && mTClick > 0) {
-						mDoubleClickTrigger |= EE_BUTTON(EE_BUTTON_LEFT);
-						mLastButtonLeftClick = 0;
-						mLastButtonLeftClicked = 0;
-					}
-				} else if ( mEvent.button.button == EE_BUTTON_RIGHT ) {
-					mLastButtonRightClicked = mLastButtonRightClick;
-					mLastButtonRightClick = eeGetTicks();
-
-					mTClick = mLastButtonRightClick - mLastButtonRightClicked;
-					if (mTClick < mDoubleClickInterval && mTClick > 0) {
-						mDoubleClickTrigger |= EE_BUTTON(EE_BUTTON_RIGHT);
-						mLastButtonRightClick = 0;
-						mLastButtonRightClicked = 0;
-					}
-				} else if( mEvent.button.button == EE_BUTTON_MIDDLE ) {
-					mLastButtonMiddleClicked = mLastButtonMiddleClick;
-					mLastButtonMiddleClick = eeGetTicks();
-
-					mTClick = mLastButtonMiddleClick - mLastButtonMiddleClicked;
-					if (mTClick < mDoubleClickInterval && mTClick > 0) {
-						mDoubleClickTrigger |= EE_BUTTON(EE_BUTTON_MIDDLE);
-						mLastButtonMiddleClick = 0;
-						mLastButtonMiddleClicked = 0;
-					}
-				}
-
-				break;
-			case SDL_VIDEORESIZE:
-				cEngine::instance()->ChangeRes(mEvent.resize.w, mEvent.resize.h, cEngine::instance()->Windowed() );
-
-				CallVideoResize();
-
-				break;
-			case SDL_QUIT:
-				cEngine::instance()->Running(false);
-				break;
-		}
-
-		for ( std::map<Uint32, InputCallback>::iterator i = mCallbacks.begin(); i != mCallbacks.end(); i++ ) {
-			i->second( &mEvent );
-		}
+void cInput::SendEvent( InputEvent * Event ) {
+	for ( std::map<Uint32, InputCallback>::iterator i = mCallbacks.begin(); i != mCallbacks.end(); i++ ) {
+		i->second( Event );
 	}
 }
 
-void cInput::CallVideoResize() {
-	if ( mVRCall.IsSet() )
-		mVRCall();
+void cInput::ProcessEvent( InputEvent * Event ) {
+	switch( Event->Type ) {
+		case InputEvent::KeyDown:
+		{
+			mInputMod = Event->key.keysym.mod;
+
+			PushKey( &mKeysDown	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, true );
+			break;
+		}
+		case InputEvent::KeyUp:
+		{
+			mInputMod = Event->key.keysym.mod;
+
+			PushKey( &mKeysDown	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, false );
+			PushKey( &mKeysUp	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, true );
+			break;
+		}
+		case InputEvent::MouseMotion:
+		{
+			if ( !mInputGrabed ) {
+				mMousePos.x = Event->motion.x;
+				mMousePos.y = Event->motion.y;
+			} else {
+				mMousePos.x += static_cast<Int32>( (eeFloat)Event->motion.xrel * mMouseSpeed );
+				mMousePos.y += static_cast<Int32>( (eeFloat)Event->motion.yrel * mMouseSpeed );
+			}
+
+			bool bInject = false;
+
+			if ( mMousePos.x >= (eeInt)mWindow->GetWidth() ) {
+				mMousePos.x = mWindow->GetWidth();
+			} else if ( mMousePos.x < 0 ) {
+				mMousePos.x = 0;
+				bInject = true;
+			}
+
+			if ( mMousePos.y >= (eeInt)mWindow->GetHeight() ) {
+				mMousePos.y = mWindow->GetHeight();
+			} else if ( mMousePos.y < 0 ) {
+				mMousePos.y = 0;
+				bInject = true;
+			}
+
+			#if EE_PLATFORM == EE_PLATFORM_WIN
+			if ( bInject ) {
+				InjectMousePos( mMousePos.x, mMousePos.y );
+			}
+			#endif
+
+			break;
+		}
+		case InputEvent::MouseButtonDown:
+		{
+			mPressTrigger		|= EE_BUTTON_MASK( Event->button.button );
+			break;
+		}
+		case InputEvent::MouseButtonUp:
+		{
+			mPressTrigger		&= ~EE_BUTTON_MASK( Event->button.button );
+			mReleaseTrigger		|= EE_BUTTON_MASK( Event->button.button );
+			mClickTrigger		|= EE_BUTTON_MASK( Event->button.button );
+
+			if ( Event->button.button == EE_BUTTON_LEFT ) {
+				mLastButtonLeftClicked		= mLastButtonLeftClick;
+				mLastButtonLeftClick		= eeGetTicks();
+
+				mTClick = mLastButtonLeftClick - mLastButtonLeftClicked;
+				
+				if ( mTClick < mDoubleClickInterval && mTClick > 0 ) {
+					mDoubleClickTrigger			|= EE_BUTTON_MASK(EE_BUTTON_LEFT);
+					mLastButtonLeftClick		= 0;
+					mLastButtonLeftClicked		= 0;
+				}
+			} else if ( Event->button.button == EE_BUTTON_RIGHT ) {
+				mLastButtonRightClicked		= mLastButtonRightClick;
+				mLastButtonRightClick		= eeGetTicks();
+
+				mTClick = mLastButtonRightClick - mLastButtonRightClicked;
+				
+				if ( mTClick < mDoubleClickInterval && mTClick > 0 ) {
+					mDoubleClickTrigger			|= EE_BUTTON_MASK(EE_BUTTON_RIGHT);
+					mLastButtonRightClick		= 0;
+					mLastButtonRightClicked		= 0;
+				}
+			} else if( Event->button.button == EE_BUTTON_MIDDLE ) {
+				mLastButtonMiddleClicked	= mLastButtonMiddleClick;
+				mLastButtonMiddleClick		= eeGetTicks();
+
+				mTClick = mLastButtonMiddleClick - mLastButtonMiddleClicked;
+				
+				if ( mTClick < mDoubleClickInterval && mTClick > 0 ) {
+					mDoubleClickTrigger			|= EE_BUTTON_MASK(EE_BUTTON_MIDDLE);
+					mLastButtonMiddleClick		= 0;
+					mLastButtonMiddleClicked	= 0;
+				}
+			}
+
+			break;
+		}
+		case InputEvent::VideoResize:
+		{
+			mWindow->Size( Event->resize.w, Event->resize.h, mWindow->Windowed() );
+			break;
+		}
+		case InputEvent::Quit:
+		{
+			mWindow->Close();
+			break;
+		}
+	}
+	
+	SendEvent( Event );
 }
 
 bool cInput::GetKey( Uint8 * Key, Uint8 Pos ) {
@@ -184,20 +190,20 @@ void cInput::InjectKeyUp( const EE_KEY& Key ) {
 
 void cInput::InjectButtonPress( const Uint32& Button ) {
 	if ( Button < 8 )
-		if ( !( mPressTrigger & EE_BUTTON( Button )  ) )
-			mPressTrigger |= EE_BUTTON( Button );
+		if ( !( mPressTrigger & EE_BUTTON_MASK( Button )  ) )
+			mPressTrigger |= EE_BUTTON_MASK( Button );
 }
 
 void cInput::InjectButtonRelease( const Uint32& Button ) {
 	if ( Button < 8 ) {
-		if ( mPressTrigger & EE_BUTTON( Button )  )
-			mPressTrigger &= ~EE_BUTTON( Button );
+		if ( mPressTrigger & EE_BUTTON_MASK( Button )  )
+			mPressTrigger &= ~EE_BUTTON_MASK( Button );
 
-		if ( !( mReleaseTrigger & EE_BUTTON( Button )  ) )
-			mReleaseTrigger |= EE_BUTTON( Button );
+		if ( !( mReleaseTrigger & EE_BUTTON_MASK( Button )  ) )
+			mReleaseTrigger |= EE_BUTTON_MASK( Button );
 
-		if ( !( mClickTrigger & EE_BUTTON( Button )  ) )
-			mClickTrigger |= EE_BUTTON( Button );
+		if ( !( mClickTrigger & EE_BUTTON_MASK( Button )  ) )
+			mClickTrigger |= EE_BUTTON_MASK( Button );
 	}
 }
 
@@ -232,27 +238,6 @@ Uint32 cInput::PushCallback( const InputCallback& cb ) {
 void cInput::PopCallback( const Uint32& CallbackId ) {
 	mCallbacks[ CallbackId ] = 0;
 	mCallbacks.erase( mCallbacks.find(CallbackId) );
-}
-
-void cInput::SetVideoResizeCallback( const VideoResizeCallback& vrc ) {
-	mVRCall = vrc;
-}
-
-bool cInput::GrabInput() {
-	return ( SDL_WM_GrabInput( SDL_GRAB_QUERY ) == SDL_GRAB_ON ) ? true : false;
-}
-
-void cInput::GrabInput( const bool& Grab ) {
-	mInputGrabed = Grab;
-
-	if ( Grab )
-		SDL_WM_GrabInput(SDL_GRAB_ON);
-	else
-		SDL_WM_GrabInput(SDL_GRAB_OFF);
-}
-
-void cInput::InjectMousePos( const Uint16& x, const Uint16& y ) {
-	SDL_WarpMouse( x, y );
 }
 
 void cInput::InjectMousePos( const eeVector2i& Pos ) {
@@ -353,6 +338,10 @@ const Uint32& cInput::DoubleClickInterval() const {
 
 void cInput::DoubleClickInterval( const Uint32& Interval ) {
 	mDoubleClickInterval = Interval;
+}
+
+cJoystickManager * cInput::GetJoystickManager() const {
+	return mJoystickManager;
 }
 
 }}

@@ -114,7 +114,7 @@ Uint32 cUISpinBox::OnMessage( const cUIMessage * Msg ) {
 					AddValue( -mClickStep );
 				}
 			} else if ( Msg->Flags() & EE_BUTTONS_WUWD ) {
-				if ( Msg->Flags() & EE_BUTTON( EE_BUTTON_WHEELUP ) )
+				if ( Msg->Flags() & EE_BUTTON_WUMASK )
 					AddValue( mClickStep );
 				else
 					AddValue( -mClickStep );

@@ -4,6 +4,7 @@
 #include "base.hpp"
 
 #include "../window/cinput.hpp"
+#include "../window/cwindow.hpp"
 #include "../window/cengine.hpp"
 using namespace EE::Window;
 
@@ -30,7 +31,7 @@ class EE_API cIsoTile {
 
 class EE_API cIsoMap {
 	public:
-		cIsoMap();
+		cIsoMap( cWindow * window = NULL );
 
 		~cIsoMap();
 
@@ -80,6 +81,7 @@ class EE_API cIsoMap {
 	protected:
 		std::vector<cIsoTile> Map;
 
+		cWindow *	mWindow;
 		eeColor		mMapAmbientColor;
 		eeUint		mMapWidth;
 		eeUint		mMapHeight;
@@ -101,7 +103,6 @@ class EE_API cIsoMap {
 		eeFloat		mOffsetY;
 
 		// Fast access to classes
-		cEngine *			mEE;
 		cPrimitives			mPR;
 
 		cFont * mFont;

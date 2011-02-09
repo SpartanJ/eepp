@@ -114,14 +114,17 @@ namespace EE { namespace Utils {
 	* @param Pos The Position of the bit
 	* @param BitWrite 0 for write 0, any other to write 1.
 	*/
-	void Write32BitKey( Uint32 * Key, Uint32 Pos, Uint32 BitWrite );
+	void EE_API Write32BitKey( Uint32 * Key, Uint32 Pos, Uint32 BitWrite );
 
 	/** Read a bit from a 32 bit key, in the position defined
 	* @param Key The Key to read
 	* @param Pos The Position in the key to read
 	* @return True if the bit is 1
 	*/
-	bool Read32BitKey( Uint32 * Key, Uint32 Pos );
+	bool EE_API Read32BitKey( Uint32 * Key, Uint32 Pos );
+
+	/** Write a 32 bit flag value */
+	void EE_API SetFlagValue( Uint32 * Key, Uint32 Val, Uint32 BitWrite );
 }
 
 }

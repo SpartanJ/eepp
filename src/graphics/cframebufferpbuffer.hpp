@@ -49,11 +49,11 @@ namespace EE { namespace Graphics {
 
 class EE_API cFrameBufferPBuffer : public cFrameBuffer {
 	public:
-		cFrameBufferPBuffer();
+		cFrameBufferPBuffer( cWindow * window = NULL );
 
 		~cFrameBufferPBuffer();
 
-		cFrameBufferPBuffer( const Uint32& Width, const Uint32& Height, bool DepthBuffer = false );
+		cFrameBufferPBuffer( const Uint32& Width, const Uint32& Height, bool DepthBuffer = false, cWindow * window = NULL );
 
 		bool Create( const Uint32& Width, const Uint32& Height );
 

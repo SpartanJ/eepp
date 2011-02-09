@@ -6,38 +6,35 @@
 
 namespace EE { namespace Window {
 
-#define MAX_JOYSTICKS (16)
-
-class EE_API cJoystickManager : public tSingleton<cJoystickManager> {
-	friend class tSingleton<cJoystickManager>;
-	friend class cJoystick;
+class EE_API cJoystickManager {
 	public:
 		cJoystickManager();
 
 		~cJoystickManager();
 
-		Uint32 			Count();
+		virtual Uint32 Count();
 
-		void 			Update();
+		virtual void 	Update() = 0;
 
 		cJoystick * 	GetJoystick( const Uint32& index );
 
-		void			Rescan();
+		virtual void	Rescan();
 	protected:
+		friend class cJoystick;
+		
 		bool			mInit;
 
 		cJoystick * 	mJoysticks[ MAX_JOYSTICKS ];
 
 		Uint32			mCount;
-	private:
-		void 			Close();
 
-		void 			Open();
+		virtual void 	Close();
 
-		void 			Create( const Uint32& index );
+		virtual void 	Open();
+
+		virtual void 	Create( const Uint32& index ) = 0;
 };
 
 }}
 
 #endif
-

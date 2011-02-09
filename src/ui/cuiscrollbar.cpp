@@ -127,7 +127,7 @@ void cUIScrollBar::Update() {
 
 void cUIScrollBar::ManageClick( const Uint32& Flags ) {
 	if ( Flags & EE_BUTTONS_WUWD ) {
-		if ( Flags & EE_BUTTON( EE_BUTTON_WHEELUP ) )
+		if ( Flags & EE_BUTTON_WUMASK )
 			mSlider->Value( Value() + ClickStep() );
 		else
 			mSlider->Value( Value() - ClickStep() );

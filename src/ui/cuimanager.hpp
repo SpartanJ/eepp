@@ -4,6 +4,7 @@
 #include "cuicontrol.hpp"
 #include "cuicontrolanim.hpp"
 #include "../window/cinput.hpp"
+#include "../window/cwindow.hpp"
 
 namespace EE { namespace UI {
 
@@ -12,7 +13,7 @@ class cUIControl;
 class EE_API cUIManager : public tSingleton<cUIManager> {
 	friend class tSingleton<cUIManager>;
 	public:
-		cUIManager();
+		cUIManager( cWindow * window = NULL );
 
 		~cUIManager();
 
@@ -56,6 +57,7 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 
 		void SendKeyDown( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod );
 	protected:
+		cWindow *			mWindow;
 		cInput *			mKM;
 
 		bool				mInit;
@@ -66,8 +68,9 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 		bool 				mFirstPress;
 		eeFloat 			mElapsed;
 		Int32 				mCbId;
+		Uint32				mResizeCb;
 
-		void				InputCallback( EE_Event * Event );
+		void				InputCallback( InputEvent * Event );
 };
 
 }}

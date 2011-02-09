@@ -31,9 +31,9 @@ class cUITest : public cUIControlAnim {
 		virtual Uint32 OnMouseUp( const eeVector2i& Pos, const Uint32 Flags ) {
 			cUIDragable::OnMouseUp( Pos, Flags );
 
-			if ( cInput::instance()->MouseWheelUp() )
+			if ( cEngine::instance()->GetCurrentWindow()->GetInput()->MouseWheelUp() )
 				Scale( Scale() + 0.1f );
-			else if ( cInput::instance()->MouseWheelDown() )
+			else if ( cEngine::instance()->GetCurrentWindow()->GetInput()->MouseWheelDown() )
 				Scale( Scale() - 0.1f );
 
 			return 1;
@@ -83,7 +83,8 @@ class cEETest : private cThread {
 		cTimeElapsed cElapsed;
 		eeFloat PSElapsed;
 	private:
-		cEngine* EE;
+		cEngine * EE;
+		cWindow * mWindow;
 		cTextureFactory* TF;
 		cLog* Log;
 		cInput* KM;
@@ -219,7 +220,7 @@ class cEETest : private cThread {
 		cUIProgressBar * mProgressBar;
 		cUIListBox * mListBox;
 		cUIPopUpMenu * Menu;
-		cUIWindow * mWindow;
+		cUIWindow * mUIWindow;
 
 		cTextCache mEEText;
 		cTextCache mFBOText;
@@ -283,7 +284,6 @@ void cEETest::CreateAquaTextureAtlas() {
 void cEETest::Init() {
 	EE = cEngine::instance();
 
-	SetScreen( 0 );
 	run 				= false;
 	DrawBack 			= false;
 	MultiViewportMode 	= false;
@@ -325,20 +325,30 @@ void cEETest::Init() {
 	else
 		GLVer = GLv_2;
 
-	run = EE->Init(mWidth, mHeight, BitColor, Windowed, Resizeable, VSync, true, false, false, GLVer );
+	Uint32 Style = Window::WindowStyle::Titlebar;
+
+	if ( !Windowed )
+		Style |= Window::WindowStyle::Fullscreen;
+
+	if ( Resizeable )
+		Style |= Window::WindowStyle::Resize;
+
+	mWindow = EE->CreateWindow( WindowSettings( mWidth, mHeight, BitColor, Style ), ContextSettings( VSync, GLVer ) );
 
 	PAK.Open( MyPath + "data/ee.zip" );
 
-	run = ( run && PAK.IsOpen() );
+	run = ( mWindow->Created() && PAK.IsOpen() );
 
 	if ( run ) {
-		EE->SetWindowCaption( "EE++ Test Application" );
+		SetScreen( 0 );
+
+		mWindow->Caption( "EE++ Test Application" );
 		TF = cTextureFactory::instance();
 		TF->Allocate(40);
 
 		Log = cLog::instance();
-		KM = cInput::instance();
-		JM = cJoystickManager::instance();
+		KM = mWindow->GetInput();
+		JM = KM->GetJoystickManager();
 
 		PS.resize(5);
 
@@ -446,13 +456,13 @@ void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
 	mFBOText.Create( TTFB, L"This is a VBO\nInside of a FBO" );
 	mInfoText.Create( FF, L"", eeColorA(255,255,255,150) );
 
-	EE->Display();
+	mWindow->Display();
 
 	mFontsLoaded = true;
 }
 
 void cEETest::CreateShaders() {
-	mUseShaders = mUseShaders && EE->ShadersSupported();
+	mUseShaders = mUseShaders && GLi->ShadersSupported();
 
 	mShaderProgram = NULL;
 
@@ -788,7 +798,7 @@ void cEETest::CreateUI() {
 	C->Scale( 0 );
 
 	CreateDecoratedWindow();
-	//mWindow->Show();
+	//mUIWindow->Show();
 }
 
 void cEETest::CreateDecoratedWindow() {
@@ -803,14 +813,14 @@ void cEETest::CreateDecoratedWindow() {
 	//WinParams.BorderAutoSize = false;
 	//WinParams.BorderSize = eeSize( 8, 8 );
 
-	mWindow = eeNew( cUIWindow, ( WinParams ) );
-	mWindow->AddEventListener( cUIEvent::EventOnWindowCloseClick, cb::Make1( this, &cEETest::CloseClick ) );
-	mWindow->Title( L"Test Window" );
-	mWindow->ToBack();
+	mUIWindow = eeNew( cUIWindow, ( WinParams ) );
+	mUIWindow->AddEventListener( cUIEvent::EventOnWindowCloseClick, cb::Make1( this, &cEETest::CloseClick ) );
+	mUIWindow->Title( L"Test Window" );
+	mUIWindow->ToBack();
 }
 
 void cEETest::CloseClick( const cUIEvent * Event ) {
-	mWindow = NULL;
+	mUIWindow = NULL;
 }
 
 void cEETest::ItemClick( const cUIEvent * Event ) {
@@ -847,11 +857,11 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 			C->StartRotation( 0, 360, 500.f, SINEIN );
 		}
 	} else if ( L"Show Window 2" == txt ) {
-		if ( NULL == mWindow ) {
+		if ( NULL == mUIWindow ) {
 			CreateDecoratedWindow();
 		}
 
-		mWindow->Show();
+		mUIWindow->Show();
 	} else if ( L"Multi Viewport" == txt ) {
 		MultiViewportMode = !MultiViewportMode;
 	}
@@ -867,7 +877,7 @@ void cEETest::QuitClick( const cUIEvent * Event ) {
 	const cUIEventMouse * MouseEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
 
 	if ( MouseEvent->Flags() & EE_BUTTON_LMASK ) {
-		EE->Running(false);
+		mWindow->Close();
 	}
 }
 
@@ -895,7 +905,7 @@ void cEETest::ButtonClick( const cUIEvent * Event ) {
 		Gfx->Enabled( false );
 
 		Gfx->StartRotation( 0, 2500, 2500 );
-		Gfx->StartMovement( eeVector2i( eeRandi( 0, EE->GetWidth() ), -64 ), eeVector2i( eeRandi( 0, EE->GetWidth() ), EE->GetHeight() + 64 ), 2500 );
+		Gfx->StartMovement( eeVector2i( eeRandi( 0, mWindow->GetWidth() ), -64 ), eeVector2i( eeRandi( 0, mWindow->GetWidth() ), mWindow->GetHeight() + 64 ), 2500 );
 		Gfx->CloseFadeOut( 3500 );
 
 		mListBox->AddListBoxItem( L"Test ListBox " + toWStr( mListBox->Count() + 1 ) + L" testing it right now!" );
@@ -904,9 +914,9 @@ void cEETest::ButtonClick( const cUIEvent * Event ) {
 
 void cEETest::SetScreen( Uint32 num ) {
 	if ( 0 == num )
-		EE->SetBackColor( eeColor( 240, 240, 240 ) );
+		mWindow->BackColor( eeColor( 240, 240, 240 ) );
 	else
-		EE->SetBackColor( eeColor( 0, 0, 0 ) );
+		mWindow->BackColor( eeColor( 0, 0, 0 ) );
 
 	if ( num < 6 )
 		Screen = num;
@@ -920,7 +930,7 @@ void cEETest::CmdSetPartsNum ( const std::vector < std::wstring >& params ) {
 			bool Res = fromWString<Int32>( tInt, params[1] );
 
 			if ( Res && ( tInt >= 0 && tInt <= 100000 ) ) {
-				PS[2].Create(WormHole, tInt, TN[5], EE->GetWidth() * 0.5f, EE->GetHeight() * 0.5f, 32, true);
+				PS[2].Create(WormHole, tInt, TN[5], mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f, 32, true);
 				Con.PushText( L"Wormhole Particles Number Changed to: " + toWStr(tInt) );
 			} else
 				Con.PushText( L"Valid parameters are between 0 and 100000 (0 = no limit)." );
@@ -985,9 +995,9 @@ void cEETest::LoadTextures() {
 
 	PS[0].SetCallbackReset( cb::Make2( this, &cEETest::ParticlesCallback ) );
 	PS[0].Create(Callback, 500, TN[5], 0, 0, 16, true);
-	PS[1].Create(Heal, 250, TN[5], EE->GetWidth() * 0.5f, EE->GetHeight() * 0.5f, 16, true);
+	PS[1].Create(Heal, 250, TN[5], mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f, 16, true);
 
-	PS[2].Create(WormHole, PartsNum, TN[5], EE->GetWidth() * 0.5f, EE->GetHeight() * 0.5f, 32, true);
+	PS[2].Create(WormHole, PartsNum, TN[5], mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f, 32, true);
 	Con.AddCommand( L"setparticlesnum", cb::Make1( this, &cEETest::CmdSetPartsNum ) );
 
 	PS[3].Create(Fire, 350, TN[5], -50.f, -50.f, 32, true);
@@ -1016,7 +1026,7 @@ void cEETest::LoadTextures() {
 	Cursor[1] = TF->LoadFromPack( &PAK, "cursor.tga" );
 	CursorP[1] = TF->GetTexture( Cursor[1] );
 
-	EE->ShowCursor(false);
+	mWindow->ShowCursor(false);
 
 	CL1.AddFrame(TN[2]);
 	CL1.Position( 500, 400 );
@@ -1094,7 +1104,7 @@ void cEETest::Run() {
 }
 
 void cEETest::ParticlesThread() {
-	while ( cEngine::instance()->Running() ) {
+	while ( mWindow->Running() ) {
 		if ( MultiViewportMode || Screen == 2 ) {
 			PSElapsed = (eeFloat)cElapsed.Elapsed();
 
@@ -1118,7 +1128,7 @@ void cEETest::Screen2() {
 	}
 
 	if ( KM->MouseLeftPressed() )
-		TNP[3]->DrawEx( 0.f, 0.f, (eeFloat)EE->GetWidth(), (eeFloat)EE->GetHeight() );
+		TNP[3]->DrawEx( 0.f, 0.f, (eeFloat)mWindow->GetWidth(), (eeFloat)mWindow->GetHeight() );
 
 	Batch.SetTexture( TNP[2] );
 	Batch.QuadsBegin();
@@ -1195,7 +1205,7 @@ void cEETest::Screen2() {
 	}
 
 	eeColorA Col(255,255,255,(int)alpha);
-	TNP[1]->DrawEx( (eeFloat)EE->GetWidth() - 128.f, (eeFloat)EE->GetHeight() - 128.f, 128.f, 128.f, ang, 1, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
+	TNP[1]->DrawEx( (eeFloat)mWindow->GetWidth() - 128.f, (eeFloat)mWindow->GetHeight() - 128.f, 128.f, 128.f, ang, 1, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
 
 	SP.Position( alpha, alpha );
 	SP.Draw();
@@ -1226,7 +1236,7 @@ void cEETest::Screen2() {
 
 	PR.DrawQuad( CL1.GetQuad(), EE_DRAW_LINE );
 
-	Ang = Ang + EE->Elapsed() * 0.1f;
+	Ang = Ang + mWindow->Elapsed() * 0.1f;
 	if (Ang > 360.f) Ang = 1.f;
 
 	if ( ShowParticles )
@@ -1234,10 +1244,10 @@ void cEETest::Screen2() {
 
 	PR.SetColor( eeColorA(0, 255, 0, 50) );
 
-	if (IntersectLines( eeVector2f(0.f, 0.f), eeVector2f( (eeFloat)EE->GetWidth(), (eeFloat)EE->GetHeight() ), eeVector2f(Mousef.x - 80.f, Mousef.y - 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y + 80.f) ) )
+	if (IntersectLines( eeVector2f(0.f, 0.f), eeVector2f( (eeFloat)mWindow->GetWidth(), (eeFloat)mWindow->GetHeight() ), eeVector2f(Mousef.x - 80.f, Mousef.y - 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y + 80.f) ) )
 		iL1 = true; else iL1 = false;
 
-	if (IntersectLines( eeVector2f((eeFloat)EE->GetWidth(), 0.f), eeVector2f( 0.f, (eeFloat)EE->GetHeight() ), eeVector2f(Mousef.x - 80.f, Mousef.y + 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y - 80.f) ) )
+	if (IntersectLines( eeVector2f((eeFloat)mWindow->GetWidth(), 0.f), eeVector2f( 0.f, (eeFloat)mWindow->GetHeight() ), eeVector2f(Mousef.x - 80.f, Mousef.y + 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y - 80.f) ) )
 		iL2 = true; else iL2 = false;
 
 	if (iL1 && iL2)
@@ -1252,10 +1262,10 @@ void cEETest::Screen2() {
 	PR.DrawTriangle( eeVector2f( Mousef.x, Mousef.y - 10.f ), eeVector2f( Mousef.x - 10.f, Mousef.y + 10.f ), eeVector2f( Mousef.x + 10.f, Mousef.y + 10.f ), EE_DRAW_LINE );
 	PR.DrawLine( eeVector2f(Mousef.x - 80.f, Mousef.y - 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y + 80.f) );
 	PR.DrawLine( eeVector2f(Mousef.x - 80.f, Mousef.y + 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y - 80.f) );
-	PR.DrawLine( eeVector2f((eeFloat)EE->GetWidth(), 0.f), eeVector2f( 0.f, (eeFloat)EE->GetHeight() ) );
+	PR.DrawLine( eeVector2f((eeFloat)mWindow->GetWidth(), 0.f), eeVector2f( 0.f, (eeFloat)mWindow->GetHeight() ) );
 	PR.DrawQuad( eeVector2f(0.f, 0.f), eeVector2f(0.f, 100.f), eeVector2f(150.f, 150.f), eeVector2f(200.f, 150.f), eeColorA(220, 240, 0, 125), eeColorA(100, 0, 240, 125), eeColorA(250, 50, 25, 125), eeColorA(50, 150, 150, 125) );
 	PR.DrawRectangle(Mousef.x - 80.f, Mousef.y - 80.f, 160.f, 160.f, 45.f, 1.f, EE_DRAW_LINE);
-	PR.DrawLine( eeVector2f(0.f, 0.f), eeVector2f( (eeFloat)EE->GetWidth(), (eeFloat)EE->GetHeight() ) );
+	PR.DrawLine( eeVector2f(0.f, 0.f), eeVector2f( (eeFloat)mWindow->GetWidth(), (eeFloat)mWindow->GetHeight() ) );
 
 	TNP[3]->DrawQuadEx( eeQuad2f( eeVector2f(0.f, 0.f), eeVector2f(0.f, 100.f), eeVector2f(150.f, 150.f), eeVector2f(200.f, 150.f) ), 0.0f, 0.0f, ang, scale, eeColorA(220, 240, 0, 125), eeColorA(100, 0, 240, 125), eeColorA(250, 50, 25, 125), eeColorA(50, 150, 150, 125) );
 
@@ -1299,7 +1309,7 @@ void cEETest::Screen4() {
 		mFBO->Unbind();
 
 		if ( NULL != mFBO->GetTexture() ) {
-			mFBO->GetTexture()->Draw( (eeFloat)EE->GetWidth() * 0.5f - (eeFloat)mFBO->GetWidth() * 0.5f, (eeFloat)EE->GetHeight() * 0.5f - (eeFloat)mFBO->GetHeight() * 0.5f, Ang );
+			mFBO->GetTexture()->Draw( (eeFloat)mWindow->GetWidth() * 0.5f - (eeFloat)mFBO->GetWidth() * 0.5f, (eeFloat)mWindow->GetHeight() * 0.5f - (eeFloat)mFBO->GetHeight() * 0.5f, Ang );
 			cGlobalBatchRenderer::instance()->Draw();
 		}
 	}
@@ -1313,14 +1323,14 @@ void cEETest::Render() {
 	if ( !mTextureLoaded )
 		mResLoad.Update();
 
-	HWidth = EE->GetWidth() * 0.5f;
-	HHeight = EE->GetHeight() * 0.5f;
+	HWidth = mWindow->GetWidth() * 0.5f;
+	HHeight = mWindow->GetHeight() * 0.5f;
 
 	if ( eeGetTicks() - lasttick >= 50 ) {
 		lasttick = eeGetTicks();
 		#ifdef EE_DEBUG
 		mInfo = StrFormated( "EE - FPS: %d Elapsed Time: %4.8f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s\nApp Memory Usage: %s\nApp Peak Memory Usage: %s",
-							EE->FPS(),
+							mWindow->FPS(),
 							et,
 							(Int32)Mouse.x,
 							(Int32)Mouse.y,
@@ -1330,7 +1340,7 @@ void cEETest::Render() {
 						);
 		#else
 		mInfo = StrFormated( "EE - FPS: %d Elapsed Time: %4.8f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s",
-							EE->FPS(),
+							mWindow->FPS(),
 							et,
 							(Int32)Mouse.x,
 							(Int32)Mouse.y,
@@ -1344,23 +1354,23 @@ void cEETest::Render() {
 	if ( !MultiViewportMode ) {
 		Scenes[ Screen ]();
 	} else {
-		Views[0].SetView( 0, 0, EE->GetWidth(), static_cast<Uint32>( HHeight ) );
-		Views[1].SetView( 0, static_cast<Int32> ( HHeight ), EE->GetWidth(), static_cast<Uint32>( HHeight ) );
+		Views[0].SetView( 0, 0, mWindow->GetWidth(), static_cast<Uint32>( HHeight ) );
+		Views[1].SetView( 0, static_cast<Int32> ( HHeight ), mWindow->GetWidth(), static_cast<Uint32>( HHeight ) );
 
-		EE->SetView( Views[1] );
+		mWindow->SetView( Views[1] );
 		Mouse = KM->GetMousePosFromView( Views[1] );
 		Mousef = eeVector2f( (eeFloat)Mouse.x, (eeFloat)Mouse.y );
 		Screen2();
 
-		EE->SetView( Views[0] );
+		mWindow->SetView( Views[0] );
 		Mouse = KM->GetMousePosFromView( Views[0] );
 		Mousef = eeVector2f( (eeFloat)Mouse.x, (eeFloat)Mouse.y );
 		Screen1();
 
-		EE->SetView( EE->GetDefaultView() );
-		EE->ClipEnable( (Int32)HWidth - 320, (Int32)HHeight - 240, 640, 480 );
+		mWindow->SetView( mWindow->GetDefaultView() );
+		mWindow->ClipEnable( (Int32)HWidth - 320, (Int32)HHeight - 240, 640, 480 );
 		Screen3();
-		EE->ClipDisable();
+		mWindow->ClipDisable();
 	}
 
 	eeColorA ColRR1( 150, 150, 150, 220 );
@@ -1372,13 +1382,13 @@ void cEETest::Render() {
 
 	PR.DrawRectangle(
 					0.f,
-					(eeFloat)EE->GetHeight() - (eeFloat)mEEText.GetNumLines() * (eeFloat)mEEText.Font()->GetFontSize(),
+					(eeFloat)mWindow->GetHeight() - (eeFloat)mEEText.GetNumLines() * (eeFloat)mEEText.Font()->GetFontSize(),
 					mEEText.GetTextWidth(),
 					mEEText.GetTextHeight(),
 					ColRR1, ColRR2, ColRR3, ColRR4
 	);
 
-	mEEText.Draw( 0.f, (eeFloat)EE->GetHeight() - mEEText.GetTextHeight(), FONT_DRAW_CENTER, 1.f, Ang );
+	mEEText.Draw( 0.f, (eeFloat)mWindow->GetHeight() - mEEText.GetTextHeight(), FONT_DRAW_CENTER, 1.f, Ang );
 
 	mInfoText.Draw( 6.f, 6.f );
 
@@ -1391,8 +1401,8 @@ void cEETest::Render() {
 		FF2->Draw( L"_", 6.f + FF2->GetTextWidth(), 180.f + (eeFloat)LineNum * (eeFloat)FF2->GetFontSize() );
 	}
 
-	FF2->SetText( L"FPS: " + toWStr( EE->FPS() ) );
-	FF2->Draw( EE->GetWidth() - FF2->GetTextWidth() - 15, 0 );
+	FF2->SetText( L"FPS: " + toWStr( mWindow->FPS() ) );
+	FF2->Draw( mWindow->GetWidth() - FF2->GetTextWidth() - 15, 0 );
 
 	FF2->SetText( InBuf.Buffer() );
 	FF2->Draw( 6, 180, FONT_DRAW_SHADOW );
@@ -1415,56 +1425,56 @@ void cEETest::Input() {
 	Mouse = KM->GetMousePos();
 	Mousef = eeVector2f( (eeFloat)Mouse.x, (eeFloat)Mouse.y );
 
-	if ( !EE->WindowVisible() ) {
+	if ( !mWindow->Visible() ) {
 		mWasMinimized = true;
 
-		EE->SetFrameRateLimit( 10 );
+		mWindow->FrameRateLimit( 10 );
 
 		if ( Mus->State() == SOUND_PLAYING )
 			Mus->Pause();
 
 	} else {
-		if ( mLastFPSLimit != EE->GetFrameRateLimit() && !mWasMinimized )
-			mLastFPSLimit = EE->GetFrameRateLimit();
+		if ( mLastFPSLimit != mWindow->FrameRateLimit() && !mWasMinimized )
+			mLastFPSLimit = mWindow->FrameRateLimit();
 
 		if ( mWasMinimized ) {
 			mWasMinimized = false;
 
-			if ( !EE->Windowed() )
+			if ( !mWindow->Windowed() )
 				KM->GrabInput( true );
 		}
 
-		EE->SetFrameRateLimit( mLastFPSLimit );
+		mWindow->FrameRateLimit( mLastFPSLimit );
 
 		if ( Mus->State() == SOUND_PAUSED )
 			Mus->Play();
 	}
 
 	if ( KM->IsKeyDown(KEY_ESCAPE) )
-		EE->Running(false);
+		mWindow->Close();
 
 	if ( KM->IsKeyUp(KEY_F1) )
 		MultiViewportMode = !MultiViewportMode;
 
 	if ( KM->AltPressed() && KM->IsKeyUp(KEY_M) && !Con.Active() )
-		EE->MaximizeWindow();
+		mWindow->Maximize();
 
 	if ( KM->IsKeyUp(KEY_F4) )
 		TF->ReloadAllTextures();
 
 	if ( KM->AltPressed() && KM->IsKeyUp(KEY_RETURN) ) {
-		if ( EE->Windowed() ) {
-			EE->ChangeRes( EE->GetDeskWidth(), EE->GetDeskHeight(), false );
+		if ( mWindow->Windowed() ) {
+			mWindow->Size( mWindow->GetDesktopResolution().Width(), mWindow->GetDesktopResolution().Height(), false );
 			KM->GrabInput(true);
 		} else {
-			EE->ToggleFullscreen();
+			mWindow->ToggleFullscreen();
 			KM->GrabInput(false);
 		}
 	}
 
 	if ( KM->GrabInput() ) {
 		if ( KM->AltPressed() && KM->IsKeyDown( KEY_TAB ) ) {
-			EE->MinimizeWindow();
+			mWindow->Minimize();
 
 			if ( KM->GrabInput() )
 				KM->GrabInput( false );
@@ -1519,7 +1529,7 @@ void cEETest::Input() {
 		Int16 aY = Joy->GetAxis( AXIS_Y );
 
 		if ( 0 != aX || 0 != aY ) {
-			eeFloat rE = EE->Elapsed();
+			eeFloat rE = mWindow->Elapsed();
 
 			if ( aX < 0 )	mAxisX -= ( (eeFloat)aX / (eeFloat)AXIS_MIN ) * rE;
 			else 			mAxisX += ( (eeFloat)aX / (eeFloat)AXIS_MAX ) * rE;
@@ -1556,35 +1566,35 @@ void cEETest::Input() {
 				Uint8 hat = Joy->GetHat();
 
 				if ( HAT_LEFT == hat || HAT_LEFTDOWN == hat || HAT_LEFTUP == hat )
-					Map.Move( (EE->Elapsed() * 0.2f), 0 );
+					Map.Move( (mWindow->Elapsed() * 0.2f), 0 );
 
 				if ( HAT_RIGHT == hat || HAT_RIGHTDOWN == hat || HAT_RIGHTUP == hat )
-					Map.Move( -EE->Elapsed() * 0.2f, 0 );
+					Map.Move( -mWindow->Elapsed() * 0.2f, 0 );
 
 				if ( HAT_UP == hat || HAT_LEFTUP == hat || HAT_RIGHTUP == hat )
-					Map.Move( 0, (EE->Elapsed() * 0.2f) );
+					Map.Move( 0, (mWindow->Elapsed() * 0.2f) );
 
 				if ( HAT_DOWN == hat || HAT_LEFTDOWN == hat || HAT_RIGHTDOWN == hat )
-					Map.Move( 0, -EE->Elapsed() * 0.2f );
+					Map.Move( 0, -mWindow->Elapsed() * 0.2f );
 			}
 
 			if ( KM->IsKeyDown(KEY_LEFT) )
-				Map.Move( (EE->Elapsed() * 0.2f), 0 );
+				Map.Move( (mWindow->Elapsed() * 0.2f), 0 );
 
 			if ( KM->IsKeyDown(KEY_RIGHT) )
-				Map.Move( -EE->Elapsed() * 0.2f, 0 );
+				Map.Move( -mWindow->Elapsed() * 0.2f, 0 );
 
 			if ( KM->IsKeyDown(KEY_UP) )
-				Map.Move( 0, (EE->Elapsed() * 0.2f) );
+				Map.Move( 0, (mWindow->Elapsed() * 0.2f) );
 
 			if ( KM->IsKeyDown(KEY_DOWN) )
-				Map.Move( 0, -EE->Elapsed() * 0.2f );
+				Map.Move( 0, -mWindow->Elapsed() * 0.2f );
 
 			if ( KM->IsKeyDown(KEY_KP_MINUS) )
-				Map.BaseLight().Radius( Map.BaseLight().Radius() - EE->Elapsed() * 0.2f );
+				Map.BaseLight().Radius( Map.BaseLight().Radius() - mWindow->Elapsed() * 0.2f );
 
 			if ( KM->IsKeyDown(KEY_KP_PLUS) )
-				Map.BaseLight().Radius( Map.BaseLight().Radius() + EE->Elapsed() * 0.2f );
+				Map.BaseLight().Radius( Map.BaseLight().Radius() + mWindow->Elapsed() * 0.2f );
 
 			if ( KM->IsKeyUp(KEY_F6) ) {
 				Wireframe = !Wireframe;
@@ -1641,7 +1651,7 @@ void cEETest::Process() {
 	Init();
 	if ( run ) {
 		do {
-			et = EE->Elapsed();
+			et = mWindow->Elapsed();
 
 			Input();
 
@@ -1650,10 +1660,10 @@ void cEETest::Process() {
 			else
 				mFontLoader.Update();
 
-			if ( KM->IsKeyUp(KEY_F12) ) EE->TakeScreenshot( MyPath + "data/screenshots/" ); //After render and before Display
+			if ( KM->IsKeyUp(KEY_F12) ) mWindow->TakeScreenshot( MyPath + "data/screenshots/" ); //After render and before Display
 
-			EE->Display();
-		} while( EE->Running() );
+			mWindow->Display();
+		} while( mWindow->Running() );
 	}
 
 	End();
@@ -1720,27 +1730,27 @@ void cEETest::Demo1Create() {
 	cBody *body, *staticBody = mSpace->StaticBody();
 	Physics::cShape * shape;
 
-	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( 0, EE->GetHeight() ), cVectNew( EE->GetWidth(), EE->GetHeight() ), 0.0f ) );
+	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( 0, mWindow->GetHeight() ), cVectNew( mWindow->GetWidth(), mWindow->GetHeight() ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
 	shape->Layers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( EE->GetWidth(), 0 ), cVectNew( EE->GetWidth(), EE->GetHeight() ), 0.0f ) );
+	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( mWindow->GetWidth(), 0 ), cVectNew( mWindow->GetWidth(), mWindow->GetHeight() ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
 	shape->Layers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( 0, 0 ), cVectNew( 0, EE->GetHeight() ), 0.0f ) );
+	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( 0, 0 ), cVectNew( 0, mWindow->GetHeight() ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
 	shape->Layers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( 0, 0 ), cVectNew( EE->GetWidth(), 0 ), 0.0f ) );
+	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( 0, 0 ), cVectNew( mWindow->GetWidth(), 0 ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
 	shape->Layers( NOT_GRABABLE_MASK );
 
-	eeFloat hw = EE->GetWidth() / 2;
+	eeFloat hw = mWindow->GetWidth() / 2;
 
 	for(int i=0; i<14; i++){
 		for(int j=0; j<=i; j++){
@@ -1757,7 +1767,7 @@ void cEETest::Demo1Create() {
 	cpFloat radius = 15.0f;
 
 	body = mSpace->AddBody( cBody::New( 10.0f, Moment::ForCircle( 10.0f, 0.0f, radius, cVectZero ) ) );
-	body->Pos( cVectNew( hw, EE->GetHeight() - radius - 5 ) );
+	body->Pos( cVectNew( hw, mWindow->GetHeight() - radius - 5 ) );
 
 	//shape = mSpace->AddShape( cShapeCircleSprite::New( body, radius, cVectZero, mCircleSprite ) );
 	shape = mSpace->AddShape( cShapeCircle::New( body, radius, cVectZero ) );
@@ -1837,7 +1847,7 @@ void cEETest::Demo2Create() {
 
 	emitterInstance.queue = 5;
 	emitterInstance.blocked = 0;
-	emitterInstance.position = cVectNew( EE->GetWidth() / 2 , 150);
+	emitterInstance.position = cVectNew( mWindow->GetWidth() / 2 , 150);
 
 	shape = mSpace->AddShape( cShapeCircle::New( staticBody, 15.0f, emitterInstance.position ) );
 	shape->Sensor( 1 );
@@ -1927,7 +1937,7 @@ void cEETest::PhysicsUpdate() {
 	mMousePoint = cVectNew( KM->GetMousePosf().x, KM->GetMousePosf().y );
 	cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last ), tocpv( mMousePoint ), 0.25 ) );
 	mMouseBody->Pos( newPoint );
-	mMouseBody->Vel( ( newPoint - mMousePoint_last ) * (cpFloat)EE->FPS() );
+	mMouseBody->Vel( ( newPoint - mMousePoint_last ) * (cpFloat)mWindow->FPS() );
 	mMousePoint_last = newPoint;
 
 	if ( KM->MouseLeftPressed() ) {
@@ -1956,118 +1966,15 @@ void cEETest::PhysicsUpdate() {
 
 void cEETest::PhysicsDestroy() {
 	mDemo[ mCurDemo ].destroy();
-	cPhysicsManager::DestroySingleton();
 }
-/*
-static void defineVertexArrayObject(GLuint vaoId, size_t NbytesV, size_t NbytesC, GLint size, GLenum type, GLfloat *vertices, GLfloat *colors, GLfloat * texCoords, GLuint shader_id ) {
-	//enable vertex array object to be defined
-	glBindVertexArray(vaoId);
 
-	//generate VBO foreach 'in'; dgl_Vertex dgl_Color dgl_TexCoord
-	GLuint m_vboId[3];
-	glGenBuffers(3, &m_vboId[0]);
-
-	//"in		 vec2 dgl_Vertex;",
-	glBindBuffer(GL_ARRAY_BUFFER, m_vboId[0] );											// enable the 1st VBO
-	glBufferData(GL_ARRAY_BUFFER, NbytesV, vertices, GL_STATIC_DRAW);					// fill the VBO with vertices data
-	const GLuint index_mPosition = glGetAttribLocation( shader_id, "dgl_Vertex" );		// get ID for "dgl_Vertex"
-	glEnableVertexAttribArray( index_mPosition );										// enable VBO vertex attribute ("dgl_Vertex")
-	glVertexAttribPointer( index_mPosition, 2, type, GL_FALSE, 0, 0 );					// VBO point to the "dgl_Vertex" attribute
-
-	//"in		 vec4 dgl_Color;",
-	glBindBuffer( GL_ARRAY_BUFFER, m_vboId[1] );										// enable the 2nd VBO
-	glBufferData( GL_ARRAY_BUFFER, NbytesC, colors, GL_STATIC_DRAW );					// fill the 2nd VBO with colors data
-	const GLuint index_mcolor = glGetAttribLocation( shader_id,"dgl_Color" );			// get ID for "dgl_Color"
-	glEnableVertexAttribArray( index_mcolor );											// enable VBO vertex attribute ("dgl_Color")
-	glVertexAttribPointer( index_mcolor, 4, type, GL_FALSE, 0, 0 );						// VBO point to the "dgl_Color" attribute
-
-	//"in		 vec2 dgl_TexCoord;",
-	glBindBuffer( GL_ARRAY_BUFFER, m_vboId[2] );										// enable the 3rd VBO
-	glBufferData( GL_ARRAY_BUFFER, NbytesV, texCoords, GL_STATIC_DRAW );				// fill the 3nd VBO with tex coords data
-	const GLuint index_mcoords = glGetAttribLocation( shader_id,"dgl_TexCoord" );		// get ID for "dgl_TexCoords"
-	glEnableVertexAttribArray( index_mcoords );											// enable VBO vertex attribute ("dgl_TexCoords")
-	glVertexAttribPointer( index_mcoords, 2, type, GL_FALSE, 0, 0 );					// VBO point to the "dgl_TexCoords" attribute
-}
-*/
 int main (int argc, char * argv []) {
 	cEETest * Test = eeNew( cEETest, () );
 
 	Test->Process();
 
 	eeDelete( Test );
-/*
-	cEngine *			EE		= cEngine::instance();
-	EE->Init( 800, 600, 32, true, true, true, true, false, false, GLv_3 );
-	EE->SetBackColor( eeColor( 255, 255, 255 ) );
 
-	cInput *			KM		= cInput::instance();
-	cTextureFactory *	TF		= cTextureFactory::instance();
-	cTexture *			Tex		= TF->GetTexture( TF->Load( AppPath() + "data/bnb/bnb.png" ) );
-
-	cRendererGL3 * Ren = reinterpret_cast<cRendererGL3 *>( GLi );
-
-	GLfloat vertices0[] = { // dgl_Vertex
-		0.0		, 0.0, // xy
-		0.0		, 600,
-		800.0	, 600.0,
-		800.0	, 0.0
-	};
-
-	size_t Nbytes_vertices0=sizeof(vertices0);
-
-	GLfloat colors0[] = { // dgl_Color
-		1.0, 1.0, 1.0, 0.5, //rgba
-		1.0, 1.0, 1.0, 0.5,
-		1.0, 1.0, 1.0, 0.5,
-		1.0, 1.0, 1.0, 0.5
-	};
-	size_t Nbytes_colors0=sizeof(colors0);
-
-	GLfloat texCoords0[] = { // dgl_TexCoord
-		0.0		, 0.0, // xy
-		0.0		, 1.0,
-		1.0		, 1.0,
-		1.0		, 0.0
-	};
-
-	GLuint				vao_id;
-
-	glGenVertexArrays( 1, &vao_id );
-	glBindVertexArray( vao_id );
-
-	GLuint vao_elementcount = Nbytes_vertices0 / 2 / sizeof(GLfloat);
-
-	defineVertexArrayObject( vao_id, Nbytes_vertices0, Nbytes_colors0, 4, GL_FLOAT, vertices0, colors0, texCoords0, Ren->BaseShaderId() );
-
-	eeFloat ang = 0;
-
-	while( EE->Running() ) {
-		KM->Update();
-
-		ang += EE->Elapsed() * 0.1;
-
-		TF->Bind( Tex );
-		//glBindVertexArray( vao_id );
-
-		GLi->DrawArrays( GL_TRIANGLE_FAN, 0, vao_elementcount );
-
-		GLi->PushMatrix();
-
-		GLi->Translatef( 400, 300, 0 );
-		GLi->Rotatef( ang, 0, 0, 1 );
-		GLi->Translatef( -400, -300, 0 );
-
-		GLi->DrawArrays( GL_TRIANGLE_FAN, 0, vao_elementcount );
-
-		GLi->PopMatrix();
-
-		EE->Display();
-
-		if ( KM->IsKeyDown( KEY_ESCAPE ) ) EE->Running( false );
-	};
-
-	cEngine::DestroySingleton();
-*/
 	EE::MemoryManager::LogResults();
 
 	return 0;

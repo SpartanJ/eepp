@@ -3,10 +3,6 @@
 
 #include "base.hpp"
 #include "cparticle.hpp"
-#include "ctexturefactory.hpp"
-#include "../window/cengine.hpp"
-
-using namespace EE::Window;
 
 namespace EE { namespace Graphics {
 
@@ -124,9 +120,6 @@ class EE_API cParticleSystem {
 		/** Set a callback function for the reset effect of the particles. \n The reset it's where do you create the effect for every single particle. */
 		void SetCallbackReset( const ParticleCallback& pc );
 	private:
-		cEngine *			EE;
-		cTextureFactory *	TF;
-
 		cParticle *			mParticle;
 		Uint32				mPCount;
 		Uint32				mTexId;

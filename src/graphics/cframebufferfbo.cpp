@@ -9,14 +9,14 @@ bool cFrameBufferFBO::IsSupported() {
 	return 0 != GLi->IsExtension( EEGL_EXT_framebuffer_object );
 }
 
-cFrameBufferFBO::cFrameBufferFBO() :
-	cFrameBuffer(),
+cFrameBufferFBO::cFrameBufferFBO( cWindow * window ) :
+	cFrameBuffer( window ),
 	mFrameBuffer(0),
 	mDepthBuffer(0)
 {}
 
-cFrameBufferFBO::cFrameBufferFBO( const Uint32& Width, const Uint32& Height, bool DepthBuffer ) :
-	cFrameBuffer(),
+cFrameBufferFBO::cFrameBufferFBO( const Uint32& Width, const Uint32& Height, bool DepthBuffer, cWindow * window ) :
+	cFrameBuffer( window ),
 	mFrameBuffer(0),
 	mDepthBuffer(0)
 {
@@ -51,6 +51,10 @@ bool cFrameBufferFBO::Create( const Uint32& Width, const Uint32& Height ) {
 bool cFrameBufferFBO::Create( const Uint32& Width, const Uint32& Height, bool DepthBuffer ) {
 	if ( !IsSupported() )
 		return false;
+
+	if ( NULL == mWindow ) {
+		mWindow = cEngine::instance()->GetCurrentWindow();
+	}
 
 	mWidth 			= Width;
 	mHeight 		= Height;

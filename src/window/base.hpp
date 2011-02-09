@@ -2,7 +2,6 @@
 #define EE_WINDOW_BASE
 
 #include "../base.hpp"
-#include <SDL/SDL_syswm.h>
 
 #include "../utils/colors.hpp"
 #include "../utils/rect.hpp"
@@ -32,28 +31,34 @@ using namespace EE::Graphics;
 	typedef Atom			eeScrapType;
 	typedef Window			X11Window;
 	typedef Display	*		eeWindowHandler;
+	#undef Window
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
+	typedef Uint32			eeScrapType;
+	typedef void *			eeWindowHandler; // NSWindow *
+#else
+	typedef Uint32			eeWindowHandler; //! Fallback
 	typedef Uint32			eeScrapType;
 #endif
 
 #ifdef EE_GLEW_AVAILABLE
 	#if EE_PLATFORM == EE_PLATFORM_WIN
 		#include "../helper/glew/wglew.h"
-		typedef HGLRC			eeWindowContex;
+		typedef HGLRC		eeWindowContex;
 
 	#elif EE_PLATFORM == EE_PLATFORM_LINUX
 
 		#include "../helper/glew/glxew.h"
-		typedef GLXContext		eeWindowContex;
+		typedef GLXContext	eeWindowContex;
 
 	#elif EE_PLATFORM == EE_PLATFORM_MACOSX
-		//#include <AGL/agl.h>
+		#include <AGL/agl.h>
 
-		//typedef AGLContext	eeWindowContex;
-		//typedef NSWindow *	eeWindowHandler;
+		typedef AGLContext	eeWindowContex;
 	#endif
 #else
 	typedef Uint32			eeWindowContex;	//! Fallback
 #endif
+
+#include "keycodes.hpp"
 
 #endif

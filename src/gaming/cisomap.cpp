@@ -2,18 +2,25 @@
 
 namespace EE { namespace Gaming {
 
-cIsoMap::cIsoMap() :
+cIsoMap::cIsoMap( cWindow * window ) :
+	mWindow( window ),
 	mOffsetX(0),
 	mOffsetY(0),
 	mFont(NULL)
 {
-	mEE = cEngine::instance();
+	if ( NULL == mWindow ) {
+		mWindow = cEngine::instance()->GetCurrentWindow();
+	}
 }
 
 cIsoMap::~cIsoMap() {
 }
 
 void cIsoMap::Create( const eeUint& MapTilesX, const eeUint& MapTilesY, const eeUint& NumLayers, const eeUint TilesWidth, const eeUint TilesHeight, const eeColor& AmbientCol ) {
+	if ( NULL == mWindow ) {
+		mWindow = cEngine::instance()->GetCurrentWindow();
+	}
+
 	mMapWidth = MapTilesX;
 	mMapHeight = MapTilesY;
 	mMapLayers = NumLayers;
@@ -75,9 +82,9 @@ void cIsoMap::Draw() {
 	eeAABB TileAABB;
 	cIsoTile * T;
 
-	mScreenAABB = eeAABB( -mOffsetX, -mOffsetY, mEE->GetWidth() - mOffsetX, mEE->GetHeight() - mOffsetY ); // Screen AABB to MAP AABB
+	mScreenAABB = eeAABB( -mOffsetX, -mOffsetY, mWindow->GetWidth() - mOffsetX, mWindow->GetHeight() - mOffsetY ); // Screen AABB to MAP AABB
 
-	mMouseMapPos = eeVector2f( cInput::instance()->MouseX() - mOffsetX, cInput::instance()->MouseY() - mOffsetY );
+	mMouseMapPos = eeVector2f( mWindow->GetInput()->MouseX() - mOffsetX, mWindow->GetInput()->MouseY() - mOffsetY );
 
 	mLight.UpdatePos( mMouseMapPos );
 
@@ -87,11 +94,11 @@ void cIsoMap::Draw() {
 	if (mOffsetY > 0)
 		mOffsetY = 0;
 
-	if ( -mOffsetX > Tile( mMapWidth-1, mMapHeight-1 ).Q.V[1].x - mEE->GetWidth() )
-		mOffsetX = -(Tile( mMapWidth-1, mMapHeight-1 ).Q.V[1].x - mEE->GetWidth());
+	if ( -mOffsetX > Tile( mMapWidth-1, mMapHeight-1 ).Q.V[1].x - mWindow->GetWidth() )
+		mOffsetX = -(Tile( mMapWidth-1, mMapHeight-1 ).Q.V[1].x - mWindow->GetWidth());
 
-	if ( -mOffsetY > Tile( mMapWidth-1, mMapHeight-1 ).Q.V[1].y - mEE->GetHeight() )
-		mOffsetY = -(Tile( mMapWidth-1, mMapHeight-1 ).Q.V[1].y - mEE->GetHeight());
+	if ( -mOffsetY > Tile( mMapWidth-1, mMapHeight-1 ).Q.V[1].y - mWindow->GetHeight() )
+		mOffsetY = -(Tile( mMapWidth-1, mMapHeight-1 ).Q.V[1].y - mWindow->GetHeight());
 
 	Tx = (Int32)( -mOffsetX / (eeFloat)mTileHeight ) - mTilesRange;
 	Ty = (Int32)( -mOffsetY / (eeFloat)mTileHeight ) - mTilesRange;
@@ -102,8 +109,8 @@ void cIsoMap::Draw() {
 	if (Ty < 0) Ty = 0;
 	if (Ty >= (eeInt)mMapHeight) Ty = mMapHeight-1;
 
-	Tx2 = ( Tx + mTilesRange + (eeInt)( mEE->GetWidth() / (eeFloat)mTileHeight ) + mTilesRange );
-	Ty2 = ( Ty + mTilesRange + (eeInt)( mEE->GetHeight() / (eeFloat)mTileHeight) + mTilesRange );
+	Tx2 = ( Tx + mTilesRange + (eeInt)( mWindow->GetWidth() / (eeFloat)mTileHeight ) + mTilesRange );
+	Ty2 = ( Ty + mTilesRange + (eeInt)( mWindow->GetHeight() / (eeFloat)mTileHeight) + mTilesRange );
 
 	eeColorA SC(50,50,50,100);
 

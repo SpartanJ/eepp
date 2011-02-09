@@ -76,7 +76,8 @@ void cGL::DestroySingleton() {
 }
 
 cGL::cGL() :
-	mExtensions(0)
+	mExtensions(0),
+	mStateFlags( 1 << GLSF_LINE_SMOOTH )
 {
 	GLi = this;
 }
@@ -119,36 +120,37 @@ void cGL::Init() {
 	else
 	#endif
 	{
-		WriteExtension( EEGL_ARB_texture_non_power_of_two	, GetExtension( "GL_ARB_texture_non_power_of_two" ) );
-		WriteExtension( EEGL_ARB_point_parameters			, GetExtension( "GL_ARB_point_parameters" ) 		);
-		WriteExtension( EEGL_ARB_point_sprite				, GetExtension( "GL_ARB_point_sprite" ) 			);
-		WriteExtension( EEGL_ARB_shading_language_100		, GetExtension( "GL_ARB_shading_language_100" ) 	);
-		WriteExtension( EEGL_ARB_shader_objects				, GetExtension( "GL_ARB_shader_objects" )			);
-		WriteExtension( EEGL_ARB_vertex_shader				, GetExtension( "GL_ARB_vertex_shader" ) 			);
-		WriteExtension( EEGL_ARB_fragment_shader			, GetExtension( "GL_ARB_fragment_shader" ) 			);
-		WriteExtension( EEGL_EXT_framebuffer_object			, GetExtension( "GL_EXT_framebuffer_object" ) 		);
-		WriteExtension( EEGL_ARB_multitexture				, GetExtension( "GL_ARB_multitexture" ) 			);
-		WriteExtension( EEGL_EXT_texture_compression_s3tc	, GetExtension( "GL_EXT_texture_compression_s3tc" ) );
-		WriteExtension( EEGL_ARB_vertex_buffer_object		, GetExtension( "GL_ARB_vertex_buffer_object" )	);
+		WriteExtension( EEGL_ARB_texture_non_power_of_two	, IsExtension( "GL_ARB_texture_non_power_of_two" )	);
+		WriteExtension( EEGL_ARB_point_parameters			, IsExtension( "GL_ARB_point_parameters" )			);
+		WriteExtension( EEGL_ARB_point_sprite				, IsExtension( "GL_ARB_point_sprite" )				);
+		WriteExtension( EEGL_ARB_shading_language_100		, IsExtension( "GL_ARB_shading_language_100" )		);
+		WriteExtension( EEGL_ARB_shader_objects				, IsExtension( "GL_ARB_shader_objects" )			);
+		WriteExtension( EEGL_ARB_vertex_shader				, IsExtension( "GL_ARB_vertex_shader" ) 			);
+		WriteExtension( EEGL_ARB_fragment_shader			, IsExtension( "GL_ARB_fragment_shader" ) 			);
+		WriteExtension( EEGL_EXT_framebuffer_object			, IsExtension( "GL_EXT_framebuffer_object" ) 		);
+		WriteExtension( EEGL_ARB_multitexture				, IsExtension( "GL_ARB_multitexture" )				);
+		WriteExtension( EEGL_EXT_texture_compression_s3tc	, IsExtension( "GL_EXT_texture_compression_s3tc" )	);
+		WriteExtension( EEGL_ARB_vertex_buffer_object		, IsExtension( "GL_ARB_vertex_buffer_object" )		);
 
 		glewOn = false; /// avoid compiler warning
 	}
 }
 
-Uint32 cGL::GetExtension( const char * name ) {
+bool cGL::IsExtension( const std::string& name ) {
 #ifdef EE_GLEW_AVAILABLE
-	return glewIsSupported( name );
+	return 0 != glewIsSupported( name.c_str() );
 #else
-	char *Exts = (char *)glGetString(GL_EXTENSIONS);
+	char *Exts = (char *)glGetString( GL_EXTENSIONS );
 
-	if ( strstr( Exts, name ) )
-			return 1;
+	if ( strstr( Exts, name.c_str() ) ) {
+		return true;
+	}
 
-	return 0;
+	return false;
 #endif
 }
 
-bool cGL::IsExtension( Uint32 name ) {
+bool cGL::IsExtension( EEGL_extensions name ) {
 	return 0 != ( mExtensions & ( 1 << name ) );
 }
 
@@ -291,6 +293,54 @@ void cGL::SetShader( cShaderProgram * Shader ) {
 	} else {
 		glUseProgram( 0 );
 	}
+}
+
+bool cGL::IsLineSmooth() {
+	return Read32BitKey( &mStateFlags, GLSF_LINE_SMOOTH );
+}
+
+void cGL::LineSmooth() {
+	LineSmooth( IsLineSmooth() );
+}
+
+void cGL::LineSmooth( const bool& Enable ) {
+	if ( Enable ) {
+		GLi->Enable( GL_LINE_SMOOTH );
+	} else {
+		GLi->Disable( GL_LINE_SMOOTH );
+	}
+
+	Write32BitKey( &mStateFlags, GLSF_LINE_SMOOTH, Enable ? 1 : 0 );
+}
+
+void cGL::PolygonMode() {
+	EE_FILL_MODE Mode = EE_DRAW_FILL;
+
+	if ( Read32BitKey( &mStateFlags, GLSF_POLYGON_MODE ) )
+		Mode = EE_DRAW_LINE;
+
+	PolygonMode( Mode );
+}
+
+void cGL::PolygonMode( const EE_FILL_MODE& Mode ) {
+	if ( Mode == EE_DRAW_FILL )
+		GLi->PolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+	else
+		GLi->PolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+
+	Write32BitKey( &mStateFlags, GLSF_POLYGON_MODE, Mode == EE_DRAW_LINE ? 1 : 0 );
+}
+
+std::string cGL::GetVendor() {
+	return std::string( reinterpret_cast<const char*> ( cGL::instance()->GetString( GL_VENDOR ) ) );
+}
+
+std::string cGL::GetRenderer() {
+	return std::string( reinterpret_cast<const char*> ( cGL::instance()->GetString( GL_RENDERER ) ) );
+}
+
+std::string cGL::GetVersion() {
+	return std::string( reinterpret_cast<const char*> ( cGL::instance()->GetString( GL_VERSION ) ) );
 }
 
 }}

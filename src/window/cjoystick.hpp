@@ -2,26 +2,9 @@
 #define EE_WINDOWCJOYSTICK_HPP
 
 #include "base.hpp"
+#include "joycodes.hpp"
 
 namespace EE { namespace Window {
-
-#define HAT_CENTERED	0x00
-#define HAT_UP			0x01
-#define HAT_RIGHT		0x02
-#define HAT_DOWN		0x04
-#define HAT_LEFT		0x08
-#define HAT_RIGHTUP		(HAT_RIGHT|HAT_UP)
-#define HAT_RIGHTDOWN	(HAT_RIGHT|HAT_DOWN)
-#define HAT_LEFTUP		(HAT_LEFT|HAT_UP)
-#define HAT_LEFTDOWN	(HAT_LEFT|HAT_DOWN)
-
-#define AXIS_X			(0)
-#define AXIS_Y			(1)
-#define AXIS_X2			(3)
-#define AXIS_Y2			(2)
-
-#define AXIS_MAX		(32768)
-#define AXIS_MIN		(-32768)
 
 class EE_API cJoystick {
 	public:
@@ -29,40 +12,40 @@ class EE_API cJoystick {
 
 		~cJoystick();
 
-		void 			Close();
+		virtual void 		Close();
 
-		void 			Open();
+		virtual void 		Open();
 
-		void			ReOpen();
+		virtual void		Update() = 0;
 
-		bool			Plugged() const;
+		virtual Uint8		GetHat( const Int32& index = 0 ) = 0;
 
-		void			Update();
+		virtual Int16		GetAxis( const Int32& axis ) = 0;
 
-		const Int32&	GetNumHats() const 		{ return mHats; 		}
+		virtual eeVector2i	GetBallMotion( const Int32& ball ) = 0;
 
-		const Int32&	GetNumButtons() const 		{ return mButtons; 	}
+		virtual bool		Plugged() const = 0;
+		
+		virtual void		ReOpen();
 
-		const Int32&	GetNumAxes() const 		{ return mAxes; 		}
+		const Int32&		GetNumHats() const;
 
-		const Int32&	GetNumBalls() const 		{ return mBalls; 		}
+		const Int32&		GetNumButtons() const;
 
-		const Uint32&	GetButtonTrigger() const 	{ return mButtonDown;	}
+		const Int32&		GetNumAxes() const;
 
-		const Uint32&	GetButtonUpTrigger() const	{ return mButtonUp; 	}
+		const Int32&		GetNumBalls() const;
 
-		Uint8			GetHat( const Int32& index = 0 );
+		const Uint32&		GetButtonTrigger() const;
 
-		Int16			GetAxis( const Int32& axis );
+		const Uint32&		GetButtonUpTrigger() const;
 
-		eeVector2i		GetBallMotion( const Int32& ball );
+		bool				IsButtonDown( const Int32& index );
 
-		bool			IsButtonDown( const Int32& index );
-
-		bool			IsButtonUp( const Int32& index );
+		bool				IsButtonUp( const Int32& index );
 	protected:
+		friend class cJoystickManager;
 		Uint32 			mIndex;
-		SDL_Joystick * 	mJoystick;
 		std::string		mName;
 		Int32			mHats;
 		Int32			mButtons;
@@ -71,8 +54,13 @@ class EE_API cJoystick {
 		Uint32			mButtonDown;
 		Uint32			mButtonDownLast;
 		Uint32			mButtonUp;
+		
+		void UpdateButton( const Uint32& index, const bool& down );
+		
+		virtual void ClearStates();
 };
 
 }}
 
 #endif
+ 

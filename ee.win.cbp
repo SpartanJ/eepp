@@ -25,7 +25,6 @@
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-O3" />
-					<Add option="-fno-strict-aliasing" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -34,6 +33,8 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
+			<Add option="-fno-strict-aliasing -ffast-math -DSTBI_FAILURE_USERMSG -Wno-unknown-pragmas -std=gnu99" />
+			<Add directory=".\src\helper\chipmunk" />
 		</Compiler>
 		<Linker>
 			<Add option="-mwindows" />
@@ -167,6 +168,13 @@
 		<Unit filename="src\graphics\packerhelper.hpp" />
 		<Unit filename="src\graphics\pixelperfect.cpp" />
 		<Unit filename="src\graphics\pixelperfect.hpp" />
+		<Unit filename="src\graphics\renderer\base.hpp" />
+		<Unit filename="src\graphics\renderer\cgl.cpp" />
+		<Unit filename="src\graphics\renderer\cgl.hpp" />
+		<Unit filename="src\graphics\renderer\crenderergl.cpp" />
+		<Unit filename="src\graphics\renderer\crenderergl.hpp" />
+		<Unit filename="src\graphics\renderer\crenderergl3.cpp" />
+		<Unit filename="src\graphics\renderer\crenderergl3.hpp" />
 		<Unit filename="src\graphics\renders.hpp" />
 		<Unit filename="src\graphics\vbohelper.hpp" />
 		<Unit filename="src\helper\PlusCallback\callback.hpp" />
@@ -192,12 +200,125 @@
 		<Unit filename="src\helper\SOIL\stb_image_write.h" />
 		<Unit filename="src\helper\SOIL\stbi_DDS.h" />
 		<Unit filename="src\helper\SOIL\stbi_DDS_c.h" />
+		<Unit filename="src\helper\chipmunk\chipmunk.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\chipmunk.h" />
+		<Unit filename="src\helper\chipmunk\chipmunk_ffi.h" />
+		<Unit filename="src\helper\chipmunk\chipmunk_private.h" />
+		<Unit filename="src\helper\chipmunk\chipmunk_types.h" />
+		<Unit filename="src\helper\chipmunk\chipmunk_unsafe.h" />
+		<Unit filename="src\helper\chipmunk\constraints\cpConstraint.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\constraints\cpConstraint.h" />
+		<Unit filename="src\helper\chipmunk\constraints\cpDampedRotarySpring.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\constraints\cpDampedRotarySpring.h" />
+		<Unit filename="src\helper\chipmunk\constraints\cpDampedSpring.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\constraints\cpDampedSpring.h" />
+		<Unit filename="src\helper\chipmunk\constraints\cpGearJoint.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\constraints\cpGearJoint.h" />
+		<Unit filename="src\helper\chipmunk\constraints\cpGrooveJoint.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\constraints\cpGrooveJoint.h" />
+		<Unit filename="src\helper\chipmunk\constraints\cpPinJoint.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\constraints\cpPinJoint.h" />
+		<Unit filename="src\helper\chipmunk\constraints\cpPivotJoint.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\constraints\cpPivotJoint.h" />
+		<Unit filename="src\helper\chipmunk\constraints\cpRatchetJoint.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\constraints\cpRatchetJoint.h" />
+		<Unit filename="src\helper\chipmunk\constraints\cpRotaryLimitJoint.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\constraints\cpRotaryLimitJoint.h" />
+		<Unit filename="src\helper\chipmunk\constraints\cpSimpleMotor.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\constraints\cpSimpleMotor.h" />
+		<Unit filename="src\helper\chipmunk\constraints\cpSlideJoint.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\constraints\cpSlideJoint.h" />
+		<Unit filename="src\helper\chipmunk\constraints\util.h" />
+		<Unit filename="src\helper\chipmunk\cpArbiter.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\cpArbiter.h" />
+		<Unit filename="src\helper\chipmunk\cpArray.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\cpBB.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\cpBB.h" />
+		<Unit filename="src\helper\chipmunk\cpBBTree.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\cpBody.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\cpBody.h" />
+		<Unit filename="src\helper\chipmunk\cpCollision.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\cpHashSet.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\cpPolyShape.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\cpPolyShape.h" />
+		<Unit filename="src\helper\chipmunk\cpShape.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\cpShape.h" />
+		<Unit filename="src\helper\chipmunk\cpSpace.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\cpSpace.h" />
+		<Unit filename="src\helper\chipmunk\cpSpaceComponent.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\cpSpaceHash.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\cpSpaceQuery.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\cpSpaceStep.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\cpSpatialIndex.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\cpSpatialIndex.h" />
+		<Unit filename="src\helper\chipmunk\cpVect.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\chipmunk\cpVect.h" />
+		<Unit filename="src\helper\chipmunk\prime.h" />
 		<Unit filename="src\helper\glew\glew.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src\helper\glew\glew.h" />
 		<Unit filename="src\helper\glew\glxew.h" />
 		<Unit filename="src\helper\glew\wglew.h" />
+		<Unit filename="src\helper\glm\ext.hpp" />
+		<Unit filename="src\helper\glm\glm.hpp" />
+		<Unit filename="src\helper\glm\setup.hpp" />
 		<Unit filename="src\helper\haikuttf\haikuttf.hpp" />
 		<Unit filename="src\helper\haikuttf\hkbase.hpp" />
 		<Unit filename="src\helper\haikuttf\hkfont.cpp" />
@@ -425,6 +546,7 @@
 		</Unit>
 		<Unit filename="src\helper\libzip\zipconf.h" />
 		<Unit filename="src\helper\libzip\zipint.h" />
+		<Unit filename="src\helper\sophist\sophist.h" />
 		<Unit filename="src\helper\stb_vorbis\stb_vorbis.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -478,6 +600,53 @@
 		<Unit filename="src\math\cmtrand.hpp" />
 		<Unit filename="src\math\math.cpp" />
 		<Unit filename="src\math\math.hpp" />
+		<Unit filename="src\physics\area.hpp" />
+		<Unit filename="src\physics\base.hpp" />
+		<Unit filename="src\physics\carbiter.cpp" />
+		<Unit filename="src\physics\carbiter.hpp" />
+		<Unit filename="src\physics\cbody.cpp" />
+		<Unit filename="src\physics\cbody.hpp" />
+		<Unit filename="src\physics\constraints\cconstraint.cpp" />
+		<Unit filename="src\physics\constraints\cconstraint.hpp" />
+		<Unit filename="src\physics\constraints\cdampedrotaryspring.cpp" />
+		<Unit filename="src\physics\constraints\cdampedrotaryspring.hpp" />
+		<Unit filename="src\physics\constraints\cdampedspring.cpp" />
+		<Unit filename="src\physics\constraints\cdampedspring.hpp" />
+		<Unit filename="src\physics\constraints\cgearjoint.cpp" />
+		<Unit filename="src\physics\constraints\cgearjoint.hpp" />
+		<Unit filename="src\physics\constraints\cgroovejoint.cpp" />
+		<Unit filename="src\physics\constraints\cgroovejoint.hpp" />
+		<Unit filename="src\physics\constraints\cpinjoint.cpp" />
+		<Unit filename="src\physics\constraints\cpinjoint.hpp" />
+		<Unit filename="src\physics\constraints\cpivotjoint.cpp" />
+		<Unit filename="src\physics\constraints\cpivotjoint.hpp" />
+		<Unit filename="src\physics\constraints\cratchetjoint.cpp" />
+		<Unit filename="src\physics\constraints\cratchetjoint.hpp" />
+		<Unit filename="src\physics\constraints\crotarylimitjoint.cpp" />
+		<Unit filename="src\physics\constraints\crotarylimitjoint.hpp" />
+		<Unit filename="src\physics\constraints\csimplemotor.cpp" />
+		<Unit filename="src\physics\constraints\csimplemotor.hpp" />
+		<Unit filename="src\physics\constraints\cslidejoint.cpp" />
+		<Unit filename="src\physics\constraints\cslidejoint.hpp" />
+		<Unit filename="src\physics\cphysicsmanager.cpp" />
+		<Unit filename="src\physics\cphysicsmanager.hpp" />
+		<Unit filename="src\physics\cshape.cpp" />
+		<Unit filename="src\physics\cshape.hpp" />
+		<Unit filename="src\physics\cshapecircle.cpp" />
+		<Unit filename="src\physics\cshapecircle.hpp" />
+		<Unit filename="src\physics\cshapecirclesprite.cpp" />
+		<Unit filename="src\physics\cshapecirclesprite.hpp" />
+		<Unit filename="src\physics\cshapepoly.cpp" />
+		<Unit filename="src\physics\cshapepoly.hpp" />
+		<Unit filename="src\physics\cshapepolysprite.cpp" />
+		<Unit filename="src\physics\cshapepolysprite.hpp" />
+		<Unit filename="src\physics\cshapesegment.cpp" />
+		<Unit filename="src\physics\cshapesegment.hpp" />
+		<Unit filename="src\physics\cspace.cpp" />
+		<Unit filename="src\physics\cspace.hpp" />
+		<Unit filename="src\physics\moment.hpp" />
+		<Unit filename="src\physics\physicshelper.hpp" />
+		<Unit filename="src\physics\settings.hpp" />
 		<Unit filename="src\system\base.hpp" />
 		<Unit filename="src\system\cinifile.cpp" />
 		<Unit filename="src\system\cinifile.hpp" />
@@ -503,9 +672,9 @@
 		<Unit filename="src\system\ctimer.hpp" />
 		<Unit filename="src\system\czip.cpp" />
 		<Unit filename="src\system\czip.hpp" />
-		<Unit filename="src\system\tsingleton.hpp" />
 		<Unit filename="src\system\tcontainer.hpp" />
 		<Unit filename="src\system\tresourcemanager.hpp" />
+		<Unit filename="src\system\tsingleton.hpp" />
 		<Unit filename="src\test\ee.cpp" />
 		<Unit filename="src\ui\base.hpp" />
 		<Unit filename="src\ui\cuibackground.cpp" />
@@ -516,6 +685,8 @@
 		<Unit filename="src\ui\cuicheckbox.hpp" />
 		<Unit filename="src\ui\cuicombobox.cpp" />
 		<Unit filename="src\ui\cuicombobox.hpp" />
+		<Unit filename="src\ui\cuicomplexcontrol.cpp" />
+		<Unit filename="src\ui\cuicomplexcontrol.hpp" />
 		<Unit filename="src\ui\cuicontrol.cpp" />
 		<Unit filename="src\ui\cuicontrol.hpp" />
 		<Unit filename="src\ui\cuicontrolanim.cpp" />
@@ -530,12 +701,14 @@
 		<Unit filename="src\ui\cuieventkey.hpp" />
 		<Unit filename="src\ui\cuieventmouse.cpp" />
 		<Unit filename="src\ui\cuieventmouse.hpp" />
+		<Unit filename="src\ui\cuigenericgrid.cpp" />
+		<Unit filename="src\ui\cuigenericgrid.hpp" />
 		<Unit filename="src\ui\cuigfx.cpp" />
 		<Unit filename="src\ui\cuigfx.hpp" />
+		<Unit filename="src\ui\cuigridcell.cpp" />
+		<Unit filename="src\ui\cuigridcell.hpp" />
 		<Unit filename="src\ui\cuilistbox.cpp" />
 		<Unit filename="src\ui\cuilistbox.hpp" />
-		<Unit filename="src\ui\cuilistboxcontainer.cpp" />
-		<Unit filename="src\ui\cuilistboxcontainer.hpp" />
 		<Unit filename="src\ui\cuilistboxitem.cpp" />
 		<Unit filename="src\ui\cuilistboxitem.hpp" />
 		<Unit filename="src\ui\cuimanager.cpp" />
@@ -580,12 +753,19 @@
 		<Unit filename="src\ui\cuisprite.hpp" />
 		<Unit filename="src\ui\cuitextbox.cpp" />
 		<Unit filename="src\ui\cuitextbox.hpp" />
+		<Unit filename="src\ui\cuitextedit.cpp" />
+		<Unit filename="src\ui\cuitextedit.hpp" />
 		<Unit filename="src\ui\cuitextinput.cpp" />
 		<Unit filename="src\ui\cuitextinput.hpp" />
 		<Unit filename="src\ui\cuitheme.cpp" />
 		<Unit filename="src\ui\cuitheme.hpp" />
 		<Unit filename="src\ui\cuithememanager.cpp" />
 		<Unit filename="src\ui\cuithememanager.hpp" />
+		<Unit filename="src\ui\cuitooltip.cpp" />
+		<Unit filename="src\ui\cuitooltip.hpp" />
+		<Unit filename="src\ui\cuiwindow.cpp" />
+		<Unit filename="src\ui\cuiwindow.hpp" />
+		<Unit filename="src\ui\tuiitemcontainer.hpp" />
 		<Unit filename="src\ui\uihelper.cpp" />
 		<Unit filename="src\ui\uihelper.hpp" />
 		<Unit filename="src\utils\base.hpp" />
@@ -611,7 +791,21 @@
 		<Unit filename="src\utils\utils.hpp" />
 		<Unit filename="src\utils\vector2.hpp" />
 		<Unit filename="src\utils\vector3.hpp" />
+		<Unit filename="src\window\backend\SDL\cbackendsdl.hpp" />
+		<Unit filename="src\window\backend\SDL\cclipboardsdl.cpp" />
+		<Unit filename="src\window\backend\SDL\cclipboardsdl.hpp" />
+		<Unit filename="src\window\backend\SDL\cinputsdl.cpp" />
+		<Unit filename="src\window\backend\SDL\cinputsdl.hpp" />
+		<Unit filename="src\window\backend\SDL\cjoystickmanagersdl.cpp" />
+		<Unit filename="src\window\backend\SDL\cjoystickmanagersdl.hpp" />
+		<Unit filename="src\window\backend\SDL\cjoysticksdl.cpp" />
+		<Unit filename="src\window\backend\SDL\cjoysticksdl.hpp" />
+		<Unit filename="src\window\backend\SDL\cwindowsdl.cpp" />
+		<Unit filename="src\window\backend\SDL\cwindowsdl.hpp" />
 		<Unit filename="src\window\base.hpp" />
+		<Unit filename="src\window\cbackend.hpp" />
+		<Unit filename="src\window\cclipboard.cpp" />
+		<Unit filename="src\window\cclipboard.hpp" />
 		<Unit filename="src\window\cengine.cpp" />
 		<Unit filename="src\window\cengine.hpp" />
 		<Unit filename="src\window\cinput.cpp" />
@@ -624,6 +818,13 @@
 		<Unit filename="src\window\cjoystickmanager.hpp" />
 		<Unit filename="src\window\cview.cpp" />
 		<Unit filename="src\window\cview.hpp" />
+		<Unit filename="src\window\cwindow.cpp" />
+		<Unit filename="src\window\cwindow.hpp" />
+		<Unit filename="src\window\inputevent.hpp" />
+		<Unit filename="src\window\inputhelper.cpp" />
+		<Unit filename="src\window\inputhelper.hpp" />
+		<Unit filename="src\window\joycodes.hpp" />
+		<Unit filename="src\window\keycodes.hpp" />
 		<Extensions>
 			<envvars />
 			<code_completion />

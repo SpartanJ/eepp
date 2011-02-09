@@ -19,43 +19,8 @@ cJoystickManager::~cJoystickManager() {
 	Close();
 }
 
-void cJoystickManager::Update() {
-	if ( mInit ) {
-		SDL_JoystickUpdate();
-
-		for ( eeUint i = 0; i < mCount; i++ )
-			if ( NULL != mJoysticks[i] )
-				mJoysticks[i]->Update();
-	}
-}
-
 Uint32 cJoystickManager::Count() {
-	return SDL_NumJoysticks();
-}
-
-void cJoystickManager::Open() {
-	eeInt error = SDL_InitSubSystem( SDL_INIT_JOYSTICK );
-
-	if ( !error ) {
-		mCount = Count();
-
-		for ( eeUint i = 0; i < mCount; i++ )
-			Create(i);
-
-		mInit = true;
-	}
-}
-
-void cJoystickManager::Create( const Uint32& index ) {
-	if ( NULL != mJoysticks[ index ] )
-		mJoysticks[ index ]->ReOpen();
-	else
-		mJoysticks[ index ] = eeNew( cJoystick, ( index ) );
-}
-
-void cJoystickManager::Close() {
-	if ( SDL_WasInit( SDL_INIT_JOYSTICK ) )
-		SDL_QuitSubSystem( SDL_INIT_JOYSTICK );
+	return mCount;
 }
 
 cJoystick * cJoystickManager::GetJoystick( const Uint32& index ) {
@@ -69,6 +34,12 @@ void cJoystickManager::Rescan() {
 	Close();
 
 	Open();
+}
+
+void cJoystickManager::Close() {
+}
+
+void cJoystickManager::Open() {
 }
 
 }}

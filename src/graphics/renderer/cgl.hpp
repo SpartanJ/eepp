@@ -66,9 +66,20 @@ class cGL {
 
 		virtual void Init();
 
-		Uint32 GetExtension( const char * name );
+		/** @return The company responsible for this GL implementation. */
+		std::string GetVendor();
 
-		bool IsExtension( Uint32 name );
+		/** @return The name of the renderer.\n This name is typically specific to a particular configuration of a hardware platform. */
+		std::string GetRenderer();
+
+		/** @return A GL version or release number. */
+		std::string GetVersion();
+
+		/** @return If the extension passed is supported by the GPU */
+		bool IsExtension( const std::string& name );
+
+		/** @return If the extension from the EEGL_extensions is present on the GPU. */
+		bool IsExtension( EEGL_extensions name );
 
 		bool PointSpriteSupported();
 
@@ -105,6 +116,19 @@ class cGL {
 		void BlendFunc ( GLenum sfactor, GLenum dfactor );
 
 		void Viewport ( GLint x, GLint y, GLsizei width, GLsizei height );
+
+		void LineSmooth( const bool& Enable );
+
+		/** Reapply the line smooth state */
+		void LineSmooth();
+
+		bool IsLineSmooth();
+
+		/** Set the polygon fill mode ( wireframe or filled ) */
+		void PolygonMode( const EE_FILL_MODE& Mode );
+
+		/** Reapply the polygon mode */
+		void PolygonMode();
 
 		cRendererGL * GetRendererGL();
 
@@ -172,7 +196,13 @@ class cGL {
 
 		virtual GLenum GetCurrentMatrixMode() = 0;
 	protected:
+		enum GLStateFlags {
+			GLSF_LINE_SMOOTH	= 0,
+			GLSF_POLYGON_MODE
+		};
+
 		Uint32 mExtensions;
+		Uint32 mStateFlags;
 	private:
 		void WriteExtension( Uint8 Pos, Uint32 BitWrite );
 };

@@ -661,4 +661,13 @@ bool Read32BitKey( Uint32 * Key, Uint32 Pos ) {
 	return 0 != ( ( * Key ) & ( 1 << Pos ) );
 }
 
+void SetFlagValue( Uint32 * Key, Uint32 Val, Uint32 BitWrite ) {
+	if ( BitWrite )
+		( * Key ) |= Val;
+	else {
+		if ( ( * Key ) & Val )
+			( * Key ) &= ~Val;
+	}
+}
+
 }}

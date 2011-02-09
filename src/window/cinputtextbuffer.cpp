@@ -1,14 +1,20 @@
 #include "cinputtextbuffer.hpp"
 #include "cengine.hpp"
+#include "cclipboard.hpp"
 
 namespace EE { namespace Window {
 
-cInputTextBuffer::cInputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, const Uint32& maxLenght ) :
+cInputTextBuffer::cInputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, cWindow * window, const Uint32& maxLenght ) :
+	mWindow( window ),
 	mFlags(0),
 	mCallback(0),
 	mPromptPos(0),
 	mMaxLenght(0xFFFFFFFF)
 {
+	if ( NULL == mWindow ) {
+		mWindow = cEngine::instance()->GetCurrentWindow();
+	}
+
 	Active( active );
 
 	SupportFreeEditing( supportFreeEditing );
@@ -22,12 +28,17 @@ cInputTextBuffer::cInputTextBuffer( const bool& active, const bool& supportNewLi
 	mMaxLenght = maxLenght;
 }
 
-cInputTextBuffer::cInputTextBuffer() :
+cInputTextBuffer::cInputTextBuffer( cWindow * window ) :
+	mWindow( window ),
 	mFlags(0),
 	mCallback(0),
 	mPromptPos(0),
 	mMaxLenght(0xFFFFFFFF)
 {
+	if ( NULL == mWindow ) {
+		mWindow = cEngine::instance()->GetCurrentWindow();
+	}
+
 	Active( true );
 
 	SupportFreeEditing( true );
@@ -40,32 +51,44 @@ cInputTextBuffer::cInputTextBuffer() :
 }
 
 cInputTextBuffer::~cInputTextBuffer() {
-	if ( 0 != mCallback && NULL != cInput::ExistsSingleton() )
-		cInput::instance()->PopCallback( mCallback );
+	if ( 0 != mCallback &&
+		cEngine::ExistsSingleton() &&
+		cEngine::instance()->ExistsWindow( mWindow ) )
+	{
+		mWindow->GetInput()->PopCallback( mCallback );
+	}
 
 	mText.clear();
 }
 
 void cInputTextBuffer::Start() {
-	mCallback = cInput::instance()->PushCallback( cb::Make1( this, &cInputTextBuffer::Update ) );
+	if ( NULL == mWindow ) {
+		mWindow = cEngine::instance()->GetCurrentWindow();
+	}
+
+	if ( cEngine::instance()->ExistsWindow( mWindow ) ) {
+		mCallback = mWindow->GetInput()->PushCallback( cb::Make1( this, &cInputTextBuffer::Update ) );
+	}
 }
 
-void cInputTextBuffer::Update( EE_Event* Event ) {
+void cInputTextBuffer::Update( InputEvent* Event ) {
 	if ( Active() ) {
+		cInput * Input = mWindow->GetInput();
+
 		ChangedSinceLastUpdate( false );
 		Int32 c = eeConvertKeyCharacter( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
 
 		if ( SupportFreeEditing() ) {
-			switch ( Event->type ) {
-				case SDL_KEYDOWN:
+			switch ( Event->Type ) {
+				case InputEvent::KeyDown:
 				{
-					if ( cInput::instance()->ShiftPressed() || cInput::instance()->ControlPressed() ) {
+					if ( Input->ShiftPressed() || Input->ControlPressed() ) {
 						if ( !AllowOnlyNumbers() &&
 							(	( ( Event->key.keysym.mod & KEYMOD_SHIFT ) && c == KEY_INSERT ) ||
-								( ( Event->key.keysym.mod & KEYMOD_CTRL ) && Event->key.keysym.sym == SDLK_v ) )
+								( ( Event->key.keysym.mod & KEYMOD_CTRL ) && Event->key.keysym.sym == KEY_V ) )
 							)
 						{
-							std::wstring txt = cEngine::instance()->GetClipboardTextWStr();
+							std::wstring txt = mWindow->GetClipboard()->GetTextWStr();
 
 							if ( !SupportNewLine() ) {
 								Uint32 pos = txt.find_first_of( L'\n' );
@@ -170,7 +193,7 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 
 					break;
 				}
-				case SDL_KEYUP:
+				case InputEvent::KeyUp:
 				{
 					if ( SupportNewLine() ) {
 						if ( c == KEY_END ) {
@@ -220,18 +243,18 @@ void cInputTextBuffer::Update( EE_Event* Event ) {
 				}
 			}
 		} else {
-			if ( Event->type == SDL_KEYDOWN ) {
+			if ( Event->Type == InputEvent::KeyDown ) {
 				ChangedSinceLastUpdate( true );
 
 				if ( c == KEY_BACKSPACE && mText.size() > 0 ) {
 					mText.resize( mText.size() - 1 );
-				} else if ( ( c == KEY_RETURN || c == KEY_KP_ENTER ) && !cInput::instance()->MetaPressed() && !cInput::instance()->AltPressed() && !cInput::instance()->ControlPressed() ) {
+				} else if ( ( c == KEY_RETURN || c == KEY_KP_ENTER ) && !Input->MetaPressed() && !Input->AltPressed() && !Input->ControlPressed() ) {
 					if ( SupportNewLine() && CanAdd() )
 						mText += L'\n';
 
 					if ( mEnterCall.IsSet() )
 						mEnterCall();
-				} else if ( CanAdd() && isCharacter(c) && !cInput::instance()->MetaPressed() && !cInput::instance()->AltPressed() && !cInput::instance()->ControlPressed() ) {
+				} else if ( CanAdd() && isCharacter(c) && !Input->MetaPressed() && !Input->AltPressed() && !Input->ControlPressed() ) {
 					if ( !( AllowOnlyNumbers() && !isNumber( c, AllowDotsInNumbers() ) ) ) {
 						mText += c;
 					}

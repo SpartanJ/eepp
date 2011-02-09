@@ -26,13 +26,16 @@
 #include <stack>
 
 #include "helper/PlusCallback/callback.hpp"
+#include "helper/sophist/sophist.h"
 
-#include <SDL/SDL.h>
-
-#define Int8 Sint8
-#define Int16 Sint16
-#define Int32 Sint32
-#define Int64 Sint64
+namespace EE {
+typedef SOPHIST_int8		Int8;
+typedef SOPHIST_uint8		Uint8;
+typedef SOPHIST_int16		Int16;
+typedef SOPHIST_uint16		Uint16;
+typedef SOPHIST_int32		Int32;
+typedef SOPHIST_uint32		Uint32;
+}
 
 #define EE_PLATFORM_WIN		1
 #define EE_PLATFORM_LINUX	2
@@ -184,6 +187,26 @@ namespace EE {
 	template<typename T>
 	T eeabs( T n ) {
 		return ( n < 0 ) ? -n : n;
+	}
+
+	template<typename T>
+	T eeclamp( T val, T min, T max ) {
+		if ( val < min ) {
+			return min;
+		} else if ( val > max ) {
+			return max;
+		}
+
+		return val;
+	}
+
+	template<typename T>
+	void eeclamp( T* val, T min, T max ) {
+		if ( *val < min ) {
+			*val = min;
+		} else if ( *val > max ) {
+			*val = max;
+		}
 	}
 
 	typedef double			eeDouble; 	//! The internal double floating point. It's only used when the engine needs some very high precision floating point ( for example the timer )

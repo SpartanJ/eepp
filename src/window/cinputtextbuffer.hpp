@@ -3,6 +3,7 @@
 
 #include "base.hpp"
 #include "cinput.hpp"
+#include "cwindow.hpp"
 
 namespace EE { namespace Window {
 
@@ -21,9 +22,9 @@ class EE_API cInputTextBuffer {
 	public:
 		typedef cb::Callback0<void> EnterCallback;
 
-		cInputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, const Uint32& maxLenght = 0xFFFFFFFF );
+		cInputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, cWindow * window = NULL, const Uint32& maxLenght = 0xFFFFFFFF );
 
-		cInputTextBuffer();
+		cInputTextBuffer( cWindow * window = NULL );
 
 		~cInputTextBuffer();
 
@@ -67,7 +68,7 @@ class EE_API cInputTextBuffer {
 		void Clear();
 
 		/** Internal callback, don't call it */
-		void Update( EE_Event* Event );
+		void Update( InputEvent * Event );
 
 		/** A callback for the key return */
 		void SetReturnCallback( EnterCallback EC );
@@ -108,6 +109,7 @@ class EE_API cInputTextBuffer {
 		/** Set the cursor to the last character of the buffer. */
 		void CursorToEnd();
 	protected:
+		cWindow *			mWindow;
 		std::wstring		mText;
 		Uint32				mFlags;
 		Uint32				mCallback;

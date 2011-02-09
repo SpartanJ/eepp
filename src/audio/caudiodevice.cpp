@@ -26,8 +26,9 @@ cAudioDevice::cAudioDevice() :
 			cAudioListener::instance()->SetPosition(0.f, 0.f, 0.f);
 			cAudioListener::instance()->SetTarget(0.f, 0.f, -1.f);
 
-			cLog::instance()->Write( "OpenAL current device: " );
-			cLog::instance()->Write( "\t" + std::string( (const char *)alcGetString(mDevice, ALC_DEVICE_SPECIFIER) ) );
+			std::string log( "OpenAL current device:\n" );
+			log += "\t" + std::string( (const char *)alcGetString(mDevice, ALC_DEVICE_SPECIFIER) );
+			cLog::instance()->Write( log );
 		} else {
 			cLog::instance()->Write("Failed to create the audio context");
 		}
@@ -37,21 +38,23 @@ cAudioDevice::cAudioDevice() :
 }
 
 void cAudioDevice::PrintInfo() {
-	cLog::instance()->Write( "OpenAL devices detected:" );
+	std::string log( "OpenAL devices detected:\n" );
 
 	if ( alcIsExtensionPresent( NULL, (const ALCchar *) "ALC_ENUMERATION_EXT" ) == AL_TRUE ) {
 		const char *s = (const char *) alcGetString(NULL, ALC_DEVICE_SPECIFIER);
 
 		while (*s != '\0') {
-			cLog::instance()->Write( "\t" + std::string( s ) );
+			log += "\t" + std::string( s ) + "\n";
 			while (*s++ != '\0');
 		}
 	} else {
-		cLog::instance()->Write( "OpenAL device enumeration isn't available." );
+		log += "OpenAL device enumeration isn't available.";
 	}
 
-	cLog::instance()->Write( "OpenAL default device: " );
-	cLog::instance()->Write( "\t" + std::string( (const char *)alcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER) ) );
+	log += "OpenAL default device:\n";
+	log += "\t" + std::string( (const char *)alcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER) );
+
+	cLog::instance()->Write( log );
 }
 
 cAudioDevice::~cAudioDevice() {

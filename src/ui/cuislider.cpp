@@ -301,7 +301,7 @@ void cUISlider::ManageClick( const Uint32& Flags ) {
 					Value( mValue + mClickStep );
 			}
 		} else if ( Flags & EE_BUTTONS_WUWD ) {
-			if ( Flags & EE_BUTTON( EE_BUTTON_WHEELUP ) )
+			if ( Flags & EE_BUTTON_WUMASK )
 				Value( mValue - mClickStep );
 			else
 				Value( mValue + mClickStep );

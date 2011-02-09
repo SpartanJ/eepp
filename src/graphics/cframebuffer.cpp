@@ -9,23 +9,28 @@ using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
-cFrameBuffer * cFrameBuffer::CreateNew( const Uint32& Width, const Uint32& Height, bool DepthBuffer ) {
+cFrameBuffer * cFrameBuffer::CreateNew( const Uint32& Width, const Uint32& Height, bool DepthBuffer, cWindow * window ) {
 	if ( cFrameBufferFBO::IsSupported() )
-		return eeNew( cFrameBufferFBO, ( Width, Height, DepthBuffer ) );
+		return eeNew( cFrameBufferFBO, ( Width, Height, DepthBuffer, window ) );
 
 	if ( cFrameBufferPBuffer::IsSupported() )
-		return eeNew( cFrameBufferPBuffer, ( Width, Height, DepthBuffer ) );
+		return eeNew( cFrameBufferPBuffer, ( Width, Height, DepthBuffer, window ) );
 
 	return NULL;
 }
 
-cFrameBuffer::cFrameBuffer() :
+cFrameBuffer::cFrameBuffer( cWindow * window  ) :
+	mWindow( window ),
 	mWidth(0),
 	mHeight(0),
 	mHasDepthBuffer(false),
 	mTexture(NULL),
 	mClearColor(0,0,0,0)
 {
+	if ( NULL == mWindow ) {
+		mWindow = cEngine::instance()->GetCurrentWindow();
+	}
+
 	cFrameBufferManager::instance()->Add( this );
 }
 
@@ -51,13 +56,13 @@ eeColorAf cFrameBuffer::ClearColor() const {
 void cFrameBuffer::Clear() {
 	GLi->ClearColor( mClearColor.R(), mClearColor.G(), mClearColor.B(), mClearColor.A() );
 	GLi->Clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-	cEngine::instance()->SetBackColor( cEngine::instance()->GetBackColor() );
+	mWindow->BackColor( mWindow->BackColor() );
 }
 
 void cFrameBuffer::SetBufferView() {
 	cGlobalBatchRenderer::instance()->Draw();
 
-	mPrevView = Window::cEngine::instance()->GetView();
+	mPrevView = mWindow->GetView();
 
 	GLi->MatrixMode( GL_PROJECTION );
 	GLi->LoadIdentity();
@@ -70,7 +75,7 @@ void cFrameBuffer::SetBufferView() {
 void cFrameBuffer::RecoverView() {
 	cGlobalBatchRenderer::instance()->Draw();
 
-	cEngine::instance()->SetView( mPrevView );
+	mWindow->SetView( mPrevView );
 }
 
 const Int32& cFrameBuffer::GetWidth() const {
