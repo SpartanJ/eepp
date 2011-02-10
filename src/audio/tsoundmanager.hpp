@@ -27,7 +27,7 @@ class tSoundManager{
 
 		~tSoundManager();
 	private:
-		typedef struct {
+		typedef struct sSound {
 			cSoundBuffer Buf;
 			std::vector<cSound> Snd;
 		} sSound;

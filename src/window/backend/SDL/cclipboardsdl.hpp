@@ -1,6 +1,10 @@
 #ifndef EE_WINDOWCCLIPBOARDSDL_HPP
 #define EE_WINDOWCCLIPBOARDSDL_HPP
 
+#include "../../cbackend.hpp"
+
+#ifdef EE_BACKEND_SDL_ACTIVE
+
 #include "../../base.hpp"
 #include "../../cclipboard.hpp"
 #include <SDL/SDL.h>
@@ -36,5 +40,7 @@ class EE_API cClipboardSDL : public cClipboard {
 };
 
 }}}}
+
+#endif
 
 #endif

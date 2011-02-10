@@ -1,11 +1,16 @@
 #include "cinputsdl.hpp"
 #include "cjoystickmanagersdl.hpp"
 
+#ifdef EE_BACKEND_SDL_ACTIVE
+
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
 cInputSDL::cInputSDL( cWindow * window ) :
 	cInput( window, eeNew( cJoystickManagerSDL, () ) )
 {
+	#if EE_PLATFORM == EE_PLATFORM_LINUX
+	mMouseSpeed = 1.75f;
+	#endif
 }
 
 cInputSDL::~cInputSDL() {
@@ -190,3 +195,5 @@ void cInputSDL::Init() {
 }
 
 }}}}
+
+#endif

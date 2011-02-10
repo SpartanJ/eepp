@@ -50,11 +50,11 @@ void cWindowNull::Position( Int16 Left, Int16 Top ) {
 }
 
 bool cWindowNull::Active() {
-	return false;
+	return true;
 }
 
 bool cWindowNull::Visible() {
-	return false;
+	return true;
 }
 
 eeVector2i cWindowNull::Position() {

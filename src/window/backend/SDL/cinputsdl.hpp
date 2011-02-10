@@ -1,6 +1,10 @@
 #ifndef EE_WINDOWCINPUTSDL_HPP 
 #define EE_WINDOWCINPUTSDL_HPP
 
+#include "../../cbackend.hpp"
+
+#ifdef EE_BACKEND_SDL_ACTIVE
+
 #include "../../cinput.hpp"
 #include <SDL/SDL.h>
 #include <SDL/SDL_syswm.h>
@@ -27,5 +31,7 @@ class EE_API cInputSDL : public cInput {
 };
 
 }}}}
+
+#endif
 
 #endif

@@ -1,3 +1,6 @@
+STRLOWERCASE 		= $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(subst F,f,$(subst G,g,$(subst H,h,$(subst I,i,$(subst J,j,$(subst K,k,$(subst L,l,$(subst M,m,$(subst N,n,$(subst O,o,$(subst P,p,$(subst Q,q,$(subst R,r,$(subst S,s,$(subst T,t,$(subst U,u,$(subst V,v,$(subst W,w,$(subst X,x,$(subst Y,y,$(subst Z,z,$1))))))))))))))))))))))))))
+OS 					= $(strip $(call STRLOWERCASE, $(shell uname) ) )
+
 ifeq ($(DYNAMIC), yes)
     LIB     = libeepp.so
     LIBNAME = $(LIBPATH)/$(LIB).$(VERSION)
@@ -25,12 +28,45 @@ else
 endif
 
 ifeq ($(LLVM_BUILD), yes)
-export CC         	= llvm-gcc
-export CPP        	= llvm-g++
+export CC         	= clang
+export CPP        	= clang++
 else
 export CC         	= gcc
 export CPP        	= g++
 endif
+
+ifeq ($(BACKENDS_ALL), yes)
+	BACKEND_SDL = yes
+	BACKEND_ALLEGRO = yes
+endif
+
+ifeq ($(BACKEND_SDL),  )
+	ifeq ($(BACKEND_ALLEGRO),  )
+		BACKEND_SDL = yes
+	endif
+endif
+
+ifeq ($(BACKEND_SDL), yes)
+	SDL_BACKEND_LINK	= -lSDL
+	SDL_BACKEND_SRC		= $(wildcard ./src/window/backend/SDL/*.cpp)
+	SDL_DEFINE			= -DEE_BACKEND_SDL_ACTIVE
+else
+	SDL_BACKEND_LINK	= 
+	SDL_BACKEND_SRC		= 
+	SDL_DEFINE			= 
+endif
+
+ifeq ($(BACKEND_ALLEGRO), yes)
+	ALLEGRO_BACKEND_LINK	= -lallegro
+	ALLEGRO_BACKEND_SRC		= $(wildcard ./src/window/backend/allegro5/*.cpp)
+	ALLEGRO_DEFINE			= -DEE_BACKEND_ALLEGRO_ACTIVE
+else
+	ALLEGRO_BACKEND_LINK	= 
+	ALLEGRO_BACKEND_SRC		= 
+	ALLEGRO_DEFINE			= 
+endif
+
+BACKENDFLAGS = $(SDL_DEFINE) $(ALLEGRO_DEFINE)
 
 ifeq ($(GLES2), yes)
 	FINALFLAGS = $(DEBUGFLAGS) -DEE_GLES2 -DSOIL_GLES2
@@ -42,7 +78,7 @@ else
 	endif
 endif
 
-export CFLAGS     	= -Wall -Wno-unknown-pragmas $(FINALFLAGS) $(BUILDFLAGS)
+export CFLAGS     	= -Wall -Wno-unknown-pragmas $(FINALFLAGS) $(BUILDFLAGS) $(BACKENDFLAGS)
 export CFLAGSEXT  	= $(FINALFLAGS) $(BUILDFLAGS)
 export LDFLAGS    	= $(LINKFLAGS)
 export LIBPATH    	= ./
@@ -56,11 +92,8 @@ export DESTDIR    	= /usr
 export DESTLIBDIR 	= $(DESTDIR)/lib
 export DESTINCDIR 	= $(DESTDIR)/include
 
-STRLOWERCASE 		= $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(subst F,f,$(subst G,g,$(subst H,h,$(subst I,i,$(subst J,j,$(subst K,k,$(subst L,l,$(subst M,m,$(subst N,n,$(subst O,o,$(subst P,p,$(subst Q,q,$(subst R,r,$(subst S,s,$(subst T,t,$(subst U,u,$(subst V,v,$(subst W,w,$(subst X,x,$(subst Y,y,$(subst Z,z,$1))))))))))))))))))))))))))
-OS 					= $(strip $(call STRLOWERCASE, $(shell uname) ) )
-
 ifeq ($(OS), linux)
-LIBS 		= -lfreetype -lSDL -lsndfile -lopenal -lGL -lGLU
+LIBS 		= -lfreetype -lsndfile -lopenal -lGL -lGLU $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
 LIBSIV 		= -lX11 -lXcursor
 OTHERINC	= -I/usr/include/freetype2
 else
@@ -93,7 +126,7 @@ SRCMATH				= $(wildcard ./src/math/*.cpp)
 SRCSYSTEM			= $(wildcard ./src/system/*.cpp)
 SRCUI				= $(wildcard ./src/ui/*.cpp)
 SRCUTILS     		= $(wildcard ./src/utils/*.cpp)
-SRCWINDOW     		= $(wildcard ./src/window/*.cpp) $(wildcard ./src/window/backend/SDL/*.cpp) $(wildcard ./src/window/backend/null/*.cpp)
+SRCWINDOW     		= $(wildcard ./src/window/*.cpp) $(wildcard ./src/window/backend/null/*.cpp) $(SDL_BACKEND_SRC) $(ALLEGRO_BACKEND_SRC)
 SRCPHYSICS			= $(wildcard ./src/physics/*.cpp) $(wildcard ./src/physics/constraints/*.cpp)
 
 SRCTEST     		= $(wildcard ./src/test/*.cpp)
@@ -171,6 +204,7 @@ dirs:
 	@mkdir -p $(OBJDIR)/src/window
 	@mkdir -p $(OBJDIR)/src/window/backend/SDL
 	@mkdir -p $(OBJDIR)/src/window/backend/null
+	@mkdir -p $(OBJDIR)/src/window/backend/allegro5
 	@mkdir -p $(OBJDIR)/src/physics
 	@mkdir -p $(OBJDIR)/src/physics/constraints
 	@mkdir -p $(OBJDIR)/src/test

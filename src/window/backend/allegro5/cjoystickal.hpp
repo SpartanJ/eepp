@@ -1,20 +1,19 @@
-#ifndef EE_WINDOWCJOYSTICKSDL_HPP
-#define EE_WINDOWCJOYSTICKSDL_HPP
+#ifndef EE_WINDOWCJOYSTICKAl_HPP
+#define EE_WINDOWCJOYSTICKAl_HPP
 
 #include "../../cbackend.hpp"
 
-#ifdef EE_BACKEND_SDL_ACTIVE
+#ifdef EE_BACKEND_ALLEGRO_ACTIVE
 
 #include "../../cjoystick.hpp"
-#include <SDL/SDL.h>
 
-namespace EE { namespace Window { namespace Backend { namespace SDL {
+namespace EE { namespace Window { namespace Backend { namespace Al {
 
-class EE_API cJoystickSDL : public cJoystick {
+class EE_API cJoystickAl : public cJoystick {
 	public:
-		cJoystickSDL( const Uint32& index );
+		cJoystickAl( const Uint32& index );
 
-		~cJoystickSDL();
+		~cJoystickAl();
 
 		void 		Close();
 
@@ -30,7 +29,6 @@ class EE_API cJoystickSDL : public cJoystick {
 
 		bool		Plugged() const;
 	protected:
-		SDL_Joystick * mJoystick;
 };
 
 }}}}

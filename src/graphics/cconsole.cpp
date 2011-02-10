@@ -13,7 +13,7 @@ cConsole::cConsole( cWindow * window ) :
 	mLastLogPos(0), mEnabled(false), mVisible(false), mFadeIn(false), mFadeOut(false), mExpand(false), mFading(false), mShowFps(false),
 	mConColor(35, 47, 73, 230), mConLineColor(55, 67, 93, 230), mFontColor(153, 153, 179, 230), mFontLineColor(255, 255, 255, 230),
 	mWidth(0), mHeight(0), mHeightMin(0), mY(0.0f), mA(0.0f), mFadeSpeed(250.f),
-	mMaxLogLines(1024), mFont(NULL), mTexId(0), mCurAlpha(0), mCurSide(false)
+	mMaxLogLines(1024), mFont(NULL), mTexId(0), mCurAlpha(0), mCurSide(false), mVidCb(0)
 {
 	if ( NULL == mWindow ) {
 		mWindow = cEngine::instance()->GetCurrentWindow();
@@ -31,6 +31,7 @@ cConsole::~cConsole() {
 	)
 	{
 		mWindow->GetInput()->PopCallback( mMyCallback );
+		mWindow->PopResizeCallback( mVidCb );
 	}
 }
 
@@ -63,6 +64,7 @@ void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const eeUin
 		cEngine::instance()->ExistsWindow( mWindow ) )
 	{
 		mMyCallback = mWindow->GetInput()->PushCallback( cb::Make1( this, &cConsole::PrivInputCallback ) );
+		mVidCb = mWindow->PushResizeCallback( cb::Make0( this, &cConsole::PrivVideoResize )  );
 	}
 
 	mTBuf.SetReturnCallback( cb::Make0( this, &cConsole::ProcessLine ) );
@@ -322,23 +324,25 @@ void cConsole::PrintCommandsStartingWith( const std::wstring& start ) {
 	}
 }
 
+void cConsole::PrivVideoResize() {
+	mWidth		= (eeFloat) mWindow->GetWidth();
+	mHeight		= (eeFloat) mWindow->GetHeight();
+	mHeightMin	= (eeFloat) mWindow->GetHeight() * 0.4f;
+
+	if ( mVisible ) {
+		if ( mExpand )
+			mCurHeight = mHeight;
+		else
+			mCurHeight = mHeightMin;
+
+		mY = mCurHeight;
+	}
+}
+
 void cConsole::PrivInputCallback( InputEvent * Event ) {
 	Uint8 etype = Event->Type;
 
-	if ( InputEvent::VideoExpose == etype || InputEvent::VideoResize == etype ) {
-		mWidth		= (eeFloat) mWindow->GetWidth();
-		mHeight		= (eeFloat) mWindow->GetHeight();
-		mHeightMin	= (eeFloat) mWindow->GetHeight() * 0.4f;
-
-		if ( mVisible ) {
-			if ( mExpand )
-				mCurHeight = mHeight;
-			else
-				mCurHeight = mHeightMin;
-
-			mY = mCurHeight;
-		}
-	} else if ( mVisible ) {
+	if ( mVisible ) {
 		Uint32 KeyCode	= (Uint32)Event->key.keysym.sym;
 		Uint32 Button	= Event->button.button;
 
@@ -446,7 +450,7 @@ void cConsole::CmdMinimize ( const std::vector < std::wstring >& params ) {
 }
 
 void cConsole::CmdQuit ( const std::vector < std::wstring >& params ) {
-	cEngine::instance()->Close();
+	mWindow->Close();
 }
 
 void cConsole::CmdGetTextureMemory ( const std::vector < std::wstring >& params ) {

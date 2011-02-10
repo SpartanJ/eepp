@@ -11,11 +11,7 @@ cInput::cInput( cWindow * window, cJoystickManager * joystickmanager ) :
 	mLastButtonLeftClicked(0), 		mLastButtonRightClicked(0), 	mLastButtonMiddleClicked(0),
 	mLastButtonLeftClick(0), 		mLastButtonRightClick(0), 		mLastButtonMiddleClick(0),
 	mTClick(0), mNumCallBacks(0),
-	#if EE_PLATFORM == EE_PLATFORM_LINUX
-	mMouseSpeed(1.75f),
-	#else
 	mMouseSpeed(1.0f),
-	#endif
 	mInputGrabed( false )
 {
 	memset( mKeysDown	, 0, EE_KEYS_SPACE );
@@ -33,7 +29,6 @@ void cInput::CleanStates() {
 	mLastPressTrigger 	= mPressTrigger;
 	mClickTrigger 		= 0;
 	mDoubleClickTrigger = 0;
-	mInputMod 			= 0;	
 }
 
 void cInput::SendEvent( InputEvent * Event ) {
@@ -53,8 +48,6 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 		}
 		case InputEvent::KeyUp:
 		{
-			mInputMod = Event->key.keysym.mod;
-
 			PushKey( &mKeysDown	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, false );
 			PushKey( &mKeysUp	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, true );
 			break;

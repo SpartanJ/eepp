@@ -114,9 +114,6 @@ class EE_API cWindow {
 		/** Set the window caption */
 		virtual void Caption( const std::string& Caption ) = 0;
 		
-		/** @return The caption of the titlebar */
-		virtual std::string Caption() = 0;
-
 		/** Set the Window icon */
 		virtual bool Icon( const std::string& Path ) = 0;
 
@@ -153,6 +150,9 @@ class EE_API cWindow {
 		/** Set the size of the window for a windowed window */
 		virtual void Size( const Uint32& Width, const Uint32& Height ) = 0;
 
+		/** @return The caption of the titlebar */
+		virtual std::string Caption();
+
 		/** Change the window size or the screen resolution
 		* @param Width New screen width
 		* @param Height New screen height
@@ -170,13 +170,13 @@ class EE_API cWindow {
 		virtual void SetCurrentContext( eeWindowContex Context ) = 0;
 
 		/** @return The current OpenGL context */
-		virtual eeWindowContex GetContext() const = 0;
+		virtual eeWindowContex GetContext() const;
 
 		/** @return The window handler */
 		virtual eeWindowHandler	GetWindowHandler() = 0;
 
 		/** Set as current context the default context ( the context used for the window creation ) */
-		virtual void SetDefaultContext() = 0;
+		virtual void SetDefaultContext();
 
 		/** Render the Scene to Screen */
 		virtual void Display();
@@ -305,7 +305,7 @@ class EE_API cWindow {
 		virtual void SwapBuffers() = 0;
 
 		/** Obtain the Main Context, this is called after the OpenGL context creation. */
-		virtual void GetMainContext() = 0;
+		virtual void GetMainContext();
 
 		void SendVideoResizeCb();
 

@@ -325,13 +325,13 @@ void cEETest::Init() {
 	else
 		GLVer = GLv_2;
 
-	Uint32 Style = Window::WindowStyle::Titlebar;
+	Uint32 Style = WindowStyle::Titlebar;
 
 	if ( !Windowed )
-		Style |= Window::WindowStyle::Fullscreen;
+		Style |= WindowStyle::Fullscreen;
 
 	if ( Resizeable )
-		Style |= Window::WindowStyle::Resize;
+		Style |= WindowStyle::Resize;
 
 	mWindow = EE->CreateWindow( WindowSettings( mWidth, mHeight, BitColor, Style ), ContextSettings( VSync, GLVer ) );
 

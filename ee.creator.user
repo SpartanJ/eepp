@@ -33,6 +33,7 @@
        <value type="QString">test</value>
        <value type="QString">-e</value>
        <value type="QString">DEBUGBUILD=yes</value>
+       <value type="QString">BACKENDS_ALL=yes</value>
       </valuelist>
       <value key="GenericProjectManager.GenericMakeStep.MakeCommand" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString"></value>
@@ -80,6 +81,7 @@
        <value type="QString">test</value>
        <value type="QString">-e</value>
        <value type="QString">DEBUGBUILD=no</value>
+       <value type="QString">BACKENDS_ALL=yes</value>
       </valuelist>
       <value key="GenericProjectManager.GenericMakeStep.MakeCommand" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString"></value>

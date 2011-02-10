@@ -1,6 +1,10 @@
 #ifndef EE_WINDOWCJOYSTICKMANAGERSDL_HPP
 #define EE_WINDOWCJOYSTICKMANAGERSDL_HPP
 
+#include "../../cbackend.hpp"
+
+#ifdef EE_BACKEND_SDL_ACTIVE
+
 #include "../../cjoystickmanager.hpp"
 #include <SDL/SDL.h>
 
@@ -22,5 +26,7 @@ class EE_API cJoystickManagerSDL : public cJoystickManager {
 };
 
 }}}}
+
+#endif
 
 #endif

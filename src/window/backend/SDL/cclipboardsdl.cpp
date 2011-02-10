@@ -1,6 +1,8 @@
 #include "cclipboardsdl.hpp"
 #include "cwindowsdl.hpp"
 
+#ifdef EE_BACKEND_SDL_ACTIVE
+
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
 static void * CurrentHandler = NULL;
@@ -313,3 +315,5 @@ std::wstring cClipboardSDL::GetTextWStr() {
 }
 
 }}}}
+
+#endif

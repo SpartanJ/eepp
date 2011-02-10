@@ -157,6 +157,8 @@ class EE_API cConsole{
 		eeFloat mCurAlpha;
 		bool mCurSide;
 
+		Uint32 mVidCb;
+
 		void CreateDefaultCommands();
 
 		void Fade();
@@ -221,6 +223,8 @@ class EE_API cConsole{
 		void PrivPushText( const std::wstring& str );
 
 		void PrintCommandsStartingWith( const std::wstring& start );
+
+		void PrivVideoResize();
 };
 
 }}

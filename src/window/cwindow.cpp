@@ -305,4 +305,36 @@ void cWindow::LogFailureInit( const std::string& ClassName, const std::string& B
 	cLog::instance()->Write( "Error on " + ClassName + "::Init . Backend " + BackendName + " failed to start." );
 }
 
+std::string cWindow::Caption() {
+	return mWindow.WindowConfig.Caption;
+}
+
+eeWindowContex cWindow::GetContext() const {
+#if defined( EE_GLEW_AVAILABLE  ) && ( EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOSX )
+	return mWindow.Context;
+#else
+	return 0;
+#endif
+}
+
+void cWindow::GetMainContext() {
+#ifdef EE_GLEW_AVAILABLE
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	mWindow.Context = wglGetCurrentContext();
+#elif EE_PLATFORM == EE_PLATFORM_LINUX
+	mWindow.Context = glXGetCurrentContext();
+#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+	mWindow.Context = aglGetCurrentContext();
+#endif
+
+#endif
+}
+
+void cWindow::SetDefaultContext() {
+#if defined( EE_GLEW_AVAILABLE ) && ( EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX )
+	SetCurrentContext( mWindow.Context );
+#endif
+}
+
 }}

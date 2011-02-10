@@ -12,8 +12,22 @@
 #include "../helper/haikuttf/hkfontmanager.hpp"
 #include "../physics/cphysicsmanager.hpp"
 
-#include "backend/SDL/cwindowsdl.hpp"
+#include "cbackend.hpp"
 #include "backend/SDL/cbackendsdl.hpp"
+#include "backend/allegro5/cbackendal.hpp"
+
+#define BACKEND_SDL			1
+#define BACKEND_ALLEGRO		2
+
+#ifndef DEFAULT_BACKEND
+
+#if defined( EE_BACKEND_SDL_ACTIVE )
+#define DEFAULT_BACKEND		BACKEND_SDL
+#elif defined( EE_BACKEND_ALLEGRO_ACTIVE )
+#define DEFAULT_BACKEND		BACKEND_ALLEGRO
+#endif
+
+#endif
 
 namespace EE { namespace Window {
 
@@ -21,7 +35,11 @@ cEngine::cEngine() :
 	mBackend( NULL ),
 	mWindow( NULL )
 {
+	#if DEFAULT_BACKEND == BACKEND_SDL
 	mBackend = eeNew( Backend::SDL::cBackendSDL, () );
+	#elif DEFAULT_BACKEND == BACKEND_ALLEGRO
+	mBackend = eeNew( Backend::Al::cBackendAl, () );
+	#endif
 }
 
 cEngine::~cEngine() {
@@ -67,8 +85,12 @@ void cEngine::Destroy() {
 }
 
 cWindow * cEngine::CreateWindow( WindowSettings Settings, ContextSettings Context ) {
+	#if DEFAULT_BACKEND == BACKEND_SDL
 	cWindow * window = eeNew( Backend::SDL::cWindowSDL, ( Settings, Context ) );
-	
+	#elif DEFAULT_BACKEND == BACKEND_ALLEGRO
+	cWindow * window = eeNew( Backend::Al::cWindowAl, ( Settings, Context ) );
+	#endif
+
 	if ( NULL == mWindow ) {
 		mWindow = window;
 	}
@@ -121,10 +143,6 @@ Uint32 cEngine::GetWindowCount() const {
 
 bool cEngine::Running() const {
 	return NULL != mWindow;
-}
-
-void cEngine::Close() {
-	Destroy();
 }
 
 eeFloat cEngine::Elapsed() const {

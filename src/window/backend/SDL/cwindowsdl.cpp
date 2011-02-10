@@ -1,4 +1,7 @@
 #include "cwindowsdl.hpp"
+
+#ifdef EE_BACKEND_SDL_ACTIVE
+
 #include "cclipboardsdl.hpp"
 #include "cinputsdl.hpp"
 #include "../../../graphics/cglobalbatchrenderer.hpp"
@@ -103,17 +106,18 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 		GetMainContext();
 
 		CreateView();
+
 		Setup2D();
 
 		mWindow.Created = true;
+
+		LogSuccessfulInit( "SDL" );
 
 		/// Init the clipboard after the window creation
 		reinterpret_cast<cClipboardSDL*> ( mClipboard )->Init();
 
 		/// Init the input after the window creation
 		reinterpret_cast<cInputSDL*> ( mInput )->Init();
-
-		LogSuccessfulInit( "SDL" );
 
 		return true;
 	} catch (...) {
@@ -155,10 +159,6 @@ void cWindowSDL::Caption( const std::string& Caption ) {
 	mWindow.WindowConfig.Caption = Caption;
 
 	SDL_WM_SetCaption( Caption.c_str(), NULL );
-}
-
-std::string cWindowSDL::Caption() {
-	return mWindow.WindowConfig.Caption;
 }
 
 bool cWindowSDL::Icon( const std::string& Path ) {
@@ -432,6 +432,17 @@ void cWindowSDL::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {
 	SDL_SetGamma( Red, Green, Blue );
 }
 
+eeWindowHandler	cWindowSDL::GetWindowHandler() {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	return mWMinfo.window;
+#elif EE_PLATFORM == EE_PLATFORM_LINUX
+	return mWMinfo.info.x11.display;
+#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+	return mWMinfo.cocoa.window;
+#else
+	return 0;
+#endif
+}
 
 void cWindowSDL::SetCurrentContext( eeWindowContex Context ) {
 	if ( mWindow.Created ) {
@@ -453,44 +464,6 @@ void cWindowSDL::SetCurrentContext( eeWindowContex Context ) {
 	}
 }
 
-eeWindowContex cWindowSDL::GetContext() const {
-#if defined( EE_GLEW_AVAILABLE  ) && ( EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOSX )
-	return mWindow.Context;
-#else
-	return 0;
-#endif
-}
-
-void cWindowSDL::GetMainContext() {
-#ifdef EE_GLEW_AVAILABLE
-
-#if EE_PLATFORM == EE_PLATFORM_WIN
-	mWindow.Context = wglGetCurrentContext();
-#elif EE_PLATFORM == EE_PLATFORM_LINUX
-	mWindow.Context = glXGetCurrentContext();
-#elif EE_PLATFORM == EE_PLATFORM_MACOSX
-	mWindow.Context = aglGetCurrentContext();
-#endif
-
-#endif
-}
-
-eeWindowHandler	cWindowSDL::GetWindowHandler() {
-#if EE_PLATFORM == EE_PLATFORM_WIN
-	return mWMinfo.window;
-#elif EE_PLATFORM == EE_PLATFORM_LINUX
-	return mWMinfo.info.x11.display;
-#elif EE_PLATFORM == EE_PLATFORM_MACOSX
-	return mWMinfo.cocoa.window;
-#else
-	return 0;
-#endif
-}
-
-void cWindowSDL::SetDefaultContext() {
-#if defined( EE_GLEW_AVAILABLE ) && ( EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX )
-	SetCurrentContext( mWindow.Context );
-#endif
-}
-
 }}}}
+
+#endif

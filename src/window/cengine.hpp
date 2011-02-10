@@ -31,8 +31,6 @@ class EE_API cEngine : public tSingleton<cEngine> {
 
 		bool Running() const;
 
-		void Close();
-
 		eeFloat Elapsed() const;
 
 		const Uint32& GetWidth() const;

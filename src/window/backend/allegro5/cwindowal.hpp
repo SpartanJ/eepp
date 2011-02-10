@@ -1,21 +1,20 @@
-#ifndef EE_WINDOWCWINDOWSDL_HPP
-#define EE_WINDOWCWINDOWSDL_HPP
+#ifndef EE_WINDOWCWINDOWAl_HPP
+#define EE_WINDOWCWINDOWAl_HPP
 
 #include "../../cbackend.hpp"
 
-#ifdef EE_BACKEND_SDL_ACTIVE
+#ifdef EE_BACKEND_ALLEGRO_ACTIVE
 
+#include <allegro5/allegro5.h>
 #include "../../cwindow.hpp"
-#include <SDL/SDL.h>
-#include <SDL/SDL_syswm.h>
 
-namespace EE { namespace Window { namespace Backend { namespace SDL {
+namespace EE { namespace Window { namespace Backend { namespace Al {
 
-class EE_API cWindowSDL : public cWindow {
+class EE_API cWindowAl : public cWindow {
 	public:
-		cWindowSDL( WindowSettings Settings, ContextSettings Context );
+		cWindowAl( WindowSettings Settings, ContextSettings Context );
 		
-		virtual ~cWindowSDL();
+		virtual ~cWindowAl();
 		
 		bool Create( WindowSettings Settings, ContextSettings Context );
 		
@@ -56,15 +55,18 @@ class EE_API cWindowSDL : public cWindow {
 		void SetCurrentContext( eeWindowContex Context );
 
 		eeWindowHandler	GetWindowHandler();
+
+		void SetDefaultContext();
+
+		ALLEGRO_DISPLAY * GetDisplay() const;
 	protected:
-		friend class cClipboardSDL;
-
-		SDL_Surface *	mSurface;
-		SDL_SysWMinfo 	mWMinfo;
-
+		friend class cClipboardAl;
+		friend class cInputAl;
+		
+		ALLEGRO_DISPLAY * 	mDisplay;
+		bool				mActive;
+		
 		void SwapBuffers();
-
-		void SetGLConfig();
 };
 
 }}}}
