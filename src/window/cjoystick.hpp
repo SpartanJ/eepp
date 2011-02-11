@@ -10,7 +10,7 @@ class EE_API cJoystick {
 	public:
 		cJoystick( const Uint32& index );
 
-		~cJoystick();
+		virtual ~cJoystick();
 
 		virtual void 		Close();
 
@@ -20,7 +20,7 @@ class EE_API cJoystick {
 
 		virtual Uint8		GetHat( const Int32& index = 0 ) = 0;
 
-		virtual Int16		GetAxis( const Int32& axis ) = 0;
+		virtual eeFloat		GetAxis( const Int32& axis ) = 0;
 
 		virtual eeVector2i	GetBallMotion( const Int32& ball ) = 0;
 

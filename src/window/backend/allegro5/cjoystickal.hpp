@@ -6,6 +6,7 @@
 #ifdef EE_BACKEND_ALLEGRO_ACTIVE
 
 #include "../../cjoystick.hpp"
+#include <allegro5/allegro.h>
 
 namespace EE { namespace Window { namespace Backend { namespace Al {
 
@@ -13,7 +14,7 @@ class EE_API cJoystickAl : public cJoystick {
 	public:
 		cJoystickAl( const Uint32& index );
 
-		~cJoystickAl();
+		virtual ~cJoystickAl();
 
 		void 		Close();
 
@@ -23,12 +24,15 @@ class EE_API cJoystickAl : public cJoystick {
 
 		Uint8		GetHat( const Int32& index );
 
-		Int16		GetAxis( const Int32& axis );
+		eeFloat		GetAxis( const Int32& axis );
 
 		eeVector2i	GetBallMotion( const Int32& ball );
 
 		bool		Plugged() const;
 	protected:
+		ALLEGRO_JOYSTICK * mJoystick;
+		ALLEGRO_JOYSTICK_STATE * mJoyState;
+		Uint32	mSticks;
 };
 
 }}}}

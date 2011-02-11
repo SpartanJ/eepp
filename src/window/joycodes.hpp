@@ -22,8 +22,8 @@ enum EE_JOYAXIS {
 	AXIS_Y2		= 2
 };
 
-#define AXIS_MAX		(32768)
-#define AXIS_MIN		(-32768)
+#define AXIS_MAX		(1)
+#define AXIS_MIN		(-1)
 
 #define MAX_JOYSTICKS (16)
 

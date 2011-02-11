@@ -5,12 +5,6 @@
 #include "cbackend.hpp"
 #include "cwindow.hpp"
 
-#if EE_PLATFORM == EE_PLATFORM_WIN
-#ifdef CreateWindow
-#undef CreateWindow
-#endif
-#endif
-
 namespace EE { namespace Window {
 
 /** @brief The window management class. Here the engine start working. (Singleton Class). */

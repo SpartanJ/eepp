@@ -53,8 +53,6 @@ namespace detail
     template <typename T> 
     inline tmat3x4<T>::tmat3x4()
     {
-		value_type const Zero(0);
-		value_type const One(1);
         this->value[0] = col_type(1, 0, 0, 0);
         this->value[1] = col_type(0, 1, 0, 0);
         this->value[2] = col_type(0, 0, 1, 0);

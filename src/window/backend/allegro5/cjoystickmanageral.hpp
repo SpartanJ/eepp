@@ -14,14 +14,14 @@ class EE_API cJoystickManagerAl : public cJoystickManager {
 	public:
 		cJoystickManagerAl();
 		
-		~cJoystickManagerAl();
+		virtual ~cJoystickManagerAl();
 		
 		void Update();
-	protected:
+
 		void Close();
 
 		void Open();
-		
+	protected:
 		void Create( const Uint32& index );
 };
 

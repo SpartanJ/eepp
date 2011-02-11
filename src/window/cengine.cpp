@@ -12,12 +12,13 @@
 #include "../helper/haikuttf/hkfontmanager.hpp"
 #include "../physics/cphysicsmanager.hpp"
 
-#include "cbackend.hpp"
 #include "backend/SDL/cbackendsdl.hpp"
 #include "backend/allegro5/cbackendal.hpp"
 
 #define BACKEND_SDL			1
 #define BACKEND_ALLEGRO		2
+
+#define DEFAULT_BACKEND		BACKEND_SDL
 
 #ifndef DEFAULT_BACKEND
 
@@ -42,9 +43,7 @@ cEngine::cEngine() :
 	#endif
 }
 
-cEngine::~cEngine() {
-	Destroy();
-
+cEngine::~cEngine() {	
 	Physics::cPhysicsManager::DestroySingleton();
 
 	Graphics::Private::cFrameBufferManager::DestroySingleton();
@@ -70,6 +69,8 @@ cEngine::~cEngine() {
 	cLog::DestroySingleton();
 
 	HaikuTTF::hkFontManager::DestroySingleton();
+
+	Destroy();
 
 	eeSAFE_DELETE( mBackend );
 }

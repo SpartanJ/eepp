@@ -10,7 +10,7 @@ class EE_API cJoystickManager {
 	public:
 		cJoystickManager();
 
-		~cJoystickManager();
+		virtual ~cJoystickManager();
 
 		virtual Uint32 Count();
 
@@ -19,6 +19,10 @@ class EE_API cJoystickManager {
 		cJoystick * 	GetJoystick( const Uint32& index );
 
 		virtual void	Rescan();
+
+		virtual void 	Close();
+
+		virtual void 	Open();
 	protected:
 		friend class cJoystick;
 		
@@ -27,10 +31,6 @@ class EE_API cJoystickManager {
 		cJoystick * 	mJoysticks[ MAX_JOYSTICKS ];
 
 		Uint32			mCount;
-
-		virtual void 	Close();
-
-		virtual void 	Open();
 
 		virtual void 	Create( const Uint32& index ) = 0;
 };

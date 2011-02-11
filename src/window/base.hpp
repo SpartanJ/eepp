@@ -26,6 +26,10 @@ using namespace EE::Graphics;
 
 	typedef UINT			eeScrapType;
 	typedef HWND			eeWindowHandler;
+
+	#ifdef CreateWindow
+	#undef CreateWindow
+	#endif
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
 	#include <X11/Xlib.h>
 	typedef Atom			eeScrapType;

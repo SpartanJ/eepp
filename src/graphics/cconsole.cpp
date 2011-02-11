@@ -10,10 +10,31 @@ namespace EE { namespace Graphics {
 
 cConsole::cConsole( cWindow * window ) :
 	mWindow( window ),
-	mLastLogPos(0), mEnabled(false), mVisible(false), mFadeIn(false), mFadeOut(false), mExpand(false), mFading(false), mShowFps(false),
-	mConColor(35, 47, 73, 230), mConLineColor(55, 67, 93, 230), mFontColor(153, 153, 179, 230), mFontLineColor(255, 255, 255, 230),
-	mWidth(0), mHeight(0), mHeightMin(0), mY(0.0f), mA(0.0f), mFadeSpeed(250.f),
-	mMaxLogLines(1024), mFont(NULL), mTexId(0), mCurAlpha(0), mCurSide(false), mVidCb(0)
+	mConColor(35, 47, 73, 230),
+	mConLineColor(55, 67, 93, 230),
+	mFontColor(153, 153, 179, 230),
+	mFontLineColor(255, 255, 255, 230),
+	mWidth(0),
+	mHeight(0),
+	mHeightMin(0),
+	mY(0.0f),
+	mA(0.0f),
+	mFadeSpeed(250.f),
+	mMyCallback(0),
+	mVidCb(0),
+	mMaxLogLines(1024),
+	mLastLogPos(0),
+	mFont(NULL),
+	mTexId(0),
+	mCurAlpha(0),
+	mEnabled(false),
+	mVisible(false),
+	mFadeIn(false),
+	mFadeOut(false),
+	mExpand(false),
+	mFading(false),
+	mShowFps(false),
+	mCurSide(false)
 {
 	if ( NULL == mWindow ) {
 		mWindow = cEngine::instance()->GetCurrentWindow();
@@ -365,6 +386,7 @@ void cConsole::PrivInputCallback( InputEvent * Event ) {
 						mTBuf.Buffer( L"" );
 					} else {
 						mTBuf.Buffer( mLastCommands[mLastLogPos] );
+						mTBuf.CursorToEnd();
 					}
 				}
 			}
@@ -388,7 +410,7 @@ void cConsole::PrivInputCallback( InputEvent * Event ) {
 			if ( KeyCode == KEY_END ) {
 				mCon.ConModif = 0;
 			}
-		} else if ( InputEvent::MouseButtonDown == etype ) {
+		} else if ( InputEvent::MouseButtonUp == etype ) {
 			if ( Button == EE_BUTTON_WHEELUP ) {
 				if ( mCon.ConMin - mCon.ConModif > 0 )
 					mCon.ConModif++;

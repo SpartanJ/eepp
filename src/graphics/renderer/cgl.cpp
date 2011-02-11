@@ -343,4 +343,12 @@ std::string cGL::GetVersion() {
 	return std::string( reinterpret_cast<const char*> ( cGL::instance()->GetString( GL_VERSION ) ) );
 }
 
+std::string cGL::GetShadingLanguageVersion() {
+	#ifdef GL_SHADING_LANGUAGE_VERSION
+	return std::string( reinterpret_cast<const char*> ( cGL::instance()->GetString( GL_SHADING_LANGUAGE_VERSION ) ) );
+	#else
+	return std::string( "0" );
+	#endif
+}
+
 }}

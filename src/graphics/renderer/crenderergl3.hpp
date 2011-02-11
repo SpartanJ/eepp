@@ -122,10 +122,13 @@ class cRendererGL3 : public cGL {
 		GLint					mTexActiveLoc;
 		GLint					mPointSpriteLoc;
 		GLfloat					mPointSize;
+		bool					mLoaded;
 
 		void UpdateMatrix();
 
 		void PlaneStateCheck( bool tryEnable );
+
+		void ReloadShader( cShaderProgram * Shader );
 };
 
 }}

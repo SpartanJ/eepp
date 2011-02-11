@@ -377,6 +377,12 @@ void cWindowSDL::Size( const Uint16& Width, const Uint16& Height, const bool& Wi
 			mSurface = SDL_SetVideoMode( Width, Height, mWindow.WindowConfig.BitsPerPixel, mWindow.Flags | SDL_FULLSCREEN );
 		}
 
+		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
+		if ( Reload ) {
+			cGL::instance()->Init();
+		}
+		#endif
+
 		Setup2D();
 
 		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX

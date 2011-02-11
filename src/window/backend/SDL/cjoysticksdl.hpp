@@ -14,7 +14,7 @@ class EE_API cJoystickSDL : public cJoystick {
 	public:
 		cJoystickSDL( const Uint32& index );
 
-		~cJoystickSDL();
+		virtual ~cJoystickSDL();
 
 		void 		Close();
 
@@ -24,7 +24,7 @@ class EE_API cJoystickSDL : public cJoystick {
 
 		Uint8		GetHat( const Int32& index );
 
-		Int16		GetAxis( const Int32& axis );
+		eeFloat		GetAxis( const Int32& axis );
 
 		eeVector2i	GetBallMotion( const Int32& ball );
 

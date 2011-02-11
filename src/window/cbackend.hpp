@@ -3,6 +3,14 @@
 
 #include "../base.hpp"
 
+#ifndef EE_BACKEND_ALLEGRO_ACTIVE
+#define EE_BACKEND_ALLEGRO_ACTIVE
+#endif
+
+#ifndef EE_BACKEND_ALLEGRO_ACTIVE
+#define EE_BACKEND_SDL_ACTIVE
+#endif
+
 namespace EE { namespace Window { namespace Backend {
 
 class EE_API cBackend {

@@ -12,6 +12,8 @@ namespace EE { namespace Graphics {
 */
 class EE_API cShaderProgram {
 	public:
+		typedef cb::Callback1<void, cShaderProgram*> ShaderProgramReloadCb;
+
 		cShaderProgram( const std::string& name = "" );
 
 		/** Construct a program shader with a vector of shaders and link them. */
@@ -63,24 +65,34 @@ class EE_API cShaderProgram {
 		* If there is no uniform with such name then false is returned.
 		* Note that the program has to be bound before this method can be used.
 		*/
-		bool SetUniform( const std::string& Name, eeFloat Value );
+		bool SetUniform( const std::string& Name, float Value );
 
 		/** @overload */
-		bool SetUniform( const std::string& Name, eeVector2f Value );
+		bool SetUniform( const std::string& Name, eeVector2ff Value );
 
 		/** @overload */
-		bool SetUniform( const std::string& Name, eeVector3f Value );
+		bool SetUniform( const std::string& Name, eeVector3ff Value );
+
+		/** @overload */
+		bool SetUniform( const std::string& Name, float x, float y, float z, float w );
 
 		/** @overload */
 		bool SetUniform( const std::string& Name, Int32 Value );
 
+		/** @overload */
 		bool SetUniform( const Int32& Location, Int32 Value );
 
-		bool SetUniform( const Int32& Location, eeFloat Value );
+		/** @overload */
+		bool SetUniform( const Int32& Location, float Value );
 
-		bool SetUniform( const Int32& Location, eeVector2f Value );
+		/** @overload */
+		bool SetUniform( const Int32& Location, eeVector2ff Value );
 
-		bool SetUniform( const Int32& Location, eeVector3f Value );
+		/** @overload */
+		bool SetUniform( const Int32& Location, eeVector3ff Value );
+
+		/** @overload */
+		bool SetUniform( const Int32& Location, float x, float y, float z, float w );
 
 		bool SetUniformMatrix( const std::string Name, const float * Value );
 
@@ -100,6 +112,9 @@ class EE_API cShaderProgram {
 
 		/** Set the name of the shader program */
 		void Name( const std::string& name );
+
+		/** Set a reload callback ( needed to reset shader states ). */
+		void SetReloadCb( ShaderProgramReloadCb Cb );
     protected:
 		std::string mName;
 		Uint32 mHandler;
@@ -111,6 +126,8 @@ class EE_API cShaderProgram {
 		std::vector<cShader*> mShaders;
 		std::map<std::string, Int32> mUniformLocations;
 		std::map<std::string, Int32> mAttributeLocations;
+
+		ShaderProgramReloadCb mReloadCb;
 
 		void Init();
 

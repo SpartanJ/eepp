@@ -160,6 +160,10 @@ void cShaderProgram::Reload() {
     }
 
 	Link();
+
+	if ( mReloadCb.IsSet() ) {
+		mReloadCb( this );
+	}
 }
 
 void cShaderProgram::AddShader( cShader* Shader ) {
@@ -244,7 +248,7 @@ void cShaderProgram::InvalidateLocations() {
 	mAttributeLocations.clear();
 }
 
-bool cShaderProgram::SetUniform( const std::string& Name, eeFloat Value ) {
+bool cShaderProgram::SetUniform( const std::string& Name, float Value ) {
 	Int32 Location = UniformLocation( Name );
 
 	if ( Location >= 0 )
@@ -253,20 +257,29 @@ bool cShaderProgram::SetUniform( const std::string& Name, eeFloat Value ) {
 	return ( Location >= 0 );
 }
 
-bool cShaderProgram::SetUniform( const std::string& Name, eeVector2f Value ) {
+bool cShaderProgram::SetUniform( const std::string& Name, eeVector2ff Value ) {
 	Int32 Location = UniformLocation( Name );
 
 	if ( Location >= 0 )
-		glUniform2fv( Location, 1, reinterpret_cast<eeFloat*>( &Value ) );
+		glUniform2fv( Location, 1, reinterpret_cast<float*>( &Value ) );
 
 	return ( Location >= 0 );
 }
 
-bool cShaderProgram::SetUniform( const std::string& Name, eeVector3f Value ) {
+bool cShaderProgram::SetUniform( const std::string& Name, eeVector3ff Value ) {
 	Int32 Location = UniformLocation( Name );
 
 	if ( Location >= 0 )
-		glUniform3fv( Location, 1, reinterpret_cast<eeFloat*>( &Value ) );
+		glUniform3fv( Location, 1, reinterpret_cast<float*>( &Value ) );
+
+	return ( Location >= 0 );
+}
+
+bool cShaderProgram::SetUniform( const std::string& Name, float x, float y, float z, float w ) {
+	Int32 Location = UniformLocation( Name );
+
+	if ( Location >= 0 )
+		glUniform4f( Location, x, y, z, w );
 
 	return ( Location >= 0 );
 }
@@ -290,7 +303,7 @@ bool cShaderProgram::SetUniform( const Int32& Location, Int32 Value ) {
 	return false;
 }
 
-bool cShaderProgram::SetUniform( const Int32& Location, eeFloat Value ) {
+bool cShaderProgram::SetUniform( const Int32& Location, float Value ) {
 	if ( -1 != Location ) {
 		glUniform1f( Location, Value );
 		return true;
@@ -299,18 +312,27 @@ bool cShaderProgram::SetUniform( const Int32& Location, eeFloat Value ) {
 	return false;
 }
 
-bool cShaderProgram::SetUniform( const Int32& Location, eeVector2f Value ) {
+bool cShaderProgram::SetUniform( const Int32& Location, eeVector2ff Value ) {
 	if ( -1 != Location ) {
-		glUniform2fv( Location, 1, reinterpret_cast<eeFloat*>( &Value ) );
+		glUniform2fv( Location, 1, reinterpret_cast<float*>( &Value ) );
 		return true;
 	}
 
 	return false;
 }
 
-bool cShaderProgram::SetUniform( const Int32& Location, eeVector3f Value ) {
+bool cShaderProgram::SetUniform( const Int32& Location, eeVector3ff Value ) {
 	if ( -1 != Location ) {
-		glUniform3fv( Location, 1, reinterpret_cast<eeFloat*>( &Value ) );
+		glUniform3fv( Location, 1, reinterpret_cast<float*>( &Value ) );
+		return true;
+	}
+
+	return false;
+}
+
+bool cShaderProgram::SetUniform( const Int32& Location, float x, float y, float z, float w ) {
+	if ( -1 != Location ) {
+		glUniform4f( Location, x, y, z, w );
 		return true;
 	}
 
@@ -349,6 +371,10 @@ void cShaderProgram::Name( const std::string& name ) {
 	if ( 0 != NameCount || 0 == name.size() ) {
 		Name( name + intToStr( NameCount + 1 ) );
 	}
+}
+
+void cShaderProgram::SetReloadCb( ShaderProgramReloadCb Cb ) {
+	mReloadCb = Cb;
 }
 
 }}

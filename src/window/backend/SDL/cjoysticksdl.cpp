@@ -7,10 +7,12 @@ namespace EE { namespace Window { namespace Backend { namespace SDL {
 cJoystickSDL::cJoystickSDL( const Uint32& index ) :
 	cJoystick( index ),
 	mJoystick( NULL )
-{	
+{
+	Open();
 }
 
 cJoystickSDL::~cJoystickSDL() {
+	Close();
 }
 
 void cJoystickSDL::Open() {
@@ -57,9 +59,10 @@ Uint8 cJoystickSDL::GetHat( const Int32& index ) {
 	return HAT_CENTERED;
 }
 
-Int16 cJoystickSDL::GetAxis( const Int32& axis ) {
-	if ( axis >= 0 && axis < mAxes )
-		return SDL_JoystickGetAxis( mJoystick, axis );
+eeFloat cJoystickSDL::GetAxis( const Int32& axis ) {
+	if ( axis >= 0 && axis < mAxes ) {
+		return (eeFloat)SDL_JoystickGetAxis( mJoystick, axis ) / 32768.f;
+	}
 
 	return 0;
 }

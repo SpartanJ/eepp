@@ -67,6 +67,10 @@ class EE_API cWindowAl : public cWindow {
 		bool				mActive;
 		
 		void SwapBuffers();
+
+		void DestroyDisplay();
+
+		Uint32 CreateFlags( const WindowSettings& Settings, const ContextSettings& Context );
 };
 
 }}}}

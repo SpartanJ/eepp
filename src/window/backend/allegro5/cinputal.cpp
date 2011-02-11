@@ -217,7 +217,11 @@ void cInputAl::GrabInput( const bool& Grab ) {
 }
 
 void cInputAl::InjectMousePos( const Uint16& x, const Uint16& y ) {
-	al_set_mouse_xy( GetDisplay(), x, y );
+	if ( x >= 0 && x <= GetWindowAl()->GetWidth() && y >= 0 && y <= GetWindowAl()->GetHeight() ) {
+		al_set_mouse_xy( GetDisplay(), x, y );
+		mMousePos.x = x;
+		mMousePos.y = y;
+	}
 }
 
 void cInputAl::Init() {
@@ -239,6 +243,8 @@ void cInputAl::Init() {
 	mZ = state.z;
 
 	InitializeTables();
+
+	mJoystickManager->Open();
 }
 
 cWindowAl * cInputAl::GetWindowAl() const {

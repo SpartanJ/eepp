@@ -133,16 +133,32 @@ class EE_API cConsole{
 		std::deque < std::wstring > mLastCommands;
 
 		cWindow * mWindow;
-		eeInt mLastLogPos;
 
-		bool mEnabled, mVisible, mFadeIn, mFadeOut, mExpand, mFading, mShowFps;
-		eeColorA mConColor, mConLineColor, mFontColor, mFontLineColor;
-		eeFloat mWidth, mHeight, mHeightMin, mCurHeight, mY, mA, mMaxAlpha, mTempY, mFontSize, mFadeSpeed;
-		Uint32 mMyCallback, mEx, mMaxLogLines;
+		eeColorA mConColor;
+		eeColorA mConLineColor;
+		eeColorA mFontColor;
+		eeColorA mFontLineColor;
+
+		eeFloat mWidth;
+		eeFloat mHeight;
+		eeFloat mHeightMin;
+		eeFloat mCurHeight;
+		eeFloat mY;
+		eeFloat mA;
+		eeFloat mMaxAlpha;
+		eeFloat mTempY;
+		eeFloat mFontSize;
+		eeFloat mFadeSpeed;
+
+		Uint32 mMyCallback;
+		Uint32 mVidCb;
+		Uint32 mEx;
+		Uint32 mMaxLogLines;
+		eeInt mLastLogPos;
 
 		cInputTextBuffer mTBuf;
 
-		cFont* mFont;
+		cFont * mFont;
 
 		cPrimitives mPri;
 		Uint32 mTexId;
@@ -155,9 +171,15 @@ class EE_API cConsole{
 		sCon mCon;
 
 		eeFloat mCurAlpha;
-		bool mCurSide;
 
-		Uint32 mVidCb;
+		bool mEnabled;
+		bool mVisible;
+		bool mFadeIn;
+		bool mFadeOut;
+		bool mExpand;
+		bool mFading;
+		bool mShowFps;
+		bool mCurSide;
 
 		void CreateDefaultCommands();
 

@@ -14,10 +14,22 @@ cJoystickManagerAl::~cJoystickManagerAl() {
 }
 
 void cJoystickManagerAl::Update() {
+	if ( mInit ) {
+		for ( eeUint i = 0; i < mCount; i++ )
+			if ( NULL != mJoysticks[i] )
+				mJoysticks[i]->Update();
+	}
 }
 
 void cJoystickManagerAl::Open() {
 	al_install_joystick();
+
+	mCount = (eeUint)al_get_num_joysticks();
+
+	for ( eeUint i = 0; i < mCount; i++ )
+		Create(i);
+
+	mInit = true;
 }
 
 void cJoystickManagerAl::Close() {
@@ -25,6 +37,10 @@ void cJoystickManagerAl::Close() {
 }
 
 void cJoystickManagerAl::Create( const Uint32& index ) {
+	if ( NULL != mJoysticks[ index ] )
+		mJoysticks[ index ]->ReOpen();
+	else
+		mJoysticks[ index ] = eeNew( cJoystickAl, ( index ) );
 }
 
 }}}}

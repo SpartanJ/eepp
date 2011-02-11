@@ -1425,6 +1425,9 @@ void cEETest::Input() {
 	Mouse = KM->GetMousePos();
 	Mousef = eeVector2f( (eeFloat)Mouse.x, (eeFloat)Mouse.y );
 
+	if ( KM->IsKeyUp( KEY_F1 ) )
+		Graphics::cShaderProgramManager::instance()->Reload();
+
 	if ( !mWindow->Visible() ) {
 		mWasMinimized = true;
 
@@ -1525,17 +1528,13 @@ void cEETest::Input() {
 		if ( Joy->IsButtonUp(6) )		SetScreen( 2 );
 		if ( Joy->IsButtonUp(7) )		KM->InjectButtonRelease(EE_BUTTON_MIDDLE);
 
-		Int16 aX = Joy->GetAxis( AXIS_X );
-		Int16 aY = Joy->GetAxis( AXIS_Y );
+		eeFloat aX = Joy->GetAxis( AXIS_X );
+		eeFloat aY = Joy->GetAxis( AXIS_Y );
 
 		if ( 0 != aX || 0 != aY ) {
 			eeFloat rE = mWindow->Elapsed();
-
-			if ( aX < 0 )	mAxisX -= ( (eeFloat)aX / (eeFloat)AXIS_MIN ) * rE;
-			else 			mAxisX += ( (eeFloat)aX / (eeFloat)AXIS_MAX ) * rE;
-
-			if ( aY < 0 )	mAxisY -= ( (eeFloat)aY / (eeFloat)AXIS_MIN ) * rE;
-			else 			mAxisY += ( (eeFloat)aY / (eeFloat)AXIS_MAX ) * rE;
+			mAxisX += aX * rE;
+			mAxisY += aY * rE;
 		}
 
 		if ( ( mAxisX != 0 && ( mAxisX >= 1.f || mAxisX <= -1.f ) ) || ( mAxisY != 0 && ( mAxisY >= 1.f || mAxisY <= -1.f )  ) ) {
@@ -1544,8 +1543,11 @@ void cEETest::Input() {
 
 			KM->InjectMousePos( (Int32)nmX, (Int32)nmY );
 
-			mAxisX 		= 0;
-			mAxisY	 	= 0;
+			nmX -= (Int32)nmX;
+			nmY -= (Int32)nmY;
+
+			mAxisX 		= nmX;
+			mAxisY	 	= nmY;
 		}
 	}
 

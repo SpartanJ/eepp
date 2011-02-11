@@ -94,7 +94,8 @@ cRendererGL3::cRendererGL3() :
 	mTexActive(1),
 	mTexActiveLoc(-1),
 	mPointSpriteLoc(-1),
-	mPointSize(1.f)
+	mPointSize(1.f),
+	mLoaded( false )
 {
 	mProjectionMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
 	mModelViewMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
@@ -118,6 +119,12 @@ EEGL_version cRendererGL3::Version() {
 
 GLuint cRendererGL3::BaseShaderId() {
 	return mCurShader->Handler();
+}
+
+void cRendererGL3::ReloadShader( cShaderProgram * Shader ) {
+	mCurShader = NULL;
+
+	SetShader( Shader );
 }
 
 void cRendererGL3::SetShader( const EEGL_SHADERS& Shader ) {
@@ -261,22 +268,31 @@ void cRendererGL3::PlaneStateCheck( bool tryEnable ) {
 }
 
 void cRendererGL3::Init() {
-	cGL::Init();
+	if ( !mLoaded ) {
+		cGL::Init();
 
-	Uint32 i;
+		Uint32 i;
 
-	for ( i = 0; i < EEGL_ARRAY_STATES_COUNT; i++ ) {
-		mVBO[i] = 0;
+		for ( i = 0; i < EEGL_ARRAY_STATES_COUNT; i++ ) {
+			mVBO[i] = 0;
+		}
+
+		for ( i = 0; i < EE_MAX_PLANES; i++ ) {
+			mPlanes[i]			= -1;
+			mPlanesStates[i]	= 0;
+		}
+
+		mShaders[ EEGL_SHADER_BASE ]			= eeNew( cShaderProgram, ( (const char**)EEGL_SHADER_BASE_VS, sizeof(EEGL_SHADER_BASE_VS)/sizeof(const GLchar*), (const char**)EEGL_SHADER_BASE_FS, sizeof(EEGL_SHADER_BASE_FS)/sizeof(const GLchar*), "EEGL_SHADER_BASE_TEX" ) );
+		mShaders[ EEGL_SHADER_BASE ]->SetReloadCb( cb::Make1( this, &cRendererGL3::ReloadShader ) );
+
+		SetShader( mShaders[ EEGL_SHADER_BASE ] );
+	} else {
+		mCurShader = NULL;
+
+		mShaders[ EEGL_SHADER_BASE ]->Reload();
+
+		SetShader( mShaders[ EEGL_SHADER_BASE ] );
 	}
-
-	for ( i = 0; i < EE_MAX_PLANES; i++ ) {
-		mPlanes[i]			= -1;
-		mPlanesStates[i]	= 0;
-	}
-
-	mShaders[ EEGL_SHADER_BASE ]			= eeNew( cShaderProgram, ( (const char**)EEGL_SHADER_BASE_VS, sizeof(EEGL_SHADER_BASE_VS)/sizeof(const GLchar*), (const char**)EEGL_SHADER_BASE_FS, sizeof(EEGL_SHADER_BASE_FS)/sizeof(const GLchar*), "EEGL_SHADER_BASE_TEX" ) );
-
-	SetShader( mShaders[ EEGL_SHADER_BASE ] );
 
 	#ifndef EE_GLES2
 	glGenVertexArrays( 1, &mVAO );
@@ -296,6 +312,8 @@ void cRendererGL3::Init() {
 	//"in		 vec2 dgl_TexCoord;",
 	glBindBuffer( GL_ARRAY_BUFFER, mVBO[ EEGL_TEXTURE_COORD_ARRAY ] );
 	glBufferData( GL_ARRAY_BUFFER, 131072, NULL, GL_STREAM_DRAW );
+
+	mLoaded = true;
 }
 
 void cRendererGL3::UpdateMatrix() {

@@ -75,6 +75,9 @@ class cGL {
 		/** @return A GL version or release number. */
 		std::string GetVersion();
 
+		/** @return The shading language version */
+		std::string GetShadingLanguageVersion();
+
 		/** @return If the extension passed is supported by the GPU */
 		bool IsExtension( const std::string& name );
 
