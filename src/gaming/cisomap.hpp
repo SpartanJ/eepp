@@ -25,7 +25,7 @@ class EE_API cIsoTile {
 		eeColor Color[4];	//! Color of every vertex stored
 		eeQuad2f Q; 			//! Vertex Buffer Data
 		std::vector<cShape*> Layers;
-		std::wstring TilePosStr;
+		std::string TilePosStr;
 		eeAABB Box;
 };
 

@@ -22,10 +22,13 @@
 **/
 
 /**
-	@TODO Add some Surface Grid class, to create special effects ( waved texture, and stuff like that ).
+	@TODO Support GLES1 ( GLES1 is just a fixed pipeline renderer, so it should be the same renderer that GLv_2 ).
+	@TODO Remove std::wstring dependency ( wchar_t ), and create an eeString class to manage strings without wchar_t platform restrictions ( Android only support wchar_t in 2.3 ).
+	@TODO Check for endianness problems, and make EEPP endianness agnostic.
+	@TODO Add backend for SDL 1.3 ( support for Android ). And may be SFML backend ( just for fun ).
+	@TODO Support for Android and iOS.
 	@TODO Add Scripting support ( lua or squirrel ).
-	@TODO Support color cursors ( not only black and white cursors, that really sucks ) - Imposible with SDL 1.2
-	@TODO Support for Android and iPhone
+	@TODO Support color cursors ( not only black and white cursors, that really sucks ) - Imposible with SDL 1.2. Allegro 5 have this implemented ( could implement this for the Allegro backend at least ).
 */
 
 	// General includes and declarations

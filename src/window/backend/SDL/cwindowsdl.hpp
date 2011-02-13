@@ -25,23 +25,9 @@ class EE_API cWindowSDL : public cWindow {
 
 		bool Icon( const std::string& Path );
 
-		void Minimize();
-
-		void Maximize();
-
-		void Hide();
-
-		void Raise();
-
-		void Show();
-
-		void Position( Int16 Left, Int16 Top );
-
 		bool Active();
 
 		bool Visible();
-
-		eeVector2i Position();
 
 		void Size( const Uint32& Width, const Uint32& Height );
 
@@ -53,14 +39,14 @@ class EE_API cWindowSDL : public cWindow {
 
 		void SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue );
 
-		void SetCurrentContext( eeWindowContex Context );
-
 		eeWindowHandler	GetWindowHandler();
 	protected:
 		friend class cClipboardSDL;
 
 		SDL_Surface *	mSurface;
 		SDL_SysWMinfo 	mWMinfo;
+
+		void CreatePlatform();
 
 		void SwapBuffers();
 

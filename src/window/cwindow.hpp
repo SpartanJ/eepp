@@ -3,6 +3,7 @@
 
 #include "base.hpp"
 #include "cview.hpp"
+#include "cplatformimpl.hpp"
 
 namespace EE { namespace Window {
 
@@ -118,31 +119,34 @@ class EE_API cWindow {
 		virtual bool Icon( const std::string& Path ) = 0;
 
 		/** This will attempt to iconify/minimize the window. */
-		virtual void Minimize() = 0;
+		virtual void Minimize();
 
 		/** Maximize the Window */
-		virtual void Maximize() = 0;
+		virtual void Maximize();
 
 		/** This will attempt to hide the window */
-		virtual void Hide() = 0;
+		virtual void Hide();
 
 		/** This will attempt to raise the window */
-		virtual void Raise() = 0;
+		virtual void Raise();
 
 		/** This will attempt to show the window */
-		virtual void Show() = 0;
+		virtual void Show();
 
 		/** This will attemp to move the window over the desktop to the position */
-		virtual void Position( Int16 Left, Int16 Top ) = 0;
+		virtual void Position( Int16 Left, Int16 Top );
+
+		/** @return The Current Window Position */
+		virtual eeVector2i Position();
+
+		/** Set as current context the default context ( the context used for the window creation ) */
+		virtual void SetDefaultContext();
 
 		/** @return If the current window is active */
 		virtual bool Active() = 0;
 
 		/** @return If the current window is visible */
 		virtual bool Visible() = 0;
-
-		/** @return The Current Window Position */
-		virtual eeVector2i Position() = 0;
 
 		/** Set to show or not the curson on the main screen */
 		virtual void ShowCursor( const bool& showcursor ) = 0;
@@ -167,16 +171,13 @@ class EE_API cWindow {
 		virtual void SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) = 0;
 
 		/** The the OpenGL context as the current context */
-		virtual void SetCurrentContext( eeWindowContex Context ) = 0;
+		virtual void SetCurrentContext( eeWindowContex Context );
 
 		/** @return The current OpenGL context */
 		virtual eeWindowContex GetContext() const;
 
 		/** @return The window handler */
 		virtual eeWindowHandler	GetWindowHandler() = 0;
-
-		/** Set as current context the default context ( the context used for the window creation ) */
-		virtual void SetDefaultContext();
 
 		/** Render the Scene to Screen */
 		virtual void Display();
@@ -280,12 +281,15 @@ class EE_API cWindow {
 		/** Pop the callback id indicated. */
 		void PopResizeCallback( const Uint32& CallbackId );
 	protected:
-		WindowInfo			mWindow;
-		cClipboard *		mClipboard;
-		cInput *			mInput;
-		cView				mDefaultView;
-		const cView *		mCurrentView;
-		Uint32				mNumCallBacks;
+		friend class cEngine;
+
+		WindowInfo					mWindow;
+		cClipboard *				mClipboard;
+		cInput *					mInput;
+		Platform::cPlatformImpl *	mPlatform;
+		cView						mDefaultView;
+		const cView *				mCurrentView;
+		Uint32						mNumCallBacks;
 		std::map<Uint32, WindowResizeCallback> mCallbacks;
 		
 		struct _FrameData {
@@ -301,11 +305,16 @@ class EE_API cWindow {
 			eeFloat			ElapsedTime;
 		} mFrameData;
 
+		/** Set the flag state to be the current window */
+		virtual void SetCurrent();
+
 		/** Swap Buffers call */
 		virtual void SwapBuffers() = 0;
 
 		/** Obtain the Main Context, this is called after the OpenGL context creation. */
 		virtual void GetMainContext();
+
+		virtual void CreatePlatform();
 
 		void SendVideoResizeCb();
 

@@ -7,16 +7,16 @@
 
 namespace EE { namespace Graphics {
 
-typedef struct eeTexCoordS {
+struct eeTexCoord {
 	eeFloat u;
 	eeFloat v;
-} eeTexCoord;
+};
 
-typedef struct eeVertexS {
+struct eeVertex {
 	eeVector2f pos;
 	eeTexCoord tex;
 	eeColorA color;
-} eeVertex;
+};
 
 /** @brief A batch rendering class. */
 class EE_API cBatchRenderer {

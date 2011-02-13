@@ -9,6 +9,7 @@
 #include "../../../graphics/cvertexbuffermanager.hpp"
 #include "../../../graphics/cframebuffermanager.hpp"
 #include "../../../graphics/ctexturefactory.hpp"
+#include "../../platform/platformimpl.hpp"
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
@@ -81,9 +82,6 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 			return false;
 		}
 
-		SDL_VERSION( &mWMinfo.version );
-		SDL_GetWMInfo ( &mWMinfo );
-
 		if ( mWindow.WindowConfig.BitsPerPixel == 16 ) {
 			SDL_GL_SetAttribute( SDL_GL_RED_SIZE	, 4 );
 			SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE	, 4 );
@@ -96,14 +94,16 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 			SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE	, 8 );
 		}
 
-		Caption( mWindow.WindowConfig.Caption );
-
 		if ( NULL == cGL::ExistsSingleton() ) {
 			cGL::CreateSingleton( mWindow.ContextConfig.Version );
 			cGL::instance()->Init();
 		}
 
+		CreatePlatform();
+
 		GetMainContext();
+
+		Caption( mWindow.WindowConfig.Caption );
 
 		CreateView();
 
@@ -124,6 +124,23 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 		LogFailureInit( "cWindowSDL", "SDL" );
 		return false;
 	}
+}
+
+void cWindowSDL::CreatePlatform() {
+	eeSAFE_DELETE( mPlatform );
+
+	SDL_VERSION( &mWMinfo.version );
+	SDL_GetWMInfo ( &mWMinfo );
+
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+	mPlatform = eeNew( Platform::cX11Impl, ( this, mWMinfo.info.x11.display, mWMinfo.info.x11.wmwindow, mWMinfo.info.x11.lock_func, mWMinfo.info.x11.unlock_func ) );
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+	mPlatform = eeNew( Platform::cWinImpl, ( this, GetWindowHandler() ) );
+#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+	mPlatform = eeNew( Platform::cOSXImpl, ( this ) );
+#else
+	cWindow::CreatePlatform();
+#endif
 }
 
 void cWindowSDL::SetGLConfig() {
@@ -224,117 +241,12 @@ bool cWindowSDL::Icon( const std::string& Path ) {
 	return false;
 }
 
-void cWindowSDL::Minimize() {
-	SDL_WM_IconifyWindow();
-}
-
-void cWindowSDL::Maximize() {
-	#if EE_PLATFORM == EE_PLATFORM_WIN
-		WIN_ShowWindow(mWMinfo.window, SW_MAXIMIZE);
-	#elif EE_PLATFORM == EE_PLATFORM_LINUX
-		// coded by Rafał Maj, idea from Måns Rullgård http://tinyurl.com/68mvk3
-		mWMinfo.info.x11.lock_func();
-
-		XEvent xev;
-		Atom wm_state =  XInternAtom( mWMinfo.info.x11.display, "_NET_WM_STATE", False);
-		Atom maximizeV = XInternAtom( mWMinfo.info.x11.display, "_NET_WM_STATE_MAXIMIZED_VERT", False);
-		Atom maximizeH = XInternAtom( mWMinfo.info.x11.display, "_NET_WM_STATE_MAXIMIZED_HORZ", False);
-
-		memset( &xev, 0, sizeof(xev) );
-		xev.type = ClientMessage;
-		xev.xclient.window = mWMinfo.info.x11.wmwindow;
-		xev.xclient.message_type = wm_state;
-		xev.xclient.format = 32;
-		xev.xclient.data.l[0] = 1;
-		xev.xclient.data.l[1] = maximizeV;
-		xev.xclient.data.l[2] = maximizeH;
-		xev.xclient.data.l[3] = 0;
-		XSendEvent( mWMinfo.info.x11.display, DefaultRootWindow(mWMinfo.info.x11.display), 0, SubstructureNotifyMask|SubstructureRedirectMask, &xev);
-
-		XFlush(mWMinfo.info.x11.display);
-
-		mWMinfo.info.x11.unlock_func();
-	#else
-		#warning cWindowSDL::MaximizeWindow() not implemented on this platform.
-	#endif
-}
-
-void cWindowSDL::Hide() {
-#if EE_PLATFORM == EE_PLATFORM_LINUX
-	mWMinfo.info.x11.lock_func();
-    XUnmapWindow( mWMinfo.info.x11.display, mWMinfo.info.x11.wmwindow );
-	mWMinfo.info.x11.unlock_func();
-#elif EE_PLATFORM == EE_PLATFORM_WIN
-    WIN_ShowWindow( mWMinfo.window, SW_HIDE );
-#else
-	#warning cWindowSDL::HideWindow() not implemented on this platform.
-#endif
-}
-
-void cWindowSDL::Raise() {
-#if EE_PLATFORM == EE_PLATFORM_LINUX
-	mWMinfo.info.x11.lock_func();
-    XRaiseWindow( mWMinfo.info.x11.display, mWMinfo.info.x11.wmwindow );
-	mWMinfo.info.x11.unlock_func();
-#elif EE_PLATFORM == EE_PLATFORM_WIN
-    HWND top;
-
-	if ( !Windowed() )
-        top = HWND_TOPMOST;
-    else
-        top = HWND_NOTOPMOST;
-
-    SetWindowPos( mWMinfo.window, top, 0, 0, 0, 0, (SWP_NOMOVE | SWP_NOSIZE) );
-#else
-	#warning cWindowSDL::RaiseWindow() not implemented on this platform.
-#endif
-}
-
-void cWindowSDL::Show() {
-#if EE_PLATFORM == EE_PLATFORM_LINUX
-	mWMinfo.info.x11.lock_func();
-	XMapRaised( mWMinfo.info.x11.display, mWMinfo.info.x11.wmwindow );
-	mWMinfo.info.x11.unlock_func();
-#elif EE_PLATFORM == EE_PLATFORM_WIN
-	WIN_ShowWindow( mWMinfo.window, SW_SHOW );
-#else
-	#warning cWindowSDL::RaiseWindow() not implemented on this platform.
-#endif
-}
-
-void cWindowSDL::Position( Int16 Left, Int16 Top ) {
-#if EE_PLATFORM == EE_PLATFORM_LINUX
-    XMoveWindow( mWMinfo.info.x11.display, mWMinfo.info.x11.wmwindow, Left, Top);
-    XFlush( mWMinfo.info.x11.display );
-#elif EE_PLATFORM == EE_PLATFORM_WIN
-	SetWindowPos( mWMinfo.window, NULL, Left, Top, 0, 0, SWP_NOSIZE | SWP_NOZORDER );
-#else
-	#warning cWindowSDL::SetWindowPosition() not implemented on this platform.
-#endif
-}
-
 bool cWindowSDL::Active() {
 	return 0 != ( SDL_GetAppState() & SDL_APPINPUTFOCUS );
 }
 
 bool cWindowSDL::Visible() {
 	return 0 != ( SDL_GetAppState() & SDL_APPACTIVE );
-}
-
-eeVector2i cWindowSDL::Position() {
-#if EE_PLATFORM == EE_PLATFORM_LINUX
-	XWindowAttributes Attrs;
-	XGetWindowAttributes( mWMinfo.info.x11.display, mWMinfo.info.x11.wmwindow, &Attrs );
-
-	return eeVector2i( Attrs.x, Attrs.y );
-#elif EE_PLATFORM == EE_PLATFORM_WIN
-	RECT r;
-	GetWindowRect( mWMinfo.window, &r );
-	return eeVector2i( r.left, r.top );
-#else
-	#warning cWindowSDL::GetWindowPos() not implemented on this platform.
-	return eeVector2i( 0, 0 );
-#endif
 }
 
 void cWindowSDL::Size( const Uint32& Width, const Uint32& Height ) {
@@ -392,6 +304,7 @@ void cWindowSDL::Size( const Uint16& Width, const Uint16& Height, const bool& Wi
 			Graphics::Private::cFrameBufferManager::instance()->Reload(); 	// Reload all frame buffers
 			Graphics::Private::cVertexBufferManager::instance()->Reload(); 	// Reload all vertex buffers
 			GetMainContext();												// Recover the context
+			CreatePlatform();
 		}
 		#endif
 
@@ -448,26 +361,6 @@ eeWindowHandler	cWindowSDL::GetWindowHandler() {
 #else
 	return 0;
 #endif
-}
-
-void cWindowSDL::SetCurrentContext( eeWindowContex Context ) {
-	if ( mWindow.Created ) {
-		#ifdef EE_GLEW_AVAILABLE
-
-		#if EE_PLATFORM == EE_PLATFORM_WIN
-			wglMakeCurrent( GetDC( mWMinfo.window ), Context );
-		#elif EE_PLATFORM == EE_PLATFORM_LINUX
-			mWMinfo.info.x11.lock_func();
-			glXMakeCurrent( mWMinfo.info.x11.display, mWMinfo.info.x11.window, Context );
-			mWMinfo.info.x11.unlock_func();
-		#elif EE_PLATFORM == EE_PLATFORM_MACOSX
-			aglSetCurrentContext( Context );
-		#else
-			#warning No context supported on this platform
-		#endif
-
-		#endif
-	}
 }
 
 }}}}

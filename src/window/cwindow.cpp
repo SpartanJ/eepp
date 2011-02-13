@@ -2,12 +2,14 @@
 #include "cclipboard.hpp"
 #include "cinput.hpp"
 #include "../graphics/ctexturefactory.hpp"
+#include "platform/null/cnullimpl.hpp"
 
 namespace EE { namespace Window {
 
 cWindow::cWindow( WindowSettings Settings, ContextSettings Context, cClipboard * Clipboard, cInput * Input ) :
 	mClipboard( Clipboard ),
 	mInput( Input ),
+	mPlatform( NULL ),
 	mNumCallBacks( 0 )
 {
 	mWindow.WindowConfig	= Settings;
@@ -17,6 +19,7 @@ cWindow::cWindow( WindowSettings Settings, ContextSettings Context, cClipboard *
 cWindow::~cWindow() {
 	eeSAFE_DELETE( mClipboard );
 	eeSAFE_DELETE( mInput );
+	eeSAFE_DELETE( mPlatform );
 }
 
 eeSize cWindow::Size() {
@@ -335,6 +338,56 @@ void cWindow::SetDefaultContext() {
 #if defined( EE_GLEW_AVAILABLE ) && ( EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX )
 	SetCurrentContext( mWindow.Context );
 #endif
+}
+
+void cWindow::Minimize() {
+	if ( NULL != mPlatform )
+		mPlatform->MinimizeWindow();
+}
+
+void cWindow::Maximize() {
+	if ( NULL != mPlatform )
+		mPlatform->MaximizeWindow();
+}
+
+void cWindow::Hide() {
+	if ( NULL != mPlatform )
+		mPlatform->HideWindow();
+}
+
+void cWindow::Raise() {
+	if ( NULL != mPlatform )
+		mPlatform->RaiseWindow();
+}
+
+void cWindow::Show() {
+	if ( NULL != mPlatform )
+		mPlatform->ShowWindow();
+}
+
+void cWindow::Position( Int16 Left, Int16 Top ) {
+	if ( NULL != mPlatform )
+		mPlatform->MoveWindow( Left, Top );
+}
+
+eeVector2i cWindow::Position() {
+	if ( NULL != mPlatform )
+		return mPlatform->Position();
+
+	return eeVector2i();
+}
+
+void cWindow::SetCurrentContext( eeWindowContex Context ) {
+	if ( NULL != mPlatform )
+		mPlatform->SetContext( Context );
+}
+
+void cWindow::CreatePlatform() {
+	eeSAFE_DELETE( mPlatform );
+	mPlatform = eeNew( Platform::cNullImpl, ( this ) );
+}
+
+void cWindow::SetCurrent() {
 }
 
 }}

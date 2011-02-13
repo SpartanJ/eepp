@@ -43,7 +43,7 @@ cEngine::cEngine() :
 	#endif
 }
 
-cEngine::~cEngine() {	
+cEngine::~cEngine() {
 	Physics::cPhysicsManager::DestroySingleton();
 
 	Graphics::Private::cFrameBufferManager::DestroySingleton();
@@ -97,13 +97,13 @@ cWindow * cEngine::CreateWindow( WindowSettings Settings, ContextSettings Contex
 	}
 
 	mWindows.push_back( mWindow );
-	
+
 	return window;
 }
 
 void cEngine::DestroyWindow( cWindow * window ) {
 	mWindows.remove( window );
-	
+
 	if ( window == mWindow ) {
 		if ( mWindows.size() > 0 ) {
 			mWindow = mWindows.back();
@@ -111,7 +111,7 @@ void cEngine::DestroyWindow( cWindow * window ) {
 			mWindow = NULL;
 		}
 	}
-	
+
 	eeSAFE_DELETE( window );
 }
 
@@ -133,8 +133,8 @@ cWindow * cEngine::GetCurrentWindow() const {
 void cEngine::SetCurrentWindow( cWindow * window ) {
 	if ( NULL != window ) {
 		mWindow = window;
-	
-		mWindow->SetDefaultContext();
+
+		mWindow->SetCurrent();
 	}
 }
 
@@ -148,19 +148,19 @@ bool cEngine::Running() const {
 
 eeFloat cEngine::Elapsed() const {
 	eeASSERT( Running() );
-	
+
 	return mWindow->Elapsed();
 }
 
 const Uint32& cEngine::GetWidth() const {
 	eeASSERT( Running() );
-	
+
 	return mWindow->GetWidth();
 }
 
 const Uint32& cEngine::GetHeight() const {
 	eeASSERT( Running() );
-	
+
 	return mWindow->GetHeight();
 }
 

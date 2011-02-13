@@ -33,7 +33,7 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
-			<Add option="-fno-strict-aliasing -ffast-math -DSTBI_FAILURE_USERMSG -Wno-unknown-pragmas -std=gnu99" />
+			<Add option="-fno-strict-aliasing -ffast-math -DSTBI_FAILURE_USERMSG -Wno-unknown-pragmas -std=gnu99 -Wno-unknown-pragmas" />
 			<Add directory=".\src\helper\chipmunk" />
 		</Compiler>
 		<Linker>
@@ -46,6 +46,7 @@
 			<Add library="freetype" />
 			<Add library="libsndfile-1" />
 			<Add library="OpenAL32" />
+			<Add library="allegro" />
 		</Linker>
 		<Unit filename="src\audio\base.hpp" />
 		<Unit filename="src\audio\caudiodevice.cpp" />
@@ -802,6 +803,28 @@
 		<Unit filename="src\window\backend\SDL\cjoysticksdl.hpp" />
 		<Unit filename="src\window\backend\SDL\cwindowsdl.cpp" />
 		<Unit filename="src\window\backend\SDL\cwindowsdl.hpp" />
+		<Unit filename="src\window\backend\allegro5\cbackendal.hpp" />
+		<Unit filename="src\window\backend\allegro5\cclipboardal.cpp" />
+		<Unit filename="src\window\backend\allegro5\cclipboardal.hpp" />
+		<Unit filename="src\window\backend\allegro5\cinputal.cpp" />
+		<Unit filename="src\window\backend\allegro5\cinputal.hpp" />
+		<Unit filename="src\window\backend\allegro5\cjoystickal.cpp" />
+		<Unit filename="src\window\backend\allegro5\cjoystickal.hpp" />
+		<Unit filename="src\window\backend\allegro5\cjoystickmanageral.cpp" />
+		<Unit filename="src\window\backend\allegro5\cjoystickmanageral.hpp" />
+		<Unit filename="src\window\backend\allegro5\cwindowal.cpp" />
+		<Unit filename="src\window\backend\allegro5\cwindowal.hpp" />
+		<Unit filename="src\window\backend\null\cbackendnull.hpp" />
+		<Unit filename="src\window\backend\null\cclipboardnull.cpp" />
+		<Unit filename="src\window\backend\null\cclipboardnull.hpp" />
+		<Unit filename="src\window\backend\null\cinputnull.cpp" />
+		<Unit filename="src\window\backend\null\cinputnull.hpp" />
+		<Unit filename="src\window\backend\null\cjoystickmanagernull.cpp" />
+		<Unit filename="src\window\backend\null\cjoystickmanagernull.hpp" />
+		<Unit filename="src\window\backend\null\cjoysticknull.cpp" />
+		<Unit filename="src\window\backend\null\cjoysticknull.hpp" />
+		<Unit filename="src\window\backend\null\cwindownull.cpp" />
+		<Unit filename="src\window\backend\null\cwindownull.hpp" />
 		<Unit filename="src\window\base.hpp" />
 		<Unit filename="src\window\cbackend.hpp" />
 		<Unit filename="src\window\cclipboard.cpp" />
@@ -816,6 +839,8 @@
 		<Unit filename="src\window\cjoystick.hpp" />
 		<Unit filename="src\window\cjoystickmanager.cpp" />
 		<Unit filename="src\window\cjoystickmanager.hpp" />
+		<Unit filename="src\window\cplatformimpl.cpp" />
+		<Unit filename="src\window\cplatformimpl.hpp" />
 		<Unit filename="src\window\cview.cpp" />
 		<Unit filename="src\window\cview.hpp" />
 		<Unit filename="src\window\cwindow.cpp" />
@@ -825,6 +850,15 @@
 		<Unit filename="src\window\inputhelper.hpp" />
 		<Unit filename="src\window\joycodes.hpp" />
 		<Unit filename="src\window\keycodes.hpp" />
+		<Unit filename="src\window\platform\null\cnullimpl.cpp" />
+		<Unit filename="src\window\platform\null\cnullimpl.hpp" />
+		<Unit filename="src\window\platform\osx\cosximpl.cpp" />
+		<Unit filename="src\window\platform\osx\cosximpl.hpp" />
+		<Unit filename="src\window\platform\platformimpl.hpp" />
+		<Unit filename="src\window\platform\win\cwinimpl.cpp" />
+		<Unit filename="src\window\platform\win\cwinimpl.hpp" />
+		<Unit filename="src\window\platform\x11\cx11impl.cpp" />
+		<Unit filename="src\window\platform\x11\cx11impl.hpp" />
 		<Extensions>
 			<envvars />
 			<code_completion />

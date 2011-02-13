@@ -10,11 +10,98 @@
 #include "../../../graphics/cframebuffermanager.hpp"
 #include "../../../graphics/ctexturefactory.hpp"
 
-#include <allegro5/allegro_opengl.h>
+#include "../../platform/platformimpl.hpp"
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #include <allegro5/allegro_windows.h>
+#define WGL_NV_video_out
+#elif EE_PLATFORM == EE_PLATFORM_LINUX
+
+#include <allegro5/platform/aintuthr.h>
+#include <allegro5/internal/aintern_system.h>
+
+struct ALLEGRO_SYSTEM_XGLX
+{
+   ALLEGRO_SYSTEM system;
+   Display *x11display;
+   Display *gfxdisplay;
+   Atom AllegroAtom;
+   #ifdef ALLEGRO_XWINDOWS_WITH_XF86VIDMODE
+   int xfvm_available;
+   int xfvm_screen_count;
+   struct {
+	  int mode_count;
+	  void **modes;
+	  void *original_mode;
+   } *xfvm_screen;
+   #endif
+   _AL_THREAD thread;
+   _AL_MUTEX lock;
+   _AL_COND resized;
+   ALLEGRO_DISPLAY *mouse_grab_display;
+   int toggle_mouse_grab_keycode;
+   unsigned int toggle_mouse_grab_modifiers;
+   bool inhibit_screensaver;
+
+   bool mmon_interface_inited;
+#ifdef ALLEGRO_XWINDOWS_WITH_XINERAMA
+   int xinerama_available;
+   int xinerama_screen_count;
+   void *xinerama_screen_info;
 #endif
+#ifdef ALLEGRO_XWINDOWS_WITH_XRANDR
+   int xrandr_available;
+   int xrandr_event_base;
+
+   _AL_VECTOR xrandr_screens;
+   _AL_VECTOR xrandr_adaptermap;
+#endif
+   uint32_t adapter_use_count;
+   int adapter_map[32];
+};
+
+struct ALLEGRO_DISPLAY_XGLX
+{
+   ALLEGRO_DISPLAY display;
+   Window window;
+   int xscreen;
+   int adapter;
+   GLXWindow glxwindow;
+   GLXContext context;
+   Atom wm_delete_window_atom;
+   XVisualInfo *xvinfo;
+   GLXFBConfig *fbc;
+   int glx_version;
+   _AL_COND mapped;
+   bool is_mapped;
+   int resize_count;
+   bool programmatic_resize;
+   Cursor invisible_cursor;
+   Cursor current_cursor;
+   bool cursor_hidden;
+   Pixmap icon, icon_mask;
+   int x, y;
+   bool mouse_warp;
+};
+static _AL_MUTEX * al_display_mutex = NULL;
+
+static void	al_display_lock() {
+	if ( NULL != al_display_mutex ) {
+		_al_mutex_lock( al_display_mutex );
+	}
+}
+
+static void al_display_unlock() {
+	if ( NULL != al_display_mutex ) {
+		_al_mutex_unlock( al_display_mutex );
+	}
+}
+
+#endif
+
+#include <allegro5/allegro_opengl.h>
+#include <allegro5/internal/aintern_system.h>
+#include <allegro5/internal/aintern_thread.h>
 
 namespace EE { namespace Window { namespace Backend { namespace Al {
 
@@ -99,6 +186,8 @@ bool cWindowAl::Create( WindowSettings Settings, ContextSettings Context ) {
 
 		cGL::instance()->Init();
 
+		CreatePlatform();
+
 		GetMainContext();
 
 		CreateView();
@@ -117,10 +206,31 @@ bool cWindowAl::Create( WindowSettings Settings, ContextSettings Context ) {
 
 		return true;
 	}
-	
+
 	LogFailureInit( "cWindowAl", "Allegro 5" );
 
 	return false;
+}
+
+void cWindowAl::SetCurrent() {
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+	al_display_mutex = &((ALLEGRO_SYSTEM_XGLX *)al_get_system_driver())->lock;
+#endif
+}
+
+void cWindowAl::CreatePlatform() {
+	eeSAFE_DELETE( mPlatform );
+
+#if EE_PLATFORM == EE_PLATFORM_LINUX
+	SetCurrent();
+	mPlatform = eeNew( Platform::cX11Impl, ( this, GetWindowHandler(), ((ALLEGRO_DISPLAY_XGLX *)mDisplay)->window, al_display_lock, al_display_unlock ) );
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+	mPlatform = eeNew( Platform::cWinImpl, ( this, GetWindowHandler() ) );
+#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+	mPlatform = eeNew( Platform::cOSXImpl, ( this ) );
+#else
+	cWindow::CreatePlatform();
+#endif
 }
 
 void cWindowAl::ToggleFullscreen() {
@@ -147,25 +257,6 @@ bool cWindowAl::Icon( const std::string& Path ) {
 	return false;
 }
 
-void cWindowAl::Minimize() {
-}
-
-void cWindowAl::Maximize() {
-}
-
-void cWindowAl::Hide() {
-}
-
-void cWindowAl::Raise() {
-}
-
-void cWindowAl::Show() {
-}
-
-void cWindowAl::Position( Int16 Left, Int16 Top ) {
-	al_set_window_position( mDisplay, Left, Top );
-}
-
 bool cWindowAl::Active() {
 	return mActive;
 }
@@ -176,9 +267,7 @@ bool cWindowAl::Visible() {
 
 eeVector2i cWindowAl::Position() {
 	eeVector2i Pos;
-
 	al_get_window_position( mDisplay, &Pos.x, &Pos.y );
-
 	return Pos;
 }
 
@@ -298,12 +387,12 @@ std::vector< std::pair<unsigned int, unsigned int> > cWindowAl::GetPossibleResol
 void cWindowAl::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {
 }
 
-void cWindowAl::SetCurrentContext( eeWindowContex Context ) {
-}
-
 eeWindowHandler	cWindowAl::GetWindowHandler() {
 	#if EE_PLATFORM == EE_PLATFORM_WIN
-	al_get_win_window_handle( mDisplay );
+	return al_get_win_window_handle( mDisplay );
+	#elif EE_PLATFORM == EE_PLATFORM_LINUX
+	ALLEGRO_SYSTEM_XGLX * glx = (ALLEGRO_SYSTEM_XGLX *)al_get_system_driver();
+	return glx->x11display;
 	#else
 	return 0;
 	#endif

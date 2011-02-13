@@ -36,6 +36,7 @@ using namespace EE::Graphics;
 	typedef Window			X11Window;
 	typedef Display	*		eeWindowHandler;
 	#undef Window
+	#undef Display
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
 	typedef Uint32			eeScrapType;
 	typedef void *			eeWindowHandler; // NSWindow *
