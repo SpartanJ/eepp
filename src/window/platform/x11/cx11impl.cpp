@@ -18,7 +18,7 @@ cX11Impl::~cX11Impl() {
 
 void cX11Impl::MinimizeWindow() {
 	mLock();
-	XIconifyWindow( mDisplay, DefaultRootWindow( mDisplay ), 0 );
+	XIconifyWindow( mDisplay, mWindow, 0 );
 	XFlush(mDisplay);
 	mUnlock();
 }

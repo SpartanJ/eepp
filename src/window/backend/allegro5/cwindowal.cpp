@@ -196,6 +196,10 @@ bool cWindowAl::Create( WindowSettings Settings, ContextSettings Context ) {
 
 		mWindow.Created = true;
 
+		if ( "" != mWindow.WindowConfig.Icon ) {
+			Icon( mWindow.WindowConfig.Icon );
+		}
+
 		LogSuccessfulInit( "Allegro 5" );
 
 		/// Init the clipboard after the window creation
@@ -253,16 +257,12 @@ void cWindowAl::Caption( const std::string& Caption ) {
 	al_set_window_title( mDisplay, Caption.c_str() );
 }
 
-bool cWindowAl::Icon( const std::string& Path ) {
-	return false;
-}
-
 bool cWindowAl::Active() {
 	return mActive;
 }
 
 bool cWindowAl::Visible() {
-	return true;
+	return !( 0 != ( al_get_display_flags( mDisplay ) & ALLEGRO_MINIMIZED ) );
 }
 
 eeVector2i cWindowAl::Position() {
@@ -271,73 +271,64 @@ eeVector2i cWindowAl::Position() {
 	return Pos;
 }
 
-void cWindowAl::Size( const Uint32& Width, const Uint32& Height ) {
-	if ( Windowed() ) {
-		Size( Width, Height, true );
+void cWindowAl::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
+	if ( ( !Width || !Height ) ) {
+		Width	= mWindow.DesktopResolution.Width();
+		Height	= mWindow.DesktopResolution.Height();
 	}
-}
 
-void cWindowAl::Size( const Uint16& Width, const Uint16& Height, const bool& Windowed ) {
-	cLog::instance()->Writef( "Switching from %s to %s. Width: %d Height %d.", this->Windowed() ? "windowed" : "fullscreen", Windowed ? "windowed" : "fullscreen", Width, Height );
-
-	if ( !Width || !Height )
+	if ( this->Windowed() == Windowed && Width == mWindow.WindowConfig.Width && Height == mWindow.WindowConfig.Height )
 		return;
 
+	cLog::instance()->Writef( "Switching from %s to %s. Width: %d Height %d.", this->Windowed() ? "windowed" : "fullscreen", Windowed ? "windowed" : "fullscreen", Width, Height );
+
 	try {
-		bool Reload = this->Windowed() != Windowed;
+		bool Reload				= this->Windowed() != Windowed;
+		bool WinFullscreen		= eeSize( Width, Height ) == mWindow.DesktopResolution && !Windowed;
+		bool WinIsFullscreen	= eeSize( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height ) == mWindow.DesktopResolution && !this->Windowed();
 
-		if ( !Reload ) {
-			SetFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !Windowed );
+		Uint32 oldWidth		= mWindow.WindowConfig.Width;
+		Uint32 oldHeight	= mWindow.WindowConfig.Height;
 
-			mWindow.WindowConfig.Width    = Width;
-			mWindow.WindowConfig.Height   = Height;
+		SetFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !Windowed );
 
-			if ( Windowed ) {
-				mWindow.WindowSize = eeSize( Width, Height );
+		mWindow.WindowConfig.Width    = Width;
+		mWindow.WindowConfig.Height   = Height;
+
+		if ( Windowed ) {
+			mWindow.WindowSize = eeSize( Width, Height );
+		} else {
+			mWindow.WindowSize = eeSize( oldWidth, oldHeight );
+		}
+
+		if ( !Reload || WinFullscreen || WinIsFullscreen ) {
+			if ( !WinFullscreen ) {
+				al_toggle_display_flag( mDisplay, ALLEGRO_FULLSCREEN_WINDOW, 0 );
+				al_toggle_display_flag( mDisplay, ALLEGRO_FULLSCREEN, Windowed ? 0 : 1 );
+			} else {
+				al_toggle_display_flag( mDisplay, ALLEGRO_FULLSCREEN_WINDOW, 1 );
 			}
-
-			al_toggle_display_flag( mDisplay, ALLEGRO_FULLSCREEN, Windowed ? 0 : 1 );
 
 			al_resize_display( mDisplay, Width, Height );
-
-			mDefaultView.SetView( 0, 0, Width, Height );
-
-			Setup2D();
-
-			SendVideoResizeCb();
 		} else {
-			SetFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !Windowed );
-
-			Uint32 oldWidth = mWindow.WindowConfig.Width;
-			Uint32 oldHeight = mWindow.WindowConfig.Height;
-
-			mWindow.WindowConfig.Width    = Width;
-			mWindow.WindowConfig.Height   = Height;
-
-			if ( Windowed ) {
-				mWindow.WindowSize = eeSize( Width, Height );
-			}
-
 			Graphics::cTextureFactory::instance()->GrabTextures();
 
 			Create( mWindow.WindowConfig, mWindow.ContextConfig );
-
-			if ( !Windowed ) {
-				mWindow.WindowSize = eeSize( oldWidth, oldHeight );
-			}
 
 			Graphics::cTextureFactory::instance()->UngrabTextures();		// Reload all textures
 			Graphics::cShaderProgramManager::instance()->Reload();			// Reload all shaders
 			Graphics::Private::cFrameBufferManager::instance()->Reload(); 	// Reload all frame buffers
 			Graphics::Private::cVertexBufferManager::instance()->Reload(); 	// Reload all vertex buffers
 			GetMainContext();												// Recover the context
-
-			mDefaultView.SetView( 0, 0, Width, Height );
-
-			Setup2D();
-
-			SendVideoResizeCb();
 		}
+
+		mDefaultView.SetView( 0, 0, Width, Height );
+
+		Setup2D();
+
+		SendVideoResizeCb();
+
+		ShowCursor( mWindow.CursorVisible );
 	} catch (...) {
 		cLog::instance()->Write( "Unable to change resolution" );
 		cLog::instance()->Save();
@@ -346,6 +337,8 @@ void cWindowAl::Size( const Uint16& Width, const Uint16& Height, const bool& Win
 }
 
 void cWindowAl::ShowCursor( const bool& showcursor ) {
+	mWindow.CursorVisible = showcursor;
+
 	if ( showcursor )
 		al_show_mouse_cursor( mDisplay );
 	else
@@ -404,6 +397,78 @@ void cWindowAl::SetDefaultContext() {
 
 ALLEGRO_DISPLAY * cWindowAl::GetDisplay() const {
 	return mDisplay;
+}
+
+bool cWindowAl::Icon( const std::string& Path ) {
+	int x, y, c;
+
+	if ( !mWindow.Created ) {
+		if ( stbi_info( Path.c_str(), &x, &y, &c ) ) {
+			mWindow.WindowConfig.Icon 	= Path;
+
+			return true;
+		}
+
+		return false;
+	}
+
+	if ( !FileExists( Path  ) ) {
+		return false;
+	}
+
+	unsigned char * Ptr = SOIL_load_image( Path.c_str(), &x, &y, &c, SOIL_LOAD_AUTO );
+
+	if ( NULL != Ptr ) {
+		Int32 W = x;
+		Int32 H = y;
+
+		if ( ( W  % 8 ) == 0 && ( H % 8 ) == 0 ) {
+			int nbfl = al_get_new_bitmap_flags();
+
+			al_set_new_bitmap_flags( ALLEGRO_MEMORY_BITMAP );
+
+			ALLEGRO_BITMAP * icon;
+
+			icon = al_create_bitmap( W, H );
+
+			al_set_target_bitmap( icon );
+
+			if ( icon && al_lock_bitmap( icon, ALLEGRO_PIXEL_FORMAT_ANY, ALLEGRO_LOCK_WRITEONLY ) ) {
+				eeUint Pos;
+
+				for ( y = 0; y < H; y++ ) {
+					for ( x = 0; x < W; x++ ) {
+						Pos = ( x + y * W ) * c;
+
+						if ( 4 == c )
+							al_put_pixel( x, y, al_map_rgba( Ptr[Pos], Ptr[Pos+1], Ptr[Pos+2], Ptr[Pos+3] ) );
+						else
+							al_put_pixel( x, y, al_map_rgb( Ptr[Pos], Ptr[Pos+1], Ptr[Pos+2] ) );
+					}
+				}
+
+				al_unlock_bitmap( icon );
+
+				al_set_display_icon( mDisplay, icon );
+			}
+
+			if ( icon )
+				al_destroy_bitmap( icon );
+
+			al_set_new_bitmap_flags( nbfl );
+			al_set_target_backbuffer( mDisplay );
+
+			free( Ptr );
+
+			mWindow.WindowConfig.Icon 	= Path;
+
+			return true;
+		}
+
+		free( Ptr );
+	}
+
+	return false;
 }
 
 }}}}

@@ -152,7 +152,7 @@ class EE_API cWindow {
 		virtual void ShowCursor( const bool& showcursor ) = 0;
 		
 		/** Set the size of the window for a windowed window */
-		virtual void Size( const Uint32& Width, const Uint32& Height ) = 0;
+		virtual void Size( Uint32 Width, Uint32 Height );
 
 		/** @return The caption of the titlebar */
 		virtual std::string Caption();
@@ -162,7 +162,7 @@ class EE_API cWindow {
 		* @param Height New screen height
 		* @param Windowed Windowed or Fullscreen
 		*/
-		virtual void Size( const Uint16& Width, const Uint16& Height, const bool& Windowed ) = 0;
+		virtual void Size( Uint32 Width, Uint32 Height, bool Windowed ) = 0;
 
 		/** @return The resolutions that support the video card */
 		virtual std::vector< std::pair<unsigned int, unsigned int> > GetPossibleResolutions() const = 0;

@@ -33,7 +33,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 		if ( SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
 			cLog::instance()->Write( "Unable to initialize SDL: " + std::string( SDL_GetError() ) );
 			return false;
-                }
+		}
 
 		if ( "" != mWindow.WindowConfig.Icon ) {
 			mWindow.Created = true;
@@ -151,23 +151,17 @@ void cWindowSDL::SetGLConfig() {
 }
 
 void cWindowSDL::ToggleFullscreen() {
-	#if EE_PLATFORM == EE_PLATFORM_WIN
-		bool WasMaximized = mWindow.Maximized;
+	bool WasMaximized = mWindow.Maximized;
 
-		if ( Windowed() ) {
-			Size( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, !Windowed() );
-		} else {
-			Size( mWindow.WindowSize.Width(), mWindow.WindowSize.Height(), !Windowed() );
-		}
+	if ( Windowed() ) {
+		Size( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, !Windowed() );
+	} else {
+		Size( mWindow.WindowSize.Width(), mWindow.WindowSize.Height(), !Windowed() );
+	}
 
-		if ( WasMaximized ) {
-			Maximize();
-		}
-	#else
-		SetFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !( mWindow.WindowConfig.Style & WindowStyle::Fullscreen ) );
-
-		SDL_WM_ToggleFullScreen( mSurface );
-	#endif
+	if ( WasMaximized ) {
+		Maximize();
+	}
 
 	ShowCursor( mWindow.CursorVisible );
 }
@@ -181,7 +175,7 @@ void cWindowSDL::Caption( const std::string& Caption ) {
 bool cWindowSDL::Icon( const std::string& Path ) {
 	int x, y, c;
 
-	if ( !FileExists( Path  ) ) {
+	if ( !FileExists( Path ) ) {
 		return false;
 	}
 
@@ -249,13 +243,15 @@ bool cWindowSDL::Visible() {
 	return 0 != ( SDL_GetAppState() & SDL_APPACTIVE );
 }
 
-void cWindowSDL::Size( const Uint32& Width, const Uint32& Height ) {
-	if ( Windowed() ) {
-		Size( Width, Height, true );
+void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
+	if ( ( !Width || !Height ) ) {
+		Width	= mWindow.DesktopResolution.Width();
+		Height	= mWindow.DesktopResolution.Height();
 	}
-}
 
-void cWindowSDL::Size( const Uint16& Width, const Uint16& Height, const bool& Windowed ) {
+	if ( this->Windowed() == Windowed && Width == mWindow.WindowConfig.Width && Height == mWindow.WindowConfig.Height )
+		return;
+
 	try {
 		cLog::instance()->Writef( "Switching from %s to %s. Width: %d Height %d.", this->Windowed() ? "windowed" : "fullscreen", Windowed ? "windowed" : "fullscreen", Width, Height );
 
@@ -270,6 +266,9 @@ void cWindowSDL::Size( const Uint16& Width, const Uint16& Height, const bool& Wi
 			Graphics::cTextureFactory::instance()->GrabTextures();
 		#endif
 
+		Uint32 oldWidth		= mWindow.WindowConfig.Width;
+		Uint32 oldHeight	= mWindow.WindowConfig.Height;
+
 		SetFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !Windowed );
 
 		mWindow.WindowConfig.Width    = Width;
@@ -277,9 +276,9 @@ void cWindowSDL::Size( const Uint16& Width, const Uint16& Height, const bool& Wi
 
 		if ( Windowed ) {
 			mWindow.WindowSize = eeSize( Width, Height );
+		} else {
+			mWindow.WindowSize = eeSize( oldWidth, oldHeight );
 		}
-
-		mDefaultView.SetView( 0, 0, Width, Height );
 
 		SetGLConfig();
 
@@ -292,13 +291,7 @@ void cWindowSDL::Size( const Uint16& Width, const Uint16& Height, const bool& Wi
 		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
 		if ( Reload ) {
 			cGL::instance()->Init();
-		}
-		#endif
 
-		Setup2D();
-
-		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
-		if ( Reload ) {
 			Graphics::cTextureFactory::instance()->UngrabTextures();		// Reload all textures
 			Graphics::cShaderProgramManager::instance()->Reload();			// Reload all shaders
 			Graphics::Private::cFrameBufferManager::instance()->Reload(); 	// Reload all frame buffers
@@ -307,6 +300,10 @@ void cWindowSDL::Size( const Uint16& Width, const Uint16& Height, const bool& Wi
 			CreatePlatform();
 		}
 		#endif
+
+		mDefaultView.SetView( 0, 0, Width, Height );
+
+		Setup2D();
 
 		SendVideoResizeCb();
 

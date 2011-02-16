@@ -38,6 +38,10 @@ const eeSize& cWindow::GetDesktopResolution() const {
 	return mWindow.DesktopResolution;
 }
 
+void cWindow::Size( Uint32 Width, Uint32 Height ) {
+	Size( Width, Height, Windowed() );
+}
+
 bool cWindow::Windowed() const {
 	return 0 != !( mWindow.WindowConfig.Style & WindowStyle::Fullscreen );
 }
