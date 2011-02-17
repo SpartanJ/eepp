@@ -58,14 +58,18 @@ class EE_API cShader {
     	/** Reloads the Shader. */
     	void Reload();
     protected:
+		friend class cRendererGL3;;
     	GLuint 				mGLId;
     	GLenum 				mType;
+		std::string 		mCompileLog;
+		std::string         mSource;
     	bool 				mValid;
     	bool 				mCompiled;
-    	std::string 		mCompileLog;
-        std::string         mSource;
+		static bool			Ensure;
 
     	void Init( const Uint32& Type );
+
+		void EnsureVersion();
 };
 
 /** @brief Prebuild Vertex Shader class */

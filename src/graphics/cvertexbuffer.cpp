@@ -78,7 +78,7 @@ void cVertexBuffer::ResizeIndices( const Uint32& Size ) {
 }
 
 eeFloat * cVertexBuffer::GetArray( const Uint32& Type ) {
-	if ( Type && Type < VERTEX_FLAGS_COUNT_ARR && mVertexArray[ Type ].size() )
+	if ( Type < VERTEX_FLAGS_COUNT_ARR && mVertexArray[ Type ].size() )
 		return &mVertexArray[ Type - 1 ][0];
 
 	return NULL;

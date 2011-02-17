@@ -123,6 +123,9 @@ Int32 EE_API StrStartsWith( const std::string& Start, const std::string Str );
 
 Int32 EE_API StrStartsWith( const std::wstring& Start, const std::wstring Str );
 
+/** Replaces a substring by another string inside a string */
+void EE_API ReplaceSubStr(std::string &target, const std::string& that, const std::string& with );
+
 }}
 
 #endif

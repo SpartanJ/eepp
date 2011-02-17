@@ -20,22 +20,6 @@ enum EEGL_extensions  {
 	EEGL_ARB_vertex_buffer_object
 };
 
-/** Just for reference */
-enum EEGL_ARRAY_STATES {
-	EEGL_VERTEX_ARRAY			= 0,
-	EEGL_NORMAL_ARRAY			= 1,
-	EEGL_COLOR_ARRAY			= 2,
-	EEGL_INDEX_ARRAY			= 3,
-	EEGL_TEXTURE_COORD_ARRAY	= 4,
-	EEGL_EDGE_FLAG_ARRAY		= 5,
-	EEGL_ARRAY_STATES_COUNT
-};
-
-enum EEGL_SHADERS {
-	EEGL_SHADER_BASE,
-	EEGL_SHADERS_COUNT
-};
-
 enum EEGL_version {
 	GLv_2,
 	GLv_3,

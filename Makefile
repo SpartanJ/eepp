@@ -96,15 +96,17 @@ ifeq ($(OS), linux)
 LIBS 		= -lfreetype -lsndfile -lopenal -lGL -lGLU $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
 LIBSIV 		= -lX11 -lXcursor
 OTHERINC	= -I/usr/include/freetype2
+PLATFORMSRC	= $(wildcard ./src/window/platform/x11/*.cpp)
 else
 ifeq ($(OS), darwin)
 LIBS 		= -lfreetype -lSDL -lSDLmain -lsndfile -framework OpenGL -framework GLUT -framework OpenAL -framework Cocoa -framework CoreFoundation -framework AGL
 LIBSIV 		= 
 OTHERINC	= -I/usr/include/freetype2
+PLATFORMSRC = $(wildcard ./src/window/platform/osx/*.cpp)
 endif
 endif
 
-HELPERSINC	= -I./src/helper/chipmunk
+HELPERSINC	= -I./src/helper/chipmunk -I./src/helper/zlib
 
 EXE     			= eetest-$(RELEASETYPE)
 EXEIV				= eeiv-$(RELEASETYPE)
@@ -126,7 +128,7 @@ SRCMATH				= $(wildcard ./src/math/*.cpp)
 SRCSYSTEM			= $(wildcard ./src/system/*.cpp)
 SRCUI				= $(wildcard ./src/ui/*.cpp)
 SRCUTILS     		= $(wildcard ./src/utils/*.cpp)
-SRCWINDOW     		= $(wildcard ./src/window/*.cpp) $(wildcard ./src/window/backend/null/*.cpp) $(SDL_BACKEND_SRC) $(ALLEGRO_BACKEND_SRC)
+SRCWINDOW     		= $(wildcard ./src/window/*.cpp) $(wildcard ./src/window/backend/null/*.cpp) $(wildcard ./src/window/platform/null/*.cpp) $(SDL_BACKEND_SRC) $(ALLEGRO_BACKEND_SRC) $(PLATFORMSRC)
 SRCPHYSICS			= $(wildcard ./src/physics/*.cpp) $(wildcard ./src/physics/constraints/*.cpp)
 
 SRCTEST     		= $(wildcard ./src/test/*.cpp)
@@ -205,6 +207,10 @@ dirs:
 	@mkdir -p $(OBJDIR)/src/window/backend/SDL
 	@mkdir -p $(OBJDIR)/src/window/backend/null
 	@mkdir -p $(OBJDIR)/src/window/backend/allegro5
+	@mkdir -p $(OBJDIR)/src/window/platform/x11
+	@mkdir -p $(OBJDIR)/src/window/platform/win
+	@mkdir -p $(OBJDIR)/src/window/platform/osx
+	@mkdir -p $(OBJDIR)/src/window/platform/null
 	@mkdir -p $(OBJDIR)/src/physics
 	@mkdir -p $(OBJDIR)/src/physics/constraints
 	@mkdir -p $(OBJDIR)/src/test

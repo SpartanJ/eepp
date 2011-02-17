@@ -301,4 +301,14 @@ Int32 StrStartsWith( const std::wstring& Start, const std::wstring Str ) {
 	return Pos;
 }
 
+void ReplaceSubStr( std::string &target, const std::string& that, const std::string& with ) {
+	std::string::size_type pos=0;
+
+	while( ( pos = target.find( that, pos ) ) != std::string::npos ) {
+		target.erase( pos, that.length() );
+		target.insert( pos, with );
+		pos += with.length();
+	}
+}
+
 }}

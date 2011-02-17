@@ -468,11 +468,7 @@ void cEETest::CreateShaders() {
 
 	if ( mUseShaders ) {
 		mBlurFactor = 0.01f;
-
-		if ( GLv_3 == GLi->Version() || GLv_ES2 == GLi->Version() )
-			mShaderProgram = eeNew( cShaderProgram, ( MyPath + "data/shader/gl3_blur.vert", MyPath + "data/shader/gl3_blur.frag" ) );
-		else
-			mShaderProgram = eeNew( cShaderProgram, ( MyPath + "data/shader/blur.vert", MyPath + "data/shader/blur.frag" ) );
+		mShaderProgram = eeNew( cShaderProgram, ( MyPath + "data/shader/blur.vert", MyPath + "data/shader/blur.frag" ) );
 	}
 }
 

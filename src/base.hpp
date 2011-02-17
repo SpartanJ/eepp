@@ -28,15 +28,6 @@
 #include "helper/PlusCallback/callback.hpp"
 #include "helper/sophist/sophist.h"
 
-namespace EE {
-typedef SOPHIST_int8		Int8;
-typedef SOPHIST_uint8		Uint8;
-typedef SOPHIST_int16		Int16;
-typedef SOPHIST_uint16		Uint16;
-typedef SOPHIST_int32		Int32;
-typedef SOPHIST_uint32		Uint32;
-}
-
 #define EE_PLATFORM_WIN		1
 #define EE_PLATFORM_LINUX	2
 #define EE_PLATFORM_MACOSX	3
@@ -44,11 +35,11 @@ typedef SOPHIST_uint32		Uint32;
 #if defined( __WIN32__ ) || defined( _WIN32 ) || defined( _WIN64 )
 	#define EE_PLATFORM EE_PLATFORM_WIN
 
-	#if (defined (_MSCVER) || defined (_MSC_VER))
+	#if ( defined( _MSCVER ) || defined( _MSC_VER ) )
 		#define EE_COMPILER_MSVC
 	#endif
 
-#elif defined( __APPLE_CC__) || defined ( __APPLE__ )
+#elif defined( __APPLE_CC__ ) || defined ( __APPLE__ )
 	#define EE_PLATFORM EE_PLATFORM_MACOSX
 
 #elif defined ( linux ) || defined( __linux__ )
@@ -69,10 +60,7 @@ typedef SOPHIST_uint32		Uint32;
 	#endif
 #endif
 
-#if defined(__x86_64__) || \
-	(defined(_WIN64) && !defined(_XBOX)) || \
-	defined(__64BIT__) || defined(__LP64)  || defined(__LP64__) || defined(_LP64) || defined(_ADDR64) || defined(_CRAYC) || defined(__arch64__) || \
-	defined(__sparcv9) || defined(__sparc_v9__)
+#if 1 == SOPHIST_pointer64
 	#define EE_64BIT
 #else
 	#define EE_32BIT
@@ -81,28 +69,24 @@ typedef SOPHIST_uint32		Uint32;
 #define EE_LITTLE_ENDIAN	1
 #define EE_BIG_ENDIAN		2
 
-#if    defined(__386__) || defined(i386)    || defined(__i386__)  \
-	|| defined(__X86)   || defined(_M_IX86)                       \
-	|| defined(_M_X64)  || defined(__x86_64__)                    \
-	|| defined(alpha)   || defined(__alpha) || defined(__alpha__) \
-	|| defined(_M_ALPHA)                                          \
-	|| defined(ARM)     || defined(_ARM)    || defined(__arm__)   \
-	|| defined(WIN32)   || defined(_WIN32)  || defined(__WIN32__) \
-	|| defined(_WIN32_WCE) || defined(__NT__)                     \
-	|| defined(__MIPSEL__)
-	#define EE_ENDIAN  EE_LITTLE_ENDIAN
+#if SOPHIST_little_endian == SOPHIST_endian
+	#define EE_ENDIAN EE_LITTLE_ENDIAN
 #else
-	#define EE_ENDIAN  EE_BIG_ENDIAN
+	#define EE_ENDIAN EE_BIG_ENDIAN
 #endif
 
 #ifdef EE_PLATFORM
 	#define EE_SUPPORTED_PLATFORM
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_WIN
-	#define EE_CALL _stdcall
+#if ( __GNUC__ >= 4 ) && defined( EE_DYNAMIC ) && defined( EE_EXPORTS )
+	#define EE_API __attribute__ ((visibility("default")))
+#endif
 
+#if EE_PLATFORM == EE_PLATFORM_WIN
 	#ifdef EE_DYNAMIC
+		#define EE_CALL _stdcall
+
 		// Windows platforms
 		#ifdef EE_EXPORTS
 			// From DLL side, we must export
@@ -119,24 +103,18 @@ typedef SOPHIST_uint32		Uint32;
 		#endif
 	#else
 		// No specific directive needed for static build
+		#ifndef EE_API
 		#define EE_API
+		#endif
+		#define EE_CALL
 	#endif
 #else
 	// Other platforms don't need to define anything
+	#ifndef EE_API
 	#define EE_API
+	#endif
 	#define EE_CALL
 #endif
-
-#if ( __GNUC__ >= 4 ) && defined( EE_DYNAMIC ) && defined( EE_EXPORTS )
-	#define EE_API __attribute__ ((visibility("default")))
-#else
-	#define EE_API
-#endif
-
-#define eeARRAY_SIZE(__array)	( sizeof(__array) / sizeof(__array[0]) )
-#define eeSAFE_DELETE(p)		{ if(p) { eeDelete (p);			(p)=NULL; } }
-#define eeSAFE_FREE(p)			{ if(p) { eeFree ( (void*)p );	(p)=NULL; } }
-#define eeSAFE_DELETE_ARRAY(p)  { if(p) { eeDeleteArray(p);		(p)=NULL; } }
 
 #ifndef EE_USE_DOUBLE
 	#ifdef EE_64BIT
@@ -151,8 +129,13 @@ typedef SOPHIST_uint32		Uint32;
 #define EE_BACKEND_SDL_ACTIVE
 #endif
 
+#define eeARRAY_SIZE(__array)	( sizeof(__array) / sizeof(__array[0]) )
+#define eeSAFE_DELETE(p)		{ if(p) { eeDelete (p);			(p)=NULL; } }
+#define eeSAFE_FREE(p)			{ if(p) { eeFree ( (void*)p );	(p)=NULL; } }
+#define eeSAFE_DELETE_ARRAY(p)  { if(p) { eeDeleteArray(p);		(p)=NULL; } }
+
 namespace EE {
-#if EE_USE_DOUBLES
+#if 1 == EE_USE_DOUBLES
 	typedef double eeFloat;
 	#define eesqrt sqrt
 	#define eesin sin
@@ -214,12 +197,18 @@ namespace EE {
 		}
 	}
 
+	typedef SOPHIST_int8	Int8;
+	typedef SOPHIST_uint8	Uint8;
+	typedef SOPHIST_int16	Int16;
+	typedef SOPHIST_uint16	Uint16;
+	typedef SOPHIST_int32	Int32;
+	typedef SOPHIST_uint32	Uint32;
 	typedef double			eeDouble; 	//! The internal double floating point. It's only used when the engine needs some very high precision floating point ( for example the timer )
 	typedef unsigned int	eeUint;
 	typedef signed int		eeInt;
 
-	const eeFloat PI		= 3.141592654;
-	const eeFloat TwoPI		= 6.283185308;
+	const eeFloat PI		= 3.14159265358979323846;
+	const eeFloat TwoPI		= 6.28318530717958647692;
 	const eeFloat PId180	= PI / 180;
 	const eeFloat d180PI	= 180 / PI;
 }

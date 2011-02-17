@@ -3,7 +3,7 @@
 
 namespace EE { namespace Graphics {
 
-#define EE_MAX_TEXTURE_UNITS 8
+#define EE_MAX_TEXTURE_UNITS 4
 
 /** @enum EE_FILL_MODE Defines the fill mode for the primitives. */
 enum EE_FILL_MODE {

@@ -199,6 +199,9 @@ bool cShaderProgram::Link() {
 
 	if ( !mValid ) {
 		cLog::instance()->Write( "cShaderProgram::Link(): Couldn't link program. Log follows:" + mLinkLog );
+		#ifdef EE_DEBUG
+		std::cout << "cShaderProgram::Link(): Couldn't link program. Log follows:" + mLinkLog << std::endl;
+		#endif
 	} else {
 		mUniformLocations.clear();
 		mAttributeLocations.clear();

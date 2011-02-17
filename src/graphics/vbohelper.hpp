@@ -16,13 +16,11 @@ enum EE_VBO_USAGE_TYPE
 #define VERTEX_FLAG_TEXTURE1	( 2 )
 #define VERTEX_FLAG_TEXTURE2	( 3 )
 #define VERTEX_FLAG_TEXTURE3	( 4 )
-#define VERTEX_FLAG_TEXTURE4	( 5 )
-#define VERTEX_FLAG_COLOR		( 6 )
+#define VERTEX_FLAG_COLOR		( 5 )
+#define VERTEX_FLAG_USE_INDICES ( 6 )
 
-#define VERTEX_FLAGS_COUNT_ARR	( 6 )
-#define VERTEX_FLAGS_COUNT 		( 7 )
-
-#define VERTEX_FLAG_USE_INDICES ( 7 )
+#define VERTEX_FLAGS_COUNT_ARR	( 5 )
+#define VERTEX_FLAGS_COUNT 		( 6 )
 
 const int eeVertexElements[] = {
 								2, //Position
@@ -30,7 +28,6 @@ const int eeVertexElements[] = {
 								2, //Texture1
 								2, //Texture2
 								2, //Texture3
-								2, //Texture4
 								4  //Color0
 							};
 

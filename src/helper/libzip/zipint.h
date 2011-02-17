@@ -34,7 +34,7 @@
   IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#include "../zlib/zlib.h"
+#include <zlib.h>
 
 #include "zip.h"
 #include "config.h"

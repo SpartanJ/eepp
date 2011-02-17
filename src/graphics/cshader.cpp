@@ -1,6 +1,10 @@
 #include "cshader.hpp"
+#include "glhelper.hpp"
+#include "renderer/crenderergl3.hpp"
 
 namespace EE { namespace Graphics {
+
+bool cShader::Ensure = true;
 
 cShader::cShader( const Uint32& Type ) {
 	Init( Type );
@@ -73,9 +77,31 @@ void cShader::Init( const Uint32& Type ) {
 void cShader::Reload() {
 	Init( mType );
 
+	cShader::Ensure = false;
 	SetSource( mSource );
+	cShader::Ensure = true;
 
 	Compile();
+}
+
+void cShader::EnsureVersion() {
+	if ( cShader::Ensure && ( GLi->Version() == GLv_3 || GLi->Version() == GLv_ES2 ) ) {
+		cLog::instance()->Write( "Shader " + toStr( mGLId ) + " converted to programmable pipeline automatically." );
+
+		if ( GL_VERTEX_SHADER == mType ) {
+			if ( mSource.find( "ftransform" ) != std::string::npos ) {
+				mSource = GLi->GetRendererGL3()->GetBaseVertexShader();
+			}
+		} else {
+			if ( mSource.find( "gl_FragColor" ) != std::string::npos ) {
+				mSource = "#version 150\nuniform		int			dgl_TexActive = 1;\ninvariant in	vec4		gl_Color;\ninvariant in	vec4		gl_TexCoord[ 4 ];\nout				vec4		gl_FragColor;\n" + mSource;
+
+				ReplaceSubStr( mSource, "gl_FragColor"	, "dgl_FragColor"	);
+				ReplaceSubStr( mSource, "gl_Color"		, "dgl_Color"		);
+				ReplaceSubStr( mSource, "gl_TexCoord"	, "dgl_TexCoord"	);
+			}
+		}
+	}
 }
 
 void cShader::SetSource( const std::string& Source ) {
@@ -86,7 +112,9 @@ void cShader::SetSource( const std::string& Source ) {
 
 	mSource = Source;
 
-	const char * src = reinterpret_cast<const char *> ( &Source[0] );
+	EnsureVersion();
+
+	const char * src = reinterpret_cast<const char *> ( &mSource[0] );
 
 	glShaderSource( mGLId, 1, &src, NULL );
 }

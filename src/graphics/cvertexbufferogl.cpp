@@ -54,7 +54,7 @@ void cVertexBufferOGL::SetVertexStates() {
 
 	/// TEXTURES
 	if ( GLi->IsExtension( EEGL_ARB_multitexture ) ) {
-		for ( Int32 i = 0; i < 5; i++ ) {
+		for ( Int32 i = 0; i < EE_MAX_TEXTURE_UNITS; i++ ) {
 			if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 + i ) ) {
 				GLi->ClientActiveTexture( GL_TEXTURE0 + i );
 				GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );

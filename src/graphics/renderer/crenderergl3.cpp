@@ -7,10 +7,17 @@ namespace EE { namespace Graphics {
 const char * EEGL_STATES_NAME[] = {
 	"dgl_Vertex",
 	"dgl_Normal",
-	"dgl_Color",
+	"dgl_FrontColor",
 	"dgl_Index",
 	"dgl_MultiTexCoord0",
 	"dgl_EdgeFlag"
+};
+
+const char * EEGL_TEXTUREUNIT_NAMES[] = {
+	"dgl_MultiTexCoord0",
+	"dgl_MultiTexCoord1",
+	"dgl_MultiTexCoord2",
+	"dgl_MultiTexCoord3"
 };
 
 const char * EEGL_PLANES_ENABLED_NAME[] = {
@@ -40,20 +47,30 @@ const GLchar * EEGL_SHADER_BASE_VS[] = {
 	"uniform			int	 dgl_ClipEnabled[ MAX_CLIP_PLANES ] = { 0, 0, 0, 0, 0, 0 };\n",
 	"uniform			vec4 dgl_ClipPlane[ MAX_CLIP_PLANES ];\n",
 	#ifdef EE_GLES2
+	//"#ifdef GL_ES\n",
 	"uniform			float dgl_PointSize = 1;\n",
+	//"#endif\n",
 	#endif
 	"in					vec4 dgl_Vertex;\n",			// replaces deprecated gl_Vertex
-	"in					vec4 dgl_Color;\n",				// replaces deprecated gl_Color
+	"in					vec4 dgl_FrontColor;\n",		// replaces deprecated gl_FrontColor
 	"in					vec4 dgl_MultiTexCoord0;\n",	// replaces deprecated gl_MultiTexCoord0
-	"invariant out		vec4 dgl_VertexColor;\n",		// to fragment shader
-	"invariant out		vec4 dgl_TexCoord0;\n",			// to fragment shader
+	"in					vec4 dgl_MultiTexCoord1;\n",	// replaces deprecated gl_MultiTexCoord1
+	"in					vec4 dgl_MultiTexCoord2;\n",	// replaces deprecated gl_MultiTexCoord2
+	"in					vec4 dgl_MultiTexCoord3;\n",	// replaces deprecated gl_MultiTexCoord3
+	"invariant out		vec4 dgl_Color;\n",				// to fragment shader
+	"invariant out		vec4 dgl_TexCoord[ 4 ];\n",		// to fragment shader
 	"void main(void)\n",
 	"{\n",
 	#ifdef EE_GLES2
+	//"#ifdef GL_ES\n",
 	"	gl_PointSize	= dgl_PointSize;\n",
+	//"#endif\n",
 	#endif
-	"	dgl_VertexColor	= dgl_Color;\n",
-	"	dgl_TexCoord0	= dgl_MultiTexCoord0;\n",
+	"	dgl_Color		= dgl_FrontColor;\n",
+	"	dgl_TexCoord[0]	= dgl_MultiTexCoord0;\n",
+	"	dgl_TexCoord[1]	= dgl_MultiTexCoord1;\n",
+	"	dgl_TexCoord[2]	= dgl_MultiTexCoord2;\n",
+	"	dgl_TexCoord[3]	= dgl_MultiTexCoord3;\n",
 	"	vec4 vEye		= dgl_ModelViewMatrix * dgl_Vertex;\n",
 	"	gl_Position		= dgl_ProjectionMatrix * vEye;\n",
 	"	if ( 1 == dgl_ClippingEnabled ) {\n",
@@ -70,18 +87,18 @@ const GLchar * EEGL_SHADER_BASE_FS[] = {
 	"uniform		sampler2D	textureUnit0;\n",
 	"uniform		int			dgl_TexActive = 1;\n",
 	"uniform		int			dgl_PointSpriteActive = 0;\n",
-	"invariant in	vec4		dgl_VertexColor;\n",
-	"invariant in	vec4		dgl_TexCoord0;\n",
+	"invariant in	vec4		dgl_Color;\n",
+	"invariant in	vec4		dgl_TexCoord[ 4 ];\n",
 	"smooth out		vec4		dgl_FragColor;\n",
 	"void main(void)\n",
 	"{\n",
 	"	if ( 0 == dgl_PointSpriteActive ) {\n",
 	"		if ( 1 == dgl_TexActive )\n",
-	"			dgl_FragColor = dgl_VertexColor * texture2D( textureUnit0, dgl_TexCoord0.xy );\n",
+	"			dgl_FragColor = dgl_Color * texture2D( textureUnit0, dgl_TexCoord[ 0 ].xy );\n",
 	"		else\n",
-	"			dgl_FragColor = dgl_VertexColor;\n",
+	"			dgl_FragColor = dgl_Color;\n",
 	"	} else\n",
-	"		dgl_FragColor = dgl_VertexColor * texture2D( textureUnit0, gl_PointCoord );\n",
+	"		dgl_FragColor = dgl_Color * texture2D( textureUnit0, gl_PointCoord );\n",
 	"}\n"
 };
 
@@ -95,6 +112,7 @@ cRendererGL3::cRendererGL3() :
 	mTexActiveLoc(-1),
 	mPointSpriteLoc(-1),
 	mPointSize(1.f),
+	mCurActiveTex( 0 ),
 	mLoaded( false )
 {
 	mProjectionMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
@@ -146,6 +164,7 @@ void cRendererGL3::SetShader( cShaderProgram * Shader ) {
 	mModelViewMatrix_id		= mCurShader->UniformLocation( "dgl_ModelViewMatrix" );
 	mTexActiveLoc			= mCurShader->UniformLocation( "dgl_TexActive" );
 	mPointSpriteLoc			= mCurShader->UniformLocation( "dgl_PointSpriteActive" );
+	mCurActiveTex			= 0;
 
 	Uint32 i;
 
@@ -155,6 +174,10 @@ void cRendererGL3::SetShader( cShaderProgram * Shader ) {
 
 	for ( i = 0; i < EE_MAX_PLANES; i++ ) {
 		mPlanes[ i ] = mCurShader->UniformLocation( EEGL_PLANES_NAME[ i ] );
+	}
+
+	for ( i = 0; i < EE_MAX_TEXTURE_UNITS; i++ ) {
+		mTextureUnits[ i ] = mCurShader->AttributeLocation( EEGL_TEXTUREUNIT_NAMES[ i ] );
 	}
 
 	glUseProgram( mCurShader->Handler() );
@@ -271,19 +294,29 @@ void cRendererGL3::Init() {
 	if ( !mLoaded ) {
 		cGL::Init();
 
+		mBaseVertexShader = "";
+
+		for ( Uint32 i = 0; i < sizeof(EEGL_SHADER_BASE_VS)/sizeof(const GLchar*); i++ ) {
+			mBaseVertexShader += std::string( EEGL_SHADER_BASE_VS[i] );
+		}
+
 		Uint32 i;
 
-		for ( i = 0; i < EEGL_ARRAY_STATES_COUNT; i++ ) {
+		for ( i = 0; i < EEGL_ARRAY_STATES_COUNT; i++ )
 			mVBO[i] = 0;
-		}
 
 		for ( i = 0; i < EE_MAX_PLANES; i++ ) {
 			mPlanes[i]			= -1;
 			mPlanesStates[i]	= 0;
 		}
 
+		for ( i = 0; i < EE_MAX_TEXTURE_UNITS; i++ )
+			mTextureUnits[i] = -1;
+
+		cShader::Ensure = false;
 		mShaders[ EEGL_SHADER_BASE ]			= eeNew( cShaderProgram, ( (const char**)EEGL_SHADER_BASE_VS, sizeof(EEGL_SHADER_BASE_VS)/sizeof(const GLchar*), (const char**)EEGL_SHADER_BASE_FS, sizeof(EEGL_SHADER_BASE_FS)/sizeof(const GLchar*), "EEGL_SHADER_BASE_TEX" ) );
 		mShaders[ EEGL_SHADER_BASE ]->SetReloadCb( cb::Make1( this, &cRendererGL3::ReloadShader ) );
+		cShader::Ensure = true;
 
 		SetShader( mShaders[ EEGL_SHADER_BASE ] );
 	} else {
@@ -451,11 +484,19 @@ void cRendererGL3::MatrixMode(GLenum mode) {
 }
 
 void cRendererGL3::EnableClientState( GLenum array ) {
-	glEnableVertexAttribArray( mStates[ array - GL_VERTEX_ARRAY ] );
+	if ( GL_TEXTURE_COORD_ARRAY == array ) {
+		glEnableVertexAttribArray( mTextureUnits[ mCurActiveTex ] );
+	} else {
+		glEnableVertexAttribArray( mStates[ array - GL_VERTEX_ARRAY ] );
+	}
 }
 
 void cRendererGL3::DisableClientState( GLenum array ) {
-	glDisableVertexAttribArray( mStates[ array - GL_VERTEX_ARRAY ] );
+	if ( GL_TEXTURE_COORD_ARRAY == array ) {
+		glDisableVertexAttribArray( mTextureUnits[ mCurActiveTex ] );
+	} else {
+		glDisableVertexAttribArray( mStates[ array - GL_VERTEX_ARRAY ] );
+	}
 }
 
 void cRendererGL3::VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid * pointer, GLuint allocate ) {
@@ -501,7 +542,7 @@ void cRendererGL3::ColorPointer ( GLint size, GLenum type, GLsizei stride, const
 }
 
 void cRendererGL3::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
-	const GLint index = mStates[ EEGL_TEXTURE_COORD_ARRAY ];
+	const GLint index = mTextureUnits[ mCurActiveTex ];
 
 	if ( -1 != index ) {
 		#ifndef EE_GLES2
@@ -600,11 +641,18 @@ void cRendererGL3::BindGlobalVAO() {
 }
 
 void cRendererGL3::ClientActiveTexture( GLenum texture ) {
-	/// TODO: Implement multitexturing in GL3 renderer
+	mCurActiveTex = texture - GL_TEXTURE0;
+
+	if ( mCurActiveTex >= EE_MAX_TEXTURE_UNITS )
+		mCurActiveTex = 0;
 }
 
 void cRendererGL3::TexEnvi( GLenum target, GLenum pname, GLint param ) {
 	/// TODO: Implement TexEnvi
+}
+
+std::string cRendererGL3::GetBaseVertexShader() {
+	return mBaseVertexShader;
 }
 
 }}
