@@ -1,6 +1,8 @@
 #include "ccursoral.hpp"
 #include "cwindowal.hpp"
 
+#ifdef EE_BACKEND_ALLEGRO_ACTIVE
+
 namespace EE { namespace Window { namespace Backend { namespace Al {
 
 cCursorAl::cCursorAl( cTexture * tex, const eeVector2i& hotspot, const std::string& name, cWindow * window ) :
@@ -77,3 +79,5 @@ void cCursorAl::Create() {
 }
 
 }}}}
+
+#endif

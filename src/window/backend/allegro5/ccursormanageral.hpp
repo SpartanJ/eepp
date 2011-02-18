@@ -3,6 +3,8 @@
 
 #include "../../ccursormanager.hpp"
 
+#ifdef EE_BACKEND_ALLEGRO_ACTIVE
+
 using namespace EE::Window;
 
 namespace EE { namespace Window { namespace Backend { namespace Al {
@@ -31,5 +33,7 @@ class cCursorManagerAl : public cCursorManager {
 };
 
 }}}}
+
+#endif
 
 #endif

@@ -2,6 +2,9 @@
 #define EE_WINDOWCCURSORAL_HPP
 
 #include "../../ccursor.hpp"
+
+#ifdef EE_BACKEND_ALLEGRO_ACTIVE
+
 #include <allegro5/allegro.h>
 
 using namespace EE::Window;
@@ -28,5 +31,7 @@ class cCursorAl : public cCursor {
 };
 
 }}}}
+
+#endif
 
 #endif

@@ -2,6 +2,8 @@
 #include "ccursoral.hpp"
 #include "cwindowal.hpp"
 
+#ifdef EE_BACKEND_ALLEGRO_ACTIVE
+
 namespace EE { namespace Window { namespace Backend { namespace Al {
 
 cCursorManagerAl::cCursorManagerAl( cWindow * window ) :
@@ -71,3 +73,5 @@ void cCursorManagerAl::Reload() {
 }
 
 }}}}
+
+#endif

@@ -3,6 +3,8 @@
 
 #include "../../ccursor.hpp"
 
+#ifdef EE_BACKEND_SDL_ACTIVE
+
 using namespace EE::Window;
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
@@ -21,5 +23,7 @@ class cCursorSDL : public cCursor {
 };
 
 }}}}
+
+#endif
 
 #endif

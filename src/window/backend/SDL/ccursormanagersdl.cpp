@@ -1,6 +1,8 @@
 #include "ccursormanagersdl.hpp"
 #include "ccursorsdl.hpp"
 
+#ifdef EE_BACKEND_SDL_ACTIVE
+
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
 cCursorManagerSDL::cCursorManagerSDL( cWindow * window ) :
@@ -53,3 +55,5 @@ void cCursorManagerSDL::Reload() {
 }
 
 }}}}
+
+#endif

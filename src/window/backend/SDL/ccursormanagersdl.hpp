@@ -2,6 +2,9 @@
 #define EE_WINDOWCCURSORMANAGERSDL_HPP
 
 #include "../../ccursormanager.hpp"
+
+#ifdef EE_BACKEND_SDL_ACTIVE
+
 #include <SDL/SDL.h>
 
 using namespace EE::Window;
@@ -32,5 +35,7 @@ class cCursorManagerSDL : public cCursorManager {
 };
 
 }}}}
+
+#endif
 
 #endif
