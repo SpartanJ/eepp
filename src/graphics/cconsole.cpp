@@ -3,6 +3,7 @@
 #include "../audio/caudiolistener.hpp"
 #include "../window/cinput.hpp"
 #include "../window/cengine.hpp"
+#include "../window/ccursormanager.hpp"
 
 using namespace EE::Window;
 
@@ -494,7 +495,7 @@ void cConsole::CmdShowCursor ( const std::vector < std::wstring >& params ) {
 			bool Res = fromWString<Int32>( tInt, params[1] );
 
 			if ( Res && ( tInt == 0 || tInt == 1 ) ) {
-				mWindow->ShowCursor( 0 != tInt );
+				mWindow->GetCursorManager()->Visible( 0 != tInt );
 				PushText( L"showcursor " + toWStr(tInt) );
 			} else
 				PushText( L"Valid parameters are 0 or 1." );
@@ -573,7 +574,7 @@ void cConsole::CmdSetVolume( const std::vector < std::wstring >& params ) {
 			bool Res = fromWString<eeFloat>( tFloat, params[1] );
 
 			if ( Res && ( tFloat >= 0.0f && tFloat <= 100.0f ) ) {
-				EE::Audio::cAudioListener::instance()->SetGlobalVolume( tFloat );
+				EE::Audio::cAudioListener::instance()->GlobalVolume( tFloat );
 				PushText( L"setvolume " + toWStr(tFloat) );
 			} else
 				PushText( L"Valid parameters are between 0 and 100." );

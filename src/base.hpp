@@ -207,10 +207,10 @@ namespace EE {
 	typedef unsigned int	eeUint;
 	typedef signed int		eeInt;
 
-	const eeFloat PI		= 3.14159265358979323846;
-	const eeFloat TwoPI		= 6.28318530717958647692;
-	const eeFloat PId180	= PI / 180;
-	const eeFloat d180PI	= 180 / PI;
+	#define EE_PI			3.14159265358979323846
+	#define EE_PI2			6.28318530717958647692
+	const eeFloat EE_PI_180	= EE_PI / 180;
+	const eeFloat EE_180_PI	= 180 / EE_PI;
 }
 
 #include "base/base.hpp"

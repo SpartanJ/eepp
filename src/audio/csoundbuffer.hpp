@@ -8,6 +8,8 @@
 
 namespace EE { namespace Audio {
 
+class cSound;
+
 class EE_API cSoundBuffer : public cAudioResource {
 	public :
 		cSoundBuffer();
@@ -51,12 +53,20 @@ class EE_API cSoundBuffer : public cAudioResource {
 	private :
 		friend class cSound;
 
-		/** Update the internal buffer with the audio samples */
-		bool Update( unsigned int ChannelsCount, unsigned int SampleRate );
-
 		unsigned int		mBuffer;   ///< OpenAL buffer identifier
 		std::vector<Int16>	mSamples;  ///< Samples buffer
 		eeFloat				mDuration; ///< Sound duration, in seconds
+
+		typedef std::set<cSound*> SoundList;
+		mutable SoundList	mSounds;
+
+		/** Update the internal buffer with the audio samples */
+		bool Update( unsigned int ChannelsCount, unsigned int SampleRate );
+
+		void AttachSound( cSound* sound ) const;
+
+		void DetachSound( cSound* sound ) const;
+
 };
 
 }}

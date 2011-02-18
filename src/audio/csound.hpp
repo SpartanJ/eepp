@@ -105,6 +105,13 @@ class EE_API cSound : public cAudioResource {
 		* @return True if the position is relative, false if it's absolute
 		*/
 		bool IsRelativeToListener() const;
+
+		/** \brief Reset the internal buffer of the sound
+		* This function is for internal use only, you don't have
+		* to use it. It is called by the cSoundBuffer that
+		* this sound uses, when it is destroyed in order to prevent
+		* the sound from using a dead buffer. */
+		void ResetBuffer();
 	private :
 		friend class cSoundStream;
 

@@ -133,6 +133,8 @@ class cGL {
 
 		virtual EEGL_version Version() = 0;
 
+		virtual std::string VersionStr() = 0;
+
 		virtual void PushMatrix() = 0;
 
 		virtual void PopMatrix() = 0;

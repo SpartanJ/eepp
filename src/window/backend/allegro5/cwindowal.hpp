@@ -34,8 +34,6 @@ class EE_API cWindowAl : public cWindow {
 
 		void Size( Uint32 Width, Uint32 Height, bool Windowed  );
 
-		void ShowCursor( const bool& showcursor );
-
 		std::vector< std::pair<unsigned int, unsigned int> > GetPossibleResolutions() const;
 
 		void SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue );

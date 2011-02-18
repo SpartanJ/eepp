@@ -30,8 +30,6 @@ class EE_API cWindowSDL : public cWindow {
 		bool Visible();
 
 		void Size( Uint32 Width, Uint32 Height, bool Windowed );
-		
-		void ShowCursor( const bool& showcursor );
 
 		std::vector< std::pair<unsigned int, unsigned int> > GetPossibleResolutions() const;
 

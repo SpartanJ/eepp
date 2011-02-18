@@ -1,11 +1,12 @@
 #include "cwindownull.hpp"
 #include "cclipboardnull.hpp"
 #include "cinputnull.hpp"
+#include "ccursormanagernull.hpp"
 
 namespace EE { namespace Window { namespace Backend { namespace Null {
 
 cWindowNull::cWindowNull( WindowSettings Settings, ContextSettings Context ) :
-	cWindow( Settings, Context, eeNew( cClipboardNull, ( this ) ), eeNew( cInputNull, ( this ) ) )
+	cWindow( Settings, Context, eeNew( cClipboardNull, ( this ) ), eeNew( cInputNull, ( this ) ), eeNew( cCursorManagerNull, ( this ) ) )
 {
 	Create( Settings, Context );
 }
@@ -65,9 +66,6 @@ void cWindowNull::Size( const Uint32& Width, const Uint32& Height ) {
 }
 
 void cWindowNull::Size( const Uint16& Width, const Uint16& Height, const bool& Windowed ) {
-}
-
-void cWindowNull::ShowCursor( const bool& showcursor ) {
 }
 
 void cWindowNull::SwapBuffers() {

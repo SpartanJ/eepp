@@ -17,23 +17,23 @@ eeInt eeRandi( const eeInt& fMin, const eeInt& fMax ) {
 }
 
 eeFloat cosAng( const eeFloat& Ang ) {
-	return eecos(Ang * PId180);
+	return eecos(Ang * EE_PI_180);
 }
 
 eeFloat sinAng( const eeFloat& Ang ) {
-	return eesin(Ang * PId180);
+	return eesin(Ang * EE_PI_180);
 }
 
 eeFloat tanAng( const eeFloat& Ang ) {
-	return tan(Ang * PId180);
+	return tan(Ang * EE_PI_180);
 }
 
 eeFloat Radians( const eeFloat& Ang ) {
-	return Ang * PId180;
+	return Ang * EE_PI_180;
 }
 
 eeFloat Degrees( const eeFloat& Radians ) {
-	return Radians * d180PI;
+	return Radians * EE_180_PI;
 }
 
 eeFloat RotatePointFromX ( const eeFloat& x, const eeFloat& y, const eeFloat& Angle ) {

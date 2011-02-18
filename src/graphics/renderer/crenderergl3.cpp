@@ -10,7 +10,10 @@ const char * EEGL_STATES_NAME[] = {
 	"dgl_FrontColor",
 	"dgl_Index",
 	"dgl_MultiTexCoord0",
-	"dgl_EdgeFlag"
+	"dgl_EdgeFlag",
+	"dgl_MultiTexCoord1",
+	"dgl_MultiTexCoord2",
+	"dgl_MultiTexCoord3"
 };
 
 const char * EEGL_TEXTUREUNIT_NAMES[] = {
@@ -113,6 +116,9 @@ cRendererGL3::cRendererGL3() :
 	mPointSpriteLoc(-1),
 	mPointSize(1.f),
 	mCurActiveTex( 0 ),
+	mCurTexCoordArray( 0 ),
+	mVBOSizeAlloc( 1024 * 128 ),
+	mBiggestAlloc( 0 ),
 	mLoaded( false )
 {
 	mProjectionMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
@@ -129,10 +135,26 @@ cRendererGL3::~cRendererGL3() {
 	#ifndef EE_GLES2
 	glDeleteVertexArrays( 1, &mVAO );
 	#endif
+
+	#ifdef EE_DEBUG
+	cLog::instance()->Write( "Biggest VBO allocation on GL3 Renderer: " + SizeToString( mBiggestAlloc ) );
+	#endif
 }
 
 EEGL_version cRendererGL3::Version() {
+	#ifndef EE_GLES2
 	return GLv_3;
+	#else
+	return GLv_ES2;
+	#endif
+}
+
+std::string cRendererGL3::VersionStr() {
+	#ifndef EE_GLES2
+	return "OpenGL 3";
+	#else
+	return "OpenGL ES2";
+	#endif
 }
 
 GLuint cRendererGL3::BaseShaderId() {
@@ -334,19 +356,42 @@ void cRendererGL3::Init() {
 
 	glGenBuffers( EEGL_ARRAY_STATES_COUNT, &mVBO[0] );
 
+	AllocateBuffers( mVBOSizeAlloc );
+
+	ClientActiveTexture( GL_TEXTURE0 );
+
+	mLoaded = true;
+}
+
+void cRendererGL3::AllocateBuffers( const Uint32& size ) {
+	if ( mVBOSizeAlloc != size )
+		cLog::instance()->Write( "Allocating new VBO buffers size: " + toStr( size ) );
+
+	mVBOSizeAlloc = size;
+
 	//"in		 vec2 dgl_Vertex;",
 	glBindBuffer( GL_ARRAY_BUFFER, mVBO[ EEGL_VERTEX_ARRAY ] );
-	glBufferData( GL_ARRAY_BUFFER, 131072, NULL, GL_STREAM_DRAW );
+	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 
 	//"in		 vec4 dgl_Color;",
 	glBindBuffer( GL_ARRAY_BUFFER, mVBO[ EEGL_COLOR_ARRAY ] );
-	glBufferData( GL_ARRAY_BUFFER, 131072, NULL, GL_STREAM_DRAW );
+	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 
-	//"in		 vec2 dgl_TexCoord;",
+	//"in		 vec2 dgl_TexCoord[0];",
 	glBindBuffer( GL_ARRAY_BUFFER, mVBO[ EEGL_TEXTURE_COORD_ARRAY ] );
-	glBufferData( GL_ARRAY_BUFFER, 131072, NULL, GL_STREAM_DRAW );
+	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 
-	mLoaded = true;
+	//"in		 vec2 dgl_TexCoord[1];",
+	glBindBuffer( GL_ARRAY_BUFFER, mVBO[ EEGL_TEXTURE_COORD_ARRAY1 ] );
+	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+
+	//"in		 vec2 dgl_TexCoord[2];",
+	glBindBuffer( GL_ARRAY_BUFFER, mVBO[ EEGL_TEXTURE_COORD_ARRAY2 ] );
+	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+
+	//"in		 vec2 dgl_TexCoord[3];",
+	glBindBuffer( GL_ARRAY_BUFFER, mVBO[ EEGL_TEXTURE_COORD_ARRAY3 ] );
+	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 }
 
 void cRendererGL3::UpdateMatrix() {
@@ -502,10 +547,18 @@ void cRendererGL3::DisableClientState( GLenum array ) {
 void cRendererGL3::VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid * pointer, GLuint allocate ) {
 	const GLint index = mStates[ EEGL_VERTEX_ARRAY ];
 
+	#ifdef EE_DEBUG
+	mBiggestAlloc = eemax( mBiggestAlloc, allocate );
+	#endif
+
 	if ( -1 != index ) {
 		#ifndef EE_GLES2
 		glBindVertexArray( mVAO );
 		#endif
+
+		if ( allocate > mVBOSizeAlloc ) {
+			AllocateBuffers( allocate );
+		}
 
 		glBindBuffer( GL_ARRAY_BUFFER, mVBO[ EEGL_VERTEX_ARRAY ]			);
 		glBufferSubData( GL_ARRAY_BUFFER, 0, allocate, pointer );
@@ -521,10 +574,18 @@ void cRendererGL3::VertexPointer ( GLint size, GLenum type, GLsizei stride, cons
 void cRendererGL3::ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
 	const GLint index = mStates[ EEGL_COLOR_ARRAY ];
 
+	#ifdef EE_DEBUG
+	mBiggestAlloc = eemax( mBiggestAlloc, allocate );
+	#endif
+
 	if ( -1 != index ) {
 		#ifndef EE_GLES2
 		glBindVertexArray( mVAO );
 		#endif
+
+		if ( allocate > mVBOSizeAlloc ) {
+			AllocateBuffers( allocate );
+		}
 
 		glBindBuffer( GL_ARRAY_BUFFER, mVBO[ EEGL_COLOR_ARRAY ]				);
 		glBufferSubData( GL_ARRAY_BUFFER, 0, allocate, pointer );
@@ -544,12 +605,20 @@ void cRendererGL3::ColorPointer ( GLint size, GLenum type, GLsizei stride, const
 void cRendererGL3::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
 	const GLint index = mTextureUnits[ mCurActiveTex ];
 
+	#ifdef EE_DEBUG
+	mBiggestAlloc = eemax( mBiggestAlloc, allocate );
+	#endif
+
 	if ( -1 != index ) {
 		#ifndef EE_GLES2
 		glBindVertexArray( mVAO );
 		#endif
 
-		glBindBuffer( GL_ARRAY_BUFFER, mVBO[ EEGL_TEXTURE_COORD_ARRAY ]		);
+		if ( allocate > mVBOSizeAlloc ) {
+			AllocateBuffers( allocate );
+		}
+
+		glBindBuffer( GL_ARRAY_BUFFER, mCurTexCoordArray );
 		glBufferSubData( GL_ARRAY_BUFFER, 0, allocate, pointer );
 
 		#ifdef EE_GLES2
@@ -645,6 +714,14 @@ void cRendererGL3::ClientActiveTexture( GLenum texture ) {
 
 	if ( mCurActiveTex >= EE_MAX_TEXTURE_UNITS )
 		mCurActiveTex = 0;
+
+	switch ( mCurActiveTex )
+	{
+		case 0: mCurTexCoordArray = mVBO[ EEGL_TEXTURE_COORD_ARRAY ]; break;
+		case 1: mCurTexCoordArray = mVBO[ EEGL_TEXTURE_COORD_ARRAY1 ]; break;
+		case 2: mCurTexCoordArray = mVBO[ EEGL_TEXTURE_COORD_ARRAY2 ]; break;
+		case 3: mCurTexCoordArray = mVBO[ EEGL_TEXTURE_COORD_ARRAY3 ]; break;
+	}
 }
 
 void cRendererGL3::TexEnvi( GLenum target, GLenum pname, GLint param ) {

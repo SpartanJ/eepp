@@ -4,6 +4,8 @@
 
 #include "cclipboardsdl.hpp"
 #include "cinputsdl.hpp"
+#include "ccursormanagersdl.hpp"
+
 #include "../../../graphics/cglobalbatchrenderer.hpp"
 #include "../../../graphics/cshaderprogrammanager.hpp"
 #include "../../../graphics/cvertexbuffermanager.hpp"
@@ -14,7 +16,7 @@
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
 cWindowSDL::cWindowSDL( WindowSettings Settings, ContextSettings Context ) :
-	cWindow( Settings, Context, eeNew( cClipboardSDL, ( this ) ), eeNew( cInputSDL, ( this ) ) )
+	cWindow( Settings, Context, eeNew( cClipboardSDL, ( this ) ), eeNew( cInputSDL, ( this ) ), eeNew( cCursorManagerSDL, ( this ) ) )
 {
 	Create( Settings, Context );
 }
@@ -163,7 +165,7 @@ void cWindowSDL::ToggleFullscreen() {
 		Maximize();
 	}
 
-	ShowCursor( mWindow.CursorVisible );
+	GetCursorManager()->Reload();
 }
 
 void cWindowSDL::Caption( const std::string& Caption ) {
@@ -315,12 +317,6 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 		cLog::instance()->Save();
 		mWindow.Created = false;
 	}
-}
-
-void cWindowSDL::ShowCursor( const bool& showcursor ) {
-	mWindow.CursorVisible = showcursor;
-
-	SDL_ShowCursor( mWindow.CursorVisible ? SDL_ENABLE : SDL_DISABLE );
 }
 
 void cWindowSDL::SwapBuffers() {

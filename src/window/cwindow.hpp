@@ -9,6 +9,7 @@ namespace EE { namespace Window {
 
 class cClipboard;
 class cInput;
+class cCursorManager;
 
 namespace WindowStyle {
 	enum
@@ -81,8 +82,7 @@ class WindowInfo {
 	inline WindowInfo() :
 		BackgroundColor(0,0,0),
 		Created( false ),
-		Maximized( false ),
-		CursorVisible( true )
+		Maximized( false )
 	{}
 
 	WindowSettings		WindowConfig;
@@ -94,7 +94,6 @@ class WindowInfo {
 	eeColor				BackgroundColor;
 	bool				Created;
 	bool				Maximized;
-	bool				CursorVisible;
 	eeWindowContex		Context;
 };
 
@@ -102,7 +101,7 @@ class EE_API cWindow {
 	public:
 		typedef cb::Callback0<void>					WindowResizeCallback;
 
-		cWindow( WindowSettings Settings, ContextSettings Context, cClipboard * Clipboard, cInput * Input );
+		cWindow( WindowSettings Settings, ContextSettings Context, cClipboard * Clipboard, cInput * Input, cCursorManager * CursorManager );
 		
 		virtual ~cWindow();
 		
@@ -148,9 +147,6 @@ class EE_API cWindow {
 		/** @return If the current window is visible */
 		virtual bool Visible() = 0;
 
-		/** Set to show or not the curson on the main screen */
-		virtual void ShowCursor( const bool& showcursor ) = 0;
-		
 		/** Set the size of the window for a windowed window */
 		virtual void Size( Uint32 Width, Uint32 Height );
 
@@ -205,6 +201,9 @@ class EE_API cWindow {
 
 		/** @return The current desktop resolution */
 		virtual const eeSize& GetDesktopResolution() const;
+
+		/** Center the window to the desktop ( if windowed ) */
+		virtual void Center();
 
 		/** @return If the aplication is running returns true ( If you Init correctly the window and is running ). */
 		bool Running() const;
@@ -273,6 +272,9 @@ class EE_API cWindow {
 		/** @return The input manager */
 		cInput * GetInput() const;
 
+		/** @return The cursor manager */
+		cCursorManager * GetCursorManager() const;
+
 		/** Push a new window resize callback.
 		* @return The Callback Id
 		*/
@@ -286,6 +288,7 @@ class EE_API cWindow {
 		WindowInfo					mWindow;
 		cClipboard *				mClipboard;
 		cInput *					mInput;
+		cCursorManager *			mCursorManager;
 		Platform::cPlatformImpl *	mPlatform;
 		cView						mDefaultView;
 		const cView *				mCurrentView;

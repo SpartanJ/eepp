@@ -4,7 +4,7 @@
 #include "../base.hpp"
 #include "../renders.hpp"
 
-#if !defined( EE_GLES2 ) || !defined( EE_GLES1 )
+#if !defined( EE_GLES1 )
 	#define EE_GL3_ENABLED 1
 #endif
 

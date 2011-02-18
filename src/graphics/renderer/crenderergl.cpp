@@ -11,7 +11,19 @@ cRendererGL::~cRendererGL() {
 }
 
 EEGL_version cRendererGL::Version() {
+	#ifndef EE_GLES1
 	return GLv_2;
+	#else
+	return GLv_ES1;
+	#endif
+}
+
+std::string cRendererGL::VersionStr() {
+	#ifndef EE_GLES1
+	return "OpenGL 2";
+	#else
+	return "OpenGL ES1";
+	#endif
 }
 
 void cRendererGL::PushMatrix() {

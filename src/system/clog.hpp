@@ -15,7 +15,11 @@ class EE_API cLog : public tSingleton<cLog> {
 
 		void Writef( const char* format, ... );
 
-		std::string Buffer() const { return mData; }
+		std::string Buffer() const;
+
+		const bool& ConsoleOutput() const;
+
+		void ConsoleOutput( const bool& output );
 
 		~cLog();
 	protected:
@@ -23,6 +27,7 @@ class EE_API cLog : public tSingleton<cLog> {
 	private:
 		std::string mData, mFilePath;
 		bool mSave;
+		bool mConsoleOutput;
 };
 
 }}

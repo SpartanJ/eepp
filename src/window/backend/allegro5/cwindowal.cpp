@@ -1,6 +1,4 @@
 #include "cwindowal.hpp"
-#include "cclipboardal.hpp"
-#include "cinputal.hpp"
 
 #ifdef EE_BACKEND_ALLEGRO_ACTIVE
 
@@ -103,10 +101,14 @@ static void al_display_unlock() {
 #include <allegro5/internal/aintern_system.h>
 #include <allegro5/internal/aintern_thread.h>
 
+#include "cclipboardal.hpp"
+#include "cinputal.hpp"
+#include "ccursormanageral.hpp"
+
 namespace EE { namespace Window { namespace Backend { namespace Al {
 
 cWindowAl::cWindowAl( WindowSettings Settings, ContextSettings Context ) :
-	cWindow( Settings, Context, eeNew( cClipboardAl, ( this ) ), eeNew( cInputAl, ( this ) ) ),
+	cWindow( Settings, Context, eeNew( cClipboardAl, ( this ) ), eeNew( cInputAl, ( this ) ), eeNew( cCursorManagerAl, ( this ) ) ),
 	mDisplay( NULL ),
 	mActive( true )
 {
@@ -328,21 +330,12 @@ void cWindowAl::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 
 		SendVideoResizeCb();
 
-		ShowCursor( mWindow.CursorVisible );
+		GetCursorManager()->Reload();
 	} catch (...) {
 		cLog::instance()->Write( "Unable to change resolution" );
 		cLog::instance()->Save();
 		mWindow.Created = false;
 	}
-}
-
-void cWindowAl::ShowCursor( const bool& showcursor ) {
-	mWindow.CursorVisible = showcursor;
-
-	if ( showcursor )
-		al_show_mouse_cursor( mDisplay );
-	else
-		al_hide_mouse_cursor( mDisplay );
 }
 
 void cWindowAl::SwapBuffers() {

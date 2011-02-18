@@ -2,7 +2,10 @@
 
 namespace EE { namespace System {
 
-cLog::cLog() : mSave(false) {
+cLog::cLog() :
+	mSave( false ),
+	mConsoleOutput( false )
+{
 	Write("...::: Entropia Engine++ Loaded :::...");
 	Write( "Loaded on " + GetDateTimeStr() );
 }
@@ -14,11 +17,11 @@ cLog::~cLog() {
 	if ( !mFilePath.empty() )
 		mFilePath = AppPath();
 
-	if (mSave) {
+	if ( mSave ) {
 		std::string str = mFilePath;
 		str += "log.log";
 
-		std::ofstream fs(str.c_str(), std::ios::app);
+		std::ofstream fs( str.c_str(), std::ios::app );
 
 		fs << mData << std::endl;
 		fs.close();
@@ -26,14 +29,24 @@ cLog::~cLog() {
 }
 
 void cLog::Save(const std::string& filepath) {
-	mFilePath = filepath;
-	mSave = true;
+	mFilePath	= filepath;
+	mSave		= true;
 }
 
 void cLog::Write(const std::string& Text, const bool& newLine) {
 	mData += Text;
-	if ( newLine )
+
+	if ( newLine ) {
 		mData += '\n';
+	}
+
+	if ( mConsoleOutput ) {
+		if ( newLine ) {
+			std::cout << Text << std::endl;
+		} else {
+			std::cout << Text;
+		}
+	}
 }
 
 void cLog::Writef( const char* format, ... ) {
@@ -58,6 +71,10 @@ void cLog::Writef( const char* format, ... ) {
 
 			mData += tstr + '\n';
 
+			if ( mConsoleOutput ) {
+				std::cout << tstr << std::endl;
+			}
+
 			return;
 		}
 
@@ -68,6 +85,18 @@ void cLog::Writef( const char* format, ... ) {
 
 		tstr.resize( size, '\0' );
 	}
+}
+
+std::string cLog::Buffer() const {
+	return mData;
+}
+
+const bool& cLog::ConsoleOutput() const {
+	return mConsoleOutput;
+}
+
+void cLog::ConsoleOutput( const bool& output ) {
+	mConsoleOutput = output;
 }
 
 }}

@@ -54,7 +54,14 @@ void cSound::Stop() {
 }
 
 void cSound::Buffer(const cSoundBuffer& Buffer) {
+	if ( NULL != mBuffer ) {
+		Stop();
+		mBuffer->DetachSound( this );
+	}
+
 	mBuffer = &Buffer;
+	mBuffer->AttachSound (this );
+
 	ALCheck( alSourcei(mSource, AL_BUFFER, mBuffer ? mBuffer->mBuffer : 0) );
 }
 
@@ -157,11 +164,25 @@ void cSound::PlayingOffset( const eeFloat& TimeOffset ) {
     ALCheck( alSourcef(mSource, AL_SEC_OFFSET, TimeOffset) );
 }
 
-cSound& cSound::operator =(const cSound& Other) {
-	cSound Temp(Other);
+cSound& cSound::operator =( const cSound& Other ) {
+	if ( NULL != mBuffer ) {
+		Stop();
+		mBuffer->DetachSound( this );
+		mBuffer = NULL;
+	}
 
-	std::swap(mSource, Temp.mSource);
-	std::swap(mBuffer, Temp.mBuffer);
+	// Copy the sound attributes
+	if ( NULL != Other.mBuffer ) {
+		Buffer( *Other.mBuffer );
+	}
+
+	Loop( Other.Loop() );
+	Pitch( Other.Pitch() );
+	Volume( Other.Volume() );
+	Position( Other.Position() );
+	SetRelativeToListener( Other.IsRelativeToListener() );
+	MinDistance( Other.MinDistance()) ;
+	Attenuation( Other.Attenuation() );
 
 	return *this;
 }
@@ -175,5 +196,16 @@ bool cSound::IsRelativeToListener() const {
 	ALCheck( alGetSourcei( mSource, AL_SOURCE_RELATIVE, &Relative ) );
 	return Relative != 0;
 }
+
+void cSound::ResetBuffer() {
+	// First stop the sound in case it is playing
+	Stop();
+
+	// Detach the buffer
+	ALCheck( alSourcei( mSource, AL_BUFFER, 0) );
+
+	mBuffer = NULL;
+}
+
 
 }}

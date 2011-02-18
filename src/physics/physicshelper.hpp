@@ -5,16 +5,16 @@
 
 CP_NAMESPACE_BEGIN
 
-const cpFloat cpPI		= 3.141592654;
-const cpFloat cpPId180	= cpPI / 180;
-const cpFloat cpd180PI	= 180 / cpPI;
+const cpFloat cpPI		= 3.14159265358979323846;
+const cpFloat cpPI_180	= cpPI / 180;
+const cpFloat cp180_PI	= 180 / cpPI;
 
 inline static cpFloat cpRadians( const cpFloat& Ang ) {
-	return Ang * cpPId180;
+	return Ang * cpPI_180;
 }
 
 inline static cpFloat cpDegrees( const cpFloat& Radians ) {
-	return Radians * cpd180PI;
+	return Radians * cp180_PI;
 }
 
 #ifdef USE_EE_VECTOR

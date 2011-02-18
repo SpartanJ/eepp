@@ -31,6 +31,9 @@ enum EEGL_ARRAY_STATES {
 	EEGL_INDEX_ARRAY			= 3,
 	EEGL_TEXTURE_COORD_ARRAY	= 4,
 	EEGL_EDGE_FLAG_ARRAY		= 5,
+	EEGL_TEXTURE_COORD_ARRAY1	= 6,
+	EEGL_TEXTURE_COORD_ARRAY2	= 7,
+	EEGL_TEXTURE_COORD_ARRAY3	= 8,
 	EEGL_ARRAY_STATES_COUNT
 };
 
@@ -46,6 +49,8 @@ class cRendererGL3 : public cGL {
 		~cRendererGL3();
 
 		EEGL_version Version();
+
+		std::string VersionStr();
 
 		void Init();
 
@@ -143,6 +148,9 @@ class cRendererGL3 : public cGL {
 		GLfloat					mPointSize;
 		GLint					mTextureUnits[ EE_MAX_TEXTURE_UNITS ];
 		GLint					mCurActiveTex;
+		GLuint					mCurTexCoordArray;
+		Uint32					mVBOSizeAlloc;
+		Uint32					mBiggestAlloc;
 		bool					mLoaded;
 		std::string				mBaseVertexShader;
 
@@ -151,6 +159,8 @@ class cRendererGL3 : public cGL {
 		void PlaneStateCheck( bool tryEnable );
 
 		void ReloadShader( cShaderProgram * Shader );
+
+		void AllocateBuffers( const Uint32& size );
 };
 
 }}

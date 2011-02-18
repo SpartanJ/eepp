@@ -22,13 +22,12 @@
 **/
 
 /**
-	@TODO Support GLES1 ( GLES1 is just a fixed pipeline renderer, so it should be the same renderer that GLv_2 ).
-	@TODO Remove std::wstring dependency ( wchar_t ), and create an eeString class to manage strings without wchar_t platform restrictions ( Android only support wchar_t in 2.3 ).
 	@TODO Check for endianness problems, and make EEPP endianness agnostic.
 	@TODO Add backend for SDL 1.3 ( support for Android ). And may be SFML backend ( just for fun ).
 	@TODO Support for Android and iOS.
-	@TODO Add Scripting support ( lua or squirrel ).
-	@TODO Support color cursors ( not only black and white cursors, that really sucks ) - Imposible with SDL 1.2. Allegro 5 have this implemented ( could implement this for the Allegro backend at least ).
+	@TODO Support color cursors - Imposible with SDL 1.2. Allegro 5 have this implemented ( could implement this for the Allegro backend at least ).
+	@TODO Remove std::wstring dependency ( wchar_t ), and create an eeString class to manage strings without wchar_t platform restrictions ( Android only supports wchar_t in 2.3 ).
+	@TODO Add Scripting support ( squirrel or python ).
 */
 
 	// General includes and declarations
@@ -98,6 +97,8 @@
 	#include "window/cview.hpp"
 	#include "window/cwindow.hpp"
 	#include "window/cclipboard.hpp"
+	#include "window/ccursor.hpp"
+	#include "window/ccursormanager.hpp"
 	#include "window/cjoystick.hpp"
 	#include "window/cjoystickmanager.hpp"
 	#include "window/cengine.hpp"

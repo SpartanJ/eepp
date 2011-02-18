@@ -3067,7 +3067,7 @@ static stbi_uc *bmp_load(stbi *s, int *x, int *y, int *comp, int req_comp)
 
    *x = s->img_x;
    *y = s->img_y;
-   if (comp) *comp = target;
+   if (comp) *comp = s->img_n;
    return out;
 }
 
@@ -3262,7 +3262,11 @@ static stbi_uc *tga_load(stbi *s, int *x, int *y, int *comp, int req_comp)
       //   load the palette
       tga_palette = (unsigned char*)malloc( tga_palette_len * tga_palette_bits / 8 );
       if (!getn(s, tga_palette, tga_palette_len * tga_palette_bits / 8 ))
+	  {
+		 free( tga_palette );
+		 free( tga_data );
          return NULL;
+	  }
    }
    //   load the data
    trans_data[0] = trans_data[1] = trans_data[2] = trans_data[3] = 0;

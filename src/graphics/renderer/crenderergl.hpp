@@ -16,6 +16,8 @@ class cRendererGL : public cGL {
 
 		EEGL_version Version();
 
+		std::string VersionStr();
+
 		void ClientActiveTexture( GLenum texture );
 
 		void PointSize( GLfloat size );

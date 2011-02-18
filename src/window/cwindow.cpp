@@ -1,14 +1,16 @@
 #include "cwindow.hpp"
 #include "cclipboard.hpp"
 #include "cinput.hpp"
+#include "ccursormanager.hpp"
 #include "../graphics/ctexturefactory.hpp"
 #include "platform/null/cnullimpl.hpp"
 
 namespace EE { namespace Window {
 
-cWindow::cWindow( WindowSettings Settings, ContextSettings Context, cClipboard * Clipboard, cInput * Input ) :
+cWindow::cWindow( WindowSettings Settings, ContextSettings Context, cClipboard * Clipboard, cInput * Input, cCursorManager * CursorManager ) :
 	mClipboard( Clipboard ),
 	mInput( Input ),
+	mCursorManager( CursorManager ),
 	mPlatform( NULL ),
 	mNumCallBacks( 0 )
 {
@@ -19,6 +21,7 @@ cWindow::cWindow( WindowSettings Settings, ContextSettings Context, cClipboard *
 cWindow::~cWindow() {
 	eeSAFE_DELETE( mClipboard );
 	eeSAFE_DELETE( mInput );
+	eeSAFE_DELETE( mCursorManager );
 	eeSAFE_DELETE( mPlatform );
 }
 
@@ -287,6 +290,10 @@ cInput * cWindow::GetInput() const {
 	return mInput;
 }
 
+cCursorManager * cWindow::GetCursorManager() const {
+	return mCursorManager;
+}
+
 Uint32 cWindow::PushResizeCallback( const WindowResizeCallback& cb ) {
 	mNumCallBacks++;
 	mCallbacks[ mNumCallBacks ] = cb;
@@ -305,7 +312,7 @@ void cWindow::SendVideoResizeCb() {
 }
 
 void cWindow::LogSuccessfulInit( const std::string& BackendName ) {
-	cLog::instance()->Write( "Engine Initialized Succesfully.\n\tBackend: " + BackendName + "\n\tGL Vendor: " + GLi->GetVendor() + "\n\tGL Renderer: " + GLi->GetRenderer() + "\n\tGL Version: " + GLi->GetVersion() + "\n\tGL Shading Language Version: " + GLi->GetShadingLanguageVersion() );
+	cLog::instance()->Write( "Engine Initialized Succesfully.\n\tBackend: " + BackendName + "\n\tGL Backend: " + GLi->VersionStr() + "\n\tGL Vendor: " + GLi->GetVendor() + "\n\tGL Renderer: " + GLi->GetRenderer() + "\n\tGL Version: " + GLi->GetVersion() + "\n\tGL Shading Language Version: " + GLi->GetShadingLanguageVersion() );
 }
 
 void cWindow::LogFailureInit( const std::string& ClassName, const std::string& BackendName ) {
@@ -392,6 +399,12 @@ void cWindow::CreatePlatform() {
 }
 
 void cWindow::SetCurrent() {
+}
+
+void cWindow::Center() {
+	if ( Windowed() ) {
+		Position( mWindow.DesktopResolution.Width() / 2 - mWindow.WindowConfig.Width / 2, mWindow.DesktopResolution.Height() / 2 - mWindow.WindowConfig.Height / 2 );
+	}
 }
 
 }}

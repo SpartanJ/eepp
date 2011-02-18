@@ -284,6 +284,10 @@ void cEETest::CreateAquaTextureAtlas() {
 void cEETest::Init() {
 	EE = cEngine::instance();
 
+	#ifdef EE_DEBUG
+	cLog::instance()->ConsoleOutput( true );
+	#endif
+
 	run 				= false;
 	DrawBack 			= false;
 	MultiViewportMode 	= false;
@@ -373,7 +377,7 @@ void cEETest::Init() {
 		Mus = eeNew( cMusic, () );
 		if ( Mus->OpenFromPack( &PAK, "music.ogg" ) ) {
 			Mus->Loop(true);
-			Mus->Volume( 0.f );
+			Mus->Volume( 100.f );
 			Mus->Play();
 		}
 
@@ -1022,7 +1026,9 @@ void cEETest::LoadTextures() {
 	Cursor[1] = TF->LoadFromPack( &PAK, "cursor.tga" );
 	CursorP[1] = TF->GetTexture( Cursor[1] );
 
-	mWindow->ShowCursor(false);
+	mWindow->GetCursorManager()->Visible( false );
+	//mWindow->GetCursorManager()->Set( mWindow->GetCursorManager()->Add( mWindow->GetCursorManager()->Create( MyPath + "data/cursor.tga", eeVector2i( 2, 2 ), "cursor_special" ) ) );
+	//mWindow->GetCursorManager()->Set( Window::Cursor::SYS_CURSOR_EDIT );
 
 	CL1.AddFrame(TN[2]);
 	CL1.Position( 500, 400 );
@@ -1449,19 +1455,22 @@ void cEETest::Input() {
 			Mus->Play();
 	}
 
-	if ( KM->IsKeyDown(KEY_ESCAPE) )
+	if ( KM->IsKeyDown( KEY_ESCAPE ) )
 		mWindow->Close();
 
-	if ( KM->IsKeyUp(KEY_F1) )
+	if ( KM->IsKeyUp( KEY_F1 ) )
 		MultiViewportMode = !MultiViewportMode;
 
-	if ( KM->AltPressed() && KM->IsKeyUp(KEY_M) && !Con.Active() )
+	if ( KM->AltPressed() && KM->IsKeyUp( KEY_C ) )
+		mWindow->Center();
+
+	if ( KM->AltPressed() && KM->IsKeyUp( KEY_M ) && !Con.Active() )
 		mWindow->Maximize();
 
 	if ( KM->IsKeyUp(KEY_F4) )
 		TF->ReloadAllTextures();
 
-	if ( KM->AltPressed() && KM->IsKeyUp(KEY_RETURN) ) {
+	if ( KM->AltPressed() && KM->IsKeyUp( KEY_RETURN ) ) {
 		if ( mWindow->Windowed() ) {
 			mWindow->Size( mWindow->GetDesktopResolution().Width(), mWindow->GetDesktopResolution().Height(), false );
 			KM->GrabInput(true);
@@ -1483,12 +1492,9 @@ void cEETest::Input() {
 	if ( KM->ControlPressed() && KM->IsKeyUp(KEY_G) )
 		KM->GrabInput(  !KM->GrabInput() );
 
-	if ( KM->IsKeyUp(KEY_F3) || ( KM->AltPressed() && KM->IsKeyUp(KEY_C) ) || KM->IsKeyUp( KEY_WORLD_26 ) ) {
+	if ( KM->IsKeyUp( KEY_F3 ) || KM->IsKeyUp( KEY_WORLD_26 ) || KM->IsKeyUp( KEY_BACKSLASH ) ) {
 		Con.Toggle();
-		if ( Con.Active() )
-			InBuf.Active( false );
-		else
-			InBuf.Active( true );
+		InBuf.Active( !Con.Active() );
 	}
 
 	if ( KM->IsKeyUp(KEY_1) && KM->ControlPressed() )

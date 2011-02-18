@@ -1,4 +1,5 @@
 #include "csoundbuffer.hpp"
+#include "csound.hpp"
 
 namespace EE { namespace Audio {
 
@@ -13,13 +14,17 @@ cSoundBuffer::cSoundBuffer(const cSoundBuffer& Copy) :
 	cAudioResource(Copy),
 	mBuffer(0),
 	mSamples(Copy.mSamples),
-	mDuration(Copy.mDuration)
+	mDuration(Copy.mDuration),
+	mSounds()
 {
 	ALCheck( alGenBuffers( 1, &mBuffer ) );
 	Update( Copy.GetChannelsCount(), Copy.GetSampleRate() );
 }
 
 cSoundBuffer::~cSoundBuffer() {
+	for ( SoundList::const_iterator it = mSounds.begin(); it != mSounds.end(); ++it )
+		(*it)->ResetBuffer();
+
 	if ( mBuffer )
 		ALCheck( alDeleteBuffers( 1, &mBuffer ) );
 }
@@ -154,9 +159,10 @@ eeFloat cSoundBuffer::GetDuration() const {
 cSoundBuffer& cSoundBuffer::operator =( const cSoundBuffer& Other ) {
 	cSoundBuffer Temp( Other );
 
-	mSamples.swap( Temp.mSamples );
-	std::swap( mBuffer,   Temp.mBuffer );
-	std::swap( mDuration, Temp.mDuration );
+	std::swap( mSamples	,	Temp.mSamples );
+	std::swap( mBuffer	,	Temp.mBuffer );
+	std::swap( mDuration,	Temp.mDuration );
+	std::swap( mSounds	,	Temp.mSounds );
 
 	return *this;
 }
@@ -185,5 +191,12 @@ bool cSoundBuffer::Update( unsigned int ChannelsCount, unsigned int SampleRate )
 	return true;
 }
 
+void cSoundBuffer::AttachSound( cSound* sound ) const {
+	mSounds.insert(sound);
+}
+
+void cSoundBuffer::DetachSound( cSound* sound ) const {
+	mSounds.erase(sound);
+}
 
 }}

@@ -6,7 +6,7 @@
 #ifdef EE_BACKEND_ALLEGRO_ACTIVE
 
 #include "../../cinput.hpp"
-#include <allegro5/allegro5.h>
+#include <allegro5/allegro.h>
 
 namespace EE { namespace Window { namespace Backend { namespace Al {
 

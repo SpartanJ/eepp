@@ -175,12 +175,12 @@ bool operator !=(const Vector2<T>& V1, const Vector2<T>& V2) {
 
 template <typename T>
 T Vector2<T>::cosAng( const T& Ang ) {
-	return eecos(Ang * PId180);
+	return eecos(Ang * EE_PI_180);
 }
 
 template <typename T>
 T Vector2<T>::sinAng( const T& Ang ) {
-	return eesin(Ang * PId180);
+	return eesin(Ang * EE_PI_180);
 }
 
 template <typename T>

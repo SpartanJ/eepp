@@ -26,8 +26,9 @@ bool cMusic::OpenFromFile(const std::string& Filename) {
 	Stop();
 	eeSAFE_DELETE( mFile );
 
-	mFile = cSoundFile::CreateRead(Filename);
-	if (!mFile) {
+	mFile = cSoundFile::CreateRead( Filename );
+
+	if ( NULL == mFile ) {
 		cLog::instance()->Write( "Failed to open \"" + Filename + "\" for reading" );
 		return false;
 	}
@@ -47,7 +48,7 @@ bool cMusic::OpenFromMemory(const char* Data, std::size_t SizeInBytes) {
 	eeSAFE_DELETE( mFile );
 
 	// Create the sound file implementation, and open it in read mode
-	mFile = cSoundFile::CreateRead(Data, SizeInBytes);
+	mFile = cSoundFile::CreateRead( Data, SizeInBytes );
 
 	if ( NULL == mFile ) {
 		cLog::instance()->Write( "Failed to open music from memory for reading" );
@@ -63,14 +64,14 @@ bool cMusic::OpenFromMemory(const char* Data, std::size_t SizeInBytes) {
 }
 
 bool cMusic::OnStart() {
-	return mFile && mFile->Restart();
+	return NULL != mFile && mFile->Restart();
 }
 
-bool cMusic::OnGetData(cSoundStream::Chunk& Data) {
+bool cMusic::OnGetData( cSoundStream::Chunk& Data ) {
 	if ( NULL != mFile ) {
 		// Fill the chunk parameters
 		Data.Samples   = &mSamples[0];
-		Data.NbSamples = mFile->Read(&mSamples[0], mSamples.size());
+		Data.NbSamples = mFile->Read( &mSamples[0], mSamples.size() );
 
 		// Check if we have reached the end of the audio file
 		return Data.NbSamples == mSamples.size();
@@ -84,8 +85,9 @@ eeFloat cMusic::GetDuration() const {
 }
 
 void cMusic::OnSeek( float timeOffset ) {
-	if ( NULL != mFile )
+	if ( NULL != mFile ) {
 		mFile->Seek( timeOffset );
+	}
 }
 
 }}

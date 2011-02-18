@@ -54,7 +54,7 @@ T IsPow2( T v ) {
 
 template <typename T>
 T LineAngle( const T& X1, const T& Y1, const T& X2, const T& Y2 ) {
-	return eeatan2( (eeFloat)(Y2 - Y1), (eeFloat)(X2 - X1) ) * d180PI;
+	return eeatan2( (eeFloat)(Y2 - Y1), (eeFloat)(X2 - X1) ) * EE_180_PI;
 }
 eeFloat EE_API LineAngle( const eeVector2f& p1, const eeVector2f& p2 );
 
@@ -335,9 +335,9 @@ bool PointInsidePolygon2( const Polygon2<T>& poly, const Vector2<T>& point ) {
 
 template<typename T>
 Polygon2<T> CreateRoundedPolygon( const T& x, const T& y, const T& width, const T& height, const eeUint& Radius = 8 ) {
-	eeFloat PI05 = PI * 0.5f;
-	eeFloat PI15 = PI * 1.5f;
-	eeFloat PI20 = PI * 2.0f;
+	eeFloat PI05 = EE_PI * 0.5f;
+	eeFloat PI15 = EE_PI * 1.5f;
+	eeFloat PI20 = EE_PI2;
 	eeFloat sx, sy;
 	eeFloat t;
 
@@ -346,7 +346,7 @@ Polygon2<T> CreateRoundedPolygon( const T& x, const T& y, const T& width, const 
 	Poly.PushBack( Vector2<T>( x, y + height - Radius) );
 	Poly.PushBack( Vector2<T>( x, y + Radius ) );
 
-	for( t = PI; t < PI15; t += 0.1f ) {
+	for( t = EE_PI; t < PI15; t += 0.1f ) {
 		sx = x + Radius + (eeFloat)cosf(t) * Radius;
 		sy = y + Radius + (eeFloat)sinf(t) * Radius;
 
@@ -376,7 +376,7 @@ Polygon2<T> CreateRoundedPolygon( const T& x, const T& y, const T& width, const 
 	Poly.PushBack( Vector2<T> ( x + width - Radius, y + height ) );
 	Poly.PushBack( Vector2<T> ( x + Radius, y + height ) );
 
-	for( t = PI05; t < PI; t += 0.1f ) {
+	for( t = PI05; t < EE_PI; t += 0.1f ) {
 		sx = x + Radius + (eeFloat)cosf(t) * Radius;
 		sy = y + height - Radius + (eeFloat)sinf(t) * Radius;
 
