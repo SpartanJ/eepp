@@ -45,8 +45,10 @@ cCursor::cCursor( const std::string& path, const eeVector2i& hotspot, const std:
 	if ( NULL != data ) {
 		mImage = eeNew( cImage, ( data, w, h, c ) );
 
-		//! HACK: This is a hack to memory manager recognize the allocated data
+		//! HACK: This is a hack to make the memory manager recognize the allocated data
+		#ifdef EE_MEMORY_MANAGER
 		MemoryManager::AddPointer( cAllocatedPointer( (void*)data, __FILE__, __LINE__, mImage->Size() ) );
+		#endif
 	} else {
 		cLog::instance()->Write( "cCursor::cCursor: Error creating cursor from path." );
 	}
