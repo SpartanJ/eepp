@@ -7,7 +7,7 @@
 	#define EE_GLES
 #endif
 
-#if ( EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_LINUX ) && !defined( EE_GLES )
+#if ( EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM ) ) && !defined( EE_GLES )
 	#define EE_GLEW_AVAILABLE
 #endif
 
@@ -27,7 +27,7 @@
 	#endif
 
 	#ifndef EE_GLEW_AVAILABLE
-		#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_WIN
+		#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN
 			#include <GL/glext.h>
 		#elif EE_PLATFORM == EE_PLATFORM_MACOSX
 			#include <OpenGL/glext.h>

@@ -12,6 +12,9 @@ using namespace EE::System;
 #include "../utils/vector3.hpp"
 using namespace EE::Utils;
 
+#if EE_PLATFORM == EE_PLATFORM_HAIKU
+#define EE_NO_SNDFILE
+#endif
 
 /**
 This module is based on the sfml-audio module.

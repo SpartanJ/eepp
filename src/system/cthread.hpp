@@ -9,7 +9,7 @@
 #endif
 #include <windows.h>
 #include <process.h>
-#elif defined( EE_PLATFORM_UNIX )
+#elif defined( EE_PLATFORM_POSIX )
 #include <pthread.h>
 #endif
 
@@ -46,7 +46,7 @@ class EE_API cThread {
 
 		HANDLE			mThread;
 
-		#elif defined( EE_PLATFORM_UNIX )
+		#elif defined( EE_PLATFORM_POSIX )
 
 		static void* EntryPoint(void* userData);
 

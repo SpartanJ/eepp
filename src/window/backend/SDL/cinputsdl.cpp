@@ -8,7 +8,7 @@ namespace EE { namespace Window { namespace Backend { namespace SDL {
 cInputSDL::cInputSDL( cWindow * window ) :
 	cInput( window, eeNew( cJoystickManagerSDL, () ) )
 {
-	#if EE_PLATFORM == EE_PLATFORM_LINUX
+	#if defined( EE_X11_PLATFORM )
 	mMouseSpeed = 1.75f;
 	#endif
 }

@@ -5,14 +5,12 @@
 namespace EE { namespace Graphics {
 
 cFrameBufferPBuffer::cFrameBufferPBuffer( cWindow * window )
-#ifdef EE_GLEW_AVAILABLE
-
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	: cFrameBuffer( window ),
 	mDeviceContext( NULL ),
 	mPBuffer( NULL ),
 	mContext( NULL )
-#elif EE_PLATFORM == EE_PLATFORM_LINUX
+#elif defined( EE_X11_PLATFORM )
 	: cFrameBuffer( window ),
 	mDisplay( NULL ),
 	mPBuffer( 0 ),
@@ -20,23 +18,19 @@ cFrameBufferPBuffer::cFrameBufferPBuffer( cWindow * window )
 #else
 	: cFrameBuffer( window )
 #endif
-
-#endif
 {
-#if defined( EE_GLEW_AVAILABLE ) && EE_PLATFORM == EE_PLATFORM_LINUX
+#if defined( EE_GLEW_AVAILABLE ) && defined( EE_X11_PLATFORM )
 	mDisplay = XOpenDisplay(NULL);
 #endif
 }
 
 cFrameBufferPBuffer::cFrameBufferPBuffer( const Uint32& Width, const Uint32& Height, bool DepthBuffer, cWindow * window )
-#ifdef EE_GLEW_AVAILABLE
-
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	: cFrameBuffer( window ),
 	mDeviceContext( NULL ),
 	mPBuffer( NULL ),
 	mContext( NULL )
-#elif EE_PLATFORM == EE_PLATFORM_LINUX
+#elif defined( EE_X11_PLATFORM )
 	: cFrameBuffer( window ),
 	mDisplay( NULL ),
 	mPBuffer( 0 ),
@@ -44,10 +38,8 @@ cFrameBufferPBuffer::cFrameBufferPBuffer( const Uint32& Width, const Uint32& Hei
 #else
 	: cFrameBuffer( window )
 #endif
-
-#endif
 {
-#if defined( EE_GLEW_AVAILABLE ) &&  EE_PLATFORM == EE_PLATFORM_LINUX
+#if defined( EE_GLEW_AVAILABLE ) && defined( EE_X11_PLATFORM )
 	mDisplay = XOpenDisplay(NULL);
 #endif
 	Create( Width, Height, DepthBuffer );
@@ -64,7 +56,7 @@ cFrameBufferPBuffer::~cFrameBufferPBuffer() {
 		wglReleasePbufferDCARB( mPBuffer, mDeviceContext );
 		wglDestroyPbufferARB( mPBuffer );
 	}
-#elif EE_PLATFORM == EE_PLATFORM_LINUX
+#elif defined( EE_X11_PLATFORM )
     if ( mContext )
         glXDestroyContext( mDisplay, mContext );
 
@@ -86,7 +78,7 @@ bool cFrameBufferPBuffer::IsSupported() {
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	return WGLEW_ARB_pbuffer && WGLEW_ARB_pixel_format;
-#elif EE_PLATFORM == EE_PLATFORM_LINUX
+#elif defined( EE_X11_PLATFORM )
 	return glxewIsSupported("GLX_SGIX_pbuffer");
 #else
 	return false;
@@ -158,7 +150,7 @@ bool cFrameBufferPBuffer::Create( const Uint32& Width, const Uint32& Height, boo
 		wglShareLists( currentContext, mContext );
 		wglMakeCurrent( currentDC, currentContext );
 	}
-#elif EE_PLATFORM == EE_PLATFORM_LINUX
+#elif defined( EE_X11_PLATFORM )
 	int visualAttributes[] =
 	{
 		GLX_RENDER_TYPE,   GLX_RGBA_BIT,
@@ -249,7 +241,7 @@ void cFrameBufferPBuffer::Bind() {
 			wglMakeCurrent( mDeviceContext, mContext );
 		}
 	}
-	#elif EE_PLATFORM == EE_PLATFORM_LINUX
+	#elif defined( EE_X11_PLATFORM )
 	if ( mPBuffer && mContext ) {
 		if ( glXGetCurrentContext() != mContext ) {
 			ChangeContext = true;

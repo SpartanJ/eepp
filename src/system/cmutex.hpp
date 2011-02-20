@@ -8,7 +8,7 @@
 	#define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
-#elif defined( EE_PLATFORM_UNIX )
+#elif defined( EE_PLATFORM_POSIX )
 #include <pthread.h>
 #endif
 
@@ -29,7 +29,7 @@ class EE_API cMutex {
 	private:
 		#if EE_PLATFORM == EE_PLATFORM_WIN
 		CRITICAL_SECTION mMutex;
-		#elif defined( EE_PLATFORM_UNIX )
+		#elif defined( EE_PLATFORM_POSIX )
 		pthread_mutex_t mMutex;
 		#endif
 };

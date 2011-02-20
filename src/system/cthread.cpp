@@ -30,7 +30,7 @@ void cThread::Launch() {
 	if ( !mThread )
 		mIsActive = false;
 
-	#elif defined( EE_PLATFORM_UNIX )
+	#elif defined( EE_PLATFORM_POSIX )
 
 	mIsActive = pthread_create( &mThread, NULL, &cThread::EntryPoint, this ) == 0;
 
@@ -49,7 +49,7 @@ void cThread::Wait() {
 
 		WaitForSingleObject( mThread, INFINITE );
 
-		#elif defined( EE_PLATFORM_UNIX )
+		#elif defined( EE_PLATFORM_POSIX )
 
 		pthread_join(mThread, NULL);
 
@@ -65,7 +65,7 @@ void cThread::Terminate() {
 
 		TerminateThread( mThread, 0 );
 
-		#elif defined( EE_PLATFORM_UNIX )
+		#elif defined( EE_PLATFORM_POSIX )
 
 		pthread_cancel( mThread );
 
@@ -94,7 +94,7 @@ unsigned int __stdcall cThread::EntryPoint( void * userData ) {
 	return 0;
 }
 
-#elif defined( EE_PLATFORM_UNIX )
+#elif defined( EE_PLATFORM_POSIX )
 
 void * cThread::EntryPoint( void * userData ) {
 	// The Thread instance is stored in the user data

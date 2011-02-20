@@ -85,6 +85,7 @@ void cShader::Reload() {
 }
 
 void cShader::EnsureVersion() {
+	#ifdef EE_GL3_ENABLED
 	if ( cShader::Ensure && ( GLi->Version() == GLv_3 || GLi->Version() == GLv_ES2 ) ) {
 		cLog::instance()->Write( "Shader " + toStr( mGLId ) + " converted to programmable pipeline automatically." );
 
@@ -102,6 +103,7 @@ void cShader::EnsureVersion() {
 			}
 		}
 	}
+	#endif
 }
 
 void cShader::SetSource( const std::string& Source ) {

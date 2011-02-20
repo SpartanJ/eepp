@@ -13,7 +13,7 @@
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #include <allegro5/allegro_windows.h>
 #define WGL_NV_video_out
-#elif EE_PLATFORM == EE_PLATFORM_LINUX
+#elif defined( EE_X11_PLATFORM )
 
 #include <allegro5/platform/aintuthr.h>
 #include <allegro5/internal/aintern_system.h>
@@ -219,7 +219,7 @@ bool cWindowAl::Create( WindowSettings Settings, ContextSettings Context ) {
 }
 
 void cWindowAl::SetCurrent() {
-#if EE_PLATFORM == EE_PLATFORM_LINUX
+#if defined( EE_X11_PLATFORM )
 	al_display_mutex = &((ALLEGRO_SYSTEM_XGLX *)al_get_system_driver())->lock;
 #endif
 }
@@ -227,7 +227,7 @@ void cWindowAl::SetCurrent() {
 void cWindowAl::CreatePlatform() {
 	eeSAFE_DELETE( mPlatform );
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX
+#if defined( EE_X11_PLATFORM )
 	SetCurrent();
 	mPlatform = eeNew( Platform::cX11Impl, ( this, GetWindowHandler(), ((ALLEGRO_DISPLAY_XGLX *)mDisplay)->window, al_display_lock, al_display_unlock ) );
 #elif EE_PLATFORM == EE_PLATFORM_WIN
@@ -376,7 +376,7 @@ void cWindowAl::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {
 eeWindowHandler	cWindowAl::GetWindowHandler() {
 	#if EE_PLATFORM == EE_PLATFORM_WIN
 	return al_get_win_window_handle( mDisplay );
-	#elif EE_PLATFORM == EE_PLATFORM_LINUX
+	#elif defined( EE_X11_PLATFORM )
 	ALLEGRO_SYSTEM_XGLX * glx = (ALLEGRO_SYSTEM_XGLX *)al_get_system_driver();
 	return glx->x11display;
 	#else

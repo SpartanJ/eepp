@@ -324,7 +324,7 @@ std::string cWindow::Caption() {
 }
 
 eeWindowContex cWindow::GetContext() const {
-#if defined( EE_GLEW_AVAILABLE  ) && ( EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOSX )
+#if defined( EE_GLEW_AVAILABLE  ) && ( EE_PLATFORM == EE_PLATFORM_WIN || defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_MACOSX )
 	return mWindow.Context;
 #else
 	return 0;
@@ -336,7 +336,7 @@ void cWindow::GetMainContext() {
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	mWindow.Context = wglGetCurrentContext();
-#elif EE_PLATFORM == EE_PLATFORM_LINUX
+#elif defined( EE_X11_PLATFORM )
 	mWindow.Context = glXGetCurrentContext();
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
 	mWindow.Context = aglGetCurrentContext();
@@ -346,7 +346,7 @@ void cWindow::GetMainContext() {
 }
 
 void cWindow::SetDefaultContext() {
-#if defined( EE_GLEW_AVAILABLE ) && ( EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_LINUX )
+#if defined( EE_GLEW_AVAILABLE ) && ( EE_PLATFORM == EE_PLATFORM_WIN || defined( EE_X11_PLATFORM ) )
 	SetCurrentContext( mWindow.Context );
 #endif
 }

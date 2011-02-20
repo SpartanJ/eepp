@@ -3,7 +3,7 @@
 
 #include "../../base.hpp"
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX
+#if defined( EE_X11_PLATFORM )
 #include "../platform/x11/cx11impl.hpp"
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 #include "../platform/win/cwinimpl.hpp"

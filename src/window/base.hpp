@@ -30,7 +30,7 @@ using namespace EE::Graphics;
 	#ifdef CreateWindow
 	#undef CreateWindow
 	#endif
-#elif EE_PLATFORM == EE_PLATFORM_LINUX
+#elif defined( EE_X11_PLATFORM )
 	#include <X11/Xlib.h>
 	typedef Atom			eeScrapType;
 	typedef Window			X11Window;
@@ -38,11 +38,11 @@ using namespace EE::Graphics;
 	#undef Window
 	#undef Display
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
-	typedef Uint32			eeScrapType;
+	typedef unsigned int	eeScrapType;
 	typedef void *			eeWindowHandler; // NSWindow *
 #else
-	typedef Uint32			eeWindowHandler; //! Fallback
-	typedef Uint32			eeScrapType;
+	typedef unsigned int	eeWindowHandler; //! Fallback
+	typedef unsigned int	eeScrapType;
 #endif
 
 #ifdef EE_GLEW_AVAILABLE
@@ -50,7 +50,7 @@ using namespace EE::Graphics;
 		#include "../helper/glew/wglew.h"
 		typedef HGLRC		eeWindowContex;
 
-	#elif EE_PLATFORM == EE_PLATFORM_LINUX
+	#elif defined( EE_X11_PLATFORM )
 
 		#include "../helper/glew/glxew.h"
 		typedef GLXContext	eeWindowContex;
@@ -61,7 +61,7 @@ using namespace EE::Graphics;
 		typedef AGLContext	eeWindowContex;
 	#endif
 #else
-	typedef Uint32			eeWindowContex;	//! Fallback
+	typedef unsigned int	eeWindowContex;	//! Fallback
 #endif
 
 #include "keycodes.hpp"

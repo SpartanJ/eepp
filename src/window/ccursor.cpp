@@ -39,17 +39,9 @@ cCursor::cCursor( const std::string& path, const eeVector2i& hotspot, const std:
 	mHotSpot( hotspot ),
 	mWindow( window )
 {
-	int w, h, c;
-	Uint8 * data = SOIL_load_image( path.c_str(), &w, &h, &c, 0 );
+	mImage = eeNew( cImage, ( path ) );
 
-	if ( NULL != data ) {
-		mImage = eeNew( cImage, ( data, w, h, c ) );
-
-		//! HACK: This is a hack to make the memory manager recognize the allocated data
-		#ifdef EE_MEMORY_MANAGER
-		MemoryManager::AddPointer( cAllocatedPointer( (void*)data, __FILE__, __LINE__, mImage->Size() ) );
-		#endif
-	} else {
+	if ( NULL == mImage->GetPixels() ) {
 		cLog::instance()->Write( "cCursor::cCursor: Error creating cursor from path." );
 	}
 }

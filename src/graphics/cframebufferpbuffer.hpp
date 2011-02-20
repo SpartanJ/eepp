@@ -33,7 +33,7 @@
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #include "../helper/glew/wglew.h"
-#elif EE_PLATFORM == EE_PLATFORM_LINUX
+#elif defined( EE_X11_PLATFORM )
 #include "../helper/glew/glxew.h"
 #include <X11/Xlib.h>
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
@@ -73,7 +73,7 @@ class EE_API cFrameBufferPBuffer : public cFrameBuffer {
 		HDC          mDeviceContext;
 		HPBUFFERARB  mPBuffer;
 		HGLRC        mContext;
-		#elif EE_PLATFORM == EE_PLATFORM_LINUX
+		#elif defined( EE_X11_PLATFORM )
 		::Display*   mDisplay;
 		GLXPbuffer   mPBuffer;
 		GLXContext   mContext;

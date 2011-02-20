@@ -1,6 +1,6 @@
-#ifndef EE_NO_SNDFILE
-
 #include "csoundfiledefault.hpp"
+
+#ifndef EE_NO_SNDFILE
 
 namespace EE { namespace Audio {
 

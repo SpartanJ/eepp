@@ -18,6 +18,9 @@ class EE_API cImage {
 		/** Create an empty image */
 		cImage( const Uint32& Width, const Uint32& Height, const Uint32& Channels );
 
+		/** Load an image from path */
+		cImage( const std::string& Path );
+
 		virtual ~cImage();
 
 		/** Create an empty image data */

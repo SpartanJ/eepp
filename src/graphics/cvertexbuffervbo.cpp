@@ -148,14 +148,17 @@ void cVertexBufferVBO::SetVertexStates() {
 	if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
 		GLi->EnableClientState( GL_VERTEX_ARRAY );
 		glBindBuffer( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_POSITION ] );
-
+		#ifdef EE_GL3_ENABLED
 		if ( GLv_3 == GLi->Version() ) {
 			index = GLi->GetRendererGL3()->GetStateIndex( EEGL_VERTEX_ARRAY );
 
 			if ( -1 != index ) {
 				glVertexAttribPointer( index, eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FLOAT, GL_FALSE, 0, 0 );
 			}
-		} else {
+		}
+		else
+		#endif
+		{
 			GLi->VertexPointer( eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FLOAT, 0, (char*)NULL, 0 );
 		}
 	} else {
@@ -167,12 +170,16 @@ void cVertexBufferVBO::SetVertexStates() {
 		GLi->EnableClientState( GL_COLOR_ARRAY );
 		glBindBuffer( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_COLOR ] );
 
+		#ifdef EE_GL3_ENABLED
 		if ( GLv_3 == GLi->Version() ) {
 			index = GLi->GetRendererGL3()->GetStateIndex( EEGL_COLOR_ARRAY );
 
 			if ( -1 != index )
 				glVertexAttribPointer( index, eeVertexElements[ VERTEX_FLAG_COLOR ], GL_UNSIGNED_BYTE, GL_TRUE, 0, 0 );
-		} else {
+		}
+		else
+		#endif
+		{
 			GLi->ColorPointer( eeVertexElements[ VERTEX_FLAG_COLOR ], GL_UNSIGNED_BYTE, 0, (char*)NULL, 0 );
 		}
 	} else {
@@ -188,12 +195,16 @@ void cVertexBufferVBO::SetVertexStates() {
 
 				glBindBuffer( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_TEXTURE0 + i ] );
 
+				#ifdef EE_GL3_ENABLED
 				if ( GLv_3 == GLi->Version() ) { /** FIXME: Support for multitexturing */
 					index = GLi->GetRendererGL3()->GetStateIndex( EEGL_TEXTURE_COORD_ARRAY );
 
 					if ( -1 != index && 0 == i )
 						glVertexAttribPointer( index, eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], GL_FLOAT, GL_FALSE, 0, 0 );
-				} else {
+				}
+				else
+				#endif
+				{
 					GLi->TexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], GL_FLOAT, 0, (char*)NULL, 0 );
 				}
 
@@ -212,12 +223,16 @@ void cVertexBufferVBO::SetVertexStates() {
 			GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
 			glBindBuffer( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_TEXTURE0 ] );
 
+			#ifdef EE_GL3_ENABLED
 			if ( GLv_3 == GLi->Version() ) {
 				index = GLi->GetRendererGL3()->GetStateIndex( EEGL_TEXTURE_COORD_ARRAY );
 
 				if ( -1 != index ) /** FIXME: Support for multitexturing */
 					glVertexAttribPointer( index, eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], GL_FLOAT, GL_FALSE, 0, 0 );
-			} else {
+			}
+			else
+			#endif
+			{
 				GLi->TexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], GL_FLOAT, 0, (char*)NULL, 0 );
 			}
 
@@ -278,9 +293,13 @@ void cVertexBufferVBO::Reload() {
 
 
 void cVertexBufferVBO::Unbind() {
+	#ifdef EE_GL3_ENABLED
 	if ( GLv_3 == GLi->Version() ) {
 		GLi->GetRendererGL3()->BindGlobalVAO();
-	} else {
+	}
+	else
+	#endif
+	{
 		if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
 			GLi->EnableClientState( GL_VERTEX_ARRAY );
 		}

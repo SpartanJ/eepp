@@ -1,6 +1,6 @@
 #include "cx11impl.hpp"
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX
+#if defined( EE_X11_PLATFORM )
 
 namespace EE { namespace Window { namespace Platform {
 

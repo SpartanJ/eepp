@@ -134,7 +134,7 @@ void cWindowSDL::CreatePlatform() {
 	SDL_VERSION( &mWMinfo.version );
 	SDL_GetWMInfo ( &mWMinfo );
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX
+#if defined( EE_X11_PLATFORM )
 	mPlatform = eeNew( Platform::cX11Impl, ( this, mWMinfo.info.x11.display, mWMinfo.info.x11.wmwindow, mWMinfo.info.x11.lock_func, mWMinfo.info.x11.unlock_func ) );
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	mPlatform = eeNew( Platform::cWinImpl, ( this, GetWindowHandler() ) );
@@ -347,7 +347,7 @@ void cWindowSDL::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {
 eeWindowHandler	cWindowSDL::GetWindowHandler() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	return mWMinfo.window;
-#elif EE_PLATFORM == EE_PLATFORM_LINUX
+#elif defined( EE_X11_PLATFORM )
 	return mWMinfo.info.x11.display;
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
 	return mWMinfo.cocoa.window;

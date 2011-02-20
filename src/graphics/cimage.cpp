@@ -1,5 +1,6 @@
 #include "cimage.hpp"
 #include "../helper/SOIL/image_helper.h"
+#include "../helper/SOIL/SOIL.h"
 
 namespace EE { namespace Graphics {
 
@@ -43,6 +44,32 @@ cImage::cImage( Uint8* data, const eeUint& Width, const eeUint& Height, const ee
 	mSize(Width*Height*Channels),
 	mAvoidFree(false)
 {
+}
+
+cImage::cImage( const std::string& Path ) :
+	mPixels(NULL),
+	mWidth(0),
+	mHeight(0),
+	mChannels(0),
+	mSize(0),
+	mAvoidFree(false)
+{
+	int w, h, c;
+	Uint8 * data = SOIL_load_image( Path.c_str(), &w, &h, &c, SOIL_LOAD_AUTO );
+
+	if ( NULL != data ) {
+		mPixels		= data;
+		mWidth		= (eeUint)w;
+		mHeight		= (eeUint)h;
+		mChannels	= (eeUint)c;
+
+		mSize	= mWidth * mHeight * mChannels;
+
+		//! HACK: This is a hack to make the memory manager recognize the allocated data
+		#ifdef EE_MEMORY_MANAGER
+		MemoryManager::AddPointer( cAllocatedPointer( (void*)data, __FILE__, __LINE__, mSize ) );
+		#endif
+	}
 }
 
 cImage::~cImage() {

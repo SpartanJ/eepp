@@ -1,6 +1,20 @@
 STRLOWERCASE 		= $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(subst F,f,$(subst G,g,$(subst H,h,$(subst I,i,$(subst J,j,$(subst K,k,$(subst L,l,$(subst M,m,$(subst N,n,$(subst O,o,$(subst P,p,$(subst Q,q,$(subst R,r,$(subst S,s,$(subst T,t,$(subst U,u,$(subst V,v,$(subst W,w,$(subst X,x,$(subst Y,y,$(subst Z,z,$1))))))))))))))))))))))))))
 OS 					= $(strip $(call STRLOWERCASE, $(shell uname) ) )
 
+export CFLAGS     	= -Wall -Wno-unknown-pragmas $(FINALFLAGS) $(BUILDFLAGS) $(BACKENDFLAGS)
+export CFLAGSEXT  	= $(FINALFLAGS) $(BUILDFLAGS)
+export LDFLAGS    	= $(LINKFLAGS)
+export LIBPATH    	= ./
+export VERSION    	= 0.7
+export CP         	= cp
+export LN         	= ln
+export LNFLAGS    	= -s -f
+export AR         	= ar
+export ARFLAGS    	= rcs
+export DESTDIR    	= /usr
+export DESTLIBDIR 	= $(DESTDIR)/lib
+export DESTINCDIR 	= $(DESTDIR)/include
+
 ifeq ($(DYNAMIC), yes)
     LIB     = libeepp.so
     LIBNAME = $(LIBPATH)/$(LIB).$(VERSION)
@@ -11,11 +25,23 @@ else
     INSTALL = 
 endif
 
+ifeq ($(LLVM_BUILD), yes)
+export CC         	= clang
+export CPP        	= clang++
+else
+export CC         	= gcc
+export CPP        	= g++
+endif
+
 ifeq ($(DEBUGBUILD), yes)
     DEBUGFLAGS = -g -DDEBUG -DEE_DEBUG -DEE_MEMORY_MANAGER
     RELEASETYPE = debug
 else
+	ifeq ($(LLVM_BUILD), yes)
+	DEBUGFLAGS = -fno-strict-aliasing -O3 -DNDEBUG -ffast-math
+	else
     DEBUGFLAGS = -fno-strict-aliasing -O3 -s -DNDEBUG -ffast-math
+    endif
     RELEASETYPE = release
 endif
 
@@ -25,14 +51,6 @@ ifeq ($(DYNAMIC), yes)
 else
     BUILDFLAGS = 
     LINKFLAGS  = 
-endif
-
-ifeq ($(LLVM_BUILD), yes)
-export CC         	= clang
-export CPP        	= clang++
-else
-export CC         	= gcc
-export CPP        	= g++
 endif
 
 ifeq ($(BACKENDS_ALL), yes)
@@ -78,32 +96,30 @@ else
 	endif
 endif
 
-export CFLAGS     	= -Wall -Wno-unknown-pragmas $(FINALFLAGS) $(BUILDFLAGS) $(BACKENDFLAGS)
-export CFLAGSEXT  	= $(FINALFLAGS) $(BUILDFLAGS)
-export LDFLAGS    	= $(LINKFLAGS)
-export LIBPATH    	= ./
-export VERSION    	= 0.7
-export CP         	= cp
-export LN         	= ln
-export LNFLAGS    	= -s -f
-export AR         	= ar
-export ARFLAGS    	= rcs
-export DESTDIR    	= /usr
-export DESTLIBDIR 	= $(DESTDIR)/lib
-export DESTINCDIR 	= $(DESTDIR)/include
-
 ifeq ($(OS), linux)
 LIBS 		= -lfreetype -lsndfile -lopenal -lGL -lGLU $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
 LIBSIV 		= -lX11 -lXcursor
 OTHERINC	= -I/usr/include/freetype2
 PLATFORMSRC	= $(wildcard ./src/window/platform/x11/*.cpp)
 else
+
 ifeq ($(OS), darwin)
 LIBS 		= -lfreetype -lSDL -lSDLmain -lsndfile -framework OpenGL -framework GLUT -framework OpenAL -framework Cocoa -framework CoreFoundation -framework AGL
 LIBSIV 		= 
 OTHERINC	= -I/usr/include/freetype2
 PLATFORMSRC = $(wildcard ./src/window/platform/osx/*.cpp)
+
+else
+
+ifeq ($(OS), haiku)
+LIBS 		= -lfreetype -lopenal -lGL -lGLU $(SDL_BACKEND_LINK)
+LIBSIV 		= 
+OTHERINC	= -I/usr/include/freetype2
+PLATFORMSRC	= 
 endif
+
+endif
+
 endif
 
 HELPERSINC	= -I./src/helper/chipmunk -I./src/helper/zlib

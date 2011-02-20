@@ -9,6 +9,8 @@
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
 	#include <libgen.h>
 	#include <unistd.h>
+#elif EE_PLATFORM == EE_PLATFORM_HAIKU
+	#include <kernel/OS.h>
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -37,11 +39,11 @@ static LARGE_INTEGER hires_start_ticks;
 static LARGE_INTEGER hires_ticks_per_second;
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD
 #define HAVE_CLOCK_GETTIME
 #endif
 
-#ifdef EE_PLATFORM_UNIX
+#ifdef EE_PLATFORM_POSIX
 #ifdef HAVE_CLOCK_GETTIME
 static struct timespec start;
 #else
@@ -60,14 +62,13 @@ static void eeStartTicks() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
     QueryPerformanceFrequency(&hires_ticks_per_second);
     QueryPerformanceCounter(&hires_start_ticks);
-#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOSX
+#else
 	#ifdef HAVE_CLOCK_GETTIME
 	clock_gettime(CLOCK_MONOTONIC, &start);
 	#else
 	gettimeofday(&start, NULL);
+	#warning eeStartTicks implemented with gettimeofday. Probably the platform is not fully supported.
 	#endif
-#else
-	#warning eeStartTicks not implemented in this platform.
 #endif
 
 	TickStarted = true;
@@ -87,7 +88,7 @@ Uint32 eeGetTicks() {
     hires_now.QuadPart /= hires_ticks_per_second.QuadPart;
 
     return (DWORD) hires_now.QuadPart;
-#elif defined( EE_PLATFORM_UNIX )
+#elif defined( EE_PLATFORM_POSIX )
 	#ifdef HAVE_CLOCK_GETTIME
 	Uint32 ticks;
 	struct timespec now;
@@ -113,7 +114,7 @@ Uint32 eeGetTicks() {
 void eeSleep( const Uint32& ms ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	Sleep( ms );
-#elif defined( EE_PLATFORM_UNIX )
+#elif defined( EE_PLATFORM_POSIX )
 	usleep( static_cast<unsigned long>( ms * 1000 ) );
 #else
 	#warning eeSleep not implemented in this platform.
@@ -541,8 +542,14 @@ eeInt GetNumCPUs() {
 			return 1;
 
 		nprocs = maxproc;
+	#elif EE_PLATFORM == EE_PLATFORM_HAIKU
+		system_info info;
+
+		if ( get_system_info( &info ) == B_OK ) {
+			return info.cpu_count;
+		}
 	#else
-		#warning GetNumCPUs not implemented on this platform.
+		#warning GetNumCPUs not implemented on this platform ( it will return 1 ).
 	#endif
 
 	if ( nprocs < 0 )
