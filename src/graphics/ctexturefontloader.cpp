@@ -67,7 +67,7 @@ cTextureFontLoader::~cTextureFontLoader() {
 void cTextureFontLoader::Start() {
 	cObjectLoader::Start();
 
-	mTexLoader->Threaded( true );
+	mTexLoader->Threaded( mThreaded );
 	mTexLoader->Load();
 
 	if ( !mThreaded )

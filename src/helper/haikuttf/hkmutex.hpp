@@ -17,7 +17,7 @@ class hkMutex {
 	protected:
 		#if HK_PLATFORM == HK_PLATFORM_WIN
 		CRITICAL_SECTION mMutex;
-		#elif defined( HK_PLATFORM_UNIX )
+		#elif defined( HK_PLATFORM_POSIX )
 		pthread_mutex_t mMutex;
 		#endif
 };

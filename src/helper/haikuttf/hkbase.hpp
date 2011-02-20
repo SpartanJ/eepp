@@ -17,17 +17,26 @@ typedef SOPHIST_uint32		u32;
 #define HK_PLATFORM_WIN 	(1)
 #define HK_PLATFORM_LINUX 	(2)
 #define HK_PLATFORM_MACOSX 	(3)
+#define HK_PLATFORM_BSD		(4)
+#define HK_PLATFORM_SOLARIS	(5)
+#define HK_PLATFORM_HAIKU	(6)
 
 #if defined( __WIN32__ ) || defined( _WIN32 ) || defined( _WIN64 )
-#   define HK_PLATFORM HK_PLATFORM_WIN
-#elif defined( __APPLE_CC__) || defined ( __APPLE__ )
-#   define HK_PLATFORM HK_PLATFORM_MACOSX
-#elif defined( LINUX ) || defined( __linux__ )
-#   define HK_PLATFORM HK_PLATFORM_LINUX
+	#define HK_PLATFORM HK_PLATFORM_WIN
+#elif defined( __APPLE_CC__ ) || defined ( __APPLE__ )
+	#define HK_PLATFORM HK_PLATFORM_MACOSX
+#elif defined ( linux ) || defined( __linux__ )
+	#define HK_PLATFORM HK_PLATFORM_LINUX
+#elif defined( __FreeBSD__ ) || defined(__OpenBSD__) || defined( __NetBSD__ ) || defined( __DragonFly__ )
+	#define HK_PLATFORM HK_PLATFORM_BSD
+#elif defined( __SVR4 )
+	#define HK_PLATFORM HK_PLATFORM_SOLARIS
+#elif defined( __HAIKU__ ) || defined( __BEOS__ )
+	#define HK_PLATFORM HK_PLATFORM_HAIKU
 #endif
 
-#if HK_PLATFORM == HK_PLATFORM_LINUX || HK_PLATFORM == HK_PLATFORM_MACOSX
-#define HK_PLATFORM_UNIX
+#if defined ( linux ) || defined( __linux__ ) || defined( __FreeBSD__ ) || defined(__OpenBSD__) || defined( __NetBSD__ ) || defined( __DragonFly__ ) || defined( __SVR4 ) || defined( __APPLE_CC__ ) || defined ( __APPLE__ ) || defined( __HAIKU__ ) || defined( __BEOS__ )
+	#define HK_PLATFORM_POSIX
 #endif
 
 #if HK_PLATFORM == HK_PLATFORM_WIN
@@ -35,7 +44,7 @@ typedef SOPHIST_uint32		u32;
 	#define WIN32_LEAN_AND_MEAN
 #endif
 #include <windows.h>
-#elif defined( HK_PLATFORM_UNIX )
+#elif defined( HK_PLATFORM_POSIX )
 #include <pthread.h>
 #endif
 
