@@ -282,6 +282,9 @@ class EE_API cWindow {
 
 		/** Pop the callback id indicated. */
 		void PopResizeCallback( const Uint32& CallbackId );
+
+		/** @return The pointer to the instance of the platform implementation functions. */
+		Platform::cPlatformImpl * GetPlatform() const;
 	protected:
 		friend class cEngine;
 

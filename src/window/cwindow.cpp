@@ -407,4 +407,8 @@ void cWindow::Center() {
 	}
 }
 
+Platform::cPlatformImpl * cWindow::GetPlatform() const {
+	return mPlatform;
+}
+
 }}

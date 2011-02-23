@@ -131,7 +131,7 @@ cWindow * cEngine::GetCurrentWindow() const {
 }
 
 void cEngine::SetCurrentWindow( cWindow * window ) {
-	if ( NULL != window ) {
+	if ( NULL != window && window != mWindow ) {
 		mWindow = window;
 
 		mWindow->SetCurrent();

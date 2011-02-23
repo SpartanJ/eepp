@@ -324,9 +324,9 @@ void cGL::PolygonMode() {
 
 void cGL::PolygonMode( const EE_FILL_MODE& Mode ) {
 	if ( Mode == EE_DRAW_FILL )
-		GLi->PolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+		PolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 	else
-		GLi->PolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+		PolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 
 	Write32BitKey( &mStateFlags, GLSF_POLYGON_MODE, Mode == EE_DRAW_LINE ? 1 : 0 );
 }
