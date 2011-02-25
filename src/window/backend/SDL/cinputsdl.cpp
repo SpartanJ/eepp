@@ -1,5 +1,6 @@
 #include "cinputsdl.hpp"
 #include "cjoystickmanagersdl.hpp"
+#include "ccursormanagersdl.hpp"
 
 #ifdef EE_BACKEND_SDL_ACTIVE
 

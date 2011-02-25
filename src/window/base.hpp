@@ -32,11 +32,15 @@ using namespace EE::Graphics;
 	#endif
 #elif defined( EE_X11_PLATFORM )
 	#include <X11/Xlib.h>
+	#include <X11/Xcursor/Xcursor.h>
+	#include <X11/cursorfont.h>
 	typedef Atom			eeScrapType;
 	typedef Window			X11Window;
 	typedef Display	*		eeWindowHandler;
+	typedef Cursor			X11Cursor;
 	#undef Window
 	#undef Display
+	#undef Cursor
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
 	typedef unsigned int	eeScrapType;
 	typedef void *			eeWindowHandler; // NSWindow *

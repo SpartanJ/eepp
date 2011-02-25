@@ -74,8 +74,8 @@ struct ALLEGRO_DISPLAY_XGLX
    bool is_mapped;
    int resize_count;
    bool programmatic_resize;
-   Cursor invisible_cursor;
-   Cursor current_cursor;
+   X11Cursor invisible_cursor;
+   X11Cursor current_cursor;
    bool cursor_hidden;
    Pixmap icon, icon_mask;
    int x, y;
@@ -229,7 +229,7 @@ void cWindowAl::CreatePlatform() {
 
 #if defined( EE_X11_PLATFORM )
 	SetCurrent();
-	mPlatform = eeNew( Platform::cX11Impl, ( this, GetWindowHandler(), ((ALLEGRO_DISPLAY_XGLX *)mDisplay)->window, al_display_lock, al_display_unlock ) );
+	mPlatform = eeNew( Platform::cX11Impl, ( this, GetWindowHandler(), ((ALLEGRO_DISPLAY_XGLX *)mDisplay)->window, ((ALLEGRO_DISPLAY_XGLX *)mDisplay)->window, al_display_lock, al_display_unlock ) );
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	mPlatform = eeNew( Platform::cWinImpl, ( this, GetWindowHandler() ) );
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX

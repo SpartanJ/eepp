@@ -7,7 +7,7 @@
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="eetest" prefix_auto="1" extension_auto="1" />
+				<Option output="eetest-debug" prefix_auto="1" extension_auto="1" />
 				<Option object_output=".\obj\win\debug\" />
 				<Option type="1" />
 				<Option compiler="gcc" />
@@ -19,7 +19,7 @@
 				</Compiler>
 			</Target>
 			<Target title="Release">
-				<Option output="eetest" prefix_auto="1" extension_auto="1" />
+				<Option output="eetest-release" prefix_auto="1" extension_auto="1" />
 				<Option object_output=".\obj\win\release\" />
 				<Option type="1" />
 				<Option compiler="gcc" />
@@ -33,8 +33,9 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
-			<Add option="-fno-strict-aliasing -ffast-math -DSTBI_FAILURE_USERMSG -Wno-unknown-pragmas -std=gnu99 -Wno-unknown-pragmas" />
+			<Add option="-std=gnu99 -fno-strict-aliasing -ffast-math -DSTBI_FAILURE_USERMSG -Wno-unknown-pragmas -Wno-unknown-pragmas -DEE_BACKEND_ALLEGRO_ACTIVE -DEE_BACKEND_SDL_ACTIVE" />
 			<Add directory=".\src\helper\chipmunk" />
+			<Add directory=".\src\helper\zlib" />
 		</Compiler>
 		<Linker>
 			<Add option="-mwindows" />
@@ -795,6 +796,10 @@
 		<Unit filename="src\window\backend\SDL\cbackendsdl.hpp" />
 		<Unit filename="src\window\backend\SDL\cclipboardsdl.cpp" />
 		<Unit filename="src\window\backend\SDL\cclipboardsdl.hpp" />
+		<Unit filename="src\window\backend\SDL\ccursormanagersdl.cpp" />
+		<Unit filename="src\window\backend\SDL\ccursormanagersdl.hpp" />
+		<Unit filename="src\window\backend\SDL\ccursorsdl.cpp" />
+		<Unit filename="src\window\backend\SDL\ccursorsdl.hpp" />
 		<Unit filename="src\window\backend\SDL\cinputsdl.cpp" />
 		<Unit filename="src\window\backend\SDL\cinputsdl.hpp" />
 		<Unit filename="src\window\backend\SDL\cjoystickmanagersdl.cpp" />
@@ -806,6 +811,10 @@
 		<Unit filename="src\window\backend\allegro5\cbackendal.hpp" />
 		<Unit filename="src\window\backend\allegro5\cclipboardal.cpp" />
 		<Unit filename="src\window\backend\allegro5\cclipboardal.hpp" />
+		<Unit filename="src\window\backend\allegro5\ccursoral.cpp" />
+		<Unit filename="src\window\backend\allegro5\ccursoral.hpp" />
+		<Unit filename="src\window\backend\allegro5\ccursormanageral.cpp" />
+		<Unit filename="src\window\backend\allegro5\ccursormanageral.hpp" />
 		<Unit filename="src\window\backend\allegro5\cinputal.cpp" />
 		<Unit filename="src\window\backend\allegro5\cinputal.hpp" />
 		<Unit filename="src\window\backend\allegro5\cjoystickal.cpp" />
@@ -817,6 +826,10 @@
 		<Unit filename="src\window\backend\null\cbackendnull.hpp" />
 		<Unit filename="src\window\backend\null\cclipboardnull.cpp" />
 		<Unit filename="src\window\backend\null\cclipboardnull.hpp" />
+		<Unit filename="src\window\backend\null\ccursormanagernull.cpp" />
+		<Unit filename="src\window\backend\null\ccursormanagernull.hpp" />
+		<Unit filename="src\window\backend\null\ccursornull.cpp" />
+		<Unit filename="src\window\backend\null\ccursornull.hpp" />
 		<Unit filename="src\window\backend\null\cinputnull.cpp" />
 		<Unit filename="src\window\backend\null\cinputnull.hpp" />
 		<Unit filename="src\window\backend\null\cjoystickmanagernull.cpp" />
@@ -829,6 +842,10 @@
 		<Unit filename="src\window\cbackend.hpp" />
 		<Unit filename="src\window\cclipboard.cpp" />
 		<Unit filename="src\window\cclipboard.hpp" />
+		<Unit filename="src\window\ccursor.cpp" />
+		<Unit filename="src\window\ccursor.hpp" />
+		<Unit filename="src\window\ccursormanager.cpp" />
+		<Unit filename="src\window\ccursormanager.hpp" />
 		<Unit filename="src\window\cengine.cpp" />
 		<Unit filename="src\window\cengine.hpp" />
 		<Unit filename="src\window\cinput.cpp" />
@@ -841,6 +858,7 @@
 		<Unit filename="src\window\cjoystickmanager.hpp" />
 		<Unit filename="src\window\cplatformimpl.cpp" />
 		<Unit filename="src\window\cplatformimpl.hpp" />
+		<Unit filename="src\window\cursorhelper.hpp" />
 		<Unit filename="src\window\cview.cpp" />
 		<Unit filename="src\window\cview.hpp" />
 		<Unit filename="src\window\cwindow.cpp" />
@@ -855,8 +873,12 @@
 		<Unit filename="src\window\platform\osx\cosximpl.cpp" />
 		<Unit filename="src\window\platform\osx\cosximpl.hpp" />
 		<Unit filename="src\window\platform\platformimpl.hpp" />
+		<Unit filename="src\window\platform\win\ccursorwin.cpp" />
+		<Unit filename="src\window\platform\win\ccursorwin.hpp" />
 		<Unit filename="src\window\platform\win\cwinimpl.cpp" />
 		<Unit filename="src\window\platform\win\cwinimpl.hpp" />
+		<Unit filename="src\window\platform\x11\ccursorx11.cpp" />
+		<Unit filename="src\window\platform\x11\ccursorx11.hpp" />
 		<Unit filename="src\window\platform\x11\cx11impl.cpp" />
 		<Unit filename="src\window\platform\x11\cx11impl.hpp" />
 		<Extensions>

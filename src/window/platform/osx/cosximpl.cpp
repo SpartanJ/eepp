@@ -38,6 +38,33 @@ eeVector2i cOSXImpl::Position() {
 	return eeVector2i(0,0);
 }
 
+void cOSXImpl::ShowMouseCursor() {
+}
+
+void cOSXImpl::HideMouseCursor() {
+}
+
+cCursor * cOSXImpl::CreateMouseCursor( cTexture * tex, const eeVector2i& hotspot, const std::string& name ) {
+	return NULL;
+}
+
+cCursor * cOSXImpl::CreateMouseCursor( cImage * img, const eeVector2i& hotspot, const std::string& name ) {
+	return NULL;
+}
+
+cCursor * cOSXImpl::CreateMouseCursor( const std::string& path, const eeVector2i& hotspot, const std::string& name ) {
+	return NULL;
+}
+
+void cOSXImpl::SetMouseCursor( cCursor * cursor ) {
+}
+
+void cOSXImpl::SetSystemMouseCursor( Cursor::EE_SYSTEM_CURSOR syscursor ) {
+}
+
+void cOSXImpl::RestoreCursor() {
+}
+
 }}}
 
 #endif

@@ -27,6 +27,8 @@ class cCursorManagerNull : public cCursorManager {
 
 		void Visible( bool visible );
 
+		void Remove( cCursor * cursor, bool Delete = false );
+
 		void Reload();
 };
 

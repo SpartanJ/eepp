@@ -148,11 +148,17 @@ FILE_PATTERNS          = *.c \
                          *.dox
 RECURSIVE              = YES
 EXCLUDE                = ./src/helper/glew \
-                         ./src/helper/haikuttf \
+                         ./src/helper/chipmunk \
+                         ./src/helper/glm \
                          ./src/helper/libzip \
                          ./src/helper/SOIL \
                          ./src/helper/stb_vorbis \
-                         ./src/helper/zlib
+                         ./src/helper/zlib \
+                         ./src/helper/PlusCallback \
+                         ./src/helper/sophist \
+                         ./src/fluid \
+                         ./src/test \
+                         ./src/eeiv
                          
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = 

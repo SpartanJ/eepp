@@ -25,7 +25,7 @@
 	@TODO Check for endianness problems, and make EEPP endianness agnostic.
 	@TODO Add backend for SDL 1.3 ( support for Android ). And may be SFML backend ( just for fun ).
 	@TODO Support for Android and iOS.
-	@TODO Support color cursors - Imposible with SDL 1.2. Allegro 5 have this implemented ( could implement this for the Allegro backend at least ).
+	@TODO Support color cursors - Imposible with SDL 1.2. Allegro 5 have this implemented ( could implement this for the Allegro backend at least - DONE ).
 	@TODO Remove std::wstring dependency ( wchar_t ), and create an eeString class to manage strings without wchar_t platform restrictions ( Android only supports wchar_t in 2.3 ).
 	@TODO Add Scripting support ( squirrel or python ).
 */

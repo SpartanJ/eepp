@@ -35,6 +35,10 @@ void cCursorManagerNull::Hide() {
 void cCursorManagerNull::Visible( bool visible ) {
 }
 
+void cCursorManagerNull::Remove( cCursor * cursor, bool Delete ) {
+    cCursorManager::Remove( cursor, Delete );
+}
+
 void cCursorManagerNull::Reload() {
 }
 

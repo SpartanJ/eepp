@@ -15,7 +15,7 @@ class cX11Impl : public cPlatformImpl {
 		typedef void (*LockFunc)(void);
 		typedef void (*UnlockFunc)(void);
 		
-		cX11Impl( cWindow * window, eeWindowHandler display, X11Window xwindow, LockFunc lock, UnlockFunc unlock );
+		cX11Impl( cWindow * window, eeWindowHandler display, X11Window xwindow, X11Window mainwindow, LockFunc lock, UnlockFunc unlock );
 		
 		~cX11Impl();
 		
@@ -34,11 +34,38 @@ class cX11Impl : public cPlatformImpl {
 		void SetContext( eeWindowContex Context );
 
 		eeVector2i Position();
+
+		void ShowMouseCursor();
+
+		void HideMouseCursor();
+
+		cCursor * CreateMouseCursor( cTexture * tex, const eeVector2i& hotspot, const std::string& name );
+
+		cCursor * CreateMouseCursor( cImage * img, const eeVector2i& hotspot, const std::string& name );
+
+		cCursor * CreateMouseCursor( const std::string& path, const eeVector2i& hotspot, const std::string& name );
+
+		void SetMouseCursor( cCursor * cursor );
+
+		void SetSystemMouseCursor( Cursor::EE_SYSTEM_CURSOR syscursor );
+
+		void RestoreCursor();
+
+		eeWindowHandler GetDisplay() const;
+
+		void Lock();
+
+		void Unlock();
 	protected:
 		eeWindowHandler	mDisplay;
-		X11Window		mWindow;
+		X11Window		mX11Window;
+		X11Window		mMainWindow;
 		LockFunc		mLock;
 		UnlockFunc		mUnlock;
+		X11Cursor		mCursorCurrent;
+		X11Cursor		mCursorInvisible;
+		X11Cursor		mCursorSystemLast;
+		bool			mCursorHidden;
 };
 
 }}}

@@ -121,6 +121,8 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 		/// Init the input after the window creation
 		reinterpret_cast<cInputSDL*> ( mInput )->Init();
 
+		mCursorManager->Set( Cursor::SYS_CURSOR_DEFAULT );
+
 		return true;
 	} catch (...) {
 		LogFailureInit( "cWindowSDL", "SDL" );
@@ -135,7 +137,7 @@ void cWindowSDL::CreatePlatform() {
 	SDL_GetWMInfo ( &mWMinfo );
 
 #if defined( EE_X11_PLATFORM )
-	mPlatform = eeNew( Platform::cX11Impl, ( this, mWMinfo.info.x11.display, mWMinfo.info.x11.wmwindow, mWMinfo.info.x11.lock_func, mWMinfo.info.x11.unlock_func ) );
+	mPlatform = eeNew( Platform::cX11Impl, ( this, mWMinfo.info.x11.display, mWMinfo.info.x11.wmwindow, mWMinfo.info.x11.window, mWMinfo.info.x11.lock_func, mWMinfo.info.x11.unlock_func ) );
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	mPlatform = eeNew( Platform::cWinImpl, ( this, GetWindowHandler() ) );
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
@@ -271,8 +273,6 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 		Uint32 oldWidth		= mWindow.WindowConfig.Width;
 		Uint32 oldHeight	= mWindow.WindowConfig.Height;
 
-		SetFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !Windowed );
-
 		mWindow.WindowConfig.Width    = Width;
 		mWindow.WindowConfig.Height   = Height;
 
@@ -280,6 +280,10 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 			mWindow.WindowSize = eeSize( Width, Height );
 		} else {
 			mWindow.WindowSize = eeSize( oldWidth, oldHeight );
+		}
+
+		if ( this->Windowed() && !Windowed ) {
+			mWinPos = Position();
 		}
 
 		SetGLConfig();
@@ -303,11 +307,19 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 		}
 		#endif
 
+		if ( !this->Windowed() && Windowed ) {
+			Position( mWinPos.x, mWinPos.y );
+		}
+
+		SetFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !Windowed );
+
 		mDefaultView.SetView( 0, 0, Width, Height );
 
 		Setup2D();
 
 		SendVideoResizeCb();
+
+		mCursorManager->Reload();
 
 		if ( NULL == mSurface ) {
 			mWindow.Created = false;

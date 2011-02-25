@@ -29,7 +29,22 @@ class cNullImpl : public cPlatformImpl {
 		void SetContext( eeWindowContex Context );
 
 		eeVector2i Position();
-	protected:
+
+		void ShowMouseCursor();
+
+		void HideMouseCursor();
+
+		cCursor * CreateMouseCursor( cTexture * tex, const eeVector2i& hotspot, const std::string& name );
+
+		cCursor * CreateMouseCursor( cImage * img, const eeVector2i& hotspot, const std::string& name );
+
+		cCursor * CreateMouseCursor( const std::string& path, const eeVector2i& hotspot, const std::string& name );
+
+		void SetMouseCursor( cCursor * cursor );
+
+		void SetSystemMouseCursor( Cursor::EE_SYSTEM_CURSOR syscursor );
+
+		void RestoreCursor();
 };
 
 }}}
