@@ -88,6 +88,9 @@ void cWindow::CreateView() {
 }
 
 void cWindow::Setup2D( const bool& KeepView ) {
+	glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
+	glPixelStorei( GL_PACK_ALIGNMENT, 1 );
+
 	BackColor( mWindow.BackgroundColor );
 
 	GLi->LineSmooth();
@@ -127,6 +130,8 @@ const eeColor& cWindow::BackColor() const {
 }
 
 bool cWindow::TakeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format ) {
+	cGlobalBatchRenderer::instance()->Draw();
+
 	bool CreateNewFile = false;
 	std::string File, Ext;
 

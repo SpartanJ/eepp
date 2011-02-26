@@ -1026,11 +1026,11 @@ void cEETest::LoadTextures() {
 	Cursor[1] = TF->LoadFromPack( &PAK, "cursor.tga" );
 	CursorP[1] = TF->GetTexture( Cursor[1] );
 
-	//cCursorManager * CurMan = mWindow->GetCursorManager();
-	//CurMan->Visible( false );
+	cCursorManager * CurMan = mWindow->GetCursorManager();
+	CurMan->Visible( false );
 	//CurMan->Visible( true );
 	//CurMan->Set( Window::Cursor::SYS_CURSOR_DEFAULT );
-	//CurMan->Set( CurMan->Add( CurMan->Create( MyPath + "data/cursor.tga", eeVector2i( 2, 2 ), "cursor_special" ) ) );
+	//CurMan->Set( CurMan->Add( CurMan->Create( CursorP[1], eeVector2i( 2, 2 ), "cursor_special" ) ) );
 
 	CL1.AddFrame(TN[2]);
 	CL1.Position( 500, 400 );

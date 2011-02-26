@@ -222,10 +222,13 @@ void cTextureLoader::LoadFromPixels() {
 			glBindTexture(GL_TEXTURE_2D, PreviousTexture);
 
 			if ( tTexId ) {
-				if ( mIsDDS && mIsDDSCompressed && mSize > 128 )
+				if ( mIsDDS && mIsDDSCompressed && mSize > 128 ) {
 					mSize -= 128; // Remove the header size
-				else
-					mSize = mWidth * mHeight * mChannels;
+				} else {
+					mWidth	= width;
+					mHeight	= height;
+					mSize	= mWidth * mHeight * mChannels;
+				}
 
 				mTexId = cTextureFactory::instance()->PushTexture( mFilepath, tTexId, mImgWidth, mImgHeight, width, height, mMipmap, mChannels, mClampMode, mCompressTexture || mIsDDSCompressed, mLocalCopy, mSize );
 
