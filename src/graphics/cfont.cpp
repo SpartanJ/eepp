@@ -65,7 +65,7 @@ void cFont::CacheNumLines() {
 	Int32 c = 1;
 
 	for ( eeUint i = 0; i < mText.size(); i++ ) {
-		if ( mText[i] == L'\n' )
+		if ( mText[i] == '\n' )
 			c++;
 	}
 
@@ -190,8 +190,8 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 			if ( Char >= 0 && Char < tGlyphSize ) {
 				eeTexCoords* C = &mTexCoords[ Char ];
 
-				switch(Char) {
-					case L'\v':
+				switch( Char ) {
+					case '\v':
 					{
 						if (mVerticalDraw)
 							nY += GetFontHeight();
@@ -199,7 +199,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 							nX += mGlyphs[ Char ].Advance;
 						break;
 					}
-					case L'\t':
+					case '\t':
 					{
 						if (mVerticalDraw)
 							nY += GetFontHeight() * 4;
@@ -207,7 +207,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 							nX += mGlyphs[ Char ].Advance * 4;
 						break;
 					}
-					case L'\n':
+					case '\n':
 					{
 						if (mVerticalDraw) {
 							nX += (GetFontSize() * Scale);
@@ -376,19 +376,19 @@ void cFont::SubDraw( const std::wstring& Text, const eeFloat& X, const eeFloat& 
 			eeTexCoords * C = &mTexCoords[ Char ];
 
 			switch( Char ) {
-				case L'\v':
+				case '\v':
 					if (mVerticalDraw)
 						nY += GetFontHeight();
 					else
 						nX += mGlyphs[ Char ].Advance;
 					break;
-				case L'\t':
+				case '\t':
 					if (mVerticalDraw)
 						nY += GetFontHeight() * 4;
 					else
 						nX += mGlyphs[ Char ].Advance * 4;
 					break;
-				case L'\n':
+				case '\n':
 					if (mVerticalDraw) {
 						nX += (GetFontSize() * Scale);
 						nY = 0;
@@ -497,12 +497,12 @@ void cFont::CacheWidth( const std::wstring& Text, std::vector<eeFloat>& LinesWid
 		if ( CharID >= 0 && CharID < tGlyphSize ) {
 			Width += mGlyphs[CharID].Advance;
 
-			if ( CharID == L'\t' )
+			if ( CharID == '\t' )
 				Width += mGlyphs[CharID].Advance * 3;
 
-			if ( CharID == L'\n' ) {
+			if ( CharID == '\n' ) {
 				Lines++;
-				eeFloat lWidth = ( CharID == L'\t' ) ? mGlyphs[CharID].Advance * 4.f : mGlyphs[CharID].Advance;
+				eeFloat lWidth = ( CharID == '\t' ) ? mGlyphs[CharID].Advance * 4.f : mGlyphs[CharID].Advance;
 				LinesWidth.push_back( Width - lWidth );
 				Width = 0;
 			}
@@ -562,7 +562,7 @@ void cFont::ShrinkText( std::string& Str, const Uint32& MaxWidth ) {
 						*tStringLoop	= '\n';
 					}
 
-					if ( L'\0' == *( tStringLoop + 1 ) )
+					if ( '\0' == *( tStringLoop + 1 ) )
 						tStringLoop++;
 
 					tLastSpace		= NULL;
@@ -604,13 +604,13 @@ void cFont::ShrinkText( std::wstring& Str, const Uint32& MaxWidth ) {
 			eeGlyph * pChar = &mGlyphs[ ( *tStringLoop ) ];
 			eeFloat fCharWidth	= (eeFloat)pChar->Advance;
 
-			if ( ( *tStringLoop ) == L'\t' )
+			if ( ( *tStringLoop ) == '\t' )
 				fCharWidth += pChar->Advance * 3;
 
 			// Add the new char width to the current word width
 			tWordWidth		+= fCharWidth;
 
-			if ( L' ' == *tStringLoop || L'\0' == *( tStringLoop + 1 ) ) {
+			if ( ' ' == *tStringLoop || '\0' == *( tStringLoop + 1 ) ) {
 
 				// If current width plus word width is minor to the max width, continue adding
 				if ( tCurWidth + tWordWidth < tMaxWidth ) {
@@ -624,13 +624,13 @@ void cFont::ShrinkText( std::wstring& Str, const Uint32& MaxWidth ) {
 					// If it was an space before, replace that space for an new line
 					// Start counting from the new line first character
 					if ( NULL != tLastSpace ) {
-						*tLastSpace		= L'\n';
+						*tLastSpace		= '\n';
 						tStringLoop	= tLastSpace + 1;
 					} else {	// The word is larger than the current possible width
-						*tStringLoop	= L'\n';
+						*tStringLoop	= '\n';
 					}
 
-					if ( L'\0' == *( tStringLoop + 1 ) )
+					if ( '\0' == *( tStringLoop + 1 ) )
 						tStringLoop++;
 
 					// Set the last spaces as null, because is a new line
@@ -645,7 +645,7 @@ void cFont::ShrinkText( std::wstring& Str, const Uint32& MaxWidth ) {
 
 				// New word, so we reset the current word width
 				tWordWidth = 0.f;
-			} else if ( L'\n' == *tStringLoop ) {
+			} else if ( '\n' == *tStringLoop ) {
 				tWordWidth 		= 0.f;
 				tCurWidth 		= 0.f;
 				tPrev			= ( *tStringLoop );
@@ -656,8 +656,8 @@ void cFont::ShrinkText( std::wstring& Str, const Uint32& MaxWidth ) {
 				tStringLoop++;
 			}
 		} else {	// Replace any unknown char as spaces.
-			*tStringLoop		= L' ';
-			tPrev				= L' ';
+			*tStringLoop		= ' ';
+			tPrev				= ' ';
 		}
 	}
 }

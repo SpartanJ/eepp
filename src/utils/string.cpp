@@ -18,13 +18,13 @@ bool isLetter( const eeInt& mValue ) {
 }
 
 std::wstring stringTowstring(const std::string& s) {
-	std::wstring temp(s.length(), L' ');
+	std::wstring temp( s.length(), ' ' );
 	std::copy(s.begin(), s.end(), temp.begin());
 	return temp;
 }
 
 std::string wstringTostring( const std::wstring& s ) {
-	std::string temp(s.length(), ' ');
+	std::string temp( s.length(), ' ' );
 	std::copy(s.begin(), s.end(), temp.begin());
 	return temp;
 }
@@ -192,7 +192,7 @@ std::wstring Uint8Towstring( const std::vector<Uint8> v ) {
 }
 
 void InsertChar( std::wstring& str, const eeUint& pos, const Uint32& tchar ) {
-	std::wstring tStr( str.length() + 1, L' ');
+	std::wstring tStr( str.length() + 1, ' ');
 	for ( eeUint i = 0; i < tStr.size(); i++ ) {
 		if ( i < pos ) {
 			tStr[i] = str[i];

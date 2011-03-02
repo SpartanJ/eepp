@@ -198,7 +198,7 @@ std::vector<std::wstring> FilesGetInPath( const std::wstring& path ) {
 	#ifdef UNICODE
 		std::wstring mPath( path );
 
-		if ( mPath[ mPath.size() - 1 ] == L'/' || mPath[ mPath.size() - 1 ] == L'\\' ) {
+		if ( mPath[ mPath.size() - 1 ] == '/' || mPath[ mPath.size() - 1 ] == '\\' ) {
 			mPath += L"*";
 		} else {
 			mPath += L"\\*";
@@ -225,7 +225,7 @@ std::vector<std::wstring> FilesGetInPath( const std::wstring& path ) {
 	#else
         std::wstring mPath( path );
 
-        if ( mPath[ mPath.size() - 1 ] == L'/' || mPath[ mPath.size() - 1 ] == L'\\' ) {
+		if ( mPath[ mPath.size() - 1 ] == '/' || mPath[ mPath.size() - 1 ] == '\\' ) {
                 mPath += L"*";
         } else {
                 mPath += L"\\*";
@@ -289,7 +289,7 @@ std::vector<std::string> FilesGetInPath( const std::string& path ) {
 	#ifdef UNICODE
 		std::wstring mPath( stringTowstring( path ) );
 
-		if ( mPath[ mPath.size() - 1 ] == L'/' || mPath[ mPath.size() - 1 ] == L'\\' ) {
+		if ( mPath[ mPath.size() - 1 ] == '/' || mPath[ mPath.size() - 1 ] == '\\' ) {
 			mPath += L"*";
 		} else {
 			mPath += L"\\*";
@@ -438,23 +438,40 @@ std::string GetWindowsPath() {
 }
 
 Uint32 MakeHash( const std::wstring& str ) {
-	return MakeHash( reinterpret_cast<const Int8*>( &str[0] ) );
+	return MakeHash( reinterpret_cast<const Uint8*>( &str[0] ) );
 }
 
 Uint32 MakeHash( const std::string& str ) {
-	return MakeHash( reinterpret_cast<const Int8*>( &str[0] ) );
+	return MakeHash( reinterpret_cast<const Uint8*>( &str[0] ) );
 }
 
-Uint32 MakeHash( const Int8* str ) {
-	if ( NULL != str && *str ) {
-		Uint32 hash = 5381 + *str;
+Uint32 MakeHash( const EE::String& str ) {
+	return MakeHash( reinterpret_cast<const Uint8*>( str.data() ) );
+}
 
-		while( *str ) {
-			hash = *str + ( hash << 6 ) + ( hash << 16 ) - hash;
-			str++;
-		}
+Uint32 MakeHash( const Uint8 * str ) {
+	//! This is djb2 + sdbm mixed. This hash doesn't exists, but worked.
+	//! Since i found this pretty funny because i used this hash in a lot of projects and never found a collision, i'll let it stay here.
+	/**
+	Uint32 hash = 5381 + *str;
 
-		hash += *( str - 1 );
+	while( *str ) {
+		hash = *str + ( hash << 6 ) + ( hash << 16 ) - hash;
+		str++;
+	}
+
+	hash += *( str - 1 );
+
+	return hash;
+	*/
+
+	//! djb2
+	if ( NULL != str ) {
+		Uint32 hash = 5381;
+		Int32 c;
+
+		while ( ( c = *str++ ) )
+			hash = ( ( hash << 5 ) + hash ) + c;
 
 		return hash;
 	}
@@ -476,6 +493,7 @@ bool FileGet( const std::string& path, std::vector<Uint8>& data ) {
 
 		return true;
 	}
+
 	return false;
 }
 

@@ -60,7 +60,7 @@ bool fromWString(T& t, const std::wstring& s, std::ios_base& (*f)(std::ios_base&
 }
 
 /** Split a wstring and hold it on a vector */
-std::vector < std::wstring > EE_API SplitString ( const std::wstring& str, const Uint32& splitchar = L'\n' );
+std::vector < std::wstring > EE_API SplitString ( const std::wstring& str, const Uint32& splitchar = '\n' );
 
 /** Split a string and hold it on a vector */
 std::vector < std::string > EE_API SplitString ( const std::string& str, const Int8& splitchar = '\n' );

@@ -194,7 +194,7 @@ void cUISpinBox::Update() {
 		} else {
 			eeFloat Val = mValue;
 
-			if ( L'.' == mInput->Text()[ mInput->Text().size() - 1 ] ) {
+			if ( '.' == mInput->Text()[ mInput->Text().size() - 1 ] ) {
 				Uint32 pos = (Uint32)mInput->Text().find_first_of( L"." );
 
 				if ( pos != mInput->Text().size() - 1 )

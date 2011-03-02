@@ -198,7 +198,7 @@ void cConsole::FadeOut() {
 
 void cConsole::ProcessLine() {
 	std::wstring wstr = mTBuf.Buffer();;
-	std::vector < std::wstring > params = SplitString( wstr, L' ' );
+	std::vector < std::wstring > params = SplitString( wstr, ' ' );
 
 	mLastCommands.push_back( wstr );
 	mLastLogPos = (eeInt)mLastCommands.size();
@@ -537,7 +537,7 @@ void cConsole::CmdGetLog( const std::vector < std::wstring >& params ) {
 
 void cConsole::CmdGetGpuExtensions() {
 	char *Exts = GLi->GetExtensions();
-    std::vector < std::wstring > tvec = SplitString( toWStr( std::string( Exts ) ), L' ' );
+	std::vector < std::wstring > tvec = SplitString( toWStr( std::string( Exts ) ), ' ' );
 	if ( tvec.size() > 0 ) {
 		for ( eeUint i = 0; i < tvec.size(); i++ )
 			PushText( tvec[i] );

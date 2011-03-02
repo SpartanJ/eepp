@@ -91,7 +91,7 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 							std::wstring txt = mWindow->GetClipboard()->GetTextWStr();
 
 							if ( !SupportNewLine() ) {
-								Uint32 pos = txt.find_first_of( L'\n' );
+								Uint32 pos = txt.find_first_of( '\n' );
 
 								if ( pos != std::string::npos )
 									txt = txt.substr( 0, pos );
@@ -134,7 +134,7 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 						}
 					} else if ( ( c == KEY_RETURN || c == KEY_KP_ENTER ) ) {
 						if ( SupportNewLine() && CanAdd() ) {
-							InsertChar( mText, mPromptPos, L'\n' );
+							InsertChar( mText, mPromptPos, '\n' );
 
 							mPromptPos++;
 
@@ -198,7 +198,7 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 					if ( SupportNewLine() ) {
 						if ( c == KEY_END ) {
 							for ( Uint32 i = mPromptPos; i < mText.size(); i++ )  {
-								if ( mText[i] == L'\n' ) {
+								if ( mText[i] == '\n' ) {
 									mPromptPos = i;
 									AutoPrompt( false );
 									break;
@@ -215,7 +215,7 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 							if ( 0 != mPromptPos ) {
 								for ( Int32 i = (Int32)mPromptPos - 1; i >= 0; i-- )  {
 									if ( i >= 0 ) {
-										if ( mText[i] == L'\n' ) {
+										if ( mText[i] == '\n' ) {
 											mPromptPos = i + 1;
 											AutoPrompt( false );
 											break;
@@ -250,7 +250,7 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 					mText.resize( mText.size() - 1 );
 				} else if ( ( c == KEY_RETURN || c == KEY_KP_ENTER ) && !Input->MetaPressed() && !Input->AltPressed() && !Input->ControlPressed() ) {
 					if ( SupportNewLine() && CanAdd() )
-						mText += L'\n';
+						mText += '\n';
 
 					if ( mEnterCall.IsSet() )
 						mEnterCall();
@@ -274,7 +274,7 @@ void cInputTextBuffer::MovePromptRowDown( const bool& breakit ) {
 		Uint32 dCharLineCount	= 0;
 
 		for ( Uint32 i = mPromptPos; i < mText.size(); i++ )  {
-			if ( mText[i] == L'\n' ) {
+			if ( mText[i] == '\n' ) {
 				if ( breakit ) {
 					if ( 0 == dLastLinePos ) {
 						dLastLinePos = i + 1;
@@ -317,7 +317,7 @@ void cInputTextBuffer::MovePromptRowUp( const bool& breakit ) {
 			uNLPos					= ( uNLPos - 1 );
 
 			for ( Uint32 i = 0; i < uNLPos; i++ )  {
-				if ( mText[i] == L'\n' ) {
+				if ( mText[i] == '\n' ) {
 					if ( !breakit ) {
 						uLastLinePos = i + 1;
 
@@ -373,7 +373,7 @@ Uint32 cInputTextBuffer::GetCurPosLinePos( Uint32& LastNewLinePos ) {
 		Uint32 nl = 0;
 		LastNewLinePos = 0;
 		for ( eeInt i = 0; i < mPromptPos; i++ )  {
-			if ( mText[i] == L'\n' ) {
+			if ( mText[i] == '\n' ) {
 				nl++;
 				LastNewLinePos = i + 1;
 			}

@@ -292,7 +292,7 @@ std::wstring cClipboardSDL::GetTextWStr() {
 	clipboard_get_scrap( T('T','E','X','T'), &scraplen, &scrap );
 
 	if ( scraplen != 0 && strcmp( scrap, "SDL-\r-scrap" ) ) {
-		tStr.resize( scraplen-1, L' ' );
+		tStr.resize( scraplen-1, ' ' );
 
 		char *cp;
 		int   i;

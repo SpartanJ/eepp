@@ -40,14 +40,17 @@ namespace EE { namespace Utils {
 	/** @return The default windows directory */
 	std::string EE_API GetWindowsPath();
 
-	/** @return djb2 wstring hash */
+	/** @return wstring hash */
 	Uint32 EE_API MakeHash( const std::wstring& str );
 
-	/** @return djb2 string hash */
+	/** @return string hash */
 	Uint32 EE_API MakeHash( const std::string& str );
 
-	/** @return djb2 string hash */
-	Uint32 EE_API MakeHash( const Int8 *str );
+	/** @return string hash */
+	Uint32 EE_API MakeHash( const Uint8 * str );
+
+	/** @return string hash */
+	Uint32 EE_API MakeHash( const EE::String& str );
 
 	/** Copy a file to memory
 	* @param path The file path
