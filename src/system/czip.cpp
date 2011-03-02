@@ -112,10 +112,8 @@ bool cZip::EraseFile( const std::string& path ) {
 }
 
 bool cZip::EraseFiles( const std::vector<std::string>& paths ) {
-	std::vector<Int32> files;
 	Int32 Ex;
 	Uint32 i = 0;
-	std::vector<struct zip_stat> uEntry;
 
 	for ( i = 0; i < paths.size(); i++ ) {
 		Ex = Exists( paths[i] );

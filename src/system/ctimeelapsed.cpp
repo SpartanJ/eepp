@@ -2,7 +2,10 @@
 
 namespace EE { namespace System {
 
-cTimeElapsed::cTimeElapsed() : mFirstCheck( getMicroseconds() ), mLastCheck( getMicroseconds() ), mElapsed(0)
+cTimeElapsed::cTimeElapsed() :
+	mFirstCheck( getMicroseconds() ),
+	mLastCheck( mFirstCheck ),
+	mElapsed(0)
 {
 }
 
@@ -23,6 +26,8 @@ eeDouble cTimeElapsed::ElapsedSinceStart() {
 
 void cTimeElapsed::Reset() {
 	mFirstCheck = getMicroseconds();
+	mLastCheck	= mFirstCheck;
+	mElapsed	= 0;
 }
 
 }}

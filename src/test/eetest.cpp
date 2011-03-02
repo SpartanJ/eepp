@@ -1,285 +1,4 @@
-#include "../ee.h"
-
-class cUITest : public cUIControlAnim {
-	public:
-		cUITest( cUIControlAnim::CreateParams& Params ) : cUIControlAnim( Params ) 	{ mOldColor = mBackground->Colors(); }
-
-		virtual Uint32 OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags )	{
-			if ( 4 == mOldColor.size() ) {
-				mBackground->Colors( eeColorA( mOldColor[0].R(), mOldColor[0].G(), mOldColor[0].B(), 200 ),
-									eeColorA( mOldColor[1].R(), mOldColor[1].G(), mOldColor[1].B(), 200 ),
-									eeColorA( mOldColor[2].R(), mOldColor[2].G(), mOldColor[2].B(), 200 ),
-									eeColorA( mOldColor[3].R(), mOldColor[3].G(), mOldColor[3].B(), 200 )
-								);
-			} else {
-				mBackground->Color( eeColorA( mOldColor[0].R(), mOldColor[0].G(), mOldColor[0].B(), 200 ) );
-			}
-
-			return 1;
-		}
-
-		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags )	{
-			if ( 4 == mOldColor.size() ) {
-				mBackground->Colors( mOldColor[0], mOldColor[1], mOldColor[2], mOldColor[3] );
-			} else {
-				mBackground->Color( mOldColor[0] );
-			}
-
-			return 1;
-		}
-
-		virtual Uint32 OnMouseUp( const eeVector2i& Pos, const Uint32 Flags ) {
-			cUIDragable::OnMouseUp( Pos, Flags );
-
-			if ( cEngine::instance()->GetCurrentWindow()->GetInput()->MouseWheelUp() )
-				Scale( Scale() + 0.1f );
-			else if ( cEngine::instance()->GetCurrentWindow()->GetInput()->MouseWheelDown() )
-				Scale( Scale() - 0.1f );
-
-			return 1;
-		}
-
-		virtual Uint32 OnFocus() {
-			ToFront();
-
-			return 1;
-		}
-
-		const std::vector<eeColorA>& OldColor() { return mOldColor; }
-	protected:
-		std::vector<eeColorA> mOldColor;
-};
-
-enum CollisionTypes {
-	BALL_TYPE,
-	BLOCKING_SENSOR_TYPE,
-	CATCH_SENSOR_TYPE,
-};
-
-typedef struct Emitter {
-	int queue;
-	int blocked;
-	cVect position;
-} Emitter;
-
-class cEETest : private cThread {
-	public:
-		typedef cb::Callback0<void> SceneCb;
-
-		void Init();
-		void End();
-		void Process();
-		void Render();
-		void Input();
-		void ParticlesCallback(cParticle* P, cParticleSystem* Me);
-
-		void ParticlesThread();
-		void Particles();
-		void LoadTextures();
-		void CmdSetPartsNum ( const std::vector < std::wstring >& params );
-
-		std::vector<cParticleSystem, eeAllocator< cParticleSystem > > PS;
-
-		cTimeElapsed cElapsed;
-		eeFloat PSElapsed;
-	private:
-		cEngine * EE;
-		cWindow * mWindow;
-		cTextureFactory* TF;
-		cLog* Log;
-		cInput* KM;
-		cInputTextBuffer InBuf;
-
-		bool run, side, aside;
-		eeFloat ang, scale, alpha, Ang;
-		eeFloat et;
-		Int32 x, y;
-		Uint32 lasttick;
-
-		std::vector<Uint32> TN;
-		std::vector<cTexture *> TNP;
-
-		std::vector<Graphics::cShape*> Tiles;
-
-		eeVector2i Mouse;
-		eeVector2f Mousef;
-
-		cSprite SP;
-		cSprite CL1, CL2;
-		cTextureFont * FF;
-		cTextureFont * FF2;
-		cTTFFont * TTF;
-		cTTFFont * TTFB;
-
-		cPrimitives PR;
-		bool iL1, iL2;
-		eeFloat HWidth, HHeight;
-
-		cMusic * Mus;
-		cSoundManager SndMng;
-
-		bool DrawBack;
-
-		cConsole Con;
-		virtual void Run();
-
-		eeVector2f Point;
-
-		std::string MyPath;
-		bool ShowParticles;
-
-		cIsoMap Map;
-
-		bool Wireframe;
-
-		void CreateTiling( const bool& Wire );
-		void RandomizeHeights();
-		cPerlinNoise PerlinNoise;
-		bool TreeTilingCreated;
-
-		eeFloat H;
-		Int32 NH;
-
-		Uint8 Screen;
-		SceneCb Scenes[6];
-		void Screen1();
-		void Screen2();
-		void Screen3();
-		void Screen4();
-		void Screen5();
-
-		cZip PAK;
-		cZip PakTest;
-
-		std::vector<Uint8> tmpv;
-		std::vector<Uint8> MySong;
-
-		cWaypoints WP;
-		Int32 PartsNum;
-		Uint32 Cursor[2];
-		cTexture * CursorP[2];
-		std::string mInfo;
-
-		bool MultiViewportMode;
-
-		cBatchRenderer Batch;
-		eeFloat AnimVal;
-		bool AnimSide;
-
-		cView Views[2];
-
-		cShaderProgram * mShaderProgram;
-    	eeFloat mBlurFactor;
-    	bool mUseShaders;
-
-    	Uint32 mLastFPSLimit;
-    	bool mWasMinimized;
-
-		eeInt mWidth;
-		eeInt mHeight;
-
-		std::wstring mBuda;
-
-		bool mTextureLoaded;
-		cResourceLoader mResLoad;
-		void OnTextureLoaded( cResourceLoader * ObjLoaded );
-
-		void CreateUI();
-		void CreateShaders();
-
-		void LoadFonts();
-
-		bool mFontsLoaded;
-		cResourceLoader mFontLoader;
-		void OnFontLoaded( cResourceLoader * ObjLoaded );
-
-		cJoystickManager * JM;
-		eeFloat mAxisX;
-		eeFloat mAxisY;
-
-		cTextureGroupLoader * mTGL;
-		cSprite mBlindy;
-		cSprite * mBlindyPtr;
-
-		cFrameBuffer * mFBO;
-		cVertexBuffer * mVBO;
-
-		void ItemClick( const cUIEvent * Event );
-		void MainClick( const cUIEvent * Event );
-		void QuitClick( const cUIEvent * Event );
-		void CloseClick( const cUIEvent * Event );
-		void ButtonClick( const cUIEvent * Event );
-		void OnValueChange( const cUIEvent * Event );
-		void CreateDecoratedWindow();
-		void CreateAquaTextureAtlas();
-
-		cUIControlAnim * C;
-		cUIScrollBar * mScrollBar;
-		cUITextBox * mTextBoxValue;
-		cUISlider * mSlider;
-		cUIProgressBar * mProgressBar;
-		cUIListBox * mListBox;
-		cUIPopUpMenu * Menu;
-		cUIWindow * mUIWindow;
-
-		cTextCache mEEText;
-		cTextCache mFBOText;
-		cTextCache mInfoText;
-
-		cSpace * mSpace;
-		cBody * mMouseBody;
-		cVect mMousePoint;
-		cVect mMousePoint_last;
-		cConstraint * mMouseJoint;
-		void PhysicsCreate();
-		void PhysicsUpdate();
-		void PhysicsDestroy();
-
-		void SetScreen( Uint32 num );
-
-		cpBool blockerBegin( cArbiter *arb, cSpace *space, void *unused );
-		void blockerSeparate( cArbiter *arb, cSpace *space, void *unused );
-		void postStepRemove( cSpace *space, void * tshape, void *unused );
-		cpBool catcherBarBegin( cArbiter *arb, cSpace *space, void *unused );
-
-		void Demo1Create();
-		void Demo1Update();
-		void Demo1Destroy();
-
-		void Demo2Create();
-		void Demo2Update();
-		void Demo2Destroy();
-
-		Emitter emitterInstance;
-
-		void ChangeDemo( Uint32 num );
-
-		struct physicDemo {
-			SceneCb init;
-			SceneCb update;
-			SceneCb destroy;
-		};
-
-		std::vector<physicDemo> mDemo;
-		Int32					mCurDemo;
-		cSprite *				mBoxSprite;
-		cSprite *				mCircleSprite;
-};
-
-void cEETest::CreateAquaTextureAtlas() {
-	std::string tgpath( MyPath + "data/aquatg/aqua" );
-	std::string Path( MyPath + "data/aqua" );
-
-	if ( !FileExists( tgpath + ".etg" ) ) {
-		cTexturePacker tp( 512, 512, true, 2 );
-		tp.AddTexturesPath( Path );
-		tp.PackTextures();
-		tp.Save( tgpath + ".png", EE_SAVE_TYPE_PNG );
-	} else {
-		cTextureGroupLoader tgl;
-		tgl.UpdateTextureAtlas( tgpath + ".etg", Path );
-	}
-}
+#include "eetest.hpp"
 
 void cEETest::Init() {
 	EE = cEngine::instance();
@@ -303,8 +22,6 @@ void cEETest::Init() {
 	mLastFPSLimit 		= 0;
 	mWasMinimized 		= false;
 
-	mFontsLoaded		= false;
-	mTextureLoaded		= false;
 	mAxisX				= 0;
 	mAxisY				= 0;
 
@@ -423,7 +140,26 @@ void cEETest::Init() {
 	}
 }
 
+void cEETest::CreateAquaTextureAtlas() {
+	//cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
+
+	std::string tgpath( MyPath + "data/aquatg/aqua" );
+	std::string Path( MyPath + "data/aqua" );
+
+	if ( !FileExists( tgpath + ".etg" ) ) {
+		cTexturePacker tp( 512, 512, true, 2 );
+		tp.AddTexturesPath( Path );
+		tp.PackTextures();
+		tp.Save( tgpath + ".png", EE_SAVE_TYPE_PNG );
+	} else {
+		cTextureGroupLoader tgl;
+		tgl.UpdateTextureAtlas( tgpath + ".etg", Path );
+	}
+}
+
 void cEETest::LoadFonts() {
+	mFTE.Reset();
+
 	cTextureLoader * tl = eeNew( cTextureLoader, ( &PAK, "conchars.png" ) );
 	tl->SetColorKey( eeColor(0,0,0) );
 
@@ -436,10 +172,12 @@ void cEETest::LoadFonts() {
 }
 
 void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
-	FF 		= reinterpret_cast<cTextureFont*> ( cFontManager::instance()->GetByName( "conchars" ) );
-	FF2 	= reinterpret_cast<cTextureFont*> ( cFontManager::instance()->GetByName( "ProggySquareSZ" ) );
-	TTF 	= reinterpret_cast<cTTFFont*> ( cFontManager::instance()->GetByName( "arial" ) );
-	TTFB 	= reinterpret_cast<cTTFFont*> ( cFontManager::instance()->GetByName( "arialb" ) );
+	FF		= cFontManager::instance()->GetByName( "conchars" );
+	FF2		= cFontManager::instance()->GetByName( "ProggySquareSZ" );
+	TTF		= cFontManager::instance()->GetByName( "arial" );
+	TTFB	= cFontManager::instance()->GetByName( "arialb" );
+
+	Log->Writef( "Fonts loading time: %f", mFTE.Elapsed() );
 
 	eeASSERT( TTF != NULL );
 	eeASSERT( TTFB != NULL );
@@ -451,18 +189,11 @@ void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
 
 	mBuda = L"El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde.";
 
-	cTimeElapsed TE;
-	cUIManager::instance()->Init();
 	CreateUI();
-	cLog::instance()->Writef( "CreateUI time: %f", TE.ElapsedSinceStart() );
 
 	mEEText.Create( TTFB, L"Entropia Engine++\nCTRL + Number to change Demo Screen" );
 	mFBOText.Create( TTFB, L"This is a VBO\nInside of a FBO" );
 	mInfoText.Create( FF, L"", eeColorA(255,255,255,150) );
-
-	mWindow->Display();
-
-	mFontsLoaded = true;
 }
 
 void cEETest::CreateShaders() {
@@ -477,11 +208,13 @@ void cEETest::CreateShaders() {
 }
 
 void cEETest::CreateUI() {
+	cTimeElapsed TE;
+	cUIManager::instance()->Init();
+
 	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
-	//cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
-
 	CreateAquaTextureAtlas();
+	Log->Writef( "Texture Atlas Loading Time: %f", TE.ElapsedSinceStart() );
 
 	cTextureGroupLoader tgl( MyPath + "data/aquatg/aqua.etg" );
 	TF->GetByName( "data/aquatg/aqua.png" )->TextureFilter( TEX_FILTER_NEAREST );
@@ -799,6 +532,8 @@ void cEETest::CreateUI() {
 
 	CreateDecoratedWindow();
 	//mUIWindow->Show();
+
+	Log->Writef( "CreateUI time: %f", TE.ElapsedSinceStart() );
 }
 
 void cEETest::CreateDecoratedWindow() {
@@ -941,14 +676,13 @@ void cEETest::CmdSetPartsNum ( const std::vector < std::wstring >& params ) {
 }
 
 void cEETest::OnTextureLoaded( cResourceLoader * ResLoaded ) {
-	mTextureLoaded = true;
 	SndMng.Play( "mysound" );
 }
 
 void cEETest::LoadTextures() {
-	Uint32 i;
+	cTimeElapsed te;
 
-	mTextureLoaded = false;
+	Uint32 i;
 
 	PakTest.Open( MyPath + "data/test.zip" );
 
@@ -1044,19 +778,22 @@ void cEETest::LoadTextures() {
 	mBlindy.AddFramesByPattern( "rn" );
 	mBlindy.Position( 320.f, 0.f );
 
-	Map.Create( 100, 100, 2, 128, 64, eeColor(175,175,175) );
-
-	RandomizeHeights();
-
-	TreeTilingCreated = false;
-	CreateTiling(Wireframe);
-
 	cGlobalShapeGroup::instance()->Add( eeNew( Graphics::cShape, ( TF->Load( MyPath + "data/aqua/aqua_button_ok.png" ), "aqua_button_ok" ) ) );
 
 	mBoxSprite = eeNew( cSprite, () );
 	mBoxSprite->CreateStatic( cGlobalShapeGroup::instance()->Add( eeNew( Graphics::cShape, ( TN[3], "ilmare" ) ) ) );
 	mCircleSprite = eeNew( cSprite, () );
 	mCircleSprite->CreateStatic( cGlobalShapeGroup::instance()->Add( eeNew( Graphics::cShape, ( TN[1], "thecircle" ) ) ) );
+
+	Log->Writef( "Textures loading time: %f", te.Elapsed() );
+
+	Map.Create( 100, 100, 2, 128, 64, eeColor(175,175,175) );
+	RandomizeHeights();
+
+	TreeTilingCreated = false;
+	CreateTiling(Wireframe);
+
+	Log->Writef( "Map creation time: %f", te.Elapsed() );
 }
 
 void cEETest::RandomizeHeights() {
@@ -1124,7 +861,7 @@ void cEETest::Screen1() {
 }
 
 void cEETest::Screen2() {
-	if ( mTextureLoaded ) {
+	if ( mResLoad.IsLoaded() ) {
 		cTexture * TexLoaded = TF->GetByName( "1.jpg" );
 
 		if ( NULL != TexLoaded )
@@ -1324,8 +1061,7 @@ void cEETest::Screen5() {
 }
 
 void cEETest::Render() {
-	if ( !mTextureLoaded )
-		mResLoad.Update();
+	mResLoad.Update();
 
 	HWidth = mWindow->GetWidth() * 0.5f;
 	HHeight = mWindow->GetHeight() * 0.5f;
@@ -1661,7 +1397,7 @@ void cEETest::Process() {
 
 			Input();
 
-			if ( mFontsLoaded )
+			if ( mFontLoader.IsLoaded() )
 				Render();
 			else
 				mFontLoader.Update();

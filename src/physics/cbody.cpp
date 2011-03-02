@@ -209,4 +209,12 @@ void cBody::Data( void * data ) {
 	mData = data;
 }
 
+bool cBody::IsGrounded() {
+	return cpTrue == cpBodyIsGrounded( mBody );
+}
+
+bool cBody::IsGroundedTolerance( cVect normal, cpFloat tolerance ) {
+	return cpTrue == cpBodyIsGroundedTolerance( mBody, tocpv( normal ), tolerance );
+}
+
 CP_NAMESPACE_END

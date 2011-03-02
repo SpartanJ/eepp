@@ -49,13 +49,13 @@ void cpArrayFreeEach(cpArray *arr, void (freeFunc)(void*));
 #define CP_BODY_FOREACH_CONSTRAINT(body, var)\
 	for(cpConstraint *var = body->constraintList; var; var = (var->a == body ? var->nextA : var->nextB))
 
-#define CP_BODY_FOREACH_ARBITER(body, var)\
-	for(cpArbiter *var = body->arbiterList; var; var = (var->a->body == body ? var->nextA : var->nextB))
+#define CP_BODY_FOREACH_ARBITER(bdy, var)\
+	for(cpArbiter *var = bdy->arbiterList; var; var = (var->a->body == bdy ? var->nextA : var->nextB))
 
 #define CP_BODY_FOREACH_SHAPE(body, var)\
 	for(cpShape *var = body->shapeList; var; var = var->next)
 
-#define CP_BODY_FOREACH_GROUP(root, var)\
+#define CP_BODY_FOREACH_COMPONENT(root, var)\
 	for(cpBody *var = root; var; var = var->node.next)
 
 #pragma mark cpHashSet
@@ -88,8 +88,8 @@ cpContact* cpContactInit(cpContact *con, cpVect p, cpVect n, cpFloat dist, cpHas
 cpArbiter* cpArbiterInit(cpArbiter *arb, cpShape *a, cpShape *b);
 
 void cpArbiterUpdate(cpArbiter *arb, cpContact *contacts, int numContacts, struct cpCollisionHandler *handler, cpShape *a, cpShape *b);
-void cpArbiterPreStep(cpArbiter *arb, cpFloat dt_inv);
-void cpArbiterApplyCachedImpulse(cpArbiter *arb);
+void cpArbiterPreStep(cpArbiter *arb, cpFloat dt_inv, cpFloat bias, cpFloat slop);
+void cpArbiterApplyCachedImpulse(cpArbiter *arb, cpFloat dt_coef);
 void cpArbiterApplyImpulse(cpArbiter *arb);
 
 #pragma mark Collision Functions

@@ -112,8 +112,36 @@ void cSpace::SleepTimeThreshold( const cpFloat& sleepTimeThreshold ) {
 	mSpace->sleepTimeThreshold = sleepTimeThreshold;
 }
 
+void cSpace::CollisionSlop( cpFloat slop ) {
+	mSpace->collisionSlop = slop;
+}
+
+cpFloat cSpace::CollisionSlop() const {
+	return mSpace->collisionSlop;
+}
+
+void cSpace::CollisionBias( cpFloat bias ) {
+	mSpace->collisionBias = bias;
+}
+
+cpFloat cSpace::CollisionBias() const {
+	return mSpace->collisionBias;
+}
+
 cBody * cSpace::StaticBody() const {
 	return mStaticBody;
+}
+
+bool cSpace::Contains( cShape * shape ) {
+	return cpTrue == cpSpaceContainsShape( mSpace, shape->Shape() );
+}
+
+bool cSpace::Contains( cBody * body ) {
+	return cpTrue == cpSpaceContainsBody( mSpace, body->Body() );
+}
+
+bool cSpace::Contains( cConstraint * constraint ) {
+	return cpTrue == cpSpaceContainsConstraint( mSpace, constraint->Constraint() );
 }
 
 cShape * cSpace::AddShape( cShape * shape ) {

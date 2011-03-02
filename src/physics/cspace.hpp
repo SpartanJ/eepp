@@ -124,7 +124,21 @@ class CP_API cSpace {
 
 		void SleepTimeThreshold( const cpFloat& sleepTimeThreshold );
 
-		cShape * AddShape( cShape *shape );
+		void CollisionSlop( cpFloat slop );
+
+		cpFloat CollisionSlop() const;
+
+		void CollisionBias( cpFloat bias );
+
+		cpFloat CollisionBias() const;
+
+		bool Contains( cShape * shape );
+
+		bool Contains( cBody * body );
+
+		bool Contains( cConstraint * constraint );
+
+		cShape * AddShape( cShape * shape );
 
 		cShape * AddStaticShape( cShape *shape );
 

@@ -266,5 +266,16 @@ void cTextureLoader::SetColorKey( eeColor Color ) {
 	mColorKey = eeNew( eeColor, ( Color.R(), Color.G(), Color.B() ) );
 }
 
+const std::string& cTextureLoader::Filepath() const {
+	return mFilepath;
+}
+
+cTexture * cTextureLoader::GetTexture() const {
+	if ( 0 != mTexId )
+		return cTextureFactory::instance()->GetTexture( mTexId );
+
+	return NULL;
+}
+
 }}
 
