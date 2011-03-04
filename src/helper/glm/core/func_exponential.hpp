@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2008-08-08
 // Updated : 2010-02-04
@@ -20,6 +20,9 @@ namespace glm
 	namespace function{
 	//! Define all exponential functions from Section 8.2 of GLSL 1.30.8 specification. Included in glm namespace.
 	namespace exponential{
+
+	/// \addtogroup core_funcs
+	///@{
 
 	//! Returns x raised to the y power. 
 	//! (From GLSL 1.30.08 specification, section 8.2)
@@ -58,6 +61,8 @@ namespace glm
 	//! (From GLSL 1.30.08 specification, section 8.2)
 	template <typename genType> 
 	genType inversesqrt(genType const & x);
+
+	///@}
 
 	}//namespace exponential
 	}//namespace function

@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2008-10-24
 // Updated : 2008-10-24
@@ -16,6 +16,10 @@
 // Dependency:
 #include "../glm.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_log_base extension included")
+#endif
+
 namespace glm
 {
    	namespace test{
@@ -26,12 +30,17 @@ namespace glm
 	//! GLM_GTX_log_base extension: Logarithm for any base. base can be a vector or a scalar.
 	namespace log_base
 	{
+		/// \addtogroup gtx_log_base
+		///@{
+
 		//! Logarithm for any base.
 		//! From GLM_GTX_log_base.
 		template <typename genType> 
 		genType log(
 			genType const & x, 
 			genType const & base);
+
+		///@}
 
 	}//namespace extend
 	}//namespace gtx

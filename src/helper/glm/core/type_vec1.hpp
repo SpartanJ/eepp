@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2008-08-25
 // Updated : 2010-02-04
@@ -38,6 +38,7 @@ namespace glm
 		struct tvec1
 		{
 			enum ctor{null};
+
 			typedef T value_type;
 			typedef std::size_t size_type;
 			static size_type value_size();
@@ -48,11 +49,11 @@ namespace glm
 			//////////////////////////////////////
 			// Data
 
-#	if defined(GLM_USE_ONLY_XYZW)
+#		if(GLM_COMPONENT == GLM_COMPONENT_ONLY_XYZW)
 			value_type x;
-#	else//GLM_USE_ONLY_XYZW
+#		else//(GLM_COMPONENT == GLM_COMPONENT_GLSL_NAMES)
 			union {value_type x, r, s;};
-#	endif//GLM_USE_ONLY_XYZW
+#		endif//GLM_COMPONENT
 
 			//////////////////////////////////////
 			// Accesses
@@ -154,6 +155,8 @@ namespace glm
 			T& x;
 		};
 
+		GLM_DETAIL_IS_VECTOR(tvec1);
+
 		typedef detail::tvec1<core::type::precision::highp_float>		highp_vec1_t;
 		typedef detail::tvec1<core::type::precision::mediump_float>		mediump_vec1_t;
 		typedef detail::tvec1<core::type::precision::lowp_float>		lowp_vec1_t;
@@ -167,6 +170,8 @@ namespace glm
 	} //namespace detail
 }//namespace glm
 
+#ifndef GLM_EXTERNAL_TEMPLATE
 #include "type_vec1.inl"
+#endif
 
 #endif//glm_core_type_gentype1

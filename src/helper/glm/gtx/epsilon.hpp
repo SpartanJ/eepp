@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2005-12-21
 // Updated : 2006-11-13
@@ -8,7 +8,6 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Dependency:
 // - GLM core
-// - GLM_GTX_double
 // - GLM_GTX_half
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -17,8 +16,11 @@
 
 // Dependency:
 #include "../glm.hpp"
-#include "../gtc/double_float.hpp"
 #include "../gtc/half_float.hpp"
+
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_epsilon extension included")
+#endif
 
 namespace glm
 {
@@ -27,9 +29,12 @@ namespace glm
 	}//namespace test
 
 	namespace gtx{
-	//! GLM_GTX_epsilon extension: Comparaison functions for a user defined epsilon values.
+	//! GLM_GTX_epsilon extension: Comparison functions for a user defined epsilon values.
 	namespace epsilon
 	{
+		/// \addtogroup gtx_epsilon
+		///@{
+
 		//! Returns the component-wise compare of |x - y| < epsilon.
 		//! From GLM_GTX_epsilon extension.
 		template <typename genTypeT, typename genTypeU> 
@@ -45,6 +50,8 @@ namespace glm
 			genTypeT const & x, 
 			genTypeT const & y, 
 			genTypeU const & epsilon);
+
+		///@}
 
 	}//namespace epsilon
 	}//namespace gtx

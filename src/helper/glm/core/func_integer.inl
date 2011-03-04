@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2010-03-17
 // Updated : 2010-03-31
@@ -266,7 +266,7 @@ namespace glm
 			int const & Bits
 		)
 		{
-			GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer);
+			GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer, "'bitfieldExtract' only accept integer values");
 			assert(Offset + Bits <= sizeof(genIUType));
 
 			genIUType Result = 0;
@@ -332,7 +332,7 @@ namespace glm
 			int const & Bits
 		)
 		{
-			GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer);
+			GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer, "'bitfieldInsert' only accept integer values");
 			assert(Offset + Bits <= sizeof(genIUType));
 
 			if(Bits == 0)
@@ -394,7 +394,7 @@ namespace glm
 		template <typename genIUType>
 		inline genIUType bitfieldReverse(genIUType const & Value)
 		{
-			GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer);
+			GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer, "'bitfieldReverse' only accept integer values");
 
 			genIUType Result = 0;
 			for(std::size_t i = 0; i < sizeof(genIUType) * std::size_t(8); ++i)
@@ -443,7 +443,7 @@ namespace glm
 		template <typename genIUType>
 		int bitCount(genIUType const & Value)
 		{
-			GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer);
+			GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer, "'bitCount' only accept integer values");
 
 			int Count = 0;
 			for(std::size_t i = 0; i < sizeof(genIUType) * std::size_t(8); ++i)
@@ -497,7 +497,7 @@ namespace glm
 			genIUType const & Value
 		)
 		{
-			GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer);
+			GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer, "'findLSB' only accept integer values");
 			if(Value == 0)
 				return -1;
 
@@ -549,7 +549,7 @@ namespace glm
 			genIUType const & Value
 		)
 		{
-			GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer);
+			GLM_STATIC_ASSERT(std::numeric_limits<genIUType>::is_integer, "'findMSB' only accept integer values");
 			if(Value == 0)
 				return -1;
 

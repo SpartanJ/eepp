@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2008-03-08
 // Updated : 2010-01-26
@@ -9,6 +9,8 @@
 
 #ifndef glm_core_func_common
 #define glm_core_func_common
+
+#include "_fixes.hpp"
 
 namespace glm
 {
@@ -21,12 +23,15 @@ namespace glm
 	//! Define common functions from Section 8.3 of GLSL 1.30.8 specification. Included in glm namespace.
 	namespace common{
 
+	/// \addtogroup core_funcs
+	///@{
+
 	//! Returns x if x >= 0; otherwise, it returns -x. 
 	//! (From GLSL 1.30.08 specification, section 8.3)
 	template <typename genFIType> 
 	genFIType abs(genFIType const & x);
 
-	//! Returns 1.0 if x > 0, 0.0 if x = 0, or -1.0 if x < 0. 
+	//! Returns 1.0 if x > 0, 0.0 if x == 0, or -1.0 if x < 0. 
 	//! (From GLSL 1.30.08 specification, section 8.3)
 	template <typename genFIType> 
 	genFIType sign(genFIType const & x);
@@ -261,6 +266,8 @@ namespace glm
 	//! (From GLSL 4.00.08 specification, section 8.3)
 	template <typename genType, typename genIType>
 	genType ldexp(genType const & x, genIType const & exp);
+
+	///@}
 
 	}//namespace common
 	}//namespace function

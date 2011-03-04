@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2006-04-19
 // Updated : 2009-02-19
@@ -16,12 +16,19 @@
 // Dependency:
 #include "../glm.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_matrix_major_storage extension included")
+#endif
+
 namespace glm
 {
 	namespace gtx{
-	//! GLM_GTX_matrix_cross_product: Build matrices with specific matrix order, row or column
+	//! GLM_GTX_matrix_major_storage: Build matrices with specific matrix order, row or column
 	namespace matrix_major_storage
 	{
+		/// \addtogroup gtx_matrix_major_storage
+		///@{
+
 		//! Build a row major matrix from row vectors.
 		//! From GLM_GTX_matrix_major_storage extension.
 		template <typename T> 
@@ -105,6 +112,8 @@ namespace glm
 		template <typename T> 
 		detail::tmat4x4<T> colMajor4(
 			const detail::tmat4x4<T>& m);
+
+		///@}
 		
 	}//namespace matrix_major_storage
 	}//namespace gtx

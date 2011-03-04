@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2005-12-30
 // Updated : 2006-11-13
@@ -20,6 +20,10 @@
 #include "../gtx/quaternion.hpp"
 #include "../gtx/epsilon.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_vector_angle extension included")
+#endif
+
 namespace glm
 {
 	namespace test{
@@ -32,6 +36,9 @@ namespace glm
     {
 		using namespace quaternion;
 		using namespace epsilon;
+
+		/// \addtogroup gtx_vector_angle
+		///@{
 
 		//! Returns the absolute angle between x and y.
 		//! Parameters need to be normalized.
@@ -57,6 +64,8 @@ namespace glm
 			vecType const & x,
 			vecType const & y,
 			detail::tvec3<typename vecType::value_type> const & ref);
+
+		///@}
     }//namespace vector_angle
     }//namespace gtx
 }//namespace glm

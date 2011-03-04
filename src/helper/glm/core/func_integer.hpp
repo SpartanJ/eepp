@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2010-03-17
 // Updated : 2010-03-31
@@ -20,6 +20,9 @@ namespace glm
 	namespace function{
 	//! Define integer functions from Section 8.8 of GLSL 4.00.8 specification. 
 	namespace integer{
+
+		/// \addtogroup core_funcs
+		///@{
 
 		//! Adds 32-bit unsigned integer x and y, returning the sum
 		//! modulo pow(2, 32). The value carry is set to 0 if the sum was
@@ -64,7 +67,6 @@ namespace glm
 			genIType const & y, 
 			genIType & msb, 
 			genIType & lsb);
-
 
 		//! Extracts bits [offset, offset + bits - 1] from value,
 		//! returning them in the least significant bits of the result.
@@ -128,6 +130,8 @@ namespace glm
 		//! (From GLSL 4.00.08 specification, section 8.8)
 		template <typename T, template <typename> class C>
 		typename C<T>::signed_type findMSB(C<T> const & Value);
+
+		///@}
 
 	}//namespace integer
 	}//namespace function

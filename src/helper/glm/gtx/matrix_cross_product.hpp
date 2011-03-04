@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2005-12-21
 // Updated : 2006-11-13
@@ -16,6 +16,10 @@
 // Dependency:
 #include "../glm.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_matrix_cross_product extension included")
+#endif
+
 namespace glm
 {
    	namespace test{
@@ -26,6 +30,9 @@ namespace glm
 	//! GLM_GTX_matrix_cross_product: Build cross product matrices
 	namespace matrix_cross_product
 	{
+		/// \addtogroup gtx_matrix_cross_product
+		///@{
+
 		//! Build a cross product matrix.
 		//! From GLM_GTX_matrix_cross_product extension.
 		template <typename T> 
@@ -37,6 +44,8 @@ namespace glm
 		template <typename T> 
 		detail::tmat4x4<T> matrixCross4(
 			detail::tvec3<T> const & x);
+
+		///@}
 
 	}//namespace matrix_cross_product
 	}//namespace gtx

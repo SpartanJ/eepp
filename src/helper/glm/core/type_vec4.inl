@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2008-08-23
 // Updated : 2010-02-05
@@ -859,6 +859,29 @@ namespace glm
 				v.y - One, 
 				v.z - One, 
 				v.w - One);
+		}
+
+		//////////////////////////////////////
+		// Boolean operators
+
+		template <typename T> 
+		inline bool operator==
+		(
+			tvec4<T> const & v1, 
+			tvec4<T> const & v2
+		)
+		{
+			return (v1.x == v2.x) && (v1.y == v2.y) && (v1.z == v2.z) && (v1.w == v2.w);
+		}
+
+		template <typename T> 
+		inline bool operator!=
+		(
+			tvec4<T> const & v1, 
+			tvec4<T> const & v2
+		)
+		{
+			return (v1.x != v2.x) || (v1.y != v2.y) || (v1.z != v2.z) || (v1.w != v2.w);
 		}
 
 		//////////////////////////////////////

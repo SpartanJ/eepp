@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2008-08-01
 // Updated : 2008-09-23
@@ -20,7 +20,7 @@ namespace glm
 		genType const & x
 	)
 	{
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float);
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'noise1' only accept floating-point values");
 
 		int iNbr = int(x + genType(3) / genType(2)) * 1103515245 + 12345;
 		return genType(int(iNbr / genType(65536)) % 32768) / genType(32767);
@@ -69,7 +69,7 @@ namespace glm
 		genType const & x
 	)
 	{
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float);
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'noise2' only accept floating-point values");
 
 		genType f1 = x * genType(1103515245) + genType(12345);
 		genType f2 = f1 * genType(1103515245) + genType(12345);
@@ -84,7 +84,7 @@ namespace glm
 		detail::tvec2<T> const & x
 	)
 	{
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'noise2' only accept floating-point values");
 
 		T f0(0);
 		for(typename detail::tvec2<T>::size_type i = 0; i < detail::tvec2<T>::value_size(); ++i)
@@ -103,7 +103,7 @@ namespace glm
 		detail::tvec3<T> const & x
 	)
 	{
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'noise2' only accept floating-point values");
 
 		T f0(0);
 		for(typename detail::tvec3<T>::size_type i = 0; i < detail::tvec3<T>::value_size(); ++i)
@@ -122,7 +122,7 @@ namespace glm
 		detail::tvec4<T> const & x
 	)
 	{
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'noise2' only accept floating-point values");
 
 		T f0(0);
 		for(typename detail::tvec4<T>::size_type i = 0; i < detail::tvec4<T>::value_size(); ++i)
@@ -142,7 +142,7 @@ namespace glm
 		genType const & x
 	)
 	{
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float);
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'noise3' only accept floating-point values");
 
 		genType f1 = x * genType(1103515245) + genType(12345);
 		genType f2 = f1 * genType(1103515245) + genType(12345);
@@ -159,7 +159,7 @@ namespace glm
 		detail::tvec2<T> const & x
 	)
 	{
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'noise3' only accept floating-point values");
 
 		T f0(0);
 		for(typename detail::tvec2<T>::size_type i = 0; i < detail::tvec2<T>::value_size(); ++i)
@@ -179,7 +179,7 @@ namespace glm
 		detail::tvec3<T> const & x
 	)
 	{
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'noise3' only accept floating-point values");
 
 		T f0(0);
 		for(typename detail::tvec3<T>::size_type i = 0; i < detail::tvec3<T>::value_size(); ++i)
@@ -199,7 +199,7 @@ namespace glm
 		detail::tvec4<T> const & x
 	)
 	{
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'noise3' only accept floating-point values");
 
 		T f0(0);
 		for(typename detail::tvec4<T>::size_type i = 0; i < detail::tvec4<T>::value_size(); ++i)
@@ -220,7 +220,7 @@ namespace glm
 		genType const & x
 	)
 	{
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float);
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'noise4' only accept floating-point values");
 
 		genType f1 = x * genType(1103515245) + genType(12345);
 		genType f2 = f1 * genType(1103515245) + genType(12345);
@@ -239,7 +239,7 @@ namespace glm
 		detail::tvec2<T> const & x
 	)
 	{
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'noise4' only accept floating-point values");
 
 		T f0(0);
 		for(typename detail::tvec2<T>::size_type i = 0; i < detail::tvec2<T>::value_size(); ++i)
@@ -261,7 +261,7 @@ namespace glm
 		detail::tvec3<T> const & x
 	)
 	{
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'noise4' only accept floating-point values");
 
 		T f0(0);
 		for(typename detail::tvec3<T>::size_type i = 0; i < detail::tvec3<T>::value_size()(); ++i)
@@ -283,7 +283,7 @@ namespace glm
 		detail::tvec4<T> const & x
 	)
 	{
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'noise4' only accept floating-point values");
 
 		T f0(0);
 		for(typename detail::tvec4<T>::size_type i = 0; i < detail::tvec4<T>::value_size()(); ++i)

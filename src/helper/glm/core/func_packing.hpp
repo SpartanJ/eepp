@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2010-03-17
 // Updated : 2010-03-17
@@ -21,16 +21,21 @@ namespace glm
 	//! Define packing functions from section 8.4 floating-point pack and unpack functions of GLSL 4.00.8 specification
 	namespace packing
 	{
-		uint packUnorm2x16(vec2 const & v);
-		uint packUnorm4x8(vec4 const & v);
-		uint packSnorm4x8(vec4 const & v);
+		/// \addtogroup core_funcs
+		///@{
 
-		vec2 unpackUnorm2x16(uint const & p);
-		vec4 unpackUnorm4x8(uint const & p);
-		vec4 unpackSnorm4x8(uint const & p);
+		detail::uint32 packUnorm2x16(detail::tvec2<detail::float32> const & v);
+		detail::uint32 packUnorm4x8(detail::tvec4<detail::float32> const & v);
+		detail::uint32 packSnorm4x8(detail::tvec4<detail::float32> const & v);
 
-		double packDouble2x32(uvec2 const & v);
-		uvec2 unpackDouble2x32(double const & v);
+		detail::tvec2<detail::float32> unpackUnorm2x16(detail::uint32 const & p);
+		detail::tvec4<detail::float32> unpackUnorm4x8(detail::uint32 const & p);
+		detail::tvec4<detail::float32> unpackSnorm4x8(detail::uint32 const & p);
+
+		double packDouble2x32(detail::tvec2<detail::uint32> const & v);
+		detail::tvec2<detail::uint32> unpackDouble2x32(double const & v);
+
+		///@}
 
 	}//namespace packing
 	}//namespace function

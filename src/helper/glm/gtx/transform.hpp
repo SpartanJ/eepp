@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2005-12-21
 // Updated : 2009-04-29
@@ -18,6 +18,10 @@
 #include "../glm.hpp"
 #include "../gtc/matrix_transform.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_transform extension included")
+#endif
+
 namespace glm
 {
 	namespace test{
@@ -29,6 +33,9 @@ namespace glm
 	namespace transform
 	{
 		using namespace gtc::matrix_transform; 
+
+		/// \addtogroup gtx_transform
+		///@{
 
 		//! Builds a translation 4 * 4 matrix created from 3 scalars.
 		//! From GLM_GTX_transform extension.
@@ -89,6 +96,8 @@ namespace glm
 		template <typename T> 
 		detail::tmat4x4<T> scale(
 			detail::tvec3<T> const & v);
+
+		///@}
 
 	}//namespace transform
 	}//namespace gtx

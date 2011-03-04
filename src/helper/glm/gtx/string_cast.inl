@@ -39,27 +39,27 @@ namespace string_cast
 	////////////////////////////////
 	// Scalars
 
-	inline std::string string(detail::thalf const & x)
+	inline std::string to_string(detail::thalf const & x)
 	{
 		return detail::format("half(%f)", float(x));
 	}
 
-	inline std::string string(float x)
+	inline std::string to_string(float x)
 	{
 		return detail::format("float(%f)", x);
 	}
 
-	inline std::string string(double x)
+	inline std::string to_string(double x)
 	{
 		return detail::format("double(%f)", x);
 	}
 
-	inline std::string string(int x)
+	inline std::string to_string(int x)
 	{
 		return detail::format("int(%d)", x);
 	}
 
-	inline std::string string(unsigned int x)
+	inline std::string to_string(unsigned int x)
 	{
 		return detail::format("uint(%d)", x);
 	}
@@ -67,7 +67,7 @@ namespace string_cast
 	////////////////////////////////
 	// Bool vectors
 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tvec2<bool> const & v
 	)
@@ -77,7 +77,7 @@ namespace string_cast
 			v.y ? detail::True : detail::False);
 	}
 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tvec3<bool> const & v
 	)
@@ -88,7 +88,7 @@ namespace string_cast
 			v.z ? detail::True : detail::False);
 	}
 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tvec4<bool> const & v
 	)
@@ -104,7 +104,7 @@ namespace string_cast
 	// Half vectors
 
 	template <>
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tvec2<detail::thalf> const & v
 	)
@@ -113,7 +113,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tvec3<detail::thalf> const & v
 	)
@@ -122,7 +122,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tvec4<detail::thalf> const & v
 	)
@@ -134,7 +134,7 @@ namespace string_cast
 	// Float vectors
 
 	template <>
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tvec2<float> const & v
 	)
@@ -143,7 +143,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tvec3<float> const & v
 	)
@@ -152,7 +152,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tvec4<float> const & v
 	)
@@ -164,7 +164,7 @@ namespace string_cast
 	// Double vectors
 
 	template <>
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tvec2<double> const & v
 	)
@@ -173,7 +173,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tvec3<double> const & v
 	)
@@ -182,7 +182,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tvec4<double> const & v
 	)
@@ -194,7 +194,7 @@ namespace string_cast
 	// Int vectors
 
 	template <>
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tvec2<int> const & v
 	)
@@ -203,7 +203,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tvec3<int> const & v
 	)
@@ -212,7 +212,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tvec4<int> const & v
 	)
@@ -224,7 +224,7 @@ namespace string_cast
 	// Unsigned int vectors
 
 	template <>
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tvec2<unsigned int> const & v
 	)
@@ -233,7 +233,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tvec3<unsigned int> const & v
 	)
@@ -242,7 +242,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tvec4<unsigned int> const & v
 	)
@@ -254,7 +254,7 @@ namespace string_cast
 	// Half matrices
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat2x2<detail::thalf> const & m
 	)
@@ -266,7 +266,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat2x3<detail::thalf> const & m
 	)
@@ -278,7 +278,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat2x4<detail::thalf> const & m
 	)
@@ -290,7 +290,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat3x2<detail::thalf> const & m
 	)
@@ -303,7 +303,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat3x3<detail::thalf> const & m
 	)
@@ -316,7 +316,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat3x4<detail::thalf> const & m
 	)
@@ -329,7 +329,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat4x2<detail::thalf> const & m
 	)
@@ -343,7 +343,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat4x3<detail::thalf> const & m
 	)
@@ -357,7 +357,7 @@ namespace string_cast
 	}
 
 	template <>
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat4x4<detail::thalf> const & m
 	)
@@ -374,7 +374,7 @@ namespace string_cast
 	// Float matrices
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat2x2<float> const & x
 	)
@@ -385,7 +385,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat2x3<float> const & x
 	)
@@ -396,7 +396,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat2x4<float> const & x
 	)
@@ -407,7 +407,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat3x2<float> const & x
 	)
@@ -419,7 +419,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat3x3<float> const & x
 	)
@@ -431,7 +431,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat3x4<float> const & x
 	)
@@ -443,7 +443,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat4x2<float> const & x
 	)
@@ -456,7 +456,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat4x3<float> const & x
 	)
@@ -469,7 +469,7 @@ namespace string_cast
 	}
 
 	template <>
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat4x4<float> const & x
 	)
@@ -485,7 +485,7 @@ namespace string_cast
 	// Double matrices
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat2x2<double> const & x
 	)
@@ -496,7 +496,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat2x3<double> const & x
 	)
@@ -507,7 +507,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat2x4<double> const & x
 	)
@@ -518,7 +518,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat3x2<double> const & x
 	)
@@ -530,7 +530,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat3x3<double> const & x
 	)
@@ -542,7 +542,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat3x4<double> const & x
 	)
@@ -554,7 +554,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat4x2<double> const & x
 	)
@@ -567,7 +567,7 @@ namespace string_cast
 	}
 
 	template <> 
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat4x3<double> const & x
 	)
@@ -580,7 +580,7 @@ namespace string_cast
 	}
 
 	template <>
-	inline std::string string
+	inline std::string to_string
 	(
 		detail::tmat4x4<double> const & x
 	)

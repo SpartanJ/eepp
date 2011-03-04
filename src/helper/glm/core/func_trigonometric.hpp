@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2008-08-01
 // Updated : 2008-09-10
@@ -22,6 +22,9 @@ namespace glm
 	//! from Section 8.1 of GLSL 1.30.8 specification. 
 	//! Included in glm namespace.
 	namespace trigonometric{
+
+	/// \addtogroup core_funcs
+	///@{
 
 	//! Converts degrees to radians and returns the result.
 	//! (From GLSL 1.30.08 specification, section 8.1)
@@ -110,6 +113,8 @@ namespace glm
 	//! (From GLSL 1.30.08 specification, section 8.1)
 	template <typename genType> 
 	genType atanh(genType const & x);
+
+	///@}
 
 	}//namespace trigonometric
 	}//namespace function

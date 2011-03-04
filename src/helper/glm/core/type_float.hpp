@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2008-08-22
 // Updated : 2010-02-08
@@ -11,7 +11,7 @@
 #define glm_core_type_float
 
 #include "type_half.hpp"
-#include "../setup.hpp"
+#include "setup.hpp"
 
 namespace glm
 {
@@ -38,16 +38,19 @@ namespace glm
 		typedef double				highp_float_t;
 
 		//! Low precision floating-point numbers. 
-		//! There is no garanty on the actual precision.
+		//! There is no guarantee on the actual precision.
 		//! From GLSL 1.30.8 specification
+		//! \ingroup core_precision
 		typedef lowp_float_t		lowp_float;
 		//! Medium precision floating-point numbers.
-		//! There is no garanty on the actual precision.
+		//! There is no guarantee on the actual precision.
 		//! From GLSL 1.30.8 specification
+		//! \ingroup core_precision
 		typedef mediump_float_t		mediump_float;
 		//! High precision floating-point numbers.
-		//! There is no garanty on the actual precision.
+		//! There is no guarantee on the actual precision.
 		//! From GLSL 1.30.8 specification
+		//! \ingroup core_precision
 		typedef highp_float_t		highp_float;
 	}
 	//namespace precision

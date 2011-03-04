@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2006-01-04
 // Updated : 2008-10-07
@@ -20,6 +20,10 @@
 // Dependency:
 #include "../glm.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_fast_square_root extension included")
+#endif
+
 namespace glm
 {
    	namespace test{
@@ -30,6 +34,9 @@ namespace glm
 	//! GLM_GTX_fast_square_root extension: Fast but less accurate implementations of square root based functions.
 	namespace fast_square_root
 	{
+		/// \addtogroup gtx_fast_square_root
+		///@{
+
 		//! Faster than the common sqrt function but less accurate.
 		//! From GLM_GTX_fast_square_root extension.
 		template <typename genType> 
@@ -54,6 +61,8 @@ namespace glm
 		//! From GLM_GTX_fast_square_root extension.
 		template <typename genType> 
 		genType fastNormalize(genType const & x);
+
+		///@}
 
 	}//namespace fast_square_root
 	}//	namespace gtx

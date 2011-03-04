@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2005-01-27
 // Updated : 2010-02-05
@@ -731,6 +731,29 @@ namespace detail
             m[2] - typename tmat4x4<T>::value_type(1),
             m[3] - typename tmat4x4<T>::value_type(1));
     }
+
+	//////////////////////////////////////
+	// Boolean operators
+
+	template <typename T> 
+	inline bool operator==
+	(
+		tmat4x4<T> const & m1, 
+		tmat4x4<T> const & m2
+	)
+	{
+		return (m1[0] == m2[0]) && (m1[1] == m2[1]) && (m1[2] == m2[2]) && (m1[3] == m2[3]);
+	}
+
+	template <typename T> 
+	inline bool operator!=
+	(
+		tmat4x4<T> const & m1, 
+		tmat4x4<T> const & m2
+	)
+	{
+		return (m1[0] != m2[0]) || (m1[1] != m2[1]) || (m1[2] != m2[2]) || (m1[3] != m2[3]);
+	}
 
 } //namespace detail
 } //namespace glm

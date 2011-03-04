@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2007-03-05
 // Updated : 2007-03-05
@@ -16,6 +16,10 @@
 // Dependency:
 #include "../glm.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_matrix_query extension included")
+#endif
+
 namespace glm
 {
    	namespace test{
@@ -23,9 +27,12 @@ namespace glm
 	}//namespace test
 
 	namespace gtx{
-	//! GLM_GTX_matrix_query: Query to evaluate matrices properties
+	//! GLM_GTX_matrix_query: Query to evaluate matrix properties
 	namespace matrix_query
 	{
+		/// \addtogroup gtx_matrix_query
+		///@{
+
 		//! Return if a matrix a null matrix.
 		//! From GLM_GTX_matrix_query extension.
 		template<typename T> 
@@ -82,6 +89,7 @@ namespace glm
 			const genType& m, 
 			const typename genType::value_type epsilon = std::numeric_limits<typename genType::value_type>::epsilon());
 
+		///@}
 	}//namespace matrix_query
 	}//namespace gtx
 }//namespace glm

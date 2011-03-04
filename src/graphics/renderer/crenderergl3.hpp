@@ -14,12 +14,9 @@
 #undef False
 #endif
 
-#include "../../helper/glm/gtx/matrix_projection.hpp"
 #include "../../helper/glm/gtx/transform.hpp"
-#include "../../helper/glm/gtx/transform2.hpp"
 
 namespace EE { namespace Graphics {
-
 
 #define EE_MAX_PLANES 6
 

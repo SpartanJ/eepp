@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2005-12-21
 // Updated : 2006-11-13
@@ -16,6 +16,10 @@
 // Dependency:
 #include "../glm.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_orthonormalize extension included")
+#endif
+
 namespace glm
 {
 	namespace test{
@@ -26,7 +30,10 @@ namespace glm
 	//! GLM_GTX_orthonormalize extension: Orthonormalize matrices.
     namespace orthonormalize
     {
-        //! Returns the orthonormalized matrix of m.
+		/// \addtogroup gtx_orthonormalize
+		///@{
+
+		//! Returns the orthonormalized matrix of m.
 		//! From GLM_GTX_orthonormalize extension.
 		template <typename T> 
 		detail::tmat3x3<T> orthonormalize(
@@ -38,6 +45,8 @@ namespace glm
 		detail::tvec3<T> orthonormalize(
 			const detail::tvec3<T>& x, 
 			const detail::tvec3<T>& y);
+
+		///@}
 
     }//namespace orthonormalize
     }//namespace gtx

@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 //////////////////////////////////////////////////////////////////////////////////
 // Created : 2007-09-28
 // Updated : 2008-10-07
@@ -18,6 +18,10 @@
 #include "../glm.hpp"
 #include "../gtx/fast_square_root.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_normalize_dot extension included")
+#endif
+
 namespace glm
 {
 	namespace gtx{
@@ -25,6 +29,9 @@ namespace glm
 	namespace normalize_dot
 	{
 		using namespace gtx::fast_square_root;
+
+		/// \addtogroup gtx_normalize_dot
+		///@{
 
 		//! Normalize parameters and returns the dot product of x and y.
 		//! It's faster that dot(normalize(x), normalize(y)).
@@ -41,6 +48,8 @@ namespace glm
 		typename genType::value_type fastNormalizeDot(
 			genType const & x, 
 			genType const & y);
+
+		///@}
 
 	}//namespace normalize_dot
 	}//namespace gtx

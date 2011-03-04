@@ -1,10 +1,10 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2006-04-21
 // Updated : 2006-11-13
 // Licence : This source is under MIT License
-// File    : glm/gtx/inertia.h
+// File    : glm/gtx/inertia.hpp
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Dependency:
 // - GLM core
@@ -16,12 +16,19 @@
 // Dependency:
 #include "../glm.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_inertia extension included")
+#endif
+
 namespace glm
 {
 	namespace gtx{
 	//! GLM_GTX_inertia extension: Create inertia matrices
 	namespace inertia
 	{
+		/// \addtogroup gtx_inertia
+		///@{
+
 		//! Build an inertia matrix for a box.
 		//! From GLM_GTX_inertia extension.
 		template <typename T> 
@@ -77,6 +84,8 @@ namespace glm
 		detail::tmat4x4<T> sphereInertia4(
 			const T Mass, 
 			const T Radius);
+
+		///@}
 
 	}//namespace inertia
 	}//namespace gtx

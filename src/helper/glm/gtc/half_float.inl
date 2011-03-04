@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2005-12-21
 // Updated : 2010-02-07
@@ -10,7 +10,7 @@
 namespace glm{
 namespace detail{
 
-#ifndef GLM_USE_ANONYMOUS_UNION
+#ifndef _MSC_EXTENSIONS
 
 //////////////////////////////////////
 // hvec2
@@ -969,7 +969,7 @@ inline tref4<thalf> tvec4<thalf>::swizzle(comp x, comp y, comp z, comp w)
 		(*this)[w]);
 }
 
-#endif//GLM_USE_ANONYMOUS_UNION
+#endif//_MSC_EXTENSIONS
 
 }//namespace detail
 }//namespace glm

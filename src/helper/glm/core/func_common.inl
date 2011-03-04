@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2008-08-03
 // Updated : 2010-01-26
@@ -23,7 +23,7 @@ namespace glm
 			{
 				GLM_STATIC_ASSERT(
 					detail::type<genFIType>::is_float || 
-					detail::type<genFIType>::is_int);
+					detail::type<genFIType>::is_int, "'abs' only accept floating-point and integer inputs");
 				return x >= genFIType(0) ? x : -x;
 			}
 		};
@@ -34,7 +34,7 @@ namespace glm
 			static genFIType get(genFIType const & x)
 			{
 				GLM_STATIC_ASSERT(
-					detail::type<genFIType>::is_uint);
+					detail::type<genFIType>::is_uint, "'abs' only accept floating-point and integer inputs");
 
 				return x;
 			}
@@ -100,7 +100,7 @@ namespace glm
 	{
 		GLM_STATIC_ASSERT(
 			detail::type<genFIType>::is_float || 
-			detail::type<genFIType>::is_int);
+			detail::type<genFIType>::is_int, "'sign' only accept signed inputs");
         
 		genFIType result;
 		if(x > genFIType(0))
@@ -152,7 +152,7 @@ namespace glm
     template <typename genType>
     inline genType floor(genType const& x)
     {
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float);
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'floor' only accept floating-point inputs");
 
         return ::std::floor(x);
     }
@@ -188,8 +188,8 @@ namespace glm
     template <typename genType>
     inline genType trunc(genType const & x)
     {
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float);
-        return floor(abs(x));
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'trunc' only accept floating-point inputs");
+        return x < 0 ? -floor(-x) : floor(x);
     }
 
     template <typename valType>
@@ -223,7 +223,7 @@ namespace glm
     template <typename genType>
     inline genType round(genType const& x)
     {
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float);
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'round' only accept floating-point inputs");
 
         return genType(int(x + genType(0.5)));
     }
@@ -259,7 +259,7 @@ namespace glm
     template <typename genType>
     inline genType roundEven(genType const& x)
     {
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float);
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'roundEven' only accept floating-point inputs");
 
 		return genType(int(x + genType(int(x) % 2)));
     }
@@ -295,7 +295,7 @@ namespace glm
     template <typename genType>
     inline genType ceil(genType const & x)
     {
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float);
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'ceil' only accept floating-point inputs");
 
         return ::std::ceil(x);
     }
@@ -334,7 +334,7 @@ namespace glm
 		genType const & x
 	)
     {
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float);
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'fract' only accept floating-point inputs");
 
         return x - ::std::floor(x);
     }
@@ -383,7 +383,7 @@ namespace glm
 		genType const & y
 	)
     {
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float);
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'mod' only accept floating-point inputs");
 
         return x - y * floor(x / y);
     }
@@ -474,7 +474,7 @@ namespace glm
 		genType & i
 	)
     {
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float);
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'modf' only accept floating-point inputs");
 
 		i = glm::floor(x);
 
@@ -539,7 +539,7 @@ namespace glm
 		GLM_STATIC_ASSERT(
 			detail::type<genType>::is_float || 
 			detail::type<genType>::is_int ||
-			detail::type<genType>::is_uint);
+			detail::type<genType>::is_uint, "'min' only accept numbers");
 
         return x < y ? x : y;
     }
@@ -633,7 +633,7 @@ namespace glm
 		GLM_STATIC_ASSERT(
 			detail::type<genType>::is_float || 
 			detail::type<genType>::is_int ||
-			detail::type<genType>::is_uint);
+			detail::type<genType>::is_uint, "'max' only accept numbers");
 
 		return x > y ? x : y;
     }
@@ -727,11 +727,13 @@ namespace glm
 		GLM_STATIC_ASSERT(
 			detail::type<valType>::is_float || 
 			detail::type<valType>::is_int ||
-			detail::type<valType>::is_uint);
+			detail::type<valType>::is_uint, "'clamp' only accept numbers");
 		
-		if(x >= maxVal) return maxVal; 
-        if(x <= minVal) return minVal;
-	    return x;
+		// Old implementation, less predictable branching
+		//if(x >= maxVal) return maxVal; 
+        //if(x <= minVal) return minVal;
+	    //return x;
+		return glm::max(glm::min(x, maxVal), minVal);
     }
 
     template <typename T>
@@ -932,7 +934,7 @@ namespace glm
 		bool a
 	)
 	{
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float);
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'mix' only accept floating-point inputs");
 
 		return a ? x : y;
 	}
@@ -945,7 +947,7 @@ namespace glm
 		typename detail::tvec2<T>::bool_type a
 	)
 	{
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'mix' only accept floating-point inputs");
 
 		detail::tvec2<T> result;
 		for
@@ -968,7 +970,7 @@ namespace glm
 		typename detail::tvec3<T>::bool_type a
 	)
 	{
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'mix' only accept floating-point inputs");
 
 		detail::tvec3<T> result;
 		for
@@ -991,7 +993,7 @@ namespace glm
 		typename detail::tvec4<T>::bool_type a
 	)
 	{
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'mix' only accept floating-point inputs");
 
 		detail::tvec4<T> result;
 		for
@@ -1014,7 +1016,7 @@ namespace glm
 		genType const & x
 	)
     {
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float);
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'mix' only accept floating-point inputs");
 
         return x <= edge ? genType(0) : genType(1);
     }
@@ -1106,7 +1108,7 @@ namespace glm
 		genType const & x
 	)
     {
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float);
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'mix' only accept floating-point inputs");
 
         genType tmp = clamp((x - edge0) / (edge1 - edge0), genType(0), genType(1));
         return tmp * tmp * (genType(3) - genType(2) * tmp);
@@ -1202,7 +1204,7 @@ namespace glm
 		genType const & x
 	)
 	{
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float);
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'mix' only accept floating-point inputs");
 
 #if(defined(GLM_COMPILER) && GLM_COMPILER & GLM_COMPILER_VC)
 		return typename genType::bool_type(_isnan(x));
@@ -1253,7 +1255,7 @@ namespace glm
 		genType const & x
 	)
 	{
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float);
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'isinf' only accept floating-point inputs");
 
 #if(defined(GLM_COMPILER) && GLM_COMPILER & GLM_COMPILER_VC)
 		return typename genType::bool_type(_fpclass(x) == _FPCLASS_NINF || _fpclass(x) == _FPCLASS_PINF);

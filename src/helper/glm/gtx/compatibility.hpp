@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2007-01-24
 // Updated : 2008-10-24
@@ -9,7 +9,6 @@
 // Dependency:
 // - GLM core
 // - GLM_GTC_half_float
-// - GLM_GTC_double_float
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef glm_gtx_compatibility
@@ -18,14 +17,16 @@
 // Dependency:
 #include "../glm.hpp"  
 #include "../gtc/half_float.hpp"
-#include "../gtc/double_float.hpp"
 
-#ifdef GLM_COMPILER_VC
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_compatibility extension included")
+#endif
+
+#if(GLM_COMPILER & GLM_COMPILER_VC)
 #include <cfloat>
-#endif
-#ifdef GLM_COMPILER_GCC
+#elif(GLM_COMPILER & GLM_COMPILER_GCC)
 #include <cmath>
-#endif
+#endif//GLM_COMPILER
 
 namespace glm
 {
@@ -37,6 +38,9 @@ namespace glm
 	//! GLM_GTX_compatibility extension: Provide functions to increase the compatibility with Cg and HLSL languages
 	namespace compatibility
 	{
+		/// \addtogroup gtx_compatibility
+		///@{
+
 		template <typename T> inline T lerp(T x, T y, T a){return mix(x, y, a);}																					//!< \brief Returns x * (1.0 - a) + y * a, i.e., the linear blend of x and y using the floating-point value a. The value for a is not restricted to the range [0, 1]. (From GLM_GTX_compatibility)
 		template <typename T> inline detail::tvec2<T> lerp(const detail::tvec2<T>& x, const detail::tvec2<T>& y, T a){return mix(x, y, a);}							//!< \brief Returns x * (1.0 - a) + y * a, i.e., the linear blend of x and y using the floating-point value a. The value for a is not restricted to the range [0, 1]. (From GLM_GTX_compatibility)
 		template <typename T> inline detail::tvec3<T> lerp(const detail::tvec3<T>& x, const detail::tvec3<T>& y, T a){return mix(x, y, a);}							//!< \brief Returns x * (1.0 - a) + y * a, i.e., the linear blend of x and y using the floating-point value a. The value for a is not restricted to the range [0, 1]. (From GLM_GTX_compatibility)
@@ -149,6 +153,8 @@ namespace glm
 		typedef detail::tmat4x2<double>		double4x2;		//!< \brief double-precision floating-point matrix with 4 x 2 components. (From GLM_GTX_compatibility extension)
 		typedef detail::tmat4x3<double>		double4x3;		//!< \brief double-precision floating-point matrix with 4 x 3 components. (From GLM_GTX_compatibility extension)
 		typedef detail::tmat4x4<double>		double4x4;		//!< \brief double-precision floating-point matrix with 4 x 4 components. (From GLM_GTX_compatibility extension)
+
+		///@}
 
 	}//namespace compatibility
 	}//namespace gtx

@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2009-03-06
 // Updated : 2009-03-09
@@ -16,6 +16,10 @@
 // Dependency:
 #include "../glm.hpp"
 #include "../gtx/optimum_pow.hpp"
+
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_gradient_paint extension included")
+#endif
 
 namespace glm
 {

@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2005-12-21
 // Updated : 2006-11-13
@@ -16,6 +16,10 @@
 // Dependency:
 #include "../glm.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_normal extension included")
+#endif
+
 namespace glm
 {
    	namespace test{
@@ -26,6 +30,9 @@ namespace glm
 	//! GLM_GTX_normal extension: Compute the normal of a triangle.
     namespace normal
     {
+		/// \addtogroup gtx_normal
+		///@{
+
 		//! Computes triangle normal from triangle points. 
 		//! From GLM_GTX_normal extension.
         template <typename T> 
@@ -33,6 +40,8 @@ namespace glm
 			detail::tvec3<T> const & p1, 
 			detail::tvec3<T> const & p2, 
 			detail::tvec3<T> const & p3);
+
+		///@}
 
     }//namespace normal
     }//namespace gtx

@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2007-06-21
 // Updated : 2009-06-05
@@ -18,6 +18,10 @@
 #include "../glm.hpp"
 #include "../gtx/number_precision.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_color_cast extension included")
+#endif
+
 namespace glm
 {
 	namespace test{
@@ -29,6 +33,9 @@ namespace glm
 	namespace color_cast
 	{
 		using namespace gtx::number_precision;
+
+		/// \addtogroup gtx_color_cast
+		///@{
 
 		//! Conversion of a floating value into a 8bit unsigned int value. 
 		//! From GLM_GTX_color_cast extension.
@@ -93,6 +100,8 @@ namespace glm
 		template <typename T> gtc::type_precision::f64vec4 f64_argb_cast(T c);		//!< \brief Conversion of a u32 or u64 color into 4 components floating color. (From GLM_GTX_color_cast extension)
 		template <typename T> gtc::type_precision::f64vec4 f64_bgra_cast(T c);		//!< \brief Conversion of a u32 or u64 color into 4 components floating color. (From GLM_GTX_color_cast extension)
 		template <typename T> gtc::type_precision::f64vec4 f64_abgr_cast(T c);		//!< \brief Conversion of a u32 or u64 color into 4 components floating color. (From GLM_GTX_color_cast extension)
+
+		///@}
 	}//namespace color_space
 	}//namespace gtx
 }//namespace glm

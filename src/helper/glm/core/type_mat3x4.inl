@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2006-08-05
 // Updated : 2010-02-05
@@ -53,6 +53,8 @@ namespace detail
     template <typename T> 
     inline tmat3x4<T>::tmat3x4()
     {
+		value_type const Zero(0);
+		value_type const One(1);
         this->value[0] = col_type(1, 0, 0, 0);
         this->value[1] = col_type(0, 1, 0, 0);
         this->value[2] = col_type(0, 0, 1, 0);
@@ -578,6 +580,29 @@ namespace detail
             m[0] - T(1),
             m[1] - T(1),
             m[2] - T(1));
+	}
+
+	//////////////////////////////////////
+	// Boolean operators
+
+	template <typename T> 
+	inline bool operator==
+	(
+		tmat3x4<T> const & m1, 
+		tmat3x4<T> const & m2
+	)
+	{
+		return (m1[0] == m2[0]) && (m1[1] == m2[1]) && (m1[2] == m2[2]);
+	}
+
+	template <typename T> 
+	inline bool operator!=
+	(
+		tmat3x4<T> const & m1, 
+		tmat3x4<T> const & m2
+	)
+	{
+		return (m1[0] != m2[0]) || (m1[1] != m2[1]) || (m1[2] != m2[2]);
 	}
 
 } //namespace detail

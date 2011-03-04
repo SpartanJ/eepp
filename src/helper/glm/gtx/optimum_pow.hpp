@@ -1,10 +1,10 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2005-12-21
 // Updated : 2006-11-13
 // Licence : This source is under MIT License
-// File    : glm/gtx/optimum_pow.h
+// File    : glm/gtx/optimum_pow.hpp
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Dependency:
 // - GLM core
@@ -16,6 +16,10 @@
 // Dependency:
 #include "../glm.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_optimum_pow extension included")
+#endif
+
 namespace glm
 {
 	namespace test{
@@ -23,9 +27,12 @@ namespace glm
 	}//namespace test
 
     namespace gtx{
-	//! GLM_GTX_optimum_pow extension: Integer exponenciation of power functions.
+	//! GLM_GTX_optimum_pow extension: Integer exponentiation of power functions.
     namespace optimum_pow
     {
+		/// \addtogroup gtx_optimum_pow
+		///@{
+
 		//! Returns x raised to the power of 2.
 		//! From GLM_GTX_optimum_pow extension.
         template <typename genType> 
@@ -56,6 +63,8 @@ namespace glm
 		//! Checks to determine if the parameter component are power of 2 numbers. 
 		//! From GLM_GTX_optimum_pow extension.
         detail::tvec4<bool> powOfTwo(const detail::tvec4<int>& x);
+
+		///@}
 
     }//namespace optimum_pow
     }//namespace gtx

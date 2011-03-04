@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2008-08-03
 // Updated : 2010-02-04
@@ -20,7 +20,7 @@ namespace glm
 		genType const & x
 	)
     {
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float);
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'length' only accept floating-point inputs");
 
         genType sqr = x * x;
         return sqrt(sqr);
@@ -32,7 +32,7 @@ namespace glm
 		detail::tvec2<T> const & v
 	)
     {
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'length' only accept floating-point inputs");
 
         typename detail::tvec2<T>::value_type sqr = v.x * v.x + v.y * v.y;
         return sqrt(sqr);
@@ -44,7 +44,7 @@ namespace glm
 		detail::tvec3<T> const & v
 	)
     {
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'length' only accept floating-point inputs");
 
         typename detail::tvec3<T>::value_type sqr = v.x * v.x + v.y * v.y + v.z * v.z;
         return sqrt(sqr);
@@ -56,7 +56,7 @@ namespace glm
 		detail::tvec4<T> const & v
 	)
     {
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'length' only accept floating-point inputs");
 
         typename detail::tvec4<T>::value_type sqr = v.x * v.x + v.y * v.y + v.z * v.z + v.w * v.w;
         return sqrt(sqr);
@@ -70,7 +70,7 @@ namespace glm
 		genType const & p1
 	)
     {
-        GLM_STATIC_ASSERT(detail::type<genType>::is_float);
+        GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'distance' only accept floating-point inputs");
 
 		return length(p1 - p0);
     }
@@ -82,7 +82,7 @@ namespace glm
 		detail::tvec2<T> const & p1
 	)
     {
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'distance' only accept floating-point inputs");
 
         return length(p1 - p0);
     }
@@ -94,7 +94,7 @@ namespace glm
 		detail::tvec3<T> const & p1
 	)
     {
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'distance' only accept floating-point inputs");
 
 		return length(p1 - p0);
     }
@@ -106,7 +106,7 @@ namespace glm
 		detail::tvec4<T> const & p1
 	)
     {
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'distance' only accept floating-point inputs");
 
 		return length(p1 - p0);
     }
@@ -119,7 +119,7 @@ namespace glm
 		genType const & y
 	)
 	{
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float);
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'dot' only accept floating-point inputs");
 
 		return x * y;
 	}
@@ -131,7 +131,7 @@ namespace glm
 		detail::tvec2<T> const & y
 	)
     {
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'dot' only accept floating-point inputs");
 
 		return x.x * y.x + x.y * y.y;
     }
@@ -143,7 +143,7 @@ namespace glm
 		detail::tvec3<T> const & y
 	)
     {
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'dot' only accept floating-point inputs");
 
 		return x.x * y.x + x.y * y.y + x.z * y.z;
     }
@@ -171,7 +171,7 @@ namespace glm
 		detail::tvec4<T> const & y
 	)
     {
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'dot' only accept floating-point inputs");
 
         return x.x * y.x + x.y * y.y + x.z * y.z + x.w * y.w;
     }
@@ -184,7 +184,7 @@ namespace glm
 		detail::tvec3<T> const & y
 	)
     {
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'cross' only accept floating-point inputs");
 
         return detail::tvec3<T>(
             x.y * y.z - y.y * x.z,
@@ -199,7 +199,7 @@ namespace glm
 		genType const & x
 	)
     {
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float);
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'normalize' only accept floating-point inputs");
 
         return x < genType(0) ? genType(-1) : genType(1);
     }
@@ -211,7 +211,7 @@ namespace glm
 		detail::tvec2<T> const & x
 	)
     {
-		GLM_STATIC_ASSERT(detail::type<T>::is_float);
+		GLM_STATIC_ASSERT(detail::type<T>::is_float, "'normalize' only accept floating-point inputs");
 		
 		typename detail::tvec2<T>::value_type sqr = x.x * x.x + x.y * x.y;
 	    return x * inversesqrt(sqr);
@@ -223,7 +223,7 @@ namespace glm
 		detail::tvec3<T> const & x
 	)
     {
-        GLM_STATIC_ASSERT(detail::type<T>::is_float);
+        GLM_STATIC_ASSERT(detail::type<T>::is_float, "'normalize' only accept floating-point inputs");
 
 		typename detail::tvec3<T>::value_type sqr = x.x * x.x + x.y * x.y + x.z * x.z;
 	    return x * inversesqrt(sqr);
@@ -235,7 +235,7 @@ namespace glm
 		detail::tvec4<T> const & x
 	)
     {
-        GLM_STATIC_ASSERT(detail::type<T>::is_float);
+        GLM_STATIC_ASSERT(detail::type<T>::is_float, "'normalize' only accept floating-point inputs");
 		
 		typename detail::tvec4<T>::value_type sqr = x.x * x.x + x.y * x.y + x.z * x.z + x.w * x.w;
 	    return x * inversesqrt(sqr);

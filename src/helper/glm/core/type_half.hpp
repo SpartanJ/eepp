@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2008-08-17
 // Updated : 2010-02-17
@@ -27,6 +27,8 @@ namespace glm
 		float toFloat32(hdata value);
 		hdata toFloat16(float const & value);
 
+		///16-bit floating point type.
+		/// \ingroup gtc_half_float
 		class thalf
 		{
 		public: 

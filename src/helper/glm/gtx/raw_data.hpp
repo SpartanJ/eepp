@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2008-11-19
 // Updated : 2010-01-28
@@ -17,6 +17,10 @@
 #include "../glm.hpp"
 #include "../gtc/type_precision.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_raw_data extension included")
+#endif
+
 namespace glm{
 namespace gtx
 {
@@ -24,6 +28,9 @@ namespace gtx
     namespace raw_data
     {
 		using namespace gtc::type_precision;
+
+		/// \addtogroup gtx_raw_data
+		///@{
 
 		//! Type for byte numbers. 
 		//! From GLM_GTX_raw_data extension.
@@ -40,6 +47,8 @@ namespace gtx
 		//! Type for qword numbers. 
 		//! From GLM_GTX_raw_data extension.
 		typedef uint64		qword;
+
+		///@}
 	}
 }//namespace gtx
 }//namespace glm

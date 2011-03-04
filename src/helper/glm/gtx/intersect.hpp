@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2007-04-03
 // Updated : 2009-01-20
@@ -18,6 +18,10 @@
 #include "../glm.hpp"
 #include "../gtx/closest_point.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_closest_point extension included")
+#endif
+
 namespace glm
 {
 	namespace test{
@@ -28,7 +32,10 @@ namespace glm
 	//! GLM_GTX_intersect extension: Add intersection functions
 	namespace intersect
 	{
-        //! Compute the intersection of a ray and a triangle.
+		/// \addtogroup gtx_intersect
+		///@{
+
+		//! Compute the intersection of a ray and a triangle.
 		//! From GLM_GTX_intersect extension.
 		template <typename genType>
 		bool intersectRayTriangle(
@@ -59,6 +66,8 @@ namespace glm
 			genType const & point0, genType const & point1,
 			genType const & center, typename genType::value_type radius,
 			genType & position, genType & normal);
+
+		///@}
 
 	}//namespace intersect
 }//namespace gtx

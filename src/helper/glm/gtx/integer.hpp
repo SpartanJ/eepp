@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2005-12-24
 // Updated : 2006-11-14
@@ -16,12 +16,19 @@
 // Dependency:
 #include "../glm.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_integer extension included")
+#endif
+
 namespace glm
 {
 	namespace gtx{
 	//! GLM_GTX_integer extension: Add support for integer for core functions
 	namespace integer
 	{
+		/// \addtogroup gtx_integer
+		///@{
+
 		//! Returns x raised to the y power. 
 		//! From GLM_GTX_integer extension.
 		int pow(int x, int y);
@@ -38,6 +45,8 @@ namespace glm
 		//! From GLM_GTX_integer extension.
 		template <typename genType> 
 		genType factorial(genType const & x);
+
+		///@}
 
 	}//namespace integer
 	}//namespace gtx

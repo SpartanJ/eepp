@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2005-12-21
 // Updated : 2009-03-06
@@ -18,6 +18,10 @@
 #include "../glm.hpp"
 #include "../gtx/projection.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_perpendicular extension included")
+#endif
+
 namespace glm
 {
 	namespace test{
@@ -28,7 +32,10 @@ namespace glm
 	//! GLM_GTX_perpendicular extension: Perpendicular of a vector from other one
     namespace perpendicular
     {
-        //! Projects x a perpendicular axis of Normal.
+		/// \addtogroup gtx_perpendicular
+		///@{
+
+		//! Projects x a perpendicular axis of Normal.
 		//! From GLM_GTX_perpendicular extension.
 		template <typename T> 
 		detail::tvec2<T> perp(
@@ -48,6 +55,9 @@ namespace glm
 		detail::tvec4<T> perp(
 			detail::tvec4<T> const & x, 
 			detail::tvec4<T> const & Normal);
+
+
+		///@}
 		
     }//namespace perpendicular
     }//namespace gtx

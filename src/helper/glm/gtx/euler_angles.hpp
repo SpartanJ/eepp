@@ -1,14 +1,13 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2005-12-21
 // Updated : 2007-08-14
 // Licence : This source is under MIT License
-// File    : glm/gtx/euler_angles.h
+// File    : glm/gtx/euler_angles.hpp
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Dependency:
 // - GLM core
-// - GLM_GTC_double_float
 // - GLM_GTC_half_float
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // ToDo:
@@ -21,15 +20,21 @@
 
 // Dependency:
 #include "../glm.hpp"
-#include "../gtc/double_float.hpp"
 #include "../gtc/half_float.hpp"
+
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_euler_angles extension included")
+#endif
 
 namespace glm
 {
     namespace gtx{
-	//! GLM_GTX_euler_angles extension: Build matrices from euler angles.
+	//! GLM_GTX_euler_angles extension: Build matrices from Euler angles.
 	namespace euler_angles
 	{
+		/// \addtogroup gtx_euler_angles
+		///@{
+
 		//! Creates a 3D 4 * 4 homogeneous rotation matrix from an euler angle X.
 		//! From GLM_GTX_euler_angles extension.
 		template <typename valType> 
@@ -125,6 +130,8 @@ namespace glm
 		//! From GLM_GTX_euler_angles extension.
 		template <typename T> 
 		detail::tmat4x4<T> orientate4(detail::tvec3<T> const & angles);
+
+		///@}
 	}//namespace euler_angles
     }//namespace gtx
 }//namespace glm

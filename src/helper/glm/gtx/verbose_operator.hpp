@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2007-05-21
 // Updated : 2007-05-21
@@ -16,6 +16,10 @@
 // Dependency:
 #include "../glm.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_verbose_operator extension included")
+#endif
+
 namespace glm
 {
 	namespace test{
@@ -26,6 +30,9 @@ namespace glm
 	//! GLM_GTX_verbose_operator extension: Use words to replace operators
 	namespace verbose_operator
 	{
+		/// \addtogroup gtx_verbose_operator
+		///@{
+
 		//! Addition of two values
 		//! From GLM_GTX_verbose_operator extension.
 		template <typename genTypeT, typename genTypeU> 
@@ -50,6 +57,8 @@ namespace glm
 		//! From GLM_GTX_verbose_operator extension.
 		template <typename genTypeT, typename genTypeU, typename genTypeV> 
 		genTypeT mad(genTypeT const & a, genTypeU const & b, genTypeV const & c);
+
+		///@}
 	}//namespace verbose_operator
 	}//namespace gtx
 }//namespace glm

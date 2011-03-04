@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2005-12-21
 // Updated : 2006-11-13
@@ -18,6 +18,10 @@
 #include "../glm.hpp"
 #include "../gtx/transform.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_transform2 extension included")
+#endif
+
 namespace glm
 {
 	namespace test{
@@ -29,6 +33,9 @@ namespace glm
 	namespace transform2
 	{
 		using namespace gtx::transform;
+
+		/// \addtogroup gtx_transform2
+		///@{
 
 		//! Transforms a matrix with a shearing on X axis.
 		//! From GLM_GTX_transform2 extension.
@@ -90,14 +97,6 @@ namespace glm
 			const detail::tmat4x4<T> & m, 
 			const detail::tvec3<T>& normal);
 
-		//! Build a look at view matrix.
-		//! From GLM_GTX_transform2 extension.
-		template <typename T> 
-		detail::tmat4x4<T> lookAt(
-			detail::tvec3<T> const & eye, 
-			detail::tvec3<T> const & center, 
-			detail::tvec3<T> const & up);
-
 		//! Build a scale bias matrix. 
 		//! From GLM_GTX_transform2 extension.
 		template <typename valType> 
@@ -112,6 +111,8 @@ namespace glm
 			detail::tmat4x4<valType> const & m, 
 			valType scale, 
 			valType bias);
+
+		///@}
 
 	}//namespace transform2
     }//namespace gtx

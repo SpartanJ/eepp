@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2005-12-30
 // Updated : 2008-10-05
@@ -16,6 +16,10 @@
 // Dependency:
 #include "../glm.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_closest_point extension included")
+#endif
+
 namespace glm
 {
 	namespace test{
@@ -26,6 +30,9 @@ namespace glm
 	//! GLM_GTX_closest_point extension: Find the point on a straight line which is the closet of a point.
 	namespace closest_point{
 
+	/// \addtogroup gtx_closest_point
+	///@{
+
 	//! Find the point on a straight line which is the closet of a point. 
 	//! From GLM_GTX_closest_point extension.
 	template <typename T> 
@@ -33,6 +40,7 @@ namespace glm
 		detail::tvec3<T> const & point, 
 		detail::tvec3<T> const & a, 
 		detail::tvec3<T> const & b);
+	///@}
 
 	}//namespace closest_point
 	}//namespace gtx

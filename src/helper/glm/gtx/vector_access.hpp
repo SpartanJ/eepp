@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2006-01-16
 // Updated : 2008-10-07
@@ -16,6 +16,10 @@
 // Dependency:
 #include "../glm.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_vector_access extension included")
+#endif
+
 namespace glm
 {
 	namespace test{
@@ -26,6 +30,9 @@ namespace glm
 	//! GLM_GTX_vector_access extension: Function to set values to vectors
     namespace vector_access
     {
+		/// \addtogroup gtx_vector_access
+		///@{
+
 		//! Set values to a 2 components vector.
 		//! From GLM_GTX_vector_access extension.
         template <typename valType> 
@@ -52,6 +59,8 @@ namespace glm
 			valType const & y, 
 			valType const & z, 
 			valType const & w);
+
+		///@}
 
     }//namespace vector_access
     }//namespace gtx

@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2007-03-14
 // Updated : 2008-11-14
@@ -18,6 +18,10 @@
 #include "../glm.hpp"
 #include "../gtc/half_float.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_bit extension included")
+#endif
+
 namespace glm
 {
 	namespace test{
@@ -30,6 +34,8 @@ namespace glm
 	{
 		using namespace gtc::half_float;
 
+		/// \addtogroup gtx_bit
+		///@{
 		//! Build a mask of 'count' bits
 		//! From GLM_GTX_bit extension.
 		template <typename genIType>
@@ -93,6 +99,7 @@ namespace glm
 		//! From GLM_GTX_bit extension.
 		template <typename genType>
 		genType bitRotateLeft(genType const & In, std::size_t Shift);
+		///@}
 
 	}//namespace bit
 	}//namespace gtx

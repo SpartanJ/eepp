@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2005-12-21
 // Updated : 2009-05-21
@@ -21,6 +21,10 @@
 #include "../glm.hpp"
 #include "../gtc/quaternion.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_quaternion extension included")
+#endif
+
 namespace glm
 {
 	namespace gtx{
@@ -29,7 +33,10 @@ namespace glm
     {
 		using namespace gtc::quaternion;
 
-        //! Compute a cross product between a quaternion and a vector. 
+		/// \addtogroup gtx_quaternion
+		///@{
+
+		//! Compute a cross product between a quaternion and a vector. 
 		//! From GLM_GTX_quaternion extension.
 		template <typename valType> 
 		detail::tvec3<valType> cross(
@@ -183,6 +190,8 @@ namespace glm
 		template <typename valType> 
 		detail::tquat<valType> toQuat(
 			detail::tmat4x4<valType> const & x){return gtc::quaternion::quat_cast(x);}
+
+		///@}
 
     }//namespace quaternion
     }//namespace gtx

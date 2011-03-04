@@ -1,5 +1,5 @@
  ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2007-03-05
 // Updated : 2007-03-05
@@ -18,6 +18,10 @@
 #include <cfloat>
 #include <limits>
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_vector_query extension included")
+#endif
+
 namespace glm
 {
 	namespace test{
@@ -28,7 +32,10 @@ namespace glm
 	//! GLM_GTX_vector_query extension: Query informations of vector types
     namespace vector_query
     {
-        //! Check if two vectors are collinears.
+		/// \addtogroup gtx_vector_query
+		///@{
+
+		//! Check if two vectors are collinears.
 		//! From GLM_GTX_vector_query extensions.
 		template <typename genType> 
 		bool areCollinear(
@@ -81,6 +88,8 @@ namespace glm
 			const genType& v0, 
 			const genType& v1, 
 			const GLMvalType epsilon = std::numeric_limits<GLMvalType>::epsilon());
+
+		///@}
 
     }//namespace vector_query
     }//namespace gtx

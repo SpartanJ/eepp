@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2009-06-04
 // Updated : 2009-06-04
@@ -9,7 +9,6 @@
 // Dependency:
 // - GLM core
 // - GLM_GTC_half
-// - GLM_GTC_double
 // - GLM_GTC_quaternion
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -19,8 +18,11 @@
 // Dependency:
 #include "../glm.hpp"
 #include "../gtc/half_float.hpp"
-#include "../gtc/double_float.hpp"
 #include "../gtc/quaternion.hpp"
+
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTC_type_precision extension included")
+#endif
 
 namespace glm
 {
@@ -36,11 +38,13 @@ namespace glm
 		// Dependences
 
 		using namespace gtc::half_float;
-		using namespace gtc::double_float;
 		using namespace gtc::quaternion;
 
 		///////////////////////////
 		// Signed int vector types 
+
+		/// \addtogroup gtc_type_precision
+		///@{
 
 		typedef detail::int8						int8;         //!< \brief 8bit signed integer. (from GLM_GTC_type_precision extension)
 		typedef detail::int16						int16;        //!< \brief 16bit signed integer. (from GLM_GTC_type_precision extension)
@@ -116,6 +120,10 @@ namespace glm
 		typedef float32								f32;        //!< \brief Single-precision floating-point scalar. (from GLM_GTC_type_precision extension)
 		typedef float64								f64;        //!< \brief Double-precision floating-point scalar. (from GLM_GTC_type_precision extension)
 
+		typedef detail::tvec2<float>				fvec2;		//!<  Vector of 2 single-precision floating-point numbers. (from GLM_GTC_type_precision extension)
+		typedef detail::tvec3<float>				fvec3;		//!<  Vector of 3 single-precision floating-point numbers. (from GLM_GTC_type_precision extension)
+		typedef detail::tvec4<float>				fvec4;		//!<  Vector of 4 single-precision floating-point numbers. (from GLM_GTC_type_precision extension)
+
 		//typedef f16									f16vec1;    //!< \brief Half-precision floating-point scalar. (from GLM_GTC_type_precision extension)
 		typedef detail::tvec2<f16>					f16vec2;    //!< \brief Half-precision floating-point vector of 2 components. (from GLM_GTC_type_precision extension)
 		typedef detail::tvec3<f16>					f16vec3;    //!< \brief Half-precision floating-point vector of 3 components. (from GLM_GTC_type_precision extension)
@@ -133,6 +141,22 @@ namespace glm
 
 		//////////////////////
 		// Float matrix types 
+
+		//typedef f32									fmat1;	//!< \brief Single-precision floating-point scalar. (from GLM_GTC_type_precision extension)
+		typedef detail::tmat2x2<f32>				fmat2;	//!< \brief Single-precision floating-point 2x2 matrix. (from GLM_GTC_type_precision extension)
+		typedef detail::tmat3x3<f32>				fmat3;	//!< \brief Single-precision floating-point 3x3 matrix. (from GLM_GTC_type_precision extension)
+		typedef detail::tmat4x4<f32>				fmat4;	//!< \brief Single-precision floating-point 4x4 matrix. (from GLM_GTC_type_precision extension)
+
+		//typedef f32									fmat1x1;	//!< \brief Single-precision floating-point scalar. (from GLM_GTC_type_precision extension)
+		typedef detail::tmat2x2<f32>				fmat2x2;  //!< \brief Single-precision floating-point 2x2 matrix. (from GLM_GTC_type_precision extension)
+		typedef detail::tmat2x3<f32>				fmat2x3;	//!< \brief Single-precision floating-point 2x3 matrix. (from GLM_GTC_type_precision extension)
+		typedef detail::tmat2x4<f32>				fmat2x4;	//!< \brief Single-precision floating-point 2x4 matrix. (from GLM_GTC_type_precision extension)
+		typedef detail::tmat3x2<f32>				fmat3x2;	//!< \brief Single-precision floating-point 3x2 matrix. (from GLM_GTC_type_precision extension)
+		typedef detail::tmat3x3<f32>				fmat3x3;	//!< \brief Single-precision floating-point 3x3 matrix. (from GLM_GTC_type_precision extension)
+		typedef detail::tmat3x4<f32>				fmat3x4;	//!< \brief Single-precision floating-point 3x4 matrix. (from GLM_GTC_type_precision extension)
+		typedef detail::tmat4x2<f32>				fmat4x2;	//!< \brief Single-precision floating-point 4x2 matrix. (from GLM_GTC_type_precision extension)
+		typedef detail::tmat4x3<f32>				fmat4x3;	//!< \brief Single-precision floating-point 4x3 matrix. (from GLM_GTC_type_precision extension)
+		typedef detail::tmat4x4<f32>				fmat4x4;	//!< \brief Single-precision floating-point 4x4 matrix. (from GLM_GTC_type_precision extension)
 
 		//typedef f16									f16mat1;    //!< \brief Half-precision floating-point scalar. (from GLM_GTC_type_precision extension)
 		typedef detail::tmat2x2<f16>				f16mat2;	//!< \brief Half-precision floating-point 2x2 matrix. (from GLM_GTC_type_precision extension)
@@ -188,6 +212,8 @@ namespace glm
 		typedef detail::tquat<f16>					f16quat;    //!< \brief Half-precision floating-point quaternion. (from GLM_GTC_type_precision extension)
 		typedef detail::tquat<f32>					f32quat;    //!< \brief Single-precision floating-point quaternion. (from GLM_GTC_type_precision extension)
 		typedef detail::tquat<f64>					f64quat;    //!< \brief Double-precision floating-point quaternion. (from GLM_GTC_type_precision extension)
+
+		///@}
 
 	}//namespace type_precision
 	}//namespace gtc

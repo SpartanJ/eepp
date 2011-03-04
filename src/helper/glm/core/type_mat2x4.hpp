@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2006-08-05
 // Updated : 2010-02-11
@@ -35,7 +35,8 @@ namespace glm
 		template <typename T> struct tmat4x3;
 		template <typename T> struct tmat4x4;
 
-		//!< \brief Template for 2 columns and 4 rows matrix of floating-point numbers.
+		//! Template for 2 columns and 4 rows matrix of floating-point numbers.
+		//! \ingroup core_template
 		template <typename T> 
 		struct tmat2x4
 		{
@@ -189,15 +190,15 @@ namespace glm
 	namespace precision
 	{
 		//! 2 columns of 4 components matrix of low precision floating-point numbers.
-		//! There is no garanty on the actual precision.
+		//! There is no guarantee on the actual precision.
 		//! (From GLSL 1.30.8 specification, section 4.1.6 Matrices and section 4.5 Precision and Precision Qualifiers)
 		typedef detail::tmat2x4<lowp_float>		lowp_mat2x4;
 		//! 2 columns of 4 components matrix of medium precision floating-point numbers.
-		//! There is no garanty on the actual precision.
+		//! There is no guarantee on the actual precision.
 		//! (From GLSL 1.30.8 specification, section 4.1.6 Matrices and section 4.5 Precision and Precision Qualifiers)
 		typedef detail::tmat2x4<mediump_float>	mediump_mat2x4;
 		//! 2 columns of 4 components matrix of high precision floating-point numbers.
-		//! There is no garanty on the actual precision.
+		//! There is no guarantee on the actual precision.
 		//! (From GLSL 1.30.8 specification, section 4.1.6 Matrices and section 4.5 Precision and Precision Qualifiers)
 		typedef detail::tmat2x4<highp_float>	highp_mat2x4;
 	}
@@ -207,6 +208,8 @@ namespace glm
 	}//namespace core
 } //namespace glm
 
+#ifndef GLM_EXTERNAL_TEMPLATE
 #include "type_mat2x4.inl"
+#endif
 
 #endif //glm_core_type_mat2x4

@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2005-02-28
 // Updated : 2005-04-23
@@ -129,35 +129,6 @@ namespace transform2
         r[2][1] = - normal.y * normal.z;
         r[2][2] = 1 - normal.z * normal.z;
         return m * r;
-    }
-
-    template <typename T> 
-    inline detail::tmat4x4<T> lookAt(
-		const detail::tvec3<T>& eye, 
-		const detail::tvec3<T>& center, 
-		const detail::tvec3<T>& up)
-    {
-        detail::tvec3<T> f = normalize(center - eye);
-        detail::tvec3<T> u = normalize(up);
-        detail::tvec3<T> s = normalize(cross(f, u));
-        u = cross(s, f);
-
-        detail::tmat4x4<T> Result(1);
-        Result[0][0] = s.x;
-        Result[1][0] = s.y;
-        Result[2][0] = s.z;
-        Result[0][1] = u.x;
-        Result[1][1] = u.y;
-        Result[2][1] = u.z;
-        Result[0][2] =-f.x;
-        Result[1][2] =-f.y;
-        Result[2][2] =-f.z;
-    /*  Test this instead of translate3D
-        Result[3][0] =-dot(s, eye);
-        Result[3][1] =-dot(y, eye);
-        Result[3][2] = dot(f, eye);
-    */  
-		return gtc::matrix_transform::translate(Result, -eye);
     }
 
 	template <typename T> 

@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2009-05-21
 // Updated : 2010-02-04
@@ -9,7 +9,6 @@
 // Dependency:
 // - GLM core
 // - GLM_GTC_half_float
-// - GLM_GTC_double_float
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // ToDo:
 // - Study constructors with angles and axis
@@ -22,7 +21,10 @@
 // Dependency:
 #include "../glm.hpp"
 #include "../gtc/half_float.hpp"
-#include "../gtc/double_float.hpp"
+
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTC_quaternion extension included")
+#endif
 
 namespace glm
 {
@@ -34,6 +36,7 @@ namespace glm
 	{
 		//! \brief Template for quaternion. 
 		//! From GLM_GTC_quaternion extension.
+		/// \ingroup gtc_quaternion
 		template <typename T> 
 		struct tquat// : public genType<T, tquat>
 		{
@@ -77,6 +80,11 @@ namespace glm
 			detail::tquat<T> const & q);
 
 		template <typename T> 
+		detail::tquat<T> operator* ( 
+			detail::tquat<T> const & q, 
+			detail::tquat<T> const & p); 
+
+		template <typename T> 
 		detail::tvec3<T> operator* (
 			detail::tquat<T> const & q, 
 			detail::tvec3<T> const & v);
@@ -117,6 +125,9 @@ namespace glm
 	//! GLM_GTC_quaternion extension: Quaternion types and functions
     namespace quaternion
     {
+		/// \addtogroup gtc_quaternion
+		///@{
+
 		//! Returns the length of the quaternion x. 
 		//! From GLM_GTC_quaternion extension.
         template <typename T> 
@@ -139,11 +150,11 @@ namespace glm
         //! Returns the cross product of q1 and q2. 
 		//! From GLM_GTC_quaternion extension.
 		template <typename T> 
-		detail::tquat<T> cross(
+		GLM_DEPRECATED detail::tquat<T> cross(
 			detail::tquat<T> const & q1, 
 			detail::tquat<T> const & q2);
 		
-		//! Returns a LERP interpolated quaternion of x and y according a. 
+		//! Returns a SLERP interpolated quaternion of x and y according a. 
 		//! From GLM_GTC_quaternion extension.
 		template <typename T> 
 		detail::tquat<T> mix(
@@ -210,6 +221,8 @@ namespace glm
 		//! Quaternion of double-precision floating-point numbers. 
 		//! From GLM_GTC_quaternion extension.
 		typedef detail::tquat<double>	dquat;
+
+		///@}
 
     }//namespace quaternion
     }//namespace gtc

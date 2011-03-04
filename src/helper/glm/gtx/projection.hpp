@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2005-12-21
 // Updated : 2009-03-06
@@ -16,6 +16,10 @@
 // Dependency:
 #include "../glm.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_projection extension included")
+#endif
+
 namespace glm
 {
 	namespace test{
@@ -26,6 +30,9 @@ namespace glm
 	//! GLM_GTX_projection extension: Projection of a vector to other one
 	namespace projection
 	{
+		/// \addtogroup gtx_projection
+		///@{
+
 		//! Projects x on Normal.
 		//! From GLM_GTX_projection extension.
 		template <typename T> 
@@ -46,6 +53,8 @@ namespace glm
 		detail::tvec4<T> proj(
 			detail::tvec4<T> const & x, 
 			detail::tvec4<T> const & Normal);
+
+		///@}
 		
 	}//namespace projection
     }//namespace gtx

@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2008-08-01
 // Updated : 2008-09-10
@@ -21,6 +21,9 @@ namespace glm
 	// Define all noise functions from Section 8.9 of GLSL 1.30.8 specification. Included in glm namespace.
 	namespace noise{
 
+	/// \addtogroup core_funcs
+	///@{
+
 	// Returns a 1D noise value based on the input value x.
 	// From GLSL 1.30.08 specification, section 8.9.
 	template <typename genType>
@@ -40,6 +43,8 @@ namespace glm
 	// From GLSL 1.30.08 specification, section 8.9.
 	template <typename genType>
 	detail::tvec4<typename genType::value_type> noise4(genType const & x);
+
+	///@}
 
 	}//namespace noise
 	}//namespace function

@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2005-12-21
 // Updated : 2007-02-22
@@ -16,6 +16,10 @@
 // Dependency:
 #include "../glm.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_color_space extension included")
+#endif
+
 namespace glm
 {
 	namespace test{
@@ -26,6 +30,9 @@ namespace glm
 	//! GLM_GTX_color_space extension: Related to RGB to HSV conversions and operations
     namespace color_space
     {
+		/// \addtogroup gtx_color_space
+		///@{
+
 		//! Converts a color from HSV color space to its color in RGB color space.
 		//! From GLM_GTX_color_space extension.
         template <typename valType> 
@@ -63,6 +70,8 @@ namespace glm
 		template <typename valType> 
 		valType luminosity(
 			detail::tvec3<valType> const & color);
+
+		///@}
 		
 	}//namespace color_space
 	}//namespace gtx

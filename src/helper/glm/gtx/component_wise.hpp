@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2007-05-21
 // Updated : 2007-05-21
@@ -16,6 +16,10 @@
 // Dependency:
 #include "../glm.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_component_wise extension included")
+#endif
+
 namespace glm
 {
 	namespace test{
@@ -26,6 +30,9 @@ namespace glm
 	//! GLM_GTX_component_wise extension: Operations between components of a type
 	namespace component_wise
 	{
+		/// \addtogroup gtx_component_wise
+		///@{
+
 		//! Add all vector components together. 
 		//! From GLM_GTX_component_wise extension.
 		template <typename genType> 
@@ -49,6 +56,8 @@ namespace glm
 		template <typename genType> 
 		typename genType::value_type compMax(
 			genType const & v);
+
+		///@}
 
 	}//namespace component_wise
 	}//namespace gtx

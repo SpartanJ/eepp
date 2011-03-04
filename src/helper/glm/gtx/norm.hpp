@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2005-12-21
 // Updated : 2008-07-24
@@ -9,7 +9,6 @@
 // Dependency:
 // - GLM core
 // - GLM_GTX_quaternion
-// - GLM_GTC_double_float
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // ToDo:
 // - Study the validity of the notion of length2 to quaternion
@@ -20,8 +19,11 @@
 
 // Dependency:
 #include "../glm.hpp"
-#include "../gtc/double_float.hpp"
 #include "../gtx/quaternion.hpp"
+
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_norm extension included")
+#endif
 
 namespace glm
 {
@@ -30,9 +32,12 @@ namespace glm
 	}//namespace test
 
 	namespace gtx{
-	//! GLM_GTX_norm extension: Varius way to compute vector norms.
+	//! GLM_GTX_norm extension: Various way to compute vector norms.
 	namespace norm
 	{
+		/// \addtogroup gtx_norm
+		///@{
+
 		//! Returns the squared length of x.
 		//! From GLM_GTX_norm extension.
 		template <typename T> 
@@ -131,6 +136,8 @@ namespace glm
 		T lxNorm(
 			const detail::tvec3<T>& x,
 			unsigned int Depth);
+
+		///@}
 
 	}//namespace norm
 	}//namespace gtx

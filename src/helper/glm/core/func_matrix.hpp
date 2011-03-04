@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2008-08-03
 // Updated : 2010-02-04
@@ -20,6 +20,9 @@ namespace glm
 	namespace function{
 	//! Define all matrix functions from Section 8.5 of GLSL 1.30.8 specification. Included in glm namespace.
 	namespace matrix{
+
+	/// \addtogroup core_funcs
+	///@{
 
 	//! Multiply matrix x by matrix y component-wise, i.e., 
 	//! result[i][j] is the scalar product of x[i][j] and y[i][j].
@@ -79,6 +82,8 @@ namespace glm
 	template <typename T> 
 	detail::tmat4x4<T> inverse(
 		detail::tmat4x4<T> const & m);
+
+	///@}
 
 	}//namespace matrix
 	}//namespace function

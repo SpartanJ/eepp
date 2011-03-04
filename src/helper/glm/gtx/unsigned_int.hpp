@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2005-12-24
 // Updated : 2008-10-07
@@ -18,6 +18,10 @@
 #include "../glm.hpp"
 #include "../gtx/integer.hpp"
 
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_unsigned_int extension included")
+#endif
+
 namespace glm
 {
 	namespace test{
@@ -29,6 +33,9 @@ namespace glm
 	namespace unsigned_int
 	{
 		using namespace gtx::integer;
+
+		/// \addtogroup gtx_unsigned_int
+		///@{
 
 		//! 32bit signed integer. 
 		//! From GLM_GTX_unsigned_int extension.
@@ -45,6 +52,8 @@ namespace glm
 		//! Modulus. Returns x - y * floor(x / y) for each component in x using the floating point value y.
 		//! From GLM_GTX_unsigned_int extension.
 		uint mod(uint x, uint y);
+
+		///@}
 
 	}//namespace unsigned_int
 	}//namespace gtx

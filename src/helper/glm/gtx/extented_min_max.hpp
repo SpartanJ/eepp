@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2007-03-14
 // Updated : 2010-02-19
@@ -9,7 +9,6 @@
 // Dependency:
 // - GLM core
 // - GLM_GTX_half_float
-// - GLM_GTX_double_float
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef glm_gtx_extented_min_max
@@ -18,7 +17,10 @@
 // Dependency:
 #include "../glm.hpp"
 #include "../gtc/half_float.hpp"
-#include "../gtc/double_float.hpp"
+
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_extented_min_max extension included")
+#endif
 
 namespace glm
 {
@@ -30,6 +32,9 @@ namespace glm
 	//! GLM_GTX_extented_min_max extension: Min and max functions for 3 to 4 parameters.
 	namespace extented_min_max
 	{
+		/// \addtogroup gtx_extented_min_max
+		///@{
+
 		//< Return the minimum component-wise values of 3 inputs 
 		//< From GLM_GTX_extented_min_max extension
 		template <typename T>
@@ -163,6 +168,8 @@ namespace glm
 			C<T> const & y, 
 			C<T> const & z, 
 			C<T> const & w);
+
+		///@}
 
 	}//namespace extented_min_max
 	}//namespace gtx

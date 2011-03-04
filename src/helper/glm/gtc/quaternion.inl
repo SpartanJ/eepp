@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2009-05-21
 // Updated : 2010-02-04
@@ -156,6 +156,20 @@ namespace detail{
 		return detail::tquat<T>(-q.w, -q.x, -q.y, -q.z);
 	}
 
+	template <typename T> 
+	inline detail::tquat<T> operator*
+	( 
+		detail::tquat<T> const & q, 
+		detail::tquat<T> const & p
+	) 
+	{ 
+        return detail::tquat<T>(
+            q.w * p.w - q.x * p.x - q.y * p.y - q.z * p.z,
+	        q.w * p.x + q.x * p.w + q.y * p.z - q.z * p.y,
+	        q.w * p.y + q.y * p.w + q.z * p.x - q.x * p.z,
+	        q.w * p.z + q.z * p.w + q.x * p.y - q.y * p.x);
+	} 
+
 	// Transformation
 	template <typename T>
 	inline detail::tvec3<T> operator* 
@@ -236,6 +250,29 @@ namespace detail{
 	{
 		return detail::tquat<T>(
 			q.w / s, q.x / s, q.y / s, q.z / s);
+	}
+
+	//////////////////////////////////////
+	// Boolean operators
+
+	template <typename T> 
+	inline bool operator==
+	(
+		detail::tquat<T> const & q1, 
+		detail::tquat<T> const & q2
+	)
+	{
+		return (q1.x == q2.x) && (q1.y == q2.y) && (q1.z == q2.z) && (q1.w == q2.w);
+	}
+
+	template <typename T> 
+	inline bool operator!=
+	(
+		detail::tquat<T> const & q1, 
+		detail::tquat<T> const & q2
+	)
+	{
+		return (q1.x != q2.x) || (q1.y != q2.y) || (q1.z != q2.z) || (q1.w != q2.w);
 	}
 
 }//namespace detail
@@ -330,6 +367,43 @@ namespace quaternion{
             k0 * x.x + k1 * y2.x,
             k0 * x.y + k1 * y2.y,
             k0 * x.z + k1 * y2.z);
+    }
+
+    template <typename T>
+    inline detail::tquat<T> mix2
+	(
+		detail::tquat<T> const & x, 
+		detail::tquat<T> const & y, 
+		T const & a
+	)
+    {
+        bool flip = false;
+		if(a <= T(0)) return x;
+        if(a >= T(1)) return y;
+
+        T cos_t = dot(x, y);
+		if(cos_t < T(0))
+		{
+			cos_t = -cos_t;
+			flip = true;
+		}
+
+		T alpha(0), beta(0);
+
+		if(T(1) - cos_t < 1e-7)
+			beta = T(1) - alpha;
+		else
+		{
+			T theta = acos(cos_t);
+			T sin_t = sin(theta);
+			beta = sin(theta * (T(1) - alpha)) / sin_t;
+			alpha = sin(alpha * theta) / sin_t;
+		}
+
+		if(flip)
+			alpha = -alpha;
+		
+        return normalize(beta * x + alpha * y);
     }
 
     template <typename T> 

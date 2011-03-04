@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2006-01-09
 // Updated : 2006-11-13
@@ -8,8 +8,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Dependency:
 // - GLM core
-// - GLM_GTX_half
-// - GLM_GTX_double
+// - GLM_GTC_half_float
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #ifndef glm_gtx_fast_exponential
@@ -18,7 +17,10 @@
 // Dependency:
 #include "../glm.hpp"
 #include "../gtc/half_float.hpp"
-#include "../gtc/double_float.hpp"
+
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_GTX_fast_exponential extension included")
+#endif
 
 namespace glm
 {
@@ -31,7 +33,8 @@ namespace glm
 	namespace fast_exponential
 	{
 		using namespace gtc::half_float;
-		using namespace gtc::double_float;
+		/// \addtogroup gtx_fast_exponential
+		///@{
 
 		//! Faster than the common pow function but less accurate.
 		//! From GLM_GTX_fast_exponential extension.
@@ -71,6 +74,8 @@ namespace glm
 		//! From GLM_GTX_fast_exponential extension.
 		template <typename T> 
 		T fastLn(const T& x);
+
+		///@}
 
 	}//namespace fast_exponential
 	}//namespace gtx

@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2005-01-27
 // Updated : 2008-08-30
@@ -35,7 +35,8 @@ namespace glm
 		template <typename T> struct tmat4x3;
 		template <typename T> struct tmat4x4;
 
-		//!< \brief Template for 4 * 4 matrix of floating-point numbers.
+		//! \brief Template for 4 * 4 matrix of floating-point numbers.
+		//! \ingroup core_template
 		template <typename T> 
 		struct tmat4x4
 		{
@@ -221,16 +222,19 @@ namespace glm
 	namespace precision
 	{
 		//! 4 columns of 4 components matrix of low precision floating-point numbers.
-		//! There is no garanty on the actual precision.
+		//! There is no guarantee on the actual precision.
 		//! (From GLSL 1.30.8 specification, section 4.1.6 Matrices and section 4.5 Precision and Precision Qualifiers)
+		//! \ingroup core_precision
 		typedef detail::tmat4x4<lowp_float>		lowp_mat4x4;
 		//! 4 columns of 4 components matrix of medium precision floating-point numbers.
-		//! There is no garanty on the actual precision.
+		//! There is no guarantee on the actual precision.
 		//! (From GLSL 1.30.8 specification, section 4.1.6 Matrices and section 4.5 Precision and Precision Qualifiers)
+		//! \ingroup core_precision
 		typedef detail::tmat4x4<mediump_float>	mediump_mat4x4;
 		//! 4 columns of 4 components matrix of high precision floating-point numbers.
-		//! There is no garanty on the actual precision.
+		//! There is no guarantee on the actual precision.
 		//! (From GLSL 1.30.8 specification, section 4.1.6 Matrices and section 4.5 Precision and Precision Qualifiers)
+		//! \ingroup core_precision
 		typedef detail::tmat4x4<highp_float>	highp_mat4x4;
 	}
 	//namespace precision
@@ -239,6 +243,8 @@ namespace glm
 	}//namespace core
 } //namespace glm
 
+#ifndef GLM_EXTERNAL_TEMPLATE
 #include "type_mat4x4.inl"
+#endif
 
 #endif //glm_core_type_mat4x4

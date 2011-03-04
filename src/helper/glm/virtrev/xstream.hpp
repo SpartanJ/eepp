@@ -2,13 +2,13 @@
 #define GLM_EXT_VIRTREV_XSTREAM_HPP
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2010 G-Truc Creation (www.g-truc.net)
+// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
 // Virtrev SDK copyright matrem (matrem84.free.fr)
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Created : 2008-05-24
 // Updated : 2008-05-26
 // Licence : This source is under MIT License
-// File    : glm/ext/virtrev/xstream.h
+// File    : glm/ext/virtrev/xstream.hpp
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Dependency:
 // - GLM core
@@ -16,8 +16,12 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "../glm.hpp"
-#include "../gtx/matrix_selection.hpp"
+#include "../gtc/matrix_access.hpp"
 #include <iostream>
+
+#if(defined(GLM_MESSAGES) && !defined(glm_ext))
+#	pragma message("GLM: GLM_VIRTREV_xstream extension included")
+#endif
 
 namespace glm
 {
@@ -131,7 +135,7 @@ namespace glm
 				stream << "z=\"" << glm::row(mat, 3)[2] << "\" ";
 				stream << "w=\"" << glm::row(mat, 3)[3] << "\" ";
 				stream << "/>" << std::endl;
-				stream << "</glm_mat3>";
+				stream << "</glm_mat4>";
 			
 				return stream;
 			}
