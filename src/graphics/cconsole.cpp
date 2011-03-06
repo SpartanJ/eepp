@@ -193,7 +193,7 @@ void cConsole::FadeOut() {
 }
 
 void cConsole::ProcessLine() {
-	String str = mTBuf.Buffer();;
+	String str = mTBuf.Buffer();
 	std::vector < String > params = SplitString( str, ' ' );
 
 	mLastCommands.push_back( str );

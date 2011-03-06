@@ -806,7 +806,6 @@ cpBBTreeOptimize(cpSpatialIndex *index)
 #define CP_BBTREE_DEBUG_DRAW
 #ifdef CP_BBTREE_DEBUG_DRAW
 #include <GL/gl.h>
-#include <GL/glu.h>
 
 static void
 NodeRender(Node *node, int depth)

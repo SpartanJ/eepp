@@ -19,27 +19,27 @@ class tSize : public Vector2<T>
 };
 
 template <typename T>
-tSize<T>::tSize() {
-	this->x = 0;
-	this->y = 0;
+tSize<T>::tSize() :
+	Vector2<T>( 0, 0 )
+{
 }
 
 template <typename T>
-tSize<T>::tSize( const T& Width, const T& Height ) {
-	this->x = Width;
-	this->y = Height;
+tSize<T>::tSize( const T& Width, const T& Height ) :
+	Vector2<T>( Width, Height )
+{
 }
 
 template <typename T>
-tSize<T>::tSize( const tSize<T>& Size ) {
-	this->x = Size.Width();
-	this->y = Size.Height();
+tSize<T>::tSize( const tSize<T>& Size ) :
+	Vector2<T>( Size.Width(), Size.Height() )
+{
 }
 
 template <typename T>
-tSize<T>::tSize( const Vector2<T>& Vec ) {
-	this->x = Vec.x;
-	this->y = Vec.y;
+tSize<T>::tSize( const Vector2<T>& Vec ) :
+	Vector2<T>( Vec.x, Vec.y )
+{
 }
 
 template <typename T>

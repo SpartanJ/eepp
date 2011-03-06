@@ -86,43 +86,52 @@ endif
 
 BACKENDFLAGS = $(SDL_DEFINE) $(ALLEGRO_DEFINE)
 
+ifeq ($(NO_LIBSNDFILE),yes)
+	LIBSNDFILE	=
+	SNDFILEFLAG = -DEE_NO_SNDFILE
+else
+	LIBSNDFILE	= -lsndfile
+	SNDFILEFLAG = 
+endif
+
 ifeq ($(GLES2), yes)
-	FINALFLAGS = $(DEBUGFLAGS) -DEE_GLES2 -DSOIL_GLES2
+	FINALFLAGS = $(DEBUGFLAGS) $(SNDFILEFLAG) -DEE_GLES2 -DSOIL_GLES2
 else
 	ifeq ($(GLES1), yes)
-		FINALFLAGS = $(DEBUGFLAGS) -DEE_GLES1 -DSOIL_GLES1
+		FINALFLAGS = $(DEBUGFLAGS) $(SNDFILEFLAG) -DEE_GLES1 -DSOIL_GLES1
 	else
-		FINALFLAGS = $(DEBUGFLAGS)
+		FINALFLAGS = $(DEBUGFLAGS) $(SNDFILEFLAG)
 	endif
 endif
 
 ifeq ($(OS), linux)
-LIBS 		= -lfreetype -lsndfile -lopenal -lGL -lGLU $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
-LIBSIV 		= -lX11 -lXcursor
+
+LIBS 		= -lfreetype -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
 OTHERINC	= -I/usr/include/freetype2
 PLATFORMSRC	= $(wildcard ./src/window/platform/x11/*.cpp)
+
 else
 
 ifeq ($(OS), darwin)
-LIBS 		= -lfreetype -lSDL -lSDLmain -lsndfile -framework OpenGL -framework GLUT -framework OpenAL -framework Cocoa -framework CoreFoundation -framework AGL
-LIBSIV 		= 
+LIBS 		= -lfreetype -lSDL -lSDLmain -framework OpenGL -framework OpenAL -framework Cocoa -framework CoreFoundation -framework AGL $(LIBSNDFILE)
 OTHERINC	= -I/usr/include/freetype2
 PLATFORMSRC = $(wildcard ./src/window/platform/osx/*.cpp)
 
 else
 
 ifeq ($(OS), haiku)
-LIBS 		= -lfreetype -lopenal -lGL -lGLU $(SDL_BACKEND_LINK)
-LIBSIV 		= 
+
+LIBS 		= -lfreetype -lopenal -lGL $(SDL_BACKEND_LINK)
 OTHERINC	= -I/usr/include/freetype2
 PLATFORMSRC	= 
-endif
 
 endif
 
 endif
 
-HELPERSINC	= -I./src/helper/chipmunk -I./src/helper/zlib
+endif
+
+HELPERSINC			= -I./src/helper/chipmunk -I./src/helper/zlib
 
 EXE     			= eetest-$(RELEASETYPE)
 EXEIV				= eeiv-$(RELEASETYPE)
@@ -259,7 +268,7 @@ $(EXEFLUID): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJFLUID)
 	$(CPP) -o ./$(EXEFLUID) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJFLUID) $(LDFLAGS) $(LIBS)
 
 $(EXEIV): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJEEIV)
-	$(CPP) -o ./$(EXEIV) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJEEIV) $(LDFLAGS) $(LIBS) $(LIBSIV)
+	$(CPP) -o ./$(EXEIV) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJEEIV) $(LDFLAGS) $(LIBS)
 
 $(EXE): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJTEST)
 	$(CPP) -o ./$(EXE) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJTEST) $(LDFLAGS) $(LIBS)

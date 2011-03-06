@@ -76,7 +76,7 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 		cInput * Input = mWindow->GetInput();
 
 		ChangedSinceLastUpdate( false );
-		Int32 c = eeConvertKeyCharacter( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
+		Uint32 c = eeConvertKeyCharacter( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
 
 		if ( SupportFreeEditing() ) {
 			switch ( Event->Type ) {
@@ -182,7 +182,7 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 							ChangedSinceLastUpdate( true );
 
 							if ( AutoPrompt() ) {
-								mText.append( 1, static_cast<String::StringBaseType> ( c ) );
+								mText += c;
 								mPromptPos = (eeInt)mText.size();
 							} else {
 								InsertChar( mText, mPromptPos, c );
@@ -256,7 +256,7 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 						mEnterCall();
 				} else if ( CanAdd() && isCharacter(c) && !Input->MetaPressed() && !Input->AltPressed() && !Input->ControlPressed() ) {
 					if ( !( AllowOnlyNumbers() && !isNumber( c, AllowDotsInNumbers() ) ) ) {
-						mText.append( 1, static_cast<String::StringBaseType> ( c ) );
+						mText += c;
 					}
 				}
 			}
@@ -427,7 +427,7 @@ bool cInputTextBuffer::AutoPrompt() {
 }
 
 bool cInputTextBuffer::Active() const {
-	return 0 != ( mFlags & ( 1 << INPUT_TB_ACTIVE ) );;
+	return 0 != ( mFlags & ( 1 << INPUT_TB_ACTIVE ) );
 }
 
 void cInputTextBuffer::Active( const bool& Active ) {

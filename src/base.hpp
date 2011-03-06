@@ -150,10 +150,12 @@
 
 namespace EE {
 #if 1 == EE_USE_DOUBLES
+	#define EE_SIZE_OF_FLOAT 8
 	typedef double eeFloat;
 	#define eesqrt sqrt
 	#define eesin sin
 	#define eecos cos
+	#define eetan tan
 	#define eeacos acos
 	#define eeatan2 atan2
 	#define eemod fmod
@@ -163,10 +165,12 @@ namespace EE {
 	#define eeceil ceil
 	#define eeabs abs
 #else
+	#define EE_SIZE_OF_FLOAT 4
 	typedef float eeFloat; //! The internal floating point used on EE++. \n This can help to improve compatibility with some platforms. \n And helps for an easy change from single precision to double precision.
 	#define eesqrt sqrtf
 	#define eesin sinf
 	#define eecos cosf
+	#define eetan tanf
 	#define eeacos acosf
 	#define eeatan2 atan2f
 	#define eemod fmodf

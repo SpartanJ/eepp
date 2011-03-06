@@ -17,6 +17,7 @@ cTexture::cTexture() :
 }
 
 cTexture::cTexture( const cTexture& Copy ) :
+	cImage(),
 	mFilepath( Copy.mFilepath ),
 	mId( Copy.mId ),
 	mTexture( Copy.mTexture ),

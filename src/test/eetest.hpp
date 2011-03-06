@@ -56,7 +56,7 @@ class cUITest : public cUIControlAnim {
 enum CollisionTypes {
 	BALL_TYPE,
 	BLOCKING_SENSOR_TYPE,
-	CATCH_SENSOR_TYPE,
+	CATCH_SENSOR_TYPE
 };
 
 typedef struct Emitter {

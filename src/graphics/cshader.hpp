@@ -58,7 +58,7 @@ class EE_API cShader {
     	/** Reloads the Shader. */
     	void Reload();
     protected:
-		friend class cRendererGL3;;
+		friend class cRendererGL3;
     	GLuint 				mGLId;
     	GLenum 				mType;
 		std::string 		mCompileLog;

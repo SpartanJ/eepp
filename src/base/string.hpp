@@ -202,12 +202,15 @@ class EE_API String {
 	**/
 	String& operator =(const String& right);
 
+	String& operator =( const StringBaseType& right );
+
 	/** @brief Overload of += operator to append an UTF-32 string
 	** @param right String to append
 	** @return Reference to self
 	**/
 	String& operator +=(const String& right);
 
+	String& operator +=( const StringBaseType& right );
 
 	/** @brief Overload of [] operator to access a character by its position
 	** This function provides read-only access to characters.
@@ -626,5 +629,5 @@ EE_API String operator +( const String& left, const String& right );
 ** Please note that EE also defines a low-level, generic
 ** interface for Unicode handling, see the EE::Utf classes.
 **
-** All credits to Laurent Gomila, i just modified a little bit the implementation.
+** All credits to Laurent Gomila, i just modified and expanded a little bit the implementation.
 **/

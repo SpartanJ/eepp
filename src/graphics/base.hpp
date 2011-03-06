@@ -32,8 +32,6 @@
 		#elif EE_PLATFORM == EE_PLATFORM_MACOSX
 			#include <OpenGL/glext.h>
 		#endif
-
-		#include <GL/glu.h>
 	#endif
 
 #else

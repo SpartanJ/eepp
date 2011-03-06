@@ -607,7 +607,6 @@ static cpSpatialIndexClass klass = {
 #define CP_BBTREE_DEBUG_DRAW
 #ifdef CP_BBTREE_DEBUG_DRAW
 #include <GL/gl.h>
-#include <GL/glu.h>
 
 void
 cpSpaceHashRenderDebug(cpSpatialIndex *index)

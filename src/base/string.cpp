@@ -177,11 +177,24 @@ String& String::operator =(const String& right)
     return *this;
 }
 
+String& String::operator =( const StringBaseType& right )
+{
+	mString = right;
+	return *this;
+}
+
 String& String::operator +=(const String& right)
 {
     mString += right.mString;
     return *this;
 }
+
+String& String::operator +=( const StringBaseType& right )
+{
+	mString += right;
+	return *this;
+}
+
 
 String::StringBaseType String::operator [](std::size_t index) const
 {

@@ -32,13 +32,13 @@ void cCursorManager::Remove( cCursor * cursor, bool Delete ) {
 }
 
 void cCursorManager::Remove( const std::string& name, bool Delete ) {
-	Remove( MakeHash( name ) );
+	Remove( MakeHash( name ), Delete );
 }
 
 void cCursorManager::Remove( const Uint32& id, bool Delete ) {
 	for ( CursorsList::iterator it = mCursors.begin(); it != mCursors.end(); ++it ) {
 		if ( (*it)->Id() == id ) {
-			Remove( (*it) );
+			Remove( (*it), Delete );
 			break;	
 		}
 	}
