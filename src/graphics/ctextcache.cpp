@@ -14,7 +14,7 @@ cTextCache::cTextCache() :
 {
 }
 
-cTextCache::cTextCache( cFont * font, const std::wstring& text, eeColorA FontColor, eeColorA FontShadowColor ) :
+cTextCache::cTextCache( cFont * font, const String& text, eeColorA FontColor, eeColorA FontShadowColor ) :
 	mText( text ),
 	mFont( font ),
 	mCachedWidth(0.f),
@@ -29,7 +29,7 @@ cTextCache::cTextCache( cFont * font, const std::wstring& text, eeColorA FontCol
 cTextCache::~cTextCache() {
 }
 
-void cTextCache::Create( cFont * font, const std::wstring& text, eeColorA FontColor, eeColorA FontShadowColor ) {
+void cTextCache::Create( cFont * font, const String& text, eeColorA FontColor, eeColorA FontShadowColor ) {
 	mFont = font;
 	mText = text;
 	UpdateCoords();
@@ -47,7 +47,7 @@ void cTextCache::Font( cFont * font ) {
 	Cache();
 }
 
-std::wstring& cTextCache::Text() {
+String& cTextCache::Text() {
 	return mText;
 }
 
@@ -58,7 +58,7 @@ void cTextCache::UpdateCoords() {
 	mColors.resize( size, mFontColor );
 }
 
-void cTextCache::Text( const std::wstring& text ) {
+void cTextCache::Text( const String& text ) {
 	bool needUpdate = false;
 
 	if ( mText.size() != text.size() )
@@ -98,10 +98,6 @@ std::vector<eeVertexCoords>& cTextCache::VertextCoords() {
 
 std::vector<eeColorA>& cTextCache::Colors() {
 	return mColors;
-}
-
-void cTextCache::Text( const std::string& text ) {
-	Text( stringTowstring( text ) );
 }
 
 void cTextCache::Cache() {

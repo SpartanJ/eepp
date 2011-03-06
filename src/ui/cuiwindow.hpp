@@ -77,9 +77,9 @@ class cUIWindow : public cUIComplexControl {
 
 		const Uint8& BaseAlpha() const;
 
-		void Title( const std::wstring& Text );
+		void Title( const String& Text );
 
-		std::wstring Title() const;
+		String Title() const;
 
 		cUITextBox * TitleTextBox() const;
 	protected:

@@ -17,15 +17,15 @@ void cClipboardNull::Init() {
 void cClipboardNull::SetText( const std::string& Text ) {
 }
 
-void cClipboardNull::SetText( const std::wstring& Text ) {
+void cClipboardNull::SetText( const String& Text ) {
 }
 
 std::string cClipboardNull::GetText() {
 	return std::string();
 }
 
-std::wstring cClipboardNull::GetTextWStr() {
-	return std::wstring();
+String cClipboardNull::GetWideText() {
+	return String();
 }
 
 }}}}

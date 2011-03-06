@@ -42,11 +42,9 @@ class EE_API cUITextInput : public cUITextBox {
 
 		const bool& AllowEditing() const;
 
-		virtual const std::wstring& Text();
+		virtual const String& Text();
 
-		virtual void Text( const std::wstring& text );
-
-		virtual void Text( const std::string& text );
+		virtual void Text( const String& text );
 
 		virtual void ShrinkText( const Uint32& MaxWidth );
 	protected:

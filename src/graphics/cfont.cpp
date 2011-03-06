@@ -23,7 +23,7 @@ cFont::~cFont() {
 	mGlyphs.clear();
 }
 
-void cFont::SetText( const std::wstring& Text ) {
+void cFont::SetText( const String& Text ) {
 	if ( mText.size() != Text.size() ) {
 		Int32 size = Text.size() * EE_QUAD_VERTEX;
 
@@ -35,10 +35,6 @@ void cFont::SetText( const std::wstring& Text ) {
 
 	if ( mCacheData )
 		CacheWidth();
-}
-
-void cFont::SetText( const std::string& Text) {
-	SetText ( stringTowstring(Text) );
 }
 
 const eeColorA& cFont::Color() const {
@@ -76,7 +72,7 @@ eeInt cFont::GetNumLines() {
 	return mNumLines;
 }
 
-eeFloat cFont::GetTextWidth( const std::wstring& Text ) {
+eeFloat cFont::GetTextWidth( const String& Text ) {
 	SetText( Text );
 	return mCachedWidth;
 }
@@ -93,7 +89,7 @@ Uint32 cFont::GetFontHeight() const {
 	return mHeight;
 }
 
-std::wstring cFont::GetText() {
+String cFont::GetText() {
 	return mText;
 }
 
@@ -113,15 +109,11 @@ const std::vector<eeFloat>& cFont::GetLinesWidth() const {
 	return mLinesWidth;
 }
 
-void cFont::Draw( const std::string& Text, const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, const EE_PRE_BLEND_FUNC& Effect ) {
-	Draw( stringTowstring(Text), X, Y, Flags, Scale, Angle, Effect );
-}
-
 void cFont::Draw( const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, const EE_PRE_BLEND_FUNC& Effect) {
 	SubDraw( mText, X, Y, Flags, Scale, Angle, true, Effect );
 }
 
-void cFont::Draw( const std::wstring& Text, const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, const EE_PRE_BLEND_FUNC& Effect ) {
+void cFont::Draw( const String& Text, const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, const EE_PRE_BLEND_FUNC& Effect ) {
 	SubDraw( Text, X, Y, Flags, Scale, Angle, false, Effect );
 }
 
@@ -312,7 +304,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 	}
 }
 
-void cFont::SubDraw( const std::wstring& Text, const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, const bool& Cached, const EE_PRE_BLEND_FUNC& Effect ) {
+void cFont::SubDraw( const String& Text, const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, const bool& Cached, const EE_PRE_BLEND_FUNC& Effect ) {
 	if ( !Text.size() )
 		return;
 
@@ -482,7 +474,7 @@ void cFont::SubDraw( const std::wstring& Text, const eeFloat& X, const eeFloat& 
 		GLi->PopMatrix();
 }
 
-void cFont::CacheWidth( const std::wstring& Text, std::vector<eeFloat>& LinesWidth, eeFloat& CachedWidth, eeInt& NumLines ) {
+void cFont::CacheWidth( const String& Text, std::vector<eeFloat>& LinesWidth, eeFloat& CachedWidth, eeInt& NumLines ) {
 	LinesWidth.clear();
 
 	eeFloat Width = 0, MaxWidth = 0;
@@ -588,7 +580,7 @@ void cFont::ShrinkText( std::string& Str, const Uint32& MaxWidth ) {
 	}
 }
 
-void cFont::ShrinkText( std::wstring& Str, const Uint32& MaxWidth ) {
+void cFont::ShrinkText( String& Str, const Uint32& MaxWidth ) {
 	if ( !Str.size() )
 		return;
 
@@ -596,11 +588,11 @@ void cFont::ShrinkText( std::wstring& Str, const Uint32& MaxWidth ) {
 	eeFloat 	tWordWidth		= 0.f;
 	eeFloat 	tMaxWidth		= (eeFloat) MaxWidth;
 	Int32 		tPrev			= -1;
-	wchar_t *	tStringLoop		= &Str[0];
-	wchar_t	*	tLastSpace		= NULL;
+	String::StringBaseType *	tStringLoop		= &Str[0];
+	String::StringBaseType *	tLastSpace		= NULL;
 
 	while ( *tStringLoop ) {
-		if ( (Uint32)( *tStringLoop ) < mGlyphs.size() ) {
+		if ( (String::StringBaseType)( *tStringLoop ) < mGlyphs.size() ) {
 			eeGlyph * pChar = &mGlyphs[ ( *tStringLoop ) ];
 			eeFloat fCharWidth	= (eeFloat)pChar->Advance;
 

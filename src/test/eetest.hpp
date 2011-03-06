@@ -79,7 +79,7 @@ class cEETest : private cThread {
 		void ParticlesThread();
 		void Particles();
 		void LoadTextures();
-		void CmdSetPartsNum ( const std::vector < std::wstring >& params );
+		void CmdSetPartsNum ( const std::vector < String >& params );
 
 		std::vector<cParticleSystem, eeAllocator< cParticleSystem > > PS;
 
@@ -181,7 +181,7 @@ class cEETest : private cThread {
 		eeInt mWidth;
 		eeInt mHeight;
 
-		std::wstring mBuda;
+		String mBuda;
 
 		cResourceLoader mResLoad;
 		void OnTextureLoaded( cResourceLoader * ObjLoaded );

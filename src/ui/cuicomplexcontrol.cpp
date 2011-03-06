@@ -76,7 +76,7 @@ void cUIComplexControl::CreateTooltip() {
 	mTooltip = eeNew( cUITooltip, ( Params, this ) );
 }
 
-void cUIComplexControl::TooltipText( const std::wstring& Text ) {
+void cUIComplexControl::TooltipText( const String& Text ) {
 	if ( NULL == mTooltip ) {	// If the tooltip wasn't created it will avoid to create a new one if the string is ""
 		if ( Text.size() ) {
 			CreateTooltip();
@@ -88,15 +88,11 @@ void cUIComplexControl::TooltipText( const std::wstring& Text ) {
 	}
 }
 
-void cUIComplexControl::TooltipText( const std::string& Text ) {
-	TooltipText( stringTowstring( Text ) );
-}
-
-std::wstring cUIComplexControl::TooltipText() {
+String cUIComplexControl::TooltipText() {
 	if ( NULL != mTooltip )
 		return mTooltip->Text();
 
-	return std::wstring();
+	return String();
 }
 
 void cUIComplexControl::TooltipRemove() {

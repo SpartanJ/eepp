@@ -176,7 +176,7 @@ const bool& cUITextInput::AllowEditing() const {
 	return mAllowEditing;
 }
 
-void cUITextInput::Text( const std::wstring& text ) {
+void cUITextInput::Text( const String& text ) {
 	cUITextBox::Text( text );
 
 	mTextBuffer.Buffer( text );
@@ -184,12 +184,8 @@ void cUITextInput::Text( const std::wstring& text ) {
 	mTextBuffer.CursorToEnd();
 }
 
-const std::wstring& cUITextInput::Text() {
+const String& cUITextInput::Text() {
 	return cUITextBox::Text();
-}
-
-void cUITextInput::Text( const std::string& text ) {
-	Text( stringTowstring( text ) );
 }
 
 void cUITextInput::ShrinkText( const Uint32& MaxWidth ) {

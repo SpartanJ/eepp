@@ -60,19 +60,19 @@ class EE_API cUIMenu : public cUIComplexControl {
 
 		~cUIMenu();
 
-		Uint32 Add( const std::wstring& Text, cShape * Icon = NULL );
+		Uint32 Add( const String& Text, cShape * Icon = NULL );
 
 		Uint32 Add( cUIControl * Control );
 
 		Uint32 AddSeparator();
 
-		Uint32 AddCheckBox( const std::wstring& Text );
+		Uint32 AddCheckBox( const String& Text );
 
-		Uint32 AddSubMenu( const std::wstring& Text, cShape * Icon = NULL, cUIMenu * SubMenu = NULL );
+		Uint32 AddSubMenu( const String& Text, cShape * Icon = NULL, cUIMenu * SubMenu = NULL );
 
 		cUIControl * GetItem( const Uint32& Index );
 		
-		cUIControl * GetItem( const std::wstring& Text );
+		cUIControl * GetItem( const String& Text );
 
 		Uint32 GetItemIndex( cUIControl * Item );
 
@@ -84,7 +84,7 @@ class EE_API cUIMenu : public cUIComplexControl {
 
 		void RemoveAll();
 
-		void Insert( const std::wstring& Text, cShape * Icon, const Uint32& Index );
+		void Insert( const String& Text, cShape * Icon, const Uint32& Index );
 
 		void Insert( cUIControl * Control, const Uint32& Index );
 
@@ -133,11 +133,11 @@ class EE_API cUIMenu : public cUIComplexControl {
 		
 		void ResizeMe();
 		
-		cUIMenuItem * CreateMenuItem( const std::wstring& Text, cShape * Icon );
+		cUIMenuItem * CreateMenuItem( const String& Text, cShape * Icon );
 
-		cUIMenuCheckBox * CreateMenuCheckBox( const std::wstring& Text );
+		cUIMenuCheckBox * CreateMenuCheckBox( const String& Text );
 
-		cUIMenuSubMenu * CreateSubMenu( const std::wstring& Text, cShape * Icon, cUIMenu * SubMenu );
+		cUIMenuSubMenu * CreateSubMenu( const String& Text, cShape * Icon, cUIMenu * SubMenu );
 		
 		void DoAfterSetTheme();
 

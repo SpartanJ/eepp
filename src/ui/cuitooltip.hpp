@@ -52,11 +52,9 @@ class EE_API cUITooltip : public cUIControlAnim {
 
 		void Font( cFont * font );
 
-		virtual const std::wstring& Text();
+		virtual const String& Text();
 
-		virtual void Text( const std::wstring& text );
-
-		virtual void Text( const std::string& text );
+		virtual void Text( const String& text );
 
 		const eeColorA& Color() const;
 

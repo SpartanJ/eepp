@@ -103,6 +103,17 @@ mString(str.mString)
 {
 }
 
+String String::FromUtf8( const std::string& utf8 )
+{
+	String::StringType utf32;
+
+	utf32.reserve( utf8.length() + 1 );
+
+	Utf8::ToUtf32( utf8.begin(), utf8.end(), std::back_inserter( utf32 ) );
+
+	return String( utf32 );
+}
+
 String::operator std::string() const
 {
     return ToAnsiString();
@@ -137,16 +148,27 @@ std::string String::ToAnsiString(const std::locale& locale) const
     return output;
 }
 
-std::wstring String::ToWideString() const
+String String::ToWideString() const
 {
     // Prepare the output string
-    std::wstring output;
+	std::wstring output;
     output.reserve(mString.length() + 1);
 
     // Convert
     Utf32::ToWide(mString.begin(), mString.end(), std::back_inserter(output), 0);
 
     return output;
+}
+
+std::string String::ToUtf8() const {
+	// Prepare the output string
+	std::string output;
+	output.reserve(mString.length() + 1);
+
+	// Convert
+	Utf32::ToUtf8(mString.begin(), mString.end(), std::back_inserter(output) );
+
+	return output;
 }
 
 String& String::operator =(const String& right)
@@ -402,6 +424,13 @@ String& String::append ( const char* s )
 }
 
 String& String::append ( size_t n, char c )
+{
+	mString.append( n, c );
+
+	return *this;
+}
+
+String& String::append ( std::size_t n, StringBaseType c )
 {
 	mString.append( n, c );
 

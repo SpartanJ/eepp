@@ -12,23 +12,21 @@ class cFont;
 /** @brief Cached text for a fast font rendering. */
 class EE_API cTextCache {
 	public:
-		cTextCache( cFont * font, const std::wstring& text = L"", eeColorA FontColor = eeColorA(0xFFFFFFFF), eeColorA FontShadowColor = eeColorA(0xFF000000) );
+		cTextCache( cFont * font, const String& text = "", eeColorA FontColor = eeColorA(0xFFFFFFFF), eeColorA FontShadowColor = eeColorA(0xFF000000) );
 
 		cTextCache();
 
 		~cTextCache();
 
-		void Create( cFont * font, const std::wstring& text = L"", eeColorA FontColor = eeColorA(0xFFFFFFFF), eeColorA FontShadowColor = eeColorA(0xFF000000) );
+		void Create( cFont * font, const String& text = "", eeColorA FontColor = eeColorA(0xFFFFFFFF), eeColorA FontShadowColor = eeColorA(0xFF000000) );
 
 		cFont * Font() const;
 
 		void Font( cFont * font );
 
-		std::wstring& Text();
+		String& Text();
 
-		void Text( const std::wstring& text );
-
-		void Text( const std::string& text );
+		void Text( const String& text );
 
 		eeFloat GetTextWidth();
 
@@ -60,7 +58,7 @@ class EE_API cTextCache {
 	protected:
 		friend class cFont;
 
-		std::wstring 				mText;
+		String 				mText;
 		cFont * 					mFont;
 		std::vector<eeFloat> 		mLinesWidth;
 		eeFloat 					mCachedWidth;

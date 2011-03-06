@@ -141,6 +141,10 @@ void cEETest::Init() {
 }
 
 void cEETest::CreateAquaTextureAtlas() {
+	#ifndef EE_DEBUG
+	return;
+	#endif
+
 	//cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
 
 	std::string tgpath( MyPath + "data/aquatg/aqua" );
@@ -191,9 +195,9 @@ void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
 
 	CreateUI();
 
-	mEEText.Create( TTFB, L"Entropia Engine++\nCTRL + Number to change Demo Screen" );
-	mFBOText.Create( TTFB, L"This is a VBO\nInside of a FBO" );
-	mInfoText.Create( FF, L"", eeColorA(255,255,255,150) );
+	mEEText.Create( TTFB, "Entropia Engine++\nCTRL + Number to change Demo Screen" );
+	mFBOText.Create( TTFB, "This is a VBO\nInside of a FBO" );
+	mInfoText.Create( FF, "", eeColorA(255,255,255,150) );
 }
 
 void cEETest::CreateShaders() {
@@ -273,7 +277,7 @@ void cEETest::CreateUI() {
 	cUITextBox * Text = eeNew( cUITextBox, ( TextParams ) );
 	Text->Visible( true );
 	Text->Enabled( false );
-	Text->Text( L"Turn around\nJust Turn Around\nAround!" );
+	Text->Text( "Turn around\nJust Turn Around\nAround!" );
 
 	cUITextInput::CreateParams InputParams;
 	InputParams.Parent( C );
@@ -293,28 +297,28 @@ void cEETest::CreateUI() {
 	cUIPushButton * Button = eeNew( cUIPushButton, ( ButtonParams ) );
 	Button->Visible( true );
 	Button->Enabled( true );
-	Button->Text( L"Click Me" );
+	Button->Text( "Click Me" );
 	Button->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::ButtonClick ) );
-	Button->TooltipText( L"Click and see what happens..." );
+	Button->TooltipText( "Click and see what happens..." );
 
 	TextParams.PosSet( 130, 20 );
 	TextParams.Size = eeSize( 80, 22 );
 	TextParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT;
 	cUICheckBox * Checkbox = eeNew( cUICheckBox, ( TextParams ) );
 	Checkbox->Visible( true );
-	Checkbox->Text( L"Check Me" );
+	Checkbox->Text( "Check Me" );
 	Checkbox->Enabled( true );
 
 	TextParams.PosSet( 130, 40 );
 	cUIRadioButton * RadioButton = eeNew( cUIRadioButton, ( TextParams ) );
 	RadioButton->Visible( true );
-	RadioButton->Text( L"Check Me" );
+	RadioButton->Text( "Check Me" );
 	RadioButton->Enabled( true );
 
 	TextParams.PosSet( 130, 60 );
 	RadioButton = eeNew( cUIRadioButton, ( TextParams ) );
 	RadioButton->Visible( true );
-	RadioButton->Text( L"Check Me 2" );
+	RadioButton->Text( "Check Me 2" );
 	RadioButton->Enabled( true );
 
 	cUISlider::CreateParams SliderParams;
@@ -385,12 +389,12 @@ void cEETest::CreateUI() {
 	Int32 wsize = 100;
 
 	if ( wsize ) {
-		std::vector<std::wstring> wstr(wsize);
+		std::vector<String> str(wsize);
 
 		for ( Int32 i = 1; i <= wsize; i++ )
-			wstr[i-1] = L"Test ListBox " + toWStr(i) + L" testing it right now!";
+			str[i-1] = "Test ListBox " + toStr(i) + " testing it right now!";
 
-		mListBox->AddListBoxItems( wstr );
+		mListBox->AddListBoxItems( str );
 	}
 
 	cUIDropDownList::CreateParams DDLParams;
@@ -402,11 +406,11 @@ void cEETest::CreateUI() {
 	mDropDownList->Visible( true );
 	mDropDownList->Enabled( true );
 
-	std::vector<std::wstring> combostrs;
-	combostrs.push_back( L"Plane" );
-	combostrs.push_back( L"Car" );
-	combostrs.push_back( L"Bus" );
-	combostrs.push_back( L"Train" );
+	std::vector<String> combostrs;
+	combostrs.push_back( "Plane" );
+	combostrs.push_back( "Car" );
+	combostrs.push_back( "Bus" );
+	combostrs.push_back( "Train" );
 
 	mDropDownList->ListBox()->AddListBoxItems( combostrs );
 	mDropDownList->ListBox()->SetSelected( 0 );
@@ -433,41 +437,41 @@ void cEETest::CreateUI() {
 	MenuParams.FontSelectedColor = eeColorA( 255, 255, 255, 255 );
 	MenuParams.MinRightMargin = 8;
 	Menu = eeNew( cUIPopUpMenu, ( MenuParams ) );
-	Menu->Add( L"New", cGlobalShapeGroup::instance()->GetByName( "aqua_button_ok" ) );
-	Menu->Add( L"Open..." );
+	Menu->Add( "New", cGlobalShapeGroup::instance()->GetByName( "aqua_button_ok" ) );
+	Menu->Add( "Open..." );
 	Menu->AddSeparator();
-	Menu->Add( L"Show Screen 1" );
-	Menu->Add( L"Show Screen 2" );
-	Menu->Add( L"Show Screen 3" );
-	Menu->Add( L"Show Screen 4" );
-	Menu->Add( L"Show Screen 5" );
-	Menu->Add( L"Show Screen 6" );
+	Menu->Add( "Show Screen 1" );
+	Menu->Add( "Show Screen 2" );
+	Menu->Add( "Show Screen 3" );
+	Menu->Add( "Show Screen 4" );
+	Menu->Add( "Show Screen 5" );
+	Menu->Add( "Show Screen 6" );
 	Menu->AddSeparator();
-	Menu->AddCheckBox( L"Show Window" );
-	Menu->Add( L"Show Window 2" );
-	Menu->AddCheckBox( L"Multi Viewport" );
+	Menu->AddCheckBox( "Show Window" );
+	Menu->Add( "Show Window 2" );
+	Menu->AddCheckBox( "Multi Viewport" );
 
 	cUIPopUpMenu * Menu3 = eeNew( cUIPopUpMenu, ( MenuParams ) );
-	Menu3->Add( L"Hello World 1" );
-	Menu3->Add( L"Hello World 2" );
-	Menu3->Add( L"Hello World 3" );
-	Menu3->Add( L"Hello World 4" );
+	Menu3->Add( "Hello World 1" );
+	Menu3->Add( "Hello World 2" );
+	Menu3->Add( "Hello World 3" );
+	Menu3->Add( "Hello World 4" );
 
 	cUIPopUpMenu * Menu2 = eeNew( cUIPopUpMenu, ( MenuParams ) );
-	Menu2->Add( L"Test 1" );
-	Menu2->Add( L"Test 2" );
-	Menu2->Add( L"Test 3" );
-	Menu2->Add( L"Test 4" );
-	Menu2->AddSubMenu( L"Hello World", NULL, Menu3 );
+	Menu2->Add( "Test 1" );
+	Menu2->Add( "Test 2" );
+	Menu2->Add( "Test 3" );
+	Menu2->Add( "Test 4" );
+	Menu2->AddSubMenu( "Hello World", NULL, Menu3 );
 
 	Menu->AddSeparator();
-	Menu->AddSubMenu( L"Sub-Menu", NULL, Menu2 ) ;
+	Menu->AddSubMenu( "Sub-Menu", NULL, Menu2 ) ;
 
 	Menu->AddSeparator();
-	Menu->Add( L"Quit" );
+	Menu->Add( "Quit" );
 
 	Menu->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cEETest::ItemClick ) );
-	Menu->GetItem( L"Quit" )->AddEventListener( cUIEvent::EventMouseUp, cb::Make1( this, &cEETest::QuitClick ) );
+	Menu->GetItem( "Quit" )->AddEventListener( cUIEvent::EventMouseUp, cb::Make1( this, &cEETest::QuitClick ) );
 	cUIManager::instance()->MainControl()->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::MainClick ) );
 
 	cUITextEdit::CreateParams TEParams;
@@ -508,7 +512,7 @@ void cEETest::CreateUI() {
 		cUITextInput * TxtInput		= eeNew( cUITextInput, ( TxtInputParams ) );
 		cUIGfx * TxtGfx				= eeNew( cUIGfx, ( TxtGfxParams )  );
 
-		TxtBox->Text( L"Test " + toWStr( i+1 ) );
+		TxtBox->Text( "Test " + toStr( i+1 ) );
 
 		Cell->Cell( 0, TxtBox );
 		Cell->Cell( 1, TxtGfx );
@@ -521,7 +525,7 @@ void cEETest::CreateUI() {
 	mGenGrid->CollumnWidth( 1, 24 );
 	mGenGrid->CollumnWidth( 2, 100 );
 /*
-	//reinterpret_cast<cUIMenuCheckBox*> ( Menu->GetItem( L"Show Window" ) )->Active( true );
+	//reinterpret_cast<cUIMenuCheckBox*> ( Menu->GetItem( "Show Window" ) )->Active( true );
 	C->Visible( true );
 	C->Enabled( true );
 	C->StartScaleAnim( 0.f, 1.f, 500.f, SINEOUT );
@@ -550,7 +554,7 @@ void cEETest::CreateDecoratedWindow() {
 
 	mUIWindow = eeNew( cUIWindow, ( WinParams ) );
 	mUIWindow->AddEventListener( cUIEvent::EventOnWindowCloseClick, cb::Make1( this, &cEETest::CloseClick ) );
-	mUIWindow->Title( L"Test Window" );
+	mUIWindow->Title( "Test Window" );
 	mUIWindow->ToBack();
 }
 
@@ -562,21 +566,21 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 	if ( !Event->Ctrl()->IsType( UI_TYPE_MENUITEM ) )
 		return;
 
-	const std::wstring& txt = reinterpret_cast<cUIMenuItem*> ( Event->Ctrl() )->Text();
+	const String& txt = reinterpret_cast<cUIMenuItem*> ( Event->Ctrl() )->Text();
 
-	if ( L"Show Screen 1" == txt ) {
+	if ( "Show Screen 1" == txt ) {
 		SetScreen( 0 );
-	} else if ( L"Show Screen 2" == txt ) {
+	} else if ( "Show Screen 2" == txt ) {
 		SetScreen( 1 );
-	} else if ( L"Show Screen 3" == txt ) {
+	} else if ( "Show Screen 3" == txt ) {
 		SetScreen( 2 );
-	} else if ( L"Show Screen 4" == txt ) {
+	} else if ( "Show Screen 4" == txt ) {
 		SetScreen( 3 );
-	} else if ( L"Show Screen 5" == txt ) {
+	} else if ( "Show Screen 5" == txt ) {
 		SetScreen( 4 );
-	} else if ( L"Show Screen 6" == txt ) {
+	} else if ( "Show Screen 6" == txt ) {
 		SetScreen( 5 );
-	} else if ( L"Show Window" == txt ) {
+	} else if ( "Show Window" == txt ) {
 		cUIMenuCheckBox * Chk = reinterpret_cast<cUIMenuCheckBox*> ( Event->Ctrl() );
 
 		C->Visible( true );
@@ -591,19 +595,19 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 			C->StartAlphaAnim( C->Alpha(), 0.f, 500.f );
 			C->StartRotation( 0, 360, 500.f, SINEIN );
 		}
-	} else if ( L"Show Window 2" == txt ) {
+	} else if ( "Show Window 2" == txt ) {
 		if ( NULL == mUIWindow ) {
 			CreateDecoratedWindow();
 		}
 
 		mUIWindow->Show();
-	} else if ( L"Multi Viewport" == txt ) {
+	} else if ( "Multi Viewport" == txt ) {
 		MultiViewportMode = !MultiViewportMode;
 	}
 }
 
 void cEETest::OnValueChange( const cUIEvent * Event ) {
-	mTextBoxValue->Text( L"Scroll Value:\n" + toWStr( mScrollBar->Value() ) );
+	mTextBoxValue->Text( "Scroll Value:\n" + toStr( mScrollBar->Value() ) );
 
 	mProgressBar->Progress( mScrollBar->Value() * 100.f );
 }
@@ -643,7 +647,7 @@ void cEETest::ButtonClick( const cUIEvent * Event ) {
 		Gfx->StartMovement( eeVector2i( eeRandi( 0, mWindow->GetWidth() ), -64 ), eeVector2i( eeRandi( 0, mWindow->GetWidth() ), mWindow->GetHeight() + 64 ), 2500 );
 		Gfx->CloseFadeOut( 3500 );
 
-		mListBox->AddListBoxItem( L"Test ListBox " + toWStr( mListBox->Count() + 1 ) + L" testing it right now!" );
+		mListBox->AddListBoxItem( "Test ListBox " + toStr( mListBox->Count() + 1 ) + " testing it right now!" );
 	}
 }
 
@@ -657,20 +661,20 @@ void cEETest::SetScreen( Uint32 num ) {
 		Screen = num;
 }
 
-void cEETest::CmdSetPartsNum ( const std::vector < std::wstring >& params ) {
+void cEETest::CmdSetPartsNum ( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		try {
 			Int32 tInt = 0;
 
-			bool Res = fromWString<Int32>( tInt, params[1] );
+			bool Res = fromString<Int32>( tInt, params[1] );
 
 			if ( Res && ( tInt >= 0 && tInt <= 100000 ) ) {
 				PS[2].Create(WormHole, tInt, TN[5], mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f, 32, true);
-				Con.PushText( L"Wormhole Particles Number Changed to: " + toWStr(tInt) );
+				Con.PushText( "Wormhole Particles Number Changed to: " + toStr(tInt) );
 			} else
-				Con.PushText( L"Valid parameters are between 0 and 100000 (0 = no limit)." );
+				Con.PushText( "Valid parameters are between 0 and 100000 (0 = no limit)." );
 		} catch (...) {
-			Con.PushText( L"Invalid Parameter. Expected int value from '" + params[1] + L"'." );
+			Con.PushText( "Invalid Parameter. Expected int value from '" + params[1] + "'." );
 		}
 	}
 }
@@ -732,7 +736,7 @@ void cEETest::LoadTextures() {
 	PS[1].Create(Heal, 250, TN[5], mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f, 16, true);
 
 	PS[2].Create(WormHole, PartsNum, TN[5], mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f, 32, true);
-	Con.AddCommand( L"setparticlesnum", cb::Make1( this, &cEETest::CmdSetPartsNum ) );
+	Con.AddCommand( "setparticlesnum", cb::Make1( this, &cEETest::CmdSetPartsNum ) );
 
 	PS[3].Create(Fire, 350, TN[5], -50.f, -50.f, 32, true);
 	PS[4].Create(Fire, 350, TN[5], -50.f, -50.f, 32, true);
@@ -1135,13 +1139,13 @@ void cEETest::Render() {
 	Uint32 NLPos = 0;
 	Uint32 LineNum = InBuf.GetCurPosLinePos( NLPos );
 	if ( InBuf.CurPos() == (eeInt)InBuf.Buffer().size() && !LineNum ) {
-		FF2->Draw( L"_", 6.f + FF2->GetTextWidth(), 180.f );
+		FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f );
 	} else {
 		FF2->SetText( InBuf.Buffer().substr( NLPos, InBuf.CurPos() - NLPos ) );
-		FF2->Draw( L"_", 6.f + FF2->GetTextWidth(), 180.f + (eeFloat)LineNum * (eeFloat)FF2->GetFontSize() );
+		FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f + (eeFloat)LineNum * (eeFloat)FF2->GetFontSize() );
 	}
 
-	FF2->SetText( L"FPS: " + toWStr( mWindow->FPS() ) );
+	FF2->SetText( "FPS: " + toStr( mWindow->FPS() ) );
 	FF2->Draw( mWindow->GetWidth() - FF2->GetTextWidth() - 15, 0 );
 
 	FF2->SetText( InBuf.Buffer() );

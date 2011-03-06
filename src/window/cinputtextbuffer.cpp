@@ -88,7 +88,7 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 								( ( Event->key.keysym.mod & KEYMOD_CTRL ) && Event->key.keysym.sym == KEY_V ) )
 							)
 						{
-							std::wstring txt = mWindow->GetClipboard()->GetTextWStr();
+							String txt = mWindow->GetClipboard()->GetWideText();
 
 							if ( !SupportNewLine() ) {
 								Uint32 pos = txt.find_first_of( '\n' );
@@ -182,7 +182,7 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 							ChangedSinceLastUpdate( true );
 
 							if ( AutoPrompt() ) {
-								mText += c;
+								mText.append( 1, static_cast<String::StringBaseType> ( c ) );
 								mPromptPos = (eeInt)mText.size();
 							} else {
 								InsertChar( mText, mPromptPos, c );
@@ -256,7 +256,7 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 						mEnterCall();
 				} else if ( CanAdd() && isCharacter(c) && !Input->MetaPressed() && !Input->AltPressed() && !Input->ControlPressed() ) {
 					if ( !( AllowOnlyNumbers() && !isNumber( c, AllowDotsInNumbers() ) ) ) {
-						mText += c;
+						mText.append( 1, static_cast<String::StringBaseType> ( c ) );
 					}
 				}
 			}
@@ -350,7 +350,7 @@ void cInputTextBuffer::SetReturnCallback( EnterCallback EC ) {
 	mEnterCall = EC;
 }
 
-void cInputTextBuffer::Buffer( const std::wstring& str ) {
+void cInputTextBuffer::Buffer( const String& str ) {
 	if ( mText != str ) {
 		mText = str;
 		ChangedSinceLastUpdate( true );
@@ -402,7 +402,7 @@ const Uint32& cInputTextBuffer::MaxLenght() const {
 	return mMaxLenght;
 }
 
-std::wstring cInputTextBuffer::Buffer() const {
+String cInputTextBuffer::Buffer() const {
 	return mText;
 }
 

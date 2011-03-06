@@ -17,18 +17,6 @@ bool isLetter( const eeInt& mValue ) {
 	return ( ( (mValue >= 65 && mValue <= 90) || (mValue >= 97 && mValue <= 122) || (mValue >= 192 && mValue <= 255) ) && (mValue != 215) && (mValue != 247) );
 }
 
-std::wstring stringTowstring(const std::string& s) {
-	std::wstring temp( s.length(), ' ' );
-	std::copy(s.begin(), s.end(), temp.begin());
-	return temp;
-}
-
-std::string wstringTostring( const std::wstring& s ) {
-	std::string temp( s.length(), ' ' );
-	std::copy(s.begin(), s.end(), temp.begin());
-	return temp;
-}
-
 std::string intToStr( Int32 n ) {
 	char buf[10];
 
@@ -68,19 +56,15 @@ std::string GetDateTimeStr() {
 #endif
 }
 
-std::vector < std::wstring > SplitString ( const std::wstring& str, const Uint32& splitchar ) {
-	std::vector < std::wstring > tmp;
-	std::wstring tmpstr;
+std::vector < String > SplitString ( const String& str, const Uint32& splitchar ) {
+	std::vector < String > tmp;
+	String tmpstr;
 
 	for ( eeUint i = 0; i < str.size(); i++ ) {
-		#if EE_PLATFORM == EE_PLATFORM_WIN
 		if ( str[i] == splitchar ) {
-		#else
-		if ( str[i] == (Int32)splitchar ) {
-		#endif
 			if ( tmpstr.size() ) {
 				tmp.push_back(tmpstr);
-				tmpstr = L"";
+				tmpstr = "";
 			}
 		} else {
 			tmpstr += str[i];
@@ -179,20 +163,13 @@ std::vector<Uint8> stringToUint8( const std::string& str ) {
 	return std::vector<Uint8>( str.begin(), str.end() );
 }
 
-std::vector<Uint8> wstringToUint8( const std::wstring& str ) {
-	return std::vector<Uint8>( str.begin(), str.end() );
-}
-
 std::string Uint8Tostring( const std::vector<Uint8> v ) {
 	return std::string( v.begin(), v.end() );
 }
 
-std::wstring Uint8Towstring( const std::vector<Uint8> v ) {
-	return std::wstring( v.begin(), v.end() );
-}
+void InsertChar( String& str, const eeUint& pos, const Uint32& tchar ) {
+	String tStr( str.length() );
 
-void InsertChar( std::wstring& str, const eeUint& pos, const Uint32& tchar ) {
-	std::wstring tStr( str.length() + 1, ' ');
 	for ( eeUint i = 0; i < tStr.size(); i++ ) {
 		if ( i < pos ) {
 			tStr[i] = str[i];
@@ -284,7 +261,7 @@ Int32 StrStartsWith( const std::string& Start, const std::string Str ) {
 	return Pos;
 }
 
-Int32 StrStartsWith( const std::wstring& Start, const std::wstring Str ) {
+Int32 StrStartsWith( const String& Start, const String Str ) {
 	Int32 Pos = -1;
 
 	if ( Str.size() >= Start.size() ) {

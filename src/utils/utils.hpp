@@ -20,7 +20,7 @@ namespace EE { namespace Utils {
 	std::vector<std::string> EE_API FilesGetInPath( const std::string& path );
 
 	/** @return The files and sub directories contained by a directory */
-	std::vector<std::wstring> EE_API FilesGetInPath( const std::wstring& path );
+	std::vector<String> EE_API FilesGetInPath( const String& path );
 
 	/** @return The size of a file */
 	Uint32 EE_API FileSize( const std::string& Filepath );
@@ -32,16 +32,13 @@ namespace EE { namespace Utils {
 	bool EE_API IsDirectory( const std::string& path );
 
 	/** @return If directory exists, and is a directory */
-	bool EE_API IsDirectory( const std::wstring& path );
+	bool EE_API IsDirectory( const String& path );
 
 	/** Creates a new directory */
 	bool EE_API MakeDir( const std::string& path, const Uint16& mode = 0770 );
 
 	/** @return The default windows directory */
 	std::string EE_API GetWindowsPath();
-
-	/** @return wstring hash */
-	Uint32 EE_API MakeHash( const std::wstring& str );
 
 	/** @return string hash */
 	Uint32 EE_API MakeHash( const std::string& str );
@@ -106,11 +103,6 @@ namespace EE { namespace Utils {
 	* @example 10485760 -> "10.0 MB"
 	*/
 	std::string EE_API SizeToString( const Uint32& MemSize );
-
-	/** Convert a size represented in bytes, to a wstring converted in byes/kb/mb/tb.
-	* @example 10485760 -> "10.0 MB"
-	*/
-	std::wstring EE_API SizeToWString( const Uint32& MemSize );
 
 	/** Write a bit into the Key in the position defined.
 	* @param Key The Key to write

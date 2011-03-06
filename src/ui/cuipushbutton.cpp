@@ -131,17 +131,12 @@ cUIGfx * cUIPushButton::Icon() const {
 	return mIcon;
 }
 
-void cUIPushButton::Text( const std::wstring& text ) {
+void cUIPushButton::Text( const String& text ) {
 	mTextBox->Text( text );
 	OnSizeChange();
 }
 
-void cUIPushButton::Text( const std::string& text ) {
-	mTextBox->Text( text );
-	OnSizeChange();
-}
-
-const std::wstring& cUIPushButton::Text() {
+const String& cUIPushButton::Text() {
 	return mTextBox->Text();
 }
 

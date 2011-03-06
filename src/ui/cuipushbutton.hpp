@@ -62,11 +62,9 @@ class EE_API cUIPushButton : public cUIComplexControl {
 
 		cUIGfx * Icon() const;
 
-		void Text( const std::wstring& text );
+		void Text( const String& text );
 
-		void Text( const std::string& text );
-
-		const std::wstring& Text();
+		const String& Text();
 
 		void Padding( const eeRecti& padding );
 

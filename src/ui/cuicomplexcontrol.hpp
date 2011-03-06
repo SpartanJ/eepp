@@ -17,7 +17,7 @@ class EE_API cUIComplexControl : public cUIControlAnim {
 
 				inline ~CreateParams() {}
 
-				std::wstring TooltipText;
+				String TooltipText;
 		};
 
 		cUIComplexControl( const cUIComplexControl::CreateParams& Params );
@@ -30,11 +30,9 @@ class EE_API cUIComplexControl : public cUIControlAnim {
 
 		void TooltipRemove();
 
-		void TooltipText( const std::wstring& Text );
+		void TooltipText( const String& Text );
 
-		void TooltipText( const std::string& Text );
-
-		std::wstring TooltipText();
+		String TooltipText();
 	protected:
 		cUITooltip *	mTooltip;
 

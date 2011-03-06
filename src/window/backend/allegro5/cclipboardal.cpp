@@ -19,15 +19,15 @@ void cClipboardAl::Init() {
 void cClipboardAl::SetText( const std::string& Text ) {
 }
 
-void cClipboardAl::SetText( const std::wstring& Text ) {
+void cClipboardAl::SetText( const String& Text ) {
 }
 
 std::string cClipboardAl::GetText() {
 	return std::string();
 }
 
-std::wstring cClipboardAl::GetTextWStr() {
-	return std::wstring();
+String cClipboardAl::GetWideText() {
+	return String();
 }
 
 }}}}

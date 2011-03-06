@@ -220,20 +220,16 @@ cUIScrollBar * cUITextEdit::VScrollBar() const {
 	return mVScrollBar;
 }
 
-const std::wstring& cUITextEdit::Text() const {
+const String& cUITextEdit::Text() const {
 	return mTextInput->Text();
 }
 
-void cUITextEdit::Text( const std::wstring& Txt ) {
+void cUITextEdit::Text( const String& Txt ) {
 	mTextInput->Text( Txt );
 
 	OnInputSizeChange();
 
 	OnSizeChange();
-}
-
-void cUITextEdit::Text( const std::string& Txt ) {
-	Text( stringTowstring( Txt ) );
 }
 
 void cUITextEdit::OnInputSizeChange( const cUIEvent * Event ) {

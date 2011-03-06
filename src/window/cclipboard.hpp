@@ -12,14 +12,14 @@ class cClipboard {
 		/** @return The Clipboard Text if available */
 		virtual std::string GetText() = 0;
 
-		/** @return The Clipboard Text if available ( as std::wstring ) */
-		virtual std::wstring GetTextWStr() = 0;
-		
+		/** @return The Clipboard Text if available ( as String ) */
+		virtual String GetWideText() = 0;
+
 		/** Set the current clipboard text */
 		virtual void SetText( const std::string& Text ) = 0;
 		
 		/** Set the current clipboard text */
-		virtual void SetText( const std::wstring& Text ) = 0;
+		virtual void SetText( const String& Text ) = 0;
 
 		cWindow * GetWindow() const;
 	protected:

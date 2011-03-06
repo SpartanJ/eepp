@@ -68,15 +68,11 @@ void cUITextBox::Font( cFont * font ) {
 	}
 }
 
-const std::wstring& cUITextBox::Text() {
+const String& cUITextBox::Text() {
 	return mTextCache->Text();
 }
 
-void cUITextBox::Text( const std::string& text ) {
-	Text( stringTowstring( text ) );
-}
-
-void cUITextBox::Text( const std::wstring& text ) {
+void cUITextBox::Text( const String& text ) {
 	mTextCache->Text( text );
 	AutoShrink();
 	AutoSize();

@@ -107,15 +107,11 @@ void cUITooltip::Font( cFont * font ) {
 	}
 }
 
-const std::wstring& cUITooltip::Text() {
+const String& cUITooltip::Text() {
 	return mTextCache->Text();
 }
 
-void cUITooltip::Text( const std::string& text ) {
-	Text( stringTowstring( text ) );
-}
-
-void cUITooltip::Text( const std::wstring& text ) {
+void cUITooltip::Text( const String& text ) {
 	mTextCache->Text( text );
 	AutoPadding();
 	AutoSize();

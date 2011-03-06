@@ -54,15 +54,15 @@ class EE_API cUIListBox : public cUIComplexControl {
 
 		virtual ~cUIListBox();
 
-		void AddListBoxItems( std::vector<std::wstring> Texts );
+		void AddListBoxItems( std::vector<String> Texts );
 
 		Uint32 AddListBoxItem( const std::string& Text );
 
-		Uint32 AddListBoxItem( const std::wstring& Text );
+		Uint32 AddListBoxItem( const String& Text );
 
 		Uint32 AddListBoxItem( cUIListBoxItem * Item );
 
-		Uint32 RemoveListBoxItem( const std::wstring& Text );
+		Uint32 RemoveListBoxItem( const String& Text );
 
 		Uint32 RemoveListBoxItem( cUIListBoxItem * Item );
 
@@ -84,7 +84,7 @@ class EE_API cUIListBox : public cUIComplexControl {
 
 		cUIListBoxItem * GetItemSelected();
 
-		std::wstring GetItemSelectedText() const;
+		String GetItemSelectedText() const;
 
 		Uint32 GetItemSelectedIndex() const;
 
@@ -167,7 +167,7 @@ class EE_API cUIListBox : public cUIComplexControl {
 
 		std::list<Uint32>				mSelected;
 		std::vector<cUIListBoxItem *> 	mItems;
-		std::vector<std::wstring>		mTexts;
+		std::vector<String>		mTexts;
 
 		void UpdateScroll( bool FromScrollChange = false );
 
@@ -181,7 +181,7 @@ class EE_API cUIListBox : public cUIComplexControl {
 
 		void UpdateListBoxItemsSize();
 
-		Uint32 GetListBoxItemIndex( const std::wstring& Name );
+		Uint32 GetListBoxItemIndex( const String& Name );
 
 		Uint32 GetListBoxItemIndex( cUIListBoxItem * Item );
 
@@ -199,7 +199,7 @@ class EE_API cUIListBox : public cUIComplexControl {
 
 		void FindMaxWidth();
 
-		cUIListBoxItem * CreateListBoxItem( const std::wstring& Name );
+		cUIListBoxItem * CreateListBoxItem( const String& Name );
 
 		void CreateItemIndex( const Uint32& i );
 

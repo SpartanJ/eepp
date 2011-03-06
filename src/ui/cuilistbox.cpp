@@ -103,7 +103,7 @@ cUIScrollBar * cUIListBox::HorizontalScrollBar() const {
 	return mHScrollBar;
 }
 
-void cUIListBox::AddListBoxItems( std::vector<std::wstring> Texts ) {
+void cUIListBox::AddListBoxItems( std::vector<String> Texts ) {
 	mItems.reserve( mItems.size() + Texts.size() );
 	mTexts.reserve( mTexts.size() + Texts.size() );
 
@@ -137,10 +137,10 @@ Uint32 cUIListBox::AddListBoxItem( cUIListBoxItem * Item ) {
 }
 
 Uint32 cUIListBox::AddListBoxItem( const std::string& Text ) {
-	return AddListBoxItem( stringTowstring( Text ) );
+	return AddListBoxItem( String( Text ) );
 }
 
-Uint32 cUIListBox::AddListBoxItem( const std::wstring& Text ) {
+Uint32 cUIListBox::AddListBoxItem( const String& Text ) {
 	mTexts.push_back( Text );
 	mItems.push_back( NULL );
 
@@ -159,7 +159,7 @@ Uint32 cUIListBox::AddListBoxItem( const std::wstring& Text ) {
 	return (Uint32)(mItems.size() - 1);
 }
 
-cUIListBoxItem * cUIListBox::CreateListBoxItem( const std::wstring& Name ) {
+cUIListBoxItem * cUIListBox::CreateListBoxItem( const String& Name ) {
 	cUITextBox::CreateParams TextParams;
 	TextParams.Parent( mContainer );
 	TextParams.Flags 		= UI_VALIGN_CENTER | UI_HALIGN_LEFT;
@@ -171,7 +171,7 @@ cUIListBoxItem * cUIListBox::CreateListBoxItem( const std::wstring& Name ) {
 	return tItem;
 }
 
-Uint32 cUIListBox::RemoveListBoxItem( const std::wstring& Text ) {
+Uint32 cUIListBox::RemoveListBoxItem( const String& Text ) {
 	return RemoveListBoxItem( GetListBoxItemIndex( Text ) );
 }
 
@@ -228,7 +228,7 @@ Uint32 cUIListBox::RemoveListBoxItem( Uint32 ItemIndex ) {
 	return ItemIndex;
 }
 
-Uint32 cUIListBox::GetListBoxItemIndex( const std::wstring& Name ) {
+Uint32 cUIListBox::GetListBoxItemIndex( const String& Name ) {
 	Uint32 size = (Uint32)mItems.size();
 
 	for ( Uint32 i = 0; i < size; i++ ) {
@@ -601,8 +601,8 @@ Uint32 cUIListBox::GetItemSelectedIndex() const {
 	return 0xFFFFFFFF;
 }
 
-std::wstring cUIListBox::GetItemSelectedText() const {
-	std::wstring tstr;
+String cUIListBox::GetItemSelectedText() const {
+	String tstr;
 
 	if ( mSelected.size() )
 		return mTexts[ mSelected.front() ];

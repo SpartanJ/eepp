@@ -593,7 +593,7 @@ const Uint8& cUIWindow::BaseAlpha() const {
 	return mBaseAlpha;
 }
 
-void cUIWindow::Title( const std::wstring& Text ) {
+void cUIWindow::Title( const String& Text ) {
 	if ( NULL == mTitle ) {
 		cUITextBox::CreateParams Params;
 		Params.Parent( this );
@@ -620,11 +620,11 @@ void cUIWindow::FixTitleSize() {
 	}
 }
 
-std::wstring cUIWindow::Title() const {
+String cUIWindow::Title() const {
 	if ( NULL != mTitle )
 		return mTitle->Text();
 
-	return std::wstring();
+	return String();
 }
 
 cUITextBox * cUIWindow::TitleTextBox() const {

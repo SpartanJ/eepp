@@ -5,12 +5,13 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
-static void * CurrentHandler = NULL;
-
 #define T(A, B, C, D)	(int)((A<<24)|(B<<16)|(C<<8)|(D<<0))
 #define FORMAT_PREFIX	"EE_scrap_0x"
 
 #if defined( EE_X11_PLATFORM )
+
+static void * CurrentHandler = NULL;
+
 static int clipboard_filter( const SDL_Event *event ) {
 	/* Post all non-window manager specific events */
 	if ( event->type != SDL_SYSWMEVENT ) {
@@ -93,7 +94,7 @@ void cClipboardSDL::Init() {
 void cClipboardSDL::SetText( const std::string& Text ) {
 }
 
-void cClipboardSDL::SetText( const std::wstring& Text ) {
+void cClipboardSDL::SetText( const String& Text ) {
 }
 
 int cClipboardSDL::clipboard_convert_scrap( int type, char *dst, char *src, int srclen ) {
@@ -282,8 +283,8 @@ std::string cClipboardSDL::GetText() {
 	return tStr;
 }
 
-std::wstring cClipboardSDL::GetTextWStr() {
-	std::wstring tStr;
+String cClipboardSDL::GetWideText() {
+	String tStr;
 
 	#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN
 	char * scrap = NULL;
@@ -308,7 +309,7 @@ std::wstring cClipboardSDL::GetTextWStr() {
 
 	eeSAFE_DELETE_ARRAY( scrap );
 	#else
-		#warning cClipboardSDL::GetClipboardTextWStr() not implemented on this platform.
+		#warning cClipboardSDL::GetWideText() not implemented on this platform.
 	#endif
 
 	return tStr;

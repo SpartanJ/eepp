@@ -44,7 +44,7 @@ void cUIMenu::DoAfterSetTheme() {
 	OnSizeChange();
 }
 
-cUIMenuItem * cUIMenu::CreateMenuItem( const std::wstring& Text, cShape * Icon ) {
+cUIMenuItem * cUIMenu::CreateMenuItem( const String& Text, cShape * Icon ) {
 	cUIMenuItem::CreateParams Params;
 	Params.Parent( this );
 	Params.Font 			= mFont;
@@ -66,11 +66,11 @@ cUIMenuItem * cUIMenu::CreateMenuItem( const std::wstring& Text, cShape * Icon )
 	return tCtrl;
 }
 
-Uint32 cUIMenu::Add( const std::wstring& Text, cShape * Icon ) {
+Uint32 cUIMenu::Add( const String& Text, cShape * Icon ) {
 	return Add( CreateMenuItem( Text, Icon ) );
 }
 
-cUIMenuCheckBox * cUIMenu::CreateMenuCheckBox( const std::wstring& Text ) {
+cUIMenuCheckBox * cUIMenu::CreateMenuCheckBox( const String& Text ) {
 	cUIMenuCheckBox::CreateParams Params;
 	Params.Parent( this );
 	Params.Font 			= mFont;
@@ -89,11 +89,11 @@ cUIMenuCheckBox * cUIMenu::CreateMenuCheckBox( const std::wstring& Text ) {
 	return tCtrl;
 }
 
-Uint32 cUIMenu::AddCheckBox( const std::wstring& Text ) {
+Uint32 cUIMenu::AddCheckBox( const String& Text ) {
 	return Add( CreateMenuCheckBox( Text ) );
 }
 
-cUIMenuSubMenu * cUIMenu::CreateSubMenu( const std::wstring& Text, cShape * Icon, cUIMenu * SubMenu ) {
+cUIMenuSubMenu * cUIMenu::CreateSubMenu( const String& Text, cShape * Icon, cUIMenu * SubMenu ) {
 	cUIMenuSubMenu::CreateParams Params;
 	Params.Parent( this );
 	Params.Font 			= mFont;
@@ -116,7 +116,7 @@ cUIMenuSubMenu * cUIMenu::CreateSubMenu( const std::wstring& Text, cShape * Icon
 	return tCtrl;
 }
 
-Uint32 cUIMenu::AddSubMenu( const std::wstring& Text, cShape * Icon, cUIMenu * SubMenu ) {
+Uint32 cUIMenu::AddSubMenu( const String& Text, cShape * Icon, cUIMenu * SubMenu ) {
 	return Add( CreateSubMenu( Text, Icon, SubMenu ) );
 }
 
@@ -219,7 +219,7 @@ cUIControl * cUIMenu::GetItem( const Uint32& Index ) {
 	return mItems[ Index ];
 }
 
-cUIControl * cUIMenu::GetItem( const std::wstring& Text ) {
+cUIControl * cUIMenu::GetItem( const String& Text ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
 		if ( mItems[i]->IsType( UI_TYPE_MENUITEM ) ) {
 			cUIMenuItem * tMenuItem = reinterpret_cast<cUIMenuItem*>( mItems[i] );
@@ -277,7 +277,7 @@ void cUIMenu::RemoveAll() {
 	ResizeMe();
 }
 
-void cUIMenu::Insert( const std::wstring& Text, cShape * Icon, const Uint32& Index ) {
+void cUIMenu::Insert( const String& Text, cShape * Icon, const Uint32& Index ) {
 	Insert( CreateMenuItem( Text, Icon ), Index );
 }
 

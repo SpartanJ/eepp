@@ -29,10 +29,10 @@ class EE_API cInputTextBuffer {
 		~cInputTextBuffer();
 
 		/** @return The current buffer */
-		std::wstring Buffer() const;
+		String Buffer() const;
 
 		/** Set a new current buffer */
-		void Buffer( const std::wstring& str );
+		void Buffer( const String& str );
 
 		/** @return If input buffer is active */
 		bool Active() const;
@@ -110,7 +110,7 @@ class EE_API cInputTextBuffer {
 		void CursorToEnd();
 	protected:
 		cWindow *			mWindow;
-		std::wstring		mText;
+		String		mText;
 		Uint32				mFlags;
 		Uint32				mCallback;
 		eeInt				mPromptPos;

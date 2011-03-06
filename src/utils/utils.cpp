@@ -159,7 +159,7 @@ std::string AppPath() {
 
 		GetModuleFileName(0, &dllName[0], _MAX_PATH);
 
-		std::string dllstrName( wstringTostring( dllName ) );
+		std::string dllstrName( String( dllName ).ToUtf8() );
 
 		#ifdef EE_COMPILER_MSVC
 		_splitpath_s( dllstrName.c_str(), szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFilename, _MAX_DIR, szExt, _MAX_DIR );
@@ -191,59 +191,59 @@ std::string AppPath() {
 #endif
 }
 
-std::vector<std::wstring> FilesGetInPath( const std::wstring& path ) {
-	std::vector<std::wstring> files;
+std::vector<String> FilesGetInPath( const String& path ) {
+	std::vector<String> files;
 
 #ifdef EE_COMPILER_MSVC
 	#ifdef UNICODE
-		std::wstring mPath( path );
+		String mPath( path );
 
 		if ( mPath[ mPath.size() - 1 ] == '/' || mPath[ mPath.size() - 1 ] == '\\' ) {
-			mPath += L"*";
+			mPath += "*";
 		} else {
-			mPath += L"\\*";
+			mPath += "\\*";
 		}
 
 		WIN32_FIND_DATA findFileData;
-		HANDLE hFind = FindFirstFile( mPath.c_str(), &findFileData );
+		HANDLE hFind = FindFirstFile( mPath.ToWideString().c_str(), &findFileData );
 
 		if( hFind != INVALID_HANDLE_VALUE ) {
-			std::wstring tmpstr( findFileData.cFileName );
+			String tmpstr( findFileData.cFileName );
 
-			if ( tmpstr != L"." && tmpstr != L".." )
+			if ( tmpstr != "." && tmpstr != ".." )
 				files.push_back( tmpstr );
 
 			while( FindNextFile( hFind, &findFileData ) ) {
-				tmpstr = std::wstring( findFileData.cFileName );
+				tmpstr = String( findFileData.cFileName );
 
-				if ( tmpstr != L"." && tmpstr != L".." )
+				if ( tmpstr != "." && tmpstr != ".." )
 					files.push_back( tmpstr );
 			}
 
 			FindClose( hFind );
 		}
 	#else
-        std::wstring mPath( path );
+        String mPath( path );
 
 		if ( mPath[ mPath.size() - 1 ] == '/' || mPath[ mPath.size() - 1 ] == '\\' ) {
-                mPath += L"*";
+				mPath += "*";
         } else {
-                mPath += L"\\*";
+				mPath += "\\*";
         }
 
         WIN32_FIND_DATA findFileData;
-        HANDLE hFind = FindFirstFile( (LPCTSTR) mPath.c_str(), &findFileData );
+		HANDLE hFind = FindFirstFile( (LPCTSTR) mPath.ToAnsiString().c_str(), &findFileData );
 
         if( hFind != INVALID_HANDLE_VALUE ) {
-			std::wstring tmpstr( stringTowstring( findFileData.cFileName ) );
+			String tmpstr( String::FromUtf8( findFileData.cFileName ) );
 
-			if ( tmpstr != L"." && tmpstr != L".." )
+			if ( tmpstr != "." && tmpstr != ".." )
 					files.push_back( tmpstr );
 
 			while( FindNextFile( hFind, &findFileData ) ) {
-					tmpstr = std::wstring( stringTowstring( findFileData.cFileName ) );
+					tmpstr = String::FromUtf8( findFileData.cFileName );
 
-					if ( tmpstr != L"." && tmpstr != L".." )
+					if ( tmpstr != "." && tmpstr != ".." )
 							files.push_back( tmpstr );
 			}
 
@@ -256,14 +256,14 @@ std::vector<std::wstring> FilesGetInPath( const std::wstring& path ) {
 	DIR *dp;
 	struct dirent *dirp;
 
-	if( ( dp = opendir( wstringTostring( path.c_str() ).c_str() ) ) == NULL)
+	if( ( dp = opendir( path.ToUtf8().c_str() ) ) == NULL)
 		return files;
 
 	while ( ( dirp = readdir(dp) ) != NULL) {
 		if ( strcmp( dirp->d_name, ".." ) != 0 && strcmp( dirp->d_name, "." ) != 0 ) {
 
 			char * p = &dirp->d_name[0];
-			std::wstring tmp;
+			String tmp;
 
 			while ( *p ) {
 				unsigned char y = *p;
@@ -287,28 +287,28 @@ std::vector<std::string> FilesGetInPath( const std::string& path ) {
 
 #ifdef EE_COMPILER_MSVC
 	#ifdef UNICODE
-		std::wstring mPath( stringTowstring( path ) );
+		String mPath( String::FromUtf8( path ) );
 
 		if ( mPath[ mPath.size() - 1 ] == '/' || mPath[ mPath.size() - 1 ] == '\\' ) {
-			mPath += L"*";
+			mPath += "*";
 		} else {
-			mPath += L"\\*";
+			mPath += "\\*";
 		}
 
 		WIN32_FIND_DATA findFileData;
-		HANDLE hFind = FindFirstFile( mPath.c_str(), &findFileData );
+		HANDLE hFind = FindFirstFile( mPath.ToWideString().c_str(), &findFileData );
 
 		if( hFind != INVALID_HANDLE_VALUE ) {
-			std::wstring tmpstr( findFileData.cFileName );
+			String tmpstr( findFileData.cFileName );
 
-			if ( tmpstr != L"." && tmpstr != L".." )
-				files.push_back( wstringTostring( tmpstr ) );
+			if ( tmpstr != "." && tmpstr != ".." )
+				files.push_back( tmpstr.ToUtf8() );
 
 			while( FindNextFile(hFind, &findFileData ) ) {
-				tmpstr = std::wstring( findFileData.cFileName );
+				tmpstr = String( findFileData.cFileName );
 
-				if ( tmpstr != L"." && tmpstr != L".." )
-					files.push_back( std::string( wstringTostring( findFileData.cFileName ) ) );
+				if ( tmpstr != "." && tmpstr != ".." )
+					files.push_back( String( findFileData.cFileName ).ToUtf8() );
 			}
 
 			FindClose( hFind );
@@ -392,8 +392,8 @@ eeDouble GetSystemTime() {
 #endif
 }
 
-bool IsDirectory( const std::wstring& path ) {
-	return IsDirectory( wstringTostring( path ) );
+bool IsDirectory( const String& path ) {
+	return IsDirectory( path.ToUtf8() );
 }
 
 bool IsDirectory( const std::string& path ) {
@@ -426,7 +426,7 @@ std::string GetWindowsPath() {
 	#ifdef UNICODE
  		wchar_t Buffer[1024];
  		GetWindowsDirectory( Buffer, 1024 );
-		return wstringTostring( std::wstring( Buffer ) );
+		return String( Buffer ).ToUtf8();
 	#else
 		char Buffer[1024];
 		GetWindowsDirectory( Buffer, 1024 );
@@ -435,10 +435,6 @@ std::string GetWindowsPath() {
 #else
 	return std::string( "/usr/bin/" ); // :P
 #endif
-}
-
-Uint32 MakeHash( const std::wstring& str ) {
-	return MakeHash( reinterpret_cast<const Uint8*>( &str[0] ) );
 }
 
 Uint32 MakeHash( const std::string& str ) {
@@ -649,28 +645,6 @@ std::string SizeToString( const Uint32& MemSize ) {
 	}
 
 	return std::string( toStr( mem ) + size );
-}
-
-std::wstring SizeToWString( const Uint32& MemSize ) {
-	std::wstring size = L" bytes";
-	eeDouble mem = static_cast<eeDouble>( MemSize );
-	Uint8 c = 0;
-
-	while ( mem > 1024 ) {
-		c++;
-		mem = mem / 1024;
-	}
-
-	switch (c) {
-		case 0: size = L" bytes"; break;
-		case 1: size = L" KB"; break;
-		case 2: size = L" MB"; break;
-		case 3: size = L" GB"; break;
-		case 4: size = L" TB"; break;
-		default: size = L" WTF";
-	}
-
-	return std::wstring( toWStr( mem ) + size );
 }
 
 void Write32BitKey( Uint32 * Key, Uint32 Pos, Uint32 BitWrite ) {

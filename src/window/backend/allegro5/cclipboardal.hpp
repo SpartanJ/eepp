@@ -16,11 +16,11 @@ class EE_API cClipboardAl : public cClipboard {
 
 		std::string GetText();
 
-		std::wstring GetTextWStr();
-		
+		String GetWideText();
+
 		void SetText( const std::string& Text );
 		
-		void SetText( const std::wstring& Text );
+		void SetText( const String& Text );
 	protected:
 		friend class cWindowAl;
 

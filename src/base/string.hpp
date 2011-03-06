@@ -46,11 +46,12 @@ class EE_API String {
 
 	static const std::size_t InvalidPos; ///< Represents an invalid position in the string
 
+	static String FromUtf8( const std::string& utf8 );
+
 	/** @brief Default constructor
 	** This constructor creates an empty string.
 	**/
 	String();
-
 
 	/** @brief Construct from a single ANSI character
 	** The source character is converted to UTF-32 according
@@ -147,12 +148,11 @@ class EE_API String {
 	** This operator is defined for convenience, and is equivalent
 	** to calling ToAnsiString().
 	** @return Converted ANSI string
-	** @see ToAnsiString, operator std::wstring
+	** @see ToAnsiString, operator String
 	**/
 	operator std::string() const;
 
-
-	/** @brief Implicit cast operator to std::wstring (wide string)
+	/** @brief Implicit cast operator to String (wide string)
 	** Characters that do not fit in the target encoding are
 	** discarded from the returned string.
 	** This operator is defined for convenience, and is equivalent
@@ -161,7 +161,6 @@ class EE_API String {
 	** @see ToWideString, operator std::string
 	**/
 	operator std::wstring() const;
-
 
 	/** @brief Convert the unicode string to an ANSI string
 	** The current global locale is used for conversion. If you
@@ -191,9 +190,11 @@ class EE_API String {
 	** Characters that do not fit in the target encoding are
 	** discarded from the returned string.
 	** @return Converted wide string
-	** @see ToAnsiString, operator std::wstring
+	** @see ToAnsiString, operator String
 	**/
-	std::wstring ToWideString() const;
+	String ToWideString() const;
+
+	std::string ToUtf8() const;
 
 	/** @brief Overload of assignment operator
 	** @param right Instance to assign
@@ -428,6 +429,8 @@ class EE_API String {
 
 	String& append ( std::size_t n, char c );
 
+	String& append ( std::size_t n, StringBaseType c );
+
 	template <class InputIterator>
 	String& append ( InputIterator first, InputIterator last )
 	{
@@ -595,7 +598,7 @@ EE_API String operator +( const String& left, const String& right );
 ** @code
 ** EE::String s;
 ** std::string s1 = s;  // automatically converted to ANSI string
-** std::wstring s2 = s; // automatically converted to wide string
+** String s2 = s; // automatically converted to wide string
 ** s = "hello";         // automatically converted from ANSI string
 ** s = L"hello";        // automatically converted from wide string
 ** s += 'a';            // automatically converted from ANSI string

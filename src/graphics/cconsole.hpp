@@ -13,8 +13,8 @@ namespace EE { namespace Graphics {
 
 class EE_API cConsole{
 	public:
-		//! The Console Callback return a vector of parameters ( wstring )
-		typedef cb::Callback1<void, const std::vector < std::wstring >& > ConsoleCallback;
+		//! The Console Callback return a vector of parameters ( String )
+		typedef cb::Callback1<void, const std::vector < String >& > ConsoleCallback;
 
 		cConsole( cWindow * window = NULL );
 
@@ -93,10 +93,7 @@ class EE_API cConsole{
 		void Create( cFont* Font, const bool& MakeDefaultCommands = true, const eeUint& MaxLogLines = 1024, const Uint32& TextureId = 0 );
 
 		/** Add Text to Console */
-		void PushText( const std::wstring& str );
-
-		/** Add Text to Console */
-		void PushText( const std::string& str );
+		void PushText( const String& str );
 
 		/** Add formated Text to console */
 		void PushText( const char* format, ... );
@@ -105,13 +102,7 @@ class EE_API cConsole{
 		* @param Command The Command Name ( raise the event )
 		* @param CB The Callback for the Command
 		*/
-		void AddCommand( const std::wstring& Command, ConsoleCallback CB );
-
-		/** Adds a new Command
-		* @param Command The Command Name ( raise the event )
-		* @param CB The Callback for the Command
-		*/
-		void AddCommand( const std::string& Command, ConsoleCallback CB );
+		void AddCommand( const String& Command, ConsoleCallback CB );
 
 		/** Draw the Console ( allways call it, visible or not ) */
 		void Draw();
@@ -128,9 +119,9 @@ class EE_API cConsole{
 		/** Activate/Deactive fps rendering */
 		void ShowFps( const bool& Show );
 	protected:
-		std::map < std::wstring, ConsoleCallback > mCallbacks;
-		std::deque < std::wstring > mCmdLog;
-		std::deque < std::wstring > mLastCommands;
+		std::map < String, ConsoleCallback > mCallbacks;
+		std::deque < String > mCmdLog;
+		std::deque < String > mLastCommands;
 
 		cWindow * mWindow;
 
@@ -186,46 +177,46 @@ class EE_API cConsole{
 		void Fade();
 
 		/** Internal Callback for default command ( clear ) */
-		void CmdClear		( const std::vector < std::wstring >& params );
+		void CmdClear		( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( maximize ) */
-		void CmdMaximize	( const std::vector < std::wstring >& params );
+		void CmdMaximize	( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( minimize ) */
-		void CmdMinimize	( const std::vector < std::wstring >& params );
+		void CmdMinimize	( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( quit ) */
-		void CmdQuit		( const std::vector < std::wstring >& params );
+		void CmdQuit		( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( cmdlist ) */
-		void CmdCmdList		( const std::vector < std::wstring >& params );
+		void CmdCmdList		( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( showcursor ) */
-		void CmdShowCursor	( const std::vector < std::wstring >& params );
+		void CmdShowCursor	( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( setframelimit ) */
-		void CmdFrameLimit	( const std::vector < std::wstring >& params );
+		void CmdFrameLimit	( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( getlog ) */
-		void CmdGetLog	( const std::vector < std::wstring >& params );
+		void CmdGetLog	( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( setgamma ) */
-		void CmdSetGamma( const std::vector < std::wstring >& params );
+		void CmdSetGamma( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( setvolume ) */
-		void CmdSetVolume( const std::vector < std::wstring >& params );
+		void CmdSetVolume( const std::vector < String >& params );
 
         /** Internal Callback for default command ( getgpuextensions ) */
-		void CmdGetGpuExtensions( const std::vector < std::wstring >& params );
+		void CmdGetGpuExtensions( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( dir and ls ) */
-		void CmdDir( const std::vector < std::wstring >& params );
+		void CmdDir( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( showfps ) */
-		void CmdShowFps( const std::vector < std::wstring >& params );
+		void CmdShowFps( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( gettexturememory ) */
-		void CmdGetTextureMemory ( const std::vector < std::wstring >& params );
+		void CmdGetTextureMemory ( const std::vector < String >& params );
 
 		/** The Default Commands Callbacks for the Console ( don't call it ) */
 		void PrivInputCallback( InputEvent * Event );
@@ -242,9 +233,9 @@ class EE_API cConsole{
 		/** Internal Callback to Process the new line ( when return pressed ) */
 		void ProcessLine();
 
-		void PrivPushText( const std::wstring& str );
+		void PrivPushText( const String& str );
 
-		void PrintCommandsStartingWith( const std::wstring& start );
+		void PrintCommandsStartingWith( const String& start );
 
 		void PrivVideoResize();
 };

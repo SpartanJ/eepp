@@ -31,11 +31,9 @@ class EE_API cUITextEdit : public cUIControlAnim {
 
 		virtual void SetTheme( cUITheme * Theme );
 
-		const std::wstring& Text() const;
+		const String& Text() const;
 
-		void Text( const std::wstring& Txt );
-
-		void Text( const std::string& Txt );
+		void Text( const String& Txt );
 
 		cUITextInput * TextInput() const;
 
@@ -55,7 +53,7 @@ class EE_API cUITextEdit : public cUIControlAnim {
 		UI_SCROLLBAR_MODE	mHScrollBarMode;
 		UI_SCROLLBAR_MODE	mVScrollBarMode;
 		eeRecti				mPadding;
-		std::wstring		mText;
+		String		mText;
 		bool				mSkipValueChange;
 
 		virtual void OnSizeChange();
