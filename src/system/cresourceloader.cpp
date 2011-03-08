@@ -130,6 +130,18 @@ void cResourceLoader::Update() {
 	Load();
 }
 
+void cResourceLoader::Unload() {
+	if ( mLoaded ) {
+		std::list<cObjectLoader *>::iterator it;
+
+		for ( it = mObjs.begin(); it != mObjs.end(); it++ ) {
+			(*it)->Unload();
+		}
+
+		mLoaded = false;
+	}
+}
+
 bool cResourceLoader::IsLoaded() {
 	return mLoaded;
 }

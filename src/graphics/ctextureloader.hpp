@@ -29,6 +29,8 @@ class EE_API cTextureLoader : public cObjectLoader {
 
 		void 			Update();
 
+		void			Unload();
+
 		const std::string&	Filepath() const;
 
 		const Uint32& 	Id() const;
@@ -57,6 +59,8 @@ class EE_API cTextureLoader : public cObjectLoader {
 		eeColor *		mColorKey;
 
 		void 			Start();
+
+		void			Reset();
 	private:
 		bool			mTexLoaded;
 		bool			mIsDDS;

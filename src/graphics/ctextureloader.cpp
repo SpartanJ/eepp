@@ -277,5 +277,29 @@ cTexture * cTextureLoader::GetTexture() const {
 	return NULL;
 }
 
+void cTextureLoader::Unload() {
+	if ( mLoaded ) {
+		cTextureFactory::instance()->Remove( mTexId );
+
+		Reset();
+	}
+}
+
+void cTextureLoader::Reset() {
+	cObjectLoader::Reset();
+
+	mPixels				= NULL;
+	mTexId				= 0;
+	mImgWidth			= 0;
+	mImgHeight			= 0;
+	mWidth				= 0;
+	mHeight				= 0;
+	mChannels			= 0;
+	mSize				= 0;
+	mTexLoaded			= false;
+	mIsDDS				= false;
+	mIsDDSCompressed	= 0;
+}
+
 }}
 

@@ -26,6 +26,8 @@ class EE_API cObjectLoader : cThread {
 
 		void 			Load( ObjLoadCallback Cb );
 
+		virtual void	Unload() = 0;
+
 		virtual void 	Update();
 
 		void 			Launch();
@@ -50,6 +52,8 @@ class EE_API cObjectLoader : cThread {
 		virtual void 	Start();
 
 		virtual void	SetLoaded();
+
+		virtual void	Reset();
 	private:
 		virtual void 	Run();
 };

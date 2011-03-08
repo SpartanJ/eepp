@@ -27,6 +27,8 @@ class EE_API tSoundLoader : public cObjectLoader {
 
 		void 					Update();
 
+		void					Unload();
+
 		const T&				Id() const;
 	protected:
 		Uint32					mLoadType;
@@ -157,6 +159,15 @@ void tSoundLoader<T>::LoadFromSamples() {
 template <typename T>
 const T& tSoundLoader<T>::Id() const {
 	return mId;
+}
+
+template <typename T>
+void tSoundLoader<T>::Unload() {
+	if ( mLoaded ) {
+		mSndMngr->Remove( mId );
+
+		Reset();
+	}
 }
 
 typedef tSoundLoader<std::string>	cSoundLoader;

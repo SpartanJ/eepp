@@ -81,4 +81,9 @@ const Uint32& cObjectLoader::Type() const {
 	return mObjType;
 }
 
+void cObjectLoader::Reset() {
+	mLoaded		= false;
+	mLoading	= false;
+}
+
 }}

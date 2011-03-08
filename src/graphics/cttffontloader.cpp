@@ -1,4 +1,5 @@
 #include "cttffontloader.hpp"
+#include "cfontmanager.hpp"
 
 namespace EE { namespace Graphics {
 
@@ -109,6 +110,20 @@ void cTTFFontLoader::LoadFromPack() {
 
 cFont * cTTFFontLoader::Font() const {
 	return mFont;
+}
+
+void cTTFFontLoader::Unload() {
+	if ( mLoaded ) {
+		cFontManager::instance()->Remove( mFont );
+
+		Reset();
+	}
+}
+
+void cTTFFontLoader::Reset() {
+	cObjectLoader::Reset();
+
+	mFontLoaded = false;
 }
 
 }}

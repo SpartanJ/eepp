@@ -23,6 +23,8 @@ class EE_API cResourceLoader {
 
 		void 			Load();
 
+		void			Unload();
+
 		virtual void 	Update();
 
 		virtual bool	IsLoaded();

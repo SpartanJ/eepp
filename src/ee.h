@@ -25,8 +25,11 @@
 	@TODO Check for endianness problems, and make EEPP endianness agnostic.
 	@TODO Add backend for SDL 1.3 ( support for Android ). And may be SFML backend ( just for fun ).
 	@TODO Support for Android and iOS.
-	@TODO Support color cursors - Imposible with SDL 1.2. Allegro 5 have this implemented ( could implement this for the Allegro backend at least - DONE ).
+	@TODO Support color cursors \n
+				SDL 1.2					Not even posible ( win32 and x11 backends for this ready ) \n
+				Allegro 5				DONE
 	@TODO Add Scripting support ( squirrel or python ).
+	@TODO Fix classes bad padding, optimize memory consumption.
 */
 
 	// General includes and declarations

@@ -1,4 +1,5 @@
 #include "ctexturefontloader.hpp"
+#include "cfontmanager.hpp"
 
 namespace EE { namespace Graphics {
 
@@ -129,6 +130,23 @@ void cTextureFontLoader::LoadFont() {
 
 cFont * cTextureFontLoader::Font() const {
 	return mFont;
+}
+
+void cTextureFontLoader::Unload() {
+	if ( mLoaded ) {
+		mTexLoader->Unload();
+
+		cFontManager::instance()->Remove( mFont );
+
+		Reset();
+	}
+}
+
+void cTextureFontLoader::Reset() {
+	cObjectLoader::Reset();
+
+	mTexLoaded		= false;
+	mFontLoaded		= false;
 }
 
 }}

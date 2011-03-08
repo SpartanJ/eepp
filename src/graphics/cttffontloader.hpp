@@ -24,7 +24,9 @@ class EE_API cTTFFontLoader : public cObjectLoader {
 
 		void 				Update();
 
-		const std::string& Id() const;
+		void				Unload();
+
+		const std::string&	Id() const;
 
 		cFont *				Font() const;
 	protected:
@@ -47,6 +49,8 @@ class EE_API cTTFFontLoader : public cObjectLoader {
 		eeUint				mDataSize;
 
 		void 				Start();
+
+		void				Reset();
 	private:
 		bool				mFontLoaded;
 

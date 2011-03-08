@@ -28,13 +28,15 @@ class EE_API cTextureFontLoader : public cObjectLoader {
 
 		void 				Update();
 
-		const std::string& Id() const;
+		void				Unload();
+
+		const std::string&	Id() const;
 
 		cFont *				Font() const;
 	protected:
 		Uint32				mLoadType; 	// From memory, from path, from pack
 
-		cTextureFont *	mFont;
+		cTextureFont *		mFont;
 
 		std::string			mFontName;
 		cTextureLoader *	mTexLoader;
@@ -54,6 +56,8 @@ class EE_API cTextureFontLoader : public cObjectLoader {
 		Uint32				mDataSize;
 
 		void 				Start();
+
+		void				Reset();
 	private:
 		bool				mTexLoaded;
 		bool				mFontLoaded;
