@@ -99,10 +99,11 @@ void cX11Impl::MoveWindow( int left, int top ) {
 }
 
 void cX11Impl::SetContext( eeWindowContex Context ) {
-	/// FIXME: This is wrong
-	/*mLock();
+	mLock();
+
 	glXMakeCurrent( mDisplay, mX11Window, Context );
-	mUnlock();*/
+
+	mUnlock();
 }
 
 eeVector2i cX11Impl::Position() {

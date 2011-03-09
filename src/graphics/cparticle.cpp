@@ -8,7 +8,7 @@ cParticle::cParticle() {
 
 cParticle::~cParticle() {}
 
-void cParticle::SetColor(eeColorAf Color, eeFloat AlphaDecay) {
+void cParticle::Color(eeColorAf Color, eeFloat AlphaDecay) {
 	mColor = Color;
 	mAlphaDecay = AlphaDecay;
 }

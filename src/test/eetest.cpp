@@ -1429,6 +1429,8 @@ void cEETest::End() {
 	eeSAFE_DELETE( mBoxSprite );
 	eeSAFE_DELETE( mCircleSprite );
 
+	mResLoad.Unload();
+
 	cLog::instance()->Save();
 
 	cEngine::DestroySingleton();
@@ -1440,7 +1442,7 @@ void cEETest::ParticlesCallback(cParticle* P, cParticleSystem* Me) {
 	x = Me->X() + radio * cos( (eeFloat)P->Id() );
 	y = Me->Y() + radio * sin( (eeFloat)P->Id() );
 	P->Reset(x, y, eeRandf(-10.f, 10.f), eeRandf(-10.f, 10.f), eeRandf(-10.f, 10.f), eeRandf(-10.f, 10.f));
-	P->SetColor( eeColorAf(1.f, 0.6f, 0.3f, 1.f), 0.02f + eeRandf() * 0.3f );
+	P->Color( eeColorAf(1.f, 0.6f, 0.3f, 1.f), 0.02f + eeRandf() * 0.3f );
 }
 
 void cEETest::Particles() {

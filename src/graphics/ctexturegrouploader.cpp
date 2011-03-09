@@ -97,10 +97,10 @@ void cTextureGroupLoader::Load( const std::string& TextureGroupPath ) {
 		if ( !mSkipResourceLoad ) {
 			mIsLoading = true;
 			mRL.Load();
+
+			if ( !mThreaded )
+				CreateShapes();
 		}
-		
-		if ( !mThreaded )
-			CreateShapes();
 	}
 }
 
@@ -209,7 +209,10 @@ void cTextureGroupLoader::CreateShapes() {
 				tSG->Add( tShape );
 			}
 		} else {
-			/** @TODO: Error Report */
+			cLog::instance()->Write( "cTextureGroupLoader::CreateShapes: Failed to find texture group texture, it seems that is not loaded for some reason. Couldn't find: " + path );
+
+			eeASSERT( NULL != tTex );
+
 			return;
 		}
 	}

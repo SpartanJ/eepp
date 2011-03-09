@@ -631,6 +631,10 @@ void cRendererGL3::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, co
 
 GLint cRendererGL3::GetStateIndex( const Uint32& State ) {
 	eeASSERT( State < EEGL_ARRAY_STATES_COUNT );
+
+	if ( EEGL_TEXTURE_COORD_ARRAY == State )
+		return mTextureUnits[ mCurActiveTex ];
+
 	return mStates[ State ];
 }
 

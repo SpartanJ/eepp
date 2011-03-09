@@ -196,7 +196,7 @@ void cVertexBufferVBO::SetVertexStates() {
 				glBindBuffer( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_TEXTURE0 + i ] );
 
 				#ifdef EE_GL3_ENABLED
-				if ( GLv_3 == GLi->Version() ) { /** FIXME: Support for multitexturing */
+				if ( GLv_3 == GLi->Version() ) {
 					index = GLi->GetRendererGL3()->GetStateIndex( EEGL_TEXTURE_COORD_ARRAY );
 
 					if ( -1 != index && 0 == i )
@@ -227,7 +227,7 @@ void cVertexBufferVBO::SetVertexStates() {
 			if ( GLv_3 == GLi->Version() ) {
 				index = GLi->GetRendererGL3()->GetStateIndex( EEGL_TEXTURE_COORD_ARRAY );
 
-				if ( -1 != index ) /** FIXME: Support for multitexturing */
+				if ( -1 != index )
 					glVertexAttribPointer( index, eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], GL_FLOAT, GL_FALSE, 0, 0 );
 			}
 			else

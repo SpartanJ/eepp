@@ -10,8 +10,8 @@ class EE_API cParticle{
 		cParticle();
 		~cParticle();
 		
-		void SetColor(eeColorAf Color, eeFloat AlphaDecay);
-		eeColorAf GetColor() const { return mColor; }
+		void Color(eeColorAf Color, eeFloat AlphaDecay);
+		eeColorAf Color() const { return mColor; }
 		
 		eeFloat R() { return mColor.R(); }
 		eeFloat G() { return mColor.G(); }

@@ -67,7 +67,6 @@ void cCursorManagerSDL::Visible( bool visible ) {
 }
 
 void cCursorManagerSDL::Remove( cCursor * cursor, bool Delete ) {
-    //! FIXME: Implement Secure Deletion
     cCursorManager::Remove( cursor, Delete );
 }
 

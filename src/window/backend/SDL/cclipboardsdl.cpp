@@ -18,8 +18,6 @@ static int clipboard_filter( const SDL_Event *event ) {
 		return 1;
 	}
 
-	/** FIXME: Support multiple windows */
-	//Display * curDisplay = cEngine::instance()->GetWindowHandler();
 	Display * curDisplay = (Display *)CurrentHandler;
 
 	/* Handle window-manager specific clipboard events */
@@ -84,7 +82,6 @@ void cClipboardSDL::Init() {
 	SDL_EventState( SDL_SYSWMEVENT, SDL_ENABLE );
 	SDL_SetEventFilter( clipboard_filter );
 
-	/** FIXME: Support multiple windows */
 	CurrentHandler = (void*)mWindow->GetWindowHandler();
 	#endif
 

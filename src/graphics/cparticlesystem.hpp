@@ -131,9 +131,6 @@ class EE_API cParticleSystem {
 
 		eeInt				mProgression;
 		eeInt				mDirection;
-		bool				mLoop;
-		bool				mUsed;
-		bool				mPointsSup;
 
 		eeFloat				mX;
 		eeFloat				mY;
@@ -148,7 +145,12 @@ class EE_API cParticleSystem {
 		eeFloat				mX2;
 		eeFloat				mY2;
 
+		bool				mLoop;
+		bool				mUsed;
+		bool				mPointsSup;
+
 		void Begin();
+
 		void Reset( cParticle* P );
 
 		ParticleCallback mPC;

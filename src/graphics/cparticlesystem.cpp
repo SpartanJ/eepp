@@ -17,9 +17,6 @@ cParticleSystem::cParticleSystem() :
 	mColor(),
 	mProgression( 0 ),
 	mDirection( 0 ),
-	mLoop( false ),
-	mUsed( false ),
-	mPointsSup( false ),
 	mX( 0.f ),
 	mY( 0.f ),
 	mXAcc( 0.f ),
@@ -31,8 +28,10 @@ cParticleSystem::cParticleSystem() :
 	mHSize( 0.f ),
 	mTime( 0.01f ),
 	mX2( 0.f ),
-	mY2( 0.f )
-
+	mY2( 0.f ),
+	mLoop( false ),
+	mUsed( false ),
+	mPointsSup( false )
 {
 }
 
@@ -110,46 +109,46 @@ void cParticleSystem::Reset(cParticle* P) {
 	switch(mEffect) {
 		case Nofx:
 			P->Reset(mX, mY, mXSpeed, mYSpeed, mXAcc, mYAcc, mSize);
-			P->SetColor( mColor , mAlphaDecay );
+			P->Color( mColor , mAlphaDecay );
 			break;
 		case BlueBall:
 			P->Reset(mX, mY, -10, (-1 * eeRandf()), 0.01f, eeRandf(), mSize);
-			P->SetColor( eeColorAf(0.25f ,0.25f ,1 ,1) , 0.1f + (0.1f * eeRandf()));
+			P->Color( eeColorAf(0.25f ,0.25f ,1 ,1) , 0.1f + (0.1f * eeRandf()));
 			break;
 		case Fire:
 			x = (mX2 - mX + 1) * eeRandf() + mX;
 			y = (mY2 - mY + 1) * eeRandf() + mY;
 			P->Reset(mX, mY, eeRandf() - 0.5f, (eeRandf() - 1.1f) * 8.5f, 0.f, 0.05f, mSize);
-			P->SetColor(eeColorAf(1.f, 0.5f, 0.1f, (eeRandf() * 0.5f) ), eeRandf() * 0.4f + 0.01f );
+			P->Color(eeColorAf(1.f, 0.5f, 0.1f, (eeRandf() * 0.5f) ), eeRandf() * 0.4f + 0.01f );
 			break;
 		case Smoke:
 			x = (mX2 - mX + 1) * eeRandf() + mX;
 			y = (mY2 - mY + 1) * eeRandf() + mY;
 			P->Reset(x, y, -(eeRandf() / 3.f + 0.1f), ((eeRandf() * 0.5f) - 0.7f) * 3, (eeRandf() / 200.f), (eeRandf() - 0.5f) / 200.f );
-			P->SetColor( eeColorAf(0.8f,0.8f,0.8f,0.3f), (eeRandf() * 0.005f) + 0.005f );
+			P->Color( eeColorAf(0.8f,0.8f,0.8f,0.3f), (eeRandf() * 0.005f) + 0.005f );
 			break;
 		case Snow:
 			x = (mX2 - mX + 1) * eeRandf() + mX;
 			y = (mY2 - mY + 1) * eeRandf() + mY;
 			w = (eeRandf() + 0.3f) * 4;
 			P->Reset(x, y, eeRandf() - 0.5f, w, 0.f, 0.f, w * 3);
-			P->SetColor( eeColorAf(1.f, 1.f, 1.f, 0.5f), 0 );
+			P->Color( eeColorAf(1.f, 1.f, 1.f, 0.5f), 0 );
 			break;
 		case MagicFire:
 			P->Reset( mX + eeRandf() , mY, -0.4f + eeRandf() * 0.8f, -0.5f - eeRandf() * 0.4f, 0.f, -(eeRandf() * 0.3f) );
-			P->SetColor( eeColorAf(1.f, 0.5f, 0.1f, 0.7f + 0.2f * eeRandf()), 0.01f + eeRandf() * 0.05f );
+			P->Color( eeColorAf(1.f, 0.5f, 0.1f, 0.7f + 0.2f * eeRandf()), 0.01f + eeRandf() * 0.05f );
 			break;
 		case LevelUp:
 			P->Reset(mX, mY, eeRandf() * 1.5f - 0.75f, eeRandf() * 1.5f - 0.75f, eeRandf() * 4 - 2, eeRandf() * -4 + 2 );
-			P->SetColor( eeColorAf(1.f, 0.5f, 0.1f, 1.f), 0.07f + eeRandf() * 0.01f );
+			P->Color( eeColorAf(1.f, 0.5f, 0.1f, 1.f), 0.07f + eeRandf() * 0.01f );
 			break;
 		case LevelUp2:
 			P->Reset(mX + eeRandf() * 32 - 16, mY + eeRandf() * 64 - 32, eeRandf() - 0.5f, eeRandf() - 0.5f, eeRandf() - 0.5f, eeRandf() * -0.9f + 0.45f );
-			P->SetColor( eeColorAf(0.1f + eeRandf() * 0.1f, 0.1f + eeRandf() * 0.1f, 0.8f + eeRandf() * 0.3f, 1), 0.07f + eeRandf() * 0.01f );
+			P->Color( eeColorAf(0.1f + eeRandf() * 0.1f, 0.1f + eeRandf() * 0.1f, 0.8f + eeRandf() * 0.3f, 1), 0.07f + eeRandf() * 0.01f );
 			break;
 		case Heal:
 			P->Reset(mX, mY, eeRandf() * 1.4f - 0.7f, eeRandf() * -0.4f - 1.5f, eeRandf() - 0.5f, eeRandf() * -0.2f + 0.1f );
-			P->SetColor( eeColorAf(0.2f, 0.3f, 0.9f, 0.4f), 0.01f + eeRandf() * 0.01f );
+			P->Color( eeColorAf(0.2f, 0.3f, 0.9f, 0.4f), 0.01f + eeRandf() * 0.01f );
 			break;
 		case WormHole:
 			int lo, la;
@@ -168,7 +167,7 @@ void cParticleSystem::Reset(cParticle* P) {
 			y = mY + (radio * eesin( (eeFloat)P->Id() ));
 
 			P->Reset(x, y, VarB[0], VarB[1], VarB[2], VarB[3]);
-			P->SetColor( eeColorAf(1.f, 0.6f, 0.3f, 1.f), 0.02f + eeRandf() * 0.3f );
+			P->Color( eeColorAf(1.f, 0.6f, 0.3f, 1.f), 0.02f + eeRandf() * 0.3f );
 			break;
 		case Twirl:
 			z = 10.f + (eeFloat)mProgression;
@@ -181,7 +180,7 @@ void cParticleSystem::Reset(cParticle* P) {
 			y = mY - z * eecos((eeFloat)q * 2);
 
 			P->Reset(x, y, 1, 1, 0, 0);
-			P->SetColor( eeColorAf(1.f, 0.25f, 0.25f, 1), 0.6f + eeRandf() * 0.3f );
+			P->Color( eeColorAf(1.f, 0.25f, 0.25f, 1), 0.6f + eeRandf() * 0.3f );
 			break;
 		case Flower:
 			radio = eecos( 2 * ( (eeFloat)P->Id() * 0.1f ) ) * 50;
@@ -189,21 +188,21 @@ void cParticleSystem::Reset(cParticle* P) {
 			y = mY + radio * eesin( (eeFloat)P->Id() * 0.1f );
 
 			P->Reset(x, y, 1, 1, 0 , 0);
-			P->SetColor( eeColorAf(1.f, 0.25f, 0.1f, 0.1f), 0.3f + (0.2f * eeRandf()) + eeRandf() * 0.3f );
+			P->Color( eeColorAf(1.f, 0.25f, 0.1f, 0.1f), 0.3f + (0.2f * eeRandf()) + eeRandf() * 0.3f );
 			break;
 		case Galaxy:
 			radio = (eeRandf(1.f, 1.2f) + eesin( 20.f / (eeFloat)P->Id() )) * 60;
 			x = mX + radio * eecos( (eeFloat)P->Id() );
 			y = mY + radio * eesin( (eeFloat)P->Id() );
 			P->Reset(x, y, 0, 0, 0, 0);
-			P->SetColor( eeColorAf(0.2f, 0.2f, 0.6f + 0.4f * eeRandf(), 1.f), eeRandf(0.05f, 0.15f) );
+			P->Color( eeColorAf(0.2f, 0.2f, 0.6f + 0.4f * eeRandf(), 1.f), eeRandf(0.05f, 0.15f) );
 			break;
 		case Heart:
 			q = P->Id() * 0.01f;
 			x = mX - 50 * eesin(q * 2) * eesqrt( eeabs( eecos(q) ) );
 			y = mY - 50 * eecos(q * 2) * eesqrt( eeabs( eesin(q) ) );
 			P->Reset(x, y, 0.f, 0.f, 0.f, -(eeRandf() * 0.2f));
-			P->SetColor( eeColorAf(1.f, 0.5f, 0.2f, 0.6f + 0.2f * eeRandf()), 0.01f + eeRandf() * 0.08f );
+			P->Color( eeColorAf(1.f, 0.5f, 0.2f, 0.6f + 0.2f * eeRandf()), 0.01f + eeRandf() * 0.08f );
 			break;
 		case BlueExplosion:
 			if ( P->Id() == 0 ) mProgression+=10;
@@ -212,7 +211,7 @@ void cParticleSystem::Reset(cParticle* P) {
 			y = mY + (radio * eesin( (eeFloat)P->Id() / mProgression ) * 30);
 
 			P->Reset(x, y, eecos( (eeFloat)P->Id() ), eesin( (eeFloat)P->Id() ), 0, 0 );
-			P->SetColor( eeColorAf(0.3f, 0.6f, 1.f, 1.f), 0.03f );
+			P->Color( eeColorAf(0.3f, 0.6f, 1.f, 1.f), 0.03f );
 			break;
 		case GP:
 			radio = 50 + eeRandf() * 15 * eecos( (eeFloat)P->Id() * 3.5f );
@@ -220,7 +219,7 @@ void cParticleSystem::Reset(cParticle* P) {
 			y = mY + ( radio * eesin( (eeFloat)P->Id() * (eeFloat)0.01428571428 ) );
 
 			P->Reset(x, y, 0, 0, 0, 0);
-			P->SetColor( eeColorAf(0.2f, 0.8f, 0.4f, 0.5f) , eeRandf() * 0.3f );
+			P->Color( eeColorAf(0.2f, 0.8f, 0.4f, 0.5f) , eeRandf() * 0.3f );
 			break;
 		case BTwirl:
 			w = 10.f + (eeFloat)mProgression;
@@ -232,7 +231,7 @@ void cParticleSystem::Reset(cParticle* P) {
 			y = mY - w * eecos((eeFloat)q * 2);
 
 			P->Reset(x, y, 1, 1, 0, 0);
-			P->SetColor( eeColorAf(0.25f, 0.25f, 1.f, 1.f), 0.1f + eeRandf() * 0.3f + eeRandf() * 0.3f );
+			P->Color( eeColorAf(0.25f, 0.25f, 1.f, 1.f), 0.1f + eeRandf() * 0.3f + eeRandf() * 0.3f );
 			break;
 		case BT:
 			w = 10.f + (eeFloat)mProgression;
@@ -244,14 +243,14 @@ void cParticleSystem::Reset(cParticle* P) {
 			y = mY - w * eecos((eeFloat)q * 2);
 
 			P->Reset(x, y, -10, -1 * eeRandf(), 0, eeRandf());
-			P->SetColor( eeColorAf(0.25f, 0.25f, 1.f, 1.f), 0.1f + eeRandf() * 0.1f + eeRandf() * 0.3f );
+			P->Color( eeColorAf(0.25f, 0.25f, 1.f, 1.f), 0.1f + eeRandf() * 0.1f + eeRandf() * 0.3f );
 			break;
 		case Atomic:
 			radio = 10 + eesin( 2 * ( (eeFloat)P->Id() * 0.1f ) ) * 50;
 			x = mX + radio * eecos( (eeFloat)P->Id() * (eeFloat)0.033333 );
 			y = mY + radio * eesin( (eeFloat)P->Id() * (eeFloat)0.033333 );
 			P->Reset(x, y, 1, 1, 0, 0);
-			P->SetColor( eeColorAf(0.4f, 0.25f, 1.f, 1.f), 0.3f + eeRandf() * 0.2f + eeRandf() * 0.3f );
+			P->Color( eeColorAf(0.4f, 0.25f, 1.f, 1.f), 0.3f + eeRandf() * 0.2f + eeRandf() * 0.3f );
 			break;
 		case Callback:
 			if ( mPC.IsSet() )
@@ -293,15 +292,10 @@ void cParticleSystem::Draw() {
 
 		for ( Uint32 i = 0; i < mPCount; i++ ) {
 			P = &mParticle[i];
-			eeVector2f TL;
 
 			if ( P->Used() ) {
-				TL.x = P->X() - mHSize;
-				TL.y = P->Y() - mHSize;
-
-				/** FIXME: Optimize */
 				BR->QuadsSetColor( eeColorA( static_cast<Uint8> ( P->R() * 255 ), static_cast<Uint8> ( P->G() * 255 ), static_cast<Uint8>( P->B() * 255 ), static_cast<Uint8>( P->A() * 255 ) ) );
-				BR->BatchQuad( TL.x, TL.y, mSize, mSize );
+				BR->BatchQuad( P->X() - mHSize, P->Y() - mHSize, mSize, mSize );
 			}
 		}
 

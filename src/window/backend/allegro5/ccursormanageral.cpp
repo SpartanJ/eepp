@@ -51,7 +51,6 @@ void cCursorManagerAl::Visible( bool visible ) {
 }
 
 void cCursorManagerAl::Remove( cCursor * cursor, bool Delete ) {
-    //! FIXME: Implement Secure Deletion
     cCursorManager::Remove( cursor, Delete );
 }
 

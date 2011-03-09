@@ -22,7 +22,8 @@ struct eeVertex {
 class EE_API cBatchRenderer {
 	public:
 		cBatchRenderer();
-		~cBatchRenderer();
+
+		virtual ~cBatchRenderer();
 
 		/** Construct with a defined number of vertexs preallocated */
 		cBatchRenderer( const eeUint& Prealloc );
