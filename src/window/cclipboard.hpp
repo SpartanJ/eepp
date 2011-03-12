@@ -17,9 +17,6 @@ class cClipboard {
 
 		/** Set the current clipboard text */
 		virtual void SetText( const std::string& Text ) = 0;
-		
-		/** Set the current clipboard text */
-		virtual void SetText( const String& Text ) = 0;
 
 		cWindow * GetWindow() const;
 	protected:

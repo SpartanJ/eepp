@@ -88,10 +88,28 @@ void cClipboardSDL::Init() {
 	mInfo = &( reinterpret_cast<cWindowSDL*> ( mWindow )->mWMinfo );
 }
 
-void cClipboardSDL::SetText( const std::string& Text ) {
-}
+#if defined( EE_X11_PLATFORM )
+#ifdef X_HAVE_UTF8_STRING
+#define TEXT_FORMAT XInternAtom(display, "UTF8_STRING", False)
+#else
+#define TEXT_FORMAT XA_STRING
+#endif
+#endif
 
-void cClipboardSDL::SetText( const String& Text ) {
+void cClipboardSDL::SetText( const std::string& Text ) {
+	#if defined( EE_X11_PLATFORM )
+	eeWindowHandler display	= mInfo->info.x11.display;
+	X11Window window		= mInfo->info.x11.wmwindow;
+	Atom format				= TEXT_FORMAT;
+
+	XChangeProperty( display, DefaultRootWindow( display ), XA_CUT_BUFFER0, format, 8, PropModeReplace, (const unsigned char *)Text.c_str(), Text.size() );
+
+	if ( XGetSelectionOwner( display, XA_PRIMARY ) != window ) {
+		XSetSelectionOwner( display, XA_PRIMARY, window, CurrentTime );
+	}
+	#elif EE_PLATFORM == EE_PLATFORM_WIN
+
+	#endif
 }
 
 int cClipboardSDL::clipboard_convert_scrap( int type, char *dst, char *src, int srclen ) {

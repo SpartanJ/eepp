@@ -421,22 +421,6 @@ bool MakeDir( const std::string& path, const Uint16& mode ) {
     return v == 0;
 }
 
-std::string GetWindowsPath() {
-#if EE_PLATFORM == EE_PLATFORM_WIN
-	#ifdef UNICODE
- 		wchar_t Buffer[1024];
- 		GetWindowsDirectory( Buffer, 1024 );
-		return String( Buffer ).ToUtf8();
-	#else
-		char Buffer[1024];
-		GetWindowsDirectory( Buffer, 1024 );
-		return std::string( Buffer );
-	#endif
-#else
-	return std::string( "/usr/bin/" ); // :P
-#endif
-}
-
 Uint32 MakeHash( const std::string& str ) {
 	return MakeHash( reinterpret_cast<const Uint8*>( &str[0] ) );
 }
@@ -540,33 +524,32 @@ eeInt GetNumCPUs() {
 		GetSystemInfo(&info);
 
 		nprocs = (eeInt) info.dwNumberOfProcessors;
-	#elif EE_PLATFORM == EE_PLATFORM_LINUX
+	#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_SOLARIS
 		nprocs = sysconf(_SC_NPROCESSORS_ONLN);
-	#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+	#elif EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD
 		int mib[2];
-		size_t len;
 		int maxproc = 1;
+		size_t len = sizeof(int);
 
 		mib[0] = CTL_HW;
 		mib[1] = HW_NCPU;
+		
 		len = sizeof(maxproc);
 
-		// sysctl != 0 == error
-		if ( sysctl(mib, 2, &maxproc, &len, NULL, NULL == -1) )
-			return 1;
-
+		sysctl( mib, 2, &maxproc, &len, NULL, 0 );
+		
 		nprocs = maxproc;
 	#elif EE_PLATFORM == EE_PLATFORM_HAIKU
 		system_info info;
 
-		if ( get_system_info( &info ) == B_OK ) {
-			return info.cpu_count;
+		if ( B_OK == get_system_info( &info ) ) {
+			nprocs = info.cpu_count;
 		}
 	#else
 		#warning GetNumCPUs not implemented on this platform ( it will return 1 ).
 	#endif
 
-	if ( nprocs < 0 )
+	if ( nprocs < 1 )
 		nprocs = 1;
 
 	return nprocs;

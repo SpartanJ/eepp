@@ -23,7 +23,7 @@
 
 /**
 	@TODO Check for endianness problems, and make EEPP endianness agnostic.
-	@TODO Add backend for SDL 1.3 ( support for Android ). And may be SFML backend ( just for fun ).
+	@TODO Add backend for SDL 1.3 ( support for Android ). And may be SFML backend ( may be implement as the default build-in backend with sfml-window static linked ).
 	@TODO Support for Android and iOS.
 	@TODO Support color cursors \n
 				SDL 1.2					Not even posible ( win32 and x11 backends for this ready ) \n

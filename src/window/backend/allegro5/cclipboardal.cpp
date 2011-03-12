@@ -19,9 +19,6 @@ void cClipboardAl::Init() {
 void cClipboardAl::SetText( const std::string& Text ) {
 }
 
-void cClipboardAl::SetText( const String& Text ) {
-}
-
 std::string cClipboardAl::GetText() {
 	return std::string();
 }

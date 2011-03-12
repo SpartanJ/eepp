@@ -15,8 +15,6 @@ class EE_API cClipboardNull : public cClipboard {
 		String GetWideText();
 
 		void SetText( const std::string& Text );
-		
-		void SetText( const String& Text );
 	protected:
 		friend class cWindowNull;
 

@@ -37,9 +37,6 @@ namespace EE { namespace Utils {
 	/** Creates a new directory */
 	bool EE_API MakeDir( const std::string& path, const Uint16& mode = 0770 );
 
-	/** @return The default windows directory */
-	std::string EE_API GetWindowsPath();
-
 	/** @return string hash */
 	Uint32 EE_API MakeHash( const std::string& str );
 
