@@ -132,9 +132,10 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 
 void cWindowSDL::CreatePlatform() {
 	eeSAFE_DELETE( mPlatform );
-
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
 	SDL_VERSION( &mWMinfo.version );
 	SDL_GetWMInfo ( &mWMinfo );
+#endif
 
 #if defined( EE_X11_PLATFORM )
 	mPlatform = eeNew( Platform::cX11Impl, ( this, mWMinfo.info.x11.display, mWMinfo.info.x11.wmwindow, mWMinfo.info.x11.window, mWMinfo.info.x11.lock_func, mWMinfo.info.x11.unlock_func ) );

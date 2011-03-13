@@ -85,7 +85,9 @@ void cClipboardSDL::Init() {
 	CurrentHandler = (void*)mWindow->GetWindowHandler();
 	#endif
 
+	#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
 	mInfo = &( reinterpret_cast<cWindowSDL*> ( mWindow )->mWMinfo );
+	#endif
 }
 
 #if defined( EE_X11_PLATFORM )

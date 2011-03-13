@@ -2032,6 +2032,8 @@ int query_DXT_capability( void )
 				CFRelease( bundleURL );
 				CFRelease( extensionName );
 				CFRelease( bundle );
+			#elif defined( SOIL_GLES2 ) || defined( SOIL_GLES1 )
+				ext_addr = (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)&glCompressedTexImage2D;
 			#elif defined( SOIL_X11_PLATFORM )
 				ext_addr = (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)
 						#if !defined(GLX_VERSION_1_4)
@@ -2042,8 +2044,6 @@ int query_DXT_capability( void )
 						(
 							(const GLubyte *)"glCompressedTexImage2DARB"
 						);
-			#elif defined( SOIL_GLES2 ) || defined( SOIL_GLES1 )
-				ext_addr = (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)&glCompressedTexImage2D;
 			#else
 				ext_addr = (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)&glCompressedTexImage2D;
 			#endif

@@ -53,7 +53,13 @@
 #if defined ( linux ) || defined( __linux__ ) \
 	|| defined( __FreeBSD__ ) || defined(__OpenBSD__) || defined( __NetBSD__ ) || defined( __DragonFly__ ) \
 	|| defined( __SVR4 )
+
+#if !defined( EE_GLES1 ) && !defined( EE_GLES2 )
+
 #define EE_X11_PLATFORM
+
+#endif
+
 #endif
 
 //! Since EE just use basic POSIX stuff, declare as POSIX some OS that are mostly POSIX-compliant

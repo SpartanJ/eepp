@@ -48,6 +48,25 @@
 	#endif
 #endif
 
+#ifdef EE_GLES
+#define glCheckFramebufferStatusEXT glCheckFramebufferStatus
+#define glDeleteFramebuffersEXT glDeleteFramebuffers
+#define glGenFramebuffersEXT glGenFramebuffers
+#define glGenRenderbuffersEXT glGenRenderbuffers
+#define glBindFramebufferEXT glBindFramebuffer
+#define glRenderbufferStorageEXT glRenderbufferStorage
+#define glBindRenderbufferEXT glBindRenderbuffer
+#define glFramebufferRenderbufferEXT glFramebufferRenderbuffer
+#define glFramebufferTexture2DEXT glFramebufferTexture2D
+#define glDeleteBuffersARB glDeleteBuffers
+#define glGenBuffersARB glGenBuffers
+#define glBindBufferARB glBindBuffer
+#define glBufferDataARB glBufferData
+#define glBufferSubDataARB glBufferSubData
+#define glVertexAttribPointerARB glVertexAttribPointer
+typedef GLfloat		GLdouble;
+#endif
+
 #ifdef EE_GLES2
 typedef char GLchar;
 #define GL_MODELVIEW 0x1700
@@ -71,7 +90,6 @@ typedef char GLchar;
 #define GL_CLIP_PLANE5 0x3005
 #define GL_POINT_SPRITE 0x8861
 #define GL_VERTEX_PROGRAM_POINT_SIZE 0x8642
-typedef GLfloat		GLdouble;
 #endif
 
 #define STBI_TYPE_SPECIFIC_FUNCTIONS

@@ -128,7 +128,7 @@ cRendererGL3::cRendererGL3() :
 cRendererGL3::~cRendererGL3() {
 	for ( Uint32 i = 0; i < eeARRAY_SIZE( mVBO ); i++ ) {
 		if ( 0 != mVBO[i] ) {
-			glDeleteBuffers( 1, &mVBO[i] );
+			glDeleteBuffersARB( 1, &mVBO[i] );
 		}
 	}
 
@@ -354,7 +354,7 @@ void cRendererGL3::Init() {
 	glBindVertexArray( mVAO );
 	#endif
 
-	glGenBuffers( EEGL_ARRAY_STATES_COUNT, &mVBO[0] );
+	glGenBuffersARB( EEGL_ARRAY_STATES_COUNT, &mVBO[0] );
 
 	AllocateBuffers( mVBOSizeAlloc );
 
@@ -370,28 +370,28 @@ void cRendererGL3::AllocateBuffers( const Uint32& size ) {
 	mVBOSizeAlloc = size;
 
 	//"in		 vec2 dgl_Vertex;",
-	glBindBuffer( GL_ARRAY_BUFFER, mVBO[ EEGL_VERTEX_ARRAY ] );
-	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+	glBindBufferARB( GL_ARRAY_BUFFER, mVBO[ EEGL_VERTEX_ARRAY ] );
+	glBufferDataARB( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 
 	//"in		 vec4 dgl_Color;",
-	glBindBuffer( GL_ARRAY_BUFFER, mVBO[ EEGL_COLOR_ARRAY ] );
-	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+	glBindBufferARB( GL_ARRAY_BUFFER, mVBO[ EEGL_COLOR_ARRAY ] );
+	glBufferDataARB( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 
 	//"in		 vec2 dgl_TexCoord[0];",
-	glBindBuffer( GL_ARRAY_BUFFER, mVBO[ EEGL_TEXTURE_COORD_ARRAY ] );
-	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+	glBindBufferARB( GL_ARRAY_BUFFER, mVBO[ EEGL_TEXTURE_COORD_ARRAY ] );
+	glBufferDataARB( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 
 	//"in		 vec2 dgl_TexCoord[1];",
-	glBindBuffer( GL_ARRAY_BUFFER, mVBO[ EEGL_TEXTURE_COORD_ARRAY1 ] );
-	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+	glBindBufferARB( GL_ARRAY_BUFFER, mVBO[ EEGL_TEXTURE_COORD_ARRAY1 ] );
+	glBufferDataARB( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 
 	//"in		 vec2 dgl_TexCoord[2];",
-	glBindBuffer( GL_ARRAY_BUFFER, mVBO[ EEGL_TEXTURE_COORD_ARRAY2 ] );
-	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+	glBindBufferARB( GL_ARRAY_BUFFER, mVBO[ EEGL_TEXTURE_COORD_ARRAY2 ] );
+	glBufferDataARB( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 
 	//"in		 vec2 dgl_TexCoord[3];",
-	glBindBuffer( GL_ARRAY_BUFFER, mVBO[ EEGL_TEXTURE_COORD_ARRAY3 ] );
-	glBufferData( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+	glBindBufferARB( GL_ARRAY_BUFFER, mVBO[ EEGL_TEXTURE_COORD_ARRAY3 ] );
+	glBufferDataARB( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 }
 
 void cRendererGL3::UpdateMatrix() {
@@ -560,14 +560,14 @@ void cRendererGL3::VertexPointer ( GLint size, GLenum type, GLsizei stride, cons
 			AllocateBuffers( allocate );
 		}
 
-		glBindBuffer( GL_ARRAY_BUFFER, mVBO[ EEGL_VERTEX_ARRAY ]			);
-		glBufferSubData( GL_ARRAY_BUFFER, 0, allocate, pointer );
+		glBindBufferARB( GL_ARRAY_BUFFER, mVBO[ EEGL_VERTEX_ARRAY ]			);
+		glBufferSubDataARB( GL_ARRAY_BUFFER, 0, allocate, pointer );
 
 		#ifdef EE_GLES2
 		glEnableVertexAttribArray( index );
 		#endif
 
-		glVertexAttribPointer( index, size, type, GL_FALSE, stride, 0 );
+		glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, 0 );
 	}
 }
 
@@ -587,17 +587,17 @@ void cRendererGL3::ColorPointer ( GLint size, GLenum type, GLsizei stride, const
 			AllocateBuffers( allocate );
 		}
 
-		glBindBuffer( GL_ARRAY_BUFFER, mVBO[ EEGL_COLOR_ARRAY ]				);
-		glBufferSubData( GL_ARRAY_BUFFER, 0, allocate, pointer );
+		glBindBufferARB( GL_ARRAY_BUFFER, mVBO[ EEGL_COLOR_ARRAY ]				);
+		glBufferSubDataARB( GL_ARRAY_BUFFER, 0, allocate, pointer );
 
 		#ifdef EE_GLES2
 		glEnableVertexAttribArray( index );
 		#endif
 
 		if ( type == GL_UNSIGNED_BYTE ) {
-			glVertexAttribPointer( index, size, type, GL_TRUE, stride, 0 );
+			glVertexAttribPointerARB( index, size, type, GL_TRUE, stride, 0 );
 		} else {
-			glVertexAttribPointer( index, size, type, GL_FALSE, stride, 0 );
+			glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, 0 );
 		}
 	}
 }
@@ -618,14 +618,14 @@ void cRendererGL3::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, co
 			AllocateBuffers( allocate );
 		}
 
-		glBindBuffer( GL_ARRAY_BUFFER, mCurTexCoordArray );
-		glBufferSubData( GL_ARRAY_BUFFER, 0, allocate, pointer );
+		glBindBufferARB( GL_ARRAY_BUFFER, mCurTexCoordArray );
+		glBufferSubDataARB( GL_ARRAY_BUFFER, 0, allocate, pointer );
 
 		#ifdef EE_GLES2
 		glEnableVertexAttribArray( index );
 		#endif
 
-		glVertexAttribPointer( index, size, type, GL_FALSE, stride, 0 );
+		glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, 0 );
 	}
 }
 

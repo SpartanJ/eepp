@@ -168,20 +168,7 @@ std::string Uint8Tostring( const std::vector<Uint8> v ) {
 }
 
 void InsertChar( String& str, const eeUint& pos, const Uint32& tchar ) {
-	String tStr( str.length() );
-
-	for ( eeUint i = 0; i < tStr.size(); i++ ) {
-		if ( i < pos ) {
-			tStr[i] = str[i];
-		} else {
-			if ( pos != i ) {
-				tStr[i] = str[i-1];
-			} else {
-				tStr[i] = tchar;
-			}
-		}
-	}
-	str = tStr;
+	str.insert( str.begin() + pos, tchar );
 }
 
 std::string StoragePath( std::string appname ) {

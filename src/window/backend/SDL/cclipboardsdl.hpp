@@ -8,7 +8,10 @@
 #include "../../base.hpp"
 #include "../../cclipboard.hpp"
 #include <SDL/SDL.h>
+
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
 #include <SDL/SDL_syswm.h>
+#endif
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
@@ -28,7 +31,11 @@ class EE_API cClipboardSDL : public cClipboard {
 
 		void Init();
 
+		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
 		SDL_SysWMinfo * mInfo;
+		#else
+		void * mInfo;
+		#endif
 
 		eeScrapType clipboard_convert_format(int type);
 

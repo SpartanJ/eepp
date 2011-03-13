@@ -38,6 +38,8 @@ void cEETest::Init() {
 	bool VSync 		= Ini.GetValueB( "EEPP", "VSync", true );
 	PartsNum 		= Ini.GetValueI( "EEPP", "ParticlesNum", 1000);
 	mUseShaders 	= Ini.GetValueB( "EEPP", "UseShaders", false );
+	mJoyEnabled		= Ini.GetValueB( "EEPP", "JoystickEnabled", false );
+
 	Int32 GLVersion = Ini.GetValueI( "EEPP", "GLVersion", 2 );
 	EEGL_version GLVer;
 
@@ -1259,7 +1261,7 @@ void cEETest::Input() {
 
 	cJoystick * Joy = JM->GetJoystick(0);
 
-	if ( NULL != Joy ) {
+	if ( mJoyEnabled && NULL != Joy ) {
 		if ( Joy->IsButtonDown(0) )		KM->InjectButtonPress(EE_BUTTON_LEFT);
 		if ( Joy->IsButtonDown(1) )		KM->InjectButtonPress(EE_BUTTON_RIGHT);
 		if ( Joy->IsButtonDown(2) )		KM->InjectButtonPress(EE_BUTTON_MIDDLE);
@@ -1428,8 +1430,6 @@ void cEETest::End() {
 	eeSAFE_DELETE( mBlindyPtr );
 	eeSAFE_DELETE( mBoxSprite );
 	eeSAFE_DELETE( mCircleSprite );
-
-	mResLoad.Unload();
 
 	cLog::instance()->Save();
 

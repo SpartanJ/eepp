@@ -7,7 +7,9 @@
 
 #include "../../cwindow.hpp"
 #include <SDL/SDL.h>
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
 #include <SDL/SDL_syswm.h>
+#endif
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
@@ -40,7 +42,11 @@ class EE_API cWindowSDL : public cWindow {
 		friend class cClipboardSDL;
 
 		SDL_Surface *	mSurface;
+
+		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
 		SDL_SysWMinfo 	mWMinfo;
+		#endif
+
 		eeVector2i		mWinPos;
 
 		void CreatePlatform();

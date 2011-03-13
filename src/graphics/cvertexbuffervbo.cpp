@@ -17,15 +17,15 @@ cVertexBufferVBO::cVertexBufferVBO( const Uint32& VertexFlags, EE_DRAW_MODE Draw
 cVertexBufferVBO::~cVertexBufferVBO() {
 	for( Int32 i = 0; i < VERTEX_FLAGS_COUNT; i++ ) {
 		if( VERTEX_FLAG_QUERY( mVertexFlags, i ) ) {
-			glDeleteBuffers( 1,(GLuint *)&mArrayHandle[ i ] );
+			glDeleteBuffersARB( 1,(GLuint *)&mArrayHandle[ i ] );
 		}
 	}
 
 	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) ) {
-		glDeleteBuffers( 1, (GLuint *)&mElementHandle );
+		glDeleteBuffersARB( 1, (GLuint *)&mElementHandle );
 	}
 
-	#ifndef EE_GLES2
+	#if !defined( EE_GLES2 ) && EE_PLATFORM != EE_PLATFORM_HAIKU
 	if ( GLv_3 == GLi->Version() ) {
 		glDeleteVertexArrays( 1, &mVAO );
 	}
@@ -47,7 +47,7 @@ bool cVertexBufferVBO::Compile() {
 	if( mCompiled )
 		return false;
 
-	#ifndef EE_GLES2
+	#if !defined( EE_GLES2 ) && EE_PLATFORM != EE_PLATFORM_HAIKU
 	if ( GLv_3 == GLi->Version() ) {
 		glGenVertexArrays( 1, &mVAO );
 		glBindVertexArray( mVAO );
@@ -61,15 +61,15 @@ bool cVertexBufferVBO::Compile() {
 	//Create the VBO vertex arrays
 	for( Int32 i = 0; i < VERTEX_FLAGS_COUNT; i++ ) {
 		if( VERTEX_FLAG_QUERY( mVertexFlags, i ) ) {
-			glGenBuffers( 1,(GLuint *)&mArrayHandle[ i ] );
+			glGenBuffersARB( 1,(GLuint *)&mArrayHandle[ i ] );
 
-			glBindBuffer( GL_ARRAY_BUFFER, mArrayHandle[i] );
+			glBindBufferARB( GL_ARRAY_BUFFER, mArrayHandle[i] );
 
 			if ( mArrayHandle[i] ) {
 				if ( i != VERTEX_FLAG_COLOR )
-					glBufferData( GL_ARRAY_BUFFER, mVertexArray[i].size() * sizeof(eeFloat), &( mVertexArray[i][0] ), usageType );
+					glBufferDataARB( GL_ARRAY_BUFFER, mVertexArray[i].size() * sizeof(eeFloat), &( mVertexArray[i][0] ), usageType );
 				else
-					glBufferData( GL_ARRAY_BUFFER, mColorArray.size(), &mColorArray[0], usageType );
+					glBufferDataARB( GL_ARRAY_BUFFER, mColorArray.size(), &mColorArray[0], usageType );
 			} else {
 				return false;
 			}
@@ -80,13 +80,13 @@ bool cVertexBufferVBO::Compile() {
 
 	//Create the VBO index array
 	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) ) {
-		glGenBuffers( 1, (GLuint *)&mElementHandle );
+		glGenBuffersARB( 1, (GLuint *)&mElementHandle );
 
-		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, mElementHandle );
+		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER, mElementHandle );
 
-		glBufferData( GL_ELEMENT_ARRAY_BUFFER, GetIndexCount() * sizeof(Uint32), &mIndexArray[0], usageType );
+		glBufferDataARB( GL_ELEMENT_ARRAY_BUFFER, GetIndexCount() * sizeof(Uint32), &mIndexArray[0], usageType );
 
-		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER, 0 );
 	}
 
 	mCompiled	= true;
@@ -99,8 +99,8 @@ void cVertexBufferVBO::Draw() {
 	if ( !mCompiled )
 		return;
 
-	if ( GLv_3 == GLi->Version() ) {
-		#ifndef EE_GLES2
+	if ( GLv_3 == GLi->Version() || GLv_ES2 == GLi->Version() ) {
+		#if !defined( EE_GLES2 ) && EE_PLATFORM != EE_PLATFORM_HAIKU
 		glBindVertexArray( mVAO );
 		#endif
 
@@ -115,16 +115,16 @@ void cVertexBufferVBO::Draw() {
 		if( mElemDraw < 0 )
 			lSize = GetIndexCount();
 
-		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, mElementHandle );
+		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER, mElementHandle );
 
 		glDrawElements( mDrawType, lSize, GL_UNSIGNED_INT, (char*)NULL );
 
-		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER, 0 );
 	} else {
 		glDrawArrays( mDrawType, 0, GetVertexCount() );
 	}
 
-	if ( GLv_3 == GLi->Version() ) {
+	if ( GLv_3 == GLi->Version() || GLv_ES2 == GLi->Version() ) {
 		if ( !mTextured ) {
 			GLi->Enable( GL_TEXTURE_2D );
 		}
@@ -134,7 +134,7 @@ void cVertexBufferVBO::Draw() {
 void cVertexBufferVBO::SetVertexStates() {
 	GLint index;
 
-	#ifndef EE_GLES2
+	#if !defined( EE_GLES2 ) && EE_PLATFORM != EE_PLATFORM_HAIKU
 	if ( GLv_3 == GLi->Version() ) {
 		if ( mBuffersSet ) {
 			return;
@@ -147,13 +147,13 @@ void cVertexBufferVBO::SetVertexStates() {
 	/// POSITION
 	if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
 		GLi->EnableClientState( GL_VERTEX_ARRAY );
-		glBindBuffer( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_POSITION ] );
+		glBindBufferARB( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_POSITION ] );
 		#ifdef EE_GL3_ENABLED
-		if ( GLv_3 == GLi->Version() ) {
+		if ( GLv_3 == GLi->Version() || GLv_ES2 == GLi->Version() ) {
 			index = GLi->GetRendererGL3()->GetStateIndex( EEGL_VERTEX_ARRAY );
 
 			if ( -1 != index ) {
-				glVertexAttribPointer( index, eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FLOAT, GL_FALSE, 0, 0 );
+				glVertexAttribPointerARB( index, eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FLOAT, GL_FALSE, 0, 0 );
 			}
 		}
 		else
@@ -168,14 +168,14 @@ void cVertexBufferVBO::SetVertexStates() {
 	/// COLOR
 	if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) ) {
 		GLi->EnableClientState( GL_COLOR_ARRAY );
-		glBindBuffer( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_COLOR ] );
+		glBindBufferARB( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_COLOR ] );
 
 		#ifdef EE_GL3_ENABLED
-		if ( GLv_3 == GLi->Version() ) {
+		if ( GLv_3 == GLi->Version() || GLv_ES2 == GLi->Version() ) {
 			index = GLi->GetRendererGL3()->GetStateIndex( EEGL_COLOR_ARRAY );
 
 			if ( -1 != index )
-				glVertexAttribPointer( index, eeVertexElements[ VERTEX_FLAG_COLOR ], GL_UNSIGNED_BYTE, GL_TRUE, 0, 0 );
+				glVertexAttribPointerARB( index, eeVertexElements[ VERTEX_FLAG_COLOR ], GL_UNSIGNED_BYTE, GL_TRUE, 0, 0 );
 		}
 		else
 		#endif
@@ -193,14 +193,14 @@ void cVertexBufferVBO::SetVertexStates() {
 				GLi->ClientActiveTexture( GL_TEXTURE0 + i );
 				GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
 
-				glBindBuffer( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_TEXTURE0 + i ] );
+				glBindBufferARB( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_TEXTURE0 + i ] );
 
 				#ifdef EE_GL3_ENABLED
-				if ( GLv_3 == GLi->Version() ) {
+				if ( GLv_3 == GLi->Version() || GLv_ES2 == GLi->Version() ) {
 					index = GLi->GetRendererGL3()->GetStateIndex( EEGL_TEXTURE_COORD_ARRAY );
 
 					if ( -1 != index && 0 == i )
-						glVertexAttribPointer( index, eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], GL_FLOAT, GL_FALSE, 0, 0 );
+						glVertexAttribPointerARB( index, eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], GL_FLOAT, GL_FALSE, 0, 0 );
 				}
 				else
 				#endif
@@ -221,14 +221,14 @@ void cVertexBufferVBO::SetVertexStates() {
 	} else {
 		if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 ) ) {
 			GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
-			glBindBuffer( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_TEXTURE0 ] );
+			glBindBufferARB( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_TEXTURE0 ] );
 
 			#ifdef EE_GL3_ENABLED
-			if ( GLv_3 == GLi->Version() ) {
+			if ( GLv_3 == GLi->Version() || GLv_ES2 == GLi->Version() ) {
 				index = GLi->GetRendererGL3()->GetStateIndex( EEGL_TEXTURE_COORD_ARRAY );
 
 				if ( -1 != index )
-					glVertexAttribPointer( index, eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], GL_FLOAT, GL_FALSE, 0, 0 );
+					glVertexAttribPointerARB( index, eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], GL_FLOAT, GL_FALSE, 0, 0 );
 			}
 			else
 			#endif
@@ -248,7 +248,7 @@ void cVertexBufferVBO::SetVertexStates() {
 	GLi->ActiveTexture( GL_TEXTURE0 );
 	GLi->ClientActiveTexture( GL_TEXTURE0 );
 
-	glBindBuffer( GL_ARRAY_BUFFER, 0 );
+	glBindBufferARB( GL_ARRAY_BUFFER, 0 );
 
 	mBuffersSet = true;
 }
@@ -260,13 +260,13 @@ void cVertexBufferVBO::Update( const Uint32& Types, bool Indices ) {
 
 	for( Int32 i = 0; i < VERTEX_FLAGS_COUNT; i++ ) {
 		if ( VERTEX_FLAG_QUERY( mVertexFlags, i ) && VERTEX_FLAG_QUERY( Types, i ) ) {
-			glBindBuffer( GL_ARRAY_BUFFER, mArrayHandle[i] );
+			glBindBufferARB( GL_ARRAY_BUFFER, mArrayHandle[i] );
 
 			if ( mArrayHandle[i] ) {
 				if ( i != VERTEX_FLAG_COLOR )
-					glBufferData( GL_ARRAY_BUFFER, mVertexArray[i].size() * sizeof(eeFloat), &( mVertexArray[i][0] ), usageType );
+					glBufferDataARB( GL_ARRAY_BUFFER, mVertexArray[i].size() * sizeof(eeFloat), &( mVertexArray[i][0] ), usageType );
 				else
-					glBufferData( GL_ARRAY_BUFFER, mColorArray.size(), &mColorArray[0], usageType );
+					glBufferDataARB( GL_ARRAY_BUFFER, mColorArray.size(), &mColorArray[0], usageType );
 			}
 		}
 	}
@@ -274,11 +274,11 @@ void cVertexBufferVBO::Update( const Uint32& Types, bool Indices ) {
 	glBindBuffer( GL_ARRAY_BUFFER, 0 );
 
 	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) && Indices ) {
-		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, mElementHandle );
+		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER, mElementHandle );
 
-		glBufferData( GL_ELEMENT_ARRAY_BUFFER, GetIndexCount() * sizeof(Uint32), &mIndexArray[0], usageType );
+		glBufferDataARB( GL_ELEMENT_ARRAY_BUFFER, GetIndexCount() * sizeof(Uint32), &mIndexArray[0], usageType );
 
-		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, 0 );
+		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER, 0 );
 	}
 
 	mBuffersSet = false;

@@ -35,12 +35,12 @@ cFrameBufferFBO::~cFrameBufferFBO() {
 
     if ( mDepthBuffer ) {
         GLuint depthBuffer = static_cast<GLuint>( mDepthBuffer );
-		glDeleteFramebuffers( 1, &depthBuffer );
+		glDeleteFramebuffersEXT( 1, &depthBuffer );
     }
 
     if ( mFrameBuffer ) {
         GLuint frameBuffer = static_cast<GLuint>( mFrameBuffer );
-		glDeleteFramebuffers( 1, &frameBuffer );
+		glDeleteFramebuffersEXT( 1, &frameBuffer );
     }
 }
 
@@ -62,30 +62,30 @@ bool cFrameBufferFBO::Create( const Uint32& Width, const Uint32& Height, bool De
 
 	GLuint frameBuffer = 0;
 
-	glGenFramebuffers( 1, &frameBuffer );
+	glGenFramebuffersEXT( 1, &frameBuffer );
 
 	mFrameBuffer = static_cast<unsigned int>( frameBuffer );
 
 	if ( !mFrameBuffer)
 		return false;
 
-	glBindFramebuffer( GL_FRAMEBUFFER, mFrameBuffer );
+	glBindFramebufferEXT( GL_FRAMEBUFFER, mFrameBuffer );
 
 	if ( DepthBuffer ) {
 		GLuint depth = 0;
 
-		glGenRenderbuffers( 1, &depth );
+		glGenRenderbuffersEXT( 1, &depth );
 
 		mDepthBuffer = static_cast<unsigned int>(depth);
 
 		if ( !mDepthBuffer )
 			return false;
 
-		glBindRenderbuffer( GL_RENDERBUFFER, mDepthBuffer );
+		glBindRenderbufferEXT( GL_RENDERBUFFER, mDepthBuffer );
 
-		glRenderbufferStorage( GL_RENDERBUFFER, GL_DEPTH_COMPONENT, Width, Height );
+		glRenderbufferStorageEXT( GL_RENDERBUFFER, GL_DEPTH_COMPONENT, Width, Height );
 
-		glFramebufferRenderbuffer( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, mDepthBuffer );
+		glFramebufferRenderbufferEXT( GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, mDepthBuffer );
 	}
 
 	if ( NULL == mTexture ) {
@@ -98,22 +98,22 @@ bool cFrameBufferFBO::Create( const Uint32& Width, const Uint32& Height, bool De
 		}
 	}
 
-	glFramebufferTexture2D( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTexture->Handle(), 0 );
+	glFramebufferTexture2DEXT( GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, mTexture->Handle(), 0 );
 
-	if ( glCheckFramebufferStatus( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE ) {
-		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+	if ( glCheckFramebufferStatusEXT( GL_FRAMEBUFFER ) != GL_FRAMEBUFFER_COMPLETE ) {
+		glBindFramebufferEXT( GL_FRAMEBUFFER, 0 );
 
 		return false;
 	}
 
-	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+	glBindFramebufferEXT( GL_FRAMEBUFFER, 0 );
 
 	return true;
 }
 
 void cFrameBufferFBO::Bind() {
 	if ( mFrameBuffer ) {
-		glBindFramebuffer( GL_FRAMEBUFFER, mFrameBuffer );
+		glBindFramebufferEXT( GL_FRAMEBUFFER, mFrameBuffer );
 		SetBufferView();
 	}
 }
@@ -121,7 +121,7 @@ void cFrameBufferFBO::Bind() {
 void cFrameBufferFBO::Unbind() {
 	if ( mFrameBuffer ) {
 		RecoverView();
-		glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+		glBindFramebufferEXT( GL_FRAMEBUFFER, 0 );
 	}
 }
 
