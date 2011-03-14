@@ -15,7 +15,7 @@ cLog::~cLog() {
 	Write( "...::: Entropia Engine++ Unloaded :::..." );
 
 	if ( !mFilePath.empty() )
-		mFilePath = AppPath();
+		mFilePath = GetProcessPath();
 
 	if ( mSave ) {
 		std::string str = mFilePath;

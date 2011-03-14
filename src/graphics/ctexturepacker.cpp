@@ -495,7 +495,7 @@ void cTexturePacker::Save( const std::string& Filepath, const EE_SAVE_TYPE& Form
 		t = &(*it);
 
 		if ( t->Placed() ) {
-			Uint8 * data = SOIL_load_image( t->Name().c_str(), &w, &h, &c, 0 );
+			Uint8 * data = stbi_load( t->Name().c_str(), &w, &h, &c, 0 );
 
 			if ( NULL != data && t->Width() == w && t->Height() == h ) {
 				cImage * ImgCopy = eeNew( cImage, ( data, w, h, c ) );
@@ -509,7 +509,8 @@ void cTexturePacker::Save( const std::string& Filepath, const EE_SAVE_TYPE& Form
 
 				eeSAFE_DELETE( ImgCopy );
 
-				SOIL_free_image_data( data );
+				if ( data )
+					free( data );
 
 				mPlacedCount++;
 			}

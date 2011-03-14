@@ -125,6 +125,14 @@ LIBS 		= -lfreetype -lopenal -lGL $(SDL_BACKEND_LINK)
 OTHERINC	= -I/usr/include/freetype2
 PLATFORMSRC	= 
 
+ifeq ($(OS), freebsd)
+
+LIBS 		= -lfreetype -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
+OTHERINC	= -I/usr/include/freetype2
+PLATFORMSRC	= $(wildcard ./src/window/platform/x11/*.cpp)
+
+endif
+
 endif
 
 endif
@@ -137,7 +145,12 @@ EXE     			= eetest-$(RELEASETYPE)
 EXEIV				= eeiv-$(RELEASETYPE)
 EXEFLUID			= eefluid-$(RELEASETYPE)
 
+ifeq ($(OS), haiku)
+SRCGLEW 			= 
+else
 SRCGLEW 			= $(wildcard ./src/helper/glew/*.c)
+endif
+
 SRCSOIL 			= $(wildcard ./src/helper/SOIL/*.c)
 SRCSTBVORBIS 		= $(wildcard ./src/helper/stb_vorbis/*.c)
 SRCZLIB				= $(wildcard ./src/helper/zlib/*.c)

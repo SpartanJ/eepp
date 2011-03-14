@@ -163,11 +163,11 @@ void cTextureLoader::LoadFromPath() {
 
 			stbi_dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsDDSCompressed );
 		} else {
-			mPixels = SOIL_load_image( mFilepath.c_str(), &mImgWidth, &mImgHeight, &mChannels, SOIL_LOAD_AUTO );
+			mPixels = stbi_load( mFilepath.c_str(), &mImgWidth, &mImgHeight, &mChannels, 0 );
 		}
 
 		if ( NULL == mPixels )
-			cLog::instance()->Write( SOIL_last_result() );
+			cLog::instance()->Write( stbi_failure_reason() );
 	}
 }
 
@@ -191,11 +191,11 @@ void cTextureLoader::LoadFromMemory() {
 		memcpy( mPixels, mImagePtr, mSize );
 		stbi_dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsDDSCompressed );
 	} else {
-		mPixels = SOIL_load_image_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels, SOIL_LOAD_AUTO );
+		mPixels = stbi_load_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels, 0 );
 	}
 
 	if ( NULL == mPixels )
-		cLog::instance()->Write( SOIL_last_result() );
+		cLog::instance()->Write( stbi_failure_reason() );
 }
 
 void cTextureLoader::LoadFromPixels() {
@@ -234,20 +234,23 @@ void cTextureLoader::LoadFromPixels() {
 
 				if ( NULL != mColorKey && 0 != mTexId )
 					cTextureFactory::instance()->GetTexture( mTexId )->CreateMaskFromColor( eeColorA( mColorKey->R(), mColorKey->G(), mColorKey->B(), 255 ), 0 );
+			} else {
+				cLog::instance()->Write( "Failed to create texture. Reason: " + std::string( SOIL_last_result() ) );
 			}
 
 			if ( TEX_LT_PIXELS != mLoadType ) {
 				if ( mIsDDS ) {
 					eeFree( mPixels );
 				} else {
-					SOIL_free_image_data( mPixels );
+					if ( mPixels )
+						free( mPixels );
 				}
 			}
 
 			mPixels = NULL;
 
 		} else
-			cLog::instance()->Write( SOIL_last_result() );
+			cLog::instance()->Write( stbi_failure_reason() );
 
 		SetLoaded();
 	}

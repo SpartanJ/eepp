@@ -8,7 +8,7 @@ namespace EE { namespace Graphics {
 cTextureGroupLoader::cTextureGroupLoader() :
 	mThreaded(false),
 	mLoaded(false),
-	mAppPath( AppPath() ),
+	mAppPath( GetProcessPath() ),
 	mSkipResourceLoad(false),
 	mIsLoading(false)
 {
@@ -18,7 +18,7 @@ cTextureGroupLoader::cTextureGroupLoader( const std::string& TextureGroupPath, c
 	mTextureGroupPath( TextureGroupPath ),
 	mThreaded( Threaded ),
 	mLoaded(false),
-	mAppPath( AppPath() ),
+	mAppPath( GetProcessPath() ),
 	mPack(NULL),
 	mSkipResourceLoad(false),
 	mIsLoading(false)
@@ -30,7 +30,7 @@ cTextureGroupLoader::cTextureGroupLoader( const Uint8* Data, const Uint32& DataS
 	mTextureGroupPath( TextureGroupName ),
 	mThreaded( Threaded ),
 	mLoaded(false),
-	mAppPath( AppPath() ),
+	mAppPath( GetProcessPath() ),
 	mPack(NULL),
 	mSkipResourceLoad(false),
 	mIsLoading(false)
@@ -42,7 +42,7 @@ cTextureGroupLoader::cTextureGroupLoader( cPack * Pack, const std::string& FileP
 	mTextureGroupPath( FilePackPath ),
 	mThreaded( Threaded ),
 	mLoaded(false),
-	mAppPath( AppPath() ),
+	mAppPath( GetProcessPath() ),
 	mPack(NULL),
 	mSkipResourceLoad(false),
 	mIsLoading(false)
@@ -335,7 +335,7 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 					tapath = FileRemoveExtension( TextureAtlasPath ) + "_ch" + toStr( z ) + "." + SaveTypeToExtension( mTexGrHdr.Format );
 				}
 
-				unsigned char * imgPtr = SOIL_load_image( tapath.c_str(), &x, &y, &c, SOIL_LOAD_AUTO );
+				unsigned char * imgPtr = stbi_load( tapath.c_str(), &x, &y, &c, 0 );
 
 				if ( NULL != imgPtr ) {
 					cImage Img( imgPtr, x, y, c );
@@ -356,7 +356,7 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 						if ( tSh->Date != ModifDate ) {
 							tSh->Date = ModifDate;	// Update the shape hdr
 
-							unsigned char * imgCopyPtr = SOIL_load_image( imgcopypath.c_str(), &x, &y, &c, SOIL_LOAD_AUTO );
+							unsigned char * imgCopyPtr = stbi_load( imgcopypath.c_str(), &x, &y, &c, 0 );
 
 							if ( NULL != imgCopyPtr ) {
 								cImage ImgCopy( imgCopyPtr, x, y, c );
@@ -364,7 +364,8 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 
 								Img.CopyImage( &ImgCopy, tSh->X, tSh->Y );	// Update the image into the texture atlas
 
-								SOIL_free_image_data( imgCopyPtr );
+								if ( imgCopyPtr )
+									free( imgCopyPtr );
 							} else
 								break;
 						}
@@ -374,7 +375,8 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 
 					Img.SaveToFile( tapath, (EE_SAVE_TYPE)mTexGrHdr.Format );
 
-					SOIL_free_image_data( imgPtr );
+					if ( imgPtr )
+						free( imgPtr );
 				}
 				else
 					return false; // fatal error

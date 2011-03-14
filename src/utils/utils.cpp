@@ -3,7 +3,6 @@
 
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 	#include <CoreFoundation/CoreFoundation.h>
-	#include <sys/sysctl.h>
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	#include <windows.h>
 #elif EE_PLATFORM == EE_PLATFORM_LINUX
@@ -11,6 +10,13 @@
 	#include <unistd.h>
 #elif EE_PLATFORM == EE_PLATFORM_HAIKU
 	#include <kernel/OS.h>
+	#include <kernel/image.h>
+#elif EE_PLATFORM == EE_PLATFORM_SOLARIS
+	#include <stdlib.h>
+#endif
+
+#if EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD
+#include <sys/sysctl.h>
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -32,15 +38,159 @@ static bool TickStarted = false;
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
+typedef void (WINAPI *PGNSI)(LPSYSTEM_INFO);
+
+static std::string GetWindowsArch() {
+	std::string arch = "Unknown";
+	OSVERSIONINFOEX osvi;
+	SYSTEM_INFO si;
+	PGNSI pGNSI;
+	BOOL bOsVersionInfoEx;
+
+	ZeroMemory(&si, sizeof(SYSTEM_INFO));
+	ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
+
+	osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+	bOsVersionInfoEx = GetVersionEx( (OSVERSIONINFO*) &osvi );
+
+	if( bOsVersionInfoEx == FALSE ) return arch;
+
+	// Call GetNativeSystemInfo if supported or GetSystemInfo otherwise.
+	pGNSI = (PGNSI) GetProcAddress( GetModuleHandle( TEXT( "kernel32.dll" ) ), "GetNativeSystemInfo" );
+
+	if( NULL != pGNSI ) {
+		pGNSI(&si);
+	} else {
+		GetSystemInfo(&si);
+	}
+
+	if ( osvi.dwMajorVersion >= 6 ) {
+		if ( si.wProcessorArchitecture==PROCESSOR_ARCHITECTURE_AMD64 ) {
+			arch = "x64";
+		} else if (si.wProcessorArchitecture==PROCESSOR_ARCHITECTURE_INTEL ) {
+			arch = "x86";
+		}
+	} else {
+		arch = "x86";
+	}
+
+	return arch;
+}
+
+static std::string GetWindowsVersion() {
+	std::string os;
+	OSVERSIONINFOEX osvi;
+	SYSTEM_INFO si;
+	PGNSI pGNSI;
+	BOOL bOsVersionInfoEx;
+
+	ZeroMemory(&si, sizeof(SYSTEM_INFO));
+	ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
+
+	osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+	bOsVersionInfoEx = GetVersionEx( (OSVERSIONINFO*) &osvi );
+
+	if( bOsVersionInfoEx == FALSE ) return os;
+
+	// Call GetNativeSystemInfo if supported or GetSystemInfo otherwise.
+	pGNSI = (PGNSI) GetProcAddress( GetModuleHandle( TEXT( "kernel32.dll" ) ), "GetNativeSystemInfo" );
+
+	if( NULL != pGNSI ) {
+		pGNSI(&si);
+	} else {
+		GetSystemInfo(&si);
+	}
+
+	os = "Microsoft ";
+
+	if ( VER_PLATFORM_WIN32_NT == osvi.dwPlatformId && osvi.dwMajorVersion > 4 ) {
+		if ( osvi.dwMajorVersion == 6 ) {
+			if( osvi.dwMinorVersion == 0 ) {
+				if( osvi.wProductType == VER_NT_WORKSTATION ) {
+					os += "Windows Vista";
+				} else {
+					os += "Windows Server 2008";
+				}
+			}
+
+			if ( osvi.dwMinorVersion == 1 ) {
+				if( osvi.wProductType == VER_NT_WORKSTATION ) {
+					os += "Windows 7";
+				} else {
+					os += "Windows Server 2008 R2";
+				}
+			}
+		}
+
+		if ( osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 2 ) {
+			if ( GetSystemMetrics(SM_SERVERR2) ) {
+				os += "Windows Server 2003 R2, ";
+			} else if ( osvi.wSuiteMask & VER_SUITE_STORAGE_SERVER ) {
+				os += "Windows Storage Server 2003";
+			} else if ( osvi.wSuiteMask & 0x00008000 ) { //VER_SUITE_WH_SERVER
+				os += "Windows Home Server";
+			} else if ( osvi.wProductType == VER_NT_WORKSTATION && si.wProcessorArchitecture == PROCESSOR_ARCHITECTURE_AMD64 ) {
+				os += "Windows XP Professional x64 Edition";
+			} else {
+				os += "Windows Server 2003, ";
+			}
+		}
+
+		if ( osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 1 ) {
+			os += "Windows XP";
+		}
+
+		if ( osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 0 ) {
+			os += "Windows 2000";
+		}
+
+		// Include service pack (if any) and build number.
+		std::string CSDVer( osvi.szCSDVersion );
+		if ( CSDVer.size() ) {
+			os += " " + CSDVer;
+		}
+	} else if ( VER_PLATFORM_WIN32_WINDOWS == osvi.dwPlatformId ) {
+		if (osvi.dwMajorVersion == 4 && osvi.dwMinorVersion == 0) {
+			if (osvi.szCSDVersion[1] == 'C' ||
+				osvi.szCSDVersion[1] == 'B') {
+				os += "Windows 95 OSR2";
+			} else {
+				os += "Windows 95";
+			}
+		} else if (osvi.dwMajorVersion == 4 && osvi.dwMinorVersion == 10) {
+			if (osvi.szCSDVersion[1] == 'A') {
+				os += "Windows 98 SE";
+			} else {
+				os += "Windows 98";
+			}
+		} else if (osvi.dwMajorVersion == 4 && osvi.dwMinorVersion == 90) {
+			os += "Windows ME";
+		} else if (osvi.dwMajorVersion == 4) {
+			os += "Windows unknown 95 family";
+		} else {
+			os += "Windows";
+		}
+	} else {
+		os += "Windows";
+	}
+
+	return os;
+}
+
 #define TIME_WRAP_VALUE (~(DWORD)0)
 /* The first high-resolution ticks value of the application */
 static LARGE_INTEGER hires_start_ticks;
 /* The number of ticks per second of the high-resolution performance counter */
 static LARGE_INTEGER hires_ticks_per_second;
+
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD
 #define HAVE_CLOCK_GETTIME
+#endif
+
+#if defined( EE_PLATFORM_POSIX )
+#include <sys/utsname.h>
 #endif
 
 #ifdef EE_PLATFORM_POSIX
@@ -52,6 +202,38 @@ static struct timeval start;
 #endif
 
 namespace EE { namespace Utils {
+
+std::string GetOSName() {
+#if defined( EE_PLATFORM_POSIX )
+	struct utsname os;
+
+	if ( -1 != uname( &os ) ) {
+		return std::string( os.sysname ) + " " + std::string( os.release );
+	}
+
+	return "Unknown";
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+	return GetWindowsVersion();
+#else
+	return "Unknown";
+#endif
+}
+
+std::string GetOSArchitecture() {
+#if defined( EE_PLATFORM_POSIX )
+	struct utsname os;
+
+	if ( -1 != uname( &os ) ) {
+		return std::string( os.machine );
+	}
+
+	return "Unknown";
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+	return GetWindowsArch();
+#else
+	return "Unknown";
+#endif
+}
 
 bool FileExists( const std::string& Filepath ) {
 	struct stat st;
@@ -121,7 +303,7 @@ void eeSleep( const Uint32& ms ) {
 #endif
 }
 
-std::string AppPath() {
+std::string GetProcessPath() {
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 	char exe_file[PATH_MAX + 1];
 	CFBundleRef mainBundle = CFBundleGetMainBundle();
@@ -185,8 +367,31 @@ std::string AppPath() {
 
         return std::string(szDrive) + std::string(szDir);
 	#endif
+#elif EE_PLATFORM == EE_PLATFORM_BSD
+	int mib[4];
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_PROC;
+	mib[2] = KERN_PROC_PATHNAME;
+	mib[3] = -1;
+	char buf[1024];
+	size_t cb = sizeof(buf);
+	sysctl(mib, 4, buf, &cb, NULL, 0);
+
+	return FileRemoveFileName( std::string( buf ) );
+#elif EE_PLATFORM == EE_PLATFORM_SOLARIS
+	return FileRemoveFileName( std::string( getexecname() ) );
+#elif EE_PLATFORM == EE_PLATFORM_HAIKU
+	image_info info;
+	int32 cookie = 0;
+
+	while ( B_OK == get_next_image_info( 0, &cookie, &info ) ) {
+		if ( info.type == B_APP_IMAGE )
+			break;
+	}
+
+	return FileRemoveFileName( std::string( info.name ) );
 #else
-	#warning AppPath() not implemented on this platform. ( will return "./" )
+	#warning GetProcessPath() not implemented on this platform. ( will return "./" )
 	return "./";
 #endif
 }
@@ -516,7 +721,7 @@ std::string FileRemoveFileName( const std::string& filepath ) {
 	return filepath.substr( 0, filepath.find_last_of("/\\") + 1 );
 }
 
-eeInt GetNumCPUs() {
+eeInt GetCPUCount() {
 	eeInt nprocs = -1;
 
 	#if EE_PLATFORM == EE_PLATFORM_WIN
@@ -533,11 +738,11 @@ eeInt GetNumCPUs() {
 
 		mib[0] = CTL_HW;
 		mib[1] = HW_NCPU;
-		
+
 		len = sizeof(maxproc);
 
 		sysctl( mib, 2, &maxproc, &len, NULL, 0 );
-		
+
 		nprocs = maxproc;
 	#elif EE_PLATFORM == EE_PLATFORM_HAIKU
 		system_info info;
@@ -546,7 +751,7 @@ eeInt GetNumCPUs() {
 			nprocs = info.cpu_count;
 		}
 	#else
-		#warning GetNumCPUs not implemented on this platform ( it will return 1 ).
+		#warning GetCPUCount not implemented on this platform ( it will return 1 ).
 	#endif
 
 	if ( nprocs < 1 )

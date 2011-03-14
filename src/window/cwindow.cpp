@@ -142,7 +142,7 @@ bool cWindow::TakeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format )
 		if ( IsDirectory( filepath ) || !Ext.size() )
 			CreateNewFile = true;
 	} else {
-		filepath = AppPath();
+		filepath = GetProcessPath();
 		CreateNewFile = true;
 	}
 
@@ -317,7 +317,7 @@ void cWindow::SendVideoResizeCb() {
 }
 
 void cWindow::LogSuccessfulInit( const std::string& BackendName ) {
-	cLog::instance()->Write( "Engine Initialized Succesfully.\n\tBackend: " + BackendName + "\n\tGL Backend: " + GLi->VersionStr() + "\n\tGL Vendor: " + GLi->GetVendor() + "\n\tGL Renderer: " + GLi->GetRenderer() + "\n\tGL Version: " + GLi->GetVersion() + "\n\tGL Shading Language Version: " + GLi->GetShadingLanguageVersion() );
+	cLog::instance()->Write( "Engine Initialized Succesfully.\n\tOS: " + GetOSName() + "\n\tArch: " + GetOSArchitecture() + " \n\tBackend: " + BackendName + "\n\tGL Backend: " + GLi->VersionStr() + "\n\tGL Vendor: " + GLi->GetVendor() + "\n\tGL Renderer: " + GLi->GetRenderer() + "\n\tGL Version: " + GLi->GetVersion() + "\n\tGL Shading Language Version: " + GLi->GetShadingLanguageVersion() );
 }
 
 void cWindow::LogFailureInit( const std::string& ClassName, const std::string& BackendName ) {

@@ -55,7 +55,7 @@ cImage::cImage( const std::string& Path ) :
 	mAvoidFree(false)
 {
 	int w, h, c;
-	Uint8 * data = SOIL_load_image( Path.c_str(), &w, &h, &c, SOIL_LOAD_AUTO );
+	Uint8 * data = stbi_load( Path.c_str(), &w, &h, &c, 0 );
 
 	if ( NULL != data ) {
 		mPixels		= data;
@@ -69,6 +69,8 @@ cImage::cImage( const std::string& Path ) :
 		#ifdef EE_MEMORY_MANAGER
 		MemoryManager::AddPointer( cAllocatedPointer( (void*)data, __FILE__, __LINE__, mSize ) );
 		#endif
+	} else {
+		cLog::instance()->Write( "Failed to load image, reason: " + std::string( stbi_failure_reason() ) );
 	}
 }
 

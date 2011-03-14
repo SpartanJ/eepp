@@ -25,7 +25,7 @@ void cEETest::Init() {
 	mAxisX				= 0;
 	mAxisY				= 0;
 
-	MyPath 				= AppPath();
+	MyPath 				= GetProcessPath();
 
 	cIniFile Ini( MyPath + "data/ee.ini" );
 	Ini.ReadFile();
@@ -56,7 +56,7 @@ void cEETest::Init() {
 	if ( Resizeable )
 		Style |= WindowStyle::Resize;
 
-	mWindow = EE->CreateWindow( WindowSettings( mWidth, mHeight, BitColor, Style ), ContextSettings( VSync, GLVer ) );
+	mWindow = EE->CreateWindow( WindowSettings( mWidth, mHeight, BitColor, Style, MyPath + "data/ee.png" ), ContextSettings( VSync, GLVer ) );
 
 	PAK.Open( MyPath + "data/ee.zip" );
 

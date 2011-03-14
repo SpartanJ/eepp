@@ -17,9 +17,9 @@ cResourceLoader::~cResourceLoader() {
 
 void cResourceLoader::SetThreads() {
 	if ( THREADS_AUTO == mThreads ) {
-		mThreads = GetNumCPUs();
+		mThreads = GetCPUCount();
 		/**
-		eeInt NumCpus = GetNumCPUs() - 1;
+		eeInt NumCpus = GetCPUCount() - 1;
 
 		if ( NumCpus > 1 )
 			mThreads = NumCpus;

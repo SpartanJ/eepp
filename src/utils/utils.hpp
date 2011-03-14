@@ -14,7 +14,7 @@ namespace EE { namespace Utils {
 	void EE_API eeSleep( const Uint32& ms );
 
 	/** @return The application path ( the executable path ) */
-	std::string EE_API AppPath();
+	std::string EE_API GetProcessPath();
 
 	/** @return The files and sub directories contained by a directory */
 	std::vector<std::string> EE_API FilesGetInPath( const std::string& path );
@@ -82,7 +82,7 @@ namespace EE { namespace Utils {
 	bool EE_API FileWrite( const std::string& filepath, const std::vector<Uint8>& data );
 
 	/** @return The Number of CPUs of the system. */
-	eeInt EE_API GetNumCPUs();
+	eeInt EE_API GetCPUCount();
 
 	/** @return The modification date of the file */
 	Uint32 EE_API FileGetModificationDate( const std::string& Filepath );
@@ -117,6 +117,12 @@ namespace EE { namespace Utils {
 
 	/** Write a 32 bit flag value */
 	void EE_API SetFlagValue( Uint32 * Key, Uint32 Val, Uint32 BitWrite );
+
+	/** @return The OS Name */
+	std::string GetOSName();
+
+	/** @return The OS Architecture */
+	std::string GetOSArchitecture();
 }
 
 }

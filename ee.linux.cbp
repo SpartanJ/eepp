@@ -76,6 +76,9 @@
 		<Unit filename="src/base/memorymanager.cpp" />
 		<Unit filename="src/base/memorymanager.hpp" />
 		<Unit filename="src/base/stlcontainers.hpp" />
+		<Unit filename="src/base/string.cpp" />
+		<Unit filename="src/base/string.hpp" />
+		<Unit filename="src/base/utf.hpp" />
 		<Unit filename="src/ee.h" />
 		<Unit filename="src/gaming/base.hpp" />
 		<Unit filename="src/gaming/cisomap.cpp" />
@@ -669,7 +672,8 @@
 		<Unit filename="src/system/tcontainer.hpp" />
 		<Unit filename="src/system/tresourcemanager.hpp" />
 		<Unit filename="src/system/tsingleton.hpp" />
-		<Unit filename="src/test/ee.cpp" />
+		<Unit filename="src/test/eetest.cpp" />
+		<Unit filename="src/test/eetest.hpp" />
 		<Unit filename="src/ui/base.hpp" />
 		<Unit filename="src/ui/cuibackground.cpp" />
 		<Unit filename="src/ui/cuibackground.hpp" />

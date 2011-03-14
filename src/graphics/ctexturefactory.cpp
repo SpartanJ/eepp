@@ -10,7 +10,7 @@ cTextureFactory::cTextureFactory() :
 	mTextures.clear();
 	mTextures.push_back( NULL );
 
-	mAppPath = AppPath();
+	mAppPath = GetProcessPath();
 
 	memset( &mCurrentTexture[0], 0, EE_MAX_TEXTURE_UNITS );
 }

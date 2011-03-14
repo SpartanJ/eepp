@@ -298,18 +298,35 @@ class EE_API cWindow {
 		Uint32						mNumCallBacks;
 		std::map<Uint32, WindowResizeCallback> mCallbacks;
 		
-		struct _FrameData {
+		class cFrameData {
 			public:
-			struct FPSData {
-				Uint32 LastCheck;
-				Uint32 Current;
-				Uint32 Count;
-				eeFloat Limit;
-				Int32 Error;
-			}				FPS;
-			cTimeElapsed	FrameElapsed;
-			eeFloat			ElapsedTime;
-		} mFrameData;
+				class cFPSData {
+					public:
+					cFPSData() :
+						LastCheck(0),
+						Current(0),
+						Count(0),
+						Limit(0),
+						Error(0)
+					{}
+
+					Uint32 LastCheck;
+					Uint32 Current;
+					Uint32 Count;
+					eeFloat Limit;
+					Int32 Error;
+				};
+
+				cFPSData		FPS;
+				cTimeElapsed	FrameElapsed;
+				eeFloat			ElapsedTime;
+
+				cFrameData() :
+					ElapsedTime(0)
+				{}
+		};
+
+		cFrameData mFrameData;
 
 		/** Set the flag state to be the current window */
 		virtual void SetCurrent();
