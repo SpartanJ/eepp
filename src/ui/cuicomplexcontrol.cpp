@@ -5,9 +5,12 @@ namespace EE { namespace UI {
 
 cUIComplexControl::cUIComplexControl( const cUIComplexControl::CreateParams& Params ) :
 	cUIControlAnim( Params ),
-	mTooltip( NULL )
+	mTooltip( NULL ),
+	mMinControlSize( Params.MinControlSize )
 {
 	mType	|= UI_TYPE_GET( UI_TYPE_CONTROL_COMPLEX );
+
+	mDistToBorder	= eeVector2i( mParentCtrl->Size().x - ( mPos.x + mSize.x ), mParentCtrl->Size().y - ( mPos.y + mSize.y ) );
 
 	TooltipText( Params.TooltipText );
 }
@@ -97,6 +100,56 @@ String cUIComplexControl::TooltipText() {
 
 void cUIComplexControl::TooltipRemove() {
 	mTooltip = NULL;
+}
+
+void cUIComplexControl::Size( const eeSize &Size ) {
+	eeSize s( Size );
+
+	if ( s.x < mMinControlSize.x )
+		s.x = mMinControlSize.x;
+
+	if ( s.y < mMinControlSize.y )
+		s.y = mMinControlSize.y;
+
+	cUIControlAnim::Size( s );
+}
+
+void cUIComplexControl::Size( const Int32& Width, const Int32& Height ) {
+	cUIControlAnim::Size( Width, Height );
+}
+
+const eeSize& cUIComplexControl::Size() {
+	return cUIControlAnim::Size();
+}
+
+void cUIComplexControl::OnParentSizeChange() {
+	eeSize newSize( mSize );
+
+	if ( mFlags & UI_ANCHOR_LEFT ) {
+		// Nothing ?
+	}
+
+	if ( mFlags & UI_ANCHOR_RIGHT ) {
+		newSize.x = mParentCtrl->Size().x - mPos.x - mDistToBorder.x;
+
+		if ( newSize.x < mMinControlSize.Width() )
+			newSize.y = mMinControlSize.Width();
+	}
+
+	if ( mFlags & UI_ANCHOR_TOP ) {
+		// Nothing ?
+	}
+
+	if ( mFlags & UI_ANCHOR_BOTTOM ) {
+		newSize.y = Parent()->Size().y - mPos.y - mDistToBorder.y;
+
+		if ( newSize.y < mMinControlSize.Height() )
+			newSize.y = mMinControlSize.Height();
+	}
+
+	Size( newSize );
+
+	cUIControlAnim::OnParentSizeChange();
 }
 
 }}

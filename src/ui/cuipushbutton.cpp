@@ -174,6 +174,8 @@ void cUIPushButton::OnStateChange() {
 	} else {
 		mTextBox->Color( mFontColor );
 	}
+
+	mTextBox->Alpha( mAlpha );
 }
 
 }}

@@ -1,4 +1,4 @@
-/* stbi-1.30 - public domain JPEG/PNG reader - http://nothings.org/stb_image.c
+/* stbi-1.31 - public domain JPEG/PNG reader - http://nothings.org/stb_image.c
    when you control the images you're loading
                                      no warranty implied; use at your own risk
 
@@ -21,6 +21,7 @@
       - supports installable dequantizing-IDCT, YCbCr-to-RGB conversion (define STBI_SIMD)
 
    Latest revisions:
+      1.31 (2011-02-18) fixed a minor bug in bmp_load (corysama)
       1.30 (2010-08-18) added stbi_info support for BMP,PSD,HDR,PIC by Martin Golini
       1.29 (2010-08-16) various warning fixes from Aurelien Pocheville
       1.28 (2010-08-01) fix bug in GIF palette transparency (SpartanJ)
@@ -4815,6 +4816,7 @@ int stbi_hdr_info_from_file(FILE *f, int *x, int *y, int *comp)
 
 /*
    revision history:
+      1.31 (2011-02-18) fixed a minor bug in bmp_load (corysama)
       1.30 (2010-08-18) added stbi_info support for BMP,PSD,HDR,PIC by Martin Golini
       1.29 (2010-08-16) various warning fixes from Aurelien Pocheville
       1.28 (2010-08-01) fix bug in GIF palette transparency (SpartanJ)

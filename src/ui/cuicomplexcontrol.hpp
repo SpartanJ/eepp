@@ -11,13 +11,15 @@ class EE_API cUIComplexControl : public cUIControlAnim {
 		class CreateParams : public cUIControlAnim::CreateParams {
 			public:
 				inline CreateParams() :
-					cUIControlAnim::CreateParams()
+					cUIControlAnim::CreateParams(),
+					MinControlSize( 0, 0 )
 				{
 				}
 
 				inline ~CreateParams() {}
 
-				String TooltipText;
+				String	TooltipText;
+				eeSize	MinControlSize;
 		};
 
 		cUIComplexControl( const cUIComplexControl::CreateParams& Params );
@@ -25,6 +27,12 @@ class EE_API cUIComplexControl : public cUIControlAnim {
 		~cUIComplexControl();
 
 		virtual void Update();
+
+		virtual void Size( const eeSize &Size );
+
+		void Size( const Int32& Width, const Int32& Height );
+
+		const eeSize& Size();
 
 		cUITooltip * Tooltip();
 
@@ -35,8 +43,12 @@ class EE_API cUIComplexControl : public cUIControlAnim {
 		String TooltipText();
 	protected:
 		cUITooltip *	mTooltip;
+		eeSize			mMinControlSize;
+		eeVector2i		mDistToBorder;
 
 		void CreateTooltip();
+
+		virtual void OnParentSizeChange();
 };
 
 }}

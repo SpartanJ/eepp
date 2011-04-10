@@ -110,7 +110,7 @@ class EE_API cInputTextBuffer {
 		void CursorToEnd();
 	protected:
 		cWindow *			mWindow;
-		String		mText;
+		String				mText;
 		Uint32				mFlags;
 		Uint32				mCallback;
 		eeInt				mPromptPos;
@@ -127,6 +127,12 @@ class EE_API cInputTextBuffer {
 		void MovePromptRowDown( const bool& breakit );
 
 		void MovePromptRowUp( const bool& breakit );
+
+		void PromptToLeftFirstNoChar();
+
+		void PromptToRightFirstNoChar();
+
+		void EraseToNextNoChar();
 };
 
 }}

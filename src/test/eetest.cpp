@@ -550,7 +550,7 @@ void cEETest::CreateDecoratedWindow() {
 	WinParams.Size = eeSize( 530, 380 );
 	WinParams.ButtonsPositionFixer.x = -4;
 	WinParams.ButtonsPositionFixer.y = -2;
-	WinParams.BaseAlpha = 240;
+	WinParams.BaseAlpha = 200;
 	//WinParams.BorderAutoSize = false;
 	//WinParams.BorderSize = eeSize( 8, 8 );
 
@@ -558,6 +558,27 @@ void cEETest::CreateDecoratedWindow() {
 	mUIWindow->AddEventListener( cUIEvent::EventOnWindowCloseClick, cb::Make1( this, &cEETest::CloseClick ) );
 	mUIWindow->Title( "Test Window" );
 	mUIWindow->ToBack();
+
+	cUIPushButton::CreateParams ButtonParams;
+	ButtonParams.Parent( mUIWindow->Container() );
+	ButtonParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_ANCHOR_RIGHT;
+	ButtonParams.PosSet( 10, 10 );
+	ButtonParams.Size = eeSize( 510, 22 );
+
+	cUIPushButton * Button = eeNew( cUIPushButton, ( ButtonParams ) );
+	Button->Visible( true );
+	Button->Enabled( true );
+	Button->Text( "Click Me" );
+
+	cUITextEdit::CreateParams TEParams;
+	TEParams.Parent( mUIWindow->Container() );
+	TEParams.PosSet( 10, 40 );
+	TEParams.Size	= eeSize( 510, 300 );
+	TEParams.Flags = UI_AUTO_PADDING | UI_CLIP_ENABLE | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM;
+	cUITextEdit * TextEdit = eeNew( cUITextEdit, ( TEParams ) );
+	TextEdit->Visible( true );
+	TextEdit->Enabled( true );
+	TextEdit->Text( mBuda );
 }
 
 void cEETest::CloseClick( const cUIEvent * Event ) {

@@ -133,6 +133,7 @@ const eeVector2i& cUIControl::Pos() const {
 void cUIControl::Size( const eeSize& Size ) {
 	if ( Size != mSize ) {
 		mSize = Size;
+
 		OnSizeChange();
 	}
 }
@@ -469,6 +470,7 @@ void cUIControl::OnPosChange() {
 
 void cUIControl::OnSizeChange() {
 	SendCommonEvent( cUIEvent::EventOnSizeChange );
+
 	SendParentSizeChange();
 }
 
@@ -1019,7 +1021,7 @@ void cUIControl::SendParentSizeChange() {
 	}
 }
 
-void cUIControl::OnParentSizeChange() {
+void cUIControl::OnParentSizeChange( ) {
 	SendCommonEvent( cUIEvent::EventOnParentSizeChange );
 }
 

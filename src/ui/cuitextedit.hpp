@@ -7,7 +7,7 @@
 
 namespace EE { namespace UI {
 
-class EE_API cUITextEdit : public cUIControlAnim {
+class EE_API cUITextEdit : public cUIComplexControl {
 	public:			
 		class CreateParams : public cUITextBox::CreateParams {
 			public:
@@ -53,10 +53,14 @@ class EE_API cUITextEdit : public cUIControlAnim {
 		UI_SCROLLBAR_MODE	mHScrollBarMode;
 		UI_SCROLLBAR_MODE	mVScrollBarMode;
 		eeRecti				mPadding;
-		String		mText;
+		String				mText;
 		bool				mSkipValueChange;
 
 		virtual void OnSizeChange();
+
+		virtual void OnAlphaChange();
+
+		virtual void OnParentSizeChange();
 
 		void OnVScrollValueChange( const cUIEvent * Event );
 

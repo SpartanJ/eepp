@@ -4,7 +4,7 @@
 namespace EE { namespace UI {
 
 cUITextEdit::cUITextEdit( cUITextEdit::CreateParams& Params ) :
-	cUIControlAnim( Params ),
+	cUIComplexControl( Params ),
 	mTextInput( NULL ),
 	mHScrollBar( NULL ),
 	mVScrollBar( NULL ),
@@ -14,10 +14,24 @@ cUITextEdit::cUITextEdit( cUITextEdit::CreateParams& Params ) :
 {
 	mType |= UI_TYPE_GET( UI_TYPE_TEXTEDIT );
 
+	Uint32 extraFlags = 0;
+
+	if ( mFlags & UI_ANCHOR_LEFT )
+		extraFlags |= UI_ANCHOR_LEFT;
+
+	if ( mFlags & UI_ANCHOR_RIGHT )
+		extraFlags |= UI_ANCHOR_RIGHT;
+
+	if ( mFlags & UI_ANCHOR_TOP )
+		extraFlags |= UI_ANCHOR_TOP;
+
+	if ( mFlags & UI_ANCHOR_BOTTOM )
+		extraFlags |= UI_ANCHOR_BOTTOM;
+
 	cUITextInput::CreateParams TIParams;
 	TIParams.Parent( this );
 	TIParams.Size				= mSize;
-	TIParams.Flags				= UI_VALIGN_TOP | UI_HALIGN_LEFT;
+	TIParams.Flags				= UI_VALIGN_TOP | UI_HALIGN_LEFT | extraFlags;
 	TIParams.MaxLenght			= 1024 * 1024 * 10;
 	TIParams.Font				= Params.Font;
 	TIParams.FontColor			= Params.FontColor;
@@ -69,23 +83,37 @@ void cUITextEdit::SetTheme( cUITheme * Theme ) {
 
 	mTextInput->ForceThemeSkin( Theme, "textedit_box" );
 
-	mHScrollBar->Pos( 0, mSize.Height() - mHScrollBar->Size().Height() );
-	mVScrollBar->Pos( mSize.Width() - mVScrollBar->Size().Width(), 0 );
-
-	mHScrollBar->Size( mSize.Width(), mHScrollBar->Size().Height() );
-	mVScrollBar->Size( mVScrollBar->Size().Width(), mSize.Height() );
-
 	AutoPadding();
 
 	OnSizeChange();
 }
 
 void cUITextEdit::OnSizeChange() {
+	mHScrollBar->Pos( 0, mSize.Height() - mHScrollBar->Size().Height() );
+	mVScrollBar->Pos( mSize.Width() - mVScrollBar->Size().Width(), 0 );
+
+	mHScrollBar->Size( mSize.Width(), mHScrollBar->Size().Height() );
+	mVScrollBar->Size( mVScrollBar->Size().Width(), mSize.Height() );
+
 	mTextInput->Pos( mPadding.Left, mPadding.Top );
 
 	ScrollbarsSet();
 
 	FixScroll();
+}
+
+void cUITextEdit::OnParentSizeChange() {
+	cUIComplexControl::OnParentSizeChange();
+
+	OnInputSizeChange( NULL );
+}
+
+void cUITextEdit::OnAlphaChange() {
+	mTextInput->Alpha( mAlpha );
+	mHScrollBar->Alpha( mAlpha );
+	mVScrollBar->Alpha( mAlpha );
+
+	cUIComplexControl::OnAlphaChange();
 }
 
 void cUITextEdit::FixScroll() {

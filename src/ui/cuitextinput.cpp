@@ -7,7 +7,8 @@ namespace EE { namespace UI {
 cUITextInput::cUITextInput( const cUITextInput::CreateParams& Params ) :
 	cUITextBox( Params ),
 	mCursorPos(0),
-	mAllowEditing( true )
+	mAllowEditing( true ),
+	mShowingWait( true )
 {
 	mType |= UI_TYPE_GET(UI_TYPE_TEXTINPUT);
 

@@ -42,7 +42,11 @@ cUIWindow::cUIWindow( const cUIWindow::CreateParams& Params ) :
 	mBorderBottom->Enabled( true );
 	mBorderBottom->Visible( true );
 
-	mContainer		= eeNew( cUIControlAnim, ( tParams ) );
+	cUIComplexControl::CreateParams tcParams;
+	tcParams.Parent( this );
+	tcParams.Flags |= UI_REPORT_SIZE_CHANGE_TO_CHILDS;
+
+	mContainer		= eeNew( cUIComplexControl, ( tcParams ) );
 	mContainer->Enabled( true );
 	mContainer->Visible( true );
 	mContainer->AddEventListener( cUIEvent::EventOnPosChange, cb::Make1( this, &cUIWindow::ContainerPosChange ) );
@@ -207,7 +211,7 @@ void cUIWindow::Size( const eeSize& Size ) {
 	size.x += mBorderLeft->Size().Width() + mBorderRight->Size().Width();
 	size.y += mWindowDecoration->Size().Height() + mBorderBottom->Size().Height();
 
-	cUIControl::Size( size );
+	cUIComplexControl::Size( size );
 }
 
 void cUIWindow::FixChildsSize() {
@@ -564,7 +568,6 @@ bool cUIWindow::Hide() {
 	return false;
 }
 
-
 void cUIWindow::OnAlphaChange() {
 	if ( mWinFlags & UI_WIN_SHARE_ALPHA_WITH_CHILDS ) {
 		cUIControlAnim * AnimChild;
@@ -579,6 +582,8 @@ void cUIWindow::OnAlphaChange() {
 			CurChild = CurChild->NextGet();
 		}
 	}
+
+	cUIComplexControl::OnAlphaChange();
 }
 
 void cUIWindow::BaseAlpha( const Uint8& Alpha ) {

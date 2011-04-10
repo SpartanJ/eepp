@@ -101,7 +101,7 @@ class cUIWindow : public cUIComplexControl {
 		cUIControlAnim *	mBorderLeft;
 		cUIControlAnim *	mBorderRight;
 		cUIControlAnim *	mBorderBottom;
-		cUIControlAnim *	mContainer;
+		cUIComplexControl *	mContainer;
 
 		cUIComplexControl *	mButtonClose;
 		cUIComplexControl *	mButtonMinimize;

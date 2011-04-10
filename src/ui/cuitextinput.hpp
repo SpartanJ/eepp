@@ -49,11 +49,11 @@ class EE_API cUITextInput : public cUITextBox {
 		virtual void ShrinkText( const Uint32& MaxWidth );
 	protected:
 		cInputTextBuffer	mTextBuffer;
-		bool				mShowingWait;
 		eeFloat				mWaitCursorTime;
 		eeVector2f			mCurPos;
 		eeInt				mCursorPos;
 		bool				mAllowEditing;
+		bool				mShowingWait;
 
 		void ResetWaitCursor();
 

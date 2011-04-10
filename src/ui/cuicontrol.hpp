@@ -96,9 +96,9 @@ class EE_API cUIControl {
 
 		void Size( const Int32& Width, const Int32& Height );
 
-		eeRecti Rect() const;
-
 		const eeSize& Size();
+
+		eeRecti Rect() const;
 
 		void Visible( const bool& visible );
 

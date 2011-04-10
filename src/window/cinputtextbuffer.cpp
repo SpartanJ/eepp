@@ -71,6 +71,67 @@ void cInputTextBuffer::Start() {
 	}
 }
 
+void cInputTextBuffer::PromptToLeftFirstNoChar() {
+	if ( !mText.size() )
+		return;
+
+	if ( mPromptPos - 2 > 0 ) {
+		for ( Int32 i = mPromptPos - 2; i > 0; i-- ) {
+			if ( !isLetter( mText[i] ) && !isNumber( mText[i] ) && '\n' != mText[i] ) {
+				mPromptPos = i + 1;
+				break;
+			} else if ( i - 1 == 0 ) {
+				mPromptPos = 0;
+				break;
+			}
+		}
+	} else {
+		mPromptPos = 0;
+	}
+}
+
+void cInputTextBuffer::PromptToRightFirstNoChar() {
+	Uint32 s = mText.size();
+
+	if ( 0 == s )
+		return;
+
+	for ( Int32 i = mPromptPos; i < s; i++ ) {
+		if ( !isLetter( mText[i] ) && !isNumber( mText[i] ) && '\n' != mText[i] ) {
+			mPromptPos = i + 1;
+			break;
+		} else if ( i + 1 == s ) {
+			mPromptPos = s;
+		}
+	}
+}
+
+void cInputTextBuffer::EraseToNextNoChar() {
+	if ( !mText.size() || !mPromptPos )
+		return;
+
+	String::StringBaseType c;
+
+	do {
+		if ( mPromptPos < (eeInt)mText.size() ) {
+			mText.erase( mPromptPos - 1, 1 );
+			mPromptPos--;
+		} else {
+			mText.resize( mText.size() - 1 );
+			mPromptPos = mText.size();
+		}
+
+		if ( mPromptPos <= 0 ) {
+			mPromptPos = 0;
+			break;
+		}
+
+		c = mText[ mPromptPos - 1 ];
+	} while  ( isLetter( c ) || isNumber( c ) );
+
+	ChangedSinceLastUpdate( true );
+}
+
 void cInputTextBuffer::Update( InputEvent* Event ) {
 	if ( Active() ) {
 		cInput * Input = mWindow->GetInput();
@@ -113,6 +174,19 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 								}
 							}
 						}
+
+						if ( Input->ControlPressed() ) {
+							if ( c == KEY_LEFT ) {
+								PromptToLeftFirstNoChar();
+								break;
+							} else if ( c == KEY_RIGHT ) {
+								PromptToRightFirstNoChar();
+								break;
+							} else if ( ( c == KEY_BACKSPACE || c == KEY_DELETE ) ) {
+								EraseToNextNoChar();
+								break;
+							}
+						}
 					}
 
 					if ( ( c == KEY_BACKSPACE || c == KEY_DELETE ) ) {
@@ -125,8 +199,9 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 										mText.erase(mPromptPos-1,1);
 										mPromptPos--;
 									}
-								} else
+								} else {
 									mText.erase(mPromptPos,1);
+								}
 							} else if ( c == KEY_BACKSPACE ) {
 								mText.resize( mText.size() - 1 );
 								AutoPrompt( true );
