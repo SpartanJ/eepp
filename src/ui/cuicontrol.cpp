@@ -352,6 +352,7 @@ Uint32 cUIControl::OnFocusLoss() {
 }
 
 void cUIControl::OnComplexControlFocusLoss() {
+	SendCommonEvent( cUIEvent::EventOnComplexControlFocusLoss );
 }
 
 bool cUIControl::HasFocus() const {

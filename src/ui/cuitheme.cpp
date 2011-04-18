@@ -69,6 +69,8 @@ static void LoadThemeElements() {
 		UI_THEME_ELEMENTS.push_back( "winmax" );
 		UI_THEME_ELEMENTS.push_back( "winmin" );
 		UI_THEME_ELEMENTS.push_back( "winshade" );
+		UI_THEME_ELEMENTS.push_back( "winmenu" );
+		UI_THEME_ELEMENTS.push_back( "winmenubutton" );
 	}
 }
 

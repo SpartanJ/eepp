@@ -430,7 +430,7 @@ void cEETest::CreateUI() {
 	mComboBox->ListBox()->SetSelected( 0 );
 
 	cUIPopUpMenu::CreateParams MenuParams;
-	MenuParams. Parent( cUIManager::instance()->MainControl() );
+	MenuParams.Parent( cUIManager::instance()->MainControl() );
 	MenuParams.Flags = UI_AUTO_SIZE | UI_AUTO_PADDING;
 	MenuParams.Size = eeSize( 0, 200 );
 	MenuParams.MinWidth = 100;
@@ -537,9 +537,49 @@ void cEETest::CreateUI() {
 	C->Scale( 0 );
 
 	CreateDecoratedWindow();
+
+	CreateWinMenu();
+
 	//mUIWindow->Show();
 
 	Log->Writef( "CreateUI time: %f", TE.ElapsedSinceStart() );
+}
+
+void cEETest::CreateWinMenu() {
+	cUIWinMenu::CreateParams WinMenuParams;
+
+	WinMenuParams.Parent( mUIWindow->Container() );
+	WinMenuParams.ButtonMargin = 8;
+	WinMenuParams.FontSelectedColor = eeColorA( 255, 255, 255, 255 );
+
+	cUIWinMenu * WinMenu = eeNew( cUIWinMenu, ( WinMenuParams ) );
+
+	cUIPopUpMenu::CreateParams MenuParams;
+	MenuParams.Parent( cUIManager::instance()->MainControl() );
+	MenuParams.Flags = UI_AUTO_SIZE | UI_AUTO_PADDING;
+	MenuParams.Size = eeSize( 0, 200 );
+	MenuParams.MinWidth = 100;
+	MenuParams.MinSpaceForIcons = 16;
+	MenuParams.PosSet( 0, 0 );
+	MenuParams.FontSelectedColor = eeColorA( 255, 255, 255, 255 );
+	MenuParams.MinRightMargin = 8;
+
+	cUIPopUpMenu * PopMenu = eeNew( cUIPopUpMenu, ( MenuParams ) );
+	PopMenu->Add( "File" );
+	PopMenu->Add( "Open" );
+	PopMenu->Add( "Close" );
+	PopMenu->Add( "Quit" );
+
+	cUIPopUpMenu * PopMenu2 = eeNew( cUIPopUpMenu, ( MenuParams ) );
+	PopMenu2->Add( "Bla" );
+	PopMenu2->Add( "Bla 2" );
+	PopMenu2->Add( "Bla 3" );
+	PopMenu2->Add( "Bla 4" );
+
+	WinMenu->AddMenuButton( "File", PopMenu );
+	WinMenu->AddMenuButton( "Edit", PopMenu2 );
+	WinMenu->Enabled( true );
+	WinMenu->Visible( true );
 }
 
 void cEETest::CreateDecoratedWindow() {
@@ -547,7 +587,7 @@ void cEETest::CreateDecoratedWindow() {
 	WinParams.Flags = UI_HALIGN_CENTER;
 	WinParams.WinFlags |= cUIWindow::UI_WIN_MAXIMIZE_BUTTON;
 	WinParams.PosSet( 200, 50 );
-	WinParams.Size = eeSize( 530, 380 );
+	WinParams.Size = eeSize( 530, 400 );
 	WinParams.ButtonsPositionFixer.x = -4;
 	WinParams.ButtonsPositionFixer.y = -2;
 	WinParams.BaseAlpha = 200;
@@ -562,7 +602,7 @@ void cEETest::CreateDecoratedWindow() {
 	cUIPushButton::CreateParams ButtonParams;
 	ButtonParams.Parent( mUIWindow->Container() );
 	ButtonParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_ANCHOR_RIGHT;
-	ButtonParams.PosSet( 10, 10 );
+	ButtonParams.PosSet( 10, 25 );
 	ButtonParams.Size = eeSize( 510, 22 );
 
 	cUIPushButton * Button = eeNew( cUIPushButton, ( ButtonParams ) );
@@ -572,7 +612,7 @@ void cEETest::CreateDecoratedWindow() {
 
 	cUITextEdit::CreateParams TEParams;
 	TEParams.Parent( mUIWindow->Container() );
-	TEParams.PosSet( 10, 40 );
+	TEParams.PosSet( 10, 55 );
 	TEParams.Size	= eeSize( 510, 300 );
 	TEParams.Flags = UI_AUTO_PADDING | UI_CLIP_ENABLE | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM;
 	cUITextEdit * TextEdit = eeNew( cUITextEdit, ( TEParams ) );

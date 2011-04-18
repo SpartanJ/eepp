@@ -31,7 +31,7 @@ void cUIManager::Init() {
 		Shutdown();
 
 	mInit			= true;
-	mControl		= eeNew( cUIControlAnim, ( cUIControl::CreateParams( NULL, eeVector2i( 0, 0 ), eeSize( cEngine::instance()->GetWidth(), cEngine::instance()->GetHeight() ) ) ) );
+	mControl		= eeNew( cUIControlAnim, ( cUIControl::CreateParams( NULL, eeVector2i( 0, 0 ), eeSize( cEngine::instance()->GetWidth(), cEngine::instance()->GetHeight() ), UI_HALIGN_LEFT | UI_VALIGN_CENTER | UI_REPORT_SIZE_CHANGE_TO_CHILDS ) ) );
 	mControl->Visible( true );
 	mControl->Enabled( true );
 

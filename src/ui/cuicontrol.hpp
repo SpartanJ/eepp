@@ -122,7 +122,7 @@ class EE_API cUIControl {
 
 		void Center();
 
-		void Close();
+		virtual void Close();
 
 		virtual void Draw();
 

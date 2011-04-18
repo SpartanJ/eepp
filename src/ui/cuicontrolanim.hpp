@@ -54,6 +54,8 @@ class EE_API cUIControlAnim : public cUIDragable {
 		cWaypoints * MovementInterpolation();
 
 		virtual void Draw();
+
+		bool FadingOut();
     protected:
     	friend class cUIManager;
 

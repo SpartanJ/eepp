@@ -318,8 +318,7 @@ Uint32 cUIMenu::OnMessage( const cUIMessage * Msg ) {
 		{
 			cUIControl * FocusCtrl = cUIManager::instance()->FocusControl();
 
-			if ( this != FocusCtrl && !IsParentOf( FocusCtrl )  && !IsSubMenu( FocusCtrl ) ) {
-				SendCommonEvent( cUIEvent::EventOnComplexControlFocusLoss );
+			if ( this != FocusCtrl && !IsParentOf( FocusCtrl ) && !IsSubMenu( FocusCtrl ) ) {
 				OnComplexControlFocusLoss();
 			}
 

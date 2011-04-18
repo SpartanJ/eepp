@@ -520,7 +520,6 @@ Uint32 cUIGenericGrid::OnMessage( const cUIMessage * Msg ) {
 			cUIControl * FocusCtrl = cUIManager::instance()->FocusControl();
 
 			if ( this != FocusCtrl && !IsParentOf( FocusCtrl ) ) {
-				SendCommonEvent( cUIEvent::EventOnComplexControlFocusLoss );
 				OnComplexControlFocusLoss();
 			}
 

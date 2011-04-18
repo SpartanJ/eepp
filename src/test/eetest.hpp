@@ -215,6 +215,7 @@ class cEETest : private cThread {
 		void ButtonClick( const cUIEvent * Event );
 		void OnValueChange( const cUIEvent * Event );
 		void CreateDecoratedWindow();
+		void CreateWinMenu();
 		void CreateAquaTextureAtlas();
 
 		cUIControlAnim * C;

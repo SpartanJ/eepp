@@ -49,6 +49,8 @@ class EE_API cUIComplexControl : public cUIControlAnim {
 		void CreateTooltip();
 
 		virtual void OnParentSizeChange();
+
+		void CalcDistToBorder();
 };
 
 }}

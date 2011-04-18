@@ -10,13 +10,17 @@ cUIComplexControl::cUIComplexControl( const cUIComplexControl::CreateParams& Par
 {
 	mType	|= UI_TYPE_GET( UI_TYPE_CONTROL_COMPLEX );
 
-	mDistToBorder	= eeVector2i( mParentCtrl->Size().x - ( mPos.x + mSize.x ), mParentCtrl->Size().y - ( mPos.y + mSize.y ) );
+	CalcDistToBorder();
 
 	TooltipText( Params.TooltipText );
 }
 
 cUIComplexControl::~cUIComplexControl() {
 	eeSAFE_DELETE( mTooltip );
+}
+
+void cUIComplexControl::CalcDistToBorder() {
+	mDistToBorder	= eeVector2i( mParentCtrl->Size().x - ( mPos.x + mSize.x ), mParentCtrl->Size().y - ( mPos.y + mSize.y ) );
 }
 
 void cUIComplexControl::Update() {
@@ -130,7 +134,7 @@ void cUIComplexControl::OnParentSizeChange() {
 	}
 
 	if ( mFlags & UI_ANCHOR_RIGHT ) {
-		newSize.x = mParentCtrl->Size().x - mPos.x - mDistToBorder.x;
+		newSize.x = mParentCtrl->Size().Width() - mPos.x - mDistToBorder.x;
 
 		if ( newSize.x < mMinControlSize.Width() )
 			newSize.y = mMinControlSize.Width();

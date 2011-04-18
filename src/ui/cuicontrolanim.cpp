@@ -131,6 +131,10 @@ void cUIControlAnim::Update() {
 	}
 }
 
+bool cUIControlAnim::FadingOut() {
+	return 0 != ( mControlFlags & UI_CTRL_FLAG_DISABLE_FADE_OUT );
+}
+
 bool cUIControlAnim::Animating() {
 	return ( NULL != mAlphaAnim && mAlphaAnim->Enabled() ) || ( NULL != mAngleAnim && mAngleAnim->Enabled() ) || ( NULL != mScaleAnim && mScaleAnim->Enabled() ) || ( NULL != mMoveAnim && mMoveAnim->Enabled() );
 }

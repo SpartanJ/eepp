@@ -4,7 +4,7 @@
 
 namespace EE { namespace UI {
 
-cUIListBoxItem::cUIListBoxItem( cUITextBox::CreateParams& Params ) :
+cUIListBoxItem::cUIListBoxItem( const cUITextBox::CreateParams& Params ) :
 	cUITextBox( Params )
 {
 	ApplyDefaultTheme();

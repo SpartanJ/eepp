@@ -192,6 +192,8 @@
 	#include "ui/cuigridcell.hpp"
 	#include "ui/cuigenericgrid.hpp"
 	#include "ui/cuiwindow.hpp"
+	#include "ui/cuiselectbutton.hpp"
+	#include "ui/cuiwinmenu.hpp"
 	using namespace EE::UI;
 
 	#include "physics/cphysicsmanager.hpp"

@@ -73,6 +73,8 @@ class cUIWindow : public cUIComplexControl {
 
 		virtual void Update();
 
+		virtual void Close();
+
 		void BaseAlpha( const Uint8& Alpha );
 
 		const Uint8& BaseAlpha() const;

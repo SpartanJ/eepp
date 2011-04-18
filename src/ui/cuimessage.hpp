@@ -21,6 +21,7 @@ class EE_API cUIMessage {
 			MsgFocus,
 			MsgFocusLoss,
 			MsgCellClicked,
+			MsgSelected,
 			MsgUser,
 			MsgForceDWord = 0xFFFFFFFF
 		};

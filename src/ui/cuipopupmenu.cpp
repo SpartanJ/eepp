@@ -6,6 +6,8 @@ namespace EE { namespace UI {
 cUIPopUpMenu::cUIPopUpMenu( cUIPopUpMenu::CreateParams Params ) :
 	cUIMenu( Params )
 {
+	mType |= UI_TYPE_GET(UI_TYPE_POPUPMENU);
+
 	ApplyDefaultTheme();
 }
 
@@ -38,11 +40,13 @@ bool cUIPopUpMenu::Show() {
 
 bool cUIPopUpMenu::Hide() {
 	if ( Visible() ) {
-		if ( cUIThemeManager::instance()->DefaultEffectsEnabled() ) {
-			DisableFadeOut( cUIThemeManager::instance()->ControlsFadeOutTime() );
-		} else {
-			Enabled( false );
-			Visible( false );
+		if ( !FadingOut() ) {
+			if ( cUIThemeManager::instance()->DefaultEffectsEnabled() ) {
+				DisableFadeOut( cUIThemeManager::instance()->ControlsFadeOutTime() );
+			} else {
+				Enabled( false );
+				Visible( false );
+			}
 		}
 
 		if ( NULL != mItemSelected )
@@ -59,6 +63,8 @@ bool cUIPopUpMenu::Hide() {
 
 void cUIPopUpMenu::OnComplexControlFocusLoss() {
 	Hide();
+
+	cUIMenu::OnComplexControlFocusLoss();
 }
 
 Uint32 cUIPopUpMenu::OnMessage( const cUIMessage * Msg ) {
@@ -67,6 +73,8 @@ Uint32 cUIPopUpMenu::OnMessage( const cUIMessage * Msg ) {
 		{
 			if ( !Msg->Sender()->IsType( UI_TYPE_MENUSUBMENU ) && ( Msg->Flags() & EE_BUTTONS_LRM ) ) {
 				SendCommonEvent( cUIEvent::EventOnHideByClick );
+
+				cUIManager::instance()->MainControl()->SetFocus();
 
 				Hide();
 			}

@@ -10,7 +10,7 @@ class cUIListBox;
 
 class EE_API cUIListBoxItem : public cUITextBox {
 	public:
-		cUIListBoxItem( cUITextBox::CreateParams& Params );
+		cUIListBoxItem( const cUITextBox::CreateParams& Params );
 
 		virtual ~cUIListBoxItem();
 
