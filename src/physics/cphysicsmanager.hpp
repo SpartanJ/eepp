@@ -44,22 +44,6 @@ class CP_API cPhysicsManager : public tSingleton<cPhysicsManager> {
 
 		const bool& MemoryManager() const;
 
-		const cpFloat& BiasCoef() const;
-
-		void BiasCoef( const cpFloat& biasCoef );
-
-		const cpFloat& ConstraintBiasCoef() const;
-
-		void ConstraintBiasCoef( const cpFloat& constraintBiasCoef );
-
-		const cpTimestamp& ContactPersistence() const;
-
-		void ContactPersistence( const cpTimestamp& timestamp );
-
-		const cpFloat& CollisionSlop() const;
-
-		void CollisionSlop( const cpFloat& slop );
-
 		cPhysicsManager::cDrawSpaceOptions * GetDrawOptions();
 	protected:
 		cDrawSpaceOptions	mOptions;

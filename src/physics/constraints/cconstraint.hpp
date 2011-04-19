@@ -24,10 +24,6 @@ class CP_API cConstraint {
 
 		void MaxForce( const cpFloat& maxforce );
 
-		cpFloat BiasCoef();
-
-		void BiasCoef( const cpFloat& biascoef );
-
 		cpFloat MaxBias();
 
 		void MaxBias( const cpFloat& maxbias );

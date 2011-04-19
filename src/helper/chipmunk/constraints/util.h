@@ -25,13 +25,6 @@ void cpConstraintInit(cpConstraint *constraint, const cpConstraintClass *klass, 
 
 #define J_MAX(constraint, dt) (((cpConstraint *)constraint)->maxForce*(dt))
 
-// Get valid body pointers and exit early if the bodies are idle
-#define CONSTRAINT_BEGIN(constraint, a_var, b_var) \
-cpBody *a_var, *b_var; { \
-	a_var = ((cpConstraint *)constraint)->a; \
-	b_var = ((cpConstraint *)constraint)->b; \
-}
-
 static inline cpVect
 relative_velocity(cpBody *a, cpBody *b, cpVect r1, cpVect r2){
 	cpVect v1_sum = cpvadd(a->v, cpvmult(cpvperp(r1), a->w));
@@ -46,10 +39,16 @@ normal_relative_velocity(cpBody *a, cpBody *b, cpVect r1, cpVect r2, cpVect n){
 }
 
 static inline void
+apply_impulse(cpBody *body, cpVect j, cpVect r){
+	body->v = cpvadd(body->v, cpvmult(j, body->m_inv));
+	body->w += body->i_inv*cpvcross(r, j);
+}
+
+static inline void
 apply_impulses(cpBody *a , cpBody *b, cpVect r1, cpVect r2, cpVect j)
 {
-	cpBodyApplyImpulse(a, cpvneg(j), r1);
-	cpBodyApplyImpulse(b, j, r2);
+	apply_impulse(a, cpvneg(j), r1);
+	apply_impulse(b, j, r2);
 }
 
 static inline void
@@ -64,13 +63,6 @@ apply_bias_impulses(cpBody *a , cpBody *b, cpVect r1, cpVect r2, cpVect j)
 {
 	apply_bias_impulse(a, cpvneg(j), r1);
 	apply_bias_impulse(b, j, r2);
-}
-
-static inline cpVect
-clamp_vect(cpVect v, cpFloat len)
-{
-	return cpvclamp(v, len);
-//	return (cpvdot(v,v) > len*len) ? cpvmult(cpvnormalize(v), len) : v;
 }
 
 static inline cpFloat
@@ -127,4 +119,10 @@ static inline cpVect
 mult_k(cpVect vr, cpVect k1, cpVect k2)
 {
 	return cpv(cpvdot(vr, k1), cpvdot(vr, k2));
+}
+
+static inline cpFloat
+bias_coef(cpFloat errorBias, cpFloat dt)
+{
+	return 1.0f - cpfpow(errorBias, dt);
 }

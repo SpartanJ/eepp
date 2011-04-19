@@ -55,7 +55,7 @@ cpSpaceActivateBody(cpSpace *space, cpBody *body)
 				cpShape *a = arb->a, *b = arb->b;
 				cpShape *shape_pair[] = {a, b};
 				cpHashValue arbHashID = CP_HASH_PAIR((size_t)a, (size_t)b);
-				cpHashSetInsert(space->contactSet, arbHashID, shape_pair, arb, NULL);
+				cpHashSetInsert(space->cachedArbiters, arbHashID, shape_pair, arb, NULL);
 				cpArrayPush(space->arbiters, arb);
 				arb->stamp = space->stamp;
 				
@@ -86,7 +86,7 @@ cpSpaceDeactivateBody(cpSpace *space, cpBody *body)
 			cpShape *a = arb->a, *b = arb->b;
 			cpShape *shape_pair[] = {a, b};
 			cpHashValue arbHashID = CP_HASH_PAIR((size_t)a, (size_t)b);
-			cpHashSetRemove(space->contactSet, arbHashID, shape_pair);
+			cpHashSetRemove(space->cachedArbiters, arbHashID, shape_pair);
 			cpArrayDeleteObj(space->arbiters, arb);
 			
 			// Save contact values to a new block of memory so they won't time out
@@ -101,6 +101,12 @@ cpSpaceDeactivateBody(cpSpace *space, cpBody *body)
 		cpBody *bodyA = constraint->a;
 		if(body == bodyA || cpBodyIsStatic(bodyA)) cpArrayDeleteObj(space->constraints, constraint);
 	}
+}
+
+static inline cpBody *
+ComponentRoot(cpBody *body)
+{
+	return (body ? body->node.root : NULL);
 }
 
 static inline void
@@ -131,9 +137,9 @@ ComponentAdd(cpBody *root, cpBody *body){
 void
 cpBodyActivate(cpBody *body)
 {
-	if(!cpBodyIsStatic(body)){
+	if(!cpBodyIsRogue(body)){
 		body->node.idleTime = 0.0f;
-		ComponentActivate(body->node.root);
+		ComponentActivate(ComponentRoot(body));
 	}
 }
 
@@ -151,14 +157,13 @@ static inline void
 FloodFillComponent(cpBody *root, cpBody *body)
 {
 	if(!cpBodyIsStatic(body) && !cpBodyIsRogue(body)){
-		cpBody *other_root = body->node.root;
+		cpBody *other_root = ComponentRoot(body);
 		if(other_root == NULL){
 			ComponentAdd(root, body);
 			CP_BODY_FOREACH_ARBITER(body, arb) FloodFillComponent(root, (body == arb->body_a ? arb->body_b : arb->body_a));
 			CP_BODY_FOREACH_CONSTRAINT(body, constraint) FloodFillComponent(root, (body == constraint->a ? constraint->b : constraint->a));
 		} else {
-			// TODO can probably remove this at some point.
-			cpAssert(other_root == root, "Uh oh. This shouldn't happen?");
+			cpAssert(other_root == root, "Internal Error: Inconsistency dectected in the contact graph.");
 		}
 	}
 }
@@ -168,9 +173,9 @@ cpBodyPushArbiter(cpBody *body, cpArbiter *arb)
 {
 	if(!cpBodyIsStatic(body) && !cpBodyIsRogue(body)){
 		if(body == arb->body_a){
-			arb->nextA = body->arbiterList;
+			arb->next_a = body->arbiterList;
 		} else {
-			arb->nextB = body->arbiterList;
+			arb->next_b = body->arbiterList;
 		}
 		
 		body->arbiterList = arb;
@@ -181,7 +186,7 @@ void
 cpSpaceProcessComponents(cpSpace *space, cpFloat dt)
 {
 	cpFloat dv = space->idleSpeedThreshold;
-	cpFloat dvsq = (dv ? dv*dv : cpvlengthsq(space->gravity)*dt*dt); // is dt^2 a bug?
+	cpFloat dvsq = (dv ? dv*dv : cpvlengthsq(space->gravity)*dt*dt);
 	
 	// update idling and reset arbiter list and component nodes
 	cpArray *bodies = space->bodies;
@@ -189,45 +194,46 @@ cpSpaceProcessComponents(cpSpace *space, cpFloat dt)
 		cpBody *body = (cpBody*)bodies->arr[i];
 		
 		// Need to deal with infinite mass objects
-		cpFloat thresh = (dvsq ? body->m*dvsq : 0.0f);
-		body->node.idleTime = (cpBodyKineticEnergy(body) > thresh ? 0.0f : body->node.idleTime + dt);
+		cpFloat keThreshold = (dvsq ? body->m*dvsq : 0.0f);
+		body->node.idleTime = (cpBodyKineticEnergy(body) > keThreshold ? 0.0f : body->node.idleTime + dt);
 		
 		body->arbiterList = NULL;
 		body->node.next = NULL;
 	}
 	
-	// Add arbiters to body lists and awaken any sleeping bodies found
+	// Awaken any sleeping bodies found and then push arbiters to the bodies' lists.
 	cpArray *arbiters = space->arbiters;
 	for(int i=0, count=arbiters->num; i<count; i++){
 		cpArbiter *arb = (cpArbiter*)arbiters->arr[i];
 		cpBody *a = arb->body_a, *b = arb->body_b;
 		
-		if(cpBodyIsSleeping(a) || (cpBodyIsRogue(b) && !cpBodyIsStatic(b))) cpBodyActivate(a);
-		if(cpBodyIsSleeping(b) || (cpBodyIsRogue(a) && !cpBodyIsStatic(a))) cpBodyActivate(b);
+		if((cpBodyIsRogue(b) && !cpBodyIsStatic(b)) || cpBodyIsSleeping(a)) cpBodyActivate(a);
+		if((cpBodyIsRogue(a) && !cpBodyIsStatic(a)) || cpBodyIsSleeping(b)) cpBodyActivate(b);
 		
 		cpBodyPushArbiter(a, arb);
 		cpBodyPushArbiter(b, arb);
 	}
 	
-	// Bodies are awoken when adding constraints, is this redundant?
+	// Bodies should be held active if connected by a joint to a non-static rouge body.
 	cpArray *constraints = space->constraints;
 	for(int i=0; i<constraints->num; i++){
-		cpConstraint *constraint = constraints->arr[i];
+		cpConstraint *constraint = (cpConstraint *)constraints->arr[i];
 		cpBody *a = constraint->a, *b = constraint->b;
 		
-		if(cpBodyIsSleeping(a) || (cpBodyIsRogue(b) && !cpBodyIsStatic(b))) cpBodyActivate(a);
-		if(cpBodyIsSleeping(b) || (cpBodyIsRogue(a) && !cpBodyIsStatic(a))) cpBodyActivate(b);
+		if(cpBodyIsRogue(b) && !cpBodyIsStatic(b)) cpBodyActivate(a);
+		if(cpBodyIsRogue(a) && !cpBodyIsStatic(a)) cpBodyActivate(b);
 	}
 	
 	// Generate components and deactivate sleeping ones
 	for(int i=0; i<bodies->num;){
 		cpBody *body = (cpBody*)bodies->arr[i];
 		
-		if(body->node.root == NULL){
-			// Body not in a component.
-			// Perform a flood fill to find and mark the component in the contact graph.
+		if(ComponentRoot(body) == NULL){
+			// Body not in a component yet. Perform a DFS to flood fill mark 
+			// the component in the contact graph using this body as the root.
 			FloodFillComponent(body, body);
 			
+			// Check if the component should be put to sleep.
 			if(!ComponentActive(body, space->sleepTimeThreshold)){
 				cpArrayPush(space->sleepingComponents, body);
 				CP_BODY_FOREACH_COMPONENT(body, other) cpSpaceDeactivateBody(space, other);
@@ -259,14 +265,18 @@ cpBodySleepWithGroup(cpBody *body, cpBody *group){
 	cpSpace *space = body->space;
 	cpAssert(space, "Cannot put a rogue body to sleep.");
 	cpAssert(!space->locked, "Bodies cannot be put to sleep during a query or a call to cpSpaceStep(). Put these calls into a post-step callback.");
-	cpAssert(!group || cpBodyIsSleeping(group), "Cannot use a non-sleeping body as a group identifier.");
-	cpAssert(!group || cpBodyIsSleeping(body), "Cannot add a body that is already sleeping to a group.");
-		
+	cpAssert(group == NULL || cpBodyIsSleeping(group), "Cannot use a non-sleeping body as a group identifier.");
+	
+	if(cpBodyIsSleeping(body)){
+		cpAssert(ComponentRoot(body) == ComponentRoot(group), "The body is already sleeping and it's group cannot be reassigned.");
+		return;
+	}
+	
 	CP_BODY_FOREACH_SHAPE(body, shape) cpShapeUpdate(shape, body->p, body->rot);
 	cpSpaceDeactivateBody(space, body);
 	
 	if(group){
-		cpBody *root = group->node.root;
+		cpBody *root = ComponentRoot(group);
 		
 		cpComponentNode node = {root, root->node.next, 0.0f};
 		body->node = node;

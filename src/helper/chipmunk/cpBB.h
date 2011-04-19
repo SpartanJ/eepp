@@ -19,11 +19,16 @@
  * SOFTWARE.
  */
 
-// TODO fix naming
+/// @defgroup cpBBB cpBB
+/// Chipmunk's axis-aligned 2D bounding box type along with a few handy routines.
+/// @{
+
+/// Chipmunk's axis-aligned 2D bounding box type. (left, bottom, right, top)
 typedef struct cpBB{
 	cpFloat l, b, r ,t;
 } cpBB;
 
+/// Convenience constructor for cpBB structs.
 static inline cpBB
 cpBBNew(const cpFloat l, const cpFloat b,
 		const cpFloat r, const cpFloat t)
@@ -32,26 +37,30 @@ cpBBNew(const cpFloat l, const cpFloat b,
 	return bb;
 }
 
+/// Returns true if @c a and @c b intersect.
 static inline cpBool
-cpBBintersects(const cpBB a, const cpBB b)
+cpBBIntersects(const cpBB a, const cpBB b)
 {
 	return (a.l <= b.r && b.l <= a.r && a.b <= b.t && b.b <= a.t);
 }
 
+/// Returns true if @c other lies completely within @c bb.
 static inline cpBool
-cpBBcontainsBB(const cpBB bb, const cpBB other)
+cpBBContainsBB(const cpBB bb, const cpBB other)
 {
 	return (bb.l <= other.l && bb.r >= other.r && bb.b <= other.b && bb.t >= other.t);
 }
 
+/// Returns true if @c bb contains @c v.
 static inline cpBool
-cpBBcontainsVect(const cpBB bb, const cpVect v)
+cpBBContainsVect(const cpBB bb, const cpVect v)
 {
 	return (bb.l <= v.x && bb.r >= v.x && bb.b <= v.y && bb.t >= v.y);
 }
 
+/// Returns a bounding box that holds both bounding boxes.
 static inline cpBB
-cpBBmerge(const cpBB a, const cpBB b){
+cpBBMerge(const cpBB a, const cpBB b){
 	return cpBBNew(
 		cpfmin(a.l, b.l),
 		cpfmin(a.b, b.b),
@@ -60,8 +69,9 @@ cpBBmerge(const cpBB a, const cpBB b){
 	);
 }
 
+/// Returns a bounding box that holds both @c bb and @c v.
 static inline cpBB
-cpBBexpand(const cpBB bb, const cpVect v){
+cpBBExpand(const cpBB bb, const cpVect v){
 	return cpBBNew(
 		cpfmin(bb.l, v.x),
 		cpfmin(bb.b, v.y),
@@ -70,23 +80,26 @@ cpBBexpand(const cpBB bb, const cpVect v){
 	);
 }
 
+/// Returns the area of the bounding box.
 static inline cpFloat
 cpBBArea(cpBB bb)
 {
 	return (bb.r - bb.l)*(bb.t - bb.b);
 }
 
+/// Merges @c a and @c b and returns the area of the merged bounding box.
 static inline cpFloat
 cpBBMergedArea(cpBB a, cpBB b)
 {
 	return (cpfmax(a.r, b.r) - cpfmin(a.l, b.l))*(cpfmax(a.t, b.t) - cpfmin(a.b, b.b));
 }
 
+/// Return true if the bounding box intersects the line segment with ends @c a and @c b.
 static inline cpBool
 cpBBIntersectsSegment(cpBB bb, cpVect a, cpVect b)
 {
 	cpBB seg_bb = cpBBNew(cpfmin(a.x, b.x), cpfmin(a.y, b.y), cpfmax(a.x, b.x), cpfmax(a.y, b.y));
-	if(cpBBintersects(bb, seg_bb)){
+	if(cpBBIntersects(bb, seg_bb)){
 		cpVect axis = cpv(b.y - a.y, a.x - b.x);
 		cpVect offset = cpv((a.x + b.x - bb.r - bb.l), (a.y + b.y - bb.t - bb.b));
 		cpVect extents = cpv(bb.r - bb.l, bb.t - bb.b);
@@ -97,6 +110,11 @@ cpBBIntersectsSegment(cpBB bb, cpVect a, cpVect b)
 	return cpFalse;
 }
 
+/// Clamp a vector to a bounding box.
 cpVect cpBBClampVect(const cpBB bb, const cpVect v); // clamps the vector to lie within the bbox
+
 // TODO edge case issue
+/// Wrap a vector to a bounding box.
 cpVect cpBBWrapVect(const cpBB bb, const cpVect v); // wrap a vector to a bbox
+
+///@}

@@ -1714,7 +1714,6 @@ void cEETest::ChangeDemo( Uint32 num ) {
 
 void cEETest::PhysicsCreate() {
 	cPhysicsManager::CreateSingleton();
-	cPhysicsManager::instance()->CollisionSlop( 0.2 );
 	cPhysicsManager * PM = cPhysicsManager::instance();
 	cPhysicsManager::cDrawSpaceOptions * DSO = PM->GetDrawOptions();
 
@@ -1759,7 +1758,6 @@ void cEETest::PhysicsUpdate() {
 				mMouseJoint = eeNew( cPivotJoint, ( mMouseBody, shape->Body(), cVectZero, shape->Body()->World2Local( point ) ) );
 
 				mMouseJoint->MaxForce( 50000.0f );
-				mMouseJoint->BiasCoef( 0.15f );
 				mSpace->AddConstraint( mMouseJoint );
 			}
 		}

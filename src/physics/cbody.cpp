@@ -166,7 +166,7 @@ void cBody::AngVelLimit( const cpFloat& speed ) {
 }
 
 void cBody::Slew( cVect pos, cpFloat dt ) {
-	cpBodySlew( mBody, tocpv( pos ), dt );
+	//cpBodySlew( mBody, tocpv( pos ), dt );
 }
 
 void cBody::UpdateVelocity( cVect gravity, cpFloat damping, cpFloat dt ) {
@@ -207,14 +207,6 @@ void * cBody::Data() const {
 
 void cBody::Data( void * data ) {
 	mData = data;
-}
-
-bool cBody::IsGrounded() {
-	return cpTrue == cpBodyIsGrounded( mBody );
-}
-
-bool cBody::IsGroundedTolerance( cVect normal, cpFloat tolerance ) {
-	return cpTrue == cpBodyIsGroundedTolerance( mBody, tocpv( normal ), tolerance );
 }
 
 CP_NAMESPACE_END

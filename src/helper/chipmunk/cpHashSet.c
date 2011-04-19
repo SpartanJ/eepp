@@ -44,37 +44,28 @@ struct cpHashSet {
 };
 
 void
-cpHashSetDestroy(cpHashSet *set)
-{
-	cpfree(set->table);
-	
-	cpArrayFreeEach(set->allocatedBuffers, cpfree);
-	cpArrayFree(set->allocatedBuffers);
-}
-
-void
 cpHashSetFree(cpHashSet *set)
 {
 	if(set){
-		cpHashSetDestroy(set);
+		cpfree(set->table);
+		
+		cpArrayFreeEach(set->allocatedBuffers, cpfree);
+		cpArrayFree(set->allocatedBuffers);
+		
 		cpfree(set);
 	}
 }
 
 cpHashSet *
-cpHashSetAlloc(void)
+cpHashSetNew(int size, cpHashSetEqlFunc eqlFunc)
 {
-	return (cpHashSet *)cpcalloc(1, sizeof(cpHashSet));
-}
-
-cpHashSet *
-cpHashSetInit(cpHashSet *set, int size, cpHashSetEqlFunc eqlFunc, void *default_value)
-{
+	cpHashSet *set = (cpHashSet *)cpcalloc(1, sizeof(cpHashSet));
+	
 	set->size = next_prime(size);
 	set->entries = 0;
 	
 	set->eql = eqlFunc;
-	set->default_value = default_value;
+	set->default_value = NULL;
 	
 	set->table = (cpHashSetBin **)cpcalloc(set->size, sizeof(cpHashSetBin *));
 	set->pooledBins = NULL;
@@ -84,10 +75,10 @@ cpHashSetInit(cpHashSet *set, int size, cpHashSetEqlFunc eqlFunc, void *default_
 	return set;
 }
 
-cpHashSet *
-cpHashSetNew(int size, cpHashSetEqlFunc eqlFunc, void *default_value)
+void
+cpHashSetSetDefaultValue(cpHashSet *set, void *default_value)
 {
-	return cpHashSetInit(cpHashSetAlloc(), size, eqlFunc, default_value);
+	set->default_value = default_value;
 }
 
 static int
@@ -228,7 +219,7 @@ cpHashSetFind(cpHashSet *set, cpHashValue hash, void *ptr)
 }
 
 void
-cpHashSetEach(cpHashSet *set, cpHashSetIterFunc func, void *data)
+cpHashSetEach(cpHashSet *set, cpHashSetIteratorFunc func, void *data)
 {
 	for(int i=0; i<set->size; i++){
 		cpHashSetBin *bin = set->table[i];

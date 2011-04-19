@@ -5,6 +5,7 @@
 
 CP_NAMESPACE_BEGIN
 
+//! TODO: Search for a IsGrounded replacement.
 class CP_API cBody {
 	public:
 		static cBody * New( cpFloat m, cpFloat i );
@@ -100,10 +101,6 @@ class CP_API cBody {
 		void * Data() const;
 
 		void Data( void * data );
-
-		bool IsGrounded();
-
-		bool IsGroundedTolerance( cVect normal, cpFloat tolerance );
 	protected:
 		friend class cSpace;
 

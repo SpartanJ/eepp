@@ -154,14 +154,6 @@ class CP_API cSpace {
 
 		void RemoveConstraint( cConstraint * constraint );
 
-		void ResizeStaticHash( cpFloat dim, int count );
-
-		void ResizeActiveHash( cpFloat dim, int count );
-
-		void RehashStatic();
-
-		void RehashShape( cShape * shape );
-
 		cpSpace * Space() const;
 
 		void ActivateShapesTouchingShape( cShape * shape );

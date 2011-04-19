@@ -55,7 +55,7 @@ circle2circleQuery(const cpVect p1, const cpVect p2, const cpFloat r1, const cpF
 static int
 circle2circle(const cpShape *shape1, const cpShape *shape2, cpContact *arr)
 {
-	cpCircleShape *circ1 = (cpCircleShape *)shape1;
+	cpCircleShape *circ1 = (cpCircleShape *)shape1; //TODO
 	cpCircleShape *circ2 = (cpCircleShape *)shape2;
 	
 	return circle2circleQuery(circ1->tc, circ2->tc, circ1->r, circ2->r, arr);
@@ -283,6 +283,7 @@ seg2poly(const cpShape *shape1, const cpShape *shape2, cpContact *arr)
 	// Floating point precision problems here.
 	// This will have to do for now.
 //	poly_min -= cp_collision_slop; // TODO is this needed anymore?
+	
 	if(minNorm >= poly_min || minNeg >= poly_min) {
 		if(minNorm > minNeg)
 			findPointsBehindSeg(arr, &num, seg, poly, minNorm, 1.0f);

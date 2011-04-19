@@ -46,14 +46,6 @@ void cConstraint::MaxForce( const cpFloat& maxforce ) {
 	mConstraint->maxForce = maxforce;
 }
 
-cpFloat cConstraint::BiasCoef() {
-	return mConstraint->biasCoef;
-}
-
-void cConstraint::BiasCoef( const cpFloat& biascoef ) {
-	mConstraint->biasCoef = biascoef;
-}
-
 cpFloat cConstraint::MaxBias() {
 	return mConstraint->maxBias;
 }

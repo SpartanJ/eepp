@@ -20,13 +20,12 @@
  */
 
 #include <stdlib.h>
+#include <math.h>
 
 #include "chipmunk_private.h"
 #include "constraints/util.h"
 
 // TODO: Comment me!
-
-cpFloat cp_constraint_bias_coef = 0.1f;
 
 void cpConstraintDestroy(cpConstraint *constraint){}
 
@@ -49,10 +48,10 @@ cpConstraintInit(cpConstraint *constraint, const cpConstraintClass *klass, cpBod
 	constraint->a = a;
 	constraint->b = b;
 	
-	constraint->nextA = NULL;
-	constraint->nextB = NULL;
+	constraint->next_a = NULL;
+	constraint->next_b = NULL;
 	
 	constraint->maxForce = (cpFloat)INFINITY;
-	constraint->biasCoef = cp_constraint_bias_coef;
+	constraint->errorBias = cpfpow(1.0f - 0.1f, 60.0f);
 	constraint->maxBias = (cpFloat)INFINITY;
 }

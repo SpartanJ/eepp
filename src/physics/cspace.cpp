@@ -60,18 +60,6 @@ void cSpace::Update() {
 	#endif
 }
 
-void cSpace::ResizeStaticHash( cpFloat dim, int count ) {
-	cpSpaceResizeStaticHash( mSpace, dim, count );
-}
-
-void cSpace::ResizeActiveHash( cpFloat dim, int count ) {
-	cpSpaceResizeActiveHash( mSpace, dim, count );
-}
-
-void cSpace::RehashStatic() {
-	cpSpaceRehashStatic( mSpace );
-}
-
 const int& cSpace::Iterations() const {
 	return mSpace->iterations;
 }
@@ -252,10 +240,6 @@ void cSpace::ActivateShapesTouchingShape( cShape * shape ) {
 	cpSpaceActivateShapesTouchingShape( mSpace, shape->Shape() );
 }
 
-void cSpace::RehashShape( cShape * shape ) {
-	cpSpaceRehashShape( mSpace, shape->Shape() );
-}
-
 #ifdef PHYSICS_RENDERER_ENABLED
 static void drawObject( cpShape * shape, cpSpace * space ) {
 	reinterpret_cast<cShape*> ( shape->data )->Draw( reinterpret_cast<cSpace*>( space->data ) );
@@ -289,15 +273,15 @@ void cSpace::Draw() {
 	BR->SetLineWidth( options->LineThickness );
 
 	if( options->DrawShapes ) {
-		cpSpatialIndexEach( mSpace->CP_PRIVATE(activeShapes), (cpSpatialIndexIterator)drawObject, mSpace );
-		cpSpatialIndexEach( mSpace->CP_PRIVATE(staticShapes), (cpSpatialIndexIterator)drawObject, mSpace );
+		cpSpatialIndexEach( mSpace->CP_PRIVATE(activeShapes), (cpSpatialIndexIteratorFunc)drawObject, mSpace );
+		cpSpatialIndexEach( mSpace->CP_PRIVATE(staticShapes), (cpSpatialIndexIteratorFunc)drawObject, mSpace );
 	}
 
 	BR->SetLineWidth( lw );
 
 	if( options->DrawBBs ){
-		cpSpatialIndexEach( mSpace->CP_PRIVATE(activeShapes), (cpSpatialIndexIterator)drawBB, NULL );
-		cpSpatialIndexEach( mSpace->CP_PRIVATE(staticShapes), (cpSpatialIndexIterator)drawBB, NULL );
+		cpSpatialIndexEach( mSpace->CP_PRIVATE(activeShapes), (cpSpatialIndexIteratorFunc)drawBB, NULL );
+		cpSpatialIndexEach( mSpace->CP_PRIVATE(staticShapes), (cpSpatialIndexIteratorFunc)drawBB, NULL );
 	}
 
 	cpArray * constraints = mSpace->CP_PRIVATE(constraints);
