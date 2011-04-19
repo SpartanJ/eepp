@@ -108,16 +108,16 @@ void cUIWindow::ContainerPosChange( const cUIEvent * Event ) {
 }
 
 void cUIWindow::ButtonCloseClick( const cUIEvent * Event ) {
-	Close();
+	CloseWindow();
 
 	SendCommonEvent( cUIEvent::EventOnWindowCloseClick );
 }
 
-void cUIWindow::Close() {
+void cUIWindow::CloseWindow() {
 	if ( 0 != cUIThemeManager::instance()->ControlsFadeOutTime() )
 		CloseFadeOut( cUIThemeManager::instance()->ControlsFadeOutTime() );
 	else
-		cUIComplexControl::Close();
+		Close();
 }
 
 void cUIWindow::ButtonMaximizeClick( const cUIEvent * Event ) {

@@ -538,8 +538,6 @@ void cEETest::CreateUI() {
 
 	CreateDecoratedWindow();
 
-	CreateWinMenu();
-
 	//mUIWindow->Show();
 
 	Log->Writef( "CreateUI time: %f", TE.ElapsedSinceStart() );
@@ -619,6 +617,8 @@ void cEETest::CreateDecoratedWindow() {
 	TextEdit->Visible( true );
 	TextEdit->Enabled( true );
 	TextEdit->Text( mBuda );
+
+	CreateWinMenu();
 }
 
 void cEETest::CloseClick( const cUIEvent * Event ) {
