@@ -2,7 +2,7 @@
 <qtcreator>
  <data>
   <variable>GenericProjectManager.GenericProject.Toolchain</variable>
-  <value type="QString"></value>
+  <value type="QString">ProjectExplorer.ToolChain.Gcc:/usr/bin/g++.x86-linux-generic-elf-32bit</value>
  </data>
  <data>
   <variable>ProjectExplorer.Project.ActiveTarget</variable>
