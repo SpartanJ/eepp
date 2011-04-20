@@ -21,7 +21,7 @@ class EE_API cUIWinMenu : public cUIComplexControl {
 					FontSelectedColor( 0, 0, 0, 255 ),
 					MarginBetweenButtons(0),
 					ButtonMargin(4),
-					MenuHeight(22),
+					MenuHeight(0),
 					FirstButtonMargin(1)
 				{
 					cUITheme * Theme = cUIThemeManager::instance()->DefaultTheme();
@@ -88,6 +88,7 @@ class EE_API cUIWinMenu : public cUIComplexControl {
 		Uint32			mMarginBetweenButtons;
 		Uint32			mButtonMargin;
 		Uint32			mFirstButtonMargin;
+		Uint32			mMenuHeight;
 		WinMenuList		mButtons;
 
 		void RefreshButtons();

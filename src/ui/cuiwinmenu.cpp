@@ -13,14 +13,15 @@ cUIWinMenu::cUIWinMenu( const cUIWinMenu::CreateParams& Params ) :
 	mCurrentMenu( NULL ),
 	mMarginBetweenButtons( Params.MarginBetweenButtons ),
 	mButtonMargin( Params.ButtonMargin ),
-	mFirstButtonMargin( Params.FirstButtonMargin )
+	mFirstButtonMargin( Params.FirstButtonMargin ),
+	mMenuHeight( Params.MenuHeight )
 {
 	mType |= UI_TYPE_GET(UI_TYPE_WINMENU);
 
 	if ( !(mFlags & UI_ANCHOR_RIGHT) )
 		mFlags |= UI_ANCHOR_RIGHT;
 
-	Size( Parent()->Size().Width(), Params.MenuHeight );
+	Size( Parent()->Size().Width(), mMenuHeight );
 
 	CalcDistToBorder();
 
@@ -68,6 +69,14 @@ void cUIWinMenu::SetTheme( cUITheme * Theme ) {
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
 		it->first->ForceThemeSkin( Theme, "winmenubutton" );
 	}
+
+	if ( 0 == mMenuHeight && NULL != GetSkin() && NULL != GetSkin()->GetShape( cUISkinState::StateNormal ) ) {
+		mMenuHeight = GetSkin()->GetShape( cUISkinState::StateNormal )->Size().Height();
+
+		Size( Parent()->Size().Width(), mMenuHeight );
+
+		CalcDistToBorder();
+	}
 }
 
 void cUIWinMenu::RemoveMenuButton( const String& ButtonText ) {
@@ -103,13 +112,46 @@ cUIPopUpMenu * cUIWinMenu::GetPopUpMenu( const String& ButtonText ) {
 
 void cUIWinMenu::RefreshButtons() {
 	Uint32 xpos = mFirstButtonMargin;
+	Int32 h = 0, th = 0, ycenter = 0;
+
+	if ( NULL != GetSkin() ) {
+		cShape * shape = GetSkin()->GetShape( cUISkinState::StateNormal );
+
+		if ( NULL != shape ) {
+			h = shape->Size().Height();
+
+			if ( mButtons.begin() != mButtons.end() ) {
+				cUISelectButton * tbut = mButtons.begin()->first;
+
+				if ( NULL != tbut->GetSkin() ) {
+					cShape * tshape2 = tbut->GetSkin()->GetShape( cUISkinState::StateSelected );
+
+					if ( NULL != tshape2 )  {
+						th = tshape2->Size().Height();
+
+						switch ( VAlignGet( Flags() ) ) {
+							case UI_VALIGN_CENTER:
+								ycenter = ( h - th ) / 2;
+								break;
+							case UI_VALIGN_BOTTOM:
+								ycenter = ( h - th );
+								break;
+							case UI_VALIGN_TOP:
+								ycenter = 0;
+								break;
+						}
+					}
+				}
+			}
+		}
+	}
 
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
 		cUISelectButton * pbut	= it->first;
 		cUITextBox * tbox		= pbut->TextBox();
 
 		pbut->Size( tbox->GetTextWidth() + mButtonMargin, Size().Height() );
-		pbut->Pos( xpos, 0 );
+		pbut->Pos( xpos, ycenter );
 
 		xpos += pbut->Size().Width() + mMarginBetweenButtons;
 	}

@@ -139,7 +139,7 @@ void cUITextBox::AutoAlign() {
 
 	switch ( FontVAlignGet( Flags() ) ) {
 		case UI_VALIGN_CENTER:
-			mAlignOffset.y = (eeFloat)( ( (Int32)( mSize.y - mTextCache->GetTextHeight() ) ) / 2 );
+			mAlignOffset.y = (eeFloat)( ( (Int32)( mSize.y - mTextCache->GetTextHeight() ) ) / 2 ) - 1;
 			break;
 		case UI_VALIGN_BOTTOM:
 			mAlignOffset.y = ( (eeFloat)mSize.y - (eeFloat)mTextCache->GetTextHeight() );
