@@ -63,6 +63,14 @@ void cEETest::Init() {
 	run = ( mWindow->Created() && PAK.IsOpen() );
 
 	if ( run ) {
+		std::cout << "Size of cTexture: " << sizeof(cTexture) << std::endl;
+		std::cout << "Size of cShape: " << sizeof(Graphics::cShape) << std::endl;
+		std::cout << "Size of cSprite: " << sizeof(cSprite) << std::endl;
+		std::cout << "Size of cUIControl: " << sizeof(cUIControl) << std::endl;
+		std::cout << "Size of cUIControlAnim: " << sizeof(cUIControlAnim) << std::endl;
+		std::cout << "Size of cUITextBox: " << sizeof(cUITextBox) << std::endl;
+		std::cout << "Size of cUIComplexControl: " << sizeof(cUIComplexControl) << std::endl;
+
 		SetScreen( 0 );
 
 		mWindow->Caption( "EE++ Test Application" );

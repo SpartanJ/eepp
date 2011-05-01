@@ -182,10 +182,12 @@ Uint32 cUIWinMenu::OnMessage( const cUIMessage * Msg ) {
 						tpop->Show();
 					}
 				} else {
-					mCurrentMenu = tpop;
+					if ( Msg->Flags() & EE_BUTTON_LMASK ) {
+						mCurrentMenu = tpop;
 
-					tbut->Select();
-					tpop->Show();
+						tbut->Select();
+						tpop->Show();
+					}
 				}
 
 				return 1;

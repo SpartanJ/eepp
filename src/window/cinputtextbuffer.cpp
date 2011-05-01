@@ -91,7 +91,7 @@ void cInputTextBuffer::PromptToLeftFirstNoChar() {
 }
 
 void cInputTextBuffer::PromptToRightFirstNoChar() {
-	Uint32 s = mText.size();
+	Int32 s = static_cast<Int32> ( mText.size() );
 
 	if ( 0 == s )
 		return;

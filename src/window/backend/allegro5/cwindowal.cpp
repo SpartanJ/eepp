@@ -229,7 +229,7 @@ void cWindowAl::CreatePlatform() {
 
 #if defined( EE_X11_PLATFORM )
 	SetCurrent();
-	mPlatform = eeNew( Platform::cX11Impl, ( this, GetWindowHandler(), ((ALLEGRO_DISPLAY_XGLX *)mDisplay)->window, ((ALLEGRO_DISPLAY_XGLX *)mDisplay)->window, al_display_lock, al_display_unlock ) );
+	mPlatform = eeNew( Platform::cX11Impl, ( this, GetWindowHandler(), GetX11Window(), GetX11Window(), al_display_lock, al_display_unlock ) );
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	mPlatform = eeNew( Platform::cWinImpl, ( this, GetWindowHandler() ) );
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
@@ -238,6 +238,12 @@ void cWindowAl::CreatePlatform() {
 	cWindow::CreatePlatform();
 #endif
 }
+
+#if defined( EE_X11_PLATFORM )
+X11Window cWindowAl::GetX11Window() {
+	return ((ALLEGRO_DISPLAY_XGLX *)mDisplay)->window;
+}
+#endif
 
 void cWindowAl::ToggleFullscreen() {
 	bool WasMaximized = mWindow.Maximized;

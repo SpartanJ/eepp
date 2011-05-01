@@ -34,6 +34,7 @@ using namespace EE::Graphics;
 	#include <X11/Xlib.h>
 	#include <X11/Xcursor/Xcursor.h>
 	#include <X11/cursorfont.h>
+	#include <X11/Xatom.h>
 	typedef Atom			eeScrapType;
 	typedef Window			X11Window;
 	typedef Display	*		eeWindowHandler;

@@ -52,39 +52,148 @@ std::vector<cShape*> cShapeGroupManager::GetShapesByPattern( const std::string& 
 	cShape *				tShape 	= NULL;
 	std::string				realext = "";
 	eeInt 					c 		= 0;
+	eeInt					t		= 0;
+	eeInt i;
+
 	if ( extension.size() )
 		realext = "." + extension;
 
-	do {
-		if ( c < 100 )
-			search = StrFormated( "%s%02d%s", name.c_str(), c, realext.c_str() );
-		else if ( c < 1000 )
-			search = StrFormated( "%s%03d%s", name.c_str(), c, realext.c_str() );
-		else if ( c < 10000 )
-			search = StrFormated( "%s%04d%s", name.c_str(), c, realext.c_str() );
-		else
-			found = false;
+	// Test if name starts with 0 - 1
+	for ( i = 0; i < 2; i++ ) {
+		search = StrFormated( "%s%d%s", name.c_str(), i, realext.c_str() );
 
-		if ( found ) {
+		if ( NULL == SearchInShapeGroup )
+			tShape = GetShapeByName( search );
+		else
+			tShape = SearchInShapeGroup->GetByName( search );
+
+		if ( NULL != tShape ) {
+			t = 1;
+
+			break;
+		}
+	}
+
+	// in case that name doesn't start with 0 - 1, we test with 00 - 01
+	if ( 0 == t ) {
+		for ( i = 0; i < 2; i++ ) {
+			search = StrFormated( "%s%02d%s", name.c_str(), i, realext.c_str() );
+
 			if ( NULL == SearchInShapeGroup )
 				tShape = GetShapeByName( search );
 			else
 				tShape = SearchInShapeGroup->GetByName( search );
 
 			if ( NULL != tShape ) {
-				Shapes.push_back( tShape );
+				t = 2;
 
-				found = true;
-			} else {
-				if ( 0 == c ) // if didn't found "00", will search at least for "01"
-					found = true;
-				else
-					found = false;
+				break;
 			}
 		}
 
-		c++;
-	} while ( found );
+		// in case that name doesn't start with 0 - 1, we test with 000 - 001
+		if ( 0 == t ) {
+			for ( i = 0; i < 2; i++ ) {
+				search = StrFormated( "%s%03d%s", name.c_str(), i, realext.c_str() );
+
+				if ( NULL == SearchInShapeGroup )
+					tShape = GetShapeByName( search );
+				else
+					tShape = SearchInShapeGroup->GetByName( search );
+
+				if ( NULL != tShape ) {
+					t = 3;
+
+					break;
+				}
+			}
+
+			if ( 0 == t ) {
+				for ( i = 0; i < 2; i++ ) {
+					search = StrFormated( "%s%04d%s", name.c_str(), i, realext.c_str() );
+
+					if ( NULL == SearchInShapeGroup )
+						tShape = GetShapeByName( search );
+					else
+						tShape = SearchInShapeGroup->GetByName( search );
+
+					if ( NULL != tShape ) {
+						t = 4;
+
+						break;
+					}
+				}
+
+				if ( 0 == t ) {
+					for ( i = 0; i < 2; i++ ) {
+						search = StrFormated( "%s%05d%s", name.c_str(), i, realext.c_str() );
+
+						if ( NULL == SearchInShapeGroup )
+							tShape = GetShapeByName( search );
+						else
+							tShape = SearchInShapeGroup->GetByName( search );
+
+						if ( NULL != tShape ) {
+							t = 5;
+
+							break;
+						}
+					}
+
+					if ( 0 == t ) {
+						for ( i = 0; i < 2; i++ ) {
+							search = StrFormated( "%s%06d%s", name.c_str(), i, realext.c_str() );
+
+							if ( NULL == SearchInShapeGroup )
+								tShape = GetShapeByName( search );
+							else
+								tShape = SearchInShapeGroup->GetByName( search );
+
+							if ( NULL != tShape ) {
+								t = 6;
+
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if ( 0 != t ) {
+		do {
+			switch ( t ) {
+				case 1: search = StrFormated( "%s%d%s", name.c_str(), c, realext.c_str() ); break;
+				case 2: search = StrFormated( "%s%02d%s", name.c_str(), c, realext.c_str() ); break;
+				case 3: search = StrFormated( "%s%03d%s", name.c_str(), c, realext.c_str() ); break;
+				case 4: search = StrFormated( "%s%04d%s", name.c_str(), c, realext.c_str() ); break;
+				case 5: search = StrFormated( "%s%05d%s", name.c_str(), c, realext.c_str() ); break;
+				case 6: search = StrFormated( "%s%06d%s", name.c_str(), c, realext.c_str() ); break;
+				default: found = false;
+			}
+
+			if ( found ) {
+				if ( NULL == SearchInShapeGroup )
+					tShape = GetShapeByName( search );
+				else
+					tShape = SearchInShapeGroup->GetByName( search );
+
+				if ( NULL != tShape ) {
+					Shapes.push_back( tShape );
+
+					found = true;
+				} else {
+					if ( 0 == c ) // if didn't found "00", will search at least for "01"
+						found = true;
+					else
+						found = false;
+				}
+			}
+
+			c++;
+		} while ( found );
+	}
 
 	return Shapes;
 }

@@ -40,6 +40,10 @@ class EE_API cWindowAl : public cWindow {
 
 		eeWindowHandler	GetWindowHandler();
 
+		#if defined( EE_X11_PLATFORM )
+		X11Window GetX11Window();
+		#endif
+
 		void SetDefaultContext();
 
 		ALLEGRO_DISPLAY * GetDisplay() const;

@@ -357,13 +357,13 @@ class EE_API cSprite {
 		EE_PRE_BLEND_FUNC	mBlend;
 		EE_RENDERTYPE		mEffect;
 
-		SpriteCallback		mCb;
-
 		eeUint				mCurrentFrame;
 		eeFloat				mfCurrentFrame;
 		eeUint				mCurrentSubFrame;
 		eeUint				mSubFrames;
 		eeUint				mAnimTo;
+
+		SpriteCallback		mCb;
 
 		class cFrame {
 			public:

@@ -110,7 +110,7 @@ void cClipboardSDL::SetText( const std::string& Text ) {
 		XSetSelectionOwner( display, XA_PRIMARY, window, CurrentTime );
 	}
 	#elif EE_PLATFORM == EE_PLATFORM_WIN
-
+	/** @TODO Implement */
 	#endif
 }
 
