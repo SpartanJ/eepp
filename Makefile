@@ -1,5 +1,6 @@
 STRLOWERCASE 		= $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(subst F,f,$(subst G,g,$(subst H,h,$(subst I,i,$(subst J,j,$(subst K,k,$(subst L,l,$(subst M,m,$(subst N,n,$(subst O,o,$(subst P,p,$(subst Q,q,$(subst R,r,$(subst S,s,$(subst T,t,$(subst U,u,$(subst V,v,$(subst W,w,$(subst X,x,$(subst Y,y,$(subst Z,z,$1))))))))))))))))))))))))))
 OS 					= $(strip $(call STRLOWERCASE, $(shell uname) ) )
+SDLVERSION			= $(shell sdl-config --version)
 
 export CFLAGS     	= -Wall -Wno-unknown-pragmas $(FINALFLAGS) $(BUILDFLAGS) $(BACKENDFLAGS)
 export CFLAGSEXT  	= $(FINALFLAGS) $(BUILDFLAGS)
@@ -65,8 +66,15 @@ ifeq ($(BACKEND_SDL),  )
 endif
 
 ifeq ($(BACKEND_SDL), yes)
-	SDL_BACKEND_LINK	= -lSDL
-	SDL_BACKEND_SRC		= $(wildcard ./src/window/backend/SDL/*.cpp)
+		
+	ifeq ($(SDLVERSION), 1.3.0)
+		SDL_BACKEND_LINK	= libs/$(OS)/libSDL.a
+		SDL_BACKEND_SRC		= $(wildcard ./src/window/backend/SDL13/*.cpp)
+	else
+		SDL_BACKEND_LINK	= -lSDL
+		SDL_BACKEND_SRC		= $(wildcard ./src/window/backend/SDL/*.cpp)
+	endif
+	
 	SDL_DEFINE			= -DEE_BACKEND_SDL_ACTIVE
 else
 	SDL_BACKEND_LINK	= 
@@ -243,6 +251,7 @@ dirs:
 	@mkdir -p $(OBJDIR)/src/utils
 	@mkdir -p $(OBJDIR)/src/window
 	@mkdir -p $(OBJDIR)/src/window/backend/SDL
+	@mkdir -p $(OBJDIR)/src/window/backend/SDL13
 	@mkdir -p $(OBJDIR)/src/window/backend/null
 	@mkdir -p $(OBJDIR)/src/window/backend/allegro5
 	@mkdir -p $(OBJDIR)/src/window/platform/x11

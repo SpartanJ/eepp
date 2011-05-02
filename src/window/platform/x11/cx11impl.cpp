@@ -30,18 +30,18 @@ cX11Impl::~cX11Impl() {
 }
 
 void cX11Impl::MinimizeWindow() {
-	mLock();
+	Lock();
 
 	XIconifyWindow( mDisplay, mX11Window, 0 );
 
 	XFlush( mDisplay );
 
-	mUnlock();
+	Unlock();
 }
 
 void cX11Impl::MaximizeWindow() {
 	// coded by Rafał Maj, idea from Måns Rullgård http://tinyurl.com/68mvk3
-	mLock();
+	Lock();
 
 	XEvent xev;
 	Atom wm_state =  XInternAtom( mDisplay, "_NET_WM_STATE", False);
@@ -61,49 +61,49 @@ void cX11Impl::MaximizeWindow() {
 
 	XFlush(mDisplay);
 
-	mUnlock();
+	Unlock();
 }
 
 void cX11Impl::HideWindow() {
-	mLock();
+	Lock();
 
 	XUnmapWindow( mDisplay, mX11Window );
 
-	mUnlock();
+	Unlock();
 }
 
 void cX11Impl::RaiseWindow() {
-	mLock();
+	Lock();
 
 	XRaiseWindow( mDisplay, mX11Window );
 
-	mUnlock();
+	Unlock();
 }
 
 void cX11Impl::ShowWindow() {
-	mLock();
+	Lock();
 
 	XMapRaised( mDisplay, mX11Window );
 
-	mUnlock();
+	Unlock();
 }
 
 void cX11Impl::MoveWindow( int left, int top ) {
-	mLock();
+	Lock();
 
 	XMoveWindow( mDisplay, mX11Window, left, top );
 
 	XFlush( mDisplay );
 
-	mUnlock();
+	Unlock();
 }
 
 void cX11Impl::SetContext( eeWindowContex Context ) {
-	mLock();
+	Lock();
 
 	glXMakeCurrent( mDisplay, mX11Window, Context );
 
-	mUnlock();
+	Unlock();
 }
 
 eeVector2i cX11Impl::Position() {
@@ -119,20 +119,20 @@ void cX11Impl::ShowMouseCursor() {
 	if ( !mCursorHidden )
 	  return;
 
-	mLock();
+	Lock();
 
 	XDefineCursor( mDisplay, mMainWindow, mCursorCurrent );
 
 	mCursorHidden = false;
 
-	mUnlock();
+	Unlock();
 }
 
 void cX11Impl::HideMouseCursor() {
 	if ( mCursorHidden )
 		return;
 
-	mLock();
+	Lock();
 
 	if ( mCursorInvisible == None ) {
 		unsigned long gcmask;
@@ -163,7 +163,7 @@ void cX11Impl::HideMouseCursor() {
 
 	mCursorHidden = true;
 
-	mUnlock();
+	Unlock();
 }
 
 cCursor * cX11Impl::CreateMouseCursor( cTexture * tex, const eeVector2i& hotspot, const std::string& name ) {
@@ -182,21 +182,21 @@ void cX11Impl::SetMouseCursor( cCursor * cursor ) {
 	mCursorCurrent = reinterpret_cast<cCursorX11*>( cursor )->GetCursor();
 
 	if ( !mCursorHidden ) {
-		mLock();
+		Lock();
 
 		XDefineCursor( mDisplay, mMainWindow,  mCursorCurrent );
 
-		mUnlock();
+		Unlock();
 	}
 }
 
 void cX11Impl::RestoreCursor() {
 	if ( !mCursorHidden ) {
-		mLock();
+		Lock();
 
 		XDefineCursor( mDisplay, mMainWindow,  mCursorCurrent );
 
-		mUnlock();
+		Unlock();
 	} else {
 		HideMouseCursor();
 	}
@@ -267,7 +267,7 @@ void cX11Impl::SetSystemMouseCursor( Cursor::EE_SYSTEM_CURSOR syscursor ) {
 		XFreeCursor( mDisplay, mCursorSystemLast );
 	}
 
-	mLock();
+	Lock();
 
 	mCursorCurrent		= XCreateFontCursor( mDisplay, cursor_shape );
 	mCursorSystemLast	= mCursorCurrent;
@@ -276,7 +276,7 @@ void cX11Impl::SetSystemMouseCursor( Cursor::EE_SYSTEM_CURSOR syscursor ) {
 		XDefineCursor( mDisplay, mMainWindow, mCursorCurrent );
 	}
 
-	mUnlock();
+	Unlock();
 }
 
 eeWindowHandler cX11Impl::GetDisplay() const {
@@ -284,11 +284,13 @@ eeWindowHandler cX11Impl::GetDisplay() const {
 }
 
 void cX11Impl::Lock() {
-	mLock();
+	if ( NULL != mLock )
+		mLock();
 }
 
 void cX11Impl::Unlock() {
-	mUnlock();
+	if ( NULL != mUnlock )
+		mUnlock();
 }
 
 }}}

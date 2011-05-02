@@ -143,7 +143,7 @@
 
 /// Activate at least one backend for the compilation
 #if !defined( EE_BACKEND_SDL_ACTIVE ) && !defined( EE_BACKEND_ALLEGRO_ACTIVE )
-#define EE_BACKEND_SDL_ACTIVE
+	#define EE_BACKEND_SDL_ACTIVE
 #endif
 
 #define eeARRAY_SIZE(__array)	( sizeof(__array) / sizeof(__array[0]) )

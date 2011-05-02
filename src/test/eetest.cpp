@@ -838,7 +838,7 @@ void cEETest::LoadTextures() {
 	cCursorManager * CurMan = mWindow->GetCursorManager();
 	CurMan->Visible( false );
 	//CurMan->Visible( true );
-	//CurMan->Set( Window::Cursor::SYS_CURSOR_DEFAULT );
+	//CurMan->Set( Window::Cursor::SYS_CURSOR_LINK );
 	//CurMan->Set( CurMan->Add( CurMan->Create( CursorP[1], eeVector2i( 2, 2 ), "cursor_special" ) ) );
 
 	CL1.AddFrame(TN[2]);

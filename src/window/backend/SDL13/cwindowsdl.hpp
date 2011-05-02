@@ -1,17 +1,18 @@
-#ifndef EE_WINDOWCWINDOWSDL_HPP
-#define EE_WINDOWCWINDOWSDL_HPP
+#ifndef EE_WINDOWCWINDOWSDL13_HPP
+#define EE_WINDOWCWINDOWSDL13_HPP
 
 #include "../../cbackend.hpp"
+#include "base.hpp"
 
-#ifdef EE_BACKEND_SDL_ACTIVE
+#ifdef EE_BACKEND_SDL_1_3
 
 #include "../../cwindow.hpp"
-#include <SDL/SDL.h>
+
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
 #include <SDL/SDL_syswm.h>
 #endif
 
-namespace EE { namespace Window { namespace Backend { namespace SDL {
+namespace EE { namespace Window { namespace Backend { namespace SDL13 {
 
 class EE_API cWindowSDL : public cWindow {
 	public:
@@ -38,10 +39,27 @@ class EE_API cWindowSDL : public cWindow {
 		void SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue );
 
 		eeWindowHandler	GetWindowHandler();
+
+		virtual void Minimize();
+
+		virtual void Maximize();
+
+		virtual void Hide();
+
+		virtual void Raise();
+
+		virtual void Show();
+
+		virtual void Position( Int16 Left, Int16 Top );
+
+		virtual eeVector2i Position();
+
+		SDL_WindowID	GetSDLWindow() const;
 	protected:
 		friend class cClipboardSDL;
 
-		SDL_Surface *	mSurface;
+		SDL_WindowID	mSDLWindow;
+		SDL_GLContext	mGLContext;
 
 		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
 		SDL_SysWMinfo 	mWMinfo;

@@ -41,7 +41,8 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 	switch( Event->Type ) {
 		case InputEvent::KeyDown:
 		{
-			mInputMod = Event->key.keysym.mod;
+			if ( Event->key.keysym.mod != 0xFFFFFFFF )
+				mInputMod = Event->key.keysym.mod;
 
 			PushKey( &mKeysDown	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, true );
 			break;
