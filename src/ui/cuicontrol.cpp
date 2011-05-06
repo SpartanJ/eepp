@@ -435,16 +435,22 @@ EE_PRE_BLEND_FUNC& cUIControl::Blend() {
 }
 
 void cUIControl::ToFront() {
-	mParentCtrl->ChildRemove( this );
-	mParentCtrl->ChildAdd( this );
+	if ( NULL != mParentCtrl ) {
+		mParentCtrl->ChildRemove( this );
+		mParentCtrl->ChildAdd( this );
+	}
 }
 
 void cUIControl::ToBack() {
-	mParentCtrl->ChildAddAt( this, 0 );
+	if ( NULL != mParentCtrl ) {
+		mParentCtrl->ChildAddAt( this, 0 );
+	}
 }
 
 void cUIControl::ToPos( const Uint32& Pos ) {
-	mParentCtrl->ChildAddAt( this, Pos );
+	if ( NULL != mParentCtrl ) {
+		mParentCtrl->ChildAddAt( this, Pos );
+	}
 }
 
 void cUIControl::OnVisibleChange() {
@@ -671,6 +677,19 @@ bool cUIControl::IsChild( cUIControl * ChildCtrl ) const {
 			return true;
 
 		ChildLoop = ChildLoop->mNext;
+	}
+
+	return false;
+}
+
+bool cUIControl::InParentTreeOf( cUIControl * Child ) const {
+	cUIControl * ParentLoop = Child->mParentCtrl;
+
+	while ( NULL != ParentLoop ) {
+		if ( ParentLoop == this )
+			return true;
+
+		ParentLoop = ParentLoop->mParentCtrl;
 	}
 
 	return false;
@@ -1067,6 +1086,51 @@ eeSize cUIControl::GetSkinShapeSize() {
 	}
 
 	return tSize;
+}
+
+cUIControl * cUIControl::NextComplexControl() {
+	cUIControl * Found		= NULL;
+	cUIControl * ChildLoop	= mChild;
+
+	while( NULL != ChildLoop ) {
+		if ( ChildLoop->Visible() ) {
+			if ( ChildLoop->IsType( UI_TYPE_CONTROL_COMPLEX ) ) {
+				return ChildLoop;
+			} else {
+				Found = ChildLoop->NextComplexControl();
+
+				if ( NULL != Found ) {
+					return Found;
+				}
+			}
+		}
+
+		ChildLoop = ChildLoop->mNext;
+	}
+
+	if ( NULL != mNext ) {
+		if ( mNext->Visible() && mNext->IsType( UI_TYPE_CONTROL_COMPLEX ) ) {
+			return mNext;
+		} else {
+			return mNext->NextComplexControl();
+		}
+	} else {
+		ChildLoop = mParentCtrl;
+
+		while ( NULL != ChildLoop ) {
+			if ( NULL != ChildLoop->mNext ) {
+				if ( ChildLoop->mNext->Visible() && ChildLoop->mNext->IsType( UI_TYPE_CONTROL_COMPLEX ) ) {
+					return ChildLoop->mNext;
+				} else {
+					return ChildLoop->mNext->NextComplexControl();
+				}
+			}
+
+			ChildLoop = ChildLoop->mParentCtrl;
+		}
+	}
+
+	return cUIManager::instance()->MainControl();
 }
 
 }}

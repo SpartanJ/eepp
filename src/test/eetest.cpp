@@ -223,7 +223,7 @@ void cEETest::CreateShaders() {
 
 void cEETest::CreateUI() {
 	cTimeElapsed TE;
-	cUIManager::instance()->Init();
+	cUIManager::instance()->Init(  ); //UI_MANAGER_HIGHLIGHT_FOCUS
 
 	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
@@ -557,6 +557,7 @@ void cEETest::CreateWinMenu() {
 	WinMenuParams.Parent( mUIWindow->Container() );
 	WinMenuParams.ButtonMargin = 12;
 	WinMenuParams.FontSelectedColor = eeColorA( 255, 255, 255, 255 );
+	WinMenuParams.Flags |= cUIWindow::UI_WIN_NO_BORDER;
 
 	cUIWinMenu * WinMenu = eeNew( cUIWinMenu, ( WinMenuParams ) );
 
@@ -615,6 +616,7 @@ void cEETest::CreateDecoratedWindow() {
 	Button->Visible( true );
 	Button->Enabled( true );
 	Button->Text( "Click Me" );
+	Button->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::ButtonClick ) );
 
 	cUITextEdit::CreateParams TEParams;
 	TEParams.Parent( mUIWindow->Container() );
@@ -625,6 +627,8 @@ void cEETest::CreateDecoratedWindow() {
 	TextEdit->Visible( true );
 	TextEdit->Enabled( true );
 	TextEdit->Text( mBuda );
+
+	mUIWindow->AddShortcut( KEY_C, KEYMOD_ALT, Button );
 
 	CreateWinMenu();
 }

@@ -34,7 +34,7 @@ class cUIWindow : public cUIComplexControl {
 				{
 				}
 
-				inline ~CreateParams() {};
+				inline ~CreateParams() {}
 
 				Uint32		WinFlags;
 				eeSize		DecorationSize;
@@ -54,6 +54,10 @@ class cUIWindow : public cUIComplexControl {
 		~cUIWindow();
 
 		virtual void Size( const eeSize& Size );
+
+		void Size( const Int32& Width, const Int32& Height );
+
+		const eeSize& Size();
 
 		virtual void SetTheme( cUITheme * Theme );
 
@@ -84,7 +88,32 @@ class cUIWindow : public cUIComplexControl {
 		String Title() const;
 
 		cUITextBox * TitleTextBox() const;
+
+		bool AddShortcut( const Uint32& KeyCode, const Uint32& Mod, cUIPushButton * Button );
+
+		bool RemoveShortcut( const Uint32& KeyCode, const Uint32& Mod );
 	protected:
+		class KeyboardShortcut {
+			public:
+				KeyboardShortcut() :
+					KeyCode(0),
+					Mod(0),
+					Button(NULL)
+				{}
+
+				KeyboardShortcut( const Uint32& KeyCode, const Uint32& Mod, cUIPushButton * Button ) :
+					KeyCode( KeyCode ),
+					Mod( Mod ),
+					Button( Button )
+				{}
+
+				Uint32 KeyCode;
+				Uint32 Mod;
+				cUIPushButton * Button;
+		};
+
+		typedef std::list< KeyboardShortcut > KeyboardShortcuts;
+
 		enum UI_RESIZE_TYPE {
 			RESIZE_NONE,
 			RESIZE_LEFT,
@@ -124,6 +153,8 @@ class cUIWindow : public cUIComplexControl {
 
 		eeColorA			mTitleFontColor;
 
+		KeyboardShortcuts	mKbShortcuts;
+
 		Uint8				mBaseAlpha;
 
 		bool				mDecoAutoSize;
@@ -132,6 +163,8 @@ class cUIWindow : public cUIComplexControl {
 		virtual void OnSizeChange();
 
 		virtual void OnAlphaChange();
+
+		virtual Uint32 OnKeyDown( const cUIEventKey &Event );
 
 		void ButtonCloseClick( const cUIEvent * Event );
 
@@ -162,6 +195,10 @@ class cUIWindow : public cUIComplexControl {
 		void FixTitleSize();
 
 		Uint32 OnMouseDoubleClick( const eeVector2i &Pos, Uint32 Flags );
+
+		void CheckShortcuts( const Uint32& KeyCode, const Uint32& Mod );
+
+		KeyboardShortcuts::iterator ExistsShortcut( const Uint32& KeyCode, const Uint32& Mod );
 };
 
 }}

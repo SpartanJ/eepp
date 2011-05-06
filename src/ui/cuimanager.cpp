@@ -3,35 +3,52 @@
 
 namespace EE { namespace UI {
 
-cUIManager::cUIManager( cWindow * window ) :
-	mWindow( window ),
+cUIManager::cUIManager() :
+	mWindow( NULL ),
 	mKM( NULL ),
-	mInit( false ),
 	mControl( NULL ),
 	mFocusControl( NULL ),
 	mOverControl( NULL ),
 	mDownControl( NULL ),
-	mFirstPress( false ),
 	mCbId(-1),
-	mResizeCb(0)
+	mResizeCb(0),
+	mFlags( 0 ),
+	mHighlightColor( 234, 195, 123, 255 ),
+	mInit( false ),
+	mFirstPress( false )
 {
-	if ( NULL == mWindow ) {
-		mWindow = cEngine::instance()->GetCurrentWindow();
-	}
-
-	mKM = mWindow->GetInput();
 }
 
 cUIManager::~cUIManager() {
 	Shutdown();
 }
 
-void cUIManager::Init() {
+void cUIManager::Init( Uint32 Flags, cWindow * window ) {
 	if ( mInit )
 		Shutdown();
 
+	mWindow		= window;
+	mFlags		= Flags;
+
+	if ( NULL == mWindow ) {
+		mWindow = cEngine::instance()->GetCurrentWindow();
+	}
+
+	mKM				= mWindow->GetInput();
+
 	mInit			= true;
-	mControl		= eeNew( cUIControlAnim, ( cUIControl::CreateParams( NULL, eeVector2i( 0, 0 ), eeSize( cEngine::instance()->GetWidth(), cEngine::instance()->GetHeight() ), UI_HALIGN_LEFT | UI_VALIGN_CENTER | UI_REPORT_SIZE_CHANGE_TO_CHILDS ) ) );
+
+	cUIWindow::CreateParams Params;
+	Params.Parent( NULL );
+	Params.PosSet( 0, 0 );
+	Params.SizeSet( cEngine::instance()->GetWidth(), cEngine::instance()->GetHeight() );
+	Params.Flags = UI_HALIGN_LEFT | UI_VALIGN_CENTER | UI_REPORT_SIZE_CHANGE_TO_CHILDS;
+	Params.WinFlags = cUIWindow::UI_WIN_NO_BORDER | cUIWindow::UI_WIN_RESIZEABLE;
+	Params.MinWindowSize = eeSize( 0, 0 );
+	Params.DecorationSize = eeSize( 0, 0 );
+	Params.DecorationAutoSize = false;
+
+	mControl		= eeNew( cUIWindow, ( Params ) );
 	mControl->Visible( true );
 	mControl->Enabled( true );
 
@@ -71,6 +88,8 @@ void cUIManager::InputCallback( InputEvent * Event ) {
 			break;
 		case InputEvent::KeyDown:
 			SendKeyDown( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
+
+			CheckTabPress( Event->key.keysym.sym );
 			break;
 	}
 }
@@ -203,7 +222,7 @@ void cUIManager::Draw() {
 	cGlobalBatchRenderer::instance()->Draw();
 }
 
-cUIControlAnim * cUIManager::MainControl() const {
+cUIWindow * cUIManager::MainControl() const {
 	return mControl;
 }
 
@@ -233,6 +252,46 @@ void cUIManager::ClipEnable( const Int32& x, const Int32& y, const Uint32& Width
 
 void cUIManager::ClipDisable() {
 	mWindow->ClipPlaneDisable();
+}
+
+void cUIManager::HighlightFocus( bool Highlight ) {
+	SetFlagValue( &mFlags, UI_MANAGER_HIGHLIGHT_FOCUS, Highlight ? 1 : 0 );
+}
+
+bool cUIManager::HighlightFocus() const {
+	return 0 != ( mFlags & UI_MANAGER_HIGHLIGHT_FOCUS );
+}
+
+void cUIManager::HighlightColor( const eeColorA& Color ) {
+	mHighlightColor = Color;
+}
+
+const eeColorA& cUIManager::HighlightColor() const {
+	return mHighlightColor;
+}
+
+void cUIManager::CheckTabPress( const Uint32& KeyCode ) {
+	if ( KeyCode == KEY_TAB ) {
+		cUIControl * Ctrl = mFocusControl->NextComplexControl();
+
+		if ( NULL != Ctrl )
+			Ctrl->SetFocus();
+	}
+}
+
+void cUIManager::SendMouseClick( cUIControl * ToCtrl, const eeVector2i& Pos, const Uint32 Flags ) {
+	SendMsg( ToCtrl, cUIMessage::MsgClick, Flags );
+	ToCtrl->OnMouseClick( Pos, Flags );
+}
+
+void cUIManager::SendMouseUp( cUIControl * ToCtrl, const eeVector2i& Pos, const Uint32 Flags ) {
+	SendMsg( ToCtrl, cUIMessage::MsgMouseUp, Flags );
+	ToCtrl->OnMouseUp( Pos, Flags );
+}
+
+void cUIManager::SendMouseDown( cUIControl * ToCtrl, const eeVector2i& Pos, const Uint32 Flags ) {
+	SendMsg( ToCtrl, cUIMessage::MsgMouseDown, Flags );
+	ToCtrl->OnMouseDown( Pos, Flags );
 }
 
 }}

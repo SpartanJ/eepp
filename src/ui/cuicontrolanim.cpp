@@ -34,6 +34,12 @@ void cUIControlAnim::Draw() {
 
 		if ( NULL != mSkinState )
 			mSkinState->Draw( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), (Uint32)mAlpha );
+
+		if ( cUIManager::instance()->HighlightFocus() && cUIManager::instance()->FocusControl() == this ) {
+			cPrimitives P;
+			P.SetColor( cUIManager::instance()->HighlightColor() );
+			P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_LINE, mBlend, 1, 0 );
+		}
 	}
 }
 

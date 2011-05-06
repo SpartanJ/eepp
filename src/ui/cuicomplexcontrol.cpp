@@ -20,7 +20,9 @@ cUIComplexControl::~cUIComplexControl() {
 }
 
 void cUIComplexControl::CalcDistToBorder() {
-	mDistToBorder	= eeVector2i( mParentCtrl->Size().x - ( mPos.x + mSize.x ), mParentCtrl->Size().y - ( mPos.y + mSize.y ) );
+	if ( NULL != mParentCtrl ) {
+		mDistToBorder	= eeVector2i( mParentCtrl->Size().x - ( mPos.x + mSize.x ), mParentCtrl->Size().y - ( mPos.y + mSize.y ) );
+	}
 }
 
 void cUIComplexControl::Update() {
@@ -134,10 +136,12 @@ void cUIComplexControl::OnParentSizeChange() {
 	}
 
 	if ( mFlags & UI_ANCHOR_RIGHT ) {
-		newSize.x = mParentCtrl->Size().Width() - mPos.x - mDistToBorder.x;
+		if ( NULL != mParentCtrl ) {
+			newSize.x = mParentCtrl->Size().Width() - mPos.x - mDistToBorder.x;
 
-		if ( newSize.x < mMinControlSize.Width() )
-			newSize.y = mMinControlSize.Width();
+			if ( newSize.x < mMinControlSize.Width() )
+				newSize.y = mMinControlSize.Width();
+		}
 	}
 
 	if ( mFlags & UI_ANCHOR_TOP ) {
@@ -145,10 +149,12 @@ void cUIComplexControl::OnParentSizeChange() {
 	}
 
 	if ( mFlags & UI_ANCHOR_BOTTOM ) {
-		newSize.y = Parent()->Size().y - mPos.y - mDistToBorder.y;
+		if ( NULL != mParentCtrl ) {
+			newSize.y = mParentCtrl->Size().y - mPos.y - mDistToBorder.y;
 
-		if ( newSize.y < mMinControlSize.Height() )
-			newSize.y = mMinControlSize.Height();
+			if ( newSize.y < mMinControlSize.Height() )
+				newSize.y = mMinControlSize.Height();
+		}
 	}
 
 	Size( newSize );

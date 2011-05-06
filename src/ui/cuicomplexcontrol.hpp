@@ -16,6 +16,21 @@ class EE_API cUIComplexControl : public cUIControlAnim {
 				{
 				}
 
+				inline CreateParams(
+					cUIControl * parentCtrl,
+					const eeVector2i& pos = eeVector2i( 0, 0 ),
+					const eeSize& size = eeSize( -1, -1 ),
+					const Uint32& flags = UI_HALIGN_LEFT | UI_VALIGN_CENTER,
+					const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL,
+					const cUIBackground& Back = cUIBackground(),
+					const cUIBorder& Bord = cUIBorder(),
+					const eeSize& MinCtrlSize = eeSize(0,0)
+				) :
+					cUIControlAnim::CreateParams( parentCtrl, pos, size, flags, blend, Back, Bord ),
+					MinControlSize( MinCtrlSize )
+				{
+				}
+
 				inline ~CreateParams() {}
 
 				String	TooltipText;

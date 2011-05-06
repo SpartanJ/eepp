@@ -280,7 +280,7 @@ Uint32 cUISlider::OnKeyDown( const cUIEventKey &Event ) {
 		}
 	}
 
-	return 1;
+	return cUIComplexControl::OnKeyDown( Event );
 }
 
 void cUISlider::ManageClick( const Uint32& Flags ) {

@@ -35,13 +35,9 @@ void cInputSDL::Update() {
 				switch ( SDLEvent.window.event ) {
 					case SDL_WINDOWEVENT_RESIZED:
 					{
-						if ( mWindow->Windowed() ) {
-							EEEvent.Type = InputEvent::VideoResize;
-							EEEvent.resize.w = SDLEvent.window.data1;
-							EEEvent.resize.h = SDLEvent.window.data2;
-						} else {
-							EEEvent.Type = InputEvent::NoEvent;
-						}
+						EEEvent.Type = InputEvent::VideoResize;
+						EEEvent.resize.w = SDLEvent.window.data1;
+						EEEvent.resize.h = SDLEvent.window.data2;
 						break;
 					}
 					case SDL_WINDOWEVENT_EXPOSED:

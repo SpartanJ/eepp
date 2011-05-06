@@ -194,8 +194,6 @@ cUIControlAnim * cUIRadioButton::InactiveButton() const {
 }
 
 Uint32 cUIRadioButton::OnKeyDown( const cUIEventKey& Event ) {
-	cUITextBox::OnKeyDown( Event );
-
 	if ( Event.KeyCode() == KEY_SPACE ) {
 		if ( eeGetTicks() - mLastTick > 250 ) {
 			mLastTick = eeGetTicks();
@@ -204,7 +202,7 @@ Uint32 cUIRadioButton::OnKeyDown( const cUIEventKey& Event ) {
 		}
 	}
 
-	return 1;
+	return cUITextBox::OnKeyDown( Event );
 }
 
 void cUIRadioButton::OnAlphaChange() {

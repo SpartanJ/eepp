@@ -6,6 +6,7 @@ namespace EE { namespace UI {
 cUIWindow::cUIWindow( const cUIWindow::CreateParams& Params ) :
 	cUIComplexControl( Params ),
 	mWinFlags( Params.WinFlags ),
+	mWindowDecoration( NULL ),
 	mButtonClose( NULL ),
 	mButtonMinimize( NULL ),
 	mButtonMaximize( NULL ),
@@ -16,6 +17,7 @@ cUIWindow::cUIWindow( const cUIWindow::CreateParams& Params ) :
 	mButtonsPositionFixer( Params.ButtonsPositionFixer ),
 	mButtonsSeparation( Params.ButtonsSeparation ),
 	mMinCornerDistance( Params.MinCornerDistance ),
+	mResizeType( RESIZE_NONE ),
 	mTitleFontColor( Params.TitleFontColor ),
 	mBaseAlpha( Params.BaseAlpha ),
 	mDecoAutoSize( Params.DecorationAutoSize ),
@@ -26,22 +28,6 @@ cUIWindow::cUIWindow( const cUIWindow::CreateParams& Params ) :
 	cUIControlAnim::CreateParams tParams;
 	tParams.Parent( this );
 
-	mWindowDecoration = eeNew( cUIControlAnim, ( tParams ) );
-	mWindowDecoration->Visible( true );
-	mWindowDecoration->Enabled( false );
-
-	mBorderLeft		= eeNew( cUIControlAnim, ( tParams ) );
-	mBorderLeft->Enabled( true );
-	mBorderLeft->Visible( true );
-
-	mBorderRight	= eeNew( cUIControlAnim, ( tParams ) );
-	mBorderRight->Enabled( true );
-	mBorderRight->Visible( true );
-
-	mBorderBottom	= eeNew( cUIControlAnim, ( tParams ) );
-	mBorderBottom->Enabled( true );
-	mBorderBottom->Visible( true );
-
 	cUIComplexControl::CreateParams tcParams;
 	tcParams.Parent( this );
 	tcParams.Flags |= UI_REPORT_SIZE_CHANGE_TO_CHILDS;
@@ -51,45 +37,63 @@ cUIWindow::cUIWindow( const cUIWindow::CreateParams& Params ) :
 	mContainer->Visible( true );
 	mContainer->AddEventListener( cUIEvent::EventOnPosChange, cb::Make1( this, &cUIWindow::ContainerPosChange ) );
 
-	if ( mWinFlags & UI_WIN_DRAGABLE_CONTAINER )
-		mContainer->DragEnable( true );
+	if ( !( mWinFlags & UI_WIN_NO_BORDER ) ) {
+		mWindowDecoration = eeNew( cUIControlAnim, ( tParams ) );
+		mWindowDecoration->Visible( true );
+		mWindowDecoration->Enabled( false );
 
-	cUIComplexControl::CreateParams ButtonParams;
-	ButtonParams.Parent( this );
+		mBorderLeft		= eeNew( cUIControlAnim, ( tParams ) );
+		mBorderLeft->Enabled( true );
+		mBorderLeft->Visible( true );
 
-	if ( mWinFlags & UI_WIN_CLOSE_BUTTON ) {
-		mButtonClose = eeNew( cUIComplexControl, ( ButtonParams ) );
-		mButtonClose->Visible( true );
-		mButtonClose->Enabled( true );
+		mBorderRight	= eeNew( cUIControlAnim, ( tParams ) );
+		mBorderRight->Enabled( true );
+		mBorderRight->Visible( true );
 
-		if ( mWinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
-			mButtonClose->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cUIWindow::ButtonCloseClick ) );
+		mBorderBottom	= eeNew( cUIControlAnim, ( tParams ) );
+		mBorderBottom->Enabled( true );
+		mBorderBottom->Visible( true );
+
+		if ( mWinFlags & UI_WIN_DRAGABLE_CONTAINER )
+			mContainer->DragEnable( true );
+
+		cUIComplexControl::CreateParams ButtonParams;
+		ButtonParams.Parent( this );
+
+		if ( mWinFlags & UI_WIN_CLOSE_BUTTON ) {
+			mButtonClose = eeNew( cUIComplexControl, ( ButtonParams ) );
+			mButtonClose->Visible( true );
+			mButtonClose->Enabled( true );
+
+			if ( mWinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
+				mButtonClose->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cUIWindow::ButtonCloseClick ) );
+			}
 		}
-	}
 
-	if ( ( mWinFlags & UI_WIN_RESIZEABLE ) && ( mWinFlags & UI_WIN_MAXIMIZE_BUTTON ) ) {
-		mButtonMaximize = eeNew( cUIComplexControl, ( ButtonParams ) );
-		mButtonMaximize->Visible( true );
-		mButtonMaximize->Enabled( true );
+		if ( ( mWinFlags & UI_WIN_RESIZEABLE ) && ( mWinFlags & UI_WIN_MAXIMIZE_BUTTON ) ) {
+			mButtonMaximize = eeNew( cUIComplexControl, ( ButtonParams ) );
+			mButtonMaximize->Visible( true );
+			mButtonMaximize->Enabled( true );
 
-		if ( mWinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
-			mButtonMaximize->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cUIWindow::ButtonMaximizeClick ) );
+			if ( mWinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
+				mButtonMaximize->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cUIWindow::ButtonMaximizeClick ) );
+			}
 		}
-	}
 
-	if ( mWinFlags & UI_WIN_MINIMIZE_BUTTON ) {
-		mButtonMinimize = eeNew( cUIComplexControl, ( ButtonParams ) );
-		mButtonMinimize->Visible( true );
-		mButtonMinimize->Enabled( true );
+		if ( mWinFlags & UI_WIN_MINIMIZE_BUTTON ) {
+			mButtonMinimize = eeNew( cUIComplexControl, ( ButtonParams ) );
+			mButtonMinimize->Visible( true );
+			mButtonMinimize->Enabled( true );
 
-		if ( mWinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
-			mButtonMinimize->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cUIWindow::ButtonMinimizeClick ) );
+			if ( mWinFlags & UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS ) {
+				mButtonMinimize->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cUIWindow::ButtonMinimizeClick ) );
+			}
 		}
+
+		DragEnable( true );
 	}
 
 	Alpha( mBaseAlpha );
-
-	DragEnable( true );
 
 	ApplyDefaultTheme();
 }
@@ -146,32 +150,37 @@ void cUIWindow::ButtonMinimizeClick( const cUIEvent * Event ) {
 void cUIWindow::SetTheme( cUITheme *Theme ) {
 	cUIComplexControl::SetTheme( Theme );
 
-	mContainer->ForceThemeSkin			( Theme, "winback"			);
-	mWindowDecoration->ForceThemeSkin	( Theme, "windeco"			);
-	mBorderLeft->ForceThemeSkin			( Theme, "winborderleft"	);
-	mBorderRight->ForceThemeSkin		( Theme, "winborderright"	);
-	mBorderBottom->ForceThemeSkin		( Theme, "winborderbottom"	);
+	if ( !( mWinFlags & UI_WIN_NO_BORDER ) ) {
+		mContainer->ForceThemeSkin			( Theme, "winback"			);
+		mWindowDecoration->ForceThemeSkin	( Theme, "windeco"			);
+		mBorderLeft->ForceThemeSkin			( Theme, "winborderleft"	);
+		mBorderRight->ForceThemeSkin		( Theme, "winborderright"	);
+		mBorderBottom->ForceThemeSkin		( Theme, "winborderbottom"	);
 
-	if ( NULL != mButtonClose ) {
-		mButtonClose->ForceThemeSkin( Theme, "winclose" );
-		mButtonClose->Size( mButtonClose->GetSkinShapeSize() );
+		if ( NULL != mButtonClose ) {
+			mButtonClose->ForceThemeSkin( Theme, "winclose" );
+			mButtonClose->Size( mButtonClose->GetSkinShapeSize() );
+		}
+
+		if ( NULL != mButtonMaximize ) {
+			mButtonMaximize->ForceThemeSkin( Theme, "winmax" );
+			mButtonMaximize->Size( mButtonMaximize->GetSkinShapeSize() );
+		}
+
+		if ( NULL != mButtonMinimize ) {
+			mButtonMinimize->ForceThemeSkin( Theme, "winmin" );
+			mButtonMinimize->Size( mButtonMinimize->GetSkinShapeSize() );
+		}
+
+		FixChildsSize();
+		GetMinWinSize();
 	}
-
-	if ( NULL != mButtonMaximize ) {
-		mButtonMaximize->ForceThemeSkin( Theme, "winmax" );
-		mButtonMaximize->Size( mButtonMaximize->GetSkinShapeSize() );
-	}
-
-	if ( NULL != mButtonMinimize ) {
-		mButtonMinimize->ForceThemeSkin( Theme, "winmin" );
-		mButtonMinimize->Size( mButtonMinimize->GetSkinShapeSize() );
-	}
-
-	FixChildsSize();
-	GetMinWinSize();
 }
 
 void cUIWindow::GetMinWinSize() {
+	if ( NULL == mWindowDecoration )
+		return;
+
 	eeSize tSize;
 
 	tSize.x = mBorderLeft->Size().Width() + mBorderRight->Size().Width() - mButtonsPositionFixer.x;
@@ -210,15 +219,30 @@ void cUIWindow::OnSizeChange() {
 }
 
 void cUIWindow::Size( const eeSize& Size ) {
-	eeSize size = Size;
+	if ( NULL != mWindowDecoration ) {
+		eeSize size = Size;
 
-	size.x += mBorderLeft->Size().Width() + mBorderRight->Size().Width();
-	size.y += mWindowDecoration->Size().Height() + mBorderBottom->Size().Height();
+		size.x += mBorderLeft->Size().Width() + mBorderRight->Size().Width();
+		size.y += mWindowDecoration->Size().Height() + mBorderBottom->Size().Height();
 
-	cUIComplexControl::Size( size );
+		cUIComplexControl::Size( size );
+	} else {
+		cUIComplexControl::Size( Size );
+	}
+}
+
+void cUIWindow::Size( const Int32& Width, const Int32& Height ) {
+	Size( eeSize( Width, Height ) );
+}
+
+const eeSize& cUIWindow::Size() {
+	return cUIComplexControl::Size();
 }
 
 void cUIWindow::FixChildsSize() {
+	if ( NULL == mWindowDecoration )
+		return;
+
 	if ( mDecoAutoSize ) {
 		mDecoSize = eeSize( mSize.Width(), mWindowDecoration->GetSkinShapeSize().Height() );
 	}
@@ -301,6 +325,9 @@ Uint32 cUIWindow::OnMessage( const cUIMessage * Msg ) {
 }
 
 void cUIWindow::DoResize ( const cUIMessage * Msg ) {
+	if ( NULL == mWindowDecoration )
+		return;
+
 	if (	!( mWinFlags & UI_WIN_RESIZEABLE ) ||
 			!( Msg->Flags() & EE_BUTTON_LMASK ) ||
 			RESIZE_NONE != mResizeType ||
@@ -646,6 +673,53 @@ Uint32 cUIWindow::OnMouseDoubleClick( const eeVector2i &Pos, Uint32 Flags ) {
 	}
 
 	return 1;
+}
+
+Uint32 cUIWindow::OnKeyDown( const cUIEventKey &Event ) {
+	CheckShortcuts( Event.KeyCode(), Event.Mod() );
+
+	return cUIComplexControl::OnKeyDown( Event );
+}
+
+void cUIWindow::CheckShortcuts( const Uint32& KeyCode, const Uint32& Mod ) {
+	for ( KeyboardShortcuts::iterator it = mKbShortcuts.begin(); it != mKbShortcuts.end(); it++ ) {
+		KeyboardShortcut kb = (*it);
+
+		if ( KeyCode == kb.KeyCode && ( Mod & kb.Mod ) ) {
+			cUIManager::instance()->SendMouseClick( kb.Button, eeVector2i(0,0), EE_BUTTON_LMASK );
+		}
+	}
+}
+
+cUIWindow::KeyboardShortcuts::iterator cUIWindow::ExistsShortcut( const Uint32& KeyCode, const Uint32& Mod ) {
+	for ( KeyboardShortcuts::iterator it = mKbShortcuts.begin(); it != mKbShortcuts.end(); it++ ) {
+		if ( (*it).KeyCode == KeyCode && (*it).Mod == Mod )
+			return it;
+	}
+
+	return mKbShortcuts.end();
+}
+
+bool cUIWindow::AddShortcut( const Uint32& KeyCode, const Uint32& Mod, cUIPushButton * Button ) {
+	if ( InParentTreeOf( Button ) && mKbShortcuts.end() == ExistsShortcut( KeyCode, Mod ) ) {
+		mKbShortcuts.push_back( KeyboardShortcut( KeyCode, Mod, Button ) );
+
+		return true;
+	}
+
+	return false;
+}
+
+bool cUIWindow::RemoveShortcut( const Uint32& KeyCode, const Uint32& Mod ) {
+	KeyboardShortcuts::iterator it = ExistsShortcut( KeyCode, Mod );
+
+	if ( mKbShortcuts.end() != it ) {
+		mKbShortcuts.erase( it );
+
+		return true;
+	}
+
+	return false;
 }
 
 }}

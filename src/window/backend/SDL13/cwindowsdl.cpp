@@ -242,6 +242,8 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 
 		if ( this->Windowed() && !Windowed ) {
 			mWinPos = Position();
+		} else {
+			SDL_SetWindowFullscreen( mSDLWindow, Windowed ? SDL_FALSE : SDL_TRUE );
 		}
 
 		SDL_SetWindowSize( mSDLWindow, Width, Height );
@@ -280,6 +282,9 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 		SendVideoResizeCb();
 
 		mCursorManager->Reload();
+
+		SDL_PumpEvents();
+		SDL_FlushEvent( SDL_WINDOWEVENT );
 	} catch (...) {
 		cLog::instance()->Write( "Unable to change resolution: " + std::string( SDL_GetError() ) );
 		cLog::instance()->Save();

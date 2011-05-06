@@ -224,6 +224,8 @@ class EE_API cUIControl {
 		void SendCommonEvent( const Uint32& Event );
 
 		eeSize GetSkinShapeSize();
+
+		cUIControl * NextComplexControl();
 	protected:
 		friend class cUIManager;
 
@@ -326,6 +328,8 @@ class EE_API cUIControl {
 		void ChildRemove( cUIControl * ChildCtrl );
 
 		bool IsChild( cUIControl * ChildCtrl ) const;
+
+		bool InParentTreeOf( cUIControl * Child ) const;
 
 		Uint32 ChildCount() const;
 

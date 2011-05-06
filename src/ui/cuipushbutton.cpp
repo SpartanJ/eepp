@@ -178,4 +178,24 @@ void cUIPushButton::OnStateChange() {
 	mTextBox->Alpha( mAlpha );
 }
 
+Uint32 cUIPushButton::OnKeyDown( const cUIEventKey& Event ) {
+	if ( Event.KeyCode() == KEY_RETURN ) {
+		cUIMessage Msg( this, cUIMessage::MsgClick, EE_BUTTON_LMASK );
+		MessagePost( &Msg );
+		OnMouseClick( eeVector2i(0,0), EE_BUTTON_LMASK );
+
+		SetSkinState( cUISkinState::StateMouseDown );
+	}
+
+	return cUIComplexControl::OnKeyDown( Event );
+}
+
+Uint32 cUIPushButton::OnKeyUp( const cUIEventKey& Event ) {
+	if ( Event.KeyCode() == KEY_RETURN ) {
+		SetPrevSkinState();
+	}
+
+	return cUIComplexControl::OnKeyUp( Event );
+}
+
 }}

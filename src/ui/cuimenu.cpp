@@ -526,7 +526,7 @@ Uint32 cUIMenu::OnKeyDown( const cUIEventKey& Event ) {
 		}
 	}
 
-	return 1;
+	return cUIComplexControl::OnKeyDown( Event );
 }
 
 const eeRecti& cUIMenu::Padding() const {

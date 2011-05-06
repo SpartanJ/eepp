@@ -91,6 +91,10 @@ class EE_API cUIPushButton : public cUIComplexControl {
 		virtual void OnStateChange();
 
 		void DoAfterSetTheme();
+
+		virtual Uint32 OnKeyDown( const cUIEventKey& Event );
+
+		virtual Uint32 OnKeyUp( const cUIEventKey& Event );
 };
 
 }}

@@ -91,7 +91,7 @@ std::vector<cShape*> cShapeGroupManager::GetShapesByPattern( const std::string& 
 			}
 		}
 
-		// in case that name doesn't start with 0 - 1, we test with 000 - 001
+		// in case that name doesn't start with 00 - 01, we test with 000 - 001
 		if ( 0 == t ) {
 			for ( i = 0; i < 2; i++ ) {
 				search = StrFormated( "%s%03d%s", name.c_str(), i, realext.c_str() );

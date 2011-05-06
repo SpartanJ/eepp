@@ -149,7 +149,7 @@ void cUIDropDownList::Update() {
 Uint32 cUIDropDownList::OnKeyDown( const cUIEventKey &Event ) {
 	mListBox->OnKeyDown( Event );
 
-	return 1;
+	return cUITextInput::OnKeyDown( Event );
 }
 
 }}
