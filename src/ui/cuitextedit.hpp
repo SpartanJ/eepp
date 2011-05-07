@@ -60,7 +60,7 @@ class EE_API cUITextEdit : public cUIComplexControl {
 
 		virtual void OnAlphaChange();
 
-		virtual void OnParentSizeChange();
+		virtual void OnParentSizeChange( const eeVector2i& SizeChange );
 
 		void OnVScrollValueChange( const cUIEvent * Event );
 

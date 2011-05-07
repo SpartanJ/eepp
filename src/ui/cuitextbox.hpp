@@ -81,6 +81,7 @@ class EE_API cUITextBox : public cUIComplexControl {
 		virtual void ShrinkText( const Uint32& MaxWidth );
 	protected:
 		cTextCache *	mTextCache;
+		String			mString;
 		eeColorA 		mFontColor;
 		eeColorA 		mFontShadowColor;
 		eeVector2f 		mAlignOffset;

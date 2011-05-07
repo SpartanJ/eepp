@@ -548,6 +548,15 @@ void cEETest::CreateUI() {
 
 	//mUIWindow->Show();
 
+	cUICommonDialog::CreateParams CDParams;
+	CDParams.Flags = UI_HALIGN_CENTER;
+	CDParams.WinFlags |= cUIWindow::UI_WIN_MAXIMIZE_BUTTON;
+	CDParams.Size = eeSize( 420, 267 );
+	cUICommonDialog * CDialog = eeNew( cUICommonDialog, ( CDParams ) );
+	CDialog->AddFilePattern( "*.hpp;*.cpp", true );
+	CDialog->Center();
+	CDialog->Show();
+
 	Log->Writef( "CreateUI time: %f", TE.ElapsedSinceStart() );
 }
 
@@ -595,11 +604,7 @@ void cEETest::CreateDecoratedWindow() {
 	WinParams.WinFlags |= cUIWindow::UI_WIN_MAXIMIZE_BUTTON;
 	WinParams.PosSet( 200, 50 );
 	WinParams.Size = eeSize( 530, 400 );
-	WinParams.ButtonsPositionFixer.x = -4;
-	WinParams.ButtonsPositionFixer.y = -2;
-	//WinParams.BaseAlpha = 200;
-	//WinParams.BorderAutoSize = false;
-	//WinParams.BorderSize = eeSize( 8, 8 );
+	WinParams.MinWindowSize = eeSize( 100, 200 );
 
 	mUIWindow = eeNew( cUIWindow, ( WinParams ) );
 	mUIWindow->AddEventListener( cUIEvent::EventOnWindowCloseClick, cb::Make1( this, &cEETest::CloseClick ) );
@@ -608,7 +613,7 @@ void cEETest::CreateDecoratedWindow() {
 
 	cUIPushButton::CreateParams ButtonParams;
 	ButtonParams.Parent( mUIWindow->Container() );
-	ButtonParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_ANCHOR_RIGHT;
+	ButtonParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_LEFT | UI_ANCHOR_TOP;
 	ButtonParams.PosSet( 10, 28 );
 	ButtonParams.Size = eeSize( 510, 22 );
 
@@ -618,17 +623,17 @@ void cEETest::CreateDecoratedWindow() {
 	Button->Text( "Click Me" );
 	Button->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::ButtonClick ) );
 
+	mUIWindow->AddShortcut( KEY_C, KEYMOD_ALT, Button );
+
 	cUITextEdit::CreateParams TEParams;
 	TEParams.Parent( mUIWindow->Container() );
 	TEParams.PosSet( 10, 55 );
 	TEParams.Size	= eeSize( 510, 300 );
-	TEParams.Flags = UI_AUTO_PADDING | UI_CLIP_ENABLE | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM;
+	TEParams.Flags = UI_AUTO_PADDING | UI_CLIP_ENABLE | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_TOP;
 	cUITextEdit * TextEdit = eeNew( cUITextEdit, ( TEParams ) );
 	TextEdit->Visible( true );
 	TextEdit->Enabled( true );
 	TextEdit->Text( mBuda );
-
-	mUIWindow->AddShortcut( KEY_C, KEYMOD_ALT, Button );
 
 	CreateWinMenu();
 }
@@ -1651,8 +1656,6 @@ cpBool cEETest::catcherBarBegin(cArbiter *arb, Physics::cSpace *space, void *unu
 	return cpFalse;
 }
 
-static cpFloat frand_unit(){return 2.0f*((cpFloat)rand()/(cpFloat)RAND_MAX) - 1.0f;}
-
 void cEETest::Demo2Create() {
 	mMouseJoint	= NULL;
 	mMouseBody	= eeNew( cBody, ( INFINITY, INFINITY ) );
@@ -1702,7 +1705,7 @@ void cEETest::Demo2Update() {
 
 		cBody * body = mSpace->AddBody( cBody::New( 1.0f, Moment::ForCircle(1.0f, 15.0f, 0.0f, cVectZero ) ) );
 		body->Pos( emitterInstance.position );
-		body->Vel( cVectNew( frand_unit(), frand_unit() ) * (cpFloat)100 );
+		body->Vel( cVectNew( eeRandf(-1,1), eeRandf(-1,1) ) * (cpFloat)100 );
 
 		Physics::cShape *shape = mSpace->AddShape( cShapeCircle::New( body, 15.0f, cVectZero ) );
 		shape->CollisionType( BALL_TYPE );

@@ -105,6 +105,11 @@ void cUIDropDownList::OnItemClicked( const cUIEvent * Event ) {
 
 void cUIDropDownList::OnItemSelected( const cUIEvent * Event ) {
 	Text( mListBox->GetItemSelectedText() );
+
+	cUIMessage Msg( this, cUIMessage::MsgSelected, mListBox->GetItemSelectedIndex() );
+	MessagePost( &Msg );
+
+	SendCommonEvent( cUIEvent::EventOnItemSelected );
 }
 
 void cUIDropDownList::Show() {

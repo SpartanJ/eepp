@@ -102,8 +102,8 @@ void cUITextEdit::OnSizeChange() {
 	FixScroll();
 }
 
-void cUITextEdit::OnParentSizeChange() {
-	cUIComplexControl::OnParentSizeChange();
+void cUITextEdit::OnParentSizeChange( const eeVector2i& SizeChange ) {
+	cUIComplexControl::OnParentSizeChange( SizeChange );
 
 	OnInputSizeChange( NULL );
 }

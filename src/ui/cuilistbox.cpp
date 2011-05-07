@@ -136,10 +136,6 @@ Uint32 cUIListBox::AddListBoxItem( cUIListBoxItem * Item ) {
 	return (Uint32)(mItems.size() - 1);
 }
 
-Uint32 cUIListBox::AddListBoxItem( const std::string& Text ) {
-	return AddListBoxItem( String( Text ) );
-}
-
 Uint32 cUIListBox::AddListBoxItem( const String& Text ) {
 	mTexts.push_back( Text );
 	mItems.push_back( NULL );
@@ -220,6 +216,17 @@ void cUIListBox::RemoveListBoxItems( std::vector<Uint32> ItemsIndex ) {
 		FindMaxWidth();
 		UpdateListBoxItemsSize();
 	}
+}
+
+void cUIListBox::Clear() {
+	mTexts.clear();
+	mItems.clear();
+	mSelected.clear();
+	mVScrollBar->Value(0);
+
+	UpdateScroll();
+	FindMaxWidth();
+	UpdateListBoxItemsSize();
 }
 
 Uint32 cUIListBox::RemoveListBoxItem( Uint32 ItemIndex ) {
@@ -561,6 +568,9 @@ void cUIListBox::ItemClicked( cUIListBoxItem * Item ) {
 }
 
 Uint32 cUIListBox::OnSelected() {
+	cUIMessage tMsg( this, cUIMessage::MsgSelected, 0 );
+	MessagePost( &tMsg );
+
 	SendCommonEvent( cUIEvent::EventOnSelected );
 
 	return 1;

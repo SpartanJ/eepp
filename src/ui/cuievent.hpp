@@ -38,11 +38,13 @@ class EE_API cUIEvent {
 			EventOnHideByClick,
 			EventOnItemKeyDown,
 			EventOnItemKeyUp,
+			EventOnItemSelected,
 			EventOnCursorPosChange,
 			EventOnParentSizeChange,
 			EventOnWindowCloseClick,
 			EventOnWindowMaximizeClick,
 			EventOnWindowMinimizeClick,
+			EventOpenFile,
 			EventUser,
 			EventForceDWord = 0xFFFFFFFF
 		};

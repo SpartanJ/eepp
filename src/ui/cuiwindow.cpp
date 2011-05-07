@@ -178,7 +178,7 @@ void cUIWindow::SetTheme( cUITheme *Theme ) {
 }
 
 void cUIWindow::GetMinWinSize() {
-	if ( NULL == mWindowDecoration )
+	if ( NULL == mWindowDecoration || ( mMinWindowSize.x != 0 && mMinWindowSize.y != 0 ) )
 		return;
 
 	eeSize tSize;

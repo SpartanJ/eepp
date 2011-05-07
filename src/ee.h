@@ -194,6 +194,7 @@
 	#include "ui/cuiwindow.hpp"
 	#include "ui/cuiselectbutton.hpp"
 	#include "ui/cuiwinmenu.hpp"
+	#include "ui/cuicommondialog.hpp"
 	using namespace EE::UI;
 
 	#include "physics/cphysicsmanager.hpp"

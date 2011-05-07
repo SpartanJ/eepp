@@ -39,7 +39,7 @@ class EE_API cUIComplexControl : public cUIControlAnim {
 
 		cUIComplexControl( const cUIComplexControl::CreateParams& Params );
 
-		~cUIComplexControl();
+		virtual ~cUIComplexControl();
 
 		virtual void Update();
 
@@ -59,11 +59,11 @@ class EE_API cUIComplexControl : public cUIControlAnim {
 	protected:
 		cUITooltip *	mTooltip;
 		eeSize			mMinControlSize;
-		eeVector2i		mDistToBorder;
+		eeRecti			mDistToBorder;
 
 		void CreateTooltip();
 
-		virtual void OnParentSizeChange();
+		virtual void OnParentSizeChange( const eeVector2i& SizeChange );
 
 		void CalcDistToBorder();
 };

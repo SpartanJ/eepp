@@ -69,11 +69,20 @@ void cUITextBox::Font( cFont * font ) {
 }
 
 const String& cUITextBox::Text() {
+	if ( mFlags & UI_AUTO_SHRINK_TEXT )
+		return mString;
+
 	return mTextCache->Text();
 }
 
 void cUITextBox::Text( const String& text ) {
-	mTextCache->Text( text );
+	if ( mFlags & UI_AUTO_SHRINK_TEXT ) {
+		mString = text;
+		mTextCache->Text( mString );
+	} else {
+		mTextCache->Text( text );
+	}
+
 	AutoShrink();
 	AutoSize();
 	AutoAlign();
@@ -114,6 +123,10 @@ void cUITextBox::AutoShrink() {
 }
 
 void cUITextBox::ShrinkText( const Uint32& MaxWidth ) {
+	if ( mFlags & UI_AUTO_SHRINK_TEXT ) {
+		mTextCache->Text( mString );
+	}
+
 	mTextCache->Font()->ShrinkText( mTextCache->Text(), MaxWidth );
 }
 

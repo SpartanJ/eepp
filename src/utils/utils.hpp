@@ -93,6 +93,9 @@ namespace EE { namespace Utils {
 	/** If the directory path not end with a slash, it will add it. */
 	void EE_API DirPathAddSlashAtEnd( std::string& path );
 
+	/** Move up from directory tree */
+	std::string RemoveLastFolderFromPath( std::string path );
+
 	/** @return The default slash path code of the current OS */
 	std::string EE_API GetOSlash();
 

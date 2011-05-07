@@ -132,9 +132,15 @@ const eeVector2i& cUIControl::Pos() const {
 
 void cUIControl::Size( const eeSize& Size ) {
 	if ( Size != mSize ) {
+		eeVector2i sizeChange( Size.x - mSize.x, Size.y - mSize.y );
+
 		mSize = Size;
 
 		OnSizeChange();
+
+		if ( mFlags & UI_REPORT_SIZE_CHANGE_TO_CHILDS ) {
+			SendParentSizeChange( sizeChange );
+		}
 	}
 }
 
@@ -477,8 +483,6 @@ void cUIControl::OnPosChange() {
 
 void cUIControl::OnSizeChange() {
 	SendCommonEvent( cUIEvent::EventOnSizeChange );
-
-	SendParentSizeChange();
 }
 
 void cUIControl::BackgroundDraw() {
@@ -1030,18 +1034,18 @@ void cUIControl::SetFocus() {
 	cUIManager::instance()->FocusControl( this );
 }
 
-void cUIControl::SendParentSizeChange() {
+void cUIControl::SendParentSizeChange( const eeVector2i& SizeChange ) {
 	if ( mFlags & UI_REPORT_SIZE_CHANGE_TO_CHILDS )	{
 		cUIControl * ChildLoop = mChild;
 
 		while( NULL != ChildLoop ) {
-			ChildLoop->OnParentSizeChange();
+			ChildLoop->OnParentSizeChange( SizeChange );
 			ChildLoop = ChildLoop->mNext;
 		}
 	}
 }
 
-void cUIControl::OnParentSizeChange( ) {
+void cUIControl::OnParentSizeChange( const eeVector2i& SizeChange ) {
 	SendCommonEvent( cUIEvent::EventOnParentSizeChange );
 }
 

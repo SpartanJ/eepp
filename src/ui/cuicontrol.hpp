@@ -49,7 +49,7 @@ class EE_API cUIControl {
 					ParentCtrl		= NULL;
 					Pos				= eeVector2i( 0, 0 );
 					Size			= eeSize( -1, -1 );
-					Flags			= UI_HALIGN_LEFT | UI_VALIGN_CENTER;
+					Flags			= UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_HALIGN_LEFT | UI_VALIGN_CENTER;
 					Blend			= ALPHA_NORMAL;
 				}
 
@@ -293,7 +293,7 @@ class EE_API cUIControl {
 
 		virtual void OnSizeChange();
 
-		virtual void OnParentSizeChange();
+		virtual void OnParentSizeChange( const eeVector2i& SizeChange );
 
 		virtual void OnStateChange();
 		
@@ -355,7 +355,7 @@ class EE_API cUIControl {
 
 		void ApplyDefaultTheme();
 
-		void SendParentSizeChange();
+		void SendParentSizeChange( const eeVector2i& SizeChange );
 
 		eeFloat Elapsed();
 

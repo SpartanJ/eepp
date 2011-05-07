@@ -801,7 +801,7 @@ std::string SaveTypeToExtension( const Uint32& Format ) {
 }
 
 void DirPathAddSlashAtEnd( std::string& path ) {
-	if ( path[ path.size() - 1 ] != '/' && path[ path.size() - 1 ] != '\\' )
+	if ( path.size() && path[ path.size() - 1 ] != '/' && path[ path.size() - 1 ] != '\\' )
 		path += GetOSlash();
 }
 
@@ -809,8 +809,30 @@ std::string GetOSlash() {
 	#if EE_PLATFORM == EE_PLATFORM_WIN
 		return std::string( "\\" );
 	#else
-    	return std::string( "/" );
+		return std::string( "/" );
 	#endif
+}
+
+std::string RemoveLastFolderFromPath( std::string path ) {
+	if ( path.size() > 1 && ( path[ path.size() - 1 ] == '/' || path[ path.size() - 1 ] == '\\' ) ) {
+		path.resize( path.size() - 1 );
+	}
+
+	std::size_t pos = path.find_last_of( GetOSlash() );
+
+	if ( std::string::npos != pos ) {
+		std::size_t pos2 = path.find_first_of( GetOSlash() );
+
+		if ( pos2 != pos ) {
+			return path.substr(0,pos) + GetOSlash();
+		} else {
+			if ( pos == pos2 ) {
+				return path.substr(0,pos2+1);
+			}
+		}
+	}
+
+	return path;
 }
 
 std::string SizeToString( const Uint32& MemSize ) {

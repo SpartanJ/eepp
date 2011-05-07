@@ -54,9 +54,9 @@ class EE_API cUIListBox : public cUIComplexControl {
 
 		virtual ~cUIListBox();
 
-		void AddListBoxItems( std::vector<String> Texts );
+		void Clear();
 
-		Uint32 AddListBoxItem( const std::string& Text );
+		void AddListBoxItems( std::vector<String> Texts );
 
 		Uint32 AddListBoxItem( const String& Text );
 
