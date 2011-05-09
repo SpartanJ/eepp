@@ -10,7 +10,7 @@ cUITextBox::cUITextBox( const cUITextBox::CreateParams& Params ) :
 	mFontShadowColor( Params.FontShadowColor ),
 	mAlignOffset( 0.f, 0.f )
 {
-	mType |= UI_TYPE_GET(UI_TYPE_TEXTBOX);
+	mType = UI_TYPE_TEXTBOX;
 
 	mTextCache = eeNew( cTextCache, () );
 	mTextCache->Font( Params.Font );
@@ -45,7 +45,7 @@ void cUITextBox::Draw() {
 				);
 			}
 
-			mTextCache->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x + (eeFloat)mPadding.Left, (eeFloat)mScreenPos.y + mAlignOffset.y + (eeFloat)mPadding.Top, Flags(), 1.f, 0.f, mBlend );
+			mTextCache->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x + (eeFloat)mPadding.Left, (eeFloat)mScreenPos.y + mAlignOffset.y + (eeFloat)mPadding.Top, Flags(), 1.f, 0.f, Blend() );
 
 			if ( mFlags & UI_CLIP_ENABLE ) {
 				cUIManager::instance()->ClipDisable();

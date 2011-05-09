@@ -9,7 +9,7 @@ cUIGfx::cUIGfx( const cUIGfx::CreateParams& Params ) :
 	mRender( Params.ShapeRender ),
 	mAlignOffset(0,0)
 {
-	mType |= UI_TYPE_GET(UI_TYPE_GFX);
+	mType = UI_TYPE_GFX;
 
 	if ( NULL != mShape && ( ( Flags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) )
 		Size( mShape->Size() );
@@ -43,7 +43,7 @@ void cUIGfx::Draw() {
 
 	if ( mVisible ) {
 		if ( NULL != mShape && 0.f != mAlpha )
-			mShape->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x, (eeFloat)mScreenPos.y + mAlignOffset.y, mColor, 0.f, 1.f, mBlend, mRender );
+			mShape->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x, (eeFloat)mScreenPos.y + mAlignOffset.y, mColor, 0.f, 1.f, Blend(), mRender );
 	}
 }
 

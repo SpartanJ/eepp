@@ -9,7 +9,7 @@ cUISpinBox::cUISpinBox( const cUISpinBox::CreateParams& Params ) :
 	mValue( Params.DefaultValue ),
 	mClickStep( 1.f )
 {
-	mType |= UI_TYPE_GET(UI_TYPE_SPINBOX);
+	mType = UI_TYPE_SPINBOX;
 
 	cUITextInput::CreateParams InputParams( Params );
 	InputParams.PosSet( 0, 0 );

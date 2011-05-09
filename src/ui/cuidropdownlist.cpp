@@ -9,7 +9,7 @@ cUIDropDownList::cUIDropDownList( cUIDropDownList::CreateParams& Params ) :
 	mMinNumVisibleItems( Params.MinNumVisibleItems ),
 	mPopUpToMainControl( Params.PopUpToMainControl )
 {
-	mType |= UI_TYPE_GET( UI_TYPE_DROPDOWNLIST );
+	mType = UI_TYPE_DROPDOWNLIST;
 
 	if ( NULL == mListBox ) {
 		cUIListBox::CreateParams LBParams;

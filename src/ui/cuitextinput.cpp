@@ -10,7 +10,7 @@ cUITextInput::cUITextInput( const cUITextInput::CreateParams& Params ) :
 	mAllowEditing( true ),
 	mShowingWait( true )
 {
-	mType |= UI_TYPE_GET(UI_TYPE_TEXTINPUT);
+	mType = UI_TYPE_TEXTINPUT;
 
 	mTextBuffer.Start();
 	mTextBuffer.Active( false );

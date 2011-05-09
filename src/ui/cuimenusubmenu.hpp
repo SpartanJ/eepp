@@ -37,6 +37,8 @@ class cUIMenuSubMenu : public cUIMenuItem {
 		cUIGfx * Arrow() const;
 
 		void ShowSubMenu();
+
+		virtual bool InheritsFrom( const Uint32 Type );
 	protected:
 		cUIMenu *	mSubMenu;
 		cUISkin *	mSkinArrow;

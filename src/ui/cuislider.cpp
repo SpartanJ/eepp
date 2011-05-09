@@ -16,7 +16,7 @@ cUISlider::cUISlider( const cUISlider::CreateParams& Params ) :
 	mClickStep( 0.1f ),
 	mOnPosChange( false )
 {
-	mType |= UI_TYPE_GET(UI_TYPE_SLIDER);
+	mType = UI_TYPE_SLIDER;
 
 	cUIControl::CreateParams BgParams;
 	BgParams.Parent( this );

@@ -6,7 +6,7 @@ namespace EE { namespace UI {
 cUIMenuItem::cUIMenuItem( cUIPushButton::CreateParams& Params ) : 
 	cUIPushButton( Params )
 {
-	mType |= UI_TYPE_GET( UI_TYPE_MENUITEM );
+	mType = UI_TYPE_MENUITEM;
 	
 	ApplyDefaultTheme();
 }

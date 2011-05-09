@@ -4,24 +4,24 @@
 namespace EE { namespace UI {
 
 cUIControl::cUIControl( const CreateParams& Params ) :
-	mVisible( false ),
-	mEnabled( false ),
 	mPos( Params.Pos ),
 	mSize( Params.Size ),
-	mParentCtrl( Params.ParentCtrl ),
 	mFlags( Params.Flags ),
-	mType( 0 ),
+	mType( UI_TYPE_CONTROL ),
 	mData( 0 ),
+	mParentCtrl( Params.ParentCtrl ),
 	mChild( NULL ),
 	mChildLast( NULL ),
 	mNext( NULL ),
 	mPrev( NULL ),
+	mSkinState( NULL ),
 	mBackground( NULL ),
 	mBorder( NULL ),
 	mControlFlags( 0 ),
 	mBlend( Params.Blend ),
-	mNumCallBacks(0),
-	mSkinState(NULL)
+	mNumCallBacks( 0 ),
+	mVisible( false ),
+	mEnabled( false )
 {
 	if ( NULL == mParentCtrl && NULL != cUIManager::instance()->MainControl() ) {
 		mParentCtrl = cUIManager::instance()->MainControl();
@@ -94,7 +94,15 @@ Uint32 cUIControl::Type() const {
 }
 
 bool cUIControl::IsType( const Uint32& Type ) const {
-	return ( mType & UI_TYPE_GET(Type) ) != 0;
+	return mType == Type;
+}
+
+bool cUIControl::InheritsFrom( const Uint32 Type ) {
+	return false;
+}
+
+bool cUIControl::IsTypeOrInheritsFrom( const Uint32 Type ) {
+	return IsType( Type ) || InheritsFrom( Type );
 }
 
 void cUIControl::MessagePost( const cUIMessage * Msg ) {
@@ -433,11 +441,11 @@ void cUIControl::Flags( const Uint32& flags ) {
 }
 
 void cUIControl::Blend( const EE_PRE_BLEND_FUNC& blend ) {
-	mBlend = blend;
+	mBlend = static_cast<Uint16> ( blend );
 }
 
-EE_PRE_BLEND_FUNC& cUIControl::Blend() {
-	return mBlend;
+EE_PRE_BLEND_FUNC cUIControl::Blend() {
+	return static_cast<EE_PRE_BLEND_FUNC> ( mBlend );
 }
 
 void cUIControl::ToFront() {
@@ -501,9 +509,9 @@ void cUIControl::BorderDraw() {
 	P.SetColor( mBorder->Color() );
 
 	if ( mFlags & UI_CLIP_ENABLE )
-		P.DrawRectangle( (eeFloat)mScreenPos.x + 0.1f, (eeFloat)mScreenPos.y + 0.1f, (eeFloat)mSize.Width() - 0.1f, (eeFloat)mSize.Height() - 0.1f, 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder->Width(), mBackground->Corners() );
+		P.DrawRectangle( (eeFloat)mScreenPos.x + 0.1f, (eeFloat)mScreenPos.y + 0.1f, (eeFloat)mSize.Width() - 0.1f, (eeFloat)mSize.Height() - 0.1f, 0.f, 1.f, EE_DRAW_LINE, Blend(), (eeFloat)mBorder->Width(), mBackground->Corners() );
 	else
-		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder->Width(), mBackground->Corners() );
+		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_LINE, Blend(), (eeFloat)mBorder->Width(), mBackground->Corners() );
 }
 
 const Uint32& cUIControl::ControlFlags() const {
@@ -747,7 +755,7 @@ cUIControl * cUIControl::ChildGetLast() const {
 cUIControl * cUIControl::OverFind( const eeVector2f& Point ) {
 	cUIControl * pOver = NULL;
 
-	if ( mVisible && mEnabled ) {
+	if ( mEnabled && mVisible ) {
 		UpdateQuad();
 
 		if ( PointInsidePolygon2( mPoly, Point ) ) {
@@ -800,10 +808,17 @@ Uint32 cUIControl::IsAnimated() {
 	return mControlFlags & UI_CTRL_FLAG_ANIM;
 }
 
+Uint32 cUIControl::IsDragable() {
+	return mControlFlags & UI_CTRL_FLAG_DRAGABLE;
+}
+
+Uint32 cUIControl::IsComplex() {
+	return mControlFlags & UI_CTRL_FLAG_COMPLEX;
+}
+
 Uint32 cUIControl::IsClipped() {
 	return mFlags & UI_CLIP_ENABLE;
 }
-
 
 const eePolygon2f& cUIControl::GetPolygon() const {
 	return mPoly;
@@ -847,7 +862,7 @@ Uint32 cUIControl::AddEventListener( const Uint32& EventType, const UIEventCallb
 }
 
 void cUIControl::RemoveEventListener( const Uint32& CallbackId ) {
-	std::map< Uint32, std::map<Uint32, UIEventCallback> >::iterator it;
+	UIEventsMap::iterator it;
 
 	for ( it = mEvents.begin(); it != mEvents.end(); ++it ) {
 		std::map<Uint32, UIEventCallback> event = it->second;
@@ -1098,7 +1113,7 @@ cUIControl * cUIControl::NextComplexControl() {
 
 	while( NULL != ChildLoop ) {
 		if ( ChildLoop->Visible() ) {
-			if ( ChildLoop->IsType( UI_TYPE_CONTROL_COMPLEX ) ) {
+			if ( ChildLoop->IsComplex() ) {
 				return ChildLoop;
 			} else {
 				Found = ChildLoop->NextComplexControl();
@@ -1113,7 +1128,7 @@ cUIControl * cUIControl::NextComplexControl() {
 	}
 
 	if ( NULL != mNext ) {
-		if ( mNext->Visible() && mNext->IsType( UI_TYPE_CONTROL_COMPLEX ) ) {
+		if ( mNext->Visible() && mNext->IsComplex() ) {
 			return mNext;
 		} else {
 			return mNext->NextComplexControl();
@@ -1123,7 +1138,7 @@ cUIControl * cUIControl::NextComplexControl() {
 
 		while ( NULL != ChildLoop ) {
 			if ( NULL != ChildLoop->mNext ) {
-				if ( ChildLoop->mNext->Visible() && ChildLoop->mNext->IsType( UI_TYPE_CONTROL_COMPLEX ) ) {
+				if ( ChildLoop->mNext->Visible() && ChildLoop->mNext->IsComplex() ) {
 					return ChildLoop->mNext;
 				} else {
 					return ChildLoop->mNext->NextComplexControl();

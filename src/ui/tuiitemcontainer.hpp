@@ -60,7 +60,7 @@ cUIControl * tUIItemContainer<TContainer>::OverFind( const eeVector2f& Point ) {
 
 	cUIControl * pOver = NULL;
 
-	if ( mVisible && mEnabled && LBParent->mItems.size() ) {
+	if ( mEnabled && mVisible && LBParent->mItems.size() ) {
 		UpdateQuad();
 
 		if ( PointInsidePolygon2( mPoly, Point ) ) {

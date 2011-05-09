@@ -16,16 +16,18 @@ cInterpolation::cInterpolation() :
 	mSpeed(1.3f),
 	mActP(NULL),
 	mNexP(NULL),
-	mOnPathEndCallback()
+	mOnPathEndCallback(NULL),
+	mOnStepCallback(NULL)
 {
 }
 
 cInterpolation::~cInterpolation() {
 }
 
-void cInterpolation::Start( OnPathEndCallback PathEndCallback ) {
+void cInterpolation::Start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback) {
 	mEnable				= true;
 	mOnPathEndCallback	= PathEndCallback;
+	mOnStepCallback		= StepCallback;
 
 	if ( mPoints.size() ) {
 		mActP = &mPoints[ 0 ];
@@ -34,12 +36,21 @@ void cInterpolation::Start( OnPathEndCallback PathEndCallback ) {
 			mNexP = &mPoints[ 1 ];
 
 		mCurPos = mPoints[0].p;
-	} else
+	} else {
 		mEnable = false;
+	}
 }
 
 void cInterpolation::Stop() {
 	mEnable	= false;
+}
+
+void cInterpolation::SetPathEndCallback( OnPathEndCallback PathEndCallback ) {
+	mOnPathEndCallback = PathEndCallback;
+}
+
+void cInterpolation::SetStepCallback( OnStepCallback StepCallback ) {
+	mOnStepCallback = StepCallback;
 }
 
 void cInterpolation::Reset() {
@@ -121,9 +132,15 @@ void cInterpolation::Update( const eeFloat& Elapsed ) {
 			mCurTime = 0;
 			mActP = &mPoints[ mCurPoint ];
 
-			if ( mCurPoint + (eeUint)1 < mPoints.size() )
+			if ( mCurPoint + (eeUint)1 < mPoints.size() ) {
 				mNexP = &mPoints[ mCurPoint + 1 ];
-			else {
+
+				if ( mOnStepCallback.IsSet() )
+					mOnStepCallback();
+			} else {
+				if ( mOnStepCallback.IsSet() )
+					mOnStepCallback();
+
 				if ( mLoop ) {
 					mNexP = &mPoints[ 0 ];
 

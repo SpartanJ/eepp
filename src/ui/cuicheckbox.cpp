@@ -6,7 +6,7 @@ cUICheckBox::cUICheckBox( const cUITextBox::CreateParams& Params ) :
 	cUITextBox( Params ),
 	mActive( false )
 {
-	mType |= UI_TYPE_GET(UI_TYPE_CHECKBOX);
+	mType = UI_TYPE_CHECKBOX;
 
 	cUIControlAnim::CreateParams ButtonParams( Params );
 

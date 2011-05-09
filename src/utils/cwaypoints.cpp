@@ -14,15 +14,18 @@ cWaypoints::cWaypoints() :
 	mCurPoint(0),
 	mCurTime(0.0f),
 	mSpeed(1.3f),
-	mOnPathEndCallback(NULL) {
+	mOnPathEndCallback(NULL),
+	mOnStepCallback(NULL)
+{
 }
 
 cWaypoints::~cWaypoints() {
 }
 
-void cWaypoints::Start( OnPathEndCallback PathEndCallback ) {
-	mEnable = true;
-	mOnPathEndCallback = PathEndCallback;
+void cWaypoints::Start( OnPathEndCallback PathEndCallback, OnStepCallback StepCallback ) {
+	mEnable				= true;
+	mOnPathEndCallback	= PathEndCallback;
+	mOnStepCallback		= StepCallback;
 
 	if ( mPoints.size() ) {
 		mActP = &mPoints[ 0 ];
@@ -38,6 +41,14 @@ void cWaypoints::Start( OnPathEndCallback PathEndCallback ) {
 
 void cWaypoints::Stop() {
 	mEnable = false;
+}
+
+void cWaypoints::SetPathEndCallback( OnPathEndCallback PathEndCallback ) {
+	mOnPathEndCallback = PathEndCallback;
+}
+
+void cWaypoints::SetStepCallback( OnStepCallback StepCallback ) {
+	mOnStepCallback = StepCallback;
 }
 
 void cWaypoints::Reset() {
@@ -135,9 +146,15 @@ void cWaypoints::Update( const eeFloat& Elapsed ) {
 			mCurTime = 0;
 			mActP = &mPoints[ mCurPoint ];
 
-			if ( mCurPoint + 1 < mPoints.size() )
+			if ( mCurPoint + 1 < mPoints.size() ) {
 				mNexP = &mPoints[ mCurPoint + 1 ];
-			else {
+
+				if ( mOnStepCallback.IsSet() )
+					mOnStepCallback();
+			} else {
+				if ( mOnStepCallback.IsSet() )
+					mOnStepCallback();
+
 				if ( mLoop ) {
 					mNexP = &mPoints[ 0 ];
 

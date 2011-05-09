@@ -13,7 +13,7 @@ cUIControlAnim::cUIControlAnim( const CreateParams& Params ) :
 	mAlphaAnim(NULL),
 	mMoveAnim(NULL)
 {
-	mType |= UI_TYPE_GET(UI_TYPE_CONTROL_ANIM);
+	mType = UI_TYPE_CONTROL_ANIM;
 	mControlFlags |= UI_CTRL_FLAG_ANIM;
 }
 
@@ -38,7 +38,7 @@ void cUIControlAnim::Draw() {
 		if ( cUIManager::instance()->HighlightFocus() && cUIManager::instance()->FocusControl() == this ) {
 			cPrimitives P;
 			P.SetColor( cUIManager::instance()->HighlightColor() );
-			P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_LINE, mBlend, 1, 0 );
+			P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_LINE, Blend(), 1, 0 );
 		}
 	}
 }
@@ -252,9 +252,9 @@ void cUIControlAnim::BorderDraw() {
 	P.SetColor( GetColor( mBorder->Color() ) );
 
 	if ( mFlags & UI_CLIP_ENABLE )
-		P.DrawRectangle( (eeFloat)mScreenPos.x + 0.1f, (eeFloat)mScreenPos.y + 0.1f, (eeFloat)mSize.Width() - 0.1f, (eeFloat)mSize.Height() - 0.1f, 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder->Width(), mBackground->Corners() );
+		P.DrawRectangle( (eeFloat)mScreenPos.x + 0.1f, (eeFloat)mScreenPos.y + 0.1f, (eeFloat)mSize.Width() - 0.1f, (eeFloat)mSize.Height() - 0.1f, 0.f, 1.f, EE_DRAW_LINE, Blend(), (eeFloat)mBorder->Width(), mBackground->Corners() );
 	else
-		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_LINE, mBlend, (eeFloat)mBorder->Width(), mBackground->Corners() );
+		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_LINE, Blend(), (eeFloat)mBorder->Width(), mBackground->Corners() );
 }
 
 eeColorA cUIControlAnim::GetColor( const eeColorA& Col ) {

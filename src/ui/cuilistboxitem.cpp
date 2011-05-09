@@ -7,7 +7,7 @@ namespace EE { namespace UI {
 cUIListBoxItem::cUIListBoxItem( const cUITextBox::CreateParams& Params ) :
 	cUITextBox( Params )
 {
-	mType |= UI_TYPE_GET( UI_TYPE_LISTBOXITEM );
+	mType = UI_TYPE_LISTBOXITEM;
 
 	ApplyDefaultTheme();
 }

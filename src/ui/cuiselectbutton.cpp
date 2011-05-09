@@ -6,7 +6,7 @@ namespace EE { namespace UI {
 cUISelectButton::cUISelectButton( const cUIPushButton::CreateParams& Params ) :
 	cUIPushButton( Params )
 {
-	mType |= UI_TYPE_GET(UI_TYPE_SELECTBUTTON);
+	mType = UI_TYPE_SELECTBUTTON;
 }
 
 cUISelectButton::~cUISelectButton() {

@@ -25,6 +25,8 @@ class EE_API cInterpolation {
 
 		typedef cb::Callback0<void> OnPathEndCallback;
 
+		typedef cb::Callback0<void> OnStepCallback;
+
 		/** Add a new point */
 		void AddWaypoint( const eeFloat Pos, const eeFloat Time = 0 );
 
@@ -35,10 +37,16 @@ class EE_API cInterpolation {
 		bool EraseWaypoint( const eeUint PointNum );
 
 		/** Start the animation */
-		void Start( OnPathEndCallback PathEndCallback = OnPathEndCallback() );
+		void Start( OnPathEndCallback PathEndCallback = OnPathEndCallback(), OnStepCallback StepCallback = OnStepCallback() );
 
 		/** Stop the animation */
 		void Stop();
+
+		/** Sets a path end callback */
+		void SetPathEndCallback( OnPathEndCallback PathEndCallback );
+
+		/** Sets a step callback */
+		void SetStepCallback( OnStepCallback StepCallback );
 
 		/** Update the movement interpolation */
 		void Update( const eeFloat& Elapsed );
@@ -118,6 +126,8 @@ class EE_API cInterpolation {
 		cPoint1df* mNexP;
 
 		OnPathEndCallback		mOnPathEndCallback;
+
+		OnStepCallback			mOnStepCallback;
 };
 
 }}

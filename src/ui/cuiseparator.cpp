@@ -5,7 +5,7 @@ namespace EE { namespace UI {
 cUISeparator::cUISeparator( cUIControlAnim::CreateParams Params ) :
 	cUIControlAnim( Params )
 {
-	mType |= UI_TYPE_GET( UI_TYPE_SEPARATOR );
+	mType = UI_TYPE_SEPARATOR;
 	
 	ApplyDefaultTheme();
 }

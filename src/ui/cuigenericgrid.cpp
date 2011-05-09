@@ -23,7 +23,7 @@ cUIGenericGrid::cUIGenericGrid( const cUIGenericGrid::CreateParams& Params ) :
 	mSelected(-1),
 	mCollWidthAssigned( false )
 {
-	mType |= UI_TYPE_GENERICGRID;
+	mType = UI_TYPE_GENERICGRID;
 
 	mCollumnsWidth.resize( mCollumnsCount, 0 );
 	mCollumnsPos.resize( mCollumnsCount, 0 );

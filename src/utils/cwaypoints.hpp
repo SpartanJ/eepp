@@ -25,6 +25,8 @@ class EE_API cWaypoints {
 
 		typedef cb::Callback0<void> OnPathEndCallback;
 
+		typedef cb::Callback0<void> OnStepCallback;
+
 		/** Add a new waypoint */
 		void AddWaypoint( const eeVector2f& Pos, const eeFloat& Time = 0.f );
 
@@ -37,10 +39,16 @@ class EE_API cWaypoints {
 		/** Start the animation ( will reset the current state, and start from the beginning )
 		@param PathEndCallback An optional callback fired when the animation ends.
 		*/
-		void Start( OnPathEndCallback PathEndCallback = OnPathEndCallback() );
+		void Start( OnPathEndCallback PathEndCallback = OnPathEndCallback(), OnStepCallback StepCallback = OnStepCallback() );
 
 		/** Stop the animation ( Enable = false ) */
 		void Stop();
+
+		/** Sets a path end callback */
+		void SetPathEndCallback( OnPathEndCallback PathEndCallback );
+
+		/** Sets a step callback */
+		void SetStepCallback( OnStepCallback StepCallback );
 
 		/** Update the movement interpolation */
 		void Update( const eeFloat& Elapsed );
@@ -113,6 +121,8 @@ class EE_API cWaypoints {
 		std::vector<cWaypoint> mPoints;
 
 		OnPathEndCallback mOnPathEndCallback;
+
+		OnStepCallback mOnStepCallback;
 };
 
 }}

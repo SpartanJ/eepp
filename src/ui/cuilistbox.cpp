@@ -27,7 +27,7 @@ cUIListBox::cUIListBox( cUIListBox::CreateParams& Params ) :
 	mVisibleFirst(0),
 	mVisibleLast(0)
 {
-	mType |= UI_TYPE_GET( UI_TYPE_LISTBOX );
+	mType = UI_TYPE_LISTBOX;
 
 	if ( NULL == Params.Font && NULL != cUIThemeManager::instance()->DefaultFont() )
 		mFont = cUIThemeManager::instance()->DefaultFont();

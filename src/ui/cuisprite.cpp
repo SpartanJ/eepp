@@ -9,7 +9,7 @@ cUISprite::cUISprite( const cUISprite::CreateParams& Params ) :
 	mAlignOffset(0,0),
 	mShapeLast(NULL)
 {
-	mType |= UI_TYPE_GET(UI_TYPE_SPRITE);
+	mType = UI_TYPE_SPRITE;
 
 	if ( ( Flags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) {
 		if ( NULL != mSprite && NULL != mSprite->GetCurrentShape() ) {
@@ -34,7 +34,7 @@ void cUISprite::Draw() {
 		if ( NULL != mSprite && 0.f != mAlpha ) {
 			CheckShapeUpdate();
 			mSprite->Position( (eeFloat)( mScreenPos.x + mAlignOffset.x ), (eeFloat)( mScreenPos.y + mAlignOffset.y ) );
-			mSprite->Draw( mBlend, mRender );
+			mSprite->Draw( Blend(), mRender );
 		}
 	}
 }

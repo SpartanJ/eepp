@@ -14,7 +14,7 @@ cUIMenuSubMenu::cUIMenuSubMenu( cUIMenuSubMenu::CreateParams& Params ) :
 	mCbId( 0 ),
 	mCbId2( 0 )
 {
-	mType |= UI_TYPE_GET( UI_TYPE_MENUSUBMENU );
+	mType = UI_TYPE_MENUSUBMENU;
 
 	cUIGfx::CreateParams GfxParams;
 	GfxParams.Parent( this );
@@ -140,6 +140,13 @@ void cUIMenuSubMenu::OnHideByClick( const cUIEvent * Event ) {
 
 	tMenu->mClickHide = true;
 	tMenu->Hide();
+}
+
+bool cUIMenuSubMenu::InheritsFrom( const Uint32 Type ) {
+	if ( Type == UI_TYPE_MENUITEM )
+		return true;
+
+	return false;
 }
 
 }}

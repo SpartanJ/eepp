@@ -63,6 +63,10 @@ void cEETest::Init() {
 	run = ( mWindow->Created() && PAK.IsOpen() );
 
 	if ( run ) {
+		std::cout << "Size of Callback0: " << sizeof( cb::Callback0<void> ) << std::endl;
+		std::cout << "Size of cWaypoints: " << sizeof( cWaypoints ) << std::endl;
+		std::cout << "Size of UIEventsMap: " << sizeof( std::map< Uint32, std::map<Uint32, cUIControl::UIEventCallback> > ) << std::endl;
+		std::cout << "Size of eePolygon2f: " << sizeof(eePolygon2f) << std::endl;
 		std::cout << "Size of cTexture: " << sizeof(cTexture) << std::endl;
 		std::cout << "Size of cShape: " << sizeof(Graphics::cShape) << std::endl;
 		std::cout << "Size of cSprite: " << sizeof(cSprite) << std::endl;
@@ -643,7 +647,7 @@ void cEETest::CloseClick( const cUIEvent * Event ) {
 }
 
 void cEETest::ItemClick( const cUIEvent * Event ) {
-	if ( !Event->Ctrl()->IsType( UI_TYPE_MENUITEM ) )
+	if ( !Event->Ctrl()->IsTypeOrInheritsFrom( UI_TYPE_MENUITEM ) )
 		return;
 
 	const String& txt = reinterpret_cast<cUIMenuItem*> ( Event->Ctrl() )->Text();

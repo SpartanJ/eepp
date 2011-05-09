@@ -37,7 +37,7 @@ cUITooltip::cUITooltip( cUITooltip::CreateParams& Params, cUIControl * TooltipOf
 cUITooltip::~cUITooltip() {
 	eeSAFE_DELETE( mTextCache );
 
-	if ( NULL != mTooltipOf && mTooltipOf->IsType( UI_TYPE_CONTROL_COMPLEX ) ) {
+	if ( NULL != mTooltipOf && mTooltipOf->IsComplex() ) {
 		reinterpret_cast<cUIComplexControl*>( mTooltipOf )->TooltipRemove();
 	}
 }
@@ -59,7 +59,7 @@ void cUITooltip::AutoPadding() {
 }
 
 void cUITooltip::Show() {
-	if ( !Visible() ) {
+	if ( !Visible() || 0 == mAlpha ) {
 		ToFront();
 
 		Visible( true );
@@ -88,7 +88,7 @@ void cUITooltip::Draw() {
 		cUIControlAnim::Draw();
 
 		if ( mTextCache->GetTextWidth() ) {
-			mTextCache->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x, (eeFloat)mScreenPos.y + mAlignOffset.y, Flags(), 1.f, 0.f, mBlend );
+			mTextCache->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x, (eeFloat)mScreenPos.y + mAlignOffset.y, Flags(), 1.f, 0.f, Blend() );
 		}
 	}
 }

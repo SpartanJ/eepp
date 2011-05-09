@@ -71,7 +71,7 @@ void cUIGridCell::Update() {
 			Alpha( MyParent->Alpha() );
 
 			for ( Uint32 i = 0; i < mCells.size(); i++ ) {
-				if ( NULL != mCells[i] && mCells[i]->IsType( UI_TYPE_CONTROL_ANIM ) ) {
+				if ( NULL != mCells[i] && mCells[i]->IsAnimated() ) {
 					reinterpret_cast<cUIControlAnim*>( mCells[i] )->Alpha( MyParent->Alpha() );
 				}
 			}

@@ -12,7 +12,7 @@ cUITextEdit::cUITextEdit( cUITextEdit::CreateParams& Params ) :
 	mVScrollBarMode( Params.VScrollBar ),
 	mSkipValueChange( false )
 {
-	mType |= UI_TYPE_GET( UI_TYPE_TEXTEDIT );
+	mType = UI_TYPE_TEXTEDIT;
 
 	Uint32 extraFlags = 0;
 

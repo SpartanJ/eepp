@@ -12,7 +12,7 @@ cUIProgressBar::cUIProgressBar( const cUIProgressBar::CreateParams& Params ) :
 	mTotalSteps( 100.f ),
 	mParallax( NULL )
 {
-	mType |= UI_TYPE_GET(UI_TYPE_PROGRESSBAR);
+	mType = UI_TYPE_PROGRESSBAR;
 
 	cUITextBox::CreateParams TxtBoxParams = Params;
 

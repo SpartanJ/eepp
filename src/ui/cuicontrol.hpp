@@ -82,6 +82,10 @@ class EE_API cUIControl {
 
 		bool IsType( const Uint32& Type ) const;
 
+		virtual bool InheritsFrom( const Uint32 Type );
+
+		bool IsTypeOrInheritsFrom( const Uint32 Type );
+
 		virtual void MessagePost( const cUIMessage * Msg );
 
 		bool IsInside( const eeVector2i& Pos ) const;
@@ -158,7 +162,7 @@ class EE_API cUIControl {
 
 		void Blend( const EE_PRE_BLEND_FUNC& blend );
 
-		EE_PRE_BLEND_FUNC& Blend();
+		EE_PRE_BLEND_FUNC Blend();
 
 		void ToFront();
 
@@ -172,6 +176,10 @@ class EE_API cUIControl {
 		void ControlFlags( const Uint32& Flags );
 
 		Uint32 IsAnimated();
+
+		Uint32 IsDragable();
+
+		Uint32 IsComplex();
 
 		Uint32 IsClipped();
 
@@ -227,37 +235,40 @@ class EE_API cUIControl {
 
 		cUIControl * NextComplexControl();
 	protected:
+		typedef std::map< Uint32, std::map<Uint32, UIEventCallback> > UIEventsMap;
 		friend class cUIManager;
 
-		bool			mVisible;
-		bool			mEnabled;
 		eeVector2i		mPos;
 		eeVector2i		mScreenPos;
 		eeSize			mSize;
-		cUIControl *	mParentCtrl;
+
 		Uint32			mFlags;
 		Uint32			mType;
 		Uint32 			mData;
 
+		cUIControl *	mParentCtrl;
 		cUIControl *	mChild;			//! Pointer to the first child of the control
 		cUIControl * 	mChildLast;		//! Pointer to the last child added
 		cUIControl *	mNext;			//! Pointer to the next child of the father
 		cUIControl * 	mPrev;			//! Pointer to the prev child of the father
+		cUISkinState *	mSkinState;
 
 		cUIBackground *	mBackground;
 		cUIBorder *		mBorder;
 
 		Uint32			mControlFlags;
-		EE_PRE_BLEND_FUNC	mBlend;
+		Uint16			mBlend;
+		Uint16			mNumCallBacks;
 
 		eePolygon2f 	mPoly;
 		eeVector2f 		mCenter;
 
-		std::map< Uint32, std::map<Uint32, UIEventCallback> > mEvents;
-		Uint32			mNumCallBacks;
+		UIEventsMap		mEvents;
 
-		cUISkinState *	mSkinState;
 		std::string		mSkinForcedName;
+
+		bool			mVisible;
+		bool			mEnabled;
 
 		virtual Uint32 OnMessage( const cUIMessage * Msg );
 

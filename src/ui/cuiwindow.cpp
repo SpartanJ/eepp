@@ -23,7 +23,7 @@ cUIWindow::cUIWindow( const cUIWindow::CreateParams& Params ) :
 	mDecoAutoSize( Params.DecorationAutoSize ),
 	mBorderAutoSize( Params.BorderAutoSize )
 {
-	mType |= UI_TYPE_GET( UI_TYPE_WINDOW );
+	mType = UI_TYPE_WINDOW;
 
 	cUIControlAnim::CreateParams tParams;
 	tParams.Parent( this );

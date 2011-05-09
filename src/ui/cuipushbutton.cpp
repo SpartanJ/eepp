@@ -10,7 +10,7 @@ cUIPushButton::cUIPushButton( const cUIPushButton::CreateParams& Params ) :
 	mTextBox( NULL ),
 	mIconSpace( Params.IconHorizontalMargin )
 {
-	mType |= UI_TYPE_GET(UI_TYPE_PUSHBUTTON);
+	mType = UI_TYPE_PUSHBUTTON;
 
 	cUIGfx::CreateParams GfxParams;
 	GfxParams.Parent( this );

@@ -16,7 +16,7 @@ cUIWinMenu::cUIWinMenu( const cUIWinMenu::CreateParams& Params ) :
 	mFirstButtonMargin( Params.FirstButtonMargin ),
 	mMenuHeight( Params.MenuHeight )
 {
-	mType |= UI_TYPE_GET(UI_TYPE_WINMENU);
+	mType = UI_TYPE_WINMENU;
 
 	if ( !(mFlags & UI_ANCHOR_RIGHT) )
 		mFlags |= UI_ANCHOR_RIGHT;
@@ -162,7 +162,7 @@ Uint32 cUIWinMenu::OnMessage( const cUIMessage * Msg ) {
 		case cUIMessage::MsgMouseUp:
 		case cUIMessage::MsgMouseEnter:
 		{
-			if ( Msg->Sender()->IsType( UI_TYPE_SELECTBUTTON ) ) {
+			if ( Msg->Sender()->IsTypeOrInheritsFrom( UI_TYPE_SELECTBUTTON ) ) {
 				cUISelectButton * tbut	= reinterpret_cast<cUISelectButton*> ( Msg->Sender() );
 				cUIPopUpMenu * tpop		= GetMenuFromButton( tbut );
 

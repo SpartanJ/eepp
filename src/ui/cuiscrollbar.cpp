@@ -6,7 +6,7 @@ namespace EE { namespace UI {
 cUIScrollBar::cUIScrollBar( const cUIScrollBar::CreateParams& Params ) :
 	cUIComplexControl( Params )
 {
-	mType |= UI_TYPE_GET( UI_TYPE_SCROLLBAR );
+	mType = UI_TYPE_SCROLLBAR;
 
 	cUIControlAnim::CreateParams CParams = Params;
 	CParams.Size = eeSize( 16, 16 );

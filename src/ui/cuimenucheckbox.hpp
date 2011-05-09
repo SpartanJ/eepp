@@ -20,6 +20,8 @@ class cUIMenuCheckBox : public cUIMenuItem {
 		void Active( const bool& active );
 
 		void SwitchActive();
+
+		virtual bool InheritsFrom( const Uint32 Type );
 	protected:
 		bool		mActive;
 		cUISkin *	mSkinActive;

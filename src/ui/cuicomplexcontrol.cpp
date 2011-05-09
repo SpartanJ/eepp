@@ -8,7 +8,8 @@ cUIComplexControl::cUIComplexControl( const cUIComplexControl::CreateParams& Par
 	mTooltip( NULL ),
 	mMinControlSize( Params.MinControlSize )
 {
-	mType	|= UI_TYPE_GET( UI_TYPE_CONTROL_COMPLEX );
+	mType = UI_TYPE_CONTROL_COMPLEX;
+	mControlFlags |= UI_CTRL_FLAG_COMPLEX;
 
 	CalcDistToBorder();
 

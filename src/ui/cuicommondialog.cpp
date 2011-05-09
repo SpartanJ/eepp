@@ -11,6 +11,8 @@ cUICommonDialog::cUICommonDialog( const cUICommonDialog::CreateParams& Params ) 
 	cUIWindow( Params ),
 	mCurPath( Params.DefaultDirectory )
 {
+	mType = UI_TYPE_COMMONDIALOG;
+
 	if ( mSize.Width() < CDLG_MIN_WIDTH )
 		mSize.x = CDLG_MIN_WIDTH;
 
@@ -179,7 +181,7 @@ Uint32 cUICommonDialog::OnMessage( const cUIMessage *Msg ) {
 		}
 		case cUIMessage::MsgDoubleClick:
 		{
-			if ( Msg->Sender()->IsType( UI_TYPE_LISTBOXITEM ) ) {
+			if ( Msg->Sender()->IsTypeOrInheritsFrom( UI_TYPE_LISTBOXITEM ) ) {
 				std::string newPath = mCurPath + mList->GetItemSelectedText();
 
 				if ( IsDirectory( newPath ) ) {

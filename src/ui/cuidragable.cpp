@@ -8,7 +8,8 @@ cUIDragable::cUIDragable( const cUIControl::CreateParams& Params ) :
 	cUIControl( Params ),
 	mDragButton( EE_BUTTON_LMASK )
 {
-	mType |= UI_TYPE_GET(UI_TYPE_CONTROL_DRAGABLE);
+	mType = UI_TYPE_CONTROL_DRAGABLE;
+	mControlFlags |= UI_CTRL_FLAG_DRAGABLE;
 }
 
 cUIDragable::~cUIDragable() {

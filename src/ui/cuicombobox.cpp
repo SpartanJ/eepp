@@ -6,7 +6,7 @@ cUIComboBox::cUIComboBox( cUIComboBox::CreateParams& Params ) :
 	cUIDropDownList( Params ),
 	mButton( NULL )
 {
-	mType |= UI_TYPE_GET( UI_TYPE_COMBOBOX );
+	mType = UI_TYPE_COMBOBOX;
 
 	AllowEditing( true );
 
