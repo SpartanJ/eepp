@@ -11,6 +11,7 @@ cUIWindow::cUIWindow( const cUIWindow::CreateParams& Params ) :
 	mButtonMinimize( NULL ),
 	mButtonMaximize( NULL ),
 	mTitle( NULL ),
+	mModalCtrl( NULL ),
 	mDecoSize( Params.DecorationSize ),
 	mBorderSize( Params.BorderSize ),
 	mMinWindowSize( Params.MinWindowSize ),
@@ -118,6 +119,11 @@ void cUIWindow::ButtonCloseClick( const cUIEvent * Event ) {
 }
 
 void cUIWindow::CloseWindow() {
+	if ( NULL != mModalCtrl ) {
+		mModalCtrl->Close();
+		mModalCtrl = NULL;
+	}
+
 	if ( 0 != cUIThemeManager::instance()->ControlsFadeOutTime() )
 		CloseFadeOut( cUIThemeManager::instance()->ControlsFadeOutTime() );
 	else
@@ -576,6 +582,19 @@ bool cUIWindow::Show() {
 			StartAlphaAnim( mAlpha, mBaseAlpha, cUIThemeManager::instance()->ControlsFadeInTime() );
 		}
 
+		if ( IsModal() ) {
+			if ( NULL == mModalCtrl ) {
+				cUIControl * Ctrl = cUIManager::instance()->MainControl();
+				mModalCtrl = eeNew( cUIControl, ( cUIControl::CreateParams( Ctrl , eeVector2i(0,0), Ctrl->Size(), UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) );
+			}
+
+			mModalCtrl->Enabled( true );
+			mModalCtrl->Visible( true );
+			mModalCtrl->ToFront();
+
+			ToFront();
+		}
+
 		return true;
 	}
 
@@ -592,6 +611,11 @@ bool cUIWindow::Hide() {
 		}
 
 		cUIManager::instance()->MainControl()->SetFocus();
+
+		if ( NULL != mModalCtrl ) {
+			mModalCtrl->Enabled( false );
+			mModalCtrl->Visible( false );
+		}
 
 		return true;
 	}
@@ -720,6 +744,14 @@ bool cUIWindow::RemoveShortcut( const Uint32& KeyCode, const Uint32& Mod ) {
 	}
 
 	return false;
+}
+
+bool cUIWindow::IsModal() {
+	return 0 != ( mWinFlags & UI_WIN_MODAL );
+}
+
+cUIControl * cUIWindow::GetModalControl() const {
+	return mModalCtrl;
 }
 
 }}

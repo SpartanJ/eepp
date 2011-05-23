@@ -269,6 +269,8 @@ class cEETest : private cThread {
 		Int32					mCurDemo;
 		cSprite *				mBoxSprite;
 		cSprite *				mCircleSprite;
+
+		cMap *					mMap;
 };
 
 #endif

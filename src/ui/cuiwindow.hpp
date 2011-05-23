@@ -17,7 +17,8 @@ class cUIWindow : public cUIComplexControl {
 			UI_WIN_USE_DEFAULT_BUTTONS_ACTIONS	= ( 1 << 4 ),
 			UI_WIN_RESIZEABLE					= ( 1 << 5 ),
 			UI_WIN_DRAGABLE_CONTAINER			= ( 1 << 6 ),
-			UI_WIN_SHARE_ALPHA_WITH_CHILDS		= ( 1 << 7 )
+			UI_WIN_SHARE_ALPHA_WITH_CHILDS		= ( 1 << 7 ),
+			UI_WIN_MODAL						= ( 1 << 8 )
 		};
 
 		class CreateParams : public cUIComplexControl::CreateParams {
@@ -92,6 +93,10 @@ class cUIWindow : public cUIComplexControl {
 		bool AddShortcut( const Uint32& KeyCode, const Uint32& Mod, cUIPushButton * Button );
 
 		bool RemoveShortcut( const Uint32& KeyCode, const Uint32& Mod );
+
+		bool IsModal();
+
+		cUIControl * GetModalControl() const;
 	protected:
 		class KeyboardShortcut {
 			public:
@@ -138,6 +143,8 @@ class cUIWindow : public cUIComplexControl {
 		cUIComplexControl *	mButtonMinimize;
 		cUIComplexControl *	mButtonMaximize;
 		cUITextBox *		mTitle;
+
+		cUIControl *		mModalCtrl;
 
 		eeSize				mDecoSize;
 		eeSize				mBorderSize;

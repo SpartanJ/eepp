@@ -23,13 +23,9 @@
 
 /**
 	@TODO Check for endianness problems, and make EEPP endianness agnostic.
-	@TODO Add backend for SDL 1.3 ( support for Android ). And may be SFML backend ( may be implement as the default build-in backend with sfml-window static linked ).
+	@TODO May be SFML backend ( may be implement as the default build-in backend with sfml-window static linked ).
 	@TODO Support for Android and iOS.
-	@TODO Support color cursors \n
-				SDL 1.2					Not even posible ( win32 and x11 backends for this ready ) \n
-				Allegro 5				DONE
 	@TODO Add Scripting support ( squirrel or python ).
-	@TODO Fix classes bad padding, optimize memory consumption.
 */
 
 	// General includes and declarations
@@ -148,11 +144,6 @@
 	#include "graphics/cvertexbuffervbo.hpp"
 	using namespace EE::Graphics;
 
-	// Gaming
-	#include "gaming/clight.hpp"
-	#include "gaming/cisomap.hpp"
-	using namespace EE::Gaming;
-
 	// UI
 	#include "ui/cuibackground.hpp"
 	#include "ui/cuiborder.hpp"
@@ -196,6 +187,19 @@
 	#include "ui/cuiwinmenu.hpp"
 	#include "ui/cuicommondialog.hpp"
 	using namespace EE::UI;
+
+	// Gaming
+	#include "gaming/clight.hpp"
+	#include "gaming/cisomap.hpp"
+	#include "gaming/cgameobject.hpp"
+	#include "gaming/cgameobjectshape.hpp"
+	#include "gaming/cgameobjectshapeex.hpp"
+	#include "gaming/cgameobjectsprite.hpp"
+	#include "gaming/clayer.hpp"
+	#include "gaming/ctilelayer.hpp"
+	#include "gaming/cobjectlayer.hpp"
+	#include "gaming/cmap.hpp"
+	using namespace EE::Gaming;
 
 	#include "physics/cphysicsmanager.hpp"
 	#include "physics/cshape.hpp"

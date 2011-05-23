@@ -9,7 +9,8 @@ namespace EE { namespace UI {
 
 cUICommonDialog::cUICommonDialog( const cUICommonDialog::CreateParams& Params ) :
 	cUIWindow( Params ),
-	mCurPath( Params.DefaultDirectory )
+	mCurPath( Params.DefaultDirectory ),
+	mCDLFlags( Params.CDLFlags )
 {
 	mType = UI_TYPE_COMMONDIALOG;
 
@@ -25,7 +26,11 @@ cUICommonDialog::cUICommonDialog( const cUICommonDialog::CreateParams& Params ) 
 	if ( mMinWindowSize.Height() < CDLG_MIN_HEIGHT )
 		mMinWindowSize.Height( CDLG_MIN_HEIGHT );
 
-	Title( "Select a file" );
+	if ( AllowFolderSelect() ) {
+		Title( "Select a folder" );
+	} else {
+		Title( "Select a file" );
+	}
 
 	cUITextBox::CreateParams TxtBoxParams;
 	TxtBoxParams.Parent( Container() );
@@ -44,7 +49,11 @@ cUICommonDialog::cUICommonDialog( const cUICommonDialog::CreateParams& Params ) 
 	mButtonOpen = eeNew( cUIPushButton, ( ButtonParams ) );
 	mButtonOpen->Visible( true );
 	mButtonOpen->Enabled( true );
-	mButtonOpen->Text( "Open" );
+
+	if ( IsSaveDialog() )
+		mButtonOpen->Text( "Save" );
+	else
+		mButtonOpen->Text( "Open" );
 
 	ButtonParams.Pos.y = mButtonOpen->Pos().y + mButtonOpen->Size().Height() + 6;
 	mButtonCancel = eeNew( cUIPushButton, ( ButtonParams ) );
@@ -110,12 +119,15 @@ cUICommonDialog::cUICommonDialog( const cUICommonDialog::CreateParams& Params ) 
 	mFiletype = eeNew( cUIDropDownList, ( DDLParams ) );
 	mFiletype->Visible( true );
 	mFiletype->Enabled( true );
-	mFiletype->ListBox()->AddListBoxItem( "*" );
+	mFiletype->ListBox()->AddListBoxItem( Params.DefaultFilePattern );
 	mFiletype->ListBox()->SetSelected(0);
 
 	ApplyDefaultTheme();
 
 	RefreshFolder();
+}
+
+cUICommonDialog::~cUICommonDialog() {
 }
 
 void cUICommonDialog::RefreshFolder() {
@@ -134,7 +146,7 @@ void cUICommonDialog::RefreshFolder() {
 	}
 
 	for ( i = 0; i < flist.size(); i++ ) {
-		if ( IsDirectory( mCurPath + flist[i] ) ) {
+		if ( FoldersFirst() && IsDirectory( mCurPath + flist[i] ) ) {
 			folders.push_back( flist[i] );
 		} else {
 			accepted = false;
@@ -155,11 +167,17 @@ void cUICommonDialog::RefreshFolder() {
 		}
 	}
 
-	std::sort( folders.begin(), folders.end() );
-	std::sort( files.begin(), files.end() );
+	if ( SortAlphabetically() ) {
+		std::sort( folders.begin(), folders.end() );
+		std::sort( files.begin(), files.end() );
+	}
 
 	mList->Clear();
-	mList->AddListBoxItems( folders );
+
+	if ( FoldersFirst() ) {
+		mList->AddListBoxItems( folders );
+	}
+
 	mList->AddListBoxItems( files );
 }
 
@@ -212,6 +230,14 @@ Uint32 cUICommonDialog::OnMessage( const cUIMessage *Msg ) {
 
 void cUICommonDialog::Open() {
 	if ( "" != mList->GetItemSelectedText() ) {
+		if ( !AllowFolderSelect() ) {
+			if ( IsDirectory( GetFullPath() ) )
+				return;
+		} else {
+			if ( !IsDirectory( GetFullPath() ) )
+				return;
+		}
+
 		SendCommonEvent( cUIEvent::EventOpenFile );
 
 		CloseWindow();
@@ -226,6 +252,46 @@ void cUICommonDialog::AddFilePattern( std::string pattern, bool select ) {
 
 		RefreshFolder();
 	}
+}
+
+bool cUICommonDialog::IsSaveDialog() {
+	return 0 != ( mCDLFlags & CDL_FLAG_SAVE_DIALOG );
+}
+
+bool cUICommonDialog::SortAlphabetically() {
+	return 0 != ( mCDLFlags & CDL_FLAG_SORT_ALPHABETICALLY );
+}
+
+bool cUICommonDialog::FoldersFirst() {
+	return 0 != ( mCDLFlags & CDL_FLAG_FOLDERS_FISRT );
+}
+
+bool cUICommonDialog::AllowFolderSelect() {
+	return 0 != ( mCDLFlags & CDL_FLAG_ALLOW_FOLDER_SELECT );
+}
+
+void cUICommonDialog::SortAlphabetically( const bool& sortAlphabetically ) {
+	SetFlagValue( &mCDLFlags, CDL_FLAG_SORT_ALPHABETICALLY, sortAlphabetically ? 1 : 0 );
+	RefreshFolder();
+}
+
+void cUICommonDialog::FoldersFirst( const bool& foldersFirst ) {
+	SetFlagValue( &mCDLFlags, CDL_FLAG_FOLDERS_FISRT , foldersFirst ? 1 : 0 );
+	RefreshFolder();
+}
+
+void cUICommonDialog::AllowFolderSelect( const bool& allowFolderSelect ) {
+	SetFlagValue( &mCDLFlags, CDL_FLAG_ALLOW_FOLDER_SELECT, allowFolderSelect ? 1 : 0 );
+}
+
+std::string cUICommonDialog::GetFullPath() {
+	std::string tPath = mCurPath;
+
+	DirPathAddSlashAtEnd( tPath );
+
+	tPath += GetCurFile();
+
+	return tPath;
 }
 
 std::string cUICommonDialog::GetCurPath() const {

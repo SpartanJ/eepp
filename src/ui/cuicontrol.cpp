@@ -45,8 +45,7 @@ cUIControl::~cUIControl() {
 	eeSAFE_DELETE( mBackground );
 	eeSAFE_DELETE( mBorder );
 
-	while( NULL != mChild )
-		eeDelete( mChild );
+	ChildDeleteAll();
 
 	if ( NULL != mParentCtrl )
 		mParentCtrl->ChildRemove( this );
@@ -607,8 +606,9 @@ void cUIControl::MatrixUnset() {
 }
 
 void cUIControl::ChildDeleteAll() {
-	while( NULL != mChild )
+	while( NULL != mChild ) {
 		eeDelete( mChild );
+	}
 }
 
 void cUIControl::ChildAdd( cUIControl * ChildCtrl ) {

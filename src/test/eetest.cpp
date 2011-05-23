@@ -63,6 +63,7 @@ void cEETest::Init() {
 	run = ( mWindow->Created() && PAK.IsOpen() );
 
 	if ( run ) {
+		#ifdef EE_DEBUG
 		std::cout << "Size of Callback0: " << sizeof( cb::Callback0<void> ) << std::endl;
 		std::cout << "Size of cWaypoints: " << sizeof( cWaypoints ) << std::endl;
 		std::cout << "Size of UIEventsMap: " << sizeof( std::map< Uint32, std::map<Uint32, cUIControl::UIEventCallback> > ) << std::endl;
@@ -74,16 +75,18 @@ void cEETest::Init() {
 		std::cout << "Size of cUIControlAnim: " << sizeof(cUIControlAnim) << std::endl;
 		std::cout << "Size of cUITextBox: " << sizeof(cUITextBox) << std::endl;
 		std::cout << "Size of cUIComplexControl: " << sizeof(cUIComplexControl) << std::endl;
+		#endif
 
 		SetScreen( 0 );
 
 		mWindow->Caption( "EE++ Test Application" );
+
 		TF = cTextureFactory::instance();
 		TF->Allocate(40);
 
-		Log = cLog::instance();
-		KM = mWindow->GetInput();
-		JM = KM->GetJoystickManager();
+		Log		= cLog::instance();
+		KM		= mWindow->GetInput();
+		JM		= KM->GetJoystickManager();
 
 		PS.resize(5);
 
@@ -106,6 +109,7 @@ void cEETest::Init() {
 		CreateShaders();
 
 		Mus = eeNew( cMusic, () );
+
 		if ( Mus->OpenFromPack( &PAK, "music.ogg" ) ) {
 			Mus->Loop(true);
 			Mus->Volume( 100.f );
@@ -554,7 +558,7 @@ void cEETest::CreateUI() {
 
 	cUICommonDialog::CreateParams CDParams;
 	CDParams.Flags = UI_HALIGN_CENTER;
-	CDParams.WinFlags |= cUIWindow::UI_WIN_MAXIMIZE_BUTTON;
+	CDParams.WinFlags |= cUIWindow::UI_WIN_MAXIMIZE_BUTTON; //  | cUIWindow::UI_WIN_MODAL
 	CDParams.Size = eeSize( 420, 267 );
 	cUICommonDialog * CDialog = eeNew( cUICommonDialog, ( CDParams ) );
 	CDialog->AddFilePattern( "*.hpp;*.cpp", true );
@@ -882,6 +886,24 @@ void cEETest::LoadTextures() {
 	CreateTiling(Wireframe);
 
 	Log->Writef( "Map creation time: %f", te.Elapsed() );
+
+	cMTRand Rand( 0xFF00FF00 );
+	mMap = eeNew( cMap, () );
+	mMap->Create( eeSize(25,25), 8, eeSize(32,32), MAP_FLAG_CLAMP_BODERS | MAP_FLAG_CLIP_AREA );
+	mMap->AddLayer( MAP_LAYER_TILED, 0, "ground" );
+	mMap->Position( eeVector2i( mWindow->GetWidth() / 2 - mMap->ViewSize().Width() / 2, mWindow->GetHeight() / 2 - mMap->ViewSize().Height() / 2 ) );
+
+	cTileLayer * TLayer = reinterpret_cast<cTileLayer*> ( mMap->GetLayer(0) );
+
+	for ( x = 0; x < mMap->Size().Width(); x++ ) {
+		for ( y = 0; y < mMap->Size().Height(); y++ ) {
+			TLayer->AddGameObject(
+				eeNew(
+					cGameObjectShape, ( GObjFlags::GAMEOBJECT_STATIC, Tiles[ Rand.RandRange( 0, 5 ) ] )
+				), eeVector2u( x, y )
+			);
+		}
+	}
 }
 
 void cEETest::RandomizeHeights() {
@@ -1145,7 +1167,11 @@ void cEETest::Screen4() {
 }
 
 void cEETest::Screen5() {
+	mMap->Update();
+	mMap->Draw();
 
+	cPrimitives p;
+	p.DrawRectangle( mMap->Position().x, mMap->Position().y, mMap->ViewSize().Width(), mMap->ViewSize().Height(), 0, 1, EE_DRAW_LINE );
 }
 
 void cEETest::Render() {
@@ -1408,17 +1434,21 @@ void cEETest::Input() {
 					Map.Move( 0, -mWindow->Elapsed() * 0.2f );
 			}
 
-			if ( KM->IsKeyDown(KEY_LEFT) )
-				Map.Move( (mWindow->Elapsed() * 0.2f), 0 );
+			if ( KM->IsKeyDown(KEY_LEFT) ) {
+				Map.Move( mWindow->Elapsed() * 0.2f, 0 );
+			}
 
-			if ( KM->IsKeyDown(KEY_RIGHT) )
+			if ( KM->IsKeyDown(KEY_RIGHT) ) {
 				Map.Move( -mWindow->Elapsed() * 0.2f, 0 );
+			}
 
-			if ( KM->IsKeyDown(KEY_UP) )
-				Map.Move( 0, (mWindow->Elapsed() * 0.2f) );
+			if ( KM->IsKeyDown(KEY_UP) ) {
+				Map.Move( 0, mWindow->Elapsed() * 0.2f );
+			}
 
-			if ( KM->IsKeyDown(KEY_DOWN) )
+			if ( KM->IsKeyDown(KEY_DOWN) ) {
 				Map.Move( 0, -mWindow->Elapsed() * 0.2f );
+			}
 
 			if ( KM->IsKeyDown(KEY_KP_MINUS) )
 				Map.BaseLight().Radius( Map.BaseLight().Radius() - mWindow->Elapsed() * 0.2f );
@@ -1474,6 +1504,24 @@ void cEETest::Input() {
 			}
 
 			break;
+		case 5:
+			if ( KM->IsKeyDown(KEY_LEFT) ) {
+				mMap->Move( mWindow->Elapsed() * 0.2f, 0 );
+			}
+
+			if ( KM->IsKeyDown(KEY_RIGHT) ) {
+				mMap->Move( -mWindow->Elapsed() * 0.2f, 0 );
+			}
+
+			if ( KM->IsKeyDown(KEY_UP) ) {
+				mMap->Move( 0, mWindow->Elapsed() * 0.2f );
+			}
+
+			if ( KM->IsKeyDown(KEY_DOWN) ) {
+				mMap->Move( 0, -mWindow->Elapsed() * 0.2f );
+			}
+
+			break;
 	}
 }
 
@@ -1512,6 +1560,7 @@ void cEETest::End() {
 	eeSAFE_DELETE( mBlindyPtr );
 	eeSAFE_DELETE( mBoxSprite );
 	eeSAFE_DELETE( mCircleSprite );
+	eeSAFE_DELETE( mMap );
 
 	cLog::instance()->Save();
 

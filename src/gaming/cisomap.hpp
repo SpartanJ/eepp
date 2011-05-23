@@ -1,5 +1,5 @@
-#ifndef mEE_GAMINGCISOMAP_H
-#define mEE_GAMINGCISOMAP_H
+#ifndef EE_GAMINGCISOMAP_H
+#define EE_GAMINGCISOMAP_H
 
 #include "base.hpp"
 
