@@ -21,6 +21,10 @@ class EE_API cLog : public tSingleton<cLog> {
 
 		void ConsoleOutput( const bool& output );
 
+		const bool& LiveWrite() const;
+
+		void LiveWrite( const bool& lw );
+
 		~cLog();
 	protected:
 		cLog();
@@ -28,6 +32,10 @@ class EE_API cLog : public tSingleton<cLog> {
 		std::string mData, mFilePath;
 		bool mSave;
 		bool mConsoleOutput;
+		bool mLiveWrite;
+		std::ofstream mFS;
+
+		void openfs();
 };
 
 }}

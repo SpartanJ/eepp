@@ -116,6 +116,7 @@ void cGL::Init() {
 		WriteExtension( EEGL_ARB_multitexture				, GLEW_ARB_multitexture 							);
 		WriteExtension( EEGL_EXT_texture_compression_s3tc	, GLEW_EXT_texture_compression_s3tc 				);
 		WriteExtension( EEGL_ARB_vertex_buffer_object		, GLEW_ARB_vertex_buffer_object						);
+		WriteExtension( EEGL_ARB_vertex_array_object		, GLEW_ARB_vertex_array_object 						);
 	}
 	else
 	#endif
@@ -131,6 +132,7 @@ void cGL::Init() {
 		WriteExtension( EEGL_ARB_multitexture				, IsExtension( "GL_ARB_multitexture" )				);
 		WriteExtension( EEGL_EXT_texture_compression_s3tc	, IsExtension( "GL_EXT_texture_compression_s3tc" )	);
 		WriteExtension( EEGL_ARB_vertex_buffer_object		, IsExtension( "GL_ARB_vertex_buffer_object" )		);
+		WriteExtension( EEGL_ARB_vertex_array_object		, IsExtension( "GL_ARB_vertex_array_object" )		);
 
 		glewOn = false; /// avoid compiler warning
 	}
@@ -344,11 +346,13 @@ std::string cGL::GetVersion() {
 }
 
 std::string cGL::GetShadingLanguageVersion() {
-	#ifdef GL_SHADING_LANGUAGE_VERSION
-	return std::string( reinterpret_cast<const char*> ( cGL::instance()->GetString( GL_SHADING_LANGUAGE_VERSION ) ) );
-	#else
-	return std::string( "0" );
-	#endif
+	if ( ShadersSupported() ) {
+		#ifdef GL_SHADING_LANGUAGE_VERSION
+			return std::string( reinterpret_cast<const char*> ( cGL::instance()->GetString( GL_SHADING_LANGUAGE_VERSION ) ) );
+		#endif
+	}
+
+	return std::string( "Shaders not supported" );
 }
 
 }}

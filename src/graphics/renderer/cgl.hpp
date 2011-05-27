@@ -17,7 +17,8 @@ enum EEGL_extensions  {
 	EEGL_EXT_framebuffer_object,
 	EEGL_ARB_multitexture,
 	EEGL_EXT_texture_compression_s3tc,
-	EEGL_ARB_vertex_buffer_object
+	EEGL_ARB_vertex_buffer_object,
+	EEGL_ARB_vertex_array_object
 };
 
 enum EEGL_version {

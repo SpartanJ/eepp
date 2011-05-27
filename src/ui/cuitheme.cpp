@@ -4,6 +4,14 @@
 #include "../graphics/ctexturefactory.hpp"
 #include "../graphics/cshapegroupmanager.hpp"
 
+#include "cuicheckbox.hpp"
+#include "cuicombobox.hpp"
+#include "cuidropdownlist.hpp"
+#include "cuilistbox.hpp"
+#include "cuipopupmenu.hpp"
+#include "cuiprogressbar.hpp"
+#include "cuipushbutton.hpp"
+
 namespace EE { namespace UI {
 
 static std::vector<std::string> UI_THEME_ELEMENTS;
@@ -261,6 +269,7 @@ cUITheme::cUITheme( const std::string& Name, const std::string& Abbr, cFont * De
 	mFontOverColor( 0, 0, 0, 255 ),
 	mFontSelectedColor( 0, 0, 0, 255 )
 {
+	PostInit();
 }
 
 cUITheme::~cUITheme() {
@@ -328,6 +337,94 @@ void cUITheme::FontOverColor( const eeColorA& Color ) {
 
 void cUITheme::FontSelectedColor( const eeColorA& Color ) {
 	mFontSelectedColor = Color;
+}
+
+void cUITheme::PostInit() {
+}
+
+cUICheckBox * cUITheme::CreateCheckBox( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags ) {
+	cUITextBox::CreateParams CheckBoxParams;
+	CheckBoxParams.Parent( Parent );
+	CheckBoxParams.PosSet( Pos );
+	CheckBoxParams.SizeSet( Size );
+	CheckBoxParams.Flags = Flags;
+	return eeNew( cUICheckBox, ( CheckBoxParams ) );
+}
+
+cUIComboBox * cUITheme::CreateComboBox( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, cUIListBox * ListBox ) {
+	cUIComboBox::CreateParams ComboParams;
+	ComboParams.Parent( Parent );
+	ComboParams.PosSet( Pos );
+	ComboParams.SizeSet( Size );
+	ComboParams.Flags = Flags;
+	ComboParams.MinNumVisibleItems = MinNumVisibleItems;
+	ComboParams.PopUpToMainControl = PopUpToMainControl;
+	ComboParams.ListBox = ListBox;
+	return eeNew( cUIComboBox, ( ComboParams ) );
+}
+
+cUIDropDownList * cUITheme::CreateDropDownList( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, cUIListBox * ListBox ) {
+	cUIDropDownList::CreateParams DDLParams;
+	DDLParams.Parent( Parent );
+	DDLParams.PosSet( Pos );
+	DDLParams.SizeSet( Size );
+	DDLParams.Flags = Flags;
+	DDLParams.MinNumVisibleItems = MinNumVisibleItems;
+	DDLParams.PopUpToMainControl = PopUpToMainControl;
+	DDLParams.ListBox = ListBox;
+	return eeNew( cUIDropDownList, ( DDLParams ) );
+}
+
+cUIListBox * cUITheme::CreateListBox( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool SmoothScroll, Uint32 RowHeight, UI_SCROLLBAR_MODE VScrollMode, UI_SCROLLBAR_MODE HScrollMode, eeRecti PaddingContainer ) {
+	cUIListBox::CreateParams LBParams;
+	LBParams.Parent( Parent );
+	LBParams.PosSet( Pos );
+	LBParams.SizeSet( Size );
+	LBParams.Flags = Flags;
+	LBParams.SmoothScroll = SmoothScroll;
+	LBParams.RowHeight = RowHeight;
+	LBParams.VScrollMode = VScrollMode;
+	LBParams.HScrollMode = HScrollMode;
+	LBParams.PaddingContainer = PaddingContainer;
+	return eeNew( cUIListBox, ( LBParams ) );
+}
+
+cUIPopUpMenu * cUITheme::CreatePopUpMenu( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags ) {
+	cUIPopUpMenu::CreateParams MenuParams;
+	MenuParams.Parent( Parent );
+	MenuParams.PosSet( Pos );
+	MenuParams.SizeSet( Size );
+	MenuParams.Flags = Flags;
+
+	/** Aqua Theme Stuff *//**
+	MenuParams.MinWidth = 100;
+	MenuParams.MinSpaceForIcons = 16;
+	MenuParams.MinRightMargin = 8;
+	*/
+	return eeNew( cUIPopUpMenu, ( MenuParams ) );
+}
+
+cUIProgressBar * cUITheme::CreateProgressBar( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool DisplayPercent ) {
+	cUIProgressBar::CreateParams PBParams;
+	PBParams.Parent( Parent );
+	PBParams.PosSet( Pos );
+	PBParams.SizeSet( Size );
+	PBParams.Flags = Flags;
+	PBParams.DisplayPercent = DisplayPercent;
+	return eeNew( cUIProgressBar, ( PBParams ) );
+}
+
+cUIPushButton * cUITheme::CreatePushButton( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, cShape * Icon ) {
+	cUIPushButton::CreateParams ButtonParams;
+	ButtonParams.Parent( Parent );
+	ButtonParams.PosSet( Pos );
+	ButtonParams.SizeSet( Size );
+	ButtonParams.Flags = Flags;
+
+	if ( NULL != Icon )
+		ButtonParams.SetIcon( Icon );
+
+	return eeNew( cUIPushButton, ( ButtonParams ) );
 }
 
 }}

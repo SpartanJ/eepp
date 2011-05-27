@@ -32,14 +32,12 @@ cpBody cpStaticBodySingleton;
 cpBody*
 cpBodyAlloc(void)
 {
-	return (cpBody *)cpmalloc(sizeof(cpBody));
+	return (cpBody *)cpcalloc(1, sizeof(cpBody));
 }
 
 cpBody *
 cpBodyInit(cpBody *body, cpFloat m, cpFloat i)
 {
-	bzero(body, sizeof(cpBody));
-	
 	body->space = NULL;
 	body->shapeList = NULL;
 	body->arbiterList = NULL;
@@ -48,14 +46,13 @@ cpBodyInit(cpBody *body, cpFloat m, cpFloat i)
 	body->velocity_func = cpBodyUpdateVelocity;
 	body->position_func = cpBodyUpdatePosition;
 	
-	cpBodySetMass(body, m);
-	cpBodySetMoment(body, i);
-
+	cpComponentNode node = {NULL, NULL, 0.0f};
+	body->node = node;
+	
 	body->p = cpvzero;
 	body->v = cpvzero;
 	body->f = cpvzero;
 	
-	cpBodySetAngle(body, 0.0f);
 	body->w = 0.0f;
 	body->t = 0.0f;
 	
@@ -65,10 +62,12 @@ cpBodyInit(cpBody *body, cpFloat m, cpFloat i)
 	body->v_limit = (cpFloat)INFINITY;
 	body->w_limit = (cpFloat)INFINITY;
 	
-	cpComponentNode node = {NULL, NULL, 0.0f};
-	body->node = node;
-	
 	body->data = NULL;
+	
+	// Setters must be called after full initialization so the sanity checks don't assert on garbage data.
+	cpBodySetMass(body, m);
+	cpBodySetMoment(body, i);
+	cpBodySetAngle(body, 0.0f);
 	
 	return body;
 }
@@ -143,6 +142,27 @@ cpBodySetMoment(cpBody *body, cpFloat moment)
 	cpBodyActivate(body);
 	body->i = moment;
 	body->i_inv = 1.0f/moment;
+}
+
+void
+cpBodyAddShape(cpBody *body, cpShape *shape)
+{
+	shape->next = body->shapeList; body->shapeList = shape;
+}
+
+void
+cpBodyRemoveShape(cpBody *body, cpShape *shape)
+{
+	cpShape **prev_ptr = &body->shapeList;
+	cpShape *node = body->shapeList;
+	
+	while(node && node != shape){
+		prev_ptr = &node->next;
+		node = node->next;
+	}
+	
+	cpAssert(node, "Attempted to remove a shape from a body it was never attached to.");
+	(*prev_ptr) = node->next;
 }
 
 static inline void

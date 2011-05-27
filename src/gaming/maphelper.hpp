@@ -6,11 +6,11 @@ namespace EE { namespace Gaming {
 class GObjFlags {
 	public:
 		enum EE_GAMEOBJECT_FLAGS {
-			GAMEOBJECT_STATIC = 0,
-			GAMEOBJECT_ANIMATED,
-			GAMEOBJECT_MIRRORED,
-			GAMEOBJECT_FLIPED,
-			GAMEOBJECT_BLOCKED
+			GAMEOBJECT_STATIC		=  ( 1 << 0 ),
+			GAMEOBJECT_ANIMATED		=  ( 1 << 1 ),
+			GAMEOBJECT_MIRRORED		=  ( 1 << 2 ),
+			GAMEOBJECT_FLIPED		=  ( 1 << 3 ),
+			GAMEOBJECT_BLOCKED		=  ( 1 << 4 )
 		};
 };
 

@@ -69,7 +69,7 @@ cpShapeInit(cpShape *shape, const cpShapeClass *klass, cpBody *body)
 void
 cpShapeDestroy(cpShape *shape)
 {
-	if(shape->klass->destroy) shape->klass->destroy(shape);
+	if(shape->klass && shape->klass->destroy) shape->klass->destroy(shape);
 }
 
 void
@@ -79,6 +79,19 @@ cpShapeFree(cpShape *shape)
 		cpShapeDestroy(shape);
 		cpfree(shape);
 	}
+}
+
+void
+cpShapeSetBody(cpShape *shape, cpBody *body)
+{
+	// This is a little tricky, but was requested by a user.
+	// Changing the body on an active shape swapping out the shape lists on the bodies
+	if(shape->next){
+		cpBodyRemoveShape(shape->body, shape);
+		cpBodyAddShape(body, shape);
+	}
+	
+	shape->body = body;
 }
 
 cpBB

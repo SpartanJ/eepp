@@ -5,6 +5,7 @@ void cEETest::Init() {
 
 	#ifdef EE_DEBUG
 	cLog::instance()->ConsoleOutput( true );
+	cLog::instance()->LiveWrite( true );
 	#endif
 
 	run 				= false;
@@ -63,6 +64,8 @@ void cEETest::Init() {
 	run = ( mWindow->Created() && PAK.IsOpen() );
 
 	if ( run ) {
+        cLog::instance()->Write( "Running eepp" );
+
 		#ifdef EE_DEBUG
 		std::cout << "Size of Callback0: " << sizeof( cb::Callback0<void> ) << std::endl;
 		std::cout << "Size of cWaypoints: " << sizeof( cWaypoints ) << std::endl;
@@ -136,24 +139,31 @@ void cEETest::Init() {
 		if ( NULL != mFBO )
 			mFBO->ClearColor( eeColorAf( 0, 0, 0, 0.5f ) );
 
-
 		eePolygon2f Poly = CreateRoundedPolygon( 0.f, 0.f, 256.f, 50.f );
 
 		mVBO = cVertexBuffer::Create( VERTEX_FLAG_GET( VERTEX_FLAG_POSITION ) | VERTEX_FLAG_GET( VERTEX_FLAG_COLOR ), DM_POLYGON );
 
-		for ( Uint32 i = 0; i < Poly.Size(); i++ ) {
-			mVBO->AddVertex( Poly[i] );
-			mVBO->AddColor( eeColorA( 100 + i, 255 - i, 150 + i, 200 ) );
-		}
+        if ( NULL != mVBO ) {
+            for ( Uint32 i = 0; i < Poly.Size(); i++ ) {
+                mVBO->AddVertex( Poly[i] );
+                mVBO->AddColor( eeColorA( 100 + i, 255 - i, 150 + i, 200 ) );
+            }
 
-		mVBO->Compile();
+            mVBO->Compile();
+        }
 
 		PhysicsCreate();
 
 		Launch();
 	} else {
-		std::cout << "Failed to start EE++" << std::endl;
+        std::string err;
+
+		std::cout << err.c_str() << std::endl;
+
+		cLog::instance()->Write( err );
+
 		cEngine::DestroySingleton();
+
 		exit(0);
 	}
 }
@@ -207,9 +217,9 @@ void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
 	Map.Font( FF );
 
 	Con.Create( FF, true );
-	Con.IgnoreCharOnPrompt( 186 ); // 'Âº'
+	Con.IgnoreCharOnPrompt( 186 ); // 'º'
 
-	mBuda = String::FromUtf8( "El mono ve el pez en el agua y sufre. Piensa que su mundo es el Ãºnico que existe, el mejor, el real. Sufre porque es bueno y tiene compasiÃ³n, lo ve y piensa: \"Pobre se estÃ¡ ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvÃ©. Pero el pez se retuerce de dolor y muere. Por eso te mostrÃ© el sueÃ±o, es imposible meter el mar en tu cabeza, que es un balde." );
+	mBuda = String::FromUtf8( "El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde." );
 
 	CreateUI();
 
@@ -239,9 +249,12 @@ void cEETest::CreateUI() {
 	Log->Writef( "Texture Atlas Loading Time: %f", TE.ElapsedSinceStart() );
 
 	cTextureGroupLoader tgl( MyPath + "data/aquatg/aqua.etg" );
-	TF->GetByName( "data/aquatg/aqua.png" )->TextureFilter( TEX_FILTER_NEAREST );
-	cUIThemeManager::instance()->Add( cUITheme::LoadFromShapeGroup( cShapeGroupManager::instance()->GetByName( "aqua" ), "aqua", "aqua" ) );
+	tgl.GetTexture()->TextureFilter( TEX_FILTER_NEAREST );
 
+	cUITheme * Aqua = cUITheme::LoadFromShapeGroup( cShapeGroupManager::instance()->GetByName( "aqua" ), "aqua", "aqua" );
+	Aqua->FontSelectedColor( eeColorA( 255, 255, 255, 255 ) );
+
+	cUIThemeManager::instance()->Add( Aqua );
 	cUIThemeManager::instance()->DefaultEffectsEnabled( true );
 	cUIThemeManager::instance()->DefaultFont( TTF );
 	cUIThemeManager::instance()->DefaultTheme( "aqua" );
@@ -399,7 +412,6 @@ void cEETest::CreateUI() {
 	LBParams.PosSet( 325, 8 );
 	LBParams.Size = eeSize( 200, 240-16 );
 	LBParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING; // | UI_MULTI_SELECT
-	LBParams.FontSelectedColor = eeColorA( 255, 255, 255, 255 );
 	mListBox = eeNew( cUIListBox, ( LBParams ) );
 	mListBox->Visible( true );
 	mListBox->Enabled( true );
@@ -452,7 +464,6 @@ void cEETest::CreateUI() {
 	MenuParams.MinWidth = 100;
 	MenuParams.MinSpaceForIcons = 16;
 	MenuParams.PosSet( 0, 0 );
-	MenuParams.FontSelectedColor = eeColorA( 255, 255, 255, 255 );
 	MenuParams.MinRightMargin = 8;
 	Menu = eeNew( cUIPopUpMenu, ( MenuParams ) );
 	Menu->Add( "New", cGlobalShapeGroup::instance()->GetByName( "aqua_button_ok" ) );
@@ -559,7 +570,7 @@ void cEETest::CreateUI() {
 	cUICommonDialog::CreateParams CDParams;
 	CDParams.Flags = UI_HALIGN_CENTER;
 	CDParams.WinFlags |= cUIWindow::UI_WIN_MAXIMIZE_BUTTON; //  | cUIWindow::UI_WIN_MODAL
-	CDParams.Size = eeSize( 420, 267 );
+	CDParams.ButtonsPositionFixer.x = -2;
 	cUICommonDialog * CDialog = eeNew( cUICommonDialog, ( CDParams ) );
 	CDialog->AddFilePattern( "*.hpp;*.cpp", true );
 	CDialog->Center();
@@ -573,8 +584,6 @@ void cEETest::CreateWinMenu() {
 
 	WinMenuParams.Parent( mUIWindow->Container() );
 	WinMenuParams.ButtonMargin = 12;
-	WinMenuParams.FontSelectedColor = eeColorA( 255, 255, 255, 255 );
-	WinMenuParams.Flags |= cUIWindow::UI_WIN_NO_BORDER;
 
 	cUIWinMenu * WinMenu = eeNew( cUIWinMenu, ( WinMenuParams ) );
 
@@ -585,7 +594,6 @@ void cEETest::CreateWinMenu() {
 	MenuParams.MinWidth = 100;
 	MenuParams.MinSpaceForIcons = 16;
 	MenuParams.PosSet( 0, 0 );
-	MenuParams.FontSelectedColor = eeColorA( 255, 255, 255, 255 );
 	MenuParams.MinRightMargin = 8;
 
 	cUIPopUpMenu * PopMenu = eeNew( cUIPopUpMenu, ( MenuParams ) );
@@ -613,6 +621,7 @@ void cEETest::CreateDecoratedWindow() {
 	WinParams.PosSet( 200, 50 );
 	WinParams.Size = eeSize( 530, 400 );
 	WinParams.MinWindowSize = eeSize( 100, 200 );
+	WinParams.ButtonsPositionFixer.x = -2;
 
 	mUIWindow = eeNew( cUIWindow, ( WinParams ) );
 	mUIWindow->AddEventListener( cUIEvent::EventOnWindowCloseClick, cb::Make1( this, &cEETest::CloseClick ) );
@@ -1151,9 +1160,11 @@ void cEETest::Screen4() {
 		mBlindy.Position( 128-16, 128-16 );
 		mBlindy.Draw();
 
-		mVBO->Bind();
-		mVBO->Draw();
-		mVBO->Unbind();
+        if ( NULL != mVBO ) {
+            mVBO->Bind();
+            mVBO->Draw();
+            mVBO->Unbind();
+        }
 
 		mFBOText.Draw( 128.f - (eeFloat)(Int32)( mFBOText.GetTextWidth() * 0.5f ), 25.f - (eeFloat)(Int32)( mFBOText.GetTextHeight() * 0.5f ), FONT_DRAW_CENTER );
 

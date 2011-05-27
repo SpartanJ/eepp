@@ -168,7 +168,7 @@ SRCCHIPMUNK			= $(wildcard ./src/helper/chipmunk/*.c) $(wildcard ./src/helper/ch
 SRCHAIKUTTF 		= $(wildcard ./src/helper/haikuttf/*.cpp)
 SRCBASE				= $(wildcard ./src/base/*.cpp)
 SRCAUDIO			= $(wildcard ./src/audio/*.cpp)
-SRCGAMING			= $(wildcard ./src/gaming/*.cpp)
+SRCGAMING			= $(wildcard ./src/gaming/*.cpp) $(wildcard ./src/gaming/mapeditor/*.cpp)
 SRCGRAPHICS			= $(wildcard ./src/graphics/*.cpp) $(wildcard ./src/graphics/renderer/*.cpp)
 SRCMATH				= $(wildcard ./src/math/*.cpp)
 SRCSYSTEM			= $(wildcard ./src/system/*.cpp)
@@ -243,6 +243,7 @@ dirs:
 	@mkdir -p $(OBJDIR)/src/base
 	@mkdir -p $(OBJDIR)/src/audio
 	@mkdir -p $(OBJDIR)/src/gaming
+	@mkdir -p $(OBJDIR)/src/gaming/mapeditor
 	@mkdir -p $(OBJDIR)/src/graphics
 	@mkdir -p $(OBJDIR)/src/graphics/renderer
 	@mkdir -p $(OBJDIR)/src/math

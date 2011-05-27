@@ -150,70 +150,72 @@ Uint32 cWindowAl::CreateFlags( const WindowSettings& Settings, const ContextSett
 }
 
 bool cWindowAl::Create( WindowSettings Settings, ContextSettings Context ) {
-	DestroyDisplay();
+	try {
+		DestroyDisplay();
 
-	mWindow.WindowConfig	= Settings;
-	mWindow.ContextConfig	= Context;
+		mWindow.WindowConfig	= Settings;
+		mWindow.ContextConfig	= Context;
 
-	al_set_new_display_flags( CreateFlags( Settings, Context ) );
-	al_set_new_display_option( ALLEGRO_STENCIL_SIZE	, Context.StencilBufferSize	, ALLEGRO_SUGGEST );
-	al_set_new_display_option( ALLEGRO_DEPTH_SIZE	, Context.DepthBufferSize	, ALLEGRO_SUGGEST );
+		al_set_new_display_flags( CreateFlags( Settings, Context ) );
+		al_set_new_display_option( ALLEGRO_STENCIL_SIZE	, Context.StencilBufferSize	, ALLEGRO_SUGGEST );
+		al_set_new_display_option( ALLEGRO_DEPTH_SIZE	, Context.DepthBufferSize	, ALLEGRO_SUGGEST );
 
-	if ( Context.VSync )
-		al_set_new_display_option( ALLEGRO_VSYNC, 1, ALLEGRO_SUGGEST );
+		if ( Context.VSync )
+			al_set_new_display_option( ALLEGRO_VSYNC, 1, ALLEGRO_SUGGEST );
 
-	ALLEGRO_MONITOR_INFO minfo;
+		ALLEGRO_MONITOR_INFO minfo;
 
-	if ( al_get_monitor_info( 0, &minfo ) ) {
-		mWindow.DesktopResolution = eeSize( minfo.x2, minfo.y2 );
+		if ( al_get_monitor_info( 0, &minfo ) ) {
+			mWindow.DesktopResolution = eeSize( minfo.x2, minfo.y2 );
 
-		if ( mWindow.WindowConfig.Style & WindowStyle::UseDesktopResolution ) {
-			mWindow.WindowConfig.Width	= mWindow.DesktopResolution.Width();
-			mWindow.WindowConfig.Height	= mWindow.DesktopResolution.Height();
+			if ( mWindow.WindowConfig.Style & WindowStyle::UseDesktopResolution ) {
+				mWindow.WindowConfig.Width	= mWindow.DesktopResolution.Width();
+				mWindow.WindowConfig.Height	= mWindow.DesktopResolution.Height();
+			}
+		} else {
+			mWindow.DesktopResolution = eeSize( Settings.Width, Settings.Height );
 		}
-	} else {
-		mWindow.DesktopResolution = eeSize( Settings.Width, Settings.Height );
+
+		mDisplay = al_create_display( Settings.Width, Settings.Height );
+
+		if ( NULL != mDisplay ) {
+			al_inhibit_screensaver( true );
+
+			Caption( mWindow.WindowConfig.Caption );
+
+			if ( NULL == cGL::ExistsSingleton() ) {
+				cGL::CreateSingleton( mWindow.ContextConfig.Version );
+			}
+
+			cGL::instance()->Init();
+
+			CreatePlatform();
+
+			GetMainContext();
+
+			CreateView();
+
+			Setup2D();
+
+			mWindow.Created = true;
+
+			if ( "" != mWindow.WindowConfig.Icon ) {
+				Icon( mWindow.WindowConfig.Icon );
+			}
+
+			LogSuccessfulInit( "Allegro 5" );
+
+			/// Init the clipboard after the window creation
+			reinterpret_cast<cClipboardAl*> ( mClipboard )->Init();
+
+			/// Init the input after the window creation
+			reinterpret_cast<cInputAl*> ( mInput )->Init();
+
+			return true;
+		}
+	} catch (...) {
+		LogFailureInit( "cWindowAl", "Allegro 5" );
 	}
-
-	mDisplay = al_create_display( Settings.Width, Settings.Height );
-
-	if ( NULL != mDisplay ) {
-		al_inhibit_screensaver( true );
-
-		Caption( mWindow.WindowConfig.Caption );
-
-		if ( NULL == cGL::ExistsSingleton() ) {
-			cGL::CreateSingleton( mWindow.ContextConfig.Version );
-		}
-
-		cGL::instance()->Init();
-
-		CreatePlatform();
-
-		GetMainContext();
-
-		CreateView();
-
-		Setup2D();
-
-		mWindow.Created = true;
-
-		if ( "" != mWindow.WindowConfig.Icon ) {
-			Icon( mWindow.WindowConfig.Icon );
-		}
-
-		LogSuccessfulInit( "Allegro 5" );
-
-		/// Init the clipboard after the window creation
-		reinterpret_cast<cClipboardAl*> ( mClipboard )->Init();
-
-		/// Init the input after the window creation
-		reinterpret_cast<cInputAl*> ( mInput )->Init();
-
-		return true;
-	}
-
-	LogFailureInit( "cWindowAl", "Allegro 5" );
 
 	return false;
 }

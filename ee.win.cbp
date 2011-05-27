@@ -36,6 +36,7 @@
 			<Add option="-std=gnu99 -fno-strict-aliasing -ffast-math -DSTBI_FAILURE_USERMSG -Wno-unknown-pragmas -Wno-unknown-pragmas -DEE_BACKEND_ALLEGRO_ACTIVE -DEE_BACKEND_SDL_ACTIVE" />
 			<Add directory=".\src\helper\chipmunk" />
 			<Add directory=".\src\helper\zlib" />
+			<Add directory="C:\MinGW\include\freetype2" />
 		</Compiler>
 		<Linker>
 			<Add option="-mwindows" />
@@ -84,12 +85,33 @@
 		<Unit filename="src\base\string.cpp" />
 		<Unit filename="src\base\string.hpp" />
 		<Unit filename="src\base\utf.hpp" />
+		<Unit filename="src\base\utf.inl" />
 		<Unit filename="src\ee.h" />
 		<Unit filename="src\gaming\base.hpp" />
+		<Unit filename="src\gaming\cgameobject.cpp" />
+		<Unit filename="src\gaming\cgameobject.hpp" />
+		<Unit filename="src\gaming\cgameobjectshape.cpp" />
+		<Unit filename="src\gaming\cgameobjectshape.hpp" />
+		<Unit filename="src\gaming\cgameobjectshapeex.cpp" />
+		<Unit filename="src\gaming\cgameobjectshapeex.hpp" />
+		<Unit filename="src\gaming\cgameobjectsprite.cpp" />
+		<Unit filename="src\gaming\cgameobjectsprite.hpp" />
 		<Unit filename="src\gaming\cisomap.cpp" />
 		<Unit filename="src\gaming\cisomap.hpp" />
+		<Unit filename="src\gaming\clayer.cpp" />
+		<Unit filename="src\gaming\clayer.hpp" />
 		<Unit filename="src\gaming\clight.cpp" />
 		<Unit filename="src\gaming\clight.hpp" />
+		<Unit filename="src\gaming\cmap.cpp" />
+		<Unit filename="src\gaming\cmap.hpp" />
+		<Unit filename="src\gaming\cobjectlayer.cpp" />
+		<Unit filename="src\gaming\cobjectlayer.hpp" />
+		<Unit filename="src\gaming\ctilelayer.cpp" />
+		<Unit filename="src\gaming\ctilelayer.hpp" />
+		<Unit filename="src\gaming\mapeditor\base.hpp" />
+		<Unit filename="src\gaming\mapeditor\cmapeditor.cpp" />
+		<Unit filename="src\gaming\mapeditor\cmapeditor.hpp" />
+		<Unit filename="src\gaming\maphelper.hpp" />
 		<Unit filename="src\graphics\base.hpp" />
 		<Unit filename="src\graphics\cbatchrenderer.cpp" />
 		<Unit filename="src\graphics\cbatchrenderer.hpp" />
@@ -310,6 +332,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src\helper\chipmunk\cpSpatialIndex.h" />
+		<Unit filename="src\helper\chipmunk\cpSweep1D.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="src\helper\chipmunk\cpVect.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -691,6 +716,8 @@
 		<Unit filename="src\ui\cuicheckbox.hpp" />
 		<Unit filename="src\ui\cuicombobox.cpp" />
 		<Unit filename="src\ui\cuicombobox.hpp" />
+		<Unit filename="src\ui\cuicommondialog.cpp" />
+		<Unit filename="src\ui\cuicommondialog.hpp" />
 		<Unit filename="src\ui\cuicomplexcontrol.cpp" />
 		<Unit filename="src\ui\cuicomplexcontrol.hpp" />
 		<Unit filename="src\ui\cuicontrol.cpp" />
@@ -739,6 +766,8 @@
 		<Unit filename="src\ui\cuiradiobutton.hpp" />
 		<Unit filename="src\ui\cuiscrollbar.cpp" />
 		<Unit filename="src\ui\cuiscrollbar.hpp" />
+		<Unit filename="src\ui\cuiselectbutton.cpp" />
+		<Unit filename="src\ui\cuiselectbutton.hpp" />
 		<Unit filename="src\ui\cuiseparator.cpp" />
 		<Unit filename="src\ui\cuiseparator.hpp" />
 		<Unit filename="src\ui\cuiskin.cpp" />
@@ -771,6 +800,8 @@
 		<Unit filename="src\ui\cuitooltip.hpp" />
 		<Unit filename="src\ui\cuiwindow.cpp" />
 		<Unit filename="src\ui\cuiwindow.hpp" />
+		<Unit filename="src\ui\cuiwinmenu.cpp" />
+		<Unit filename="src\ui\cuiwinmenu.hpp" />
 		<Unit filename="src\ui\tuiitemcontainer.hpp" />
 		<Unit filename="src\ui\uihelper.cpp" />
 		<Unit filename="src\ui\uihelper.hpp" />
@@ -797,6 +828,22 @@
 		<Unit filename="src\utils\utils.hpp" />
 		<Unit filename="src\utils\vector2.hpp" />
 		<Unit filename="src\utils\vector3.hpp" />
+		<Unit filename="src\window\backend\SDL13\base.hpp" />
+		<Unit filename="src\window\backend\SDL13\cbackendsdl.hpp" />
+		<Unit filename="src\window\backend\SDL13\cclipboardsdl.cpp" />
+		<Unit filename="src\window\backend\SDL13\cclipboardsdl.hpp" />
+		<Unit filename="src\window\backend\SDL13\ccursormanagersdl.cpp" />
+		<Unit filename="src\window\backend\SDL13\ccursormanagersdl.hpp" />
+		<Unit filename="src\window\backend\SDL13\ccursorsdl.cpp" />
+		<Unit filename="src\window\backend\SDL13\ccursorsdl.hpp" />
+		<Unit filename="src\window\backend\SDL13\cinputsdl.cpp" />
+		<Unit filename="src\window\backend\SDL13\cinputsdl.hpp" />
+		<Unit filename="src\window\backend\SDL13\cjoystickmanagersdl.cpp" />
+		<Unit filename="src\window\backend\SDL13\cjoystickmanagersdl.hpp" />
+		<Unit filename="src\window\backend\SDL13\cjoysticksdl.cpp" />
+		<Unit filename="src\window\backend\SDL13\cjoysticksdl.hpp" />
+		<Unit filename="src\window\backend\SDL13\cwindowsdl.cpp" />
+		<Unit filename="src\window\backend\SDL13\cwindowsdl.hpp" />
 		<Unit filename="src\window\backend\SDL\cbackendsdl.hpp" />
 		<Unit filename="src\window\backend\SDL\cclipboardsdl.cpp" />
 		<Unit filename="src\window\backend\SDL\cclipboardsdl.hpp" />

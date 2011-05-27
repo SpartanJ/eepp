@@ -131,9 +131,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 }
 
 std::string cWindowSDL::GetVersion() {
-	SDL_version ver;
-
-	SDL_GetVersion( &ver );
+	SDL_version ver = mWMinfo.version;
 
 	return StrFormated( "SDL %d.%d.%d", ver.major, ver.minor, ver.patch );
 }

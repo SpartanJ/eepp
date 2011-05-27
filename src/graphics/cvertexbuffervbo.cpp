@@ -76,7 +76,7 @@ bool cVertexBufferVBO::Compile() {
 		}
 	}
 
-	glBindBuffer( GL_ARRAY_BUFFER, 0 );
+	glBindBufferARB( GL_ARRAY_BUFFER, 0 );
 
 	//Create the VBO index array
 	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) ) {

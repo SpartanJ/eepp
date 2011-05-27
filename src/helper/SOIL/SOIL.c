@@ -1043,6 +1043,14 @@ unsigned int
 		}
 	}
 
+	/*	if the user can't support NPOT textures, make sure we force the POT option	*/
+	if( (query_NPOT_capability() == SOIL_CAPABILITY_NONE) &&
+		!(flags & SOIL_FLAG_TEXTURE_RECTANGLE) )
+	{
+		/*	add in the POT flag */
+		flags |= SOIL_FLAG_POWER_OF_TWO;
+	}
+
 	needCopy = ( ( flags & SOIL_FLAG_INVERT_Y ) || ( flags & SOIL_FLAG_NTSC_SAFE_RGB ) || ( flags & SOIL_FLAG_MULTIPLY_ALPHA ) || ( ( flags & SOIL_FLAG_POWER_OF_TWO ) || ( flags & SOIL_FLAG_MIPMAPS ) || ( iwidth > max_supported_size ) || ( iheight > max_supported_size ) ) || ( flags & SOIL_FLAG_CoCg_Y ) || ( flags & SOIL_FLAG_COMPRESS_TO_DXT ) );
 
 	/*	create a copy the image data
@@ -1101,13 +1109,6 @@ unsigned int
 			/*	no other number of channels contains alpha data	*/
 			break;
 		}
-	}
-	/*	if the user can't support NPOT textures, make sure we force the POT option	*/
-	if( (query_NPOT_capability() == SOIL_CAPABILITY_NONE) &&
-		!(flags & SOIL_FLAG_TEXTURE_RECTANGLE) )
-	{
-		/*	add in the POT flag */
-		flags |= SOIL_FLAG_POWER_OF_TWO;
 	}
 
 	/*	do I need to make it a power of 2?	*/

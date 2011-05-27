@@ -4,7 +4,8 @@ namespace EE { namespace System {
 
 cLog::cLog() :
 	mSave( false ),
-	mConsoleOutput( false )
+	mConsoleOutput( false ),
+	mLiveWrite( false )
 {
 	Write("...::: Entropia Engine++ Loaded :::...");
 	Write( "Loaded on " + GetDateTimeStr() );
@@ -14,26 +15,22 @@ cLog::~cLog() {
 	Write( "\nUnloaded on " + GetDateTimeStr(), false );
 	Write( "...::: Entropia Engine++ Unloaded :::..." );
 
-	if ( !mFilePath.empty() )
-		mFilePath = GetProcessPath();
+	if ( mSave && !mLiveWrite ) {
+        openfs();
+		mFS << mData << std::endl;
+	}
 
-	if ( mSave ) {
-		std::string str = mFilePath;
-		str += "log.log";
-
-		std::ofstream fs( str.c_str(), std::ios::app );
-
-		fs << mData << std::endl;
-		fs.close();
+	if ( mFS.is_open() ) {
+        mFS.close();
 	}
 }
 
-void cLog::Save(const std::string& filepath) {
+void cLog::Save( const std::string& filepath ) {
 	mFilePath	= filepath;
 	mSave		= true;
 }
 
-void cLog::Write(const std::string& Text, const bool& newLine) {
+void cLog::Write( const std::string& Text, const bool& newLine ) {
 	mData += Text;
 
 	if ( newLine ) {
@@ -47,6 +44,21 @@ void cLog::Write(const std::string& Text, const bool& newLine) {
 			std::cout << Text;
 		}
 	}
+
+	if ( mLiveWrite ) {
+        openfs();
+		mFS << Text << std::endl;
+	}
+}
+
+void cLog::openfs() {
+	if ( !mFilePath.empty() )
+		mFilePath = GetProcessPath();
+
+    if ( !mFS.is_open() ) {
+        std::string str = mFilePath + "log.log";
+        mFS.open( str.c_str(), std::ios::app );
+    }
 }
 
 void cLog::Writef( const char* format, ... ) {
@@ -75,6 +87,11 @@ void cLog::Writef( const char* format, ... ) {
 				std::cout << tstr << std::endl;
 			}
 
+            if ( mLiveWrite ) {
+                openfs();
+                mFS << tstr << std::endl;
+            }
+
 			return;
 		}
 
@@ -97,6 +114,14 @@ const bool& cLog::ConsoleOutput() const {
 
 void cLog::ConsoleOutput( const bool& output ) {
 	mConsoleOutput = output;
+}
+
+const bool& cLog::LiveWrite() const {
+    return mLiveWrite;
+}
+
+void cLog::LiveWrite( const bool& lw ) {
+    mLiveWrite = lw;
 }
 
 }}

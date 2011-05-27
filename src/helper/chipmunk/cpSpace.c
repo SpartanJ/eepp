@@ -51,7 +51,7 @@ handlerSetEql(cpCollisionHandler *check, cpCollisionHandler *pair)
 static void *
 handlerSetTrans(cpCollisionHandler *handler, void *unused)
 {
-	cpCollisionHandler *copy = (cpCollisionHandler *)cpmalloc(sizeof(cpCollisionHandler));
+	cpCollisionHandler *copy = (cpCollisionHandler *)cpcalloc(1, sizeof(cpCollisionHandler));
 	(*copy) = (*handler);
 	
 	return copy;
@@ -155,15 +155,11 @@ cpSpaceDestroy(cpSpace *space)
 		cpArrayFree(space->allocatedBuffers);
 	}
 	
-	if(space->postStepCallbacks){
-		cpHashSetEach(space->postStepCallbacks, freeWrap, NULL);
-		cpHashSetFree(space->postStepCallbacks);
-	}
+	if(space->postStepCallbacks) cpHashSetEach(space->postStepCallbacks, freeWrap, NULL);
+	cpHashSetFree(space->postStepCallbacks);
 	
-	if(space->collisionHandlers){
-		cpHashSetEach(space->collisionHandlers, freeWrap, NULL);
-		cpHashSetFree(space->collisionHandlers);
-	}
+	if(space->collisionHandlers) cpHashSetEach(space->collisionHandlers, freeWrap, NULL);
+	cpHashSetFree(space->collisionHandlers);
 }
 
 void
@@ -174,6 +170,12 @@ cpSpaceFree(cpSpace *space)
 		cpfree(space);
 	}
 }
+
+#define cpAssertSpaceUnlocked(space) \
+	cpAssert(!space->locked, \
+		"This addition/removal cannot be done safely during a call to cpSpaceStep() or during a query. " \
+		"Put these calls into a post-step callback." \
+	);
 
 #pragma mark Collision Handler Function Management
 
@@ -187,6 +189,8 @@ cpSpaceAddCollisionHandler(
 	cpCollisionSeparateFunc separate,
 	void *data
 ){
+	cpAssertSpaceUnlocked(space);
+	
 	// Remove any old function so the new one will get added.
 	cpSpaceRemoveCollisionHandler(space, a, b);
 	
@@ -205,6 +209,8 @@ cpSpaceAddCollisionHandler(
 void
 cpSpaceRemoveCollisionHandler(cpSpace *space, cpCollisionType a, cpCollisionType b)
 {
+	cpAssertSpaceUnlocked(space);
+	
 	struct { cpCollisionType a, b; } ids = {a, b};
 	cpCollisionHandler *old_handler = (cpCollisionHandler *) cpHashSetRemove(space->collisionHandlers, CP_HASH_PAIR(a, b), &ids);
 	cpfree(old_handler);
@@ -219,6 +225,8 @@ cpSpaceSetDefaultCollisionHandler(
 	cpCollisionSeparateFunc separate,
 	void *data
 ){
+	cpAssertSpaceUnlocked(space);
+	
 	cpCollisionHandler handler = {
 		0, 0,
 		begin ? begin : alwaysCollide,
@@ -233,28 +241,6 @@ cpSpaceSetDefaultCollisionHandler(
 }
 
 #pragma mark Body, Shape, and Joint Management
-
-#define cpAssertSpaceUnlocked(space) \
-	cpAssert(!space->locked, \
-		"This addition/removal cannot be done safely during a call to cpSpaceStep() or during a query. " \
-		"Put these calls into a post-step callback." \
-	);
-
-static void
-cpBodyRemoveShape(cpBody *body, cpShape *shape)
-{
-	cpShape **prev_ptr = &body->shapeList;
-	cpShape *node = body->shapeList;
-	
-	while(node && node != shape){
-		prev_ptr = &node->next;
-		node = node->next;
-	}
-	
-	cpAssert(node, "Attempted to remove a shape from a body it was never attached to.");
-	(*prev_ptr) = node->next;
-}
-
 cpShape *
 cpSpaceAddShape(cpSpace *space, cpShape *shape)
 {
@@ -266,9 +252,7 @@ cpSpaceAddShape(cpSpace *space, cpShape *shape)
 	cpAssertSpaceUnlocked(space);
 	
 	cpBodyActivate(body);
-	
-	// Push onto the head of the body's shape list
-	shape->next = body->shapeList; body->shapeList = shape;
+	cpBodyAddShape(body, shape);
 	
 	cpShapeUpdate(shape, body->p, body->rot);
 	cpSpatialIndexInsert(space->activeShapes, shape, shape->hashid);
@@ -284,6 +268,7 @@ cpSpaceAddStaticShape(cpSpace *space, cpShape *shape)
 	cpAssertSpaceUnlocked(space);
 	
 	cpBody *body = shape->body;
+	cpBodyAddShape(body, shape);
 	cpShapeUpdate(shape, body->p, body->rot);
 	cpSpaceActivateShapesTouchingShape(space, shape);
 	cpSpatialIndexInsert(space->staticShapes, shape, shape->hashid);
@@ -392,20 +377,19 @@ cpSpaceRemoveShape(cpSpace *space, cpShape *shape)
 	cpBody *body = shape->body;
 	if(cpBodyIsStatic(body)){
 		cpSpaceRemoveStaticShape(space, shape);
-		return;
+	} else {
+		cpBodyActivate(body);
+		
+		cpAssert(cpSpaceContainsShape(space, shape),
+			"Cannot remove a shape that was not added to the space. (Removed twice maybe?)");
+		cpAssertSpaceUnlocked(space);
+		
+		cpBodyRemoveShape(body, shape);
+		
+		arbiterRemovalContext context = {space, shape};
+		cpHashSetFilter(space->cachedArbiters, (cpHashSetFilterFunc)arbiterSetFilterRemovedShape, &context);
+		cpSpatialIndexRemove(space->activeShapes, shape, shape->hashid);
 	}
-
-	cpBodyActivate(body);
-	
-	cpAssert(cpSpaceContainsShape(space, shape),
-		"Cannot remove a shape that was not added to the space. (Removed twice maybe?)");
-	cpAssertSpaceUnlocked(space);
-	
-	cpBodyRemoveShape(body, shape);
-	
-	arbiterRemovalContext context = {space, shape};
-	cpHashSetFilter(space->cachedArbiters, (cpHashSetFilterFunc)arbiterSetFilterRemovedShape, &context);
-	cpSpatialIndexRemove(space->activeShapes, shape, shape->hashid);
 }
 
 void
@@ -414,6 +398,8 @@ cpSpaceRemoveStaticShape(cpSpace *space, cpShape *shape)
 	cpAssert(cpSpaceContainsShape(space, shape),
 		"Cannot remove a static or sleeping shape that was not added to the space. (Removed twice maybe?)");
 	cpAssertSpaceUnlocked(space);
+	
+	cpBodyRemoveShape(shape->body, shape);
 	
 	arbiterRemovalContext context = {space, shape};
 	cpHashSetFilter(space->cachedArbiters, (cpHashSetFilterFunc)arbiterSetFilterRemovedShape, &context);

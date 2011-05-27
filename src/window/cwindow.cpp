@@ -55,7 +55,7 @@ bool cWindow::Resizeable() const {
 
 void cWindow::SetViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height, const bool& UpdateProjectionMatrix ) {
 	GLi->Viewport( x, GetHeight() - Height - y, Width, Height );
-	
+
 	if ( UpdateProjectionMatrix ) {
 		GLi->MatrixMode( GL_PROJECTION );
 		GLi->LoadIdentity();
@@ -101,7 +101,7 @@ void cWindow::Setup2D( const bool& KeepView ) {
 
 	if ( !KeepView )
 		SetView( mDefaultView );
-	
+
 	cTextureFactory::instance()->SetPreBlendFunc( ALPHA_NORMAL, true );
 
 	if ( GLv_3 != GLi->Version() ) {

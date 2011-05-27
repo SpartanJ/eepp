@@ -31,7 +31,7 @@ class EE_API cUIWinMenu : public cUIComplexControl {
 						FontColor			= Theme->FontColor();
 						FontShadowColor		= Theme->FontShadowColor();
 						FontOverColor		= Theme->FontOverColor();
-						FontSelectedColor	= FontOverColor;
+						FontSelectedColor	= Theme->FontSelectedColor();
 					}
 
 					if ( NULL == Font )

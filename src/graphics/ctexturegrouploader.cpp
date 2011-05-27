@@ -176,10 +176,13 @@ void cTextureGroupLoader::CreateShapes() {
 
 		Int32 pos = StrStartsWith( mAppPath, path );
 
+		// Removes the app path part
 		if ( -1 != pos && (Uint32)(pos + 1) < path.size() )
 			path = path.substr( pos + 1 );
 
 		cTexture * tTex 			= cTextureFactory::instance()->GetByName( path );
+
+		mTexuresLoaded.push_back( tTex );
 
 		// Create the Shape Group with the name of the real texture, not the Childs ( example load 1.png and not 1_ch1.png )
 		if ( 0 == z ) {
@@ -234,6 +237,15 @@ const bool& cTextureGroupLoader::IsLoaded() const {
 
 const bool& cTextureGroupLoader::IsLoading() const {
 	return mIsLoading;
+}
+
+cTexture * cTextureGroupLoader::GetTexture( const Uint32& texnum ) const {
+	eeASSERT( texnum < mTexuresLoaded.size() );
+	return mTexuresLoaded[ texnum ];
+}
+
+Uint32 cTextureGroupLoader::GetTexturesLoadedCount() {
+	return mTexuresLoaded.size();
 }
 
 bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std::string ImagesPath ) {
