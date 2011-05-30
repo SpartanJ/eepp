@@ -821,16 +821,25 @@ std::string RemoveLastFolderFromPath( std::string path ) {
 	std::size_t pos = path.find_last_of( GetOSlash() );
 
 	if ( std::string::npos != pos ) {
+		std::string sstr;
 		std::size_t pos2 = path.find_first_of( GetOSlash() );
 
 		if ( pos2 != pos ) {
-			return path.substr(0,pos) + GetOSlash();
+			sstr = path.substr(0,pos) + GetOSlash();
 		} else {
 			if ( pos == pos2 ) {
-				return path.substr(0,pos2+1);
+				sstr = path.substr(0,pos2+1);
 			}
 		}
+
+		if ( sstr.size() ) {
+			DirPathAddSlashAtEnd( sstr );
+
+			return sstr;
+		}
 	}
+
+	DirPathAddSlashAtEnd( path );
 
 	return path;
 }

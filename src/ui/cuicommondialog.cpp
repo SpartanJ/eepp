@@ -67,6 +67,7 @@ cUICommonDialog::cUICommonDialog( const cUICommonDialog::CreateParams& Params ) 
 	TInputParams.PosSet( 70, 6 );
 	TInputParams.SizeSet( Container()->Size().Width() - TInputParams.Pos.x - 42, 22 );
 	mPath = eeNew( cUITextInput, ( TInputParams ) );
+	mPath->AddEventListener( cUIEvent::EventOnPressEnter, cb::Make1( this, &cUICommonDialog::OnPressEnter ) );
 	mPath->Visible( true );
 	mPath->Enabled( true );
 	mPath->Text( mCurPath );
@@ -241,6 +242,16 @@ void cUICommonDialog::Open() {
 		SendCommonEvent( cUIEvent::EventOpenFile );
 
 		CloseWindow();
+	}
+}
+
+void cUICommonDialog::OnPressEnter( const cUIEvent * Event ) {
+	if ( IsDirectory( mPath->Text() ) ) {
+		std::string tpath = mPath->Text();
+		DirPathAddSlashAtEnd( tpath );
+		mPath->Text( tpath );
+		mCurPath = mPath->Text();
+		RefreshFolder();
 	}
 }
 

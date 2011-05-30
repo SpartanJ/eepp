@@ -14,11 +14,10 @@
 
 namespace EE { namespace UI {
 
-static std::vector<std::string> UI_THEME_ELEMENTS;
+static std::list<std::string> UI_THEME_ELEMENTS;
 
 static void LoadThemeElements() {
 	if ( !UI_THEME_ELEMENTS.size() ) {
-		UI_THEME_ELEMENTS.reserve( 60 );
 		UI_THEME_ELEMENTS.push_back( "control" );
 		UI_THEME_ELEMENTS.push_back( "button" );
 		UI_THEME_ELEMENTS.push_back( "textinput" );
@@ -108,12 +107,10 @@ cUITheme * cUITheme::LoadFromPath( const std::string& Path, const std::string& N
 
 	cUITheme * tTheme = eeNew( cUITheme, ( Name, NameAbbr ) );
 
-	Uint32 Count = UI_THEME_ELEMENTS.size();
-
-	for ( i = 0; i < Count; i++ ) {
+	for ( std::list<std::string>::iterator it = UI_THEME_ELEMENTS.begin() ; it != UI_THEME_ELEMENTS.end(); it++ ) {
 		Uint32 IsComplex = 0;
 
-		Element = std::string( NameAbbr + "_" + UI_THEME_ELEMENTS[i] );
+		Element = std::string( NameAbbr + "_" + *it );
 
 		Found 	= SearchFilesOfElement( tSG, RPath, Element, IsComplex, ImgExt );
 
@@ -153,12 +150,10 @@ cUITheme * cUITheme::LoadFromShapeGroup( cShapeGroup * ShapeGroup, const std::st
 
 	cUITheme * tTheme = eeNew( cUITheme, ( Name, NameAbbr ) );
 
-	Uint32 Count = UI_THEME_ELEMENTS.size();
-
-	for ( i = 0; i < Count; i++ ) {
+	for ( std::list<std::string>::iterator it = UI_THEME_ELEMENTS.begin() ; it != UI_THEME_ELEMENTS.end(); it++ ) {
 		Uint32 IsComplex = 0;
 
-		Element = std::string( NameAbbr + "_" + UI_THEME_ELEMENTS[i] );
+		Element = std::string( NameAbbr + "_" + *it );
 
 		Found 	= SearchFilesInGroup( ShapeGroup, Element, IsComplex );
 

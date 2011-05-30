@@ -92,6 +92,8 @@ class cUICommonDialog : public cUIWindow {
 		cUITextInput *		mFile;
 		cUIDropDownList *	mFiletype;
 		Uint32				mCDLFlags;
+
+		void OnPressEnter( const cUIEvent * Event );
 };
 
 }}
