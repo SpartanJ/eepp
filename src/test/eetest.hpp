@@ -201,7 +201,6 @@ class cEETest : private cThread {
 
 		cTextureGroupLoader * mTGL;
 		cSprite mBlindy;
-		cSprite * mBlindyPtr;
 
 		cFrameBuffer * mFBO;
 		cVertexBuffer * mVBO;

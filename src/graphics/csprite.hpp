@@ -21,6 +21,12 @@ class EE_API cSprite {
 
 		cSprite();
 
+		cSprite( const std::string& name, const std::string& extension = "", cShapeGroup * SearchInShapeGroup = NULL );
+
+		cSprite( cShape * Shape );
+
+		cSprite( const Uint32& TexId, const eeFloat& DestWidth = 0, const eeFloat& DestHeight = 0, const eeFloat& offSetX = 0, const eeFloat& offSetY = 0, const eeRecti& TexSector = eeRecti(0,0,0,0) );
+
 		~cSprite();
 
 		cSprite& operator =( const cSprite& Other );

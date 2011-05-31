@@ -27,6 +27,8 @@ class cUITextInput;
 class cUITooltip;
 class cUIWindow;
 class cUIWinMenu;
+class cUIGfx;
+class cUISprite;
 
 class EE_API cUITheme : public tResourceManager<cUISkin> {
 	public:
@@ -70,6 +72,10 @@ class EE_API cUITheme : public tResourceManager<cUISkin> {
 
 		void FontSelectedColor( const eeColorA& Color );
 
+		virtual cUIGfx * CreateGfx( cShape * Shape, cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER, eeColorA ShapeColor = eeColorA(255,255,255,255), EE_RENDERTYPE ShapeRender = RN_NORMAL );
+
+		virtual cUISprite * CreateSprite( cSprite * Sprite, cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER, bool DeallocSprite = true, EE_RENDERTYPE SpriteRender = RN_NORMAL );
+
 		virtual cUICheckBox * CreateCheckBox( cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT );
 
 		virtual cUIRadioButton * CreateRadioButton( cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT );
@@ -99,6 +105,8 @@ class EE_API cUITheme : public tResourceManager<cUISkin> {
 		virtual cUIProgressBar * CreateProgressBar( cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_HALIGN_LEFT | UI_VALIGN_CENTER, bool DisplayPercent = false, bool VerticalExpand = false, eeVector2f MovementSpeed = eeVector2f( 64, 0 ), eeRectf FillerMargin = eeRectf() );
 
 		virtual cUIPushButton * CreatePushButton( cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER, cShape * Icon = NULL, Int32 IconHorizontalMargin = 0, bool IconAutoMargin = true );
+
+		virtual cUIWinMenu * CreateWinMenu( cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT, Uint32 MarginBetweenButtons = 0, Uint32 ButtonMargin = 4, Uint32 MenuHeight = 0, Uint32 FirstButtonMargin = 1 );
 	protected:
 		std::string 		mName;
 		Uint32				mNameHash;

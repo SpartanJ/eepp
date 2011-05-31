@@ -29,6 +29,70 @@ cSprite::cSprite() :
 	mCb.Reset();
 }
 
+cSprite::cSprite( const std::string& name, const std::string& extension, cShapeGroup * SearchInShapeGroup )  :
+	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_SCALE_CENTERED | SPRITE_FLAG_EVENTS_ENABLED ),
+	mPos(),
+	mAngle( 0.f ),
+	mScale( 1.f ),
+	mAnimSpeed( 16.f ),
+	mColor( 255,255,255,255 ),
+	mVertexColors( NULL ),
+	mRepeations( -1 ),
+	mBlend( ALPHA_NORMAL ),
+	mEffect( RN_NORMAL ),
+	mCurrentFrame( 0 ),
+	mfCurrentFrame( 0.f ),
+	mCurrentSubFrame( 0 ),
+	mSubFrames( 1 ),
+	mAnimTo( 0 )
+{
+	mCb.Reset();
+	AddFramesByPattern( name, extension, SearchInShapeGroup );
+}
+
+cSprite::cSprite( cShape * Shape ) :
+	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_SCALE_CENTERED | SPRITE_FLAG_EVENTS_ENABLED ),
+	mPos(),
+	mAngle( 0.f ),
+	mScale( 1.f ),
+	mAnimSpeed( 16.f ),
+	mColor( 255,255,255,255 ),
+	mVertexColors( NULL ),
+	mRepeations( -1 ),
+	mBlend( ALPHA_NORMAL ),
+	mEffect( RN_NORMAL ),
+	mCurrentFrame( 0 ),
+	mfCurrentFrame( 0.f ),
+	mCurrentSubFrame( 0 ),
+	mSubFrames( 1 ),
+	mAnimTo( 0 )
+{
+	mCb.Reset();
+	CreateStatic( Shape );
+}
+
+cSprite::cSprite( const Uint32& TexId, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeFloat& offSetX, const eeFloat& offSetY, const eeRecti& TexSector ) :
+	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_SCALE_CENTERED | SPRITE_FLAG_EVENTS_ENABLED ),
+	mPos(),
+	mAngle( 0.f ),
+	mScale( 1.f ),
+	mAnimSpeed( 16.f ),
+	mColor( 255,255,255,255 ),
+	mVertexColors( NULL ),
+	mRepeations( -1 ),
+	mBlend( ALPHA_NORMAL ),
+	mEffect( RN_NORMAL ),
+	mCurrentFrame( 0 ),
+	mfCurrentFrame( 0.f ),
+	mCurrentSubFrame( 0 ),
+	mSubFrames( 1 ),
+	mAnimTo( 0 )
+{
+	mCb.Reset();
+	CreateStatic( TexId, DestWidth, DestHeight, offSetX, offSetY, TexSector );
+}
+
+
 cSprite::~cSprite() {
 }
 

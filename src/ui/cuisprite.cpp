@@ -11,6 +11,9 @@ cUISprite::cUISprite( const cUISprite::CreateParams& Params ) :
 {
 	mType = UI_TYPE_SPRITE;
 
+	if ( Params.DeallocSprite )
+		mControlFlags |= UI_CTRL_FLAG_FREE_USE;
+
 	if ( ( Flags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) {
 		if ( NULL != mSprite && NULL != mSprite->GetCurrentShape() ) {
 			Size( mSprite->GetCurrentShape()->Size() );
@@ -19,9 +22,18 @@ cUISprite::cUISprite( const cUISprite::CreateParams& Params ) :
 }
 
 cUISprite::~cUISprite() {
+	if ( DeallocSprite() )
+		eeSAFE_DELETE( mSprite );
+}
+
+Uint32 cUISprite::DeallocSprite() {
+	return mControlFlags & UI_CTRL_FLAG_FREE_USE;
 }
 
 void cUISprite::Sprite( cSprite * sprite ) {
+	if ( DeallocSprite() )
+		eeSAFE_DELETE( mSprite );
+
 	mSprite = sprite;
 	
 	UpdateSize();

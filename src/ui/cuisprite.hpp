@@ -12,7 +12,8 @@ class EE_API cUISprite : public cUIComplexControl {
 				inline CreateParams() :
 					cUIComplexControl::CreateParams(),
 					Sprite( NULL ),
-					SpriteRender( RN_NORMAL )
+					SpriteRender( RN_NORMAL ),
+					DeallocSprite( true )
 				{
 				}
 
@@ -20,6 +21,7 @@ class EE_API cUISprite : public cUIComplexControl {
 
 				cSprite * 			Sprite;
 				EE_RENDERTYPE		SpriteRender;
+				bool				DeallocSprite;
 		};
 
 		cUISprite( const cUISprite::CreateParams& Params );
@@ -48,6 +50,7 @@ class EE_API cUISprite : public cUIComplexControl {
 		EE_RENDERTYPE 		mRender;
 		eeVector2i			mAlignOffset;
 		cShape *			mShapeLast;
+		bool				mDealloc;
 
 		void UpdateSize();
 
@@ -56,6 +59,8 @@ class EE_API cUISprite : public cUIComplexControl {
 		void CheckShapeUpdate();
 
 		virtual void OnSizeChange();
+
+		Uint32 DeallocSprite();
 };
 
 }}

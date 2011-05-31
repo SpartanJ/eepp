@@ -64,8 +64,6 @@ void cEETest::Init() {
 	run = ( mWindow->Created() && PAK.IsOpen() );
 
 	if ( run ) {
-        cLog::instance()->Write( "Running eepp" );
-
 		#ifdef EE_DEBUG
 		std::cout << "Size of Callback0: " << sizeof( cb::Callback0<void> ) << std::endl;
 		std::cout << "Size of cWaypoints: " << sizeof( cWaypoints ) << std::endl;
@@ -288,17 +286,7 @@ void cEETest::CreateUI() {
 	Child2->StartRotation( 0.f, 360.f, 5000.f );
 	Child2->AngleInterpolation()->Loop( true );
 
-	mBlindyPtr = eeNew( cSprite, () );
-	mBlindyPtr->AddFramesByPattern( "gn" );
-
-	cUISprite::CreateParams SpriteParams;
-	SpriteParams.Parent( C );
-	SpriteParams.PosSet( 160, 100 );
-	SpriteParams.Flags |= UI_AUTO_SIZE;
-	SpriteParams.Sprite = mBlindyPtr;
-	cUISprite * Spr = eeNew( cUISprite, ( SpriteParams ) );
-	Spr->Visible( true );
-	Spr->Enabled( true );
+	Aqua->CreateSprite( eeNew( cSprite, ( "gn" ) ), C, eeSize(), eeVector2i( 160, 100 ) );
 
 	cUITextBox::CreateParams TextParams;
 	TextParams.Parent( C );
@@ -1568,7 +1556,6 @@ void cEETest::End() {
 	eeSAFE_DELETE( mTGL );
 	eeSAFE_DELETE( mFBO );
 	eeSAFE_DELETE( mVBO );
-	eeSAFE_DELETE( mBlindyPtr );
 	eeSAFE_DELETE( mBoxSprite );
 	eeSAFE_DELETE( mCircleSprite );
 	eeSAFE_DELETE( mMap );

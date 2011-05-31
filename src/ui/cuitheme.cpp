@@ -21,6 +21,8 @@
 #include "cuitooltip.hpp"
 #include "cuiwindow.hpp"
 #include "cuiwinmenu.hpp"
+#include "cuigfx.hpp"
+#include "cuisprite.hpp"
 
 namespace EE { namespace UI {
 
@@ -347,13 +349,46 @@ void cUITheme::FontSelectedColor( const eeColorA& Color ) {
 void cUITheme::PostInit() {
 }
 
+cUIGfx * cUITheme::CreateGfx( cShape * Shape, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, eeColorA ShapeColor, EE_RENDERTYPE ShapeRender ) {
+	cUIGfx::CreateParams GfxParams;
+	GfxParams.Parent( Parent );
+	GfxParams.PosSet( Pos );
+	GfxParams.SizeSet( Size );
+	GfxParams.Flags = Flags;
+	GfxParams.Shape = Shape;
+	GfxParams.ShapeColor = ShapeColor;
+	GfxParams.ShapeRender = ShapeRender;
+	cUIGfx * Gfx = eeNew( cUIGfx, ( GfxParams ) );
+	Gfx->Visible( true );
+	Gfx->Enabled( true );
+	return Gfx;
+}
+
+cUISprite * cUITheme::CreateSprite( cSprite * Sprite, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool DeallocSprite, EE_RENDERTYPE SpriteRender ) {
+	cUISprite::CreateParams SpriteParams;
+	SpriteParams.Parent( Parent );
+	SpriteParams.PosSet( Pos );
+	SpriteParams.SizeSet( Size );
+	SpriteParams.Flags = Flags;
+	SpriteParams.Sprite = Sprite;
+	SpriteParams.SpriteRender = SpriteRender;
+	SpriteParams.DeallocSprite = DeallocSprite;
+	cUISprite * Spr = eeNew( cUISprite, ( SpriteParams ) );
+	Spr->Visible( true );
+	Spr->Enabled( true );
+	return Spr;
+}
+
 cUICheckBox * cUITheme::CreateCheckBox( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags ) {
 	cUICheckBox::CreateParams CheckBoxParams;
 	CheckBoxParams.Parent( Parent );
 	CheckBoxParams.PosSet( Pos );
 	CheckBoxParams.SizeSet( Size );
 	CheckBoxParams.Flags = Flags;
-	return eeNew( cUICheckBox, ( CheckBoxParams ) );
+	cUICheckBox * Ctrl = eeNew( cUICheckBox, ( CheckBoxParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
 }
 
 cUIRadioButton * cUITheme::CreateRadioButton( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags ) {
@@ -362,7 +397,10 @@ cUIRadioButton * cUITheme::CreateRadioButton( cUIControl * Parent, const eeSize&
 	RadioButtonParams.PosSet( Pos );
 	RadioButtonParams.SizeSet( Size );
 	RadioButtonParams.Flags = Flags;
-	return eeNew( cUIRadioButton, ( RadioButtonParams ) );
+	cUIRadioButton * Ctrl = eeNew( cUIRadioButton, ( RadioButtonParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
 }
 
 cUITextBox * cUITheme::CreateTextBox( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags ) {
@@ -371,7 +409,10 @@ cUITextBox * cUITheme::CreateTextBox( cUIControl * Parent, const eeSize& Size, c
 	TextBoxParams.PosSet( Pos );
 	TextBoxParams.SizeSet( Size );
 	TextBoxParams.Flags = Flags;
-	return eeNew( cUITextBox, ( TextBoxParams ) );
+	cUITextBox * Ctrl = eeNew( cUITextBox, ( TextBoxParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
 }
 
 cUITooltip * cUITheme::CreateTooltip( cUIControl * TooltipOf, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags ) {
@@ -380,7 +421,10 @@ cUITooltip * cUITheme::CreateTooltip( cUIControl * TooltipOf, cUIControl * Paren
 	TooltipParams.PosSet( Pos );
 	TooltipParams.SizeSet( Size );
 	TooltipParams.Flags = Flags;
-	return eeNew( cUITooltip, ( TooltipParams, TooltipOf ) );
+	cUITooltip * Ctrl = eeNew( cUITooltip, ( TooltipParams, TooltipOf ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
 }
 
 cUITextEdit * cUITheme::CreateTextEdit( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, UI_SCROLLBAR_MODE HScrollBar, UI_SCROLLBAR_MODE VScrollBar, bool WordWrap ) {
@@ -392,7 +436,10 @@ cUITextEdit * cUITheme::CreateTextEdit( cUIControl * Parent, const eeSize& Size,
 	TextEditParams.HScrollBar = HScrollBar;
 	TextEditParams.VScrollBar = VScrollBar;
 	TextEditParams.WordWrap = WordWrap;
-	return eeNew( cUITextEdit, ( TextEditParams ) );
+	cUITextEdit * Ctrl = eeNew( cUITextEdit, ( TextEditParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
 }
 
 cUITextInput * cUITheme::CreateTextInput( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool SupportFreeEditing, Uint32 MaxLenght ) {
@@ -403,7 +450,10 @@ cUITextInput * cUITheme::CreateTextInput( cUIControl * Parent, const eeSize& Siz
 	TextInputParams.Flags = Flags;
 	TextInputParams.SupportFreeEditing = SupportFreeEditing;
 	TextInputParams.MaxLenght = MaxLenght;
-	return eeNew( cUITextInput, ( TextInputParams ) );
+	cUITextInput * Ctrl = eeNew( cUITextInput, ( TextInputParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
 }
 
 cUISpinBox * cUITheme::CreateSpinBox( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, eeFloat DefaultValue, bool AllowDotsInNumbers ) {
@@ -414,7 +464,10 @@ cUISpinBox * cUITheme::CreateSpinBox( cUIControl * Parent, const eeSize& Size, c
 	SpinBoxParams.Flags = Flags;
 	SpinBoxParams.DefaultValue = DefaultValue;
 	SpinBoxParams.AllowDotsInNumbers = AllowDotsInNumbers;
-	return eeNew( cUISpinBox, ( SpinBoxParams ) );
+	cUISpinBox * Ctrl = eeNew( cUISpinBox, ( SpinBoxParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
 }
 
 cUIScrollBar * cUITheme::CreateScrollBar( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool VerticalScrollBar ) {
@@ -423,7 +476,10 @@ cUIScrollBar * cUITheme::CreateScrollBar( cUIControl * Parent, const eeSize& Siz
 	ScrollBarParams.PosSet( Pos );
 	ScrollBarParams.SizeSet( Size );
 	ScrollBarParams.Flags = Flags;
-	return eeNew( cUIScrollBar, ( ScrollBarParams ) );
+	cUIScrollBar * Ctrl = eeNew( cUIScrollBar, ( ScrollBarParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
 }
 
 cUISlider * cUITheme::CreateSlider( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool VerticalSlider, bool AllowHalfSliderOut, bool ExpandBackground ) {
@@ -435,7 +491,10 @@ cUISlider * cUITheme::CreateSlider( cUIControl * Parent, const eeSize& Size, con
 	SliderParams.VerticalSlider = VerticalSlider;
 	SliderParams.AllowHalfSliderOut = AllowHalfSliderOut;
 	SliderParams.ExpandBackground = ExpandBackground;
-	return eeNew( cUISlider, ( SliderParams ) );
+	cUISlider * Ctrl = eeNew( cUISlider, ( SliderParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
 }
 
 cUIComboBox * cUITheme::CreateComboBox( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, cUIListBox * ListBox ) {
@@ -447,7 +506,10 @@ cUIComboBox * cUITheme::CreateComboBox( cUIControl * Parent, const eeSize& Size,
 	ComboParams.MinNumVisibleItems = MinNumVisibleItems;
 	ComboParams.PopUpToMainControl = PopUpToMainControl;
 	ComboParams.ListBox = ListBox;
-	return eeNew( cUIComboBox, ( ComboParams ) );
+	cUIComboBox * Ctrl = eeNew( cUIComboBox, ( ComboParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
 }
 
 cUIDropDownList * cUITheme::CreateDropDownList( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, cUIListBox * ListBox ) {
@@ -459,7 +521,10 @@ cUIDropDownList * cUITheme::CreateDropDownList( cUIControl * Parent, const eeSiz
 	DDLParams.MinNumVisibleItems = MinNumVisibleItems;
 	DDLParams.PopUpToMainControl = PopUpToMainControl;
 	DDLParams.ListBox = ListBox;
-	return eeNew( cUIDropDownList, ( DDLParams ) );
+	cUIDropDownList * Ctrl = eeNew( cUIDropDownList, ( DDLParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
 }
 
 cUIListBox * cUITheme::CreateListBox( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool SmoothScroll, Uint32 RowHeight, UI_SCROLLBAR_MODE VScrollMode, UI_SCROLLBAR_MODE HScrollMode, eeRecti PaddingContainer ) {
@@ -473,7 +538,10 @@ cUIListBox * cUITheme::CreateListBox( cUIControl * Parent, const eeSize& Size, c
 	LBParams.VScrollMode = VScrollMode;
 	LBParams.HScrollMode = HScrollMode;
 	LBParams.PaddingContainer = PaddingContainer;
-	return eeNew( cUIListBox, ( LBParams ) );
+	cUIListBox * Ctrl = eeNew( cUIListBox, ( LBParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
 }
 
 cUIPopUpMenu * cUITheme::CreatePopUpMenu( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 RowHeight, eeRecti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
@@ -493,7 +561,10 @@ cUIPopUpMenu * cUITheme::CreatePopUpMenu( cUIControl * Parent, const eeSize& Siz
 	MenuParams.MinSpaceForIcons = 16;
 	MenuParams.MinRightMargin = 8;
 	*/
-	return eeNew( cUIPopUpMenu, ( MenuParams ) );
+	cUIPopUpMenu * Ctrl = eeNew( cUIPopUpMenu, ( MenuParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
 }
 
 cUIProgressBar * cUITheme::CreateProgressBar( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool DisplayPercent, bool VerticalExpand, eeVector2f MovementSpeed, eeRectf FillerMargin ) {
@@ -510,7 +581,10 @@ cUIProgressBar * cUITheme::CreateProgressBar( cUIControl * Parent, const eeSize&
 	/** Aqua Theme Stuff *//**
 	PBParams.DisplayPercent = true
 	*/
-	return eeNew( cUIProgressBar, ( PBParams ) );
+	cUIProgressBar * Ctrl = eeNew( cUIProgressBar, ( PBParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
 }
 
 cUIPushButton * cUITheme::CreatePushButton( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, cShape * Icon, Int32 IconHorizontalMargin, bool IconAutoMargin ) {
@@ -526,7 +600,30 @@ cUIPushButton * cUITheme::CreatePushButton( cUIControl * Parent, const eeSize& S
 	if ( NULL != Icon )
 		ButtonParams.SetIcon( Icon );
 
-	return eeNew( cUIPushButton, ( ButtonParams ) );
+	cUIPushButton * Ctrl = eeNew( cUIPushButton, ( ButtonParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
+}
+
+cUIWinMenu * cUITheme::CreateWinMenu( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 MarginBetweenButtons, Uint32 ButtonMargin, Uint32 MenuHeight, Uint32 FirstButtonMargin ) {
+	cUIWinMenu::CreateParams WinMenuParams;
+	WinMenuParams.Parent( Parent );
+	WinMenuParams.PosSet( Pos );
+	WinMenuParams.SizeSet( Size );
+	WinMenuParams.Flags = Flags;
+	WinMenuParams.MarginBetweenButtons = MarginBetweenButtons;
+	WinMenuParams.ButtonMargin = ButtonMargin;
+	WinMenuParams.MenuHeight = MenuHeight;
+	WinMenuParams.FirstButtonMargin = FirstButtonMargin;
+
+	/** Aqua Theme Stuff *//**
+	WinMenuParams.ButtonMargin = 12;
+	*/
+	cUIWinMenu * Ctrl = eeNew( cUIWinMenu, ( WinMenuParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
 }
 
 }}
