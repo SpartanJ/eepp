@@ -11,10 +11,11 @@ class EE_API cUISpinBox : public cUIComplexControl {
 		class CreateParams : public cUITextInput::CreateParams {
 			public:
 				inline CreateParams() :
-					cUITextInput::CreateParams()
+					cUITextInput::CreateParams(),
+					DefaultValue( 0.f ),
+					AllowDotsInNumbers( true )
 				{
 					MaxLenght = 24;
-					DefaultValue = 0.f;
 				}
 
 				inline ~CreateParams() {}

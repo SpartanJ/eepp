@@ -17,13 +17,13 @@ class EE_API cUIMenu : public cUIComplexControl {
 					cUIComplexControl::CreateParams(),
 					RowHeight( 0 ),
 					PaddingContainer(),
+					MinWidth( 0 ),
+					MinSpaceForIcons( 0 ),
+					MinRightMargin( 0 ),
 					Font( NULL ),
 					FontColor( 0, 0, 0, 255 ),
 					FontOverColor( 0, 0, 0, 255 ),
-					FontSelectedColor( 0, 0, 0, 255 ),
-					MinWidth( 0 ),
-					MinSpaceForIcons( 0 ),
-					MinRightMargin( 0 )
+					FontSelectedColor( 0, 0, 0, 255 )
 				{
 					cUITheme * Theme = cUIThemeManager::instance()->DefaultTheme();
 
@@ -43,14 +43,14 @@ class EE_API cUIMenu : public cUIComplexControl {
 
 				Uint32		RowHeight;
 				eeRecti		PaddingContainer;
+				Uint32		MinWidth;
+				Uint32		MinSpaceForIcons;
+				Uint32		MinRightMargin;
 				cFont * 	Font;
 				eeColorA 	FontColor;
 				eeColorA	FontShadowColor;
 				eeColorA 	FontOverColor;
 				eeColorA	FontSelectedColor;
-				Uint32		MinWidth;
-				Uint32		MinSpaceForIcons;
-				Uint32		MinRightMargin;
 
 		};
 

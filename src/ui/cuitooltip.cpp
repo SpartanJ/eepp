@@ -12,7 +12,7 @@ cUITooltip::cUITooltip( cUITooltip::CreateParams& Params, cUIControl * TooltipOf
 	mTooltipTime( 0.f ),
 	mTooltipOf( TooltipOf )
 {
-	mType |= UI_TYPE_TOOLTIP;
+	mType = UI_TYPE_TOOLTIP;
 
 	mTextCache = eeNew( cTextCache, () );
 	mTextCache->Font( Params.Font );

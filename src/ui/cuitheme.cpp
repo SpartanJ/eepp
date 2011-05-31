@@ -11,6 +11,16 @@
 #include "cuipopupmenu.hpp"
 #include "cuiprogressbar.hpp"
 #include "cuipushbutton.hpp"
+#include "cuiradiobutton.hpp"
+#include "cuiscrollbar.hpp"
+#include "cuislider.hpp"
+#include "cuispinbox.hpp"
+#include "cuitextbox.hpp"
+#include "cuitextedit.hpp"
+#include "cuitextinput.hpp"
+#include "cuitooltip.hpp"
+#include "cuiwindow.hpp"
+#include "cuiwinmenu.hpp"
 
 namespace EE { namespace UI {
 
@@ -338,12 +348,94 @@ void cUITheme::PostInit() {
 }
 
 cUICheckBox * cUITheme::CreateCheckBox( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags ) {
-	cUITextBox::CreateParams CheckBoxParams;
+	cUICheckBox::CreateParams CheckBoxParams;
 	CheckBoxParams.Parent( Parent );
 	CheckBoxParams.PosSet( Pos );
 	CheckBoxParams.SizeSet( Size );
 	CheckBoxParams.Flags = Flags;
 	return eeNew( cUICheckBox, ( CheckBoxParams ) );
+}
+
+cUIRadioButton * cUITheme::CreateRadioButton( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags ) {
+	cUIRadioButton::CreateParams RadioButtonParams;
+	RadioButtonParams.Parent( Parent );
+	RadioButtonParams.PosSet( Pos );
+	RadioButtonParams.SizeSet( Size );
+	RadioButtonParams.Flags = Flags;
+	return eeNew( cUIRadioButton, ( RadioButtonParams ) );
+}
+
+cUITextBox * cUITheme::CreateTextBox( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags ) {
+	cUITextBox::CreateParams TextBoxParams;
+	TextBoxParams.Parent( Parent );
+	TextBoxParams.PosSet( Pos );
+	TextBoxParams.SizeSet( Size );
+	TextBoxParams.Flags = Flags;
+	return eeNew( cUITextBox, ( TextBoxParams ) );
+}
+
+cUITooltip * cUITheme::CreateTooltip( cUIControl * TooltipOf, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags ) {
+	cUITooltip::CreateParams TooltipParams;
+	TooltipParams.Parent( Parent );
+	TooltipParams.PosSet( Pos );
+	TooltipParams.SizeSet( Size );
+	TooltipParams.Flags = Flags;
+	return eeNew( cUITooltip, ( TooltipParams, TooltipOf ) );
+}
+
+cUITextEdit * cUITheme::CreateTextEdit( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, UI_SCROLLBAR_MODE HScrollBar, UI_SCROLLBAR_MODE VScrollBar, bool WordWrap ) {
+	cUITextEdit::CreateParams TextEditParams;
+	TextEditParams.Parent( Parent );
+	TextEditParams.PosSet( Pos );
+	TextEditParams.SizeSet( Size );
+	TextEditParams.Flags = Flags;
+	TextEditParams.HScrollBar = HScrollBar;
+	TextEditParams.VScrollBar = VScrollBar;
+	TextEditParams.WordWrap = WordWrap;
+	return eeNew( cUITextEdit, ( TextEditParams ) );
+}
+
+cUITextInput * cUITheme::CreateTextInput( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool SupportFreeEditing, Uint32 MaxLenght ) {
+	cUITextInput::CreateParams TextInputParams;
+	TextInputParams.Parent( Parent );
+	TextInputParams.PosSet( Pos );
+	TextInputParams.SizeSet( Size );
+	TextInputParams.Flags = Flags;
+	TextInputParams.SupportFreeEditing = SupportFreeEditing;
+	TextInputParams.MaxLenght = MaxLenght;
+	return eeNew( cUITextInput, ( TextInputParams ) );
+}
+
+cUISpinBox * cUITheme::CreateSpinBox( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, eeFloat DefaultValue, bool AllowDotsInNumbers ) {
+	cUISpinBox::CreateParams SpinBoxParams;
+	SpinBoxParams.Parent( Parent );
+	SpinBoxParams.PosSet( Pos );
+	SpinBoxParams.SizeSet( Size );
+	SpinBoxParams.Flags = Flags;
+	SpinBoxParams.DefaultValue = DefaultValue;
+	SpinBoxParams.AllowDotsInNumbers = AllowDotsInNumbers;
+	return eeNew( cUISpinBox, ( SpinBoxParams ) );
+}
+
+cUIScrollBar * cUITheme::CreateScrollBar( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool VerticalScrollBar ) {
+	cUIScrollBar::CreateParams ScrollBarParams;
+	ScrollBarParams.Parent( Parent );
+	ScrollBarParams.PosSet( Pos );
+	ScrollBarParams.SizeSet( Size );
+	ScrollBarParams.Flags = Flags;
+	return eeNew( cUIScrollBar, ( ScrollBarParams ) );
+}
+
+cUISlider * cUITheme::CreateSlider( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool VerticalSlider, bool AllowHalfSliderOut, bool ExpandBackground ) {
+	cUISlider::CreateParams SliderParams;
+	SliderParams.Parent( Parent );
+	SliderParams.PosSet( Pos );
+	SliderParams.SizeSet( Size );
+	SliderParams.Flags = Flags;
+	SliderParams.VerticalSlider = VerticalSlider;
+	SliderParams.AllowHalfSliderOut = AllowHalfSliderOut;
+	SliderParams.ExpandBackground = ExpandBackground;
+	return eeNew( cUISlider, ( SliderParams ) );
 }
 
 cUIComboBox * cUITheme::CreateComboBox( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, cUIListBox * ListBox ) {
@@ -384,12 +476,17 @@ cUIListBox * cUITheme::CreateListBox( cUIControl * Parent, const eeSize& Size, c
 	return eeNew( cUIListBox, ( LBParams ) );
 }
 
-cUIPopUpMenu * cUITheme::CreatePopUpMenu( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags ) {
+cUIPopUpMenu * cUITheme::CreatePopUpMenu( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 RowHeight, eeRecti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
 	cUIPopUpMenu::CreateParams MenuParams;
 	MenuParams.Parent( Parent );
 	MenuParams.PosSet( Pos );
 	MenuParams.SizeSet( Size );
 	MenuParams.Flags = Flags;
+	MenuParams.RowHeight = RowHeight;
+	MenuParams.PaddingContainer = PaddingContainer;
+	MenuParams.MinWidth = MinWidth;
+	MenuParams.MinSpaceForIcons = MinSpaceForIcons;
+	MenuParams.MinRightMargin = MinRightMargin;
 
 	/** Aqua Theme Stuff *//**
 	MenuParams.MinWidth = 100;
@@ -399,22 +496,32 @@ cUIPopUpMenu * cUITheme::CreatePopUpMenu( cUIControl * Parent, const eeSize& Siz
 	return eeNew( cUIPopUpMenu, ( MenuParams ) );
 }
 
-cUIProgressBar * cUITheme::CreateProgressBar( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool DisplayPercent ) {
+cUIProgressBar * cUITheme::CreateProgressBar( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool DisplayPercent, bool VerticalExpand, eeVector2f MovementSpeed, eeRectf FillerMargin ) {
 	cUIProgressBar::CreateParams PBParams;
 	PBParams.Parent( Parent );
 	PBParams.PosSet( Pos );
 	PBParams.SizeSet( Size );
 	PBParams.Flags = Flags;
 	PBParams.DisplayPercent = DisplayPercent;
+	PBParams.VerticalExpand = VerticalExpand;
+	PBParams.MovementSpeed = MovementSpeed;
+	PBParams.FillerMargin = FillerMargin;
+
+	/** Aqua Theme Stuff *//**
+	PBParams.DisplayPercent = true
+	*/
 	return eeNew( cUIProgressBar, ( PBParams ) );
 }
 
-cUIPushButton * cUITheme::CreatePushButton( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, cShape * Icon ) {
+cUIPushButton * cUITheme::CreatePushButton( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, cShape * Icon, Int32 IconHorizontalMargin, bool IconAutoMargin ) {
 	cUIPushButton::CreateParams ButtonParams;
 	ButtonParams.Parent( Parent );
 	ButtonParams.PosSet( Pos );
 	ButtonParams.SizeSet( Size );
 	ButtonParams.Flags = Flags;
+	ButtonParams.Icon = Icon;
+	ButtonParams.IconHorizontalMargin = IconHorizontalMargin;
+	ButtonParams.IconAutoMargin = IconAutoMargin;
 
 	if ( NULL != Icon )
 		ButtonParams.SetIcon( Icon );
