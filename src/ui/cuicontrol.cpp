@@ -1099,7 +1099,7 @@ eeSize cUIControl::GetSkinShapeSize() {
 			tShape = tSkinC->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Right );
 
 			if ( NULL != tShape ) {
-				tSize.y += tShape->RealSize().Width();
+				tSize.x += tShape->RealSize().Width();
 			}
 		}
 	}

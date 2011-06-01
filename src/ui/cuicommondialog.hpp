@@ -13,20 +13,13 @@ namespace EE { namespace UI {
 
 class cUICommonDialog : public cUIWindow {
 	public:
-		enum CommonDialogFlags {
-			CDL_FLAG_SAVE_DIALOG			= ( 1 << 0 ),
-			CDL_FLAG_FOLDERS_FISRT			= ( 1 << 1 ),
-			CDL_FLAG_SORT_ALPHABETICALLY	= ( 1 << 2 ),
-			CDL_FLAG_ALLOW_FOLDER_SELECT	= ( 1 << 3 )
-		};
-
 		class CreateParams : public cUIWindow::CreateParams {
 			public:
 				inline CreateParams() :
 					cUIWindow::CreateParams(),
 					DefaultDirectory( GetProcessPath() ),
 					DefaultFilePattern( "*" ),
-					CDLFlags( CDL_FLAG_FOLDERS_FISRT | CDL_FLAG_SORT_ALPHABETICALLY )
+					CDLFlags( UI_CDL_DEFAULT_FLAGS )
 				{
 				}
 

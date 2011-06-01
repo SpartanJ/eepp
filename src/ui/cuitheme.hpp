@@ -29,12 +29,18 @@ class cUIWindow;
 class cUIWinMenu;
 class cUIGfx;
 class cUISprite;
+class cUIMenu;
+class cUICommonDialog;
 
 class EE_API cUITheme : public tResourceManager<cUISkin> {
 	public:
-		static cUITheme * LoadFromPath( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt = "png" );
+		static cUITheme * LoadFromShapeGroup( cUITheme * tTheme, cShapeGroup * ShapeGroup );
+
+		static cUITheme * LoadFromPath( cUITheme * tTheme, const std::string& Path, const std::string ImgExt = "png" );
 
 		static cUITheme * LoadFromShapeGroup( cShapeGroup * ShapeGroup, const std::string& Name, const std::string NameAbbr );
+
+		static cUITheme * LoadFromPath( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt = "png" );
 
 		static void AddThemeElement( const std::string& Element );
 
@@ -72,41 +78,51 @@ class EE_API cUITheme : public tResourceManager<cUISkin> {
 
 		void FontSelectedColor( const eeColorA& Color );
 
-		virtual cUIGfx * CreateGfx( cShape * Shape, cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER, eeColorA ShapeColor = eeColorA(255,255,255,255), EE_RENDERTYPE ShapeRender = RN_NORMAL );
+		void UseDefaultThemeValues( const bool& Use );
 
-		virtual cUISprite * CreateSprite( cSprite * Sprite, cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER, bool DeallocSprite = true, EE_RENDERTYPE SpriteRender = RN_NORMAL );
+		const bool& UseDefaultThemeValues() const;
 
-		virtual cUICheckBox * CreateCheckBox( cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT );
+		virtual cUIGfx * CreateGfx( cShape * Shape, cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, eeColorA ShapeColor = eeColorA(255,255,255,255), EE_RENDERTYPE ShapeRender = RN_NORMAL );
 
-		virtual cUIRadioButton * CreateRadioButton( cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT );
+		virtual cUISprite * CreateSprite( cSprite * Sprite, cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, bool DeallocSprite = true, EE_RENDERTYPE SpriteRender = RN_NORMAL );
 
-		virtual cUITextBox * CreateTextBox( cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_HALIGN_LEFT | UI_VALIGN_CENTER );
+		virtual cUICheckBox * CreateCheckBox( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS );
 
-		virtual cUITextEdit * CreateTextEdit( cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_HALIGN_LEFT | UI_VALIGN_CENTER | UI_AUTO_PADDING | UI_CLIP_ENABLE, UI_SCROLLBAR_MODE HScrollBar = UI_SCROLLBAR_AUTO, UI_SCROLLBAR_MODE VScrollBar = UI_SCROLLBAR_AUTO, bool WordWrap = true );
+		virtual cUIRadioButton * CreateRadioButton( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS );
 
-		virtual cUITextInput * CreateTextInput( cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_HALIGN_LEFT | UI_VALIGN_CENTER | UI_CLIP_ENABLE | UI_AUTO_PADDING, bool SupportFreeEditing = true, Uint32 MaxLenght = 256 );
+		virtual cUITextBox * CreateTextBox( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS );
 
-		virtual cUITooltip * CreateTooltip( cUIControl * TooltipOf, cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_PADDING | UI_AUTO_SIZE );
+		virtual cUITextEdit * CreateTextEdit( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_PADDING | UI_CLIP_ENABLE, UI_SCROLLBAR_MODE HScrollBar = UI_SCROLLBAR_AUTO, UI_SCROLLBAR_MODE VScrollBar = UI_SCROLLBAR_AUTO, bool WordWrap = true );
 
-		virtual cUIScrollBar * CreateScrollBar( cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_AUTO_SIZE, bool VerticalScrollBar = false );
+		virtual cUITextInput * CreateTextInput( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING, bool SupportFreeEditing = true, Uint32 MaxLenght = 256 );
 
-		virtual cUISlider * CreateSlider( cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT, bool VerticalSlider = false, bool AllowHalfSliderOut = true, bool ExpandBackground = false );
+		virtual cUITooltip * CreateTooltip( cUIControl * TooltipOf, cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_PADDING | UI_AUTO_SIZE );
 
-		virtual cUISpinBox * CreateSpinBox( cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE, eeFloat DefaultValue = 0.f, bool AllowDotsInNumbers = true );
+		virtual cUIScrollBar * CreateScrollBar( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE, bool VerticalScrollBar = false );
 
-		virtual cUIComboBox * CreateComboBox( cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT, Uint32 MinNumVisibleItems = 6, bool PopUpToMainControl = false, cUIListBox * ListBox = NULL );
+		virtual cUISlider * CreateSlider( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS, bool VerticalSlider = false, bool AllowHalfSliderOut = true, bool ExpandBackground = false );
 
-		virtual cUIDropDownList * CreateDropDownList( cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT, Uint32 MinNumVisibleItems = 6, bool PopUpToMainControl = false, cUIListBox * ListBox = NULL );
+		virtual cUISpinBox * CreateSpinBox( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE, eeFloat DefaultValue = 0.f, bool AllowDotsInNumbers = true );
 
-		virtual cUIListBox * CreateListBox( cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING, bool SmoothScroll = true, Uint32 RowHeight = 0, UI_SCROLLBAR_MODE VScrollMode = UI_SCROLLBAR_AUTO, UI_SCROLLBAR_MODE HScrollMode = UI_SCROLLBAR_AUTO, eeRecti PaddingContainer = eeRecti() );
+		virtual cUIComboBox * CreateComboBox( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING, Uint32 MinNumVisibleItems = 6, bool PopUpToMainControl = false, cUIListBox * ListBox = NULL );
 
-		virtual cUIPopUpMenu * CreatePopUpMenu( cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_AUTO_SIZE | UI_AUTO_PADDING, Uint32 RowHeight = 0, eeRecti PaddingContainer = eeRecti(), Uint32 MinWidth = 0, Uint32 MinSpaceForIcons = 0, Uint32 MinRightMargin = 0 );
+		virtual cUIDropDownList * CreateDropDownList( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING, Uint32 MinNumVisibleItems = 6, bool PopUpToMainControl = false, cUIListBox * ListBox = NULL );
 
-		virtual cUIProgressBar * CreateProgressBar( cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_HALIGN_LEFT | UI_VALIGN_CENTER, bool DisplayPercent = false, bool VerticalExpand = false, eeVector2f MovementSpeed = eeVector2f( 64, 0 ), eeRectf FillerMargin = eeRectf() );
+		virtual cUIListBox * CreateListBox( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING, bool SmoothScroll = true, Uint32 RowHeight = 0, UI_SCROLLBAR_MODE VScrollMode = UI_SCROLLBAR_AUTO, UI_SCROLLBAR_MODE HScrollMode = UI_SCROLLBAR_AUTO, eeRecti PaddingContainer = eeRecti() );
 
-		virtual cUIPushButton * CreatePushButton( cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER, cShape * Icon = NULL, Int32 IconHorizontalMargin = 0, bool IconAutoMargin = true );
+		virtual cUIMenu * CreateMenu( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE | UI_AUTO_PADDING, Uint32 RowHeight = 0, eeRecti PaddingContainer = eeRecti(), Uint32 MinWidth = 0, Uint32 MinSpaceForIcons = 0, Uint32 MinRightMargin = 0 );
 
-		virtual cUIWinMenu * CreateWinMenu( cUIControl * Parent, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT, Uint32 MarginBetweenButtons = 0, Uint32 ButtonMargin = 4, Uint32 MenuHeight = 0, Uint32 FirstButtonMargin = 1 );
+		virtual cUIPopUpMenu * CreatePopUpMenu( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE | UI_AUTO_PADDING, Uint32 RowHeight = 0, eeRecti PaddingContainer = eeRecti(), Uint32 MinWidth = 0, Uint32 MinSpaceForIcons = 0, Uint32 MinRightMargin = 0 );
+
+		virtual cUIProgressBar * CreateProgressBar( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS, bool DisplayPercent = false, bool VerticalExpand = false, eeVector2f MovementSpeed = eeVector2f( 64, 0 ), eeRectf FillerMargin = eeRectf() );
+
+		virtual cUIPushButton * CreatePushButton( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS, cShape * Icon = NULL, Int32 IconHorizontalMargin = 0, bool IconAutoMargin = true );
+
+		virtual cUIWinMenu * CreateWinMenu( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS, Uint32 MarginBetweenButtons = 0, Uint32 ButtonMargin = 4, Uint32 MenuHeight = 0, Uint32 FirstButtonMargin = 1 );
+
+		virtual cUIWindow * CreateWindow( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED, Uint32 WinFlags = UI_WIN_DEFAULT_FLAGS, eeSize MinWindowSize = eeSize(0,0), Uint8 BaseAlpha = 255 );
+
+		virtual cUICommonDialog * CreateCommonDialog( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED, Uint32 WinFlags = UI_WIN_DEFAULT_FLAGS, eeSize MinWindowSize = eeSize(0,0), Uint8 BaseAlpha = 255, Uint32 CDLFlags = UI_CDL_DEFAULT_FLAGS, std::string DefaultFilePattern = "*", std::string DefaultDirectory = GetProcessPath() );
 	protected:
 		std::string 		mName;
 		Uint32				mNameHash;
@@ -116,12 +132,11 @@ class EE_API cUITheme : public tResourceManager<cUISkin> {
 		eeColorA			mFontShadowColor;
 		eeColorA			mFontOverColor;
 		eeColorA			mFontSelectedColor;
+		bool				mUseDefaultThemeValues;
 
 		static bool SearchFilesOfElement( cShapeGroup * SG, const std::string& Path, std::string Element, Uint32& IsComplex, const std::string ImgExt );
 
 		static bool SearchFilesInGroup( cShapeGroup * SG, std::string Element, Uint32& IsComplex );
-
-		virtual void PostInit();
 };
 
 }}

@@ -134,9 +134,9 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 
 		SetText( TextCache.Text() );
 
-		Color( mShadowColor );
+		Color( TextCache.ShadowColor() );
 
-		Draw( TextCache, X + 1, Y + 1, f, Scale, Angle, Effect );
+		Draw( X + 1, Y + 1, f, Scale, Angle, Effect );
 
 		Color( Col );
 	}

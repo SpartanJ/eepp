@@ -30,7 +30,7 @@ class EE_API cUIControl {
 					cUIControl * parentCtrl,
 					const eeVector2i& pos = eeVector2i( 0, 0 ),
 					const eeSize& size = eeSize( -1, -1 ),
-					const Uint32& flags = UI_HALIGN_LEFT | UI_VALIGN_CENTER,
+					const Uint32& flags = UI_CONTROL_DEFAULT_FLAGS,
 					const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL,
 					const cUIBackground& Back = cUIBackground(),
 					const cUIBorder& Bord = cUIBorder()
@@ -49,7 +49,7 @@ class EE_API cUIControl {
 					ParentCtrl		= NULL;
 					Pos				= eeVector2i( 0, 0 );
 					Size			= eeSize( -1, -1 );
-					Flags			= UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_HALIGN_LEFT | UI_VALIGN_CENTER;
+					Flags			= UI_CONTROL_DEFAULT_FLAGS;
 					Blend			= ALPHA_NORMAL;
 				}
 

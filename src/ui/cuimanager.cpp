@@ -42,8 +42,8 @@ void cUIManager::Init( Uint32 Flags, cWindow * window ) {
 	Params.Parent( NULL );
 	Params.PosSet( 0, 0 );
 	Params.SizeSet( cEngine::instance()->GetWidth(), cEngine::instance()->GetHeight() );
-	Params.Flags = UI_HALIGN_LEFT | UI_VALIGN_CENTER | UI_REPORT_SIZE_CHANGE_TO_CHILDS;
-	Params.WinFlags = cUIWindow::UI_WIN_NO_BORDER | cUIWindow::UI_WIN_RESIZEABLE;
+	Params.Flags = UI_CONTROL_DEFAULT_FLAGS | UI_REPORT_SIZE_CHANGE_TO_CHILDS;
+	Params.WinFlags = UI_WIN_NO_BORDER | UI_WIN_RESIZEABLE;
 	Params.MinWindowSize = eeSize( 0, 0 );
 	Params.DecorationSize = eeSize( 0, 0 );
 	Params.DecorationAutoSize = false;

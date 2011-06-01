@@ -177,7 +177,7 @@ void cEETest::CreateAquaTextureAtlas() {
 	std::string Path( MyPath + "data/aqua" );
 
 	if ( !FileExists( tgpath + ".etg" ) ) {
-		cTexturePacker tp( 512, 512, true, 2 );
+		cTexturePacker tp( 256, 256, true, 2 );
 		tp.AddTexturesPath( Path );
 		tp.PackTextures();
 		tp.Save( tgpath + ".png", EE_SAVE_TYPE_PNG );
@@ -237,32 +237,56 @@ void cEETest::CreateShaders() {
 	}
 }
 
+void cEETest::OnWinMouseUp( const cUIEvent * Event ) {
+	const cUIEventMouse * MEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
+
+	cUIControlAnim * CtrlAnim;
+
+	if ( Event->Ctrl()->IsType( UI_TYPE_WINDOW ) ) {
+		CtrlAnim = reinterpret_cast<cUIControlAnim*>( Event->Ctrl() );
+	} else {
+		CtrlAnim = reinterpret_cast<cUIControlAnim*>( Event->Ctrl()->Parent() );
+	}
+
+	if ( MEvent->Flags() & EE_BUTTON_WUMASK ) {
+		CtrlAnim->Scale( CtrlAnim->Scale() + 0.1f );
+	} else if ( MEvent->Flags() & EE_BUTTON_WDMASK ) {
+		CtrlAnim->Scale( CtrlAnim->Scale() - 0.1f );
+	}
+}
+
 void cEETest::CreateUI() {
 	cTimeElapsed TE;
-	cUIManager::instance()->Init(  ); //UI_MANAGER_HIGHLIGHT_FOCUS
-
-	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
 	CreateAquaTextureAtlas();
+
 	Log->Writef( "Texture Atlas Loading Time: %f", TE.ElapsedSinceStart() );
+
+	cUIManager::instance()->Init(); //UI_MANAGER_HIGHLIGHT_FOCUS
 
 	cTextureGroupLoader tgl( MyPath + "data/aquatg/aqua.etg" );
 	tgl.GetTexture()->TextureFilter( TEX_FILTER_NEAREST );
 
-	cUITheme * Aqua = cUITheme::LoadFromShapeGroup( cShapeGroupManager::instance()->GetByName( "aqua" ), "aqua", "aqua" );
-	Aqua->FontSelectedColor( eeColorA( 255, 255, 255, 255 ) );
+	mTheme = cUITheme::LoadFromShapeGroup( eeNew( cUIAquaTheme, ( "aqua", "aqua" ) ), cShapeGroupManager::instance()->GetByName( "aqua" ) );
 
-	cUIThemeManager::instance()->Add( Aqua );
+	cUIThemeManager::instance()->Add( mTheme );
 	cUIThemeManager::instance()->DefaultEffectsEnabled( true );
 	cUIThemeManager::instance()->DefaultFont( TTF );
 	cUIThemeManager::instance()->DefaultTheme( "aqua" );
 
+	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
+
 	Params.Border.Width( 2 );
 	Params.Border.Color( 0xFF979797 );
 	Params.Background.Colors( eeColorA( 0x66EDEDED ), eeColorA( 0xCCEDEDED ), eeColorA( 0xCCEDEDED ), eeColorA( 0x66EDEDED ) );
-	C = eeNew( cUITest, ( Params ) );
-	C->Pos( 320, 240 );
-	C->DragEnable( true );
+
+	cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 530, 405 ), eeVector2i( 320, 240 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_DRAW_SHADOW, UI_WIN_DRAGABLE_CONTAINER , eeSize( 530, 405 ), 200 );
+	C = tWin->Container();
+
+	tWin->Title( "Controls Test" );
+
+	tWin->AddEventListener( cUIEvent::EventMouseUp, cb::Make1( this, &cEETest::OnWinMouseUp ) );
+	C->AddEventListener( cUIEvent::EventMouseUp, cb::Make1( this, &cEETest::OnWinMouseUp ) );
 
 	Params.Flags &= ~UI_CLIP_ENABLE;
 	Params.Background.Corners(0);
@@ -286,7 +310,7 @@ void cEETest::CreateUI() {
 	Child2->StartRotation( 0.f, 360.f, 5000.f );
 	Child2->AngleInterpolation()->Loop( true );
 
-	Aqua->CreateSprite( eeNew( cSprite, ( "gn" ) ), C, eeSize(), eeVector2i( 160, 100 ) );
+	mTheme->CreateSprite( eeNew( cSprite, ( "gn" ) ), C, eeSize(), eeVector2i( 160, 100 ) );
 
 	cUITextBox::CreateParams TextParams;
 	TextParams.Parent( C );
@@ -445,15 +469,7 @@ void cEETest::CreateUI() {
 	mComboBox->ListBox()->AddListBoxItems( combostrs );
 	mComboBox->ListBox()->SetSelected( 0 );
 
-	cUIPopUpMenu::CreateParams MenuParams;
-	MenuParams.Parent( cUIManager::instance()->MainControl() );
-	MenuParams.Flags = UI_AUTO_SIZE | UI_AUTO_PADDING;
-	MenuParams.Size = eeSize( 0, 200 );
-	MenuParams.MinWidth = 100;
-	MenuParams.MinSpaceForIcons = 16;
-	MenuParams.PosSet( 0, 0 );
-	MenuParams.MinRightMargin = 8;
-	Menu = eeNew( cUIPopUpMenu, ( MenuParams ) );
+	Menu = mTheme->CreatePopUpMenu();
 	Menu->Add( "New", cGlobalShapeGroup::instance()->GetByName( "aqua_button_ok" ) );
 	Menu->Add( "Open..." );
 	Menu->AddSeparator();
@@ -468,13 +484,13 @@ void cEETest::CreateUI() {
 	Menu->Add( "Show Window 2" );
 	Menu->AddCheckBox( "Multi Viewport" );
 
-	cUIPopUpMenu * Menu3 = eeNew( cUIPopUpMenu, ( MenuParams ) );
+	cUIPopUpMenu * Menu3 = mTheme->CreatePopUpMenu();
 	Menu3->Add( "Hello World 1" );
 	Menu3->Add( "Hello World 2" );
 	Menu3->Add( "Hello World 3" );
 	Menu3->Add( "Hello World 4" );
 
-	cUIPopUpMenu * Menu2 = eeNew( cUIPopUpMenu, ( MenuParams ) );
+	cUIPopUpMenu * Menu2 = mTheme->CreatePopUpMenu();
 	Menu2->Add( "Test 1" );
 	Menu2->Add( "Test 2" );
 	Menu2->Add( "Test 3" );
@@ -541,56 +557,31 @@ void cEETest::CreateUI() {
 	mGenGrid->CollumnWidth( 0, 50 );
 	mGenGrid->CollumnWidth( 1, 24 );
 	mGenGrid->CollumnWidth( 2, 100 );
-/*
-	//reinterpret_cast<cUIMenuCheckBox*> ( Menu->GetItem( "Show Window" ) )->Active( true );
-	C->Visible( true );
-	C->Enabled( true );
-	C->StartScaleAnim( 0.f, 1.f, 500.f, SINEOUT );
-	C->StartAlphaAnim( 0.f, 255.f, 500.f );
-	C->StartRotation( 0, 360, 500.f, SINEOUT );
-*/
-	C->Scale( 0 );
 
 	CreateDecoratedWindow();
 
-	//mUIWindow->Show();
-
-	cUICommonDialog::CreateParams CDParams;
-	CDParams.Flags = UI_HALIGN_CENTER;
-	CDParams.WinFlags |= cUIWindow::UI_WIN_MAXIMIZE_BUTTON; //  | cUIWindow::UI_WIN_MODAL
-	CDParams.ButtonsPositionFixer.x = -2;
-	cUICommonDialog * CDialog = eeNew( cUICommonDialog, ( CDParams ) );
-	CDialog->AddFilePattern( "*.hpp;*.cpp", true );
-	CDialog->Center();
-	CDialog->Show();
+	C = reinterpret_cast<cUIControlAnim*> ( C->Parent() );
 
 	Log->Writef( "CreateUI time: %f", TE.ElapsedSinceStart() );
 }
 
+void cEETest::CreateCommonDialog() {
+	cUICommonDialog * CDialog = mTheme->CreateCommonDialog( NULL, eeSize(), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_DRAW_SHADOW, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON );
+	CDialog->AddFilePattern( "*.hpp;*.cpp", true );
+	CDialog->Center();
+	CDialog->Show();
+}
+
 void cEETest::CreateWinMenu() {
-	cUIWinMenu::CreateParams WinMenuParams;
+	cUIWinMenu * WinMenu = mTheme->CreateWinMenu( mUIWindow->Container() );
 
-	WinMenuParams.Parent( mUIWindow->Container() );
-	WinMenuParams.ButtonMargin = 12;
-
-	cUIWinMenu * WinMenu = eeNew( cUIWinMenu, ( WinMenuParams ) );
-
-	cUIPopUpMenu::CreateParams MenuParams;
-	MenuParams.Parent( cUIManager::instance()->MainControl() );
-	MenuParams.Flags = UI_AUTO_SIZE | UI_AUTO_PADDING;
-	MenuParams.Size = eeSize( 0, 200 );
-	MenuParams.MinWidth = 100;
-	MenuParams.MinSpaceForIcons = 16;
-	MenuParams.PosSet( 0, 0 );
-	MenuParams.MinRightMargin = 8;
-
-	cUIPopUpMenu * PopMenu = eeNew( cUIPopUpMenu, ( MenuParams ) );
+	cUIPopUpMenu * PopMenu = mTheme->CreatePopUpMenu();
 	PopMenu->Add( "File" );
 	PopMenu->Add( "Open" );
 	PopMenu->Add( "Close" );
 	PopMenu->Add( "Quit" );
 
-	cUIPopUpMenu * PopMenu2 = eeNew( cUIPopUpMenu, ( MenuParams ) );
+	cUIPopUpMenu * PopMenu2 = mTheme->CreatePopUpMenu();
 	PopMenu2->Add( "Bla" );
 	PopMenu2->Add( "Bla 2" );
 	PopMenu2->Add( "Bla 3" );
@@ -598,47 +589,27 @@ void cEETest::CreateWinMenu() {
 
 	WinMenu->AddMenuButton( "File", PopMenu );
 	WinMenu->AddMenuButton( "Edit", PopMenu2 );
-	WinMenu->Enabled( true );
-	WinMenu->Visible( true );
 }
 
 void cEETest::CreateDecoratedWindow() {
-	cUIWindow::CreateParams WinParams;
-	WinParams.Flags = UI_HALIGN_CENTER;
-	WinParams.WinFlags |= cUIWindow::UI_WIN_MAXIMIZE_BUTTON;
-	WinParams.PosSet( 200, 50 );
-	WinParams.Size = eeSize( 530, 400 );
-	WinParams.MinWindowSize = eeSize( 100, 200 );
-	WinParams.ButtonsPositionFixer.x = -2;
+	mUIWindow = mTheme->CreateWindow( NULL, eeSize( 530, 400 ), eeVector2i( 200, 50 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_DRAW_SHADOW, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, eeSize( 100, 200 ) );
 
-	mUIWindow = eeNew( cUIWindow, ( WinParams ) );
 	mUIWindow->AddEventListener( cUIEvent::EventOnWindowCloseClick, cb::Make1( this, &cEETest::CloseClick ) );
 	mUIWindow->Title( "Test Window" );
 	mUIWindow->ToBack();
 
-	cUIPushButton::CreateParams ButtonParams;
-	ButtonParams.Parent( mUIWindow->Container() );
-	ButtonParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_LEFT | UI_ANCHOR_TOP;
-	ButtonParams.PosSet( 10, 28 );
-	ButtonParams.Size = eeSize( 510, 22 );
-
-	cUIPushButton * Button = eeNew( cUIPushButton, ( ButtonParams ) );
-	Button->Visible( true );
-	Button->Enabled( true );
+	cUIPushButton * Button = mTheme->CreatePushButton( mUIWindow->Container(), eeSize( 510, 22 ), eeVector2i( 10, 28 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_ANCHOR_RIGHT );
 	Button->Text( "Click Me" );
 	Button->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::ButtonClick ) );
 
 	mUIWindow->AddShortcut( KEY_C, KEYMOD_ALT, Button );
 
-	cUITextEdit::CreateParams TEParams;
-	TEParams.Parent( mUIWindow->Container() );
-	TEParams.PosSet( 10, 55 );
-	TEParams.Size	= eeSize( 510, 300 );
-	TEParams.Flags = UI_AUTO_PADDING | UI_CLIP_ENABLE | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_TOP;
-	cUITextEdit * TextEdit = eeNew( cUITextEdit, ( TEParams ) );
-	TextEdit->Visible( true );
-	TextEdit->Enabled( true );
-	TextEdit->Text( mBuda );
+	mTheme->CreateTextEdit(
+		mUIWindow->Container(),
+		eeSize( 510, 300 ),
+		eeVector2i( 10, 55 ),
+		UI_AUTO_PADDING | UI_CLIP_ENABLE | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_TOP
+	)->Text( mBuda );
 
 	CreateWinMenu();
 }
@@ -672,6 +643,7 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 		C->Enabled( true );
 
 		if ( Chk->Active() ) {
+			if ( C->Scale() == 1.f ) C->Scale( 0.f );
 			C->StartScaleAnim( C->Scale(), 1.f, 500.f, SINEOUT );
 			C->StartAlphaAnim( C->Alpha(), 255.f, 500.f );
 			C->StartRotation( 0, 360, 500.f, SINEOUT );
@@ -688,6 +660,12 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 		mUIWindow->Show();
 	} else if ( "Multi Viewport" == txt ) {
 		MultiViewportMode = !MultiViewportMode;
+	} else if ( "Open..." == txt ) {
+		CreateCommonDialog();
+	} else if ( "New" ) {
+		if ( 0 == Screen ) {
+			ChangeDemo( 0 );
+		}
 	}
 }
 

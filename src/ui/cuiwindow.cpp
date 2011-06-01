@@ -663,6 +663,9 @@ void cUIWindow::Title( const String& Text ) {
 		if ( mFlags & UI_HALIGN_CENTER )
 			Params.Flags |= UI_HALIGN_CENTER;
 
+		if ( mFlags & UI_DRAW_SHADOW )
+			Params.Flags |= UI_DRAW_SHADOW;
+
 		mTitle = eeNew( cUITextBox, ( Params ) );
 		mTitle->Enabled( false );
 		mTitle->Visible( true );

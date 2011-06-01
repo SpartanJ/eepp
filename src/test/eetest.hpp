@@ -207,12 +207,14 @@ class cEETest : private cThread {
 
 		cTimeElapsed	mFTE;
 
+		void CreateCommonDialog();
 		void ItemClick( const cUIEvent * Event );
 		void MainClick( const cUIEvent * Event );
 		void QuitClick( const cUIEvent * Event );
 		void CloseClick( const cUIEvent * Event );
 		void ButtonClick( const cUIEvent * Event );
 		void OnValueChange( const cUIEvent * Event );
+		void OnWinMouseUp( const cUIEvent * Event );
 		void CreateDecoratedWindow();
 		void CreateWinMenu();
 		void CreateAquaTextureAtlas();
@@ -270,6 +272,7 @@ class cEETest : private cThread {
 		cSprite *				mCircleSprite;
 
 		cMap *					mMap;
+		cUITheme *				mTheme;
 };
 
 #endif

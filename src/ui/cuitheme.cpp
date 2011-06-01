@@ -23,6 +23,7 @@
 #include "cuiwinmenu.hpp"
 #include "cuigfx.hpp"
 #include "cuisprite.hpp"
+#include "cuicommondialog.hpp"
 
 namespace EE { namespace UI {
 
@@ -97,7 +98,43 @@ void cUITheme::AddThemeElement( const std::string& Element ) {
 	UI_THEME_ELEMENTS.push_back( Element );
 }
 
-cUITheme * cUITheme::LoadFromPath( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt ) {
+cUITheme * cUITheme::LoadFromShapeGroup( cUITheme * tTheme, cShapeGroup * ShapeGroup ) {
+	cTimeElapsed TE;
+
+	LoadThemeElements();
+
+	Uint32 i;
+	bool Found;
+	std::string Element;
+	std::vector<std::string> 	ElemFound;
+	std::vector<Uint32> 		ElemType;
+
+	for ( std::list<std::string>::iterator it = UI_THEME_ELEMENTS.begin() ; it != UI_THEME_ELEMENTS.end(); it++ ) {
+		Uint32 IsComplex = 0;
+
+		Element = std::string( tTheme->Abbr() + "_" + *it );
+
+		Found 	= SearchFilesInGroup( ShapeGroup, Element, IsComplex );
+
+		if ( Found ) {
+			ElemFound.push_back( Element );
+			ElemType.push_back( IsComplex );
+		}
+	}
+
+	for ( i = 0; i < ElemFound.size(); i++ ) {
+		if ( ElemType[i] )
+			tTheme->Add( eeNew( cUISkinComplex, ( ElemFound[i] ) ) );
+		else
+			tTheme->Add( eeNew( cUISkinSimple, ( ElemFound[i] ) ) );
+	}
+
+	cLog::instance()->Write( "UI Theme Loaded in: " + toStr( TE.ElapsedSinceStart() ) + " ( from ShapeGroup )" );
+
+	return tTheme;
+}
+
+cUITheme * cUITheme::LoadFromPath( cUITheme * tTheme, const std::string& Path, const std::string ImgExt ) {
 	cTimeElapsed TE;
 
 	LoadThemeElements();
@@ -115,14 +152,12 @@ cUITheme * cUITheme::LoadFromPath( const std::string& Path, const std::string& N
 	std::vector<std::string> 	ElemFound;
 	std::vector<Uint32> 		ElemType;
 
-	cShapeGroup * tSG = eeNew( cShapeGroup, ( NameAbbr ) );
-
-	cUITheme * tTheme = eeNew( cUITheme, ( Name, NameAbbr ) );
+	cShapeGroup * tSG = eeNew( cShapeGroup, ( tTheme->Abbr() ) );
 
 	for ( std::list<std::string>::iterator it = UI_THEME_ELEMENTS.begin() ; it != UI_THEME_ELEMENTS.end(); it++ ) {
 		Uint32 IsComplex = 0;
 
-		Element = std::string( NameAbbr + "_" + *it );
+		Element = std::string( tTheme->Abbr() + "_" + *it );
 
 		Found 	= SearchFilesOfElement( tSG, RPath, Element, IsComplex, ImgExt );
 
@@ -149,42 +184,12 @@ cUITheme * cUITheme::LoadFromPath( const std::string& Path, const std::string& N
 	return tTheme;
 }
 
+cUITheme * cUITheme::LoadFromPath( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt ) {
+	return LoadFromPath( eeNew( cUITheme, ( Name, NameAbbr ) ), Path, ImgExt );
+}
+
 cUITheme * cUITheme::LoadFromShapeGroup( cShapeGroup * ShapeGroup, const std::string& Name, const std::string NameAbbr ) {
-	cTimeElapsed TE;
-
-	LoadThemeElements();
-
-	Uint32 i;
-	bool Found;
-	std::string Element;
-	std::vector<std::string> 	ElemFound;
-	std::vector<Uint32> 		ElemType;
-
-	cUITheme * tTheme = eeNew( cUITheme, ( Name, NameAbbr ) );
-
-	for ( std::list<std::string>::iterator it = UI_THEME_ELEMENTS.begin() ; it != UI_THEME_ELEMENTS.end(); it++ ) {
-		Uint32 IsComplex = 0;
-
-		Element = std::string( NameAbbr + "_" + *it );
-
-		Found 	= SearchFilesInGroup( ShapeGroup, Element, IsComplex );
-
-		if ( Found ) {
-			ElemFound.push_back( Element );
-			ElemType.push_back( IsComplex );
-		}
-	}
-
-	for ( i = 0; i < ElemFound.size(); i++ ) {
-		if ( ElemType[i] )
-			tTheme->Add( eeNew( cUISkinComplex, ( ElemFound[i] ) ) );
-		else
-			tTheme->Add( eeNew( cUISkinSimple, ( ElemFound[i] ) ) );
-	}
-
-	cLog::instance()->Write( "UI Theme Loaded in: " + toStr( TE.ElapsedSinceStart() ) + " ( from ShapeGroup )" );
-
-	return tTheme;
+	return LoadFromShapeGroup( eeNew( cUITheme, ( Name, NameAbbr ) ), ShapeGroup );
 }
 
 bool cUITheme::SearchFilesInGroup( cShapeGroup * SG, std::string Element, Uint32& IsComplex ) {
@@ -274,9 +279,9 @@ cUITheme::cUITheme( const std::string& Name, const std::string& Abbr, cFont * De
 	mFontColor( 0, 0, 0, 255 ),
 	mFontShadowColor( 255, 255, 255, 200 ),
 	mFontOverColor( 0, 0, 0, 255 ),
-	mFontSelectedColor( 0, 0, 0, 255 )
+	mFontSelectedColor( 0, 0, 0, 255 ),
+	mUseDefaultThemeValues( true )
 {
-	PostInit();
 }
 
 cUITheme::~cUITheme() {
@@ -346,7 +351,12 @@ void cUITheme::FontSelectedColor( const eeColorA& Color ) {
 	mFontSelectedColor = Color;
 }
 
-void cUITheme::PostInit() {
+void cUITheme::UseDefaultThemeValues( const bool& Use ) {
+	mUseDefaultThemeValues = Use;
+}
+
+const bool& cUITheme::UseDefaultThemeValues() const {
+	return mUseDefaultThemeValues;
 }
 
 cUIGfx * cUITheme::CreateGfx( cShape * Shape, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, eeColorA ShapeColor, EE_RENDERTYPE ShapeRender ) {
@@ -544,6 +554,24 @@ cUIListBox * cUITheme::CreateListBox( cUIControl * Parent, const eeSize& Size, c
 	return Ctrl;
 }
 
+cUIMenu * cUITheme::CreateMenu( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 RowHeight, eeRecti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
+	cUIMenu::CreateParams MenuParams;
+	MenuParams.Parent( Parent );
+	MenuParams.PosSet( Pos );
+	MenuParams.SizeSet( Size );
+	MenuParams.Flags = Flags;
+	MenuParams.RowHeight = RowHeight;
+	MenuParams.PaddingContainer = PaddingContainer;
+	MenuParams.MinWidth = MinWidth;
+	MenuParams.MinSpaceForIcons = MinSpaceForIcons;
+	MenuParams.MinRightMargin = MinRightMargin;
+
+	cUIMenu * Ctrl = eeNew( cUIMenu, ( MenuParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
+}
+
 cUIPopUpMenu * cUITheme::CreatePopUpMenu( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 RowHeight, eeRecti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
 	cUIPopUpMenu::CreateParams MenuParams;
 	MenuParams.Parent( Parent );
@@ -555,16 +583,7 @@ cUIPopUpMenu * cUITheme::CreatePopUpMenu( cUIControl * Parent, const eeSize& Siz
 	MenuParams.MinWidth = MinWidth;
 	MenuParams.MinSpaceForIcons = MinSpaceForIcons;
 	MenuParams.MinRightMargin = MinRightMargin;
-
-	/** Aqua Theme Stuff *//**
-	MenuParams.MinWidth = 100;
-	MenuParams.MinSpaceForIcons = 16;
-	MenuParams.MinRightMargin = 8;
-	*/
-	cUIPopUpMenu * Ctrl = eeNew( cUIPopUpMenu, ( MenuParams ) );
-	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
-	return Ctrl;
+	return eeNew( cUIPopUpMenu, ( MenuParams ) );
 }
 
 cUIProgressBar * cUITheme::CreateProgressBar( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool DisplayPercent, bool VerticalExpand, eeVector2f MovementSpeed, eeRectf FillerMargin ) {
@@ -578,9 +597,6 @@ cUIProgressBar * cUITheme::CreateProgressBar( cUIControl * Parent, const eeSize&
 	PBParams.MovementSpeed = MovementSpeed;
 	PBParams.FillerMargin = FillerMargin;
 
-	/** Aqua Theme Stuff *//**
-	PBParams.DisplayPercent = true
-	*/
 	cUIProgressBar * Ctrl = eeNew( cUIProgressBar, ( PBParams ) );
 	Ctrl->Visible( true );
 	Ctrl->Enabled( true );
@@ -617,13 +633,37 @@ cUIWinMenu * cUITheme::CreateWinMenu( cUIControl * Parent, const eeSize& Size, c
 	WinMenuParams.MenuHeight = MenuHeight;
 	WinMenuParams.FirstButtonMargin = FirstButtonMargin;
 
-	/** Aqua Theme Stuff *//**
-	WinMenuParams.ButtonMargin = 12;
-	*/
 	cUIWinMenu * Ctrl = eeNew( cUIWinMenu, ( WinMenuParams ) );
 	Ctrl->Visible( true );
 	Ctrl->Enabled( true );
 	return Ctrl;
+}
+
+cUIWindow * cUITheme::CreateWindow( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 WinFlags, eeSize MinWindowSize, Uint8 BaseAlpha ) {
+	cUIWindow::CreateParams WinParams;
+	WinParams.Parent( Parent );
+	WinParams.PosSet( Pos );
+	WinParams.SizeSet( Size );
+	WinParams.Flags = Flags;
+	WinParams.WinFlags = WinFlags;
+	WinParams.MinWindowSize = MinWindowSize;
+	WinParams.BaseAlpha = BaseAlpha;
+	return eeNew( cUIWindow, ( WinParams ) );
+}
+
+cUICommonDialog * cUITheme::CreateCommonDialog( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 WinFlags, eeSize MinWindowSize, Uint8 BaseAlpha, Uint32 CDLFlags, std::string DefaultFilePattern, std::string DefaultDirectory ) {
+	cUICommonDialog::CreateParams DLGParams;
+	DLGParams.Parent( Parent );
+	DLGParams.PosSet( Pos );
+	DLGParams.SizeSet( Size );
+	DLGParams.Flags = Flags;
+	DLGParams.WinFlags = WinFlags;
+	DLGParams.MinWindowSize = MinWindowSize;
+	DLGParams.BaseAlpha = BaseAlpha;
+	DLGParams.DefaultDirectory = DefaultDirectory;
+	DLGParams.DefaultFilePattern = DefaultFilePattern;
+	DLGParams.CDLFlags = CDLFlags;
+	return eeNew( cUICommonDialog, ( DLGParams ) );
 }
 
 }}
