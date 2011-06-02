@@ -125,7 +125,8 @@ enum UI_WINDOW_FLAGS {
 	UI_WIN_RESIZEABLE					= ( 1 << 5 ),
 	UI_WIN_DRAGABLE_CONTAINER			= ( 1 << 6 ),
 	UI_WIN_SHARE_ALPHA_WITH_CHILDS		= ( 1 << 7 ),
-	UI_WIN_MODAL						= ( 1 << 8 )
+	UI_WIN_MODAL						= ( 1 << 8 ),
+	UI_WIN_DRAW_SHADOW					= ( 1 << 9 )
 };
 
 enum UI_COMMON_DIALOG_FLAGS {

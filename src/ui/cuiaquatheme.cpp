@@ -87,6 +87,12 @@ cUIWindow * cUIAquaTheme::CreateWindow( cUIControl * Parent, const eeSize& Size,
 	WinParams.BaseAlpha = BaseAlpha;
 
 	if ( UseDefaultThemeValues() ) {
+		if ( !( WinParams.Flags & UI_DRAW_SHADOW ) )
+			WinParams.Flags |= UI_DRAW_SHADOW;
+
+		if ( !( WinParams.WinFlags & UI_WIN_DRAW_SHADOW ) )
+			WinParams.WinFlags |= UI_WIN_DRAW_SHADOW;
+
 		WinParams.ButtonsPositionFixer.x = -2;
 		WinParams.TitleFontColor = eeColorA( 0, 0, 0, 255 );
 	}
@@ -108,6 +114,12 @@ cUICommonDialog * cUIAquaTheme::CreateCommonDialog( cUIControl * Parent, const e
 	DLGParams.CDLFlags = CDLFlags;
 
 	if ( UseDefaultThemeValues() ) {
+		if ( !( DLGParams.Flags & UI_DRAW_SHADOW ) )
+			DLGParams.Flags |= UI_DRAW_SHADOW;
+
+		if ( !( DLGParams.WinFlags & UI_WIN_DRAW_SHADOW ) )
+			DLGParams.WinFlags |= UI_WIN_DRAW_SHADOW;
+
 		DLGParams.ButtonsPositionFixer.x = -2;
 		DLGParams.TitleFontColor = eeColorA( 0, 0, 0, 255 );
 	}

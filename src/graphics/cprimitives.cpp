@@ -3,17 +3,18 @@
 
 namespace EE { namespace Graphics {
 
-cPrimitives::cPrimitives() {
-	TF = cTextureFactory::instance();
-
-	BR = cGlobalBatchRenderer::instance();
+cPrimitives::cPrimitives() :
+	mBR( cGlobalBatchRenderer::instance() ),
+	mForceDraw( true )
+{
 }
 
-cPrimitives::~cPrimitives() {}
+cPrimitives::~cPrimitives() {
+}
 
 void cPrimitives::DrawRoundedRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeFloat& Scale, const EE_FILL_MODE& fillmode, const  EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth, const eeUint& Corners ) {
-	BR->SetTexture( NULL );
-	BR->SetPreBlendFunc( blend );
+	mBR->SetTexture( NULL );
+	mBR->SetPreBlendFunc( blend );
 
 	eeUint i;
 	eeFloat xscalediff = width * Scale - width;
@@ -27,62 +28,62 @@ void cPrimitives::DrawRoundedRectangle(const eeFloat& x, const eeFloat& y, const
 	switch(fillmode) {
 		case EE_DRAW_FILL: {
 			if ( TopLeft == BottomLeft && BottomLeft == BottomRight && BottomRight == TopRight ) {
-				BR->PolygonSetColor( TopLeft );
+				mBR->PolygonSetColor( TopLeft );
 
-				BR->BatchPolygon( Poly );
+				mBR->BatchPolygon( Poly );
 			} else {
 				for ( i = 0; i < Poly.Size(); i++ ) {
 					poly = Poly[i];
 
 					if ( poly.x <= Center.x && poly.y <= Center.y )
-						BR->PolygonSetColor( TopLeft );
+						mBR->PolygonSetColor( TopLeft );
 					else if ( poly.x <= Center.x && poly.y >= Center.y )
-						BR->PolygonSetColor( BottomLeft );
+						mBR->PolygonSetColor( BottomLeft );
 					else if ( poly.x > Center.x && poly.y > Center.y )
-						BR->PolygonSetColor( BottomRight );
+						mBR->PolygonSetColor( BottomRight );
 					else if ( poly.x > Center.x && poly.y < Center.y )
-						BR->PolygonSetColor( TopRight );
+						mBR->PolygonSetColor( TopRight );
 					else
-						BR->PolygonSetColor( TopLeft );
+						mBR->PolygonSetColor( TopLeft );
 
-					BR->BatchPolygonByPoint( Poly[i] );
+					mBR->BatchPolygonByPoint( Poly[i] );
 				}
 			}
 
 			break;
 		}
 		case EE_DRAW_LINE:
-			BR->SetLineWidth( lineWidth );
+			mBR->SetLineWidth( lineWidth );
 
-			BR->LineLoopBegin();
-			BR->LineLoopSetColor( TopLeft );
+			mBR->LineLoopBegin();
+			mBR->LineLoopSetColor( TopLeft );
 
 			if ( TopLeft == BottomLeft && BottomLeft == BottomRight && BottomRight == TopRight ) {
 				for ( i = 0; i < Poly.Size(); i+=2 )
-					BR->BatchLineLoop( Poly[i], Poly[i+1] );
+					mBR->BatchLineLoop( Poly[i], Poly[i+1] );
 			} else {
 				for ( eeUint i = 0; i < Poly.Size(); i++ ) {
 					poly = Poly[i];
 
 					if ( poly.x <= Center.x && poly.y <= Center.y )
-						BR->LineLoopSetColor( TopLeft );
+						mBR->LineLoopSetColor( TopLeft );
 					else if ( poly.x < Center.x && poly.y > Center.y )
-						BR->LineLoopSetColor( BottomLeft );
+						mBR->LineLoopSetColor( BottomLeft );
 					else if ( poly.x > Center.x && poly.y > Center.y )
-						BR->LineLoopSetColor( BottomRight );
+						mBR->LineLoopSetColor( BottomRight );
 					else if ( poly.x > Center.x && poly.y < Center.y )
-						BR->LineLoopSetColor( TopRight );
+						mBR->LineLoopSetColor( TopRight );
 					else
-						BR->LineLoopSetColor( TopLeft );
+						mBR->LineLoopSetColor( TopLeft );
 
-					BR->BatchLineLoop( Poly[i] );
+					mBR->BatchLineLoop( Poly[i] );
 				}
 			}
 
 			break;
 	}
 
-	BR->Draw();
+	DrawBatch();
 }
 
 void cPrimitives::DrawRectangle(const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeFloat& Scale, const EE_FILL_MODE& fillmode, const  EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth, const eeUint& Corners) {
@@ -91,21 +92,21 @@ void cPrimitives::DrawRectangle(const eeFloat& x, const eeFloat& y, const eeFloa
 		return;
 	}
 
-	BR->SetTexture( NULL );
-	BR->SetPreBlendFunc( blend );
+	mBR->SetTexture( NULL );
+	mBR->SetPreBlendFunc( blend );
 
 	switch(fillmode) {
 		case EE_DRAW_FILL: {
-			BR->QuadsBegin();
-			BR->QuadsSetColorFree( TopLeft, BottomLeft, BottomRight, TopRight );
-			BR->BatchQuadEx( x, y, width, height, Angle, Scale );
+			mBR->QuadsBegin();
+			mBR->QuadsSetColorFree( TopLeft, BottomLeft, BottomRight, TopRight );
+			mBR->BatchQuadEx( x, y, width, height, Angle, Scale );
 			break;
 		}
 		case EE_DRAW_LINE:
-			BR->SetLineWidth( lineWidth );
+			mBR->SetLineWidth( lineWidth );
 
-			BR->LineLoopBegin();
-			BR->LineLoopSetColorFree( TopLeft, BottomLeft );
+			mBR->LineLoopBegin();
+			mBR->LineLoopSetColorFree( TopLeft, BottomLeft );
 
 			if ( Scale != 1.0f || Angle != 0.0f ) {
 				eeQuad2f Q;
@@ -117,147 +118,147 @@ void cPrimitives::DrawRectangle(const eeFloat& x, const eeFloat& y, const eeFloa
 				Q.Scale( Scale );
 				Q.Rotate( Angle, eeVector2f( x + width * 0.5f, y + height * 0.5f ) );
 
-				BR->BatchLineLoop( Q[0].x, Q[0].y, Q[1].x, Q[1].y );
-				BR->LineLoopSetColorFree( BottomRight, TopRight );
-				BR->BatchLineLoop( Q[2].x, Q[2].y, Q[3].x, Q[3].y );
+				mBR->BatchLineLoop( Q[0].x, Q[0].y, Q[1].x, Q[1].y );
+				mBR->LineLoopSetColorFree( BottomRight, TopRight );
+				mBR->BatchLineLoop( Q[2].x, Q[2].y, Q[3].x, Q[3].y );
 			} else {
-				BR->BatchLineLoop( x, y, x, y + height );
-				BR->LineLoopSetColorFree( BottomRight, TopRight );
-				BR->BatchLineLoop( x + width, y + height, x + width, y );
+				mBR->BatchLineLoop( x, y, x, y + height );
+				mBR->LineLoopSetColorFree( BottomRight, TopRight );
+				mBR->BatchLineLoop( x + width, y + height, x + width, y );
 			}
 			break;
 	}
 
-	BR->Draw();
+	DrawBatch();
 }
 
 void cPrimitives::DrawLine(const eeFloat& x, const eeFloat& y, const eeFloat& x2, const eeFloat& y2, const eeFloat& lineWidth) {
-	BR->SetLineWidth( lineWidth );
+	mBR->SetLineWidth( lineWidth );
 
-	BR->SetTexture( NULL );
-	BR->LinesBegin();
-	BR->LinesSetColor( mColor );
+	mBR->SetTexture( NULL );
+	mBR->LinesBegin();
+	mBR->LinesSetColor( mColor );
 
-	BR->BatchLine( x, y, x2, y2 );
+	mBR->BatchLine( x, y, x2, y2 );
 
-	BR->Draw();
+	DrawBatch();
 }
 
 void cPrimitives::DrawPoint( const eeFloat& x, const eeFloat& y, const eeFloat& pointSize ) {
-	BR->SetPointSize( pointSize );
+	mBR->SetPointSize( pointSize );
 
-	BR->SetTexture( NULL );
-	BR->PointsBegin();
-	BR->PointSetColor( mColor );
+	mBR->SetTexture( NULL );
+	mBR->PointsBegin();
+	mBR->PointSetColor( mColor );
 
-	BR->BatchPoint( x, y );
+	mBR->BatchPoint( x, y );
 
-	BR->Draw();
+	DrawBatch();
 }
 
 void cPrimitives::DrawCircle( const eeFloat& x, const eeFloat& y, const eeFloat& radius, Uint32 points, const EE_FILL_MODE& fillmode, const eeFloat& lineWidth ) {
 	if(points < 6) points = 6;
     eeFloat angle_shift =  360 / static_cast<eeFloat>(points);
 
-	BR->SetTexture( NULL );
+	mBR->SetTexture( NULL );
 
 	switch( fillmode ) {
 		case EE_DRAW_LINE:
-			BR->SetLineWidth( lineWidth );
-			BR->LineLoopBegin();
-			BR->LineLoopSetColor( mColor );
+			mBR->SetLineWidth( lineWidth );
+			mBR->LineLoopBegin();
+			mBR->LineLoopSetColor( mColor );
 
 			for( eeFloat i = 0; i < 360; i+= ( angle_shift + angle_shift ) )
-				BR->BatchLineLoop( x + radius * sinAng(i), y + radius * cosAng(i), x + radius * sinAng( i + angle_shift ), y + radius * cosAng( i + angle_shift ) );
+				mBR->BatchLineLoop( x + radius * sinAng(i), y + radius * cosAng(i), x + radius * sinAng( i + angle_shift ), y + radius * cosAng( i + angle_shift ) );
 
 			break;
 		case EE_DRAW_FILL:
-			BR->TriangleFanBegin();
-			BR->TriangleFanSetColor( mColor );
+			mBR->TriangleFanBegin();
+			mBR->TriangleFanSetColor( mColor );
 
 			for( eeFloat i = 0; i < 360; i+= ( angle_shift + angle_shift + angle_shift ) )
-				BR->BatchTriangleFan( x + radius * sinAng(i), y + radius * cosAng(i), x + radius * sinAng( i + angle_shift ), y + radius * cosAng( i + angle_shift ), x + radius * sinAng( i + angle_shift + angle_shift ), y + radius * cosAng( i + angle_shift + angle_shift ) );
+				mBR->BatchTriangleFan( x + radius * sinAng(i), y + radius * cosAng(i), x + radius * sinAng( i + angle_shift ), y + radius * cosAng( i + angle_shift ), x + radius * sinAng( i + angle_shift + angle_shift ), y + radius * cosAng( i + angle_shift + angle_shift ) );
 
 			break;
 	}
 
-	BR->Draw();
+	DrawBatch();
 }
 
 void cPrimitives::DrawTriangle(const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth) {
-	BR->SetTexture( NULL );
-	BR->SetPreBlendFunc( blend );
+	mBR->SetTexture( NULL );
+	mBR->SetPreBlendFunc( blend );
 
 	switch(fillmode) {
 		case EE_DRAW_LINE:
-			BR->SetLineWidth( lineWidth );
+			mBR->SetLineWidth( lineWidth );
 
-			BR->LineLoopBegin();
+			mBR->LineLoopBegin();
 
-			BR->LineLoopSetColorFree( Color1, Color2 );
-			BR->BatchLineLoop( x1, y1, x2, y2 );
-			BR->LineLoopSetColorFree( Color2, Color3 );
-			BR->BatchLineLoop( x2, y2, x3, y3 );
+			mBR->LineLoopSetColorFree( Color1, Color2 );
+			mBR->BatchLineLoop( x1, y1, x2, y2 );
+			mBR->LineLoopSetColorFree( Color2, Color3 );
+			mBR->BatchLineLoop( x2, y2, x3, y3 );
 			break;
 		default:
 		case EE_DRAW_FILL:
-			BR->TrianglesBegin();
+			mBR->TrianglesBegin();
 
-			BR->TrianglesSetColorFree( Color1, Color2, Color3 );
-			BR->BatchTriangle( x1, y1, x2, y2, x3, y3 );
+			mBR->TrianglesSetColorFree( Color1, Color2, Color3 );
+			mBR->BatchTriangle( x1, y1, x2, y2, x3, y3 );
 
 			break;
 	}
 
-	BR->Draw();
+	DrawBatch();
 }
 
 void cPrimitives::DrawQuad( const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const eeFloat& x4, const eeFloat& y4, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const eeColorA& Color4, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth, const eeFloat& OffsetX, const eeFloat& OffsetY ) {
-	BR->SetTexture( NULL );
-	BR->SetPreBlendFunc( blend );
+	mBR->SetTexture( NULL );
+	mBR->SetPreBlendFunc( blend );
 
 	switch(fillmode) {
 		case EE_DRAW_LINE:
-			BR->SetLineWidth( lineWidth );
+			mBR->SetLineWidth( lineWidth );
 
-			BR->LineLoopBegin();
-			BR->LineLoopSetColorFree( Color1, Color2 );
-			BR->BatchLineLoop( OffsetX + x1, OffsetY + y1, OffsetX + x2, OffsetY + y2 );
-			BR->LineLoopSetColorFree( Color2, Color3 );
-			BR->BatchLineLoop( OffsetX + x3, OffsetY + y3, OffsetX + x4, OffsetY + y4 );
+			mBR->LineLoopBegin();
+			mBR->LineLoopSetColorFree( Color1, Color2 );
+			mBR->BatchLineLoop( OffsetX + x1, OffsetY + y1, OffsetX + x2, OffsetY + y2 );
+			mBR->LineLoopSetColorFree( Color2, Color3 );
+			mBR->BatchLineLoop( OffsetX + x3, OffsetY + y3, OffsetX + x4, OffsetY + y4 );
 			break;
 		case EE_DRAW_FILL:
-			BR->QuadsBegin();
-			BR->QuadsSetColorFree( Color1, Color2, Color3, Color4 );
-			BR->BatchQuadFree( OffsetX + x1, OffsetY + y1, OffsetX + x2, OffsetY + y2, OffsetX + x3, OffsetY + y3, OffsetX + x4, OffsetY + y4 );
+			mBR->QuadsBegin();
+			mBR->QuadsSetColorFree( Color1, Color2, Color3, Color4 );
+			mBR->BatchQuadFree( OffsetX + x1, OffsetY + y1, OffsetX + x2, OffsetY + y2, OffsetX + x3, OffsetY + y3, OffsetX + x4, OffsetY + y4 );
 			break;
 	}
 
-	BR->Draw();
+	DrawBatch();
 }
 
 void cPrimitives::DrawPolygon(const eePolygon2f& p, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth) {
-	BR->SetTexture( NULL );
-	BR->SetPreBlendFunc( blend );
+	mBR->SetTexture( NULL );
+	mBR->SetPreBlendFunc( blend );
 
 	switch(fillmode) {
 		case EE_DRAW_LINE:
-			BR->SetLineWidth( lineWidth );
+			mBR->SetLineWidth( lineWidth );
 
-			BR->LineLoopBegin();
-			BR->LineLoopSetColor( mColor );
+			mBR->LineLoopBegin();
+			mBR->LineLoopSetColor( mColor );
 
 			for ( Uint32 i = 0; i < p.Size(); i += 2 )
-				BR->BatchLineLoop( p[i].x, p[i].y, p[i+1].x, p[i+1].y );
+				mBR->BatchLineLoop( p[i].x, p[i].y, p[i+1].x, p[i+1].y );
 
 			break;
 		case EE_DRAW_FILL:
-			BR->PolygonSetColor( mColor );
-			BR->BatchPolygon( p );
+			mBR->PolygonSetColor( mColor );
+			mBR->BatchPolygon( p );
 			break;
 	}
 
-	BR->Draw();
+	DrawBatch();
 }
 
 void cPrimitives::DrawRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeFloat& Scale, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth, const eeUint& Corners) {
@@ -334,6 +335,21 @@ void cPrimitives::DrawQuad(const eeVector2f& p1, const eeVector2f& p2, const eeV
 
 void cPrimitives::DrawQuad(const eeQuad2f& q, const EE_FILL_MODE& fillmode, const EE_PRE_BLEND_FUNC& blend, const eeFloat& lineWidth, const eeFloat& OffsetX, const eeFloat& OffsetY ) {
 	DrawQuad(q.V[0].x, q.V[0].y, q.V[1].x, q.V[1].y, q.V[2].x, q.V[2].y, q.V[3].x, q.V[3].y, mColor, mColor, mColor, mColor, fillmode, blend, lineWidth, OffsetX, OffsetY);
+}
+
+void cPrimitives::DrawBatch() {
+	if ( mForceDraw )
+		mBR->Draw();
+	else
+		mBR->DrawOpt();
+}
+
+void cPrimitives::ForceDraw( const bool& force ) {
+	mForceDraw = force;
+}
+
+const bool& cPrimitives::ForceDraw() const {
+	return mForceDraw;
 }
 
 }}

@@ -60,6 +60,8 @@ class cUIWindow : public cUIComplexControl {
 
 		cUIComplexControl * ButtonMinimize() const;
 
+		virtual void Draw();
+
 		virtual bool Show();
 
 		virtual bool Hide();

@@ -280,7 +280,7 @@ void cEETest::CreateUI() {
 	Params.Border.Color( 0xFF979797 );
 	Params.Background.Colors( eeColorA( 0x66EDEDED ), eeColorA( 0xCCEDEDED ), eeColorA( 0xCCEDEDED ), eeColorA( 0x66EDEDED ) );
 
-	cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 530, 405 ), eeVector2i( 320, 240 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_DRAW_SHADOW, UI_WIN_DRAGABLE_CONTAINER , eeSize( 530, 405 ), 200 );
+	cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 530, 405 ), eeVector2i( 320, 240 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DRAGABLE_CONTAINER , eeSize( 530, 405 ), 200 );
 	C = tWin->Container();
 
 	tWin->Title( "Controls Test" );
@@ -566,7 +566,7 @@ void cEETest::CreateUI() {
 }
 
 void cEETest::CreateCommonDialog() {
-	cUICommonDialog * CDialog = mTheme->CreateCommonDialog( NULL, eeSize(), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_DRAW_SHADOW, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON );
+	cUICommonDialog * CDialog = mTheme->CreateCommonDialog( NULL, eeSize(), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON );
 	CDialog->AddFilePattern( "*.hpp;*.cpp", true );
 	CDialog->Center();
 	CDialog->Show();
@@ -592,7 +592,7 @@ void cEETest::CreateWinMenu() {
 }
 
 void cEETest::CreateDecoratedWindow() {
-	mUIWindow = mTheme->CreateWindow( NULL, eeSize( 530, 400 ), eeVector2i( 200, 50 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_DRAW_SHADOW, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, eeSize( 100, 200 ) );
+	mUIWindow = mTheme->CreateWindow( NULL, eeSize( 530, 400 ), eeVector2i( 200, 50 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, eeSize( 100, 200 ) );
 
 	mUIWindow->AddEventListener( cUIEvent::EventOnWindowCloseClick, cb::Make1( this, &cEETest::CloseClick ) );
 	mUIWindow->Title( "Test Window" );

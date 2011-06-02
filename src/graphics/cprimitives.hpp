@@ -11,6 +11,7 @@ namespace EE { namespace Graphics {
 class EE_API cPrimitives {
 	public:
 		cPrimitives();
+
 		~cPrimitives();
 
 		/** Draw a Line on screen
@@ -272,11 +273,18 @@ class EE_API cPrimitives {
 
 		/** Set the current color for drawing primitives */
 		void SetColor( const eeColorA& Color );
-	private:
-		cTextureFactory* TF;
-		eeColorA mColor;
 
-		cGlobalBatchRenderer* BR;
+		/** Forcing the draw, will force the batch renderer to draw the batched vertexs immediately ( active by default ). */
+		void ForceDraw( const bool& force );
+
+		const bool& ForceDraw() const;
+
+		/** Force to draw the batched vertexs. */
+		void DrawBatch();
+	private:
+		eeColorA				mColor;
+		cGlobalBatchRenderer *	mBR;
+		bool					mForceDraw;
 };
 
 }}
