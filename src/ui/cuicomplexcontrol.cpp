@@ -162,7 +162,8 @@ void cUIComplexControl::OnParentSizeChange( const eeVector2i& SizeChange ) {
 		}
 	}
 
-	Size( newSize );
+	if ( newSize != mSize )
+		Size( newSize );
 
 	cUIControlAnim::OnParentSizeChange( SizeChange );
 }

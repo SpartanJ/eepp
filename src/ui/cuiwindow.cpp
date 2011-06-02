@@ -556,27 +556,29 @@ void cUIWindow::Draw() {
 		cPrimitives P;
 		P.ForceDraw( false );
 
-		eeColorA BeginC( 150, 150, 150, 50 );
-		eeColorA EndC( 255, 255, 255, 0 );
-		eeFloat SSize = 24.f;
+		eeColorA BeginC( 0, 0, 0, 25 );
+		eeColorA EndC( 0, 0, 0, 0 );
+		eeFloat SSize = 16.f;
 
-		P.DrawRectangle( mScreenPos.x, mScreenPos.y, mSize.Width(), mSize.Height(), BeginC, BeginC, BeginC, BeginC );
+		eeVector2i ShadowPos = mScreenPos + eeVector2i( 0, 16 );
 
-		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y - SSize, (eeFloat)mSize.Width(), SSize, EndC, BeginC, BeginC, EndC );
+		P.DrawRectangle( ShadowPos.x, ShadowPos.y, mSize.Width(), mSize.Height(), BeginC, BeginC, BeginC, BeginC );
 
-		P.DrawRectangle( (eeFloat)mScreenPos.x - SSize, (eeFloat)mScreenPos.y, SSize, mSize.Height(), EndC, EndC, BeginC, BeginC );
+		P.DrawRectangle( ShadowPos.x, ShadowPos.y - SSize, mSize.Width(), SSize, EndC, BeginC, BeginC, EndC );
 
-		P.DrawRectangle( mScreenPos.x + mSize.Width(), mScreenPos.y, SSize, mSize.Height(), BeginC, BeginC, EndC, EndC );
+		P.DrawRectangle( ShadowPos.x - SSize, ShadowPos.y, SSize, mSize.Height(), EndC, EndC, BeginC, BeginC );
 
-		P.DrawRectangle( mScreenPos.x, mScreenPos.y + mSize.Height(), mSize.Width(), SSize, BeginC, EndC, EndC, BeginC );
+		P.DrawRectangle( ShadowPos.x + mSize.Width(), ShadowPos.y, SSize, mSize.Height(), BeginC, BeginC, EndC, EndC );
 
-		P.DrawTriangle( eeTriangle2f( eeVector2f( mScreenPos.x + mSize.Width(), mScreenPos.y ), eeVector2f( mScreenPos.x + mSize.Width(), mScreenPos.y - SSize ), eeVector2f( mScreenPos.x + mSize.Width() + SSize, mScreenPos.y ) ), BeginC, EndC, EndC );
+		P.DrawRectangle( ShadowPos.x, ShadowPos.y + mSize.Height(), mSize.Width(), SSize, BeginC, EndC, EndC, BeginC );
 
-		P.DrawTriangle( eeTriangle2f( eeVector2f( mScreenPos.x, mScreenPos.y ), eeVector2f( mScreenPos.x, mScreenPos.y - SSize ), eeVector2f( mScreenPos.x - SSize, mScreenPos.y ) ), BeginC, EndC, EndC );
+		P.DrawTriangle( eeTriangle2f( eeVector2f( ShadowPos.x + mSize.Width(), ShadowPos.y ), eeVector2f( ShadowPos.x + mSize.Width(), ShadowPos.y - SSize ), eeVector2f( ShadowPos.x + mSize.Width() + SSize, ShadowPos.y ) ), BeginC, EndC, EndC );
 
-		P.DrawTriangle( eeTriangle2f( eeVector2f( mScreenPos.x + mSize.Width(), mScreenPos.y + mSize.Height() ), eeVector2f( mScreenPos.x + mSize.Width(), mScreenPos.y + mSize.Height() + SSize ), eeVector2f( mScreenPos.x + mSize.Width() + SSize, mScreenPos.y + mSize.Height() ) ), BeginC, EndC, EndC );
+		P.DrawTriangle( eeTriangle2f( eeVector2f( ShadowPos.x, ShadowPos.y ), eeVector2f( ShadowPos.x, ShadowPos.y - SSize ), eeVector2f( ShadowPos.x - SSize, ShadowPos.y ) ), BeginC, EndC, EndC );
 
-		P.DrawTriangle( eeTriangle2f( eeVector2f( mScreenPos.x, mScreenPos.y + mSize.Height() ), eeVector2f( mScreenPos.x - SSize, mScreenPos.y + mSize.Height() ), eeVector2f( mScreenPos.x, mScreenPos.y + mSize.Height() + SSize ) ), BeginC, EndC, EndC );
+		P.DrawTriangle( eeTriangle2f( eeVector2f( ShadowPos.x + mSize.Width(), ShadowPos.y + mSize.Height() ), eeVector2f( ShadowPos.x + mSize.Width(), ShadowPos.y + mSize.Height() + SSize ), eeVector2f( ShadowPos.x + mSize.Width() + SSize, ShadowPos.y + mSize.Height() ) ), BeginC, EndC, EndC );
+
+		P.DrawTriangle( eeTriangle2f( eeVector2f( ShadowPos.x, ShadowPos.y + mSize.Height() ), eeVector2f( ShadowPos.x - SSize, ShadowPos.y + mSize.Height() ), eeVector2f( ShadowPos.x, ShadowPos.y + mSize.Height() + SSize ) ), BeginC, EndC, EndC );
 
 		P.DrawBatch();
 	}

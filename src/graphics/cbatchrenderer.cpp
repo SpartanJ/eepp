@@ -69,6 +69,9 @@ void cBatchRenderer::SetTexture( const cTexture * Tex ) {
 }
 
 void cBatchRenderer::SetPreBlendFunc( const EE_PRE_BLEND_FUNC& Blend ) {
+	if ( Blend != mBlend )
+		Flush();
+
 	mBlend = Blend;
 }
 
