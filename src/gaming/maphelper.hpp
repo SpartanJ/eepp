@@ -29,7 +29,8 @@ enum EE_LAYER_TYPE {
 
 enum EE_MAP_FLAGS {
 	MAP_FLAG_CLAMP_BODERS	= ( 1 << 0 ),
-	MAP_FLAG_CLIP_AREA		= ( 1 << 1 )
+	MAP_FLAG_CLIP_AREA		= ( 1 << 1 ),
+	MAP_FLAG_DRAW_GRID		= ( 1 << 2 )
 };
 
 }}

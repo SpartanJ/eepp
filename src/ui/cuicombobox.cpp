@@ -19,6 +19,8 @@ cUIComboBox::~cUIComboBox() {
 void cUIComboBox::SetTheme( cUITheme * Theme ) {
 	cUIControl::SetTheme( Theme, "combobox" );
 
+	AutoSizeControl();
+
 	CreateButton();
 
 	AutoPadding();
@@ -33,7 +35,6 @@ void cUIComboBox::CreateButton() {
 
 	if ( NULL != mSkinState && NULL != mSkinState->GetSkin() ) {
 		if ( mSkinState->GetSkin()->GetType() == cUISkin::UISkinComplex ) {
-
 			cUISkinComplex * tComplex = reinterpret_cast<cUISkinComplex*> ( mSkinState->GetSkin() );
 
 			cShape * tShape = tComplex->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Right );

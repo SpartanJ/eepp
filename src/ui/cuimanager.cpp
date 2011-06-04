@@ -51,6 +51,8 @@ void cUIManager::Init( Uint32 Flags, cWindow * window ) {
 	mControl		= eeNew( cUIWindow, ( Params ) );
 	mControl->Visible( true );
 	mControl->Enabled( true );
+	mControl->Container()->Enabled( false );
+	mControl->Container()->Visible( false );
 
 	mFocusControl	= mControl;
 	mOverControl	= mControl;
@@ -292,6 +294,10 @@ void cUIManager::SendMouseUp( cUIControl * ToCtrl, const eeVector2i& Pos, const 
 void cUIManager::SendMouseDown( cUIControl * ToCtrl, const eeVector2i& Pos, const Uint32 Flags ) {
 	SendMsg( ToCtrl, cUIMessage::MsgMouseDown, Flags );
 	ToCtrl->OnMouseDown( Pos, Flags );
+}
+
+cWindow * cUIManager::GetWindow() const {
+	return mWindow;
 }
 
 }}

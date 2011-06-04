@@ -486,6 +486,7 @@ cUIScrollBar * cUITheme::CreateScrollBar( cUIControl * Parent, const eeSize& Siz
 	ScrollBarParams.PosSet( Pos );
 	ScrollBarParams.SizeSet( Size );
 	ScrollBarParams.Flags = Flags;
+	ScrollBarParams.VerticalScrollBar = VerticalScrollBar;
 	cUIScrollBar * Ctrl = eeNew( cUIScrollBar, ( ScrollBarParams ) );
 	Ctrl->Visible( true );
 	Ctrl->Enabled( true );

@@ -571,7 +571,7 @@ Uint32 cUIListBox::OnSelected() {
 	cUIMessage tMsg( this, cUIMessage::MsgSelected, 0 );
 	MessagePost( &tMsg );
 
-	SendCommonEvent( cUIEvent::EventOnSelected );
+	SendCommonEvent( cUIEvent::EventOnItemSelected );
 
 	return 1;
 }

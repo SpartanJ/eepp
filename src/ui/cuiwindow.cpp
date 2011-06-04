@@ -26,9 +26,6 @@ cUIWindow::cUIWindow( const cUIWindow::CreateParams& Params ) :
 {
 	mType = UI_TYPE_WINDOW;
 
-	cUIControlAnim::CreateParams tParams;
-	tParams.Parent( this );
-
 	cUIComplexControl::CreateParams tcParams;
 	tcParams.Parent( this );
 	tcParams.Flags |= UI_REPORT_SIZE_CHANGE_TO_CHILDS;
@@ -36,9 +33,13 @@ cUIWindow::cUIWindow( const cUIWindow::CreateParams& Params ) :
 	mContainer		= eeNew( cUIComplexControl, ( tcParams ) );
 	mContainer->Enabled( true );
 	mContainer->Visible( true );
+	mContainer->Size( mSize );
 	mContainer->AddEventListener( cUIEvent::EventOnPosChange, cb::Make1( this, &cUIWindow::ContainerPosChange ) );
 
 	if ( !( mWinFlags & UI_WIN_NO_BORDER ) ) {
+		cUIControlAnim::CreateParams tParams;
+		tParams.Parent( this );
+
 		mWindowDecoration = eeNew( cUIControlAnim, ( tParams ) );
 		mWindowDecoration->Visible( true );
 		mWindowDecoration->Enabled( false );
@@ -100,6 +101,7 @@ cUIWindow::cUIWindow( const cUIWindow::CreateParams& Params ) :
 }
 
 cUIWindow::~cUIWindow() {
+	SendCommonEvent( cUIEvent::EventOnWindowClose );
 }
 
 void cUIWindow::ContainerPosChange( const cUIEvent * Event ) {
@@ -246,8 +248,10 @@ const eeSize& cUIWindow::Size() {
 }
 
 void cUIWindow::FixChildsSize() {
-	if ( NULL == mWindowDecoration )
+	if ( NULL == mWindowDecoration ) {
+		mContainer->Size( mSize.Width(), mSize.Height() );
 		return;
+	}
 
 	if ( mDecoAutoSize ) {
 		mDecoSize = eeSize( mSize.Width(), mWindowDecoration->GetSkinShapeSize().Height() );
@@ -712,7 +716,7 @@ void cUIWindow::Title( const String& Text ) {
 }
 
 void cUIWindow::FixTitleSize() {
-	if ( NULL != mTitle ) {
+	if ( NULL != mWindowDecoration && NULL != mTitle ) {
 		mTitle->Size( mWindowDecoration->Size().Width() - mBorderLeft->Size().Width() - mBorderRight->Size().Width(), mWindowDecoration->Size().Height() );
 		mTitle->Pos( mBorderLeft->Size().Width(), 0 );
 	}

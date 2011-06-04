@@ -55,9 +55,9 @@ class EE_API cUIGfx : public cUIComplexControl {
 
 		void AutoSize();
 
-		void FitToControl();
-
 		void AutoAlign();
+
+		void DrawShape();
 };
 
 }}

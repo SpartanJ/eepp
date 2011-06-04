@@ -37,6 +37,8 @@ class tResourceManager {
 		void Destroy();
 
 		void PrintNames();
+
+		std::list<T*>& GetResources();
 	protected:
 		std::list<T*> mResources;
 		bool mUniqueId;
@@ -59,6 +61,11 @@ void tResourceManager<T>::Destroy() {
 
 	for ( it = mResources.begin() ; it != mResources.end(); it++ )
 		eeSAFE_DELETE( (*it) );
+}
+
+template <class T>
+std::list<T*>& tResourceManager<T>::GetResources() {
+	return mResources;
 }
 
 template <class T>

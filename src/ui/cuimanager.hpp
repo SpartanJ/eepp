@@ -68,6 +68,8 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 		void SendMouseUp( cUIControl * ToCtrl, const eeVector2i& Pos, const Uint32 Flags );
 
 		void SendMouseDown( cUIControl * ToCtrl, const eeVector2i& Pos, const Uint32 Flags );
+
+		cWindow * GetWindow() const;
 	protected:
 		cWindow *			mWindow;
 		cInput *			mKM;

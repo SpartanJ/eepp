@@ -24,8 +24,9 @@ cUIGfx::~cUIGfx() {
 
 void cUIGfx::Shape( cShape * shape ) {
 	mShape = shape;
-	
+
 	AutoSize();
+	AutoAlign();
 }
 
 void cUIGfx::AutoSize() {
@@ -42,9 +43,49 @@ void cUIGfx::Draw() {
 	cUIControlAnim::Draw();
 
 	if ( mVisible ) {
-		if ( NULL != mShape && 0.f != mAlpha )
-			mShape->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x, (eeFloat)mScreenPos.y + mAlignOffset.y, mColor, 0.f, 1.f, Blend(), mRender );
+		if ( NULL != mShape && 0.f != mAlpha ) {
+			eeFloat oDestWidth	= mShape->DestWidth();
+			eeFloat oDestHeight	= mShape->DestHeight();
+
+			if ( mFlags & UI_FIT_TO_CONTROL ) {
+				mShape->DestWidth( (eeFloat)mSize.x );
+				mShape->DestHeight( (eeFloat)mSize.y );
+
+				DrawShape();
+
+				mShape->DestWidth( oDestWidth );
+				mShape->DestHeight( oDestHeight );
+			} else if ( mFlags & UI_AUTO_FIT ) {
+				eeFloat Scale1 = mSize.x / oDestWidth;
+				eeFloat Scale2 = mSize.y / oDestHeight;
+
+				if ( Scale1 < 1 || Scale2 < 1 ) {
+					if ( Scale2 < Scale1 )
+						Scale1 = Scale2;
+
+					mShape->DestWidth( oDestWidth * Scale1 );
+					mShape->DestHeight( oDestHeight * Scale1 );
+
+					AutoAlign();
+
+					DrawShape();
+
+					mShape->DestWidth( oDestWidth );
+					mShape->DestHeight( oDestHeight );
+
+					AutoAlign();
+				} else {
+					DrawShape();
+				}
+			} else {
+				DrawShape();
+			}
+		}
 	}
+}
+
+void cUIGfx::DrawShape() {
+	mShape->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x, (eeFloat)mScreenPos.y + mAlignOffset.y, mColor, 0.f, 1.f, Blend(), mRender );
 }
 
 void cUIGfx::Alpha( const eeFloat& alpha ) {
@@ -73,36 +114,28 @@ void cUIGfx::RenderType( const EE_RENDERTYPE& render ) {
 	mRender = render;
 }
 
-void cUIGfx::FitToControl() {
-	if ( NULL != mShape && mFlags & UI_FIT_TO_CONTROL ) {
-		mShape->DestWidth( (eeFloat)mSize.x );
-		mShape->DestHeight( (eeFloat)mSize.y );
-	}
-}
-
 void cUIGfx::AutoAlign() {
 	if ( NULL == mShape )
 		return;
 
 	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = mSize.Width() / 2 - mShape->Size().Width() / 2;
+		mAlignOffset.x = mSize.Width() / 2 - mShape->DestWidth() / 2;
 	} else if ( FontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mSize.Width() - mShape->Size().Width();
+		mAlignOffset.x =  mSize.Width() - mShape->DestWidth();
 	} else {
 		mAlignOffset.x = 0;
 	}
 
 	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = mSize.Height() / 2 - mShape->Size().Height() / 2;
+		mAlignOffset.y = mSize.Height() / 2 - mShape->DestHeight() / 2;
 	} else if ( FontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.Height() - mShape->Size().Height();
+		mAlignOffset.y = mSize.Height() - mShape->DestHeight();
 	} else {
 		mAlignOffset.y = 0;
 	}
 }
 
 void cUIGfx::OnSizeChange() {
-	FitToControl();
 	AutoSize();
 	AutoAlign();
 	cUIControlAnim::OnSizeChange();

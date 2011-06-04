@@ -56,6 +56,11 @@ template <typename T>
 T LineAngle( const T& X1, const T& Y1, const T& X2, const T& Y2 ) {
 	return eeatan2( (eeFloat)(Y2 - Y1), (eeFloat)(X2 - X1) ) * EE_180_PI;
 }
+
+eeDouble EE_API eeRound( eeDouble r );
+
+eeFloat EE_API eeRound( eeFloat r );
+
 eeFloat EE_API LineAngle( const eeVector2f& p1, const eeVector2f& p2 );
 
 eeFloat EE_API RotatePointFromX ( const eeFloat& x, const eeFloat& y, const eeFloat& Angle );

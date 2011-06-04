@@ -71,6 +71,7 @@ void cUISlider::SetTheme( cUITheme * Theme ) {
 }
 
 void cUISlider::OnSizeChange() {
+	cUIComplexControl::OnSizeChange();
 	AdjustChilds();
 }
 
@@ -188,18 +189,20 @@ void cUISlider::Value( eeFloat Val ) {
 		mValue = Val;
 
 		if ( !mOnPosChange ) {
+			eeFloat Percent = ( Val - mMinValue ) / ( mMaxValue - mMinValue );
+
 			mOnPosChange = true;
 
 			if ( !mVertical ) {
 				if ( mAllowHalfSliderOut )
-					mSlider->Pos( (Int32)( (eeFloat)mBackSlider->Size().Width() * ( Val - mMinValue ) ), mSlider->Pos().y );
+					mSlider->Pos( (Int32)( (eeFloat)mBackSlider->Size().Width() * Percent ), mSlider->Pos().y );
 				else
-					mSlider->Pos( (Int32)( ( (eeFloat)mSize.Width() - mSlider->Size().Width() ) * ( Val - mMinValue ) ), mSlider->Pos().y );
+					mSlider->Pos( (Int32)( ( (eeFloat)mSize.Width() - mSlider->Size().Width() ) * Percent ), mSlider->Pos().y );
 			} else {
 				if ( mAllowHalfSliderOut )
-					mSlider->Pos( mSlider->Pos().x, (Int32)( (eeFloat)mBackSlider->Size().Height() * ( Val - mMinValue ) ) );
+					mSlider->Pos( mSlider->Pos().x, (Int32)( (eeFloat)mBackSlider->Size().Height() * Percent ) );
 				else
-					mSlider->Pos( mSlider->Pos().x, (Int32)( ( (eeFloat)mSize.Height() - mSlider->Size().Height() ) * ( Val - mMinValue ) ) );
+					mSlider->Pos( mSlider->Pos().x, (Int32)( ( (eeFloat)mSize.Height() - mSlider->Size().Height() ) * Percent ) );
 			}
 
 			mOnPosChange = false;

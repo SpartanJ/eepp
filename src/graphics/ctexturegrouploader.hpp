@@ -11,6 +11,8 @@ namespace EE { namespace Graphics {
 
 using namespace Private;
 
+class cShapeGroup;
+
 class EE_API cTextureGroupLoader {
 	public:
 		cTextureGroupLoader();
@@ -23,28 +25,30 @@ class EE_API cTextureGroupLoader {
 
 		~cTextureGroupLoader();
 
-		void 				Update();
+		void					Update();
 
-		void				Load( const std::string& TextureGroupPath = "" );
+		void					Load( const std::string& TextureGroupPath = "" );
 
-		void				LoadFromMemory( const Uint8* Data, const Uint32& DataSize, const std::string& TextureGroupName );
+		void					LoadFromMemory( const Uint8* Data, const Uint32& DataSize, const std::string& TextureGroupName );
 
-		void				LoadFromPack( cPack * Pack, const std::string& FilePackPath );
+		void					LoadFromPack( cPack * Pack, const std::string& FilePackPath );
 
-		bool				Threaded() const;
+		bool					Threaded() const;
 
-		void				Threaded( const bool& threaded );
+		void					Threaded( const bool& threaded );
 
-		const bool&			IsLoaded() const;
+		const bool&				IsLoaded() const;
 		
-		const bool&			IsLoading() const;
+		const bool&				IsLoading() const;
 
 		/** Will check if the texture atlas is updated ( all the image of the path are inside the texture atlas, and are the same version, otherwise it will recreate or update the texture atlas. */
-		bool				UpdateTextureAtlas( std::string TextureAtlasPath, std::string ImagesPath );
+		bool					UpdateTextureAtlas( std::string TextureAtlasPath, std::string ImagesPath );
 
-		cTexture *			GetTexture( const Uint32& texnum = 0 ) const;
+		cTexture *				GetTexture( const Uint32& texnum = 0 ) const;
 
-		Uint32				GetTexturesLoadedCount();
+		Uint32					GetTexturesLoadedCount();
+
+		cShapeGroup *			GetShapeGroup() const;
 	protected:
 		cResourceLoader			mRL;
 		std::string				mTextureGroupPath;
@@ -54,6 +58,7 @@ class EE_API cTextureGroupLoader {
 		cPack *					mPack;
 		bool					mSkipResourceLoad;
 		bool					mIsLoading;
+		cShapeGroup *			mShapeGroup;
 		std::vector<cTexture*>	mTexuresLoaded;
 
 		typedef struct sTempTexGroupS {

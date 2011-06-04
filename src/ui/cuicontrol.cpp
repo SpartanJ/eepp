@@ -395,17 +395,23 @@ void cUIControl::VAlign( Uint32 valign ) {
 }
 
 void cUIControl::FillBackground( bool enabled ) {
-	if ( enabled )
-		mFlags |= UI_FILL_BACKGROUND;
-	else
-		mFlags &= ~UI_FILL_BACKGROUND;
+	SetFlagValue( &mFlags, UI_FILL_BACKGROUND, enabled ? 1 : 0 );
+
+	if ( enabled && NULL == mBackground ) {
+		mBackground = eeNew( cUIBackground, () );
+	}
 }
 
 void cUIControl::Border( bool enabled ) {
-	if ( enabled )
-		mFlags |= UI_BORDER;
-	else
-		mFlags &= ~UI_BORDER;
+	SetFlagValue( &mFlags, UI_BORDER, enabled ? 1 : 0 );
+
+	if ( enabled && NULL == mBorder ) {
+		mBorder = eeNew( cUIBorder, () );
+
+		if ( NULL == mBackground ) {
+			mBackground = eeNew( cUIBackground, () );
+		}
+	}
 }
 
 cUIControl * cUIControl::NextGet() const {

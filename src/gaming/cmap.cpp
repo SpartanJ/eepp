@@ -16,19 +16,37 @@ cMap::cMap() :
 	mFlags( 0 ),
 	mMaxLayers( 0 ),
 	mLayerCount( 0 ),
-	mViewSize( 640, 480 )
+	mViewSize( 800, 600 )
 {
 	ViewSize( mViewSize );
 }
 
 cMap::~cMap() {
+	DeleteLayers();
+}
+
+void cMap::Reset() {
+	DeleteLayers();
+
+	mWindow = NULL;
+	mLayers = NULL;
+	mFlags	= 0;
+	mMaxLayers	= 0;
+	mViewSize = eeSize( 800, 600 );
+}
+
+void cMap::DeleteLayers() {
 	for ( Uint32 i = 0; i < mLayerCount; i++ )
 		eeSAFE_DELETE( mLayers[i] );
 
 	eeSAFE_DELETE( mLayers );
+
+	mLayerCount = 0;
 }
 
 void cMap::Create( eeSize Size, Uint32 MaxLayers, eeSize TileSize, Uint32 Flags, eeSize viewSize, cWindow * Window ) {
+	Reset();
+
 	mWindow		= Window;
 
 	if ( NULL == mWindow )
@@ -92,6 +110,8 @@ void cMap::Draw() {
 
 	GetMouseOverTile();
 
+	GridDraw();
+
 	for ( Uint32 i = 0; i < mLayerCount; i++ ) {
 		mLayers[i]->Draw( offsetFixed );
 	}
@@ -99,6 +119,38 @@ void cMap::Draw() {
 	if ( ClipedArea() ) {
 		mWindow->ClipDisable();
 	}
+}
+
+void cMap::GridDraw() {
+	if ( !DrawGrid() )
+		return;
+
+	cPrimitives P;
+
+	P.SetColor( eeColorA( 0, 0, 0, 50 ) );
+	P.DrawRectangle( mScreenPos.x, mScreenPos.y, mViewSize.x, mViewSize.y, 0.f, 1.f );
+	P.SetColor( eeColorA( 255, 255, 255, 255 ) );
+
+	if ( 0 == mSize.x || 0 == mSize.y )
+		return;
+
+	cGlobalBatchRenderer::instance()->Draw();
+	eeVector2f offsetFixed = eeVector2f( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y ) + FixOffset();
+
+	GLi->LoadIdentity();
+	GLi->PushMatrix();
+	GLi->Translatef( offsetFixed.x, offsetFixed.y, 0.0f );
+
+	eeVector2i start = StartTile();
+	eeVector2i end = EndTile();
+
+	for ( Int32 x = start.x; x < end.x; x++ ) {
+		for ( Int32 y = start.y; y < end.y; y++ ) {
+			P.DrawRectangle( x * mTileSize.x, y * mTileSize.y, mTileSize.x, mTileSize.y, 0.f, 1.f, EE_DRAW_LINE );
+		}
+	}
+
+	GLi->PopMatrix();
 }
 
 void cMap::GetMouseOverTile() {
@@ -172,8 +224,8 @@ void cMap::CalcTilesClip() {
 
 		mStartTile.x	= -foff.x / mTileSize.x;
 		mStartTile.y	= -foff.y / mTileSize.y;
-		mEndTile.x		= mStartTile.x + mViewSize.x / mTileSize.x + 1;
-		mEndTile.y		= mStartTile.y + mViewSize.y / mTileSize.y + 1;
+		mEndTile.x		= mStartTile.x + eeRound( (eeFloat)mViewSize.x / (eeFloat)mTileSize.x ) + 1;
+		mEndTile.y		= mStartTile.y + eeRound( (eeFloat)mViewSize.y / (eeFloat)mTileSize.y ) + 1;
 
 		if ( mStartTile.x < 0 )
 			mStartTile.x = 0;
@@ -199,11 +251,27 @@ void cMap::Clamp() {
 	if ( mOffset.y > 0 )
 		mOffset.y = 0;
 
-	if ( -mOffset.x + mViewSize.x > mTileSize.x * mSize.x )
-		mOffset.x = -( mTileSize.x * mSize.x - mViewSize.x );
+	eeSize totSize( mTileSize * mSize );
 
-	if ( -mOffset.y + mViewSize.y > mTileSize.y * mSize.y )
-		mOffset.y = -( mTileSize.y * mSize.y - mViewSize.y );
+	if ( -mOffset.x + mViewSize.x > totSize.x )
+		mOffset.x = -( totSize.x - mViewSize.x );
+
+	if ( -mOffset.y + mViewSize.y > totSize.y )
+		mOffset.y = -( totSize.y - mViewSize.y );
+
+	if ( totSize.x < mViewSize.x )
+		mOffset.x = 0;
+
+	if ( totSize.y < mViewSize.y )
+		mOffset.y = 0;
+}
+
+void cMap::DrawGrid( const bool& draw ) {
+	SetFlagValue( &mFlags, MAP_FLAG_DRAW_GRID, draw ? 1 : 0 );
+}
+
+Uint32 cMap::DrawGrid() const {
+	return mFlags & MAP_FLAG_DRAW_GRID;
 }
 
 Uint32 cMap::ClipedArea() const {

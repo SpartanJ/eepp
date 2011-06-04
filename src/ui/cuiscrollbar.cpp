@@ -86,6 +86,24 @@ void cUIScrollBar::SetTheme( cUITheme * Theme ) {
 		}
 	}
 
+	if ( mFlags & UI_AUTO_SIZE ) {
+		tSkin = mSlider->GetBackSlider()->GetSkin();
+
+		if ( NULL != tSkin ) {
+			tShape = tSkin->GetShape( cUISkinState::StateNormal );
+
+			if ( NULL != tShape ) {
+				if ( mSlider->IsVertical() ) {
+					mSlider->Size( tShape->RealSize().Width() , mSize.Height() );
+					Size( tShape->RealSize().Width() , mSize.Height() );
+				} else {
+					mSlider->Size( mSize.Width(), tShape->RealSize().Height() );
+					Size( mSize.Width(), tShape->RealSize().Height() );
+				}
+			}
+		}
+	}
+
 	AdjustChilds();
 
 	mSlider->AdjustChilds();
@@ -93,6 +111,8 @@ void cUIScrollBar::SetTheme( cUITheme * Theme ) {
 
 void cUIScrollBar::OnSizeChange() {
 	AdjustChilds();
+	mSlider->AdjustChilds();
+	cUIComplexControl::OnSizeChange();
 }
 
 void cUIScrollBar::AdjustChilds() {

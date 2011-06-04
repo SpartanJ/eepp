@@ -497,7 +497,7 @@ Uint32 cUIGenericGrid::GetItemIndex( cUIGridCell * Item ) {
 }
 
 Uint32 cUIGenericGrid::OnSelected() {
-	SendCommonEvent( cUIEvent::EventOnSelected );
+	SendCommonEvent( cUIEvent::EventOnItemSelected );
 
 	return 1;
 }

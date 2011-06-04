@@ -71,6 +71,12 @@ class cMap {
 		Uint32 ClampBorders() const;
 
 		Uint32 ClipedArea() const;
+
+		void DrawGrid( const bool& draw );
+
+		Uint32 DrawGrid() const;
+
+		void Reset();
 	protected:
 		cWindow *		mWindow;
 		cLayer**		mLayers;
@@ -95,6 +101,10 @@ class cMap {
 		void			Clamp();
 
 		void			GetMouseOverTile();
+
+		void			GridDraw();
+
+		void			DeleteLayers();
 };
 
 }}

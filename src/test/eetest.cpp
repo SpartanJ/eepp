@@ -1,4 +1,6 @@
 #include "eetest.hpp"
+#include "../gaming/mapeditor/cmapeditor.hpp"
+using namespace EE::Gaming::MapEditor;
 
 void cEETest::Init() {
 	EE = cEngine::instance();
@@ -442,7 +444,7 @@ void cEETest::CreateUI() {
 	cUIDropDownList::CreateParams DDLParams;
 	DDLParams.Parent( C );
 	DDLParams.PosSet( 20, 55 );
-	DDLParams.Size = eeSize( 100, 19 );
+	DDLParams.Size = eeSize( 100, 21 );
 	DDLParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
 	cUIDropDownList * mDropDownList = eeNew( cUIDropDownList, ( DDLParams ) );
 	mDropDownList->Visible( true );
@@ -460,8 +462,8 @@ void cEETest::CreateUI() {
 	cUIComboBox::CreateParams ComboParams;
 	ComboParams.Parent( C );
 	ComboParams.PosSet( 20, 80 );
-	ComboParams.Size = eeSize( 100, 19 );
-	ComboParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
+	ComboParams.Size = eeSize( 100, 1 );
+	ComboParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_AUTO_SIZE;
 	cUIComboBox * mComboBox = eeNew( cUIComboBox, ( ComboParams ) );
 	mComboBox->Visible( true );
 	mComboBox->Enabled( true );
@@ -563,6 +565,11 @@ void cEETest::CreateUI() {
 	C = reinterpret_cast<cUIControlAnim*> ( C->Parent() );
 
 	Log->Writef( "CreateUI time: %f", TE.ElapsedSinceStart() );
+
+	tWin = mTheme->CreateWindow( NULL, eeSize( 1024, 768 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, eeSize( 1024, 768 ) );
+	eeNew( cMapEditor, ( tWin ) );
+	tWin->Center();
+	tWin->Show();
 }
 
 void cEETest::CreateCommonDialog() {
@@ -715,7 +722,7 @@ void cEETest::ButtonClick( const cUIEvent * Event ) {
 }
 
 void cEETest::SetScreen( Uint32 num ) {
-	if ( 0 == num )
+	if ( 0 == num || 5 == num )
 		mWindow->BackColor( eeColor( 240, 240, 240 ) );
 	else
 		mWindow->BackColor( eeColor( 0, 0, 0 ) );
@@ -863,7 +870,7 @@ void cEETest::LoadTextures() {
 	Log->Writef( "Map creation time: %f", te.Elapsed() );
 
 	cMTRand Rand( 0xFF00FF00 );
-	mMap = eeNew( cMap, () );
+	/*mMap = eeNew( cMap, () );
 	mMap->Create( eeSize(25,25), 8, eeSize(32,32), MAP_FLAG_CLAMP_BODERS | MAP_FLAG_CLIP_AREA );
 	mMap->AddLayer( MAP_LAYER_TILED, 0, "ground" );
 	mMap->Position( eeVector2i( mWindow->GetWidth() / 2 - mMap->ViewSize().Width() / 2, mWindow->GetHeight() / 2 - mMap->ViewSize().Height() / 2 ) );
@@ -878,7 +885,7 @@ void cEETest::LoadTextures() {
 				), eeVector2u( x, y )
 			);
 		}
-	}
+	}*/
 }
 
 void cEETest::RandomizeHeights() {
@@ -1144,11 +1151,11 @@ void cEETest::Screen4() {
 }
 
 void cEETest::Screen5() {
-	mMap->Update();
+	/*mMap->Update();
 	mMap->Draw();
 
 	cPrimitives p;
-	p.DrawRectangle( mMap->Position().x, mMap->Position().y, mMap->ViewSize().Width(), mMap->ViewSize().Height(), 0, 1, EE_DRAW_LINE );
+	p.DrawRectangle( mMap->Position().x, mMap->Position().y, mMap->ViewSize().Width(), mMap->ViewSize().Height(), 0, 1, EE_DRAW_LINE );*/
 }
 
 void cEETest::Render() {

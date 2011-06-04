@@ -2,6 +2,7 @@
 #include "cshapegroup.hpp"
 #include "cshapegroupmanager.hpp"
 #include "ctexturepacker.hpp"
+#include "cshapegroup.hpp"
 
 namespace EE { namespace Graphics {
 
@@ -10,7 +11,8 @@ cTextureGroupLoader::cTextureGroupLoader() :
 	mLoaded(false),
 	mAppPath( GetProcessPath() ),
 	mSkipResourceLoad(false),
-	mIsLoading(false)
+	mIsLoading(false),
+	mShapeGroup(NULL)
 {
 }
 
@@ -21,7 +23,8 @@ cTextureGroupLoader::cTextureGroupLoader( const std::string& TextureGroupPath, c
 	mAppPath( GetProcessPath() ),
 	mPack(NULL),
 	mSkipResourceLoad(false),
-	mIsLoading(false)
+	mIsLoading(false),
+	mShapeGroup(NULL)
 {
 	Load();
 }
@@ -33,7 +36,8 @@ cTextureGroupLoader::cTextureGroupLoader( const Uint8* Data, const Uint32& DataS
 	mAppPath( GetProcessPath() ),
 	mPack(NULL),
 	mSkipResourceLoad(false),
-	mIsLoading(false)
+	mIsLoading(false),
+	mShapeGroup(NULL)
 {
 	LoadFromMemory( Data, DataSize, TextureGroupName );
 }
@@ -45,7 +49,8 @@ cTextureGroupLoader::cTextureGroupLoader( cPack * Pack, const std::string& FileP
 	mAppPath( GetProcessPath() ),
 	mPack(NULL),
 	mSkipResourceLoad(false),
-	mIsLoading(false)
+	mIsLoading(false),
+	mShapeGroup(NULL)
 {
 	LoadFromPack( Pack, FilePackPath );
 }
@@ -162,11 +167,13 @@ void cTextureGroupLoader::LoadFromMemory( const Uint8* Data, const Uint32& DataS
 	}
 }
 
+cShapeGroup * cTextureGroupLoader::GetShapeGroup() const {
+	return mShapeGroup;
+}
+
 void cTextureGroupLoader::CreateShapes() {
 	mIsLoading = false;
 	
-	cShapeGroup * tSG = NULL;
-
 	for ( Uint32 z = 0; z < mTempGroups.size(); z++ ) {
 		sTempTexGroup * tTexGroup 	= &mTempGroups[z];
 		sTextureHdr * tTexHdr 		= &tTexGroup->Texture;
@@ -189,8 +196,8 @@ void cTextureGroupLoader::CreateShapes() {
 			if ( mTexGrHdr.Flags & HDR_TEXTURE_GROUP_REMOVE_EXTENSION )
 				name = FileRemoveExtension( name );
 
-			tSG = eeNew( cShapeGroup, ( name ) );
-			cShapeGroupManager::instance()->Add( tSG );
+			mShapeGroup = eeNew( cShapeGroup, ( name ) );
+			cShapeGroupManager::instance()->Add( mShapeGroup );
 		}
 
 		if ( NULL != tTex ) {
@@ -209,7 +216,7 @@ void cTextureGroupLoader::CreateShapes() {
 				//if ( tSh->Flags & HDR_SHAPE_FLAG_FLIPED )
 					// Should rotate the shape, but.. shape rotation is not stored.
 
-				tSG->Add( tShape );
+				mShapeGroup->Add( tShape );
 			}
 		} else {
 			cLog::instance()->Write( "cTextureGroupLoader::CreateShapes: Failed to find texture group texture, it seems that is not loaded for some reason. Couldn't find: " + path );

@@ -127,4 +127,48 @@ cUICommonDialog * cUIAquaTheme::CreateCommonDialog( cUIControl * Parent, const e
 	return eeNew( cUICommonDialog, ( DLGParams ) );
 }
 
+cUIComboBox * cUIAquaTheme::CreateComboBox( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, cUIListBox * ListBox ) {
+	cUIComboBox::CreateParams ComboParams;
+	ComboParams.Parent( Parent );
+	ComboParams.PosSet( Pos );
+	ComboParams.SizeSet( Size );
+	ComboParams.Flags = Flags;
+	ComboParams.MinNumVisibleItems = MinNumVisibleItems;
+	ComboParams.PopUpToMainControl = PopUpToMainControl;
+	ComboParams.ListBox = ListBox;
+
+	if ( UseDefaultThemeValues() ) {
+		if ( !( ComboParams.Flags & UI_AUTO_SIZE ) ) {
+			ComboParams.Flags |= UI_AUTO_SIZE;
+		}
+	}
+
+	cUIComboBox * Ctrl = eeNew( cUIComboBox, ( ComboParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
+}
+
+cUIDropDownList * cUIAquaTheme::CreateDropDownList( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, cUIListBox * ListBox ) {
+	cUIDropDownList::CreateParams DDLParams;
+	DDLParams.Parent( Parent );
+	DDLParams.PosSet( Pos );
+	DDLParams.SizeSet( Size );
+	DDLParams.Flags = Flags;
+	DDLParams.MinNumVisibleItems = MinNumVisibleItems;
+	DDLParams.PopUpToMainControl = PopUpToMainControl;
+	DDLParams.ListBox = ListBox;
+
+	if ( UseDefaultThemeValues() ) {
+		if ( !( DDLParams.Flags & UI_AUTO_SIZE ) ) {
+			DDLParams.Flags |= UI_AUTO_SIZE;
+		}
+	}
+
+	cUIDropDownList * Ctrl = eeNew( cUIDropDownList, ( DDLParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
+}
+
 }}

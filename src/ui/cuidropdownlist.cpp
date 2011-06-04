@@ -11,6 +11,10 @@ cUIDropDownList::cUIDropDownList( cUIDropDownList::CreateParams& Params ) :
 {
 	mType = UI_TYPE_DROPDOWNLIST;
 
+	AllowEditing( false );
+
+	ApplyDefaultTheme();
+
 	if ( NULL == mListBox ) {
 		cUIListBox::CreateParams LBParams;
 		LBParams.Size 				= eeSize( mSize.Width(), mMinNumVisibleItems * mSize.Height() );
@@ -22,12 +26,8 @@ cUIDropDownList::cUIDropDownList( cUIDropDownList::CreateParams& Params ) :
 	mListBox->Enabled( false );
 	mListBox->Visible( false );
 
-	AllowEditing( false );
-
-	ApplyDefaultTheme();
-
 	mListBox->AddEventListener( cUIEvent::EventOnComplexControlFocusLoss, cb::Make1( this, &cUIDropDownList::OnListBoxFocusLoss ) );
-	mListBox->AddEventListener( cUIEvent::EventOnSelected	, cb::Make1( this, &cUIDropDownList::OnItemSelected ) );
+	mListBox->AddEventListener( cUIEvent::EventOnItemSelected	, cb::Make1( this, &cUIDropDownList::OnItemSelected ) );
 	mListBox->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cUIDropDownList::OnItemClicked ) );
 	mListBox->AddEventListener( cUIEvent::EventOnItemKeyDown, cb::Make1( this, &cUIDropDownList::OnItemKeyDown ) );
 	mListBox->AddEventListener( cUIEvent::EventKeyDown		, cb::Make1( this, &cUIDropDownList::OnItemKeyDown ) );
@@ -39,9 +39,53 @@ cUIDropDownList::~cUIDropDownList() {
 void cUIDropDownList::SetTheme( cUITheme * Theme ) {
 	cUIControl::SetTheme( Theme, "dropdownlist" );
 
+	AutoSizeControl();
+
 	AutoPadding();
 
 	OnSizeChange();
+}
+
+void cUIDropDownList::OnSizeChange() {
+	cUIComplexControl::OnSizeChange();
+}
+
+void cUIDropDownList::AutoSizeControl() {
+	if ( mFlags & UI_AUTO_SIZE ) {
+		if ( NULL != mSkinState &&  NULL != mSkinState->GetSkin() ) {
+			if ( mSkinState->GetSkin()->GetType() == cUISkin::UISkinComplex ) {
+				Uint32 tHeight = 0;
+
+				cUISkinComplex * tComplex = reinterpret_cast<cUISkinComplex*> ( mSkinState->GetSkin() );
+
+				cShape * tShape = tComplex->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Center );
+
+				if ( NULL != tShape )
+					tHeight += tShape->RealSize().Height();
+
+				tShape = tComplex->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Up );
+
+				if ( NULL != tShape )
+					tHeight += tShape->RealSize().Height();
+
+				tShape = tComplex->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Down );
+
+				if ( NULL != tShape )
+					tHeight += tShape->RealSize().Height();
+
+				Size( mSize.x, tHeight );
+			} else {
+				cShape * tShape = mSkinState->GetSkin()->GetShape( cUISkinState::StateNormal );
+
+				if ( NULL != tShape ) {
+					Size( mSize.x, tShape->RealSize().Height() );
+				}
+			}
+		}
+	}
+}
+
+void cUIDropDownList::AutoSize() {
 }
 
 cUIListBox * cUIDropDownList::ListBox() const {
