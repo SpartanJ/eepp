@@ -55,6 +55,8 @@ class EE_API cUIDropDownList : public cUITextInput {
 
 		virtual void OnItemKeyDown( const cUIEvent * Event );
 
+		virtual void OnControlClear( const cUIEvent * Event );
+
 		Uint32 OnKeyDown( const cUIEventKey &Event );
 
 		virtual void OnSizeChange();

@@ -45,6 +45,7 @@ class EE_API cUIEvent {
 			EventOnWindowMaximizeClick,
 			EventOnWindowMinimizeClick,
 			EventOpenFile,
+			EventOnControlClear,
 			EventUser,
 			EventForceDWord = 0xFFFFFFFF
 		};

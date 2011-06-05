@@ -31,6 +31,7 @@ cUIDropDownList::cUIDropDownList( cUIDropDownList::CreateParams& Params ) :
 	mListBox->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cUIDropDownList::OnItemClicked ) );
 	mListBox->AddEventListener( cUIEvent::EventOnItemKeyDown, cb::Make1( this, &cUIDropDownList::OnItemKeyDown ) );
 	mListBox->AddEventListener( cUIEvent::EventKeyDown		, cb::Make1( this, &cUIDropDownList::OnItemKeyDown ) );
+	mListBox->AddEventListener( cUIEvent::EventOnControlClear, cb::Make1( this, &cUIDropDownList::OnControlClear ) );
 }
 
 cUIDropDownList::~cUIDropDownList() {
@@ -98,6 +99,10 @@ void cUIDropDownList::ShowListBox() {
 	} else {
 		Hide();
 	}
+}
+
+void cUIDropDownList::OnControlClear( const cUIEvent * Event ) {
+	Text( "" );
 }
 
 void cUIDropDownList::OnItemKeyDown( const cUIEvent * Event ) {

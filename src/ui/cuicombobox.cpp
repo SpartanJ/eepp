@@ -74,4 +74,7 @@ Uint32 cUIComboBox::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
 	return 1;
 }
 
+void cUIComboBox::OnControlClear( const cUIEvent *Event ) {
+}
+
 }}

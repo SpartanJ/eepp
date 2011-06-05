@@ -269,8 +269,12 @@ void cMapEditor::FillSGCombo() {
 
 	std::vector<String> items;
 
+	Uint32 Restricted1 = MakeHash( std::string( "global" ) );
+	Uint32 Restricted2 = MakeHash( mTheme->ShapeGroup()->Name() );
+
 	for ( std::list<cShapeGroup*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
-		items.push_back( reinterpret_cast<cShapeGroup*>( *it )->Name() );
+		if ( (*it)->Id() != Restricted1 && (*it)->Id() != Restricted2 )
+			items.push_back( (*it)->Name() );
 	}
 
 	if ( items.size() ) {
@@ -293,7 +297,7 @@ void cMapEditor::FillShapeList() {
 		std::vector<String> items;
 
 		for ( std::list<cShape*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
-			items.push_back( (*it)->Name() );
+				items.push_back( (*it)->Name() );
 		}
 
 		if ( items.size() ) {
@@ -322,6 +326,9 @@ void cMapEditor::CreateNewMap() {
 }
 
 void cMapEditor::MapCreated() {
+	mLayerList->ListBox()->Clear();
+	FillSGCombo();
+
 	mMapHScroll->Value( 0 );
 	mMapVScroll->Value( 0 );
 	OnMapSizeChange( NULL );

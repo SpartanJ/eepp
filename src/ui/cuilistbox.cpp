@@ -227,6 +227,8 @@ void cUIListBox::Clear() {
 	UpdateScroll();
 	FindMaxWidth();
 	UpdateListBoxItemsSize();
+
+	SendCommonEvent( cUIEvent::EventOnControlClear );
 }
 
 Uint32 cUIListBox::RemoveListBoxItem( Uint32 ItemIndex ) {

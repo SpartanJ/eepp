@@ -20,6 +20,8 @@ class EE_API cUIComboBox : public cUIDropDownList {
 		Uint32 OnMouseClick( const eeVector2i& Pos, const Uint32 Flags );
 
 		void CreateButton();
+
+		virtual void OnControlClear( const cUIEvent *Event );
 };
 
 }}
