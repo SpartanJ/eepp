@@ -13,7 +13,7 @@ class EE_API cUISpinBox : public cUIComplexControl {
 				inline CreateParams() :
 					cUITextInput::CreateParams(),
 					DefaultValue( 0.f ),
-					AllowDotsInNumbers( true )
+					AllowDotsInNumbers( false )
 				{
 					MaxLenght = 24;
 				}

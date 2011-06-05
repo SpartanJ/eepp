@@ -34,6 +34,8 @@ class cUICommonDialog : public cUIWindow {
 
 		~cUICommonDialog();
 
+		virtual void		SetTheme( cUITheme * Theme );
+
 		void				RefreshFolder();
 
 		virtual Uint32		OnMessage( const cUIMessage *Msg );

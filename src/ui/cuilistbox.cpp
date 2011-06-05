@@ -640,7 +640,16 @@ std::list<cUIListBoxItem *> cUIListBox::GetItemsSelected() {
 
 Uint32 cUIListBox::GetItemIndex( cUIListBoxItem * Item ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
-		if ( mItems[i] == Item )
+		if ( Item == mItems[i] )
+			return i;
+	}
+
+	return 0xFFFFFFFF;
+}
+
+Uint32 cUIListBox::GetItemIndex( const String& Text ) {
+	for ( Uint32 i = 0; i < mTexts.size(); i++ ) {
+		if ( Text == mTexts[i] )
 			return i;
 	}
 
@@ -731,6 +740,10 @@ Uint32 cUIListBox::Count() {
 	return (Uint32)mItems.size();
 }
 
+void cUIListBox::SetSelected( const String& Text ) {
+	SetSelected( GetItemIndex( Text ) );
+}
+
 void cUIListBox::SetSelected( Uint32 Index ) {
 	if ( Index < mItems.size() ) {
 		if ( IsMultiSelect() ) {
@@ -739,8 +752,13 @@ void cUIListBox::SetSelected( Uint32 Index ) {
 					return;
 			}
 		} else {
-			if ( mSelected.size() )
+			if ( mSelected.size() ) {
+				if ( NULL != mItems[ mSelected.front() ] ) {
+					mItems[ mSelected.front() ]->Unselect();
+				}
+
 				mSelected.clear();
+			}
 		}
 
 		mSelected.push_back( Index );
@@ -764,15 +782,13 @@ void cUIListBox::SelectPrev() {
 			if ( NULL == mItems[ SelIndex ] )
 				CreateItemIndex( SelIndex );
 
-			mItems[ mSelected.front() 		]->Unselect();
-
 			if ( mItems[ SelIndex ]->Pos().y < 0 ) {
 				mVScrollBar->Value( (eeFloat)( SelIndex * mRowHeight ) / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) );
 
 				mItems[ SelIndex ]->SetFocus();
 			}
 
-			mItems[ SelIndex ]->Select();
+			SetSelected( SelIndex );
 		}
 	}
 }
@@ -788,15 +804,13 @@ void cUIListBox::SelectNext() {
 			if ( NULL == mItems[ SelIndex ] )
 				CreateItemIndex( SelIndex );
 
-			mItems[ mSelected.front() 		]->Unselect();
-
 			if ( mItems[ SelIndex ]->Pos().y + (Int32)RowHeight() > mContainer->Size().Height() ) {
 				mVScrollBar->Value( (eeFloat)( SelIndex * mRowHeight ) / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) );
 
 				mItems[ SelIndex ]->SetFocus();
 			}
 
-			mItems[ SelIndex 	]->Select();
+			SetSelected( SelIndex );
 		}
 	}
 }
@@ -816,29 +830,25 @@ Uint32 cUIListBox::OnKeyDown( const cUIEventKey &Event ) {
 			mLastTickMove = eeGetTicks();
 
 			SelectPrev();
-		} else if ( KEY_PAGEUP == Event.KeyCode() ) {
+		} else if ( KEY_HOME == Event.KeyCode() ) {
 			mLastTickMove = eeGetTicks();
 
 			if ( mSelected.front() != 0 ) {
-				mItems[ mSelected.front() ]->Unselect();
-
 				mVScrollBar->Value( 0 );
 
 				mItems[ 0 ]->SetFocus();
 
-				mItems[ 0 ]->Select();
+				SetSelected( 0 );
 			}
-		} else if ( KEY_PAGEDOWN == Event.KeyCode() ) {
+		} else if ( KEY_END == Event.KeyCode() ) {
 			mLastTickMove = eeGetTicks();
 
 			if ( mSelected.front() != Count() - 1 ) {
-				mItems[ mSelected.front() ]->Unselect();
-
 				mVScrollBar->Value( 1 );
 
 				mItems[ Count() - 1 ]->SetFocus();
 
-				mItems[ Count() - 1 ]->Select();
+				SetSelected( Count() - 1 );
 			}
 		}
 	}

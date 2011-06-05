@@ -14,6 +14,10 @@ cUISpinBox::cUISpinBox( const cUISpinBox::CreateParams& Params ) :
 	cUITextInput::CreateParams InputParams( Params );
 	InputParams.PosSet( 0, 0 );
 	InputParams.Parent( this );
+
+	if ( InputParams.Flags & UI_AUTO_SIZE )
+		InputParams.Flags &= ~UI_AUTO_SIZE;
+
 	InputParams.Flags |= UI_AUTO_PADDING;
 
 	mInput		= eeNew( cUITextInput, ( InputParams ) );
@@ -78,6 +82,10 @@ void cUISpinBox::SetTheme( cUITheme * Theme ) {
 		}
 	}
 
+	if ( mFlags & UI_AUTO_SIZE ) {
+		mSize.Height( mInput->GetSkinShapeSize().Height() );
+	}
+
 	AdjustChilds();
 }
 
@@ -129,7 +137,7 @@ Uint32 cUISpinBox::OnMessage( const cUIMessage * Msg ) {
 
 void cUISpinBox::AddValue( const eeFloat& value ) {
 	if ( !mInput->Text().size() )
-		mInput->Text( "0" );
+		mInput->Text( toStr( static_cast<Int32>( mMinValue ) ) );
 
 	Value( mValue + value );
 }

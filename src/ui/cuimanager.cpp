@@ -219,6 +219,10 @@ void cUIManager::Update() {
 	mControl->CheckClose();
 }
 
+cUIControl * cUIManager::DownControl() const {
+	return mDownControl;
+}
+
 void cUIManager::Draw() {
 	mControl->InternalDraw();
 	cGlobalBatchRenderer::instance()->Draw();

@@ -115,7 +115,7 @@ void cEETest::Init() {
 
 		if ( Mus->OpenFromPack( &PAK, "music.ogg" ) ) {
 			Mus->Loop(true);
-			Mus->Volume( 100.f );
+			Mus->Volume( 0.f );
 			Mus->Play();
 		}
 
@@ -172,8 +172,6 @@ void cEETest::CreateAquaTextureAtlas() {
 	#ifndef EE_DEBUG
 	return;
 	#endif
-
-	//cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
 
 	std::string tgpath( MyPath + "data/aquatg/aqua" );
 	std::string Path( MyPath + "data/aqua" );
@@ -266,6 +264,8 @@ void cEETest::CreateUI() {
 
 	cUIManager::instance()->Init(); //UI_MANAGER_HIGHLIGHT_FOCUS
 
+	//cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
+
 	cTextureGroupLoader tgl( MyPath + "data/aquatg/aqua.etg" );
 	tgl.GetTexture()->TextureFilter( TEX_FILTER_NEAREST );
 
@@ -335,10 +335,10 @@ void cEETest::CreateUI() {
 
 	cUIPushButton::CreateParams ButtonParams;
 	ButtonParams.Parent( C );
-	ButtonParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
+	ButtonParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE;
 	ButtonParams.PosSet( 225, 216 );
-	ButtonParams.Size = eeSize( 90, 22 );
-	ButtonParams.SetIcon( cGlobalShapeGroup::instance()->GetByName( "aqua_button_ok" ) );
+	ButtonParams.Size = eeSize( 90, 0 );
+	ButtonParams.SetIcon( mTheme->GetIconByName( "ok" ) );
 	cUIPushButton * Button = eeNew( cUIPushButton, ( ButtonParams ) );
 	Button->Visible( true );
 	Button->Enabled( true );
@@ -472,8 +472,8 @@ void cEETest::CreateUI() {
 	mComboBox->ListBox()->SetSelected( 0 );
 
 	Menu = mTheme->CreatePopUpMenu();
-	Menu->Add( "New", cGlobalShapeGroup::instance()->GetByName( "aqua_button_ok" ) );
-	Menu->Add( "Open..." );
+	Menu->Add( "New", mTheme->GetIconByName( "document-new" ) );
+	Menu->Add( "Open...", mTheme->GetIconByName( "document-open" ) );
 	Menu->AddSeparator();
 	Menu->Add( "Show Screen 1" );
 	Menu->Add( "Show Screen 2" );
@@ -539,7 +539,7 @@ void cEETest::CreateUI() {
 
 	cUIGfx::CreateParams TxtGfxParams;
 	TxtGfxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
-	TxtGfxParams.Shape = cGlobalShapeGroup::instance()->GetByName( "aqua_button_ok" );
+	TxtGfxParams.Shape = mTheme->GetIconByName( "ok" );
 
 	for ( Uint32 i = 0; i < 100; i++ ) {
 		cUIGridCell * Cell			= eeNew( cUIGridCell, ( CellParams ) );
@@ -708,7 +708,7 @@ void cEETest::ButtonClick( const cUIEvent * Event ) {
 	if ( MouseEvent->Flags() & EE_BUTTONS_LRM ) {
 		cUIGfx::CreateParams GfxParams;
 		GfxParams.Parent( cUIManager::instance()->MainControl() );
-		GfxParams.Shape = cShapeGroupManager::instance()->GetShapeByName( "aqua_button_ok" );
+		GfxParams.Shape = mTheme->GetIconByName( "ok" );
 		cUIGfx * Gfx = eeNew( cUIGfx, ( GfxParams ) );
 		Gfx->Visible( true );
 		Gfx->Enabled( false );
@@ -851,8 +851,6 @@ void cEETest::LoadTextures() {
 
 	mBlindy.AddFramesByPattern( "rn" );
 	mBlindy.Position( 320.f, 0.f );
-
-	cGlobalShapeGroup::instance()->Add( eeNew( Graphics::cShape, ( TF->Load( MyPath + "data/aqua/aqua_button_ok.png" ), "aqua_button_ok" ) ) );
 
 	mBoxSprite = eeNew( cSprite, () );
 	mBoxSprite->CreateStatic( cGlobalShapeGroup::instance()->Add( eeNew( Graphics::cShape, ( TN[3], "ilmare" ) ) ) );

@@ -15,8 +15,19 @@ cUIPushButton::cUIPushButton( const cUIPushButton::CreateParams& Params ) :
 	cUIGfx::CreateParams GfxParams;
 	GfxParams.Parent( this );
 	GfxParams.Shape = Params.Icon;
-	GfxParams.Flags = UI_AUTO_SIZE;
+
+	if ( Params.IconMinSize.x != 0 && Params.IconMinSize.y != 0 ) {
+		GfxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
+	} else {
+		GfxParams.Flags = UI_AUTO_SIZE | UI_VALIGN_CENTER | UI_HALIGN_CENTER;
+	}
+
 	mIcon = eeNew( cUIGfx, ( GfxParams ) );
+
+	if ( Params.IconMinSize.x != 0 && Params.IconMinSize.y != 0 ) {
+		mIcon->Size( Params.IconMinSize );
+	}
+
 	mIcon->Visible( true );
 	mIcon->Enabled( false );
 
@@ -24,7 +35,7 @@ cUIPushButton::cUIPushButton( const cUIPushButton::CreateParams& Params ) :
 
 	cUITextBox::CreateParams TxtParams = Params;
 	TxtParams.Parent( this );
-	TxtParams.Flags 			= Params.Flags;
+	TxtParams.Flags 			= HAlignGet( Params.Flags ) | VAlignGet( Params.Flags );
 	TxtParams.Font				= Params.Font;
 	TxtParams.FontColor 		= Params.FontColor;
 	TxtParams.FontShadowColor 	= Params.FontShadowColor;
@@ -70,6 +81,11 @@ void cUIPushButton::OnSizeChange() {
 		}
 	}
 
+	if ( NULL != mTextBox && 0 == mTextBox->Text().size() ) {
+		mIcon->Center();
+	}
+
+	/** Auto Size only for height? May be set another flag to this... *//**
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( NULL != mTextBox ) {
 			eeRecti P = MakePadding();
@@ -91,7 +107,7 @@ void cUIPushButton::OnSizeChange() {
 		if ( NULL != mTextBox && 0 == mTextBox->Text().size() ) {
 			mIcon->Center();
 		}
-	}
+	}*/
 }
 
 cUIPushButton::~cUIPushButton() {
@@ -99,6 +115,7 @@ cUIPushButton::~cUIPushButton() {
 
 void cUIPushButton::SetTheme( cUITheme * Theme ) {
 	cUIControl::SetTheme( Theme, "button" );
+
 	DoAfterSetTheme();
 }
 
@@ -109,6 +126,10 @@ void cUIPushButton::DoAfterSetTheme() {
 	if ( mControlFlags & UI_CTRL_FLAG_FREE_USE ) {
 		eeRecti RMargin = MakePadding( true, false, false, false, true );
 		mIconSpace = RMargin.Left;
+	}
+
+	if ( mFlags & UI_AUTO_SIZE ) {
+		mSize.Height( GetSkinShapeSize().Height() );
 	}
 
 	AutoPadding();

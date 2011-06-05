@@ -1,4 +1,5 @@
 #include "cuiradiobutton.hpp"
+#include "cuimanager.hpp"
 
 namespace EE { namespace UI {
 
@@ -66,6 +67,17 @@ void cUIRadioButton::SetTheme( cUITheme * Theme ) {
 	Padding( eeRecti(0,0,0,0) );
 }
 
+void cUIRadioButton::AutoSize() {
+	cUITextBox::AutoSize();
+
+	if ( mFlags & UI_AUTO_SIZE ) {
+		mActiveButton->CenterVertical();
+		mInactiveButton->CenterVertical();
+
+		mSize.Width( (eeInt)mTextCache->GetTextWidth() + mActiveButton->Size().Width() );
+	}
+}
+
 void cUIRadioButton::OnSizeChange() {
 	cUITextBox::OnSizeChange();
 
@@ -76,8 +88,13 @@ void cUIRadioButton::OnSizeChange() {
 Uint32 cUIRadioButton::OnMessage( const cUIMessage * Msg ) {
 	switch ( Msg->Msg() ) {
 		case cUIMessage::MsgClick: {
-			if ( Msg->Flags() & EE_BUTTON_LMASK )
+			if ( Msg->Flags() & EE_BUTTON_LMASK ) {
 				SwitchState();
+			}
+
+			if ( Msg->Sender() == mActiveButton || Msg->Sender() == mInactiveButton ) {
+				SendMouseEvent( cUIEvent::EventMouseClick, cUIManager::instance()->GetMousePos(), cUIManager::instance()->PressTrigger() );
+			}
 
 			return 1;
 		}

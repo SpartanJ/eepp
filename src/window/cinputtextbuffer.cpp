@@ -136,7 +136,6 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 	if ( Active() ) {
 		cInput * Input = mWindow->GetInput();
 
-		ChangedSinceLastUpdate( false );
 		Uint32 c = eeConvertKeyCharacter( Event->key.keysym.sym, Event->key.keysym.unicode, Event->key.keysym.mod );
 
 		if ( SupportFreeEditing() ) {

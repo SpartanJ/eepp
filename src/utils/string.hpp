@@ -106,6 +106,9 @@ Int32 EE_API StrStartsWith( const String& Start, const String Str );
 /** Replaces a substring by another string inside a string */
 void EE_API ReplaceSubStr(std::string &target, const std::string& that, const std::string& with );
 
+/** Removes the numbers at the end of the string */
+std::string EE_API RemoveNumbersAtEnd( std::string txt );
+
 }}
 
 #endif

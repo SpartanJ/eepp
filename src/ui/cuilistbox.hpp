@@ -82,6 +82,8 @@ class EE_API cUIListBox : public cUIComplexControl {
 
 		Uint32 GetItemIndex( cUIListBoxItem * Item );
 
+		Uint32 GetItemIndex( const String& Text );
+
 		cUIListBoxItem * GetItemSelected();
 
 		String GetItemSelectedText() const;
@@ -128,6 +130,8 @@ class EE_API cUIListBox : public cUIComplexControl {
 
 		void SetSelected( Uint32 Index );
 
+		void SetSelected( const String& Text );
+
 		void SelectPrev();
 
 		void SelectNext();
@@ -167,7 +171,7 @@ class EE_API cUIListBox : public cUIComplexControl {
 
 		std::list<Uint32>				mSelected;
 		std::vector<cUIListBoxItem *> 	mItems;
-		std::vector<String>		mTexts;
+		std::vector<String>				mTexts;
 
 		void UpdateScroll( bool FromScrollChange = false );
 

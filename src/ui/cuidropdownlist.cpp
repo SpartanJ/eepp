@@ -52,36 +52,7 @@ void cUIDropDownList::OnSizeChange() {
 
 void cUIDropDownList::AutoSizeControl() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		if ( NULL != mSkinState &&  NULL != mSkinState->GetSkin() ) {
-			if ( mSkinState->GetSkin()->GetType() == cUISkin::UISkinComplex ) {
-				Uint32 tHeight = 0;
-
-				cUISkinComplex * tComplex = reinterpret_cast<cUISkinComplex*> ( mSkinState->GetSkin() );
-
-				cShape * tShape = tComplex->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Center );
-
-				if ( NULL != tShape )
-					tHeight += tShape->RealSize().Height();
-
-				tShape = tComplex->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Up );
-
-				if ( NULL != tShape )
-					tHeight += tShape->RealSize().Height();
-
-				tShape = tComplex->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Down );
-
-				if ( NULL != tShape )
-					tHeight += tShape->RealSize().Height();
-
-				Size( mSize.x, tHeight );
-			} else {
-				cShape * tShape = mSkinState->GetSkin()->GetShape( cUISkinState::StateNormal );
-
-				if ( NULL != tShape ) {
-					Size( mSize.x, tShape->RealSize().Height() );
-				}
-			}
-		}
+		Size( mSize.x, GetSkinShapeSize().Height() );
 	}
 }
 

@@ -80,7 +80,6 @@ void cUIListBoxItem::Update() {
 		if ( IsMouseOver() ) {
 			if ( Flags & EE_BUTTONS_WUWD && LBParent->VerticalScrollBar()->Visible() ) {
 				LBParent->VerticalScrollBar()->Slider()->ManageClick( Flags );
-				//LBParent->UpdateScroll( true );
 			}
 		}
 	}

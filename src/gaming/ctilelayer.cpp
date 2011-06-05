@@ -90,4 +90,8 @@ void cTileLayer::RemoveGameObject( const eeVector2u& TilePos ) {
 	}
 }
 
+cGameObject * cTileLayer::GetGameObject( const eeVector2u& TilePos ) {
+	return mTiles[ TilePos.x ][ TilePos.y ];
+}
+
 }}

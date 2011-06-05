@@ -42,6 +42,8 @@ class EE_API cUICheckBox : public cUITextBox {
 		virtual Uint32 OnMessage( const cUIMessage * Msg );
 
 		void DoAfterSetTheme();
+
+		virtual void AutoSize();
 };
 
 }}

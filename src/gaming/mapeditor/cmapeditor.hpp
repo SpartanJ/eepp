@@ -9,6 +9,8 @@ using namespace EE::UI;
 
 namespace EE { namespace Gaming { namespace MapEditor {
 
+class cUILayerNew;
+
 class cMapEditor {
 	public:
 		typedef cb::Callback0<void> MapEditorCloseCb;
@@ -31,8 +33,16 @@ class cMapEditor {
 		cShapeGroup *		mCurSG;
 		cUIScrollBar *		mMapHScroll;
 		cUIScrollBar *		mMapVScroll;
-		cUIDropDownList *	mTypeAdd;
+		cUIDropDownList *	mGOTypeList;
 		cUIDropDownList *	mLayerList;
+		cUICheckBox *		mChkMirrored;
+		cUICheckBox *		mChkFliped;
+		cUICheckBox *		mChkBlocked;
+		cUICheckBox *		mChkAnim;
+		cLayer *			mCurLayer;
+		cUIPushButton *		mBtnGOTypeAdd;
+		Uint32				mCurGOType;
+		Uint32				mCurGOFlags;
 
 		void WindowClose( const cUIEvent * Event );
 
@@ -64,13 +74,47 @@ class cMapEditor {
 
 		void OnShapeGroupChange( const cUIEvent * Event );
 
+		void MapOpen( const cUIEvent * Event );
+
 		void OnShapeChange( const cUIEvent * Event );
+
+		void OnTypeChange( const cUIEvent * Event );
 
 		void OnScrollMapH( const cUIEvent * Event );
 
 		void OnScrollMapV( const cUIEvent * Event );
 
 		void OnMapSizeChange( const cUIEvent * Event );
+
+		void OnLayerSelect( const cUIEvent * Event );
+
+		void MapCreated();
+
+		void ChkClickMirrored( const cUIEvent * Event );
+
+		void ChkClickFliped( const cUIEvent * Event );
+
+		void ChkClickBlocked( const cUIEvent * Event );
+
+		void ChkClickAnimated( const cUIEvent * Event );
+
+		void OnMapMouseDown( const cUIEvent * Event );
+
+		void OnLayerAdd( cUILayerNew * UILayer );
+
+		void AddNewGOType( const cUIEvent * Event );
+
+		void OnNewGOTypeAdded( std::string name, Uint32 hash );
+
+		void UpdateGfx();
+
+		void UpdateFlags();
+
+		void AddGameObjectToTile();
+
+		void RemoveGameObjectFromTile();
+
+		cGameObject * CreateGameObject();
 };
 
 }}}

@@ -44,6 +44,8 @@ class EE_API cUIRadioButton : public cUITextBox {
 		virtual Uint32 OnKeyDown( const cUIEventKey& Event );
 
 		virtual Uint32 OnMessage( const cUIMessage * Msg );
+
+		virtual void AutoSize();
 };
 
 }}

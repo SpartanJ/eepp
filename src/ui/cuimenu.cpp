@@ -51,15 +51,22 @@ cUIMenuItem * cUIMenu::CreateMenuItem( const String& Text, cShape * Icon ) {
 	Params.FontColor 		= mFontColor;
 	Params.FontShadowColor 	= mFontShadowColor;
 	Params.FontOverColor 	= mFontOverColor;
-	Params.Flags			= UI_CLIP_ENABLE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
+	Params.Icon				= Icon;
+
+	if ( mRowHeight < mMinSpaceForIcons )
+		Params.IconMinSize		= eeSize( mMinSpaceForIcons, mRowHeight );
+	else
+		Params.IconMinSize		= eeSize( mMinSpaceForIcons, mMinSpaceForIcons );
+
+	if ( mFlags & UI_AUTO_SIZE ) {
+		Params.Flags		= UI_VALIGN_CENTER | UI_HALIGN_LEFT;
+	} else {
+		Params.Flags		= UI_CLIP_ENABLE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
+	}
 
 	cUIMenuItem * tCtrl 	= eeNew( cUIMenuItem, ( Params ) );
 
 	tCtrl->Text( Text );
-
-	if ( NULL != Icon )
-		tCtrl->Icon( Icon );
-
 	tCtrl->Visible( true );
 	tCtrl->Enabled( true );
 
@@ -77,8 +84,18 @@ cUIMenuCheckBox * cUIMenu::CreateMenuCheckBox( const String& Text ) {
 	Params.FontColor 		= mFontColor;
 	Params.FontShadowColor 	= mFontShadowColor;
 	Params.FontOverColor	= mFontOverColor;
-	Params.Flags			= UI_CLIP_ENABLE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
 	Params.Size				= eeSize( 0, mRowHeight );
+
+	if ( mRowHeight < mMinSpaceForIcons )
+		Params.IconMinSize		= eeSize( mMinSpaceForIcons, mRowHeight );
+	else
+		Params.IconMinSize		= eeSize( mMinSpaceForIcons, mMinSpaceForIcons );
+
+	if ( mFlags & UI_AUTO_SIZE ) {
+		Params.Flags		= UI_VALIGN_CENTER | UI_HALIGN_LEFT;
+	} else {
+		Params.Flags		= UI_CLIP_ENABLE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
+	}
 
 	cUIMenuCheckBox * tCtrl 	= eeNew( cUIMenuCheckBox, ( Params ) );
 
@@ -101,15 +118,22 @@ cUIMenuSubMenu * cUIMenu::CreateSubMenu( const String& Text, cShape * Icon, cUIM
 	Params.FontShadowColor 	= mFontShadowColor;
 	Params.FontOverColor 	= mFontOverColor;
 	Params.SubMenu			= SubMenu;
-	Params.Flags			= UI_CLIP_ENABLE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
+	Params.Icon				= Icon;
+
+	if ( mRowHeight < mMinSpaceForIcons )
+		Params.IconMinSize		= eeSize( mMinSpaceForIcons, mRowHeight );
+	else
+		Params.IconMinSize		= eeSize( mMinSpaceForIcons, mMinSpaceForIcons );
+
+	if ( mFlags & UI_AUTO_SIZE ) {
+		Params.Flags		= UI_VALIGN_CENTER | UI_HALIGN_LEFT;
+	} else {
+		Params.Flags		= UI_CLIP_ENABLE | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
+	}
 
 	cUIMenuSubMenu * tCtrl 	= eeNew( cUIMenuSubMenu, ( Params ) );
 
 	tCtrl->Text( Text );
-
-	if ( NULL != Icon )
-		tCtrl->Icon( Icon );
-
 	tCtrl->Visible( true );
 	tCtrl->Enabled( true );
 
@@ -181,14 +205,6 @@ Uint32 cUIMenu::Add( cUIControl * Control ) {
 void cUIMenu::SetControlSize( cUIControl * Control, const Uint32& Pos ) {
 	if ( Control->IsTypeOrInheritsFrom( UI_TYPE_MENUITEM ) ) {
 		Control->Size( mSize.Width() - mPadding.Left - mPadding.Right, mRowHeight );
-
-		cUIMenuItem * tItem = reinterpret_cast<cUIMenuItem*> (Control);
-
-		if ( NULL == tItem->Icon()->Shape() ) {
-			tItem->Padding( eeRecti( mBiggestIcon, 0, 0, 0 ) );
-		} else {
-			tItem->Padding( eeRecti( 0, 0, 0, 0 ) );
-		}
 	} else {
 		Control->Size( mSize.Width() - mPadding.Left - mPadding.Right, Control->Size().Height() );
 	}

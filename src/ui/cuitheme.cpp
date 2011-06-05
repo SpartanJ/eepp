@@ -29,6 +29,8 @@ namespace EE { namespace UI {
 
 static std::list<std::string> UI_THEME_ELEMENTS;
 
+static std::list<std::string> UI_THEME_ICONS;
+
 static void LoadThemeElements() {
 	if ( !UI_THEME_ELEMENTS.size() ) {
 		UI_THEME_ELEMENTS.push_back( "control" );
@@ -92,10 +94,27 @@ static void LoadThemeElements() {
 		UI_THEME_ELEMENTS.push_back( "winmenu" );
 		UI_THEME_ELEMENTS.push_back( "winmenubutton" );
 	}
+
+	if ( !UI_THEME_ICONS.size() ) {
+		UI_THEME_ICONS.push_back( "ok" );
+		UI_THEME_ICONS.push_back( "cancel" );
+		UI_THEME_ICONS.push_back( "go-up" );
+		UI_THEME_ICONS.push_back( "quit" );
+		UI_THEME_ICONS.push_back( "add" );
+		UI_THEME_ICONS.push_back( "document-open" );
+		UI_THEME_ICONS.push_back( "document-close" );
+		UI_THEME_ICONS.push_back( "document-new" );
+		UI_THEME_ICONS.push_back( "document-save" );
+		UI_THEME_ICONS.push_back( "document-save-as" );
+	}
 }
 
 void cUITheme::AddThemeElement( const std::string& Element ) {
 	UI_THEME_ELEMENTS.push_back( Element );
+}
+
+void cUITheme::AddThemeIcon( const std::string& Icon ) {
+	UI_THEME_ICONS.push_back( Icon );
 }
 
 cUITheme * cUITheme::LoadFromShapeGroup( cUITheme * tTheme, cShapeGroup * ShapeGroup ) {
@@ -108,6 +127,8 @@ cUITheme * cUITheme::LoadFromShapeGroup( cUITheme * tTheme, cShapeGroup * ShapeG
 	std::string Element;
 	std::vector<std::string> 	ElemFound;
 	std::vector<Uint32> 		ElemType;
+
+	tTheme->ShapeGroup( ShapeGroup );
 
 	for ( std::list<std::string>::iterator it = UI_THEME_ELEMENTS.begin() ; it != UI_THEME_ELEMENTS.end(); it++ ) {
 		Uint32 IsComplex = 0;
@@ -142,6 +163,7 @@ cUITheme * cUITheme::LoadFromPath( cUITheme * tTheme, const std::string& Path, c
 	Uint32 i;
 	bool Found;
 	std::string Element;
+	std::string ElemName;
 	std::string RPath( Path );
 
 	DirPathAddSlashAtEnd( RPath );
@@ -154,16 +176,28 @@ cUITheme * cUITheme::LoadFromPath( cUITheme * tTheme, const std::string& Path, c
 
 	cShapeGroup * tSG = eeNew( cShapeGroup, ( tTheme->Abbr() ) );
 
+	tTheme->ShapeGroup( tSG );
+
 	for ( std::list<std::string>::iterator it = UI_THEME_ELEMENTS.begin() ; it != UI_THEME_ELEMENTS.end(); it++ ) {
 		Uint32 IsComplex = 0;
 
-		Element = std::string( tTheme->Abbr() + "_" + *it );
+		Element = tTheme->Abbr() + "_" + *it;
 
 		Found 	= SearchFilesOfElement( tSG, RPath, Element, IsComplex, ImgExt );
 
 		if ( Found ) {
 			ElemFound.push_back( Element );
 			ElemType.push_back( IsComplex );
+		}
+	}
+
+	// Load the icons from path.
+	for ( std::list<std::string>::iterator it = UI_THEME_ICONS.begin() ; it != UI_THEME_ICONS.end(); it++ ) {
+		ElemName	= tTheme->Abbr() + "_icon_" + *it;
+		Element		= RPath + ElemName + "." + ImgExt;
+
+		if ( FileExists( Element ) ) {
+			tSG->Add( eeNew( cShape, ( cTextureFactory::instance()->Load( Element ), ElemName ) ) );
 		}
 	}
 
@@ -178,6 +212,8 @@ cUITheme * cUITheme::LoadFromPath( cUITheme * tTheme, const std::string& Path, c
 		else
 			tTheme->Add( eeNew( cUISkinSimple, ( ElemFound[i] ) ) );
 	}
+
+
 
 	cLog::instance()->Write( "UI Theme Loaded in: " + toStr( TE.ElapsedSinceStart() ) + " ( from path )" );
 
@@ -275,6 +311,7 @@ cUITheme::cUITheme( const std::string& Name, const std::string& Abbr, cFont * De
 	mName( Name ),
 	mNameHash( MakeHash( mName ) ),
 	mAbbr( Abbr ),
+	mShapeGroup( NULL ),
 	mFont( DefaultFont ),
 	mFontColor( 0, 0, 0, 255 ),
 	mFontShadowColor( 255, 255, 255, 200 ),
@@ -357,6 +394,21 @@ void cUITheme::UseDefaultThemeValues( const bool& Use ) {
 
 const bool& cUITheme::UseDefaultThemeValues() const {
 	return mUseDefaultThemeValues;
+}
+
+cShapeGroup * cUITheme::ShapeGroup() const {
+	return mShapeGroup;
+}
+
+void cUITheme::ShapeGroup( cShapeGroup * SG ) {
+	mShapeGroup = SG;
+}
+
+cShape * cUITheme::GetIconByName( const std::string& name ) {
+	if ( NULL != mShapeGroup )
+		return mShapeGroup->GetByName( mAbbr + "_icon_" + name );
+
+	return NULL;
 }
 
 cUIGfx * cUITheme::CreateGfx( cShape * Shape, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, eeColorA ShapeColor, EE_RENDERTYPE ShapeRender ) {

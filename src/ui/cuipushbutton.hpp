@@ -19,7 +19,8 @@ class EE_API cUIPushButton : public cUIComplexControl {
 					FontOverColor( 0, 0, 0, 255 ),
 					Icon( NULL ),
 					IconHorizontalMargin( 0 ),
-					IconAutoMargin( true )
+					IconAutoMargin( true ),
+					IconMinSize( 0, 0 )
 				{
 					cUITheme * Theme = cUIThemeManager::instance()->DefaultTheme();
 
@@ -50,6 +51,7 @@ class EE_API cUIPushButton : public cUIComplexControl {
 				cShape * 	Icon;
 				Int32 		IconHorizontalMargin;
 				bool 		IconAutoMargin;
+				eeSize		IconMinSize;
 		};
 
 		cUIPushButton( const cUIPushButton::CreateParams& Params );
@@ -58,9 +60,9 @@ class EE_API cUIPushButton : public cUIComplexControl {
 
 		virtual void SetTheme( cUITheme * Theme );
 
-		void Icon( cShape * Icon );
+		virtual void Icon( cShape * Icon );
 
-		cUIGfx * Icon() const;
+		virtual cUIGfx * Icon() const;
 
 		void Text( const String& text );
 

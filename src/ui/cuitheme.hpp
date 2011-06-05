@@ -44,6 +44,8 @@ class EE_API cUITheme : public tResourceManager<cUISkin> {
 
 		static void AddThemeElement( const std::string& Element );
 
+		static void AddThemeIcon( const std::string& Icon );
+
 		cUITheme( const std::string& Name, const std::string& Abbr, cFont * DefaultFont = NULL );
 
 		virtual ~cUITheme();
@@ -82,6 +84,10 @@ class EE_API cUITheme : public tResourceManager<cUISkin> {
 
 		const bool& UseDefaultThemeValues() const;
 
+		cShapeGroup * ShapeGroup() const;
+
+		cShape * GetIconByName( const std::string& name );
+
 		virtual cUIGfx * CreateGfx( cShape * Shape, cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, eeColorA ShapeColor = eeColorA(255,255,255,255), EE_RENDERTYPE ShapeRender = RN_NORMAL );
 
 		virtual cUISprite * CreateSprite( cSprite * Sprite, cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, bool DeallocSprite = true, EE_RENDERTYPE SpriteRender = RN_NORMAL );
@@ -102,7 +108,7 @@ class EE_API cUITheme : public tResourceManager<cUISkin> {
 
 		virtual cUISlider * CreateSlider( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS, bool VerticalSlider = false, bool AllowHalfSliderOut = true, bool ExpandBackground = false );
 
-		virtual cUISpinBox * CreateSpinBox( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE, eeFloat DefaultValue = 0.f, bool AllowDotsInNumbers = true );
+		virtual cUISpinBox * CreateSpinBox( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_SIZE, eeFloat DefaultValue = 0.f, bool AllowDotsInNumbers = true );
 
 		virtual cUIComboBox * CreateComboBox( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING, Uint32 MinNumVisibleItems = 6, bool PopUpToMainControl = false, cUIListBox * ListBox = NULL );
 
@@ -116,7 +122,7 @@ class EE_API cUITheme : public tResourceManager<cUISkin> {
 
 		virtual cUIProgressBar * CreateProgressBar( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS, bool DisplayPercent = false, bool VerticalExpand = false, eeVector2f MovementSpeed = eeVector2f( 64, 0 ), eeRectf FillerMargin = eeRectf() );
 
-		virtual cUIPushButton * CreatePushButton( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS, cShape * Icon = NULL, Int32 IconHorizontalMargin = 0, bool IconAutoMargin = true );
+		virtual cUIPushButton * CreatePushButton( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, cShape * Icon = NULL, Int32 IconHorizontalMargin = 0, bool IconAutoMargin = true );
 
 		virtual cUIWinMenu * CreateWinMenu( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS, Uint32 MarginBetweenButtons = 0, Uint32 ButtonMargin = 4, Uint32 MenuHeight = 0, Uint32 FirstButtonMargin = 1 );
 
@@ -127,12 +133,15 @@ class EE_API cUITheme : public tResourceManager<cUISkin> {
 		std::string 		mName;
 		Uint32				mNameHash;
 		std::string			mAbbr;
+		cShapeGroup *		mShapeGroup;
 		cFont * 			mFont;
 		eeColorA			mFontColor;
 		eeColorA			mFontShadowColor;
 		eeColorA			mFontOverColor;
 		eeColorA			mFontSelectedColor;
 		bool				mUseDefaultThemeValues;
+
+		void ShapeGroup( cShapeGroup * SG );
 
 		static bool SearchFilesOfElement( cShapeGroup * SG, const std::string& Path, std::string Element, Uint32& IsComplex, const std::string ImgExt );
 

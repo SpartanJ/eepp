@@ -1,4 +1,5 @@
 #include "cuicheckbox.hpp"
+#include "cuimanager.hpp"
 
 namespace EE { namespace UI {
 
@@ -66,6 +67,17 @@ void cUICheckBox::DoAfterSetTheme() {
 	Padding( eeRecti(0,0,0,0) );
 }
 
+void cUICheckBox::AutoSize() {
+	cUITextBox::AutoSize();
+
+	if ( mFlags & UI_AUTO_SIZE ) {
+		mActiveButton->CenterVertical();
+		mInactiveButton->CenterVertical();
+
+		mSize.Width( (eeInt)mTextCache->GetTextWidth() + mActiveButton->Size().Width() );
+	}
+}
+
 void cUICheckBox::OnSizeChange() {
 	cUITextBox::OnSizeChange();
 
@@ -76,8 +88,13 @@ void cUICheckBox::OnSizeChange() {
 Uint32 cUICheckBox::OnMessage( const cUIMessage * Msg ) {
 	switch ( Msg->Msg() ) {
 		case cUIMessage::MsgClick: {
-			if ( Msg->Flags() & EE_BUTTON_LMASK )
+			if ( Msg->Flags() & EE_BUTTON_LMASK ) {
 				SwitchState();
+			}
+
+			if ( Msg->Sender() == mActiveButton || Msg->Sender() == mInactiveButton ) {
+				SendMouseEvent( cUIEvent::EventMouseClick, cUIManager::instance()->GetMousePos(), cUIManager::instance()->PressTrigger() );
+			}
 
 			return 1;
 		}

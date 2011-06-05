@@ -59,6 +59,8 @@ class EE_API cUITextInput : public cUITextBox {
 
 		void AlignFix();
 
+		virtual void AutoSize();
+
 		void PrivOnPressEnter();
 
 		void AutoPadding();

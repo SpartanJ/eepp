@@ -11,7 +11,7 @@ using namespace EE::Graphics;
 namespace EE { namespace Gaming {
 
 cMap::cMap() :
-	mWindow( NULL ),
+	mWindow( cEngine::instance()->GetCurrentWindow() ),
 	mLayers( NULL ),
 	mFlags( 0 ),
 	mMaxLayers( 0 ),
@@ -64,8 +64,11 @@ void cMap::Create( eeSize Size, Uint32 MaxLayers, eeSize TileSize, Uint32 Flags,
 	ViewSize( viewSize );
 }
 
-void cMap::AddLayer( Uint32 Type, Uint32 flags, std::string name ) {
+cLayer * cMap::AddLayer( Uint32 Type, Uint32 flags, std::string name ) {
 	eeASSERT( NULL != mLayers );
+
+	if ( mLayerCount >= mMaxLayers )
+		return NULL;
 
 	switch ( Type ) {
 		case MAP_LAYER_TILED:
@@ -75,10 +78,12 @@ void cMap::AddLayer( Uint32 Type, Uint32 flags, std::string name ) {
 			mLayers[ mLayerCount ] = eeNew( cObjectLayer, ( this, flags, name ) );
 			break;
 		default:
-			return;
+			return NULL;
 	}
 
 	mLayerCount++;
+
+	return mLayers[ mLayerCount - 1 ];
 }
 
 cLayer* cMap::GetLayer( Uint32 index ) {
@@ -170,6 +175,9 @@ void cMap::GetMouseOverTile() {
 
 	if ( mMouseOverTile.y >= mSize.Height() )
 		mMouseOverTile.y = mSize.Height() - 1;
+
+	// Clamped pos
+	mMouseOverTileFinal = eeVector2u( mMouseOverTile.x, mMouseOverTile.y );
 }
 
 void cMap::Update() {
@@ -179,6 +187,10 @@ void cMap::Update() {
 
 const eeSize& cMap::ViewSize() const {
 	return mViewSize;
+}
+
+const eeVector2u& cMap::GetMouseTilePos() const {
+	return mMouseOverTileFinal;
 }
 
 void cMap::ViewSize( const eeSize& viewSize ) {

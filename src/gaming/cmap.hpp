@@ -20,15 +20,15 @@ class cMap {
 
 		virtual ~cMap();
 
-		virtual void Create( eeSize Size, Uint32 MaxLayers, eeSize TileSize, Uint32 Flags = 0, eeSize viewSize = eeSize( 640, 480 ), cWindow * Window = NULL );
+		virtual void Create( eeSize Size, Uint32 MaxLayers, eeSize TileSize, Uint32 Flags = 0, eeSize viewSize = eeSize( 800, 600 ), cWindow * Window = NULL );
 
-		virtual void AddLayer( Uint32 Type, Uint32 flags, std::string name );
+		virtual cLayer * AddLayer( Uint32 Type, Uint32 flags, std::string name );
 
-		virtual cLayer* GetLayer( Uint32 index );
+		virtual cLayer * GetLayer( Uint32 index );
 
-		virtual cLayer* GetLayerByHash( Uint32 hash );
+		virtual cLayer * GetLayerByHash( Uint32 hash );
 
-		virtual cLayer* GetLayer( const std::string& name );
+		virtual cLayer * GetLayer( const std::string& name );
 
 		virtual void Load( const std::string& path );
 
@@ -77,6 +77,8 @@ class cMap {
 		Uint32 DrawGrid() const;
 
 		void Reset();
+
+		const eeVector2u& GetMouseTilePos() const;
 	protected:
 		cWindow *		mWindow;
 		cLayer**		mLayers;
@@ -91,6 +93,7 @@ class cMap {
 		eeVector2i		mStartTile;
 		eeVector2i		mEndTile;
 		eeVector2i		mMouseOverTile;
+		eeVector2u		mMouseOverTileFinal;
 
 		cGameObject *	CreateGameObject( const Uint32& Type, const Uint32& Flags );
 

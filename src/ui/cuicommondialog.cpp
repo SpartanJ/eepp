@@ -43,9 +43,9 @@ cUICommonDialog::cUICommonDialog( const cUICommonDialog::CreateParams& Params ) 
 
 	cUIPushButton::CreateParams ButtonParams;
 	ButtonParams.Parent( Container() );
-	ButtonParams.PosSet( Container()->Size().Width() - 81, Container()->Size().Height() - 54 );
-	ButtonParams.SizeSet( 75, 22 );
-	ButtonParams.Flags = UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_VALIGN_CENTER;
+	ButtonParams.PosSet( Container()->Size().Width() - 86, Container()->Size().Height() - 54 );
+	ButtonParams.SizeSet( 80, 22 );
+	ButtonParams.Flags = UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_VALIGN_CENTER | UI_AUTO_SIZE;
 	mButtonOpen = eeNew( cUIPushButton, ( ButtonParams ) );
 	mButtonOpen->Visible( true );
 	mButtonOpen->Enabled( true );
@@ -129,6 +129,17 @@ cUICommonDialog::cUICommonDialog( const cUICommonDialog::CreateParams& Params ) 
 }
 
 cUICommonDialog::~cUICommonDialog() {
+}
+
+void cUICommonDialog::SetTheme( cUITheme * Theme ) {
+	cUIWindow::SetTheme( Theme );
+
+	cShape * Icon = Theme->GetIconByName( "go-up" );
+
+	if ( NULL != Icon ) {
+		mButtonUp->Text( "" );
+		mButtonUp->Icon( Icon );
+	}
 }
 
 void cUICommonDialog::RefreshFolder() {

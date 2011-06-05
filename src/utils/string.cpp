@@ -275,4 +275,12 @@ void ReplaceSubStr( std::string &target, const std::string& that, const std::str
 	}
 }
 
+std::string RemoveNumbersAtEnd( std::string txt ) {
+	while ( txt.size() && txt[ txt.size() - 1 ] >= '0' && txt[ txt.size() - 1 ] <= '9' ) {
+		txt.resize( txt.size() - 1 );
+	}
+
+	return txt;
+}
+
 }}

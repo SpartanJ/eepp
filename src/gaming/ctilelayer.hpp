@@ -17,6 +17,8 @@ class cTileLayer : public cLayer {
 		virtual void AddGameObject( cGameObject * obj, const eeVector2u& TilePos );
 
 		virtual void RemoveGameObject( const eeVector2u& TilePos );
+
+		virtual cGameObject * GetGameObject( const eeVector2u& TilePos );
 	protected:
 		friend class cMap;
 

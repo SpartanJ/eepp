@@ -70,6 +70,9 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 		void SendMouseDown( cUIControl * ToCtrl, const eeVector2i& Pos, const Uint32 Flags );
 
 		cWindow * GetWindow() const;
+
+		/** Control where the mouse click started to be down */
+		cUIControl * DownControl() const;
 	protected:
 		cWindow *			mWindow;
 		cInput *			mKM;

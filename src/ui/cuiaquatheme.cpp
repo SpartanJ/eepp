@@ -28,7 +28,7 @@ cUIPopUpMenu * cUIAquaTheme::CreatePopUpMenu( cUIControl * Parent, const eeSize&
 
 	if ( UseDefaultThemeValues() ) {
 		MenuParams.MinWidth = 100;
-		MenuParams.MinSpaceForIcons = 16;
+		MenuParams.MinSpaceForIcons = 24;
 		MenuParams.MinRightMargin = 8;
 	}
 

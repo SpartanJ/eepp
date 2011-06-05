@@ -154,6 +154,13 @@ void cUITextInput::SetTheme( cUITheme * Theme ) {
 	cUIControl::SetTheme( Theme, "textinput" );
 
 	AutoPadding();
+	AutoSize();
+}
+
+void cUITextInput::AutoSize() {
+	if ( mFlags & UI_AUTO_SIZE ) {
+		Size( mSize.x, GetSkinShapeSize().Height() );
+	}
 }
 
 void cUITextInput::AutoPadding() {
