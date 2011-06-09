@@ -86,16 +86,19 @@ void cUIDropDownList::ShowListBox() {
 		mListBox->Parent()->ScreenToControl( Pos );
 		mListBox->Pos( Pos );
 
-		eeRecti tPadding = mListBox->PaddingContainer();
+		if ( mListBox->Count() ) {
+			eeRecti tPadding = mListBox->PaddingContainer();
 
-		if ( mMinNumVisibleItems < mListBox->Count() )
-			mListBox->Size( mSize.Width(), (Int32)( mMinNumVisibleItems * mSize.Height() ) + tPadding.Top );
-		else
-			mListBox->Size( mSize.Width(), (Int32)( mListBox->Count() * mSize.Height() ) + tPadding.Top );
+			if ( mMinNumVisibleItems < mListBox->Count() )
+				mListBox->Size( mSize.Width(), (Int32)( mMinNumVisibleItems * mListBox->RowHeight() ) + tPadding.Top + tPadding.Bottom );
+			else {
+				mListBox->Size( mSize.Width(), (Int32)( mListBox->Count() * mListBox->RowHeight() ) + tPadding.Top + tPadding.Bottom );
+			}
 
-		Show();
+			Show();
 
-		mListBox->SetFocus();
+			mListBox->SetFocus();
+		}
 	} else {
 		Hide();
 	}

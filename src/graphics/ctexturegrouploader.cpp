@@ -113,11 +113,13 @@ void cTextureGroupLoader::LoadFromPack( cPack * Pack, const std::string& FilePac
 	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( FilePackPath ) ) {
 		mPack = Pack;
 
-		std::vector<Uint8> TempData;
+		cPack::PointerData PData;
 
-		Pack->ExtractFileToMemory( FilePackPath, TempData );
+		Pack->ExtractFileToMemory( FilePackPath, PData );
 
-		LoadFromMemory( reinterpret_cast<const Uint8*> ( &TempData[0] ), (Uint32)TempData.size(), FilePackPath );
+		LoadFromMemory( reinterpret_cast<const Uint8*> ( PData.Data ), PData.DataSize, FilePackPath );
+
+		eeSAFE_DELETE( PData.Data );
 	}
 }
 
@@ -197,6 +199,11 @@ void cTextureGroupLoader::CreateShapes() {
 				name = FileRemoveExtension( name );
 
 			mShapeGroup = eeNew( cShapeGroup, ( name ) );
+
+			std::string etgpath = FileRemoveExtension( path ) + ".etg";
+
+			mShapeGroup->Path( etgpath );
+
 			cShapeGroupManager::instance()->Add( mShapeGroup );
 		}
 
@@ -211,7 +218,7 @@ void cTextureGroupLoader::CreateShapes() {
 
 				eeRecti tRect( tSh->X, tSh->Y, tSh->X + tSh->Width, tSh->Y + tSh->Height );
 
-				cShape * tShape = eeNew( cShape, ( tTex->Id(), tRect, (eeFloat)tSh->DestWidth, (eeFloat)tSh->DestHeight, (eeFloat)tSh->OffsetX, (eeFloat)tSh->OffsetY, ShapeName ) );
+				cShape * tShape = eeNew( cShape, ( tTex->Id(), tRect, (eeFloat)tSh->DestWidth, (eeFloat)tSh->DestHeight, tSh->OffsetX, tSh->OffsetY, ShapeName ) );
 
 				//if ( tSh->Flags & HDR_SHAPE_FLAG_FLIPED )
 					// Should rotate the shape, but.. shape rotation is not stored.

@@ -355,6 +355,18 @@ bool cSprite::AddFrames( const std::vector<cShape*> Shapes ) {
 	return false;
 }
 
+bool cSprite::AddFramesByPatternId( const Uint32& ShapeId, const std::string& extension, cShapeGroup * SearchInShapeGroup ) {
+	std::vector<cShape*> Shapes = cShapeGroupManager::instance()->GetShapesByPatternId( ShapeId, extension, SearchInShapeGroup );
+
+	if ( Shapes.size() ) {
+		AddFrames( Shapes );
+
+		return true;
+	}
+
+	return false;
+}
+
 bool cSprite::AddFramesByPattern( const std::string& name, const std::string& extension, cShapeGroup * SearchInShapeGroup ) {
 	std::vector<cShape*> Shapes = cShapeGroupManager::instance()->GetShapesByPattern( name, extension, SearchInShapeGroup );
 
@@ -405,7 +417,7 @@ eeUint cSprite::AddFrame(const Uint32& TexId, const eeFloat& DestWidth, const ee
 	return 0;
 }
 
-bool cSprite::AddSubFrame(const Uint32& TexId, const eeUint& NumFrame, const eeUint& NumSubFrame, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeFloat& offSetX, const eeFloat& offSetY, const eeRecti& TexSector) {
+bool cSprite::AddSubFrame(const Uint32& TexId, const eeUint& NumFrame, const eeUint& NumSubFrame, const eeFloat& DestWidth, const eeFloat& DestHeight, const Int32& offSetX, const Int32& offSetY, const eeRecti& TexSector) {
 	if ( !cTextureFactory::instance()->TextureIdExists( TexId ) )
 		return false;
 
@@ -580,39 +592,39 @@ eeUint cSprite::GetSubFrame( const eeUint& SubFrame ) {
 	return SFN;
 }
 
-eeFloat cSprite::OffSetX() {
+Int32 cSprite::OffSetX() {
 	cShape* S = GetCurrentShape();
 
 	if ( S != NULL )
 		return S->OffsetX();
 
-	return 0.0f;
+	return 0;
 }
 
-void cSprite::OffSetX( const eeFloat& offsetx ) {
+void cSprite::OffSetX( const Int32& offsetx ) {
 	cShape* S = GetCurrentShape();
 
 	if ( S != NULL )
 		S->OffsetX( offsetx );
 }
 
-eeFloat cSprite::OffSetY() {
+Int32 cSprite::OffSetY() {
 	cShape* S = GetCurrentShape();
 
 	if ( S != NULL )
 		return S->OffsetY();
 
-	return 0.0f;
+	return 0;
 }
 
-void cSprite::OffSetY( const eeFloat& offsety ) {
+void cSprite::OffSetY( const Int32& offsety ) {
 	cShape* S = GetCurrentShape();
 
 	if ( S != NULL )
 		S->OffsetY( offsety );
 }
 
-void cSprite::OffSet( const eeVector2f& offset ) {
+void cSprite::OffSet( const eeVector2i& offset ) {
 	cShape* S = GetCurrentShape();
 
 	if ( S != NULL ) {

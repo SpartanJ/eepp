@@ -10,6 +10,8 @@ class cMap;
 
 class cObjectLayer : public cLayer {
 	public:
+		typedef std::list<cGameObject*> ObjList;
+
 		virtual ~cObjectLayer();
 
 		virtual void Draw( const eeVector2f &Offset = eeVector2f(0,0) );
@@ -19,10 +21,14 @@ class cObjectLayer : public cLayer {
 		virtual void AddGameObject( cGameObject * obj );
 
 		virtual void RemoveGameObject( cGameObject * obj );
+
+		virtual void RemoveGameObject( const eeVector2i& pos );
+
+		virtual cGameObject * GetObjectOver( const eeVector2i& pos );
+
+		virtual Uint32 GetObjectCount() const;
 	protected:
 		friend class cMap;
-
-		typedef std::list<cGameObject*> ObjList;
 
 		ObjList		mObjects;
 
@@ -31,6 +37,8 @@ class cObjectLayer : public cLayer {
 		void AllocateLayer();
 
 		void DeallocateLayer();
+
+		ObjList& GetObjectList();
 };
 
 }}

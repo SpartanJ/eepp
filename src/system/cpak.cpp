@@ -141,7 +141,7 @@ bool cPak::ExtractFileToMemory( const std::string& path, std::vector<Uint8>& dat
 	return Ret;
 }
 
-bool cPak::ExtractFileToMemory( const std::string& path, Uint8** data, Uint32* dataSize ) {
+bool cPak::ExtractFileToMemory( const std::string& path, PointerData& data ) {
 	Lock();
 
 	bool Ret = false;
@@ -149,11 +149,11 @@ bool cPak::ExtractFileToMemory( const std::string& path, Uint8** data, Uint32* d
 	Int32 Pos = Exists( path );
 
 	if ( Pos != -1 ) {
-		*dataSize = pakFiles[Pos].file_length;
-		*data = eeNew( Uint8, (*dataSize) );
+		data.DataSize	= pakFiles[Pos].file_length;
+		data.Data		= eeNewArray( Uint8, ( data.DataSize ) );
 
 		myPak.fs.seekg( pakFiles[Pos].file_position, std::ios::beg );
-		myPak.fs.read( reinterpret_cast<char*> ( *data ), pakFiles[Pos].file_length );
+		myPak.fs.read( reinterpret_cast<char*> ( data.Data ), pakFiles[Pos].file_length );
 
 		Ret = true;
 	}

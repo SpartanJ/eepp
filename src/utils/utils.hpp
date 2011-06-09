@@ -43,9 +43,6 @@ namespace EE { namespace Utils {
 	/** @return string hash */
 	Uint32 EE_API MakeHash( const Uint8 * str );
 
-	/** @return string hash */
-	Uint32 EE_API MakeHash( const EE::String& str );
-
 	/** Copy a file to memory
 	* @param path The file path
 	* @param data The vector to allocate the file in memory

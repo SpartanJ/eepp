@@ -16,17 +16,18 @@ cTTFFont::~cTTFFont() {
 }
 
 bool cTTFFont::LoadFromPack( cPack* Pack, const std::string& FilePackPath, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) {
-	std::vector<Uint8> TmpData;
+	bool Ret = false;
+	cPack::PointerData PData;
 
-	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, TmpData ) ) {
+	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, PData ) ) {
 		mFilepath = FilePackPath;
 
-		return LoadFromMemory( reinterpret_cast<Uint8*> (&TmpData[0]), (eeUint)TmpData.size(), Size, Style, VerticalDraw, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
+		Ret = LoadFromMemory( PData.Data, PData.DataSize, Size, Style, VerticalDraw, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
 	}
 
-	TmpData.clear();
+	eeSAFE_DELETE( PData.Data );
 
-	return false;
+	return Ret;
 }
 
 bool cTTFFont::LoadFromMemory( Uint8* TTFData, const eeUint& TTFDataSize, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) {

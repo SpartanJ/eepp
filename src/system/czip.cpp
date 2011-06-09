@@ -180,7 +180,7 @@ bool cZip::ExtractFileToMemory( const std::string& path, std::vector<Uint8>& dat
 	return Ret;
 }
 
-bool cZip::ExtractFileToMemory( const std::string& path, Uint8** data, Uint32* dataSize ) {
+bool cZip::ExtractFileToMemory( const std::string& path, PointerData& data ) {
 	Lock();
 
 	bool Ret = false;
@@ -196,10 +196,10 @@ bool cZip::ExtractFileToMemory( const std::string& path, Uint8** data, Uint32* d
 			struct zip_file * zf = zip_fopen_index( mZip, zs.index, 0 );
 
 			if ( NULL != zf ) {
-				*dataSize = (Uint32)zs.size;
-				*data = eeNew( Uint8, (*dataSize) );
+				data.DataSize	= (Uint32)zs.size;
+				data.Data		= eeNewArray( Uint8, ( data.DataSize ) );
 
-				Result = (Int32)zip_fread( zf, reinterpret_cast<void*> (&data[0]), (*dataSize) );
+				Result = (Int32)zip_fread( zf, (void*)data.Data, data.DataSize );
 
 				zip_fclose(zf);
 

@@ -15,6 +15,8 @@ class cGameObjectShapeEx : public cGameObjectShape {
 		virtual void Draw();
 
 		virtual Uint32 Type() const;
+
+		virtual void FlagSet( const Uint32& Flag );
 	protected:
 		EE_PRE_BLEND_FUNC	mBlend;
 		EE_RENDERTYPE		mRender;

@@ -222,6 +222,8 @@ class EE_API cSprite {
 		/** @see cShapeGroupManager::GetShapesByPattern */
 		bool AddFramesByPattern( const std::string& name, const std::string& extension = "", cShapeGroup * SearchInShapeGroup = NULL );
 
+		bool AddFramesByPatternId( const Uint32& ShapeId, const std::string& extension, cShapeGroup * SearchInShapeGroup );
+
 		/** Add a frame on an specific subframe to the sprite
 		* @param TexId The internal Texture Id
 		* @param NumFrame The Frame Number
@@ -233,7 +235,7 @@ class EE_API cSprite {
 		* @param TexSector The texture sector to be rendered ( default all the texture )
 		* @return True if success
 		*/
-		bool AddSubFrame( const Uint32& TexId, const eeUint& NumFrame, const eeUint& NumSubFrame, const eeFloat& DestWidth = 0, const eeFloat& DestHeight = 0, const eeFloat& offSetX = 0, const eeFloat& offSetY = 0, const eeRecti& TexSector = eeRecti(0,0,0,0) );
+		bool AddSubFrame( const Uint32& TexId, const eeUint& NumFrame, const eeUint& NumSubFrame, const eeFloat& DestWidth = 0, const eeFloat& DestHeight = 0, const Int32& offSetX = 0, const Int32& offSetY = 0, const eeRecti& TexSector = eeRecti(0,0,0,0) );
 
 		/** Add a frame on an specific subframe to the sprite
 		* @param Shape The Shape used in the frame
@@ -280,19 +282,19 @@ class EE_API cSprite {
 		eeQuad2f GetQuad();
 
 		/** @return The OffSetX of the current frame */
-		eeFloat OffSetX();
+		Int32 OffSetX();
 
 		/** Set the OffSetX of the current frame */
-		void OffSetX( const eeFloat& offsetx );
+		void OffSetX( const Int32& offsetx );
 
 		/** @return The OffSetY of the current frame */
-		eeFloat OffSetY();
+		Int32 OffSetY();
 
 		/** Set the OffSetY of the current frame */
-		void OffSetY( const eeFloat& offsety );
+		void OffSetY( const Int32& offsety );
 
 		/** Set the OffSet of the current frame */
-		void OffSet( const eeVector2f& offset );
+		void OffSet( const eeVector2i& offset );
 
 		/** Reverse the animation from last frame to first mFrames. */
 		void ReverseAnim( const bool& Reverse );

@@ -17,7 +17,7 @@ class EE_API cShape {
 
 		cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const std::string& Name = "" );
 
-		cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeFloat& OffsetX, const eeFloat& OffsetY, const std::string& Name = "" );
+		cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const Int32& OffsetX, const Int32& OffsetY, const std::string& Name = "" );
 
 		~cShape();
 
@@ -43,13 +43,13 @@ class EE_API cShape {
 
 		void DestHeight( const eeFloat& height );
 
-		const eeFloat& OffsetX() const;
+		const Int32& OffsetX() const;
 
-		void OffsetX( const eeFloat& offsetx );
+		void OffsetX( const Int32& offsetx );
 
-		const eeFloat& OffsetY() const;
+		const Int32& OffsetY() const;
 
-		void OffsetY( const eeFloat& offsety );
+		void OffsetY( const Int32& offsety );
 
 		void Draw( const eeFloat& X, const eeFloat& Y, const eeColorA& Color = eeColorA(), const eeFloat& Angle = 0.f, const eeFloat& Scale = 1.f, const EE_PRE_BLEND_FUNC& Blend = ALPHA_NORMAL, const EE_RENDERTYPE& Effect = RN_NORMAL, const bool& ScaleRendered = true );
 
@@ -100,8 +100,8 @@ class EE_API cShape {
 		eeRecti		mSrcRect;
 		eeFloat		mDestWidth;
 		eeFloat		mDestHeight;
-		eeFloat		mOffSetX;
-		eeFloat		mOffSetY;
+		Int32		mOffSetX;
+		Int32		mOffSetY;
 
 		void CreateUnnamed();
 };

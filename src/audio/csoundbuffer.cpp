@@ -59,12 +59,15 @@ bool cSoundBuffer::LoadFromFile(const std::string& Filename) {
 }
 
 bool cSoundBuffer::LoadFromPack( cPack* Pack, const std::string& FilePackPath ) {
-	std::vector<Uint8> TmpData;
+	bool Ret = false;
+	cPack::PointerData PData;
 
-	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, TmpData ) )
-		return LoadFromMemory( reinterpret_cast<const char*> ( &TmpData[0] ), TmpData.size() );
+	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, PData ) )
+		Ret = LoadFromMemory( reinterpret_cast<const char*> ( PData.Data ), PData.DataSize );
 
-	return false;
+	eeSAFE_DELETE( PData.Data );
+
+	return Ret;
 }
 
 bool cSoundBuffer::LoadFromMemory( const char* Data, std::size_t SizeInBytes ) {

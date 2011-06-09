@@ -630,10 +630,6 @@ Uint32 MakeHash( const std::string& str ) {
 	return MakeHash( reinterpret_cast<const Uint8*>( &str[0] ) );
 }
 
-Uint32 MakeHash( const EE::String& str ) {
-	return MakeHash( reinterpret_cast<const Uint8*>( str.data() ) );
-}
-
 Uint32 MakeHash( const Uint8 * str ) {
 	//! This is djb2 + sdbm mixed. This hash doesn't exists, but worked.
 	//! Since i found this pretty funny because i used this hash in a lot of projects and never found a collision, i'll let it stay here.

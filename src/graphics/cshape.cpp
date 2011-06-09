@@ -66,7 +66,7 @@ cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& Dest
 	CreateUnnamed();
 }
 
-cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeFloat& OffsetX, const eeFloat& OffsetY, const std::string& Name ) :
+cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const Int32& OffsetX, const Int32& OffsetY, const std::string& Name ) :
 	mPixels(NULL),
 	mAlpha(NULL),
 	mName( Name ),
@@ -143,19 +143,19 @@ void cShape::DestHeight( const eeFloat& height ) {
 	mDestHeight = height;
 }
 
-const eeFloat& cShape::OffsetX() const {
+const Int32& cShape::OffsetX() const {
 	return mOffSetX;
 }
 
-void cShape::OffsetX( const eeFloat& offsetx ) {
+void cShape::OffsetX( const Int32& offsetx ) {
 	mOffSetX = offsetx;
 }
 
-const eeFloat& cShape::OffsetY() const {
+const Int32& cShape::OffsetY() const {
 	return mOffSetY;
 }
 
-void cShape::OffsetY( const eeFloat& offsety ) {
+void cShape::OffsetY( const Int32& offsety ) {
 	mOffSetY = offsety;
 }
 

@@ -11,6 +11,7 @@ cGameObjectShapeEx::cGameObjectShapeEx( const Uint32& Flags, cShape * Shape, con
 	mColor( Color ),
 	mVertexColors( NULL )
 {
+	mRender = RenderTypeFromFlags();
 }
 
 cGameObjectShapeEx::~cGameObjectShapeEx()
@@ -28,6 +29,12 @@ void cGameObjectShapeEx::Draw() {
 		else
 			mShape->Draw( mPos.x, mPos.y, mColor, mAngle, mScale, mBlend, mRender );
 	}
+}
+
+void cGameObjectShapeEx::FlagSet( const Uint32& Flag ) {
+	mRender = RenderTypeFromFlags();
+
+	cGameObject::FlagSet( Flag );
 }
 
 }}

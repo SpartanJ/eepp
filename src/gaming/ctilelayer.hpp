@@ -14,11 +14,11 @@ class cTileLayer : public cLayer {
 
 		virtual void Update();
 
-		virtual void AddGameObject( cGameObject * obj, const eeVector2u& TilePos );
+		virtual void AddGameObject( cGameObject * obj, const eeVector2i& TilePos );
 
-		virtual void RemoveGameObject( const eeVector2u& TilePos );
+		virtual void RemoveGameObject( const eeVector2i& TilePos );
 
-		virtual cGameObject * GetGameObject( const eeVector2u& TilePos );
+		virtual cGameObject * GetGameObject( const eeVector2i& TilePos );
 	protected:
 		friend class cMap;
 

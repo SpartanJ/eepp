@@ -9,6 +9,8 @@ class cMap;
 
 class cLayer {
 	public:
+		typedef std::map<std::string, std::string> PropertiesMap;
+
 		virtual ~cLayer();
 
 		virtual void Draw( const eeVector2f& Offset = eeVector2f(0,0) ) = 0;
@@ -34,6 +36,16 @@ class cLayer {
 		const std::string& Name() const;
 
 		const Uint32& Id() const;
+
+		void AddProperty( std::string Text, std::string Value );
+
+		void EditProperty( std::string Text, std::string Value );
+
+		void RemoveProperty( std::string Text );
+
+		void ClearProperties();
+
+		PropertiesMap& GetProperties();
 	protected:
 		friend class cMap;
 
@@ -43,6 +55,7 @@ class cLayer {
 		eeVector2f		mOffset;
 		Uint32			mNameHash;
 		std::string		mName;
+		PropertiesMap	mProperties;
 
 		cLayer( cMap * map, Uint32 type, Uint32 flags, std::string name = "", eeVector2f offset = eeVector2f(0,0) );
 };

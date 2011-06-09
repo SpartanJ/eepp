@@ -21,6 +21,8 @@ class cGameObjectShape : public cGameObject {
 
 		virtual eeVector2f Pos() const;
 
+		virtual eeSize Size();
+
 		virtual void Pos( eeVector2f pos );
 
 		cShape * Shape() const;
@@ -28,6 +30,10 @@ class cGameObjectShape : public cGameObject {
 		void Shape( cShape * shape );
 
 		virtual Uint32 Type() const;
+
+		virtual Uint32 DataId();
+
+		virtual void DataId( Uint32 Id );
 	protected:
 		cShape *	mShape;
 		eeVector2f	mPos;

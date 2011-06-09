@@ -66,20 +66,6 @@ void cEETest::Init() {
 	run = ( mWindow->Created() && PAK.IsOpen() );
 
 	if ( run ) {
-		#ifdef EE_DEBUG
-		std::cout << "Size of Callback0: " << sizeof( cb::Callback0<void> ) << std::endl;
-		std::cout << "Size of cWaypoints: " << sizeof( cWaypoints ) << std::endl;
-		std::cout << "Size of UIEventsMap: " << sizeof( std::map< Uint32, std::map<Uint32, cUIControl::UIEventCallback> > ) << std::endl;
-		std::cout << "Size of eePolygon2f: " << sizeof(eePolygon2f) << std::endl;
-		std::cout << "Size of cTexture: " << sizeof(cTexture) << std::endl;
-		std::cout << "Size of cShape: " << sizeof(Graphics::cShape) << std::endl;
-		std::cout << "Size of cSprite: " << sizeof(cSprite) << std::endl;
-		std::cout << "Size of cUIControl: " << sizeof(cUIControl) << std::endl;
-		std::cout << "Size of cUIControlAnim: " << sizeof(cUIControlAnim) << std::endl;
-		std::cout << "Size of cUITextBox: " << sizeof(cUITextBox) << std::endl;
-		std::cout << "Size of cUIComplexControl: " << sizeof(cUIComplexControl) << std::endl;
-		#endif
-
 		SetScreen( 0 );
 
 		mWindow->Caption( "EE++ Test Application" );
@@ -880,7 +866,7 @@ void cEETest::LoadTextures() {
 			TLayer->AddGameObject(
 				eeNew(
 					cGameObjectShape, ( GObjFlags::GAMEOBJECT_STATIC, Tiles[ Rand.RandRange( 0, 5 ) ] )
-				), eeVector2u( x, y )
+				), eeVector2i( x, y )
 			);
 		}
 	}*/

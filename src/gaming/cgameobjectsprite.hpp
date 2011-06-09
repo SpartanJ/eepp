@@ -23,11 +23,19 @@ class cGameObjectSprite : public cGameObject {
 
 		virtual void Pos( eeVector2f pos );
 
+		virtual eeSize Size();
+
 		cSprite * Sprite() const;
 
 		void Sprite( cSprite * sprite );
 
 		virtual Uint32 Type() const;
+
+		virtual void FlagSet( const Uint32& Flag );
+
+		virtual Uint32 DataId();
+
+		virtual void DataId( Uint32 Id );
 	private:
 		cSprite *	mSprite;
 };

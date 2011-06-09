@@ -43,6 +43,11 @@ class cMapEditor {
 		cUIPushButton *		mBtnGOTypeAdd;
 		Uint32				mCurGOType;
 		Uint32				mCurGOFlags;
+		cUIComplexControl * mRPCont;
+		cUIComplexControl * mSGCont;
+		cUIComplexControl * mDICont;
+		cUICheckBox *		mChkDI;
+		cUITextInput *		mDataIdInput;
 
 		void WindowClose( const cUIEvent * Event );
 
@@ -98,7 +103,11 @@ class cMapEditor {
 
 		void ChkClickAnimated( const cUIEvent * Event );
 
+		void ChkClickDI( const cUIEvent * Event );
+
 		void OnMapMouseDown( const cUIEvent * Event );
+
+		void OnMapMouseClick( const cUIEvent * Event );
 
 		void OnLayerAdd( cUILayerNew * UILayer );
 
@@ -114,7 +123,19 @@ class cMapEditor {
 
 		void RemoveGameObjectFromTile();
 
+		void AddGameObject();
+
+		void RemoveGameObject();
+
 		cGameObject * CreateGameObject();
+
+		void MoveLayerUp();
+
+		void MoveLayerDown();
+
+		void RemoveLayer();
+
+		void RefreshLayersList();
 };
 
 }}}

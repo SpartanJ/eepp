@@ -50,7 +50,7 @@ class EE_API cZip : public cPack {
 		bool ExtractFileToMemory( const std::string& path, std::vector<Uint8>& data );
 
 		/** Extract a file to memory from the pakFile */
-		bool ExtractFileToMemory( const std::string& path, Uint8** data, Uint32* dataSize );
+		bool ExtractFileToMemory( const std::string& path, PointerData& data );
 
 		/** Check if a file exists in the pack file and return the number of the file, otherwise return -1. */
 		Int32 Exists( const std::string& path );

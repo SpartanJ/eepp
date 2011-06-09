@@ -172,14 +172,16 @@ void cTextureLoader::LoadFromPath() {
 }
 
 void cTextureLoader::LoadFromPack() {
-	std::vector<Uint8> TmpData;
+	cPack::PointerData PData;
 
-	if ( NULL != mPack && mPack->IsOpen() && mPack->ExtractFileToMemory( mFilepath, TmpData ) ) {
-		mImagePtr 	= reinterpret_cast<const Uint8*> (&TmpData[0]);
-		mSize 		= (Uint32)TmpData.size();
+	if ( NULL != mPack && mPack->IsOpen() && mPack->ExtractFileToMemory( mFilepath, PData ) ) {
+		mImagePtr	= PData.Data;
+		mSize		= PData.DataSize;
 
 		LoadFromMemory();
 	}
+
+	eeSAFE_DELETE( PData.Data );
 }
 
 void cTextureLoader::LoadFromMemory() {

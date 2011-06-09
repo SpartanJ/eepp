@@ -45,6 +45,27 @@ void cShapeGroupManager::PrintResources() {
 		(*it)->PrintNames();
 }
 
+std::vector<cShape*> cShapeGroupManager::GetShapesByPatternId( const Uint32& ShapeId, const std::string& extension, cShapeGroup * SearchInShapeGroup ) {
+	cShape * tShape 	= NULL;
+	std::string tName;
+
+	if ( NULL == SearchInShapeGroup )
+		tShape = GetShapeById( ShapeId );
+	else
+		tShape = SearchInShapeGroup->GetById( ShapeId );
+
+	if ( NULL != tShape ) {
+		if ( extension.size() )
+			tName = RemoveNumbersAtEnd( FileRemoveExtension( tShape->Name() ) ) + extension;
+		else
+			tName = tShape->Name();
+
+		return GetShapesByPattern( RemoveNumbersAtEnd( tShape->Name() ), "", SearchInShapeGroup );
+	}
+
+	return std::vector<cShape*>();
+}
+
 std::vector<cShape*> cShapeGroupManager::GetShapesByPattern( const std::string& name, const std::string& extension, cShapeGroup * SearchInShapeGroup ) {
 	std::vector<cShape*> 	Shapes;
 	std::string 			search;

@@ -41,17 +41,19 @@ cShader::cShader( const Uint32& Type, const char * Data, const Uint32& DataSize 
 }
 
 cShader::cShader( const Uint32& Type, cPack * Pack, const std::string& Filename ) {
+	cPack::PointerData PData;
+
 	Init( Type );
 
 	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( Filename ) ) {
-		std::vector<Uint8> TempData;
+		Pack->ExtractFileToMemory( Filename, PData );
 
-		Pack->ExtractFileToMemory( Filename, TempData );
-
-		SetSource( reinterpret_cast<char*> ( &TempData[0] ), (Uint32)TempData.size() );
+		SetSource( reinterpret_cast<char*> ( PData.Data ), PData.DataSize );
 	}
 
 	Compile();
+
+	eeSAFE_DELETE( PData.Data );
 }
 
 cShader::cShader( const Uint32& Type, const char ** Data, const Uint32& NumLines ) {

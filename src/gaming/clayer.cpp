@@ -61,5 +61,25 @@ const Uint32& cLayer::Id() const {
 	return mNameHash;
 }
 
+void cLayer::ClearProperties() {
+	mProperties.clear();
+}
+
+void cLayer::AddProperty( std::string Text, std::string Value ) {
+	mProperties[ Text ] = Value;
+}
+
+void cLayer::EditProperty( std::string Text, std::string Value ) {
+	mProperties[ Text ] = Value;
+}
+
+void cLayer::RemoveProperty( std::string Text ) {
+	mProperties.erase( Text );
+}
+
+cLayer::PropertiesMap& cLayer::GetProperties() {
+	return mProperties;
+}
+
 }}
 

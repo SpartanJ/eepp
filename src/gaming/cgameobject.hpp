@@ -3,6 +3,9 @@
 
 #include "base.hpp"
 #include "maphelper.hpp"
+#include "../graphics/renders.hpp"
+
+using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {
 
@@ -20,6 +23,8 @@ class cGameObject {
 
 		virtual void Pos( eeVector2f pos );
 
+		virtual eeSize Size();
+
 		virtual Uint32 Type() const;
 
 		bool IsType( const Uint32& type );
@@ -32,13 +37,19 @@ class cGameObject {
 
 		Uint32 FlagGet( const Uint32& Flag );
 
-		void FlagSet( const Uint32& Flag );
+		virtual void FlagSet( const Uint32& Flag );
 
 		void FlagClear( const Uint32& Flag );
 
 		Uint32 IsBlocked() const;
+
+		virtual Uint32 DataId();
+
+		virtual void DataId( Uint32 Id );
 	protected:
 		Uint32	mFlags;
+
+		virtual EE_RENDERTYPE RenderTypeFromFlags();
 };
 
 }}

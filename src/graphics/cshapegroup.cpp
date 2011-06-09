@@ -20,6 +20,14 @@ void cShapeGroup::Name( const std::string& name ) {
 	mId = MakeHash( mName );
 }
 
+const std::string& cShapeGroup::Path() const {
+	return mPath;
+}
+
+void cShapeGroup::Path( const std::string& path ) {
+	mPath = path;
+}
+
 const Uint32& cShapeGroup::Id() const {
 	return mId;
 }

@@ -14,8 +14,13 @@ using namespace EE::Window;
 
 namespace EE { namespace Gaming {
 
+#define MAP_LAYER_UNKNOWN 0xFFFFFFFF
+
 class cMap {
 	public:
+		typedef std::map<std::string, std::string>	PropertiesMap;
+		typedef std::list<std::string>				GOTypesList;		//! Special object types used in this map
+
 		cMap();
 
 		virtual ~cMap();
@@ -25,6 +30,8 @@ class cMap {
 		virtual cLayer * AddLayer( Uint32 Type, Uint32 flags, std::string name );
 
 		virtual cLayer * GetLayer( Uint32 index );
+
+		virtual Uint32 GetLayerIndex( cLayer * Layer );
 
 		virtual cLayer * GetLayerByHash( Uint32 hash );
 
@@ -76,9 +83,41 @@ class cMap {
 
 		Uint32 DrawGrid() const;
 
+		Uint32 DrawTileOver() const;
+
+		void DrawTileOver( const bool& draw );
+
 		void Reset();
 
-		const eeVector2u& GetMouseTilePos() const;
+		bool MoveLayerUp( cLayer * Layer );
+
+		bool MoveLayerDown( cLayer * Layer );
+
+		bool RemoveLayer( cLayer * Layer );
+
+		const eeVector2i& GetMouseTilePos() const;
+
+		const eeVector2i& GetMouseMapPos() const;
+
+		const eeSize& TotalSize() const;
+
+		void AddProperty( std::string Text, std::string Value );
+
+		void EditProperty( std::string Text, std::string Value );
+
+		void RemoveProperty( std::string Text );
+
+		void ClearProperties();
+
+		PropertiesMap& GetProperties();
+
+		void AddVirtualObjectType( const std::string& name );
+
+		void RemoveVirtualObjectType( const std::string& name );
+
+		void ClearVirtualObjectTypes();
+
+		GOTypesList& GetVirtualObjectTypes();
 	protected:
 		cWindow *		mWindow;
 		cLayer**		mLayers;
@@ -86,6 +125,7 @@ class cMap {
 		Uint32			mMaxLayers;
 		Uint32			mLayerCount;
 		eeSize			mSize;
+		eeSize			mPixelSize;
 		eeSize			mTileSize;
 		eeSize			mViewSize;
 		eeVector2f		mOffset;
@@ -93,7 +133,11 @@ class cMap {
 		eeVector2i		mStartTile;
 		eeVector2i		mEndTile;
 		eeVector2i		mMouseOverTile;
-		eeVector2u		mMouseOverTileFinal;
+		eeVector2i		mMouseOverTileFinal;
+		eeVector2i		mMouseMapPos;
+		eeVector2f		mOffsetFixed;
+		PropertiesMap	mProperties;
+		GOTypesList		mObjTypes;
 
 		cGameObject *	CreateGameObject( const Uint32& Type, const Uint32& Flags );
 
@@ -107,7 +151,11 @@ class cMap {
 
 		void			GridDraw();
 
+		void			MouseOverDraw();
+
 		void			DeleteLayers();
+
+		std::vector<std::string> GetShapeGroups();
 };
 
 }}

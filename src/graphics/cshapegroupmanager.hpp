@@ -26,6 +26,8 @@ class EE_API cShapeGroupManager : public tResourceManager<cShapeGroup>, public t
 		*/
 		std::vector<cShape*> GetShapesByPattern( const std::string& name, const std::string& extension = "", cShapeGroup * SearchInShapeGroup = NULL );
 
+		std::vector<cShape*> GetShapesByPatternId( const Uint32& ShapeId, const std::string& extension = "", cShapeGroup * SearchInShapeGroup = NULL );
+
 		void PrintResources();
 };
 
