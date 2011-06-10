@@ -54,6 +54,7 @@ cSprite * cGameObjectSprite::Sprite() const {
 void cGameObjectSprite::Sprite( cSprite * sprite ) {
 	eeSAFE_DELETE( mSprite );
 	mSprite = sprite;
+	mSprite->SetRenderType( RenderTypeFromFlags() );
 }
 
 void cGameObjectSprite::FlagSet( const Uint32& Flag ) {
@@ -68,12 +69,24 @@ Uint32 cGameObjectSprite::DataId() {
 }
 
 void cGameObjectSprite::DataId( Uint32 Id ) {
-	std::vector<cShape*> tShapeVec = cShapeGroupManager::instance()->GetShapesByPatternId( Id );
+	cSprite * tSprite = NULL;
 
-	if ( tShapeVec.size() ) {
-		cSprite * tSprite = eeNew( cSprite, () );
-		tSprite->CreateAnimation();
-		tSprite->AddFrames( tShapeVec );
+	if ( mFlags & GObjFlags::GAMEOBJECT_ANIMATED ) {
+		std::vector<cShape*> tShapeVec = cShapeGroupManager::instance()->GetShapesByPatternId( Id );
+
+		if ( tShapeVec.size() ) {
+			tSprite = eeNew( cSprite, () );
+			tSprite->CreateAnimation();
+			tSprite->AddFrames( tShapeVec );
+
+			Sprite( tSprite );
+		}
+	} else {
+		cShape * tShape = cShapeGroupManager::instance()->GetShapeById( Id );
+
+		if ( NULL != tShape ) {
+			Sprite( eeNew( cSprite, ( tShape ) ) );
+		}
 	}
 }
 

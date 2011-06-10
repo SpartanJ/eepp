@@ -56,7 +56,10 @@ void eePRINT( const char * format, ... ) {
 	#ifdef EE_COMPILER_MSVC
 	OutputDebugStringA( buf );
 	#else
-	printf("%s", buf );
+	if ( PrintDebugInLog && cLog::instance()->ConsoleOutput() && cLog::instance()->LiveWrite() )
+		cLog::instance()->Write( std::string( buf ) );
+	else
+		printf("%s", buf );
 	#endif
 
 	if ( PrintDebugInLog )

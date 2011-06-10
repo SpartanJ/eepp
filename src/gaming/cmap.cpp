@@ -181,8 +181,6 @@ void cMap::GridDraw() {
 		}
 	}
 
-	P.DrawBatch();
-
 	GLi->PopMatrix();
 }
 
@@ -361,14 +359,49 @@ void cMap::Move( const eeFloat& offsetx, const eeFloat& offsety ) {
 	Offset( eeVector2f( mOffset.x + offsetx, mOffset.y + offsety ) );
 }
 
-cGameObject * cMap::CreateGameObject( const Uint32& Type, const Uint32& Flags ) {
+cGameObject * cMap::CreateGameObject( const Uint32& Type, const Uint32& Flags, const Uint32& DataId ) {
 	switch ( Type ) {
 		case GAMEOBJECT_TYPE_SHAPE:
-			return eeNew( cGameObjectShape, ( Flags ) );
+		{
+			cGameObjectShape * tShape = eeNew( cGameObjectShape, ( Flags ) );
+
+			tShape->DataId( DataId );
+
+			return tShape;
+		}
 		case GAMEOBJECT_TYPE_SHAPEEX:
-			return eeNew( cGameObjectShapeEx, ( Flags ) );
+		{
+			cGameObjectShapeEx * tShapeEx = eeNew( cGameObjectShapeEx, ( Flags ) );
+
+			tShapeEx->DataId( DataId );
+
+			return tShapeEx;
+		}
 		case GAMEOBJECT_TYPE_SPRITE:
-			return eeNew( cGameObjectSprite, ( Flags ) );
+		{
+			cGameObjectSprite * tSprite = eeNew( cGameObjectSprite, ( Flags ) );
+
+			tSprite->DataId( DataId );
+
+			return tSprite;
+		}
+		default:
+		{
+			if ( mCreateGOCb.IsSet() ) {
+				return mCreateGOCb( Type, Flags, DataId );
+			} else {
+				cGameObjectVirtual * tVirtual;
+				cShape * tIsShape = cShapeGroupManager::instance()->GetShapeById( DataId );
+
+				if ( NULL != tIsShape ) {
+					tVirtual = eeNew( cGameObjectVirtual, ( tIsShape, Flags, Type ) );
+				} else {
+					tVirtual = eeNew( cGameObjectVirtual, ( DataId, Flags, Type ) );
+				}
+
+				return tVirtual;
+			}
+		}
 	}
 
 	return NULL;
@@ -487,6 +520,10 @@ cMap::GOTypesList& cMap::GetVirtualObjectTypes() {
 	return mObjTypes;
 }
 
+void cMap::SetCreateGameObjectCallback( const CreateGOCb& Cb ) {
+	mCreateGOCb = Cb;
+}
+
 #define MAP_PROPERTY_SIZE			(64)
 #define LAYER_NAME_SIZE				(64)
 #define MAP_SHAPEGROUP_PATH_SIZE	(128)
@@ -508,6 +545,8 @@ typedef struct sMapHdrS {
 	Uint32	Magic;
 	Uint32	SizeX;
 	Uint32	SizeY;
+	Uint32	TileSizeX;
+	Uint32	TileSizeY;
 	Uint32	MaxLayers;
 	Uint32	LayerCount;
 	Uint32	Flags;
@@ -540,26 +579,145 @@ typedef struct sMapObjGOHdrS {
 	Int32	PosY;
 } sMapObjGOHdr;
 
-void cMap::Load( const std::string& path ) {
+bool cMap::Load( const std::string& path ) {
+	if ( FileExists( path ) ) {
+		sMapHdr MapHdr;
+		Uint32 i, z;
 
-}
+		std::fstream fs ( path.c_str() , std::ios::in | std::ios::binary );
 
-std::vector<std::string> cMap::GetShapeGroups() {
-	cShapeGroupManager * SGM = cShapeGroupManager::instance();
-	std::list<cShapeGroup*>& Res = SGM->GetResources();
+		if ( fs.is_open() ) {
+			fs.read( reinterpret_cast<char*> (&MapHdr), sizeof(sMapHdr) );
 
-	std::vector<std::string> items;
+			if ( MapHdr.Magic == ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'M' << 16 ) | ( 'P' << 24 ) ) ) {
+				Create( eeSize( MapHdr.SizeX, MapHdr.SizeY ), MapHdr.MaxLayers, eeSize( MapHdr.TileSizeX, MapHdr.TileSizeY ), MapHdr.Flags );
 
-	//! Ugly ugly ugly, but i don't see another way
-	Uint32 Restricted1 = MakeHash( std::string( "global" ) );
-	Uint32 Restricted2 = MakeHash( UI::cUIThemeManager::instance()->DefaultTheme()->ShapeGroup()->Name() );
+				//! Load Properties
+				if ( MapHdr.PropertyCount ) {
+					sPropertyHdr tProp[ MapHdr.PropertyCount ];
+					fs.read( reinterpret_cast<char*>( &tProp[0] ), sizeof(sPropertyHdr) * MapHdr.PropertyCount );
 
-	for ( std::list<cShapeGroup*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
-		if ( (*it)->Id() != Restricted1 && (*it)->Id() != Restricted2 )
-			items.push_back( (*it)->Path() );
+					for ( i = 0; i < MapHdr.PropertyCount; i++ ) {
+						AddProperty( std::string( tProp[i].Name ), std::string( tProp[i].Value ) );
+					}
+				}
+
+				//! Load Shape Groups
+				if ( MapHdr.ShapeGroupCount ) {
+					sMapShapeGroup tSG[ MapHdr.ShapeGroupCount ];
+					fs.read( reinterpret_cast<char*>( &tSG[0] ), sizeof(sMapShapeGroup) * MapHdr.ShapeGroupCount );
+
+					std::vector<std::string> ShapeGroups;
+
+					for ( i = 0; i < MapHdr.ShapeGroupCount; i++ ) {
+						ShapeGroups.push_back( std::string( tSG[i].Path ) );
+					}
+
+					//! Load the Texture groups if needed
+				}
+
+				//! Load Virtual Object Types
+				if ( MapHdr.VirtualObjectTypesCount ) {
+					sVirtualObj tVObj[ MapHdr.VirtualObjectTypesCount ];
+					fs.read( reinterpret_cast<char*>( &tVObj[0] ), sizeof(sVirtualObj) * MapHdr.VirtualObjectTypesCount );
+
+					for ( i = 0; i < MapHdr.VirtualObjectTypesCount; i++ ) {
+						AddVirtualObjectType( std::string( tVObj[i].Name ) );
+					}
+				}
+
+				//! Load Layers
+				if ( MapHdr.LayerCount ) {
+					sLayerHdr tLayersHdr[ MapHdr.LayerCount ];
+					sLayerHdr * tLayerHdr;
+
+					fs.read( reinterpret_cast<char*>( &tLayersHdr[0] ), sizeof(sLayerHdr) * MapHdr.LayerCount );
+
+					for ( i = 0; i < MapHdr.LayerCount; i++ ) {
+						tLayerHdr = &(tLayersHdr[i]);
+
+						cLayer * tLayer = AddLayer( tLayerHdr->Type, tLayerHdr->Flags, std::string( tLayerHdr->Name ) );
+
+						tLayer->Offset( eeVector2f( (eeFloat)tLayerHdr->OffsetX, (eeFloat)tLayerHdr->OffsetY ) );
+
+						sPropertyHdr tProps[ tLayerHdr->PropertyCount ];
+						fs.read( reinterpret_cast<char*>( &tProps[0] ), sizeof(sPropertyHdr) * tLayerHdr->PropertyCount );
+
+						for ( z = 0; z < tLayerHdr->PropertyCount; z++ ) {
+							tLayer->AddProperty( std::string( tProps[z].Name ), std::string( tProps[z].Value ) );
+						}
+					}
+
+					bool ThereIsTiled = false;
+
+					for ( i = 0; i < mLayerCount; i++ ) {
+						if ( NULL != mLayers[i] && mLayers[i]->Type() == MAP_LAYER_TILED ) {
+							ThereIsTiled = true;
+						}
+					}
+
+					Int32 x, y;
+					Uint32 tReadFlag = 0;
+					cTileLayer * tTLayer;
+					cGameObject * tGO;
+
+					if ( ThereIsTiled ) {
+						//! First we read the tiled layers.
+						for ( y = 0; y < mSize.y; y++ ) {
+							for ( x = 0; x < mSize.x; x++ ) {
+
+								//! Read the current tile flags
+								fs.read( reinterpret_cast<char*> ( &tReadFlag ), sizeof(Uint32) );
+
+								//! Read every game object header corresponding to this tile
+								for ( i = 0; i < mLayerCount; i++ ) {
+									if ( tReadFlag & ( 1 << i ) ) {
+										tTLayer = reinterpret_cast<cTileLayer*> ( mLayers[i] );
+
+										sMapTileGOHdr tTGOHdr;
+										fs.read( reinterpret_cast<char*> ( &tTGOHdr ), sizeof(sMapTileGOHdr) );
+
+										tGO = CreateGameObject( tTGOHdr.Type, tTGOHdr.Flags, tTGOHdr.Id );
+
+										tTLayer->AddGameObject( tGO, eeVector2i( x, y ) );
+									}
+								}
+							}
+						}
+					}
+
+					//! Load the game objects from the object layers
+					cObjectLayer * tOLayer;
+
+					for ( i = 0; i < mLayerCount; i++ ) {
+						if ( NULL != mLayers[i] && mLayers[i]->Type() == MAP_LAYER_OBJECT ) {
+							tLayerHdr	= &( tLayersHdr[i] );
+							tOLayer		= reinterpret_cast<cObjectLayer*> ( mLayers[i] );
+
+							sMapObjGOHdr tOGOsHdr[ tLayerHdr->ObjectCount ];
+							sMapObjGOHdr * tOGOHdr;
+
+							fs.read( reinterpret_cast<char*> ( &tOGOsHdr ), sizeof(sMapObjGOHdr) * tLayerHdr->ObjectCount );
+
+							for ( z = 0; z < tLayerHdr->ObjectCount; z++ ) {
+								tOGOHdr = &( tOGOsHdr[z] );
+
+								tGO = CreateGameObject( tOGOHdr->Type, tOGOHdr->Flags, tOGOHdr->Id );
+
+								tGO->Pos( eeVector2f( tOGOHdr->PosX, tOGOHdr->PosY ) );
+
+								tOLayer->AddGameObject( tGO );
+							}
+						}
+					}
+				}
+
+				return true;
+			}
+		}
 	}
 
-	return items;
+	return false;
 }
 
 void cMap::Save( const std::string& path ) {
@@ -574,6 +732,8 @@ void cMap::Save( const std::string& path ) {
 	MapHdr.MaxLayers				= mMaxLayers;
 	MapHdr.SizeX					= mSize.Width();
 	MapHdr.SizeY					= mSize.Height();
+	MapHdr.TileSizeX				= mTileSize.Width();
+	MapHdr.TileSizeY				= mTileSize.Height();
 	MapHdr.LayerCount				= mLayerCount;
 	MapHdr.PropertyCount			= mProperties.size();
 	MapHdr.ShapeGroupCount			= ShapeGroups.size();
@@ -584,13 +744,6 @@ void cMap::Save( const std::string& path ) {
 	if ( fs.is_open() ) {
 		//! Writes the map header
 		fs.write( reinterpret_cast<const char*> ( &MapHdr ), sizeof(sMapHdr) );
-
-		//! Writes the layers type order ( because the object layers will be saved separately
-		for ( i = 0; i < mLayerCount; i++ ) {
-			if ( NULL != mLayers[i] ) {
-				fs.write( reinterpret_cast<const char*> ( &mLayers[i]->Type() ), sizeof(Uint32) );
-			}
-		}
 
 		//! Writes the properties of the map
 		for ( cMap::PropertiesMap::iterator it = mProperties.begin(); it != mProperties.end(); it++ ) {
@@ -640,7 +793,11 @@ void cMap::Save( const std::string& path ) {
 			tLayerH.Flags			= tLayer->Flags();
 			tLayerH.OffsetX			= tLayer->Offset().x;
 			tLayerH.OffsetY			= tLayer->Offset().y;
-			tLayerH.ObjectCount		= 0;
+
+			if ( MAP_LAYER_OBJECT == tLayerH.Type )
+				tLayerH.ObjectCount = reinterpret_cast<cObjectLayer*> ( tLayer )->GetObjectCount();
+			else
+				tLayerH.ObjectCount		= 0;
 
 			cLayer::PropertiesMap& tLayerProp = tLayer->GetProperties();
 
@@ -661,6 +818,14 @@ void cMap::Save( const std::string& path ) {
 			}
 		}
 
+		bool ThereIsTiled = false;
+
+		for ( i = 0; i < mLayerCount; i++ ) {
+			if ( NULL != mLayers[i] && mLayers[i]->Type() == MAP_LAYER_TILED ) {
+				ThereIsTiled = true;
+			}
+		}
+
 		//! This method is slow, but allows to save big maps with little space needed, i'll add an alternative save method ( just plain layer -> tile object saving )
 		Int32 x, y;
 		Uint32 tReadFlag = 0, z;
@@ -669,120 +834,125 @@ void cMap::Save( const std::string& path ) {
 
 		cGameObject * tObjects[ mLayerCount ];
 
-		//! First we save the tiled layers.
-		for ( y = 0; y < mSize.y; y++ ) {
-			for ( x = 0; x < mSize.x; x++ ) {
-				//! Reset Layer Read Flags and temporal objects
-				tReadFlag		= 0;
+		if ( ThereIsTiled ) {
+			//! First we save the tiled layers.
+			for ( y = 0; y < mSize.y; y++ ) {
+				for ( x = 0; x < mSize.x; x++ ) {
+					//! Reset Layer Read Flags and temporal objects
+					tReadFlag		= 0;
 
-				for ( z = 0; z < mLayerCount; z++ )
-					tObjects[z] = NULL;
+					for ( z = 0; z < mLayerCount; z++ )
+						tObjects[z] = NULL;
 
-				//! Look at every layer if it's some data on the current tile, in that case it will write a bit flag to
-				//! inform that it's an object on the current tile layer, and it will store a temporal reference to the
-				//! object to write layer the object header information
-				for ( i = 0; i < mLayerCount; i++ ) {
-					tLayer = mLayers[i];
+					//! Look at every layer if it's some data on the current tile, in that case it will write a bit flag to
+					//! inform that it's an object on the current tile layer, and it will store a temporal reference to the
+					//! object to write layer the object header information
+					for ( i = 0; i < mLayerCount; i++ ) {
+						tLayer = mLayers[i];
 
-					if ( NULL != tLayer && tLayer->Type() == MAP_LAYER_TILED ) {
-						tTLayer = reinterpret_cast<cTileLayer*> ( tLayer );
+						if ( NULL != tLayer && tLayer->Type() == MAP_LAYER_TILED ) {
+							tTLayer = reinterpret_cast<cTileLayer*> ( tLayer );
 
-						tObj = tTLayer->GetGameObject( eeVector2i( x, y ) );
+							tObj = tTLayer->GetGameObject( eeVector2i( x, y ) );
 
-						if ( NULL != tObj ) {
-							tReadFlag |= 1 << i;
+							if ( NULL != tObj ) {
+								tReadFlag |= 1 << i;
 
-							tObjects[i] = tObj;
+								tObjects[i] = tObj;
+							}
 						}
 					}
-				}
 
-				//! Writes the current tile flags
-				fs.write( reinterpret_cast<const char*> ( &tReadFlag ), sizeof(Uint32) );
+					//! Writes the current tile flags
+					fs.write( reinterpret_cast<const char*> ( &tReadFlag ), sizeof(Uint32) );
 
-				//! Writes every game object header corresponding to this tile
-				for ( i = 0; i < mLayerCount; i++ ) {
-					if ( tReadFlag & ( 1 << i ) ) {
-						tObj = tObjects[i];
+					//! Writes every game object header corresponding to this tile
+					for ( i = 0; i < mLayerCount; i++ ) {
+						if ( tReadFlag & ( 1 << i ) ) {
+							tObj = tObjects[i];
 
-						sMapTileGOHdr tTGOHdr;
+							sMapTileGOHdr tTGOHdr;
 
-						//! The DataId should be the Shape hash name ( at least in the cases of type Shape, ShapeEx and Sprite.
-						tTGOHdr.Id		= tObj->DataId();
+							//! The DataId should be the Shape hash name ( at least in the cases of type Shape, ShapeEx and Sprite.
+							tTGOHdr.Id		= tObj->DataId();
 
-						//! If the object type is virtual, means that the real type is stored elsewhere.
-						if ( tObj->Type() != GAMEOBJECT_TYPE_VIRTUAL ) {
-							tTGOHdr.Type	= tObj->Type();
-						} else {
-							cGameObjectVirtual * tObjV = reinterpret_cast<cGameObjectVirtual*> ( tObj );
+							//! If the object type is virtual, means that the real type is stored elsewhere.
+							if ( tObj->Type() != GAMEOBJECT_TYPE_VIRTUAL ) {
+								tTGOHdr.Type	= tObj->Type();
+							} else {
+								cGameObjectVirtual * tObjV = reinterpret_cast<cGameObjectVirtual*> ( tObj );
 
-							tTGOHdr.Type	= tObjV->RealType();
+								tTGOHdr.Type	= tObjV->RealType();
+							}
+
+							tTGOHdr.Flags	= tObj->Flags();
+
+							fs.write( reinterpret_cast<const char*> ( &tTGOHdr ), sizeof(sMapTileGOHdr) );
 						}
-
-						tTGOHdr.Flags	= tObj->Flags();
-
-						fs.write( reinterpret_cast<const char*> ( &tTGOHdr ), sizeof(sMapTileGOHdr) );
 					}
 				}
 			}
 		}
 
 		//! Then we save the Object layers.
-		std::list<cObjectLayer*> mObjLayers;
 		cObjectLayer * tOLayer;
 
 		for ( i = 0; i < mLayerCount; i++ ) {
 			tLayer = mLayers[i];
 
 			if ( NULL != tLayer && tLayer->Type() == MAP_LAYER_OBJECT ) {
-				mObjLayers.push_back( reinterpret_cast<cObjectLayer*> ( tLayer ) );
-			}
-		}
+				tOLayer = reinterpret_cast<cObjectLayer*> ( tLayer );
 
-		for ( std::list<cObjectLayer*>::iterator oit = mObjLayers.begin(); oit != mObjLayers.end(); oit++ ) {
-			tOLayer = (*oit);
+				cObjectLayer::ObjList ObjList = tOLayer->GetObjectList();
 
-			sLayerHdr tLayerH;
+				for ( cObjectLayer::ObjList::iterator MapObjIt = ObjList.begin(); MapObjIt != ObjList.end(); MapObjIt++ ) {
+					tObj = (*MapObjIt);
 
-			memset( tLayerH.Name, 0, LAYER_NAME_SIZE );
+					sMapObjGOHdr tOGOHdr;
 
-			StrCopy( tLayerH.Name, tOLayer->Name().c_str(), LAYER_NAME_SIZE );
+					//! The DataId should be the Shape hash name ( at least in the cases of type Shape, ShapeEx and Sprite.
+					tOGOHdr.Id		= tObj->DataId();
 
-			tLayerH.Type			= tOLayer->Type();
-			tLayerH.Flags			= tOLayer->Flags();
-			tLayerH.OffsetX			= tOLayer->Offset().x;
-			tLayerH.OffsetY			= tOLayer->Offset().y;
-			tLayerH.ObjectCount		= tOLayer->GetObjectCount();
+					//! If the object type is virtual, means that the real type is stored elsewhere.
+					if ( tObj->Type() != GAMEOBJECT_TYPE_VIRTUAL ) {
+						tOGOHdr.Type	= tObj->Type();
+					} else {
+						cGameObjectVirtual * tObjV = reinterpret_cast<cGameObjectVirtual*> ( tObj );
 
-			fs.write( reinterpret_cast<const char*> ( &tLayerH ), sizeof(sLayerHdr) );
+						tOGOHdr.Type	= tObjV->RealType();
+					}
 
-			cObjectLayer::ObjList ObjList = tOLayer->GetObjectList();
+					tOGOHdr.Flags	= tObj->Flags();
 
-			for ( cObjectLayer::ObjList::iterator MapObjIt = ObjList.begin(); MapObjIt != ObjList.end(); MapObjIt++ ) {
-				tObj = (*MapObjIt);
+					tOGOHdr.PosX	= (Int32)tObj->Pos().x;
 
-				sMapTileGOHdr tTGOHdr;
+					tOGOHdr.PosY	= (Int32)tObj->Pos().y;
 
-				//! The DataId should be the Shape hash name ( at least in the cases of type Shape, ShapeEx and Sprite.
-				tTGOHdr.Id		= tObj->DataId();
-
-				//! If the object type is virtual, means that the real type is stored elsewhere.
-				if ( tObj->Type() != GAMEOBJECT_TYPE_VIRTUAL ) {
-					tTGOHdr.Type	= tObj->Type();
-				} else {
-					cGameObjectVirtual * tObjV = reinterpret_cast<cGameObjectVirtual*> ( tObj );
-
-					tTGOHdr.Type	= tObjV->RealType();
+					fs.write( reinterpret_cast<const char*> ( &tOGOHdr ), sizeof(sMapObjGOHdr) );
 				}
-
-				tTGOHdr.Flags	= tObj->Flags();
-
-				fs.write( reinterpret_cast<const char*> ( &tTGOHdr ), sizeof(sMapTileGOHdr) );
 			}
 		}
 
 		fs.close();
 	}
+}
+
+std::vector<std::string> cMap::GetShapeGroups() {
+	cShapeGroupManager * SGM = cShapeGroupManager::instance();
+	std::list<cShapeGroup*>& Res = SGM->GetResources();
+
+	std::vector<std::string> items;
+
+	//! Ugly ugly ugly, but i don't see another way
+	Uint32 Restricted1 = MakeHash( std::string( "global" ) );
+	Uint32 Restricted2 = MakeHash( UI::cUIThemeManager::instance()->DefaultTheme()->ShapeGroup()->Name() );
+
+	for ( std::list<cShapeGroup*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
+		if ( (*it)->Id() != Restricted1 && (*it)->Id() != Restricted2 )
+			items.push_back( (*it)->Path() );
+	}
+
+	return items;
 }
 
 }}

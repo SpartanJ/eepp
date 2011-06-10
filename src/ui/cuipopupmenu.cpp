@@ -20,7 +20,7 @@ void cUIPopUpMenu::SetTheme( cUITheme * Theme ) {
 }
 
 bool cUIPopUpMenu::Show() {
-	if ( !Visible() ) {
+	if ( !Visible() || 0.f == mAlpha ) {
 		Enabled( true );
 		Visible( true );
 		ToFront();

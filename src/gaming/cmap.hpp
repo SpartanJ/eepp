@@ -20,6 +20,7 @@ class cMap {
 	public:
 		typedef std::map<std::string, std::string>	PropertiesMap;
 		typedef std::list<std::string>				GOTypesList;		//! Special object types used in this map
+		typedef cb::Callback3< cGameObject *, const Uint32&, const Uint32&, const Uint32&>		CreateGOCb;
 
 		cMap();
 
@@ -37,7 +38,7 @@ class cMap {
 
 		virtual cLayer * GetLayer( const std::string& name );
 
-		virtual void Load( const std::string& path );
+		virtual bool Load( const std::string& path );
 
 		virtual void Save( const std::string& path );
 
@@ -118,6 +119,8 @@ class cMap {
 		void ClearVirtualObjectTypes();
 
 		GOTypesList& GetVirtualObjectTypes();
+
+		void SetCreateGameObjectCallback( const CreateGOCb& Cb );
 	protected:
 		cWindow *		mWindow;
 		cLayer**		mLayers;
@@ -138,8 +141,10 @@ class cMap {
 		eeVector2f		mOffsetFixed;
 		PropertiesMap	mProperties;
 		GOTypesList		mObjTypes;
+		CreateGOCb		mCreateGOCb;
 
-		cGameObject *	CreateGameObject( const Uint32& Type, const Uint32& Flags );
+
+		virtual cGameObject *	CreateGameObject( const Uint32& Type, const Uint32& Flags, const Uint32& DataId = 0 );
 
 		eeVector2f		FixOffset();
 
