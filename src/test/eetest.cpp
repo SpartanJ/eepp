@@ -655,7 +655,7 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 		MultiViewportMode = !MultiViewportMode;
 	} else if ( "Open..." == txt ) {
 		CreateCommonDialog();
-	} else if ( "New" ) {
+	} else if ( "New" == txt ) {
 		if ( 0 == Screen ) {
 			ChangeDemo( 0 );
 		}

@@ -471,6 +471,8 @@ void cMapEditor::MapOpen( const cUIEvent * Event ) {
 	mUIMap->Map()->Load( CDL->GetFullPath() );
 
 	MapCreated();
+
+	RefreshLayersList();
 }
 
 void cMapEditor::FileMenuClick( const cUIEvent * Event ) {
