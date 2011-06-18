@@ -62,10 +62,7 @@ eeVector2i cWindowNull::Position() {
 	return eeVector2i();
 }
 
-void cWindowNull::Size( const Uint32& Width, const Uint32& Height ) {
-}
-
-void cWindowNull::Size( const Uint16& Width, const Uint16& Height, const bool& Windowed ) {
+void cWindowNull::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 }
 
 void cWindowNull::SwapBuffers() {

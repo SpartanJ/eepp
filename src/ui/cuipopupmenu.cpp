@@ -23,12 +23,15 @@ bool cUIPopUpMenu::Show() {
 	if ( !Visible() || 0.f == mAlpha ) {
 		Enabled( true );
 		Visible( true );
+
 		ToFront();
 
-		if ( 255.f == Alpha() )
-			StartAlphaAnim( 0.f, 255.f, cUIThemeManager::instance()->ControlsFadeInTime() );
-		else
-			CreateFadeIn( cUIThemeManager::instance()->ControlsFadeInTime() );
+		if ( cUIThemeManager::instance()->DefaultEffectsEnabled() ) {
+			if ( 255.f == Alpha() )
+				StartAlphaAnim( 0.f, 255.f, cUIThemeManager::instance()->ControlsFadeInTime() );
+			else
+				CreateFadeIn( cUIThemeManager::instance()->ControlsFadeInTime() );
+		}
 
 		SetFocus();
 
@@ -41,6 +44,12 @@ bool cUIPopUpMenu::Show() {
 bool cUIPopUpMenu::Hide() {
 	if ( Visible() ) {
 		if ( !FadingOut() ) {
+			if ( NULL != mItemSelected )
+				mItemSelected->SetSkinState( cUISkinState::StateNormal );
+
+			mItemSelected		= NULL;
+			mItemSelectedIndex	= 0xFFFFFFFF;
+
 			if ( cUIThemeManager::instance()->DefaultEffectsEnabled() ) {
 				DisableFadeOut( cUIThemeManager::instance()->ControlsFadeOutTime() );
 			} else {
@@ -48,12 +57,6 @@ bool cUIPopUpMenu::Hide() {
 				Visible( false );
 			}
 		}
-
-		if ( NULL != mItemSelected )
-			mItemSelected->SetSkinState( cUISkinState::StateNormal );
-
-		mItemSelected		= NULL;
-		mItemSelectedIndex	= 0xFFFFFFFF;
 
 		return true;
 	}

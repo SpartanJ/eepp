@@ -170,10 +170,6 @@ Uint32 cUIWinMenu::OnMessage( const cUIMessage * Msg ) {
 				tbut->ControlToScreen( pos );
 				tpop->Pos( pos );
 
-				if ( NULL != mCurrentMenu && tpop != mCurrentMenu ) {
-					mCurrentMenu->Hide();
-				}
-
 				if ( Msg->Msg() == cUIMessage::MsgMouseEnter ) {
 					if ( NULL != mCurrentMenu ) {
 						mCurrentMenu = tpop;

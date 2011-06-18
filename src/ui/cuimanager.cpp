@@ -10,6 +10,7 @@ cUIManager::cUIManager() :
 	mFocusControl( NULL ),
 	mOverControl( NULL ),
 	mDownControl( NULL ),
+	mLossFocusControl( NULL ),
 	mCbId(-1),
 	mResizeCb(0),
 	mFlags( 0 ),
@@ -129,14 +130,18 @@ cUIControl * cUIManager::FocusControl() const {
 	return mFocusControl;
 }
 
+cUIControl * cUIManager::LossFocusControl() const {
+	return mLossFocusControl;
+}
+
 void cUIManager::FocusControl( cUIControl * Ctrl ) {
 	if ( NULL != Ctrl && Ctrl != mFocusControl ) {
-		cUIControl * CtrlFocusLoss = mFocusControl;
+		mLossFocusControl = mFocusControl;
 
 		mFocusControl = Ctrl;
 
-		CtrlFocusLoss->OnFocusLoss();
-		SendMsg( CtrlFocusLoss, cUIMessage::MsgFocusLoss );
+		mLossFocusControl->OnFocusLoss();
+		SendMsg( mLossFocusControl, cUIMessage::MsgFocusLoss );
 
 		mFocusControl->OnFocus();
 		SendMsg( mFocusControl, cUIMessage::MsgFocus );

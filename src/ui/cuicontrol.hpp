@@ -82,6 +82,7 @@ class EE_API cUIControl {
 
 		bool IsType( const Uint32& Type ) const;
 
+		//! This exists because i want to avoid dynamic_cast if it's possible. It's ugly, i don't like the solution, but, works.
 		virtual bool InheritsFrom( const Uint32 Type );
 
 		bool IsTypeOrInheritsFrom( const Uint32 Type );

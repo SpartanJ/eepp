@@ -449,7 +449,7 @@ void cUIMenu::TrySelect( cUIControl * Ctrl, bool Up ) {
 			if ( Index != 0xFFFFFFFF ) {
 				if ( Up ) {
 					if ( Index > 0 ) {
-						for ( Uint32 i = Index - 1; i >= 0; i-- ) {
+						for ( Int32 i = (Int32)Index - 1; i >= 0; i-- ) {
 							if ( !mItems[i]->IsTypeOrInheritsFrom( UI_TYPE_SEPARATOR ) ) {
 								SetItemSelected( mItems[i] );
 								return;

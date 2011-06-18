@@ -613,10 +613,13 @@ void cTexturePacker::CreateShapesHdr( cTexturePacker * Packer, std::vector<sShap
 	Shapes.clear();
 
 	sShapeHdr tShapeHdr;
+	Uint32 c = 0;
 
 	std::list<cTexturePackerTex> tTextures = *(Packer->GetTexturePackPtr());
 	std::list<cTexturePackerTex>::iterator it;
 	cTexturePackerTex * tTex;
+
+	Shapes.resize( tTextures.size() );
 
 	for ( it = tTextures.begin(); it != tTextures.end(); it++ ) {
 		tTex = &(*it);
@@ -627,6 +630,9 @@ void cTexturePacker::CreateShapesHdr( cTexturePacker * Packer, std::vector<sShap
 			memset( tShapeHdr.Name, 0, HDR_NAME_SIZE );
 
 			StrCopy( tShapeHdr.Name, name.c_str(), HDR_NAME_SIZE );
+
+			if ( !mSaveExtensions )
+				name = FileRemoveExtension( name );
 
 			tShapeHdr.ResourceID	= MakeHash( name );
 			tShapeHdr.Width 		= tTex->Width();
@@ -644,7 +650,9 @@ void cTexturePacker::CreateShapesHdr( cTexturePacker * Packer, std::vector<sShap
 			if ( tTex->Flipped() )
 				tShapeHdr.Flags |= HDR_SHAPE_FLAG_FLIPED;
 
-			fs->write( reinterpret_cast<const char*> (&tShapeHdr), sizeof(sShapeHdr) );
+			Shapes[c] = tShapeHdr;
+
+			c++;
 		}
 	}
 }

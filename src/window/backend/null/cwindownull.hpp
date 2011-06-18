@@ -39,9 +39,7 @@ class EE_API cWindowNull : public cWindow {
 
 		eeVector2i Position();
 
-		void Size( const Uint32& Width, const Uint32& Height );
-
-		void Size( const Uint16& Width, const Uint16& Height, const bool& Windowed );
+		void Size( Uint32 Width, Uint32 Height, bool Windowed );
 
 		std::vector< std::pair<unsigned int, unsigned int> > GetPossibleResolutions() const;
 

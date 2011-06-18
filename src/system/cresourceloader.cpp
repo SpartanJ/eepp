@@ -33,6 +33,10 @@ bool cResourceLoader::Threaded() const {
 	return mThreaded;
 }
 
+Uint32 cResourceLoader::Count() const {
+	return mObjs.size();
+}
+
 void cResourceLoader::Threaded( const bool& threaded ) {
 	if ( !mLoading )
 		mThreaded = threaded;

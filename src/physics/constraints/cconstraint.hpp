@@ -12,7 +12,7 @@ class CP_API cConstraint {
 
 		cConstraint( cpConstraint * Constraint );
 
-		~cConstraint();
+		virtual ~cConstraint();
 
 		cpConstraint * Constraint() const;
 

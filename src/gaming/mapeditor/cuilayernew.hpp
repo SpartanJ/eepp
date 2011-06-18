@@ -11,7 +11,9 @@ namespace EE { namespace Gaming { namespace MapEditor {
 
 class cUILayerNew {
 	public:
-		cUILayerNew( cUIMap * Map, EE_LAYER_TYPE Type, cb::Callback1<void, cUILayerNew*> NewLayerCb = cb::Callback1<void, cUILayerNew*>() );
+		typedef cb::Callback1<void, cUILayerNew*> NewLayerCb;
+
+		cUILayerNew( cUIMap * Map, EE_LAYER_TYPE Type, NewLayerCb newLayerCb = NewLayerCb() );
 
 		virtual ~cUILayerNew();
 
@@ -26,7 +28,7 @@ class cUILayerNew {
 		cUITheme *			mTheme;
 		cUIMap *			mUIMap;
 		EE_LAYER_TYPE		mType;
-		cb::Callback1<void, cUILayerNew*>	mNewLayerCb;
+		NewLayerCb			mNewLayerCb;
 		cUIWindow *			mUIWindow;
 		cUITextInput *		mUILayerName;
 		cLayer *			mLayer;
@@ -36,6 +38,8 @@ class cUILayerNew {
 		void CancelClick( const cUIEvent * Event );
 
 		void OKClick( const cUIEvent * Event );
+
+		void OnKeyUp( const cUIEvent * Event );
 };
 
 }}}

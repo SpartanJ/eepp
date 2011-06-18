@@ -138,12 +138,10 @@ bool cTextureFont::Load( const Uint32& TexId, const std::string& CoordinatesDatP
 
 bool cTextureFont::LoadFromPack( const Uint32& TexId, cPack* Pack, const std::string& FilePackPath, const bool& VerticalDraw ) {
 	bool Ret = false;
-	cPack::PointerData PData;
+	cPack::SafePointerData PData;
 
 	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, PData ) )
 		Ret = LoadFromMemory( TexId, reinterpret_cast<const Uint8*> ( PData.Data ), PData.DataSize, VerticalDraw );
-
-	eeSAFE_DELETE( PData.Data );
 
 	return Ret;
 }

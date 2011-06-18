@@ -26,7 +26,7 @@ namespace WindowStyle {
 class WindowSettings {
 	public:
 
-	inline WindowSettings( Uint32 width, Uint32 height, Uint32 bpp, Uint32 style = WindowStyle::Default, const std::string& icon = std::string(), const std::string& caption = std::string() ) :
+	inline WindowSettings( Uint32 width, Uint32 height, Uint32 bpp = 32, Uint32 style = WindowStyle::Default, const std::string& icon = std::string(), const std::string& caption = std::string() ) :
 		Style( style ),
 		Width( width ),
 		Height( height ),

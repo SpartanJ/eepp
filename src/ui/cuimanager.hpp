@@ -73,6 +73,8 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 
 		/** Control where the mouse click started to be down */
 		cUIControl * DownControl() const;
+
+		cUIControl * LossFocusControl() const;
 	protected:
 		cWindow *			mWindow;
 		cInput *			mKM;
@@ -80,6 +82,7 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 		cUIControl *		mFocusControl;
 		cUIControl *		mOverControl;
 		cUIControl * 		mDownControl;
+		cUIControl *		mLossFocusControl;
 
 		eeFloat 			mElapsed;
 		Int32 				mCbId;

@@ -44,6 +44,8 @@ class EE_API cTextureGroupLoader {
 		/** Will check if the texture atlas is updated ( all the image of the path are inside the texture atlas, and are the same version, otherwise it will recreate or update the texture atlas. */
 		bool					UpdateTextureAtlas( std::string TextureAtlasPath, std::string ImagesPath );
 
+		bool					UpdateTextureAtlas();
+
 		cTexture *				GetTexture( const Uint32& texnum = 0 ) const;
 
 		Uint32					GetTexturesLoadedCount();

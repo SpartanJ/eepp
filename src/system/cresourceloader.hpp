@@ -38,6 +38,8 @@ class EE_API cResourceLoader {
 		bool			Clear( const bool& ClearObjectsLoaded = true );
 
 		eeFloat			Progress();
+
+		Uint32			Count() const;
 	protected:
 		bool			mLoaded;
 		bool			mLoading;

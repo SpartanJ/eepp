@@ -616,6 +616,8 @@ bool cUIWindow::Show() {
 		Enabled( true );
 		Visible( true );
 
+		SetFocus();
+
 		if ( mBaseAlpha == Alpha() ) {
 			StartAlphaAnim( 0.f, mBaseAlpha, cUIThemeManager::instance()->ControlsFadeInTime() );
 		} else {

@@ -141,7 +141,7 @@ bool cPak::ExtractFileToMemory( const std::string& path, std::vector<Uint8>& dat
 	return Ret;
 }
 
-bool cPak::ExtractFileToMemory( const std::string& path, PointerData& data ) {
+bool cPak::ExtractFileToMemory( const std::string& path, SafePointerData& data ) {
 	Lock();
 
 	bool Ret = false;

@@ -46,8 +46,13 @@ void cUIGfx::Draw() {
 		if ( NULL != mShape && 0.f != mAlpha ) {
 			eeFloat oDestWidth	= mShape->DestWidth();
 			eeFloat oDestHeight	= mShape->DestHeight();
+			Int32 oOffX = mShape->OffsetX();
+			Int32 oOffY = mShape->OffsetY();
 
 			if ( mFlags & UI_FIT_TO_CONTROL ) {
+				mShape->OffsetX( 0 );
+				mShape->OffsetY( 0 );
+
 				mShape->DestWidth( (eeFloat)mSize.x );
 				mShape->DestHeight( (eeFloat)mSize.y );
 
@@ -55,7 +60,13 @@ void cUIGfx::Draw() {
 
 				mShape->DestWidth( oDestWidth );
 				mShape->DestHeight( oDestHeight );
+
+				mShape->OffsetX( oOffX );
+				mShape->OffsetY( oOffY );
 			} else if ( mFlags & UI_AUTO_FIT ) {
+				mShape->OffsetX( 0 );
+				mShape->OffsetY( 0 );
+
 				eeFloat Scale1 = mSize.x / oDestWidth;
 				eeFloat Scale2 = mSize.y / oDestHeight;
 
@@ -77,6 +88,9 @@ void cUIGfx::Draw() {
 				} else {
 					DrawShape();
 				}
+
+				mShape->OffsetX( oOffX );
+				mShape->OffsetY( oOffY );
 			} else {
 				DrawShape();
 			}

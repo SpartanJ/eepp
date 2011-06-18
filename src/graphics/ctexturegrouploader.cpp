@@ -90,7 +90,10 @@ void cTextureGroupLoader::Load( const std::string& TextureGroupPath ) {
 				std::string name( &tTextureHdr.Name[0] );
 				std::string path( FileRemoveFileName( mTextureGroupPath ) + name );
 
-				if ( !mSkipResourceLoad )
+				//! Checks if the texture is already loaded
+				cTexture * tTex = cTextureFactory::instance()->GetByName( path );
+
+				if ( !mSkipResourceLoad && NULL == tTex )
 					mRL.Add( eeNew( cTextureLoader, ( path ) ) );
 
 				fs.read( reinterpret_cast<char*> (&tTexGroup.Shapes[0]), sizeof(sShapeHdr) * tTextureHdr.ShapeCount );
@@ -99,11 +102,11 @@ void cTextureGroupLoader::Load( const std::string& TextureGroupPath ) {
 			}
 		}
 
-		if ( !mSkipResourceLoad ) {
+		if ( !mSkipResourceLoad || ( !mSkipResourceLoad && 0 == mRL.Count() ) ) {
 			mIsLoading = true;
 			mRL.Load();
 
-			if ( !mThreaded )
+			if ( !mThreaded || ( !mSkipResourceLoad && 0 == mRL.Count() ) )
 				CreateShapes();
 		}
 	}
@@ -113,13 +116,11 @@ void cTextureGroupLoader::LoadFromPack( cPack * Pack, const std::string& FilePac
 	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( FilePackPath ) ) {
 		mPack = Pack;
 
-		cPack::PointerData PData;
+		cPack::SafePointerData PData;
 
 		Pack->ExtractFileToMemory( FilePackPath, PData );
 
 		LoadFromMemory( reinterpret_cast<const Uint8*> ( PData.Data ), PData.DataSize, FilePackPath );
-
-		eeSAFE_DELETE( PData.Data );
 	}
 }
 
@@ -149,10 +150,15 @@ void cTextureGroupLoader::LoadFromMemory( const Uint8* Data, const Uint32& DataS
 				std::string name( &tTextureHdr.Name[0] );
 				std::string path( FileRemoveFileName( mTextureGroupPath ) + name );
 
-				if ( NULL != mPack )
-					mRL.Add( eeNew( cTextureLoader, ( mPack, path ) ) );
-				else
-					mRL.Add( eeNew( cTextureLoader, ( mAppPath + path ) ) );
+				//! Checks if the texture is already loaded
+				cTexture * tTex = cTextureFactory::instance()->GetByName( path );
+
+				if ( NULL == tTex ) {
+					if ( NULL != mPack )
+						mRL.Add( eeNew( cTextureLoader, ( mPack, path ) ) );
+					else
+						mRL.Add( eeNew( cTextureLoader, ( mAppPath + path ) ) );
+				}
 
 				memcpy( (void*)(&tTexGroup.Shapes[0]), dataPtr, sizeof(sShapeHdr) * tTextureHdr.ShapeCount );
 				dataPtr += sizeof(sShapeHdr) * tTextureHdr.ShapeCount;
@@ -162,9 +168,10 @@ void cTextureGroupLoader::LoadFromMemory( const Uint8* Data, const Uint32& DataS
 		}
 		
 		mIsLoading = true;
+
 		mRL.Load();
 
-		if ( !mThreaded )
+		if ( !mThreaded || 0 == mRL.Count() )
 			CreateShapes();
 	}
 }
@@ -175,6 +182,7 @@ cShapeGroup * cTextureGroupLoader::GetShapeGroup() const {
 
 void cTextureGroupLoader::CreateShapes() {
 	mIsLoading = false;
+	bool IsAlreadyLoaded = false;
 	
 	for ( Uint32 z = 0; z < mTempGroups.size(); z++ ) {
 		sTempTexGroup * tTexGroup 	= &mTempGroups[z];
@@ -191,39 +199,50 @@ void cTextureGroupLoader::CreateShapes() {
 
 		cTexture * tTex 			= cTextureFactory::instance()->GetByName( path );
 
-		mTexuresLoaded.push_back( tTex );
+		if ( NULL != tTex )
+			mTexuresLoaded.push_back( tTex );
 
 		// Create the Shape Group with the name of the real texture, not the Childs ( example load 1.png and not 1_ch1.png )
 		if ( 0 == z ) {
 			if ( mTexGrHdr.Flags & HDR_TEXTURE_GROUP_REMOVE_EXTENSION )
 				name = FileRemoveExtension( name );
 
-			mShapeGroup = eeNew( cShapeGroup, ( name ) );
-
 			std::string etgpath = FileRemoveExtension( path ) + ".etg";
 
-			mShapeGroup->Path( etgpath );
+			cShapeGroup * tShapeGroup = cShapeGroupManager::instance()->GetByName( name );
 
-			cShapeGroupManager::instance()->Add( mShapeGroup );
+			if ( NULL != tShapeGroup && tShapeGroup->Path() == etgpath ) {
+				mShapeGroup = tShapeGroup;
+
+				IsAlreadyLoaded = true;
+			} else {
+				mShapeGroup = eeNew( cShapeGroup, ( name ) );
+
+				mShapeGroup->Path( etgpath );
+
+				cShapeGroupManager::instance()->Add( mShapeGroup );
+			}
 		}
 
 		if ( NULL != tTex ) {
-			for ( Int32 i = 0; i < tTexHdr->ShapeCount; i++ ) {
-				sShapeHdr * tSh = &tTexGroup->Shapes[i];
+			if ( !IsAlreadyLoaded ) {
+				for ( Int32 i = 0; i < tTexHdr->ShapeCount; i++ ) {
+					sShapeHdr * tSh = &tTexGroup->Shapes[i];
 
-				std::string ShapeName( &tSh->Name[0] );
+					std::string ShapeName( &tSh->Name[0] );
 
-				if ( mTexGrHdr.Flags & HDR_TEXTURE_GROUP_REMOVE_EXTENSION )
-					ShapeName = FileRemoveExtension( ShapeName );
+					if ( mTexGrHdr.Flags & HDR_TEXTURE_GROUP_REMOVE_EXTENSION )
+						ShapeName = FileRemoveExtension( ShapeName );
 
-				eeRecti tRect( tSh->X, tSh->Y, tSh->X + tSh->Width, tSh->Y + tSh->Height );
+					eeRecti tRect( tSh->X, tSh->Y, tSh->X + tSh->Width, tSh->Y + tSh->Height );
 
-				cShape * tShape = eeNew( cShape, ( tTex->Id(), tRect, (eeFloat)tSh->DestWidth, (eeFloat)tSh->DestHeight, tSh->OffsetX, tSh->OffsetY, ShapeName ) );
+					cShape * tShape = eeNew( cShape, ( tTex->Id(), tRect, (eeFloat)tSh->DestWidth, (eeFloat)tSh->DestHeight, tSh->OffsetX, tSh->OffsetY, ShapeName ) );
 
-				//if ( tSh->Flags & HDR_SHAPE_FLAG_FLIPED )
-					// Should rotate the shape, but.. shape rotation is not stored.
+					//if ( tSh->Flags & HDR_SHAPE_FLAG_FLIPED )
+						// Should rotate the shape, but.. shape rotation is not stored.
 
-				mShapeGroup->Add( tShape );
+					mShapeGroup->Add( tShape );
+				}
 			}
 		} else {
 			cLog::instance()->Write( "cTextureGroupLoader::CreateShapes: Failed to find texture group texture, it seems that is not loaded for some reason. Couldn't find: " + path );
@@ -260,6 +279,50 @@ cTexture * cTextureGroupLoader::GetTexture( const Uint32& texnum ) const {
 
 Uint32 cTextureGroupLoader::GetTexturesLoadedCount() {
 	return mTexuresLoaded.size();
+}
+
+bool cTextureGroupLoader::UpdateTextureAtlas() {
+	if ( NULL == mShapeGroup || !mTextureGroupPath.size() )
+		return false;
+
+	//! Update the data of the shape groups
+	for ( Uint32 z = 0; z < mTempGroups.size(); z++ ) {
+		sTempTexGroup * tTexGroup 	= &mTempGroups[z];
+		sTextureHdr * tTexHdr 		= &tTexGroup->Texture;
+
+		for ( Int32 i = 0; i < tTexHdr->ShapeCount; i++ ) {
+			sShapeHdr * tSh = &tTexGroup->Shapes[i];
+			cShape * tShape = mShapeGroup->GetById( tSh->ResourceID );
+
+			if ( NULL != tShape ) {
+				tSh->OffsetX = tShape->OffsetX();
+				tSh->OffsetY = tShape->OffsetY();
+				tSh->DestWidth = (Int32)tShape->DestWidth();
+				tSh->DestHeight = (Int32)tShape->DestHeight();
+			}
+		}
+	}
+
+	std::fstream fs ( mTextureGroupPath.c_str() , std::ios::out | std::ios::binary );
+
+	if ( fs.is_open() ) {
+		fs.write( reinterpret_cast<char*> (&mTexGrHdr), sizeof(sTextureGroupHdr) );
+
+		for ( Uint32 z = 0; z < mTempGroups.size(); z++ ) {
+			sTempTexGroup * tTexGroup 	= &mTempGroups[z];
+			sTextureHdr * tTexHdr 		= &tTexGroup->Texture;
+
+			fs.write( reinterpret_cast<char*> ( tTexHdr ), sizeof(sTextureHdr) );
+
+			fs.write( reinterpret_cast<char*> ( &tTexGroup->Shapes[0] ), sizeof(sShapeHdr) * (std::streamsize)tTexGroup->Shapes.size() );
+		}
+
+		fs.close();
+
+		return true;
+	}
+
+	return false;
 }
 
 bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std::string ImagesPath ) {

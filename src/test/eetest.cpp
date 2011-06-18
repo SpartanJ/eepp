@@ -1818,6 +1818,30 @@ int main (int argc, char * argv []) {
 	eeDelete( Test );
 
 	EE::MemoryManager::LogResults();
+/*
+	cTexturePacker tp( 512, 512, true, 2 );
+	tp.AddTexturesPath( GetProcessPath() + "data/tetg" );
+	tp.PackTextures();
+	tp.Save( "data/tetg.png", EE_SAVE_TYPE_PNG );
 
+	if ( cEngine::instance()->CreateWindow( WindowSettings(), ContextSettings() ) ) {
+		cTextureGroupLoader tgl( "data/tetg.etg" );
+		cShapeGroup * tSG = tgl.GetShapeGroup();
+
+		std::list<Graphics::cShape*>& Res = tSG->GetResources();
+
+		for ( std::list<Graphics::cShape*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
+			Graphics::cShape * tShape = (*it);
+
+			tShape->OffsetX( 16 - tShape->Size().Width() / 2 );
+			tShape->OffsetY( 16 - tShape->Size().Height() / 2 );
+		}
+
+		tgl.UpdateTextureAtlas();
+	}
+
+	cEngine::instance()->GetCurrentWindow()->Close();
+	cEngine::DestroySingleton();
+*/
 	return 0;
 }

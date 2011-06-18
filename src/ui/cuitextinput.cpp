@@ -90,8 +90,8 @@ void cUITextInput::Draw() {
 	}
 }
 
-Uint32 cUITextInput::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
-	cUIControlAnim::OnMouseClick( Pos, Flags );
+Uint32 cUITextInput::OnFocus() {
+	cUIControlAnim::OnFocus();
 
 	if ( mAllowEditing ) {
 		mTextBuffer.Active( true );

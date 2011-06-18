@@ -180,7 +180,7 @@ bool cZip::ExtractFileToMemory( const std::string& path, std::vector<Uint8>& dat
 	return Ret;
 }
 
-bool cZip::ExtractFileToMemory( const std::string& path, PointerData& data ) {
+bool cZip::ExtractFileToMemory( const std::string& path, SafePointerData& data ) {
 	Lock();
 
 	bool Ret = false;

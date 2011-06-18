@@ -96,7 +96,7 @@ class CP_API cSpace {
 
 		cSpace();
 
-		~cSpace();
+		virtual ~cSpace();
 
 		void Step( const cpFloat& dt );
 

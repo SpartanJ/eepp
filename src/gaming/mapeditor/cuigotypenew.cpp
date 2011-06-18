@@ -29,6 +29,8 @@ cUIGOTypeNew::cUIGOTypeNew( cb::Callback2<void, std::string, Uint32> Cb ) :
 	cUIPushButton * OKButton = mUITheme->CreatePushButton( mUIWindow->Container(), eeSize( 80, 22 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->GetIconByName( "add" ) );
 	OKButton->Pos( mUIWindow->Container()->Size().Width() - OKButton->Size().Width() - 4, mUIWindow->Container()->Size().Height() - OKButton->Size().Height() - 4 );
 	OKButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cUIGOTypeNew::OKClick ) );
+	mUIInput->AddEventListener( cUIEvent::EventOnPressEnter, cb::Make1( this, &cUIGOTypeNew::OKClick ) );
+
 	OKButton->Text( "Add" );
 
 	cUIPushButton * CancelButton = mUITheme->CreatePushButton( mUIWindow->Container(), OKButton->Size(), eeVector2i( OKButton->Pos().x - OKButton->Size().Width() - 4, OKButton->Pos().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->GetIconByName( "cancel" ) );
@@ -37,6 +39,8 @@ cUIGOTypeNew::cUIGOTypeNew( cb::Callback2<void, std::string, Uint32> Cb ) :
 
 	mUIWindow->Center();
 	mUIWindow->Show();
+
+	mUIInput->SetFocus();
 }
 
 cUIGOTypeNew::~cUIGOTypeNew() {

@@ -41,7 +41,7 @@ cShader::cShader( const Uint32& Type, const char * Data, const Uint32& DataSize 
 }
 
 cShader::cShader( const Uint32& Type, cPack * Pack, const std::string& Filename ) {
-	cPack::PointerData PData;
+	cPack::SafePointerData PData;
 
 	Init( Type );
 
@@ -52,8 +52,6 @@ cShader::cShader( const Uint32& Type, cPack * Pack, const std::string& Filename 
 	}
 
 	Compile();
-
-	eeSAFE_DELETE( PData.Data );
 }
 
 cShader::cShader( const Uint32& Type, const char ** Data, const Uint32& NumLines ) {

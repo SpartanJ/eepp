@@ -3,11 +3,11 @@
 
 namespace EE { namespace Gaming { namespace MapEditor {
 
-cUILayerNew::cUILayerNew( cUIMap * Map, EE_LAYER_TYPE Type, cb::Callback1<void, cUILayerNew*> NewLayerCb ) :
+cUILayerNew::cUILayerNew( cUIMap * Map, EE_LAYER_TYPE Type, NewLayerCb newLayerCb ) :
 	mTheme( NULL ),
 	mUIMap( Map ),
 	mType( Type ),
-	mNewLayerCb( NewLayerCb ),
+	mNewLayerCb( newLayerCb ),
 	mUIWindow( NULL ),
 	mLayer( NULL )
 {
@@ -36,18 +36,32 @@ cUILayerNew::cUILayerNew( cUIMap * Map, EE_LAYER_TYPE Type, cb::Callback1<void, 
 	cUIPushButton * OKButton = mTheme->CreatePushButton( mUIWindow->Container(), eeSize( 80, 22 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->GetIconByName( "add" ) );
 	OKButton->Pos( mUIWindow->Container()->Size().Width() - OKButton->Size().Width() - 4, mUIWindow->Container()->Size().Height() - OKButton->Size().Height() - 4 );
 	OKButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cUILayerNew::OKClick ) );
+	mUILayerName->AddEventListener( cUIEvent::EventOnPressEnter, cb::Make1( this, &cUILayerNew::OKClick ) );
+
 	OKButton->Text( "Add" );
 
 	cUIPushButton * CancelButton = mTheme->CreatePushButton( mUIWindow->Container(), OKButton->Size(), eeVector2i( OKButton->Pos().x - OKButton->Size().Width() - 4, OKButton->Pos().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->GetIconByName( "cancel" ) );
 	CancelButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cUILayerNew::CancelClick ) );
 	CancelButton->Text( "Cancel" );
 
+	mUIWindow->AddEventListener( cUIEvent::EventKeyUp, cb::Make1( this, &cUILayerNew::OnKeyUp ) );
+
 	mUIWindow->Center();
 	mUIWindow->Show();
+
+	mUILayerName->SetFocus();
 }
 
 cUILayerNew::~cUILayerNew() {
 
+}
+
+void cUILayerNew::OnKeyUp( const cUIEvent * Event ) {
+	const cUIEventKey * KeyEvent = reinterpret_cast<const cUIEventKey*> ( Event );
+
+	if ( KeyEvent->KeyCode() == KEY_ESCAPE ) {
+		CancelClick( Event );
+	}
 }
 
 void cUILayerNew::OKClick( const cUIEvent * Event ) {
