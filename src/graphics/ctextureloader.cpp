@@ -172,7 +172,7 @@ void cTextureLoader::LoadFromPath() {
 }
 
 void cTextureLoader::LoadFromPack() {
-	cPack::SafePointerData PData;
+	SafeDataPointer PData;
 
 	if ( NULL != mPack && mPack->IsOpen() && mPack->ExtractFileToMemory( mFilepath, PData ) ) {
 		mImagePtr	= PData.Data;

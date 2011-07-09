@@ -116,7 +116,7 @@ void cTextureGroupLoader::LoadFromPack( cPack * Pack, const std::string& FilePac
 	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( FilePackPath ) ) {
 		mPack = Pack;
 
-		cPack::SafePointerData PData;
+		SafeDataPointer PData;
 
 		Pack->ExtractFileToMemory( FilePackPath, PData );
 

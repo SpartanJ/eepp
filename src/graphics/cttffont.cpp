@@ -17,7 +17,7 @@ cTTFFont::~cTTFFont() {
 
 bool cTTFFont::LoadFromPack( cPack* Pack, const std::string& FilePackPath, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) {
 	bool Ret = false;
-	cPack::SafePointerData PData;
+	SafeDataPointer PData;
 
 	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, PData ) ) {
 		mFilepath = FilePackPath;

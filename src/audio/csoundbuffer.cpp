@@ -60,7 +60,7 @@ bool cSoundBuffer::LoadFromFile(const std::string& Filename) {
 
 bool cSoundBuffer::LoadFromPack( cPack* Pack, const std::string& FilePackPath ) {
 	bool Ret = false;
-	cPack::SafePointerData PData;
+	SafeDataPointer PData;
 
 	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, PData ) )
 		Ret = LoadFromMemory( reinterpret_cast<const char*> ( PData.Data ), PData.DataSize );

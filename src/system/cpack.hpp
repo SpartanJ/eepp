@@ -9,22 +9,6 @@ namespace EE { namespace System {
 /** @brief Base class for al packing classes */
 class EE_API cPack : protected cMutex {
 	public:
-		class SafePointerData {
-			public:
-				SafePointerData() :
-					Data( NULL ),
-					DataSize( 0 )
-				{
-				}
-
-				~SafePointerData() {
-					eeSAFE_DELETE( Data );
-				}
-
-				Uint8 * Data;
-				Uint32	DataSize;
-		};
-
 		cPack();
 
 		virtual ~cPack();
@@ -67,7 +51,7 @@ class EE_API cPack : protected cMutex {
 		virtual bool ExtractFileToMemory( const std::string& path, std::vector<Uint8>& data ) = 0;
 
 		/** Extract a file to memory from the pack file */
-		virtual bool ExtractFileToMemory( const std::string& path, SafePointerData& data ) = 0;
+		virtual bool ExtractFileToMemory( const std::string& path, SafeDataPointer& data ) = 0;
 
 		/** Check if a file exists in the pack file and return the number of the file, otherwise return -1. */
 		virtual Int32 Exists( const std::string& path ) = 0;

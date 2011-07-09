@@ -41,7 +41,7 @@ cShader::cShader( const Uint32& Type, const char * Data, const Uint32& DataSize 
 }
 
 cShader::cShader( const Uint32& Type, cPack * Pack, const std::string& Filename ) {
-	cPack::SafePointerData PData;
+	SafeDataPointer PData;
 
 	Init( Type );
 

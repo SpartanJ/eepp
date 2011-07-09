@@ -2,6 +2,7 @@
 #define EE_UTILSCUTILS_H
 
 #include "base.hpp"
+#include "safedatapointer.hpp"
 
 namespace EE { namespace Utils {
 	/** @return True if the file exists */
@@ -49,6 +50,13 @@ namespace EE { namespace Utils {
 	* @return True if returned the file to the vector.
 	*/
 	bool EE_API FileGet( const std::string& path, std::vector<Uint8>& data );
+
+	/** Copy a file to memory
+	* @param path The file path
+	* @param data A SafeDataPointer to allocate the data to memory
+	* @return True if returned the file to the SafeDataPointer
+	*/
+	bool EE_API FileGet( const std::string& path, SafeDataPointer& data );
 
 	/** Copy a file to location.
 	* @param src Source File Path

@@ -631,21 +631,6 @@ Uint32 MakeHash( const std::string& str ) {
 }
 
 Uint32 MakeHash( const Uint8 * str ) {
-	//! This is djb2 + sdbm mixed. This hash doesn't exists, but worked.
-	//! Since i found this pretty funny because i used this hash in a lot of projects and never found a collision, i'll let it stay here.
-	/**
-	Uint32 hash = 5381 + *str;
-
-	while( *str ) {
-		hash = *str + ( hash << 6 ) + ( hash << 16 ) - hash;
-		str++;
-	}
-
-	hash += *( str - 1 );
-
-	return hash;
-	*/
-
 	//! djb2
 	if ( NULL != str ) {
 		Uint32 hash = 5381;
@@ -658,6 +643,25 @@ Uint32 MakeHash( const Uint8 * str ) {
 	}
 
 	return 0;
+}
+
+bool FileGet( const std::string& path, SafeDataPointer& data ) {
+	if ( FileExists( path ) ) {
+		std::fstream fs ( path.c_str() , std::ios::in | std::ios::binary );
+
+		eeSAFE_DELETE( data.Data );
+
+		data.DataSize	= FileSize( path );
+		data.Data		= eeNewArray( Uint8, ( data.DataSize ) );
+
+		fs.read( reinterpret_cast<char*> ( data.Data ), data.DataSize  );
+
+		fs.close();
+
+		return true;
+	}
+
+	return false;
 }
 
 bool FileGet( const std::string& path, std::vector<Uint8>& data ) {
