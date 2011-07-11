@@ -24,7 +24,7 @@ cUIManager::~cUIManager() {
 	Shutdown();
 }
 
-void cUIManager::Init( Uint32 Flags, cWindow * window ) {
+void cUIManager::Init( Uint32 Flags, Window::cWindow * window ) {
 	if ( mInit )
 		Shutdown();
 
@@ -305,7 +305,7 @@ void cUIManager::SendMouseDown( cUIControl * ToCtrl, const eeVector2i& Pos, cons
 	ToCtrl->OnMouseDown( Pos, Flags );
 }
 
-cWindow * cUIManager::GetWindow() const {
+Window::cWindow * cUIManager::GetWindow() const {
 	return mWindow;
 }
 

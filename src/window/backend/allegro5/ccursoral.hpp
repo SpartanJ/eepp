@@ -19,11 +19,11 @@ class cCursorAl : public cCursor {
 
 		ALLEGRO_MOUSE_CURSOR * mCursor;
 
-		cCursorAl( cTexture * tex, const eeVector2i& hotspot, const std::string& name, cWindow * window );
+		cCursorAl( cTexture * tex, const eeVector2i& hotspot, const std::string& name, Window::cWindow * window );
 
-		cCursorAl( cImage * img, const eeVector2i& hotspot, const std::string& name, cWindow * window );
+		cCursorAl( cImage * img, const eeVector2i& hotspot, const std::string& name, Window::cWindow * window );
 
-		cCursorAl( const std::string& path, const eeVector2i& hotspot, const std::string& name, cWindow * window );
+		cCursorAl( const std::string& path, const eeVector2i& hotspot, const std::string& name, Window::cWindow * window );
 
 		~cCursorAl();
 

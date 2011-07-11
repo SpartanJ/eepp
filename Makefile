@@ -1,5 +1,6 @@
 STRLOWERCASE 		= $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(subst F,f,$(subst G,g,$(subst H,h,$(subst I,i,$(subst J,j,$(subst K,k,$(subst L,l,$(subst M,m,$(subst N,n,$(subst O,o,$(subst P,p,$(subst Q,q,$(subst R,r,$(subst S,s,$(subst T,t,$(subst U,u,$(subst V,v,$(subst W,w,$(subst X,x,$(subst Y,y,$(subst Z,z,$1))))))))))))))))))))))))))
 OS 					= $(strip $(call STRLOWERCASE, $(shell uname) ) )
+
 SDLVERSION			= $(shell sdl-config --version)
 
 export CFLAGS     	= -Wall -Wno-unknown-pragmas $(FINALFLAGS) $(BUILDFLAGS) $(BACKENDFLAGS)
@@ -71,7 +72,12 @@ ifeq ($(BACKEND_SDL), yes)
 		SDL_BACKEND_LINK	= libs/$(OS)/libSDL.a
 		SDL_BACKEND_SRC		= $(wildcard ./src/window/backend/SDL13/*.cpp)
 	else
+		ifeq ($(OS), darwin)
+		SDL_BACKEND_LINK	= -framework Cocoa -lSDL -lSDLmain
+     	else
 		SDL_BACKEND_LINK	= -lSDL
+		endif
+		
 		SDL_BACKEND_SRC		= $(wildcard ./src/window/backend/SDL/*.cpp)
 	endif
 	
@@ -83,7 +89,13 @@ else
 endif
 
 ifeq ($(BACKEND_ALLEGRO), yes)
+
+	ifeq ($(OS), darwin)
+	ALLEGRO_BACKEND_LINK	= -lallegro -lallegro_main
+	else
 	ALLEGRO_BACKEND_LINK	= -lallegro
+	endif
+
 	ALLEGRO_BACKEND_SRC		= $(wildcard ./src/window/backend/allegro5/*.cpp)
 	ALLEGRO_DEFINE			= -DEE_BACKEND_ALLEGRO_ACTIVE
 else
@@ -121,8 +133,8 @@ PLATFORMSRC	= $(wildcard ./src/window/platform/x11/*.cpp)
 else
 
 ifeq ($(OS), darwin)
-LIBS 		= -lfreetype -lSDL -lSDLmain -framework OpenGL -framework OpenAL -framework Cocoa -framework CoreFoundation -framework AGL $(LIBSNDFILE)
-OTHERINC	= -I/usr/include/freetype2
+LIBS 		= -lfreetype -framework OpenGL -framework OpenAL -framework CoreFoundation -framework AGL $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
+OTHERINC	= -I/usr/include/freetype2 -I/usr/local/include/freetype2
 PLATFORMSRC = $(wildcard ./src/window/platform/osx/*.cpp)
 
 else

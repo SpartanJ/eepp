@@ -27,6 +27,7 @@ void cEETest::Init() {
 
 	mAxisX				= 0;
 	mAxisY				= 0;
+	mCurDemo			= 0xFFFFFF;
 
 	MyPath 				= GetProcessPath();
 
@@ -125,7 +126,7 @@ void cEETest::Init() {
 		if ( NULL != mFBO )
 			mFBO->ClearColor( eeColorAf( 0, 0, 0, 0.5f ) );
 
-		eePolygon2f Poly = CreateRoundedPolygon( 0.f, 0.f, 256.f, 50.f );
+		eePolygon2f Poly = CreateRoundedPolygon<eeFloat>( 0, 0, 256, 50 );
 
 		mVBO = cVertexBuffer::Create( VERTEX_FLAG_GET( VERTEX_FLAG_POSITION ) | VERTEX_FLAG_GET( VERTEX_FLAG_COLOR ), DM_POLYGON );
 
@@ -852,24 +853,6 @@ void cEETest::LoadTextures() {
 	CreateTiling(Wireframe);
 
 	Log->Writef( "Map creation time: %f", te.Elapsed() );
-
-	cMTRand Rand( 0xFF00FF00 );
-	/*mMap = eeNew( cMap, () );
-	mMap->Create( eeSize(25,25), 8, eeSize(32,32), MAP_FLAG_CLAMP_BODERS | MAP_FLAG_CLIP_AREA );
-	mMap->AddLayer( MAP_LAYER_TILED, 0, "ground" );
-	mMap->Position( eeVector2i( mWindow->GetWidth() / 2 - mMap->ViewSize().Width() / 2, mWindow->GetHeight() / 2 - mMap->ViewSize().Height() / 2 ) );
-
-	cTileLayer * TLayer = reinterpret_cast<cTileLayer*> ( mMap->GetLayer(0) );
-
-	for ( x = 0; x < mMap->Size().Width(); x++ ) {
-		for ( y = 0; y < mMap->Size().Height(); y++ ) {
-			TLayer->AddGameObject(
-				eeNew(
-					cGameObjectShape, ( GObjFlags::GAMEOBJECT_STATIC, Tiles[ Rand.RandRange( 0, 5 ) ] )
-				), eeVector2i( x, y )
-			);
-		}
-	}*/
 }
 
 void cEETest::RandomizeHeights() {
@@ -999,7 +982,7 @@ void cEETest::Screen2() {
 	if ( mUseShaders ) {
 		mBlurFactor = ( 1.5f * 0.01f ) - ( scale * 0.01f );
 		mShaderProgram->Bind();
-		mShaderProgram->SetUniform( "blurfactor" , mBlurFactor );
+		mShaderProgram->SetUniform( "blurfactor" , (float)mBlurFactor );
 	}
 
 	TNP[6]->DrawFast( PlanetX, PlanetY, ang, scale);
@@ -1135,11 +1118,6 @@ void cEETest::Screen4() {
 }
 
 void cEETest::Screen5() {
-	/*mMap->Update();
-	mMap->Draw();
-
-	cPrimitives p;
-	p.DrawRectangle( mMap->Position().x, mMap->Position().y, mMap->ViewSize().Width(), mMap->ViewSize().Height(), 0, 1, EE_DRAW_LINE );*/
 }
 
 void cEETest::Render() {
@@ -1472,24 +1450,6 @@ void cEETest::Input() {
 			}
 
 			break;
-		case 5:
-			if ( KM->IsKeyDown(KEY_LEFT) ) {
-				mMap->Move( mWindow->Elapsed() * 0.2f, 0 );
-			}
-
-			if ( KM->IsKeyDown(KEY_RIGHT) ) {
-				mMap->Move( -mWindow->Elapsed() * 0.2f, 0 );
-			}
-
-			if ( KM->IsKeyDown(KEY_UP) ) {
-				mMap->Move( 0, mWindow->Elapsed() * 0.2f );
-			}
-
-			if ( KM->IsKeyDown(KEY_DOWN) ) {
-				mMap->Move( 0, -mWindow->Elapsed() * 0.2f );
-			}
-
-			break;
 	}
 }
 
@@ -1527,7 +1487,6 @@ void cEETest::End() {
 	eeSAFE_DELETE( mVBO );
 	eeSAFE_DELETE( mBoxSprite );
 	eeSAFE_DELETE( mCircleSprite );
-	eeSAFE_DELETE( mMap );
 
 	cLog::instance()->Save();
 
@@ -1739,7 +1698,8 @@ void cEETest::Demo2Destroy() {
 
 void cEETest::ChangeDemo( Uint32 num ) {
 	if ( num < mDemo.size() ) {
-		mDemo[ mCurDemo ].destroy();
+		if ( 0xFFFFFF != mCurDemo )
+			mDemo[ mCurDemo ].destroy();
 
 		mCurDemo = num;
 
@@ -1810,6 +1770,11 @@ void cEETest::PhysicsDestroy() {
 	mDemo[ mCurDemo ].destroy();
 }
 
+#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#include <SDL/SDL_main.h>
+#include <allegro5/allegro.h>
+#endif
+
 int main (int argc, char * argv []) {
 	cEETest * Test = eeNew( cEETest, () );
 
@@ -1818,7 +1783,8 @@ int main (int argc, char * argv []) {
 	eeDelete( Test );
 
 	EE::MemoryManager::LogResults();
-/*
+
+/**
 	cTexturePacker tp( 512, 512, true, 2 );
 	tp.AddTexturesPath( GetProcessPath() + "data/tetg" );
 	tp.PackTextures();

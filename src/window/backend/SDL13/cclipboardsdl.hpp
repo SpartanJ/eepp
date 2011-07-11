@@ -23,7 +23,7 @@ class EE_API cClipboardSDL : public cClipboard {
 	protected:
 		friend class cWindowSDL;
 
-		cClipboardSDL( cWindow * window );
+		cClipboardSDL( Window::cWindow * window );
 
 		void Init();
 };

@@ -9,7 +9,7 @@ using namespace EE::Window;
 
 namespace EE { namespace Graphics {
 
-cConsole::cConsole( cWindow * window ) :
+cConsole::cConsole( Window::cWindow * window ) :
 	mWindow( window ),
 	mConColor(35, 47, 73, 230),
 	mConLineColor(55, 67, 93, 230),

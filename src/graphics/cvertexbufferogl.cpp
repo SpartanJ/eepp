@@ -39,7 +39,7 @@ void cVertexBufferOGL::SetVertexStates() {
 	/// POSITION
 	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
 		GLi->EnableClientState( GL_VERTEX_ARRAY );
-		GLi->VertexPointer( eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FLOAT, sizeof(float) * eeVertexElements[ VERTEX_FLAG_POSITION ], &mVertexArray[ VERTEX_FLAG_POSITION ][0], alloc );
+		GLi->VertexPointer( eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FP, sizeof(eeFloat) * eeVertexElements[ VERTEX_FLAG_POSITION ], &mVertexArray[ VERTEX_FLAG_POSITION ][0], alloc );
 	} else {
 		GLi->DisableClientState( GL_VERTEX_ARRAY );
 	}
@@ -59,7 +59,7 @@ void cVertexBufferOGL::SetVertexStates() {
 				GLi->ClientActiveTexture( GL_TEXTURE0 + i );
 				GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
 
-				GLi->TexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], GL_FLOAT, sizeof(float) * eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], &mVertexArray[ VERTEX_FLAG_TEXTURE0 + i ][0], alloc );
+				GLi->TexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], GL_FP, sizeof(eeFloat) * eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], &mVertexArray[ VERTEX_FLAG_TEXTURE0 + i ][0], alloc );
 			} else {
 				GLi->Disable( GL_TEXTURE_2D );
 				GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
@@ -68,7 +68,7 @@ void cVertexBufferOGL::SetVertexStates() {
 	} else {
 		if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 ) ) {
 			GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
-			GLi->TexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], GL_FLOAT, sizeof(float) * eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], &mVertexArray[ VERTEX_FLAG_TEXTURE0 ][0], alloc );
+			GLi->TexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], GL_FP, sizeof(eeFloat) * eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], &mVertexArray[ VERTEX_FLAG_TEXTURE0 ][0], alloc );
 		} else {
 			GLi->Disable( GL_TEXTURE_2D );
 			GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );

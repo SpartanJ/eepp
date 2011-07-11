@@ -357,9 +357,9 @@ std::vector< std::pair<unsigned int, unsigned int> > cWindowSDL::GetPossibleReso
 }
 
 void cWindowSDL::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {
-	eeclamp( &Red	, 0.1f, 10.0f );
-	eeclamp( &Green	, 0.1f, 10.0f );
-	eeclamp( &Blue	, 0.1f, 10.0f );
+	eeclamp<eeFloat>( &Red	, 0.1f, 10.0f );
+	eeclamp<eeFloat>( &Green	, 0.1f, 10.0f );
+	eeclamp<eeFloat>( &Blue	, 0.1f, 10.0f );
 	SDL_SetGamma( Red, Green, Blue );
 }
 
@@ -369,7 +369,8 @@ eeWindowHandler	cWindowSDL::GetWindowHandler() {
 #elif defined( EE_X11_PLATFORM )
 	return mWMinfo.info.x11.display;
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
-	return mWMinfo.cocoa.window;
+	//return mWMinfo.cocoa.window;
+	return mWMinfo.info.x11.display;
 #else
 	return 0;
 #endif

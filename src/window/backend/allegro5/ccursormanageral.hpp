@@ -11,7 +11,7 @@ namespace EE { namespace Window { namespace Backend { namespace Al {
 
 class cCursorManagerAl : public cCursorManager {
 	public:
-		cCursorManagerAl( cWindow * window );
+		cCursorManagerAl( Window::cWindow * window );
 
 		cCursor * Create( cTexture * tex, const eeVector2i& hotspot, const std::string& name );
 

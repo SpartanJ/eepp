@@ -2,7 +2,7 @@
 
 namespace EE { namespace Window {
 
-cCursor::cCursor( cTexture * tex, const eeVector2i& hotspot, const std::string& name, cWindow * window ) :
+cCursor::cCursor( cTexture * tex, const eeVector2i& hotspot, const std::string& name, Window::cWindow * window ) :
 	mId( MakeHash( name ) ),
 	mName( name ),
 	mImage( NULL ),
@@ -18,7 +18,7 @@ cCursor::cCursor( cTexture * tex, const eeVector2i& hotspot, const std::string& 
 	}
 }
 
-cCursor::cCursor( cImage * img, const eeVector2i& hotspot, const std::string& name, cWindow * window ) :
+cCursor::cCursor( cImage * img, const eeVector2i& hotspot, const std::string& name, Window::cWindow * window ) :
 	mId( MakeHash( name ) ),
 	mName( name ),
 	mImage( NULL ),
@@ -32,7 +32,7 @@ cCursor::cCursor( cImage * img, const eeVector2i& hotspot, const std::string& na
 	}
 }
 
-cCursor::cCursor( const std::string& path, const eeVector2i& hotspot, const std::string& name, cWindow * window ) :
+cCursor::cCursor( const std::string& path, const eeVector2i& hotspot, const std::string& name, Window::cWindow * window ) :
 	mId( MakeHash( name ) ),
 	mName( name ),
 	mImage( NULL ),

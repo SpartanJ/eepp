@@ -22,7 +22,7 @@ class EE_API cClipboardAl : public cClipboard {
 	protected:
 		friend class cWindowAl;
 
-		cClipboardAl( cWindow * window );
+		cClipboardAl( Window::cWindow * window );
 
 		void Init();
 };

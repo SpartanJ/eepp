@@ -12,7 +12,7 @@ using namespace EE::Window;
 
 class cOSXImpl : public cPlatformImpl {
 	public:
-		cOSXImpl( cWindow * window );
+		cOSXImpl( Window::cWindow * window );
 
 		~cOSXImpl();
 

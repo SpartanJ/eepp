@@ -12,7 +12,7 @@ using namespace EE::Window;
 
 class cWinImpl : public cPlatformImpl {
 	public:
-		cWinImpl( cWindow * window, eeWindowHandler handler );
+		cWinImpl( Window::cWindow * window, eeWindowHandler handler );
 
 		~cWinImpl();
 

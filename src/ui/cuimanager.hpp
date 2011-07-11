@@ -25,7 +25,7 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 
 		void OverControl( cUIControl * Ctrl );
 
-		void Init( Uint32 Flags = 0, cWindow * window = NULL );
+		void Init( Uint32 Flags = 0, Window::cWindow * window = NULL );
 
 		void Shutdown();
 
@@ -69,14 +69,14 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 
 		void SendMouseDown( cUIControl * ToCtrl, const eeVector2i& Pos, const Uint32 Flags );
 
-		cWindow * GetWindow() const;
+		Window::cWindow * GetWindow() const;
 
 		/** Control where the mouse click started to be down */
 		cUIControl * DownControl() const;
 
 		cUIControl * LossFocusControl() const;
 	protected:
-		cWindow *			mWindow;
+		Window::cWindow *			mWindow;
 		cInput *			mKM;
 		cUIWindow *			mControl;
 		cUIControl *		mFocusControl;

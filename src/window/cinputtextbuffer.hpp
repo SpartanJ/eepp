@@ -22,9 +22,9 @@ class EE_API cInputTextBuffer {
 	public:
 		typedef cb::Callback0<void> EnterCallback;
 
-		cInputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, cWindow * window = NULL, const Uint32& maxLenght = 0xFFFFFFFF );
+		cInputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, Window::cWindow * window = NULL, const Uint32& maxLenght = 0xFFFFFFFF );
 
-		cInputTextBuffer( cWindow * window = NULL );
+		cInputTextBuffer( Window::cWindow * window = NULL );
 
 		~cInputTextBuffer();
 

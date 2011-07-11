@@ -16,7 +16,7 @@ namespace EE { namespace Window {
 
 class EE_API cCursorManager {
 	public:
-		cCursorManager( cWindow * window );
+		cCursorManager( Window::cWindow * window );
 
 		virtual ~cCursorManager();
 

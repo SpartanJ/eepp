@@ -5,21 +5,21 @@
 
 namespace EE { namespace Window { namespace Platform {
 
-cCursorX11::cCursorX11( cTexture * tex, const eeVector2i& hotspot, const std::string& name, cWindow * window ) :
+cCursorX11::cCursorX11( cTexture * tex, const eeVector2i& hotspot, const std::string& name, Window::cWindow * window ) :
 	cCursor( tex, hotspot, name, window ),
 	mCursor( None )
 {
 	Create();
 }
 
-cCursorX11::cCursorX11( cImage * img, const eeVector2i& hotspot, const std::string& name, cWindow * window ) :
+cCursorX11::cCursorX11( cImage * img, const eeVector2i& hotspot, const std::string& name, Window::cWindow * window ) :
 	cCursor( img, hotspot, name, window ),
 	mCursor( None )
 {
 	Create();
 }
 
-cCursorX11::cCursorX11( const std::string& path, const eeVector2i& hotspot, const std::string& name, cWindow * window ) :
+cCursorX11::cCursorX11( const std::string& path, const eeVector2i& hotspot, const std::string& name, Window::cWindow * window ) :
 	cCursor( path, hotspot, name, window ),
 	mCursor( None )
 {

@@ -19,7 +19,7 @@ class EE_API cInputNull : public cInput {
 	protected:
 		friend class cWindowNull;
 
-		cInputNull( cWindow * window );
+		cInputNull( Window::cWindow * window );
 		
 		virtual void Init();
 };

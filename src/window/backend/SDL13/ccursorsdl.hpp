@@ -18,11 +18,11 @@ class cCursorSDL : public cCursor {
 
 		SDL_Cursor * mCursor;
 
-		cCursorSDL( cTexture * tex, const eeVector2i& hotspot, const std::string& name, cWindow * window );
+		cCursorSDL( cTexture * tex, const eeVector2i& hotspot, const std::string& name, Window::cWindow * window );
 
-		cCursorSDL( cImage * img, const eeVector2i& hotspot, const std::string& name, cWindow * window );
+		cCursorSDL( cImage * img, const eeVector2i& hotspot, const std::string& name, Window::cWindow * window );
 
-		cCursorSDL( const std::string& path, const eeVector2i& hotspot, const std::string& name, cWindow * window );
+		cCursorSDL( const std::string& path, const eeVector2i& hotspot, const std::string& name, Window::cWindow * window );
 
 		virtual ~cCursorSDL();
 

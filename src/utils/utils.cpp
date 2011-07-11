@@ -185,7 +185,7 @@ static LARGE_INTEGER hires_ticks_per_second;
 
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
 #define HAVE_CLOCK_GETTIME
 #endif
 
@@ -249,7 +249,6 @@ static void eeStartTicks() {
 	clock_gettime(CLOCK_MONOTONIC, &start);
 	#else
 	gettimeofday(&start, NULL);
-	#warning eeStartTicks implemented with gettimeofday. Probably the platform is not fully supported.
 	#endif
 #endif
 
@@ -603,9 +602,13 @@ bool IsDirectory( const String& path ) {
 
 bool IsDirectory( const std::string& path ) {
 #ifndef EE_COMPILER_MSVC
-	DIR *dp;
+	DIR *dp = NULL;
+
 	bool isdir = !( ( dp = opendir( path.c_str() ) ) == NULL);
-	closedir(dp);
+
+	if ( NULL != dp )
+		closedir(dp);
+
 	return isdir;
 #else
 	return GetFileAttributes( (LPCTSTR) path.c_str() ) != INVALID_FILE_ATTRIBUTES;

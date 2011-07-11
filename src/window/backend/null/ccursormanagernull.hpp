@@ -9,7 +9,7 @@ namespace EE { namespace Window { namespace Backend { namespace Null {
 
 class cCursorManagerNull : public cCursorManager {
 	public:
-		cCursorManagerNull( cWindow * window );
+		cCursorManagerNull( Window::cWindow * window );
 
 		cCursor * Create( cTexture * tex, const eeVector2i& hotspot, const std::string& name );
 

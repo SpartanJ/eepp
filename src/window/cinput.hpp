@@ -154,7 +154,7 @@ class EE_API cInput {
 	protected:
 		friend class cWindow;
 		
-		cInput( cWindow * window, cJoystickManager * joystickmanager );
+		cInput( Window::cWindow * window, cJoystickManager * joystickmanager );
 		
 		virtual void Init() = 0;
 

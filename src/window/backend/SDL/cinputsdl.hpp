@@ -27,7 +27,7 @@ class EE_API cInputSDL : public cInput {
 	protected:
 		friend class cWindowSDL;
 
-		cInputSDL( cWindow * window );
+		cInputSDL( Window::cWindow * window );
 		
 		virtual void Init();
 };

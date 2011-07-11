@@ -217,7 +217,7 @@ void cInputAl::GrabInput( const bool& Grab ) {
 }
 
 void cInputAl::InjectMousePos( const Uint16& x, const Uint16& y ) {
-	if ( x >= 0 && x <= GetWindowAl()->GetWidth() && y >= 0 && y <= GetWindowAl()->GetHeight() ) {
+	if ( x <= GetWindowAl()->GetWidth() && y <= GetWindowAl()->GetHeight() ) {
 		al_set_mouse_xy( GetDisplay(), x, y );
 		mMousePos.x = x;
 		mMousePos.y = y;

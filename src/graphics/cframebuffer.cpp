@@ -9,7 +9,7 @@ using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
-cFrameBuffer * cFrameBuffer::CreateNew( const Uint32& Width, const Uint32& Height, bool DepthBuffer, cWindow * window ) {
+cFrameBuffer * cFrameBuffer::CreateNew( const Uint32& Width, const Uint32& Height, bool DepthBuffer, Window::cWindow * window ) {
 	if ( cFrameBufferFBO::IsSupported() )
 		return eeNew( cFrameBufferFBO, ( Width, Height, DepthBuffer, window ) );
 
@@ -19,7 +19,7 @@ cFrameBuffer * cFrameBuffer::CreateNew( const Uint32& Width, const Uint32& Heigh
 	return NULL;
 }
 
-cFrameBuffer::cFrameBuffer( cWindow * window  ) :
+cFrameBuffer::cFrameBuffer( Window::cWindow * window  ) :
 	mWindow( window ),
 	mWidth(0),
 	mHeight(0),

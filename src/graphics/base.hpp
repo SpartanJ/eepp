@@ -3,6 +3,12 @@
 
 #include "../base.hpp"
 
+#ifdef EE_64BIT
+#define GL_FP	GL_DOUBLE
+#else
+#define GL_FP	GL_FLOAT
+#endif
+
 #if ( defined( EE_GLES2 ) || defined( EE_GLES1 ) ) && !defined( EE_GLES )
 	#define EE_GLES
 #endif

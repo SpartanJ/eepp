@@ -29,7 +29,7 @@ class EE_API cInputAl : public cInput {
 		ALLEGRO_EVENT_QUEUE *	mQueue;
 		bool					mGrab;
 
-		cInputAl( cWindow * window );
+		cInputAl( Window::cWindow * window );
 		
 		virtual void Init();
 

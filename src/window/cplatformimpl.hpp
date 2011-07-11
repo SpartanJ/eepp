@@ -24,7 +24,7 @@ using namespace EE::Window;
 
 class cPlatformImpl {
 	public:
-		cPlatformImpl( cWindow * window );
+		cPlatformImpl( Window::cWindow * window );
 		
 		virtual ~cPlatformImpl();
 		

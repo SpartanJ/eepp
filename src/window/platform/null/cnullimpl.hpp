@@ -10,7 +10,7 @@ using namespace EE::Window;
 
 class cNullImpl : public cPlatformImpl {
 	public:
-		cNullImpl( cWindow * window );
+		cNullImpl( Window::cWindow * window );
 
 		~cNullImpl();
 

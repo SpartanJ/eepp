@@ -18,16 +18,16 @@ class cClipboard {
 		/** Set the current clipboard text */
 		virtual void SetText( const std::string& Text ) = 0;
 
-		cWindow * GetWindow() const;
+		Window::cWindow * GetWindow() const;
 	protected:
 		friend class cWindow;
 
-		cClipboard( cWindow * window );
+		cClipboard( Window::cWindow * window );
 
 		/** Initialize the clipboard manager. This is needed because the backends first create the instance of the clipboard and then initialize the window context. */
 		virtual void Init() = 0;
 
-		cWindow * mWindow;
+		Window::cWindow * mWindow;
 };
 
 }}

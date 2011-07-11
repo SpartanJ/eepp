@@ -38,7 +38,7 @@
 #include <X11/Xlib.h>
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
 //#include <AGL/agl.h>
-#warning No PBuffer implemented on MAC
+//#warning No PBuffer implemented on MAC
 #else
 #warning No PBuffer implemented on this platform
 #endif
@@ -49,11 +49,11 @@ namespace EE { namespace Graphics {
 
 class EE_API cFrameBufferPBuffer : public cFrameBuffer {
 	public:
-		cFrameBufferPBuffer( cWindow * window = NULL );
+		cFrameBufferPBuffer( Window::cWindow * window = NULL );
 
 		~cFrameBufferPBuffer();
 
-		cFrameBufferPBuffer( const Uint32& Width, const Uint32& Height, bool DepthBuffer = false, cWindow * window = NULL );
+		cFrameBufferPBuffer( const Uint32& Width, const Uint32& Height, bool DepthBuffer = false, Window::cWindow * window = NULL );
 
 		bool Create( const Uint32& Width, const Uint32& Height );
 

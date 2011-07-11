@@ -87,7 +87,7 @@ class cEETest : private cThread {
 		eeFloat PSElapsed;
 	private:
 		cEngine * EE;
-		cWindow * mWindow;
+		Window::cWindow * mWindow;
 		cTextureFactory* TF;
 		cLog* Log;
 		cInput* KM;
@@ -271,7 +271,6 @@ class cEETest : private cThread {
 		cSprite *				mBoxSprite;
 		cSprite *				mCircleSprite;
 
-		cMap *					mMap;
 		cUITheme *				mTheme;
 };
 

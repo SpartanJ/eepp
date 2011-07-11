@@ -4,7 +4,7 @@
 
 namespace EE { namespace Graphics {
 
-cFrameBufferPBuffer::cFrameBufferPBuffer( cWindow * window )
+cFrameBufferPBuffer::cFrameBufferPBuffer( Window::cWindow * window )
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	: cFrameBuffer( window ),
 	mDeviceContext( NULL ),
@@ -24,7 +24,7 @@ cFrameBufferPBuffer::cFrameBufferPBuffer( cWindow * window )
 #endif
 }
 
-cFrameBufferPBuffer::cFrameBufferPBuffer( const Uint32& Width, const Uint32& Height, bool DepthBuffer, cWindow * window )
+cFrameBufferPBuffer::cFrameBufferPBuffer( const Uint32& Width, const Uint32& Height, bool DepthBuffer, Window::cWindow * window )
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	: cFrameBuffer( window ),
 	mDeviceContext( NULL ),

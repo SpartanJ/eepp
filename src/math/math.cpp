@@ -16,9 +16,11 @@ eeInt eeRandi( const eeInt& fMin, const eeInt& fMax ) {
 	return (eeInt)(fMin + (fMax - fMin + 1) * ( rand() / ( (eeFloat) RAND_MAX + 1) ) );
 }
 
+#ifndef EE_64BIT
 eeDouble eeRound( eeDouble r ) {
 	return (r > 0.0) ? floor(r + 0.5) : ceil(r - 0.5);
 }
+#endif
 
 eeFloat eeRound( eeFloat r ) {
 	return (r > 0.0f) ? floor(r + 0.5f) : ceil(r - 0.5f);

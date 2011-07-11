@@ -2,7 +2,7 @@
 
 namespace EE { namespace Gaming {
 
-cIsoMap::cIsoMap( cWindow * window ) :
+cIsoMap::cIsoMap( Window::cWindow * window ) :
 	mWindow( window ),
 	mOffsetX(0),
 	mOffsetY(0),

@@ -18,7 +18,7 @@ class EE_API cClipboardNull : public cClipboard {
 	protected:
 		friend class cWindowNull;
 
-		cClipboardNull( cWindow * window );
+		cClipboardNull( Window::cWindow * window );
 
 		void Init();
 };

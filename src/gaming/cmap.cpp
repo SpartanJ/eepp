@@ -47,7 +47,7 @@ void cMap::DeleteLayers() {
 	mLayerCount = 0;
 }
 
-void cMap::Create( eeSize Size, Uint32 MaxLayers, eeSize TileSize, Uint32 Flags, eeSize viewSize, cWindow * Window ) {
+void cMap::Create( eeSize Size, Uint32 MaxLayers, eeSize TileSize, Uint32 Flags, eeSize viewSize, Window::cWindow * Window ) {
 	Reset();
 
 	mWindow		= Window;

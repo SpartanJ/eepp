@@ -4,7 +4,7 @@
 
 namespace EE { namespace Window {
 
-cInputTextBuffer::cInputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, cWindow * window, const Uint32& maxLenght ) :
+cInputTextBuffer::cInputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, Window::cWindow * window, const Uint32& maxLenght ) :
 	mWindow( window ),
 	mFlags(0),
 	mCallback(0),
@@ -151,7 +151,7 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 							String txt = mWindow->GetClipboard()->GetWideText();
 
 							if ( !SupportNewLine() ) {
-								Uint32 pos = txt.find_first_of( '\n' );
+								size_t pos = txt.find_first_of( '\n' );
 
 								if ( pos != std::string::npos )
 									txt = txt.substr( 0, pos );

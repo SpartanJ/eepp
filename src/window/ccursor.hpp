@@ -31,11 +31,11 @@ class EE_API cCursor {
 		eeVector2i		mHotSpot;
 		cWindow *		mWindow;
 
-		cCursor( cTexture * tex, const eeVector2i& hotspot, const std::string& name, cWindow * window );
+		cCursor( cTexture * tex, const eeVector2i& hotspot, const std::string& name, Window::cWindow * window );
 
-		cCursor( cImage * img, const eeVector2i& hotspot, const std::string& name, cWindow * window );
+		cCursor( cImage * img, const eeVector2i& hotspot, const std::string& name, Window::cWindow * window );
 
-		cCursor( const std::string& path, const eeVector2i& hotspot, const std::string& name, cWindow * window );
+		cCursor( const std::string& path, const eeVector2i& hotspot, const std::string& name, Window::cWindow * window );
 
 		virtual void Create() = 0;
 };

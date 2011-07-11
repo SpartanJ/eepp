@@ -12,9 +12,9 @@ namespace EE { namespace Graphics {
 
 class EE_API cFrameBuffer {
 	public:
-		static cFrameBuffer * CreateNew( const Uint32& Width, const Uint32& Height, bool DepthBuffer = false, cWindow * window = NULL );
+		static cFrameBuffer * CreateNew( const Uint32& Width, const Uint32& Height, bool DepthBuffer = false, Window::cWindow * window = NULL );
 
-		cFrameBuffer( cWindow * window );
+		cFrameBuffer( Window::cWindow * window );
 
 		virtual ~cFrameBuffer();
 
@@ -40,7 +40,7 @@ class EE_API cFrameBuffer {
 
 		const bool& HasDepthBuffer() const;
 	protected:
-		cWindow *	mWindow;
+		Window::cWindow *	mWindow;
 		Int32		mWidth;
 		Int32		mHeight;
 		bool		mHasDepthBuffer;

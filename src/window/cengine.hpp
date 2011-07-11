@@ -16,18 +16,18 @@ class EE_API cEngine : public tSingleton<cEngine> {
 		/** Creates a new window.
 		* Allegro 5 backend support more than one window creation, SDL backend only 1 window.
 		*/
-		cWindow * CreateWindow( WindowSettings Settings, ContextSettings Context );
+		Window::cWindow * CreateWindow( WindowSettings Settings, ContextSettings Context );
 
 		/** Destroy the window instance, and set as current other window running ( if any ).
 		* This function is only usefull for multi-window environment. Avoid using it with one window context.
 		*/
-		void DestroyWindow( cWindow * window );
+		void DestroyWindow( Window::cWindow * window );
 
 		/** @return The current Window context. */
-		cWindow * GetCurrentWindow() const;
+		Window::cWindow * GetCurrentWindow() const;
 
 		/** Set the window as the current. */
-		void SetCurrentWindow( cWindow * window );
+		void SetCurrentWindow( Window::cWindow * window );
 
 		/** @return The number of windows created. */
 		Uint32	GetWindowCount() const;
@@ -45,7 +45,7 @@ class EE_API cEngine : public tSingleton<cEngine> {
 		const Uint32& GetHeight() const;
 
 		/** @return If the window instance is inside the window list. */
-		bool ExistsWindow( cWindow * window );
+		bool ExistsWindow( Window::cWindow * window );
 	protected:
 		friend class cWindow;
 

@@ -19,11 +19,11 @@ class cCursorX11 : public cCursor {
 
 		X11Cursor	mCursor;
 
-		cCursorX11( cTexture * tex, const eeVector2i& hotspot, const std::string& name, cWindow * window );
+		cCursorX11( cTexture * tex, const eeVector2i& hotspot, const std::string& name, Window::cWindow * window );
 
-		cCursorX11( cImage * img, const eeVector2i& hotspot, const std::string& name, cWindow * window );
+		cCursorX11( cImage * img, const eeVector2i& hotspot, const std::string& name, Window::cWindow * window );
 
-		cCursorX11( const std::string& path, const eeVector2i& hotspot, const std::string& name, cWindow * window );
+		cCursorX11( const std::string& path, const eeVector2i& hotspot, const std::string& name, Window::cWindow * window );
 
 		~cCursorX11();
 

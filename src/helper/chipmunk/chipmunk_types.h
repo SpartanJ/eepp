@@ -130,7 +130,12 @@ cpflerpconst(cpFloat f1, cpFloat f2, cpFloat d)
 }
 
 /// Hash value type.
-typedef unsigned int cpHashValue;
+#include "../sophist/sophist.h"
+#if 1 == SOPHIST_pointer64
+typedef SOPHIST_uint64 cpHashValue;
+#else
+typedef SOPHIST_uint32 cpHashValue;
+#endif
 
 /// Chipmunk's boolean type.
 /// Oh C, how we love to define our own boolean types to get compiler compatibility

@@ -31,7 +31,7 @@ class EE_API cIsoTile {
 
 class EE_API cIsoMap {
 	public:
-		cIsoMap( cWindow * window = NULL );
+		cIsoMap( Window::cWindow * window = NULL );
 
 		~cIsoMap();
 
@@ -81,7 +81,7 @@ class EE_API cIsoMap {
 	protected:
 		std::vector<cIsoTile> Map;
 
-		cWindow *	mWindow;
+		Window::cWindow *	mWindow;
 		eeColor		mMapAmbientColor;
 		eeUint		mMapWidth;
 		eeUint		mMapHeight;

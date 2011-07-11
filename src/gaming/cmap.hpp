@@ -26,7 +26,7 @@ class cMap {
 
 		virtual ~cMap();
 
-		virtual void Create( eeSize Size, Uint32 MaxLayers, eeSize TileSize, Uint32 Flags = 0, eeSize viewSize = eeSize( 800, 600 ), cWindow * Window = NULL );
+		virtual void Create( eeSize Size, Uint32 MaxLayers, eeSize TileSize, Uint32 Flags = 0, eeSize viewSize = eeSize( 800, 600 ), Window::cWindow * Window = NULL );
 
 		virtual cLayer * AddLayer( Uint32 Type, Uint32 flags, std::string name );
 
@@ -122,7 +122,7 @@ class cMap {
 
 		void SetCreateGameObjectCallback( const CreateGOCb& Cb );
 	protected:
-		cWindow *		mWindow;
+		Window::cWindow *		mWindow;
 		cLayer**		mLayers;
 		Uint32			mFlags;
 		Uint32			mMaxLayers;

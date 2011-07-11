@@ -16,7 +16,7 @@ class EE_API cConsole{
 		//! The Console Callback return a vector of parameters ( String )
 		typedef cb::Callback1<void, const std::vector < String >& > ConsoleCallback;
 
-		cConsole( cWindow * window = NULL );
+		cConsole( Window::cWindow * window = NULL );
 
 		~cConsole();
 
@@ -123,7 +123,7 @@ class EE_API cConsole{
 		std::deque < String > mCmdLog;
 		std::deque < String > mLastCommands;
 
-		cWindow * mWindow;
+		Window::cWindow * mWindow;
 
 		eeColorA mConColor;
 		eeColorA mConLineColor;

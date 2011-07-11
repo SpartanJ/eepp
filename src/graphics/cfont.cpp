@@ -293,8 +293,8 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 	Uint32 alloc = numvert * sizeof(eeVertexCoords);
 
 	GLi->ColorPointer	( 4, GL_UNSIGNED_BYTE	, 0						, reinterpret_cast<char*>( &Colors[0] )								, alloc );
-	GLi->TexCoordPointer( 2, GL_FLOAT			, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] )						, alloc );
-	GLi->VertexPointer	( 2, GL_FLOAT			, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] ) + sizeof(eeFloat) * 2 , alloc );
+	GLi->TexCoordPointer( 2, GL_FP			, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] )						, alloc );
+	GLi->VertexPointer	( 2, GL_FP			, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] ) + sizeof(eeFloat) * 2 , alloc );
 
 	#ifndef EE_GLES
 	GLi->DrawArrays( GL_QUADS, 0, numvert );
@@ -464,8 +464,8 @@ void cFont::SubDraw( const String& Text, const eeFloat& X, const eeFloat& Y, con
 	Uint32 alloc = numvert * sizeof(eeVertexCoords);
 
 	GLi->ColorPointer		( 4, GL_UNSIGNED_BYTE	, 0						, reinterpret_cast<char*>( &mColors[0] )								, alloc	);
-	GLi->TexCoordPointer	( 2, GL_FLOAT			, sizeof(eeVertexCoords), reinterpret_cast<char*>( &mRenderCoords[0] )							, alloc );
-	GLi->VertexPointer		( 2, GL_FLOAT			, sizeof(eeVertexCoords), reinterpret_cast<char*>( &mRenderCoords[0] ) + sizeof(eeFloat) * 2	, alloc );
+	GLi->TexCoordPointer	( 2, GL_FP			, sizeof(eeVertexCoords), reinterpret_cast<char*>( &mRenderCoords[0] )							, alloc );
+	GLi->VertexPointer		( 2, GL_FP			, sizeof(eeVertexCoords), reinterpret_cast<char*>( &mRenderCoords[0] ) + sizeof(eeFloat) * 2	, alloc );
 
 	#ifndef EE_GLES
 	GLi->DrawArrays( GL_QUADS, 0, numvert );
