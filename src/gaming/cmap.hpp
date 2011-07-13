@@ -142,7 +142,7 @@ class cMap {
 		PropertiesMap	mProperties;
 		GOTypesList		mObjTypes;
 		CreateGOCb		mCreateGOCb;
-
+		cTexture *		mTileTex;
 
 		virtual cGameObject *	CreateGameObject( const Uint32& Type, const Uint32& Flags, const Uint32& DataId = 0 );
 
@@ -161,6 +161,8 @@ class cMap {
 		void			DeleteLayers();
 
 		std::vector<std::string> GetShapeGroups();
+
+		void			CreateEmptyTile();
 };
 
 }}

@@ -104,7 +104,7 @@ void cPrimitives::DrawRectangle(const eeFloat& x, const eeFloat& y, const eeFloa
 		}
 		case EE_DRAW_LINE:
 			mBR->SetLineWidth( lineWidth );
-
+			
 			mBR->LineLoopBegin();
 			mBR->LineLoopSetColorFree( TopLeft, BottomLeft );
 
@@ -126,6 +126,7 @@ void cPrimitives::DrawRectangle(const eeFloat& x, const eeFloat& y, const eeFloa
 				mBR->LineLoopSetColorFree( BottomRight, TopRight );
 				mBR->BatchLineLoop( x + width, y + height, x + width, y );
 			}
+
 			break;
 	}
 

@@ -19,7 +19,8 @@ cMap::cMap() :
 	mFlags( 0 ),
 	mMaxLayers( 0 ),
 	mLayerCount( 0 ),
-	mViewSize( 800, 600 )
+	mViewSize( 800, 600 ),
+	mTileTex( NULL )
 {
 	ViewSize( mViewSize );
 }
@@ -66,6 +67,51 @@ void cMap::Create( eeSize Size, Uint32 MaxLayers, eeSize TileSize, Uint32 Flags,
 		mLayers[i] = NULL;
 
 	ViewSize( viewSize );
+
+	CreateEmptyTile();
+}
+
+void cMap::CreateEmptyTile() {
+	//! I create a texture representing an empty tile to render instead of rendering with primitives because is a lot faster, at least with NVIDIA GPUs.
+	cTextureFactory * TF = cTextureFactory::instance();
+	std::string tileName( "maptile-" + toStr( mTileSize.Width() ) + "x" + toStr( mTileSize.Height() ) );
+
+	cTexture * Tex = TF->GetByName( tileName );
+
+	if ( NULL == Tex ) {
+		Uint32 x, y;
+		eeColorA Col( 255, 255, 255, 255 );
+
+		cImage Img( mTileSize.Width(), mTileSize.Height(), 4 );
+
+		Img.FillWithColor( eeColorA( 0, 0, 0, 0 ) );
+
+		for ( x = 0; x < Img.Width(); x++ ) {
+			Img.SetPixel( x, 0, Col );
+			Img.SetPixel( x, mTileSize.y - 1, Col );
+		}
+
+		for ( y = 0; y < Img.Height(); y++ ) {
+			Img.SetPixel( 0, y, Col );
+			Img.SetPixel( mTileSize.x - 1, y, Col );
+		}
+
+		Uint32 TileTexId = TF->LoadFromPixels(
+			Img.GetPixelsPtr(),
+			Img.Width(),
+			Img.Height(),
+			Img.Channels(),
+			false,
+			EE_CLAMP_TO_EDGE,
+			false,
+			false,
+			tileName
+		);
+
+		mTileTex = TF->GetTexture( TileTexId );
+	} else {
+		mTileTex = Tex;
+	}
 }
 
 cLayer * cMap::AddLayer( Uint32 Type, Uint32 flags, std::string name ) {
@@ -175,11 +221,19 @@ void cMap::GridDraw() {
 	eeVector2i start = StartTile();
 	eeVector2i end = EndTile();
 
+	eeFloat tx, ty;
+
 	for ( Int32 x = start.x; x < end.x; x++ ) {
 		for ( Int32 y = start.y; y < end.y; y++ ) {
-			P.DrawRectangle( x * mTileSize.x, y * mTileSize.y, mTileSize.x, mTileSize.y, 0.f, 1.f, EE_DRAW_LINE );
+			tx = x * mTileSize.x;
+
+			ty = y * mTileSize.y;
+
+			mTileTex->Draw( tx, ty );
 		}
 	}
+
+	cGlobalBatchRenderer::instance()->Draw();
 
 	GLi->PopMatrix();
 }

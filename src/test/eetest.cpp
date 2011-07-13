@@ -823,9 +823,9 @@ void cEETest::LoadTextures() {
 
 	cCursorManager * CurMan = mWindow->GetCursorManager();
 	CurMan->Visible( false );
-	//CurMan->Visible( true );
-	//CurMan->Set( Window::Cursor::SYS_CURSOR_LINK );
-	//CurMan->Set( CurMan->Add( CurMan->Create( CursorP[1], eeVector2i( 2, 2 ), "cursor_special" ) ) );
+	CurMan->Visible( true );
+	CurMan->Set( Window::Cursor::SYS_CURSOR_LINK );
+	CurMan->Set( CurMan->Add( CurMan->Create( CursorP[1], eeVector2i( 2, 2 ), "cursor_special" ) ) );
 
 	CL1.AddFrame(TN[2]);
 	CL1.Position( 500, 400 );
@@ -1212,10 +1212,10 @@ void cEETest::Render() {
 
 	Con.Draw();
 
-	if ( Screen == 1 )
+	/*if ( Screen == 1 )
 		CursorP[ 0 ]->Draw( Mousef.x, Mousef.y );
 	else
-		CursorP[ 1 ]->Draw( Mousef.x, Mousef.y );
+		CursorP[ 1 ]->Draw( Mousef.x, Mousef.y );*/
 }
 
 void cEETest::Input() {
