@@ -90,8 +90,13 @@ void cTextureGroupLoader::LoadFromStream( cIOStream& IOS ) {
 				//! Checks if the texture is already loaded
 				cTexture * tTex = cTextureFactory::instance()->GetByName( path );
 
-				if ( !mSkipResourceLoad && NULL == tTex )
-					mRL.Add( eeNew( cTextureLoader, ( path ) ) );
+				if ( !mSkipResourceLoad && NULL == tTex ) {
+					if ( NULL != mPack ) {
+						mRL.Add( eeNew( cTextureLoader, ( mPack, path ) ) );
+					} else {
+						mRL.Add( eeNew( cTextureLoader, ( path ) ) );
+					}
+				}
 
 				IOS.Read( (char*)&tTexGroup.Shapes[0], sizeof(sShapeHdr) * tTextureHdr.ShapeCount );
 

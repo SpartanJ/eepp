@@ -578,61 +578,6 @@ void cMap::SetCreateGameObjectCallback( const CreateGOCb& Cb ) {
 	mCreateGOCb = Cb;
 }
 
-#define MAP_PROPERTY_SIZE			(64)
-#define LAYER_NAME_SIZE				(64)
-#define MAP_SHAPEGROUP_PATH_SIZE	(128)
-
-typedef struct sPropertyHdrS {
-	char	Name[ MAP_PROPERTY_SIZE ];
-	char	Value[ MAP_PROPERTY_SIZE ];
-} sPropertyHdr;
-
-typedef struct sMapShapeGroupS {
-	char	Path[ MAP_SHAPEGROUP_PATH_SIZE ];
-} sMapShapeGroup;
-
-typedef struct sVirtualObjS {
-	char	Name[ MAP_PROPERTY_SIZE ];
-} sVirtualObj;
-
-typedef struct sMapHdrS {
-	Uint32	Magic;
-	Uint32	SizeX;
-	Uint32	SizeY;
-	Uint32	TileSizeX;
-	Uint32	TileSizeY;
-	Uint32	MaxLayers;
-	Uint32	LayerCount;
-	Uint32	Flags;
-	Uint32	PropertyCount;
-	Uint32	ShapeGroupCount;
-	Uint32	VirtualObjectTypesCount;
-} sMapHdr;
-
-typedef struct sLayerHdrS {
-	char	Name[ LAYER_NAME_SIZE ];
-	Uint32	Type;
-	Uint32	Flags;
-	Int32	OffsetX;
-	Int32	OffsetY;
-	Uint32	PropertyCount;
-	Uint32	ObjectCount;		//! Only used by the Object Layer
-} sLayerHdr;
-
-typedef struct sMapTileGOHdrS {
-	Uint32	Type;
-	Uint32	Id;
-	Uint32	Flags;
-} sMapTileGOHdr;
-
-typedef struct sMapObjGOHdrS {
-	Uint32	Type;
-	Uint32	Id;
-	Uint32	Flags;
-	Int32	PosX;
-	Int32	PosY;
-} sMapObjGOHdr;
-
 bool cMap::LoadFromStream( cIOStream& IOS ) {
 	sMapHdr MapHdr;
 	Uint32 i, z;
@@ -776,9 +721,15 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 	return false;
 }
 
+const std::string& cMap::Path() const {
+	return mPath;
+}
+
 bool cMap::Load( const std::string& path ) {
 	if ( FileExists( path ) ) {
-		cIOStreamFile IOS( path, std::ios::in | std::ios::binary );
+		mPath = path;
+
+		cIOStreamFile IOS( mPath, std::ios::in | std::ios::binary );
 
 		return LoadFromStream( IOS );
 	}

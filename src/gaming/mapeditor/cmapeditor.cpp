@@ -468,11 +468,13 @@ void cMapEditor::OnScrollMapV( const cUIEvent * Event ) {
 void cMapEditor::MapOpen( const cUIEvent * Event ) {
 	cUICommonDialog * CDL = reinterpret_cast<cUICommonDialog*> ( Event->Ctrl() );
 
-	mUIMap->Map()->Load( CDL->GetFullPath() );
+	if ( mUIMap->Map()->Load( CDL->GetFullPath() ) ) {
+		mUIMap->Map()->ViewSize( mUIMap->Size() );
 
-	MapCreated();
+		MapCreated();
 
-	RefreshLayersList();
+		RefreshLayersList();
+	}
 }
 
 void cMapEditor::FileMenuClick( const cUIEvent * Event ) {
@@ -491,8 +493,17 @@ void cMapEditor::FileMenuClick( const cUIEvent * Event ) {
 		TGDialog->Center();
 		TGDialog->Show();
 	} else if ( "Save" == txt ) {
-		//! Testing, temporal!
-		mUIMap->Map()->Save( GetProcessPath() + "data/test.eem" );
+		if ( mUIMap->Map()->Path().size() ) {
+			mUIMap->Map()->Save( mUIMap->Map()->Path() );
+		}
+	} else if ( "Close" == txt ) {
+		mUIMap->Map()->Create( eeSize( 100, 100 ), 16, eeSize( 32, 32 ), MAP_FLAG_DRAW_GRID | MAP_FLAG_CLAMP_BODERS | MAP_FLAG_CLIP_AREA, mUIMap->Size() );
+
+		MapCreated();
+
+		mCurLayer = NULL;
+
+		RefreshLayersList();
 	} else if ( "Quit" == txt ) {
 		if ( mUIWindow == cUIManager::instance()->MainControl() ) {
 			cUIManager::instance()->GetWindow()->Close();

@@ -90,16 +90,21 @@ void cUIGridCell::Update() {
 void cUIGridCell::Select() {
 	cUIGenericGrid * MyParent 	= reinterpret_cast<cUIGenericGrid*> ( Parent()->Parent() );
 
-	bool wasSelected = 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
+	if ( MyParent->GetItemSelected() != this ) {
+		if ( NULL != MyParent->GetItemSelected() )
+			MyParent->GetItemSelected()->Unselect();
 
-	SetSkinState( cUISkinState::StateSelected );
+		bool wasSelected = 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
 
-	mControlFlags |= UI_CTRL_FLAG_SELECTED;
+		SetSkinState( cUISkinState::StateSelected );
 
-	MyParent->mSelected = MyParent->GetItemIndex( this );
+		mControlFlags |= UI_CTRL_FLAG_SELECTED;
 
-	if ( !wasSelected ) {
-		MyParent->OnSelected();
+		MyParent->mSelected = MyParent->GetItemIndex( this );
+
+		if ( !wasSelected ) {
+			MyParent->OnSelected();
+		}
 	}
 }
 
@@ -137,7 +142,7 @@ Uint32 cUIGridCell::OnMessage( const cUIMessage * Msg ) {
 		}
 		case cUIMessage::MsgClick:
 		{
-			if ( Msg->Flags() == EE_BUTTONS_LRM ) {
+			if ( Msg->Flags() & EE_BUTTONS_LRM ) {
 				Select();
 
 				cUIMessage tMsg( this, cUIMessage::MsgCellClicked, Msg->Flags() );

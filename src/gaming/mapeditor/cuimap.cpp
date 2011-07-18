@@ -18,17 +18,24 @@ cMap * cUIMap::Map() const {
 }
 
 void cUIMap::Draw() {
-	mMap->Position( mScreenPos );
-	mMap->Draw();
+	if ( NULL != mMap ) {
+		mMap->Position( mScreenPos );
+		mMap->Draw();
+	}
 }
 
 void cUIMap::Update() {
-	mMap->Update();
+	if ( NULL != mMap ) {
+		mMap->Update();
+	}
 }
 
 void cUIMap::OnSizeChange() {
-	mMap->Position( mScreenPos );
-	mMap->ViewSize( mSize );
+	if ( NULL != mMap ) {
+		mMap->Position( mScreenPos );
+		mMap->ViewSize( mSize );
+	}
+
 	cUIComplexControl::OnSizeChange();
 }
 

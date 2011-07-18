@@ -130,11 +130,19 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 
 		f &= ~FONT_DRAW_SHADOW;
 
-		eeColorA Col = mColor;
+		eeColorA Col = TextCache.Color();
 
 		SetText( TextCache.Text() );
 
-		Color( TextCache.ShadowColor() );
+		if ( Col.A() != 255 ) {
+			eeColorA ShadowColor = TextCache.ShadowColor();
+
+			ShadowColor.Alpha = (Uint8)( (eeFloat)ShadowColor.Alpha * ( (eeFloat)Col.A() / (eeFloat)255 ) );
+
+			Color( ShadowColor );
+		} else {
+			Color( TextCache.ShadowColor() );
+		}
 
 		Draw( X + 1, Y + 1, f, Scale, Angle, Effect );
 
@@ -325,8 +333,18 @@ void cFont::SubDraw( const String& Text, const eeFloat& X, const eeFloat& Y, con
 
 		eeColorA Col = mColor;
 
-		Color( mShadowColor );
+		if ( Col.A() != 255 ) {
+			eeColorA ShadowColor = mShadowColor;
+
+			ShadowColor.Alpha = (Uint8)( (eeFloat)ShadowColor.Alpha * ( (eeFloat)Col.A() / (eeFloat)255 ) );
+
+			Color( ShadowColor );
+		} else {
+			Color( mShadowColor );
+		}
+
 		SubDraw( Text, X + 1, Y + 1, f, Scale, Angle, true, Effect );
+
 		Color( Col );
 	}
 

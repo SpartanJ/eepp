@@ -3,6 +3,61 @@
 
 namespace EE { namespace Gaming {
 
+#define MAP_PROPERTY_SIZE			(64)
+#define LAYER_NAME_SIZE				(64)
+#define MAP_SHAPEGROUP_PATH_SIZE	(128)
+
+typedef struct sPropertyHdrS {
+	char	Name[ MAP_PROPERTY_SIZE ];
+	char	Value[ MAP_PROPERTY_SIZE ];
+} sPropertyHdr;
+
+typedef struct sMapShapeGroupS {
+	char	Path[ MAP_SHAPEGROUP_PATH_SIZE ];
+} sMapShapeGroup;
+
+typedef struct sVirtualObjS {
+	char	Name[ MAP_PROPERTY_SIZE ];
+} sVirtualObj;
+
+typedef struct sMapHdrS {
+	Uint32	Magic;
+	Uint32	SizeX;
+	Uint32	SizeY;
+	Uint32	TileSizeX;
+	Uint32	TileSizeY;
+	Uint32	MaxLayers;
+	Uint32	LayerCount;
+	Uint32	Flags;
+	Uint32	PropertyCount;
+	Uint32	ShapeGroupCount;
+	Uint32	VirtualObjectTypesCount;
+} sMapHdr;
+
+typedef struct sLayerHdrS {
+	char	Name[ LAYER_NAME_SIZE ];
+	Uint32	Type;
+	Uint32	Flags;
+	Int32	OffsetX;
+	Int32	OffsetY;
+	Uint32	PropertyCount;
+	Uint32	ObjectCount;		//! Only used by the Object Layer
+} sLayerHdr;
+
+typedef struct sMapTileGOHdrS {
+	Uint32	Type;
+	Uint32	Id;
+	Uint32	Flags;
+} sMapTileGOHdr;
+
+typedef struct sMapObjGOHdrS {
+	Uint32	Type;
+	Uint32	Id;
+	Uint32	Flags;
+	Int32	PosX;
+	Int32	PosY;
+} sMapObjGOHdr;
+
 class GObjFlags {
 	public:
 		enum EE_GAMEOBJECT_FLAGS {

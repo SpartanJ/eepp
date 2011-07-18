@@ -125,6 +125,8 @@ class cMap {
 		GOTypesList& GetVirtualObjectTypes();
 
 		void SetCreateGameObjectCallback( const CreateGOCb& Cb );
+
+		const std::string& Path() const;
 	protected:
 		Window::cWindow *		mWindow;
 		cLayer**		mLayers;
@@ -147,6 +149,7 @@ class cMap {
 		GOTypesList		mObjTypes;
 		CreateGOCb		mCreateGOCb;
 		cTexture *		mTileTex;
+		std::string		mPath;
 
 		virtual cGameObject *	CreateGameObject( const Uint32& Type, const Uint32& Flags, const Uint32& DataId = 0 );
 
