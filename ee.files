@@ -725,3 +725,8 @@ src/gaming/cgameobjectvirtual.hpp
 src/gaming/cgameobjectvirtual.cpp
 src/utils/safedatapointer.hpp
 src/utils/safedatapointer.cpp
+src/system/ciostream.hpp
+src/system/ciostreamfile.hpp
+src/system/ciostreamfile.cpp
+src/system/ciostreammemory.hpp
+src/system/ciostreammemory.cpp

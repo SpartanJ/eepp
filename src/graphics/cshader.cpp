@@ -13,21 +13,15 @@ cShader::cShader( const Uint32& Type ) {
 cShader::cShader( const Uint32& Type, const std::string& Filename ) {
     Init( Type );
 
-	std::fstream fs;
-	fs.open( Filename.c_str(), std::ios::in | std::ios::binary );
+	if ( FileExists( Filename ) ) {
+		SafeDataPointer PData;
 
-	if ( !fs.is_open() ) {
+		FileGet( Filename, PData );
+
+		SetSource( (const char*)PData.Data, PData.DataSize );
+	} else {
 		cLog::instance()->Write( std::string( "Couldn't open shader object: " ) + Filename );
 	}
-
-	fs.seekg ( 0, std::ios::end );
-	Int32 Length = fs.tellg();
-	fs.seekg ( 0, std::ios::beg );
-	std::string Buffer( Length + 1, 0 );
-	fs.read( reinterpret_cast<char*> ( &Buffer[0] ), Length );
-	fs.close();
-
-    SetSource( Buffer );
 
     Compile();
 }

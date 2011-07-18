@@ -6,6 +6,7 @@
 #include "ctextureloader.hpp"
 #include "ctexturefactory.hpp"
 #include "../system/cresourceloader.hpp"
+#include "../system/ciostream.hpp"
 
 namespace EE { namespace Graphics {
 
@@ -28,6 +29,8 @@ class EE_API cTextureGroupLoader {
 		void					Update();
 
 		void					Load( const std::string& TextureGroupPath = "" );
+
+		void					LoadFromStream( cIOStream& IOS );
 
 		void					LoadFromMemory( const Uint8* Data, const Uint32& DataSize, const std::string& TextureGroupName );
 

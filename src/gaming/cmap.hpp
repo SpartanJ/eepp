@@ -40,7 +40,11 @@ class cMap {
 
 		virtual bool Load( const std::string& path );
 
+		virtual bool LoadFromStream( cIOStream& IOS );
+
 		virtual void Save( const std::string& path );
+
+		virtual void SaveToStream( cIOStream& IOS );
 
 		virtual void Draw();
 

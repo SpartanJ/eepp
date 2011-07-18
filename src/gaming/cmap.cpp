@@ -633,148 +633,160 @@ typedef struct sMapObjGOHdrS {
 	Int32	PosY;
 } sMapObjGOHdr;
 
-bool cMap::Load( const std::string& path ) {
-	if ( FileExists( path ) ) {
-		sMapHdr MapHdr;
-		Uint32 i, z;
+bool cMap::LoadFromStream( cIOStream& IOS ) {
+	sMapHdr MapHdr;
+	Uint32 i, z;
 
-		std::fstream fs ( path.c_str() , std::ios::in | std::ios::binary );
+	if ( IOS.IsOpen() ) {
+		IOS.Read( (char*)&MapHdr, sizeof(sMapHdr) );
 
-		if ( fs.is_open() ) {
-			fs.read( reinterpret_cast<char*> (&MapHdr), sizeof(sMapHdr) );
+		if ( MapHdr.Magic == ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'M' << 16 ) | ( 'P' << 24 ) ) ) {
+			Create( eeSize( MapHdr.SizeX, MapHdr.SizeY ), MapHdr.MaxLayers, eeSize( MapHdr.TileSizeX, MapHdr.TileSizeY ), MapHdr.Flags );
 
-			if ( MapHdr.Magic == ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'M' << 16 ) | ( 'P' << 24 ) ) ) {
-				Create( eeSize( MapHdr.SizeX, MapHdr.SizeY ), MapHdr.MaxLayers, eeSize( MapHdr.TileSizeX, MapHdr.TileSizeY ), MapHdr.Flags );
+			//! Load Properties
+			if ( MapHdr.PropertyCount ) {
+				sPropertyHdr tProp[ MapHdr.PropertyCount ];
 
-				//! Load Properties
-				if ( MapHdr.PropertyCount ) {
-					sPropertyHdr tProp[ MapHdr.PropertyCount ];
-					fs.read( reinterpret_cast<char*>( &tProp[0] ), sizeof(sPropertyHdr) * MapHdr.PropertyCount );
+				IOS.Read( (char*)&tProp[0], sizeof(sPropertyHdr) * MapHdr.PropertyCount );
 
-					for ( i = 0; i < MapHdr.PropertyCount; i++ ) {
-						AddProperty( std::string( tProp[i].Name ), std::string( tProp[i].Value ) );
+				for ( i = 0; i < MapHdr.PropertyCount; i++ ) {
+					AddProperty( std::string( tProp[i].Name ), std::string( tProp[i].Value ) );
+				}
+			}
+
+			//! Load Shape Groups
+			if ( MapHdr.ShapeGroupCount ) {
+				sMapShapeGroup tSG[ MapHdr.ShapeGroupCount ];
+
+				IOS.Read( (char*)&tSG[0], sizeof(sMapShapeGroup) * MapHdr.ShapeGroupCount );
+
+				std::vector<std::string> ShapeGroups;
+
+				for ( i = 0; i < MapHdr.ShapeGroupCount; i++ ) {
+					ShapeGroups.push_back( std::string( tSG[i].Path ) );
+				}
+
+				//! Load the Texture groups if needed
+				//! @TODO: Load TGPs
+			}
+
+			//! Load Virtual Object Types
+			if ( MapHdr.VirtualObjectTypesCount ) {
+				sVirtualObj tVObj[ MapHdr.VirtualObjectTypesCount ];
+
+				IOS.Read( (char*)&tVObj[0], sizeof(sVirtualObj) * MapHdr.VirtualObjectTypesCount );
+
+				for ( i = 0; i < MapHdr.VirtualObjectTypesCount; i++ ) {
+					AddVirtualObjectType( std::string( tVObj[i].Name ) );
+				}
+			}
+
+			//! Load Layers
+			if ( MapHdr.LayerCount ) {
+				sLayerHdr tLayersHdr[ MapHdr.LayerCount ];
+				sLayerHdr * tLayerHdr;
+
+				IOS.Read( (char*)&tLayersHdr[0], sizeof(sLayerHdr) * MapHdr.LayerCount );
+
+				for ( i = 0; i < MapHdr.LayerCount; i++ ) {
+					tLayerHdr = &(tLayersHdr[i]);
+
+					cLayer * tLayer = AddLayer( tLayerHdr->Type, tLayerHdr->Flags, std::string( tLayerHdr->Name ) );
+
+					tLayer->Offset( eeVector2f( (eeFloat)tLayerHdr->OffsetX, (eeFloat)tLayerHdr->OffsetY ) );
+
+					sPropertyHdr tProps[ tLayerHdr->PropertyCount ];
+
+					IOS.Read( (char*)&tProps[0], sizeof(sPropertyHdr) * tLayerHdr->PropertyCount );
+
+					for ( z = 0; z < tLayerHdr->PropertyCount; z++ ) {
+						tLayer->AddProperty( std::string( tProps[z].Name ), std::string( tProps[z].Value ) );
 					}
 				}
 
-				//! Load Shape Groups
-				if ( MapHdr.ShapeGroupCount ) {
-					sMapShapeGroup tSG[ MapHdr.ShapeGroupCount ];
-					fs.read( reinterpret_cast<char*>( &tSG[0] ), sizeof(sMapShapeGroup) * MapHdr.ShapeGroupCount );
+				bool ThereIsTiled = false;
 
-					std::vector<std::string> ShapeGroups;
-
-					for ( i = 0; i < MapHdr.ShapeGroupCount; i++ ) {
-						ShapeGroups.push_back( std::string( tSG[i].Path ) );
-					}
-
-					//! Load the Texture groups if needed
-				}
-
-				//! Load Virtual Object Types
-				if ( MapHdr.VirtualObjectTypesCount ) {
-					sVirtualObj tVObj[ MapHdr.VirtualObjectTypesCount ];
-					fs.read( reinterpret_cast<char*>( &tVObj[0] ), sizeof(sVirtualObj) * MapHdr.VirtualObjectTypesCount );
-
-					for ( i = 0; i < MapHdr.VirtualObjectTypesCount; i++ ) {
-						AddVirtualObjectType( std::string( tVObj[i].Name ) );
+				for ( i = 0; i < mLayerCount; i++ ) {
+					if ( NULL != mLayers[i] && mLayers[i]->Type() == MAP_LAYER_TILED ) {
+						ThereIsTiled = true;
 					}
 				}
 
-				//! Load Layers
-				if ( MapHdr.LayerCount ) {
-					sLayerHdr tLayersHdr[ MapHdr.LayerCount ];
-					sLayerHdr * tLayerHdr;
+				Int32 x, y;
+				Uint32 tReadFlag = 0;
+				cTileLayer * tTLayer;
+				cGameObject * tGO;
 
-					fs.read( reinterpret_cast<char*>( &tLayersHdr[0] ), sizeof(sLayerHdr) * MapHdr.LayerCount );
+				if ( ThereIsTiled ) {
+					//! First we read the tiled layers.
+					for ( y = 0; y < mSize.y; y++ ) {
+						for ( x = 0; x < mSize.x; x++ ) {
 
-					for ( i = 0; i < MapHdr.LayerCount; i++ ) {
-						tLayerHdr = &(tLayersHdr[i]);
+							//! Read the current tile flags
+							IOS.Read( (char*)&tReadFlag, sizeof(Uint32) );
 
-						cLayer * tLayer = AddLayer( tLayerHdr->Type, tLayerHdr->Flags, std::string( tLayerHdr->Name ) );
+							//! Read every game object header corresponding to this tile
+							for ( i = 0; i < mLayerCount; i++ ) {
+								if ( tReadFlag & ( 1 << i ) ) {
+									tTLayer = reinterpret_cast<cTileLayer*> ( mLayers[i] );
 
-						tLayer->Offset( eeVector2f( (eeFloat)tLayerHdr->OffsetX, (eeFloat)tLayerHdr->OffsetY ) );
+									sMapTileGOHdr tTGOHdr;
 
-						sPropertyHdr tProps[ tLayerHdr->PropertyCount ];
-						fs.read( reinterpret_cast<char*>( &tProps[0] ), sizeof(sPropertyHdr) * tLayerHdr->PropertyCount );
+									IOS.Read( (char*)&tTGOHdr, sizeof(sMapTileGOHdr) );
 
-						for ( z = 0; z < tLayerHdr->PropertyCount; z++ ) {
-							tLayer->AddProperty( std::string( tProps[z].Name ), std::string( tProps[z].Value ) );
-						}
-					}
+									tGO = CreateGameObject( tTGOHdr.Type, tTGOHdr.Flags, tTGOHdr.Id );
 
-					bool ThereIsTiled = false;
-
-					for ( i = 0; i < mLayerCount; i++ ) {
-						if ( NULL != mLayers[i] && mLayers[i]->Type() == MAP_LAYER_TILED ) {
-							ThereIsTiled = true;
-						}
-					}
-
-					Int32 x, y;
-					Uint32 tReadFlag = 0;
-					cTileLayer * tTLayer;
-					cGameObject * tGO;
-
-					if ( ThereIsTiled ) {
-						//! First we read the tiled layers.
-						for ( y = 0; y < mSize.y; y++ ) {
-							for ( x = 0; x < mSize.x; x++ ) {
-
-								//! Read the current tile flags
-								fs.read( reinterpret_cast<char*> ( &tReadFlag ), sizeof(Uint32) );
-
-								//! Read every game object header corresponding to this tile
-								for ( i = 0; i < mLayerCount; i++ ) {
-									if ( tReadFlag & ( 1 << i ) ) {
-										tTLayer = reinterpret_cast<cTileLayer*> ( mLayers[i] );
-
-										sMapTileGOHdr tTGOHdr;
-										fs.read( reinterpret_cast<char*> ( &tTGOHdr ), sizeof(sMapTileGOHdr) );
-
-										tGO = CreateGameObject( tTGOHdr.Type, tTGOHdr.Flags, tTGOHdr.Id );
-
-										tTLayer->AddGameObject( tGO, eeVector2i( x, y ) );
-									}
+									tTLayer->AddGameObject( tGO, eeVector2i( x, y ) );
 								}
 							}
 						}
 					}
+				}
 
-					//! Load the game objects from the object layers
-					cObjectLayer * tOLayer;
+				//! Load the game objects from the object layers
+				cObjectLayer * tOLayer;
 
-					for ( i = 0; i < mLayerCount; i++ ) {
-						if ( NULL != mLayers[i] && mLayers[i]->Type() == MAP_LAYER_OBJECT ) {
-							tLayerHdr	= &( tLayersHdr[i] );
-							tOLayer		= reinterpret_cast<cObjectLayer*> ( mLayers[i] );
+				for ( i = 0; i < mLayerCount; i++ ) {
+					if ( NULL != mLayers[i] && mLayers[i]->Type() == MAP_LAYER_OBJECT ) {
+						tLayerHdr	= &( tLayersHdr[i] );
+						tOLayer		= reinterpret_cast<cObjectLayer*> ( mLayers[i] );
 
-							sMapObjGOHdr tOGOsHdr[ tLayerHdr->ObjectCount ];
-							sMapObjGOHdr * tOGOHdr;
+						sMapObjGOHdr tOGOsHdr[ tLayerHdr->ObjectCount ];
+						sMapObjGOHdr * tOGOHdr;
 
-							fs.read( reinterpret_cast<char*> ( &tOGOsHdr ), sizeof(sMapObjGOHdr) * tLayerHdr->ObjectCount );
+						IOS.Read( (char*)&tOGOsHdr, sizeof(sMapObjGOHdr) * tLayerHdr->ObjectCount );
 
-							for ( z = 0; z < tLayerHdr->ObjectCount; z++ ) {
-								tOGOHdr = &( tOGOsHdr[z] );
+						for ( z = 0; z < tLayerHdr->ObjectCount; z++ ) {
+							tOGOHdr = &( tOGOsHdr[z] );
 
-								tGO = CreateGameObject( tOGOHdr->Type, tOGOHdr->Flags, tOGOHdr->Id );
+							tGO = CreateGameObject( tOGOHdr->Type, tOGOHdr->Flags, tOGOHdr->Id );
 
-								tGO->Pos( eeVector2f( tOGOHdr->PosX, tOGOHdr->PosY ) );
+							tGO->Pos( eeVector2f( tOGOHdr->PosX, tOGOHdr->PosY ) );
 
-								tOLayer->AddGameObject( tGO );
-							}
+							tOLayer->AddGameObject( tGO );
 						}
 					}
 				}
-
-				return true;
 			}
+
+			return true;
 		}
 	}
 
 	return false;
 }
 
-void cMap::Save( const std::string& path ) {
+bool cMap::Load( const std::string& path ) {
+	if ( FileExists( path ) ) {
+		cIOStreamFile IOS( path, std::ios::in | std::ios::binary );
+
+		return LoadFromStream( IOS );
+	}
+
+	return false;
+}
+
+void cMap::SaveToStream( cIOStream& IOS ) {
 	Uint32 i;
 	sMapHdr MapHdr;
 	cLayer * tLayer;
@@ -793,11 +805,9 @@ void cMap::Save( const std::string& path ) {
 	MapHdr.ShapeGroupCount			= ShapeGroups.size();
 	MapHdr.VirtualObjectTypesCount	= mObjTypes.size();	//! This is only usefull for the Map Editor, to auto add on the load the virtual object types that where used to create the map.
 
-	std::fstream fs ( path.c_str() , std::ios::out | std::ios::binary );
-
-	if ( fs.is_open() ) {
+	if ( IOS.IsOpen() ) {
 		//! Writes the map header
-		fs.write( reinterpret_cast<const char*> ( &MapHdr ), sizeof(sMapHdr) );
+		IOS.Write( (const char*)&MapHdr, sizeof(sMapHdr) );
 
 		//! Writes the properties of the map
 		for ( cMap::PropertiesMap::iterator it = mProperties.begin(); it != mProperties.end(); it++ ) {
@@ -809,7 +819,7 @@ void cMap::Save( const std::string& path ) {
 			StrCopy( tProp.Name, (*it).first.c_str(), MAP_PROPERTY_SIZE );
 			StrCopy( tProp.Value, (*it).second.c_str(), MAP_PROPERTY_SIZE );
 
-			fs.write( reinterpret_cast<const char*> ( &tProp ), sizeof(sPropertyHdr) );
+			IOS.Write( (const char*)&tProp, sizeof(sPropertyHdr) );
 		}
 
 		//! Writes the shape groups that the map will need and load
@@ -820,7 +830,7 @@ void cMap::Save( const std::string& path ) {
 
 			StrCopy( tSG.Path, ShapeGroups[i].c_str(), MAP_SHAPEGROUP_PATH_SIZE );
 
-			fs.write( reinterpret_cast<const char*> ( &tSG ), sizeof(sMapShapeGroup) );
+			IOS.Write( (const char*)&tSG, sizeof(sMapShapeGroup) );
 		}
 
 		//! Writes the names of the virtual object types created in the map editor
@@ -831,7 +841,7 @@ void cMap::Save( const std::string& path ) {
 
 			StrCopy( tVObjH.Name, (*votit).c_str(), MAP_PROPERTY_SIZE );
 
-			fs.write( reinterpret_cast<const char*> ( &tVObjH ), sizeof(sVirtualObj) );
+			IOS.Write( (const char*)&tVObjH, sizeof(sVirtualObj) );
 		}
 
 		//! Writes every layer header
@@ -858,7 +868,7 @@ void cMap::Save( const std::string& path ) {
 			tLayerH.PropertyCount	= tLayerProp.size();
 
 			//! Writes the layer header
-			fs.write( reinterpret_cast<const char*> ( &tLayerH ), sizeof(sLayerHdr) );
+			IOS.Write( (const char*)&tLayerH, sizeof(sLayerHdr) );
 
 			//! Writes the properties of the current layer
 			for ( cLayer::PropertiesMap::iterator lit = tLayerProp.begin(); lit != tLayerProp.end(); lit++ ) {
@@ -869,6 +879,8 @@ void cMap::Save( const std::string& path ) {
 
 				StrCopy( tProp.Name, (*lit).first.c_str(), MAP_PROPERTY_SIZE );
 				StrCopy( tProp.Value, (*lit).second.c_str(), MAP_PROPERTY_SIZE );
+
+				IOS.Write( (const char*)&tProp, sizeof(sPropertyHdr) );
 			}
 		}
 
@@ -918,7 +930,7 @@ void cMap::Save( const std::string& path ) {
 					}
 
 					//! Writes the current tile flags
-					fs.write( reinterpret_cast<const char*> ( &tReadFlag ), sizeof(Uint32) );
+					IOS.Write( (const char*)&tReadFlag, sizeof(Uint32) );
 
 					//! Writes every game object header corresponding to this tile
 					for ( i = 0; i < mLayerCount; i++ ) {
@@ -941,7 +953,7 @@ void cMap::Save( const std::string& path ) {
 
 							tTGOHdr.Flags	= tObj->Flags();
 
-							fs.write( reinterpret_cast<const char*> ( &tTGOHdr ), sizeof(sMapTileGOHdr) );
+							IOS.Write( (const char*)&tTGOHdr, sizeof(sMapTileGOHdr) );
 						}
 					}
 				}
@@ -982,13 +994,17 @@ void cMap::Save( const std::string& path ) {
 
 					tOGOHdr.PosY	= (Int32)tObj->Pos().y;
 
-					fs.write( reinterpret_cast<const char*> ( &tOGOHdr ), sizeof(sMapObjGOHdr) );
+					IOS.Write( (const char*)&tOGOHdr, sizeof(sMapObjGOHdr) );
 				}
 			}
 		}
-
-		fs.close();
 	}
+}
+
+void cMap::Save( const std::string& path ) {
+	cIOStreamFile IOS( path, std::ios::out | std::ios::binary );
+
+	SaveToStream( IOS );
 }
 
 std::vector<std::string> cMap::GetShapeGroups() {

@@ -3,6 +3,8 @@
 #include "cshapegroupmanager.hpp"
 #include "ctexturepacker.hpp"
 #include "cshapegroup.hpp"
+#include "../system/ciostreamfile.hpp"
+#include "../system/ciostreammemory.hpp"
 
 namespace EE { namespace Graphics {
 
@@ -66,23 +68,18 @@ void cTextureGroupLoader::Update() {
 		CreateShapes();
 }
 
-void cTextureGroupLoader::Load( const std::string& TextureGroupPath ) {
+void cTextureGroupLoader::LoadFromStream( cIOStream& IOS ) {
 	mRL.Threaded( mThreaded );
 
-	if ( TextureGroupPath.size() )
-		mTextureGroupPath = TextureGroupPath;
-
-	std::fstream fs ( mTextureGroupPath.c_str() , std::ios::in | std::ios::binary );
-
-	if ( fs.is_open() ) {
-		fs.read( reinterpret_cast<char*> (&mTexGrHdr), sizeof(sTextureGroupHdr) );
+	if ( IOS.IsOpen() ) {
+		IOS.Read( (char*)&mTexGrHdr, sizeof(sTextureGroupHdr) );
 
 		if ( mTexGrHdr.Magic == ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'T' << 16 ) | ( 'G' << 24 ) ) ) {
 			for ( Uint32 i = 0; i < mTexGrHdr.TextureCount; i++ ) {
 				sTextureHdr tTextureHdr;
 				sTempTexGroup tTexGroup;
 
-				fs.read( reinterpret_cast<char*> (&tTextureHdr), sizeof(sTextureHdr) );
+				IOS.Read( (char*)&tTextureHdr, sizeof(sTextureHdr) );
 
 				tTexGroup.Texture = tTextureHdr;
 				tTexGroup.Shapes.resize( tTextureHdr.ShapeCount );
@@ -96,7 +93,7 @@ void cTextureGroupLoader::Load( const std::string& TextureGroupPath ) {
 				if ( !mSkipResourceLoad && NULL == tTex )
 					mRL.Add( eeNew( cTextureLoader, ( path ) ) );
 
-				fs.read( reinterpret_cast<char*> (&tTexGroup.Shapes[0]), sizeof(sShapeHdr) * tTextureHdr.ShapeCount );
+				IOS.Read( (char*)&tTexGroup.Shapes[0], sizeof(sShapeHdr) * tTextureHdr.ShapeCount );
 
 				mTempGroups.push_back( tTexGroup );
 			}
@@ -112,6 +109,15 @@ void cTextureGroupLoader::Load( const std::string& TextureGroupPath ) {
 	}
 }
 
+void cTextureGroupLoader::Load( const std::string& TextureGroupPath ) {
+	if ( TextureGroupPath.size() )
+		mTextureGroupPath = TextureGroupPath;
+
+	cIOStreamFile IOS( mTextureGroupPath, std::ios::in | std::ios::binary );
+
+	LoadFromStream( IOS );
+}
+
 void cTextureGroupLoader::LoadFromPack( cPack * Pack, const std::string& FilePackPath ) {
 	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( FilePackPath ) ) {
 		mPack = Pack;
@@ -125,55 +131,12 @@ void cTextureGroupLoader::LoadFromPack( cPack * Pack, const std::string& FilePac
 }
 
 void cTextureGroupLoader::LoadFromMemory( const Uint8* Data, const Uint32& DataSize, const std::string& TextureGroupName ) {
-	mRL.Threaded( mThreaded );
-
 	if ( TextureGroupName.size() )
 		mTextureGroupPath = TextureGroupName;
 
-	const Uint8* dataPtr = Data;
+	cIOStreamMemory IOS( (const char*)Data, DataSize );
 
-	if ( NULL != dataPtr ) {
-		memcpy( (void*)&mTexGrHdr, dataPtr, sizeof(sTextureGroupHdr) );
-		dataPtr += sizeof(sTextureGroupHdr);
-
-		if ( mTexGrHdr.Magic == ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'T' << 16 ) | ( 'G' << 24 ) ) ) {
-			for ( Uint32 i = 0; i < mTexGrHdr.TextureCount; i++ ) {
-				sTextureHdr tTextureHdr;
-				sTempTexGroup tTexGroup;
-
-				memcpy( (void*)&tTextureHdr, dataPtr, sizeof(sTextureHdr) );
-				dataPtr += sizeof(sTextureHdr);
-
-				tTexGroup.Texture = tTextureHdr;
-				tTexGroup.Shapes.resize( tTextureHdr.ShapeCount );
-
-				std::string name( &tTextureHdr.Name[0] );
-				std::string path( FileRemoveFileName( mTextureGroupPath ) + name );
-
-				//! Checks if the texture is already loaded
-				cTexture * tTex = cTextureFactory::instance()->GetByName( path );
-
-				if ( NULL == tTex ) {
-					if ( NULL != mPack )
-						mRL.Add( eeNew( cTextureLoader, ( mPack, path ) ) );
-					else
-						mRL.Add( eeNew( cTextureLoader, ( mAppPath + path ) ) );
-				}
-
-				memcpy( (void*)(&tTexGroup.Shapes[0]), dataPtr, sizeof(sShapeHdr) * tTextureHdr.ShapeCount );
-				dataPtr += sizeof(sShapeHdr) * tTextureHdr.ShapeCount;
-
-				mTempGroups.push_back( tTexGroup );
-			}
-		}
-		
-		mIsLoading = true;
-
-		mRL.Load();
-
-		if ( !mThreaded || 0 == mRL.Count() )
-			CreateShapes();
-	}
+	LoadFromStream( IOS );
 }
 
 cShapeGroup * cTextureGroupLoader::GetShapeGroup() const {

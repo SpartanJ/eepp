@@ -12,4 +12,9 @@ using namespace EE::Utils;
 #include "../math/math.hpp"
 using namespace EE::Math;
 
+#include "../system/ciostream.hpp"
+#include "../system/ciostreamfile.hpp"
+#include "../system/ciostreammemory.hpp"
+using namespace EE::System;
+
 #endif
