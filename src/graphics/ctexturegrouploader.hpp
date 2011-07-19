@@ -54,6 +54,8 @@ class EE_API cTextureGroupLoader {
 		Uint32					GetTexturesLoadedCount();
 
 		cShapeGroup *			GetShapeGroup() const;
+
+		std::string				AppPath() const;
 	protected:
 		cResourceLoader			mRL;
 		std::string				mTextureGroupPath;

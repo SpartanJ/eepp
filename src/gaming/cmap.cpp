@@ -8,6 +8,7 @@
 
 #include "../graphics/cprimitives.hpp"
 #include "../graphics/cshapegroupmanager.hpp"
+#include "../graphics/ctexturegrouploader.hpp"
 #include "../ui/cuithememanager.hpp"
 using namespace EE::Graphics;
 
@@ -613,7 +614,17 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 				}
 
 				//! Load the Texture groups if needed
-				//! @TODO: Load TGPs
+				for ( i = 0; i < ShapeGroups.size(); i++ ) {
+					std::string sgname = FileRemoveExtension( FileNameFromPath( ShapeGroups[i] ) );
+
+					if ( NULL == cShapeGroupManager::instance()->GetByName( sgname ) ) {
+						cTextureGroupLoader * tgl = eeNew( cTextureGroupLoader, () );
+
+						tgl->Load( tgl->AppPath() + ShapeGroups[i] );
+
+						eeSAFE_DELETE( tgl );
+					}
+				}
 			}
 
 			//! Load Virtual Object Types
@@ -736,6 +747,24 @@ bool cMap::Load( const std::string& path ) {
 	}
 
 	return false;
+}
+
+bool cMap::LoadFromPack( cPack * Pack, const std::string& FilePackPath ) {
+	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( FilePackPath ) ) {
+		SafeDataPointer PData;
+
+		Pack->ExtractFileToMemory( FilePackPath, PData );
+
+		return LoadFromMemory( reinterpret_cast<const char*> ( PData.Data ), PData.DataSize );
+	}
+
+	return false;
+}
+
+bool cMap::LoadFromMemory( const char * Data, const Uint32& DataSize ) {
+	cIOStreamMemory IOS( Data, DataSize );
+
+	return LoadFromStream( IOS );
 }
 
 void cMap::SaveToStream( cIOStream& IOS ) {
@@ -957,6 +986,8 @@ void cMap::Save( const std::string& path ) {
 	cIOStreamFile IOS( path, std::ios::out | std::ios::binary );
 
 	SaveToStream( IOS );
+
+	mPath = path;
 }
 
 std::vector<std::string> cMap::GetShapeGroups() {

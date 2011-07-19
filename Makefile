@@ -3,11 +3,8 @@ OS 					= $(strip $(call STRLOWERCASE, $(shell uname) ) )
 
 SDLVERSION			= $(shell sdl-config --version)
 
-export CFLAGS     	= -Wall -Wno-unknown-pragmas $(FINALFLAGS) $(BUILDFLAGS) $(BACKENDFLAGS)
-export CFLAGSEXT  	= $(FINALFLAGS) $(BUILDFLAGS)
-export LDFLAGS    	= $(LINKFLAGS)
 export LIBPATH    	= ./
-export VERSION    	= 0.7
+export VERSION    	= 0.8
 export CP         	= cp
 export LN         	= ln
 export LNFLAGS    	= -s -f
@@ -124,6 +121,10 @@ else
 	endif
 endif
 
+export CFLAGS     	= -Wall -Wno-unknown-pragmas $(FINALFLAGS) $(BUILDFLAGS) $(BACKENDFLAGS)
+export CFLAGSEXT  	= $(FINALFLAGS) $(BUILDFLAGS)
+export LDFLAGS    	= $(LINKFLAGS)
+
 ifeq ($(OS), linux)
 
 LIBS 		= -lfreetype -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
@@ -144,6 +145,8 @@ ifeq ($(OS), haiku)
 LIBS 		= -lfreetype -lopenal -lGL $(SDL_BACKEND_LINK)
 OTHERINC	= -I/usr/include/freetype2
 PLATFORMSRC	= 
+
+else
 
 ifeq ($(OS), freebsd)
 
@@ -195,9 +198,6 @@ SRCFLUID     		= $(wildcard ./src/fluid/*.cpp)
 
 SRCHELPERS			= $(SRCGLEW) $(SRCSOIL) $(SRCSTBVORBIS) $(SRCZLIB) $(SRCLIBZIP) $(SRCCHIPMUNK)
 SRCMODULES			= $(SRCHAIKUTTF) $(SRCBASE) $(SRCAUDIO) $(SRCGAMING) $(SRCGRAPHICS) $(SRCMATH) $(SRCSYSTEM) $(SRCUI) $(SRCUTILS) $(SRCWINDOW) $(SRCPHYSICS)
-SRCALL				= $(SRCMODULES) $(SRCHELPERS) $(SRCTEST) $(SRCEEIV)
-SRCHPPALL			= $(SRCALL:.cpp=.hpp)
-SRCHALL				= $(SRCALL:.c=.h)
 
 OBJGLEW 			= $(SRCGLEW:.c=.o)
 OBJSOIL 			= $(SRCSOIL:.c=.o)

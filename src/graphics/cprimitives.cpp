@@ -347,6 +347,9 @@ void cPrimitives::DrawBatch() {
 
 void cPrimitives::ForceDraw( const bool& force ) {
 	mForceDraw = force;
+
+	if ( force )
+		DrawBatch();
 }
 
 const bool& cPrimitives::ForceDraw() const {

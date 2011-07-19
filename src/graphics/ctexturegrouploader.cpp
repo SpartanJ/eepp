@@ -12,6 +12,7 @@ cTextureGroupLoader::cTextureGroupLoader() :
 	mThreaded(false),
 	mLoaded(false),
 	mAppPath( GetProcessPath() ),
+	mPack(NULL),
 	mSkipResourceLoad(false),
 	mIsLoading(false),
 	mShapeGroup(NULL)
@@ -118,9 +119,11 @@ void cTextureGroupLoader::Load( const std::string& TextureGroupPath ) {
 	if ( TextureGroupPath.size() )
 		mTextureGroupPath = TextureGroupPath;
 
-	cIOStreamFile IOS( mTextureGroupPath, std::ios::in | std::ios::binary );
+	if ( FileExists( mTextureGroupPath ) ) {
+		cIOStreamFile IOS( mTextureGroupPath, std::ios::in | std::ios::binary );
 
-	LoadFromStream( IOS );
+		LoadFromStream( IOS );
+	}
 }
 
 void cTextureGroupLoader::LoadFromPack( cPack * Pack, const std::string& FilePackPath ) {
@@ -444,6 +447,10 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 	}
 
 	return true;
+}
+
+std::string	cTextureGroupLoader::AppPath() const {
+	return mAppPath;
 }
 
 }}

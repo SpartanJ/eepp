@@ -42,6 +42,10 @@ class cMap {
 
 		virtual bool LoadFromStream( cIOStream& IOS );
 
+		virtual bool LoadFromPack( cPack * Pack, const std::string& FilePackPath );
+
+		virtual bool LoadFromMemory( const char * Data, const Uint32& DataSize );
+
 		virtual void Save( const std::string& path );
 
 		virtual void SaveToStream( cIOStream& IOS );

@@ -469,12 +469,20 @@ void cMapEditor::MapOpen( const cUIEvent * Event ) {
 	cUICommonDialog * CDL = reinterpret_cast<cUICommonDialog*> ( Event->Ctrl() );
 
 	if ( mUIMap->Map()->Load( CDL->GetFullPath() ) ) {
+		mCurLayer = NULL;
+
 		mUIMap->Map()->ViewSize( mUIMap->Size() );
 
 		MapCreated();
 
 		RefreshLayersList();
 	}
+}
+
+void cMapEditor::MapSave( const cUIEvent * Event ) {
+	cUICommonDialog * CDL = reinterpret_cast<cUICommonDialog*> ( Event->Ctrl() );
+
+	mUIMap->Map()->Save( CDL->GetFullPath() );
 }
 
 void cMapEditor::FileMenuClick( const cUIEvent * Event ) {
@@ -490,6 +498,13 @@ void cMapEditor::FileMenuClick( const cUIEvent * Event ) {
 
 		TGDialog->Title( "Open Map" );
 		TGDialog->AddEventListener( cUIEvent::EventOpenFile, cb::Make1( this, &cMapEditor::MapOpen ) );
+		TGDialog->Center();
+		TGDialog->Show();
+	} else if ( "Save As..." == txt ) {
+		cUICommonDialog * TGDialog = mTheme->CreateCommonDialog( NULL, eeSize(), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, eeSize(), 255, UI_CDL_DEFAULT_FLAGS | CDL_FLAG_SAVE_DIALOG, "*.eem" );
+
+		TGDialog->Title( "Save Map" );
+		TGDialog->AddEventListener( cUIEvent::EventSaveFile, cb::Make1( this, &cMapEditor::MapSave ) );
 		TGDialog->Center();
 		TGDialog->Show();
 	} else if ( "Save" == txt ) {

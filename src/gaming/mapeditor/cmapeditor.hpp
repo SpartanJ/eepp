@@ -81,6 +81,8 @@ class cMapEditor {
 
 		void MapOpen( const cUIEvent * Event );
 
+		void MapSave( const cUIEvent * Event );
+
 		void OnShapeChange( const cUIEvent * Event );
 
 		void OnTypeChange( const cUIEvent * Event );

@@ -42,6 +42,8 @@ class cUICommonDialog : public cUIWindow {
 
 		virtual void		Open();
 
+		virtual void		Save();
+
 		std::string			GetCurPath() const;
 
 		std::string			GetCurFile() const;
@@ -89,6 +91,12 @@ class cUICommonDialog : public cUIWindow {
 		Uint32				mCDLFlags;
 
 		void OnPressEnter( const cUIEvent * Event );
+
+		void OnPressFileEnter( const cUIEvent * Event );
+
+		void OpenSaveClick();
+
+		std::string			GetTempFullPath();
 };
 
 }}

@@ -110,6 +110,7 @@ cUICommonDialog::cUICommonDialog( const cUICommonDialog::CreateParams& Params ) 
 	mFile = eeNew( cUITextInput, ( TInputParams ) );
 	mFile->Visible( true );
 	mFile->Enabled( true );
+	mFile->AddEventListener( cUIEvent::EventOnPressEnter, cb::Make1( this, &cUICommonDialog::OnPressFileEnter ) );
 
 	cUIDropDownList::CreateParams DDLParams;
 	DDLParams.Parent( Container() );
@@ -193,12 +194,24 @@ void cUICommonDialog::RefreshFolder() {
 	mList->AddListBoxItems( files );
 }
 
+void cUICommonDialog::OpenSaveClick() {
+	if ( IsSaveDialog() ) {
+		Save();
+	} else {
+		Open();
+	}
+}
+
+void cUICommonDialog::OnPressFileEnter( const cUIEvent * Event ) {
+	OpenSaveClick();
+}
+
 Uint32 cUICommonDialog::OnMessage( const cUIMessage *Msg ) {
 	switch ( Msg->Msg() ) {
 		case cUIMessage::MsgClick:
 		{
 			if ( Msg->Sender() == mButtonOpen ) {
-				Open();
+				OpenSaveClick();
 			} else if ( Msg->Sender() == mButtonCancel ) {
 				CloseWindow();
 			} else if ( Msg->Sender() == mButtonUp ) {
@@ -228,7 +241,19 @@ Uint32 cUICommonDialog::OnMessage( const cUIMessage *Msg ) {
 		case cUIMessage::MsgSelected:
 		{
 			if ( Msg->Sender() == mList ) {
-				mFile->Text( mList->GetItemSelectedText() );
+				if ( !IsSaveDialog() ) {
+					if ( AllowFolderSelect() ) {
+						mFile->Text( mList->GetItemSelectedText() );
+					} else {
+						if ( !IsDirectory( GetTempFullPath() ) ) {
+							mFile->Text( mList->GetItemSelectedText() );
+						}
+					}
+				} else {
+					if ( !IsDirectory( GetTempFullPath() ) ) {
+						mFile->Text( mList->GetItemSelectedText() );
+					}
+				}
 			} else if ( Msg->Sender() == mFiletype ) {
 				RefreshFolder();
 			}
@@ -238,6 +263,12 @@ Uint32 cUICommonDialog::OnMessage( const cUIMessage *Msg ) {
 	}
 
 	return cUIWindow::OnMessage( Msg );
+}
+
+void cUICommonDialog::Save() {
+	SendCommonEvent( cUIEvent::EventSaveFile );
+
+	CloseWindow();
 }
 
 void cUICommonDialog::Open() {
@@ -316,11 +347,24 @@ std::string cUICommonDialog::GetFullPath() {
 	return tPath;
 }
 
+std::string	cUICommonDialog::GetTempFullPath() {
+	std::string tPath = mCurPath;
+
+	DirPathAddSlashAtEnd( tPath );
+
+	tPath += mList->GetItemSelectedText().ToUtf8();
+
+	return tPath;
+}
+
 std::string cUICommonDialog::GetCurPath() const {
 	return mCurPath;
 }
 
 std::string cUICommonDialog::GetCurFile() const {
+	if ( mCDLFlags & CDL_FLAG_SAVE_DIALOG )
+		return mFile->Text();
+
 	return mList->GetItemSelectedText().ToUtf8();
 }
 

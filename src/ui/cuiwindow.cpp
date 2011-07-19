@@ -585,7 +585,6 @@ void cUIWindow::Draw() {
 		P.DrawTriangle( eeTriangle2f( eeVector2f( ShadowPos.x, ShadowPos.y + mSize.Height() ), eeVector2f( ShadowPos.x - SSize, ShadowPos.y + mSize.Height() ), eeVector2f( ShadowPos.x, ShadowPos.y + mSize.Height() + SSize ) ), BeginC, EndC, EndC );
 
 		P.ForceDraw( true );
-		P.DrawBatch();
 	}
 }
 
