@@ -98,6 +98,7 @@ static void LoadThemeElements() {
 	if ( !UI_THEME_ICONS.size() ) {
 		UI_THEME_ICONS.push_back( "ok" );
 		UI_THEME_ICONS.push_back( "cancel" );
+		UI_THEME_ICONS.push_back( "remove" );
 		UI_THEME_ICONS.push_back( "go-up" );
 		UI_THEME_ICONS.push_back( "quit" );
 		UI_THEME_ICONS.push_back( "add" );

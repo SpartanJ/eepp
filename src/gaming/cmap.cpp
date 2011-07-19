@@ -179,7 +179,8 @@ void cMap::Draw() {
 	GridDraw();
 
 	for ( Uint32 i = 0; i < mLayerCount; i++ ) {
-		mLayers[i]->Draw( mOffsetFixed );
+		if ( mLayers[i]->Visible() )
+			mLayers[i]->Draw( mOffsetFixed );
 	}
 
 	MouseOverDraw();
@@ -631,9 +632,9 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 				sLayerHdr tLayersHdr[ MapHdr.LayerCount ];
 				sLayerHdr * tLayerHdr;
 
-				IOS.Read( (char*)&tLayersHdr[0], sizeof(sLayerHdr) * MapHdr.LayerCount );
-
 				for ( i = 0; i < MapHdr.LayerCount; i++ ) {
+					IOS.Read( (char*)&tLayersHdr[i], sizeof(sLayerHdr) );
+
 					tLayerHdr = &(tLayersHdr[i]);
 
 					cLayer * tLayer = AddLayer( tLayerHdr->Type, tLayerHdr->Flags, std::string( tLayerHdr->Name ) );

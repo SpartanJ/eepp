@@ -46,6 +46,10 @@ class cLayer {
 		void ClearProperties();
 
 		PropertiesMap& GetProperties();
+
+		void Visible( const bool& visible );
+
+		bool Visible();
 	protected:
 		friend class cMap;
 

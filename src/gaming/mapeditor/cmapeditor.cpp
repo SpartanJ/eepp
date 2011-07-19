@@ -2,6 +2,9 @@
 #include "cuimapnew.hpp"
 #include "cuilayernew.hpp"
 #include "cuigotypenew.hpp"
+#include "cmapproperties.hpp"
+#include "clayerproperties.hpp"
+
 #include "../ctilelayer.hpp"
 #include "../cobjectlayer.hpp"
 #include "../cgameobjectvirtual.hpp"
@@ -82,12 +85,6 @@ void cMapEditor::CreateWinMenu() {
 	PU1->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cMapEditor::FileMenuClick ) );
 	WinMenu->AddMenuButton( "File", PU1 );
 
-	cUIPopUpMenu * PU2 = mTheme->CreatePopUpMenu();
-	PU2->Add( "Preferences..." );
-
-	PU2->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cMapEditor::EditMenuClick ) );
-	WinMenu->AddMenuButton( "Edit", PU2 );
-
 	cUIPopUpMenu * PU3 = mTheme->CreatePopUpMenu();
 	PU3->AddCheckBox( "Show Grid" );
 
@@ -117,6 +114,9 @@ void cMapEditor::CreateWinMenu() {
 	PU5->Add( "Move Layer Down" );
 	PU5->AddSeparator();
 	PU5->Add( "Layer Properties..." );
+	PU5->AddSeparator();
+	Uint32 LayerChkBoxIndex = PU5->AddCheckBox( "Visible" );
+	mLayerCheckbox = reinterpret_cast<cUIMenuCheckBox*> ( PU5->GetItem( LayerChkBoxIndex ) );
 
 	PU5->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cMapEditor::LayerMenuClick ) );
 	WinMenu->AddMenuButton( "Layer", PU5 );
@@ -513,10 +513,6 @@ void cMapEditor::FileMenuClick( const cUIEvent * Event ) {
 	}
 }
 
-void cMapEditor::EditMenuClick( const cUIEvent * Event ) {
-
-}
-
 void cMapEditor::ViewMenuClick( const cUIEvent * Event ) {
 	if ( !Event->Ctrl()->IsTypeOrInheritsFrom( UI_TYPE_MENUITEM ) )
 		return;
@@ -542,6 +538,8 @@ void cMapEditor::MapMenuClick( const cUIEvent * Event ) {
 		TGDialog->AddEventListener( cUIEvent::EventOpenFile, cb::Make1( this, &cMapEditor::TextureGroupOpen ) );
 		TGDialog->Center();
 		TGDialog->Show();
+	} else if ( "Map Properties..." == txt ) {
+		eeNew( cMapProperties, ( mUIMap->Map() ) );
 	}
 }
 
@@ -561,6 +559,14 @@ void cMapEditor::LayerMenuClick( const cUIEvent * Event ) {
 		MoveLayerUp();
 	} else if ( "Move Layer Down" == txt ) {
 		MoveLayerDown();
+	} else if ( "Layer Properties..." == txt ) {
+		if ( NULL != mCurLayer) {
+			eeNew( cLayerProperties, ( mCurLayer ) );
+		}
+	} else if ( "Visible" == txt ) {
+		if ( NULL != mCurLayer ) {
+			mCurLayer->Visible( !mCurLayer->Visible() );
+		}
 	}
 }
 
@@ -634,8 +640,11 @@ void cMapEditor::OnLayerAdd( cUILayerNew * UILayer ) {
 void cMapEditor::OnLayerSelect( const cUIEvent * Event ) {
 	cLayer * tLayer = mUIMap->Map()->GetLayer( mLayerList->Text() );
 
-	if ( NULL != tLayer )
+	if ( NULL != tLayer ) {
 		mCurLayer = tLayer;
+
+		mLayerCheckbox->Active( mCurLayer->Visible() );
+	}
 }
 
 void cMapEditor::WindowClose( const cUIEvent * Event ) {

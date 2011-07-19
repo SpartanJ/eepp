@@ -38,7 +38,7 @@ void cUIGridCell::Cell( const Uint32& CollumnIndex, cUIControl * Ctrl ) {
 	if ( Ctrl->Parent() != this )
 		Ctrl->Parent( this );
 
-	Ctrl->Pos		( P->GetCellPos( CollumnIndex )	, 0						);
+	Ctrl->Pos		( P->GetCellPos( CollumnIndex )		, 0					);
 	Ctrl->Size		( P->CollumnWidth( CollumnIndex )	, P->RowHeight()	);
 
 	Ctrl->Visible( true );

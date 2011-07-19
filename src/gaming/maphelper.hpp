@@ -89,6 +89,10 @@ enum EE_MAP_FLAGS {
 	MAP_FLAG_DRAW_TILE_OVER = ( 1 << 3 )
 };
 
+enum EE_LAYER_FLAGS {
+	LAYER_FLAG_VISIBLE		= ( 1 << 0 )
+};
+
 }}
 
 #endif

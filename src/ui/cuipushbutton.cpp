@@ -85,7 +85,8 @@ void cUIPushButton::OnSizeChange() {
 		mIcon->Center();
 	}
 
-	/** Auto Size only for height? May be set another flag to this... *//**
+	/** Auto Size only for height? May be set another flag to this... */
+	/**
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( NULL != mTextBox ) {
 			eeRecti P = MakePadding();
@@ -107,7 +108,8 @@ void cUIPushButton::OnSizeChange() {
 		if ( NULL != mTextBox && 0 == mTextBox->Text().size() ) {
 			mIcon->Center();
 		}
-	}*/
+	}
+	*/
 }
 
 cUIPushButton::~cUIPushButton() {

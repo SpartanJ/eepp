@@ -730,3 +730,7 @@ src/system/ciostreamfile.hpp
 src/system/ciostreamfile.cpp
 src/system/ciostreammemory.hpp
 src/system/ciostreammemory.cpp
+src/gaming/mapeditor/cmapproperties.hpp
+src/gaming/mapeditor/cmapproperties.cpp
+src/gaming/mapeditor/clayerproperties.hpp
+src/gaming/mapeditor/clayerproperties.cpp

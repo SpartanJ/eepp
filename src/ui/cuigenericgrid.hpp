@@ -23,7 +23,7 @@ class EE_API cUIGenericGrid : public cUIControlAnim {
 				{
 				}
 
-				inline ~CreateParams() {};
+				inline ~CreateParams() {}
 
 				bool				SmoothScroll;
 				UI_SCROLLBAR_MODE	VScrollMode;

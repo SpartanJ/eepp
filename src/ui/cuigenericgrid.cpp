@@ -78,7 +78,7 @@ void cUIGenericGrid::SetDefaultCollumnsWidth() {
 
 	if ( mItemsNotVisible <= 0 ) {
 		Uint32 VisibleItems 	= mContainer->Size().Height() / mRowHeight;
-		Int32 oItemsNotVisible 		= (Int32)mItems.size() - VisibleItems;
+		Int32 oItemsNotVisible 	= (Int32)mItems.size() - VisibleItems;
 
 		if ( oItemsNotVisible > 0 ) {
 			mItemsNotVisible = oItemsNotVisible;

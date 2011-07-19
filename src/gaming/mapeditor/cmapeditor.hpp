@@ -3,6 +3,7 @@
 
 #include "base.hpp"
 #include "../../ui/cuiwindow.hpp"
+#include "../../ui/cuimenucheckbox.hpp"
 #include "cuimap.hpp"
 
 using namespace EE::UI;
@@ -48,6 +49,7 @@ class cMapEditor {
 		cUIComplexControl * mDICont;
 		cUICheckBox *		mChkDI;
 		cUITextInput *		mDataIdInput;
+		cUIMenuCheckBox	*	mLayerCheckbox;
 
 		void WindowClose( const cUIEvent * Event );
 
@@ -68,8 +70,6 @@ class cMapEditor {
 		void CreateNewMap();
 
 		void FileMenuClick( const cUIEvent * Event );
-
-		void EditMenuClick( const cUIEvent * Event );
 
 		void ViewMenuClick( const cUIEvent * Event );
 
