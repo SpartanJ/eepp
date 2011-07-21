@@ -1,5 +1,5 @@
 /*
-  zip_name_locate.c -- get index by name
+  zip_get_num_entries.c -- get number of entries in archive
   Copyright (C) 1999-2011 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
@@ -33,64 +33,20 @@
 
 
 
-#include <string.h>
-
 #include "zipint.h"
 
 
 
-ZIP_EXTERN int
-zip_name_locate(struct zip *za, const char *fname, int flags)
+ZIP_EXTERN zip_uint64_t
+zip_get_num_entries(struct zip *za, int flags)
 {
-    return _zip_name_locate(za, fname, flags, &za->error);
-}
-
-
-
-int
-_zip_name_locate(struct zip *za, const char *fname, int flags,
-		 struct zip_error *error)
-{
-    int (*cmp)(const char *, const char *);
-    const char *fn, *p;
-    int i, n;
-
     if (za == NULL)
 	return -1;
 
-    if (fname == NULL) {
-	_zip_error_set(error, ZIP_ER_INVAL, 0);
-	return -1;
+    if (flags & ZIP_FL_UNCHANGED) {
+      if (za->cdir == NULL)
+	return 0;
+      return za->cdir->nentry;
     }
-
-    if ((flags & ZIP_FL_UNCHANGED)  && za->cdir == NULL) {
-        _zip_error_set(error, ZIP_ER_NOENT, 0);
-        return -1;
-    }
-
-    cmp = (flags & ZIP_FL_NOCASE) ? strcasecmp : strcmp;
-
-    n = (flags & ZIP_FL_UNCHANGED) ? za->cdir->nentry : za->nentry;
-    for (i=0; i<n; i++) {
-	if (flags & ZIP_FL_UNCHANGED)
-	    fn = za->cdir->entry[i].filename;
-	else
-	    fn = _zip_get_name(za, i, flags, error);
-
-	/* newly added (partially filled) entry */
-	if (fn == NULL)
-	    continue;
-	
-	if (flags & ZIP_FL_NODIR) {
-	    p = strrchr(fn, '/');
-	    if (p)
-		fn = p+1;
-	}
-
-	if (cmp(fname, fn) == 0)
-	    return i;
-    }
-
-    _zip_error_set(error, ZIP_ER_NOENT, 0);
-    return -1;
+    return za->nentry;
 }

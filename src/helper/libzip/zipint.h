@@ -3,7 +3,7 @@
 
 /*
   zipint.h -- internal declarations.
-  Copyright (C) 1999-2010 Dieter Baron and Thomas Klausner
+  Copyright (C) 1999-2011 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
   The authors can be contacted at <libzip@nih.at>
@@ -35,6 +35,12 @@
 */
 
 #include <zlib.h>
+
+#ifdef _WIN32
+//#define ZIP_EXTERN __declspec(dllexport)
+/* for dup(), close(), etc. */
+#include <io.h>
+#endif
 
 #include "zip.h"
 #include "config.h"
@@ -77,6 +83,8 @@ int _zip_mkstemp(char *);
 #if !defined(HAVE_STRCASECMP)
 #if defined(HAVE__STRCMPI)
 #define strcasecmp	_strcmpi
+#elif defined(HAVE__STRICMP)
+#define strcasecmp	_stricmp
 #endif
 #endif
 
@@ -99,9 +107,66 @@ int _zip_mkstemp(char *);
 #define CDENTRYSIZE         46u
 #define LENTRYSIZE          30
 #define MAXCOMLEN        65536
+#define MAXEXTLEN        65536
 #define EOCDLEN             22
 #define CDBUFSIZE       (MAXCOMLEN+EOCDLEN)
 #define BUFSIZE		8192
+
+
+
+/* This section contains API that won't materialize like this.  It's
+   placed in the internal section, pending cleanup. */
+
+typedef struct zip_source *(*zip_compression_implementation)(struct zip *,
+						     struct zip_source *,
+						     zip_uint16_t, int);
+typedef struct zip_source *(*zip_encryption_implementation)(struct zip *,
+						    struct zip_source *,
+						    zip_uint16_t, int,
+						    const char *);
+
+ZIP_EXTERN zip_compression_implementation zip_get_compression_implementation(
+    zip_uint16_t);
+ZIP_EXTERN zip_encryption_implementation zip_get_encryption_implementation(
+    zip_uint16_t);
+
+
+
+
+/* This section contains API that is of limited use until support for
+   user-supplied compression/encryption implementation is finished.
+   Thus we will keep it private for now. */
+
+typedef zip_int64_t (*zip_source_layered_callback)(struct zip_source *, void *,
+						   void *, zip_uint64_t,
+						   enum zip_source_cmd);
+
+ZIP_EXTERN void zip_source_close(struct zip_source *);
+ZIP_EXTERN struct zip_source *zip_source_crc(struct zip *, struct zip_source *,
+					     int);
+ZIP_EXTERN struct zip_source *zip_source_deflate(struct zip *,
+						 struct zip_source *,
+						 zip_uint16_t, int);
+ZIP_EXTERN void zip_source_error(struct zip_source *, int *, int *);
+ZIP_EXTERN struct zip_source *zip_source_layered(struct zip *,
+						 struct zip_source *,
+						 zip_source_layered_callback,
+						 void *);
+ZIP_EXTERN int zip_source_open(struct zip_source *);
+ZIP_EXTERN struct zip_source *zip_source_pkware(struct zip *,
+						struct zip_source *,
+						zip_uint16_t, int,
+						const char *);
+ZIP_EXTERN zip_int64_t zip_source_read(struct zip_source *, void *,
+				       zip_uint64_t);
+ZIP_EXTERN int zip_source_stat(struct zip_source *, struct zip_stat *);
+
+
+/* This function will probably remain private.  It is not needed to
+   implement compression/encryption routines.  (We should probably
+   rename it to _zip_source_pop.) */
+
+ZIP_EXTERN struct zip_source *zip_source_pop(struct zip_source *);
 
 
 
@@ -215,6 +280,8 @@ struct zip_entry {
     enum zip_state state;
     struct zip_source *source;
     char *ch_filename;
+    char *ch_extra;
+    int ch_extra_len;
     char *ch_comment;
     int ch_comment_len;
 };

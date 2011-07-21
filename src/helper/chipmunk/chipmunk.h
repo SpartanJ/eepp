@@ -46,15 +46,19 @@ void cpMessage(const char *message, const char *condition, const char *file, int
 	#define cpAssertWarn(condition, message) if(!(condition)) cpMessage(message, #condition, __FILE__, __LINE__, 0)
 #endif
 
+// Hard assertions are important and cheap to execute. They are not disabled by compiling as debug.
+#define cpAssertHard(condition, message) if(!(condition)) cpMessage(message, #condition, __FILE__, __LINE__, 1)
+
 #ifdef NDEBUG
-	#define	cpAssert(condition, message)
+	#define	cpAssertSoft(condition, message)
 #else
-	#define cpAssert(condition, message) if(!(condition)) cpMessage(message, #condition, __FILE__, __LINE__, 1)
+	#define cpAssertSoft(condition, message) cpAssertHard(condition, message)
 #endif
+
 
 #include "chipmunk_types.h"
 	
-// Maximum allocated size for various Chipmunk buffers
+// Allocated size for various Chipmunk buffers
 #ifndef CP_BUFFER_BYTES
 	#define CP_BUFFER_BYTES (32*1024)
 #endif
@@ -79,6 +83,7 @@ typedef struct cpBody cpBody;
 typedef struct cpShape cpShape;
 typedef struct cpConstraint cpConstraint;
 
+typedef struct cpCollisionHandler cpCollisionHandler;
 typedef struct cpArbiter cpArbiter;
 
 typedef struct cpSpace cpSpace;
@@ -103,8 +108,7 @@ typedef struct cpSpace cpSpace;
 /// Version string.
 extern const char *cpVersionString;
 
-/// Initialize Chipmunk.
-/// Must be called before anything else or your program will crash.
+/// @deprecated
 void cpInitChipmunk(void);
 
 /// Calculate the moment of inertia for a circle.
@@ -137,6 +141,9 @@ void cpRecenterPoly(const int numVerts, cpVect *verts);
 
 /// Calculate the moment of inertia for a solid box.
 cpFloat cpMomentForBox(cpFloat m, cpFloat width, cpFloat height);
+
+/// Calculate the moment of inertia for a solid box.
+cpFloat cpMomentForBox2(cpFloat m, cpBB box);
 
 #ifdef __cplusplus
 }

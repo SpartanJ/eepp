@@ -71,7 +71,7 @@ typedef struct {
 #define DDSCAPS2_CUBEMAP_NEGATIVEZ	0x00008000
 #define DDSCAPS2_VOLUME	0x00200000
 
-static int dds_test(stbi *s)
+static int stbi_dds_test(stbi *s)
 {
 	//	check the magic number
 	if (get8(s) != 'D') return 0;
@@ -99,7 +99,7 @@ int      stbi_dds_test_file        (FILE *f)
    stbi s;
    int r,n = ftell(f);
    start_file(&s,f);
-   r = dds_test(&s);
+   r = stbi_dds_test(&s);
    fseek(f,n,SEEK_SET);
    return r;
 }
@@ -109,7 +109,7 @@ int      stbi_dds_test_memory      (stbi_uc const *buffer, int len)
 {
    stbi s;
    start_mem(&s,buffer, len);
-   return dds_test(&s);
+   return stbi_dds_test(&s);
 }
 
 //	helper functions
@@ -277,7 +277,7 @@ void stbi_decode_DXT_color_block(
 	//	done
 }
 
-static int dds_get_info( stbi *s, int *x, int *y, int *comp, int *iscompressed ) {
+static int stbi_dds_info( stbi *s, int *x, int *y, int *comp, int *iscompressed ) {
 	int flags,is_compressed,has_alpha;
 	DDS_header header;
 
@@ -322,11 +322,11 @@ int stbi_dds_info_from_memory (stbi_uc const *buffer, int len, int *x, int *y, i
 {
 	stbi s;
 	start_mem(&s,buffer, len);
-	return dds_get_info( &s, x, y, comp, iscompressed );
+	return stbi_dds_info( &s, x, y, comp, iscompressed );
 }
 
 #ifndef STBI_NO_STDIO
-int stbi_dds_info(char const *filename,     int *x, int *y, int *comp, int *iscompressed)
+int stbi_dds_info_from_path(char const *filename,     int *x, int *y, int *comp, int *iscompressed)
 {
    int res;
    FILE *f = fopen(filename, "rb");
@@ -342,13 +342,13 @@ int stbi_dds_info_from_file(FILE *f,                  int *x, int *y, int *comp,
    int res;
    long n = ftell(f);
    start_file(&s, f);
-   res = dds_get_info(&s, x, y, comp, iscompressed);
+   res = stbi_dds_info(&s, x, y, comp, iscompressed);
    fseek(f, n, SEEK_SET);
    return res;
 }
 #endif
 
-static stbi_uc *dds_load(stbi *s, int *x, int *y, int *comp, int req_comp)
+static stbi_uc * stbi_dds_load(stbi *s, int *x, int *y, int *comp, int req_comp)
 {
 	//	all variables go up front
 	stbi_uc *dds_data = NULL;
@@ -572,10 +572,10 @@ stbi_uc *stbi_dds_load_from_file   (FILE *f,                  int *x, int *y, in
 {
 	stbi s;
    start_file(&s,f);
-   return dds_load(&s,x,y,comp,req_comp);
+   return stbi_dds_load(&s,x,y,comp,req_comp);
 }
 
-stbi_uc *stbi_dds_load             (char *filename,           int *x, int *y, int *comp, int req_comp)
+stbi_uc *stbi_dds_load_from_path             (char *filename,           int *x, int *y, int *comp, int req_comp)
 {
    stbi_uc *data;
    FILE *f = fopen(filename, "rb");
@@ -590,5 +590,5 @@ stbi_uc *stbi_dds_load_from_memory (stbi_uc const *buffer, int len, int *x, int 
 {
 	stbi s;
    start_mem(&s,buffer, len);
-   return dds_load(&s,x,y,comp,req_comp);
+   return stbi_dds_load(&s,x,y,comp,req_comp);
 }

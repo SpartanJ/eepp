@@ -96,6 +96,8 @@
 		<Unit filename="src\gaming\cgameobjectshapeex.hpp" />
 		<Unit filename="src\gaming\cgameobjectsprite.cpp" />
 		<Unit filename="src\gaming\cgameobjectsprite.hpp" />
+		<Unit filename="src\gaming\cgameobjectvirtual.cpp" />
+		<Unit filename="src\gaming\cgameobjectvirtual.hpp" />
 		<Unit filename="src\gaming\cisomap.cpp" />
 		<Unit filename="src\gaming\cisomap.hpp" />
 		<Unit filename="src\gaming\clayer.cpp" />
@@ -109,8 +111,20 @@
 		<Unit filename="src\gaming\ctilelayer.cpp" />
 		<Unit filename="src\gaming\ctilelayer.hpp" />
 		<Unit filename="src\gaming\mapeditor\base.hpp" />
+		<Unit filename="src\gaming\mapeditor\clayerproperties.cpp" />
+		<Unit filename="src\gaming\mapeditor\clayerproperties.hpp" />
 		<Unit filename="src\gaming\mapeditor\cmapeditor.cpp" />
 		<Unit filename="src\gaming\mapeditor\cmapeditor.hpp" />
+		<Unit filename="src\gaming\mapeditor\cmapproperties.cpp" />
+		<Unit filename="src\gaming\mapeditor\cmapproperties.hpp" />
+		<Unit filename="src\gaming\mapeditor\cuigotypenew.cpp" />
+		<Unit filename="src\gaming\mapeditor\cuigotypenew.hpp" />
+		<Unit filename="src\gaming\mapeditor\cuilayernew.cpp" />
+		<Unit filename="src\gaming\mapeditor\cuilayernew.hpp" />
+		<Unit filename="src\gaming\mapeditor\cuimap.cpp" />
+		<Unit filename="src\gaming\mapeditor\cuimap.hpp" />
+		<Unit filename="src\gaming\mapeditor\cuimapnew.cpp" />
+		<Unit filename="src\gaming\mapeditor\cuimapnew.hpp" />
 		<Unit filename="src\gaming\maphelper.hpp" />
 		<Unit filename="src\graphics\base.hpp" />
 		<Unit filename="src\graphics\cbatchrenderer.cpp" />
@@ -463,7 +477,13 @@
 		<Unit filename="src\helper\libzip\zip_get_file_comment.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="src\helper\libzip\zip_get_file_extra.c">
+			<Option compilerVar="CC" />
+		</Unit>
 		<Unit filename="src\helper\libzip\zip_get_name.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\libzip\zip_get_num_entries.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src\helper\libzip\zip_get_num_files.c">
@@ -497,6 +517,9 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src\helper\libzip\zip_set_file_comment.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="src\helper\libzip\zip_set_file_extra.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src\helper\libzip\zip_set_name.c">
@@ -680,6 +703,11 @@
 		<Unit filename="src\system\base.hpp" />
 		<Unit filename="src\system\cinifile.cpp" />
 		<Unit filename="src\system\cinifile.hpp" />
+		<Unit filename="src\system\ciostream.hpp" />
+		<Unit filename="src\system\ciostreamfile.cpp" />
+		<Unit filename="src\system\ciostreamfile.hpp" />
+		<Unit filename="src\system\ciostreammemory.cpp" />
+		<Unit filename="src\system\ciostreammemory.hpp" />
 		<Unit filename="src\system\clog.cpp" />
 		<Unit filename="src\system\clog.hpp" />
 		<Unit filename="src\system\cmutex.cpp" />
@@ -708,6 +736,8 @@
 		<Unit filename="src\test\eetest.cpp" />
 		<Unit filename="src\test\eetest.hpp" />
 		<Unit filename="src\ui\base.hpp" />
+		<Unit filename="src\ui\cuiaquatheme.cpp" />
+		<Unit filename="src\ui\cuiaquatheme.hpp" />
 		<Unit filename="src\ui\cuibackground.cpp" />
 		<Unit filename="src\ui\cuibackground.hpp" />
 		<Unit filename="src\ui\cuiborder.cpp" />
@@ -820,6 +850,8 @@
 		<Unit filename="src\utils\polygon2.hpp" />
 		<Unit filename="src\utils\quad2.hpp" />
 		<Unit filename="src\utils\rect.hpp" />
+		<Unit filename="src\utils\safedatapointer.cpp" />
+		<Unit filename="src\utils\safedatapointer.hpp" />
 		<Unit filename="src\utils\size.hpp" />
 		<Unit filename="src\utils\string.cpp" />
 		<Unit filename="src\utils\string.hpp" />

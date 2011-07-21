@@ -30,6 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  */
+
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -37,6 +38,9 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#ifdef _WIN32
+#include <io.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -61,12 +65,19 @@ typedef int pid_t;
 #include <io.h>
 #endif
 
-
-
 int
 _zip_mkstemp(char *path)
 {
-	int fd;
+#ifdef _WIN32
+	int ret;
+	ret = _creat(_mktemp(path), _S_IREAD|_S_IWRITE);
+	if (ret == -1) {
+		return 0;
+	} else {
+		return ret;
+	}
+#else
+	int fd;   
 	char *start, *trv;
 	struct stat sbuf;
 	pid_t pid;
@@ -77,18 +88,14 @@ _zip_mkstemp(char *path)
 	static char xtra[2] = "aa";
 	int xcnt = 0;
 
-	#if ( defined (_MSCVER) || defined (_MSC_VER) )
-	pid = _getpid();
-	#else
 	pid = getpid();
-	#endif
 
 	/* Move to end of path and count trailing X's. */
 	for (trv = path; *trv; ++trv)
 		if (*trv == 'X')
 			xcnt++;
 		else
-			xcnt = 0;
+			xcnt = 0;	
 
 	/* Use at least one from xtra.  Use 2 if more than 6 X's. */
 	if (*(trv - 1) == 'X')
@@ -134,11 +141,7 @@ _zip_mkstemp(char *path)
 	}
 
 	for (;;) {
-#if ( defined (_MSCVER) || defined (_MSC_VER) )
-        if ((fd=_open(path, O_CREAT|O_EXCL|O_RDWR|O_BINARY)) >= 0)
-#else
-        if ((fd=open(path, O_CREAT|O_EXCL|O_RDWR|O_BINARY, 0600)) >= 0)
-#endif
+		if ((fd=open(path, O_CREAT|O_EXCL|O_RDWR|O_BINARY, 0600)) >= 0)
 			return (fd);
 		if (errno != EEXIST)
 			return (0);
@@ -159,4 +162,5 @@ _zip_mkstemp(char *path)
 		}
 	}
 	/*NOTREACHED*/
+#endif
 }

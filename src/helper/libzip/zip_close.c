@@ -1,6 +1,6 @@
 /*
   zip_close.c -- close zip archive and update changes
-  Copyright (C) 1999-2009 Dieter Baron and Thomas Klausner
+  Copyright (C) 1999-2011 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
   The authors can be contacted at <libzip@nih.at>
@@ -17,7 +17,7 @@
   3. The names of the authors may not be used to endorse or promote
      products derived from this software without specific prior
      written permission.
-
+ 
   THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS
   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
   WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -33,20 +33,20 @@
 
 
 
+#include "zipint.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-
-#ifdef _WIN32
-#include <fcntl.h>
-#endif
-
-#include "zipint.h"
 #ifdef ZIP_HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+#include <sys/types.h>
+#include <sys/stat.h>
+#ifdef _WIN32
+#include <io.h>
+#include <fcntl.h>
 #endif
 
 static int add_data(struct zip *, struct zip_source *, struct zip_dirent *,
@@ -74,7 +74,9 @@ zip_close(struct zip *za)
     int i, j, error;
     char *temp;
     FILE *out;
+#ifndef _WIN32
     mode_t mask;
+#endif
     struct zip_cdir *cd;
     struct zip_dirent de;
     struct filelist *filelist;
@@ -101,7 +103,7 @@ zip_close(struct zip *za)
 	}
 	_zip_free(za);
 	return 0;
-    }
+    }	       
 
     if ((filelist=(struct filelist *)malloc(sizeof(filelist[0])*survivors))
 	== NULL)
@@ -168,7 +170,7 @@ zip_close(struct zip *za)
 
 	    if (zip_get_archive_flag(za, ZIP_AFL_TORRENT, 0))
 		_zip_dirent_torrent_normalize(&de);
-
+		
 	    /* use it as central directory entry */
 	    memcpy(cd->entry+j, &de, sizeof(cd->entry[j]));
 
@@ -221,6 +223,22 @@ zip_close(struct zip *za)
 	    cd->entry[j].filename_len = de.filename_len;
 	}
 
+	if (za->entry[i].ch_extra_len != -1) {
+	    free(de.extrafield);
+	    if ((de.extrafield=malloc(za->entry[i].ch_extra_len)) == NULL) {
+		error = 1;
+		break;
+	    }
+	    memcpy(de.extrafield, za->entry[i].ch_extra, za->entry[i].ch_extra_len);
+	    de.extrafield_len = za->entry[i].ch_extra_len;
+	    /* as the rest of cd entries, its malloc/free is done by za */
+	    /* TODO unsure if this should also be set in the CD --
+	     * not done for now
+	    cd->entry[j].extrafield = za->entry[i].ch_extra;
+	    cd->entry[j].extrafield_len = za->entry[i].ch_extra_len;
+	    */
+	}
+
 	if (zip_get_archive_flag(za, ZIP_AFL_TORRENT, 0) == 0
 	    && za->entry[i].ch_comment_len != -1) {
 	    /* as the rest of cd entries, its malloc/free is done by za */
@@ -250,7 +268,7 @@ zip_close(struct zip *za)
 	    }
 	    if (zs)
 		zip_source_free(zs);
-
+	    
 	    cd->entry[j].last_mod = de.last_mod;
 	    cd->entry[j].comp_method = de.comp_method;
 	    cd->entry[j].comp_size = de.comp_size;
@@ -279,7 +297,7 @@ zip_close(struct zip *za)
 	if (write_cdir(za, cd, out) < 0)
 	    error = 1;
     }
-
+   
     /* pointers in cd entries are owned by za */
     cd->nentry = 0;
     _zip_cdir_free(cd);
@@ -298,7 +316,7 @@ zip_close(struct zip *za)
 	free(temp);
 	return -1;
     }
-
+    
     if (za->zp) {
 	fclose(za->zp);
 	za->zp = NULL;
@@ -314,13 +332,15 @@ zip_close(struct zip *za)
 	}
 	return -1;
     }
+#ifndef _WIN32
     mask = umask(0);
     umask(mask);
     chmod(za->zn, 0666&~mask);
+#endif
 
     _zip_free(za);
     free(temp);
-
+    
     return 0;
 }
 
@@ -335,7 +355,7 @@ add_data(struct zip *za, struct zip_source *src, struct zip_dirent *de,
     struct zip_source *s2;
     zip_compression_implementation comp_impl;
     int ret;
-
+    
     if (zip_source_stat(src, &st) < 0) {
 	_zip_error_set_from_source(&za->error, src);
 	return -1;
@@ -350,7 +370,7 @@ add_data(struct zip *za, struct zip_source *src, struct zip_dirent *de,
 	zip_source_pop(s2);
 	return -1;
     }
-
+    
     /* XXX: deflate 0-byte files for torrentzip? */
     if (((st.valid & ZIP_STAT_COMP_METHOD) == 0
 	 || st.comp_method == ZIP_CM_STORE)
@@ -373,12 +393,12 @@ add_data(struct zip *za, struct zip_source *src, struct zip_dirent *de,
 	s2 = src;
 
     offdata = ftello(ft);
-
+	
     ret = copy_source(za, s2, ft);
-
+	
     if (zip_source_stat(s2, &st) < 0)
 	ret = -1;
-
+    
     while (s2 != src) {
 	if ((s2=zip_source_pop(s2)) == NULL) {
 	    /* XXX: set erorr */
@@ -408,7 +428,7 @@ add_data(struct zip *za, struct zip_source *src, struct zip_dirent *de,
 
     if (_zip_dirent_write(de, ft, 1, &za->error) < 0)
 	return -1;
-
+    
     if (fseeko(ft, offend, SEEK_SET) < 0) {
 	_zip_error_set(&za->error, ZIP_ER_SEEK, errno);
 	return -1;
@@ -443,7 +463,7 @@ copy_data(FILE *fs, off_t len, FILE *ft, struct zip_error *error)
 	    _zip_error_set(error, ZIP_ER_WRITE, errno);
 	    return -1;
 	}
-
+	
 	len -= n;
     }
 
@@ -472,15 +492,15 @@ copy_source(struct zip *za, struct zip_source *src, FILE *ft)
 	    break;
 	}
     }
-
+    
     if (n < 0) {
 	if (ret == 0)
 	    _zip_error_set_from_source(&za->error, src);
 	ret = -1;
-    }
+    }	
 
     zip_source_close(src);
-
+    
     return ret;
 }
 
@@ -492,10 +512,10 @@ write_cdir(struct zip *za, struct zip_cdir *cd, FILE *out)
     off_t offset;
     uLong crc;
     char buf[TORRENT_CRC_LEN+1];
-
+    
     if (_zip_cdir_write(cd, out, &za->error) < 0)
 	return -1;
-
+    
     if (zip_get_archive_flag(za, ZIP_AFL_TORRENT, 0) == 0)
 	return 0;
 
@@ -561,6 +581,7 @@ _zip_changed(struct zip *za, int *survivorsp)
 
     for (i=0; i<za->nentry; i++) {
 	if ((za->entry[i].state != ZIP_ST_UNCHANGED)
+	    || (za->entry[i].ch_extra_len != -1)
 	    || (za->entry[i].ch_comment_len != -1))
 	    changed = 1;
 	if (za->entry[i].state != ZIP_ST_DELETED)
@@ -581,7 +602,7 @@ _zip_create_temp_output(struct zip *za, FILE **outp)
     char *temp;
     int tfd;
     FILE *tfp;
-
+    
     if ((temp=(char *)malloc(strlen(za->zn)+8)) == NULL) {
 	_zip_error_set(&za->error, ZIP_ER_MEMORY, 0);
 	return NULL;
@@ -594,7 +615,7 @@ _zip_create_temp_output(struct zip *za, FILE **outp)
 	free(temp);
 	return NULL;
     }
-
+    
     if ((tfp=fdopen(tfd, "r+b")) == NULL) {
 	_zip_error_set(&za->error, ZIP_ER_TMPOPEN, errno);
 	close(tfd);

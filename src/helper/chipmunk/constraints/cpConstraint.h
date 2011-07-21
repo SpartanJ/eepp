@@ -47,6 +47,8 @@ struct cpConstraint {
 	/// The second body connected to this constraint.
 	cpBody *b;
 	
+	CP_PRIVATE(cpSpace *space);
+	
 	CP_PRIVATE(cpConstraint *next_a);
 	CP_PRIVATE(cpConstraint *next_b);
 	
@@ -73,8 +75,7 @@ void cpConstraintDestroy(cpConstraint *constraint);
 void cpConstraintFree(cpConstraint *constraint);
 
 /// @private
-static inline void
-cpConstraintActivateBodies(cpConstraint *constraint)
+static inline void cpConstraintActivateBodies(cpConstraint *constraint)
 {
 	cpBody *a = constraint->a; if(a) cpBodyActivate(a);
 	cpBody *b = constraint->b; if(b) cpBodyActivate(b);
@@ -101,8 +102,7 @@ CP_DefineConstraintStructProperty(cpFloat, maxBias, MaxBias);
 CP_DefineConstraintStructProperty(cpDataPointer, data, UserData);
 
 /// Get the last impulse applied by this constraint.
-static inline cpFloat
-cpConstraintGetImpulse(cpConstraint *constraint)
+static inline cpFloat cpConstraintGetImpulse(cpConstraint *constraint)
 {
 	return constraint->CP_PRIVATE(klass)->getImpulse(constraint);
 }
@@ -110,7 +110,7 @@ cpConstraintGetImpulse(cpConstraint *constraint)
 /// @}
 
 #define cpConstraintCheckCast(constraint, struct) \
-	cpAssert(constraint->CP_PRIVATE(klass) == struct##GetClass(), "Constraint is not a "#struct)
+	cpAssertHard(constraint->CP_PRIVATE(klass) == struct##GetClass(), "Constraint is not a "#struct)
 
 #define CP_DefineConstraintGetter(struct, type, member, name) \
 static inline type struct##Get##name(const cpConstraint *constraint){ \

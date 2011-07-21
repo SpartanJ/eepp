@@ -25,7 +25,7 @@
 	@TODO Check for endianness problems, and make EEPP endianness agnostic.
 	@TODO May be SFML backend ( may be implement as the default build-in backend with sfml-window static linked ).
 	@TODO Support for Android and iOS.
-	@TODO Add Scripting support ( squirrel or python ).
+	@TODO Add Scripting support ( squirrel or angel script ).
 */
 
 	// General includes and declarations

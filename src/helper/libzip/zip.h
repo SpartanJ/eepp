@@ -3,7 +3,7 @@
 
 /*
   zip.h -- exported declarations.
-  Copyright (C) 1999-2010 Dieter Baron and Thomas Klausner
+  Copyright (C) 1999-2011 Dieter Baron and Thomas Klausner
 
   This file is part of libzip, a library to manipulate ZIP archives.
   The authors can be contacted at <libzip@nih.at>
@@ -168,7 +168,7 @@ enum zip_source_cmd {
     ZIP_SOURCE_CLOSE,	/* reading is done */
     ZIP_SOURCE_STAT,	/* get meta information */
     ZIP_SOURCE_ERROR,	/* get error information */
-	ZIP_SOURCE_FREE		/* cleanup and free resources */
+    ZIP_SOURCE_FREE	/* cleanup and free resources */
 };
 
 #define ZIP_SOURCE_ERR_LOWER	-2
@@ -202,16 +202,6 @@ struct zip_source;
 
 typedef zip_int64_t (*zip_source_callback)(void *, void *, zip_uint64_t,
 					   enum zip_source_cmd);
-typedef zip_int64_t (*zip_source_layered_callback)(struct zip_source *, void *,
-						   void *, zip_uint64_t,
-						   enum zip_source_cmd);
-typedef struct zip_source *(*zip_compression_implementation)(struct zip *,
-						     struct zip_source *,
-						     zip_uint16_t, int);
-typedef struct zip_source *(*zip_encryption_implementation)(struct zip *,
-						    struct zip_source *,
-						    zip_uint16_t, int,
-						    const char *);
 
 
 
@@ -238,14 +228,13 @@ ZIP_EXTERN struct zip_file *zip_fopen_index_encrypted(struct zip *,
 ZIP_EXTERN zip_int64_t zip_fread(struct zip_file *, void *, zip_uint64_t);
 ZIP_EXTERN const char *zip_get_archive_comment(struct zip *, int *, int);
 ZIP_EXTERN int zip_get_archive_flag(struct zip *, int, int);
-ZIP_EXTERN zip_compression_implementation zip_get_compression_implementation(
-    zip_uint16_t);
-ZIP_EXTERN zip_encryption_implementation zip_get_encryption_implementation(
-    zip_uint16_t);
 ZIP_EXTERN const char *zip_get_file_comment(struct zip *, zip_uint64_t,
 					    int *, int);
+ZIP_EXTERN const char *zip_get_file_extra(struct zip *, zip_uint64_t,
+					  int *, int);
 ZIP_EXTERN const char *zip_get_name(struct zip *, zip_uint64_t, int);
-ZIP_EXTERN int zip_get_num_files(struct zip *);
+ZIP_EXTERN zip_uint64_t zip_get_num_entries(struct zip *, int);
+ZIP_EXTERN int zip_get_num_files(struct zip *);  /* deprecated, use zip_get_num_entries instead */
 ZIP_EXTERN int zip_name_locate(struct zip *, const char *, int);
 ZIP_EXTERN struct zip *zip_open(const char *, int, int *);
 ZIP_EXTERN int zip_rename(struct zip *, zip_uint64_t, const char *);
@@ -255,15 +244,10 @@ ZIP_EXTERN int zip_set_archive_flag(struct zip *, int, int);
 ZIP_EXTERN int zip_set_default_password(struct zip *, const char *);
 ZIP_EXTERN int zip_set_file_comment(struct zip *, zip_uint64_t,
 				    const char *, int);
+ZIP_EXTERN int zip_set_file_extra(struct zip *, zip_uint64_t,
+				  const char *, int);
 ZIP_EXTERN struct zip_source *zip_source_buffer(struct zip *, const void *,
 						zip_uint64_t, int);
-ZIP_EXTERN void zip_source_close(struct zip_source *);
-ZIP_EXTERN struct zip_source *zip_source_crc(struct zip *, struct zip_source *,
-					     int);
-ZIP_EXTERN struct zip_source *zip_source_deflate(struct zip *,
-						 struct zip_source *,
-						 zip_uint16_t, int);
-ZIP_EXTERN void zip_source_error(struct zip_source *, int *, int *);
 ZIP_EXTERN struct zip_source *zip_source_file(struct zip *, const char *,
 					      zip_uint64_t, zip_int64_t);
 ZIP_EXTERN struct zip_source *zip_source_filep(struct zip *, FILE *,
@@ -271,19 +255,6 @@ ZIP_EXTERN struct zip_source *zip_source_filep(struct zip *, FILE *,
 ZIP_EXTERN void zip_source_free(struct zip_source *);
 ZIP_EXTERN struct zip_source *zip_source_function(struct zip *,
 						  zip_source_callback, void *);
-ZIP_EXTERN struct zip_source *zip_source_layered(struct zip *,
-						 struct zip_source *,
-						 zip_source_layered_callback,
-						 void *);
-ZIP_EXTERN int zip_source_open(struct zip_source *);
-ZIP_EXTERN struct zip_source *zip_source_pkware(struct zip *,
-						struct zip_source *,
-						zip_uint16_t, int,
-						const char *);
-ZIP_EXTERN struct zip_source *zip_source_pop(struct zip_source *);
-ZIP_EXTERN zip_int64_t zip_source_read(struct zip_source *, void *,
-				       zip_uint64_t);
-ZIP_EXTERN int zip_source_stat(struct zip_source *, struct zip_stat *);
 ZIP_EXTERN struct zip_source *zip_source_zip(struct zip *, struct zip *,
 					     zip_uint64_t, int,
 					     zip_uint64_t, zip_int64_t);

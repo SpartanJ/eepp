@@ -1,4 +1,4 @@
-// Ogg Vorbis I audio decoder  -- version 0.99994
+// Ogg Vorbis I audio decoder  -- version 0.99996
 //
 // Written in April 2007 by Sean Barrett, sponsored by RAD Game Tools.
 //
@@ -342,7 +342,7 @@ enum STBVorbisError
    VORBIS_invalid_first_page,
    VORBIS_bad_packet_type,
    VORBIS_cant_find_last_page,
-   VORBIS_seek_failed
+   VORBIS_seek_failed,
 };
 
 

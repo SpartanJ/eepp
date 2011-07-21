@@ -729,7 +729,7 @@ void cRendererGL3::ClientActiveTexture( GLenum texture ) {
 }
 
 void cRendererGL3::TexEnvi( GLenum target, GLenum pname, GLint param ) {
-	/// TODO: Implement TexEnvi
+	//! @TODO: Implement TexEnvi
 }
 
 std::string cRendererGL3::GetBaseVertexShader() {
