@@ -115,6 +115,8 @@ class cMapEditor {
 
 		void AddNewGOType( const cUIEvent * Event );
 
+		void OnMapClose( const cUIEvent * Event );
+
 		void OnNewGOTypeAdded( std::string name, Uint32 hash );
 
 		void UpdateGfx();

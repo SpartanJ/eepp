@@ -206,33 +206,37 @@ void cUICommonDialog::OnPressFileEnter( const cUIEvent * Event ) {
 	OpenSaveClick();
 }
 
-Uint32 cUICommonDialog::OnMessage( const cUIMessage *Msg ) {
+Uint32 cUICommonDialog::OnMessage( const cUIMessage * Msg ) {
 	switch ( Msg->Msg() ) {
 		case cUIMessage::MsgClick:
 		{
-			if ( Msg->Sender() == mButtonOpen ) {
-				OpenSaveClick();
-			} else if ( Msg->Sender() == mButtonCancel ) {
-				CloseWindow();
-			} else if ( Msg->Sender() == mButtonUp ) {
-				mCurPath = RemoveLastFolderFromPath( mCurPath );
-				mPath->Text( mCurPath );
-				RefreshFolder();
+			if ( Msg->Flags() & EE_BUTTON_LMASK ) {
+				if ( Msg->Sender() == mButtonOpen ) {
+					OpenSaveClick();
+				} else if ( Msg->Sender() == mButtonCancel ) {
+					CloseWindow();
+				} else if ( Msg->Sender() == mButtonUp ) {
+					mCurPath = RemoveLastFolderFromPath( mCurPath );
+					mPath->Text( mCurPath );
+					RefreshFolder();
+				}
 			}
 
 			break;
 		}
 		case cUIMessage::MsgDoubleClick:
 		{
-			if ( Msg->Sender()->IsTypeOrInheritsFrom( UI_TYPE_LISTBOXITEM ) ) {
-				std::string newPath = mCurPath + mList->GetItemSelectedText();
+			if ( Msg->Flags() & EE_BUTTON_LMASK ) {
+				if ( Msg->Sender()->IsTypeOrInheritsFrom( UI_TYPE_LISTBOXITEM ) ) {
+					std::string newPath = mCurPath + mList->GetItemSelectedText();
 
-				if ( IsDirectory( newPath ) ) {
-					mCurPath = newPath + GetOSlash();
-					mPath->Text( mCurPath );
-					RefreshFolder();
-				} else {
-					Open();
+					if ( IsDirectory( newPath ) ) {
+						mCurPath = newPath + GetOSlash();
+						mPath->Text( mCurPath );
+						RefreshFolder();
+					} else {
+						Open();
+					}
 				}
 			}
 

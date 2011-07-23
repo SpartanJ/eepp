@@ -32,7 +32,7 @@ class cUICommonDialog : public cUIWindow {
 
 		cUICommonDialog( const cUICommonDialog::CreateParams& Params );
 
-		~cUICommonDialog();
+		virtual ~cUICommonDialog();
 
 		virtual void		SetTheme( cUITheme * Theme );
 

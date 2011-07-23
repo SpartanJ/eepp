@@ -18,6 +18,7 @@
 #include "../../ui/cuispinbox.hpp"
 #include "../../ui/cuicheckbox.hpp"
 #include "../../ui/cuicommondialog.hpp"
+#include "../../ui/cuimessagebox.hpp"
 #include "../../graphics/cshapegroupmanager.hpp"
 #include "../../graphics/cglobalshapegroup.hpp"
 #include "../../graphics/ctexturegrouploader.hpp"
@@ -512,13 +513,11 @@ void cMapEditor::FileMenuClick( const cUIEvent * Event ) {
 			mUIMap->Map()->Save( mUIMap->Map()->Path() );
 		}
 	} else if ( "Close" == txt ) {
-		mUIMap->Map()->Create( eeSize( 100, 100 ), 16, eeSize( 32, 32 ), MAP_FLAG_DRAW_GRID | MAP_FLAG_CLAMP_BODERS | MAP_FLAG_CLIP_AREA, mUIMap->Size() );
-
-		MapCreated();
-
-		mCurLayer = NULL;
-
-		RefreshLayersList();
+		cUIMessageBox * MsgBox = mTheme->CreateMessageBox( MSGBOX_OKCANCEL, "Do you really want to close the current map?\nAll changes will be lost." );
+		MsgBox->AddEventListener( cUIEvent::EventMsgBoxConfirmClick, cb::Make1( this, &cMapEditor::OnMapClose ) );
+		MsgBox->Title( "Close Map?" );
+		MsgBox->Center();
+		MsgBox->Show();
 	} else if ( "Quit" == txt ) {
 		if ( mUIWindow == cUIManager::instance()->MainControl() ) {
 			cUIManager::instance()->GetWindow()->Close();
@@ -526,6 +525,16 @@ void cMapEditor::FileMenuClick( const cUIEvent * Event ) {
 			mUIWindow->CloseWindow();
 		}
 	}
+}
+
+void cMapEditor::OnMapClose( const cUIEvent * Event ) {
+	mUIMap->Map()->Create( eeSize( 100, 100 ), 16, eeSize( 32, 32 ), MAP_FLAG_DRAW_GRID | MAP_FLAG_CLAMP_BODERS | MAP_FLAG_CLIP_AREA, mUIMap->Size() );
+
+	MapCreated();
+
+	mCurLayer = NULL;
+
+	RefreshLayersList();
 }
 
 void cMapEditor::ViewMenuClick( const cUIEvent * Event ) {
@@ -577,6 +586,11 @@ void cMapEditor::LayerMenuClick( const cUIEvent * Event ) {
 	} else if ( "Layer Properties..." == txt ) {
 		if ( NULL != mCurLayer) {
 			eeNew( cLayerProperties, ( mCurLayer ) );
+		} else {
+			cUIMessageBox * MsgBox = mTheme->CreateMessageBox( MSGBOX_OK, "First select and add a new layer." );
+			MsgBox->Title( "Error retrieving layer properties" );
+			MsgBox->Center();
+			MsgBox->Show();
 		}
 	} else if ( "Visible" == txt ) {
 		if ( NULL != mCurLayer ) {

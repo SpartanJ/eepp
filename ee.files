@@ -789,3 +789,5 @@ src/helper/chipmunk/constraints/cpGearJoint.c
 src/helper/chipmunk/constraints/cpDampedSpring.c
 src/helper/chipmunk/constraints/cpDampedRotarySpring.c
 src/helper/chipmunk/constraints/cpConstraint.c
+src/ui/cuimessagebox.hpp
+src/ui/cuimessagebox.cpp

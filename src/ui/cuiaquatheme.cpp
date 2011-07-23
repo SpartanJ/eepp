@@ -4,6 +4,7 @@
 #include "cuipopupmenu.hpp"
 #include "cuiprogressbar.hpp"
 #include "cuicommondialog.hpp"
+#include "cuimessagebox.hpp"
 
 namespace EE { namespace UI {
 
@@ -125,6 +126,32 @@ cUICommonDialog * cUIAquaTheme::CreateCommonDialog( cUIControl * Parent, const e
 	}
 
 	return eeNew( cUICommonDialog, ( DLGParams ) );
+}
+
+cUIMessageBox * cUIAquaTheme::CreateMessageBox( UI_MSGBOX_TYPE Type, const String& Message, Uint32 WinFlags, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, eeSize MinWindowSize, Uint8 BaseAlpha ) {
+	cUIMessageBox::CreateParams MsgBoxParams;
+	MsgBoxParams.Parent( Parent );
+	MsgBoxParams.PosSet( Pos );
+	MsgBoxParams.SizeSet( Size );
+	MsgBoxParams.Flags = Flags;
+	MsgBoxParams.WinFlags = WinFlags;
+	MsgBoxParams.MinWindowSize = MinWindowSize;
+	MsgBoxParams.BaseAlpha = BaseAlpha;
+	MsgBoxParams.Type = Type;
+	MsgBoxParams.Message = Message;
+
+	if ( UseDefaultThemeValues() ) {
+		if ( !( MsgBoxParams.Flags & UI_DRAW_SHADOW ) )
+			MsgBoxParams.Flags |= UI_DRAW_SHADOW;
+
+		if ( !( MsgBoxParams.WinFlags & UI_WIN_DRAW_SHADOW ) )
+			MsgBoxParams.WinFlags |= UI_WIN_DRAW_SHADOW;
+
+		MsgBoxParams.ButtonsPositionFixer.x = -2;
+		MsgBoxParams.TitleFontColor = eeColorA( 0, 0, 0, 255 );
+	}
+
+	return eeNew( cUIMessageBox, ( MsgBoxParams ) );
 }
 
 cUIComboBox * cUIAquaTheme::CreateComboBox( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, cUIListBox * ListBox ) {

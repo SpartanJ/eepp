@@ -47,6 +47,7 @@ class EE_API cUIEvent {
 			EventOpenFile,
 			EventSaveFile,
 			EventOnControlClear,
+			EventMsgBoxConfirmClick,
 			EventUser,
 			EventForceDWord = 0xFFFFFFFF
 		};

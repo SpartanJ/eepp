@@ -186,6 +186,7 @@
 	#include "ui/cuiselectbutton.hpp"
 	#include "ui/cuiwinmenu.hpp"
 	#include "ui/cuicommondialog.hpp"
+	#include "ui/cuimessagebox.hpp"
 
 	#include "ui/cuiaquatheme.hpp"
 	using namespace EE::UI;

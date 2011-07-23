@@ -9,7 +9,7 @@ SafeDataPointer::SafeDataPointer() :
 }
 
 SafeDataPointer::~SafeDataPointer() {
-	eeSAFE_DELETE( Data );
+	eeSAFE_DELETE_ARRAY( Data );
 }
 
 }}

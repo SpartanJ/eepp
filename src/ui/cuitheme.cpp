@@ -24,6 +24,7 @@
 #include "cuigfx.hpp"
 #include "cuisprite.hpp"
 #include "cuicommondialog.hpp"
+#include "cuimessagebox.hpp"
 
 namespace EE { namespace UI {
 
@@ -718,6 +719,20 @@ cUICommonDialog * cUITheme::CreateCommonDialog( cUIControl * Parent, const eeSiz
 	DLGParams.DefaultFilePattern = DefaultFilePattern;
 	DLGParams.CDLFlags = CDLFlags;
 	return eeNew( cUICommonDialog, ( DLGParams ) );
+}
+
+cUIMessageBox * cUITheme::CreateMessageBox( UI_MSGBOX_TYPE Type, const String& Message, Uint32 WinFlags, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, eeSize MinWindowSize, Uint8 BaseAlpha ) {
+	cUIMessageBox::CreateParams MsgBoxParams;
+	MsgBoxParams.Parent( Parent );
+	MsgBoxParams.PosSet( Pos );
+	MsgBoxParams.SizeSet( Size );
+	MsgBoxParams.Flags = Flags;
+	MsgBoxParams.WinFlags = WinFlags;
+	MsgBoxParams.MinWindowSize = MinWindowSize;
+	MsgBoxParams.BaseAlpha = BaseAlpha;
+	MsgBoxParams.Type = Type;
+	MsgBoxParams.Message = Message;
+	return eeNew( cUIMessageBox, ( MsgBoxParams ) );
 }
 
 }}
