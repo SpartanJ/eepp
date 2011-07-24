@@ -127,7 +127,7 @@ void cMapProperties::AddCellClick( const cUIEvent * Event ) {
 
 	Uint32 Index = mGenGrid->GetItemSelectedIndex();
 
-	if ( 0xFFFFFFFF == Index ) {
+	if ( eeINDEX_NOT_FOUND == Index ) {
 		mGenGrid->GetCell( 0 )->Select();
 	}
 }
@@ -135,7 +135,7 @@ void cMapProperties::AddCellClick( const cUIEvent * Event ) {
 void cMapProperties::RemoveCellClick( const cUIEvent * Event ) {
 	Uint32 Index = mGenGrid->GetItemSelectedIndex();
 
-	if ( 0xFFFFFFFF != Index ) {
+	if ( eeINDEX_NOT_FOUND != Index ) {
 		mGenGrid->Remove( Index );
 
 		if ( Index < mGenGrid->Count() ) {

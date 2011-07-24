@@ -7,7 +7,7 @@
 
 namespace EE { namespace UI {
 
-class cUIMessageBox : public cUIWindow {
+class EE_API cUIMessageBox : public cUIWindow {
 	public:
 		class CreateParams : public cUIWindow::CreateParams {
 			public:

@@ -722,4 +722,12 @@ const Int32& cTexturePacker::GetPlacedCount() const {
 	return mPlacedCount;
 }
 
+const Int32& cTexturePacker::Width() const {
+	return mWidth;
+}
+
+const Int32& cTexturePacker::Height() const {
+	return mHeight;
+}
+
 }}

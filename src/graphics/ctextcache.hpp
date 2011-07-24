@@ -12,13 +12,13 @@ class cFont;
 /** @brief Cached text for a fast font rendering. */
 class EE_API cTextCache {
 	public:
-		cTextCache( cFont * font, const String& text = "", eeColorA FontColor = eeColorA(0xFFFFFFFF), eeColorA FontShadowColor = eeColorA(0xFF000000) );
+		cTextCache( cFont * font, const String& text = "", eeColorA FontColor = eeColorA(255,255,255,255), eeColorA FontShadowColor = eeColorA(0,0,0,255) );
 
 		cTextCache();
 
 		~cTextCache();
 
-		void Create( cFont * font, const String& text = "", eeColorA FontColor = eeColorA(0xFFFFFFFF), eeColorA FontShadowColor = eeColorA(0xFF000000) );
+		void Create( cFont * font, const String& text = "", eeColorA FontColor = eeColorA(255,255,255,255), eeColorA FontShadowColor = eeColorA(0,0,0,255) );
 
 		cFont * Font() const;
 

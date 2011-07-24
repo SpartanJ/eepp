@@ -1665,8 +1665,10 @@ static int stbi_jpeg_test(stbi *s)
 
 static int stbi_jpeg_info_raw(jpeg *j, int *x, int *y, int *comp)
 {
-   if (!decode_jpeg_header(j, SCAN_header))
+   if (!decode_jpeg_header(j, SCAN_header)) {
+	  stbi_rewind( j->s );
       return 0;
+   }
    if (x) *x = j->s->img_x;
    if (y) *y = j->s->img_y;
    if (comp) *comp = j->s->img_n;
@@ -2606,8 +2608,10 @@ static int stbi_png_test(stbi *s)
 
 static int stbi_png_info_raw(png *p, int *x, int *y, int *comp)
 {
-   if (!parse_png_file(p, SCAN_header, 0))
+   if (!parse_png_file(p, SCAN_header, 0)) {
+	  stbi_rewind( p->s );
       return 0;
+   }
    if (x) *x = p->s->img_x;
    if (y) *y = p->s->img_y;
    if (comp) *comp = p->s->img_n;
@@ -2925,18 +2929,33 @@ static int tga_test(stbi *s)
    int sz;
    get8u(s);      //   discard Offset
    sz = get8u(s);   //   color type
-   if ( sz > 1 ) return 0;   //   only RGB or indexed allowed
+   if ( sz > 1 ) {
+	   stbi_rewind( s );
+	   return 0;
+   }   //   only RGB or indexed allowed
    sz = get8u(s);   //   image type
-   if ( (sz != 1) && (sz != 2) && (sz != 3) && (sz != 9) && (sz != 10) && (sz != 11) ) return 0;   //   only RGB or grey allowed, +/- RLE
+   if ( (sz != 1) && (sz != 2) && (sz != 3) && (sz != 9) && (sz != 10) && (sz != 11) ) {
+	   stbi_rewind( s );
+	   return 0;
+   }   //   only RGB or grey allowed, +/- RLE
    get16(s);      //   discard palette start
    get16(s);      //   discard palette length
    get8(s);         //   discard bits per palette color entry
    get16(s);      //   discard x origin
    get16(s);      //   discard y origin
-   if ( get16(s) < 1 ) return 0;      //   test width
-   if ( get16(s) < 1 ) return 0;      //   test height
+   if ( get16(s) < 1 ) {
+	   stbi_rewind( s );
+	   return 0;
+   }      //   test width
+   if ( get16(s) < 1 ) {
+	   stbi_rewind( s );
+	   return 0;
+   }      //   test height
    sz = get8(s);   //   bits per pixel
-   if ( (sz != 8) && (sz != 16) && (sz != 24) && (sz != 32) ) return 0;   //   only RGB or RGBA or grey allowed
+   if ( (sz != 8) && (sz != 16) && (sz != 24) && (sz != 32) ) {
+	   stbi_rewind( s );
+	   return 0;
+   }   //   only RGB or RGBA or grey allowed
    return 1;      //   seems to have passed everything
 }
 
@@ -3659,7 +3678,10 @@ static int stbi_gif_header(stbi *s, stbi_gif *g, int *comp, int is_info)
 static int stbi_gif_info_raw(stbi *s, int *x, int *y, int *comp)
 {
    stbi_gif g;
-   if (!stbi_gif_header(s, &g, comp, 1)) return 0;
+   if (!stbi_gif_header(s, &g, comp, 1)) {
+	  stbi_rewind( s );
+	  return 0;
+   }
    if (x) *x = g.w;
    if (y) *y = g.h;
    return 1;
@@ -4107,7 +4129,10 @@ static int stbi_hdr_info(stbi *s, int *x, int *y, int *comp)
    char *token;
    int valid = 0;
 
-   if (strcmp(hdr_gettoken(s,buffer), "#?RADIANCE") != 0) return 0;
+   if (strcmp(hdr_gettoken(s,buffer), "#?RADIANCE") != 0) {
+	   stbi_rewind( s );
+	   return 0;
+   }
 
    for(;;) {
       token = hdr_gettoken(s,buffer);
@@ -4115,13 +4140,22 @@ static int stbi_hdr_info(stbi *s, int *x, int *y, int *comp)
       if (strcmp(token, "FORMAT=32-bit_rle_rgbe") == 0) valid = 1;
    }
 
-   if (!valid)    return 0;
+   if (!valid) {
+	   stbi_rewind( s );
+	   return 0;
+   }
    token = hdr_gettoken(s,buffer);
-   if (strncmp(token, "-Y ", 3))  return 0;
+   if (strncmp(token, "-Y ", 3)) {
+	   stbi_rewind( s );
+	   return 0;
+   }
    token += 3;
    *y = strtol(token, &token, 10);
    while (*token == ' ') ++token;
-   if (strncmp(token, "+X ", 3))  return 0;
+   if (strncmp(token, "+X ", 3)) {
+	   stbi_rewind( s );
+	   return 0;
+   }
    token += 3;
    *x = strtol(token, NULL, 10);
    *comp = 3;
@@ -4137,10 +4171,16 @@ static int stbi_hdr_info(stbi *s, int *x, int *y, int *comp)
 static int stbi_bmp_info(stbi *s, int *x, int *y, int *comp)
 {
    int hsz;
-   if (get8(s) != 'B' || get8(s) != 'M') return 0;
+   if (get8(s) != 'B' || get8(s) != 'M') {
+	   stbi_rewind( s );
+	   return 0;
+   }
    skip(s,12);
    hsz = get32le(s);
-   if (hsz != 12 && hsz != 40 && hsz != 56 && hsz != 108) return 0;
+   if (hsz != 12 && hsz != 40 && hsz != 56 && hsz != 108) {
+	   stbi_rewind( s );
+	   return 0;
+   }
    if (hsz == 12) {
       *x = get16le(s);
       *y = get16le(s);
@@ -4148,7 +4188,10 @@ static int stbi_bmp_info(stbi *s, int *x, int *y, int *comp)
       *x = get32le(s);
       *y = get32le(s);
    }
-   if (get16le(s) != 1) return 0;
+   if (get16le(s) != 1) {
+	   stbi_rewind( s );
+	   return 0;
+   }
    *comp = get16le(s) / 8;
    return 1;
 }
@@ -4156,15 +4199,30 @@ static int stbi_bmp_info(stbi *s, int *x, int *y, int *comp)
 static int stbi_psd_info(stbi *s, int *x, int *y, int *comp)
 {
    int channelCount;
-   if (get32(s) != 0x38425053) return 0;
-   if (get16(s) != 1) return 0;
+   if (get32(s) != 0x38425053) {
+	   stbi_rewind( s );
+	   return 0;
+   }
+   if (get16(s) != 1) {
+	   stbi_rewind( s );
+	   return 0;
+   }
    skip(s, 6);
    channelCount = get16(s);
-   if (channelCount < 0 || channelCount > 16) return 0;
+   if (channelCount < 0 || channelCount > 16) {
+	   stbi_rewind( s );
+	   return 0;
+   }
    *y = get32(s);
    *x = get32(s);
-   if (get16(s) != 8) return 0;
-   if (get16(s) != 3) return 0;
+   if (get16(s) != 8) {
+	   stbi_rewind( s );
+	   return 0;
+   }
+   if (get16(s) != 3) {
+	   stbi_rewind( s );
+	   return 0;
+   }
    *comp = 4;
    return 1;
 }
@@ -4179,7 +4237,10 @@ static int stbi_pic_info(stbi *s, int *x, int *y, int *comp)
    *x = get16(s);
    *y = get16(s);
    if (at_eof(s))  return 0;
-   if ( (*x) != 0 && (1 << 28) / (*x) < (*y)) return 0;
+   if ( (*x) != 0 && (1 << 28) / (*x) < (*y)) {
+	   stbi_rewind( s );
+	   return 0;
+   }
 
    skip(s, 8);
 
@@ -4196,8 +4257,14 @@ static int stbi_pic_info(stbi *s, int *x, int *y, int *comp)
       packet->channel = get8u(s);
       act_comp |= packet->channel;
 
-      if (at_eof(s))          return 0;
-      if (packet->size != 8)  return 0;
+	  if (at_eof(s)) {
+		  stbi_rewind( s );
+		  return 0;
+	  }
+	  if (packet->size != 8) {
+		  stbi_rewind( s );
+		  return 0;
+	  }
    } while (chained);
 
    *comp = (act_comp & 0x10 ? 4 : 3);
@@ -4208,9 +4275,9 @@ static int stbi_pic_info(stbi *s, int *x, int *y, int *comp)
 static int stbi_info_main(stbi *s, int *x, int *y, int *comp)
 {
    if (stbi_jpeg_info(s, x, y, comp))
-       return 1;
+	   return 1;
    if (stbi_png_info(s, x, y, comp))
-       return 1;
+	   return 1;
    if (stbi_gif_info(s, x, y, comp))
        return 1;
    if (stbi_bmp_info(s, x, y, comp))

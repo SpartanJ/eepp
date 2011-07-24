@@ -19,7 +19,7 @@ cUIMenu::cUIMenu( cUIMenu::CreateParams& Params ) :
 	mNextPosY( 0 ),
 	mBiggestIcon( mMinSpaceForIcons ),
 	mItemSelected( NULL ),
-	mItemSelectedIndex( 0xFFFFFFFF ),
+	mItemSelectedIndex( eeINDEX_NOT_FOUND ),
 	mClickHide( false ),
 	mLastTickMove( 0 )
 {
@@ -254,7 +254,7 @@ Uint32 cUIMenu::GetItemIndex( cUIControl * Item ) {
 			return i;
 	}
 
-	return 0xFFFFFFFF;
+	return eeINDEX_NOT_FOUND;
 }
 
 Uint32 cUIMenu::Count() const {
@@ -413,7 +413,7 @@ bool cUIMenu::Hide() {
 		mItemSelected->SetSkinState( cUISkinState::StateNormal );
 
 	mItemSelected		= NULL;
-	mItemSelectedIndex	= 0xFFFFFFFF;
+	mItemSelectedIndex	= eeINDEX_NOT_FOUND;
 
 	return true;
 }
@@ -446,7 +446,7 @@ void cUIMenu::TrySelect( cUIControl * Ctrl, bool Up ) {
 		} else {
 			Uint32 Index = GetItemIndex( Ctrl );
 
-			if ( Index != 0xFFFFFFFF ) {
+			if ( Index != eeINDEX_NOT_FOUND ) {
 				if ( Up ) {
 					if ( Index > 0 ) {
 						for ( Int32 i = (Int32)Index - 1; i >= 0; i-- ) {
@@ -475,7 +475,7 @@ void cUIMenu::TrySelect( cUIControl * Ctrl, bool Up ) {
 
 void cUIMenu::NextSel() {
 	if ( mItems.size() ) {
-		if ( mItemSelectedIndex != 0xFFFFFFFF ) {
+		if ( mItemSelectedIndex != eeINDEX_NOT_FOUND ) {
 			if ( mItemSelectedIndex + 1 < mItems.size() ) {
 				TrySelect( mItems[ mItemSelectedIndex + 1 ], false );
 			} else {
@@ -489,7 +489,7 @@ void cUIMenu::NextSel() {
 
 void cUIMenu::PrevSel() {
 	if ( mItems.size() ) {
-		if (  mItemSelectedIndex != 0xFFFFFFFF  ) {
+		if (  mItemSelectedIndex != eeINDEX_NOT_FOUND  ) {
 			if ( mItemSelectedIndex >= 1 ) {
 				TrySelect( mItems[ mItemSelectedIndex - 1 ], true );
 			} else {
@@ -532,9 +532,9 @@ Uint32 cUIMenu::OnKeyDown( const cUIEventKey& Event ) {
 				break;
 			case KEY_RETURN:
 				if ( NULL != mItemSelected ) {
-					mItemSelected->SendMouseEvent(cUIEvent::EventMouseClick, cUIManager::instance()->GetMousePos(), 0xFFFFFFFF );
+					mItemSelected->SendMouseEvent(cUIEvent::EventMouseClick, cUIManager::instance()->GetMousePos(), EE_BUTTONS_ALL );
 
-					cUIMessage Msg( mItemSelected, cUIMessage::MsgMouseUp, 0xFFFFFFFF );
+					cUIMessage Msg( mItemSelected, cUIMessage::MsgMouseUp, EE_BUTTONS_ALL );
 					mItemSelected->MessagePost( &Msg );
 				}
 

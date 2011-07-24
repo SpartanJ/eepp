@@ -18,11 +18,13 @@ enum INPUT_TEXTBUFFER_FLAGS {
 	INPUT_TB_SUPPORT_COPY_PASTE			= 7
 };
 
+#define INPUT_LENGHT_MAX 0xFFFFFFFF
+
 class EE_API cInputTextBuffer {
 	public:
 		typedef cb::Callback0<void> EnterCallback;
 
-		cInputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, Window::cWindow * window = NULL, const Uint32& maxLenght = 0xFFFFFFFF );
+		cInputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, Window::cWindow * window = NULL, const Uint32& maxLenght = INPUT_LENGHT_MAX );
 
 		cInputTextBuffer( Window::cWindow * window = NULL );
 

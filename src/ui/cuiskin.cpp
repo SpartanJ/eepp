@@ -24,7 +24,7 @@ cUISkin::cUISkin( const std::string& Name, const Uint32& Type ) :
 	mColorDefault	= 0xFFFFFFFF;
 
 	for ( Int32 i = 0; i < cUISkinState::StateCount; i++ )
-		mColor[ i ] = eeColorA( 0xFFFFFFFF );
+		mColor[ i ] = eeColorA( 255, 255, 255, 255 );
 }
 
 cUISkin::~cUISkin() {

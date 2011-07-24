@@ -48,22 +48,24 @@ class EE_API cTexturePacker {
 
 		~cTexturePacker();
 
-		bool AddTexture( const std::string& TexturePath );
+		bool				AddTexture( const std::string& TexturePath );
 
-		bool AddTexturesPath( std::string TexturesPath );
+		bool				AddTexturesPath( std::string TexturesPath );
 
-		Int32 PackTextures();
+		Int32				PackTextures();
 
-		void Save( const std::string& Filepath, const EE_SAVE_TYPE& Format = EE_SAVE_TYPE_DDS, const bool& SaveExtensions = false );
+		void				Save( const std::string& Filepath, const EE_SAVE_TYPE& Format = EE_SAVE_TYPE_DDS, const bool& SaveExtensions = false );
 
-		void Close();
+		void				Close();
 
 		/** First of all you need to set at least the max dimensions of the texture atlas. */
-		void SetOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const bool& ForcePowOfTwo = true, const Uint32& PixelBorder = 0, const bool& AllowFlipping = false );
+		void				SetOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const bool& ForcePowOfTwo = true, const Uint32& PixelBorder = 0, const bool& AllowFlipping = false );
 
-		inline const Int32& Width() const { return mWidth; }
+		const Int32&		Width() const;
 
-		inline const Int32& Height() const { return mHeight; }
+		const Int32&		Height() const;
+
+		const std::string&	GetFilepath() const;
 	protected:
 		enum PackStrategy {
 			PackBig,
@@ -89,15 +91,13 @@ class EE_API cTexturePacker {
 		bool							mForcePowOfTwo;
 		Int32							mPixelBorder;
 		bool							mSaveExtensions;
-		EE_SAVE_TYPE						mFormat;
+		EE_SAVE_TYPE					mFormat;
 
 		cTexturePacker * 				GetChild() const;
 
 		cTexturePacker * 				GetParent() const;
 
 		std::list<cTexturePackerTex> *	GetTexturePackPtr();
-
-		const std::string&				GetFilepath() const;
 
 		void							ChildSave( const EE_SAVE_TYPE& Format );
 

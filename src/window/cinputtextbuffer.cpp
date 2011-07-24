@@ -9,7 +9,7 @@ cInputTextBuffer::cInputTextBuffer( const bool& active, const bool& supportNewLi
 	mFlags(0),
 	mCallback(0),
 	mPromptPos(0),
-	mMaxLenght(0xFFFFFFFF)
+	mMaxLenght(INPUT_LENGHT_MAX)
 {
 	if ( NULL == mWindow ) {
 		mWindow = cEngine::instance()->GetCurrentWindow();
@@ -33,7 +33,7 @@ cInputTextBuffer::cInputTextBuffer( cWindow * window ) :
 	mFlags(0),
 	mCallback(0),
 	mPromptPos(0),
-	mMaxLenght(0xFFFFFFFF)
+	mMaxLenght(INPUT_LENGHT_MAX)
 {
 	if ( NULL == mWindow ) {
 		mWindow = cEngine::instance()->GetCurrentWindow();

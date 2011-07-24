@@ -92,6 +92,10 @@ class cMap {
 
 		Uint32 DrawGrid() const;
 
+		void DrawBackground( const bool& draw );
+
+		Uint32 DrawBackground() const;
+
 		Uint32 DrawTileOver() const;
 
 		void DrawTileOver( const bool& draw );

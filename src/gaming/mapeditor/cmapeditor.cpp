@@ -19,6 +19,7 @@
 #include "../../ui/cuicheckbox.hpp"
 #include "../../ui/cuicommondialog.hpp"
 #include "../../ui/cuimessagebox.hpp"
+#include "../../ui/tools/ctexturegroupeditor.hpp"
 #include "../../graphics/cshapegroupmanager.hpp"
 #include "../../graphics/cglobalshapegroup.hpp"
 #include "../../graphics/ctexturegrouploader.hpp"
@@ -41,10 +42,9 @@ cMapEditor::cMapEditor( cUIWindow * AttatchTo, const MapEditorCloseCb& callback 
 
 	mTheme = cUIThemeManager::instance()->DefaultTheme();
 
-	if ( NULL == mUIWindow )
+	if ( NULL == mUIWindow ) {
 		mUIWindow = cUIManager::instance()->MainControl();
-
-
+	}
 
 	if ( cUIManager::instance()->MainControl() == mUIWindow ) {
 		mUIContainer = mUIWindow;
@@ -423,7 +423,7 @@ void cMapEditor::CreateUIMap() {
 	mUIMap = eeNew( cUIMap, ( Params ) );
 	mUIMap->Visible( true );
 	mUIMap->Enabled( true );
-	mUIMap->Map()->Create( eeSize( 100, 100 ), 16, eeSize( 32, 32 ), MAP_FLAG_DRAW_GRID | MAP_FLAG_CLAMP_BODERS | MAP_FLAG_CLIP_AREA, Params.Size );
+	mUIMap->Map()->Create( eeSize( 100, 100 ), 16, eeSize( 32, 32 ), MAP_FLAG_DRAW_GRID | MAP_FLAG_DRAW_BACKGROUND | MAP_FLAG_CLAMP_BODERS | MAP_FLAG_CLIP_AREA, Params.Size );
 	mUIMap->AddEventListener( cUIEvent::EventOnSizeChange, cb::Make1( this, &cMapEditor::OnMapSizeChange ) );
 	mUIMap->AddEventListener( cUIEvent::EventMouseDown, cb::Make1( this, &cMapEditor::OnMapMouseDown ) );
 	mUIMap->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::OnMapMouseClick ) );
@@ -528,7 +528,7 @@ void cMapEditor::FileMenuClick( const cUIEvent * Event ) {
 }
 
 void cMapEditor::OnMapClose( const cUIEvent * Event ) {
-	mUIMap->Map()->Create( eeSize( 100, 100 ), 16, eeSize( 32, 32 ), MAP_FLAG_DRAW_GRID | MAP_FLAG_CLAMP_BODERS | MAP_FLAG_CLIP_AREA, mUIMap->Size() );
+	mUIMap->Map()->Create( eeSize( 100, 100 ), 16, eeSize( 32, 32 ), MAP_FLAG_DRAW_GRID | MAP_FLAG_DRAW_BACKGROUND | MAP_FLAG_CLAMP_BODERS | MAP_FLAG_CLIP_AREA, mUIMap->Size() );
 
 	MapCreated();
 
@@ -555,7 +555,12 @@ void cMapEditor::MapMenuClick( const cUIEvent * Event ) {
 
 	const String& txt = reinterpret_cast<cUIMenuItem*> ( Event->Ctrl() )->Text();
 
-	if ( "Add External Texture Group..." == txt ) {
+	if ( "New Texture Group..." == txt ) {
+		cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 1024, 768 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, eeSize( 1024, 768 ) );
+		eeNew ( Tools::cTextureGroupEditor, ( tWin ) );
+		tWin->Center();
+		tWin->Show();
+	} else if ( "Add External Texture Group..." == txt ) {
 		cUICommonDialog * TGDialog = mTheme->CreateCommonDialog( NULL, eeSize(), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, eeSize(), 255, UI_CDL_DEFAULT_FLAGS, "*.etg" );
 
 		TGDialog->Title( "Load texture group..." );
@@ -646,10 +651,16 @@ void cMapEditor::TextureGroupOpen( const cUIEvent * Event ) {
 
 	std::string sgname = FileRemoveExtension( FileNameFromPath( CDL->GetFullPath() ) );
 
-	if ( NULL == cShapeGroupManager::instance()->GetByName( sgname ) ) {
+	cShapeGroup * SG = cShapeGroupManager::instance()->GetByName( sgname );
+
+	if ( NULL == SG ) {
 		cTextureGroupLoader tgl( CDL->GetFullPath() );
 
 		if ( tgl.IsLoaded() ) {
+			mShapeGroupsList->ListBox()->AddListBoxItem( sgname );
+		}
+	} else {
+		if ( eeINDEX_NOT_FOUND == mShapeGroupsList->ListBox()->GetItemIndex( sgname ) ) {
 			mShapeGroupsList->ListBox()->AddListBoxItem( sgname );
 		}
 	}

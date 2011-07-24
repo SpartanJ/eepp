@@ -288,14 +288,32 @@ static int stbi_dds_info( stbi *s, int *x, int *y, int *comp, int *iscompressed 
 
 	getn( s, (stbi_uc*)(&header), 128 );
 
-	if( header.dwMagic != (('D' << 0) | ('D' << 8) | ('S' << 16) | (' ' << 24)) ) return 0;
-	if( header.dwSize != 124 ) return 0;
+	if( header.dwMagic != (('D' << 0) | ('D' << 8) | ('S' << 16) | (' ' << 24)) ) {
+	   stbi_rewind( s );
+	   return 0;
+	}
+	if( header.dwSize != 124 ) {
+	   stbi_rewind( s );
+	   return 0;
+	}
 	flags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT;
-	if( (header.dwFlags & flags) != flags ) return 0;
-	if( header.sPixelFormat.dwSize != 32 ) return 0;
+	if( (header.dwFlags & flags) != flags ) {
+	   stbi_rewind( s );
+	   return 0;
+	}
+	if( header.sPixelFormat.dwSize != 32 ) {
+	   stbi_rewind( s );
+	   return 0;
+	}
 	flags = DDPF_FOURCC | DDPF_RGB;
-	if( (header.sPixelFormat.dwFlags & flags) == 0 ) return 0;
-	if( (header.sCaps.dwCaps1 & DDSCAPS_TEXTURE) == 0 ) return 0;
+	if( (header.sPixelFormat.dwFlags & flags) == 0 ) {
+	   stbi_rewind( s );
+	   return 0;
+	}
+	if( (header.sCaps.dwCaps1 & DDSCAPS_TEXTURE) == 0 ) {
+	   stbi_rewind( s );
+	   return 0;
+	}
 
 	is_compressed = (header.sPixelFormat.dwFlags & DDPF_FOURCC) / DDPF_FOURCC;
 	has_alpha = (header.sPixelFormat.dwFlags & DDPF_ALPHAPIXELS) / DDPF_ALPHAPIXELS;

@@ -19,7 +19,7 @@ cUIListBox::cUIListBox( cUIListBox::CreateParams& Params ) :
 	mFontColor( Params.FontColor ),
 	mFontOverColor( Params.FontOverColor ),
 	mFontSelectedColor( Params.FontSelectedColor ),
-	mLastPos( 0xFFFFFFFF ),
+	mLastPos( eeINDEX_NOT_FOUND ),
 	mMaxTextWidth(0),
 	mHScrollInit(0),
 	mItemsNotVisible(0),
@@ -176,7 +176,7 @@ Uint32 cUIListBox::RemoveListBoxItem( cUIListBoxItem * Item ) {
 }
 
 void cUIListBox::RemoveListBoxItems( std::vector<Uint32> ItemsIndex ) {
-	if ( ItemsIndex.size() && 0xFFFFFFFF != ItemsIndex[0] ) {
+	if ( ItemsIndex.size() && eeINDEX_NOT_FOUND != ItemsIndex[0] ) {
 		std::vector<cUIListBoxItem*> ItemsCpy;
 		bool erase;
 		mTexts.clear();
@@ -245,7 +245,7 @@ Uint32 cUIListBox::GetListBoxItemIndex( const String& Name ) {
 			return i;
 	}
 
-	return 0xFFFFFFFF;
+	return eeINDEX_NOT_FOUND;
 }
 
 Uint32 cUIListBox::GetListBoxItemIndex( cUIListBoxItem * Item ) {
@@ -256,7 +256,7 @@ Uint32 cUIListBox::GetListBoxItemIndex( cUIListBoxItem * Item ) {
 			return i;
 	}
 
-	return 0xFFFFFFFF;
+	return eeINDEX_NOT_FOUND;
 }
 
 void cUIListBox::OnScrollValueChange( const cUIEvent * Event ) {
@@ -461,7 +461,7 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 
 		RelPosMax 	= RelPos + mContainer->Size().Height() + mRowHeight;
 
-		if ( ( FromScrollChange && 0xFFFFFFFF != mLastPos && mLastPos == RelPos ) && ( tHLastScroll == mHScrollInit ) )
+		if ( ( FromScrollChange && eeINDEX_NOT_FOUND != mLastPos && mLastPos == RelPos ) && ( tHLastScroll == mHScrollInit ) )
 			return;
 
 		mLastPos = RelPos;
@@ -505,7 +505,7 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 			RelPosMax			= RelPos + VisibleItems;
 		}
 
-		if ( ( FromScrollChange && 0xFFFFFFFF != mLastPos && mLastPos == RelPos )  && ( !Clipped || tHLastScroll == mHScrollInit ) )
+		if ( ( FromScrollChange && eeINDEX_NOT_FOUND != mLastPos && mLastPos == RelPos )  && ( !Clipped || tHLastScroll == mHScrollInit ) )
 			return;
 
 		mLastPos = RelPos;
@@ -610,7 +610,7 @@ Uint32 cUIListBox::GetItemSelectedIndex() const {
 	if ( mSelected.size() )
 		return mSelected.front();
 
-	return 0xFFFFFFFF;
+	return eeINDEX_NOT_FOUND;
 }
 
 String cUIListBox::GetItemSelectedText() const {
@@ -646,7 +646,7 @@ Uint32 cUIListBox::GetItemIndex( cUIListBoxItem * Item ) {
 			return i;
 	}
 
-	return 0xFFFFFFFF;
+	return eeINDEX_NOT_FOUND;
 }
 
 Uint32 cUIListBox::GetItemIndex( const String& Text ) {
@@ -655,7 +655,7 @@ Uint32 cUIListBox::GetItemIndex( const String& Text ) {
 			return i;
 	}
 
-	return 0xFFFFFFFF;
+	return eeINDEX_NOT_FOUND;
 }
 
 void cUIListBox::FontColor( const eeColorA& Color ) {

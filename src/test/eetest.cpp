@@ -1771,8 +1771,12 @@ void cEETest::PhysicsDestroy() {
 }
 
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
+#ifdef EE_BACKEND_SDL_ACTIVE
 #include <SDL/SDL_main.h>
+#endif
+#ifdef EE_BACKEND_ALLEGRO_ACTIVE
 #include <allegro5/allegro.h>
+#endif
 #endif
 
 int main (int argc, char * argv []) {

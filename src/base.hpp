@@ -150,6 +150,7 @@
 #define eeSAFE_DELETE(p)		{ if(p) { eeDelete (p);			(p)=NULL; } }
 #define eeSAFE_FREE(p)			{ if(p) { eeFree ( (void*)p );	(p)=NULL; } }
 #define eeSAFE_DELETE_ARRAY(p)  { if(p) { eeDeleteArray(p);		(p)=NULL; } }
+#define eeINDEX_NOT_FOUND 0xFFFFFFFF
 
 namespace EE {
 #if 1 == EE_USE_DOUBLES

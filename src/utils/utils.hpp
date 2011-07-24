@@ -127,10 +127,10 @@ namespace EE { namespace Utils {
 	void EE_API SetFlagValue( Uint32 * Key, Uint32 Val, Uint32 BitWrite );
 
 	/** @return The OS Name */
-	std::string GetOSName();
+	std::string EE_API GetOSName();
 
 	/** @return The OS Architecture */
-	std::string GetOSArchitecture();
+	std::string EE_API GetOSArchitecture();
 }
 
 }

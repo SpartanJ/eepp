@@ -86,7 +86,8 @@ enum EE_MAP_FLAGS {
 	MAP_FLAG_CLAMP_BODERS	= ( 1 << 0 ),
 	MAP_FLAG_CLIP_AREA		= ( 1 << 1 ),
 	MAP_FLAG_DRAW_GRID		= ( 1 << 2 ),
-	MAP_FLAG_DRAW_TILE_OVER = ( 1 << 3 )
+	MAP_FLAG_DRAW_TILE_OVER = ( 1 << 3 ),
+	MAP_FLAG_DRAW_BACKGROUND= ( 1 << 4 )
 };
 
 enum EE_LAYER_FLAGS {

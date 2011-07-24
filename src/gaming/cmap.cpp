@@ -202,11 +202,13 @@ void cMap::MouseOverDraw() {
 }
 
 void cMap::GridDraw() {
-	cPrimitives P;
+	if ( DrawBackground() ) {
+		cPrimitives P;
 
-	P.SetColor( eeColorA( 0, 0, 0, 50 ) );
-	P.DrawRectangle( mScreenPos.x, mScreenPos.y, mViewSize.x, mViewSize.y, 0.f, 1.f );
-	P.SetColor( eeColorA( 255, 255, 255, 255 ) );
+		P.SetColor( eeColorA( 0, 0, 0, 50 ) );
+		P.DrawRectangle( mScreenPos.x, mScreenPos.y, mViewSize.x, mViewSize.y, 0.f, 1.f );
+		P.SetColor( eeColorA( 255, 255, 255, 255 ) );
+	}
 
 	if ( !DrawGrid() )
 		return;
@@ -385,6 +387,14 @@ void cMap::DrawGrid( const bool& draw ) {
 
 Uint32 cMap::DrawGrid() const {
 	return mFlags & MAP_FLAG_DRAW_GRID;
+}
+
+void cMap::DrawBackground( const bool& draw ) {
+	SetFlagValue( &mFlags, MAP_FLAG_DRAW_BACKGROUND, draw ? 1 : 0 );
+}
+
+Uint32 cMap::DrawBackground() const {
+	return mFlags & MAP_FLAG_DRAW_BACKGROUND;
 }
 
 Uint32 cMap::ClipedArea() const {

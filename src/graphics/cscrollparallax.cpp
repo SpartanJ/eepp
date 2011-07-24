@@ -5,7 +5,7 @@ namespace EE { namespace Graphics {
 cScrollParallax::cScrollParallax() :
 	mShape( NULL ),
 	mBlend( ALPHA_NORMAL ),
-	mColor( 0xFFFFFFFF )
+	mColor( 255, 255, 255, 255 )
 {
 }
 

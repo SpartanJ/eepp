@@ -15,7 +15,7 @@ cUIGenericGrid::cUIGenericGrid( const cUIGenericGrid::CreateParams& Params ) :
 	mCollumnsCount( Params.CollumnsCount ),
 	mRowHeight( Params.RowHeight ),
 	mTotalWidth( Params.GridWidth ),
-	mLastPos( 0xFFFFFFFF ),
+	mLastPos( eeINDEX_NOT_FOUND ),
 	mVisibleFirst(0),
 	mVisibleLast(0),
 	mHScrollInit(0),
@@ -229,7 +229,7 @@ void cUIGenericGrid::UpdateScroll( bool FromScrollChange ) {
 
 		RelPosMax 	= RelPos + mContainer->Size().Height() + mRowHeight;
 
-		if ( ( FromScrollChange && 0xFFFFFFFF != mLastPos && mLastPos == RelPos ) && ( tHLastScroll == mHScrollInit ) )
+		if ( ( FromScrollChange && eeINDEX_NOT_FOUND != mLastPos && mLastPos == RelPos ) && ( tHLastScroll == mHScrollInit ) )
 			return;
 
 		mLastPos = RelPos;
@@ -263,7 +263,7 @@ void cUIGenericGrid::UpdateScroll( bool FromScrollChange ) {
 			RelPosMax			= RelPos + VisibleItems;
 		}
 
-		if ( ( FromScrollChange && 0xFFFFFFFF != mLastPos && mLastPos == RelPos )  && ( !Clipped || tHLastScroll == mHScrollInit ) )
+		if ( ( FromScrollChange && eeINDEX_NOT_FOUND != mLastPos && mLastPos == RelPos )  && ( !Clipped || tHLastScroll == mHScrollInit ) )
 			return;
 
 		mLastPos = RelPos;
@@ -329,7 +329,7 @@ void cUIGenericGrid::Remove( cUIGridCell * Cell ) {
 }
 
 void cUIGenericGrid::Remove( std::vector<Uint32> ItemsIndex ) {
-	if ( ItemsIndex.size() && 0xFFFFFFFF != ItemsIndex[0] ) {
+	if ( ItemsIndex.size() && eeINDEX_NOT_FOUND != ItemsIndex[0] ) {
 		std::vector<cUIGridCell*> ItemsCpy;
 		bool erase;
 
@@ -493,7 +493,7 @@ Uint32 cUIGenericGrid::GetItemIndex( cUIGridCell * Item ) {
 			return i;
 	}
 
-	return 0xFFFFFFFF;
+	return eeINDEX_NOT_FOUND;
 }
 
 Uint32 cUIGenericGrid::OnSelected() {

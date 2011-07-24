@@ -791,3 +791,9 @@ src/helper/chipmunk/constraints/cpDampedRotarySpring.c
 src/helper/chipmunk/constraints/cpConstraint.c
 src/ui/cuimessagebox.hpp
 src/ui/cuimessagebox.cpp
+src/ui/tools/ctexturegroupeditor.hpp
+src/ui/tools/ctexturegroupeditor.cpp
+src/ui/tools/ctexturegroupnew.hpp
+src/ui/tools/ctexturegroupnew.cpp
+src/ui/tools/ctexturegroupshapeeditor.hpp
+src/ui/tools/ctexturegroupshapeeditor.cpp

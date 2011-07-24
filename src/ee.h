@@ -191,6 +191,9 @@
 	#include "ui/cuiaquatheme.hpp"
 	using namespace EE::UI;
 
+	#include "ui/tools/ctexturegroupeditor.hpp"
+	using namespace EE::UI::Tools;
+
 	// Gaming
 	#include "gaming/clight.hpp"
 	#include "gaming/cisomap.hpp"
@@ -203,6 +206,9 @@
 	#include "gaming/cobjectlayer.hpp"
 	#include "gaming/cmap.hpp"
 	using namespace EE::Gaming;
+
+	#include "gaming/mapeditor/cmapeditor.hpp"
+	using namespace EE::Gaming::MapEditor;
 
 	#include "physics/cphysicsmanager.hpp"
 	#include "physics/cshape.hpp"

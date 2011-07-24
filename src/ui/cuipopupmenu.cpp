@@ -48,7 +48,7 @@ bool cUIPopUpMenu::Hide() {
 				mItemSelected->SetSkinState( cUISkinState::StateNormal );
 
 			mItemSelected		= NULL;
-			mItemSelectedIndex	= 0xFFFFFFFF;
+			mItemSelectedIndex	= eeINDEX_NOT_FOUND;
 
 			if ( cUIThemeManager::instance()->DefaultEffectsEnabled() ) {
 				DisableFadeOut( cUIThemeManager::instance()->ControlsFadeOutTime() );

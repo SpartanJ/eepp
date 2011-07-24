@@ -12,15 +12,13 @@ namespace EE { namespace Gaming { namespace MapEditor {
 
 class cUILayerNew;
 
-class cMapEditor {
+class EE_API cMapEditor {
 	public:
 		typedef cb::Callback0<void> MapEditorCloseCb;
 
 		cMapEditor( cUIWindow * AttatchTo = NULL, const MapEditorCloseCb& callback = MapEditorCloseCb() );
 
 		~cMapEditor();
-
-		void CloseCallback( const MapEditorCloseCb& callback );
 	protected:
 		cUIWindow *			mUIWindow;
 		cUIControl *		mUIContainer;

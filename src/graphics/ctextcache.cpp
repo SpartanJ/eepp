@@ -7,8 +7,8 @@ cTextCache::cTextCache() :
 	mFont(NULL),
 	mCachedWidth(0.f),
 	mNumLines(1),
-	mFontColor(0xFFFFFFFF),
-	mFontShadowColor(0xFF000000),
+	mFontColor(255,255,255,255),
+	mFontShadowColor(0,0,0,255),
 	mCachedCoords(false),
 	mFlags(0)
 {

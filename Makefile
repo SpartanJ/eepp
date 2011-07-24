@@ -187,7 +187,7 @@ SRCGAMING			= $(wildcard ./src/gaming/*.cpp) $(wildcard ./src/gaming/mapeditor/*
 SRCGRAPHICS			= $(wildcard ./src/graphics/*.cpp) $(wildcard ./src/graphics/renderer/*.cpp)
 SRCMATH				= $(wildcard ./src/math/*.cpp)
 SRCSYSTEM			= $(wildcard ./src/system/*.cpp)
-SRCUI				= $(wildcard ./src/ui/*.cpp)
+SRCUI				= $(wildcard ./src/ui/*.cpp) $(wildcard ./src/ui/tools/*.cpp)
 SRCUTILS     		= $(wildcard ./src/utils/*.cpp)
 SRCWINDOW     		= $(wildcard ./src/window/*.cpp) $(wildcard ./src/window/backend/null/*.cpp) $(wildcard ./src/window/platform/null/*.cpp) $(SDL_BACKEND_SRC) $(ALLEGRO_BACKEND_SRC) $(PLATFORMSRC)
 SRCPHYSICS			= $(wildcard ./src/physics/*.cpp) $(wildcard ./src/physics/constraints/*.cpp)
@@ -261,6 +261,7 @@ dirs:
 	@mkdir -p $(OBJDIR)/src/math
 	@mkdir -p $(OBJDIR)/src/system
 	@mkdir -p $(OBJDIR)/src/ui
+	@mkdir -p $(OBJDIR)/src/ui/tools
 	@mkdir -p $(OBJDIR)/src/utils
 	@mkdir -p $(OBJDIR)/src/window
 	@mkdir -p $(OBJDIR)/src/window/backend/SDL

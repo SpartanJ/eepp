@@ -156,8 +156,6 @@ void cUISpinBox::InternalValue( const eeFloat& Val, const bool& Force ) {
 
 			mValue = Val;
 
-			mInput->GetInputTextBuffer()->ChangedSinceLastUpdate( false );
-
 			OnValueChange();
 		}
 	}
@@ -194,9 +192,11 @@ const eeFloat& cUISpinBox::MaxValue() const {
 }
 
 void cUISpinBox::Update() {
+	bool Changed = mInput->GetInputTextBuffer()->ChangedSinceLastUpdate();
+
 	cUIControlAnim::Update();
 
-	if ( mInput->GetInputTextBuffer()->ChangedSinceLastUpdate() ) {
+	if ( Changed ) {
 		if ( !mInput->Text().size() ) {
 			Value( 0 );
 		} else {

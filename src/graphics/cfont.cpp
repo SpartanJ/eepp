@@ -6,7 +6,7 @@ namespace EE { namespace Graphics {
 cFont::cFont( const Uint32& Type, const std::string& Name ) :
 	mType( Type ),
 	mCacheData(true),
-	mColor(0xFFFFFFFF),
+	mColor(255,255,255,255),
 	mShadowColor(0xFF000000),
 	mNumLines(1),
 	mTexId(0),

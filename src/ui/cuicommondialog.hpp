@@ -11,7 +11,7 @@
 
 namespace EE { namespace UI {
 
-class cUICommonDialog : public cUIWindow {
+class EE_API cUICommonDialog : public cUIWindow {
 	public:
 		class CreateParams : public cUIWindow::CreateParams {
 			public:
