@@ -1,6 +1,4 @@
 #include "eetest.hpp"
-#include "../gaming/mapeditor/cmapeditor.hpp"
-using namespace EE::Gaming::MapEditor;
 
 void cEETest::Init() {
 	EE = cEngine::instance();
@@ -143,12 +141,6 @@ void cEETest::Init() {
 
 		Launch();
 	} else {
-        std::string err;
-
-		std::cout << err.c_str() << std::endl;
-
-		cLog::instance()->Write( err );
-
 		cEngine::DestroySingleton();
 
 		exit(0);
@@ -839,10 +831,8 @@ void cEETest::LoadTextures() {
 	mBlindy.AddFramesByPattern( "rn" );
 	mBlindy.Position( 320.f, 0.f );
 
-	mBoxSprite = eeNew( cSprite, () );
-	mBoxSprite->CreateStatic( cGlobalShapeGroup::instance()->Add( eeNew( Graphics::cShape, ( TN[3], "ilmare" ) ) ) );
-	mCircleSprite = eeNew( cSprite, () );
-	mCircleSprite->CreateStatic( cGlobalShapeGroup::instance()->Add( eeNew( Graphics::cShape, ( TN[1], "thecircle" ) ) ) );
+	mBoxSprite = eeNew( cSprite, ( cGlobalShapeGroup::instance()->Add( eeNew( Graphics::cShape, ( TN[3], "ilmare" ) ) ) ) );
+	mCircleSprite = eeNew( cSprite, ( cGlobalShapeGroup::instance()->Add( eeNew( Graphics::cShape, ( TN[1], "thecircle" ) ) ) ) );
 
 	Log->Writef( "Textures loading time: %f", te.Elapsed() );
 
@@ -1480,7 +1470,6 @@ void cEETest::End() {
 
 	PhysicsDestroy();
 
-	Mus->Stop();
 	eeSAFE_DELETE( Mus );
 	eeSAFE_DELETE( mTGL );
 	eeSAFE_DELETE( mFBO );
@@ -1526,9 +1515,6 @@ void cEETest::Demo1Create() {
 	Physics::cShape::ResetShapeIdCounter();
 
 	mSpace = Physics::cSpace::New();
-	//mSpace->Iterations( 30 );
-	//mSpace->ResizeStaticHash( 40.f, 1000 );
-	//mSpace->ResizeActiveHash( 40.f, 1000 );
 	mSpace->Gravity( cVectNew( 0, 100 ) );
 	mSpace->SleepTimeThreshold( 0.5f );
 
@@ -1788,30 +1774,5 @@ int main (int argc, char * argv []) {
 
 	EE::MemoryManager::LogResults();
 
-/**
-	cTexturePacker tp( 512, 512, true, 2 );
-	tp.AddTexturesPath( GetProcessPath() + "data/tetg" );
-	tp.PackTextures();
-	tp.Save( "data/tetg.png", EE_SAVE_TYPE_PNG );
-
-	if ( cEngine::instance()->CreateWindow( WindowSettings(), ContextSettings() ) ) {
-		cTextureGroupLoader tgl( "data/tetg.etg" );
-		cShapeGroup * tSG = tgl.GetShapeGroup();
-
-		std::list<Graphics::cShape*>& Res = tSG->GetResources();
-
-		for ( std::list<Graphics::cShape*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
-			Graphics::cShape * tShape = (*it);
-
-			tShape->OffsetX( 16 - tShape->Size().Width() / 2 );
-			tShape->OffsetY( 16 - tShape->Size().Height() / 2 );
-		}
-
-		tgl.UpdateTextureAtlas();
-	}
-
-	cEngine::instance()->GetCurrentWindow()->Close();
-	cEngine::DestroySingleton();
-*/
 	return 0;
 }

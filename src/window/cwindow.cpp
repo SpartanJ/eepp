@@ -276,7 +276,6 @@ void cWindow::ClipDisable() {
 	GLi->Disable( GL_SCISSOR_TEST );
 }
 
-
 void cWindow::ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
 	cGlobalBatchRenderer::instance()->Draw();
 	GLi->Clip2DPlaneEnable( x, y, Width, Height );

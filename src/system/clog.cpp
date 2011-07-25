@@ -52,7 +52,7 @@ void cLog::Write( const std::string& Text, const bool& newLine ) {
 }
 
 void cLog::openfs() {
-	if ( !mFilePath.empty() )
+	if ( mFilePath.empty() )
 		mFilePath = GetProcessPath();
 
     if ( !mFS.is_open() ) {
