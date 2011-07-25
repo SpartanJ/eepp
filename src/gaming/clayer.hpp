@@ -7,7 +7,7 @@ namespace EE { namespace Gaming {
 
 class cMap;
 
-class cLayer {
+class EE_API cLayer {
 	public:
 		typedef std::map<std::string, std::string> PropertiesMap;
 

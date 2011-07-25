@@ -16,7 +16,7 @@ namespace EE { namespace Gaming {
 
 #define MAP_LAYER_UNKNOWN 0xFFFFFFFF
 
-class cMap {
+class EE_API cMap {
 	public:
 		typedef std::map<std::string, std::string>	PropertiesMap;
 		typedef std::list<std::string>				GOTypesList;		//! Special object types used in this map

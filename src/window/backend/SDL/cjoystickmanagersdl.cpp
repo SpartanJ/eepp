@@ -1,7 +1,7 @@
 #include "cjoystickmanagersdl.hpp"
 #include "cjoysticksdl.hpp"
 
-#ifdef EE_BACKEND_SDL_ACTIVE
+#ifdef EE_BACKEND_SDL_1_2
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
@@ -39,7 +39,7 @@ void cJoystickManagerSDL::Open() {
 void cJoystickManagerSDL::Close() {
 	if ( SDL_WasInit( SDL_INIT_JOYSTICK ) ) {
 		SDL_QuitSubSystem( SDL_INIT_JOYSTICK );
-		
+
 		mInit = false;
 	}
 }

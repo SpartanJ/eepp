@@ -337,11 +337,11 @@ void cWindowSDL::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {
 
 eeWindowHandler	cWindowSDL::GetWindowHandler() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	return mWMinfo.window;
+	return mWMinfo.info.win.window;
 #elif defined( EE_X11_PLATFORM )
 	return mWMinfo.info.x11.display;
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
-	return mWMinfo.cocoa.window;
+	return mWMinfo.info.cocoa.window;
 #else
 	return 0;
 #endif

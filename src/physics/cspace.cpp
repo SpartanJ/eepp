@@ -17,7 +17,9 @@ void cSpace::Free( cSpace * space ) {
 	cpSAFE_DELETE( space );
 }
 
-cSpace::cSpace() {
+cSpace::cSpace() :
+	mData( NULL )
+{
 	mSpace = cpSpaceNew();
 	mSpace->data = (void*)this;
 	mStaticBody = cpNew( cBody, ( mSpace->staticBody ) );
@@ -46,6 +48,14 @@ cSpace::~cSpace() {
 	cpSAFE_DELETE( mStaticBody );
 
 	cPhysicsManager::instance()->RemoveSpace( this );
+}
+
+void cSpace::Data( void * data ) {
+	mData = data;
+}
+
+void * cSpace::Data() const {
+	return mData;
 }
 
 void cSpace::Step( const cpFloat& dt ) {
@@ -114,6 +124,22 @@ void cSpace::CollisionBias( cpFloat bias ) {
 
 cpFloat cSpace::CollisionBias() const {
 	return mSpace->collisionBias;
+}
+
+cpTimestamp cSpace::CollisionPersistence() {
+	return cpSpaceGetCollisionPersistence( mSpace );
+}
+
+void cSpace::CollisionPersistence( cpTimestamp value ) {
+	cpSpaceSetCollisionPersistence( mSpace, value );
+}
+
+bool cSpace::EnableContactGraph() {
+	return cpTrue == cpSpaceGetEnableContactGraph( mSpace );
+}
+
+void cSpace::EnableContactGraph( bool value ) {
+	cpSpaceSetEnableContactGraph( mSpace, value );
 }
 
 cBody * cSpace::StaticBody() const {
@@ -554,6 +580,54 @@ void cSpace::PointQuery( cVect point, cpLayers layers, cpGroup group, PointQuery
 	tPointQuery.Func	= func;
 
 	cpSpacePointQuery( mSpace, tocpv( point ), layers, group, &RecieverPointQueryFunc, reinterpret_cast<void*>( &tPointQuery ) );
+}
+
+void cSpace::ReindexShape( cShape * shape ) {
+	cpSpaceReindexShape( mSpace, shape->Shape() );
+}
+
+void cSpace::ReindexShapesForBody( cBody *body ) {
+	cpSpaceReindexShapesForBody( mSpace, body->Body() );
+}
+
+void cSpace::ReindexStatic() {
+	cpSpaceReindexStatic( mSpace );
+}
+
+void cSpace::UseSpatialHash( cpFloat dim, int count ) {
+	cpSpaceUseSpatialHash( mSpace, dim, count );
+}
+
+static void SpaceBodyIteratorFunc( cpBody * body, void *data ) {
+	cSpace::cBodyIterator * it = reinterpret_cast<cSpace::cBodyIterator *> ( data );
+	it->Space->OnEachBody( reinterpret_cast<cBody*>( body->data ), it );
+}
+
+void cSpace::EachBody( BodyIteratorFunc Func, void * data ) {
+	cBodyIterator it( this, data, Func );
+	cpSpaceEachBody( mSpace, &SpaceBodyIteratorFunc, (void*)&it );
+}
+
+void cSpace::OnEachBody( cBody * Body, cBodyIterator * it ) {
+	if ( it->Func.IsSet() ) {
+		it->Func( it->Space, Body, it->Data );
+	}
+}
+
+static void SpaceShapeIteratorFunc ( cpShape * shape, void * data ) {
+	cSpace::cShapeIterator * it = reinterpret_cast<cSpace::cShapeIterator *> ( data );
+	it->Space->OnEachShape( reinterpret_cast<cShape*>( shape->data ), it );
+}
+
+void cSpace::EachShape( ShapeIteratorFunc Func, void * data ) {
+	cShapeIterator it( this, data, Func );
+	cpSpaceEachShape( mSpace, &SpaceShapeIteratorFunc, (void*)&it );
+}
+
+void cSpace::OnEachShape( cShape * Shape, cShapeIterator * it ) {
+	if ( it->Func.IsSet() ) {
+		it->Func( it->Space, Shape, it->Data );
+	}
 }
 
 CP_NAMESPACE_END

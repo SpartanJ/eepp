@@ -6,7 +6,7 @@
 
 namespace EE { namespace Gaming {
 
-class cGameObjectShapeEx : public cGameObjectShape {
+class EE_API cGameObjectShapeEx : public cGameObjectShape {
 	public:
 		cGameObjectShapeEx( const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC, cShape * Shape = NULL, const eeVector2f& Pos = eeVector2f(), EE_PRE_BLEND_FUNC Blend = ALPHA_NORMAL, EE_RENDERTYPE Render = RN_NORMAL, eeFloat Angle = 0.f, eeFloat Scale = 1.f, eeColorA Color = eeColorA() );
 

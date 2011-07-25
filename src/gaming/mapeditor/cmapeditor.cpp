@@ -406,6 +406,7 @@ void cMapEditor::CreateNewMap() {
 }
 
 void cMapEditor::MapCreated() {
+	mCurLayer = NULL;
 	mLayerList->ListBox()->Clear();
 	FillSGCombo();
 

@@ -8,7 +8,7 @@ namespace EE { namespace Gaming {
 
 class cMap;
 
-class cObjectLayer : public cLayer {
+class EE_API cObjectLayer : public cLayer {
 	public:
 		typedef std::list<cGameObject*> ObjList;
 

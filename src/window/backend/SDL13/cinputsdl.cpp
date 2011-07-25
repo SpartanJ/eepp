@@ -289,6 +289,8 @@ void cInputSDL::Init() {
 void cInputSDL::InitializeTables() {
 	Uint32 i;
 
+	memset( &mKeyCodesTable[0], 0, SDL_NUM_SCANCODES );
+
 	for ( i = SDL_SCANCODE_A; i <= SDL_SCANCODE_Z; i++ )
 		mKeyCodesTable[ i ] = KEY_A + i - SDL_SCANCODE_A;
 

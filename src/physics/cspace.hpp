@@ -19,6 +19,8 @@ class CP_API cSpace {
 		typedef cb::Callback2<void	, cShape *	, void * >							BBQueryFunc;
 		typedef cb::Callback4<void	, cShape *	, cpFloat	, cVect	, void * >		SegmentQueryFunc;
 		typedef cb::Callback2<void	, cShape *	, void * >							PointQueryFunc;
+		typedef cb::Callback3<void	, cSpace *	, cBody *	, void * >				BodyIteratorFunc;
+		typedef cb::Callback3<void	, cSpace *	, cShape *	, void * >				ShapeIteratorFunc;
 
 		class cCollisionHandler {
 			public:
@@ -90,6 +92,32 @@ class CP_API cSpace {
 				void *			Data;
 		};
 
+		class cBodyIterator {
+			public:
+				cBodyIterator( cSpace * space, void * data, BodyIteratorFunc func ) :
+					Space( space ),
+					Data( data ),
+					Func( func )
+				{}
+
+				cSpace *					Space;
+				void *						Data;
+				BodyIteratorFunc			Func;
+		};
+
+		class cShapeIterator {
+			public:
+				cShapeIterator( cSpace * space, void * data, ShapeIteratorFunc func ) :
+					Space( space ),
+					Data( data ),
+					Func( func )
+				{}
+
+				cSpace *					Space;
+				void *						Data;
+				ShapeIteratorFunc			Func;
+		};
+
 		static cSpace * New();
 
 		static void Free( cSpace * space );
@@ -131,6 +159,14 @@ class CP_API cSpace {
 		void CollisionBias( cpFloat bias );
 
 		cpFloat CollisionBias() const;
+
+		cpTimestamp CollisionPersistence();
+
+		void CollisionPersistence( cpTimestamp value );
+
+		bool EnableContactGraph();
+
+		void EnableContactGraph( bool value );
 
 		bool Contains( cShape * shape );
 
@@ -193,9 +229,30 @@ class CP_API cSpace {
 		void SegmentQuery( cVect start, cVect end, cpLayers layers, cpGroup group, SegmentQueryFunc func, void * data );
 
 		void PointQuery( cVect point, cpLayers layers, cpGroup group, PointQueryFunc func, void * data );
+
+		void Data( void * data );
+
+		void * Data() const;
+
+		void ReindexShape( cShape * shape );
+
+		void ReindexShapesForBody( cBody *body );
+
+		void ReindexStatic();
+
+		void UseSpatialHash( cpFloat dim, int count );
+
+		void EachShape( ShapeIteratorFunc Func, void * data );
+
+		virtual void OnEachShape( cShape * Shape, cShapeIterator * it );
+
+		void EachBody( BodyIteratorFunc Func, void * data );
+
+		virtual void OnEachBody( cBody * Body, cBodyIterator * it );
 	protected:
 		cpSpace *									mSpace;
 		cBody *										mStaticBody;
+		void *										mData;
 		std::list<cBody*>							mBodys;
 		std::list<cShape*>							mShapes;
 		std::list<cConstraint*>						mConstraints;

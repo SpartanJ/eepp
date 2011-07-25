@@ -1,7 +1,7 @@
 #include "cclipboardsdl.hpp"
 #include "cwindowsdl.hpp"
 
-#ifdef EE_BACKEND_SDL_ACTIVE
+#ifdef EE_BACKEND_SDL_1_2
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 

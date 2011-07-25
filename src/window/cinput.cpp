@@ -41,6 +41,9 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 	switch( Event->Type ) {
 		case InputEvent::KeyDown:
 		{
+			if ( Event->key.keysym.sym > EE_KEYS_NUM )
+				break;
+
 			if ( Event->key.keysym.mod != 0xFFFFFFFF )
 				mInputMod = Event->key.keysym.mod;
 
@@ -49,6 +52,9 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 		}
 		case InputEvent::KeyUp:
 		{
+			if ( Event->key.keysym.sym > EE_KEYS_NUM )
+				break;
+
 			PushKey( &mKeysDown	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, false );
 			PushKey( &mKeysUp	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, true );
 			break;
@@ -103,7 +109,7 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 				mLastButtonLeftClick		= eeGetTicks();
 
 				mTClick = mLastButtonLeftClick - mLastButtonLeftClicked;
-				
+
 				if ( mTClick < mDoubleClickInterval && mTClick > 0 ) {
 					mDoubleClickTrigger			|= EE_BUTTON_MASK(EE_BUTTON_LEFT);
 					mLastButtonLeftClick		= 0;
@@ -114,7 +120,7 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 				mLastButtonRightClick		= eeGetTicks();
 
 				mTClick = mLastButtonRightClick - mLastButtonRightClicked;
-				
+
 				if ( mTClick < mDoubleClickInterval && mTClick > 0 ) {
 					mDoubleClickTrigger			|= EE_BUTTON_MASK(EE_BUTTON_RIGHT);
 					mLastButtonRightClick		= 0;
@@ -125,7 +131,7 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 				mLastButtonMiddleClick		= eeGetTicks();
 
 				mTClick = mLastButtonMiddleClick - mLastButtonMiddleClicked;
-				
+
 				if ( mTClick < mDoubleClickInterval && mTClick > 0 ) {
 					mDoubleClickTrigger			|= EE_BUTTON_MASK(EE_BUTTON_MIDDLE);
 					mLastButtonMiddleClick		= 0;
@@ -146,7 +152,7 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 			break;
 		}
 	}
-	
+
 	SendEvent( Event );
 }
 

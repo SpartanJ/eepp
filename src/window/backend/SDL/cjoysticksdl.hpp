@@ -2,11 +2,11 @@
 #define EE_WINDOWCJOYSTICKSDL_HPP
 
 #include "../../cbackend.hpp"
+#include "base.hpp"
 
-#ifdef EE_BACKEND_SDL_ACTIVE
+#ifdef EE_BACKEND_SDL_1_2
 
 #include "../../cjoystick.hpp"
-#include <SDL/SDL.h>
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 

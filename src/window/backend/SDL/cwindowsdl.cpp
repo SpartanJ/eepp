@@ -1,6 +1,6 @@
 #include "cwindowsdl.hpp"
 
-#ifdef EE_BACKEND_SDL_ACTIVE
+#ifdef EE_BACKEND_SDL_1_2
 
 #include "cclipboardsdl.hpp"
 #include "cinputsdl.hpp"
@@ -369,7 +369,6 @@ eeWindowHandler	cWindowSDL::GetWindowHandler() {
 #elif defined( EE_X11_PLATFORM )
 	return mWMinfo.info.x11.display;
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
-	//return mWMinfo.cocoa.window;
 	return mWMinfo.info.x11.display;
 #else
 	return 0;

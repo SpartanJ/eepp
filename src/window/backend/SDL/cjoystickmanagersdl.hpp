@@ -2,20 +2,20 @@
 #define EE_WINDOWCJOYSTICKMANAGERSDL_HPP
 
 #include "../../cbackend.hpp"
+#include "base.hpp"
 
-#ifdef EE_BACKEND_SDL_ACTIVE
+#ifdef EE_BACKEND_SDL_1_2
 
 #include "../../cjoystickmanager.hpp"
-#include <SDL/SDL.h>
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
 class EE_API cJoystickManagerSDL : public cJoystickManager {
 	public:
 		cJoystickManagerSDL();
-		
+
 		virtual ~cJoystickManagerSDL();
-		
+
 		void Update();
 
 		void Close();

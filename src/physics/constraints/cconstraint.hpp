@@ -29,8 +29,20 @@ class CP_API cConstraint {
 		void MaxBias( const cpFloat& maxbias );
 
 		virtual void Draw();
+
+		cpFloat ErrorBias();
+
+		void ErrorBias( cpFloat value );
+
+		void Data( void * data );
+
+		void * Data() const;
+
+		cpFloat Impulse();
 	protected:
 		cpConstraint *		mConstraint;
+
+		void *				mData;
 
 		cConstraint();
 

@@ -33,7 +33,7 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
-			<Add option="-std=gnu99 -fno-strict-aliasing -ffast-math -DSTBI_FAILURE_USERMSG -Wno-unknown-pragmas -Wno-unknown-pragmas -DEE_BACKEND_ALLEGRO_ACTIVE -DEE_BACKEND_SDL_ACTIVE" />
+			<Add option="-std=gnu99 -fno-strict-aliasing -ffast-math -DSTBI_FAILURE_USERMSG -Wno-unknown-pragmas -DEE_BACKEND_ALLEGRO_ACTIVE -DEE_BACKEND_SDL_ACTIVE" />
 			<Add directory=".\src\helper\chipmunk" />
 			<Add directory=".\src\helper\zlib" />
 			<Add directory="C:\MinGW\include\freetype2" />
@@ -786,6 +786,8 @@
 		<Unit filename="src\ui\cuimenusubmenu.hpp" />
 		<Unit filename="src\ui\cuimessage.cpp" />
 		<Unit filename="src\ui\cuimessage.hpp" />
+		<Unit filename="src\ui\cuimessagebox.cpp" />
+		<Unit filename="src\ui\cuimessagebox.hpp" />
 		<Unit filename="src\ui\cuipopupmenu.cpp" />
 		<Unit filename="src\ui\cuipopupmenu.hpp" />
 		<Unit filename="src\ui\cuiprogressbar.cpp" />
@@ -832,6 +834,12 @@
 		<Unit filename="src\ui\cuiwindow.hpp" />
 		<Unit filename="src\ui\cuiwinmenu.cpp" />
 		<Unit filename="src\ui\cuiwinmenu.hpp" />
+		<Unit filename="src\ui\tools\ctexturegroupeditor.cpp" />
+		<Unit filename="src\ui\tools\ctexturegroupeditor.hpp" />
+		<Unit filename="src\ui\tools\ctexturegroupnew.cpp" />
+		<Unit filename="src\ui\tools\ctexturegroupnew.hpp" />
+		<Unit filename="src\ui\tools\ctexturegroupshapeeditor.cpp" />
+		<Unit filename="src\ui\tools\ctexturegroupshapeeditor.hpp" />
 		<Unit filename="src\ui\tuiitemcontainer.hpp" />
 		<Unit filename="src\ui\uihelper.cpp" />
 		<Unit filename="src\ui\uihelper.hpp" />

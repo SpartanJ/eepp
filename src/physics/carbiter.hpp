@@ -34,6 +34,18 @@ class CP_API cArbiter {
 		cpContactPointSet GetContactPointSet();
 
 		cpArbiter *	Arbiter() const;
+
+		cpFloat Elasticity();
+
+		void Elasticity( cpFloat value );
+
+		cpFloat Friction();
+
+		void Friction( cpFloat value );
+
+		cVect SurfaceVelocity();
+
+		void SurfaceVelocity( cVect value );
 	protected:
 		cpArbiter *		mArbiter;
 };

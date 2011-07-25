@@ -1,5 +1,8 @@
 #include "cbody.hpp"
 #include "cphysicsmanager.hpp"
+#include "cshape.hpp"
+#include "constraints/cconstraint.hpp"
+#include "carbiter.hpp"
 
 CP_NAMESPACE_BEGIN
 
@@ -55,6 +58,10 @@ void cBody::SetData() {
 
 void cBody::Activate() {
 	cpBodyActivate( mBody );
+}
+
+void cBody::ActivateStatic( cBody *body, cShape * filter ) {
+	cpBodyActivateStatic( mBody, filter->Shape() );
 }
 
 void cBody::Sleep() {
@@ -145,6 +152,14 @@ void cBody::AngVel( const cpFloat& rotVel ) {
 	cpBodySetAngVel( mBody, rotVel );
 }
 
+cpFloat cBody::Torque() const {
+	return cpBodyGetTorque( mBody );
+}
+
+void cBody::Torque( const cpFloat& torque ) {
+	cpBodySetTorque( mBody, torque );
+}
+
 cVect cBody::Rot() const {
 	return tovect( cpBodyGetRot( mBody ) );
 }
@@ -163,10 +178,6 @@ cpFloat cBody::AngVelLimit() const {
 
 void cBody::AngVelLimit( const cpFloat& speed ) {
 	cpBodySetAngVelLimit( mBody, speed );
-}
-
-void cBody::Slew( cVect pos, cpFloat dt ) {
-	//cpBodySlew( mBody, tocpv( pos ), dt );
 }
 
 void cBody::UpdateVelocity( cVect gravity, cpFloat damping, cpFloat dt ) {
@@ -207,6 +218,55 @@ void * cBody::Data() const {
 
 void cBody::Data( void * data ) {
 	mData = data;
+}
+
+static void BodyShapeIteratorFunc ( cpBody * body, cpShape * shape, void * data ) {
+	cBody::cShapeIterator * it = reinterpret_cast<cBody::cShapeIterator *> ( data );
+	it->Body->OnEachShape( reinterpret_cast<cShape*>( shape->data ), it );
+}
+
+void cBody::EachShape( ShapeIteratorFunc Func, void * data ) {
+	cShapeIterator it( this, data, Func );
+	cpBodyEachShape( mBody, &BodyShapeIteratorFunc, (void*)&it );
+}
+
+void cBody::OnEachShape( cShape * Shape, cShapeIterator * it ) {
+	if ( it->Func.IsSet() ) {
+		it->Func( it->Body, Shape, it->Data );
+	}
+}
+
+static void BodyConstraintIteratorFunc( cpBody * body, cpConstraint * constraint, void * data ) {
+	cBody::cConstraintIterator * it = reinterpret_cast<cBody::cConstraintIterator *> ( data );
+	it->Body->OnEachConstraint( reinterpret_cast<cConstraint*> ( constraint->data ), it );
+}
+
+void cBody::EachConstraint( ConstraintIteratorFunc Func, void * data ) {
+	cConstraintIterator it( this, data, Func );
+	cpBodyEachConstraint( mBody, &BodyConstraintIteratorFunc, (void*)&it );
+}
+
+void cBody::OnEachConstraint( cConstraint * Constraint, cConstraintIterator * it ) {
+	if ( it->Func.IsSet() ) {
+		it->Func( this, Constraint, it->Data );
+	}
+}
+
+static void BodyArbiterIteratorFunc( cpBody * body, cpArbiter * arbiter, void * data ) {
+	cBody::cArbiterIterator * it = reinterpret_cast<cBody::cArbiterIterator *> ( data );
+	cArbiter tarb( arbiter );
+	it->Body->OnEachArbiter( &tarb, it );
+}
+
+void cBody::EachArbiter( ArbiterIteratorFunc Func, void * data ) {
+	cArbiterIterator it( this, data, Func );
+	cpBodyEachArbiter( mBody, &BodyArbiterIteratorFunc, (void*)&it );
+}
+
+void cBody::OnEachArbiter( cArbiter * Arbiter, cArbiterIterator * it ) {
+	if ( it->Func.IsSet() ) {
+		it->Func( this, Arbiter, it->Data );
+	}
 }
 
 CP_NAMESPACE_END

@@ -5,9 +5,55 @@
 
 CP_NAMESPACE_BEGIN
 
-//! TODO: Search for a IsGrounded replacement.
+class cShape;
+class cConstraint;
+class cArbiter;
+
 class CP_API cBody {
 	public:
+		typedef cb::Callback3<void, cBody *, cShape *, void * >		ShapeIteratorFunc;
+		typedef cb::Callback3<void, cBody *, cConstraint *, void *> ConstraintIteratorFunc;
+		typedef cb::Callback3<void, cBody *, cArbiter *, void *>	ArbiterIteratorFunc;
+
+		class cShapeIterator {
+			public:
+				cShapeIterator( cBody * body, void * data, ShapeIteratorFunc func ) :
+					Body( body ),
+					Data( data ),
+					Func( func )
+				{}
+
+				cBody *						Body;
+				void *						Data;
+				ShapeIteratorFunc			Func;
+		};
+
+		class cConstraintIterator {
+			public:
+				cConstraintIterator( cBody * body, void * data, ConstraintIteratorFunc func ) :
+					Body( body ),
+					Data( data ),
+					Func( func )
+				{}
+
+				cBody *						Body;
+				void *						Data;
+				ConstraintIteratorFunc		Func;
+		};
+
+		class cArbiterIterator {
+			public:
+				cArbiterIterator( cBody * body, void * data, ArbiterIteratorFunc func ) :
+					Body( body ),
+					Data( data ),
+					Func( func )
+				{}
+
+				cBody *						Body;
+				void *						Data;
+				ArbiterIteratorFunc			Func;
+		};
+
 		static cBody * New( cpFloat m, cpFloat i );
 
 		static cBody * New( cpBody * body );
@@ -22,9 +68,11 @@ class CP_API cBody {
 
 		cBody();
 
-		~cBody();
+		virtual ~cBody();
 
 		void Activate();
+
+		void ActivateStatic( cBody *body, cShape * filter );
 
 		void Sleep();
 
@@ -70,6 +118,10 @@ class CP_API cBody {
 
 		void AngVel( const cpFloat& angVel );
 
+		cpFloat Torque() const;
+
+		void Torque( const cpFloat& torque );
+
 		cVect Rot() const;
 
 		cpFloat VelLimit() const;
@@ -79,8 +131,6 @@ class CP_API cBody {
 		cpFloat AngVelLimit() const;
 
 		void AngVelLimit( const cpFloat& speed );
-
-		void Slew( cVect pos, cpFloat dt );
 
 		void UpdateVelocity( cVect gravity, cpFloat damping, cpFloat dt );
 
@@ -101,11 +151,23 @@ class CP_API cBody {
 		void * Data() const;
 
 		void Data( void * data );
+
+		void EachShape( ShapeIteratorFunc Func, void * data );
+
+		virtual void OnEachShape( cShape * Shape, cShapeIterator * it );
+
+		void EachConstraint( ConstraintIteratorFunc Func, void * data );
+
+		virtual void OnEachConstraint( cConstraint * Constraint, cConstraintIterator * it );
+
+		void EachArbiter( ArbiterIteratorFunc Func, void * data );
+
+		virtual void OnEachArbiter( cArbiter * Arbiter, cArbiterIterator * it );
 	protected:
 		friend class cSpace;
 
-		cpBody *		mBody;
-		void *			mData;
+		cpBody *				mBody;
+		void *					mData;
 
 		void SetData();
 };

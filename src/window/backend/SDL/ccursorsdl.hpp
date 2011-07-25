@@ -2,8 +2,9 @@
 #define EE_WINDOWCCURSORSDL_HPP
 
 #include "../../ccursor.hpp"
+#include "base.hpp"
 
-#ifdef EE_BACKEND_SDL_ACTIVE
+#ifdef EE_BACKEND_SDL_1_2
 
 using namespace EE::Window;
 

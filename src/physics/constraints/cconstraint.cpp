@@ -7,12 +7,17 @@ void cConstraint::Free( cConstraint * constraint ) {
 	cpSAFE_DELETE( constraint );
 }
 
-cConstraint::cConstraint( cpConstraint * Constraint ) {
+cConstraint::cConstraint( cpConstraint * Constraint ) :
+	mData( NULL )
+{
 	mConstraint = Constraint;
 	SetData();
 }
 
-cConstraint::cConstraint() {
+cConstraint::cConstraint() :
+	mConstraint( NULL ),
+	mData( NULL )
+{
 }
 
 cConstraint::~cConstraint() {
@@ -52,6 +57,26 @@ cpFloat cConstraint::MaxBias() {
 
 void cConstraint::MaxBias( const cpFloat& maxbias ) {
 	mConstraint->maxBias = maxbias;
+}
+
+cpFloat cConstraint::ErrorBias() {
+	return cpConstraintGetErrorBias( mConstraint );
+}
+
+void cConstraint::ErrorBias( cpFloat value ) {
+	cpConstraintSetErrorBias( mConstraint, value );
+}
+
+void cConstraint::Data( void * data ) {
+	mData = data;
+}
+
+void * cConstraint::Data() const {
+	return mData;
+}
+
+cpFloat cConstraint::Impulse() {
+	return cpConstraintGetImpulse( mConstraint );
 }
 
 void cConstraint::Draw() {

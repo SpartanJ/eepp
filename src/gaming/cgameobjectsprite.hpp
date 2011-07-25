@@ -9,7 +9,7 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {
 
-class cGameObjectSprite : public cGameObject {
+class EE_API cGameObjectSprite : public cGameObject {
 	public:
 		cGameObjectSprite( const Uint32& Flags = GObjFlags::GAMEOBJECT_ANIMATED, cSprite * Sprite = NULL );
 

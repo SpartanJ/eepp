@@ -39,7 +39,7 @@ enum EEGL_SHADERS {
 	EEGL_SHADERS_COUNT
 };
 
-class cRendererGL3 : public cGL {
+class EE_API cRendererGL3 : public cGL {
 	public:
 		cRendererGL3();
 

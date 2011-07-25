@@ -80,4 +80,28 @@ cpArbiter *	cArbiter::Arbiter() const {
 	return mArbiter;
 }
 
+cpFloat cArbiter::Elasticity() {
+	return cpArbiterGetElasticity( mArbiter);
+}
+
+void cArbiter::Elasticity( cpFloat value ) {
+	cpArbiterSetElasticity( mArbiter, value );
+}
+
+cpFloat cArbiter::Friction() {
+	return cpArbiterGetFriction( mArbiter );
+}
+
+void cArbiter::Friction( cpFloat value ) {
+	cpArbiterSetFriction( mArbiter, value );
+}
+
+cVect cArbiter::SurfaceVelocity() {
+	return tovect( cpArbiterGetSurfaceVelocity( mArbiter ) );
+}
+
+void cArbiter::SurfaceVelocity( cVect value ) {
+	cpArbiterSetSurfaceVelocity( mArbiter, tocpv( value ) );
+}
+
 CP_NAMESPACE_END

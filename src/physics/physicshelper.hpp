@@ -1,6 +1,7 @@
 #ifndef EE_PHYSICS_HELPER
 #define EE_PHYSICS_HELPER
 
+#include "base.hpp"
 #include "../graphics/base.hpp"
 
 CP_NAMESPACE_BEGIN

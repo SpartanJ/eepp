@@ -32,7 +32,7 @@ enum EEGL_version {
 class cRendererGL;
 class cRendererGL3;
 
-class cGL {
+class EE_API cGL {
 	static cGL * ms_singleton;
 	public:
 		static cGL * CreateSingleton( EEGL_version ver );

@@ -6,7 +6,7 @@
 
 namespace EE { namespace Gaming {
 
-class cTileLayer : public cLayer {
+class EE_API cTileLayer : public cLayer {
 	public:
 		virtual ~cTileLayer();
 
