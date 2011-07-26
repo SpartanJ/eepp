@@ -798,3 +798,7 @@ src/ui/tools/ctexturegroupnew.cpp
 src/ui/tools/ctexturegroupshapeeditor.hpp
 src/ui/tools/ctexturegroupshapeeditor.cpp
 src/window/backend/SDL/base.hpp
+src/system/cpackmanager.hpp
+src/system/cpackmanager.cpp
+src/gaming/clightmanager.hpp
+src/gaming/clightmanager.cpp

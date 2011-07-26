@@ -60,9 +60,10 @@ void cEETest::Init() {
 
 	mWindow = EE->CreateWindow( WindowSettings( mWidth, mHeight, BitColor, Style, MyPath + "data/ee.png" ), ContextSettings( VSync, GLVer ) );
 
-	PAK.Open( MyPath + "data/ee.zip" );
+	PAK = eeNew( cZip, () );
+	PAK->Open( MyPath + "data/ee.zip" );
 
-	run = ( mWindow->Created() && PAK.IsOpen() );
+	run = ( mWindow->Created() && PAK->IsOpen() );
 
 	if ( run ) {
 		SetScreen( 0 );
@@ -98,7 +99,7 @@ void cEETest::Init() {
 
 		Mus = eeNew( cMusic, () );
 
-		if ( Mus->OpenFromPack( &PAK, "music.ogg" ) ) {
+		if ( Mus->OpenFromPack( PAK, "music.ogg" ) ) {
 			Mus->Loop(true);
 			Mus->Volume( 100.f );
 			Mus->Play();
@@ -169,13 +170,13 @@ void cEETest::CreateAquaTextureAtlas() {
 void cEETest::LoadFonts() {
 	mFTE.Reset();
 
-	cTextureLoader * tl = eeNew( cTextureLoader, ( &PAK, "conchars.png" ) );
+	cTextureLoader * tl = eeNew( cTextureLoader, ( PAK, "conchars.png" ) );
 	tl->SetColorKey( eeColor(0,0,0) );
 
 	mFontLoader.Add( eeNew( cTextureFontLoader, ( "conchars", tl, (eeUint)32 ) ) );
-	mFontLoader.Add( eeNew( cTextureFontLoader, ( "ProggySquareSZ", eeNew( cTextureLoader, ( &PAK, "ProggySquareSZ.png" ) ), &PAK, "ProggySquareSZ.dat" ) ) );
-	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", &PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255) ) ) );
-	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arialb", &PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255), 1, eeColor(0,0,0), true ) ) );
+	mFontLoader.Add( eeNew( cTextureFontLoader, ( "ProggySquareSZ", eeNew( cTextureLoader, ( PAK, "ProggySquareSZ.png" ) ), PAK, "ProggySquareSZ.dat" ) ) );
+	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255) ) ) );
+	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arialb", PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255), 1, eeColor(0,0,0), true ) ) );
 
 	mFontLoader.Load( cb::Make1( this, &cEETest::OnFontLoaded ) );
 }
@@ -737,19 +738,21 @@ void cEETest::LoadTextures() {
 
 	Uint32 i;
 
-	PakTest.Open( MyPath + "data/test.zip" );
 
-	std::vector<std::string> files = PakTest.GetFileList();
+	PakTest = eeNew( cZip, () );
+	PakTest->Open( MyPath + "data/test.zip" );
+
+	std::vector<std::string> files = PakTest->GetFileList();
 
 	for ( i = 0; i < files.size(); i++ ) {
 		std::string name( files[i] );
 
 		if ( "jpg" == FileExtension( name ) ) {
-			mResLoad.Add( eeNew( cTextureLoader, ( &PakTest, name ) ) );
+			mResLoad.Add( eeNew( cTextureLoader, ( PakTest, name ) ) );
 		}
 	}
 
-	mResLoad.Add( eeNew( cSoundLoader, ( &SndMng, "mysound", &PAK, "sound.ogg" ) ) );
+	mResLoad.Add( eeNew( cSoundLoader, ( &SndMng, "mysound", PAK, "sound.ogg" ) ) );
 
 	mResLoad.Load( cb::Make1( this, &cEETest::OnTextureLoaded ) );
 
@@ -757,21 +760,21 @@ void cEETest::LoadTextures() {
 	TNP.resize(12);
 
 	for ( i = 0; i <= 7; i++ ) {
-		TN[i] = TF->LoadFromPack( &PAK, "t" + toStr(i+1) + ".png", ( (i+1) == 7 ) ? true : false, ( (i+1) == 4 ) ? EE_CLAMP_REPEAT : EE_CLAMP_TO_EDGE );
+		TN[i] = TF->LoadFromPack( PAK, "t" + toStr(i+1) + ".png", ( (i+1) == 7 ) ? true : false, ( (i+1) == 4 ) ? EE_CLAMP_REPEAT : EE_CLAMP_TO_EDGE );
 		TNP[i] = TF->GetTexture( TN[i] );
 	}
 
 	Tiles.resize(10);
 
-	cTextureGroupLoader tgl( &PAK, "tiles.etg" );
+	cTextureGroupLoader tgl( PAK, "tiles.etg" );
 	cShapeGroup * SG = cShapeGroupManager::instance()->GetByName( "tiles" );
 
 	for ( i = 0; i < 6; i++ ) {
 		Tiles[i] = SG->GetByName( toStr( i+1 ) );
 	}
 
-	Tiles[6] = SG->Add( TF->LoadFromPack( &PAK, "objects/1.png" ), "7" );
-	Tiles[7] = SG->Add( TF->LoadFromPack( &PAK, "objects/2.png" ), "8" );
+	Tiles[6] = SG->Add( TF->LoadFromPack( PAK, "objects/1.png" ), "7" );
+	Tiles[7] = SG->Add( TF->LoadFromPack( PAK, "objects/2.png" ), "8" );
 	Tiles[7]->GetTexture()->CreateMaskFromColor( eeColorA(0,0,0,255), 0 );
 
 	eeInt w, h;
@@ -808,9 +811,9 @@ void cEETest::LoadTextures() {
 	}
 	Tex->Unlock(false, true);
 
-	Cursor[0] = TF->LoadFromPack( &PAK, "cursor.png" );
+	Cursor[0] = TF->LoadFromPack( PAK, "cursor.png" );
 	CursorP[0] = TF->GetTexture( Cursor[0] );
-	Cursor[1] = TF->LoadFromPack( &PAK, "cursor.tga" );
+	Cursor[1] = TF->LoadFromPack( PAK, "cursor.tga" );
 	CursorP[1] = TF->GetTexture( Cursor[1] );
 
 	cCursorManager * CurMan = mWindow->GetCursorManager();
@@ -1476,6 +1479,8 @@ void cEETest::End() {
 	eeSAFE_DELETE( mVBO );
 	eeSAFE_DELETE( mBoxSprite );
 	eeSAFE_DELETE( mCircleSprite );
+	eeSAFE_DELETE( PAK );
+	eeSAFE_DELETE( PakTest );
 
 	cLog::instance()->Save();
 

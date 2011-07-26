@@ -82,6 +82,10 @@ class tColorA : public tColor<T> {
 		static const tColorA<T> Black;   ///< Black predefined color
 		
 		Uint32 GetUint32();
+
+		void Assign( T r, T g, T b, T a );
+
+		void Assign( const tColorA<T>& Col );
 };
 
 template <typename T>
@@ -92,6 +96,22 @@ tColorA<T>::tColorA( const Uint32& Col )
 	Red		|= Col >> 16;
 	Green	|= Col >> 8;
 	Blue	|= Col;
+}
+
+template <typename T>
+void tColorA<T>::Assign( T r, T g, T b, T a ) {
+	Red = r;
+	Green = g;
+	Blue = b;
+	Alpha = a;
+}
+
+template <typename T>
+void tColorA<T>::Assign( const tColorA<T>& Col ) {
+	Red = Col.Red;
+	Green = Col.Green;
+	Blue = Col.Blue;
+	Alpha = Col.Alpha;
 }
 
 template <typename T>

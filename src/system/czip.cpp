@@ -134,12 +134,12 @@ bool cZip::ExtractFile( const std::string& path , const std::string& dest ) {
 
 	bool Ret = false;
 
-	std::vector<Uint8> data;
+	SafeDataPointer data;
 
 	Ret = ExtractFileToMemory( path, data );
 
 	if ( Ret )
-		FileWrite( dest, data );
+		FileWrite( dest, data.Data, data.DataSize );
 
 	Unlock();
 
@@ -215,7 +215,10 @@ bool cZip::ExtractFileToMemory( const std::string& path, SafeDataPointer& data )
 }
 
 Int32 cZip::Exists( const std::string& path ) {
-	return zip_name_locate( mZip, path.c_str(), 0 );
+	if ( IsOpen() )
+		return zip_name_locate( mZip, path.c_str(), 0 );
+
+	return -1;
 }
 
 Int8 cZip::CheckPack() {

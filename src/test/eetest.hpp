@@ -151,8 +151,8 @@ class cEETest : private cThread {
 		void Screen4();
 		void Screen5();
 
-		cZip PAK;
-		cZip PakTest;
+		cZip * PAK;
+		cZip * PakTest;
 
 		std::vector<Uint8> tmpv;
 		std::vector<Uint8> MySong;

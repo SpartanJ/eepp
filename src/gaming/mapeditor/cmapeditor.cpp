@@ -424,7 +424,7 @@ void cMapEditor::CreateUIMap() {
 	mUIMap = eeNew( cUIMap, ( Params ) );
 	mUIMap->Visible( true );
 	mUIMap->Enabled( true );
-	mUIMap->Map()->Create( eeSize( 100, 100 ), 16, eeSize( 32, 32 ), MAP_FLAG_DRAW_GRID | MAP_FLAG_DRAW_BACKGROUND | MAP_FLAG_CLAMP_BODERS | MAP_FLAG_CLIP_AREA, Params.Size );
+	mUIMap->Map()->Create( eeSize( 100, 100 ), 16, eeSize( 32, 32 ), MAP_EDITOR_DEFAULT_FLAGS, Params.Size );
 	mUIMap->AddEventListener( cUIEvent::EventOnSizeChange, cb::Make1( this, &cMapEditor::OnMapSizeChange ) );
 	mUIMap->AddEventListener( cUIEvent::EventMouseDown, cb::Make1( this, &cMapEditor::OnMapMouseDown ) );
 	mUIMap->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::OnMapMouseClick ) );
@@ -529,7 +529,7 @@ void cMapEditor::FileMenuClick( const cUIEvent * Event ) {
 }
 
 void cMapEditor::OnMapClose( const cUIEvent * Event ) {
-	mUIMap->Map()->Create( eeSize( 100, 100 ), 16, eeSize( 32, 32 ), MAP_FLAG_DRAW_GRID | MAP_FLAG_DRAW_BACKGROUND | MAP_FLAG_CLAMP_BODERS | MAP_FLAG_CLIP_AREA, mUIMap->Size() );
+	mUIMap->Map()->Create( eeSize( 100, 100 ), 16, eeSize( 32, 32 ), MAP_EDITOR_DEFAULT_FLAGS, mUIMap->Size() );
 
 	MapCreated();
 
@@ -700,32 +700,32 @@ cGameObject * cMapEditor::CreateGameObject() {
 
 	if ( GAMEOBJECT_TYPE_SHAPE == mCurGOType ) {
 
-		tObj = eeNew( cGameObjectShape, ( mCurGOFlags, mGfxPreview->Shape() ) );
+		tObj = eeNew( cGameObjectShape, ( mCurGOFlags, mCurLayer, mGfxPreview->Shape() ) );
 
 	} else if ( GAMEOBJECT_TYPE_SHAPEEX == mCurGOType ) {
 
-		tObj = eeNew( cGameObjectShapeEx, ( mCurGOFlags, mGfxPreview->Shape() ) );
+		tObj = eeNew( cGameObjectShapeEx, ( mCurGOFlags, mCurLayer, mGfxPreview->Shape() ) );
 
 	} else if ( GAMEOBJECT_TYPE_SPRITE == mCurGOType ) {
 
 		if ( mChkAnim->Active() ) {
 
 			cSprite * tAnimSprite = eeNew( cSprite, ( RemoveNumbersAtEnd( mGfxPreview->Shape()->Name() ) ) );
-			tObj = eeNew( cGameObjectSprite, ( mCurGOFlags, tAnimSprite ) );
+			tObj = eeNew( cGameObjectSprite, ( mCurGOFlags, mCurLayer, tAnimSprite ) );
 
 		} else {
 
 			cSprite * tStaticSprite = eeNew( cSprite, ( mGfxPreview->Shape() ) );
-			tObj = eeNew( cGameObjectSprite, ( mCurGOFlags, tStaticSprite ) );
+			tObj = eeNew( cGameObjectSprite, ( mCurGOFlags, mCurLayer, tStaticSprite ) );
 
 		}
 	} else {
 		//! Creates an empty game object. The client will interpret the GameObject Type, and instanciate the corresponding class.
 
 		if ( mChkDI->Active() )
-			tObj = eeNew( cGameObjectVirtual, ( MakeHash( mDataIdInput->Text().ToUtf8() ), mCurGOFlags, mCurGOType ) );
+			tObj = eeNew( cGameObjectVirtual, ( MakeHash( mDataIdInput->Text().ToUtf8() ), mCurLayer, mCurGOFlags, mCurGOType ) );
 		else
-			tObj = eeNew( cGameObjectVirtual, ( mGfxPreview->Shape(), mCurGOFlags, mCurGOType ) );
+			tObj = eeNew( cGameObjectVirtual, ( mGfxPreview->Shape(), mCurLayer, mCurGOFlags, mCurGOType ) );
 	}
 
 	return tObj;

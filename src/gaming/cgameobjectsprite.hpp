@@ -11,7 +11,7 @@ namespace EE { namespace Gaming {
 
 class EE_API cGameObjectSprite : public cGameObject {
 	public:
-		cGameObjectSprite( const Uint32& Flags = GObjFlags::GAMEOBJECT_ANIMATED, cSprite * Sprite = NULL );
+		cGameObjectSprite( const Uint32& Flags, cLayer * Layer, cSprite * Sprite = NULL );
 
 		virtual ~cGameObjectSprite();
 

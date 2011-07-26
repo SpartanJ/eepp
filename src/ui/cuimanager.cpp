@@ -186,7 +186,7 @@ void cUIManager::Update() {
 	if ( mKM->ReleaseTrigger() ) {
 		if ( NULL != mFocusControl ) {
 			mFocusControl->OnMouseUp( mKM->GetMousePos(), mKM->ReleaseTrigger() );
-			SendMsg( mFocusControl, cUIMessage::MsgMouseUp, mKM->ClickTrigger() );
+			SendMsg( mFocusControl, cUIMessage::MsgMouseUp, mKM->ReleaseTrigger() );
 
 			if ( mDownControl == mOverControl && mKM->ClickTrigger() ) {
 				SendMsg( mFocusControl, cUIMessage::MsgClick, mKM->ClickTrigger() );

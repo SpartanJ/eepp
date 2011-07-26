@@ -80,7 +80,7 @@ void cUIMapNew::OKClick( const cUIEvent * Event ) {
 	Int32 ml = static_cast<Int32>( mUIMapMaxLayers->Value() );
 
 	if ( w > 0 && h > 0 && tw > 0 && th > 0 && ml > 0 ) {
-		mUIMap->Map()->Create( eeSize( w, h ), ml, eeSize( tw, th ), MAP_FLAG_CLAMP_BODERS | MAP_FLAG_CLIP_AREA | MAP_FLAG_DRAW_GRID | MAP_FLAG_DRAW_BACKGROUND, mUIMap->Map()->ViewSize() );
+		mUIMap->Map()->Create( eeSize( w, h ), ml, eeSize( tw, th ), MAP_EDITOR_DEFAULT_FLAGS, mUIMap->Map()->ViewSize() );
 
 		if ( mNewMapCb.IsSet() )
 			mNewMapCb();

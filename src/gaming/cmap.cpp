@@ -6,6 +6,8 @@
 #include "ctilelayer.hpp"
 #include "cobjectlayer.hpp"
 
+#include "../system/cpackmanager.hpp"
+
 #include "../graphics/cprimitives.hpp"
 #include "../graphics/cshapegroupmanager.hpp"
 #include "../graphics/ctexturegrouploader.hpp"
@@ -21,7 +23,9 @@ cMap::cMap() :
 	mMaxLayers( 0 ),
 	mLayerCount( 0 ),
 	mViewSize( 800, 600 ),
-	mTileTex( NULL )
+	mBaseColor( 255, 255, 255, 255 ),
+	mTileTex( NULL ),
+	mLightManager( NULL )
 {
 	ViewSize( mViewSize );
 }
@@ -38,9 +42,12 @@ void cMap::Reset() {
 	mFlags	= 0;
 	mMaxLayers	= 0;
 	mViewSize = eeSize( 800, 600 );
+	mBaseColor = eeColorA( 255, 255, 255, 255 );
 }
 
 void cMap::DeleteLayers() {
+	eeSAFE_DELETE( mLightManager );
+
 	for ( Uint32 i = 0; i < mLayerCount; i++ )
 		eeSAFE_DELETE( mLayers[i] );
 
@@ -63,6 +70,9 @@ void cMap::Create( eeSize Size, Uint32 MaxLayers, eeSize TileSize, Uint32 Flags,
 	mTileSize	= TileSize;
 	mPixelSize	= Size * TileSize;
 	mLayers		= eeNewArray( cLayer*, mMaxLayers );
+
+	if ( LightsEnabled() )
+		mLightManager = eeNew( cLightManager, ( this, ( mFlags & MAP_FLAG_LIGHTS_BYVERTEX ) ? true : false ) );
 
 	for ( Uint32 i = 0; i < mMaxLayers; i++ )
 		mLayers[i] = NULL;
@@ -173,10 +183,6 @@ void cMap::Draw() {
 		mWindow->ClipEnable( mScreenPos.x, mScreenPos.y, mViewSize.x, mViewSize.y );
 	}
 
-	mOffsetFixed = eeVector2f( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y ) + FixOffset();
-
-	GetMouseOverTile();
-
 	GridDraw();
 
 	for ( Uint32 i = 0; i < mLayerCount; i++ ) {
@@ -247,39 +253,41 @@ void cMap::GetMouseOverTile() {
 
 	eeVector2i MapPos( mouse.x - mScreenPos.x - mOffset.x, mouse.y - mScreenPos.y - mOffset.y );
 
-	if ( MapPos.x < 0 )
-		MapPos.x = 0;
-
-	if ( MapPos.y < 0 )
-		MapPos.y = 0;
-
-	if ( MapPos.x > mPixelSize.x )
-		MapPos.x = mPixelSize.x;
-
-	if ( MapPos.y > mPixelSize.y )
-		MapPos.y = mPixelSize.y;
+	MapPos.x = eemax( MapPos.x, 0 );
+	MapPos.y = eemax( MapPos.y, 0 );
+	MapPos.x = eemin( MapPos.x, mPixelSize.x );
+	MapPos.y = eemin( MapPos.y, mPixelSize.y );
 
 	mMouseOverTile.x = MapPos.x / mTileSize.Width();
 	mMouseOverTile.y = MapPos.y / mTileSize.Height();
 
-	if ( mMouseOverTile.x < 0 )
-		mMouseOverTile.x = 0;
-
-	if ( mMouseOverTile.y < 0 )
-		mMouseOverTile.y = 0;
-
-	if ( mMouseOverTile.x >= mSize.Width() )
-		mMouseOverTile.x = mSize.Width() - 1;
-
-	if ( mMouseOverTile.y >= mSize.Height() )
-		mMouseOverTile.y = mSize.Height() - 1;
-
 	// Clamped pos
-	mMouseOverTileFinal = eeVector2i( mMouseOverTile.x, mMouseOverTile.y );
-	mMouseMapPos		= eeVector2i( MapPos.x, MapPos.y );
+	mMouseOverTileFinal.x = eemin( mMouseOverTile.x, mSize.Width()	- 1 );
+	mMouseOverTileFinal.y = eemin( mMouseOverTile.y, mSize.Height()	- 1 );
+	mMouseOverTileFinal.x = eemax( mMouseOverTileFinal.x, 0 );
+	mMouseOverTileFinal.y = eemax( mMouseOverTileFinal.y, 0 );
+
+	mMouseMapPos = MapPos;
+}
+
+void cMap::UpdateScreenAABB() {
+	mScreenAABB = eeAABB( mOffset.x, mOffset.y, mOffset.x + mViewSize.Width(), mOffset.y + mViewSize.Height() );
+}
+
+const eeAABB& cMap::GetViewAreaAABB() const {
+	return mScreenAABB;
 }
 
 void cMap::Update() {
+	mOffsetFixed = eeVector2f( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y ) + FixOffset();
+
+	GetMouseOverTile();
+
+	UpdateScreenAABB();
+
+	if ( NULL != mLightManager )
+		mLightManager->Update();
+
 	for ( Uint32 i = 0; i < mLayerCount; i++ )
 		mLayers[i]->Update();
 }
@@ -290,6 +298,10 @@ const eeSize& cMap::ViewSize() const {
 
 const eeVector2i& cMap::GetMouseTilePos() const {
 	return mMouseOverTileFinal;
+}
+
+const eeVector2i& cMap::GetRealMouseTilePos() const {
+	return mMouseOverTile;
 }
 
 const eeVector2i& cMap::GetMouseMapPos() const {
@@ -381,6 +393,14 @@ void cMap::Clamp() {
 		mOffset.y = 0;
 }
 
+void cMap::BaseColor( const eeColorA& color ) {
+	mBaseColor = color;
+}
+
+const eeColorA& cMap::BaseColor() const {
+	return mBaseColor;
+}
+
 void cMap::DrawGrid( const bool& draw ) {
 	SetFlagValue( &mFlags, MAP_FLAG_DRAW_GRID, draw ? 1 : 0 );
 }
@@ -413,6 +433,14 @@ void cMap::DrawTileOver( const bool& draw ) {
 	SetFlagValue( &mFlags, MAP_FLAG_DRAW_TILE_OVER, draw ? 1 : 0 );
 }
 
+Uint32 cMap::LightsEnabled() {
+	return mFlags & MAP_FLAG_LIGHTS_ENABLED;
+}
+
+void cMap::LightsEnabled( const bool& enabled ) {
+	SetFlagValue( &mFlags, MAP_FLAG_LIGHTS_ENABLED, enabled ? 1 : 0 );
+}
+
 eeVector2f cMap::FixOffset() {
 	return eeVector2f( (eeFloat)static_cast<Int32>( mOffset.x ), (eeFloat)static_cast<Int32>( mOffset.y ) );
 }
@@ -425,11 +453,11 @@ void cMap::Move( const eeFloat& offsetx, const eeFloat& offsety ) {
 	Offset( eeVector2f( mOffset.x + offsetx, mOffset.y + offsety ) );
 }
 
-cGameObject * cMap::CreateGameObject( const Uint32& Type, const Uint32& Flags, const Uint32& DataId ) {
+cGameObject * cMap::CreateGameObject( const Uint32& Type, const Uint32& Flags, cLayer * Layer, const Uint32& DataId ) {
 	switch ( Type ) {
 		case GAMEOBJECT_TYPE_SHAPE:
 		{
-			cGameObjectShape * tShape = eeNew( cGameObjectShape, ( Flags ) );
+			cGameObjectShape * tShape = eeNew( cGameObjectShape, ( Flags, Layer ) );
 
 			tShape->DataId( DataId );
 
@@ -437,7 +465,7 @@ cGameObject * cMap::CreateGameObject( const Uint32& Type, const Uint32& Flags, c
 		}
 		case GAMEOBJECT_TYPE_SHAPEEX:
 		{
-			cGameObjectShapeEx * tShapeEx = eeNew( cGameObjectShapeEx, ( Flags ) );
+			cGameObjectShapeEx * tShapeEx = eeNew( cGameObjectShapeEx, ( Flags, Layer ) );
 
 			tShapeEx->DataId( DataId );
 
@@ -445,7 +473,7 @@ cGameObject * cMap::CreateGameObject( const Uint32& Type, const Uint32& Flags, c
 		}
 		case GAMEOBJECT_TYPE_SPRITE:
 		{
-			cGameObjectSprite * tSprite = eeNew( cGameObjectSprite, ( Flags ) );
+			cGameObjectSprite * tSprite = eeNew( cGameObjectSprite, ( Flags, Layer ) );
 
 			tSprite->DataId( DataId );
 
@@ -454,15 +482,15 @@ cGameObject * cMap::CreateGameObject( const Uint32& Type, const Uint32& Flags, c
 		default:
 		{
 			if ( mCreateGOCb.IsSet() ) {
-				return mCreateGOCb( Type, Flags, DataId );
+				return mCreateGOCb( Type, Flags, Layer, DataId );
 			} else {
 				cGameObjectVirtual * tVirtual;
 				cShape * tIsShape = cShapeGroupManager::instance()->GetShapeById( DataId );
 
 				if ( NULL != tIsShape ) {
-					tVirtual = eeNew( cGameObjectVirtual, ( tIsShape, Flags, Type ) );
+					tVirtual = eeNew( cGameObjectVirtual, ( tIsShape, Layer, Flags, Type ) );
 				} else {
-					tVirtual = eeNew( cGameObjectVirtual, ( DataId, Flags, Type ) );
+					tVirtual = eeNew( cGameObjectVirtual, ( DataId, Layer, Flags, Type ) );
 				}
 
 				return tVirtual;
@@ -471,6 +499,10 @@ cGameObject * cMap::CreateGameObject( const Uint32& Type, const Uint32& Flags, c
 	}
 
 	return NULL;
+}
+
+cLightManager * cMap::GetLightManager() const {
+	return mLightManager;
 }
 
 const eeSize& cMap::TotalSize() const {
@@ -701,7 +733,7 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 
 									IOS.Read( (char*)&tTGOHdr, sizeof(sMapTileGOHdr) );
 
-									tGO = CreateGameObject( tTGOHdr.Type, tTGOHdr.Flags, tTGOHdr.Id );
+									tGO = CreateGameObject( tTGOHdr.Type, tTGOHdr.Flags, mLayers[i], tTGOHdr.Id );
 
 									tTLayer->AddGameObject( tGO, eeVector2i( x, y ) );
 								}
@@ -726,7 +758,7 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 						for ( z = 0; z < tLayerHdr->ObjectCount; z++ ) {
 							tOGOHdr = &( tOGOsHdr[z] );
 
-							tGO = CreateGameObject( tOGOHdr->Type, tOGOHdr->Flags, tOGOHdr->Id );
+							tGO = CreateGameObject( tOGOHdr->Type, tOGOHdr->Flags, mLayers[i], tOGOHdr->Id );
 
 							tGO->Pos( eeVector2f( tOGOHdr->PosX, tOGOHdr->PosY ) );
 

@@ -94,6 +94,7 @@ cSprite::cSprite( const Uint32& TexId, const eeFloat& DestWidth, const eeFloat& 
 
 
 cSprite::~cSprite() {
+	eeSAFE_DELETE_ARRAY( mVertexColors );
 }
 
 cSprite& cSprite::operator =( const cSprite& Other ) {
@@ -234,17 +235,21 @@ eeAABB cSprite::GetAABB() {
 			TmpR.Top = MinY;
 			TmpR.Bottom = MaxY;
 		} else { // The method used if mAngle != 0 works for mAngle = 0, but i prefer to use the faster way
-			cShape* S = GetCurrentShape();
-			if ( S != NULL && SPR_FGET( SPRITE_FLAG_SCALE_CENTERED ) )
-				if (mScale == 1.f)
-					TmpR = eeRectf( mPos.x, mPos.y, mPos.x + S->DestWidth(), mPos.y + S->DestHeight() );
-				else {
-					eeFloat halfW = S->DestWidth() * 0.5f;
-					eeFloat halfH = S->DestHeight() * 0.5f;
-					TmpR = eeRectf( mPos.x + halfW - halfW * mScale, mPos.y + halfH - halfH * mScale, mPos.x + halfW + halfW * mScale, mPos.y + halfH + halfH * mScale );
+			cShape * S = GetCurrentShape();
+
+			if ( S != NULL ) {
+				if ( SPR_FGET( SPRITE_FLAG_SCALE_CENTERED ) ) {
+					if ( mScale == 1.f ) {
+						TmpR = eeRectf( mPos.x, mPos.y, mPos.x + S->DestWidth(), mPos.y + S->DestHeight() );
+					} else {
+						eeFloat halfW = S->DestWidth() * 0.5f;
+						eeFloat halfH = S->DestHeight() * 0.5f;
+						TmpR = eeRectf( mPos.x + halfW - halfW * mScale, mPos.y + halfH - halfH * mScale, mPos.x + halfW + halfW * mScale, mPos.y + halfH + halfH * mScale );
+					}
+				} else {
+					TmpR = eeRectf(mPos.x, mPos.y, mPos.x + S->DestWidth() * mScale, mPos.y + + S->DestHeight() * mScale);
 				}
-			else
-				TmpR = eeRectf(mPos.x, mPos.y, mPos.x + S->DestWidth() * mScale, mPos.y + + S->DestHeight() * mScale);
+			}
 		}
 	}
 
@@ -277,9 +282,9 @@ void cSprite::UpdateSize( const eeFloat& Width, const eeFloat& Height, const eeU
 }
 
 void cSprite::UpdateVertexColors( const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3 ) {
-	DisableVertexColors();
+	if ( NULL == mVertexColors )
+		mVertexColors		= eeNewArray( eeColorA, 4 );
 
-	mVertexColors		= eeNewArray( eeColorA, 4 );
 	mVertexColors[0]	= Color0;
 	mVertexColors[1]	= Color1;
 	mVertexColors[2]	= Color2;
@@ -694,6 +699,7 @@ eeQuad2f cSprite::GetQuad() {
 			case RN_FLIPMIRROR:
 				if ( mAngle != 0.0f )
 					Q.Rotate( mAngle, GetRotationCenter(TmpR) );
+
 				return Q;
 
 				break;

@@ -90,9 +90,11 @@ Int8 cPak::CheckPack() {
 }
 
 Int32 cPak::Exists( const std::string& path ) {
-	for ( Uint32 i = 0; i < pakFiles.size(); i++ )
-		if ( strcmp( path.c_str(), pakFiles[i].filename ) == 0 )
-			return i;
+	if ( IsOpen() ) {
+		for ( Uint32 i = 0; i < pakFiles.size(); i++ )
+			if ( strcmp( path.c_str(), pakFiles[i].filename ) == 0 )
+				return i;
+	}
 
 	return -1;
 }
@@ -103,14 +105,16 @@ bool cPak::ExtractFile( const std::string& path , const std::string& dest ) {
 	bool Ret = false;
 
 	Int32 Pos = Exists( path );
+
 	if ( Pos != -1 ) {
 		std::fstream fs ( dest.c_str() , std::ios::out | std::ios::binary );
 
-		std::vector<Uint8> tmpv;
-		if ( ExtractFileToMemory( path, tmpv ) )
-			fs.write( reinterpret_cast<const char*> (&tmpv[0]), pakFiles[Pos].file_length );
+		SafeDataPointer data;
 
-		fs.close();
+		if ( ExtractFileToMemory( path, data ) ) {
+			FileWrite( path, data.Data, data.DataSize );
+		}
+
 		Ret = true;
 	}
 

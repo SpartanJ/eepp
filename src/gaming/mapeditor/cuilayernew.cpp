@@ -66,7 +66,7 @@ void cUILayerNew::OnKeyUp( const cUIEvent * Event ) {
 
 void cUILayerNew::OKClick( const cUIEvent * Event ) {
 	if ( mUILayerName->Text().size() ) {
-		mLayer = mUIMap->Map()->AddLayer( mType, 0, mUILayerName->Text() );
+		mLayer = mUIMap->Map()->AddLayer( mType, LAYER_FLAG_VISIBLE | LAYER_FLAG_LIGHTS_ENABLED, mUILayerName->Text() );
 
 		if ( mNewLayerCb.IsSet() )
 			mNewLayerCb( this );

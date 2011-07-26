@@ -23,6 +23,8 @@ class EE_API cLight {
 
 		virtual eeColor ProcessVertex( const eeFloat& PointX, const eeFloat& PointY, const eeColor& VertexColor, const eeColor& BaseColor );
 
+		virtual eeColorA ProcessVertex( const eeFloat& PointX, const eeFloat& PointY, const eeColorA& VertexColor, const eeColorA& BaseColor );
+
 		eeColor ProcessVertex( const eeVector2f& Pos, const eeColor& VertexColor, const eeColor& BaseColor );
 
 		void Move( const eeFloat& addtox, const eeFloat& addtoy );
@@ -50,6 +52,8 @@ class EE_API cLight {
 		const LIGHT_TYPE& Type() const;
 
 		const eeVector2f& Position() const;
+
+		void Position( const eeVector2f& newPos );
 	protected:
 		eeFloat		mRadius;
 		eeVector2f	mPos;

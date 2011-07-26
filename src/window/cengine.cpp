@@ -1,4 +1,5 @@
 #include "cengine.hpp"
+#include "../system/cpackmanager.hpp"
 #include "../graphics/ctexturefactory.hpp"
 #include "../graphics/cfontmanager.hpp"
 #include "../graphics/cglobalbatchrenderer.hpp"
@@ -72,6 +73,8 @@ cEngine::~cEngine() {
 	Graphics::cGL::DestroySingleton();
 
 	cShaderProgramManager::DestroySingleton();
+
+	cPackManager::DestroySingleton();
 
 	cLog::DestroySingleton();
 

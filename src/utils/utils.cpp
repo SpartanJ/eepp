@@ -724,6 +724,15 @@ std::string FileRemoveFileName( const std::string& filepath ) {
 	return filepath.substr( 0, filepath.find_last_of("/\\") + 1 );
 }
 
+void FilePathRemoveProcessPath( std::string& path ) {
+	static std::string ProcessPath = GetProcessPath();
+
+	Int32 pos = StrStartsWith( ProcessPath, path );
+
+	if ( -1 != pos && (Uint32)(pos + 1) < path.size() )
+		path = path.substr( pos + 1 );
+}
+
 eeInt GetCPUCount() {
 	eeInt nprocs = -1;
 

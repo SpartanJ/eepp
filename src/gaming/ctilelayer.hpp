@@ -19,11 +19,14 @@ class EE_API cTileLayer : public cLayer {
 		virtual void RemoveGameObject( const eeVector2i& TilePos );
 
 		virtual cGameObject * GetGameObject( const eeVector2i& TilePos );
+
+		const eeVector2i& GetCurrentTile() const;
 	protected:
 		friend class cMap;
 
 		cGameObject***	mTiles;
 		eeSize			mSize;
+		eeVector2i		mCurTile;
 
 		cTileLayer( cMap * map, eeSize size, Uint32 flags, std::string name = "", eeVector2f offset = eeVector2f(0,0) );
 

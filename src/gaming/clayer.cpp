@@ -11,8 +11,6 @@ cLayer::cLayer( cMap * map, Uint32 type, Uint32 flags, std::string name, eeVecto
 	mNameHash( MakeHash( name ) ),
 	mName( name )
 {
-	if ( !Visible() )
-		Visible( true );
 }
 
 cLayer::~cLayer() {
@@ -89,6 +87,14 @@ void cLayer::Visible( const bool& visible ) {
 
 bool cLayer::Visible() {
 	return 0 != FlagGet( LAYER_FLAG_VISIBLE );
+}
+
+bool cLayer::LightsEnabled() {
+	return FlagGet( LAYER_FLAG_LIGHTS_ENABLED );
+}
+
+void cLayer::LightsEnabled( const bool& enabled ) {
+	enabled ? FlagSet( MAP_FLAG_LIGHTS_ENABLED ) : FlagClear( MAP_FLAG_LIGHTS_ENABLED );
 }
 
 }}

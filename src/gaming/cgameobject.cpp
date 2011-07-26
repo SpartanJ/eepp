@@ -2,8 +2,9 @@
 
 namespace EE { namespace Gaming {
 
-cGameObject::cGameObject(  const Uint32& Flags ) :
-	mFlags( Flags )
+cGameObject::cGameObject(  const Uint32& Flags, cLayer * Layer ) :
+	mFlags( Flags ),
+	mLayer( Layer )
 {
 }
 
@@ -87,6 +88,10 @@ EE_RENDERTYPE cGameObject::RenderTypeFromFlags() {
 	}
 
 	return Render;
+}
+
+cLayer * cGameObject::Layer() const {
+	return mLayer;
 }
 
 }}

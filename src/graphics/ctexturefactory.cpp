@@ -56,12 +56,9 @@ Uint32 cTextureFactory::PushTexture( const std::string& Filepath, const Uint32& 
 	eeInt MyWidth 		= ImgWidth;
 	eeInt MyHeight 		= ImgHeight;
 
-	std::string FPath = Filepath;
+	std::string FPath( Filepath );
 
-	Int32 pos = StrStartsWith( mAppPath, FPath );
-
-	if ( -1 != pos && (Uint32)(pos + 1) < FPath.size() )
-		FPath = FPath.substr( pos + 1 );
+	FilePathRemoveProcessPath( FPath );
 
 	Pos = FindFreeSlot();
 	Tex = mTextures[ Pos ] = eeNew( cTexture, () );

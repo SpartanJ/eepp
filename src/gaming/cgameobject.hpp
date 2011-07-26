@@ -3,15 +3,16 @@
 
 #include "base.hpp"
 #include "maphelper.hpp"
-#include "../graphics/renders.hpp"
+#include "clayer.hpp"
 
+#include "../graphics/renders.hpp"
 using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {
 
 class EE_API cGameObject {
 	public:
-		cGameObject( const Uint32& Flags );
+		cGameObject( const Uint32& Flags, cLayer * Layer );
 
 		virtual ~cGameObject();
 
@@ -46,8 +47,11 @@ class EE_API cGameObject {
 		virtual Uint32 DataId();
 
 		virtual void DataId( Uint32 Id );
+
+		cLayer * Layer() const;
 	protected:
-		Uint32	mFlags;
+		Uint32		mFlags;
+		cLayer *	mLayer;
 
 		virtual EE_RENDERTYPE RenderTypeFromFlags();
 };

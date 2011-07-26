@@ -30,8 +30,12 @@ void cTileLayer::cTileLayer::Draw( const eeVector2f &Offset ) {
 
 	for ( Int32 x = start.x; x < end.x; x++ ) {
 		for ( Int32 y = start.y; y < end.y; y++ ) {
-			if ( NULL != mTiles[x][y] )
+			mCurTile.x = x;
+			mCurTile.y = y;
+
+			if ( NULL != mTiles[x][y] ) {
 				mTiles[x][y]->Draw();
+			}
 		}
 	}
 
@@ -46,8 +50,12 @@ void cTileLayer::Update() {
 
 	for ( Int32 x = start.x; x < end.x; x++ ) {
 		for ( Int32 y = start.y; y < end.y; y++ ) {
-			if ( NULL != mTiles[x][y] )
+			mCurTile.x = x;
+			mCurTile.y = y;
+
+			if ( NULL != mTiles[x][y] ) {
 				mTiles[x][y]->Update();
+			}
 		}
 	}
 }
@@ -96,6 +104,10 @@ void cTileLayer::RemoveGameObject( const eeVector2i& TilePos ) {
 
 cGameObject * cTileLayer::GetGameObject( const eeVector2i& TilePos ) {
 	return mTiles[ TilePos.x ][ TilePos.y ];
+}
+
+const eeVector2i& cTileLayer::GetCurrentTile() const {
+	return mCurTile;
 }
 
 }}

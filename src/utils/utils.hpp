@@ -80,6 +80,9 @@ namespace EE { namespace Utils {
 	/** @return Removes the extension of a filepath */
 	std::string EE_API FileRemoveExtension( const std::string& filepath );
 
+	/** Removes the process path to a file path */
+	void FilePathRemoveProcessPath( std::string& path );
+
 	/** Write a file in binary mode and close it. */
 	bool EE_API FileWrite( const std::string& filepath, const Uint8* data, const Uint32& dataSize );
 

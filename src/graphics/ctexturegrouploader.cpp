@@ -162,11 +162,7 @@ void cTextureGroupLoader::CreateShapes() {
 		std::string name( &tTexHdr->Name[0] );
 		std::string path( FileRemoveFileName( mTextureGroupPath ) + name );
 
-		Int32 pos = StrStartsWith( mAppPath, path );
-
-		// Removes the app path part
-		if ( -1 != pos && (Uint32)(pos + 1) < path.size() )
-			path = path.substr( pos + 1 );
+		FilePathRemoveProcessPath( path );
 
 		cTexture * tTex 			= cTextureFactory::instance()->GetByName( path );
 

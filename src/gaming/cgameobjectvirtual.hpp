@@ -12,9 +12,9 @@ class cLayer;
 
 class EE_API cGameObjectVirtual : public cGameObject {
 	public:
-		cGameObjectVirtual( Uint32 DataId, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC, Uint32 RealType = GAMEOBJECT_TYPE_VIRTUAL, const eeVector2f& Pos = eeVector2f() );
+		cGameObjectVirtual( Uint32 DataId, cLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC, Uint32 RealType = GAMEOBJECT_TYPE_VIRTUAL, const eeVector2f& Pos = eeVector2f() );
 
-		cGameObjectVirtual( cShape * Shape, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC, Uint32 RealType = GAMEOBJECT_TYPE_VIRTUAL, const eeVector2f& Pos = eeVector2f() );
+		cGameObjectVirtual( cShape * Shape, cLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC, Uint32 RealType = GAMEOBJECT_TYPE_VIRTUAL, const eeVector2f& Pos = eeVector2f() );
 
 		virtual ~cGameObjectVirtual();
 

@@ -7,8 +7,8 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {
 
-cGameObjectVirtual::cGameObjectVirtual( Uint32 DataId, const Uint32& Flags, Uint32 Type, const eeVector2f& Pos ) :
-	cGameObject( Flags ),
+cGameObjectVirtual::cGameObjectVirtual( Uint32 DataId, cLayer * Layer, const Uint32& Flags, Uint32 Type, const eeVector2f& Pos ) :
+	cGameObject( Flags, Layer ),
 	mType( Type ),
 	mDataId( DataId ),
 	mPos( Pos ),
@@ -17,8 +17,8 @@ cGameObjectVirtual::cGameObjectVirtual( Uint32 DataId, const Uint32& Flags, Uint
 {
 }
 
-cGameObjectVirtual::cGameObjectVirtual( cShape * Shape, const Uint32& Flags, Uint32 Type, const eeVector2f& Pos ) :
-	cGameObject( Flags ),
+cGameObjectVirtual::cGameObjectVirtual( cShape * Shape, cLayer * Layer, const Uint32& Flags, Uint32 Type, const eeVector2f& Pos ) :
+	cGameObject( Flags, Layer ),
 	mType( Type ),
 	mDataId( 0 ),
 	mPos( Pos ),

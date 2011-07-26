@@ -5,6 +5,7 @@
 
 #include "cgameobject.hpp"
 #include "clight.hpp"
+#include "clightmanager.hpp"
 #include "clayer.hpp"
 
 #include "../window/cinput.hpp"
@@ -20,7 +21,7 @@ class EE_API cMap {
 	public:
 		typedef std::map<std::string, std::string>	PropertiesMap;
 		typedef std::list<std::string>				GOTypesList;		//! Special object types used in this map
-		typedef cb::Callback3< cGameObject *, const Uint32&, const Uint32&, const Uint32&>		CreateGOCb;
+		typedef cb::Callback4< cGameObject *, const Uint32&, const Uint32&, cLayer *, const Uint32&>		CreateGOCb;
 
 		cMap();
 
@@ -100,6 +101,10 @@ class EE_API cMap {
 
 		void DrawTileOver( const bool& draw );
 
+		Uint32 LightsEnabled();
+
+		void LightsEnabled( const bool& enabled );
+
 		void Reset();
 
 		bool MoveLayerUp( cLayer * Layer );
@@ -109,6 +114,8 @@ class EE_API cMap {
 		bool RemoveLayer( cLayer * Layer );
 
 		const eeVector2i& GetMouseTilePos() const;
+
+		const eeVector2i& GetRealMouseTilePos() const;
 
 		const eeVector2i& GetMouseMapPos() const;
 
@@ -135,6 +142,14 @@ class EE_API cMap {
 		void SetCreateGameObjectCallback( const CreateGOCb& Cb );
 
 		const std::string& Path() const;
+
+		void BaseColor( const eeColorA& color );
+
+		const eeColorA& BaseColor() const;
+
+		const eeAABB& GetViewAreaAABB() const;
+
+		cLightManager * GetLightManager() const;
 	protected:
 		Window::cWindow *		mWindow;
 		cLayer**		mLayers;
@@ -153,13 +168,16 @@ class EE_API cMap {
 		eeVector2i		mMouseOverTileFinal;
 		eeVector2i		mMouseMapPos;
 		eeVector2f		mOffsetFixed;
+		eeColorA		mBaseColor;
 		PropertiesMap	mProperties;
 		GOTypesList		mObjTypes;
 		CreateGOCb		mCreateGOCb;
 		cTexture *		mTileTex;
 		std::string		mPath;
+		eeAABB			mScreenAABB;
+		cLightManager *	mLightManager;
 
-		virtual cGameObject *	CreateGameObject( const Uint32& Type, const Uint32& Flags, const Uint32& DataId = 0 );
+		virtual cGameObject *	CreateGameObject( const Uint32& Type, const Uint32& Flags, cLayer * Layer, const Uint32& DataId = 0 );
 
 		eeVector2f		FixOffset();
 
@@ -178,6 +196,8 @@ class EE_API cMap {
 		std::vector<std::string> GetShapeGroups();
 
 		void			CreateEmptyTile();
+
+		void			UpdateScreenAABB();
 };
 
 }}

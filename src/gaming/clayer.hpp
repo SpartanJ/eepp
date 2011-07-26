@@ -50,6 +50,10 @@ class EE_API cLayer {
 		void Visible( const bool& visible );
 
 		bool Visible();
+
+		bool LightsEnabled();
+
+		void LightsEnabled( const bool& enabled );
 	protected:
 		friend class cMap;
 

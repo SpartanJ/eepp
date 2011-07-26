@@ -1,10 +1,12 @@
 #include "cgameobjectsprite.hpp"
 #include "../graphics/cshapegroupmanager.hpp"
+#include "cmap.hpp"
+#include "ctilelayer.hpp"
 
 namespace EE { namespace Gaming {
 
-cGameObjectSprite::cGameObjectSprite( const Uint32& Flags, cSprite * Sprite ) :
-	cGameObject( Flags ),
+cGameObjectSprite::cGameObjectSprite( const Uint32& Flags, cLayer * Layer, cSprite * Sprite ) :
+	cGameObject( Flags, Layer ),
 	mSprite( Sprite )
 {
 	if ( NULL != mSprite )
@@ -21,6 +23,38 @@ Uint32 cGameObjectSprite::Type() const {
 
 void cGameObjectSprite::Draw() {
 	if ( NULL != mSprite ) {
+		if ( mLayer->Map()->LightsEnabled() && mLayer->LightsEnabled() ) {
+			cLightManager * LM = mLayer->Map()->GetLightManager();
+
+			if ( MAP_LAYER_TILED == mLayer->Type() ) {
+				eeVector2i Tile = reinterpret_cast<cTileLayer*> ( mLayer )->GetCurrentTile();
+
+				if ( LM->IsByVertex() ) {
+					mSprite->UpdateVertexColors(
+						*LM->GetTileColor( Tile, 0 ),
+						*LM->GetTileColor( Tile, 1 ),
+						*LM->GetTileColor( Tile, 2 ),
+						*LM->GetTileColor( Tile, 3 )
+					);
+				} else {
+					mSprite->Color( *LM->GetTileColor( Tile ) );
+				}
+			} else {
+				if ( LM->IsByVertex() ) {
+					eeQuad2f Q = mSprite->GetQuad();
+
+					mSprite->UpdateVertexColors(
+						LM->GetColorFromPos( Q.V[0] ),
+						LM->GetColorFromPos( Q.V[1] ),
+						LM->GetColorFromPos( Q.V[2] ),
+						LM->GetColorFromPos( Q.V[3] )
+					);
+				} else {
+					mSprite->Color( LM->GetColorFromPos( mSprite->Position() ) );
+				}
+			}
+		}
+
 		mSprite->Draw();
 	}
 }
