@@ -23,7 +23,7 @@ cMap::cMap() :
 	mMaxLayers( 0 ),
 	mLayerCount( 0 ),
 	mViewSize( 800, 600 ),
-	mBaseColor( 150, 150, 150, 255 ),
+	mBaseColor( 255, 255, 255, 255 ),
 	mTileTex( NULL ),
 	mLightManager( NULL )
 {
@@ -42,7 +42,7 @@ void cMap::Reset() {
 	mFlags	= 0;
 	mMaxLayers	= 0;
 	mViewSize = eeSize( 800, 600 );
-	mBaseColor = eeColorA( 150, 150, 150, 255 );
+	mBaseColor = eeColorA( 255, 255, 255, 255 );
 }
 
 void cMap::DeleteLayers() {
