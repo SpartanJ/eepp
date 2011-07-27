@@ -46,10 +46,10 @@ void cLightManager::UpdateByVertex() {
 	if ( !mLights.size() )
 		return;
 
-	for ( std::list<cLight*>::iterator it = mLights.begin(); it != mLights.end(); it++ ) {
+	for ( LightsList::iterator it = mLights.begin(); it != mLights.end(); it++ ) {
 		cLight * Light = (*it);
 
-		if ( Intersect( VisibleArea, Light->GetAABB() ) ) {
+		if ( firstLight || Intersect( VisibleArea, Light->GetAABB() ) ) {
 			for ( Int32 x = start.x; x < end.x; x++ ) {
 				for ( Int32 y = start.y; y < end.y; y++ ) {
 					if ( firstLight ) {
@@ -90,10 +90,10 @@ void cLightManager::UpdateByTile() {
 	if ( !mLights.size() )
 		return;
 
-	for ( std::list<cLight*>::iterator it = mLights.begin(); it != mLights.end(); it++ ) {
+	for ( LightsList::iterator it = mLights.begin(); it != mLights.end(); it++ ) {
 		cLight * Light = (*it);
 
-		if ( Intersect( VisibleArea, Light->GetAABB() ) ) {
+		if (  firstLight || Intersect( VisibleArea, Light->GetAABB() ) ) {
 			for ( Int32 x = start.x; x < end.x; x++ ) {
 				for ( Int32 y = start.y; y < end.y; y++ ) {
 					if ( firstLight ) {
@@ -124,7 +124,7 @@ eeColorA cLightManager::GetColorFromPos( const eeVector2f& Pos ) {
 	if ( !mLights.size() )
 		return Col;
 
-	for ( std::list<cLight*>::iterator it = mLights.begin(); it != mLights.end(); it++ ) {
+	for ( LightsList::iterator it = mLights.begin(); it != mLights.end(); it++ ) {
 		cLight * Light = (*it);
 
 		if ( Contains( Light->GetAABB(), Pos ) ) {
@@ -140,7 +140,7 @@ void cLightManager::AddLight( cLight * Light ) {
 }
 
 void cLightManager::RemoveLight( const eeVector2f& OverPos ) {
-	for ( std::list<cLight*>::reverse_iterator it = mLights.rbegin(); it != mLights.rend(); it++ ) {
+	for ( LightsList::reverse_iterator it = mLights.rbegin(); it != mLights.rend(); it++ ) {
 		cLight * Light = (*it);
 
 		if ( Contains( Light->GetAABB(), OverPos ) ) {
@@ -151,13 +151,21 @@ void cLightManager::RemoveLight( const eeVector2f& OverPos ) {
 	}
 }
 
-eeColorA * cLightManager::GetTileColor( const eeVector2i& TilePos ) {
+const eeColorA * cLightManager::GetTileColor( const eeVector2i& TilePos ) {
 	eeASSERT( 1 == mNumVertex );
+
+	if ( !mLights.size() )
+		return &mMap->BaseColor();
+
 	return mTileColors[ TilePos.x ][ TilePos.y ][0];
 }
 
-eeColorA * cLightManager::GetTileColor( const eeVector2i& TilePos, const Uint32& Vertex ) {
+const eeColorA * cLightManager::GetTileColor( const eeVector2i& TilePos, const Uint32& Vertex ) {
 	eeASSERT( 4 == mNumVertex );
+
+	if ( !mLights.size() )
+		return &mMap->BaseColor();
+
 	return mTileColors[ TilePos.x ][ TilePos.y ][Vertex];
 }
 
@@ -197,10 +205,18 @@ void cLightManager::DeallocateColors() {
 }
 
 void cLightManager::DestroyLights() {
-	for ( std::list<cLight*>::iterator it = mLights.begin(); it != mLights.end(); it++ ) {
+	for ( LightsList::iterator it = mLights.begin(); it != mLights.end(); it++ ) {
 		cLight * Light = (*it);
 		eeSAFE_DELETE( Light );
 	}
+}
+
+Uint32 cLightManager::Count() {
+	return (Uint32)mLights.size();
+}
+
+cLightManager::LightsList& cLightManager::GetLights() {
+	return mLights;
 }
 
 }}

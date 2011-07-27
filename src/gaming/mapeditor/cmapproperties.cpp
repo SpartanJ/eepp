@@ -22,9 +22,60 @@ cMapProperties::cMapProperties( cMap * Map ) :
 	mUIWindow->AddEventListener( cUIEvent::EventOnWindowClose, cb::Make1( this, &cMapProperties::WindowClose ) );
 	mUIWindow->Title( "Map Properties" );
 
+
+	Uint32 DiffIfLights = 0;
+
+	if ( mMap->LightsEnabled() ) {
+		DiffIfLights = 100;
+
+		cUITextBox * Txt = mUITheme->CreateTextBox( mUIWindow->Container(), eeSize(), eeVector2i( 50, 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+		Txt->Text( "Map Base Color:" );
+
+		cUIComplexControl::CreateParams ComParams;
+		ComParams.Parent( mUIWindow->Container() );
+		ComParams.PosSet( Txt->Pos().x, Txt->Pos().y + Txt->Size().Height() + 4 );
+		ComParams.SizeSet( 64, 64 );
+		ComParams.Background.Color( eeColorA( 255, 255, 255, 255 ) );
+		ComParams.Border.Color( eeColorA( 100, 100, 100, 200 ) );
+		ComParams.Flags |= UI_FILL_BACKGROUND | UI_BORDER;
+		mUIBaseColor = eeNew( cUIComplexControl, ( ComParams ) );
+		mUIBaseColor->Visible( true );
+		mUIBaseColor->Enabled( true );
+
+		Txt = mUITheme->CreateTextBox( mUIWindow->Container(), eeSize(), eeVector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIBaseColor->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+		Txt->Text( "Red Color:" );
+		mUIRedSlider = mUITheme->CreateSlider( mUIWindow->Container(), eeSize( 255, 20 ), eeVector2i( Txt->Pos().x + Txt->Size().Width() + 16, Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
+		mUIRedSlider->MaxValue( 255 );
+		mUIRedSlider->Value( mMap->BaseColor().R() );
+		mUIRedSlider->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cMapProperties::OnRedChange ) );
+
+		mUIRedTxt = mUITheme->CreateTextBox( mUIWindow->Container(), eeSize(), eeVector2i( mUIRedSlider->Pos().x + mUIRedSlider->Size().Width() + 4, mUIRedSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+		mUIRedTxt->Text( toStr( (Uint32)mMap->BaseColor().R() ) );
+
+		Txt = mUITheme->CreateTextBox( mUIWindow->Container(), eeSize(), eeVector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIRedSlider->Pos().y + mUIRedSlider->Size().Height() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+		Txt->Text( "Green Color:" );
+		mUIGreenSlider = mUITheme->CreateSlider( mUIWindow->Container(), eeSize( 255, 20 ), eeVector2i( mUIRedSlider->Pos().x, Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
+		mUIGreenSlider->MaxValue( 255 );
+		mUIGreenSlider->Value( mMap->BaseColor().G() );
+		mUIGreenSlider->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cMapProperties::OnGreenChange ) );
+
+		mUIGreenTxt = mUITheme->CreateTextBox( mUIWindow->Container(), eeSize(), eeVector2i( mUIGreenSlider->Pos().x + mUIGreenSlider->Size().Width() + 4, mUIGreenSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+		mUIGreenTxt->Text( toStr( (Uint32)mMap->BaseColor().G() ) );
+
+		Txt = mUITheme->CreateTextBox( mUIWindow->Container(), eeSize(), eeVector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIGreenSlider->Pos().y + mUIGreenSlider->Size().Height() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+		Txt->Text( "Blue Color:" );
+		mUIBlueSlider = mUITheme->CreateSlider( mUIWindow->Container(), eeSize( 255, 20 ), eeVector2i( mUIRedSlider->Pos().x, Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
+		mUIBlueSlider->MaxValue( 255 );
+		mUIBlueSlider->Value( mMap->BaseColor().B() );
+		mUIBlueSlider->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cMapProperties::OnBlueChange ) );
+
+		mUIBlueTxt = mUITheme->CreateTextBox( mUIWindow->Container(), eeSize(), eeVector2i( mUIBlueSlider->Pos().x + mUIBlueSlider->Size().Width() + 4, mUIBlueSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+		mUIBlueTxt->Text( toStr( (Uint32)mMap->BaseColor().B() ) );
+	}
+
 	Uint32 TxtBoxFlags = UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
-	mUITheme->CreateTextBox( mUIWindow->Container(), eeSize(192, 24), eeVector2i(50,10), TxtBoxFlags )->Text( "Property Name" );
-	mUITheme->CreateTextBox( mUIWindow->Container(), eeSize(192, 24), eeVector2i(50+192,10), TxtBoxFlags )->Text( "Property Value" );
+	cUITextBox * TxtBox = mUITheme->CreateTextBox( mUIWindow->Container(), eeSize(192, 24), eeVector2i( 50, 10 + DiffIfLights ), TxtBoxFlags ); TxtBox->Text( "Property Name" );
+	mUITheme->CreateTextBox( mUIWindow->Container(), eeSize(192, 24), eeVector2i(50+192, TxtBox->Pos().y ), TxtBoxFlags )->Text( "Property Value" );
 
 	cUIPushButton * OKButton = mUITheme->CreatePushButton( mUIWindow->Container(), eeSize( 80, 22 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->GetIconByName( "ok" ) );
 	OKButton->Pos( mUIWindow->Container()->Size().Width() - OKButton->Size().Width() - 4, mUIWindow->Container()->Size().Height() - OKButton->Size().Height() - 4 );
@@ -38,8 +89,8 @@ cMapProperties::cMapProperties( cMap * Map ) :
 
 	cUIGenericGrid::CreateParams GridParams;
 	GridParams.Parent( mUIWindow->Container() );
-	GridParams.PosSet( 50, 30 );
-	GridParams.SizeSet( 400, 400 );
+	GridParams.PosSet( 50, TxtBox->Pos().y + 20 );
+	GridParams.SizeSet( 400, 400 - DiffIfLights );
 	GridParams.Flags = UI_AUTO_PADDING;
 	GridParams.RowHeight = 24;
 	GridParams.CollumnsCount = 5;
@@ -76,6 +127,40 @@ cMapProperties::cMapProperties( cMap * Map ) :
 
 cMapProperties::~cMapProperties() {
 }
+
+void cMapProperties::OnRedChange( const cUIEvent * Event ) {
+	eeColorA Col = mUIBaseColor->Background()->Color();
+	Col.Red = (Uint8)mUIRedSlider->Value();
+	mUIBaseColor->Background()->Color( Col );
+	mUIRedTxt->Text( toStr( (Int32)mUIRedSlider->Value() ) );
+
+	eeColorA MapCol = mMap->BaseColor();
+	MapCol.Red = Col.Red;
+	mMap->BaseColor( MapCol );
+}
+
+void cMapProperties::OnGreenChange( const cUIEvent * Event ) {
+	eeColorA Col = mUIBaseColor->Background()->Color();
+	Col.Green = (Uint8)mUIGreenSlider->Value();
+	mUIBaseColor->Background()->Color( Col );
+	mUIGreenTxt->Text( toStr( (Uint32)mUIGreenSlider->Value() ) );
+
+	eeColorA MapCol = mMap->BaseColor();
+	MapCol.Green = Col.Green;
+	mMap->BaseColor( MapCol );
+}
+
+void cMapProperties::OnBlueChange( const cUIEvent * Event ) {
+	eeColorA Col = mUIBaseColor->Background()->Color();
+	Col.Blue = (Uint8)mUIBlueSlider->Value();
+	mUIBaseColor->Background()->Color( Col );
+	mUIBlueTxt->Text( toStr( (Uint32)mUIBlueSlider->Value() ) );
+
+	eeColorA MapCol = mMap->BaseColor();
+	MapCol.Blue = Col.Blue;
+	mMap->BaseColor( MapCol );
+}
+
 
 void cMapProperties::SaveProperties() {
 	mMap->ClearProperties();

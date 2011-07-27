@@ -102,6 +102,16 @@ void cTileLayer::RemoveGameObject( const eeVector2i& TilePos ) {
 	}
 }
 
+void cTileLayer::MoveTileObject( const eeVector2i& FromPos, const eeVector2i& ToPos ) {
+	RemoveGameObject( ToPos );
+
+	cGameObject * tObj = mTiles[ FromPos.x ][ FromPos.y ];
+
+	mTiles[ FromPos.x ][ FromPos.y ] = NULL;
+
+	mTiles[ ToPos.x ][ ToPos.y ] = tObj;
+}
+
 cGameObject * cTileLayer::GetGameObject( const eeVector2i& TilePos ) {
 	return mTiles[ TilePos.x ][ TilePos.y ];
 }

@@ -18,6 +18,8 @@ class EE_API cTileLayer : public cLayer {
 
 		virtual void RemoveGameObject( const eeVector2i& TilePos );
 
+		virtual void MoveTileObject( const eeVector2i& FromPos, const eeVector2i& ToPos );
+
 		virtual cGameObject * GetGameObject( const eeVector2i& TilePos );
 
 		const eeVector2i& GetCurrentTile() const;

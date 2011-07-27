@@ -150,6 +150,11 @@ class EE_API cMap {
 		const eeAABB& GetViewAreaAABB() const;
 
 		cLightManager * GetLightManager() const;
+
+		/** Tiles to add or subtract from the real values of StartTile and EndTile ( so it will loop over more/less tiles than the required to render every tile on screen ). */
+		void ExtraTiles( const eeVector2i& extra );
+
+		const eeVector2i& ExtraTiles() const;
 	protected:
 		Window::cWindow *		mWindow;
 		cLayer**		mLayers;
@@ -164,6 +169,7 @@ class EE_API cMap {
 		eeVector2i		mScreenPos;
 		eeVector2i		mStartTile;
 		eeVector2i		mEndTile;
+		eeVector2i		mExtraTiles;
 		eeVector2i		mMouseOverTile;
 		eeVector2i		mMouseOverTileFinal;
 		eeVector2i		mMouseMapPos;
@@ -198,6 +204,8 @@ class EE_API cMap {
 		void			CreateEmptyTile();
 
 		void			UpdateScreenAABB();
+
+		void			CreateLightManager();
 };
 
 }}

@@ -68,9 +68,6 @@ void cGameObjectShape::Draw() {
 	}
 }
 
-void cGameObjectShape::Update() {
-}
-
 eeVector2f cGameObjectShape::Pos() const {
 	return mPos;
 }

@@ -116,8 +116,14 @@ void cMapEditor::CreateWinMenu() {
 	PU5->AddSeparator();
 	PU5->Add( "Layer Properties..." );
 	PU5->AddSeparator();
-	Uint32 LayerChkBoxIndex = PU5->AddCheckBox( "Visible" );
-	mLayerCheckbox = reinterpret_cast<cUIMenuCheckBox*> ( PU5->GetItem( LayerChkBoxIndex ) );
+
+	Uint32 LayerChkBoxIndex = PU5->AddCheckBox( "Lights Enabled" );
+	mLayerChkLights = reinterpret_cast<cUIMenuCheckBox*> ( PU5->GetItem( LayerChkBoxIndex ) );
+
+	PU5->AddSeparator();
+
+	LayerChkBoxIndex = PU5->AddCheckBox( "Visible" );
+	mLayerChkVisible = reinterpret_cast<cUIMenuCheckBox*> ( PU5->GetItem( LayerChkBoxIndex ) );
 
 	PU5->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cMapEditor::LayerMenuClick ) );
 	WinMenu->AddMenuButton( "Layer", PU5 );
@@ -405,6 +411,10 @@ void cMapEditor::CreateNewMap() {
 	eeNew( cUIMapNew, ( mUIMap, cb::Make0( this, &cMapEditor::MapCreated ) ) );
 }
 
+void cMapEditor::CreateNewEmptyMap() {
+	mUIMap->Map()->Create( eeSize( 100, 100 ), 16, eeSize( 32, 32 ), MAP_EDITOR_DEFAULT_FLAGS | MAP_FLAG_LIGHTS_ENABLED, mUIMap->Size() );
+}
+
 void cMapEditor::MapCreated() {
 	mCurLayer = NULL;
 	mLayerList->ListBox()->Clear();
@@ -424,7 +434,7 @@ void cMapEditor::CreateUIMap() {
 	mUIMap = eeNew( cUIMap, ( Params ) );
 	mUIMap->Visible( true );
 	mUIMap->Enabled( true );
-	mUIMap->Map()->Create( eeSize( 100, 100 ), 16, eeSize( 32, 32 ), MAP_EDITOR_DEFAULT_FLAGS, Params.Size );
+	CreateNewEmptyMap();
 	mUIMap->AddEventListener( cUIEvent::EventOnSizeChange, cb::Make1( this, &cMapEditor::OnMapSizeChange ) );
 	mUIMap->AddEventListener( cUIEvent::EventMouseDown, cb::Make1( this, &cMapEditor::OnMapMouseDown ) );
 	mUIMap->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::OnMapMouseClick ) );
@@ -529,7 +539,7 @@ void cMapEditor::FileMenuClick( const cUIEvent * Event ) {
 }
 
 void cMapEditor::OnMapClose( const cUIEvent * Event ) {
-	mUIMap->Map()->Create( eeSize( 100, 100 ), 16, eeSize( 32, 32 ), MAP_EDITOR_DEFAULT_FLAGS, mUIMap->Size() );
+	CreateNewEmptyMap();
 
 	MapCreated();
 
@@ -597,6 +607,10 @@ void cMapEditor::LayerMenuClick( const cUIEvent * Event ) {
 			MsgBox->Title( "Error retrieving layer properties" );
 			MsgBox->Center();
 			MsgBox->Show();
+		}
+	} else if ( "Lights Enabled" == txt ) {
+		if ( NULL != mCurLayer ) {
+			mCurLayer->LightsEnabled( !mCurLayer->LightsEnabled() );
 		}
 	} else if ( "Visible" == txt ) {
 		if ( NULL != mCurLayer ) {
@@ -684,7 +698,9 @@ void cMapEditor::OnLayerSelect( const cUIEvent * Event ) {
 	if ( NULL != tLayer ) {
 		mCurLayer = tLayer;
 
-		mLayerCheckbox->Active( mCurLayer->Visible() );
+		mLayerChkVisible->Active( mCurLayer->Visible() );
+
+		mLayerChkLights->Active( mCurLayer->LightsEnabled() );
 	}
 }
 

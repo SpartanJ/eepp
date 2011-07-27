@@ -23,6 +23,18 @@ class cUIMapNew {
 		cUISpinBox *		mUIMapTWidth;
 		cUISpinBox *		mUIMapTHeight;
 		cUISpinBox *		mUIMapMaxLayers;
+		cUICheckBox *		mUILightsEnabled;
+		cUICheckBox *		mUILightsByVertex;
+		cUICheckBox *		mUIClampBorders;
+		cUICheckBox *		mUIClipArea;
+		cUIComplexControl *	mUIBaseColor;
+		cUISlider *			mUIRedSlider;
+		cUISlider *			mUIGreenSlider;
+		cUISlider *			mUIBlueSlider;
+		cUITextBox *		mUIRedTxt;
+		cUITextBox *		mUIGreenTxt;
+		cUITextBox *		mUIBlueTxt;
+
 		cb::Callback0<void> mNewMapCb;
 
 		void WindowClose( const cUIEvent * Event );
@@ -30,6 +42,12 @@ class cUIMapNew {
 		void CancelClick( const cUIEvent * Event );
 
 		void OKClick( const cUIEvent * Event );
+
+		void OnRedChange( const cUIEvent * Event );
+
+		void OnGreenChange( const cUIEvent * Event );
+
+		void OnBlueChange( const cUIEvent * Event );
 };
 
 }}}

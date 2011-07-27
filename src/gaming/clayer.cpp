@@ -90,11 +90,11 @@ bool cLayer::Visible() {
 }
 
 bool cLayer::LightsEnabled() {
-	return FlagGet( LAYER_FLAG_LIGHTS_ENABLED );
+	return 0 != FlagGet( LAYER_FLAG_LIGHTS_ENABLED );
 }
 
 void cLayer::LightsEnabled( const bool& enabled ) {
-	enabled ? FlagSet( MAP_FLAG_LIGHTS_ENABLED ) : FlagClear( MAP_FLAG_LIGHTS_ENABLED );
+	enabled ? FlagSet( LAYER_FLAG_LIGHTS_ENABLED ) : FlagClear( LAYER_FLAG_LIGHTS_ENABLED );
 }
 
 }}

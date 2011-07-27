@@ -59,9 +59,6 @@ void cGameObjectSprite::Draw() {
 	}
 }
 
-void cGameObjectSprite::Update() {
-}
-
 eeVector2f cGameObjectSprite::Pos() const {
 	if ( NULL != mSprite )
 		return mSprite->Position();

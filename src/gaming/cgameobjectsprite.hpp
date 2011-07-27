@@ -17,8 +17,6 @@ class EE_API cGameObjectSprite : public cGameObject {
 
 		virtual void Draw();
 
-		virtual void Update();
-
 		eeVector2f Pos() const;
 
 		virtual void Pos( eeVector2f pos );

@@ -32,6 +32,8 @@ typedef struct sMapHdrS {
 	Uint32	PropertyCount;
 	Uint32	ShapeGroupCount;
 	Uint32	VirtualObjectTypesCount;
+	Uint32	BaseColor;
+	Uint32	LightsCount;
 } sMapHdr;
 
 typedef struct sLayerHdrS {
@@ -58,6 +60,14 @@ typedef struct sMapObjGOHdrS {
 	Int32	PosY;
 } sMapObjGOHdr;
 
+typedef struct sMapLightHdrS {
+	Uint32	Radius;
+	Int32	PosX;
+	Int32	PosY;
+	Uint32	Color;
+	Uint32	Type;
+} sMapLightHdr;
+
 class GObjFlags {
 	public:
 		enum EE_GAMEOBJECT_FLAGS {
@@ -83,7 +93,7 @@ enum EE_LAYER_TYPE {
 };
 
 enum EE_MAP_FLAGS {
-	MAP_FLAG_CLAMP_BODERS		= ( 1 << 0 ),
+	MAP_FLAG_CLAMP_BORDERS		= ( 1 << 0 ),
 	MAP_FLAG_CLIP_AREA			= ( 1 << 1 ),
 	MAP_FLAG_DRAW_GRID			= ( 1 << 2 ),
 	MAP_FLAG_DRAW_TILE_OVER		= ( 1 << 3 ),
@@ -92,7 +102,7 @@ enum EE_MAP_FLAGS {
 	MAP_FLAG_LIGHTS_BYVERTEX	= ( 1 << 6 )
 };
 
-#define MAP_EDITOR_DEFAULT_FLAGS ( MAP_FLAG_CLAMP_BODERS | MAP_FLAG_CLIP_AREA | MAP_FLAG_DRAW_GRID | MAP_FLAG_DRAW_BACKGROUND | MAP_FLAG_LIGHTS_ENABLED )
+#define MAP_EDITOR_DEFAULT_FLAGS ( MAP_FLAG_CLAMP_BORDERS | MAP_FLAG_CLIP_AREA | MAP_FLAG_DRAW_GRID | MAP_FLAG_DRAW_BACKGROUND )
 
 enum EE_LAYER_FLAGS {
 	LAYER_FLAG_VISIBLE			= ( 1 << 0 ),

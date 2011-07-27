@@ -20,8 +20,6 @@ class EE_API cGameObjectVirtual : public cGameObject {
 
 		virtual void Draw();
 
-		virtual void Update();
-
 		virtual eeVector2f Pos() const;
 
 		virtual eeSize Size();

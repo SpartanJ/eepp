@@ -47,7 +47,8 @@ class EE_API cMapEditor {
 		cUIComplexControl * mDICont;
 		cUICheckBox *		mChkDI;
 		cUITextInput *		mDataIdInput;
-		cUIMenuCheckBox	*	mLayerCheckbox;
+		cUIMenuCheckBox	*	mLayerChkVisible;
+		cUIMenuCheckBox *	mLayerChkLights;
 
 		void WindowClose( const cUIEvent * Event );
 
@@ -138,6 +139,8 @@ class EE_API cMapEditor {
 		void RemoveLayer();
 
 		void RefreshLayersList();
+
+		void CreateNewEmptyMap();
 };
 
 }}}

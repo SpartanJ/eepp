@@ -10,6 +10,8 @@ class cMap;
 
 class cLightManager {
 	public:
+		typedef std::list<cLight*> LightsList;
+
 		cLightManager( cMap * Map, bool ByVertex );
 
 		virtual ~cLightManager();
@@ -20,18 +22,22 @@ class cLightManager {
 
 		void RemoveLight( const eeVector2f& OverPos );
 
-		eeColorA * GetTileColor( const eeVector2i& TilePos );
+		Uint32 Count();
 
-		eeColorA * GetTileColor( const eeVector2i& TilePos, const Uint32& Vertex );
+		const eeColorA * GetTileColor( const eeVector2i& TilePos );
+
+		const eeColorA * GetTileColor( const eeVector2i& TilePos, const Uint32& Vertex );
 
 		eeColorA GetColorFromPos( const eeVector2f& Pos );
 
 		const bool& IsByVertex() const;
+
+		LightsList& GetLights();
 	protected:
 		cMap *				mMap;
 		Int32				mNumVertex;
 		eeColorA****		mTileColors;
-		std::list<cLight*>	mLights;
+		LightsList			mLights;
 		bool				mIsByVertex;
 
 		void AllocateColors();

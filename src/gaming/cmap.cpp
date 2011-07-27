@@ -23,7 +23,7 @@ cMap::cMap() :
 	mMaxLayers( 0 ),
 	mLayerCount( 0 ),
 	mViewSize( 800, 600 ),
-	mBaseColor( 255, 255, 255, 255 ),
+	mBaseColor( 150, 150, 150, 255 ),
 	mTileTex( NULL ),
 	mLightManager( NULL )
 {
@@ -42,7 +42,7 @@ void cMap::Reset() {
 	mFlags	= 0;
 	mMaxLayers	= 0;
 	mViewSize = eeSize( 800, 600 );
-	mBaseColor = eeColorA( 255, 255, 255, 255 );
+	mBaseColor = eeColorA( 150, 150, 150, 255 );
 }
 
 void cMap::DeleteLayers() {
@@ -72,7 +72,7 @@ void cMap::Create( eeSize Size, Uint32 MaxLayers, eeSize TileSize, Uint32 Flags,
 	mLayers		= eeNewArray( cLayer*, mMaxLayers );
 
 	if ( LightsEnabled() )
-		mLightManager = eeNew( cLightManager, ( this, ( mFlags & MAP_FLAG_LIGHTS_BYVERTEX ) ? true : false ) );
+		CreateLightManager();
 
 	for ( Uint32 i = 0; i < mMaxLayers; i++ )
 		mLayers[i] = NULL;
@@ -80,6 +80,11 @@ void cMap::Create( eeSize Size, Uint32 MaxLayers, eeSize TileSize, Uint32 Flags,
 	ViewSize( viewSize );
 
 	CreateEmptyTile();
+}
+
+void cMap::CreateLightManager() {
+	eeSAFE_DELETE( mLightManager );
+	mLightManager = eeNew( cLightManager, ( this, ( mFlags & MAP_FLAG_LIGHTS_BYVERTEX ) ? true : false ) );
 }
 
 void cMap::CreateEmptyTile() {
@@ -271,7 +276,7 @@ void cMap::GetMouseOverTile() {
 }
 
 void cMap::UpdateScreenAABB() {
-	mScreenAABB = eeAABB( mOffset.x, mOffset.y, mOffset.x + mViewSize.Width(), mOffset.y + mViewSize.Height() );
+	mScreenAABB = eeAABB( -mOffset.x, -mOffset.y, -mOffset.x + mViewSize.Width(), -mOffset.y + mViewSize.Height() );
 }
 
 const eeAABB& cMap::GetViewAreaAABB() const {
@@ -336,6 +341,14 @@ const eeVector2i& cMap::EndTile() const {
 	return mEndTile;
 }
 
+void cMap::ExtraTiles( const eeVector2i& extra ) {
+	mExtraTiles = extra;
+}
+
+const eeVector2i& cMap::ExtraTiles() const {
+	return mExtraTiles;
+}
+
 void cMap::Offset( const eeVector2f& offset ) {
 	mOffset = offset;
 
@@ -349,10 +362,10 @@ void cMap::CalcTilesClip() {
 		eeVector2f ffoff( FixOffset() );
 		eeVector2i foff( (Int32)ffoff.x, (Int32)ffoff.y );
 
-		mStartTile.x	= -foff.x / mTileSize.x;
-		mStartTile.y	= -foff.y / mTileSize.y;
-		mEndTile.x		= mStartTile.x + eeRound( (eeFloat)mViewSize.x / (eeFloat)mTileSize.x ) + 1;
-		mEndTile.y		= mStartTile.y + eeRound( (eeFloat)mViewSize.y / (eeFloat)mTileSize.y ) + 1;
+		mStartTile.x	= -foff.x / mTileSize.x - mExtraTiles.x;
+		mStartTile.y	= -foff.y / mTileSize.y - mExtraTiles.y;
+		mEndTile.x		= mStartTile.x + eeRound( (eeFloat)mViewSize.x / (eeFloat)mTileSize.x ) + 1 + mExtraTiles.x;
+		mEndTile.y		= mStartTile.y + eeRound( (eeFloat)mViewSize.y / (eeFloat)mTileSize.y ) + 1 + mExtraTiles.y;
 
 		if ( mStartTile.x < 0 )
 			mStartTile.x = 0;
@@ -422,7 +435,7 @@ Uint32 cMap::ClipedArea() const {
 }
 
 Uint32 cMap::ClampBorders() const {
-	return mFlags & MAP_FLAG_CLAMP_BODERS;
+	return mFlags & MAP_FLAG_CLAMP_BORDERS;
 }
 
 Uint32 cMap::DrawTileOver() const {
@@ -632,6 +645,8 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 		if ( MapHdr.Magic == ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'M' << 16 ) | ( 'P' << 24 ) ) ) {
 			Create( eeSize( MapHdr.SizeX, MapHdr.SizeY ), MapHdr.MaxLayers, eeSize( MapHdr.TileSizeX, MapHdr.TileSizeY ), MapHdr.Flags );
 
+			BaseColor( eeColorA( MapHdr.BaseColor ) );
+
 			//! Load Properties
 			if ( MapHdr.PropertyCount ) {
 				sPropertyHdr tProp[ MapHdr.PropertyCount ];
@@ -766,6 +781,26 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 						}
 					}
 				}
+
+				if ( MapHdr.LightsCount ) {
+					CreateLightManager();
+
+					sMapLightHdr tLighsHdr[ MapHdr.LightsCount ];
+					sMapLightHdr * tLightHdr;
+
+					IOS.Read( (char*)&tLighsHdr, sizeof(sMapLightHdr) * MapHdr.LightsCount );
+
+					for ( i = 0; i < MapHdr.LightsCount; i++ ) {
+						tLightHdr = &( tLighsHdr[ i ] );
+
+						eeColorA tLightColA( tLightHdr->Color );
+						eeColor tLightCol( tLightColA.R(), tLightColA.G(), tLightColA.B() );
+
+						mLightManager->AddLight(
+							eeNew( cLight, ( tLightHdr->Radius, tLightHdr->PosX, tLightHdr->PosY, tLightCol, (LIGHT_TYPE)tLightHdr->Type ) )
+						);
+					}
+				}
 			}
 
 			return true;
@@ -827,6 +862,12 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 	MapHdr.PropertyCount			= mProperties.size();
 	MapHdr.ShapeGroupCount			= ShapeGroups.size();
 	MapHdr.VirtualObjectTypesCount	= mObjTypes.size();	//! This is only usefull for the Map Editor, to auto add on the load the virtual object types that where used to create the map.
+	MapHdr.BaseColor				= mBaseColor.GetUint32();
+
+	if ( LightsEnabled() && NULL != mLightManager )
+		MapHdr.LightsCount = mLightManager->Count();
+	else
+		MapHdr.LightsCount = 0;
 
 	if ( IOS.IsOpen() ) {
 		//! Writes the map header
@@ -1019,6 +1060,24 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 
 					IOS.Write( (const char*)&tOGOHdr, sizeof(sMapObjGOHdr) );
 				}
+			}
+		}
+
+		if ( MapHdr.LightsCount && NULL != mLightManager ) {
+			cLightManager::LightsList& Lights = mLightManager->GetLights();
+
+			for ( cLightManager::LightsList::iterator LightsIt = Lights.begin(); LightsIt != Lights.end(); LightsIt++ ) {
+				cLight * Light = (*LightsIt);
+
+				sMapLightHdr tLightHdr;
+
+				tLightHdr.Radius	= Light->Radius();
+				tLightHdr.PosX		= (Int32)Light->Position().x;
+				tLightHdr.PosY		= (Int32)Light->Position().y;
+				tLightHdr.Color		= eeColorA( Light->Color() ).GetUint32();
+				tLightHdr.Type		= Light->Type();
+
+				IOS.Write( (const char*)&tLightHdr, sizeof(sMapLightHdr) );
 			}
 		}
 	}
