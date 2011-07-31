@@ -229,11 +229,16 @@ cLightManager::LightsList& cLightManager::GetLights() {
 cLight * cLightManager::GetLightOver( const eeVector2f& OverPos, cLight * LightCurrent ) {
 	cLight * PivotLight = NULL;
 	cLight * LastLight	= NULL;
+	cLight * FirstLight = NULL;
 
 	for ( LightsList::reverse_iterator it = mLights.rbegin(); it != mLights.rend(); it++ ) {
 		cLight * Light = (*it);
 
 		if ( Contains( Light->GetAABB(), OverPos ) ) {
+			if ( NULL == FirstLight ) {
+				FirstLight = Light;
+			}
+
 			if ( NULL != LightCurrent ) {
 				if ( Light != LightCurrent ) {
 					PivotLight = Light;
@@ -248,6 +253,10 @@ cLight * cLightManager::GetLightOver( const eeVector2f& OverPos, cLight * LightC
 
 			LastLight = Light;
 		}
+	}
+
+	if ( LastLight == LightCurrent && NULL != FirstLight ) {
+		return FirstLight;
 	}
 
 	if ( NULL == PivotLight && NULL != LightCurrent && Contains( LightCurrent->GetAABB(), OverPos ) ) {

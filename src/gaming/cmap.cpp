@@ -1098,11 +1098,13 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 }
 
 void cMap::Save( const std::string& path ) {
-	cIOStreamFile IOS( path, std::ios::out | std::ios::binary );
+	if ( !IsDirectory( path ) ) {
+		cIOStreamFile IOS( path, std::ios::out | std::ios::binary );
 
-	SaveToStream( IOS );
+		SaveToStream( IOS );
 
-	mPath = path;
+		mPath = path;
+	}
 }
 
 std::vector<std::string> cMap::GetShapeGroups() {
