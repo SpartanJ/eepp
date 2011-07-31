@@ -22,6 +22,8 @@ class cLightManager {
 
 		void RemoveLight( const eeVector2f& OverPos );
 
+		void RemoveLight( cLight * Light );
+
 		Uint32 Count();
 
 		const eeColorA * GetTileColor( const eeVector2i& TilePos );
@@ -33,6 +35,8 @@ class cLightManager {
 		const bool& IsByVertex() const;
 
 		LightsList& GetLights();
+
+		cLight * GetLightOver( const eeVector2f& OverPos, cLight * LightCurrent = NULL );
 	protected:
 		cMap *				mMap;
 		Int32				mNumVertex;

@@ -197,6 +197,9 @@ void cMap::Draw() {
 
 	MouseOverDraw();
 
+	if ( mDrawCb.IsSet() )
+		mDrawCb();
+
 	if ( ClipedArea() ) {
 		mWindow->ClipDisable();
 	}
@@ -295,6 +298,9 @@ void cMap::Update() {
 
 	for ( Uint32 i = 0; i < mLayerCount; i++ )
 		mLayers[i]->Update();
+
+	if ( mUpdateCb.IsSet() )
+		mUpdateCb();
 }
 
 const eeSize& cMap::ViewSize() const {
@@ -311,6 +317,10 @@ const eeVector2i& cMap::GetRealMouseTilePos() const {
 
 const eeVector2i& cMap::GetMouseMapPos() const {
 	return mMouseMapPos;
+}
+
+eeVector2f cMap::GetMouseMapPosf() const {
+	return eeVector2f( (eeFloat)mMouseMapPos.x, (eeFloat)mMouseMapPos.y );
 }
 
 void cMap::ViewSize( const eeSize& viewSize ) {
@@ -331,6 +341,10 @@ void cMap::Position( const eeVector2i& position ) {
 
 const eeVector2f& cMap::Offset() const {
 	return mOffset;
+}
+
+const eeVector2f& cMap::OffsetFixed() const {
+	return mOffsetFixed;
 }
 
 const eeVector2i& cMap::StartTile() const {
@@ -1107,6 +1121,14 @@ std::vector<std::string> cMap::GetShapeGroups() {
 	}
 
 	return items;
+}
+
+void cMap::SetDrawCallback( MapDrawCb Cb ) {
+	mDrawCb = Cb;
+}
+
+void cMap::SetUpdateCallback( MapUpdateCb Cb ) {
+	mUpdateCb = Cb;
 }
 
 }}

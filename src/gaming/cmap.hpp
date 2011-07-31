@@ -22,6 +22,8 @@ class EE_API cMap {
 		typedef std::map<std::string, std::string>	PropertiesMap;
 		typedef std::list<std::string>				GOTypesList;		//! Special object types used in this map
 		typedef cb::Callback4< cGameObject *, const Uint32&, const Uint32&, cLayer *, const Uint32&>		CreateGOCb;
+		typedef cb::Callback0<void>	MapDrawCb;
+		typedef cb::Callback0<void> MapUpdateCb;
 
 		cMap();
 
@@ -68,6 +70,8 @@ class EE_API cMap {
 		void ViewSize( const eeSize& viewSize );
 
 		const eeVector2f& Offset() const;
+
+		const eeVector2f& OffsetFixed() const;
 
 		void Offset( const eeVector2f& offset );
 
@@ -119,6 +123,8 @@ class EE_API cMap {
 
 		const eeVector2i& GetMouseMapPos() const;
 
+		eeVector2f GetMouseMapPosf() const;
+
 		const eeSize& TotalSize() const;
 
 		void AddProperty( std::string Text, std::string Value );
@@ -155,6 +161,10 @@ class EE_API cMap {
 		void ExtraTiles( const eeVector2i& extra );
 
 		const eeVector2i& ExtraTiles() const;
+
+		void SetDrawCallback( MapDrawCb Cb );
+
+		void SetUpdateCallback( MapUpdateCb Cb );
 	protected:
 		Window::cWindow *		mWindow;
 		cLayer**		mLayers;
@@ -182,6 +192,8 @@ class EE_API cMap {
 		std::string		mPath;
 		eeAABB			mScreenAABB;
 		cLightManager *	mLightManager;
+		MapDrawCb		mDrawCb;
+		MapUpdateCb		mUpdateCb;
 
 		virtual cGameObject *	CreateGameObject( const Uint32& Type, const Uint32& Flags, cLayer * Layer, const Uint32& DataId = 0 );
 

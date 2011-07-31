@@ -35,7 +35,7 @@ cMapProperties::cMapProperties( cMap * Map ) :
 		ComParams.Parent( mUIWindow->Container() );
 		ComParams.PosSet( Txt->Pos().x, Txt->Pos().y + Txt->Size().Height() + 4 );
 		ComParams.SizeSet( 64, 64 );
-		ComParams.Background.Color( eeColorA( 255, 255, 255, 255 ) );
+		ComParams.Background.Color( mMap->BaseColor() );
 		ComParams.Border.Color( eeColorA( 100, 100, 100, 200 ) );
 		ComParams.Flags |= UI_FILL_BACKGROUND | UI_BORDER;
 		mUIBaseColor = eeNew( cUIComplexControl, ( ComParams ) );

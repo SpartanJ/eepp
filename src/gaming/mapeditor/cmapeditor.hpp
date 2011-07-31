@@ -42,13 +42,37 @@ class EE_API cMapEditor {
 		cUIPushButton *		mBtnGOTypeAdd;
 		Uint32				mCurGOType;
 		Uint32				mCurGOFlags;
-		cUIComplexControl * mRPCont;
+		cUIComplexControl * mShapeCont;
+		cUIComplexControl * mLightCont;
 		cUIComplexControl * mSGCont;
 		cUIComplexControl * mDICont;
 		cUICheckBox *		mChkDI;
 		cUITextInput *		mDataIdInput;
 		cUIMenuCheckBox	*	mLayerChkVisible;
 		cUIMenuCheckBox *	mLayerChkLights;
+		cUIPushButton *		mShapeContBut;
+		cUIPushButton *		mLightContBut;
+
+		//! Light Color
+		cUIComplexControl *	mUIBaseColor;
+		cUISlider *			mUIRedSlider;
+		cUISlider *			mUIGreenSlider;
+		cUISlider *			mUIBlueSlider;
+		cUITextBox *		mUIRedTxt;
+		cUITextBox *		mUIGreenTxt;
+		cUITextBox *		mUIBlueTxt;
+		cUISpinBox *		mLightRadius;
+		cUICheckBox *		mLightTypeChk;
+
+		void OnRedChange( const cUIEvent * Event );
+
+		void OnGreenChange( const cUIEvent * Event );
+
+		void OnBlueChange( const cUIEvent * Event );
+
+		void CreateLightContainer();
+
+		void CreateShapeContainer( Int32 Width );
 
 		void WindowClose( const cUIEvent * Event );
 
@@ -115,6 +139,20 @@ class EE_API cMapEditor {
 		void AddNewGOType( const cUIEvent * Event );
 
 		void OnMapClose( const cUIEvent * Event );
+
+		void OnShapeContClick( const cUIEvent * Event );
+
+		void OnLightContClick( const cUIEvent * Event );
+
+		void OnNewLight( const cUIEvent * Event );
+
+		void OnLightRadiusChangeVal( const cUIEvent * Event );
+
+		void OnLightTypeChange( const cUIEvent * Event );
+
+		void OnLightSelect( cLight * Light );
+
+		void OnLightRadiusChange( cLight * Light );
 
 		void OnNewGOTypeAdded( std::string name, Uint32 hash );
 

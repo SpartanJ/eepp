@@ -137,6 +137,13 @@ eeColorA cLightManager::GetColorFromPos( const eeVector2f& Pos ) {
 
 void cLightManager::AddLight( cLight * Light ) {
 	mLights.push_back( Light );
+
+	if ( mLights.size() == 1 )
+		Update();
+}
+
+void cLightManager::RemoveLight( cLight * Light ) {
+	mLights.remove( Light );
 }
 
 void cLightManager::RemoveLight( const eeVector2f& OverPos ) {
@@ -217,6 +224,37 @@ Uint32 cLightManager::Count() {
 
 cLightManager::LightsList& cLightManager::GetLights() {
 	return mLights;
+}
+
+cLight * cLightManager::GetLightOver( const eeVector2f& OverPos, cLight * LightCurrent ) {
+	cLight * PivotLight = NULL;
+	cLight * LastLight	= NULL;
+
+	for ( LightsList::reverse_iterator it = mLights.rbegin(); it != mLights.rend(); it++ ) {
+		cLight * Light = (*it);
+
+		if ( Contains( Light->GetAABB(), OverPos ) ) {
+			if ( NULL != LightCurrent ) {
+				if ( Light != LightCurrent ) {
+					PivotLight = Light;
+
+					if ( LastLight == LightCurrent ) {
+						return Light;
+					}
+				}
+			} else {
+				return Light;
+			}
+
+			LastLight = Light;
+		}
+	}
+
+	if ( NULL == PivotLight && NULL != LightCurrent && Contains( LightCurrent->GetAABB(), OverPos ) ) {
+		return LightCurrent;
+	}
+
+	return PivotLight;
 }
 
 }}

@@ -2899,19 +2899,30 @@ static int tga_info(stbi *s, int *x, int *y, int *comp)
     int sz;
     get8u(s);                   // discard Offset
     sz = get8u(s);              // color type
-    if( sz > 1 ) return 0;      // only RGB or indexed allowed
+    if( sz > 1 ) {
+        stbi_rewind(s);
+        return 0;      // only RGB or indexed allowed
+    }
     sz = get8u(s);              // image type
     // only RGB or grey allowed, +/- RLE
     if ((sz != 1) && (sz != 2) && (sz != 3) && (sz != 9) && (sz != 10) && (sz != 11)) return 0;
     skip(s,9);
-
     tga_w = get16le(s);
-    if( tga_w < 1 ) return 0;   // test width
+    if( tga_w < 1 ) {
+        stbi_rewind(s);
+        return 0;   // test width
+    }
     tga_h = get16le(s);
-    if( tga_h < 1 ) return 0;   // test height
+    if( tga_h < 1 ) {
+        stbi_rewind(s);
+        return 0;   // test height
+    }
     sz = get8(s);               // bits per pixel
     // only RGB or RGBA or grey allowed
-    if ((sz != 8) && (sz != 16) && (sz != 24) && (sz != 32)) return 0;
+    if ((sz != 8) && (sz != 16) && (sz != 24) && (sz != 32)) {
+        stbi_rewind(s);
+        return 0;
+    }
     tga_comp = sz;
     if (x) *x = tga_w;
     if (y) *y = tga_h;

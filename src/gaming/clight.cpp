@@ -145,8 +145,10 @@ const eeFloat& cLight::Radius() const {
 }
 
 void cLight::Radius( const eeFloat& radius ) {
-	mRadius = radius;
-	UpdateAABB();
+	if ( radius > 0 ) {
+		mRadius = radius;
+		UpdateAABB();
+	}
 }
 
 const bool& cLight::Active() const {
@@ -167,6 +169,7 @@ const eeColor& cLight::Color() const {
 
 void cLight::Type( const LIGHT_TYPE& type ) {
 	mType = type;
+	UpdateAABB();
 }
 
 const LIGHT_TYPE& cLight::Type() const {
