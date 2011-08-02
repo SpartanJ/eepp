@@ -23,6 +23,8 @@ class EE_API cTileLayer : public cLayer {
 		virtual cGameObject * GetGameObject( const eeVector2i& TilePos );
 
 		const eeVector2i& GetCurrentTile() const;
+
+		eeVector2i GetTilePosFromPos( const eeVector2f& Pos );
 	protected:
 		friend class cMap;
 

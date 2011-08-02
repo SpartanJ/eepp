@@ -101,7 +101,7 @@ void cEETest::Init() {
 
 		if ( Mus->OpenFromPack( PAK, "music.ogg" ) ) {
 			Mus->Loop(true);
-			Mus->Volume( 100.f );
+			Mus->Volume( 0.f );
 			Mus->Play();
 		}
 
@@ -829,7 +829,7 @@ void cEETest::LoadTextures() {
 	CL2.AddFrame(TN[0], 96, 96);
 	CL2.Color( eeColorA( 255, 255, 255, 255 ) );
 
-	mTGL = eeNew( cTextureGroupLoader, ( MyPath + "data/bnb/bnb.etg" ) );
+	mTGL = eeNew( cTextureGroupLoader, ( MyPath + "data/bnb/gfx/bnb.etg" ) );
 
 	mBlindy.AddFramesByPattern( "rn" );
 	mBlindy.Position( 320.f, 0.f );

@@ -14,6 +14,9 @@ cGameObjectShapeEx::cGameObjectShapeEx( const Uint32& Flags, cLayer * Layer, cSh
 	mVertexColors( NULL )
 {
 	mRender = RenderTypeFromFlags();
+
+	if ( 0 == mAngle )
+		mAngle = GetAngle();
 }
 
 cGameObjectShapeEx::~cGameObjectShapeEx()

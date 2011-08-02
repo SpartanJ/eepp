@@ -97,6 +97,10 @@ class EE_API cMap {
 
 		Uint32 DrawGrid() const;
 
+		void ShowBlocked( const bool& show );
+
+		Uint32 ShowBlocked() const;
+
 		void DrawBackground( const bool& draw );
 
 		Uint32 DrawBackground() const;
@@ -165,6 +169,8 @@ class EE_API cMap {
 		void SetDrawCallback( MapDrawCb Cb );
 
 		void SetUpdateCallback( MapUpdateCb Cb );
+
+		cTexture * GetBlankTileTexture();
 	protected:
 		Window::cWindow *		mWindow;
 		cLayer**		mLayers;

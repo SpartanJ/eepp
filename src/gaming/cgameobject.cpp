@@ -1,4 +1,5 @@
 #include "cgameobject.hpp"
+#include "ctilelayer.hpp"
 
 namespace EE { namespace Gaming {
 
@@ -48,6 +49,10 @@ Uint32 cGameObject::IsBlocked() const {
 	return mFlags & GObjFlags::GAMEOBJECT_BLOCKED;
 }
 
+Uint32 cGameObject::IsRotated() const {
+	return mFlags & GObjFlags::GAMEOBJECT_ROTATE_90DEG;
+}
+
 void cGameObject::Draw() {
 }
 
@@ -59,6 +64,14 @@ eeVector2f cGameObject::Pos() const {
 }
 
 void cGameObject::Pos( eeVector2f pos ) {
+	AutoFixTilePos();
+}
+
+eeVector2i cGameObject::TilePos() const {
+	return eeVector2i();
+}
+
+void cGameObject::TilePos( eeVector2i pos ) {
 }
 
 eeSize cGameObject::Size() {
@@ -92,6 +105,33 @@ EE_RENDERTYPE cGameObject::RenderTypeFromFlags() {
 
 cLayer * cGameObject::Layer() const {
 	return mLayer;
+}
+
+void cGameObject::AutoFixTilePos() {
+	if ( ( mFlags & GObjFlags::GAMEOBJECT_AUTO_FIX_TILE_POS ) && NULL != mLayer && mLayer->Type() == MAP_LAYER_TILED ) {
+		eeVector2i CurPos = TilePos();
+
+		AssignTilePos();
+
+		if ( CurPos != TilePos() ) {
+			cTileLayer * TLayer = static_cast<cTileLayer *> ( mLayer );
+
+			if ( TLayer->GetGameObject( CurPos ) == this ) {
+				TLayer->RemoveGameObject( CurPos );
+				TLayer->AddGameObject( this, TilePos() );
+			}
+		}
+	}
+}
+
+void cGameObject::AssignTilePos() {
+	cTileLayer * TLayer = static_cast<cTileLayer *> ( mLayer );
+
+	TilePos( TLayer->GetTilePosFromPos( Pos() ) );
+}
+
+eeFloat cGameObject::GetAngle() {
+	return IsRotated() ? 90 : 0;
 }
 
 }}

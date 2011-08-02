@@ -23,7 +23,7 @@ cGameObjectVirtual::cGameObjectVirtual( cShape * Shape, cLayer * Layer, const Ui
 	mType( Type ),
 	mDataId( 0 ),
 	mPos( Pos ),
-	mLayer( NULL ),
+	mLayer( Layer ),
 	mShape( Shape )
 {
 	if ( NULL != Shape )
@@ -63,7 +63,7 @@ void cGameObjectVirtual::Draw() {
 					mShape->Draw(
 						mPos.x,
 						mPos.y,
-						0.f,
+						GetAngle(),
 						1.f,
 						*LM->GetTileColor( Tile, 0 ),
 						*LM->GetTileColor( Tile, 1 ),
@@ -73,14 +73,14 @@ void cGameObjectVirtual::Draw() {
 						RenderTypeFromFlags()
 					);
 				} else {
-					mShape->Draw( mPos.x, mPos.y, *LM->GetTileColor( Tile ), 0.f, 1.f, ALPHA_NORMAL, RenderTypeFromFlags() );
+					mShape->Draw( mPos.x, mPos.y, *LM->GetTileColor( Tile ), GetAngle(), 1.f, ALPHA_NORMAL, RenderTypeFromFlags() );
 				}
 			} else {
 				if ( LM->IsByVertex() ) {
 					mShape->Draw(
 						mPos.x,
 						mPos.y,
-						0.f,
+						GetAngle(),
 						1.f,
 						LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y ) ),
 						LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y + mShape->DestHeight() ) ),
@@ -90,11 +90,11 @@ void cGameObjectVirtual::Draw() {
 						RenderTypeFromFlags()
 					);
 				} else {
-					mShape->Draw( mPos.x, mPos.y, LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y ) ), 0.f, 1.f, ALPHA_NORMAL, RenderTypeFromFlags() );
+					mShape->Draw( mPos.x, mPos.y, LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y ) ), GetAngle(), 1.f, ALPHA_NORMAL, RenderTypeFromFlags() );
 				}
 			}
 		} else {
-			mShape->Draw( mPos.x, mPos.y, eeColorA(), 0.f, 1.f, ALPHA_NORMAL, RenderTypeFromFlags() );
+			mShape->Draw( mPos.x, mPos.y, eeColorA(), GetAngle(), 1.f, ALPHA_NORMAL, RenderTypeFromFlags() );
 		}
 	} else {
 		cPrimitives P;

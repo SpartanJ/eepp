@@ -87,11 +87,13 @@ void cMapEditor::CreateWinMenu() {
 	WinMenu->AddMenuButton( "File", PU1 );
 
 	cUIPopUpMenu * PU3 = mTheme->CreatePopUpMenu();
-	PU3->AddCheckBox( "Show Grid" );
+	mChkShowGrid = reinterpret_cast<cUIMenuCheckBox*>( PU3->GetItem( PU3->AddCheckBox( "Show Grid" ) ) );
 
-	reinterpret_cast<cUIMenuCheckBox*> ( PU3->GetItem( "Show Grid" ) )->Active( true );
+	mChkShowGrid->Active( true );
 
-	PU3->AddCheckBox( "Mark Tile Over" );
+	mChkMarkTileOver = reinterpret_cast<cUIMenuCheckBox*>( PU3->GetItem( PU3->AddCheckBox( "Mark Tile Over" ) ) );
+
+	mChkShowBlocked = reinterpret_cast<cUIMenuCheckBox*>( PU3->GetItem( PU3->AddCheckBox( "Show Blocked" ) ) );
 
 	PU3->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cMapEditor::ViewMenuClick ) );
 	WinMenu->AddMenuButton( "View", PU3 );
@@ -167,6 +169,16 @@ void cMapEditor::CreateETGMenu() {
 	CreateShapeContainer( Width );
 }
 
+void cMapEditor::FillGotyList() {
+	std::vector<String> items;
+	items.push_back( "Shape" );
+	items.push_back( "ShapeEx" );
+	items.push_back( "Sprite" );
+	mGOTypeList->ListBox()->Clear();
+	mGOTypeList->ListBox()->AddListBoxItems( items );
+	mGOTypeList->ListBox()->SetSelected(0);
+}
+
 void cMapEditor::CreateShapeContainer( Int32 Width ) {
 	cUITextBox * Txt;
 	Uint32 TxtFlags = UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP | UI_DRAW_SHADOW;
@@ -175,13 +187,8 @@ void cMapEditor::CreateShapeContainer( Int32 Width ) {
 	Txt->Text( "Add Game Object as..." );
 
 	mGOTypeList = mTheme->CreateDropDownList( mShapeCont, eeSize( Width - 26, 21 ), eeVector2i( 0, Txt->Pos().y + Txt->Size().Height() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	std::vector<String> items;
-	items.push_back( "Shape" );
-	items.push_back( "ShapeEx" );
-	items.push_back( "Sprite" );
-	mGOTypeList->ListBox()->AddListBoxItems( items );
 	mGOTypeList->AddEventListener( cUIEvent::EventOnItemSelected, cb::Make1( this, &cMapEditor::OnTypeChange ) );
-	mGOTypeList->ListBox()->SetSelected(0);
+	FillGotyList();
 
 	mBtnGOTypeAdd = mTheme->CreatePushButton( mShapeCont, eeSize( 24, 21 ), eeVector2i( mGOTypeList->Pos().x + mGOTypeList->Size().Width() + 2, mGOTypeList->Pos().y ), UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mTheme->GetIconByName( "add" ) );
 	mBtnGOTypeAdd->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::AddNewGOType ) );
@@ -216,7 +223,15 @@ void cMapEditor::CreateShapeContainer( Int32 Width ) {
 	mChkAnim->Text( "Animated" );
 	mChkAnim->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::ChkClickAnimated ) );
 
-	Txt = mTheme->CreateTextBox( mShapeCont, eeSize( Width, 16 ), eeVector2i( 0, mChkBlocked->Pos().y + mChkBlocked->Size().Height() + 8 ), TxtFlags );
+	mChkRot90 = mTheme->CreateCheckBox( mShapeCont, eeSize(), eeVector2i( mChkBlocked->Pos().x, mChkBlocked->Pos().y + mChkBlocked->Size().Height() + 4 ), ChkFlags );
+	mChkRot90->Text( String::FromUtf8( "Rotate 90º" ) );
+	mChkRot90->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::ChkClickRot90 ) );
+
+	mChkAutoFix = mTheme->CreateCheckBox( mShapeCont, eeSize(), eeVector2i( mChkAnim->Pos().x, mChkAnim->Pos().y + mChkAnim->Size().Height() + 4 ), ChkFlags );
+	mChkAutoFix->Text( "AutoFix TilePos" );
+	mChkAutoFix->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::ChkClickAutoFix ) );
+
+	Txt = mTheme->CreateTextBox( mShapeCont, eeSize( Width, 16 ), eeVector2i( 0, mChkRot90->Pos().y + mChkRot90->Size().Height() + 8 ), TxtFlags );
 	Txt->Text( "Game Object Data:" );
 
 	mChkDI = mTheme->CreateCheckBox( mShapeCont, eeSize(), eeVector2i( 0, Txt->Pos().y + Txt->Size().Height() + 4 ), ChkFlags );
@@ -470,6 +485,11 @@ void cMapEditor::UpdateGfx() {
 		mGfxPreview->RenderType( RN_FLIP );
 	else
 		mGfxPreview->RenderType( RN_NORMAL );
+
+	if ( mChkRot90->Active() )
+		mGfxPreview->Angle( 90 );
+	else
+		mGfxPreview->Angle( 0 );
 }
 
 void cMapEditor::UpdateFlags() {
@@ -486,6 +506,12 @@ void cMapEditor::UpdateFlags() {
 
 	if ( mChkAnim->Active() )
 		mCurGOFlags |= GObjFlags::GAMEOBJECT_ANIMATED;
+
+	if ( mChkRot90->Active() )
+		mCurGOFlags |= GObjFlags::GAMEOBJECT_ROTATE_90DEG;
+
+	if ( mChkAutoFix->Active() )
+		mCurGOFlags |= GObjFlags::GAMEOBJECT_AUTO_FIX_TILE_POS;
 }
 
 void cMapEditor::OnTypeChange( const cUIEvent * Event ) {
@@ -515,7 +541,16 @@ void cMapEditor::ChkClickFliped( const cUIEvent * Event ) {
 	UpdateFlags();
 }
 
+void cMapEditor::ChkClickRot90( const cUIEvent * Event ) {
+	UpdateGfx();
+	UpdateFlags();
+}
+
 void cMapEditor::ChkClickBlocked( const cUIEvent * Event ) {
+	UpdateFlags();
+}
+
+void cMapEditor::ChkClickAutoFix( const cUIEvent * Event ) {
 	UpdateFlags();
 }
 
@@ -620,7 +655,9 @@ void cMapEditor::CreateNewEmptyMap() {
 void cMapEditor::MapCreated() {
 	mCurLayer = NULL;
 	mLayerList->ListBox()->Clear();
+	SetViewOptions();
 	FillSGCombo();
+	FillGotyList();
 
 	mMapHScroll->Value( 0 );
 	mMapVScroll->Value( 0 );
@@ -691,6 +728,8 @@ void cMapEditor::MapOpen( const cUIEvent * Event ) {
 		MapCreated();
 
 		RefreshLayersList();
+
+		RefreshGotyList();
 	}
 }
 
@@ -761,8 +800,11 @@ void cMapEditor::ViewMenuClick( const cUIEvent * Event ) {
 		mUIMap->Map()->DrawGrid( reinterpret_cast<cUIMenuCheckBox*> ( Event->Ctrl() )->Active() );
 	} else if ( "Mark Tile Over" == txt ) {
 		mUIMap->Map()->DrawTileOver( reinterpret_cast<cUIMenuCheckBox*> ( Event->Ctrl() )->Active() );
+	} else if ( "Show Blocked" == txt ) {
+		mUIMap->Map()->ShowBlocked( reinterpret_cast<cUIMenuCheckBox*> ( Event->Ctrl() )->Active() );
 	}
 }
+
 void cMapEditor::MapMenuClick( const cUIEvent * Event ) {
 	if ( !Event->Ctrl()->IsTypeOrInheritsFrom( UI_TYPE_MENUITEM ) )
 		return;
@@ -839,6 +881,14 @@ void cMapEditor::RemoveLayer() {
 		mCurLayer = NULL;
 
 		RefreshLayersList();
+	}
+}
+
+void cMapEditor::RefreshGotyList() {
+	cMap::GOTypesList& GOList = mUIMap->Map()->GetVirtualObjectTypes();
+
+	for ( cMap::GOTypesList::iterator it = GOList.begin(); it != GOList.end(); it++ ) {
+		mGOTypeList->ListBox()->AddListBoxItem( (*it) );
 	}
 }
 
@@ -1025,6 +1075,12 @@ void cMapEditor::OnMapMouseDown( const cUIEvent * Event ) {
 				RemoveGameObjectFromTile();
 		}
 	}
+}
+
+void cMapEditor::SetViewOptions() {
+	mChkShowGrid->Active( mUIMap->Map()->DrawGrid() ? true : false );
+	mChkMarkTileOver->Active( mUIMap->Map()->DrawTileOver() ? true : false  );
+	mChkShowBlocked->Active( mUIMap->Map()->ShowBlocked() ? true : false );
 }
 
 }}}

@@ -39,6 +39,20 @@ void cTileLayer::cTileLayer::Draw( const eeVector2f &Offset ) {
 		}
 	}
 
+	cTexture * Tex = mMap->GetBlankTileTexture();
+
+	if ( mMap->ShowBlocked() && NULL != Tex ) {
+		for ( Int32 x = start.x; x < end.x; x++ ) {
+			for ( Int32 y = start.y; y < end.y; y++ ) {
+				if ( NULL != mTiles[x][y] ) {
+					if ( mTiles[x][y]->IsBlocked() ) {
+						Tex->Draw( x * mMap->TileSize().x, y * mMap->TileSize().y, 0 , 1, eeColorA( 255, 0, 0, 200 ) );
+					}
+				}
+			}
+		}
+	}
+
 	cGlobalBatchRenderer::instance()->Draw();
 
 	GLi->PopMatrix();
@@ -118,6 +132,10 @@ cGameObject * cTileLayer::GetGameObject( const eeVector2i& TilePos ) {
 
 const eeVector2i& cTileLayer::GetCurrentTile() const {
 	return mCurTile;
+}
+
+eeVector2i cTileLayer::GetTilePosFromPos( const eeVector2f& Pos ) {
+	return eeVector2i( ( (Int32)Pos.x + mOffset.x ) / mMap->TileSize().x, ( (Int32)Pos.y + mOffset.y ) / mMap->TileSize().y );
 }
 
 }}

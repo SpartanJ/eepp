@@ -11,6 +11,7 @@ cGameObjectShape::cGameObjectShape( const Uint32& Flags, cLayer * Layer, cShape 
 	mShape( Shape ),
 	mPos( Pos )
 {
+	AssignTilePos();
 }
 
 cGameObjectShape::~cGameObjectShape() {
@@ -32,7 +33,7 @@ void cGameObjectShape::Draw() {
 					mShape->Draw(
 						mPos.x,
 						mPos.y,
-						0.f,
+						GetAngle(),
 						1.f,
 						*LM->GetTileColor( Tile, 0 ),
 						*LM->GetTileColor( Tile, 1 ),
@@ -42,14 +43,14 @@ void cGameObjectShape::Draw() {
 						RenderTypeFromFlags()
 					);
 				} else {
-					mShape->Draw( mPos.x, mPos.y, *LM->GetTileColor( Tile ), 0.f, 1.f, ALPHA_NORMAL, RenderTypeFromFlags() );
+					mShape->Draw( mPos.x, mPos.y, *LM->GetTileColor( Tile ), GetAngle(), 1.f, ALPHA_NORMAL, RenderTypeFromFlags() );
 				}
 			} else {
 				if ( LM->IsByVertex() ) {
 					mShape->Draw(
 						mPos.x,
 						mPos.y,
-						0.f,
+						GetAngle(),
 						1.f,
 						LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y ) ),
 						LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y + mShape->DestHeight() ) ),
@@ -59,11 +60,11 @@ void cGameObjectShape::Draw() {
 						RenderTypeFromFlags()
 					);
 				} else {
-					mShape->Draw( mPos.x, mPos.y, LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y ) ), 0.f, 1.f, ALPHA_NORMAL, RenderTypeFromFlags() );
+					mShape->Draw( mPos.x, mPos.y, LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y ) ), GetAngle(), 1.f, ALPHA_NORMAL, RenderTypeFromFlags() );
 				}
 			}
 		} else {
-			mShape->Draw( mPos.x, mPos.y, eeColorA(), 0.f, 1.f, ALPHA_NORMAL, RenderTypeFromFlags() );
+			mShape->Draw( mPos.x, mPos.y, eeColorA(), GetAngle(), 1.f, ALPHA_NORMAL, RenderTypeFromFlags() );
 		}
 	}
 }
@@ -72,15 +73,24 @@ eeVector2f cGameObjectShape::Pos() const {
 	return mPos;
 }
 
+void cGameObjectShape::Pos( eeVector2f pos ) {
+	mPos = pos;
+	cGameObject::Pos( pos );
+}
+
+eeVector2i cGameObjectShape::TilePos() const {
+	return mTilePos;
+}
+
+void cGameObjectShape::TilePos( eeVector2i pos ) {
+	mTilePos = pos;
+}
+
 eeSize cGameObjectShape::Size() {
 	if ( NULL != mShape )
 		return mShape->RealSize();
 
 	return eeSize();
-}
-
-void cGameObjectShape::Pos( eeVector2f pos ) {
-	mPos = pos;
 }
 
 cShape * cGameObjectShape::Shape() const {

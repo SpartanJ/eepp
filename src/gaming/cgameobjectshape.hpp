@@ -19,9 +19,13 @@ class EE_API cGameObjectShape : public cGameObject {
 
 		virtual eeVector2f Pos() const;
 
-		virtual eeSize Size();
-
 		virtual void Pos( eeVector2f pos );
+
+		virtual eeVector2i TilePos() const;
+
+		virtual void TilePos( eeVector2i pos );
+
+		virtual eeSize Size();
 
 		cShape * Shape() const;
 
@@ -35,6 +39,7 @@ class EE_API cGameObjectShape : public cGameObject {
 	protected:
 		cShape *	mShape;
 		eeVector2f	mPos;
+		eeVector2i	mTilePos;
 };
 
 }}

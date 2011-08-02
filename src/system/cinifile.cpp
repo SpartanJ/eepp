@@ -88,7 +88,7 @@ bool cIniFile::ReadFile() {
 						break;
 					case '=':
 						valuename = Trim( line.substr ( 0, pLeft ) ); // Remove the extra space between valuename and = . No spaced valuename permited.
-						value = line.substr ( pLeft + 1 );
+						value = LTrim( line.substr ( pLeft + 1 ) );
 						SetValue ( keyname, valuename, value );
 						break;
 					case ';':

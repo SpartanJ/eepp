@@ -194,7 +194,7 @@ class EE_API cConsole{
 		/** Internal Callback for default command ( showcursor ) */
 		void CmdShowCursor	( const std::vector < String >& params );
 
-		/** Internal Callback for default command ( setframelimit ) */
+		/** Internal Callback for default command ( setfpslimit ) */
 		void CmdFrameLimit	( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( getlog ) */

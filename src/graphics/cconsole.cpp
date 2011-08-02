@@ -425,7 +425,7 @@ void cConsole::CreateDefaultCommands() {
 	AddCommand( "cmdlist", cb::Make1( this, &cConsole::CmdCmdList) );
 	AddCommand( "help", cb::Make1( this, &cConsole::CmdCmdList) );
 	AddCommand( "showcursor", cb::Make1( this, &cConsole::CmdShowCursor) );
-	AddCommand( "setframelimit", cb::Make1( this, &cConsole::CmdFrameLimit) );
+	AddCommand( "setfpslimit", cb::Make1( this, &cConsole::CmdFrameLimit) );
 	AddCommand( "getlog", cb::Make1( this, &cConsole::CmdGetLog) );
 	AddCommand( "setgamma", cb::Make1( this, &cConsole::CmdSetGamma) );
 	AddCommand( "setvolume", cb::Make1( this, &cConsole::CmdSetVolume) );
@@ -506,7 +506,7 @@ void cConsole::CmdFrameLimit ( const std::vector < String >& params ) {
 
 			if ( Res && ( tInt >= 0 && tInt <= 10000 ) ) {
 				mWindow->FrameRateLimit( tInt );
-				PushText( "setframelimit " + toStr( tInt ) );
+				PushText( "setfpslimit " + toStr( tInt ) );
 			} else
 				PushText( "Valid parameters are between 0 and 10000 (0 = no limit)." );
 		} catch (...) {

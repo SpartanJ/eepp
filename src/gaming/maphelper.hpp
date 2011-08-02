@@ -71,11 +71,13 @@ typedef struct sMapLightHdrS {
 class GObjFlags {
 	public:
 		enum EE_GAMEOBJECT_FLAGS {
-			GAMEOBJECT_STATIC		=  ( 1 << 0 ),
-			GAMEOBJECT_ANIMATED		=  ( 1 << 1 ),
-			GAMEOBJECT_MIRRORED		=  ( 1 << 2 ),
-			GAMEOBJECT_FLIPED		=  ( 1 << 3 ),
-			GAMEOBJECT_BLOCKED		=  ( 1 << 4 )
+			GAMEOBJECT_STATIC				= ( 1 << 0 ),
+			GAMEOBJECT_ANIMATED				= ( 1 << 1 ),
+			GAMEOBJECT_MIRRORED				= ( 1 << 2 ),
+			GAMEOBJECT_FLIPED				= ( 1 << 3 ),
+			GAMEOBJECT_BLOCKED				= ( 1 << 4 ),
+			GAMEOBJECT_ROTATE_90DEG			= ( 1 << 5 ),
+			GAMEOBJECT_AUTO_FIX_TILE_POS	= ( 1 << 6 )
 		};
 };
 
@@ -99,7 +101,8 @@ enum EE_MAP_FLAGS {
 	MAP_FLAG_DRAW_TILE_OVER		= ( 1 << 3 ),
 	MAP_FLAG_DRAW_BACKGROUND	= ( 1 << 4 ),
 	MAP_FLAG_LIGHTS_ENABLED		= ( 1 << 5 ),
-	MAP_FLAG_LIGHTS_BYVERTEX	= ( 1 << 6 )
+	MAP_FLAG_LIGHTS_BYVERTEX	= ( 1 << 6 ),
+	MAP_FLAG_SHOW_BLOCKED		= ( 1 << 7 )
 };
 
 #define MAP_EDITOR_DEFAULT_FLAGS ( MAP_FLAG_CLAMP_BORDERS | MAP_FLAG_CLIP_AREA | MAP_FLAG_DRAW_GRID | MAP_FLAG_DRAW_BACKGROUND )

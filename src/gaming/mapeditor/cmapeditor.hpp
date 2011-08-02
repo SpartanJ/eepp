@@ -38,6 +38,8 @@ class EE_API cMapEditor {
 		cUICheckBox *		mChkFliped;
 		cUICheckBox *		mChkBlocked;
 		cUICheckBox *		mChkAnim;
+		cUICheckBox *		mChkRot90;
+		cUICheckBox *		mChkAutoFix;
 		cLayer *			mCurLayer;
 		cUIPushButton *		mBtnGOTypeAdd;
 		Uint32				mCurGOType;
@@ -52,6 +54,9 @@ class EE_API cMapEditor {
 		cUIMenuCheckBox *	mLayerChkLights;
 		cUIPushButton *		mShapeContBut;
 		cUIPushButton *		mLightContBut;
+		cUIMenuCheckBox	*	mChkShowGrid;
+		cUIMenuCheckBox	*	mChkMarkTileOver;
+		cUIMenuCheckBox	*	mChkShowBlocked;
 
 		//! Light Color
 		cUIComplexControl *	mUIBaseColor;
@@ -128,6 +133,10 @@ class EE_API cMapEditor {
 
 		void ChkClickAnimated( const cUIEvent * Event );
 
+		void ChkClickRot90( const cUIEvent * Event );
+
+		void ChkClickAutoFix( const cUIEvent * Event );
+
 		void ChkClickDI( const cUIEvent * Event );
 
 		void OnMapMouseDown( const cUIEvent * Event );
@@ -179,6 +188,12 @@ class EE_API cMapEditor {
 		void RefreshLayersList();
 
 		void CreateNewEmptyMap();
+
+		void FillGotyList();
+
+		void RefreshGotyList();
+
+		void SetViewOptions();
 };
 
 }}}

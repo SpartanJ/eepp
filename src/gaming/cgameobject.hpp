@@ -24,6 +24,10 @@ class EE_API cGameObject {
 
 		virtual void Pos( eeVector2f pos );
 
+		virtual eeVector2i TilePos() const;
+
+		virtual void TilePos( eeVector2i pos );
+
 		virtual eeSize Size();
 
 		virtual Uint32 Type() const;
@@ -44,6 +48,8 @@ class EE_API cGameObject {
 
 		Uint32 IsBlocked() const;
 
+		Uint32 IsRotated() const;
+
 		virtual Uint32 DataId();
 
 		virtual void DataId( Uint32 Id );
@@ -54,6 +60,12 @@ class EE_API cGameObject {
 		cLayer *	mLayer;
 
 		virtual EE_RENDERTYPE RenderTypeFromFlags();
+
+		void AutoFixTilePos();
+
+		void AssignTilePos();
+
+		eeFloat GetAngle();
 };
 
 }}

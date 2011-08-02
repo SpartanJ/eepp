@@ -11,6 +11,8 @@ cGameObjectSprite::cGameObjectSprite( const Uint32& Flags, cLayer * Layer, cSpri
 {
 	if ( NULL != mSprite )
 		mSprite->SetRenderType( RenderTypeFromFlags() );
+
+	AssignTilePos();
 }
 
 cGameObjectSprite::~cGameObjectSprite() {
@@ -23,6 +25,8 @@ Uint32 cGameObjectSprite::Type() const {
 
 void cGameObjectSprite::Draw() {
 	if ( NULL != mSprite ) {
+		mSprite->Angle( GetAngle() );
+
 		if ( mLayer->Map()->LightsEnabled() && mLayer->LightsEnabled() ) {
 			cLightManager * LM = mLayer->Map()->GetLightManager();
 
@@ -67,8 +71,18 @@ eeVector2f cGameObjectSprite::Pos() const {
 }
 
 void cGameObjectSprite::Pos( eeVector2f pos ) {
-	if ( NULL != mSprite )
+	if ( NULL != mSprite ) {
 		mSprite->Position( pos );
+		cGameObject::Pos( pos );
+	}
+}
+
+eeVector2i cGameObjectSprite::TilePos() const {
+	return mTilePos;
+}
+
+void cGameObjectSprite::TilePos( eeVector2i pos ) {
+	mTilePos = pos;
 }
 
 eeSize cGameObjectSprite::Size() {

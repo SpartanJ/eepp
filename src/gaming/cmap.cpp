@@ -206,13 +206,10 @@ void cMap::Draw() {
 }
 
 void cMap::MouseOverDraw() {
-	if ( !DrawTileOver() )
+	if ( !DrawTileOver() || NULL == mTileTex )
 		return;
 
-	cPrimitives P;
-	P.SetColor( eeColorA( 255, 0, 0, 255 ) );
-
-	P.DrawRectangle( mOffsetFixed.x + mMouseOverTileFinal.x * mTileSize.x, mOffsetFixed.y + mMouseOverTileFinal.y * mTileSize.y, mTileSize.x, mTileSize.y, 0.f, 1.f, EE_DRAW_LINE );
+	mTileTex->Draw( mOffsetFixed.x + mMouseOverTileFinal.x * mTileSize.x, mOffsetFixed.y + mMouseOverTileFinal.y * mTileSize.y, 0, 1, eeColorA( 255, 0, 0, 200 ) );
 }
 
 void cMap::GridDraw() {
@@ -227,7 +224,7 @@ void cMap::GridDraw() {
 	if ( !DrawGrid() )
 		return;
 
-	if ( 0 == mSize.x || 0 == mSize.y )
+	if ( 0 == mSize.x || 0 == mSize.y || NULL == mTileTex )
 		return;
 
 	cGlobalBatchRenderer::instance()->Draw();
@@ -438,6 +435,14 @@ Uint32 cMap::DrawGrid() const {
 
 void cMap::DrawBackground( const bool& draw ) {
 	SetFlagValue( &mFlags, MAP_FLAG_DRAW_BACKGROUND, draw ? 1 : 0 );
+}
+
+void cMap::ShowBlocked( const bool& show ) {
+	SetFlagValue( &mFlags, MAP_FLAG_SHOW_BLOCKED, show ? 1 : 0 );
+}
+
+Uint32 cMap::ShowBlocked() const {
+	return mFlags & MAP_FLAG_SHOW_BLOCKED;
 }
 
 Uint32 cMap::DrawBackground() const {
@@ -1131,6 +1136,10 @@ void cMap::SetDrawCallback( MapDrawCb Cb ) {
 
 void cMap::SetUpdateCallback( MapUpdateCb Cb ) {
 	mUpdateCb = Cb;
+}
+
+cTexture * cMap::GetBlankTileTexture() {
+	return mTileTex;
 }
 
 }}

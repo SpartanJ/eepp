@@ -802,3 +802,7 @@ src/system/cpackmanager.hpp
 src/system/cpackmanager.cpp
 src/gaming/clightmanager.hpp
 src/gaming/clightmanager.cpp
+src/bnb/bnb.hpp
+src/bnb/bnb.cpp
+src/bnb/cgame.hpp
+src/bnb/cgame.cpp

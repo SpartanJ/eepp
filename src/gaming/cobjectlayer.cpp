@@ -29,12 +29,26 @@ void cObjectLayer::DeallocateLayer() {
 void cObjectLayer::Draw( const eeVector2f &Offset ) {
 	cGlobalBatchRenderer::instance()->Draw();
 
+	ObjList::iterator it;
+
 	GLi->LoadIdentity();
 	GLi->PushMatrix();
 	GLi->Translatef( mOffset.x + Offset.x, mOffset.y + Offset.y, 0.0f );
 
-	for ( ObjList::iterator it = mObjects.begin(); it != mObjects.end(); it++ ) {
+	for ( it = mObjects.begin(); it != mObjects.end(); it++ ) {
 		(*it)->Draw();
+	}
+
+	cTexture * Tex = mMap->GetBlankTileTexture();
+
+	if ( mMap->ShowBlocked() && NULL != Tex ) {
+		eeColorA Col( 255, 0, 0, 200 );
+
+		for ( it = mObjects.begin(); it != mObjects.end(); it++ ) {
+			cGameObject * Obj = (*it);
+
+			Tex->DrawEx( Obj->Pos().x, Obj->Pos().y, Obj->Size().Width(), Obj->Size().Height(), 0, 1, Col, Col, Col, Col );
+		}
 	}
 
 	cGlobalBatchRenderer::instance()->Draw();

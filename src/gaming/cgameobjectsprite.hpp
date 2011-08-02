@@ -21,6 +21,10 @@ class EE_API cGameObjectSprite : public cGameObject {
 
 		virtual void Pos( eeVector2f pos );
 
+		virtual eeVector2i TilePos() const;
+
+		virtual void TilePos( eeVector2i pos );
+
 		virtual eeSize Size();
 
 		cSprite * Sprite() const;
@@ -36,6 +40,7 @@ class EE_API cGameObjectSprite : public cGameObject {
 		virtual void DataId( Uint32 Id );
 	private:
 		cSprite *	mSprite;
+		eeVector2i	mTilePos;
 };
 
 }}
