@@ -1,6 +1,7 @@
 #include "cuicommondialog.hpp"
 #include "cuimanager.hpp"
 #include "cuilistboxitem.hpp"
+#include "cuithememanager.hpp"
 
 namespace EE { namespace UI {
 
@@ -86,6 +87,13 @@ cUICommonDialog::cUICommonDialog( const cUICommonDialog::CreateParams& Params ) 
 	LBParams.Size = eeSize( Container()->Size().Width() - 12, Container()->Size().Height() - 92 );
 	LBParams.Flags = UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM | UI_CLIP_ENABLE;
 	LBParams.FontSelectedColor = eeColorA( 255, 255, 255, 255 );
+
+	if ( NULL != cUIThemeManager::instance()->DefaultTheme() ) {
+		cUITheme * Theme = cUIThemeManager::instance()->DefaultTheme();
+
+		LBParams.FontSelectedColor = Theme->FontSelectedColor();
+	}
+
 	mList = eeNew( cUIListBox, ( LBParams ) );
 	mList->Visible( true );
 	mList->Enabled( true );
@@ -192,6 +200,10 @@ void cUICommonDialog::RefreshFolder() {
 	}
 
 	mList->AddListBoxItems( files );
+
+	if ( NULL != mList->VerticalScrollBar() ) {
+		mList->VerticalScrollBar()->ClickStep( 1.f / ( ( mList->Count() * mList->RowHeight() ) / (eeFloat)mList->Size().Height() ) );
+	}
 }
 
 void cUICommonDialog::OpenSaveClick() {

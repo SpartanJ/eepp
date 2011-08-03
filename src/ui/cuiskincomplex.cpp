@@ -126,6 +126,9 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 		tShape->Draw( X + dls.Width(), Y + Height - tShape->RealSize().Height(), mTempColor );
 
 		tShape->ResetDestWidthAndHeight();
+
+		if ( dls.Height() == 0 && drs.Height() == 0 )
+			dls.Height( tShape->RealSize().Height() );
 	}
 
 	tShape = mShape[ State ][ Center ];
