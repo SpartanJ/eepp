@@ -123,6 +123,7 @@ void cWaypoints::Speed( const eeFloat& Speed ) {
 		}
 
 		eeFloat TotTime = tdist * mSpeed;
+
 		if ( mLoop ) {
 			tdist += mPoints[ mPoints.size() - 1 ].p.Distance( mPoints[0].p );
 			mPoints[ mPoints.size() - 1 ].t = mPoints[ mPoints.size() - 1 ].p.Distance( mPoints[0].p ) * TotTime / tdist;
@@ -166,7 +167,7 @@ void cWaypoints::Update( const eeFloat& Elapsed ) {
 
 					if ( mOnPathEndCallback.IsSet() ) {
 						mOnPathEndCallback();
-						mOnPathEndCallback = NULL;
+						mOnPathEndCallback.Reset();
 					}
 					return;
 				}

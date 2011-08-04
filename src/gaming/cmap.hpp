@@ -171,6 +171,16 @@ class EE_API cMap {
 		void SetUpdateCallback( MapUpdateCb Cb );
 
 		cTexture * GetBlankTileTexture();
+
+		bool IsTileBlocked( const eeVector2i& TilePos );
+
+		void Data( void * value );
+
+		void * Data() const;
+
+		const bool& IsMouseOver() const;
+
+		cGameObject * IsTypeInTilePos( const Uint32& Type, const eeVector2i& TilePos );
 	protected:
 		Window::cWindow *		mWindow;
 		cLayer**		mLayers;
@@ -200,6 +210,9 @@ class EE_API cMap {
 		cLightManager *	mLightManager;
 		MapDrawCb		mDrawCb;
 		MapUpdateCb		mUpdateCb;
+		void *			mData;
+		bool			mMouseOver;
+		eeColorA		mTileOverColor;
 
 		virtual cGameObject *	CreateGameObject( const Uint32& Type, const Uint32& Flags, cLayer * Layer, const Uint32& DataId = 0 );
 
@@ -224,6 +237,8 @@ class EE_API cMap {
 		void			UpdateScreenAABB();
 
 		void			CreateLightManager();
+
+		virtual void	OnMapLoaded();
 };
 
 }}

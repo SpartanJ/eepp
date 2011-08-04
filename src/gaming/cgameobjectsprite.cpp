@@ -10,7 +10,7 @@ cGameObjectSprite::cGameObjectSprite( const Uint32& Flags, cLayer * Layer, cSpri
 	mSprite( Sprite )
 {
 	if ( NULL != mSprite )
-		mSprite->SetRenderType( RenderTypeFromFlags() );
+		mSprite->RenderType( RenderTypeFromFlags() );
 
 	AssignTilePos();
 }
@@ -99,12 +99,12 @@ cSprite * cGameObjectSprite::Sprite() const {
 void cGameObjectSprite::Sprite( cSprite * sprite ) {
 	eeSAFE_DELETE( mSprite );
 	mSprite = sprite;
-	mSprite->SetRenderType( RenderTypeFromFlags() );
+	mSprite->RenderType( RenderTypeFromFlags() );
 }
 
 void cGameObjectSprite::FlagSet( const Uint32& Flag ) {
 	if ( NULL != mSprite )
-		mSprite->SetRenderType( RenderTypeFromFlags() );
+		mSprite->RenderType( RenderTypeFromFlags() );
 
 	cGameObject::FlagSet( Flag );
 }

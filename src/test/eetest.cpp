@@ -1003,7 +1003,7 @@ void cEETest::Screen2() {
 	SP.Position( alpha, alpha );
 	SP.Draw();
 
-	CL1.SetRenderType( RN_ISOMETRIC );
+	CL1.RenderType( RN_ISOMETRIC );
 
 	if (IntersectRectCircle( CL1.GetAABB(), Mousef.x, Mousef.y, 80.f ))
 		CL1.Color( eeColorA(255, 0, 0, 200) );

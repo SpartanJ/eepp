@@ -3,15 +3,17 @@
 
 namespace EE { namespace Gaming { namespace MapEditor {
 
-cUIMap::cUIMap( const cUIComplexControl::CreateParams& Params ) :
+cUIMap::cUIMap( const cUIComplexControl::CreateParams& Params, cMap * Map ) :
 	cUIComplexControl( Params ),
-	mMap( NULL ),
+	mMap( Map ),
 	mEditingLights( false ),
 	mAddLight( NULL ),
 	mSelLight( NULL )
 {
-	mMap = eeNew( cMap, () );
-	mMap->SetDrawCallback( cb::Make0( this, &cUIMap::MapDraw ) );
+	if ( NULL == Map ) {
+		mMap = eeNew( cMap, () );
+		mMap->SetDrawCallback( cb::Make0( this, &cUIMap::MapDraw ) );
+	}
 }
 
 cUIMap::~cUIMap() {

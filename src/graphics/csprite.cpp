@@ -192,7 +192,10 @@ void cSprite::Reset() {
 	DisableVertexColors();
 }
 
-void cSprite::CurrentFrame (const eeFloat &CurFrame ) {
+void cSprite::CurrentFrame ( eeUint CurFrame ) {
+	if ( CurFrame )
+		CurFrame--;
+
 	mfCurrentFrame = CurFrame;
 	mCurrentFrame = (eeUint)CurFrame;
 
@@ -858,12 +861,20 @@ const eeUint& cSprite::CurrentSubFrame() const {
 	return mCurrentSubFrame;
 }
 
-void cSprite::SetRenderType( const EE_RENDERTYPE& Effect ) {
+void cSprite::RenderType( const EE_RENDERTYPE& Effect ) {
 	mEffect = Effect;
 }
 
-void cSprite::SetRenderAlphas( const EE_PRE_BLEND_FUNC& Blend ) {
+const EE_RENDERTYPE& cSprite::RenderType() const {
+	return mEffect;
+}
+
+void cSprite::BlendMode( const EE_PRE_BLEND_FUNC& Blend ) {
 	mBlend = Blend;
+}
+
+const EE_PRE_BLEND_FUNC& cSprite::BlendMode() const {
+	return mBlend;
 }
 
 void cSprite::ReverseAnim( const bool& Reverse ) {
@@ -889,7 +900,7 @@ void cSprite::GoToAndPlay( Uint32 GoTo ) {
 		GoTo--;
 
 	if ( GoTo < mFrames.size() ) {
-		mCurrentFrame		= GoTo;
+		mCurrentFrame	= GoTo;
 		mfCurrentFrame	= (eeFloat)GoTo;
 
 		AnimPaused( false );

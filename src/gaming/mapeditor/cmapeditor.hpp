@@ -194,6 +194,8 @@ class EE_API cMapEditor {
 		void RefreshGotyList();
 
 		void SetViewOptions();
+
+		cGameObject * GetCurrentGOOver();
 };
 
 }}}

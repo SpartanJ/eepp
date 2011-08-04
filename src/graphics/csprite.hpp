@@ -104,7 +104,7 @@ class EE_API cSprite {
 		void ScaleCentered(const bool& ScaleCentered );
 
 		/** Set the Current Frame */
-		void CurrentFrame( const eeFloat& CurFrame );
+		void CurrentFrame( eeUint CurFrame );
 
 		/** Get the Current Frame */
 		const eeUint& CurrentFrame() const;
@@ -124,10 +124,16 @@ class EE_API cSprite {
 		const eeUint& CurrentSubFrame() const;
 
 		/** Set the Render Type */
-		void SetRenderType( const EE_RENDERTYPE& Effect );
+		void RenderType( const EE_RENDERTYPE& Effect );
+
+		/** Get the Render Type */
+		const EE_RENDERTYPE& RenderType() const;
 
 		/** Set the Blend Mode */
-		void SetRenderAlphas( const EE_PRE_BLEND_FUNC& Blend );
+		void BlendMode( const EE_PRE_BLEND_FUNC& Blend );
+
+		/** Get the Blend Mode */
+		const EE_PRE_BLEND_FUNC& BlendMode() const;
 
 		/** Reset the sprite as a new one. */
 		void Reset();

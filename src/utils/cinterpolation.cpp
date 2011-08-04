@@ -152,7 +152,7 @@ void cInterpolation::Update( const eeFloat& Elapsed ) {
 
 					if ( mOnPathEndCallback.IsSet() ) {
 						mOnPathEndCallback();
-						mOnPathEndCallback = NULL;
+						mOnPathEndCallback.Reset();
 					}
 					return;
 				}

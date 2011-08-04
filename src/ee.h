@@ -71,6 +71,7 @@
 	#include "system/cobjectloader.hpp"
 	#include "system/cresourceloader.hpp"
 	#include "system/tresourcemanager.hpp"
+	#include "system/cpackmanager.hpp"
 	using namespace EE::System;
 
 	// Audio

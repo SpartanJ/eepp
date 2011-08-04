@@ -25,6 +25,8 @@ class EE_API cTileLayer : public cLayer {
 		const eeVector2i& GetCurrentTile() const;
 
 		eeVector2i GetTilePosFromPos( const eeVector2f& Pos );
+
+		eeVector2f GetPosFromTilePos( const eeVector2i& TilePos );
 	protected:
 		friend class cMap;
 

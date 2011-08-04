@@ -167,6 +167,7 @@ HELPERSINC			= -I./src/helper/chipmunk -I./src/helper/zlib
 EXE     			= eetest-$(RELEASETYPE)
 EXEIV				= eeiv-$(RELEASETYPE)
 EXEFLUID			= eefluid-$(RELEASETYPE)
+EXEBNB				= bnb-$(RELEASETYPE)
 
 ifeq ($(OS), haiku)
 SRCGLEW 			= 
@@ -195,6 +196,7 @@ SRCPHYSICS			= $(wildcard ./src/physics/*.cpp) $(wildcard ./src/physics/constrai
 SRCTEST     		= $(wildcard ./src/test/*.cpp)
 SRCEEIV     		= $(wildcard ./src/eeiv/*.cpp)
 SRCFLUID     		= $(wildcard ./src/fluid/*.cpp)
+SRCBNB     			= $(wildcard ./src/bnb/*.cpp)
 
 SRCHELPERS			= $(SRCGLEW) $(SRCSOIL) $(SRCSTBVORBIS) $(SRCZLIB) $(SRCLIBZIP) $(SRCCHIPMUNK)
 SRCMODULES			= $(SRCHAIKUTTF) $(SRCBASE) $(SRCAUDIO) $(SRCGAMING) $(SRCGRAPHICS) $(SRCMATH) $(SRCSYSTEM) $(SRCUI) $(SRCUTILS) $(SRCWINDOW) $(SRCPHYSICS)
@@ -224,6 +226,7 @@ OBJMODULES			= $(OBJHAIKUTTF) $(OBJBASE) $(OBJUTILS) $(OBJMATH) $(OBJSYSTEM) $(O
 OBJTEST     		= $(SRCTEST:.cpp=.o)
 OBJEEIV     		= $(SRCEEIV:.cpp=.o)
 OBJFLUID     		= $(SRCFLUID:.cpp=.o)
+OBJBNB     			= $(SRCBNB:.cpp=.o)
 
 OBJDIR				= obj/$(OS)/$(RELEASETYPE)/
 
@@ -233,8 +236,9 @@ FOBJMODULES			= $(patsubst ./%, $(OBJDIR)%, $(OBJHAIKUTTF) $(OBJBASE) $(OBJUTILS
 FOBJTEST     		= $(patsubst ./%, $(OBJDIR)%, $(SRCTEST:.cpp=.o) )
 FOBJEEIV     		= $(patsubst ./%, $(OBJDIR)%, $(SRCEEIV:.cpp=.o) )
 FOBJFLUID     		= $(patsubst ./%, $(OBJDIR)%, $(SRCFLUID:.cpp=.o) )
+FOBJBNB     		= $(patsubst ./%, $(OBJDIR)%, $(SRCBNB:.cpp=.o) )
 
-FOBJEEPP			= $(FOBJMODULES) $(FOBJTEST) $(FOBJEEIV) $(FOBJFLUID)
+FOBJEEPP			= $(FOBJMODULES) $(FOBJTEST) $(FOBJEEIV) $(FOBJFLUID) $(FOBJBNB)
 FOBJALL 			= $(FOBJHELPERS) $(FOBJEEPP)
 
 DEPSEEPP			= $(FOBJEEPP:.o=.d)
@@ -277,6 +281,7 @@ dirs:
 	@mkdir -p $(OBJDIR)/src/test
 	@mkdir -p $(OBJDIR)/src/eeiv
 	@mkdir -p $(OBJDIR)/src/fluid
+	@mkdir -p $(OBJDIR)/src/bnb
 
 lib: dirs $(LIB)
 
@@ -300,14 +305,21 @@ $(FOBJFLUID):
 	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
 	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
 
-$(EXEFLUID): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJFLUID)
-	$(CPP) -o ./$(EXEFLUID) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJFLUID) $(LDFLAGS) $(LIBS)
+$(FOBJBNB):
+	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
+	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
+
+$(EXE): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJTEST)
+	$(CPP) -o ./$(EXE) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJTEST) $(LDFLAGS) $(LIBS)
 
 $(EXEIV): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJEEIV)
 	$(CPP) -o ./$(EXEIV) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJEEIV) $(LDFLAGS) $(LIBS)
 
-$(EXE): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJTEST)
-	$(CPP) -o ./$(EXE) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJTEST) $(LDFLAGS) $(LIBS)
+$(EXEFLUID): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJFLUID)
+	$(CPP) -o ./$(EXEFLUID) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJFLUID) $(LDFLAGS) $(LIBS)
+
+$(EXEBNB): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJBNB)
+	$(CPP) -o ./$(EXEBNB) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJBNB) $(LDFLAGS) $(LIBS)
 
 libeepp-s.a: $(FOBJHELPERS) $(FOBJMODULES)
 	$(AR) $(ARFLAGS) $(LIBNAME) $(FOBJHELPERS) $(FOBJMODULES)
@@ -324,6 +336,8 @@ eeiv: dirs $(EXEIV)
 
 fluid: dirs $(EXEFLUID)
 
+bnb: dirs $(EXEBNB)
+
 docs:
 	doxygen ./Doxyfile
 
@@ -336,7 +350,9 @@ cleantemp:
 cleanall: clean
 	@rm -rf $(LIBNAME)
 	@rm -rf ./$(EXE)
+	@rm -rf ./$(EXEFLUID)
 	@rm -rf ./$(EXEIV)
+	@rm -rf ./$(EXEBNB)
 	@rm -rf ./log.log
 
 install:

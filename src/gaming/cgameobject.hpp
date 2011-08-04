@@ -46,9 +46,21 @@ class EE_API cGameObject {
 
 		void FlagClear( const Uint32& Flag );
 
-		Uint32 IsBlocked() const;
+		Uint32 Blocked() const;
 
-		Uint32 IsRotated() const;
+		void Blocked( bool blocked );
+
+		Uint32 Rotated() const;
+
+		void Rotated( bool rotated );
+
+		Uint32 Mirrored() const;
+
+		void Mirrored( bool mirrored );
+
+		Uint32 Fliped() const;
+
+		void Fliped( bool fliped );
 
 		virtual Uint32 DataId();
 

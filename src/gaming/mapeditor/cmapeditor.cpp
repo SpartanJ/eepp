@@ -1043,6 +1043,10 @@ void cMapEditor::RemoveGameObject() {
 	tLayer->RemoveGameObject( tMap->GetMouseMapPos() );
 }
 
+cGameObject * cMapEditor::GetCurrentGOOver() {
+	return reinterpret_cast<cTileLayer*>( mCurLayer )->GetGameObject( mUIMap->Map()->GetMouseTilePos() );
+}
+
 void cMapEditor::OnMapMouseClick( const cUIEvent * Event ) {
 	const cUIEventMouse * MEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
 
@@ -1056,6 +1060,30 @@ void cMapEditor::OnMapMouseClick( const cUIEvent * Event ) {
 		} else if ( MEvent->Flags() & EE_BUTTON_RMASK ) {
 			if ( mCurLayer->Type() == MAP_LAYER_OBJECT )
 				RemoveGameObject();
+		} else if ( MEvent->Flags() & EE_BUTTON_MMASK ) {
+			if ( mCurLayer->Type() == MAP_LAYER_TILED ) {
+				cGameObject * tObj = GetCurrentGOOver();
+
+				if ( NULL != tObj ) {
+					tObj->Blocked( !tObj->Blocked() );
+				}
+			}
+		} else if ( MEvent->Flags() & EE_BUTTON_WUMASK ) {
+			if ( mCurLayer->Type() == MAP_LAYER_TILED ) {
+				cGameObject * tObj = GetCurrentGOOver();
+
+				if ( NULL != tObj ) {
+					tObj->Mirrored( !tObj->Mirrored() );
+				}
+			}
+		} else if ( MEvent->Flags() & EE_BUTTON_WDMASK ) {
+			if ( mCurLayer->Type() == MAP_LAYER_TILED ) {
+				cGameObject * tObj = GetCurrentGOOver();
+
+				if ( NULL != tObj ) {
+					tObj->Rotated( !tObj->Rotated() );
+				}
+			}
 		}
 	}
 }

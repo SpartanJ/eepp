@@ -806,3 +806,11 @@ src/bnb/bnb.hpp
 src/bnb/bnb.cpp
 src/bnb/cgame.hpp
 src/bnb/cgame.cpp
+src/bnb/cgameobjectblindy.hpp
+src/bnb/cgameobjectblindy.cpp
+src/bnb/cgamemap.hpp
+src/bnb/cgamemap.cpp
+src/bnb/cgamedata.hpp
+src/bnb/cgamedata.cpp
+src/bnb/cgameobjectdoor.hpp
+src/bnb/cgameobjectdoor.cpp

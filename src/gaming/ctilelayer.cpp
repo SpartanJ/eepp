@@ -45,7 +45,7 @@ void cTileLayer::cTileLayer::Draw( const eeVector2f &Offset ) {
 		for ( Int32 x = start.x; x < end.x; x++ ) {
 			for ( Int32 y = start.y; y < end.y; y++ ) {
 				if ( NULL != mTiles[x][y] ) {
-					if ( mTiles[x][y]->IsBlocked() ) {
+					if ( mTiles[x][y]->Blocked() ) {
 						Tex->Draw( x * mMap->TileSize().x, y * mMap->TileSize().y, 0 , 1, eeColorA( 255, 0, 0, 200 ) );
 					}
 				}
@@ -135,7 +135,11 @@ const eeVector2i& cTileLayer::GetCurrentTile() const {
 }
 
 eeVector2i cTileLayer::GetTilePosFromPos( const eeVector2f& Pos ) {
-	return eeVector2i( ( (Int32)Pos.x + mOffset.x ) / mMap->TileSize().x, ( (Int32)Pos.y + mOffset.y ) / mMap->TileSize().y );
+	return eeVector2i( ( (Int32)Pos.x + mOffset.x ) / mMap->TileSize().Width(), ( (Int32)Pos.y + mOffset.y ) / mMap->TileSize().Height() );
+}
+
+eeVector2f cTileLayer::GetPosFromTilePos( const eeVector2i& TilePos ) {
+	return eeVector2f( TilePos.x * mMap->TileSize().Width() + mOffset.x, TilePos.y * mMap->TileSize().Height() + mOffset.y );
 }
 
 }}

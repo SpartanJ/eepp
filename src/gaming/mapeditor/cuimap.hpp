@@ -16,7 +16,7 @@ class cUIMap : public cUIComplexControl {
 		typedef cb::Callback1<void, cLight *> LightSelectCb;
 		typedef cb::Callback1<void, cLight *> LightRadiusChangeCb;
 
-		cUIMap( const cUIComplexControl::CreateParams& Params );
+		cUIMap( const cUIComplexControl::CreateParams& Params, cMap * Map = NULL );
 
 		virtual ~cUIMap();
 

@@ -38,7 +38,7 @@ class EE_API cGameObjectSprite : public cGameObject {
 		virtual Uint32 DataId();
 
 		virtual void DataId( Uint32 Id );
-	private:
+	protected:
 		cSprite *	mSprite;
 		eeVector2i	mTilePos;
 };

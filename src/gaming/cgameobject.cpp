@@ -45,12 +45,36 @@ void cGameObject::FlagClear( const Uint32& Flag ) {
 	}
 }
 
-Uint32 cGameObject::IsBlocked() const {
+Uint32 cGameObject::Blocked() const {
 	return mFlags & GObjFlags::GAMEOBJECT_BLOCKED;
 }
 
-Uint32 cGameObject::IsRotated() const {
+void cGameObject::Blocked( bool blocked ) {
+	blocked ? FlagSet( GObjFlags::GAMEOBJECT_BLOCKED ) : FlagClear( GObjFlags::GAMEOBJECT_BLOCKED );
+}
+
+Uint32 cGameObject::Rotated() const {
 	return mFlags & GObjFlags::GAMEOBJECT_ROTATE_90DEG;
+}
+
+void cGameObject::Rotated( bool rotated ) {
+	rotated ? FlagSet( GObjFlags::GAMEOBJECT_ROTATE_90DEG ) : FlagClear( GObjFlags::GAMEOBJECT_ROTATE_90DEG );
+}
+
+Uint32 cGameObject::Mirrored() const {
+	return mFlags & GObjFlags::GAMEOBJECT_MIRRORED;
+}
+
+void cGameObject::Mirrored( bool mirrored ) {
+	mirrored ? FlagSet( GObjFlags::GAMEOBJECT_MIRRORED ) : FlagClear( GObjFlags::GAMEOBJECT_MIRRORED );
+}
+
+Uint32 cGameObject::Fliped() const {
+	return mFlags & GObjFlags::GAMEOBJECT_FLIPED;
+}
+
+void cGameObject::Fliped( bool fliped ) {
+	fliped ? FlagSet( GObjFlags::GAMEOBJECT_FLIPED ) : FlagClear( GObjFlags::GAMEOBJECT_FLIPED );
 }
 
 void cGameObject::Draw() {
@@ -113,12 +137,13 @@ void cGameObject::AutoFixTilePos() {
 
 		AssignTilePos();
 
-		if ( CurPos != TilePos() ) {
+		eeVector2i NewPos = TilePos();
+
+		if ( CurPos != NewPos ) {
 			cTileLayer * TLayer = static_cast<cTileLayer *> ( mLayer );
 
 			if ( TLayer->GetGameObject( CurPos ) == this ) {
-				TLayer->RemoveGameObject( CurPos );
-				TLayer->AddGameObject( this, TilePos() );
+				TLayer->MoveTileObject( CurPos, NewPos );
 			}
 		}
 	}
@@ -131,7 +156,7 @@ void cGameObject::AssignTilePos() {
 }
 
 eeFloat cGameObject::GetAngle() {
-	return IsRotated() ? 90 : 0;
+	return Rotated() ? 90 : 0;
 }
 
 }}

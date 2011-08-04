@@ -25,7 +25,10 @@ cMap::cMap() :
 	mViewSize( 800, 600 ),
 	mBaseColor( 255, 255, 255, 255 ),
 	mTileTex( NULL ),
-	mLightManager( NULL )
+	mLightManager( NULL ),
+	mData( NULL ),
+	mMouseOver( false ),
+	mTileOverColor( 255, 0, 0, 200 )
 {
 	ViewSize( mViewSize );
 }
@@ -39,8 +42,10 @@ void cMap::Reset() {
 
 	mWindow = NULL;
 	mLayers = NULL;
+	mData = NULL;
 	mFlags	= 0;
 	mMaxLayers	= 0;
+	mMouseOver = false;
 	mViewSize = eeSize( 800, 600 );
 	mBaseColor = eeColorA( 255, 255, 255, 255 );
 }
@@ -209,7 +214,7 @@ void cMap::MouseOverDraw() {
 	if ( !DrawTileOver() || NULL == mTileTex )
 		return;
 
-	mTileTex->Draw( mOffsetFixed.x + mMouseOverTileFinal.x * mTileSize.x, mOffsetFixed.y + mMouseOverTileFinal.y * mTileSize.y, 0, 1, eeColorA( 255, 0, 0, 200 ) );
+	mTileTex->Draw( mOffsetFixed.x + mMouseOverTileFinal.x * mTileSize.x, mOffsetFixed.y + mMouseOverTileFinal.y * mTileSize.y, 0, 1, mTileOverColor );
 }
 
 void cMap::GridDraw() {
@@ -253,10 +258,16 @@ void cMap::GridDraw() {
 	GLi->PopMatrix();
 }
 
+const bool& cMap::IsMouseOver() const {
+	return mMouseOver;
+}
+
 void cMap::GetMouseOverTile() {
 	eeVector2i mouse = mWindow->GetInput()->GetMousePos();
 
 	eeVector2i MapPos( mouse.x - mScreenPos.x - mOffset.x, mouse.y - mScreenPos.y - mOffset.y );
+
+	mMouseOver = !( MapPos.x < 0 || MapPos.y < 0 || MapPos.x > mPixelSize.x || MapPos.y > mPixelSize.y );
 
 	MapPos.x = eemax( MapPos.x, 0 );
 	MapPos.y = eemax( MapPos.y, 0 );
@@ -822,6 +833,8 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 				}
 			}
 
+			OnMapLoaded();
+
 			return true;
 		}
 	}
@@ -1140,6 +1153,52 @@ void cMap::SetUpdateCallback( MapUpdateCb Cb ) {
 
 cTexture * cMap::GetBlankTileTexture() {
 	return mTileTex;
+}
+
+bool cMap::IsTileBlocked( const eeVector2i& TilePos ) {
+	cTileLayer * TLayer;
+	cGameObject * TObj;
+
+	for ( Uint32 i = 0; i < mLayerCount; i++ ) {
+		if ( mLayers[i]->Type() == MAP_LAYER_TILED ) {
+			TLayer	= static_cast<cTileLayer*>( mLayers[i] );
+			TObj	= TLayer->GetGameObject( TilePos );
+
+			if ( NULL != TObj && TObj->Blocked() ) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+void cMap::Data( void * value ) {
+	mData = value;
+}
+
+void * cMap::Data() const {
+	return mData;
+}
+
+void cMap::OnMapLoaded() {
+}
+
+cGameObject * cMap::IsTypeInTilePos( const Uint32& Type, const eeVector2i& TilePos ) {
+	for ( Uint32 i = 0; i < mLayerCount; i++ ) {
+		if ( mLayers[i]->Type() == MAP_LAYER_TILED ) {
+			cTileLayer * tLayer = reinterpret_cast<cTileLayer*> ( mLayers[i] );
+			cGameObject * tObj = NULL;
+
+			if ( ( tObj = tLayer->GetGameObject( TilePos ) ) ) {
+				if ( tObj->Type() == Type ) {
+					return tObj;
+				}
+			}
+		}
+	}
+
+	return NULL;
 }
 
 }}

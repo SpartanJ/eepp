@@ -194,7 +194,7 @@
     <value key="ProjectExplorer.BuildConfiguration.ClearSystemEnvironment" type="bool">false</value>
     <valuelist key="ProjectExplorer.BuildConfiguration.UserEnvironmentChanges" type="QVariantList"/>
     <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString">debug-test</value>
-    <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString">bnb-test</value>
+    <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString">debug-bnb</value>
     <value key="ProjectExplorer.ProjectConfiguration.Id" type="QString">GenericProjectManager.GenericBuildConfiguration</value>
    </valuemap>
    <valuemap key="ProjectExplorer.Target.BuildConfiguration.12" type="QVariantMap">
@@ -233,7 +233,7 @@
     <value key="ProjectExplorer.BuildConfiguration.ClearSystemEnvironment" type="bool">false</value>
     <valuelist key="ProjectExplorer.BuildConfiguration.UserEnvironmentChanges" type="QVariantList"/>
     <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString">release-test</value>
-    <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString">bnb-release</value>
+    <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString">release-bnb</value>
     <value key="ProjectExplorer.ProjectConfiguration.Id" type="QString">GenericProjectManager.GenericBuildConfiguration</value>
    </valuemap>
    <valuemap key="ProjectExplorer.Target.BuildConfiguration.2" type="QVariantMap">
