@@ -196,9 +196,10 @@ void cInterpolation::SetTotalTime( const eeFloat TotTime ) {
 	}
 }
 
-void cInterpolation::Speed( const eeFloat speed ) {
-	eeFloat tdist	= mTotDist;
-	mSpeed	= speed;
+void cInterpolation::Speed( const eeFloat Speed ) {
+	eeFloat tdist = mTotDist;
+	mSpeed = Speed;
+	eeFloat CurDist;
 
 	if ( mPoints.size() ) {
 		if ( tdist == 0.0f ) {
@@ -206,15 +207,18 @@ void cInterpolation::Speed( const eeFloat speed ) {
 			return;
 		}
 
-		eeFloat TotTime = tdist * mSpeed;
+		eeFloat TotTime = tdist * ( 1000.f / mSpeed );
+
 		if ( mLoop ) {
-			tdist += eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p );
-			mPoints[ mPoints.size() - 1 ].t = eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p ) * TotTime / tdist;
-			TotTime = tdist * mSpeed;
+			CurDist = eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p );
+			tdist += CurDist;
+
+			mPoints[ mPoints.size() - 1 ].t = CurDist * TotTime / tdist;
+			TotTime = tdist * ( 1000.f / mSpeed );
 		}
 
 		for ( eeUint i = 0; i < mPoints.size() - 1; i++) {
-			eeFloat CurDist = eeabs( mPoints[i].p - mPoints[i + 1].p );
+			CurDist = eeabs( mPoints[i].p - mPoints[i + 1].p );
 			mPoints[i].t = CurDist * TotTime / tdist;
 		}
 	}
@@ -226,6 +230,46 @@ void cInterpolation::Type( EE_INTERPOLATION InterpolationType ) {
 
 const eeInt& cInterpolation::Type() const {
 	return mType;
+}
+
+const bool& cInterpolation::Loop() const {
+	return mLoop;
+}
+
+void cInterpolation::Loop( const bool& loop ) {
+	mLoop = loop;
+}
+
+const bool& cInterpolation::Ended() const {
+	return mEnded;
+}
+
+cPoint1df * cInterpolation::GetCurrentActual() const {
+	return mActP;
+}
+
+cPoint1df * cInterpolation::GetCurrentNext() const {
+	return mNexP;
+}
+
+const Uint32& cInterpolation::GetCurrentPos() const {
+	return mCurPoint;
+}
+
+const std::vector<cPoint1df>& cInterpolation::GetPoints() const {
+	return mPoints;
+}
+
+const eeFloat& cInterpolation::Speed() const {
+	return mSpeed;
+}
+
+const bool& cInterpolation::Enabled() const {
+	return mEnable;
+}
+
+void cInterpolation::Enabled( const bool& Enabled ) {
+	mEnable = Enabled;
 }
 
 }}

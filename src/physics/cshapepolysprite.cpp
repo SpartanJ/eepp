@@ -25,7 +25,8 @@ cShapePolySprite::cShapePolySprite( cBody * body, cpFloat width, cpFloat height,
 	mSprite( Sprite ),
 	mSpriteAutoDelete( AutoDeleteSprite )
 {
-	mSprite->UpdateSize( width, height );
+	mSprite->Width( width );
+	mSprite->Height( height );
 	OffsetSet( cVectNew( width / 2, height / 2 ) );
 }
 
@@ -37,7 +38,8 @@ cShapePolySprite::~cShapePolySprite() {
 void cShapePolySprite::Draw( cSpace * space ) {
 	cVect Pos = Body()->Pos();
 
-	mSprite->Update( Pos.x, Pos.y, 1.0f, Body()->AngleDeg() );
+	mSprite->Position( Pos.x, Pos.y );
+	mSprite->Angle( Body()->AngleDeg() );
 	mSprite->Draw();
 }
 

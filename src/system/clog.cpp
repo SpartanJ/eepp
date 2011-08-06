@@ -113,7 +113,16 @@ const bool& cLog::ConsoleOutput() const {
 }
 
 void cLog::ConsoleOutput( const bool& output ) {
+	bool OldOutput = mConsoleOutput;
+
 	mConsoleOutput = output;
+
+	if ( !OldOutput && output ) {
+		std::string data( mData );
+		mData = "";
+		Write( data, false );
+	}
+
 }
 
 const bool& cLog::LiveWrite() const {

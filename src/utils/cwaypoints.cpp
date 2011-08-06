@@ -112,9 +112,9 @@ bool cWaypoints::EraseWaypoint( const eeUint& PointNum ) {
 }
 
 void cWaypoints::Speed( const eeFloat& Speed ) {
-	eeUint i;
 	eeFloat tdist = mTotDist;
 	mSpeed = Speed;
+	eeFloat CurDist;
 
 	if ( mPoints.size() ) {
 		if ( tdist == 0.0f ) {
@@ -122,16 +122,18 @@ void cWaypoints::Speed( const eeFloat& Speed ) {
 			return;
 		}
 
-		eeFloat TotTime = tdist * mSpeed;
+		eeFloat TotTime = tdist * ( 1000.f / mSpeed );
 
 		if ( mLoop ) {
-			tdist += mPoints[ mPoints.size() - 1 ].p.Distance( mPoints[0].p );
-			mPoints[ mPoints.size() - 1 ].t = mPoints[ mPoints.size() - 1 ].p.Distance( mPoints[0].p ) * TotTime / tdist;
-			TotTime = tdist * mSpeed;
+			CurDist = mPoints[ mPoints.size() - 1 ].p.Distance( mPoints[0].p );
+			tdist += CurDist;
+
+			mPoints[ mPoints.size() - 1 ].t = CurDist * TotTime / tdist;
+			TotTime = tdist * ( 1000.f / mSpeed );
 		}
 
-		for (i = 0; i < mPoints.size() - 1; i++) {
-			eeFloat CurDist = mPoints[i].p.Distance( mPoints[i + 1].p );
+		for ( eeUint i = 0; i < mPoints.size() - 1; i++) {
+			CurDist = mPoints[i].p.Distance( mPoints[i + 1].p );
 			mPoints[i].t = CurDist * TotTime / tdist;
 		}
 	}
@@ -220,6 +222,46 @@ void cWaypoints::Type( EE_INTERPOLATION InterpolationType ) {
 
 const eeInt& cWaypoints::Type() const {
 	return mType;
+}
+
+bool cWaypoints::Loop() const {
+	return mLoop;
+}
+
+void cWaypoints::Loop( const bool& loop ) {
+	mLoop = loop;
+}
+
+bool cWaypoints::Ended() const {
+	return mEnded;
+}
+
+cWaypoint * cWaypoints::GetCurrentActual() const {
+	return mActP;
+}
+
+cWaypoint * cWaypoints::GetCurrentNext() const {
+	return mNexP;
+}
+
+const Uint32& cWaypoints::GetCurrentPos() const {
+	return mCurPoint;
+}
+
+const std::vector<cWaypoint>& cWaypoints::GetWaypoints() const {
+	return mPoints;
+}
+
+const eeFloat& cWaypoints::Speed() const {
+	return mSpeed;
+}
+
+const bool& cWaypoints::Enabled() const {
+	return mEnable;
+}
+
+void cWaypoints::Enabled( const bool& Enabled ) {
+	mEnable = Enabled;
 }
 
 }}

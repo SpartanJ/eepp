@@ -4,8 +4,8 @@ void cEETest::Init() {
 	EE = cEngine::instance();
 
 	#ifdef EE_DEBUG
-	cLog::instance()->ConsoleOutput( true );
 	cLog::instance()->LiveWrite( true );
+	cLog::instance()->ConsoleOutput( true );
 	#endif
 
 	run 				= false;

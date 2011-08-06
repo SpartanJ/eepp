@@ -272,18 +272,6 @@ void cSprite::Position( const eeVector2f& NewPos ) {
 	mPos = NewPos;
 }
 
-void cSprite::UpdateSize( const eeFloat& Width, const eeFloat& Height, const eeUint& FrameNum ) {
-	eeUint FN;
-	if ( FrameNum >= mFrames.size() )
-		FN = mCurrentFrame;
-	else
-		FN = FrameNum;
-
-	cShape* S = mFrames[FN].Spr[mCurrentSubFrame];
-	S->DestWidth( Width );
-	S->DestHeight( Height );
-}
-
 void cSprite::UpdateVertexColors( const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3 ) {
 	if ( NULL == mVertexColors )
 		mVertexColors		= eeNewArray( eeColorA, 4 );
@@ -296,23 +284,6 @@ void cSprite::UpdateVertexColors( const eeColorA& Color0, const eeColorA& Color1
 
 void cSprite::DisableVertexColors() {
 	eeSAFE_DELETE_ARRAY( mVertexColors );
-}
-
-void cSprite::Update( const eeFloat& x, const eeFloat& y, const eeFloat& Scale, const eeFloat& Angle, const Uint8& Alpha, const eeColorA& Color ) {
-	mPos.x = x;
-	mPos.y = y;
-	mScale = Scale;
-	mAngle = Angle;
-	mColor = Color;
-
-	this->Alpha(Alpha);
-}
-
-Uint32 cSprite::GetTexture(const eeUint& FrameNum, const eeUint& SubFrameNum) {
-	if ( FrameNum < mFrames.size() && SubFrameNum < mSubFrames )
-		return mFrames[FrameNum].Spr[SubFrameNum]->GetTexture()->Id();
-
-	return 0;
 }
 
 eeUint cSprite::FramePos() {
@@ -457,18 +428,21 @@ bool cSprite::AddSubFrame(const Uint32& TexId, const eeUint& NumFrame, const eeU
 	return true;
 }
 
-void cSprite::Animate( const eeFloat& ElapsedTime ) {
-	if ( mFrames.size() > 1 && SPR_FGET( SPRITE_FLAG_AUTO_ANIM ) && !SPR_FGET( SPRITE_FLAG_ANIM_PAUSED ) && 0.f != ElapsedTime ) {
+void cSprite::Update() {
+	Update( (eeFloat)cEngine::instance()->Elapsed() );
+}
+
+void cSprite::Update( const eeFloat& ElapsedTime ) {
+	if ( mFrames.size() > 1 && !SPR_FGET( SPRITE_FLAG_ANIM_PAUSED ) && 0 != ElapsedTime ) {
 		eeUint Size		= (eeUint)mFrames.size() - 1;
-		eeFloat Elapsed = ( ElapsedTime != -99999.f ) ? (eeFloat)ElapsedTime : (eeFloat)cEngine::instance()->Elapsed();
 
 		if ( mRepeations == 0 )
 			return;
 
 		if ( !SPR_FGET( SPRITE_FLAG_REVERSE_ANIM ) )
-			mfCurrentFrame += ( ( mAnimSpeed * Elapsed ) / 1000.f );
+			mfCurrentFrame += ( ( mAnimSpeed * ElapsedTime ) / 1000.f );
 		else
-			mfCurrentFrame -= ( ( mAnimSpeed * Elapsed ) / 1000.f );
+			mfCurrentFrame -= ( ( mAnimSpeed * ElapsedTime ) / 1000.f );
 
 		mCurrentFrame = (eeUint)mfCurrentFrame;
 
@@ -552,8 +526,9 @@ void cSprite::SetReverseFromStart() {
 	mCurrentFrame = Size;
 }
 
-void cSprite::Draw( const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect, const eeFloat& ElapsedTime ) {
-	Animate( ElapsedTime );
+void cSprite::Draw( const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect ) {
+	if ( SPR_FGET( SPRITE_FLAG_AUTO_ANIM ) )
+		Update();
 
 	cShape * S = GetCurrentShape();
 
@@ -567,15 +542,15 @@ void cSprite::Draw( const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect,
 }
 
 void cSprite::Draw() {
-	Draw(mBlend, mEffect);
+	Draw( mBlend, mEffect );
 }
 
 void cSprite::Draw( const EE_PRE_BLEND_FUNC& Blend ) {
-	Draw(Blend, mEffect);
+	Draw( Blend, mEffect );
 }
 
 void cSprite::Draw( const EE_RENDERTYPE& Effect ) {
-	Draw(mBlend, Effect);
+	Draw( mBlend, Effect );
 }
 
 eeUint cSprite::GetFrame( const eeUint& FrameNum ) {
@@ -641,31 +616,43 @@ void cSprite::OffSet( const eeVector2i& offset ) {
 	}
 }
 
-void cSprite::UpdateSprRECT( const eeRecti& R, const eeUint& FrameNum, const eeUint& SubFrame ) {
-	mFrames[ GetFrame(FrameNum) ].Spr[ GetSubFrame(SubFrame) ]->SrcRect( R );
-}
-
 void cSprite::Width( const eeFloat& Width, const eeUint& FrameNum, const eeUint& SubFrame ) {
 	mFrames[ GetFrame(FrameNum) ].Spr[ GetSubFrame(SubFrame) ]->DestWidth( Width );
+}
+
+void cSprite::Width( const eeFloat& Width ) {
+	mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ]->DestWidth( Width );
 }
 
 eeFloat cSprite::Width( const eeUint& FrameNum, const eeUint& SubFrame ) {
 	return mFrames[ GetFrame(FrameNum) ].Spr[ GetSubFrame(SubFrame) ]->DestWidth();
 }
 
+eeFloat cSprite::Width() {
+	return mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ]->DestWidth();
+}
+
 void cSprite::Height( const eeFloat& Height, const eeUint& FrameNum, const eeUint& SubFrame ) {
 	mFrames[ GetFrame(FrameNum) ].Spr[ GetSubFrame(SubFrame) ]->DestHeight( Height );
+}
+
+void cSprite::Height( const eeFloat& Height ) {
+	mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ]->DestHeight( Height );
 }
 
 eeFloat cSprite::Height( const eeUint& FrameNum, const eeUint& SubFrame ) {
 	return mFrames[ GetFrame(FrameNum) ].Spr[ GetSubFrame(SubFrame) ]->DestHeight();
 }
 
+eeFloat cSprite::Height() {
+	return mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ]->DestHeight();
+}
+
 void cSprite::SetRepeations( const int& Repeations ) {
 	mRepeations = Repeations;
 }
 
-void cSprite::SetAutoAnimate( const bool& Autoanim ) {
+void cSprite::AutoAnimate( const bool& Autoanim ) {
 	if ( Autoanim ) {
 		if ( !SPR_FGET( SPRITE_FLAG_AUTO_ANIM ) )
 			mFlags |= SPRITE_FLAG_AUTO_ANIM;
@@ -674,6 +661,10 @@ void cSprite::SetAutoAnimate( const bool& Autoanim ) {
 			mFlags &= ~SPRITE_FLAG_AUTO_ANIM;
 	}
 
+}
+
+bool cSprite::AutoAnimate() const {
+	return 0 != SPR_FGET( SPRITE_FLAG_AUTO_ANIM );
 }
 
 eeQuad2f cSprite::GetQuad() {

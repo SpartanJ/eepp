@@ -24,12 +24,14 @@ cShapeCircleSprite::~cShapeCircleSprite() {
 void cShapeCircleSprite::Draw( cSpace * space ) {
 	cVect Pos = Body()->Pos();
 
-	mSprite->Update( Pos.x, Pos.y, 1.0f, Body()->AngleDeg() );
+	mSprite->Position( Pos.x, Pos.y );
+	mSprite->Angle( Body()->AngleDeg() );
 	mSprite->Draw();
 }
 
 void cShapeCircleSprite::OffsetSet() {
-	mSprite->UpdateSize( cShapeCircle::Radius() * 2, cShapeCircle::Radius() * 2 );
+	mSprite->Width( cShapeCircle::Radius() * 2 );
+	mSprite->Height( cShapeCircle::Radius() * 2 );
 	mSprite->OffSetX( -cShapeCircle::Radius() + cShapeCircle::Offset().x );
 	mSprite->OffSetY( -cShapeCircle::Radius() + cShapeCircle::Offset().y );
 }

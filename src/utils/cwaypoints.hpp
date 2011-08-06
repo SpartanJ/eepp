@@ -21,6 +21,7 @@ typedef Waypoint<eeFloat> cWaypoint;
 class EE_API cWaypoints {
 	public:
 		cWaypoints();
+
 		~cWaypoints();
 
 		typedef cb::Callback0<void> OnPathEndCallback;
@@ -60,42 +61,43 @@ class EE_API cWaypoints {
 		const eeVector2f& GetPos();
 
 		/** @return If movement interpolation is a loop */
-		bool Loop() const { return mLoop; }
+		bool Loop() const;
+
 		/** Set if loop the movement interpolation */
-		void Loop( const bool& loop ) { mLoop = loop; }
+		void Loop( const bool& loop );
 
 		/** Clear all the waypoints */
 		void ClearWaypoints();
 
 		/** @return If the animation ended */
-		bool Ended() const { return mEnded; }
+		bool Ended() const;
 
 		/** Instead if setting the time between every waypoing, this set a total time for all the movement interpolation. */
 		void SetTotalTime( const eeFloat& TotTime );
 
 		/** @return The Current Node */
-		cWaypoint* GetCurrentActual() const	{ return mActP; }
+		cWaypoint * GetCurrentActual() const;
 
 		/** @return The Next Node */
-		cWaypoint* GetCurrentNext() const { return mNexP; }
+		cWaypoint * GetCurrentNext() const;
 
 		/** @return The Current Position in the vector */
-		const Uint32& GetCurrentPos() const { return mCurPoint; }
+		const Uint32& GetCurrentPos() const;
 
 		/** @return the vector of waypoints */
-		const std::vector<cWaypoint>* GetWaypoints() { return &mPoints; }
+		const std::vector<cWaypoint>& GetWaypoints() const;
 
-		/** Set the current interpolation speed ( This will destroy the time of the interpolation and create one depending on the speed ) */
+		/** Set the current interpolation speed ( This will destroy the time of the interpolation and create one depending on the speed ) ( pixels per second ) */
 		void Speed( const eeFloat& Speed );
 
 		/** Get the current interpolation speed */
-		const eeFloat& Speed() const { return mSpeed; }
+		const eeFloat& Speed() const;
 
 		/** @return If enabled */
-		bool& Enabled() { return mEnable; }
+		const bool& Enabled() const;
 
 		/** Set it enabled or not */
-		void Enabled( const bool& Enabled ) { mEnable = Enabled; }
+		void Enabled( const bool& Enabled );
 
 		/** Set the type of interpolation to be used */
 		void Type( EE_INTERPOLATION InterpolationType );

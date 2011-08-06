@@ -61,42 +61,42 @@ class EE_API cInterpolation {
 		const eeFloat& GetRealPos() const;
 
 		/** @return If movement interpolation is a loop */
-		const bool&	Loop() const { return mLoop; }
+		const bool&	Loop() const;
 
 		/** Set if loop the movement interpolation */
-		void Loop( const bool& loop ) { mLoop = loop; }
+		void Loop( const bool& loop );
 
 		/** Clear all the points */
 		void ClearWaypoints();
 
 		/** @return If the animation ended */
-		const bool& Ended() const { return mEnded; }
+		const bool& Ended() const;
 
 		/** Set the current interpolation speed */
-		void Speed( const eeFloat speed );
+		void Speed( const eeFloat Speed );
 
 		/** Get the current interpolation speed */
-		const eeFloat& Speed() const { return mSpeed; }
+		const eeFloat& Speed() const;
 
 		/** @return If enabled */
-		const bool& Enabled() { return mEnable; }
+		const bool& Enabled() const;
 
-		void Enabled( const bool enabled ) { mEnable = enabled; }
+		void Enabled( const bool& Enabled );
 
 		/** Instead if setting the time between every waypoing, this set a total time for all the movement interpolation. */
 		void SetTotalTime( const eeFloat TotTime );
 
 		/** @return the vector of points */
-		const std::vector<cPoint1df>& GetPoints() const { return mPoints; }
+		const std::vector<cPoint1df>& GetPoints() const;
 
 		/** @return The Current Node */
-		cPoint1df* GetCurrentActual() const	{ return mActP; }
+		cPoint1df* GetCurrentActual() const;
 
 		/** @return The Next Node */
-		cPoint1df* GetCurrentNext() const { return mNexP; }
+		cPoint1df* GetCurrentNext() const;
 
 		/** @return The Current Position in the vector */
-		const eeUint& GetCurrentPos() const { return mCurPoint; }
+		const eeUint& GetCurrentPos() const;
 
 		/** @return The path end position */
 		const eeFloat& GetEndPos();

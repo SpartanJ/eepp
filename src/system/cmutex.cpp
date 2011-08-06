@@ -6,7 +6,10 @@ cMutex::cMutex() {
 	#if EE_PLATFORM == EE_PLATFORM_WIN
 	InitializeCriticalSection(&mMutex);
 	#elif defined( EE_PLATFORM_POSIX )
-	pthread_mutex_init(&mMutex, NULL);
+	pthread_mutexattr_t attributes;
+	pthread_mutexattr_init(&attributes);
+	pthread_mutexattr_settype(&attributes, PTHREAD_MUTEX_RECURSIVE);
+	pthread_mutex_init(&mMutex, &attributes);
 	#endif
 }
 

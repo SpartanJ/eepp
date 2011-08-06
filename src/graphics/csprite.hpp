@@ -27,7 +27,7 @@ class EE_API cSprite {
 
 		cSprite( const Uint32& TexId, const eeFloat& DestWidth = 0, const eeFloat& DestHeight = 0, const eeFloat& offSetX = 0, const eeFloat& offSetY = 0, const eeRecti& TexSector = eeRecti(0,0,0,0) );
 
-		~cSprite();
+		virtual ~cSprite();
 
 		cSprite& operator =( const cSprite& Other );
 
@@ -59,10 +59,16 @@ class EE_API cSprite {
 		* @param FrameNum If the Frame Number is 0 use the Current Frame Number
 		* @param SubFrame If the Sub Frame Number is 0 use the Current Sub Frame Number
 		*/
-		void Width( const eeFloat& Width, const eeUint& FrameNum = 0, const eeUint& SubFrame = 0 );
+		void Width( const eeFloat& Width, const eeUint& FrameNum, const eeUint& SubFrame);
+
+		/** Set the current Shape Width */
+		void Width( const eeFloat& Width );
 
 		/** Get the Frame Number Sprite Width */
-		eeFloat Width( const eeUint& FrameNum = 0, const eeUint& SubFrame = 0 );
+		eeFloat Width( const eeUint& FrameNum, const eeUint& SubFrame );
+
+		/** Get the current Frame Width */
+		eeFloat Width();
 
 		/** Set the Frame Number Sprite Height
 		* @param FrameNum If the Frame Number is 0 use the Current Frame Number
@@ -70,8 +76,14 @@ class EE_API cSprite {
 		*/
 		void Height( const eeFloat& Height, const eeUint& FrameNum, const eeUint& SubFrame );
 
+		/** Set the current Frame Width */
+		void Height( const eeFloat& Height );
+
 		/** Get the Frame Number Sprite Height */
-		eeFloat Height( const eeUint& FrameNum = 0, const eeUint& SubFrame = 0 );
+		eeFloat Height( const eeUint& FrameNum, const eeUint& SubFrame );
+
+		/** Get the current Frame Width */
+		eeFloat Height();
 
 		/** Set the sprite animation speed ( AnimSpeed equals to Animation Frames per Second ) */
 		void AnimSpeed( const eeFloat& AnimSpeed );
@@ -101,7 +113,7 @@ class EE_API cSprite {
 		bool ScaleCentered() const;
 
 		/** Set if the sprite it's scaled centered or scaled from the Left - Top position of the sprite ( default True ) */
-		void ScaleCentered(const bool& ScaleCentered );
+		void ScaleCentered( const bool& ScaleCentered );
 
 		/** Set the Current Frame */
 		void CurrentFrame( eeUint CurFrame );
@@ -141,17 +153,14 @@ class EE_API cSprite {
 		/** @return The AABB (axis-aligned bounding box) */
 		eeAABB GetAABB();
 
-		/** Update the sprite position */
+		/** Set the sprite position */
 		void Position( const eeFloat& x, const eeFloat& y );
 
-		/** Update the sprite position from a Vector */
+		/** Set the sprite position from a Vector */
 		void Position( const eeVector2f& NewPos );
 
 		/** @return The Position of the sprite */
 		const eeVector2f Position() const;
-
-		/** Update the sprite size of a frame number */
-		void UpdateSize( const eeFloat& Width, const eeFloat& Height, const eeUint& FrameNum = 0 );
 
 		/** Update the colors of every vertex rendered of the sprite ( this will override the default color )
 		* @param Color0 The Left - Top vertex color
@@ -163,23 +172,6 @@ class EE_API cSprite {
 
 		/** This will disable the vertex colors */
 		void DisableVertexColors();
-
-		/** Update the sprite
-		* @param x Set the x axis position
-		* @param y Set the y axis position
-		* @param Scale Set the Scale
-		* @param Angle Set the Angle
-		* @param Alpha Set the Color Alpha
-		* @param Color Set the Color
-		*/
-		void Update( const eeFloat& x, const eeFloat& y, const eeFloat& Scale = 1.0f, const eeFloat& Angle = 0.0f, const Uint8& Alpha = 255, const eeColorA& Color = eeColorA() );
-
-		/** Get the internal texture id from a frame number and a sub frame number
-		* @param FrameNum The Frame Number
-		* @param SubFrameNum The Sub Frame Number
-		* @return The Internal Texture Id
-		*/
-		Uint32 GetTexture( const eeUint& FrameNum = 0, const eeUint& SubFrameNum = 0 );
 
 		/** Creates an static sprite (no animation)
 		* @param Shape The sprite shape
@@ -257,9 +249,8 @@ class EE_API cSprite {
 		/** Draw the sprite to the screen forcing the Blend Mode and the Render Type
 		* @param Blend The Blend Mode
 		* @param Effect The Render Type
-		* @param ElapsedTime The Elapsed Time for the animation ( -99999.f will take the elapsed time counted by the engine )
 		*/
-		void Draw( const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect, const eeFloat& ElapsedTime = -99999.f );
+		void Draw( const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect );
 
 		/** Draw the sprite to the screen forcing the Blend Mode
 		* @param Blend The Blend Mode
@@ -271,18 +262,14 @@ class EE_API cSprite {
 		*/
 		void Draw( const EE_RENDERTYPE& Effect );
 
-		/** Update the Frame Number SrcRECT
-		* @param R The new SrcRECT
-		* @param FrameNum The Frame Number to change the SrcRECT. Default change the Current mFrames.
-		* @param SubFrame The Sub Frame Number to change the SrcRECT. Default change the Current Sub mFrames.
-		*/
-		void UpdateSprRECT( const eeRecti& R, const eeUint& FrameNum = 0, const eeUint& SubFrame = 0 );
-
 		/** Set the number of repeations of the animation. Any number below 0 the animation will loop. */
 		void SetRepeations( const int& Repeations );
 
-		/** Set if the class autoanimate the sprite ( default it's true ) */
-		void SetAutoAnimate( const bool& Autoanim );
+		/** Set if the class auto-animate the sprite ( default it's active ) */
+		void AutoAnimate( const bool& Autoanim );
+
+		/** Get if the class is auto-animated */
+		bool AutoAnimate() const;
 
 		/** @return The four vertex position of the Sprite */
 		eeQuad2f GetQuad();
@@ -347,6 +334,12 @@ class EE_API cSprite {
 
 		/** Creates a copy of the current sprite and return it */
 		cSprite * Copy();
+
+		/** Update the sprite animation */
+		void Update( const eeFloat& ElapsedTime );
+
+		/** Update the sprite animation using the current elapsed time provided by cEngine */
+		void Update();
 	protected:
 		enum SpriteFlags {
 			SPRITE_FLAG_AUTO_ANIM				= ( 1 << 0 ),
@@ -388,8 +381,6 @@ class EE_API cSprite {
 		eeUint FramePos();
 
 		void ClearFrame();
-
-		void Animate( const eeFloat& ElapsedTime = -99999.f );
 
 		eeVector2f GetRotationCenter( const eeRectf& DestRECT );
 

@@ -56,7 +56,7 @@ void cMap::DeleteLayers() {
 	for ( Uint32 i = 0; i < mLayerCount; i++ )
 		eeSAFE_DELETE( mLayers[i] );
 
-	eeSAFE_DELETE( mLayers );
+	eeSAFE_DELETE_ARRAY( mLayers );
 
 	mLayerCount = 0;
 }
