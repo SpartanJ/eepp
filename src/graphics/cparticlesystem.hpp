@@ -8,26 +8,26 @@ namespace EE { namespace Graphics {
 
 /** @enum EE_PARTICLE_EFFECT Predefined effects for the particle system. Use Callback when wan't to create a new effect, o set the parameters using NoFx, but it's much more limited. */
 enum EE_PARTICLE_EFFECT {
-	Nofx = 0, //!< User defined effect
-	BlueBall = 1,
-	Fire = 2,
-	Smoke = 3,
-	Snow = 4,
-	MagicFire = 5,
-	LevelUp = 6,
-	LevelUp2 = 7,
-	Heal = 8,
-	WormHole = 9,
-	Twirl = 10,
-	Flower = 11,
-	Galaxy = 12,
-	Heart = 13,
-	BlueExplosion = 14,
-	GP = 15,
-	BTwirl = 16,
-	BT = 17,
-	Atomic = 18,
-	Callback = 19 //!< Callback defined effect. Set the callback before creating the effect.
+	PSE_Nofx = 0, //!< User defined effect
+	PSE_BlueBall,
+	PSE_Fire,
+	PSE_Smoke,
+	PSE_Snow,
+	PSE_MagicFire,
+	PSE_LevelUp,
+	PSE_LevelUp2,
+	PSE_Heal,
+	PSE_WormHole,
+	PSE_Twirl,
+	PSE_Flower,
+	PSE_Galaxy,
+	PSE_Heart,
+	PSE_BlueExplosion,
+	PSE_GP,
+	PSE_BTwirl,
+	PSE_BT,
+	PSE_Atomic,
+	PSE_Callback //!< Callback defined effect. Set the callback before creating the effect.
 };
 
 /** @brief Basic but powerfull Particle System */
@@ -36,35 +36,48 @@ class EE_API cParticleSystem {
 		typedef cb::Callback2<void, cParticle*, cParticleSystem*> ParticleCallback;
 
 		cParticleSystem();
-		~cParticleSystem();
+
+		virtual ~cParticleSystem();
 
 		/** Creates the new effect
 		* @param Effect Number of the effect.
 		* @param NumParticles Number of particles
 		* @param TexId Texture Id to render the particles
-		* @param X Initial x position
-		* @param Y Initial y position
+		* @param Pos Initial position
 		* @param PartSize Size of the particles
 		* @param AnimLoop Loop the animation?
 		* @param NumLoops If AnimLoop is false, set the number of times to render the effect
-		* @param Color Particles Color
-		* @param X2 Extended x position for some effects (used for NoFx)
-		* @param Y2 Extended y position for some effects (used for NoFx)
+		* @param Color Particles Color (used for NoFx)
+		* @param Pos2 Extended position for some effects to define the expansion over the screen (used by fire,smoke,snow)
 		* @param AlphaDecay The Alpha Decay for the particles (used for NoFx)
-		* @param XSpeed The speed on x axis (used for NoFx)
-		* @param YSpeed The speed on y axis (used for NoFx)
-		* @param XAcceleration The acceleration of the particle on x axis (used for NoFx)
-		* @param YAcceleration The acceleration of the particle on x axis (used for NoFx)
+		* @param Speed The speed on x axis (used for NoFx)
+		* @param Acc The acceleration of the particle (used for NoFx)
 		*/
-		void Create(const EE_PARTICLE_EFFECT& Effect, const Uint32& NumParticles, const Uint32& TexId, const eeFloat& X = 0, const eeFloat& Y = 0, const eeFloat& PartSize = 16.0f, const bool& AnimLoop = false, const Uint32& NumLoops = 1, const eeColorAf& Color = eeColorAf(1.0f,1.0f,1.0f,1.0f), const eeFloat& X2 = 0, const eeFloat& Y2 = 0, const eeFloat& AlphaDecay = 0.01f, const eeFloat& XSpeed = 0.1f, const eeFloat& YSpeed = 0.1f, const eeFloat& XAcceleration = 0.1f, const eeFloat& YAcceleration = 0.1f);
+		void Create(
+			const EE_PARTICLE_EFFECT& Effect,
+			const Uint32& NumParticles,
+			const Uint32& TexId,
+			const eeVector2f& Pos,
+			const eeFloat& PartSize = 16.0f,
+			const bool& AnimLoop = false,
+			const Uint32& NumLoops = 1,
+			const eeColorAf& Color = eeColorAf( 1.0f, 1.0f, 1.0f, 1.0f ),
+			const eeVector2f& Pos2 = eeVector2f( 0, 0 ),
+			const eeFloat& AlphaDecay = 0.01f,
+			const eeVector2f& Speed = eeVector2f( 0.1f, 0.1f ),
+			const eeVector2f& Acc = eeVector2f( 0.1f, 0.1f )
+		);
 
 		/** Draw the particles effect */
 		void Draw();
 
 		/** Update the particles effect
-		* @param Time The time transcurred between the last update. If -1 will take the cEngine::Elapsed()
+		* @param Time The time transcurred between the last update.
 		*/
-		void Update( const eeFloat& Time = -99999.f );
+		void Update( const eeFloat& Time );
+
+		/** Update the particles effect taking the elapsed time from cEngine */
+		void Update();
 
 		/** Stop using the effect but wait to end the animation */
 		void End();
@@ -75,50 +88,68 @@ class EE_API cParticleSystem {
 		/** Stop immediately the effect */
 		void Kill();
 
-		/** Draw and Update the effect. Don't call Draw or Update if you use this. */
-		void DrawUpdate();
-
 		/** Change the default time modifier. Default 0.01f */
-		void Time(const eeFloat& time) { if (time>0) mTime = time; }
+		void Time( const eeFloat& time );
 
 		/** Get the time modifier */
-		eeFloat Time() const { return mTime; }
+		eeFloat Time() const;
 
 		/** Set if the effect it's in use */
-		void Using(const bool& inuse) { mUsed = inuse; }
+		void Using( const bool& inuse );
 
 		/** @return It's used or no */
-		bool Using() const { return mUsed; }
-
-		/** Set the x axis position */
-		void X(const eeFloat& x) { mX = x; }
-
-		/** Get the x axis position */
-		eeFloat X() const { return mX; }
-
-		/** Set the y axis position */
-		void Y(const eeFloat& y) { mY = y; }
-
-		/** Get the y axis position */
-		eeFloat Y() const { return mY; }
-
-		/** Set the x2 axis position */
-		void X2(const eeFloat& x2) { mX2 = x2; mX2 = x2 + (mX2 - mX); }
-
-		/** Get the x2 axis position */
-		eeFloat X2() const { return mX2; }
-
-		/** Set the y2 axis position */
-		void Y2(const eeFloat& y2) { mY2 = y2; mY2 = y2 + (mY2 - mY); }
-
-		/** Get the y2 axis position */
-		eeFloat Y2() const { return mY2; }
+		bool Using() const;
 
 		/** Update the effect position */
-		void UpdatePos(const eeFloat& x, const eeFloat& y);
+		void Position( const eeFloat& x, const eeFloat& y );
+
+		/** Update the effect position */
+		void Position( const eeVector2f& Pos );
+
+		/** @return The effect position */
+		const eeVector2f& Position() const;
+
+		/** Update the effect position 2 */
+		void Position2( const eeFloat& x, const eeFloat& y );
+
+		/** Update the effect position 2 */
+		void Position2( const eeVector2f& Pos );
+
+		/** @return The effect position 2 */
+		const eeVector2f& Position2() const;
 
 		/** Set a callback function for the reset effect of the particles. \n The reset it's where do you create the effect for every single particle. */
 		void SetCallbackReset( const ParticleCallback& pc );
+
+		/** @return The effect blend mode */
+		const EE_PRE_BLEND_FUNC& BlendMode() const;
+
+		/** Set the effect blend mode */
+		void BlendMode( const EE_PRE_BLEND_FUNC& mode );
+
+		/** @return The color of the effect */
+		const eeColorAf& Color() const;
+
+		/** Set the color of the effect */
+		void Color( const eeColorAf& Col );
+
+		/** @return The alpha decay of the effect */
+		const eeFloat& AlphaDecay() const;
+
+		/** Set the alpha decay of the effect */
+		void AlphaDecay( const eeFloat& Decay );
+
+		/** @return The Speed of the effect */
+		const eeVector2f& Speed() const;
+
+		/** Set the Speed of the effect */
+		void Speed( const eeVector2f& speed );
+
+		/** @return The Acceleration of the effect */
+		const eeVector2f& Acceleration() const;
+
+		/** Set The Acceleration of the effect */
+		void Acceleration( const eeVector2f& acc );
 	private:
 		cParticle *			mParticle;
 		Uint32				mPCount;
@@ -127,23 +158,21 @@ class EE_API cParticleSystem {
 		Uint32				mLoops;
 
 		EE_PARTICLE_EFFECT	mEffect;
+		EE_PRE_BLEND_FUNC	mBlend;
+
 		eeColorAf			mColor;
 
 		eeInt				mProgression;
 		eeInt				mDirection;
 
-		eeFloat				mX;
-		eeFloat				mY;
-		eeFloat				mXAcc;
-		eeFloat				mYAcc;
-		eeFloat				mXSpeed;
-		eeFloat				mYSpeed;
+		eeVector2f			mPos;
+		eeVector2f			mPos2;
+		eeVector2f			mAcc;
+		eeVector2f			mSpeed;
 		eeFloat				mAlphaDecay;
 		eeFloat				mSize;
 		eeFloat				mHSize;
 		eeFloat				mTime;
-		eeFloat				mX2;
-		eeFloat				mY2;
 
 		bool				mLoop;
 		bool				mUsed;
@@ -151,7 +180,7 @@ class EE_API cParticleSystem {
 
 		void Begin();
 
-		void Reset( cParticle* P );
+		virtual void Reset( cParticle * P );
 
 		ParticleCallback mPC;
 };

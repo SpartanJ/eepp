@@ -719,7 +719,7 @@ void cEETest::CmdSetPartsNum ( const std::vector < String >& params ) {
 			bool Res = fromString<Int32>( tInt, params[1] );
 
 			if ( Res && ( tInt >= 0 && tInt <= 100000 ) ) {
-				PS[2].Create(WormHole, tInt, TN[5], mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f, 32, true);
+				PS[2].Create( PSE_WormHole, tInt, TN[5], eeVector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 32, true );
 				Con.PushText( "Wormhole Particles Number Changed to: " + toStr(tInt) );
 			} else
 				Con.PushText( "Valid parameters are between 0 and 100000 (0 = no limit)." );
@@ -784,16 +784,15 @@ void cEETest::LoadTextures() {
 			SP.AddFrame( TN[4], 0, 0, 0, 0, eeRecti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
 
 	PS[0].SetCallbackReset( cb::Make2( this, &cEETest::ParticlesCallback ) );
-	PS[0].Create(Callback, 500, TN[5], 0, 0, 16, true);
-	PS[1].Create(Heal, 250, TN[5], mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f, 16, true);
+	PS[0].Create( PSE_Callback, 500, TN[5], eeVector2f( 0, 0 ), 16, true );
+	PS[1].Create( PSE_Heal, 250, TN[5], eeVector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 16, true );
+	PS[2].Create( PSE_WormHole, PartsNum, TN[5], eeVector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 32, true );
+	PS[3].Create( PSE_Fire, 350, TN[5], eeVector2f( -50.f, -50.f ), 32, true );
+	PS[4].Create( PSE_Fire, 350, TN[5], eeVector2f( -50.f, -50.f ), 32, true );
 
-	PS[2].Create(WormHole, PartsNum, TN[5], mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f, 32, true);
 	Con.AddCommand( "setparticlesnum", cb::Make1( this, &cEETest::CmdSetPartsNum ) );
 
-	PS[3].Create(Fire, 350, TN[5], -50.f, -50.f, 32, true);
-	PS[4].Create(Fire, 350, TN[5], -50.f, -50.f, 32, true);
-
-	cTexture * Tex = TF->GetTexture(TN[2]);
+	cTexture * Tex = TF->GetTexture( TN[2] );
 
 	Tex->Lock();
 	w = (eeInt)Tex->Width();
@@ -1487,26 +1486,28 @@ void cEETest::End() {
 	cEngine::DestroySingleton();
 }
 
-void cEETest::ParticlesCallback(cParticle* P, cParticleSystem* Me) {
+void cEETest::ParticlesCallback( cParticle * P, cParticleSystem * Me ) {
 	eeFloat x, y, radio;
+	eeVector2f MePos( Me->Position() );
+
 	radio = (eeRandf(1.f, 1.2f) + sin( 20.0f / P->Id() )) * 24;
-	x = Me->X() + radio * cos( (eeFloat)P->Id() );
-	y = Me->Y() + radio * sin( (eeFloat)P->Id() );
+	x = MePos.x + radio * cos( (eeFloat)P->Id() );
+	y = MePos.y + radio * sin( (eeFloat)P->Id() );
 	P->Reset(x, y, eeRandf(-10.f, 10.f), eeRandf(-10.f, 10.f), eeRandf(-10.f, 10.f), eeRandf(-10.f, 10.f));
 	P->Color( eeColorAf(1.f, 0.6f, 0.3f, 1.f), 0.02f + eeRandf() * 0.3f );
 }
 
 void cEETest::Particles() {
-	PS[0].UpdatePos(Mousef.x, Mousef.y);
+	PS[0].Position( Mousef );
 
 	if ( DrawBack )
-		PS[1].UpdatePos(Mousef.x, Mousef.y);
+		PS[1].Position( Mousef );
 
-	PS[2].UpdatePos( HWidth, HHeight );
-	PS[3].UpdatePos(  cosAng(Ang) * 220.f + HWidth + eeRandf(0.f, 10.f),  sinAng(Ang) * 220.f + HHeight + eeRandf(0.f, 10.f) );
-	PS[4].UpdatePos( -cosAng(Ang) * 220.f + HWidth + eeRandf(0.f, 10.f), -sinAng(Ang) * 220.f + HHeight + eeRandf(0.f, 10.f) );
+	PS[2].Position( HWidth, HHeight );
+	PS[3].Position(  cosAng(Ang) * 220.f + HWidth + eeRandf(0.f, 10.f),  sinAng(Ang) * 220.f + HHeight + eeRandf(0.f, 10.f) );
+	PS[4].Position( -cosAng(Ang) * 220.f + HWidth + eeRandf(0.f, 10.f), -sinAng(Ang) * 220.f + HHeight + eeRandf(0.f, 10.f) );
 
-	for ( Uint8 i = 0; i < PS.size(); i++ )
+	for ( Uint32 i = 0; i < PS.size(); i++ )
 		PS[i].Draw();
 }
 
