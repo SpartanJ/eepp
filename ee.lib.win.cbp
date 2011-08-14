@@ -2,29 +2,32 @@
 <CodeBlocks_project_file>
 	<FileVersion major="1" minor="6" />
 	<Project>
-		<Option title="ee" />
+		<Option title="ee.lib.win" />
 		<Option pch_mode="2" />
 		<Option compiler="gcc" />
 		<Build>
 			<Target title="Debug">
-				<Option output="eetest-debug" prefix_auto="1" extension_auto="1" />
-				<Option object_output=".\obj\win\debug\" />
-				<Option type="1" />
+				<Option output="libs\win\debug\libeepp" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="" />
+				<Option object_output="obj\win\debug\" />
+				<Option type="2" />
 				<Option compiler="gcc" />
+				<Option createDefFile="1" />
 				<Compiler>
 					<Add option="-Wall" />
 					<Add option="-g" />
-					<Add option="-DEE_DEBUG" />
-					<Add option="-DEE_MEMORY_MANAGER" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
-				<Option output="eetest-release" prefix_auto="1" extension_auto="1" />
-				<Option object_output=".\obj\win\release\" />
-				<Option type="1" />
+				<Option output="libs\win\release\libeepp" prefix_auto="1" extension_auto="1" />
+				<Option working_dir="" />
+				<Option object_output="obj\win\release\" />
+				<Option type="2" />
 				<Option compiler="gcc" />
+				<Option createDefFile="1" />
 				<Compiler>
 					<Add option="-O3" />
+					<Add option="-Wall" />
 				</Compiler>
 				<Linker>
 					<Add option="-s" />
@@ -85,7 +88,6 @@
 		<Unit filename="src\base\string.cpp" />
 		<Unit filename="src\base\string.hpp" />
 		<Unit filename="src\base\utf.hpp" />
-		<Unit filename="src\base\utf.inl" />
 		<Unit filename="src\ee.h" />
 		<Unit filename="src\gaming\base.hpp" />
 		<Unit filename="src\gaming\cgameobject.cpp" />
@@ -104,6 +106,8 @@
 		<Unit filename="src\gaming\clayer.hpp" />
 		<Unit filename="src\gaming\clight.cpp" />
 		<Unit filename="src\gaming\clight.hpp" />
+		<Unit filename="src\gaming\clightmanager.cpp" />
+		<Unit filename="src\gaming\clightmanager.hpp" />
 		<Unit filename="src\gaming\cmap.cpp" />
 		<Unit filename="src\gaming\cmap.hpp" />
 		<Unit filename="src\gaming\cobjectlayer.cpp" />
@@ -360,9 +364,6 @@
 		<Unit filename="src\helper\glew\glew.h" />
 		<Unit filename="src\helper\glew\glxew.h" />
 		<Unit filename="src\helper\glew\wglew.h" />
-		<Unit filename="src\helper\glm\ext.hpp" />
-		<Unit filename="src\helper\glm\glm.hpp" />
-		<Unit filename="src\helper\glm\setup.hpp" />
 		<Unit filename="src\helper\haikuttf\haikuttf.hpp" />
 		<Unit filename="src\helper\haikuttf\hkbase.hpp" />
 		<Unit filename="src\helper\haikuttf\hkfont.cpp" />
@@ -375,11 +376,9 @@
 		<Unit filename="src\helper\haikuttf\hkmutex.hpp" />
 		<Unit filename="src\helper\haikuttf\sophist.h" />
 		<Unit filename="src\helper\libzip\config.h" />
-		<Unit filename="src\helper\libzip\inttypes.h" />
 		<Unit filename="src\helper\libzip\mkstemp.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="src\helper\libzip\stdint.h" />
 		<Unit filename="src\helper\libzip\zip.h" />
 		<Unit filename="src\helper\libzip\zip_add.c">
 			<Option compilerVar="CC" />
@@ -618,7 +617,6 @@
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="src\helper\zlib\deflate.h" />
-		<Unit filename="src\helper\zlib\gzguts.h" />
 		<Unit filename="src\helper\zlib\infback.c">
 			<Option compilerVar="CC" />
 		</Unit>
@@ -716,6 +714,8 @@
 		<Unit filename="src\system\cobjectloader.hpp" />
 		<Unit filename="src\system\cpack.cpp" />
 		<Unit filename="src\system\cpack.hpp" />
+		<Unit filename="src\system\cpackmanager.cpp" />
+		<Unit filename="src\system\cpackmanager.hpp" />
 		<Unit filename="src\system\cpak.cpp" />
 		<Unit filename="src\system\cpak.hpp" />
 		<Unit filename="src\system\crc4.cpp" />
@@ -733,8 +733,6 @@
 		<Unit filename="src\system\tcontainer.hpp" />
 		<Unit filename="src\system\tresourcemanager.hpp" />
 		<Unit filename="src\system\tsingleton.hpp" />
-		<Unit filename="src\test\eetest.cpp" />
-		<Unit filename="src\test\eetest.hpp" />
 		<Unit filename="src\ui\base.hpp" />
 		<Unit filename="src\ui\cuiaquatheme.cpp" />
 		<Unit filename="src\ui\cuiaquatheme.hpp" />
@@ -884,6 +882,7 @@
 		<Unit filename="src\window\backend\SDL13\cjoysticksdl.hpp" />
 		<Unit filename="src\window\backend\SDL13\cwindowsdl.cpp" />
 		<Unit filename="src\window\backend\SDL13\cwindowsdl.hpp" />
+		<Unit filename="src\window\backend\SDL\base.hpp" />
 		<Unit filename="src\window\backend\SDL\cbackendsdl.hpp" />
 		<Unit filename="src\window\backend\SDL\cclipboardsdl.cpp" />
 		<Unit filename="src\window\backend\SDL\cclipboardsdl.hpp" />
@@ -973,19 +972,9 @@
 		<Unit filename="src\window\platform\x11\cx11impl.cpp" />
 		<Unit filename="src\window\platform\x11\cx11impl.hpp" />
 		<Extensions>
-			<envvars />
 			<code_completion />
+			<envvars />
 			<debugger />
-			<lib_finder disable_auto="1" />
-			<DoxyBlocks>
-				<comment_style block="0" line="0" />
-				<doxyfile_project />
-				<doxyfile_build />
-				<doxyfile_warnings />
-				<doxyfile_output />
-				<doxyfile_dot />
-				<general />
-			</DoxyBlocks>
 		</Extensions>
 	</Project>
 </CodeBlocks_project_file>

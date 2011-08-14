@@ -26,8 +26,15 @@ cMap * cUIMap::Map() const {
 
 void cUIMap::Draw() {
 	if ( NULL != mMap ) {
-		mMap->Position( mScreenPos );
 		mMap->Draw();
+	}
+}
+
+void cUIMap::UpdateScreenPos() {
+	cUIComplexControl::UpdateScreenPos();
+
+	if ( NULL != mMap ) {
+		mMap->Position( mScreenPos );
 	}
 }
 

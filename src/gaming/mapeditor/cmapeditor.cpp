@@ -655,6 +655,7 @@ void cMapEditor::CreateNewEmptyMap() {
 void cMapEditor::MapCreated() {
 	mCurLayer = NULL;
 	mLayerList->ListBox()->Clear();
+	UpdateFlags();
 	SetViewOptions();
 	FillSGCombo();
 	FillGotyList();

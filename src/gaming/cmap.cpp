@@ -294,9 +294,11 @@ const eeAABB& cMap::GetViewAreaAABB() const {
 	return mScreenAABB;
 }
 
-void cMap::Update() {
+void cMap::FixedOffset() {
 	mOffsetFixed = eeVector2f( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y ) + FixOffset();
+}
 
+void cMap::Update() {
 	GetMouseOverTile();
 
 	UpdateScreenAABB();
@@ -345,6 +347,7 @@ const eeVector2i& cMap::Position() const {
 
 void cMap::Position( const eeVector2i& position ) {
 	mScreenPos = position;
+	FixedOffset();
 }
 
 const eeVector2f& cMap::Offset() const {
@@ -377,6 +380,8 @@ void cMap::Offset( const eeVector2f& offset ) {
 	Clamp();
 
 	CalcTilesClip();
+
+	FixedOffset();
 }
 
 void cMap::CalcTilesClip() {

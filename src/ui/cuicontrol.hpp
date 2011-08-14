@@ -357,7 +357,7 @@ class EE_API cUIControl {
 
 		void SetPrevSkinState();
 
-		void UpdateScreenPos();
+		virtual void UpdateScreenPos();
 
 		void UpdateChildsScreenPos();
 

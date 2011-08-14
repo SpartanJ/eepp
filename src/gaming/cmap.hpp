@@ -218,6 +218,8 @@ class EE_API cMap {
 
 		eeVector2f		FixOffset();
 
+		void			FixedOffset();
+
 		void			CalcTilesClip();
 
 		void			Clamp();
