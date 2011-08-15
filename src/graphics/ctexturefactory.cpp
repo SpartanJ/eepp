@@ -275,7 +275,7 @@ const EE_PRE_BLEND_FUNC& cTextureFactory::GetPreBlendFunc() const {
 	return mLastBlend;
 }
 
-eeUint cTextureFactory::GetValidTextureSize(const eeUint& Size) {
+eeUint cTextureFactory::GetValidTextureSize( const eeUint& Size ) {
 	if ( GLi->IsExtension( EEGL_ARB_texture_non_power_of_two ) )
 		return Size;
 	else

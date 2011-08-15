@@ -158,11 +158,13 @@ void cIsoMap::Draw() {
 							eeAABB LayerAABB( TileCenter.x - Shape->DestWidth() * 0.5f, TileCenter.y - Shape->DestHeight(), TileCenter.x + Shape->DestWidth() * 0.5f, TileCenter.y  );
 							eeAABB ShadowAABB( ObjPos.x, TileCenter.y - Shape->DestHeight(), TileCenter.x + Shape->DestWidth(), TileCenter.y );
 
-							if ( Intersect( mScreenAABB, ShadowAABB ) )
+							if ( Intersect( mScreenAABB, ShadowAABB ) ) {
 								Shape->Draw( mOffsetX + ObjPos.x, mOffsetY + ObjPos.y, 0, 1, SC, SC, SC, SC, ALPHA_NORMAL, RN_ISOMETRIC );
+							}
 
-							if ( Intersect( mScreenAABB, LayerAABB )  )
+							if ( Intersect( mScreenAABB, LayerAABB )  ) {
 								Shape->Draw( mOffsetX + TileCenter.x - (eeFloat)Shape->DestWidth() * 0.5f, mOffsetY + TileCenter.y - (eeFloat)Shape->DestHeight(), 0, 1, eeColorA(T->Color[0]), eeColorA(T->Color[1]), eeColorA(T->Color[2]), eeColorA(T->Color[3]) );
+							}
 						}
 					}
 				}

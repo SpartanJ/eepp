@@ -38,16 +38,16 @@
    <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString"></value>
    <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString"></value>
    <value key="ProjectExplorer.ProjectConfiguration.Id" type="QString">GenericProjectManager.GenericTarget</value>
-   <value key="ProjectExplorer.Target.ActiveBuildConfiguration" type="int">11</value>
+   <value key="ProjectExplorer.Target.ActiveBuildConfiguration" type="int">0</value>
    <value key="ProjectExplorer.Target.ActiveDeployConfiguration" type="int">0</value>
-   <value key="ProjectExplorer.Target.ActiveRunConfiguration" type="int">6</value>
+   <value key="ProjectExplorer.Target.ActiveRunConfiguration" type="int">0</value>
    <valuemap key="ProjectExplorer.Target.BuildConfiguration.0" type="QVariantMap">
     <value key="GenericProjectManager.GenericBuildConfiguration.BuildDirectory" type="QString">/home/programming/projects/EE</value>
     <value key="ProjectExplorer.BuildCOnfiguration.ToolChain" type="QString">INVALID</value>
     <valuemap key="ProjectExplorer.BuildConfiguration.BuildStepList.0" type="QVariantMap">
      <valuemap key="ProjectExplorer.BuildStepList.Step.0" type="QVariantMap">
       <valuelist key="GenericProjectManager.GenericMakeStep.BuildTargets" type="QVariantList"/>
-      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 test -e DEBUGBUILD=yes BACKENDS_ALL=yes</value>
+      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 test -e DEBUGBUILD=yes</value>
       <value key="GenericProjectManager.GenericMakeStep.MakeCommand" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString"></value>
@@ -86,9 +86,9 @@
     <valuemap key="ProjectExplorer.BuildConfiguration.BuildStepList.0" type="QVariantMap">
      <valuemap key="ProjectExplorer.BuildStepList.Step.0" type="QVariantMap">
       <valuelist key="GenericProjectManager.GenericMakeStep.BuildTargets" type="QVariantList"/>
-      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 test -e DEBUGBUILD=no BACKENDS_ALL=yes</value>
+      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 test</value>
       <value key="GenericProjectManager.GenericMakeStep.MakeCommand" type="QString"></value>
-      <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString"></value>
+      <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString">Make</value>
       <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.Id" type="QString">GenericProjectManager.GenericMakeStep</value>
      </valuemap>
@@ -164,7 +164,7 @@
     <valuemap key="ProjectExplorer.BuildConfiguration.BuildStepList.0" type="QVariantMap">
      <valuemap key="ProjectExplorer.BuildStepList.Step.0" type="QVariantMap">
       <valuelist key="GenericProjectManager.GenericMakeStep.BuildTargets" type="QVariantList"/>
-      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 bnb -e DEBUGBUILD=yes BACKENDS_ALL=yes</value>
+      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 bnb -e DEBUGBUILD=yes</value>
       <value key="GenericProjectManager.GenericMakeStep.MakeCommand" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString">Make</value>
       <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString">Clone of </value>
@@ -203,7 +203,7 @@
     <valuemap key="ProjectExplorer.BuildConfiguration.BuildStepList.0" type="QVariantMap">
      <valuemap key="ProjectExplorer.BuildStepList.Step.0" type="QVariantMap">
       <valuelist key="GenericProjectManager.GenericMakeStep.BuildTargets" type="QVariantList"/>
-      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 bnb -e DEBUGBUILD=no BACKENDS_ALL=yes</value>
+      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 bnb</value>
       <value key="GenericProjectManager.GenericMakeStep.MakeCommand" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString">Make</value>
       <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString">Clone of </value>
@@ -281,7 +281,7 @@
     <valuemap key="ProjectExplorer.BuildConfiguration.BuildStepList.0" type="QVariantMap">
      <valuemap key="ProjectExplorer.BuildStepList.Step.0" type="QVariantMap">
       <valuelist key="GenericProjectManager.GenericMakeStep.BuildTargets" type="QVariantList"/>
-      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 eeiv -e DEBUGBUILD=no</value>
+      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 eeiv -e NO_LIBSNDFILE=yes</value>
       <value key="GenericProjectManager.GenericMakeStep.MakeCommand" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString"></value>
@@ -359,7 +359,7 @@
     <valuemap key="ProjectExplorer.BuildConfiguration.BuildStepList.0" type="QVariantMap">
      <valuemap key="ProjectExplorer.BuildStepList.Step.0" type="QVariantMap">
       <valuelist key="GenericProjectManager.GenericMakeStep.BuildTargets" type="QVariantList"/>
-      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 -e DYNAMIC=no -e DEBUGBUILD=no</value>
+      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 -e DYNAMIC=no</value>
       <value key="GenericProjectManager.GenericMakeStep.MakeCommand" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString"></value>
@@ -437,7 +437,7 @@
     <valuemap key="ProjectExplorer.BuildConfiguration.BuildStepList.0" type="QVariantMap">
      <valuemap key="ProjectExplorer.BuildStepList.Step.0" type="QVariantMap">
       <valuelist key="GenericProjectManager.GenericMakeStep.BuildTargets" type="QVariantList"/>
-      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 -e DYNAMIC=yes -e DEBUGBUILD=no</value>
+      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 -e DYNAMIC=yes</value>
       <value key="GenericProjectManager.GenericMakeStep.MakeCommand" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString"></value>

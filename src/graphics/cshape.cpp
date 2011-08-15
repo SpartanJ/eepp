@@ -31,6 +31,10 @@ cShape::cShape( const Uint32& TexId, const std::string& Name ) :
 	mOffSetX(0),
 	mOffSetY(0)
 {
+	if ( !GLi->IsExtension( EEGL_ARB_texture_non_power_of_two ) ) {
+		mSrcRect = eeRecti( 0, 0, mTexture->ImgWidth(), mTexture->ImgHeight() );
+	}
+
 	CreateUnnamed();
 }
 
