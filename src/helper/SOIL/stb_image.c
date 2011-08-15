@@ -1,4 +1,4 @@
-/* stbi-1.32 - public domain JPEG/PNG reader - http://nothings.org/stb_image.c
+/* stbi-1.33 - public domain JPEG/PNG reader - http://nothings.org/stb_image.c
    when you control the images you're loading
                                      no warranty implied; use at your own risk
 
@@ -22,6 +22,7 @@
       - overridable dequantizing-IDCT, YCbCr-to-RGB conversion (define STBI_SIMD)
 
    Latest revisions:
+      1.33 (2011-07-14) minor fixes suggested by Dave Moore
       1.32 (2011-07-13) info support for all filetypes (SpartanJ)
       1.31 (2011-06-19) a few more leak fixes, bug in PNG handling (SpartanJ)
       1.30 (2011-06-11) added ability to load files via io callbacks (Ben Wenger)
@@ -103,7 +104,7 @@ typedef unsigned char validate_uint32[sizeof(uint32)==4 ? 1 : -1];
 #define STBI_NO_WRITE
 #endif
 
-#define STBI_NOTUSED(v)  v=v
+#define STBI_NOTUSED(v)  (void)sizeof(v)
 
 #ifdef _MSC_VER
 #define STBI_HAS_LROTL
@@ -189,9 +190,7 @@ static void start_file(stbi *s, FILE *f)
    start_callbacks(s, &stbi_stdio_callbacks, (void *) f);
 }
 
-static void stop_file(stbi *s)
-{
-}
+//static void stop_file(stbi *s) { }
 
 #endif // !STBI_NO_STDIO
 
@@ -4336,6 +4335,8 @@ int stbi_info_from_callbacks(stbi_io_callbacks const *c, void *user, int *x, int
 
 /*
    revision history:
+      1.33 (2011-07-14)
+             make stbi_is_hdr work in STBI_NO_HDR (as specified), minor compiler-friendly improvements
       1.32 (2011-07-13)
              support for "info" function for all supported filetypes (SpartanJ)
       1.31 (2011-06-20)
