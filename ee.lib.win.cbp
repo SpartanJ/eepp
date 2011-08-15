@@ -16,6 +16,8 @@
 				<Compiler>
 					<Add option="-Wall" />
 					<Add option="-g" />
+					<Add option="-DEE_DEBUG" />
+					<Add option="-DEE_MEMORY_MANAGER" />
 				</Compiler>
 			</Target>
 			<Target title="Release">
@@ -36,7 +38,8 @@
 		</Build>
 		<Compiler>
 			<Add option="-Wall" />
-			<Add option="-std=gnu99 -fno-strict-aliasing -ffast-math -DSTBI_FAILURE_USERMSG -Wno-unknown-pragmas -DEE_BACKEND_ALLEGRO_ACTIVE -DEE_BACKEND_SDL_ACTIVE" />
+			<Add option="-std=gnu99 -fno-strict-aliasing -ffast-math -Wno-unknown-pragmas" />
+			<Add option="-DSTBI_FAILURE_USERMSG" />
 			<Add directory=".\src\helper\chipmunk" />
 			<Add directory=".\src\helper\zlib" />
 			<Add directory="C:\MinGW\include\freetype2" />
@@ -51,7 +54,6 @@
 			<Add library="freetype" />
 			<Add library="libsndfile-1" />
 			<Add library="OpenAL32" />
-			<Add library="allegro" />
 		</Linker>
 		<Unit filename="src\audio\base.hpp" />
 		<Unit filename="src\audio\caudiodevice.cpp" />
