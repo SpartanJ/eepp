@@ -28,14 +28,14 @@ void cCursorManagerAl::Set( cCursor * cursor ) {
 		return;
 
 	al_set_mouse_cursor( reinterpret_cast<cWindowAl*>( mWindow )->GetDisplay(), reinterpret_cast<cCursorAl*>( cursor )->GetCursor() );
-	mCurrrent		= cursor;
+	mCurrent		= cursor;
 	mCurSysCursor	= false;
 	mSysCursor		= Cursor::SYS_CURSOR_NONE;
 }
 
 void cCursorManagerAl::Set( EE_SYSTEM_CURSOR syscurid ) {
 	al_set_system_mouse_cursor( reinterpret_cast<cWindowAl*>( mWindow )->GetDisplay(), (ALLEGRO_SYSTEM_MOUSE_CURSOR)syscurid );
-	mCurrrent		= NULL;
+	mCurrent		= NULL;
 	mCurSysCursor	= true;
 	mSysCursor		= syscurid;
 }
@@ -69,7 +69,7 @@ void cCursorManagerAl::Reload() {
 		if ( mCurSysCursor ) {
 			Set( mSysCursor );
 		} else {
-			Set( mCurrrent );
+			Set( mCurrent );
 		}
 	} else {
 		Hide();

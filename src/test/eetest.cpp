@@ -1704,7 +1704,6 @@ void cEETest::PhysicsCreate() {
 	cPhysicsManager * PM = cPhysicsManager::instance();
 	cPhysicsManager::cDrawSpaceOptions * DSO = PM->GetDrawOptions();
 
-	DSO->DrawHash			= false;
 	DSO->DrawBBs			= false;
 	DSO->DrawShapes			= true;
 	DSO->CollisionPointSize	= 0;

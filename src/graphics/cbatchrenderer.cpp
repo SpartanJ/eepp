@@ -120,12 +120,12 @@ void cBatchRenderer::Flush() {
 
 	Uint32 alloc = sizeof(eeVertex) * NumVertex;
 
-	GLi->VertexPointer	( 2, GL_FP			, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] )												, alloc	);
+	GLi->VertexPointer	( 2, GL_FP			, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] )													, alloc	);
 	GLi->ColorPointer	( 4, GL_UNSIGNED_BYTE	, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f) + sizeof(eeTexCoord)	, alloc	);
 
 	if ( NULL != mTexture ) {
 		cTextureFactory::instance()->Bind( mTexture );
-		GLi->TexCoordPointer( 2, GL_FP		, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f)						, alloc	);
+		GLi->TexCoordPointer( 2, GL_FP		, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f)							, alloc	);
 	} else {
 		GLi->Disable( GL_TEXTURE_2D );
 		GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );

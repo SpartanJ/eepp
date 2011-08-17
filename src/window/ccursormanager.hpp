@@ -55,10 +55,16 @@ class EE_API cCursorManager {
 		virtual void			Visible( bool visible ) = 0;
 
 		virtual bool			Visible();
+
+		cCursor *				Current() const;
+
+		EE_SYSTEM_CURSOR		CurrentSysCursor() const;
+
+		bool					CurrentIsSysCursor() const;
 	protected:
 		typedef	std::set<cCursor*> CursorsList;
 		cWindow *				mWindow;
-		cCursor *				mCurrrent;
+		cCursor *				mCurrent;
 		EE_SYSTEM_CURSOR		mSysCursor;
 		CursorsList				mCursors;
 		bool					mCurSysCursor;

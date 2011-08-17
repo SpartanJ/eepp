@@ -72,7 +72,7 @@
 #endif
 
 #ifndef EE_DEBUG
-	#if defined( DEBUG ) || defined( _DEBUG ) || defined( __DEBUG )
+	#if defined( DEBUG ) || defined( _DEBUG ) || defined( __DEBUG ) || defined( __DEBUG__ )
 		#define EE_DEBUG
 	#endif
 #endif

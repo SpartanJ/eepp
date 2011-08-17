@@ -20,8 +20,6 @@
 #define BACKEND_SDL			1
 #define BACKEND_ALLEGRO		2
 
-//#define DEFAULT_BACKEND		BACKEND_ALLEGRO
-
 #ifndef DEFAULT_BACKEND
 
 #if defined( EE_BACKEND_SDL_ACTIVE )

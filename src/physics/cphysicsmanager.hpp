@@ -16,7 +16,6 @@ class CP_API cPhysicsManager : public tSingleton<cPhysicsManager> {
 		class cDrawSpaceOptions {
 			public:
 				cDrawSpaceOptions() :
-					DrawHash( false ),
 					DrawBBs( false ),
 					DrawShapes( true ),
 					CollisionPointSize( 4.0f ),
@@ -24,7 +23,6 @@ class CP_API cPhysicsManager : public tSingleton<cPhysicsManager> {
 					LineThickness( 1.5f )
 				{}
 
-				bool	DrawHash;
 				bool	DrawBBs;
 				bool	DrawShapes;
 				cpFloat CollisionPointSize;

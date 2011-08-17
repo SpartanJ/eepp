@@ -291,32 +291,28 @@ void cSpace::Draw() {
 	cpFloat lw = BR->GetLineWidth();
 	cpFloat ps = BR->GetPointSize();
 
-	if( options->DrawHash ) {
-		//cpBBTreeRenderDebug( mSpace->staticShapes );
-		//cpBBTreeRenderDebug( mSpace->activeShapes );
-	}
-
 	BR->SetLineWidth( options->LineThickness );
 
-	if( options->DrawShapes ) {
+	if ( options->DrawShapes ) {
 		cpSpatialIndexEach( mSpace->CP_PRIVATE(activeShapes), (cpSpatialIndexIteratorFunc)drawObject, mSpace );
 		cpSpatialIndexEach( mSpace->CP_PRIVATE(staticShapes), (cpSpatialIndexIteratorFunc)drawObject, mSpace );
 	}
 
 	BR->SetLineWidth( lw );
 
-	if( options->DrawBBs ){
+	if ( options->DrawBBs ){
 		cpSpatialIndexEach( mSpace->CP_PRIVATE(activeShapes), (cpSpatialIndexIteratorFunc)drawBB, NULL );
 		cpSpatialIndexEach( mSpace->CP_PRIVATE(staticShapes), (cpSpatialIndexIteratorFunc)drawBB, NULL );
+		BR->Draw();
 	}
 
 	cpArray * constraints = mSpace->CP_PRIVATE(constraints);
 
-	for( int i=0, count = constraints->num; i < count; i++ ) {
+	for ( int i = 0, count = constraints->num; i < count; i++ ) {
 		drawConstraint( (cpConstraint *)constraints->arr[i] );
 	}
 
-	if( options->BodyPointSize ) {
+	if ( options->BodyPointSize ) {
 		BR->SetPointSize( options->BodyPointSize );
 		BR->PointsBegin();
 		BR->PointSetColor( eeColorA( 255, 255, 255, 255 ) );

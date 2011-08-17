@@ -25,7 +25,7 @@ cCursor * cCursorManagerSDL::Create( const std::string& path, const eeVector2i& 
 void cCursorManagerSDL::Set( cCursor * cursor ) {
 	SDL_SetCursor( reinterpret_cast<cCursorSDL*>( cursor )->GetCursor() );
 
-	mCurrrent		= cursor;
+	mCurrent		= cursor;
 	mCurSysCursor	= false;
 	mSysCursor		= Cursor::SYS_CURSOR_NONE;
 }
@@ -33,7 +33,7 @@ void cCursorManagerSDL::Set( cCursor * cursor ) {
 void cCursorManagerSDL::Set( EE_SYSTEM_CURSOR syscurid ) {
 	mWindow->GetPlatform()->SetSystemMouseCursor( syscurid );
 
-	mCurrrent		= NULL;
+	mCurrent		= NULL;
 	mCurSysCursor	= true;
 	mSysCursor		= syscurid;
 }
@@ -67,7 +67,7 @@ void cCursorManagerSDL::Reload() {
 		if ( mCurSysCursor ) {
 			Set( mSysCursor );
 		} else {
-			Set( mCurrrent );
+			Set( mCurrent );
 		}
 	} else {
 		Hide();

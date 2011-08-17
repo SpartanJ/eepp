@@ -4,7 +4,7 @@ namespace EE { namespace Window {
 
 cCursorManager::cCursorManager( cWindow * window ) :
 	mWindow( window ),
-	mCurrrent( NULL ),
+	mCurrent( NULL ),
 	mSysCursor( SYS_CURSOR_NONE ),
 	mCursors(),
 	mCurSysCursor( SYS_CURSOR_NONE ),
@@ -73,6 +73,18 @@ void cCursorManager::Set( const Uint32& id ) {
 
 bool cCursorManager::Visible() {
 	return mVisible;	
+}
+
+cCursor * cCursorManager::Current() const {
+	return mCurrent;
+}
+
+EE_SYSTEM_CURSOR cCursorManager::CurrentSysCursor() const {
+	return mSysCursor;
+}
+
+bool cCursorManager::CurrentIsSysCursor() const {
+	return mCurSysCursor;
 }
 
 }}
