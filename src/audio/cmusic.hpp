@@ -34,7 +34,7 @@ class EE_API cMusic : public cSoundStream {
 		cSoundFile * 		mFile; 		///< Sound file
 		eeFloat 			mDuration; 	///< Music duration, in seconds
 		std::vector<Int16>	mSamples; 	///< Temporary buffer of samples
-		std::vector<Uint8>	mData;
+		SafeDataPointer		mData;
 };
 
 }}

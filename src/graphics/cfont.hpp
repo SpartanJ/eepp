@@ -14,8 +14,6 @@ namespace EE { namespace Graphics {
 /** @brief Font interface class. */
 class EE_API cFont {
 	public:
-		cFont( const Uint32& Type, const std::string& Name );
-
 		virtual ~cFont();
 
 		/** Set a text to render
@@ -145,6 +143,8 @@ class EE_API cFont {
 
 		std::vector<eeVertexCoords> mRenderCoords;
 		std::vector<eeColorA> 		mColors;
+
+		cFont( const Uint32& Type, const std::string& Name );
 
 		void CacheWidth();
 		void CacheNumLines();

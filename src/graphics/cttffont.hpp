@@ -14,7 +14,8 @@ namespace EE { namespace Graphics {
 class EE_API cTTFFont : public cFont {
 	public:
 		cTTFFont( const std::string FontName );
-		~cTTFFont();
+
+		virtual ~cTTFFont();
 
 		/** Load a True Type Font from path
 		* @param Filepath The TTF file path

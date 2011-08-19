@@ -30,12 +30,12 @@ class EE_API cSoundFile {
 		virtual bool OpenRead(const char* Data, std::size_t SizeInBytes, std::size_t& NbSamples, unsigned int& ChannelsCount, unsigned int& SampleRate);
 		virtual bool OpenWrite(const std::string& Filename, unsigned int ChannelsCount, unsigned int SampleRate);
 
-		std::size_t	mNbSamples;
+		std::size_t		mNbSamples;
 		unsigned int	mChannelsCount;
 		unsigned int	mSampleRate;
 		std::string		mFilename;
 		const char *	mData;
-		std::size_t	mSize;
+		std::size_t		mSize;
 };
 
 }}

@@ -123,6 +123,14 @@ void cTextureGroupLoader::Load( const std::string& TextureGroupPath ) {
 		cIOStreamFile IOS( mTextureGroupPath, std::ios::in | std::ios::binary );
 
 		LoadFromStream( IOS );
+	} else if ( cPackManager::instance()->FallbackToPacks() ) {
+		std::string tgPath( mTextureGroupPath );
+
+		cPack * tPack = cPackManager::instance()->Exists( tgPath );
+
+		if ( NULL != tPack ) {
+			LoadFromPack( tPack, tgPath );
+		}
 	}
 }
 

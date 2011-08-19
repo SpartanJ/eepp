@@ -1,11 +1,12 @@
 #include "cmusic.hpp"
+#include "../system/cpackmanager.hpp"
 
 namespace EE { namespace Audio {
 
-cMusic::cMusic(std::size_t BufferSize) :
-	mFile (NULL),
-	mDuration(0.f),
-	mSamples (BufferSize)
+cMusic::cMusic( std::size_t BufferSize ) :
+	mFile ( NULL ),
+	mDuration( 0.f ),
+	mSamples( BufferSize )
 {
 }
 
@@ -16,12 +17,26 @@ cMusic::~cMusic() {
 
 bool cMusic::OpenFromPack( cPack* Pack, const std::string& FilePackPath ) {
 	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, mData ) )
-		return OpenFromMemory( reinterpret_cast<const char*> (&mData[0]), mData.size() );
+		return OpenFromMemory( reinterpret_cast<const char*> ( mData.Data ), mData.DataSize );
 
 	return false;
 }
 
-bool cMusic::OpenFromFile(const std::string& Filename) {
+bool cMusic::OpenFromFile( const std::string& Filename ) {
+	if ( !FileExists( Filename ) ) {
+		if ( cPackManager::instance()->FallbackToPacks() ) {
+			std::string tPath( Filename );
+
+			cPack * tPack = cPackManager::instance()->Exists( tPath );
+
+			if ( NULL != tPack ) {
+				return OpenFromPack( tPack, tPath );
+			}
+		}
+
+		return false;
+	}
+
 	// Create the sound file implementation, and open it in read mode
 	Stop();
 	eeSAFE_DELETE( mFile );
@@ -34,7 +49,7 @@ bool cMusic::OpenFromFile(const std::string& Filename) {
 	}
 
 	// Compute the duration
-	mDuration = static_cast<eeFloat>(mFile->GetSamplesCount()) / mFile->GetSampleRate() / mFile->GetChannelsCount();
+	mDuration = static_cast<eeFloat>( mFile->GetSamplesCount() ) / mFile->GetSampleRate() / mFile->GetChannelsCount();
 
 	// Initialize the stream
 	Initialize(mFile->GetChannelsCount(), mFile->GetSampleRate());
@@ -43,7 +58,7 @@ bool cMusic::OpenFromFile(const std::string& Filename) {
 	return true;
 }
 
-bool cMusic::OpenFromMemory(const char* Data, std::size_t SizeInBytes) {
+bool cMusic::OpenFromMemory( const char * Data, std::size_t SizeInBytes ) {
 	Stop();
 	eeSAFE_DELETE( mFile );
 
@@ -55,9 +70,9 @@ bool cMusic::OpenFromMemory(const char* Data, std::size_t SizeInBytes) {
 		return false;
 	}
 
-	mDuration = static_cast<eeFloat>(mFile->GetSamplesCount()) / mFile->GetSampleRate(); // Compute the duration
+	mDuration = static_cast<eeFloat>( mFile->GetSamplesCount() ) / mFile->GetSampleRate(); // Compute the duration
 
-	Initialize(mFile->GetChannelsCount(), mFile->GetSampleRate()); // Initialize the stream
+	Initialize( mFile->GetChannelsCount(), mFile->GetSampleRate() ); // Initialize the stream
 
 	cLog::instance()->Write( "Music file loaded from memory." );
 	return true;

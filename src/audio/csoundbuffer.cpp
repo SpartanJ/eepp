@@ -1,5 +1,6 @@
 #include "csoundbuffer.hpp"
 #include "csound.hpp"
+#include "../system/cpackmanager.hpp"
 
 namespace EE { namespace Audio {
 
@@ -30,6 +31,21 @@ cSoundBuffer::~cSoundBuffer() {
 }
 
 bool cSoundBuffer::LoadFromFile(const std::string& Filename) {
+	if ( !FileExists( Filename ) ) {
+		if ( cPackManager::instance()->FallbackToPacks() ) {
+			std::string tPath( Filename );
+
+			cPack * tPack = cPackManager::instance()->Exists( tPath );
+
+			if ( NULL != tPack ) {
+				return LoadFromPack( tPack, tPath );
+			}
+		}
+
+		cLog::instance()->Write( "Failed to load sound buffer from file \"" + Filename + "\"" );
+		return false;
+	}
+
 	// Create the sound file
 	std::auto_ptr<cSoundFile> File( cSoundFile::CreateRead( Filename ) );
 

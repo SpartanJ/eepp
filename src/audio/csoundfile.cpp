@@ -21,9 +21,9 @@ cSoundFile * cSoundFile::CreateRead( const std::string& Filename ) {
 	// Create the file according to its type
 	cSoundFile * File = NULL;
 
-	if 			( cSoundFileOgg::IsFileSupported(Filename, true) )	 	File = eeNew( cSoundFileOgg, () );
+	if 			( cSoundFileOgg::IsFileSupported( Filename, true ) )	 	File = eeNew( cSoundFileOgg, () );
 	#ifndef EE_NO_SNDFILE
-	else if 	( cSoundFileDefault::IsFileSupported(Filename, true) ) 	File = eeNew( cSoundFileDefault, () );
+	else if 	( cSoundFileDefault::IsFileSupported( Filename, true ) ) 	File = eeNew( cSoundFileDefault, () );
 	#endif
 
 	// Open it for reading
@@ -52,9 +52,9 @@ cSoundFile * cSoundFile::CreateRead( const char* Data, std::size_t SizeInMemory 
 	// Create the file according to its type
 	cSoundFile * File = NULL;
 
-	if			( cSoundFileOgg::IsFileSupported(Data, SizeInMemory))	 	File = eeNew( cSoundFileOgg, () );
+	if			( cSoundFileOgg::IsFileSupported( Data, SizeInMemory ) )	 	File = eeNew( cSoundFileOgg, () );
 	#ifndef EE_NO_SNDFILE
-	else if 	( cSoundFileDefault::IsFileSupported(Data, SizeInMemory) ) 	File = eeNew( cSoundFileDefault, () );
+	else if 	( cSoundFileDefault::IsFileSupported( Data, SizeInMemory ) ) 	File = eeNew( cSoundFileDefault, () );
 	#endif
 
 	// Open it for reading
@@ -63,13 +63,13 @@ cSoundFile * cSoundFile::CreateRead( const char* Data, std::size_t SizeInMemory 
 		unsigned int ChannelsCount;
 		unsigned int SampleRate;
 
-		if ( File->OpenRead(Data, SizeInMemory, SamplesCount, ChannelsCount, SampleRate) ) {
-			File->mFilename	  = "";
-			File->mData		  = Data;
-			File->mSize		  = SizeInMemory;
-			File->mNbSamples	 = SamplesCount;
-			File->mChannelsCount = ChannelsCount;
-			File->mSampleRate	= SampleRate;
+		if ( File->OpenRead( Data, SizeInMemory, SamplesCount, ChannelsCount, SampleRate ) ) {
+			File->mFilename			= "";
+			File->mData				= Data;
+			File->mSize				= SizeInMemory;
+			File->mNbSamples		= SamplesCount;
+			File->mChannelsCount	= ChannelsCount;
+			File->mSampleRate		= SampleRate;
 		} else {
 			eeDelete( File );
 			File = NULL;
@@ -83,20 +83,20 @@ cSoundFile * cSoundFile::CreateWrite( const std::string& Filename, unsigned int 
 	// Create the file according to its type
 	cSoundFile * File = NULL;
 
-	if			( cSoundFileOgg::IsFileSupported(Filename, false) )		File = eeNew( cSoundFileOgg, () );
+	if		( cSoundFileOgg::IsFileSupported( Filename, false ) )		File = eeNew( cSoundFileOgg, () );
 	#ifndef EE_NO_SNDFILE
-	else if	( cSoundFileDefault::IsFileSupported(Filename, false) )	File = eeNew( cSoundFileDefault, () );
+	else if	( cSoundFileDefault::IsFileSupported( Filename, false ) )	File = eeNew( cSoundFileDefault, () );
 	#endif
 
 	// Open it for writing
 	if ( NULL != File ) {
-		if ( File->OpenWrite(Filename, ChannelsCount, SampleRate) ) {
-			File->mFilename	  = "";
-			File->mData		  = NULL;
-			File->mSize		  = 0;
-			File->mNbSamples	 = 0;
-			File->mChannelsCount = ChannelsCount;
-			File->mSampleRate	= SampleRate;
+		if ( File->OpenWrite( Filename, ChannelsCount, SampleRate ) ) {
+			File->mFilename			= "";
+			File->mData				= NULL;
+			File->mSize				= 0;
+			File->mNbSamples		= 0;
+			File->mChannelsCount	= ChannelsCount;
+			File->mSampleRate		= SampleRate;
 		} else {
 			eeDelete( File );
 			File = NULL;
@@ -122,10 +122,10 @@ unsigned int cSoundFile::GetSampleRate() const {
 bool cSoundFile::Restart() {
 	if ( mData ) {
 		// Reopen from memory
-		return OpenRead(mData, mSize, mNbSamples, mChannelsCount, mSampleRate);
+		return OpenRead( mData, mSize, mNbSamples, mChannelsCount, mSampleRate );
 	} else if ( mFilename != "" ) {
 		// Reopen from file
-		return OpenRead(mFilename, mNbSamples, mChannelsCount, mSampleRate);
+		return OpenRead( mFilename, mNbSamples, mChannelsCount, mSampleRate );
 	} else {
 		cLog::instance()->Write( "Warning : trying to restart a sound opened in write mode, which is not allowed" );
 		return false;

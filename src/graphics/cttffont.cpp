@@ -40,12 +40,23 @@ bool cTTFFont::LoadFromMemory( Uint8* TTFData, const eeUint& TTFDataSize, const 
 }
 
 bool cTTFFont::Load( const std::string& Filepath, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) {
-	mFilepath = Filepath;
-	mLoadedFromMemory = false;
+	mFilepath			= Filepath;
 
-	mFont = hkFontManager::instance()->OpenFromFile( Filepath.c_str(), Size, 0, NumCharsToGen );
+	if ( FileExists( Filepath ) ) {
+		mLoadedFromMemory	= false;
 
-	return iLoad( Size, Style, VerticalDraw, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
+		mFont = hkFontManager::instance()->OpenFromFile( Filepath.c_str(), Size, 0, NumCharsToGen );
+
+		return iLoad( Size, Style, VerticalDraw, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
+	} else if ( cPackManager::instance()->FallbackToPacks() ) {
+		cPack * tPack = cPackManager::instance()->Exists( mFilepath );
+
+		if ( NULL != tPack ) {
+			return LoadFromPack( tPack, mFilepath, Size, Style, VerticalDraw, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
+		}
+	}
+
+	return false;
 }
 
 bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, Uint8 OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) {

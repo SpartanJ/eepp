@@ -19,7 +19,7 @@ class EE_API cShape {
 
 		cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const Int32& OffsetX, const Int32& OffsetY, const std::string& Name = "" );
 
-		~cShape();
+		virtual ~cShape();
 
 		const Uint32& Id() const;
 

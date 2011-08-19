@@ -126,24 +126,32 @@ void cTextureFont::BuildFontFromDat() {
 
 bool cTextureFont::Load( const Uint32& TexId, const std::string& CoordinatesDatPath, const bool& VerticalDraw ) {
 	if ( FileExists( CoordinatesDatPath ) ) {
-		std::vector<Uint8> TmpData;
+		SafeDataPointer PData;
 
-		FileGet( CoordinatesDatPath, TmpData );
+		FileGet( CoordinatesDatPath, PData );
 
-		return LoadFromMemory( TexId, reinterpret_cast<Uint8*> ( &TmpData[0] ), (Uint32)TmpData.size(), VerticalDraw );
+		return LoadFromMemory( TexId, reinterpret_cast<const Uint8*> ( PData.Data ), PData.DataSize, VerticalDraw );
+	} else if ( cPackManager::instance()->FallbackToPacks() ) {
+		std::string tPath( CoordinatesDatPath );
+
+		cPack * tPack = cPackManager::instance()->Exists( tPath );
+
+		if ( NULL != tPack ) {
+			return LoadFromPack( TexId, tPack, tPath, VerticalDraw );
+		}
 	}
 
 	return false;
 }
 
 bool cTextureFont::LoadFromPack( const Uint32& TexId, cPack* Pack, const std::string& FilePackPath, const bool& VerticalDraw ) {
-	bool Ret = false;
 	SafeDataPointer PData;
 
-	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, PData ) )
-		Ret = LoadFromMemory( TexId, reinterpret_cast<const Uint8*> ( PData.Data ), PData.DataSize, VerticalDraw );
+	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, PData ) ) {
+		return LoadFromMemory( TexId, reinterpret_cast<const Uint8*> ( PData.Data ), PData.DataSize, VerticalDraw );
+	}
 
-	return Ret;
+	return false;
 }
 
 bool cTextureFont::LoadFromMemory( const Uint32& TexId, const Uint8* CoordData, const Uint32& CoordDataSize, const bool& VerticalDraw ) {
@@ -170,6 +178,7 @@ bool cTextureFont::LoadFromMemory( const Uint32& TexId, const Uint8* CoordData, 
 
 			BuildFontFromDat();
 			mLoadedCoords = true;
+
 			return true;
 		}
 	}

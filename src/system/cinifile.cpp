@@ -1,4 +1,5 @@
 #include "cinifile.hpp"
+#include "cpackmanager.hpp"
 
 namespace EE { namespace System {
 
@@ -8,14 +9,34 @@ namespace EE { namespace System {
 #define iniEOL '\r' << std::endl
 #endif
 
-cIniFile::cIniFile ( std::string const iniPath ) {
-	mCaseInsensitive = true;
+cIniFile::cIniFile ( std::string const iniPath ) :
+	mCaseInsensitive( true )
+{
 	LoadFromFile( iniPath );
 }
 
-cIniFile::cIniFile ( const Uint8* RAWData, const Uint32& size ) {
-	mCaseInsensitive = true;
+cIniFile::cIniFile ( const Uint8* RAWData, const Uint32& size ) :
+	mCaseInsensitive( true )
+{
 	LoadFromMemory( RAWData, size );
+}
+
+cIniFile::cIniFile( cPack * Pack, std::string iniPackPath ) :
+	mCaseInsensitive( true )
+{
+	LoadFromPack( Pack, iniPackPath );
+}
+
+bool cIniFile::LoadFromPack( cPack * Pack, std::string iniPackPath ) {
+	if ( NULL != Pack && Pack->IsOpen() && Pack->Exists( iniPackPath ) ) {
+		SafeDataPointer PData;
+
+		Pack->ExtractFileToMemory( iniPackPath, PData );
+
+		return LoadFromMemory( PData.Data, PData.DataSize );
+	}
+
+	return false;
 }
 
 bool cIniFile::LoadFromMemory( const Uint8* RAWData, const Uint32& size ) {
@@ -28,26 +49,38 @@ bool cIniFile::LoadFromMemory( const Uint8* RAWData, const Uint32& size ) {
 }
 
 bool cIniFile::LoadFromFile( const std::string& iniPath ) {
-	// Normally you would use ifstream, but the SGI CC compiler has
-	// a few bugs with ifstream. So ... fstream used.
-	std::fstream f;
-	std::string   line;
+	if ( FileExists( iniPath ) ) {
+		// Normally you would use ifstream, but the SGI CC compiler has
+		// a few bugs with ifstream. So ... fstream used.
+		std::fstream f;
+		std::string line;
 
-	Path ( iniPath );
+		Path ( iniPath );
 
-	f.open ( mPath.c_str(), std::ios::in );
+		f.open ( mPath.c_str(), std::ios::in );
 
-	if ( f.fail() )
-		return false;
+		if ( f.fail() )
+			return false;
 
-	mLines.clear();
+		mLines.clear();
 
-	while ( getline ( f, line ) )
-		mLines.push_back( line );
+		while ( getline ( f, line ) )
+			mLines.push_back( line );
 
-	f.close();
+		f.close();
 
-	return true;
+		return true;
+	} else if ( cPackManager::instance()->FallbackToPacks() ) {
+		std::string tPath( iniPath );
+
+		cPack * tPack = cPackManager::instance()->Exists( tPath );
+
+		if ( NULL != tPack ) {
+			return LoadFromPack( tPack, tPath );
+		}
+	}
+
+	return false;
 }
 
 bool cIniFile::ReadFile() {

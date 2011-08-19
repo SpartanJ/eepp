@@ -58,10 +58,10 @@ void cEETest::Init() {
 	if ( Resizeable )
 		Style |= WindowStyle::Resize;
 
-	mWindow = EE->CreateWindow( WindowSettings( mWidth, mHeight, BitColor, Style, MyPath + "data/ee.png" ), ContextSettings( VSync, GLVer ) );
-
 	PAK = eeNew( cZip, () );
 	PAK->Open( MyPath + "data/ee.zip" );
+
+	mWindow = EE->CreateWindow( WindowSettings( mWidth, mHeight, BitColor, Style, "ee.png" ), ContextSettings( VSync, GLVer ) );
 
 	run = ( mWindow->Created() && PAK->IsOpen() );
 
@@ -737,7 +737,6 @@ void cEETest::LoadTextures() {
 	cTimeElapsed te;
 
 	Uint32 i;
-
 
 	PakTest = eeNew( cZip, () );
 	PakTest->Open( MyPath + "data/test.zip" );

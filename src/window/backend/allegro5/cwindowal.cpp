@@ -413,15 +413,13 @@ bool cWindowAl::Icon( const std::string& Path ) {
 		return false;
 	}
 
-	if ( !FileExists( Path  ) ) {
-		return false;
-	}
+	cImage Img( Path );
 
-	unsigned char * Ptr = stbi_load( Path.c_str(), &x, &y, &c, 0 );
-
-	if ( NULL != Ptr ) {
-		Int32 W = x;
-		Int32 H = y;
+	if ( NULL != Img.GetPixelsPtr() ) {
+		const Uint8 * Ptr = Img.GetPixelsPtr();
+		Int32 W = Img.Width();
+		Int32 H = Img.Height();
+		c = Img.Channels();
 
 		if ( ( W  % 8 ) == 0 && ( H % 8 ) == 0 ) {
 			int nbfl = al_get_new_bitmap_flags();
@@ -459,14 +457,10 @@ bool cWindowAl::Icon( const std::string& Path ) {
 			al_set_new_bitmap_flags( nbfl );
 			al_set_target_backbuffer( mDisplay );
 
-			free( Ptr );
-
 			mWindow.WindowConfig.Icon 	= Path;
 
 			return true;
 		}
-
-		free( Ptr );
 	}
 
 	return false;

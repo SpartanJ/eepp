@@ -858,6 +858,14 @@ bool cMap::Load( const std::string& path ) {
 		cIOStreamFile IOS( mPath, std::ios::in | std::ios::binary );
 
 		return LoadFromStream( IOS );
+	} else if ( cPackManager::instance()->FallbackToPacks() ) {
+		std::string tPath( path );
+		cPack * tPack = cPackManager::instance()->Exists( tPath ) ;
+
+		if ( NULL != tPack ) {
+			mPath = tPath;
+			return LoadFromPack( tPack, tPath );
+		}
 	}
 
 	return false;

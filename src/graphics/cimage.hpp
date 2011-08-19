@@ -19,7 +19,10 @@ class EE_API cImage {
 		cImage( const Uint32& Width, const Uint32& Height, const Uint32& Channels );
 
 		/** Load an image from path */
-		cImage( const std::string& Path );
+		cImage( std::string Path );
+
+		/** Load an image from pack */
+		cImage( cPack * Pack, std::string FilePackPath );
 
 		virtual ~cImage();
 
@@ -106,6 +109,8 @@ class EE_API cImage {
 		bool			mAvoidFree;
 
 		void 			Allocate( const Uint32& size );
+
+		void			LoadFromPack( cPack * Pack, const std::string& FilePackPath );
 };
 
 }}

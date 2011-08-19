@@ -20,10 +20,21 @@ cShader::cShader( const Uint32& Type, const std::string& Filename ) {
 
 		SetSource( (const char*)PData.Data, PData.DataSize );
 	} else {
-		cLog::instance()->Write( std::string( "Couldn't open shader object: " ) + Filename );
+		std::string tPath = Filename;
+		cPack * tPack = NULL;
+
+		if ( cPackManager::instance()->FallbackToPacks() && NULL != ( tPack = cPackManager::instance()->Exists( tPath ) ) ) {
+			SafeDataPointer PData;
+
+			tPack->ExtractFileToMemory( tPath, PData );
+
+			SetSource( reinterpret_cast<char*> ( PData.Data ), PData.DataSize );
+		} else {
+			cLog::instance()->Write( std::string( "Couldn't open shader object: " ) + Filename );
+		}
 	}
 
-    Compile();
+	Compile();
 }
 
 cShader::cShader( const Uint32& Type, const char * Data, const Uint32& DataSize ) {

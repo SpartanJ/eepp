@@ -168,6 +168,14 @@ void cTextureLoader::LoadFromPath() {
 
 		if ( NULL == mPixels )
 			cLog::instance()->Write( stbi_failure_reason() );
+	} else if ( cPackManager::instance()->FallbackToPacks() ) {
+		mPack = cPackManager::instance()->Exists( mFilepath );
+
+		if ( NULL != mPack ) {
+			mLoadType = TEX_LT_PACK;
+
+			LoadFromPack();
+		}
 	}
 }
 

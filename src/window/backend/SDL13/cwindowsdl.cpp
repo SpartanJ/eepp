@@ -318,18 +318,20 @@ void cWindowSDL::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {
 	Uint16 green_ramp[256];
 	Uint16 blue_ramp[256];
 
-	SDL_CalculateGammaRamp(Red, red_ramp);
+	SDL_CalculateGammaRamp( Red, red_ramp );
 
-	if (Green == Red) {
+	if ( Green == Red ) {
 		SDL_memcpy(green_ramp, red_ramp, sizeof(red_ramp));
 	} else {
-		SDL_CalculateGammaRamp(Green, green_ramp);
+		SDL_CalculateGammaRamp( Green, green_ramp );
 	}
 
-	if (Blue == Red) {
-		SDL_memcpy(blue_ramp, red_ramp, sizeof(red_ramp));
+	if ( Blue == Red ) {
+		SDL_memcpy( blue_ramp, red_ramp, sizeof(red_ramp) );
+	} else if ( Blue == Green ) {
+		SDL_memcpy( blue_ramp, green_ramp, sizeof(green_ramp) );
 	} else {
-		SDL_CalculateGammaRamp(Blue, blue_ramp);
+		SDL_CalculateGammaRamp( Blue, blue_ramp );
 	}
 
 	SDL_SetWindowGammaRamp( mSDLWindow, red_ramp, green_ramp, blue_ramp );
@@ -350,10 +352,6 @@ eeWindowHandler	cWindowSDL::GetWindowHandler() {
 bool cWindowSDL::Icon( const std::string& Path ) {
 	int x, y, c;
 
-	if ( !FileExists( Path ) ) {
-		return false;
-	}
-
 	if ( !mWindow.Created ) {
 		if ( stbi_info( Path.c_str(), &x, &y, &c ) ) {
 			mWindow.WindowConfig.Icon 	= Path;
@@ -364,13 +362,15 @@ bool cWindowSDL::Icon( const std::string& Path ) {
 		return false;
 	}
 
-	unsigned char * Ptr = stbi_load( Path.c_str(), &x, &y, &c, 0 );
+	cImage Img( Path );
 
-	if ( NULL != Ptr ) {
-		Int32 W = x;
-		Int32 H = y;
+	if ( NULL != Img.GetPixelsPtr() ) {
+		const Uint8 * Ptr = Img.GetPixelsPtr();
+		x = Img.Width();
+		y = Img.Height();
+		c = Img.Channels();
 
-		if ( ( W  % 8 ) == 0 && ( H % 8 ) == 0 ) {
+		if ( ( x  % 8 ) == 0 && ( y % 8 ) == 0 ) {
 			Uint32 rmask, gmask, bmask, amask;
 			#if SDL_BYTEORDER == SDL_BIG_ENDIAN
 				rmask = 0xff000000;
@@ -383,7 +383,7 @@ bool cWindowSDL::Icon( const std::string& Path ) {
 				bmask = 0x00ff0000;
 				amask = 0xff000000;
 			#endif
-			SDL_Surface * TempGlyphSheet = SDL_CreateRGBSurface(SDL_SWSURFACE, W, H, c * 8, rmask, gmask, bmask, amask);
+			SDL_Surface * TempGlyphSheet = SDL_CreateRGBSurface( SDL_SWSURFACE, x, y, c * 8, rmask, gmask, bmask, amask );
 
 			SDL_LockSurface( TempGlyphSheet );
 
@@ -399,12 +399,8 @@ bool cWindowSDL::Icon( const std::string& Path ) {
 
 			SDL_FreeSurface( TempGlyphSheet );
 
-			free( Ptr );
-
 			return true;
 		}
-
-		free( Ptr );
 	}
 
 	return false;

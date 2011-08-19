@@ -11,7 +11,8 @@ namespace EE { namespace Graphics {
 class EE_API cTextureFont : public cFont {
 	public:
 		cTextureFont( const std::string FontName );
-		~cTextureFont();
+
+		virtual ~cTextureFont();
 
 		/** Load's a texture font
 		* @param TexId The texture id returned by cTextureFactory

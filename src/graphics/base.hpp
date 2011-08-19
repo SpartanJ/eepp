@@ -108,7 +108,6 @@ typedef char GLchar;
 #include "../utils/string.hpp"
 #include "../utils/utils.hpp"
 #include "../utils/polygon2.hpp"
-#include "../utils/vector3.hpp"
 using namespace EE::Utils;
 
 #include "../math/math.hpp"
@@ -120,6 +119,7 @@ using namespace EE::Math;
 #include "../system/cpack.hpp"
 #include "../system/tresourcemanager.hpp"
 #include "../system/tcontainer.hpp"
+#include "../system/cpackmanager.hpp"
 using namespace EE::System;
 
 #include "renders.hpp"

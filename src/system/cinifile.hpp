@@ -24,6 +24,8 @@
 
 namespace EE { namespace System {
 
+class cPack;
+
 class EE_API cIniFile {
 	private:
 		bool   mCaseInsensitive;
@@ -43,9 +45,11 @@ class EE_API cIniFile {
 		enum errors { noID = -1};
 		cIniFile ( std::string const iniPath = "" );
 		cIniFile ( const Uint8* RAWData, const Uint32& size );
+		cIniFile ( cPack * Pack, std::string iniPackPath );
 
 		bool LoadFromFile( const std::string& iniPath );
 		bool LoadFromMemory( const Uint8* RAWData, const Uint32& size );
+		bool LoadFromPack( cPack * Pack, std::string iniPackPath );
 
 		virtual ~cIniFile()                            {}
 

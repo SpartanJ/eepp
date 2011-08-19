@@ -46,7 +46,7 @@ cImage::cImage( Uint8* data, const eeUint& Width, const eeUint& Height, const ee
 {
 }
 
-cImage::cImage( const std::string& Path ) :
+cImage::cImage( std::string Path ) :
 	mPixels(NULL),
 	mWidth(0),
 	mHeight(0),
@@ -55,6 +55,7 @@ cImage::cImage( const std::string& Path ) :
 	mAvoidFree(false)
 {
 	int w, h, c;
+	cPack * tPack = NULL;
 	Uint8 * data = stbi_load( Path.c_str(), &w, &h, &c, 0 );
 
 	if ( NULL != data ) {
@@ -69,14 +70,56 @@ cImage::cImage( const std::string& Path ) :
 		#ifdef EE_MEMORY_MANAGER
 		MemoryManager::AddPointer( cAllocatedPointer( (void*)data, __FILE__, __LINE__, mSize ) );
 		#endif
+	} else if ( cPackManager::instance()->FallbackToPacks() && NULL != ( tPack = cPackManager::instance()->Exists( Path ) ) ) {
+		LoadFromPack( tPack, Path );
 	} else {
 		cLog::instance()->Write( "Failed to load image, reason: " + std::string( stbi_failure_reason() ) );
 	}
 }
 
+cImage::cImage( cPack * Pack, std::string FilePackPath ) :
+	mPixels(NULL),
+	mWidth(0),
+	mHeight(0),
+	mChannels(0),
+	mSize(0),
+	mAvoidFree(false)
+{
+	LoadFromPack( Pack, FilePackPath );
+}
+
 cImage::~cImage() {
 	if ( !mAvoidFree )
 		ClearCache();
+}
+
+void cImage::LoadFromPack( cPack * Pack, const std::string& FilePackPath ) {
+	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( FilePackPath ) ) {
+		SafeDataPointer PData;
+
+		Pack->ExtractFileToMemory( FilePackPath, PData );
+
+		int w, h, c;
+		Uint8 * data = stbi_load_from_memory( PData.Data, PData.DataSize, &w, &h, &c, 0 );
+
+		if ( NULL != data ) {
+			mPixels		= data;
+			mWidth		= (eeUint)w;
+			mHeight		= (eeUint)h;
+			mChannels	= (eeUint)c;
+
+			mSize	= mWidth * mHeight * mChannels;
+
+			//! HACK: This is a hack to make the memory manager recognize the allocated data
+			#ifdef EE_MEMORY_MANAGER
+			MemoryManager::AddPointer( cAllocatedPointer( (void*)data, __FILE__, __LINE__, mSize ) );
+			#endif
+		} else {
+			cLog::instance()->Write( "Failed to load image, reason: " + std::string( stbi_failure_reason() ) );
+		}
+	} else {
+		cLog::instance()->Write( "Failed to load image " + FilePackPath + " from pack." );
+	}
 }
 
 void cImage::SetPixels( const Uint8* data ) {

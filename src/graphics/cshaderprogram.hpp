@@ -2,6 +2,7 @@
 #define EE_GRAPHICSCSHADERPROGRAM_H
 
 #include "base.hpp"
+#include "../utils/vector3.hpp"
 #include "cshader.hpp"
 
 namespace EE { namespace Graphics {

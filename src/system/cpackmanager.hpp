@@ -15,6 +15,12 @@ class EE_API cPackManager : public tContainer<cPack>, public tSingleton<cPackMan
 		virtual ~cPackManager();
 
 		cPack * Exists( std::string& path );
+
+		const bool& FallbackToPacks() const;
+
+		void FallbackToPacks( const bool& fallback );
+	protected:
+		bool	mFallback;
 };
 
 }}
