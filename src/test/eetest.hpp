@@ -81,8 +81,6 @@ class cEETest : private cThread {
 		void LoadTextures();
 		void CmdSetPartsNum ( const std::vector < String >& params );
 
-		std::vector<cParticleSystem, eeAllocator< cParticleSystem > > PS;
-
 		cTimeElapsed cElapsed;
 		eeFloat PSElapsed;
 	private:
@@ -103,6 +101,7 @@ class cEETest : private cThread {
 		std::vector<cTexture *> TNP;
 
 		std::vector<Graphics::cShape*> Tiles;
+		std::vector<cParticleSystem> PS;
 
 		eeVector2i Mouse;
 		eeVector2f Mousef;
@@ -227,6 +226,8 @@ class cEETest : private cThread {
 		cUIListBox * mListBox;
 		cUIPopUpMenu * Menu;
 		cUIWindow * mUIWindow;
+		cMapEditor * mMapEditor;
+		cTextureGroupEditor * mETGEditor;
 
 		cTextCache mEEText;
 		cTextCache mFBOText;
@@ -272,6 +273,14 @@ class cEETest : private cThread {
 		cSprite *				mCircleSprite;
 
 		cUITheme *				mTheme;
+
+		void CreateMapEditor();
+
+		void OnMapEditorClose();
+
+		void OnETGEditorClose();
+
+		void CreateETGEditor();
 };
 
 #endif

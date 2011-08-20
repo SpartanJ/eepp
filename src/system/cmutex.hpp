@@ -1,7 +1,7 @@
 #ifndef EE_SYSTEMCMUTEX_H
 #define EE_SYSTEMCMUTEX_H
 
-#include "base.hpp"
+#include "../base.hpp"
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #ifndef WIN32_LEAN_AND_MEAN

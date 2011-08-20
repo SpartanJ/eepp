@@ -28,6 +28,13 @@ hkFont::hkFont( hkFontManager * FontManager, unsigned int CacheSize ) :
 }
 
 hkFont::~hkFont() {
+	CacheFlush();
+
+	if ( NULL != Face() ) {
+		FT_Done_Face( Face() );
+		Face( NULL );
+	}
+
 	hkSAFE_DELETE_ARRAY( mCache );
 }
 
@@ -289,10 +296,11 @@ unsigned char * hkFont::GlyphRender( u16 ch, u32 fg ) {
 	memset( buffu32, fg, bitmap->width * bitmap->rows );
 
 	const u8* pixels = bitmap->buffer;
+	u32 index;
 
 	for ( int y = 0; y < bitmap->rows; y++ ) {
 		for ( int x = 0; x < bitmap->width; x++ ) {
-			u32 index = (x + y * bitmap->width) * 4 + 3;
+			index = (x + y * bitmap->width) * 4 + 3;
 
 			textbuf[ index ] = pixels[ x ];
 		}
@@ -337,7 +345,7 @@ int hkFont::GlyphMetrics( u16 ch, int* minx, int* maxx, int* miny, int* maxy, in
 	if ( NULL !=maxy )
 		*maxy = mCurrent->MaxY();
 
-	if ( advance ) {
+	if ( NULL != advance ) {
 		*advance = mCurrent->Advance();
 
 		if( HK_TTF_HANDLE_STYLE_BOLD(this) )
@@ -384,6 +392,134 @@ void hkFont::DrawLine( const unsigned char * textbuf, const int row, const u32 c
 
 		dst += bitmap->pitch / 4;
 	}
+}
+
+void hkFont::Face( FT_Face face ) {
+	mFace = face;
+}
+
+FT_Face	hkFont::Face() {
+	return mFace;
+}
+
+void hkFont::Height( int height ) {
+	mHeight = height;
+}
+
+int	hkFont::Height() {
+	return mHeight;
+}
+
+void hkFont::Ascent( int ascent ) {
+	mAscent = ascent;
+}
+
+int hkFont::Ascent() {
+	return mAscent;
+}
+
+void hkFont::Descent( int descent ) {
+	mDescent = descent;
+}
+
+int hkFont::Descent() {
+	return mDescent;
+}
+
+void hkFont::LineSkip( int lineskip ) {
+	mLineSkip = lineskip;
+}
+
+int	hkFont::LineSkip() {
+	return mLineSkip;
+}
+
+void hkFont::FaceStyle( int facestyle ) {
+	mFaceStyle = facestyle;
+}
+
+int hkFont::FaceStyle()	{
+	return mFaceStyle;
+}
+
+void hkFont::Kerning( int kerning )	{
+	mKerning = kerning;
+}
+
+int hkFont::Kerning() {
+	return mKerning;
+}
+
+void hkFont::GlyphOverhang( int glyphoverhang )	{
+	mGlyphOverhang = glyphoverhang;
+}
+
+int hkFont::GlyphOverhang()	{
+	return mGlyphOverhang;
+}
+
+void hkFont::GlyphItalics( float glyphitalics ) {
+	mGlyphItalics = glyphitalics;
+}
+
+float hkFont::GlyphItalics() {
+	return mGlyphItalics;
+}
+
+void hkFont::UnderlineOffset( int underlineoffset ) {
+	mUnderlineOffset = underlineoffset;
+}
+
+int hkFont::UnderlineOffset() {
+	return mUnderlineOffset;
+}
+
+void hkFont::UnderlineHeight( int underlineheight )	{
+	mUnderlineHeight = underlineheight;
+}
+
+int hkFont::UnderlineHeight() {
+	return mUnderlineHeight;
+}
+
+void hkFont::Current( hkGlyph * current ) {
+	mCurrent = current;
+}
+
+hkGlyph * hkFont::Current()	{
+	return mCurrent;
+}
+
+void hkFont::Scratch( hkGlyph scratch ) {
+	mScratch = scratch;
+}
+
+hkGlyph	hkFont::Scratch() {
+	return mScratch;
+}
+
+void hkFont::FontSizeFamily( int fontsizefamily ) {
+	mFontSizeFamily = fontsizefamily;
+}
+
+int	hkFont::FontSizeFamily() {
+	return mFontSizeFamily;
+}
+
+int	hkFont::Outline() const {
+	return mOutline;
+}
+
+int	hkFont::Hinting() const {
+	return mHinting;
+}
+
+int	hkFont::Style() {
+	return mStyle;
+}
+
+hkFontManager * hkFont::Manager() const {
+	return mFm;
 }
 
 }

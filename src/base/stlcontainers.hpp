@@ -2,6 +2,14 @@
 #define EE_STLCONTAINERS_HPP
 
 namespace EE {
+	template <typename T, typename A = eeAllocator<T> >
+	struct eeStack {
+		#ifdef EE_MEMORY_MANAGER
+		typedef typename std::stack<T, A> type;
+		#else
+		typedef typename std::stack<T> type;
+		#endif
+	};
 
 	template <typename T, typename A = eeAllocator<T> >
 	struct eeDeque {

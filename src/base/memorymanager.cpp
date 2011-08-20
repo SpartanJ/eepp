@@ -38,12 +38,23 @@ static std::string SizeToString( const unsigned int& MemSize ) {
 tAllocatedPointerMap MemoryManager::mMapPointers;
 size_t MemoryManager::mTotalMemoryUsage = 0;
 size_t MemoryManager::mPeakMemoryUsage = 0;
+cAllocatedPointer MemoryManager::mBiggestAllocation = cAllocatedPointer( NULL, "", 0, 0 );
 
-cAllocatedPointer::cAllocatedPointer( void * Data,const std::string& File, int Line, size_t Memory ) {
+cAllocatedPointer::cAllocatedPointer( void * Data, const std::string& File, int Line, size_t Memory ) {
 	mData 		= Data;
 	mFile 		= File;
 	mLine 		= Line;
 	mMemory 	= Memory;
+}
+
+void * MemoryManager::AddPointerInPlace( void * Place, const cAllocatedPointer& aAllocatedPointer ) {
+	tAllocatedPointerMapIt it = mMapPointers.find( Place );
+
+	if ( it != mMapPointers.end() ) {
+		RemovePointer( Place );
+	}
+
+	return AddPointer( aAllocatedPointer );
 }
 
 void * MemoryManager::AddPointer( const cAllocatedPointer& aAllocatedPointer ) {
@@ -51,8 +62,13 @@ void * MemoryManager::AddPointer( const cAllocatedPointer& aAllocatedPointer ) {
 
 	mTotalMemoryUsage += aAllocatedPointer.mMemory;
 
-	if ( mPeakMemoryUsage < mTotalMemoryUsage )
+	if ( mPeakMemoryUsage < mTotalMemoryUsage ) {
 		mPeakMemoryUsage = mTotalMemoryUsage;
+	}
+
+	if ( aAllocatedPointer.mMemory > mBiggestAllocation.mMemory ) {
+		mBiggestAllocation = aAllocatedPointer;
+	}
 
 	return aAllocatedPointer.mData;
 }
@@ -80,14 +96,12 @@ bool MemoryManager::RemovePointer( void * Data ) {
 void MemoryManager::LogResults() {
 	#ifdef EE_MEMORY_MANAGER
 
-	#ifdef EE_DEBUG
 	if ( EE::PrintDebugInLog ) {
 		cLog::DestroySingleton();
 		EE::PrintDebugInLog = false;
 	}
-	#endif
 
-	eePRINT("\n|--Memory Manager Report-------------------------------|\n");
+	eePRINT("\n|--Memory Manager Report-------------------------------------|\n");
 	eePRINT("|\n");
 
 	if( mMapPointers.empty() ) {
@@ -116,7 +130,7 @@ void MemoryManager::LogResults() {
 
 		eePRINT( "line\t\t memory usage\t  \n" );
 
-		eePRINT( "|------------------------------------------------------------\n" );
+		eePRINT( "|-----------------------------------------------------------|\n" );
 
 		it = mMapPointers.begin();
 
@@ -134,8 +148,10 @@ void MemoryManager::LogResults() {
 
 	eePRINT( "|\n" );
 	eePRINT( "| Memory left: %s\n", SizeToString( mTotalMemoryUsage ).c_str() );
+	eePRINT( "| Biggest allocation:\n" );
+	eePRINT( "| %s in file: %s at line: %d\n", SizeToString( mBiggestAllocation.mMemory ).c_str(), mBiggestAllocation.mFile.c_str(), mBiggestAllocation.mLine );
 	eePRINT( "| Peak Memory Usage: %s\n", SizeToString( mPeakMemoryUsage ).c_str() );
-	eePRINT( "|------------------------------------------------------------\n\n" );
+	eePRINT( "|------------------------------------------------------------|\n\n" );
 
 	#endif
 }

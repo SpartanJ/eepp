@@ -11,20 +11,11 @@ namespace HaikuTTF {
 class hkFontManager : private hkMutex {
 	static hkFontManager * mSingleton;
 	public:
-		static hkFontManager * exists() {
-			return mSingleton;
-		}
+		static hkFontManager * exists();
 
-		static hkFontManager * instance() {
-			if (mSingleton == 0)
-				mSingleton = hkNew( hkFontManager, () );
+		static hkFontManager * instance();
 
-			return mSingleton;
-		}
-
-		static void DestroySingleton() {
-			hkSAFE_DELETE( mSingleton );
-		}
+		static void DestroySingleton();
 
 		hkFontManager();
 
@@ -42,7 +33,7 @@ class hkFontManager : private hkMutex {
 
 		hkFont * 			OpenFromFile( const char* filename, int ptsize, long index = 0, unsigned int glyphCacheSize = 256 );
 
-		FT_Library 			Library() const { return mLibrary; }
+		FT_Library 			Library() const;
 	protected:
 		friend class hkFont;
 		

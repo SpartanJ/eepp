@@ -40,6 +40,7 @@
 			<Add option="-Wall" />
 			<Add option="-std=gnu99 -fno-strict-aliasing -ffast-math -Wno-unknown-pragmas" />
 			<Add option="-DSTBI_FAILURE_USERMSG" />
+			<Add option="-DEE_NO_SNDFILE" />
 			<Add directory=".\src\helper\chipmunk" />
 			<Add directory=".\src\helper\zlib" />
 			<Add directory="C:\MinGW\include\freetype2" />

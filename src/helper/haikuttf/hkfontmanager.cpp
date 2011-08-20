@@ -4,6 +4,22 @@ namespace HaikuTTF {
 
 hkFontManager * hkFontManager::mSingleton = NULL;
 
+hkFontManager * hkFontManager::exists() {
+	return mSingleton;
+}
+
+hkFontManager * hkFontManager::instance() {
+	if ( mSingleton == NULL ) {
+		mSingleton = hkNew( hkFontManager, () );
+	}
+
+	return mSingleton;
+}
+
+void hkFontManager::DestroySingleton() {
+	hkSAFE_DELETE( mSingleton );
+}
+
 hkFontManager::hkFontManager() :
 	mLibrary(NULL),
 	mInitialized(0)
@@ -44,16 +60,7 @@ int hkFontManager::WasInit() {
 }
 
 void hkFontManager::CloseFont( hkFont * Font ) {
-	if ( NULL != Font ) {
-		Font->CacheFlush();
-
-		if ( NULL != Font->Face() ) {
-			FT_Done_Face( Font->Face() );
-			Font->Face( NULL );
-		}
-
-		hkSAFE_DELETE( Font );
-	}
+	hkSAFE_DELETE( Font );
 }
 
 hkFont * hkFontManager::OpenFromMemory( const u8* data, unsigned long size, int ptsize, long index, unsigned int glyphCacheSize ) {
@@ -80,7 +87,7 @@ hkFont * hkFontManager::OpenFromMemory( const u8* data, unsigned long size, int 
 }
 
 hkFont * hkFontManager::OpenFromFile( const char* filename, int ptsize, long index, unsigned int glyphCacheSize ) {
-    if ( Init() != 0)
+	if ( Init() != 0 )
 		return NULL;
 
     FT_Face face;
@@ -89,7 +96,6 @@ hkFont * hkFontManager::OpenFromFile( const char* filename, int ptsize, long ind
 
     if ( FT_New_Face( mLibrary, filename, index, &face ) != 0 )
 		return NULL;
-
 
     if ( FT_Select_Charmap(face, FT_ENCODING_UNICODE) != 0 )
 		return NULL;
@@ -174,6 +180,10 @@ void hkFontManager::MutexLock() {
 
 void hkFontManager::MutexUnlock() {
 	Unlock();
+}
+
+FT_Library hkFontManager::Library() const {
+	return mLibrary;
 }
 
 }

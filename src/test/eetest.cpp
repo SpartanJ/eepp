@@ -26,6 +26,8 @@ void cEETest::Init() {
 	mAxisX				= 0;
 	mAxisY				= 0;
 	mCurDemo			= 0xFFFFFF;
+	mMapEditor			= NULL;
+	mETGEditor			= NULL;
 
 	MyPath 				= GetProcessPath();
 
@@ -101,7 +103,7 @@ void cEETest::Init() {
 
 		if ( Mus->OpenFromPack( PAK, "music.ogg" ) ) {
 			Mus->Loop(true);
-			Mus->Volume( 0.f );
+			//Mus->Volume( 0.f );
 			Mus->Play();
 		}
 
@@ -201,7 +203,7 @@ void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
 
 	CreateUI();
 
-	mEEText.Create( TTFB, "Entropia Engine++\nCTRL + Number to change Demo Screen" );
+	mEEText.Create( TTFB, "Entropia Engine++\nCTRL + Number to change Demo Screen\nRight click to see the PopUp Menu" );
 	mFBOText.Create( TTFB, "This is a VBO\nInside of a FBO" );
 	mInfoText.Create( FF, "", eeColorA(255,255,255,150) );
 }
@@ -455,6 +457,9 @@ void cEETest::CreateUI() {
 	Menu->Add( "New", mTheme->GetIconByName( "document-new" ) );
 	Menu->Add( "Open...", mTheme->GetIconByName( "document-open" ) );
 	Menu->AddSeparator();
+	Menu->Add( "Map Editor" );
+	Menu->Add( "Texture Group Editor" );
+	Menu->AddSeparator();
 	Menu->Add( "Show Screen 1" );
 	Menu->Add( "Show Screen 2" );
 	Menu->Add( "Show Screen 3" );
@@ -545,11 +550,31 @@ void cEETest::CreateUI() {
 	C = reinterpret_cast<cUIControlAnim*> ( C->Parent() );
 
 	Log->Writef( "CreateUI time: %f", TE.ElapsedSinceStart() );
+}
 
-	tWin = mTheme->CreateWindow( NULL, eeSize( 1024, 768 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, eeSize( 1024, 768 ) );
-	eeNew( cMapEditor, ( tWin ) );
+void cEETest::CreateMapEditor() {
+	if ( NULL != mMapEditor )
+		return;
+
+	cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 1024, 768 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, eeSize( 1024, 768 ) );
+	mMapEditor = eeNew( cMapEditor, ( tWin, cb::Make0( this, &cEETest::OnMapEditorClose ) ) );
 	tWin->Center();
 	tWin->Show();
+}
+
+void cEETest::OnMapEditorClose() {
+	mMapEditor = NULL;
+}
+
+void cEETest::CreateETGEditor() {
+	cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 1024, 768 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, eeSize( 1024, 768 ) );
+	mETGEditor = eeNew ( Tools::cTextureGroupEditor, ( tWin, cb::Make0( this, &cEETest::OnETGEditorClose ) ) );
+	tWin->Center();
+	tWin->Show();
+}
+
+void cEETest::OnETGEditorClose() {
+	mETGEditor = NULL;
 }
 
 void cEETest::CreateCommonDialog() {
@@ -645,6 +670,10 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 		}
 
 		mUIWindow->Show();
+	} else if ( "Map Editor" == txt ) {
+		CreateMapEditor();
+	} else if ( "Texture Group Editor" == txt ) {
+		CreateETGEditor();
 	} else if ( "Multi Viewport" == txt ) {
 		MultiViewportMode = !MultiViewportMode;
 	} else if ( "Open..." == txt ) {

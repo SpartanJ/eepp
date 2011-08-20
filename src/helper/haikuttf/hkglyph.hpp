@@ -11,37 +11,37 @@ class hkGlyph {
 
 		~hkGlyph();
 
-		inline int			Stored() const 					{	return mStored;			}
-		inline void		Stored( int stored ) 				{	mStored = stored;			}
+		int			Stored() const;
+		void		Stored( int stored );
 
-		inline FT_UInt		Index() const 						{	return mIndex;				}
-		inline void		Index( FT_UInt index ) 				{	mIndex = index;				}
+		FT_UInt		Index() const;
+		void		Index( FT_UInt index );
 
-		inline FT_Bitmap *	Pixmap()							{	return &mPixmap;			}
-		inline void		Pixmap( const FT_Bitmap& pixmap ) 	{	mPixmap = pixmap;			}
+		FT_Bitmap *	Pixmap();
+		void		Pixmap( const FT_Bitmap& pixmap );
 
-		inline int			MinX() const 						{	return mMinX;				}
-		inline void		MinX( int minx ) 					{	mMinX = minx;				}
+		int			MinX() const;
+		void		MinX( int minx );
 
-		inline int			MinY() const 						{	return mMinY;				}
-		inline void		MinY( int miny ) 					{	mMinY = miny;				}
+		int			MinY() const;
+		void		MinY( int miny );
 
-		inline int			MaxX() const 						{	return mMaxX;				}
-		inline void		MaxX( int maxx ) 					{	mMaxX = maxx;				}
+		int			MaxX() const;
+		void		MaxX( int maxx );
 
-		inline int			MaxY() const 						{	return mMaxY;				}
-		inline void		MaxY( int maxy ) 					{	mMaxY = maxy;				}
+		int			MaxY() const;
+		void		MaxY( int maxy );
 
-		inline int			OffsetY() const 					{	return mOffsetY;			}
-		inline void		OffsetY( int offsety ) 				{	mOffsetY = offsety;			}
+		int			OffsetY() const;
+		void		OffsetY( int offsety );
 
-		inline int			Advance() const 					{	return mAdvance;			}
-		inline void		Advance( int advance ) 				{	mAdvance = advance;			}
+		int			Advance() const;
+		void		Advance( int advance );
 
-		inline u16			Cached() const						{	return mCached;			}
-		inline void		Cached( u16 cached ) 				{	mCached = cached;			}
+		u16			Cached() const;
+		void		Cached( u16 cached );
 
-		void 				Flush();
+		void 		Flush();
 	protected:
 		int			mStored;
 		FT_UInt		mIndex;
@@ -52,7 +52,7 @@ class hkGlyph {
 		int			mMaxY;
 		int			mOffsetY;
 		int			mAdvance;
-		u16	mCached;
+		u16			mCached;
 };
 
 }

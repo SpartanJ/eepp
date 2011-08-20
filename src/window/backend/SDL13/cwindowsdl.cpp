@@ -279,12 +279,12 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 
 		Setup2D();
 
-		SendVideoResizeCb();
+		SDL_PumpEvents();
+		SDL_FlushEvent( SDL_WINDOWEVENT );
 
 		mCursorManager->Reload();
 
-		SDL_PumpEvents();
-		SDL_FlushEvent( SDL_WINDOWEVENT );
+		SendVideoResizeCb();
 	} catch (...) {
 		cLog::instance()->Write( "Unable to change resolution: " + std::string( SDL_GetError() ) );
 		cLog::instance()->Save();

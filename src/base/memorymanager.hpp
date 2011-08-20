@@ -25,6 +25,8 @@ class MemoryManager {
 	public:
 		static void * AddPointer( const cAllocatedPointer& aAllocatedPointer );
 
+		static void * AddPointerInPlace( void * Place, const cAllocatedPointer& aAllocatedPointer );
+
 		static bool RemovePointer( void * Data );
 
 		static void LogResults();
@@ -53,15 +55,20 @@ class MemoryManager {
 
 		static size_t					GetPeakMemoryUsage()	{ return mPeakMemoryUsage;	}
 		static size_t					GetTotalMemoryUsage()	{ return mTotalMemoryUsage;	}
+		static const cAllocatedPointer&	GetBiggestAllocation()	{ return mBiggestAllocation; }
 
 		static tAllocatedPointerMap 	mMapPointers;
 		static size_t					mTotalMemoryUsage;
 		static size_t					mPeakMemoryUsage;
+		static cAllocatedPointer		mBiggestAllocation;
 };
 
 #ifdef EE_MEMORY_MANAGER
 	#define eeNew( classType, constructor ) \
 			( classType *)EE::MemoryManager::AddPointer( EE::cAllocatedPointer( new classType constructor ,__FILE__,__LINE__, sizeof(classType) ) )
+
+	#define eeNewInPlace( place, classType, constructor ) \
+			( classType *)EE::MemoryManager::AddPointerInPlace( place, EE::cAllocatedPointer( new place classType constructor ,__FILE__,__LINE__, sizeof(classType) ) )
 
 	#define eeNewArray( classType, amount ) \
 			( classType *) EE::MemoryManager::AddPointer( EE::cAllocatedPointer( new classType [ amount ], __FILE__, __LINE__, amount * sizeof( classType ) ) )
@@ -83,6 +90,9 @@ class MemoryManager {
 #else
 	#define eeNew( classType, constructor ) \
 			new classType constructor
+
+	#define eeNewInPlace( place, classType, constructor ) \
+			new place classType constructor
 
 	#define eeNewArray( classType, amount ) \
 			new classType [ amount ]

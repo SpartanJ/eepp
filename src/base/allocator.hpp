@@ -9,7 +9,7 @@ template<typename T>
 class eeAllocator {
 	public:
 		typedef T				value_type;
-		typedef T *			pointer;
+		typedef T *				pointer;
 		typedef const T *		const_pointer;
 		typedef T&				reference;
 		typedef const T&		const_reference;
@@ -35,10 +35,14 @@ class eeAllocator {
 		}
 
 		void construct( T * ptr, const T&e ) {
-			new ( (void*)ptr ) T( e );
+			eeNewInPlace( ( (void*)ptr ), T, ( e ) );
 		}
 
 		void destroy( T * ptr ) {
+			#ifdef EE_MEMORY_MANAGER
+			EE::MemoryManager::RemovePointer( ptr );
+			#endif
+
 			ptr->~T();
 		}
 

@@ -14,69 +14,71 @@ class hkFont {
 
 		~hkFont();
 
-		inline void		Face( FT_Face face )						{ mFace = face; 						}
-		inline FT_Face		Face()										{ return mFace; 						}
+		void				Face( FT_Face face );
+		FT_Face				Face();
 
-		inline void		Height( int height )						{ mHeight = height; 					}
-		inline int			Height()									{ return mHeight; 						}
+		void				Height( int height );
+		int					Height();
 
-		inline void		Ascent( int ascent )						{ mAscent = ascent; 					}
-		inline int			Ascent()									{ return mAscent; 						}
+		void				Ascent( int ascent );
+		int					Ascent();
 
-		inline void		Descent( int descent )						{ mDescent = descent; 					}
-		inline int			Descent()									{ return mDescent; 					}
+		void				Descent( int descent );
+		int					Descent();
 
-		inline void		LineSkip( int lineskip )					{ mLineSkip = lineskip; 				}
-		inline int			LineSkip()									{ return mLineSkip; 					}
+		void				LineSkip( int lineskip );
+		int					LineSkip();
 
-		inline void		FaceStyle( int facestyle )					{ mFaceStyle = facestyle; 				}
-		inline int			FaceStyle()									{ return mFaceStyle; 					}
+		void				FaceStyle( int facestyle );
+		int					FaceStyle();
 
-		inline void		Kerning( int kerning )						{ mKerning = kerning; 					}
-		inline int			Kerning()									{ return mKerning; 					}
+		void				Kerning( int kerning );
+		int					Kerning();
 
-		inline void		GlyphOverhang( int glyphoverhang )			{ mGlyphOverhang = glyphoverhang; 		}
-		inline int			GlyphOverhang()								{ return mGlyphOverhang; 				}
+		void				GlyphOverhang( int glyphoverhang );
+		int					GlyphOverhang();
 
-		inline void		GlyphItalics( float glyphitalics )			{ mGlyphItalics = glyphitalics; 		}
-		inline float		GlyphItalics()								{ return mGlyphItalics; 				}
+		void				GlyphItalics( float glyphitalics );
+		float				GlyphItalics();
 
-		inline void		UnderlineOffset( int underlineoffset )		{ mUnderlineOffset = underlineoffset;	}
-		inline int			UnderlineOffset()							{ return mUnderlineOffset; 			}
+		void				UnderlineOffset( int underlineoffset );
+		int					UnderlineOffset();
 
-		inline void		UnderlineHeight( int underlineheight )		{ mUnderlineHeight = underlineheight;	}
-		inline int			UnderlineHeight()							{ return mUnderlineHeight; 			}
+		void				UnderlineHeight( int underlineheight );
+		int					UnderlineHeight();
 
-		inline void		Current( hkGlyph * current )				{ mCurrent = current; 					}
-		inline hkGlyph * 	Current()									{ return mCurrent; 					}
+		void				Current( hkGlyph * current );
+		hkGlyph *			Current();
 
-		inline void		Scratch( hkGlyph scratch )					{ mScratch = scratch; 					}
-		inline hkGlyph		Scratch()									{ return mScratch; 					}
+		void				Scratch( hkGlyph scratch );
+		hkGlyph				Scratch();
 
-		inline void		FontSizeFamily( int fontsizefamily )		{ mFontSizeFamily = fontsizefamily; 	}
-		inline int			FontSizeFamily()							{ return mFontSizeFamily; 				}
+		void				FontSizeFamily( int fontsizefamily );
+		int					FontSizeFamily();
 
 		void 				Outline( int outline );
-		inline int			Outline() const 							{ return mOutline; 					}
+		int					Outline() const;
 
 		void 				Hinting( int hinting );
-		inline int			Hinting() const 							{ return mHinting; 					}
+		int					Hinting() const;
 
 		void 				Style( int style );
-		inline int 		Style() 									{ return mStyle; 						}
+		int					Style();
 
-		hkFontManager * 	Manager() const 							{ return mFm; 							}
+		hkFontManager * 	Manager() const;
 
 		FT_Error 			GlyphFind( u16 ch, int want );
 
 		FT_Error 			GlyphLoad( u16 ch, hkGlyph * cached, int want );
 
-		unsigned char * 	GlyphRender( u16 ch, u32 fg );
+		unsigned char * 	GlyphRender( u16 ch, u32 fg = 0x00000000 );
 
 		int 				GlyphMetrics( u16 ch, int* minx, int* maxx, int* miny, int* maxy, int* advance );
 
 		void 				CacheFlush();
 	protected:
+		friend class hkFontManager;
+
 		hkFontManager * 	mFm;
 		hkGlyph * 			mCache;
 		unsigned int 		mCacheSize;

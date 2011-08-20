@@ -47,7 +47,7 @@
     <valuemap key="ProjectExplorer.BuildConfiguration.BuildStepList.0" type="QVariantMap">
      <valuemap key="ProjectExplorer.BuildStepList.Step.0" type="QVariantMap">
       <valuelist key="GenericProjectManager.GenericMakeStep.BuildTargets" type="QVariantList"/>
-      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 test -e DEBUGBUILD=yes</value>
+      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 test -e DEBUGBUILD=yes NO_LIBSNDFILE=yes</value>
       <value key="GenericProjectManager.GenericMakeStep.MakeCommand" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString"></value>
@@ -86,7 +86,7 @@
     <valuemap key="ProjectExplorer.BuildConfiguration.BuildStepList.0" type="QVariantMap">
      <valuemap key="ProjectExplorer.BuildStepList.Step.0" type="QVariantMap">
       <valuelist key="GenericProjectManager.GenericMakeStep.BuildTargets" type="QVariantList"/>
-      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 test</value>
+      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 test -e NO_LIBSNDFILE=yes</value>
       <value key="GenericProjectManager.GenericMakeStep.MakeCommand" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString">Make</value>
       <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString"></value>
@@ -125,7 +125,7 @@
     <valuemap key="ProjectExplorer.BuildConfiguration.BuildStepList.0" type="QVariantMap">
      <valuemap key="ProjectExplorer.BuildStepList.Step.0" type="QVariantMap">
       <valuelist key="GenericProjectManager.GenericMakeStep.BuildTargets" type="QVariantList"/>
-      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 test -e DEBUGBUILD=yes -e GLES2=yes</value>
+      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 test -e DEBUGBUILD=yes NO_LIBSNDFILE=yes GLES2=yes</value>
       <value key="GenericProjectManager.GenericMakeStep.MakeCommand" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString"></value>
@@ -164,7 +164,7 @@
     <valuemap key="ProjectExplorer.BuildConfiguration.BuildStepList.0" type="QVariantMap">
      <valuemap key="ProjectExplorer.BuildStepList.Step.0" type="QVariantMap">
       <valuelist key="GenericProjectManager.GenericMakeStep.BuildTargets" type="QVariantList"/>
-      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 bnb -e DEBUGBUILD=yes</value>
+      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 bnb -e DEBUGBUILD=yes NO_LIBSNDFILE=yes</value>
       <value key="GenericProjectManager.GenericMakeStep.MakeCommand" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString">Make</value>
       <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString">Clone of </value>
@@ -203,7 +203,7 @@
     <valuemap key="ProjectExplorer.BuildConfiguration.BuildStepList.0" type="QVariantMap">
      <valuemap key="ProjectExplorer.BuildStepList.Step.0" type="QVariantMap">
       <valuelist key="GenericProjectManager.GenericMakeStep.BuildTargets" type="QVariantList"/>
-      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 bnb</value>
+      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 bnb -e NO_LIBSNDFILE=yes</value>
       <value key="GenericProjectManager.GenericMakeStep.MakeCommand" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString">Make</value>
       <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString">Clone of </value>
@@ -242,7 +242,7 @@
     <valuemap key="ProjectExplorer.BuildConfiguration.BuildStepList.0" type="QVariantMap">
      <valuemap key="ProjectExplorer.BuildStepList.Step.0" type="QVariantMap">
       <valuelist key="GenericProjectManager.GenericMakeStep.BuildTargets" type="QVariantList"/>
-      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 eeiv -e DEBUGBUILD=yes</value>
+      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 eeiv -e DEBUGBUILD=yes NO_LIBSNDFILE=yes</value>
       <value key="GenericProjectManager.GenericMakeStep.MakeCommand" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString"></value>
@@ -476,7 +476,7 @@
     <valuemap key="ProjectExplorer.BuildConfiguration.BuildStepList.0" type="QVariantMap">
      <valuemap key="ProjectExplorer.BuildStepList.Step.0" type="QVariantMap">
       <valuelist key="GenericProjectManager.GenericMakeStep.BuildTargets" type="QVariantList"/>
-      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 fluid -e DEBUGBUILD=yes</value>
+      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 fluid -e DEBUGBUILD=yes NO_LIBSNDFILE=yes</value>
       <value key="GenericProjectManager.GenericMakeStep.MakeCommand" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString"></value>
@@ -515,7 +515,7 @@
     <valuemap key="ProjectExplorer.BuildConfiguration.BuildStepList.0" type="QVariantMap">
      <valuemap key="ProjectExplorer.BuildStepList.Step.0" type="QVariantMap">
       <valuelist key="GenericProjectManager.GenericMakeStep.BuildTargets" type="QVariantList"/>
-      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 fluid</value>
+      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 fluid -e NO_LIBSNDFILE=yes</value>
       <value key="GenericProjectManager.GenericMakeStep.MakeCommand" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString"></value>

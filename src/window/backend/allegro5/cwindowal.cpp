@@ -336,9 +336,9 @@ void cWindowAl::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 
 		Setup2D();
 
-		SendVideoResizeCb();
-
 		GetCursorManager()->Reload();
+
+		SendVideoResizeCb();
 	} catch (...) {
 		cLog::instance()->Write( "Unable to change resolution" );
 		cLog::instance()->Save();

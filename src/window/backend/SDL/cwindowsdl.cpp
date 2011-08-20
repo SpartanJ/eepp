@@ -318,9 +318,9 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 
 		Setup2D();
 
-		SendVideoResizeCb();
-
 		mCursorManager->Reload();
+
+		SendVideoResizeCb();
 
 		if ( NULL == mSurface ) {
 			mWindow.Created = false;
