@@ -20,9 +20,10 @@ class EE_API cSoundFileOgg : public cSoundFile {
 
 		virtual std::size_t Read(Int16* Data, std::size_t NbSamples);
 
-		virtual void Seek( float timeOffset );
+		virtual void Seek( Uint32 timeOffset );
 	private :
 		virtual bool OpenRead(const std::string& Filename, std::size_t& NbSamples, unsigned int& ChannelsCount, unsigned int& SampleRate);
+
 		virtual bool OpenRead(const char* Data, std::size_t SizeInBytes, std::size_t& NbSamples, unsigned int& ChannelsCount, unsigned int& SampleRate);
 
 		stb_vorbis *	mStream;			///< Vorbis stream

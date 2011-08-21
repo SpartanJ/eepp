@@ -6,9 +6,9 @@ namespace EE { namespace Window {
 class InputEvent {
 	public:
 		inline InputEvent() {}
-		
+
 		inline InputEvent( Uint32 type ) : Type( type ) {}
-		
+
 		struct KeySym {
 			Uint32 sym;			/** virtual keysym */
 			Uint32 mod;			/** current key modifiers */
@@ -32,9 +32,9 @@ class InputEvent {
 		struct MouseMotionEvent {
 			Uint8 which;	/** The mouse device index */
 			Uint8 state;	/** The current button state */
-			Uint16 x, y;	/** The X/Y coordinates of the mouse */
-			Int16 xrel;	/** The relative motion in the X direction */
-			Int16 yrel;	/** The relative motion in the Y direction */
+			Int16 x, y;		/** The X/Y coordinates of the mouse */
+			Int16 xrel;		/** The relative motion in the X direction */
+			Int16 yrel;		/** The relative motion in the Y direction */
 		};
 
 		/** Mouse button event structure */
@@ -42,7 +42,7 @@ class InputEvent {
 			Uint8 which;	/** The mouse device index */
 			Uint8 button;	/** The mouse button index */
 			Uint8 state;	/** EE_PRESSED or EE_RELEASED */
-			Uint16 x, y;	/** The X/Y coordinates of the mouse at press time */
+			Int16 x, y;	/** The X/Y coordinates of the mouse at press time */
 		};
 
 		/** Joystick axis motion event structure */
@@ -109,7 +109,7 @@ class InputEvent {
 		struct SysWMEvent {
 			SysWMmsg * msg;
 		};
-		
+
 		enum EventType {
 			NoEvent = 0,
 			Active,
@@ -130,7 +130,7 @@ class InputEvent {
 			EventUser,
 			EventCount = 32
 		};
-		
+
 		/** Event Type */
 		Uint32 Type;
 

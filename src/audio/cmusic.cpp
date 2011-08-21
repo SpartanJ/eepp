@@ -52,7 +52,7 @@ bool cMusic::OpenFromFile( const std::string& Filename ) {
 	mDuration = static_cast<eeFloat>( mFile->GetSamplesCount() ) / mFile->GetSampleRate() / mFile->GetChannelsCount();
 
 	// Initialize the stream
-	Initialize(mFile->GetChannelsCount(), mFile->GetSampleRate());
+	Initialize( mFile->GetChannelsCount(), mFile->GetSampleRate() );
 
 	cLog::instance()->Write( "Music file " + Filename + " loaded." );
 	return true;

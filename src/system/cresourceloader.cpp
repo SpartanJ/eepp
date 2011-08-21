@@ -18,14 +18,10 @@ cResourceLoader::~cResourceLoader() {
 void cResourceLoader::SetThreads() {
 	if ( THREADS_AUTO == mThreads ) {
 		mThreads = GetCPUCount();
-		/**
-		eeInt NumCpus = GetCPUCount() - 1;
 
-		if ( NumCpus > 1 )
-			mThreads = NumCpus;
-		else
-			mThreads = 1;
-		*/
+		if ( 1 == mThreads ) {
+			mThreaded = false;
+		}
 	}
 }
 
@@ -38,8 +34,9 @@ Uint32 cResourceLoader::Count() const {
 }
 
 void cResourceLoader::Threaded( const bool& threaded ) {
-	if ( !mLoading )
+	if ( !mLoading ) {
 		mThreaded = threaded;
+	}
 }
 
 void cResourceLoader::Add( cObjectLoader * Object ) {
@@ -99,18 +96,21 @@ void cResourceLoader::Load() {
 			Obj->Threaded( mThreaded );
 
 			if ( !Obj->IsLoaded() ) {
-				if ( !Obj->IsLoading() )
+				if ( !Obj->IsLoading() ) {
 					Obj->Load();
+				}
 
-				if ( Obj->IsLoading() )
+				if ( Obj->IsLoading() ) {
 					count++;
+				}
 
 				Obj->Update();
 
-				if ( !Obj->IsLoaded() )
+				if ( !Obj->IsLoaded() ) {
 					AllLoaded = false;
-				else
+				} else {
 					ObjsErase.push_back( Obj );
+				}
 
 				if ( mThreaded && mThreads == count ) {
 					AllLoaded = false;
@@ -126,8 +126,9 @@ void cResourceLoader::Load() {
 		mObjsLoaded.push_back( Obj );
 	}
 
-	if ( AllLoaded )
+	if ( AllLoaded ) {
 		SetLoaded();
+	}
 }
 
 void cResourceLoader::Update() {
@@ -155,14 +156,15 @@ bool cResourceLoader::IsLoading() {
 }
 
 void cResourceLoader::SetLoaded() {
-	mLoaded = true;
-	mLoading = false;
+	mLoaded		= true;
+	mLoading	= false;
 
 	if ( mLoadCbs.size() ) {
 		std::list<ResLoadCallback>::iterator it;
 
-		for ( it = mLoadCbs.begin(); it != mLoadCbs.end(); it++ )
+		for ( it = mLoadCbs.begin(); it != mLoadCbs.end(); it++ ) {
 			(*it)( this );
+		}
 
 		mLoadCbs.clear();
 	}

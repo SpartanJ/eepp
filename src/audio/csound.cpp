@@ -3,18 +3,18 @@
 namespace EE { namespace Audio {
 
 cSound::cSound() : mBuffer(NULL) {
-	ALCheck( alGenSources(1, &mSource) );
-	ALCheck( alSourcei(mSource, AL_BUFFER, 0) );
+	ALCheck( alGenSources( 1, &mSource ) );
+	ALCheck( alSourcei( mSource, AL_BUFFER, 0 ) );
 }
 
 cSound::cSound( const cSoundBuffer& Buffer, const bool& Loop, const eeFloat& Pitch, const eeFloat& Volume, const Vector3AL& Position ) : mBuffer(&Buffer) {
 	ALCheck( alGenSources(1, &mSource) );
 
-	ALCheck( alSourcei (mSource, AL_BUFFER,   Buffer.mBuffer) );
-	ALCheck( alSourcei (mSource, AL_LOOPING,  Loop) );
-	ALCheck( alSourcef (mSource, AL_PITCH,	Pitch) );
-	ALCheck( alSourcef (mSource, AL_GAIN, Volume * 0.01f) );
-	ALCheck( alSource3f(mSource, AL_POSITION, Position.x, Position.y, Position.z) );
+	ALCheck( alSourcei ( mSource, AL_BUFFER,   Buffer.mBuffer ) );
+	ALCheck( alSourcei ( mSource, AL_LOOPING,  Loop ) );
+	ALCheck( alSourcef ( mSource, AL_PITCH,	Pitch ) );
+	ALCheck( alSourcef ( mSource, AL_GAIN, Volume * 0.01f ) );
+	ALCheck( alSource3f( mSource, AL_POSITION, Position.x, Position.y, Position.z ) );
 }
 
 cSound::cSound(const cSound& Copy) :
@@ -42,15 +42,15 @@ cSound::~cSound() {
 }
 
 void cSound::Play() {
-	ALCheck( alSourcePlay(mSource) );
+	ALCheck( alSourcePlay( mSource ) );
 }
 
 void cSound::Pause() {
-	ALCheck( alSourcePause(mSource) );
+	ALCheck( alSourcePause( mSource ) );
 }
 
 void cSound::Stop() {
-	ALCheck( alSourceStop(mSource) );
+	ALCheck( alSourceStop( mSource ) );
 }
 
 void cSound::Buffer(const cSoundBuffer& Buffer) {
@@ -62,23 +62,23 @@ void cSound::Buffer(const cSoundBuffer& Buffer) {
 	mBuffer = &Buffer;
 	mBuffer->AttachSound (this );
 
-	ALCheck( alSourcei(mSource, AL_BUFFER, mBuffer ? mBuffer->mBuffer : 0) );
+	ALCheck( alSourcei( mSource, AL_BUFFER, mBuffer ? mBuffer->mBuffer : 0 ) );
 }
 
 void cSound::Loop( const bool& Loop ) {
-	ALCheck( alSourcei(mSource, AL_LOOPING, Loop) );
+	ALCheck( alSourcei( mSource, AL_LOOPING, Loop ) );
 }
 
 void cSound::Pitch( const eeFloat& Pitch ) {
-	ALCheck( alSourcef(mSource, AL_PITCH, Pitch) );
+	ALCheck( alSourcef( mSource, AL_PITCH, Pitch ) );
 }
 
 void cSound::Volume( const eeFloat& Volume ) {
-	ALCheck( alSourcef(mSource, AL_GAIN, Volume * 0.01f) );
+	ALCheck( alSourcef( mSource, AL_GAIN, Volume * 0.01f ) );
 }
 
 void cSound::Position( const eeFloat& X, const eeFloat& Y, const eeFloat& Z ) {
-	ALCheck( alSource3f(mSource, AL_POSITION, X, Y, Z) );
+	ALCheck( alSource3f( mSource, AL_POSITION, X, Y, Z ) );
 }
 
 void cSound::Position( const Vector3AL& Position ) {
@@ -86,11 +86,11 @@ void cSound::Position( const Vector3AL& Position ) {
 }
 
 void cSound::MinDistance( const eeFloat& MinDistance ) {
-	ALCheck( alSourcef(mSource, AL_REFERENCE_DISTANCE, MinDistance) );
+	ALCheck( alSourcef( mSource, AL_REFERENCE_DISTANCE, MinDistance ) );
 }
 
 void cSound::Attenuation( const eeFloat& Attenuation ) {
-	ALCheck( alSourcef(mSource, AL_ROLLOFF_FACTOR, Attenuation) );
+	ALCheck( alSourcef( mSource, AL_ROLLOFF_FACTOR, Attenuation ) );
 }
 
 const cSoundBuffer* cSound::Buffer() const {
@@ -99,49 +99,49 @@ const cSoundBuffer* cSound::Buffer() const {
 
 bool cSound::Loop() const {
 	ALint Loop;
-	ALCheck( alGetSourcei(mSource, AL_LOOPING, &Loop) );
+	ALCheck( alGetSourcei( mSource, AL_LOOPING, &Loop ) );
 
 	return Loop != 0;
 }
 
 eeFloat cSound::Pitch() const {
 	ALfloat Pitch;
-	ALCheck( alGetSourcef(mSource, AL_PITCH, &Pitch) );
+	ALCheck( alGetSourcef( mSource, AL_PITCH, &Pitch ) );
 
 	return Pitch;
 }
 
 eeFloat cSound::Volume() const {
 	ALfloat Gain;
-	ALCheck( alGetSourcef(mSource, AL_GAIN, &Gain) );
+	ALCheck( alGetSourcef( mSource, AL_GAIN, &Gain ) );
 
 	return Gain * 100.f;
 }
 
 Vector3AL cSound::Position() const {
 	Vector3AL Position;
-	ALCheck( alGetSource3f(mSource, AL_POSITION, &Position.x, &Position.y, &Position.z) );
+	ALCheck( alGetSource3f( mSource, AL_POSITION, &Position.x, &Position.y, &Position.z ) );
 
 	return Position;
 }
 
 eeFloat cSound::MinDistance() const {
 	ALfloat MinDistance;
-	ALCheck( alGetSourcef(mSource, AL_REFERENCE_DISTANCE, &MinDistance) );
+	ALCheck( alGetSourcef( mSource, AL_REFERENCE_DISTANCE, &MinDistance ) );
 
 	return MinDistance;
 }
 
 eeFloat cSound::Attenuation() const {
 	ALfloat Attenuation;
-	ALCheck( alGetSourcef(mSource, AL_ROLLOFF_FACTOR, &Attenuation) );
+	ALCheck( alGetSourcef( mSource, AL_ROLLOFF_FACTOR, &Attenuation ) );
 
 	return Attenuation;
 }
 
 EE_SOUND_STATE cSound::GetState() const {
 	ALint State;
-	ALCheck( alGetSourcei(mSource, AL_SOURCE_STATE, &State) );
+	ALCheck( alGetSourcei( mSource, AL_SOURCE_STATE, &State ) );
 
 	switch (State) {
 		case AL_INITIAL :
@@ -153,15 +153,15 @@ EE_SOUND_STATE cSound::GetState() const {
 	return SOUND_STOPPED;
 }
 
-eeFloat cSound::PlayingOffset() const {
+Uint32 cSound::PlayingOffset() const {
 	ALfloat Seconds = 0.f;
-	ALCheck( alGetSourcef(mSource, AL_SEC_OFFSET, &Seconds) );
+	ALCheck( alGetSourcef( mSource, AL_SEC_OFFSET, &Seconds ) );
 
-	return Seconds;
+	return static_cast<Uint32> ( Seconds * 1000 );
 }
 
-void cSound::PlayingOffset( const eeFloat& TimeOffset ) {
-    ALCheck( alSourcef(mSource, AL_SEC_OFFSET, TimeOffset) );
+void cSound::PlayingOffset( const Uint32& TimeOffset ) {
+	ALCheck( alSourcef( mSource, AL_SEC_OFFSET, TimeOffset / 1000.f ) );
 }
 
 cSound& cSound::operator =( const cSound& Other ) {
@@ -202,10 +202,13 @@ void cSound::ResetBuffer() {
 	Stop();
 
 	// Detach the buffer
-	ALCheck( alSourcei( mSource, AL_BUFFER, 0) );
+	ALCheck( alSourcei( mSource, AL_BUFFER, 0 ) );
 
 	mBuffer = NULL;
 }
 
+EE_SOUND_STATE cSound::State() const {
+	return GetState();
+}
 
 }}

@@ -25,7 +25,7 @@ void cThread::Launch() {
 
 	#if EE_PLATFORM == EE_PLATFORM_WIN
 
-	mThread = reinterpret_cast<HANDLE>( _beginthreadex( NULL, 0, &cThread::EntryPoint, this, 0, NULL ) );
+	mThread = reinterpret_cast<HANDLE>( _beginthreadex( NULL, 0, &cThread::EntryPoint, this, 0, &mThreadId ) );
 
 	if ( !mThread )
 		mIsActive = false;
@@ -47,11 +47,15 @@ void cThread::Wait() {
 	if ( mIsActive ) { // Wait for the thread to finish, no timeout
 		#if EE_PLATFORM == EE_PLATFORM_WIN
 
+		eeASSERT( mThreadId != GetCurrentThreadId() ); // A thread cannot wait for itself!
+
 		WaitForSingleObject( mThread, INFINITE );
 
 		#elif defined( EE_PLATFORM_POSIX )
 
-		pthread_join(mThread, NULL);
+		eeASSERT( pthread_equal( pthread_self(), mThread ) == 0 );
+
+		pthread_join( mThread, NULL );
 
 		#endif
 

@@ -174,6 +174,7 @@ class cEETest : private cThread {
     	eeFloat mBlurFactor;
     	bool mUseShaders;
 		bool mJoyEnabled;
+		bool mMusEnabled;
 
     	Uint32 mLastFPSLimit;
     	bool mWasMinimized;

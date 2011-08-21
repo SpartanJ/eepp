@@ -8,7 +8,9 @@ namespace EE { namespace Audio {
 class EE_API cAudioResource {
 	protected :
 		cAudioResource();
+
 		cAudioResource(const cAudioResource&);
+
 		virtual ~cAudioResource();
 };
 

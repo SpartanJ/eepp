@@ -2,7 +2,6 @@
 #define EE_AUDIOCSOUNDBUFFER_H
 
 #include "base.hpp"
-#include "caudiodevice.hpp"
 #include "caudioresource.hpp"
 #include "csoundfile.hpp"
 
@@ -13,6 +12,7 @@ class cSound;
 class EE_API cSoundBuffer : public cAudioResource {
 	public :
 		cSoundBuffer();
+
 		~cSoundBuffer();
 
 		/** Copy constructor */
@@ -46,7 +46,7 @@ class EE_API cSoundBuffer : public cAudioResource {
 		unsigned int GetChannelsCount() const;
 
 		/** Get the Sound Duration */
-		eeFloat GetDuration() const;
+		Uint32 GetDuration() const;
 
 		/** Assignment operator */
 		cSoundBuffer& operator =(const 	cSoundBuffer& Other);
@@ -55,7 +55,7 @@ class EE_API cSoundBuffer : public cAudioResource {
 
 		unsigned int		mBuffer;   ///< OpenAL buffer identifier
 		std::vector<Int16>	mSamples;  ///< Samples buffer
-		eeFloat				mDuration; ///< Sound duration, in seconds
+		Uint32				mDuration; ///< Sound duration, in miliseconds
 
 		typedef std::set<cSound*> SoundList;
 		mutable SoundList	mSounds;

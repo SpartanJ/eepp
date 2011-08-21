@@ -814,3 +814,4 @@ src/bnb/cgamedata.hpp
 src/bnb/cgamedata.cpp
 src/bnb/cgameobjectdoor.hpp
 src/bnb/cgameobjectdoor.cpp
+src/audio/openal.cpp

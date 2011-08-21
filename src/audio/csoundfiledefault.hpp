@@ -13,6 +13,7 @@ namespace EE { namespace Audio {
 class EE_API cSoundFileDefault : public cSoundFile {
 	public :
 		cSoundFileDefault();
+
 		~cSoundFileDefault();
 
 		/** Check if a given file is supported by this loader. */
@@ -22,12 +23,15 @@ class EE_API cSoundFileDefault : public cSoundFile {
 		static bool IsFileSupported(const char* Data, std::size_t SizeInBytes);
 
 		virtual std::size_t Read(Int16* Data, std::size_t NbSamples);
+
 		virtual void Write(const Int16* Data, std::size_t NbSamples);
 
-		virtual void Seek( float timeOffset );
+		virtual void Seek( Uint32 timeOffset );
 	private :
 		virtual bool OpenRead( const std::string& Filename, std::size_t& NbSamples, unsigned int& ChannelsCount, unsigned int& SampleRate );
+
 		virtual bool OpenRead( const char* Data, std::size_t SizeInBytes, std::size_t& NbSamples, unsigned int& ChannelsCount, unsigned int& SampleRate );
+
 		virtual bool OpenWrite( const std::string& Filename, unsigned int ChannelsCount, unsigned int SampleRate );
 
 		static int GetFormatFromFilename(const std::string& Filename);

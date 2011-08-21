@@ -17,7 +17,6 @@ cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoad
 	mFontLoaded( false )
 {
 	mTexLoader = TexLoader;
-	mTexLoader->Threaded( mThreaded );
 }
 
 cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, const std::string& CoordinatesDatPath, const bool& VerticalDraw ) :
@@ -30,7 +29,6 @@ cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoad
 	mFontLoaded( false )
 {
 	mTexLoader = TexLoader;
-	mTexLoader->Threaded( mThreaded );
 }
 
 cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, cPack * Pack, const std::string& FilePackPath, const bool& VerticalDraw ) :
@@ -44,7 +42,6 @@ cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoad
 	mFontLoaded( false )
 {
 	mTexLoader = TexLoader;
-	mTexLoader->Threaded( mThreaded );
 }
 
 cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, const Uint8* CoordData, const Uint32& CoordDataSize, const bool& VerticalDraw ) :
@@ -58,7 +55,6 @@ cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoad
 	mFontLoaded( false )
 {
 	mTexLoader = TexLoader;
-	mTexLoader->Threaded( mThreaded );
 }
 
 cTextureFontLoader::~cTextureFontLoader() {
@@ -68,16 +64,18 @@ cTextureFontLoader::~cTextureFontLoader() {
 void cTextureFontLoader::Start() {
 	cObjectLoader::Start();
 
-	mTexLoader->Threaded( mThreaded );
-	mTexLoader->Load();
+	mTexLoader->Threaded( false );
 
-	if ( !mThreaded )
+	if ( !mThreaded ) {
 		Update();
+	}
 }
 
 void cTextureFontLoader::Update() {
 	if ( !mLoaded ) {
 		if ( !mTexLoaded ) {
+			mTexLoader->Load();
+
 			mTexLoader->Update();
 
 			mTexLoaded = mTexLoader->IsLoaded();
@@ -145,6 +143,7 @@ void cTextureFontLoader::Unload() {
 void cTextureFontLoader::Reset() {
 	cObjectLoader::Reset();
 
+	mFont			= NULL;
 	mTexLoaded		= false;
 	mFontLoaded		= false;
 }

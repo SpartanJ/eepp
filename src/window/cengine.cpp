@@ -66,8 +66,6 @@ cEngine::~cEngine() {
 
 	UI::cUIManager::DestroySingleton();
 
-	Audio::cAudioListener::DestroySingleton();
-
 	Graphics::cGL::DestroySingleton();
 
 	cShaderProgramManager::DestroySingleton();

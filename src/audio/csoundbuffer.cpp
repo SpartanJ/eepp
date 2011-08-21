@@ -1,5 +1,6 @@
 #include "csoundbuffer.hpp"
 #include "csound.hpp"
+#include "caudiodevice.hpp"
 #include "../system/cpackmanager.hpp"
 
 namespace EE { namespace Audio {
@@ -8,6 +9,8 @@ cSoundBuffer::cSoundBuffer() :
 	mBuffer(0),
 	mDuration(0.f)
 {
+	EnsureALInit();
+
 	ALCheck( alGenBuffers( 1, &mBuffer ) );
 }
 
@@ -18,6 +21,8 @@ cSoundBuffer::cSoundBuffer(const cSoundBuffer& Copy) :
 	mDuration(Copy.mDuration),
 	mSounds()
 {
+	EnsureALInit();
+
 	ALCheck( alGenBuffers( 1, &mBuffer ) );
 	Update( Copy.GetChannelsCount(), Copy.GetSampleRate() );
 }
@@ -169,7 +174,7 @@ unsigned int cSoundBuffer::GetChannelsCount() const {
 	return ChannelsCount;
 }
 
-eeFloat cSoundBuffer::GetDuration() const {
+Uint32 cSoundBuffer::GetDuration() const {
 	return mDuration;
 }
 
@@ -190,7 +195,7 @@ bool cSoundBuffer::Update( unsigned int ChannelsCount, unsigned int SampleRate )
 		return false;
 
 	// Find the good format according to the number of channels
-	ALenum Format = cAudioDevice::instance()->GetFormatFromChannelsCount( ChannelsCount );
+	ALenum Format = cAudioDevice::GetFormatFromChannelsCount( ChannelsCount );
 
 	// Check if the format is valid
 	if ( Format == 0 ) {
@@ -203,7 +208,7 @@ bool cSoundBuffer::Update( unsigned int ChannelsCount, unsigned int SampleRate )
 	ALCheck( alBufferData( mBuffer, Format, &mSamples[0], Size, SampleRate ) );
 
 	// Compute the duration
-	mDuration = static_cast<eeFloat>( mSamples.size() ) / SampleRate / ChannelsCount;
+	mDuration = static_cast<Uint32>( 1000 * mSamples.size() ) / SampleRate / ChannelsCount;
 
 	return true;
 }

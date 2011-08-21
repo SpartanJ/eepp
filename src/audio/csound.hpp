@@ -17,6 +17,7 @@ enum EE_SOUND_STATE {
 class EE_API cSound : public cAudioResource {
 	public :
 		cSound();
+
 		~cSound();
 
 		/** Construct the sound from its parameters */
@@ -83,15 +84,15 @@ class EE_API cSound : public cAudioResource {
 		EE_SOUND_STATE GetState() const;
 
 		/** Get the Sound State */
-		EE_SOUND_STATE State() const { return GetState(); };
+		EE_SOUND_STATE State() const;
 
 		/** Get the current playing position of the sound */
-		virtual eeFloat PlayingOffset() const;
+		virtual Uint32 PlayingOffset() const;
 
 		/** Set the current playing position of the sound
-		* @param TimeOffset : New playing position, expressed in seconds
+		* @param TimeOffset : New playing position, expressed in miliseconds
 		*/
-		virtual void PlayingOffset( const eeFloat& TimeOffset );
+		virtual void PlayingOffset( const Uint32& TimeOffset );
 
 		/** Assignment operator */
 		cSound& operator =(const cSound& Other);

@@ -566,7 +566,7 @@ void cConsole::CmdSetVolume( const std::vector < String >& params ) {
 			bool Res = fromString<eeFloat>( tFloat, params[1] );
 
 			if ( Res && ( tFloat >= 0.0f && tFloat <= 100.0f ) ) {
-				EE::Audio::cAudioListener::instance()->GlobalVolume( tFloat );
+				EE::Audio::cAudioListener::GlobalVolume( tFloat );
 				PushText( "setvolume " + toStr( tFloat ) );
 			} else
 				PushText( "Valid parameters are between 0 and 100." );

@@ -146,9 +146,9 @@ void cSoundFileDefault::Write( const Int16 * Data, std::size_t NbSamples ) {
 		sf_write_short( mFile, Data, NbSamples );
 }
 
-void cSoundFileDefault::Seek(float timeOffset) {
+void cSoundFileDefault::Seek( Uint32 timeOffset ) {
     if ( NULL != mFile ) {
-        sf_count_t frameOffset = static_cast<sf_count_t>( timeOffset * mSampleRate );
+		sf_count_t frameOffset = static_cast<sf_count_t>( timeOffset * mSampleRate / 1000 );
         sf_seek( mFile, frameOffset, SEEK_SET );
     }
 }

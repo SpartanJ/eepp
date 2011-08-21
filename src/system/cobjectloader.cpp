@@ -15,24 +15,27 @@ cObjectLoader::~cObjectLoader()
 }
 
 void cObjectLoader::Load() {
-	if ( mLoaded )
+	if ( mLoaded ) {
 		SetLoaded();
+	}
 
 	Launch();
 }
 
 void cObjectLoader::Load( ObjLoadCallback Cb ) {
-	if ( Cb.IsSet() )
+	if ( Cb.IsSet() ) {
 		mLoadCbs.push_back( Cb );
+	}
 
 	Load();
 }
 
 void cObjectLoader::Launch() {
-	if ( mThreaded )
+	if ( mThreaded ) {
 		cThread::Launch();
-	else
+	 } else {
 		Run();
+	}
 }
 
 void cObjectLoader::Start() {
@@ -70,8 +73,9 @@ void cObjectLoader::SetLoaded() {
 	if ( mLoadCbs.size() ) {
 		std::list<ObjLoadCallback>::iterator it;
 
-		for ( it = mLoadCbs.begin(); it != mLoadCbs.end(); it++ )
+		for ( it = mLoadCbs.begin(); it != mLoadCbs.end(); it++ ) {
 			(*it)( this );
+		}
 
 		mLoadCbs.clear();
 	}

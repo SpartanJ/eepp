@@ -7,30 +7,16 @@ namespace EE { namespace Audio {
 
 class EE_API cAudioDevice {
 	public :
-		static cAudioDevice * 	instance();
-
-		static void 			AddReference();
-
-		static void 			RemoveReference();
-
-		ALCdevice * GetDevice() const;
-
-		ALenum GetFormatFromChannelsCount(unsigned int ChannelsCount) const;
-
-		bool IsExtensionSupported( const std::string& extension );
-
-		bool isCreated();
-
-		~cAudioDevice();
-	private :
 		cAudioDevice();
 
-		static cAudioDevice * mInstance;
+		~cAudioDevice();
 
-		ALCdevice *		mDevice;
-		ALCcontext *	mContext;
-		unsigned int	mRefCount;
+		static ALenum GetFormatFromChannelsCount( unsigned int ChannelsCount );
 
+		static bool IsExtensionSupported( const std::string& extension );
+
+		static bool IsAvailable();
+	private :
 		void PrintInfo();
 };
 

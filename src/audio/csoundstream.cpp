@@ -1,4 +1,5 @@
 #include "csoundstream.hpp"
+#include "caudiodevice.hpp"
 
 namespace EE { namespace Audio {
 
@@ -17,11 +18,11 @@ cSoundStream::~cSoundStream() {
 }
 
 void cSoundStream::Initialize(unsigned int ChannelsCount, unsigned int SampleRate) {
-	mChannelsCount = ChannelsCount;
-	mSampleRate	= SampleRate;
+	mChannelsCount	= ChannelsCount;
+	mSampleRate		= SampleRate;
 
 	// Deduce the format from the number of channels
-	mFormat = cAudioDevice::instance()->GetFormatFromChannelsCount(ChannelsCount);
+	mFormat = cAudioDevice::GetFormatFromChannelsCount(ChannelsCount);
 
 	if ( mFormat == 0 ) { // Check if the format is valid
 		mChannelsCount = 0;
@@ -41,15 +42,19 @@ void cSoundStream::Play() {
 		return;
 	}
 
-	if ( OnStart() ) { // Notify the derived class
-		mIsStreaming = true; // Start updating the stream in a separate thread to avoid blocking the application
-		Launch();
-	}
+	OnSeek( 0 );
+
+	mSamplesProcessed = 0;
+	mIsStreaming = true; // Start updating the stream in a separate thread to avoid blocking the application
+	Launch();
+}
+
+void cSoundStream::Pause() {
+	ALCheck( alSourcePause( mSource ) );
 }
 
 void cSoundStream::Stop() {
 	mIsStreaming = false; // Wait for the thread to terminate
-	mSamplesProcessed = 0;
 	Wait();
 }
 
@@ -70,11 +75,11 @@ EE_SOUND_STATE cSoundStream::GetState() const {
 	return Status;
 }
 
-eeFloat cSoundStream::GetPlayingOffset() const {
-    return cSound::PlayingOffset() + static_cast<eeFloat>(mSamplesProcessed) / mSampleRate / mChannelsCount;
+Uint32 cSoundStream::PlayingOffset() const {
+	return static_cast<Uint32>( cSound::PlayingOffset() ) * 1000 + 1000 * mSamplesProcessed / mSampleRate / mChannelsCount;
 }
 
-void cSoundStream::SetPlayingOffset( float timeOffset ) {
+void cSoundStream::PlayingOffset( Uint32 timeOffset ) {
     // Stop the stream
     Stop();
 
@@ -82,7 +87,7 @@ void cSoundStream::SetPlayingOffset( float timeOffset ) {
     OnSeek( timeOffset );
 
     // Restart streaming
-    mSamplesProcessed = static_cast<unsigned int>( timeOffset * mSampleRate * mChannelsCount );
+	mSamplesProcessed = static_cast<Uint32>( timeOffset ) * mSampleRate * mChannelsCount / 1000;
 
     mIsStreaming = true;
 
@@ -98,11 +103,10 @@ bool cSoundStream::Loop() const {
 }
 
 void cSoundStream::Run() {
-	if ( !cAudioDevice::instance()->isCreated() )
-		return;
-
     ALCheck( alGenBuffers( BuffersCount, mBuffers ) );
-	unsigned int EndBuffer = 0xFFFF;
+
+	for ( int i = 0; i < BuffersCount; ++i )
+		mEndBuffers[i] = false;
 
     // Fill the queue
     bool RequestStop = FillQueue();
@@ -122,7 +126,7 @@ void cSoundStream::Run() {
 		}
 
 		// Get the number of buffers that have been processed (ie. ready for reuse)
-		ALint NbProcessed;
+		ALint NbProcessed = 0;
 		ALCheck( alGetSourcei( cSound::mSource, AL_BUFFERS_PROCESSED, &NbProcessed ) );
 
 		while ( NbProcessed-- ) {
@@ -130,30 +134,31 @@ void cSoundStream::Run() {
 			ALuint Buffer;
 			ALCheck( alSourceUnqueueBuffers( cSound::mSource, 1, &Buffer ) );
 
+			// Find its number
+			Uint32 bufferNum = 0;
+			for (int i = 0; i < BuffersCount; ++i) {
+				if ( mBuffers[i] == Buffer ) {
+					bufferNum = i;
+					break;
+				}
+			}
+
 			// Retrieve its size and add it to the samples count
-			if ( Buffer == EndBuffer ) {
+			if ( mEndBuffers[bufferNum] ) {
 				// This was the last buffer: reset the sample count
 				mSamplesProcessed = 0;
-				EndBuffer = 0xFFFF;
+				mEndBuffers[bufferNum] = false;
 			} else {
-				ALint Size;
-				ALCheck( alGetBufferi( Buffer, AL_SIZE, &Size ) );
-				mSamplesProcessed += Size / sizeof(Int16);
+				ALint size, bits;
+				ALCheck( alGetBufferi( Buffer, AL_SIZE, &size ) );
+				ALCheck( alGetBufferi( Buffer, AL_BITS, &bits ) );
+				mSamplesProcessed += size / (bits / 8);
 			}
 
 			// Fill it and push it back into the playing queue
 			if ( !RequestStop ) {
-				if ( FillAndPushBuffer( Buffer ) ) {
-					// User requested to stop: check if we must loop or really stop
-					if ( mLoop && OnStart() ) {
-						// Looping: mark the current buffer as the last one
-						// (to know when to reset the sample count)
-						EndBuffer = Buffer;
-					} else {
-						// Not looping or restart failed: request stop
-						RequestStop = true;
-					}
-				}
+				if ( FillAndPushBuffer( bufferNum ) )
+					RequestStop = true;
 			}
 		}
 
@@ -173,24 +178,42 @@ void cSoundStream::Run() {
 	ALCheck( alDeleteBuffers( BuffersCount, mBuffers ) );
 }
 
-bool cSoundStream::FillAndPushBuffer( const unsigned int& Buffer) {
+bool cSoundStream::FillAndPushBuffer( const unsigned int& Buffer ) {
 	bool RequestStop = false;
 
 	// Acquire audio data
 	Chunk Data = {NULL, 0};
 
-	if ( !OnGetData( Data ) )
-		RequestStop = true;
+	if ( !OnGetData( Data ) ) {
+		// Mark the buffer as the last one (so that we know when to reset the playing position)
+		mEndBuffers[ Buffer ] = true;
+
+		// Check if the stream must loop or stop
+		if ( mLoop ) {
+			// Return to the beginning of the stream source
+			OnSeek( 0 );
+
+			// If we previously had no data, try to fill the buffer once again
+			if ( !Data.Samples || ( Data.NbSamples == 0 ) ) {
+				return FillAndPushBuffer( Buffer );
+			}
+		} else {
+			// Not looping: request stop
+			RequestStop = true;
+		}
+	}
 
 	// Create and fill the buffer, and push it to the queue
 	if ( Data.Samples && Data.NbSamples ) {
+		Uint32 buffer = mBuffers[ Buffer ];
+
 		// Fill the buffer
 		ALsizei Size = static_cast<ALsizei>( Data.NbSamples ) * sizeof(Int16);
 
-		ALCheck( alBufferData( Buffer, mFormat, Data.Samples, Size, mSampleRate ) );
+		ALCheck( alBufferData( buffer, mFormat, Data.Samples, Size, mSampleRate ) );
 
 		// Push it into the sound queue
-		ALCheck( alSourceQueueBuffers( cSound::mSource, 1, &Buffer ) );
+		ALCheck( alSourceQueueBuffers( cSound::mSource, 1, &buffer ) );
 	}
 
 	return RequestStop;
@@ -201,7 +224,7 @@ bool cSoundStream::FillQueue() {
     bool RequestStop = false;
 
     for ( int i = 0; (i < BuffersCount) && !RequestStop; ++i ) {
-        if ( FillAndPushBuffer( mBuffers[i] ) )
+		if ( FillAndPushBuffer( i ) )
             RequestStop = true;
     }
 
@@ -219,8 +242,8 @@ void cSoundStream::ClearQueue() {
         ALCheck( alSourceUnqueueBuffers( cSound::mSource, 1, &Buffer ) );
 }
 
-bool cSoundStream::OnStart() { // Called when the sound restarts
-	return true; // Does nothing by default
+EE_SOUND_STATE cSoundStream::State() const {
+	return GetState();
 }
 
 }}

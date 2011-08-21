@@ -28,6 +28,7 @@ void cEETest::Init() {
 	mCurDemo			= 0xFFFFFF;
 	mMapEditor			= NULL;
 	mETGEditor			= NULL;
+	Mus					= NULL;
 
 	MyPath 				= GetProcessPath();
 
@@ -43,6 +44,7 @@ void cEETest::Init() {
 	PartsNum 		= Ini.GetValueI( "EEPP", "ParticlesNum", 1000);
 	mUseShaders 	= Ini.GetValueB( "EEPP", "UseShaders", false );
 	mJoyEnabled		= Ini.GetValueB( "EEPP", "JoystickEnabled", false );
+	mMusEnabled		= Ini.GetValueB( "EEPP", "Music", false );
 
 	Int32 GLVersion = Ini.GetValueI( "EEPP", "GLVersion", 2 );
 	EEGL_version GLVer;
@@ -101,9 +103,8 @@ void cEETest::Init() {
 
 		Mus = eeNew( cMusic, () );
 
-		if ( Mus->OpenFromPack( PAK, "music.ogg" ) ) {
-			Mus->Loop(true);
-			//Mus->Volume( 0.f );
+		if ( mMusEnabled && Mus->OpenFromPack( PAK, "music.ogg" ) ) {
+			Mus->Loop( true );
 			Mus->Play();
 		}
 
@@ -782,6 +783,7 @@ void cEETest::LoadTextures() {
 
 	mResLoad.Add( eeNew( cSoundLoader, ( &SndMng, "mysound", PAK, "sound.ogg" ) ) );
 
+	//mResLoad.Threaded( false );
 	mResLoad.Load( cb::Make1( this, &cEETest::OnTextureLoaded ) );
 
 	TN.resize(12);
@@ -1253,7 +1255,7 @@ void cEETest::Input() {
 
 		mWindow->FrameRateLimit( 10 );
 
-		if ( Mus->State() == SOUND_PLAYING )
+		if ( mMusEnabled && Mus->State() == SOUND_PLAYING )
 			Mus->Pause();
 
 	} else {
@@ -1269,7 +1271,7 @@ void cEETest::Input() {
 
 		mWindow->FrameRateLimit( mLastFPSLimit );
 
-		if ( Mus->State() == SOUND_PAUSED )
+		if ( mMusEnabled && Mus->State() == SOUND_PAUSED )
 			Mus->Play();
 	}
 
@@ -1493,25 +1495,6 @@ void cEETest::Process() {
 	}
 
 	End();
-}
-
-void cEETest::End() {
-	Wait();
-
-	PhysicsDestroy();
-
-	eeSAFE_DELETE( Mus );
-	eeSAFE_DELETE( mTGL );
-	eeSAFE_DELETE( mFBO );
-	eeSAFE_DELETE( mVBO );
-	eeSAFE_DELETE( mBoxSprite );
-	eeSAFE_DELETE( mCircleSprite );
-	eeSAFE_DELETE( PAK );
-	eeSAFE_DELETE( PakTest );
-
-	cLog::instance()->Save();
-
-	cEngine::DestroySingleton();
 }
 
 void cEETest::ParticlesCallback( cParticle * P, cParticleSystem * Me ) {
@@ -1787,6 +1770,25 @@ void cEETest::PhysicsUpdate() {
 
 void cEETest::PhysicsDestroy() {
 	mDemo[ mCurDemo ].destroy();
+}
+
+void cEETest::End() {
+	Wait();
+
+	PhysicsDestroy();
+
+	eeSAFE_DELETE( Mus );
+	eeSAFE_DELETE( mTGL );
+	eeSAFE_DELETE( mFBO );
+	eeSAFE_DELETE( mVBO );
+	eeSAFE_DELETE( mBoxSprite );
+	eeSAFE_DELETE( mCircleSprite );
+	eeSAFE_DELETE( PAK );
+	eeSAFE_DELETE( PakTest );
+
+	cLog::instance()->Save();
+
+	cEngine::DestroySingleton();
 }
 
 #if EE_PLATFORM == EE_PLATFORM_MACOSX

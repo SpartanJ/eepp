@@ -2,7 +2,6 @@
 #define EE_AUDIOCSOUNDSTREAM_H
 
 #include "base.hpp"
-#include "caudiodevice.hpp"
 #include "csound.hpp"
 
 namespace EE { namespace Audio {
@@ -26,17 +25,22 @@ class EE_API cSoundStream : private cThread, private cSound {
 		virtual ~cSoundStream();
 
 		void Play();
+
+		void Pause();
+
 		void Stop();
 
 		unsigned int GetChannelsCount() const;
+
 		unsigned int GetSampleRate() const;
 
-		EE_SOUND_STATE 			GetState() const;
-		inline EE_SOUND_STATE 	State() const 		{ return GetState(); };
+		EE_SOUND_STATE 	GetState() const;
 
-		eeFloat GetPlayingOffset() const;
+		EE_SOUND_STATE 	State() const ;
 
-		void SetPlayingOffset( float timeOffset );
+		Uint32 PlayingOffset() const;
+
+		void PlayingOffset( Uint32 timeOffset );
 
 		/** Set the stream loop state. This parameter is disabled by default
 		* @param Loop True to play in loop, false to play once
@@ -55,11 +59,9 @@ class EE_API cSoundStream : private cThread, private cSound {
 	private :
 		virtual void Run();
 
-		virtual bool OnStart();
+		virtual bool OnGetData( Chunk& Data ) = 0;
 
-		virtual bool OnGetData(Chunk& Data) = 0;
-
-		virtual void OnSeek(float timeOffset) = 0;
+		virtual void OnSeek( float timeOffset ) = 0;
 
 		/** Fill a new buffer with audio data, and push it to the playing queue
 		* @param Buffer Buffer to fill
@@ -84,7 +86,8 @@ class EE_API cSoundStream : private cThread, private cSound {
 		unsigned int	mSampleRate;				///< Frequency (samples / second)
 		unsigned long	mFormat;					///< Format of the internal sound buffers
 		bool			mLoop;                  	///< Loop flag (true to loop, false to play once)
-		unsigned int	mSamplesProcessed;      	///< Number of buffers processed since beginning of the stream
+		Uint32			mSamplesProcessed;      	///< Number of buffers processed since beginning of the stream
+		bool			mEndBuffers[BuffersCount];	///< Each buffer is marked as "end buffer" or not, for proper duration calculation
 };
 
 }}

@@ -45,6 +45,7 @@ class EE_API cThread {
 		static unsigned int __stdcall EntryPoint(void* userData);
 
 		HANDLE			mThread;
+		unsigned int    mThreadId;
 
 		#elif defined( EE_PLATFORM_POSIX )
 
