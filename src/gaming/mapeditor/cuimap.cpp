@@ -25,6 +25,8 @@ cMap * cUIMap::Map() const {
 }
 
 void cUIMap::Draw() {
+	cUIComplexControl::Draw();
+
 	if ( NULL != mMap ) {
 		mMap->Draw();
 	}
@@ -39,6 +41,8 @@ void cUIMap::UpdateScreenPos() {
 }
 
 void cUIMap::Update() {
+	cUIComplexControl::Update();
+
 	if ( NULL != mMap ) {
 		mMap->Update();
 
@@ -156,7 +160,7 @@ void cUIMap::MapDraw() {
 	if ( mEditingLights && NULL != mSelLight ) {
 		if ( Intersect( mMap->GetViewAreaAABB(), mSelLight->GetAABB() ) ) {
 			cPrimitives P;
-			P.SetColor( eeColorA( 255, 0, 0, 225 ) );
+			P.SetColor( eeColorA( 255, 0, 0, (Uint8)mAlpha ) );
 
 			eeVector2f Pos( mSelLight->GetAABB().Left + mMap->OffsetFixed().x, mSelLight->GetAABB().Top + mMap->OffsetFixed().y );
 			eeAABB AB( mSelLight->GetAABB() );
@@ -190,6 +194,14 @@ void cUIMap::SetLightRadiusChangeCb( LightRadiusChangeCb Cb ) {
 void cUIMap::ClearLights() {
 	mSelLight = NULL;
 	mAddLight = NULL;
+}
+
+void cUIMap::OnAlphaChange() {
+	cUIComplexControl::OnAlphaChange();
+
+	if ( NULL != mMap ) {
+		mMap->BackAlpha( (Uint8)mAlpha );
+	}
 }
 
 }}}

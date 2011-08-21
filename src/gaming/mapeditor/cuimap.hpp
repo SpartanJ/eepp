@@ -55,6 +55,8 @@ class cUIMap : public cUIComplexControl {
 
 		virtual void UpdateScreenPos();
 
+		virtual void OnAlphaChange();
+
 		void MapDraw();
 
 		void TryToSelectLight();

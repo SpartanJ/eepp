@@ -207,7 +207,11 @@ eeFloat cWindow::Elapsed() const {
 }
 
 void cWindow::GetElapsedTime() {
-	mFrameData.ElapsedTime = static_cast<eeFloat> ( mFrameData.FrameElapsed.Elapsed() );
+	if ( NULL == mFrameData.FrameElapsed ) {
+		mFrameData.FrameElapsed = eeNew( cTimeElapsed, () );
+	}
+
+	mFrameData.ElapsedTime = static_cast<eeFloat> ( mFrameData.FrameElapsed->Elapsed() );
 }
 
 void cWindow::CalculateFps() {

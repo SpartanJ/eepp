@@ -26,7 +26,12 @@ cLog::~cLog() {
 }
 
 void cLog::Save( const std::string& filepath ) {
-	mFilePath	= filepath;
+	if ( filepath.size() ) {
+		mFilePath	= filepath;
+	} else {
+		mFilePath	= GetProcessPath();
+	}
+
 	mSave		= true;
 }
 

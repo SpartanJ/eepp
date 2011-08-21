@@ -181,6 +181,14 @@ class EE_API cMap {
 		const bool& IsMouseOver() const;
 
 		cGameObject * IsTypeInTilePos( const Uint32& Type, const eeVector2i& TilePos );
+
+		const Uint8& BackAlpha() const;
+
+		void BackAlpha( const Uint8& alpha );
+
+		const eeColorA& BackColor() const;
+
+		void BackColor( const eeColorA& col );
 	protected:
 		Window::cWindow *		mWindow;
 		cLayer**		mLayers;
@@ -205,14 +213,16 @@ class EE_API cMap {
 		GOTypesList		mObjTypes;
 		CreateGOCb		mCreateGOCb;
 		cTexture *		mTileTex;
-		std::string		mPath;
 		eeAABB			mScreenAABB;
 		cLightManager *	mLightManager;
 		MapDrawCb		mDrawCb;
 		MapUpdateCb		mUpdateCb;
 		void *			mData;
-		bool			mMouseOver;
 		eeColorA		mTileOverColor;
+		eeColorA		mBackColor;
+		Uint8			mBackAlpha;
+		std::string		mPath;
+		bool			mMouseOver;
 
 		virtual cGameObject *	CreateGameObject( const Uint32& Type, const Uint32& Flags, cLayer * Layer, const Uint32& DataId = 0 );
 

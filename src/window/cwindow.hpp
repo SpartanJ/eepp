@@ -318,12 +318,18 @@ class EE_API cWindow {
 				};
 
 				cFPSData		FPS;
-				cTimeElapsed	FrameElapsed;
+				cTimeElapsed *	FrameElapsed;
 				eeFloat			ElapsedTime;
 
 				cFrameData() :
+					FrameElapsed(NULL),
 					ElapsedTime(0)
 				{}
+
+				~cFrameData()
+				{
+					eeSAFE_DELETE( FrameElapsed );
+				}
 		};
 
 		cFrameData mFrameData;

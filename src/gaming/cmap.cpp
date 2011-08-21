@@ -27,8 +27,10 @@ cMap::cMap() :
 	mTileTex( NULL ),
 	mLightManager( NULL ),
 	mData( NULL ),
-	mMouseOver( false ),
-	mTileOverColor( 255, 0, 0, 200 )
+	mTileOverColor( 255, 0, 0, 200 ),
+	mBackColor( 0, 0, 0, 50 ),
+	mBackAlpha( 255 ),
+	mMouseOver( false )
 {
 	ViewSize( mViewSize );
 }
@@ -221,7 +223,9 @@ void cMap::GridDraw() {
 	if ( DrawBackground() ) {
 		cPrimitives P;
 
-		P.SetColor( eeColorA( 0, 0, 0, 50 ) );
+		Uint8 Alpha = static_cast<Uint8>( (eeFloat)mBackColor.A() * ( (eeFloat)mBackAlpha / 255.f ) );
+
+		P.SetColor( eeColorA( mBackColor.R(), mBackColor.G(), mBackColor.B(), Alpha ) );
 		P.DrawRectangle( mScreenPos.x, mScreenPos.y, mViewSize.x, mViewSize.y, 0.f, 1.f );
 		P.SetColor( eeColorA( 255, 255, 255, 255 ) );
 	}
@@ -242,6 +246,7 @@ void cMap::GridDraw() {
 	eeVector2i end = EndTile();
 
 	eeFloat tx, ty;
+	eeColorA TileTexCol( 255, 255, 255, mBackAlpha );
 
 	for ( Int32 x = start.x; x < end.x; x++ ) {
 		for ( Int32 y = start.y; y < end.y; y++ ) {
@@ -249,7 +254,7 @@ void cMap::GridDraw() {
 
 			ty = y * mTileSize.y;
 
-			mTileTex->Draw( tx, ty );
+			mTileTex->Draw( tx, ty, 0, 1, TileTexCol );
 		}
 	}
 
@@ -1212,6 +1217,22 @@ cGameObject * cMap::IsTypeInTilePos( const Uint32& Type, const eeVector2i& TileP
 	}
 
 	return NULL;
+}
+
+const Uint8& cMap::BackAlpha() const {
+	return mBackAlpha;
+}
+
+void cMap::BackAlpha( const Uint8& alpha ) {
+	mBackAlpha = alpha;
+}
+
+const eeColorA& cMap::BackColor() const {
+	return mBackColor;
+}
+
+void cMap::BackColor( const eeColorA& col ) {
+	mBackColor = col;
 }
 
 }}

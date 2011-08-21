@@ -1483,10 +1483,11 @@ void cEETest::Process() {
 
 			Input();
 
-			if ( mFontLoader.IsLoaded() )
+			if ( mFontLoader.IsLoaded() ) {
 				Render();
-			else
+			} else {
 				mFontLoader.Update();
+			}
 
 			if ( KM->IsKeyUp(KEY_F12) ) mWindow->TakeScreenshot( MyPath + "data/screenshots/" ); //After render and before Display
 
