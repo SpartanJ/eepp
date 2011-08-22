@@ -32,11 +32,7 @@ class EE_API cGameObject {
 
 		virtual Uint32 Type() const;
 
-		bool IsType( const Uint32& type );
-
-		virtual bool InheritsFrom( const Uint32& Type );
-
-		bool IsTypeOrInheritsFrom( const Uint32& Type );
+		virtual bool IsType( const Uint32& type );
 
 		const Uint32& Flags() const;
 

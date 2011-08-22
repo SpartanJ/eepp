@@ -229,6 +229,15 @@ namespace EE {
 	typedef unsigned int	eeUint;
 	typedef signed int		eeInt;
 
+	#if SOPHIST_has_64
+	typedef SOPHIST_uint64	Uint64;
+	typedef SOPHIST_int64	Int64;
+	#else
+	typedef SOPHIST_uint32	Uint64;	// Fallback to a 32 bit int
+	typedef SOPHIST_int32	Int64; // All the desktop platforms support 64bit ints, so this should not happend.
+	#warning 64bit ints represented with 32bit ints because the compiler or platform doesnt support it.
+	#endif
+
 	#define EE_PI			3.14159265358979323846
 	#define EE_PI2			6.28318530717958647692
 	const eeFloat EE_PI_180	= EE_PI / 180;

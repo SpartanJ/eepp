@@ -4,7 +4,7 @@ namespace EE { namespace UI {
 
 cUIMessageBox::cUIMessageBox( const cUIMessageBox::CreateParams& Params ) :
 	cUIWindow( Params ),
-	mType( Params.Type )
+	mMsgBoxType( Params.Type )
 {
 	cUIPushButton::CreateParams ButtonParams;
 	ButtonParams.Parent( Container() );
@@ -31,7 +31,7 @@ cUIMessageBox::cUIMessageBox( const cUIMessageBox::CreateParams& Params ) :
 
 	mTextBox->Text( Params.Message );
 
-	switch ( mType ) {
+	switch ( mMsgBoxType ) {
 		case MSGBOX_OKCANCEL:
 		{
 			mButtonOK->Text( "OK" );

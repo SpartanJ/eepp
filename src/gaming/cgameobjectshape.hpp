@@ -33,6 +33,8 @@ class EE_API cGameObjectShape : public cGameObject {
 
 		virtual Uint32 Type() const;
 
+		virtual bool IsType( const Uint32& type );
+
 		virtual Uint32 DataId();
 
 		virtual void DataId( Uint32 Id );

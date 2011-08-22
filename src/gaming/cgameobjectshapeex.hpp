@@ -16,6 +16,8 @@ class EE_API cGameObjectShapeEx : public cGameObjectShape {
 
 		virtual Uint32 Type() const;
 
+		virtual bool IsType( const Uint32& type );
+
 		virtual void FlagSet( const Uint32& Flag );
 	protected:
 		EE_PRE_BLEND_FUNC	mBlend;

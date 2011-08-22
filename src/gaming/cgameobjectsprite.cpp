@@ -23,6 +23,10 @@ Uint32 cGameObjectSprite::Type() const {
 	return GAMEOBJECT_TYPE_SPRITE;
 }
 
+bool cGameObjectSprite::IsType( const Uint32& type ) {
+	return ( Type() == type ) ? true : cGameObject::IsType( type );
+}
+
 void cGameObjectSprite::Draw() {
 	if ( NULL != mSprite ) {
 		mSprite->Angle( GetAngle() );

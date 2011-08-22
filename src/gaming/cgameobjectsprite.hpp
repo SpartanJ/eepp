@@ -33,6 +33,8 @@ class EE_API cGameObjectSprite : public cGameObject {
 
 		virtual Uint32 Type() const;
 
+		virtual bool IsType( const Uint32& type );
+
 		virtual void FlagSet( const Uint32& Flag );
 
 		virtual Uint32 DataId();

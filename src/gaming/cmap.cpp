@@ -1209,7 +1209,7 @@ cGameObject * cMap::IsTypeInTilePos( const Uint32& Type, const eeVector2i& TileP
 			cGameObject * tObj = NULL;
 
 			if ( ( tObj = tLayer->GetGameObject( TilePos ) ) ) {
-				if ( tObj->Type() == Type ) {
+				if ( tObj->IsType( Type ) ) {
 					return tObj;
 				}
 			}

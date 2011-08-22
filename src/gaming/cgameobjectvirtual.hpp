@@ -28,6 +28,8 @@ class EE_API cGameObjectVirtual : public cGameObject {
 
 		virtual Uint32 Type() const;
 
+		virtual bool IsType( const Uint32& type );
+
 		virtual Uint32 RealType() const;
 
 		virtual Uint32 DataId();

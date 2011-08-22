@@ -21,6 +21,10 @@ Uint32 cGameObjectShape::Type() const {
 	return GAMEOBJECT_TYPE_SHAPE;
 }
 
+bool cGameObjectShape::IsType( const Uint32& type ) {
+	return ( Type() == type ) ? true : cGameObject::IsType( type );
+}
+
 void cGameObjectShape::Draw() {
 	if ( NULL != mShape ) {
 		if ( mLayer->Map()->LightsEnabled() && mLayer->LightsEnabled() ) {

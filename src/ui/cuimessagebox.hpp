@@ -37,7 +37,7 @@ class EE_API cUIMessageBox : public cUIWindow {
 
 		cUIPushButton *		ButtonCancel() const;
 	protected:
-		UI_MSGBOX_TYPE		mType;
+		UI_MSGBOX_TYPE		mMsgBoxType;
 		cUITextBox *		mTextBox;
 		cUIPushButton *		mButtonOK;
 		cUIPushButton *		mButtonCancel;

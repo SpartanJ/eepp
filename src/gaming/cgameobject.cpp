@@ -17,14 +17,6 @@ bool cGameObject::IsType( const Uint32& type ) {
 	return type == Type();
 }
 
-bool cGameObject::InheritsFrom( const Uint32& Type ) {
-	return false;
-}
-
-bool cGameObject::IsTypeOrInheritsFrom( const Uint32& Type ) {
-	return IsType( Type ) || InheritsFrom( Type );
-}
-
 const Uint32& cGameObject::Flags() const {
 	return mFlags;
 }
