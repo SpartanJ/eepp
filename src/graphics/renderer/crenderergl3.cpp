@@ -41,6 +41,76 @@ const char * EEGL_PLANES_NAME[] = {
 	"dgl_ClipPlane[5]"
 };
 
+#ifdef EE_GLES2
+
+const GLchar * EEGL_SHADER_BASE_VS[] = {
+	"#define MAX_CLIP_PLANES 6\n",
+	"uniform			mat4 dgl_ProjectionMatrix;\n",	// replaces deprecated gl_ProjectionMatrix
+	"uniform			mat4 dgl_ModelViewMatrix;\n",	// replaces deprecated gl_ModelViewMatrix
+	"uniform			int  dgl_ClippingEnabled = 0;\n",
+	"uniform			int	 dgl_ClipEnabled[ MAX_CLIP_PLANES ] = { 0, 0, 0, 0, 0, 0 };\n",
+	"uniform			vec4 dgl_ClipPlane[ MAX_CLIP_PLANES ];\n",
+	"uniform			float dgl_PointSize = 1;\n",
+	"in					vec4 dgl_Vertex;\n",			// replaces deprecated gl_Vertex
+	"in					vec4 dgl_FrontColor;\n",		// replaces deprecated gl_FrontColor
+	"in					vec4 dgl_MultiTexCoord0;\n",	// replaces deprecated gl_MultiTexCoord0
+	"in					vec4 dgl_MultiTexCoord1;\n",	// replaces deprecated gl_MultiTexCoord1
+	"in					vec4 dgl_MultiTexCoord2;\n",	// replaces deprecated gl_MultiTexCoord2
+	"in					vec4 dgl_MultiTexCoord3;\n",	// replaces deprecated gl_MultiTexCoord3
+	"varying			vec4 dgl_Color;\n",				// to fragment shader
+	"varying			vec4 dgl_TexCoord[ 4 ];\n",		// to fragment shader
+	"varying			float dgl_ClipDistance[ MAX_CLIP_PLANES ];\n",
+	"void main(void)\n",
+	"{\n",
+	"	gl_PointSize	= dgl_PointSize;\n",
+	"	dgl_Color		= dgl_FrontColor;\n",
+	"	dgl_TexCoord[0]	= dgl_MultiTexCoord0;\n",
+	"	dgl_TexCoord[1]	= dgl_MultiTexCoord1;\n",
+	"	dgl_TexCoord[2]	= dgl_MultiTexCoord2;\n",
+	"	dgl_TexCoord[3]	= dgl_MultiTexCoord3;\n",
+	"	vec4 vEye		= dgl_ModelViewMatrix * dgl_Vertex;\n",
+	"	gl_Position		= dgl_ProjectionMatrix * vEye;\n",
+	"	if ( 1 == dgl_ClippingEnabled ) {\n",
+	"		for ( int i = 0; i < MAX_CLIP_PLANES; i++ ) {\n",
+	"			if ( 1 == dgl_ClipEnabled[i] )\n",
+	"				dgl_ClipDistance[i] = dot( vEye, dgl_ClipPlane[i] );\n",
+	"		}\n",
+	"	}\n",
+	"}\n"
+};
+
+const GLchar * EEGL_SHADER_BASE_FS[] = {
+	"#define MAX_CLIP_PLANES 6\n",
+	"uniform		sampler2D	textureUnit0;\n",
+	"uniform		int			dgl_TexActive = 1;\n",
+	"uniform		int			dgl_PointSpriteActive = 0;\n",
+	"uniform		int			dgl_ClippingEnabled = 0;\n",
+	"uniform		int			dgl_ClipEnabled[ MAX_CLIP_PLANES ] = { 0, 0, 0, 0, 0, 0 };\n",
+	"uniform		vec4		dgl_ClipPlane[ MAX_CLIP_PLANES ];\n",
+	"varying		vec4		dgl_Color;\n",
+	"varying		vec4		dgl_TexCoord[ 4 ];\n",
+	"varying		float		dgl_ClipDistance[ MAX_CLIP_PLANES ];\n",
+	"void main(void)\n",
+	"{\n",
+	"	if ( 1 == dgl_ClippingEnabled ) {\n",
+	"		for ( int i = 0; i < MAX_CLIP_PLANES; i++ ) {\n",
+	"			if ( 1 == dgl_ClipEnabled[i] )\n",
+	"				if ( dgl_ClipDistance[i] < 0.0 )\n",
+	"					discard;\n",
+	"		}\n",
+	"	}\n",
+	"	if ( 0 == dgl_PointSpriteActive ) {\n",
+	"		if ( 1 == dgl_TexActive )\n",
+	"			gl_FragColor = dgl_Color * texture2D( textureUnit0, dgl_TexCoord[ 0 ].xy );\n",
+	"		else\n",
+	"			gl_FragColor = dgl_Color;\n",
+	"	} else\n",
+	"		gl_FragColor = dgl_Color * texture2D( textureUnit0, gl_PointCoord );\n",
+	"}\n"
+};
+
+#else
+
 const GLchar * EEGL_SHADER_BASE_VS[] = {
 	"#version 150\n",
 	"#define MAX_CLIP_PLANES 6\n",
@@ -49,11 +119,6 @@ const GLchar * EEGL_SHADER_BASE_VS[] = {
 	"uniform			int  dgl_ClippingEnabled = 0;\n",
 	"uniform			int	 dgl_ClipEnabled[ MAX_CLIP_PLANES ] = { 0, 0, 0, 0, 0, 0 };\n",
 	"uniform			vec4 dgl_ClipPlane[ MAX_CLIP_PLANES ];\n",
-	#ifdef EE_GLES2
-	//"#ifdef GL_ES\n",
-	"uniform			float dgl_PointSize = 1;\n",
-	//"#endif\n",
-	#endif
 	"in					vec4 dgl_Vertex;\n",			// replaces deprecated gl_Vertex
 	"in					vec4 dgl_FrontColor;\n",		// replaces deprecated gl_FrontColor
 	"in					vec4 dgl_MultiTexCoord0;\n",	// replaces deprecated gl_MultiTexCoord0
@@ -64,11 +129,6 @@ const GLchar * EEGL_SHADER_BASE_VS[] = {
 	"invariant out		vec4 dgl_TexCoord[ 4 ];\n",		// to fragment shader
 	"void main(void)\n",
 	"{\n",
-	#ifdef EE_GLES2
-	//"#ifdef GL_ES\n",
-	"	gl_PointSize	= dgl_PointSize;\n",
-	//"#endif\n",
-	#endif
 	"	dgl_Color		= dgl_FrontColor;\n",
 	"	dgl_TexCoord[0]	= dgl_MultiTexCoord0;\n",
 	"	dgl_TexCoord[1]	= dgl_MultiTexCoord1;\n",
@@ -104,6 +164,8 @@ const GLchar * EEGL_SHADER_BASE_FS[] = {
 	"		dgl_FragColor = dgl_Color * texture2D( textureUnit0, gl_PointCoord );\n",
 	"}\n"
 };
+
+#endif
 
 cRendererGL3::cRendererGL3() :
 	mProjectionMatrix_id(0),
