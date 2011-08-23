@@ -23,14 +23,20 @@ cUIMenu::cUIMenu( cUIMenu::CreateParams& Params ) :
 	mClickHide( false ),
 	mLastTickMove( 0 )
 {
-	mType = UI_TYPE_MENU;
-
 	OnSizeChange();
 
 	ApplyDefaultTheme();
 }
 
 cUIMenu::~cUIMenu() {
+}
+
+Uint32 cUIMenu::Type() const {
+	return UI_TYPE_MENU;
+}
+
+bool cUIMenu::IsType( const Uint32& type ) const {
+	return cUIMenu::Type() == type ? true : cUIComplexControl::IsType( type );
 }
 
 void cUIMenu::SetTheme( cUITheme * Theme ) {
@@ -145,7 +151,7 @@ Uint32 cUIMenu::AddSubMenu( const String& Text, cShape * Icon, cUIMenu * SubMenu
 }
 
 bool cUIMenu::CheckControlSize( cUIControl * Control, const bool& Resize ) {
-	if ( Control->IsTypeOrInheritsFrom( UI_TYPE_MENUITEM ) ) {
+	if ( Control->IsType( UI_TYPE_MENUITEM ) ) {
 		cUIMenuItem * tItem = reinterpret_cast<cUIMenuItem*> ( Control );
 
 		if ( NULL != tItem->Icon() && tItem->IconHorizontalMargin() + tItem->Icon()->Size().Width() > (Int32)mBiggestIcon ) {
@@ -153,7 +159,7 @@ bool cUIMenu::CheckControlSize( cUIControl * Control, const bool& Resize ) {
 		}
 
 		if ( mFlags & UI_AUTO_SIZE ) {
-			if ( Control->IsTypeOrInheritsFrom( UI_TYPE_MENUSUBMENU ) ) {
+			if ( Control->IsType( UI_TYPE_MENUSUBMENU ) ) {
 				cUIMenuSubMenu * tMenu = reinterpret_cast<cUIMenuSubMenu*> ( tItem );
 
 				if ( tMenu->TextBox()->GetTextWidth() + mBiggestIcon + tMenu->Arrow()->Size().Width() + mMinRightMargin > (Int32)mMaxWidth - mPadding.Left - mPadding.Right ) {
@@ -203,7 +209,7 @@ Uint32 cUIMenu::Add( cUIControl * Control ) {
 }
 
 void cUIMenu::SetControlSize( cUIControl * Control, const Uint32& Pos ) {
-	if ( Control->IsTypeOrInheritsFrom( UI_TYPE_MENUITEM ) ) {
+	if ( Control->IsType( UI_TYPE_MENUITEM ) ) {
 		Control->Size( mSize.Width() - mPadding.Left - mPadding.Right, mRowHeight );
 	} else {
 		Control->Size( mSize.Width() - mPadding.Left - mPadding.Right, Control->Size().Height() );
@@ -237,7 +243,7 @@ cUIControl * cUIMenu::GetItem( const Uint32& Index ) {
 
 cUIControl * cUIMenu::GetItem( const String& Text ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
-		if ( mItems[i]->IsTypeOrInheritsFrom( UI_TYPE_MENUITEM ) ) {
+		if ( mItems[i]->IsType( UI_TYPE_MENUITEM ) ) {
 			cUIMenuItem * tMenuItem = reinterpret_cast<cUIMenuItem*>( mItems[i] );
 			
 			if ( tMenuItem->Text() == Text )
@@ -308,7 +314,7 @@ void cUIMenu::Insert( cUIControl * Control, const Uint32& Index ) {
 
 bool cUIMenu::IsSubMenu( cUIControl * Ctrl ) {
 	for ( Uint32 i = 0; i < mItems.size(); i++ ) {
-		if ( mItems[i]->IsTypeOrInheritsFrom( UI_TYPE_MENUSUBMENU ) ) {
+		if ( mItems[i]->IsType( UI_TYPE_MENUSUBMENU ) ) {
 			cUIMenuSubMenu * tMenu = reinterpret_cast<cUIMenuSubMenu*> ( mItems[i] );
 
 			if ( tMenu->SubMenu() == Ctrl )
@@ -420,7 +426,7 @@ bool cUIMenu::Hide() {
 
 void cUIMenu::SetItemSelected( cUIControl * Item ) {
 	if ( NULL != mItemSelected ) {
-		if ( mItemSelected->IsTypeOrInheritsFrom( UI_TYPE_MENUSUBMENU ) ) {
+		if ( mItemSelected->IsType( UI_TYPE_MENUSUBMENU ) ) {
 			cUIMenuSubMenu * tMenu = reinterpret_cast<cUIMenuSubMenu*> ( mItemSelected );
 
 			if ( NULL != tMenu->SubMenu() )
@@ -441,7 +447,7 @@ void cUIMenu::SetItemSelected( cUIControl * Item ) {
 
 void cUIMenu::TrySelect( cUIControl * Ctrl, bool Up ) {
 	if ( mItems.size() ) {
-		if ( !Ctrl->IsTypeOrInheritsFrom( UI_TYPE_SEPARATOR ) ) {
+		if ( !Ctrl->IsType( UI_TYPE_SEPARATOR ) ) {
 			SetItemSelected( Ctrl );
 		} else {
 			Uint32 Index = GetItemIndex( Ctrl );
@@ -450,7 +456,7 @@ void cUIMenu::TrySelect( cUIControl * Ctrl, bool Up ) {
 				if ( Up ) {
 					if ( Index > 0 ) {
 						for ( Int32 i = (Int32)Index - 1; i >= 0; i-- ) {
-							if ( !mItems[i]->IsTypeOrInheritsFrom( UI_TYPE_SEPARATOR ) ) {
+							if ( !mItems[i]->IsType( UI_TYPE_SEPARATOR ) ) {
 								SetItemSelected( mItems[i] );
 								return;
 							}
@@ -460,7 +466,7 @@ void cUIMenu::TrySelect( cUIControl * Ctrl, bool Up ) {
 					SetItemSelected( mItems[ mItems.size() ] );
 				} else {
 					for ( Uint32 i = Index + 1; i < mItems.size(); i++ ) {
-						if ( !mItems[i]->IsTypeOrInheritsFrom( UI_TYPE_SEPARATOR ) ) {
+						if ( !mItems[i]->IsType( UI_TYPE_SEPARATOR ) ) {
 							SetItemSelected( mItems[i] );
 							return;
 						}
@@ -515,7 +521,7 @@ Uint32 cUIMenu::OnKeyDown( const cUIEventKey& Event ) {
 
 				break;
 			case KEY_RIGHT:
-				if ( NULL != mItemSelected && ( mItemSelected->IsTypeOrInheritsFrom( UI_TYPE_MENUSUBMENU ) ) ) {
+				if ( NULL != mItemSelected && ( mItemSelected->IsType( UI_TYPE_MENUSUBMENU ) ) ) {
 					cUIMenuSubMenu * tMenu = reinterpret_cast<cUIMenuSubMenu*> ( mItemSelected );
 
 					tMenu->ShowSubMenu();

@@ -9,8 +9,6 @@ cUISprite::cUISprite( const cUISprite::CreateParams& Params ) :
 	mAlignOffset(0,0),
 	mShapeLast(NULL)
 {
-	mType = UI_TYPE_SPRITE;
-
 	if ( Params.DeallocSprite )
 		mControlFlags |= UI_CTRL_FLAG_FREE_USE;
 
@@ -24,6 +22,14 @@ cUISprite::cUISprite( const cUISprite::CreateParams& Params ) :
 cUISprite::~cUISprite() {
 	if ( DeallocSprite() )
 		eeSAFE_DELETE( mSprite );
+}
+
+Uint32 cUISprite::Type() const {
+	return UI_TYPE_SPRITE;
+}
+
+bool cUISprite::IsType( const Uint32& type ) const {
+	return cUISprite::Type() == type ? true : cUIComplexControl::IsType( type );
 }
 
 Uint32 cUISprite::DeallocSprite() {

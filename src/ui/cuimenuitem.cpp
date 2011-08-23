@@ -6,12 +6,18 @@ namespace EE { namespace UI {
 cUIMenuItem::cUIMenuItem( cUIPushButton::CreateParams& Params ) : 
 	cUIPushButton( Params )
 {
-	mType = UI_TYPE_MENUITEM;
-	
 	ApplyDefaultTheme();
 }
 
 cUIMenuItem::~cUIMenuItem() {
+}
+
+Uint32 cUIMenuItem::Type() const {
+	return UI_TYPE_MENUITEM;
+}
+
+bool cUIMenuItem::IsType( const Uint32& type ) const {
+	return cUIMenuItem::Type() == type ? true : cUIPushButton::IsType( type );
 }
 
 void cUIMenuItem::SetTheme( cUITheme * Theme ) {

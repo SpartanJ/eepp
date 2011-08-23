@@ -6,14 +6,20 @@ cUIComboBox::cUIComboBox( cUIComboBox::CreateParams& Params ) :
 	cUIDropDownList( Params ),
 	mButton( NULL )
 {
-	mType = UI_TYPE_COMBOBOX;
-
 	AllowEditing( true );
 
 	ApplyDefaultTheme();
 }
 
 cUIComboBox::~cUIComboBox() {
+}
+
+Uint32 cUIComboBox::Type() const {
+	return UI_TYPE_COMBOBOX;
+}
+
+bool cUIComboBox::IsType( const Uint32& type ) const {
+	return cUIComboBox::Type() == type ? true : cUIDropDownList::IsType( type );
 }
 
 void cUIComboBox::SetTheme( cUITheme * Theme ) {

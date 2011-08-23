@@ -741,7 +741,7 @@ void cMapEditor::MapSave( const cUIEvent * Event ) {
 }
 
 void cMapEditor::FileMenuClick( const cUIEvent * Event ) {
-	if ( !Event->Ctrl()->IsTypeOrInheritsFrom( UI_TYPE_MENUITEM ) )
+	if ( !Event->Ctrl()->IsType( UI_TYPE_MENUITEM ) )
 		return;
 
 	const String& txt = reinterpret_cast<cUIMenuItem*> ( Event->Ctrl() )->Text();
@@ -792,7 +792,7 @@ void cMapEditor::OnMapClose( const cUIEvent * Event ) {
 }
 
 void cMapEditor::ViewMenuClick( const cUIEvent * Event ) {
-	if ( !Event->Ctrl()->IsTypeOrInheritsFrom( UI_TYPE_MENUITEM ) )
+	if ( !Event->Ctrl()->IsType( UI_TYPE_MENUITEM ) )
 		return;
 
 	const String& txt = reinterpret_cast<cUIMenuItem*> ( Event->Ctrl() )->Text();
@@ -807,7 +807,7 @@ void cMapEditor::ViewMenuClick( const cUIEvent * Event ) {
 }
 
 void cMapEditor::MapMenuClick( const cUIEvent * Event ) {
-	if ( !Event->Ctrl()->IsTypeOrInheritsFrom( UI_TYPE_MENUITEM ) )
+	if ( !Event->Ctrl()->IsType( UI_TYPE_MENUITEM ) )
 		return;
 
 	const String& txt = reinterpret_cast<cUIMenuItem*> ( Event->Ctrl() )->Text();
@@ -830,7 +830,7 @@ void cMapEditor::MapMenuClick( const cUIEvent * Event ) {
 }
 
 void cMapEditor::LayerMenuClick( const cUIEvent * Event ) {
-	if ( !Event->Ctrl()->IsTypeOrInheritsFrom( UI_TYPE_MENUITEM ) )
+	if ( !Event->Ctrl()->IsType( UI_TYPE_MENUITEM ) )
 		return;
 
 	const String& txt = reinterpret_cast<cUIMenuItem*> ( Event->Ctrl() )->Text();

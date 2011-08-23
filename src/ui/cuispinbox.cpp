@@ -9,8 +9,6 @@ cUISpinBox::cUISpinBox( const cUISpinBox::CreateParams& Params ) :
 	mValue( Params.DefaultValue ),
 	mClickStep( 1.f )
 {
-	mType = UI_TYPE_SPINBOX;
-
 	cUITextInput::CreateParams InputParams( Params );
 	InputParams.PosSet( 0, 0 );
 	InputParams.Parent( this );
@@ -49,7 +47,14 @@ cUISpinBox::cUISpinBox( const cUISpinBox::CreateParams& Params ) :
 }
 
 cUISpinBox::~cUISpinBox() {
+}
 
+Uint32 cUISpinBox::Type() const {
+	return UI_TYPE_SPINBOX;
+}
+
+bool cUISpinBox::IsType( const Uint32& type ) const {
+	return cUISpinBox::Type() == type ? true : cUIComplexControl::IsType( type );
 }
 
 void cUISpinBox::SetTheme( cUITheme * Theme ) {

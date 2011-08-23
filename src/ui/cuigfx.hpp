@@ -28,6 +28,10 @@ class EE_API cUIGfx : public cUIComplexControl {
 
 		~cUIGfx();
 
+		virtual Uint32 Type() const;
+
+		virtual bool IsType( const Uint32& type ) const;
+
 		virtual void Draw();
 
 		virtual void Alpha( const eeFloat& alpha );

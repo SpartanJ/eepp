@@ -13,8 +13,12 @@ cGameObject::~cGameObject()
 {
 }
 
+Uint32 cGameObject::Type() const {
+	return GAMEOBJECT_TYPE_BASE;
+}
+
 bool cGameObject::IsType( const Uint32& type ) {
-	return type == Type();
+	return type == cGameObject::Type();
 }
 
 const Uint32& cGameObject::Flags() const {
@@ -92,10 +96,6 @@ void cGameObject::TilePos( eeVector2i pos ) {
 
 eeSize cGameObject::Size() {
 	return eeSize();
-}
-
-Uint32 cGameObject::Type() const {
-	return GAMEOBJECT_TYPE_BASE;
 }
 
 Uint32 cGameObject::DataId() {

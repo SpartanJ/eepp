@@ -12,8 +12,6 @@ cUIProgressBar::cUIProgressBar( const cUIProgressBar::CreateParams& Params ) :
 	mTotalSteps( 100.f ),
 	mParallax( NULL )
 {
-	mType = UI_TYPE_PROGRESSBAR;
-
 	cUITextBox::CreateParams TxtBoxParams = Params;
 
 	TxtBoxParams.Parent( this );
@@ -30,6 +28,14 @@ cUIProgressBar::cUIProgressBar( const cUIProgressBar::CreateParams& Params ) :
 
 cUIProgressBar::~cUIProgressBar() {
 	eeSAFE_DELETE( mParallax );
+}
+
+Uint32 cUIProgressBar::Type() const {
+	return UI_TYPE_PROGRESSBAR;
+}
+
+bool cUIProgressBar::IsType( const Uint32& type ) const {
+	return cUIProgressBar::Type() == type ? true : cUIComplexControl::IsType( type );
 }
 
 void cUIProgressBar::Draw() {

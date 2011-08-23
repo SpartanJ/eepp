@@ -11,6 +11,10 @@ class EE_API cUIComboBox : public cUIDropDownList {
 
 		~cUIComboBox();
 
+		virtual Uint32 Type() const;
+
+		virtual bool IsType( const Uint32& type ) const;
+
 		virtual void SetTheme( cUITheme * Theme );
 	protected:
 		cUIControl * mButton;

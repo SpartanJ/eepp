@@ -10,8 +10,6 @@ cUITextInput::cUITextInput( const cUITextInput::CreateParams& Params ) :
 	mAllowEditing( true ),
 	mShowingWait( true )
 {
-	mType = UI_TYPE_TEXTINPUT;
-
 	mTextBuffer.Start();
 	mTextBuffer.Active( false );
 	mTextBuffer.SupportFreeEditing( Params.SupportFreeEditing );
@@ -22,6 +20,14 @@ cUITextInput::cUITextInput( const cUITextInput::CreateParams& Params ) :
 }
 
 cUITextInput::~cUITextInput() {
+}
+
+Uint32 cUITextInput::Type() const {
+	return UI_TYPE_TEXTINPUT;
+}
+
+bool cUITextInput::IsType( const Uint32& type ) const {
+	return cUITextInput::Type() == type ? true : cUITextBox::IsType( type );
 }
 
 void cUITextInput::Update() {

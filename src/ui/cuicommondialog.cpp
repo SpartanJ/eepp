@@ -13,8 +13,6 @@ cUICommonDialog::cUICommonDialog( const cUICommonDialog::CreateParams& Params ) 
 	mCurPath( Params.DefaultDirectory ),
 	mCDLFlags( Params.CDLFlags )
 {
-	mType = UI_TYPE_COMMONDIALOG;
-
 	if ( mSize.Width() < CDLG_MIN_WIDTH )
 		mSize.x = CDLG_MIN_WIDTH;
 
@@ -140,6 +138,14 @@ cUICommonDialog::cUICommonDialog( const cUICommonDialog::CreateParams& Params ) 
 cUICommonDialog::~cUICommonDialog() {
 }
 
+Uint32 cUICommonDialog::Type() const {
+	return UI_TYPE_COMMONDIALOG;
+}
+
+bool cUICommonDialog::IsType( const Uint32& type ) const {
+	return cUICommonDialog::Type() == type ? true : cUIWindow::IsType( type );
+}
+
 void cUICommonDialog::SetTheme( cUITheme * Theme ) {
 	cUIWindow::SetTheme( Theme );
 
@@ -239,7 +245,7 @@ Uint32 cUICommonDialog::OnMessage( const cUIMessage * Msg ) {
 		case cUIMessage::MsgDoubleClick:
 		{
 			if ( Msg->Flags() & EE_BUTTON_LMASK ) {
-				if ( Msg->Sender()->IsTypeOrInheritsFrom( UI_TYPE_LISTBOXITEM ) ) {
+				if ( Msg->Sender()->IsType( UI_TYPE_LISTBOXITEM ) ) {
 					std::string newPath = mCurPath + mList->GetItemSelectedText();
 
 					if ( IsDirectory( newPath ) ) {

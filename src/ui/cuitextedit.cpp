@@ -12,8 +12,6 @@ cUITextEdit::cUITextEdit( cUITextEdit::CreateParams& Params ) :
 	mVScrollBarMode( Params.VScrollBar ),
 	mSkipValueChange( false )
 {
-	mType = UI_TYPE_TEXTEDIT;
-
 	Uint32 extraFlags = 0;
 
 	if ( mFlags & UI_ANCHOR_LEFT )
@@ -76,6 +74,14 @@ cUITextEdit::cUITextEdit( cUITextEdit::CreateParams& Params ) :
 }
 
 cUITextEdit::~cUITextEdit() {
+}
+
+Uint32 cUITextEdit::Type() const {
+	return UI_TYPE_TEXTEDIT;
+}
+
+bool cUITextEdit::IsType( const Uint32& type ) const {
+	return cUITextEdit::Type() == type ? true : cUIComplexControl::IsType( type );
 }
 
 void cUITextEdit::SetTheme( cUITheme * Theme ) {

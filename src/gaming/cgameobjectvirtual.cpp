@@ -38,7 +38,7 @@ Uint32 cGameObjectVirtual::Type() const {
 }
 
 bool cGameObjectVirtual::IsType( const Uint32& type ) {
-	return ( Type() == type ) ? true : cGameObject::IsType( type );
+	return ( cGameObjectVirtual::Type() == type ) ? true : cGameObject::IsType( type );
 }
 
 Uint32 cGameObjectVirtual::RealType() const {

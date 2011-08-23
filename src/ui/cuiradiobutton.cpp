@@ -9,8 +9,6 @@ cUIRadioButton::cUIRadioButton( const cUITextBox::CreateParams& Params ) :
 	mInactiveButton(NULL),
 	mActive( false )
 {
-	mType = UI_TYPE_RADIOBUTTON;
-
 	cUIControlAnim::CreateParams ButtonParams( Params );
 
 	ButtonParams.Parent( this );
@@ -33,6 +31,14 @@ cUIRadioButton::cUIRadioButton( const cUITextBox::CreateParams& Params ) :
 }
 
 cUIRadioButton::~cUIRadioButton() {
+}
+
+Uint32 cUIRadioButton::Type() const {
+	return UI_TYPE_RADIOBUTTON;
+}
+
+bool cUIRadioButton::IsType( const Uint32& type ) const {
+	return cUIRadioButton::Type() == type ? true : cUITextBox::IsType( type );
 }
 
 void cUIRadioButton::SetTheme( cUITheme * Theme ) {
@@ -130,7 +136,7 @@ void cUIRadioButton::Active( const bool& active ) {
 		cUIControl * tChild = mParentCtrl->ChildGetFirst();
 
 		while ( NULL != tChild ) {
-			if ( tChild->IsType( UI_TYPE_RADIOBUTTON ) || tChild->InheritsFrom( UI_TYPE_RADIOBUTTON ) ) {
+			if ( tChild->IsType( UI_TYPE_RADIOBUTTON ) ) {
 				if ( tChild != this ) {
 					cUIRadioButton * tRB = reinterpret_cast<cUIRadioButton*> ( tChild );
 
@@ -149,7 +155,7 @@ bool cUIRadioButton::CheckActives() {
 		cUIControl * tChild = mParentCtrl->ChildGetFirst();
 
 		while ( NULL != tChild ) {
-			if ( tChild->IsTypeOrInheritsFrom( UI_TYPE_RADIOBUTTON ) ) {
+			if ( tChild->IsType( UI_TYPE_RADIOBUTTON ) ) {
 				if ( tChild != this ) {
 					cUIRadioButton * tRB = reinterpret_cast<cUIRadioButton*> ( tChild );
 
@@ -172,7 +178,7 @@ void cUIRadioButton::AutoActivate() {
 		cUIControl * tChild = mParentCtrl->ChildGetFirst();
 
 		while ( NULL != tChild ) {
-			if ( tChild->IsTypeOrInheritsFrom( UI_TYPE_RADIOBUTTON ) ) {
+			if ( tChild->IsType( UI_TYPE_RADIOBUTTON ) ) {
 				if ( tChild != this ) {
 					cUIRadioButton * tRB = reinterpret_cast<cUIRadioButton*> ( tChild );
 

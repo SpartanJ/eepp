@@ -13,6 +13,10 @@ class EE_API cUIControlAnim : public cUIDragable {
 
     	virtual ~cUIControlAnim();
 
+		virtual Uint32 Type() const;
+
+		virtual bool IsType( const Uint32& type ) const;
+
  		virtual void Update();
 
  		const eeFloat& Angle() const;

@@ -7,8 +7,6 @@ namespace EE { namespace UI {
 cUIListBoxItem::cUIListBoxItem( const cUITextBox::CreateParams& Params ) :
 	cUITextBox( Params )
 {
-	mType = UI_TYPE_LISTBOXITEM;
-
 	ApplyDefaultTheme();
 }
 
@@ -18,6 +16,14 @@ cUIListBoxItem::~cUIListBoxItem() {
 
 	if ( cUIManager::instance()->OverControl() == this )
 		cUIManager::instance()->OverControl( mParentCtrl );
+}
+
+Uint32 cUIListBoxItem::Type() const {
+	return UI_TYPE_LISTBOXITEM;
+}
+
+bool cUIListBoxItem::IsType( const Uint32& type ) const {
+	return cUIListBoxItem::Type() == type ? true : cUITextBox::IsType( type );
 }
 
 void cUIListBoxItem::SetTheme( cUITheme * Theme ) {

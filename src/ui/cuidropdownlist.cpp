@@ -9,8 +9,6 @@ cUIDropDownList::cUIDropDownList( cUIDropDownList::CreateParams& Params ) :
 	mMinNumVisibleItems( Params.MinNumVisibleItems ),
 	mPopUpToMainControl( Params.PopUpToMainControl )
 {
-	mType = UI_TYPE_DROPDOWNLIST;
-
 	AllowEditing( false );
 
 	ApplyDefaultTheme();
@@ -35,6 +33,14 @@ cUIDropDownList::cUIDropDownList( cUIDropDownList::CreateParams& Params ) :
 }
 
 cUIDropDownList::~cUIDropDownList() {
+}
+
+Uint32 cUIDropDownList::Type() const {
+	return UI_TYPE_DROPDOWNLIST;
+}
+
+bool cUIDropDownList::IsType( const Uint32& type ) const {
+	return cUIDropDownList::Type() == type ? true : cUITextInput::IsType( type );
 }
 
 void cUIDropDownList::SetTheme( cUITheme * Theme ) {

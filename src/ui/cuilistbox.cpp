@@ -27,8 +27,6 @@ cUIListBox::cUIListBox( cUIListBox::CreateParams& Params ) :
 	mVisibleFirst(0),
 	mVisibleLast(0)
 {
-	mType = UI_TYPE_LISTBOX;
-
 	if ( NULL == Params.Font && NULL != cUIThemeManager::instance()->DefaultFont() )
 		mFont = cUIThemeManager::instance()->DefaultFont();
 
@@ -76,6 +74,14 @@ cUIListBox::cUIListBox( cUIListBox::CreateParams& Params ) :
 }
 
 cUIListBox::~cUIListBox() {
+}
+
+Uint32 cUIListBox::Type() const {
+	return UI_TYPE_LISTBOX;
+}
+
+bool cUIListBox::IsType( const Uint32& type ) const {
+	return cUIListBox::Type() == type ? true : cUIComplexControl::IsType( type );
 }
 
 void cUIListBox::SetTheme( cUITheme * Theme ) {

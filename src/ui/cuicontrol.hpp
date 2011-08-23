@@ -78,14 +78,9 @@ class EE_API cUIControl {
 
 		void ControlToScreen( eeVector2i& Pos ) const;
 
-		Uint32 Type() const;
+		virtual Uint32 Type() const;
 
-		bool IsType( const Uint32& Type ) const;
-
-		//! This exists because i want to avoid dynamic_cast if it's possible. It's ugly, i don't like the solution, but, works.
-		virtual bool InheritsFrom( const Uint32 Type );
-
-		bool IsTypeOrInheritsFrom( const Uint32 Type );
+		virtual bool IsType( const Uint32& type ) const;
 
 		virtual void MessagePost( const cUIMessage * Msg );
 
@@ -244,7 +239,6 @@ class EE_API cUIControl {
 		eeSize			mSize;
 
 		Uint32			mFlags;
-		Uint32			mType;
 		Uint32 			mData;
 
 		cUIControl *	mParentCtrl;

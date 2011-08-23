@@ -13,7 +13,6 @@ cUIControlAnim::cUIControlAnim( const CreateParams& Params ) :
 	mAlphaAnim(NULL),
 	mMoveAnim(NULL)
 {
-	mType = UI_TYPE_CONTROL_ANIM;
 	mControlFlags |= UI_CTRL_FLAG_ANIM;
 }
 
@@ -22,6 +21,14 @@ cUIControlAnim::~cUIControlAnim() {
 	eeSAFE_DELETE( mAngleAnim );
 	eeSAFE_DELETE( mScaleAnim );
 	eeSAFE_DELETE( mMoveAnim );
+}
+
+Uint32 cUIControlAnim::Type() const {
+	return UI_TYPE_CONTROL_ANIM;
+}
+
+bool cUIControlAnim::IsType( const Uint32& type ) const {
+	return cUIControlAnim::Type() == type ? true : cUIControl::IsType( type );
 }
 
 void cUIControlAnim::Draw() {

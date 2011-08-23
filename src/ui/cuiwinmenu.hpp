@@ -53,6 +53,10 @@ class EE_API cUIWinMenu : public cUIComplexControl {
 
 		virtual ~cUIWinMenu();
 
+		virtual Uint32 Type() const;
+
+		virtual bool IsType( const Uint32& type ) const;
+
 		void AddMenuButton( const String& ButtonText, cUIPopUpMenu * Menu );
 
 		void RemoveMenuButton( const String& ButtonText );

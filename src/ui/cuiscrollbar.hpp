@@ -25,6 +25,10 @@ class cUIScrollBar : public cUIComplexControl {
 
 		~cUIScrollBar();
 
+		virtual Uint32 Type() const;
+
+		virtual bool IsType( const Uint32& type ) const;
+
 		virtual void Value( eeFloat Val );
 
 		const eeFloat& Value() const;

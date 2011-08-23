@@ -10,8 +10,6 @@ cUIPushButton::cUIPushButton( const cUIPushButton::CreateParams& Params ) :
 	mTextBox( NULL ),
 	mIconSpace( Params.IconHorizontalMargin )
 {
-	mType = UI_TYPE_PUSHBUTTON;
-
 	cUIGfx::CreateParams GfxParams;
 	GfxParams.Parent( this );
 	GfxParams.Shape = Params.Icon;
@@ -53,6 +51,17 @@ cUIPushButton::cUIPushButton( const cUIPushButton::CreateParams& Params ) :
 	OnSizeChange();
 
 	ApplyDefaultTheme();
+}
+
+cUIPushButton::~cUIPushButton() {
+}
+
+Uint32 cUIPushButton::Type() const {
+	return UI_TYPE_PUSHBUTTON;
+}
+
+bool cUIPushButton::IsType( const Uint32& type ) const {
+	return cUIPushButton::Type() == type ? true : cUIComplexControl::IsType( type );
 }
 
 void cUIPushButton::OnSizeChange() {
@@ -110,9 +119,6 @@ void cUIPushButton::OnSizeChange() {
 		}
 	}
 	*/
-}
-
-cUIPushButton::~cUIPushButton() {
 }
 
 void cUIPushButton::SetTheme( cUITheme * Theme ) {

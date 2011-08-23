@@ -24,8 +24,6 @@ cUIWindow::cUIWindow( const cUIWindow::CreateParams& Params ) :
 	mDecoAutoSize( Params.DecorationAutoSize ),
 	mBorderAutoSize( Params.BorderAutoSize )
 {
-	mType = UI_TYPE_WINDOW;
-
 	cUIComplexControl::CreateParams tcParams;
 	tcParams.Parent( this );
 	tcParams.Flags |= UI_REPORT_SIZE_CHANGE_TO_CHILDS;
@@ -102,6 +100,14 @@ cUIWindow::cUIWindow( const cUIWindow::CreateParams& Params ) :
 
 cUIWindow::~cUIWindow() {
 	SendCommonEvent( cUIEvent::EventOnWindowClose );
+}
+
+Uint32 cUIWindow::Type() const {
+	return UI_TYPE_WINDOW;
+}
+
+bool cUIWindow::IsType( const Uint32& type ) const {
+	return cUIWindow::Type() == type ? true : cUIComplexControl::IsType( type );
 }
 
 void cUIWindow::ContainerPosChange( const cUIEvent * Event ) {

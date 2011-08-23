@@ -29,6 +29,10 @@ class EE_API cUIDropDownList : public cUITextInput {
 
 		~cUIDropDownList();
 
+		virtual Uint32 Type() const;
+
+		virtual bool IsType( const Uint32& type ) const;
+
 		virtual void SetTheme( cUITheme * Theme );
 
 		cUIListBox * ListBox() const;

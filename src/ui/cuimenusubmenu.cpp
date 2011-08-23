@@ -14,8 +14,6 @@ cUIMenuSubMenu::cUIMenuSubMenu( cUIMenuSubMenu::CreateParams& Params ) :
 	mCbId( 0 ),
 	mCbId2( 0 )
 {
-	mType = UI_TYPE_MENUSUBMENU;
-
 	cUIGfx::CreateParams GfxParams;
 	GfxParams.Parent( this );
 	GfxParams.Shape = NULL;
@@ -30,6 +28,14 @@ cUIMenuSubMenu::cUIMenuSubMenu( cUIMenuSubMenu::CreateParams& Params ) :
 }
 
 cUIMenuSubMenu::~cUIMenuSubMenu() {
+}
+
+Uint32 cUIMenuSubMenu::Type() const {
+	return UI_TYPE_MENUSUBMENU;
+}
+
+bool cUIMenuSubMenu::IsType( const Uint32& type ) const {
+	return cUIMenuSubMenu::Type() == type ? true : cUIMenuItem::IsType( type );
 }
 
 void cUIMenuSubMenu::SetTheme( cUITheme * Theme ) {

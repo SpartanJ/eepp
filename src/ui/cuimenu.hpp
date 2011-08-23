@@ -60,6 +60,10 @@ class EE_API cUIMenu : public cUIComplexControl {
 
 		~cUIMenu();
 
+		virtual Uint32 Type() const;
+
+		virtual bool IsType( const Uint32& type ) const;
+
 		Uint32 Add( const String& Text, cShape * Icon = NULL );
 
 		Uint32 Add( cUIControl * Control );

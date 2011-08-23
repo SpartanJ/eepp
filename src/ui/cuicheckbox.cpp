@@ -7,8 +7,6 @@ cUICheckBox::cUICheckBox( const cUITextBox::CreateParams& Params ) :
 	cUITextBox( Params ),
 	mActive( false )
 {
-	mType = UI_TYPE_CHECKBOX;
-
 	cUIControlAnim::CreateParams ButtonParams( Params );
 
 	ButtonParams.Parent( this );
@@ -29,6 +27,14 @@ cUICheckBox::cUICheckBox( const cUITextBox::CreateParams& Params ) :
 }
 
 cUICheckBox::~cUICheckBox() {
+}
+
+Uint32 cUICheckBox::Type() const {
+	return UI_TYPE_CHECKBOX;
+}
+
+bool cUICheckBox::IsType( const Uint32& type ) const {
+	return cUICheckBox::Type() == type ? true : cUITextBox::IsType( type );
 }
 
 void cUICheckBox::SetTheme( cUITheme * Theme ) {

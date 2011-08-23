@@ -632,7 +632,7 @@ void cEETest::CloseClick( const cUIEvent * Event ) {
 }
 
 void cEETest::ItemClick( const cUIEvent * Event ) {
-	if ( !Event->Ctrl()->IsTypeOrInheritsFrom( UI_TYPE_MENUITEM ) )
+	if ( !Event->Ctrl()->IsType( UI_TYPE_MENUITEM ) )
 		return;
 
 	const String& txt = reinterpret_cast<cUIMenuItem*> ( Event->Ctrl() )->Text();
@@ -849,7 +849,7 @@ void cEETest::LoadTextures() {
 	CurMan->Visible( false );
 	CurMan->Visible( true );
 	CurMan->Set( Window::Cursor::SYS_CURSOR_LINK );
-	CurMan->Set( CurMan->Add( CurMan->Create( CursorP[1], eeVector2i( 2, 2 ), "cursor_special" ) ) );
+	CurMan->Set( CurMan->Add( CurMan->Create( CursorP[1], eeVector2i( 1, 1 ), "cursor_special" ) ) );
 
 	CL1.AddFrame(TN[2]);
 	CL1.Position( 500, 400 );

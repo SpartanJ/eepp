@@ -38,6 +38,10 @@ class EE_API cUITextBox : public cUIComplexControl {
 
 		~cUITextBox();
 
+		virtual Uint32 Type() const;
+
+		virtual bool IsType( const Uint32& type ) const;
+
 		virtual void Draw();
 
 		virtual void Alpha( const eeFloat& alpha );

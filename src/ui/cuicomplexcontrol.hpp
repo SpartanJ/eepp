@@ -41,6 +41,10 @@ class EE_API cUIComplexControl : public cUIControlAnim {
 
 		virtual ~cUIComplexControl();
 
+		virtual Uint32 Type() const;
+
+		virtual bool IsType( const Uint32& type ) const;
+
 		virtual void Update();
 
 		virtual void Size( const eeSize &Size );

@@ -9,8 +9,6 @@ cUIGfx::cUIGfx( const cUIGfx::CreateParams& Params ) :
 	mRender( Params.ShapeRender ),
 	mAlignOffset(0,0)
 {
-	mType = UI_TYPE_GFX;
-
 	if ( NULL != mShape && ( ( Flags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) )
 		Size( mShape->Size() );
 
@@ -20,6 +18,14 @@ cUIGfx::cUIGfx( const cUIGfx::CreateParams& Params ) :
 }
 
 cUIGfx::~cUIGfx() {
+}
+
+Uint32 cUIGfx::Type() const {
+	return UI_TYPE_GFX;
+}
+
+bool cUIGfx::IsType( const Uint32& type ) const {
+	return cUIGfx::Type() == type ? true : cUIComplexControl::IsType( type );
 }
 
 void cUIGfx::Shape( cShape * shape ) {

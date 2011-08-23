@@ -28,6 +28,10 @@ class EE_API cUISpinBox : public cUIComplexControl {
 
 		~cUISpinBox();
 
+		virtual Uint32 Type() const;
+
+		virtual bool IsType( const Uint32& type ) const;
+
 		virtual void SetTheme( cUITheme * Theme );
 
 		virtual void Padding( const eeRecti& padding );

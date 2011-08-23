@@ -28,6 +28,10 @@ class EE_API cUITextInput : public cUITextBox {
 
 		~cUITextInput();
 
+		virtual Uint32 Type() const;
+
+		virtual bool IsType( const Uint32& type ) const;
+
 		virtual void Update();
 
 		virtual void Draw();

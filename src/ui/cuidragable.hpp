@@ -9,6 +9,10 @@ class EE_API cUIDragable : public cUIControl {
 	public:
     	cUIDragable( const cUIControl::CreateParams& Params );
 
+		virtual Uint32 Type() const;
+
+		virtual bool IsType( const Uint32& type ) const;
+
 		bool				Dragging() const;
 		void				Dragging( const bool& dragging );
 

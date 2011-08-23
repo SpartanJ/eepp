@@ -24,7 +24,7 @@ Uint32 cGameObjectSprite::Type() const {
 }
 
 bool cGameObjectSprite::IsType( const Uint32& type ) {
-	return ( Type() == type ) ? true : cGameObject::IsType( type );
+	return ( cGameObjectSprite::Type() == type ) ? true : cGameObject::IsType( type );
 }
 
 void cGameObjectSprite::Draw() {

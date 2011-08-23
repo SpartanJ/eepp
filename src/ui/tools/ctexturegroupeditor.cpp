@@ -226,7 +226,7 @@ void cTextureGroupEditor::CreateWinMenu() {
 }
 
 void cTextureGroupEditor::FileMenuClick( const cUIEvent * Event ) {
-	if ( !Event->Ctrl()->IsTypeOrInheritsFrom( UI_TYPE_MENUITEM ) )
+	if ( !Event->Ctrl()->IsType( UI_TYPE_MENUITEM ) )
 		return;
 
 	const String& txt = reinterpret_cast<cUIMenuItem*> ( Event->Ctrl() )->Text();

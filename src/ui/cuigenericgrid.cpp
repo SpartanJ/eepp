@@ -23,8 +23,6 @@ cUIGenericGrid::cUIGenericGrid( const cUIGenericGrid::CreateParams& Params ) :
 	mSelected(-1),
 	mCollWidthAssigned( false )
 {
-	mType = UI_TYPE_GENERICGRID;
-
 	mCollumnsWidth.resize( mCollumnsCount, 0 );
 	mCollumnsPos.resize( mCollumnsCount, 0 );
 
@@ -70,6 +68,14 @@ cUIGenericGrid::cUIGenericGrid( const cUIGenericGrid::CreateParams& Params ) :
 }
 
 cUIGenericGrid::~cUIGenericGrid() {
+}
+
+Uint32 cUIGenericGrid::Type() const {
+	return UI_TYPE_GENERICGRID;
+}
+
+bool cUIGenericGrid::IsType( const Uint32& type ) const {
+	return cUIGenericGrid::Type() == type ? true : cUIControlAnim::IsType( type );
 }
 
 void cUIGenericGrid::SetDefaultCollumnsWidth() {

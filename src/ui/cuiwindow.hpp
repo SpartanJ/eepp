@@ -42,6 +42,10 @@ class cUIWindow : public cUIComplexControl {
 
 		~cUIWindow();
 
+		virtual Uint32 Type() const;
+
+		virtual bool IsType( const Uint32& type ) const;
+
 		virtual void Size( const eeSize& Size );
 
 		void Size( const Int32& Width, const Int32& Height );

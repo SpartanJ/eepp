@@ -5,14 +5,20 @@ namespace EE { namespace UI {
 cUISeparator::cUISeparator( cUIControlAnim::CreateParams Params ) :
 	cUIControlAnim( Params )
 {
-	mType = UI_TYPE_SEPARATOR;
-	
 	ApplyDefaultTheme();
 }
 
 cUISeparator::~cUISeparator() {
 }
-		
+
+Uint32 cUISeparator::Type() const {
+	return UI_TYPE_SEPARATOR;
+}
+
+bool cUISeparator::IsType( const Uint32& type ) const {
+	return cUISeparator::Type() == type ? true : cUIControlAnim::IsType( type );
+}
+
 void cUISeparator::SetTheme( cUITheme * Theme ) {
 	cUIControl::SetTheme( Theme, "separator" );
 	

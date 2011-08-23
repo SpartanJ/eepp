@@ -12,6 +12,10 @@ class EE_API cUIRadioButton : public cUITextBox {
 
 		~cUIRadioButton();
 
+		virtual Uint32 Type() const;
+
+		virtual bool IsType( const Uint32& type ) const;
+
 		virtual void SetTheme( cUITheme * Theme );
 
 		const bool& IsActive() const;

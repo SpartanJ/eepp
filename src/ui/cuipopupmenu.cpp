@@ -6,12 +6,18 @@ namespace EE { namespace UI {
 cUIPopUpMenu::cUIPopUpMenu( cUIPopUpMenu::CreateParams Params ) :
 	cUIMenu( Params )
 {
-	mType = UI_TYPE_POPUPMENU;
-
 	ApplyDefaultTheme();
 }
 
 cUIPopUpMenu::~cUIPopUpMenu() {
+}
+
+Uint32 cUIPopUpMenu::Type() const {
+	return UI_TYPE_POPUPMENU;
+}
+
+bool cUIPopUpMenu::IsType( const Uint32& type ) const {
+	return cUIPopUpMenu::Type() == type ? true : cUIMenu::IsType( type );
 }
 
 void cUIPopUpMenu::SetTheme( cUITheme * Theme ) {
@@ -74,7 +80,7 @@ Uint32 cUIPopUpMenu::OnMessage( const cUIMessage * Msg ) {
 	switch ( Msg->Msg() ) {
 		case cUIMessage::MsgMouseUp:
 		{
-			if ( !Msg->Sender()->IsTypeOrInheritsFrom( UI_TYPE_MENUSUBMENU ) && ( Msg->Flags() & EE_BUTTONS_LRM ) ) {
+			if ( !Msg->Sender()->IsType( UI_TYPE_MENUSUBMENU ) && ( Msg->Flags() & EE_BUTTONS_LRM ) ) {
 				SendCommonEvent( cUIEvent::EventOnHideByClick );
 
 				cUIManager::instance()->MainControl()->SetFocus();

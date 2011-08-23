@@ -11,6 +11,10 @@ class cUISelectButton : public cUIPushButton {
 
 		virtual ~cUISelectButton();
 
+		virtual Uint32 Type() const;
+
+		virtual bool IsType( const Uint32& type ) const;
+
 		virtual bool Selected() const;
 
 		virtual void Unselect();

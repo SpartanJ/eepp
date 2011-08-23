@@ -14,6 +14,10 @@ class EE_API cUIListBoxItem : public cUITextBox {
 
 		virtual ~cUIListBoxItem();
 
+		virtual Uint32 Type() const;
+
+		virtual bool IsType( const Uint32& type ) const;
+
 		virtual void SetTheme( cUITheme * Theme );
 
 		virtual void Update();

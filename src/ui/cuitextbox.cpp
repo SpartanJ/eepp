@@ -10,8 +10,6 @@ cUITextBox::cUITextBox( const cUITextBox::CreateParams& Params ) :
 	mFontShadowColor( Params.FontShadowColor ),
 	mAlignOffset( 0.f, 0.f )
 {
-	mType = UI_TYPE_TEXTBOX;
-
 	mTextCache = eeNew( cTextCache, () );
 	mTextCache->Font( Params.Font );
 	mTextCache->Color( mFontColor );
@@ -29,6 +27,14 @@ cUITextBox::cUITextBox( const cUITextBox::CreateParams& Params ) :
 
 cUITextBox::~cUITextBox() {
 	eeSAFE_DELETE( mTextCache );
+}
+
+Uint32 cUITextBox::Type() const {
+	return UI_TYPE_TEXTBOX;
+}
+
+bool cUITextBox::IsType( const Uint32& type ) const {
+	return cUITextBox::Type() == type ? true : cUIComplexControl::IsType( type );
 }
 
 void cUITextBox::Draw() {

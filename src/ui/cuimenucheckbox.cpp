@@ -9,12 +9,18 @@ cUIMenuCheckBox::cUIMenuCheckBox( cUIMenuCheckBox::CreateParams& Params ) :
 	mSkinActive( NULL ),
 	mSkinInactive( NULL )
 {
-	mType = UI_TYPE_MENUCHECKBOX;
-
 	ApplyDefaultTheme();
 }
 
 cUIMenuCheckBox::~cUIMenuCheckBox() {
+}
+
+Uint32 cUIMenuCheckBox::Type() const {
+	return UI_TYPE_MENUCHECKBOX;
+}
+
+bool cUIMenuCheckBox::IsType( const Uint32& type ) const {
+	return cUIMenuCheckBox::Type() == type ? true : cUIMenuItem::IsType( type );
 }
 
 void cUIMenuCheckBox::SetTheme( cUITheme * Theme ) {

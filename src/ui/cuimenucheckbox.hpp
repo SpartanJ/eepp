@@ -11,6 +11,10 @@ class cUIMenuCheckBox : public cUIMenuItem {
 
 		~cUIMenuCheckBox();
 
+		virtual Uint32 Type() const;
+
+		virtual bool IsType( const Uint32& type ) const;
+
 		virtual void SetTheme( cUITheme * Theme );
 
 		const bool& Active() const;

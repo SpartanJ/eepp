@@ -8,11 +8,18 @@ cUIDragable::cUIDragable( const cUIControl::CreateParams& Params ) :
 	cUIControl( Params ),
 	mDragButton( EE_BUTTON_LMASK )
 {
-	mType = UI_TYPE_CONTROL_DRAGABLE;
 	mControlFlags |= UI_CTRL_FLAG_DRAGABLE;
 }
 
 cUIDragable::~cUIDragable() {
+}
+
+Uint32 cUIDragable::Type() const {
+	return UI_TYPE_CONTROL_DRAGABLE;
+}
+
+bool cUIDragable::IsType( const Uint32& type ) const {
+	return cUIDragable::Type() == type ? true : cUIControl::IsType( type );
 }
 
 Uint32 cUIDragable::OnMouseDown( const eeVector2i& Pos, const Uint32 Flags ) {

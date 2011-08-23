@@ -10,7 +10,11 @@ class cUISeparator : public cUIControlAnim {
 		cUISeparator( cUIControlAnim::CreateParams Params );
 		
 		~cUISeparator();
-		
+
+		virtual Uint32 Type() const;
+
+		virtual bool IsType( const Uint32& type ) const;
+
 		virtual void SetTheme( cUITheme * Theme );
 	protected:
 };

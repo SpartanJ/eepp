@@ -8,7 +8,6 @@ cUIComplexControl::cUIComplexControl( const cUIComplexControl::CreateParams& Par
 	mTooltip( NULL ),
 	mMinControlSize( Params.MinControlSize )
 {
-	mType = UI_TYPE_CONTROL_COMPLEX;
 	mControlFlags |= UI_CTRL_FLAG_COMPLEX;
 
 	CalcDistToBorder();
@@ -18,6 +17,14 @@ cUIComplexControl::cUIComplexControl( const cUIComplexControl::CreateParams& Par
 
 cUIComplexControl::~cUIComplexControl() {
 	eeSAFE_DELETE( mTooltip );
+}
+
+Uint32 cUIComplexControl::Type() const {
+	return UI_TYPE_CONTROL_COMPLEX;
+}
+
+bool cUIComplexControl::IsType( const Uint32& type ) const {
+	return cUIComplexControl::Type() == type ? true : cUIControlAnim::IsType( type );
 }
 
 void cUIComplexControl::CalcDistToBorder() {

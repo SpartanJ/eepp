@@ -7,7 +7,6 @@ cUIControl::cUIControl( const CreateParams& Params ) :
 	mPos( Params.Pos ),
 	mSize( Params.Size ),
 	mFlags( Params.Flags ),
-	mType( UI_TYPE_CONTROL ),
 	mData( 0 ),
 	mParentCtrl( Params.ParentCtrl ),
 	mChild( NULL ),
@@ -89,19 +88,11 @@ void cUIControl::ControlToScreen( eeVector2i& Pos ) const {
 }
 
 Uint32 cUIControl::Type() const {
-	return mType;
+	return UI_TYPE_CONTROL;
 }
 
-bool cUIControl::IsType( const Uint32& Type ) const {
-	return mType == Type;
-}
-
-bool cUIControl::InheritsFrom( const Uint32 Type ) {
-	return false;
-}
-
-bool cUIControl::IsTypeOrInheritsFrom( const Uint32 Type ) {
-	return IsType( Type ) || InheritsFrom( Type );
+bool cUIControl::IsType( const Uint32& type ) const {
+	return cUIControl::Type() == type;
 }
 
 void cUIControl::MessagePost( const cUIMessage * Msg ) {

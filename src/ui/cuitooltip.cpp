@@ -12,8 +12,6 @@ cUITooltip::cUITooltip( cUITooltip::CreateParams& Params, cUIControl * TooltipOf
 	mTooltipTime( 0.f ),
 	mTooltipOf( TooltipOf )
 {
-	mType = UI_TYPE_TOOLTIP;
-
 	mTextCache = eeNew( cTextCache, () );
 	mTextCache->Font( Params.Font );
 	mTextCache->Color( mFontColor );
@@ -40,6 +38,14 @@ cUITooltip::~cUITooltip() {
 	if ( NULL != mTooltipOf && mTooltipOf->IsComplex() ) {
 		reinterpret_cast<cUIComplexControl*>( mTooltipOf )->TooltipRemove();
 	}
+}
+
+Uint32 cUITooltip::Type() const {
+	return UI_TYPE_TOOLTIP;
+}
+
+bool cUITooltip::IsType( const Uint32& type ) const {
+	return cUITooltip::Type() == type ? true : cUIControlAnim::IsType( type );
 }
 
 void cUITooltip::SetTheme( cUITheme * Theme ) {

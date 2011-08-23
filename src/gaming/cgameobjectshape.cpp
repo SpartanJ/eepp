@@ -22,7 +22,7 @@ Uint32 cGameObjectShape::Type() const {
 }
 
 bool cGameObjectShape::IsType( const Uint32& type ) {
-	return ( Type() == type ) ? true : cGameObject::IsType( type );
+	return ( cGameObjectShape::Type() == type ) ? true : cGameObject::IsType( type );
 }
 
 void cGameObjectShape::Draw() {
