@@ -45,16 +45,30 @@
 
 	//! GLES2 ( programmable pipeline )
 	#ifdef EE_GLES2
-		#include <GLES2/gl2.h>
-		#include <GLES2/gl2ext.h>
+		#if EE_PLATFORM_IOS
+			#include <OpenGLES/ES2/gl.h>
+			#include <OpenGLES/ES2/glext.h>
+		#else
+			#include <GLES2/gl2.h>
+			#include <GLES2/gl2ext.h>
+		#endif
 
 	//! GLES1 ( fixed pipeline )
 	#elif defined( EE_GLES1 )
-		#include <GLES/gl.h>
+		#if EE_PLATFORM_IOS
+			#include <OpenGLES/ES1/gl.h>
+			#include <OpenGLES/ES1/glext.h>
+		#else
+			#include <GLES/gl.h>
+			#include <GLES/glext.h>
+		#endif
 	#endif
 #endif
 
 #ifdef EE_GLES
+typedef GLfloat		GLdouble;
+typedef char		GLchar;
+
 #define glCheckFramebufferStatusEXT glCheckFramebufferStatus
 #define glDeleteFramebuffersEXT glDeleteFramebuffers
 #define glGenFramebuffersEXT glGenFramebuffers
@@ -70,11 +84,7 @@
 #define glBufferDataARB glBufferData
 #define glBufferSubDataARB glBufferSubData
 #define glVertexAttribPointerARB glVertexAttribPointer
-typedef GLfloat		GLdouble;
-#endif
 
-#ifdef EE_GLES2
-typedef char GLchar;
 #define GL_MODELVIEW 0x1700
 #define GL_PROJECTION 0x1701
 #define GL_TEXTURE 0x1702
@@ -96,6 +106,12 @@ typedef char GLchar;
 #define GL_CLIP_PLANE5 0x3005
 #define GL_POINT_SPRITE 0x8861
 #define GL_VERTEX_PROGRAM_POINT_SIZE 0x8642
+#endif
+
+#ifdef EE_GLES
+	#define EE_QUAD_VERTEX 6
+#else
+	#define EE_QUAD_VERTEX 4
 #endif
 
 #define STBI_TYPE_SPECIFIC_FUNCTIONS
@@ -123,11 +139,5 @@ using namespace EE::Math;
 using namespace EE::System;
 
 #include "renders.hpp"
-
-#ifdef EE_GLES
-	#define EE_QUAD_VERTEX 6
-#else
-	#define EE_QUAD_VERTEX 4
-#endif
 
 #endif

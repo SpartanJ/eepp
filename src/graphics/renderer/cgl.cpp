@@ -44,16 +44,10 @@ cGL * cGL::CreateSingleton() {
 	if ( ms_singleton == 0 ) {
 		#ifdef EE_GLES2
 			ms_singleton = eeNew( cRendererGL3, () );
-		#elif EE_GLES1
+		#elif defined( EE_GLES1 )
 			ms_singleton = eeNew( cRendererGL, () );
 		#else
-			#ifdef EE_GL3_ENABLED
-			/** Implement an OpenGL3 compilant renderer */
-			if ( '3' == glGetString(GL_VERSION)[0] )
-				ms_singleton = eeNew( cRendererGL3, () );
-			else
-			#endif
-				ms_singleton = eeNew( cRendererGL, () );
+			ms_singleton = eeNew( cRendererGL, () );
 		#endif
 	}
 

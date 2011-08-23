@@ -31,6 +31,8 @@
 #define EE_PLATFORM_BSD		4
 #define EE_PLATFORM_SOLARIS	5
 #define EE_PLATFORM_HAIKU	6
+#define EE_PLATFORM_ANDROID	7
+#define EE_PLATFORM_IOS		8
 
 #if defined( __WIN32__ ) || defined( _WIN32 ) || defined( _WIN64 )
 	#define EE_PLATFORM EE_PLATFORM_WIN
@@ -39,7 +41,15 @@
 		#define EE_COMPILER_MSVC
 	#endif
 #elif defined( __APPLE_CC__ ) || defined ( __APPLE__ )
-	#define EE_PLATFORM EE_PLATFORM_MACOSX
+
+	#include <TargetConditionals.h>
+
+	#if defined( __IPHONE__ ) || ( defined( TARGET_OS_IPHONE ) && TARGET_OS_IPHONE ) || ( defined( TARGET_IPHONE_SIMULATOR ) && TARGET_IPHONE_SIMULATOR )
+		#define EE_PLATFORM EE_PLATFORM_IOS
+	#else
+		#define EE_PLATFORM EE_PLATFORM_MACOSX
+	#endif
+
 #elif defined ( linux ) || defined( __linux__ )
 	#define EE_PLATFORM EE_PLATFORM_LINUX
 #elif defined( __FreeBSD__ ) || defined(__OpenBSD__) || defined( __NetBSD__ ) || defined( __DragonFly__ )
@@ -48,6 +58,20 @@
 	#define EE_PLATFORM EE_PLATFORM_SOLARIS
 #elif defined( __HAIKU__ ) || defined( __BEOS__ )
 	#define EE_PLATFORM EE_PLATFORM_HAIKU
+#elif defined( __ANDROID__ ) || defined( ANDROID )
+	#define EE_PLATFORM EE_PLATFORM_ANDROID
+#endif
+
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+	#if !defined( EE_GLES1 ) && !defined( EE_GLES2 )
+		#define EE_GLES1
+	#endif
+#endif
+
+#if EE_PLATFORM == EE_PLATFORM_IOS
+	#if !defined( EE_GLES1 ) && !defined( EE_GLES2 )
+		#define EE_GLES1
+	#endif
 #endif
 
 #if defined ( linux ) || defined( __linux__ ) \
@@ -235,7 +259,6 @@ namespace EE {
 	#else
 	typedef SOPHIST_uint32	Uint64;	// Fallback to a 32 bit int
 	typedef SOPHIST_int32	Int64; // All the desktop platforms support 64bit ints, so this should not happend.
-	#warning 64bit ints represented with 32bit ints because the compiler or platform doesnt support it.
 	#endif
 
 	#define EE_PI			3.14159265358979323846
