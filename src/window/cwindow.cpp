@@ -54,7 +54,7 @@ bool cWindow::Resizeable() const {
 }
 
 void cWindow::SetViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height, const bool& UpdateProjectionMatrix ) {
-	GLi->Viewport( x, GetHeight() - Height - y, Width, Height );
+	GLi->Viewport( x, GetHeight() - ( y + Height ), Width, Height );
 
 	if ( UpdateProjectionMatrix ) {
 		GLi->MatrixMode( GL_PROJECTION );
@@ -99,13 +99,16 @@ void cWindow::Setup2D( const bool& KeepView ) {
 	GLi->Disable( GL_DEPTH_TEST );
 	GLi->Disable( GL_LIGHTING );
 
-	if ( !KeepView )
+	if ( !KeepView ) {
 		SetView( mDefaultView );
+
+		mCurrentView->NeedUpdate();
+	}
 
 	cTextureFactory::instance()->SetPreBlendFunc( ALPHA_NORMAL, true );
 
 	if ( GLv_3 != GLi->Version() ) {
-		#ifndef EE_GLES
+		#ifndef EE_GLES2
 		GLi->TexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
 		GLi->TexEnvi( GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE );
 		#endif
@@ -271,7 +274,7 @@ void cWindow::Display() {
 
 void cWindow::ClipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
 	cGlobalBatchRenderer::instance()->Draw();
-	GLi->Scissor( x, GetHeight() - Height - y, Width, Height );
+	GLi->Scissor( x, GetHeight() - ( y + Height ), Width, Height );
 	GLi->Enable( GL_SCISSOR_TEST );
 }
 

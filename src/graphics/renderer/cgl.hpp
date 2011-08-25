@@ -185,6 +185,16 @@ class EE_API cGL {
 		virtual void GetCurrentMatrix( GLenum mode, GLfloat * m ) = 0;
 
 		virtual GLenum GetCurrentMatrixMode() = 0;
+
+		void GetViewport( GLint * viewport );
+
+		virtual GLint Project( GLfloat objx, GLfloat objy, GLfloat objz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *winx, GLfloat *winy, GLfloat *winz ) = 0;
+
+		virtual GLint UnProject( GLfloat winx, GLfloat winy, GLfloat winz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *objx, GLfloat *objy, GLfloat *objz ) = 0;
+
+		eeVector3f ProjectCurrent( const eeVector3f& point );
+
+		eeVector3f UnProjectCurrent( const eeVector3f& point );
 	protected:
 		enum GLStateFlags {
 			GLSF_LINE_SMOOTH	= 0,

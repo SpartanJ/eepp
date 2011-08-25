@@ -211,6 +211,10 @@ eeVector2i cInput::GetMousePos() const {
 	return mMousePos;
 }
 
+void cInput::SetMousePos( const eeVector2i& Pos ) {
+	mMousePos = Pos;
+}
+
 eeVector2f cInput::GetMousePosf() {
 	return eeVector2f( (eeFloat)mMousePos.x, (eeFloat)mMousePos.y );
 }

@@ -91,7 +91,11 @@ class EE_API cMap {
 
 		Uint32 ClampBorders() const;
 
+		void ClampBorders( const bool& clamp );
+
 		Uint32 ClipedArea() const;
+
+		void ClipedArea( const bool& clip );
 
 		void DrawGrid( const bool& draw );
 
@@ -189,6 +193,10 @@ class EE_API cMap {
 		const eeColorA& BackColor() const;
 
 		void BackColor( const eeColorA& col );
+
+		const eeFloat& Scale() const;
+
+		void Scale( const eeFloat& scale );
 	protected:
 		Window::cWindow *		mWindow;
 		cLayer**		mLayers;
@@ -200,6 +208,7 @@ class EE_API cMap {
 		eeSize			mTileSize;
 		eeSize			mViewSize;
 		eeVector2f		mOffset;
+		eeVector2f		mFixedOffset;
 		eeVector2i		mScreenPos;
 		eeVector2i		mStartTile;
 		eeVector2i		mEndTile;
@@ -207,7 +216,6 @@ class EE_API cMap {
 		eeVector2i		mMouseOverTile;
 		eeVector2i		mMouseOverTileFinal;
 		eeVector2i		mMouseMapPos;
-		eeVector2f		mOffsetFixed;
 		eeColorA		mBaseColor;
 		PropertiesMap	mProperties;
 		GOTypesList		mObjTypes;
@@ -221,14 +229,12 @@ class EE_API cMap {
 		eeColorA		mTileOverColor;
 		eeColorA		mBackColor;
 		Uint8			mBackAlpha;
-		std::string		mPath;
 		bool			mMouseOver;
+		std::string		mPath;
+		eeFloat			mScale;
+		eeVector2f		mOffscale;
 
 		virtual cGameObject *	CreateGameObject( const Uint32& Type, const Uint32& Flags, cLayer * Layer, const Uint32& DataId = 0 );
-
-		eeVector2f		FixOffset();
-
-		void			FixedOffset();
 
 		void			CalcTilesClip();
 
@@ -251,6 +257,8 @@ class EE_API cMap {
 		void			CreateLightManager();
 
 		virtual void	OnMapLoaded();
+
+		void			UpdateOffscale();
 };
 
 }}

@@ -557,11 +557,13 @@ void cRendererGL3::fromGLMmat4( glm::mat4 from, GLfloat * to ) {
 void cRendererGL3::GetCurrentMatrix( GLenum mode, GLfloat * m ) {
 	switch ( mode ) {
 		case GL_PROJECTION:
+		case GL_PROJECTION_MATRIX:
 		{
 			fromGLMmat4( mProjectionMatrix.top(), m );
 			break;
 		}
 		case GL_MODELVIEW:
+		case GL_MODELVIEW_MATRIX:
 		{
 			fromGLMmat4( mModelViewMatrix.top(), m );
 			break;
@@ -578,11 +580,13 @@ void cRendererGL3::MatrixMode(GLenum mode) {
 
 	switch ( mCurrentMode ) {
 		case GL_PROJECTION:
+		case GL_PROJECTION_MATRIX:
 		{
 			mCurMatrix = &mProjectionMatrix;
 			break;
 		}
 		case GL_MODELVIEW:
+		case GL_MODELVIEW_MATRIX:
 		{
 			mCurMatrix = &mModelViewMatrix;
 			break;
@@ -796,6 +800,36 @@ void cRendererGL3::TexEnvi( GLenum target, GLenum pname, GLint param ) {
 
 std::string cRendererGL3::GetBaseVertexShader() {
 	return mBaseVertexShader;
+}
+
+GLint cRendererGL3::Project( GLfloat objx, GLfloat objy, GLfloat objz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *winx, GLfloat *winy, GLfloat *winz ) {
+	glm::vec3 tv3( glm::project( glm::vec3( objx, objy, objz ), toGLMmat4( modelMatrix ), toGLMmat4( projMatrix ), glm::vec4( viewport[0], viewport[1], viewport[2], viewport[3] ) ) );
+
+	if ( NULL != winx )
+		*winx = tv3.x;
+
+	if ( NULL != winy )
+		*winy = tv3.y;
+
+	if ( NULL != winz )
+		*winz = tv3.z;
+
+	return GL_TRUE;
+}
+
+GLint cRendererGL3::UnProject( GLfloat winx, GLfloat winy, GLfloat winz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *objx, GLfloat *objy, GLfloat *objz ) {
+	glm::vec3 tv3( glm::unProject( glm::vec3( winx, winy, winz ), toGLMmat4( modelMatrix ), toGLMmat4( projMatrix ), glm::vec4( viewport[0], viewport[1], viewport[2], viewport[3] ) ) );
+
+	if ( NULL != objx )
+		*objx = tv3.x;
+
+	if ( NULL != objy )
+		*objy = tv3.y;
+
+	if ( NULL != objz )
+		*objz = tv3.z;
+
+	return GL_TRUE;
 }
 
 }}

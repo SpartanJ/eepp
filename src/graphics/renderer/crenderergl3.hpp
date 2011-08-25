@@ -124,6 +124,10 @@ class EE_API cRendererGL3 : public cGL {
 		void BindGlobalVAO();
 
 		std::string GetBaseVertexShader();
+
+		GLint Project( GLfloat objx, GLfloat objy, GLfloat objz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *winx, GLfloat *winy, GLfloat *winz );
+
+		GLint UnProject( GLfloat winx, GLfloat winy, GLfloat winz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *objx, GLfloat *objy, GLfloat *objz );
 	protected:
 		std::stack<glm::mat4>	mProjectionMatrix;		// cpu-side
 		GLint					mProjectionMatrix_id;	// cpu-side hook to shader uniform

@@ -1210,7 +1210,7 @@ void cEETest::Render() {
 					ColRR1, ColRR2, ColRR3, ColRR4
 	);
 
-	mEEText.Draw( 0.f, (eeFloat)mWindow->GetHeight() - mEEText.GetTextHeight(), FONT_DRAW_CENTER, 1.f, Ang );
+	mEEText.Draw( 0.f, (eeFloat)mWindow->GetHeight() - mEEText.GetTextHeight(), FONT_DRAW_CENTER );
 
 	mInfoText.Draw( 6.f, 6.f );
 

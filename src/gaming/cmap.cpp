@@ -30,7 +30,9 @@ cMap::cMap() :
 	mTileOverColor( 255, 0, 0, 200 ),
 	mBackColor( 0, 0, 0, 50 ),
 	mBackAlpha( 255 ),
-	mMouseOver( false )
+	mMouseOver( false ),
+	mScale( 1 ),
+	mOffscale( 1, 1 )
 {
 	ViewSize( mViewSize );
 }
@@ -195,31 +197,6 @@ void cMap::Draw() {
 		mWindow->ClipEnable( mScreenPos.x, mScreenPos.y, mViewSize.x, mViewSize.y );
 	}
 
-	GridDraw();
-
-	for ( Uint32 i = 0; i < mLayerCount; i++ ) {
-		if ( mLayers[i]->Visible() )
-			mLayers[i]->Draw( mOffsetFixed );
-	}
-
-	MouseOverDraw();
-
-	if ( mDrawCb.IsSet() )
-		mDrawCb();
-
-	if ( ClipedArea() ) {
-		mWindow->ClipDisable();
-	}
-}
-
-void cMap::MouseOverDraw() {
-	if ( !DrawTileOver() || NULL == mTileTex )
-		return;
-
-	mTileTex->Draw( mOffsetFixed.x + mMouseOverTileFinal.x * mTileSize.x, mOffsetFixed.y + mMouseOverTileFinal.y * mTileSize.y, 0, 1, mTileOverColor );
-}
-
-void cMap::GridDraw() {
 	if ( DrawBackground() ) {
 		cPrimitives P;
 
@@ -230,6 +207,40 @@ void cMap::GridDraw() {
 		P.SetColor( eeColorA( 255, 255, 255, 255 ) );
 	}
 
+	GLi->LoadIdentity();
+	GLi->PushMatrix();
+	GLi->Translatef( (eeFloat)static_cast<Int32>( mScreenPos.x + mFixedOffset.x ), (eeFloat)static_cast<Int32>( mScreenPos.y + mFixedOffset.y ), 0 );
+	GLi->Scalef( mScale, mScale, 0 );
+
+	GridDraw();
+
+	for ( Uint32 i = 0; i < mLayerCount; i++ ) {
+		if ( mLayers[i]->Visible() )
+			mLayers[i]->Draw();
+	}
+
+	MouseOverDraw();
+
+	if ( mDrawCb.IsSet() )
+		mDrawCb();
+
+	cGlobalBatchRenderer::instance()->Draw();
+
+	GLi->PopMatrix();
+
+	if ( ClipedArea() ) {
+		mWindow->ClipDisable();
+	}
+}
+
+void cMap::MouseOverDraw() {
+	if ( !DrawTileOver() || NULL == mTileTex )
+		return;
+
+	mTileTex->Draw( mMouseOverTileFinal.x * mTileSize.x, mMouseOverTileFinal.y * mTileSize.y, 0, 1, mTileOverColor );
+}
+
+void cMap::GridDraw() {
 	if ( !DrawGrid() )
 		return;
 
@@ -237,10 +248,6 @@ void cMap::GridDraw() {
 		return;
 
 	cGlobalBatchRenderer::instance()->Draw();
-
-	GLi->LoadIdentity();
-	GLi->PushMatrix();
-	GLi->Translatef( mOffsetFixed.x, mOffsetFixed.y, 0.0f );
 
 	eeVector2i start = StartTile();
 	eeVector2i end = EndTile();
@@ -259,8 +266,6 @@ void cMap::GridDraw() {
 	}
 
 	cGlobalBatchRenderer::instance()->Draw();
-
-	GLi->PopMatrix();
 }
 
 const bool& cMap::IsMouseOver() const {
@@ -270,7 +275,7 @@ const bool& cMap::IsMouseOver() const {
 void cMap::GetMouseOverTile() {
 	eeVector2i mouse = mWindow->GetInput()->GetMousePos();
 
-	eeVector2i MapPos( mouse.x - mScreenPos.x - mOffset.x, mouse.y - mScreenPos.y - mOffset.y );
+	eeVector2i MapPos( static_cast<eeFloat>( mouse.x - mScreenPos.x - mFixedOffset.x ) / mScale, static_cast<eeFloat>( mouse.y - mScreenPos.y - mFixedOffset.y ) / mScale );
 
 	mMouseOver = !( MapPos.x < 0 || MapPos.y < 0 || MapPos.x > mPixelSize.x || MapPos.y > mPixelSize.y );
 
@@ -291,16 +296,104 @@ void cMap::GetMouseOverTile() {
 	mMouseMapPos = MapPos;
 }
 
+void cMap::CalcTilesClip() {
+	if ( mTileSize.x > 0 && mTileSize.y > 0 ) {
+		eeVector2f ffoff( mFixedOffset );
+		eeVector2i foff( (Int32)ffoff.x, (Int32)ffoff.y );
+
+		mStartTile.x	= -foff.x / ( mTileSize.x * mScale ) - mExtraTiles.x;
+		mStartTile.y	= -foff.y / ( mTileSize.y * mScale ) - mExtraTiles.y;
+		mEndTile.x		= mStartTile.x + eeRound( (eeFloat)mViewSize.x / ( (eeFloat)mTileSize.x * mScale ) ) + 1 + mExtraTiles.x;
+		mEndTile.y		= mStartTile.y + eeRound( (eeFloat)mViewSize.y / ( (eeFloat)mTileSize.y * mScale ) ) + 1 + mExtraTiles.y;
+
+		if ( mStartTile.x < 0 )
+			mStartTile.x = 0;
+
+		if ( mStartTile.y < 0 )
+			mStartTile.y = 0;
+
+		if ( mEndTile.x > mSize.x )
+			mEndTile.x = mSize.x;
+
+		if ( mEndTile.y > mSize.y )
+			mEndTile.y = mSize.y;
+	}
+}
+
+void cMap::Clamp() {
+	if ( !ClampBorders() )
+		return;
+
+	if ( mOffset.x > 0 )
+		mOffset.x = 0;
+
+	if ( mOffset.y > 0 )
+		mOffset.y = 0;
+
+	eeSize totSize( mTileSize * mSize );
+
+	if ( -mOffset.x + mViewSize.x > totSize.x )
+		mOffset.x = -( totSize.x - mViewSize.x );
+
+	if ( -mOffset.y + mViewSize.y > totSize.y )
+		mOffset.y = -( totSize.y - mViewSize.y );
+
+	if ( totSize.x < mViewSize.x )
+		mOffset.x = 0;
+
+	if ( totSize.y < mViewSize.y )
+		mOffset.y = 0;
+
+	totSize.x = (Int32)( (eeFloat)( mTileSize.x * mSize.x ) * mScale );
+	totSize.y = (Int32)( (eeFloat)( mTileSize.y * mSize.y ) * mScale );
+
+	if ( -mFixedOffset.x + mViewSize.x > totSize.x )
+		mFixedOffset.x = -( totSize.x - mViewSize.x );
+
+	if ( -mFixedOffset.y + mViewSize.y > totSize.y )
+		mFixedOffset.y = -( totSize.y - mViewSize.y );
+
+	if ( totSize.x < mViewSize.x )
+		mFixedOffset.x = 0;
+
+	if ( totSize.y < mViewSize.y )
+		mFixedOffset.y = 0;
+}
+
+void cMap::Offset( const eeVector2f& offset ) {
+	mOffset			= offset;
+	mFixedOffset	= mOffset * mOffscale;
+
+	Clamp();
+
+	CalcTilesClip();
+}
+
+void cMap::UpdateOffscale() {
+	eeVector2f totSizeT( mTileSize.x * mSize.x - mViewSize.x			, mTileSize.y * mSize.y - mViewSize.y			);
+	eeVector2f totSizeS( mTileSize.x * mSize.x * mScale - mViewSize.x	, mTileSize.y * mSize.y * mScale - mViewSize.y	);
+
+	mOffscale = eeVector2f( totSizeS.x / totSizeT.x, totSizeS.y / totSizeT.y );
+}
+
+const eeFloat& cMap::Scale() const {
+	return mScale;
+}
+
+void cMap::Scale( const eeFloat& scale ) {
+	mScale = scale;
+
+	UpdateOffscale();
+
+	Offset( mOffset );
+}
+
 void cMap::UpdateScreenAABB() {
 	mScreenAABB = eeAABB( -mOffset.x, -mOffset.y, -mOffset.x + mViewSize.Width(), -mOffset.y + mViewSize.Height() );
 }
 
 const eeAABB& cMap::GetViewAreaAABB() const {
 	return mScreenAABB;
-}
-
-void cMap::FixedOffset() {
-	mOffsetFixed = eeVector2f( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y ) + FixOffset();
 }
 
 void cMap::Update() {
@@ -341,6 +434,8 @@ eeVector2f cMap::GetMouseMapPosf() const {
 void cMap::ViewSize( const eeSize& viewSize ) {
 	mViewSize = viewSize;
 
+	UpdateOffscale();
+
 	Clamp();
 
 	CalcTilesClip();
@@ -352,15 +447,10 @@ const eeVector2i& cMap::Position() const {
 
 void cMap::Position( const eeVector2i& position ) {
 	mScreenPos = position;
-	FixedOffset();
 }
 
 const eeVector2f& cMap::Offset() const {
 	return mOffset;
-}
-
-const eeVector2f& cMap::OffsetFixed() const {
-	return mOffsetFixed;
 }
 
 const eeVector2i& cMap::StartTile() const {
@@ -377,65 +467,6 @@ void cMap::ExtraTiles( const eeVector2i& extra ) {
 
 const eeVector2i& cMap::ExtraTiles() const {
 	return mExtraTiles;
-}
-
-void cMap::Offset( const eeVector2f& offset ) {
-	mOffset = offset;
-
-	Clamp();
-
-	CalcTilesClip();
-
-	FixedOffset();
-}
-
-void cMap::CalcTilesClip() {
-	if ( mTileSize.x > 0 && mTileSize.y > 0 ) {
-		eeVector2f ffoff( FixOffset() );
-		eeVector2i foff( (Int32)ffoff.x, (Int32)ffoff.y );
-
-		mStartTile.x	= -foff.x / mTileSize.x - mExtraTiles.x;
-		mStartTile.y	= -foff.y / mTileSize.y - mExtraTiles.y;
-		mEndTile.x		= mStartTile.x + eeRound( (eeFloat)mViewSize.x / (eeFloat)mTileSize.x ) + 1 + mExtraTiles.x;
-		mEndTile.y		= mStartTile.y + eeRound( (eeFloat)mViewSize.y / (eeFloat)mTileSize.y ) + 1 + mExtraTiles.y;
-
-		if ( mStartTile.x < 0 )
-			mStartTile.x = 0;
-
-		if ( mStartTile.y < 0 )
-			mStartTile.y = 0;
-
-		if ( mEndTile.x > mSize.x )
-			mEndTile.x = mSize.x;
-
-		if ( mEndTile.y > mSize.y )
-			mEndTile.y = mSize.y;
-	}
-}
-
-void cMap::Clamp() {
-	if ( !ClampBorders() )
-		return;
-
-	if ( mOffset.x > 0 )
-		mOffset.x = 0;
-
-	if ( mOffset.y > 0 )
-		mOffset.y = 0;
-
-	eeSize totSize( mTileSize * mSize );
-
-	if ( -mOffset.x + mViewSize.x > totSize.x )
-		mOffset.x = -( totSize.x - mViewSize.x );
-
-	if ( -mOffset.y + mViewSize.y > totSize.y )
-		mOffset.y = -( totSize.y - mViewSize.y );
-
-	if ( totSize.x < mViewSize.x )
-		mOffset.x = 0;
-
-	if ( totSize.y < mViewSize.y )
-		mOffset.y = 0;
 }
 
 void cMap::BaseColor( const eeColorA& color ) {
@@ -474,8 +505,16 @@ Uint32 cMap::ClipedArea() const {
 	return mFlags & MAP_FLAG_CLIP_AREA;
 }
 
+void cMap::ClipedArea( const bool& clip ) {
+	SetFlagValue( &mFlags, MAP_FLAG_CLIP_AREA, clip ? 1 : 0 );
+}
+
 Uint32 cMap::ClampBorders() const {
 	return mFlags & MAP_FLAG_CLAMP_BORDERS;
+}
+
+void cMap::ClampBorders( const bool& clamp ) {
+	SetFlagValue( &mFlags, MAP_FLAG_CLAMP_BORDERS, clamp ? 1 : 0 );
 }
 
 Uint32 cMap::DrawTileOver() const {
@@ -492,10 +531,6 @@ Uint32 cMap::LightsEnabled() {
 
 void cMap::LightsEnabled( const bool& enabled ) {
 	SetFlagValue( &mFlags, MAP_FLAG_LIGHTS_ENABLED, enabled ? 1 : 0 );
-}
-
-eeVector2f cMap::FixOffset() {
-	return eeVector2f( (eeFloat)static_cast<Int32>( mOffset.x ), (eeFloat)static_cast<Int32>( mOffset.y ) );
 }
 
 void cMap::Move( const eeVector2f& offset )  {

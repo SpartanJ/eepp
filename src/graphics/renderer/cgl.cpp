@@ -159,7 +159,7 @@ bool cGL::ShadersSupported() {
 }
 
 Uint32 cGL::GetTextureParamEnum( const EE_TEXTURE_PARAM& Type ) {
-	#ifndef EE_GLES2
+	#ifndef EE_GLES
 	switch( Type ) {
 		case TEX_PARAM_COLOR_FUNC:			return GL_COMBINE_RGB_ARB;
 		case TEX_PARAM_ALPHA_FUNC:			return GL_COMBINE_ALPHA_ARB;
@@ -258,7 +258,7 @@ void cGL::Scissor ( GLint x, GLint y, GLsizei width, GLsizei height ) {
 }
 
 void cGL::PolygonMode( GLenum face, GLenum mode ) {
-	#ifndef EE_GLES2
+	#ifndef EE_GLES
 	glPolygonMode( face, mode );
 	#endif
 }
@@ -284,11 +284,13 @@ void cGL::BlendFunc ( GLenum sfactor, GLenum dfactor ) {
 }
 
 void cGL::SetShader( cShaderProgram * Shader ) {
+	#ifndef EE_GLES1
 	if ( NULL != Shader ) {
 		glUseProgram( Shader->Handler() );
 	} else {
 		glUseProgram( 0 );
 	}
+	#endif
 }
 
 bool cGL::IsLineSmooth() {
@@ -347,6 +349,44 @@ std::string cGL::GetShadingLanguageVersion() {
 	}
 
 	return std::string( "Shaders not supported" );
+}
+
+void cGL::GetViewport( GLint * viewport ) {
+	glGetIntegerv( GL_VIEWPORT, viewport );
+}
+
+eeVector3f cGL::ProjectCurrent( const eeVector3f& point ) {
+	GLfloat projMat[16];
+	GetCurrentMatrix( GL_PROJECTION_MATRIX, projMat );
+
+	GLfloat modelMat[16];
+	GetCurrentMatrix( GL_MODELVIEW_MATRIX, modelMat );
+
+	GLint viewPort[4];
+	GetViewport( viewPort );
+
+	eeVector3f tv3;
+
+	Project( point.x, point.y, point.z, projMat, modelMat, viewPort, &tv3.x, &tv3.y, &tv3.z );
+
+	return tv3;
+}
+
+eeVector3f cGL::UnProjectCurrent( const eeVector3f& point ) {
+	GLfloat projMat[16];
+	GetCurrentMatrix( GL_PROJECTION_MATRIX, projMat );
+
+	GLfloat modelMat[16];
+	GetCurrentMatrix( GL_MODELVIEW_MATRIX, modelMat );
+
+	GLint viewPort[4];
+	GetViewport( viewPort );
+
+	eeVector3f tv3;
+
+	UnProject( point.x, point.y, point.z, projMat, modelMat, viewPort, &tv3.x, &tv3.y, &tv3.z );
+
+	return tv3;
 }
 
 }}

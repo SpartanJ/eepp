@@ -229,6 +229,7 @@ cUIControl * cUIManager::DownControl() const {
 }
 
 void cUIManager::Draw() {
+	cGlobalBatchRenderer::instance()->Draw();
 	mControl->InternalDraw();
 	cGlobalBatchRenderer::instance()->Draw();
 }

@@ -110,6 +110,9 @@ class EE_API cInput {
 		/** @return The position vector converted to float */
 		eeVector2f GetMousePosf();
 
+		/** This will change the value of the mouse pos, will not REALLY move the mouse ( for that is InjectMousePos ). */
+		void SetMousePos( const eeVector2i& Pos );
+
 		/** @return The mouse position over the current view */
 		eeVector2i GetMousePosFromView( const cView& View );
 

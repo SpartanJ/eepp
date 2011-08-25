@@ -68,15 +68,20 @@ cShader::cShader( const Uint32& Type, const char ** Data, const Uint32& NumLines
 }
 
 cShader::~cShader() {
-	if ( 0 != mGLId )
+	if ( 0 != mGLId ) {
+		#ifndef EE_GLES1
 		glDeleteShader( mGLId );
+		#endif
+	}
 }
 
 void cShader::Init( const Uint32& Type ) {
 	mType 		= Type;
 	mValid 		= false;
 	mCompiled 	= false;
+	#ifndef EE_GLES1
 	mGLId 		= glCreateShader( mType );
+	#endif
 }
 
 void cShader::Reload() {
@@ -121,9 +126,11 @@ void cShader::SetSource( const std::string& Source ) {
 
 	EnsureVersion();
 
+	#ifndef EE_GLES1
 	const char * src = reinterpret_cast<const char *> ( &mSource[0] );
 
 	glShaderSource( mGLId, 1, &src, NULL );
+	#endif
 }
 
 void cShader::SetSource( const char** Data, const Uint32& NumLines ) {
@@ -158,6 +165,8 @@ bool cShader::Compile() {
 		return false;
 	}
 
+	#ifndef EE_GLES1
+
 	glCompileShader( GetId() );
 	mCompiled = true;
 
@@ -185,6 +194,8 @@ bool cShader::Compile() {
 	} else {
 		cLog::instance()->Write( "Shader Loaded Succesfully" );
 	}
+
+	#endif
 
 	return mValid;
 }

@@ -162,7 +162,7 @@ void cUIMap::MapDraw() {
 			cPrimitives P;
 			P.SetColor( eeColorA( 255, 0, 0, (Uint8)mAlpha ) );
 
-			eeVector2f Pos( mSelLight->GetAABB().Left + mMap->OffsetFixed().x, mSelLight->GetAABB().Top + mMap->OffsetFixed().y );
+			eeVector2f Pos( mSelLight->GetAABB().Left, mSelLight->GetAABB().Top );
 			eeAABB AB( mSelLight->GetAABB() );
 			eeSizef Size( AB.Size() );
 

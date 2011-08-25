@@ -64,9 +64,9 @@ void cFrameBuffer::SetBufferView() {
 
 	mPrevView = mWindow->GetView();
 
+	GLi->Viewport( 0, 0, mWidth, mHeight );
 	GLi->MatrixMode( GL_PROJECTION );
 	GLi->LoadIdentity();
-	GLi->Viewport( 0, 0, mWidth, mHeight );
 	GLi->Ortho( 0.0f, mWidth, 0.f, mHeight, -1000.0f, 1000.0f );
 	GLi->MatrixMode( GL_MODELVIEW );
 	GLi->LoadIdentity();

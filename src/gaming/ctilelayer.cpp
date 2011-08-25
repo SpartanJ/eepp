@@ -21,9 +21,8 @@ cTileLayer::~cTileLayer() {
 void cTileLayer::cTileLayer::Draw( const eeVector2f &Offset ) {
 	cGlobalBatchRenderer::instance()->Draw();
 
-	GLi->LoadIdentity();
 	GLi->PushMatrix();
-	GLi->Translatef( mOffset.x + Offset.x, mOffset.y + Offset.y, 0.0f );
+	GLi->Translatef( mOffset.x, mOffset.y, 0.0f );
 
 	eeVector2i start = mMap->StartTile();
 	eeVector2i end = mMap->EndTile();

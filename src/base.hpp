@@ -165,6 +165,10 @@
 	#endif
 #endif
 
+#if ( defined( EE_GLES2 ) || defined( EE_GLES1 ) ) && !defined( EE_GLES )
+	#define EE_GLES
+#endif
+
 /// Activate at least one backend for the compilation
 #if !defined( EE_BACKEND_SDL_ACTIVE ) && !defined( EE_BACKEND_ALLEGRO_ACTIVE )
 	#define EE_BACKEND_SDL_ACTIVE

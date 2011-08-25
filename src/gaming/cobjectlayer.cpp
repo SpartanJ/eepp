@@ -31,9 +31,8 @@ void cObjectLayer::Draw( const eeVector2f &Offset ) {
 
 	ObjList::iterator it;
 
-	GLi->LoadIdentity();
 	GLi->PushMatrix();
-	GLi->Translatef( mOffset.x + Offset.x, mOffset.y + Offset.y, 0.0f );
+	GLi->Translatef( mOffset.x, mOffset.y, 0.0f );
 
 	for ( it = mObjects.begin(); it != mObjects.end(); it++ ) {
 		(*it)->Draw();

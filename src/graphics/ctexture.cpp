@@ -602,6 +602,10 @@ void cTexture::DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width,
 	BR->DrawOpt();
 }
 
+void cTexture::DrawEx2( const eeFloat &x, const eeFloat &y, const eeFloat &width, const eeFloat &height, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color, const EE_PRE_BLEND_FUNC &blend, const EE_RENDERTYPE &Effect, const bool &ScaleCentered, const eeRecti& texSector ) {
+	DrawEx( x, y, width, height, Angle, Scale, Color, Color, Color, Color, blend, Effect, ScaleCentered, texSector );
+}
+
 void cTexture::DrawQuad( const eeQuad2f& Q, const eeFloat &offsetx, const eeFloat &offsety, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color, const EE_PRE_BLEND_FUNC &blend, const eeRecti& texSector) {
 	DrawQuadEx( Q, offsetx, offsety, Angle, Scale, Color, Color, Color, Color, blend, texSector);
 }

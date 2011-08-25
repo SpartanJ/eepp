@@ -25,7 +25,7 @@ cVertexBufferVBO::~cVertexBufferVBO() {
 		glDeleteBuffersARB( 1, (GLuint *)&mElementHandle );
 	}
 
-	#if !defined( EE_GLES2 ) && EE_PLATFORM != EE_PLATFORM_HAIKU
+	#if !defined( EE_GLES ) && EE_PLATFORM != EE_PLATFORM_HAIKU
 	if ( GLv_3 == GLi->Version() ) {
 		glDeleteVertexArrays( 1, &mVAO );
 	}
@@ -47,7 +47,7 @@ bool cVertexBufferVBO::Compile() {
 	if( mCompiled )
 		return false;
 
-	#if !defined( EE_GLES2 ) && EE_PLATFORM != EE_PLATFORM_HAIKU
+	#if !defined( EE_GLES ) && EE_PLATFORM != EE_PLATFORM_HAIKU
 	if ( GLv_3 == GLi->Version() ) {
 		glGenVertexArrays( 1, &mVAO );
 		glBindVertexArray( mVAO );
@@ -100,7 +100,7 @@ void cVertexBufferVBO::Draw() {
 		return;
 
 	if ( GLv_3 == GLi->Version() || GLv_ES2 == GLi->Version() ) {
-		#if !defined( EE_GLES2 ) && EE_PLATFORM != EE_PLATFORM_HAIKU
+		#if !defined( EE_GLES ) && EE_PLATFORM != EE_PLATFORM_HAIKU
 		glBindVertexArray( mVAO );
 		#endif
 
@@ -132,9 +132,11 @@ void cVertexBufferVBO::Draw() {
 }
 
 void cVertexBufferVBO::SetVertexStates() {
+	#ifdef EE_GL3_ENABLED
 	GLint index;
+	#endif
 
-	#if !defined( EE_GLES2 ) && EE_PLATFORM != EE_PLATFORM_HAIKU
+	#if !defined( EE_GLES ) && EE_PLATFORM != EE_PLATFORM_HAIKU
 	if ( GLv_3 == GLi->Version() ) {
 		if ( mBuffersSet ) {
 			return;
