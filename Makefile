@@ -66,7 +66,12 @@ endif
 ifeq ($(BACKEND_SDL), yes)
 		
 	ifeq ($(SDLVERSION), 1.3.0)
+		ifeq ($(OS), darwin)
+		SDL_BACKEND_LINK	= -framework Cocoa -lSDL -lSDLmain
+     	else
 		SDL_BACKEND_LINK	= libs/$(OS)/libSDL.a
+		endif
+		
 		SDL_BACKEND_SRC		= $(wildcard ./src/window/backend/SDL13/*.cpp)
 	else
 		ifeq ($(OS), darwin)

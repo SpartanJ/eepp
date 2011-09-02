@@ -196,6 +196,10 @@ class EE_API cMapEditor {
 		void SetViewOptions();
 
 		cGameObject * GetCurrentGOOver();
+
+		void ZoomIn();
+
+		void ZoomOut();
 };
 
 }}}

@@ -365,11 +365,11 @@ eeVector3f cGL::ProjectCurrent( const eeVector3f& point ) {
 	GLint viewPort[4];
 	GetViewport( viewPort );
 
-	eeVector3f tv3;
+	Vector3<GLfloat> tv3;
 
-	Project( point.x, point.y, point.z, projMat, modelMat, viewPort, &tv3.x, &tv3.y, &tv3.z );
+	Project( (GLfloat)point.x, (GLfloat)point.y, (GLfloat)point.z, projMat, modelMat, viewPort, &tv3.x, &tv3.y, &tv3.z );
 
-	return tv3;
+	return eeVector3f( tv3.x, tv3.y, tv3.z );
 }
 
 eeVector3f cGL::UnProjectCurrent( const eeVector3f& point ) {
@@ -382,11 +382,11 @@ eeVector3f cGL::UnProjectCurrent( const eeVector3f& point ) {
 	GLint viewPort[4];
 	GetViewport( viewPort );
 
-	eeVector3f tv3;
+	Vector3<GLfloat> tv3;
 
-	UnProject( point.x, point.y, point.z, projMat, modelMat, viewPort, &tv3.x, &tv3.y, &tv3.z );
+	UnProject( (GLfloat)point.x, (GLfloat)point.y, (GLfloat)point.z, projMat, modelMat, viewPort, &tv3.x, &tv3.y, &tv3.z );
 
-	return tv3;
+	return eeVector3f( tv3.x, tv3.y, tv3.z );
 }
 
 }}

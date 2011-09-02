@@ -261,7 +261,27 @@ void cMap::GridDraw() {
 
 			ty = y * mTileSize.y;
 
-			mTileTex->Draw( tx, ty, 0, 1, TileTexCol );
+			if ( LightsEnabled() ) {
+				eeVector2i TPos( x, y );
+
+				if ( mLightManager->IsByVertex() ) {
+					eeColorA TileTexCol0( *mLightManager->GetTileColor( TPos, 0 ) );
+					eeColorA TileTexCol1( *mLightManager->GetTileColor( TPos, 1 ) );
+					eeColorA TileTexCol2( *mLightManager->GetTileColor( TPos, 2 ) );
+					eeColorA TileTexCol3( *mLightManager->GetTileColor( TPos, 3 ) );
+
+					TileTexCol0.Alpha = TileTexCol1.Alpha = TileTexCol2.Alpha = TileTexCol3.Alpha	= mBackAlpha;
+
+					mTileTex->DrawEx( tx, ty, 0, 0, 0, 1, TileTexCol0, TileTexCol1, TileTexCol2, TileTexCol3 );
+				} else {
+					TileTexCol			= *mLightManager->GetTileColor( TPos );
+					TileTexCol.Alpha	= mBackAlpha;
+
+					mTileTex->Draw( tx, ty, 0, 1, TileTexCol );
+				}
+			} else {
+				mTileTex->Draw( tx, ty, 0, 1, TileTexCol );
+			}
 		}
 	}
 

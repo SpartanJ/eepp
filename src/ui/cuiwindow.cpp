@@ -760,6 +760,7 @@ void cUIWindow::CheckShortcuts( const Uint32& KeyCode, const Uint32& Mod ) {
 		KeyboardShortcut kb = (*it);
 
 		if ( KeyCode == kb.KeyCode && ( Mod & kb.Mod ) ) {
+			cUIManager::instance()->SendMouseUp( kb.Button, eeVector2i(0,0), EE_BUTTON_LMASK );
 			cUIManager::instance()->SendMouseClick( kb.Button, eeVector2i(0,0), EE_BUTTON_LMASK );
 		}
 	}

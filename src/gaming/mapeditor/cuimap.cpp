@@ -158,16 +158,14 @@ void cUIMap::EditingLights( const bool& editing ) {
 
 void cUIMap::MapDraw() {
 	if ( mEditingLights && NULL != mSelLight ) {
-		if ( Intersect( mMap->GetViewAreaAABB(), mSelLight->GetAABB() ) ) {
-			cPrimitives P;
-			P.SetColor( eeColorA( 255, 0, 0, (Uint8)mAlpha ) );
+		cPrimitives P;
+		P.SetColor( eeColorA( 255, 0, 0, (Uint8)mAlpha ) );
 
-			eeVector2f Pos( mSelLight->GetAABB().Left, mSelLight->GetAABB().Top );
-			eeAABB AB( mSelLight->GetAABB() );
-			eeSizef Size( AB.Size() );
+		eeVector2f Pos( mSelLight->GetAABB().Left, mSelLight->GetAABB().Top );
+		eeAABB AB( mSelLight->GetAABB() );
+		eeSizef Size( AB.Size() );
 
-			P.DrawRectangle( Pos.x, Pos.y, Size.Width(), Size.Height(), 0, 1, EE_DRAW_LINE );
-		}
+		P.DrawRectangle( Pos.x, Pos.y, Size.Width(), Size.Height(), 0, 1, EE_DRAW_LINE );
 	}
 }
 

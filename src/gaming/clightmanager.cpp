@@ -64,10 +64,19 @@ void cLightManager::UpdateByVertex() {
 					eeAABB TileAABB( Pos.x, Pos.y, Pos.x + TileSize.x, Pos.y + TileSize.y );
 
 					if ( Intersect( TileAABB, Light->GetAABB() ) ) {
-						mTileColors[x][y][0]->Assign( Light->ProcessVertex( Pos.x, Pos.y, *(mTileColors[x][y][0]), *(mTileColors[x][y][0]) ) );
+						if ( y > 0 )
+							mTileColors[x][y][0]->Assign( *mTileColors[x][y - 1][1] );
+						else
+							mTileColors[x][y][0]->Assign( Light->ProcessVertex( Pos.x, Pos.y, *(mTileColors[x][y][0]), *(mTileColors[x][y][0]) ) );
+
 						mTileColors[x][y][1]->Assign( Light->ProcessVertex( Pos.x, Pos.y + TileSize.Height(), *(mTileColors[x][y][1]), *(mTileColors[x][y][1]) ) );
+
 						mTileColors[x][y][2]->Assign( Light->ProcessVertex( Pos.x + TileSize.Width(), Pos.y + TileSize.Height(), *(mTileColors[x][y][2]), *(mTileColors[x][y][2]) ) );
-						mTileColors[x][y][3]->Assign( Light->ProcessVertex( Pos.x + TileSize.Width(), Pos.y, *(mTileColors[x][y][3]), *(mTileColors[x][y][3]) ) );
+
+						if ( y > 0 )
+							mTileColors[x][y][3]->Assign( *mTileColors[x][y - 1][2] );
+						else
+							mTileColors[x][y][3]->Assign( Light->ProcessVertex( Pos.x + TileSize.Width(), Pos.y, *(mTileColors[x][y][3]), *(mTileColors[x][y][3]) ) );
 					}
 				}
 			}

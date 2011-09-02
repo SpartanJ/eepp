@@ -329,7 +329,7 @@ Uint32 cUIMenu::OnMessage( const cUIMessage * Msg ) {
 	switch ( Msg->Msg() ) {
 		case cUIMessage::MsgMouseUp:
 		{
-			if ( Msg->Sender()->Parent() == this && Msg->Sender()->Parent()->Visible() && ( Msg->Flags() & EE_BUTTONS_LRM ) ) {
+			if ( Msg->Sender()->Parent() == this && ( Msg->Flags() & EE_BUTTONS_LRM ) ) {
 				cUIEvent ItemEvent( Msg->Sender(), cUIEvent::EventOnItemClicked );
 				SendEvent( &ItemEvent );
 			}

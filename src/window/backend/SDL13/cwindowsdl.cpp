@@ -310,9 +310,9 @@ std::vector< std::pair<unsigned int, unsigned int> > cWindowSDL::GetPossibleReso
 }
 
 void cWindowSDL::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {
-	eeclamp( &Red	, 0.1f, 10.0f );
-	eeclamp( &Green	, 0.1f, 10.0f );
-	eeclamp( &Blue	, 0.1f, 10.0f );
+	eeclamp( &Red	, (eeFloat)0.1f, (eeFloat)10.0f );
+	eeclamp( &Green	, (eeFloat)0.1f, (eeFloat)10.0f );
+	eeclamp( &Blue	, (eeFloat)0.1f, (eeFloat)10.0f );
 
 	Uint16 red_ramp[256];
 	Uint16 green_ramp[256];

@@ -86,7 +86,7 @@ void cMapEditor::CreateWinMenu() {
 	PU1->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cMapEditor::FileMenuClick ) );
 	WinMenu->AddMenuButton( "File", PU1 );
 
-	cUIPopUpMenu * PU3 = mTheme->CreatePopUpMenu();
+	cUIPopUpMenu * PU3 = mTheme->CreatePopUpMenu( mUIContainer );
 	mChkShowGrid = reinterpret_cast<cUIMenuCheckBox*>( PU3->GetItem( PU3->AddCheckBox( "Show Grid" ) ) );
 
 	mChkShowGrid->Active( true );
@@ -94,6 +94,13 @@ void cMapEditor::CreateWinMenu() {
 	mChkMarkTileOver = reinterpret_cast<cUIMenuCheckBox*>( PU3->GetItem( PU3->AddCheckBox( "Mark Tile Over" ) ) );
 
 	mChkShowBlocked = reinterpret_cast<cUIMenuCheckBox*>( PU3->GetItem( PU3->AddCheckBox( "Show Blocked" ) ) );
+
+	PU3->AddSeparator();
+	mUIWindow->AddShortcut( KEY_KP_PLUS	, KEYMOD_CTRL, reinterpret_cast<cUIPushButton*> ( PU3->GetItem( PU3->Add( "Zoom In", mTheme->GetIconByName( "zoom-in" ) ) ) ) );
+	mUIWindow->AddShortcut( KEY_KP_MINUS, KEYMOD_CTRL, reinterpret_cast<cUIPushButton*> ( PU3->GetItem( PU3->Add( "Zoom Out", mTheme->GetIconByName( "zoom-out" ) ) ) ) );
+	mUIWindow->AddShortcut( KEY_KP0		, KEYMOD_CTRL, reinterpret_cast<cUIPushButton*> ( PU3->GetItem( PU3->Add( "Normal Size", mTheme->GetIconByName( "zoom-original" ) ) ) ) );
+	PU3->AddSeparator();
+
 
 	PU3->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cMapEditor::ViewMenuClick ) );
 	WinMenu->AddMenuButton( "View", PU3 );
@@ -803,6 +810,66 @@ void cMapEditor::ViewMenuClick( const cUIEvent * Event ) {
 		mUIMap->Map()->DrawTileOver( reinterpret_cast<cUIMenuCheckBox*> ( Event->Ctrl() )->Active() );
 	} else if ( "Show Blocked" == txt ) {
 		mUIMap->Map()->ShowBlocked( reinterpret_cast<cUIMenuCheckBox*> ( Event->Ctrl() )->Active() );
+	} else if ( "Zoom In" == txt ) {
+		ZoomIn();
+	} else if ( "Zoom Out" == txt ) {
+		ZoomOut();
+	} else if ( "Normal Size" == txt ) {
+		mUIMap->Map()->Scale( 1 );
+	}
+}
+
+void cMapEditor::ZoomIn() {
+	cMap * Map = mUIMap->Map();
+	eeFloat S = mUIMap->Map()->Scale();
+
+	if ( S < 4 ) {
+		if ( 0.0625f == S ) {
+			Map->Scale( 0.125f );
+		} else if ( 0.125f == S ) {
+			Map->Scale( 0.25f );
+		} else if ( 0.25f == S ) {
+			Map->Scale( 0.5f );
+		} else if ( 0.5f == S ) {
+			Map->Scale( 0.75f );
+		} else if ( 0.75f == S ) {
+			Map->Scale( 1.0f );
+		} else if ( 1.0f == S ) {
+			Map->Scale( 1.5f );
+		} else if ( 1.5f == S ) {
+			Map->Scale( 2.0f );
+		} else if ( 2.0f == S ) {
+			Map->Scale( 3.0f );
+		} else if ( 3.0f == S ) {
+			Map->Scale( 4.0f );
+		}
+	}
+}
+
+void cMapEditor::ZoomOut() {
+	cMap * Map = mUIMap->Map();
+	eeFloat S = mUIMap->Map()->Scale();
+
+	if ( S > 0.0625f ) {
+		if ( 0.125f == S ) {
+			Map->Scale( 0.0625f );
+		} else if ( 0.25f == S ) {
+			Map->Scale( 0.125f );
+		} else if ( 0.5f == S ) {
+			Map->Scale( 0.25f );
+		} else if ( 0.75f == S ) {
+			Map->Scale( 0.5f );
+		} else if ( 1.0f == S ) {
+			Map->Scale( 0.75f );
+		} else if ( 1.5f == S ) {
+			Map->Scale( 1.0f );
+		} else if ( 2.0f == S ) {
+			Map->Scale( 1.5f );
+		} else if ( 3.0f == S ) {
+			Map->Scale( 2.0f );
+		} else if ( 4.0f == S ) {
+			Map->Scale( 3.0f );
+		}
 	}
 }
 
