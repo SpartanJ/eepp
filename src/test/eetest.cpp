@@ -247,7 +247,7 @@ void cEETest::CreateUI() {
 
 	cUIManager::instance()->Init(); //UI_MANAGER_HIGHLIGHT_FOCUS
 
-	//cUIThemeManager::instance()->Add( cUITheme::LoadFromPath( MyPath + "data/aqua/", "aqua", "aqua" ) );
+	//mTheme = cUITheme::LoadFromPath( eeNew( cUIAquaTheme, ( "aqua", "aqua" ) ), MyPath + "data/aqua/" );
 
 	cTextureGroupLoader tgl( MyPath + "data/aquatg/aqua.etg" );
 	tgl.GetTexture()->TextureFilter( TEX_FILTER_NEAREST );

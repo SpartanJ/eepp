@@ -12,9 +12,10 @@ ALfloat cAudioListener::GlobalVolume() {
 	EnsureALInit();
 
 	ALfloat Volume = 0.f;
+
 	ALCheck( alGetListenerf( AL_GAIN, &Volume ) );
 
-	return Volume;
+	return Volume * 100.f;
 }
 
 void cAudioListener::Position( const ALfloat& X, const ALfloat& Y, const ALfloat& Z ) {
