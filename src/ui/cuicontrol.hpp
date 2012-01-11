@@ -217,7 +217,7 @@ class EE_API cUIControl {
 
 		bool HasFocus() const;
 
-		void SetFocus();
+		virtual void SetFocus();
 
 		bool IsParentOf( cUIControl * Ctrl );
 

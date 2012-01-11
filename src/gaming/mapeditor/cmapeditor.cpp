@@ -916,10 +916,7 @@ void cMapEditor::LayerMenuClick( const cUIEvent * Event ) {
 		if ( NULL != mCurLayer) {
 			eeNew( cLayerProperties, ( mCurLayer ) );
 		} else {
-			cUIMessageBox * MsgBox = mTheme->CreateMessageBox( MSGBOX_OK, "First select and add a new layer." );
-			MsgBox->Title( "Error retrieving layer properties" );
-			MsgBox->Center();
-			MsgBox->Show();
+			CreateNoLayerAlert( "Error retrieving layer properties" );
 		}
 	} else if ( "Lights Enabled" == txt ) {
 		if ( NULL != mCurLayer ) {
@@ -930,6 +927,13 @@ void cMapEditor::LayerMenuClick( const cUIEvent * Event ) {
 			mCurLayer->Visible( !mCurLayer->Visible() );
 		}
 	}
+}
+
+void cMapEditor::CreateNoLayerAlert( const String title ) {
+	cUIMessageBox * MsgBox = mTheme->CreateMessageBox( MSGBOX_OK, "First select and add a new layer." );
+	MsgBox->Title( title );
+	MsgBox->Center();
+	MsgBox->Show();
 }
 
 void cMapEditor::MoveLayerUp() {
@@ -1119,8 +1123,12 @@ void cMapEditor::OnMapMouseClick( const cUIEvent * Event ) {
 	const cUIEventMouse * MEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
 
 	if ( mShapeCont->Visible() ) {
-		if ( NULL == mCurLayer || NULL == mGfxPreview->Shape() || cUIManager::instance()->DownControl() != mUIMap )
+		if ( NULL == mCurLayer || NULL == mGfxPreview->Shape() || cUIManager::instance()->DownControl() != mUIMap ) {
+			if ( NULL == mCurLayer )
+				CreateNoLayerAlert( "No layers found" );
+
 			return;
+		}
 
 		if ( MEvent->Flags() & EE_BUTTON_LMASK ) {
 			if ( mCurLayer->Type() == MAP_LAYER_OBJECT )
@@ -1162,6 +1170,7 @@ void cMapEditor::OnMapMouseDown( const cUIEvent * Event ) {
 	if ( mShapeCont->Visible() ) {
 		if ( NULL == mCurLayer || NULL == mGfxPreview->Shape() || cUIManager::instance()->DownControl() != mUIMap )
 			return;
+
 
 		if ( MEvent->Flags() & EE_BUTTON_LMASK ) {
 			if ( mCurLayer->Type() == MAP_LAYER_TILED )

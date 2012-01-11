@@ -26,6 +26,16 @@ eeFloat eeRound( eeFloat r ) {
 	return (r > 0.0f) ? floor(r + 0.5f) : ceil(r - 0.5f);
 }
 
+#ifndef EE_64BIT
+eeDouble eeRoundUp( eeDouble r ) {
+	return (r > 0.0) ? ceil(r) : ceil(r - 0.5);
+}
+#endif
+
+eeFloat eeRoundUp( eeFloat r ) {
+	return (r > 0.0f) ? ceil(r) : ceil(r - 0.5f);
+}
+
 eeFloat cosAng( const eeFloat& Ang ) {
 	return eecos(Ang * EE_PI_180);
 }

@@ -40,7 +40,7 @@ class cUIWindow : public cUIComplexControl {
 
 		cUIWindow( const cUIWindow::CreateParams& Params );
 
-		~cUIWindow();
+		virtual ~cUIWindow();
 
 		virtual Uint32 Type() const;
 

@@ -24,6 +24,8 @@ cUIWindow::cUIWindow( const cUIWindow::CreateParams& Params ) :
 	mDecoAutoSize( Params.DecorationAutoSize ),
 	mBorderAutoSize( Params.BorderAutoSize )
 {
+	cUIManager::instance()->WindowAdd( this );
+
 	cUIComplexControl::CreateParams tcParams;
 	tcParams.Parent( this );
 	tcParams.Flags |= UI_REPORT_SIZE_CHANGE_TO_CHILDS;
@@ -99,6 +101,10 @@ cUIWindow::cUIWindow( const cUIWindow::CreateParams& Params ) :
 }
 
 cUIWindow::~cUIWindow() {
+	cUIManager::instance()->WindowRemove( this );
+
+	cUIManager::instance()->SetFocusLastWindow( this );
+
 	SendCommonEvent( cUIEvent::EventOnWindowClose );
 }
 

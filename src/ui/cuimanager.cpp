@@ -73,10 +73,10 @@ void cUIManager::Shutdown() {
 			mWindow->PopResizeCallback( mResizeCb );
 		}
 
+		eeSAFE_DELETE( mControl );
+
 		mOverControl = NULL;
 		mFocusControl = NULL;
-
-		eeSAFE_DELETE( mControl );
 
 		mInit = false;
 	}
@@ -135,7 +135,7 @@ cUIControl * cUIManager::LossFocusControl() const {
 }
 
 void cUIManager::FocusControl( cUIControl * Ctrl ) {
-	if ( NULL != Ctrl && Ctrl != mFocusControl ) {
+	if ( NULL != mFocusControl && NULL != Ctrl && Ctrl != mFocusControl ) {
 		mLossFocusControl = mFocusControl;
 
 		mFocusControl = Ctrl;
@@ -308,6 +308,32 @@ void cUIManager::SendMouseDown( cUIControl * ToCtrl, const eeVector2i& Pos, cons
 
 Window::cWindow * cUIManager::GetWindow() const {
 	return mWindow;
+}
+
+void cUIManager::SetFocusLastWindow( cUIWindow * window ) {
+	if ( !mWindowsList.empty() && window != mWindowsList.front() ) {
+		FocusControl( mWindowsList.front() );
+	}
+}
+
+void cUIManager::WindowAdd( cUIWindow * win ) {
+	if ( !WindowExists( win ) ) {
+		mWindowsList.push_front( win );
+	} else {
+		//! Send to front
+		mWindowsList.remove( win );
+		mWindowsList.push_front( win );
+	}
+}
+
+void cUIManager::WindowRemove( cUIWindow * win ) {
+	if ( WindowExists( win ) ) {
+		mWindowsList.remove( win );
+	}
+}
+
+bool cUIManager::WindowExists( cUIWindow * win ) {
+	return mWindowsList.end() != std::find( mWindowsList.begin(), mWindowsList.end(), win );
 }
 
 }}

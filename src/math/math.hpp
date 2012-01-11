@@ -63,6 +63,12 @@ eeDouble EE_API eeRound( eeDouble r );
 
 eeFloat EE_API eeRound( eeFloat r );
 
+#ifndef EE_64BIT
+eeDouble EE_API eeRoundUp( eeDouble r );
+#endif
+
+eeFloat EE_API eeRoundUp( eeFloat r );
+
 eeFloat EE_API LineAngle( const eeVector2f& p1, const eeVector2f& p2 );
 
 eeFloat EE_API RotatePointFromX ( const eeFloat& x, const eeFloat& y, const eeFloat& Angle );

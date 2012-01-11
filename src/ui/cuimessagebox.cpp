@@ -135,4 +135,12 @@ void cUIMessageBox::AutoSize() {
 	}
 }
 
+bool cUIMessageBox::Show() {
+	bool b = cUIWindow::Show();
+
+	mButtonOK->SetFocus();
+
+	return b;
+}
+
 }}

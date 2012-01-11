@@ -200,6 +200,8 @@ class EE_API cMapEditor {
 		void ZoomIn();
 
 		void ZoomOut();
+
+		void CreateNoLayerAlert( const String title );
 };
 
 }}}

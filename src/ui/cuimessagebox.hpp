@@ -36,6 +36,8 @@ class EE_API cUIMessageBox : public cUIWindow {
 		cUIPushButton *		ButtonOK() const;
 
 		cUIPushButton *		ButtonCancel() const;
+
+		virtual bool		Show();
 	protected:
 		UI_MSGBOX_TYPE		mMsgBoxType;
 		cUITextBox *		mTextBox;

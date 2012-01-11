@@ -76,6 +76,8 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 
 		cUIControl * LossFocusControl() const;
 	protected:
+		friend class cUIWindow;
+
 		Window::cWindow *			mWindow;
 		cInput *			mKM;
 		cUIWindow *			mControl;
@@ -83,6 +85,7 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 		cUIControl *		mOverControl;
 		cUIControl * 		mDownControl;
 		cUIControl *		mLossFocusControl;
+		std::list<cUIWindow*> mWindowsList;
 
 		eeFloat 			mElapsed;
 		Int32 				mCbId;
@@ -97,6 +100,16 @@ class EE_API cUIManager : public tSingleton<cUIManager> {
 		void				InputCallback( InputEvent * Event );
 
 		void				CheckTabPress( const Uint32& KeyCode );
+
+		void				SetActiveWindow( cUIWindow * window );
+
+		void				SetFocusLastWindow( cUIWindow * window  );
+
+		void				WindowAdd( cUIWindow * win );
+
+		void				WindowRemove( cUIWindow * win );
+
+		bool				WindowExists( cUIWindow * win );
 };
 
 }}

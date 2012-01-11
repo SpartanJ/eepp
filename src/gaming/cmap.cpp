@@ -323,8 +323,8 @@ void cMap::CalcTilesClip() {
 
 		mStartTile.x	= -foff.x / ( mTileSize.x * mScale ) - mExtraTiles.x;
 		mStartTile.y	= -foff.y / ( mTileSize.y * mScale ) - mExtraTiles.y;
-		mEndTile.x		= mStartTile.x + eeRound( (eeFloat)mViewSize.x / ( (eeFloat)mTileSize.x * mScale ) ) + 1 + mExtraTiles.x;
-		mEndTile.y		= mStartTile.y + eeRound( (eeFloat)mViewSize.y / ( (eeFloat)mTileSize.y * mScale ) ) + 1 + mExtraTiles.y;
+		mEndTile.x		= mStartTile.x + eeRoundUp( (eeFloat)mViewSize.x / ( (eeFloat)mTileSize.x * mScale ) ) + 1 + mExtraTiles.x;
+		mEndTile.y		= mStartTile.y + eeRoundUp( (eeFloat)mViewSize.y / ( (eeFloat)mTileSize.y * mScale ) ) + 1 + mExtraTiles.y;
 
 		if ( mStartTile.x < 0 )
 			mStartTile.x = 0;
@@ -877,6 +877,7 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 					}
 				}
 
+				//! Load the lights
 				if ( MapHdr.LightsCount ) {
 					CreateLightManager();
 
@@ -1168,6 +1169,7 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 			}
 		}
 
+		//! Saves the lights
 		if ( MapHdr.LightsCount && NULL != mLightManager ) {
 			cLightManager::LightsList& Lights = mLightManager->GetLights();
 
