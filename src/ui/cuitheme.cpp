@@ -506,14 +506,14 @@ cUITextEdit * cUITheme::CreateTextEdit( cUIControl * Parent, const eeSize& Size,
 	return Ctrl;
 }
 
-cUITextInput * cUITheme::CreateTextInput( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool SupportFreeEditing, Uint32 MaxLenght ) {
+cUITextInput * cUITheme::CreateTextInput( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool SupportFreeEditing, Uint32 MaxLength ) {
 	cUITextInput::CreateParams TextInputParams;
 	TextInputParams.Parent( Parent );
 	TextInputParams.PosSet( Pos );
 	TextInputParams.SizeSet( Size );
 	TextInputParams.Flags = Flags;
 	TextInputParams.SupportFreeEditing = SupportFreeEditing;
-	TextInputParams.MaxLenght = MaxLenght;
+	TextInputParams.MaxLength = MaxLength;
 	cUITextInput * Ctrl = eeNew( cUITextInput, ( TextInputParams ) );
 	Ctrl->Visible( true );
 	Ctrl->Enabled( true );

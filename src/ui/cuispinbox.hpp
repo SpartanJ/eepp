@@ -15,7 +15,7 @@ class EE_API cUISpinBox : public cUIComplexControl {
 					DefaultValue( 0.f ),
 					AllowDotsInNumbers( false )
 				{
-					MaxLenght = 24;
+					MaxLength = 24;
 				}
 
 				inline ~CreateParams() {}

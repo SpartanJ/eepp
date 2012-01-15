@@ -24,7 +24,7 @@ class EE_API cInputTextBuffer {
 	public:
 		typedef cb::Callback0<void> EnterCallback;
 
-		cInputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, Window::cWindow * window = NULL, const Uint32& maxLenght = INPUT_LENGHT_MAX );
+		cInputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, Window::cWindow * window = NULL, const Uint32& maxLength = INPUT_LENGHT_MAX );
 
 		cInputTextBuffer( Window::cWindow * window = NULL );
 
@@ -96,11 +96,11 @@ class EE_API cInputTextBuffer {
 		/** Push the char you want to ignore */
 		void PushIgnoredChar( const Uint32& ch );
 
-		/** Set the new max lenght */
-		void MaxLenght( const Uint32& Max );
+		/** Set the new max length */
+		void MaxLength( const Uint32& Max );
 
-		/** @return The Max Lenght */
-		const Uint32& MaxLenght() const;
+		/** @return The Max Length */
+		const Uint32& MaxLength() const;
 
 		/** Support copy paste */
 		void SupportCopyPaste( const bool& support );
@@ -117,7 +117,7 @@ class EE_API cInputTextBuffer {
 		Uint32				mCallback;
 		eeInt				mPromptPos;
 		EnterCallback		mEnterCall;
-		Uint32				mMaxLenght;
+		Uint32				mMaxLength;
 		std::vector<Uint32>	mIgnoredChars;
 
 		void AutoPrompt( const bool& set );

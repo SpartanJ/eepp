@@ -172,6 +172,7 @@ public :
     template <typename In, typename Out>
     static Out ToAnsi(In begin, In end, Out output, char replacement = 0, const std::locale& locale = std::locale());
 
+#if EE_PLATFORM != EE_PLATFORM_ANDROID
     ////////////////////////////////////////////////////////////
     /// \brief Convert an UTF-8 characters range to wide characters
     ///
@@ -185,6 +186,7 @@ public :
     ////////////////////////////////////////////////////////////
     template <typename In, typename Out>
     static Out ToWide(In begin, In end, Out output, wchar_t replacement = 0);
+#endif
 
     ////////////////////////////////////////////////////////////
     /// \brief Convert an UTF-8 characters range to latin-1 (ISO-5589-1) characters
@@ -380,6 +382,7 @@ public :
     template <typename In, typename Out>
     static Out ToAnsi(In begin, In end, Out output, char replacement = 0, const std::locale& locale = std::locale());
 
+#if EE_PLATFORM != EE_PLATFORM_ANDROID
     ////////////////////////////////////////////////////////////
     /// \brief Convert an UTF-16 characters range to wide characters
     ///
@@ -393,6 +396,7 @@ public :
     ////////////////////////////////////////////////////////////
     template <typename In, typename Out>
     static Out ToWide(In begin, In end, Out output, wchar_t replacement = 0);
+#endif
 
     ////////////////////////////////////////////////////////////
     /// \brief Convert an UTF-16 characters range to latin-1 (ISO-5589-1) characters
@@ -589,6 +593,7 @@ public :
     template <typename In, typename Out>
     static Out ToAnsi(In begin, In end, Out output, char replacement = 0, const std::locale& locale = std::locale());
 
+#if EE_PLATFORM != EE_PLATFORM_ANDROID
     ////////////////////////////////////////////////////////////
     /// \brief Convert an UTF-32 characters range to wide characters
     ///
@@ -602,6 +607,7 @@ public :
     ////////////////////////////////////////////////////////////
     template <typename In, typename Out>
     static Out ToWide(In begin, In end, Out output, wchar_t replacement = 0);
+#endif
 
     ////////////////////////////////////////////////////////////
     /// \brief Convert an UTF-16 characters range to latin-1 (ISO-5589-1) characters
@@ -710,6 +716,7 @@ public :
     template <typename Out>
     static Out EncodeAnsi(Uint32 codepoint, Out output, char replacement = 0, const std::locale& locale = std::locale());
 
+#if EE_PLATFORM != EE_PLATFORM_ANDROID
     ////////////////////////////////////////////////////////////
     /// \brief Encode a single UTF-32 character to wide
     ///
@@ -726,6 +733,7 @@ public :
     ////////////////////////////////////////////////////////////
     template <typename Out>
     static Out EncodeWide(Uint32 codepoint, Out output, wchar_t replacement = 0);
+#endif
 };
 
 #include "utf.inl"

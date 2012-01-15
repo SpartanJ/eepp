@@ -30,7 +30,7 @@ cUITextEdit::cUITextEdit( cUITextEdit::CreateParams& Params ) :
 	TIParams.Parent( this );
 	TIParams.Size				= mSize;
 	TIParams.Flags				= UI_VALIGN_TOP | UI_HALIGN_LEFT | extraFlags;
-	TIParams.MaxLenght			= 1024 * 1024 * 10;
+	TIParams.MaxLength			= 1024 * 1024 * 10;
 	TIParams.Font				= Params.Font;
 	TIParams.FontColor			= Params.FontColor;
 	TIParams.FontShadowColor	= Params.FontShadowColor;

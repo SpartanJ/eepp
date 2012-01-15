@@ -170,6 +170,7 @@ Out Utf<8>::ToAnsi(In begin, In end, Out output, char replacement, const std::lo
     return output;
 }
 
+#if EE_PLATFORM != EE_PLATFORM_ANDROID
 template <typename In, typename Out>
 Out Utf<8>::ToWide(In begin, In end, Out output, wchar_t replacement)
 {
@@ -182,6 +183,7 @@ Out Utf<8>::ToWide(In begin, In end, Out output, wchar_t replacement)
 
     return output;
 }
+#endif
 
 template <typename In, typename Out>
 Out Utf<8>::ToLatin1(In begin, In end, Out output, char replacement)
@@ -374,6 +376,7 @@ Out Utf<16>::ToAnsi(In begin, In end, Out output, char replacement, const std::l
     return output;
 }
 
+#if EE_PLATFORM != EE_PLATFORM_ANDROID
 template <typename In, typename Out>
 Out Utf<16>::ToWide(In begin, In end, Out output, wchar_t replacement)
 {
@@ -386,6 +389,7 @@ Out Utf<16>::ToWide(In begin, In end, Out output, wchar_t replacement)
 
     return output;
 }
+#endif
 
 template <typename In, typename Out>
 Out Utf<16>::ToLatin1(In begin, In end, Out output, char replacement)
@@ -500,6 +504,7 @@ Out Utf<32>::ToAnsi(In begin, In end, Out output, char replacement, const std::l
     return output;
 }
 
+#if EE_PLATFORM != EE_PLATFORM_ANDROID
 template <typename In, typename Out>
 Out Utf<32>::ToWide(In begin, In end, Out output, wchar_t replacement)
 {
@@ -508,6 +513,7 @@ Out Utf<32>::ToWide(In begin, In end, Out output, wchar_t replacement)
 
     return output;
 }
+#endif
 
 template <typename In, typename Out>
 Out Utf<32>::ToLatin1(In begin, In end, Out output, char replacement)
@@ -621,6 +627,7 @@ Out Utf<32>::EncodeAnsi(Uint32 codepoint, Out output, char replacement, const st
     #endif
 }
 
+#if EE_PLATFORM != EE_PLATFORM_ANDROID
 template <typename Out>
 Out Utf<32>::EncodeWide(Uint32 codepoint, Out output, wchar_t replacement)
 {
@@ -654,3 +661,4 @@ Out Utf<32>::EncodeWide(Uint32 codepoint, Out output, wchar_t replacement)
 
     return output;
 }
+#endif

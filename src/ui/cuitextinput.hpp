@@ -14,14 +14,14 @@ class EE_API cUITextInput : public cUITextBox {
 				inline CreateParams() :
 					cUITextBox::CreateParams(),
 					SupportFreeEditing( true ),
-					MaxLenght( 256 )
+					MaxLength( 256 )
 				{
 				}
 
 				inline ~CreateParams() {}
 
 				bool SupportFreeEditing;
-				Uint32 MaxLenght;
+				Uint32 MaxLength;
 		};
 
 		cUITextInput( const cUITextInput::CreateParams& Params );

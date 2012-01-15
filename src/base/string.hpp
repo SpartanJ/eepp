@@ -62,10 +62,12 @@ class EE_API String {
 	**/
 	String( char ansiChar, const std::locale& locale = std::locale() );
 
+#if EE_PLATFORM != EE_PLATFORM_ANDROID
 	/** @brief Construct from single wide character
 	** @param wideChar Wide character to convert
 	**/
 	String( wchar_t wideChar );
+#endif
 
 	/** @brief Construct from single UTF-32 character
 	** @param utf32Char UTF-32 character to convert
@@ -90,6 +92,7 @@ class EE_API String {
 	**/
 	String( const std::string& ansiString, const std::locale& locale = std::locale() );
 
+#if EE_PLATFORM != EE_PLATFORM_ANDROID
 	/** @brief Construct from null-terminated C-style wide string
 	** @param wideString Wide string to convert
 	**/
@@ -99,6 +102,7 @@ class EE_API String {
 	** @param wideString Wide string to convert
 	**/
 	String( const std::wstring& wideString );
+#endif
 
 	/** @brief Construct from a null-terminated C-style UTF-32 string
 	** @param utf32String UTF-32 string to assign
@@ -128,6 +132,7 @@ class EE_API String {
 	**/
 	operator std::string() const;
 
+#if EE_PLATFORM != EE_PLATFORM_ANDROID
 	/** @brief Implicit cast operator to String (wide string)
 	** Characters that do not fit in the target encoding are
 	** discarded from the returned string.
@@ -137,6 +142,7 @@ class EE_API String {
 	** @see ToWideString, operator std::string
 	**/
 	operator std::wstring() const;
+#endif
 
 	/** @brief Convert the unicode string to an ANSI string
 	** The UTF-32 string is converted to an ANSI string in
@@ -151,6 +157,7 @@ class EE_API String {
 	**/
 	std::string ToAnsiString( const std::locale& locale = std::locale() ) const;
 
+#if EE_PLATFORM != EE_PLATFORM_ANDROID
 	/** @brief Convert the unicode string to a wide string
 	** Characters that do not fit in the target encoding are
 	** discarded from the returned string.
@@ -158,6 +165,7 @@ class EE_API String {
 	** @see ToAnsiString, operator String
 	**/
 	String ToWideString() const;
+#endif
 
 	std::string ToUtf8() const;
 

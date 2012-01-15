@@ -1,3 +1,4 @@
+#include <cctype>
 #include "string.hpp"
 
 namespace EE { namespace Utils {

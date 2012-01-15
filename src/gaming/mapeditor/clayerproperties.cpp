@@ -165,7 +165,7 @@ cUIGridCell * cLayerProperties::CreateCell() {
 
 	cUITextInput::CreateParams TxtInputParams;
 	TxtInputParams.Flags = UI_CLIP_ENABLE | UI_VALIGN_CENTER | UI_AUTO_PADDING;
-	TxtInputParams.MaxLenght = LAYER_NAME_SIZE;
+	TxtInputParams.MaxLength = LAYER_NAME_SIZE;
 
 	cUIComplexControl::CreateParams CControl;
 

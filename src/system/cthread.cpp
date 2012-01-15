@@ -71,8 +71,11 @@ void cThread::Terminate() {
 
 		#elif defined( EE_PLATFORM_POSIX )
 
-		pthread_cancel( mThread );
-
+			#ifndef ANDROID
+				pthread_cancel( mThread );
+			#else
+				pthread_kill( mThread , SIGUSR1 );
+			#endif
 		#endif
 
 		mIsActive = false;
@@ -105,7 +108,9 @@ void * cThread::EntryPoint( void * userData ) {
 	cThread * owner = static_cast<cThread*>( userData );
 
 	// Tell the thread to handle cancel requests immediatly
+	#ifdef PTHREAD_CANCEL_ASYNCHRONOUS
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+	#endif
 
 	// Forward to the owner
 	owner->Run();

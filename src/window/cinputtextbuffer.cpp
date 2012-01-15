@@ -4,12 +4,12 @@
 
 namespace EE { namespace Window {
 
-cInputTextBuffer::cInputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, Window::cWindow * window, const Uint32& maxLenght ) :
+cInputTextBuffer::cInputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, Window::cWindow * window, const Uint32& maxLength ) :
 	mWindow( window ),
 	mFlags(0),
 	mCallback(0),
 	mPromptPos(0),
-	mMaxLenght(INPUT_LENGHT_MAX)
+	mMaxLength(INPUT_LENGHT_MAX)
 {
 	if ( NULL == mWindow ) {
 		mWindow = cEngine::instance()->GetCurrentWindow();
@@ -25,7 +25,7 @@ cInputTextBuffer::cInputTextBuffer( const bool& active, const bool& supportNewLi
 
 	SupportCopyPaste( true );
 
-	mMaxLenght = maxLenght;
+	mMaxLength = maxLength;
 }
 
 cInputTextBuffer::cInputTextBuffer( cWindow * window ) :
@@ -33,7 +33,7 @@ cInputTextBuffer::cInputTextBuffer( cWindow * window ) :
 	mFlags(0),
 	mCallback(0),
 	mPromptPos(0),
-	mMaxLenght(INPUT_LENGHT_MAX)
+	mMaxLength(INPUT_LENGHT_MAX)
 {
 	if ( NULL == mWindow ) {
 		mWindow = cEngine::instance()->GetCurrentWindow();
@@ -160,7 +160,7 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 							if ( txt.size() ) {
 								ChangedSinceLastUpdate( true );
 
-								if ( mText.size() + txt.size() < mMaxLenght ) {
+								if ( mText.size() + txt.size() < mMaxLength ) {
 									if ( AutoPrompt() ) {
 										mText += txt;
 										mPromptPos = (eeInt)mText.size();
@@ -462,18 +462,18 @@ void cInputTextBuffer::PushIgnoredChar( const Uint32& ch ) {
 }
 
 bool cInputTextBuffer::CanAdd() {
-	return mText.size() < mMaxLenght;
+	return mText.size() < mMaxLength;
 }
 
-void cInputTextBuffer::MaxLenght( const Uint32& Max ) {
-	mMaxLenght = Max;
+void cInputTextBuffer::MaxLength( const Uint32& Max ) {
+	mMaxLength = Max;
 
-	if ( mText.size() > mMaxLenght )
-		mText.resize( mMaxLenght );
+	if ( mText.size() > mMaxLength )
+		mText.resize( mMaxLength );
 }
 
-const Uint32& cInputTextBuffer::MaxLenght() const {
-	return mMaxLenght;
+const Uint32& cInputTextBuffer::MaxLength() const {
+	return mMaxLength;
 }
 
 String cInputTextBuffer::Buffer() const {

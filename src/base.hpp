@@ -50,6 +50,8 @@
 		#define EE_PLATFORM EE_PLATFORM_MACOSX
 	#endif
 
+#elif defined( __ANDROID__ ) || defined( ANDROID )
+	#define EE_PLATFORM EE_PLATFORM_ANDROID
 #elif defined ( linux ) || defined( __linux__ )
 	#define EE_PLATFORM EE_PLATFORM_LINUX
 #elif defined( __FreeBSD__ ) || defined(__OpenBSD__) || defined( __NetBSD__ ) || defined( __DragonFly__ )
@@ -58,19 +60,17 @@
 	#define EE_PLATFORM EE_PLATFORM_SOLARIS
 #elif defined( __HAIKU__ ) || defined( __BEOS__ )
 	#define EE_PLATFORM EE_PLATFORM_HAIKU
-#elif defined( __ANDROID__ ) || defined( ANDROID )
-	#define EE_PLATFORM EE_PLATFORM_ANDROID
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	#if !defined( EE_GLES1 ) && !defined( EE_GLES2 )
-		#define EE_GLES1
+		#define EE_GLES2
 	#endif
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_IOS
 	#if !defined( EE_GLES1 ) && !defined( EE_GLES2 )
-		#define EE_GLES1
+		#define EE_GLES2
 	#endif
 #endif
 

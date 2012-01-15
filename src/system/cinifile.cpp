@@ -1,3 +1,4 @@
+#include <cctype>
 #include "cinifile.hpp"
 #include "cpackmanager.hpp"
 

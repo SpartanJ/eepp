@@ -5,7 +5,7 @@
 	#include <CoreFoundation/CoreFoundation.h>
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	#include <windows.h>
-#elif EE_PLATFORM == EE_PLATFORM_LINUX
+#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
 	#include <libgen.h>
 	#include <unistd.h>
 #elif EE_PLATFORM == EE_PLATFORM_HAIKU
