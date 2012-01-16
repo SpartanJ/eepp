@@ -1,0 +1,3 @@
+inside jni folder add symbolic link to src ( from the parent parent folder, the engine src folder, not the folder with the java file )
+then
+inside src/helper/android/sdl-1.3/include/ add a symbolic link to the same folder in a subfolder called SDL ( ln -s . SDL )

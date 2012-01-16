@@ -43,12 +43,16 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 		SDL_GetDesktopDisplayMode( 0, &dpm );
 
 		mWindow.DesktopResolution = eeSize( dpm.w, dpm.h );
+		
+		#if EE_PLATFORM == EE_PLATFORM_ANDROID
+			mWindow.WindowConfig.Style = WindowStyle::Fullscreen | WindowStyle::UseDesktopResolution;
+		#endif
 
 		if ( mWindow.WindowConfig.Style & WindowStyle::UseDesktopResolution ) {
 			mWindow.WindowConfig.Width	= mWindow.DesktopResolution.Width();
 			mWindow.WindowConfig.Height	= mWindow.DesktopResolution.Height();
 		}
-
+		
 		mWindow.Flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
 
 		if ( mWindow.WindowConfig.Style & WindowStyle::Resize ) {
@@ -66,7 +70,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 		if ( mWindow.WindowConfig.Style & WindowStyle::Fullscreen ) {
 			mTmpFlags |= SDL_WINDOW_FULLSCREEN;
 		}
-
+		
 		mSDLWindow = SDL_CreateWindow( mWindow.WindowConfig.Caption.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, mTmpFlags );
 
 		mWindow.WindowSize = eeSize( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
@@ -75,7 +79,19 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 			cLog::instance()->Write( "Unable to create window: " + std::string( SDL_GetError() ) );
 			return false;
 		}
-
+		
+		#if EE_PLAFORM == EE_PLATFORM_ANDROID
+			#ifdef EE_GLES1
+				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
+				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+			#endif
+			
+			#ifdef EE_GLES2
+				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+			#endif
+		#endif
+		
 		mGLContext = SDL_GL_CreateContext( mSDLWindow );
 
 		if ( NULL == mGLContext ) {
@@ -89,6 +105,10 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 			cGL::CreateSingleton( mWindow.ContextConfig.Version );
 			cGL::instance()->Init();
 		}
+		
+		#if EE_PLAFORM == EE_PLATFORM_ANDROID && ( defined( EE_GLES1 ) || defined( EE_GLES2 ) )
+			SDL_GL_MakeCurrent( mSDLWindow, mGLContext );
+		#endif
 
 		CreatePlatform();
 
@@ -292,7 +312,7 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	}
 }
 
-void cWindowSDL::SwapBuffers() {
+void cWindowSDL::SwapBuffers() {	
 	SDL_GL_SwapWindow( mSDLWindow );
 }
 

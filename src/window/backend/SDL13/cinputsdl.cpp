@@ -282,8 +282,10 @@ void cInputSDL::Init() {
 	mMousePos.y = (eeInt)mTempMouse.y;
 
 	InitializeTables();
-
+	
+	#if EE_PLATFORM != EE_PLATFORM_ANDROID
 	mJoystickManager->Open();
+	#endif
 }
 
 void cInputSDL::InitializeTables() {
