@@ -71,7 +71,7 @@ void cThread::Terminate() {
 
 		#elif defined( EE_PLATFORM_POSIX )
 
-			#ifndef ANDROID
+			#if EE_PLATFORM != EE_PLATFORM_ANDROID
 				pthread_cancel( mThread );
 			#else
 				pthread_kill( mThread , SIGUSR1 );

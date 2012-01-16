@@ -15,7 +15,7 @@ String::String(char ansiChar, const std::locale& locale)
     mString += Utf32::DecodeAnsi(ansiChar, locale);
 }
 
-#if EE_PLATFORM != EE_PLATFORM_ANDROID
+#ifndef EE_NO_WIDECHAR
 String::String(wchar_t wideChar)
 {
     mString += Utf32::DecodeWide(wideChar);
@@ -46,7 +46,7 @@ String::String(const std::string& ansiString, const std::locale& locale)
     Utf32::FromAnsi(ansiString.begin(), ansiString.end(), std::back_inserter(mString), locale);
 }
 
-#if EE_PLATFORM != EE_PLATFORM_ANDROID
+#ifndef EE_NO_WIDECHAR
 String::String(const wchar_t* wideString)
 {
     if (wideString)
@@ -99,7 +99,7 @@ String::operator std::string() const
     return ToAnsiString();
 }
 
-#if EE_PLATFORM != EE_PLATFORM_ANDROID
+#ifndef EE_NO_WIDECHAR
 String::operator std::wstring() const
 {
     return ToWideString();
@@ -118,7 +118,7 @@ std::string String::ToAnsiString(const std::locale& locale) const
     return output;
 }
 
-#if EE_PLATFORM != EE_PLATFORM_ANDROID
+#ifndef EE_NO_WIDECHAR
 String String::ToWideString() const
 {
     // Prepare the output string

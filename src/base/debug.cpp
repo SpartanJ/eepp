@@ -30,7 +30,7 @@ void eeREPORT_ASSERT( const char * File, int Line, const char * Exp ) {
 	if ( PrintDebugInLog )
 		cLog::instance()->Writef( "ASSERT: %s file:%s line:%d", Exp, File, Line );
 
-	#if defined(EE_COMPILER_GCC) && defined(EE_32BIT)
+	#if defined(EE_COMPILER_GCC) && defined(EE_32BIT) && !defined(EE_ARM)
 	asm("int3");
 	#else
 	assert( false );

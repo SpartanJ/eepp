@@ -62,13 +62,7 @@
 	#define EE_PLATFORM EE_PLATFORM_HAIKU
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-	#if !defined( EE_GLES1 ) && !defined( EE_GLES2 )
-		#define EE_GLES2
-	#endif
-#endif
-
-#if EE_PLATFORM == EE_PLATFORM_IOS
+#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
 	#if !defined( EE_GLES1 ) && !defined( EE_GLES2 )
 		#define EE_GLES2
 	#endif
@@ -95,6 +89,28 @@
 	#define EE_COMPILER_GCC
 #endif
 
+#if defined(arm) || defined(__arm__)
+	#define	EE_ARM
+#endif
+
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+	#define EE_NO_WIDECHAR
+
+	#define main	SDL_main
+
+	#ifndef EE_MAIN_FUNC
+		#ifdef __cplusplus
+			#define EE_MAIN_FUNC extern "C"
+		#else
+			#define EE_MAIN_FUNC
+		#endif
+	#endif
+#else
+	#ifndef EE_MAIN_FUNC
+		#define EE_MAIN_FUNC
+	#endif
+#endif
+
 #ifndef EE_DEBUG
 	#if defined( DEBUG ) || defined( _DEBUG ) || defined( __DEBUG ) || defined( __DEBUG__ )
 		#define EE_DEBUG
@@ -118,6 +134,8 @@
 
 #ifdef EE_PLATFORM
 	#define EE_SUPPORTED_PLATFORM
+#else
+	#error Platform not supported
 #endif
 
 #if ( __GNUC__ >= 4 ) && defined( EE_DYNAMIC ) && defined( EE_EXPORTS )

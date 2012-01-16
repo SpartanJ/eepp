@@ -389,6 +389,8 @@ std::string GetProcessPath() {
 	}
 
 	return FileRemoveFileName( std::string( info.name ) );
+#elif EE_PLATFORM == EE_PLATFORM_ANDROID
+	return "/sdcard/";
 #else
 	#warning GetProcessPath() not implemented on this platform. ( will return "./" )
 	return "./";

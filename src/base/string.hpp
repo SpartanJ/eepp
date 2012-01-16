@@ -62,7 +62,7 @@ class EE_API String {
 	**/
 	String( char ansiChar, const std::locale& locale = std::locale() );
 
-#if EE_PLATFORM != EE_PLATFORM_ANDROID
+#ifndef EE_NO_WIDECHAR
 	/** @brief Construct from single wide character
 	** @param wideChar Wide character to convert
 	**/
@@ -92,7 +92,7 @@ class EE_API String {
 	**/
 	String( const std::string& ansiString, const std::locale& locale = std::locale() );
 
-#if EE_PLATFORM != EE_PLATFORM_ANDROID
+#ifndef EE_NO_WIDECHAR
 	/** @brief Construct from null-terminated C-style wide string
 	** @param wideString Wide string to convert
 	**/
@@ -132,7 +132,7 @@ class EE_API String {
 	**/
 	operator std::string() const;
 
-#if EE_PLATFORM != EE_PLATFORM_ANDROID
+#ifndef EE_NO_WIDECHAR
 	/** @brief Implicit cast operator to String (wide string)
 	** Characters that do not fit in the target encoding are
 	** discarded from the returned string.
@@ -157,7 +157,7 @@ class EE_API String {
 	**/
 	std::string ToAnsiString( const std::locale& locale = std::locale() ) const;
 
-#if EE_PLATFORM != EE_PLATFORM_ANDROID
+#ifndef EE_NO_WIDECHAR
 	/** @brief Convert the unicode string to a wide string
 	** Characters that do not fit in the target encoding are
 	** discarded from the returned string.

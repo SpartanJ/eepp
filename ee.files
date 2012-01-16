@@ -815,3 +815,4 @@ src/bnb/cgamedata.cpp
 src/bnb/cgameobjectdoor.hpp
 src/bnb/cgameobjectdoor.cpp
 src/audio/openal.cpp
+src/test/empty_window/empty_window.cpp

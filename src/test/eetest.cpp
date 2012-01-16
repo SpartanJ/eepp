@@ -1792,7 +1792,7 @@ void cEETest::End() {
 	cEngine::DestroySingleton();
 }
 
-int main (int argc, char * argv []) {
+EE_MAIN_FUNC int main (int argc, char * argv []) {
 	cEETest * Test = eeNew( cEETest, () );
 
 	Test->Process();
