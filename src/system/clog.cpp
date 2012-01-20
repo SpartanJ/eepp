@@ -5,7 +5,8 @@ namespace EE { namespace System {
 cLog::cLog() :
 	mSave( false ),
 	mConsoleOutput( false ),
-	mLiveWrite( false )
+	mLiveWrite( false ),
+	mFS( NULL )
 {
 	Write("...::: Entropia Engine++ Loaded :::...");
 	Write( "Loaded on " + GetDateTimeStr() );
@@ -13,16 +14,15 @@ cLog::cLog() :
 
 cLog::~cLog() {
 	Write( "\nUnloaded on " + GetDateTimeStr(), false );
-	Write( "...::: Entropia Engine++ Unloaded :::..." );
+	Write( "...::: Entropia Engine++ Unloaded :::...\n" );
 
 	if ( mSave && !mLiveWrite ) {
         openfs();
-		mFS << mData << std::endl;
+
+		mFS->Write( mData.c_str(), mData.size() );
 	}
 
-	if ( mFS.is_open() ) {
-        mFS.close();
-	}
+	eeSAFE_DELETE( mFS );
 }
 
 void cLog::Save( const std::string& filepath ) {
@@ -52,17 +52,24 @@ void cLog::Write( const std::string& Text, const bool& newLine ) {
 
 	if ( mLiveWrite ) {
         openfs();
-		mFS << Text << std::endl;
+
+		mFS->Write( Text.c_str(), Text.size() );
+
+		if ( newLine ) {
+			mFS->Write( "\n", 1 );
+		}
 	}
 }
 
 void cLog::openfs() {
-	if ( mFilePath.empty() )
+	if ( mFilePath.empty() ) {
 		mFilePath = GetProcessPath();
+	}
 
-    if ( !mFS.is_open() ) {
+	if ( NULL == mFS ) {
         std::string str = mFilePath + "log.log";
-        mFS.open( str.c_str(), std::ios::app );
+
+		mFS = eeNew( cIOStreamFile, ( str, std::ios::app | std::ios::out | std::ios::binary ) );
     }
 }
 
@@ -94,7 +101,10 @@ void cLog::Writef( const char* format, ... ) {
 
             if ( mLiveWrite ) {
                 openfs();
-                mFS << tstr << std::endl;
+
+				tstr += '\n';
+
+				mFS->Write( tstr.c_str(), tstr.size() );
             }
 
 			return;

@@ -1,4 +1,5 @@
 #include "crc4.hpp"
+#include "ciostreamfile.hpp"
 
 namespace EE { namespace System {
 
@@ -60,7 +61,6 @@ void cRC4::EncryptString( std::string& buffer ) {
 }
 
 bool cRC4::EncryptFile( const std::string& SourceFile, const std::string& DestFile ) {
-	std::fstream fs;
 	std::vector<Uint8> tmpv;
 
 	if ( !FileExists( SourceFile ) )
@@ -68,22 +68,19 @@ bool cRC4::EncryptFile( const std::string& SourceFile, const std::string& DestFi
 
 	tmpv.resize( FileSize( SourceFile ) );
 
-	fs.open( SourceFile.c_str() , std::ios::in | std::ios::out | std::ios::binary );
-	fs.read( reinterpret_cast<char*>(&tmpv[0]), (std::streamsize)tmpv.size() );
+	cIOStreamFile fs( SourceFile, std::ios::in | std::ios::out | std::ios::binary );
+
+	fs.Read( reinterpret_cast<char*>(&tmpv[0]), (std::streamsize)tmpv.size() );
 
 	EncryptByte( tmpv );
 
 	if ( SourceFile != DestFile ) {
-		std::fstream fs2;
-		fs2.open( DestFile.c_str() , std::ios::out | std::ios::binary );
-		fs2.write( reinterpret_cast<const char*>( &tmpv[0] ), (std::streamsize)tmpv.size() );
-		fs2.close();
+		cIOStreamFile fs2( DestFile, std::ios::out | std::ios::binary );
+		fs2.Write( reinterpret_cast<const char*>( &tmpv[0] ), (std::streamsize)tmpv.size() );
 	} else {
-		fs.seekg( 0, std::ios::beg );
-		fs.write( reinterpret_cast<const char*>( &tmpv[0] ), (std::streamsize)tmpv.size() );
+		fs.Seek( 0 );
+		fs.Write( reinterpret_cast<const char*>( &tmpv[0] ), (std::streamsize)tmpv.size() );
 	}
-
-	fs.close();
 
 	return true;
 }

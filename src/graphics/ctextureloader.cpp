@@ -1,6 +1,7 @@
 #include "ctextureloader.hpp"
 #include "ctexturefactory.hpp"
 #include "glhelper.hpp"
+#include "../system/ciostreamfile.hpp"
 
 namespace EE { namespace Graphics {
 
@@ -155,11 +156,13 @@ void cTextureLoader::LoadFromPath() {
 			mIsDDS = 0 != stbi_dds_test_filename( mFilepath.c_str() );
 
 		if ( mIsDDS ) {
-			std::fstream fs ( mFilepath.c_str() , std::ios::in | std::ios::binary );
+			cIOStreamFile fs( mFilepath , std::ios::in | std::ios::binary );
+
 			mSize = FileSize( mFilepath );
+
 			mPixels = (Uint8*) eeMalloc( mSize );
-			fs.read( reinterpret_cast<char*> ( mPixels ), mSize );
-			fs.close();
+
+			fs.Read( reinterpret_cast<char*> ( mPixels ), mSize );
 
 			stbi_dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsDDSCompressed );
 		} else {

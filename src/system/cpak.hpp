@@ -4,6 +4,7 @@
 #include "base.hpp"
 #include "cpack.hpp"
 #include "clog.hpp"
+#include "ciostreamfile.hpp"
 
 namespace EE { namespace System {
 
@@ -80,15 +81,14 @@ class EE_API cPak : public cPack {
 		} pakEntry;	//! The stored file info
 
 		typedef struct pakfile_t {
-			std::fstream fs;
+			cIOStreamFile * fs;
 			pakHeader header;
 			Uint32 pakFilesNum;
 			std::string pakPath;
 		} pakFile;
 
-		pakFile myPak;
-
-		std::vector<pakEntry> pakFiles;
+		pakFile					mPak;
+		std::vector<pakEntry>	mPakFiles;
 };
 
 }}

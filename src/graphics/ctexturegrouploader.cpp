@@ -278,21 +278,19 @@ bool cTextureGroupLoader::UpdateTextureAtlas() {
 		}
 	}
 
-	std::fstream fs ( mTextureGroupPath.c_str() , std::ios::out | std::ios::binary );
+	cIOStreamFile fs( mTextureGroupPath, std::ios::out | std::ios::binary );
 
-	if ( fs.is_open() ) {
-		fs.write( reinterpret_cast<char*> (&mTexGrHdr), sizeof(sTextureGroupHdr) );
+	if ( fs.IsOpen() ) {
+		fs.Write( reinterpret_cast<char*> (&mTexGrHdr), sizeof(sTextureGroupHdr) );
 
 		for ( Uint32 z = 0; z < mTempGroups.size(); z++ ) {
 			sTempTexGroup * tTexGroup 	= &mTempGroups[z];
 			sTextureHdr * tTexHdr 		= &tTexGroup->Texture;
 
-			fs.write( reinterpret_cast<char*> ( tTexHdr ), sizeof(sTextureHdr) );
+			fs.Write( reinterpret_cast<char*> ( tTexHdr ), sizeof(sTextureHdr) );
 
-			fs.write( reinterpret_cast<char*> ( &tTexGroup->Shapes[0] ), sizeof(sShapeHdr) * (std::streamsize)tTexGroup->Shapes.size() );
+			fs.Write( reinterpret_cast<char*> ( &tTexGroup->Shapes[0] ), sizeof(sShapeHdr) * (std::streamsize)tTexGroup->Shapes.size() );
 		}
-
-		fs.close();
 
 		return true;
 	}
@@ -387,12 +385,13 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 			tp.Save( tapath, (EE_SAVE_TYPE)mTexGrHdr.Format );
 		} else if ( 1 == NeedUpdate ) {
 			std::string etgpath = FileRemoveExtension( tapath ) + ".etg";
-			std::fstream fs ( etgpath.c_str() , std::ios::out | std::ios::binary );
 
-			if ( !fs.is_open() )
+			cIOStreamFile fs( etgpath , std::ios::out | std::ios::binary );
+
+			if ( !fs.IsOpen() )
 				return false;
 
-			fs.write( reinterpret_cast<const char*> (&mTexGrHdr), sizeof(sTextureGroupHdr) );
+			fs.Write( reinterpret_cast<const char*> (&mTexGrHdr), sizeof(sTextureGroupHdr) );
 
 			for ( Uint32 z = 0; z < mTempGroups.size(); z++ ) {
 				if ( z != 0 ) {
@@ -408,7 +407,7 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 					sTempTexGroup * tTexGroup 	= &mTempGroups[z];
 					sTextureHdr * tTexHdr 		= &tTexGroup->Texture;
 
-					fs.write( reinterpret_cast<const char*> (tTexHdr), sizeof(sTextureHdr) );
+					fs.Write( reinterpret_cast<const char*> (tTexHdr), sizeof(sTextureHdr) );
 
 					for ( Int32 i = 0; i < tTexHdr->ShapeCount; i++ ) {
 						sShapeHdr * tSh = &tTexGroup->Shapes[i];
@@ -435,7 +434,7 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 						}
 					}
 
-					fs.write( reinterpret_cast<const char*> (&tTexGroup->Shapes[0]), sizeof(sShapeHdr) * tTexHdr->ShapeCount );
+					fs.Write( reinterpret_cast<const char*> (&tTexGroup->Shapes[0]), sizeof(sShapeHdr) * tTexHdr->ShapeCount );
 
 					Img.SaveToFile( tapath, (EE_SAVE_TYPE)mTexGrHdr.Format );
 
@@ -445,8 +444,6 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 				else
 					return false; // fatal error
 			}
-
-			fs.close();
 		}
 	}
 

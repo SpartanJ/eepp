@@ -3,6 +3,7 @@
 
 #include "base.hpp"
 #include "tsingleton.hpp"
+#include "ciostreamfile.hpp"
 
 namespace EE { namespace System {
 
@@ -29,11 +30,12 @@ class EE_API cLog : public tSingleton<cLog> {
 	protected:
 		cLog();
 	private:
-		std::string mData, mFilePath;
-		bool mSave;
-		bool mConsoleOutput;
-		bool mLiveWrite;
-		std::ofstream mFS;
+		std::string		mData;
+		std::string		mFilePath;
+		bool			mSave;
+		bool			mConsoleOutput;
+		bool			mLiveWrite;
+		cIOStreamFile *	mFS;
 
 		void openfs();
 };

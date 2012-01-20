@@ -1,4 +1,5 @@
 #include "cttffont.hpp"
+#include "../system/ciostreamfile.hpp"
 
 namespace EE { namespace Graphics {
 
@@ -335,20 +336,19 @@ bool cTTFFont::SaveTexture( const std::string& Filepath, const EE_SAVE_TYPE& For
 bool cTTFFont::SaveCoordinates( const std::string& Filepath ) {
 	Uint8 chars;
 	try {
-		std::fstream fs ( Filepath.c_str() , std::ios::out | std::ios::binary );
+		cIOStreamFile fs( Filepath, std::ios::out | std::ios::binary );
 
 		// Write the number of the fist char represented on the texture
 		chars = 0;
-		fs.write( reinterpret_cast<const char*> (&chars), sizeof(Uint8) );
+		fs.Write( reinterpret_cast<const char*> (&chars), sizeof(Uint8) );
 
 		// Write the default size of every char
 		chars = static_cast<Uint8> ( mSize );
-		fs.write( reinterpret_cast<const char*> (&chars), sizeof(Uint8) );
+		fs.Write( reinterpret_cast<const char*> (&chars), sizeof(Uint8) );
 
 		for (eeUint i = 0; i < mGlyphs.size(); i++)
-			fs.write( reinterpret_cast<const char*> (&mGlyphs[i]), sizeof(eeGlyph) );
+			fs.Write( reinterpret_cast<const char*> (&mGlyphs[i]), sizeof(eeGlyph) );
 
-		fs.close();
 		RebuildFromGlyphs();
 
 		return true;

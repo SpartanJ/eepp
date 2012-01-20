@@ -287,6 +287,12 @@ namespace EE {
 	#define EE_PI2			6.28318530717958647692
 	const eeFloat EE_PI_180	= EE_PI / 180;
 	const eeFloat EE_180_PI	= 180 / EE_PI;
+
+	#define EE_1B		( 1 )
+	#define EE_1KB		( 1024 )
+	#define EE_1MB		( 1048576 )
+	#define EE_1GB		( 1073741824 )
+	#define EE_1TB		( 1099511627776 )
 }
 
 #include "base/base.hpp"

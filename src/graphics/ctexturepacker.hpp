@@ -123,7 +123,7 @@ class EE_API cTexturePacker {
 
     	sTextureHdr						CreateTextureHdr( cTexturePacker * Packer );
 
-    	void							CreateShapesHdr( cTexturePacker * Packer, std::vector<sShapeHdr>& Shapes, std::fstream * fs );
+		void							CreateShapesHdr( cTexturePacker * Packer, std::vector<sShapeHdr>& Shapes );
 
     	cTexturePackerNode *			GetBestFit( cTexturePackerTex * t, cTexturePackerNode ** prevBestFit, Int32 * EdgeCount );
 

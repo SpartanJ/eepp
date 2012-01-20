@@ -1,5 +1,6 @@
 #include "ctexturepacker.hpp"
 #include "cimage.hpp"
+#include "../system/ciostreamfile.hpp"
 
 namespace EE { namespace Graphics {
 
@@ -577,39 +578,37 @@ void cTexturePacker::SaveShapes() {
 	std::vector<sShapeHdr> tShapesHdr;
 
 	std::string path = FileRemoveExtension( mFilepath ) + ".etg";
-	std::fstream fs ( path.c_str() , std::ios::out | std::ios::binary );
+	cIOStreamFile fs ( path , std::ios::out | std::ios::binary );
 
-	if ( fs.is_open() ) {
-		fs.write( reinterpret_cast<const char*> (&TexGrHdr), sizeof(sTextureGroupHdr) );
+	if ( fs.IsOpen() ) {
+		fs.Write( reinterpret_cast<const char*> (&TexGrHdr), sizeof(sTextureGroupHdr) );
 
-		fs.write( reinterpret_cast<const char*> (&TexHdr[ 0 ]), sizeof(sTextureHdr) );
+		fs.Write( reinterpret_cast<const char*> (&TexHdr[ 0 ]), sizeof(sTextureHdr) );
 
-		CreateShapesHdr( this, tShapesHdr, &fs );
+		CreateShapesHdr( this, tShapesHdr );
 
 		if ( tShapesHdr.size() )
-			fs.write( reinterpret_cast<const char*> (&tShapesHdr[ 0 ]), sizeof(sShapeHdr) * (std::streamsize)tShapesHdr.size() );
+			fs.Write( reinterpret_cast<const char*> (&tShapesHdr[ 0 ]), sizeof(sShapeHdr) * (std::streamsize)tShapesHdr.size() );
 
 		Int32 HdrPos 				= 1;
 		cTexturePacker * Child 		= mChild;
 
 		while ( NULL != Child ) {
-			fs.write( reinterpret_cast<const char*> (&TexHdr[ HdrPos ]), sizeof(sTextureHdr) );
+			fs.Write( reinterpret_cast<const char*> (&TexHdr[ HdrPos ]), sizeof(sTextureHdr) );
 
-			CreateShapesHdr( Child, tShapesHdr, &fs );
+			CreateShapesHdr( Child, tShapesHdr );
 
 			if ( tShapesHdr.size() )
-				fs.write( reinterpret_cast<const char*> (&tShapesHdr[ 0 ]), sizeof(sShapeHdr) * (std::streamsize)tShapesHdr.size() );
+				fs.Write( reinterpret_cast<const char*> (&tShapesHdr[ 0 ]), sizeof(sShapeHdr) * (std::streamsize)tShapesHdr.size() );
 
 			Child 				= Child->GetChild();
 
 			HdrPos++;
 		}
-
-		fs.close();
 	}
 }
 
-void cTexturePacker::CreateShapesHdr( cTexturePacker * Packer, std::vector<sShapeHdr>& Shapes, std::fstream * fs ) {
+void cTexturePacker::CreateShapesHdr( cTexturePacker * Packer, std::vector<sShapeHdr>& Shapes ) {
 	Shapes.clear();
 
 	sShapeHdr tShapeHdr;

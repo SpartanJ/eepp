@@ -1,5 +1,6 @@
 #include "utils.hpp"
 #include "string.hpp"
+#include "../system/ciostreamfile.hpp"
 
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 	#include <CoreFoundation/CoreFoundation.h>
@@ -200,6 +201,8 @@ static struct timespec start;
 static struct timeval start;
 #endif
 #endif
+
+using namespace EE::System;
 
 namespace EE { namespace Utils {
 
@@ -652,16 +655,14 @@ Uint32 MakeHash( const Uint8 * str ) {
 
 bool FileGet( const std::string& path, SafeDataPointer& data ) {
 	if ( FileExists( path ) ) {
-		std::fstream fs ( path.c_str() , std::ios::in | std::ios::binary );
+		cIOStreamFile fs ( path , std::ios::in | std::ios::binary );
 
 		eeSAFE_DELETE( data.Data );
 
 		data.DataSize	= FileSize( path );
 		data.Data		= eeNewArray( Uint8, ( data.DataSize ) );
 
-		fs.read( reinterpret_cast<char*> ( data.Data ), data.DataSize  );
-
-		fs.close();
+		fs.Read( reinterpret_cast<char*> ( data.Data ), data.DataSize  );
 
 		return true;
 	}
@@ -671,15 +672,13 @@ bool FileGet( const std::string& path, SafeDataPointer& data ) {
 
 bool FileGet( const std::string& path, std::vector<Uint8>& data ) {
 	if ( FileExists( path ) ) {
-		std::fstream fs ( path.c_str() , std::ios::in | std::ios::binary );
+		cIOStreamFile fs ( path, std::ios::in | std::ios::binary );
 		Uint32 fsize = FileSize( path );
 
 		data.clear();
 		data.resize( fsize );
 
-		fs.read( reinterpret_cast<char*> (&data[0]), fsize  );
-
-		fs.close();
+		fs.Read( reinterpret_cast<char*> (&data[0]), fsize  );
 
 		return true;
 	}
@@ -689,14 +688,30 @@ bool FileGet( const std::string& path, std::vector<Uint8>& data ) {
 
 bool FileCopy( const std::string& src, const std::string& dst ) {
 	if ( FileExists( src ) ) {
-		std::ifstream in( src.c_str() );
-		std::ofstream out( dst.c_str() );
+		Int64	chunksize	= EE_1MB;
+		Int64	size		= FileSize( src );
+		Int64	size_left	= (Int32)size;
+		Int64	allocate	= ( size < chunksize ) ? size : chunksize;
+		Int64	copysize	= 0;
 
-		if ( in.is_open() && out.is_open() ) {
-			out << in.rdbuf();
+		char buff[ allocate ];
 
-			in.close();
-			out.close();
+		cIOStreamFile in( src, std::ios::binary | std::ios::in );
+		cIOStreamFile out( dst, std::ios::binary | std::ios::out );
+
+		if ( in.IsOpen() && out.IsOpen() && size > 0 ) {
+			do {
+				if ( size_left - chunksize < 0 ) {
+					copysize = size_left;
+				} else {
+					copysize = chunksize;
+				}
+
+				in.Read		( &buff[0], copysize );
+				out.Write	( (const char*)&buff[0], copysize );
+
+				size_left -= copysize;
+			} while ( size_left > 0 );
 
 			return true;
 		}
@@ -775,13 +790,10 @@ eeInt GetCPUCount() {
 }
 
 bool FileWrite( const std::string& filepath, const Uint8* data, const Uint32& dataSize ) {
-	std::fstream fs( filepath.c_str() , std::ios::out | std::ios::binary );
+	cIOStreamFile fs( filepath, std::ios::out | std::ios::binary );
 
-	if ( fs.is_open() ) {
-		fs.write( reinterpret_cast<const char*> (data), dataSize );
-
-		fs.close();
-
+	if ( fs.IsOpen() ) {
+		fs.Write( reinterpret_cast<const char*> (data), dataSize );
 		return true;
 	}
 

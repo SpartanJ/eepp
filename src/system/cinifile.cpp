@@ -1,6 +1,8 @@
 #include <cctype>
 #include "cinifile.hpp"
 #include "cpackmanager.hpp"
+#include "ciostreamfile.hpp"
+#include "ciostreammemory.hpp"
 
 namespace EE { namespace System {
 
@@ -43,6 +45,7 @@ bool cIniFile::LoadFromPack( cPack * Pack, std::string iniPackPath ) {
 bool cIniFile::LoadFromMemory( const Uint8* RAWData, const Uint32& size ) {
 	std::string myfile;
 	myfile.assign( reinterpret_cast<const char*> (RAWData), size );
+
 	mLines.clear();
 	mLines = SplitString( myfile );
 
@@ -50,25 +53,20 @@ bool cIniFile::LoadFromMemory( const Uint8* RAWData, const Uint32& size ) {
 }
 
 bool cIniFile::LoadFromFile( const std::string& iniPath ) {
+	Path ( iniPath );
+
 	if ( FileExists( iniPath ) ) {
-		// Normally you would use ifstream, but the SGI CC compiler has
-		// a few bugs with ifstream. So ... fstream used.
-		std::fstream f;
-		std::string line;
+		cIOStreamFile f( mPath, std::ios::in );
 
-		Path ( iniPath );
-
-		f.open ( mPath.c_str(), std::ios::in );
-
-		if ( f.fail() )
+		if ( !f.IsOpen() )
 			return false;
 
+		std::string myfile( (size_t)f.GetSize(), '\0' );
+
+		f.Read( (char*)&myfile[0], f.GetSize() );
+
 		mLines.clear();
-
-		while ( getline ( f, line ) )
-			mLines.push_back( line );
-
-		f.close();
+		mLines = SplitString( myfile );
 
 		return true;
 	} else if ( cPackManager::instance()->FallbackToPacks() ) {
@@ -144,32 +142,51 @@ bool cIniFile::ReadFile() {
 
 bool cIniFile::WriteFile() {
 	unsigned commentID, keyID, valueID;
-	// Normally you would use ofstream, but the SGI CC compiler has
-	// a few bugs with ofstream. So ... fstream used.
-	std::fstream f;
 
-	f.open ( mPath.c_str(), std::ios::out );
-	if ( f.fail() )
+	cIOStreamFile f( mPath, std::ios::out );
+
+	if ( !f.IsOpen() )
 		return false;
 
+	std::string str;
+
 	// Write header mComments.
-	for ( commentID = 0; commentID < mComments.size(); ++commentID )
-		f << ';' << mComments[commentID] << iniEOL;
-	if ( mComments.size() )
-		f << iniEOL;
+	for ( commentID = 0; commentID < mComments.size(); ++commentID ) {
+		str = ';' + mComments[commentID] + '\n';
+
+		f.Write( str.c_str(), str.size() );
+	}
+
+	if ( mComments.size() ) {
+		str = "\n";
+
+		f.Write( str.c_str(), str.size() );
+	}
 
 	// Write Keys and values.
 	for ( keyID = 0; keyID < mKeys.size(); ++keyID ) {
-		f << '[' << mNames[keyID] << ']' << iniEOL;
+		str = '[' + mNames[keyID] + ']' + '\n';
+
+		f.Write( str.c_str(), str.size() );
+
 		// Comments.
-		for ( commentID = 0; commentID < mKeys[keyID].comments.size(); ++commentID )
-			f << ';' << mKeys[keyID].comments[commentID] << iniEOL;
+		for ( commentID = 0; commentID < mKeys[keyID].comments.size(); ++commentID ) {
+			str = ';' + mKeys[keyID].comments[commentID] + '\n';
+
+			f.Write( str.c_str(), str.size() );
+		}
+
 		// Values.
-		for ( valueID = 0; valueID < mKeys[keyID].names.size(); ++valueID )
-			f << mKeys[keyID].names[valueID] << '=' << mKeys[keyID].values[valueID] << iniEOL;
-		f << iniEOL;
+		for ( valueID = 0; valueID < mKeys[keyID].names.size(); ++valueID ) {
+			str = mKeys[keyID].names[valueID] + '=' + mKeys[keyID].values[valueID] + '\n';
+
+			f.Write( str.c_str(), str.size() );
+		}
+
+		str = "\n";
+
+		f.Write( str.c_str(), str.size() );
 	}
-	f.close();
 
 	return true;
 }
