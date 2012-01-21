@@ -141,7 +141,17 @@ typedef unsigned int size_t;
 
 /* Enable OpenGL ES */
 #define SDL_VIDEO_OPENGL_ES	1
-#define SDL_VIDEO_RENDER_OGL_ES	1
-#define SDL_VIDEO_RENDER_OGL_ES2	0
+
+#ifdef SDL_GLES1
+	#define SDL_VIDEO_RENDER_OGL_ES	1
+#endif
+
+#ifdef SDL_GLES2
+	#define SDL_VIDEO_RENDER_OGL_ES2 1
+#endif
+
+#if !defined( SDL_VIDEO_RENDER_OGL_ES ) && !defined( SDL_VIDEO_RENDER_OGL_ES2 )
+	#define SDL_VIDEO_RENDER_OGL_ES	1
+#endif
 
 #endif /* _SDL_config_minimal_h */

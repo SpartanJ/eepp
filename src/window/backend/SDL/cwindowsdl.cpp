@@ -25,109 +25,113 @@ cWindowSDL::~cWindowSDL() {
 }
 
 bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
-	try {
-		if ( mWindow.Created )
-			return false;
+	if ( mWindow.Created )
+		return false;
 
-		mWindow.WindowConfig	= Settings;
-		mWindow.ContextConfig	= Context;
+	mWindow.WindowConfig	= Settings;
+	mWindow.ContextConfig	= Context;
 
-		if ( SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
-			cLog::instance()->Write( "Unable to initialize SDL: " + std::string( SDL_GetError() ) );
-			return false;
-		}
+	if ( SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
+		cLog::instance()->Write( "Unable to initialize SDL: " + std::string( SDL_GetError() ) );
 
-		if ( "" != mWindow.WindowConfig.Icon ) {
-			mWindow.Created = true;
-			Icon( mWindow.WindowConfig.Icon );
-			mWindow.Created = false;
-		}
-
-		const SDL_VideoInfo * videoInfo = SDL_GetVideoInfo();
-
-		mWindow.DesktopResolution = eeSize( videoInfo->current_w, videoInfo->current_h );
-
-		if ( mWindow.WindowConfig.Style & WindowStyle::UseDesktopResolution ) {
-			mWindow.WindowConfig.Width	= mWindow.DesktopResolution.Width();
-			mWindow.WindowConfig.Height	= mWindow.DesktopResolution.Height();
-		}
-
-		mWindow.Flags = SDL_OPENGL | SDL_HWPALETTE;
-
-		if ( mWindow.WindowConfig.Style & WindowStyle::Resize ) {
-			mWindow.Flags |= SDL_RESIZABLE;
-		}
-
-		if ( mWindow.WindowConfig.Style & WindowStyle::NoBorder ) {
-			mWindow.Flags |= SDL_NOFRAME;
-		}
-
-		SetGLConfig();
-
-		Uint32 mTmpFlags = mWindow.Flags;
-
-		if ( mWindow.WindowConfig.Style & WindowStyle::Fullscreen ) {
-    		mTmpFlags |= SDL_FULLSCREEN;
-		}
-
-		if ( SDL_VideoModeOK( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, mWindow.WindowConfig.BitsPerPixel, mTmpFlags ) ) {
-			mSurface = SDL_SetVideoMode( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, mWindow.WindowConfig.BitsPerPixel, mTmpFlags );
-		} else {
-			cLog::instance()->Write( "Video Mode Unsopported for this videocard: " );
-			return false;
-		}
-
-		mWindow.WindowSize = eeSize( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
-
-		if ( NULL == mSurface ) {
-			cLog::instance()->Write( "Unable to set video mode: " + std::string( SDL_GetError() ) );
-			return false;
-		}
-
-		if ( mWindow.WindowConfig.BitsPerPixel == 16 ) {
-			SDL_GL_SetAttribute( SDL_GL_RED_SIZE	, 4 );
-			SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE	, 4 );
-			SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE	, 4 );
-			SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE	, 4 );
-		} else {
-			SDL_GL_SetAttribute( SDL_GL_RED_SIZE	, 8);
-			SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE	, 8 );
-			SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE	, 8 );
-			SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE	, 8 );
-		}
-
-		if ( NULL == cGL::ExistsSingleton() ) {
-			cGL::CreateSingleton( mWindow.ContextConfig.Version );
-			cGL::instance()->Init();
-		}
-
-		CreatePlatform();
-
-		GetMainContext();
-
-		Caption( mWindow.WindowConfig.Caption );
-
-		CreateView();
-
-		Setup2D();
-
-		mWindow.Created = true;
-
-		LogSuccessfulInit( GetVersion() );
-
-		/// Init the clipboard after the window creation
-		reinterpret_cast<cClipboardSDL*> ( mClipboard )->Init();
-
-		/// Init the input after the window creation
-		reinterpret_cast<cInputSDL*> ( mInput )->Init();
-
-		mCursorManager->Set( Cursor::SYS_CURSOR_DEFAULT );
-
-		return true;
-	} catch (...) {
 		LogFailureInit( "cWindowSDL", GetVersion() );
+
 		return false;
 	}
+
+	if ( "" != mWindow.WindowConfig.Icon ) {
+		mWindow.Created = true;
+		Icon( mWindow.WindowConfig.Icon );
+		mWindow.Created = false;
+	}
+
+	const SDL_VideoInfo * videoInfo = SDL_GetVideoInfo();
+
+	mWindow.DesktopResolution = eeSize( videoInfo->current_w, videoInfo->current_h );
+
+	if ( mWindow.WindowConfig.Style & WindowStyle::UseDesktopResolution ) {
+		mWindow.WindowConfig.Width	= mWindow.DesktopResolution.Width();
+		mWindow.WindowConfig.Height	= mWindow.DesktopResolution.Height();
+	}
+
+	mWindow.Flags = SDL_OPENGL | SDL_HWPALETTE;
+
+	if ( mWindow.WindowConfig.Style & WindowStyle::Resize ) {
+		mWindow.Flags |= SDL_RESIZABLE;
+	}
+
+	if ( mWindow.WindowConfig.Style & WindowStyle::NoBorder ) {
+		mWindow.Flags |= SDL_NOFRAME;
+	}
+
+	SetGLConfig();
+
+	Uint32 mTmpFlags = mWindow.Flags;
+
+	if ( mWindow.WindowConfig.Style & WindowStyle::Fullscreen ) {
+		mTmpFlags |= SDL_FULLSCREEN;
+	}
+
+	if ( SDL_VideoModeOK( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, mWindow.WindowConfig.BitsPerPixel, mTmpFlags ) ) {
+		mSurface = SDL_SetVideoMode( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, mWindow.WindowConfig.BitsPerPixel, mTmpFlags );
+	} else {
+		cLog::instance()->Write( "Video Mode Unsopported for this videocard: " );
+
+		LogFailureInit( "cWindowSDL", GetVersion() );
+
+		return false;
+	}
+
+	mWindow.WindowSize = eeSize( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
+
+	if ( NULL == mSurface ) {
+		cLog::instance()->Write( "Unable to set video mode: " + std::string( SDL_GetError() ) );
+
+		LogFailureInit( "cWindowSDL", GetVersion() );
+
+		return false;
+	}
+
+	if ( mWindow.WindowConfig.BitsPerPixel == 16 ) {
+		SDL_GL_SetAttribute( SDL_GL_RED_SIZE	, 4 );
+		SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE	, 4 );
+		SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE	, 4 );
+		SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE	, 4 );
+	} else {
+		SDL_GL_SetAttribute( SDL_GL_RED_SIZE	, 8);
+		SDL_GL_SetAttribute( SDL_GL_GREEN_SIZE	, 8 );
+		SDL_GL_SetAttribute( SDL_GL_BLUE_SIZE	, 8 );
+		SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE	, 8 );
+	}
+
+	if ( NULL == cGL::ExistsSingleton() ) {
+		cGL::CreateSingleton( mWindow.ContextConfig.Version );
+		cGL::instance()->Init();
+	}
+
+	CreatePlatform();
+
+	GetMainContext();
+
+	Caption( mWindow.WindowConfig.Caption );
+
+	CreateView();
+
+	Setup2D();
+
+	mWindow.Created = true;
+
+	LogSuccessfulInit( GetVersion() );
+
+	/// Init the clipboard after the window creation
+	reinterpret_cast<cClipboardSDL*> ( mClipboard )->Init();
+
+	/// Init the input after the window creation
+	reinterpret_cast<cInputSDL*> ( mInput )->Init();
+
+	mCursorManager->Set( Cursor::SYS_CURSOR_DEFAULT );
+
+	return true;
 }
 
 std::string cWindowSDL::GetVersion() {
@@ -257,7 +261,9 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	if ( this->Windowed() == Windowed && Width == mWindow.WindowConfig.Width && Height == mWindow.WindowConfig.Height )
 		return;
 
+	#ifdef EE_SUPPORT_EXCEPTIONS
 	try {
+	#endif
 		cLog::instance()->Writef( "Switching from %s to %s. Width: %d Height %d.", this->Windowed() ? "windowed" : "fullscreen", Windowed ? "windowed" : "fullscreen", Width, Height );
 
 		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
@@ -325,11 +331,13 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 		if ( NULL == mSurface ) {
 			mWindow.Created = false;
 		}
+	#ifdef EE_SUPPORT_EXCEPTIONS
 	} catch (...) {
 		cLog::instance()->Write( "Unable to change resolution: " + std::string( SDL_GetError() ) );
 		cLog::instance()->Save();
 		mWindow.Created = false;
 	}
+	#endif
 }
 
 void cWindowSDL::SwapBuffers() {

@@ -17,6 +17,7 @@ import android.hardware.*;
 import android.content.*;
 
 import java.lang.*;
+import java.lang.Integer;
 
 
 /**
@@ -31,12 +32,13 @@ public class SDLActivity extends Activity {
     // Audio
     private static Thread mAudioThread;
     private static AudioTrack mAudioTrack;
+    
+    public static int SCREEN_WIDTH = 569;
+    public static int SCREEN_HEIGHT = 320;
 
     // Load the .so
     static {
-        //System.loadLibrary("eepp");
-        System.loadLibrary("bnb");
-        //System.loadLibrary("main");
+        System.loadLibrary("main");
     }
 
     // Setup
@@ -52,6 +54,14 @@ public class SDLActivity extends Activity {
         setContentView(mSurface);
         SurfaceHolder holder = mSurface.getHolder();
         holder.setType(SurfaceHolder.SURFACE_TYPE_GPU);
+
+        WindowManager w = getWindowManager();
+        Display d       = w.getDefaultDisplay();
+
+        SCREEN_WIDTH    = d.getWidth();
+        SCREEN_HEIGHT   = d.getHeight();
+        
+        Log.v("SDL", "Native screen resolution " + Integer.toString( SCREEN_WIDTH )  + "x" + Integer.toString( SCREEN_HEIGHT ) );
     }
 
     // Events
@@ -335,6 +345,7 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
             Log.v("SDL", "pixel format unknown " + format);
             break;
         }
+
         SDLActivity.onNativeResize(width, height, sdlFormat);
 
         // Now start up the C app thread

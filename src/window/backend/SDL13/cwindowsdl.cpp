@@ -27,120 +27,122 @@ cWindowSDL::~cWindowSDL() {
 }
 
 bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
-	try {
-		if ( mWindow.Created )
-			return false;
+	if ( mWindow.Created )
+		return false;
 
-		mWindow.WindowConfig	= Settings;
-		mWindow.ContextConfig	= Context;
+	mWindow.WindowConfig	= Settings;
+	mWindow.ContextConfig	= Context;
 
-		if ( SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
-			cLog::instance()->Write( "Unable to initialize SDL: " + std::string( SDL_GetError() ) );
-			return false;
-		}
+	if ( SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
+		cLog::instance()->Write( "Unable to initialize SDL: " + std::string( SDL_GetError() ) );
 
-		SDL_DisplayMode dpm;
-		SDL_GetDesktopDisplayMode( 0, &dpm );
-
-		mWindow.DesktopResolution = eeSize( dpm.w, dpm.h );
-		
-		#if EE_PLATFORM == EE_PLATFORM_ANDROID
-			mWindow.WindowConfig.Style = WindowStyle::Fullscreen | WindowStyle::UseDesktopResolution;
-		#endif
-
-		if ( mWindow.WindowConfig.Style & WindowStyle::UseDesktopResolution ) {
-			mWindow.WindowConfig.Width	= mWindow.DesktopResolution.Width();
-			mWindow.WindowConfig.Height	= mWindow.DesktopResolution.Height();
-		}
-		
-		mWindow.Flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
-
-		if ( mWindow.WindowConfig.Style & WindowStyle::Resize ) {
-			mWindow.Flags |= SDL_WINDOW_RESIZABLE;
-		}
-
-		if ( mWindow.WindowConfig.Style & WindowStyle::NoBorder ) {
-			mWindow.Flags |= SDL_WINDOW_BORDERLESS;
-		}
-
-		SetGLConfig();
-
-		Uint32 mTmpFlags = mWindow.Flags;
-
-		if ( mWindow.WindowConfig.Style & WindowStyle::Fullscreen ) {
-			mTmpFlags |= SDL_WINDOW_FULLSCREEN;
-		}
-		
-		mSDLWindow = SDL_CreateWindow( mWindow.WindowConfig.Caption.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, mTmpFlags );
-
-		mWindow.WindowSize = eeSize( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
-
-		if ( NULL == mSDLWindow ) {
-			cLog::instance()->Write( "Unable to create window: " + std::string( SDL_GetError() ) );
-			return false;
-		}
-		
-		#if EE_PLAFORM == EE_PLATFORM_ANDROID
-			#ifdef EE_GLES1
-				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
-				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-			#endif
-			
-			#ifdef EE_GLES2
-				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-			#endif
-		#endif
-		
-		mGLContext = SDL_GL_CreateContext( mSDLWindow );
-
-		if ( NULL == mGLContext ) {
-			cLog::instance()->Write( "Unable to create context: " + std::string( SDL_GetError() ) );
-			return false;
-		}
-
-		SDL_GL_SetSwapInterval( ( mWindow.ContextConfig.VSync ? 1 : 0 ) );								// VSync
-
-		if ( NULL == cGL::ExistsSingleton() ) {
-			cGL::CreateSingleton( mWindow.ContextConfig.Version );
-			cGL::instance()->Init();
-		}
-		
-		#if EE_PLAFORM == EE_PLATFORM_ANDROID && ( defined( EE_GLES1 ) || defined( EE_GLES2 ) )
-			SDL_GL_MakeCurrent( mSDLWindow, mGLContext );
-		#endif
-
-		CreatePlatform();
-
-		GetMainContext();
-
-		Caption( mWindow.WindowConfig.Caption );
-
-		CreateView();
-
-		Setup2D();
-
-		mWindow.Created = true;
-
-		if ( "" != mWindow.WindowConfig.Icon ) {
-			Icon( mWindow.WindowConfig.Icon );
-		}
-
-		LogSuccessfulInit( GetVersion() );
-
-		/// Init the clipboard after the window creation
-		reinterpret_cast<cClipboardSDL*> ( mClipboard )->Init();
-
-		/// Init the input after the window creation
-		reinterpret_cast<cInputSDL*> ( mInput )->Init();
-
-		mCursorManager->Set( Cursor::SYS_CURSOR_DEFAULT );
-
-		return true;
-	} catch (...) {
 		LogFailureInit( "cWindowSDL", GetVersion() );
+
 		return false;
 	}
+
+	SDL_DisplayMode dpm;
+	SDL_GetDesktopDisplayMode( 0, &dpm );
+
+	mWindow.DesktopResolution = eeSize( dpm.w, dpm.h );
+
+	#if EE_PLATFORM == EE_PLATFORM_ANDROID
+		mWindow.WindowConfig.Style = WindowStyle::Fullscreen | WindowStyle::UseDesktopResolution;
+	#endif
+
+	if ( mWindow.WindowConfig.Style & WindowStyle::UseDesktopResolution ) {
+		mWindow.WindowConfig.Width	= mWindow.DesktopResolution.Width();
+		mWindow.WindowConfig.Height	= mWindow.DesktopResolution.Height();
+	}
+
+	mWindow.Flags = SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN;
+
+	if ( mWindow.WindowConfig.Style & WindowStyle::Resize ) {
+		mWindow.Flags |= SDL_WINDOW_RESIZABLE;
+	}
+
+	if ( mWindow.WindowConfig.Style & WindowStyle::NoBorder ) {
+		mWindow.Flags |= SDL_WINDOW_BORDERLESS;
+	}
+
+	SetGLConfig();
+
+	Uint32 mTmpFlags = mWindow.Flags;
+
+	if ( mWindow.WindowConfig.Style & WindowStyle::Fullscreen ) {
+		mTmpFlags |= SDL_WINDOW_FULLSCREEN;
+	}
+
+	mSDLWindow = SDL_CreateWindow( mWindow.WindowConfig.Caption.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, mTmpFlags );
+
+	mWindow.WindowSize = eeSize( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
+
+	if ( NULL == mSDLWindow ) {
+		cLog::instance()->Write( "Unable to create window: " + std::string( SDL_GetError() ) );
+
+		LogFailureInit( "cWindowSDL", GetVersion() );
+
+		return false;
+	}
+
+	#if EE_PLAFORM == EE_PLATFORM_ANDROID
+		#ifdef EE_GLES1
+			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
+			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+		#endif
+
+		#ifdef EE_GLES2
+			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+		#endif
+	#endif
+
+	mGLContext = SDL_GL_CreateContext( mSDLWindow );
+
+	if ( NULL == mGLContext ) {
+		cLog::instance()->Write( "Unable to create context: " + std::string( SDL_GetError() ) );
+
+		LogFailureInit( "cWindowSDL", GetVersion() );
+
+		return false;
+	}
+
+	SDL_GL_SetSwapInterval( ( mWindow.ContextConfig.VSync ? 1 : 0 ) );								// VSync
+
+	if ( NULL == cGL::ExistsSingleton() ) {
+		cGL::CreateSingleton( mWindow.ContextConfig.Version );
+		cGL::instance()->Init();
+	}
+
+	SDL_GL_MakeCurrent( mSDLWindow, mGLContext );
+
+	CreatePlatform();
+
+	GetMainContext();
+
+	Caption( mWindow.WindowConfig.Caption );
+
+	CreateView();
+
+	Setup2D();
+
+	mWindow.Created = true;
+
+	if ( "" != mWindow.WindowConfig.Icon ) {
+		Icon( mWindow.WindowConfig.Icon );
+	}
+
+	LogSuccessfulInit( GetVersion() );
+
+	/// Init the clipboard after the window creation
+	reinterpret_cast<cClipboardSDL*> ( mClipboard )->Init();
+
+	/// Init the input after the window creation
+	reinterpret_cast<cInputSDL*> ( mInput )->Init();
+
+	mCursorManager->Set( Cursor::SYS_CURSOR_DEFAULT );
+
+	return true;
 }
 
 std::string cWindowSDL::GetVersion() {
@@ -234,7 +236,9 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	if ( this->Windowed() == Windowed && Width == mWindow.WindowConfig.Width && Height == mWindow.WindowConfig.Height )
 		return;
 
+	#ifdef EE_SUPPORT_EXCEPTIONS
 	try {
+	#endif
 		cLog::instance()->Writef( "Switching from %s to %s. Width: %d Height %d.", this->Windowed() ? "windowed" : "fullscreen", Windowed ? "windowed" : "fullscreen", Width, Height );
 
 		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
@@ -305,11 +309,13 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 		mCursorManager->Reload();
 
 		SendVideoResizeCb();
+	#ifdef EE_SUPPORT_EXCEPTIONS
 	} catch (...) {
 		cLog::instance()->Write( "Unable to change resolution: " + std::string( SDL_GetError() ) );
 		cLog::instance()->Save();
 		mWindow.Created = false;
 	}
+	#endif
 }
 
 void cWindowSDL::SwapBuffers() {	

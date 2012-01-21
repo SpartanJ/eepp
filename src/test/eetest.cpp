@@ -743,19 +743,15 @@ void cEETest::SetScreen( Uint32 num ) {
 
 void cEETest::CmdSetPartsNum ( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
-		try {
-			Int32 tInt = 0;
+		Int32 tInt = 0;
 
-			bool Res = fromString<Int32>( tInt, params[1] );
+		bool Res = fromString<Int32>( tInt, params[1] );
 
-			if ( Res && ( tInt >= 0 && tInt <= 100000 ) ) {
-				PS[2].Create( PSE_WormHole, tInt, TN[5], eeVector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 32, true );
-				Con.PushText( "Wormhole Particles Number Changed to: " + toStr(tInt) );
-			} else
-				Con.PushText( "Valid parameters are between 0 and 100000 (0 = no limit)." );
-		} catch (...) {
-			Con.PushText( "Invalid Parameter. Expected int value from '" + params[1] + "'." );
-		}
+		if ( Res && ( tInt >= 0 && tInt <= 100000 ) ) {
+			PS[2].Create( PSE_WormHole, tInt, TN[5], eeVector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 32, true );
+			Con.PushText( "Wormhole Particles Number Changed to: " + toStr(tInt) );
+		} else
+			Con.PushText( "Valid parameters are between 0 and 100000 (0 = no limit)." );
 	}
 }
 

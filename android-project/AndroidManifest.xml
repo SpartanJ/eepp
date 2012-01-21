@@ -15,4 +15,8 @@
             </intent-filter>
         </activity>
     </application>
+
+	<supports-screens android:anyDensity="true" />
+
+	<uses-sdk android:minSdkVersion="7" />
 </manifest> 

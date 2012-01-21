@@ -350,7 +350,12 @@ void cMapEditor::CreateUIMap() {
 	cUIComplexControl::CreateParams Params;
 	Params.Parent( mWinContainer );
 	Params.PosSet( 0, 0 );
-	Params.SizeSet( 800, 600 );
+
+	if ( mWinContainer->Size().Width() > 800 && mWinContainer->Size().Height() > 600 )
+		Params.SizeSet( 800, 600 );
+	else
+		Params.SizeSet( mWinContainer->Size().Width() - 220, mWinContainer->Size().Height() - 16 );
+
 	Params.Flags |= UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT;
 	mUIMap = eeNew( cUIMap, ( Params ) );
 	mUIMap->Visible( true );

@@ -1,6 +1,9 @@
 #ifndef EE_BASE_HPP
 #define EE_BASE_HPP
 
+#undef M_E
+#undef M_PI
+#undef INFINITY
 #include <cstdlib>
 #include <climits>
 #include <cmath>
@@ -110,6 +113,8 @@
 	#ifndef EE_MAIN_FUNC
 		#define EE_MAIN_FUNC
 	#endif
+
+	#define EE_SUPPORT_EXCEPTIONS
 #endif
 
 #ifndef EE_DEBUG
@@ -176,11 +181,11 @@
 	#define EE_CALL
 #endif
 
-#ifndef EE_USE_DOUBLE
+#ifndef EE_USE_DOUBLES
 	#ifdef EE_64BIT
 		#define EE_USE_DOUBLES 1
 	#else
-		#define EE_USE_DOUBLE 0
+		#define EE_USE_DOUBLES 0
 	#endif
 #endif
 

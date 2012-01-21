@@ -150,70 +150,68 @@ Uint32 cWindowAl::CreateFlags( const WindowSettings& Settings, const ContextSett
 }
 
 bool cWindowAl::Create( WindowSettings Settings, ContextSettings Context ) {
-	try {
-		DestroyDisplay();
+	DestroyDisplay();
 
-		mWindow.WindowConfig	= Settings;
-		mWindow.ContextConfig	= Context;
+	mWindow.WindowConfig	= Settings;
+	mWindow.ContextConfig	= Context;
 
-		al_set_new_display_flags( CreateFlags( Settings, Context ) );
-		al_set_new_display_option( ALLEGRO_STENCIL_SIZE	, Context.StencilBufferSize	, ALLEGRO_SUGGEST );
-		al_set_new_display_option( ALLEGRO_DEPTH_SIZE	, Context.DepthBufferSize	, ALLEGRO_SUGGEST );
+	al_set_new_display_flags( CreateFlags( Settings, Context ) );
+	al_set_new_display_option( ALLEGRO_STENCIL_SIZE	, Context.StencilBufferSize	, ALLEGRO_SUGGEST );
+	al_set_new_display_option( ALLEGRO_DEPTH_SIZE	, Context.DepthBufferSize	, ALLEGRO_SUGGEST );
 
-		if ( Context.VSync )
-			al_set_new_display_option( ALLEGRO_VSYNC, 1, ALLEGRO_SUGGEST );
+	if ( Context.VSync )
+		al_set_new_display_option( ALLEGRO_VSYNC, 1, ALLEGRO_SUGGEST );
 
-		ALLEGRO_MONITOR_INFO minfo;
+	ALLEGRO_MONITOR_INFO minfo;
 
-		if ( al_get_monitor_info( 0, &minfo ) ) {
-			mWindow.DesktopResolution = eeSize( minfo.x2, minfo.y2 );
+	if ( al_get_monitor_info( 0, &minfo ) ) {
+		mWindow.DesktopResolution = eeSize( minfo.x2, minfo.y2 );
 
-			if ( mWindow.WindowConfig.Style & WindowStyle::UseDesktopResolution ) {
-				mWindow.WindowConfig.Width	= mWindow.DesktopResolution.Width();
-				mWindow.WindowConfig.Height	= mWindow.DesktopResolution.Height();
-			}
-		} else {
-			mWindow.DesktopResolution = eeSize( Settings.Width, Settings.Height );
+		if ( mWindow.WindowConfig.Style & WindowStyle::UseDesktopResolution ) {
+			mWindow.WindowConfig.Width	= mWindow.DesktopResolution.Width();
+			mWindow.WindowConfig.Height	= mWindow.DesktopResolution.Height();
+		}
+	} else {
+		mWindow.DesktopResolution = eeSize( Settings.Width, Settings.Height );
+	}
+
+	mDisplay = al_create_display( Settings.Width, Settings.Height );
+
+	if ( NULL != mDisplay ) {
+		al_inhibit_screensaver( true );
+
+		Caption( mWindow.WindowConfig.Caption );
+
+		if ( NULL == cGL::ExistsSingleton() ) {
+			cGL::CreateSingleton( mWindow.ContextConfig.Version );
 		}
 
-		mDisplay = al_create_display( Settings.Width, Settings.Height );
+		cGL::instance()->Init();
 
-		if ( NULL != mDisplay ) {
-			al_inhibit_screensaver( true );
+		CreatePlatform();
 
-			Caption( mWindow.WindowConfig.Caption );
+		GetMainContext();
 
-			if ( NULL == cGL::ExistsSingleton() ) {
-				cGL::CreateSingleton( mWindow.ContextConfig.Version );
-			}
+		CreateView();
 
-			cGL::instance()->Init();
+		Setup2D();
 
-			CreatePlatform();
+		mWindow.Created = true;
 
-			GetMainContext();
-
-			CreateView();
-
-			Setup2D();
-
-			mWindow.Created = true;
-
-			if ( "" != mWindow.WindowConfig.Icon ) {
-				Icon( mWindow.WindowConfig.Icon );
-			}
-
-			LogSuccessfulInit( "Allegro 5" );
-
-			/// Init the clipboard after the window creation
-			reinterpret_cast<cClipboardAl*> ( mClipboard )->Init();
-
-			/// Init the input after the window creation
-			reinterpret_cast<cInputAl*> ( mInput )->Init();
-
-			return true;
+		if ( "" != mWindow.WindowConfig.Icon ) {
+			Icon( mWindow.WindowConfig.Icon );
 		}
-	} catch (...) {
+
+		LogSuccessfulInit( "Allegro 5" );
+
+		/// Init the clipboard after the window creation
+		reinterpret_cast<cClipboardAl*> ( mClipboard )->Init();
+
+		/// Init the input after the window creation
+		reinterpret_cast<cInputAl*> ( mInput )->Init();
+
+		return true;
+	} else {
 		LogFailureInit( "cWindowAl", "Allegro 5" );
 	}
 
@@ -292,7 +290,9 @@ void cWindowAl::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 
 	cLog::instance()->Writef( "Switching from %s to %s. Width: %d Height %d.", this->Windowed() ? "windowed" : "fullscreen", Windowed ? "windowed" : "fullscreen", Width, Height );
 
+	#ifdef EE_SUPPORT_EXCEPTIONS
 	try {
+	#endif
 		bool Reload				= this->Windowed() != Windowed;
 		bool WinFullscreen		= eeSize( Width, Height ) == mWindow.DesktopResolution && !Windowed;
 		bool WinIsFullscreen	= eeSize( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height ) == mWindow.DesktopResolution && !this->Windowed();
@@ -339,11 +339,13 @@ void cWindowAl::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 		GetCursorManager()->Reload();
 
 		SendVideoResizeCb();
+	#ifdef EE_SUPPORT_EXCEPTIONS
 	} catch (...) {
 		cLog::instance()->Write( "Unable to change resolution" );
 		cLog::instance()->Save();
 		mWindow.Created = false;
 	}
+	#endif
 }
 
 void cWindowAl::SwapBuffers() {

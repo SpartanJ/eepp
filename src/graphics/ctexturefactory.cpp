@@ -113,16 +113,12 @@ void cTextureFactory::Bind( const Uint32& TexId, const Uint32& TextureUnit ) {
 }
 
 void cTextureFactory::UnloadTextures() {
-	try {
-		for ( Uint32 i = 1; i < mTextures.size(); i++ )
-			eeSAFE_DELETE( mTextures[i] );
+	for ( Uint32 i = 1; i < mTextures.size(); i++ )
+		eeSAFE_DELETE( mTextures[i] );
 
-		mTextures.clear();
+	mTextures.clear();
 
-		cLog::instance()->Write( "Textures Unloaded." );
-	} catch (...) {
-		cLog::instance()->Write("An error ocurred on: UnloadTextures.");
-	}
+	cLog::instance()->Write( "Textures Unloaded." );
 }
 
 bool cTextureFactory::Remove( Uint32 TexId ) {
@@ -161,17 +157,14 @@ void cTextureFactory::SetCurrentTexture( const GLint& TexId, const Uint32& Textu
 }
 
 void cTextureFactory::ReloadAllTextures() {
-	try {
-		for ( Uint32 i = 1; i < mTextures.size(); i++ ) {
-			cTexture* Tex = GetTexture(i);
+	for ( Uint32 i = 1; i < mTextures.size(); i++ ) {
+		cTexture* Tex = GetTexture(i);
 
-			if ( Tex )
-				Tex->Reload();
-		}
-		cLog::instance()->Write("Textures Reloaded.");
-	} catch (...) {
-		cLog::instance()->Write("An error ocurred on: ReloadAllTextures.");
+		if ( Tex )
+			Tex->Reload();
 	}
+
+	cLog::instance()->Write("Textures Reloaded.");
 }
 
 void cTextureFactory::GrabTextures() {

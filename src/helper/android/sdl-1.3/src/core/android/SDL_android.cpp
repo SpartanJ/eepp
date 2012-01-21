@@ -106,6 +106,7 @@ extern "C" void Java_org_libsdl_app_SDLActivity_onNativeResize(
                                     JNIEnv* env, jclass jcls,
                                     jint width, jint height, jint format)
 {
+	__android_log_print(ANDROID_LOG_INFO, "SDL", "Java_org_libsdl_app_SDLActivity_onNativeResize %d %d %d", width, height, format);
     Android_SetScreenResolution(width, height, format);
 }
 

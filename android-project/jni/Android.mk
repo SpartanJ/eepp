@@ -15,7 +15,7 @@ MY_C_FLAGS	:=	-DANDROID \
 				$(EE_GLES_VERSION) \
 				-DEE_NO_SNDFILE
 
-MY_LDLIBS 	:= -llog -landroid -lEGL $(EE_GLES_LINK) -lm -lz
+MY_LDLIBS 	:= $(APP_LDLIBS)
 
 include $(call all-subdir-makefiles) 
 
@@ -134,19 +134,10 @@ LOCAL_PATH := $(MY_PATH)/helper/android/sdl-1.3
 
 LOCAL_MODULE := sdl-1.3
 
-ifndef SDL_JAVA_PACKAGE_PATH
-$(error Please define SDL_JAVA_PACKAGE_PATH to the path of your Java package with dots replaced with underscores, for example "com_example_SanAngeles")
-endif
-
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
 
 LOCAL_CFLAGS := -O3 -D__ANDROID__ -DANDROID \
-	-DSDL_JAVA_PACKAGE_PATH=$(SDL_JAVA_PACKAGE_PATH) \
-	-DSDL_CURDIR_PATH=\"$(SDL_CURDIR_PATH)\" \
-	-DSDL_TRACKBALL_KEYUP_DELAY=$(SDL_TRACKBALL_KEYUP_DELAY) \
-	-DSDL_VIDEO_RENDER_RESIZE_KEEP_ASPECT=$(SDL_VIDEO_RENDER_RESIZE_KEEP_ASPECT) \
-	-DSDL_VIDEO_RENDER_RESIZE=$(SDL_VIDEO_RENDER_RESIZE) \
-	$(SDL_ADDITIONAL_CFLAGS)
+	$(EE_GLES_VERSION)
 
 LOCAL_SRC_FILES := \
 	$(subst $(LOCAL_PATH)/,, \
@@ -168,6 +159,7 @@ LOCAL_SRC_FILES := \
 	$(wildcard $(LOCAL_PATH)/src/power/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/render/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/render/opengles/*.c) \
+	$(wildcard $(LOCAL_PATH)/src/render/opengles2/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/render/software/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/stdlib/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/thread/*.c) \
@@ -211,7 +203,7 @@ include $(CLEAR_VARS)
 
 LOCAL_PATH := $(MY_PATH)/test/empty_window
 
-LOCAL_MODULE := main
+LOCAL_MODULE := empty_window
 
 SDL_PATH := $(MY_PATH)/helper/android/sdl-1.3
 
@@ -237,7 +229,7 @@ include $(CLEAR_VARS)
 
 LOCAL_PATH := $(MY_PATH)/bnb
 
-LOCAL_MODULE := bnb
+LOCAL_MODULE := main
 
 SDL_PATH := $(MY_PATH)/helper/android/sdl-1.3
 
@@ -257,3 +249,29 @@ LOCAL_STATIC_LIBRARIES := eepp
 
 include $(BUILD_SHARED_LIBRARY)
 #************ BnB ************
+
+#************* full_test *************
+include $(CLEAR_VARS)
+
+LOCAL_PATH := $(MY_PATH)/test/
+
+LOCAL_MODULE := full_test
+
+SDL_PATH := $(MY_PATH)/helper/android/sdl-1.3
+
+LOCAL_LDLIBS 	:= $(MY_LDLIBS)
+
+LOCAL_CFLAGS 	:= $(MY_C_FLAGS)
+
+LOCAL_C_INCLUDES := $(MY_C_INCLUDES)
+
+CORE_SRCS :=  \
+	../../helper/android/sdl-1.3/src/main/android/*.cpp \
+	*.cpp \
+
+LOCAL_SRC_FILES := $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+LOCAL_STATIC_LIBRARIES := eepp
+
+include $(BUILD_SHARED_LIBRARY)
+#************ full_test ************

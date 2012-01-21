@@ -2,7 +2,7 @@
 <qtcreator>
  <data>
   <variable>GenericProjectManager.GenericProject.Toolchain</variable>
-  <value type="QString">ProjectExplorer.ToolChain.Gcc:/usr/bin/g++.x86-macos-generic-mach_o-64bit.</value>
+  <value type="QString">ProjectExplorer.ToolChain.Gcc:/usr/bin/g++.x86-linux-generic-elf-32bit.</value>
  </data>
  <data>
   <variable>ProjectExplorer.Project.ActiveTarget</variable>
@@ -11,19 +11,19 @@
  <data>
   <variable>ProjectExplorer.Project.EditorSettings</variable>
   <valuemap type="QVariantMap">
-   <value key="EditorConfiguration.AutoIndent" type="bool">true</value>
+   <value key="EditorConfiguration.AutoIndent" type="bool">false</value>
    <value key="EditorConfiguration.AutoSpacesForTabs" type="bool">false</value>
    <value key="EditorConfiguration.Codec" type="QByteArray">System</value>
    <value key="EditorConfiguration.DoubleIndentBlocks" type="bool">false</value>
    <value key="EditorConfiguration.IndentBraces" type="bool">false</value>
    <value key="EditorConfiguration.IndentSize" type="int">4</value>
    <value key="EditorConfiguration.MouseNavigation" type="bool">true</value>
-   <value key="EditorConfiguration.PaddingMode" type="int">1</value>
+   <value key="EditorConfiguration.PaddingMode" type="int">2</value>
    <value key="EditorConfiguration.ScrollWheelZooming" type="bool">true</value>
    <value key="EditorConfiguration.SmartBackspace" type="bool">false</value>
-   <value key="EditorConfiguration.SpacesForTabs" type="bool">true</value>
+   <value key="EditorConfiguration.SpacesForTabs" type="bool">false</value>
    <value key="EditorConfiguration.TabKeyBehavior" type="int">0</value>
-   <value key="EditorConfiguration.TabSize" type="int">8</value>
+   <value key="EditorConfiguration.TabSize" type="int">4</value>
    <value key="EditorConfiguration.UseGlobal" type="bool">true</value>
    <value key="EditorConfiguration.Utf8BomBehavior" type="int">1</value>
    <value key="EditorConfiguration.addFinalNewLine" type="bool">true</value>
@@ -42,12 +42,14 @@
    <value key="ProjectExplorer.Target.ActiveDeployConfiguration" type="int">0</value>
    <value key="ProjectExplorer.Target.ActiveRunConfiguration" type="int">0</value>
    <valuemap key="ProjectExplorer.Target.BuildConfiguration.0" type="QVariantMap">
-    <value key="GenericProjectManager.GenericBuildConfiguration.BuildDirectory" type="QString">/Users/spartan/programming/projects/EE</value>
+    <value key="GenericProjectManager.GenericBuildConfiguration.BuildDirectory" type="QString">/home/programming/projects/EE</value>
     <value key="ProjectExplorer.BuildCOnfiguration.ToolChain" type="QString">INVALID</value>
     <valuemap key="ProjectExplorer.BuildConfiguration.BuildStepList.0" type="QVariantMap">
      <valuemap key="ProjectExplorer.BuildStepList.Step.0" type="QVariantMap">
-      <valuelist key="GenericProjectManager.GenericMakeStep.BuildTargets" type="QVariantList"/>
-      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString">-j4 test -e DEBUGBUILD=yes BACKEND_ALLEGRO=yes</value>
+      <valuelist key="GenericProjectManager.GenericMakeStep.BuildTargets" type="QVariantList">
+       <value type="QString">all</value>
+      </valuelist>
+      <value key="GenericProjectManager.GenericMakeStep.MakeArguments" type="QString"></value>
       <value key="GenericProjectManager.GenericMakeStep.MakeCommand" type="QString"></value>
       <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString">Make</value>
       <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString"></value>
@@ -59,16 +61,7 @@
      <value key="ProjectExplorer.ProjectConfiguration.Id" type="QString">ProjectExplorer.BuildSteps.Build</value>
     </valuemap>
     <valuemap key="ProjectExplorer.BuildConfiguration.BuildStepList.1" type="QVariantMap">
-     <valuemap key="ProjectExplorer.BuildStepList.Step.0" type="QVariantMap">
-      <value key="ProjectExplorer.ProcessStep.Arguments" type="QString"></value>
-      <value key="ProjectExplorer.ProcessStep.Command" type="QString">make clean -e DEBUGBUILD=yes</value>
-      <value key="ProjectExplorer.ProcessStep.Enabled" type="bool">false</value>
-      <value key="ProjectExplorer.ProcessStep.WorkingDirectory" type="QString">%{buildDir}</value>
-      <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString">Custom Process Step</value>
-      <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString"></value>
-      <value key="ProjectExplorer.ProjectConfiguration.Id" type="QString">ProjectExplorer.ProcessStep</value>
-     </valuemap>
-     <value key="ProjectExplorer.BuildStepList.StepsCount" type="int">1</value>
+     <value key="ProjectExplorer.BuildStepList.StepsCount" type="int">0</value>
      <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString">Clean</value>
      <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString"></value>
      <value key="ProjectExplorer.ProjectConfiguration.Id" type="QString">ProjectExplorer.BuildSteps.Clean</value>
@@ -77,7 +70,7 @@
     <value key="ProjectExplorer.BuildConfiguration.ClearSystemEnvironment" type="bool">false</value>
     <valuelist key="ProjectExplorer.BuildConfiguration.UserEnvironmentChanges" type="QVariantList"/>
     <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString"></value>
-    <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString">eetest-allegro5</value>
+    <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString">all</value>
     <value key="ProjectExplorer.ProjectConfiguration.Id" type="QString">GenericProjectManager.GenericBuildConfiguration</value>
    </valuemap>
    <value key="ProjectExplorer.Target.BuildConfigurationCount" type="int">1</value>
@@ -120,11 +113,11 @@
     </valuelist>
     <value key="ProjectExplorer.CustomExecutableRunConfiguration.Arguments" type="QString"></value>
     <value key="ProjectExplorer.CustomExecutableRunConfiguration.BaseEnvironmentBase" type="int">2</value>
-    <value key="ProjectExplorer.CustomExecutableRunConfiguration.Executable" type="QString">/Users/spartan/programming/projects/EE/eetest-debug</value>
+    <value key="ProjectExplorer.CustomExecutableRunConfiguration.Executable" type="QString"></value>
     <value key="ProjectExplorer.CustomExecutableRunConfiguration.UseTerminal" type="bool">false</value>
     <valuelist key="ProjectExplorer.CustomExecutableRunConfiguration.UserEnvironmentChanges" type="QVariantList"/>
-    <value key="ProjectExplorer.CustomExecutableRunConfiguration.WorkingDirectory" type="QString">/Users/spartan/programming/projects/EE/</value>
-    <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString">Run /Users/spartan/programming/projects/EE/eetest-debug</value>
+    <value key="ProjectExplorer.CustomExecutableRunConfiguration.WorkingDirectory" type="QString">%{buildDir}</value>
+    <value key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName" type="QString">Custom Executable</value>
     <value key="ProjectExplorer.ProjectConfiguration.DisplayName" type="QString"></value>
     <value key="ProjectExplorer.ProjectConfiguration.Id" type="QString">ProjectExplorer.CustomExecutableRunConfiguration</value>
     <value key="RunConfiguration.QmlDebugServerPort" type="uint">3768</value>
@@ -140,7 +133,7 @@
  </data>
  <data>
   <variable>ProjectExplorer.Project.Updater.EnvironmentId</variable>
-  <value type="QString">{9860e61f-bf1d-46f7-bc8b-acdd80f1725e}</value>
+  <value type="QString">{bbaeda53-a008-4abc-a769-1c41d79116d2}</value>
  </data>
  <data>
   <variable>ProjectExplorer.Project.Updater.FileVersion</variable>

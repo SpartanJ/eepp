@@ -341,7 +341,6 @@ void cConsole::PrintCommandsStartingWith( const String& start ) {
 void cConsole::PrivVideoResize() {
 	mWidth		= (eeFloat) mWindow->GetWidth();
 	mHeight		= (eeFloat) mWindow->GetHeight();
-	mHeightMin	= (eeFloat) mWindow->GetHeight() * 0.4f;
 
 	if ( mVisible ) {
 		if ( mExpand )
@@ -481,37 +480,29 @@ void cConsole::CmdCmdList ( const std::vector < String >& params ) {
 
 void cConsole::CmdShowCursor ( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
-		try {
-			Int32 tInt = 0;
+		Int32 tInt = 0;
 
-			bool Res = fromString<Int32>( tInt, params[1] );
+		bool Res = fromString<Int32>( tInt, params[1] );
 
-			if ( Res && ( tInt == 0 || tInt == 1 ) ) {
-				mWindow->GetCursorManager()->Visible( 0 != tInt );
-				PushText( "showcursor " + toStr( tInt ) );
-			} else
-				PushText( "Valid parameters are 0 or 1." );
-		} catch (...) {
-			PushText( "Invalid Parameter. Expected int value from '" + params[1] + "'." );
-		}
+		if ( Res && ( tInt == 0 || tInt == 1 ) ) {
+			mWindow->GetCursorManager()->Visible( 0 != tInt );
+			PushText( "showcursor " + toStr( tInt ) );
+		} else
+			PushText( "Valid parameters are 0 or 1." );
 	}
 }
 
 void cConsole::CmdFrameLimit ( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
-		try {
-			Int32 tInt = 0;
+		Int32 tInt = 0;
 
-			bool Res = fromString<Int32>( tInt, params[1] );
+		bool Res = fromString<Int32>( tInt, params[1] );
 
-			if ( Res && ( tInt >= 0 && tInt <= 10000 ) ) {
-				mWindow->FrameRateLimit( tInt );
-				PushText( "setfpslimit " + toStr( tInt ) );
-			} else
-				PushText( "Valid parameters are between 0 and 10000 (0 = no limit)." );
-		} catch (...) {
-			PushText( "Invalid Parameter. Expected int value from '" + params[1] + "'." );
-		}
+		if ( Res && ( tInt >= 0 && tInt <= 10000 ) ) {
+			mWindow->FrameRateLimit( tInt );
+			PushText( "setfpslimit " + toStr( tInt ) );
+		} else
+			PushText( "Valid parameters are between 0 and 10000 (0 = no limit)." );
 	}
 }
 
@@ -542,128 +533,111 @@ void cConsole::CmdGetGpuExtensions( const std::vector < String >& params ) {
 
 void cConsole::CmdSetGamma( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
-		try {
-			eeFloat tFloat = 0.f;
+		eeFloat tFloat = 0.f;
 
-			bool Res = fromString<eeFloat>( tFloat, params[1] );
+		bool Res = fromString<eeFloat>( tFloat, params[1] );
 
-			if ( Res && ( tFloat > 0.1f && tFloat <= 10.0f ) ) {
-				mWindow->SetGamma( tFloat, tFloat, tFloat );
-				PushText( "setgamma " + toStr( tFloat ) );
-			} else
-				PushText( "Valid parameters are between 0.1 and 10." );
-		} catch (...) {
-			PushText( "Invalid Parameter. Expected float value." );
-		}
+		if ( Res && ( tFloat > 0.1f && tFloat <= 10.0f ) ) {
+			mWindow->SetGamma( tFloat, tFloat, tFloat );
+			PushText( "setgamma " + toStr( tFloat ) );
+		} else
+			PushText( "Valid parameters are between 0.1 and 10." );
 	}
 }
 
 void cConsole::CmdSetVolume( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
-		try {
-			eeFloat tFloat = 0.f;
+		eeFloat tFloat = 0.f;
 
-			bool Res = fromString<eeFloat>( tFloat, params[1] );
+		bool Res = fromString<eeFloat>( tFloat, params[1] );
 
-			if ( Res && ( tFloat >= 0.0f && tFloat <= 100.0f ) ) {
-				EE::Audio::cAudioListener::GlobalVolume( tFloat );
-				PushText( "setvolume " + toStr( tFloat ) );
-			} else
-				PushText( "Valid parameters are between 0 and 100." );
-		} catch (...) {
-			PushText( "Invalid Parameter. Expected eeFloat value." );
-		}
+		if ( Res && ( tFloat >= 0.0f && tFloat <= 100.0f ) ) {
+			EE::Audio::cAudioListener::GlobalVolume( tFloat );
+			PushText( "setvolume " + toStr( tFloat ) );
+		} else
+			PushText( "Valid parameters are between 0 and 100." );
 	}
-
 }
 
 void cConsole::CmdDir( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
-		try {
-			#if EE_PLATFORM == EE_PLATFORM_WIN
-			String Slash( "/\\" );
-			#else
-			String Slash( "/" );
-			#endif
-			String myPath = params[1];
-			String myOrder;
+		#if EE_PLATFORM == EE_PLATFORM_WIN
+		String Slash( "/\\" );
+		#else
+		String Slash( "/" );
+		#endif
+		String myPath = params[1];
+		String myOrder;
 
-			if ( params.size() > 2 ) {
-				for ( eeUint i = 2; i < params.size(); i++ ) {
-					if ( i + 1 == params.size() ) {
-						if ( params[i] == "ff" )
-							myOrder = params[i];
-						else
-							myPath += " " + params[i];
-					} else {
+		if ( params.size() > 2 ) {
+			for ( eeUint i = 2; i < params.size(); i++ ) {
+				if ( i + 1 == params.size() ) {
+					if ( params[i] == "ff" )
+						myOrder = params[i];
+					else
 						myPath += " " + params[i];
-					}
-				}
-			}
-
-			if ( IsDirectory( myPath ) ) {
-				eeUint i;
-
-				std::vector<String> mFiles = FilesGetInPath( myPath );
-				std::sort( mFiles.begin(), mFiles.end() );
-
-				PushText( "Directory: " + myPath );
-
-				if ( myOrder == "ff" ) {
-					std::vector<String> mFolders;
-					std::vector<String> mFile;
-
-					for ( i = 0; i < mFiles.size(); i++ ) {
-						if ( IsDirectory( myPath + Slash + mFiles[i] ) ) {
-							mFolders.push_back( mFiles[i] );
-						} else {
-							mFile.push_back( mFiles[i] );
-						}
-					}
-
-					if ( mFolders.size() )
-						PushText( "Folders: " );
-
-					for ( i = 0; i < mFolders.size(); i++ )
-						PushText( "	" + mFolders[i] );
-
-					if ( mFolders.size() )
-						PushText( "Files: " );
-
-					for ( i = 0; i < mFile.size(); i++ )
-						PushText( "	" + mFile[i] );
-
 				} else {
-					for ( i = 0; i < mFiles.size(); i++ )
-						PushText( "	" + mFiles[i] );
+					myPath += " " + params[i];
 				}
-			} else {
-				if ( myPath == "help" )
-					PushText( "You can use a third parameter to show folders first, the parameter is ff." );
-				else
-					PushText( "Path is not a directory." );
 			}
-		} catch (...) {
-			PushText( "Invalid Parameter." );
+		}
+
+		if ( IsDirectory( myPath ) ) {
+			eeUint i;
+
+			std::vector<String> mFiles = FilesGetInPath( myPath );
+			std::sort( mFiles.begin(), mFiles.end() );
+
+			PushText( "Directory: " + myPath );
+
+			if ( myOrder == "ff" ) {
+				std::vector<String> mFolders;
+				std::vector<String> mFile;
+
+				for ( i = 0; i < mFiles.size(); i++ ) {
+					if ( IsDirectory( myPath + Slash + mFiles[i] ) ) {
+						mFolders.push_back( mFiles[i] );
+					} else {
+						mFile.push_back( mFiles[i] );
+					}
+				}
+
+				if ( mFolders.size() )
+					PushText( "Folders: " );
+
+				for ( i = 0; i < mFolders.size(); i++ )
+					PushText( "	" + mFolders[i] );
+
+				if ( mFolders.size() )
+					PushText( "Files: " );
+
+				for ( i = 0; i < mFile.size(); i++ )
+					PushText( "	" + mFile[i] );
+
+			} else {
+				for ( i = 0; i < mFiles.size(); i++ )
+					PushText( "	" + mFiles[i] );
+			}
+		} else {
+			if ( myPath == "help" )
+				PushText( "You can use a third parameter to show folders first, the parameter is ff." );
+			else
+				PushText( "Path is not a directory." );
 		}
 	}
 }
 
 void cConsole::CmdShowFps( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
-		try {
-			Int32 tInt = 0;
+		Int32 tInt = 0;
 
-			bool Res = fromString<Int32>( tInt, params[1] );
+		bool Res = fromString<Int32>( tInt, params[1] );
 
-			if ( Res && ( tInt == 0 || tInt == 1 ) ) {
-				mShowFps = 0 != tInt;
-				PushText( "showfps " + toStr( tInt ) );
-			} else
-				PushText( "Valid parameters are 0 or 1." );
-		} catch (...) {
-			PushText( "Invalid Parameter. Expected int value from '" + params[1] + "'." );
-		}
+		if ( Res && ( tInt == 0 || tInt == 1 ) ) {
+			mShowFps = 0 != tInt;
+			PushText( "showfps " + toStr( tInt ) );
+		} else
+			PushText( "Valid parameters are 0 or 1." );
 	}
 }
 

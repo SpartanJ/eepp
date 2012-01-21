@@ -27,8 +27,20 @@
 #define __CALLBACK_HPP__
 
 #include <string.h>
-#include <stdexcept>
 
+#if !defined( __ANDROID__ ) && !defined( ANDROID )
+	#define EXCEPTIONS_SUPPORTED
+#endif
+
+#ifdef EXCEPTIONS_SUPPORTED
+	#include <stdexcept>
+
+	#define THROW_RUNTIME_ERROR( R ) throw std::runtime_error(unset_call_error);
+#else
+	#include <cstdio>
+
+	#define THROW_RUNTIME_ERROR( R ) printf( "throw std::runtime_error(unset_call_error)" ); return ( R )NULL;
+#endif
 
 //PlusCallback 1.7
 //This library was built on 12.10.2010 to support
@@ -155,7 +167,7 @@ namespace cb
                         if (mCallback)
                             return (*mCallback)();
                         else
-                            throw std::runtime_error(unset_call_error);
+							THROW_RUNTIME_ERROR( R )
                     }
 
                     ///Invokes the callback. This function can sometimes be more convenient than the operator(), which does the same thing.
@@ -164,7 +176,7 @@ namespace cb
                         if (mCallback)
                             return (*mCallback)();
                         else
-                            throw std::runtime_error(unset_call_error);
+							THROW_RUNTIME_ERROR( R )
                     }
 
                 private:
@@ -398,7 +410,7 @@ namespace cb
                         if (mCallback)
                             return (*mCallback)(t0);
                         else
-                            throw std::runtime_error(unset_call_error);
+							THROW_RUNTIME_ERROR( R )
                     }
 
                     ///Invokes the callback. This function can sometimes be more convenient than the operator(), which does the same thing.
@@ -407,7 +419,7 @@ namespace cb
                         if (mCallback)
                             return (*mCallback)(t0);
                         else
-                            throw std::runtime_error(unset_call_error);
+							THROW_RUNTIME_ERROR( R )
                     }
 
                 private:
@@ -641,7 +653,7 @@ namespace cb
                         if (mCallback)
                             return (*mCallback)(t0, t1);
                         else
-                            throw std::runtime_error(unset_call_error);
+							THROW_RUNTIME_ERROR( R )
                     }
 
                     ///Invokes the callback. This function can sometimes be more convenient than the operator(), which does the same thing.
@@ -650,7 +662,7 @@ namespace cb
                         if (mCallback)
                             return (*mCallback)(t0, t1);
                         else
-                            throw std::runtime_error(unset_call_error);
+							THROW_RUNTIME_ERROR( R )
                     }
 
                 private:
@@ -884,7 +896,7 @@ namespace cb
                         if (mCallback)
                             return (*mCallback)(t0, t1, t2);
                         else
-                            throw std::runtime_error(unset_call_error);
+							THROW_RUNTIME_ERROR( R )
                     }
 
                     ///Invokes the callback. This function can sometimes be more convenient than the operator(), which does the same thing.
@@ -893,7 +905,7 @@ namespace cb
                         if (mCallback)
                             return (*mCallback)(t0, t1, t2);
                         else
-                            throw std::runtime_error(unset_call_error);
+							THROW_RUNTIME_ERROR( R )
                     }
 
                 private:
@@ -1127,7 +1139,7 @@ namespace cb
                         if (mCallback)
                             return (*mCallback)(t0, t1, t2, t3);
                         else
-                            throw std::runtime_error(unset_call_error);
+							THROW_RUNTIME_ERROR( R )
                     }
 
                     ///Invokes the callback. This function can sometimes be more convenient than the operator(), which does the same thing.
@@ -1136,7 +1148,7 @@ namespace cb
                         if (mCallback)
                             return (*mCallback)(t0, t1, t2, t3);
                         else
-                            throw std::runtime_error(unset_call_error);
+							THROW_RUNTIME_ERROR( R )
                     }
 
                 private:
@@ -1370,7 +1382,7 @@ namespace cb
                         if (mCallback)
                             return (*mCallback)(t0, t1, t2, t3, t4);
                         else
-                            throw std::runtime_error(unset_call_error);
+							THROW_RUNTIME_ERROR( R )
                     }
 
                     ///Invokes the callback. This function can sometimes be more convenient than the operator(), which does the same thing.
@@ -1379,7 +1391,7 @@ namespace cb
                         if (mCallback)
                             return (*mCallback)(t0, t1, t2, t3, t4);
                         else
-                            throw std::runtime_error(unset_call_error);
+							THROW_RUNTIME_ERROR( R )
                     }
 
                 private:
@@ -1613,7 +1625,7 @@ namespace cb
                         if (mCallback)
                             return (*mCallback)(t0, t1, t2, t3, t4, t5);
                         else
-                            throw std::runtime_error(unset_call_error);
+							THROW_RUNTIME_ERROR( R )
                     }
 
                     ///Invokes the callback. This function can sometimes be more convenient than the operator(), which does the same thing.
@@ -1622,7 +1634,7 @@ namespace cb
                         if (mCallback)
                             return (*mCallback)(t0, t1, t2, t3, t4, t5);
                         else
-                            throw std::runtime_error(unset_call_error);
+							THROW_RUNTIME_ERROR( R )
                     }
 
                 private:
@@ -1856,7 +1868,7 @@ namespace cb
                         if (mCallback)
                             return (*mCallback)(t0, t1, t2, t3, t4, t5, t6);
                         else
-                            throw std::runtime_error(unset_call_error);
+							THROW_RUNTIME_ERROR( R )
                     }
 
                     ///Invokes the callback. This function can sometimes be more convenient than the operator(), which does the same thing.
@@ -1865,7 +1877,7 @@ namespace cb
                         if (mCallback)
                             return (*mCallback)(t0, t1, t2, t3, t4, t5, t6);
                         else
-                            throw std::runtime_error(unset_call_error);
+							THROW_RUNTIME_ERROR( R )
                     }
 
                 private:
@@ -2099,7 +2111,7 @@ namespace cb
                         if (mCallback)
                             return (*mCallback)(t0, t1, t2, t3, t4, t5, t6, t7);
                         else
-                            throw std::runtime_error(unset_call_error);
+							THROW_RUNTIME_ERROR( R )
                     }
 
                     ///Invokes the callback. This function can sometimes be more convenient than the operator(), which does the same thing.
@@ -2108,7 +2120,7 @@ namespace cb
                         if (mCallback)
                             return (*mCallback)(t0, t1, t2, t3, t4, t5, t6, t7);
                         else
-                            throw std::runtime_error(unset_call_error);
+							THROW_RUNTIME_ERROR( R )
                     }
 
                 private:
@@ -2342,7 +2354,7 @@ namespace cb
                         if (mCallback)
                             return (*mCallback)(t0, t1, t2, t3, t4, t5, t6, t7, t8);
                         else
-                            throw std::runtime_error(unset_call_error);
+							THROW_RUNTIME_ERROR( R )
                     }
 
                     ///Invokes the callback. This function can sometimes be more convenient than the operator(), which does the same thing.
@@ -2351,7 +2363,7 @@ namespace cb
                         if (mCallback)
                             return (*mCallback)(t0, t1, t2, t3, t4, t5, t6, t7, t8);
                         else
-                            throw std::runtime_error(unset_call_error);
+							THROW_RUNTIME_ERROR( R )
                     }
 
                 private:

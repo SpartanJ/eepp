@@ -36,6 +36,8 @@
 #include "SDL_androidkeyboard.h"
 #include "SDL_androidwindow.h"
 
+#include <android/log.h>
+
 #define ANDROID_VID_DRIVER_NAME "Android"
 
 /* Initialization/Query functions */
@@ -130,7 +132,9 @@ int
 Android_VideoInit(_THIS)
 {
     SDL_DisplayMode mode;
-
+	
+	__android_log_print(ANDROID_LOG_INFO, "SDL", "Android_VideoInit %d %d", Android_ScreenWidth, Android_ScreenHeight);
+	
     mode.format = Android_ScreenFormat;
     mode.w = Android_ScreenWidth;
     mode.h = Android_ScreenHeight;
@@ -158,6 +162,7 @@ Android_VideoQuit(_THIS)
 void
 Android_SetScreenResolution(int width, int height, Uint32 format)
 {
+	__android_log_print(ANDROID_LOG_INFO, "SDL", "Android_SetScreenResolution %d %d %d", width, height, format);
     Android_ScreenWidth = width;
     Android_ScreenHeight = height;   
     Android_ScreenFormat = format;
