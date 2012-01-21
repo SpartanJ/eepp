@@ -34,8 +34,9 @@ public class SDLActivity extends Activity {
 
     // Load the .so
     static {
-        System.loadLibrary("eepp");
-        System.loadLibrary("main");
+        //System.loadLibrary("eepp");
+        System.loadLibrary("bnb");
+        //System.loadLibrary("main");
     }
 
     // Setup

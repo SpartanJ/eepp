@@ -24,7 +24,7 @@ namespace EE { namespace Utils {
 	std::vector<String> EE_API FilesGetInPath( const String& path );
 
 	/** @return The size of a file */
-	Uint32 EE_API FileSize( const std::string& Filepath );
+	Uint64 EE_API FileSize( const std::string& Filepath );
 
 	/** @return The System Time */
 	eeDouble EE_API GetSystemTime();
@@ -134,6 +134,9 @@ namespace EE { namespace Utils {
 
 	/** @return The OS Architecture */
 	std::string EE_API GetOSArchitecture();
+
+	/** @return Returns free disk space for a given path */
+	Int64 EE_API GetDiskFreeSpace(const std::string& path);
 }
 
 }

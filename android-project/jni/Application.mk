@@ -35,4 +35,4 @@ APP_STL := gnustl_static
 APP_CFLAGS := -DDEBUG
 APP_PLATFORM := android-10
 
-APP_MODULES := main
+APP_MODULES := bnb

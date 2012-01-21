@@ -67,10 +67,12 @@ static float fLastAccelerometer[3];
 *******************************************************************************/
 
 // Library init
+/*
 extern "C" jint JNI_OnLoad(JavaVM* vm, void* reserved)
 {
     return JNI_VERSION_1_4;
 }
+* */
 
 // Called before SDL_main() to initialize JNI bindings
 extern "C" void SDL_Android_Init(JNIEnv* env, jclass cls)

@@ -2,6 +2,7 @@
 #define EE_SYSTEMSINGLETON_H
 
 #include "../base.hpp"
+#include <typeinfo>
 
 namespace EE { namespace System {
 
@@ -13,9 +14,10 @@ class tSingleton {
 	public:
 		/** Get the singleton pointer */
 		static T* CreateSingleton() {
-			if (ms_singleton == 0)
+			if (ms_singleton == 0) {
 				ms_singleton = eeNew( T, () );
-
+			}
+			
 			return ms_singleton;
 		}
 

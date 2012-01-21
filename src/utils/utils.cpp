@@ -9,12 +9,21 @@
 #elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
 	#include <libgen.h>
 	#include <unistd.h>
+	#if EE_PLATFORM != EE_PLATFORM_ANDROID
+		#include <sys/statvfs.h>
+	#else
+		#include <sys/vfs.h>
+		#define statvfs statfs
+		#define fstatvfs fstatfs
+	#endif
 #elif EE_PLATFORM == EE_PLATFORM_HAIKU
 	#include <kernel/OS.h>
 	#include <kernel/image.h>
 #elif EE_PLATFORM == EE_PLATFORM_SOLARIS
 	#include <stdlib.h>
 #endif
+
+
 
 #if EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD
 #include <sys/sysctl.h>
@@ -570,7 +579,7 @@ std::vector<std::string> FilesGetInPath( const std::string& path ) {
 #endif
 }
 
-Uint32 FileSize( const std::string& Filepath ) {
+Uint64 FileSize( const std::string& Filepath ) {
 	struct stat st;
 	int res = stat( Filepath.c_str(), &st );
 
@@ -758,7 +767,7 @@ eeInt GetCPUCount() {
 		GetSystemInfo(&info);
 
 		nprocs = (eeInt) info.dwNumberOfProcessors;
-	#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_SOLARIS
+	#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_SOLARIS || EE_PLATFORM == EE_PLATFORM_ANDROID
 		nprocs = sysconf(_SC_NPROCESSORS_ONLN);
 	#elif EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD
 		int mib[2];
@@ -912,6 +921,23 @@ void SetFlagValue( Uint32 * Key, Uint32 Val, Uint32 BitWrite ) {
 		if ( ( * Key ) & Val )
 			( * Key ) &= ~Val;
 	}
+}
+
+Int64 GetDiskFreeSpace(const std::string& path) {
+#if defined( EE_PLATFORM_POSIX )
+	struct statvfs data;
+	statvfs(path.c_str(),  &data);
+	return (Int64)data.f_bsize * (Int64)data.f_bfree;
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+	Int64 AvailableBytes;
+	Int64 TotalBytes;
+	Int64 FreeBytes;
+	GetDiskFreeSpaceEx(path.c_str(),(PULARGE_INTEGER) &AvailableBytes,
+	(PULARGE_INTEGER) &TotalBytes, (PULARGE_INTEGER) &FreeBytes);
+	return FreeBytes;
+#else
+	return -1;
+#endif
 }
 
 }}

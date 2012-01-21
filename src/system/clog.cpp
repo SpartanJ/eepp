@@ -41,15 +41,23 @@ void cLog::Write( const std::string& Text, const bool& newLine ) {
 	if ( newLine ) {
 		mData += '\n';
 	}
-
+	
 	if ( mConsoleOutput ) {
+	#if EE_PLATFORM == EE_PLATFORM_ANDROID
+		if ( newLine ) {
+			ANDROID_LOGI( ( Text + std::string( "\n" ) ).c_str() );
+		} else {
+			ANDROID_LOGI( Text.c_str() );
+		}
+	#else
 		if ( newLine ) {
 			std::cout << Text << std::endl;
 		} else {
 			std::cout << Text;
 		}
+	#endif
 	}
-
+	
 	if ( mLiveWrite ) {
         openfs();
 
@@ -96,7 +104,11 @@ void cLog::Writef( const char* format, ... ) {
 			mData += tstr + '\n';
 
 			if ( mConsoleOutput ) {
+				#if EE_PLATFORM != EE_PLATFORM_ANDROID
 				std::cout << tstr << std::endl;
+				#else
+				ANDROID_LOGI( ( tstr + std::string( "\n" ) ).c_str() );
+				#endif
 			}
 
             if ( mLiveWrite ) {

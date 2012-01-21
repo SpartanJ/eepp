@@ -572,10 +572,13 @@ Uint32 Utf<32>::DecodeAnsi(In input, const std::locale& locale)
         return static_cast<Uint32>(character);
 
     #else
-
         // Get the facet of the locale which deals with character conversion
+        #if EE_PLATFORM != EE_PLATFORM_ANDROID
         const std::ctype<wchar_t>& facet = std::use_facet< std::ctype<wchar_t> >(locale);
-
+		#else
+		const std::ctype<char>& facet = std::use_facet< std::ctype<char> >(locale);
+		#endif
+		
         // Use the facet to convert each character of the input string
         return static_cast<Uint32>(facet.widen(input));
 
@@ -615,9 +618,12 @@ Out Utf<32>::EncodeAnsi(Uint32 codepoint, Out output, char replacement, const st
         return output;
 
     #else
-
         // Get the facet of the locale which deals with character conversion
+        #if EE_PLATFORM != EE_PLATFORM_ANDROID
         const std::ctype<wchar_t>& facet = std::use_facet< std::ctype<wchar_t> >(locale);
+        #else
+        const std::ctype<char>& facet = std::use_facet< std::ctype<char> >(locale);
+        #endif
 
         // Use the facet to convert each character of the input string
         *output++ = facet.narrow(static_cast<wchar_t>(codepoint), replacement);

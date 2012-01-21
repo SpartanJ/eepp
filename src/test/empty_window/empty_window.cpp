@@ -5,33 +5,33 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	// Create a new window
 	cWindow * win = cEngine::instance()->CreateWindow( WindowSettings( 800, 600, 32, WindowStyle::Default, "", "eepp - Empty Window" ), ContextSettings(  ) );
-	
+
 	// Set window background color
 	win->BackColor( eeColor( 50, 50, 50 ) );
-	
+
 	// Check if created
 	if ( win->Created() )
 	{
 		// Get input pointer
 		cInput * imp = win->GetInput();
-		
+
 		eeFloat ang = 0;
-		
+
 		// Application loop
 		while ( win->Running() )
 		{
 			// Update the input
 			imp->Update();
-        
+
 			// Check if ESCAPE key is pressed
 			if ( imp->IsKeyDown( KEY_ESCAPE ) )
 			{
 				// Close the window
 				win->Close();
 			}
-			
+
 			ang += cEngine::instance()->Elapsed() * 0.01;
-			
+
 			// Create an instance of the primitive renderer
 			cPrimitives p;
 
@@ -46,7 +46,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 			// Draw a circle
 			p.DrawCircle( win->GetWidth() / 2, win->GetHeight() / 2, 200 );
-			
+
 			// Draw frame
 			win->Display();
 
@@ -54,12 +54,12 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 			eeSleep( 10 );
 		}
 	}
-	
+
 	// Destroy the engine instance. Destroys all the windows and engine singletons.
 	cEngine::DestroySingleton();
-	
+
 	// If was compiled in debug mode it will print the memory manager report
 	EE::MemoryManager::LogResults();
-	
+
 	return 0;
 }

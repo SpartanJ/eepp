@@ -323,7 +323,7 @@ void cFont::SubDraw( const String& Text, const eeFloat& X, const eeFloat& Y, con
 	cTextureFactory::instance()->Bind( mTexId );
 	cTextureFactory::instance()->SetPreBlendFunc( Effect );
 
-	if ( !Cached && ( Text.size() != mRenderCoords.size() / 4 || Angle != 0.f || Scale != 1.f || FontHAlignGet( Flags ) == FONT_DRAW_CENTER || FontHAlignGet( Flags ) == FONT_DRAW_RIGHT ) ) {
+	if ( !Cached && ( Text.size() != mRenderCoords.size() / EE_QUAD_VERTEX || Angle != 0.f || Scale != 1.f || FontHAlignGet( Flags ) == FONT_DRAW_CENTER || FontHAlignGet( Flags ) == FONT_DRAW_RIGHT ) ) {
 		SetText( Text );
 	}
 

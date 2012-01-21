@@ -15,7 +15,7 @@ MY_C_FLAGS	:=	-DANDROID \
 				$(EE_GLES_VERSION) \
 				-DEE_NO_SNDFILE
 
-MY_LDLIBS 	:= -llog -landroid -lEGL $(EE_GLES_LINK) -lm
+MY_LDLIBS 	:= -llog -landroid -lEGL $(EE_GLES_LINK) -lm -lz
 
 include $(call all-subdir-makefiles) 
 
@@ -62,7 +62,7 @@ LOCAL_SRC_FILES := $(foreach F, $(CODE_SRCS), $(addprefix $(dir $(F)),$(notdir $
 
 LOCAL_STATIC_LIBRARIES := sdl-1.3 chipmunk freetype openal
 
-include $(BUILD_SHARED_LIBRARY) 
+include $(BUILD_STATIC_LIBRARY) 
 #*************** EEPP ***************
 
 #*************** CHIPMUNK ***************
@@ -227,7 +227,7 @@ CORE_SRCS :=  \
 
 LOCAL_SRC_FILES := $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
-LOCAL_SHARED_LIBRARIES := eepp
+LOCAL_STATIC_LIBRARIES := eepp
 
 include $(BUILD_SHARED_LIBRARY)
 #************ empty_window ************
@@ -253,7 +253,7 @@ LOCAL_C_INCLUDES := $(MY_C_INCLUDES)
 
 LOCAL_SRC_FILES := $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
-LOCAL_SHARED_LIBRARIES := eepp
+LOCAL_STATIC_LIBRARIES := eepp
 
 include $(BUILD_SHARED_LIBRARY)
 #************ BnB ************

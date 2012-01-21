@@ -170,7 +170,7 @@ void cTextureLoader::LoadFromPath() {
 		}
 
 		if ( NULL == mPixels )
-			cLog::instance()->Write( stbi_failure_reason() );
+			cLog::instance()->Write( "Filed to load: " + mFilepath + " Reason: " + std::string( stbi_failure_reason() ) );
 	} else if ( cPackManager::instance()->FallbackToPacks() ) {
 		mPack = cPackManager::instance()->Exists( mFilepath );
 
