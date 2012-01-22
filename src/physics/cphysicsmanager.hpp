@@ -11,8 +11,9 @@ class cConstraint;
 class cSpace;
 
 class CP_API cPhysicsManager : public tSingleton<cPhysicsManager> {
-	friend class tSingleton<cPhysicsManager>;
 	public:
+		SINGLETON_DECLARE_HEADERS(cPhysicsManager)
+
 		class cDrawSpaceOptions {
 			public:
 				cDrawSpaceOptions() :

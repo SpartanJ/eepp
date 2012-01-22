@@ -8,8 +8,9 @@
 namespace EE { namespace System {
 
 class EE_API cPackManager : public tContainer<cPack>, public tSingleton<cPackManager> {
-	friend class tSingleton<cPackManager>;
 	public:
+		SINGLETON_DECLARE_HEADERS(cPackManager)
+
 		cPackManager();
 
 		virtual ~cPackManager();

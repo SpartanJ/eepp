@@ -4,6 +4,8 @@
 
 namespace EE { namespace Graphics {
 
+SINGLETON_DECLARE_IMPLEMENTATION(cTextureFactory)
+
 cTextureFactory::cTextureFactory() :
 	mMemSize(0)
 {

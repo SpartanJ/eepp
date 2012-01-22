@@ -2,6 +2,8 @@
 
 namespace EE { namespace Graphics { namespace Private {
 
+SINGLETON_DECLARE_IMPLEMENTATION(cVertexBufferManager)
+
 cVertexBufferManager::cVertexBufferManager()
 {
 }

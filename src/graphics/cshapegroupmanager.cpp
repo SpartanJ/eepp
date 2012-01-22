@@ -3,6 +3,8 @@
 
 namespace EE { namespace Graphics {
 
+SINGLETON_DECLARE_IMPLEMENTATION(cShapeGroupManager)
+
 cShapeGroupManager::cShapeGroupManager() :
 	tResourceManager<cShapeGroup>( false )
 {

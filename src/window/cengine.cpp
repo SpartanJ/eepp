@@ -32,6 +32,8 @@
 
 namespace EE { namespace Window {
 
+SINGLETON_DECLARE_IMPLEMENTATION(cEngine)
+
 cEngine::cEngine() :
 	mBackend( NULL ),
 	mWindow( NULL )

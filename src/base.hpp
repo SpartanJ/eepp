@@ -150,8 +150,6 @@
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	#ifdef EE_DYNAMIC
-		#define EE_CALL _stdcall
-
 		// Windows platforms
 		#ifdef EE_EXPORTS
 			// From DLL side, we must export
@@ -165,20 +163,20 @@
 			#pragma warning(disable : 4251)
 			#pragma warning(disable : 4244)
 			#pragma warning(disable : 4996)
+			#pragma warning(disable : 4311)
+			#pragma warning(disable : 4312)
 		#endif
 	#else
 		// No specific directive needed for static build
 		#ifndef EE_API
 		#define EE_API
 		#endif
-		#define EE_CALL
 	#endif
 #else
 	// Other platforms don't need to define anything
 	#ifndef EE_API
 	#define EE_API
 	#endif
-	#define EE_CALL
 #endif
 
 #ifndef EE_USE_DOUBLES

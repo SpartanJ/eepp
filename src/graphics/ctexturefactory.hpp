@@ -14,8 +14,9 @@ class cGlobalBatchRenderer;
 
 /** @brief The Texture Manager Class. Here we do all the textures stuff. (Singleton Class) */
 class EE_API cTextureFactory: public tSingleton<cTextureFactory>, protected cMutex {
-	friend class tSingleton<cTextureFactory>;
 	public:
+		SINGLETON_DECLARE_HEADERS(cTextureFactory)
+
 		/** Create an empty texture
 		* @param Width Texture Width
 		* @param Height Texture Height

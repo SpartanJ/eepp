@@ -4,6 +4,8 @@
 
 namespace EE { namespace UI {
 
+SINGLETON_DECLARE_IMPLEMENTATION(cUIThemeManager)
+
 cUIThemeManager::cUIThemeManager() :
 	tResourceManager<cUITheme>( true ),
 	mFont( NULL ),

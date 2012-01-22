@@ -9,8 +9,9 @@
 namespace EE { namespace UI {
 
 class EE_API cUIManager : public tSingleton<cUIManager> {
-	friend class tSingleton<cUIManager>;
 	public:
+		SINGLETON_DECLARE_HEADERS(cUIManager)
+
 		cUIManager();
 
 		~cUIManager();

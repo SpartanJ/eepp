@@ -9,8 +9,9 @@ namespace EE { namespace UI {
 class cUIControl;
 
 class EE_API cUIThemeManager : public tResourceManager<cUITheme>, public tSingleton<cUIThemeManager> {
-	friend class tSingleton<cUIThemeManager>;
 	public:
+		SINGLETON_DECLARE_HEADERS(cUIThemeManager)
+
 		cUIThemeManager();
 
 		virtual ~cUIThemeManager();

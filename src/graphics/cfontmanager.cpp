@@ -2,6 +2,8 @@
 
 namespace EE { namespace Graphics {
 
+SINGLETON_DECLARE_IMPLEMENTATION(cFontManager)
+
 cFontManager::cFontManager() {
 }
 

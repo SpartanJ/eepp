@@ -2,6 +2,8 @@
 
 namespace EE { namespace System {
 
+SINGLETON_DECLARE_IMPLEMENTATION(cLog)
+
 cLog::cLog() :
 	mSave( false ),
 	mConsoleOutput( false ),

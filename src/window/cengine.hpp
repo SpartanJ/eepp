@@ -9,8 +9,9 @@ namespace EE { namespace Window {
 
 /** @brief The window management class. Here the engine start working. (Singleton Class). */
 class EE_API cEngine : public tSingleton<cEngine> {
-	friend class tSingleton<cEngine>;
 	public:
+		SINGLETON_DECLARE_HEADERS(cEngine)
+
 		~cEngine();
 
 		/** Creates a new window.

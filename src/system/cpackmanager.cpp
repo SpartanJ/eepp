@@ -2,6 +2,8 @@
 
 namespace EE { namespace System {
 
+SINGLETON_DECLARE_IMPLEMENTATION(cPackManager)
+
 cPackManager::cPackManager() :
 	mFallback( true )
 {

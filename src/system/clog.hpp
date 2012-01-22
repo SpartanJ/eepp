@@ -8,8 +8,9 @@
 namespace EE { namespace System {
 
 class EE_API cLog : public tSingleton<cLog> {
-	friend class tSingleton<cLog>;
 	public:
+		SINGLETON_DECLARE_HEADERS(cLog)
+
 		void Save(const std::string& filepath = "" );
 
 		void Write(const std::string& Text, const bool& newLine = true);

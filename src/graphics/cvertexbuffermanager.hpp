@@ -7,8 +7,9 @@
 namespace EE { namespace Graphics { namespace Private {
 
 class EE_API cVertexBufferManager : public tContainer<cVertexBuffer>, public tSingleton<cVertexBufferManager> {
-	friend class tSingleton<cVertexBufferManager>;
 	public:
+		SINGLETON_DECLARE_HEADERS(cVertexBufferManager)
+
 		cVertexBufferManager();
 
 		virtual ~cVertexBufferManager();

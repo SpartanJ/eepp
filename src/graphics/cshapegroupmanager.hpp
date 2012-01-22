@@ -8,8 +8,9 @@
 namespace EE { namespace Graphics {
 
 class EE_API cShapeGroupManager : public tResourceManager<cShapeGroup>, public tSingleton<cShapeGroupManager> {
-	friend class tSingleton<cShapeGroupManager>;
 	public:
+		SINGLETON_DECLARE_HEADERS(cShapeGroupManager)
+
 		cShapeGroupManager();
 
 		virtual ~cShapeGroupManager();

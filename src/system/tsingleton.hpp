@@ -2,19 +2,51 @@
 #define EE_SYSTEMSINGLETON_H
 
 #include "../base.hpp"
-#include <typeinfo>
+
+#define SINGLETON_DECLARE_HEADERS( T ) \
+		static T * CreateSingleton(); \
+\
+		static T * ExistsSingleton(); \
+\
+		static T * instance(); \
+\
+		static void DestroySingleton();
+
+#define SINGLETON_DECLARE_IMPLEMENTATION( T ) \
+template<> T* tSingleton<T>::ms_singleton = NULL; \
+\
+T* T::CreateSingleton() { \
+	if ( NULL == ms_singleton ) { \
+		ms_singleton = eeNew( T, () ); \
+	} \
+\
+	return ms_singleton; \
+} \
+\
+T * T::ExistsSingleton() { \
+	return ms_singleton; \
+} \
+\
+T * T::instance() { \
+	return CreateSingleton(); \
+} \
+\
+void T::DestroySingleton() { \
+	eeSAFE_DELETE(ms_singleton) ; \
+}
 
 namespace EE { namespace System {
 
 /** @brief Template class for only one instance classes. */
 template<typename T>
 class tSingleton {
-	static T* ms_singleton;
+	protected:
+		static T* ms_singleton;
 
 	public:
 		/** Get the singleton pointer */
 		static T* CreateSingleton() {
-			if (ms_singleton == 0) {
+			if ( NULL == ms_singleton ) {
 				ms_singleton = eeNew( T, () );
 			}
 			
@@ -33,13 +65,9 @@ class tSingleton {
 
 		/** Destroy the singleton instance */
 		static void DestroySingleton() {
-			if( ms_singleton != 0 ) {
-				eeDelete( ms_singleton );
-				ms_singleton = 0;
-			}
+			eeSAFE_DELETE(ms_singleton);
 		}
 };
-template <typename T> T* tSingleton <T>::ms_singleton = 0;
 
 }}
 #endif

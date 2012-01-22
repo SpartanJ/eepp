@@ -3,6 +3,8 @@
 
 namespace EE { namespace UI {
 
+SINGLETON_DECLARE_IMPLEMENTATION(cUIManager)
+
 cUIManager::cUIManager() :
 	mWindow( NULL ),
 	mKM( NULL ),
