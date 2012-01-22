@@ -45,7 +45,7 @@ else
 endif
 
 ifeq ($(DYNAMIC), yes)
-    BUILDFLAGS = -fPIC
+	BUILDFLAGS = -fPIC -DEE_EXPORTS
     LINKFLAGS  = -shared
 else
     BUILDFLAGS = 
@@ -132,7 +132,7 @@ export LDFLAGS    	= $(LINKFLAGS)
 
 ifeq ($(OS), linux)
 
-LIBS 		= -lfreetype -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
+LIBS 		= -lrt -lpthread -lX11 -lfreetype -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
 OTHERINC	= -I/usr/include/freetype2
 PLATFORMSRC	= $(wildcard ./src/window/platform/x11/*.cpp)
 
@@ -155,7 +155,7 @@ else
 
 ifeq ($(OS), freebsd)
 
-LIBS 		= -lfreetype -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
+LIBS 		= -lrt -lpthread -lX11 -lfreetype -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
 OTHERINC	= -I/usr/include/freetype2
 PLATFORMSRC	= $(wildcard ./src/window/platform/x11/*.cpp)
 
