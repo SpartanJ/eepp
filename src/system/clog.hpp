@@ -7,10 +7,10 @@
 
 namespace EE { namespace System {
 
-class EE_API cLog : public tSingleton<cLog> {
-	public:
-		SINGLETON_DECLARE_HEADERS(cLog)
+class EE_API cLog {
+	SINGLETON_DECLARE_HEADERS(cLog)
 
+	public:
 		void Save(const std::string& filepath = "" );
 
 		void Write(const std::string& Text, const bool& newLine = true);

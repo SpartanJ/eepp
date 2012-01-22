@@ -6,10 +6,10 @@
 
 namespace EE { namespace Graphics { namespace Private {
 
-class EE_API cVertexBufferManager : public tContainer<cVertexBuffer>, public tSingleton<cVertexBufferManager> {
-	public:
-		SINGLETON_DECLARE_HEADERS(cVertexBufferManager)
+class EE_API cVertexBufferManager : public tContainer<cVertexBuffer> {
+	SINGLETON_DECLARE_HEADERS(cVertexBufferManager)
 
+	public:
 		cVertexBufferManager();
 
 		virtual ~cVertexBufferManager();

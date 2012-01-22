@@ -4,6 +4,8 @@
 #include "../base.hpp"
 
 #define SINGLETON_DECLARE_HEADERS( T ) \
+public: \
+\
 		static T * CreateSingleton(); \
 \
 		static T * ExistsSingleton(); \
@@ -13,7 +15,8 @@
 		static void DestroySingleton();
 
 #define SINGLETON_DECLARE_IMPLEMENTATION( T ) \
-template<> T* tSingleton<T>::ms_singleton = NULL; \
+\
+static T* ms_singleton = NULL; \
 \
 T* T::CreateSingleton() { \
 	if ( NULL == ms_singleton ) { \

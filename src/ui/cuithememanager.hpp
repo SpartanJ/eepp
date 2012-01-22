@@ -8,10 +8,10 @@ namespace EE { namespace UI {
 
 class cUIControl;
 
-class EE_API cUIThemeManager : public tResourceManager<cUITheme>, public tSingleton<cUIThemeManager> {
-	public:
-		SINGLETON_DECLARE_HEADERS(cUIThemeManager)
+class EE_API cUIThemeManager : public tResourceManager<cUITheme> {
+	SINGLETON_DECLARE_HEADERS(cUIThemeManager)
 
+	public:
 		cUIThemeManager();
 
 		virtual ~cUIThemeManager();

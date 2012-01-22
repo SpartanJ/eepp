@@ -13,10 +13,10 @@ namespace EE { namespace Graphics {
 class cGlobalBatchRenderer;
 
 /** @brief The Texture Manager Class. Here we do all the textures stuff. (Singleton Class) */
-class EE_API cTextureFactory: public tSingleton<cTextureFactory>, protected cMutex {
-	public:
-		SINGLETON_DECLARE_HEADERS(cTextureFactory)
+class EE_API cTextureFactory: protected cMutex {
+	SINGLETON_DECLARE_HEADERS(cTextureFactory)
 
+	public:
 		/** Create an empty texture
 		* @param Width Texture Width
 		* @param Height Texture Height

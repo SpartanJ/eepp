@@ -7,10 +7,10 @@
 
 namespace EE { namespace Graphics {
 
-class EE_API cShapeGroupManager : public tResourceManager<cShapeGroup>, public tSingleton<cShapeGroupManager> {
-	public:
-		SINGLETON_DECLARE_HEADERS(cShapeGroupManager)
+class EE_API cShapeGroupManager : public tResourceManager<cShapeGroup> {
+	SINGLETON_DECLARE_HEADERS(cShapeGroupManager)
 
+	public:
 		cShapeGroupManager();
 
 		virtual ~cShapeGroupManager();

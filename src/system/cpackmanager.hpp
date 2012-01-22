@@ -7,10 +7,10 @@
 
 namespace EE { namespace System {
 
-class EE_API cPackManager : public tContainer<cPack>, public tSingleton<cPackManager> {
-	public:
-		SINGLETON_DECLARE_HEADERS(cPackManager)
+class EE_API cPackManager : public tContainer<cPack> {
+	SINGLETON_DECLARE_HEADERS(cPackManager)
 
+	public:
 		cPackManager();
 
 		virtual ~cPackManager();

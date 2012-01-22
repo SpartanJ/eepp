@@ -7,10 +7,10 @@
 namespace EE { namespace Graphics {
 
 /** @brief The global Batch Renderer class. This class will be used by the engine for the rendering. */
-class EE_API cGlobalBatchRenderer : public tSingleton<cGlobalBatchRenderer>, public cBatchRenderer {
-	public:
-		SINGLETON_DECLARE_HEADERS(cGlobalBatchRenderer)
+class EE_API cGlobalBatchRenderer : public cBatchRenderer {
+	SINGLETON_DECLARE_HEADERS(cGlobalBatchRenderer)
 
+	public:
     	cGlobalBatchRenderer();
 
     	~cGlobalBatchRenderer();

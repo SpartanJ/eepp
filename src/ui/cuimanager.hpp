@@ -8,10 +8,10 @@
 
 namespace EE { namespace UI {
 
-class EE_API cUIManager : public tSingleton<cUIManager> {
-	public:
-		SINGLETON_DECLARE_HEADERS(cUIManager)
+class EE_API cUIManager {
+	SINGLETON_DECLARE_HEADERS(cUIManager)
 
+	public:
 		cUIManager();
 
 		~cUIManager();

@@ -10,10 +10,10 @@ class cShape;
 class cConstraint;
 class cSpace;
 
-class CP_API cPhysicsManager : public tSingleton<cPhysicsManager> {
-	public:
-		SINGLETON_DECLARE_HEADERS(cPhysicsManager)
+class CP_API cPhysicsManager {
+	SINGLETON_DECLARE_HEADERS(cPhysicsManager)
 
+	public:
 		class cDrawSpaceOptions {
 			public:
 				cDrawSpaceOptions() :

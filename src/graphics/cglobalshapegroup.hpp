@@ -6,10 +6,10 @@
 
 namespace EE { namespace Graphics {
 
-class EE_API cGlobalShapeGroup : public cShapeGroup, public tSingleton<cGlobalShapeGroup> {
-	public:
-		SINGLETON_DECLARE_HEADERS(cGlobalShapeGroup)
+class EE_API cGlobalShapeGroup : public cShapeGroup {
+	SINGLETON_DECLARE_HEADERS(cGlobalShapeGroup)
 
+	public:
 		cGlobalShapeGroup();
 
 		~cGlobalShapeGroup();
