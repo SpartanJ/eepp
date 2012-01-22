@@ -45,7 +45,7 @@ else
 endif
 
 ifeq ($(DYNAMIC), yes)
-	BUILDFLAGS = -fPIC -DEE_EXPORTS
+    BUILDFLAGS = -fPIC
     LINKFLAGS  = -shared
 else
     BUILDFLAGS = 
@@ -174,6 +174,7 @@ EXEIV				= eeiv-$(RELEASETYPE)
 EXEFLUID			= eefluid-$(RELEASETYPE)
 EXEBNB				= bnb-$(RELEASETYPE)
 EXEEMPTYWINDOW		= eeew-$(RELEASETYPE)
+EXEPARTICLES		= eeparticles-$(RELEASETYPE)
 
 ifeq ($(OS), haiku)
 SRCGLEW 			= 
@@ -202,6 +203,7 @@ SRCPHYSICS			= $(wildcard ./src/physics/*.cpp) $(wildcard ./src/physics/constrai
 SRCTEST     		= $(wildcard ./src/test/*.cpp)
 SRCEEIV     		= $(wildcard ./src/eeiv/*.cpp)
 SRCFLUID     		= $(wildcard ./src/fluid/*.cpp)
+SRCPARTICLES    		= $(wildcard ./src/particles/*.cpp)
 SRCBNB     			= $(wildcard ./src/bnb/*.cpp)
 SRCEMPTYWINDOW  	= $(wildcard ./src/test/empty_window/*.cpp)
 
@@ -235,6 +237,7 @@ OBJEEIV     		= $(SRCEEIV:.cpp=.o)
 OBJFLUID     		= $(SRCFLUID:.cpp=.o)
 OBJBNB     			= $(SRCBNB:.cpp=.o)
 OBJEMPTYWINDOW		= $(SRCEMPTYWINDOW:.cpp=.o)
+OBJPARTICLES     	= $(SRCPARTICLES:.cpp=.o)
 
 OBJDIR				= obj/$(OS)/$(RELEASETYPE)/
 
@@ -246,8 +249,9 @@ FOBJEEIV     		= $(patsubst ./%, $(OBJDIR)%, $(SRCEEIV:.cpp=.o) )
 FOBJFLUID     		= $(patsubst ./%, $(OBJDIR)%, $(SRCFLUID:.cpp=.o) )
 FOBJBNB     		= $(patsubst ./%, $(OBJDIR)%, $(SRCBNB:.cpp=.o) )
 FOBJEMTPYWINDOW     = $(patsubst ./%, $(OBJDIR)%, $(SRCEMPTYWINDOW:.cpp=.o) )
+FOBJPARTICLES     	= $(patsubst ./%, $(OBJDIR)%, $(SRCPARTICLES:.cpp=.o) )
 
-FOBJEEPP			= $(FOBJMODULES) $(FOBJTEST) $(FOBJEEIV) $(FOBJFLUID) $(FOBJBNB) $(FOBJEMTPYWINDOW)
+FOBJEEPP			= $(FOBJMODULES) $(FOBJTEST) $(FOBJEEIV) $(FOBJFLUID) $(FOBJBNB) $(FOBJEMTPYWINDOW) $(FOBJPARTICLES)
 FOBJALL 			= $(FOBJHELPERS) $(FOBJEEPP)
 
 DEPSEEPP			= $(FOBJEEPP:.o=.d)
@@ -292,6 +296,7 @@ dirs:
 	@mkdir -p $(OBJDIR)/src/eeiv
 	@mkdir -p $(OBJDIR)/src/fluid
 	@mkdir -p $(OBJDIR)/src/bnb
+	@mkdir -p $(OBJDIR)/src/particles
 
 lib: dirs $(LIB)
 
@@ -314,6 +319,12 @@ $(FOBJEEIV):
 $(FOBJFLUID):
 	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
 	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
+
+
+$(FOBJPARTICLES):
+	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
+	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
+
 
 $(FOBJBNB):
 	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
@@ -338,6 +349,9 @@ $(EXEBNB): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJBNB)
 $(EXEEMPTYWINDOW): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJEMTPYWINDOW)
 	$(CPP) -o ./$(EXEEMPTYWINDOW) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJEMTPYWINDOW) $(LDFLAGS) $(LIBS)
 
+$(EXEPARTICLES): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJPARTICLES)
+	$(CPP) -o ./$(EXEPARTICLES) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJPARTICLES) $(LDFLAGS) $(LIBS)
+
 libeepp-s.a: $(FOBJHELPERS) $(FOBJMODULES)
 	$(AR) $(ARFLAGS) $(LIBNAME) $(FOBJHELPERS) $(FOBJMODULES)
 
@@ -357,6 +371,8 @@ bnb: dirs $(EXEBNB)
 
 ew: dirs $(EXEEMPTYWINDOW)
 
+particles: dirs $(EXEPARTICLES)
+
 docs:
 	doxygen ./Doxyfile
 
@@ -370,6 +386,7 @@ cleanall: clean
 	@rm -rf $(LIBNAME)
 	@rm -rf ./$(EXE)
 	@rm -rf ./$(EXEFLUID)
+	@rm -rf ./$(EXEPARTICLES)
 	@rm -rf ./$(EXEIV)
 	@rm -rf ./$(EXEBNB)
 	@rm -rf ./log.log
