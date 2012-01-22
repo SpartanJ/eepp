@@ -181,11 +181,19 @@ void cBody::AngVelLimit( const cpFloat& speed ) {
 }
 
 void cBody::UpdateVelocity( cVect gravity, cpFloat damping, cpFloat dt ) {
-	cpBodyUpdateVelocity( mBody, tocpv( gravity ), damping, dt );
+	mBody->velocity_func( mBody, tocpv( gravity ), damping, dt );
 }
 
 void cBody::UpdatePosition( cpFloat dt ) {
-	cpBodyUpdatePosition( mBody, dt );
+	mBody->position_func( mBody, dt );
+}
+
+void cBody::VelocityFunc( cpBodyVelocityFunc func ) {
+	mBody->velocity_func = func;
+}
+
+void cBody::PositionFunc( cpBodyPositionFunc func ) {
+	mBody->position_func = func;
 }
 
 cVect cBody::Local2World( const cVect v ) {

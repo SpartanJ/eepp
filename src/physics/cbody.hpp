@@ -163,6 +163,10 @@ class CP_API cBody {
 		void EachArbiter( ArbiterIteratorFunc Func, void * data );
 
 		virtual void OnEachArbiter( cArbiter * Arbiter, cArbiterIterator * it );
+
+		void VelocityFunc( cpBodyVelocityFunc func );
+
+		void PositionFunc( cpBodyPositionFunc func );
 	protected:
 		friend class cSpace;
 

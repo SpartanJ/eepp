@@ -27,6 +27,26 @@ String::String(StringBaseType utf32Char)
     mString += utf32Char;
 }
 
+String::String( const char* uf8String ) {
+	if (uf8String)
+	{
+		std::size_t length = strlen(uf8String);
+
+		if (length > 0)
+		{
+			mString.reserve(length + 1);
+
+			Utf8::ToUtf32(uf8String, uf8String + length, std::back_inserter(mString));
+		}
+	}
+}
+
+String::String( const std::string& utf8String ) {
+	mString.reserve( utf8String.length() + 1 );
+
+	Utf8::ToUtf32( utf8String.begin(), utf8String.end(), std::back_inserter( mString ) );
+}
+
 String::String(const char* ansiString, const std::locale& locale)
 {
     if (ansiString)
@@ -83,13 +103,13 @@ mString(str.mString)
 {
 }
 
-String String::FromUtf8( const std::string& utf8 )
+String String::FromUtf8( const std::string& utf8String )
 {
 	String::StringType utf32;
 
-	utf32.reserve( utf8.length() + 1 );
+	utf32.reserve( utf8String.length() + 1 );
 
-	Utf8::ToUtf32( utf8.begin(), utf8.end(), std::back_inserter( utf32 ) );
+	Utf8::ToUtf32( utf8String.begin(), utf8String.end(), std::back_inserter( utf32 ) );
 
 	return String( utf32 );
 }

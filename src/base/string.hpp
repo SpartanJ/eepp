@@ -46,7 +46,10 @@ class EE_API String {
 
 	static const std::size_t InvalidPos; ///< Represents an invalid position in the string
 
-	static String FromUtf8( const std::string& utf8 );
+	/** @brief Construct from an UTF-8 string to UTF-32 according
+	** @param uf8String UTF-8 string to convert
+	**/
+	static String FromUtf8( const std::string& utf8String );
 
 	/** @brief Default constructor
 	** This constructor creates an empty string.
@@ -74,6 +77,16 @@ class EE_API String {
 	**/
 	String( StringBaseType utf32Char );
 
+	/** @brief Construct from an from a null-terminated C-style UTF-8 string to UTF-32
+	** @param uf8String UTF-8 string to convert
+	**/
+	String( const char* uf8String );
+
+	/** @brief Construct from an UTF-8 string to UTF-32 according
+	** @param uf8String UTF-8 string to convert
+	**/
+	String( const std::string& utf8String );
+
 	/** @brief Construct from a null-terminated C-style ANSI string and a locale
 	** The source string is converted to UTF-32 according
 	** to the given locale. If you want to use the current global
@@ -81,7 +94,7 @@ class EE_API String {
 	** @param ansiString ANSI string to convert
 	** @param locale     Locale to use for conversion
 	**/
-	String( const char* ansiString, const std::locale& locale = std::locale() );
+	String( const char* ansiString, const std::locale& locale );
 
 	/** @brief Construct from an ANSI string and a locale
 	** The source string is converted to UTF-32 according
@@ -90,7 +103,7 @@ class EE_API String {
 	** @param ansiString ANSI string to convert
 	** @param locale     Locale to use for conversion
 	**/
-	String( const std::string& ansiString, const std::locale& locale = std::locale() );
+	String( const std::string& ansiString, const std::locale& locale );
 
 #ifndef EE_NO_WIDECHAR
 	/** @brief Construct from null-terminated C-style wide string

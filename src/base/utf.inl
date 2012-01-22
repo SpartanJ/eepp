@@ -537,6 +537,7 @@ Out Utf<32>::ToUtf8(In begin, In end, Out output)
 
     return output;
 }
+
 template <typename In, typename Out>
 Out Utf<32>::ToUtf16(In begin, In end, Out output)
 {
