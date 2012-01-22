@@ -74,12 +74,35 @@ typedef struct {
 static int stbi_dds_test(stbi *s)
 {
 	//	check the magic number
-	if (get8(s) != 'D') return 0;
-	if (get8(s) != 'D') return 0;
-	if (get8(s) != 'S') return 0;
-	if (get8(s) != ' ') return 0;
+	if (get8(s) != 'D') {
+		stbi_rewind(s);
+		return 0;
+	}
+
+	if (get8(s) != 'D') {
+		stbi_rewind(s);
+		return 0;
+	}
+
+	if (get8(s) != 'S') {
+		stbi_rewind(s);
+		return 0;
+	}
+
+	if (get8(s) != ' ') {
+		stbi_rewind(s);
+		return 0;
+	}
+
 	//	check header size
-	if (get32le(s) != 124) return 0;
+	if (get32le(s) != 124) {
+		stbi_rewind(s);
+		return 0;
+	}
+
+	// Also rewind because the loader needs to read the header
+	stbi_rewind(s);
+
 	return 1;
 }
 #ifndef STBI_NO_STDIO
@@ -589,8 +612,8 @@ static stbi_uc * stbi_dds_load(stbi *s, int *x, int *y, int *comp, int req_comp)
 stbi_uc *stbi_dds_load_from_file   (FILE *f,                  int *x, int *y, int *comp, int req_comp)
 {
 	stbi s;
-   start_file(&s,f);
-   return stbi_dds_load(&s,x,y,comp,req_comp);
+	start_file(&s,f);
+	return stbi_dds_load(&s,x,y,comp,req_comp);
 }
 
 stbi_uc *stbi_dds_load_from_path             (char *filename,           int *x, int *y, int *comp, int req_comp)
