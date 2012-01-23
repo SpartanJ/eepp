@@ -4,6 +4,7 @@
 
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 	#include <CoreFoundation/CoreFoundation.h>
+	#include <sys/statvfs.h>
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	#include <windows.h>
 #elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
