@@ -410,14 +410,14 @@ static void RecieverPointQueryFunc( cpShape * shape, void * data ) {
 cpBool cSpace::OnCollisionBegin( cArbiter * arb, void * data ) {
 	cpHashValue hash = (cpHashValue)data;
 
-	if ( NULL != data ) {
+	//if ( NULL != data ) {
 		std::map< cpHashValue, cCollisionHandler >::iterator it = mCollisions.find( hash );
 		cCollisionHandler handler = static_cast<cCollisionHandler>( it->second );
 
 		if ( it != mCollisions.end() && handler.begin.IsSet() ) {
 			return handler.begin( arb, this, handler.data );
 		}
-	}
+	//}
 
 	if ( mCollisionsDefault.begin.IsSet() ) {
 		return mCollisionsDefault.begin( arb, this, mCollisionsDefault.data );
@@ -429,14 +429,14 @@ cpBool cSpace::OnCollisionBegin( cArbiter * arb, void * data ) {
 cpBool cSpace::OnCollisionPreSolve( cArbiter * arb, void * data ) {
 	cpHashValue hash = (cpHashValue)data;
 
-	if ( NULL != data ) {
+	//if ( NULL != data ) {
 		std::map< cpHashValue, cCollisionHandler >::iterator it = mCollisions.find( hash );
 		cCollisionHandler handler = static_cast<cCollisionHandler>( it->second );
 
 		if ( it != mCollisions.end() && handler.preSolve.IsSet() ) {
 			return handler.preSolve( arb, this, handler.data );
 		}
-	}
+	//}
 
 	if ( mCollisionsDefault.preSolve.IsSet() ) {
 		return mCollisionsDefault.preSolve( arb, this, mCollisionsDefault.data );
@@ -448,7 +448,7 @@ cpBool cSpace::OnCollisionPreSolve( cArbiter * arb, void * data ) {
 void cSpace::OnCollisionPostSolve( cArbiter * arb, void * data ) {
 	cpHashValue hash = (cpHashValue)data;
 
-	if ( NULL != data ) {
+	//if ( NULL != data ) {
 		std::map< cpHashValue, cCollisionHandler >::iterator it = mCollisions.find( hash );
 		cCollisionHandler handler = static_cast<cCollisionHandler>( it->second );
 
@@ -456,7 +456,7 @@ void cSpace::OnCollisionPostSolve( cArbiter * arb, void * data ) {
 			handler.postSolve( arb, this, handler.data );
 			return;
 		}
-	}
+	//}
 
 	if ( mCollisionsDefault.begin.IsSet() ) {
 		mCollisionsDefault.postSolve( arb, this, mCollisionsDefault.data );
@@ -466,7 +466,7 @@ void cSpace::OnCollisionPostSolve( cArbiter * arb, void * data ) {
 void cSpace::OnCollisionSeparate( cArbiter * arb, void * data ) {
 	cpHashValue hash = (cpHashValue)data;
 
-	if ( NULL != data ) {
+	//if ( NULL != data ) {
 		std::map< cpHashValue, cCollisionHandler >::iterator it = mCollisions.find( hash );
 		cCollisionHandler handler = static_cast<cCollisionHandler>( it->second );
 
@@ -474,7 +474,7 @@ void cSpace::OnCollisionSeparate( cArbiter * arb, void * data ) {
 			handler.separate( arb, this, handler.data );
 			return;
 		}
-	}
+	//}
 
 	if ( mCollisionsDefault.begin.IsSet() ) {
 		mCollisionsDefault.separate( arb, this, mCollisionsDefault.data );
