@@ -5,17 +5,13 @@
 
 #ifdef EE_BACKEND_SDL_ACTIVE
 
-#include <SDL/SDL.h>
+	#if defined( EE_SDL_VERSION_1_2 )
+		#ifndef EE_BACKEND_SDL_1_2
+			#define EE_BACKEND_SDL_1_2
+		#endif
 
-#if SDL_VERSION_ATLEAST(1,3,0)
-	#ifndef EE_BACKEND_SDL_1_3
-	#define EE_BACKEND_SDL_1_3
+		#include <SDL/SDL.h>
 	#endif
-#else
-	#ifndef EE_BACKEND_SDL_1_2
-	#define EE_BACKEND_SDL_1_2
-	#endif
-#endif
 
 #endif
 

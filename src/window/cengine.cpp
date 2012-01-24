@@ -14,7 +14,7 @@
 #include "../physics/cphysicsmanager.hpp"
 
 #include "backend/SDL/cbackendsdl.hpp"
-#include "backend/SDL13/cbackendsdl.hpp"
+#include "backend/SDL2/cbackendsdl.hpp"
 #include "backend/allegro5/cbackendal.hpp"
 
 #define BACKEND_SDL			1
@@ -40,8 +40,8 @@ cEngine::cEngine() :
 {
 	#if DEFAULT_BACKEND == BACKEND_SDL
 
-	#if SDL_VERSION_ATLEAST(1,3,0)
-	mBackend = eeNew( Backend::SDL13::cBackendSDL, () );
+	#if defined( EE_SDL_VERSION_1_3 ) || defined( EE_SDL_VERSION_2 )
+	mBackend = eeNew( Backend::SDL2::cBackendSDL, () );
 	#else
 	mBackend = eeNew( Backend::SDL::cBackendSDL, () );
 	#endif
@@ -96,8 +96,8 @@ void cEngine::Destroy() {
 cWindow * cEngine::CreateWindow( WindowSettings Settings, ContextSettings Context ) {
 	#if DEFAULT_BACKEND == BACKEND_SDL
 
-	#if SDL_VERSION_ATLEAST(1,3,0)
-	cWindow * window = eeNew( Backend::SDL13::cWindowSDL, ( Settings, Context ) );
+	#if defined( EE_SDL_VERSION_1_3 ) || defined( EE_SDL_VERSION_2 )
+	cWindow * window = eeNew( Backend::SDL2::cWindowSDL, ( Settings, Context ) );
 	#else
 	cWindow * window = eeNew( Backend::SDL::cWindowSDL, ( Settings, Context ) );
 	#endif

@@ -41,6 +41,7 @@
 			<Add option="-std=gnu99 -fno-strict-aliasing -ffast-math -Wno-unknown-pragmas" />
 			<Add option="-DSTBI_FAILURE_USERMSG" />
 			<Add option="-DEE_NO_SNDFILE" />
+			<Add option="-DEE_SDL_VERSION_2" />
 			<Add directory=".\src\helper\chipmunk" />
 			<Add directory=".\src\helper\zlib" />
 			<Add directory="C:\MinGW\include\freetype2" />
@@ -48,8 +49,8 @@
 		<Linker>
 			<Add option="-mwindows" />
 			<Add library="mingw32" />
-			<Add library="SDLmain" />
-			<Add library="SDL" />
+			<Add library="SDL2main" />
+			<Add library="SDL2" />
 			<Add library="opengl32" />
 			<Add library="glu32" />
 			<Add library="freetype" />
@@ -870,22 +871,22 @@
 		<Unit filename="src\utils\utils.hpp" />
 		<Unit filename="src\utils\vector2.hpp" />
 		<Unit filename="src\utils\vector3.hpp" />
-		<Unit filename="src\window\backend\SDL13\base.hpp" />
-		<Unit filename="src\window\backend\SDL13\cbackendsdl.hpp" />
-		<Unit filename="src\window\backend\SDL13\cclipboardsdl.cpp" />
-		<Unit filename="src\window\backend\SDL13\cclipboardsdl.hpp" />
-		<Unit filename="src\window\backend\SDL13\ccursormanagersdl.cpp" />
-		<Unit filename="src\window\backend\SDL13\ccursormanagersdl.hpp" />
-		<Unit filename="src\window\backend\SDL13\ccursorsdl.cpp" />
-		<Unit filename="src\window\backend\SDL13\ccursorsdl.hpp" />
-		<Unit filename="src\window\backend\SDL13\cinputsdl.cpp" />
-		<Unit filename="src\window\backend\SDL13\cinputsdl.hpp" />
-		<Unit filename="src\window\backend\SDL13\cjoystickmanagersdl.cpp" />
-		<Unit filename="src\window\backend\SDL13\cjoystickmanagersdl.hpp" />
-		<Unit filename="src\window\backend\SDL13\cjoysticksdl.cpp" />
-		<Unit filename="src\window\backend\SDL13\cjoysticksdl.hpp" />
-		<Unit filename="src\window\backend\SDL13\cwindowsdl.cpp" />
-		<Unit filename="src\window\backend\SDL13\cwindowsdl.hpp" />
+		<Unit filename="src\window\backend\SDL2\base.hpp" />
+		<Unit filename="src\window\backend\SDL2\cbackendsdl.hpp" />
+		<Unit filename="src\window\backend\SDL2\cclipboardsdl.cpp" />
+		<Unit filename="src\window\backend\SDL2\cclipboardsdl.hpp" />
+		<Unit filename="src\window\backend\SDL2\ccursormanagersdl.cpp" />
+		<Unit filename="src\window\backend\SDL2\ccursormanagersdl.hpp" />
+		<Unit filename="src\window\backend\SDL2\ccursorsdl.cpp" />
+		<Unit filename="src\window\backend\SDL2\ccursorsdl.hpp" />
+		<Unit filename="src\window\backend\SDL2\cinputsdl.cpp" />
+		<Unit filename="src\window\backend\SDL2\cinputsdl.hpp" />
+		<Unit filename="src\window\backend\SDL2\cjoystickmanagersdl.cpp" />
+		<Unit filename="src\window\backend\SDL2\cjoystickmanagersdl.hpp" />
+		<Unit filename="src\window\backend\SDL2\cjoysticksdl.cpp" />
+		<Unit filename="src\window\backend\SDL2\cjoysticksdl.hpp" />
+		<Unit filename="src\window\backend\SDL2\cwindowsdl.cpp" />
+		<Unit filename="src\window\backend\SDL2\cwindowsdl.hpp" />
 		<Unit filename="src\window\backend\SDL\base.hpp" />
 		<Unit filename="src\window\backend\SDL\cbackendsdl.hpp" />
 		<Unit filename="src\window\backend\SDL\cclipboardsdl.cpp" />

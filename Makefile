@@ -1,8 +1,6 @@
 STRLOWERCASE 		= $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(subst F,f,$(subst G,g,$(subst H,h,$(subst I,i,$(subst J,j,$(subst K,k,$(subst L,l,$(subst M,m,$(subst N,n,$(subst O,o,$(subst P,p,$(subst Q,q,$(subst R,r,$(subst S,s,$(subst T,t,$(subst U,u,$(subst V,v,$(subst W,w,$(subst X,x,$(subst Y,y,$(subst Z,z,$1))))))))))))))))))))))))))
 OS 					= $(strip $(call STRLOWERCASE, $(shell uname) ) )
 
-SDLVERSION			= $(shell sdl-config --version)
-
 export LIBPATH    	= ./
 export VERSION    	= 0.8
 export CP         	= cp
@@ -37,10 +35,11 @@ ifeq ($(DEBUGBUILD), yes)
     RELEASETYPE = debug
 else
 	ifeq ($(LLVM_BUILD), yes)
-	DEBUGFLAGS = -fno-strict-aliasing -O3 -DNDEBUG -ffast-math
+		DEBUGFLAGS = -fno-strict-aliasing -O3 -DNDEBUG -ffast-math
 	else
-    DEBUGFLAGS = -fno-strict-aliasing -O3 -s -DNDEBUG -ffast-math
+    	DEBUGFLAGS = -fno-strict-aliasing -O3 -s -DNDEBUG -ffast-math
     endif
+    
     RELEASETYPE = release
 endif
 
@@ -52,38 +51,118 @@ else
     LINKFLAGS  = 
 endif
 
-ifeq ($(BACKENDS_ALL), yes)
-	BACKEND_SDL = yes
-	BACKEND_ALLEGRO = yes
+ifeq ($(BACKENDS_ALL),yes)
+	BACKEND_SDL		= yes
+	BACKEND_ALLEGRO	= yes
 endif
 
-ifeq ($(BACKEND_SDL),  )
-	ifeq ($(BACKEND_ALLEGRO),  )
-		BACKEND_SDL = yes
+ifeq ($(BACKEND_SDL),)
+	ifeq ($(BACKEND_ALLEGRO),)
+		BACKEND_SDL	= yes
 	endif
 endif
 
-ifeq ($(BACKEND_SDL), yes)
-		
-	ifeq ($(SDLVERSION), 1.3.0)
-		ifeq ($(OS), darwin)
-		SDL_BACKEND_LINK	= -framework Cocoa -lSDL -lSDLmain
-     	else
-		SDL_BACKEND_LINK	= libs/$(OS)/libSDL.a
+ifeq ($(BACKEND_SDL),yes)
+
+	# First check for SDL2
+	SDLVERSION2			= $(shell type -P sdl2-config &>/dev/null && sdl2-config --version || echo "")
+	
+	ifeq ($(SDLVERSION2),)
+		# Then for SDL 1.2 or SDL 1.3
+		SDLVERSION				= $(shell type -P sdl-config &>/dev/null && sdl-config --version || echo "")
+
+		ifeq ($(SDLVERSION),)
+			# Default 2.0.0
+			SDL_VERSION		= 2.0.0
+		else
+			SDL_VERSION			= $(SDLVERSION)
 		endif
-		
-		SDL_BACKEND_SRC		= $(wildcard ./src/window/backend/SDL13/*.cpp)
 	else
-		ifeq ($(OS), darwin)
-		SDL_BACKEND_LINK	= -framework Cocoa -lSDL -lSDLmain
-     	else
-		SDL_BACKEND_LINK	= -lSDL
-		endif
-		
-		SDL_BACKEND_SRC		= $(wildcard ./src/window/backend/SDL/*.cpp)
+		SDL_VERSION		= $(SDLVERSION2)
 	endif
 	
-	SDL_DEFINE			= -DEE_BACKEND_SDL_ACTIVE
+	# Then for SDL 1.2 or SDL 1.3
+	#SDLVERSION				= $(shell type -P sdl-config &>/dev/null && sdl-config --version || echo "")
+
+	#ifeq ($(SDLVERSION),)
+		#SDLVERSION2			= $(shell type -P sdl2-config &>/dev/null && sdl2-config --version || echo "")
+		
+		#ifeq ($(SDLVERSION2),)
+			# Default 2.0.0
+			#SDL_VERSION		= 2.0.0
+		#else
+			#SDL_VERSION		= $(SDLVERSION2)
+		#endif
+	#else
+		#SDL_VERSION			= $(SDLVERSION)
+	#endif
+	
+	# If version is 1.2.x
+	ifneq (,$(findstring 1.2,$(SDL_VERSION)))
+		ifeq ($(OS), darwin)
+			SDL_ADD_LINK	= -framework Cocoa -lSDLmain
+		else
+			SDL_ADD_LINK	=
+		endif
+	
+		SDL_BACKEND_LINK	= -lSDL $(SDL_ADD_LINK)
+
+		SDL_BACKEND_SRC		= $(wildcard ./src/window/backend/SDL/*.cpp)
+
+		EE_SDL_VERSION		= -DEE_SDL_VERSION_1_2
+	else
+		ifeq ($(SHARED_BACKEND),)
+			#Check if static library exists
+			SDL_STATIC_FOUND	= $(shell ls libs/$(OS)/libSDL.a >/dev/null 2>&1 && echo "YES" || echo "NO")
+
+			SDL2_STATIC_FOUND	= $(shell ls libs/$(OS)/libSDL2.a >/dev/null 2>&1 && echo "YES" || echo "NO")
+
+			ifeq ($(SDL_STATIC_FOUND),NO)
+				ifeq ($(SDL2_STATIC_FOUND),NO)
+					SHARED_BACKEND = yes
+				endif
+			endif
+		endif
+
+		# Compile as shared?
+		ifeq ($(SHARED_BACKEND),yes)
+			ifneq (,$(findstring 1.3,$(SDL_VERSION)))
+
+				ifeq ($(OS), darwin)
+					SDL_ADD_LINK	= -framework Cocoa -lSDLmain2
+				else
+					SDL_ADD_LINK	=
+				endif
+		
+				SDL_BACKEND_LINK	= -lSDL $(SDL_ADD_LINK)
+
+				EE_SDL_VERSION		= -DEE_SDL_VERSION_1_3
+			else
+				SDL_BACKEND_LINK	= -lSDL2
+
+				EE_SDL_VERSION		= -DEE_SDL_VERSION_2
+			endif
+		else
+			# Compile as static then... ( only SDL 1.3 or SDL 2 allowed )
+			
+			# If version is 1.3.x
+			ifneq (,$(findstring 1.3,$(SDL_VERSION)))
+				SDL_BACKEND_LINK	= libs/$(OS)/libSDL.a
+
+				EE_SDL_VERSION		= -DEE_SDL_VERSION_1_3
+			else
+				# If version is 2.x.x
+				SDL_BACKEND_LINK	= libs/$(OS)/libSDL2.a
+
+				EE_SDL_VERSION		= -DEE_SDL_VERSION_2
+			endif
+
+		endif
+		
+		SDL_BACKEND_SRC		= $(wildcard ./src/window/backend/SDL2/*.cpp)
+	endif
+	
+	SDL_DEFINE			= -DEE_BACKEND_SDL_ACTIVE $(EE_SDL_VERSION)
 else
 	SDL_BACKEND_LINK	= 
 	SDL_BACKEND_SRC		= 
@@ -91,11 +170,10 @@ else
 endif
 
 ifeq ($(BACKEND_ALLEGRO), yes)
-
 	ifeq ($(OS), darwin)
-	ALLEGRO_BACKEND_LINK	= -lallegro -lallegro_main
+		ALLEGRO_BACKEND_LINK	= -lallegro -lallegro_main
 	else
-	ALLEGRO_BACKEND_LINK	= -lallegro
+		ALLEGRO_BACKEND_LINK	= -lallegro
 	endif
 
 	ALLEGRO_BACKEND_SRC		= $(wildcard ./src/window/backend/allegro5/*.cpp)
@@ -282,7 +360,7 @@ dirs:
 	@mkdir -p $(OBJDIR)/src/utils
 	@mkdir -p $(OBJDIR)/src/window
 	@mkdir -p $(OBJDIR)/src/window/backend/SDL
-	@mkdir -p $(OBJDIR)/src/window/backend/SDL13
+	@mkdir -p $(OBJDIR)/src/window/backend/SDL2
 	@mkdir -p $(OBJDIR)/src/window/backend/null
 	@mkdir -p $(OBJDIR)/src/window/backend/allegro5
 	@mkdir -p $(OBJDIR)/src/window/platform/x11

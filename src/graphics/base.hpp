@@ -19,7 +19,9 @@
 	#ifdef EE_GLEW_AVAILABLE
 		#include "../helper/glew/glew.h"
 	#else
-		#define GL_GLEXT_PROTOTYPES
+		#ifndef GL_GLEXT_PROTOTYPES
+			#define GL_GLEXT_PROTOTYPES
+		#endif
 	#endif
 
 	#if EE_PLATFORM == EE_PLATFORM_MACOSX
@@ -56,7 +58,11 @@
 			#include <OpenGLES/ES1/glext.h>
 		#else
 			#include <GLES/gl.h>
-			#define GL_GLEXT_PROTOTYPES
+			
+			#ifndef GL_GLEXT_PROTOTYPES
+				#define GL_GLEXT_PROTOTYPES
+			#endif
+			
 			#include <GLES/glext.h>
 		#endif
 	#endif

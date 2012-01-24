@@ -2,14 +2,9 @@
 #include "string.hpp"
 #include "../system/ciostreamfile.hpp"
 
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
-	#include <CoreFoundation/CoreFoundation.h>
-	#include <sys/statvfs.h>
-#elif EE_PLATFORM == EE_PLATFORM_WIN
-	#include <windows.h>
-#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
-	#include <libgen.h>
-	#include <unistd.h>
+#include <sys/stat.h>
+
+#if defined( EE_PLATFORM_POSIX )
 	#if EE_PLATFORM != EE_PLATFORM_ANDROID
 		#include <sys/statvfs.h>
 	#else
@@ -17,6 +12,15 @@
 		#define statvfs statfs
 		#define fstatvfs fstatfs
 	#endif
+#endif
+
+#if EE_PLATFORM == EE_PLATFORM_MACOSX
+	#include <CoreFoundation/CoreFoundation.h>
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+	#include <windows.h>
+#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
+	#include <libgen.h>
+	#include <unistd.h>
 #elif EE_PLATFORM == EE_PLATFORM_HAIKU
 	#include <kernel/OS.h>
 	#include <kernel/image.h>
@@ -24,16 +28,13 @@
 	#include <stdlib.h>
 #endif
 
-
-
 #if EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD
-#include <sys/sysctl.h>
+	#include <sys/sysctl.h>
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
     #include <direct.h>
 #endif
-#include <sys/stat.h>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	#include <sys/utime.h>

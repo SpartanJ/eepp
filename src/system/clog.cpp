@@ -68,6 +68,8 @@ void cLog::Write( const std::string& Text, const bool& newLine ) {
 		if ( newLine ) {
 			mFS->Write( "\n", 1 );
 		}
+
+		eeSAFE_DELETE( mFS );
 	}
 }
 
@@ -75,6 +77,8 @@ void cLog::openfs() {
 	if ( mFilePath.empty() ) {
 		mFilePath = GetProcessPath();
 	}
+
+	eeSAFE_DELETE( mFS );
 
 	if ( NULL == mFS ) {
         std::string str = mFilePath + "log.log";
@@ -119,6 +123,8 @@ void cLog::Writef( const char* format, ... ) {
 				tstr += '\n';
 
 				mFS->Write( tstr.c_str(), tstr.size() );
+
+				eeSAFE_DELETE( mFS );
             }
 
 			return;

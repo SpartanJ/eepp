@@ -4,7 +4,7 @@ MY_PATH := $(LOCAL_PATH)/src
 MY_C_INCLUDES := \
 	$(MY_PATH)/helper/android/openal/include/ \
 	$(MY_PATH)/helper/android/freetype/include \
-	$(MY_PATH)/helper/android/sdl-1.3/include \
+	$(MY_PATH)/helper/android/SDL2/include \
 	$(MY_PATH)/helper/chipmunk
 	
 MY_C_FLAGS	:=	-DANDROID \
@@ -13,7 +13,8 @@ MY_C_FLAGS	:=	-DANDROID \
 				-Wall \
 				-Wno-unknown-pragmas \
 				$(EE_GLES_VERSION) \
-				-DEE_NO_SNDFILE
+				-DEE_NO_SNDFILE \
+				-DEE_SDL_VERSION_2
 
 MY_LDLIBS 	:= $(APP_LDLIBS)
 
@@ -43,7 +44,7 @@ CODE_SRCS :=  \
 	audio/*.cpp \
 	window/*.cpp \
 	window/backend/SDL/*.cpp \
-	window/backend/SDL13/*.cpp \
+	window/backend/SDL2/*.cpp \
 	window/backend/allegro5/*.cpp \
 	window/backend/null/*.cpp \
 	window/platform/null/*.cpp \
@@ -60,7 +61,7 @@ LOCAL_C_INCLUDES := $(MY_C_INCLUDES)
 
 LOCAL_SRC_FILES := $(foreach F, $(CODE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
-LOCAL_STATIC_LIBRARIES := sdl-1.3 chipmunk freetype openal
+LOCAL_STATIC_LIBRARIES := SDL2 chipmunk freetype openal
 
 include $(BUILD_STATIC_LIBRARY) 
 #*************** EEPP ***************
@@ -127,16 +128,16 @@ LOCAL_LDLIBS := -llog
 include $(BUILD_STATIC_LIBRARY)
 #*************** OPENAL *****************
 
-#**************** SDL 1.3 ***************
+#**************** SDL 2 ***************
 include $(CLEAR_VARS)
 
-LOCAL_PATH := $(MY_PATH)/helper/android/sdl-1.3
+LOCAL_PATH := $(MY_PATH)/helper/android/SDL2
 
-LOCAL_MODULE := sdl-1.3
+LOCAL_MODULE := SDL2
 
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
 
-LOCAL_CFLAGS := -O3 -D__ANDROID__ -DANDROID \
+LOCAL_CFLAGS := -O3 -D__ANDROID__ -DANDROID -DGL_GLEXT_PROTOTYPES \
 	$(EE_GLES_VERSION)
 
 LOCAL_SRC_FILES := \
@@ -179,7 +180,7 @@ include $(CLEAR_VARS)
 
 LOCAL_PATH := $(MY_PATH)/test
 
-SDL_PATH := $(MY_PATH)/helper/android/sdl-1.3
+SDL_PATH := $(MY_PATH)/helper/android/SDL2
 
 LOCAL_LDLIBS 	:= $(MY_LDLIBS)
 
@@ -190,7 +191,7 @@ LOCAL_MODULE := eetest
 LOCAL_C_INCLUDES := $(MY_C_INCLUDES)
 
 LOCAL_SRC_FILES := \
-	../helper/android/sdl-1.3/src/main/android/SDL_android_main.cpp \
+	../helper/android/SDL2/src/main/android/SDL_android_main.cpp \
 	eetest.cpp
 
 LOCAL_SHARED_LIBRARIES := eepp
@@ -205,7 +206,7 @@ LOCAL_PATH := $(MY_PATH)/test/empty_window
 
 LOCAL_MODULE := empty_window
 
-SDL_PATH := $(MY_PATH)/helper/android/sdl-1.3
+SDL_PATH := $(MY_PATH)/helper/android/SDL2
 
 LOCAL_LDLIBS 	:= $(MY_LDLIBS)
 
@@ -214,7 +215,7 @@ LOCAL_CFLAGS 	:= $(MY_C_FLAGS)
 LOCAL_C_INCLUDES := $(MY_C_INCLUDES)
 
 CORE_SRCS :=  \
-	../../helper/android/sdl-1.3/src/main/android/*.cpp \
+	../../helper/android/SDL2/src/main/android/*.cpp \
 	*.cpp \
 
 LOCAL_SRC_FILES := $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
@@ -231,14 +232,14 @@ LOCAL_PATH := $(MY_PATH)/bnb
 
 LOCAL_MODULE := main
 
-SDL_PATH := $(MY_PATH)/helper/android/sdl-1.3
+SDL_PATH := $(MY_PATH)/helper/android/SDL2
 
 LOCAL_LDLIBS 	:= $(MY_LDLIBS)
 
 LOCAL_CFLAGS 	:= $(MY_C_FLAGS)
 
 CORE_SRCS :=  \
-	../helper/android/sdl-1.3/src/main/android/*.cpp \
+	../helper/android/SDL2/src/main/android/*.cpp \
 	*.cpp \
 
 LOCAL_C_INCLUDES := $(MY_C_INCLUDES)
@@ -257,7 +258,7 @@ LOCAL_PATH := $(MY_PATH)/test/
 
 LOCAL_MODULE := full_test
 
-SDL_PATH := $(MY_PATH)/helper/android/sdl-1.3
+SDL_PATH := $(MY_PATH)/helper/android/SDL2
 
 LOCAL_LDLIBS 	:= $(MY_LDLIBS)
 
@@ -266,7 +267,7 @@ LOCAL_CFLAGS 	:= $(MY_C_FLAGS)
 LOCAL_C_INCLUDES := $(MY_C_INCLUDES)
 
 CORE_SRCS :=  \
-	../../helper/android/sdl-1.3/src/main/android/*.cpp \
+	../../helper/android/SDL2/src/main/android/*.cpp \
 	*.cpp \
 
 LOCAL_SRC_FILES := $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
