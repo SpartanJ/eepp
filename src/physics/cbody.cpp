@@ -181,19 +181,39 @@ void cBody::AngVelLimit( const cpFloat& speed ) {
 }
 
 void cBody::UpdateVelocity( cVect gravity, cpFloat damping, cpFloat dt ) {
-	mBody->velocity_func( mBody, tocpv( gravity ), damping, dt );
+	cpBodyUpdateVelocity( mBody, tocpv( gravity ), damping, dt );
 }
 
 void cBody::UpdatePosition( cpFloat dt ) {
-	mBody->position_func( mBody, dt );
+	cpBodyUpdatePosition( mBody, dt );
 }
 
-void cBody::VelocityFunc( cpBodyVelocityFunc func ) {
-	mBody->velocity_func = func;
+void cBody::BodyVelocityFuncWrapper( cpBody *body, cpVect gravity, cpFloat damping, cpFloat dt ) {
+	cBody * tBody = reinterpret_cast<cBody*>( body->data );
+
+	if ( tBody->mVelocityFunc.IsSet() ) {
+		tBody->mVelocityFunc( reinterpret_cast<cBody*>( body->data ), tovect( gravity ), damping, dt );
+	}
 }
 
-void cBody::PositionFunc( cpBodyPositionFunc func ) {
-	mBody->position_func = func;
+void cBody::VelocityFunc( BodyVelocityFunc func ) {
+	mBody->velocity_func = &cBody::BodyVelocityFuncWrapper;
+
+	mVelocityFunc = func;
+}
+
+void cBody::BodyPositionFuncWrapper( cpBody* body, cpFloat dt ) {
+	cBody * tBody = reinterpret_cast<cBody*>( body->data );
+
+	if ( tBody->mPositionFunc.IsSet() ) {
+		tBody->mPositionFunc( reinterpret_cast<cBody*>( body->data ), dt );
+	}
+}
+
+void cBody::PositionFunc( BodyPositionFunc func ) {
+	mBody->position_func = &cBody::BodyPositionFuncWrapper;
+
+	mPositionFunc = func;
 }
 
 cVect cBody::Local2World( const cVect v ) {

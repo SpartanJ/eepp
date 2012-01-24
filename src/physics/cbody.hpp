@@ -11,9 +11,11 @@ class cArbiter;
 
 class CP_API cBody {
 	public:
-		typedef cb::Callback3<void, cBody *, cShape *, void * >		ShapeIteratorFunc;
-		typedef cb::Callback3<void, cBody *, cConstraint *, void *> ConstraintIteratorFunc;
-		typedef cb::Callback3<void, cBody *, cArbiter *, void *>	ArbiterIteratorFunc;
+		typedef cb::Callback3<void, cBody *, cShape *, void * >			ShapeIteratorFunc;
+		typedef cb::Callback3<void, cBody *, cConstraint *, void *>		ConstraintIteratorFunc;
+		typedef cb::Callback3<void, cBody *, cArbiter *, void *>		ArbiterIteratorFunc;
+		typedef cb::Callback4<void, cBody *, cVect, cpFloat, cpFloat>	BodyVelocityFunc;
+		typedef cb::Callback2<void, cBody *, cpFloat>					BodyPositionFunc;
 
 		class cShapeIterator {
 			public:
@@ -164,14 +166,22 @@ class CP_API cBody {
 
 		virtual void OnEachArbiter( cArbiter * Arbiter, cArbiterIterator * it );
 
-		void VelocityFunc( cpBodyVelocityFunc func );
+		void VelocityFunc( BodyVelocityFunc func );
 
-		void PositionFunc( cpBodyPositionFunc func );
+		void PositionFunc( BodyPositionFunc func );
 	protected:
 		friend class cSpace;
 
+		static void BodyVelocityFuncWrapper( cpBody *body, cpVect gravity, cpFloat damping, cpFloat dt );
+
+		static void BodyPositionFuncWrapper( cpBody* body, cpFloat dt );
+
 		cpBody *				mBody;
 		void *					mData;
+
+		BodyVelocityFunc		mVelocityFunc;
+
+		BodyPositionFunc		mPositionFunc;
 
 		void SetData();
 };

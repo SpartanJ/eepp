@@ -69,20 +69,28 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 				mMousePos.y += static_cast<Int32>( (eeFloat)Event->motion.yrel * mMouseSpeed );
 			}
 
+			#if EE_PLATFORM == EE_PLATFORM_WIN
 			bool bInject = false;
+			#endif
 
 			if ( mMousePos.x >= (eeInt)mWindow->GetWidth() ) {
 				mMousePos.x = mWindow->GetWidth();
 			} else if ( mMousePos.x < 0 ) {
 				mMousePos.x = 0;
+
+				#if EE_PLATFORM == EE_PLATFORM_WIN
 				bInject = true;
+				#endif
 			}
 
 			if ( mMousePos.y >= (eeInt)mWindow->GetHeight() ) {
 				mMousePos.y = mWindow->GetHeight();
 			} else if ( mMousePos.y < 0 ) {
 				mMousePos.y = 0;
+
+				#if EE_PLATFORM == EE_PLATFORM_WIN
 				bInject = true;
+				#endif
 			}
 
 			#if EE_PLATFORM == EE_PLATFORM_WIN
