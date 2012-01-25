@@ -13,13 +13,13 @@ export DESTLIBDIR 	= $(DESTDIR)/lib
 export DESTINCDIR 	= $(DESTDIR)/include
 
 ifeq ($(DYNAMIC), yes)
-    LIB     = libeepp.so
-    LIBNAME = $(LIBPATH)/$(LIB).$(VERSION)
-    INSTALL = && $(LN) $(LNFLAGS) $(DESTLIBDIR)/$(LIB).$(VERSION) $(DESTLIBDIR)/$(LIB)
+	LIB     = libeepp.so
+	LIBNAME = $(LIBPATH)/$(LIB).$(VERSION)
+	INSTALL = && $(LN) $(LNFLAGS) $(DESTLIBDIR)/$(LIB).$(VERSION) $(DESTLIBDIR)/$(LIB)
 else
-    LIB     = libeepp-s.a
-    LIBNAME = $(LIBPATH)/$(LIB)
-    INSTALL = 
+	LIB     = libeepp-s.a
+	LIBNAME = $(LIBPATH)/$(LIB)
+	INSTALL = 
 endif
 
 ifeq ($(LLVM_BUILD), yes)
@@ -281,7 +281,7 @@ SRCPHYSICS			= $(wildcard ./src/physics/*.cpp) $(wildcard ./src/physics/constrai
 SRCTEST     		= $(wildcard ./src/test/*.cpp)
 SRCEEIV     		= $(wildcard ./src/eeiv/*.cpp)
 SRCFLUID     		= $(wildcard ./src/fluid/*.cpp)
-SRCPARTICLES    		= $(wildcard ./src/particles/*.cpp)
+SRCPARTICLES    	= $(wildcard ./src/particles/*.cpp) $(wildcard ./src/particles/objects/*.cpp) $(wildcard ./src/particles/gameobjects/*.cpp)
 SRCBNB     			= $(wildcard ./src/bnb/*.cpp)
 SRCEMPTYWINDOW  	= $(wildcard ./src/test/empty_window/*.cpp)
 
@@ -375,6 +375,8 @@ dirs:
 	@mkdir -p $(OBJDIR)/src/fluid
 	@mkdir -p $(OBJDIR)/src/bnb
 	@mkdir -p $(OBJDIR)/src/particles
+	@mkdir -p $(OBJDIR)/src/particles/objects
+	@mkdir -p $(OBJDIR)/src/particles/gameobjects
 
 lib: dirs $(LIB)
 
