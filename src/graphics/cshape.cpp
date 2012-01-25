@@ -12,8 +12,8 @@ cShape::cShape() :
 	mSrcRect( eeRecti(0,0,0,0) ),
 	mDestWidth(0),
 	mDestHeight(0),
-	mOffSetX(0),
-	mOffSetY(0)
+	mOffsetX(0),
+	mOffsetY(0)
 {
 	CreateUnnamed();
 }
@@ -28,8 +28,8 @@ cShape::cShape( const Uint32& TexId, const std::string& Name ) :
 	mSrcRect( eeRecti( 0, 0, mTexture->Width(), mTexture->Height() ) ),
 	mDestWidth( (eeFloat)mTexture->Width() ),
 	mDestHeight( (eeFloat)mTexture->Height() ),
-	mOffSetX(0),
-	mOffSetY(0)
+	mOffsetX(0),
+	mOffsetY(0)
 {
 	if ( !GLi->IsExtension( EEGL_ARB_texture_non_power_of_two ) ) {
 		mSrcRect = eeRecti( 0, 0, mTexture->ImgWidth(), mTexture->ImgHeight() );
@@ -48,8 +48,8 @@ cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const std::string& 
 	mSrcRect(SrcRect),
 	mDestWidth( (eeFloat)( mSrcRect.Right - mSrcRect.Left ) ),
 	mDestHeight( (eeFloat)( mSrcRect.Bottom - mSrcRect.Top ) ),
-	mOffSetX(0),
-	mOffSetY(0)
+	mOffsetX(0),
+	mOffsetY(0)
 {
 	CreateUnnamed();
 }
@@ -64,8 +64,8 @@ cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& Dest
 	mSrcRect(SrcRect),
 	mDestWidth(DestWidth),
 	mDestHeight(DestHeight),
-	mOffSetX(0),
-	mOffSetY(0)
+	mOffsetX(0),
+	mOffsetY(0)
 {
 	CreateUnnamed();
 }
@@ -80,8 +80,8 @@ cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& Dest
 	mSrcRect(SrcRect),
 	mDestWidth(DestWidth),
 	mDestHeight(DestHeight),
-	mOffSetX(OffsetX),
-	mOffSetY(OffsetY)
+	mOffsetX(OffsetX),
+	mOffsetY(OffsetY)
 {
 	CreateUnnamed();
 }
@@ -148,29 +148,29 @@ void cShape::DestHeight( const eeFloat& height ) {
 }
 
 const Int32& cShape::OffsetX() const {
-	return mOffSetX;
+	return mOffsetX;
 }
 
 void cShape::OffsetX( const Int32& offsetx ) {
-	mOffSetX = offsetx;
+	mOffsetX = offsetx;
 }
 
 const Int32& cShape::OffsetY() const {
-	return mOffSetY;
+	return mOffsetY;
 }
 
 void cShape::OffsetY( const Int32& offsety ) {
-	mOffSetY = offsety;
+	mOffsetY = offsety;
 }
 
 void cShape::Draw( const eeFloat& X, const eeFloat& Y, const eeColorA& Color, const eeFloat& Angle, const eeFloat& Scale, const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
 	if ( NULL != mTexture )
-		mTexture->DrawEx( X + mOffSetX, Y + mOffSetY, mDestWidth, mDestHeight, Angle, Scale, Color, Color, Color, Color, Blend, Effect, ScaleRendered, mSrcRect );
+		mTexture->DrawEx( X + mOffsetX, Y + mOffsetY, mDestWidth, mDestHeight, Angle, Scale, Color, Color, Color, Color, Blend, Effect, ScaleRendered, mSrcRect );
 }
 
 void cShape::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
 	if ( NULL != mTexture )
-		mTexture->DrawEx( X + mOffSetX, Y + mOffSetY, mDestWidth, mDestHeight, Angle, Scale, Color0, Color1, Color2, Color3, Blend, Effect, ScaleRendered, mSrcRect );
+		mTexture->DrawEx( X + mOffsetX, Y + mOffsetY, mDestWidth, mDestHeight, Angle, Scale, Color0, Color1, Color2, Color3, Blend, Effect, ScaleRendered, mSrcRect );
 }
 
 void cShape::Draw( const eeQuad2f Q, const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_PRE_BLEND_FUNC& Blend ) {

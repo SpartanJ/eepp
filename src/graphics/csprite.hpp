@@ -274,20 +274,20 @@ class EE_API cSprite {
 		/** @return The four vertex position of the Sprite */
 		eeQuad2f GetQuad();
 
-		/** @return The OffSetX of the current frame */
-		Int32 OffSetX();
+		/** @return The OffsetX of the current frame */
+		Int32 OffsetX();
 
-		/** Set the OffSetX of the current frame */
-		void OffSetX( const Int32& offsetx );
+		/** Set the OffsetX of the current frame */
+		void OffsetX( const Int32& offsetx );
 
-		/** @return The OffSetY of the current frame */
-		Int32 OffSetY();
+		/** @return The OffsetY of the current frame */
+		Int32 OffsetY();
 
-		/** Set the OffSetY of the current frame */
-		void OffSetY( const Int32& offsety );
+		/** Set the OffsetY of the current frame */
+		void OffsetY( const Int32& offsety );
 
-		/** Set the OffSet of the current frame */
-		void OffSet( const eeVector2i& offset );
+		/** Set the Offset of the current frame */
+		void Offset( const eeVector2i& offset );
 
 		/** Reverse the animation from last frame to first mFrames. */
 		void ReverseAnim( const bool& Reverse );

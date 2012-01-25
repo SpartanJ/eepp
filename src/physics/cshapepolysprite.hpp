@@ -28,6 +28,7 @@ class CP_API cShapePolySprite : public cShapePoly {
 	protected:
 		cSprite *	mSprite;
 		bool		mSpriteAutoDelete;
+		eeVector2i	mOffset;
 
 		void OffsetSet( cVect center );
 };

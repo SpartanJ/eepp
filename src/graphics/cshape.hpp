@@ -100,8 +100,8 @@ class EE_API cShape {
 		eeRecti		mSrcRect;
 		eeFloat		mDestWidth;
 		eeFloat		mDestHeight;
-		Int32		mOffSetX;
-		Int32		mOffSetY;
+		Int32		mOffsetX;
+		Int32		mOffsetY;
 
 		void CreateUnnamed();
 };

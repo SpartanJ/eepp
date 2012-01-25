@@ -575,7 +575,7 @@ eeUint cSprite::GetSubFrame( const eeUint& SubFrame ) {
 	return SFN;
 }
 
-Int32 cSprite::OffSetX() {
+Int32 cSprite::OffsetX() {
 	cShape* S = GetCurrentShape();
 
 	if ( S != NULL )
@@ -584,14 +584,14 @@ Int32 cSprite::OffSetX() {
 	return 0;
 }
 
-void cSprite::OffSetX( const Int32& offsetx ) {
+void cSprite::OffsetX( const Int32& offsetx ) {
 	cShape* S = GetCurrentShape();
 
 	if ( S != NULL )
 		S->OffsetX( offsetx );
 }
 
-Int32 cSprite::OffSetY() {
+Int32 cSprite::OffsetY() {
 	cShape* S = GetCurrentShape();
 
 	if ( S != NULL )
@@ -600,14 +600,14 @@ Int32 cSprite::OffSetY() {
 	return 0;
 }
 
-void cSprite::OffSetY( const Int32& offsety ) {
+void cSprite::OffsetY( const Int32& offsety ) {
 	cShape* S = GetCurrentShape();
 
 	if ( S != NULL )
 		S->OffsetY( offsety );
 }
 
-void cSprite::OffSet( const eeVector2i& offset ) {
+void cSprite::Offset( const eeVector2i& offset ) {
 	cShape* S = GetCurrentShape();
 
 	if ( S != NULL ) {

@@ -38,6 +38,7 @@ cShapePolySprite::~cShapePolySprite() {
 void cShapePolySprite::Draw( cSpace * space ) {
 	cVect Pos = Body()->Pos();
 
+	mSprite->Offset( mOffset );
 	mSprite->Position( Pos.x, Pos.y );
 	mSprite->Angle( Body()->AngleDeg() );
 	mSprite->Draw();
@@ -46,8 +47,7 @@ void cShapePolySprite::Draw( cSpace * space ) {
 void cShapePolySprite::OffsetSet( cVect center ) {
 	cVect myCenter = cVectNew( ( mSprite->Width() / 2	), ( mSprite->Height() / 2	) );
 
-	mSprite->OffSetX( -myCenter.x + ( center.x - myCenter.x ) );
-	mSprite->OffSetY( -myCenter.y + ( center.y - myCenter.y ) );
+	mOffset = eeVector2i(  (Int32)( -myCenter.x + ( center.x - myCenter.x ) ) , (Int32)( -myCenter.y + ( center.y - myCenter.y ) ) );
 }
 
 cSprite * cShapePolySprite::GetSprite() const {

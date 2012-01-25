@@ -19,9 +19,9 @@ class CP_API cPhysicsManager {
 				cDrawSpaceOptions() :
 					DrawBBs( false ),
 					DrawShapes( true ),
-					CollisionPointSize( 4.0f ),
+					CollisionPointSize( 0.0f ),
 					BodyPointSize( 0.0f ),
-					LineThickness( 1.5f )
+					LineThickness( 0.0f )
 				{}
 
 				bool	DrawBBs;
