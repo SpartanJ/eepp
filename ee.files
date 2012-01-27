@@ -935,3 +935,13 @@ src/particles/particles.hpp
 src/particles/cgameworld.hpp
 src/particles/particles.cpp
 src/particles/cgameworld.cpp
+src/rhythm/rhythm.cpp
+src/rhythm/cuigfxcolor.hpp
+src/rhythm/crhythm.hpp
+src/rhythm/rhythm.cpp
+src/rhythm/cuigfxcolor.cpp
+src/rhythm/crhythm.cpp
+src/rhythm/cuinote.hpp
+src/rhythm/cuinote.cpp
+src/rhythm/cuiinstrument.hpp
+src/rhythm/cuiinstrument.cpp

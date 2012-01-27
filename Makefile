@@ -253,6 +253,7 @@ EXEFLUID			= eefluid-$(RELEASETYPE)
 EXEBNB				= bnb-$(RELEASETYPE)
 EXEEMPTYWINDOW		= eeew-$(RELEASETYPE)
 EXEPARTICLES		= eeparticles-$(RELEASETYPE)
+EXERHYTHM			= rhythm-$(RELEASETYPE)
 
 ifeq ($(OS), haiku)
 SRCGLEW 			= 
@@ -284,6 +285,7 @@ SRCFLUID     		= $(wildcard ./src/fluid/*.cpp)
 SRCPARTICLES    	= $(wildcard ./src/particles/*.cpp) $(wildcard ./src/particles/objects/*.cpp) $(wildcard ./src/particles/gameobjects/*.cpp)
 SRCBNB     			= $(wildcard ./src/bnb/*.cpp)
 SRCEMPTYWINDOW  	= $(wildcard ./src/test/empty_window/*.cpp)
+SRCRHYTHM		  	= $(wildcard ./src/rhythm/*.cpp)
 
 SRCHELPERS			= $(SRCGLEW) $(SRCSOIL) $(SRCSTBVORBIS) $(SRCZLIB) $(SRCLIBZIP) $(SRCCHIPMUNK)
 SRCMODULES			= $(SRCHAIKUTTF) $(SRCBASE) $(SRCAUDIO) $(SRCGAMING) $(SRCGRAPHICS) $(SRCMATH) $(SRCSYSTEM) $(SRCUI) $(SRCUTILS) $(SRCWINDOW) $(SRCPHYSICS)
@@ -316,6 +318,7 @@ OBJFLUID     		= $(SRCFLUID:.cpp=.o)
 OBJBNB     			= $(SRCBNB:.cpp=.o)
 OBJEMPTYWINDOW		= $(SRCEMPTYWINDOW:.cpp=.o)
 OBJPARTICLES     	= $(SRCPARTICLES:.cpp=.o)
+OBJRHYTHM			= $(SRCRHYTHM:.cpp=.o)
 
 OBJDIR				= obj/$(OS)/$(RELEASETYPE)/
 
@@ -328,8 +331,9 @@ FOBJFLUID     		= $(patsubst ./%, $(OBJDIR)%, $(SRCFLUID:.cpp=.o) )
 FOBJBNB     		= $(patsubst ./%, $(OBJDIR)%, $(SRCBNB:.cpp=.o) )
 FOBJEMTPYWINDOW     = $(patsubst ./%, $(OBJDIR)%, $(SRCEMPTYWINDOW:.cpp=.o) )
 FOBJPARTICLES     	= $(patsubst ./%, $(OBJDIR)%, $(SRCPARTICLES:.cpp=.o) )
+FOBJRHYTHM		 	= $(patsubst ./%, $(OBJDIR)%, $(SRCRHYTHM:.cpp=.o) )
 
-FOBJEEPP			= $(FOBJMODULES) $(FOBJTEST) $(FOBJEEIV) $(FOBJFLUID) $(FOBJBNB) $(FOBJEMTPYWINDOW) $(FOBJPARTICLES)
+FOBJEEPP			= $(FOBJMODULES) $(FOBJTEST) $(FOBJEEIV) $(FOBJFLUID) $(FOBJBNB) $(FOBJEMTPYWINDOW) $(FOBJPARTICLES) $(FOBJRHYTHM)
 FOBJALL 			= $(FOBJHELPERS) $(FOBJEEPP)
 
 DEPSEEPP			= $(FOBJEEPP:.o=.d)
@@ -377,6 +381,7 @@ dirs:
 	@mkdir -p $(OBJDIR)/src/particles
 	@mkdir -p $(OBJDIR)/src/particles/objects
 	@mkdir -p $(OBJDIR)/src/particles/gameobjects
+	@mkdir -p $(OBJDIR)/src/rhythm
 
 lib: dirs $(LIB)
 
@@ -400,17 +405,19 @@ $(FOBJFLUID):
 	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
 	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
 
-
 $(FOBJPARTICLES):
 	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
 	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
-
 
 $(FOBJBNB):
 	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
 	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
 
 $(FOBJEMTPYWINDOW):
+	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
+	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
+
+$(FOBJRHYTHM):
 	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
 	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
 
@@ -432,6 +439,9 @@ $(EXEEMPTYWINDOW): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJEMTPYWINDOW)
 $(EXEPARTICLES): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJPARTICLES)
 	$(CPP) -o ./$(EXEPARTICLES) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJPARTICLES) $(LDFLAGS) $(LIBS)
 
+$(EXERHYTHM): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJRHYTHM)
+	$(CPP) -o ./$(EXERHYTHM) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJRHYTHM) $(LDFLAGS) $(LIBS)
+
 libeepp-s.a: $(FOBJHELPERS) $(FOBJMODULES)
 	$(AR) $(ARFLAGS) $(LIBNAME) $(FOBJHELPERS) $(FOBJMODULES)
 
@@ -452,6 +462,8 @@ bnb: dirs $(EXEBNB)
 ew: dirs $(EXEEMPTYWINDOW)
 
 particles: dirs $(EXEPARTICLES)
+
+rhythm: dirs $(EXERHYTHM)
 
 docs:
 	doxygen ./Doxyfile
