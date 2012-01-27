@@ -52,10 +52,10 @@ bool cSoundBuffer::LoadFromFile(const std::string& Filename) {
 	}
 
 	// Create the sound file
-	std::auto_ptr<cSoundFile> File( cSoundFile::CreateRead( Filename ) );
+	cSoundFile * File = cSoundFile::CreateRead( Filename );
 
 	// Open the sound file
-	if ( File.get() ) {
+	if ( NULL != File ) {
 		// Get the sound parameters
 		std::size_t  NbSamples		= File->GetSamplesCount();
 		unsigned int ChannelsCount	= File->GetChannelsCount();
@@ -68,13 +68,19 @@ bool cSoundBuffer::LoadFromFile(const std::string& Filename) {
 			cLog::instance()->Write( "Sound file " + Filename + " loaded." );
 
 			// Update the internal buffer with the new samples
+			eeDelete( File );
+
 			return Update( ChannelsCount, SampleRate );
 		} else {
 			cLog::instance()->Write( "Failed to read audio data from file \"" + Filename + "\"" );
+
+			eeDelete( File );
+
 			return false;
 		}
 	} else {
 		cLog::instance()->Write( "Failed to load sound buffer from file \"" + Filename + "\"" );
+
 		return false;
 	}
 }
