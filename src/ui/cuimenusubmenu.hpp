@@ -26,7 +26,7 @@ class cUIMenuSubMenu : public cUIMenuItem {
 
 		cUIMenuSubMenu( cUIMenuSubMenu::CreateParams& Params );
 
-		~cUIMenuSubMenu();
+		virtual ~cUIMenuSubMenu();
 
 		virtual Uint32 Type() const;
 

@@ -27,7 +27,7 @@ class EE_API cUISlider : public cUIComplexControl {
 
 		cUISlider( const cUISlider::CreateParams& Params );
 
-		~cUISlider();
+		virtual ~cUISlider();
 
 		virtual Uint32 Type() const;
 

@@ -36,7 +36,7 @@ class EE_API cUITooltip : public cUIControlAnim {
 
 		cUITooltip( cUITooltip::CreateParams& Params, cUIControl * TooltipOf );
 
-		~cUITooltip();
+		virtual ~cUITooltip();
 
 		virtual Uint32 Type() const;
 

@@ -27,7 +27,7 @@ class EE_API cUIDropDownList : public cUITextInput {
 
 		cUIDropDownList( cUIDropDownList::CreateParams& Params );
 
-		~cUIDropDownList();
+		virtual ~cUIDropDownList();
 
 		virtual Uint32 Type() const;
 

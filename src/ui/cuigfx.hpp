@@ -26,7 +26,7 @@ class EE_API cUIGfx : public cUIComplexControl {
 
 		cUIGfx( const cUIGfx::CreateParams& Params );
 
-		~cUIGfx();
+		virtual ~cUIGfx();
 
 		virtual Uint32 Type() const;
 

@@ -27,7 +27,7 @@ class EE_API cUITextEdit : public cUIComplexControl {
 
 		cUITextEdit( cUITextEdit::CreateParams& Params );
 
-		~cUITextEdit();
+		virtual ~cUITextEdit();
 
 		virtual Uint32 Type() const;
 

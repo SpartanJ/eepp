@@ -531,9 +531,11 @@ void cUIControl::CheckClose() {
 			ChildLoop = mChild;
 		}
 
-		ChildLoop->CheckClose();
+		if ( NULL != ChildLoop ) {
+			ChildLoop->CheckClose();
 
-		ChildLoop = ChildLoop->mNext;
+			ChildLoop = ChildLoop->mNext;
+		}
 	}
 }
 
@@ -661,8 +663,14 @@ void cUIControl::ChildRemove( cUIControl * ChildCtrl ) {
 	if ( ChildCtrl == mChild ) {
 		mChild 			= mChild->mNext;
 
-		if ( NULL != mChild )
+		if ( NULL != mChild ) {
 			mChild->mPrev 	= NULL;
+
+			if ( ChildCtrl == mChildLast )
+				mChildLast		= mChild;
+		} else {
+			mChildLast		= NULL;
+		}
 	} else {
 		if ( mChildLast == ChildCtrl )
 			mChildLast = mChildLast->mPrev;

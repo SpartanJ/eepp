@@ -36,7 +36,7 @@ class EE_API cUITextBox : public cUIComplexControl {
 
 		cUITextBox( const cUITextBox::CreateParams& Params );
 
-		~cUITextBox();
+		virtual ~cUITextBox();
 
 		virtual Uint32 Type() const;
 

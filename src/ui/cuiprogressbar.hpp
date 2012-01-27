@@ -29,7 +29,7 @@ class cUIProgressBar : public cUIComplexControl {
 
 		cUIProgressBar( const cUIProgressBar::CreateParams& Params );
 
-		~cUIProgressBar();
+		virtual ~cUIProgressBar();
 
 		virtual Uint32 Type() const;
 

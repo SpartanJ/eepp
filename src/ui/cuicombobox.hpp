@@ -9,7 +9,7 @@ class EE_API cUIComboBox : public cUIDropDownList {
 	public:
 		cUIComboBox( cUIComboBox::CreateParams& Params );
 
-		~cUIComboBox();
+		virtual ~cUIComboBox();
 
 		virtual Uint32 Type() const;
 

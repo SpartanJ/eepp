@@ -10,7 +10,7 @@ class EE_API cUIRadioButton : public cUITextBox {
 	public:
 		cUIRadioButton( const cUITextBox::CreateParams& Params );
 
-		~cUIRadioButton();
+		virtual ~cUIRadioButton();
 
 		virtual Uint32 Type() const;
 

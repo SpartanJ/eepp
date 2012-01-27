@@ -12,7 +12,7 @@ class EE_API cUIGridCell : public cUIComplexControl {
 	public:
 		cUIGridCell( cUIGridCell::CreateParams& Params );
 
-		~cUIGridCell();
+		virtual ~cUIGridCell();
 
 		virtual void SetTheme( cUITheme * Theme );
 

@@ -9,7 +9,7 @@ class cUIMenuCheckBox : public cUIMenuItem {
 	public:
 		cUIMenuCheckBox( cUIMenuCheckBox::CreateParams& Params );
 
-		~cUIMenuCheckBox();
+		virtual ~cUIMenuCheckBox();
 
 		virtual Uint32 Type() const;
 

@@ -58,7 +58,7 @@ class EE_API cUIMenu : public cUIComplexControl {
 
 		cUIMenu( cUIMenu::CreateParams& Params );
 
-		~cUIMenu();
+		virtual ~cUIMenu();
 
 		virtual Uint32 Type() const;
 

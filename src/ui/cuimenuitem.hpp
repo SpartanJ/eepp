@@ -9,7 +9,7 @@ class EE_API cUIMenuItem : public cUIPushButton {
 	public:
 		cUIMenuItem( cUIMenuItem::CreateParams& Params );
 
-		~cUIMenuItem();
+		virtual ~cUIMenuItem();
 
 		virtual Uint32 Type() const;
 

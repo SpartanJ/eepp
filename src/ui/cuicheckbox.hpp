@@ -10,7 +10,7 @@ class EE_API cUICheckBox : public cUITextBox {
 	public:
 		cUICheckBox( const cUITextBox::CreateParams& Params );
 
-		~cUICheckBox();
+		virtual ~cUICheckBox();
 
 		virtual Uint32 Type() const;
 

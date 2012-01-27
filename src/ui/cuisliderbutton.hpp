@@ -9,7 +9,7 @@ class cUISliderButton : public cUIControlAnim {
 	public:
 		cUISliderButton( const cUIControlAnim::CreateParams& Params );
 
-		~cUISliderButton();
+		virtual ~cUISliderButton();
 	protected:
 		virtual void OnPosChange();
 };

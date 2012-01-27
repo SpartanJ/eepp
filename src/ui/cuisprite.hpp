@@ -26,7 +26,7 @@ class EE_API cUISprite : public cUIComplexControl {
 
 		cUISprite( const cUISprite::CreateParams& Params );
 
-		~cUISprite();
+		virtual ~cUISprite();
 
 		virtual Uint32 Type() const;
 

@@ -9,7 +9,7 @@ class cUIPopUpMenu : public cUIMenu {
 	public:
 		cUIPopUpMenu( cUIPopUpMenu::CreateParams Params );
 
-		~cUIPopUpMenu();
+		virtual ~cUIPopUpMenu();
 
 		virtual Uint32 Type() const;
 

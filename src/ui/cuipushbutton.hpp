@@ -56,7 +56,7 @@ class EE_API cUIPushButton : public cUIComplexControl {
 
 		cUIPushButton( const cUIPushButton::CreateParams& Params );
 
-		~cUIPushButton();
+		virtual ~cUIPushButton();
 
 		virtual Uint32 Type() const;
 

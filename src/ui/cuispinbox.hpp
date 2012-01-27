@@ -26,7 +26,7 @@ class EE_API cUISpinBox : public cUIComplexControl {
 
 		cUISpinBox( const cUISpinBox::CreateParams& Params );
 
-		~cUISpinBox();
+		virtual ~cUISpinBox();
 
 		virtual Uint32 Type() const;
 

@@ -26,7 +26,7 @@ class EE_API cUITextInput : public cUITextBox {
 
 		cUITextInput( const cUITextInput::CreateParams& Params );
 
-		~cUITextInput();
+		virtual ~cUITextInput();
 
 		virtual Uint32 Type() const;
 

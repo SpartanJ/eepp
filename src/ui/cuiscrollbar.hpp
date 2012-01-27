@@ -23,7 +23,7 @@ class cUIScrollBar : public cUIComplexControl {
 
 		cUIScrollBar( const cUIScrollBar::CreateParams& Params );
 
-		~cUIScrollBar();
+		virtual ~cUIScrollBar();
 
 		virtual Uint32 Type() const;
 

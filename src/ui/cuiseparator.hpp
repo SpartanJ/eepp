@@ -9,7 +9,7 @@ class cUISeparator : public cUIControlAnim {
 	public:
 		cUISeparator( cUIControlAnim::CreateParams Params );
 		
-		~cUISeparator();
+		virtual ~cUISeparator();
 
 		virtual Uint32 Type() const;
 
