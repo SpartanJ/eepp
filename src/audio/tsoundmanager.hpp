@@ -28,6 +28,8 @@ class tSoundManager {
 
 		cSound& operator[] ( const T& id );
 
+		cSound& GetFreeSound( const T& id );
+
 		~tSoundManager();
 	private:
 		typedef struct sSound {
@@ -97,6 +99,29 @@ template <typename T>
 cSoundBuffer& tSoundManager<T>::GetBuffer( const T& id ) {
 	if ( tSounds.find( id ) != tSounds.end() )
 		return tSounds[id].Buf;
+}
+
+template <typename T>
+cSound& tSoundManager<T>::GetFreeSound( const T& id ) {
+	typename std::map<T, sSound>::iterator it = tSounds.find( id );
+
+	if ( it != tSounds.end() ) {
+		sSound * tSound = &it->second;
+		Uint32 tSize = (Uint32)tSound->Snd.size();
+
+		for ( Uint32 i = 0; i < tSize; i++ ) {
+			// If there is a free slot, use it.
+			if ( tSound->Snd[i].GetState() != SOUND_PLAYING ) {
+				return tSound->Snd[i];
+			}
+		}
+
+		tSound->Snd.push_back( cSound( tSound->Buf ) );
+
+		return tSound->Snd[ tSound->Snd.size() - 1 ];
+	}
+
+	return tSounds[0].Snd[0];
 }
 
 template <typename T>
