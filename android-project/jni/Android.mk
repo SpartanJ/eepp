@@ -1,10 +1,13 @@
 LOCAL_PATH := $(call my-dir)
 MY_PATH := $(LOCAL_PATH)/src
 
+MY_SDL_PATH			:= $(MY_PATH)/helper/android/SDL1.3
+MY_SDL_MAIN_PATH	:= helper/android/SDL1.3/src/main/android/*.cpp
+
 MY_C_INCLUDES := \
 	$(MY_PATH)/helper/android/openal/include/ \
 	$(MY_PATH)/helper/android/freetype/include \
-	$(MY_PATH)/helper/android/SDL2/include \
+	$(MY_SDL_PATH)/include \
 	$(MY_PATH)/helper/chipmunk
 	
 MY_C_FLAGS	:=	-DANDROID \
@@ -14,7 +17,7 @@ MY_C_FLAGS	:=	-DANDROID \
 				-Wno-unknown-pragmas \
 				$(EE_GLES_VERSION) \
 				-DEE_NO_SNDFILE \
-				-DEE_SDL_VERSION_2
+				-D$(EE_SDL_VERSION)
 
 MY_LDLIBS 	:= $(APP_LDLIBS)
 
@@ -131,7 +134,7 @@ include $(BUILD_STATIC_LIBRARY)
 #**************** SDL 2 ***************
 include $(CLEAR_VARS)
 
-LOCAL_PATH := $(MY_PATH)/helper/android/SDL2
+LOCAL_PATH := $(MY_SDL_PATH)
 
 LOCAL_MODULE := SDL2
 
@@ -173,14 +176,12 @@ LOCAL_SRC_FILES := \
 LOCAL_LDLIBS := $(EE_GLES_LINK) -ldl -llog
 
 include $(BUILD_STATIC_LIBRARY)
-#**************** SDL 1.3 ***************
+#**************** SDL 2 ***************
 
 #**************** eetest ****************
 include $(CLEAR_VARS)
 
 LOCAL_PATH := $(MY_PATH)/test
-
-SDL_PATH := $(MY_PATH)/helper/android/SDL2
 
 LOCAL_LDLIBS 	:= $(MY_LDLIBS)
 
@@ -191,8 +192,10 @@ LOCAL_MODULE := eetest
 LOCAL_C_INCLUDES := $(MY_C_INCLUDES)
 
 LOCAL_SRC_FILES := \
-	../helper/android/SDL2/src/main/android/SDL_android_main.cpp \
-	eetest.cpp
+	../$(MY_SDL_MAIN_PATH) \
+	*.cpp
+
+LOCAL_SRC_FILES := $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
 LOCAL_SHARED_LIBRARIES := eepp
 
@@ -206,8 +209,6 @@ LOCAL_PATH := $(MY_PATH)/test/empty_window
 
 LOCAL_MODULE := empty_window
 
-SDL_PATH := $(MY_PATH)/helper/android/SDL2
-
 LOCAL_LDLIBS 	:= $(MY_LDLIBS)
 
 LOCAL_CFLAGS 	:= $(MY_C_FLAGS)
@@ -215,7 +216,7 @@ LOCAL_CFLAGS 	:= $(MY_C_FLAGS)
 LOCAL_C_INCLUDES := $(MY_C_INCLUDES)
 
 CORE_SRCS :=  \
-	../../helper/android/SDL2/src/main/android/*.cpp \
+	../../$(MY_SDL_MAIN_PATH) \
 	*.cpp \
 
 LOCAL_SRC_FILES := $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
@@ -230,16 +231,14 @@ include $(CLEAR_VARS)
 
 LOCAL_PATH := $(MY_PATH)/bnb
 
-LOCAL_MODULE := main
-
-SDL_PATH := $(MY_PATH)/helper/android/SDL2
+LOCAL_MODULE := bnb
 
 LOCAL_LDLIBS 	:= $(MY_LDLIBS)
 
 LOCAL_CFLAGS 	:= $(MY_C_FLAGS)
 
 CORE_SRCS :=  \
-	../helper/android/SDL2/src/main/android/*.cpp \
+	../$(MY_SDL_MAIN_PATH) \
 	*.cpp \
 
 LOCAL_C_INCLUDES := $(MY_C_INCLUDES)
@@ -258,8 +257,6 @@ LOCAL_PATH := $(MY_PATH)/test/
 
 LOCAL_MODULE := full_test
 
-SDL_PATH := $(MY_PATH)/helper/android/SDL2
-
 LOCAL_LDLIBS 	:= $(MY_LDLIBS)
 
 LOCAL_CFLAGS 	:= $(MY_C_FLAGS)
@@ -267,7 +264,7 @@ LOCAL_CFLAGS 	:= $(MY_C_FLAGS)
 LOCAL_C_INCLUDES := $(MY_C_INCLUDES)
 
 CORE_SRCS :=  \
-	../../helper/android/SDL2/src/main/android/*.cpp \
+	../../$(MY_SDL_MAIN_PATH) \
 	*.cpp \
 
 LOCAL_SRC_FILES := $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
@@ -276,3 +273,53 @@ LOCAL_STATIC_LIBRARIES := eepp
 
 include $(BUILD_SHARED_LIBRARY)
 #************ full_test ************
+
+#************* KCTSU *************
+include $(CLEAR_VARS)
+
+LOCAL_PATH := $(MY_PATH)/particles
+
+LOCAL_MODULE := kctsu
+
+LOCAL_LDLIBS 	:= $(MY_LDLIBS)
+
+LOCAL_CFLAGS 	:= $(MY_C_FLAGS)
+
+CORE_SRCS :=  \
+	../$(MY_SDL_MAIN_PATH) \
+	*.cpp \
+	gameobjects/*.cpp \
+	objects/*.cpp
+
+LOCAL_C_INCLUDES := $(MY_C_INCLUDES)
+
+LOCAL_SRC_FILES := $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+LOCAL_STATIC_LIBRARIES := eepp
+
+include $(BUILD_SHARED_LIBRARY)
+#************ KCTSU ************
+
+#************* Rhythm *************
+include $(CLEAR_VARS)
+
+LOCAL_PATH := $(MY_PATH)/rhythm
+
+LOCAL_MODULE := main
+
+LOCAL_LDLIBS 	:= $(MY_LDLIBS)
+
+LOCAL_CFLAGS 	:= $(MY_C_FLAGS)
+
+CORE_SRCS :=  \
+	../$(MY_SDL_MAIN_PATH) \
+	*.cpp
+
+LOCAL_C_INCLUDES := $(MY_C_INCLUDES)
+
+LOCAL_SRC_FILES := $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+LOCAL_STATIC_LIBRARIES := eepp
+
+include $(BUILD_SHARED_LIBRARY)
+#************ Rhythm ************
