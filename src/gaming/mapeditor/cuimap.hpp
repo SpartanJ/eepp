@@ -11,7 +11,7 @@ using namespace EE::UI;
 
 namespace EE { namespace Gaming { namespace MapEditor {
 
-class cUIMap : public cUIComplexControl {
+class EE_API cUIMap : public cUIComplexControl {
 	public:
 		typedef cb::Callback1<void, cLight *> LightSelectCb;
 		typedef cb::Callback1<void, cLight *> LightRadiusChangeCb;

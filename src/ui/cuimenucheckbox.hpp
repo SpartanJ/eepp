@@ -5,7 +5,7 @@
 
 namespace EE { namespace UI {
 
-class cUIMenuCheckBox : public cUIMenuItem {
+class EE_API cUIMenuCheckBox : public cUIMenuItem {
 	public:
 		cUIMenuCheckBox( cUIMenuCheckBox::CreateParams& Params );
 

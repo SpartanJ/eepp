@@ -5,7 +5,7 @@
 
 namespace EE { namespace Window {
 
-class cClipboard {
+class EE_API cClipboard {
 	public:
 		virtual ~cClipboard();
 

@@ -7,7 +7,7 @@ namespace EE { namespace UI {
 
 class cUISkin;
 
-class cUISkinState {
+class EE_API cUISkinState {
 	public:
 		enum UISkinStates {
 			StateNormal = 0,

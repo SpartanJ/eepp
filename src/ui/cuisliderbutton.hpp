@@ -5,7 +5,7 @@
 
 namespace EE { namespace UI { namespace Private {
 
-class cUISliderButton : public cUIControlAnim {
+class EE_API cUISliderButton : public cUIControlAnim {
 	public:
 		cUISliderButton( const cUIControlAnim::CreateParams& Params );
 

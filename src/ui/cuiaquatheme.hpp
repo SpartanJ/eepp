@@ -5,7 +5,7 @@
 
 namespace EE { namespace UI {
 
-class cUIAquaTheme : public cUITheme {
+class EE_API cUIAquaTheme : public cUITheme {
 	public:
 		cUIAquaTheme( const std::string& Name, const std::string& Abbr, cFont * DefaultFont = NULL );
 

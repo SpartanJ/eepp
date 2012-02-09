@@ -10,7 +10,7 @@
 
 namespace EE { namespace UI { namespace Tools {
 
-class cTextureGroupNew {
+class EE_API cTextureGroupNew {
 	public:
 		typedef cb::Callback1<void, cTexturePacker *> TGCreateCb;
 

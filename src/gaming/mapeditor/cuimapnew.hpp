@@ -9,7 +9,7 @@ using namespace EE::UI;
 
 namespace EE { namespace Gaming { namespace MapEditor {
 
-class cUIMapNew {
+class EE_API cUIMapNew {
 	public:
 		cUIMapNew( cUIMap * Map, cb::Callback0<void> NewMapCb = cb::Callback0<void>() );
 

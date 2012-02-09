@@ -5,7 +5,7 @@
 
 namespace EE { namespace System {
 
-class cIOStreamFile : public cIOStream {
+class EE_API cIOStreamFile : public cIOStream {
 	public:
 		cIOStreamFile( const std::string& path, std::ios_base::openmode mode );
 

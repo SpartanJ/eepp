@@ -1,6 +1,7 @@
 #ifndef EE_MEMORY_MANAGER_HPP
 #define EE_MEMORY_MANAGER_HPP
 
+#include "../declares.hpp"
 #include <string>
 #include <map>
 #include <cstdlib>
@@ -8,7 +9,7 @@
 
 namespace EE {
 
-class cAllocatedPointer {
+class EE_API cAllocatedPointer {
 	public:
 		cAllocatedPointer( void * Data, const std::string& File, int Line, size_t Memory );
 
@@ -21,7 +22,7 @@ class cAllocatedPointer {
 typedef std::map<void*, cAllocatedPointer> 	tAllocatedPointerMap;
 typedef tAllocatedPointerMap::iterator 		tAllocatedPointerMapIt;
 
-class MemoryManager {
+class EE_API MemoryManager {
 	public:
 		static void * AddPointer( const cAllocatedPointer& aAllocatedPointer );
 

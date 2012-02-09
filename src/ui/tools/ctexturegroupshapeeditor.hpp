@@ -10,7 +10,7 @@ namespace EE { namespace UI { namespace Tools {
 
 class cTextureGroupEditor;
 
-class cTextureGroupShapeEditor : public cUIComplexControl {
+class EE_API cTextureGroupShapeEditor : public cUIComplexControl {
 	public:
 		cTextureGroupShapeEditor( const cUIComplexControl::CreateParams& Params, cTextureGroupEditor * Editor );
 

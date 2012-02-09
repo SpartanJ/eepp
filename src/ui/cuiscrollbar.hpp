@@ -6,7 +6,7 @@
 
 namespace EE { namespace UI {
 
-class cUIScrollBar : public cUIComplexControl {
+class EE_API cUIScrollBar : public cUIComplexControl {
 	public:
 		class CreateParams : public cUIComplexControl::CreateParams {
 			public:

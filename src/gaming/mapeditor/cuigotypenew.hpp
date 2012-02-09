@@ -8,7 +8,7 @@ using namespace EE::UI;
 
 namespace EE { namespace Gaming { namespace MapEditor {
 
-class cUIGOTypeNew {
+class EE_API cUIGOTypeNew {
 	public:
 		cUIGOTypeNew( cb::Callback2<void, std::string, Uint32> Cb );
 

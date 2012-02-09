@@ -12,7 +12,7 @@ using namespace EE::UI;
 
 namespace EE { namespace Gaming { namespace MapEditor {
 
-class cLayerProperties {
+class EE_API cLayerProperties {
 	public:
 		cLayerProperties( cLayer * Map );
 

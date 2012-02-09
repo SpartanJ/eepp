@@ -5,7 +5,7 @@
 
 namespace EE { namespace System {
 
-class cIOStreamMemory : public cIOStream {
+class EE_API cIOStreamMemory : public cIOStream {
 	public:
 		cIOStreamMemory( const char * data, ios_size size );
 

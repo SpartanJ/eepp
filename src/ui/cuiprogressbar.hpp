@@ -7,7 +7,7 @@
 
 namespace EE { namespace UI {
 
-class cUIProgressBar : public cUIComplexControl {
+class EE_API cUIProgressBar : public cUIComplexControl {
 	public:
 		class CreateParams : public cUITextBox::CreateParams {
 			public:

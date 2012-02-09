@@ -7,7 +7,7 @@ namespace EE { namespace UI {
 
 class cUIMenu;
 
-class cUIMenuSubMenu : public cUIMenuItem {
+class EE_API cUIMenuSubMenu : public cUIMenuItem {
 	public:
 		class CreateParams : public cUIMenuItem::CreateParams {
 			public:

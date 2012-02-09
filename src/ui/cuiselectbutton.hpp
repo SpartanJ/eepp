@@ -5,7 +5,7 @@
 
 namespace EE { namespace UI {
 
-class cUISelectButton : public cUIPushButton {
+class EE_API cUISelectButton : public cUIPushButton {
 	public:
 		cUISelectButton( const cUIPushButton::CreateParams& Params );
 

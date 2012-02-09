@@ -8,7 +8,7 @@ namespace EE { namespace Gaming {
 
 class cMap;
 
-class cLightManager {
+class EE_API cLightManager {
 	public:
 		typedef std::list<cLight*> LightsList;
 

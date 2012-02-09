@@ -5,7 +5,7 @@
 
 namespace EE { namespace UI {
 
-class cUISeparator : public cUIControlAnim {
+class EE_API cUISeparator : public cUIControlAnim {
 	public:
 		cUISeparator( cUIControlAnim::CreateParams Params );
 		

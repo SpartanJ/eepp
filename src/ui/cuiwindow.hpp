@@ -7,7 +7,7 @@
 
 namespace EE { namespace UI {
 
-class cUIWindow : public cUIComplexControl {
+class EE_API cUIWindow : public cUIComplexControl {
 	public:
 		class CreateParams : public cUIComplexControl::CreateParams {
 			public:
