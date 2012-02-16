@@ -43,8 +43,6 @@ eeVector2i cView::Center() const {
 }
 
 void cView::Center( const eeVector2i& Center ) {
-	eeVector2f LastCenter = mCenter;
-
 	mCenter.x = (eeFloat)Center.x;
 	mCenter.y = (eeFloat)Center.y;
 	mView.Left = static_cast<eeInt> ( mCenter.x - (eeFloat)mView.Right * 0.5f );
@@ -66,7 +64,6 @@ void cView::Move( const eeVector2i& Offset ) {
 }
 
 void cView::Scale( const eeFloat& Factor ) {
-	eeRecti LastView = mView;
 	eeVector2f v( mView.Right * 0.5f, mView.Bottom * 0.5f );
 
 	mView.Left = mView.Left + static_cast<eeInt> ( v.x - v.x * Factor );

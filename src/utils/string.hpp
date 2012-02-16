@@ -14,12 +14,6 @@ bool EE_API isNumber( const eeInt& mValue, bool AllowDot = false );
 /** @return If the value passed is a letter */
 bool EE_API isLetter( const eeInt& mValue );
 
-/** Converts an integer value to std::string. It's faster than toStr. */
-std::string EE_API intToStr(Int32 n);
-
-/** Converts an float value to std::string. It's faster than toStr. */
-std::string EE_API floatToStr(eeFloat n);
-
 /** Returns the current date time */
 std::string EE_API GetDateTimeStr();
 

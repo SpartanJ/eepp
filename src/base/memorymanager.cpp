@@ -74,13 +74,9 @@ void * MemoryManager::AddPointer( const cAllocatedPointer& aAllocatedPointer ) {
 }
 
 bool MemoryManager::RemovePointer( void * Data ) {
-	bool Found = false;
-
 	tAllocatedPointerMapIt it = mMapPointers.find( Data );
 
-	if ( it != mMapPointers.end() ) {
-		Found = true;
-	} else {
+	if ( it == mMapPointers.end() ) {
 		eePRINT( "Trying to delete pointer %p created that does not exist!\n", Data );
 
 		return false;

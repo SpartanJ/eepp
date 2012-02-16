@@ -18,28 +18,6 @@ bool isLetter( const eeInt& mValue ) {
 	return ( ( (mValue >= 65 && mValue <= 90) || (mValue >= 97 && mValue <= 122) || (mValue >= 192 && mValue <= 255) ) && (mValue != 215) && (mValue != 247) );
 }
 
-std::string intToStr( Int32 n ) {
-	char buf[10];
-
-#ifdef EE_COMPILER_MSVC
-	_itoa_s(n, &buf[0], 10, 10 );
-#else
-	std::sprintf(buf, "%d", n);
-#endif
-
-	return std::string( buf );
-}
-
-std::string floatToStr( eeFloat n ) {
-	char buf[24];
-#ifdef EE_COMPILER_MSVC
-	_snprintf_s( &buf[0], 24, 24, "%f", n );
-#else
-	std::sprintf(buf, "%f", n);
-#endif
-	return std::string( buf );
-}
-
 std::string GetDateTimeStr() {
 	time_t rawtime;
 	time ( &rawtime );

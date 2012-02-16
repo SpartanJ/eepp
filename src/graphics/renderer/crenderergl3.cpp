@@ -766,7 +766,7 @@ void cRendererGL3::ClipPlane( GLenum plane, const GLdouble * equation ) {
 
 	teq = teq * glm::inverse( mModelViewMatrix.top() );		/// Apply the inverse of the model view matrix to the equation
 
-	glUniform4f( nplane, (GLfloat)teq[0], (GLfloat)teq[1], (GLfloat)teq[2], (GLfloat)teq[3] );
+	glUniform4f( location, (GLfloat)teq[0], (GLfloat)teq[1], (GLfloat)teq[2], (GLfloat)teq[3] );
 }
 
 GLfloat cRendererGL3::PointSize() {

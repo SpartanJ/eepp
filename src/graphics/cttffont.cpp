@@ -66,8 +66,6 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ve
 
 	unsigned char * TempGlyphSurface;
 
-	eeFloat Top, Bottom;
-
 	// Change the outline size to add a pixel separating the character from the around characters to prevent ugly zooming of characters
 	Uint32 PixelSep = 0;
 
@@ -186,9 +184,6 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ve
 
 		GlyphRect.y += OutlineSize;
 		TempGlyph.Advance += OutlineSize;
-
-		Top = static_cast<eeFloat> ( mSize 	- GlyphRect.y - TempGlyph.MinY );
-		Bottom = static_cast<eeFloat> ( mSize 	+ GlyphRect.y - TempGlyph.MaxY );
 
 		// Translate the Glyph coordinates to the new texture coordinates
 		TempGlyph.MinX -= OutlineSize;

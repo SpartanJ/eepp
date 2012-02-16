@@ -544,7 +544,6 @@ void cFont::ShrinkText( std::string& Str, const Uint32& MaxWidth ) {
 	eeFloat		tCurWidth		= 0.f;
 	eeFloat 	tWordWidth		= 0.f;
 	eeFloat 	tMaxWidth		= (eeFloat) MaxWidth;
-	Int32 		tPrev			= -1;
 	char *		tStringLoop		= &Str[0];
 	char *		tLastSpace		= NULL;
 	Uint32 		tGlyphSize 		= (Uint32)mGlyphs.size();
@@ -564,8 +563,6 @@ void cFont::ShrinkText( std::string& Str, const Uint32& MaxWidth ) {
 					tCurWidth		+= tWordWidth;
 					tLastSpace		= tStringLoop;
 
-					tPrev			= *tStringLoop;
-
 					tStringLoop++;
 				} else {
 					if ( NULL != tLastSpace ) {
@@ -580,23 +577,19 @@ void cFont::ShrinkText( std::string& Str, const Uint32& MaxWidth ) {
 
 					tLastSpace		= NULL;
 					tCurWidth		= 0.f;
-					tPrev			= -1;
 				}
 
 				tWordWidth = 0.f;
 			} else if ( '\n' == *tStringLoop ) {
 				tWordWidth 		= 0.f;
 				tCurWidth 		= 0.f;
-				tPrev			= ( *tStringLoop );
 				tLastSpace		= NULL;
 				tStringLoop++;
 			} else {
-				tPrev			= ( *tStringLoop );
 				tStringLoop++;
 			}
 		} else {
 			*tStringLoop		= ' ';
-			tPrev				= ' ';
 		}
 	}
 }
@@ -608,7 +601,6 @@ void cFont::ShrinkText( String& Str, const Uint32& MaxWidth ) {
 	eeFloat		tCurWidth		= 0.f;
 	eeFloat 	tWordWidth		= 0.f;
 	eeFloat 	tMaxWidth		= (eeFloat) MaxWidth;
-	Int32 		tPrev			= -1;
 	String::StringBaseType *	tStringLoop		= &Str[0];
 	String::StringBaseType *	tLastSpace		= NULL;
 
@@ -630,8 +622,6 @@ void cFont::ShrinkText( String& Str, const Uint32& MaxWidth ) {
 					tCurWidth		+= tWordWidth;
 					tLastSpace		= tStringLoop;
 
-					tPrev			= *tStringLoop;
-
 					tStringLoop++;
 				} else {
 					// If it was an space before, replace that space for an new line
@@ -651,9 +641,6 @@ void cFont::ShrinkText( String& Str, const Uint32& MaxWidth ) {
 
 					// New line, new current width
 					tCurWidth		= 0.f;
-
-					// No previous char for the new line
-					tPrev			= -1;
 				}
 
 				// New word, so we reset the current word width
@@ -661,16 +648,13 @@ void cFont::ShrinkText( String& Str, const Uint32& MaxWidth ) {
 			} else if ( '\n' == *tStringLoop ) {
 				tWordWidth 		= 0.f;
 				tCurWidth 		= 0.f;
-				tPrev			= ( *tStringLoop );
 				tLastSpace		= NULL;
 				tStringLoop++;
 			} else {
-				tPrev			= ( *tStringLoop );
 				tStringLoop++;
 			}
 		} else {	// Replace any unknown char as spaces.
 			*tStringLoop		= ' ';
-			tPrev				= ' ';
 		}
 	}
 }
