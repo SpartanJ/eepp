@@ -167,16 +167,16 @@ void cRendererGL::LookAt( GLfloat eyeX, GLfloat eyeY, GLfloat eyeZ, GLfloat cent
 	glTranslatef(-eyeX, -eyeY, -eyeZ);
 }
 
-static void MakeIdentityf( GLfloat m[16] )
+static void MakeIdentityf( GLfloat* m )
 {
-	m[0+4*0] = 1; m[0+4*1] = 0; m[0+4*2] = 0; m[0+4*3] = 0;
-	m[1+4*0] = 0; m[1+4*1] = 1; m[1+4*2] = 0; m[1+4*3] = 0;
-	m[2+4*0] = 0; m[2+4*1] = 0; m[2+4*2] = 1; m[2+4*3] = 0;
-	m[3+4*0] = 0; m[3+4*1] = 0; m[3+4*2] = 0; m[3+4*3] = 1;
+	m[0] = 1;	m[4] = 0;	m[8] = 0;	m[12] = 0;
+	m[1] = 0;	m[5] = 1;	m[9] = 0;	m[13] = 0;
+	m[2] = 0;	m[6] = 0;	m[10] = 1;	m[14] = 0;
+	m[3] = 0;	m[7] = 0;	m[11] = 0;	m[15] = 1;
 }
 
 void cRendererGL::Perspective ( GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar ) {
-	GLfloat m[4][4];
+	GLfloat m[16];
 	float sine, cotangent, deltaZ;
 	float radians = fovy / 2 * EE_PI_180;
 
@@ -189,16 +189,16 @@ void cRendererGL::Perspective ( GLfloat fovy, GLfloat aspect, GLfloat zNear, GLf
 
 	cotangent = eecos(radians) / sine;
 
-	MakeIdentityf( &m[0][0] );
+	MakeIdentityf( &m[0] );
 
-	m[0][0] = cotangent / aspect;
-	m[1][1] = cotangent;
-	m[2][2] = -(zFar + zNear) / deltaZ;
-	m[2][3] = -1;
-	m[3][2] = -2 * zNear * zFar / deltaZ;
-	m[3][3] = 0;
+	m[0]	= cotangent / aspect;
+	m[5]	= cotangent;
+	m[10]	= -(zFar + zNear) / deltaZ;
+	m[11]	= -1;
+	m[14]	= -2 * zNear * zFar / deltaZ;
+	m[15]	= 0;
 
-	glMultMatrixf( &m[0][0] );
+	glMultMatrixf( &m[0] );
 }
 
 void cRendererGL::EnableClientState( GLenum array ) {

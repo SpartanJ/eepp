@@ -155,6 +155,7 @@ T * tResourceManager<T>::GetById( const Uint32& id ) {
 
 template <class T>
 void tResourceManager<T>::PrintNames() {
+	#ifdef EE_DEBUG
 	typename std::list<T*>::reverse_iterator it;
 
 	T * sp = NULL;
@@ -164,6 +165,7 @@ void tResourceManager<T>::PrintNames() {
 
 		eePRINT( "'%s'\n", sp->Name().c_str() );
 	}
+	#endif
 }
 
 template <class T>
