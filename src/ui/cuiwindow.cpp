@@ -171,24 +171,24 @@ void cUIWindow::SetTheme( cUITheme *Theme ) {
 	cUIComplexControl::SetTheme( Theme );
 
 	if ( !( mWinFlags & UI_WIN_NO_BORDER ) ) {
-		mContainer->ForceThemeSkin			( Theme, "winback"			);
-		mWindowDecoration->ForceThemeSkin	( Theme, "windeco"			);
-		mBorderLeft->ForceThemeSkin			( Theme, "winborderleft"	);
-		mBorderRight->ForceThemeSkin		( Theme, "winborderright"	);
-		mBorderBottom->ForceThemeSkin		( Theme, "winborderbottom"	);
+		mContainer->SetSkin			( Theme, "winback"			);
+		mWindowDecoration->SetSkin	( Theme, "windeco"			);
+		mBorderLeft->SetSkin			( Theme, "winborderleft"	);
+		mBorderRight->SetSkin		( Theme, "winborderright"	);
+		mBorderBottom->SetSkin		( Theme, "winborderbottom"	);
 
 		if ( NULL != mButtonClose ) {
-			mButtonClose->ForceThemeSkin( Theme, "winclose" );
+			mButtonClose->SetSkin( Theme, "winclose" );
 			mButtonClose->Size( mButtonClose->GetSkinShapeSize() );
 		}
 
 		if ( NULL != mButtonMaximize ) {
-			mButtonMaximize->ForceThemeSkin( Theme, "winmax" );
+			mButtonMaximize->SetSkin( Theme, "winmax" );
 			mButtonMaximize->Size( mButtonMaximize->GetSkinShapeSize() );
 		}
 
 		if ( NULL != mButtonMinimize ) {
-			mButtonMinimize->ForceThemeSkin( Theme, "winmin" );
+			mButtonMinimize->SetSkin( Theme, "winmin" );
 			mButtonMinimize->Size( mButtonMinimize->GetSkinShapeSize() );
 		}
 

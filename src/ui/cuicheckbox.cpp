@@ -40,8 +40,8 @@ bool cUICheckBox::IsType( const Uint32& type ) const {
 void cUICheckBox::SetTheme( cUITheme * Theme ) {
 	cUIControl::SetTheme( Theme, "checkbox" );
 
-	mActiveButton->ForceThemeSkin	( Theme, "checkbox_active" );
-	mInactiveButton->ForceThemeSkin	( Theme, "checkbox_inactive" );
+	mActiveButton->SetSkin	( Theme, "checkbox_active" );
+	mInactiveButton->SetSkin	( Theme, "checkbox_inactive" );
 
 	DoAfterSetTheme();
 }

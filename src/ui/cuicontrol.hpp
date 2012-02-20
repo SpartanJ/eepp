@@ -197,7 +197,9 @@ class EE_API cUIControl {
 
 		cUISkin * GetSkin();
 
-		void ForceThemeSkin( cUITheme * Theme, const std::string& ControlName );
+		void SetSkin( cUITheme * Theme, const std::string& ControlName );
+
+		void SetSkin( cUISkin * Skin );
 
 		cUIControl * ChildGetFirst() const;
 
@@ -259,8 +261,6 @@ class EE_API cUIControl {
 		eeVector2f 		mCenter;
 
 		UIEventsMap		mEvents;
-
-		std::string		mSkinForcedName;
 
 		bool			mVisible;
 		bool			mEnabled;
@@ -355,7 +355,7 @@ class EE_API cUIControl {
 
 		void UpdateChildsScreenPos();
 
-		void WriteCtrlFlag( const Uint32& Pos, const Uint32& Val );
+		void WriteCtrlFlag( const Uint32& Flag, const Uint32& Val );
 
 		void WriteFlag( const Uint32& Flag, const Uint32& Val );
 
@@ -366,6 +366,8 @@ class EE_API cUIControl {
 		eeFloat Elapsed();
 
 		eeRecti MakePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
+
+		void SafeDeleteSkinState();
 };
 
 }}

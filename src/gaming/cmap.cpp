@@ -323,14 +323,15 @@ void cMap::CalcTilesClip() {
 
 		mStartTile.x	= -foff.x / ( mTileSize.x * mScale ) - mExtraTiles.x;
 		mStartTile.y	= -foff.y / ( mTileSize.y * mScale ) - mExtraTiles.y;
-		mEndTile.x		= mStartTile.x + eeRoundUp( (eeFloat)mViewSize.x / ( (eeFloat)mTileSize.x * mScale ) ) + 1 + mExtraTiles.x;
-		mEndTile.y		= mStartTile.y + eeRoundUp( (eeFloat)mViewSize.y / ( (eeFloat)mTileSize.y * mScale ) ) + 1 + mExtraTiles.y;
 
 		if ( mStartTile.x < 0 )
 			mStartTile.x = 0;
 
 		if ( mStartTile.y < 0 )
 			mStartTile.y = 0;
+
+		mEndTile.x		= mStartTile.x + eeRoundUp( (eeFloat)mViewSize.x / ( (eeFloat)mTileSize.x * mScale ) ) + 1 + mExtraTiles.x;
+		mEndTile.y		= mStartTile.y + eeRoundUp( (eeFloat)mViewSize.y / ( (eeFloat)mTileSize.y * mScale ) ) + 1 + mExtraTiles.y;
 
 		if ( mEndTile.x > mSize.x )
 			mEndTile.x = mSize.x;
@@ -393,7 +394,17 @@ void cMap::UpdateOffscale() {
 	eeVector2f totSizeT( mTileSize.x * mSize.x - mViewSize.x			, mTileSize.y * mSize.y - mViewSize.y			);
 	eeVector2f totSizeS( mTileSize.x * mSize.x * mScale - mViewSize.x	, mTileSize.y * mSize.y * mScale - mViewSize.y	);
 
-	mOffscale = eeVector2f( totSizeS.x / totSizeT.x, totSizeS.y / totSizeT.y );
+	if ( 0 == totSizeT.x ) {
+		mOffscale.x = 0;
+	} else {
+		mOffscale.x = totSizeS.x / totSizeT.x;
+	}
+
+	if ( 0 == totSizeT.y ) {
+		mOffscale.y = 0;
+	} else {
+		mOffscale.y = totSizeS.y / totSizeT.y;
+	}
 }
 
 const eeFloat& cMap::Scale() const {

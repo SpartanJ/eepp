@@ -40,7 +40,7 @@ cUIControl::cUIControl( const CreateParams& Params ) :
 }
 
 cUIControl::~cUIControl() {
-	eeSAFE_DELETE( mSkinState );
+	SafeDeleteSkinState();
 	eeSAFE_DELETE( mBackground );
 	eeSAFE_DELETE( mBorder );
 
@@ -255,7 +255,7 @@ void cUIControl::Update() {
 	}
 
 	if ( mControlFlags & UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD )
-		WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD_POS, 0 );
+		WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );
 }
 
 void cUIControl::SendMouseEvent( const Uint32& Event, const eeVector2i& Pos, const Uint32& Flags ) {
@@ -305,11 +305,11 @@ Uint32 cUIControl::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
 }
 
 bool cUIControl::IsMouseOver() {
-	return 0 != Read32BitKey( &mControlFlags, UI_CTRL_FLAG_MOUSEOVER_POS );
+	return mControlFlags & UI_CTRL_FLAG_MOUSEOVER;
 }
 
 bool cUIControl::IsMouseOverMeOrChilds() {
-	return 0 != Read32BitKey( &mControlFlags, UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD_POS );
+	return mControlFlags & UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD;
 }
 
 Uint32 cUIControl::OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags ) {
@@ -318,7 +318,7 @@ Uint32 cUIControl::OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags
 }
 
 Uint32 cUIControl::OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags ) {
-	WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_POS, 1 );
+	WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER, 1 );
 
 	SendMouseEvent( cUIEvent::EventMouseEnter, Pos, Flags );
 
@@ -328,7 +328,7 @@ Uint32 cUIControl::OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags ) {
 }
 
 Uint32 cUIControl::OnMouseExit( const eeVector2i& Pos, const Uint32 Flags ) {
-	WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_POS, 0 );
+	WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER, 0 );
 
 	SendMouseEvent( cUIEvent::EventMouseExit, Pos, Flags );
 
@@ -386,7 +386,7 @@ void cUIControl::VAlign( Uint32 valign ) {
 }
 
 void cUIControl::FillBackground( bool enabled ) {
-	SetFlagValue( &mFlags, UI_FILL_BACKGROUND, enabled ? 1 : 0 );
+	WriteFlag( UI_FILL_BACKGROUND, enabled ? 1 : 0 );
 
 	if ( enabled && NULL == mBackground ) {
 		mBackground = eeNew( cUIBackground, () );
@@ -394,7 +394,7 @@ void cUIControl::FillBackground( bool enabled ) {
 }
 
 void cUIControl::Border( bool enabled ) {
-	SetFlagValue( &mFlags, UI_BORDER, enabled ? 1 : 0 );
+	WriteFlag( UI_BORDER, enabled ? 1 : 0 );
 
 	if ( enabled && NULL == mBorder ) {
 		mBorder = eeNew( cUIBorder, () );
@@ -764,7 +764,7 @@ cUIControl * cUIControl::OverFind( const eeVector2f& Point ) {
 		UpdateQuad();
 
 		if ( PointInsidePolygon2( mPoly, Point ) ) {
-			WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD_POS, 1 );
+			WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
 
 			cUIControl * ChildLoop = mChildLast;
 
@@ -905,27 +905,40 @@ void cUIControl::SetTheme( cUITheme * Theme ) {
 	SetTheme( Theme, "control" );
 }
 
+void cUIControl::SafeDeleteSkinState() {
+	if ( NULL != mSkinState && ( mControlFlags & UI_CTRL_FLAG_SKIN_OWNER ) ) {
+		cUISkin * tSkin = mSkinState->GetSkin();
+
+		eeSAFE_DELETE( tSkin );
+	}
+
+	eeSAFE_DELETE( mSkinState );
+}
+
 void cUIControl::SetTheme( cUITheme * Theme, const std::string& ControlName ) {
 	if ( NULL != Theme ) {
-		cUISkin * tSkin = NULL;
-
-		if ( mSkinForcedName.size() )
-			tSkin = Theme->GetByName( Theme->Abbr() + "_" + mSkinForcedName );
-		else
-			tSkin = Theme->GetByName( Theme->Abbr() + "_" + ControlName );
+		cUISkin * tSkin = Theme->GetByName( Theme->Abbr() + "_" + ControlName );
 
 		if ( NULL != tSkin ) {
-			eeSAFE_DELETE( mSkinState );
+			SafeDeleteSkinState();
 
 			mSkinState = eeNew( cUISkinState, ( tSkin ) );
 		}
 	}
 }
 
-void cUIControl::ForceThemeSkin( cUITheme * Theme, const std::string& ControlName ) {
-	mSkinForcedName = ControlName;
-
+void cUIControl::SetSkin( cUITheme * Theme, const std::string& ControlName ) {
 	SetTheme( Theme, ControlName );
+}
+
+void cUIControl::SetSkin( cUISkin * Skin ) {
+	if ( NULL != Skin ) {
+		SafeDeleteSkinState();
+
+		WriteCtrlFlag( UI_CTRL_FLAG_SKIN_OWNER, 1 );
+
+		mSkinState = eeNew( cUISkinState, ( Skin ) );
+	}
 }
 
 void cUIControl::OnStateChange() {
@@ -984,8 +997,8 @@ cUISkin * cUIControl::GetSkin() {
 	return NULL;
 }
 
-void cUIControl::WriteCtrlFlag( const Uint32& Pos, const Uint32& Val ) {
-	Write32BitKey( &mControlFlags, Pos, Val );
+void cUIControl::WriteCtrlFlag( const Uint32& Flag, const Uint32& Val ) {
+	SetFlagValue( &mControlFlags, Flag, Val );
 }
 
 void cUIControl::WriteFlag( const Uint32& Flag, const Uint32& Val ) {

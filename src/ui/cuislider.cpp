@@ -62,13 +62,13 @@ void cUISlider::SetTheme( cUITheme * Theme ) {
 	if ( !mVertical ) {
 		cUIControl::SetTheme( Theme, "hslider" );
 
-		mBackSlider->ForceThemeSkin( Theme, "hslider_bg" );
-		mSlider->ForceThemeSkin( Theme, "hslider_button" );
+		mBackSlider->SetSkin( Theme, "hslider_bg" );
+		mSlider->SetSkin( Theme, "hslider_button" );
 	} else {
 		cUIControl::SetTheme( Theme, "vslider" );
 
-		mBackSlider->ForceThemeSkin( Theme, "vslider_bg" );
-		mSlider->ForceThemeSkin( Theme, "vslider_button" );
+		mBackSlider->SetSkin( Theme, "vslider_bg" );
+		mSlider->SetSkin( Theme, "vslider_button" );
 	}
 
 	AdjustChilds();

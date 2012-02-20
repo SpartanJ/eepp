@@ -86,7 +86,7 @@ bool cUIDragable::Dragging() const {
 }
 
 void cUIDragable::Dragging( const bool& dragging ) {
-	WriteCtrlFlag( UI_CTRL_FLAG_DRAGGING_POS, true == dragging );
+	WriteCtrlFlag( UI_CTRL_FLAG_DRAGGING, true == dragging );
 }
 
 void cUIDragable::DragButton( const Uint32& Button ) {

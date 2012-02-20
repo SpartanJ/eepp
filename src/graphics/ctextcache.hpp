@@ -58,7 +58,7 @@ class EE_API cTextCache {
 	protected:
 		friend class cFont;
 
-		String 				mText;
+		String						mText;
 		cFont * 					mFont;
 		std::vector<eeFloat> 		mLinesWidth;
 		eeFloat 					mCachedWidth;
@@ -69,9 +69,11 @@ class EE_API cTextCache {
 
 		std::vector<eeVertexCoords>	mRenderCoords;
 		std::vector<eeColorA>		mColors;
-		bool						mCachedCoords;
+
 		Uint32						mFlags;
 		Uint32						mVertexNumCached;
+
+		bool						mCachedCoords;
 
 		void UpdateCoords();
 

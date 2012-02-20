@@ -60,9 +60,9 @@ bool cUISpinBox::IsType( const Uint32& type ) const {
 void cUISpinBox::SetTheme( cUITheme * Theme ) {
 	cUIControl::SetTheme		( Theme, "spinbox" );
 
-	mInput->ForceThemeSkin		( Theme, "spinbox_input" );
-	mPushUp->ForceThemeSkin		( Theme, "spinbox_btnup" );
-	mPushDown->ForceThemeSkin	( Theme, "spinbox_btndown" );
+	mInput->SetSkin		( Theme, "spinbox_input" );
+	mPushUp->SetSkin		( Theme, "spinbox_btnup" );
+	mPushDown->SetSkin	( Theme, "spinbox_btndown" );
 
 	cShape * tShape = NULL;
 	cUISkin * tSkin = NULL;

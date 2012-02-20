@@ -395,6 +395,7 @@ void cEETest::CreateUI() {
 	PBParams.PosSet( 20, 197 );
 	PBParams.Size = eeSize( 200, 16 );
 	PBParams.DisplayPercent = true;
+	PBParams.MovementSpeed = eeVector2f( -64, 0 );
 	mProgressBar = eeNew( cUIProgressBar, ( PBParams ) );
 	mProgressBar->Visible( true );
 	mProgressBar->Enabled( true );
