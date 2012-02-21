@@ -27,8 +27,7 @@ cUILayerNew::cUILayerNew( cUIMap * Map, EE_LAYER_TYPE Type, NewLayerCb newLayerC
 	Int32 InitialY		= 16;
 	Int32 DistFromTitle	= 18;
 
-	cUITextBox * Txt = mTheme->CreateTextBox( mUIWindow->Container(), eeSize(), eeVector2i( 16, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	Txt->Text( "Layer Name" );
+	cUITextBox * Txt = mTheme->CreateTextBox( "Layer Name", mUIWindow->Container(), eeSize(), eeVector2i( 16, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	mUILayerName = mTheme->CreateTextInput( mUIWindow->Container(), eeSize( 120, 22 ), eeVector2i( Txt->Pos().x + DistFromTitle, Txt->Pos().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE, true, 64 );
 	mUILayerName->Text( "Layer " + toStr( mUIMap->Map()->LayerCount() + 1 ) );

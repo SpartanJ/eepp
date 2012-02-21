@@ -1082,39 +1082,38 @@ void cUIControl::OnParentSizeChange( const eeVector2i& SizeChange ) {
 	SendCommonEvent( cUIEvent::EventOnParentSizeChange );
 }
 
-eeSize cUIControl::GetSkinShapeSize() {
-	cUISkin *	tSkin = GetSkin();
+eeSize cUIControl::GetSkinShapeSize( cUISkin * Skin, const Uint32& State ) {
 	eeSize		tSize;
 
-	if ( NULL != tSkin ) {
-		cShape * tShape = tSkin->GetShape( cUISkinState::StateNormal );
+	if ( NULL != Skin ) {
+		cShape * tShape = Skin->GetShape( State );
 
 		if ( NULL != tShape ) {
 			tSize = tShape->RealSize();
 		}
 
-		if ( tSkin->GetType() == cUISkin::UISkinComplex ) {
-			cUISkinComplex * tSkinC = reinterpret_cast<cUISkinComplex*> ( tSkin );
+		if ( Skin->GetType() == cUISkin::UISkinComplex ) {
+			cUISkinComplex * SkinC = reinterpret_cast<cUISkinComplex*> ( Skin );
 
-			tShape = tSkinC->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Up );
-
-			if ( NULL != tShape ) {
-				tSize.y += tShape->RealSize().Height();
-			}
-
-			tShape = tSkinC->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Down );
+			tShape = SkinC->GetShapeSide( State, cUISkinComplex::Up );
 
 			if ( NULL != tShape ) {
 				tSize.y += tShape->RealSize().Height();
 			}
 
-			tShape = tSkinC->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Left );
+			tShape = SkinC->GetShapeSide( State, cUISkinComplex::Down );
+
+			if ( NULL != tShape ) {
+				tSize.y += tShape->RealSize().Height();
+			}
+
+			tShape = SkinC->GetShapeSide( State, cUISkinComplex::Left );
 
 			if ( NULL != tShape ) {
 				tSize.x += tShape->RealSize().Width();
 			}
 
-			tShape = tSkinC->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Right );
+			tShape = SkinC->GetShapeSide( State, cUISkinComplex::Right );
 
 			if ( NULL != tShape ) {
 				tSize.x += tShape->RealSize().Width();
@@ -1123,6 +1122,10 @@ eeSize cUIControl::GetSkinShapeSize() {
 	}
 
 	return tSize;
+}
+
+eeSize cUIControl::GetSkinShapeSize() {
+	return GetSkinShapeSize( GetSkin(), cUISkinState::StateNormal );
 }
 
 cUIControl * cUIControl::NextComplexControl() {

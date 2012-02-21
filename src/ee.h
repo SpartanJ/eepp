@@ -187,6 +187,8 @@
 	#include "ui/cuiwinmenu.hpp"
 	#include "ui/cuicommondialog.hpp"
 	#include "ui/cuimessagebox.hpp"
+	#include "ui/cuitab.hpp"
+	#include "ui/cuitabwidget.hpp"
 
 	#include "ui/cuiaquatheme.hpp"
 	using namespace EE::UI;

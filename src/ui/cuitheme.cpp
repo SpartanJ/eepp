@@ -25,6 +25,7 @@
 #include "cuisprite.hpp"
 #include "cuicommondialog.hpp"
 #include "cuimessagebox.hpp"
+#include "cuitabwidget.hpp"
 
 namespace EE { namespace UI {
 
@@ -94,6 +95,11 @@ static void LoadThemeElements() {
 		UI_THEME_ELEMENTS.push_back( "winshade" );
 		UI_THEME_ELEMENTS.push_back( "winmenu" );
 		UI_THEME_ELEMENTS.push_back( "winmenubutton" );
+		UI_THEME_ELEMENTS.push_back( "tabwidget" );
+		UI_THEME_ELEMENTS.push_back( "tabcontainer" );
+		UI_THEME_ELEMENTS.push_back( "tab" );
+		UI_THEME_ELEMENTS.push_back( "tab_left" );
+		UI_THEME_ELEMENTS.push_back( "tab_right" );
 	}
 
 	if ( !UI_THEME_ICONS.size() ) {
@@ -467,7 +473,7 @@ cUIRadioButton * cUITheme::CreateRadioButton( cUIControl * Parent, const eeSize&
 	return Ctrl;
 }
 
-cUITextBox * cUITheme::CreateTextBox( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags ) {
+cUITextBox * cUITheme::CreateTextBox( const String& Text, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags ) {
 	cUITextBox::CreateParams TextBoxParams;
 	TextBoxParams.Parent( Parent );
 	TextBoxParams.PosSet( Pos );
@@ -476,6 +482,7 @@ cUITextBox * cUITheme::CreateTextBox( cUIControl * Parent, const eeSize& Size, c
 	cUITextBox * Ctrl = eeNew( cUITextBox, ( TextBoxParams ) );
 	Ctrl->Visible( true );
 	Ctrl->Enabled( true );
+	Ctrl->Text( Text );
 	return Ctrl;
 }
 
@@ -733,6 +740,27 @@ cUIMessageBox * cUITheme::CreateMessageBox( UI_MSGBOX_TYPE Type, const String& M
 	MsgBoxParams.Type = Type;
 	MsgBoxParams.Message = Message;
 	return eeNew( cUIMessageBox, ( MsgBoxParams ) );
+}
+
+cUITabWidget * cUITheme::CreateTabWidget( cUIControl *Parent, const eeSize &Size, const eeVector2i &Pos, const Uint32 &Flags, const bool &TabsClosable, const bool &SpecialBorderTabs, const Int32 &TabSeparation, const Uint32 &MaxTextLength, const Uint32 &TabWidgetHeight, const Uint32 &TabTextAlign, const Uint32 &MinTabWidth, const Uint32 &MaxTabWidth ) {
+	cUITabWidget::CreateParams TabWidgetParams;
+	TabWidgetParams.Parent( Parent );
+	TabWidgetParams.PosSet( Pos );
+	TabWidgetParams.SizeSet( Size );
+	TabWidgetParams.Flags = Flags;
+	TabWidgetParams.TabsClosable = TabsClosable;
+	TabWidgetParams.SpecialBorderTabs = SpecialBorderTabs;
+	TabWidgetParams.TabSeparation = TabSeparation;
+	TabWidgetParams.MaxTextLength = MaxTextLength;
+	TabWidgetParams.TabWidgetHeight = TabWidgetHeight;
+	TabWidgetParams.TabTextAlign = TabTextAlign;
+	TabWidgetParams.MinTabWidth = MinTabWidth;
+	TabWidgetParams.MaxTabWidth = MaxTabWidth;
+
+	cUITabWidget * Ctrl = eeNew( cUITabWidget, ( TabWidgetParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
 }
 
 }}

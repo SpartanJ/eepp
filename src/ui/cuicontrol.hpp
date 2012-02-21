@@ -368,6 +368,8 @@ class EE_API cUIControl {
 		eeRecti MakePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
 
 		void SafeDeleteSkinState();
+
+		eeSize GetSkinShapeSize( cUISkin * Skin, const Uint32& State = cUISkinState::StateNormal );
 };
 
 }}

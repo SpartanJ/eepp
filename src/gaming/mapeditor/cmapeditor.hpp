@@ -52,8 +52,7 @@ class EE_API cMapEditor {
 		cUITextInput *		mDataIdInput;
 		cUIMenuCheckBox	*	mLayerChkVisible;
 		cUIMenuCheckBox *	mLayerChkLights;
-		cUIPushButton *		mShapeContBut;
-		cUIPushButton *		mLightContBut;
+		cUITabWidget *		mTabWidget;
 		cUIMenuCheckBox	*	mChkShowGrid;
 		cUIMenuCheckBox	*	mChkMarkTileOver;
 		cUIMenuCheckBox	*	mChkShowBlocked;
@@ -202,6 +201,10 @@ class EE_API cMapEditor {
 		void ZoomOut();
 
 		void CreateNoLayerAlert( const String title );
+
+		void OnTabSelected( const cUIEvent * Event );
+
+		void CreateTabs();
 };
 
 }}}

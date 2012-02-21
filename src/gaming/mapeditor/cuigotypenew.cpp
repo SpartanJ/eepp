@@ -21,8 +21,7 @@ cUIGOTypeNew::cUIGOTypeNew( cb::Callback2<void, std::string, Uint32> Cb ) :
 	Int32 InitialY		= 16;
 	Int32 DistFromTitle	= 18;
 
-	cUITextBox * Txt = mUITheme->CreateTextBox( mUIWindow->Container(), eeSize(), eeVector2i( 16, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	Txt->Text( "GameObject Type Name" );
+	cUITextBox * Txt = mUITheme->CreateTextBox( "GameObject Type Name", mUIWindow->Container(), eeSize(), eeVector2i( 16, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	mUIInput = mUITheme->CreateTextInput( mUIWindow->Container(), eeSize( 120, 22 ), eeVector2i( Txt->Pos().x + DistFromTitle, Txt->Pos().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE, true, 64 );
 

@@ -5,6 +5,7 @@
 #include "cuiprogressbar.hpp"
 #include "cuicommondialog.hpp"
 #include "cuimessagebox.hpp"
+#include "cuitabwidget.hpp"
 
 namespace EE { namespace UI {
 
@@ -193,6 +194,33 @@ cUIDropDownList * cUIAquaTheme::CreateDropDownList( cUIControl * Parent, const e
 	}
 
 	cUIDropDownList * Ctrl = eeNew( cUIDropDownList, ( DDLParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
+}
+
+
+cUITabWidget * cUIAquaTheme::CreateTabWidget( cUIControl *Parent, const eeSize &Size, const eeVector2i &Pos, const Uint32 &Flags, const bool &TabsClosable, const bool &SpecialBorderTabs, const Int32 &TabSeparation, const Uint32 &MaxTextLength, const Uint32 &TabWidgetHeight, const Uint32 &TabTextAlign, const Uint32 &MinTabWidth, const Uint32 &MaxTabWidth ) {
+	cUITabWidget::CreateParams TabWidgetParams;
+	TabWidgetParams.Parent( Parent );
+	TabWidgetParams.PosSet( Pos );
+	TabWidgetParams.SizeSet( Size );
+	TabWidgetParams.Flags = Flags;
+	TabWidgetParams.TabsClosable = TabsClosable;
+	TabWidgetParams.SpecialBorderTabs = SpecialBorderTabs;
+	TabWidgetParams.TabSeparation = TabSeparation;
+	TabWidgetParams.MaxTextLength = MaxTextLength;
+	TabWidgetParams.TabWidgetHeight = TabWidgetHeight;
+	TabWidgetParams.TabTextAlign = TabTextAlign;
+	TabWidgetParams.MinTabWidth = MinTabWidth;
+	TabWidgetParams.MaxTabWidth = MaxTabWidth;
+
+	if ( UseDefaultThemeValues() ) {
+		TabWidgetParams.TabSeparation = -15;
+		TabWidgetParams.FontSelectedColor = eeColorA( 0, 0, 0, 255 );
+	}
+
+	cUITabWidget * Ctrl = eeNew( cUITabWidget, ( TabWidgetParams ) );
 	Ctrl->Visible( true );
 	Ctrl->Enabled( true );
 	return Ctrl;

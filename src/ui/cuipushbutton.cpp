@@ -66,7 +66,7 @@ bool cUIPushButton::IsType( const Uint32& type ) const {
 
 void cUIPushButton::OnSizeChange() {
 	if ( NULL != mTextBox ) {
-		mTextBox->Size( mSize.Width(), mSize.Height() );
+		mTextBox->Size( mSize );
 		mTextBox->Pos( 0, 0 );
 	}
 

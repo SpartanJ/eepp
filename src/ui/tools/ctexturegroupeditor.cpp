@@ -192,9 +192,7 @@ void cTextureGroupEditor::OnDestHChange( const cUIEvent * Event ) {
 }
 
 cUITextBox * cTextureGroupEditor::CreateTxtBox( eeVector2i Pos, const String& Text ) {
-	cUITextBox * TxtBox = mTheme->CreateTextBox( mUIContainer, eeSize(), Pos, UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	TxtBox->Text( Text );
-	return TxtBox;
+	return mTheme->CreateTextBox( Text, mUIContainer, eeSize(), Pos, UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 }
 
 void cTextureGroupEditor::WindowClose( const cUIEvent * Event ) {

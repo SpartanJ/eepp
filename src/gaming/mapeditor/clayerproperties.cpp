@@ -23,8 +23,8 @@ cLayerProperties::cLayerProperties( cLayer * Map ) :
 	mUIWindow->Title( "Layer Properties" );
 
 	Uint32 TxtBoxFlags = UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
-	mUITheme->CreateTextBox( mUIWindow->Container(), eeSize(192, 24), eeVector2i(50,10), TxtBoxFlags )->Text( "Property Name" );
-	mUITheme->CreateTextBox( mUIWindow->Container(), eeSize(192, 24), eeVector2i(50+192,10), TxtBoxFlags )->Text( "Property Value" );
+	mUITheme->CreateTextBox( "Property Name", mUIWindow->Container(), eeSize(192, 24), eeVector2i(50,10), TxtBoxFlags );
+	mUITheme->CreateTextBox( "Property Value", mUIWindow->Container(), eeSize(192, 24), eeVector2i(50+192,10), TxtBoxFlags );
 
 	cUIPushButton * OKButton = mUITheme->CreatePushButton( mUIWindow->Container(), eeSize( 80, 22 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->GetIconByName( "ok" ) );
 	OKButton->Pos( mUIWindow->Container()->Size().Width() - OKButton->Size().Width() - 4, mUIWindow->Container()->Size().Height() - OKButton->Size().Height() - 4 );

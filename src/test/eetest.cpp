@@ -606,7 +606,7 @@ void cEETest::CreateWinMenu() {
 }
 
 void cEETest::CreateDecoratedWindow() {
-	mUIWindow = mTheme->CreateWindow( NULL, eeSize( 530, 400 ), eeVector2i( 200, 50 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, eeSize( 100, 200 ) );
+	mUIWindow = mTheme->CreateWindow( NULL, eeSize( 530, 350 ), eeVector2i( 200, 50 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, eeSize( 100, 200 ) );
 
 	mUIWindow->AddEventListener( cUIEvent::EventOnWindowCloseClick, cb::Make1( this, &cEETest::CloseClick ) );
 	mUIWindow->Title( "Test Window" );
@@ -618,12 +618,17 @@ void cEETest::CreateDecoratedWindow() {
 
 	mUIWindow->AddShortcut( KEY_C, KEYMOD_ALT, Button );
 
-	mTheme->CreateTextEdit(
-		mUIWindow->Container(),
-		eeSize( 510, 300 ),
-		eeVector2i( 10, 55 ),
-		UI_AUTO_PADDING | UI_CLIP_ENABLE | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_TOP
-	)->Text( mBuda );
+	cUITabWidget * TabWidget = mTheme->CreateTabWidget( mUIWindow->Container(), eeSize( 510, 250 ), eeVector2i( 10, 55 ), UI_HALIGN_CENTER | UI_VALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_TOP );
+
+	cUITextEdit * TEdit = mTheme->CreateTextEdit( TabWidget, eeSize(), eeVector2i(), UI_AUTO_PADDING );
+	TEdit->Text( mBuda );
+	TabWidget->Add( "TextEdit", TEdit );
+
+	cUITextBox * Txt = mTheme->CreateTextInput( TabWidget, eeSize(), eeVector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT );
+	Txt->Text( mBuda );
+	TabWidget->Add( "TextInput", Txt );
+
+	TabWidget->Add( "TextBox", mTheme->CreateTextBox( mBuda, TabWidget, eeSize(), eeVector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT ) );
 
 	CreateWinMenu();
 }

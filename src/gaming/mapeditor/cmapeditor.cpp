@@ -19,6 +19,7 @@
 #include "../../ui/cuicheckbox.hpp"
 #include "../../ui/cuicommondialog.hpp"
 #include "../../ui/cuimessagebox.hpp"
+#include "../../ui/cuitabwidget.hpp"
 #include "../../ui/tools/ctexturegroupeditor.hpp"
 #include "../../graphics/cshapegroupmanager.hpp"
 #include "../../graphics/cglobalshapegroup.hpp"
@@ -101,7 +102,6 @@ void cMapEditor::CreateWinMenu() {
 	mUIWindow->AddShortcut( KEY_KP0		, KEYMOD_CTRL, reinterpret_cast<cUIPushButton*> ( PU3->GetItem( PU3->Add( "Normal Size", mTheme->GetIconByName( "zoom-original" ) ) ) ) );
 	PU3->AddSeparator();
 
-
 	PU3->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cMapEditor::ViewMenuClick ) );
 	WinMenu->AddMenuButton( "View", PU3 );
 
@@ -152,17 +152,8 @@ void cMapEditor::CreateETGMenu() {
 	Int32 DistToBorder = 5;
 	Int32 ContPosX = mWinContainer->Size().Width() - Width - DistToBorder;
 
-	mShapeContBut = mTheme->CreatePushButton( mWinContainer, eeSize( ( Width + DistToBorder ) / 2, 22 ), eeVector2i( ContPosX, 4 ), UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	mShapeContBut->Text( "Sprites" );
-	mShapeContBut->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::OnShapeContClick ) );
-
-	mLightContBut = mTheme->CreatePushButton( mWinContainer, mShapeContBut->Size(), eeVector2i( ContPosX + ( Width + DistToBorder ) / 2, 4 ), UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	mLightContBut->Text( "Lights" );
-	mLightContBut->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::OnLightContClick ) );
-
 	cUIComplexControl::CreateParams CParams;
 	CParams.Parent( mWinContainer );
-	CParams.PosSet( eeVector2i( ContPosX, mShapeContBut->Pos().y + mShapeContBut->Size().Height() + 4 ) );
 	CParams.SizeSet( eeSize( Width + DistToBorder, mWinContainer->Size().Height() ) );
 	CParams.Flags = UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 	mShapeCont = eeNew( cUIComplexControl, ( CParams ) );
@@ -171,9 +162,37 @@ void cMapEditor::CreateETGMenu() {
 
 	mLightCont = eeNew( cUIComplexControl, ( CParams ) );
 
+	mTabWidget = mTheme->CreateTabWidget( mWinContainer, eeSize( Width + DistToBorder, mWinContainer->Size().Height() ), eeVector2i( ContPosX, 4 ), UI_HALIGN_CENTER | UI_VALIGN_BOTTOM | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
+	mTabWidget->AddEventListener( cUIEvent::EventOnTabSelected, cb::Make1( this, &cMapEditor::OnTabSelected ) );
+	CreateTabs();
+
 	CreateLightContainer();
 
 	CreateShapeContainer( Width );
+}
+
+void cMapEditor::CreateTabs() {
+	mTabWidget->RemoveAll();
+	mTabWidget->Add( "Sprites", mShapeCont );
+
+	if ( NULL != mUIMap ) {
+		if ( mUIMap->Map()->LightsEnabled() ) {
+			mTabWidget->Add( "Lights", mLightCont );
+		}
+	}
+}
+
+void cMapEditor::OnTabSelected( const cUIEvent * Event ) {
+	if ( NULL != mUIMap ) {
+		switch ( mTabWidget->GetSelectedTabIndex() ) {
+			case 0:
+				mUIMap->EditingLights( false );
+				break;
+			case 1:
+				mUIMap->EditingLights( true );
+				break;
+		}
+	}
 }
 
 void cMapEditor::FillGotyList() {
@@ -190,8 +209,7 @@ void cMapEditor::CreateShapeContainer( Int32 Width ) {
 	cUITextBox * Txt;
 	Uint32 TxtFlags = UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP | UI_DRAW_SHADOW;
 
-	Txt = mTheme->CreateTextBox( mShapeCont, eeSize( Width, 16 ), eeVector2i( 0, 4 ), TxtFlags );
-	Txt->Text( "Add Game Object as..." );
+	Txt = mTheme->CreateTextBox( "Add Game Object as...", mShapeCont, eeSize( Width, 16 ), eeVector2i( 0, 4 ), TxtFlags );
 
 	mGOTypeList = mTheme->CreateDropDownList( mShapeCont, eeSize( Width - 26, 21 ), eeVector2i( 0, Txt->Pos().y + Txt->Size().Height() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mGOTypeList->AddEventListener( cUIEvent::EventOnItemSelected, cb::Make1( this, &cMapEditor::OnTypeChange ) );
@@ -203,14 +221,12 @@ void cMapEditor::CreateShapeContainer( Int32 Width ) {
 	if ( NULL == mBtnGOTypeAdd->Icon()->Shape() )
 		mBtnGOTypeAdd->Text( "..." );
 
-	Txt = mTheme->CreateTextBox( mShapeCont, eeSize( Width, 16 ), eeVector2i( 0, mGOTypeList->Pos().y + mGOTypeList->Size().Height() + 4 ), TxtFlags );
-	Txt->Text( "Layers:" );
+	Txt = mTheme->CreateTextBox( "Layers:", mShapeCont, eeSize( Width, 16 ), eeVector2i( 0, mGOTypeList->Pos().y + mGOTypeList->Size().Height() + 4 ), TxtFlags );
 
 	mLayerList = mTheme->CreateDropDownList( mShapeCont, eeSize( Width, 21 ), eeVector2i( 0, Txt->Pos().y + Txt->Size().Height() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mLayerList->AddEventListener( cUIEvent::EventOnItemSelected, cb::Make1( this, &cMapEditor::OnLayerSelect ) );
 
-	Txt = mTheme->CreateTextBox( mShapeCont, eeSize( Width, 16 ), eeVector2i( 0, mLayerList->Pos().y + mLayerList->Size().Height() + 4 ), TxtFlags );
-	Txt->Text( "Game Object Flags:" );
+	Txt = mTheme->CreateTextBox( "Game Object Flags:", mShapeCont, eeSize( Width, 16 ), eeVector2i( 0, mLayerList->Pos().y + mLayerList->Size().Height() + 4 ), TxtFlags );
 
 	Uint32 ChkFlags = UI_CONTROL_DEFAULT_ALIGN | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
 
@@ -238,8 +254,7 @@ void cMapEditor::CreateShapeContainer( Int32 Width ) {
 	mChkAutoFix->Text( "AutoFix TilePos" );
 	mChkAutoFix->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::ChkClickAutoFix ) );
 
-	Txt = mTheme->CreateTextBox( mShapeCont, eeSize( Width, 16 ), eeVector2i( 0, mChkRot90->Pos().y + mChkRot90->Size().Height() + 8 ), TxtFlags );
-	Txt->Text( "Game Object Data:" );
+	Txt = mTheme->CreateTextBox( "Game Object Data:", mShapeCont, eeSize( Width, 16 ), eeVector2i( 0, mChkRot90->Pos().y + mChkRot90->Size().Height() + 8 ), TxtFlags );
 
 	mChkDI = mTheme->CreateCheckBox( mShapeCont, eeSize(), eeVector2i( 0, Txt->Pos().y + Txt->Size().Height() + 4 ), ChkFlags );
 	mChkDI->Text( "Add as DataId" );
@@ -254,8 +269,7 @@ void cMapEditor::CreateShapeContainer( Int32 Width ) {
 	mSGCont->Enabled( true );
 	mSGCont->Visible( true );
 
-	Txt = mTheme->CreateTextBox( mSGCont, eeSize( Width, 16 ), eeVector2i( 0, 0 ), TxtFlags );
-	Txt->Text( "Shape Groups:" );
+	Txt = mTheme->CreateTextBox( "Shape Groups:", mSGCont, eeSize( Width, 16 ), eeVector2i( 0, 0 ), TxtFlags );
 
 	mShapeGroupsList = mTheme->CreateDropDownList( mSGCont, eeSize( Width, 21 ), eeVector2i( 0, Txt->Pos().y +Txt->Size().Height() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mShapeGroupsList->AddEventListener( cUIEvent::EventOnItemSelected, cb::Make1( this, &cMapEditor::OnShapeGroupChange ) );
@@ -276,8 +290,7 @@ void cMapEditor::CreateShapeContainer( Int32 Width ) {
 	mDICont->Enabled( false );
 	mDICont->Visible( false );
 
-	Txt = mTheme->CreateTextBox( mDICont, eeSize( Width, 16 ), eeVector2i( 0, 0 ), TxtFlags );
-	Txt->Text( "DataId String:" );
+	Txt = mTheme->CreateTextBox( "DataId String:", mDICont, eeSize( Width, 16 ), eeVector2i( 0, 0 ), TxtFlags );
 
 	mDataIdInput = mTheme->CreateTextInput( mDICont, eeSize( Width / 4 * 3, 21 ), eeVector2i( 8, Txt->Pos().y + Txt->Size().Height() + 8 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE );
 
@@ -289,8 +302,7 @@ void cMapEditor::CreateLightContainer() {
 	NewLightBut->Text( "New Light" );
 	NewLightBut->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::OnNewLight ) );
 
-	cUITextBox * Txt = mTheme->CreateTextBox( mLightCont, eeSize(), eeVector2i( 0, 32 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	Txt->Text( "Light Color:" );
+	cUITextBox * Txt = mTheme->CreateTextBox( "Light Color:", mLightCont, eeSize(), eeVector2i( 0, 32 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	cUIComplexControl::CreateParams ComParams;
 	ComParams.Parent( mLightCont );
@@ -303,38 +315,31 @@ void cMapEditor::CreateLightContainer() {
 	mUIBaseColor->Visible( true );
 	mUIBaseColor->Enabled( true );
 
-	Txt = mTheme->CreateTextBox( mLightCont, eeSize(), eeVector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIBaseColor->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	Txt->Text( "R:" );
+	Txt = mTheme->CreateTextBox( "R:", mLightCont, eeSize(), eeVector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIBaseColor->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 	mUIRedSlider = mTheme->CreateSlider( mLightCont, eeSize( 100, 20 ), eeVector2i( Txt->Pos().x + Txt->Size().Width(), Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	mUIRedSlider->MaxValue( 255 );
 	mUIRedSlider->Value( 255 );
 	mUIRedSlider->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cMapEditor::OnRedChange ) );
 
-	mUIRedTxt = mTheme->CreateTextBox( mLightCont, eeSize(), eeVector2i( mUIRedSlider->Pos().x + mUIRedSlider->Size().Width() + 4, mUIRedSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	mUIRedTxt->Text( toStr( (Uint32)255 ) );
+	mUIRedTxt = mTheme->CreateTextBox( toStr( (Uint32)255 ), mLightCont, eeSize(), eeVector2i( mUIRedSlider->Pos().x + mUIRedSlider->Size().Width() + 4, mUIRedSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
-	Txt = mTheme->CreateTextBox( mLightCont, eeSize(), eeVector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIRedSlider->Pos().y + mUIRedSlider->Size().Height() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	Txt->Text( "G:" );
+	Txt = mTheme->CreateTextBox( "G:", mLightCont, eeSize(), eeVector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIRedSlider->Pos().y + mUIRedSlider->Size().Height() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 	mUIGreenSlider = mTheme->CreateSlider( mLightCont, eeSize( 100, 20 ), eeVector2i( mUIRedSlider->Pos().x, Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	mUIGreenSlider->MaxValue( 255 );
 	mUIGreenSlider->Value( 255 );
 	mUIGreenSlider->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cMapEditor::OnGreenChange ) );
 
-	mUIGreenTxt = mTheme->CreateTextBox( mLightCont, eeSize(), eeVector2i( mUIGreenSlider->Pos().x + mUIGreenSlider->Size().Width() + 4, mUIGreenSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	mUIGreenTxt->Text( toStr( (Uint32)255 ) );
+	mUIGreenTxt = mTheme->CreateTextBox( toStr( (Uint32)255 ), mLightCont, eeSize(), eeVector2i( mUIGreenSlider->Pos().x + mUIGreenSlider->Size().Width() + 4, mUIGreenSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
-	Txt = mTheme->CreateTextBox( mLightCont, eeSize(), eeVector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIGreenSlider->Pos().y + mUIGreenSlider->Size().Height() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	Txt->Text( "B:" );
+	Txt = mTheme->CreateTextBox( "B:", mLightCont, eeSize(), eeVector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIGreenSlider->Pos().y + mUIGreenSlider->Size().Height() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 	mUIBlueSlider = mTheme->CreateSlider( mLightCont, eeSize( 100, 20 ), eeVector2i( mUIRedSlider->Pos().x, Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	mUIBlueSlider->MaxValue( 255 );
 	mUIBlueSlider->Value( 255 );
 	mUIBlueSlider->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cMapEditor::OnBlueChange ) );
 
-	mUIBlueTxt = mTheme->CreateTextBox( mLightCont, eeSize(), eeVector2i( mUIBlueSlider->Pos().x + mUIBlueSlider->Size().Width() + 4, mUIBlueSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	mUIBlueTxt->Text( toStr( (Uint32)255 ) );
+	mUIBlueTxt = mTheme->CreateTextBox( toStr( (Uint32)255 ), mLightCont, eeSize(), eeVector2i( mUIBlueSlider->Pos().x + mUIBlueSlider->Size().Width() + 4, mUIBlueSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
-	Txt = mTheme->CreateTextBox( mLightCont, eeSize(), eeVector2i( 0, mUIBlueTxt->Pos().y + mUIBlueTxt->Size().Height() + 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	Txt->Text( "Light Radius:" );
+	Txt = mTheme->CreateTextBox( "Light Radius:", mLightCont, eeSize(), eeVector2i( 0, mUIBlueTxt->Pos().y + mUIBlueTxt->Size().Height() + 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	mLightRadius = mTheme->CreateSpinBox( mLightCont, eeSize( 100, 22 ), eeVector2i( Txt->Pos().x, Txt->Pos().y + Txt->Size().Height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_SIZE, 100, false );
 	mLightRadius->MaxValue( 2000 );
@@ -678,27 +683,7 @@ void cMapEditor::MapCreated() {
 
 	mUIMap->ClearLights();
 
-	if ( !mUIMap->Map()->LightsEnabled() ) {
-		mShapeContBut->Visible( false );
-		mShapeContBut->Enabled( false );
-		mLightContBut->Visible( false );
-		mLightContBut->Enabled( false );
-		mShapeCont->Pos( mShapeCont->Pos().x, mShapeContBut->Pos().y );
-
-		if ( mLightCont->Visible() ) {
-			mLightCont->Visible( false );
-			mLightCont->Enabled( false );
-		}
-
-		mShapeCont->Visible( true );
-		mShapeCont->Enabled( true );
-	} else {
-		mShapeContBut->Visible( true );
-		mShapeContBut->Enabled( true );
-		mLightContBut->Visible( true );
-		mLightContBut->Enabled( true );
-		mShapeCont->Pos( mLightCont->Pos() );
-	}
+	CreateTabs();
 }
 
 void cMapEditor::OnMapSizeChange( const cUIEvent *Event ) {

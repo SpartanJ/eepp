@@ -23,43 +23,35 @@ cUIMapNew::cUIMapNew( cUIMap * Map, cb::Callback0<void> NewMapCb ) :
 	Int32 InitialY		= 16;
 	Int32 DistFromTitle	= 18;
 
-	cUITextBox * Txt = mTheme->CreateTextBox( mUIWindow->Container(), eeSize(), eeVector2i( 16, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	Txt->Text( "Map Size" );
+	cUITextBox * Txt = mTheme->CreateTextBox( "Map Size", mUIWindow->Container(), eeSize(), eeVector2i( 16, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
-	Txt = mTheme->CreateTextBox( mUIWindow->Container(), eeSize( 46, 24 ), eeVector2i( Txt->Pos().x + DistFromTitle, Txt->Pos().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW  );
-	Txt->Text( "Width:" );
+	Txt = mTheme->CreateTextBox( "Width:", mUIWindow->Container(), eeSize( 46, 24 ), eeVector2i( Txt->Pos().x + DistFromTitle, Txt->Pos().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW  );
 
 	mUIMapWidth = mTheme->CreateSpinBox( mUIWindow->Container(), eeSize( 53, 24 ), eeVector2i( Txt->Pos().x + Txt->Size().Width(), Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS, 25, false );
 	mUIMapWidth->MinValue(1);
 
-	Txt = mTheme->CreateTextBox( mUIWindow->Container(), eeSize( 46, 24 ), eeVector2i( Txt->Pos().x, Txt->Pos().y + Txt->Size().Height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW  );
-	Txt->Text( "Height:" );
+	Txt = mTheme->CreateTextBox( "Height:", mUIWindow->Container(), eeSize( 46, 24 ), eeVector2i( Txt->Pos().x, Txt->Pos().y + Txt->Size().Height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW  );
 
 	mUIMapHeight = mTheme->CreateSpinBox( mUIWindow->Container(), eeSize( 53, 24 ), eeVector2i( Txt->Pos().x + Txt->Size().Width(), Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS, 18, false );
 	mUIMapHeight->MinValue(1);
 
-	Txt = mTheme->CreateTextBox( mUIWindow->Container(), eeSize(), eeVector2i( mUIWindow->Container()->Size().Width() / 2, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	Txt->Text( "Tile Size" );
+	Txt = mTheme->CreateTextBox( "Tile Size", mUIWindow->Container(), eeSize(), eeVector2i( mUIWindow->Container()->Size().Width() / 2, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
-	Txt = mTheme->CreateTextBox( mUIWindow->Container(), eeSize( 46, 24 ), eeVector2i( Txt->Pos().x + DistFromTitle, Txt->Pos().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW  );
-	Txt->Text( "Width:" );
+	Txt = mTheme->CreateTextBox( "Width:", mUIWindow->Container(), eeSize( 46, 24 ), eeVector2i( Txt->Pos().x + DistFromTitle, Txt->Pos().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW  );
 
 	mUIMapTWidth = mTheme->CreateSpinBox( mUIWindow->Container(), eeSize( 53, 24 ), eeVector2i( Txt->Pos().x + Txt->Size().Width(), Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS, 32, false );
 	mUIMapTWidth->MinValue(1);
 
-	Txt = mTheme->CreateTextBox( mUIWindow->Container(), eeSize( 46, 24 ), eeVector2i( Txt->Pos().x, Txt->Pos().y + Txt->Size().Height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW  );
-	Txt->Text( "Height:" );
+	Txt = mTheme->CreateTextBox( "Height:", mUIWindow->Container(), eeSize( 46, 24 ), eeVector2i( Txt->Pos().x, Txt->Pos().y + Txt->Size().Height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW  );
 
 	mUIMapTHeight = mTheme->CreateSpinBox( mUIWindow->Container(), eeSize( 53, 24 ), eeVector2i( Txt->Pos().x + Txt->Size().Width(), Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS, 32, false );
 	mUIMapTHeight->MinValue(1);
 
-	Txt = mTheme->CreateTextBox( mUIWindow->Container(), eeSize(), eeVector2i( 16, mUIMapTHeight->Pos().y + mUIMapTHeight->Size().Height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	Txt->Text( "Max Layers" );
+	Txt = mTheme->CreateTextBox( "Max Layers", mUIWindow->Container(), eeSize(), eeVector2i( 16, mUIMapTHeight->Pos().y + mUIMapTHeight->Size().Height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	mUIMapMaxLayers = mTheme->CreateSpinBox( mUIWindow->Container(), eeSize( 53, 24 ), eeVector2i( Txt->Pos().x + DistFromTitle, Txt->Pos().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS, 8, false );
 
-	Txt = mTheme->CreateTextBox( mUIWindow->Container(), eeSize(), eeVector2i( Txt->Pos().x, mUIMapMaxLayers->Pos().y + mUIMapMaxLayers->Size().Height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	Txt->Text( "Map Flags:" );
+	Txt = mTheme->CreateTextBox( "Map Flags:", mUIWindow->Container(), eeSize(), eeVector2i( Txt->Pos().x, mUIMapMaxLayers->Pos().y + mUIMapMaxLayers->Size().Height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	mUILightsEnabled = mTheme->CreateCheckBox( mUIWindow->Container(), eeSize(), eeVector2i( Txt->Pos().x + DistFromTitle, Txt->Pos().y + Txt->Size().Height() + 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	mUILightsEnabled->Text( "Lights Enabled" );
@@ -74,8 +66,7 @@ cUIMapNew::cUIMapNew( cUIMap * Map, cb::Callback0<void> NewMapCb ) :
 	mUIClipArea = mTheme->CreateCheckBox( mUIWindow->Container(), eeSize(), eeVector2i( mUIWindow->Container()->Size().Width() / 2, mUIClampBorders->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	mUIClipArea->Text( "Clip View Area" );
 
-	Txt = mTheme->CreateTextBox( mUIWindow->Container(), eeSize(), eeVector2i( Txt->Pos().x, mUIClipArea->Pos().y + mUIClipArea->Size().Height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	Txt->Text( "Map Base Color:" );
+	Txt = mTheme->CreateTextBox( "Map Base Color:", mUIWindow->Container(), eeSize(), eeVector2i( Txt->Pos().x, mUIClipArea->Pos().y + mUIClipArea->Size().Height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	cUIComplexControl::CreateParams ComParams;
 	ComParams.Parent( mUIWindow->Container() );
@@ -88,35 +79,32 @@ cUIMapNew::cUIMapNew( cUIMap * Map, cb::Callback0<void> NewMapCb ) :
 	mUIBaseColor->Visible( true );
 	mUIBaseColor->Enabled( true );
 
-	Txt = mTheme->CreateTextBox( mUIWindow->Container(), eeSize(), eeVector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIBaseColor->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	Txt->Text( "Red Color:" );
+	Txt = mTheme->CreateTextBox( "Red Color:", mUIWindow->Container(), eeSize(), eeVector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIBaseColor->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+
 	mUIRedSlider = mTheme->CreateSlider( mUIWindow->Container(), eeSize( 128, 20 ), eeVector2i( Txt->Pos().x + Txt->Size().Width() + 16, Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	mUIRedSlider->MaxValue( 255 );
 	mUIRedSlider->Value( 255 );
 	mUIRedSlider->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cUIMapNew::OnRedChange ) );
 
-	mUIRedTxt = mTheme->CreateTextBox( mUIWindow->Container(), eeSize(), eeVector2i( mUIRedSlider->Pos().x + mUIRedSlider->Size().Width() + 4, mUIRedSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	mUIRedTxt->Text( toStr( 255 ) );
+	mUIRedTxt = mTheme->CreateTextBox( toStr( 255 ), mUIWindow->Container(), eeSize(), eeVector2i( mUIRedSlider->Pos().x + mUIRedSlider->Size().Width() + 4, mUIRedSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
-	Txt = mTheme->CreateTextBox( mUIWindow->Container(), eeSize(), eeVector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIRedSlider->Pos().y + mUIRedSlider->Size().Height() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	Txt->Text( "Green Color:" );
+	Txt = mTheme->CreateTextBox( "Green Color:", mUIWindow->Container(), eeSize(), eeVector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIRedSlider->Pos().y + mUIRedSlider->Size().Height() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+
 	mUIGreenSlider = mTheme->CreateSlider( mUIWindow->Container(), eeSize( 128, 20 ), eeVector2i( mUIRedSlider->Pos().x, Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	mUIGreenSlider->MaxValue( 255 );
 	mUIGreenSlider->Value( 255 );
 	mUIGreenSlider->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cUIMapNew::OnGreenChange ) );
 
-	mUIGreenTxt = mTheme->CreateTextBox( mUIWindow->Container(), eeSize(), eeVector2i( mUIGreenSlider->Pos().x + mUIGreenSlider->Size().Width() + 4, mUIGreenSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	mUIGreenTxt->Text( toStr( 255 ) );
+	mUIGreenTxt = mTheme->CreateTextBox( toStr( 255 ), mUIWindow->Container(), eeSize(), eeVector2i( mUIGreenSlider->Pos().x + mUIGreenSlider->Size().Width() + 4, mUIGreenSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
-	Txt = mTheme->CreateTextBox( mUIWindow->Container(), eeSize(), eeVector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIGreenSlider->Pos().y + mUIGreenSlider->Size().Height() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	Txt->Text( "Blue Color:" );
+	Txt = mTheme->CreateTextBox( "Blue Color:", mUIWindow->Container(), eeSize(), eeVector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIGreenSlider->Pos().y + mUIGreenSlider->Size().Height() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+
 	mUIBlueSlider = mTheme->CreateSlider( mUIWindow->Container(), eeSize( 128, 20 ), eeVector2i( mUIRedSlider->Pos().x, Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	mUIBlueSlider->MaxValue( 255 );
 	mUIBlueSlider->Value( 255 );
 	mUIBlueSlider->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cUIMapNew::OnBlueChange ) );
 
-	mUIBlueTxt = mTheme->CreateTextBox( mUIWindow->Container(), eeSize(), eeVector2i( mUIBlueSlider->Pos().x + mUIBlueSlider->Size().Width() + 4, mUIBlueSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	mUIBlueTxt->Text( toStr( 255 ) );
+	mUIBlueTxt = mTheme->CreateTextBox( toStr( 255 ), mUIWindow->Container(), eeSize(), eeVector2i( mUIBlueSlider->Pos().x + mUIBlueSlider->Size().Width() + 4, mUIBlueSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	cUIPushButton * OKButton = mTheme->CreatePushButton( mUIWindow->Container(), eeSize( 80, 22 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->GetIconByName( "ok" ) );
 	OKButton->Pos( mUIWindow->Container()->Size().Width() - OKButton->Size().Width() - 4, mUIWindow->Container()->Size().Height() - OKButton->Size().Height() - 4 );

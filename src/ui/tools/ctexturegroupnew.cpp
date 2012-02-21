@@ -79,9 +79,7 @@ cTextureGroupNew::~cTextureGroupNew() {
 }
 
 cUITextBox * cTextureGroupNew::CreateTxtBox( eeVector2i Pos, const String& Text ) {
-	cUITextBox * TxtBox = mTheme->CreateTextBox( mUIWindow->Container(), eeSize(), Pos, UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	TxtBox->Text( Text );
-	return TxtBox;
+	return mTheme->CreateTextBox( Text, mUIWindow->Container(), eeSize(), Pos, UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 }
 
 void cTextureGroupNew::OKClick( const cUIEvent * Event ) {
