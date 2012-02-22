@@ -175,7 +175,7 @@ void cMapEditor::CreateTabs() {
 	mTabWidget->RemoveAll();
 	mTabWidget->Add( "Sprites", mShapeCont );
 
-	if ( NULL != mUIMap ) {
+	if ( NULL != mUIMap && NULL != mUIMap->Map() ) {
 		if ( mUIMap->Map()->LightsEnabled() ) {
 			mTabWidget->Add( "Lights", mLightCont );
 		}

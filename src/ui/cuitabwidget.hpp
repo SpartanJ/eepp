@@ -55,7 +55,7 @@ class EE_API cUITabWidget : public cUIComplexControl {
 				Uint32		MinTabWidth;
 				Uint32		MaxTabWidth;
 				bool		TabsClosable;
-				bool		SpecialBorderTabs; //! Indicates if the periferical tabs ( the left and right border tab ) are different from the central tabs. Not implemented yet.
+				bool		SpecialBorderTabs; //! Indicates if the periferical tabs ( the left and right border tab ) are different from the central tabs.
 		};
 
 		cUITabWidget( cUITabWidget::CreateParams& Params );
@@ -140,6 +140,8 @@ class EE_API cUITabWidget : public cUIComplexControl {
 		void SelectPrev();
 
 		void SelectNext();
+
+		void ApplyThemeToTabs();
 };
 
 }}

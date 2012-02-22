@@ -232,6 +232,8 @@ class EE_API cUIControl {
 		eeSize GetSkinShapeSize();
 
 		cUIControl * NextComplexControl();
+
+		void ApplyDefaultTheme();
 	protected:
 		typedef std::map< Uint32, std::map<Uint32, UIEventCallback> > UIEventsMap;
 		friend class cUIManager;
@@ -358,8 +360,6 @@ class EE_API cUIControl {
 		void WriteCtrlFlag( const Uint32& Flag, const Uint32& Val );
 
 		void WriteFlag( const Uint32& Flag, const Uint32& Val );
-
-		void ApplyDefaultTheme();
 
 		void SendParentSizeChange( const eeVector2i& SizeChange );
 

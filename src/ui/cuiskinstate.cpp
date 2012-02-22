@@ -88,5 +88,16 @@ cUISkin * cUISkinState::GetSkin() const {
 	return mSkin;
 }
 
+bool cUISkinState::StateExists( const Uint32& State ) {
+	switch ( mSkin->GetType() )
+	{
+		case cUISkin::UISkinSimple:
+		case cUISkin::UISkinComplex:
+			return NULL != mSkin->GetShape( State );
+	}
+
+	return true;
+}
+
 }}
 

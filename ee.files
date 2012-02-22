@@ -945,3 +945,10 @@ src/rhythm/cuinote.hpp
 src/rhythm/cuinote.cpp
 src/rhythm/cuiinstrument.hpp
 src/rhythm/cuiinstrument.cpp
+src/declares.hpp
+src/ui/cuitabwidget.hpp
+src/ui/cuitabwidget.cpp
+src/ui/cuitabwidget.hpp
+src/ui/cuitab.hpp
+src/ui/cuitabwidget.cpp
+src/ui/cuitab.cpp

@@ -39,7 +39,7 @@ void cUITab::SetTheme( cUITheme * Theme ) {
 		if ( tTabW->mSpecialBorderTabs ) {
 			if ( 0 == tTabW->GetTabIndex( this ) ) {
 				tabPos = "tab_left";
-			} else if ( ( tTabW->Count() - 1 ) == tTabW->GetTabIndex( this ) ) {
+			} else if ( tTabW->Count() > 0 && ( tTabW->Count() - 1 ) == tTabW->GetTabIndex( this ) ) {
 				tabPos = "tab_right";
 			}
 		}

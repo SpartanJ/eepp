@@ -149,6 +149,8 @@ void cUITabWidget::ZOrderTabs() {
 }
 
 void cUITabWidget::OrderTabs() {
+	ApplyThemeToTabs();
+
 	ZOrderTabs();
 
 	SetTabContainerSize();
@@ -349,6 +351,14 @@ void cUITabWidget::OnSizeChange() {
 
 	if ( NULL != mTabSelected ) {
 		mTabSelected->CtrlOwned()->Size( mCtrlContainer->Size() );
+	}
+}
+
+void cUITabWidget::ApplyThemeToTabs() {
+	if ( mSpecialBorderTabs ) {
+		for ( Uint32 i = 0; i < mTabs.size(); i++ ) {
+			mTabs[ i ]->ApplyDefaultTheme();
+		}
 	}
 }
 

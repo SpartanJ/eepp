@@ -920,9 +920,16 @@ void cUIControl::SetTheme( cUITheme * Theme, const std::string& ControlName ) {
 		cUISkin * tSkin = Theme->GetByName( Theme->Abbr() + "_" + ControlName );
 
 		if ( NULL != tSkin ) {
+			Uint32 InitialState = cUISkinState::StateNormal;
+
+			if ( NULL != mSkinState ) {
+				InitialState = mSkinState->GetState();
+			}
+
 			SafeDeleteSkinState();
 
 			mSkinState = eeNew( cUISkinState, ( tSkin ) );
+			mSkinState->SetState( InitialState );
 		}
 	}
 }

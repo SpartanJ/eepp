@@ -45,7 +45,9 @@ bool cUISelectButton::Selected() const {
 
 void cUISelectButton::OnStateChange() {
 	if ( mSkinState->GetState() != cUISkinState::StateSelected && Selected() ) {
-		SetSkinState( cUISkinState::StateSelected );
+		if ( mSkinState->StateExists( cUISkinState::StateSelected ) ) {
+			SetSkinState( cUISkinState::StateSelected );
+		}
 	}
 
 	if ( Parent()->Type() & UI_TYPE_WINMENU ) {
