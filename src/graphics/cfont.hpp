@@ -52,6 +52,15 @@ class EE_API cFont {
 		/** @return The current font height */
 		Uint32 GetFontHeight() const;
 
+		/** @return The recommended line spacing */
+		Int32 GetLineSkip() const;
+
+		/** @return The font highest ascent (height above base) */
+		Int32 GetFontAscent() const;
+
+		/** @return The font lowest descent (height below base) */
+		Int32 GetFontDescent() const;
+
 		/** @return The current text */
 		String GetText();
 
@@ -126,7 +135,7 @@ class EE_API cFont {
 		std::string					mFontName;
 		Uint32						mFontHash;
 
-		String 				mText;
+		String						mText;
 		bool 						mCacheData;
 		eeColorA 					mColor;
 		eeColorA 					mShadowColor;
@@ -136,6 +145,9 @@ class EE_API cFont {
 		eeFloat 					mCachedWidth;
 		Uint32 						mHeight;
 		Uint32 						mSize;
+		Int32						mLineSkip;
+		Int32						mAscent;
+		Int32						mDescent;
 
 		std::vector<eeFloat> 		mLinesWidth;
 		std::vector<eeGlyph> 		mGlyphs;

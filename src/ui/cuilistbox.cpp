@@ -300,15 +300,15 @@ void cUIListBox::SetRowHeight() {
 		Uint32 FontSize = 12;
 
 		if ( NULL != cUIThemeManager::instance()->DefaultFont() )
-			FontSize = cUIThemeManager::instance()->DefaultFont()->GetFontSize();
+			FontSize = cUIThemeManager::instance()->DefaultFont()->GetFontHeight();
 
 		if ( NULL != mSkinState && NULL != mSkinState->GetSkin() && NULL != mSkinState->GetSkin()->Theme() && NULL != mSkinState->GetSkin()->Theme()->Font() )
-			FontSize = mSkinState->GetSkin()->Theme()->Font()->GetFontSize();
+			FontSize = mSkinState->GetSkin()->Theme()->Font()->GetFontHeight();
 
 		if ( NULL != mFont )
-			FontSize = mFont->GetFontSize();
+			FontSize = mFont->GetFontHeight();
 
-		mRowHeight = (Uint32)( FontSize * 1.5f );
+		mRowHeight = (Uint32)( FontSize + 4 );
 	}
 
 	if ( tOldRowHeight != mRowHeight ) {

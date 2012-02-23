@@ -44,7 +44,7 @@ cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoad
 	mTexLoader = TexLoader;
 }
 
-cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, const Uint8* CoordData, const Uint32& CoordDataSize, const bool& VerticalDraw ) :
+cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, const char* CoordData, const Uint32& CoordDataSize, const bool& VerticalDraw ) :
 	cObjectLoader( FontTexLoader ),
 	mLoadType( TEF_LT_MEM ),
 	mFontName( FontName ),

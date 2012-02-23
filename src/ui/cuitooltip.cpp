@@ -24,7 +24,7 @@ cUITooltip::cUITooltip( cUITooltip::CreateParams& Params, cUIControl * TooltipOf
 			eePRINT( "cUITooltip::cUITextBox : Created a UI TextBox without a defined font.\n" );
 	}
 
-	AutoAlign();
+	AutoPadding();
 
 	if ( Params.ParentCtrl != cUIManager::instance()->MainControl() )
 		Parent( cUIManager::instance()->MainControl() );
@@ -161,7 +161,7 @@ void cUITooltip::AutoSize() {
 
 void cUITooltip::AutoAlign() {
 	Uint32 Width	= mSize.Width()		- mPadding.Left - mPadding.Right;
-	Uint32 Height	= mSize.Height()	- mPadding.Top	- mPadding.Right;
+	Uint32 Height	= mSize.Height()	- mPadding.Top	- mPadding.Bottom;
 
 	switch ( FontHAlignGet( Flags() ) ) {
 		case UI_HALIGN_CENTER:

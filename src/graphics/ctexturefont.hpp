@@ -50,14 +50,17 @@ class EE_API cTextureFont : public cFont {
 		* @param VerticalDraw If true render the string verticaly
 		* @return True if success
 		*/
-		bool LoadFromMemory( const Uint32& TexId, const Uint8* CoordData, const Uint32& CoordDataSize, const bool& VerticalDraw = false );
+		bool LoadFromMemory( const Uint32& TexId, const char* CoordData, const Uint32& CoordDataSize, const bool& VerticalDraw = false );
+
+		bool LoadFromStream( const Uint32& TexId, cIOStream& IOS, const bool& VerticalDraw );
 	private:
 		eeUint mBase, mStartChar, mTexColumns, mTexRows, mSpacing, mNumChars;
 		eeFloat mtX, mtY, mFWidth, mFHeight;
 		bool mLoadedCoords;
 
 		void BuildFont();
-		void BuildFontFromDat();
+
+		void BuildFromGlyphs();
 };
 
 }}

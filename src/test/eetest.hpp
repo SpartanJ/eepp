@@ -269,7 +269,7 @@ class cEETest : private cThread {
 		};
 
 		std::vector<physicDemo> mDemo;
-		Int32					mCurDemo;
+		Uint32					mCurDemo;
 		cSprite *				mBoxSprite;
 		cSprite *				mCircleSprite;
 

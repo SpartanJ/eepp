@@ -353,7 +353,7 @@ Uint32 cUIMenu::OnMessage( const cUIMessage * Msg ) {
 
 void cUIMenu::OnSizeChange() {
 	if ( NULL != mFont && ( ( mFlags & UI_AUTO_SIZE ) || 0 == mRowHeight ) ) {
-		mRowHeight = mFont->GetFontSize() * 1.5f;
+		mRowHeight = mFont->GetFontHeight() + 8;
 	}
 
 	if ( 0 != mMinWidth && mSize.Width() < (Int32)mMinWidth ) {

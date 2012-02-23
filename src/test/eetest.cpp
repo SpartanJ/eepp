@@ -25,7 +25,7 @@ void cEETest::Init() {
 
 	mAxisX				= 0;
 	mAxisY				= 0;
-	mCurDemo			= 0xFFFFFF;
+	mCurDemo			= eeINDEX_NOT_FOUND;
 	mMapEditor			= NULL;
 	mETGEditor			= NULL;
 	Mus					= NULL;
@@ -181,6 +181,10 @@ void cEETest::LoadFonts() {
 	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255) ) ) );
 	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arialb", PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255), 1, eeColor(0,0,0), true ) ) );
 
+	//mFontLoader.Add( eeNew( cTextureFontLoader, ( "ProggySquareSZ", eeNew( cTextureLoader, ( MyPath + "data/ProggySquareSZ.png" ) ), MyPath + "data/ProggySquareSZ.fnt" ) ) );
+	//mFontLoader.Add( eeNew( cTTFFontLoader, ( "ProggySquareSZ", MyPath + "data/ProggySquareSZ.ttf", 16, EE_TTF_STYLE_NORMAL, false, 256 ) ) );
+	//mFontLoader.Add( eeNew( cTTFFontLoader, ( "DejaVuSansMono", MyPath + "fonts/DejaVuSansMono.ttf", 12, EE_TTF_STYLE_NORMAL, false, 512, eeColor(), 1, eeColor(0,0,0) ) ) );
+
 	mFontLoader.Load( cb::Make1( this, &cEETest::OnFontLoaded ) );
 }
 
@@ -189,6 +193,32 @@ void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
 	FF2		= cFontManager::instance()->GetByName( "ProggySquareSZ" );
 	TTF		= cFontManager::instance()->GetByName( "arial" );
 	TTFB	= cFontManager::instance()->GetByName( "arialb" );
+
+	//cFont * FF3		= cFontManager::instance()->GetByName( "DejaVuSansMono" );
+
+/*
+	std::string MyFontPath = MyPath + "fonts" + GetOSlash();
+	cTTFFont * TTFD, * TTFMon;
+	TTFD 	= eeNew( cTTFFont, ( "DejaVuSans" ) );
+	TTFMon 	= eeNew( cTTFFont, ( "DejaVuSansMono" ) );
+
+	TTFD->Load( MyFontPath + "DejaVuSans.ttf", 12, EE_TTF_STYLE_NORMAL, false, 512, eeColor(), 1, eeColor(0,0,0) );
+	TTFMon->Load( MyFontPath + "DejaVuSansMono.ttf", 12, EE_TTF_STYLE_NORMAL, false, 512, eeColor(), 1, eeColor(0,0,0) );
+
+	TTFD->Save( MyFontPath + "DejaVuSans.png", MyFontPath + "DejaVuSans.dat", EE_SAVE_TYPE_PNG );
+	TTFMon->Save( MyFontPath + "DejaVuSansMono.png", MyFontPath + "DejaVuSansMono.dat", EE_SAVE_TYPE_PNG );
+*/
+
+	/*
+	cTTFFont * Fnt = reinterpret_cast<cTTFFont*> ( FF2 );
+	Fnt->Save( MyPath + "data/ProggySquareSZ.png", MyPath + "data/ProggySquareSZ.fnt" );
+
+	Fnt = reinterpret_cast<cTTFFont*> ( TTF );
+	Fnt->Save( MyPath + "data/arial.png", MyPath + "data/arial.fnt" );
+
+	Fnt = reinterpret_cast<cTTFFont*> ( TTFB );
+	Fnt->Save( MyPath + "data/arialb.png", MyPath + "data/arialb.fnt" );
+	*/
 
 	Log->Writef( "Fonts loading time: %f", mFTE.Elapsed() );
 
@@ -454,9 +484,20 @@ void cEETest::CreateUI() {
 
 	mComboBox->ListBox()->AddListBoxItems( combostrs );
 	mComboBox->ListBox()->SetSelected( 0 );
-
+/*
+	cUIPopUpMenu::CreateParams MenuParams;
+	MenuParams.Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE | UI_AUTO_PADDING;
+	MenuParams.RowHeight = 0;
+	MenuParams.PaddingContainer = eeRecti();
+	MenuParams.MinWidth = 100;
+	MenuParams.MinSpaceForIcons = 24;
+	MenuParams.MinRightMargin = 8;
+	MenuParams.Font = FF2;
+	Menu = eeNew( cUIPopUpMenu, ( MenuParams ) );
+*/
 	Menu = mTheme->CreatePopUpMenu();
 	Menu->Add( "New", mTheme->GetIconByName( "document-new" ) );
+
 	Menu->Add( "Open...", mTheme->GetIconByName( "document-open" ) );
 	Menu->AddSeparator();
 	Menu->Add( "Map Editor" );
@@ -1206,7 +1247,7 @@ void cEETest::Render() {
 
 	PR.DrawRectangle(
 					0.f,
-					(eeFloat)mWindow->GetHeight() - (eeFloat)mEEText.GetNumLines() * (eeFloat)mEEText.Font()->GetFontSize(),
+					(eeFloat)mWindow->GetHeight() - mEEText.GetTextHeight(),
 					mEEText.GetTextWidth(),
 					mEEText.GetTextHeight(),
 					ColRR1, ColRR2, ColRR3, ColRR4
@@ -1222,7 +1263,7 @@ void cEETest::Render() {
 		FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f );
 	} else {
 		FF2->SetText( InBuf.Buffer().substr( NLPos, InBuf.CurPos() - NLPos ) );
-		FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f + (eeFloat)LineNum * (eeFloat)FF2->GetFontSize() );
+		FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f + (eeFloat)LineNum * (eeFloat)FF2->GetFontHeight() );
 	}
 
 	FF2->SetText( "FPS: " + toStr( mWindow->FPS() ) );
@@ -1704,7 +1745,7 @@ void cEETest::Demo2Destroy() {
 
 void cEETest::ChangeDemo( Uint32 num ) {
 	if ( num < mDemo.size() ) {
-		if ( 0xFFFFFF != mCurDemo )
+		if ( eeINDEX_NOT_FOUND != mCurDemo )
 			mDemo[ mCurDemo ].destroy();
 
 		mCurDemo = num;

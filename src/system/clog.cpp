@@ -24,7 +24,7 @@ cLog::~cLog() {
 		mFS->Write( mData.c_str(), mData.size() );
 	}
 
-	eeSAFE_DELETE( mFS );
+	closefs();
 }
 
 void cLog::Save( const std::string& filepath ) {
@@ -69,7 +69,7 @@ void cLog::Write( const std::string& Text, const bool& newLine ) {
 			mFS->Write( "\n", 1 );
 		}
 
-		eeSAFE_DELETE( mFS );
+		closefs();
 	}
 }
 
@@ -78,13 +78,21 @@ void cLog::openfs() {
 		mFilePath = GetProcessPath();
 	}
 
-	eeSAFE_DELETE( mFS );
+	closefs();
 
 	if ( NULL == mFS ) {
         std::string str = mFilePath + "log.log";
 
 		mFS = eeNew( cIOStreamFile, ( str, std::ios::app | std::ios::out | std::ios::binary ) );
     }
+}
+
+void cLog::closefs() {
+	Lock();
+
+	eeSAFE_DELETE( mFS );
+
+	Unlock();
 }
 
 void cLog::Writef( const char* format, ... ) {
@@ -124,7 +132,7 @@ void cLog::Writef( const char* format, ... ) {
 
 				mFS->Write( tstr.c_str(), tstr.size() );
 
-				eeSAFE_DELETE( mFS );
+				closefs();
             }
 
 			return;

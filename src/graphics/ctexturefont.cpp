@@ -1,4 +1,6 @@
 #include "ctexturefont.hpp"
+#include "../system/ciostreamfile.hpp"
+#include "../system/ciostreammemory.hpp"
 
 namespace EE { namespace Graphics {
 
@@ -19,19 +21,19 @@ bool cTextureFont::Load( const Uint32& TexId, const eeUint& StartChar, const eeU
 	mTexId = TexId;
 
 	if ( NULL != Tex ) {
-		mTexColumns = TexColumns;
-		mTexRows = TexRows;
-		mStartChar = StartChar;
-		mNumChars = NumChars;
+		mTexColumns		= TexColumns;
+		mTexRows		= TexRows;
+		mStartChar		= StartChar;
+		mNumChars		= NumChars;
 
-		mtX = ( 1 / static_cast<eeFloat>( mTexColumns ) );
-		mtY = ( 1 / static_cast<eeFloat>( mTexRows ) );
+		mtX				= ( 1 / static_cast<eeFloat>( mTexColumns ) );
+		mtY				= ( 1 / static_cast<eeFloat>( mTexRows ) );
 
-		mFWidth = (eeFloat)( Tex->Width() / mTexColumns );
-		mFHeight = (eeFloat)( Tex->Height() / mTexRows );
-		mHeight = mSize = (eeUint)mFHeight;
+		mFWidth			= (eeFloat)( Tex->Width() / mTexColumns );
+		mFHeight		= (eeFloat)( Tex->Height() / mTexRows );
+		mHeight			= mSize = mLineSkip = (eeUint)mFHeight;
 
-		mVerticalDraw = VerticalDraw;
+		mVerticalDraw	= VerticalDraw;
 
 		if ( Spacing == 0 )
 			mSpacing = static_cast<eeUint>( mFWidth );
@@ -85,7 +87,7 @@ void cTextureFont::BuildFont() {
 	}
 }
 
-void cTextureFont::BuildFontFromDat() {
+void cTextureFont::BuildFromGlyphs() {
 	eeFloat Top, Bottom;
 	eeRectf tR;
 
@@ -95,15 +97,19 @@ void cTextureFont::BuildFontFromDat() {
 
 	cTextureFactory::instance()->Bind( Tex );
 
+	eeGlyph tGlyph;
+
 	for (eeUint i = 0; i < mNumChars; i++) {
-		tR.Left = (eeFloat)mGlyphs[i].CurX / Tex->Width();
-		tR.Top = (eeFloat)mGlyphs[i].CurY / Tex->Height();
+		tGlyph		= mGlyphs[i];
 
-		tR.Right = (eeFloat)(mGlyphs[i].CurX + mGlyphs[i].CurW) / Tex->Width();
-		tR.Bottom = (eeFloat)(mGlyphs[i].CurY + mGlyphs[i].CurH) / Tex->Height();
+		tR.Left		= (eeFloat)tGlyph.CurX / Tex->Width();
+		tR.Top		= (eeFloat)tGlyph.CurY / Tex->Height();
 
-		Top = 		mFHeight 	- mGlyphs[i].GlyphH - mGlyphs[i].MinY;
-		Bottom = 	mFHeight 	+ mGlyphs[i].GlyphH - mGlyphs[i].MaxY;
+		tR.Right	= (eeFloat)(tGlyph.CurX + tGlyph.CurW) / Tex->Width();
+		tR.Bottom	= (eeFloat)(tGlyph.CurY + tGlyph.CurH) / Tex->Height();
+
+		Top = 		mHeight + mDescent 	- tGlyph.GlyphH - tGlyph.MinY;
+		Bottom = 	mHeight + mDescent 	+ tGlyph.GlyphH - tGlyph.MaxY;
 
 		mTexCoords[i].TexCoords[0] = tR.Left;
 		mTexCoords[i].TexCoords[1] = tR.Top;
@@ -113,24 +119,22 @@ void cTextureFont::BuildFontFromDat() {
 		mTexCoords[i].TexCoords[5] = tR.Bottom;
 		mTexCoords[i].TexCoords[6] = tR.Right;
 		mTexCoords[i].TexCoords[7] = tR.Top;
-		mTexCoords[i].Vertex[0] = (eeFloat) mGlyphs[i].MinX;
+		mTexCoords[i].Vertex[0] = (eeFloat) tGlyph.MinX;
 		mTexCoords[i].Vertex[1] = Top;
-		mTexCoords[i].Vertex[2] = (eeFloat) mGlyphs[i].MinX;
+		mTexCoords[i].Vertex[2] = (eeFloat) tGlyph.MinX;
 		mTexCoords[i].Vertex[3] = Bottom;
-		mTexCoords[i].Vertex[4] = (eeFloat) mGlyphs[i].MaxX;
+		mTexCoords[i].Vertex[4] = (eeFloat) tGlyph.MaxX;
 		mTexCoords[i].Vertex[5] = Bottom;
-		mTexCoords[i].Vertex[6] = (eeFloat) mGlyphs[i].MaxX;
+		mTexCoords[i].Vertex[6] = (eeFloat) tGlyph.MaxX;
 		mTexCoords[i].Vertex[7] = Top;
 	}
 }
 
 bool cTextureFont::Load( const Uint32& TexId, const std::string& CoordinatesDatPath, const bool& VerticalDraw ) {
 	if ( FileExists( CoordinatesDatPath ) ) {
-		SafeDataPointer PData;
+		cIOStreamFile IOS( CoordinatesDatPath, std::ios::in | std::ios::binary );
 
-		FileGet( CoordinatesDatPath, PData );
-
-		return LoadFromMemory( TexId, reinterpret_cast<const Uint8*> ( PData.Data ), PData.DataSize, VerticalDraw );
+		return LoadFromStream( TexId, IOS, VerticalDraw );
 	} else if ( cPackManager::instance()->FallbackToPacks() ) {
 		std::string tPath( CoordinatesDatPath );
 
@@ -145,38 +149,52 @@ bool cTextureFont::Load( const Uint32& TexId, const std::string& CoordinatesDatP
 }
 
 bool cTextureFont::LoadFromPack( const Uint32& TexId, cPack* Pack, const std::string& FilePackPath, const bool& VerticalDraw ) {
-	SafeDataPointer PData;
+	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( FilePackPath ) ) {
+		SafeDataPointer PData;
 
-	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, PData ) ) {
-		return LoadFromMemory( TexId, reinterpret_cast<const Uint8*> ( PData.Data ), PData.DataSize, VerticalDraw );
+		Pack->ExtractFileToMemory( FilePackPath, PData );
+
+		return LoadFromMemory( TexId, reinterpret_cast<const char*> ( PData.Data ), PData.DataSize, VerticalDraw );
 	}
 
 	return false;
 }
 
-bool cTextureFont::LoadFromMemory( const Uint32& TexId, const Uint8* CoordData, const Uint32& CoordDataSize, const bool& VerticalDraw ) {
+bool cTextureFont::LoadFromMemory( const Uint32& TexId, const char* CoordData, const Uint32& CoordDataSize, const bool& VerticalDraw ) {
+	cIOStreamMemory IOS( CoordData, CoordDataSize );
+
+	return LoadFromStream( TexId, IOS, VerticalDraw );
+}
+
+bool cTextureFont::LoadFromStream( const Uint32& TexId, cIOStream& IOS, const bool& VerticalDraw ) {
 	mTexId = TexId;
 
 	if ( mTexId > 0 ) {
 		mVerticalDraw = VerticalDraw;
 
-		if ( CoordData != NULL ) {
-			mNumChars = static_cast<Uint16> ( ( CoordDataSize - 2 ) / 32 );
+		if ( IOS.IsOpen() ) {
+			sFntHdr FntHdr;
+
+			IOS.Read( (char*)&FntHdr, sizeof(sFntHdr) );
+
+			if ( EE_TTF_FONT_MAGIC != FntHdr.Magic )
+				return false;
+
+			mStartChar	= FntHdr.FirstChar;
+			mNumChars	= FntHdr.NumChars;
+			mSize		= FntHdr.Size;
+			mHeight		= FntHdr.Height;
+			mLineSkip	= FntHdr.LineSkip;
+			mAscent		= FntHdr.Ascent;
+			mDescent	= FntHdr.Descent;
 
 			mGlyphs.resize( mNumChars );
 
-			// Read the number of the first char represented on the texture
-			mStartChar = CoordData[0];
+			// Read the glyphs
+			IOS.Read( (char*)&mGlyphs[0], sizeof(eeGlyph) * mNumChars );
 
-			// Read the default size of every char
-			mFWidth = CoordData[1];
-			mFHeight = CoordData[1];
-			mHeight = mSize = (Uint32)mFHeight;
+			BuildFromGlyphs();
 
-			// Read every char coordinates
-			memcpy( reinterpret_cast<void*> (&mGlyphs[0]), reinterpret_cast<const void*> (&CoordData[2]), sizeof(eeGlyph) * mNumChars );
-
-			BuildFontFromDat();
 			mLoadedCoords = true;
 
 			return true;

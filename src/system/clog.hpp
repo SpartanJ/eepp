@@ -4,10 +4,11 @@
 #include "base.hpp"
 #include "tsingleton.hpp"
 #include "ciostreamfile.hpp"
+#include "cmutex.hpp"
 
 namespace EE { namespace System {
 
-class EE_API cLog {
+class EE_API cLog : protected cMutex {
 	SINGLETON_DECLARE_HEADERS(cLog)
 
 	public:
@@ -39,6 +40,8 @@ class EE_API cLog {
 		cIOStreamFile *	mFS;
 
 		void openfs();
+
+		void closefs();
 };
 
 }}

@@ -182,7 +182,7 @@ void cIsoMap::Draw() {
 		for ( eeInt y = Ty; y < Ty2; y++ ) {
 			for ( eeInt x = Tx; x < Tx2; x++ ) {
 				T = &Tile( (eeUint)x, (eeUint)y );
-				mFont->Draw( T->TilePosStr, mOffsetX + T->Q.V[1].x + ( T->Q.V[3].x - T->Q.V[1].x ) * 0.5f - T->TilePosStr.size() * mFont->GetFontSize() * 0.5f, mOffsetY + T->Q.V[0].y + ( T->Q.V[2].y - T->Q.V[0].y ) * 0.5f - mFont->GetFontHeight() * 0.5f );
+				mFont->Draw( T->TilePosStr, mOffsetX + T->Q.V[1].x + ( T->Q.V[3].x - T->Q.V[1].x ) * 0.5f - T->TilePosStr.size() * mFont->GetFontHeight() * 0.5f, mOffsetY + T->Q.V[0].y + ( T->Q.V[2].y - T->Q.V[0].y ) * 0.5f - mFont->GetFontHeight() * 0.5f );
 			}
 		}
 	}

@@ -64,7 +64,10 @@ void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const eeUin
 
 	mFont = Font;
 
-	mFontSize = (eeFloat)mFont->GetFontSize();
+	mFontSize = (eeFloat)( mFont->GetFontSize() * 1.25 );
+
+	if ( mFont->GetFontHeight() < mFontSize && ( mFont->GetFontHeight() != mFont->GetFontSize() || mFont->GetLineSkip() != (Int32)mFont->GetFontHeight() ) )
+		mFontSize = mFont->GetFontHeight();
 
 	if ( TextureId > 0 )
 		mTexId = TextureId;
@@ -73,7 +76,6 @@ void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const eeUin
 	mMaxAlpha = (eeFloat)mConColor.A();
 
 	mEnabled = true;
-	mFontSize *= 1.25f;
 
 	if ( MakeDefaultCommands )
 		CreateDefaultCommands();
@@ -150,7 +152,7 @@ void cConsole::Draw() {
 				}
 			}
 
-			CurY = mTempY + mY + mCurHeight - mFontSize;
+			CurY = mTempY + mY + mCurHeight - mFontSize - 1;
 
 			mFont->Color( eeColorA ( mFontLineColor.R(), mFontLineColor.G(), mFontLineColor.B(), static_cast<Uint8>(mA) ) );
 			mFont->SetText( "> " + mTBuf.Buffer() );

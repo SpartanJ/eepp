@@ -115,7 +115,7 @@ eeFloat cTextCache::GetTextWidth() {
 }
 
 eeFloat cTextCache::GetTextHeight() {
-	return (eeFloat)mFont->GetFontSize() * (eeFloat)mNumLines;
+	return (eeFloat)mFont->GetFontHeight() * (eeFloat)mNumLines;
 }
 
 const eeInt& cTextCache::GetNumLines() const {

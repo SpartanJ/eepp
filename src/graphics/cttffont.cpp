@@ -86,6 +86,10 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ve
 	mVerticalDraw 	= VerticalDraw;
 	mSize 			= Size;
 	mHeight 		= mFont->Height() + OutlineTotal;
+	mLineSkip		= mFont->LineSkip();
+	mAscent			= mFont->Ascent();
+	mDescent		= mFont->Descent();
+
 	mNumChars 		= NumCharsToGen;
 	mFontColor 		= FontColor;
 	mOutlineColor 	= OutlineColor;
@@ -99,12 +103,30 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ve
 	bool lastWasWidth = false;
 	Uint32 ReqSize;
 
-	// Find the best size for the texture ( aprox )
+	// Find the larger glyph
+	/*
+	int maxWidth = 0, maxHeight = 0;
 
-	mSize += PixelSep;
+	for ( eeUint i = 0; i < mNumChars; i++) {
+		TempGlyphSurface = mFont->GlyphRender( i, 0x00000000 );
+
+		maxWidth = eemax( mFont->Current()->Pixmap()->width, maxWidth );
+		maxHeight = eemax( mFont->Current()->Pixmap()->rows, maxHeight );
+
+		hkSAFE_DELETE_ARRAY( TempGlyphSurface );
+	}
+
+	//ReqSize = mNumChars * mHeight * mHeight;
+	*/
+
+	// Find the best size for the texture ( aprox )
+	// Totally wild guessing, but it's working
+	Int32 tWildGuessW = ( mAscent + PixelSep + OutlineTotal );
+	Int32 tWildGuessH = tWildGuessW; //( mHeight );
+
+	ReqSize = mNumChars * tWildGuessW * tWildGuessH;
 
 	do {
-		ReqSize = mNumChars * mSize * mSize;
 		TexSize = (Uint32)mTexWidth * (Uint32)mTexHeight;
 
 		if ( TexSize < ReqSize ) {
@@ -116,10 +138,6 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ve
 			lastWasWidth = !lastWasWidth;
 		}
 	} while ( TexSize < ReqSize  );
-
-	mSize -= PixelSep;
-
-	TexSize = (Uint32)mTexWidth * (Uint32)mTexHeight;
 
 	mPixels = eeNewArray( eeColorA, TexSize );
 	memset( mPixels, 0x00000000, TexSize * 4 );
@@ -288,15 +306,19 @@ void cTTFFont::RebuildFromGlyphs() {
 
 	cTextureFactory::instance()->Bind( Tex );
 
+	eeGlyph tGlyph;
+
 	for (eeUint i = 0; i < mNumChars; i++) {
-		tR.Left = (eeFloat)mGlyphs[i].CurX / Tex->Width();
-		tR.Top = (eeFloat)mGlyphs[i].CurY / Tex->Height();
+		tGlyph		= mGlyphs[i];
 
-		tR.Right = (eeFloat)(mGlyphs[i].CurX + mGlyphs[i].CurW) / Tex->Width();
-		tR.Bottom = (eeFloat)(mGlyphs[i].CurY + mGlyphs[i].CurH) / Tex->Height();
+		tR.Left		= (eeFloat)tGlyph.CurX / Tex->Width();
+		tR.Top		= (eeFloat)tGlyph.CurY / Tex->Height();
 
-		Top = 		(eeFloat)mSize 	- mGlyphs[i].GlyphH - mGlyphs[i].MinY;
-		Bottom = 	(eeFloat)mSize 	+ mGlyphs[i].GlyphH - mGlyphs[i].MaxY;
+		tR.Right	= (eeFloat)(tGlyph.CurX + tGlyph.CurW) / Tex->Width();
+		tR.Bottom	= (eeFloat)(tGlyph.CurY + tGlyph.CurH) / Tex->Height();
+
+		Top			= (eeFloat)mHeight + mDescent	- tGlyph.GlyphH - tGlyph.MinY;
+		Bottom		= (eeFloat)mHeight + mDescent	+ tGlyph.GlyphH - tGlyph.MaxY;
 
 		mTexCoords[i].TexCoords[0] = tR.Left;
 		mTexCoords[i].TexCoords[1] = tR.Top;
@@ -306,13 +328,13 @@ void cTTFFont::RebuildFromGlyphs() {
 		mTexCoords[i].TexCoords[5] = tR.Bottom;
 		mTexCoords[i].TexCoords[6] = tR.Right;
 		mTexCoords[i].TexCoords[7] = tR.Top;
-		mTexCoords[i].Vertex[0] = (eeFloat) mGlyphs[i].MinX;
+		mTexCoords[i].Vertex[0] = (eeFloat) tGlyph.MinX;
 		mTexCoords[i].Vertex[1] = Top;
-		mTexCoords[i].Vertex[2] = (eeFloat) mGlyphs[i].MinX;
+		mTexCoords[i].Vertex[2] = (eeFloat) tGlyph.MinX;
 		mTexCoords[i].Vertex[3] = Bottom;
-		mTexCoords[i].Vertex[4] = (eeFloat) mGlyphs[i].MaxX;
+		mTexCoords[i].Vertex[4] = (eeFloat) tGlyph.MaxX;
 		mTexCoords[i].Vertex[5] = Bottom;
-		mTexCoords[i].Vertex[6] = (eeFloat) mGlyphs[i].MaxX;
+		mTexCoords[i].Vertex[6] = (eeFloat) tGlyph.MaxX;
 		mTexCoords[i].Vertex[7] = Top;
 	}
 }
@@ -327,21 +349,25 @@ bool cTTFFont::SaveTexture( const std::string& Filepath, const EE_SAVE_TYPE& For
 }
 
 bool cTTFFont::SaveCoordinates( const std::string& Filepath ) {
-	Uint8 chars;
-
 	cIOStreamFile fs( Filepath, std::ios::out | std::ios::binary );
 
 	if ( fs.IsOpen() ) {
-		// Write the number of the fist char represented on the texture
-		chars = 0;
-		fs.Write( reinterpret_cast<const char*> (&chars), sizeof(Uint8) );
+		sFntHdr FntHdr;
 
-		// Write the default size of every char
-		chars = static_cast<Uint8> ( mSize );
-		fs.Write( reinterpret_cast<const char*> (&chars), sizeof(Uint8) );
+		FntHdr.Magic		= EE_TTF_FONT_MAGIC;
+		FntHdr.FirstChar	= 0;
+		FntHdr.NumChars		= mGlyphs.size();
+		FntHdr.Size			= mSize;
+		FntHdr.Height		= mHeight;
+		FntHdr.LineSkip		= mLineSkip;
+		FntHdr.Ascent		= mAscent;
+		FntHdr.Descent		= mDescent;
 
-		for (eeUint i = 0; i < mGlyphs.size(); i++)
-			fs.Write( reinterpret_cast<const char*> (&mGlyphs[i]), sizeof(eeGlyph) );
+		// Write the header
+		fs.Write( reinterpret_cast<const char*>( &FntHdr ), sizeof(sFntHdr) );
+
+		// Write the glyphs
+		fs.Write( reinterpret_cast<const char*> (&mGlyphs[0]), sizeof(eeGlyph) * mGlyphs.size() );
 
 		RebuildFromGlyphs();
 
@@ -379,6 +405,14 @@ void cTTFFont::MakeOutline( Uint8 *in, Uint8 *out, Int16 w, Int16 h) {
 			}
 		}
 	}
+}
+
+bool cTTFFont::ThreadedLoading() const {
+	return mThreadedLoading;
+}
+
+void cTTFFont::ThreadedLoading( const bool& isThreaded ) {
+	mThreadedLoading = isThreaded;
 }
 
 }}

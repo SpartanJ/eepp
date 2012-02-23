@@ -348,7 +348,7 @@ void cUITextEdit::FixScrollToCursor() {
 		mSkipValueChange = true;
 
 		eeFloat tW	= mTextInput->GetTextCache()->Font()->GetTextWidth();
-		eeFloat tH	= (eeFloat)(LineNum + 1) * (eeFloat)mTextInput->GetTextCache()->Font()->GetFontSize();
+		eeFloat tH	= (eeFloat)(LineNum + 1) * (eeFloat)mTextInput->GetTextCache()->Font()->GetFontHeight();
 
 		if ( tW > Width ) {
 			mTextInput->Pos( mPadding.Left + Width - tW, mTextInput->Pos().y );

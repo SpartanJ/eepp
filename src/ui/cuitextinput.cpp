@@ -145,7 +145,7 @@ void cUITextInput::AlignFix() {
 		eeFloat tX	= mAlignOffset.x + tW;
 
 		mCurPos.x	= tW;
-		mCurPos.y	= (eeFloat)LineNum * (eeFloat)mTextCache->Font()->GetFontSize();
+		mCurPos.y	= (eeFloat)LineNum * (eeFloat)mTextCache->Font()->GetFontHeight();
 
 		if ( !mTextBuffer.SupportNewLine() ) {
 			if ( tX < 0.f )

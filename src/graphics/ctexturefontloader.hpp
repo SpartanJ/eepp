@@ -22,7 +22,7 @@ class EE_API cTextureFontLoader : public cObjectLoader {
 
 		cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, cPack * Pack, const std::string& FilePackPath, const bool& VerticalDraw = false );
 
-		cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, const Uint8* CoordData, const Uint32& CoordDataSize, const bool& VerticalDraw = false );
+		cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, const char* CoordData, const Uint32& CoordDataSize, const bool& VerticalDraw = false );
 
 		virtual ~cTextureFontLoader();
 
@@ -52,7 +52,7 @@ class EE_API cTextureFontLoader : public cObjectLoader {
 
 		cPack *				mPack;
 
-		const Uint8 *		mData;
+		const char *		mData;
 		Uint32				mDataSize;
 
 		void 				Start();

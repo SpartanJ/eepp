@@ -12,7 +12,10 @@ cFont::cFont( const Uint32& Type, const std::string& Name ) :
 	mTexId(0),
 	mCachedWidth(0.f),
 	mHeight(0),
-	mSize(0)
+	mSize(0),
+	mLineSkip(0),
+	mAscent(0),
+	mDescent(0)
 {
 	this->Name( Name );
 	cFontManager::instance()->Add( this );
@@ -89,6 +92,18 @@ Uint32 cFont::GetFontHeight() const {
 	return mHeight;
 }
 
+Int32 cFont::GetLineSkip() const {
+	return mLineSkip;
+}
+
+Int32 cFont::GetFontAscent() const {
+	return mAscent;
+}
+
+Int32 cFont::GetFontDescent() const {
+	return mDescent;
+}
+
 String cFont::GetText() {
 	return mText;
 }
@@ -102,7 +117,7 @@ const bool& cFont::CacheData() const {
 }
 
 eeFloat cFont::GetTextHeight() {
-	return (eeFloat)GetFontSize() * (eeFloat)GetNumLines();
+	return (eeFloat)GetFontHeight() * (eeFloat)GetNumLines();
 }
 
 const std::vector<eeFloat>& cFont::GetLinesWidth() const {
@@ -213,7 +228,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 					case '\n':
 					{
 						if (mVerticalDraw) {
-							nX += (GetFontSize() * Scale);
+							nX += (GetFontHeight() * Scale);
 							nY = 0;
 						} else {
 							if ( i + 1 < TextCache.Text().size() ) {
@@ -229,7 +244,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 								}
 							}
 
-							nY += (GetFontSize() * Scale);
+							nY += (GetFontHeight() * Scale);
 							Line++;
 						}
 
@@ -403,7 +418,7 @@ void cFont::SubDraw( const String& Text, const eeFloat& X, const eeFloat& Y, con
 					break;
 				case '\n':
 					if (mVerticalDraw) {
-						nX += (GetFontSize() * Scale);
+						nX += (GetFontHeight() * Scale);
 						nY = 0;
 					} else {
 						if ( i + 1 < Text.size() ) {
@@ -419,7 +434,7 @@ void cFont::SubDraw( const String& Text, const eeFloat& X, const eeFloat& Y, con
 							}
 						}
 
-						nY += (GetFontSize() * Scale);
+						nY += (GetFontHeight() * Scale);
 						Line++;
 					}
 

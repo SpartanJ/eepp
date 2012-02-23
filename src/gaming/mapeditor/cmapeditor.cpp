@@ -216,6 +216,7 @@ void cMapEditor::CreateShapeContainer( Int32 Width ) {
 	FillGotyList();
 
 	mBtnGOTypeAdd = mTheme->CreatePushButton( mShapeCont, eeSize( 24, 21 ), eeVector2i( mGOTypeList->Pos().x + mGOTypeList->Size().Width() + 2, mGOTypeList->Pos().y ), UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mTheme->GetIconByName( "add" ) );
+	mBtnGOTypeAdd->TooltipText( "Adds a new game object type\nunknown by the map editor." );
 	mBtnGOTypeAdd->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::AddNewGOType ) );
 
 	if ( NULL == mBtnGOTypeAdd->Icon()->Shape() )
@@ -240,10 +241,12 @@ void cMapEditor::CreateShapeContainer( Int32 Width ) {
 
 	mChkBlocked = mTheme->CreateCheckBox( mShapeCont, eeSize(), eeVector2i( mChkMirrored->Pos().x, mChkMirrored->Pos().y + mChkMirrored->Size().Height() + 4 ), ChkFlags );
 	mChkBlocked->Text( "Blocked" );
+	mChkBlocked->TooltipText( "Blocks the tile occupied by the sprite." );
 	mChkBlocked->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::ChkClickBlocked ) );
 
 	mChkAnim = mTheme->CreateCheckBox( mShapeCont, eeSize(), eeVector2i( mChkFliped->Pos().x, mChkFliped->Pos().y + mChkFliped->Size().Height() + 4 ), ChkFlags );
 	mChkAnim->Text( "Animated" );
+	mChkAnim->TooltipText( "Indicates if the Sprite is animated." );
 	mChkAnim->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::ChkClickAnimated ) );
 
 	mChkRot90 = mTheme->CreateCheckBox( mShapeCont, eeSize(), eeVector2i( mChkBlocked->Pos().x, mChkBlocked->Pos().y + mChkBlocked->Size().Height() + 4 ), ChkFlags );
@@ -252,12 +255,14 @@ void cMapEditor::CreateShapeContainer( Int32 Width ) {
 
 	mChkAutoFix = mTheme->CreateCheckBox( mShapeCont, eeSize(), eeVector2i( mChkAnim->Pos().x, mChkAnim->Pos().y + mChkAnim->Size().Height() + 4 ), ChkFlags );
 	mChkAutoFix->Text( "AutoFix TilePos" );
+	mChkAutoFix->TooltipText( "In a tiled layer if the sprite is moved,\nit will update the current tile position automatically." );
 	mChkAutoFix->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::ChkClickAutoFix ) );
 
 	Txt = mTheme->CreateTextBox( "Game Object Data:", mShapeCont, eeSize( Width, 16 ), eeVector2i( 0, mChkRot90->Pos().y + mChkRot90->Size().Height() + 8 ), TxtFlags );
 
 	mChkDI = mTheme->CreateCheckBox( mShapeCont, eeSize(), eeVector2i( 0, Txt->Pos().y + Txt->Size().Height() + 4 ), ChkFlags );
 	mChkDI->Text( "Add as DataId" );
+	mChkDI->TooltipText( "If the resource it's not a sprite,\nyou can reference it with a data id" );
 	mChkDI->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::ChkClickDI ) );
 
 	cUIComplexControl::CreateParams SGParams;

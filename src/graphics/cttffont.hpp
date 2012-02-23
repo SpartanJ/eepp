@@ -70,32 +70,35 @@ class EE_API cTTFFont : public cFont {
 	protected:
 		friend class cTTFFontLoader;
 
-		bool ThreadedLoading() const { return mThreadedLoading; }
+		hkFont *	mFont;
+		eeColorA *	mPixels;
 
-		void ThreadedLoading( const bool& isThreaded ) { mThreadedLoading = isThreaded; }
+		std::string	mFilepath;
+		Uint32		mNumChars;
+		Uint8		mOutlineSize;
 
-		void UpdateLoading();
-	private:
-		hkFont * mFont;
-		eeColorA * mPixels;
+		eeColor		mFontColor;
+		eeColor		mOutlineColor;
 
-		std::string mFilepath;
-		Uint32 mBase;
-		Uint32 mNumChars;
-		Uint8 mOutlineSize;
-
-		eeColor mFontColor, mOutlineColor;
 		EE_TTF_FONTSTYLE mStyle;
 
-		eeFloat mTexWidth, mTexHeight;
+		eeFloat		mTexWidth;
+		eeFloat		mTexHeight;
 
-		bool mLoadedFromMemory;
+		bool		mLoadedFromMemory;
+		bool		mThreadedLoading;
+		bool		mTexReady;
 
-		bool mThreadedLoading;
-		bool mTexReady;
+		bool ThreadedLoading() const;
+
+		void ThreadedLoading( const bool& isThreaded );
+
+		void UpdateLoading();
 
 		bool iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, Uint8 OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator );
+
 		void MakeOutline( Uint8 *in, Uint8 *out, Int16 w, Int16 h);
+
 		void RebuildFromGlyphs();
 };
 
