@@ -33,42 +33,42 @@ tUIItemContainer<TContainer>::~tUIItemContainer()
 
 template<class TContainer>
 void tUIItemContainer<TContainer>::Update() {
-	TContainer * LBParent = reinterpret_cast<TContainer*> ( Parent() );
+	TContainer * tParent = reinterpret_cast<TContainer*> ( Parent() );
 
-	if ( LBParent->mItems.size() ) {
-		for ( Uint32 i = LBParent->mVisibleFirst; i <= LBParent->mVisibleLast; i++ ) {
-			if ( NULL != LBParent->mItems[i] )
-				LBParent->mItems[i]->Update();
+	if ( tParent->mItems.size() ) {
+		for ( Uint32 i = tParent->mVisibleFirst; i <= tParent->mVisibleLast; i++ ) {
+			if ( NULL != tParent->mItems[i] )
+				tParent->mItems[i]->Update();
 		}
 	}
 }
 
 template<class TContainer>
 void tUIItemContainer<TContainer>::DrawChilds() {
-	TContainer * LBParent = reinterpret_cast<TContainer*> ( Parent() );
+	TContainer * tParent = reinterpret_cast<TContainer*> ( Parent() );
 
-	if ( LBParent->mItems.size() ) {
-		for ( Uint32 i = LBParent->mVisibleFirst; i <= LBParent->mVisibleLast; i++ )
-			if ( NULL != LBParent->mItems[i] )
-				LBParent->mItems[i]->InternalDraw();
+	if ( tParent->mItems.size() ) {
+		for ( Uint32 i = tParent->mVisibleFirst; i <= tParent->mVisibleLast; i++ )
+			if ( NULL != tParent->mItems[i] )
+				tParent->mItems[i]->InternalDraw();
 	}
 }
 
 template<class TContainer>
 cUIControl * tUIItemContainer<TContainer>::OverFind( const eeVector2f& Point ) {
-	TContainer * LBParent = reinterpret_cast<TContainer*> ( Parent() );
+	TContainer * tParent = reinterpret_cast<TContainer*> ( Parent() );
 
 	cUIControl * pOver = NULL;
 
-	if ( mEnabled && mVisible && LBParent->mItems.size() ) {
+	if ( mEnabled && mVisible && tParent->mItems.size() ) {
 		UpdateQuad();
 
 		if ( PointInsidePolygon2( mPoly, Point ) ) {
 			WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
 
-			for ( Uint32 i = LBParent->mVisibleFirst; i <= LBParent->mVisibleLast; i++ ) {
-				if ( NULL != LBParent->mItems[i] ) {
-					cUIControl * ChildOver = LBParent->mItems[i]->OverFind( Point );
+			for ( Uint32 i = tParent->mVisibleFirst; i <= tParent->mVisibleLast; i++ ) {
+				if ( NULL != tParent->mItems[i] ) {
+					cUIControl * ChildOver = tParent->mItems[i]->OverFind( Point );
 
 					if ( NULL != ChildOver ) {
 						pOver = ChildOver;

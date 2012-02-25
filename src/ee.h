@@ -12,7 +12,7 @@
 		* Sean Barrett for the stb_vorbis and stb_image libraries. \n
 		* Sam Latinga for Simple DirectMedia Layer library. \n
 		* Jonathan Dummer for the Simple OpenGL Image Library. \n
-		* Laurent Gomila for the SFML library ( eepp audio module is based on the SFML audio module ) \n
+		* Laurent Gomila for the SFML library ( eepp audio module is heavily based on the SFML audio module ) \n
 		* OGRE staff for the Timer implementation \n
 		* Lewis Van Winkle for PlusCallback \n
 		* Dieter Baron and Thomas Klausner for libzip \n
@@ -23,7 +23,7 @@
 
 /**
 	@TODO Check for endianness problems, and make EEPP endianness agnostic.
-	@TODO Support for Android and iOS.
+	@TODO Support for Android ( work in progress, it's working ) and iOS.
 	@TODO Add Scripting support ( squirrel or angel script ).
 */
 

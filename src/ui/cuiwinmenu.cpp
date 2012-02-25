@@ -26,8 +26,8 @@ cUIWinMenu::cUIWinMenu( const cUIWinMenu::CreateParams& Params ) :
 	ApplyDefaultTheme();
 }
 
-cUIWinMenu::~cUIWinMenu()
-{
+cUIWinMenu::~cUIWinMenu() {
+	DestroyMenues();
 }
 
 Uint32 cUIWinMenu::Type() const {
@@ -88,12 +88,13 @@ void cUIWinMenu::SetTheme( cUITheme * Theme ) {
 void cUIWinMenu::RemoveMenuButton( const String& ButtonText ) {
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
 		if ( it->first->Text() == ButtonText ) {
+			it->second->Close();
+
 			mButtons.erase( it );
+
 			break;
 		}
 	}
-
-	RefreshButtons();
 }
 
 cUISelectButton * cUIWinMenu::GetButton( const String& ButtonText ) {
@@ -297,5 +298,12 @@ cFont * cUIWinMenu::Font() const {
 	return mFont;
 }
 
+void cUIWinMenu::DestroyMenues() {
+	if ( !cUIManager::instance()->IsShootingDown() ) {
+		for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
+			it->second->Close();
+		}
+	}
+}
 
 }}

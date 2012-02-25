@@ -18,7 +18,8 @@ cUIManager::cUIManager() :
 	mFlags( 0 ),
 	mHighlightColor( 234, 195, 123, 255 ),
 	mInit( false ),
-	mFirstPress( false )
+	mFirstPress( false ),
+	mShootingDown( false )
 {
 }
 
@@ -75,7 +76,11 @@ void cUIManager::Shutdown() {
 			mWindow->PopResizeCallback( mResizeCb );
 		}
 
+		mShootingDown = true;
+
 		eeSAFE_DELETE( mControl );
+
+		mShootingDown = false;
 
 		mOverControl = NULL;
 		mFocusControl = NULL;
@@ -336,6 +341,10 @@ void cUIManager::WindowRemove( cUIWindow * win ) {
 
 bool cUIManager::WindowExists( cUIWindow * win ) {
 	return mWindowsList.end() != std::find( mWindowsList.begin(), mWindowsList.end(), win );
+}
+
+const bool& cUIManager::IsShootingDown() const {
+	return mShootingDown;
 }
 
 }}

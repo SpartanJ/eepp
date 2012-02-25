@@ -49,6 +49,7 @@ class EE_API cUIEvent {
 			EventOnControlClear,
 			EventMsgBoxConfirmClick,
 			EventOnTabSelected,
+			EventOnClose, // Warning: Only some controls will report this event.
 			EventUser,
 			EventForceDWord = 0xFFFFFFFF
 		};

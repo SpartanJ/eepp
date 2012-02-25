@@ -291,6 +291,8 @@ class EE_API cUIControl {
 
 		virtual Uint32 OnFocusLoss();
 
+		virtual void OnClose();
+
 		virtual Uint32 OnValueChange();
 
 		virtual void OnVisibleChange();

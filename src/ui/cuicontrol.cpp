@@ -369,6 +369,10 @@ Uint32 cUIControl::OnValueChange() {
 	return 1;
 }
 
+void cUIControl::OnClose() {
+	SendCommonEvent( cUIEvent::EventOnClose );
+}
+
 Uint32 cUIControl::HAlign() const {
 	return mFlags & UI_HALIGN_MASK;
 }

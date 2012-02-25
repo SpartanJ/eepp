@@ -31,6 +31,7 @@ namespace EE { namespace Gaming { namespace MapEditor {
 
 cMapEditor::cMapEditor( cUIWindow * AttatchTo, const MapEditorCloseCb& callback ) :
 	mUIWindow( AttatchTo ),
+	mUIMap( NULL ),
 	mCloseCb( callback ),
 	mGOTypeList( NULL ),
 	mChkAnim( NULL ),
@@ -73,7 +74,7 @@ void cMapEditor::CreateME() {
 void cMapEditor::CreateWinMenu() {
 	cUIWinMenu * WinMenu = mTheme->CreateWinMenu( mUIContainer );
 
-	cUIPopUpMenu * PU1 = mTheme->CreatePopUpMenu();
+	cUIPopUpMenu * PU1 = mTheme->CreatePopUpMenu( mUIContainer );
 	PU1->Add( "New...", mTheme->GetIconByName( "document-new" ) );
 	PU1->Add( "Open...", mTheme->GetIconByName( "document-open" ) );
 	PU1->AddSeparator();
@@ -105,7 +106,7 @@ void cMapEditor::CreateWinMenu() {
 	PU3->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cMapEditor::ViewMenuClick ) );
 	WinMenu->AddMenuButton( "View", PU3 );
 
-	cUIPopUpMenu * PU4 = mTheme->CreatePopUpMenu();
+	cUIPopUpMenu * PU4 = mTheme->CreatePopUpMenu( mUIContainer );
 	PU4->Add( "New Texture Group..." );
 	PU4->Add( "Add External Texture Group..." );
 	PU4->AddSeparator();
@@ -114,7 +115,7 @@ void cMapEditor::CreateWinMenu() {
 	PU4->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cMapEditor::MapMenuClick ) );
 	WinMenu->AddMenuButton( "Map", PU4 );
 
-	cUIPopUpMenu * PU5 = mTheme->CreatePopUpMenu();
+	cUIPopUpMenu * PU5 = mTheme->CreatePopUpMenu( mUIContainer );
 	PU5->Add( "Add Tile Layer..." );
 	PU5->Add( "Add Object Layer..." );
 	PU5->AddSeparator();

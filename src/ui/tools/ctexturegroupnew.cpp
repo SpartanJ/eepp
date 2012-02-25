@@ -103,7 +103,7 @@ void cTextureGroupNew::WindowClose( const cUIEvent * Event ) {
 }
 
 static bool IsValidExtension( const std::string& ext ) {
-	return ext == "png" || ext == "bmp" || ext == "dds" || ext == "dds";
+	return ext == "png" || ext == "bmp" || ext == "dds" || ext == "tga";
 }
 
 void cTextureGroupNew::TextureGroupSave( const cUIEvent * Event ) {

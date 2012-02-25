@@ -491,6 +491,8 @@ void cConsole::CmdShowCursor ( const std::vector < String >& params ) {
 			PushText( "showcursor " + toStr( tInt ) );
 		} else
 			PushText( "Valid parameters are 0 or 1." );
+	} else {
+		PushText( "No parameters. Valid parameters are 0 ( hide ) or 1 ( show )." );
 	}
 }
 
@@ -503,9 +505,11 @@ void cConsole::CmdFrameLimit ( const std::vector < String >& params ) {
 		if ( Res && ( tInt >= 0 && tInt <= 10000 ) ) {
 			mWindow->FrameRateLimit( tInt );
 			PushText( "setfpslimit " + toStr( tInt ) );
-		} else
-			PushText( "Valid parameters are between 0 and 10000 (0 = no limit)." );
+			return;
+		}
 	}
+
+	PushText( "Valid parameters are between 0 and 10000 (0 = no limit)." );
 }
 
 void cConsole::CmdGetLog() {
@@ -542,9 +546,11 @@ void cConsole::CmdSetGamma( const std::vector < String >& params ) {
 		if ( Res && ( tFloat > 0.1f && tFloat <= 10.0f ) ) {
 			mWindow->SetGamma( tFloat, tFloat, tFloat );
 			PushText( "setgamma " + toStr( tFloat ) );
-		} else
-			PushText( "Valid parameters are between 0.1 and 10." );
+			return;
+		}
 	}
+
+	PushText( "Valid parameters are between 0.1 and 10." );
 }
 
 void cConsole::CmdSetVolume( const std::vector < String >& params ) {
@@ -556,9 +562,11 @@ void cConsole::CmdSetVolume( const std::vector < String >& params ) {
 		if ( Res && ( tFloat >= 0.0f && tFloat <= 100.0f ) ) {
 			EE::Audio::cAudioListener::GlobalVolume( tFloat );
 			PushText( "setvolume " + toStr( tFloat ) );
-		} else
-			PushText( "Valid parameters are between 0 and 100." );
+			return;
+		}
 	}
+
+	PushText( "Valid parameters are between 0 and 100." );
 }
 
 void cConsole::CmdDir( const std::vector < String >& params ) {
@@ -626,6 +634,8 @@ void cConsole::CmdDir( const std::vector < String >& params ) {
 			else
 				PushText( "Path is not a directory." );
 		}
+	} else {
+		PushText( "Expected a path to list. Example of usage: ls /home" );
 	}
 }
 
@@ -638,9 +648,11 @@ void cConsole::CmdShowFps( const std::vector < String >& params ) {
 		if ( Res && ( tInt == 0 || tInt == 1 ) ) {
 			mShowFps = 0 != tInt;
 			PushText( "showfps " + toStr( tInt ) );
-		} else
-			PushText( "Valid parameters are 0 or 1." );
+			return;
+		}
 	}
+
+	PushText( "Valid parameters are 0 ( hide ) or 1 ( show )." );
 }
 
 void cConsole::IgnoreCharOnPrompt( const Uint32& ch ) {

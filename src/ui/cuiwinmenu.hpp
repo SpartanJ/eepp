@@ -108,6 +108,8 @@ class EE_API cUIWinMenu : public cUIComplexControl {
 		void OnMenuFocusLoss( const cUIEvent * Event );
 
 		void UnselectButtons();
+
+		void DestroyMenues();
 };
 
 }}

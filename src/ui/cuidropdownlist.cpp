@@ -33,6 +33,7 @@ cUIDropDownList::cUIDropDownList( cUIDropDownList::CreateParams& Params ) :
 }
 
 cUIDropDownList::~cUIDropDownList() {
+	DestroyListBox();
 }
 
 Uint32 cUIDropDownList::Type() const {
@@ -184,6 +185,12 @@ Uint32 cUIDropDownList::OnKeyDown( const cUIEventKey &Event ) {
 	mListBox->OnKeyDown( Event );
 
 	return cUITextInput::OnKeyDown( Event );
+}
+
+void cUIDropDownList::DestroyListBox() {
+	if ( !cUIManager::instance()->IsShootingDown() ) {
+		mListBox->Close();
+	}
 }
 
 }}

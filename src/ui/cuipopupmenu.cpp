@@ -10,6 +10,7 @@ cUIPopUpMenu::cUIPopUpMenu( cUIPopUpMenu::CreateParams Params ) :
 }
 
 cUIPopUpMenu::~cUIPopUpMenu() {
+	OnClose();
 }
 
 Uint32 cUIPopUpMenu::Type() const {

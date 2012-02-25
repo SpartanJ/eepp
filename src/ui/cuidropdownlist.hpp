@@ -68,6 +68,8 @@ class EE_API cUIDropDownList : public cUITextInput {
 		virtual void AutoSize();
 
 		virtual void AutoSizeControl();
+
+		void DestroyListBox();
 };
 
 }}

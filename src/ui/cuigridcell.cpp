@@ -78,7 +78,7 @@ void cUIGridCell::Update() {
 		}
 
 		if ( IsMouseOverMeOrChilds() ) {
-			if ( Flags & EE_BUTTONS_WUWD && MyParent->VerticalScrollBar()->Visible() ) {
+			if ( ( Flags & EE_BUTTONS_WUWD ) && MyParent->VerticalScrollBar()->Visible() ) {
 				MyParent->VerticalScrollBar()->Slider()->ManageClick( Flags );
 			}
 		}

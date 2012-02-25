@@ -76,6 +76,8 @@ class EE_API cUIManager {
 		cUIControl * DownControl() const;
 
 		cUIControl * LossFocusControl() const;
+
+		const bool& IsShootingDown() const;
 	protected:
 		friend class cUIWindow;
 
@@ -97,6 +99,7 @@ class EE_API cUIManager {
 
 		bool				mInit;
 		bool 				mFirstPress;
+		bool				mShootingDown;
 
 		void				InputCallback( InputEvent * Event );
 

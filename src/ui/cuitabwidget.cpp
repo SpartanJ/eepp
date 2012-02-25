@@ -352,6 +352,8 @@ void cUITabWidget::OnSizeChange() {
 	if ( NULL != mTabSelected ) {
 		mTabSelected->CtrlOwned()->Size( mCtrlContainer->Size() );
 	}
+
+	cUIControl::OnSizeChange();
 }
 
 void cUITabWidget::ApplyThemeToTabs() {

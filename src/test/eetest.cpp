@@ -588,8 +588,6 @@ void cEETest::CreateUI() {
 	mGenGrid->CollumnWidth( 1, 24 );
 	mGenGrid->CollumnWidth( 2, 100 );
 
-	CreateDecoratedWindow();
-
 	C = reinterpret_cast<cUIControlAnim*> ( C->Parent() );
 
 	Log->Writef( "CreateUI time: %f", TE.ElapsedSinceStart() );
