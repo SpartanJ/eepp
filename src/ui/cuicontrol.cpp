@@ -231,6 +231,8 @@ void cUIControl::Center() {
 
 void cUIControl::Close() {
 	mControlFlags |= UI_CTRL_FLAG_CLOSE;
+
+	cUIManager::instance()->AddToCloseQueue( this );
 }
 
 void cUIControl::Draw() {
@@ -522,42 +524,6 @@ void cUIControl::ControlFlags( const Uint32& Flags ) {
 	mControlFlags = Flags;
 }
 
-void cUIControl::CheckClose() {
-	if ( mControlFlags & UI_CTRL_FLAG_DISABLE_CHECK_CLOSE_CHILDS )
-		return;
-
-	cUIControl * ChildLoop = mChild;
-
-	while( NULL != ChildLoop ) {
-		if ( ChildLoop->mControlFlags & UI_CTRL_FLAG_CLOSE ) {
-			eeDelete( ChildLoop );
-
-			ChildLoop = mChild;
-		}
-
-		if ( NULL != ChildLoop ) {
-			ChildLoop->CheckClose();
-
-			ChildLoop = ChildLoop->mNext;
-		}
-	}
-}
-
-void cUIControl::ClipTo() {
-	if ( !(mFlags & UI_CLIP_ENABLE) && NULL != Parent() ) {
-		cUIControl * parent = Parent();
-
-		while ( NULL != parent ) {
-			if ( parent->mFlags & UI_CLIP_ENABLE ) {
-				Parent()->ClipMe();
-				parent = NULL;
-			} else {
-				parent = parent->Parent();
-			}
-		}
-	}
-}
-
 void cUIControl::DrawChilds() {
 	cUIControl * ChildLoop = mChild;
 
@@ -572,8 +538,6 @@ void cUIControl::DrawChilds() {
 
 void cUIControl::InternalDraw() {
 	if ( mVisible ) {
-		//ClipTo();
-
 		MatrixSet();
 
 		ClipMe();
@@ -1067,11 +1031,6 @@ eeRecti cUIControl::MakePadding( bool PadLeft, bool PadRight, bool PadTop, bool 
 	}
 
 	return tPadding;
-}
-
-void cUIControl::DisableChildCloseCheck() {
-	if ( !( mControlFlags & UI_CTRL_FLAG_DISABLE_CHECK_CLOSE_CHILDS ) )
-		mControlFlags |= UI_CTRL_FLAG_DISABLE_CHECK_CLOSE_CHILDS;
 }
 
 void cUIControl::SetFocus() {

@@ -79,6 +79,7 @@ class EE_API cUIManager {
 
 		const bool& IsShootingDown() const;
 	protected:
+		friend class cUIControl;
 		friend class cUIWindow;
 
 		Window::cWindow *			mWindow;
@@ -89,6 +90,7 @@ class EE_API cUIManager {
 		cUIControl * 		mDownControl;
 		cUIControl *		mLossFocusControl;
 		std::list<cUIWindow*> mWindowsList;
+		std::list<cUIControl*> mCloseList;
 
 		eeFloat 			mElapsed;
 		Int32 				mCbId;
@@ -114,6 +116,10 @@ class EE_API cUIManager {
 		void				WindowRemove( cUIWindow * win );
 
 		bool				WindowExists( cUIWindow * win );
+
+		void				AddToCloseQueue( cUIControl * Ctrl );
+
+		void				CheckClose();
 };
 
 }}

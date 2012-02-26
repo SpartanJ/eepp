@@ -23,7 +23,6 @@ template<class TContainer>
 tUIItemContainer<TContainer>::tUIItemContainer( cUIControl::CreateParams& Params ) :
 	cUIControl( Params )
 {
-	DisableChildCloseCheck();
 }
 
 template<class TContainer>

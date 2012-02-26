@@ -228,7 +228,7 @@ void cUIManager::Update() {
 			mOverControl->OnMouseMove( mKM->GetMousePos(), mKM->PressTrigger() );
 	}
 
-	mControl->CheckClose();
+	CheckClose();
 }
 
 cUIControl * cUIManager::DownControl() const {
@@ -345,6 +345,57 @@ bool cUIManager::WindowExists( cUIWindow * win ) {
 
 const bool& cUIManager::IsShootingDown() const {
 	return mShootingDown;
+}
+
+void cUIManager::AddToCloseQueue( cUIControl * Ctrl ) {
+	eeASSERT( NULL != Ctrl );
+
+	std::list<cUIControl*>::iterator it;
+	cUIControl * itCtrl = NULL;
+
+	for ( it = mCloseList.begin(); it != mCloseList.end(); it++ ) {
+		itCtrl = *it;
+
+		if ( itCtrl->IsParentOf( Ctrl ) ) {
+			// If a parent will be removed, means that the control
+			// that we are trying to queue will be removed by the father
+			// so we skip it
+			return;
+		}
+	}
+
+	std::list< std::list<cUIControl*>::iterator > itEraseList;
+
+	for ( it = mCloseList.begin(); it != mCloseList.end(); it++ ) {
+		itCtrl = *it;
+
+		if ( Ctrl->IsParentOf( itCtrl ) ) {
+			// if the control added is parent of another control already added,
+			// we remove the already added control because it will be deleted
+			// by its parent
+			itEraseList.push_back( it );
+		}
+	}
+
+	// We delete all the controls that don't need to be deleted
+	// because of the new added control to the queue
+	std::list< std::list<cUIControl*>::iterator >::iterator ite;
+
+	for ( ite = itEraseList.begin(); ite != itEraseList.end(); ite++ ) {
+		mCloseList.erase( *ite );
+	}
+
+	mCloseList.push_back( Ctrl );
+}
+
+void cUIManager::CheckClose() {
+	if ( !mCloseList.empty() ) {
+		for ( std::list<cUIControl*>::iterator it = mCloseList.begin(); it != mCloseList.end(); it++ ) {
+			eeSAFE_DELETE( *it );
+		}
+
+		mCloseList.clear();
+	}
 }
 
 }}

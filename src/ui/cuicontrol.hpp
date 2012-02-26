@@ -215,8 +215,6 @@ class EE_API cUIControl {
 
 		void SetSkinState( const Uint32& State );
 
-		void DisableChildCloseCheck();
-
 		bool HasFocus() const;
 
 		virtual void SetFocus();
