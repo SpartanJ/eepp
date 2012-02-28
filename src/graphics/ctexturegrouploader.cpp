@@ -298,6 +298,37 @@ bool cTextureGroupLoader::UpdateTextureAtlas() {
 	return false;
 }
 
+static bool IsImage( std::string path ) {
+	if ( FileSize( path ) ) {
+		std::string File	= path.substr( path.find_last_of("/\\") + 1 );
+		std::string Ext		= File.substr( File.find_last_of(".") + 1 );
+		toLower( Ext );
+
+		if ( Ext == "png" ||
+			 Ext == "tga" ||
+			 Ext == "bmp" ||
+			 Ext == "jpg" ||
+			 Ext == "gif" ||
+			 Ext == "jpeg" ||
+			 Ext == "dds" ||
+			 Ext == "psd" ||
+			 Ext == "hdr" ||
+			 Ext == "pic"
+		) {
+			return true;
+		} else {
+			int x,y,c;
+
+			int res = stbi_info( path.c_str(), &x, &y, &c );
+
+			if ( res )
+				return true;
+		}
+	}
+
+	return false;
+}
+
 bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std::string ImagesPath ) {
 	if ( !TextureAtlasPath.size() || !ImagesPath.size() || !FileExists( TextureAtlasPath ) || !IsDirectory( ImagesPath ) )
 		return false;
@@ -327,7 +358,8 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 	for ( z = 0; z < PathFiles.size(); z++ ) {
 		std::string realpath( ImagesPath + PathFiles[z] );
 
-		if ( stbi_info( realpath.c_str(), &x, &y, &c ) )
+		// Avoids reading file headers for known extensions
+		if ( IsImage( realpath ) )
 			totalImages++;
 	}
 
@@ -344,22 +376,23 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 
 					std::string path( ImagesPath + tSh->Name );
 
-					if ( FileExists( path ) ) {
-						if ( stbi_info( path.c_str(), &x, &y, &c ) ) {
-							if ( tSh->Date != FileGetModificationDate( path ) ) {
+					if ( FileSize( path ) ) {
+						if ( tSh->Date != FileGetModificationDate( path ) ) {
+							if ( stbi_info( path.c_str(), &x, &y, &c ) ) {
 								if ( 	( !( tSh->Flags & HDR_SHAPE_FLAG_FLIPED ) && tSh->Width == x && tSh->Height == y ) || // If size or channels changed, the image need update
 										( ( tSh->Flags & HDR_SHAPE_FLAG_FLIPED ) && tSh->Width == y && tSh->Height == x ) ||
 										tSh->Channels != c
 								)
 								{
-									NeedUpdate = 1;
+									NeedUpdate = 1;	// Only update the image with the newest one
 								} else {
-									NeedUpdate = 2;
+									NeedUpdate = 2; // The image change it, recreate all
 									break;
 								}
+							} else {
+								NeedUpdate = 2; // Something is wrong on the image
+								break;
 							}
-						} else {
-							NeedUpdate = 2; // Something is wrong on the image
 						}
 					} else {
 						NeedUpdate = 2; // Need recreation of the whole texture atlas, some image where deleted.
