@@ -178,36 +178,12 @@ LOCAL_LDLIBS := $(EE_GLES_LINK) -ldl -llog
 include $(BUILD_STATIC_LIBRARY)
 #**************** SDL 2 ***************
 
-#**************** eetest ****************
-include $(CLEAR_VARS)
-
-LOCAL_PATH := $(MY_PATH)/test
-
-LOCAL_LDLIBS 	:= $(MY_LDLIBS)
-
-LOCAL_CFLAGS	:= $(MY_C_FLAGS)
-
-LOCAL_MODULE := eetest
-
-LOCAL_C_INCLUDES := $(MY_C_INCLUDES)
-
-LOCAL_SRC_FILES := \
-	../$(MY_SDL_MAIN_PATH) \
-	*.cpp
-
-LOCAL_SRC_FILES := $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
-
-LOCAL_SHARED_LIBRARIES := eepp
-
-include $(BUILD_SHARED_LIBRARY)
-#**************** eetest ****************
-
 #************* empty_window *************
 include $(CLEAR_VARS)
 
 LOCAL_PATH := $(MY_PATH)/test/empty_window
 
-LOCAL_MODULE := empty_window
+LOCAL_MODULE := main
 
 LOCAL_LDLIBS 	:= $(MY_LDLIBS)
 
@@ -305,7 +281,7 @@ include $(CLEAR_VARS)
 
 LOCAL_PATH := $(MY_PATH)/rhythm
 
-LOCAL_MODULE := main
+LOCAL_MODULE := rhythm
 
 LOCAL_LDLIBS 	:= $(MY_LDLIBS)
 

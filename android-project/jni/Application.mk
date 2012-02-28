@@ -14,3 +14,4 @@ APP_LDLIBS			:= -llog $(EE_GLES_LINK) -lm -lz
 APP_CFLAGS			:= -DDEBUG										# arm-linux-androideabi-4.4.3 crashes in -O0 mode on SDL sources
 APP_PLATFORM		:= android-7
 APP_MODULES			:= main
+#APP_ABI				:= armeabi-v7a
