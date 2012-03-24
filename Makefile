@@ -65,37 +65,38 @@ endif
 ifeq ($(BACKEND_SDL),yes)
 
 	# First check for SDL2
-	SDLVERSION2			= $(shell type -P sdl2-config &>/dev/null && sdl2-config --version || echo "")
+	#SDLVERSION2			= $(shell type -P sdl2-config &>/dev/null && sdl2-config --version || echo "")
 	
-	ifeq ($(SDLVERSION2),)
+	#ifeq ($(SDLVERSION2),)
 		# Then for SDL 1.2 or SDL 1.3
-		SDLVERSION				= $(shell type -P sdl-config &>/dev/null && sdl-config --version || echo "")
+		#SDLVERSION				= $(shell type -P sdl-config &>/dev/null && sdl-config --version || echo "")
 
-		ifeq ($(SDLVERSION),)
-			# Default 2.0.0
-			SDL_VERSION		= 2.0.0
-		else
-			SDL_VERSION			= $(SDLVERSION)
-		endif
-	else
-		SDL_VERSION		= $(SDLVERSION2)
-	endif
-	
-	# Then for SDL 1.2 or SDL 1.3
-	#SDLVERSION				= $(shell type -P sdl-config &>/dev/null && sdl-config --version || echo "")
-
-	#ifeq ($(SDLVERSION),)
-		#SDLVERSION2			= $(shell type -P sdl2-config &>/dev/null && sdl2-config --version || echo "")
-		
-		#ifeq ($(SDLVERSION2),)
+		#ifeq ($(SDLVERSION),)
 			# Default 2.0.0
 			#SDL_VERSION		= 2.0.0
 		#else
-			#SDL_VERSION		= $(SDLVERSION2)
+			#SDL_VERSION			= $(SDLVERSION)
 		#endif
 	#else
-		#SDL_VERSION			= $(SDLVERSION)
+		#SDL_VERSION		= $(SDLVERSION2)
 	#endif
+	
+	# First check for SDL 1.2 or SDL 1.3
+	SDLVERSION				= $(shell type -P sdl-config &>/dev/null && sdl-config --version || echo "")
+
+	ifeq ($(SDLVERSION),)
+		# Then for SDL 2
+		SDLVERSION2			= $(shell type -P sdl2-config &>/dev/null && sdl2-config --version || echo "")
+		
+		ifeq ($(SDLVERSION2),)
+			# Default 2.0.0
+			SDL_VERSION		= 2.0.0
+		else
+			SDL_VERSION		= $(SDLVERSION2)
+		endif
+	else
+		SDL_VERSION			= $(SDLVERSION)
+	endif
 	
 	# If version is 1.2.x
 	ifneq (,$(findstring 1.2,$(SDL_VERSION)))

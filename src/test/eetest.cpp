@@ -65,7 +65,7 @@ void cEETest::Init() {
 	PAK = eeNew( cZip, () );
 	PAK->Open( MyPath + "data/ee.zip" );
 
-	mWindow = EE->CreateWindow( WindowSettings( mWidth, mHeight, BitColor, Style, "ee.png" ), ContextSettings( VSync, GLVer ) );
+	mWindow = EE->CreateWindow( WindowSettings( mWidth, mHeight, BitColor, Style, "ee.png" ), ContextSettings( VSync, GLVer, true, 0, 0 ) );
 
 	run = ( mWindow->Created() && PAK->IsOpen() );
 

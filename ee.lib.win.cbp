@@ -41,7 +41,7 @@
 			<Add option="-std=gnu99 -fno-strict-aliasing -ffast-math -Wno-unknown-pragmas" />
 			<Add option="-DSTBI_FAILURE_USERMSG" />
 			<Add option="-DEE_NO_SNDFILE" />
-			<Add option="-DEE_SDL_VERSION_2" />
+			<Add option="-DEE_SDL_VERSION_1_3" />
 			<Add directory=".\src\helper\chipmunk" />
 			<Add directory=".\src\helper\zlib" />
 			<Add directory="C:\MinGW\include\freetype2" />
@@ -821,6 +821,10 @@
 		<Unit filename="src\ui\cuispinbox.hpp" />
 		<Unit filename="src\ui\cuisprite.cpp" />
 		<Unit filename="src\ui\cuisprite.hpp" />
+		<Unit filename="src\ui\cuitab.cpp" />
+		<Unit filename="src\ui\cuitab.hpp" />
+		<Unit filename="src\ui\cuitabwidget.cpp" />
+		<Unit filename="src\ui\cuitabwidget.hpp" />
 		<Unit filename="src\ui\cuitextbox.cpp" />
 		<Unit filename="src\ui\cuitextbox.hpp" />
 		<Unit filename="src\ui\cuitextedit.cpp" />
