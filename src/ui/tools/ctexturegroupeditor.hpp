@@ -25,6 +25,16 @@ class EE_API cTextureGroupEditor {
 
 		cUISpinBox *			SpinOffY() const { return mSpinOffY; }
 	protected:
+		class cUITGEUpdater : public cUIControl
+		{
+			public:
+				cUITGEUpdater( const CreateParams& Params, cTextureGroupEditor * TGEditor ) : cUIControl( Params ), mTGEditor( TGEditor ) {}
+				virtual void Update() { mTGEditor->Update(); }
+			protected:
+				cTextureGroupEditor * mTGEditor;
+		};
+		friend class cUITGEUpdater;
+
 		cUIWindow *				mUIWindow;
 		cUIControl *			mUIContainer;
 		cUITheme *				mTheme;
@@ -39,6 +49,7 @@ class EE_API cTextureGroupEditor {
 		cUIListBox *			mShapeList;
 		cUIWinMenu *			mWinMenu;
 		cTextureGroupShapeEditor * mShapeEditor;
+		cUITGEUpdater *			mTGEU;
 
 		void WindowClose( const cUIEvent * Event );
 
@@ -79,6 +90,10 @@ class EE_API cTextureGroupEditor {
 		void OnCenterOffset( const cUIEvent * Event );
 
 		void OnHBOffset( const cUIEvent * Event );
+
+		void OnTextureGroupLoaded( cTextureGroupLoader * TGLoader );
+
+		void Update();
 };
 
 }}}

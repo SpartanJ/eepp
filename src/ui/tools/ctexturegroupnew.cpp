@@ -48,8 +48,8 @@ cTextureGroupNew::cTextureGroupNew( TGCreateCb NewTGCb ) :
 	mComboHeight->ListBox()->AddListBoxItems( Sizes );
 	mComboWidth->GetInputTextBuffer()->AllowOnlyNumbers( true );
 	mComboHeight->GetInputTextBuffer()->AllowOnlyNumbers( true );
-	mComboWidth->Text( "512" );
-	mComboHeight->Text( "512" );
+	mComboWidth->ListBox()->SetSelected( "512" );
+	mComboHeight->ListBox()->SetSelected( "512" );
 
 	CreateTxtBox( eeVector2i( 10, 110 ), "Space between shapes (pixels):" );
 	mPixelSpace = mTheme->CreateSpinBox( mUIWindow->Container(), eeSize( 100, 22 ), eeVector2i( PosX, 110 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_SIZE, 0, false );
@@ -163,6 +163,11 @@ void cTextureGroupNew::OnSelectFolder( const cUIEvent * Event ) {
 	cUIMessageBox * MsgBox;
 	std::string FPath( CDL->GetFullPath() );
 	DirPathAddSlashAtEnd( FPath );
+
+	if ( !IsDirectory( FPath ) ) {
+		FPath = CDL->GetCurPath();
+		DirPathAddSlashAtEnd( FPath );
+	}
 
 	if ( IsDirectory( FPath ) ) {
 		std::vector<std::string> files = FilesGetInPath( FPath );

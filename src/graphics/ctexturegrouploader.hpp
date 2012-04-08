@@ -16,13 +16,15 @@ class cShapeGroup;
 
 class EE_API cTextureGroupLoader {
 	public:
+		typedef cb::Callback1<void, cTextureGroupLoader *> GLLoadCallback;
+
 		cTextureGroupLoader();
 
-		cTextureGroupLoader( const std::string& TextureGroupPath, const bool& Threaded = false );
+		cTextureGroupLoader( const std::string& TextureGroupPath, const bool& Threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
 
-		cTextureGroupLoader( const Uint8* Data, const Uint32& DataSize, const std::string& TextureGroupName, const bool& Threaded = false );
+		cTextureGroupLoader( const Uint8* Data, const Uint32& DataSize, const std::string& TextureGroupName, const bool& Threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
 
-		cTextureGroupLoader( cPack * Pack, const std::string& FilePackPath, const bool& Threaded = false );
+		cTextureGroupLoader( cPack * Pack, const std::string& FilePackPath, const bool& Threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
 
 		~cTextureGroupLoader();
 
@@ -55,6 +57,8 @@ class EE_API cTextureGroupLoader {
 
 		cShapeGroup *			GetShapeGroup() const;
 
+		void					SetLoadCallback( GLLoadCallback LoadCallback );
+
 		std::string				AppPath() const;
 	protected:
 		cResourceLoader			mRL;
@@ -66,6 +70,7 @@ class EE_API cTextureGroupLoader {
 		bool					mSkipResourceLoad;
 		bool					mIsLoading;
 		cShapeGroup *			mShapeGroup;
+		GLLoadCallback			mLoadCallback;
 		std::vector<cTexture*>	mTexuresLoaded;
 
 		typedef struct sTempTexGroupS {

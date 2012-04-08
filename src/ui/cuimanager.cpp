@@ -107,6 +107,12 @@ void cUIManager::InputCallback( InputEvent * Event ) {
 void cUIManager::ResizeControl() {
 	mControl->Size( mWindow->GetWidth(), mWindow->GetHeight() );
 	SendMsg( mControl, cUIMessage::MsgWindowResize );
+
+	std::list<cUIWindow*>::iterator it;
+
+	for ( it = mWindowsList.begin(); it != mWindowsList.end(); it++ ) {
+		SendMsg( *it, cUIMessage::MsgWindowResize );
+	}
 }
 
 void cUIManager::SendKeyUp( const Uint32& KeyCode, const Uint16& Char, const Uint32& Mod ) {
@@ -356,7 +362,7 @@ void cUIManager::AddToCloseQueue( cUIControl * Ctrl ) {
 	for ( it = mCloseList.begin(); it != mCloseList.end(); it++ ) {
 		itCtrl = *it;
 
-		if ( itCtrl->IsParentOf( Ctrl ) ) {
+		if ( NULL != itCtrl && itCtrl->IsParentOf( Ctrl ) ) {
 			// If a parent will be removed, means that the control
 			// that we are trying to queue will be removed by the father
 			// so we skip it
@@ -369,10 +375,12 @@ void cUIManager::AddToCloseQueue( cUIControl * Ctrl ) {
 	for ( it = mCloseList.begin(); it != mCloseList.end(); it++ ) {
 		itCtrl = *it;
 
-		if ( Ctrl->IsParentOf( itCtrl ) ) {
+		if ( NULL != itCtrl && Ctrl->IsParentOf( itCtrl ) ) {
 			// if the control added is parent of another control already added,
 			// we remove the already added control because it will be deleted
 			// by its parent
+			itEraseList.push_back( it );
+		} else if ( NULL == itCtrl ) {
 			itEraseList.push_back( it );
 		}
 	}
@@ -389,9 +397,9 @@ void cUIManager::AddToCloseQueue( cUIControl * Ctrl ) {
 }
 
 void cUIManager::CheckClose() {
-	if ( !mCloseList.empty() ) {
+	if ( mCloseList.size() ) {
 		for ( std::list<cUIControl*>::iterator it = mCloseList.begin(); it != mCloseList.end(); it++ ) {
-			eeSAFE_DELETE( *it );
+			eeDelete( *it );
 		}
 
 		mCloseList.clear();

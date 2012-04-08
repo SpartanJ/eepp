@@ -5,7 +5,7 @@
 #include "safedatapointer.hpp"
 
 namespace EE { namespace Utils {
-	/** @return True if the file exists */
+	/** @return True if the file exists ( false if is a directory, to know if directory exists use IsDirectory ) */
 	bool EE_API FileExists( const std::string& Filepath );
 
 	/** @return The number of milliseconds since the EE++ library initialization. Note that this value wraps if the program runs for more than ~49 days. */

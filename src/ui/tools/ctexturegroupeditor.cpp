@@ -115,13 +115,18 @@ cTextureGroupEditor::cTextureGroupEditor( cUIWindow * AttatchTo, const TGEditorC
 	mShapeEditor = eeNew( cTextureGroupShapeEditor, ( Params, this ) );
 	mShapeEditor->Visible( true );
 	mShapeEditor->Enabled( true );
+
+	mTGEU = eeNew( cUITGEUpdater, ( cUITGEUpdater::CreateParams(), this ) );
 }
 
 cTextureGroupEditor::~cTextureGroupEditor() {
 	eeSAFE_DELETE( mTexturePacker );
 	eeSAFE_DELETE( mTextureGroupLoader );
-}
 
+	if ( !cUIManager::instance()->IsShootingDown() ) {
+		mTGEU->Close();
+	}
+}
 
 void cTextureGroupEditor::OnResetDestSize( const cUIEvent * Event ) {
 	const cUIEventMouse * MouseEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
@@ -239,11 +244,11 @@ void cTextureGroupEditor::FileMenuClick( const cUIEvent * Event ) {
 		TGDialog->Center();
 		TGDialog->Show();
 	} else if ( "Save" == txt ) {
-		if ( NULL != mTextureGroupLoader ) {
+		if ( NULL != mTextureGroupLoader && mTextureGroupLoader->IsLoaded() ) {
 			mTextureGroupLoader->UpdateTextureAtlas();
 		}
 	} else if ( "Close" == txt ) {
-		if ( NULL != mTextureGroupLoader ) {
+		if ( NULL != mTextureGroupLoader && mTextureGroupLoader->IsLoaded()  ) {
 			cUIMessageBox * MsgBox = mTheme->CreateMessageBox( MSGBOX_OKCANCEL, "Do you really want to close the current texture group?\nAll changes will be lost." );
 			MsgBox->AddEventListener( cUIEvent::EventMsgBoxConfirmClick, cb::Make1( this, &cTextureGroupEditor::OnTextureGroupClose ) );
 			MsgBox->Title( "Close Texture Group?" );
@@ -269,19 +274,17 @@ void cTextureGroupEditor::OnTextureGroupCreate( cTexturePacker * TexPacker ) {
 
 	std::string FPath( FileRemoveExtension( mTexturePacker->GetFilepath() ) + ".etg" );
 
-	mTextureGroupLoader = eeNew( cTextureGroupLoader, ( FPath ) );
-
-	UpdateControls();
+	mTextureGroupLoader = eeNew( cTextureGroupLoader, ( FPath, true, cb::Make1( this, &cTextureGroupEditor::OnTextureGroupLoaded ) ) );
 }
 
 void cTextureGroupEditor::UpdateControls() {
-	if ( NULL != mTextureGroupLoader ) {
+	if ( NULL != mTextureGroupLoader && mTextureGroupLoader->IsLoaded()  ) {
 		FillShapeList();
 	}
 }
 
 void cTextureGroupEditor::FillShapeList() {
-	if ( NULL == mTextureGroupLoader || NULL == mTextureGroupLoader->GetShapeGroup() )
+	if ( NULL == mTextureGroupLoader || NULL == mTextureGroupLoader->GetShapeGroup() || !mTextureGroupLoader->IsLoaded()  )
 		return;
 
 	std::list<cShape*>& Res = mTextureGroupLoader->GetShapeGroup()->GetResources();
@@ -318,19 +321,27 @@ void cTextureGroupEditor::OnShapeChange( const cUIEvent * Event ) {
 	}
 }
 
+void cTextureGroupEditor::Update() {
+	if ( NULL != mTextureGroupLoader && !mTextureGroupLoader->IsLoaded() ) {
+		mTextureGroupLoader->Update();
+	}
+}
+
 void cTextureGroupEditor::OpenTextureGroup( const cUIEvent * Event ) {
 	cUICommonDialog * CDL = reinterpret_cast<cUICommonDialog*> ( Event->Ctrl() );
 
 	eeSAFE_DELETE( mTextureGroupLoader );
-	mTextureGroupLoader = eeNew( cTextureGroupLoader, ( CDL->GetFullPath() ) );
+	mTextureGroupLoader = eeNew( cTextureGroupLoader, ( CDL->GetFullPath(), true, cb::Make1( this, &cTextureGroupEditor::OnTextureGroupLoaded ) ) );
+}
 
-	if ( mTextureGroupLoader->IsLoaded() ) {
+void cTextureGroupEditor::OnTextureGroupLoaded( cTextureGroupLoader * TGLoader ) {
+	if ( NULL != mTextureGroupLoader && mTextureGroupLoader->IsLoaded() ) {
 		UpdateControls();
 	}
 }
 
 void cTextureGroupEditor::SaveTextureGroup( const cUIEvent * Event ) {
-	if ( NULL != mTextureGroupLoader ) {
+	if ( NULL != mTextureGroupLoader && mTextureGroupLoader->IsLoaded() ) {
 		mTextureGroupLoader->UpdateTextureAtlas();
 	}
 }

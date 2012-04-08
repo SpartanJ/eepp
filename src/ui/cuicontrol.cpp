@@ -198,6 +198,8 @@ void cUIControl::Parent( cUIControl * parent ) {
 }
 
 bool cUIControl::IsParentOf( cUIControl * Ctrl ) {
+	eeASSERT( NULL != Ctrl );
+
 	cUIControl * tParent = Ctrl->Parent();
 
 	while ( NULL != tParent ) {

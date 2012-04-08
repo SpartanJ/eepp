@@ -331,6 +331,8 @@ void cTexturePacker::CreateChild() {
 	mChild = eeNew( cTexturePacker, ( mWidth, mHeight, mForcePowOfTwo, mPixelBorder, mAllowFlipping ) );
 
 	std::list<cTexturePackerTex>::iterator it;
+	std::list< std::list<cTexturePackerTex>::iterator > remove;
+
 	cTexturePackerTex * t = NULL;
 
 	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
@@ -342,8 +344,17 @@ void cTexturePacker::CreateChild() {
 
 			t->Disabled( true );
 
+			remove.push_back( it );
+
 			mCount--;
 		}
+	}
+
+	// Removes the non-placed textures from the pack
+	std::list< std::list<cTexturePackerTex>::iterator >::iterator itit;
+
+	for ( itit = remove.begin(); itit != remove.end(); itit++ ) {
+		mTextures.erase( *itit );
 	}
 
 	mChild->PackTextures();

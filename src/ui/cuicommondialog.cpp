@@ -294,12 +294,12 @@ void cUICommonDialog::Save() {
 }
 
 void cUICommonDialog::Open() {
-	if ( "" != mList->GetItemSelectedText() ) {
+	if ( "" != mList->GetItemSelectedText() || AllowFolderSelect() ) {
 		if ( !AllowFolderSelect() ) {
 			if ( IsDirectory( GetFullPath() ) )
 				return;
 		} else {
-			if ( !IsDirectory( GetFullPath() ) )
+			if ( !IsDirectory( GetFullPath() ) && !IsDirectory( GetCurPath() ) )
 				return;
 		}
 

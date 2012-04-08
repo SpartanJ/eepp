@@ -19,7 +19,7 @@ cTextureGroupLoader::cTextureGroupLoader() :
 {
 }
 
-cTextureGroupLoader::cTextureGroupLoader( const std::string& TextureGroupPath, const bool& Threaded ) :
+cTextureGroupLoader::cTextureGroupLoader( const std::string& TextureGroupPath, const bool& Threaded, GLLoadCallback LoadCallback ) :
 	mTextureGroupPath( TextureGroupPath ),
 	mThreaded( Threaded ),
 	mLoaded(false),
@@ -27,12 +27,13 @@ cTextureGroupLoader::cTextureGroupLoader( const std::string& TextureGroupPath, c
 	mPack(NULL),
 	mSkipResourceLoad(false),
 	mIsLoading(false),
-	mShapeGroup(NULL)
+	mShapeGroup(NULL),
+	mLoadCallback( LoadCallback )
 {
 	Load();
 }
 
-cTextureGroupLoader::cTextureGroupLoader( const Uint8* Data, const Uint32& DataSize, const std::string& TextureGroupName, const bool& Threaded ) :
+cTextureGroupLoader::cTextureGroupLoader( const Uint8* Data, const Uint32& DataSize, const std::string& TextureGroupName, const bool& Threaded, GLLoadCallback LoadCallback ) :
 	mTextureGroupPath( TextureGroupName ),
 	mThreaded( Threaded ),
 	mLoaded(false),
@@ -40,12 +41,13 @@ cTextureGroupLoader::cTextureGroupLoader( const Uint8* Data, const Uint32& DataS
 	mPack(NULL),
 	mSkipResourceLoad(false),
 	mIsLoading(false),
-	mShapeGroup(NULL)
+	mShapeGroup(NULL),
+	mLoadCallback( LoadCallback )
 {
 	LoadFromMemory( Data, DataSize, TextureGroupName );
 }
 
-cTextureGroupLoader::cTextureGroupLoader( cPack * Pack, const std::string& FilePackPath, const bool& Threaded ) :
+cTextureGroupLoader::cTextureGroupLoader( cPack * Pack, const std::string& FilePackPath, const bool& Threaded, GLLoadCallback LoadCallback ) :
 	mTextureGroupPath( FilePackPath ),
 	mThreaded( Threaded ),
 	mLoaded(false),
@@ -53,13 +55,18 @@ cTextureGroupLoader::cTextureGroupLoader( cPack * Pack, const std::string& FileP
 	mPack(NULL),
 	mSkipResourceLoad(false),
 	mIsLoading(false),
-	mShapeGroup(NULL)
+	mShapeGroup(NULL),
+	mLoadCallback( LoadCallback )
 {
 	LoadFromPack( Pack, FilePackPath );
 }
 
 cTextureGroupLoader::~cTextureGroupLoader()
 {
+}
+
+void cTextureGroupLoader::SetLoadCallback( GLLoadCallback LoadCallback ) {
+	mLoadCallback = LoadCallback;
 }
 
 void cTextureGroupLoader::Update() {
@@ -229,6 +236,10 @@ void cTextureGroupLoader::CreateShapes() {
 	}
 
 	mLoaded = true;
+
+	if ( mLoadCallback.IsSet() ) {
+		mLoadCallback( this );
+	}
 }
 
 bool cTextureGroupLoader::Threaded() const {

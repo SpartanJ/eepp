@@ -251,7 +251,7 @@ std::string GetOSArchitecture() {
 
 bool FileExists( const std::string& Filepath ) {
 	struct stat st;
-	return ( stat( Filepath.c_str(), &st ) == 0 );
+	return ( stat( Filepath.c_str(), &st ) == 0 ) && !S_ISDIR( st.st_mode );
 }
 
 static void eeStartTicks() {

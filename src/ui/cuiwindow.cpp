@@ -145,18 +145,7 @@ void cUIWindow::CloseWindow() {
 }
 
 void cUIWindow::ButtonMaximizeClick( const cUIEvent * Event ) {
-	cUIControl * Ctrl = cUIManager::instance()->MainControl();
-
-	if ( Ctrl->Size() == mSize ) {
-		Pos( mNonMaxPos );
-		InternalSize( mNonMaxSize );
-	} else {
-		mNonMaxPos	= mPos;
-		mNonMaxSize = mSize;
-
-		Pos( 0, 0 );
-		InternalSize( cUIManager::instance()->MainControl()->Size() );
-	}
+	Maximize();
 
 	SendCommonEvent( cUIEvent::EventOnWindowMaximizeClick );
 }
@@ -340,6 +329,12 @@ Uint32 cUIWindow::OnMessage( const cUIMessage * Msg ) {
 		{
 			DoResize( Msg );
 			break;
+		}
+		case cUIMessage::MsgWindowResize:
+		{
+			if ( IsModal() && NULL != mModalCtrl ) {
+				mModalCtrl->Size( cUIManager::instance()->MainControl()->Size() );
+			}
 		}
 	}
 
@@ -747,6 +742,21 @@ cUITextBox * cUIWindow::TitleTextBox() const {
 	return mTitle;
 }
 
+void cUIWindow::Maximize() {
+	cUIControl * Ctrl = cUIManager::instance()->MainControl();
+
+	if ( Ctrl->Size() == mSize ) {
+		Pos( mNonMaxPos );
+		InternalSize( mNonMaxSize );
+	} else {
+		mNonMaxPos	= mPos;
+		mNonMaxSize = mSize;
+
+		Pos( 0, 0 );
+		InternalSize( cUIManager::instance()->MainControl()->Size() );
+	}
+}
+
 Uint32 cUIWindow::OnMouseDoubleClick( const eeVector2i &Pos, Uint32 Flags ) {
 	if ( ( mWinFlags & UI_WIN_RESIZEABLE ) && ( NULL != mButtonMaximize ) && ( Flags & EE_BUTTON_LMASK ) ) {
 		ButtonMaximizeClick( NULL );
@@ -801,6 +811,10 @@ bool cUIWindow::RemoveShortcut( const Uint32& KeyCode, const Uint32& Mod ) {
 	}
 
 	return false;
+}
+
+bool cUIWindow::IsMaximixable() {
+	return 0 != ( ( mWinFlags & UI_WIN_RESIZEABLE ) && ( mWinFlags & UI_WIN_MAXIMIZE_BUTTON ) );
 }
 
 bool cUIWindow::IsModal() {

@@ -91,6 +91,10 @@ class EE_API cUIWindow : public cUIComplexControl {
 		bool IsModal();
 
 		cUIControl * GetModalControl() const;
+
+		void Maximize();
+
+		bool IsMaximixable();
 	protected:
 		class KeyboardShortcut {
 			public:
