@@ -740,7 +740,13 @@ void cMapEditor::MapOpen( const cUIEvent * Event ) {
 void cMapEditor::MapSave( const cUIEvent * Event ) {
 	cUICommonDialog * CDL = reinterpret_cast<cUICommonDialog*> ( Event->Ctrl() );
 
-	mUIMap->Map()->Save( CDL->GetFullPath() );
+	std::string path( CDL->GetFullPath() );
+
+	if ( path.substr( path.size() - 4 ) != ".eem" ) {
+		path += ".eem";
+	}
+
+	mUIMap->Map()->Save( path );
 }
 
 void cMapEditor::FileMenuClick( const cUIEvent * Event ) {

@@ -884,7 +884,14 @@ Uint32 cUIListBox::OnMessage( const cUIMessage * Msg ) {
 }
 
 void cUIListBox::OnAlphaChange() {
-	cUIControlAnim::OnAlphaChange();
+	cUIComplexControl::OnAlphaChange();
+
+	if ( mItems.size() ) {
+		for ( Uint32 i = mVisibleFirst; i <= mVisibleLast; i++ ) {
+			if ( NULL != mItems[i] )
+				mItems[i]->Alpha( mAlpha );
+		}
+	}
 
 	mVScrollBar->Alpha( mAlpha );
 	mHScrollBar->Alpha( mAlpha );

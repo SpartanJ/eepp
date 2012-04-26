@@ -397,7 +397,7 @@ void cUIManager::AddToCloseQueue( cUIControl * Ctrl ) {
 }
 
 void cUIManager::CheckClose() {
-	if ( mCloseList.size() ) {
+	if ( !mCloseList.empty() ) {
 		for ( std::list<cUIControl*>::iterator it = mCloseList.begin(); it != mCloseList.end(); it++ ) {
 			eeDelete( *it );
 		}

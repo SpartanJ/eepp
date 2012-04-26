@@ -80,9 +80,6 @@ void cUIListBoxItem::Update() {
 		cUIListBox * LBParent 	= reinterpret_cast<cUIListBox*> ( Parent()->Parent() );
 		Uint32 Flags 			= cUIManager::instance()->GetInput()->ClickTrigger();
 
-		if ( NULL != LBParent && LBParent->Alpha() != mAlpha )
-			Alpha( LBParent->Alpha() );
-		
 		if ( IsMouseOver() ) {
 			if ( Flags & EE_BUTTONS_WUWD && LBParent->VerticalScrollBar()->Visible() ) {
 				LBParent->VerticalScrollBar()->Slider()->ManageClick( Flags );

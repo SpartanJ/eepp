@@ -79,6 +79,22 @@ void cUIControlAnim::Alpha( const eeFloat& alpha ) {
 	OnAlphaChange();
 }
 
+void cUIControlAnim::AlphaChilds( const eeFloat &alpha ) {
+	cUIControlAnim * AnimChild;
+	cUIControl * CurChild = mChild;
+
+	while ( NULL != CurChild ) {
+		if ( CurChild->IsAnimated() ) {
+			AnimChild = reinterpret_cast<cUIControlAnim*> ( CurChild );
+
+			AnimChild->Alpha( alpha );
+			AnimChild->AlphaChilds( alpha );
+		}
+
+		CurChild = CurChild->NextGet();
+	}
+}
+
 void cUIControlAnim::MatrixSet() {
 	if ( mScale != 1.f || mAngle != 0.f ) {
 		cGlobalBatchRenderer::instance()->Draw();

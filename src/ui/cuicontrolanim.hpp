@@ -31,6 +31,8 @@ class EE_API cUIControlAnim : public cUIDragable {
 
  		virtual void Alpha( const eeFloat& alpha );
 
+		virtual void AlphaChilds( const eeFloat& alpha );
+
  		bool Animating();
 
 		void StartAlphaAnim( const eeFloat& From, const eeFloat& To, const eeFloat& TotalTime, const bool& AlphaChilds = true, const EE_INTERPOLATION& Type = LINEAR, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
