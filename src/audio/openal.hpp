@@ -3,7 +3,7 @@
 
 #include "base.hpp"
 
-#if EE_PLATFORM == EE_PLATFORM_MACOSX
+#if EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_IOS
 #include <OpenAL/al.h>
 #include <OpenAL/alc.h>
 #else

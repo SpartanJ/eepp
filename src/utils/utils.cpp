@@ -28,7 +28,7 @@
 	#include <stdlib.h>
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD
+#if EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD || EE_PLATFORM == EE_PLATFORM_IOS
 	#include <sys/sysctl.h>
 #endif
 
@@ -197,20 +197,18 @@ static LARGE_INTEGER hires_ticks_per_second;
 
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD
-#define HAVE_CLOCK_GETTIME
-#endif
-
 #if defined( EE_PLATFORM_POSIX )
-#include <sys/utsname.h>
+	#include <sys/utsname.h>
 #endif
 
 #ifdef EE_PLATFORM_POSIX
-#ifdef HAVE_CLOCK_GETTIME
+
+#ifdef EE_HAVE_CLOCK_GETTIME
 static struct timespec start;
 #else
 static struct timeval start;
 #endif
+
 #endif
 
 using namespace EE::System;
@@ -259,7 +257,7 @@ static void eeStartTicks() {
     QueryPerformanceFrequency(&hires_ticks_per_second);
     QueryPerformanceCounter(&hires_start_ticks);
 #else
-	#ifdef HAVE_CLOCK_GETTIME
+	#ifdef EE_HAVE_CLOCK_GETTIME
 	clock_gettime(CLOCK_MONOTONIC, &start);
 	#else
 	gettimeofday(&start, NULL);
@@ -284,7 +282,7 @@ Uint32 eeGetTicks() {
 
     return (DWORD) hires_now.QuadPart;
 #elif defined( EE_PLATFORM_POSIX )
-	#ifdef HAVE_CLOCK_GETTIME
+	#ifdef EE_HAVE_CLOCK_GETTIME
 	Uint32 ticks;
 	struct timespec now;
 	clock_gettime(CLOCK_MONOTONIC, &now);
@@ -308,9 +306,44 @@ Uint32 eeGetTicks() {
 
 void eeSleep( const Uint32& ms ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	Sleep( ms );
+	::Sleep( ms );
 #elif defined( EE_PLATFORM_POSIX )
-	usleep( static_cast<unsigned long>( ms * 1000 ) );
+	// usleep( static_cast<unsigned long>( ms * 1000 ) );
+
+	// usleep is not reliable enough (it might block the
+	// whole process instead of just the current thread)
+	// so we must use pthread_cond_timedwait instead
+
+	// this implementation is inspired from Qt
+	// and taken from SFML
+
+	Uint64 usecs = ms * 1000;
+
+	// get the current time
+	timeval tv;
+	gettimeofday(&tv, NULL);
+
+	// construct the time limit (current time + time to wait)
+	timespec ti;
+	ti.tv_nsec = (tv.tv_usec + (usecs % 1000000)) * 1000;
+	ti.tv_sec = tv.tv_sec + (usecs / 1000000) + (ti.tv_nsec / 1000000000);
+	ti.tv_nsec %= 1000000000;
+
+	// create a mutex and thread condition
+	pthread_mutex_t mutex;
+	pthread_mutex_init(&mutex, 0);
+	pthread_cond_t condition;
+	pthread_cond_init(&condition, 0);
+
+	// wait...
+	pthread_mutex_lock(&mutex);
+	pthread_cond_timedwait(&condition, &mutex, &ti);
+	pthread_mutex_unlock(&mutex);
+
+	// destroy the mutex and condition
+	pthread_cond_destroy(&condition);
+	pthread_mutex_destroy(&mutex);
+
 #else
 	#warning eeSleep not implemented in this platform.
 #endif
@@ -771,7 +804,7 @@ eeInt GetCPUCount() {
 		nprocs = (eeInt) info.dwNumberOfProcessors;
 	#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_SOLARIS || EE_PLATFORM == EE_PLATFORM_ANDROID
 		nprocs = sysconf(_SC_NPROCESSORS_ONLN);
-	#elif EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD
+	#elif EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD || EE_PLATFORM == EE_PLATFORM_IOS
 		int mib[2];
 		int maxproc = 1;
 		size_t len = sizeof(int);

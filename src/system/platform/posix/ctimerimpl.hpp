@@ -5,7 +5,11 @@
 
 #if defined( EE_PLATFORM_POSIX )
 
-#include <sys/time.h>
+#ifdef EE_HAVE_CLOCK_GETTIME
+	#include <time.h>
+#else
+	#include <sys/time.h>
+#endif
 
 namespace EE { namespace System { namespace Platform {
 
@@ -21,8 +25,11 @@ class cTimerImpl {
 
 		unsigned long GetMicroseconds();
 	private:
-		clock_t				mZeroClock;
-		struct timeval		mStart;
+		#ifdef EE_HAVE_CLOCK_GETTIME
+		struct timespec mStart;
+		#else
+		struct timeval mStart;
+		#endif
 	};
 }}}
 

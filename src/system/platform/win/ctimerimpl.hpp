@@ -35,7 +35,6 @@ class cTimerImpl {
 
 		unsigned long GetMicroseconds();
 	private:
-		clock_t				mZeroClock;
 		unsigned long		mStartTick;
 		LONGLONG			mLastTime;
 		LARGE_INTEGER		mStartTime;

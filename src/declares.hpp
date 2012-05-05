@@ -63,6 +63,10 @@
 	#define EE_PLATFORM_POSIX
 #endif
 
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || EE_PLATFORM == EE_PLATFORM_SOLARIS || EE_PLATFORM == EE_PLATFORM_HAIKU
+	#define EE_HAVE_CLOCK_GETTIME
+#endif
+
 #if defined(__GNUC__)
 	#define EE_COMPILER_GCC
 #endif
@@ -268,7 +272,7 @@ namespace EE {
 	typedef SOPHIST_int64	Int64;
 	#else
 	typedef SOPHIST_uint32	Uint64;	// Fallback to a 32 bit int
-	typedef SOPHIST_int32	Int64; // All the desktop platforms support 64bit ints, so this should not happend.
+	typedef SOPHIST_int32	Int64;	// All the desktop platforms support 64bit ints, so this shouldn't happen.
 	#endif
 
 	#define EE_PI			3.14159265358979323846

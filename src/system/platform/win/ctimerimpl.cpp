@@ -49,7 +49,6 @@ void cTimerImpl::Reset() {
 	SetThreadAffinityMask(thread, oldMask);
 
 	mLastTime	= 0;
-	mZeroClock	= clock();
 }
 
 unsigned long cTimerImpl::GetMilliseconds() {
