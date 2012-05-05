@@ -170,6 +170,7 @@
 	#define EE_BACKEND_SDL_ACTIVE
 #endif
 
+#define eeCOMMA ,
 #define eeARRAY_SIZE(__array)	( sizeof(__array) / sizeof(__array[0]) )
 #define eeSAFE_DELETE(p)		{ if(p) { eeDelete (p);			(p)=NULL; } }
 #define eeSAFE_FREE(p)			{ if(p) { eeFree ( (void*)p );	(p)=NULL; } }

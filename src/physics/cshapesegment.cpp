@@ -72,10 +72,10 @@ void cShapeSegment::Draw( cSpace * space ) {
 		cVect r = d * ( seg->CP_PRIVATE(r) / cpvlength( tocpv( d ) ) );
 
 		const GLfloat matrix[] = {
-			 r.x, r.y, 0.0f, 0.0f,
-			-r.y, r.x, 0.0f, 0.0f,
-			 d.x, d.y, 0.0f, 0.0f,
-			 a.x, a.y, 0.0f, 1.0f,
+			(GLfloat)r.x	, (GLfloat)r.y, 0.0f, 0.0f,
+			(GLfloat)-r.y	, (GLfloat)r.x, 0.0f, 0.0f,
+			(GLfloat)d.x	, (GLfloat)d.y, 0.0f, 0.0f,
+			(GLfloat)a.x	, (GLfloat)a.y, 0.0f, 1.0f,
 		};
 
 		GLi->MultMatrixf( matrix );

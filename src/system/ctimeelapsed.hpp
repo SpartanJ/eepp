@@ -10,6 +10,7 @@ namespace EE { namespace System {
 class EE_API cTimeElapsed : private cTimer {
 	public:
 		cTimeElapsed();
+
 		~cTimeElapsed();
 
 		/** Time elapsed between this call and the last call to Elapsed() */

@@ -2,15 +2,7 @@
 #define EE_SYSTEMCMUTEX_H
 
 #include "../base.hpp"
-
-#if EE_PLATFORM == EE_PLATFORM_WIN
-#ifndef WIN32_LEAN_AND_MEAN
-	#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
-#elif defined( EE_PLATFORM_POSIX )
-#include <pthread.h>
-#endif
+#include "platform/platformimpl.hpp"
 
 namespace EE { namespace System {
 
@@ -27,11 +19,7 @@ class EE_API cMutex {
 		/** Unlock the mutex */
 		void Unlock();
 	private:
-		#if EE_PLATFORM == EE_PLATFORM_WIN
-		CRITICAL_SECTION mMutex;
-		#elif defined( EE_PLATFORM_POSIX )
-		pthread_mutex_t mMutex;
-		#endif
+		Platform::cMutexImpl *		mMutexImpl;
 };
 
 }}

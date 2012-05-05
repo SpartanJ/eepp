@@ -1,26 +1,32 @@
 STRLOWERCASE 		= $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(subst F,f,$(subst G,g,$(subst H,h,$(subst I,i,$(subst J,j,$(subst K,k,$(subst L,l,$(subst M,m,$(subst N,n,$(subst O,o,$(subst P,p,$(subst Q,q,$(subst R,r,$(subst S,s,$(subst T,t,$(subst U,u,$(subst V,v,$(subst W,w,$(subst X,x,$(subst Y,y,$(subst Z,z,$1))))))))))))))))))))))))))
+
+#cross-compiling support
+ifeq ($(MINGW32),yes)
+OS					= mingw32
+else
 OS 					= $(strip $(call STRLOWERCASE, $(shell uname) ) )
+endif
 
 export LIBPATH    	= ./
 export VERSION    	= 0.8
 export CP         	= cp
 export LN         	= ln
 export LNFLAGS    	= -s -f
-export AR         	= ar
 export ARFLAGS    	= rcs
 export DESTDIR    	= /usr
 export DESTLIBDIR 	= $(DESTDIR)/lib
 export DESTINCDIR 	= $(DESTDIR)/include
 
-ifeq ($(DYNAMIC), yes)
-	LIB     = libeepp.so
-	LIBNAME = $(LIBPATH)/$(LIB).$(VERSION)
-	INSTALL = && $(LN) $(LNFLAGS) $(DESTLIBDIR)/$(LIB).$(VERSION) $(DESTLIBDIR)/$(LIB)
+ifeq ($(OS), mingw32)
+
+export AR         	= i686-w64-mingw32-ar
+export CC         	= i686-w64-mingw32-gcc
+export CPP        	= i686-w64-mingw32-g++
+OSLIBEXTENSION		= dll
+
 else
-	LIB     = libeepp-s.a
-	LIBNAME = $(LIBPATH)/$(LIB)
-	INSTALL = 
-endif
+
+export AR         	= ar
 
 ifeq ($(LLVM_BUILD), yes)
 export CC         	= clang
@@ -29,6 +35,23 @@ else
 export CC         	= gcc
 export CPP        	= g++
 endif
+
+OSLIBEXTENSION		= so
+SDLCONFIGPATH		= 
+
+endif
+
+
+ifeq ($(DYNAMIC), yes)
+	LIB     = libeepp.$(OSLIBEXTENSION)
+	LIBNAME = $(LIBPATH)/$(LIB).$(VERSION)
+	INSTALL = && $(LN) $(LNFLAGS) $(DESTLIBDIR)/$(LIB).$(VERSION) $(DESTLIBDIR)/$(LIB)
+else
+	LIB     = libeepp-s.a
+	LIBNAME = $(LIBPATH)/$(LIB)
+	INSTALL = 
+endif
+
 
 ifeq ($(DEBUGBUILD), yes)
     DEBUGFLAGS = -g -DDEBUG -DEE_DEBUG -DEE_MEMORY_MANAGER
@@ -42,6 +65,7 @@ else
     
     RELEASETYPE = release
 endif
+
 
 ifeq ($(DYNAMIC), yes)
     BUILDFLAGS = -fPIC
@@ -65,11 +89,11 @@ endif
 ifeq ($(BACKEND_SDL),yes)
 
 	# First check for SDL2
-	#SDLVERSION2			= $(shell type -P sdl2-config &>/dev/null && sdl2-config --version || echo "")
+	#SDLVERSION2			= $(shell type -P $(SDLCONFIGPATH)sdl2-config &>/dev/null && $(SDLCONFIGPATH)sdl2-config --version || echo "")
 	
 	#ifeq ($(SDLVERSION2),)
 		# Then for SDL 1.2 or SDL 1.3
-		#SDLVERSION				= $(shell type -P sdl-config &>/dev/null && sdl-config --version || echo "")
+		#SDLVERSION				= $(shell type -P $(SDLCONFIGPATH)sdl-config &>/dev/null && $(SDLCONFIGPATH)sdl-config --version || echo "")
 
 		#ifeq ($(SDLVERSION),)
 			# Default 2.0.0
@@ -82,11 +106,11 @@ ifeq ($(BACKEND_SDL),yes)
 	#endif
 	
 	# First check for SDL 1.2 or SDL 1.3
-	SDLVERSION				= $(shell type -P sdl-config &>/dev/null && sdl-config --version || echo "")
+	SDLVERSION				= $(shell type -P $(SDLCONFIGPATH)sdl-config &>/dev/null && $(SDLCONFIGPATH)sdl-config --version || echo "")
 
 	ifeq ($(SDLVERSION),)
 		# Then for SDL 2
-		SDLVERSION2			= $(shell type -P sdl2-config &>/dev/null && sdl2-config --version || echo "")
+		SDLVERSION2			= $(shell type -P $(SDLCONFIGPATH)sdl2-config &>/dev/null && $(SDLCONFIGPATH)sdl2-config --version || echo "")
 		
 		ifeq ($(SDLVERSION2),)
 			# Default 2.0.0
@@ -191,7 +215,12 @@ ifeq ($(NO_LIBSNDFILE),yes)
 	LIBSNDFILE	=
 	SNDFILEFLAG = -DEE_NO_SNDFILE
 else
-	LIBSNDFILE	= -lsndfile
+	ifeq ($(MINGW32),yes)
+		LIBSNDFILE	= -llibsndfile-1
+	else
+		LIBSNDFILE	= -lsndfile
+	endif
+	
 	SNDFILEFLAG = 
 endif
 
@@ -213,14 +242,14 @@ ifeq ($(OS), linux)
 
 LIBS 		= -lrt -lpthread -lX11 -lfreetype -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
 OTHERINC	= -I/usr/include/freetype2
-PLATFORMSRC	= $(wildcard ./src/window/platform/x11/*.cpp)
+PLATFORMSRC	= $(wildcard ./src/window/platform/x11/*.cpp) $(wildcard ./src/system/platform/posix/*.cpp)
 
 else
 
 ifeq ($(OS), darwin)
 LIBS 		= -lfreetype -framework OpenGL -framework OpenAL -framework CoreFoundation -framework AGL $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
 OTHERINC	= -I/usr/include/freetype2 -I/usr/local/include/freetype2
-PLATFORMSRC = $(wildcard ./src/window/platform/osx/*.cpp)
+PLATFORMSRC = $(wildcard ./src/window/platform/osx/*.cpp) $(wildcard ./src/system/platform/posix/*.cpp)
 
 else
 
@@ -228,7 +257,7 @@ ifeq ($(OS), haiku)
 
 LIBS 		= -lfreetype -lopenal -lGL $(SDL_BACKEND_LINK)
 OTHERINC	= -I/usr/include/freetype2
-PLATFORMSRC	= 
+PLATFORMSRC	= $(wildcard ./src/system/platform/posix/*.cpp)
 
 else
 
@@ -236,25 +265,47 @@ ifeq ($(OS), freebsd)
 
 LIBS 		= -lrt -lpthread -lX11 -lfreetype -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
 OTHERINC	= -I/usr/include/freetype2
-PLATFORMSRC	= $(wildcard ./src/window/platform/x11/*.cpp)
+PLATFORMSRC	= $(wildcard ./src/window/platform/x11/*.cpp) $(wildcard ./src/system/platform/posix/*.cpp)
+
+else
+
+ifeq ($(OS), mingw32)
+
+LIBS 		= -lfreetype -llibOpenAL32 -lopengl32 -lmingw32 -lglu32 -lgdi32 -static-libgcc -static-libstdc++ $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
+OTHERINC	= -I/usr/include/freetype2
+PLATFORMSRC	= $(wildcard ./src/window/platform/win/*.cpp) $(wildcard ./src/system/platform/win/*.cpp)
 
 endif
+#endif mingw32
 
 endif
+#endif freebsd
 
 endif
+#endif haiku
 
 endif
+#endif darwin
+
+endif
+#endif linux
 
 HELPERSINC			= -I./src/helper/chipmunk -I./src/helper/zlib
 
-EXE     			= eetest-$(RELEASETYPE)
-EXEIV				= eeiv-$(RELEASETYPE)
-EXEFLUID			= eefluid-$(RELEASETYPE)
-EXEBNB				= bnb-$(RELEASETYPE)
-EXEEMPTYWINDOW		= eeew-$(RELEASETYPE)
-EXEPARTICLES		= eeparticles-$(RELEASETYPE)
-EXERHYTHM			= rhythm-$(RELEASETYPE)
+
+ifeq ($(OS), mingw32)
+OSEXTENSION			= .exe
+else
+OSEXTENSION			= 
+endif
+
+EXE     			= eetest-$(RELEASETYPE)$(OSEXTENSION)
+EXEIV				= eeiv-$(RELEASETYPE)$(OSEXTENSION)
+EXEFLUID			= eefluid-$(RELEASETYPE)$(OSEXTENSION)
+EXEBNB				= bnb-$(RELEASETYPE)$(OSEXTENSION)
+EXEEMPTYWINDOW		= eeew-$(RELEASETYPE)$(OSEXTENSION)
+EXEPARTICLES		= eeparticles-$(RELEASETYPE)$(OSEXTENSION)
+EXERHYTHM			= rhythm-$(RELEASETYPE)$(OSEXTENSION)
 
 ifeq ($(OS), haiku)
 SRCGLEW 			= 
@@ -360,6 +411,8 @@ dirs:
 	@mkdir -p $(OBJDIR)/src/graphics/renderer
 	@mkdir -p $(OBJDIR)/src/math
 	@mkdir -p $(OBJDIR)/src/system
+	@mkdir -p $(OBJDIR)/src/system/platform/posix
+	@mkdir -p $(OBJDIR)/src/system/platform/win
 	@mkdir -p $(OBJDIR)/src/ui
 	@mkdir -p $(OBJDIR)/src/ui/tools
 	@mkdir -p $(OBJDIR)/src/utils

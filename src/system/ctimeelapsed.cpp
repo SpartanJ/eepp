@@ -3,7 +3,7 @@
 namespace EE { namespace System {
 
 cTimeElapsed::cTimeElapsed() :
-	mFirstCheck( getMicroseconds() ),
+	mFirstCheck( GetMicroseconds() ),
 	mLastCheck( mFirstCheck ),
 	mElapsed(0)
 {
@@ -14,18 +14,18 @@ cTimeElapsed::~cTimeElapsed()
 }
 
 eeDouble cTimeElapsed::Elapsed() {
-	mElapsed 	= (eeDouble)( getMicroseconds() - mLastCheck ) / 1000.0;
-	mLastCheck 	= getMicroseconds();
+	mElapsed 	= (eeDouble)( GetMicroseconds() - mLastCheck ) / 1000.0;
+	mLastCheck 	= GetMicroseconds();
 
 	return mElapsed;
 }
 
 eeDouble cTimeElapsed::ElapsedSinceStart() {
-	return (eeDouble)( getMicroseconds() - mFirstCheck ) / 1000.0;
+	return (eeDouble)( GetMicroseconds() - mFirstCheck ) / 1000.0;
 }
 
 void cTimeElapsed::Reset() {
-	mFirstCheck = getMicroseconds();
+	mFirstCheck = GetMicroseconds();
 	mLastCheck	= mFirstCheck;
 	mElapsed	= 0;
 }

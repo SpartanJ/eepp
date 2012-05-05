@@ -42,6 +42,7 @@ CODE_SRCS :=  \
 	helper/haikuttf/*.cpp \
 	utils/*.cpp \
 	system/*.cpp \
+	system/platform/posix/*.cpp \
 	base/*.cpp \
 	math/*.cpp \
 	audio/*.cpp \

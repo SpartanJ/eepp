@@ -3,6 +3,8 @@
 
 #include "../base.hpp"
 
+/** Internally we gonna use the macro singleton because it works with the engine compiled as dynamic libraries */
+
 #define SINGLETON_DECLARE_HEADERS( T ) \
 public: \
 \
