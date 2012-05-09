@@ -113,8 +113,8 @@ ifeq ($(BACKEND_SDL),yes)
 		SDLVERSION2			= $(shell type -P $(SDLCONFIGPATH)sdl2-config &>/dev/null && $(SDLCONFIGPATH)sdl2-config --version || echo "")
 		
 		ifeq ($(SDLVERSION2),)
-			# Default 2.0.0
-			SDL_VERSION		= 2.0.0
+			# Default 1.2
+			SDL_VERSION		= 1.2
 		else
 			SDL_VERSION		= $(SDLVERSION2)
 		endif
@@ -218,7 +218,11 @@ else
 	ifeq ($(MINGW32),yes)
 		LIBSNDFILE	= -llibsndfile-1
 	else
-		LIBSNDFILE	= -lsndfile
+		ifeq ($(OS), cygwin_nt-6.1)
+			LIBSNDFILE	= -llibsndfile-1
+		else
+			LIBSNDFILE	= -lsndfile
+		endif
 	endif
 	
 	SNDFILEFLAG = 
@@ -274,6 +278,17 @@ ifeq ($(OS), mingw32)
 LIBS 		= -lfreetype -llibOpenAL32 -lopengl32 -lmingw32 -lglu32 -lgdi32 -static-libgcc -static-libstdc++ $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
 OTHERINC	= -I/usr/include/freetype2
 PLATFORMSRC	= $(wildcard ./src/window/platform/win/*.cpp) $(wildcard ./src/system/platform/win/*.cpp)
+
+else
+
+ifeq ($(OS), cygwin_nt-6.1)
+
+LIBS 		= -lfreetype -lOpenAL32 -lmingw32 -lopengl32 -lglu32 -lgdi32 -static-libgcc -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
+OTHERINC	= -I./src/helper/zlib -I./src/helper/cygwin/freetype2  
+PLATFORMSRC	= $(wildcard ./src/window/platform/win/*.cpp) $(wildcard ./src/system/platform/win/*.cpp)
+
+endif
+#endif cygwin
 
 endif
 #endif mingw32
