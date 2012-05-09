@@ -42,15 +42,16 @@ class EE_API cView {
 
 		/** Creates a new view */
 		void SetView( const eeInt& X, const eeInt& Y, const eeInt& Width, const eeInt& Height );
-
-		/** This is only used by cEngine. DON'T CALL IT. */
-		bool NeedUpdate() const;
 	private:
+		friend class cWindow;
+
 		bool mNeedUpdate;
 		eeRecti mView;
 		eeVector2f mCenter;
 
 		void CalcCenter();
+
+		bool NeedUpdate() const;
 };
 
 }}

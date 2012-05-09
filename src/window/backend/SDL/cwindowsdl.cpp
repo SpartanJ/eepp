@@ -359,9 +359,9 @@ std::vector< std::pair<unsigned int, unsigned int> > cWindowSDL::GetPossibleReso
 }
 
 void cWindowSDL::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {
-	eeclamp( &Red	, 0.1f, 10.0f );
-	eeclamp( &Green	, 0.1f, 10.0f );
-	eeclamp( &Blue	, 0.1f, 10.0f );
+	eeclamp<eeFloat>( &Red		, 0.1f, 10.0f );
+	eeclamp<eeFloat>( &Green	, 0.1f, 10.0f );
+	eeclamp<eeFloat>( &Blue		, 0.1f, 10.0f );
 	SDL_SetGamma( Red, Green, Blue );
 }
 

@@ -19,12 +19,37 @@
 #define SOIL_X11_PLATFORM
 #endif
 
+#if defined( __APPLE_CC__ ) || defined ( __APPLE__ )
+	#include <TargetConditionals.h>
+
+	#if defined( __IPHONE__ ) || ( defined( TARGET_OS_IPHONE ) && TARGET_OS_IPHONE ) || ( defined( TARGET_IPHONE_SIMULATOR ) && TARGET_IPHONE_SIMULATOR )
+		#define SOIL_PLATFORM_IOS
+	#endif
+#elif defined( __ANDROID__ ) || defined( ANDROID )
+	#define SOIL_PLATFORM_ANDROID
+#endif
+
+#if ( defined( SOIL_PLATFORM_IOS ) || defined( SOIL_PLATFORM_ANDROID ) ) && ( !defined( SOIL_GLES1 ) && !defined( SOIL_GLES2 ) )
+	#define SOIL_GLES1
+#endif
+
 #if defined( SOIL_GLES2 )
-	#include <GLES2/gl2.h>
-	#include <GLES2/gl2ext.h>
+	#ifdef SOIL_PLATFORM_IOS
+		#include <OpenGLES/ES2/gl.h>
+		#include <OpenGLES/ES2/glext.h>
+	#else
+		#include <GLES2/gl2.h>
+		#include <GLES2/gl2ext.h>
+	#endif
+
 	#define APIENTRY GL_APIENTRY
 #elif defined( SOIL_GLES1 )
-	#include <GLES/gl.h>
+	#ifdef SOIL_PLATFORM_IOS
+		#include <OpenGLES/ES1/gl.h>
+	#else
+		#include <GLES/gl.h>
+	#endif
+
 	#define APIENTRY GL_APIENTRY
 #else
 
@@ -2004,7 +2029,9 @@ int query_DXT_capability( void )
 			/*	and find the address of the extension function	*/
 			P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC ext_addr = NULL;
 
-			#if defined( WIN32 )
+			#if defined( SOIL_GLES2 ) || defined( SOIL_GLES1 )
+				ext_addr = (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)&glCompressedTexImage2D;
+			#elif defined( WIN32 )
 				ext_addr = (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)
 						wglGetProcAddress
 						(
@@ -2034,8 +2061,6 @@ int query_DXT_capability( void )
 				CFRelease( bundleURL );
 				CFRelease( extensionName );
 				CFRelease( bundle );
-			#elif defined( SOIL_GLES2 ) || defined( SOIL_GLES1 )
-				ext_addr = (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)&glCompressedTexImage2D;
 			#elif defined( SOIL_X11_PLATFORM )
 				ext_addr = (P_SOIL_GLCOMPRESSEDTEXIMAGE2DPROC)
 						#if !defined(GLX_VERSION_1_4)
