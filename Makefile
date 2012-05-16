@@ -284,7 +284,7 @@ else
 ifeq ($(OS), cygwin_nt-6.1)
 
 LIBS 		= -lfreetype -lOpenAL32 -lmingw32 -lopengl32 -lglu32 -lgdi32 -static-libgcc -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
-OTHERINC	= -I./src/helper/zlib -I./src/helper/cygwin/freetype2  
+OTHERINC	= -I./src/helper/zlib -I./src/helper/android/freetype/include
 PLATFORMSRC	= $(wildcard ./src/window/platform/win/*.cpp) $(wildcard ./src/system/platform/win/*.cpp)
 
 endif
