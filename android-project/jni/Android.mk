@@ -6,7 +6,7 @@ MY_SDL_MAIN_PATH	:= helper/android/SDL1.3/src/main/android/*.cpp
 
 MY_C_INCLUDES := \
 	$(MY_PATH)/helper/android/openal/include/ \
-	$(MY_PATH)/helper/android/freetype/include \
+	$(MY_PATH)/helper/freetype2/include \
 	$(MY_SDL_PATH)/include \
 	$(MY_PATH)/helper/chipmunk
 	
@@ -99,7 +99,7 @@ include $(BUILD_STATIC_LIBRARY)
 #*************** FREETYPE ***************
 include $(CLEAR_VARS)
 
-LOCAL_PATH := $(MY_PATH)/helper/android/freetype
+LOCAL_PATH := $(MY_PATH)/helper/freetype2
 
 LOCAL_MODULE := freetype
 

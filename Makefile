@@ -2,9 +2,13 @@ STRLOWERCASE 		= $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(s
 
 #cross-compiling support
 ifeq ($(MINGW32),yes)
-OS					= mingw32
+	OS				= mingw32
 else
-OS 					= $(strip $(call STRLOWERCASE, $(shell uname) ) )
+	ifeq ($(IOS),yes)
+		OS			= ios
+	else
+		OS 			= $(strip $(call STRLOWERCASE, $(shell uname) ) )
+	endif
 endif
 
 export LIBPATH    	= ./
@@ -16,6 +20,8 @@ export ARFLAGS    	= rcs
 export DESTDIR    	= /usr
 export DESTLIBDIR 	= $(DESTDIR)/lib
 export DESTINCDIR 	= $(DESTDIR)/include
+export MKDIR		= mkdir -p
+export RM			= rm -rf
 
 ifeq ($(OS), mingw32)
 
@@ -26,14 +32,72 @@ OSLIBEXTENSION		= dll
 
 else
 
-export AR         	= ar
+ifeq ($(OS), ios)
+	ifeq ($(IOSVERSION),)
+		ifneq (,$(findstring 4.3,$(XCODE)))
+			IOSVERSION	= 5.1
+		else
+			IOSVERSION	= 5.0
+		endif
+	endif
+	
+	ifeq ($(STATIC_FT2),)
+		STATIC_FT2=yes
+	endif
+	
+	#if TOOLCHAINPATH is empty
+	ifeq ($(TOOLCHAINPATH),)
+		ifeq ($(SIMULATOR),yes)
+			ARCH = i686
+			PARCHFLAGS = -DTARGET_IPHONE_SIMULATOR -m32
+
+			ifneq (,$(findstring 4.3,$(XCODE)))
+				TOOLCHAINPATH	= /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin/
+				SYSROOTPATH		= /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator$(IOSVERSION).sdk
+			else
+				TOOLCHAINPATH	= /Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin/
+				SYSROOTPATH		= /Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator$(IOSVERSION).sdk
+			endif
+		else
+			ARCH = armv7
+			PARCHFLAGS = -DTARGET_OS_IPHONE -marm -mcpu=cortex-a8
+			
+			#if xcode is 4.3
+			ifneq (,$(findstring 4.3,$(XCODE)))
+				TOOLCHAINPATH	= /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/
+				SYSROOTPATH		= /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$(IOSVERSION).sdk
+			else
+				TOOLCHAINPATH	= /Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/
+				SYSROOTPATH		= /Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$(IOSVERSION).sdk
+			endif
+		endif
+
+		export C_INCLUDE_PATH		= $(SYSROOTPATH)/usr/include
+		export CPLUS_INCLUDE_PATH	= $(SYSROOTPATH)/usr/include
+		
+		PLATFORMFLAGS = -D__IPHONE__ $(PARCHFLAGS) -miphoneos-version-min=$(IOSVERSION) -DDARWIN_NO_CARBON -isysroot $(SYSROOTPATH) -I./src/helper/android/SDL2/include
+	endif
+endif
+
+export AR         	= $(TOOLCHAINPATH)ar
 
 ifeq ($(LLVM_BUILD), yes)
-export CC         	= clang
-export CPP        	= clang++
+export CC         	= $(TOOLCHAINPATH)clang
+export CPP        	= $(TOOLCHAINPATH)clang++
 else
-export CC         	= gcc
-export CPP        	= g++
+
+ifneq (,$(findstring arm,$(ARCH)))
+
+export CC         	= $(TOOLCHAINPATH)arm-apple-darwin10-llvm-gcc-4.2
+export CPP        	= $(TOOLCHAINPATH)arm-apple-darwin10-llvm-g++-4.2
+
+else
+
+export CC         	= $(TOOLCHAINPATH)gcc
+export CPP        	= $(TOOLCHAINPATH)g++
+
+endif
+
 endif
 
 OSLIBEXTENSION		= so
@@ -41,13 +105,23 @@ SDLCONFIGPATH		=
 
 endif
 
+ifeq ($(ARCH),)
+ARCHFLAGS			=
+else
+ARCHFLAGS			= 
+endif
 
 ifeq ($(DYNAMIC), yes)
 	LIB     = libeepp.$(OSLIBEXTENSION)
 	LIBNAME = $(LIBPATH)/$(LIB).$(VERSION)
 	INSTALL = && $(LN) $(LNFLAGS) $(DESTLIBDIR)/$(LIB).$(VERSION) $(DESTLIBDIR)/$(LIB)
 else
-	LIB     = libeepp-s.a
+	ifeq ($(ARCH),)
+		LIB     = libeepp.a
+	else
+		LIB		= libeepp-$(ARCH).a
+	endif
+	
 	LIBNAME = $(LIBPATH)/$(LIB)
 	INSTALL = 
 endif
@@ -87,39 +161,40 @@ ifeq ($(BACKEND_SDL),)
 endif
 
 ifeq ($(BACKEND_SDL),yes)
-
-	# First check for SDL2
-	#SDLVERSION2			= $(shell type -P $(SDLCONFIGPATH)sdl2-config &>/dev/null && $(SDLCONFIGPATH)sdl2-config --version || echo "")
-	
-	#ifeq ($(SDLVERSION2),)
-		# Then for SDL 1.2 or SDL 1.3
-		#SDLVERSION				= $(shell type -P $(SDLCONFIGPATH)sdl-config &>/dev/null && $(SDLCONFIGPATH)sdl-config --version || echo "")
-
-		#ifeq ($(SDLVERSION),)
-			# Default 2.0.0
-			#SDL_VERSION		= 2.0.0
-		#else
-			#SDL_VERSION			= $(SDLVERSION)
-		#endif
-	#else
-		#SDL_VERSION		= $(SDLVERSION2)
-	#endif
-	
-	# First check for SDL 1.2 or SDL 1.3
-	SDLVERSION				= $(shell type -P $(SDLCONFIGPATH)sdl-config &>/dev/null && $(SDLCONFIGPATH)sdl-config --version || echo "")
-
-	ifeq ($(SDLVERSION),)
-		# Then for SDL 2
+	ifeq ($(OS), ios)
+		# First check for SDL2
 		SDLVERSION2			= $(shell type -P $(SDLCONFIGPATH)sdl2-config &>/dev/null && $(SDLCONFIGPATH)sdl2-config --version || echo "")
 		
 		ifeq ($(SDLVERSION2),)
-			# Default 1.2
-			SDL_VERSION		= 1.2
+			# Then for SDL 1.2 or SDL 1.3
+			SDLVERSION				= $(shell type -P $(SDLCONFIGPATH)sdl-config &>/dev/null && $(SDLCONFIGPATH)sdl-config --version || echo "")
+
+			ifeq ($(SDLVERSION),)
+				# Default 2.0.0
+				SDL_VERSION		= 2.0.0
+			else
+				SDL_VERSION			= $(SDLVERSION)
+			endif
 		else
 			SDL_VERSION		= $(SDLVERSION2)
 		endif
 	else
-		SDL_VERSION			= $(SDLVERSION)
+		# First check for SDL 1.2 or SDL 1.3
+		SDLVERSION				= $(shell type -P $(SDLCONFIGPATH)sdl-config &>/dev/null && $(SDLCONFIGPATH)sdl-config --version || echo "")
+
+		ifeq ($(SDLVERSION),)
+			# Then for SDL 2
+			SDLVERSION2			= $(shell type -P $(SDLCONFIGPATH)sdl2-config &>/dev/null && $(SDLCONFIGPATH)sdl2-config --version || echo "")
+			
+			ifeq ($(SDLVERSION2),)
+				# Default 1.2
+				SDL_VERSION		= 1.2
+			else
+				SDL_VERSION		= $(SDLVERSION2)
+			endif
+		else
+			SDL_VERSION			= $(SDLVERSION)
+		endif
 	endif
 	
 	# If version is 1.2.x
@@ -228,6 +303,14 @@ else
 	SNDFILEFLAG = 
 endif
 
+ifeq ($(STATIC_FT2),yes)
+	LIBFREETYPE2	= 
+	INCFREETYPE2	= -I./src/helper/freetype2/include
+else
+	LIBFREETYPE2	= -lfreetype
+	INCFREETYPE2	= -I$(DESTINCDIR)/freetype2
+endif
+
 ifeq ($(GLES2), yes)
 	FINALFLAGS = $(DEBUGFLAGS) $(SNDFILEFLAG) -DEE_GLES2 -DSOIL_GLES2
 else
@@ -238,54 +321,62 @@ else
 	endif
 endif
 
-export CFLAGS     	= -Wall -Wno-unknown-pragmas $(FINALFLAGS) $(BUILDFLAGS) $(BACKENDFLAGS)
-export CFLAGSEXT  	= $(FINALFLAGS) $(BUILDFLAGS)
-export LDFLAGS    	= $(LINKFLAGS)
-
 ifeq ($(OS), linux)
 
-LIBS 		= -lrt -lpthread -lX11 -lfreetype -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
-OTHERINC	= -I/usr/include/freetype2
+LIBS 		= -lrt -lpthread -lX11 -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
+OTHERINC	= $(INCFREETYPE2)
 PLATFORMSRC	= $(wildcard ./src/window/platform/x11/*.cpp) $(wildcard ./src/system/platform/posix/*.cpp)
 
 else
 
 ifeq ($(OS), darwin)
-LIBS 		= -lfreetype -framework OpenGL -framework OpenAL -framework CoreFoundation -framework AGL $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
-OTHERINC	= -I/usr/include/freetype2 -I/usr/local/include/freetype2
+
+LIBS 		= -framework OpenGL -framework OpenAL -framework CoreFoundation -framework AGL $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
+OTHERINC	= $(INCFREETYPE2) -I/usr/local/include/freetype2
 PLATFORMSRC = $(wildcard ./src/window/platform/osx/*.cpp) $(wildcard ./src/system/platform/posix/*.cpp)
 
 else
 
 ifeq ($(OS), haiku)
 
-LIBS 		= -lfreetype -lopenal -lGL $(SDL_BACKEND_LINK)
-OTHERINC	= -I/usr/include/freetype2
+LIBS 		= -lopenal -lGL $(SDL_BACKEND_LINK) $(LIBFREETYPE2)
+OTHERINC	= $(INCFREETYPE2)
 PLATFORMSRC	= $(wildcard ./src/system/platform/posix/*.cpp)
 
 else
 
 ifeq ($(OS), freebsd)
 
-LIBS 		= -lrt -lpthread -lX11 -lfreetype -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
-OTHERINC	= -I/usr/include/freetype2
+LIBS 		= -lrt -lpthread -lX11 -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
+OTHERINC	= $(INCFREETYPE2)
 PLATFORMSRC	= $(wildcard ./src/window/platform/x11/*.cpp) $(wildcard ./src/system/platform/posix/*.cpp)
 
 else
 
 ifeq ($(OS), mingw32)
 
-LIBS 		= -lfreetype -llibOpenAL32 -lopengl32 -lmingw32 -lglu32 -lgdi32 -static-libgcc -static-libstdc++ $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
-OTHERINC	= -I/usr/include/freetype2
+LIBS 		= -llibOpenAL32 -lopengl32 -lmingw32 -lglu32 -lgdi32 -static-libgcc -static-libstdc++ $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
+OTHERINC	= $(INCFREETYPE2)
 PLATFORMSRC	= $(wildcard ./src/window/platform/win/*.cpp) $(wildcard ./src/system/platform/win/*.cpp)
 
 else
 
 ifeq ($(OS), cygwin_nt-6.1)
 
-LIBS 		= -lfreetype -lOpenAL32 -lmingw32 -lopengl32 -lglu32 -lgdi32 -static-libgcc -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
-OTHERINC	= -I./src/helper/zlib -I./src/helper/android/freetype/include
+LIBS 		= -lOpenAL32 -lmingw32 -lopengl32 -lglu32 -lgdi32 -static-libgcc -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
+OTHERINC	= -I./src/helper/zlib -I./src/helper/freetype2/include
 PLATFORMSRC	= $(wildcard ./src/window/platform/win/*.cpp) $(wildcard ./src/system/platform/win/*.cpp)
+
+else
+
+ifeq ($(OS), ios)
+
+LIBS 		= -framework OpenGLES -framework OpenAL -framework Foundation -framework CoreFoundation -framework CoreSurface -framework UIKit -framework QuartzCore -framework CoreGraphics $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
+OTHERINC	= -I./src/helper/freetype2/include
+PLATFORMSRC = $(wildcard ./src/system/platform/posix/*.cpp)
+
+endif
+#endif ios
 
 endif
 #endif cygwin
@@ -305,8 +396,12 @@ endif
 endif
 #endif linux
 
-HELPERSINC			= -I./src/helper/chipmunk -I./src/helper/zlib
+export CFLAGS     	= $(ARCHFLAGS) -Wall -Wno-unknown-pragmas $(FINALFLAGS) $(BUILDFLAGS) $(BACKENDFLAGS) $(PLATFORMFLAGS)
+export CFLAGSEXT  	= $(ARCHFLAGS) $(FINALFLAGS) $(BUILDFLAGS) $(PLATFORMFLAGS)
+export LDFLAGS    	= $(LINKFLAGS)
+HELPERSFLAGS		= -DSTBI_FAILURE_USERMSG -DFT2_BUILD_LIBRARY
 
+HELPERSINC			= -I./src/helper/chipmunk -I./src/helper/zlib -I./src/helper/freetype2/include
 
 ifeq ($(OS), mingw32)
 OSEXTENSION			= .exe
@@ -325,7 +420,18 @@ EXERHYTHM			= rhythm-$(RELEASETYPE)$(OSEXTENSION)
 ifeq ($(OS), haiku)
 SRCGLEW 			= 
 else
+ifeq ($(OS), ios)
+SRCGLEW 			= 
+else
 SRCGLEW 			= $(wildcard ./src/helper/glew/*.c)
+endif
+
+endif
+
+ifeq ($(STATIC_FT2), yes)
+SRCFREETYPE			= $(wildcard ./src/helper/freetype2/src/*/*.c)
+else
+SRCFREETYPE			= 
 endif
 
 SRCSOIL 			= $(wildcard ./src/helper/SOIL/*.c)
@@ -354,9 +460,10 @@ SRCBNB     			= $(wildcard ./src/bnb/*.cpp)
 SRCEMPTYWINDOW  	= $(wildcard ./src/test/empty_window/*.cpp)
 SRCRHYTHM		  	= $(wildcard ./src/rhythm/*.cpp)
 
-SRCHELPERS			= $(SRCGLEW) $(SRCSOIL) $(SRCSTBVORBIS) $(SRCZLIB) $(SRCLIBZIP) $(SRCCHIPMUNK)
+SRCHELPERS			= $(SRCFREETYPE) $(SRCGLEW) $(SRCSOIL) $(SRCSTBVORBIS) $(SRCZLIB) $(SRCLIBZIP) $(SRCCHIPMUNK)
 SRCMODULES			= $(SRCHAIKUTTF) $(SRCBASE) $(SRCAUDIO) $(SRCGAMING) $(SRCGRAPHICS) $(SRCMATH) $(SRCSYSTEM) $(SRCUI) $(SRCUTILS) $(SRCWINDOW) $(SRCPHYSICS)
 
+OBJFREETYPE			= $(SRCFREETYPE:.c=.o)
 OBJGLEW 			= $(SRCGLEW:.c=.o)
 OBJSOIL 			= $(SRCSOIL:.c=.o)
 OBJSTBVORBIS 		= $(SRCSTBVORBIS:.c=.o) 
@@ -376,7 +483,7 @@ OBJUTILS			= $(SRCUTILS:.cpp=.o)
 OBJWINDOW			= $(SRCWINDOW:.cpp=.o)
 OBJPHYSICS			= $(SRCPHYSICS:.cpp=.o)
 
-OBJHELPERS			= $(OBJGLEW) $(OBJSOIL) $(OBJSTBVORBIS) $(OBJZLIB) $(OBJLIBZIP) $(OBJCHIPMUNK)
+OBJHELPERS			= $(OBJFREETYPE) $(OBJGLEW) $(OBJSOIL) $(OBJSTBVORBIS) $(OBJZLIB) $(OBJLIBZIP) $(OBJCHIPMUNK)
 OBJMODULES			= $(OBJHAIKUTTF) $(OBJBASE) $(OBJUTILS) $(OBJMATH) $(OBJSYSTEM) $(OBJAUDIO) $(OBJWINDOW) $(OBJGRAPHICS) $(OBJGAMING) $(OBJUI) $(OBJPHYSICS)
 
 OBJTEST     		= $(SRCTEST:.cpp=.o)
@@ -387,9 +494,13 @@ OBJEMPTYWINDOW		= $(SRCEMPTYWINDOW:.cpp=.o)
 OBJPARTICLES     	= $(SRCPARTICLES:.cpp=.o)
 OBJRHYTHM			= $(SRCRHYTHM:.cpp=.o)
 
+ifeq ($(ARCH),)
 OBJDIR				= obj/$(OS)/$(RELEASETYPE)/
+else
+OBJDIR				= obj/$(OS)/$(RELEASETYPE)/$(ARCH)/
+endif
 
-FOBJHELPERS			= $(patsubst ./%, $(OBJDIR)%, $(OBJGLEW) $(OBJSOIL) $(OBJSTBVORBIS) $(OBJZLIB) $(OBJLIBZIP) $(OBJCHIPMUNK) )
+FOBJHELPERS			= $(patsubst ./%, $(OBJDIR)%, $(OBJFREETYPE) $(OBJGLEW) $(OBJSOIL) $(OBJSTBVORBIS) $(OBJZLIB) $(OBJLIBZIP) $(OBJCHIPMUNK) )
 FOBJMODULES			= $(patsubst ./%, $(OBJDIR)%, $(OBJHAIKUTTF) $(OBJBASE) $(OBJUTILS) $(OBJMATH) $(OBJSYSTEM) $(OBJAUDIO) $(OBJWINDOW) $(OBJGRAPHICS) $(OBJGAMING) $(OBJUI) $(OBJPHYSICS) )
 
 FOBJTEST     		= $(patsubst ./%, $(OBJDIR)%, $(SRCTEST:.cpp=.o) )
@@ -406,52 +517,77 @@ FOBJALL 			= $(FOBJHELPERS) $(FOBJEEPP)
 DEPSEEPP			= $(FOBJEEPP:.o=.d)
 DEPSALL				= $(FOBJALL:.o=.d)
 
+.PHONY: all dirs lib $(FOBJMODULES) $(FOBJHELPERS) $(EXE) os test eeiv fluid bnb ew rhythm particles docs clean cleantemp cleanall install
+
 all: lib
 
 dirs:
-	@mkdir -p $(OBJDIR)/src
-	@mkdir -p $(OBJDIR)/src/helper/glew
-	@mkdir -p $(OBJDIR)/src/helper/SOIL
-	@mkdir -p $(OBJDIR)/src/helper/stb_vorbis
-	@mkdir -p $(OBJDIR)/src/helper/zlib
-	@mkdir -p $(OBJDIR)/src/helper/libzip
-	@mkdir -p $(OBJDIR)/src/helper/chipmunk
-	@mkdir -p $(OBJDIR)/src/helper/chipmunk/constraints
-	@mkdir -p $(OBJDIR)/src/helper/haikuttf
-	@mkdir -p $(OBJDIR)/src/base
-	@mkdir -p $(OBJDIR)/src/audio
-	@mkdir -p $(OBJDIR)/src/gaming
-	@mkdir -p $(OBJDIR)/src/gaming/mapeditor
-	@mkdir -p $(OBJDIR)/src/graphics
-	@mkdir -p $(OBJDIR)/src/graphics/renderer
-	@mkdir -p $(OBJDIR)/src/math
-	@mkdir -p $(OBJDIR)/src/system
-	@mkdir -p $(OBJDIR)/src/system/platform/posix
-	@mkdir -p $(OBJDIR)/src/system/platform/win
-	@mkdir -p $(OBJDIR)/src/ui
-	@mkdir -p $(OBJDIR)/src/ui/tools
-	@mkdir -p $(OBJDIR)/src/utils
-	@mkdir -p $(OBJDIR)/src/window
-	@mkdir -p $(OBJDIR)/src/window/backend/SDL
-	@mkdir -p $(OBJDIR)/src/window/backend/SDL2
-	@mkdir -p $(OBJDIR)/src/window/backend/null
-	@mkdir -p $(OBJDIR)/src/window/backend/allegro5
-	@mkdir -p $(OBJDIR)/src/window/platform/x11
-	@mkdir -p $(OBJDIR)/src/window/platform/win
-	@mkdir -p $(OBJDIR)/src/window/platform/osx
-	@mkdir -p $(OBJDIR)/src/window/platform/null
-	@mkdir -p $(OBJDIR)/src/physics
-	@mkdir -p $(OBJDIR)/src/physics/constraints
-	@mkdir -p $(OBJDIR)/src/test
-	@mkdir -p $(OBJDIR)/src/test/empty_window
-	@mkdir -p $(OBJDIR)/src/eeiv
-	@mkdir -p $(OBJDIR)/src/fluid
-	@mkdir -p $(OBJDIR)/src/bnb
-	@mkdir -p $(OBJDIR)/src/particles
-	@mkdir -p $(OBJDIR)/src/particles/objects
-	@mkdir -p $(OBJDIR)/src/particles/gameobjects
-	@mkdir -p $(OBJDIR)/src/rhythm
-
+	@echo Creating directories $(OBJDIR)
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/psaux
+	@$(MKDIR) $(OBJDIR)/src/helper/SOIL
+	@$(MKDIR) $(OBJDIR)/src/helper/zlib
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/autofit
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/base
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/bdf
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/bzip2
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/cache
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/cff
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/cid
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/gxvalid
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/gzip
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/lzw
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/otvalid
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/pcf
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/pfr
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/pshinter
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/psnames
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/raster
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/sfnt
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/smooth
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/truetype
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/type1
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/type42
+	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/winfonts
+	@$(MKDIR) $(OBJDIR)/src/helper/glew
+	@$(MKDIR) $(OBJDIR)/src/helper/stb_vorbis
+	@$(MKDIR) $(OBJDIR)/src/helper/libzip
+	@$(MKDIR) $(OBJDIR)/src/helper/chipmunk
+	@$(MKDIR) $(OBJDIR)/src/helper/chipmunk/constraints
+	@$(MKDIR) $(OBJDIR)/src/helper/haikuttf
+	@$(MKDIR) $(OBJDIR)/src/base
+	@$(MKDIR) $(OBJDIR)/src/audio
+	@$(MKDIR) $(OBJDIR)/src/gaming
+	@$(MKDIR) $(OBJDIR)/src/gaming/mapeditor
+	@$(MKDIR) $(OBJDIR)/src/graphics
+	@$(MKDIR) $(OBJDIR)/src/graphics/renderer
+	@$(MKDIR) $(OBJDIR)/src/math
+	@$(MKDIR) $(OBJDIR)/src/system
+	@$(MKDIR) $(OBJDIR)/src/system/platform/posix
+	@$(MKDIR) $(OBJDIR)/src/system/platform/win
+	@$(MKDIR) $(OBJDIR)/src/ui
+	@$(MKDIR) $(OBJDIR)/src/ui/tools
+	@$(MKDIR) $(OBJDIR)/src/utils
+	@$(MKDIR) $(OBJDIR)/src/window
+	@$(MKDIR) $(OBJDIR)/src/window/backend/SDL
+	@$(MKDIR) $(OBJDIR)/src/window/backend/SDL2
+	@$(MKDIR) $(OBJDIR)/src/window/backend/null
+	@$(MKDIR) $(OBJDIR)/src/window/backend/allegro5
+	@$(MKDIR) $(OBJDIR)/src/window/platform/x11
+	@$(MKDIR) $(OBJDIR)/src/window/platform/win
+	@$(MKDIR) $(OBJDIR)/src/window/platform/osx
+	@$(MKDIR) $(OBJDIR)/src/window/platform/null
+	@$(MKDIR) $(OBJDIR)/src/physics
+	@$(MKDIR) $(OBJDIR)/src/physics/constraints
+	@$(MKDIR) $(OBJDIR)/src/test
+	@$(MKDIR) $(OBJDIR)/src/test/empty_window
+	@$(MKDIR) $(OBJDIR)/src/eeiv
+	@$(MKDIR) $(OBJDIR)/src/fluid
+	@$(MKDIR) $(OBJDIR)/src/bnb
+	@$(MKDIR) $(OBJDIR)/src/particles
+	@$(MKDIR) $(OBJDIR)/src/particles/objects
+	@$(MKDIR) $(OBJDIR)/src/particles/gameobjects
+	@$(MKDIR) $(OBJDIR)/src/rhythm
+	
 lib: dirs $(LIB)
 
 $(FOBJMODULES):
@@ -459,8 +595,8 @@ $(FOBJMODULES):
 	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
 
 $(FOBJHELPERS):
-	$(CC) -o $@ -c $(patsubst $(OBJDIR)%.o,%.c,$@) $(CFLAGSEXT) -DSTBI_FAILURE_USERMSG -std=gnu99 $(HELPERSINC)
-	@$(CC) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.c,$@) -DSTBI_FAILURE_USERMSG > $(patsubst %.o,%.d,$@) $(HELPERSINC)
+	$(CC) -o $@ -c $(patsubst $(OBJDIR)%.o,%.c,$@) $(CFLAGSEXT) $(HELPERSFLAGS) -std=gnu99 $(HELPERSINC)
+	@$(CC) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.c,$@) $(HELPERSFLAGS) > $(patsubst %.o,%.d,$@) $(HELPERSINC)
 
 $(FOBJTEST):
 	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
@@ -511,7 +647,11 @@ $(EXEPARTICLES): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJPARTICLES)
 $(EXERHYTHM): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJRHYTHM)
 	$(CPP) -o ./$(EXERHYTHM) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJRHYTHM) $(LDFLAGS) $(LIBS)
 
-libeepp-s.a: $(FOBJHELPERS) $(FOBJMODULES)
+
+libeepp-$(ARCH).a: $(FOBJHELPERS) $(FOBJMODULES)
+	$(AR) $(ARFLAGS) $(LIBNAME) $(FOBJHELPERS) $(FOBJMODULES)
+
+libeepp.a: $(FOBJHELPERS) $(FOBJMODULES)
 	$(AR) $(ARFLAGS) $(LIBNAME) $(FOBJHELPERS) $(FOBJMODULES)
 
 libeepp.so: $(FOBJHELPERS) $(FOBJMODULES)
@@ -538,19 +678,19 @@ docs:
 	doxygen ./Doxyfile
 
 clean:
-	@rm -rf $(FOBJALL) $(DEPSALL)
+	@$(RM) $(FOBJALL) $(DEPSALL)
 
 cleantemp:
-	@rm -rf $(FOBJEEPP) $(DEPSEEPP)
+	@$(RM) $(FOBJEEPP) $(DEPSEEPP)
 
 cleanall: clean
-	@rm -rf $(LIBNAME)
-	@rm -rf ./$(EXE)
-	@rm -rf ./$(EXEFLUID)
-	@rm -rf ./$(EXEPARTICLES)
-	@rm -rf ./$(EXEIV)
-	@rm -rf ./$(EXEBNB)
-	@rm -rf ./log.log
+	@$(RM) $(LIBNAME)
+	@$(RM) ./$(EXE)
+	@$(RM) ./$(EXEFLUID)
+	@$(RM) ./$(EXEPARTICLES)
+	@$(RM) ./$(EXEIV)
+	@$(RM) ./$(EXEBNB)
+	@$(RM) ./log.log
 
 install:
 	@($(CP) $(LIBNAME) $(DESTLIBDIR) $(INSTALL))
