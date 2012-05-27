@@ -23,6 +23,9 @@ export DESTINCDIR 	= $(DESTDIR)/include
 export MKDIR		= mkdir -p
 export RM			= rm -rf
 
+FRAMEWORKFLAGS		=
+STATIC_LIBS			=
+
 ifeq ($(OS), mingw32)
 
 export AR         	= i686-w64-mingw32-ar
@@ -40,6 +43,10 @@ ifeq ($(OS), ios)
 			IOSVERSION	= 5.0
 		endif
 	endif
+
+	ifeq ($(NO_LIBSNDFILE),)
+		NO_LIBSNDFILE=yes
+	endif
 	
 	ifeq ($(STATIC_FT2),)
 		STATIC_FT2=yes
@@ -48,34 +55,32 @@ ifeq ($(OS), ios)
 	#if TOOLCHAINPATH is empty
 	ifeq ($(TOOLCHAINPATH),)
 		ifeq ($(SIMULATOR),yes)
-			ARCH = i686
-			PARCHFLAGS = -DTARGET_IPHONE_SIMULATOR -m32
-
-			ifneq (,$(findstring 4.3,$(XCODE)))
-				TOOLCHAINPATH	= /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin/
-				SYSROOTPATH		= /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator$(IOSVERSION).sdk
-			else
-				TOOLCHAINPATH	= /Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin/
-				SYSROOTPATH		= /Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator$(IOSVERSION).sdk
-			endif
+			ARCH = i386
+			PARCHFLAGS = -m32 -march=i386
+			PLATNAME = Simulator
 		else
 			ARCH = armv7
-			PARCHFLAGS = -DTARGET_OS_IPHONE -marm -mcpu=cortex-a8
-			
-			#if xcode is 4.3
-			ifneq (,$(findstring 4.3,$(XCODE)))
-				TOOLCHAINPATH	= /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/
-				SYSROOTPATH		= /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$(IOSVERSION).sdk
-			else
-				TOOLCHAINPATH	= /Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/
-				SYSROOTPATH		= /Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS$(IOSVERSION).sdk
-			endif
+			PARCHFLAGS = -marm
+			PLATNAME = OS
+		endif
+
+		#if xcode is 4.3
+		ifneq (,$(findstring 4.3,$(XCODE)))
+			TOOLCHAINPATH	= /Applications/Xcode.app/Contents/Developer/Platforms/iPhone$(PLATNAME).platform/Developer/usr/bin/
+			SYSROOTPATH		= /Applications/Xcode.app/Contents/Developer/Platforms/iPhone$(PLATNAME).platform/Developer/SDKs/iPhone$(PLATNAME)$(IOSVERSION).sdk
+			FRAMEWORKPATH	= /Applications/Xcode.app/Contents/Developer/Platforms/iPhone$(PLATNAME).platform/Developer/SDKs/iPhone$(PLATNAME)$(IOSVERSION).sdk/System/Library/Frameworks
+		else
+			TOOLCHAINPATH	= /Developer/Platforms/iPhone$(PLATNAME).platform/Developer/usr/bin/
+			SYSROOTPATH		= /Developer/Platforms/iPhone$(PLATNAME).platform/Developer/SDKs/iPhone$(PLATNAME)$(IOSVERSION).sdk
+			FRAMEWORKPATH	= /Developer/Platforms/iPhone$(PLATNAME).platform/Developer/SDKs/iPhone$(PLATNAME)$(IOSVERSION).sdk/System/Library/Frameworks
 		endif
 
 		export C_INCLUDE_PATH		= $(SYSROOTPATH)/usr/include
 		export CPLUS_INCLUDE_PATH	= $(SYSROOTPATH)/usr/include
-		
-		PLATFORMFLAGS = -D__IPHONE__ $(PARCHFLAGS) -miphoneos-version-min=$(IOSVERSION) -DDARWIN_NO_CARBON -isysroot $(SYSROOTPATH) -I./src/helper/android/SDL2/include
+		export LIBRARY_PATH			= $(FRAMEWORKPATH)/usr/lib
+
+		PLATFORMFLAGS = $(PARCHFLAGS) -miphoneos-version-min=$(IOSVERSION) -isysroot $(SYSROOTPATH)
+		FRAMEWORKFLAGS += -F$(FRAMEWORKPATH) -L$(SYSROOTPATH)/usr/lib -isysroot $(SYSROOTPATH)
 	endif
 endif
 
@@ -106,9 +111,9 @@ SDLCONFIGPATH		=
 endif
 
 ifeq ($(ARCH),)
-ARCHFLAGS			=
+	ARCHEXT		=
 else
-ARCHFLAGS			= 
+	ARCHEXT		=-$(ARCH)
 endif
 
 ifeq ($(DYNAMIC), yes)
@@ -116,16 +121,10 @@ ifeq ($(DYNAMIC), yes)
 	LIBNAME = $(LIBPATH)/$(LIB).$(VERSION)
 	INSTALL = && $(LN) $(LNFLAGS) $(DESTLIBDIR)/$(LIB).$(VERSION) $(DESTLIBDIR)/$(LIB)
 else
-	ifeq ($(ARCH),)
-		LIB     = libeepp.a
-	else
-		LIB		= libeepp-$(ARCH).a
-	endif
-	
+	LIB		= libeepp$(ARCHEXT).a
 	LIBNAME = $(LIBPATH)/$(LIB)
 	INSTALL = 
 endif
-
 
 ifeq ($(DEBUGBUILD), yes)
     DEBUGFLAGS = -g -DDEBUG -DEE_DEBUG -DEE_MEMORY_MANAGER
@@ -196,7 +195,7 @@ ifeq ($(BACKEND_SDL),yes)
 			SDL_VERSION			= $(SDLVERSION)
 		endif
 	endif
-	
+
 	# If version is 1.2.x
 	ifneq (,$(findstring 1.2,$(SDL_VERSION)))
 		ifeq ($(OS), darwin)
@@ -252,11 +251,11 @@ ifeq ($(BACKEND_SDL),yes)
 				EE_SDL_VERSION		= -DEE_SDL_VERSION_1_3
 			else
 				# If version is 2.x.x
-				SDL_BACKEND_LINK	= libs/$(OS)/libSDL2.a
-
+				SDL_BACKEND_LINK	= libs/$(OS)/libSDL2$(ARCHEXT).a
 				EE_SDL_VERSION		= -DEE_SDL_VERSION_2
 			endif
 
+			STATIC_LIBS			+= $(SDL_BACKEND_LINK)
 		endif
 		
 		SDL_BACKEND_SRC		= $(wildcard ./src/window/backend/SDL2/*.cpp)
@@ -270,10 +269,14 @@ else
 endif
 
 ifeq ($(BACKEND_ALLEGRO), yes)
-	ifeq ($(OS), darwin)
-		ALLEGRO_BACKEND_LINK	= -lallegro -lallegro_main
+	ifeq ($(STATIC_ALLEGRO),)
+		ifeq ($(OS), darwin)
+			ALLEGRO_BACKEND_LINK	= -lallegro -lallegro_main
+		else
+			ALLEGRO_BACKEND_LINK	= -lallegro
+		endif
 	else
-		ALLEGRO_BACKEND_LINK	= -lallegro
+		ALLEGRO_BACKEND_LINK	= libs/$(OS)/liballegro$(ARCHEXT).a libs/$(OS)/liballegro_main$(ARCHEXT).a
 	endif
 
 	ALLEGRO_BACKEND_SRC		= $(wildcard ./src/window/backend/allegro5/*.cpp)
@@ -321,6 +324,18 @@ else
 	endif
 endif
 
+ifeq ($(OS), ios)
+
+ifeq ($(BACKEND_SDL),yes)
+	BACKENDINCLUDE = -I./src/helper/android/SDL2/include
+else
+	BACKENDINCLUDE = -I./src/helper/allegro5/include
+endif
+
+PLATFORMFLAGS += $(BACKENDINCLUDE)
+
+endif
+
 ifeq ($(OS), linux)
 
 LIBS 		= -lrt -lpthread -lX11 -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
@@ -364,15 +379,15 @@ else
 ifeq ($(OS), cygwin_nt-6.1)
 
 LIBS 		= -lOpenAL32 -lmingw32 -lopengl32 -lglu32 -lgdi32 -static-libgcc -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
-OTHERINC	= -I./src/helper/zlib -I./src/helper/freetype2/include
+OTHERINC	= -I./src/helper/zlib $(INCFREETYPE2)
 PLATFORMSRC	= $(wildcard ./src/window/platform/win/*.cpp) $(wildcard ./src/system/platform/win/*.cpp)
 
 else
 
 ifeq ($(OS), ios)
 
-LIBS 		= -framework OpenGLES -framework OpenAL -framework Foundation -framework CoreFoundation -framework CoreSurface -framework UIKit -framework QuartzCore -framework CoreGraphics $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
-OTHERINC	= -I./src/helper/freetype2/include
+LIBS 		= -static-libgcc -static-libstdc++ -framework OpenGLES -framework OpenAL -framework AudioToolbox -framework CoreAudio -framework Foundation -framework CoreFoundation -framework UIKit -framework QuartzCore -framework CoreGraphics $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
+OTHERINC	= $(INCFREETYPE2)
 PLATFORMSRC = $(wildcard ./src/system/platform/posix/*.cpp)
 
 endif
@@ -398,7 +413,7 @@ endif
 
 export CFLAGS     	= $(ARCHFLAGS) -Wall -Wno-unknown-pragmas $(FINALFLAGS) $(BUILDFLAGS) $(BACKENDFLAGS) $(PLATFORMFLAGS)
 export CFLAGSEXT  	= $(ARCHFLAGS) $(FINALFLAGS) $(BUILDFLAGS) $(PLATFORMFLAGS)
-export LDFLAGS    	= $(LINKFLAGS)
+export LDFLAGS    	= $(ARCHFLAGS) $(LINKFLAGS) $(FRAMEWORKFLAGS)
 HELPERSFLAGS		= -DSTBI_FAILURE_USERMSG -DFT2_BUILD_LIBRARY
 
 HELPERSINC			= -I./src/helper/chipmunk -I./src/helper/zlib -I./src/helper/freetype2/include
@@ -517,12 +532,9 @@ FOBJALL 			= $(FOBJHELPERS) $(FOBJEEPP)
 DEPSEEPP			= $(FOBJEEPP:.o=.d)
 DEPSALL				= $(FOBJALL:.o=.d)
 
-.PHONY: all dirs lib $(FOBJMODULES) $(FOBJHELPERS) $(EXE) os test eeiv fluid bnb ew rhythm particles docs clean cleantemp cleanall install
-
 all: lib
 
 dirs:
-	@echo Creating directories $(OBJDIR)
 	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/psaux
 	@$(MKDIR) $(OBJDIR)/src/helper/SOIL
 	@$(MKDIR) $(OBJDIR)/src/helper/zlib
@@ -678,7 +690,7 @@ docs:
 	doxygen ./Doxyfile
 
 clean:
-	@$(RM) $(FOBJALL) $(DEPSALL)
+	$(RM) $(FOBJALL) $(DEPSALL)
 
 cleantemp:
 	@$(RM) $(FOBJEEPP) $(DEPSEEPP)
@@ -691,6 +703,9 @@ cleanall: clean
 	@$(RM) ./$(EXEIV)
 	@$(RM) ./$(EXEBNB)
 	@$(RM) ./log.log
+
+depends:
+	@echo $(DEPSALL)
 
 install:
 	@($(CP) $(LIBNAME) $(DESTLIBDIR) $(INSTALL))
