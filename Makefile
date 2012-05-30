@@ -60,7 +60,6 @@ ifeq ($(OS), ios)
 			PLATNAME = Simulator
 		else
 			ARCH = armv7
-			PARCHFLAGS = -marm
 			PLATNAME = OS
 		endif
 
@@ -79,29 +78,22 @@ ifeq ($(OS), ios)
 		export CPLUS_INCLUDE_PATH	= $(SYSROOTPATH)/usr/include
 		export LIBRARY_PATH			= $(FRAMEWORKPATH)/usr/lib
 
-		PLATFORMFLAGS = $(PARCHFLAGS) -miphoneos-version-min=$(IOSVERSION) -isysroot $(SYSROOTPATH)
-		FRAMEWORKFLAGS += -F$(FRAMEWORKPATH) -L$(SYSROOTPATH)/usr/lib -isysroot $(SYSROOTPATH)
+		PLATFORMFLAGS = $(PARCHFLAGS) -miphoneos-version-min=$(IOSVERSION) -isysroot $(SYSROOTPATH) -arch ${ARCH} -I${C_INCLUDE_PATH}
+		FRAMEWORKFLAGS += -F$(FRAMEWORKPATH) -L$(SYSROOTPATH)/usr/lib -isysroot $(SYSROOTPATH) -arch ${$ARCH}
 	endif
 endif
 
 export AR         	= $(TOOLCHAINPATH)ar
 
 ifeq ($(LLVM_BUILD), yes)
+
 export CC         	= $(TOOLCHAINPATH)clang
 export CPP        	= $(TOOLCHAINPATH)clang++
-else
-
-ifneq (,$(findstring arm,$(ARCH)))
-
-export CC         	= $(TOOLCHAINPATH)arm-apple-darwin10-llvm-gcc-4.2
-export CPP        	= $(TOOLCHAINPATH)arm-apple-darwin10-llvm-g++-4.2
 
 else
 
 export CC         	= $(TOOLCHAINPATH)gcc
 export CPP        	= $(TOOLCHAINPATH)g++
-
-endif
 
 endif
 
@@ -388,6 +380,11 @@ ifeq ($(OS), ios)
 
 LIBS 		= -static-libgcc -static-libstdc++ -framework OpenGLES -framework OpenAL -framework AudioToolbox -framework CoreAudio -framework Foundation -framework CoreFoundation -framework UIKit -framework QuartzCore -framework CoreGraphics $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
 OTHERINC	= $(INCFREETYPE2)
+
+ifeq ($(ARCH),armv7)
+OTHERINC += -DU_HAVE_GCC_ATOMICS=0
+endif
+
 PLATFORMSRC = $(wildcard ./src/system/platform/posix/*.cpp)
 
 endif

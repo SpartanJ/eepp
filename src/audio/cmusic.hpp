@@ -9,7 +9,7 @@ namespace EE { namespace Audio {
 class EE_API cMusic : public cSoundStream {
 	public :
 		/** Construct the music with a buffer size */
-		cMusic( std::size_t BufferSize = 44100 );
+		cMusic( std::size_t BufferSize = 48000 );
 
 		~cMusic();
 

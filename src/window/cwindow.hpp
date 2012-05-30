@@ -14,11 +14,11 @@ class cCursorManager;
 namespace WindowStyle {
 	enum
 	{
-		NoBorder 					= ( 0 << 0 ),
-		Titlebar					= ( 1 << 0 ),
-		Resize						= ( 1 << 1 ),
-		Fullscreen					= ( 1 << 2 ),
-		UseDesktopResolution		= ( 1 << 3 ),
+		NoBorder 					= ( 1 << 0 ),
+		Titlebar					= ( 1 << 1 ),
+		Resize						= ( 1 << 2 ),
+		Fullscreen					= ( 1 << 3 ),
+		UseDesktopResolution		= ( 1 << 4 ),
 		Default						= Titlebar | Resize
 	};
 }

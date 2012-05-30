@@ -75,10 +75,32 @@
 	#define	EE_ARM
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-	#define EE_NO_WIDECHAR
+/// Activate at least one backend for the compilation
+#if !defined( EE_BACKEND_SDL_ACTIVE ) && !defined( EE_BACKEND_ALLEGRO_ACTIVE )
+	#define EE_BACKEND_SDL_ACTIVE
+#endif
 
-	#define main	SDL_main
+#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
+	#if EE_PLATFORM == EE_PLATFORM_ANDROID
+		#define EE_NO_WIDECHAR
+	#endif
+
+	#ifdef EE_BACKEND_SDL_ACTIVE
+		#define main	SDL_main
+	#endif
+
+	#ifdef EE_BACKEND_ALLEGRO_ACTIVE
+		#if EE_PLATFORM == EE_PLATFORM_IOS
+			#define ALLEGRO_MAGIC_MAIN
+			#define main _al_mangled_main
+		#elif EE_PLATFORM == EE_PLATFORM_ANDROID
+			#ifdef __cplusplus
+			extern "C" int main(int argc, char ** argv);
+			#else
+			extern int main(int argc, char ** argv);
+			#endif
+		#endif
+	#endif
 
 	#ifndef EE_MAIN_FUNC
 		#ifdef __cplusplus
@@ -167,11 +189,6 @@
 
 #if ( defined( EE_GLES2 ) || defined( EE_GLES1 ) ) && !defined( EE_GLES )
 	#define EE_GLES
-#endif
-
-/// Activate at least one backend for the compilation
-#if !defined( EE_BACKEND_SDL_ACTIVE ) && !defined( EE_BACKEND_ALLEGRO_ACTIVE )
-	#define EE_BACKEND_SDL_ACTIVE
 #endif
 
 #define eeCOMMA ,

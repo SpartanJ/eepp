@@ -200,12 +200,14 @@ bool cShaderProgram::Link() {
 	glGetProgramiv( Handler(), GL_LINK_STATUS, &linked );
 	mValid = 0 != linked;
 
-	GLsizei logsize, logarraysize;
+	GLsizei logsize = 0, logarraysize = 0;
 	glGetProgramiv( Handler(), GL_INFO_LOG_LENGTH, &logarraysize );
-	mLinkLog.resize(logarraysize);
 
-	glGetProgramInfoLog( Handler(), logarraysize, &logsize, reinterpret_cast<GLchar*>( &mLinkLog[0] ) );
+	if ( logarraysize > 0 ) {
+		mLinkLog.resize( logarraysize );
 
+		glGetProgramInfoLog( Handler(), logarraysize, &logsize, reinterpret_cast<GLchar*>( &mLinkLog[0] ) );
+	}
 	#endif
 
 	if ( !mValid ) {

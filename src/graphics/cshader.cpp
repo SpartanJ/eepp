@@ -175,22 +175,18 @@ bool cShader::Compile() {
 	mValid = 0 != Compiled;
 
 	if ( !mValid ) {
-		GLsizei logsize, logarraysize;
+		GLsizei logsize = 0, logarraysize = 0;
 		glGetShaderiv( GetId(), GL_INFO_LOG_LENGTH, &logarraysize );
 
-		mCompileLog.resize( logarraysize - 1 );
+		if ( logarraysize > 0 ) {
+			mCompileLog.resize( logarraysize - 1 );
 
-		glGetShaderInfoLog( GetId(), logarraysize, &logsize, reinterpret_cast<GLchar*>( &mCompileLog[0] ) );
+			glGetShaderInfoLog( GetId(), logarraysize, &logsize, reinterpret_cast<GLchar*>( &mCompileLog[0] ) );
+		}
 
 		cLog::instance()->Write( "Couldn't compile shader. Log follows:" );
 		cLog::instance()->Write( mCompileLog );
 		cLog::instance()->Write( mSource );
-
-		#ifdef EE_DEBUG
-		std::cout << "Couldn't compile shader. Log follows:"  << std::endl;
-		std::cout << mCompileLog << std::endl;
-		std::cout << mSource << std::endl;
-		#endif
 	} else {
 		cLog::instance()->Write( "Shader Loaded Succesfully" );
 	}
