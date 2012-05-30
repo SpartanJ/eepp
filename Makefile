@@ -2,12 +2,12 @@ STRLOWERCASE 		= $(subst A,a,$(subst B,b,$(subst C,c,$(subst D,d,$(subst E,e,$(s
 
 #cross-compiling support
 ifeq ($(MINGW32),yes)
-	OS				= mingw32
+	BUILD_OS		= mingw32
 else
 	ifeq ($(IOS),yes)
-		OS			= ios
+		BUILD_OS	= ios
 	else
-		OS 			= $(strip $(call STRLOWERCASE, $(shell uname) ) )
+		BUILD_OS 	= $(strip $(call STRLOWERCASE, $(shell uname) ) )
 	endif
 endif
 
@@ -26,7 +26,7 @@ export RM			= rm -rf
 FRAMEWORKFLAGS		=
 STATIC_LIBS			=
 
-ifeq ($(OS), mingw32)
+ifeq ($(BUILD_OS), mingw32)
 
 export AR         	= i686-w64-mingw32-ar
 export CC         	= i686-w64-mingw32-gcc
@@ -35,7 +35,7 @@ OSLIBEXTENSION		= dll
 
 else
 
-ifeq ($(OS), ios)
+ifeq ($(BUILD_OS), ios)
 	ifeq ($(IOSVERSION),)
 		ifneq (,$(findstring 4.3,$(XCODE)))
 			IOSVERSION	= 5.1
@@ -152,7 +152,7 @@ ifeq ($(BACKEND_SDL),)
 endif
 
 ifeq ($(BACKEND_SDL),yes)
-	ifeq ($(OS), ios)
+	ifeq ($(BUILD_OS), ios)
 		# First check for SDL2
 		SDLVERSION2			= $(shell type -P $(SDLCONFIGPATH)sdl2-config &>/dev/null && $(SDLCONFIGPATH)sdl2-config --version || echo "")
 		
@@ -190,7 +190,7 @@ ifeq ($(BACKEND_SDL),yes)
 
 	# If version is 1.2.x
 	ifneq (,$(findstring 1.2,$(SDL_VERSION)))
-		ifeq ($(OS), darwin)
+		ifeq ($(BUILD_OS), darwin)
 			SDL_ADD_LINK	= -framework Cocoa -lSDLmain
 		else
 			SDL_ADD_LINK	=
@@ -204,9 +204,9 @@ ifeq ($(BACKEND_SDL),yes)
 	else
 		ifeq ($(SHARED_BACKEND),)
 			#Check if static library exists
-			SDL_STATIC_FOUND	= $(shell ls libs/$(OS)/libSDL.a >/dev/null 2>&1 && echo "YES" || echo "NO")
+			SDL_STATIC_FOUND	= $(shell ls libs/$(BUILD_OS)/libSDL.a >/dev/null 2>&1 && echo "YES" || echo "NO")
 
-			SDL2_STATIC_FOUND	= $(shell ls libs/$(OS)/libSDL2.a >/dev/null 2>&1 && echo "YES" || echo "NO")
+			SDL2_STATIC_FOUND	= $(shell ls libs/$(BUILD_OS)/libSDL2.a >/dev/null 2>&1 && echo "YES" || echo "NO")
 
 			ifeq ($(SDL_STATIC_FOUND),NO)
 				ifeq ($(SDL2_STATIC_FOUND),NO)
@@ -219,7 +219,7 @@ ifeq ($(BACKEND_SDL),yes)
 		ifeq ($(SHARED_BACKEND),yes)
 			ifneq (,$(findstring 1.3,$(SDL_VERSION)))
 
-				ifeq ($(OS), darwin)
+				ifeq ($(BUILD_OS), darwin)
 					SDL_ADD_LINK	= -framework Cocoa -lSDLmain2
 				else
 					SDL_ADD_LINK	=
@@ -238,12 +238,12 @@ ifeq ($(BACKEND_SDL),yes)
 			
 			# If version is 1.3.x
 			ifneq (,$(findstring 1.3,$(SDL_VERSION)))
-				SDL_BACKEND_LINK	= libs/$(OS)/libSDL.a
+				SDL_BACKEND_LINK	= libs/$(BUILD_OS)/libSDL.a
 
 				EE_SDL_VERSION		= -DEE_SDL_VERSION_1_3
 			else
 				# If version is 2.x.x
-				SDL_BACKEND_LINK	= libs/$(OS)/libSDL2$(ARCHEXT).a
+				SDL_BACKEND_LINK	= libs/$(BUILD_OS)/libSDL2$(ARCHEXT).a
 				EE_SDL_VERSION		= -DEE_SDL_VERSION_2
 			endif
 
@@ -262,13 +262,13 @@ endif
 
 ifeq ($(BACKEND_ALLEGRO), yes)
 	ifeq ($(STATIC_ALLEGRO),)
-		ifeq ($(OS), darwin)
+		ifeq ($(BUILD_OS), darwin)
 			ALLEGRO_BACKEND_LINK	= -lallegro -lallegro_main
 		else
 			ALLEGRO_BACKEND_LINK	= -lallegro
 		endif
 	else
-		ALLEGRO_BACKEND_LINK	= libs/$(OS)/liballegro$(ARCHEXT).a libs/$(OS)/liballegro_main$(ARCHEXT).a
+		ALLEGRO_BACKEND_LINK	= libs/$(BUILD_OS)/liballegro$(ARCHEXT).a libs/$(BUILD_OS)/liballegro_main$(ARCHEXT).a
 	endif
 
 	ALLEGRO_BACKEND_SRC		= $(wildcard ./src/window/backend/allegro5/*.cpp)
@@ -288,7 +288,8 @@ else
 	ifeq ($(MINGW32),yes)
 		LIBSNDFILE	= -llibsndfile-1
 	else
-		ifeq ($(OS), cygwin_nt-6.1)
+		#if it is cygwin
+		ifneq (,$(findstring cygwin,$(BUILD_OS)))
 			LIBSNDFILE	= -llibsndfile-1
 		else
 			LIBSNDFILE	= -lsndfile
@@ -303,7 +304,12 @@ ifeq ($(STATIC_FT2),yes)
 	INCFREETYPE2	= -I./src/helper/freetype2/include
 else
 	LIBFREETYPE2	= -lfreetype
-	INCFREETYPE2	= -I$(DESTINCDIR)/freetype2
+	
+	ifneq (,$(findstring cygwin,$(BUILD_OS)))
+		INCFREETYPE2	= -I./src/helper/freetype2/include
+	else
+		INCFREETYPE2	= -I$(DESTINCDIR)/freetype2
+	endif
 endif
 
 ifeq ($(GLES2), yes)
@@ -316,7 +322,7 @@ else
 	endif
 endif
 
-ifeq ($(OS), ios)
+ifeq ($(BUILD_OS), ios)
 
 ifeq ($(BACKEND_SDL),yes)
 	BACKENDINCLUDE = -I./src/helper/android/SDL2/include
@@ -328,7 +334,7 @@ PLATFORMFLAGS += $(BACKENDINCLUDE)
 
 endif
 
-ifeq ($(OS), linux)
+ifeq ($(BUILD_OS), linux)
 
 LIBS 		= -lrt -lpthread -lX11 -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	= $(INCFREETYPE2)
@@ -336,7 +342,7 @@ PLATFORMSRC	= $(wildcard ./src/window/platform/x11/*.cpp) $(wildcard ./src/syste
 
 else
 
-ifeq ($(OS), darwin)
+ifeq ($(BUILD_OS), darwin)
 
 LIBS 		= -framework OpenGL -framework OpenAL -framework CoreFoundation -framework AGL $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	= $(INCFREETYPE2) -I/usr/local/include/freetype2
@@ -344,7 +350,7 @@ PLATFORMSRC = $(wildcard ./src/window/platform/osx/*.cpp) $(wildcard ./src/syste
 
 else
 
-ifeq ($(OS), haiku)
+ifeq ($(BUILD_OS), haiku)
 
 LIBS 		= -lopenal -lGL $(SDL_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	= $(INCFREETYPE2)
@@ -352,7 +358,7 @@ PLATFORMSRC	= $(wildcard ./src/system/platform/posix/*.cpp)
 
 else
 
-ifeq ($(OS), freebsd)
+ifeq ($(BUILD_OS), freebsd)
 
 LIBS 		= -lrt -lpthread -lX11 -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	= $(INCFREETYPE2)
@@ -360,7 +366,7 @@ PLATFORMSRC	= $(wildcard ./src/window/platform/x11/*.cpp) $(wildcard ./src/syste
 
 else
 
-ifeq ($(OS), mingw32)
+ifeq ($(BUILD_OS), mingw32)
 
 LIBS 		= -llibOpenAL32 -lopengl32 -lmingw32 -lglu32 -lgdi32 -static-libgcc -static-libstdc++ $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	= $(INCFREETYPE2)
@@ -368,7 +374,8 @@ PLATFORMSRC	= $(wildcard ./src/window/platform/win/*.cpp) $(wildcard ./src/syste
 
 else
 
-ifeq ($(OS), cygwin_nt-6.1)
+#if it is cygwin
+ifneq (,$(findstring cygwin,$(BUILD_OS)))
 
 LIBS 		= -lOpenAL32 -lmingw32 -lopengl32 -lglu32 -lgdi32 -static-libgcc -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	= -I./src/helper/zlib $(INCFREETYPE2)
@@ -376,7 +383,7 @@ PLATFORMSRC	= $(wildcard ./src/window/platform/win/*.cpp) $(wildcard ./src/syste
 
 else
 
-ifeq ($(OS), ios)
+ifeq ($(BUILD_OS), ios)
 
 LIBS 		= -static-libgcc -static-libstdc++ -framework OpenGLES -framework OpenAL -framework AudioToolbox -framework CoreAudio -framework Foundation -framework CoreFoundation -framework UIKit -framework QuartzCore -framework CoreGraphics $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
 OTHERINC	= $(INCFREETYPE2)
@@ -415,7 +422,7 @@ HELPERSFLAGS		= -DSTBI_FAILURE_USERMSG -DFT2_BUILD_LIBRARY
 
 HELPERSINC			= -I./src/helper/chipmunk -I./src/helper/zlib -I./src/helper/freetype2/include
 
-ifeq ($(OS), mingw32)
+ifeq ($(BUILD_OS), mingw32)
 OSEXTENSION			= .exe
 else
 OSEXTENSION			= 
@@ -429,10 +436,10 @@ EXEEMPTYWINDOW		= eeew-$(RELEASETYPE)$(OSEXTENSION)
 EXEPARTICLES		= eeparticles-$(RELEASETYPE)$(OSEXTENSION)
 EXERHYTHM			= rhythm-$(RELEASETYPE)$(OSEXTENSION)
 
-ifeq ($(OS), haiku)
+ifeq ($(BUILD_OS), haiku)
 SRCGLEW 			= 
 else
-ifeq ($(OS), ios)
+ifeq ($(BUILD_OS), ios)
 SRCGLEW 			= 
 else
 SRCGLEW 			= $(wildcard ./src/helper/glew/*.c)
@@ -507,9 +514,9 @@ OBJPARTICLES     	= $(SRCPARTICLES:.cpp=.o)
 OBJRHYTHM			= $(SRCRHYTHM:.cpp=.o)
 
 ifeq ($(ARCH),)
-OBJDIR				= obj/$(OS)/$(RELEASETYPE)/
+OBJDIR				= obj/$(BUILD_OS)/$(RELEASETYPE)/
 else
-OBJDIR				= obj/$(OS)/$(RELEASETYPE)/$(ARCH)/
+OBJDIR				= obj/$(BUILD_OS)/$(RELEASETYPE)/$(ARCH)/
 endif
 
 FOBJHELPERS			= $(patsubst ./%, $(OBJDIR)%, $(OBJFREETYPE) $(OBJGLEW) $(OBJSOIL) $(OBJSTBVORBIS) $(OBJZLIB) $(OBJLIBZIP) $(OBJCHIPMUNK) )
@@ -667,7 +674,10 @@ libeepp.so: $(FOBJHELPERS) $(FOBJMODULES)
 	$(CPP) $(LDFLAGS) -Wl,-soname,$(LIB).$(VERSION) -o $(LIBNAME) $(FOBJHELPERS) $(FOBJMODULES) $(LIBS)
 
 os:
-	@echo $(OS)
+	@echo $(BUILD_OS)
+
+objdir:
+	@echo $(OBJDIR)
 
 test: dirs $(EXE)
 
