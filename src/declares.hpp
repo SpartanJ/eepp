@@ -144,11 +144,16 @@
 	#error Platform not supported
 #endif
 
-#if ( __GNUC__ >= 4 ) && defined( EE_DYNAMIC ) && defined( EE_EXPORTS )
-	#define EE_API __attribute__ ((visibility("default")))
-#endif
-
 #if EE_PLATFORM == EE_PLATFORM_WIN
+	#ifdef EE_COMPILER_MSVC
+		#pragma warning(disable : 4251)
+		#pragma warning(disable : 4244)
+		#pragma warning(disable : 4996)
+		#pragma warning(disable : 4311)
+		#pragma warning(disable : 4312)
+		#pragma warning(disable : 4068)
+	#endif
+
 	#ifdef EE_DYNAMIC
 		// Windows platforms
 		#ifdef EE_EXPORTS
@@ -158,14 +163,6 @@
 			// From client application side, we must import
 			#define EE_API __declspec(dllimport)
 		#endif
-
-		#ifdef EE_COMPILER_MSVC
-			#pragma warning(disable : 4251)
-			#pragma warning(disable : 4244)
-			#pragma warning(disable : 4996)
-			#pragma warning(disable : 4311)
-			#pragma warning(disable : 4312)
-		#endif
 	#else
 		// No specific directive needed for static build
 		#ifndef EE_API
@@ -173,6 +170,10 @@
 		#endif
 	#endif
 #else
+	#if ( __GNUC__ >= 4 ) && defined( EE_EXPORTS )
+		#define EE_API __attribute__ ((visibility("default")))
+	#endif
+
 	// Other platforms don't need to define anything
 	#ifndef EE_API
 	#define EE_API
@@ -294,8 +295,8 @@ namespace EE {
 
 	#define EE_PI			3.14159265358979323846
 	#define EE_PI2			6.28318530717958647692
-	const eeFloat EE_PI_180	= EE_PI / 180;
-	const eeFloat EE_180_PI	= 180 / EE_PI;
+	const eeFloat EE_PI_180	= (eeFloat)EE_PI / 180;
+	const eeFloat EE_180_PI	= 180 / (eeFloat)EE_PI;
 
 	#define EE_1B		( 1 )
 	#define EE_1KB		( 1024 )

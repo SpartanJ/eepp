@@ -97,7 +97,12 @@ export CPP        	= $(TOOLCHAINPATH)g++
 
 endif
 
+ifneq (,$(findstring cygwin,$(BUILD_OS)))
+OSLIBEXTENSION		= dll
+else
 OSLIBEXTENSION		= so
+endif
+
 SDLCONFIGPATH		= 
 
 endif
@@ -108,9 +113,11 @@ else
 	ARCHEXT		=-$(ARCH)
 endif
 
+DYLIB     = libeepp.$(OSLIBEXTENSION)
+
 ifeq ($(DYNAMIC), yes)
-	LIB     = libeepp.$(OSLIBEXTENSION)
-	LIBNAME = $(LIBPATH)/$(LIB).$(VERSION)
+	LIB     = $(DYLIB)
+	LIBNAME = $(LIBPATH)/$(LIB)
 	INSTALL = && $(LN) $(LNFLAGS) $(DESTLIBDIR)/$(LIB).$(VERSION) $(DESTLIBDIR)/$(LIB)
 else
 	LIB		= libeepp$(ARCHEXT).a
@@ -133,8 +140,8 @@ endif
 
 
 ifeq ($(DYNAMIC), yes)
-    BUILDFLAGS = -fPIC
-    LINKFLAGS  = -shared
+    BUILDFLAGS = -fPIC -DEE_EXPORTS
+    LINKFLAGS  = -shared -DEE_EXPORTS
 else
     BUILDFLAGS = 
     LINKFLAGS  = 
@@ -670,7 +677,7 @@ libeepp-$(ARCH).a: $(FOBJHELPERS) $(FOBJMODULES)
 libeepp.a: $(FOBJHELPERS) $(FOBJMODULES)
 	$(AR) $(ARFLAGS) $(LIBNAME) $(FOBJHELPERS) $(FOBJMODULES)
 
-libeepp.so: $(FOBJHELPERS) $(FOBJMODULES)
+$(DYLIB): $(FOBJHELPERS) $(FOBJMODULES)
 	$(CPP) $(LDFLAGS) -Wl,-soname,$(LIB).$(VERSION) -o $(LIBNAME) $(FOBJHELPERS) $(FOBJMODULES) $(LIBS)
 
 os:

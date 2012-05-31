@@ -84,7 +84,7 @@ cUIMenu * cUIMenuSubMenu::SubMenu() const {
 	return mSubMenu;
 }
 
-Uint32 cUIMenuSubMenu::OnMouseMove( const eeVector2i &Pos, Uint32 Flags ) {
+Uint32 cUIMenuSubMenu::OnMouseMove( const eeVector2i &Pos, const Uint32 Flags ) {
 	cUIMenuItem::OnMouseMove( Pos, Flags );
 
 	if ( NULL != mSubMenu && !mSubMenu->Visible() ) {
@@ -115,7 +115,7 @@ void cUIMenuSubMenu::ShowSubMenu() {
 	}
 }
 
-Uint32 cUIMenuSubMenu::OnMouseExit( const eeVector2i &Pos, Uint32 Flags ) {
+Uint32 cUIMenuSubMenu::OnMouseExit( const eeVector2i &Pos, const Uint32 Flags ) {
 	cUIMenuItem::OnMouseExit( Pos, Flags );
 
 	mTimeOver = 0;

@@ -50,7 +50,7 @@ void cUITab::SetTheme( cUITheme * Theme ) {
 	DoAfterSetTheme();
 }
 
-Uint32 cUITab::OnMouseClick( const eeVector2i &Pos, Uint32 Flags ) {
+Uint32 cUITab::OnMouseClick( const eeVector2i &Pos, const Uint32 Flags ) {
 	cUISelectButton::OnMouseClick( Pos, Flags );
 
 	cUITabWidget * tTabW = GetTabWidget();

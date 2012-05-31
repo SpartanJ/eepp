@@ -1,4 +1,6 @@
 #include "czip.hpp"
+#include "../helper/libzip/zip.h"
+#include "../helper/libzip/zipint.h"
 
 namespace EE { namespace System {
 

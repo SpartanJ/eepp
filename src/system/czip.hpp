@@ -3,8 +3,8 @@
 
 #include "base.hpp"
 #include "cpack.hpp"
-#include "../helper/libzip/zip.h"
-#include "../helper/libzip/zipint.h"
+
+struct zip;
 
 namespace EE { namespace System {
 

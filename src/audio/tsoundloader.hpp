@@ -13,7 +13,7 @@ namespace EE { namespace Audio {
 #define SND_LT_SAMPLES	(4)
 
 template <typename T>
-class EE_API tSoundLoader : public cObjectLoader {
+class tSoundLoader : public cObjectLoader {
 	public:
 		tSoundLoader( tSoundManager<T> * SndMngr, const T& id, const std::string& filepath );
 

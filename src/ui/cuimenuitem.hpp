@@ -17,7 +17,7 @@ class EE_API cUIMenuItem : public cUIPushButton {
 
 		virtual void SetTheme( cUITheme * Theme );
 	protected:
-		virtual Uint32 OnMouseEnter( const eeVector2i &Pos, Uint32 Flags );
+		virtual Uint32 OnMouseEnter( const eeVector2i &Pos, const Uint32 Flags );
 
 		virtual void OnStateChange();
 };

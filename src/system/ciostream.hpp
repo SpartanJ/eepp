@@ -9,7 +9,7 @@ namespace EE {
 
 namespace EE { namespace System {
 
-class cIOStream {
+class EE_API cIOStream {
 	public:
 		virtual ~cIOStream() {}
 

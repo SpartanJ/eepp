@@ -757,7 +757,7 @@ void cUIWindow::Maximize() {
 	}
 }
 
-Uint32 cUIWindow::OnMouseDoubleClick( const eeVector2i &Pos, Uint32 Flags ) {
+Uint32 cUIWindow::OnMouseDoubleClick( const eeVector2i &Pos, const Uint32 Flags ) {
 	if ( ( mWinFlags & UI_WIN_RESIZEABLE ) && ( NULL != mButtonMaximize ) && ( Flags & EE_BUTTON_LMASK ) ) {
 		ButtonMaximizeClick( NULL );
 	}
