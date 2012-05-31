@@ -1,5 +1,7 @@
 #include "cttffont.hpp"
 #include "../system/ciostreamfile.hpp"
+#include "../helper/haikuttf/haikuttf.hpp"
+using namespace HaikuTTF;
 
 namespace EE { namespace Graphics {
 

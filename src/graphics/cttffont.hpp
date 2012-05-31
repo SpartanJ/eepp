@@ -5,8 +5,9 @@
 #include "ctexturefactory.hpp"
 #include "cfont.hpp"
 
-#include "../helper/haikuttf/haikuttf.hpp"
-using namespace HaikuTTF;
+namespace HaikuTTF {
+	class hkFont;
+}
 
 namespace EE { namespace Graphics {
 
@@ -70,7 +71,7 @@ class EE_API cTTFFont : public cFont {
 	protected:
 		friend class cTTFFontLoader;
 
-		hkFont *	mFont;
+		HaikuTTF::hkFont *	mFont;
 		eeColorA *	mPixels;
 
 		std::string	mFilepath;
