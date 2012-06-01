@@ -109,6 +109,8 @@ void cConsole::AddCommand( const String& Command, ConsoleCallback CB ) {
 
 void cConsole::Draw() {
 	if ( mEnabled && NULL != mFont ) {
+		eeColorA OldColor( mFont->Color() );
+
 		Fade();
 
 		if ( mY > 0.0f ) {
@@ -159,6 +161,9 @@ void cConsole::Draw() {
 			mFont->Draw( mFontSize, CurY );
 
 			mFont->Color( eeColorA ( mFontLineColor.R(), mFontLineColor.G(), mFontLineColor.B(), static_cast<Uint8>(mCurAlpha) ) );
+
+			mFont->Color( OldColor );
+
 			if ( (eeUint)mTBuf.CurPos() == mTBuf.Buffer().size() ) {
 				mFont->Draw( "_", mFontSize + mFont->GetTextWidth() , CurY );
 			} else {
@@ -169,9 +174,11 @@ void cConsole::Draw() {
 	}
 
 	if ( mShowFps ) {
+		eeColorA OldColor1( mFont->Color() );
 		mFont->Color( eeColorA () );
 		mFont->SetText( "FPS: " + toStr( mWindow->FPS() ) );
 		mFont->Draw( mWindow->GetWidth() - mFont->GetTextWidth() - 15, 6 );
+		mFont->Color( OldColor1 );
 	}
 }
 
