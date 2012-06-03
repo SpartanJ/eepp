@@ -127,36 +127,30 @@ void cInputSDL::Update() {
 				EEEvent.key.keysym.unicode = 0;
 				break;
 			}
-			case SDL_FINGERMOTION:
-			{
-				EEEvent.Type = InputEvent::MouseMotion;
-				EEEvent.motion.which = SDLEvent.tfinger.windowID;
-				EEEvent.motion.state = SDLEvent.tfinger.state;
-				EEEvent.motion.x = SDLEvent.tfinger.x;
-				EEEvent.motion.y = SDLEvent.tfinger.y;
-				EEEvent.motion.xrel = SDLEvent.tfinger.dx;
-				EEEvent.motion.yrel = SDLEvent.tfinger.dy;
-				break;
-			}
 			case SDL_MOUSEMOTION:
 			{
 				EEEvent.Type = InputEvent::MouseMotion;
 				EEEvent.motion.which = SDLEvent.motion.windowID;
 				EEEvent.motion.state = SDLEvent.motion.state;
+
+				#if EE_PLATFORM == EE_PLATFORM_IOS
+				if ( mWindow->GetWidth() == 960 || mWindow->GetWidth() == 640 ) {
+					EEEvent.motion.x = SDLEvent.motion.x * 2;
+					EEEvent.motion.y = SDLEvent.motion.y * 2;
+					EEEvent.motion.xrel = SDLEvent.motion.xrel * 2;
+					EEEvent.motion.yrel = SDLEvent.motion.yrel * 2;
+				} else {
+					EEEvent.motion.x = SDLEvent.motion.x;
+					EEEvent.motion.y = SDLEvent.motion.y;
+					EEEvent.motion.xrel = SDLEvent.motion.xrel;
+					EEEvent.motion.yrel = SDLEvent.motion.yrel;
+				}
+				#else
 				EEEvent.motion.x = SDLEvent.motion.x;
 				EEEvent.motion.y = SDLEvent.motion.y;
 				EEEvent.motion.xrel = SDLEvent.motion.xrel;
 				EEEvent.motion.yrel = SDLEvent.motion.yrel;
-				break;
-			}
-			case SDL_FINGERDOWN:
-			{
-				EEEvent.Type = InputEvent::MouseButtonDown;
-				EEEvent.button.button = 1;
-				EEEvent.button.which = SDLEvent.tfinger.windowID;
-				EEEvent.button.state = SDLEvent.tfinger.state;
-				EEEvent.button.x = SDLEvent.tfinger.x;
-				EEEvent.button.y = SDLEvent.tfinger.y;
+				#endif
 				break;
 			}
 			case SDL_MOUSEBUTTONDOWN:
@@ -167,16 +161,6 @@ void cInputSDL::Update() {
 				EEEvent.button.state = SDLEvent.button.state;
 				EEEvent.button.x = SDLEvent.button.x;
 				EEEvent.button.y = SDLEvent.button.y;
-				break;
-			}
-			case SDL_FINGERUP:
-			{
-				EEEvent.Type = InputEvent::MouseButtonUp;
-				EEEvent.button.button = 1;
-				EEEvent.button.which = SDLEvent.tfinger.windowID;
-				EEEvent.button.state = SDLEvent.tfinger.state;
-				EEEvent.button.x = SDLEvent.tfinger.x;
-				EEEvent.button.y = SDLEvent.tfinger.y;
 				break;
 			}
 			case SDL_MOUSEBUTTONUP:
@@ -218,7 +202,38 @@ void cInputSDL::Update() {
 				EEEvent.Type = InputEvent::MouseButtonUp;
 				EEEvent.button.state = 0;
 				break;
+			}/*
+			case SDL_FINGERDOWN:
+			{
+				EEEvent.Type = InputEvent::FingerDown;
+				EEEvent.finger.button = 1;
+				EEEvent.finger.which = SDLEvent.tfinger.windowID;
+				EEEvent.finger.state = SDLEvent.tfinger.state;
+				EEEvent.finger.x = SDLEvent.tfinger.x;
+				EEEvent.finger.y = SDLEvent.tfinger.y;
+				break;
 			}
+			case SDL_FINGERMOTION:
+			{
+				EEEvent.Type = InputEvent::FingerMotion;
+				EEEvent.finger.which = SDLEvent.tfinger.windowID;
+				EEEvent.finger.state = SDLEvent.tfinger.state;
+				EEEvent.finger.x = SDLEvent.tfinger.x;
+				EEEvent.finger.y = SDLEvent.tfinger.y;
+				EEEvent.finger.xrel = SDLEvent.tfinger.dx;
+				EEEvent.finger.yrel = SDLEvent.tfinger.dy;
+				break;
+			}
+			case SDL_FINGERUP:
+			{
+				EEEvent.Type = InputEvent::FingerUp;
+				EEEvent.finger.button = 1;
+				EEEvent.finger.which = SDLEvent.tfinger.windowID;
+				EEEvent.finger.state = SDLEvent.tfinger.state;
+				EEEvent.finger.x = SDLEvent.tfinger.x;
+				EEEvent.finger.y = SDLEvent.tfinger.y;
+				break;
+			}*/
 			case SDL_JOYAXISMOTION:
 			{
 				EEEvent.Type = InputEvent::JoyAxisMotion;
