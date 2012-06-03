@@ -54,7 +54,7 @@ std::string cRendererGL::VersionStr() {
 	#ifndef EE_GLES1
 	return "OpenGL 2";
 	#else
-	return "OpenGL ES1";
+	return "OpenGL ES 1";
 	#endif
 }
 

@@ -2362,7 +2362,7 @@ static int expand_palette(png *a, uint8 *palette, int len, int pal_img_n)
 }
 
 static int stbi_unpremultiply_on_load = 0;
-static int stbi_de_iphone_flag = 0;
+static int stbi_de_iphone_flag = 1;
 
 void stbi_set_unpremultiply_on_load(int flag_true_if_should_unpremultiply)
 {
