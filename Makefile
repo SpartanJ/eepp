@@ -60,6 +60,7 @@ ifeq ($(BUILD_OS), ios)
 			PLATNAME = Simulator
 		else
 			ARCH = armv7
+			PARCHFLAGS = -march=armv7 -marm -mcpu=cortex-a8 
 			PLATNAME = OS
 		endif
 
@@ -78,8 +79,8 @@ ifeq ($(BUILD_OS), ios)
 		export CPLUS_INCLUDE_PATH	= $(SYSROOTPATH)/usr/include
 		export LIBRARY_PATH			= $(FRAMEWORKPATH)/usr/lib
 
-		PLATFORMFLAGS = $(PARCHFLAGS) -miphoneos-version-min=$(IOSVERSION) -isysroot $(SYSROOTPATH) -arch ${ARCH} -I${C_INCLUDE_PATH}
-		FRAMEWORKFLAGS += -F$(FRAMEWORKPATH) -L$(SYSROOTPATH)/usr/lib -isysroot $(SYSROOTPATH) -arch ${$ARCH}
+		PLATFORMFLAGS = -arch ${ARCH} -miphoneos-version-min=$(IOSVERSION) -isysroot $(SYSROOTPATH) -I${C_INCLUDE_PATH}
+		FRAMEWORKFLAGS += -arch ${ARCH} $(PARCHFLAGS) -F$(FRAMEWORKPATH) -L$(SYSROOTPATH)/usr/lib -isysroot $(SYSROOTPATH)
 	endif
 endif
 
@@ -319,13 +320,13 @@ else
 	endif
 endif
 
+FINALFLAGS = $(DEBUGFLAGS) $(SNDFILEFLAG)
+
 ifeq ($(GLES2), yes)
-	FINALFLAGS = $(DEBUGFLAGS) $(SNDFILEFLAG) -DEE_GLES2 -DSOIL_GLES2
+	FINALFLAGS += -DEE_GLES2 -DSOIL_GLES2
 else
 	ifeq ($(GLES1), yes)
-		FINALFLAGS = $(DEBUGFLAGS) $(SNDFILEFLAG) -DEE_GLES1 -DSOIL_GLES1
-	else
-		FINALFLAGS = $(DEBUGFLAGS) $(SNDFILEFLAG)
+		FINALFLAGS += -DEE_GLES1 -DSOIL_GLES1
 	endif
 endif
 
@@ -375,7 +376,7 @@ else
 
 ifeq ($(BUILD_OS), mingw32)
 
-LIBS 		= -llibOpenAL32 -lopengl32 -lmingw32 -lglu32 -lgdi32 -static-libgcc -static-libstdc++ $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
+LIBS 		= -lOpenAL32 -lopengl32 -lmingw32 -lglu32 -lgdi32 -static-libgcc -static-libstdc++ $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	= $(INCFREETYPE2)
 PLATFORMSRC	= $(wildcard ./src/window/platform/win/*.cpp) $(wildcard ./src/system/platform/win/*.cpp)
 

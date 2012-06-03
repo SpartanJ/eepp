@@ -85,7 +85,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 		return false;
 	}
 
-	#if EE_PLAFORM == EE_PLATFORM_ANDROID
+	#if EE_PLAFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
 		#ifdef EE_GLES1
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);

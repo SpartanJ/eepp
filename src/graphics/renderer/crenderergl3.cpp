@@ -45,20 +45,20 @@ const char * EEGL_PLANES_NAME[] = {
 
 const GLchar * EEGL_SHADER_BASE_VS[] = {
 	"#define MAX_CLIP_PLANES 6\n",
-	"uniform			mat4 dgl_ProjectionMatrix;\n",	// replaces deprecated gl_ProjectionMatrix
-	"uniform			mat4 dgl_ModelViewMatrix;\n",	// replaces deprecated gl_ModelViewMatrix
-	"uniform			int  dgl_ClippingEnabled = 0;\n",
-	"uniform			int	 dgl_ClipEnabled[ MAX_CLIP_PLANES ] = { 0, 0, 0, 0, 0, 0 };\n",
+	"uniform			mat4 dgl_ProjectionMatrix;\n",
+	"uniform			mat4 dgl_ModelViewMatrix;\n",
+	"uniform			int  dgl_ClippingEnabled;\n",
+	"uniform			int	 dgl_ClipEnabled[ MAX_CLIP_PLANES ];\n",
 	"uniform			vec4 dgl_ClipPlane[ MAX_CLIP_PLANES ];\n",
-	"uniform			float dgl_PointSize = 1;\n",
-	"in					vec4 dgl_Vertex;\n",			// replaces deprecated gl_Vertex
-	"in					vec4 dgl_FrontColor;\n",		// replaces deprecated gl_FrontColor
-	"in					vec4 dgl_MultiTexCoord0;\n",	// replaces deprecated gl_MultiTexCoord0
-	"in					vec4 dgl_MultiTexCoord1;\n",	// replaces deprecated gl_MultiTexCoord1
-	"in					vec4 dgl_MultiTexCoord2;\n",	// replaces deprecated gl_MultiTexCoord2
-	"in					vec4 dgl_MultiTexCoord3;\n",	// replaces deprecated gl_MultiTexCoord3
-	"varying			vec4 dgl_Color;\n",				// to fragment shader
-	"varying			vec4 dgl_TexCoord[ 4 ];\n",		// to fragment shader
+	"uniform			float dgl_PointSize;\n",
+	"attribute			vec4 dgl_Vertex;\n",
+	"attribute			vec4 dgl_FrontColor;\n",
+	"attribute			vec4 dgl_MultiTexCoord0;\n",
+	"attribute			vec4 dgl_MultiTexCoord1;\n",
+	"attribute			vec4 dgl_MultiTexCoord2;\n",
+	"attribute			vec4 dgl_MultiTexCoord3;\n",
+	"varying			vec4 dgl_Color;\n",
+	"varying			vec4 dgl_TexCoord[ 4 ];\n",
 	"varying			float dgl_ClipDistance[ MAX_CLIP_PLANES ];\n",
 	"void main(void)\n",
 	"{\n",
@@ -81,11 +81,12 @@ const GLchar * EEGL_SHADER_BASE_VS[] = {
 
 const GLchar * EEGL_SHADER_BASE_FS[] = {
 	"#define MAX_CLIP_PLANES 6\n",
+	"precision highp float;\n",
 	"uniform		sampler2D	textureUnit0;\n",
-	"uniform		int			dgl_TexActive = 1;\n",
-	"uniform		int			dgl_PointSpriteActive = 0;\n",
-	"uniform		int			dgl_ClippingEnabled = 0;\n",
-	"uniform		int			dgl_ClipEnabled[ MAX_CLIP_PLANES ] = { 0, 0, 0, 0, 0, 0 };\n",
+	"uniform		int			dgl_TexActive;\n",
+	"uniform		int			dgl_PointSpriteActive;\n",
+	"uniform		int			dgl_ClippingEnabled;\n",
+	"uniform		int			dgl_ClipEnabled[ MAX_CLIP_PLANES ];\n",
 	"uniform		vec4		dgl_ClipPlane[ MAX_CLIP_PLANES ];\n",
 	"varying		vec4		dgl_Color;\n",
 	"varying		vec4		dgl_TexCoord[ 4 ];\n",
@@ -106,7 +107,7 @@ const GLchar * EEGL_SHADER_BASE_FS[] = {
 	"			gl_FragColor = dgl_Color;\n",
 	"	} else\n",
 	"		gl_FragColor = dgl_Color * texture2D( textureUnit0, gl_PointCoord );\n",
-	"}\n"
+	"}\n",
 };
 
 #else
@@ -215,7 +216,7 @@ std::string cRendererGL3::VersionStr() {
 	#ifndef EE_GLES2
 	return "OpenGL 3";
 	#else
-	return "OpenGL ES2";
+	return "OpenGL ES 2";
 	#endif
 }
 
@@ -273,6 +274,24 @@ void cRendererGL3::SetShader( cShaderProgram * Shader ) {
 	MatrixMode( GL_MODELVIEW );
 	UpdateMatrix();
 	MatrixMode( CM );
+
+	#ifdef EE_GLES2
+	if ( -1 != mTexActiveLoc ) {
+		mCurShader->SetUniform( mTexActiveLoc, 1 );
+	}
+
+	mCurShader->SetUniform( "dgl_ClippingEnabled", 0 );
+
+	for ( i = 0; i < EE_MAX_PLANES; i++ ) {
+		if ( -1 != mPlanes[ i ] ) {
+			mCurShader->SetUniform( EEGL_PLANES_ENABLED_NAME[ i ], 0 );
+		}
+	}
+
+	if ( -1 != mPointSpriteLoc ) {
+		mCurShader->SetUniform( mPointSpriteLoc, 0 );
+	}
+	#endif
 }
 
 void cRendererGL3::Enable( GLenum cap ) {

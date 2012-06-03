@@ -105,9 +105,17 @@ void cShader::EnsureVersion() {
 			}
 		} else {
 			if ( mSource.find( "gl_FragColor" ) != std::string::npos ) {
-				mSource = "#version 150\nuniform		int			dgl_TexActive = 1;\ninvariant in	vec4		gl_Color;\ninvariant in	vec4		gl_TexCoord[ 4 ];\nout				vec4		gl_FragColor;\n" + mSource;
 
-				ReplaceSubStr( mSource, "gl_FragColor"	, "dgl_FragColor"	);
+				if ( GLi->Version() == GLv_3 ) {
+					mSource = "#version 150\nuniform		int			dgl_TexActive = 1;\ninvariant in	vec4		gl_Color;\ninvariant in	vec4		gl_TexCoord[ 4 ];\nout				vec4		gl_FragColor;\n" + mSource;
+				} else {
+					mSource = "uniform		int			dgl_TexActive;\nvarying	vec4		gl_Color;\nvarying	vec4		gl_TexCoord[ 4 ];\n" + mSource;
+				}
+
+				if ( GLi->Version() == GLv_3 ) {
+					ReplaceSubStr( mSource, "gl_FragColor"	, "dgl_FragColor"	);
+				}
+
 				ReplaceSubStr( mSource, "gl_Color"		, "dgl_Color"		);
 				ReplaceSubStr( mSource, "gl_TexCoord"	, "dgl_TexCoord"	);
 			}

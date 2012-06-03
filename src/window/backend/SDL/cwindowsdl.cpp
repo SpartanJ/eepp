@@ -135,9 +135,13 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 }
 
 std::string cWindowSDL::GetVersion() {
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
 	SDL_version ver = mWMinfo.version;
 
 	return StrFormated( "SDL %d.%d.%d", ver.major, ver.minor, ver.patch );
+#else
+	return StrFormated( "SDL %d.%d.%d", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL );
+#endif
 }
 
 void cWindowSDL::CreatePlatform() {
