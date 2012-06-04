@@ -173,7 +173,7 @@ void cShaderProgram::Reload() {
 
 void cShaderProgram::AddShader( cShader* Shader ) {
 	if ( !Shader->IsValid() ) {
-		cLog::instance()->Write( "cShaderProgram::AddShader(): Cannot add invalid shader" );
+		cLog::instance()->Write( "cShaderProgram::AddShader() " + mName + ": Cannot add invalid shader" );
 		return;
 	}
 
@@ -195,7 +195,6 @@ bool cShaderProgram::Link() {
 	#ifndef EE_GLES1
 	glLinkProgram( Handler() );
 
-
 	Int32 linked;
 	glGetProgramiv( Handler(), GL_LINK_STATUS, &linked );
 	mValid = 0 != linked;
@@ -211,11 +210,12 @@ bool cShaderProgram::Link() {
 	#endif
 
 	if ( !mValid ) {
-		cLog::instance()->Write( "cShaderProgram::Link(): Couldn't link program. Log follows:" + mLinkLog );
-		#ifdef EE_DEBUG
-		std::cout << "cShaderProgram::Link(): Couldn't link program. Log follows:" + mLinkLog << std::endl;
-		#endif
+		cLog::instance()->Write( "cShaderProgram::Link() " + mName + ": Couldn't link program. Log follows:" + mLinkLog );
 	} else {
+		if ( mLinkLog.size() ) {
+			cLog::instance()->Write( "cShaderProgram::Link() " + mName + ": Program linked, but recibed some log:\n" + mLinkLog );
+		}
+
 		mUniformLocations.clear();
 		mAttributeLocations.clear();
 	}

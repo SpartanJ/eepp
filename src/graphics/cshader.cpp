@@ -13,6 +13,8 @@ cShader::cShader( const Uint32& Type ) {
 cShader::cShader( const Uint32& Type, const std::string& Filename ) {
     Init( Type );
 
+	mFilename = FileNameFromPath( Filename );
+
 	if ( FileExists( Filename ) ) {
 		SafeDataPointer PData;
 
@@ -49,6 +51,8 @@ cShader::cShader( const Uint32& Type, cPack * Pack, const std::string& Filename 
 	SafeDataPointer PData;
 
 	Init( Type );
+
+	mFilename = FileNameFromPath( Filename );
 
 	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( Filename ) ) {
 		Pack->ExtractFileToMemory( Filename, PData );
@@ -94,13 +98,25 @@ void cShader::Reload() {
 	Compile();
 }
 
+std::string cShader::GetName() {
+	std::string name;
+
+	if ( mFilename.size() ) {
+		name = mFilename;
+	} else {
+		name = toStr( mGLId );
+	}
+
+	return name;
+}
+
 void cShader::EnsureVersion() {
 	#ifdef EE_GL3_ENABLED
 	if ( cShader::Ensure && ( GLi->Version() == GLv_3 || GLi->Version() == GLv_ES2 ) ) {
-		cLog::instance()->Write( "Shader " + toStr( mGLId ) + " converted to programmable pipeline automatically." );
+		cLog::instance()->Write( "Shader " + GetName() + " converted to programmable pipeline automatically." );
 
 		if ( GL_VERTEX_SHADER == mType ) {
-			if ( mSource.find( "ftransform" ) != std::string::npos ) {
+			if ( mSource.find( "ftransform" ) != std::string::npos || mSource.find("dgl_Vertex") == std::string::npos ) {
 				mSource = GLi->GetRendererGL3()->GetBaseVertexShader();
 			}
 		} else {
@@ -126,7 +142,7 @@ void cShader::EnsureVersion() {
 
 void cShader::SetSource( const std::string& Source ) {
 	if ( IsCompiled() ) {
-		cLog::instance()->Write( "Can't set source for compiled shaders" );
+		cLog::instance()->Write( "Shader " + GetName() +  " report: can't set source for compiled shaders" );
 		return;
 	}
 
@@ -169,7 +185,7 @@ void cShader::SetSource( const std::vector<Uint8>& Source ) {
 
 bool cShader::Compile() {
 	if ( IsCompiled() ) {
-		cLog::instance()->Write( "Can't compile a shader twice" );
+		cLog::instance()->Write( "Shader " + GetName() +  " report: can't compile a shader twice" );
 		return false;
 	}
 
@@ -192,16 +208,36 @@ bool cShader::Compile() {
 			glGetShaderInfoLog( GetId(), logarraysize, &logsize, reinterpret_cast<GLchar*>( &mCompileLog[0] ) );
 		}
 
-		cLog::instance()->Write( "Couldn't compile shader. Log follows:" );
+		cLog::instance()->Write( "Couldn't compile shader " + GetName() + ". Log follows:" );
 		cLog::instance()->Write( mCompileLog );
 		cLog::instance()->Write( mSource );
 	} else {
-		cLog::instance()->Write( "Shader Loaded Succesfully" );
+		cLog::instance()->Write( "Shader " + GetName() + " loaded Succesfully" );
 	}
 
 	#endif
 
 	return mValid;
+}
+
+bool cShader::IsValid() const {
+	return mValid;
+}
+
+bool cShader::IsCompiled() const {
+	return mCompiled;
+}
+
+std::string cShader::CompileLog() const {
+	return mCompileLog;
+}
+
+Uint32 cShader::GetType() const {
+	return mType;
+}
+
+Uint32 cShader::GetId() const {
+	return mGLId;
 }
 
 cVertexShader::cVertexShader() :

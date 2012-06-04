@@ -93,10 +93,8 @@ void cGL::WriteExtension( Uint8 Pos, Uint32 BitWrite ) {
 }
 
 void cGL::Init() {
-	bool glewOn = false;
-
 	#ifdef EE_GLEW_AVAILABLE
-	glewOn = ( GLEW_OK == glewInit() );
+	bool glewOn = ( GLEW_OK == glewInit() );
 
 	if ( glewOn ) {
 		WriteExtension( EEGL_ARB_texture_non_power_of_two	, GLEW_ARB_texture_non_power_of_two 				);
@@ -127,8 +125,6 @@ void cGL::Init() {
 		WriteExtension( EEGL_EXT_texture_compression_s3tc	, IsExtension( "GL_EXT_texture_compression_s3tc" )	);
 		WriteExtension( EEGL_ARB_vertex_buffer_object		, IsExtension( "GL_ARB_vertex_buffer_object" )		);
 		WriteExtension( EEGL_ARB_vertex_array_object		, IsExtension( "GL_ARB_vertex_array_object" )		);
-
-		glewOn = false; /// avoid compiler warning
 	}
 }
 
@@ -138,7 +134,7 @@ bool cGL::IsExtension( const std::string& name ) {
 #else
 	char *Exts = (char *)glGetString( GL_EXTENSIONS );
 
-	if ( strstr( Exts, name.c_str() ) ) {
+	if ( NULL != Exts && strstr( Exts, name.c_str() ) ) {
 		return true;
 	}
 
@@ -330,15 +326,30 @@ void cGL::PolygonMode( const EE_FILL_MODE& Mode ) {
 }
 
 std::string cGL::GetVendor() {
-	return std::string( reinterpret_cast<const char*> ( cGL::instance()->GetString( GL_VENDOR ) ) );
+	char * str = cGL::instance()->GetString( GL_VENDOR );
+
+	if ( NULL != str )
+		return std::string( reinterpret_cast<const char*> ( str ) );
+
+	return std::string();
 }
 
 std::string cGL::GetRenderer() {
-	return std::string( reinterpret_cast<const char*> ( cGL::instance()->GetString( GL_RENDERER ) ) );
+	char * str = cGL::instance()->GetString( GL_RENDERER );
+
+	if ( NULL != str )
+		return std::string( reinterpret_cast<const char*> ( str ) );
+
+	return std::string();
 }
 
 std::string cGL::GetVersion() {
-	return std::string( reinterpret_cast<const char*> ( cGL::instance()->GetString( GL_VERSION ) ) );
+	char * str = cGL::instance()->GetString( GL_VERSION );
+
+	if ( NULL != str )
+		return std::string( reinterpret_cast<const char*> ( str ) );
+
+	return std::string();
 }
 
 std::string cGL::GetShadingLanguageVersion() {

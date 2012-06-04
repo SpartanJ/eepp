@@ -344,7 +344,13 @@ endif
 
 ifeq ($(BUILD_OS), linux)
 
-LIBS 		= -lrt -lpthread -lX11 -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
+ifeq ($(GLES2),yes)
+LINUXLGL = -lGLESv2
+else
+LINUXLGL = -lGL
+endif
+
+LIBS 		= -lrt -lpthread -lX11 -lopenal $(LINUXLGL) -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	= $(INCFREETYPE2)
 PLATFORMSRC	= $(wildcard ./src/window/platform/x11/*.cpp) $(wildcard ./src/system/platform/posix/*.cpp)
 

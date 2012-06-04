@@ -150,7 +150,7 @@ void cBatchRenderer::Flush() {
 		GLi->Disable( GL_POINT_SPRITE );
 	}
 
-	if ( mTexture == 0 ) {
+	if ( NULL == mTexture ) {
 		GLi->Enable( GL_TEXTURE_2D );
 		GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
 	}

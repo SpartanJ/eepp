@@ -614,18 +614,26 @@ void cRendererGL3::MatrixMode(GLenum mode) {
 }
 
 void cRendererGL3::EnableClientState( GLenum array ) {
+	GLint state;
+
 	if ( GL_TEXTURE_COORD_ARRAY == array ) {
-		glEnableVertexAttribArray( mTextureUnits[ mCurActiveTex ] );
+		if ( -1 != ( state = mTextureUnits[ mCurActiveTex ] ) )
+			glEnableVertexAttribArray( state );
 	} else {
-		glEnableVertexAttribArray( mStates[ array - GL_VERTEX_ARRAY ] );
+		if ( -1 != ( state = mStates[ array - GL_VERTEX_ARRAY ] ) )
+			glEnableVertexAttribArray( state );
 	}
 }
 
 void cRendererGL3::DisableClientState( GLenum array ) {
+	GLint state;
+
 	if ( GL_TEXTURE_COORD_ARRAY == array ) {
-		glDisableVertexAttribArray( mTextureUnits[ mCurActiveTex ] );
+		if ( -1 != ( state = mTextureUnits[ mCurActiveTex ] ) )
+			glDisableVertexAttribArray( state );
 	} else {
-		glDisableVertexAttribArray( mStates[ array - GL_VERTEX_ARRAY ] );
+		if ( -1 != ( state = mStates[ array - GL_VERTEX_ARRAY ] ) )
+			glDisableVertexAttribArray( state );
 	}
 }
 
@@ -684,6 +692,10 @@ void cRendererGL3::ColorPointer ( GLint size, GLenum type, GLsizei stride, const
 		} else {
 			glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, 0 );
 		}
+	} else {
+		#ifdef EE_GLES2
+		glDisableVertexAttribArray( index );
+		#endif
 	}
 }
 
@@ -711,6 +723,10 @@ void cRendererGL3::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, co
 		#endif
 
 		glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, 0 );
+	} else {
+		#ifdef EE_GLES2
+		glDisableVertexAttribArray( index );
+		#endif
 	}
 }
 

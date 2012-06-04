@@ -8,6 +8,9 @@ namespace EE { namespace Graphics {
 /** @brief The basic shader class. */
 class EE_API cShader {
 	public:
+		/** Activates/Deactivates shader convertion from fixed pipeline to programmable pipeline ( activated by default ) */
+		static bool			Ensure;
+
 		/** Constructor with type of shader, next you'll need to set the source and compile it. */
     	cShader( const Uint32& Type );
 
@@ -41,19 +44,19 @@ class EE_API cShader {
     	bool Compile();
 
     	/** @return If the shader is valid */
-    	bool IsValid() const { return mValid; }
+		bool IsValid() const;
 
     	/** @return If the shader is compiled */
-    	bool IsCompiled() const { return mCompiled; }
+		bool IsCompiled() const;
 
     	/** @return The log of the compilation */
-    	std::string CompileLog() const { return mCompileLog; }
+		std::string CompileLog() const;
 
     	/** @return The Shader Type */
-    	Uint32 GetType() const { return mType; }
+		Uint32 GetType() const;
 
     	/** @return The Shader Id */
-    	Uint32 GetId() const { return mGLId; }
+		Uint32 GetId() const;
 
     	/** Reloads the Shader. */
     	void Reload();
@@ -61,13 +64,15 @@ class EE_API cShader {
 		friend class cRendererGL3;
     	GLuint 				mGLId;
     	GLenum 				mType;
+		std::string			mFilename;
 		std::string 		mCompileLog;
 		std::string         mSource;
     	bool 				mValid;
     	bool 				mCompiled;
-		static bool			Ensure;
 
     	void Init( const Uint32& Type );
+
+		std::string GetName();
 
 		void EnsureVersion();
 };
