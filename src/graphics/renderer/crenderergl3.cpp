@@ -307,7 +307,7 @@ void cRendererGL3::Enable( GLenum cap ) {
 		{
 			mTexActive = 1;
 			mCurShader->SetUniform( mTexActiveLoc, mTexActive );
-			return;
+			break;
 		}
 		case GL_CLIP_PLANE0:
 		case GL_CLIP_PLANE1:
@@ -343,7 +343,7 @@ void cRendererGL3::Disable ( GLenum cap ) {
 		{
 			mTexActive = 0;
 			mCurShader->SetUniform( mTexActiveLoc, mTexActive );
-			return;
+			break;
 		}
 		case GL_CLIP_PLANE0:
 		case GL_CLIP_PLANE1:

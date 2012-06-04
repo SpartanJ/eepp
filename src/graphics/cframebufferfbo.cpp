@@ -91,7 +91,7 @@ bool cFrameBufferFBO::Create( const Uint32& Width, const Uint32& Height, bool De
 		if ( !mDepthBuffer )
 			return false;
 
-		glBindRenderbufferEXT( GL_RENDERBUFFER, mDepthBuffer );
+		BindRenderBuffer();
 
 		glRenderbufferStorageEXT( GL_RENDERBUFFER, GL_DEPTH_COMPONENT, Width, Height );
 
@@ -124,6 +124,8 @@ bool cFrameBufferFBO::Create( const Uint32& Width, const Uint32& Height, bool De
 void cFrameBufferFBO::Bind() {
 	if ( mFrameBuffer ) {
 		BindFrameBuffer();
+		BindRenderBuffer();
+
 		SetBufferView();
 	}
 }
@@ -131,6 +133,11 @@ void cFrameBufferFBO::Bind() {
 void cFrameBufferFBO::Unbind() {
 	if ( mFrameBuffer ) {
 		RecoverView();
+
+		if ( mDepthBuffer ) {
+			glBindFramebufferEXT( GL_FRAMEBUFFER, mLastRB );
+		}
+
 		glBindFramebufferEXT( GL_FRAMEBUFFER, mLastFB );
 	}
 }
@@ -146,6 +153,17 @@ void cFrameBufferFBO::BindFrameBuffer() {
 	mLastFB = (Int32)curFB;
 
 	glBindFramebufferEXT( GL_FRAMEBUFFER, mFrameBuffer );
+}
+
+void cFrameBufferFBO::BindRenderBuffer() {
+	if ( mDepthBuffer ) {
+		GLint curRB;
+		glGetIntegerv( GL_RENDERBUFFER_BINDING, &curRB );
+
+		mLastRB = (Int32)curRB;
+
+		glBindRenderbufferEXT( GL_RENDERBUFFER, mDepthBuffer );
+	}
 }
 
 }}

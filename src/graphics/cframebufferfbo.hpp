@@ -33,6 +33,8 @@ class EE_API cFrameBufferFBO : public cFrameBuffer {
 		Int32		mLastRB;
 
 		void		BindFrameBuffer();
+
+		void		BindRenderBuffer();
 };
 
 }}
