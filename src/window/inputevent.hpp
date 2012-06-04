@@ -42,7 +42,21 @@ class InputEvent {
 			Uint8 which;	/** The mouse device index */
 			Uint8 button;	/** The mouse button index */
 			Uint8 state;	/** EE_PRESSED or EE_RELEASED */
-			Int16 x, y;	/** The X/Y coordinates of the mouse at press time */
+			Int16 x, y;		/** The X/Y coordinates of the mouse at press time */
+		};
+
+		/** Touch finger motion/finger event structure */
+		struct FingerEvent
+		{
+			Uint32 timestamp;
+			Int64 touchId;		/** The touch device id */
+			Int64 fingerId;		/** The finger id */
+			Uint8 state;		/** The current button state */
+			Uint16 x;			/** The x coordinate of the touch */
+			Uint16 y;			/** The y coordinate of the touch */
+			Int16 dx;			/** Change in x coordinate during this motion event */
+			Int16 dy;			/** Change in y coordinate during this motion event */
+			Uint16 pressure;	/** The pressure of the touch */
 		};
 
 		/** Joystick axis motion event structure */
@@ -56,8 +70,8 @@ class InputEvent {
 		struct JoyBallEvent {
 			Uint8 which;	/** The joystick device index */
 			Uint8 ball;		/** The joystick trackball index */
-			Int16 xrel;	/** The relative motion in the X direction */
-			Int16 yrel;	/** The relative motion in the Y direction */
+			Int16 xrel;		/** The relative motion in the X direction */
+			Int16 yrel;		/** The relative motion in the Y direction */
 		};
 
 		/** Joystick hat position change event structure */
@@ -103,7 +117,6 @@ class InputEvent {
 			void *data2;	/** User defined data pointer */
 		};
 
-		/** If you want to use this event, you should include EE_syswm.h */
 		struct SysWMmsg;
 		typedef struct SysWMmsg SysWMmsg;
 		struct SysWMEvent {
@@ -123,6 +136,9 @@ class InputEvent {
 			JoyHatMotion,
 			JoyButtonDown,
 			JoyButtonUp,
+			FingerMotion,
+			FingerDown,
+			FingerUp,
 			Quit,
 			SysWM,
 			VideoResize,
@@ -140,6 +156,7 @@ class InputEvent {
 			KeyboardEvent		key;
 			MouseMotionEvent	motion;
 			MouseButtonEvent	button;
+			FingerEvent			finger;
 			JoyAxisEvent		jaxis;
 			JoyBallEvent		jball;
 			JoyHatEvent			jhat;

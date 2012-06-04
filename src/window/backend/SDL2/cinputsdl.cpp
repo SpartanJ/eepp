@@ -28,6 +28,8 @@ void cInputSDL::Update() {
 
 	CleanStates();
 
+	/** TODO: Filter by windowId */
+
 	while ( SDL_PollEvent( &SDLEvent ) ) {
 		switch( SDLEvent.type ) {
 			case SDL_WINDOWEVENT:
@@ -202,38 +204,49 @@ void cInputSDL::Update() {
 				EEEvent.Type = InputEvent::MouseButtonUp;
 				EEEvent.button.state = 0;
 				break;
-			}/*
-			case SDL_FINGERDOWN:
-			{
-				EEEvent.Type = InputEvent::FingerDown;
-				EEEvent.finger.button = 1;
-				EEEvent.finger.which = SDLEvent.tfinger.windowID;
-				EEEvent.finger.state = SDLEvent.tfinger.state;
-				EEEvent.finger.x = SDLEvent.tfinger.x;
-				EEEvent.finger.y = SDLEvent.tfinger.y;
-				break;
 			}
 			case SDL_FINGERMOTION:
 			{
 				EEEvent.Type = InputEvent::FingerMotion;
-				EEEvent.finger.which = SDLEvent.tfinger.windowID;
+				EEEvent.finger.timestamp = SDLEvent.tfinger.timestamp;
+				EEEvent.finger.touchId = SDLEvent.tfinger.touchId;
+				EEEvent.finger.fingerId = SDLEvent.tfinger.fingerId;
 				EEEvent.finger.state = SDLEvent.tfinger.state;
 				EEEvent.finger.x = SDLEvent.tfinger.x;
 				EEEvent.finger.y = SDLEvent.tfinger.y;
-				EEEvent.finger.xrel = SDLEvent.tfinger.dx;
-				EEEvent.finger.yrel = SDLEvent.tfinger.dy;
+				EEEvent.finger.dx = SDLEvent.tfinger.dx;
+				EEEvent.finger.dy = SDLEvent.tfinger.dy;
+				EEEvent.finger.pressure = SDLEvent.tfinger.pressure;
+				break;
+			}
+			case SDL_FINGERDOWN:
+			{
+				EEEvent.Type = InputEvent::FingerDown;
+				EEEvent.finger.timestamp = SDLEvent.tfinger.timestamp;
+				EEEvent.finger.touchId = SDLEvent.tfinger.touchId;
+				EEEvent.finger.fingerId = SDLEvent.tfinger.fingerId;
+				EEEvent.finger.state = SDLEvent.tfinger.state;
+				EEEvent.finger.x = SDLEvent.tfinger.x;
+				EEEvent.finger.y = SDLEvent.tfinger.y;
+				EEEvent.finger.dx = SDLEvent.tfinger.dx;
+				EEEvent.finger.dy = SDLEvent.tfinger.dy;
+				EEEvent.finger.pressure = SDLEvent.tfinger.pressure;
 				break;
 			}
 			case SDL_FINGERUP:
 			{
 				EEEvent.Type = InputEvent::FingerUp;
-				EEEvent.finger.button = 1;
-				EEEvent.finger.which = SDLEvent.tfinger.windowID;
+				EEEvent.finger.timestamp = SDLEvent.tfinger.timestamp;
+				EEEvent.finger.touchId = SDLEvent.tfinger.touchId;
+				EEEvent.finger.fingerId = SDLEvent.tfinger.fingerId;
 				EEEvent.finger.state = SDLEvent.tfinger.state;
 				EEEvent.finger.x = SDLEvent.tfinger.x;
 				EEEvent.finger.y = SDLEvent.tfinger.y;
+				EEEvent.finger.dx = SDLEvent.tfinger.dx;
+				EEEvent.finger.dy = SDLEvent.tfinger.dy;
+				EEEvent.finger.pressure = SDLEvent.tfinger.pressure;
 				break;
-			}*/
+			}
 			case SDL_JOYAXISMOTION:
 			{
 				EEEvent.Type = InputEvent::JoyAxisMotion;

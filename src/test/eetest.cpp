@@ -65,7 +65,11 @@ void cEETest::Init() {
 	PAK = eeNew( cZip, () );
 	PAK->Open( MyPath + "data/ee.zip" );
 
+	#if EE_PLATFORM == EE_PLATFORM_IOS
+	mWindow = EE->CreateWindow( WindowSettings( 960, 640, BitColor, WindowStyle::NoBorder ), ContextSettings( VSync, GLv_default, true, 0, 0 ) );
+	#else
 	mWindow = EE->CreateWindow( WindowSettings( mWidth, mHeight, BitColor, Style, "ee.png" ), ContextSettings( VSync, GLVer, true, 0, 0 ) );
+	#endif
 
 	run = ( mWindow->Created() && PAK->IsOpen() );
 
@@ -745,15 +749,19 @@ void cEETest::QuitClick( const cUIEvent * Event ) {
 	}
 }
 
+void cEETest::ShowMenu() {
+	if ( Menu->Show() ) {
+		eeVector2i Pos = mWindow->GetInput()->GetMousePos();
+		cUIMenu::FixMenuPos( Pos , Menu );
+		Menu->Pos( Pos );
+	}
+}
+
 void cEETest::MainClick( const cUIEvent * Event ) {
 	const cUIEventMouse * MouseEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
 
 	if ( MouseEvent->Flags() & EE_BUTTON_RMASK ) {
-		if ( Menu->Show() ) {
-			eeVector2i Pos = MouseEvent->Pos();
-			cUIMenu::FixMenuPos( Pos , Menu );
-			Menu->Pos( Pos );
-		}
+		ShowMenu();
 	}
 }
 
@@ -1376,6 +1384,15 @@ void cEETest::Input() {
 	if ( KM->IsKeyUp(KEY_6) && KM->ControlPressed() )
 		SetScreen( 5 );
 
+	#ifdef EE_PLATFORM_TOUCH
+	std::list<cInputFinger*> Fingers = KM->GetFingersDown();
+	std::list<cInputFinger*> FingersDown = KM->GetFingersWasDown();
+
+	if ( Fingers.size() == 1 && FingersDown.size() == 1 ) {
+		ShowMenu();
+	}
+	#endif
+
 	cJoystick * Joy = JM->GetJoystick(0);
 
 	if ( mJoyEnabled && NULL != Joy ) {
@@ -1567,9 +1584,20 @@ void cEETest::Particles() {
 #define GRABABLE_MASK_BIT (1<<31)
 #define NOT_GRABABLE_MASK (~GRABABLE_MASK_BIT)
 
-void cEETest::Demo1Create() {
+void cEETest::CreateJointAndBody() {
+	#ifndef EE_PLATFORM_TOUCH
 	mMouseJoint	= NULL;
 	mMouseBody	= eeNew( cBody, ( INFINITY, INFINITY ) );
+	#else
+	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
+		mMouseJoint[i] = NULL;
+		mMouseBody[i] = eeNew( cBody, ( INFINITY, INFINITY ) );
+	}
+	#endif
+}
+
+void cEETest::Demo1Create() {
+	CreateJointAndBody();
 
 	Physics::cShape::ResetShapeIdCounter();
 
@@ -1629,8 +1657,19 @@ void cEETest::Demo1Update() {
 
 }
 
-void cEETest::Demo1Destroy() {
+void cEETest::DestroyBody() {
+	#ifndef EE_PLATFORM_TOUCH
 	eeSAFE_DELETE( mMouseBody );
+	#else
+	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
+		eeSAFE_DELETE( mMouseBody[i] );
+	}
+	#endif
+}
+
+void cEETest::Demo1Destroy() {
+	DestroyBody();
+
 	eeSAFE_DELETE( mSpace );
 }
 
@@ -1657,10 +1696,19 @@ void cEETest::blockerSeparate( cArbiter *arb, cSpace * space, void *unused ) {
 void cEETest::postStepRemove( cSpace *space, void * tshape, void * unused ) {
 	Physics::cShape * shape = reinterpret_cast<Physics::cShape*>( tshape );
 
+	#ifndef EE_PLATFORM_TOUCH
 	if ( NULL != mMouseJoint && ( mMouseJoint->A() == shape->Body() || mMouseJoint->B() == shape->Body() ) ) {
 		mSpace->RemoveConstraint( mMouseJoint );
 		eeSAFE_DELETE( mMouseJoint );
 	}
+	#else
+	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
+		if ( NULL != mMouseJoint[i] && ( mMouseJoint[i]->A() == shape->Body() || mMouseJoint[i]->B() == shape->Body() ) ) {
+			mSpace->RemoveConstraint( mMouseJoint[i] );
+			eeSAFE_DELETE( mMouseJoint[i] );
+		}
+	}
+	#endif
 
 	mSpace->RemoveBody( shape->Body() );
 	mSpace->RemoveShape( shape );
@@ -1681,8 +1729,7 @@ cpBool cEETest::catcherBarBegin(cArbiter *arb, Physics::cSpace *space, void *unu
 }
 
 void cEETest::Demo2Create() {
-	mMouseJoint	= NULL;
-	mMouseBody	= eeNew( cBody, ( INFINITY, INFINITY ) );
+	CreateJointAndBody();
 
 	Physics::cShape::ResetShapeIdCounter();
 
@@ -1737,7 +1784,7 @@ void cEETest::Demo2Update() {
 }
 
 void cEETest::Demo2Destroy() {
-	eeSAFE_DELETE( mMouseBody );
+	DestroyBody();
 	eeSAFE_DELETE( mSpace );
 }
 
@@ -1780,7 +1827,8 @@ void cEETest::PhysicsCreate() {
 	ChangeDemo( 0 );
 }
 
-void cEETest::PhysicsUpdate() {
+void cEETest::PhysicsUpdate() {	
+	#ifndef EE_PLATFORM_TOUCH
 	mMousePoint = cVectNew( KM->GetMousePosf().x, KM->GetMousePosf().y );
 	cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last ), tocpv( mMousePoint ), 0.25 ) );
 	mMouseBody->Pos( newPoint );
@@ -1804,6 +1852,34 @@ void cEETest::PhysicsUpdate() {
 		mSpace->RemoveConstraint( mMouseJoint );
 		eeSAFE_DELETE( mMouseJoint );
 	}
+	#else
+	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
+		cInputFinger * Finger = KM->GetFingerIndex(i);
+		mMousePoint[i] = cVectNew( Finger->x, Finger->y );
+		cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last[i] ), tocpv( mMousePoint[i] ), 0.25 ) );
+		mMouseBody[i]->Pos( newPoint );
+		mMouseBody[i]->Vel( ( newPoint - mMousePoint_last[i] ) * (cpFloat)mWindow->FPS() );
+		mMousePoint_last[i] = newPoint;
+
+		if ( Finger->IsDown() ) {
+			if ( NULL == mMouseJoint[i] ) {
+				cVect point = cVectNew( Finger->x, Finger->y );
+
+				Physics::cShape * shape = mSpace->PointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
+
+				if( NULL != shape ){
+					mMouseJoint[i] = eeNew( cPivotJoint, ( mMouseBody[i], shape->Body(), cVectZero, shape->Body()->World2Local( point ) ) );
+
+					mMouseJoint[i]->MaxForce( 50000.0f );
+					mSpace->AddConstraint( mMouseJoint[i] );
+				}
+			}
+		} else if ( NULL != mMouseJoint[i] ) {
+			mSpace->RemoveConstraint( mMouseJoint[i] );
+			eeSAFE_DELETE( mMouseJoint[i] );
+		}
+	}
+	#endif
 
 	mDemo[ mCurDemo ].update();
 	mSpace->Update();

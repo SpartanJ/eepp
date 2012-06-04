@@ -6,6 +6,7 @@
 #include "inputhelper.hpp"
 #include "inputevent.hpp"
 #include "cjoystickmanager.hpp"
+#include "cinputfinger.hpp"
 
 namespace EE { namespace Window {
 
@@ -149,11 +150,24 @@ class EE_API cInput {
 		/** Set the double click interval in milliseconds */
 		void DoubleClickInterval( const Uint32& Interval );
 
+		/** Clean the keyboard and mouse states */
 		void CleanStates();
 		
+		/** Send an input event to the window */
 		void SendEvent( InputEvent * Event );
 		
+		/** @return The joystick manager */
 		cJoystickManager * GetJoystickManager() const;
+
+		const Uint32& GetFingerCount();
+
+		cInputFinger * GetFingerIndex( const Uint32& Index );
+
+		cInputFinger * GetFinger( const Int64& fingerId );
+
+		std::list<cInputFinger *> GetFingersDown();
+
+		std::list<cInputFinger *> GetFingersWasDown();
 	protected:
 		friend class cWindow;
 		
@@ -183,6 +197,7 @@ class EE_API cInput {
 		Uint32		mNumCallBacks;
 		eeFloat		mMouseSpeed;
 		bool		mInputGrabed;
+		cInputFinger mFingers[ EE_MAX_FINGERS ];
 		
 		std::map<Uint32, InputCallback> mCallbacks;
 		
@@ -191,6 +206,10 @@ class EE_API cInput {
 		void PushKey( Uint8 * Key, Uint8 Pos, bool BitWrite );
 		
 		void ProcessEvent( InputEvent * Event );
+
+		cInputFinger * GetFingerId( const Int64& fingerId );
+
+		void ResetFingerWasDown();
 };
 
 }}

@@ -59,11 +59,11 @@ enum CollisionTypes {
 	CATCH_SENSOR_TYPE
 };
 
-typedef struct Emitter {
+struct Emitter {
 	int queue;
 	int blocked;
 	cVect position;
-} Emitter;
+};
 
 class cEETest : private cThread {
 	public:
@@ -235,10 +235,19 @@ class cEETest : private cThread {
 		cTextCache mInfoText;
 
 		cSpace * mSpace;
+
+		#ifndef EE_PLATFORM_TOUCH
 		cBody * mMouseBody;
 		cVect mMousePoint;
 		cVect mMousePoint_last;
 		cConstraint * mMouseJoint;
+		#else
+		cBody * mMouseBody[ EE_MAX_FINGERS ];
+		cVect mMousePoint[ EE_MAX_FINGERS ];
+		cVect mMousePoint_last[ EE_MAX_FINGERS ];
+		cConstraint * mMouseJoint[ EE_MAX_FINGERS ];
+		#endif
+
 		void PhysicsCreate();
 		void PhysicsUpdate();
 		void PhysicsDestroy();
@@ -257,6 +266,8 @@ class cEETest : private cThread {
 		void Demo2Create();
 		void Demo2Update();
 		void Demo2Destroy();
+
+		void ShowMenu();
 
 		Emitter emitterInstance;
 
@@ -282,6 +293,10 @@ class cEETest : private cThread {
 		void OnETGEditorClose();
 
 		void CreateETGEditor();
+
+		void CreateJointAndBody();
+
+		void DestroyBody();
 };
 
 #endif

@@ -965,3 +965,5 @@ src/system/platform/win/ctimerimpl.hpp
 src/system/platform/win/ctimerimpl.cpp
 src/system/platform/posix/ctimerimpl.hpp
 src/system/platform/posix/ctimerimpl.cpp
+src/window/cinputfinger.hpp
+src/window/cinputfinger.cpp

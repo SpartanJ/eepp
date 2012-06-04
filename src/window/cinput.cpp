@@ -29,6 +29,8 @@ void cInput::CleanStates() {
 	mLastPressTrigger 	= mPressTrigger;
 	mClickTrigger 		= 0;
 	mDoubleClickTrigger = 0;
+
+	ResetFingerWasDown();
 }
 
 void cInput::SendEvent( InputEvent * Event ) {
@@ -149,6 +151,49 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 
 			break;
 		}
+		case InputEvent::FingerDown:
+		{
+			cInputFinger * Finger = GetFingerId( Event->finger.fingerId );
+
+			Finger->WriteLast();
+			Finger->x			= (Uint16)( ( (eeFloat)Event->finger.x / (eeFloat)32768 ) * (eeFloat)mWindow->GetWidth() );
+			Finger->y			= (Uint16)( ( (eeFloat)Event->finger.y / (eeFloat)32768 ) * (eeFloat)mWindow->GetHeight() );
+			Finger->pressure	= Event->finger.pressure;
+			Finger->down		= true;
+			Finger->xdelta		= Event->finger.dx;
+			Finger->ydelta		= Event->finger.dy;
+
+			break;
+		}
+		case InputEvent::FingerUp:
+		{
+			cInputFinger * Finger = GetFingerId( Event->finger.fingerId );
+
+			Finger->WriteLast();
+			Finger->x			= (Uint16)( ( (eeFloat)Event->finger.x / (eeFloat)32768 ) * (eeFloat)mWindow->GetWidth() );
+			Finger->y			= (Uint16)( ( (eeFloat)Event->finger.y / (eeFloat)32768 ) * (eeFloat)mWindow->GetHeight() );
+			Finger->pressure	= Event->finger.pressure;
+			Finger->down		= false;
+			Finger->was_down	= true;
+			Finger->xdelta		= Event->finger.dx;
+			Finger->ydelta		= Event->finger.dy;
+
+			break;
+		}
+		case InputEvent::FingerMotion:
+		{
+			cInputFinger * Finger = GetFingerId( Event->finger.fingerId );
+
+			Finger->WriteLast();
+			Finger->x			= (Uint16)( ( (eeFloat)Event->finger.x / (eeFloat)32768 ) * (eeFloat)mWindow->GetWidth() );
+			Finger->y			= (Uint16)( ( (eeFloat)Event->finger.y / (eeFloat)32768 ) * (eeFloat)mWindow->GetHeight() );
+			Finger->pressure	= Event->finger.pressure;
+			Finger->down		= true;
+			Finger->xdelta		= Event->finger.dx;
+			Finger->ydelta		= Event->finger.dy;
+
+			break;
+		}
 		case InputEvent::VideoResize:
 		{
 			mWindow->Size( Event->resize.w, Event->resize.h, mWindow->Windowed() );
@@ -162,6 +207,40 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 	}
 
 	SendEvent( Event );
+}
+
+cInputFinger * cInput::GetFingerId( const Int64 &fingerId ) {
+	Uint32 i;
+
+	for ( i = 0; i < EE_MAX_FINGERS; i++ ) {
+		if ( mFingers[i].id == fingerId ) {
+			return &mFingers[i];
+		}
+	}
+
+	for ( i = 0; i < EE_MAX_FINGERS; i++ ) {
+		if ( -1 == mFingers[i].id ) {
+			mFingers[i].id = fingerId;
+
+			return &mFingers[i];
+		}
+	}
+
+	//! Find first unused
+	for ( i = 0; i < EE_MAX_FINGERS; i++ ) {
+		if ( !mFingers[i].down ) {
+			mFingers[i].id = fingerId;
+			return &mFingers[i];
+		}
+	}
+
+	return NULL;
+}
+
+void cInput::ResetFingerWasDown() {
+	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
+		mFingers[i].was_down = false;
+	}
 }
 
 bool cInput::GetKey( Uint8 * Key, Uint8 Pos ) {
@@ -354,6 +433,45 @@ void cInput::DoubleClickInterval( const Uint32& Interval ) {
 
 cJoystickManager * cInput::GetJoystickManager() const {
 	return mJoystickManager;
+}
+
+cInputFinger * cInput::GetFingerIndex( const Uint32 &Index ) {
+	eeASSERT( Index < EE_MAX_FINGERS );
+	return &mFingers[Index];
+}
+
+cInputFinger * cInput::GetFinger( const Int64 &fingerId ) {
+	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
+		if ( mFingers[i].id == fingerId ) {
+			return &mFingers[i];
+		}
+	}
+
+	return NULL;
+}
+
+std::list<cInputFinger *> cInput::GetFingersDown() {
+	std::list<cInputFinger *> fDown;
+
+	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
+		if ( mFingers[i].down ) {
+			fDown.push_back( &mFingers[i] );
+		}
+	}
+
+	return fDown;
+}
+
+std::list<cInputFinger *> cInput::GetFingersWasDown() {
+	std::list<cInputFinger *> fDown;
+
+	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
+		if ( mFingers[i].was_down ) {
+			fDown.push_back( &mFingers[i] );
+		}
+	}
+
+	return fDown;
 }
 
 }}

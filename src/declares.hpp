@@ -44,6 +44,10 @@
 	#if !defined( EE_GLES1 ) && !defined( EE_GLES2 )
 		#define EE_GLES2
 	#endif
+
+	#ifndef EE_PLATFORM_TOUCH
+		#define EE_PLATFORM_TOUCH
+	#endif
 #endif
 
 #if defined ( linux ) || defined( __linux__ ) \

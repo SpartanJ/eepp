@@ -28,6 +28,10 @@ void cUIPopUpMenu::SetTheme( cUITheme * Theme ) {
 
 bool cUIPopUpMenu::Show() {
 	if ( !Visible() || 0.f == mAlpha ) {
+		#ifdef EE_PLATFORM_TOUCH
+		mTE.Reset();
+		#endif
+
 		Enabled( true );
 		Visible( true );
 
@@ -81,14 +85,20 @@ Uint32 cUIPopUpMenu::OnMessage( const cUIMessage * Msg ) {
 	switch ( Msg->Msg() ) {
 		case cUIMessage::MsgMouseUp:
 		{
-			if ( !Msg->Sender()->IsType( UI_TYPE_MENUSUBMENU ) && ( Msg->Flags() & EE_BUTTONS_LRM ) ) {
-				SendCommonEvent( cUIEvent::EventOnHideByClick );
+			#ifdef EE_PLATFORM_TOUCH
+			if ( mTE.Elapsed() > 250.f ) {
+			#endif
+				if ( !Msg->Sender()->IsType( UI_TYPE_MENUSUBMENU ) && ( Msg->Flags() & EE_BUTTONS_LRM ) ) {
+					SendCommonEvent( cUIEvent::EventOnHideByClick );
 
-				if ( Visible() )
-					cUIManager::instance()->MainControl()->SetFocus();
+					if ( Visible() )
+						cUIManager::instance()->MainControl()->SetFocus();
 
-				Hide();
+					Hide();
+				}
+			#ifdef EE_PLATFORM_TOUCH
 			}
+			#endif
 		}
 	}
 
