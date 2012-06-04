@@ -29,6 +29,10 @@ class EE_API cFrameBufferFBO : public cFrameBuffer {
 	protected:
 		Int32 		mFrameBuffer;
 		Uint32 		mDepthBuffer;
+		Int32		mLastFB;
+		Int32		mLastRB;
+
+		void		BindFrameBuffer();
 };
 
 }}

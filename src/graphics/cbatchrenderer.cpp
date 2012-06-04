@@ -120,7 +120,7 @@ void cBatchRenderer::Flush() {
 
 	Uint32 alloc = sizeof(eeVertex) * NumVertex;
 
-	GLi->VertexPointer	( 2, GL_FP			, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] )													, alloc	);
+	GLi->VertexPointer	( 2, GL_FP				, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] )												, alloc	);
 	GLi->ColorPointer	( 4, GL_UNSIGNED_BYTE	, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f) + sizeof(eeTexCoord)	, alloc	);
 
 	if ( NULL != mTexture ) {

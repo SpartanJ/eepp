@@ -151,7 +151,13 @@ bool cGL::PointSpriteSupported() {
 }
 
 bool cGL::ShadersSupported() {
+#ifdef EE_GLES2
+	return true;
+#elif defined( EE_GLES1 )
+	return false;
+#else
 	return IsExtension( EEGL_ARB_shading_language_100 ) && IsExtension( EEGL_ARB_shader_objects ) && IsExtension( EEGL_ARB_vertex_shader ) && IsExtension( EEGL_ARB_fragment_shader );
+#endif
 }
 
 Uint32 cGL::GetTextureParamEnum( const EE_TEXTURE_PARAM& Type ) {
@@ -355,7 +361,10 @@ std::string cGL::GetVersion() {
 std::string cGL::GetShadingLanguageVersion() {
 	if ( ShadersSupported() ) {
 		#ifdef GL_SHADING_LANGUAGE_VERSION
-			return std::string( reinterpret_cast<const char*> ( cGL::instance()->GetString( GL_SHADING_LANGUAGE_VERSION ) ) );
+			char * str = cGL::instance()->GetString( GL_SHADING_LANGUAGE_VERSION );
+
+			if ( NULL != str )
+				return std::string( reinterpret_cast<const char*> ( str ) );
 		#endif
 	}
 

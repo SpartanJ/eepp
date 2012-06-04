@@ -147,6 +147,8 @@ void cShaderProgram::Init() {
 		mValid = false;
 		mUniformLocations.clear();
 		mAttributeLocations.clear();
+	} else {
+		cLog::instance()->Write( "cShaderProgram::Init() " + mName + ": Couldn't create program." );
 	}
 }
 
@@ -210,7 +212,7 @@ bool cShaderProgram::Link() {
 	#endif
 
 	if ( !mValid ) {
-		cLog::instance()->Write( "cShaderProgram::Link() " + mName + ": Couldn't link program. Log follows:" + mLinkLog );
+		cLog::instance()->Write( "cShaderProgram::Link() " + mName + ": Couldn't link program. Log follows:\n" + mLinkLog );
 	} else {
 		if ( mLinkLog.size() ) {
 			cLog::instance()->Write( "cShaderProgram::Link() " + mName + ": Program linked, but recibed some log:\n" + mLinkLog );

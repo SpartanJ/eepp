@@ -134,7 +134,7 @@ void cEETest::Init() {
 
 		eePolygon2f Poly = CreateRoundedPolygon<eeFloat>( 0, 0, 256, 50 );
 
-		mVBO = cVertexBuffer::Create( VERTEX_FLAG_GET( VERTEX_FLAG_POSITION ) | VERTEX_FLAG_GET( VERTEX_FLAG_COLOR ), DM_POLYGON );
+		mVBO = cVertexBuffer::Create( VERTEX_FLAG_GET( VERTEX_FLAG_POSITION ) | VERTEX_FLAG_GET( VERTEX_FLAG_COLOR ), DM_TRIANGLE_FAN );
 
         if ( NULL != mVBO ) {
             for ( Uint32 i = 0; i < Poly.Size(); i++ ) {

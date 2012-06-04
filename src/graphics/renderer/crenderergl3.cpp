@@ -45,6 +45,8 @@ const char * EEGL_PLANES_NAME[] = {
 
 const GLchar * EEGL_SHADER_BASE_VS[] = {
 	"#define MAX_CLIP_PLANES 6\n",
+	"precision highp float;\n",
+	"precision highp int;\n",
 	"uniform			mat4 dgl_ProjectionMatrix;\n",
 	"uniform			mat4 dgl_ModelViewMatrix;\n",
 	"uniform			int  dgl_ClippingEnabled;\n",
@@ -82,6 +84,7 @@ const GLchar * EEGL_SHADER_BASE_VS[] = {
 const GLchar * EEGL_SHADER_BASE_FS[] = {
 	"#define MAX_CLIP_PLANES 6\n",
 	"precision highp float;\n",
+	"precision highp int;\n",
 	"uniform		sampler2D	textureUnit0;\n",
 	"uniform		int			dgl_TexActive;\n",
 	"uniform		int			dgl_PointSpriteActive;\n",
@@ -243,6 +246,10 @@ void cRendererGL3::SetShader( cShaderProgram * Shader ) {
 		return;
 	}
 
+	DisableClientState( GL_VERTEX_ARRAY );
+	DisableClientState( GL_TEXTURE_COORD_ARRAY );
+	DisableClientState( GL_COLOR_ARRAY );
+
 	mShaderPrev				= mCurShader;
 	mCurShader				= Shader;
 	mProjectionMatrix_id	= mCurShader->UniformLocation( "dgl_ProjectionMatrix" );
@@ -298,12 +305,9 @@ void cRendererGL3::Enable( GLenum cap ) {
 	switch ( cap ) {
 		case GL_TEXTURE_2D:
 		{
-			if ( !glIsEnabled( cap ) ) {
-				mTexActive = 1;
-				mCurShader->SetUniform( mTexActiveLoc, mTexActive );
-			}
-
-			break;
+			mTexActive = 1;
+			mCurShader->SetUniform( mTexActiveLoc, mTexActive );
+			return;
 		}
 		case GL_CLIP_PLANE0:
 		case GL_CLIP_PLANE1:
@@ -337,12 +341,9 @@ void cRendererGL3::Disable ( GLenum cap ) {
 	switch ( cap ) {
 		case GL_TEXTURE_2D:
 		{
-			if ( glIsEnabled( cap ) ) {
-				mTexActive = 0;
-				mCurShader->SetUniform( mTexActiveLoc, mTexActive );
-			}
-
-			break;
+			mTexActive = 0;
+			mCurShader->SetUniform( mTexActiveLoc, mTexActive );
+			return;
 		}
 		case GL_CLIP_PLANE0:
 		case GL_CLIP_PLANE1:
@@ -656,9 +657,7 @@ void cRendererGL3::VertexPointer ( GLint size, GLenum type, GLsizei stride, cons
 		glBindBufferARB( GL_ARRAY_BUFFER, mVBO[ EEGL_VERTEX_ARRAY ]			);
 		glBufferSubDataARB( GL_ARRAY_BUFFER, 0, allocate, pointer );
 
-		#ifdef EE_GLES2
 		glEnableVertexAttribArray( index );
-		#endif
 
 		glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, 0 );
 	}
@@ -683,19 +682,13 @@ void cRendererGL3::ColorPointer ( GLint size, GLenum type, GLsizei stride, const
 		glBindBufferARB( GL_ARRAY_BUFFER, mVBO[ EEGL_COLOR_ARRAY ]				);
 		glBufferSubDataARB( GL_ARRAY_BUFFER, 0, allocate, pointer );
 
-		#ifdef EE_GLES2
 		glEnableVertexAttribArray( index );
-		#endif
 
 		if ( type == GL_UNSIGNED_BYTE ) {
 			glVertexAttribPointerARB( index, size, type, GL_TRUE, stride, 0 );
 		} else {
 			glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, 0 );
 		}
-	} else {
-		#ifdef EE_GLES2
-		glDisableVertexAttribArray( index );
-		#endif
 	}
 }
 
@@ -718,15 +711,9 @@ void cRendererGL3::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, co
 		glBindBufferARB( GL_ARRAY_BUFFER, mCurTexCoordArray );
 		glBufferSubDataARB( GL_ARRAY_BUFFER, 0, allocate, pointer );
 
-		#ifdef EE_GLES2
 		glEnableVertexAttribArray( index );
-		#endif
 
 		glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, 0 );
-	} else {
-		#ifdef EE_GLES2
-		glDisableVertexAttribArray( index );
-		#endif
 	}
 }
 

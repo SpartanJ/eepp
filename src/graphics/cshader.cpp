@@ -125,7 +125,7 @@ void cShader::EnsureVersion() {
 				if ( GLi->Version() == GLv_3 ) {
 					mSource = "#version 150\nuniform		int			dgl_TexActive = 1;\ninvariant in	vec4		gl_Color;\ninvariant in	vec4		gl_TexCoord[ 4 ];\nout				vec4		gl_FragColor;\n" + mSource;
 				} else {
-					mSource = "uniform		int			dgl_TexActive;\nvarying	vec4		gl_Color;\nvarying	vec4		gl_TexCoord[ 4 ];\n" + mSource;
+					mSource = "precision highp float;\nprecision highp int;\nuniform		int			dgl_TexActive;\nvarying	vec4		gl_Color;\nvarying	vec4		gl_TexCoord[ 4 ];\n" + mSource;
 				}
 
 				if ( GLi->Version() == GLv_3 ) {
@@ -208,11 +208,11 @@ bool cShader::Compile() {
 			glGetShaderInfoLog( GetId(), logarraysize, &logsize, reinterpret_cast<GLchar*>( &mCompileLog[0] ) );
 		}
 
-		cLog::instance()->Write( "Couldn't compile shader " + GetName() + ". Log follows:" );
+		cLog::instance()->Write( "Couldn't compile shader " + GetName() + ". Log follows:\n" );
 		cLog::instance()->Write( mCompileLog );
 		cLog::instance()->Write( mSource );
 	} else {
-		cLog::instance()->Write( "Shader " + GetName() + " loaded Succesfully" );
+		cLog::instance()->Write( "Shader " + GetName() + " compiled succesfully" );
 	}
 
 	#endif
