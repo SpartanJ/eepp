@@ -318,8 +318,8 @@ bool cTexture::LocalCopy() {
 
 void cTexture::ClampMode( const EE_CLAMP_MODE& clampmode ) {
 	if ( mClampMode != clampmode ) {
-		ApplyClampMode();
 		mClampMode = clampmode;
+		ApplyClampMode();
 	}
 }
 
