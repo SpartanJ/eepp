@@ -19,7 +19,11 @@ namespace WindowStyle {
 		Resize						= ( 1 << 2 ),
 		Fullscreen					= ( 1 << 3 ),
 		UseDesktopResolution		= ( 1 << 4 ),
+		#if EE_PLATFORM == EE_PLATFORM_IOS || EE_PLATFORM == EE_PLATFORM_ANDROID
+		Default						= NoBorder
+		#else
 		Default						= Titlebar | Resize
+		#endif
 	};
 }
 

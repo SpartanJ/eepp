@@ -4,7 +4,7 @@
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	// Create a new window
-	cWindow * win = cEngine::instance()->CreateWindow( WindowSettings( 800, 600, 32, WindowStyle::Default, "", "eepp - Empty Window" ), ContextSettings(  ) );
+	cWindow * win = cEngine::instance()->CreateWindow( WindowSettings( 960, 640, 32, WindowStyle::Default, "", "eepp - Empty Window" ), ContextSettings(  ) );
 
 	// Set window background color
 	win->BackColor( eeColor( 50, 50, 50 ) );
