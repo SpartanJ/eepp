@@ -7,7 +7,8 @@ namespace EE { namespace Graphics {
 SINGLETON_DECLARE_IMPLEMENTATION(cTextureFactory)
 
 cTextureFactory::cTextureFactory() :
-	mMemSize(0)
+	mMemSize(0),
+	mErasing(false)
 {
 	mTextures.clear();
 	mTextures.push_back( NULL );
@@ -21,9 +22,9 @@ cTextureFactory::~cTextureFactory() {
 	UnloadTextures();
 }
 
-Uint32 cTextureFactory::CreateEmptyTexture( const eeUint& Width, const eeUint& Height, const eeColorA& DefaultColor, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
-	std::vector<eeColorA> tmpTex( Width * Height, DefaultColor );
-	return LoadFromPixels( reinterpret_cast<unsigned char*> ( &tmpTex[0] ), Width, Height, 4, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
+Uint32 cTextureFactory::CreateEmptyTexture( const eeUint& Width, const eeUint& Height, const eeUint& Channels, const eeColorA& DefaultColor, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+	cImage TmpImg( Width, Height, Channels, DefaultColor );
+	return LoadFromPixels( TmpImg.GetPixelsPtr(), Width, Height, Channels, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
 }
 
 Uint32 cTextureFactory::LoadFromPixels( const unsigned char * Pixels, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy, const std::string& FileName ) {
@@ -115,8 +116,12 @@ void cTextureFactory::Bind( const Uint32& TexId, const Uint32& TextureUnit ) {
 }
 
 void cTextureFactory::UnloadTextures() {
+	mErasing = true;
+
 	for ( Uint32 i = 1; i < mTextures.size(); i++ )
 		eeSAFE_DELETE( mTextures[i] );
+
+	mErasing = false;
 
 	mTextures.clear();
 
@@ -124,28 +129,38 @@ void cTextureFactory::UnloadTextures() {
 }
 
 bool cTextureFactory::Remove( Uint32 TexId ) {
-	if ( TexId < mTextures.size() && NULL != mTextures[ TexId ] ) {
-		cTexture * Tex = mTextures[ TexId ];
+	cTexture * Tex;
 
-		mMemSize -= GetTexMemSize( TexId );
+	if ( TexId < mTextures.size() && NULL != ( Tex = mTextures[ TexId ] ) ) {
+		RemoveReference( mTextures[ TexId ] );
 
-		GLint glTexId = Tex->Handle();
-
+		mErasing = true;
 		eeDelete( Tex );
-
-		mTextures[ TexId ] = NULL;
-
-		for ( Uint32 i = 0; i < EE_MAX_TEXTURE_UNITS; i++ ) {
-			if ( mCurrentTexture[ i ] == (Int32)glTexId )
-				mCurrentTexture[ i ] = 0;
-		}
-
-		mVectorFreeSlots.push_back( TexId );
+		mErasing = false;
 
 		return true;
 	}
 
 	return false;
+}
+
+void cTextureFactory::RemoveReference( cTexture * Tex ) {
+	mMemSize -= GetTexMemSize( Tex->Id() );
+
+	GLint glTexId = Tex->Handle();
+
+	mTextures[ Tex->Id() ] = NULL;
+
+	for ( Uint32 i = 0; i < EE_MAX_TEXTURE_UNITS; i++ ) {
+		if ( mCurrentTexture[ i ] == (Int32)glTexId )
+			mCurrentTexture[ i ] = 0;
+	}
+
+	mVectorFreeSlots.push_back( Tex->Id() );
+}
+
+const bool& cTextureFactory::IsErasing() const {
+	return mErasing;
 }
 
 GLint cTextureFactory::GetCurrentTexture( const Uint32& TextureUnit ) const {

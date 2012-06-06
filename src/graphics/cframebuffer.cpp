@@ -35,8 +35,9 @@ cFrameBuffer::cFrameBuffer( Window::cWindow * window  ) :
 }
 
 cFrameBuffer::~cFrameBuffer() {
-	if ( NULL != mTexture )
-		cTextureFactory::instance()->Remove( mTexture->Id() );
+	if ( NULL != mTexture ) {
+		eeSAFE_DELETE( mTexture );
+	}
 
 	cFrameBufferManager::instance()->Remove( this );
 }

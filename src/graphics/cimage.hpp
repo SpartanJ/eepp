@@ -16,7 +16,7 @@ class EE_API cImage {
 		cImage( const Uint8* data, const eeUint& Width, const eeUint& Height, const eeUint& Channels );
 
 		/** Create an empty image */
-		cImage( const Uint32& Width, const Uint32& Height, const Uint32& Channels );
+		cImage( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const eeColorA& DefaultColor = eeColorA(0,0,0,0) );
 
 		/** Load an image from path */
 		cImage( std::string Path );
@@ -27,7 +27,7 @@ class EE_API cImage {
 		virtual ~cImage();
 
 		/** Create an empty image data */
-		void Create( const Uint32& Width, const Uint32& Height, const Uint32& Channels );
+		void Create(const Uint32& Width, const Uint32& Height, const Uint32& Channels, const eeColorA &DefaultColor = eeColorA(0,0,0,0) );
 
 		/** Return the pixel color from the image. \n You must have a copy of the image on local memory. For that you need to Lock the image first. */
 		virtual eeColorA GetPixel(const eeUint& x, const eeUint& y);
@@ -108,7 +108,7 @@ class EE_API cImage {
 		Uint32			mSize;
 		bool			mAvoidFree;
 
-		void 			Allocate( const Uint32& size );
+		void 			Allocate( const Uint32& size, eeColorA DefaultColor = eeColorA(0,0,0,0) );
 
 		void			LoadFromPack( cPack * Pack, const std::string& FilePackPath );
 };

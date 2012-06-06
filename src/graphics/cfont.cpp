@@ -24,6 +24,10 @@ cFont::cFont( const Uint32& Type, const std::string& Name ) :
 cFont::~cFont() {
 	mText.clear();
 	mGlyphs.clear();
+
+	if ( !cFontManager::instance()->IsDestroying() ) {
+		cFontManager::instance()->Remove( this, false );
+	}
 }
 
 void cFont::SetText( const String& Text ) {

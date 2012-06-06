@@ -12,6 +12,7 @@ class EE_API cTextureFont : public cFont {
 	public:
 		cTextureFont( const std::string FontName );
 
+		/** The destructor will not unload the texture from memory. If you want that you'll have to remove it manually ( cTextureFactory::instance()->Remove( MyFontInstance->GetTexId() ) ). */
 		virtual ~cTextureFont();
 
 		/** Load's a texture font

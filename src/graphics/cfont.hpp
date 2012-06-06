@@ -123,13 +123,17 @@ class EE_API cFont {
 		/** @return The font texture id */
 		const Uint32& GetTexId() const;
 
+		/** @return The type of the instance of the font, can be FONT_TYPE_TTF ( true type font ) or FONT_TYPE_TEX ( texture font ) */
 		const Uint32& Type() const;
 
-		const std::string& 		Name() const;
+		/** @return The font name */
+		const std::string&	Name() const;
 
-		void						Name( const std::string& name );
+		/** Change the font name ( and id, because it's the font name hash ) */
+		void Name( const std::string& name );
 
-		const Uint32&				Id();
+		/** @return The font id */
+		const Uint32& Id();
 	protected:
 		Uint32 						mType;
 		std::string					mFontName;

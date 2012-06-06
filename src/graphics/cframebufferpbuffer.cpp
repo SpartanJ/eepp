@@ -217,7 +217,7 @@ bool cFrameBufferPBuffer::Create( const Uint32& Width, const Uint32& Height, boo
 #endif
 
 	if ( NULL == mTexture ) {
-		Uint32 TexId = cTextureFactory::instance()->CreateEmptyTexture( Width, Height, eeColorA(0,0,0,0) );
+		Uint32 TexId = cTextureFactory::instance()->CreateEmptyTexture( Width, Height, 4, eeColorA(0,0,0,0) );
 
 		if ( cTextureFactory::instance()->TextureIdExists( TexId ) ) {
 			mTexture = 	cTextureFactory::instance()->GetTexture( TexId );

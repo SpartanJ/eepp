@@ -39,15 +39,24 @@ class tResourceManager {
 		void PrintNames();
 
 		std::list<T*>& GetResources();
+
+		const bool& IsDestroying() const;
 	protected:
 		std::list<T*> mResources;
 		bool mUniqueId;
+		bool mIsDestroying;
 };
 
 template <class T>
 tResourceManager<T>::tResourceManager( bool UniqueId ) :
-	mUniqueId( UniqueId )
+	mUniqueId( UniqueId ),
+	mIsDestroying( false )
 {
+}
+
+template <class T>
+const bool& tResourceManager<T>::IsDestroying() const {
+	return mIsDestroying;
 }
 
 template <class T>
@@ -59,8 +68,12 @@ template <class T>
 void tResourceManager<T>::Destroy() {
 	typename std::list<T*>::iterator it;
 
+	mIsDestroying = true;
+
 	for ( it = mResources.begin() ; it != mResources.end(); it++ )
 		eeSAFE_DELETE( (*it) );
+
+	mIsDestroying = false;
 }
 
 template <class T>

@@ -6,7 +6,8 @@ namespace EE { namespace Graphics {
 SINGLETON_DECLARE_IMPLEMENTATION(cShapeGroupManager)
 
 cShapeGroupManager::cShapeGroupManager() :
-	tResourceManager<cShapeGroup>( false )
+	tResourceManager<cShapeGroup>( false ),
+	mWarnings( false )
 {
 	Add( cGlobalShapeGroup::instance() );
 }
@@ -17,7 +18,9 @@ cShapeGroupManager::~cShapeGroupManager() {
 cShape * cShapeGroupManager::GetShapeByName( const std::string& Name ) {
 	cShape * tShape = GetShapeById( MakeHash( Name ) );
 
-	//eePRINTC( NULL == tShape, "cShapeGroupManager::GetShapeByName shape '%s' not found\n", Name.c_str() );
+	if ( mWarnings ) {
+		eePRINTC( NULL == tShape, "cShapeGroupManager::GetShapeByName shape '%s' not found\n", Name.c_str() );
+	}
 
 	return tShape;
 }
@@ -66,6 +69,14 @@ std::vector<cShape*> cShapeGroupManager::GetShapesByPatternId( const Uint32& Sha
 	}
 
 	return std::vector<cShape*>();
+}
+
+void cShapeGroupManager::PrintWarnings( const bool& warn ) {
+	mWarnings = warn;
+}
+
+const bool& cShapeGroupManager::PrintWarnings() const {
+	return mWarnings;
 }
 
 std::vector<cShape*> cShapeGroupManager::GetShapesByPattern( const std::string& name, const std::string& extension, cShapeGroup * SearchInShapeGroup ) {

@@ -127,6 +127,10 @@ cShaderProgram::~cShaderProgram() {
 
 	for ( eeUint i = 0; i < mShaders.size(); i++ )
 		eeSAFE_DELETE( mShaders[i] );
+
+	if ( !cShaderProgramManager::instance()->IsDestroying() ) {
+		RemoveFromManager();
+	}
 }
 
 void cShaderProgram::AddToManager( const std::string& name ) {
@@ -136,7 +140,7 @@ void cShaderProgram::AddToManager( const std::string& name ) {
 }
 
 void cShaderProgram::RemoveFromManager() {
-	cShaderProgramManager::instance()->Remove( this );
+	cShaderProgramManager::instance()->Remove( this, false );
 }
 
 void cShaderProgram::Init() {

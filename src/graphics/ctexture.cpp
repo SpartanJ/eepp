@@ -1,4 +1,5 @@
 #include "ctexture.hpp"
+#include "ctexturefactory.hpp"
 #include "cglobalbatchrenderer.hpp"
 
 namespace EE { namespace Graphics {
@@ -37,27 +38,10 @@ cTexture::cTexture( const cTexture& Copy ) :
 
 cTexture::~cTexture() {
 	DeleteTexture();
-}
 
-cTexture& cTexture::operator =(const cTexture& Other) {
-    cTexture Temp(Other);
-
-	std::swap(mWidth, Temp.mWidth);
-	std::swap(mHeight, Temp.mHeight);
-	std::swap(mChannels, Temp.mChannels);
-	std::swap(mSize, Temp.mSize);
-	std::swap(mFilepath, Temp.mFilepath);
-	std::swap(mId, Temp.mId);
-    std::swap(mTexture, Temp.mTexture);
-	std::swap(mImgWidth, Temp.mImgWidth);
-	std::swap(mImgHeight, Temp.mImgHeight);
-	std::swap(mFlags, Temp.mFlags);
-	std::swap(mFilter, Temp.mFilter);
-	std::swap(mClampMode, Temp.mClampMode);
-
-	SetPixels( reinterpret_cast<const Uint8*>( &Temp.mPixels[0] ) );
-
-    return *this;
+	if ( !cTextureFactory::instance()->IsErasing() ) {
+		cTextureFactory::instance()->RemoveReference( this );
+	}
 }
 
 void cTexture::DeleteTexture() {

@@ -20,6 +20,7 @@ class EE_API cTextureFactory: protected cMutex {
 		/** Create an empty texture
 		* @param Width Texture Width
 		* @param Height Texture Height
+		* @param Channels Texture Number of Channels (in bytes)
 		* @param DefaultColor The background color for the texture
 		* @param mipmap Create Mipmap?
 		* @param ClampMode Defines the CLAMP MODE
@@ -27,7 +28,7 @@ class EE_API cTextureFactory: protected cMutex {
 		* @param KeepLocalCopy Keep the array data copy. ( usefull if want to reload the texture )
 		* @return Internal Texture Id
 		*/
-		Uint32 CreateEmptyTexture( const eeUint& Width, const eeUint& Height, const eeColorA& DefaultColor = eeColorA(0,0,0,255), const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 CreateEmptyTexture( const eeUint& Width, const eeUint& Height, const eeUint& Channels = 4, const eeColorA& DefaultColor = eeColorA(0,0,0,255), const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Loads a RAW Texture from Memory
 		* @param Pixels The Texture array
@@ -204,6 +205,8 @@ class EE_API cTextureFactory: protected cMutex {
 
 		~cTextureFactory();
 	protected:
+		friend class cTexture;
+
 		cTextureFactory();
 
 		GLint mCurrentTexture[ EE_MAX_TEXTURE_UNITS ];
@@ -221,6 +224,12 @@ class EE_API cTextureFactory: protected cMutex {
 		void UnloadTextures();
 
 		Uint32 FindFreeSlot();
+
+		bool mErasing;
+
+		const bool& IsErasing() const;
+
+		void RemoveReference( cTexture * Tex );
 };
 
 }}

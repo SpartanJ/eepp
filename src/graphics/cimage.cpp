@@ -25,7 +25,7 @@ cImage::cImage( const Uint8* data, const eeUint& Width, const eeUint& Height, co
 	SetPixels( data );
 }
 
-cImage::cImage( const Uint32& Width, const Uint32& Height, const Uint32& Channels ) :
+cImage::cImage( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const eeColorA& DefaultColor ) :
 	mPixels(NULL),
 	mWidth(Width),
 	mHeight(Height),
@@ -33,7 +33,7 @@ cImage::cImage( const Uint32& Width, const Uint32& Height, const Uint32& Channel
 	mSize(0),
 	mAvoidFree(false)
 {
-	Create( Width, Height, Channels );
+	Create( Width, Height, Channels, DefaultColor );
 }
 
 cImage::cImage( Uint8* data, const eeUint& Width, const eeUint& Height, const eeUint& Channels ) :
@@ -166,7 +166,7 @@ void cImage::SetPixel(const eeUint& x, const eeUint& y, const eeColorA& Color) {
 	if ( mChannels >= 4 ) mPixels[ Pos + 3 ]	= Color.A();
 }
 
-void cImage::Create( const Uint32& Width, const Uint32& Height, const Uint32& Channels ) {
+void cImage::Create( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const eeColorA& DefaultColor ) {
 	mWidth 		= Width;
 	mHeight 	= Height;
 	mChannels 	= Channels;
@@ -178,12 +178,14 @@ Uint8* cImage::GetPixels() const {
 	return mPixels;
 }
 
-void cImage::Allocate( const Uint32& size ) {
+void cImage::Allocate( const Uint32& size, eeColorA DefaultColor ) {
 	ClearCache();
 
 	mPixels = eeNewArray( unsigned char, size );
 
-	memset( mPixels, 0, size );
+	Int32 c = (Int32)DefaultColor.GetUint32();
+
+	memset( mPixels, c, size );
 
 	mSize 	= size;
 }

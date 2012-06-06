@@ -116,7 +116,7 @@ class EE_API cShaderProgram {
 
 		/** Set a reload callback ( needed to reset shader states ). */
 		void SetReloadCb( ShaderProgramReloadCb Cb );
-    protected:
+	protected:
 		std::string mName;
 		Uint32 mHandler;
 		Uint32 mId;

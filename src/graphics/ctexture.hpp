@@ -20,8 +20,6 @@ class EE_API cTexture : public cImage {
 
 		cTexture( const cTexture& Copy );
 
-		cTexture& operator =(const cTexture& Other);
-
 		virtual ~cTexture();
 
 		/** Create the Texture
