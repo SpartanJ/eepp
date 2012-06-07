@@ -121,8 +121,6 @@ class EE_API cRendererGL3 : public cGL {
 
 		GLenum GetCurrentMatrixMode();
 
-		void BindGlobalVAO();
-
 		std::string GetBaseVertexShader();
 
 		GLint Project( GLfloat objx, GLfloat objy, GLfloat objz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *winx, GLfloat *winy, GLfloat *winz );
@@ -137,8 +135,6 @@ class EE_API cRendererGL3 : public cGL {
 		std::stack<glm::mat4>*	mCurMatrix;
 		cShaderProgram *		mShaders[ EEGL_SHADERS_COUNT ];
 		cShaderProgram *		mCurShader;
-		GLuint					mVAO;
-		GLuint					mVBO[ EEGL_ARRAY_STATES_COUNT ];
 		GLint					mStates[ EEGL_ARRAY_STATES_COUNT ];
 		GLint					mPlanes[ EE_MAX_PLANES ];
 		GLint					mPlanesStates[ EE_MAX_PLANES ];
@@ -146,12 +142,10 @@ class EE_API cRendererGL3 : public cGL {
 		Int32					mTexActive;
 		GLint					mTexActiveLoc;
 		GLint					mPointSpriteLoc;
+		GLint					mClippingEnabledLoc;
 		GLfloat					mPointSize;
 		GLint					mTextureUnits[ EE_MAX_TEXTURE_UNITS ];
 		GLint					mCurActiveTex;
-		GLuint					mCurTexCoordArray;
-		Uint32					mVBOSizeAlloc;
-		Uint32					mBiggestAlloc;
 		bool					mLoaded;
 		std::string				mBaseVertexShader;
 
@@ -160,8 +154,6 @@ class EE_API cRendererGL3 : public cGL {
 		void PlaneStateCheck( bool tryEnable );
 
 		void ReloadShader( cShaderProgram * Shader );
-
-		void AllocateBuffers( const Uint32& size );
 };
 
 }}

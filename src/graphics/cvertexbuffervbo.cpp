@@ -322,26 +322,20 @@ void cVertexBufferVBO::Reload() {
 
 
 void cVertexBufferVBO::Unbind() {
-	#ifdef EE_GL3_ENABLED
-	if ( GLv_3 == GLi->Version() ) {
-		GLi->GetRendererGL3()->BindGlobalVAO();
+#ifndef EE_GL3_ENABLED
+	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
+		GLi->EnableClientState( GL_VERTEX_ARRAY );
 	}
-	else
-	#endif
-	{
-		if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
-			GLi->EnableClientState( GL_VERTEX_ARRAY );
-		}
 
-		if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) ) {
-			GLi->EnableClientState( GL_COLOR_ARRAY );
-		}
-
-		if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 ) ) {
-			GLi->Enable( GL_TEXTURE_2D );
-			GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
-		}
+	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) ) {
+		GLi->EnableClientState( GL_COLOR_ARRAY );
 	}
+
+	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 ) ) {
+		GLi->Enable( GL_TEXTURE_2D );
+		GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
+	}
+#endif
 }
 
 

@@ -125,7 +125,7 @@ void cShader::EnsureVersion() {
 				if ( GLi->Version() == GLv_3 ) {
 					mSource = "#version 150\nuniform		int			dgl_TexActive = 1;\ninvariant in	vec4		gl_Color;\ninvariant in	vec4		gl_TexCoord[ 4 ];\nout				vec4		gl_FragColor;\n" + mSource;
 				} else {
-					mSource = "precision highp float;\nprecision highp int;\nuniform		int			dgl_TexActive;\nvarying	vec4		gl_Color;\nvarying	vec4		gl_TexCoord[ 4 ];\n" + mSource;
+					mSource = "#ifdef GL_ES\nprecision mediump float;\nprecision lowp int;\n#endif\nuniform		int			dgl_TexActive;\nvarying	vec4		gl_Color;\nvarying	vec4		gl_TexCoord[ 4 ];\n" + mSource;
 				}
 
 				if ( GLi->Version() == GLv_3 ) {

@@ -74,7 +74,7 @@ void cEETest::Init() {
 	run = ( mWindow->Created() && PAK->IsOpen() );
 
 	if ( run ) {
-		SetScreen( 2 );
+		SetScreen( 0 );
 
 		mWindow->Caption( "EE++ Test Application" );
 
@@ -601,7 +601,7 @@ void cEETest::CreateMapEditor() {
 	if ( NULL != mMapEditor )
 		return;
 
-	cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 1024, 768 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, eeSize( 1024, 768 ) );
+	cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 1024, 768 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, eeSize( 1024, 768 ) );
 	mMapEditor = eeNew( cMapEditor, ( tWin, cb::Make0( this, &cEETest::OnMapEditorClose ) ) );
 	tWin->Center();
 	tWin->Show();
@@ -612,7 +612,7 @@ void cEETest::OnMapEditorClose() {
 }
 
 void cEETest::CreateETGEditor() {
-	cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 1024, 768 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, eeSize( 1024, 768 ) );
+	cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 1024, 768 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, eeSize( 1024, 768 ) );
 	mETGEditor = eeNew ( Tools::cTextureGroupEditor, ( tWin, cb::Make0( this, &cEETest::OnETGEditorClose ) ) );
 	tWin->Center();
 	tWin->Show();
