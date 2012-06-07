@@ -9,7 +9,7 @@ bool cFrameBufferFBO::IsSupported() {
 #ifdef EE_GLES2
 	return true;
 #elif defined( EE_GLES1 )
-	return false
+	return false;
 #else
 	return 0 != GLi->IsExtension( EEGL_EXT_framebuffer_object );
 #endif

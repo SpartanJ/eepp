@@ -74,7 +74,7 @@ void cEETest::Init() {
 	run = ( mWindow->Created() && PAK->IsOpen() );
 
 	if ( run ) {
-		SetScreen( 0 );
+		SetScreen( 2 );
 
 		mWindow->Caption( "EE++ Test Application" );
 

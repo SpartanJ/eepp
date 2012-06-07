@@ -48,7 +48,9 @@ bool cVertexBufferVBO::Compile() {
 		return false;
 
 	#if !defined( EE_GLES ) && EE_PLATFORM != EE_PLATFORM_HAIKU
+	GLint curVAO = 0;
 	if ( GLv_3 == GLi->Version() ) {
+		glGetIntegerv( GL_VERTEX_ARRAY_BINDING, &curVAO );
 		glGenVertexArrays( 1, &mVAO );
 		glBindVertexArray( mVAO );
 	}
@@ -89,6 +91,12 @@ bool cVertexBufferVBO::Compile() {
 		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER, 0 );
 	}
 
+	#if !defined( EE_GLES ) && EE_PLATFORM != EE_PLATFORM_HAIKU
+	if ( GLv_3 == GLi->Version() ) {
+		glBindVertexArray( curVAO );
+	}
+	#endif
+
 	mCompiled	= true;
 	mBuffersSet	= false;
 
@@ -99,8 +107,12 @@ void cVertexBufferVBO::Draw() {
 	if ( !mCompiled )
 		return;
 
+	#if !defined( EE_GLES ) && EE_PLATFORM != EE_PLATFORM_HAIKU
+	GLint curVAO = 0;
+	#endif
 	if ( GLv_3 == GLi->Version() || GLv_ES2 == GLi->Version() ) {
 		#if !defined( EE_GLES ) && EE_PLATFORM != EE_PLATFORM_HAIKU
+		glGetIntegerv( GL_VERTEX_ARRAY_BINDING, &curVAO );
 		glBindVertexArray( mVAO );
 		#endif
 
@@ -124,6 +136,12 @@ void cVertexBufferVBO::Draw() {
 		glDrawArrays( mDrawType, 0, GetVertexCount() );
 	}
 
+	#if !defined( EE_GLES ) && EE_PLATFORM != EE_PLATFORM_HAIKU
+	if ( GLv_3 == GLi->Version() ) {
+		glBindVertexArray( curVAO );
+	}
+	#endif
+
 	if ( GLv_3 == GLi->Version() || GLv_ES2 == GLi->Version() ) {
 		if ( !mTextured ) {
 			GLi->Enable( GL_TEXTURE_2D );
@@ -137,11 +155,14 @@ void cVertexBufferVBO::SetVertexStates() {
 	#endif
 
 	#if !defined( EE_GLES ) && EE_PLATFORM != EE_PLATFORM_HAIKU
+	GLint curVAO = 0;
+
 	if ( GLv_3 == GLi->Version() ) {
 		if ( mBuffersSet ) {
 			return;
 		}
 
+		glGetIntegerv( GL_VERTEX_ARRAY_BINDING, &curVAO );
 		glBindVertexArray( mVAO );
 	}
 	#endif
@@ -251,6 +272,12 @@ void cVertexBufferVBO::SetVertexStates() {
 	GLi->ClientActiveTexture( GL_TEXTURE0 );
 
 	glBindBufferARB( GL_ARRAY_BUFFER, 0 );
+
+	#if !defined( EE_GLES ) && EE_PLATFORM != EE_PLATFORM_HAIKU
+	if ( GLv_3 == GLi->Version() ) {
+		glBindVertexArray( curVAO );
+	}
+	#endif
 
 	mBuffersSet = true;
 }

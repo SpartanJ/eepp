@@ -80,6 +80,7 @@ void cShapePoly::Draw( cSpace * space ) {
 		BR->DrawOpt();
 	}
 
+#ifndef EE_GLES
 	BR->LineLoopBegin();
 	BR->LineLoopSetColor( Col );
 
@@ -88,6 +89,8 @@ void cShapePoly::Draw( cSpace * space ) {
 	}
 
 	BR->DrawOpt();
+#endif
+
 	#endif
 }
 
