@@ -11,7 +11,6 @@ else
 	endif
 endif
 
-export LIBPATH    	= ./
 export VERSION    	= 0.8
 export CP         	= cp
 export LN         	= ln
@@ -44,10 +43,6 @@ ifeq ($(BUILD_OS), ios)
 		endif
 	endif
 
-	ifeq ($(NO_LIBSNDFILE),)
-		NO_LIBSNDFILE=yes
-	endif
-	
 	ifeq ($(STATIC_FT2),)
 		STATIC_FT2=yes
 	endif
@@ -87,21 +82,18 @@ endif
 export AR         	= $(TOOLCHAINPATH)ar
 
 ifeq ($(LLVM_BUILD), yes)
-
-export CC         	= $(TOOLCHAINPATH)clang
-export CPP        	= $(TOOLCHAINPATH)clang++
+	export CC         	= $(TOOLCHAINPATH)clang
+	export CPP        	= $(TOOLCHAINPATH)clang++
 
 else
-
-export CC         	= $(TOOLCHAINPATH)gcc
-export CPP        	= $(TOOLCHAINPATH)g++
-
+	export CC         	= $(TOOLCHAINPATH)gcc
+	export CPP        	= $(TOOLCHAINPATH)g++
 endif
 
 ifneq (,$(findstring cygwin,$(BUILD_OS)))
-OSLIBEXTENSION		= dll
+	OSLIBEXTENSION		= dll
 else
-OSLIBEXTENSION		= so
+	OSLIBEXTENSION		= so
 endif
 
 SDLCONFIGPATH		= 
@@ -114,15 +106,16 @@ else
 	ARCHEXT		=-$(ARCH)
 endif
 
-DYLIB     = libeepp.$(OSLIBEXTENSION)
+LIBPATH		= ./libs/$(BUILD_OS)/$(RELEASETYPE)/
+DYLIB		= libeepp$(ARCHEXT).$(OSLIBEXTENSION)
 
 ifeq ($(DYNAMIC), yes)
 	LIB     = $(DYLIB)
-	LIBNAME = $(LIBPATH)/$(LIB)
+	LIBNAME = $(LIBPATH)$(LIB)
 	INSTALL = && $(LN) $(LNFLAGS) $(DESTLIBDIR)/$(LIB).$(VERSION) $(DESTLIBDIR)/$(LIB)
 else
 	LIB		= libeepp$(ARCHEXT).a
-	LIBNAME = $(LIBPATH)/$(LIB)
+	LIBNAME = $(LIBPATH)$(LIB)
 	INSTALL = 
 endif
 
@@ -138,7 +131,6 @@ else
     
     RELEASETYPE = release
 endif
-
 
 ifeq ($(DYNAMIC), yes)
     BUILDFLAGS = -fPIC -DEE_EXPORTS
@@ -289,10 +281,7 @@ endif
 
 BACKENDFLAGS = $(SDL_DEFINE) $(ALLEGRO_DEFINE)
 
-ifeq ($(NO_LIBSNDFILE),yes)
-	LIBSNDFILE	=
-	SNDFILEFLAG = -DEE_NO_SNDFILE
-else
+ifeq ($(LIBSNDFILE_ENABLE),yes)
 	ifeq ($(MINGW32),yes)
 		LIBSNDFILE	= -llibsndfile-1
 	else
@@ -304,7 +293,10 @@ else
 		endif
 	endif
 	
-	SNDFILEFLAG = 
+	SNDFILEFLAG = -DEE_LIBSNDFILE_ENABLED
+else
+	LIBSNDFILE	=
+	SNDFILEFLAG =
 endif
 
 ifeq ($(STATIC_FT2),yes)
@@ -320,28 +312,41 @@ else
 	endif
 endif
 
+ifeq ($(BUILD_OS), ios)
+
+	ifeq ($(BACKEND_SDL),yes)
+		BACKENDINCLUDE = -I./src/helper/android/SDL2/include
+	else
+		BACKENDINCLUDE = -I./src/helper/allegro5/include
+	endif
+
+	PLATFORMFLAGS += $(BACKENDINCLUDE)
+
+	ifneq ($(GLES2), yes)
+		ifneq ($(GLES1), yes)
+			GLES1=yes
+		endif
+	endif
+endif
+
 FINALFLAGS = $(DEBUGFLAGS) $(SNDFILEFLAG)
 
 ifeq ($(GLES2), yes)
 	FINALFLAGS += -DEE_GLES2 -DSOIL_GLES2
+	
+	GL_VERSION = GLES2
 else
 	ifeq ($(GLES1), yes)
 		FINALFLAGS += -DEE_GLES1 -DSOIL_GLES1
+		
+		GL_VERSION = GLES1
+	else
+		GL_VERSION = GL
 	endif
 endif
 
-ifeq ($(BUILD_OS), ios)
 
-ifeq ($(BACKEND_SDL),yes)
-	BACKENDINCLUDE = -I./src/helper/android/SDL2/include
-else
-	BACKENDINCLUDE = -I./src/helper/allegro5/include
-endif
-
-PLATFORMFLAGS += $(BACKENDINCLUDE)
-
-endif
-
+##################### OS BUILD OPTIONS #####################
 ifeq ($(BUILD_OS), linux)
 
 LIBS 		= -lrt -lpthread -lX11 -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
@@ -422,63 +427,56 @@ endif
 
 endif
 #endif linux
+##################### OS BUILD OPTIONS #####################
 
 export CFLAGS     	= $(ARCHFLAGS) -Wall -Wno-unknown-pragmas $(FINALFLAGS) $(BUILDFLAGS) $(BACKENDFLAGS) $(PLATFORMFLAGS)
 export CFLAGSEXT  	= $(ARCHFLAGS) $(FINALFLAGS) $(BUILDFLAGS) $(PLATFORMFLAGS)
 export LDFLAGS    	= $(ARCHFLAGS) $(LINKFLAGS) $(FRAMEWORKFLAGS)
 HELPERSFLAGS		= -DSTBI_FAILURE_USERMSG -DFT2_BUILD_LIBRARY
-
 HELPERSINC			= -I./src/helper/chipmunk -I./src/helper/zlib -I./src/helper/freetype2/include
 
 ifeq ($(BUILD_OS), mingw32)
-OSEXTENSION			= .exe
+	OSEXTENSION			= .exe
 else
-OSEXTENSION			= 
+	OSEXTENSION			= 
 endif
-
-EXE     			= eetest-$(RELEASETYPE)$(OSEXTENSION)
-EXEIV				= eeiv-$(RELEASETYPE)$(OSEXTENSION)
-EXEFLUID			= eefluid-$(RELEASETYPE)$(OSEXTENSION)
-EXEBNB				= bnb-$(RELEASETYPE)$(OSEXTENSION)
-EXEEMPTYWINDOW		= eeew-$(RELEASETYPE)$(OSEXTENSION)
-EXEPARTICLES		= eeparticles-$(RELEASETYPE)$(OSEXTENSION)
-EXERHYTHM			= rhythm-$(RELEASETYPE)$(OSEXTENSION)
 
 ifeq ($(BUILD_OS), haiku)
-SRCGLEW 			= 
+	SRCGLEW 			= 
 else
-ifeq ($(BUILD_OS), ios)
-SRCGLEW 			= 
-else
-SRCGLEW 			= $(wildcard ./src/helper/glew/*.c)
-endif
-
+	ifeq ($(BUILD_OS), ios)
+		SRCGLEW 			= 
+	else
+		SRCGLEW 			= $(wildcard ./src/helper/glew/*.c)
+	endif
 endif
 
 ifeq ($(STATIC_FT2), yes)
-SRCFREETYPE			= $(wildcard ./src/helper/freetype2/src/*/*.c)
+	SRCFREETYPE			= $(wildcard ./src/helper/freetype2/src/*/*.c)
 else
-SRCFREETYPE			= 
+	SRCFREETYPE			= 
 endif
 
-SRCSOIL 			= $(wildcard ./src/helper/SOIL/*.c)
-SRCSTBVORBIS 		= $(wildcard ./src/helper/stb_vorbis/*.c)
-SRCZLIB				= $(wildcard ./src/helper/zlib/*.c)
-SRCLIBZIP			= $(wildcard ./src/helper/libzip/*.c)
-SRCCHIPMUNK			= $(wildcard ./src/helper/chipmunk/*.c) $(wildcard ./src/helper/chipmunk/constraints/*.c)
+SRCHELPERS			= $(SRCFREETYPE) $(SRCGLEW) $(wildcard ./src/helper/SOIL/*.c) $(wildcard ./src/helper/stb_vorbis/*.c) $(wildcard ./src/helper/zlib/*.c) $(wildcard ./src/helper/libzip/*.c) $(wildcard ./src/helper/chipmunk/*.c) $(wildcard ./src/helper/chipmunk/constraints/*.c)
+SRCMODULES			= $(wildcard ./src/helper/haikuttf/*.cpp) $(wildcard ./src/base/*.cpp) $(wildcard ./src/audio/*.cpp) $(wildcard ./src/gaming/*.cpp) $(wildcard ./src/gaming/mapeditor/*.cpp) $(wildcard ./src/graphics/*.cpp) $(wildcard ./src/graphics/renderer/*.cpp) $(wildcard ./src/math/*.cpp) $(wildcard ./src/system/*.cpp) $(wildcard ./src/ui/*.cpp) $(wildcard ./src/ui/tools/*.cpp) $(wildcard ./src/utils/*.cpp) $(wildcard ./src/window/*.cpp) $(wildcard ./src/window/backend/null/*.cpp) $(wildcard ./src/window/platform/null/*.cpp) $(SDL_BACKEND_SRC) $(ALLEGRO_BACKEND_SRC) $(PLATFORMSRC) $(wildcard ./src/physics/*.cpp) $(wildcard ./src/physics/constraints/*.cpp)
 
-SRCHAIKUTTF 		= $(wildcard ./src/helper/haikuttf/*.cpp)
-SRCBASE				= $(wildcard ./src/base/*.cpp)
-SRCAUDIO			= $(wildcard ./src/audio/*.cpp)
-SRCGAMING			= $(wildcard ./src/gaming/*.cpp) $(wildcard ./src/gaming/mapeditor/*.cpp)
-SRCGRAPHICS			= $(wildcard ./src/graphics/*.cpp) $(wildcard ./src/graphics/renderer/*.cpp)
-SRCMATH				= $(wildcard ./src/math/*.cpp)
-SRCSYSTEM			= $(wildcard ./src/system/*.cpp)
-SRCUI				= $(wildcard ./src/ui/*.cpp) $(wildcard ./src/ui/tools/*.cpp)
-SRCUTILS     		= $(wildcard ./src/utils/*.cpp)
-SRCWINDOW     		= $(wildcard ./src/window/*.cpp) $(wildcard ./src/window/backend/null/*.cpp) $(wildcard ./src/window/platform/null/*.cpp) $(SDL_BACKEND_SRC) $(ALLEGRO_BACKEND_SRC) $(PLATFORMSRC)
-SRCPHYSICS			= $(wildcard ./src/physics/*.cpp) $(wildcard ./src/physics/constraints/*.cpp)
+OBJHELPERS			= $(SRCHELPERS:.c=.o)
+OBJMODULES			= $(SRCMODULES:.cpp=.o)
 
+ifeq ($(ARCH),)
+	OBJDIR				= obj/$(BUILD_OS)/$(RELEASETYPE)/
+else
+	ifeq ($(BUILD_OS), ios)
+		OBJDIR				= obj/$(BUILD_OS)/$(RELEASETYPE)/$(ARCH)/$(GL_VERSION)/
+	else
+		OBJDIR				= obj/$(BUILD_OS)/$(RELEASETYPE)/$(ARCH)/
+	endif
+endif
+
+FOBJHELPERS			= $(patsubst ./%, $(OBJDIR)%, $(OBJHELPERS) )
+FOBJMODULES			= $(patsubst ./%, $(OBJDIR)%, $(OBJMODULES) )
+
+# OUT OF EEPP LIB
 SRCTEST     		= $(wildcard ./src/test/*.cpp)
 SRCEEIV     		= $(wildcard ./src/eeiv/*.cpp)
 SRCFLUID     		= $(wildcard ./src/fluid/*.cpp)
@@ -486,32 +484,6 @@ SRCPARTICLES    	= $(wildcard ./src/particles/*.cpp) $(wildcard ./src/particles/
 SRCBNB     			= $(wildcard ./src/bnb/*.cpp)
 SRCEMPTYWINDOW  	= $(wildcard ./src/test/empty_window/*.cpp)
 SRCRHYTHM		  	= $(wildcard ./src/rhythm/*.cpp)
-
-SRCHELPERS			= $(SRCFREETYPE) $(SRCGLEW) $(SRCSOIL) $(SRCSTBVORBIS) $(SRCZLIB) $(SRCLIBZIP) $(SRCCHIPMUNK)
-SRCMODULES			= $(SRCHAIKUTTF) $(SRCBASE) $(SRCAUDIO) $(SRCGAMING) $(SRCGRAPHICS) $(SRCMATH) $(SRCSYSTEM) $(SRCUI) $(SRCUTILS) $(SRCWINDOW) $(SRCPHYSICS)
-
-OBJFREETYPE			= $(SRCFREETYPE:.c=.o)
-OBJGLEW 			= $(SRCGLEW:.c=.o)
-OBJSOIL 			= $(SRCSOIL:.c=.o)
-OBJSTBVORBIS 		= $(SRCSTBVORBIS:.c=.o) 
-OBJZLIB 			= $(SRCZLIB:.c=.o) 
-OBJLIBZIP 			= $(SRCLIBZIP:.c=.o) 
-OBJCHIPMUNK			= $(SRCCHIPMUNK:.c=.o)
-
-OBJHAIKUTTF 		= $(SRCHAIKUTTF:.cpp=.o)
-OBJBASE 			= $(SRCBASE:.cpp=.o)
-OBJAUDIO 			= $(SRCAUDIO:.cpp=.o)
-OBJGAMING 			= $(SRCGAMING:.cpp=.o)
-OBJGRAPHICS 		= $(SRCGRAPHICS:.cpp=.o)
-OBJMATH 			= $(SRCMATH:.cpp=.o)
-OBJSYSTEM 			= $(SRCSYSTEM:.cpp=.o)
-OBJUI 				= $(SRCUI:.cpp=.o)
-OBJUTILS			= $(SRCUTILS:.cpp=.o)
-OBJWINDOW			= $(SRCWINDOW:.cpp=.o)
-OBJPHYSICS			= $(SRCPHYSICS:.cpp=.o)
-
-OBJHELPERS			= $(OBJFREETYPE) $(OBJGLEW) $(OBJSOIL) $(OBJSTBVORBIS) $(OBJZLIB) $(OBJLIBZIP) $(OBJCHIPMUNK)
-OBJMODULES			= $(OBJHAIKUTTF) $(OBJBASE) $(OBJUTILS) $(OBJMATH) $(OBJSYSTEM) $(OBJAUDIO) $(OBJWINDOW) $(OBJGRAPHICS) $(OBJGAMING) $(OBJUI) $(OBJPHYSICS)
 
 OBJTEST     		= $(SRCTEST:.cpp=.o)
 OBJEEIV     		= $(SRCEEIV:.cpp=.o)
@@ -521,15 +493,6 @@ OBJEMPTYWINDOW		= $(SRCEMPTYWINDOW:.cpp=.o)
 OBJPARTICLES     	= $(SRCPARTICLES:.cpp=.o)
 OBJRHYTHM			= $(SRCRHYTHM:.cpp=.o)
 
-ifeq ($(ARCH),)
-OBJDIR				= obj/$(BUILD_OS)/$(RELEASETYPE)/
-else
-OBJDIR				= obj/$(BUILD_OS)/$(RELEASETYPE)/$(ARCH)/
-endif
-
-FOBJHELPERS			= $(patsubst ./%, $(OBJDIR)%, $(OBJFREETYPE) $(OBJGLEW) $(OBJSOIL) $(OBJSTBVORBIS) $(OBJZLIB) $(OBJLIBZIP) $(OBJCHIPMUNK) )
-FOBJMODULES			= $(patsubst ./%, $(OBJDIR)%, $(OBJHAIKUTTF) $(OBJBASE) $(OBJUTILS) $(OBJMATH) $(OBJSYSTEM) $(OBJAUDIO) $(OBJWINDOW) $(OBJGRAPHICS) $(OBJGAMING) $(OBJUI) $(OBJPHYSICS) )
-
 FOBJTEST     		= $(patsubst ./%, $(OBJDIR)%, $(SRCTEST:.cpp=.o) )
 FOBJEEIV     		= $(patsubst ./%, $(OBJDIR)%, $(SRCEEIV:.cpp=.o) )
 FOBJFLUID     		= $(patsubst ./%, $(OBJDIR)%, $(SRCFLUID:.cpp=.o) )
@@ -537,6 +500,15 @@ FOBJBNB     		= $(patsubst ./%, $(OBJDIR)%, $(SRCBNB:.cpp=.o) )
 FOBJEMTPYWINDOW     = $(patsubst ./%, $(OBJDIR)%, $(SRCEMPTYWINDOW:.cpp=.o) )
 FOBJPARTICLES     	= $(patsubst ./%, $(OBJDIR)%, $(SRCPARTICLES:.cpp=.o) )
 FOBJRHYTHM		 	= $(patsubst ./%, $(OBJDIR)%, $(SRCRHYTHM:.cpp=.o) )
+
+EXE     			= eetest-$(RELEASETYPE)$(OSEXTENSION)
+EXEIV				= eeiv-$(RELEASETYPE)$(OSEXTENSION)
+EXEFLUID			= eefluid-$(RELEASETYPE)$(OSEXTENSION)
+EXEBNB				= bnb-$(RELEASETYPE)$(OSEXTENSION)
+EXEEMPTYWINDOW		= eeew-$(RELEASETYPE)$(OSEXTENSION)
+EXEPARTICLES		= eeparticles-$(RELEASETYPE)$(OSEXTENSION)
+EXERHYTHM			= rhythm-$(RELEASETYPE)$(OSEXTENSION)
+# OUT OF EEPP LIB
 
 FOBJEEPP			= $(FOBJMODULES) $(FOBJTEST) $(FOBJEEIV) $(FOBJFLUID) $(FOBJBNB) $(FOBJEMTPYWINDOW) $(FOBJPARTICLES) $(FOBJRHYTHM)
 FOBJALL 			= $(FOBJHELPERS) $(FOBJEEPP)
@@ -578,6 +550,7 @@ dirs:
 	@$(MKDIR) $(OBJDIR)/src/helper/chipmunk
 	@$(MKDIR) $(OBJDIR)/src/helper/chipmunk/constraints
 	@$(MKDIR) $(OBJDIR)/src/helper/haikuttf
+	@$(MKDIR) $(LIBPATH)
 	@$(MKDIR) $(OBJDIR)/src/base
 	@$(MKDIR) $(OBJDIR)/src/audio
 	@$(MKDIR) $(OBJDIR)/src/gaming
@@ -611,7 +584,7 @@ dirs:
 	@$(MKDIR) $(OBJDIR)/src/particles/objects
 	@$(MKDIR) $(OBJDIR)/src/particles/gameobjects
 	@$(MKDIR) $(OBJDIR)/src/rhythm
-	
+
 lib: dirs $(LIB)
 
 $(FOBJMODULES):
