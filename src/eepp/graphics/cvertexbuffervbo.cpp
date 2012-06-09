@@ -322,7 +322,6 @@ void cVertexBufferVBO::Reload() {
 
 
 void cVertexBufferVBO::Unbind() {
-#ifndef EE_GL3_ENABLED
 	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
 		GLi->EnableClientState( GL_VERTEX_ARRAY );
 	}
@@ -335,7 +334,6 @@ void cVertexBufferVBO::Unbind() {
 		GLi->Enable( GL_TEXTURE_2D );
 		GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
 	}
-#endif
 }
 
 
