@@ -119,13 +119,6 @@ String::operator std::string() const
     return ToAnsiString();
 }
 
-#ifndef EE_NO_WIDECHAR
-String::operator std::wstring() const
-{
-    return ToWideString();
-}
-#endif
-
 std::string String::ToAnsiString(const std::locale& locale) const
 {
     // Prepare the output string

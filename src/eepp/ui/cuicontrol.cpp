@@ -309,11 +309,11 @@ Uint32 cUIControl::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
 }
 
 bool cUIControl::IsMouseOver() {
-	return mControlFlags & UI_CTRL_FLAG_MOUSEOVER;
+	return 0 != ( mControlFlags & UI_CTRL_FLAG_MOUSEOVER );
 }
 
 bool cUIControl::IsMouseOverMeOrChilds() {
-	return mControlFlags & UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD;
+	return 0 != ( mControlFlags & UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD );
 }
 
 Uint32 cUIControl::OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags ) {

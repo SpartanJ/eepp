@@ -1,13 +1,11 @@
-#ifdef EE_COMPILER_MSVC
-#ifndef WIN32_LEAN_AND_MEAN
-	#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
-#endif
-
 #include <eepp/base/debug.hpp>
 #include <eepp/system/clog.hpp>
 using namespace EE::System;
+
+#ifdef EE_COMPILER_MSVC
+#include <windows.h>
+#include <crtdbg.h>
+#endif
 
 namespace EE {
 

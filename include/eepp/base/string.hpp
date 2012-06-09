@@ -148,18 +148,6 @@ class EE_API String {
 	**/
 	operator std::string() const;
 
-#ifndef EE_NO_WIDECHAR
-	/** @brief Implicit cast operator to String (wide string)
-	** Characters that do not fit in the target encoding are
-	** discarded from the returned string.
-	** This operator is defined for convenience, and is equivalent
-	** to calling ToWideString().
-	** @return Converted wide string
-	** @see ToWideString, operator std::string
-	**/
-	operator std::wstring() const;
-#endif
-
 	/** @brief Convert the unicode string to an ANSI string
 	** The UTF-32 string is converted to an ANSI string in
 	** the encoding defined by \a locale. If you want to use

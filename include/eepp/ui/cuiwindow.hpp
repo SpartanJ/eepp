@@ -199,7 +199,7 @@ class EE_API cUIWindow : public cUIComplexControl {
 
 		void FixTitleSize();
 
-		Uint32 OnMouseDoubleClick( const eeVector2i &Pos, Uint32 Flags );
+		Uint32 OnMouseDoubleClick( const eeVector2i &Pos, const Uint32 Flags );
 
 		void CheckShortcuts( const Uint32& KeyCode, const Uint32& Mod );
 

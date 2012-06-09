@@ -1,6 +1,7 @@
 #include <eepp/utils/utils.hpp>
 #include <eepp/utils/string.hpp>
 #include <eepp/system/ciostreamfile.hpp>
+using namespace EE::System;
 
 #include <sys/stat.h>
 
@@ -44,6 +45,10 @@
 
 #ifndef EE_COMPILER_MSVC
 	#include <dirent.h>
+#else
+	#ifndef S_ISDIR
+	#define S_ISDIR(mode)  (((mode) & S_IFMT) == S_IFDIR)
+	#endif
 #endif
 
 static bool TickStarted = false;
@@ -157,7 +162,12 @@ static std::string GetWindowsVersion() {
 		}
 
 		// Include service pack (if any) and build number.
+		#if defined( EE_COMPILER_MSVC ) && defined( UNICODE )
+		std::string CSDVer( EE::String( osvi.szCSDVersion ).ToUtf8() );
+		#else
 		std::string CSDVer( osvi.szCSDVersion );
+		#endif
+
 		if ( CSDVer.size() ) {
 			os += " " + CSDVer;
 		}
@@ -210,8 +220,6 @@ static struct timeval start;
 #endif
 
 #endif
-
-using namespace EE::System;
 
 namespace EE { namespace Utils {
 
@@ -458,7 +466,7 @@ std::vector<String> FilesGetInPath( const String& path ) {
 		}
 
 		WIN32_FIND_DATA findFileData;
-		HANDLE hFind = FindFirstFile( mPath.ToWideString().c_str(), &findFileData );
+		HANDLE hFind = FindFirstFile( (LPCWSTR)mPath.ToWideString().c_str(), &findFileData );
 
 		if( hFind != INVALID_HANDLE_VALUE ) {
 			String tmpstr( findFileData.cFileName );
@@ -549,7 +557,7 @@ std::vector<std::string> FilesGetInPath( const std::string& path ) {
 		}
 
 		WIN32_FIND_DATA findFileData;
-		HANDLE hFind = FindFirstFile( mPath.ToWideString().c_str(), &findFileData );
+		HANDLE hFind = FindFirstFile( (LPCWSTR)mPath.ToWideString().c_str(), &findFileData );
 
 		if( hFind != INVALID_HANDLE_VALUE ) {
 			String tmpstr( findFileData.cFileName );
@@ -738,7 +746,10 @@ bool FileCopy( const std::string& src, const std::string& dst ) {
 		Int64	allocate	= ( size < chunksize ) ? size : chunksize;
 		Int64	copysize	= 0;
 
-		char buff[ allocate ];
+		SafeDataPointer data;
+		data.DataSize	= (Uint32)allocate;
+		data.Data		= eeNewArray( Uint8, ( data.DataSize ) );
+		char * buff		= (char*)data.Data;
 
 		cIOStreamFile in( src, std::ios::binary | std::ios::in );
 		cIOStreamFile out( dst, std::ios::binary | std::ios::out );
@@ -967,8 +978,13 @@ Int64 GetDiskFreeSpace(const std::string& path) {
 	Int64 AvailableBytes;
 	Int64 TotalBytes;
 	Int64 FreeBytes;
+	#ifdef UNICODE
+	GetDiskFreeSpaceEx((LPCWSTR)path.c_str(),(PULARGE_INTEGER) &AvailableBytes,
+	#else
 	GetDiskFreeSpaceEx(path.c_str(),(PULARGE_INTEGER) &AvailableBytes,
+	#endif
 	(PULARGE_INTEGER) &TotalBytes, (PULARGE_INTEGER) &FreeBytes);
+	
 	return FreeBytes;
 #else
 	return -1;

@@ -755,18 +755,20 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 
 			//! Load Properties
 			if ( MapHdr.PropertyCount ) {
-				sPropertyHdr tProp[ MapHdr.PropertyCount ];
+				sPropertyHdr * tProp = eeNewArray( sPropertyHdr, MapHdr.PropertyCount );
 
 				IOS.Read( (char*)&tProp[0], sizeof(sPropertyHdr) * MapHdr.PropertyCount );
 
 				for ( i = 0; i < MapHdr.PropertyCount; i++ ) {
 					AddProperty( std::string( tProp[i].Name ), std::string( tProp[i].Value ) );
 				}
+
+				eeSAFE_DELETE_ARRAY( tProp );
 			}
 
 			//! Load Shape Groups
 			if ( MapHdr.ShapeGroupCount ) {
-				sMapShapeGroup tSG[ MapHdr.ShapeGroupCount ];
+				sMapShapeGroup * tSG = eeNewArray( sMapShapeGroup, MapHdr.ShapeGroupCount );
 
 				IOS.Read( (char*)&tSG[0], sizeof(sMapShapeGroup) * MapHdr.ShapeGroupCount );
 
@@ -788,22 +790,26 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 						eeSAFE_DELETE( tgl );
 					}
 				}
+
+				eeSAFE_DELETE_ARRAY( tSG );
 			}
 
 			//! Load Virtual Object Types
 			if ( MapHdr.VirtualObjectTypesCount ) {
-				sVirtualObj tVObj[ MapHdr.VirtualObjectTypesCount ];
+				sVirtualObj * tVObj = eeNewArray( sVirtualObj, MapHdr.VirtualObjectTypesCount );
 
 				IOS.Read( (char*)&tVObj[0], sizeof(sVirtualObj) * MapHdr.VirtualObjectTypesCount );
 
 				for ( i = 0; i < MapHdr.VirtualObjectTypesCount; i++ ) {
 					AddVirtualObjectType( std::string( tVObj[i].Name ) );
 				}
+
+				eeSAFE_DELETE_ARRAY( tVObj );
 			}
 
 			//! Load Layers
 			if ( MapHdr.LayerCount ) {
-				sLayerHdr tLayersHdr[ MapHdr.LayerCount ];
+				sLayerHdr * tLayersHdr = eeNewArray( sLayerHdr, MapHdr.LayerCount );
 				sLayerHdr * tLayerHdr;
 
 				for ( i = 0; i < MapHdr.LayerCount; i++ ) {
@@ -815,13 +821,15 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 
 					tLayer->Offset( eeVector2f( (eeFloat)tLayerHdr->OffsetX, (eeFloat)tLayerHdr->OffsetY ) );
 
-					sPropertyHdr tProps[ tLayerHdr->PropertyCount ];
+					sPropertyHdr * tProps = eeNewArray( sPropertyHdr, tLayerHdr->PropertyCount );
 
 					IOS.Read( (char*)&tProps[0], sizeof(sPropertyHdr) * tLayerHdr->PropertyCount );
 
 					for ( z = 0; z < tLayerHdr->PropertyCount; z++ ) {
 						tLayer->AddProperty( std::string( tProps[z].Name ), std::string( tProps[z].Value ) );
 					}
+
+					eeSAFE_DELETE_ARRAY( tProps );
 				}
 
 				bool ThereIsTiled = false;
@@ -871,7 +879,7 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 						tLayerHdr	= &( tLayersHdr[i] );
 						tOLayer		= reinterpret_cast<cObjectLayer*> ( mLayers[i] );
 
-						sMapObjGOHdr tOGOsHdr[ tLayerHdr->ObjectCount ];
+						sMapObjGOHdr * tOGOsHdr = eeNewArray( sMapObjGOHdr, tLayerHdr->ObjectCount );
 						sMapObjGOHdr * tOGOHdr;
 
 						IOS.Read( (char*)&tOGOsHdr, sizeof(sMapObjGOHdr) * tLayerHdr->ObjectCount );
@@ -885,6 +893,8 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 
 							tOLayer->AddGameObject( tGO );
 						}
+
+						eeSAFE_DELETE_ARRAY( tOGOsHdr );
 					}
 				}
 
@@ -892,7 +902,7 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 				if ( MapHdr.LightsCount ) {
 					CreateLightManager();
 
-					sMapLightHdr tLighsHdr[ MapHdr.LightsCount ];
+					sMapLightHdr * tLighsHdr = eeNewArray( sMapLightHdr, MapHdr.LightsCount );
 					sMapLightHdr * tLightHdr;
 
 					IOS.Read( (char*)&tLighsHdr, sizeof(sMapLightHdr) * MapHdr.LightsCount );
@@ -907,7 +917,11 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 							eeNew( cLight, ( tLightHdr->Radius, tLightHdr->PosX, tLightHdr->PosY, tLightCol, (LIGHT_TYPE)tLightHdr->Type ) )
 						);
 					}
+
+					eeSAFE_DELETE_ARRAY( tLighsHdr );
 				}
+
+				eeSAFE_DELETE_ARRAY( tLayersHdr );
 			}
 
 			OnMapLoaded();
@@ -1079,7 +1093,7 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 		cTileLayer * tTLayer;
 		cGameObject * tObj;
 
-		cGameObject * tObjects[ mLayerCount ];
+		std::vector<cGameObject*> tObjects( mLayerCount );
 
 		if ( ThereIsTiled ) {
 			//! First we save the tiled layers.

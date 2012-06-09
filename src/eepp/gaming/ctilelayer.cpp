@@ -18,7 +18,7 @@ cTileLayer::~cTileLayer() {
 	DeallocateLayer();
 }
 
-void cTileLayer::cTileLayer::Draw( const eeVector2f &Offset ) {
+void cTileLayer::Draw( const eeVector2f& Offset ) {
 	cGlobalBatchRenderer::instance()->Draw();
 
 	GLi->PushMatrix();

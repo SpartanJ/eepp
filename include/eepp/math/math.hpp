@@ -348,11 +348,11 @@ bool PointInsidePolygon2( const Polygon2<T>& poly, const Vector2<T>& point ) {
 
 template<typename T>
 Polygon2<T> CreateRoundedPolygon( const T& x, const T& y, const T& width, const T& height, const eeUint& Radius = 8 ) {
-	eeFloat PI05 = EE_PI * 0.5f;
-	eeFloat PI15 = EE_PI * 1.5f;
-	eeFloat PI20 = EE_PI2;
-	eeFloat sx, sy;
-	eeFloat t;
+	T PI05 = EE_PI * 0.5f;
+	T PI15 = EE_PI * 1.5f;
+	T PI20 = EE_PI2;
+	T sx, sy;
+	T t;
 
 	Polygon2<T> Poly;
 
