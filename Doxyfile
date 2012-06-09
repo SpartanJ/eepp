@@ -1,11 +1,11 @@
-# Doxyfile 1.5.7.1-KDevelop
+# Doxyfile
 
 #---------------------------------------------------------------------------
 # Project related configuration options
 #---------------------------------------------------------------------------
 DOXYFILE_ENCODING      = UTF-8
 PROJECT_NAME           = "Entropia Engine++"
-PROJECT_NUMBER         = 0.7
+PROJECT_NUMBER         = 0.8
 OUTPUT_DIRECTORY       = ./docs
 CREATE_SUBDIRS         = NO
 OUTPUT_LANGUAGE        = English
@@ -95,7 +95,7 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = ./src
+INPUT                  = ./src/eepp
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.c \
                          *.cc \
@@ -147,18 +147,15 @@ FILE_PATTERNS          = *.c \
                          *.xpm \
                          *.dox
 RECURSIVE              = YES
-EXCLUDE                = ./src/helper/glew \
-                         ./src/helper/chipmunk \
-                         ./src/helper/glm \
-                         ./src/helper/libzip \
-                         ./src/helper/SOIL \
-                         ./src/helper/stb_vorbis \
-                         ./src/helper/zlib \
-                         ./src/helper/PlusCallback \
-                         ./src/helper/sophist \
-                         ./src/fluid \
-                         ./src/test \
-                         ./src/eeiv
+EXCLUDE                = ./src/eepp/helper/glew \
+                         ./src/eepp/helper/chipmunk \
+                         ./src/eepp/helper/glm \
+                         ./src/eepp/helper/libzip \
+                         ./src/eepp/helper/SOIL \
+                         ./src/eepp/helper/stb_vorbis \
+                         ./src/eepp/helper/zlib \
+                         ./src/eepp/helper/PlusCallback \
+                         ./src/eepp/helper/sophist
                          
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = 

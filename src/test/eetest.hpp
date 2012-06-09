@@ -1,7 +1,7 @@
 #ifndef EE_EETEST_HPP
 #define EE_EETEST_HPP
 
-#include "../ee.h"
+#include <eepp/ee.hpp>
 
 class cUITest : public cUIControlAnim {
 	public:

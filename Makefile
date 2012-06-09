@@ -198,7 +198,7 @@ ifeq ($(BACKEND_SDL),yes)
 	
 		SDL_BACKEND_LINK	= -lSDL $(SDL_ADD_LINK)
 
-		SDL_BACKEND_SRC		= $(wildcard ./src/window/backend/SDL/*.cpp)
+		SDL_BACKEND_SRC		= $(wildcard ./src/eepp/window/backend/SDL/*.cpp)
 
 		EE_SDL_VERSION		= -DEE_SDL_VERSION_1_2
 	else
@@ -250,7 +250,7 @@ ifeq ($(BACKEND_SDL),yes)
 			STATIC_LIBS			+= $(SDL_BACKEND_LINK)
 		endif
 		
-		SDL_BACKEND_SRC		= $(wildcard ./src/window/backend/SDL2/*.cpp)
+		SDL_BACKEND_SRC		= $(wildcard ./src/eepp/window/backend/SDL2/*.cpp)
 	endif
 	
 	SDL_DEFINE			= -DEE_BACKEND_SDL_ACTIVE $(EE_SDL_VERSION)
@@ -271,7 +271,7 @@ ifeq ($(BACKEND_ALLEGRO), yes)
 		ALLEGRO_BACKEND_LINK	= libs/$(BUILD_OS)/liballegro$(ARCHEXT).a libs/$(BUILD_OS)/liballegro_main$(ARCHEXT).a
 	endif
 
-	ALLEGRO_BACKEND_SRC		= $(wildcard ./src/window/backend/allegro5/*.cpp)
+	ALLEGRO_BACKEND_SRC		= $(wildcard ./src/eepp/window/backend/allegro5/*.cpp)
 	ALLEGRO_DEFINE			= -DEE_BACKEND_ALLEGRO_ACTIVE
 else
 	ALLEGRO_BACKEND_LINK	= 
@@ -301,12 +301,12 @@ endif
 
 ifeq ($(STATIC_FT2),yes)
 	LIBFREETYPE2	= 
-	INCFREETYPE2	= -I./src/helper/freetype2/include
+	INCFREETYPE2	= -I./src/eepp/helper/freetype2/include
 else
 	LIBFREETYPE2	= -lfreetype
 	
 	ifneq (,$(findstring cygwin,$(BUILD_OS)))
-		INCFREETYPE2	= -I./src/helper/freetype2/include
+		INCFREETYPE2	= -I./src/eepp/helper/freetype2/include
 	else
 		INCFREETYPE2	= -I$(DESTINCDIR)/freetype2
 	endif
@@ -315,9 +315,9 @@ endif
 ifeq ($(BUILD_OS), ios)
 
 	ifeq ($(BACKEND_SDL),yes)
-		BACKENDINCLUDE = -I./src/helper/android/SDL2/include
+		BACKENDINCLUDE = -I./src/eepp/helper/SDL2/include
 	else
-		BACKENDINCLUDE = -I./src/helper/allegro5/include
+		BACKENDINCLUDE = -I./src/eepp/helper/allegro5/include
 	endif
 
 	PLATFORMFLAGS += $(BACKENDINCLUDE)
@@ -345,45 +345,48 @@ else
 	endif
 endif
 
+BASEINC		= -I./include/ -I./src/
+OTHERINC	= $(BASEINC)
+BININC		= -I./include/
 
 ##################### OS BUILD OPTIONS #####################
 ifeq ($(BUILD_OS), linux)
 
 LIBS 		= -lrt -lpthread -lX11 -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
-OTHERINC	= $(INCFREETYPE2)
-PLATFORMSRC	= $(wildcard ./src/window/platform/x11/*.cpp) $(wildcard ./src/system/platform/posix/*.cpp)
+OTHERINC	+= $(INCFREETYPE2)
+PLATFORMSRC	= $(wildcard ./src/eepp/window/platform/x11/*.cpp) $(wildcard ./src/eepp/system/platform/posix/*.cpp)
 
 else
 
 ifeq ($(BUILD_OS), darwin)
 
 LIBS 		= -framework OpenGL -framework OpenAL -framework CoreFoundation -framework AGL $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
-OTHERINC	= $(INCFREETYPE2) -I/usr/local/include/freetype2
-PLATFORMSRC = $(wildcard ./src/window/platform/osx/*.cpp) $(wildcard ./src/system/platform/posix/*.cpp)
+OTHERINC	+= $(INCFREETYPE2) -I/usr/local/include/freetype2
+PLATFORMSRC = $(wildcard ./src/eepp/window/platform/osx/*.cpp) $(wildcard ./src/eepp/system/platform/posix/*.cpp)
 
 else
 
 ifeq ($(BUILD_OS), haiku)
 
 LIBS 		= -lopenal -lGL $(SDL_BACKEND_LINK) $(LIBFREETYPE2)
-OTHERINC	= $(INCFREETYPE2)
-PLATFORMSRC	= $(wildcard ./src/system/platform/posix/*.cpp)
+OTHERINC	+= $(INCFREETYPE2)
+PLATFORMSRC	= $(wildcard ./src/eepp/system/platform/posix/*.cpp)
 
 else
 
 ifeq ($(BUILD_OS), freebsd)
 
 LIBS 		= -lrt -lpthread -lX11 -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
-OTHERINC	= $(INCFREETYPE2)
-PLATFORMSRC	= $(wildcard ./src/window/platform/x11/*.cpp) $(wildcard ./src/system/platform/posix/*.cpp)
+OTHERINC	+= $(INCFREETYPE2)
+PLATFORMSRC	= $(wildcard ./src/eepp/window/platform/x11/*.cpp) $(wildcard ./src/eepp/system/platform/posix/*.cpp)
 
 else
 
 ifeq ($(BUILD_OS), mingw32)
 
 LIBS 		= -lOpenAL32 -lopengl32 -lmingw32 -lglu32 -lgdi32 -static-libgcc -static-libstdc++ $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
-OTHERINC	= $(INCFREETYPE2)
-PLATFORMSRC	= $(wildcard ./src/window/platform/win/*.cpp) $(wildcard ./src/system/platform/win/*.cpp)
+OTHERINC	+= $(INCFREETYPE2)
+PLATFORMSRC	= $(wildcard ./src/eepp/window/platform/win/*.cpp) $(wildcard ./src/eepp/system/platform/win/*.cpp)
 
 else
 
@@ -391,21 +394,21 @@ else
 ifneq (,$(findstring cygwin,$(BUILD_OS)))
 
 LIBS 		= -lOpenAL32 -lmingw32 -lopengl32 -lglu32 -lgdi32 -static-libgcc -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
-OTHERINC	= -I./src/helper/zlib $(INCFREETYPE2)
-PLATFORMSRC	= $(wildcard ./src/window/platform/win/*.cpp) $(wildcard ./src/system/platform/win/*.cpp)
+OTHERINC	+= -I./src/eepp/helper/zlib $(INCFREETYPE2)
+PLATFORMSRC	= $(wildcard ./src/eepp/window/platform/win/*.cpp) $(wildcard ./src/eepp/system/platform/win/*.cpp)
 
 else
 
 ifeq ($(BUILD_OS), ios)
 
 LIBS 		= -static-libgcc -static-libstdc++ -framework OpenGLES -framework OpenAL -framework AudioToolbox -framework CoreAudio -framework Foundation -framework CoreFoundation -framework UIKit -framework QuartzCore -framework CoreGraphics $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK)
-OTHERINC	= $(INCFREETYPE2)
+OTHERINC	+= $(INCFREETYPE2)
 
 ifeq ($(ARCH),armv7)
 OTHERINC += -DU_HAVE_GCC_ATOMICS=0
 endif
 
-PLATFORMSRC = $(wildcard ./src/system/platform/posix/*.cpp)
+PLATFORMSRC = $(wildcard ./src/eepp/system/platform/posix/*.cpp)
 
 endif
 #endif ios
@@ -433,7 +436,7 @@ export CFLAGS     	= $(ARCHFLAGS) -Wall -Wno-unknown-pragmas $(FINALFLAGS) $(BUI
 export CFLAGSEXT  	= $(ARCHFLAGS) $(FINALFLAGS) $(BUILDFLAGS) $(PLATFORMFLAGS)
 export LDFLAGS    	= $(ARCHFLAGS) $(LINKFLAGS) $(FRAMEWORKFLAGS)
 HELPERSFLAGS		= -DSTBI_FAILURE_USERMSG -DFT2_BUILD_LIBRARY
-HELPERSINC			= -I./src/helper/chipmunk -I./src/helper/zlib -I./src/helper/freetype2/include
+HELPERSINC			= -I./include/eepp/helper/chipmunk -I./src/eepp/helper/zlib -I./src/eepp/helper/freetype2/include -I./include/eepp/helper/SOIL -I./include/eepp/helper/glew
 
 ifeq ($(BUILD_OS), mingw32)
 	OSEXTENSION			= .exe
@@ -447,18 +450,18 @@ else
 	ifeq ($(BUILD_OS), ios)
 		SRCGLEW 			= 
 	else
-		SRCGLEW 			= $(wildcard ./src/helper/glew/*.c)
+		SRCGLEW 			= $(wildcard ./src/eepp/helper/glew/*.c)
 	endif
 endif
 
 ifeq ($(STATIC_FT2), yes)
-	SRCFREETYPE			= $(wildcard ./src/helper/freetype2/src/*/*.c)
+	SRCFREETYPE			= $(wildcard ./src/eepp/helper/freetype2/src/*/*.c)
 else
 	SRCFREETYPE			= 
 endif
 
-SRCHELPERS			= $(SRCFREETYPE) $(SRCGLEW) $(wildcard ./src/helper/SOIL/*.c) $(wildcard ./src/helper/stb_vorbis/*.c) $(wildcard ./src/helper/zlib/*.c) $(wildcard ./src/helper/libzip/*.c) $(wildcard ./src/helper/chipmunk/*.c) $(wildcard ./src/helper/chipmunk/constraints/*.c)
-SRCMODULES			= $(wildcard ./src/helper/haikuttf/*.cpp) $(wildcard ./src/base/*.cpp) $(wildcard ./src/audio/*.cpp) $(wildcard ./src/gaming/*.cpp) $(wildcard ./src/gaming/mapeditor/*.cpp) $(wildcard ./src/graphics/*.cpp) $(wildcard ./src/graphics/renderer/*.cpp) $(wildcard ./src/math/*.cpp) $(wildcard ./src/system/*.cpp) $(wildcard ./src/ui/*.cpp) $(wildcard ./src/ui/tools/*.cpp) $(wildcard ./src/utils/*.cpp) $(wildcard ./src/window/*.cpp) $(wildcard ./src/window/backend/null/*.cpp) $(wildcard ./src/window/platform/null/*.cpp) $(SDL_BACKEND_SRC) $(ALLEGRO_BACKEND_SRC) $(PLATFORMSRC) $(wildcard ./src/physics/*.cpp) $(wildcard ./src/physics/constraints/*.cpp)
+SRCHELPERS			= $(SRCFREETYPE) $(SRCGLEW) $(wildcard ./src/eepp/helper/SOIL/*.c) $(wildcard ./src/eepp/helper/stb_vorbis/*.c) $(wildcard ./src/eepp/helper/zlib/*.c) $(wildcard ./src/eepp/helper/libzip/*.c) $(wildcard ./src/eepp/helper/chipmunk/*.c) $(wildcard ./src/eepp/helper/chipmunk/constraints/*.c)
+SRCMODULES			= $(wildcard ./src/eepp/helper/haikuttf/*.cpp) $(wildcard ./src/eepp/base/*.cpp) $(wildcard ./src/eepp/audio/*.cpp) $(wildcard ./src/eepp/gaming/*.cpp) $(wildcard ./src/eepp/gaming/mapeditor/*.cpp) $(wildcard ./src/eepp/graphics/*.cpp) $(wildcard ./src/eepp/graphics/renderer/*.cpp) $(wildcard ./src/eepp/math/*.cpp) $(wildcard ./src/eepp/system/*.cpp) $(wildcard ./src/eepp/ui/*.cpp) $(wildcard ./src/eepp/ui/tools/*.cpp) $(wildcard ./src/eepp/utils/*.cpp) $(wildcard ./src/eepp/window/*.cpp) $(wildcard ./src/eepp/window/backend/null/*.cpp) $(wildcard ./src/eepp/window/platform/null/*.cpp) $(SDL_BACKEND_SRC) $(ALLEGRO_BACKEND_SRC) $(PLATFORMSRC) $(wildcard ./src/eepp/physics/*.cpp) $(wildcard ./src/eepp/physics/constraints/*.cpp)
 
 OBJHELPERS			= $(SRCHELPERS:.c=.o)
 OBJMODULES			= $(SRCMODULES:.cpp=.o)
@@ -480,9 +483,9 @@ FOBJMODULES			= $(patsubst ./%, $(OBJDIR)%, $(OBJMODULES) )
 SRCTEST     		= $(wildcard ./src/test/*.cpp)
 SRCEEIV     		= $(wildcard ./src/eeiv/*.cpp)
 SRCFLUID     		= $(wildcard ./src/fluid/*.cpp)
-SRCPARTICLES    	= $(wildcard ./src/particles/*.cpp) $(wildcard ./src/particles/objects/*.cpp) $(wildcard ./src/particles/gameobjects/*.cpp)
+SRCPARTICLES    	= $(wildcard ./src/particles/*.cpp) $(wildcard ./src/eepp/particles/objects/*.cpp) $(wildcard ./src/eepp/particles/gameobjects/*.cpp)
 SRCBNB     			= $(wildcard ./src/bnb/*.cpp)
-SRCEMPTYWINDOW  	= $(wildcard ./src/test/empty_window/*.cpp)
+SRCEMPTYWINDOW  	= $(wildcard ./src/examples/empty_window/*.cpp)
 SRCRHYTHM		  	= $(wildcard ./src/rhythm/*.cpp)
 
 OBJTEST     		= $(SRCTEST:.cpp=.o)
@@ -519,64 +522,64 @@ DEPSALL				= $(FOBJALL:.o=.d)
 all: lib
 
 dirs:
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/psaux
-	@$(MKDIR) $(OBJDIR)/src/helper/SOIL
-	@$(MKDIR) $(OBJDIR)/src/helper/zlib
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/autofit
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/base
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/bdf
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/bzip2
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/cache
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/cff
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/cid
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/gxvalid
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/gzip
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/lzw
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/otvalid
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/pcf
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/pfr
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/pshinter
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/psnames
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/raster
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/sfnt
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/smooth
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/truetype
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/type1
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/type42
-	@$(MKDIR) $(OBJDIR)/src/helper/freetype2/src/winfonts
-	@$(MKDIR) $(OBJDIR)/src/helper/glew
-	@$(MKDIR) $(OBJDIR)/src/helper/stb_vorbis
-	@$(MKDIR) $(OBJDIR)/src/helper/libzip
-	@$(MKDIR) $(OBJDIR)/src/helper/chipmunk
-	@$(MKDIR) $(OBJDIR)/src/helper/chipmunk/constraints
-	@$(MKDIR) $(OBJDIR)/src/helper/haikuttf
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/psaux
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/SOIL
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/zlib
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/autofit
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/base
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/bdf
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/bzip2
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/cache
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/cff
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/cid
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/gxvalid
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/gzip
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/lzw
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/otvalid
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/pcf
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/pfr
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/pshinter
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/psnames
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/raster
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/sfnt
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/smooth
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/truetype
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/type1
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/type42
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/winfonts
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/glew
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/stb_vorbis
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/libzip
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/chipmunk
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/chipmunk/constraints
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/haikuttf
 	@$(MKDIR) $(LIBPATH)
-	@$(MKDIR) $(OBJDIR)/src/base
-	@$(MKDIR) $(OBJDIR)/src/audio
-	@$(MKDIR) $(OBJDIR)/src/gaming
-	@$(MKDIR) $(OBJDIR)/src/gaming/mapeditor
-	@$(MKDIR) $(OBJDIR)/src/graphics
-	@$(MKDIR) $(OBJDIR)/src/graphics/renderer
-	@$(MKDIR) $(OBJDIR)/src/math
-	@$(MKDIR) $(OBJDIR)/src/system
-	@$(MKDIR) $(OBJDIR)/src/system/platform/posix
-	@$(MKDIR) $(OBJDIR)/src/system/platform/win
-	@$(MKDIR) $(OBJDIR)/src/ui
-	@$(MKDIR) $(OBJDIR)/src/ui/tools
-	@$(MKDIR) $(OBJDIR)/src/utils
-	@$(MKDIR) $(OBJDIR)/src/window
-	@$(MKDIR) $(OBJDIR)/src/window/backend/SDL
-	@$(MKDIR) $(OBJDIR)/src/window/backend/SDL2
-	@$(MKDIR) $(OBJDIR)/src/window/backend/null
-	@$(MKDIR) $(OBJDIR)/src/window/backend/allegro5
-	@$(MKDIR) $(OBJDIR)/src/window/platform/x11
-	@$(MKDIR) $(OBJDIR)/src/window/platform/win
-	@$(MKDIR) $(OBJDIR)/src/window/platform/osx
-	@$(MKDIR) $(OBJDIR)/src/window/platform/null
-	@$(MKDIR) $(OBJDIR)/src/physics
-	@$(MKDIR) $(OBJDIR)/src/physics/constraints
+	@$(MKDIR) $(OBJDIR)/src/eepp/base
+	@$(MKDIR) $(OBJDIR)/src/eepp/audio
+	@$(MKDIR) $(OBJDIR)/src/eepp/gaming
+	@$(MKDIR) $(OBJDIR)/src/eepp/gaming/mapeditor
+	@$(MKDIR) $(OBJDIR)/src/eepp/graphics
+	@$(MKDIR) $(OBJDIR)/src/eepp/graphics/renderer
+	@$(MKDIR) $(OBJDIR)/src/eepp/math
+	@$(MKDIR) $(OBJDIR)/src/eepp/system
+	@$(MKDIR) $(OBJDIR)/src/eepp/system/platform/posix
+	@$(MKDIR) $(OBJDIR)/src/eepp/system/platform/win
+	@$(MKDIR) $(OBJDIR)/src/eepp/ui
+	@$(MKDIR) $(OBJDIR)/src/eepp/ui/tools
+	@$(MKDIR) $(OBJDIR)/src/eepp/utils
+	@$(MKDIR) $(OBJDIR)/src/eepp/window
+	@$(MKDIR) $(OBJDIR)/src/eepp/window/backend/SDL
+	@$(MKDIR) $(OBJDIR)/src/eepp/window/backend/SDL2
+	@$(MKDIR) $(OBJDIR)/src/eepp/window/backend/null
+	@$(MKDIR) $(OBJDIR)/src/eepp/window/backend/allegro5
+	@$(MKDIR) $(OBJDIR)/src/eepp/window/platform/x11
+	@$(MKDIR) $(OBJDIR)/src/eepp/window/platform/win
+	@$(MKDIR) $(OBJDIR)/src/eepp/window/platform/osx
+	@$(MKDIR) $(OBJDIR)/src/eepp/window/platform/null
+	@$(MKDIR) $(OBJDIR)/src/eepp/physics
+	@$(MKDIR) $(OBJDIR)/src/eepp/physics/constraints
 	@$(MKDIR) $(OBJDIR)/src/test
-	@$(MKDIR) $(OBJDIR)/src/test/empty_window
+	@$(MKDIR) $(OBJDIR)/src/examples/empty_window
 	@$(MKDIR) $(OBJDIR)/src/eeiv
 	@$(MKDIR) $(OBJDIR)/src/fluid
 	@$(MKDIR) $(OBJDIR)/src/bnb
@@ -596,31 +599,31 @@ $(FOBJHELPERS):
 	@$(CC) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.c,$@) $(HELPERSFLAGS) > $(patsubst %.o,%.d,$@) $(HELPERSINC)
 
 $(FOBJTEST):
-	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
-	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
+	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(BININC)
+	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(BININC) > $(patsubst %.o,%.d,$@)
 
 $(FOBJEEIV):
-	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
+	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(BININC)
 	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
 
 $(FOBJFLUID):
-	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
+	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(BININC)
 	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
 
 $(FOBJPARTICLES):
-	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
+	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(BININC)
 	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
 
 $(FOBJBNB):
-	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
+	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(BININC)
 	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
 
 $(FOBJEMTPYWINDOW):
-	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
+	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(BININC)
 	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
 
 $(FOBJRHYTHM):
-	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(OTHERINC)
+	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(BININC)
 	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
 
 $(EXE): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJTEST)

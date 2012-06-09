@@ -1,2 +1,0 @@
-#include "glhelper.hpp"
-
