@@ -156,7 +156,7 @@ void cEETest::Init() {
 }
 
 void cEETest::CreateAquaTextureAtlas() {
-	#ifndef EE_DEBUG
+	#if !defined( EE_DEBUG ) || defined( EE_GLES )
 	return;
 	#endif
 
@@ -185,10 +185,6 @@ void cEETest::LoadFonts() {
 	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255) ) ) );
 	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arialb", PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255), 1, eeColor(0,0,0), true ) ) );
 
-	//mFontLoader.Add( eeNew( cTextureFontLoader, ( "ProggySquareSZ", eeNew( cTextureLoader, ( MyPath + "data/ProggySquareSZ.png" ) ), MyPath + "data/ProggySquareSZ.fnt" ) ) );
-	//mFontLoader.Add( eeNew( cTTFFontLoader, ( "ProggySquareSZ", MyPath + "data/ProggySquareSZ.ttf", 16, EE_TTF_STYLE_NORMAL, false, 256 ) ) );
-	//mFontLoader.Add( eeNew( cTTFFontLoader, ( "DejaVuSansMono", MyPath + "fonts/DejaVuSansMono.ttf", 12, EE_TTF_STYLE_NORMAL, false, 512, eeColor(), 1, eeColor(0,0,0) ) ) );
-
 	mFontLoader.Load( cb::Make1( this, &cEETest::OnFontLoaded ) );
 }
 
@@ -197,32 +193,6 @@ void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
 	FF2		= cFontManager::instance()->GetByName( "ProggySquareSZ" );
 	TTF		= cFontManager::instance()->GetByName( "arial" );
 	TTFB	= cFontManager::instance()->GetByName( "arialb" );
-
-	//cFont * FF3		= cFontManager::instance()->GetByName( "DejaVuSansMono" );
-
-/*
-	std::string MyFontPath = MyPath + "fonts" + GetOSlash();
-	cTTFFont * TTFD, * TTFMon;
-	TTFD 	= eeNew( cTTFFont, ( "DejaVuSans" ) );
-	TTFMon 	= eeNew( cTTFFont, ( "DejaVuSansMono" ) );
-
-	TTFD->Load( MyFontPath + "DejaVuSans.ttf", 12, EE_TTF_STYLE_NORMAL, false, 512, eeColor(), 1, eeColor(0,0,0) );
-	TTFMon->Load( MyFontPath + "DejaVuSansMono.ttf", 12, EE_TTF_STYLE_NORMAL, false, 512, eeColor(), 1, eeColor(0,0,0) );
-
-	TTFD->Save( MyFontPath + "DejaVuSans.png", MyFontPath + "DejaVuSans.dat", EE_SAVE_TYPE_PNG );
-	TTFMon->Save( MyFontPath + "DejaVuSansMono.png", MyFontPath + "DejaVuSansMono.dat", EE_SAVE_TYPE_PNG );
-*/
-
-	/*
-	cTTFFont * Fnt = reinterpret_cast<cTTFFont*> ( FF2 );
-	Fnt->Save( MyPath + "data/ProggySquareSZ.png", MyPath + "data/ProggySquareSZ.fnt" );
-
-	Fnt = reinterpret_cast<cTTFFont*> ( TTF );
-	Fnt->Save( MyPath + "data/arial.png", MyPath + "data/arial.fnt" );
-
-	Fnt = reinterpret_cast<cTTFFont*> ( TTFB );
-	Fnt->Save( MyPath + "data/arialb.png", MyPath + "data/arialb.fnt" );
-	*/
 
 	Log->Writef( "Fonts loading time: %f", mFTE.Elapsed() );
 
@@ -488,17 +458,7 @@ void cEETest::CreateUI() {
 
 	mComboBox->ListBox()->AddListBoxItems( combostrs );
 	mComboBox->ListBox()->SetSelected( 0 );
-/*
-	cUIPopUpMenu::CreateParams MenuParams;
-	MenuParams.Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE | UI_AUTO_PADDING;
-	MenuParams.RowHeight = 0;
-	MenuParams.PaddingContainer = eeRecti();
-	MenuParams.MinWidth = 100;
-	MenuParams.MinSpaceForIcons = 24;
-	MenuParams.MinRightMargin = 8;
-	MenuParams.Font = FF2;
-	Menu = eeNew( cUIPopUpMenu, ( MenuParams ) );
-*/
+
 	Menu = mTheme->CreatePopUpMenu();
 	Menu->Add( "New", mTheme->GetIconByName( "document-new" ) );
 
@@ -818,6 +778,8 @@ void cEETest::LoadTextures() {
 	Uint32 i;
 
 	PakTest = eeNew( cZip, () );
+
+	#ifndef EE_GLES
 	PakTest->Open( MyPath + "data/test.zip" );
 
 	std::vector<std::string> files = PakTest->GetFileList();
@@ -829,6 +791,7 @@ void cEETest::LoadTextures() {
 			mResLoad.Add( eeNew( cTextureLoader, ( PakTest, name ) ) );
 		}
 	}
+	#endif
 
 	mResLoad.Add( eeNew( cSoundLoader, ( &SndMng, "mysound", PAK, "sound.ogg" ) ) );
 
@@ -873,21 +836,23 @@ void cEETest::LoadTextures() {
 
 	cTexture * Tex = TF->GetTexture( TN[2] );
 
-	Tex->Lock();
-	w = (eeInt)Tex->Width();
-	h = (eeInt)Tex->Height();
+	if ( Tex->Lock() ) {
+		w = (eeInt)Tex->Width();
+		h = (eeInt)Tex->Height();
 
-	for ( y = 0; y < h; y++) {
-		for ( x = 0; x < w; x++) {
-			eeColorA C = Tex->GetPixel(x, y);
+		for ( y = 0; y < h; y++) {
+			for ( x = 0; x < w; x++) {
+				eeColorA C = Tex->GetPixel(x, y);
 
-			if ( C.R() > 200 && C.G() > 200 && C.B() > 200 )
-				Tex->SetPixel(x, y, eeColorA( eeRandi(0, 255), eeRandi(0, 255), eeRandi(0, 255), C.A() ) );
-			else
-				Tex->SetPixel(x, y, eeColorA( eeRandi(200, 255), eeRandi(200, 255), eeRandi(200, 255), C.A() ) );
+				if ( C.R() > 200 && C.G() > 200 && C.B() > 200 )
+					Tex->SetPixel(x, y, eeColorA( eeRandi(0, 255), eeRandi(0, 255), eeRandi(0, 255), C.A() ) );
+				else
+					Tex->SetPixel(x, y, eeColorA( eeRandi(200, 255), eeRandi(200, 255), eeRandi(200, 255), C.A() ) );
+			}
 		}
+
+		Tex->Unlock(false, true);
 	}
-	Tex->Unlock(false, true);
 
 	Cursor[0] = TF->LoadFromPack( PAK, "cursor.png" );
 	CursorP[0] = TF->GetTexture( Cursor[0] );
@@ -1081,6 +1046,7 @@ void cEETest::Screen2() {
 	SP.Position( alpha, alpha );
 	SP.Draw();
 
+	#ifndef EE_GLES
 	CL1.RenderType( RN_ISOMETRIC );
 
 	if (IntersectRectCircle( CL1.GetAABB(), Mousef.x, Mousef.y, 80.f ))
@@ -1106,6 +1072,7 @@ void cEETest::Screen2() {
 	PR.DrawRectangle( CL1.GetAABB(), 0.0f, 1.0f, EE_DRAW_LINE );
 
 	PR.DrawQuad( CL1.GetQuad(), EE_DRAW_LINE );
+	#endif
 
 	Ang = Ang + mWindow->Elapsed() * 0.1f;
 	if (Ang > 360.f) Ang = 1.f;
@@ -1282,11 +1249,6 @@ void cEETest::Render() {
 	cUIManager::instance()->Draw();
 
 	Con.Draw();
-
-	/*if ( Screen == 1 )
-		CursorP[ 0 ]->Draw( Mousef.x, Mousef.y );
-	else
-		CursorP[ 1 ]->Draw( Mousef.x, Mousef.y );*/
 }
 
 void cEETest::Input() {
@@ -1535,6 +1497,7 @@ void cEETest::Input() {
 
 void cEETest::Process() {
 	Init();
+
 	if ( run ) {
 		do {
 			et = mWindow->Elapsed();
