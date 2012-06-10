@@ -47,6 +47,11 @@
 #ifdef _WIN32
 #include <io.h>
 #include <fcntl.h>
+
+#if ( defined( _MSCVER ) || defined( _MSC_VER ) )
+	#define snprintf _snprintf
+#endif
+
 #endif
 
 static int add_data(struct zip *, struct zip_source *, struct zip_dirent *,
@@ -641,6 +646,10 @@ _zip_create_temp_output(struct zip *za, FILE **outp)
 static int
 _zip_torrentzip_cmp(const void *a, const void *b)
 {
+#if ( defined( _MSCVER ) || defined( _MSC_VER ) )
+    return stricmp(((const struct filelist *)a)->name,
+#else
     return strcasecmp(((const struct filelist *)a)->name,
-		      ((const struct filelist *)b)->name);
+#endif
+      ((const struct filelist *)b)->name);
 }
