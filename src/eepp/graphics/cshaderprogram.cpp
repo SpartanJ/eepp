@@ -218,7 +218,7 @@ bool cShaderProgram::Link() {
 	if ( !mValid ) {
 		cLog::instance()->Write( "cShaderProgram::Link() " + mName + ": Couldn't link program. Log follows:\n" + mLinkLog );
 	} else {
-		if ( mLinkLog.size() > 4 ) {
+		if ( mLinkLog.size() > 1 ) {
 			cLog::instance()->Write( "cShaderProgram::Link() " + mName + ": Program linked, but recibed some log:\n" + mLinkLog );
 		}
 

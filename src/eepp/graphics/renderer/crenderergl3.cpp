@@ -7,9 +7,7 @@ namespace EE { namespace Graphics {
 const char * EEGL_STATES_NAME[] = {
 	"dgl_Vertex",
 	"dgl_Normal",
-	"dgl_FrontColor",
-	"dgl_Index",
-	"dgl_EdgeFlag"
+	"dgl_FrontColor"
 };
 
 const char * EEGL_TEXTUREUNIT_NAMES[] = {
@@ -54,20 +52,14 @@ const GLchar * EEGL_SHADER_BASE_VS[] = {
 	"attribute			vec4 dgl_Vertex;\n",
 	"attribute			vec4 dgl_FrontColor;\n",
 	"attribute			vec4 dgl_MultiTexCoord0;\n",
-	"attribute			vec4 dgl_MultiTexCoord1;\n",
-	"attribute			vec4 dgl_MultiTexCoord2;\n",
-	"attribute			vec4 dgl_MultiTexCoord3;\n",
 	"varying			vec4 dgl_Color;\n",
-	"varying			vec4 dgl_TexCoord[ 4 ];\n",
+	"varying			vec4 dgl_TexCoord[ 1 ];\n",
 	"varying			float dgl_ClipDistance[ MAX_CLIP_PLANES ];\n",
 	"void main(void)\n",
 	"{\n",
 	"	gl_PointSize	= dgl_PointSize;\n",
 	"	dgl_Color		= dgl_FrontColor;\n",
 	"	dgl_TexCoord[0]	= dgl_MultiTexCoord0;\n",
-	"	dgl_TexCoord[1]	= dgl_MultiTexCoord1;\n",
-	"	dgl_TexCoord[2]	= dgl_MultiTexCoord2;\n",
-	"	dgl_TexCoord[3]	= dgl_MultiTexCoord3;\n",
 	"	vec4 vEye		= dgl_ModelViewMatrix * dgl_Vertex;\n",
 	"	gl_Position		= dgl_ProjectionMatrix * vEye;\n",
 	"	if ( 1 == dgl_ClippingEnabled ) {\n",
@@ -94,7 +86,7 @@ const GLchar * EEGL_SHADER_BASE_FS[] = {
 	"uniform		int			dgl_ClipEnabled[ MAX_CLIP_PLANES ];\n",
 	"uniform		vec4		dgl_ClipPlane[ MAX_CLIP_PLANES ];\n",
 	"varying		vec4		dgl_Color;\n",
-	"varying		vec4		dgl_TexCoord[ 4 ];\n",
+	"varying		vec4		dgl_TexCoord[ 1 ];\n",
 	"varying		float		dgl_ClipDistance[ MAX_CLIP_PLANES ];\n",
 	"void main(void)\n",
 	"{\n",
