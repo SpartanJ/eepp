@@ -8,6 +8,7 @@ cBatchRenderer::cBatchRenderer() :
 	mVertex( NULL ),
 	mNumVertex(0),
 	mTexture(NULL),
+	mTF( cTextureFactory::instance() ),
 	mBlend(ALPHA_NORMAL),
 	mCurrentMode(DM_QUADS),
 	mRotation(0.0f),
@@ -24,6 +25,7 @@ cBatchRenderer::cBatchRenderer() :
 cBatchRenderer::cBatchRenderer( const eeUint& Prealloc ) :
 	mNumVertex(0),
 	mTexture(NULL),
+	mTF( cTextureFactory::instance() ),
 	mBlend(ALPHA_NORMAL),
 	mCurrentMode(DM_QUADS),
 	mRotation(0.0f),
@@ -101,7 +103,7 @@ void cBatchRenderer::Flush() {
 
 	bool CreateMatrix = ( mRotation || mScale != 1.0f || mPosition.x || mPosition.y );
 
-	cTextureFactory::instance()->SetPreBlendFunc( mBlend );
+	mTF->SetPreBlendFunc( mBlend );
 
 	if ( mCurrentMode == DM_POINTS && NULL != mTexture ) {
 		GLi->Enable( GL_POINT_SPRITE );
@@ -120,16 +122,16 @@ void cBatchRenderer::Flush() {
 
 	Uint32 alloc = sizeof(eeVertex) * NumVertex;
 
-	GLi->VertexPointer	( 2, GL_FP				, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] )												, alloc	);
-	GLi->ColorPointer	( 4, GL_UNSIGNED_BYTE	, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f) + sizeof(eeTexCoord)	, alloc	);
-
 	if ( NULL != mTexture ) {
-		cTextureFactory::instance()->Bind( mTexture );
+		mTF->Bind( mTexture );
 		GLi->TexCoordPointer( 2, GL_FP		, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f)							, alloc	);
 	} else {
 		GLi->Disable( GL_TEXTURE_2D );
 		GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
 	}
+
+	GLi->VertexPointer	( 2, GL_FP				, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] )												, alloc	);
+	GLi->ColorPointer	( 4, GL_UNSIGNED_BYTE	, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f) + sizeof(eeTexCoord)	, alloc	);
 
 	#ifdef EE_GLES
 	if ( DM_QUADS == mCurrentMode ) {

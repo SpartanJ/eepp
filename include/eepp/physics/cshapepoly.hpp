@@ -25,6 +25,8 @@ class CP_API cShapePoly : public cShape {
 
 		virtual void Draw( cSpace * space );
 
+		virtual void DrawBorder( cSpace * space );
+
 		static void Recenter( int numVerts, cVect * verts );
 
 		static cVect Centroid( int numVerts, const cVect * verts );

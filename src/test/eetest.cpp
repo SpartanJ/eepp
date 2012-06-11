@@ -29,6 +29,7 @@ void cEETest::Init() {
 	mMapEditor			= NULL;
 	mETGEditor			= NULL;
 	Mus					= NULL;
+	mUIWindow			= NULL;
 
 	MyPath 				= GetProcessPath();
 
@@ -51,6 +52,8 @@ void cEETest::Init() {
 
 	if ( 3 == GLVersion )
 		GLVer = GLv_3;
+	else if ( 4 == GLVersion )
+		GLVer = GLv_ES2;
 	else
 		GLVer = GLv_2;
 
@@ -811,8 +814,13 @@ void cEETest::LoadTextures() {
 	cTextureGroupLoader tgl( PAK, "tiles.etg" );
 	cShapeGroup * SG = cShapeGroupManager::instance()->GetByName( "tiles" );
 
+	Uint32 ORTO = TF->Load( MyPath + "data/tilesortogonal.png" );
+
+	Graphics::cShape * OrtoShape = cGlobalShapeGroup::instance()->Add( ORTO );
+
 	for ( i = 0; i < 6; i++ ) {
-		Tiles[i] = SG->GetByName( toStr( i+1 ) );
+		//Tiles[i] = SG->GetByName( toStr( i+1 ) );
+		Tiles[i] = OrtoShape;
 	}
 
 	Tiles[6] = SG->Add( TF->LoadFromPack( PAK, "objects/1.png" ), "7" );

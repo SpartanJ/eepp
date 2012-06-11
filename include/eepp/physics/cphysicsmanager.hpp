@@ -19,6 +19,11 @@ class CP_API cPhysicsManager {
 				cDrawSpaceOptions() :
 					DrawBBs( false ),
 					DrawShapes( true ),
+	#ifdef EE_GLES
+					DrawShapesBorders( false ),
+	#else
+					DrawShapesBorders( true ),
+	#endif
 					CollisionPointSize( 0.0f ),
 					BodyPointSize( 0.0f ),
 					LineThickness( 0.0f )
@@ -26,6 +31,7 @@ class CP_API cPhysicsManager {
 
 				bool	DrawBBs;
 				bool	DrawShapes;
+				bool	DrawShapesBorders;
 				cpFloat CollisionPointSize;
 				cpFloat BodyPointSize;
 				cpFloat LineThickness;

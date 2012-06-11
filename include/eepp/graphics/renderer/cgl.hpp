@@ -6,6 +6,19 @@
 
 namespace EE { namespace Graphics {
 
+#ifndef EE_MAX_PLANES
+#define EE_MAX_PLANES 6
+#endif
+
+/** Just for reference */
+enum EEGL_ARRAY_STATES {
+	EEGL_VERTEX_ARRAY			= 0,
+	EEGL_NORMAL_ARRAY,
+	EEGL_COLOR_ARRAY,
+	EEGL_ARRAY_STATES_COUNT,
+	EEGL_TEXTURE_COORD_ARRAY
+};
+
 enum EEGL_extensions  {
 	EEGL_ARB_texture_non_power_of_two	= 0,
 	EEGL_ARB_point_parameters,
@@ -31,6 +44,7 @@ enum EEGL_version {
 
 class cRendererGL;
 class cRendererGL3;
+class cRendererGLES2;
 
 class EE_API cGL {
 	static cGL * ms_singleton;
@@ -121,6 +135,8 @@ class EE_API cGL {
 		cRendererGL * GetRendererGL();
 
 		cRendererGL3 * GetRendererGL3();
+
+		cRendererGLES2 * GetRendererGLES2();
 
 		virtual void PointSize( GLfloat size ) = 0;
 

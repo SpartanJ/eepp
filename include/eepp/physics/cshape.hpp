@@ -79,7 +79,9 @@ class CP_API cShape {
 
 		cShapeSegment * GetAsSegment();
 
-		virtual void Draw( cSpace * space ) = 0;
+		virtual void Draw( cSpace * space );
+
+		virtual void DrawBorder( cSpace * space );
 
 		virtual void DrawBB();
 

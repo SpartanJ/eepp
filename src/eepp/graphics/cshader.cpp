@@ -1,6 +1,7 @@
 #include <eepp/graphics/cshader.hpp>
 #include <eepp/graphics/glhelper.hpp>
 #include <eepp/graphics/renderer/crenderergl3.hpp>
+#include <eepp/graphics/renderer/crenderergles2.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -117,25 +118,23 @@ void cShader::EnsureVersion() {
 
 		if ( GL_VERTEX_SHADER == mType ) {
 			if ( mSource.find( "ftransform" ) != std::string::npos || mSource.find("dgl_Vertex") == std::string::npos ) {
-				mSource = GLi->GetRendererGL3()->GetBaseVertexShader();
+				if ( GLi->Version() == GLv_3 ) {
+					mSource = GLi->GetRendererGL3()->GetBaseVertexShader();
+				} else {
+					mSource = GLi->GetRendererGLES2()->GetBaseVertexShader();
+				}
 			}
 		} else {
 			if ( mSource.find( "gl_FragColor" ) != std::string::npos ) {
 
-				if ( GLi->Version() == GLv_3 ) {
-					mSource = "#version 150\nuniform		int			dgl_TexActive = 1;\ninvariant in	vec4		gl_Color;\ninvariant in	vec4		gl_TexCoord[ 4 ];\nout				vec4		gl_FragColor;\n" + mSource;
-				} else {
-					mSource = "#ifdef GL_ES\nprecision mediump float;\nprecision lowp int;\n#endif\nuniform		int			dgl_TexActive;\nvarying	vec4		gl_Color;\nvarying	vec4		gl_TexCoord[ 4 ];\n" + mSource;
-				}
-
-				if ( GLi->Version() == GLv_3 ) {
-					ReplaceSubStr( mSource, "gl_FragColor"	, "dgl_FragColor"	);
-				}
+				mSource = "#ifdef GL_ES\nprecision mediump float;\nprecision lowp int;\n#endif\nvarying	vec4		gl_Color;\nvarying	vec4		gl_TexCoord[ 1 ];\n" + mSource;
 
 				ReplaceSubStr( mSource, "gl_Color"		, "dgl_Color"		);
 				ReplaceSubStr( mSource, "gl_TexCoord"	, "dgl_TexCoord"	);
 			}
 		}
+
+		/// cLog::instance()->Write( "Shader " + GetName() +  " converted looks like: \n" + mSource + "\n" );
 	}
 	#endif
 }

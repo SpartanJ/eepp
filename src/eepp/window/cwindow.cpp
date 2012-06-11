@@ -114,9 +114,11 @@ void cWindow::Setup2D( const bool& KeepView ) {
 		#endif
 	}
 
-	GLi->EnableClientState( GL_VERTEX_ARRAY );
-	GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
-	GLi->EnableClientState( GL_COLOR_ARRAY );
+	if ( GLv_2 == GLi->Version() || GLv_ES1 == GLi->Version() ) {
+		GLi->EnableClientState( GL_VERTEX_ARRAY );
+		GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
+		GLi->EnableClientState( GL_COLOR_ARRAY );
+	}
 }
 
 const WindowInfo * cWindow::GetWindowInfo() const {
@@ -323,7 +325,7 @@ void cWindow::SendVideoResizeCb() {
 }
 
 void cWindow::LogSuccessfulInit( const std::string& BackendName ) {
-	cLog::instance()->Write( "Engine Initialized Succesfully.\n\tOS: " + GetOSName() + "\n\tArch: " + GetOSArchitecture() + " \n\tWindow/Input Backend: " + BackendName + "\n\tGL Backend: " + GLi->VersionStr() + "\n\tGL Vendor: " + GLi->GetVendor() + "\n\tGL Renderer: " + GLi->GetRenderer() + "\n\tGL Version: " + GLi->GetVersion() + "\n\tGL Shading Language Version: " + GLi->GetShadingLanguageVersion() + "\n\tResolution: " + toStr( GetWidth() ) + "x" + toStr( GetHeight() ) );
+	cLog::instance()->Write( "Engine Initialized Succesfully.\n\tOS: " + GetOSName() + "\n\tArch: " + GetOSArchitecture() + " \n\tWindow/Input Backend: " + BackendName + "\n\tGL Backend: " + GLi->VersionStr() + "\n\tGL Vendor: " + GLi->GetVendor() + "\n\tGL Renderer: " + GLi->GetRenderer() + "\n\tGL Version: " + GLi->GetVersion() + "\n\tGL Shading Language Version: " + GLi->GetShadingLanguageVersion() + "\n\tResolution: " + toStr( GetWidth() ) + "x" + toStr( GetHeight() ) + "\n\tGL extensions supported:\n" + GLi->GetExtensions() );
 }
 
 void cWindow::LogFailureInit( const std::string& ClassName, const std::string& BackendName ) {

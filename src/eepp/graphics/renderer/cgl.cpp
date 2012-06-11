@@ -1,6 +1,7 @@
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/renderer/crenderergl.hpp>
 #include <eepp/graphics/renderer/crenderergl3.hpp>
+#include <eepp/graphics/renderer/crenderergles2.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -14,11 +15,17 @@ cGL * cGL::CreateSingleton( EEGL_version ver ) {
 		ver = GLv_2;
 	#else
 	if ( GLv_default == ver )
-		ver = GLv_3;
+		ver = GLv_ES2;
 	#endif
 
 	switch ( ver ) {
 		case GLv_ES2:
+		{
+			#if defined( EE_GL3_ENABLED ) || defined( EE_GLES2 )
+			ms_singleton = eeNew( cRendererGLES2, () );
+			break;
+			#endif
+		}
 		case GLv_3:
 		{
 			#if defined( EE_GL3_ENABLED ) || defined( EE_GLES2 )
@@ -43,7 +50,7 @@ cGL * cGL::CreateSingleton( EEGL_version ver ) {
 cGL * cGL::CreateSingleton() {
 	if ( ms_singleton == 0 ) {
 		#ifdef EE_GLES2
-			ms_singleton = eeNew( cRendererGL3, () );
+			ms_singleton = eeNew( cRendererGLES2, () );
 		#elif defined( EE_GLES1 )
 			ms_singleton = eeNew( cRendererGL, () );
 		#else
@@ -86,6 +93,10 @@ cRendererGL * cGL::GetRendererGL() {
 
 cRendererGL3 * cGL::GetRendererGL3() {
 	return reinterpret_cast<cRendererGL3*>( this );
+}
+
+cRendererGLES2 * cGL::GetRendererGLES2() {
+	return reinterpret_cast<cRendererGLES2*>( this );
 }
 
 void cGL::WriteExtension( Uint8 Pos, Uint32 BitWrite ) {
@@ -147,7 +158,11 @@ bool cGL::IsExtension( EEGL_extensions name ) {
 }
 
 bool cGL::PointSpriteSupported() {
+#ifdef EE_GLES
+	return true;
+#else
 	return IsExtension( EEGL_ARB_point_parameters ) && IsExtension( EEGL_ARB_point_sprite );
+#endif
 }
 
 bool cGL::ShadersSupported() {

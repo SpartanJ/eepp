@@ -99,14 +99,14 @@ Uint32 cTextureFactory::FindFreeSlot() {
 
 void cTextureFactory::Bind( const cTexture* Tex, const Uint32& TextureUnit ) {
 	if( NULL != Tex && mCurrentTexture[ TextureUnit ] != (Int32)Tex->Handle() ) {
-		if ( GLi->IsExtension( EEGL_ARB_multitexture ) )
+		if ( TextureUnit && GLi->IsExtension( EEGL_ARB_multitexture ) )
 			SetActiveTextureUnit( TextureUnit );
 
 		GLi->BindTexture( GL_TEXTURE_2D, Tex->Handle() );
 
 		mCurrentTexture[ TextureUnit ] = Tex->Handle();
 
-		if ( GLi->IsExtension( EEGL_ARB_multitexture ) )
+		if ( TextureUnit && GLi->IsExtension( EEGL_ARB_multitexture ) )
 			SetActiveTextureUnit( 0 );
 	}
 }

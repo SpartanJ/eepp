@@ -18,6 +18,8 @@ struct eeVertex {
 	eeColorA color;
 };
 
+class cTextureFactory;
+
 /** @brief A batch rendering class. */
 class EE_API cBatchRenderer {
 	public:
@@ -205,6 +207,7 @@ class EE_API cBatchRenderer {
 		eeUint				mNumVertex;
 
 		const cTexture *	mTexture;
+		cTextureFactory *	mTF;
 		EE_PRE_BLEND_FUNC	mBlend;
 
 		eeTexCoord			mTexCoord[4];

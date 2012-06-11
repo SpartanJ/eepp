@@ -271,6 +271,10 @@ static void drawObject( cpShape * shape, cpSpace * space ) {
 	reinterpret_cast<cShape*> ( shape->data )->Draw( reinterpret_cast<cSpace*>( space->data ) );
 }
 
+static void drawObjectBorder( cpShape * shape, cpSpace * space ) {
+	reinterpret_cast<cShape*> ( shape->data )->DrawBorder( reinterpret_cast<cSpace*>( space->data ) );
+}
+
 static void drawBB( cpShape *shape, void * unused ) {
 	reinterpret_cast<cShape*> ( shape->data )->DrawBB();
 }
@@ -296,6 +300,11 @@ void cSpace::Draw() {
 	if ( options->DrawShapes ) {
 		cpSpatialIndexEach( mSpace->CP_PRIVATE(activeShapes), (cpSpatialIndexIteratorFunc)drawObject, mSpace );
 		cpSpatialIndexEach( mSpace->CP_PRIVATE(staticShapes), (cpSpatialIndexIteratorFunc)drawObject, mSpace );
+	}
+
+	if ( options->DrawShapesBorders ) {
+		cpSpatialIndexEach( mSpace->CP_PRIVATE(activeShapes), (cpSpatialIndexIteratorFunc)drawObjectBorder, mSpace );
+		cpSpatialIndexEach( mSpace->CP_PRIVATE(staticShapes), (cpSpatialIndexIteratorFunc)drawObjectBorder, mSpace );
 	}
 
 	BR->SetLineWidth( lw );

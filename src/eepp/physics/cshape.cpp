@@ -186,4 +186,10 @@ void cShape::Data( void * data ) {
 	mData = data;
 }
 
+void cShape::Draw( cSpace * space ) {
+}
+
+void cShape::DrawBorder( cSpace * space ) {
+}
+
 CP_NAMESPACE_END

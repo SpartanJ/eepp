@@ -1,5 +1,5 @@
-#ifndef EE_GRAPHICS_CRENDERERGL3_HPP
-#define EE_GRAPHICS_CRENDERERGL3_HPP
+#ifndef EE_GRAPHICS_CRENDERERGLES2_HPP
+#define EE_GRAPHICS_CRENDERERGLES2_HPP
 
 #include <eepp/graphics/renderer/cgl.hpp>
 
@@ -18,16 +18,19 @@
 
 namespace EE { namespace Graphics {
 
-enum EEGL3_SHADERS {
-	EEGL3_SHADER_BASE,
-	EEGL3_SHADERS_COUNT
+enum EEGLES2_SHADERS {
+	EEGLES2_SHADER_BASE,
+	EEGLES2_SHADER_CLIPPED,
+	EEGLES2_SHADER_POINTSPRITE,
+	EEGLES2_SHADER_PRIMITIVE,
+	EEGLES2_SHADERS_COUNT
 };
 
-class EE_API cRendererGL3 : public cGL {
+class EE_API cRendererGLES2 : public cGL {
 	public:
-		cRendererGL3();
+		cRendererGLES2();
 
-		~cRendererGL3();
+		~cRendererGLES2();
 
 		EEGL_version Version();
 
@@ -79,7 +82,7 @@ class EE_API cRendererGL3 : public cGL {
 
 		void SetShader( cShaderProgram * Shader );
 
-		void SetShader( const EEGL3_SHADERS& Shader );
+		void SetShader( const EEGLES2_SHADERS& Shader );
 
 		GLint GetStateIndex( const Uint32& State );
 
@@ -117,7 +120,7 @@ class EE_API cRendererGL3 : public cGL {
 		GLint					mModelViewMatrix_id;	// cpu-side hook to shader uniform
 		GLenum					mCurrentMode;
 		std::stack<glm::mat4>*	mCurMatrix;
-		cShaderProgram *		mShaders[ EEGL3_SHADERS_COUNT ];
+		cShaderProgram *		mShaders[ EEGLES2_SHADERS_COUNT ];
 		cShaderProgram *		mCurShader;
 		GLint					mAttribsLoc[ EEGL_ARRAY_STATES_COUNT ];
 		GLint					mAttribsLocStates[ EEGL_ARRAY_STATES_COUNT ];
@@ -126,13 +129,15 @@ class EE_API cRendererGL3 : public cGL {
 		cShaderProgram *		mShaderPrev;
 		Int32					mTexActive;
 		GLint					mTexActiveLoc;
-		GLint					mPointSpriteLoc;
 		GLint					mClippingEnabledLoc;
 		GLfloat					mPointSize;
 		GLint					mTextureUnits[ EE_MAX_TEXTURE_UNITS ];
 		GLint					mTextureUnitsStates[ EE_MAX_TEXTURE_UNITS ];
 		GLint					mCurActiveTex;
+		Uint8					mClippingEnabled;
+		Uint8					mPointSpriteEnabled;
 		bool					mLoaded;
+		bool					mCurShaderLocal;
 		std::string				mBaseVertexShader;
 
 		void UpdateMatrix();
@@ -140,6 +145,8 @@ class EE_API cRendererGL3 : public cGL {
 		void PlaneStateCheck( bool tryEnable );
 
 		void ReloadShader( cShaderProgram * Shader );
+
+		void CheckLocalShader();
 };
 
 }}

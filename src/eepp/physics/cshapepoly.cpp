@@ -80,7 +80,18 @@ void cShapePoly::Draw( cSpace * space ) {
 		BR->DrawOpt();
 	}
 
-#ifndef EE_GLES
+
+	#endif
+}
+
+void cShapePoly::DrawBorder( cSpace *space ) {
+#ifdef PHYSICS_RENDERER_ENABLED
+	cpPolyShape * poly = (cpPolyShape*)mShape;
+
+	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
+
+	eeColorA Col = ColorForShape( (cpShape *)poly, space->Space() );
+
 	BR->LineLoopBegin();
 	BR->LineLoopSetColor( Col );
 
@@ -88,10 +99,8 @@ void cShapePoly::Draw( cSpace * space ) {
 		BR->BatchLineLoop( poly->CP_PRIVATE(tVerts)[i].x, poly->CP_PRIVATE(tVerts)[i].y );
 	}
 
-	BR->DrawOpt();
+	BR->Draw();
 #endif
-
-	#endif
 }
 
 CP_NAMESPACE_END

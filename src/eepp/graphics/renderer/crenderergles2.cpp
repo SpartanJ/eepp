@@ -1,23 +1,23 @@
-#include <eepp/graphics/renderer/crenderergl3.hpp>
+#include <eepp/graphics/renderer/crenderergles2.hpp>
 
 #ifdef EE_GL3_ENABLED
 
 namespace EE { namespace Graphics {
 
-const char * EEGL3_STATES_NAME[] = {
+const char * EEGLES2_STATES_NAME[] = {
 	"dgl_Vertex",
 	"dgl_Normal",
 	"dgl_FrontColor"
 };
 
-const char * EEGL3_TEXTUREUNIT_NAMES[] = {
+const char * EEGLES2_TEXTUREUNIT_NAMES[] = {
 	"dgl_MultiTexCoord0",
 	"dgl_MultiTexCoord1",
 	"dgl_MultiTexCoord2",
 	"dgl_MultiTexCoord3"
 };
 
-const char * EEGL3_PLANES_ENABLED_NAME[] = {
+const char * EEGLES2_PLANES_ENABLED_NAME[] = {
 	"dgl_ClipEnabled[0]",
 	"dgl_ClipEnabled[1]",
 	"dgl_ClipEnabled[2]",
@@ -26,7 +26,7 @@ const char * EEGL3_PLANES_ENABLED_NAME[] = {
 	"dgl_ClipEnabled[5]"
 };
 
-const char * EEGL3_PLANES_NAME[] = {
+const char * EEGLES2_PLANES_NAMENABLED_NAME[] = {
 	"dgl_ClipPlane[0]",
 	"dgl_ClipPlane[1]",
 	"dgl_ClipPlane[2]",
@@ -35,13 +35,31 @@ const char * EEGL3_PLANES_NAME[] = {
 	"dgl_ClipPlane[5]"
 };
 
-const GLchar * EEGL3_SHADER_BASE_VS =
-#include "shaders/basegl3.vert"
+const GLchar * EEGLES2_SHADER_BASE_VS =
+#include "shaders/base.vert"
 
-const GLchar * EEGL3_SHADER_BASE_FS =
-#include "shaders/basegl3.frag"
+const GLchar * EEGLES2_SHADER_BASE_FS =
+#include "shaders/base.frag"
 
-cRendererGL3::cRendererGL3() :
+const GLchar * EEGLES2_SHADER_CLIPPED_VS =
+#include "shaders/clipped.vert"
+
+const GLchar * EEGLES2_SHADER_CLIPPED_FS =
+#include "shaders/clipped.frag"
+
+const GLchar * EEGLES2_SHADER_POINTSPRITE_VS =
+#include "shaders/pointsprite.vert"
+
+const GLchar * EEGLES2_SHADER_POINTSPRITE_FS =
+#include "shaders/pointsprite.frag"
+
+const GLchar * EEGLES2_SHADER_PRIMITIVE_VS =
+#include "shaders/primitive.vert"
+
+const GLchar * EEGLES2_SHADER_PRIMITIVE_FS =
+#include "shaders/primitive.frag"
+
+cRendererGLES2::cRendererGLES2() :
 	mProjectionMatrix_id(0),
 	mModelViewMatrix_id(0),
 	mCurrentMode(0),
@@ -49,35 +67,37 @@ cRendererGL3::cRendererGL3() :
 	mShaderPrev(NULL),
 	mTexActive(1),
 	mTexActiveLoc(-1),
-	mPointSpriteLoc(-1),
 	mClippingEnabledLoc(-1),
 	mPointSize(1.f),
 	mCurActiveTex( 0 ),
-	mLoaded( false )
+	mClippingEnabled( false ),
+	mPointSpriteEnabled( false ),
+	mLoaded( false ),
+	mCurShaderLocal( true )
 {
 	mProjectionMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
 	mModelViewMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
 }
 
-cRendererGL3::~cRendererGL3() {
+cRendererGLES2::~cRendererGLES2() {
 }
 
-EEGL_version cRendererGL3::Version() {
-	return GLv_3;
+EEGL_version cRendererGLES2::Version() {
+	return GLv_ES2;
 }
 
-std::string cRendererGL3::VersionStr() {
-	return "OpenGL 3";
+std::string cRendererGLES2::VersionStr() {
+	return "OpenGL ES 2";
 }
 
-void cRendererGL3::Init() {
+void cRendererGLES2::Init() {
 	if ( !mLoaded ) {
 		Uint32 i;
 
 		cGL::Init();
 
-		std::string vs( EEGL3_SHADER_BASE_VS );
-		std::string fs( EEGL3_SHADER_BASE_FS );
+		std::string vs( EEGLES2_SHADER_BASE_VS );
+		std::string fs( EEGLES2_SHADER_BASE_FS );
 
 		mBaseVertexShader = vs;
 
@@ -98,18 +118,36 @@ void cRendererGL3::Init() {
 
 		cShader::Ensure = false;
 
-		mShaders[ EEGL3_SHADER_BASE ]			= eeNew( cShaderProgram, ( vs.c_str(), vs.size(), fs.c_str(), fs.size() ) );
-		mShaders[ EEGL3_SHADER_BASE ]->SetReloadCb( cb::Make1( this, &cRendererGL3::ReloadShader ) );
+		mShaders[ EEGLES2_SHADER_BASE ]			= eeNew( cShaderProgram, ( vs.c_str(), vs.size(), fs.c_str(), fs.size() ) );
+		mShaders[ EEGLES2_SHADER_BASE ]->SetReloadCb( cb::Make1( this, &cRendererGLES2::ReloadShader ) );
+
+		vs = EEGLES2_SHADER_CLIPPED_VS;
+		fs = EEGLES2_SHADER_CLIPPED_FS;
+
+		mShaders[ EEGLES2_SHADER_CLIPPED ]			= eeNew( cShaderProgram, ( vs.c_str(), vs.size(), fs.c_str(), fs.size() ) );
+		mShaders[ EEGLES2_SHADER_CLIPPED ]->SetReloadCb( cb::Make1( this, &cRendererGLES2::ReloadShader ) );
+
+		vs = EEGLES2_SHADER_POINTSPRITE_VS;
+		fs = EEGLES2_SHADER_POINTSPRITE_FS;
+
+		mShaders[ EEGLES2_SHADER_POINTSPRITE ]		= eeNew( cShaderProgram, ( vs.c_str(), vs.size(), fs.c_str(), fs.size() ) );
+		mShaders[ EEGLES2_SHADER_POINTSPRITE ]->SetReloadCb( cb::Make1( this, &cRendererGLES2::ReloadShader ) );
+
+		vs = EEGLES2_SHADER_PRIMITIVE_VS;
+		fs = EEGLES2_SHADER_PRIMITIVE_FS;
+
+		mShaders[ EEGLES2_SHADER_PRIMITIVE ]		= eeNew( cShaderProgram, ( vs.c_str(), vs.size(), fs.c_str(), fs.size() ) );
+		mShaders[ EEGLES2_SHADER_PRIMITIVE ]->SetReloadCb( cb::Make1( this, &cRendererGLES2::ReloadShader ) );
 
 		cShader::Ensure = true;
 
-		SetShader( EEGL3_SHADER_BASE );
+		SetShader( EEGLES2_SHADER_BASE );
 	} else {
 		mCurShader = NULL;
 
-		mShaders[ EEGL3_SHADER_BASE ]->Reload();
+		mShaders[ EEGLES2_SHADER_BASE ]->Reload();
 
-		SetShader( EEGL3_SHADER_BASE );
+		SetShader( EEGLES2_SHADER_BASE );
 	}
 
 	ClientActiveTexture( GL_TEXTURE0 );
@@ -117,23 +155,34 @@ void cRendererGL3::Init() {
 	mLoaded = true;
 }
 
-GLuint cRendererGL3::BaseShaderId() {
+GLuint cRendererGLES2::BaseShaderId() {
 	return mCurShader->Handler();
 }
 
-void cRendererGL3::ReloadShader( cShaderProgram * Shader ) {
+void cRendererGLES2::ReloadShader( cShaderProgram * Shader ) {
 	mCurShader = NULL;
 
 	SetShader( Shader );
 }
 
-void cRendererGL3::SetShader( const EEGL3_SHADERS& Shader ) {
+void cRendererGLES2::SetShader( const EEGLES2_SHADERS& Shader ) {
 	SetShader( mShaders[ Shader ] );
 }
 
-void cRendererGL3::SetShader( cShaderProgram * Shader ) {
+void cRendererGLES2::CheckLocalShader() {
+	for ( Uint32 i = 0; i < EEGLES2_SHADERS_COUNT; i++ ) {
+		if ( mShaders[i] == mCurShader ) {
+			mCurShaderLocal = true;
+			return;
+		}
+	}
+
+	mCurShaderLocal = false;
+}
+
+void cRendererGLES2::SetShader( cShaderProgram * Shader ) {
 	if ( NULL == Shader ) {
-		Shader = mShaders[ EEGL3_SHADER_BASE ];
+		Shader = mShaders[ EEGLES2_SHADER_BASE ];
 	}
 
 	if ( mCurShader == Shader ) {
@@ -146,25 +195,31 @@ void cRendererGL3::SetShader( cShaderProgram * Shader ) {
 
 	mShaderPrev				= mCurShader;
 	mCurShader				= Shader;
+
+	CheckLocalShader();
+
 	mProjectionMatrix_id	= mCurShader->UniformLocation( "dgl_ProjectionMatrix" );
 	mModelViewMatrix_id		= mCurShader->UniformLocation( "dgl_ModelViewMatrix" );
 	mTexActiveLoc			= mCurShader->UniformLocation( "dgl_TexActive" );
-	mPointSpriteLoc			= mCurShader->UniformLocation( "dgl_PointSpriteActive" );
 	mClippingEnabledLoc		= mCurShader->UniformLocation( "dgl_ClippingEnabled" );
 	mCurActiveTex			= 0;
 
 	Uint32 i;
 
 	for ( i = 0; i < EEGL_ARRAY_STATES_COUNT; i++ ) {
-		mAttribsLoc[ i ] = mCurShader->AttributeLocation( EEGL3_STATES_NAME[ i ] );
+		mAttribsLoc[ i ] = mCurShader->AttributeLocation( EEGLES2_STATES_NAME[ i ] );
 	}
 
 	for ( i = 0; i < EE_MAX_PLANES; i++ ) {
-		mPlanes[ i ] = mCurShader->UniformLocation( EEGL3_PLANES_NAME[ i ] );
+		if ( -1 != mClippingEnabledLoc ) {
+			mPlanes[ i ] = mCurShader->UniformLocation( EEGLES2_PLANES_NAMENABLED_NAME[ i ] );
+		} else {
+			mPlanes[ i ] = -1;
+		}
 	}
 
 	for ( i = 0; i < EE_MAX_TEXTURE_UNITS; i++ ) {
-		mTextureUnits[ i ] = mCurShader->AttributeLocation( EEGL3_TEXTUREUNIT_NAMES[ i ] );
+		mTextureUnits[ i ] = mCurShader->AttributeLocation( EEGLES2_TEXTUREUNIT_NAMES[ i ] );
 	}
 
 	glUseProgram( mCurShader->Handler() );
@@ -187,30 +242,30 @@ void cRendererGL3::SetShader( cShaderProgram * Shader ) {
 	MatrixMode( CM );
 
 	if ( -1 != mTexActiveLoc ) {
-		mCurShader->SetUniform( mTexActiveLoc, 1 );
+		mCurShader->SetUniform( mTexActiveLoc, mTexActive );
 	}
 
-	mCurShader->SetUniform( mClippingEnabledLoc, 0 );
+	if ( -1 != mClippingEnabledLoc ) {
+		mCurShader->SetUniform( mClippingEnabledLoc, 0 );
+	}
 
 	for ( i = 0; i < EE_MAX_PLANES; i++ ) {
 		if ( -1 != mPlanes[ i ] ) {
-			mCurShader->SetUniform( EEGL3_PLANES_ENABLED_NAME[ i ], 0 );
+			mCurShader->SetUniform( EEGLES2_PLANES_ENABLED_NAME[ i ], 0 );
 		}
-	}
-
-	if ( -1 != mPointSpriteLoc ) {
-		mCurShader->SetUniform( mPointSpriteLoc, 0 );
 	}
 }
 
-void cRendererGL3::Enable( GLenum cap ) {
+void cRendererGLES2::Enable( GLenum cap ) {
 	switch ( cap ) {
 		case GL_TEXTURE_2D:
 		{
 			if ( 0 == mTexActive ) {
 				mTexActive = 1;
 
-				mCurShader->SetUniform( mTexActiveLoc, mTexActive );
+				#ifdef EE_GLES2
+				SetShader( EEGLES2_SHADER_BASE );
+				#endif
 			}
 
 			return;
@@ -224,21 +279,23 @@ void cRendererGL3::Enable( GLenum cap ) {
 		{
 			GLint plane = cap - GL_CLIP_PLANE0;
 
-			if ( 0 == mPlanesStates[ plane ] ) {
-				mPlanesStates[ plane ] = 1;
+			SetShader( EEGLES2_SHADER_CLIPPED );
 
-				PlaneStateCheck( true );
+			mPlanesStates[ plane ] = 1;
 
-				mCurShader->SetUniform( EEGL3_PLANES_ENABLED_NAME[ plane ], 1 );
-			}
+			PlaneStateCheck( true );
+
+			mCurShader->SetUniform( EEGLES2_PLANES_ENABLED_NAME[ plane ], 1 );
 
 			return;
 		}
 		case GL_POINT_SPRITE:
 		{
-			mCurShader->SetUniform( mPointSpriteLoc, 1 );
+			mPointSpriteEnabled = 1;
 
 			cGL::Enable( GL_VERTEX_PROGRAM_POINT_SIZE );
+
+			SetShader( EEGLES2_SHADER_POINTSPRITE );
 
 			break;
 		}
@@ -247,14 +304,14 @@ void cRendererGL3::Enable( GLenum cap ) {
 	cGL::Enable( cap );
 }
 
-void cRendererGL3::Disable ( GLenum cap ) {
+void cRendererGLES2::Disable ( GLenum cap ) {
 	switch ( cap ) {
 		case GL_TEXTURE_2D:
 		{
 			if ( 1 == mTexActive ) {
 				mTexActive = 0;
 
-				mCurShader->SetUniform( mTexActiveLoc, mTexActive );
+				SetShader( EEGLES2_SHADER_PRIMITIVE );
 			}
 
 			return;
@@ -268,21 +325,25 @@ void cRendererGL3::Disable ( GLenum cap ) {
 		{
 			GLint plane = cap - GL_CLIP_PLANE0;
 
-			if ( 1 == mPlanesStates[ plane ] ) {
-				mPlanesStates[ plane ] = 0;
-
-				PlaneStateCheck( false );
-
-				mCurShader->SetUniform( EEGL3_PLANES_ENABLED_NAME[ plane ], 0 );
+			if ( mTexActive ) {
+				SetShader( EEGLES2_SHADER_BASE );
+			} else {
+				SetShader( EEGLES2_SHADER_PRIMITIVE );
 			}
+
+			mPlanesStates[ plane ] = 0;
+
+			PlaneStateCheck( false );
 
 			return;
 		}
 		case GL_POINT_SPRITE:
 		{
-			mCurShader->SetUniform( mPointSpriteLoc, 0 );
+			mPointSpriteEnabled = 0;
 
 			cGL::Disable( GL_VERTEX_PROGRAM_POINT_SIZE );
+
+			SetShader( EEGLES2_SHADER_BASE );
 
 			break;
 		}
@@ -291,7 +352,7 @@ void cRendererGL3::Disable ( GLenum cap ) {
 	cGL::Disable( cap );
 }
 
-void cRendererGL3::EnableClientState( GLenum array ) {
+void cRendererGLES2::EnableClientState( GLenum array ) {
 	GLint state;
 
 	if ( GL_TEXTURE_COORD_ARRAY == array ) {
@@ -311,7 +372,7 @@ void cRendererGL3::EnableClientState( GLenum array ) {
 	}
 }
 
-void cRendererGL3::DisableClientState( GLenum array ) {
+void cRendererGLES2::DisableClientState( GLenum array ) {
 	GLint state;
 
 	if ( GL_TEXTURE_COORD_ARRAY == array ) {
@@ -331,7 +392,7 @@ void cRendererGL3::DisableClientState( GLenum array ) {
 	}
 }
 
-void cRendererGL3::VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid * pointer, GLuint allocate ) {
+void cRendererGLES2::VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid * pointer, GLuint allocate ) {
 	const GLint index = mAttribsLoc[ EEGL_VERTEX_ARRAY ];
 
 	if ( -1 != index ) {
@@ -345,7 +406,7 @@ void cRendererGL3::VertexPointer ( GLint size, GLenum type, GLsizei stride, cons
 	}
 }
 
-void cRendererGL3::ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
+void cRendererGLES2::ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
 	const GLint index = mAttribsLoc[ EEGL_COLOR_ARRAY ];
 
 	if ( -1 != index ) {
@@ -363,7 +424,21 @@ void cRendererGL3::ColorPointer ( GLint size, GLenum type, GLsizei stride, const
 	}
 }
 
-void cRendererGL3::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
+void cRendererGLES2::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
+	if ( mCurShaderLocal ) {
+		if ( 1 == mTexActive ) {
+			if ( mCurShader == mShaders[ EEGLES2_SHADER_PRIMITIVE ] ) {
+				if ( mClippingEnabled ) {
+					SetShader( EEGLES2_SHADER_CLIPPED );
+				} else if ( mPointSpriteEnabled ) {
+					SetShader( EEGLES2_SHADER_POINTSPRITE );
+				} else {
+					SetShader( EEGLES2_SHADER_BASE );
+				}
+			}
+		}
+	}
+
 	const GLint index = mTextureUnits[ mCurActiveTex ];
 
 	if ( -1 != index ) {
@@ -377,7 +452,7 @@ void cRendererGL3::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, co
 	}
 }
 
-GLint cRendererGL3::GetStateIndex( const Uint32& State ) {
+GLint cRendererGLES2::GetStateIndex( const Uint32& State ) {
 	eeASSERT( State < EEGL_ARRAY_STATES_COUNT );
 
 	if ( EEGL_TEXTURE_COORD_ARRAY == State )
@@ -386,13 +461,16 @@ GLint cRendererGL3::GetStateIndex( const Uint32& State ) {
 	return mAttribsLoc[ State ];
 }
 
-void cRendererGL3::PlaneStateCheck( bool tryEnable ) {
+void cRendererGLES2::PlaneStateCheck( bool tryEnable ) {
 	GLint i;
 
 	if (  tryEnable  ) {
 		for ( i = 0; i < EE_MAX_PLANES; i++ ) {
 			if ( 0 != mPlanesStates[ i ] ) {
 				mCurShader->SetUniform( mClippingEnabledLoc, 1 );
+
+				mClippingEnabled = 1;
+
 				return;
 			}
 		}
@@ -403,11 +481,11 @@ void cRendererGL3::PlaneStateCheck( bool tryEnable ) {
 			}
 		}
 
-		mCurShader->SetUniform( mClippingEnabledLoc, 0 );
+		mClippingEnabled = 0;
 	}
 }
 
-void cRendererGL3::UpdateMatrix() {
+void cRendererGLES2::UpdateMatrix() {
 	switch ( mCurrentMode ) {
 		case GL_PROJECTION:
 		{
@@ -428,71 +506,71 @@ void cRendererGL3::UpdateMatrix() {
 	}
 }
 
-void cRendererGL3::PushMatrix() {
+void cRendererGLES2::PushMatrix() {
 	mCurMatrix->push( mCurMatrix->top() );
 	UpdateMatrix();
 }
 
-void cRendererGL3::PopMatrix() {
+void cRendererGLES2::PopMatrix() {
 	mCurMatrix->pop();
 	UpdateMatrix();
 }
 
-void cRendererGL3::LoadIdentity() {
+void cRendererGLES2::LoadIdentity() {
 	mCurMatrix->top() = glm::mat4(1.0);
 	UpdateMatrix();
 }
 
-glm::mat4 cRendererGL3::toGLMmat4( const GLfloat * m ) {
+glm::mat4 cRendererGLES2::toGLMmat4( const GLfloat * m ) {
 	return glm::mat4( m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], m[10], m[11], m[12], m[13], m[14], m[15] );
 }
 
-void cRendererGL3::MultMatrixf ( const GLfloat * m ) {
+void cRendererGLES2::MultMatrixf ( const GLfloat * m ) {
 	mCurMatrix->top() *= toGLMmat4( m );
 	UpdateMatrix();
 }
 
-void cRendererGL3::Translatef( GLfloat x, GLfloat y, GLfloat z ) {
+void cRendererGLES2::Translatef( GLfloat x, GLfloat y, GLfloat z ) {
 	mCurMatrix->top() *= glm::translate( glm::vec3( x, y, z ) );
 	UpdateMatrix();
 }
 
-void cRendererGL3::Rotatef( GLfloat angle, GLfloat x, GLfloat y, GLfloat z ) {
+void cRendererGLES2::Rotatef( GLfloat angle, GLfloat x, GLfloat y, GLfloat z ) {
 	mCurMatrix->top() *= glm::rotate( angle, glm::vec3( x, y, z ) );
 	UpdateMatrix();
 }
 
-void cRendererGL3::Scalef( GLfloat x, GLfloat y, GLfloat z ) {
+void cRendererGLES2::Scalef( GLfloat x, GLfloat y, GLfloat z ) {
 	mCurMatrix->top() *= glm::scale( glm::vec3( x, y, z ) );
 	UpdateMatrix();
 }
 
-void cRendererGL3::Ortho( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar ) {
+void cRendererGLES2::Ortho( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar ) {
 	mCurMatrix->top() *= glm::ortho( left, right, bottom, top , zNear, zFar );
 	UpdateMatrix();
 }
 
-void cRendererGL3::LookAt( GLfloat eyeX, GLfloat eyeY, GLfloat eyeZ, GLfloat centerX, GLfloat centerY, GLfloat centerZ, GLfloat upX, GLfloat upY, GLfloat upZ ) {
+void cRendererGLES2::LookAt( GLfloat eyeX, GLfloat eyeY, GLfloat eyeZ, GLfloat centerX, GLfloat centerY, GLfloat centerZ, GLfloat upX, GLfloat upY, GLfloat upZ ) {
 	mCurMatrix->top() *= glm::lookAt( glm::vec3(eyeX, eyeY, eyeZ), glm::vec3(centerX, centerY, centerZ), glm::vec3(upX, upY, upZ) );
 	UpdateMatrix();
 }
 
-void cRendererGL3::Perspective ( GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar ) {
+void cRendererGLES2::Perspective ( GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar ) {
 	mCurMatrix->top() *= glm::perspective( fovy, aspect, zNear, zFar );
 	UpdateMatrix();
 }
 
-void cRendererGL3::LoadMatrixf( const GLfloat * m ) {
+void cRendererGLES2::LoadMatrixf( const GLfloat * m ) {
 	mCurMatrix->top() = toGLMmat4( m );
 	UpdateMatrix();
 }
 
-void cRendererGL3::Frustum( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near_val, GLfloat far_val ) {
+void cRendererGLES2::Frustum( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near_val, GLfloat far_val ) {
 	mCurMatrix->top() *= glm::frustum( left, right, bottom, top, near_val, far_val );
 	UpdateMatrix();
 }
 
-void cRendererGL3::fromGLMmat4( glm::mat4 from, GLfloat * to ) {
+void cRendererGLES2::fromGLMmat4( glm::mat4 from, GLfloat * to ) {
 	Int32 i,p;
 
 	for ( i = 0; i < 4; i++ ) {
@@ -505,7 +583,7 @@ void cRendererGL3::fromGLMmat4( glm::mat4 from, GLfloat * to ) {
 	}
 }
 
-void cRendererGL3::GetCurrentMatrix( GLenum mode, GLfloat * m ) {
+void cRendererGLES2::GetCurrentMatrix( GLenum mode, GLfloat * m ) {
 	switch ( mode ) {
 		case GL_PROJECTION:
 		case GL_PROJECTION_MATRIX:
@@ -522,11 +600,11 @@ void cRendererGL3::GetCurrentMatrix( GLenum mode, GLfloat * m ) {
 	}
 }
 
-GLenum cRendererGL3::GetCurrentMatrixMode() {
+GLenum cRendererGLES2::GetCurrentMatrixMode() {
 	return mCurrentMode;
 }
 
-void cRendererGL3::MatrixMode(GLenum mode) {
+void cRendererGLES2::MatrixMode(GLenum mode) {
 	mCurrentMode = mode;
 
 	switch ( mCurrentMode ) {
@@ -545,7 +623,7 @@ void cRendererGL3::MatrixMode(GLenum mode) {
 	}
 }
 
-void cRendererGL3::Clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
+void cRendererGLES2::Clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
 	GLfloat tX = (GLfloat)x;
 	GLfloat tY = (GLfloat)y;
 	GLfloat tW = (GLfloat)Width;
@@ -574,20 +652,24 @@ void cRendererGL3::Clip2DPlaneEnable( const Int32& x, const Int32& y, const Int3
 	glUniform4fv( mPlanes[3], 1, static_cast<const GLfloat*>( &vclip_bottom[0]	)	);
 }
 
-void cRendererGL3::Clip2DPlaneDisable() {
+void cRendererGLES2::Clip2DPlaneDisable() {
 	GLi->Disable(GL_CLIP_PLANE0);
 	GLi->Disable(GL_CLIP_PLANE1);
 	GLi->Disable(GL_CLIP_PLANE2);
 	GLi->Disable(GL_CLIP_PLANE3);
 }
 
-void cRendererGL3::PointSize( GLfloat size ) {
+void cRendererGLES2::PointSize( GLfloat size ) {
+	#ifndef EE_GLES2
+	glPointSize( size );;
+	#endif
+
 	mCurShader->SetUniform( "dgl_PointSize", size );
 
 	mPointSize = size;
 }
 
-void cRendererGL3::ClipPlane( GLenum plane, const GLdouble * equation ) {
+void cRendererGLES2::ClipPlane( GLenum plane, const GLdouble * equation ) {
 	Int32 nplane	= plane - GL_CLIP_PLANE0;
 	Int32 location;
 
@@ -606,26 +688,26 @@ void cRendererGL3::ClipPlane( GLenum plane, const GLdouble * equation ) {
 	glUniform4f( location, (GLfloat)teq[0], (GLfloat)teq[1], (GLfloat)teq[2], (GLfloat)teq[3] );
 }
 
-GLfloat cRendererGL3::PointSize() {
+GLfloat cRendererGLES2::PointSize() {
 	return mPointSize;
 }
 
-void cRendererGL3::ClientActiveTexture( GLenum texture ) {
+void cRendererGLES2::ClientActiveTexture( GLenum texture ) {
 	mCurActiveTex = texture - GL_TEXTURE0;
 
 	if ( mCurActiveTex >= EE_MAX_TEXTURE_UNITS )
 		mCurActiveTex = 0;
 }
 
-void cRendererGL3::TexEnvi( GLenum target, GLenum pname, GLint param ) {
+void cRendererGLES2::TexEnvi( GLenum target, GLenum pname, GLint param ) {
 	//! @TODO: Implement TexEnvi
 }
 
-std::string cRendererGL3::GetBaseVertexShader() {
+std::string cRendererGLES2::GetBaseVertexShader() {
 	return mBaseVertexShader;
 }
 
-GLint cRendererGL3::Project( GLfloat objx, GLfloat objy, GLfloat objz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *winx, GLfloat *winy, GLfloat *winz ) {
+GLint cRendererGLES2::Project( GLfloat objx, GLfloat objy, GLfloat objz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *winx, GLfloat *winy, GLfloat *winz ) {
 	glm::vec3 tv3( glm::project( glm::vec3( objx, objy, objz ), toGLMmat4( modelMatrix ), toGLMmat4( projMatrix ), glm::vec4( viewport[0], viewport[1], viewport[2], viewport[3] ) ) );
 
 	if ( NULL != winx )
@@ -640,7 +722,7 @@ GLint cRendererGL3::Project( GLfloat objx, GLfloat objy, GLfloat objz, const GLf
 	return GL_TRUE;
 }
 
-GLint cRendererGL3::UnProject( GLfloat winx, GLfloat winy, GLfloat winz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *objx, GLfloat *objy, GLfloat *objz ) {
+GLint cRendererGLES2::UnProject( GLfloat winx, GLfloat winy, GLfloat winz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *objx, GLfloat *objy, GLfloat *objz ) {
 	glm::vec3 tv3( glm::unProject( glm::vec3( winx, winy, winz ), toGLMmat4( modelMatrix ), toGLMmat4( projMatrix ), glm::vec4( viewport[0], viewport[1], viewport[2], viewport[3] ) ) );
 
 	if ( NULL != objx )
