@@ -117,7 +117,7 @@ cShaderProgram::cShaderProgram( const char ** VertexShaderData, const Uint32& Nu
 
 cShaderProgram::~cShaderProgram() {
 	if ( Handler() > 0 ) {
-		#ifndef EE_GLES1
+		#ifdef EE_SHADERS_SUPPORTED
     	glDeleteProgram( Handler() );
 		#endif
 	}
@@ -145,7 +145,7 @@ void cShaderProgram::RemoveFromManager() {
 
 void cShaderProgram::Init() {
 	if ( GLi->ShadersSupported() && 0 == Handler() ) {
-		#ifndef EE_GLES1
+		#ifdef EE_SHADERS_SUPPORTED
 		mHandler = glCreateProgram();
 		#endif
 		mValid = false;
@@ -184,7 +184,7 @@ void cShaderProgram::AddShader( cShader* Shader ) {
 	}
 
 	if ( 0 != Handler() ) {
-		#ifndef EE_GLES1
+		#ifdef EE_SHADERS_SUPPORTED
 		glAttachShader( Handler(), Shader->GetId() );
 		#endif
 
@@ -198,7 +198,7 @@ void cShaderProgram::AddShaders( const std::vector<cShader*>& Shaders ) {
 }
 
 bool cShaderProgram::Link() {
-	#ifndef EE_GLES1
+	#ifdef EE_SHADERS_SUPPORTED
 	glLinkProgram( Handler() );
 
 	Int32 linked;
@@ -247,7 +247,7 @@ Int32 cShaderProgram::UniformLocation( const std::string& Name ) {
 
 	std::map<std::string, Int32>::iterator it = mUniformLocations.find( Name );
 	if ( it == mUniformLocations.end() ) {
-		#ifndef EE_GLES1
+		#ifdef EE_SHADERS_SUPPORTED
 		Int32 Location = glGetUniformLocation( Handler(), Name.c_str() );
 		mUniformLocations[Name] = Location;
 		#endif
@@ -261,7 +261,7 @@ Int32 cShaderProgram::AttributeLocation( const std::string& Name ) {
 
 	std::map<std::string, Int32>::iterator it = mAttributeLocations.find( Name );
 	if ( it == mAttributeLocations.end() ) {
-		#ifndef EE_GLES1
+		#ifdef EE_SHADERS_SUPPORTED
 		Int32 Location = glGetAttribLocation( Handler(), Name.c_str() );
 		mAttributeLocations[Name] = Location;
 		#endif
@@ -278,7 +278,7 @@ bool cShaderProgram::SetUniform( const std::string& Name, float Value ) {
 	Int32 Location = UniformLocation( Name );
 
 	if ( Location >= 0 ) {
-		#ifndef EE_GLES1
+		#ifdef EE_SHADERS_SUPPORTED
 		glUniform1f( Location, Value );
 		#endif
 	}
@@ -290,7 +290,7 @@ bool cShaderProgram::SetUniform( const std::string& Name, eeVector2ff Value ) {
 	Int32 Location = UniformLocation( Name );
 
 	if ( Location >= 0 ) {
-		#ifndef EE_GLES1
+		#ifdef EE_SHADERS_SUPPORTED
 		glUniform2fv( Location, 1, reinterpret_cast<float*>( &Value ) );
 		#endif
 	}
@@ -302,7 +302,7 @@ bool cShaderProgram::SetUniform( const std::string& Name, eeVector3ff Value ) {
 	Int32 Location = UniformLocation( Name );
 
 	if ( Location >= 0 ) {
-		#ifndef EE_GLES1
+		#ifdef EE_SHADERS_SUPPORTED
 		glUniform3fv( Location, 1, reinterpret_cast<float*>( &Value ) );
 		#endif
 	}
@@ -314,7 +314,7 @@ bool cShaderProgram::SetUniform( const std::string& Name, float x, float y, floa
 	Int32 Location = UniformLocation( Name );
 
 	if ( Location >= 0 ) {
-		#ifndef EE_GLES1
+		#ifdef EE_SHADERS_SUPPORTED
 		glUniform4f( Location, x, y, z, w );
 		#endif
 	}
@@ -326,7 +326,7 @@ bool cShaderProgram::SetUniform( const std::string& Name, Int32 Value ) {
 	Int32 Location = UniformLocation( Name );
 
 	if ( Location >= 0 ) {
-		#ifndef EE_GLES1
+		#ifdef EE_SHADERS_SUPPORTED
 		glUniform1i( Location, Value );
 		#endif
 	}
@@ -336,7 +336,7 @@ bool cShaderProgram::SetUniform( const std::string& Name, Int32 Value ) {
 
 bool cShaderProgram::SetUniform( const Int32& Location, Int32 Value ) {
 	if ( -1 != Location ) {
-		#ifndef EE_GLES1
+		#ifdef EE_SHADERS_SUPPORTED
 		glUniform1i( Location, Value );
 		#endif
 
@@ -348,7 +348,7 @@ bool cShaderProgram::SetUniform( const Int32& Location, Int32 Value ) {
 
 bool cShaderProgram::SetUniform( const Int32& Location, float Value ) {
 	if ( -1 != Location ) {
-		#ifndef EE_GLES1
+		#ifdef EE_SHADERS_SUPPORTED
 		glUniform1f( Location, Value );
 		#endif
 
@@ -360,7 +360,7 @@ bool cShaderProgram::SetUniform( const Int32& Location, float Value ) {
 
 bool cShaderProgram::SetUniform( const Int32& Location, eeVector2ff Value ) {
 	if ( -1 != Location ) {
-		#ifndef EE_GLES1
+		#ifdef EE_SHADERS_SUPPORTED
 		glUniform2fv( Location, 1, reinterpret_cast<float*>( &Value ) );
 		#endif
 
@@ -372,7 +372,7 @@ bool cShaderProgram::SetUniform( const Int32& Location, eeVector2ff Value ) {
 
 bool cShaderProgram::SetUniform( const Int32& Location, eeVector3ff Value ) {
 	if ( -1 != Location ) {
-		#ifndef EE_GLES1
+		#ifdef EE_SHADERS_SUPPORTED
 		glUniform3fv( Location, 1, reinterpret_cast<float*>( &Value ) );
 		#endif
 
@@ -384,7 +384,7 @@ bool cShaderProgram::SetUniform( const Int32& Location, eeVector3ff Value ) {
 
 bool cShaderProgram::SetUniform( const Int32& Location, float x, float y, float z, float w ) {
 	if ( -1 != Location ) {
-		#ifndef EE_GLES1
+		#ifdef EE_SHADERS_SUPPORTED
 		glUniform4f( Location, x, y, z, w );
 		#endif
 
@@ -396,7 +396,7 @@ bool cShaderProgram::SetUniform( const Int32& Location, float x, float y, float 
 
 bool cShaderProgram::SetUniformMatrix( const Int32& Location, const float * Value ) {
 	if ( -1 != Location ) {
-		#ifndef EE_GLES1
+		#ifdef EE_SHADERS_SUPPORTED
 		glUniformMatrix4fv( Location, 1, false, Value );
 		#endif
 
@@ -410,7 +410,7 @@ bool cShaderProgram::SetUniformMatrix( const std::string Name, const float * Val
 	Int32 Location = UniformLocation( Name );
 
 	if ( Location >= 0 ) {
-		#ifndef EE_GLES1
+		#ifdef EE_SHADERS_SUPPORTED
 		glUniformMatrix4fv( Location, 1, false, Value );
 		#endif
 	}

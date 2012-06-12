@@ -10,12 +10,12 @@ cGL * GLi = NULL;
 cGL * cGL::ms_singleton = NULL;
 
 cGL * cGL::CreateSingleton( EEGL_version ver ) {
-	#ifndef EE_GLES2
+	#ifdef EE_PLATFORM_DESKTOP
 	if ( GLv_default == ver )
 		ver = GLv_2;
 	#else
 	if ( GLv_default == ver )
-		ver = GLv_ES2;
+		ver = GLv_ES1;
 	#endif
 
 	switch ( ver ) {
@@ -49,7 +49,9 @@ cGL * cGL::CreateSingleton( EEGL_version ver ) {
 
 cGL * cGL::CreateSingleton() {
 	if ( ms_singleton == 0 ) {
-		#ifdef EE_GLES2
+		#if defined( EE_GLES_BOTH )
+			ms_singleton = eeNew( cRendererGL, () );
+		#elif defined( EE_GLES2 )
 			ms_singleton = eeNew( cRendererGLES2, () );
 		#elif defined( EE_GLES1 )
 			ms_singleton = eeNew( cRendererGL, () );
@@ -166,9 +168,11 @@ bool cGL::PointSpriteSupported() {
 }
 
 bool cGL::ShadersSupported() {
-#ifdef EE_GLES2
-	return true;
-#elif defined( EE_GLES1 )
+#ifdef EE_GLES
+	if ( GLv_ES2 == Version() || GLv_3 == Version() )
+		return true;
+
+	/// GLES1
 	return false;
 #else
 	return IsExtension( EEGL_ARB_shading_language_100 ) && IsExtension( EEGL_ARB_shader_objects ) && IsExtension( EEGL_ARB_vertex_shader ) && IsExtension( EEGL_ARB_fragment_shader );
@@ -301,7 +305,7 @@ void cGL::BlendFunc ( GLenum sfactor, GLenum dfactor ) {
 }
 
 void cGL::SetShader( cShaderProgram * Shader ) {
-	#ifndef EE_GLES1
+	#ifdef EE_SHADERS_SUPPORTED
 	if ( NULL != Shader ) {
 		glUseProgram( Shader->Handler() );
 	} else {

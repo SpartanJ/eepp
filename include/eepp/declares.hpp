@@ -50,6 +50,10 @@
 	#endif
 #endif
 
+#if !defined( EE_GLES1 ) && !defined( EE_GLES2 )
+#define EE_PLATFORM_DESKTOP
+#endif
+
 #if defined ( linux ) || defined( __linux__ ) \
 	|| defined( __FreeBSD__ ) || defined(__OpenBSD__) || defined( __NetBSD__ ) || defined( __DragonFly__ ) \
 	|| defined( __SVR4 )
@@ -194,6 +198,14 @@
 
 #if ( defined( EE_GLES2 ) || defined( EE_GLES1 ) ) && !defined( EE_GLES )
 	#define EE_GLES
+#endif
+
+#if defined( EE_GLES2 ) && defined( EE_GLES1 )
+	#define EE_GLES_BOTH
+#endif
+
+#if ( !defined( EE_GLES1 ) && ( defined( EE_GLES2 ) || !defined( EE_PLATFORM_TOUCH ) ) ) || defined( EE_GLES_BOTH )
+	#define EE_SHADERS_SUPPORTED
 #endif
 
 #define eeCOMMA ,

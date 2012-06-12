@@ -41,8 +41,7 @@
 #else
 	//! Mobile platform ( Android / iPhone / Maemo )
 
-	//! GLES2 ( programmable pipeline )
-	#ifdef EE_GLES2
+	#ifdef EE_GLES_BOTH
 		#if EE_PLATFORM == EE_PLATFORM_IOS
 			#include <OpenGLES/ES2/gl.h>
 			#include <OpenGLES/ES2/glext.h>
@@ -51,19 +50,33 @@
 			#include <GLES2/gl2ext.h>
 		#endif
 
-	//! GLES1 ( fixed pipeline )
-	#elif defined( EE_GLES1 )
-		#if EE_PLATFORM == EE_PLATFORM_IOS
-			#include <OpenGLES/ES1/gl.h>
-			#include <OpenGLES/ES1/glext.h>
-		#else
-			#include <GLES/gl.h>
-			
-			#ifndef GL_GLEXT_PROTOTYPES
-				#define GL_GLEXT_PROTOTYPES
+		#define EE_GLES1_LATE_INCLUDE
+	#else
+		//! GLES2 ( programmable pipeline )
+		#ifdef EE_GLES2
+			#if EE_PLATFORM == EE_PLATFORM_IOS
+				#include <OpenGLES/ES2/gl.h>
+				#include <OpenGLES/ES2/glext.h>
+			#else
+				#include <GLES2/gl2.h>
+				#include <GLES2/gl2ext.h>
 			#endif
-			
-			#include <GLES/glext.h>
+		#endif
+
+		//! GLES1 ( fixed pipeline )
+		#ifdef EE_GLES1
+			#if EE_PLATFORM == EE_PLATFORM_IOS
+				#include <OpenGLES/ES1/gl.h>
+				#include <OpenGLES/ES1/glext.h>
+			#else
+				#include <GLES/gl.h>
+
+				#ifndef GL_GLEXT_PROTOTYPES
+					#define GL_GLEXT_PROTOTYPES
+				#endif
+
+				#include <GLES/glext.h>
+			#endif
 		#endif
 	#endif
 #endif
@@ -79,7 +92,8 @@
 	#define glBufferSubDataARB glBufferSubData
 #endif
 
-#ifdef EE_GLES2
+/// Wrap GLES2 functions
+#if defined( EE_GLES2 )
 
 #define glCheckFramebufferStatusEXT glCheckFramebufferStatus
 #define glDeleteFramebuffersEXT glDeleteFramebuffers
@@ -92,6 +106,11 @@
 #define glFramebufferTexture2DEXT glFramebufferTexture2D
 
 #define glVertexAttribPointerARB glVertexAttribPointer
+
+#endif
+
+/// Exclusive only when its compiling only for GLES2
+#if ( defined( EE_GLES2 ) && !defined( EE_GLES1 ) ) || defined( EE_GLES_BOTH )
 
 #define GL_MODELVIEW 0x1700
 #define GL_PROJECTION 0x1701
@@ -118,11 +137,23 @@
 #define GL_POINT_SPRITE 0x8861
 #define GL_VERTEX_PROGRAM_POINT_SIZE 0x8642
 
-#elif defined( EE_GLES1 )
+#endif
+
+#if defined( EE_GLES1 ) && !defined( EE_GLES2 ) || defined( EE_GLES_BOTH )
 
 #define glOrtho glOrthof
 #define glClipPlane glClipPlanef
 #define glFrustum glFrustumf
+
+#define GL_COORD_REPLACE GL_COORD_REPLACE_OES
+#define GL_COMBINE_ARB GL_COMBINE
+
+#endif
+
+/// Exclusive when its compiling only for GLES1
+#if defined( EE_GLES1 ) && !defined( EE_GLES2 )
+
+#define GL_POINT_SPRITE GL_POINT_SPRITE_OES
 
 #define glCheckFramebufferStatusEXT glCheckFramebufferStatusOES
 #define glDeleteFramebuffersEXT glDeleteFramebuffersOES
@@ -133,10 +164,6 @@
 #define glBindRenderbufferEXT glBindRenderbufferOES
 #define glFramebufferRenderbufferEXT glFramebufferRenderbufferOES
 #define glFramebufferTexture2DEXT glFramebufferTexture2DOES
-
-#define GL_POINT_SPRITE GL_POINT_SPRITE_OES
-#define GL_COORD_REPLACE GL_COORD_REPLACE_OES
-#define GL_COMBINE_ARB GL_COMBINE
 
 #define GL_FRAMEBUFFER GL_FRAMEBUFFER_OES
 #define GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE_OES

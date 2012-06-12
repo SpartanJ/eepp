@@ -55,7 +55,7 @@ void cEETest::Init() {
 	else if ( 4 == GLVersion )
 		GLVer = GLv_ES2;
 	else
-		GLVer = GLv_2;
+		GLVer = GLv_default;
 
 	Uint32 Style = WindowStyle::Titlebar;
 
@@ -69,7 +69,7 @@ void cEETest::Init() {
 	PAK->Open( MyPath + "data/ee.zip" );
 
 	#if EE_PLATFORM == EE_PLATFORM_IOS
-	mWindow = EE->CreateWindow( WindowSettings( 960, 640, BitColor, WindowStyle::NoBorder ), ContextSettings( VSync, GLv_default, true, 0, 0 ) );
+	mWindow = EE->CreateWindow( WindowSettings( 960, 640, BitColor, WindowStyle::NoBorder ), ContextSettings( VSync, GLVer, true, 0, 0 ) );
 	#else
 	mWindow = EE->CreateWindow( WindowSettings( mWidth, mHeight, BitColor, Style, "ee.png" ), ContextSettings( VSync, GLVer, true, 0, 0 ) );
 	#endif

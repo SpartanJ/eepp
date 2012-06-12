@@ -148,7 +148,7 @@ void cBatchRenderer::Flush() {
 		GLi->PopMatrix();
 	}
 
-	if ( mCurrentMode == DM_POINTS && mTexture > 0 ) {
+	if ( mCurrentMode == DM_POINTS && NULL != mTexture ) {
 		GLi->Disable( GL_POINT_SPRITE );
 	}
 

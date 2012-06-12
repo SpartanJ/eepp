@@ -10,10 +10,14 @@ if [ -z $1 ]; then
 	if [ "$1" == 'GLES2' ]; then
 		BACKEND="GLES2=yes"
 	else
-		BACKEND="GLES1=yes"
+		if [ "$1" == 'GLES2' ]; then
+			BACKEND="GLES1=yes"
+		else
+			BACKEND="GLES1=yes GLES2=yes"
+		fi
 	fi
 else
-	BACKEND="GLES2=yes"
+	BACKEND="GLES1=yes GLES2=yes"
 fi
 
 make -j2 -e IOS=yes NO_SNDFILE=yes STATIC_FT2=yes SIMULATOR=yes DEBUGBUILD=no $BACKEND

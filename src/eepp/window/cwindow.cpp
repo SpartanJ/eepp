@@ -5,6 +5,21 @@
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/window/platform/null/cnullimpl.hpp>
 
+#ifdef EE_GLES1_LATE_INCLUDE
+	#if EE_PLATFORM == EE_PLATFORM_IOS
+		#include <OpenGLES/ES1/gl.h>
+		#include <OpenGLES/ES1/glext.h>
+	#else
+		#include <GLES/gl.h>
+
+		#ifndef GL_GLEXT_PROTOTYPES
+			#define GL_GLEXT_PROTOTYPES
+		#endif
+
+		#include <GLES/glext.h>
+	#endif
+#endif
+
 namespace EE { namespace Window {
 
 cWindow::cWindow( WindowSettings Settings, ContextSettings Context, cClipboard * Clipboard, cInput * Input, cCursorManager * CursorManager ) :
@@ -108,7 +123,7 @@ void cWindow::Setup2D( const bool& KeepView ) {
 	cTextureFactory::instance()->SetPreBlendFunc( ALPHA_NORMAL, true );
 
 	if ( GLv_3 != GLi->Version() ) {
-		#ifndef EE_GLES2
+		#if !defined( EE_GLES2 ) || defined( EE_GLES_BOTH )
 		GLi->TexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE );
 		GLi->TexEnvi( GL_POINT_SPRITE, GL_COORD_REPLACE, GL_TRUE );
 		#endif

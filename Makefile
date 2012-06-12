@@ -153,6 +153,16 @@ endif
 
 ifeq ($(BACKEND_SDL),yes)
 	ifeq ($(BUILD_OS), ios)
+		TRY_SDL2 = yes
+	else
+		ifeq ($(BUILD_OS), darwin)
+			TRY_SDL2 = yes
+		else
+			TRY_SDL2 = no
+		endif
+	endif
+	
+	ifeq ($(TRY_SDL2), yes)
 		# First check for SDL2
 		SDLVERSION2			= $(shell type -P $(SDLCONFIGPATH)sdl2-config &>/dev/null && $(SDLCONFIGPATH)sdl2-config --version || echo "")
 		
@@ -332,9 +342,15 @@ endif
 FINALFLAGS = $(DEBUGFLAGS) $(SNDFILEFLAG)
 
 ifeq ($(GLES2), yes)
-	FINALFLAGS += -DEE_GLES2 -DSOIL_GLES2
-	
-	GL_VERSION = GLES2
+	ifneq ($(GLES1), yes)
+		FINALFLAGS += -DEE_GLES2 -DSOIL_GLES2
+		
+		GL_VERSION = GLES2
+	else
+		FINALFLAGS += -DEE_GLES1 -DSOIL_GLES1 -DEE_GLES2 -DSOIL_GLES2
+		
+		GL_VERSION = GLES
+	endif
 else
 	ifeq ($(GLES1), yes)
 		FINALFLAGS += -DEE_GLES1 -DSOIL_GLES1

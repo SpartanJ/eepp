@@ -86,15 +86,20 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	}
 
 	#if EE_PLAFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
+		if ( GLv_default == Context.Version || GLv_ES1 == Context.Version || GLv_2 == Context.Version ) {
 		#ifdef EE_GLES1
+			if ( GLv_2 == Context.Version )
+				mWindow.ContextConfig.Version = GLv_default;
+
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 		#endif
-
+		} else {
 		#ifdef EE_GLES2
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 		#endif
+		}
 	#endif
 
 	mGLContext = SDL_GL_CreateContext( mSDLWindow );

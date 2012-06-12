@@ -34,7 +34,22 @@
 
 namespace EE { namespace Graphics {
 
-#ifndef EE_GLES2
+#if !defined( EE_GLES2 ) || defined( EE_GLES_BOTH )
+
+#ifdef EE_GLES1_LATE_INCLUDE
+	#if EE_PLATFORM == EE_PLATFORM_IOS
+		#include <OpenGLES/ES1/gl.h>
+		#include <OpenGLES/ES1/glext.h>
+	#else
+		#include <GLES/gl.h>
+
+		#ifndef GL_GLEXT_PROTOTYPES
+			#define GL_GLEXT_PROTOTYPES
+		#endif
+
+		#include <GLES/glext.h>
+	#endif
+#endif
 
 cRendererGL::cRendererGL() {
 }
