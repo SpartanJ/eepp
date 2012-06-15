@@ -60,15 +60,15 @@ bool cUISlider::IsType( const Uint32& type ) const {
 
 void cUISlider::SetTheme( cUITheme * Theme ) {
 	if ( !mVertical ) {
-		cUIControl::SetTheme( Theme, "hslider" );
+		cUIControl::SetThemeControl( Theme, "hslider" );
 
-		mBackSlider->SetSkin( Theme, "hslider_bg" );
-		mSlider->SetSkin( Theme, "hslider_button" );
+		mBackSlider->SetThemeControl( Theme, "hslider_bg" );
+		mSlider->SetThemeControl( Theme, "hslider_button" );
 	} else {
-		cUIControl::SetTheme( Theme, "vslider" );
+		cUIControl::SetThemeControl( Theme, "vslider" );
 
-		mBackSlider->SetSkin( Theme, "vslider_bg" );
-		mSlider->SetSkin( Theme, "vslider_button" );
+		mBackSlider->SetThemeControl( Theme, "vslider_bg" );
+		mSlider->SetThemeControl( Theme, "vslider_button" );
 	}
 
 	AdjustChilds();

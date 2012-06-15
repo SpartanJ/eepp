@@ -85,9 +85,9 @@ bool cUITextEdit::IsType( const Uint32& type ) const {
 }
 
 void cUITextEdit::SetTheme( cUITheme * Theme ) {
-	cUIControl::SetTheme( Theme, "textedit" );
+	cUIControl::SetThemeControl( Theme, "textedit" );
 
-	mTextInput->SetSkin( Theme, "textedit_box" );
+	mTextInput->SetThemeControl( Theme, "textedit_box" );
 
 	AutoPadding();
 

@@ -45,7 +45,7 @@ bool cUIDropDownList::IsType( const Uint32& type ) const {
 }
 
 void cUIDropDownList::SetTheme( cUITheme * Theme ) {
-	cUIControl::SetTheme( Theme, "dropdownlist" );
+	cUIControl::SetThemeControl( Theme, "dropdownlist" );
 
 	AutoSizeControl();
 

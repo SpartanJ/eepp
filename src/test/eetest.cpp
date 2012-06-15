@@ -3,10 +3,8 @@
 void cEETest::Init() {
 	EE = cEngine::instance();
 
-	#ifdef EE_DEBUG
 	cLog::instance()->LiveWrite( true );
 	cLog::instance()->ConsoleOutput( true );
-	#endif
 
 	run 				= false;
 	DrawBack 			= false;
@@ -30,6 +28,9 @@ void cEETest::Init() {
 	mETGEditor			= NULL;
 	Mus					= NULL;
 	mUIWindow			= NULL;
+	mTerrainBut			= NULL;
+	mShowMenu			= NULL;
+	mTerrainUp			= true;
 
 	MyPath 				= GetProcessPath();
 
@@ -46,6 +47,7 @@ void cEETest::Init() {
 	mUseShaders 	= Ini.GetValueB( "EEPP", "UseShaders", false );
 	mJoyEnabled		= Ini.GetValueB( "EEPP", "JoystickEnabled", false );
 	mMusEnabled		= Ini.GetValueB( "EEPP", "Music", false );
+	Int32 StartScreen	= Ini.GetValueI( "EEPP", "StartScreen", 0 );
 
 	Int32 GLVersion = Ini.GetValueI( "EEPP", "GLVersion", 2 );
 	EEGL_version GLVer;
@@ -77,7 +79,7 @@ void cEETest::Init() {
 	run = ( mWindow->Created() && PAK->IsOpen() );
 
 	if ( run ) {
-		SetScreen( 0 );
+		SetScreen( StartScreen );
 
 		mWindow->Caption( "EE++ Test Application" );
 
@@ -244,6 +246,29 @@ void cEETest::OnWinMouseUp( const cUIEvent * Event ) {
 		CtrlAnim->Scale( CtrlAnim->Scale() - 0.1f );
 	}
 }
+
+void cEETest::OnTerrainMouse( const cUIEvent * Event ) {
+	cUIPushButton * PB = static_cast<cUIPushButton*>( Event->Ctrl() );
+
+	if ( PB->Text() == "Terrain Up" ) {
+		PB->Text( "Terrain Down" );
+		mTerrainUp = false;
+	} else {
+		PB->Text( "Terrain Up" );
+		mTerrainUp = true;
+	}
+}
+
+void cEETest::OnShowMenu( const cUIEvent * Event ) {
+	cUIPushButton * PB = static_cast<cUIPushButton*>( Event->Ctrl() );
+
+	if ( Menu->Show() ) {
+		eeVector2i Pos = eeVector2i( (Int32)PB->GetPolygon()[0].x, (Int32)PB->GetPolygon()[0].y );
+		cUIMenu::FixMenuPos( Pos , Menu );
+		Menu->Pos( Pos );
+	}
+}
+
 
 void cEETest::CreateUI() {
 	cTimeElapsed TE;
@@ -555,6 +580,26 @@ void cEETest::CreateUI() {
 	mGenGrid->CollumnWidth( 1, 24 );
 	mGenGrid->CollumnWidth( 2, 100 );
 
+#ifdef EE_PLATFORM_TOUCH
+	cShapeGroup * SG = cGlobalShapeGroup::instance();
+
+	SG->Add( TF->Load( MyPath + "data/extra/button-te_normal.png" ), "button-te_normal" );
+	SG->Add( TF->Load( MyPath + "data/extra/button-te_mdown.png" ), "button-te_mdown" );
+
+	cUISkinSimple * nSkin = eeNew( cUISkinSimple, ( "button-te" ) );
+
+	mShowMenu = mTheme->CreatePushButton( NULL, eeSize( 160, 80 ), eeVector2i( mWindow->GetWidth() - 170, mWindow->GetHeight() - 90 ), UI_CONTROL_ALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
+	mShowMenu->SetSkin( nSkin );
+	mShowMenu->Text( "Show Menu" );
+	mShowMenu->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::OnShowMenu ) );
+
+	mTerrainBut = mTheme->CreatePushButton( NULL, eeSize( 160, 80 ), eeVector2i( mWindow->GetWidth() - 160 * 2 - 20, mWindow->GetHeight() - 90 ), UI_CONTROL_ALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
+	mTerrainBut->SetSkin( nSkin->Copy() );
+	mTerrainBut->Text( "Terrain Up" );
+	mTerrainBut->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::OnTerrainMouse ) );
+	mTerrainBut->Visible( 1 == Screen );
+#endif
+
 	C = reinterpret_cast<cUIControlAnim*> ( C->Parent() );
 
 	Log->Writef( "CreateUI time: %f", TE.ElapsedSinceStart() );
@@ -748,6 +793,8 @@ void cEETest::ButtonClick( const cUIEvent * Event ) {
 }
 
 void cEETest::SetScreen( Uint32 num ) {
+	if ( NULL != mTerrainBut ) mTerrainBut->Visible( 1 == num );
+
 	if ( 0 == num || 5 == num )
 		mWindow->BackColor( eeColor( 240, 240, 240 ) );
 	else
@@ -814,11 +861,11 @@ void cEETest::LoadTextures() {
 	cTextureGroupLoader tgl( PAK, "tiles.etg" );
 	cShapeGroup * SG = cShapeGroupManager::instance()->GetByName( "tiles" );
 
-	Uint32 ORTO = TF->Load( MyPath + "data/tilesortogonal.png" );
-
-	Graphics::cShape * OrtoShape = cGlobalShapeGroup::instance()->Add( ORTO );
-
 	for ( i = 0; i < 6; i++ ) {
+		Uint32 ORTO = TF->Load( MyPath + "data/DungeonFloorCenter" + toStr( i + 1 ) + ".png" );
+
+		Graphics::cShape * OrtoShape = cGlobalShapeGroup::instance()->Add( ORTO );
+
 		//Tiles[i] = SG->GetByName( toStr( i+1 ) );
 		Tiles[i] = OrtoShape;
 	}
@@ -1263,6 +1310,21 @@ void cEETest::Input() {
 	KM->Update();
 	JM->Update();
 
+	#if EE_PLATFORM == EE_PLATFORM_ANDROID
+	std::list<cInputFinger*> Finger = KM->GetFingersDown();
+
+	if ( Finger.size() ) {
+		KM->InjectMousePos( Finger.front()->x, Finger.front()->y );
+		KM->InjectButtonPress( EE_BUTTON_LEFT );
+	} else {
+		Finger = KM->GetFingersWasDown();
+
+		if ( Finger.size() ) {
+			KM->InjectButtonRelease( EE_BUTTON_LEFT );
+		}
+	}
+	#endif
+
 	Mouse = KM->GetMousePos();
 	Mousef = eeVector2f( (eeFloat)Mouse.x, (eeFloat)Mouse.y );
 
@@ -1469,7 +1531,22 @@ void cEETest::Input() {
 
 			if ( KM->MouseLeftClick() ) {
 				eeVector2i P = Map.GetMouseTilePos();
-				Map.SetTileHeight( P.x, P.y );
+
+				if ( NULL != mTerrainBut ) {
+					if ( !PointInsidePolygon2( mTerrainBut->GetPolygon(), KM->GetMousePosf() ) ) {
+						if ( mTerrainUp ) {
+							Map.SetTileHeight( P.x, P.y );
+						} else {
+							Map.SetTileHeight( P.x, P.y, 1, false );
+						}
+					}
+				} else {
+					if ( mTerrainUp ) {
+						Map.SetTileHeight( P.x, P.y );
+					} else {
+						Map.SetTileHeight( P.x, P.y, 1, false );
+					}
+				}
 			}
 
 			if ( KM->MouseRightClick() ) {

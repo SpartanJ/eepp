@@ -57,7 +57,7 @@ void cUIWinMenu::AddMenuButton( const String& ButtonText, cUIPopUpMenu * Menu ) 
 	Button->Text( ButtonText );
 	Button->Visible( true );
 	Button->Enabled( true );
-	Button->SetSkin( mSkinState->GetSkin()->Theme(), "winmenubutton" );
+	Button->SetThemeControl( mSkinState->GetSkin()->Theme(), "winmenubutton" );
 
 	Menu->Visible( false );
 	Menu->Enabled( false );
@@ -70,10 +70,10 @@ void cUIWinMenu::AddMenuButton( const String& ButtonText, cUIPopUpMenu * Menu ) 
 }
 
 void cUIWinMenu::SetTheme( cUITheme * Theme ) {
-	cUIComplexControl::SetTheme( Theme, "winmenu" );
+	cUIComplexControl::SetThemeControl( Theme, "winmenu" );
 
 	for ( WinMenuList::iterator it = mButtons.begin(); it != mButtons.end(); it++ ) {
-		it->first->SetSkin( Theme, "winmenubutton" );
+		it->first->SetThemeControl( Theme, "winmenubutton" );
 	}
 
 	if ( 0 == mMenuHeight && NULL != GetSkin() && NULL != GetSkin()->GetShape( cUISkinState::StateNormal ) ) {

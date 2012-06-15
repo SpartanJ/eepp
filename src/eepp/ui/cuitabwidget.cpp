@@ -57,9 +57,9 @@ bool cUITabWidget::IsType( const Uint32& type ) const {
 }
 
 void cUITabWidget::SetTheme( cUITheme * Theme ) {
-	mTabContainer->SetTheme( Theme, "tabwidget" );
+	mTabContainer->SetThemeControl( Theme, "tabwidget" );
 
-	mCtrlContainer->SetTheme( Theme, "tabcontainer" );
+	mCtrlContainer->SetThemeControl( Theme, "tabcontainer" );
 
 	if ( 0 == mTabWidgetHeight ) {
 		cUISkin * tSkin		= Theme->GetByName( Theme->Abbr() + "_" + "tab" );

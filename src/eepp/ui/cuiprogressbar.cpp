@@ -52,7 +52,7 @@ void cUIProgressBar::Draw() {
 }
 
 void cUIProgressBar::SetTheme( cUITheme * Theme ) {
-	cUIControl::SetTheme( Theme, "progressbar" );
+	cUIControl::SetThemeControl( Theme, "progressbar" );
 
 	cUISkin * tSkin = Theme->GetByName( Theme->Abbr() + "_progressbar_filler" );
 

@@ -133,6 +133,15 @@ void cUIWindow::ButtonCloseClick( const cUIEvent * Event ) {
 }
 
 void cUIWindow::CloseWindow() {
+	if ( NULL != mButtonClose )
+		mButtonClose->Enabled( false );
+
+	if ( NULL != mButtonMaximize )
+		mButtonMaximize->Enabled( false );
+
+	if ( NULL != mButtonMinimize )
+		mButtonMinimize->Enabled( false );
+
 	if ( NULL != mModalCtrl ) {
 		mModalCtrl->Close();
 		mModalCtrl = NULL;
@@ -160,24 +169,24 @@ void cUIWindow::SetTheme( cUITheme *Theme ) {
 	cUIComplexControl::SetTheme( Theme );
 
 	if ( !( mWinFlags & UI_WIN_NO_BORDER ) ) {
-		mContainer->SetSkin			( Theme, "winback"			);
-		mWindowDecoration->SetSkin	( Theme, "windeco"			);
-		mBorderLeft->SetSkin			( Theme, "winborderleft"	);
-		mBorderRight->SetSkin		( Theme, "winborderright"	);
-		mBorderBottom->SetSkin		( Theme, "winborderbottom"	);
+		mContainer->SetThemeControl			( Theme, "winback"			);
+		mWindowDecoration->SetThemeControl	( Theme, "windeco"			);
+		mBorderLeft->SetThemeControl		( Theme, "winborderleft"	);
+		mBorderRight->SetThemeControl		( Theme, "winborderright"	);
+		mBorderBottom->SetThemeControl		( Theme, "winborderbottom"	);
 
 		if ( NULL != mButtonClose ) {
-			mButtonClose->SetSkin( Theme, "winclose" );
+			mButtonClose->SetThemeControl( Theme, "winclose" );
 			mButtonClose->Size( mButtonClose->GetSkinShapeSize() );
 		}
 
 		if ( NULL != mButtonMaximize ) {
-			mButtonMaximize->SetSkin( Theme, "winmax" );
+			mButtonMaximize->SetThemeControl( Theme, "winmax" );
 			mButtonMaximize->Size( mButtonMaximize->GetSkinShapeSize() );
 		}
 
 		if ( NULL != mButtonMinimize ) {
-			mButtonMinimize->SetSkin( Theme, "winmin" );
+			mButtonMinimize->SetThemeControl( Theme, "winmin" );
 			mButtonMinimize->Size( mButtonMinimize->GetSkinShapeSize() );
 		}
 

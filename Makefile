@@ -400,7 +400,7 @@ else
 
 ifeq ($(BUILD_OS), mingw32)
 
-LIBS 		= -lOpenAL32 -lopengl32 -lmingw32 -lglu32 -lgdi32 -static-libgcc -static-libstdc++ $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
+LIBS 		= -lOpenAL32 -lopengl32 -lmingw32 -lglu32 -lgdi32 -static-libgcc -static-libstdc++ -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	+= $(INCFREETYPE2)
 PLATFORMSRC	= $(wildcard ./src/eepp/window/platform/win/*.cpp) $(wildcard ./src/eepp/system/platform/win/*.cpp)
 

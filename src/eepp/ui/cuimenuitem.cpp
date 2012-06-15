@@ -21,7 +21,7 @@ bool cUIMenuItem::IsType( const Uint32& type ) const {
 }
 
 void cUIMenuItem::SetTheme( cUITheme * Theme ) {
-	cUIControl::SetTheme( Theme, "menuitem" );
+	cUIControl::SetThemeControl( Theme, "menuitem" );
 	DoAfterSetTheme();
 }
 

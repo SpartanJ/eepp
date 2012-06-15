@@ -24,7 +24,7 @@ bool cUIMenuCheckBox::IsType( const Uint32& type ) const {
 }
 
 void cUIMenuCheckBox::SetTheme( cUITheme * Theme ) {
-	cUIControl::SetTheme( Theme, "menuitem" );
+	cUIControl::SetThemeControl( Theme, "menuitem" );
 
 	mSkinActive		= Theme->GetByName( Theme->Abbr() + "_" + "menucheckbox_active" );
 	mSkinInactive	= Theme->GetByName( Theme->Abbr() + "_" + "menucheckbox_inactive" );

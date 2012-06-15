@@ -45,7 +45,7 @@ void cUITab::SetTheme( cUITheme * Theme ) {
 		}
 	}
 
-	cUIControl::SetTheme( Theme, tabPos );
+	cUIControl::SetThemeControl( Theme, tabPos );
 
 	DoAfterSetTheme();
 }

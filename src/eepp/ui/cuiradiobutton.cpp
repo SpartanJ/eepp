@@ -42,10 +42,10 @@ bool cUIRadioButton::IsType( const Uint32& type ) const {
 }
 
 void cUIRadioButton::SetTheme( cUITheme * Theme ) {
-	cUIControl::SetTheme( Theme, "radiobutton" );
+	cUIControl::SetThemeControl( Theme, "radiobutton" );
 
-	mActiveButton->SetSkin	( Theme, "radiobutton_active" );
-	mInactiveButton->SetSkin	( Theme, "radiobutton_inactive" );
+	mActiveButton->SetThemeControl	( Theme, "radiobutton_active" );
+	mInactiveButton->SetThemeControl( Theme, "radiobutton_inactive" );
 
 	cShape * tShape = NULL;
 	cUISkin * tSkin = mActiveButton->GetSkin();

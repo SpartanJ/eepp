@@ -224,6 +224,21 @@ void cUICommonDialog::OnPressFileEnter( const cUIEvent * Event ) {
 	OpenSaveClick();
 }
 
+void cUICommonDialog::DisableButtons() {
+	mButtonOpen->Enabled( false );
+	mButtonCancel->Enabled( false );
+	mButtonUp->Enabled( false );
+
+	if ( NULL != mButtonClose )
+		mButtonClose->Enabled( false );
+
+	if ( NULL != mButtonMinimize )
+		mButtonMinimize->Enabled( false );
+
+	if ( NULL != mButtonMaximize )
+		mButtonMaximize->Enabled( false );
+}
+
 Uint32 cUICommonDialog::OnMessage( const cUIMessage * Msg ) {
 	switch ( Msg->Msg() ) {
 		case cUIMessage::MsgClick:
@@ -232,6 +247,8 @@ Uint32 cUICommonDialog::OnMessage( const cUIMessage * Msg ) {
 				if ( Msg->Sender() == mButtonOpen ) {
 					OpenSaveClick();
 				} else if ( Msg->Sender() == mButtonCancel ) {
+					DisableButtons();
+
 					CloseWindow();
 				} else if ( Msg->Sender() == mButtonUp ) {
 					mCurPath = RemoveLastFolderFromPath( mCurPath );
@@ -290,6 +307,8 @@ Uint32 cUICommonDialog::OnMessage( const cUIMessage * Msg ) {
 void cUICommonDialog::Save() {
 	SendCommonEvent( cUIEvent::EventSaveFile );
 
+	DisableButtons();
+
 	CloseWindow();
 }
 
@@ -304,6 +323,8 @@ void cUICommonDialog::Open() {
 		}
 
 		SendCommonEvent( cUIEvent::EventOpenFile );
+
+		DisableButtons();
 
 		CloseWindow();
 	}

@@ -7,7 +7,7 @@ cInput::cInput( cWindow * window, cJoystickManager * joystickmanager ) :
 	mWindow( window ),
 	mJoystickManager( joystickmanager ),
 	mPressTrigger(0), mReleaseTrigger(0), mLastPressTrigger(0), mClickTrigger(0), mDoubleClickTrigger(0), mInputMod(0),
-	mDoubleClickInterval(200),
+	mDoubleClickInterval(400),
 	mLastButtonLeftClicked(0), 		mLastButtonRightClicked(0), 	mLastButtonMiddleClicked(0),
 	mLastButtonLeftClick(0), 		mLastButtonRightClick(0), 		mLastButtonMiddleClick(0),
 	mTClick(0), mNumCallBacks(0),

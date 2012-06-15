@@ -101,6 +101,8 @@ class EE_API cUICommonDialog : public cUIWindow {
 		void OpenSaveClick();
 
 		std::string			GetTempFullPath();
+
+		void DisableButtons();
 };
 
 }}

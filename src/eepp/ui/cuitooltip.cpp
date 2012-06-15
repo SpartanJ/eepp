@@ -49,7 +49,7 @@ bool cUITooltip::IsType( const Uint32& type ) const {
 }
 
 void cUITooltip::SetTheme( cUITheme * Theme ) {
-	cUIControl::SetTheme( Theme, "tooltip" );
+	cUIControl::SetThemeControl( Theme, "tooltip" );
 
 	AutoPadding();
 

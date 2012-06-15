@@ -40,7 +40,7 @@ bool cUIMenu::IsType( const Uint32& type ) const {
 }
 
 void cUIMenu::SetTheme( cUITheme * Theme ) {
-	cUIControl::SetTheme( Theme, "menu" );
+	cUIControl::SetThemeControl( Theme, "menu" );
 	DoAfterSetTheme();
 }
 

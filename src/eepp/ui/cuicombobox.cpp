@@ -23,7 +23,7 @@ bool cUIComboBox::IsType( const Uint32& type ) const {
 }
 
 void cUIComboBox::SetTheme( cUITheme * Theme ) {
-	cUIControl::SetTheme( Theme, "combobox" );
+	cUIControl::SetThemeControl( Theme, "combobox" );
 
 	AutoSizeControl();
 

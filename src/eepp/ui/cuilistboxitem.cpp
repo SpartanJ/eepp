@@ -27,7 +27,7 @@ bool cUIListBoxItem::IsType( const Uint32& type ) const {
 }
 
 void cUIListBoxItem::SetTheme( cUITheme * Theme ) {
-	cUIControl::SetTheme( Theme, "listboxitem" );
+	cUIControl::SetThemeControl( Theme, "listboxitem" );
 }
 
 Uint32 cUIListBoxItem::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {

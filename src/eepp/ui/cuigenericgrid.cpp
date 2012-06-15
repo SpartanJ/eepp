@@ -110,7 +110,7 @@ void cUIGenericGrid::OnScrollValueChange( const cUIEvent * Event ) {
 }
 
 void cUIGenericGrid::SetTheme( cUITheme * Theme ) {
-	cUIControl::SetTheme( Theme, "genericgrid" );
+	cUIControl::SetThemeControl( Theme, "genericgrid" );
 
 	AutoPadding();
 

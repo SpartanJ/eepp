@@ -85,7 +85,7 @@ bool cUIListBox::IsType( const Uint32& type ) const {
 }
 
 void cUIListBox::SetTheme( cUITheme * Theme ) {
-	cUIControl::SetTheme( Theme, "listbox" );
+	cUIControl::SetThemeControl( Theme, "listbox" );
 
 	if ( NULL == mFont && NULL != mSkinState && NULL != mSkinState->GetSkin() && NULL != mSkinState->GetSkin()->Theme() && NULL != mSkinState->GetSkin()->Theme()->Font() )
 		mFont = mSkinState->GetSkin()->Theme()->Font();

@@ -22,7 +22,7 @@ bool cUIPopUpMenu::IsType( const Uint32& type ) const {
 }
 
 void cUIPopUpMenu::SetTheme( cUITheme * Theme ) {
-	cUIControl::SetTheme( Theme, "popupmenu" );
+	cUIControl::SetThemeControl( Theme, "popupmenu" );
 	DoAfterSetTheme();
 }
 

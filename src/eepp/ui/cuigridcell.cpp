@@ -21,7 +21,7 @@ cUIGridCell::~cUIGridCell() {
 }
 
 void cUIGridCell::SetTheme( cUITheme * Theme ) {
-	cUIControl::SetTheme( Theme, "gridcell" );
+	cUIControl::SetThemeControl( Theme, "gridcell" );
 }
 
 cUIGenericGrid * cUIGridCell::GridParent() const {

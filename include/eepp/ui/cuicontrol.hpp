@@ -191,15 +191,15 @@ class EE_API cUIControl {
 
 		virtual void SetTheme( cUITheme * Theme );
 
-		void SetTheme( cUITheme * Theme, const std::string& ControlName );
+		void SetThemeControl( cUITheme * Theme, const std::string& ControlName );
 
 		void SetThemeToChilds( cUITheme * Theme );
 
 		cUISkin * GetSkin();
 
-		void SetSkin( cUITheme * Theme, const std::string& ControlName );
+		void SetSkinFromTheme( cUITheme * Theme, const std::string& ControlName );
 
-		void SetSkin( cUISkin * Skin );
+		virtual void SetSkin( cUISkin * Skin );
 
 		cUIControl * ChildGetFirst() const;
 

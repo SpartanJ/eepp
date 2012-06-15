@@ -286,6 +286,10 @@ class cEETest : private cThread {
 
 		cUITheme *				mTheme;
 
+		bool					mTerrainUp;
+		cUIPushButton *			mShowMenu;
+		cUIPushButton *			mTerrainBut;
+
 		void CreateMapEditor();
 
 		void OnMapEditorClose();
@@ -297,6 +301,9 @@ class cEETest : private cThread {
 		void CreateJointAndBody();
 
 		void DestroyBody();
+
+		void OnTerrainMouse( const cUIEvent * Event );
+		void OnShowMenu( const cUIEvent * Event );
 };
 
 #endif

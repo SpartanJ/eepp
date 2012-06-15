@@ -122,7 +122,13 @@ void cUIPushButton::OnSizeChange() {
 }
 
 void cUIPushButton::SetTheme( cUITheme * Theme ) {
-	cUIControl::SetTheme( Theme, "button" );
+	cUIControl::SetThemeControl( Theme, "button" );
+
+	DoAfterSetTheme();
+}
+
+void cUIPushButton::SetSkin( cUISkin * Skin ) {
+	cUIControl::SetSkin( Skin );
 
 	DoAfterSetTheme();
 }

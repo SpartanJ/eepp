@@ -157,7 +157,7 @@ void cUITextInput::AlignFix() {
 }
 
 void cUITextInput::SetTheme( cUITheme * Theme ) {
-	cUIControl::SetTheme( Theme, "textinput" );
+	cUIControl::SetThemeControl( Theme, "textinput" );
 
 	AutoPadding();
 	AutoSize();

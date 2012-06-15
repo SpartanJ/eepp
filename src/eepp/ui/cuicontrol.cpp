@@ -872,7 +872,7 @@ void cUIControl::SetThemeByName( const std::string& Theme ) {
 }
 
 void cUIControl::SetTheme( cUITheme * Theme ) {
-	SetTheme( Theme, "control" );
+	SetThemeControl( Theme, "control" );
 }
 
 void cUIControl::SafeDeleteSkinState() {
@@ -885,7 +885,7 @@ void cUIControl::SafeDeleteSkinState() {
 	eeSAFE_DELETE( mSkinState );
 }
 
-void cUIControl::SetTheme( cUITheme * Theme, const std::string& ControlName ) {
+void cUIControl::SetThemeControl( cUITheme * Theme, const std::string& ControlName ) {
 	if ( NULL != Theme ) {
 		cUISkin * tSkin = Theme->GetByName( Theme->Abbr() + "_" + ControlName );
 
@@ -904,8 +904,8 @@ void cUIControl::SetTheme( cUITheme * Theme, const std::string& ControlName ) {
 	}
 }
 
-void cUIControl::SetSkin( cUITheme * Theme, const std::string& ControlName ) {
-	SetTheme( Theme, ControlName );
+void cUIControl::SetSkinFromTheme( cUITheme * Theme, const std::string& ControlName ) {
+	SetThemeControl( Theme, ControlName );
 }
 
 void cUIControl::SetSkin( cUISkin * Skin ) {

@@ -54,19 +54,19 @@ bool cUIScrollBar::IsType( const Uint32& type ) const {
 
 void cUIScrollBar::SetTheme( cUITheme * Theme ) {
 	if ( !IsVertical() ) {
-		cUIControl::SetTheme( Theme, "hscrollbar" );
-		mSlider->SetSkin( Theme, "hscrollbar_slider" );
-		mSlider->GetBackSlider()->SetSkin( Theme, "hscrollbar_bg" );
-		mSlider->GetSliderButton()->SetSkin( Theme, "hscrollbar_button" );
-		mBtnUp->SetSkin( Theme, "hscrollbar_btnup" );
-		mBtnDown->SetSkin( Theme, "hscrollbar_btndown" );
+		cUIControl::SetThemeControl( Theme, "hscrollbar" );
+		mSlider->SetThemeControl( Theme, "hscrollbar_slider" );
+		mSlider->GetBackSlider()->SetThemeControl( Theme, "hscrollbar_bg" );
+		mSlider->GetSliderButton()->SetThemeControl( Theme, "hscrollbar_button" );
+		mBtnUp->SetThemeControl( Theme, "hscrollbar_btnup" );
+		mBtnDown->SetThemeControl( Theme, "hscrollbar_btndown" );
 	} else {
-		cUIControl::SetTheme( Theme, "vscrollbar" );
-		mSlider->SetSkin( Theme, "vscrollbar_slider" );
-		mSlider->GetBackSlider()->SetSkin( Theme, "vscrollbar_bg" );
-		mSlider->GetSliderButton()->SetSkin( Theme, "vscrollbar_button" );
-		mBtnUp->SetSkin( Theme, "vscrollbar_btnup" );
-		mBtnDown->SetSkin( Theme, "vscrollbar_btndown" );
+		cUIControl::SetThemeControl( Theme, "vscrollbar" );
+		mSlider->SetThemeControl( Theme, "vscrollbar_slider" );
+		mSlider->GetBackSlider()->SetThemeControl( Theme, "vscrollbar_bg" );
+		mSlider->GetSliderButton()->SetThemeControl( Theme, "vscrollbar_button" );
+		mBtnUp->SetThemeControl( Theme, "vscrollbar_btnup" );
+		mBtnDown->SetThemeControl( Theme, "vscrollbar_btndown" );
 	}
 
 	cShape * tShape = NULL;
