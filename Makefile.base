@@ -158,7 +158,13 @@ ifeq ($(BACKEND_SDL),yes)
 		ifeq ($(BUILD_OS), darwin)
 			TRY_SDL2 = yes
 		else
-			TRY_SDL2 = no
+			ifeq ($(BUILD_OS), linux)
+				 TRY_SDL2 = yes
+			endif
+
+			ifeq ($(TRY_SDL2),)
+				TRY_SDL2 = no
+			endif
 		endif
 	endif
 	

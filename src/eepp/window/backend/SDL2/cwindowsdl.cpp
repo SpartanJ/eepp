@@ -24,6 +24,9 @@ cWindowSDL::cWindowSDL( WindowSettings Settings, ContextSettings Context ) :
 }
 
 cWindowSDL::~cWindowSDL() {
+	if ( NULL != mGLContext ) {
+		SDL_GL_DeleteContext( mGLContext );
+	}
 }
 
 bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
@@ -75,8 +78,6 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 
 	mSDLWindow = SDL_CreateWindow( mWindow.WindowConfig.Caption.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, mTmpFlags );
 
-	mWindow.WindowSize = eeSize( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
-
 	if ( NULL == mSDLWindow ) {
 		cLog::instance()->Write( "Unable to create window: " + std::string( SDL_GetError() ) );
 
@@ -84,6 +85,14 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 
 		return false;
 	}
+
+	/// In some platforms it will not create the desired window size, so we query the real window size created
+	int w, h;
+	SDL_GetWindowSize( mSDLWindow, &w, &h );
+
+	mWindow.WindowConfig.Width	= w;
+	mWindow.WindowConfig.Height	= h;
+	mWindow.WindowSize			= eeSize( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 
 	#if EE_PLAFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
 		if ( GLv_default == Context.Version || GLv_ES1 == Context.Version || GLv_2 == Context.Version ) {
