@@ -318,6 +318,21 @@ void cInputSDL::Update() {
 			ProcessEvent( &EEEvent );
 		}
 	}
+
+	#if EE_PLATFORM == EE_PLATFORM_ANDROID
+	std::list<cInputFinger*> Finger = GetFingersDown();
+
+	if ( Finger.size() ) {
+		InjectMousePos( Finger.front()->x, Finger.front()->y );
+		InjectButtonPress( EE_BUTTON_LEFT );
+	} else {
+		Finger = GetFingersWasDown();
+
+		if ( Finger.size() ) {
+			InjectButtonRelease( EE_BUTTON_LEFT );
+		}
+	}
+	#endif
 }
 
 bool cInputSDL::GrabInput() {

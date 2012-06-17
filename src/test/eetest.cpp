@@ -845,7 +845,6 @@ void cEETest::LoadTextures() {
 
 	mResLoad.Add( eeNew( cSoundLoader, ( &SndMng, "mysound", PAK, "sound.ogg" ) ) );
 
-	//mResLoad.Threaded( false );
 	mResLoad.Load( cb::Make1( this, &cEETest::OnTextureLoaded ) );
 
 	TN.resize(12);
@@ -862,12 +861,7 @@ void cEETest::LoadTextures() {
 	cShapeGroup * SG = cShapeGroupManager::instance()->GetByName( "tiles" );
 
 	for ( i = 0; i < 6; i++ ) {
-		Uint32 ORTO = TF->Load( MyPath + "data/DungeonFloorCenter" + toStr( i + 1 ) + ".png" );
-
-		Graphics::cShape * OrtoShape = cGlobalShapeGroup::instance()->Add( ORTO );
-
-		//Tiles[i] = SG->GetByName( toStr( i+1 ) );
-		Tiles[i] = OrtoShape;
+		Tiles[i] = SG->GetByName( toStr( i+1 ) );
 	}
 
 	Tiles[6] = SG->Add( TF->LoadFromPack( PAK, "objects/1.png" ), "7" );
@@ -1309,21 +1303,6 @@ void cEETest::Render() {
 void cEETest::Input() {
 	KM->Update();
 	JM->Update();
-
-	#if EE_PLATFORM == EE_PLATFORM_ANDROID
-	std::list<cInputFinger*> Finger = KM->GetFingersDown();
-
-	if ( Finger.size() ) {
-		KM->InjectMousePos( Finger.front()->x, Finger.front()->y );
-		KM->InjectButtonPress( EE_BUTTON_LEFT );
-	} else {
-		Finger = KM->GetFingersWasDown();
-
-		if ( Finger.size() ) {
-			KM->InjectButtonRelease( EE_BUTTON_LEFT );
-		}
-	}
-	#endif
 
 	Mouse = KM->GetMousePos();
 	Mousef = eeVector2f( (eeFloat)Mouse.x, (eeFloat)Mouse.y );
