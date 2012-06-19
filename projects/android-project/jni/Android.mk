@@ -211,12 +211,36 @@ LOCAL_STATIC_LIBRARIES := eepp
 include $(BUILD_SHARED_LIBRARY)
 #************ empty_window ************
 
-#************* full_test *************
+#************* external_shader *************
 include $(CLEAR_VARS)
 
 LOCAL_PATH := $(MY_PATH)
 
 LOCAL_MODULE := main
+
+LOCAL_LDLIBS 	:= $(MY_LDLIBS)
+
+LOCAL_CFLAGS 	:= $(MY_C_FLAGS)
+
+LOCAL_C_INCLUDES := $(MY_C_INCLUDES)
+
+CORE_SRCS :=  \
+	$(MY_SDL_MAIN_PATH) \
+	../examples/external_shader/*.cpp
+
+LOCAL_SRC_FILES := $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+LOCAL_STATIC_LIBRARIES := eepp
+
+include $(BUILD_SHARED_LIBRARY)
+#************ external_shader ************
+
+#************* full_test *************
+include $(CLEAR_VARS)
+
+LOCAL_PATH := $(MY_PATH)
+
+LOCAL_MODULE := eetest
 
 LOCAL_LDLIBS 	:= $(MY_LDLIBS)
 

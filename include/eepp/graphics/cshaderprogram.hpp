@@ -116,6 +116,18 @@ class EE_API cShaderProgram {
 
 		/** Set a reload callback ( needed to reset shader states ). */
 		void SetReloadCb( ShaderProgramReloadCb Cb );
+
+		/** Enable a vertex attribute array */
+		void EnableVertexAttribArray( const std::string& Name );
+
+		/** Enable a vertex attribute array */
+		void EnableVertexAttribArray( const Int32& Location );
+
+		/** Disable a vertex attribute array */
+		void DisableVertexAttribArray( const std::string& Name );
+
+		/** Disable a vertex attribute array */
+		void DisableVertexAttribArray( const Int32& Location );
 	protected:
 		std::string mName;
 		Uint32 mHandler;

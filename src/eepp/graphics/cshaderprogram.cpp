@@ -437,4 +437,24 @@ void cShaderProgram::SetReloadCb( ShaderProgramReloadCb Cb ) {
 	mReloadCb = Cb;
 }
 
+void cShaderProgram::EnableVertexAttribArray( const std::string& Name ) {
+	EnableVertexAttribArray( AttributeLocation( Name ) );
+}
+
+void cShaderProgram::EnableVertexAttribArray( const Int32& Location ) {
+	#ifdef EE_SHADERS_SUPPORTED
+	glEnableVertexAttribArray( Location );
+	#endif
+}
+
+void cShaderProgram::DisableVertexAttribArray( const std::string& Name ) {
+	DisableVertexAttribArray( AttributeLocation( Name ) );
+}
+
+void cShaderProgram::DisableVertexAttribArray( const Int32& Location ) {
+	#ifdef EE_SHADERS_SUPPORTED
+	glDisableVertexAttribArray( Location );
+	#endif
+}
+
 }}
