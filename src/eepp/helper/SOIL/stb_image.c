@@ -3273,7 +3273,7 @@ static stbi_uc *psd_load(stbi *s, int *x, int *y, int *comp, int req_comp)
       return epuc("bad compression", "PSD has an unknown compression format");
 
    // Create the destination image.
-   out = (stbi_uc *) malloc(4 * w*h);
+   out = (stbi_uc *) malloc(channelCount * w*h);
    if (!out) return epuc("outofmem", "Out of memory");
    pixelCount = w*h;
 
@@ -3295,13 +3295,13 @@ static stbi_uc *psd_load(stbi *s, int *x, int *y, int *comp, int req_comp)
       skip(s, h * channelCount * 2 );
 
       // Read the RLE data by channel.
-      for (channel = 0; channel < 4; channel++) {
+      for (channel = 0; channel < channelCount; channel++) {
          uint8 *p;
          
          p = out+channel;
          if (channel >= channelCount) {
             // Fill this channel with default data.
-            for (i = 0; i < pixelCount; i++) *p = (channel == 3 ? 255 : 0), p += 4;
+            for (i = 0; i < pixelCount; i++) *p = (channel == 3 ? 255 : 0), p += channelCount;
          } else {
             // Read the RLE data.
             count = 0;
@@ -3315,7 +3315,7 @@ static stbi_uc *psd_load(stbi *s, int *x, int *y, int *comp, int req_comp)
                   count += len;
                   while (len) {
                      *p = get8u(s);
-                     p += 4;
+                     p += channelCount;
                      len--;
                   }
                } else if (len > 128) {
@@ -3328,7 +3328,7 @@ static stbi_uc *psd_load(stbi *s, int *x, int *y, int *comp, int req_comp)
                   count += len;
                   while (len) {
                      *p = val;
-                     p += 4;
+                     p += channelCount;
                      len--;
                   }
                }
@@ -3341,17 +3341,17 @@ static stbi_uc *psd_load(stbi *s, int *x, int *y, int *comp, int req_comp)
       // where each channel consists of an 8-bit value for each pixel in the image.
       
       // Read the data by channel.
-      for (channel = 0; channel < 4; channel++) {
+      for (channel = 0; channel < channelCount; channel++) {
          uint8 *p;
          
          p = out + channel;
          if (channel > channelCount) {
             // Fill this channel with default data.
-            for (i = 0; i < pixelCount; i++) *p = channel == 3 ? 255 : 0, p += 4;
+            for (i = 0; i < pixelCount; i++) *p = channel == 3 ? 255 : 0, p += channelCount;
          } else {
             // Read the data.
             for (i = 0; i < pixelCount; i++)
-               *p = get8u(s), p += 4;
+               *p = get8u(s), p += channelCount;
          }
       }
    }
