@@ -13,6 +13,5 @@ varying				vec4 dgl_Color;\n\
 void main(void)\n\
 {\n\
 	dgl_Color		= dgl_FrontColor;\n\
-	vec4 vEye		= dgl_ModelViewMatrix * dgl_Vertex;\n\
-	gl_Position		= dgl_ProjectionMatrix * vEye;\n\
+	gl_Position		= dgl_ProjectionMatrix * ( dgl_ModelViewMatrix * dgl_Vertex );\n\
 }";

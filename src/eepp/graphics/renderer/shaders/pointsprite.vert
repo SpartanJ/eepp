@@ -15,6 +15,5 @@ void main(void)\n\
 {\n\
 	gl_PointSize	= dgl_PointSize;\n\
 	dgl_Color		= dgl_FrontColor;\n\
-	vec4 vEye		= dgl_ModelViewMatrix * dgl_Vertex;\n\
-	gl_Position		= dgl_ProjectionMatrix * vEye;\n\
+	gl_Position		= dgl_ProjectionMatrix * ( dgl_ModelViewMatrix * dgl_Vertex );\n\
 }";

@@ -20,7 +20,6 @@ void main(void)\n\
 {\n\
 	dgl_Color		= dgl_FrontColor;\n\
 	dgl_TexCoord[0]	= dgl_MultiTexCoord0;\n\
-	vec4 vEye		= dgl_ModelViewMatrix * dgl_Vertex;\n\
-	gl_Position		= dgl_ProjectionMatrix * vEye;\n\
+	gl_Position		= dgl_ProjectionMatrix * ( dgl_ModelViewMatrix * dgl_Vertex );\n\
 }\n\
 ";
