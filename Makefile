@@ -5,45 +5,20 @@ SRCTEST     		= $(wildcard ./src/test/*.cpp)
 SRCEMPTYWINDOW  	= $(wildcard ./src/examples/empty_window/*.cpp)
 SRCEXTSHADER	  	= $(wildcard ./src/examples/external_shader/*.cpp)
 
-SRCEEIV     		= $(wildcard ./src/eeiv/*.cpp)
-SRCFLUID     		= $(wildcard ./src/fluid/*.cpp)
-SRCPARTICLES    	= $(wildcard ./src/particles/*.cpp) $(wildcard ./src/eepp/particles/objects/*.cpp) $(wildcard ./src/eepp/particles/gameobjects/*.cpp)
-SRCBNB     			= $(wildcard ./src/bnb/*.cpp)
-SRCRHYTHM		  	= $(wildcard ./src/rhythm/*.cpp)
-
 OBJTEST     		= $(SRCTEST:.cpp=.o)
 OBJEMPTYWINDOW		= $(SRCEMPTYWINDOW:.cpp=.o)
 OBJEEXTSHADER		= $(SRCEXTSHADER:.cpp=.o)
-
-OBJEEIV     		= $(SRCEEIV:.cpp=.o)
-OBJFLUID     		= $(SRCFLUID:.cpp=.o)
-OBJBNB     			= $(SRCBNB:.cpp=.o)
-OBJPARTICLES     	= $(SRCPARTICLES:.cpp=.o)
-OBJRHYTHM			= $(SRCRHYTHM:.cpp=.o)
 
 FOBJTEST     		= $(patsubst ./%, $(OBJDIR)%, $(SRCTEST:.cpp=.o) )
 FOBJEMTPYWINDOW     = $(patsubst ./%, $(OBJDIR)%, $(SRCEMPTYWINDOW:.cpp=.o) )
 FOBJEXTSHADER    	= $(patsubst ./%, $(OBJDIR)%, $(SRCEXTSHADER:.cpp=.o) )
 
-FOBJEEIV     		= $(patsubst ./%, $(OBJDIR)%, $(SRCEEIV:.cpp=.o) )
-FOBJFLUID     		= $(patsubst ./%, $(OBJDIR)%, $(SRCFLUID:.cpp=.o) )
-FOBJBNB     		= $(patsubst ./%, $(OBJDIR)%, $(SRCBNB:.cpp=.o) )
-FOBJPARTICLES     	= $(patsubst ./%, $(OBJDIR)%, $(SRCPARTICLES:.cpp=.o) )
-FOBJRHYTHM		 	= $(patsubst ./%, $(OBJDIR)%, $(SRCRHYTHM:.cpp=.o) )
-
-
-EXE     			= eetest-$(RELEASETYPE)$(OSEXTENSION)
+EXETEST    			= eetest-$(RELEASETYPE)$(OSEXTENSION)
 EXEEMPTYWINDOW		= eeew-$(RELEASETYPE)$(OSEXTENSION)
 EXEEXTSHADER		= eees-$(RELEASETYPE)$(OSEXTENSION)
-
-EXEIV				= eeiv-$(RELEASETYPE)$(OSEXTENSION)
-EXEFLUID			= eefluid-$(RELEASETYPE)$(OSEXTENSION)
-EXEBNB				= bnb-$(RELEASETYPE)$(OSEXTENSION)
-EXEPARTICLES		= eeparticles-$(RELEASETYPE)$(OSEXTENSION)
-EXERHYTHM			= rhythm-$(RELEASETYPE)$(OSEXTENSION)
 # OUT OF EEPP LIB
 
-FOBJEEPP			= $(FOBJMODULES) $(FOBJTEST) $(FOBJEMTPYWINDOW) $(FOBJEXTSHADER) $(FOBJPARTICLES) $(FOBJRHYTHM) $(FOBJEEIV) $(FOBJFLUID) $(FOBJBNB) 
+FOBJEEPP			= $(FOBJMODULES) $(FOBJTEST) $(FOBJEMTPYWINDOW) $(FOBJEXTSHADER) $(FOBJPARTICLES) $(FOBJRHYTHM) $(FOBJEEIV) $(FOBJFLUID)
 FOBJALL 			= $(FOBJHELPERS) $(FOBJEEPP)
 
 DEPSEEPP			= $(FOBJEEPP:.o=.d)
@@ -111,13 +86,6 @@ dirs:
 	@$(MKDIR) $(OBJDIR)/src/test
 	@$(MKDIR) $(OBJDIR)/src/examples/empty_window
 	@$(MKDIR) $(OBJDIR)/src/examples/external_shader
-	@$(MKDIR) $(OBJDIR)/src/eeiv
-	@$(MKDIR) $(OBJDIR)/src/fluid
-	@$(MKDIR) $(OBJDIR)/src/bnb
-	@$(MKDIR) $(OBJDIR)/src/particles
-	@$(MKDIR) $(OBJDIR)/src/particles/objects
-	@$(MKDIR) $(OBJDIR)/src/particles/gameobjects
-	@$(MKDIR) $(OBJDIR)/src/rhythm
 
 lib: dirs $(LIB)
 
@@ -133,22 +101,6 @@ $(FOBJTEST):
 	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(BININC)
 	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(BININC) > $(patsubst %.o,%.d,$@)
 
-$(FOBJEEIV):
-	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(BININC)
-	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
-
-$(FOBJFLUID):
-	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(BININC)
-	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
-
-$(FOBJPARTICLES):
-	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(BININC)
-	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
-
-$(FOBJBNB):
-	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(BININC)
-	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
-
 $(FOBJEMTPYWINDOW):
 	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(BININC)
 	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
@@ -157,34 +109,14 @@ $(FOBJEXTSHADER):
 	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(BININC)
 	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
 
-$(FOBJRHYTHM):
-	$(CPP) -o $@ -c $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(CFLAGS) $(BININC)
-	@$(CPP) -MT $@ -MM $(patsubst $(OBJDIR)%.o,%.cpp,$@) $(OTHERINC) > $(patsubst %.o,%.d,$@)
-
-$(EXE): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJTEST)
-	$(CPP) -o ./$(EXE) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJTEST) $(LDFLAGS) $(LIBS)
-
-$(EXEIV): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJEEIV)
-	$(CPP) -o ./$(EXEIV) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJEEIV) $(LDFLAGS) $(LIBS)
-
-$(EXEFLUID): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJFLUID)
-	$(CPP) -o ./$(EXEFLUID) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJFLUID) $(LDFLAGS) $(LIBS)
-
-$(EXEBNB): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJBNB)
-	$(CPP) -o ./$(EXEBNB) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJBNB) $(LDFLAGS) $(LIBS)
+$(EXETEST): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJTEST)
+	$(CPP) -o ./$(EXETEST) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJTEST) $(LDFLAGS) $(LIBS)
 
 $(EXEEMPTYWINDOW): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJEMTPYWINDOW)
 	$(CPP) -o ./$(EXEEMPTYWINDOW) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJEMTPYWINDOW) $(LDFLAGS) $(LIBS)
 
 $(EXEEXTSHADER): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJEXTSHADER)
 	$(CPP) -o ./$(EXEEXTSHADER) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJEXTSHADER) $(LDFLAGS) $(LIBS)
-
-$(EXEPARTICLES): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJPARTICLES)
-	$(CPP) -o ./$(EXEPARTICLES) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJPARTICLES) $(LDFLAGS) $(LIBS)
-
-$(EXERHYTHM): $(FOBJHELPERS) $(FOBJMODULES) $(FOBJRHYTHM)
-	$(CPP) -o ./$(EXERHYTHM) $(FOBJHELPERS) $(FOBJMODULES) $(FOBJRHYTHM) $(LDFLAGS) $(LIBS)
-
 
 libeepp-$(ARCH).a: $(FOBJHELPERS) $(FOBJMODULES)
 	$(AR) $(ARFLAGS) $(LIBNAME) $(FOBJHELPERS) $(FOBJMODULES)
@@ -201,21 +133,11 @@ os:
 objdir:
 	@echo $(OBJDIR)
 
-test: dirs $(EXE)
-
-eeiv: dirs $(EXEIV)
-
-fluid: dirs $(EXEFLUID)
-
-bnb: dirs $(EXEBNB)
+test: dirs $(EXETEST)
 
 ew: dirs $(EXEEMPTYWINDOW)
 
 es: dirs $(EXEEXTSHADER)
-
-particles: dirs $(EXEPARTICLES)
-
-rhythm: dirs $(EXERHYTHM)
 
 docs:
 	doxygen ./Doxyfile
@@ -228,11 +150,9 @@ cleantemp:
 
 cleanall: clean
 	@$(RM) $(LIBNAME)
-	@$(RM) ./$(EXE)
-	@$(RM) ./$(EXEFLUID)
-	@$(RM) ./$(EXEPARTICLES)
-	@$(RM) ./$(EXEIV)
-	@$(RM) ./$(EXEBNB)
+	@$(RM) ./$(EXETEST)
+	@$(RM) ./$(EXEEMPTYWINDOW)
+	@$(RM) ./$(EXEEXTSHADER)
 	@$(RM) ./log.log
 
 depends:
