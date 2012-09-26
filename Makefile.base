@@ -93,7 +93,11 @@ endif
 ifneq (,$(findstring cygwin,$(BUILD_OS)))
 	OSLIBEXTENSION		= dll
 else
-	OSLIBEXTENSION		= so
+	ifneq ($(BUILD_OS), darwin)
+		OSLIBEXTENSION		= so
+	else
+		OSLIBEXTENSION		= dylib
+	endif
 endif
 
 SDLCONFIGPATH		= 
@@ -500,3 +504,9 @@ endif
 
 FOBJHELPERS			= $(patsubst ./%, $(OBJDIR)%, $(OBJHELPERS) )
 FOBJMODULES			= $(patsubst ./%, $(OBJDIR)%, $(OBJMODULES) )
+
+ifneq ($(BUILD_OS), darwin)
+	DYLIB_EXTRA = -Wl,-soname,$(LIB).$(VERSION)
+else
+	DYLIB_EXTRA = -Wl
+endif
