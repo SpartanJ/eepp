@@ -27,23 +27,34 @@ namespace WindowStyle {
 	};
 }
 
+namespace WindowBackend {
+	enum
+	{
+		SDL,
+		Allegro,
+		Default
+	};
+}
+
 class WindowSettings {
 	public:
 
-	inline WindowSettings( Uint32 width, Uint32 height, Uint32 bpp = 32, Uint32 style = WindowStyle::Default, const std::string& icon = std::string(), const std::string& caption = std::string() ) :
+	inline WindowSettings( Uint32 width, Uint32 height, Uint32 bpp = 32, Uint32 style = WindowStyle::Default, const std::string& icon = std::string(), const std::string& caption = std::string(), Uint32 backend = WindowBackend::Default ) :
 		Style( style ),
 		Width( width ),
 		Height( height ),
 		BitsPerPixel( bpp ),
 		Icon( icon ),
-		Caption( caption )
+		Caption( caption ),
+		Backend( backend )
 	{}
 
 	inline WindowSettings() :
 		Style( WindowStyle::Default ),
 		Width( 800 ),
 		Height( 600 ),
-		BitsPerPixel( 32 )
+		BitsPerPixel( 32 ),
+		Backend( WindowBackend::Default )
 	{}
 
 	Uint32			Style;
@@ -52,6 +63,7 @@ class WindowSettings {
 	Uint32			BitsPerPixel;
 	std::string		Icon;
 	std::string		Caption;
+	Uint32			Backend;
 };
 
 class ContextSettings {

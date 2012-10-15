@@ -28,7 +28,8 @@ class cPack;
 
 class EE_API cIniFile {
 	private:
-		bool   mCaseInsensitive;
+		bool	mCaseInsensitive;
+		bool	mIniReaded;
 		std::string mPath;
 		struct key {
 			std::vector<std::string> names;

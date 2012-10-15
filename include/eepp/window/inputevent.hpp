@@ -3,6 +3,8 @@
 
 namespace EE { namespace Window {
 
+#define EE_TEXT_INPUT_SIZE (32)
+
 class InputEvent {
 	public:
 		inline InputEvent() {}
@@ -57,6 +59,16 @@ class InputEvent {
 			Int16 dx;			/** Change in x coordinate during this motion event */
 			Int16 dy;			/** Change in y coordinate during this motion event */
 			Uint16 pressure;	/** The pressure of the touch */
+		};
+
+		/** Keyboard text editing event */
+		struct TextInputEvent {
+			Uint32 timestamp;
+			Uint32 text;
+
+			String Text() {
+				return String( text );
+			}
 		};
 
 		/** Joystick axis motion event structure */
@@ -128,6 +140,7 @@ class InputEvent {
 			Active,
 			KeyDown,
 			KeyUp,
+			TextInput,
 			MouseMotion,
 			MouseButtonDown,
 			MouseButtonUp,
@@ -154,6 +167,7 @@ class InputEvent {
 		union {
 			ActiveEvent			active;
 			KeyboardEvent		key;
+			TextInputEvent		text;
 			MouseMotionEvent	motion;
 			MouseButtonEvent	button;
 			FingerEvent			finger;

@@ -135,6 +135,12 @@ class EE_API cInputTextBuffer {
 		void PromptToRightFirstNoChar();
 
 		void EraseToNextNoChar();
+
+		bool IsIgnoredChar( const Uint32& c );
+
+		bool ValidChar( const Uint32& c );
+
+		void TryAddChar( const Uint32& c );
 };
 
 }}

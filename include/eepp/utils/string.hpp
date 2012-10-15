@@ -6,13 +6,13 @@
 namespace EE { namespace Utils {
 
 /** @return If the value passed is a character */
-bool EE_API isCharacter( const eeInt& mValue );
+bool EE_API IsCharacter( const eeInt& mValue );
 
 /** @return If the value passed is a number */
-bool EE_API isNumber( const eeInt& mValue, bool AllowDot = false );
+bool EE_API IsNumber( const eeInt& mValue, bool AllowDot = false );
 
 /** @return If the value passed is a letter */
-bool EE_API isLetter( const eeInt& mValue );
+bool EE_API IsLetter( const eeInt& mValue );
 
 /** Returns the current date time */
 std::string EE_API GetDateTimeStr();
@@ -40,10 +40,10 @@ bool fromString(T& t, const String& s, std::ios_base& (*f)(std::ios_base&) = std
 }
 
 /** Split a String and hold it on a vector */
-std::vector < String > EE_API SplitString ( const String& str, const Uint32& splitchar = '\n' );
+std::vector < String > EE_API SplitString ( const String& str, const Uint32& splitchar = '\n', const bool& pushEmptyString = false );
 
 /** Split a string and hold it on a vector */
-std::vector < std::string > EE_API SplitString ( const std::string& str, const Int8& splitchar = '\n' );
+std::vector < std::string > EE_API SplitString ( const std::string& str, const Int8& splitchar = '\n', const bool& pushEmptyString = false );
 
 /** Returning a std::string from a formated string */
 std::string EE_API StrFormated( const char* format, ... )
@@ -64,10 +64,10 @@ std::string EE_API LTrim( const std::string & str );
 std::string EE_API Trim( const std::string & str );
 
 /** Convert the string into upper case string */
-void EE_API toUpper( std::string & str );
+void EE_API ToUpper( std::string & str );
 
 /** Convert the string into lower case string */
-void EE_API toLower( std::string & str );
+void EE_API ToLower( std::string & str );
 
 /** Convert the string to an std::vector<Uint8> */
 std::vector<Uint8> EE_API stringToUint8( const std::string& str );

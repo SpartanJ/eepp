@@ -232,6 +232,14 @@ const Uint32& cEngine::GetHeight() const {
 	return mWindow->GetHeight();
 }
 
+Uint32 cEngine::GetDefaultBackend() const {
+#if DEFAULT_BACKEND == BACKEND_SDL
+	return WindowBackend::SDL;
+#elif DEFAULT_BACKEND == BACKEND_ALLEGRO
+	return WindowBackend::Allegro;
+#endif
+}
+
 WindowSettings cEngine::CreateWindowSettings( cIniFile * ini, std::string iniKeyName ) {
 	eeASSERT ( NULL != ini );
 
@@ -243,13 +251,13 @@ WindowSettings cEngine::CreateWindowSettings( cIniFile * ini, std::string iniKey
 	bool Windowed		= ini->GetValueB( iniKeyName, "Windowed", true );
 	bool Resizeable		= ini->GetValueB( iniKeyName, "Resizeable", true );
 
-	std::string Backend = ini->GetValue( iniKeyName, "Backend", "SDL" );
-	Uint32 WinBackend	= WindowBackend::SDL;
+	std::string Backend = ini->GetValue( iniKeyName, "Backend", "" );
+	Uint32 WinBackend	= GetDefaultBackend();
 
 	ToLower( Backend );
 
-	if ( "allegro" == Backend )
-		WinBackend		= WindowBackend::Allegro;
+	if ( "allegro" == Backend )		WinBackend	= WindowBackend::Allegro;
+	else if ( "sdl" == Backend )	WinBackend	= WindowBackend::SDL;
 
 	Uint32 Style = WindowStyle::Titlebar;
 
