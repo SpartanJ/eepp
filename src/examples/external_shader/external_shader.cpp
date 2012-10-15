@@ -147,6 +147,16 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 				win->Close();
 			}
 
+			if ( imp->IsKeyUp( KEY_F ) )
+			{
+				if ( win->Windowed() ) {
+					win->Size( win->GetDesktopResolution().Width(), win->GetDesktopResolution().Height(), false );
+				} else {
+					win->Size( 960, 640, true );
+					win->Center();
+				}
+			}
+
 			eeFloat p;
 			eeVector2f mf	= imp->GetMousePosf();
 			eeFloat tratio	= tw / th;

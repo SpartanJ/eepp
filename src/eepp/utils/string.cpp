@@ -3,18 +3,18 @@
 
 namespace EE { namespace Utils {
 
-bool isCharacter( const eeInt& mValue ) {
+bool IsCharacter( const eeInt& mValue ) {
 	return (mValue >= 32 && mValue <= 126) || (mValue >= 161 && mValue <= 255) || (mValue == 9);
 }
 
-bool isNumber( const eeInt& mValue, bool AllowDot ) {
+bool IsNumber( const eeInt& mValue, bool AllowDot ) {
 	if ( AllowDot )
 		return ( mValue >= 48 && mValue <= 57 ) || mValue == 46;
 
 	return mValue >= 48 && mValue <= 57;
 }
 
-bool isLetter( const eeInt& mValue ) {
+bool IsLetter( const eeInt& mValue ) {
 	return ( ( (mValue >= 65 && mValue <= 90) || (mValue >= 97 && mValue <= 122) || (mValue >= 192 && mValue <= 255) ) && (mValue != 215) && (mValue != 247) );
 }
 
@@ -35,13 +35,13 @@ std::string GetDateTimeStr() {
 #endif
 }
 
-std::vector < String > SplitString ( const String& str, const Uint32& splitchar ) {
+std::vector < String > SplitString ( const String& str, const Uint32& splitchar, const bool& pushEmptyString ) {
 	std::vector < String > tmp;
 	String tmpstr;
 
 	for ( eeUint i = 0; i < str.size(); i++ ) {
 		if ( str[i] == splitchar ) {
-			if ( tmpstr.size() ) {
+			if ( pushEmptyString || tmpstr.size() ) {
 				tmp.push_back(tmpstr);
 				tmpstr = "";
 			}
@@ -56,13 +56,13 @@ std::vector < String > SplitString ( const String& str, const Uint32& splitchar 
 	return tmp;
 }
 
-std::vector < std::string > SplitString ( const std::string& str, const Int8& splitchar ) {
+std::vector < std::string > SplitString ( const std::string& str, const Int8& splitchar, const bool& pushEmptyString ) {
 	std::vector < std::string > tmp;
 	std::string tmpstr;
 
 	for ( eeUint i = 0; i < str.size(); i++ ) {
 		if ( str[i] == splitchar ) {
-			if ( tmpstr.size() ) {
+			if ( pushEmptyString || tmpstr.size() ) {
 				tmp.push_back(tmpstr);
 				tmpstr = "";
 			}
@@ -130,11 +130,11 @@ std::string Trim( const std::string & str ) {
 	return str.substr(pos1 == std::string::npos ? 0 : pos1, pos2 == std::string::npos ? str.length() - 1 : pos2 - pos1 + 1);
 }
 
-void toUpper( std::string & str ) {
+void ToUpper( std::string & str ) {
 	std::transform(str.begin(), str.end(), str.begin(), (int(*)(int)) std::toupper);
 }
 
-void toLower( std::string & str ) {
+void ToLower( std::string & str ) {
 	std::transform(str.begin(), str.end(), str.begin(), (int(*)(int)) std::tolower);
 }
 
@@ -191,7 +191,7 @@ std::string StoragePath( std::string appname ) {
         #else
             snprintf(path, 256, "%s/.%s", home, appname.c_str() );
             for(i = strlen(home)+2; path[i]; i++)
-                path[i] = tolower(path[i]);
+				path[i] = std::tolower(path[i]);
         #endif
     #endif
 

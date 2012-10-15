@@ -84,7 +84,7 @@ cUITextBox * cTextureGroupNew::CreateTxtBox( eeVector2i Pos, const String& Text 
 
 void cTextureGroupNew::OKClick( const cUIEvent * Event ) {
 	std::string ext( mSaveFileType->Text() );
-	toLower( ext );
+	ToLower( ext );
 
 	cUICommonDialog * TGDialog = mTheme->CreateCommonDialog( NULL, eeSize(), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, eeSize(), 255, UI_CDL_DEFAULT_FLAGS | CDL_FLAG_SAVE_DIALOG, "*." + ext );
 
@@ -130,7 +130,7 @@ void cTextureGroupNew::TextureGroupSave( const cUIEvent * Event ) {
 
 				ext = mSaveFileType->Text();
 
-				toLower( ext );
+				ToLower( ext );
 
 				FPath += "." + ext;
 			}

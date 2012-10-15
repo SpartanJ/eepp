@@ -28,23 +28,30 @@ void cInputAl::Update() {
 		switch ( ALEvent.type ) {
 			case ALLEGRO_EVENT_KEY_CHAR:
 			{
-				/// Since EEPP doesn't have a separated event for the chars, it's necessary to filtrate some chars
 				EEEvent.Type = InputEvent::KeyDown;
 				EEEvent.key.keysym.mod = SetMod( ALEvent.keyboard.modifiers );
 				EEEvent.key.keysym.unicode = 0;
 
-				if ( 8 == ALEvent.keyboard.unichar ) {
+				if ( KEY_BACKSPACE == ALEvent.keyboard.unichar ) {
 					EEEvent.key.keysym.sym = ALLEGRO_KEY_BACKSPACE;
 					ProcessEvent( &EEEvent );
-				} else if ( 9 == ALEvent.keyboard.unichar ) {
+				} else if ( KEY_TAB == ALEvent.keyboard.unichar ) {
 					EEEvent.key.keysym.sym = ALLEGRO_KEY_TAB;
 					ProcessEvent( &EEEvent );
-				} else if ( 13 == ALEvent.keyboard.unichar ) {
+				} else if ( KEY_RETURN == ALEvent.keyboard.unichar ) {
 					EEEvent.key.keysym.sym = ALLEGRO_KEY_ENTER;
 					ProcessEvent( &EEEvent );
-				} else if ( 32 == ALEvent.keyboard.unichar ) {
+				} else if ( KEY_SPACE == ALEvent.keyboard.unichar ) {
 					EEEvent.key.keysym.sym = ALLEGRO_KEY_SPACE;
 					ProcessEvent( &EEEvent );
+				}
+
+				if ( ALEvent.keyboard.unichar > 0 && KEY_TAB != ALEvent.keyboard.unichar ) { // otherwise generates the TextInput event
+					EEEvent.Type = InputEvent::TextInput;
+					EEEvent.text.timestamp = ALEvent.any.timestamp;
+					EEEvent.text.text = (Uint32)ALEvent.keyboard.unichar;
+					ProcessEvent( &EEEvent );
+					EEEvent.Type = InputEvent::KeyDown;
 				}
 
 				EEEvent.key.keysym.sym = mKeyCodesTable[ ALEvent.keyboard.keycode ];
@@ -54,7 +61,11 @@ void cInputAl::Update() {
 			}
 			case ALLEGRO_EVENT_KEY_DOWN:
 			{
-				if ( ALLEGRO_KEY_SPACE != ALEvent.keyboard.keycode && ALLEGRO_KEY_ENTER != ALEvent.keyboard.keycode && ALLEGRO_KEY_TAB != ALEvent.keyboard.keycode && ALLEGRO_KEY_BACKSPACE != ALEvent.keyboard.keycode ) {
+				if ( ALLEGRO_KEY_SPACE != ALEvent.keyboard.keycode &&
+					 ALLEGRO_KEY_ENTER != ALEvent.keyboard.keycode &&
+					 ALLEGRO_KEY_TAB != ALEvent.keyboard.keycode &&
+					 ALLEGRO_KEY_BACKSPACE != ALEvent.keyboard.keycode
+				) {
 					EEEvent.Type = InputEvent::KeyDown;
 					EEEvent.key.keysym.sym = mKeyCodesTable[ ALEvent.keyboard.keycode ];
 					EEEvent.key.keysym.mod = SetMod( ALEvent.keyboard.modifiers );

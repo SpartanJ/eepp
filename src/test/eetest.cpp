@@ -1,5 +1,7 @@
 #include "eetest.hpp"
 
+namespace EE { namespace Demo {
+
 void cEETest::Init() {
 	EE = cEngine::instance();
 
@@ -37,44 +39,19 @@ void cEETest::Init() {
 	cIniFile Ini( MyPath + "data/ee.ini" );
 	Ini.ReadFile();
 
-	mWidth 			= Ini.GetValueI( "EEPP", "Width", 800 );
-	mHeight 		= Ini.GetValueI( "EEPP", "Height", 600 );
-	int BitColor 	= Ini.GetValueI( "EEPP", "BitColor", 32);
-	bool Windowed 	= Ini.GetValueB( "EEPP", "Windowed", true );
-	bool Resizeable = Ini.GetValueB( "EEPP", "Resizeable", true );
-	bool VSync 		= Ini.GetValueB( "EEPP", "VSync", true );
-	PartsNum 		= Ini.GetValueI( "EEPP", "ParticlesNum", 1000);
-	mUseShaders 	= Ini.GetValueB( "EEPP", "UseShaders", false );
-	mJoyEnabled		= Ini.GetValueB( "EEPP", "JoystickEnabled", false );
-	mMusEnabled		= Ini.GetValueB( "EEPP", "Music", false );
+	PartsNum			= Ini.GetValueI( "EEPP", "ParticlesNum", 1000);
+	mUseShaders			= Ini.GetValueB( "EEPP", "UseShaders", false );
+	mJoyEnabled			= Ini.GetValueB( "EEPP", "JoystickEnabled", false );
+	mMusEnabled			= Ini.GetValueB( "EEPP", "Music", false );
 	Int32 StartScreen	= Ini.GetValueI( "EEPP", "StartScreen", 0 );
 
-	Int32 GLVersion = Ini.GetValueI( "EEPP", "GLVersion", 2 );
-	EEGL_version GLVer;
-
-	if ( 3 == GLVersion )
-		GLVer = GLv_3;
-	else if ( 4 == GLVersion )
-		GLVer = GLv_ES2;
-	else
-		GLVer = GLv_default;
-
-	Uint32 Style = WindowStyle::Titlebar;
-
-	if ( !Windowed )
-		Style |= WindowStyle::Fullscreen;
-
-	if ( Resizeable )
-		Style |= WindowStyle::Resize;
+	WindowSettings WinSettings	= EE->CreateWindowSettings( &Ini );
+	ContextSettings ConSettings	= EE->CreateContextSettings( &Ini );
 
 	PAK = eeNew( cZip, () );
 	PAK->Open( MyPath + "data/ee.zip" );
 
-	#if EE_PLATFORM == EE_PLATFORM_IOS
-	mWindow = EE->CreateWindow( WindowSettings( 960, 640, BitColor, WindowStyle::NoBorder ), ContextSettings( VSync, GLVer, true, 0, 0 ) );
-	#else
-	mWindow = EE->CreateWindow( WindowSettings( mWidth, mHeight, BitColor, Style, "ee.png" ), ContextSettings( VSync, GLVer, true, 0, 0 ) );
-	#endif
+	mWindow = EE->CreateWindow( WinSettings, ConSettings );
 
 	run = ( mWindow->Created() && PAK->IsOpen() );
 
@@ -263,7 +240,7 @@ void cEETest::OnShowMenu( const cUIEvent * Event ) {
 	cUIPushButton * PB = static_cast<cUIPushButton*>( Event->Ctrl() );
 
 	if ( Menu->Show() ) {
-		eeVector2i Pos = eeVector2i( (Int32)PB->GetPolygon()[0].x, (Int32)PB->GetPolygon()[0].y );
+		eeVector2i Pos = eeVector2i( (Int32)PB->GetPolygon()[0].x, (Int32)PB->GetPolygon()[0].y - 2 );
 		cUIMenu::FixMenuPos( Pos , Menu );
 		Menu->Pos( Pos );
 	}
@@ -588,12 +565,12 @@ void cEETest::CreateUI() {
 
 	cUISkinSimple * nSkin = eeNew( cUISkinSimple, ( "button-te" ) );
 
-	mShowMenu = mTheme->CreatePushButton( NULL, eeSize( 160, 80 ), eeVector2i( mWindow->GetWidth() - 170, mWindow->GetHeight() - 90 ), UI_CONTROL_ALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
+	mShowMenu = mTheme->CreatePushButton( NULL, eeSize( 128, 64 ), eeVector2i( mWindow->GetWidth() - 158, mWindow->GetHeight() - 74 ), UI_CONTROL_ALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 	mShowMenu->SetSkin( nSkin );
 	mShowMenu->Text( "Show Menu" );
 	mShowMenu->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::OnShowMenu ) );
 
-	mTerrainBut = mTheme->CreatePushButton( NULL, eeSize( 160, 80 ), eeVector2i( mWindow->GetWidth() - 160 * 2 - 20, mWindow->GetHeight() - 90 ), UI_CONTROL_ALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
+	mTerrainBut = mTheme->CreatePushButton( NULL, eeSize( 128, 64 ), eeVector2i( mShowMenu->Pos().x - 128 - 20, mWindow->GetHeight() - 74 ), UI_CONTROL_ALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 	mTerrainBut->SetSkin( nSkin->Copy() );
 	mTerrainBut->Text( "Terrain Up" );
 	mTerrainBut->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::OnTerrainMouse ) );
@@ -921,7 +898,7 @@ void cEETest::LoadTextures() {
 	CL2.AddFrame(TN[0], 96, 96);
 	CL2.Color( eeColorA( 255, 255, 255, 255 ) );
 
-	mTGL = eeNew( cTextureGroupLoader, ( MyPath + "data/bnb/gfx/bnb.etg" ) );
+	mTGL = eeNew( cTextureGroupLoader, ( MyPath + "data/extra/bnb.etg" ) );
 
 	mBlindy.AddFramesByPattern( "rn" );
 	mBlindy.Position( 320.f, 0.f );
@@ -1936,8 +1913,11 @@ void cEETest::End() {
 	cEngine::DestroySingleton();
 }
 
+}}
+
+
 EE_MAIN_FUNC int main (int argc, char * argv []) {
-	cEETest * Test = eeNew( cEETest, () );
+	EE::Demo::cEETest * Test = eeNew( EE::Demo::cEETest, () );
 
 	Test->Process();
 

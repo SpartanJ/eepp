@@ -137,6 +137,14 @@ static std::string GetWindowsVersion() {
 					os += "Windows Server 2008 R2";
 				}
 			}
+
+			if ( osvi.dwMinorVersion == 2 ) {
+				if( osvi.wProductType == VER_NT_WORKSTATION ) {
+					os += "Windows 8";
+				} else {
+					os += "Windows Server 2012";
+				}
+			}
 		}
 
 		if ( osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 2 ) {
@@ -779,7 +787,7 @@ std::string FileExtension( const std::string& filepath, const bool& lowerExt ) {
 	std::string tstr( filepath.substr( filepath.find_last_of(".") + 1 ) );
 
 	if ( lowerExt )
-		toLower( tstr );
+		ToLower( tstr );
 
 	return tstr;
 }

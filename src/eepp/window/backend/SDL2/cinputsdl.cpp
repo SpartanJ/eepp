@@ -96,12 +96,20 @@ void cInputSDL::Update() {
 			}
 			case SDL_TEXTINPUT:
 			{
+				String txt = String::FromUtf8( SDLEvent.text.text );
+
+				EEEvent.Type = InputEvent::TextInput;
+				EEEvent.text.timestamp = SDLEvent.text.timestamp;
+				EEEvent.text.text = txt[0];
+
+				ProcessEvent( &EEEvent );
+
 				EEEvent.Type = InputEvent::KeyDown;
 				EEEvent.key.state = SDLEvent.key.state;
 				EEEvent.key.which = SDLEvent.key.windowID;
 				EEEvent.key.keysym.sym = 0;
 				EEEvent.key.keysym.mod = 0xFFFFFFFF;
-				EEEvent.key.keysym.unicode = String::FromUtf8( SDLEvent.text.text )[0];
+				EEEvent.key.keysym.unicode = txt[0];
 				break;
 			}
 			case SDL_KEYDOWN:

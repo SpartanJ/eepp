@@ -45,15 +45,15 @@ void cGameObjectShapeEx::Draw() {
 						mPos.y,
 						mAngle,
 						mScale,
-						*mLayer->Map()->GetLightManager()->GetTileColor( Tile, 0 ),
-						*mLayer->Map()->GetLightManager()->GetTileColor( Tile, 1 ),
-						*mLayer->Map()->GetLightManager()->GetTileColor( Tile, 2 ),
-						*mLayer->Map()->GetLightManager()->GetTileColor( Tile, 3 ),
+						*LM->GetTileColor( Tile, 0 ),
+						*LM->GetTileColor( Tile, 1 ),
+						*LM->GetTileColor( Tile, 2 ),
+						*LM->GetTileColor( Tile, 3 ),
 						mBlend,
 						mRender
 					);
 				} else {
-					mShape->Draw( mPos.x, mPos.y, *mLayer->Map()->GetLightManager()->GetTileColor( Tile ), mAngle, mScale, mBlend, mRender );
+					mShape->Draw( mPos.x, mPos.y, *LM->GetTileColor( Tile ), mAngle, mScale, mBlend, mRender );
 				}
 			} else {
 				if ( LM->IsByVertex() ) {
@@ -62,15 +62,15 @@ void cGameObjectShapeEx::Draw() {
 						mPos.y,
 						mAngle,
 						mScale,
-						mLayer->Map()->GetLightManager()->GetColorFromPos( eeVector2f( mPos.x, mPos.y ) ),
-						mLayer->Map()->GetLightManager()->GetColorFromPos( eeVector2f( mPos.x, mPos.y + mShape->DestHeight() ) ),
-						mLayer->Map()->GetLightManager()->GetColorFromPos( eeVector2f( mPos.x + mShape->DestWidth(), mPos.y + mShape->DestHeight() ) ),
-						mLayer->Map()->GetLightManager()->GetColorFromPos( eeVector2f( mPos.x + mShape->DestWidth(), mPos.y ) ),
+						LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y ) ),
+						LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y + mShape->DestHeight() ) ),
+						LM->GetColorFromPos( eeVector2f( mPos.x + mShape->DestWidth(), mPos.y + mShape->DestHeight() ) ),
+						LM->GetColorFromPos( eeVector2f( mPos.x + mShape->DestWidth(), mPos.y ) ),
 						mBlend,
 						mRender
 					);
 				} else {
-					mShape->Draw( mPos.x, mPos.y, mLayer->Map()->GetLightManager()->GetColorFromPos( eeVector2f( mPos.x, mPos.y ) ), mAngle, mScale, mBlend, mRender );
+					mShape->Draw( mPos.x, mPos.y, LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y ) ), mAngle, mScale, mBlend, mRender );
 				}
 			}
 		} else {

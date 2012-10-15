@@ -3,6 +3,8 @@
 
 #include <eepp/ee.hpp>
 
+namespace EE { namespace Demo {
+
 class cUITest : public cUIControlAnim {
 	public:
 		cUITest( cUIControlAnim::CreateParams& Params ) : cUIControlAnim( Params ) 	{ mOldColor = mBackground->Colors(); }
@@ -306,5 +308,6 @@ class cEETest : private cThread {
 		void OnShowMenu( const cUIEvent * Event );
 };
 
+}}
 #endif
- 
+

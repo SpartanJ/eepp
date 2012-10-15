@@ -34,6 +34,14 @@ void cInputSDL::Update() {
 			}
 			case SDL_KEYDOWN:
 			{
+				if ( IsCharacter( SDLEvent.key.keysym.unicode ) && KEY_TAB != SDLEvent.key.keysym.unicode ) {
+					EEEvent.Type = InputEvent::TextInput;
+					EEEvent.text.timestamp = eeGetTicks();
+					EEEvent.text.text = SDLEvent.key.keysym.unicode;
+
+					ProcessEvent( &EEEvent );
+				}
+
 				EEEvent.Type = InputEvent::KeyDown;
 				EEEvent.key.state = SDLEvent.key.state;
 				EEEvent.key.which = SDLEvent.key.which;

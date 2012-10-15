@@ -13,19 +13,22 @@ namespace EE { namespace System {
 #endif
 
 cIniFile::cIniFile ( std::string const iniPath ) :
-	mCaseInsensitive( true )
+	mCaseInsensitive( true ),
+	mIniReaded( false )
 {
 	LoadFromFile( iniPath );
 }
 
 cIniFile::cIniFile ( const Uint8* RAWData, const Uint32& size ) :
-	mCaseInsensitive( true )
+	mCaseInsensitive( true ),
+	mIniReaded( false )
 {
 	LoadFromMemory( RAWData, size );
 }
 
 cIniFile::cIniFile( cPack * Pack, std::string iniPackPath ) :
-	mCaseInsensitive( true )
+	mCaseInsensitive( true ),
+	mIniReaded( false )
 {
 	LoadFromPack( Pack, iniPackPath );
 }
@@ -49,6 +52,8 @@ bool cIniFile::LoadFromMemory( const Uint8* RAWData, const Uint32& size ) {
 	mLines.clear();
 	mLines = SplitString( myfile );
 
+	mIniReaded = false;
+
 	return true;
 }
 
@@ -68,6 +73,8 @@ bool cIniFile::LoadFromFile( const std::string& iniPath ) {
 		mLines.clear();
 		mLines = SplitString( myfile );
 
+		mIniReaded = false;
+
 		return true;
 	} else if ( cPackManager::instance()->FallbackToPacks() ) {
 		std::string tPath( iniPath );
@@ -86,6 +93,9 @@ bool cIniFile::ReadFile() {
 	std::string   line;
 	std::string   keyname, valuename, value;
 	std::string::size_type pLeft, pRight;
+
+	if ( mIniReaded )
+		return true;
 
 	if ( mLines.size() <= 0 )
 		return false;
@@ -135,8 +145,12 @@ bool cIniFile::ReadFile() {
 		}
 	}
 
-	if ( mNames.size() )
+	if ( mNames.size() ) {
+		mIniReaded = true;
+
 		return true;
+	}
+
 	return false;
 }
 

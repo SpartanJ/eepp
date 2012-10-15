@@ -9,7 +9,7 @@ Uint32 eeConvertKeyCharacter( const Uint32& KeyCode, const Uint16& Unicode, cons
 		value = Unicode;
 	}
 
-	if ( isCharacter( value ) ) {
+	if ( IsCharacter( value ) ) {
 		return value;
 	}
 

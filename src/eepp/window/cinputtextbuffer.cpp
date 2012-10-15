@@ -77,7 +77,7 @@ void cInputTextBuffer::PromptToLeftFirstNoChar() {
 
 	if ( mPromptPos - 2 > 0 ) {
 		for ( Int32 i = mPromptPos - 2; i > 0; i-- ) {
-			if ( !isLetter( mText[i] ) && !isNumber( mText[i] ) && '\n' != mText[i] ) {
+			if ( !IsLetter( mText[i] ) && !IsNumber( mText[i] ) && '\n' != mText[i] ) {
 				mPromptPos = i + 1;
 				break;
 			} else if ( i - 1 == 0 ) {
@@ -97,7 +97,7 @@ void cInputTextBuffer::PromptToRightFirstNoChar() {
 		return;
 
 	for ( Int32 i = mPromptPos; i < s; i++ ) {
-		if ( !isLetter( mText[i] ) && !isNumber( mText[i] ) && '\n' != mText[i] ) {
+		if ( !IsLetter( mText[i] ) && !IsNumber( mText[i] ) && '\n' != mText[i] ) {
 			mPromptPos = i + 1;
 			break;
 		} else if ( i + 1 == s ) {
@@ -127,9 +127,66 @@ void cInputTextBuffer::EraseToNextNoChar() {
 		}
 
 		c = mText[ mPromptPos - 1 ];
-	} while  ( isLetter( c ) || isNumber( c ) );
+	} while  ( IsLetter( c ) || IsNumber( c ) );
 
 	ChangedSinceLastUpdate( true );
+}
+
+bool cInputTextBuffer::IsIgnoredChar( const Uint32& c ) {
+	if ( mIgnoredChars.size() ) {
+		for ( eeUint i = 0; i < mIgnoredChars.size(); i++ ) {
+			if ( mIgnoredChars[i] == c )
+				return true;
+		}
+	}
+
+	return false;
+}
+
+bool cInputTextBuffer::ValidChar( const Uint32& c ) {
+	if ( CanAdd() && IsCharacter( c ) ) {
+		bool Ignored = false;
+
+		if ( AllowOnlyNumbers() && !IsNumber( c, AllowDotsInNumbers() ) ) {
+			Ignored = true;
+		}
+
+		if ( IsIgnoredChar( c ) ) {
+			Ignored = true;
+		}
+
+		if ( !Ignored ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void cInputTextBuffer::TryAddChar( const Uint32& c ) {
+	if ( SupportFreeEditing() ) {
+		if ( ValidChar( c ) ) {
+			ChangedSinceLastUpdate( true );
+
+			if ( AutoPrompt() ) {
+				mText += c;
+				mPromptPos = (eeInt)mText.size();
+			} else {
+				InsertChar( mText, mPromptPos, c );
+				mPromptPos++;
+			}
+		}
+	} else {
+		if ( CanAdd() && IsCharacter(c) ) {
+			cInput * Input = mWindow->GetInput();
+
+			if ( !Input->MetaPressed() && !Input->AltPressed() && !Input->ControlPressed() ) {
+				if ( !( AllowOnlyNumbers() && !IsNumber( c, AllowDotsInNumbers() ) ) ) {
+					mText += c;
+				}
+			}
+		}
+	}
 }
 
 void cInputTextBuffer::Update( InputEvent* Event ) {
@@ -140,6 +197,11 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 
 		if ( SupportFreeEditing() ) {
 			switch ( Event->Type ) {
+				case InputEvent::TextInput:
+				{
+					TryAddChar( Event->text.text );
+					break;
+				}
 				case InputEvent::KeyDown:
 				{
 					if ( Input->ShiftPressed() || Input->ControlPressed() ) {
@@ -238,31 +300,8 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 						MovePromptRowUp( true );
 					} else if ( c == KEY_PAGEDOWN ) {
 						MovePromptRowDown( false );
-					} else if ( CanAdd() && isCharacter(c) ) {
-						bool Ignored = false;
-
-						if ( AllowOnlyNumbers() && !isNumber( c, AllowDotsInNumbers() ) ) {
-							Ignored = true;
-						}
-
-						if ( mIgnoredChars.size() ) {
-							for ( eeUint i = 0; i < mIgnoredChars.size(); i++ ) {
-								if ( mIgnoredChars[i] == (Uint32)c )
-									Ignored = true;
-							}
-						}
-
-						if ( !Ignored ) {
-							ChangedSinceLastUpdate( true );
-
-							if ( AutoPrompt() ) {
-								mText += c;
-								mPromptPos = (eeInt)mText.size();
-							} else {
-								InsertChar( mText, mPromptPos, c );
-								mPromptPos++;
-							}
-						}
+					} else if ( c == KEY_TAB ) {
+						TryAddChar( c );
 					}
 
 					break;
@@ -317,7 +356,9 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 				}
 			}
 		} else {
-			if ( Event->Type == InputEvent::KeyDown ) {
+			if ( Event->Type == InputEvent::TextInput ) {
+				TryAddChar( Event->text.text );
+			} else if ( Event->Type == InputEvent::KeyDown ) {
 				ChangedSinceLastUpdate( true );
 
 				if ( c == KEY_BACKSPACE && mText.size() > 0 ) {
@@ -328,10 +369,6 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 
 					if ( mEnterCall.IsSet() )
 						mEnterCall();
-				} else if ( CanAdd() && isCharacter(c) && !Input->MetaPressed() && !Input->AltPressed() && !Input->ControlPressed() ) {
-					if ( !( AllowOnlyNumbers() && !isNumber( c, AllowDotsInNumbers() ) ) ) {
-						mText += c;
-					}
 				}
 			}
 		}
