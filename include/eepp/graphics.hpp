@@ -1,0 +1,44 @@
+#ifndef EEPP_GRAPHICS_HPP
+#define EEPP_GRAPHICS_HPP
+
+#include <eepp/graphics/renderer/cgl.hpp>
+#include <eepp/graphics/renderer/crenderergl.hpp>
+#include <eepp/graphics/renderer/crenderergl3.hpp>
+#include <eepp/graphics/renders.hpp>
+#include <eepp/graphics/cimage.hpp>
+#include <eepp/graphics/ctexture.hpp>
+#include <eepp/graphics/ctextureloader.hpp>
+#include <eepp/graphics/ctexturefactory.hpp>
+#include <eepp/graphics/ctexturepacker.hpp>
+#include <eepp/graphics/cshape.hpp>
+#include <eepp/graphics/cshapegroup.hpp>
+#include <eepp/graphics/cglobalshapegroup.hpp>
+#include <eepp/graphics/cshapegroupmanager.hpp>
+#include <eepp/graphics/csprite.hpp>
+#include <eepp/graphics/cparticle.hpp>
+#include <eepp/graphics/cparticlesystem.hpp>
+#include <eepp/graphics/cfont.hpp>
+#include <eepp/graphics/ctexturefont.hpp>
+#include <eepp/graphics/cttffont.hpp>
+#include <eepp/graphics/ctexturefontloader.hpp>
+#include <eepp/graphics/cttffontloader.hpp>
+#include <eepp/graphics/cfontmanager.hpp>
+#include <eepp/graphics/cprimitives.hpp>
+#include <eepp/graphics/cscrollparallax.hpp>
+#include <eepp/graphics/cconsole.hpp>
+#include <eepp/graphics/cbatchrenderer.hpp>
+#include <eepp/graphics/cglobalbatchrenderer.hpp>
+#include <eepp/graphics/ctextcache.hpp>
+#include <eepp/graphics/pixelperfect.hpp>
+#include <eepp/graphics/cshader.hpp>
+#include <eepp/graphics/cshaderprogram.hpp>
+#include <eepp/graphics/cshaderprogrammanager.hpp>
+#include <eepp/graphics/ctexturegrouploader.hpp>
+#include <eepp/graphics/cframebuffer.hpp>
+#include <eepp/graphics/cframebufferfbo.hpp>
+#include <eepp/graphics/cframebufferpbuffer.hpp>
+#include <eepp/graphics/cvertexbuffer.hpp>
+#include <eepp/graphics/cvertexbufferogl.hpp>
+#include <eepp/graphics/cvertexbuffervbo.hpp>
+
+#endif
