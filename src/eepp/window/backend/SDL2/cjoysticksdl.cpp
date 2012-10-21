@@ -21,14 +21,11 @@ void cJoystickSDL::Open() {
 	if ( NULL != mJoystick ) {
 		mName 		= SDL_JoystickName( mIndex );
 		mHats		= SDL_JoystickNumHats( mJoystick );
-		mButtons	= SDL_JoystickNumButtons( mJoystick );
+		mButtons	= eemin( SDL_JoystickNumButtons( mJoystick ), 32 );
 		mAxes		= SDL_JoystickNumAxes( mJoystick );
 		mBalls		= SDL_JoystickNumBalls( mJoystick );
 
 		mButtonDown	= mButtonDownLast = mButtonUp = 0;
-
-		if ( mButtons > 32 )
-			mButtons = 32;
 	}
 }
 

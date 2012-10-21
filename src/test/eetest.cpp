@@ -1330,10 +1330,8 @@ void cEETest::Input() {
 	if ( KM->AltPressed() && KM->IsKeyUp( KEY_RETURN ) ) {
 		if ( mWindow->Windowed() ) {
 			mWindow->Size( mWindow->GetDesktopResolution().Width(), mWindow->GetDesktopResolution().Height(), false );
-			KM->GrabInput(true);
 		} else {
 			mWindow->ToggleFullscreen();
-			KM->GrabInput(false);
 		}
 	}
 
@@ -1914,7 +1912,6 @@ void cEETest::End() {
 }
 
 }}
-
 
 EE_MAIN_FUNC int main (int argc, char * argv []) {
 	EE::Demo::cEETest * Test = eeNew( EE::Demo::cEETest, () );

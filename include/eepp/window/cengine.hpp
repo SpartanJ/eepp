@@ -97,9 +97,13 @@ class EE_API cEngine {
 
 		Backend::cBackend * CreateAllegroBackend( const WindowSettings& Settings );
 
+		Backend::cBackend * CreateSFMLBackend( const WindowSettings& Settings );
+
 		cWindow * CreateSDLWindow( const WindowSettings& Settings, const ContextSettings& Context );
 
 		cWindow * CreateAllegroWindow( const WindowSettings& Settings, const ContextSettings& Context );
+
+		cWindow * CreateSFMLWindow( const WindowSettings& Settings, const ContextSettings& Context );
 
 		cWindow * CreateDefaultWindow( const WindowSettings& Settings, const ContextSettings& Context );
 

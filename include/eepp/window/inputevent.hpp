@@ -4,6 +4,9 @@
 namespace EE { namespace Window {
 
 #define EE_TEXT_INPUT_SIZE (32)
+#define EE_APPMOUSEFOCUS	0x01
+#define EE_APPINPUTFOCUS	0x02
+#define EE_APPACTIVE		0x04
 
 class InputEvent {
 	public:

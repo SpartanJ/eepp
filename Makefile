@@ -77,6 +77,7 @@ dirs:
 	@$(MKDIR) $(OBJDIR)/src/eepp/window/backend/SDL2
 	@$(MKDIR) $(OBJDIR)/src/eepp/window/backend/null
 	@$(MKDIR) $(OBJDIR)/src/eepp/window/backend/allegro5
+	@$(MKDIR) $(OBJDIR)/src/eepp/window/backend/SFML
 	@$(MKDIR) $(OBJDIR)/src/eepp/window/platform/x11
 	@$(MKDIR) $(OBJDIR)/src/eepp/window/platform/win
 	@$(MKDIR) $(OBJDIR)/src/eepp/window/platform/osx

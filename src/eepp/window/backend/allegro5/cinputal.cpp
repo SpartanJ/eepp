@@ -79,7 +79,7 @@ void cInputAl::Update() {
 			{
 				EEEvent.Type = InputEvent::KeyUp;
 				EEEvent.key.keysym.sym = mKeyCodesTable[ ALEvent.keyboard.keycode ];
-				EEEvent.key.keysym.mod = 0;
+				EEEvent.key.keysym.mod = SetMod( ALEvent.keyboard.modifiers );
 				EEEvent.key.keysym.unicode = ALEvent.keyboard.unichar;
 				break;
 			}
@@ -367,7 +367,7 @@ void cInputAl::InitializeTables() {
 	mKeyCodesTable[ ALLEGRO_KEY_CAPSLOCK ] = KEY_CAPSLOCK;
 }
 
-Uint32 cInputAl::SetMod(  Uint32 Mod ) {
+Uint32 cInputAl::SetMod( Uint32 Mod ) {
 	if ( !Mod )
 		return 0;
 
