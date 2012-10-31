@@ -312,7 +312,9 @@ namespace EE {
 	#define EE_PI			3.14159265358979323846
 	#define EE_PI2			6.28318530717958647692
 	const eeFloat EE_PI_180	= (eeFloat)EE_PI / 180;
+	const eeFloat EE_PI_360	= (eeFloat)EE_PI / 360;
 	const eeFloat EE_180_PI	= 180 / (eeFloat)EE_PI;
+	const eeFloat EE_360_PI	= 360 / (eeFloat)EE_PI;
 
 	#define EE_1B		( 1 )
 	#define EE_1KB		( 1024 )

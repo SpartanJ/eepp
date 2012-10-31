@@ -1011,8 +1011,8 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 			memset( tProp.Name, 0, MAP_PROPERTY_SIZE );
 			memset( tProp.Value, 0, MAP_PROPERTY_SIZE );
 
-			StrCopy( tProp.Name, (*it).first.c_str(), MAP_PROPERTY_SIZE );
-			StrCopy( tProp.Value, (*it).second.c_str(), MAP_PROPERTY_SIZE );
+			StrCopy( tProp.Name, it->first.c_str(), MAP_PROPERTY_SIZE );
+			StrCopy( tProp.Value, it->second.c_str(), MAP_PROPERTY_SIZE );
 
 			IOS.Write( (const char*)&tProp, sizeof(sPropertyHdr) );
 		}

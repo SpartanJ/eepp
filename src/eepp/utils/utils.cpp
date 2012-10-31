@@ -676,7 +676,7 @@ bool IsDirectory( const std::string& path ) {
 
 	return isdir;
 #else
-	return GetFileAttributes( (LPCTSTR) path.c_str() ) != INVALID_FILE_ATTRIBUTES;
+	return GetFileAttributes( (LPCTSTR) path.c_str() ) == FILE_ATTRIBUTE_DIRECTORY;
 #endif
 }
 

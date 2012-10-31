@@ -182,38 +182,15 @@ void cRendererGL::LookAt( GLfloat eyeX, GLfloat eyeY, GLfloat eyeZ, GLfloat cent
 	glTranslatef(-eyeX, -eyeY, -eyeZ);
 }
 
-static void MakeIdentityf( GLfloat* m )
-{
-	m[0] = 1;	m[4] = 0;	m[8] = 0;	m[12] = 0;
-	m[1] = 0;	m[5] = 1;	m[9] = 0;	m[13] = 0;
-	m[2] = 0;	m[6] = 0;	m[10] = 1;	m[14] = 0;
-	m[3] = 0;	m[7] = 0;	m[11] = 0;	m[15] = 1;
-}
-
 void cRendererGL::Perspective ( GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar ) {
-	GLfloat m[16];
-	float sine, cotangent, deltaZ;
-	float radians = fovy / 2 * EE_PI_180;
+	GLdouble xmin, xmax, ymin, ymax;
 
-	deltaZ = zFar - zNear;
-	sine = eesin( radians );
+	ymax = zNear * eetan(fovy * EE_360_PI);
+	ymin = -ymax;
+	xmin = ymin * aspect;
+	xmax = ymax * aspect;
 
-	if ( (deltaZ == 0) || (sine == 0) || (aspect == 0) ) {
-		return;
-	}
-
-	cotangent = eecos(radians) / sine;
-
-	MakeIdentityf( &m[0] );
-
-	m[0]	= cotangent / aspect;
-	m[5]	= cotangent;
-	m[10]	= -(zFar + zNear) / deltaZ;
-	m[11]	= -1;
-	m[14]	= -2 * zNear * zFar / deltaZ;
-	m[15]	= 0;
-
-	glMultMatrixf( &m[0] );
+	Frustum( xmin, xmax, ymin, ymax, zNear, zFar );
 }
 
 void cRendererGL::EnableClientState( GLenum array ) {

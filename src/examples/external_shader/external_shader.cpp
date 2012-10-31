@@ -18,7 +18,7 @@ void videoResize() {
 	eeFloat fieldOfView	= 30.0;
 	eeFloat nearPlane	= 1.0;
 	eeFloat farPlane	= 10000.0;
-	eeFloat top			= nearPlane * eetan(fieldOfView * EE_PI / 360.0);
+	eeFloat top			= nearPlane * eetan(fieldOfView * EE_PI_360);
 	eeFloat bottom		= -top;
 	eeFloat right		= top * aspectRatio;
 	eeFloat left		= -right;
@@ -29,6 +29,7 @@ void videoResize() {
 	eeFloat d = (2 * farPlane * nearPlane) / (farPlane - nearPlane);
 	eeFloat x = (2 * nearPlane) / (right - left);
 	eeFloat y = (2 * nearPlane) / (top - bottom);
+
 	GLfloat perspectiveMatrix[16] = {
 		x, 0, a, 0,
 		0, y, b, 0,
