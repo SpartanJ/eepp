@@ -10,7 +10,7 @@ namespace EE { namespace Window {
 
 class InputEvent {
 	public:
-		inline InputEvent() {}
+		inline InputEvent() : Type( NoEvent ) {}
 
 		inline InputEvent( Uint32 type ) : Type( type ) {}
 

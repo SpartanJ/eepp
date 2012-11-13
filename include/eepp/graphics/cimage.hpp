@@ -107,6 +107,7 @@ class EE_API cImage {
 		eeUint 			mChannels;
 		Uint32			mSize;
 		bool			mAvoidFree;
+		bool			mLoadedFromStbi;
 
 		void 			Allocate( const Uint32& size, eeColorA DefaultColor = eeColorA(0,0,0,0) );
 

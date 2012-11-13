@@ -58,6 +58,8 @@ class EE_API cWindowSDL : public cWindow {
 
 		virtual eeVector2i Position();
 
+		const eeSize& GetDesktopResolution();
+
 		SDL_Window *	GetSDLWindow() const;
 	protected:
 		friend class cClipboardSDL;
@@ -78,6 +80,8 @@ class EE_API cWindowSDL : public cWindow {
 		void SetGLConfig();
 
 		std::string GetVersion();
+
+		void UpdateDesktopResolution();
 };
 
 }}}}

@@ -7,6 +7,7 @@ namespace EE { namespace Graphics {
 SINGLETON_DECLARE_IMPLEMENTATION(cTextureFactory)
 
 cTextureFactory::cTextureFactory() :
+	mLastBlend(ALPHA_NORMAL),
 	mMemSize(0),
 	mErasing(false)
 {

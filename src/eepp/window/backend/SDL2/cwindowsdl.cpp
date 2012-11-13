@@ -479,6 +479,18 @@ eeVector2i cWindowSDL::Position() {
 	return p;
 }
 
+void cWindowSDL::UpdateDesktopResolution() {
+	SDL_DisplayMode dpm;
+	SDL_GetWindowDisplayMode( mSDLWindow, &dpm );
+
+	mWindow.DesktopResolution = eeSize( dpm.w, dpm.h );
+}
+
+const eeSize& cWindowSDL::GetDesktopResolution() {
+	UpdateDesktopResolution();
+	return cWindow::GetDesktopResolution();
+}
+
 SDL_Window * cWindowSDL::GetSDLWindow() const {
 	return mSDLWindow;
 }

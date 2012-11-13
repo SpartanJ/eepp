@@ -217,7 +217,7 @@ class EE_API cWindow {
 		virtual const Uint32& GetHeight() const;
 
 		/** @return The current desktop resolution */
-		virtual const eeSize& GetDesktopResolution() const;
+		virtual const eeSize& GetDesktopResolution();
 
 		/** Center the window to the desktop ( if windowed ) */
 		virtual void Center();

@@ -10,7 +10,8 @@ cImage::cImage() :
 	mHeight(0),
 	mChannels(0),
 	mSize(0),
-	mAvoidFree(false)
+	mAvoidFree(false),
+	mLoadedFromStbi(false)
 {
 }
 
@@ -20,7 +21,8 @@ cImage::cImage( const Uint8* data, const eeUint& Width, const eeUint& Height, co
 	mHeight(Height),
 	mChannels(Channels),
 	mSize(0),
-	mAvoidFree(false)
+	mAvoidFree(false),
+	mLoadedFromStbi(false)
 {
 	SetPixels( data );
 }
@@ -31,7 +33,8 @@ cImage::cImage( const Uint32& Width, const Uint32& Height, const Uint32& Channel
 	mHeight(Height),
 	mChannels(Channels),
 	mSize(0),
-	mAvoidFree(false)
+	mAvoidFree(false),
+	mLoadedFromStbi(false)
 {
 	Create( Width, Height, Channels, DefaultColor );
 }
@@ -42,7 +45,8 @@ cImage::cImage( Uint8* data, const eeUint& Width, const eeUint& Height, const ee
 	mHeight(Height),
 	mChannels(Channels),
 	mSize(Width*Height*Channels),
-	mAvoidFree(false)
+	mAvoidFree(false),
+	mLoadedFromStbi(false)
 {
 }
 
@@ -52,7 +56,8 @@ cImage::cImage( std::string Path ) :
 	mHeight(0),
 	mChannels(0),
 	mSize(0),
-	mAvoidFree(false)
+	mAvoidFree(false),
+	mLoadedFromStbi(false)
 {
 	int w, h, c;
 	cPack * tPack = NULL;
@@ -66,10 +71,7 @@ cImage::cImage( std::string Path ) :
 
 		mSize	= mWidth * mHeight * mChannels;
 
-		//! HACK: This is a hack to make the memory manager recognize the allocated data
-		#ifdef EE_MEMORY_MANAGER
-		MemoryManager::AddPointer( cAllocatedPointer( (void*)data, __FILE__, __LINE__, mSize ) );
-		#endif
+		mLoadedFromStbi = true;
 	} else if ( cPackManager::instance()->FallbackToPacks() && NULL != ( tPack = cPackManager::instance()->Exists( Path ) ) ) {
 		LoadFromPack( tPack, Path );
 	} else {
@@ -83,7 +85,8 @@ cImage::cImage( cPack * Pack, std::string FilePackPath ) :
 	mHeight(0),
 	mChannels(0),
 	mSize(0),
-	mAvoidFree(false)
+	mAvoidFree(false),
+	mLoadedFromStbi(false)
 {
 	LoadFromPack( Pack, FilePackPath );
 }
@@ -110,10 +113,7 @@ void cImage::LoadFromPack( cPack * Pack, const std::string& FilePackPath ) {
 
 			mSize	= mWidth * mHeight * mChannels;
 
-			//! HACK: This is a hack to make the memory manager recognize the allocated data
-			#ifdef EE_MEMORY_MANAGER
-			MemoryManager::AddPointer( cAllocatedPointer( (void*)data, __FILE__, __LINE__, mSize ) );
-			#endif
+			mLoadedFromStbi = true;
 		} else {
 			cLog::instance()->Write( "Failed to load image, reason: " + std::string( stbi_failure_reason() ) );
 		}
@@ -195,7 +195,11 @@ eeUint cImage::Size() const {
 }
 
 void cImage::ClearCache() {
-	eeSAFE_DELETE_ARRAY( mPixels );
+	if ( mLoadedFromStbi ) {
+		free( mPixels );
+	} else {
+		eeSAFE_DELETE_ARRAY( mPixels );
+	}
 }
 
 void cImage::Width( const eeUint& width ) {

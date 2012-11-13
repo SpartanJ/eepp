@@ -52,7 +52,7 @@ const Uint32& cWindow::GetHeight() const {
 	return mWindow.WindowConfig.Height;
 }
 
-const eeSize& cWindow::GetDesktopResolution() const {
+const eeSize& cWindow::GetDesktopResolution() {
 	return mWindow.DesktopResolution;
 }
 
