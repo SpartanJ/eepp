@@ -165,8 +165,8 @@ bool cFrameBufferPBuffer::Create( const Uint32& Width, const Uint32& Height, boo
 
 	int PBufferAttributes[] =
 	{
-		GLX_PBUFFER_WIDTH, 	Width,
-		GLX_PBUFFER_HEIGHT, Height,
+		GLX_PBUFFER_WIDTH, 	(int)Width,
+		GLX_PBUFFER_HEIGHT, (int)Height,
 		0
 	};
 
