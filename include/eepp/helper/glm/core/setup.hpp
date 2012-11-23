@@ -1,11 +1,30 @@
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Created : 2006-11-13
-// Updated : 2011-01-26
-// Licence : This source is under MIT License
-// File    : glm/setup.hpp
-///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+/// OpenGL Mathematics (glm.g-truc.net)
+///
+/// Copyright (c) 2005 - 2012 G-Truc Creation (www.g-truc.net)
+/// Permission is hereby granted, free of charge, to any person obtaining a copy
+/// of this software and associated documentation files (the "Software"), to deal
+/// in the Software without restriction, including without limitation the rights
+/// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+/// copies of the Software, and to permit persons to whom the Software is
+/// furnished to do so, subject to the following conditions:
+/// 
+/// The above copyright notice and this permission notice shall be included in
+/// all copies or substantial portions of the Software.
+/// 
+/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+/// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+/// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+/// THE SOFTWARE.
+///
+/// @ref core
+/// @file glm/core/setup.hpp
+/// @date 2006-11-13 / 2011-06-15
+/// @author Christophe Riccio
+///////////////////////////////////////////////////////////////////////////////////
 
 #ifndef glm_setup
 #define glm_setup
@@ -13,16 +32,74 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Version
 
-#define GLM_VERSION					91
+#define GLM_VERSION					94
 #define GLM_VERSION_MAJOR			0
 #define GLM_VERSION_MINOR			9
-#define GLM_VERSION_PATCH			1
+#define GLM_VERSION_PATCH			4
 #define GLM_VERSION_REVISION		0
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Platform
+
+#define GLM_PLATFORM_UNKNOWN		0x00000000
+#define GLM_PLATFORM_WINDOWS		0x00010000
+#define GLM_PLATFORM_LINUX			0x00020000
+#define GLM_PLATFORM_APPLE			0x00040000
+//#define GLM_PLATFORM_IOS			0x00080000
+#define GLM_PLATFORM_ANDROID		0x00100000
+#define GLM_PLATFORM_CHROME_NACL	0x00200000
+#define GLM_PLATFORM_UNIX			0x00400000
+#define GLM_PLATFORM_QNXNTO			0x00800000
+
+#ifdef GLM_FORCE_PLATFORM_UNKNOWN
+#	define GLM_PLATFORM GLM_PLATFORM_UNKNOWN
+#elif defined(__QNXNTO__)
+#	define GLM_PLATFORM GLM_PLATFORM_QNXNTO
+#elif defined(__APPLE__)
+#	define GLM_PLATFORM GLM_PLATFORM_APPLE
+#elif defined(_WIN32)
+#	define GLM_PLATFORM GLM_PLATFORM_WINDOWS
+#elif defined(__native_client__)
+#	define GLM_PLATFORM GLM_PLATFORM_CHROME_NACL
+#elif defined(__ANDROID__)
+#	define GLM_PLATFORM GLM_PLATFORM_ANDROID
+#elif defined(__linux)
+#	define GLM_PLATFORM GLM_PLATFORM_LINUX
+#elif defined(__unix)
+#	define GLM_PLATFORM GLM_PLATFORM_UNIX
+#else
+#	define GLM_PLATFORM GLM_PLATFORM_UNKNOWN
+#endif//
+
+// Report platform detection
+#if(defined(GLM_MESSAGES) && !defined(GLM_MESSAGE_PLATFORM_DISPLAYED))
+#	define GLM_MESSAGE_PLATFORM_DISPLAYED
+#	if(GLM_PLATFORM & GLM_PLATFORM_WINDOWS)
+#		pragma message("GLM: Windows platform detected")
+//#	elif(GLM_PLATFORM & GLM_PLATFORM_IOS)
+//#		pragma message("GLM: iOS platform detected")
+#	elif(GLM_PLATFORM & GLM_PLATFORM_APPLE)
+#		pragma message("GLM: Apple platform detected")
+#	elif(GLM_PLATFORM & GLM_PLATFORM_LINUX)
+#		pragma message("GLM: Linux platform detected")
+#	elif(GLM_PLATFORM & GLM_PLATFORM_UNIX)
+#		pragma message("GLM: UNIX platform detected")
+#	elif(GLM_PLATFORM & GLM_PLATFORM_ANDROID)
+#		pragma message("GLM: Android platform detected")
+#	elif(GLM_PLATFORM & GLM_PLATFORM_CHROME_NACL)
+#		pragma message("GLM: Chrone Native Client detected")
+#	elif(GLM_PLATFORM & GLM_PLATFORM_UNKNOWN)
+#		pragma message("GLM: platform unknown")
+#	else
+#		pragma message("GLM: platform not detected")
+#	endif
+#endif//GLM_MESSAGE
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Compiler
 
 // User defines: GLM_FORCE_COMPILER_UNKNOWN
+// TODO ? __llvm__ 
 
 #define GLM_COMPILER_UNKNOWN		0x00000000
 
@@ -37,9 +114,12 @@
 #define GLM_COMPILER_VC2005			0x01000070
 #define GLM_COMPILER_VC2008			0x01000080
 #define GLM_COMPILER_VC2010			0x01000090
+#define GLM_COMPILER_VC2012			0x010000A0
 
 // GCC defines
-#define GLM_COMPILER_GCC            0x02000000
+#define GLM_COMPILER_GCC			0x02000000
+#define GLM_COMPILER_GCC_LLVM		0x02000001
+#define GLM_COMPILER_GCC_CLANG		0x02000002
 #define GLM_COMPILER_GCC30			0x02000010
 #define GLM_COMPILER_GCC31			0x02000020
 #define GLM_COMPILER_GCC32			0x02000030
@@ -62,22 +142,106 @@
 // echo "" | g++ -E -dM -x c++ - | sort
 
 // Borland C++ defines. How to identify BC?
-#define GLM_COMPILER_BC				0x03000000
-#define GLM_COMPILER_BCB4			0x03000100
-#define GLM_COMPILER_BCB5			0x03000200
-#define GLM_COMPILER_BCB6			0x03000300
-//#define GLM_COMPILER_BCBX			0x03000400 // What's the version value?
-#define GLM_COMPILER_BCB2009		0x03000500
+#define GLM_COMPILER_BC				0x04000000
+#define GLM_COMPILER_BCB4			0x04000100
+#define GLM_COMPILER_BCB5			0x04000200
+#define GLM_COMPILER_BCB6			0x04000300
+//#define GLM_COMPILER_BCBX			0x04000400 // What's the version value?
+#define GLM_COMPILER_BCB2009		0x04000500
 
+// CodeWarrior
+#define GLM_COMPILER_CODEWARRIOR	0x08000000
+
+// CUDA
+#define GLM_COMPILER_CUDA			0x10000000
+#define GLM_COMPILER_CUDA30			0x10000010
+#define GLM_COMPILER_CUDA31			0x10000020
+#define GLM_COMPILER_CUDA32			0x10000030
+#define GLM_COMPILER_CUDA40			0x10000040
+#define GLM_COMPILER_CUDA41			0x10000050
+#define GLM_COMPILER_CUDA42			0x10000060
+
+// Clang
+#define GLM_COMPILER_CLANG			0x20000000
+#define GLM_COMPILER_CLANG26		0x20000010
+#define GLM_COMPILER_CLANG27		0x20000020
+#define GLM_COMPILER_CLANG28		0x20000030
+#define GLM_COMPILER_CLANG29		0x20000040
+#define GLM_COMPILER_CLANG30		0x20000050
+#define GLM_COMPILER_CLANG31		0x20000060
+#define GLM_COMPILER_CLANG32		0x20000070
+#define GLM_COMPILER_CLANG33		0x20000080
+#define GLM_COMPILER_CLANG40		0x20000090
+#define GLM_COMPILER_CLANG41		0x200000A0
+#define GLM_COMPILER_CLANG42		0x200000B0
+#define GLM_COMPILER_CLANG43		0x200000C0
+
+// LLVM GCC
+#define GLM_COMPILER_LLVM_GCC		0x40000000
+
+// Intel
+#define GLM_COMPILER_INTEL			0x80000000
+#define GLM_COMPILER_INTEL9			0x80000010
+#define GLM_COMPILER_INTEL10_0		0x80000020
+#define GLM_COMPILER_INTEL10_1		0x80000030
+#define GLM_COMPILER_INTEL11_0		0x80000040
+#define GLM_COMPILER_INTEL11_1		0x80000050
+#define GLM_COMPILER_INTEL12_0		0x80000060
+#define GLM_COMPILER_INTEL12_1		0x80000070
+#define GLM_COMPILER_INTEL13_0		0x80000080
+
+// Build model
 #define GLM_MODEL_32				0x00000010
 #define GLM_MODEL_64				0x00000020
 
-// CodeWarrior
-#define GLM_COMPILER_CODEWARRIOR	0x04000000
-
 // Force generic C++ compiler
 #ifdef GLM_FORCE_COMPILER_UNKNOWN
-#		define GLM_COMPILER GLM_COMPILER_UNKNOWN
+#	define GLM_COMPILER GLM_COMPILER_UNKNOWN
+
+#elif defined(__INTEL_COMPILER)
+#	if __INTEL_COMPILER == 900
+#		define GLM_COMPILER GLM_COMPILER_INTEL9
+#	elif __INTEL_COMPILER == 1000
+#		define GLM_COMPILER GLM_COMPILER_INTEL10_0
+#	elif __INTEL_COMPILER == 1010
+#		define GLM_COMPILER GLM_COMPILER_INTEL10_1
+#	elif __INTEL_COMPILER == 1100
+#		define GLM_COMPILER GLM_COMPILER_INTEL11_0
+#	elif __INTEL_COMPILER == 1110
+#		define GLM_COMPILER GLM_COMPILER_INTEL11_1
+#	elif __INTEL_COMPILER == 1200
+#		define GLM_COMPILER GLM_COMPILER_INTEL12_0
+#	elif __INTEL_COMPILER == 1210
+#		define GLM_COMPILER GLM_COMPILER_INTEL12_1
+#	elif __INTEL_COMPILER == 1300
+#		define GLM_COMPILER GLM_COMPILER_INTEL13_0
+#	else
+#		define GLM_COMPILER GLM_COMPILER_INTEL
+#	endif
+
+// CUDA
+#elif defined(__CUDACC__)
+#	define GLM_COMPILER GLM_COMPILER_CUDA
+/*
+#	if CUDA_VERSION < 3000
+#		error "GLM requires CUDA 3.0 or higher"
+#	elif CUDA_VERSION == 3000
+#		define GLM_COMPILER GLM_COMPILER_CUDA30	
+#	elif CUDA_VERSION == 3010
+#		define GLM_COMPILER GLM_COMPILER_CUDA31	
+#	elif CUDA_VERSION == 3020
+#		define GLM_COMPILER GLM_COMPILER_CUDA32	
+#	elif CUDA_VERSION == 4000
+#		define GLM_COMPILER GLM_COMPILER_CUDA40	
+#	elif CUDA_VERSION == 4010
+#		define GLM_COMPILER GLM_COMPILER_CUDA41	
+#	elif CUDA_VERSION == 4020
+#		define GLM_COMPILER GLM_COMPILER_CUDA42
+#	else
+#		define GLM_COMPILER GLM_COMPILER_CUDA
+#	endif
+*/
+
 // Visual C++
 #elif defined(_MSC_VER)
 #	if _MSC_VER == 900
@@ -98,12 +262,44 @@
 #		define GLM_COMPILER GLM_COMPILER_VC2008
 #	elif _MSC_VER == 1600
 #		define GLM_COMPILER GLM_COMPILER_VC2010
+#	elif _MSC_VER == 1700
+#		define GLM_COMPILER GLM_COMPILER_VC2012
 #	else//_MSC_VER
 #		define GLM_COMPILER GLM_COMPILER_VC
 #	endif//_MSC_VER
 
-// G++
-#elif defined(__GNUC__)
+// Clang
+#elif defined(__clang__)
+#	if(__clang_major__ == 2) && (__clang_minor__ == 6)
+#		define GLM_COMPILER GLM_COMPILER_CLANG26
+#	elif(__clang_major__ == 2) && (__clang_minor__ == 7)
+#		define GLM_COMPILER GLM_COMPILER_CLANG27
+#	elif(__clang_major__ == 2) && (__clang_minor__ == 8)
+#		define GLM_COMPILER GLM_COMPILER_CLANG28
+#	elif(__clang_major__ == 2) && (__clang_minor__ == 9)
+#		define GLM_COMPILER GLM_COMPILER_CLANG29
+#	elif(__clang_major__ == 3) && (__clang_minor__ == 0)
+#		define GLM_COMPILER GLM_COMPILER_CLANG30
+#	elif(__clang_major__ == 3) && (__clang_minor__ == 1)
+#		define GLM_COMPILER GLM_COMPILER_CLANG31
+#	elif(__clang_major__ == 3) && (__clang_minor__ == 2)
+#		define GLM_COMPILER GLM_COMPILER_CLANG32
+#	elif(__clang_major__ == 3) && (__clang_minor__ == 3)
+#		define GLM_COMPILER GLM_COMPILER_CLANG33
+#	elif(__clang_major__ == 4) && (__clang_minor__ == 0)
+#		define GLM_COMPILER GLM_COMPILER_CLANG40
+#	elif(__clang_major__ == 4) && (__clang_minor__ == 1)
+#		define GLM_COMPILER GLM_COMPILER_CLANG41
+#	elif(__clang_major__ == 4) && (__clang_minor__ == 2)
+#		define GLM_COMPILER GLM_COMPILER_CLANG42
+#	elif(__clang_major__ == 4) && (__clang_minor__ == 3)
+#		define GLM_COMPILER GLM_COMPILER_CLANG43
+#	else
+#		define GLM_COMPILER GLM_COMPILER_CLANG
+#	endif
+
+// G++ 
+#elif(defined(__GNUC__) || defined(__MINGW32__))// || defined(__llvm__) || defined(__clang__)
 #	if   (__GNUC__ == 3) && (__GNUC_MINOR__ == 2)
 #		define GLM_COMPILER GLM_COMPILER_GCC32
 #	elif (__GNUC__ == 3) && (__GNUC_MINOR__ == 3)
@@ -113,29 +309,29 @@
 #	elif (__GNUC__ == 3) && (__GNUC_MINOR__ == 5)
 #		define GLM_COMPILER GLM_COMPILER_GCC35
 #	elif (__GNUC__ == 4) && (__GNUC_MINOR__ == 0)
-#		define GLM_COMPILER GLM_COMPILER_GCC40
+#		define GLM_COMPILER (GLM_COMPILER_GCC40)
 #	elif (__GNUC__ == 4) && (__GNUC_MINOR__ == 1)
-#		define GLM_COMPILER GLM_COMPILER_GCC41
+#		define GLM_COMPILER (GLM_COMPILER_GCC41)
 #	elif (__GNUC__ == 4) && (__GNUC_MINOR__ == 2)
-#		define GLM_COMPILER GLM_COMPILER_GCC42
+#		define GLM_COMPILER (GLM_COMPILER_GCC42)
 #	elif (__GNUC__ == 4) && (__GNUC_MINOR__ == 3)
-#		define GLM_COMPILER GLM_COMPILER_GCC43
+#		define GLM_COMPILER (GLM_COMPILER_GCC43)
 #	elif (__GNUC__ == 4) && (__GNUC_MINOR__ == 4)
-#		define GLM_COMPILER GLM_COMPILER_GCC44
+#		define GLM_COMPILER (GLM_COMPILER_GCC44)
 #	elif (__GNUC__ == 4) && (__GNUC_MINOR__ == 5)
-#		define GLM_COMPILER GLM_COMPILER_GCC45
+#		define GLM_COMPILER (GLM_COMPILER_GCC45)
 #	elif (__GNUC__ == 4) && (__GNUC_MINOR__ == 6)
-#		define GLM_COMPILER GLM_COMPILER_GCC46
+#		define GLM_COMPILER (GLM_COMPILER_GCC46)
 #	elif (__GNUC__ == 4) && (__GNUC_MINOR__ == 7)
-#		define GLM_COMPILER GLM_COMPILER_GCC47
+#		define GLM_COMPILER (GLM_COMPILER_GCC47)
 #	elif (__GNUC__ == 4) && (__GNUC_MINOR__ == 8)
-#		define GLM_COMPILER GLM_COMPILER_GCC48
+#		define GLM_COMPILER (GLM_COMPILER_GCC48)
 #	elif (__GNUC__ == 4) && (__GNUC_MINOR__ == 9)
-#		define GLM_COMPILER GLM_COMPILER_GCC49
+#		define GLM_COMPILER (GLM_COMPILER_GCC49)
 #	elif (__GNUC__ == 5) && (__GNUC_MINOR__ == 0)
-#		define GLM_COMPILER GLM_COMPILER_GCC50
+#		define GLM_COMPILER (GLM_COMPILER_GCC50)
 #	else
-#		define GLM_COMPILER GLM_COMPILER_GCC
+#		define GLM_COMPILER (GLM_COMPILER_GCC)
 #	endif
 
 // Borland C++
@@ -167,13 +363,25 @@
 // Report compiler detection
 #if(defined(GLM_MESSAGES) && !defined(GLM_MESSAGE_COMPILER_DISPLAYED))
 #	define GLM_MESSAGE_COMPILER_DISPLAYED
-#	if(defined(GLM_COMPILER) && GLM_COMPILER & GLM_COMPILER_VC)
+#	if(GLM_COMPILER & GLM_COMPILER_CUDA)
+#		pragma message("GLM: CUDA compiler detected")
+#	elif(GLM_COMPILER & GLM_COMPILER_VC)
 #		pragma message("GLM: Visual C++ compiler detected")
-#	elif(defined(GLM_COMPILER) && GLM_COMPILER & GLM_COMPILER_GCC)
-#		pragma message("GLM: GCC compiler detected")
-#	elif(defined(GLM_COMPILER) && GLM_COMPILER & GLM_COMPILER_BC)
+#	elif(GLM_COMPILER & GLM_COMPILER_CLANG)
+#		pragma message("GLM: Clang compiler detected")
+#	elif(GLM_COMPILER & GLM_COMPILER_LLVM_GCC)
+#		pragma message("GLM: LLVM GCC compiler detected")
+#	elif(GLM_COMPILER & GLM_COMPILER_GCC)
+#		if(GLM_COMPILER == GLM_COMPILER_GCC_LLVM)
+#			pragma message("GLM: LLVM GCC compiler detected")
+#		elif(GLM_COMPILER == GLM_COMPILER_GCC_CLANG)
+#			pragma message("GLM: CLANG compiler detected")
+#		else
+#			pragma message("GLM: GCC compiler detected")
+#		endif
+#	elif(GLM_COMPILER & GLM_COMPILER_BC)
 #		pragma message("GLM: Borland compiler detected but not supported")
-#	elif(defined(GLM_COMPILER) && GLM_COMPILER & GLM_COMPILER_CODEWARRIOR)
+#	elif(GLM_COMPILER & GLM_COMPILER_CODEWARRIOR)
 #		pragma message("GLM: Codewarrior compiler detected but not supported")
 #	else
 #		pragma message("GLM: Compiler not detected")
@@ -183,24 +391,16 @@
 /////////////////
 // Build model //
 
-#if(GLM_COMPILER & GLM_COMPILER_VC)
-#	if defined(_M_X64)
+#if(defined(__arch64__) || defined(__LP64__) || defined(_M_X64) || defined(__ppc64__) || defined(__x86_64__))
 #		define GLM_MODEL	GLM_MODEL_64
-#	else
-#		define GLM_MODEL	GLM_MODEL_32
-#	endif//_M_X64
-#elif(GLM_COMPILER & GLM_COMPILER_GCC)
-#	if(defined(__WORDSIZE) && (__WORDSIZE == 64)) || defined(__arch64__) || defined(__LP64__) || defined(__x86_64__)
-#		define GLM_MODEL	GLM_MODEL_64
-#	else
-#		define GLM_MODEL	GLM_MODEL_32
-#	endif//
+#elif(defined(__i386__) || defined(__ppc__))
+#	define GLM_MODEL	GLM_MODEL_32
 #else
 #	define GLM_MODEL	GLM_MODEL_32
 #endif//
 
 #if(!defined(GLM_MODEL) && GLM_COMPILER != 0)
-#error "GLM_MODEL undefined, your compiler may not be supported by GLM. Add #define GLM_MODEL 0 to ignore this message."
+#	error "GLM_MODEL undefined, your compiler may not be supported by GLM. Add #define GLM_MODEL 0 to ignore this message."
 #endif//GLM_MODEL
 
 #if(defined(GLM_MESSAGES) && !defined(GLM_MESSAGE_MODEL_DISPLAYED))
@@ -217,32 +417,57 @@
 
 // User defines: GLM_FORCE_CXX98
 
-#define GLM_LANG_CXX			0
-#define GLM_LANG_CXX98			1
-#define GLM_LANG_CXX0X			2
-#define GLM_LANG_CXXMS			3
-#define GLM_LANG_CXXGNU			4
+#define GLM_LANG_CXX			(0 << 0)
+#define GLM_LANG_CXX98			((1 << 1) | GLM_LANG_CXX)
+#define GLM_LANG_CXX03			((1 << 2) | GLM_LANG_CXX98)
+#define GLM_LANG_CXX0X			((1 << 3) | GLM_LANG_CXX03)
+#define GLM_LANG_CXX11			((1 << 4) | GLM_LANG_CXX0X)
+#define GLM_LANG_CXXMS			(1 << 5)
+#define GLM_LANG_CXXGNU			(1 << 6)
 
-#if(defined(GLM_FORCE_CXX98))
-#	define GLM_LANG GLM_LANG_CXX98
-#elif(((GLM_COMPILER & GLM_COMPILER_GCC) == GLM_COMPILER_GCC) && defined(__GXX_EXPERIMENTAL_CXX0X__)) // -std=c++0x or -std=gnu++0x
-#	define GLM_LANG GLM_LANG_CXX0X
-#elif(GLM_COMPILER == GLM_COMPILER_VC2010) //_MSC_EXTENSIONS for MS language extensions
-#	define GLM_LANG GLM_LANG_CXX0X
-#elif(((GLM_COMPILER & GLM_COMPILER_GCC) == GLM_COMPILER_GCC) && defined(__STRICT_ANSI__))
-#	define GLM_LANG GLM_LANG_CXX98
-#elif(((GLM_COMPILER & GLM_COMPILER_VC) == GLM_COMPILER_VC) && !defined(_MSC_EXTENSIONS))
+#if(defined(GLM_FORCE_CXX11))
+#	define GLM_LANG GLM_LANG_CXX11
+#elif(defined(GLM_FORCE_CXX03))
+#	define GLM_LANG GLM_LANG_CXX03
+#elif(defined(GLM_FORCE_CXX98))
 #	define GLM_LANG GLM_LANG_CXX98
 #else
-#	define GLM_LANG GLM_LANG_CXX
+//  -std=c++0x or -std=gnu++0x
+#	if(((GLM_COMPILER & GLM_COMPILER_GCC) == GLM_COMPILER_GCC) && defined(__GXX_EXPERIMENTAL_CXX0X__)) 
+#		define GLM_LANG GLM_LANG_CXX0X
+#	elif(((GLM_COMPILER & GLM_COMPILER_VC) == GLM_COMPILER_VC) && defined(_MSC_EXTENSIONS))
+#		define GLM_LANG GLM_LANG_CXXMS
+#	elif(((GLM_COMPILER & GLM_COMPILER_VC) == GLM_COMPILER_VC) && !defined(_MSC_EXTENSIONS))
+#		if(GLM_COMPILER >= GLM_COMPILER_VC2010)
+#			define GLM_LANG GLM_LANG_CXX0X
+#		else
+#			define GLM_LANG GLM_LANG_CXX98
+#		endif//(GLM_COMPILER == GLM_COMPILER_VC2010)
+#	elif((GLM_COMPILER & GLM_COMPILER_GCC) == GLM_COMPILER_GCC) //&& defined(__STRICT_ANSI__))
+#		define GLM_LANG GLM_LANG_CXX98
+#	elif((GLM_COMPILER & GLM_COMPILER_CLANG) == GLM_COMPILER_CLANG) 
+#		define GLM_LANG GLM_LANG_CXX98
+#	else
+#		define GLM_LANG GLM_LANG_CXX
+#	endif
 #endif
 
 #if(defined(GLM_MESSAGES) && !defined(GLM_MESSAGE_LANG_DISPLAYED))
 #	define GLM_MESSAGE_LANG_DISPLAYED
 #	if(GLM_LANG == GLM_LANG_CXX98)
 #		pragma message("GLM: C++98")
+#	elif(GLM_LANG == GLM_LANG_CXX03)
+#		pragma message("GLM: C++03")
 #	elif(GLM_LANG == GLM_LANG_CXX0X)
 #		pragma message("GLM: C++0x")
+#	elif(GLM_LANG == GLM_LANG_CXX11)
+#		pragma message("GLM: C++11")
+#	elif(GLM_LANG == GLM_LANG_CXXGNU)
+#		pragma message("GLM: C++ with GNU language extensions")
+#	elif(GLM_LANG == GLM_LANG_CXXMS)
+#		pragma message("GLM: C++ with VC language extensions")
+#	else
+#		pragma message("GLM: C++ language undetected")
 #	endif//GLM_MODEL
 #endif//GLM_MESSAGE
 
@@ -251,108 +476,151 @@
 
 // User defines: GLM_FORCE_PURE GLM_FORCE_SSE2 GLM_FORCE_AVX
 
-#define GLM_ARCH_PURE		0x0000 //(0x0000)
-#define GLM_ARCH_SSE2		0x0001 //(0x0001)
-#define GLM_ARCH_SSE3		0x0003 //(0x0002 | GLM_ARCH_SSE2)
-#define GLM_ARCH_AVX		0x0007 //(0x0004 | GLM_ARCH_SSE3 | GLM_ARCH_SSE2)
+#define GLM_ARCH_PURE		0x0000
+#define GLM_ARCH_SSE2		0x0001
+#define GLM_ARCH_SSE3		0x0002// | GLM_ARCH_SSE2
+#define GLM_ARCH_SSE4		0x0004// | GLM_ARCH_SSE3 | GLM_ARCH_SSE2
+#define GLM_ARCH_AVX		0x0008// | GLM_ARCH_SSE4 | GLM_ARCH_SSE3 | GLM_ARCH_SSE2
+#define GLM_ARCH_AVX2		0x0010// | GLM_ARCH_AVX | GLM_ARCH_SSE4 | GLM_ARCH_SSE3 | GLM_ARCH_SSE2
 
 #if(defined(GLM_FORCE_PURE))
 #	define GLM_ARCH GLM_ARCH_PURE
+#elif(defined(GLM_FORCE_AVX2))
+#	define GLM_ARCH (GLM_ARCH_AVX2 | GLM_ARCH_AVX | GLM_ARCH_SSE3 | GLM_ARCH_SSE2)
 #elif(defined(GLM_FORCE_AVX))
-#	define GLM_ARCH GLM_ARCH_AVX
+#	define GLM_ARCH (GLM_ARCH_AVX | GLM_ARCH_SSE3 | GLM_ARCH_SSE2)
+#elif(defined(GLM_FORCE_SSE4))
+#	define GLM_ARCH (GLM_ARCH_SSE4 | GLM_ARCH_SSE3 | GLM_ARCH_SSE2)
 #elif(defined(GLM_FORCE_SSE3))
-#	define GLM_ARCH GLM_ARCH_SSE3
+#	define GLM_ARCH (GLM_ARCH_SSE3 | GLM_ARCH_SSE2)
 #elif(defined(GLM_FORCE_SSE2))
-#	define GLM_ARCH GLM_ARCH_SSE2
+#	define GLM_ARCH (GLM_ARCH_SSE2)
 #elif((GLM_COMPILER & GLM_COMPILER_VC) && (defined(_M_IX86) || defined(_M_X64)))
 #	if(defined(_M_CEE_PURE))
 #		define GLM_ARCH GLM_ARCH_PURE
+/* TODO: Explore auto detection of instruction set support
+#	elif(defined(_M_IX86_FP))
+#		if(_M_IX86_FP >= 3)
+#			define GLM_ARCH (GLM_ARCH_AVX | GLM_ARCH_SSE3 | GLM_ARCH_SSE2)
+#		elif(_M_IX86_FP >= 2)
+#			define GLM_ARCH (GLM_ARCH_SSE2)
+#		else
+#			define GLM_ARCH GLM_ARCH_PURE
+#		endif
+*/
+#	elif(GLM_COMPILER >= GLM_COMPILER_VC2012)
+#		define GLM_ARCH (GLM_ARCH_AVX | GLM_ARCH_SSE3 | GLM_ARCH_SSE2)
 #	elif(GLM_COMPILER >= GLM_COMPILER_VC2010)
 #		if(_MSC_FULL_VER >= 160031118) //160031118: VC2010 SP1 beta full version
-#			define GLM_ARCH GLM_ARCH_AVX //GLM_ARCH_AVX (Require SP1)
+#			define GLM_ARCH (GLM_ARCH_AVX | GLM_ARCH_SSE3 | GLM_ARCH_SSE2)//GLM_ARCH_AVX (Require SP1)
 #		else
-#			define GLM_ARCH GLM_ARCH_SSE3
+#			define GLM_ARCH (GLM_ARCH_SSE3 | GLM_ARCH_SSE2)
 #		endif
 #	elif(GLM_COMPILER >= GLM_COMPILER_VC2008) 
-#		define GLM_ARCH GLM_ARCH_SSE3
+#		define GLM_ARCH (GLM_ARCH_SSE3 | GLM_ARCH_SSE2)
 #	elif(GLM_COMPILER >= GLM_COMPILER_VC2005)
 #		define GLM_ARCH GLM_ARCH_SSE2
 #	else
 #		define GLM_ARCH GLM_ARCH_PURE
 #	endif
-#elif((GLM_COMPILER & GLM_COMPILER_GCC) && (defined(__i386__) || defined(__x86_64__)))
-#	if(defined(__AVX__))
-#		define GLM_ARCH GLM_ARCH_AVX
-#	elif(defined(__SSE3__))
-#		define GLM_ARCH GLM_ARCH_SSE3
-#	elif(defined(__SSE2__))
-#		define GLM_ARCH GLM_ARCH_SSE2
-#	else
-#		define GLM_ARCH GLM_ARCH_PURE
-#	endif
+#elif((GLM_PLATFORM & GLM_PLATFORM_APPLE) && (GLM_COMPILER & GLM_COMPILER_GCC))
+#	define GLM_ARCH GLM_ARCH_PURE
+#elif(((GLM_COMPILER & GLM_COMPILER_GCC) && (defined(__i386__) || defined(__x86_64__))) || (GLM_COMPILER & GLM_COMPILER_LLVM_GCC))
+#	define GLM_ARCH (GLM_ARCH_PURE \
+| (defined(__AVX2__) ? GLM_ARCH_AVX2 : 0) \
+| (defined(__AVX__) ? GLM_ARCH_AVX : 0) \
+| (defined(__SSE4__) ? GLM_ARCH_SSE4 : 0) \
+| (defined(__SSE3__) ? GLM_ARCH_SSE3 : 0) \
+| (defined(__SSE2__) ? GLM_ARCH_SSE2 : 0))
 #else
 #	define GLM_ARCH GLM_ARCH_PURE
 #endif
 
-#if(GLM_ARCH != GLM_ARCH_PURE)
-#if((GLM_ARCH & GLM_ARCH_AVX) == GLM_ARCH_AVX)
+//#if(GLM_ARCH != GLM_ARCH_PURE)
+#if(GLM_ARCH & GLM_ARCH_AVX2)
 #	include <immintrin.h>
 #endif//GLM_ARCH
-#if((GLM_ARCH & GLM_ARCH_SSE3) == GLM_ARCH_SSE3)
+#if(GLM_ARCH & GLM_ARCH_AVX)
+#	include <immintrin.h>
+#endif//GLM_ARCH
+#if(GLM_ARCH & GLM_ARCH_SSE4)
+#	include <smmintrin.h>
+#endif//GLM_ARCH
+#if(GLM_ARCH & GLM_ARCH_SSE3)
 #	include <pmmintrin.h>
 #endif//GLM_ARCH
-#if((GLM_ARCH & GLM_ARCH_SSE2) == GLM_ARCH_SSE2)
+#if(GLM_ARCH & GLM_ARCH_SSE2)
 #	include <emmintrin.h>
 #endif//GLM_ARCH
-#endif//(GLM_ARCH != GLM_ARCH_PURE)
+//#endif//(GLM_ARCH != GLM_ARCH_PURE)
 
 #if(defined(GLM_MESSAGES) && !defined(GLM_MESSAGE_ARCH_DISPLAYED))
 #	define GLM_MESSAGE_ARCH_DISPLAYED
 #	if(GLM_ARCH == GLM_ARCH_PURE)
 #		pragma message("GLM: Platform independent")
-#	elif(GLM_ARCH == GLM_ARCH_SSE2)
-#		pragma message("GLM: SSE2 build platform")
-#	elif(GLM_ARCH == GLM_ARCH_SSE3)
-#		pragma message("GLM: SSE3 build platform")
-#	elif(GLM_ARCH == GLM_ARCH_AVX)
-#		pragma message("GLM: AVX build platform")
+#	elif(GLM_ARCH & GLM_ARCH_SSE2)
+#		pragma message("GLM: SSE2 instruction set")
+#	elif(GLM_ARCH & GLM_ARCH_SSE3)
+#		pragma message("GLM: SSE3 instruction set")
+#	elif(GLM_ARCH & GLM_ARCH_SSE4)
+#		pragma message("GLM: SSE4 instruction set")
+#	elif(GLM_ARCH & GLM_ARCH_AVX)
+#		pragma message("GLM: AVX instruction set")
+#	elif(GLM_ARCH & GLM_ARCH_AVX2)
+#		pragma message("GLM: AVX2 instruction set")
 #	endif//GLM_ARCH
 #endif//GLM_MESSAGE
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Support check macros
+
+#define GLM_SUPPORT_ANONYMOUS_UNION() \
+	((GLM_LANG & GLM_LANG_CXX98) == GLM_LANG_CXX98)
+
+//#define GLM_SUPPORT_ANONYMOUS_UNION_OF_STRUCTURE() <backslash>
+//	(((GLM_LANG & GLM_LANG_CXX11) == GLM_LANG_CXX11) || ((GLM_COMPILER & GLM_COMPILER_VC) && (GLM_LANG & GLM_LANG_CXXMS) == GLM_LANG_CXXMS) || ((GLM_COMPILER & GLM_COMPILER_GCC) && (GLM_LANG == GLM_LANG_CXX0X)))
+
+#define GLM_SUPPORT_ANONYMOUS_UNION_OF_STRUCTURE() \
+	(((GLM_LANG & GLM_LANG_CXX11) == GLM_LANG_CXX11) || ((GLM_COMPILER & GLM_COMPILER_VC) && ((GLM_LANG & GLM_LANG_CXXMS) == GLM_LANG_CXXMS)) || ((GLM_LANG == GLM_LANG_CXX0X) == GLM_LANG_CXX0X))
+
+#define GLM_SUPPORT_SWIZZLE_OPERATOR() \
+	(/*defined(GLM_SWIZZLE) && */GLM_SUPPORT_ANONYMOUS_UNION_OF_STRUCTURE())
+
+#define GLM_SUPPORT_SWIZZLE_FUNCTION() defined(GLM_SWIZZLE)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Components
 
 //#define GLM_FORCE_ONLY_XYZW
-#define GLM_COMPONENT_GLSL_NAMES			0 
-#define GLM_COMPONENT_ONLY_XYZW				1 // To disable multiple vector component names access.
-#define GLM_COMPONENT_MS_EXT				2 // To use anonymous union to provide multiple component names access for class valType. Visual C++ only.
+#define GLM_COMPONENT_ONLY_XYZW				0 // To disable multiple vector component names access.
+#define GLM_COMPONENT_CXX98					1 //  
+#define GLM_COMPONENT_CXX11					2 // To use anonymous union to provide multiple component names access for class valType. Visual C++ only.
 
-#ifndef GLM_FORCE_ONLY_XYZW
-#	if((GLM_COMPILER & GLM_COMPILER_VC) && defined(_MSC_EXTENSIONS))
-#		define GLM_COMPONENT GLM_COMPONENT_MS_EXT
-#	else
-#		define GLM_COMPONENT GLM_COMPONENT_GLSL_NAMES
-#	endif
+#if(GLM_SUPPORT_ANONYMOUS_UNION_OF_STRUCTURE() && !defined(GLM_FORCE_ONLY_XYZW))
+#	define GLM_COMPONENT GLM_COMPONENT_CXX11
+#elif(GLM_SUPPORT_ANONYMOUS_UNION() && !defined(GLM_FORCE_ONLY_XYZW))
+#	define GLM_COMPONENT GLM_COMPONENT_CXX98
 #else
 #	define GLM_COMPONENT GLM_COMPONENT_ONLY_XYZW
 #endif
 
-#if((GLM_COMPONENT == GLM_COMPONENT_MS_EXT) && !(GLM_COMPILER & GLM_COMPILER_VC))
-#	error "GLM_COMPONENT value is GLM_COMPONENT_MS_EXT but this is not allowed with the current compiler."
-#endif
-
 #if(defined(GLM_MESSAGES) && !defined(GLM_MESSAGE_COMPONENT_DISPLAYED))
 #	define GLM_MESSAGE_COMPONENT_DISPLAYED
-#	if(GLM_COMPONENT == GLM_COMPONENT_GLSL_NAMES)
-#		pragma message("GLM: GLSL multiple vector component names")
+#	if(GLM_COMPONENT == GLM_COMPONENT_CXX98)
+#		pragma message("GLM: x,y,z,w; r,g,b,a; s,t,p,q component names except of half based vector types")
 #	elif(GLM_COMPONENT == GLM_COMPONENT_ONLY_XYZW)
-#		pragma message("GLM: x,y,z,w vector component names only")
-#	elif(GLM_COMPONENT == GLM_COMPONENT_MS_EXT)
-#		pragma message("GLM: Multiple vector component names through Visual C++ language extensions")
+#		pragma message("GLM: x,y,z,w component names for all vector types")
+#	elif(GLM_COMPONENT == GLM_COMPONENT_CXX11)
+#		pragma message("GLM: x,y,z,w; r,g,b,a; s,t,p,q component names for all vector types")
 #	else
-#		error "GLM_COMPONENT value unknown"
+#		error "GLM: GLM_COMPONENT value unknown"
 #	endif//GLM_MESSAGE_COMPONENT_DISPLAYED
 #endif//GLM_MESSAGE
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+// Radians
+
+//#define GLM_FORCE_RADIANS
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Static assert
@@ -369,53 +637,53 @@
 #endif//GLM_LANG
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-// inline 
+// Qualifiers 
 
-// User defines: GLM_FORCE_INLINE
+// User defines: GLM_FORCE_INLINE GLM_FORCE_CUDA
+
+#if(defined(GLM_FORCE_CUDA) || (GLM_COMPILER & GLM_COMPILER_CUDA))
+#   define GLM_CUDA_FUNC_DEF __device__ __host__ 
+#	define GLM_CUDA_FUNC_DECL __device__ __host__ 
+#else
+#   define GLM_CUDA_FUNC_DEF
+#	define GLM_CUDA_FUNC_DECL
+#endif
+
+#if GLM_COMPILER & GLM_COMPILER_GCC
+#define GLM_VAR_USED __attribute__ ((unused))
+#else
+#define GLM_VAR_USED
+#endif
 
 #if(defined(GLM_FORCE_INLINE))
-#	if((GLM_COMPILER & GLM_COMPILER_VC) && (GLM_COMPILER >= GLM_COMPILER_VC2005))
-#		define GLM_INLINE __forceinline
-#	elif((GLM_COMPILER & GLM_COMPILER_GCC) && (GLM_COMPILER >= GLM_COMPILER_VC2005))
-#		define GLM_INLINE __attribute__((always_inline))
-#	else
-#		define GLM_INLINE inline
-#	endif//GLM_COMPILER
+#   if((GLM_COMPILER & GLM_COMPILER_VC) && (GLM_COMPILER >= GLM_COMPILER_VC2005))
+#       define GLM_INLINE __forceinline
+#   elif((GLM_COMPILER & GLM_COMPILER_GCC) && (GLM_COMPILER >= GLM_COMPILER_GCC34))
+#       define GLM_INLINE __attribute__((always_inline))
+#   else
+#       define GLM_INLINE inline
+#   endif//GLM_COMPILER
 #else
-#	define GLM_INLINE inline
+#   define GLM_INLINE inline
 #endif//defined(GLM_FORCE_INLINE)
+
+#define GLM_FUNC_DECL GLM_CUDA_FUNC_DECL
+#define GLM_FUNC_QUALIFIER GLM_CUDA_FUNC_DEF GLM_INLINE
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // Swizzle operators
 
-// User defines: GLM_SWIZZLE_XYZW GLM_SWIZZLE_RGBA GLM_SWIZZLE_STQP GLM_SWIZZLE
+// User defines: GLM_SWIZZLE
 
 #if(defined(GLM_MESSAGES) && !defined(GLM_MESSAGE_SWIZZLE_DISPLAYED))
 #	define GLM_MESSAGE_SWIZZLE_DISPLAYED
-#	if(defined(GLM_SWIZZLE))
-#		pragma message("GLM: Full swizzling operator enabled")
-#	elif(!defined(GLM_SWIZZLE_XYZW) && !defined(GLM_SWIZZLE_RGBA) && !defined(GLM_SWIZZLE_STQP) && !defined(GLM_SWIZZLE))
-#		pragma message("GLM: No swizzling operator enabled")
+#	if(GLM_SUPPORT_SWIZZLE_OPERATOR())
+#		pragma message("GLM: Swizzling operators enabled")
+#	elif(GLM_SUPPORT_SWIZZLE_FUNCTION())
+#		pragma message("GLM: Swizzling operators supported through swizzling functions")
 #	else
-#		pragma message("GLM: Partial swizzling operator enabled")
+#		pragma message("GLM: Swizzling operators disabled")
 #	endif
 #endif//GLM_MESSAGE
-
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Precision
-
-#define GLM_PRECISION_NONE			0x00000000
-
-#define GLM_PRECISION_LOWP_FLOAT	0x00000011
-#define GLM_PRECISION_MEDIUMP_FLOAT	0x00000012
-#define GLM_PRECISION_HIGHP_FLOAT	0x00000013	
-
-#define GLM_PRECISION_LOWP_INT		0x00001100
-#define GLM_PRECISION_MEDIUMP_INT	0x00001200
-#define GLM_PRECISION_HIGHP_INT		0x00001300
-
-#define GLM_PRECISION_LOWP_UINT		0x00110000
-#define GLM_PRECISION_MEDIUMP_UINT	0x00120000
-#define GLM_PRECISION_HIGHP_UINT	0x00130000	
 
 #endif//glm_setup

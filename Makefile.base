@@ -82,7 +82,7 @@ endif
 
 export AR         	= $(TOOLCHAINPATH)ar
 
-ifeq ($(LLVM_BUILD), yes)
+ifeq ($(CLANG_BUILD), yes)
 	export CC         	= $(TOOLCHAINPATH)clang
 	export CPP        	= $(TOOLCHAINPATH)clang++
 
@@ -128,7 +128,7 @@ ifeq ($(DEBUGBUILD), yes)
     DEBUGFLAGS = -g -DDEBUG -DEE_DEBUG -DEE_MEMORY_MANAGER
     RELEASETYPE = debug
 else
-	ifeq ($(LLVM_BUILD), yes)
+	ifeq ($(CLANG_BUILD), yes)
 		DEBUGFLAGS = -fno-strict-aliasing -O3 -DNDEBUG -ffast-math
 	else
     	DEBUGFLAGS = -fno-strict-aliasing -O3 -s -DNDEBUG -ffast-math

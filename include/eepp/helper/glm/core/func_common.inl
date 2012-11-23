@@ -1,524 +1,276 @@
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Created : 2008-08-03
-// Updated : 2010-01-26
-// Licence : This source is under MIT License
-// File    : glm/core/func_common.inl
-///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+/// OpenGL Mathematics (glm.g-truc.net)
+///
+/// Copyright (c) 2005 - 2012 G-Truc Creation (www.g-truc.net)
+/// Permission is hereby granted, free of charge, to any person obtaining a copy
+/// of this software and associated documentation files (the "Software"), to deal
+/// in the Software without restriction, including without limitation the rights
+/// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+/// copies of the Software, and to permit persons to whom the Software is
+/// furnished to do so, subject to the following conditions:
+/// 
+/// The above copyright notice and this permission notice shall be included in
+/// all copies or substantial portions of the Software.
+/// 
+/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+/// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+/// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+/// THE SOFTWARE.
+///
+/// @ref core
+/// @file glm/core/func_common.inl
+/// @date 2008-08-03 / 2011-06-15
+/// @author Christophe Riccio
+///////////////////////////////////////////////////////////////////////////////////
 
-namespace glm
+namespace glm{
+namespace detail
 {
-	namespace detail
+	template <typename genFIType, bool /*signed*/>
+	struct Abs_
+	{};
+
+	template <typename genFIType>
+	struct Abs_<genFIType, true>
 	{
-		template <typename genFIType, bool /*signed*/>
-		struct Abs_
+		static genFIType get(genFIType const & x)
 		{
-		};
+			GLM_STATIC_ASSERT(
+				detail::type<genFIType>::is_float || 
+				detail::type<genFIType>::is_int, "'abs' only accept floating-point and integer inputs");
+			return x >= genFIType(0) ? x : -x;
+			// TODO, perf comp with: *(((int *) &x) + 1) &= 0x7fffffff;
+		}
+	};
 
-		template <typename genFIType>
-		struct Abs_<genFIType, true>
+	template <typename genFIType>
+	struct Abs_<genFIType, false>
+	{
+		static genFIType get(genFIType const & x)
 		{
-			static genFIType get(genFIType const & x)
-			{
-				GLM_STATIC_ASSERT(
-					detail::type<genFIType>::is_float || 
-					detail::type<genFIType>::is_int, "'abs' only accept floating-point and integer inputs");
-				return x >= genFIType(0) ? x : -x;
-			}
-		};
-
-		template <typename genFIType>
-		struct Abs_<genFIType, false>
-		{
-			static genFIType get(genFIType const & x)
-			{
-				GLM_STATIC_ASSERT(
+			GLM_STATIC_ASSERT(
 					detail::type<genFIType>::is_uint, "'abs' only accept floating-point and integer inputs");
-
-				return x;
-			}
-		};
-	}//namespace detail
-
-	namespace core{
-	namespace function{
-	namespace common{
+			return x;
+		}
+	};
+}//namespace detail
 
 	// abs
 	template <typename genFIType>
-    inline genFIType abs(
-		genFIType const & x)
-    {
+	GLM_FUNC_QUALIFIER genFIType abs
+	(
+		genFIType const & x
+	)
+	{
 		return detail::Abs_<genFIType, std::numeric_limits<genFIType>::is_signed>::get(x);
-    }
+	}
 
-	//template <typename T> 
-	//inline detail::tvec1<T> abs(
-	//	detail::tvec1<T> const & v)
-	//{
-	//	return detail::tvec1<T>(
-	//		abs(v.x));	
-	//}
+	VECTORIZE_VEC(abs)
 
-    template <typename T>
-    inline detail::tvec2<T> abs(
-		detail::tvec2<T> const & v)
-    {
-        return detail::tvec2<T>(
-            abs(v.x),
-            abs(v.y));
-    }
-
-    template <typename T>
-    inline detail::tvec3<T> abs(
-		detail::tvec3<T> const & v)
-    {
-        return detail::tvec3<T>(
-            abs(v.x),
-            abs(v.y),
-            abs(v.z));
-    }
-
-    template <typename T>
-    inline detail::tvec4<T> abs(
-		detail::tvec4<T> const & v)
-    {
-        return detail::tvec4<T>(
-            abs(v.x),
-            abs(v.y),
-            abs(v.z),
-            abs(v.w));
-    }
-
-    // sign
-
+	// sign
 	//Try something like based on x >> 31 to get the sign bit
-    template <typename genFIType> 
-	inline genFIType sign(
-		genFIType const & x)
+	template <typename genFIType> 
+	GLM_FUNC_QUALIFIER genFIType sign
+	(
+		genFIType const & x
+	)
 	{
 		GLM_STATIC_ASSERT(
 			detail::type<genFIType>::is_float || 
 			detail::type<genFIType>::is_int, "'sign' only accept signed inputs");
-        
+
 		genFIType result;
 		if(x > genFIType(0))
-            result = genFIType(1);
-        else if(x < genFIType(0))
-            result = genFIType(-1);
-        else
-            result = genFIType(0);
-        return result;
+			result = genFIType(1);
+		else if(x < genFIType(0))
+			result = genFIType(-1);
+		else
+			result = genFIType(0);
+		return result;
 	}
 	
-    template <typename valFIType>
-    inline detail::tvec2<valFIType> sign(
-		detail::tvec2<valFIType> const & x)
-    {
-        return detail::tvec2<valFIType>(
-            sign(x.x),
-            sign(x.y));
-    }
+	VECTORIZE_VEC(sign)
 
-    template <typename valFIType>
-    inline detail::tvec3<valFIType> sign(
-		detail::tvec3<valFIType> const & x)
-    {
-        return detail::tvec3<valFIType>(
-            sign(x.x),
-            sign(x.y),
-            sign(x.z));
-    }
+	// floor
+	template <>
+	GLM_FUNC_QUALIFIER detail::half floor<detail::half>(detail::half const & x)
+	{
+		return detail::half(::std::floor(float(x)));
+	}
 
-    template <typename valFIType>
-    inline detail::tvec4<valFIType> sign(
-		detail::tvec4<valFIType> const & x)
-    {
-        return detail::tvec4<valFIType>(
-            sign(x.x),
-            sign(x.y),
-            sign(x.z),
-            sign(x.w));
-    }
-
-    // floor
-    template <>
-	inline detail::thalf floor<detail::thalf>(detail::thalf const& x)
-    {
-        return detail::thalf(::std::floor(float(x)));
-    }
-
-    template <typename genType>
-    inline genType floor(genType const& x)
-    {
+	template <typename genType>
+	GLM_FUNC_QUALIFIER genType floor(genType const & x)
+	{
 		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'floor' only accept floating-point inputs");
 
-        return ::std::floor(x);
-    }
+		return ::std::floor(x);
+	}
 
-    template <typename valType>
-    inline detail::tvec2<valType> floor(detail::tvec2<valType> const& x)
-    {
-        return detail::tvec2<valType>(
-            floor(x.x),
-            floor(x.y));
-    }
+	VECTORIZE_VEC(floor)
 
-    template <typename valType>
-    inline detail::tvec3<valType> floor(detail::tvec3<valType> const& x)
-    {
-        return detail::tvec3<valType>(
-            floor(x.x),
-            floor(x.y),
-            floor(x.z));
-    }
-
-    template <typename valType>
-    inline detail::tvec4<valType> floor(detail::tvec4<valType> const& x)
-    {
-        return detail::tvec4<valType>(
-            floor(x.x),
-            floor(x.y),
-            floor(x.z),
-            floor(x.w));
-    }
-
-    // trunc
-    template <typename genType>
-    inline genType trunc(genType const & x)
-    {
+	// trunc
+	template <typename genType>
+	GLM_FUNC_QUALIFIER genType trunc(genType const & x)
+	{
 		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'trunc' only accept floating-point inputs");
-        return x < 0 ? -floor(-x) : floor(x);
-    }
+		return x < 0 ? -floor(-x) : floor(x);
+	}
 
-    template <typename valType>
-    inline detail::tvec2<valType> trunc(detail::tvec2<valType> const & x)
-    {
-        return detail::tvec2<valType>(
-            trunc(x.x),
-            trunc(x.y));
-    }
+	VECTORIZE_VEC(trunc)
 
-    template <typename valType>
-    inline detail::tvec3<valType> trunc(detail::tvec3<valType> const & x)
-    {
-        return detail::tvec3<valType>(
-            trunc(x.x),
-            trunc(x.y),
-            trunc(x.z));
-    }
-
-    template <typename valType>
-    inline detail::tvec4<valType> trunc(detail::tvec4<valType> const & x)
-    {
-        return detail::tvec4<valType>(
-            trunc(x.x),
-            trunc(x.y),
-            trunc(x.z),
-            trunc(x.w));
-    }
-
-    // round
-    template <typename genType>
-    inline genType round(genType const& x)
-    {
+	// round
+	template <typename genType>
+	GLM_FUNC_QUALIFIER genType round(genType const& x)
+	{
 		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'round' only accept floating-point inputs");
 
-        return genType(int(x + genType(0.5)));
-    }
+		if(x < 0)
+			return genType(int(x - genType(0.5)));
+		return genType(int(x + genType(0.5)));
+	}
 
-    template <typename valType>
-    inline detail::tvec2<valType> round(detail::tvec2<valType> const& x)
-    {
-        return detail::tvec2<valType>(
-            round(x.x),
-            round(x.y));
-    }
+	VECTORIZE_VEC(round)
 
-    template <typename valType>
-    inline detail::tvec3<valType> round(detail::tvec3<valType> const& x)
-    {
-        return detail::tvec3<valType>(
-            round(x.x),
-            round(x.y),
-            round(x.z));
-    }
-
-    template <typename valType>
-    inline detail::tvec4<valType> round(detail::tvec4<valType> const& x)
-    {
-        return detail::tvec4<valType>(
-            round(x.x),
-            round(x.y),
-            round(x.z),
-            round(x.w));
-    }
-
-    // roundEven
-    template <typename genType>
-    inline genType roundEven(genType const& x)
-    {
+/*
+	// roundEven
+	template <typename genType>
+	GLM_FUNC_QUALIFIER genType roundEven(genType const& x)
+	{
 		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'roundEven' only accept floating-point inputs");
 
 		return genType(int(x + genType(int(x) % 2)));
-    }
+	}
+*/
+	
+	// roundEven
+	template <typename genType>
+	GLM_FUNC_QUALIFIER genType roundEven(genType const & x)
+	{
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'roundEven' only accept floating-point inputs");
+		
+		int Integer = int(x);
+		genType IntegerPart = genType(Integer);
+		genType FractionalPart = fract(x);
 
-    template <typename valType>
-    inline detail::tvec2<valType> roundEven(detail::tvec2<valType> const& x)
-    {
-        return detail::tvec2<valType>(
-            roundEven(x.x),
-            roundEven(x.y));
-    }
+		if(FractionalPart > genType(0.5) || FractionalPart < genType(0.5))
+		{
+			return round(x);
+		}
+		else if((Integer % 2) == 0)
+		{
+			return IntegerPart;
+		}
+		else if(x <= genType(0)) // Work around... 
+		{
+			return IntegerPart - 1;
+		}
+		else
+		{
+			return IntegerPart + 1;
+		}
+		//else // Bug on MinGW 4.5.2
+		//{
+		//	return mix(IntegerPart + genType(-1), IntegerPart + genType(1), x <= genType(0));
+		//}
+	}
+	
+	VECTORIZE_VEC(roundEven)
 
-    template <typename valType>
-    inline detail::tvec3<valType> roundEven(detail::tvec3<valType> const& x)
-    {
-        return detail::tvec3<valType>(
-            roundEven(x.x),
-            roundEven(x.y),
-            roundEven(x.z));
-    }
-
-    template <typename valType>
-    inline detail::tvec4<valType> roundEven(detail::tvec4<valType> const& x)
-    {
-        return detail::tvec4<valType>(
-            roundEven(x.x),
-            roundEven(x.y),
-            roundEven(x.z),
-            roundEven(x.w));
-    }
-
-    // ceil
-    template <typename genType>
-    inline genType ceil(genType const & x)
-    {
+	// ceil
+	template <typename genType>
+	GLM_FUNC_QUALIFIER genType ceil(genType const & x)
+	{
 		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'ceil' only accept floating-point inputs");
 
-        return ::std::ceil(x);
-    }
+		return ::std::ceil(x);
+	}
 
-    template <typename valType>
-    inline detail::tvec2<valType> ceil(detail::tvec2<valType> const & x)
-    {
-        return detail::tvec2<valType>(
-            ceil(x.x),
-            ceil(x.y));
-    }
+	VECTORIZE_VEC(ceil)
 
-    template <typename valType>
-    inline detail::tvec3<valType> ceil(detail::tvec3<valType> const & x)
-    {
-        return detail::tvec3<valType>(
-            ceil(x.x),
-            ceil(x.y),
-            ceil(x.z));
-    }
-
-    template <typename valType>
-    inline detail::tvec4<valType> ceil(detail::tvec4<valType> const & x)
-    {
-        return detail::tvec4<valType>(
-            ceil(x.x),
-            ceil(x.y),
-            ceil(x.z),
-            ceil(x.w));
-    }
-
-    // fract
-    template <typename genType>
-    inline genType fract
+	// fract
+	template <typename genType>
+	GLM_FUNC_QUALIFIER genType fract
 	(
 		genType const & x
 	)
-    {
+	{
 		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'fract' only accept floating-point inputs");
 
-        return x - ::std::floor(x);
-    }
+		return x - ::std::floor(x);
+	}
 
-    template <typename valType>
-    inline detail::tvec2<valType> fract
-	(
-		detail::tvec2<valType> const & x
-	)
-    {
-        return detail::tvec2<valType>(
-            fract(x.x),
-            fract(x.y));
-    }
+	VECTORIZE_VEC(fract)
 
-    template <typename valType>
-    inline detail::tvec3<valType> fract
-	(
-		detail::tvec3<valType> const & x
-	)
-    {
-        return detail::tvec3<valType>(
-            fract(x.x),
-            fract(x.y),
-            fract(x.z));
-    }
-
-    template <typename valType>
-    inline detail::tvec4<valType> fract
-	(
-		detail::tvec4<valType> const & x
-	)
-    {
-        return detail::tvec4<valType>(
-            fract(x.x),
-            fract(x.y),
-            fract(x.z),
-            fract(x.w));
-    }
-
-    // mod
-    template <typename genType>
-    inline genType mod
+	// mod
+	template <typename genType>
+	GLM_FUNC_QUALIFIER genType mod
 	(
 		genType const & x, 
 		genType const & y
 	)
-    {
+	{
 		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'mod' only accept floating-point inputs");
 
-        return x - y * floor(x / y);
-    }
+		return x - y * floor(x / y);
+	}
 
-    template <typename T>
-    inline detail::tvec2<T> mod
-	(
-		detail::tvec2<T> const & x, 
-		typename detail::tvec2<T>::value_type const & y
-	)
-    {
-        return detail::tvec2<T>(
-            mod(x.x, y),
-            mod(x.y, y));
-    }
+	VECTORIZE_VEC_SCA(mod)
+	VECTORIZE_VEC_VEC(mod)
 
-    template <typename T>
-    inline detail::tvec3<T> mod
-	(
-		detail::tvec3<T> const & x, 
-		typename detail::tvec3<T>::value_type const & y
-	)
-    {
-        return detail::tvec3<T>(
-            mod(x.x, y),
-            mod(x.y, y),
-            mod(x.z, y));
-    }
-
-    template <typename T>
-    inline detail::tvec4<T> mod
-	(
-		detail::tvec4<T> const & x, 
-		typename detail::tvec4<T>::value_type const & y
-	)
-    {
-        return detail::tvec4<T>(
-            mod(x.x, y),
-            mod(x.y, y),
-            mod(x.z, y),
-            mod(x.w, y));
-    }
-
-    template <typename T>
-    inline detail::tvec2<T> mod
-	(
-		detail::tvec2<T> const & x, 
-		detail::tvec2<T> const & y
-	)
-    {
-        return detail::tvec2<T>(
-            mod(x.x, y.x),
-            mod(x.y, y.y));
-    }
-
-    template <typename T>
-    inline detail::tvec3<T> mod
-	(
-		detail::tvec3<T> const & x, 
-		detail::tvec3<T> const & y
-	)
-    {
-        return detail::tvec3<T>(
-            mod(x.x, y.x),
-            mod(x.y, y.y),
-            mod(x.z, y.z));
-    }
-
-    template <typename T>
-    inline detail::tvec4<T> mod
-	(
-		detail::tvec4<T> const & x, 
-		detail::tvec4<T> const & y
-	)
-    {
-        return detail::tvec4<T>(
-            mod(x.x, y.x),
-            mod(x.y, y.y),
-            mod(x.z, y.z),
-            mod(x.w, y.w));
-    }
-
-    // modf
-    template <typename genType>
-    inline genType modf
+	// modf
+	template <typename genType>
+	GLM_FUNC_QUALIFIER genType modf
 	(
 		genType const & x, 
 		genType & i
 	)
-    {
+	{
 		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'modf' only accept floating-point inputs");
 
-		i = glm::floor(x);
+		return std::modf(x, &i);
+	}
 
-        return x - i;
-    }
-
-    template <typename valType>
-    inline detail::tvec2<valType> modf
+	template <typename valType>
+	GLM_FUNC_QUALIFIER detail::tvec2<valType> modf
 	(
 		detail::tvec2<valType> const & x, 
-		detail::tvec2<valType> const & y
+		detail::tvec2<valType> & i
 	)
-    {
-        return detail::tvec2<valType>(
-            modf(x.x, y.x),
-            modf(x.y, y.y));
-    }
+	{
+		return detail::tvec2<valType>(
+			modf(x.x, i.x),
+			modf(x.y, i.y));
+	}
 
-    template <typename valType>
-    inline detail::tvec3<valType> modf
+	template <typename valType>
+	GLM_FUNC_QUALIFIER detail::tvec3<valType> modf
 	(
 		detail::tvec3<valType> const & x, 
-		detail::tvec3<valType> const & y
+		detail::tvec3<valType> & i
 	)
-    {
-        return detail::tvec3<valType>(
-            modf(x.x, y.x),
-            modf(x.y, y.y),
-            modf(x.z, y.z));
-    }
+	{
+		return detail::tvec3<valType>(
+			modf(x.x, i.x),
+			modf(x.y, i.y),
+			modf(x.z, i.z));
+	}
 
-    template <typename valType>
-    inline detail::tvec4<valType> modf
+	template <typename valType>
+	GLM_FUNC_QUALIFIER detail::tvec4<valType> modf
 	(
 		detail::tvec4<valType> const & x, 
-		detail::tvec4<valType> const & y
+		detail::tvec4<valType> & i
 	)
-    {
-        return detail::tvec4<valType>(
-            modf(x.x, y.x),
-            modf(x.y, y.y),
-            modf(x.z, y.z),
-            modf(x.w, y.w));
-    }
+	{
+		return detail::tvec4<valType>(
+			modf(x.x, i.x),
+			modf(x.y, i.y),
+			modf(x.z, i.z),
+			modf(x.w, i.w));
+	}
 
 	//// Only valid if (INT_MIN <= x-y <= INT_MAX)
 	//// min(x,y)
@@ -528,202 +280,53 @@ namespace glm
 	//r = x - ((x - y) & ((x - y) >> (sizeof(int) *
 	//CHAR_BIT - 1)));
 
-    // min
-    template <typename genType>
-    inline genType min
+	// min
+	template <typename genType>
+	GLM_FUNC_QUALIFIER genType min
 	(
 		genType const & x, 
 		genType const & y
 	)
-    {
+	{
 		GLM_STATIC_ASSERT(
 			detail::type<genType>::is_float || 
 			detail::type<genType>::is_int ||
 			detail::type<genType>::is_uint, "'min' only accept numbers");
 
-        return x < y ? x : y;
-    }
+		return x < y ? x : y;
+	}
 
-    template <typename T>
-    inline detail::tvec2<T> min
-	(
-		detail::tvec2<T> const & x, 
-		typename detail::tvec2<T>::value_type const & y
-	)
-    {
-        return detail::tvec2<T>(
-            min(x.x, y),
-            min(x.y, y));
-    }
+	VECTORIZE_VEC_SCA(min)
+	VECTORIZE_VEC_VEC(min)
 
-    template <typename T>
-    inline detail::tvec3<T> min
-	(
-		detail::tvec3<T> const & x, 
-		typename detail::tvec3<T>::value_type const & y
-	)
-    {
-        return detail::tvec3<T>(
-            min(x.x, y),
-            min(x.y, y),
-            min(x.z, y));
-    }
-
-    template <typename T>
-    inline detail::tvec4<T> min
-	(
-		detail::tvec4<T> const & x, 
-		typename detail::tvec4<T>::value_type const & y
-	)
-    {
-        return detail::tvec4<T>(
-            min(x.x, y),
-            min(x.y, y),
-            min(x.z, y),
-            min(x.w, y));
-    }
-
-    template <typename T>
-    inline detail::tvec2<T> min
-	(
-		detail::tvec2<T> const & x, 
-		detail::tvec2<T> const & y
-	)
-    {
-        return detail::tvec2<T>(
-            min(x.x, y.x),
-            min(x.y, y.y));
-    }
-
-    template <typename T>
-    inline detail::tvec3<T> min
-	(
-		detail::tvec3<T> const & x, 
-		detail::tvec3<T> const & y
-	)
-    {
-        return detail::tvec3<T>(
-            min(x.x, y.x),
-            min(x.y, y.y),
-            min(x.z, y.z));
-    }
-
-    template <typename T>
-    inline detail::tvec4<T> min
-	(
-		detail::tvec4<T> const & x, 
-		detail::tvec4<T> const & y
-	)
-    {
-        return detail::tvec4<T>(
-            min(x.x, y.x),
-            min(x.y, y.y),
-            min(x.z, y.z),
-            min(x.w, y.w));
-    }
-
-    // max
-    template <typename genType>
-    inline genType max
+	// max
+	template <typename genType>
+	GLM_FUNC_QUALIFIER genType max
 	(
 		genType const & x, 
 		genType const & y
 	)
-    {
+	{
 		GLM_STATIC_ASSERT(
 			detail::type<genType>::is_float || 
 			detail::type<genType>::is_int ||
 			detail::type<genType>::is_uint, "'max' only accept numbers");
 
 		return x > y ? x : y;
-    }
+	}
 
-    template <typename T>
-    inline detail::tvec2<T> max
-	(
-		detail::tvec2<T> const & x, 
-		typename detail::tvec2<T>::value_type y
-	)
-    {
-        return detail::tvec2<T>(
-            max(x.x, y),
-            max(x.y, y));
-    }
+	VECTORIZE_VEC_SCA(max)
+	VECTORIZE_VEC_VEC(max)
 
-    template <typename T>
-    inline detail::tvec3<T> max
-	(
-		detail::tvec3<T> const & x, 
-		typename detail::tvec3<T>::value_type y
-	)
-    {
-        return detail::tvec3<T>(
-            max(x.x, y),
-            max(x.y, y),
-            max(x.z, y));
-    }
-
-    template <typename T>
-    inline detail::tvec4<T> max
-	(
-		detail::tvec4<T> const & x, 
-		typename detail::tvec4<T>::value_type y
-	)
-    {
-        return detail::tvec4<T>(
-            max(x.x, y),
-            max(x.y, y),
-            max(x.z, y),
-            max(x.w, y));
-    }
-
-    template <typename T>
-    inline detail::tvec2<T> max
-	(
-		detail::tvec2<T> const & x, 
-		detail::tvec2<T> const & y
-	)
-    {
-        return detail::tvec2<T>(
-            max(x.x, y.x),
-            max(x.y, y.y));
-    }
-
-    template <typename T>
-    inline detail::tvec3<T> max
-	(
-		detail::tvec3<T> const & x, 
-		detail::tvec3<T> const & y
-	)
-    {
-        return detail::tvec3<T>(
-            max(x.x, y.x),
-            max(x.y, y.y),
-            max(x.z, y.z));
-    }
-
-    template <typename T>
-    inline detail::tvec4<T> max
-	(
-		detail::tvec4<T> const & x, 
-		detail::tvec4<T> const & y)
-    {
-        return detail::tvec4<T>(
-            max(x.x, y.x),
-            max(x.y, y.y),
-            max(x.z, y.z),
-            max(x.w, y.w));
-    }
-
-    // clamp
-    template <typename valType>
-    inline valType clamp
+	// clamp
+	template <typename valType>
+	GLM_FUNC_QUALIFIER valType clamp
 	(
 		valType const & x, 
 		valType const & minVal, 
 		valType const & maxVal
 	)
-    {
+	{
 		GLM_STATIC_ASSERT(
 			detail::type<valType>::is_float || 
 			detail::type<valType>::is_int ||
@@ -731,98 +334,98 @@ namespace glm
 		
 		// Old implementation, less predictable branching
 		//if(x >= maxVal) return maxVal; 
-        //if(x <= minVal) return minVal;
-	    //return x;
-		return glm::max(glm::min(x, maxVal), minVal);
-    }
+		//if(x <= minVal) return minVal;
+		//return x;
+		return max(min(x, maxVal), minVal);
+	}
 
-    template <typename T>
-    inline detail::tvec2<T> clamp
+	template <typename T>
+	GLM_FUNC_QUALIFIER detail::tvec2<T> clamp
 	(
 		detail::tvec2<T> const & x, 
 		typename detail::tvec2<T>::value_type const & minVal, 
 		typename detail::tvec2<T>::value_type const & maxVal
 	)
-    {
-        return detail::tvec2<T>(
-            clamp(x.x, minVal, maxVal),
-            clamp(x.y, minVal, maxVal));
-    }
+	{
+		return detail::tvec2<T>(
+			clamp(x.x, minVal, maxVal),
+			clamp(x.y, minVal, maxVal));
+	}
 
-    template <typename T>
-    inline detail::tvec3<T> clamp
+	template <typename T>
+	GLM_FUNC_QUALIFIER detail::tvec3<T> clamp
 	(
 		detail::tvec3<T> const & x, 
 		typename detail::tvec3<T>::value_type const & minVal, 
 		typename detail::tvec3<T>::value_type const & maxVal
 	)
-    {
-        return detail::tvec3<T>(
-            clamp(x.x, minVal, maxVal),
-            clamp(x.y, minVal, maxVal),
-            clamp(x.z, minVal, maxVal));
-    }
+	{
+		return detail::tvec3<T>(
+			clamp(x.x, minVal, maxVal),
+			clamp(x.y, minVal, maxVal),
+			clamp(x.z, minVal, maxVal));
+	}
 
-    template <typename T>
-    inline detail::tvec4<T> clamp
+	template <typename T>
+	GLM_FUNC_QUALIFIER detail::tvec4<T> clamp
 	(
 		detail::tvec4<T> const & x, 
 		typename detail::tvec4<T>::value_type const & minVal, 
 		typename detail::tvec4<T>::value_type const & maxVal
 	)
-    {
-        return detail::tvec4<T>(
-            clamp(x.x, minVal, maxVal),
-            clamp(x.y, minVal, maxVal),
-            clamp(x.z, minVal, maxVal),
-            clamp(x.w, minVal, maxVal));
-    }
+	{
+		return detail::tvec4<T>(
+			clamp(x.x, minVal, maxVal),
+			clamp(x.y, minVal, maxVal),
+			clamp(x.z, minVal, maxVal),
+			clamp(x.w, minVal, maxVal));
+	}
 
-    template <typename T>
-    inline detail::tvec2<T> clamp
+	template <typename T>
+	GLM_FUNC_QUALIFIER detail::tvec2<T> clamp
 	(
 		detail::tvec2<T> const & x, 
 		detail::tvec2<T> const & minVal, 
 		detail::tvec2<T> const & maxVal
 	)
-    {
-        return detail::tvec2<T>(
-            clamp(x.x, minVal.x, maxVal.x),
-            clamp(x.y, minVal.y, maxVal.y));
-    }
+	{
+		return detail::tvec2<T>(
+			clamp(x.x, minVal.x, maxVal.x),
+			clamp(x.y, minVal.y, maxVal.y));
+	}
 
-    template <typename T>
-    inline detail::tvec3<T> clamp
+	template <typename T>
+	GLM_FUNC_QUALIFIER detail::tvec3<T> clamp
 	(
 		detail::tvec3<T> const & x, 
 		detail::tvec3<T> const & minVal, 
 		detail::tvec3<T> const & maxVal
 	)
-    {
-        return detail::tvec3<T>(
-            clamp(x.x, minVal.x, maxVal.x),
-            clamp(x.y, minVal.y, maxVal.y),
-            clamp(x.z, minVal.z, maxVal.z));
-    }
+	{
+		return detail::tvec3<T>(
+			clamp(x.x, minVal.x, maxVal.x),
+			clamp(x.y, minVal.y, maxVal.y),
+			clamp(x.z, minVal.z, maxVal.z));
+	}
 
-    template <typename T>
-    inline detail::tvec4<T> clamp
+	template <typename T>
+	GLM_FUNC_QUALIFIER detail::tvec4<T> clamp
 	(
 		detail::tvec4<T> const & x, 
 		detail::tvec4<T> const & minVal, 
 		detail::tvec4<T> const & maxVal
 	)
-    {
-        return detail::tvec4<T>(
-            clamp(x.x, minVal.x, maxVal.x),
-            clamp(x.y, minVal.y, maxVal.y),
-            clamp(x.z, minVal.z, maxVal.z),
-            clamp(x.w, minVal.w, maxVal.w));
-    }
+	{
+		return detail::tvec4<T>(
+			clamp(x.x, minVal.x, maxVal.x),
+			clamp(x.y, minVal.y, maxVal.y),
+			clamp(x.z, minVal.z, maxVal.z),
+			clamp(x.w, minVal.w, maxVal.w));
+	}
 
 	// mix
 	template <typename genTypeT, typename genTypeU>
-	inline genTypeT mix
+	GLM_FUNC_QUALIFIER genTypeT mix
 	(
 		genTypeT const & x, 
 		genTypeT const & y, 
@@ -839,7 +442,7 @@ namespace glm
 	}
 
 	template <typename valTypeA, typename valTypeB>
-	inline detail::tvec2<valTypeA> mix
+	GLM_FUNC_QUALIFIER detail::tvec2<valTypeA> mix
 	(
 		detail::tvec2<valTypeA> const & x, 
 		detail::tvec2<valTypeA> const & y, 
@@ -851,7 +454,7 @@ namespace glm
 	}
 
 	template <typename valTypeA, typename valTypeB>
-	inline detail::tvec3<valTypeA> mix
+	GLM_FUNC_QUALIFIER detail::tvec3<valTypeA> mix
 	(
 		detail::tvec3<valTypeA> const & x, 
 		detail::tvec3<valTypeA> const & y, 
@@ -863,7 +466,7 @@ namespace glm
 	}
 
 	template <typename valTypeA, typename valTypeB>
-	inline detail::tvec4<valTypeA> mix
+	GLM_FUNC_QUALIFIER detail::tvec4<valTypeA> mix
 	(
 		detail::tvec4<valTypeA> const & x, 
 		detail::tvec4<valTypeA> const & y, 
@@ -875,7 +478,7 @@ namespace glm
 	}
 
 	template <typename valTypeA, typename valTypeB>
-	inline detail::tvec2<valTypeA> mix
+	GLM_FUNC_QUALIFIER detail::tvec2<valTypeA> mix
 	(
 		detail::tvec2<valTypeA> const & x, 
 		detail::tvec2<valTypeA> const & y, 
@@ -887,7 +490,7 @@ namespace glm
 	}
 
 	template <typename valTypeA, typename valTypeB>
-	inline detail::tvec3<valTypeA> mix
+	GLM_FUNC_QUALIFIER detail::tvec3<valTypeA> mix
 	(
 		detail::tvec3<valTypeA> const & x, 
 		detail::tvec3<valTypeA> const & y, 
@@ -899,7 +502,7 @@ namespace glm
 	}
 
 	template <typename valTypeA, typename valTypeB>
-	inline detail::tvec4<valTypeA> mix
+	GLM_FUNC_QUALIFIER detail::tvec4<valTypeA> mix
 	(
 		detail::tvec4<valTypeA> const & x, 
 		detail::tvec4<valTypeA> const & y, 
@@ -911,7 +514,7 @@ namespace glm
 	}
 
 	//template <typename genTypeT>
-	//inline genTypeT mix
+	//GLM_FUNC_QUALIFIER genTypeT mix
 	//(
 	//	genTypeT const & x, 
 	//	genTypeT const & y, 
@@ -927,20 +530,20 @@ namespace glm
 	//}
 
 	template <typename genType>
-	inline genType mix
+	GLM_FUNC_QUALIFIER genType mix
 	(
 		genType const & x, 
 		genType const & y, 
-		bool a
+		bool const & a
 	)
 	{
 		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'mix' only accept floating-point inputs");
 
-		return a ? x : y;
+		return a ? y : x;
 	}
 
 	template <typename T>
-	inline detail::tvec2<T> mix
+	GLM_FUNC_QUALIFIER detail::tvec2<T> mix
 	(
 		detail::tvec2<T> const & x, 
 		detail::tvec2<T> const & y, 
@@ -957,13 +560,13 @@ namespace glm
 			++i
 		)
 		{
-			result[i] = a[i] ? x[i] : y[i];
+			result[i] = a[i] ? y[i] : x[i];
 		}
 		return result;
 	}
 
 	template <typename T>
-	inline detail::tvec3<T> mix
+	GLM_FUNC_QUALIFIER detail::tvec3<T> mix
 	(
 		detail::tvec3<T> const & x, 
 		detail::tvec3<T> const & y, 
@@ -980,13 +583,13 @@ namespace glm
 			++i
 		)
 		{
-			result[i] = a[i] ? x[i] : y[i];
+			result[i] = a[i] ? y[i] : x[i];
 		}
 		return result;
 	}
 
 	template <typename T>
-	inline detail::tvec4<T> mix
+	GLM_FUNC_QUALIFIER detail::tvec4<T> mix
 	(
 		detail::tvec4<T> const & x, 
 		detail::tvec4<T> const & y, 
@@ -1003,304 +606,327 @@ namespace glm
 			++i
 		)
 		{
-			result[i] = a[i] ? x[i] : y[i];
+			result[i] = a[i] ? y[i] : x[i];
 		}
 		return result;
 	}
 
 	// step
-    template <typename genType>
-    inline genType step
+	template <typename genType>
+	GLM_FUNC_QUALIFIER genType step
 	(
 		genType const & edge, 
 		genType const & x
 	)
-    {
+	{
 		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'mix' only accept floating-point inputs");
 
-        return x <= edge ? genType(0) : genType(1);
-    }
+		return x < edge ? genType(0) : genType(1);
+	}
 
-    template <typename T>
-    inline detail::tvec2<T> step
+	template <typename T>
+	GLM_FUNC_QUALIFIER detail::tvec2<T> step
 	(
 		typename detail::tvec2<T>::value_type const & edge, 
 		detail::tvec2<T> const & x
 	)
-    {
-        return detail::tvec2<T>(
-            x.x <= edge ? T(0) : T(1),
-            x.y <= edge ? T(0) : T(1));
-    }
+	{
+		return detail::tvec2<T>(
+			x.x < edge ? T(0) : T(1),
+			x.y < edge ? T(0) : T(1));
+	}
 
-    template <typename T>
-    inline detail::tvec3<T> step
+	template <typename T>
+	GLM_FUNC_QUALIFIER detail::tvec3<T> step
 	(
 		typename detail::tvec3<T>::value_type const & edge, 
 		detail::tvec3<T> const & x
 	)
-    {
+	{
 		return detail::tvec3<T>(
-			x.x <= edge ? T(0) : T(1),
-			x.y <= edge ? T(0) : T(1),
-			x.z <= edge ? T(0) : T(1));
-    }
+			x.x < edge ? T(0) : T(1),
+			x.y < edge ? T(0) : T(1),
+			x.z < edge ? T(0) : T(1));
+	}
 
-    template <typename T>
-    inline detail::tvec4<T> step
+	template <typename T>
+	GLM_FUNC_QUALIFIER detail::tvec4<T> step
 	(
 		typename detail::tvec4<T>::value_type const & edge, 
 		detail::tvec4<T> const & x
 	)
-    {
-        return detail::tvec4<T>(
-            x.x <= edge ? T(0) : T(1),
-            x.y <= edge ? T(0) : T(1),
-            x.z <= edge ? T(0) : T(1),
-            x.w <= edge ? T(0) : T(1));
-    }
+	{
+		return detail::tvec4<T>(
+			x.x < edge ? T(0) : T(1),
+			x.y < edge ? T(0) : T(1),
+			x.z < edge ? T(0) : T(1),
+			x.w < edge ? T(0) : T(1));
+	}
 
-    template <typename T>
-    inline detail::tvec2<T> step
+	template <typename T>
+	GLM_FUNC_QUALIFIER detail::tvec2<T> step
 	(
 		detail::tvec2<T> const & edge, 
 		detail::tvec2<T> const & x
 	)
-    {
-        return detail::tvec2<T>(
-            x.x <= edge.x ? T(0) : T(1),
-            x.y <= edge.y ? T(0) : T(1));
-    }
+	{
+		return detail::tvec2<T>(
+			x.x < edge.x ? T(0) : T(1),
+			x.y < edge.y ? T(0) : T(1));
+	}
 
-    template <typename T>
-    inline detail::tvec3<T> step
+	template <typename T>
+	GLM_FUNC_QUALIFIER detail::tvec3<T> step
 	(
 		detail::tvec3<T> const & edge, 
 		detail::tvec3<T> const & x
 	)
-    {
-        return detail::tvec3<T>(
-            x.x <= edge.x ? T(0) : T(1),
-            x.y <= edge.y ? T(0) : T(1),
-            x.z <= edge.z ? T(0) : T(1));
-    }
+	{
+		return detail::tvec3<T>(
+			x.x < edge.x ? T(0) : T(1),
+			x.y < edge.y ? T(0) : T(1),
+			x.z < edge.z ? T(0) : T(1));
+	}
 
-    template <typename T>
-    inline detail::tvec4<T> step
+	template <typename T>
+	GLM_FUNC_QUALIFIER detail::tvec4<T> step
 	(
 		detail::tvec4<T> const & edge, 
 		detail::tvec4<T> const & x
 	)
-    {
-        return detail::tvec4<T>(
-            x.x <= edge.x ? T(0) : T(1),
-            x.y <= edge.y ? T(0) : T(1),
-            x.z <= edge.z ? T(0) : T(1),
-            x.w <= edge.w ? T(0) : T(1));
-    }
+	{
+		return detail::tvec4<T>(
+			x.x < edge.x ? T(0) : T(1),
+			x.y < edge.y ? T(0) : T(1),
+			x.z < edge.z ? T(0) : T(1),
+			x.w < edge.w ? T(0) : T(1));
+	}
 
-    // smoothstep
-    template <typename genType>
-    inline genType smoothstep
+	// smoothstep
+	template <typename genType>
+	GLM_FUNC_QUALIFIER genType smoothstep
 	(
 		genType const & edge0, 
 		genType const & edge1, 
 		genType const & x
 	)
-    {
+	{
 		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'mix' only accept floating-point inputs");
 
-        genType tmp = clamp((x - edge0) / (edge1 - edge0), genType(0), genType(1));
-        return tmp * tmp * (genType(3) - genType(2) * tmp);
-    }
+		genType tmp = clamp((x - edge0) / (edge1 - edge0), genType(0), genType(1));
+		return tmp * tmp * (genType(3) - genType(2) * tmp);
+	}
 
-    template <typename T>
-    inline detail::tvec2<T> smoothstep
+	template <typename T>
+	GLM_FUNC_QUALIFIER detail::tvec2<T> smoothstep
 	(
 		typename detail::tvec2<T>::value_type const & edge0, 
 		typename detail::tvec2<T>::value_type const & edge1, 
 		detail::tvec2<T> const & x
 	)
-    {
-        return detail::tvec2<T>(
-            smoothstep(edge0, edge1, x.x),
-            smoothstep(edge0, edge1, x.y));
-    }
+	{
+		return detail::tvec2<T>(
+			smoothstep(edge0, edge1, x.x),
+			smoothstep(edge0, edge1, x.y));
+	}
 
-    template <typename T>
-    inline detail::tvec3<T> smoothstep
+	template <typename T>
+	GLM_FUNC_QUALIFIER detail::tvec3<T> smoothstep
 	(
 		typename detail::tvec3<T>::value_type const & edge0, 
 		typename detail::tvec3<T>::value_type const & edge1, 
 		detail::tvec3<T> const & x
 	)
-    {
-        return detail::tvec3<T>(
-            smoothstep(edge0, edge1, x.x),
-            smoothstep(edge0, edge1, x.y),
-            smoothstep(edge0, edge1, x.z));
-    }
+	{
+		return detail::tvec3<T>(
+			smoothstep(edge0, edge1, x.x),
+			smoothstep(edge0, edge1, x.y),
+			smoothstep(edge0, edge1, x.z));
+	}
 
-    template <typename T>
-    inline detail::tvec4<T> smoothstep
+	template <typename T>
+	GLM_FUNC_QUALIFIER detail::tvec4<T> smoothstep
 	(
 		typename detail::tvec4<T>::value_type const & edge0, 
 		typename detail::tvec4<T>::value_type const & edge1, 
 		detail::tvec4<T> const & x
 	)
-    {
-        return detail::tvec4<T>(
-            smoothstep(edge0, edge1, x.x),
-            smoothstep(edge0, edge1, x.y),
-            smoothstep(edge0, edge1, x.z),
-            smoothstep(edge0, edge1, x.w));
-    }
+	{
+		return detail::tvec4<T>(
+			smoothstep(edge0, edge1, x.x),
+			smoothstep(edge0, edge1, x.y),
+			smoothstep(edge0, edge1, x.z),
+			smoothstep(edge0, edge1, x.w));
+	}
 
-    template <typename T>
-    inline detail::tvec2<T> smoothstep
+	template <typename T>
+	GLM_FUNC_QUALIFIER detail::tvec2<T> smoothstep
 	(
 		detail::tvec2<T> const & edge0, 
 		detail::tvec2<T> const & edge1, 
 		detail::tvec2<T> const & x
 	)
-    {
-        return detail::tvec2<T>(
-            smoothstep(edge0.x, edge1.x, x.x),
-            smoothstep(edge0.y, edge1.y, x.y));
-    }
+	{
+		return detail::tvec2<T>(
+			smoothstep(edge0.x, edge1.x, x.x),
+			smoothstep(edge0.y, edge1.y, x.y));
+	}
 
-    template <typename T>
-    inline detail::tvec3<T> smoothstep
+	template <typename T>
+	GLM_FUNC_QUALIFIER detail::tvec3<T> smoothstep
 	(
 		detail::tvec3<T> const & edge0, 
 		detail::tvec3<T> const & edge1, 
 		detail::tvec3<T> const & x
 	)
-    {
-        return detail::tvec3<T>(
-            smoothstep(edge0.x, edge1.x, x.x),
-            smoothstep(edge0.y, edge1.y, x.y),
-            smoothstep(edge0.z, edge1.z, x.z));
-    }
+	{
+		return detail::tvec3<T>(
+			smoothstep(edge0.x, edge1.x, x.x),
+			smoothstep(edge0.y, edge1.y, x.y),
+			smoothstep(edge0.z, edge1.z, x.z));
+	}
 
-    template <typename T>
-    inline detail::tvec4<T> smoothstep
+	template <typename T>
+	GLM_FUNC_QUALIFIER detail::tvec4<T> smoothstep
 	(
 		detail::tvec4<T> const & edge0, 
 		detail::tvec4<T> const & edge1, 
 		detail::tvec4<T> const & x
 	)
-    {
-        return detail::tvec4<T>(
-            smoothstep(edge0.x, edge1.x, x.x),
-            smoothstep(edge0.y, edge1.y, x.y),
-            smoothstep(edge0.z, edge1.z, x.z),
-            smoothstep(edge0.w, edge1.w, x.w));
-    }
-
-	template <typename genType> 
-	inline typename genType::bool_type isnan
-	(
-		genType const & x
-	)
 	{
-		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'mix' only accept floating-point inputs");
-
-#if(defined(GLM_COMPILER) && GLM_COMPILER & GLM_COMPILER_VC)
-		return typename genType::bool_type(_isnan(x));
-#else
-		return typename genType::bool_type(std::isnan(x));
-#endif
+		return detail::tvec4<T>(
+			smoothstep(edge0.x, edge1.x, x.x),
+			smoothstep(edge0.y, edge1.y, x.y),
+			smoothstep(edge0.z, edge1.z, x.z),
+			smoothstep(edge0.w, edge1.w, x.w));
 	}
 
-    template <typename T>
-    inline typename detail::tvec2<T>::bool_type isnan
+	// TODO: Not working on MinGW...
+	template <typename genType> 
+	GLM_FUNC_QUALIFIER bool isnan(genType const & x)
+	{
+		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'isnan' only accept floating-point inputs");
+
+#       if(GLM_COMPILER & (GLM_COMPILER_VC | GLM_COMPILER_INTEL))
+			return _isnan(x) != 0;
+#		elif(GLM_COMPILER & GLM_COMPILER_GCC)
+#			if(GLM_PLATFORM & GLM_PLATFORM_ANDROID)
+				return _isnan(x) != 0;
+#			else
+				return std::isnan(x);
+#			endif
+#       else
+			return std::isnan(x);
+#       endif
+	}
+
+	template <typename T>
+	GLM_FUNC_QUALIFIER typename detail::tvec2<T>::bool_type isnan
 	(
 		detail::tvec2<T> const & x
 	)
-    {
-        return typename detail::tvec2<T>::bool_type(
-            isnan(x.x),
-            isnan(x.y));
-    }
+	{
+		return typename detail::tvec2<T>::bool_type(
+			isnan(x.x),
+			isnan(x.y));
+	}
 
-    template <typename T>
-    inline typename detail::tvec3<T>::bool_type isnan
+	template <typename T>
+	GLM_FUNC_QUALIFIER typename detail::tvec3<T>::bool_type isnan
 	(
 		detail::tvec3<T> const & x
 	)
-    {
-        return typename detail::tvec3<T>::bool_type(
-            isnan(x.x),
-            isnan(x.y),
-            isnan(x.z));
-    }
+	{
+		return typename detail::tvec3<T>::bool_type(
+			isnan(x.x),
+			isnan(x.y),
+			isnan(x.z));
+	}
 
-    template <typename T>
-    inline typename detail::tvec4<T>::bool_type isnan
+	template <typename T>
+	GLM_FUNC_QUALIFIER typename detail::tvec4<T>::bool_type isnan
 	(
 		detail::tvec4<T> const & x
 	)
-    {
-        return typename detail::tvec4<T>::bool_type(
-            isnan(x.x),
-            isnan(x.y),
-            isnan(x.z),
-            isnan(x.w));
-    }
+	{
+		return typename detail::tvec4<T>::bool_type(
+			isnan(x.x),
+			isnan(x.y),
+			isnan(x.z),
+			isnan(x.w));
+	}
 
 	template <typename genType> 
-	inline typename genType::bool_type isinf
-	(
-		genType const & x
-	)
+	GLM_FUNC_QUALIFIER bool isinf(
+		genType const & x)
 	{
 		GLM_STATIC_ASSERT(detail::type<genType>::is_float, "'isinf' only accept floating-point inputs");
 
-#if(defined(GLM_COMPILER) && GLM_COMPILER & GLM_COMPILER_VC)
-		return typename genType::bool_type(_fpclass(x) == _FPCLASS_NINF || _fpclass(x) == _FPCLASS_PINF);
-#else
-		return typename genType::bool_type(std::isinf(x));
-#endif
+#       if(GLM_COMPILER & (GLM_COMPILER_INTEL | GLM_COMPILER_VC))
+			return _fpclass(x) == _FPCLASS_NINF || _fpclass(x) == _FPCLASS_PINF;
+#		elif(GLM_COMPILER & GLM_COMPILER_GCC)
+#			if(GLM_PLATFORM & GLM_PLATFORM_ANDROID)
+				return _isinf(x) != 0;
+#			else
+				return std::isinf(x);
+#			endif
+#       else
+			return std::isinf(x);
+#       endif
+/*
+#       if(GLM_COMPILER & GLM_COMPILER_VC)
+			return _fpclass(x) == _FPCLASS_NINF || _fpclass(x) == _FPCLASS_PINF;
+#       elif(GLM_COMPILER & GLM_COMPILER_GCC)
+#           if(GLM_PLATFORM & GLM_PLATFORM_ANDROID)
+				return _isinf(x) != 0;
+#           else
+				return std::isinf(x);
+#           endif
+#       elif(GLM_COMPILER & GLM_COMPILER_INTEL)
+			return isinf(x) != 0;			
+#       else
+			return std::isinf(x);
+#       endif
+*/
 	}
 
-    template <typename T>
-    inline typename detail::tvec2<T>::bool_type isinf
+	template <typename T>
+	GLM_FUNC_QUALIFIER typename detail::tvec2<T>::bool_type isinf
 	(
 		detail::tvec2<T> const & x
 	)
-    {
-        return typename detail::tvec2<T>::bool_type(
-            isnan(x.x),
-            isnan(x.y));
-    }
+	{
+		return typename detail::tvec2<T>::bool_type(
+			isinf(x.x),
+			isinf(x.y));
+	}
 
-    template <typename T>
-    inline typename detail::tvec3<T>::bool_type isinf
+	template <typename T>
+	GLM_FUNC_QUALIFIER typename detail::tvec3<T>::bool_type isinf
 	(
 		detail::tvec3<T> const & x
 	)
-    {
-        return typename detail::tvec3<T>::bool_type(
-            isnan(x.x),
-            isnan(x.y),
-            isnan(x.z));
-    }
+	{
+		return typename detail::tvec3<T>::bool_type(
+			isinf(x.x),
+			isinf(x.y),
+			isinf(x.z));
+	}
 
-    template <typename T>
-    inline typename detail::tvec4<T>::bool_type isinf
+	template <typename T>
+	GLM_FUNC_QUALIFIER typename detail::tvec4<T>::bool_type isinf
 	(
 		detail::tvec4<T> const & x
 	)
-    {
-        return typename detail::tvec4<T>::bool_type(
-            isnan(x.x),
-            isnan(x.y),
-            isnan(x.z),
-            isnan(x.w));
-    }
+	{
+		return typename detail::tvec4<T>::bool_type(
+			isinf(x.x),
+			isinf(x.y),
+			isinf(x.z),
+			isinf(x.w));
+	}
 
-	inline int floatBitsToInt(float const & value)
+	GLM_FUNC_QUALIFIER int floatBitsToInt(float const & value)
 	{
 		union
 		{
@@ -1312,40 +938,40 @@ namespace glm
 		return fi.i;
 	}
 
-    template <typename T>
-    inline detail::tvec2<int> floatBitsToInt
+	GLM_FUNC_QUALIFIER detail::tvec2<int> floatBitsToInt
 	(
-		detail::tvec2<T> const & value
+		detail::tvec2<float> const & value
 	)
-    {
-        return detail::tvec2<T>(
-            floatBitsToInt(value.x),
-            floatBitsToInt(value.y));
-    }
+	{
+		return detail::tvec2<int>(
+			floatBitsToInt(value.x),
+			floatBitsToInt(value.y));
+	}
 
-    template <typename T>
-    inline detail::tvec3<int> floatBitsToInt
+	GLM_FUNC_QUALIFIER detail::tvec3<int> floatBitsToInt
 	(
-		detail::tvec3<T> const & value
+		detail::tvec3<float> const & value
 	)
-    {
-        return detail::tvec3<T>(
-            floatBitsToInt(value.x),
-            floatBitsToInt(value.y));
-    }
+	{
+		return detail::tvec3<int>(
+			floatBitsToInt(value.x),
+			floatBitsToInt(value.y),
+			floatBitsToInt(value.z));
+	}
 
-    template <typename T>
-    inline detail::tvec4<int> floatBitsToInt
+	GLM_FUNC_QUALIFIER detail::tvec4<int> floatBitsToInt
 	(
-		detail::tvec4<T> const & value
+		detail::tvec4<float> const & value
 	)
-    {
-        return detail::tvec4<T>(
-            floatBitsToInt(value.x),
-            floatBitsToInt(value.y));
-    }
+	{
+		return detail::tvec4<int>(
+			floatBitsToInt(value.x),
+			floatBitsToInt(value.y),
+			floatBitsToInt(value.z),
+			floatBitsToInt(value.w));
+	}
 
-	inline uint floatBitsToUint(float const & value)
+	GLM_FUNC_QUALIFIER uint floatBitsToUint(float const & value)
 	{
 		union
 		{
@@ -1357,40 +983,40 @@ namespace glm
 		return fu.u;
 	}
 
-    template <typename T>
-    inline detail::tvec2<uint> floatBitsToUint
+	GLM_FUNC_QUALIFIER detail::tvec2<uint> floatBitsToUint
 	(
-		detail::tvec2<T> const & value
+		detail::tvec2<float> const & value
 	)
-    {
-        return detail::tvec2<T>(
-            floatBitsToUint(value.x),
-            floatBitsToUint(value.y));
-    }
+	{
+		return detail::tvec2<uint>(
+			floatBitsToUint(value.x),
+			floatBitsToUint(value.y));
+	}
 
-    template <typename T>
-    inline detail::tvec3<uint> floatBitsToUint
+	GLM_FUNC_QUALIFIER detail::tvec3<uint> floatBitsToUint
 	(
-		detail::tvec3<T> const & value
+		detail::tvec3<float> const & value
 	)
-    {
-        return detail::tvec3<T>(
-            floatBitsToUint(value.x),
-            floatBitsToUint(value.y));
-    }
+	{
+		return detail::tvec3<uint>(
+			floatBitsToUint(value.x),
+			floatBitsToUint(value.y),
+			floatBitsToUint(value.z));
+	}
 
-    template <typename T>
-    inline detail::tvec4<uint> floatBitsToUint
+	GLM_FUNC_QUALIFIER detail::tvec4<uint> floatBitsToUint
 	(
-		detail::tvec4<T> const & value
+		detail::tvec4<float> const & value
 	)
-    {
-        return detail::tvec4<T>(
-            floatBitsToUint(value.x),
-            floatBitsToUint(value.y));
-    }
+	{
+		return detail::tvec4<uint>(
+			floatBitsToUint(value.x),
+			floatBitsToUint(value.y),
+			floatBitsToUint(value.z),
+			floatBitsToUint(value.w));
+	}
 
-	inline float intBitsToFloat(int const & value)
+	GLM_FUNC_QUALIFIER float intBitsToFloat(int const & value)
 	{
 		union
 		{
@@ -1402,7 +1028,41 @@ namespace glm
 		return fi.f;
 	}
 
-	inline float intBitsToFloat(uint const & value)
+	GLM_FUNC_QUALIFIER detail::tvec2<float> intBitsToFloat
+
+	(
+		detail::tvec2<int> const & value
+	)
+	{
+		return detail::tvec2<float>(
+			intBitsToFloat(value.x),
+			intBitsToFloat(value.y));
+	}
+
+	GLM_FUNC_QUALIFIER detail::tvec3<float> intBitsToFloat
+	(
+		detail::tvec3<int> const & value
+	)
+	{
+		return detail::tvec3<float>(
+			intBitsToFloat(value.x),
+			intBitsToFloat(value.y),
+			intBitsToFloat(value.z));
+	}
+
+	GLM_FUNC_QUALIFIER detail::tvec4<float> intBitsToFloat
+	(
+		detail::tvec4<int> const & value
+	)
+	{
+		return detail::tvec4<float>(
+			intBitsToFloat(value.x),
+			intBitsToFloat(value.y),
+			intBitsToFloat(value.z),
+			intBitsToFloat(value.w));
+	}
+
+	GLM_FUNC_QUALIFIER float uintBitsToFloat(uint const & value)
 	{
 		union
 		{
@@ -1414,41 +1074,41 @@ namespace glm
 		return fu.f;
 	}
 
-    template <typename T>
-    inline detail::tvec2<float> intBitsToFloat
+	GLM_FUNC_QUALIFIER detail::tvec2<float> uintBitsToFloat
 	(
-		detail::tvec2<T> const & value
+		detail::tvec2<uint> const & value
 	)
-    {
-        return detail::tvec2<T>(
-            intBitsToFloat(value.x),
-            intBitsToFloat(value.y));
-    }
+	{
+		return detail::tvec2<float>(
+			uintBitsToFloat(value.x),
+			uintBitsToFloat(value.y));
+	}
 
-    template <typename T>
-    inline detail::tvec3<float> intBitsToFloat
+	GLM_FUNC_QUALIFIER detail::tvec3<float> uintBitsToFloat
 	(
-		detail::tvec3<T> const & value
+		detail::tvec3<uint> const & value
 	)
-    {
-        return detail::tvec3<T>(
-            intBitsToFloat(value.x),
-            intBitsToFloat(value.y));
-    }
+	{
+		return detail::tvec3<float>(
+			uintBitsToFloat(value.x),
+			uintBitsToFloat(value.y),
+			uintBitsToFloat(value.z));
+	}
 
-    template <typename T>
-    inline detail::tvec4<float> intBitsToFloat
+	GLM_FUNC_QUALIFIER detail::tvec4<float> uintBitsToFloat
 	(
-		detail::tvec4<T> const & value
+		detail::tvec4<uint> const & value
 	)
-    {
-        return detail::tvec4<T>(
-            intBitsToFloat(value.x),
-            intBitsToFloat(value.y));
-    }
+	{
+		return detail::tvec4<float>(
+			uintBitsToFloat(value.x),
+			uintBitsToFloat(value.y),
+			uintBitsToFloat(value.z),
+			uintBitsToFloat(value.w));
+	}
 
 	template <typename genType>
-	inline genType fma
+	GLM_FUNC_QUALIFIER genType fma
 	(
 		genType const & a, 
 		genType const & b, 
@@ -1459,7 +1119,7 @@ namespace glm
 	}
 
 	template <typename genType>
-	genType frexp
+	GLM_FUNC_QUALIFIER genType frexp
 	(
 		genType const & x, 
 		int & exp
@@ -1469,7 +1129,7 @@ namespace glm
 	}
 
 	template <typename T>
-	detail::tvec2<T> frexp
+	GLM_FUNC_QUALIFIER detail::tvec2<T> frexp
 	(
 		detail::tvec2<T> const & x, 
 		detail::tvec2<int> & exp
@@ -1479,7 +1139,7 @@ namespace glm
 	}
 
 	template <typename T>
-	detail::tvec3<T> frexp
+	GLM_FUNC_QUALIFIER detail::tvec3<T> frexp
 	(
 		detail::tvec3<T> const & x, 
 		detail::tvec3<int> & exp
@@ -1489,7 +1149,7 @@ namespace glm
 	}
 
 	template <typename T>
-	detail::tvec4<T> frexp
+	GLM_FUNC_QUALIFIER detail::tvec4<T> frexp
 	(
 		detail::tvec4<T> const & x, 
 		detail::tvec4<int> & exp
@@ -1499,7 +1159,7 @@ namespace glm
 	}
 
 	template <typename genType>
-	genType ldexp
+	GLM_FUNC_QUALIFIER genType ldexp
 	(
 		genType const & x, 
 		int const & exp
@@ -1509,7 +1169,7 @@ namespace glm
 	}
 
 	template <typename T>
-	detail::tvec2<T> ldexp
+	GLM_FUNC_QUALIFIER detail::tvec2<T> ldexp
 	(
 		detail::tvec2<T> const & x, 
 		detail::tvec2<int> const & exp
@@ -1519,7 +1179,7 @@ namespace glm
 	}
 
 	template <typename T>
-	detail::tvec3<T> ldexp
+	GLM_FUNC_QUALIFIER detail::tvec3<T> ldexp
 	(
 		detail::tvec3<T> const & x, 
 		detail::tvec3<int> const & exp
@@ -1529,7 +1189,7 @@ namespace glm
 	}
 
 	template <typename T>
-	detail::tvec4<T> ldexp
+	GLM_FUNC_QUALIFIER detail::tvec4<T> ldexp
 	(
 		detail::tvec4<T> const & x, 
 		detail::tvec4<int> const & exp
@@ -1538,7 +1198,4 @@ namespace glm
 		return std::frexp(x, exp);
 	}
 
-	}//namespace common
-	}//namespace function
-	}//namespace core
 }//namespace glm

@@ -1,49 +1,67 @@
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Created : 2008-07-24
-// Updated : 2008-08-31
-// Licence : This source is under MIT License
-// File    : glm/core/_detail.hpp
-///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+/// OpenGL Mathematics (glm.g-truc.net)
+///
+/// Copyright (c) 2005 - 2012 G-Truc Creation (www.g-truc.net)
+/// Permission is hereby granted, free of charge, to any person obtaining a copy
+/// of this software and associated documentation files (the "Software"), to deal
+/// in the Software without restriction, including without limitation the rights
+/// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+/// copies of the Software, and to permit persons to whom the Software is
+/// furnished to do so, subject to the following conditions:
+/// 
+/// The above copyright notice and this permission notice shall be included in
+/// all copies or substantial portions of the Software.
+/// 
+/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+/// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+/// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+/// THE SOFTWARE.
+///
+/// @ref core
+/// @file glm/core/_detail.hpp
+/// @date 2008-07-24 / 2011-06-14
+/// @author Christophe Riccio
+///////////////////////////////////////////////////////////////////////////////////
 
 #ifndef glm_core_detail
 #define glm_core_detail
 
 #include "setup.hpp"
 #include <cassert>
+#if(defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L))
+#include <cstdint>
+#endif
 
 namespace glm{
 namespace detail
 {
-	class thalf;
+	class half;
 
-#if(GLM_COMPILER & GLM_COMPILER_VC)
+#if(defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L)) // C99 detected, 64 bit types available
+	typedef int64_t								sint64;
+	typedef uint64_t							uint64;
+#elif(GLM_COMPILER & GLM_COMPILER_VC)
 	typedef signed __int64						sint64;
 	typedef unsigned __int64					uint64;
-#elif(GLM_COMPILER & GLM_COMPILER_GCC)
+#elif(GLM_COMPILER & (GLM_COMPILER_GCC | GLM_COMPILER_LLVM_GCC | GLM_COMPILER_CLANG))
 	__extension__ typedef signed long long		sint64;
 	__extension__ typedef unsigned long long	uint64;
-//#	if GLM_MODEL == GLM_MODEL_64
-//		typedef signed long							highp_int_t;
-//		typedef unsigned long						highp_uint_t;
-//#   elif GLM_MODEL == GLM_MODEL_32
-//		__extension__ typedef signed long long		highp_int_t;
-//		__extension__ typedef unsigned long long	highp_uint_t;
-//#	endif//GLM_MODEL
 #elif(GLM_COMPILER & GLM_COMPILER_BC)
 	typedef Int64								sint64;
 	typedef Uint64								uint64;
 #else//unknown compiler
-	typedef signed long							sint64;
-	typedef unsigned long						uint64;
+	typedef signed long	long					sint64;
+	typedef unsigned long long					uint64;
 #endif//GLM_COMPILER
 
 	template<bool C>
 	struct If
 	{
 		template<typename F, typename T>
-		static inline T apply(F functor, const T& val)
+		static GLM_FUNC_QUALIFIER T apply(F functor, const T& val)
 		{
 			return functor(val);
 		}
@@ -53,7 +71,7 @@ namespace detail
 	struct If<false>
 	{
 		template<typename F, typename T>
-		static inline T apply(F, const T& val)
+		static GLM_FUNC_QUALIFIER T apply(F, const T& val)
 		{
 			return val;
 		}
@@ -114,15 +132,15 @@ namespace detail
 
 	union uif32
 	{
-		uif32() :
+		GLM_FUNC_QUALIFIER uif32() :
 			i(0)
 		{}
 
-		uif32(float f) :
+		GLM_FUNC_QUALIFIER uif32(float f) :
 			f(f)
 		{}
 
-		uif32(unsigned int i) :
+		GLM_FUNC_QUALIFIER uif32(unsigned int i) :
 			i(i)
 		{}
 
@@ -132,15 +150,15 @@ namespace detail
 
 	union uif64
 	{
-		uif64() :
+		GLM_FUNC_QUALIFIER uif64() :
 			i(0)
 		{}
 
-		uif64(double f) :
+		GLM_FUNC_QUALIFIER uif64(double f) :
 			f(f)
 		{}
 
-		uif64(uint64 i) :
+		GLM_FUNC_QUALIFIER uif64(uint64 i) :
 			i(i)
 		{}
 
@@ -223,6 +241,11 @@ namespace detail
 			_NO = 0				\
 		};						\
 	}
+
+	GLM_DETAIL_IS_FLOAT(detail::half);
+	GLM_DETAIL_IS_FLOAT(float);
+	GLM_DETAIL_IS_FLOAT(double);
+	GLM_DETAIL_IS_FLOAT(long double);
 
 	//////////////////
 	// bool
@@ -309,23 +332,108 @@ namespace detail
 			is_bool = is_bool<T>::_YES
 		};
 	};
-
+	
 	//////////////////
 	// type
-
+	
 	typedef signed char							int8;
 	typedef signed short						int16;
 	typedef signed int							int32;
 	typedef detail::sint64						int64;
-
+	
 	typedef unsigned char						uint8;
 	typedef unsigned short						uint16;
 	typedef unsigned int						uint32;
 	typedef detail::uint64						uint64;
-
-	typedef detail::thalf						float16;
+	
+	typedef detail::half						float16;
 	typedef float								float32;
 	typedef double								float64;
+	
+	//////////////////
+	// float_or_int_trait 
+
+	struct float_or_int_value
+	{
+		enum
+		{
+			GLM_ERROR,
+			GLM_FLOAT,
+			GLM_INT
+		};
+	};
+
+	template <typename T>
+	struct float_or_int_trait
+	{
+		enum{ID = float_or_int_value::GLM_ERROR};
+	};
+
+	template <>
+	struct float_or_int_trait<int8>
+	{
+		enum{ID = float_or_int_value::GLM_INT};
+	};
+
+	template <>
+	struct float_or_int_trait<int16>
+	{
+		enum{ID = float_or_int_value::GLM_INT};
+	};
+
+	template <>
+	struct float_or_int_trait<int32>
+	{
+		enum{ID = float_or_int_value::GLM_INT};
+	};
+
+	template <>
+	struct float_or_int_trait<int64>
+	{
+		enum{ID = float_or_int_value::GLM_INT};
+	};
+
+	template <>
+	struct float_or_int_trait<uint8>
+	{
+		enum{ID = float_or_int_value::GLM_INT};
+	};
+
+	template <>
+	struct float_or_int_trait<uint16>
+	{
+		enum{ID = float_or_int_value::GLM_INT};
+	};
+
+	template <>
+	struct float_or_int_trait<uint32>
+	{
+		enum{ID = float_or_int_value::GLM_INT};
+	};
+
+	template <>
+	struct float_or_int_trait<uint64>
+	{
+		enum{ID = float_or_int_value::GLM_INT};
+	};
+
+	template <>
+	struct float_or_int_trait<float16>
+	{
+		enum{ID = float_or_int_value::GLM_FLOAT};
+	};
+
+	template <>
+	struct float_or_int_trait<float32>
+	{
+		enum{ID = float_or_int_value::GLM_FLOAT};
+	};
+
+	template <>
+	struct float_or_int_trait<float64>
+	{
+		enum{ID = float_or_int_value::GLM_FLOAT};
+	};
 
 }//namespace detail
 }//namespace glm
@@ -336,7 +444,8 @@ namespace detail
 #	define GLM_ALIGNED_STRUCT(x) __declspec(align(x)) struct 
 #	define GLM_RESTRICT __declspec(restrict)
 #	define GLM_RESTRICT_VAR __restrict
-#elif((GLM_COMPILER & GLM_COMPILER_GCC) && (GLM_COMPILER >= GLM_COMPILER_GCC31))
+#	define GLM_CONSTEXPR 
+#elif((GLM_COMPILER & (GLM_COMPILER_GCC | GLM_COMPILER_LLVM_GCC)) && (GLM_COMPILER >= GLM_COMPILER_GCC31))
 #	define GLM_DEPRECATED __attribute__((__deprecated__))
 #	define GLM_ALIGN(x) __attribute__((aligned(x)))
 #	define GLM_ALIGNED_STRUCT(x) struct __attribute__((aligned(x)))
@@ -349,12 +458,18 @@ namespace detail
 #	endif
 #	define GLM_RESTRICT __restrict__
 #	define GLM_RESTRICT_VAR __restrict__
+#	if((GLM_COMPILER >= GLM_COMPILER_GCC47) && ((GLM_LANG & GLM_LANG_CXX0X) == GLM_LANG_CXX0X))
+#		define GLM_CONSTEXPR constexpr 
+#	else
+#		define GLM_CONSTEXPR 
+#	endif
 #else
 #	define GLM_DEPRECATED
 #	define GLM_ALIGN
 #	define GLM_ALIGNED_STRUCT(x) 
 #	define GLM_RESTRICT
 #	define GLM_RESTRICT_VAR
+#	define GLM_CONSTEXPR 
 #endif//GLM_COMPILER
 
 #endif//glm_core_detail

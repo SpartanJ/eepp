@@ -181,9 +181,6 @@ class cEETest : private cThread {
     	Uint32 mLastFPSLimit;
     	bool mWasMinimized;
 
-		eeInt mWidth;
-		eeInt mHeight;
-
 		String mBuda;
 
 		cResourceLoader mResLoad;

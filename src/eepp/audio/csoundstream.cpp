@@ -79,7 +79,7 @@ Uint32 cSoundStream::PlayingOffset() const {
 	return static_cast<Uint32>( cSound::PlayingOffset() ) * 1000 + 1000 * mSamplesProcessed / mSampleRate / mChannelsCount;
 }
 
-void cSoundStream::PlayingOffset( Uint32 timeOffset ) {
+void cSoundStream::PlayingOffset( const Uint32& timeOffset ) {
     // Stop the stream
     Stop();
 

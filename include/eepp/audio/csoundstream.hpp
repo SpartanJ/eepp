@@ -40,7 +40,7 @@ class EE_API cSoundStream : private cThread, private cSound {
 
 		Uint32 PlayingOffset() const;
 
-		void PlayingOffset( Uint32 timeOffset );
+		void PlayingOffset( const Uint32& timeOffset );
 
 		/** Set the stream loop state. This parameter is disabled by default
 		* @param Loop True to play in loop, false to play once

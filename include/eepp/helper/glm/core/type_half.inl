@@ -1,22 +1,41 @@
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// OpenGL Mathematics Copyright (c) 2005 - 2011 G-Truc Creation (www.g-truc.net)
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Created : 2008-08-17
-// Updated : 2009-11-12
-// Licence : This source is under MIT License
-// File    : glm/core/type_half.inl
-///////////////////////////////////////////////////////////////////////////////////////////////////
-// Copyright:
-// This half implementation is based on OpenEXR which is Copyright (c) 2002, 
-// Industrial Light & Magic, a division of Lucas Digital Ltd. LLC
-///////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+/// OpenGL Mathematics (glm.g-truc.net)
+///
+/// Copyright (c) 2005 - 2012 G-Truc Creation (www.g-truc.net)
+///
+/// This half implementation is based on OpenEXR which is Copyright (c) 2002, 
+/// Industrial Light & Magic, a division of Lucas Digital Ltd. LLC
+///
+/// Permission is hereby granted, free of charge, to any person obtaining a copy
+/// of this software and associated documentation files (the "Software"), to deal
+/// in the Software without restriction, including without limitation the rights
+/// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+/// copies of the Software, and to permit persons to whom the Software is
+/// furnished to do so, subject to the following conditions:
+/// 
+/// The above copyright notice and this permission notice shall be included in
+/// all copies or substantial portions of the Software.
+/// 
+/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+/// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+/// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+/// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+/// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+/// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+/// THE SOFTWARE.
+///
+/// @ref core
+/// @file glm/core/type_half.inl
+/// @date 2008-08-17 / 2011-06-15
+/// @author Christophe Riccio
+///////////////////////////////////////////////////////////////////////////////////
 
 #include "_detail.hpp"
 
 namespace glm{
 namespace detail
 {
-	inline float overflow()
+	GLM_FUNC_QUALIFIER float overflow()
 	{
 		volatile float f = 1e10;
 
@@ -26,7 +45,7 @@ namespace detail
 		return f;
 	}
 
-	inline float toFloat32(hdata value)
+	GLM_FUNC_QUALIFIER float toFloat32(hdata value)
 	{
 		int s = (value >> 15) & 0x00000001;
 		int e = (value >> 10) & 0x0000001f;
@@ -41,7 +60,7 @@ namespace detail
 				//
 
 				detail::uif result;
-				result.i = s << 31;
+				result.i = (unsigned int)(s << 31);
 				return result.f;
 			}
 			else
@@ -69,7 +88,7 @@ namespace detail
 				//
 
 				uif result;
-				result.i = (s << 31) | 0x7f800000;
+				result.i = (unsigned int)((s << 31) | 0x7f800000);
 				return result.f;
 			}
 			else
@@ -79,7 +98,7 @@ namespace detail
 				//
 
 				uif result;
-				result.i = (s << 31) | 0x7f800000 | (m << 13);
+				result.i = (unsigned int)((s << 31) | 0x7f800000 | (m << 13));
 				return result.f;
 			}
 		}
@@ -96,15 +115,15 @@ namespace detail
 		//
 
 		uif Result;
-		Result.i = (s << 31) | (e << 23) | m;
+		Result.i = (unsigned int)((s << 31) | (e << 23) | m);
 		return Result.f;
 	}
 
-	inline hdata toFloat16(float const & f)
+	GLM_FUNC_QUALIFIER hdata toFloat16(float const & f)
 	{
 		uif Entry;
 		Entry.f = f;
-		int i = Entry.i;
+		int i = (int)Entry.i;
 
 		//
 		// Our floating point number, f, is represented by the bit
@@ -133,7 +152,7 @@ namespace detail
 				// less than half_MIN (f may be a small normalized
 				// float, a denormalized float or a zero).
 				//
-				// We convert f to a _halfGTX zero.
+				// We convert f to a half zero.
 				//
 
 				return 0;
@@ -143,7 +162,7 @@ namespace detail
 			// E is between -10 and 0.  F is a normalized float,
 			// whose magnitude is less than __half_NRM_MIN.
 			//
-			// We convert f to a denormalized _halfGTX.
+			// We convert f to a denormalized half.
 			// 
 
 			m = (m | 0x00800000) >> (1 - e);
@@ -161,7 +180,7 @@ namespace detail
 				m += 0x00002000;
 
 			//
-			// Assemble the _halfGTX from s, e (zero) and m.
+			// Assemble the half from s, e (zero) and m.
 			//
 
 			return hdata(s | (m >> 13));
@@ -235,122 +254,161 @@ namespace detail
 		}
 	}
 
-	inline thalf::thalf() :
+	GLM_FUNC_QUALIFIER half::half() :
 		data(0)
 	{}
 
-	inline thalf::thalf(thalf const & s) :
+	GLM_FUNC_QUALIFIER half::half(half const & s) :
 		data(s.data)
 	{}
 
 	template <typename U>
-	inline thalf::thalf(U const & s) :
+	GLM_FUNC_QUALIFIER half::half(U const & s) :
 		data(toFloat16(float(s)))
 	{}
 
-	// Cast
-	//inline half::operator float()
-	//{
-	//	return toFloat();
-	//}
-
-	inline thalf::operator float() const 
+	template <typename U>
+	GLM_FUNC_QUALIFIER half::operator U() const
 	{
-		return toFloat();
+		return static_cast<U>(toFloat32(this->data));
 	}
 
-	//inline half::operator double()
-	//{
-	//	return double(toFloat());
-	//}
-
-	//inline half::operator double() const
-	//{
-	//	return double(toFloat());
-	//}
-
 	// Unary updatable operators
-	inline thalf& thalf::operator= (thalf const & s)
+	GLM_FUNC_QUALIFIER half& half::operator= (half const & s)
 	{
 		data = s.data;
 		return *this;
 	}
 
-	inline thalf& thalf::operator+=(thalf const & s)
+	GLM_FUNC_QUALIFIER half& half::operator+=(half const & s)
 	{
 		data = toFloat16(toFloat32(data) + toFloat32(s.data));
 		return *this;
 	}
 
-	inline thalf& thalf::operator-=(thalf const & s)
+	GLM_FUNC_QUALIFIER half& half::operator-=(half const & s)
 	{
 		data = toFloat16(toFloat32(data) - toFloat32(s.data));
 		return *this;
 	}
 
-	inline thalf& thalf::operator*=(thalf const & s)
+	GLM_FUNC_QUALIFIER half& half::operator*=(half const & s)
 	{
 		data = toFloat16(toFloat32(data) * toFloat32(s.data));		
 		return *this;
 	}
 
-	inline thalf& thalf::operator/=(thalf const & s)
+	GLM_FUNC_QUALIFIER half& half::operator/=(half const & s)
 	{
 		data = toFloat16(toFloat32(data) / toFloat32(s.data));
 		return *this;
 	}
 
-	inline thalf& thalf::operator++()
+	GLM_FUNC_QUALIFIER half& half::operator++()
 	{
 		float Casted = toFloat32(data);
-		data = toFloat16(++Casted);
+		this->data = toFloat16(++Casted);
 		return *this;
 	}
 
-	inline thalf& thalf::operator--()
+	GLM_FUNC_QUALIFIER half& half::operator--()
 	{
 		float Casted = toFloat32(data);
-		data = toFloat16(--Casted);
+		this->data = toFloat16(--Casted);
 		return *this;
 	}
 
 	//////////////////////////////////////
 	// Binary arithmetic operators
 
-	inline detail::thalf operator+ (detail::thalf const & s1, detail::thalf const & s2)
+	GLM_FUNC_QUALIFIER detail::half operator+ (detail::half const & s1, detail::half const & s2)
 	{
-		return detail::thalf(float(s1) + float(s2));
+		return detail::half(float(s1) + float(s2));
 	}
 
-	inline detail::thalf operator- (detail::thalf const & s1, detail::thalf const & s2)
+	GLM_FUNC_QUALIFIER detail::half operator- (detail::half const & s1, detail::half const & s2)
 	{
-		return detail::thalf(float(s1) - float(s2));
+		return detail::half(float(s1) - float(s2));
 	}
 
-	inline detail::thalf operator* (detail::thalf const & s1, detail::thalf const & s2)
+	GLM_FUNC_QUALIFIER detail::half operator* (detail::half const & s1, detail::half const & s2)
 	{
-		return detail::thalf(float(s1) * float(s2));
+		return detail::half(float(s1) * float(s2));
 	}
 
-	inline detail::thalf operator/ (detail::thalf const & s1, detail::thalf const & s2)
+	GLM_FUNC_QUALIFIER detail::half operator/ (detail::half const & s1, detail::half const & s2)
 	{
-		return detail::thalf(float(s1) / float(s2));
+		return detail::half(float(s1) / float(s2));
 	}
 
 	// Unary constant operators
-	inline detail::thalf operator- (detail::thalf const & s)
+	GLM_FUNC_QUALIFIER detail::half operator- (detail::half const & s)
 	{
-		return detail::thalf(-float(s));
+		return detail::half(-float(s));
 	}
 
-	inline detail::thalf operator-- (detail::thalf const & s, int)
+	GLM_FUNC_QUALIFIER detail::half operator-- (detail::half const & s, int)
 	{
-		return detail::thalf(float(s) - 1.0f);
+		return detail::half(float(s) - 1.0f);
 	}
 
-	inline detail::thalf operator++ (detail::thalf const & s, int)
+	GLM_FUNC_QUALIFIER detail::half operator++ (detail::half const & s, int)
 	{
-		return detail::thalf(float(s) + 1.0f);
+		return detail::half(float(s) + 1.0f);
+	}
+
+	GLM_FUNC_QUALIFIER bool operator==
+	(
+		detail::half const & x, 
+		detail::half const & y
+	)
+	{
+		return x._data() == y._data();
+	}
+
+	GLM_FUNC_QUALIFIER bool operator!=
+	(
+		detail::half const & x, 
+		detail::half const & y
+	)
+	{
+		return x._data() != y._data();
+	}
+
+	GLM_FUNC_QUALIFIER bool operator<
+	(
+		detail::half const & x, 
+		detail::half const & y
+	)
+	{
+		return float(x) < float(y);
+	}
+
+	GLM_FUNC_QUALIFIER bool operator<=
+	(
+		detail::half const & x, 
+		detail::half const & y
+	)
+	{
+		return float(x) <= float(y);
+	}
+
+	GLM_FUNC_QUALIFIER bool operator>
+	(
+		detail::half const & x, 
+		detail::half const & y
+	)
+	{
+		return float(x) > float(y);
+	}
+
+	GLM_FUNC_QUALIFIER bool operator>=
+	(
+		detail::half const & x, 
+		detail::half const & y
+	)
+	{
+		return float(x) >= float(y);
 	}
 
 }//namespace detail

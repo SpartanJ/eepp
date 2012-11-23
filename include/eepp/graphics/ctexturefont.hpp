@@ -55,7 +55,7 @@ class EE_API cTextureFont : public cFont {
 
 		bool LoadFromStream( const Uint32& TexId, cIOStream& IOS, const bool& VerticalDraw );
 	private:
-		eeUint mBase, mStartChar, mTexColumns, mTexRows, mSpacing, mNumChars;
+		eeUint mStartChar, mTexColumns, mTexRows, mSpacing, mNumChars;
 		eeFloat mtX, mtY, mFWidth, mFHeight;
 		bool mLoadedCoords;
 
