@@ -19,9 +19,6 @@
  * SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <math.h>
-
 #include "chipmunk_private.h"
 #include "constraints/util.h"
 
@@ -39,11 +36,14 @@ preStep(cpSlideJoint *joint, cpFloat dt)
 	cpFloat pdist = 0.0f;
 	if(dist > joint->max) {
 		pdist = dist - joint->max;
+		joint->n = cpvnormalize_safe(delta);
 	} else if(dist < joint->min) {
 		pdist = joint->min - dist;
-		dist = -dist;
+		joint->n = cpvneg(cpvnormalize_safe(delta));
+	} else {
+		joint->n = cpvzero;
+		joint->jnAcc = 0.0f;
 	}
-	joint->n = cpvmult(delta, 1.0f/(dist ? dist : (cpFloat)INFINITY));
 	
 	// calculate mass normal
 	joint->nMass = 1.0f/k_scalar(a, b, joint->r1, joint->r2, joint->n);
@@ -51,12 +51,6 @@ preStep(cpSlideJoint *joint, cpFloat dt)
 	// calculate bias velocity
 	cpFloat maxBias = joint->constraint.maxBias;
 	joint->bias = cpfclamp(-bias_coef(joint->constraint.errorBias, dt)*pdist/dt, -maxBias, maxBias);
-	
-	// compute max impulse
-	joint->jnMax = J_MAX(joint, dt);
-	
-	// if bias is 0, then the joint is not at a limit. Reset cached impulse.
-	if(!joint->bias) joint->jnAcc = 0.0f;
 }
 
 static void
@@ -70,9 +64,9 @@ applyCachedImpulse(cpSlideJoint *joint, cpFloat dt_coef)
 }
 
 static void
-applyImpulse(cpSlideJoint *joint)
+applyImpulse(cpSlideJoint *joint, cpFloat dt)
 {
-	if(!joint->bias) return;  // early exit
+	if(cpveql(joint->n, cpvzero)) return;  // early exit
 
 	cpBody *a = joint->constraint.a;
 	cpBody *b = joint->constraint.b;
@@ -88,7 +82,7 @@ applyImpulse(cpSlideJoint *joint)
 	// compute normal impulse
 	cpFloat jn = (joint->bias - vrn)*joint->nMass;
 	cpFloat jnOld = joint->jnAcc;
-	joint->jnAcc = cpfclamp(jnOld + jn, -joint->jnMax, 0.0f);
+	joint->jnAcc = cpfclamp(jnOld + jn, -joint->constraint.maxForce*dt, 0.0f);
 	jn = joint->jnAcc - jnOld;
 	
 	// apply impulse

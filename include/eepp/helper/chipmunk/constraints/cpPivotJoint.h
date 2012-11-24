@@ -22,7 +22,7 @@
 /// @defgroup cpPivotJoint cpPivotJoint
 /// @{
 
-const cpConstraintClass *cpPivotJointGetClass();
+const cpConstraintClass *cpPivotJointGetClass(void);
 
 /// @private
 typedef struct cpPivotJoint {
@@ -30,23 +30,22 @@ typedef struct cpPivotJoint {
 	cpVect anchr1, anchr2;
 	
 	cpVect r1, r2;
-	cpVect k1, k2;
+	cpMat2x2 k;
 	
 	cpVect jAcc;
-	cpFloat jMaxLen;
 	cpVect bias;
 } cpPivotJoint;
 
 /// Allocate a pivot joint
-cpPivotJoint *cpPivotJointAlloc(void);
+cpPivotJoint* cpPivotJointAlloc(void);
 /// Initialize a pivot joint.
-cpPivotJoint *cpPivotJointInit(cpPivotJoint *joint, cpBody *a, cpBody *b, cpVect anchr1, cpVect anchr2);
+cpPivotJoint* cpPivotJointInit(cpPivotJoint *joint, cpBody *a, cpBody *b, cpVect anchr1, cpVect anchr2);
 /// Allocate and initialize a pivot joint.
-cpConstraint *cpPivotJointNew(cpBody *a, cpBody *b, cpVect pivot);
+cpConstraint* cpPivotJointNew(cpBody *a, cpBody *b, cpVect pivot);
 /// Allocate and initialize a pivot joint with specific anchors.
-cpConstraint *cpPivotJointNew2(cpBody *a, cpBody *b, cpVect anchr1, cpVect anchr2);
+cpConstraint* cpPivotJointNew2(cpBody *a, cpBody *b, cpVect anchr1, cpVect anchr2);
 
-CP_DefineConstraintProperty(cpPivotJoint, cpVect, anchr1, Anchr1);
-CP_DefineConstraintProperty(cpPivotJoint, cpVect, anchr2, Anchr2);
+CP_DefineConstraintProperty(cpPivotJoint, cpVect, anchr1, Anchr1)
+CP_DefineConstraintProperty(cpPivotJoint, cpVect, anchr2, Anchr2)
 
 /// @}

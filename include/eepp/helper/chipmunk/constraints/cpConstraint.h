@@ -26,7 +26,7 @@ typedef struct cpConstraintClass cpConstraintClass;
 
 typedef void (*cpConstraintPreStepImpl)(cpConstraint *constraint, cpFloat dt);
 typedef void (*cpConstraintApplyCachedImpulseImpl)(cpConstraint *constraint, cpFloat dt_coef);
-typedef void (*cpConstraintApplyImpulseImpl)(cpConstraint *constraint);
+typedef void (*cpConstraintApplyImpulseImpl)(cpConstraint *constraint, cpFloat dt);
 typedef cpFloat (*cpConstraintGetImpulseImpl)(cpConstraint *constraint);
 
 /// @private
@@ -36,6 +36,11 @@ struct cpConstraintClass {
 	cpConstraintApplyImpulseImpl applyImpulse;
 	cpConstraintGetImpulseImpl getImpulse;
 };
+
+/// Callback function type that gets called before solving a joint.
+typedef void (*cpConstraintPreSolveFunc)(cpConstraint *constraint, cpSpace *space);
+/// Callback function type that gets called after solving a joint.
+typedef void (*cpConstraintPostSolveFunc)(cpConstraint *constraint, cpSpace *space);
 
 
 /// Opaque cpConstraint struct.
@@ -63,6 +68,14 @@ struct cpConstraint {
 	/// Defaults to infinity.
 	cpFloat maxBias;
 	
+	/// Function called before the solver runs.
+	/// Animate your joint anchors, update your motor torque, etc.
+	cpConstraintPreSolveFunc preSolve;
+	
+	/// Function called after the solver runs.
+	/// Use the applied impulse to perform effects like breakable joints.
+	cpConstraintPostSolveFunc postSolve;
+	
 	/// User definable data pointer.
 	/// Generally this points to your the game object class so you can access it
 	/// when given a cpConstraint reference in a callback.
@@ -81,27 +94,34 @@ static inline void cpConstraintActivateBodies(cpConstraint *constraint)
 	cpBody *b = constraint->b; if(b) cpBodyActivate(b);
 }
 
+/// @private
 #define CP_DefineConstraintStructGetter(type, member, name) \
 static inline type cpConstraint##Get##name(const cpConstraint *constraint){return constraint->member;}
 
+/// @private
 #define CP_DefineConstraintStructSetter(type, member, name) \
 static inline void cpConstraint##Set##name(cpConstraint *constraint, type value){ \
 	cpConstraintActivateBodies(constraint); \
 	constraint->member = value; \
 }
 
+/// @private
 #define CP_DefineConstraintStructProperty(type, member, name) \
 CP_DefineConstraintStructGetter(type, member, name) \
 CP_DefineConstraintStructSetter(type, member, name)
 
-CP_DefineConstraintStructGetter(cpBody *, a, A);
-CP_DefineConstraintStructGetter(cpBody *, b, B);
-CP_DefineConstraintStructProperty(cpFloat, maxForce, MaxForce);
-CP_DefineConstraintStructProperty(cpFloat, errorBias, ErrorBias);
-CP_DefineConstraintStructProperty(cpFloat, maxBias, MaxBias);
-CP_DefineConstraintStructProperty(cpDataPointer, data, UserData);
+CP_DefineConstraintStructGetter(cpSpace*, CP_PRIVATE(space), Space)
 
-/// Get the last impulse applied by this constraint.
+CP_DefineConstraintStructGetter(cpBody*, a, A)
+CP_DefineConstraintStructGetter(cpBody*, b, B)
+CP_DefineConstraintStructProperty(cpFloat, maxForce, MaxForce)
+CP_DefineConstraintStructProperty(cpFloat, errorBias, ErrorBias)
+CP_DefineConstraintStructProperty(cpFloat, maxBias, MaxBias)
+CP_DefineConstraintStructProperty(cpConstraintPreSolveFunc, preSolve, PreSolveFunc)
+CP_DefineConstraintStructProperty(cpConstraintPostSolveFunc, postSolve, PostSolveFunc)
+CP_DefineConstraintStructProperty(cpDataPointer, data, UserData)
+
+// Get the last impulse applied by this constraint.
 static inline cpFloat cpConstraintGetImpulse(cpConstraint *constraint)
 {
 	return constraint->CP_PRIVATE(klass)->getImpulse(constraint);

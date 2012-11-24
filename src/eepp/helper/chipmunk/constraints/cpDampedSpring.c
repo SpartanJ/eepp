@@ -19,9 +19,6 @@
  * SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <math.h>
-
 #include "chipmunk_private.h"
 #include "constraints/util.h"
 
@@ -58,7 +55,7 @@ preStep(cpDampedSpring *spring, cpFloat dt)
 static void applyCachedImpulse(cpDampedSpring *spring, cpFloat dt_coef){}
 
 static void
-applyImpulse(cpDampedSpring *spring)
+applyImpulse(cpDampedSpring *spring, cpFloat dt)
 {
 	cpBody *a = spring->constraint.a;
 	cpBody *b = spring->constraint.b;

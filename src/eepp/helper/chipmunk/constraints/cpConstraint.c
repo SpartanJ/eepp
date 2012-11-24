@@ -19,9 +19,6 @@
  * SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <math.h>
-
 #include "chipmunk_private.h"
 #include "constraints/util.h"
 
@@ -38,7 +35,7 @@ cpConstraintFree(cpConstraint *constraint)
 	}
 }
 
-// *** defined in util.h
+// *** declared in util.h TODO move declaration to chipmunk_private.h
 
 void
 cpConstraintInit(cpConstraint *constraint, const cpConstraintClass *klass, cpBody *a, cpBody *b)
@@ -47,6 +44,7 @@ cpConstraintInit(cpConstraint *constraint, const cpConstraintClass *klass, cpBod
 	
 	constraint->a = a;
 	constraint->b = b;
+	constraint->space = NULL;
 	
 	constraint->next_a = NULL;
 	constraint->next_b = NULL;
@@ -54,4 +52,7 @@ cpConstraintInit(cpConstraint *constraint, const cpConstraintClass *klass, cpBod
 	constraint->maxForce = (cpFloat)INFINITY;
 	constraint->errorBias = cpfpow(1.0f - 0.1f, 60.0f);
 	constraint->maxBias = (cpFloat)INFINITY;
+	
+	constraint->preSolve = NULL;
+	constraint->postSolve = NULL;
 }

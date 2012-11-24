@@ -22,7 +22,7 @@
 /// @defgroup cpGrooveJoint cpGrooveJoint
 /// @{
 
-const cpConstraintClass *cpGrooveJointGetClass();
+const cpConstraintClass *cpGrooveJointGetClass(void);
 
 /// @private
 typedef struct cpGrooveJoint {
@@ -33,26 +33,25 @@ typedef struct cpGrooveJoint {
 	cpVect grv_tn;
 	cpFloat clamp;
 	cpVect r1, r2;
-	cpVect k1, k2;
+	cpMat2x2 k;
 	
 	cpVect jAcc;
-	cpFloat jMaxLen;
 	cpVect bias;
 } cpGrooveJoint;
 
 /// Allocate a groove joint.
-cpGrooveJoint *cpGrooveJointAlloc(void);
+cpGrooveJoint* cpGrooveJointAlloc(void);
 /// Initialize a groove joint.
-cpGrooveJoint *cpGrooveJointInit(cpGrooveJoint *joint, cpBody *a, cpBody *b, cpVect groove_a, cpVect groove_b, cpVect anchr2);
+cpGrooveJoint* cpGrooveJointInit(cpGrooveJoint *joint, cpBody *a, cpBody *b, cpVect groove_a, cpVect groove_b, cpVect anchr2);
 /// Allocate and initialize a groove joint.
-cpConstraint *cpGrooveJointNew(cpBody *a, cpBody *b, cpVect groove_a, cpVect groove_b, cpVect anchr2);
+cpConstraint* cpGrooveJointNew(cpBody *a, cpBody *b, cpVect groove_a, cpVect groove_b, cpVect anchr2);
 
-CP_DefineConstraintGetter(cpGrooveJoint, cpVect, grv_a, GrooveA);
+CP_DefineConstraintGetter(cpGrooveJoint, cpVect, grv_a, GrooveA)
 /// Set endpoint a of a groove joint's groove
 void cpGrooveJointSetGrooveA(cpConstraint *constraint, cpVect value);
-CP_DefineConstraintGetter(cpGrooveJoint, cpVect, grv_b, GrooveB);
+CP_DefineConstraintGetter(cpGrooveJoint, cpVect, grv_b, GrooveB)
 /// Set endpoint b of a groove joint's groove
 void cpGrooveJointSetGrooveB(cpConstraint *constraint, cpVect value);
-CP_DefineConstraintProperty(cpGrooveJoint, cpVect, anchr2, Anchr2);
+CP_DefineConstraintProperty(cpGrooveJoint, cpVect, anchr2, Anchr2)
 
 /// @}

@@ -26,7 +26,7 @@ typedef struct cpDampedSpring cpDampedSpring;
 
 typedef cpFloat (*cpDampedSpringForceFunc)(cpConstraint *spring, cpFloat dist);
 
-const cpConstraintClass *cpDampedSpringGetClass();
+const cpConstraintClass *cpDampedSpringGetClass(void);
 
 /// @private
 struct cpDampedSpring {
@@ -46,17 +46,17 @@ struct cpDampedSpring {
 };
 
 /// Allocate a damped spring.
-cpDampedSpring *cpDampedSpringAlloc(void);
+cpDampedSpring* cpDampedSpringAlloc(void);
 /// Initialize a damped spring.
-cpDampedSpring *cpDampedSpringInit(cpDampedSpring *joint, cpBody *a, cpBody *b, cpVect anchr1, cpVect anchr2, cpFloat restLength, cpFloat stiffness, cpFloat damping);
+cpDampedSpring* cpDampedSpringInit(cpDampedSpring *joint, cpBody *a, cpBody *b, cpVect anchr1, cpVect anchr2, cpFloat restLength, cpFloat stiffness, cpFloat damping);
 /// Allocate and initialize a damped spring.
-cpConstraint *cpDampedSpringNew(cpBody *a, cpBody *b, cpVect anchr1, cpVect anchr2, cpFloat restLength, cpFloat stiffness, cpFloat damping);
+cpConstraint* cpDampedSpringNew(cpBody *a, cpBody *b, cpVect anchr1, cpVect anchr2, cpFloat restLength, cpFloat stiffness, cpFloat damping);
 
-CP_DefineConstraintProperty(cpDampedSpring, cpVect, anchr1, Anchr1);
-CP_DefineConstraintProperty(cpDampedSpring, cpVect, anchr2, Anchr2);
-CP_DefineConstraintProperty(cpDampedSpring, cpFloat, restLength, RestLength);
-CP_DefineConstraintProperty(cpDampedSpring, cpFloat, stiffness, Stiffness);
-CP_DefineConstraintProperty(cpDampedSpring, cpFloat, damping, Damping);
-CP_DefineConstraintProperty(cpDampedSpring, cpDampedSpringForceFunc, springForceFunc, SpringForceFunc);
+CP_DefineConstraintProperty(cpDampedSpring, cpVect, anchr1, Anchr1)
+CP_DefineConstraintProperty(cpDampedSpring, cpVect, anchr2, Anchr2)
+CP_DefineConstraintProperty(cpDampedSpring, cpFloat, restLength, RestLength)
+CP_DefineConstraintProperty(cpDampedSpring, cpFloat, stiffness, Stiffness)
+CP_DefineConstraintProperty(cpDampedSpring, cpFloat, damping, Damping)
+CP_DefineConstraintProperty(cpDampedSpring, cpDampedSpringForceFunc, springForceFunc, SpringForceFunc)
 
 /// @}

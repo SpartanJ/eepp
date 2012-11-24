@@ -19,9 +19,6 @@
  * SOFTWARE.
  */
 
-#include <stdlib.h>
-#include <math.h>
-
 #include "chipmunk_private.h"
 #include "constraints/util.h"
 
@@ -44,9 +41,6 @@ preStep(cpPinJoint *joint, cpFloat dt)
 	// calculate bias velocity
 	cpFloat maxBias = joint->constraint.maxBias;
 	joint->bias = cpfclamp(-bias_coef(joint->constraint.errorBias, dt)*(dist - joint->dist)/dt, -maxBias, maxBias);
-	
-	// compute max impulse
-	joint->jnMax = J_MAX(joint, dt);
 }
 
 static void
@@ -60,7 +54,7 @@ applyCachedImpulse(cpPinJoint *joint, cpFloat dt_coef)
 }
 
 static void
-applyImpulse(cpPinJoint *joint)
+applyImpulse(cpPinJoint *joint, cpFloat dt)
 {
 	cpBody *a = joint->constraint.a;
 	cpBody *b = joint->constraint.b;
@@ -69,10 +63,12 @@ applyImpulse(cpPinJoint *joint)
 	// compute relative velocity
 	cpFloat vrn = normal_relative_velocity(a, b, joint->r1, joint->r2, n);
 	
+	cpFloat jnMax = joint->constraint.maxForce*dt;
+	
 	// compute normal impulse
 	cpFloat jn = (joint->bias - vrn)*joint->nMass;
 	cpFloat jnOld = joint->jnAcc;
-	joint->jnAcc = cpfclamp(jnOld + jn, -joint->jnMax, joint->jnMax);
+	joint->jnAcc = cpfclamp(jnOld + jn, -jnMax, jnMax);
 	jn = joint->jnAcc - jnOld;
 	
 	// apply impulse
@@ -91,7 +87,7 @@ static const cpConstraintClass klass = {
 	(cpConstraintApplyImpulseImpl)applyImpulse,
 	(cpConstraintGetImpulseImpl)getImpulse,
 };
-CP_DefineClassGetter(cpPinJoint);
+CP_DefineClassGetter(cpPinJoint)
 
 
 cpPinJoint *
@@ -112,6 +108,8 @@ cpPinJointInit(cpPinJoint *joint, cpBody *a, cpBody *b, cpVect anchr1, cpVect an
 	cpVect p1 = (a ? cpvadd(a->p, cpvrotate(anchr1, a->rot)) : anchr1);
 	cpVect p2 = (b ? cpvadd(b->p, cpvrotate(anchr2, b->rot)) : anchr2);
 	joint->dist = cpvlength(cpvsub(p2, p1));
+	
+	cpAssertWarn(joint->dist > 0.0, "You created a 0 length pin joint. A pivot joint will be much more stable.");
 
 	joint->jnAcc = 0.0f;
 	

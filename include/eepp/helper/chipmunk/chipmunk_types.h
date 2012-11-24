@@ -1,16 +1,18 @@
+#include <stdint.h>
+
 #ifdef __APPLE__
-   #import "TargetConditionals.h"
+   #include "TargetConditionals.h"
 #endif
 
-#if (defined TARGET_OS_IPHONE) && (!defined CP_USE_CGPOINTS)
-	#define CP_USE_CGPOINTS
+#if (TARGET_OS_IPHONE == 1) || (TARGET_OS_MAC == 1) && (!defined CP_USE_CGPOINTS)
+	#define CP_USE_CGPOINTS 1
 #endif
 
-#ifdef CP_USE_CGPOINTS
+#if CP_USE_CGPOINTS == 1
 	#if TARGET_OS_IPHONE
 		#import <CoreGraphics/CGGeometry.h>
 	#elif TARGET_OS_MAC
-		#import <ApplicationServices/ApplicationServices.h>
+		#include <ApplicationServices/ApplicationServices.h>
 	#endif
 	
 	#if defined(__LP64__) && __LP64__
@@ -58,7 +60,6 @@
 #endif
 
 #ifndef INFINITY
-	//TODO use C++ infinity
 	#ifdef _MSC_VER
 		union MSVC_EVIL_FLOAT_HACK
 		{
@@ -132,15 +133,10 @@ static inline cpFloat cpflerpconst(cpFloat f1, cpFloat f2, cpFloat d)
 }
 
 /// Hash value type.
-#include "../sophist/sophist.h"
-#if 1 == SOPHIST_pointer64
-typedef SOPHIST_uint64 cpHashValue;
-#else
-typedef SOPHIST_uint32 cpHashValue;
-#endif
+typedef uintptr_t cpHashValue;
 
+// Oh C, how we love to define our own boolean types to get compiler compatibility
 /// Chipmunk's boolean type.
-/// Oh C, how we love to define our own boolean types to get compiler compatibility
 #ifdef CP_BOOL_TYPE
 	typedef CP_BOOL_TYPE cpBool;
 #else
@@ -168,18 +164,18 @@ typedef SOPHIST_uint32 cpHashValue;
 	typedef CP_COLLISION_TYPE_TYPE cpCollisionType;
 #else
 /// Type used for cpSpace.collision_type.
-	typedef unsigned int cpCollisionType;
+	typedef uintptr_t cpCollisionType;
 #endif
 
 #ifdef CP_GROUP_TYPE
 	typedef CP_GROUP_TYPE cpGroup;
 #else
 /// Type used for cpShape.group.
-	typedef unsigned int cpGroup;
+	typedef uintptr_t cpGroup;
 #endif
 
 #ifdef CP_LAYERS_TYPE
-	typedef CP_GROUP_TYPE cpLayers;
+	typedef CP_LAYERS_TYPE cpLayers;
 #else
 /// Type used for cpShape.layers.
 	typedef unsigned int cpLayers;
@@ -205,7 +201,7 @@ typedef SOPHIST_uint32 cpHashValue;
 
 // CGPoints are structurally the same, and allow
 // easy interoperability with other Cocoa libraries
-#ifdef CP_USE_CGPOINTS
+#if CP_USE_CGPOINTS
 	typedef CGPoint cpVect;
 #else
 /// Chipmunk's 2D vector type.
@@ -213,4 +209,7 @@ typedef SOPHIST_uint32 cpHashValue;
 	typedef struct cpVect{cpFloat x,y;} cpVect;
 #endif
 
-
+typedef struct cpMat2x2 {
+	// Row major [[a, b][c d]]
+	cpFloat a, b, c, d;
+} cpMat2x2;

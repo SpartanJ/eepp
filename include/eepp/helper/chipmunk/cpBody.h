@@ -100,16 +100,16 @@ struct cpBody {
 };
 
 /// Allocate a cpBody.
-cpBody *cpBodyAlloc(void);
+cpBody* cpBodyAlloc(void);
 /// Initialize a cpBody.
-cpBody *cpBodyInit(cpBody *body, cpFloat m, cpFloat i);
+cpBody* cpBodyInit(cpBody *body, cpFloat m, cpFloat i);
 /// Allocate and initialize a cpBody.
-cpBody *cpBodyNew(cpFloat m, cpFloat i);
+cpBody* cpBodyNew(cpFloat m, cpFloat i);
 
 /// Initialize a static cpBody.
-cpBody *cpBodyInitStatic(cpBody *body);
+cpBody* cpBodyInitStatic(cpBody *body);
 /// Allocate and initialize a static cpBody.
-cpBody *cpBodyNewStatic();
+cpBody* cpBodyNewStatic(void);
 
 /// Destroy a cpBody.
 void cpBodyDestroy(cpBody *body);
@@ -160,36 +160,39 @@ static inline type cpBodyGet##name(const cpBody *body){return body->member;}
 #define CP_DefineBodyStructSetter(type, member, name) \
 static inline void cpBodySet##name(cpBody *body, const type value){ \
 	cpBodyActivate(body); \
-	cpBodyAssertSane(body); \
 	body->member = value; \
+	cpBodyAssertSane(body); \
 }
 
 #define CP_DefineBodyStructProperty(type, member, name) \
 CP_DefineBodyStructGetter(type, member, name) \
 CP_DefineBodyStructSetter(type, member, name)
 
-CP_DefineBodyStructGetter(cpFloat, m, Mass);
+// TODO add to docs
+CP_DefineBodyStructGetter(cpSpace*, CP_PRIVATE(space), Space)
+
+CP_DefineBodyStructGetter(cpFloat, m, Mass)
 /// Set the mass of a body.
 void cpBodySetMass(cpBody *body, cpFloat m);
 
-CP_DefineBodyStructGetter(cpFloat, i, Moment);
+CP_DefineBodyStructGetter(cpFloat, i, Moment)
 /// Set the moment of a body.
 void cpBodySetMoment(cpBody *body, cpFloat i);
 
-CP_DefineBodyStructGetter(cpVect, p, Pos);
+CP_DefineBodyStructGetter(cpVect, p, Pos)
 /// Set the position of a body.
 void cpBodySetPos(cpBody *body, cpVect pos);
-CP_DefineBodyStructProperty(cpVect, v, Vel);
-CP_DefineBodyStructProperty(cpVect, f, Force);
-CP_DefineBodyStructGetter(cpFloat, a, Angle);
+CP_DefineBodyStructProperty(cpVect, v, Vel)
+CP_DefineBodyStructProperty(cpVect, f, Force)
+CP_DefineBodyStructGetter(cpFloat, a, Angle)
 /// Set the angle of a body.
 void cpBodySetAngle(cpBody *body, cpFloat a);
-CP_DefineBodyStructProperty(cpFloat, w, AngVel);
-CP_DefineBodyStructProperty(cpFloat, t, Torque);
-CP_DefineBodyStructGetter(cpVect, rot, Rot);
-CP_DefineBodyStructProperty(cpFloat, v_limit, VelLimit);
-CP_DefineBodyStructProperty(cpFloat, w_limit, AngVelLimit);
-CP_DefineBodyStructProperty(cpDataPointer, data, UserData);
+CP_DefineBodyStructProperty(cpFloat, w, AngVel)
+CP_DefineBodyStructProperty(cpFloat, t, Torque)
+CP_DefineBodyStructGetter(cpVect, rot, Rot)
+CP_DefineBodyStructProperty(cpFloat, v_limit, VelLimit)
+CP_DefineBodyStructProperty(cpFloat, w_limit, AngVelLimit)
+CP_DefineBodyStructProperty(cpDataPointer, data, UserData)
 
 /// Default Integration functions.
 void cpBodyUpdateVelocity(cpBody *body, cpVect gravity, cpFloat damping, cpFloat dt);
@@ -213,6 +216,12 @@ void cpBodyResetForces(cpBody *body);
 void cpBodyApplyForce(cpBody *body, const cpVect f, const cpVect r);
 /// Apply an impulse (in world coordinates) to the body at a point relative to the center of gravity (also in world coordinates).
 void cpBodyApplyImpulse(cpBody *body, const cpVect j, const cpVect r);
+
+/// Get the velocity on a body (in world units) at a point on the body in world coordinates.
+cpVect cpBodyGetVelAtWorldPoint(cpBody *body, cpVect point);
+/// Get the velocity on a body (in world units) at a point on the body in local coordinates.
+cpVect cpBodyGetVelAtLocalPoint(cpBody *body, cpVect point);
+
 
 /// Get the kinetic energy of a body.
 static inline cpFloat cpBodyKineticEnergy(const cpBody *body)

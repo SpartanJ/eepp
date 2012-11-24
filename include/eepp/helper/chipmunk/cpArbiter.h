@@ -83,6 +83,11 @@ struct cpArbiter {
 	/// Override in a pre-solve collision handler for custom behavior.
 	cpVect surface_vr;
 	
+	/// User definable data pointer.
+	/// The value will persist for the pair of shapes until the separate() callback is called.
+	/// NOTE: If you need to clean up this pointer, you should implement the separate() callback to do it.
+	cpDataPointer data;
+	
 	CP_PRIVATE(cpShape *a);
 	CP_PRIVATE(cpShape *b);
 	CP_PRIVATE(cpBody *body_a);
@@ -110,16 +115,21 @@ static inline void cpArbiterSet##name(cpArbiter *arb, type value){arb->member = 
 CP_DefineArbiterStructGetter(type, member, name) \
 CP_DefineArbiterStructSetter(type, member, name)
 
-CP_DefineArbiterStructProperty(cpFloat, e, Elasticity);
-CP_DefineArbiterStructProperty(cpFloat, u, Friction);
-CP_DefineArbiterStructProperty(cpVect, surface_vr, SurfaceVelocity);
+CP_DefineArbiterStructProperty(cpFloat, e, Elasticity)
+CP_DefineArbiterStructProperty(cpFloat, u, Friction)
+CP_DefineArbiterStructProperty(cpVect, surface_vr, SurfaceVelocity)
+CP_DefineArbiterStructProperty(cpDataPointer, data, UserData)
 
 /// Calculate the total impulse that was applied by this arbiter.
-/// Calling this function from a begin or pre-solve callback is undefined.
+/// This function should only be called from a post-solve, post-step or cpBodyEachArbiter callback.
 cpVect cpArbiterTotalImpulse(const cpArbiter *arb);
 /// Calculate the total impulse including the friction that was applied by this arbiter.
-/// Calling this function from a begin or pre-solve callback is undefined.
+/// This function should only be called from a post-solve, post-step or cpBodyEachArbiter callback.
 cpVect cpArbiterTotalImpulseWithFriction(const cpArbiter *arb);
+/// Calculate the amount of energy lost in a collision including static, but not dynamic friction.
+/// This function should only be called from a post-solve, post-step or cpBodyEachArbiter callback.
+cpFloat cpArbiterTotalKE(const cpArbiter *arb);
+
 
 /// Causes a collision pair to be ignored as if you returned false from a begin callback.
 /// If called from a pre-step callback, you will still need to return false
@@ -152,18 +162,6 @@ static inline void cpArbiterGetBodies(const cpArbiter *arb, cpBody **a, cpBody *
 /// A macro shortcut for defining and retrieving the bodies from an arbiter.
 #define CP_ARBITER_GET_BODIES(arb, a, b) cpBody *a, *b; cpArbiterGetBodies(arb, &a, &b);
 
-/// Returns true if this is the first step a pair of objects started colliding.
-static inline cpBool cpArbiterIsFirstContact(const cpArbiter *arb)
-{
-	return arb->CP_PRIVATE(state) == cpArbiterStateFirstColl;
-}
-
-/// Get the number of contact points for this arbiter.
-static inline int cpArbiterGetCount(const cpArbiter *arb)
-{
-	return arb->CP_PRIVATE(numContacts);
-}
-
 /// A struct that wraps up the important collision data for an arbiter.
 typedef struct cpContactPointSet {
 	/// The number of contact points in the set.
@@ -182,6 +180,10 @@ typedef struct cpContactPointSet {
 /// Return a contact set from an arbiter.
 cpContactPointSet cpArbiterGetContactPointSet(const cpArbiter *arb);
 
+/// Returns true if this is the first step a pair of objects started colliding.
+cpBool cpArbiterIsFirstContact(const cpArbiter *arb);
+/// Get the number of contact points for this arbiter.
+int cpArbiterGetCount(const cpArbiter *arb);
 /// Get the normal of the @c ith contact point.
 cpVect cpArbiterGetNormal(const cpArbiter *arb, int i);
 /// Get the position of the @c ith contact point.

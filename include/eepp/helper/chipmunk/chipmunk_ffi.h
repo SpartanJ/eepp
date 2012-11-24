@@ -14,7 +14,7 @@
 #endif
 
 #define MAKE_PROPERTIES_REF(struct, property) \
-	MAKE_REF(struct##Get##property); MAKE_REF(struct##Set##property);
+	MAKE_REF(struct##Get##property); MAKE_REF(struct##Set##property)
 
 MAKE_REF(cpv); // makes a variable named _cpv that contains the function pointer for cpv()
 MAKE_REF(cpveql);
@@ -47,6 +47,7 @@ MAKE_REF(cpflerp);
 MAKE_REF(cpflerpconst);
 
 MAKE_REF(cpBBNew);
+MAKE_REF(cpBBNewForCircle);
 MAKE_REF(cpBBIntersects);
 MAKE_REF(cpBBContainsBB);
 MAKE_REF(cpBBContainsVect);
@@ -54,6 +55,7 @@ MAKE_REF(cpBBMerge);
 MAKE_REF(cpBBExpand);
 MAKE_REF(cpBBArea);
 MAKE_REF(cpBBMergedArea);
+MAKE_REF(cpBBSegmentQuery);
 MAKE_REF(cpBBIntersectsSegment);
 
 MAKE_REF(cpBodyGetMass);
@@ -77,7 +79,7 @@ MAKE_REF(cpBodyKineticEnergy);
 
 MAKE_REF(cpShapeGetBB);
 MAKE_PROPERTIES_REF(cpShape, Body);
-MAKE_PROPERTIES_REF(cpShape, IsSensor);
+MAKE_PROPERTIES_REF(cpShape, Sensor);
 MAKE_PROPERTIES_REF(cpShape, Elasticity);
 MAKE_PROPERTIES_REF(cpShape, Friction);
 MAKE_PROPERTIES_REF(cpShape, SurfaceVelocity);
@@ -150,9 +152,22 @@ MAKE_REF(cpSpatialIndexInsert);
 MAKE_REF(cpSpatialIndexRemove);
 MAKE_REF(cpSpatialIndexReindex);
 MAKE_REF(cpSpatialIndexReindexObject);
-MAKE_REF(cpSpatialIndexPointQuery);
 MAKE_REF(cpSpatialIndexSegmentQuery);
 MAKE_REF(cpSpatialIndexQuery);
 MAKE_REF(cpSpatialIndexReindexQuery);
+
+MAKE_PROPERTIES_REF(cpSpace, Iterations);
+MAKE_PROPERTIES_REF(cpSpace, Gravity);
+MAKE_PROPERTIES_REF(cpSpace, Damping);
+MAKE_PROPERTIES_REF(cpSpace, IdleSpeedThreshold);
+MAKE_PROPERTIES_REF(cpSpace, SleepTimeThreshold);
+MAKE_PROPERTIES_REF(cpSpace, CollisionSlop);
+MAKE_PROPERTIES_REF(cpSpace, CollisionBias);
+MAKE_PROPERTIES_REF(cpSpace, CollisionPersistence);
+MAKE_PROPERTIES_REF(cpSpace, EnableContactGraph);
+MAKE_PROPERTIES_REF(cpSpace, UserData);
+MAKE_REF(cpSpaceGetStaticBody);
+MAKE_REF(cpSpaceGetCurrentTimeStep);
+MAKE_REF(cpSpaceIsLocked);
 
 #endif
