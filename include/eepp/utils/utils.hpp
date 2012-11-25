@@ -95,9 +95,6 @@ namespace EE { namespace Utils {
 	/** @return The modification date of the file */
 	Uint32 EE_API FileGetModificationDate( const std::string& Filepath );
 
-	/** @return The File Extension of a Save Type */
-	std::string EE_API SaveTypeToExtension( const Uint32& Format );
-
 	/** If the directory path not end with a slash, it will add it. */
 	void EE_API DirPathAddSlashAtEnd( std::string& path );
 

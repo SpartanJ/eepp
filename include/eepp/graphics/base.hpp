@@ -237,10 +237,6 @@
 	#define EE_QUAD_VERTEX 4
 #endif
 
-#define STBI_TYPE_SPECIFIC_FUNCTIONS
-#include <eepp/helper/SOIL/stb_image.h>
-#include <eepp/helper/SOIL/SOIL.h>
-
 #include <eepp/utils/colors.hpp>
 #include <eepp/utils/rect.hpp>
 #include <eepp/utils/vector2.hpp>

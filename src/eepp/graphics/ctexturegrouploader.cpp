@@ -6,6 +6,7 @@
 #include <eepp/system/ciostreamfile.hpp>
 #include <eepp/system/ciostreammemory.hpp>
 #include <eepp/graphics/packerhelper.hpp>
+#include <eepp/helper/SOIL/stb_image.h>
 
 namespace EE { namespace Graphics {
 
@@ -420,7 +421,7 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 	}
 
 	if ( NeedUpdate ) {
-		std::string tapath( FileRemoveExtension( TextureAtlasPath ) + "." + SaveTypeToExtension( mTexGrHdr.Format ) );
+		std::string tapath( FileRemoveExtension( TextureAtlasPath ) + "." + cImage::SaveTypeToExtension( mTexGrHdr.Format ) );
 
 		if ( 2 == NeedUpdate ) {
 			cTexturePacker tp( mTexGrHdr.Width, mTexGrHdr.Height, 0 != ( mTexGrHdr.Flags & HDR_TEXTURE_GROUP_POW_OF_TWO ), mTexGrHdr.PixelBorder, mTexGrHdr.Flags & HDR_TEXTURE_GROUP_ALLOW_FLIPPING );
@@ -442,7 +443,7 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 
 			for ( Uint32 z = 0; z < mTempGroups.size(); z++ ) {
 				if ( z != 0 ) {
-					tapath = FileRemoveExtension( TextureAtlasPath ) + "_ch" + toStr( z ) + "." + SaveTypeToExtension( mTexGrHdr.Format );
+					tapath = FileRemoveExtension( TextureAtlasPath ) + "_ch" + toStr( z ) + "." + cImage::SaveTypeToExtension( mTexGrHdr.Format );
 				}
 
 				unsigned char * imgPtr = stbi_load( tapath.c_str(), &x, &y, &c, 0 );

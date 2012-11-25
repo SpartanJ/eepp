@@ -1,12 +1,38 @@
 #ifndef EE_GRAPHICSCIMAGE_HPP
 #define EE_GRAPHICSCIMAGE_HPP
 
-#include <eepp/graphics/base.hpp>
+#include <eepp/base.hpp>
+
+#include <eepp/utils/colors.hpp>
+using namespace EE::Utils;
+
+#include <eepp/system/clog.hpp>
+#include <eepp/system/cpack.hpp>
+#include <eepp/system/cpackmanager.hpp>
+using namespace EE::System;
+
+#include <eepp/graphics/renders.hpp>
 
 namespace EE { namespace Graphics {
 
 class EE_API cImage {
 	public:
+		/** @return The File Extension of a Save Type */
+		static std::string SaveTypeToExtension( const Int32& Format );
+
+		/** @return The save type from a given extension ( example: "png" => EE_SAVE_TYPE_PNG ) */
+		static EE_SAVE_TYPE ExtensionToSaveType( const std::string& Extension );
+
+		/** @return True if success to get the info.
+		* @param width the var to store the image width
+		* @param height the var to store the image height
+		* @param channels the var to store the image channels count
+		*/
+		static bool GetInfo( const std::string& path, int * width, int * height, int * channels );
+
+		/** @return The last failure image loading/info reason */
+		static std::string GetLastFailureReason();
+
 		cImage();
 
 		/** Use an existing image */

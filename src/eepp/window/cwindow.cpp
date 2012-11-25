@@ -4,6 +4,7 @@
 #include <eepp/window/ccursormanager.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/window/platform/null/cnullimpl.hpp>
+#include <eepp/helper/SOIL/SOIL.h>
 
 #ifdef EE_GLES1_LATE_INCLUDE
 	#if EE_PLATFORM == EE_PLATFORM_IOS
@@ -174,7 +175,7 @@ bool cWindow::TakeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format )
 		if ( !IsDirectory( filepath ) )
 			MakeDir( filepath );
 
-		Ext = "." + SaveTypeToExtension( Format );
+		Ext = "." + cImage::SaveTypeToExtension( Format );
 
 		while ( !find && FileNum < 10000 ) {
 			TmpPath = StrFormated( "%s%05d%s", filepath.c_str(), FileNum, Ext.c_str() );

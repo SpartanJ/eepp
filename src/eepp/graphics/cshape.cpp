@@ -1,5 +1,6 @@
 #include <eepp/graphics/cshape.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
+#include <eepp/helper/SOIL/SOIL.h>
 
 namespace EE { namespace Graphics {
 

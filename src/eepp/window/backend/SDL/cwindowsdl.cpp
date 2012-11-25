@@ -12,6 +12,7 @@
 #include <eepp/graphics/cframebuffermanager.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/window/platform/platformimpl.hpp>
+#include <eepp/helper/SOIL/stb_image.h>
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 

@@ -898,7 +898,12 @@ void cEETest::LoadTextures() {
 	CL2.AddFrame(TN[0], 96, 96);
 	CL2.Color( eeColorA( 255, 255, 255, 255 ) );
 
-	mTGL = eeNew( cTextureGroupLoader, ( MyPath + "data/extra/bnb.etg" ) );
+	int x, y, c;
+
+	if ( cImage::GetInfo( MyPath + "data/extra/bnb.png", &x, &y, &c ) )
+	{
+		mTGL = eeNew( cTextureGroupLoader, ( MyPath + "data/extra/bnb.etg" ) );
+	}
 
 	mBlindy.AddFramesByPattern( "rn" );
 	mBlindy.Position( 320.f, 0.f );

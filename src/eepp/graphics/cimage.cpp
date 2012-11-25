@@ -1,8 +1,43 @@
 #include <eepp/graphics/cimage.hpp>
 #include <eepp/helper/SOIL/image_helper.h>
+#include <eepp/helper/SOIL/stb_image.h>
 #include <eepp/helper/SOIL/SOIL.h>
 
 namespace EE { namespace Graphics {
+
+std::string cImage::SaveTypeToExtension( const Int32& Format ) {
+	switch( Format ) {
+		case EE_SAVE_TYPE_TGA: return "tga";
+		case EE_SAVE_TYPE_BMP: return "bmp";
+		case EE_SAVE_TYPE_PNG: return "png";
+		case EE_SAVE_TYPE_DDS: return "dds";
+		case EE_SAVE_TYPE_UNKNOWN:
+		default:
+			break;
+	}
+
+	return "";
+}
+
+EE_SAVE_TYPE cImage::ExtensionToSaveType( const std::string& Extension ) {
+	EE_SAVE_TYPE saveType = EE_SAVE_TYPE_UNKNOWN;
+
+	if ( Extension == "tga" )		saveType = EE_SAVE_TYPE_TGA;
+	else if ( Extension == "bmp" )	saveType = EE_SAVE_TYPE_BMP;
+	else if ( Extension == "png" )	saveType = EE_SAVE_TYPE_PNG;
+	else if ( Extension == "dds" )	saveType = EE_SAVE_TYPE_DDS;
+
+	return saveType;
+}
+
+bool cImage::GetInfo( const std::string& path, int * width, int * height, int * channels ) {
+	return stbi_info( path.c_str(), width, height, channels ) != 0;
+}
+
+std::string cImage::GetLastFailureReason()
+{
+	return std::string( stbi_failure_reason() );
+}
 
 cImage::cImage() :
 	mPixels(NULL),

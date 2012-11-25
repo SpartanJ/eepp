@@ -3,6 +3,7 @@
 #include <eepp/system/ciostreamfile.hpp>
 #include <eepp/graphics/ctexturepackernode.hpp>
 #include <eepp/graphics/ctexturepackertex.hpp>
+#include <eepp/helper/SOIL/stb_image.h>
 
 namespace EE { namespace Graphics {
 

@@ -1,6 +1,8 @@
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/graphics/ctextureloader.hpp>
 #include <eepp/graphics/glhelper.hpp>
+#include <eepp/helper/SOIL/stb_image.h>
+#include <eepp/helper/SOIL/SOIL.h>
 
 namespace EE { namespace Graphics {
 

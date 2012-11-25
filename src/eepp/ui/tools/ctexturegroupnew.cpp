@@ -1,6 +1,7 @@
 #include <eepp/ui/tools/ctexturegroupnew.hpp>
 #include <eepp/ui/cuicommondialog.hpp>
 #include <eepp/ui/cuimessagebox.hpp>
+#include <eepp/helper/SOIL/stb_image.h>
 
 namespace EE { namespace UI { namespace Tools {
 
