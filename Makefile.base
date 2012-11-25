@@ -356,7 +356,11 @@ else
 	ifneq (,$(findstring cygwin,$(BUILD_OS)))
 		INCFREETYPE2	= -I./src/eepp/helper/freetype2/include
 	else
-		INCFREETYPE2	= -I$(DESTINCDIR)/freetype2
+		ifeq ($(BUILD_OS), haiku)
+			INCFREETYPE2	= -I./src/eepp/helper/freetype2/include
+		else
+			INCFREETYPE2	= -I$(DESTINCDIR)/freetype2
+		endif
 	endif
 endif
 
