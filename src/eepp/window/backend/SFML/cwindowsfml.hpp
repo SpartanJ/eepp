@@ -44,8 +44,6 @@ class EE_API cWindowSFML : public cWindow {
 
 		void SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue );
 
-		void SetCurrentContext( eeWindowContex Context );
-
 		eeWindowContex GetContext() const;
 
 		eeWindowHandler	GetWindowHandler();

@@ -35,8 +35,6 @@
 #include <eepp/graphics/cshaderprogrammanager.hpp>
 #include <eepp/graphics/ctexturegrouploader.hpp>
 #include <eepp/graphics/cframebuffer.hpp>
-#include <eepp/graphics/cframebufferfbo.hpp>
-#include <eepp/graphics/cframebufferpbuffer.hpp>
 #include <eepp/graphics/cvertexbuffer.hpp>
 #include <eepp/graphics/cvertexbufferogl.hpp>
 #include <eepp/graphics/cvertexbuffervbo.hpp>

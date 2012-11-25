@@ -159,9 +159,7 @@
 ../../include/eepp/graphics/cimage.hpp
 ../../include/eepp/graphics/cglobalshapegroup.hpp
 ../../include/eepp/graphics/cglobalbatchrenderer.hpp
-../../include/eepp/graphics/cframebufferpbuffer.hpp
 ../../include/eepp/graphics/cframebuffermanager.hpp
-../../include/eepp/graphics/cframebufferfbo.hpp
 ../../include/eepp/graphics/cframebuffer.hpp
 ../../include/eepp/graphics/cfontmanager.hpp
 ../../include/eepp/graphics/cfont.hpp
@@ -378,7 +376,6 @@
 ../../include/eepp/window/ccursormanager.hpp
 ../../include/eepp/window/ccursor.hpp
 ../../include/eepp/window/cclipboard.hpp
-../../include/eepp/window/cbackend.hpp
 ../../include/eepp/window/base.hpp
 ../../src/eepp/window/inputhelper.cpp
 ../../src/eepp/window/cwindow.cpp
@@ -576,3 +573,7 @@
 ../../src/eepp/window/backend/SFML/ccursorsfml.cpp
 ../../src/eepp/window/backend/SFML/ccursormanagersfml.cpp
 ../../src/eepp/window/backend/SFML/cclipboardsfml.cpp
+../../src/eepp/window/cbackend.hpp
+../../src/eepp/graphics/cframebufferpbuffer.hpp
+../../src/eepp/graphics/cframebufferfbo.hpp
+../../src/eepp/graphics/renderer/rendererhelper.hpp

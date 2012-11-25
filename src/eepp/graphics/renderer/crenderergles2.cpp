@@ -2,6 +2,8 @@
 
 #ifdef EE_GL3_ENABLED
 
+#include <eepp/graphics/renderer/rendererhelper.hpp>
+
 namespace EE { namespace Graphics {
 
 const char * EEGLES2_STATES_NAME[] = {
@@ -60,6 +62,7 @@ const GLchar * EEGLES2_SHADER_PRIMITIVE_FS =
 #include "shaders/primitive.frag"
 
 cRendererGLES2::cRendererGLES2() :
+	mStack( eeNew( cMatrixStack, () ) ),
 	mProjectionMatrix_id(0),
 	mModelViewMatrix_id(0),
 	mCurrentMode(0),
@@ -75,11 +78,12 @@ cRendererGLES2::cRendererGLES2() :
 	mLoaded( false ),
 	mCurShaderLocal( true )
 {
-	mProjectionMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
-	mModelViewMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
+	mStack->mProjectionMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
+	mStack->mModelViewMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
 }
 
 cRendererGLES2::~cRendererGLES2() {
+	eeSAFE_DELETE( mStack );
 }
 
 EEGL_version cRendererGLES2::Version() {
@@ -490,7 +494,7 @@ void cRendererGLES2::UpdateMatrix() {
 		case GL_PROJECTION:
 		{
 			if ( -1 != mProjectionMatrix_id ) {
-				mCurShader->SetUniformMatrix( mProjectionMatrix_id, &mProjectionMatrix.top()[0][0] );
+				mCurShader->SetUniformMatrix( mProjectionMatrix_id, &mStack->mProjectionMatrix.top()[0][0] );
 			}
 
 			break;
@@ -498,7 +502,7 @@ void cRendererGLES2::UpdateMatrix() {
 		case GL_MODELVIEW:
 		{
 			if ( -1 != mModelViewMatrix_id ) {
-				mCurShader->SetUniformMatrix( mModelViewMatrix_id, &mModelViewMatrix.top()[0][0] );
+				mCurShader->SetUniformMatrix( mModelViewMatrix_id, &mStack->mModelViewMatrix.top()[0][0] );
 			}
 
 			break;
@@ -507,80 +511,63 @@ void cRendererGLES2::UpdateMatrix() {
 }
 
 void cRendererGLES2::PushMatrix() {
-	mCurMatrix->push( mCurMatrix->top() );
+	mStack->mCurMatrix->push( mStack->mCurMatrix->top() );
 	UpdateMatrix();
 }
 
 void cRendererGLES2::PopMatrix() {
-	mCurMatrix->pop();
+	mStack->mCurMatrix->pop();
 	UpdateMatrix();
 }
 
 void cRendererGLES2::LoadIdentity() {
-	mCurMatrix->top() = glm::mat4(1.0);
+	mStack->mCurMatrix->top() = glm::mat4(1.0);
 	UpdateMatrix();
 }
 
-glm::mat4 cRendererGLES2::toGLMmat4( const GLfloat * m ) {
-	return glm::mat4( m[0], m[1], m[2], m[3], m[4], m[5], m[6], m[7], m[8], m[9], m[10], m[11], m[12], m[13], m[14], m[15] );
-}
-
 void cRendererGLES2::MultMatrixf ( const GLfloat * m ) {
-	mCurMatrix->top() *= toGLMmat4( m );
+	mStack->mCurMatrix->top() *= toGLMmat4( m );
 	UpdateMatrix();
 }
 
 void cRendererGLES2::Translatef( GLfloat x, GLfloat y, GLfloat z ) {
-	mCurMatrix->top() *= glm::translate( glm::vec3( x, y, z ) );
+	mStack->mCurMatrix->top() *= glm::translate( glm::vec3( x, y, z ) );
 	UpdateMatrix();
 }
 
 void cRendererGLES2::Rotatef( GLfloat angle, GLfloat x, GLfloat y, GLfloat z ) {
-	mCurMatrix->top() *= glm::rotate( angle, glm::vec3( x, y, z ) );
+	mStack->mCurMatrix->top() *= glm::rotate( angle, glm::vec3( x, y, z ) );
 	UpdateMatrix();
 }
 
 void cRendererGLES2::Scalef( GLfloat x, GLfloat y, GLfloat z ) {
-	mCurMatrix->top() *= glm::scale( glm::vec3( x, y, z ) );
+	mStack->mCurMatrix->top() *= glm::scale( glm::vec3( x, y, z ) );
 	UpdateMatrix();
 }
 
 void cRendererGLES2::Ortho( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar ) {
-	mCurMatrix->top() *= glm::ortho( left, right, bottom, top , zNear, zFar );
+	mStack->mCurMatrix->top() *= glm::ortho( left, right, bottom, top , zNear, zFar );
 	UpdateMatrix();
 }
 
 void cRendererGLES2::LookAt( GLfloat eyeX, GLfloat eyeY, GLfloat eyeZ, GLfloat centerX, GLfloat centerY, GLfloat centerZ, GLfloat upX, GLfloat upY, GLfloat upZ ) {
-	mCurMatrix->top() *= glm::lookAt( glm::vec3(eyeX, eyeY, eyeZ), glm::vec3(centerX, centerY, centerZ), glm::vec3(upX, upY, upZ) );
+	mStack->mCurMatrix->top() *= glm::lookAt( glm::vec3(eyeX, eyeY, eyeZ), glm::vec3(centerX, centerY, centerZ), glm::vec3(upX, upY, upZ) );
 	UpdateMatrix();
 }
 
 void cRendererGLES2::Perspective ( GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar ) {
-	mCurMatrix->top() *= glm::perspective( fovy, aspect, zNear, zFar );
+	mStack->mCurMatrix->top() *= glm::perspective( fovy, aspect, zNear, zFar );
 	UpdateMatrix();
 }
 
 void cRendererGLES2::LoadMatrixf( const GLfloat * m ) {
-	mCurMatrix->top() = toGLMmat4( m );
+	mStack->mCurMatrix->top() = toGLMmat4( m );
 	UpdateMatrix();
 }
 
 void cRendererGLES2::Frustum( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near_val, GLfloat far_val ) {
-	mCurMatrix->top() *= glm::frustum( left, right, bottom, top, near_val, far_val );
+	mStack->mCurMatrix->top() *= glm::frustum( left, right, bottom, top, near_val, far_val );
 	UpdateMatrix();
-}
-
-void cRendererGLES2::fromGLMmat4( glm::mat4 from, GLfloat * to ) {
-	Int32 i,p;
-
-	for ( i = 0; i < 4; i++ ) {
-		glm::vec4 v = from[i];
-		p		= i * 4;
-		to[p  ]	= v.x;
-		to[p+1]	= v.y;
-		to[p+2]	= v.z;
-		to[p+3]	= v.w;
-	}
 }
 
 void cRendererGLES2::GetCurrentMatrix( GLenum mode, GLfloat * m ) {
@@ -588,13 +575,13 @@ void cRendererGLES2::GetCurrentMatrix( GLenum mode, GLfloat * m ) {
 		case GL_PROJECTION:
 		case GL_PROJECTION_MATRIX:
 		{
-			fromGLMmat4( mProjectionMatrix.top(), m );
+			fromGLMmat4( mStack->mProjectionMatrix.top(), m );
 			break;
 		}
 		case GL_MODELVIEW:
 		case GL_MODELVIEW_MATRIX:
 		{
-			fromGLMmat4( mModelViewMatrix.top(), m );
+			fromGLMmat4( mStack->mModelViewMatrix.top(), m );
 			break;
 		}
 	}
@@ -611,13 +598,13 @@ void cRendererGLES2::MatrixMode(GLenum mode) {
 		case GL_PROJECTION:
 		case GL_PROJECTION_MATRIX:
 		{
-			mCurMatrix = &mProjectionMatrix;
+			mStack->mCurMatrix = &mStack->mProjectionMatrix;
 			break;
 		}
 		case GL_MODELVIEW:
 		case GL_MODELVIEW_MATRIX:
 		{
-			mCurMatrix = &mModelViewMatrix;
+			mStack->mCurMatrix = &mStack->mModelViewMatrix;
 			break;
 		}
 	}
@@ -634,7 +621,7 @@ void cRendererGLES2::Clip2DPlaneEnable( const Int32& x, const Int32& y, const In
 	glm::vec4 vclip_top		( 0.0	, 1.0	, 0.0	, -tY		);
 	glm::vec4 vclip_bottom	( 0.0	, -1.0	, 0.0	, tY + tH	);
 
-	glm::mat4 invMV = glm::inverse( mModelViewMatrix.top() );
+	glm::mat4 invMV = glm::inverse( mStack->mModelViewMatrix.top() );
 
 	vclip_left		= vclip_left	* invMV;
 	vclip_right		= vclip_right	* invMV;
@@ -683,7 +670,7 @@ void cRendererGLES2::ClipPlane( GLenum plane, const GLdouble * equation ) {
 
 	glm::vec4 teq( equation[0], equation[1], equation[2], equation[3] );
 
-	teq = teq * glm::inverse( mModelViewMatrix.top() );		/// Apply the inverse of the model view matrix to the equation
+	teq = teq * glm::inverse( mStack->mModelViewMatrix.top() );		/// Apply the inverse of the model view matrix to the equation
 
 	glUniform4f( location, (GLfloat)teq[0], (GLfloat)teq[1], (GLfloat)teq[2], (GLfloat)teq[3] );
 }

@@ -75,9 +75,6 @@ std::vector< std::pair<unsigned int, unsigned int> > cWindowNull::GetPossibleRes
 void cWindowNull::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {
 }
 
-void cWindowNull::SetCurrentContext( eeWindowContex Context ) {
-}
-
 eeWindowContex cWindowNull::GetContext() const {
 	return 0;
 }

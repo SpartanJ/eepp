@@ -14,6 +14,7 @@
 #include <eepp/helper/haikuttf/hkfontmanager.hpp>
 #include <eepp/physics/cphysicsmanager.hpp>
 
+#include <eepp/window/cbackend.hpp>
 #include <eepp/window/backend/SDL/cbackendsdl.hpp>
 #include <eepp/window/backend/SDL2/cbackendsdl.hpp>
 #include <eepp/window/backend/allegro5/cbackendal.hpp>

@@ -2,10 +2,10 @@
 #define EE_WINDOWCENGINE_H
 
 #include <eepp/window/base.hpp>
-#include <eepp/window/cbackend.hpp>
 #include <eepp/window/cwindow.hpp>
 
 namespace EE { namespace System { class cIniFile; } }
+namespace EE { namespace Window { namespace Backend { class cBackend; } } }
 
 namespace EE { namespace Window {
 

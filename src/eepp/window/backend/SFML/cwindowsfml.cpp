@@ -188,9 +188,6 @@ std::vector< std::pair<unsigned int, unsigned int> > cWindowSFML::GetPossibleRes
 void cWindowSFML::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {
 }
 
-void cWindowSFML::SetCurrentContext( eeWindowContex Context ) {
-}
-
 eeWindowContex cWindowSFML::GetContext() const {
 	return 0;
 }

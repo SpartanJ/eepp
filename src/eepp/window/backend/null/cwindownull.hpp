@@ -45,8 +45,6 @@ class EE_API cWindowNull : public cWindow {
 
 		void SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue );
 
-		void SetCurrentContext( eeWindowContex Context );
-
 		eeWindowContex GetContext() const;
 
 		eeWindowHandler	GetWindowHandler();

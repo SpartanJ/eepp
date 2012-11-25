@@ -3,7 +3,6 @@
 
 //! Chipmunk includes
 #include <eepp/helper/chipmunk/chipmunk_private.h>
-#include <eepp/helper/chipmunk/chipmunk_unsafe.h>
 
 //! EE includes needed for the wrapper, all templates, so it will be easy to port this.
 #include <eepp/base.hpp>

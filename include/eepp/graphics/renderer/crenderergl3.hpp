@@ -5,23 +5,16 @@
 
 #ifdef EE_GL3_ENABLED
 
-// GLM doesn't support forward declaration of the internal types
-// Xlib Madness
-#ifdef True
-#undef True
-#endif
-
-#ifdef False
-#undef False
-#endif
-#include <eepp/helper/glm/gtx/transform.hpp>
-
 namespace EE { namespace Graphics {
 
 enum EEGL3_SHADERS {
 	EEGL3_SHADER_BASE,
 	EEGL3_SHADERS_COUNT
 };
+
+namespace Private {
+class cMatrixStack;
+}
 
 class EE_API cRendererGL3 : public cGL {
 	public:
@@ -99,10 +92,6 @@ class EE_API cRendererGL3 : public cGL {
 
 		void GetCurrentMatrix( GLenum mode, GLfloat * m );
 
-		glm::mat4 toGLMmat4( const GLfloat * m );
-
-		void fromGLMmat4( glm::mat4 from, GLfloat * to );
-
 		GLenum GetCurrentMatrixMode();
 
 		std::string GetBaseVertexShader();
@@ -111,12 +100,10 @@ class EE_API cRendererGL3 : public cGL {
 
 		GLint UnProject( GLfloat winx, GLfloat winy, GLfloat winz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *objx, GLfloat *objy, GLfloat *objz );
 	protected:
-		std::stack<glm::mat4>	mProjectionMatrix;		// cpu-side
+		Private::cMatrixStack *	mStack;
 		GLint					mProjectionMatrix_id;	// cpu-side hook to shader uniform
-		std::stack<glm::mat4>	mModelViewMatrix;		// cpu-side
 		GLint					mModelViewMatrix_id;	// cpu-side hook to shader uniform
 		GLenum					mCurrentMode;
-		std::stack<glm::mat4>*	mCurMatrix;
 		cShaderProgram *		mShaders[ EEGL3_SHADERS_COUNT ];
 		cShaderProgram *		mCurShader;
 		GLint					mAttribsLoc[ EEGL_ARRAY_STATES_COUNT ];

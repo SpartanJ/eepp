@@ -7,9 +7,9 @@ namespace EE { namespace Window { namespace Backend {
 
 class EE_API cBackend {
 	public:
-		inline cBackend() {};
+		inline cBackend() {}
 		
-		inline virtual ~cBackend() {};
+		inline virtual ~cBackend() {}
 };
 
 }}}

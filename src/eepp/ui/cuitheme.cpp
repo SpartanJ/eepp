@@ -221,8 +221,6 @@ cUITheme * cUITheme::LoadFromPath( cUITheme * tTheme, const std::string& Path, c
 			tTheme->Add( eeNew( cUISkinSimple, ( ElemFound[i] ) ) );
 	}
 
-
-
 	cLog::instance()->Write( "UI Theme Loaded in: " + toStr( TE.ElapsedSinceStart() ) + " ( from path )" );
 
 	return tTheme;
@@ -239,10 +237,8 @@ cUITheme * cUITheme::LoadFromShapeGroup( cShapeGroup * ShapeGroup, const std::st
 bool cUITheme::SearchFilesInGroup( cShapeGroup * SG, std::string Element, Uint32& IsComplex ) {
 	bool Found = false;
 	Uint32 i = 0, s = 0;
-	std::string ElemPath;
-	std::string ElemFullPath;
 	std::string ElemName;
-	IsComplex = false;
+	IsComplex = 0;
 
 	// Search Complex Skin
 	for ( i = 0; i < cUISkinState::StateCount; i++ ) {
@@ -250,7 +246,7 @@ bool cUITheme::SearchFilesInGroup( cShapeGroup * SG, std::string Element, Uint32
 			ElemName = Element + "_" + cUISkin::GetSkinStateName( i ) + "_" + cUISkinComplex::GetSideSuffix( s );
 
 			if ( SG->GetByName( ElemName ) ) {
-				IsComplex = true;
+				IsComplex = 1;
 				Found = true;
 				break;
 			}
@@ -278,7 +274,7 @@ bool cUITheme::SearchFilesOfElement( cShapeGroup * SG, const std::string& Path, 
 	std::string ElemPath;
 	std::string ElemFullPath;
 	std::string ElemName;
-	IsComplex = false;
+	IsComplex = 0;
 
 	// Search Complex Skin
 	for ( i = 0; i < cUISkinState::StateCount; i++ ) {
@@ -290,8 +286,9 @@ bool cUITheme::SearchFilesOfElement( cShapeGroup * SG, const std::string& Path, 
 			if ( FileExists( ElemFullPath ) ) {
 				SG->Add( eeNew( cShape, ( cTextureFactory::instance()->Load( ElemFullPath ), ElemName ) ) );
 
-				IsComplex = true;
+				IsComplex = 1;
 				Found = true;
+				break;
 			}
 		}
 	}
