@@ -5,8 +5,11 @@
 #include <eepp/graphics/cshapegroup.hpp>
 #include <eepp/system/ciostreamfile.hpp>
 #include <eepp/system/ciostreammemory.hpp>
+#include <eepp/graphics/packerhelper.hpp>
 
 namespace EE { namespace Graphics {
+
+using namespace Private;
 
 cTextureGroupLoader::cTextureGroupLoader() :
 	mThreaded(false),

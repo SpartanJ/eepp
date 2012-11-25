@@ -1,7 +1,7 @@
 #ifndef EE_GRAPHICS_PIXELPERFECT_H
 #define EE_GRAPHICS_PIXELPERFECT_H
 
-#include <eepp/graphics/ctexturefactory.hpp>
+#include <eepp/graphics/ctexture.hpp>
 
 namespace EE { namespace Graphics {
 

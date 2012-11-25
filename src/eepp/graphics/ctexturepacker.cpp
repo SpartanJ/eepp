@@ -1,6 +1,8 @@
 #include <eepp/graphics/ctexturepacker.hpp>
 #include <eepp/graphics/cimage.hpp>
 #include <eepp/system/ciostreamfile.hpp>
+#include <eepp/graphics/ctexturepackernode.hpp>
+#include <eepp/graphics/ctexturepackertex.hpp>
 
 namespace EE { namespace Graphics {
 

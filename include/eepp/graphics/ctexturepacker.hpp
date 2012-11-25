@@ -33,10 +33,10 @@
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/packerhelper.hpp>
-#include <eepp/graphics/ctexturepackernode.hpp>
-#include <eepp/graphics/ctexturepackertex.hpp>
 
 namespace EE { namespace Graphics {
+
+namespace Private { class cTexturePackerNode; class cTexturePackerTex; }
 
 using namespace Private;
 
@@ -77,7 +77,7 @@ class EE_API cTexturePacker {
 
     	Int32 							mLongestEdge;
     	Int32							mTotalArea;
-    	cTexturePackerNode * 			mFreeList;
+		cTexturePackerNode *			mFreeList;
     	Int32							mWidth;
     	Int32							mHeight;
 		bool							mPacked;
@@ -109,9 +109,9 @@ class EE_API cTexturePacker {
 
     	void 							Validate();
 
-    	cTexturePackerTex * 			GetLonguestEdge();
+		cTexturePackerTex *				GetLonguestEdge();
 
-    	cTexturePackerTex * 			GetShortestEdge();
+		cTexturePackerTex *				GetShortestEdge();
 
     	Int32							GetChildCount();
 
@@ -121,11 +121,11 @@ class EE_API cTexturePacker {
 
     	const Int32&					GetPlacedCount() const;
 
-    	sTextureHdr						CreateTextureHdr( cTexturePacker * Packer );
+		sTextureHdr						CreateTextureHdr( cTexturePacker * Packer );
 
 		void							CreateShapesHdr( cTexturePacker * Packer, std::vector<sShapeHdr>& Shapes );
 
-    	cTexturePackerNode *			GetBestFit( cTexturePackerTex * t, cTexturePackerNode ** prevBestFit, Int32 * EdgeCount );
+		cTexturePackerNode *			GetBestFit( cTexturePackerTex * t, cTexturePackerNode ** prevBestFit, Int32 * EdgeCount );
 
     	void							InsertTexture( cTexturePackerTex * t, cTexturePackerNode * bestFit, Int32 edgeCount, cTexturePackerNode * previousBestFit );
 

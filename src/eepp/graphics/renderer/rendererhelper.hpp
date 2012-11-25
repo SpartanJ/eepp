@@ -6,7 +6,6 @@
 #ifdef EE_GL3_ENABLED
 
 #include <eepp/helper/glm/gtx/transform.hpp>
-#include <stack>
 
 namespace EE { namespace Graphics { namespace Private {
 

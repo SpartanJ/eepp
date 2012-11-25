@@ -126,17 +126,16 @@
 ../../include/eepp/graphics/vbohelper.hpp
 ../../include/eepp/graphics/renders.hpp
 ../../include/eepp/graphics/pixelperfect.hpp
-../../include/eepp/graphics/packerhelper.hpp
 ../../include/eepp/graphics/glhelper.hpp
 ../../include/eepp/graphics/fonthelper.hpp
 ../../include/eepp/graphics/cvertexbuffervbo.hpp
 ../../include/eepp/graphics/cvertexbufferogl.hpp
-../../include/eepp/graphics/cvertexbuffermanager.hpp
+../../src/eepp/graphics/cvertexbuffermanager.hpp
 ../../include/eepp/graphics/cvertexbuffer.hpp
 ../../include/eepp/graphics/cttffontloader.hpp
 ../../include/eepp/graphics/cttffont.hpp
-../../include/eepp/graphics/ctexturepackertex.hpp
-../../include/eepp/graphics/ctexturepackernode.hpp
+../../src/eepp/graphics/ctexturepackertex.hpp
+../../src/eepp/graphics/ctexturepackernode.hpp
 ../../include/eepp/graphics/ctexturepacker.hpp
 ../../include/eepp/graphics/ctextureloader.hpp
 ../../include/eepp/graphics/ctexturegrouploader.hpp
@@ -159,7 +158,7 @@
 ../../include/eepp/graphics/cimage.hpp
 ../../include/eepp/graphics/cglobalshapegroup.hpp
 ../../include/eepp/graphics/cglobalbatchrenderer.hpp
-../../include/eepp/graphics/cframebuffermanager.hpp
+../../src/eepp/graphics/cframebuffermanager.hpp
 ../../include/eepp/graphics/cframebuffer.hpp
 ../../include/eepp/graphics/cfontmanager.hpp
 ../../include/eepp/graphics/cfont.hpp
@@ -577,3 +576,4 @@
 ../../src/eepp/graphics/cframebufferpbuffer.hpp
 ../../src/eepp/graphics/cframebufferfbo.hpp
 ../../src/eepp/graphics/renderer/rendererhelper.hpp
+../../include/eepp/graphics/packerhelper.hpp

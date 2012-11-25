@@ -43,6 +43,7 @@ enum EE_RENDERTYPE {
 
 /** @enum EE_SAVE_TYPE Defines the format to save a texture. */
 enum EE_SAVE_TYPE {
+	EE_SAVE_TYPE_UNKNOWN	= -1,
 	EE_SAVE_TYPE_TGA 		= 0,
 	EE_SAVE_TYPE_BMP 		= 1,
 	EE_SAVE_TYPE_PNG 		= 2,
