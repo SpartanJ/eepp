@@ -1,6 +1,8 @@
 #include <eepp/ee.hpp>
 
 /// This example is based on the WebGL demo from http://minimal.be/lab/fluGL/
+namespace Demo_ExternalShader {
+
 Uint32 ParticlesNum	= 30000;
 cWindow * win = NULL;
 cShaderProgram * ShaderProgram = NULL;
@@ -75,6 +77,9 @@ void videoResize() {
 		}
 	}
 }
+
+}
+using namespace Demo_ExternalShader;
 
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {

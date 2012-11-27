@@ -1,4 +1,5 @@
 #include <eepp/system/clog.hpp>
+#include <cstdarg>
 
 namespace EE { namespace System {
 

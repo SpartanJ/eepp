@@ -6,6 +6,8 @@ using namespace EE::System;
 #include <sys/stat.h>
 
 #if defined( EE_PLATFORM_POSIX )
+	#include <sys/utsname.h>
+
 	#if EE_PLATFORM != EE_PLATFORM_ANDROID
 		#include <sys/statvfs.h>
 	#else
@@ -35,9 +37,6 @@ using namespace EE::System;
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
     #include <direct.h>
-#endif
-
-#if EE_PLATFORM == EE_PLATFORM_WIN
 	#include <sys/utime.h>
 #else
 	#include <sys/time.h>
@@ -51,7 +50,7 @@ using namespace EE::System;
 	#endif
 #endif
 
-static bool TickStarted = false;
+namespace EE { namespace Utils {
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
@@ -215,10 +214,6 @@ static LARGE_INTEGER hires_ticks_per_second;
 
 #endif
 
-#if defined( EE_PLATFORM_POSIX )
-	#include <sys/utsname.h>
-#endif
-
 #ifdef EE_PLATFORM_POSIX
 
 #ifdef EE_HAVE_CLOCK_GETTIME
@@ -228,8 +223,6 @@ static struct timeval start;
 #endif
 
 #endif
-
-namespace EE { namespace Utils {
 
 std::string GetOSName() {
 #if defined( EE_PLATFORM_POSIX )
@@ -269,23 +262,26 @@ bool FileExists( const std::string& Filepath ) {
 }
 
 static void eeStartTicks() {
-#if EE_PLATFORM == EE_PLATFORM_WIN
-    QueryPerformanceFrequency(&hires_ticks_per_second);
-    QueryPerformanceCounter(&hires_start_ticks);
-#else
-	#ifdef EE_HAVE_CLOCK_GETTIME
-	clock_gettime(CLOCK_MONOTONIC, &start);
-	#else
-	gettimeofday(&start, NULL);
-	#endif
-#endif
+	static bool TickStarted = false;
 
-	TickStarted = true;
+	if ( !TickStarted ) {
+	#if EE_PLATFORM == EE_PLATFORM_WIN
+		QueryPerformanceFrequency(&hires_ticks_per_second);
+		QueryPerformanceCounter(&hires_start_ticks);
+	#else
+		#ifdef EE_HAVE_CLOCK_GETTIME
+		clock_gettime(CLOCK_MONOTONIC, &start);
+		#else
+		gettimeofday(&start, NULL);
+		#endif
+	#endif
+
+		TickStarted = true;
+	}
 }
 
 Uint32 eeGetTicks() {
-	if ( !TickStarted )
-		eeStartTicks();
+	eeStartTicks();
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	LARGE_INTEGER hires_now;

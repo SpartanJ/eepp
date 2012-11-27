@@ -4,6 +4,8 @@
 #include <eepp/window/cinput.hpp>
 #include <eepp/window/cengine.hpp>
 #include <eepp/window/ccursormanager.hpp>
+#include <algorithm>
+#include <cstdarg>
 
 using namespace EE::Window;
 

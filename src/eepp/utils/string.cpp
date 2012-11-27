@@ -1,5 +1,7 @@
 #include <cctype>
 #include <eepp/utils/string.hpp>
+#include <algorithm>
+#include <cstdarg>
 
 namespace EE { namespace Utils {
 

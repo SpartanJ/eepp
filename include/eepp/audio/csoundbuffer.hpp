@@ -4,6 +4,7 @@
 #include <eepp/audio/base.hpp>
 #include <eepp/audio/caudioresource.hpp>
 #include <eepp/audio/csoundfile.hpp>
+#include <set>
 
 namespace EE { namespace Audio {
 

@@ -6,6 +6,5 @@
 #include <eepp/base/debug.hpp>
 #include <eepp/base/memorymanager.hpp>
 #include <eepp/base/allocator.hpp>
-#include <eepp/base/stlcontainers.hpp>
 
 #endif

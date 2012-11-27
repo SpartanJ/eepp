@@ -3,6 +3,7 @@
 
 #include <eepp/utils/base.hpp>
 #include <eepp/utils/safedatapointer.hpp>
+#include <vector>
 
 namespace EE { namespace Utils {
 	/** @return True if the file exists ( false if is a directory, to know if directory exists use IsDirectory ) */

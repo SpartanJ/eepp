@@ -1,5 +1,6 @@
 #include <eepp/audio/openal.hpp>
 #include <eepp/audio/caudiodevice.hpp>
+#include <iostream>
 
 namespace EE { namespace Audio {
 

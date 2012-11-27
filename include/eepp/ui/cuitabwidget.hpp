@@ -3,6 +3,7 @@
 
 #include <eepp/ui/cuicomplexcontrol.hpp>
 #include <eepp/ui/cuitab.hpp>
+#include <deque>
 
 namespace EE { namespace UI {
 

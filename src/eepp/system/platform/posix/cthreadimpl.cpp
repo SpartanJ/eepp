@@ -1,5 +1,6 @@
 #include <eepp/system/platform/posix/cthreadimpl.hpp>
 #include <eepp/system/cthread.hpp>
+#include <iostream>
 
 namespace EE { namespace System { namespace Platform {
 

@@ -12,6 +12,8 @@ using namespace EE::Graphics;
 #include <eepp/window/ccursor.hpp>
 using namespace EE::Window::Cursor;
 
+#include <set>
+
 namespace EE { namespace Window {
 
 class EE_API cCursorManager {

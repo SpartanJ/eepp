@@ -3,6 +3,7 @@
 #include <eepp/physics/cshape.hpp>
 #include <eepp/physics/cspace.hpp>
 #include <eepp/physics/constraints/cconstraint.hpp>
+#include <algorithm>
 
 CP_NAMESPACE_BEGIN
 

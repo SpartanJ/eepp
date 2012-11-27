@@ -2,6 +2,7 @@
 #define EE_SYSTEMTRESOURCEMANAGER_HPP
 
 #include <eepp/system/base.hpp>
+#include <list>
 
 namespace EE { namespace System {
 

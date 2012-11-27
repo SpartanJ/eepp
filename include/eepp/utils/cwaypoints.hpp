@@ -3,6 +3,7 @@
 
 #include <eepp/utils/base.hpp>
 #include <eepp/utils/vector2.hpp>
+#include <vector>
 
 namespace EE { namespace Utils {
 

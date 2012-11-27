@@ -3,6 +3,7 @@
 
 #include <eepp/gaming/clayer.hpp>
 #include <eepp/gaming/cgameobject.hpp>
+#include <list>
 
 namespace EE { namespace Gaming {
 

@@ -1,5 +1,8 @@
 #include <eepp/base/debug.hpp>
 #include <eepp/system/clog.hpp>
+#include <cassert>
+#include <cstdarg>
+
 using namespace EE::System;
 
 #ifdef EE_COMPILER_MSVC

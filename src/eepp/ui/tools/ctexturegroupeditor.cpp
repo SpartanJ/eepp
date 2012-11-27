@@ -5,6 +5,7 @@
 #include <eepp/ui/cuimenuitem.hpp>
 #include <eepp/ui/cuicommondialog.hpp>
 #include <eepp/ui/cuimessagebox.hpp>
+#include <algorithm>
 
 namespace EE { namespace UI { namespace Tools {
 

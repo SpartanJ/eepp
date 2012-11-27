@@ -25,6 +25,8 @@
 #include <eepp/graphics/cglobalshapegroup.hpp>
 #include <eepp/graphics/ctexturegrouploader.hpp>
 
+#include <algorithm>
+
 using namespace EE::Graphics;
 
 namespace EE { namespace Gaming { namespace MapEditor {

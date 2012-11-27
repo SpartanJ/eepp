@@ -4,6 +4,7 @@
 #include <eepp/utils/triangle2.hpp>
 #include <eepp/utils/quad2.hpp>
 #include <eepp/utils/rect.hpp>
+#include <vector>
 
 namespace EE { namespace Utils {
 

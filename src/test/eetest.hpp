@@ -3,7 +3,7 @@
 
 #include <eepp/ee.hpp>
 
-namespace EE { namespace Demo {
+namespace Demo_Test {
 
 class cUITest : public cUIControlAnim {
 	public:
@@ -305,6 +305,6 @@ class cEETest : private cThread {
 		void OnShowMenu( const cUIEvent * Event );
 };
 
-}}
+}
 #endif
 

@@ -3,6 +3,7 @@
 
 #include <eepp/system/base.hpp>
 #include <eepp/system/cthread.hpp>
+#include <list>
 
 namespace EE { namespace System {
 

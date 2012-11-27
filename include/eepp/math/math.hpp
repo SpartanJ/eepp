@@ -2,6 +2,7 @@
 #define EECMATH_H
 
 #include <eepp/math/base.hpp>
+#include <cmath>
 
 namespace EE { namespace Math {
 

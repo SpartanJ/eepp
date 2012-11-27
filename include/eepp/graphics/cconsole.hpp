@@ -6,6 +6,7 @@
 #include <eepp/window/cinputtextbuffer.hpp>
 #include <eepp/graphics/cprimitives.hpp>
 #include <eepp/graphics/cfont.hpp>
+#include <deque>
 
 using namespace EE::Window;
 

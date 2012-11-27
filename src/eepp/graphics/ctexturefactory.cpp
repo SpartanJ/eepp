@@ -250,7 +250,7 @@ void cTextureFactory::SetPreBlendFunc( const EE_PRE_BLEND_FUNC& blend, bool forc
 					GLi->BlendFunc(GL_DST_COLOR,GL_ZERO);
 					break;
 				case ALPHA_NONE:
-					// AVOID COMPILER WARNING
+					// Avoid compiler warning
 					break;
 				case ALPHA_CUSTOM:
 					break;

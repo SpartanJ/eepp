@@ -1,6 +1,6 @@
 #include "eetest.hpp"
 
-namespace EE { namespace Demo {
+namespace Demo_Test {
 
 void cEETest::Init() {
 	EE = cEngine::instance();
@@ -1916,10 +1916,10 @@ void cEETest::End() {
 	cEngine::DestroySingleton();
 }
 
-}}
+}
 
 EE_MAIN_FUNC int main (int argc, char * argv []) {
-	EE::Demo::cEETest * Test = eeNew( EE::Demo::cEETest, () );
+	Demo_Test::cEETest * Test = eeNew( Demo_Test::cEETest, () );
 
 	Test->Process();
 

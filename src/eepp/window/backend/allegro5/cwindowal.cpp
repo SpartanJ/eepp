@@ -11,12 +11,25 @@
 #include <eepp/window/platform/platformimpl.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
-#include <allegro5/allegro_windows.h>
-#define WGL_NV_video_out
+	#include <allegro5/allegro_windows.h>
+	#define WGL_NV_video_out
 #elif defined( EE_X11_PLATFORM )
+	#include <allegro5/platform/aintuthr.h>
+	#include <allegro5/internal/aintern_system.h>
+#endif
 
-#include <allegro5/platform/aintuthr.h>
+#include <allegro5/allegro_opengl.h>
 #include <allegro5/internal/aintern_system.h>
+#include <allegro5/internal/aintern_thread.h>
+
+#include <eepp/window/backend/allegro5/cclipboardal.hpp>
+#include <eepp/window/backend/allegro5/cinputal.hpp>
+#include <eepp/window/backend/allegro5/ccursormanageral.hpp>
+#include <eepp/helper/SOIL/stb_image.h>
+
+namespace EE { namespace Window { namespace Backend { namespace Al {
+
+#if defined( EE_X11_PLATFORM )
 
 struct ALLEGRO_SYSTEM_XGLX
 {
@@ -61,7 +74,7 @@ struct ALLEGRO_SYSTEM_XGLX
 struct ALLEGRO_DISPLAY_XGLX
 {
    ALLEGRO_DISPLAY display;
-   Window window;
+   ::Window window;
    int xscreen;
    int adapter;
    GLXWindow glxwindow;
@@ -81,6 +94,7 @@ struct ALLEGRO_DISPLAY_XGLX
    int x, y;
    bool mouse_warp;
 };
+
 static _AL_MUTEX * al_display_mutex = NULL;
 
 static void	al_display_lock() {
@@ -96,16 +110,6 @@ static void al_display_unlock() {
 }
 
 #endif
-
-#include <allegro5/allegro_opengl.h>
-#include <allegro5/internal/aintern_system.h>
-#include <allegro5/internal/aintern_thread.h>
-
-#include <eepp/window/backend/allegro5/cclipboardal.hpp>
-#include <eepp/window/backend/allegro5/cinputal.hpp>
-#include <eepp/window/backend/allegro5/ccursormanageral.hpp>
-
-namespace EE { namespace Window { namespace Backend { namespace Al {
 
 cWindowAl::cWindowAl( WindowSettings Settings, ContextSettings Context ) :
 	cWindow( Settings, Context, eeNew( cClipboardAl, ( this ) ), eeNew( cInputAl, ( this ) ), eeNew( cCursorManagerAl, ( this ) ) ),

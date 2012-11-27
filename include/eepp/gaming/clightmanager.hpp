@@ -3,6 +3,7 @@
 
 #include <eepp/gaming/base.hpp>
 #include <eepp/gaming/clight.hpp>
+#include <list>
 
 namespace EE { namespace Gaming {
 

@@ -2,6 +2,9 @@
 #define EE_UTILSCSTRING_H
 
 #include <eepp/utils/base.hpp>
+#include <fstream>
+#include <sstream>
+#include <vector>
 
 namespace EE { namespace Utils {
 

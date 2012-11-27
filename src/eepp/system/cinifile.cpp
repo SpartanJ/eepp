@@ -3,6 +3,7 @@
 #include <eepp/system/cpackmanager.hpp>
 #include <eepp/system/ciostreamfile.hpp>
 #include <eepp/system/ciostreammemory.hpp>
+#include <cstdarg>
 
 namespace EE { namespace System {
 

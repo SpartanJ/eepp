@@ -2,6 +2,7 @@
 #include <eepp/audio/csound.hpp>
 #include <eepp/audio/caudiodevice.hpp>
 #include <eepp/system/cpackmanager.hpp>
+#include <memory>
 
 namespace EE { namespace Audio {
 

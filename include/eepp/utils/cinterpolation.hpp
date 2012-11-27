@@ -2,6 +2,7 @@
 #define EE_UTILSCINTERPOLATION_H
 
 #include <eepp/utils/base.hpp>
+#include <vector>
 
 namespace EE { namespace Utils {
 

@@ -526,8 +526,6 @@
 ../../src/eepp/graphics/renderer/shaders/basegl3.vert
 ../../src/eepp/graphics/renderer/shaders/basegl3.frag
 ../../src/examples/external_shader/external_shader.cpp
-../../Makefile.base
-../../Makefile
 ../../src/eepp/helper/haikuttf/sophist.h
 ../../src/eepp/helper/haikuttf/hkmutex.hpp
 ../../src/eepp/helper/haikuttf/hkglyph.hpp
@@ -539,12 +537,6 @@
 ../../src/eepp/helper/haikuttf/hkglyph.cpp
 ../../src/eepp/helper/haikuttf/hkfontmanager.cpp
 ../../src/eepp/helper/haikuttf/hkfont.cpp
-../../src/eepp/helper/SOIL/stbi_DDS_c.h
-../../src/eepp/helper/SOIL/stb_image_write.c
-../../src/eepp/helper/SOIL/stb_image.c
-../../src/eepp/helper/SOIL/image_helper.c
-../../src/eepp/helper/SOIL/image_DXT.c
-../../src/eepp/helper/SOIL/SOIL.c
 ../../include/eepp/window.hpp
 ../../include/eepp/utils.hpp
 ../../include/eepp/ui.hpp

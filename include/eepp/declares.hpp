@@ -2,6 +2,7 @@
 #define EE_DECLARES_HPP
 
 #include <eepp/helper/sophist/sophist.h>
+#include <cmath>
 
 #define EE_PLATFORM_WIN		1
 #define EE_PLATFORM_LINUX	2

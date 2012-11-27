@@ -2,6 +2,9 @@
 #define EE_STLCONTAINERS_HPP
 
 #include <eepp/base/memorymanager.hpp>
+#include <stack>
+#include <set>
+#include <deque>
 
 namespace EE {
 	template <typename T, typename A = eeAllocator<T> >

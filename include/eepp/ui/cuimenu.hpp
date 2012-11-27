@@ -6,6 +6,7 @@
 #include <eepp/ui/cuimenucheckbox.hpp>
 #include <eepp/ui/cuimenusubmenu.hpp>
 #include <eepp/ui/cuiseparator.hpp>
+#include <deque>
 
 namespace EE { namespace UI {
 

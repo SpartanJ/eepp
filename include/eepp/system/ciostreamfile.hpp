@@ -2,6 +2,8 @@
 #define EE_SYSTEMCIOSTREAMFILE_HPP
 
 #include <eepp/system/ciostream.hpp>
+#include <iostream>
+#include <fstream>
 
 namespace EE { namespace System {
 

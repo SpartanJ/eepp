@@ -4,6 +4,7 @@
 #include <eepp/graphics/ctexturepackernode.hpp>
 #include <eepp/graphics/ctexturepackertex.hpp>
 #include <eepp/helper/SOIL/stb_image.h>
+#include <algorithm>
 
 namespace EE { namespace Graphics {
 
