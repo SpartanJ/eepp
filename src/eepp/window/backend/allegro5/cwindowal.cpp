@@ -25,7 +25,7 @@
 #include <eepp/window/backend/allegro5/cclipboardal.hpp>
 #include <eepp/window/backend/allegro5/cinputal.hpp>
 #include <eepp/window/backend/allegro5/ccursormanageral.hpp>
-#include <eepp/helper/SOIL/stb_image.h>
+#include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
 
 namespace EE { namespace Window { namespace Backend { namespace Al {
 

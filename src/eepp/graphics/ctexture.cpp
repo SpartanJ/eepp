@@ -1,7 +1,7 @@
 #include <eepp/graphics/ctexture.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
-#include <eepp/helper/SOIL/SOIL.h>
+#include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
 
 namespace EE { namespace Graphics {
 

@@ -28,7 +28,7 @@ all: lib
 
 dirs:
 	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/psaux
-	@$(MKDIR) $(OBJDIR)/src/eepp/helper/SOIL
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/SOIL2/src/SOIL2
 	@$(MKDIR) $(OBJDIR)/src/eepp/helper/zlib
 	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/autofit
 	@$(MKDIR) $(OBJDIR)/src/eepp/helper/freetype2/src/base

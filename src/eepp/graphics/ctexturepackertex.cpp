@@ -1,5 +1,5 @@
 #include <eepp/graphics/ctexturepackertex.hpp>
-#include <eepp/helper/SOIL/stb_image.h>
+#include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
 
 namespace EE { namespace Graphics { namespace Private {
 

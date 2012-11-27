@@ -6,7 +6,7 @@
 #include <eepp/system/ciostreamfile.hpp>
 #include <eepp/system/ciostreammemory.hpp>
 #include <eepp/graphics/packerhelper.hpp>
-#include <eepp/helper/SOIL/stb_image.h>
+#include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
 
 namespace EE { namespace Graphics {
 

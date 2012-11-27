@@ -4,7 +4,7 @@
 #include <eepp/window/ccursormanager.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/window/platform/null/cnullimpl.hpp>
-#include <eepp/helper/SOIL/SOIL.h>
+#include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
 
 #ifdef EE_GLES1_LATE_INCLUDE
 	#if EE_PLATFORM == EE_PLATFORM_IOS
