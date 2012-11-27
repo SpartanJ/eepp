@@ -1,10 +1,12 @@
 /**
-	@mainpage SOIL
+	@mainpage SOIL2
 
-	Jonathan Dummer
+	Fork by Martin Lucas Golini
+	
+	Original author Jonathan Dummer
 	2007-07-26-10.36
 
-	Simple OpenGL Image Library
+	Simple OpenGL Image Library 2
 
 	A tiny c library for uploading images as
 	textures into OpenGL.  Also saving and
@@ -21,8 +23,11 @@
 	- BMP		load & save
 	- TGA		load & save
 	- DDS		load & save
-	- PNG		load
+	- PNG		load & save
 	- JPG		load
+	- PSD		load
+	- HDR		load
+	- PIC		load
 
 	OpenGL Texture Features:
 	- resample to power-of-two sizes
@@ -111,6 +116,7 @@ enum
 	(TGA supports uncompressed RGB / RGBA)
 	(BMP supports uncompressed RGB)
 	(DDS supports DXT1 and DXT5)
+	(PNG supports RGB / RGBA)
 **/
 enum
 {
@@ -306,8 +312,8 @@ unsigned int
 	Creates a 2D OpenGL texture from raw image data.  Note that the raw data is
 	_NOT_ freed after the upload (so the user can load various versions).
 	\param data the raw data to be uploaded as an OpenGL texture
-	\param width the width of the image in pixels
-	\param height the height of the image in pixels
+	\param width the pointer of the width of the image in pixels ( if the texture size change, width will be overrided with the new width )
+	\param height the pointer of the height of the image in pixels ( if the texture size change, height will be overrided with the new height )
 	\param channels the number of channels: 1-luminous, 2-luminous/alpha, 3-RGB, 4-RGBA
 	\param reuse_texture_ID 0-generate a new texture ID, otherwise reuse the texture ID (overwriting the old texture)
 	\param flags can be any of SOIL_FLAG_POWER_OF_TWO | SOIL_FLAG_MIPMAPS | SOIL_FLAG_TEXTURE_REPEATS | SOIL_FLAG_MULTIPLY_ALPHA | SOIL_FLAG_INVERT_Y | SOIL_FLAG_COMPRESS_TO_DXT

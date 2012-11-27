@@ -569,3 +569,15 @@
 ../../src/eepp/graphics/cframebufferfbo.hpp
 ../../src/eepp/graphics/renderer/rendererhelper.hpp
 ../../include/eepp/graphics/packerhelper.hpp
+../../src/eepp/helper/SOIL/stbi_DDS_c.h
+../../src/eepp/helper/SOIL/stbi_DDS.h
+../../src/eepp/helper/SOIL/stb_image_write.h
+../../src/eepp/helper/SOIL/stb_image.h
+../../src/eepp/helper/SOIL/image_helper.h
+../../src/eepp/helper/SOIL/image_DXT.h
+../../src/eepp/helper/SOIL/SOIL.h
+../../src/eepp/helper/SOIL/stb_image_write.c
+../../src/eepp/helper/SOIL/stb_image.c
+../../src/eepp/helper/SOIL/image_helper.c
+../../src/eepp/helper/SOIL/image_DXT.c
+../../src/eepp/helper/SOIL/SOIL.c

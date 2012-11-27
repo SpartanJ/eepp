@@ -1,8 +1,11 @@
 /*
+ 	Fork by Martin Lucas Golini
+ 	 
+ 	Original author
 	Jonathan Dummer
 	2007-07-26-10.36
 
-	Simple OpenGL Image Library
+	Simple OpenGL Image Library 2
 
 	Public Domain
 	using Sean Barret's stb_image as a base
@@ -202,7 +205,7 @@ unsigned int
 	)
 {
 	/*	variables	*/
-	unsigned char* img;
+	unsigned char* img = NULL;
 	int width, height, channels;
 	unsigned int tex_id;
 	/*	no direct uploading of the image as a DDS file	*/
@@ -214,8 +217,14 @@ unsigned int
 		result_string_pointer = "Invalid fake HDR format specified";
 		return 0;
 	}
-	/*	try to load the image (only the HDR type) */
-	img = stbi_load( filename, &width, &height, &channels, 4 );
+
+	/* check if the image is HDR */
+	if ( stbi_is_hdr( filename ) )
+	{
+		/*	try to load the image (only the HDR type) */
+		img = stbi_load( filename, &width, &height, &channels, 4 );
+	}
+
 	/*	channels holds the original number of channels, which may have been forced	*/
 	if( NULL == img )
 	{
