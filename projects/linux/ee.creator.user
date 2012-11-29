@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by Qt Creator 2.6.0, 2012-11-28T14:43:34. -->
+<!-- Written by Qt Creator 2.6.0, 2012-11-29T02:37:06. -->
 <qtcreator>
  <data>
   <variable>ProjectExplorer.Project.ActiveTarget</variable>
@@ -57,7 +57,7 @@
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
       <valuelist type="QVariantList" key="GenericProjectManager.GenericMakeStep.BuildTargets"/>
       <value type="bool" key="GenericProjectManager.GenericMakeStep.Clean">false</value>
-      <value type="QString" key="GenericProjectManager.GenericMakeStep.MakeArguments">-j4 -e DEBUGBUILD=yes SHARED_BACKEND=no BACKENDS_ALL=yes test</value>
+      <value type="QString" key="GenericProjectManager.GenericMakeStep.MakeArguments">-j4 -e DEBUGBUILD=yes SHARED_BACKEND=yes BACKENDS_ALL=yes test</value>
       <value type="QString" key="GenericProjectManager.GenericMakeStep.MakeCommand">make</value>
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName"></value>
@@ -72,7 +72,7 @@
     <valuemap type="QVariantMap" key="ProjectExplorer.BuildConfiguration.BuildStepList.1">
      <valuemap type="QVariantMap" key="ProjectExplorer.BuildStepList.Step.0">
       <value type="bool" key="ProjectExplorer.BuildStep.Enabled">true</value>
-      <value type="QString" key="ProjectExplorer.ProcessStep.Arguments">-e DEBUGBUILD=yes clean</value>
+      <value type="QString" key="ProjectExplorer.ProcessStep.Arguments">-e DEBUGBUILD=yes BACKENDS_ALL=yes clean</value>
       <value type="QString" key="ProjectExplorer.ProcessStep.Command">/usr/bin/make</value>
       <value type="QString" key="ProjectExplorer.ProcessStep.WorkingDirectory">%{buildDir}</value>
       <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">clean</value>

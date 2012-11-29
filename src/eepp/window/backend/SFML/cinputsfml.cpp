@@ -122,7 +122,7 @@ void cInputSFML::Update() {
 			{
 				if ( KEY_TAB != event.text.unicode ) {
 					EEEvent.Type = InputEvent::TextInput;
-					EEEvent.text.timestamp = eeGetTicks();
+					EEEvent.text.timestamp = Sys::GetTicks();
 					EEEvent.text.text = event.text.unicode;
 
 					ProcessEvent( &EEEvent );

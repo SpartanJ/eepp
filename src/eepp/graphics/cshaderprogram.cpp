@@ -429,7 +429,7 @@ void cShaderProgram::Name( const std::string& name ) {
 	Uint32 NameCount = cShaderProgramManager::instance()->Exists( mName );
 
 	if ( 0 != NameCount || 0 == name.size() ) {
-		Name( name + toStr( NameCount + 1 ) );
+		Name( name + String::toStr( NameCount + 1 ) );
 	}
 }
 

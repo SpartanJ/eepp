@@ -162,7 +162,7 @@ const bool& cUIProgressBar::DisplayPercent() const {
 void cUIProgressBar::UpdateTextBox() {
 	mTextBox->Visible( mDisplayPercent );
 	mTextBox->Size( mSize );
-	mTextBox->Text( toStr( (Int32)( ( mProgress / mTotalSteps ) * 100.f ) ) + "%" );
+	mTextBox->Text( String::toStr( (Int32)( ( mProgress / mTotalSteps ) * 100.f ) ) + "%" );
 }
 
 cUITextBox * cUIProgressBar::TextBox() const {

@@ -4,6 +4,7 @@
 #include <eepp/window/ccursormanager.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/window/platform/null/cnullimpl.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
 
 #ifdef EE_GLES1_LATE_INCLUDE
@@ -160,10 +161,10 @@ bool cWindow::TakeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format )
 		File = filepath.substr( filepath.find_last_of("/\\") + 1 );
 		Ext = File.substr( File.find_last_of(".") + 1 );
 
-		if ( IsDirectory( filepath ) || !Ext.size() )
+		if ( FileSystem::IsDirectory( filepath ) || !Ext.size() )
 			CreateNewFile = true;
 	} else {
-		filepath = GetProcessPath();
+		filepath = Sys::GetProcessPath();
 		CreateNewFile = true;
 	}
 
@@ -172,17 +173,17 @@ bool cWindow::TakeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format )
 		Int32 FileNum = 1;
 		std::string TmpPath = filepath, Ext;
 
-		if ( !IsDirectory( filepath ) )
-			MakeDir( filepath );
+		if ( !FileSystem::IsDirectory( filepath ) )
+			FileSystem::MakeDir( filepath );
 
 		Ext = "." + cImage::SaveTypeToExtension( Format );
 
 		while ( !find && FileNum < 10000 ) {
-			TmpPath = StrFormated( "%s%05d%s", filepath.c_str(), FileNum, Ext.c_str() );
+			TmpPath = String::StrFormated( "%s%05d%s", filepath.c_str(), FileNum, Ext.c_str() );
 
 			FileNum++;
 
-			if ( !FileExists( TmpPath ) )
+			if ( !FileSystem::FileExists( TmpPath ) )
 				find = true;
 
 			if ( FileNum == 10000 && find == false )
@@ -192,8 +193,8 @@ bool cWindow::TakeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format )
 		return 0 != SOIL_save_screenshot(TmpPath.c_str(), Format, 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 	} else {
 		std::string Direc = filepath.substr( 0, filepath.find_last_of("/\\") );
-		if ( !IsDirectory( Direc ) )
-			MakeDir( Direc );
+		if ( !FileSystem::IsDirectory( Direc ) )
+			FileSystem::MakeDir( Direc );
 
 		return 0 != SOIL_save_screenshot(filepath.c_str(), Format, 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 	}
@@ -236,10 +237,10 @@ void cWindow::GetElapsedTime() {
 }
 
 void cWindow::CalculateFps() {
-	if ( eeGetTicks() - mFrameData.FPS.LastCheck >= 1000 ) {
+	if ( Sys::GetTicks() - mFrameData.FPS.LastCheck >= 1000 ) {
 		mFrameData.FPS.Current = mFrameData.FPS.Count;
 		mFrameData.FPS.Count = 0;
-		mFrameData.FPS.LastCheck =	eeGetTicks();
+		mFrameData.FPS.LastCheck =	Sys::GetTicks();
 	}
 
 	mFrameData.FPS.Count++;
@@ -261,7 +262,7 @@ void cWindow::LimitFps() {
 			}
 
 			if ( RemainT > 0 ) {
-				eeSleep( (Uint32) RemainT );
+				Sys::Sleep( (Uint32) RemainT );
 			}
 		}
 	}
@@ -341,7 +342,7 @@ void cWindow::SendVideoResizeCb() {
 }
 
 void cWindow::LogSuccessfulInit( const std::string& BackendName ) {
-	cLog::instance()->Write( "Engine Initialized Succesfully.\n\tOS: " + GetOSName() + "\n\tArch: " + GetOSArchitecture() + " \n\tWindow/Input Backend: " + BackendName + "\n\tGL Backend: " + GLi->VersionStr() + "\n\tGL Vendor: " + GLi->GetVendor() + "\n\tGL Renderer: " + GLi->GetRenderer() + "\n\tGL Version: " + GLi->GetVersion() + "\n\tGL Shading Language Version: " + GLi->GetShadingLanguageVersion() + "\n\tResolution: " + toStr( GetWidth() ) + "x" + toStr( GetHeight() ) + "\n\tGL extensions supported:\n" + GLi->GetExtensions() );
+	cLog::instance()->Write( "Engine Initialized Succesfully.\n\tOS: " + Sys::GetOSName() + "\n\tArch: " + Sys::GetOSArchitecture() + " \n\tWindow/Input Backend: " + BackendName + "\n\tGL Backend: " + GLi->VersionStr() + "\n\tGL Vendor: " + GLi->GetVendor() + "\n\tGL Renderer: " + GLi->GetRenderer() + "\n\tGL Version: " + GLi->GetVersion() + "\n\tGL Shading Language Version: " + GLi->GetShadingLanguageVersion() + "\n\tResolution: " + String::toStr( GetWidth() ) + "x" + String::toStr( GetHeight() ) + "\n\tGL extensions supported:\n" + GLi->GetExtensions() );
 }
 
 void cWindow::LogFailureInit( const std::string& ClassName, const std::string& BackendName ) {

@@ -663,7 +663,7 @@ void cRendererGLES2::ClipPlane( GLenum plane, const GLdouble * equation ) {
 	if ( nplane < EE_MAX_PLANES ) {
 		location = mPlanes[ nplane ];
 	} else {
-		std::string planeNum( "dgl_ClipPlane[" + toStr( nplane ) + "]" );
+		std::string planeNum( "dgl_ClipPlane[" + String::toStr( nplane ) + "]" );
 
 		location = glGetUniformLocation( mCurShader->Handler(), (GLchar*)&planeNum[0] );
 	}

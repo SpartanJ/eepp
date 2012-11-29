@@ -45,7 +45,7 @@ bool cTTFFont::LoadFromMemory( Uint8* TTFData, const eeUint& TTFDataSize, const 
 bool cTTFFont::Load( const std::string& Filepath, const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) {
 	mFilepath			= Filepath;
 
-	if ( FileExists( Filepath ) ) {
+	if ( FileSystem::FileExists( Filepath ) ) {
 		mLoadedFromMemory	= false;
 
 		mFont = hkFontManager::instance()->OpenFromFile( Filepath.c_str(), Size, 0, NumCharsToGen );
@@ -286,7 +286,7 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ve
 
 void cTTFFont::UpdateLoading() {
 	if ( mTexReady && NULL != mPixels ) {
-		std::string name( FileRemoveExtension( FileNameFromPath( mFilepath ) ) );
+		std::string name( FileSystem::FileRemoveExtension( FileSystem::FileNameFromPath( mFilepath ) ) );
 
 		mTexId = cTextureFactory::instance()->LoadFromPixels( reinterpret_cast<unsigned char *> ( &mPixels[0] ), (Uint32)mTexWidth, (Uint32)mTexHeight, 4, false, EE_CLAMP_TO_EDGE, false, false, name );
 

@@ -273,7 +273,7 @@ void cTextureGroupEditor::OnTextureGroupCreate( cTexturePacker * TexPacker ) {
 
 	eeSAFE_DELETE( mTextureGroupLoader );
 
-	std::string FPath( FileRemoveExtension( mTexturePacker->GetFilepath() ) + ".etg" );
+	std::string FPath( FileSystem::FileRemoveExtension( mTexturePacker->GetFilepath() ) + ".etg" );
 
 	mTextureGroupLoader = eeNew( cTextureGroupLoader, ( FPath, true, cb::Make1( this, &cTextureGroupEditor::OnTextureGroupLoaded ) ) );
 }

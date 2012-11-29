@@ -1,6 +1,8 @@
 #ifndef EEPP_SYSTEM_HPP
 #define EEPP_SYSTEM_HPP
 
+#include <eepp/system/sys.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/system/tsingleton.hpp>
 #include <eepp/system/cthread.hpp>
 #include <eepp/system/cmutex.hpp>

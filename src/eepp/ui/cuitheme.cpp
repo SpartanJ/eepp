@@ -3,6 +3,7 @@
 #include <eepp/ui/cuiskincomplex.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/graphics/cshapegroupmanager.hpp>
+#include <eepp/system/filesystem.hpp>
 
 #include <eepp/ui/cuicheckbox.hpp>
 #include <eepp/ui/cuicombobox.hpp>
@@ -158,7 +159,7 @@ cUITheme * cUITheme::LoadFromShapeGroup( cUITheme * tTheme, cShapeGroup * ShapeG
 			tTheme->Add( eeNew( cUISkinSimple, ( ElemFound[i] ) ) );
 	}
 
-	cLog::instance()->Write( "UI Theme Loaded in: " + toStr( TE.ElapsedSinceStart() ) + " ( from ShapeGroup )" );
+	cLog::instance()->Write( "UI Theme Loaded in: " + String::toStr( TE.ElapsedSinceStart() ) + " ( from ShapeGroup )" );
 
 	return tTheme;
 }
@@ -174,9 +175,9 @@ cUITheme * cUITheme::LoadFromPath( cUITheme * tTheme, const std::string& Path, c
 	std::string ElemName;
 	std::string RPath( Path );
 
-	DirPathAddSlashAtEnd( RPath );
+	FileSystem::DirPathAddSlashAtEnd( RPath );
 
-	if ( !IsDirectory( RPath ) )
+	if ( !FileSystem::IsDirectory( RPath ) )
 		return NULL;
 
 	std::vector<std::string> 	ElemFound;
@@ -204,7 +205,7 @@ cUITheme * cUITheme::LoadFromPath( cUITheme * tTheme, const std::string& Path, c
 		ElemName	= tTheme->Abbr() + "_icon_" + *it;
 		Element		= RPath + ElemName + "." + ImgExt;
 
-		if ( FileExists( Element ) ) {
+		if ( FileSystem::FileExists( Element ) ) {
 			tSG->Add( eeNew( cShape, ( cTextureFactory::instance()->Load( Element ), ElemName ) ) );
 		}
 	}
@@ -221,7 +222,7 @@ cUITheme * cUITheme::LoadFromPath( cUITheme * tTheme, const std::string& Path, c
 			tTheme->Add( eeNew( cUISkinSimple, ( ElemFound[i] ) ) );
 	}
 
-	cLog::instance()->Write( "UI Theme Loaded in: " + toStr( TE.ElapsedSinceStart() ) + " ( from path )" );
+	cLog::instance()->Write( "UI Theme Loaded in: " + String::toStr( TE.ElapsedSinceStart() ) + " ( from path )" );
 
 	return tTheme;
 }
@@ -283,7 +284,7 @@ bool cUITheme::SearchFilesOfElement( cShapeGroup * SG, const std::string& Path, 
 			ElemPath = Path + ElemName;
 			ElemFullPath = ElemPath + "." + ImgExt;
 
-			if ( FileExists( ElemFullPath ) ) {
+			if ( FileSystem::FileExists( ElemFullPath ) ) {
 				SG->Add( eeNew( cShape, ( cTextureFactory::instance()->Load( ElemFullPath ), ElemName ) ) );
 
 				IsComplex = 1;
@@ -300,7 +301,7 @@ bool cUITheme::SearchFilesOfElement( cShapeGroup * SG, const std::string& Path, 
 			ElemPath = Path + ElemName;
 			ElemFullPath = ElemPath + "." + ImgExt;
 
-			if ( FileExists( ElemFullPath ) ) {
+			if ( FileSystem::FileExists( ElemFullPath ) ) {
 				SG->Add( eeNew( cShape, ( cTextureFactory::instance()->Load( ElemFullPath ), ElemName ) ) );
 
 				Found = true;

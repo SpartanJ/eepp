@@ -240,7 +240,6 @@
 #include <eepp/utils/colors.hpp>
 #include <eepp/utils/rect.hpp>
 #include <eepp/utils/vector2.hpp>
-#include <eepp/utils/string.hpp>
 #include <eepp/utils/utils.hpp>
 #include <eepp/utils/polygon2.hpp>
 using namespace EE::Utils;
@@ -255,6 +254,7 @@ using namespace EE::Math;
 #include <eepp/system/tresourcemanager.hpp>
 #include <eepp/system/tcontainer.hpp>
 #include <eepp/system/cpackmanager.hpp>
+#include <eepp/system/filesystem.hpp>
 using namespace EE::System;
 
 #include <eepp/graphics/renders.hpp>

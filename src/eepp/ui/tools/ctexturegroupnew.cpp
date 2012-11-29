@@ -2,6 +2,7 @@
 #include <eepp/ui/cuicommondialog.hpp>
 #include <eepp/ui/cuimessagebox.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
+#include <eepp/system/filesystem.hpp>
 
 namespace EE { namespace UI { namespace Tools {
 
@@ -42,7 +43,7 @@ cTextureGroupNew::cTextureGroupNew( TGCreateCb NewTGCb ) :
 	std::vector<String> Sizes;
 
 	for ( Uint32 i = 6; i < 14; i++ ) {
-		Sizes.push_back( toStr( 1 << i ) );
+		Sizes.push_back( String::toStr( 1 << i ) );
 	}
 
 	mComboWidth->ListBox()->AddListBoxItems( Sizes );
@@ -85,7 +86,7 @@ cUITextBox * cTextureGroupNew::CreateTxtBox( eeVector2i Pos, const String& Text 
 
 void cTextureGroupNew::OKClick( const cUIEvent * Event ) {
 	std::string ext( mSaveFileType->Text() );
-	ToLower( ext );
+	String::ToLower( ext );
 
 	cUICommonDialog * TGDialog = mTheme->CreateCommonDialog( NULL, eeSize(), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, eeSize(), 255, UI_CDL_DEFAULT_FLAGS | CDL_FLAG_SAVE_DIALOG, "*." + ext );
 
@@ -111,10 +112,10 @@ void cTextureGroupNew::TextureGroupSave( const cUIEvent * Event ) {
 	cUICommonDialog * CDL = reinterpret_cast<cUICommonDialog*> ( Event->Ctrl() );
 	std::string FPath( CDL->GetFullPath() );
 
-	if ( !IsDirectory( FPath ) ) {
+	if ( !FileSystem::IsDirectory( FPath ) ) {
 		Int32 w,h,b;
-		bool Res1 = fromString<Int32>( w, mComboWidth->Text() );
-		bool Res2 = fromString<Int32>( h, mComboHeight->Text() );
+		bool Res1 = String::fromString<Int32>( w, mComboWidth->Text() );
+		bool Res2 = String::fromString<Int32>( h, mComboHeight->Text() );
 		b = static_cast<Int32>( mPixelSpace->Value() );
 
 		if ( Res1 && Res2 ) {
@@ -124,14 +125,14 @@ void cTextureGroupNew::TextureGroupSave( const cUIEvent * Event ) {
 
 			TexturePacker->PackTextures();
 
-			std::string ext = FileExtension( FPath, true );
+			std::string ext = FileSystem::FileExtension( FPath, true );
 
 			if ( !IsValidExtension( ext ) ) {
-				FPath = FileRemoveExtension( FPath );
+				FPath = FileSystem::FileRemoveExtension( FPath );
 
 				ext = mSaveFileType->Text();
 
-				ToLower( ext );
+				String::ToLower( ext );
 
 				FPath += "." + ext;
 			}
@@ -163,21 +164,21 @@ void cTextureGroupNew::OnSelectFolder( const cUIEvent * Event ) {
 	cUICommonDialog * CDL = reinterpret_cast<cUICommonDialog*> ( Event->Ctrl() );
 	cUIMessageBox * MsgBox;
 	std::string FPath( CDL->GetFullPath() );
-	DirPathAddSlashAtEnd( FPath );
+	FileSystem::DirPathAddSlashAtEnd( FPath );
 
-	if ( !IsDirectory( FPath ) ) {
+	if ( !FileSystem::IsDirectory( FPath ) ) {
 		FPath = CDL->GetCurPath();
-		DirPathAddSlashAtEnd( FPath );
+		FileSystem::DirPathAddSlashAtEnd( FPath );
 	}
 
-	if ( IsDirectory( FPath ) ) {
-		std::vector<std::string> files = FilesGetInPath( FPath );
+	if ( FileSystem::IsDirectory( FPath ) ) {
+		std::vector<std::string> files = FileSystem::FilesGetInPath( FPath );
 
 		int x,y,c, count = 0;
 		for ( Uint32 i = 0; i < files.size(); i++ ) {
 			std::string ImgPath( FPath + files[i] );
 
-			if ( !IsDirectory( ImgPath ) ) {
+			if ( !FileSystem::IsDirectory( ImgPath ) ) {
 				int res = stbi_info( ImgPath.c_str(), &x, &y, &c );
 
 				if ( res ) {

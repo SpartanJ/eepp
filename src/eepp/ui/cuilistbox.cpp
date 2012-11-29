@@ -829,17 +829,17 @@ Uint32 cUIListBox::OnKeyDown( const cUIEventKey &Event ) {
 	if ( !mSelected.size() || mFlags & UI_MULTI_SELECT )
 		return 0;
 
-	if ( eeGetTicks() - mLastTickMove > 100 ) {
+	if ( Sys::GetTicks() - mLastTickMove > 100 ) {
 		if ( KEY_DOWN == Event.KeyCode() ) {
-			mLastTickMove = eeGetTicks();
+			mLastTickMove = Sys::GetTicks();
 
 			SelectNext();
 		} else if ( KEY_UP == Event.KeyCode() ) {
-			mLastTickMove = eeGetTicks();
+			mLastTickMove = Sys::GetTicks();
 
 			SelectPrev();
 		} else if ( KEY_HOME == Event.KeyCode() ) {
-			mLastTickMove = eeGetTicks();
+			mLastTickMove = Sys::GetTicks();
 
 			if ( mSelected.front() != 0 ) {
 				mVScrollBar->Value( 0 );
@@ -849,7 +849,7 @@ Uint32 cUIListBox::OnKeyDown( const cUIEventKey &Event ) {
 				SetSelected( 0 );
 			}
 		} else if ( KEY_END == Event.KeyCode() ) {
-			mLastTickMove = eeGetTicks();
+			mLastTickMove = Sys::GetTicks();
 
 			if ( mSelected.front() != Count() - 1 ) {
 				mVScrollBar->Value( 1 );

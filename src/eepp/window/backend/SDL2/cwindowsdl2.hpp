@@ -9,11 +9,7 @@
 #include <eepp/window/cwindow.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
-	#if defined( EE_SDL_VERSION_1_3 )
-		#include <SDL/SDL_syswm.h>
-	#else
-		#include <SDL2/SDL_syswm.h>
-	#endif
+	#include <SDL2/SDL_syswm.h>
 #endif
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {

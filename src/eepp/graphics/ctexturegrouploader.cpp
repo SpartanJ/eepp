@@ -15,7 +15,7 @@ using namespace Private;
 cTextureGroupLoader::cTextureGroupLoader() :
 	mThreaded(false),
 	mLoaded(false),
-	mAppPath( GetProcessPath() ),
+	mAppPath( Sys::GetProcessPath() ),
 	mPack(NULL),
 	mSkipResourceLoad(false),
 	mIsLoading(false),
@@ -27,7 +27,7 @@ cTextureGroupLoader::cTextureGroupLoader( const std::string& TextureGroupPath, c
 	mTextureGroupPath( TextureGroupPath ),
 	mThreaded( Threaded ),
 	mLoaded(false),
-	mAppPath( GetProcessPath() ),
+	mAppPath( Sys::GetProcessPath() ),
 	mPack(NULL),
 	mSkipResourceLoad(false),
 	mIsLoading(false),
@@ -41,7 +41,7 @@ cTextureGroupLoader::cTextureGroupLoader( const Uint8* Data, const Uint32& DataS
 	mTextureGroupPath( TextureGroupName ),
 	mThreaded( Threaded ),
 	mLoaded(false),
-	mAppPath( GetProcessPath() ),
+	mAppPath( Sys::GetProcessPath() ),
 	mPack(NULL),
 	mSkipResourceLoad(false),
 	mIsLoading(false),
@@ -55,7 +55,7 @@ cTextureGroupLoader::cTextureGroupLoader( cPack * Pack, const std::string& FileP
 	mTextureGroupPath( FilePackPath ),
 	mThreaded( Threaded ),
 	mLoaded(false),
-	mAppPath( GetProcessPath() ),
+	mAppPath( Sys::GetProcessPath() ),
 	mPack(NULL),
 	mSkipResourceLoad(false),
 	mIsLoading(false),
@@ -97,7 +97,7 @@ void cTextureGroupLoader::LoadFromStream( cIOStream& IOS ) {
 				tTexGroup.Shapes.resize( tTextureHdr.ShapeCount );
 
 				std::string name( &tTextureHdr.Name[0] );
-				std::string path( FileRemoveFileName( mTextureGroupPath ) + name );
+				std::string path( FileSystem::FileRemoveFileName( mTextureGroupPath ) + name );
 
 				//! Checks if the texture is already loaded
 				cTexture * tTex = cTextureFactory::instance()->GetByName( path );
@@ -130,7 +130,7 @@ void cTextureGroupLoader::Load( const std::string& TextureGroupPath ) {
 	if ( TextureGroupPath.size() )
 		mTextureGroupPath = TextureGroupPath;
 
-	if ( FileExists( mTextureGroupPath ) ) {
+	if ( FileSystem::FileExists( mTextureGroupPath ) ) {
 		cIOStreamFile IOS( mTextureGroupPath, std::ios::in | std::ios::binary );
 
 		LoadFromStream( IOS );
@@ -179,9 +179,9 @@ void cTextureGroupLoader::CreateShapes() {
 		sTextureHdr * tTexHdr 		= &tTexGroup->Texture;
 
 		std::string name( &tTexHdr->Name[0] );
-		std::string path( FileRemoveFileName( mTextureGroupPath ) + name );
+		std::string path( FileSystem::FileRemoveFileName( mTextureGroupPath ) + name );
 
-		FilePathRemoveProcessPath( path );
+		FileSystem::FilePathRemoveProcessPath( path );
 
 		cTexture * tTex 			= cTextureFactory::instance()->GetByName( path );
 
@@ -191,9 +191,9 @@ void cTextureGroupLoader::CreateShapes() {
 		// Create the Shape Group with the name of the real texture, not the Childs ( example load 1.png and not 1_ch1.png )
 		if ( 0 == z ) {
 			if ( mTexGrHdr.Flags & HDR_TEXTURE_GROUP_REMOVE_EXTENSION )
-				name = FileRemoveExtension( name );
+				name = FileSystem::FileRemoveExtension( name );
 
-			std::string etgpath = FileRemoveExtension( path ) + ".etg";
+			std::string etgpath = FileSystem::FileRemoveExtension( path ) + ".etg";
 
 			cShapeGroup * tShapeGroup = cShapeGroupManager::instance()->GetByName( name );
 
@@ -218,7 +218,7 @@ void cTextureGroupLoader::CreateShapes() {
 					std::string ShapeName( &tSh->Name[0] );
 
 					if ( mTexGrHdr.Flags & HDR_TEXTURE_GROUP_REMOVE_EXTENSION )
-						ShapeName = FileRemoveExtension( ShapeName );
+						ShapeName = FileSystem::FileRemoveExtension( ShapeName );
 
 					eeRecti tRect( tSh->X, tSh->Y, tSh->X + tSh->Width, tSh->Y + tSh->Height );
 
@@ -314,10 +314,10 @@ bool cTextureGroupLoader::UpdateTextureAtlas() {
 }
 
 static bool IsImage( std::string path ) {
-	if ( FileSize( path ) ) {
+	if ( FileSystem::FileSize( path ) ) {
 		std::string File	= path.substr( path.find_last_of("/\\") + 1 );
 		std::string Ext		= File.substr( File.find_last_of(".") + 1 );
-		ToLower( Ext );
+		String::ToLower( Ext );
 
 		if ( Ext == "png" ||
 			 Ext == "tga" ||
@@ -345,7 +345,7 @@ static bool IsImage( std::string path ) {
 }
 
 bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std::string ImagesPath ) {
-	if ( !TextureAtlasPath.size() || !ImagesPath.size() || !FileExists( TextureAtlasPath ) || !IsDirectory( ImagesPath ) )
+	if ( !TextureAtlasPath.size() || !ImagesPath.size() || !FileSystem::FileExists( TextureAtlasPath ) || !FileSystem::IsDirectory( ImagesPath ) )
 		return false;
 
 	mSkipResourceLoad = true;
@@ -359,7 +359,7 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 
 	Int32 NeedUpdate = 0;
 
-	DirPathAddSlashAtEnd( ImagesPath );
+	FileSystem::DirPathAddSlashAtEnd( ImagesPath );
 
 	Uint32 z;
 
@@ -368,7 +368,7 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 		totalShapes += mTempGroups[z].Texture.ShapeCount;
 
 	Uint32 totalImages = 0;
-	std::vector<std::string> PathFiles = FilesGetInPath( ImagesPath );
+	std::vector<std::string> PathFiles = FileSystem::FilesGetInPath( ImagesPath );
 
 	for ( z = 0; z < PathFiles.size(); z++ ) {
 		std::string realpath( ImagesPath + PathFiles[z] );
@@ -391,8 +391,8 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 
 					std::string path( ImagesPath + tSh->Name );
 
-					if ( FileSize( path ) ) {
-						if ( tSh->Date != FileGetModificationDate( path ) ) {
+					if ( FileSystem::FileSize( path ) ) {
+						if ( tSh->Date != FileSystem::FileGetModificationDate( path ) ) {
 							if ( stbi_info( path.c_str(), &x, &y, &c ) ) {
 								if ( 	( !( tSh->Flags & HDR_SHAPE_FLAG_FLIPED ) && tSh->Width == x && tSh->Height == y ) || // If size or channels changed, the image need update
 										( ( tSh->Flags & HDR_SHAPE_FLAG_FLIPED ) && tSh->Width == y && tSh->Height == x ) ||
@@ -421,7 +421,7 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 	}
 
 	if ( NeedUpdate ) {
-		std::string tapath( FileRemoveExtension( TextureAtlasPath ) + "." + cImage::SaveTypeToExtension( mTexGrHdr.Format ) );
+		std::string tapath( FileSystem::FileRemoveExtension( TextureAtlasPath ) + "." + cImage::SaveTypeToExtension( mTexGrHdr.Format ) );
 
 		if ( 2 == NeedUpdate ) {
 			cTexturePacker tp( mTexGrHdr.Width, mTexGrHdr.Height, 0 != ( mTexGrHdr.Flags & HDR_TEXTURE_GROUP_POW_OF_TWO ), mTexGrHdr.PixelBorder, mTexGrHdr.Flags & HDR_TEXTURE_GROUP_ALLOW_FLIPPING );
@@ -432,7 +432,7 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 
 			tp.Save( tapath, (EE_SAVE_TYPE)mTexGrHdr.Format );
 		} else if ( 1 == NeedUpdate ) {
-			std::string etgpath = FileRemoveExtension( tapath ) + ".etg";
+			std::string etgpath = FileSystem::FileRemoveExtension( tapath ) + ".etg";
 
 			cIOStreamFile fs( etgpath , std::ios::out | std::ios::binary );
 
@@ -443,7 +443,7 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 
 			for ( Uint32 z = 0; z < mTempGroups.size(); z++ ) {
 				if ( z != 0 ) {
-					tapath = FileRemoveExtension( TextureAtlasPath ) + "_ch" + toStr( z ) + "." + cImage::SaveTypeToExtension( mTexGrHdr.Format );
+					tapath = FileSystem::FileRemoveExtension( TextureAtlasPath ) + "_ch" + String::toStr( z ) + "." + cImage::SaveTypeToExtension( mTexGrHdr.Format );
 				}
 
 				unsigned char * imgPtr = stbi_load( tapath.c_str(), &x, &y, &c, 0 );
@@ -462,7 +462,7 @@ bool cTextureGroupLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 
 						std::string imgcopypath( ImagesPath + tSh->Name );
 
-						Uint32 ModifDate = FileGetModificationDate( imgcopypath );
+						Uint32 ModifDate = FileSystem::FileGetModificationDate( imgcopypath );
 
 						if ( tSh->Date != ModifDate ) {
 							tSh->Date = ModifDate;	// Update the shape hdr

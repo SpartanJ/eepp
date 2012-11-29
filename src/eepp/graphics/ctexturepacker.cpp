@@ -365,16 +365,16 @@ void cTexturePacker::CreateChild() {
 }
 
 bool cTexturePacker::AddTexturesPath( std::string TexturesPath ) {
-	if ( IsDirectory( TexturesPath ) ) {
+	if ( FileSystem::IsDirectory( TexturesPath ) ) {
 
-		DirPathAddSlashAtEnd( TexturesPath );
+		FileSystem::DirPathAddSlashAtEnd( TexturesPath );
 
-		std::vector<std::string > files = FilesGetInPath( TexturesPath );
+		std::vector<std::string > files = FileSystem::FilesGetInPath( TexturesPath );
 		std::sort( files.begin(), files.end() );
 
 		for ( Uint32 i = 0; i < files.size(); i++ ) {
 			std::string path( TexturesPath + files[i] );
-			if ( !IsDirectory( path ) )
+			if ( !FileSystem::IsDirectory( path ) )
 				AddTexture( path );
 		}
 
@@ -385,7 +385,7 @@ bool cTexturePacker::AddTexturesPath( std::string TexturesPath ) {
 }
 
 bool cTexturePacker::AddTexture( const std::string& TexturePath ) {
-	if ( FileExists( TexturePath ) ) {
+	if ( FileSystem::FileExists( TexturePath ) ) {
 		cTexturePackerTex TPack( TexturePath );
 
 		if ( TPack.LoadedInfo() ) {
@@ -592,7 +592,7 @@ void cTexturePacker::SaveShapes() {
 
 	std::vector<sShapeHdr> tShapesHdr;
 
-	std::string path = FileRemoveExtension( mFilepath ) + ".etg";
+	std::string path = FileSystem::FileRemoveExtension( mFilepath ) + ".etg";
 	cIOStreamFile fs ( path , std::ios::out | std::ios::binary );
 
 	if ( fs.IsOpen() ) {
@@ -639,14 +639,14 @@ void cTexturePacker::CreateShapesHdr( cTexturePacker * Packer, std::vector<sShap
 		tTex = &(*it);
 
 		if ( tTex->Placed() ) {
-			std::string name = FileNameFromPath( tTex->Name() );
+			std::string name = FileSystem::FileNameFromPath( tTex->Name() );
 
 			memset( tShapeHdr.Name, 0, HDR_NAME_SIZE );
 
-			StrCopy( tShapeHdr.Name, name.c_str(), HDR_NAME_SIZE );
+			String::StrCopy( tShapeHdr.Name, name.c_str(), HDR_NAME_SIZE );
 
 			if ( !mSaveExtensions )
-				name = FileRemoveExtension( name );
+				name = FileSystem::FileRemoveExtension( name );
 
 			tShapeHdr.ResourceID	= MakeHash( name );
 			tShapeHdr.Width 		= tTex->Width();
@@ -658,7 +658,7 @@ void cTexturePacker::CreateShapesHdr( cTexturePacker * Packer, std::vector<sShap
 			tShapeHdr.OffsetY		= 0;
 			tShapeHdr.X				= tTex->X();
 			tShapeHdr.Y				= tTex->Y();
-			tShapeHdr.Date			= FileGetModificationDate( tTex->Name() );
+			tShapeHdr.Date			= FileSystem::FileGetModificationDate( tTex->Name() );
 			tShapeHdr.Flags			= 0;
 
 			if ( tTex->Flipped() )
@@ -674,14 +674,14 @@ void cTexturePacker::CreateShapesHdr( cTexturePacker * Packer, std::vector<sShap
 sTextureHdr	cTexturePacker::CreateTextureHdr( cTexturePacker * Packer ) {
 	sTextureHdr TexHdr;
 
-	std::string name( FileNameFromPath( Packer->GetFilepath() ) );
+	std::string name( FileSystem::FileNameFromPath( Packer->GetFilepath() ) );
 
 	memset( TexHdr.Name, 0, HDR_NAME_SIZE );
 
-	StrCopy( TexHdr.Name, name.c_str(), HDR_NAME_SIZE );
+	String::StrCopy( TexHdr.Name, name.c_str(), HDR_NAME_SIZE );
 
 	TexHdr.ResourceID 	= MakeHash( name );
-	TexHdr.Size			= FileSize( Packer->GetFilepath() );
+	TexHdr.Size			= FileSystem::FileSize( Packer->GetFilepath() );
 	TexHdr.ShapeCount 	= Packer->GetPlacedCount();
 
 	return TexHdr;
@@ -700,9 +700,9 @@ void cTexturePacker::ChildSave( const EE_SAVE_TYPE& Format ) {
 			Parent 	= Parent->GetParent();
 		}
 
-		std::string fFpath	= FileRemoveExtension( LastParent->GetFilepath() );
-		std::string fExt	= FileExtension( LastParent->GetFilepath() );
-		std::string fName	= fFpath + "_ch" + toStr( ParentCount ) + "." + fExt;
+		std::string fFpath	= FileSystem::FileRemoveExtension( LastParent->GetFilepath() );
+		std::string fExt	= FileSystem::FileExtension( LastParent->GetFilepath() );
+		std::string fName	= fFpath + "_ch" + String::toStr( ParentCount ) + "." + fExt;
 
 		mChild->Save( fName, Format, mSaveExtensions );
 	}

@@ -13,7 +13,6 @@
 #include <eepp/utils/cwaypoints.hpp>
 #include <eepp/utils/cinterpolation.hpp>
 #include <eepp/utils/cperlinnoise.hpp>
-#include <eepp/utils/string.hpp>
 #include <eepp/utils/utils.hpp>
 #include <eepp/utils/easing.hpp>
 

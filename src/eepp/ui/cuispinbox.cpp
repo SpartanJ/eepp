@@ -142,7 +142,7 @@ Uint32 cUISpinBox::OnMessage( const cUIMessage * Msg ) {
 
 void cUISpinBox::AddValue( const eeFloat& value ) {
 	if ( !mInput->Text().size() )
-		mInput->Text( toStr( static_cast<Int32>( mMinValue ) ) );
+		mInput->Text( String::toStr( static_cast<Int32>( mMinValue ) ) );
 
 	Value( mValue + value );
 }
@@ -154,9 +154,9 @@ void cUISpinBox::InternalValue( const eeFloat& Val, const bool& Force ) {
 			eeFloat fValN 	= (eeFloat)iValN;
 
 			if ( fValN == Val ) {
-				mInput->Text( toStr( iValN ) );
+				mInput->Text( String::toStr( iValN ) );
 			} else {
-				mInput->Text( toStr( Val ) );
+				mInput->Text( String::toStr( Val ) );
 			}
 
 			mValue = Val;
@@ -213,7 +213,7 @@ void cUISpinBox::Update() {
 				if ( pos != mInput->Text().size() - 1 )
 					mInput->Text( mInput->Text().substr( 0, mInput->Text().size() - 1 ) );
 			} else {
-				bool Res 	= fromString<eeFloat>( Val, mInput->Text() );
+				bool Res 	= String::fromString<eeFloat>( Val, mInput->Text() );
 
 				if ( Res )
 					Value( Val );

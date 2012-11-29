@@ -153,14 +153,14 @@ void cTextureLoader::Start() {
 }
 
 void cTextureLoader::LoadFromPath() {
-	if ( FileExists( mFilepath ) ) {
+	if ( FileSystem::FileExists( mFilepath ) ) {
 		if ( GLi->IsExtension( EEGL_EXT_texture_compression_s3tc ) )
 			mIsDDS = 0 != stbi_dds_test_filename( mFilepath.c_str() );
 
 		if ( mIsDDS ) {
 			cIOStreamFile fs( mFilepath , std::ios::in | std::ios::binary );
 
-			mSize = FileSize( mFilepath );
+			mSize = FileSystem::FileSize( mFilepath );
 
 			mPixels = (Uint8*) eeMalloc( mSize );
 

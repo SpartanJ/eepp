@@ -1,4 +1,6 @@
 #include <eepp/system/cpak.hpp>
+#include <eepp/system/filesystem.hpp>
+#include <eepp/system/clog.hpp>
 
 namespace EE { namespace System {
 
@@ -13,7 +15,7 @@ cPak::~cPak() {
 }
 
 bool cPak::Create( const std::string& path ) {
-	if ( !FileExists(path) ) {
+	if ( !FileSystem::FileExists(path) ) {
 		pakFile Pak;
 
 		Pak.header.head[0] = 'P';
@@ -43,7 +45,7 @@ bool cPak::Create( const std::string& path ) {
 }
 
 bool cPak::Open( const std::string& path ) {
-	if ( FileExists(path) ) {
+	if ( FileSystem::FileExists(path) ) {
 		mPak.pakPath = path;
 
 		eeSAFE_DELETE( mPak.fs );
@@ -125,7 +127,7 @@ bool cPak::ExtractFile( const std::string& path , const std::string& dest ) {
 		SafeDataPointer data;
 
 		if ( ExtractFileToMemory( path, data ) ) {
-			FileWrite( path, data.Data, data.DataSize );
+			FileSystem::FileWrite( path, data.Data, data.DataSize );
 		}
 
 		Ret = true;
@@ -207,7 +209,7 @@ bool cPak::AddFile( const Uint8 * data, const Uint32& dataSize, const std::strin
 			mPak.fs->Write( reinterpret_cast<const char*> (&data[0]), fsize );
 
 			pakEntry newFile;
-			StrCopy( newFile.filename, inpack.c_str(), 56 );
+			String::StrCopy( newFile.filename, inpack.c_str(), 56 );
 			newFile.file_position = sizeof(pakHeader);
 			newFile.file_length = fsize;
 
@@ -240,7 +242,7 @@ bool cPak::AddFile( const Uint8 * data, const Uint32& dataSize, const std::strin
 			mPak.fs->Write( reinterpret_cast<const char*> (&data[0]), fsize ); // Alloc the file
 
 			// Fill the new file data on the pakEntry
-			StrCopy (pakE[ mPak.pakFilesNum ].filename, inpack.c_str(), 56 );
+			String::StrCopy (pakE[ mPak.pakFilesNum ].filename, inpack.c_str(), 56 );
 
 			pakE[ mPak.pakFilesNum ].file_position = mPak.header.dir_offset - fsize;
 			pakE[ mPak.pakFilesNum ].file_length = fsize;
@@ -270,7 +272,7 @@ bool cPak::AddFile( const std::string& path, const std::string& inpack ) {
 
 	std::vector<Uint8> file;
 
-	FileGet( path, file );
+	FileSystem::FileGet( path, file );
 
 	return AddFile( file, inpack );
 }

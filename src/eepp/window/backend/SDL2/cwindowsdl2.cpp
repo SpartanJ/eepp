@@ -1,10 +1,10 @@
-#include <eepp/window/backend/SDL2/cwindowsdl.hpp>
+#include <eepp/window/backend/SDL2/cwindowsdl2.hpp>
 
 #ifdef EE_BACKEND_SDL2
 
-#include <eepp/window/backend/SDL2/cclipboardsdl.hpp>
-#include <eepp/window/backend/SDL2/cinputsdl.hpp>
-#include <eepp/window/backend/SDL2/ccursormanagersdl.hpp>
+#include <eepp/window/backend/SDL2/cclipboardsdl2.hpp>
+#include <eepp/window/backend/SDL2/cinputsdl2.hpp>
+#include <eepp/window/backend/SDL2/ccursormanagersdl2.hpp>
 
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
 #include <eepp/graphics/cshaderprogrammanager.hpp>
@@ -165,7 +165,7 @@ std::string cWindowSDL::GetVersion() {
 
 	SDL_GetVersion( &ver );
 
-	return StrFormated( "SDL %d.%d.%d", ver.major, ver.minor, ver.patch );
+	return String::StrFormated( "SDL %d.%d.%d", ver.major, ver.minor, ver.patch );
 }
 
 void cWindowSDL::CreatePlatform() {

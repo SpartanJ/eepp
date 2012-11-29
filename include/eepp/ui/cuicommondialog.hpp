@@ -17,7 +17,7 @@ class EE_API cUICommonDialog : public cUIWindow {
 			public:
 				inline CreateParams() :
 					cUIWindow::CreateParams(),
-					DefaultDirectory( GetProcessPath() ),
+					DefaultDirectory( Sys::GetProcessPath() ),
 					DefaultFilePattern( "*" ),
 					CDLFlags( UI_CDL_DEFAULT_FLAGS )
 				{

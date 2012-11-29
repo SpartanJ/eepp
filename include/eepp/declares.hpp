@@ -257,6 +257,13 @@ namespace EE {
 	#define eeceil ceilf
 	#define eeabs fabs
 #endif
+
+	#ifdef EE_COMPILER_MSVC
+	#define eevsnprintf( str, size, format, args ) _vsnprintf_s( str, size, size, format, args )
+	#else
+	#define eevsnprintf( str, size, format, args ) vsnprintf( str, size, format, args )
+	#endif
+
 	template<typename T>
 	T eemax( T a, T b ) {
 		return (a > b) ? a : b;

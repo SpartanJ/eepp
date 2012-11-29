@@ -269,21 +269,21 @@ void cUISlider::Update() {
 }
 
 Uint32 cUISlider::OnKeyDown( const cUIEventKey &Event ) {
-	if ( eeGetTicks() - mLastTickMove > 100 ) {
+	if ( Sys::GetTicks() - mLastTickMove > 100 ) {
 		if ( Event.KeyCode() == KEY_DOWN ) {
-			mLastTickMove = eeGetTicks();
+			mLastTickMove = Sys::GetTicks();
 
 			Value( mValue + mClickStep );
 		} else if ( Event.KeyCode() == KEY_UP ) {
-			mLastTickMove = eeGetTicks();
+			mLastTickMove = Sys::GetTicks();
 
 			Value( mValue - mClickStep );
 		} else if ( Event.KeyCode() == KEY_PAGEUP ) {
-			mLastTickMove = eeGetTicks();
+			mLastTickMove = Sys::GetTicks();
 
 			Value( mMinValue );
 		} else if ( Event.KeyCode() == KEY_PAGEDOWN ) {
-			mLastTickMove = eeGetTicks();
+			mLastTickMove = Sys::GetTicks();
 
 			Value( mMaxValue );
 		}

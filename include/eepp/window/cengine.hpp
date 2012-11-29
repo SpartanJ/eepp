@@ -95,11 +95,15 @@ class EE_API cEngine {
 
 		Backend::cBackend * CreateSDLBackend( const WindowSettings& Settings );
 
+		Backend::cBackend * CreateSDL2Backend( const WindowSettings& Settings );
+
 		Backend::cBackend * CreateAllegroBackend( const WindowSettings& Settings );
 
 		Backend::cBackend * CreateSFMLBackend( const WindowSettings& Settings );
 
 		cWindow * CreateSDLWindow( const WindowSettings& Settings, const ContextSettings& Context );
+
+		cWindow * CreateSDL2Window( const WindowSettings& Settings, const ContextSettings& Context );
 
 		cWindow * CreateAllegroWindow( const WindowSettings& Settings, const ContextSettings& Context );
 

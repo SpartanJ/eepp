@@ -6,7 +6,6 @@
 #include <eepp/utils/colors.hpp>
 #include <eepp/utils/rect.hpp>
 #include <eepp/utils/vector2.hpp>
-#include <eepp/utils/string.hpp>
 #include <eepp/utils/utils.hpp>
 using namespace EE::Utils;
 

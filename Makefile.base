@@ -11,7 +11,7 @@ else
 	endif
 endif
 
-export VERSION    	= 0.8
+export VERSION    	= 0.9
 export CP         	= cp
 export LN         	= ln
 export LNFLAGS    	= -s -f
@@ -147,6 +147,7 @@ endif
 
 ifeq ($(BACKENDS_ALL),yes)
 	BACKEND_SDL		= yes
+	BACKEND_SDL2	= yes
 	BACKEND_ALLEGRO	= yes
 	BACKEND_SFML	= yes
 endif
@@ -154,12 +155,19 @@ endif
 ifeq ($(BACKEND_SDL),)
 	ifeq ($(BACKEND_ALLEGRO),)
 		ifeq ($(BACKEND_SFML),)
-			BACKEND_SDL	= yes
+			TRY_USE_SDL	= yes
 		endif
 	endif
 endif
 
-ifeq ($(BACKEND_SDL),yes)
+SDL_BACKEND_LINK	= 
+SDL_BACKEND_SRC		= 
+SDL2_BACKEND_LINK	= 
+SDL2_BACKEND_SRC	= 
+SDL_DEFINE			= 
+
+# No backend selected? Select some SDL
+ifeq ($(TRY_USE_SDL),yes)
 	ifeq ($(BUILD_OS), ios)
 		TRY_SDL2 = yes
 	else
@@ -181,25 +189,25 @@ ifeq ($(BACKEND_SDL),yes)
 		SDLVERSION2			= $(shell type -P $(SDLCONFIGPATH)sdl2-config &>/dev/null && $(SDLCONFIGPATH)sdl2-config --version || echo "")
 		
 		ifeq ($(SDLVERSION2),)
-			# Then for SDL 1.2 or SDL 1.3
-			SDLVERSION				= $(shell type -P $(SDLCONFIGPATH)sdl-config &>/dev/null && $(SDLCONFIGPATH)sdl-config --version || echo "")
+			# Then for SDL 1.2
+			SDLVERSION		= $(shell type -P $(SDLCONFIGPATH)sdl-config &>/dev/null && $(SDLCONFIGPATH)sdl-config --version || echo "")
 
 			ifeq ($(SDLVERSION),)
 				# Default 2.0.0
 				SDL_VERSION		= 2.0.0
 			else
-				SDL_VERSION			= $(SDLVERSION)
+				SDL_VERSION		= $(SDLVERSION)
 			endif
 		else
 			SDL_VERSION		= $(SDLVERSION2)
 		endif
 	else
-		# First check for SDL 1.2 or SDL 1.3
-		SDLVERSION				= $(shell type -P $(SDLCONFIGPATH)sdl-config &>/dev/null && $(SDLCONFIGPATH)sdl-config --version || echo "")
+		# First check for SDL 1.2
+		SDLVERSION			= $(shell type -P $(SDLCONFIGPATH)sdl-config &>/dev/null && $(SDLCONFIGPATH)sdl-config --version || echo "")
 
 		ifeq ($(SDLVERSION),)
 			# Then for SDL 2
-			SDLVERSION2			= $(shell type -P $(SDLCONFIGPATH)sdl2-config &>/dev/null && $(SDLCONFIGPATH)sdl2-config --version || echo "")
+			SDLVERSION2		= $(shell type -P $(SDLCONFIGPATH)sdl2-config &>/dev/null && $(SDLCONFIGPATH)sdl2-config --version || echo "")
 			
 			ifeq ($(SDLVERSION2),)
 				# Default 1.2
@@ -215,77 +223,83 @@ ifeq ($(BACKEND_SDL),yes)
 	# If version is 1.2.x
 	ifneq (,$(findstring 1.2,$(SDL_VERSION)))
 		ifeq ($(BUILD_OS), darwin)
-			SDL_ADD_LINK	= -framework Cocoa -lSDLmain
-		else
-			SDL_ADD_LINK	=
+			SDL_ADD_LINK	+= -framework Cocoa -lSDLmain
 		endif
 	
-		SDL_BACKEND_LINK	= -lSDL $(SDL_ADD_LINK)
+		SDL_BACKEND_LINK	+= -lSDL $(SDL_ADD_LINK)
 
-		SDL_BACKEND_SRC		= $(wildcard ./src/eepp/window/backend/SDL/*.cpp)
+		SDL_BACKEND_SRC		+= $(wildcard ./src/eepp/window/backend/SDL/*.cpp)
 
-		EE_SDL_VERSION		= -DEE_SDL_VERSION_1_2
+		EE_SDL_VERSION		+= -DEE_SDL_VERSION_1_2
 		
 		DYLIBS_BACKENDS		+= $(SDL_BACKEND_LINK)
 	else
 		ifeq ($(SHARED_BACKEND),)
-			#Check if static library exists
-			SDL_STATIC_FOUND	= $(shell ls libs/$(BUILD_OS)/libSDL.a >/dev/null 2>&1 && echo "YES" || echo "NO")
-
 			SDL2_STATIC_FOUND	= $(shell ls libs/$(BUILD_OS)/libSDL2.a >/dev/null 2>&1 && echo "YES" || echo "NO")
 
-			ifeq ($(SDL_STATIC_FOUND),NO)
-				ifeq ($(SDL2_STATIC_FOUND),NO)
-					SHARED_BACKEND = yes
-				endif
+			ifeq ($(SDL2_STATIC_FOUND),NO)
+				SHARED_BACKEND = yes
 			endif
 		endif
 
 		# Compile as shared?
 		ifeq ($(SHARED_BACKEND),yes)
-			ifneq (,$(findstring 1.3,$(SDL_VERSION)))
+			SDL2_BACKEND_LINK	+= -lSDL2
 
-				ifeq ($(BUILD_OS), darwin)
-					SDL_ADD_LINK	= -framework Cocoa -lSDLmain2
-				else
-					SDL_ADD_LINK	=
-				endif
-		
-				SDL_BACKEND_LINK	= -lSDL $(SDL_ADD_LINK)
+			EE_SDL_VERSION		+= -DEE_SDL_VERSION_2
 
-				EE_SDL_VERSION		= -DEE_SDL_VERSION_1_3
-			else
-				SDL_BACKEND_LINK	= -lSDL2
-
-				EE_SDL_VERSION		= -DEE_SDL_VERSION_2
-			endif
-			
-			DYLIBS_BACKENDS		+= $(SDL_BACKEND_LINK)
+			DYLIBS_BACKENDS		+= $(SDL2_BACKEND_LINK)
 		else
-			# Compile as static then... ( only SDL 1.3 or SDL 2 allowed )
+			# Compile as static then...
+			SDL2_BACKEND_LINK	+= libs/$(BUILD_OS)/libSDL2.a
 			
-			# If version is 1.3.x
-			ifneq (,$(findstring 1.3,$(SDL_VERSION)))
-				SDL_BACKEND_LINK	= libs/$(BUILD_OS)/libSDL.a
+			EE_SDL_VERSION		+= -DEE_SDL_VERSION_2
 
-				EE_SDL_VERSION		= -DEE_SDL_VERSION_1_3
-			else
-				# If version is 2.x.x
-				SDL_BACKEND_LINK	= libs/$(BUILD_OS)/libSDL2.a
-				EE_SDL_VERSION		= -DEE_SDL_VERSION_2
-			endif
-
-			STATIC_LIBS			+= $(SDL_BACKEND_LINK)
+			STATIC_LIBS			+= $(SDL2_BACKEND_LINK)
 		endif
 		
-		SDL_BACKEND_SRC		= $(wildcard ./src/eepp/window/backend/SDL2/*.cpp)
+		SDL2_BACKEND_SRC		+= $(wildcard ./src/eepp/window/backend/SDL2/*.cpp)
 	endif
 	
-	SDL_DEFINE			= -DEE_BACKEND_SDL_ACTIVE $(EE_SDL_VERSION)
+	SDL_DEFINE					+= -DEE_BACKEND_SDL_ACTIVE $(EE_SDL_VERSION)
 else
-	SDL_BACKEND_LINK	= 
-	SDL_BACKEND_SRC		= 
-	SDL_DEFINE			= 
+
+ifeq ($(BACKEND_SDL2), yes)
+	SDL2_BACKEND_SRC		+= $(wildcard ./src/eepp/window/backend/SDL2/*.cpp)
+	
+	ifeq ($(SDL_DEFINE),)
+		SDL_DEFINE			+= -DEE_BACKEND_SDL_ACTIVE
+	endif
+	
+	SDL_DEFINE				+= -DEE_SDL_VERSION_2
+	
+	# Compile as shared?
+	ifeq ($(SHARED_BACKEND),yes)
+		SDL2_BACKEND_LINK	+= -lSDL2
+
+		DYLIBS_BACKENDS		+= $(SDL2_BACKEND_LINK)
+	else
+		# Compile as static then...
+		SDL2_BACKEND_LINK	+= libs/$(BUILD_OS)/libSDL2.a
+		
+		STATIC_LIBS			+= $(SDL2_BACKEND_LINK)
+	endif
+else
+	ifeq ($(BACKEND_SDL), yes)
+		ifeq ($(BUILD_OS), darwin)
+			SDL_ADD_LINK		+= -framework Cocoa -lSDLmain
+		endif
+
+		SDL_BACKEND_LINK		+= -lSDL $(SDL_ADD_LINK)
+		
+		DYLIBS_BACKENDS			+= $(SDL_BACKEND_LINK)
+
+		SDL_BACKEND_SRC			+= $(wildcard ./src/eepp/window/backend/SDL/*.cpp)
+		
+		SDL_DEFINE				+= -DEE_BACKEND_SDL_ACTIVE -DEE_SDL_VERSION_1_2
+	endif
+endif
+
 endif
 
 ifeq ($(BACKEND_ALLEGRO), yes)
@@ -366,10 +380,12 @@ endif
 
 ifeq ($(BUILD_OS), ios)
 
-	ifeq ($(BACKEND_SDL),yes)
+	ifeq ($(BACKEND_SDL2),yes)
 		BACKENDINCLUDE = -I./src/eepp/helper/SDL2/include
 	else
-		BACKENDINCLUDE = -I./src/eepp/helper/allegro5/include
+		ifeq ($(BACKEND_ALLEGRO),yes)
+			BACKENDINCLUDE = -I./src/eepp/helper/allegro5/include
+		endif
 	endif
 
 	PLATFORMFLAGS += $(BACKENDINCLUDE)
@@ -419,7 +435,7 @@ else
 
 ifeq ($(BUILD_OS), darwin)
 
-LIBS 		= -framework OpenGL -framework OpenAL -framework CoreFoundation -framework AGL $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
+LIBS 		= -framework OpenGL -framework OpenAL -framework CoreFoundation -framework AGL $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	+= $(INCFREETYPE2) -I/usr/local/include/freetype2
 PLATFORMSRC = $(wildcard ./src/eepp/window/platform/osx/*.cpp) $(wildcard ./src/eepp/system/platform/posix/*.cpp)
 
@@ -427,7 +443,7 @@ else
 
 ifeq ($(BUILD_OS), haiku)
 
-LIBS 		= -lopenal -lGL $(SDL_BACKEND_LINK) $(LIBFREETYPE2)
+LIBS 		= -lopenal -lGL $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	+= $(INCFREETYPE2)
 PLATFORMSRC	= $(wildcard ./src/eepp/system/platform/posix/*.cpp)
 
@@ -435,7 +451,7 @@ else
 
 ifeq ($(BUILD_OS), freebsd)
 
-LIBS 		= -lrt -lpthread -lX11 -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
+LIBS 		= -lrt -lpthread -lX11 -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	+= $(INCFREETYPE2)
 PLATFORMSRC	= $(wildcard ./src/eepp/window/platform/x11/*.cpp) $(wildcard ./src/eepp/system/platform/posix/*.cpp)
 
@@ -443,7 +459,7 @@ else
 
 ifeq ($(BUILD_OS), mingw32)
 
-LIBS 		= -lOpenAL32 -lopengl32 -lmingw32 -lglu32 -lgdi32 -static-libgcc -static-libstdc++ -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
+LIBS 		= -lOpenAL32 -lopengl32 -lmingw32 -lglu32 -lgdi32 -static-libgcc -static-libstdc++ -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	+= $(INCFREETYPE2)
 PLATFORMSRC	= $(wildcard ./src/eepp/window/platform/win/*.cpp) $(wildcard ./src/eepp/system/platform/win/*.cpp)
 
@@ -452,7 +468,7 @@ else
 #if it is cygwin
 ifneq (,$(findstring cygwin,$(BUILD_OS)))
 
-LIBS 		= -lOpenAL32 -lmingw32 -lopengl32 -lglu32 -lgdi32 -static-libgcc -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
+LIBS 		= -lOpenAL32 -lmingw32 -lopengl32 -lglu32 -lgdi32 -static-libgcc -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	+= -I./src/eepp/helper/zlib $(INCFREETYPE2)
 PLATFORMSRC	= $(wildcard ./src/eepp/window/platform/win/*.cpp) $(wildcard ./src/eepp/system/platform/win/*.cpp)
 
@@ -460,7 +476,7 @@ else
 
 ifeq ($(BUILD_OS), ios)
 
-LIBS 		= -static-libgcc -static-libstdc++ -framework OpenGLES -framework OpenAL -framework AudioToolbox -framework CoreAudio -framework Foundation -framework CoreFoundation -framework UIKit -framework QuartzCore -framework CoreGraphics $(SDL_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(SFML_BACKEND_LINK)
+LIBS 		= -static-libgcc -static-libstdc++ -framework OpenGLES -framework OpenAL -framework AudioToolbox -framework CoreAudio -framework Foundation -framework CoreFoundation -framework UIKit -framework QuartzCore -framework CoreGraphics $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(SFML_BACKEND_LINK)
 OTHERINC	+= $(INCFREETYPE2)
 
 ifeq ($(ARCH),armv7)
@@ -520,18 +536,18 @@ else
 endif
 
 SRCHELPERS			= $(SRCFREETYPE) $(SRCGLEW) $(wildcard ./src/eepp/helper/SOIL2/src/SOIL2/*.c) $(wildcard ./src/eepp/helper/stb_vorbis/*.c) $(wildcard ./src/eepp/helper/zlib/*.c) $(wildcard ./src/eepp/helper/libzip/*.c) $(wildcard ./src/eepp/helper/chipmunk/*.c) $(wildcard ./src/eepp/helper/chipmunk/constraints/*.c)
-SRCMODULES			= $(wildcard ./src/eepp/helper/haikuttf/*.cpp) $(wildcard ./src/eepp/base/*.cpp) $(wildcard ./src/eepp/audio/*.cpp) $(wildcard ./src/eepp/gaming/*.cpp) $(wildcard ./src/eepp/gaming/mapeditor/*.cpp) $(wildcard ./src/eepp/graphics/*.cpp) $(wildcard ./src/eepp/graphics/renderer/*.cpp) $(wildcard ./src/eepp/math/*.cpp) $(wildcard ./src/eepp/system/*.cpp) $(wildcard ./src/eepp/ui/*.cpp) $(wildcard ./src/eepp/ui/tools/*.cpp) $(wildcard ./src/eepp/utils/*.cpp) $(wildcard ./src/eepp/window/*.cpp) $(wildcard ./src/eepp/window/backend/null/*.cpp) $(wildcard ./src/eepp/window/platform/null/*.cpp) $(SDL_BACKEND_SRC) $(ALLEGRO_BACKEND_SRC) $(SFML_BACKEND_SRC) $(PLATFORMSRC) $(wildcard ./src/eepp/physics/*.cpp) $(wildcard ./src/eepp/physics/constraints/*.cpp)
+SRCMODULES			= $(wildcard ./src/eepp/helper/haikuttf/*.cpp) $(wildcard ./src/eepp/base/*.cpp) $(wildcard ./src/eepp/audio/*.cpp) $(wildcard ./src/eepp/gaming/*.cpp) $(wildcard ./src/eepp/gaming/mapeditor/*.cpp) $(wildcard ./src/eepp/graphics/*.cpp) $(wildcard ./src/eepp/graphics/renderer/*.cpp) $(wildcard ./src/eepp/math/*.cpp) $(wildcard ./src/eepp/system/*.cpp) $(wildcard ./src/eepp/ui/*.cpp) $(wildcard ./src/eepp/ui/tools/*.cpp) $(wildcard ./src/eepp/utils/*.cpp) $(wildcard ./src/eepp/window/*.cpp) $(wildcard ./src/eepp/window/backend/null/*.cpp) $(wildcard ./src/eepp/window/platform/null/*.cpp) $(SDL_BACKEND_SRC) $(SDL2_BACKEND_SRC) $(ALLEGRO_BACKEND_SRC) $(SFML_BACKEND_SRC) $(PLATFORMSRC) $(wildcard ./src/eepp/physics/*.cpp) $(wildcard ./src/eepp/physics/constraints/*.cpp)
 
 OBJHELPERS			= $(SRCHELPERS:.c=.o)
 OBJMODULES			= $(SRCMODULES:.cpp=.o)
 
 ifeq ($(ARCH),)
-	OBJDIR				= obj/$(BUILD_OS)/$(RELEASETYPE)/
+	OBJDIR			= obj/$(BUILD_OS)/$(RELEASETYPE)/
 else
 	ifeq ($(BUILD_OS), ios)
-		OBJDIR				= obj/$(BUILD_OS)/$(RELEASETYPE)/$(ARCH)/$(GL_VERSION)/
+		OBJDIR		= obj/$(BUILD_OS)/$(RELEASETYPE)/$(ARCH)/$(GL_VERSION)/
 	else
-		OBJDIR				= obj/$(BUILD_OS)/$(RELEASETYPE)/$(ARCH)/
+		OBJDIR		= obj/$(BUILD_OS)/$(RELEASETYPE)/$(ARCH)/
 	endif
 endif
 

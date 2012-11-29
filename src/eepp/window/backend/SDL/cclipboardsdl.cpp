@@ -1,7 +1,10 @@
 #include <eepp/window/backend/SDL/cclipboardsdl.hpp>
-#include <eepp/window/backend/SDL/cwindowsdl.hpp>
 
 #ifdef EE_BACKEND_SDL_1_2
+
+#include <eepp/window/backend/SDL/cwindowsdl.hpp>
+#include <climits>
+#include <SDL/SDL.h>
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
@@ -86,7 +89,7 @@ void cClipboardSDL::Init() {
 	#endif
 
 	#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
-	mInfo = &( reinterpret_cast<cWindowSDL*> ( mWindow )->mWMinfo );
+	mInfo = reinterpret_cast<cWindowSDL*> ( mWindow )->mWMinfo;
 	#endif
 }
 
@@ -177,7 +180,7 @@ eeScrapType cClipboardSDL::clipboard_convert_format( int type ) {
 			#endif
 		default: {
 			char format[ sizeof(FORMAT_PREFIX)+8+1 ];
-			StrFormat(format, sizeof(FORMAT_PREFIX)+8+1, "%s%08lx", FORMAT_PREFIX, (unsigned long)type);
+			String::StrFormat(format, sizeof(FORMAT_PREFIX)+8+1, "%s%08lx", FORMAT_PREFIX, (unsigned long)type);
 
 			#if defined( EE_X11_PLATFORM )
 			return XInternAtom( mInfo->info.x11.display, format, False );

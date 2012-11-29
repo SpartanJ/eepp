@@ -12,14 +12,9 @@ namespace EE { namespace Window { namespace Backend { namespace SDL {
 
 class EE_API cBackendSDL : public cBackend {
 	public:
-		inline cBackendSDL() : cBackend()
-		{
-		}
+		cBackendSDL();
 
-		inline ~cBackendSDL()
-		{
-			SDL_Quit();
-		}
+		~cBackendSDL();
 };
 
 }}}}

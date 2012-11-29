@@ -12,11 +12,11 @@ cLog::cLog() :
 	mFS( NULL )
 {
 	Write("...::: Entropia Engine++ Loaded :::...");
-	Write( "Loaded on " + GetDateTimeStr() );
+	Write( "Loaded on " + Sys::GetDateTimeStr() );
 }
 
 cLog::~cLog() {
-	Write( "\nUnloaded on " + GetDateTimeStr(), false );
+	Write( "\nUnloaded on " + Sys::GetDateTimeStr(), false );
 	Write( "...::: Entropia Engine++ Unloaded :::...\n" );
 
 	if ( mSave && !mLiveWrite ) {
@@ -32,7 +32,7 @@ void cLog::Save( const std::string& filepath ) {
 	if ( filepath.size() ) {
 		mFilePath	= filepath;
 	} else {
-		mFilePath	= GetProcessPath();
+		mFilePath	= Sys::GetProcessPath();
 	}
 
 	mSave		= true;
@@ -76,7 +76,7 @@ void cLog::Write( const std::string& Text, const bool& newLine ) {
 
 void cLog::openfs() {
 	if ( mFilePath.empty() ) {
-		mFilePath = GetProcessPath();
+		mFilePath = Sys::GetProcessPath();
 	}
 
 	closefs();
@@ -105,13 +105,7 @@ void cLog::Writef( const char* format, ... ) {
 	while (1) {
 		va_start( args, format );
 
-		#ifdef EE_COMPILER_MSVC
-			n = _vsnprintf_s( &tstr[0], size, size, format, args );
-		#else
-			n = vsnprintf( &tstr[0], size, format, args );
-		#endif
-
-		va_end( args );
+		n = eevsnprintf( &tstr[0], size, format, args );
 
 		if ( n > -1 && n < size ) {
 			tstr.resize( n );

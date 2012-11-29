@@ -116,7 +116,7 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 
 			if ( Event->button.button == EE_BUTTON_LEFT ) {
 				mLastButtonLeftClicked		= mLastButtonLeftClick;
-				mLastButtonLeftClick		= eeGetTicks();
+				mLastButtonLeftClick		= Sys::GetTicks();
 
 				mTClick = mLastButtonLeftClick - mLastButtonLeftClicked;
 
@@ -127,7 +127,7 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 				}
 			} else if ( Event->button.button == EE_BUTTON_RIGHT ) {
 				mLastButtonRightClicked		= mLastButtonRightClick;
-				mLastButtonRightClick		= eeGetTicks();
+				mLastButtonRightClick		= Sys::GetTicks();
 
 				mTClick = mLastButtonRightClick - mLastButtonRightClicked;
 
@@ -138,7 +138,7 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 				}
 			} else if( Event->button.button == EE_BUTTON_MIDDLE ) {
 				mLastButtonMiddleClicked	= mLastButtonMiddleClick;
-				mLastButtonMiddleClick		= eeGetTicks();
+				mLastButtonMiddleClick		= Sys::GetTicks();
 
 				mTClick = mLastButtonMiddleClick - mLastButtonMiddleClicked;
 

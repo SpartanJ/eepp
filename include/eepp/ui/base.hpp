@@ -16,6 +16,7 @@ using namespace EE::Utils;
 using namespace EE::Math;
 
 #include <eepp/system/tsingleton.hpp>
+#include <eepp/system/sys.hpp>
 using namespace EE::System;
 
 #include <eepp/window/inputhelper.hpp>

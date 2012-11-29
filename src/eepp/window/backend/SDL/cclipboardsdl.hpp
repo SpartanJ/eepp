@@ -8,6 +8,8 @@
 
 #include <eepp/window/cclipboard.hpp>
 
+class SDL_SysWMinfo;
+
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
 	#include <SDL/SDL_syswm.h>
 #endif

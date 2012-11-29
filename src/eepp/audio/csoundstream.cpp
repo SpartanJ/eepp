@@ -1,5 +1,7 @@
 #include <eepp/audio/csoundstream.hpp>
 #include <eepp/audio/caudiodevice.hpp>
+#include <eepp/system/sys.hpp>
+using namespace EE::System;
 
 namespace EE { namespace Audio {
 
@@ -164,7 +166,7 @@ void cSoundStream::Run() {
 
 		// Leave some time for the other threads if the stream is still playing
 		if ( cSound::GetState() != SOUND_STOPPED )
-			eeSleep(10);
+			Sys::Sleep(10);
 	}
 
 	// Stop the playback

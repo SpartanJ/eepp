@@ -1,6 +1,7 @@
 #include <eepp/system/czip.hpp>
 #include <eepp/helper/libzip/zip.h>
 #include <eepp/helper/libzip/zipint.h>
+#include <eepp/system/filesystem.hpp>
 
 namespace EE { namespace System {
 
@@ -14,7 +15,7 @@ cZip::~cZip() {
 }
 
 bool cZip::Create( const std::string& path ) {
-	if ( !FileExists(path) ) {
+	if ( !FileSystem::FileExists(path) ) {
 		int err;
 		mZip = zip_open( path.c_str(), ZIP_CREATE, &err );
 
@@ -33,7 +34,7 @@ bool cZip::Create( const std::string& path ) {
 }
 
 bool cZip::Open( const std::string& path ) {
-	if ( FileExists( path ) ) {
+	if ( FileSystem::FileExists( path ) ) {
 		int err;
 		mZip = zip_open( path.c_str(), 0, &err );
 
@@ -70,7 +71,7 @@ bool cZip::Close() {
 bool cZip::AddFile( const std::string& path, const std::string& inpack ) {
 	std::vector<Uint8> file;
 
-	FileGet( path, file );
+	FileSystem::FileGet( path, file );
 
 	return AddFile( file, inpack );
 }
@@ -141,7 +142,7 @@ bool cZip::ExtractFile( const std::string& path , const std::string& dest ) {
 	Ret = ExtractFileToMemory( path, data );
 
 	if ( Ret )
-		FileWrite( dest, data.Data, data.DataSize );
+		FileSystem::FileWrite( dest, data.Data, data.DataSize );
 
 	Unlock();
 

@@ -1,4 +1,4 @@
-#include <eepp/window/backend/SDL2/ccursorsdl.hpp>
+#include <eepp/window/backend/SDL2/ccursorsdl2.hpp>
 
 #ifdef EE_BACKEND_SDL2
 

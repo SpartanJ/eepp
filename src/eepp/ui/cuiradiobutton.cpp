@@ -218,8 +218,8 @@ cUIControlAnim * cUIRadioButton::InactiveButton() const {
 
 Uint32 cUIRadioButton::OnKeyDown( const cUIEventKey& Event ) {
 	if ( Event.KeyCode() == KEY_SPACE ) {
-		if ( eeGetTicks() - mLastTick > 250 ) {
-			mLastTick = eeGetTicks();
+		if ( Sys::GetTicks() - mLastTick > 250 ) {
+			mLastTick = Sys::GetTicks();
 
 			Active( true );
 		}

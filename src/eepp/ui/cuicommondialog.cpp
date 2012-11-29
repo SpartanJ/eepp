@@ -2,6 +2,7 @@
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/ui/cuilistboxitem.hpp>
 #include <eepp/ui/cuithememanager.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <algorithm>
 
 namespace EE { namespace UI {
@@ -159,7 +160,7 @@ void cUICommonDialog::SetTheme( cUITheme * Theme ) {
 }
 
 void cUICommonDialog::RefreshFolder() {
-	std::vector<String>			flist = FilesGetInPath( String( mCurPath ) );
+	std::vector<String>			flist = FileSystem::FilesGetInPath( String( mCurPath ) );
 	std::vector<String>			files;
 	std::vector<String>			folders;
 	std::vector<std::string>	patterns;
@@ -167,21 +168,21 @@ void cUICommonDialog::RefreshFolder() {
 	Uint32 i, z;
 
 	if ( "*" != mFiletype->Text() ) {
-		patterns = SplitString( mFiletype->Text().ToUtf8(), ';' );
+		patterns = String::SplitString( mFiletype->Text().ToUtf8(), ';' );
 
 		for ( i = 0; i < patterns.size(); i++ )
-			patterns[i] = FileExtension( patterns[i] );
+			patterns[i] = FileSystem::FileExtension( patterns[i] );
 	}
 
 	for ( i = 0; i < flist.size(); i++ ) {
-		if ( FoldersFirst() && IsDirectory( mCurPath + flist[i] ) ) {
+		if ( FoldersFirst() && FileSystem::IsDirectory( mCurPath + flist[i] ) ) {
 			folders.push_back( flist[i] );
 		} else {
 			accepted = false;
 
 			if ( patterns.size() ) {
 				for ( z = 0; z < patterns.size(); z++ ) {
-					if ( patterns[z] == FileExtension( flist[i] ) ) {
+					if ( patterns[z] == FileSystem::FileExtension( flist[i] ) ) {
 						accepted = true;
 						break;
 					}
@@ -252,7 +253,7 @@ Uint32 cUICommonDialog::OnMessage( const cUIMessage * Msg ) {
 
 					CloseWindow();
 				} else if ( Msg->Sender() == mButtonUp ) {
-					mCurPath = RemoveLastFolderFromPath( mCurPath );
+					mCurPath = FileSystem::RemoveLastFolderFromPath( mCurPath );
 					mPath->Text( mCurPath );
 					RefreshFolder();
 				}
@@ -266,8 +267,8 @@ Uint32 cUICommonDialog::OnMessage( const cUIMessage * Msg ) {
 				if ( Msg->Sender()->IsType( UI_TYPE_LISTBOXITEM ) ) {
 					std::string newPath = mCurPath + mList->GetItemSelectedText();
 
-					if ( IsDirectory( newPath ) ) {
-						mCurPath = newPath + GetOSlash();
+					if ( FileSystem::IsDirectory( newPath ) ) {
+						mCurPath = newPath + FileSystem::GetOSlash();
 						mPath->Text( mCurPath );
 						RefreshFolder();
 					} else {
@@ -285,12 +286,12 @@ Uint32 cUICommonDialog::OnMessage( const cUIMessage * Msg ) {
 					if ( AllowFolderSelect() ) {
 						mFile->Text( mList->GetItemSelectedText() );
 					} else {
-						if ( !IsDirectory( GetTempFullPath() ) ) {
+						if ( !FileSystem::IsDirectory( GetTempFullPath() ) ) {
 							mFile->Text( mList->GetItemSelectedText() );
 						}
 					}
 				} else {
-					if ( !IsDirectory( GetTempFullPath() ) ) {
+					if ( !FileSystem::IsDirectory( GetTempFullPath() ) ) {
 						mFile->Text( mList->GetItemSelectedText() );
 					}
 				}
@@ -316,10 +317,10 @@ void cUICommonDialog::Save() {
 void cUICommonDialog::Open() {
 	if ( "" != mList->GetItemSelectedText() || AllowFolderSelect() ) {
 		if ( !AllowFolderSelect() ) {
-			if ( IsDirectory( GetFullPath() ) )
+			if ( FileSystem::IsDirectory( GetFullPath() ) )
 				return;
 		} else {
-			if ( !IsDirectory( GetFullPath() ) && !IsDirectory( GetCurPath() ) )
+			if ( !FileSystem::IsDirectory( GetFullPath() ) && !FileSystem::IsDirectory( GetCurPath() ) )
 				return;
 		}
 
@@ -332,9 +333,9 @@ void cUICommonDialog::Open() {
 }
 
 void cUICommonDialog::OnPressEnter( const cUIEvent * Event ) {
-	if ( IsDirectory( mPath->Text() ) ) {
+	if ( FileSystem::IsDirectory( mPath->Text() ) ) {
 		std::string tpath = mPath->Text();
-		DirPathAddSlashAtEnd( tpath );
+		FileSystem::DirPathAddSlashAtEnd( tpath );
 		mPath->Text( tpath );
 		mCurPath = mPath->Text();
 		RefreshFolder();
@@ -384,7 +385,7 @@ void cUICommonDialog::AllowFolderSelect( const bool& allowFolderSelect ) {
 std::string cUICommonDialog::GetFullPath() {
 	std::string tPath = mCurPath;
 
-	DirPathAddSlashAtEnd( tPath );
+	FileSystem::DirPathAddSlashAtEnd( tPath );
 
 	tPath += GetCurFile();
 
@@ -394,7 +395,7 @@ std::string cUICommonDialog::GetFullPath() {
 std::string	cUICommonDialog::GetTempFullPath() {
 	std::string tPath = mCurPath;
 
-	DirPathAddSlashAtEnd( tPath );
+	FileSystem::DirPathAddSlashAtEnd( tPath );
 
 	tPath += mList->GetItemSelectedText().ToUtf8();
 

@@ -8,9 +8,8 @@
 
 #include <eepp/window/cwindow.hpp>
 
-#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
-#include <SDL/SDL_syswm.h>
-#endif
+class SDL_Surface;
+class SDL_SysWMinfo;
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
@@ -45,7 +44,7 @@ class EE_API cWindowSDL : public cWindow {
 		SDL_Surface *	mSurface;
 
 		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
-		SDL_SysWMinfo 	mWMinfo;
+		SDL_SysWMinfo *	mWMinfo;
 		#endif
 
 		eeVector2i		mWinPos;

@@ -24,6 +24,7 @@
 /** NOTE:
 ** The class was modified to fit EEPP own needs. This is not the original implementation from SFML2.
 ** Functions and methods are the same that in std::string to facilitate portability.
+** Also added a lot of utilities for string manipulation
 **/
 
 #ifndef EE_STRING_HPP
@@ -34,6 +35,9 @@
 #include <string>
 #include <cstring>
 #include <cstdlib>
+#include <fstream>
+#include <sstream>
+#include <vector>
 
 namespace EE {
 
@@ -48,6 +52,103 @@ class EE_API String {
 	typedef StringType::const_reverse_iterator	ConstReverseIterator;	//! Constant iterator type
 
 	static const std::size_t InvalidPos; ///< Represents an invalid position in the string
+	
+	/** @return If the value passed is a character */
+	static bool IsCharacter( const eeInt& mValue );
+
+	/** @return If the value passed is a number */
+	static bool IsNumber( const eeInt& mValue, bool AllowDot = false );
+
+	/** @return If the value passed is a letter */
+	static bool IsLetter( const eeInt& mValue );
+
+	/** Split a String and hold it on a vector */
+	static std::vector < String > SplitString ( const String& str, const Uint32& splitchar = '\n', const bool& pushEmptyString = false );
+
+	/** Split a string and hold it on a vector */
+	static std::vector < std::string > SplitString ( const std::string& str, const Int8& splitchar = '\n', const bool& pushEmptyString = false );
+
+	/** Remove the first space on the string */
+	static std::string LTrim( const std::string & str );
+
+	/** Removes all spaces on the string */
+	static std::string Trim( const std::string & str );
+
+	/** Convert the string into upper case string */
+	static void ToUpper( std::string & str );
+
+	/** Convert the string into lower case string */
+	static void ToLower( std::string & str );
+
+	/** Convert the string to an std::vector<Uint8> */
+	static std::vector<Uint8> stringToUint8( const std::string& str );
+
+	/** Convert the std::vector<Uint8> to an string */
+	static std::string Uint8Tostring( const std::vector<Uint8> v );
+
+	/** Insert a char into String on pos (added this function to avoid a bug on String) */
+	static void InsertChar( String& str, const eeUint& pos, const Uint32& tchar );
+
+	/** Copy a string to another
+	* @param Dst Destination String
+	* @param Src Source String
+	* @param DstSize Destination Size
+	*/
+	static void StrCopy( char * Dst, const char * Src, eeUint DstSize );
+
+	/** Compare two strings from its beginning.
+	* @param Start String start
+	* @param Str String to compare
+	* @return The position of the last char compared ( -1 if fails )
+	*/
+	static Int32 StrStartsWith( const std::string& Start, const std::string Str );
+
+	/** Compare two strings from its beginning.
+	* @param Start String start
+	* @param Str String to compare
+	* @return The position of the last char compared ( -1 if fails )
+	*/
+	static Int32 StrStartsWith( const String& Start, const String Str );
+
+	/** Replaces a substring by another string inside a string */
+	static void ReplaceSubStr(std::string &target, const std::string& that, const std::string& with );
+
+	/** Removes the numbers at the end of the string */
+	static std::string RemoveNumbersAtEnd( std::string txt );
+
+	/** Converts from any basic type to std::string */
+	template <class T>
+	static std::string toStr(const T& i) {
+		std::ostringstream ss;
+		ss << i;
+		return ss.str();
+	}
+
+	/** Converts from a string to type */
+	template <class T>
+	static bool fromString(T& t, const std::string& s, std::ios_base& (*f)(std::ios_base&) = std::dec  ) {
+		std::istringstream iss(s);
+		return !(iss >> f >> t).fail();
+	}
+
+	/** Converts from a String to type */
+	template <class T>
+	static bool fromString(T& t, const String& s, std::ios_base& (*f)(std::ios_base&) = std::dec ) {
+		std::istringstream iss( s.ToUtf8() );
+		return !(iss >> f >> t).fail();
+	}
+
+	/** Returning a std::string from a formated string */
+	static std::string StrFormated( const char* format, ... )
+	#ifdef __GNUC__
+		/* This attribute is nice: it even works through gettext invokation. For
+		   example, gcc will complain that StrFormat(_("%s"), 42) is ill-formed. */
+		__attribute__((format(printf, 1, 2)))
+	#endif
+	;
+
+	/** Format a char buffer */
+	static void StrFormat( char * Buffer, int BufferSize, const char * format, ... );
 
 	/** @brief Construct from an UTF-8 string to UTF-32 according
 	** @param uf8String UTF-8 string to convert

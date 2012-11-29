@@ -2,6 +2,12 @@
 
 #ifdef EE_BACKEND_SDL_1_2
 
+#include <SDL/SDL.h>
+
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
+#include <SDL/SDL_syswm.h>
+#endif
+
 #include <eepp/window/backend/SDL/cclipboardsdl.hpp>
 #include <eepp/window/backend/SDL/cinputsdl.hpp>
 #include <eepp/window/backend/SDL/ccursormanagersdl.hpp>
@@ -17,12 +23,15 @@
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
 cWindowSDL::cWindowSDL( WindowSettings Settings, ContextSettings Context ) :
-	cWindow( Settings, Context, eeNew( cClipboardSDL, ( this ) ), eeNew( cInputSDL, ( this ) ), eeNew( cCursorManagerSDL, ( this ) ) )
+	cWindow( Settings, Context, eeNew( cClipboardSDL, ( this ) ), eeNew( cInputSDL, ( this ) ), eeNew( cCursorManagerSDL, ( this ) ) ),
+	mSurface( NULL ),
+	mWMinfo( (SDL_SysWMinfo*)eeMalloc( sizeof( mWMinfo ) ) )
 {
 	Create( Settings, Context );
 }
 
 cWindowSDL::~cWindowSDL() {
+	eeSAFE_FREE( mWMinfo );
 }
 
 bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
@@ -137,23 +146,24 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 
 std::string cWindowSDL::GetVersion() {
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
-	SDL_version ver = mWMinfo.version;
+	SDL_version ver = mWMinfo->version;
 
-	return StrFormated( "SDL %d.%d.%d", ver.major, ver.minor, ver.patch );
+	return String::StrFormated( "SDL %d.%d.%d", ver.major, ver.minor, ver.patch );
 #else
-	return StrFormated( "SDL %d.%d.%d", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL );
+	return String::StrFormated( "SDL %d.%d.%d", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL );
 #endif
 }
 
 void cWindowSDL::CreatePlatform() {
 	eeSAFE_DELETE( mPlatform );
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
-	SDL_VERSION( &mWMinfo.version );
-	SDL_GetWMInfo ( &mWMinfo );
+	SDL_VERSION( &mWMinfo->version );
+
+	SDL_GetWMInfo ( mWMinfo );
 #endif
 
 #if defined( EE_X11_PLATFORM )
-	mPlatform = eeNew( Platform::cX11Impl, ( this, mWMinfo.info.x11.display, mWMinfo.info.x11.wmwindow, mWMinfo.info.x11.window, mWMinfo.info.x11.lock_func, mWMinfo.info.x11.unlock_func ) );
+	mPlatform = eeNew( Platform::cX11Impl, ( this, mWMinfo->info.x11.display, mWMinfo->info.x11.wmwindow, mWMinfo->info.x11.window, mWMinfo->info.x11.lock_func, mWMinfo->info.x11.unlock_func ) );
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	mPlatform = eeNew( Platform::cWinImpl, ( this, GetWindowHandler() ) );
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
@@ -372,11 +382,11 @@ void cWindowSDL::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {
 
 eeWindowHandler	cWindowSDL::GetWindowHandler() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	return mWMinfo.window;
+	return mWMinfo->window;
 #elif defined( EE_X11_PLATFORM )
-	return mWMinfo.info.x11.display;
+	return mWMinfo->info.x11.display;
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
-	return mWMinfo.info.x11.display;
+	return mWMinfo->info.x11.display;
 #else
 	return 0;
 #endif

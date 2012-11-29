@@ -3,7 +3,6 @@
 
 #include <eepp/system/base.hpp>
 #include <eepp/system/cpack.hpp>
-#include <eepp/system/clog.hpp>
 #include <eepp/system/ciostreamfile.hpp>
 
 namespace EE { namespace System {

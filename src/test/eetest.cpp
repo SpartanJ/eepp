@@ -34,7 +34,7 @@ void cEETest::Init() {
 	mShowMenu			= NULL;
 	mTerrainUp			= true;
 
-	MyPath 				= GetProcessPath();
+	MyPath 				= Sys::GetProcessPath();
 
 	cIniFile Ini( MyPath + "data/ee.ini" );
 	Ini.ReadFile();
@@ -145,7 +145,7 @@ void cEETest::CreateAquaTextureAtlas() {
 	std::string tgpath( MyPath + "data/aquatg/aqua" );
 	std::string Path( MyPath + "data/aqua" );
 
-	if ( !FileExists( tgpath + ".etg" ) ) {
+	if ( !FileSystem::FileExists( tgpath + ".etg" ) ) {
 		cTexturePacker tp( 256, 256, true, 2 );
 		tp.AddTexturesPath( Path );
 		tp.PackTextures();
@@ -429,7 +429,7 @@ void cEETest::CreateUI() {
 		std::vector<String> str(wsize);
 
 		for ( Int32 i = 1; i <= wsize; i++ )
-			str[i-1] = "Test ListBox " + toStr(i) + " testing it right now!";
+			str[i-1] = "Test ListBox " + String::toStr(i) + " testing it right now!";
 
 		mListBox->AddListBoxItems( str );
 	}
@@ -544,7 +544,7 @@ void cEETest::CreateUI() {
 		cUITextInput * TxtInput		= eeNew( cUITextInput, ( TxtInputParams ) );
 		cUIGfx * TxtGfx				= eeNew( cUIGfx, ( TxtGfxParams )  );
 
-		TxtBox->Text( "Test " + toStr( i+1 ) );
+		TxtBox->Text( "Test " + String::toStr( i+1 ) );
 
 		Cell->Cell( 0, TxtBox );
 		Cell->Cell( 1, TxtGfx );
@@ -721,7 +721,7 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 }
 
 void cEETest::OnValueChange( const cUIEvent * Event ) {
-	mTextBoxValue->Text( "Scroll Value:\n" + toStr( mScrollBar->Value() ) );
+	mTextBoxValue->Text( "Scroll Value:\n" + String::toStr( mScrollBar->Value() ) );
 
 	mProgressBar->Progress( mScrollBar->Value() * 100.f );
 }
@@ -765,7 +765,7 @@ void cEETest::ButtonClick( const cUIEvent * Event ) {
 		Gfx->StartMovement( eeVector2i( eeRandi( 0, mWindow->GetWidth() ), -64 ), eeVector2i( eeRandi( 0, mWindow->GetWidth() ), mWindow->GetHeight() + 64 ), 2500 );
 		Gfx->CloseFadeOut( 3500 );
 
-		mListBox->AddListBoxItem( "Test ListBox " + toStr( mListBox->Count() + 1 ) + " testing it right now!" );
+		mListBox->AddListBoxItem( "Test ListBox " + String::toStr( mListBox->Count() + 1 ) + " testing it right now!" );
 	}
 }
 
@@ -785,11 +785,11 @@ void cEETest::CmdSetPartsNum ( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
-		bool Res = fromString<Int32>( tInt, params[1] );
+		bool Res = String::fromString<Int32>( tInt, params[1] );
 
 		if ( Res && ( tInt >= 0 && tInt <= 100000 ) ) {
 			PS[2].Create( PSE_WormHole, tInt, TN[5], eeVector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 32, true );
-			Con.PushText( "Wormhole Particles Number Changed to: " + toStr(tInt) );
+			Con.PushText( "Wormhole Particles Number Changed to: " + String::toStr(tInt) );
 		} else
 			Con.PushText( "Valid parameters are between 0 and 100000 (0 = no limit)." );
 	}
@@ -814,7 +814,7 @@ void cEETest::LoadTextures() {
 	for ( i = 0; i < files.size(); i++ ) {
 		std::string name( files[i] );
 
-		if ( "jpg" == FileExtension( name ) ) {
+		if ( "jpg" == FileSystem::FileExtension( name ) ) {
 			mResLoad.Add( eeNew( cTextureLoader, ( PakTest, name ) ) );
 		}
 	}
@@ -828,7 +828,7 @@ void cEETest::LoadTextures() {
 	TNP.resize(12);
 
 	for ( i = 0; i <= 7; i++ ) {
-		TN[i] = TF->LoadFromPack( PAK, "t" + toStr(i+1) + ".png", ( (i+1) == 7 ) ? true : false, ( (i+1) == 4 ) ? EE_CLAMP_REPEAT : EE_CLAMP_TO_EDGE );
+		TN[i] = TF->LoadFromPack( PAK, "t" + String::toStr(i+1) + ".png", ( (i+1) == 7 ) ? true : false, ( (i+1) == 4 ) ? EE_CLAMP_REPEAT : EE_CLAMP_TO_EDGE );
 		TNP[i] = TF->GetTexture( TN[i] );
 	}
 
@@ -838,7 +838,7 @@ void cEETest::LoadTextures() {
 	cShapeGroup * SG = cShapeGroupManager::instance()->GetByName( "tiles" );
 
 	for ( i = 0; i < 6; i++ ) {
-		Tiles[i] = SG->GetByName( toStr( i+1 ) );
+		Tiles[i] = SG->GetByName( String::toStr( i+1 ) );
 	}
 
 	Tiles[6] = SG->Add( TF->LoadFromPack( PAK, "objects/1.png" ), "7" );
@@ -978,7 +978,7 @@ void cEETest::ParticlesThread() {
 			for ( Uint8 i = 0; i < PS.size(); i++ )
 				PS[i].Update( PSElapsed );
 		}
-		eeSleep(10);
+		Sys::Sleep(10);
 	}
 }
 
@@ -1195,25 +1195,25 @@ void cEETest::Render() {
 	HWidth = mWindow->GetWidth() * 0.5f;
 	HHeight = mWindow->GetHeight() * 0.5f;
 
-	if ( eeGetTicks() - lasttick >= 50 ) {
-		lasttick = eeGetTicks();
+	if ( Sys::GetTicks() - lasttick >= 50 ) {
+		lasttick = Sys::GetTicks();
 		#ifdef EE_DEBUG
-		mInfo = StrFormated( "EE - FPS: %d Elapsed Time: %4.8f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s\nApp Memory Usage: %s\nApp Peak Memory Usage: %s",
+		mInfo = String::StrFormated( "EE - FPS: %d Elapsed Time: %4.8f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s\nApp Memory Usage: %s\nApp Peak Memory Usage: %s",
 							mWindow->FPS(),
 							et,
 							(Int32)Mouse.x,
 							(Int32)Mouse.y,
-							SizeToString( TF->MemorySize() ).c_str(),
-							SizeToString( (Uint32)MemoryManager::GetTotalMemoryUsage() ).c_str(),
-							SizeToString( (Uint32)MemoryManager::GetPeakMemoryUsage() ).c_str()
+							FileSystem::SizeToString( TF->MemorySize() ).c_str(),
+							FileSystem::SizeToString( (Uint32)MemoryManager::GetTotalMemoryUsage() ).c_str(),
+							FileSystem::SizeToString( (Uint32)MemoryManager::GetPeakMemoryUsage() ).c_str()
 						);
 		#else
-		mInfo = StrFormated( "EE - FPS: %d Elapsed Time: %4.8f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s",
+		mInfo = String::StrFormated( "EE - FPS: %d Elapsed Time: %4.8f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s",
 							mWindow->FPS(),
 							et,
 							(Int32)Mouse.x,
 							(Int32)Mouse.y,
-							SizeToString( TF->MemorySize() ).c_str()
+							FileSystem::SizeToString( TF->MemorySize() ).c_str()
 						);
 		#endif
 
@@ -1270,7 +1270,7 @@ void cEETest::Render() {
 		FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f + (eeFloat)LineNum * (eeFloat)FF2->GetFontHeight() );
 	}
 
-	FF2->SetText( "FPS: " + toStr( mWindow->FPS() ) );
+	FF2->SetText( "FPS: " + String::toStr( mWindow->FPS() ) );
 	FF2->Draw( mWindow->GetWidth() - FF2->GetTextWidth() - 15, 0 );
 
 	FF2->SetText( InBuf.Buffer() );
@@ -1475,7 +1475,7 @@ void cEETest::Input() {
 
 			if ( KM->IsKeyUp(KEY_F6) ) {
 				Wireframe = !Wireframe;
-				eeSleep(1);
+				Sys::Sleep(1);
 				CreateTiling(Wireframe);
 			}
 

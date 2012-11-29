@@ -97,7 +97,7 @@ T * tResourceManager<T>::Add( T * Resource ) {
 
 				while ( Count( Resource->Id() ) ) {
 					c++;
-					Resource->Name( RealName + toStr( c ) );
+					Resource->Name( RealName + String::toStr( c ) );
 				}
 
 				return Add( Resource );

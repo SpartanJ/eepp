@@ -61,11 +61,11 @@ std::vector<cShape*> cShapeGroupManager::GetShapesByPatternId( const Uint32& Sha
 
 	if ( NULL != tShape ) {
 		if ( extension.size() )
-			tName = RemoveNumbersAtEnd( FileRemoveExtension( tShape->Name() ) ) + extension;
+			tName = String::RemoveNumbersAtEnd( FileSystem::FileRemoveExtension( tShape->Name() ) ) + extension;
 		else
 			tName = tShape->Name();
 
-		return GetShapesByPattern( RemoveNumbersAtEnd( tShape->Name() ), "", SearchInShapeGroup );
+		return GetShapesByPattern( String::RemoveNumbersAtEnd( tShape->Name() ), "", SearchInShapeGroup );
 	}
 
 	return std::vector<cShape*>();
@@ -94,7 +94,7 @@ std::vector<cShape*> cShapeGroupManager::GetShapesByPattern( const std::string& 
 
 	// Test if name starts with 0 - 1
 	for ( i = 0; i < 2; i++ ) {
-		search = StrFormated( "%s%d%s", name.c_str(), i, realext.c_str() );
+		search = String::StrFormated( "%s%d%s", name.c_str(), i, realext.c_str() );
 
 		if ( NULL == SearchInShapeGroup )
 			tShape = GetShapeByName( search );
@@ -111,7 +111,7 @@ std::vector<cShape*> cShapeGroupManager::GetShapesByPattern( const std::string& 
 	// in case that name doesn't start with 0 - 1, we test with 00 - 01
 	if ( 0 == t ) {
 		for ( i = 0; i < 2; i++ ) {
-			search = StrFormated( "%s%02d%s", name.c_str(), i, realext.c_str() );
+			search = String::StrFormated( "%s%02d%s", name.c_str(), i, realext.c_str() );
 
 			if ( NULL == SearchInShapeGroup )
 				tShape = GetShapeByName( search );
@@ -128,7 +128,7 @@ std::vector<cShape*> cShapeGroupManager::GetShapesByPattern( const std::string& 
 		// in case that name doesn't start with 00 - 01, we test with 000 - 001
 		if ( 0 == t ) {
 			for ( i = 0; i < 2; i++ ) {
-				search = StrFormated( "%s%03d%s", name.c_str(), i, realext.c_str() );
+				search = String::StrFormated( "%s%03d%s", name.c_str(), i, realext.c_str() );
 
 				if ( NULL == SearchInShapeGroup )
 					tShape = GetShapeByName( search );
@@ -144,7 +144,7 @@ std::vector<cShape*> cShapeGroupManager::GetShapesByPattern( const std::string& 
 
 			if ( 0 == t ) {
 				for ( i = 0; i < 2; i++ ) {
-					search = StrFormated( "%s%04d%s", name.c_str(), i, realext.c_str() );
+					search = String::StrFormated( "%s%04d%s", name.c_str(), i, realext.c_str() );
 
 					if ( NULL == SearchInShapeGroup )
 						tShape = GetShapeByName( search );
@@ -160,7 +160,7 @@ std::vector<cShape*> cShapeGroupManager::GetShapesByPattern( const std::string& 
 
 				if ( 0 == t ) {
 					for ( i = 0; i < 2; i++ ) {
-						search = StrFormated( "%s%05d%s", name.c_str(), i, realext.c_str() );
+						search = String::StrFormated( "%s%05d%s", name.c_str(), i, realext.c_str() );
 
 						if ( NULL == SearchInShapeGroup )
 							tShape = GetShapeByName( search );
@@ -176,7 +176,7 @@ std::vector<cShape*> cShapeGroupManager::GetShapesByPattern( const std::string& 
 
 					if ( 0 == t ) {
 						for ( i = 0; i < 2; i++ ) {
-							search = StrFormated( "%s%06d%s", name.c_str(), i, realext.c_str() );
+							search = String::StrFormated( "%s%06d%s", name.c_str(), i, realext.c_str() );
 
 							if ( NULL == SearchInShapeGroup )
 								tShape = GetShapeByName( search );
@@ -198,12 +198,12 @@ std::vector<cShape*> cShapeGroupManager::GetShapesByPattern( const std::string& 
 	if ( 0 != t ) {
 		do {
 			switch ( t ) {
-				case 1: search = StrFormated( "%s%d%s", name.c_str(), c, realext.c_str() ); break;
-				case 2: search = StrFormated( "%s%02d%s", name.c_str(), c, realext.c_str() ); break;
-				case 3: search = StrFormated( "%s%03d%s", name.c_str(), c, realext.c_str() ); break;
-				case 4: search = StrFormated( "%s%04d%s", name.c_str(), c, realext.c_str() ); break;
-				case 5: search = StrFormated( "%s%05d%s", name.c_str(), c, realext.c_str() ); break;
-				case 6: search = StrFormated( "%s%06d%s", name.c_str(), c, realext.c_str() ); break;
+				case 1: search = String::StrFormated( "%s%d%s", name.c_str(), c, realext.c_str() ); break;
+				case 2: search = String::StrFormated( "%s%02d%s", name.c_str(), c, realext.c_str() ); break;
+				case 3: search = String::StrFormated( "%s%03d%s", name.c_str(), c, realext.c_str() ); break;
+				case 4: search = String::StrFormated( "%s%04d%s", name.c_str(), c, realext.c_str() ); break;
+				case 5: search = String::StrFormated( "%s%05d%s", name.c_str(), c, realext.c_str() ); break;
+				case 6: search = String::StrFormated( "%s%06d%s", name.c_str(), c, realext.c_str() ); break;
 				default: found = false;
 			}
 

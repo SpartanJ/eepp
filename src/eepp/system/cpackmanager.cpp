@@ -1,4 +1,5 @@
 #include <eepp/system/cpackmanager.hpp>
+#include <eepp/system/filesystem.hpp>
 
 namespace EE { namespace System {
 
@@ -15,7 +16,7 @@ cPackManager::~cPackManager() {
 cPack * cPackManager::Exists( std::string& path ) {
 	std::string tpath( path );
 
-	FilePathRemoveProcessPath( tpath );
+	FileSystem::FilePathRemoveProcessPath( tpath );
 
 	std::list<cPack*>::iterator it;
 

@@ -51,7 +51,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 			win->Display();
 
 			// Sleep thread for 10 ms
-			eeSleep( 10 );
+			Sys::Sleep( 10 );
 		}
 	}
 

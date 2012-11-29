@@ -31,6 +31,7 @@ namespace WindowBackend {
 	enum
 	{
 		SDL,
+		SDL2,
 		Allegro,
 		SFML,
 		Default

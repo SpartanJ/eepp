@@ -131,7 +131,7 @@ void cTextureFont::BuildFromGlyphs() {
 }
 
 bool cTextureFont::Load( const Uint32& TexId, const std::string& CoordinatesDatPath, const bool& VerticalDraw ) {
-	if ( FileExists( CoordinatesDatPath ) ) {
+	if ( FileSystem::FileExists( CoordinatesDatPath ) ) {
 		cIOStreamFile IOS( CoordinatesDatPath, std::ios::in | std::ios::binary );
 
 		return LoadFromStream( TexId, IOS, VerticalDraw );

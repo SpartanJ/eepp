@@ -178,7 +178,7 @@ void cConsole::Draw() {
 	if ( mShowFps ) {
 		eeColorA OldColor1( mFont->Color() );
 		mFont->Color( eeColorA () );
-		mFont->SetText( "FPS: " + toStr( mWindow->FPS() ) );
+		mFont->SetText( "FPS: " + String::toStr( mWindow->FPS() ) );
 		mFont->Draw( mWindow->GetWidth() - mFont->GetTextWidth() - 15, 6 );
 		mFont->Color( OldColor1 );
 	}
@@ -205,7 +205,7 @@ void cConsole::FadeOut() {
 
 void cConsole::ProcessLine() {
 	String str = mTBuf.Buffer();
-	std::vector < String > params = SplitString( str, ' ' );
+	std::vector < String > params = String::SplitString( str, ' ' );
 
 	mLastCommands.push_back( str );
 	mLastLogPos = (eeInt)mLastCommands.size();
@@ -245,11 +245,7 @@ void cConsole::PushText( const char * format, ... ) {
 	while (1) {
 		va_start( args, format );
 
-		#ifdef EE_COMPILER_MSVC
-			n = _vsnprintf_s( &tstr[0], size, size, format, args );
-		#else
-			n = vsnprintf( &tstr[0], size, format, args );
-		#endif
+		n = eevsnprintf( &tstr[0], size, format, args );
 
 		va_end( args );
 
@@ -330,7 +326,7 @@ void cConsole::PrintCommandsStartingWith( const String& start ) {
 	std::map < String, ConsoleCallback >::iterator it;
 
 	for ( it = mCallbacks.begin(); it != mCallbacks.end(); it++ ) {
-		if ( -1 != StrStartsWith( start, it->first ) ) {
+		if ( -1 != String::StrStartsWith( start, it->first ) ) {
 			cmds.push_back( it->first );
 		}
 	}
@@ -479,7 +475,7 @@ void cConsole::CmdQuit ( const std::vector < String >& params ) {
 }
 
 void cConsole::CmdGetTextureMemory ( const std::vector < String >& params ) {
-	PushText( "Total texture memory used: " + SizeToString( cTextureFactory::instance()->MemorySize() ) );
+	PushText( "Total texture memory used: " + FileSystem::SizeToString( cTextureFactory::instance()->MemorySize() ) );
 }
 
 void cConsole::CmdCmdList ( const std::vector < String >& params ) {
@@ -493,11 +489,11 @@ void cConsole::CmdShowCursor ( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
-		bool Res = fromString<Int32>( tInt, params[1] );
+		bool Res = String::fromString<Int32>( tInt, params[1] );
 
 		if ( Res && ( tInt == 0 || tInt == 1 ) ) {
 			mWindow->GetCursorManager()->Visible( 0 != tInt );
-			PushText( "showcursor " + toStr( tInt ) );
+			PushText( "showcursor " + String::toStr( tInt ) );
 		} else
 			PushText( "Valid parameters are 0 or 1." );
 	} else {
@@ -509,11 +505,11 @@ void cConsole::CmdFrameLimit ( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
-		bool Res = fromString<Int32>( tInt, params[1] );
+		bool Res = String::fromString<Int32>( tInt, params[1] );
 
 		if ( Res && ( tInt >= 0 && tInt <= 10000 ) ) {
 			mWindow->FrameRateLimit( tInt );
-			PushText( "setfpslimit " + toStr( tInt ) );
+			PushText( "setfpslimit " + String::toStr( tInt ) );
 			return;
 		}
 	}
@@ -522,7 +518,7 @@ void cConsole::CmdFrameLimit ( const std::vector < String >& params ) {
 }
 
 void cConsole::CmdGetLog() {
-	std::vector < String > tvec = SplitString( String( toStr( cLog::instance()->Buffer() ) ) );
+	std::vector < String > tvec = String::SplitString( String( String::toStr( cLog::instance()->Buffer() ) ) );
 	if ( tvec.size() > 0 ) {
 		for ( eeUint i = 0; i < tvec.size(); i++ )
 			PushText( tvec[i] );
@@ -535,7 +531,7 @@ void cConsole::CmdGetLog( const std::vector < String >& params ) {
 
 void cConsole::CmdGetGpuExtensions() {
 	char *Exts = GLi->GetExtensions();
-	std::vector < String > tvec = SplitString( String( toStr( std::string( Exts ) ) ), ' ' );
+	std::vector < String > tvec = String::SplitString( String( String::toStr( std::string( Exts ) ) ), ' ' );
 	if ( tvec.size() > 0 ) {
 		for ( eeUint i = 0; i < tvec.size(); i++ )
 			PushText( tvec[i] );
@@ -550,11 +546,11 @@ void cConsole::CmdSetGamma( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		eeFloat tFloat = 0.f;
 
-		bool Res = fromString<eeFloat>( tFloat, params[1] );
+		bool Res = String::fromString<eeFloat>( tFloat, params[1] );
 
 		if ( Res && ( tFloat > 0.1f && tFloat <= 10.0f ) ) {
 			mWindow->SetGamma( tFloat, tFloat, tFloat );
-			PushText( "setgamma " + toStr( tFloat ) );
+			PushText( "setgamma " + String::toStr( tFloat ) );
 			return;
 		}
 	}
@@ -566,11 +562,11 @@ void cConsole::CmdSetVolume( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		eeFloat tFloat = 0.f;
 
-		bool Res = fromString<eeFloat>( tFloat, params[1] );
+		bool Res = String::fromString<eeFloat>( tFloat, params[1] );
 
 		if ( Res && ( tFloat >= 0.0f && tFloat <= 100.0f ) ) {
 			EE::Audio::cAudioListener::GlobalVolume( tFloat );
-			PushText( "setvolume " + toStr( tFloat ) );
+			PushText( "setvolume " + String::toStr( tFloat ) );
 			return;
 		}
 	}
@@ -601,10 +597,10 @@ void cConsole::CmdDir( const std::vector < String >& params ) {
 			}
 		}
 
-		if ( IsDirectory( myPath ) ) {
+		if ( FileSystem::IsDirectory( myPath ) ) {
 			eeUint i;
 
-			std::vector<String> mFiles = FilesGetInPath( myPath );
+			std::vector<String> mFiles = FileSystem::FilesGetInPath( myPath );
 			std::sort( mFiles.begin(), mFiles.end() );
 
 			PushText( "Directory: " + myPath );
@@ -614,7 +610,7 @@ void cConsole::CmdDir( const std::vector < String >& params ) {
 				std::vector<String> mFile;
 
 				for ( i = 0; i < mFiles.size(); i++ ) {
-					if ( IsDirectory( myPath + Slash + mFiles[i] ) ) {
+					if ( FileSystem::IsDirectory( myPath + Slash + mFiles[i] ) ) {
 						mFolders.push_back( mFiles[i] );
 					} else {
 						mFile.push_back( mFiles[i] );
@@ -652,11 +648,11 @@ void cConsole::CmdShowFps( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
-		bool Res = fromString<Int32>( tInt, params[1] );
+		bool Res = String::fromString<Int32>( tInt, params[1] );
 
 		if ( Res && ( tInt == 0 || tInt == 1 ) ) {
 			mShowFps = 0 != tInt;
-			PushText( "showfps " + toStr( tInt ) );
+			PushText( "showfps " + String::toStr( tInt ) );
 			return;
 		}
 	}

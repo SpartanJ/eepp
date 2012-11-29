@@ -1,4 +1,5 @@
 #include <eepp/system/cresourceloader.hpp>
+#include <eepp/system/sys.hpp>
 
 namespace EE { namespace System {
 
@@ -17,7 +18,7 @@ cResourceLoader::~cResourceLoader() {
 
 void cResourceLoader::SetThreads() {
 	if ( THREADS_AUTO == mThreads ) {
-		mThreads = GetCPUCount();
+		mThreads = Sys::GetCPUCount();
 
 		if ( 1 == mThreads ) {
 			mThreaded = false;

@@ -45,11 +45,7 @@ void eePRINT( const char * format, ... ) {
 
 	va_start( args, format );
 
-	#ifdef EE_COMPILER_MSVC
-	_vsnprintf_s( buf, sizeof( buf ), sizeof( buf ) / sizeof( buf[0]), format, args );
-	#else
-	vsnprintf( buf, sizeof( buf ) / sizeof( buf[0]), format, args );
-	#endif
+	eevsnprintf( buf, sizeof( buf ), format, args );
 
 	va_end( args );
 
@@ -75,11 +71,7 @@ void eePRINTC( unsigned int cond, const char * format, ...) {
 
 	va_start( args, format );
 
-	#ifdef EE_COMPILER_MSVC
-	_vsnprintf_s( buf, eeARRAY_SIZE( buf ), eeARRAY_SIZE( buf ), format, args );
-	#else
-	vsnprintf( buf, sizeof( buf ) / sizeof( buf[0]), format, args );
-	#endif
+	eevsnprintf( buf, sizeof( buf ) / sizeof( buf[0]), format, args );
 
 	va_end( args );
 

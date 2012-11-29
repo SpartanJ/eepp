@@ -4,6 +4,12 @@
 
 #ifdef EE_BACKEND_SDL_1_2
 
+#include <SDL/SDL.h>
+
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
+	#include <SDL/SDL_syswm.h>
+#endif
+
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
 cInputSDL::cInputSDL( cWindow * window ) :
@@ -34,9 +40,9 @@ void cInputSDL::Update() {
 			}
 			case SDL_KEYDOWN:
 			{
-				if ( IsCharacter( SDLEvent.key.keysym.unicode ) && KEY_TAB != SDLEvent.key.keysym.unicode ) {
+				if ( String::IsCharacter( SDLEvent.key.keysym.unicode ) && KEY_TAB != SDLEvent.key.keysym.unicode ) {
 					EEEvent.Type = InputEvent::TextInput;
-					EEEvent.text.timestamp = eeGetTicks();
+					EEEvent.text.timestamp = Sys::GetTicks();
 					EEEvent.text.text = SDLEvent.key.keysym.unicode;
 
 					ProcessEvent( &EEEvent );

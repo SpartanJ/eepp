@@ -1,7 +1,7 @@
-#include <eepp/window/backend/SDL2/cinputsdl.hpp>
-#include <eepp/window/backend/SDL2/cjoystickmanagersdl.hpp>
-#include <eepp/window/backend/SDL2/ccursormanagersdl.hpp>
-#include <eepp/window/backend/SDL2/cwindowsdl.hpp>
+#include <eepp/window/backend/SDL2/cinputsdl2.hpp>
+#include <eepp/window/backend/SDL2/cjoystickmanagersdl2.hpp>
+#include <eepp/window/backend/SDL2/ccursormanagersdl2.hpp>
+#include <eepp/window/backend/SDL2/cwindowsdl2.hpp>
 
 #ifdef EE_BACKEND_SDL2
 

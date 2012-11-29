@@ -30,7 +30,7 @@ cUILayerNew::cUILayerNew( cUIMap * Map, EE_LAYER_TYPE Type, NewLayerCb newLayerC
 	cUITextBox * Txt = mTheme->CreateTextBox( "Layer Name", mUIWindow->Container(), eeSize(), eeVector2i( 16, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	mUILayerName = mTheme->CreateTextInput( mUIWindow->Container(), eeSize( 120, 22 ), eeVector2i( Txt->Pos().x + DistFromTitle, Txt->Pos().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE, true, 64 );
-	mUILayerName->Text( "Layer " + toStr( mUIMap->Map()->LayerCount() + 1 ) );
+	mUILayerName->Text( "Layer " + String::toStr( mUIMap->Map()->LayerCount() + 1 ) );
 
 	cUIPushButton * OKButton = mTheme->CreatePushButton( mUIWindow->Container(), eeSize( 80, 22 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->GetIconByName( "add" ) );
 	OKButton->Pos( mUIWindow->Container()->Size().Width() - OKButton->Size().Width() - 4, mUIWindow->Container()->Size().Height() - OKButton->Size().Height() - 4 );

@@ -5,6 +5,7 @@
 #include <eepp/system/tsingleton.hpp>
 #include <eepp/system/ciostreamfile.hpp>
 #include <eepp/system/cmutex.hpp>
+#include <eepp/system/sys.hpp>
 
 namespace EE { namespace System {
 

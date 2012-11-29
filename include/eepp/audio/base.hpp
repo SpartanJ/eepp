@@ -7,6 +7,7 @@
 #include <eepp/system/clog.hpp>
 #include <eepp/system/cpack.hpp>
 #include <eepp/system/cthread.hpp>
+#include <eepp/system/filesystem.hpp>
 using namespace EE::System;
 
 #include <eepp/utils/vector3.hpp>

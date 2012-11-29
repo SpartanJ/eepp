@@ -9,8 +9,6 @@
 		#ifndef EE_BACKEND_SDL_1_2
 			#define EE_BACKEND_SDL_1_2
 		#endif
-
-		#include <SDL/SDL.h>
 	#endif
 
 #endif

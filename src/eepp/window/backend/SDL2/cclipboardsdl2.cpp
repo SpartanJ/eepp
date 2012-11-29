@@ -1,5 +1,5 @@
-#include <eepp/window/backend/SDL2/cclipboardsdl.hpp>
-#include <eepp/window/backend/SDL2/cwindowsdl.hpp>
+#include <eepp/window/backend/SDL2/cclipboardsdl2.hpp>
+#include <eepp/window/backend/SDL2/cwindowsdl2.hpp>
 
 #ifdef EE_BACKEND_SDL2
 

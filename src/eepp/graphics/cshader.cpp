@@ -14,12 +14,12 @@ cShader::cShader( const Uint32& Type ) {
 cShader::cShader( const Uint32& Type, const std::string& Filename ) {
     Init( Type );
 
-	mFilename = FileNameFromPath( Filename );
+	mFilename = FileSystem::FileNameFromPath( Filename );
 
-	if ( FileExists( Filename ) ) {
+	if ( FileSystem::FileExists( Filename ) ) {
 		SafeDataPointer PData;
 
-		FileGet( Filename, PData );
+		FileSystem::FileGet( Filename, PData );
 
 		SetSource( (const char*)PData.Data, PData.DataSize );
 	} else {
@@ -53,7 +53,7 @@ cShader::cShader( const Uint32& Type, cPack * Pack, const std::string& Filename 
 
 	Init( Type );
 
-	mFilename = FileNameFromPath( Filename );
+	mFilename = FileSystem::FileNameFromPath( Filename );
 
 	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( Filename ) ) {
 		Pack->ExtractFileToMemory( Filename, PData );
@@ -105,7 +105,7 @@ std::string cShader::GetName() {
 	if ( mFilename.size() ) {
 		name = mFilename;
 	} else {
-		name = toStr( mGLId );
+		name = String::toStr( mGLId );
 	}
 
 	return name;
@@ -129,8 +129,8 @@ void cShader::EnsureVersion() {
 
 				mSource = "#ifdef GL_ES\nprecision mediump float;\nprecision lowp int;\n#endif\nvarying	vec4		gl_Color;\nvarying	vec4		gl_TexCoord[ 1 ];\n" + mSource;
 
-				ReplaceSubStr( mSource, "gl_Color"		, "dgl_Color"		);
-				ReplaceSubStr( mSource, "gl_TexCoord"	, "dgl_TexCoord"	);
+				String::ReplaceSubStr( mSource, "gl_Color"		, "dgl_Color"		);
+				String::ReplaceSubStr( mSource, "gl_TexCoord"	, "dgl_TexCoord"	);
 			}
 		}
 

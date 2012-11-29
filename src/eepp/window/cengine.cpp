@@ -16,17 +16,20 @@
 
 #include <eepp/window/cbackend.hpp>
 #include <eepp/window/backend/SDL/cbackendsdl.hpp>
-#include <eepp/window/backend/SDL2/cbackendsdl.hpp>
+#include <eepp/window/backend/SDL2/cbackendsdl2.hpp>
 #include <eepp/window/backend/allegro5/cbackendal.hpp>
 #include <eepp/window/backend/SFML/cbackendsfml.hpp>
 
 #define BACKEND_SDL			1
-#define BACKEND_ALLEGRO		2
-#define BACKEND_SFML		3
+#define BACKEND_SDL2		2
+#define BACKEND_ALLEGRO		3
+#define BACKEND_SFML		4
 
 #ifndef DEFAULT_BACKEND
 
-#if defined( EE_BACKEND_SDL_ACTIVE )
+#if defined( EE_BACKEND_SDL_2 )
+#define DEFAULT_BACKEND		BACKEND_SDL2
+#elif defined( EE_BACKEND_SDL_1_2 )
 #define DEFAULT_BACKEND		BACKEND_SDL
 #elif defined( EE_BACKEND_ALLEGRO_ACTIVE )
 #define DEFAULT_BACKEND		BACKEND_ALLEGRO
@@ -89,12 +92,16 @@ void cEngine::Destroy() {
 }
 
 Backend::cBackend * cEngine::CreateSDLBackend( const WindowSettings &Settings ) {
-#if defined( EE_BACKEND_SDL_ACTIVE )
-	#if defined( EE_SDL_VERSION_1_3 ) || defined( EE_SDL_VERSION_2 )
-	return eeNew( Backend::SDL2::cBackendSDL, () );
-	#else
+#if defined( EE_SDL_VERSION_1_2 )
 	return eeNew( Backend::SDL::cBackendSDL, () );
-	#endif
+#else
+	return NULL;
+#endif
+}
+
+Backend::cBackend * cEngine::CreateSDL2Backend( const WindowSettings &Settings ) {
+#if defined( EE_SDL_VERSION_2 )
+	return eeNew( Backend::SDL2::cBackendSDL2, () );
 #else
 	return NULL;
 #endif
@@ -117,18 +124,24 @@ Backend::cBackend * cEngine::CreateSFMLBackend( const WindowSettings &Settings )
 }
 
 cWindow * cEngine::CreateSDLWindow( const WindowSettings& Settings, const ContextSettings& Context ) {
-#if defined( EE_BACKEND_SDL_ACTIVE )
-
+#if defined( EE_SDL_VERSION_1_2 )
 	if ( NULL == mBackend ) {
 		mBackend	= CreateSDLBackend( Settings );
 	}
 
-#if defined( EE_SDL_VERSION_1_3 ) || defined( EE_SDL_VERSION_2 )
-	return eeNew( Backend::SDL2::cWindowSDL, ( Settings, Context ) );
-#else
 	return eeNew( Backend::SDL::cWindowSDL, ( Settings, Context ) );
+#else
+	return NULL;
 #endif
+}
 
+cWindow * cEngine::CreateSDL2Window( const WindowSettings& Settings, const ContextSettings& Context ) {
+#if defined( EE_SDL_VERSION_2 )
+	if ( NULL == mBackend ) {
+		mBackend	= CreateSDL2Backend( Settings );
+	}
+
+	return eeNew( Backend::SDL2::cWindowSDL, ( Settings, Context ) );
 #else
 	return NULL;
 #endif
@@ -163,6 +176,8 @@ cWindow * cEngine::CreateSFMLWindow( const WindowSettings& Settings, const Conte
 cWindow * cEngine::CreateDefaultWindow( const WindowSettings& Settings, const ContextSettings& Context ) {
 #if DEFAULT_BACKEND == BACKEND_SDL
 	return CreateSDLWindow( Settings, Context );
+#elif DEFAULT_BACKEND == BACKEND_SDL2
+	return CreateSDL2Window( Settings, Context );
 #elif DEFAULT_BACKEND == BACKEND_ALLEGRO
 	return CreateAllegroWindow( Settings, Context );
 #elif DEFAULT_BACKEND == BACKEND_SFML
@@ -179,6 +194,7 @@ cWindow * cEngine::CreateWindow( WindowSettings Settings, ContextSettings Contex
 
 	switch ( Settings.Backend ) {
 		case WindowBackend::SDL:		window = CreateSDLWindow( Settings, Context );		break;
+		case WindowBackend::SDL2:		window = CreateSDL2Window( Settings, Context );		break;
 		case WindowBackend::Allegro:	window = CreateAllegroWindow( Settings, Context );	break;
 		case WindowBackend::SFML:		window = CreateSFMLWindow( Settings, Context );		break;
 		case WindowBackend::Default:
@@ -264,6 +280,8 @@ const Uint32& cEngine::GetHeight() const {
 Uint32 cEngine::GetDefaultBackend() const {
 #if DEFAULT_BACKEND == BACKEND_SDL
 	return WindowBackend::SDL;
+#elif DEFAULT_BACKEND == BACKEND_SDL2
+	return WindowBackend::SDL2;
 #elif DEFAULT_BACKEND == BACKEND_ALLEGRO
 	return WindowBackend::Allegro;
 #elif DEFAULT_BACKEND == BACKEND_SFML
@@ -285,9 +303,10 @@ WindowSettings cEngine::CreateWindowSettings( cIniFile * ini, std::string iniKey
 	std::string Backend = ini->GetValue( iniKeyName, "Backend", "" );
 	Uint32 WinBackend	= GetDefaultBackend();
 
-	ToLower( Backend );
+	String::ToLower( Backend );
 
 	if ( "allegro" == Backend )		WinBackend	= WindowBackend::Allegro;
+	else if ( "sdl2" == Backend )	WinBackend	= WindowBackend::SDL2;
 	else if ( "sdl" == Backend )	WinBackend	= WindowBackend::SDL;
 	else if ( "sfml" == Backend )	WinBackend	= WindowBackend::SFML;
 

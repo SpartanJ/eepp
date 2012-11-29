@@ -7,6 +7,7 @@
 #ifdef EE_BACKEND_SDL_1_2
 
 #include <eepp/window/cjoystick.hpp>
+#include <SDL/SDL.h>
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 

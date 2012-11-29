@@ -4,7 +4,6 @@
 #include <eepp/base.hpp>
 
 #include <eepp/utils/utils.hpp>
-#include <eepp/utils/string.hpp>
 #include <eepp/utils/vector2.hpp>
 
 using namespace EE::Utils;

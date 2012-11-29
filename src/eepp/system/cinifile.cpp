@@ -3,6 +3,7 @@
 #include <eepp/system/cpackmanager.hpp>
 #include <eepp/system/ciostreamfile.hpp>
 #include <eepp/system/ciostreammemory.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <cstdarg>
 
 namespace EE { namespace System {
@@ -51,7 +52,7 @@ bool cIniFile::LoadFromMemory( const Uint8* RAWData, const Uint32& size ) {
 	myfile.assign( reinterpret_cast<const char*> (RAWData), size );
 
 	mLines.clear();
-	mLines = SplitString( myfile );
+	mLines = String::SplitString( myfile );
 
 	mIniReaded = false;
 
@@ -61,7 +62,7 @@ bool cIniFile::LoadFromMemory( const Uint8* RAWData, const Uint32& size ) {
 bool cIniFile::LoadFromFile( const std::string& iniPath ) {
 	Path ( iniPath );
 
-	if ( FileExists( iniPath ) ) {
+	if ( FileSystem::FileExists( iniPath ) ) {
 		cIOStreamFile f( mPath, std::ios::in );
 
 		if ( !f.IsOpen() )
@@ -72,7 +73,7 @@ bool cIniFile::LoadFromFile( const std::string& iniPath ) {
 		f.Read( (char*)&myfile[0], f.GetSize() );
 
 		mLines.clear();
-		mLines = SplitString( myfile );
+		mLines = String::SplitString( myfile );
 
 		mIniReaded = false;
 
@@ -102,7 +103,7 @@ bool cIniFile::ReadFile() {
 		return false;
 
 	for ( Uint32 i = 0; i < mLines.size(); i++ ) {
-		line = LTrim ( mLines[i] );
+		line = String::LTrim ( mLines[i] );
 
 		// To be compatible with Win32, check for existence of '\r'.
 		// Win32 files have the '\r' and Unix files don't at the end of a line.
@@ -130,8 +131,8 @@ bool cIniFile::ReadFile() {
 						}
 						break;
 					case '=':
-						valuename = Trim( line.substr ( 0, pLeft ) ); // Remove the extra space between valuename and = . No spaced valuename permited.
-						value = LTrim( line.substr ( pLeft + 1 ) );
+						valuename = String::Trim( line.substr ( 0, pLeft ) ); // Remove the extra space between valuename and = . No spaced valuename permited.
+						value = String::LTrim( line.substr ( pLeft + 1 ) );
 						SetValue ( keyname, valuename, value );
 						break;
 					case ';':
@@ -293,14 +294,14 @@ bool cIniFile::SetValue ( std::string const keyname, std::string const valuename
 bool cIniFile::SetValueI ( std::string const keyname, std::string const valuename, int const value, bool create ) {
 	char svalue[MAX_VALUEDATA];
 
-	StrFormat( svalue, MAX_VALUEDATA, "%d", value );
+	String::StrFormat( svalue, MAX_VALUEDATA, "%d", value );
 	return SetValue ( keyname, valuename, svalue, create );
 }
 
 bool cIniFile::SetValueF ( std::string const keyname, std::string const valuename, double const value, bool create ) {
 	char svalue[MAX_VALUEDATA];
 
-	StrFormat ( svalue, MAX_VALUEDATA, "%f", value );
+	String::StrFormat ( svalue, MAX_VALUEDATA, "%f", value );
 	return SetValue ( keyname, valuename, svalue, create );
 }
 
@@ -339,14 +340,14 @@ std::string cIniFile::GetValue ( std::string const keyname, std::string const va
 int cIniFile::GetValueI ( std::string const keyname, std::string const valuename, int const defValue ) const {
 	char svalue[MAX_VALUEDATA];
 
-	StrFormat ( svalue, MAX_VALUEDATA, "%d", defValue );
+	String::StrFormat ( svalue, MAX_VALUEDATA, "%d", defValue );
 	return atoi ( GetValue ( keyname, valuename, svalue ).c_str() );
 }
 
 double cIniFile::GetValueF ( std::string const keyname, std::string const valuename, double const defValue ) const {
 	char svalue[MAX_VALUEDATA];
 
-	StrFormat ( svalue, MAX_VALUEDATA, "%f", defValue );
+	String::StrFormat ( svalue, MAX_VALUEDATA, "%f", defValue );
 	return atof ( GetValue ( keyname, valuename, svalue ).c_str() );
 }
 

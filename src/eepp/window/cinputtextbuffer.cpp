@@ -77,7 +77,7 @@ void cInputTextBuffer::PromptToLeftFirstNoChar() {
 
 	if ( mPromptPos - 2 > 0 ) {
 		for ( Int32 i = mPromptPos - 2; i > 0; i-- ) {
-			if ( !IsLetter( mText[i] ) && !IsNumber( mText[i] ) && '\n' != mText[i] ) {
+			if ( !String::IsLetter( mText[i] ) && !String::IsNumber( mText[i] ) && '\n' != mText[i] ) {
 				mPromptPos = i + 1;
 				break;
 			} else if ( i - 1 == 0 ) {
@@ -97,7 +97,7 @@ void cInputTextBuffer::PromptToRightFirstNoChar() {
 		return;
 
 	for ( Int32 i = mPromptPos; i < s; i++ ) {
-		if ( !IsLetter( mText[i] ) && !IsNumber( mText[i] ) && '\n' != mText[i] ) {
+		if ( !String::IsLetter( mText[i] ) && !String::IsNumber( mText[i] ) && '\n' != mText[i] ) {
 			mPromptPos = i + 1;
 			break;
 		} else if ( i + 1 == s ) {
@@ -127,7 +127,7 @@ void cInputTextBuffer::EraseToNextNoChar() {
 		}
 
 		c = mText[ mPromptPos - 1 ];
-	} while  ( IsLetter( c ) || IsNumber( c ) );
+	} while  ( String::IsLetter( c ) || String::IsNumber( c ) );
 
 	ChangedSinceLastUpdate( true );
 }
@@ -144,10 +144,10 @@ bool cInputTextBuffer::IsIgnoredChar( const Uint32& c ) {
 }
 
 bool cInputTextBuffer::ValidChar( const Uint32& c ) {
-	if ( CanAdd() && IsCharacter( c ) ) {
+	if ( CanAdd() && String::IsCharacter( c ) ) {
 		bool Ignored = false;
 
-		if ( AllowOnlyNumbers() && !IsNumber( c, AllowDotsInNumbers() ) ) {
+		if ( AllowOnlyNumbers() && !String::IsNumber( c, AllowDotsInNumbers() ) ) {
 			Ignored = true;
 		}
 
@@ -172,16 +172,16 @@ void cInputTextBuffer::TryAddChar( const Uint32& c ) {
 				mText += c;
 				mPromptPos = (eeInt)mText.size();
 			} else {
-				InsertChar( mText, mPromptPos, c );
+				String::InsertChar( mText, mPromptPos, c );
 				mPromptPos++;
 			}
 		}
 	} else {
-		if ( CanAdd() && IsCharacter(c) ) {
+		if ( CanAdd() && String::IsCharacter(c) ) {
 			cInput * Input = mWindow->GetInput();
 
 			if ( !Input->MetaPressed() && !Input->AltPressed() && !Input->ControlPressed() ) {
-				if ( !( AllowOnlyNumbers() && !IsNumber( c, AllowDotsInNumbers() ) ) ) {
+				if ( !( AllowOnlyNumbers() && !String::IsNumber( c, AllowDotsInNumbers() ) ) ) {
 					mText += c;
 				}
 			}
@@ -270,7 +270,7 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 						}
 					} else if ( ( c == KEY_RETURN || c == KEY_KP_ENTER ) ) {
 						if ( SupportNewLine() && CanAdd() ) {
-							InsertChar( mText, mPromptPos, '\n' );
+							String::InsertChar( mText, mPromptPos, '\n' );
 
 							mPromptPos++;
 

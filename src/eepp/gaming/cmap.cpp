@@ -99,7 +99,7 @@ void cMap::CreateLightManager() {
 void cMap::CreateEmptyTile() {
 	//! I create a texture representing an empty tile to render instead of rendering with primitives because is a lot faster, at least with NVIDIA GPUs.
 	cTextureFactory * TF = cTextureFactory::instance();
-	std::string tileName( "maptile-" + toStr( mTileSize.Width() ) + "x" + toStr( mTileSize.Height() ) );
+	std::string tileName( "maptile-" + String::toStr( mTileSize.Width() ) + "x" + String::toStr( mTileSize.Height() ) );
 
 	cTexture * Tex = TF->GetByName( tileName );
 
@@ -780,7 +780,7 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 
 				//! Load the Texture groups if needed
 				for ( i = 0; i < ShapeGroups.size(); i++ ) {
-					std::string sgname = FileRemoveExtension( FileNameFromPath( ShapeGroups[i] ) );
+					std::string sgname = FileSystem::FileRemoveExtension( FileSystem::FileNameFromPath( ShapeGroups[i] ) );
 
 					if ( NULL == cShapeGroupManager::instance()->GetByName( sgname ) ) {
 						cTextureGroupLoader * tgl = eeNew( cTextureGroupLoader, () );
@@ -938,7 +938,7 @@ const std::string& cMap::Path() const {
 }
 
 bool cMap::Load( const std::string& path ) {
-	if ( FileExists( path ) ) {
+	if ( FileSystem::FileExists( path ) ) {
 		mPath = path;
 
 		cIOStreamFile IOS( mPath, std::ios::in | std::ios::binary );
@@ -1011,8 +1011,8 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 			memset( tProp.Name, 0, MAP_PROPERTY_SIZE );
 			memset( tProp.Value, 0, MAP_PROPERTY_SIZE );
 
-			StrCopy( tProp.Name, it->first.c_str(), MAP_PROPERTY_SIZE );
-			StrCopy( tProp.Value, it->second.c_str(), MAP_PROPERTY_SIZE );
+			String::StrCopy( tProp.Name, it->first.c_str(), MAP_PROPERTY_SIZE );
+			String::StrCopy( tProp.Value, it->second.c_str(), MAP_PROPERTY_SIZE );
 
 			IOS.Write( (const char*)&tProp, sizeof(sPropertyHdr) );
 		}
@@ -1023,7 +1023,7 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 
 			memset( tSG.Path, 0, MAP_SHAPEGROUP_PATH_SIZE );
 
-			StrCopy( tSG.Path, ShapeGroups[i].c_str(), MAP_SHAPEGROUP_PATH_SIZE );
+			String::StrCopy( tSG.Path, ShapeGroups[i].c_str(), MAP_SHAPEGROUP_PATH_SIZE );
 
 			IOS.Write( (const char*)&tSG, sizeof(sMapShapeGroup) );
 		}
@@ -1034,7 +1034,7 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 
 			memset( tVObjH.Name, 0, MAP_PROPERTY_SIZE );
 
-			StrCopy( tVObjH.Name, (*votit).c_str(), MAP_PROPERTY_SIZE );
+			String::StrCopy( tVObjH.Name, (*votit).c_str(), MAP_PROPERTY_SIZE );
 
 			IOS.Write( (const char*)&tVObjH, sizeof(sVirtualObj) );
 		}
@@ -1046,7 +1046,7 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 
 			memset( tLayerH.Name, 0, LAYER_NAME_SIZE );
 
-			StrCopy( tLayerH.Name, tLayer->Name().c_str(), LAYER_NAME_SIZE );
+			String::StrCopy( tLayerH.Name, tLayer->Name().c_str(), LAYER_NAME_SIZE );
 
 			tLayerH.Type			= tLayer->Type();
 			tLayerH.Flags			= tLayer->Flags();
@@ -1072,8 +1072,8 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 				memset( tProp.Name, 0, MAP_PROPERTY_SIZE );
 				memset( tProp.Value, 0, MAP_PROPERTY_SIZE );
 
-				StrCopy( tProp.Name, (*lit).first.c_str(), MAP_PROPERTY_SIZE );
-				StrCopy( tProp.Value, (*lit).second.c_str(), MAP_PROPERTY_SIZE );
+				String::StrCopy( tProp.Name, (*lit).first.c_str(), MAP_PROPERTY_SIZE );
+				String::StrCopy( tProp.Value, (*lit).second.c_str(), MAP_PROPERTY_SIZE );
 
 				IOS.Write( (const char*)&tProp, sizeof(sPropertyHdr) );
 			}
@@ -1216,7 +1216,7 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 }
 
 void cMap::Save( const std::string& path ) {
-	if ( !IsDirectory( path ) ) {
+	if ( !FileSystem::IsDirectory( path ) ) {
 		cIOStreamFile IOS( path, std::ios::out | std::ios::binary );
 
 		SaveToStream( IOS );

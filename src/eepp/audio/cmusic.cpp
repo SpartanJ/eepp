@@ -23,7 +23,7 @@ bool cMusic::OpenFromPack( cPack* Pack, const std::string& FilePackPath ) {
 }
 
 bool cMusic::OpenFromFile( const std::string& Filename ) {
-	if ( !FileExists( Filename ) ) {
+	if ( !FileSystem::FileExists( Filename ) ) {
 		if ( cPackManager::instance()->FallbackToPacks() ) {
 			std::string tPath( Filename );
 

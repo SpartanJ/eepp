@@ -16,7 +16,7 @@ cTextureFactory::cTextureFactory() :
 	mTextures.clear();
 	mTextures.push_back( NULL );
 
-	mAppPath = GetProcessPath();
+	mAppPath = Sys::GetProcessPath();
 
 	memset( &mCurrentTexture[0], 0, EE_MAX_TEXTURE_UNITS );
 }
@@ -64,7 +64,7 @@ Uint32 cTextureFactory::PushTexture( const std::string& Filepath, const Uint32& 
 
 	std::string FPath( Filepath );
 
-	FilePathRemoveProcessPath( FPath );
+	FileSystem::FilePathRemoveProcessPath( FPath );
 
 	Pos = FindFreeSlot();
 	Tex = mTextures[ Pos ] = eeNew( cTexture, () );

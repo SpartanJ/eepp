@@ -1,5 +1,5 @@
-#include <eepp/window/backend/SDL2/cjoystickmanagersdl.hpp>
-#include <eepp/window/backend/SDL2/cjoysticksdl.hpp>
+#include <eepp/window/backend/SDL2/cjoystickmanagersdl2.hpp>
+#include <eepp/window/backend/SDL2/cjoysticksdl2.hpp>
 
 #ifdef EE_BACKEND_SDL2
 

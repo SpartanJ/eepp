@@ -508,15 +508,15 @@ void cUIMenu::PrevSel() {
 }
 
 Uint32 cUIMenu::OnKeyDown( const cUIEventKey& Event ) {
-	if ( eeGetTicks() - mLastTickMove > 50 ) {
+	if ( Sys::GetTicks() - mLastTickMove > 50 ) {
 		switch ( Event.KeyCode() ) {
 			case KEY_DOWN:
-				mLastTickMove = eeGetTicks();
+				mLastTickMove = Sys::GetTicks();
 				NextSel();
 
 				break;
 			case KEY_UP:
-				mLastTickMove = eeGetTicks();
+				mLastTickMove = Sys::GetTicks();
 				PrevSel();
 
 				break;
