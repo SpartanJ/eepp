@@ -15,7 +15,6 @@ using namespace Private;
 cTextureAtlasLoader::cTextureAtlasLoader() :
 	mThreaded(false),
 	mLoaded(false),
-	mAppPath( Sys::GetProcessPath() ),
 	mPack(NULL),
 	mSkipResourceLoad(false),
 	mIsLoading(false),
@@ -27,7 +26,6 @@ cTextureAtlasLoader::cTextureAtlasLoader( const std::string& TextureGroupPath, c
 	mTextureGroupPath( TextureGroupPath ),
 	mThreaded( Threaded ),
 	mLoaded(false),
-	mAppPath( Sys::GetProcessPath() ),
 	mPack(NULL),
 	mSkipResourceLoad(false),
 	mIsLoading(false),
@@ -41,7 +39,6 @@ cTextureAtlasLoader::cTextureAtlasLoader( const Uint8* Data, const Uint32& DataS
 	mTextureGroupPath( TextureGroupName ),
 	mThreaded( Threaded ),
 	mLoaded(false),
-	mAppPath( Sys::GetProcessPath() ),
 	mPack(NULL),
 	mSkipResourceLoad(false),
 	mIsLoading(false),
@@ -55,7 +52,6 @@ cTextureAtlasLoader::cTextureAtlasLoader( cPack * Pack, const std::string& FileP
 	mTextureGroupPath( FilePackPath ),
 	mThreaded( Threaded ),
 	mLoaded(false),
-	mAppPath( Sys::GetProcessPath() ),
 	mPack(NULL),
 	mSkipResourceLoad(false),
 	mIsLoading(false),
@@ -496,10 +492,6 @@ bool cTextureAtlasLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 	}
 
 	return true;
-}
-
-std::string	cTextureAtlasLoader::AppPath() const {
-	return mAppPath;
 }
 
 }}

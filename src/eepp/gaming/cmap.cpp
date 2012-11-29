@@ -785,7 +785,7 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 					if ( NULL == cTextureAtlasManager::instance()->GetByName( sgname ) ) {
 						cTextureAtlasLoader * tgl = eeNew( cTextureAtlasLoader, () );
 
-						tgl->Load( tgl->AppPath() + TextureAtlases[i] );
+						tgl->Load( Sys::GetProcessPath() + TextureAtlases[i] );
 
 						eeSAFE_DELETE( tgl );
 					}

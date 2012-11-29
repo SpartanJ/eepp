@@ -346,7 +346,7 @@ void Sys::Sleep( const Uint32& ms ) {
 #endif
 }
 
-std::string Sys::GetProcessPath() {
+static std::string sGetProcessPath() {
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 	char exe_file[PATH_MAX + 1];
 	CFBundleRef mainBundle = CFBundleGetMainBundle();
@@ -439,6 +439,11 @@ std::string Sys::GetProcessPath() {
 	#warning Sys::GetProcessPath() not implemented on this platform. ( will return "./" )
 	return "./";
 #endif
+}
+
+std::string Sys::GetProcessPath() {
+	static std::string path = sGetProcessPath();
+	return path;
 }
 
 eeDouble Sys::GetSystemTime() {

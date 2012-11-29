@@ -58,14 +58,11 @@ class EE_API cTextureAtlasLoader {
 		cTextureAtlas *			GetTextureAtlas() const;
 
 		void					SetLoadCallback( GLLoadCallback LoadCallback );
-
-		std::string				AppPath() const;
 	protected:
 		cResourceLoader			mRL;
 		std::string				mTextureGroupPath;
 		bool					mThreaded;
 		bool					mLoaded;
-		std::string				mAppPath;
 		cPack *					mPack;
 		bool					mSkipResourceLoad;
 		bool					mIsLoading;
