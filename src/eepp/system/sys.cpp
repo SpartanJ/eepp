@@ -479,7 +479,7 @@ std::string Sys::GetDateTimeStr() {
 #endif
 }
 
-std::string Sys::StoragePath( std::string appname ) {
+std::string Sys::GetStoragePath( std::string appname ) {
 	char path[256];
 
 	#if EE_PLATFORM == EE_PLATFORM_WIN

@@ -151,18 +151,4 @@ bool IntersectLines( const eeVector2f& l1p1, const eeVector2f& l1p2, const eeVec
 	return IntersectLines<eeFloat> (l1p1.x, l1p1.y, l1p2.x, l1p2.y, l2p1.x, l2p1.y, l2p2.x, l2p2.y, X, Y);
 }
 
-eeFloat eeFastInvSqrt( eeFloat x ) {
-    union { int i; eeFloat x; } tmp;
-    eeFloat xhalf = 0.5f * x;
-    tmp.x = x;
-    tmp.i = 0x5f375a86 - (tmp.i >> 1);
-    x = tmp.x;
-    x = x * (1.5f - xhalf * x * x);
-    return x;
-}
-
-eeFloat eeFastSqrt( eeFloat x ) {
-    return 1.0f / eeFastInvSqrt(x);
-}
-
 }}

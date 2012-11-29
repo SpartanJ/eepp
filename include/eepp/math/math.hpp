@@ -400,20 +400,6 @@ Polygon2<T> CreateRoundedPolygon( const T& x, const T& y, const T& width, const 
 	return Poly;
 }
 
-/* A very fast function to calculate the approximate inverse square root of a
-* floating point value and a helper function that uses it for getting the
-* normal squareroot. For an explanation of the inverse squareroot function
-* read:
-* http://www.math.purdue.edu/~clomont/Math/Papers/2003/InvSqrt.pdf
-*
-* Unfortunately the original creator of this function seems to be unknown.
-*
-* $Id: fastsqrt.h 4046 2008-04-07 15:41:22Z b_lindeijer $
-*/
-
-eeFloat EE_API eeFastInvSqrt(eeFloat x);
-eeFloat EE_API eeFastSqrt(eeFloat x);
-
 }}
 
 #endif
