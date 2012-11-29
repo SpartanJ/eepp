@@ -22,8 +22,8 @@ bool cUISeparator::IsType( const Uint32& type ) const {
 void cUISeparator::SetTheme( cUITheme * Theme ) {
 	cUIControl::SetThemeControl( Theme, "separator" );
 	
-	if ( NULL != mSkinState && NULL != mSkinState->GetSkin() && NULL != mSkinState->GetSkin()->GetShape( cUISkinState::StateNormal ) ) {
-		Size( mSize.Width(), mSkinState->GetSkin()->GetShape( cUISkinState::StateNormal )->RealSize().Height() );
+	if ( NULL != mSkinState && NULL != mSkinState->GetSkin() && NULL != mSkinState->GetSkin()->GetSubTexture( cUISkinState::StateNormal ) ) {
+		Size( mSize.Width(), mSkinState->GetSkin()->GetSubTexture( cUISkinState::StateNormal )->RealSize().Height() );
 	}
 }
 

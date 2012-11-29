@@ -64,31 +64,31 @@ void cUISpinBox::SetTheme( cUITheme * Theme ) {
 	mPushUp->SetThemeControl		( Theme, "spinbox_btnup" );
 	mPushDown->SetThemeControl	( Theme, "spinbox_btndown" );
 
-	cShape * tShape = NULL;
+	cSubTexture * tSubTexture = NULL;
 	cUISkin * tSkin = NULL;
 
 	tSkin = mPushUp->GetSkin();
 
 	if ( NULL != tSkin ) {
-		tShape = tSkin->GetShape( cUISkinState::StateNormal );
+		tSubTexture = tSkin->GetSubTexture( cUISkinState::StateNormal );
 
-		if ( NULL != tShape ) {
-			mPushUp->Size( tShape->RealSize() );
+		if ( NULL != tSubTexture ) {
+			mPushUp->Size( tSubTexture->RealSize() );
 		}
 	}
 
 	tSkin = mPushDown->GetSkin();
 
 	if ( NULL != tSkin ) {
-		tShape = tSkin->GetShape( cUISkinState::StateNormal );
+		tSubTexture = tSkin->GetSubTexture( cUISkinState::StateNormal );
 
-		if ( NULL != tShape ) {
-			mPushDown->Size( tShape->RealSize() );
+		if ( NULL != tSubTexture ) {
+			mPushDown->Size( tSubTexture->RealSize() );
 		}
 	}
 
 	if ( mFlags & UI_AUTO_SIZE ) {
-		mSize.Height( mInput->GetSkinShapeSize().Height() );
+		mSize.Height( mInput->GetSkinSize().Height() );
 	}
 
 	AdjustChilds();

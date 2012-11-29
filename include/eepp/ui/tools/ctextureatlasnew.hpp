@@ -10,13 +10,13 @@
 
 namespace EE { namespace UI { namespace Tools {
 
-class EE_API cTextureGroupNew {
+class EE_API cTextureAtlasNew {
 	public:
 		typedef cb::Callback1<void, cTexturePacker *> TGCreateCb;
 
-		cTextureGroupNew( TGCreateCb NewTGCb = TGCreateCb() );
+		cTextureAtlasNew( TGCreateCb NewTGCb = TGCreateCb() );
 
-		virtual ~cTextureGroupNew();
+		virtual ~cTextureAtlasNew();
 	protected:
 		cUITheme *			mTheme;
 		cUIWindow *			mUIWindow;

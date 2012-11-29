@@ -151,7 +151,7 @@ void cEETest::CreateAquaTextureAtlas() {
 		tp.PackTextures();
 		tp.Save( tgpath + ".png", EE_SAVE_TYPE_PNG );
 	} else {
-		cTextureGroupLoader tgl;
+		cTextureAtlasLoader tgl;
 		tgl.UpdateTextureAtlas( tgpath + ".etg", Path );
 	}
 }
@@ -258,10 +258,10 @@ void cEETest::CreateUI() {
 
 	//mTheme = cUITheme::LoadFromPath( eeNew( cUIAquaTheme, ( "aqua", "aqua" ) ), MyPath + "data/aqua/" );
 
-	cTextureGroupLoader tgl( MyPath + "data/aquatg/aqua.etg" );
+	cTextureAtlasLoader tgl( MyPath + "data/aquatg/aqua.etg" );
 	tgl.GetTexture()->TextureFilter( TEX_FILTER_NEAREST );
 
-	mTheme = cUITheme::LoadFromShapeGroup( eeNew( cUIAquaTheme, ( "aqua", "aqua" ) ), cShapeGroupManager::instance()->GetByName( "aqua" ) );
+	mTheme = cUITheme::LoadFromTextureAtlas( eeNew( cUIAquaTheme, ( "aqua", "aqua" ) ), cTextureAtlasManager::instance()->GetByName( "aqua" ) );
 
 	cUIThemeManager::instance()->Add( mTheme );
 	cUIThemeManager::instance()->DefaultEffectsEnabled( true );
@@ -536,7 +536,7 @@ void cEETest::CreateUI() {
 
 	cUIGfx::CreateParams TxtGfxParams;
 	TxtGfxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
-	TxtGfxParams.Shape = mTheme->GetIconByName( "ok" );
+	TxtGfxParams.SubTexture = mTheme->GetIconByName( "ok" );
 
 	for ( Uint32 i = 0; i < 100; i++ ) {
 		cUIGridCell * Cell			= eeNew( cUIGridCell, ( CellParams ) );
@@ -558,7 +558,7 @@ void cEETest::CreateUI() {
 	mGenGrid->CollumnWidth( 2, 100 );
 
 #ifdef EE_PLATFORM_TOUCH
-	cShapeGroup * SG = cGlobalShapeGroup::instance();
+	cTextureAtlas * SG = cGlobalTextureAtlas::instance();
 
 	SG->Add( TF->Load( MyPath + "data/extra/button-te_normal.png" ), "button-te_normal" );
 	SG->Add( TF->Load( MyPath + "data/extra/button-te_mdown.png" ), "button-te_mdown" );
@@ -598,7 +598,7 @@ void cEETest::OnMapEditorClose() {
 
 void cEETest::CreateETGEditor() {
 	cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 1024, 768 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, eeSize( 1024, 768 ) );
-	mETGEditor = eeNew ( Tools::cTextureGroupEditor, ( tWin, cb::Make0( this, &cEETest::OnETGEditorClose ) ) );
+	mETGEditor = eeNew ( Tools::cTextureAtlasEditor, ( tWin, cb::Make0( this, &cEETest::OnETGEditorClose ) ) );
 	tWin->Center();
 	tWin->Show();
 }
@@ -756,7 +756,7 @@ void cEETest::ButtonClick( const cUIEvent * Event ) {
 	if ( MouseEvent->Flags() & EE_BUTTONS_LRM ) {
 		cUIGfx::CreateParams GfxParams;
 		GfxParams.Parent( cUIManager::instance()->MainControl() );
-		GfxParams.Shape = mTheme->GetIconByName( "ok" );
+		GfxParams.SubTexture = mTheme->GetIconByName( "ok" );
 		cUIGfx * Gfx = eeNew( cUIGfx, ( GfxParams ) );
 		Gfx->Visible( true );
 		Gfx->Enabled( false );
@@ -834,8 +834,8 @@ void cEETest::LoadTextures() {
 
 	Tiles.resize(10);
 
-	cTextureGroupLoader tgl( PAK, "tiles.etg" );
-	cShapeGroup * SG = cShapeGroupManager::instance()->GetByName( "tiles" );
+	cTextureAtlasLoader tgl( PAK, "tiles.etg" );
+	cTextureAtlas * SG = cTextureAtlasManager::instance()->GetByName( "tiles" );
 
 	for ( i = 0; i < 6; i++ ) {
 		Tiles[i] = SG->GetByName( String::toStr( i+1 ) );
@@ -902,14 +902,14 @@ void cEETest::LoadTextures() {
 
 	if ( cImage::GetInfo( MyPath + "data/extra/bnb.png", &x, &y, &c ) )
 	{
-		mTGL = eeNew( cTextureGroupLoader, ( MyPath + "data/extra/bnb.etg" ) );
+		mTGL = eeNew( cTextureAtlasLoader, ( MyPath + "data/extra/bnb.etg" ) );
 	}
 
 	mBlindy.AddFramesByPattern( "rn" );
 	mBlindy.Position( 320.f, 0.f );
 
-	mBoxSprite = eeNew( cSprite, ( cGlobalShapeGroup::instance()->Add( eeNew( Graphics::cShape, ( TN[3], "ilmare" ) ) ) ) );
-	mCircleSprite = eeNew( cSprite, ( cGlobalShapeGroup::instance()->Add( eeNew( Graphics::cShape, ( TN[1], "thecircle" ) ) ) ) );
+	mBoxSprite = eeNew( cSprite, ( cGlobalTextureAtlas::instance()->Add( eeNew( cSubTexture, ( TN[3], "ilmare" ) ) ) ) );
+	mCircleSprite = eeNew( cSprite, ( cGlobalTextureAtlas::instance()->Add( eeNew( cSubTexture, ( TN[1], "thecircle" ) ) ) ) );
 
 	Log->Writef( "Textures loading time: %f", te.Elapsed() );
 
@@ -1606,14 +1606,14 @@ void cEETest::CreateJointAndBody() {
 void cEETest::Demo1Create() {
 	CreateJointAndBody();
 
-	Physics::cShape::ResetShapeIdCounter();
+	cShape::ResetShapeIdCounter();
 
 	mSpace = Physics::cSpace::New();
 	mSpace->Gravity( cVectNew( 0, 100 ) );
 	mSpace->SleepTimeThreshold( 0.5f );
 
 	cBody *body, *staticBody = mSpace->StaticBody();
-	Physics::cShape * shape;
+	cShape * shape;
 
 	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( 0, mWindow->GetHeight() ), cVectNew( mWindow->GetWidth(), mWindow->GetHeight() ), 0.0f ) );
 	shape->e( 1.0f );
@@ -1681,7 +1681,7 @@ void cEETest::Demo1Destroy() {
 }
 
 cpBool cEETest::blockerBegin( cArbiter *arb, cSpace *space, void *unused ) {
-	Physics::cShape * a, * b;
+	cShape * a, * b;
 	arb->GetShapes( &a, &b );
 
 	Emitter *emitter = (Emitter *) a->Data();
@@ -1692,7 +1692,7 @@ cpBool cEETest::blockerBegin( cArbiter *arb, cSpace *space, void *unused ) {
 }
 
 void cEETest::blockerSeparate( cArbiter *arb, cSpace * space, void *unused ) {
-	Physics::cShape * a, * b;
+	cShape * a, * b;
 	arb->GetShapes( &a, &b );
 
 	Emitter *emitter = (Emitter *) a->Data();
@@ -1701,7 +1701,7 @@ void cEETest::blockerSeparate( cArbiter *arb, cSpace * space, void *unused ) {
 }
 
 void cEETest::postStepRemove( cSpace *space, void * tshape, void * unused ) {
-	Physics::cShape * shape = reinterpret_cast<Physics::cShape*>( tshape );
+	cShape * shape = reinterpret_cast<cShape*>( tshape );
 
 	#ifndef EE_PLATFORM_TOUCH
 	if ( NULL != mMouseJoint && ( mMouseJoint->A() == shape->Body() || mMouseJoint->B() == shape->Body() ) ) {
@@ -1719,11 +1719,11 @@ void cEETest::postStepRemove( cSpace *space, void * tshape, void * unused ) {
 
 	mSpace->RemoveBody( shape->Body() );
 	mSpace->RemoveShape( shape );
-	Physics::cShape::Free( shape, true );
+	cShape::Free( shape, true );
 }
 
 cpBool cEETest::catcherBarBegin(cArbiter *arb, Physics::cSpace *space, void *unused) {
-	Physics::cShape * a, * b;
+	cShape * a, * b;
 	arb->GetShapes( &a, &b );
 
 	Emitter *emitter = (Emitter *) a->Data();
@@ -1738,14 +1738,14 @@ cpBool cEETest::catcherBarBegin(cArbiter *arb, Physics::cSpace *space, void *unu
 void cEETest::Demo2Create() {
 	CreateJointAndBody();
 
-	Physics::cShape::ResetShapeIdCounter();
+	cShape::ResetShapeIdCounter();
 
 	mSpace = Physics::cSpace::New();
 	mSpace->Iterations( 10 );
 	mSpace->Gravity( cVectNew( 0, 100 ) );
 
 	cBody * staticBody = mSpace->StaticBody();
-	Physics::cShape * shape;
+	cShape * shape;
 
 	emitterInstance.queue = 5;
 	emitterInstance.blocked = 0;
@@ -1785,7 +1785,7 @@ void cEETest::Demo2Update() {
 		body->Pos( emitterInstance.position );
 		body->Vel( cVectNew( eeRandf(-1,1), eeRandf(-1,1) ) * (cpFloat)100 );
 
-		Physics::cShape *shape = mSpace->AddShape( cShapeCircle::New( body, 15.0f, cVectZero ) );
+		cShape *shape = mSpace->AddShape( cShapeCircle::New( body, 15.0f, cVectZero ) );
 		shape->CollisionType( BALL_TYPE );
 	}
 }
@@ -1846,7 +1846,7 @@ void cEETest::PhysicsUpdate() {
 		if ( NULL == mMouseJoint ) {
 			cVect point = cVectNew( KM->GetMousePosf().x, KM->GetMousePosf().y );
 
-			Physics::cShape * shape = mSpace->PointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
+			cShape * shape = mSpace->PointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
 
 			if( NULL != shape ){
 				mMouseJoint = eeNew( cPivotJoint, ( mMouseBody, shape->Body(), cVectZero, shape->Body()->World2Local( point ) ) );
@@ -1872,7 +1872,7 @@ void cEETest::PhysicsUpdate() {
 			if ( NULL == mMouseJoint[i] ) {
 				cVect point = cVectNew( Finger->x, Finger->y );
 
-				Physics::cShape * shape = mSpace->PointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
+				cShape * shape = mSpace->PointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
 
 				if( NULL != shape ){
 					mMouseJoint[i] = eeNew( cPivotJoint, ( mMouseBody[i], shape->Body(), cVectZero, shape->Body()->World2Local( point ) ) );

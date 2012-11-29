@@ -5,7 +5,7 @@
 #include <eepp/graphics/cfontmanager.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
 #include <eepp/graphics/cshaderprogrammanager.hpp>
-#include <eepp/graphics/cshapegroupmanager.hpp>
+#include <eepp/graphics/ctextureatlasmanager.hpp>
 #include <eepp/graphics/cframebuffermanager.hpp>
 #include <eepp/graphics/cvertexbuffermanager.hpp>
 #include <eepp/ui/cuimanager.hpp>
@@ -60,7 +60,7 @@ cEngine::~cEngine() {
 
 	cTextureFactory::DestroySingleton();
 
-	cShapeGroupManager::DestroySingleton();
+	cTextureAtlasManager::DestroySingleton();
 
 	cFontManager::DestroySingleton();
 

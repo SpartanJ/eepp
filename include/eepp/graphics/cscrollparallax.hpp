@@ -3,7 +3,7 @@
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/ctexture.hpp>
-#include <eepp/graphics/cshape.hpp>
+#include <eepp/graphics/csubtexture.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -13,10 +13,10 @@ class EE_API cScrollParallax {
 		~cScrollParallax();
 
 		/** Constructor that create's the Scroll Parallax */
-		cScrollParallax( cShape * Shape, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeVector2f& Speed, const eeColorA& Color = eeColorA(), const EE_PRE_BLEND_FUNC& Blend = ALPHA_NORMAL );
+		cScrollParallax( cSubTexture * SubTexture, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeVector2f& Speed, const eeColorA& Color = eeColorA(), const EE_PRE_BLEND_FUNC& Blend = ALPHA_NORMAL );
 
 		/** Create's the Scroll Parallax
-		* @param Shape The Shape to Draw
+		* @param SubTexture The SubTexture to Draw
 		* @param DestX The X position
 		* @param DestY The Y position
 		* @param DestWidth The Width of the Parallax
@@ -26,7 +26,7 @@ class EE_API cScrollParallax {
 		* @param Effect The Blend Mode ( default ALPHA_NORMAL )
 		* @return True if success
 		*/
-		bool Create( cShape * Shape, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeVector2f& Speed, const eeColorA& Color = eeColorA(), const EE_PRE_BLEND_FUNC& Blend = ALPHA_NORMAL );
+		bool Create( cSubTexture * SubTexture, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeVector2f& Speed, const eeColorA& Color = eeColorA(), const EE_PRE_BLEND_FUNC& Blend = ALPHA_NORMAL );
 
 		/** Set the Color */
 		void Color( const eeColorA& Color ) { mColor = Color; }
@@ -63,11 +63,11 @@ class EE_API cScrollParallax {
 		/** @return Position */
 		const eeVector2f& Position() const;
 		
-		/** @return Shape */
-		cShape * Shape() const;
+		/** @return SubTexture */
+		cSubTexture * SubTexture() const;
 		
-		/** Set Shape */
-		void Shape( cShape * shape );
+		/** Set SubTexture */
+		void SubTexture( cSubTexture * subTexture );
 		
 		/** Set the parallax speed */
 		void Speed( const eeVector2f& speed );
@@ -75,7 +75,7 @@ class EE_API cScrollParallax {
 		/** @return The parallax speed */
 		const eeVector2f& Speed() const;
 	private:
-		cShape * 			mShape;
+		cSubTexture * 			mSubTexture;
 		EE_PRE_BLEND_FUNC 	mBlend;
 		eeColorA 			mColor;
 		eeVector2f			mInitPos;
@@ -88,7 +88,7 @@ class EE_API cScrollParallax {
 		eeRectf				mAABB;
 		eeSizef				mRealSize;
 		
-		void SetShape();
+		void SetSubTexture();
 		
 		void SetAABB();
 };

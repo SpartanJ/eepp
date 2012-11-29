@@ -76,8 +76,8 @@ void cUIWinMenu::SetTheme( cUITheme * Theme ) {
 		it->first->SetThemeControl( Theme, "winmenubutton" );
 	}
 
-	if ( 0 == mMenuHeight && NULL != GetSkin() && NULL != GetSkin()->GetShape( cUISkinState::StateNormal ) ) {
-		mMenuHeight = GetSkin()->GetShape( cUISkinState::StateNormal )->Size().Height();
+	if ( 0 == mMenuHeight && NULL != GetSkin() && NULL != GetSkin()->GetSubTexture( cUISkinState::StateNormal ) ) {
+		mMenuHeight = GetSkin()->GetSubTexture( cUISkinState::StateNormal )->Size().Height();
 
 		Size( Parent()->Size().Width(), mMenuHeight );
 
@@ -122,19 +122,19 @@ void cUIWinMenu::RefreshButtons() {
 	Int32 h = 0, th = 0, ycenter = 0;
 
 	if ( NULL != GetSkin() ) {
-		cShape * shape = GetSkin()->GetShape( cUISkinState::StateNormal );
+		cSubTexture * subTexture = GetSkin()->GetSubTexture( cUISkinState::StateNormal );
 
-		if ( NULL != shape ) {
-			h = shape->Size().Height();
+		if ( NULL != subTexture ) {
+			h = subTexture->Size().Height();
 
 			if ( mButtons.begin() != mButtons.end() ) {
 				cUISelectButton * tbut = mButtons.begin()->first;
 
 				if ( NULL != tbut->GetSkin() ) {
-					cShape * tshape2 = tbut->GetSkin()->GetShape( cUISkinState::StateSelected );
+					cSubTexture * tSubTexture2 = tbut->GetSkin()->GetSubTexture( cUISkinState::StateSelected );
 
-					if ( NULL != tshape2 )  {
-						th = tshape2->Size().Height();
+					if ( NULL != tSubTexture2 )  {
+						th = tSubTexture2->Size().Height();
 
 						switch ( VAlignGet( Flags() ) ) {
 							case UI_VALIGN_CENTER:

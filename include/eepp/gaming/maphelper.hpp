@@ -5,16 +5,16 @@ namespace EE { namespace Gaming {
 
 #define MAP_PROPERTY_SIZE			(64)
 #define LAYER_NAME_SIZE				(64)
-#define MAP_SHAPEGROUP_PATH_SIZE	(128)
+#define MAP_TEXTUREATLAS_PATH_SIZE	(128)
 
 typedef struct sPropertyHdrS {
 	char	Name[ MAP_PROPERTY_SIZE ];
 	char	Value[ MAP_PROPERTY_SIZE ];
 } sPropertyHdr;
 
-typedef struct sMapShapeGroupS {
-	char	Path[ MAP_SHAPEGROUP_PATH_SIZE ];
-} sMapShapeGroup;
+typedef struct sMapTextureAtlasS {
+	char	Path[ MAP_TEXTUREATLAS_PATH_SIZE ];
+} sMapTextureAtlas;
 
 typedef struct sVirtualObjS {
 	char	Name[ MAP_PROPERTY_SIZE ];
@@ -30,7 +30,7 @@ typedef struct sMapHdrS {
 	Uint32	LayerCount;
 	Uint32	Flags;
 	Uint32	PropertyCount;
-	Uint32	ShapeGroupCount;
+	Uint32	TextureAtlasCount;
 	Uint32	VirtualObjectTypesCount;
 	Uint32	BaseColor;
 	Uint32	LightsCount;

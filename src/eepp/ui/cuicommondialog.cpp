@@ -151,7 +151,7 @@ bool cUICommonDialog::IsType( const Uint32& type ) const {
 void cUICommonDialog::SetTheme( cUITheme * Theme ) {
 	cUIWindow::SetTheme( Theme );
 
-	cShape * Icon = Theme->GetIconByName( "go-up" );
+	cSubTexture * Icon = Theme->GetIconByName( "go-up" );
 
 	if ( NULL != Icon ) {
 		mButtonUp->Text( "" );

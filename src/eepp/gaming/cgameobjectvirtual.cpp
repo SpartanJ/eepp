@@ -18,7 +18,7 @@ cGameObjectVirtual::cGameObjectVirtual( Uint32 DataId, cLayer * Layer, const Uin
 {
 }
 
-cGameObjectVirtual::cGameObjectVirtual( cShape * Shape, cLayer * Layer, const Uint32& Flags, Uint32 Type, const eeVector2f& Pos ) :
+cGameObjectVirtual::cGameObjectVirtual( cSubTexture * Shape, cLayer * Layer, const Uint32& Flags, Uint32 Type, const eeVector2f& Pos ) :
 	cGameObject( Flags, Layer ),
 	mType( Type ),
 	mDataId( 0 ),

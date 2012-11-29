@@ -10,7 +10,7 @@ using namespace EE::Window;
 
 #include <eepp/graphics/ctexture.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
-#include <eepp/graphics/cshape.hpp>
+#include <eepp/graphics/csubtexture.hpp>
 #include <eepp/graphics/cfont.hpp>
 #include <eepp/graphics/cprimitives.hpp>
 #include <eepp/graphics/glhelper.hpp>
@@ -24,7 +24,7 @@ class EE_API cIsoTile {
 	public:
 		eeColor Color[4];	//! Color of every vertex stored
 		eeQuad2f Q; 			//! Vertex Buffer Data
-		std::vector<cShape*> Layers;
+		std::vector<cSubTexture*> Layers;
 		std::string TilePosStr;
 		eeAABB Box;
 };
@@ -39,7 +39,7 @@ class EE_API cIsoMap {
 
 		cIsoTile& Tile( const eeUint& MapTileX, const eeUint& MapTileY );
 
-		void Layer( const eeUint& MapTileX, const eeUint& MapTileY, const eeUint& LayerNum, cShape * LayerData );
+		void Layer( const eeUint& MapTileX, const eeUint& MapTileY, const eeUint& LayerNum, cSubTexture * LayerData );
 
 		void Draw();
 

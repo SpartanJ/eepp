@@ -46,6 +46,6 @@
 #include <eepp/ui/cuitab.hpp>
 #include <eepp/ui/cuitabwidget.hpp>
 #include <eepp/ui/cuiaquatheme.hpp>
-#include <eepp/ui/tools/ctexturegroupeditor.hpp>
+#include <eepp/ui/tools/ctextureatlaseditor.hpp>
 
 #endif

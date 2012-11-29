@@ -1,4 +1,4 @@
-#include <eepp/ui/tools/ctexturegroupnew.hpp>
+#include <eepp/ui/tools/ctextureatlasnew.hpp>
 #include <eepp/ui/cuicommondialog.hpp>
 #include <eepp/ui/cuimessagebox.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
@@ -6,7 +6,7 @@
 
 namespace EE { namespace UI { namespace Tools {
 
-cTextureGroupNew::cTextureGroupNew( TGCreateCb NewTGCb ) :
+cTextureAtlasNew::cTextureAtlasNew( TGCreateCb NewTGCb ) :
 	mTheme( NULL ),
 	mUIWindow( NULL ),
 	mNewTGCb( NewTGCb )
@@ -17,7 +17,7 @@ cTextureGroupNew::cTextureGroupNew( TGCreateCb NewTGCb ) :
 		return;
 
 	mUIWindow	= mTheme->CreateWindow( NULL, eeSize( 378, 244 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL );
-	mUIWindow->AddEventListener( cUIEvent::EventOnWindowClose, cb::Make1( this, &cTextureGroupNew::WindowClose ) );
+	mUIWindow->AddEventListener( cUIEvent::EventOnWindowClose, cb::Make1( this, &cTextureAtlasNew::WindowClose ) );
 	mUIWindow->Title( "New Texture Group" );
 
 	Int32 PosX = mUIWindow->Container()->Size().Width() - 110;
@@ -53,7 +53,7 @@ cTextureGroupNew::cTextureGroupNew( TGCreateCb NewTGCb ) :
 	mComboWidth->ListBox()->SetSelected( "512" );
 	mComboHeight->ListBox()->SetSelected( "512" );
 
-	CreateTxtBox( eeVector2i( 10, 110 ), "Space between shapes (pixels):" );
+	CreateTxtBox( eeVector2i( 10, 110 ), "Space between sub texturesF (pixels):" );
 	mPixelSpace = mTheme->CreateSpinBox( mUIWindow->Container(), eeSize( 100, 22 ), eeVector2i( PosX, 110 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_SIZE, 0, false );
 
 	CreateTxtBox( eeVector2i( 10, 140 ), "Texture Group Folder Path:" );
@@ -62,45 +62,45 @@ cTextureGroupNew::cTextureGroupNew( TGCreateCb NewTGCb ) :
 
 	mSetPathButton = mTheme->CreatePushButton( mUIWindow->Container(), eeSize( 32, 32 ), eeVector2i( mUIWindow->Container()->Size().Width() - 10 - 32, 160 ) );
 	mSetPathButton->Text( "..." );
-	mSetPathButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cTextureGroupNew::OnDialogFolderSelect ) );
+	mSetPathButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cTextureAtlasNew::OnDialogFolderSelect ) );
 
 	cUIPushButton * OKButton = mTheme->CreatePushButton( mUIWindow->Container(), eeSize( 80, 22 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->GetIconByName( "ok" ) );
 	OKButton->Pos( mUIWindow->Container()->Size().Width() - OKButton->Size().Width() - 4, mUIWindow->Container()->Size().Height() - OKButton->Size().Height() - 4 );
-	OKButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cTextureGroupNew::OKClick ) );
+	OKButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cTextureAtlasNew::OKClick ) );
 	OKButton->Text( "OK" );
 
 	cUIPushButton * CancelButton = mTheme->CreatePushButton( mUIWindow->Container(), OKButton->Size(), eeVector2i( OKButton->Pos().x - OKButton->Size().Width() - 4, OKButton->Pos().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->GetIconByName( "cancel" ) );
-	CancelButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cTextureGroupNew::CancelClick ) );
+	CancelButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cTextureAtlasNew::CancelClick ) );
 	CancelButton->Text( "Cancel" );
 
 	mUIWindow->Center();
 	mUIWindow->Show();
 }
 
-cTextureGroupNew::~cTextureGroupNew() {
+cTextureAtlasNew::~cTextureAtlasNew() {
 }
 
-cUITextBox * cTextureGroupNew::CreateTxtBox( eeVector2i Pos, const String& Text ) {
+cUITextBox * cTextureAtlasNew::CreateTxtBox( eeVector2i Pos, const String& Text ) {
 	return mTheme->CreateTextBox( Text, mUIWindow->Container(), eeSize(), Pos, UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 }
 
-void cTextureGroupNew::OKClick( const cUIEvent * Event ) {
+void cTextureAtlasNew::OKClick( const cUIEvent * Event ) {
 	std::string ext( mSaveFileType->Text() );
 	String::ToLower( ext );
 
 	cUICommonDialog * TGDialog = mTheme->CreateCommonDialog( NULL, eeSize(), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, eeSize(), 255, UI_CDL_DEFAULT_FLAGS | CDL_FLAG_SAVE_DIALOG, "*." + ext );
 
 	TGDialog->Title( "Save Texture Group" );
-	TGDialog->AddEventListener( cUIEvent::EventSaveFile, cb::Make1( this, &cTextureGroupNew::TextureGroupSave ) );
+	TGDialog->AddEventListener( cUIEvent::EventSaveFile, cb::Make1( this, &cTextureAtlasNew::TextureGroupSave ) );
 	TGDialog->Center();
 	TGDialog->Show();
 }
 
-void cTextureGroupNew::CancelClick( const cUIEvent * Event ) {
+void cTextureAtlasNew::CancelClick( const cUIEvent * Event ) {
 	mUIWindow->CloseWindow();
 }
 
-void cTextureGroupNew::WindowClose( const cUIEvent * Event ) {
+void cTextureAtlasNew::WindowClose( const cUIEvent * Event ) {
 	eeDelete( this );
 }
 
@@ -108,7 +108,7 @@ static bool IsValidExtension( const std::string& ext ) {
 	return ext == "png" || ext == "bmp" || ext == "dds" || ext == "tga";
 }
 
-void cTextureGroupNew::TextureGroupSave( const cUIEvent * Event ) {
+void cTextureAtlasNew::TextureGroupSave( const cUIEvent * Event ) {
 	cUICommonDialog * CDL = reinterpret_cast<cUICommonDialog*> ( Event->Ctrl() );
 	std::string FPath( CDL->GetFullPath() );
 
@@ -147,20 +147,20 @@ void cTextureGroupNew::TextureGroupSave( const cUIEvent * Event ) {
 	}
 }
 
-void cTextureGroupNew::OnDialogFolderSelect( const cUIEvent * Event ) {
+void cTextureAtlasNew::OnDialogFolderSelect( const cUIEvent * Event ) {
 	const cUIEventMouse * MouseEvent = reinterpret_cast<const cUIEventMouse*>( Event );
 
 	if ( MouseEvent->Flags() & EE_BUTTON_LMASK ) {
 		cUICommonDialog * TGDialog = mTheme->CreateCommonDialog( NULL, eeSize(), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, eeSize(), 255, UI_CDL_DEFAULT_FLAGS | CDL_FLAG_ALLOW_FOLDER_SELECT, "*" );
 
 		TGDialog->Title( "Create Texture Group ( Select Folder Containing Textures )" );
-		TGDialog->AddEventListener( cUIEvent::EventOpenFile, cb::Make1( this, &cTextureGroupNew::OnSelectFolder ) );
+		TGDialog->AddEventListener( cUIEvent::EventOpenFile, cb::Make1( this, &cTextureAtlasNew::OnSelectFolder ) );
 		TGDialog->Center();
 		TGDialog->Show();
 	}
 }
 
-void cTextureGroupNew::OnSelectFolder( const cUIEvent * Event ) {
+void cTextureAtlasNew::OnSelectFolder( const cUIEvent * Event ) {
 	cUICommonDialog * CDL = reinterpret_cast<cUICommonDialog*> ( Event->Ctrl() );
 	cUIMessageBox * MsgBox;
 	std::string FPath( CDL->GetFullPath() );

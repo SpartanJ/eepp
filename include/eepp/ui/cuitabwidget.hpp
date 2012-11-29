@@ -67,7 +67,7 @@ class EE_API cUITabWidget : public cUIComplexControl {
 
 		virtual bool IsType( const Uint32& type ) const;
 
-		Uint32 Add( const String& Text, cUIControl * CtrlOwned, cShape * Icon = NULL );
+		Uint32 Add( const String& Text, cUIControl * CtrlOwned, cSubTexture * Icon = NULL );
 
 		Uint32 Add( cUITab * Tab );
 
@@ -85,7 +85,7 @@ class EE_API cUITabWidget : public cUIComplexControl {
 
 		void RemoveAll();
 
-		void Insert( const String& Text, cUIControl * CtrlOwned, cShape * Icon, const Uint32& Index );
+		void Insert( const String& Text, cUIControl * CtrlOwned, cSubTexture * Icon, const Uint32& Index );
 
 		void Insert( cUITab * Tab, const Uint32& Index );
 
@@ -122,7 +122,7 @@ class EE_API cUITabWidget : public cUIComplexControl {
 
 		void DoAfterSetTheme();
 
-		cUITab * CreateTab( const String& Text, cUIControl * CtrlOwned, cShape * Icon );
+		cUITab * CreateTab( const String& Text, cUIControl * CtrlOwned, cSubTexture * Icon );
 
 		virtual void OnSizeChange();
 

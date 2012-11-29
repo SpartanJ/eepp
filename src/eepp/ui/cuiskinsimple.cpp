@@ -1,5 +1,5 @@
 #include <eepp/ui/cuiskinsimple.hpp>
-#include <eepp/graphics/cshapegroupmanager.hpp>
+#include <eepp/graphics/ctextureatlasmanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -7,7 +7,7 @@ cUISkinSimple::cUISkinSimple( const std::string& Name ) :
 	cUISkin( Name, UISkinSimple )
 {
 	for ( Int32 i = 0; i < cUISkinState::StateCount; i++ )
-		mShape[ i ] = NULL;
+		mSubTexture[ i ] = NULL;
 
 	SetSkins();
 }
@@ -19,20 +19,20 @@ void cUISkinSimple::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wid
 	if ( 0 == Alpha )
 		return;
 
-	cShape * tShape = mShape[ State ];
+	cSubTexture * tSubTexture = mSubTexture[ State ];
 	mTempColor		= mColor[ State ];
 
-	if ( NULL != tShape ) {
-		tShape->DestWidth( Width );
-		tShape->DestHeight( Height );
+	if ( NULL != tSubTexture ) {
+		tSubTexture->DestWidth( Width );
+		tSubTexture->DestHeight( Height );
 
 		if ( mTempColor.Alpha != Alpha ) {
 			mTempColor.Alpha = (Uint8)( (eeFloat)mTempColor.Alpha * ( (eeFloat)Alpha / 255.f ) );
 		}
 
-		tShape->Draw( X, Y, mTempColor );
+		tSubTexture->Draw( X, Y, mTempColor );
 
-		tShape->ResetDestWidthAndHeight();
+		tSubTexture->ResetDestWidthAndHeight();
 	}
 }
 
@@ -41,18 +41,18 @@ void cUISkinSimple::SetSkin( const Uint32& State ) {
 
 	std::string Name( mName + "_" + cUISkin::GetSkinStateName( State ) );
 
-	mShape[ State ] = cShapeGroupManager::instance()->GetShapeByName( Name );
+	mSubTexture[ State ] = cTextureAtlasManager::instance()->GetSubTextureByName( Name );
 }
 
-cShape * cUISkinSimple::GetShape( const Uint32& State ) const {
+cSubTexture * cUISkinSimple::GetSubTexture( const Uint32& State ) const {
 	eeASSERT ( State < cUISkinState::StateCount );
 
-	return mShape[ State ];
+	return mSubTexture[ State ];
 }
 
 void cUISkinSimple::StateNormalToState( const Uint32& State ) {
-	if ( NULL == mShape[ State ] )
-		mShape[ State ] = mShape[ cUISkinState::StateNormal ];
+	if ( NULL == mSubTexture[ State ] )
+		mSubTexture[ State ] = mSubTexture[ cUISkinState::StateNormal ];
 }
 
 cUISkinSimple * cUISkinSimple::Copy( const std::string& NewName, const bool& CopyColorsState ) {
@@ -64,7 +64,7 @@ cUISkinSimple * cUISkinSimple::Copy( const std::string& NewName, const bool& Cop
 		memcpy( &SkinS->mColor[0], &mColor[0], cUISkinState::StateCount * sizeof(eeColorA) );
 	}
 
-	memcpy( &SkinS->mShape[0], &mShape[0], cUISkinState::StateCount * sizeof(cShape*) );
+	memcpy( &SkinS->mSubTexture[0], &mSubTexture[0], cUISkinState::StateCount * sizeof(cSubTexture*) );
 
 	return SkinS;
 }

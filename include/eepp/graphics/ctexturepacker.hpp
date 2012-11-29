@@ -101,7 +101,7 @@ class EE_API cTexturePacker {
 
 		void							ChildSave( const EE_SAVE_TYPE& Format );
 
-		void							SaveShapes();
+		void							SaveSubTextures();
 
     	void 							NewFree( Int32 x, Int32 y, Int32 width, Int32 height );
 
@@ -123,7 +123,7 @@ class EE_API cTexturePacker {
 
 		sTextureHdr						CreateTextureHdr( cTexturePacker * Packer );
 
-		void							CreateShapesHdr( cTexturePacker * Packer, std::vector<sShapeHdr>& Shapes );
+		void							CreateSubTexturesHdr( cTexturePacker * Packer, std::vector<sSubTextureHdr>& SubTextures );
 
 		cTexturePackerNode *			GetBestFit( cTexturePackerTex * t, cTexturePackerNode ** prevBestFit, Int32 * EdgeCount );
 

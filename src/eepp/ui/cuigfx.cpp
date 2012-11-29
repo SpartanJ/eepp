@@ -4,13 +4,13 @@ namespace EE { namespace UI {
 
 cUIGfx::cUIGfx( const cUIGfx::CreateParams& Params ) :
 	cUIComplexControl( Params ),
-	mShape( Params.Shape ),
-	mColor( Params.ShapeColor ),
-	mRender( Params.ShapeRender ),
+	mSubTexture( Params.SubTexture ),
+	mColor( Params.SubTextureColor ),
+	mRender( Params.SubTextureRender ),
 	mAlignOffset(0,0)
 {
-	if ( NULL != mShape && ( ( Flags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) )
-		Size( mShape->Size() );
+	if ( NULL != mSubTexture && ( ( Flags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) )
+		Size( mSubTexture->Size() );
 
 	mColor.Alpha = (Uint8)mAlpha;
 
@@ -28,8 +28,8 @@ bool cUIGfx::IsType( const Uint32& type ) const {
 	return cUIGfx::Type() == type ? true : cUIComplexControl::IsType( type );
 }
 
-void cUIGfx::Shape( cShape * shape ) {
-	mShape = shape;
+void cUIGfx::SubTexture( cSubTexture * subTexture ) {
+	mSubTexture = subTexture;
 
 	AutoSize();
 	AutoAlign();
@@ -37,8 +37,8 @@ void cUIGfx::Shape( cShape * shape ) {
 
 void cUIGfx::AutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		if ( NULL != mShape ) {
-			Size( mShape->Size() );
+		if ( NULL != mSubTexture ) {
+			Size( mSubTexture->Size() );
 		} else {
 			Size( eeSize( 0, 0 ) );
 		}
@@ -49,29 +49,29 @@ void cUIGfx::Draw() {
 	cUIControlAnim::Draw();
 
 	if ( mVisible ) {
-		if ( NULL != mShape && 0.f != mAlpha ) {
-			eeFloat oDestWidth	= mShape->DestWidth();
-			eeFloat oDestHeight	= mShape->DestHeight();
-			Int32 oOffX = mShape->OffsetX();
-			Int32 oOffY = mShape->OffsetY();
+		if ( NULL != mSubTexture && 0.f != mAlpha ) {
+			eeFloat oDestWidth	= mSubTexture->DestWidth();
+			eeFloat oDestHeight	= mSubTexture->DestHeight();
+			Int32 oOffX = mSubTexture->OffsetX();
+			Int32 oOffY = mSubTexture->OffsetY();
 
 			if ( mFlags & UI_FIT_TO_CONTROL ) {
-				mShape->OffsetX( 0 );
-				mShape->OffsetY( 0 );
+				mSubTexture->OffsetX( 0 );
+				mSubTexture->OffsetY( 0 );
 
-				mShape->DestWidth( (eeFloat)mSize.x );
-				mShape->DestHeight( (eeFloat)mSize.y );
+				mSubTexture->DestWidth( (eeFloat)mSize.x );
+				mSubTexture->DestHeight( (eeFloat)mSize.y );
 
-				DrawShape();
+				DrawSubTexture();
 
-				mShape->DestWidth( oDestWidth );
-				mShape->DestHeight( oDestHeight );
+				mSubTexture->DestWidth( oDestWidth );
+				mSubTexture->DestHeight( oDestHeight );
 
-				mShape->OffsetX( oOffX );
-				mShape->OffsetY( oOffY );
+				mSubTexture->OffsetX( oOffX );
+				mSubTexture->OffsetY( oOffY );
 			} else if ( mFlags & UI_AUTO_FIT ) {
-				mShape->OffsetX( 0 );
-				mShape->OffsetY( 0 );
+				mSubTexture->OffsetX( 0 );
+				mSubTexture->OffsetY( 0 );
 
 				eeFloat Scale1 = mSize.x / oDestWidth;
 				eeFloat Scale2 = mSize.y / oDestHeight;
@@ -80,32 +80,32 @@ void cUIGfx::Draw() {
 					if ( Scale2 < Scale1 )
 						Scale1 = Scale2;
 
-					mShape->DestWidth( oDestWidth * Scale1 );
-					mShape->DestHeight( oDestHeight * Scale1 );
+					mSubTexture->DestWidth( oDestWidth * Scale1 );
+					mSubTexture->DestHeight( oDestHeight * Scale1 );
 
 					AutoAlign();
 
-					DrawShape();
+					DrawSubTexture();
 
-					mShape->DestWidth( oDestWidth );
-					mShape->DestHeight( oDestHeight );
+					mSubTexture->DestWidth( oDestWidth );
+					mSubTexture->DestHeight( oDestHeight );
 
 					AutoAlign();
 				} else {
-					DrawShape();
+					DrawSubTexture();
 				}
 
-				mShape->OffsetX( oOffX );
-				mShape->OffsetY( oOffY );
+				mSubTexture->OffsetX( oOffX );
+				mSubTexture->OffsetY( oOffY );
 			} else {
-				DrawShape();
+				DrawSubTexture();
 			}
 		}
 	}
 }
 
-void cUIGfx::DrawShape() {
-	mShape->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x, (eeFloat)mScreenPos.y + mAlignOffset.y, mColor, 0.f, 1.f, Blend(), mRender );
+void cUIGfx::DrawSubTexture() {
+	mSubTexture->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x, (eeFloat)mScreenPos.y + mAlignOffset.y, mColor, 0.f, 1.f, Blend(), mRender );
 }
 
 void cUIGfx::Alpha( const eeFloat& alpha ) {
@@ -113,8 +113,8 @@ void cUIGfx::Alpha( const eeFloat& alpha ) {
 	mColor.Alpha = (Uint8)alpha;
 }
 
-cShape * cUIGfx::Shape() const {
-	return mShape;
+cSubTexture * cUIGfx::SubTexture() const {
+	return mSubTexture;
 }
 
 const eeColorA& cUIGfx::Color() const {
@@ -135,21 +135,21 @@ void cUIGfx::RenderType( const EE_RENDERTYPE& render ) {
 }
 
 void cUIGfx::AutoAlign() {
-	if ( NULL == mShape )
+	if ( NULL == mSubTexture )
 		return;
 
 	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = mSize.Width() / 2 - mShape->DestWidth() / 2;
+		mAlignOffset.x = mSize.Width() / 2 - mSubTexture->DestWidth() / 2;
 	} else if ( FontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mSize.Width() - mShape->DestWidth();
+		mAlignOffset.x =  mSize.Width() - mSubTexture->DestWidth();
 	} else {
 		mAlignOffset.x = 0;
 	}
 
 	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = mSize.Height() / 2 - mShape->DestHeight() / 2;
+		mAlignOffset.y = mSize.Height() / 2 - mSubTexture->DestHeight() / 2;
 	} else if ( FontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.Height() - mShape->DestHeight();
+		mAlignOffset.y = mSize.Height() - mSubTexture->DestHeight();
 	} else {
 		mAlignOffset.y = 0;
 	}

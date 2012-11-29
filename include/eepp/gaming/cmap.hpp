@@ -248,7 +248,7 @@ class EE_API cMap {
 
 		void			DeleteLayers();
 
-		std::vector<std::string> GetShapeGroups();
+		std::vector<std::string> GetTextureAtlases();
 
 		void			CreateEmptyTile();
 

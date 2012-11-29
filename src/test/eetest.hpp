@@ -102,7 +102,7 @@ class cEETest : private cThread {
 		std::vector<Uint32> TN;
 		std::vector<cTexture *> TNP;
 
-		std::vector<Graphics::cShape*> Tiles;
+		std::vector<cSubTexture*> Tiles;
 		std::vector<cParticleSystem> PS;
 
 		eeVector2i Mouse;
@@ -198,7 +198,7 @@ class cEETest : private cThread {
 		eeFloat mAxisX;
 		eeFloat mAxisY;
 
-		cTextureGroupLoader * mTGL;
+		cTextureAtlasLoader * mTGL;
 		cSprite mBlindy;
 
 		cFrameBuffer * mFBO;
@@ -227,7 +227,7 @@ class cEETest : private cThread {
 		cUIPopUpMenu * Menu;
 		cUIWindow * mUIWindow;
 		cMapEditor * mMapEditor;
-		cTextureGroupEditor * mETGEditor;
+		cTextureAtlasEditor * mETGEditor;
 
 		cTextCache mEEText;
 		cTextCache mFBOText;

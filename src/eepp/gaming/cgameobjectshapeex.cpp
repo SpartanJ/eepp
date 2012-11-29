@@ -4,7 +4,7 @@
 
 namespace EE { namespace Gaming {
 
-cGameObjectShapeEx::cGameObjectShapeEx( const Uint32& Flags, cLayer * Layer, cShape * Shape, const eeVector2f& Pos, EE_PRE_BLEND_FUNC Blend, EE_RENDERTYPE Render, eeFloat Angle, eeFloat Scale, eeColorA Color ) :
+cGameObjectShapeEx::cGameObjectShapeEx( const Uint32& Flags, cLayer * Layer, cSubTexture * Shape, const eeVector2f& Pos, EE_PRE_BLEND_FUNC Blend, EE_RENDERTYPE Render, eeFloat Angle, eeFloat Scale, eeColorA Color ) :
 	cGameObjectShape( Flags, Layer, Shape, Pos ),
 	mBlend( Blend ),
 	mRender( Render ),

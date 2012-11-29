@@ -20,10 +20,10 @@
 #include <eepp/ui/cuicommondialog.hpp>
 #include <eepp/ui/cuimessagebox.hpp>
 #include <eepp/ui/cuitabwidget.hpp>
-#include <eepp/ui/tools/ctexturegroupeditor.hpp>
-#include <eepp/graphics/cshapegroupmanager.hpp>
-#include <eepp/graphics/cglobalshapegroup.hpp>
-#include <eepp/graphics/ctexturegrouploader.hpp>
+#include <eepp/ui/tools/ctextureatlaseditor.hpp>
+#include <eepp/graphics/ctextureatlasmanager.hpp>
+#include <eepp/graphics/cglobaltextureatlas.hpp>
+#include <eepp/graphics/ctextureatlasloader.hpp>
 
 #include <algorithm>
 
@@ -222,7 +222,7 @@ void cMapEditor::CreateShapeContainer( Int32 Width ) {
 	mBtnGOTypeAdd->TooltipText( "Adds a new game object type\nunknown by the map editor." );
 	mBtnGOTypeAdd->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::AddNewGOType ) );
 
-	if ( NULL == mBtnGOTypeAdd->Icon()->Shape() )
+	if ( NULL == mBtnGOTypeAdd->Icon()->SubTexture() )
 		mBtnGOTypeAdd->Text( "..." );
 
 	Txt = mTheme->CreateTextBox( "Layers:", mShapeCont, eeSize( Width, 16 ), eeVector2i( 0, mGOTypeList->Pos().y + mGOTypeList->Size().Height() + 4 ), TxtFlags );
@@ -279,10 +279,10 @@ void cMapEditor::CreateShapeContainer( Int32 Width ) {
 
 	Txt = mTheme->CreateTextBox( "Shape Groups:", mSGCont, eeSize( Width, 16 ), eeVector2i( 0, 0 ), TxtFlags );
 
-	mShapeGroupsList = mTheme->CreateDropDownList( mSGCont, eeSize( Width, 21 ), eeVector2i( 0, Txt->Pos().y +Txt->Size().Height() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
-	mShapeGroupsList->AddEventListener( cUIEvent::EventOnItemSelected, cb::Make1( this, &cMapEditor::OnShapeGroupChange ) );
+	mTextureAtlasesList = mTheme->CreateDropDownList( mSGCont, eeSize( Width, 21 ), eeVector2i( 0, Txt->Pos().y +Txt->Size().Height() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
+	mTextureAtlasesList->AddEventListener( cUIEvent::EventOnItemSelected, cb::Make1( this, &cMapEditor::OnTextureAtlasChange ) );
 
-	mShapeList = mTheme->CreateListBox( mSGCont, eeSize( Width, 156 ), eeVector2i( 0, mShapeGroupsList->Pos().y + mShapeGroupsList->Size().Height() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
+	mShapeList = mTheme->CreateListBox( mSGCont, eeSize( Width, 156 ), eeVector2i( 0, mTextureAtlasesList->Pos().y + mTextureAtlasesList->Size().Height() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mShapeList->Size( mShapeList->Size().Width(), mShapeList->RowHeight() * 9 + mShapeList->PaddingContainer().Top + mShapeList->PaddingContainer().Bottom );
 	mShapeList->AddEventListener( cUIEvent::EventOnItemSelected, cb::Make1( this, &cMapEditor::OnShapeChange ) );
 
@@ -606,41 +606,41 @@ void cMapEditor::OnNewGOTypeAdded( std::string name, Uint32 hash ) {
 }
 
 void cMapEditor::FillSGCombo() {
-	cShapeGroupManager * SGM = cShapeGroupManager::instance();
-	std::list<cShapeGroup*>& Res = SGM->GetResources();
+	cTextureAtlasManager * SGM = cTextureAtlasManager::instance();
+	std::list<cTextureAtlas*>& Res = SGM->GetResources();
 
-	mShapeGroupsList->ListBox()->Clear();
+	mTextureAtlasesList->ListBox()->Clear();
 
 	std::vector<String> items;
 
 	Uint32 Restricted1 = MakeHash( std::string( "global" ) );
-	Uint32 Restricted2 = MakeHash( mTheme->ShapeGroup()->Name() );
+	Uint32 Restricted2 = MakeHash( mTheme->TextureAtlas()->Name() );
 
-	for ( std::list<cShapeGroup*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
+	for ( std::list<cTextureAtlas*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
 		if ( (*it)->Id() != Restricted1 && (*it)->Id() != Restricted2 )
 			items.push_back( (*it)->Name() );
 	}
 
 	if ( items.size() ) {
-		mShapeGroupsList->ListBox()->AddListBoxItems( items );
+		mTextureAtlasesList->ListBox()->AddListBoxItems( items );
 	}
 
-	if ( mShapeGroupsList->ListBox()->Count() && NULL == mShapeGroupsList->ListBox()->GetItemSelected() ) {
-		mShapeGroupsList->ListBox()->SetSelected( 0 );
+	if ( mTextureAtlasesList->ListBox()->Count() && NULL == mTextureAtlasesList->ListBox()->GetItemSelected() ) {
+		mTextureAtlasesList->ListBox()->SetSelected( 0 );
 	}
 }
 
 void cMapEditor::FillShapeList() {
-	cShapeGroupManager * SGM = cShapeGroupManager::instance();
-	mCurSG = SGM->GetByName( mShapeGroupsList->Text() );
-	std::list<cShape*>& Res = mCurSG->GetResources();
+	cTextureAtlasManager * SGM = cTextureAtlasManager::instance();
+	mCurSG = SGM->GetByName( mTextureAtlasesList->Text() );
+	std::list<cSubTexture*>& Res = mCurSG->GetResources();
 
 	mShapeList->Clear();
 
 	if ( NULL != mCurSG ) {
 		std::vector<String> items;
 
-		for ( std::list<cShape*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
+		for ( std::list<cSubTexture*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
 				items.push_back( (*it)->Name() );
 		}
 
@@ -657,15 +657,15 @@ void cMapEditor::FillShapeList() {
 
 void cMapEditor::OnShapeChange( const cUIEvent * Event ) {
 	if ( NULL != mCurSG ) {
-		cShape * tShape = mCurSG->GetByName( mShapeList->GetItemSelectedText() );
+		cSubTexture * tShape = mCurSG->GetByName( mShapeList->GetItemSelectedText() );
 
 		if ( NULL != tShape ) {
-			mGfxPreview->Shape( tShape );
+			mGfxPreview->SubTexture( tShape );
 		}
 	}
 }
 
-void cMapEditor::OnShapeGroupChange( const cUIEvent * Event ) {
+void cMapEditor::OnTextureAtlasChange( const cUIEvent * Event ) {
 	FillShapeList();
 }
 
@@ -885,7 +885,7 @@ void cMapEditor::MapMenuClick( const cUIEvent * Event ) {
 
 	if ( "New Texture Group..." == txt ) {
 		cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 1024, 768 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, eeSize( 1024, 768 ) );
-		eeNew ( Tools::cTextureGroupEditor, ( tWin ) );
+		eeNew ( Tools::cTextureAtlasEditor, ( tWin ) );
 		tWin->Center();
 		tWin->Show();
 	} else if ( "Add External Texture Group..." == txt ) {
@@ -995,17 +995,17 @@ void cMapEditor::TextureGroupOpen( const cUIEvent * Event ) {
 
 	std::string sgname = FileSystem::FileRemoveExtension( FileSystem::FileNameFromPath( CDL->GetFullPath() ) );
 
-	cShapeGroup * SG = cShapeGroupManager::instance()->GetByName( sgname );
+	cTextureAtlas * SG = cTextureAtlasManager::instance()->GetByName( sgname );
 
 	if ( NULL == SG ) {
-		cTextureGroupLoader tgl( CDL->GetFullPath() );
+		cTextureAtlasLoader tgl( CDL->GetFullPath() );
 
 		if ( tgl.IsLoaded() ) {
-			mShapeGroupsList->ListBox()->AddListBoxItem( sgname );
+			mTextureAtlasesList->ListBox()->AddListBoxItem( sgname );
 		}
 	} else {
-		if ( eeINDEX_NOT_FOUND == mShapeGroupsList->ListBox()->GetItemIndex( sgname ) ) {
-			mShapeGroupsList->ListBox()->AddListBoxItem( sgname );
+		if ( eeINDEX_NOT_FOUND == mTextureAtlasesList->ListBox()->GetItemIndex( sgname ) ) {
+			mTextureAtlasesList->ListBox()->AddListBoxItem( sgname );
 		}
 	}
 }
@@ -1045,22 +1045,22 @@ cGameObject * cMapEditor::CreateGameObject() {
 
 	if ( GAMEOBJECT_TYPE_SHAPE == mCurGOType ) {
 
-		tObj = eeNew( cGameObjectShape, ( mCurGOFlags, mCurLayer, mGfxPreview->Shape() ) );
+		tObj = eeNew( cGameObjectShape, ( mCurGOFlags, mCurLayer, mGfxPreview->SubTexture() ) );
 
 	} else if ( GAMEOBJECT_TYPE_SHAPEEX == mCurGOType ) {
 
-		tObj = eeNew( cGameObjectShapeEx, ( mCurGOFlags, mCurLayer, mGfxPreview->Shape() ) );
+		tObj = eeNew( cGameObjectShapeEx, ( mCurGOFlags, mCurLayer, mGfxPreview->SubTexture() ) );
 
 	} else if ( GAMEOBJECT_TYPE_SPRITE == mCurGOType ) {
 
 		if ( mChkAnim->Active() ) {
 
-			cSprite * tAnimSprite = eeNew( cSprite, ( String::RemoveNumbersAtEnd( mGfxPreview->Shape()->Name() ) ) );
+			cSprite * tAnimSprite = eeNew( cSprite, ( String::RemoveNumbersAtEnd( mGfxPreview->SubTexture()->Name() ) ) );
 			tObj = eeNew( cGameObjectSprite, ( mCurGOFlags, mCurLayer, tAnimSprite ) );
 
 		} else {
 
-			cSprite * tStaticSprite = eeNew( cSprite, ( mGfxPreview->Shape() ) );
+			cSprite * tStaticSprite = eeNew( cSprite, ( mGfxPreview->SubTexture() ) );
 			tObj = eeNew( cGameObjectSprite, ( mCurGOFlags, mCurLayer, tStaticSprite ) );
 
 		}
@@ -1070,7 +1070,7 @@ cGameObject * cMapEditor::CreateGameObject() {
 		if ( mChkDI->Active() )
 			tObj = eeNew( cGameObjectVirtual, ( MakeHash( mDataIdInput->Text().ToUtf8() ), mCurLayer, mCurGOFlags, mCurGOType ) );
 		else
-			tObj = eeNew( cGameObjectVirtual, ( mGfxPreview->Shape(), mCurLayer, mCurGOFlags, mCurGOType ) );
+			tObj = eeNew( cGameObjectVirtual, ( mGfxPreview->SubTexture(), mCurLayer, mCurGOFlags, mCurGOType ) );
 	}
 
 	return tObj;
@@ -1127,7 +1127,7 @@ void cMapEditor::OnMapMouseClick( const cUIEvent * Event ) {
 	const cUIEventMouse * MEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
 
 	if ( mShapeCont->Visible() ) {
-		if ( NULL == mCurLayer || NULL == mGfxPreview->Shape() || cUIManager::instance()->DownControl() != mUIMap ) {
+		if ( NULL == mCurLayer || NULL == mGfxPreview->SubTexture() || cUIManager::instance()->DownControl() != mUIMap ) {
 			if ( NULL == mCurLayer )
 				CreateNoLayerAlert( "No layers found" );
 
@@ -1172,7 +1172,7 @@ void cMapEditor::OnMapMouseDown( const cUIEvent * Event ) {
 	const cUIEventMouse * MEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
 
 	if ( mShapeCont->Visible() ) {
-		if ( NULL == mCurLayer || NULL == mGfxPreview->Shape() || cUIManager::instance()->DownControl() != mUIMap )
+		if ( NULL == mCurLayer || NULL == mGfxPreview->SubTexture() || cUIManager::instance()->DownControl() != mUIMap )
 			return;
 
 

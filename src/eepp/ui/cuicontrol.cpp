@@ -999,34 +999,34 @@ eeRecti cUIControl::MakePadding( bool PadLeft, bool PadRight, bool PadTop, bool 
 			if ( mSkinState->GetSkin()->GetType() == cUISkin::UISkinComplex ) {
 				cUISkinComplex * tComplex = reinterpret_cast<cUISkinComplex*> ( mSkinState->GetSkin() );
 
-				cShape * tShape = NULL;
+				cSubTexture * tSubTexture = NULL;
 
 				if ( PadLeft ) {
-					tShape = tComplex->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Left );
+					tSubTexture = tComplex->GetSubTextureSide( cUISkinState::StateNormal, cUISkinComplex::Left );
 
-					if ( NULL != tShape )
-						tPadding.Left = tShape->RealSize().Width();
+					if ( NULL != tSubTexture )
+						tPadding.Left = tSubTexture->RealSize().Width();
 				}
 
 				if ( PadRight ) {
-					tShape = tComplex->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Right );
+					tSubTexture = tComplex->GetSubTextureSide( cUISkinState::StateNormal, cUISkinComplex::Right );
 
-					if ( NULL != tShape )
-						tPadding.Right = tShape->RealSize().Width();
+					if ( NULL != tSubTexture )
+						tPadding.Right = tSubTexture->RealSize().Width();
 				}
 
 				if ( PadTop ) {
-					tShape = tComplex->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Up );
+					tSubTexture = tComplex->GetSubTextureSide( cUISkinState::StateNormal, cUISkinComplex::Up );
 
-					if ( NULL != tShape )
-						tPadding.Top = tShape->RealSize().Height();
+					if ( NULL != tSubTexture )
+						tPadding.Top = tSubTexture->RealSize().Height();
 				}
 
 				if ( PadBottom ) {
-					tShape = tComplex->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Down );
+					tSubTexture = tComplex->GetSubTextureSide( cUISkinState::StateNormal, cUISkinComplex::Down );
 
-					if ( NULL != tShape )
-						tPadding.Bottom = tShape->RealSize().Height();
+					if ( NULL != tSubTexture )
+						tPadding.Bottom = tSubTexture->RealSize().Height();
 				}
 			}
 		}
@@ -1054,41 +1054,41 @@ void cUIControl::OnParentSizeChange( const eeVector2i& SizeChange ) {
 	SendCommonEvent( cUIEvent::EventOnParentSizeChange );
 }
 
-eeSize cUIControl::GetSkinShapeSize( cUISkin * Skin, const Uint32& State ) {
+eeSize cUIControl::GetSkinSize( cUISkin * Skin, const Uint32& State ) {
 	eeSize		tSize;
 
 	if ( NULL != Skin ) {
-		cShape * tShape = Skin->GetShape( State );
+		cSubTexture * tSubTexture = Skin->GetSubTexture( State );
 
-		if ( NULL != tShape ) {
-			tSize = tShape->RealSize();
+		if ( NULL != tSubTexture ) {
+			tSize = tSubTexture->RealSize();
 		}
 
 		if ( Skin->GetType() == cUISkin::UISkinComplex ) {
 			cUISkinComplex * SkinC = reinterpret_cast<cUISkinComplex*> ( Skin );
 
-			tShape = SkinC->GetShapeSide( State, cUISkinComplex::Up );
+			tSubTexture = SkinC->GetSubTextureSide( State, cUISkinComplex::Up );
 
-			if ( NULL != tShape ) {
-				tSize.y += tShape->RealSize().Height();
+			if ( NULL != tSubTexture ) {
+				tSize.y += tSubTexture->RealSize().Height();
 			}
 
-			tShape = SkinC->GetShapeSide( State, cUISkinComplex::Down );
+			tSubTexture = SkinC->GetSubTextureSide( State, cUISkinComplex::Down );
 
-			if ( NULL != tShape ) {
-				tSize.y += tShape->RealSize().Height();
+			if ( NULL != tSubTexture ) {
+				tSize.y += tSubTexture->RealSize().Height();
 			}
 
-			tShape = SkinC->GetShapeSide( State, cUISkinComplex::Left );
+			tSubTexture = SkinC->GetSubTextureSide( State, cUISkinComplex::Left );
 
-			if ( NULL != tShape ) {
-				tSize.x += tShape->RealSize().Width();
+			if ( NULL != tSubTexture ) {
+				tSize.x += tSubTexture->RealSize().Width();
 			}
 
-			tShape = SkinC->GetShapeSide( State, cUISkinComplex::Right );
+			tSubTexture = SkinC->GetSubTextureSide( State, cUISkinComplex::Right );
 
-			if ( NULL != tShape ) {
-				tSize.x += tShape->RealSize().Width();
+			if ( NULL != tSubTexture ) {
+				tSize.x += tSubTexture->RealSize().Width();
 			}
 		}
 	}
@@ -1096,8 +1096,8 @@ eeSize cUIControl::GetSkinShapeSize( cUISkin * Skin, const Uint32& State ) {
 	return tSize;
 }
 
-eeSize cUIControl::GetSkinShapeSize() {
-	return GetSkinShapeSize( GetSkin(), cUISkinState::StateNormal );
+eeSize cUIControl::GetSkinSize() {
+	return GetSkinSize( GetSkin(), cUISkinState::StateNormal );
 }
 
 cUIControl * cUIControl::NextComplexControl() {

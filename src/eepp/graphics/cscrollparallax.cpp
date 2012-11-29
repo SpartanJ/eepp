@@ -3,7 +3,7 @@
 namespace EE { namespace Graphics {
 
 cScrollParallax::cScrollParallax() :
-	mShape( NULL ),
+	mSubTexture( NULL ),
 	mBlend( ALPHA_NORMAL ),
 	mColor( 255, 255, 255, 255 )
 {
@@ -11,27 +11,27 @@ cScrollParallax::cScrollParallax() :
 
 cScrollParallax::~cScrollParallax() {}
 
-cScrollParallax::cScrollParallax( cShape * Shape, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeVector2f& Speed, const eeColorA& Color, const EE_PRE_BLEND_FUNC& Blend ) {
-	Create( Shape, DestX, DestY, DestWidth, DestHeight, Speed, Color, Blend );
+cScrollParallax::cScrollParallax( cSubTexture * SubTexture, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeVector2f& Speed, const eeColorA& Color, const EE_PRE_BLEND_FUNC& Blend ) {
+	Create( SubTexture, DestX, DestY, DestWidth, DestHeight, Speed, Color, Blend );
 }
 
-cShape * cScrollParallax::Shape() const {
-	return mShape;
+cSubTexture * cScrollParallax::SubTexture() const {
+	return mSubTexture;
 }
 
-void cScrollParallax::Shape( cShape * shape ) {
-	mShape = shape;
+void cScrollParallax::SubTexture( cSubTexture * subTexture ) {
+	mSubTexture = subTexture;
 
-	SetShape();
+	SetSubTexture();
 }
 
-void cScrollParallax::SetShape() {
-	if ( NULL != mShape ) {
-		mRect		= mShape->SrcRect();
-		mRealSize	= eeVector2f( (eeFloat)mShape->RealSize().Width(), (eeFloat)mShape->RealSize().Height() );
+void cScrollParallax::SetSubTexture() {
+	if ( NULL != mSubTexture ) {
+		mRect		= mSubTexture->SrcRect();
+		mRealSize	= eeVector2f( (eeFloat)mSubTexture->RealSize().Width(), (eeFloat)mSubTexture->RealSize().Height() );
 
-		mTiles.x	= ( (Int32)mSize.Width() / mShape->RealSize().Width() ) + 1;
-		mTiles.y	= ( (Int32)mSize.Height() / mShape->RealSize().Height() ) + 1;
+		mTiles.x	= ( (Int32)mSize.Width() / mSubTexture->RealSize().Width() ) + 1;
+		mTiles.y	= ( (Int32)mSize.Height() / mSubTexture->RealSize().Height() ) + 1;
 	}
 }
 
@@ -39,8 +39,8 @@ void cScrollParallax::SetAABB() {
 	mAABB		= eeRectf( mInitPos.x, mInitPos.y, mInitPos.x + mSize.Width(), mInitPos.y + mSize.Height() );
 }
 
-bool cScrollParallax::Create( cShape * Shape, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeVector2f& Speed, const eeColorA& Color, const EE_PRE_BLEND_FUNC& Blend ) {
-	mShape		= Shape;
+bool cScrollParallax::Create( cSubTexture * SubTexture, const eeFloat& DestX, const eeFloat& DestY, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeVector2f& Speed, const eeColorA& Color, const EE_PRE_BLEND_FUNC& Blend ) {
+	mSubTexture		= SubTexture;
 	mPos		= eeVector2f( DestX, DestY );
 	mSize 		= eeSizef( DestWidth, DestHeight );
 	mInitPos	= mPos;
@@ -49,7 +49,7 @@ bool cScrollParallax::Create( cShape * Shape, const eeFloat& DestX, const eeFloa
 	mBlend		= Blend;
 
 	SetAABB();
-	SetShape();
+	SetSubTexture();
 
 	return true;
 }
@@ -57,7 +57,7 @@ bool cScrollParallax::Create( cShape * Shape, const eeFloat& DestX, const eeFloa
 void cScrollParallax::Size( const eeFloat& DestWidth, const eeFloat& DestHeight ) {
 	mSize = eeSizef( DestWidth, DestHeight );
 
-	SetShape();
+	SetSubTexture();
 	SetAABB();
 }
 
@@ -80,7 +80,7 @@ const eeVector2f& cScrollParallax::Position() const {
 }
 
 void cScrollParallax::Draw() {
-	if ( NULL != mShape && mAABB.Left != mAABB.Right && mAABB.Top != mAABB.Bottom && 0 != mColor.Alpha ) {
+	if ( NULL != mSubTexture && mAABB.Left != mAABB.Right && mAABB.Top != mAABB.Bottom && 0 != mColor.Alpha ) {
 		mPos += ( ( mSpeed * (eeFloat)mElapsed.Elapsed() ) / (eeFloat)1000 );
 
 		if ( mPos.x > mAABB.Left + mRealSize.Width() || mPos.x < mAABB.Left - mRealSize.Width() )
@@ -124,11 +124,11 @@ void cScrollParallax::Draw() {
 						Rect.Bottom -= (Int32)( ( Pos.y + mRealSize.Height() ) - mAABB.Bottom );
 					}
 
-					mShape->SrcRect( Rect );
-					mShape->ResetDestWidthAndHeight();
+					mSubTexture->SrcRect( Rect );
+					mSubTexture->ResetDestWidthAndHeight();
 
 					if ( !( Rect.Right == 0 || Rect.Bottom == 0 ) )
-						mShape->Draw( AABB.Left, AABB.Top, mColor, 0.f, 1.f, mBlend );
+						mSubTexture->Draw( AABB.Left, AABB.Top, mColor, 0.f, 1.f, mBlend );
 				}
 
 				Pos.x += mRealSize.Width();
@@ -142,8 +142,8 @@ void cScrollParallax::Draw() {
 			Pos.y += mRealSize.Height();
 		}
 
-		mShape->SrcRect( mRect );
-		mShape->ResetDestWidthAndHeight();
+		mSubTexture->SrcRect( mRect );
+		mSubTexture->ResetDestWidthAndHeight();
 	}
 }
 

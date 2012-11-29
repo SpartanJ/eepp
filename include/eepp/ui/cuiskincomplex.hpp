@@ -31,16 +31,16 @@ class EE_API cUISkinComplex : public cUISkin {
 
 		void SetSkin( const Uint32& State );
 
-		cShape * GetShape( const Uint32& State ) const;
+		cSubTexture * GetSubTexture( const Uint32& State ) const;
 
-		cShape * GetShapeSide( const Uint32& State, const Uint32& Side );
+		cSubTexture * GetSubTextureSide( const Uint32& State, const Uint32& Side );
 
 		cUISkinComplex * Copy( const std::string& NewName, const bool& CopyColorsState = true );
 
 		virtual cUISkin * Copy();
 	protected:
-		cShape * 	mShape[ cUISkinState::StateCount ][ SideCount ];
-		eeColorA	mTempColor;
+		cSubTexture * 	mSubTexture[ cUISkinState::StateCount ][ SideCount ];
+		eeColorA		mTempColor;
 
 		void StateNormalToState( const Uint32& State );
 };

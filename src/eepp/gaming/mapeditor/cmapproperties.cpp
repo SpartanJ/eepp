@@ -101,7 +101,7 @@ cMapProperties::cMapProperties( cMap * Map ) :
 	cUIPushButton * AddButton = mUITheme->CreatePushButton( mUIWindow->Container(), eeSize(24,21), Pos, UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mUITheme->GetIconByName( "add" ) );
 	AddButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapProperties::AddCellClick ) );
 
-	if ( NULL == AddButton->Icon()->Shape() )
+	if ( NULL == AddButton->Icon()->SubTexture() )
 		AddButton->Text( "+" );
 
 	Pos.y += AddButton->Size().Height() + 5;
@@ -109,7 +109,7 @@ cMapProperties::cMapProperties( cMap * Map ) :
 	cUIPushButton * RemoveButton = mUITheme->CreatePushButton( mUIWindow->Container(), eeSize(24,21), Pos, UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mUITheme->GetIconByName( "remove" )  );
 	RemoveButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapProperties::RemoveCellClick ) );
 
-	if ( NULL == RemoveButton->Icon()->Shape() )
+	if ( NULL == RemoveButton->Icon()->SubTexture() )
 		RemoveButton->Text( "-" );
 
 	CreateGridElems();

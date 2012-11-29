@@ -64,8 +64,8 @@ void cUITabWidget::SetTheme( cUITheme * Theme ) {
 	if ( 0 == mTabWidgetHeight ) {
 		cUISkin * tSkin		= Theme->GetByName( Theme->Abbr() + "_" + "tab" );
 
-		eeSize tSize1		= GetSkinShapeSize( tSkin );
-		eeSize tSize2		= GetSkinShapeSize( tSkin, cUISkinState::StateSelected );
+		eeSize tSize1		= GetSkinSize( tSkin );
+		eeSize tSize2		= GetSkinSize( tSkin, cUISkinState::StateSelected );
 
 		mTabWidgetHeight	= eemax( tSize1.Height(), tSize2.Height() );
 
@@ -158,7 +158,7 @@ void cUITabWidget::OrderTabs() {
 	PosTabs();
 }
 
-cUITab * cUITabWidget::CreateTab( const String& Text, cUIControl * CtrlOwned, cShape * Icon ) {
+cUITab * cUITabWidget::CreateTab( const String& Text, cUIControl * CtrlOwned, cSubTexture * Icon ) {
 	cUITab::CreateParams Params;
 	Params.Parent( mTabContainer );
 	Params.Font 			= mFont;
@@ -181,7 +181,7 @@ cUITab * cUITabWidget::CreateTab( const String& Text, cUIControl * CtrlOwned, cS
 	return tCtrl;
 }
 
-Uint32 cUITabWidget::Add( const String& Text, cUIControl * CtrlOwned, cShape * Icon ) {
+Uint32 cUITabWidget::Add( const String& Text, cUIControl * CtrlOwned, cSubTexture * Icon ) {
 	return Add( CreateTab( Text, CtrlOwned, Icon ) );
 }
 
@@ -280,7 +280,7 @@ void cUITabWidget::RemoveAll() {
 	OrderTabs();
 }
 
-void cUITabWidget::Insert( const String& Text, cUIControl * CtrlOwned, cShape * Icon, const Uint32& Index ) {
+void cUITabWidget::Insert( const String& Text, cUIControl * CtrlOwned, cSubTexture * Icon, const Uint32& Index ) {
 	Insert( CreateTab( Text, CtrlOwned, Icon ), Index );
 }
 

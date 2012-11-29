@@ -3,7 +3,7 @@
 
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uihelper.hpp>
-#include <eepp/graphics/cshapegroup.hpp>
+#include <eepp/graphics/ctextureatlas.hpp>
 #include <eepp/graphics/cfont.hpp>
 #include <eepp/ui/cuiskin.hpp>
 
@@ -36,11 +36,11 @@ class cUITabWidget;
 
 class EE_API cUITheme : public tResourceManager<cUISkin> {
 	public:
-		static cUITheme * LoadFromShapeGroup( cUITheme * tTheme, cShapeGroup * ShapeGroup );
+		static cUITheme * LoadFromTextureAtlas( cUITheme * tTheme, cTextureAtlas * TextureAtlas );
 
 		static cUITheme * LoadFromPath( cUITheme * tTheme, const std::string& Path, const std::string ImgExt = "png" );
 
-		static cUITheme * LoadFromShapeGroup( cShapeGroup * ShapeGroup, const std::string& Name, const std::string NameAbbr );
+		static cUITheme * LoadFromTextureAtlas( cTextureAtlas * TextureAtlas, const std::string& Name, const std::string NameAbbr );
 
 		static cUITheme * LoadFromPath( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt = "png" );
 
@@ -86,11 +86,11 @@ class EE_API cUITheme : public tResourceManager<cUISkin> {
 
 		const bool& UseDefaultThemeValues() const;
 
-		cShapeGroup * ShapeGroup() const;
+		cTextureAtlas * TextureAtlas() const;
 
-		cShape * GetIconByName( const std::string& name );
+		cSubTexture * GetIconByName( const std::string& name );
 
-		virtual cUIGfx * CreateGfx( cShape * Shape, cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, eeColorA ShapeColor = eeColorA(255,255,255,255), EE_RENDERTYPE ShapeRender = RN_NORMAL );
+		virtual cUIGfx * CreateGfx( cSubTexture * SubTexture, cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, eeColorA SubTextureColor = eeColorA(255,255,255,255), EE_RENDERTYPE SubTextureRender = RN_NORMAL );
 
 		virtual cUISprite * CreateSprite( cSprite * Sprite, cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, bool DeallocSprite = true, EE_RENDERTYPE SpriteRender = RN_NORMAL );
 
@@ -124,7 +124,7 @@ class EE_API cUITheme : public tResourceManager<cUISkin> {
 
 		virtual cUIProgressBar * CreateProgressBar( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS, bool DisplayPercent = false, bool VerticalExpand = false, eeVector2f MovementSpeed = eeVector2f( 64, 0 ), eeRectf FillerMargin = eeRectf() );
 
-		virtual cUIPushButton * CreatePushButton( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, cShape * Icon = NULL, Int32 IconHorizontalMargin = 0, bool IconAutoMargin = true );
+		virtual cUIPushButton * CreatePushButton( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, cSubTexture * Icon = NULL, Int32 IconHorizontalMargin = 0, bool IconAutoMargin = true );
 
 		virtual cUIWinMenu * CreateWinMenu( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS, Uint32 MarginBetweenButtons = 0, Uint32 ButtonMargin = 4, Uint32 MenuHeight = 0, Uint32 FirstButtonMargin = 1 );
 
@@ -139,7 +139,7 @@ class EE_API cUITheme : public tResourceManager<cUISkin> {
 		std::string 		mName;
 		Uint32				mNameHash;
 		std::string			mAbbr;
-		cShapeGroup *		mShapeGroup;
+		cTextureAtlas *		mTextureAtlas;
 		cFont * 			mFont;
 		eeColorA			mFontColor;
 		eeColorA			mFontShadowColor;
@@ -147,11 +147,11 @@ class EE_API cUITheme : public tResourceManager<cUISkin> {
 		eeColorA			mFontSelectedColor;
 		bool				mUseDefaultThemeValues;
 
-		void ShapeGroup( cShapeGroup * SG );
+		void TextureAtlas( cTextureAtlas * SG );
 
-		static bool SearchFilesOfElement( cShapeGroup * SG, const std::string& Path, std::string Element, Uint32& IsComplex, const std::string ImgExt );
+		static bool SearchFilesOfElement( cTextureAtlas * SG, const std::string& Path, std::string Element, Uint32& IsComplex, const std::string ImgExt );
 
-		static bool SearchFilesInGroup( cShapeGroup * SG, std::string Element, Uint32& IsComplex );
+		static bool SearchFilesInGroup( cTextureAtlas * SG, std::string Element, Uint32& IsComplex );
 };
 
 }}

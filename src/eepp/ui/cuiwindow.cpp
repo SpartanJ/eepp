@@ -177,17 +177,17 @@ void cUIWindow::SetTheme( cUITheme *Theme ) {
 
 		if ( NULL != mButtonClose ) {
 			mButtonClose->SetThemeControl( Theme, "winclose" );
-			mButtonClose->Size( mButtonClose->GetSkinShapeSize() );
+			mButtonClose->Size( mButtonClose->GetSkinSize() );
 		}
 
 		if ( NULL != mButtonMaximize ) {
 			mButtonMaximize->SetThemeControl( Theme, "winmax" );
-			mButtonMaximize->Size( mButtonMaximize->GetSkinShapeSize() );
+			mButtonMaximize->Size( mButtonMaximize->GetSkinSize() );
 		}
 
 		if ( NULL != mButtonMinimize ) {
 			mButtonMinimize->SetThemeControl( Theme, "winmin" );
-			mButtonMinimize->Size( mButtonMinimize->GetSkinShapeSize() );
+			mButtonMinimize->Size( mButtonMinimize->GetSkinSize() );
 		}
 
 		FixChildsSize();
@@ -264,13 +264,13 @@ void cUIWindow::FixChildsSize() {
 	}
 
 	if ( mDecoAutoSize ) {
-		mDecoSize = eeSize( mSize.Width(), mWindowDecoration->GetSkinShapeSize().Height() );
+		mDecoSize = eeSize( mSize.Width(), mWindowDecoration->GetSkinSize().Height() );
 	}
 
 	mWindowDecoration->Size( mDecoSize );
 
 	if ( mBorderAutoSize ) {
-		mBorderBottom->Size( mSize.Width(), mBorderBottom->GetSkinShapeSize().Height() );
+		mBorderBottom->Size( mSize.Width(), mBorderBottom->GetSkinSize().Height() );
 	} else {
 		mBorderBottom->Size( mSize.Width(), mBorderSize.Height() );
 	}
@@ -278,8 +278,8 @@ void cUIWindow::FixChildsSize() {
 	Uint32 BorderHeight = mSize.Height() - mDecoSize.Height() - mBorderBottom->Size().Height();
 
 	if ( mBorderAutoSize ) {
-		mBorderLeft->Size( mBorderLeft->GetSkinShapeSize().Width()	, BorderHeight );
-		mBorderRight->Size( mBorderRight->GetSkinShapeSize().Width(), BorderHeight );
+		mBorderLeft->Size( mBorderLeft->GetSkinSize().Width()	, BorderHeight );
+		mBorderRight->Size( mBorderRight->GetSkinSize().Width(), BorderHeight );
 	} else {
 		mBorderLeft->Size( mBorderSize.Width(), BorderHeight );
 		mBorderRight->Size( mBorderSize.Width(), BorderHeight );

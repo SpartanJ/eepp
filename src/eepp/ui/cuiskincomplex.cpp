@@ -1,5 +1,5 @@
 #include <eepp/ui/cuiskincomplex.hpp>
-#include <eepp/graphics/cshapegroupmanager.hpp>
+#include <eepp/graphics/ctextureatlasmanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -18,7 +18,7 @@ cUISkinComplex::cUISkinComplex( const std::string& Name ) :
 {
 	for ( Int32 x = 0; x < cUISkinState::StateCount; x++ )
 		for ( Int32 y = 0; y < SideCount; y++ )
-			mShape[ x ][ y ] = NULL;
+			mSubTexture[ x ][ y ] = NULL;
 
 	SetSkins();
 }
@@ -31,7 +31,7 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 	if ( 0 == Alpha )
 		return;
 
-	cShape * tShape = mShape[ State ][ UpLeft ];
+	cSubTexture * tSubTexture = mSubTexture[ State ][ UpLeft ];
 	mTempColor		= mColor[ State ];
 
 	if ( mTempColor.Alpha != Alpha ) {
@@ -40,106 +40,106 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 
 	eeSize uls;
 
-	if ( NULL != tShape ) {
-		uls = tShape->RealSize();
+	if ( NULL != tSubTexture ) {
+		uls = tSubTexture->RealSize();
 
-		tShape->Draw( X, Y, mTempColor );
+		tSubTexture->Draw( X, Y, mTempColor );
 	}
 
-	tShape = mShape[ State ][ DownLeft ];
+	tSubTexture = mSubTexture[ State ][ DownLeft ];
 
 	eeSize dls;
 
-	if ( NULL != tShape ) {
-		dls = tShape->RealSize();
+	if ( NULL != tSubTexture ) {
+		dls = tSubTexture->RealSize();
 
-		tShape->Draw( X, Y + Height - dls.Height(), mTempColor );
+		tSubTexture->Draw( X, Y + Height - dls.Height(), mTempColor );
 	}
 
-	tShape = mShape[ State ][ UpRight ];
+	tSubTexture = mSubTexture[ State ][ UpRight ];
 
 	eeSize urs;
 
-	if ( NULL != tShape ) {
-		urs = tShape->RealSize();
+	if ( NULL != tSubTexture ) {
+		urs = tSubTexture->RealSize();
 
-		tShape->Draw( X + Width - urs.Width(), Y, mTempColor );
+		tSubTexture->Draw( X + Width - urs.Width(), Y, mTempColor );
 	}
 
-	tShape = mShape[ State ][ DownRight ];
+	tSubTexture = mSubTexture[ State ][ DownRight ];
 
 	eeSize drs;
 
-	if ( NULL != tShape ) {
-		drs = tShape->RealSize();
+	if ( NULL != tSubTexture ) {
+		drs = tSubTexture->RealSize();
 
-		tShape->Draw( X + Width - drs.Width(), Y + Height - drs.Height(), mTempColor );
+		tSubTexture->Draw( X + Width - drs.Width(), Y + Height - drs.Height(), mTempColor );
 	}
 
-	tShape = mShape[ State ][ Left ];
+	tSubTexture = mSubTexture[ State ][ Left ];
 
-	if ( NULL != tShape ) {
-		tShape->DestHeight( Height - uls.Height() - dls.Height() );
+	if ( NULL != tSubTexture ) {
+		tSubTexture->DestHeight( Height - uls.Height() - dls.Height() );
 
-		tShape->Draw( X, Y + uls.Height(), mTempColor );
+		tSubTexture->Draw( X, Y + uls.Height(), mTempColor );
 
-		tShape->ResetDestWidthAndHeight();
+		tSubTexture->ResetDestWidthAndHeight();
 
 		if ( uls.Width() == 0 )
-			uls.x = tShape->RealSize().Width();
+			uls.x = tSubTexture->RealSize().Width();
 	}
 
-	tShape = mShape[ State ][ Up ];
+	tSubTexture = mSubTexture[ State ][ Up ];
 
-	if ( NULL != tShape ) {
-		tShape->DestWidth( Width - uls.Width() - urs.Width() );
+	if ( NULL != tSubTexture ) {
+		tSubTexture->DestWidth( Width - uls.Width() - urs.Width() );
 
-		tShape->Draw( X + uls.Width(), Y, mTempColor );
+		tSubTexture->Draw( X + uls.Width(), Y, mTempColor );
 
-		tShape->ResetDestWidthAndHeight();
+		tSubTexture->ResetDestWidthAndHeight();
 
 		if ( urs.Height() == 0 )
-			urs.y = tShape->RealSize().Height();
+			urs.y = tSubTexture->RealSize().Height();
 
 		if ( uls.Height() == 0 )
-			uls.y = tShape->RealSize().Height();
+			uls.y = tSubTexture->RealSize().Height();
 	}
 
-	tShape = mShape[ State ][ Right ];
+	tSubTexture = mSubTexture[ State ][ Right ];
 
-	if ( NULL != tShape ) {
+	if ( NULL != tSubTexture ) {
 		if ( urs.Width() == 0 )
-			urs.x = tShape->RealSize().Width();
+			urs.x = tSubTexture->RealSize().Width();
 
-		tShape->DestHeight( Height - urs.Height() - drs.Height() );
+		tSubTexture->DestHeight( Height - urs.Height() - drs.Height() );
 
-		tShape->Draw( X + Width - tShape->RealSize().Width(), Y + urs.Height(), mTempColor );
+		tSubTexture->Draw( X + Width - tSubTexture->RealSize().Width(), Y + urs.Height(), mTempColor );
 
-		tShape->ResetDestWidthAndHeight();
+		tSubTexture->ResetDestWidthAndHeight();
 	}
 
-	tShape = mShape[ State ][ Down ];
+	tSubTexture = mSubTexture[ State ][ Down ];
 
-	if ( NULL != tShape ) {
-		tShape->DestWidth( Width - dls.Width() - drs.Width() );
+	if ( NULL != tSubTexture ) {
+		tSubTexture->DestWidth( Width - dls.Width() - drs.Width() );
 
-		tShape->Draw( X + dls.Width(), Y + Height - tShape->RealSize().Height(), mTempColor );
+		tSubTexture->Draw( X + dls.Width(), Y + Height - tSubTexture->RealSize().Height(), mTempColor );
 
-		tShape->ResetDestWidthAndHeight();
+		tSubTexture->ResetDestWidthAndHeight();
 
 		if ( dls.Height() == 0 && drs.Height() == 0 )
-			dls.Height( tShape->RealSize().Height() );
+			dls.Height( tSubTexture->RealSize().Height() );
 	}
 
-	tShape = mShape[ State ][ Center ];
+	tSubTexture = mSubTexture[ State ][ Center ];
 
-	if ( NULL != tShape ) {
-		tShape->DestWidth( Width - uls.Width() - urs.Width() );
-		tShape->DestHeight( Height - uls.Height() - dls.Height() );
+	if ( NULL != tSubTexture ) {
+		tSubTexture->DestWidth( Width - uls.Width() - urs.Width() );
+		tSubTexture->DestHeight( Height - uls.Height() - dls.Height() );
 
-		tShape->Draw( X + uls.Width(), Y + uls.Height(), mTempColor );
+		tSubTexture->Draw( X + uls.Width(), Y + uls.Height(), mTempColor );
 
-		tShape->ResetDestWidthAndHeight();
+		tSubTexture->ResetDestWidthAndHeight();
 	}
 }
 
@@ -148,29 +148,29 @@ void cUISkinComplex::SetSkin( const Uint32& State ) {
 
 	for ( Uint32 Side = 0; Side < SideCount; Side++ ) {
 
-		cShape * Shape = cShapeGroupManager::instance()->GetShapeByName( std::string( mName + "_" + cUISkin::GetSkinStateName( State ) + "_" + SideSuffix[ Side ] ) );
+		cSubTexture * SubTexture = cTextureAtlasManager::instance()->GetSubTextureByName( std::string( mName + "_" + cUISkin::GetSkinStateName( State ) + "_" + SideSuffix[ Side ] ) );
 
-		if ( NULL != Shape )
-			mShape[ State ][ Side ] = Shape;
+		if ( NULL != SubTexture )
+			mSubTexture[ State ][ Side ] = SubTexture;
 	}
 }
 
-cShape * cUISkinComplex::GetShape( const Uint32& State ) const {
+cSubTexture * cUISkinComplex::GetSubTexture( const Uint32& State ) const {
 	eeASSERT ( State < cUISkinState::StateCount );
 
-	return mShape[ State ][ Center ];
+	return mSubTexture[ State ][ Center ];
 }
 
-cShape * cUISkinComplex::GetShapeSide( const Uint32& State, const Uint32& Side ) {
+cSubTexture * cUISkinComplex::GetSubTextureSide( const Uint32& State, const Uint32& Side ) {
 	eeASSERT ( State < cUISkinState::StateCount && Side < cUISkinComplex::SideCount );
 
-	return mShape[ State ][ Side ];
+	return mSubTexture[ State ][ Side ];
 }
 
 void cUISkinComplex::StateNormalToState( const Uint32& State ) {
-	if ( NULL == mShape[ State ][ 0 ] ) {
+	if ( NULL == mSubTexture[ State ][ 0 ] ) {
 		for ( Uint32 Side = 0; Side < SideCount; Side++ ) {
-			mShape[ State ][ Side ] = mShape[ cUISkinState::StateNormal ][ Side ];
+			mSubTexture[ State ][ Side ] = mSubTexture[ cUISkinState::StateNormal ][ Side ];
 		}
 	}
 }
@@ -184,7 +184,7 @@ cUISkinComplex * cUISkinComplex::Copy( const std::string& NewName, const bool& C
 		memcpy( &SkinC->mColor[0], &mColor[0], cUISkinState::StateCount * sizeof(eeColorA) );
 	}
 
-	memcpy( &SkinC->mShape[0], &mShape[0], cUISkinState::StateCount * SideCount * sizeof(cShape*) );
+	memcpy( &SkinC->mSubTexture[0], &mSubTexture[0], cUISkinState::StateCount * SideCount * sizeof(cSubTexture*) );
 
 	return SkinC;
 }

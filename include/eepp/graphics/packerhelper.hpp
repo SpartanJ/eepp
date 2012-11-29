@@ -7,7 +7,7 @@ namespace EE { namespace Graphics { namespace Private {
 
 #define HDR_NAME_SIZE 64
 
-typedef struct sShapeHdrS {
+typedef struct sSubTextureHdrS {
 	char	Name[ HDR_NAME_SIZE ];
 	Uint32	Date;
 	Int32	X;
@@ -21,15 +21,15 @@ typedef struct sShapeHdrS {
 	Int32	DestWidth;
 	Int32	DestHeight;
 	Uint32	Flags;
-} sShapeHdr;
+} sSubTextureHdr;
 
-#define HDR_SHAPE_FLAG_FLIPED 					( 1 << 0 )
+#define HDR_SUBTEXTURE_FLAG_FLIPED 					( 1 << 0 )
 
 typedef struct sTextureHdrS {
 	char	Name[ HDR_NAME_SIZE ];
 	Uint32	ResourceID;
 	Uint32	Size;
-	Int32	ShapeCount;
+	Int32	SubTextureCount;
 } sTextureHdr;
 
 typedef struct sTextureGroupHdrS {

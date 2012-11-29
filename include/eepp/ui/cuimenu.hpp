@@ -65,7 +65,7 @@ class EE_API cUIMenu : public cUIComplexControl {
 
 		virtual bool IsType( const Uint32& type ) const;
 
-		Uint32 Add( const String& Text, cShape * Icon = NULL );
+		Uint32 Add( const String& Text, cSubTexture * Icon = NULL );
 
 		Uint32 Add( cUIControl * Control );
 
@@ -73,7 +73,7 @@ class EE_API cUIMenu : public cUIComplexControl {
 
 		Uint32 AddCheckBox( const String& Text );
 
-		Uint32 AddSubMenu( const String& Text, cShape * Icon = NULL, cUIMenu * SubMenu = NULL );
+		Uint32 AddSubMenu( const String& Text, cSubTexture * Icon = NULL, cUIMenu * SubMenu = NULL );
 
 		cUIControl * GetItem( const Uint32& Index );
 		
@@ -89,7 +89,7 @@ class EE_API cUIMenu : public cUIComplexControl {
 
 		void RemoveAll();
 
-		void Insert( const String& Text, cShape * Icon, const Uint32& Index );
+		void Insert( const String& Text, cSubTexture * Icon, const Uint32& Index );
 
 		void Insert( cUIControl * Control, const Uint32& Index );
 
@@ -138,11 +138,11 @@ class EE_API cUIMenu : public cUIComplexControl {
 		
 		void ResizeMe();
 		
-		cUIMenuItem * CreateMenuItem( const String& Text, cShape * Icon );
+		cUIMenuItem * CreateMenuItem( const String& Text, cSubTexture * Icon );
 
 		cUIMenuCheckBox * CreateMenuCheckBox( const String& Text );
 
-		cUIMenuSubMenu * CreateSubMenu( const String& Text, cShape * Icon, cUIMenu * SubMenu );
+		cUIMenuSubMenu * CreateSubMenu( const String& Text, cSubTexture * Icon, cUIMenu * SubMenu );
 		
 		void DoAfterSetTheme();
 

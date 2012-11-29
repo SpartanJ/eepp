@@ -26,7 +26,7 @@ class EE_API cUISkin {
 
 		virtual void SetSkin( const Uint32& State ) = 0;
 
-		virtual cShape * GetShape( const Uint32& State ) const = 0;
+		virtual cSubTexture * GetSubTexture( const Uint32& State ) const = 0;
 
 		virtual void SetColor( const Uint32& State, const eeColorA& Color );
 

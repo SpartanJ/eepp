@@ -1,5 +1,5 @@
 #include <eepp/gaming/cgameobjectsprite.hpp>
-#include <eepp/graphics/cshapegroupmanager.hpp>
+#include <eepp/graphics/ctextureatlasmanager.hpp>
 #include <eepp/gaming/cmap.hpp>
 #include <eepp/gaming/ctilelayer.hpp>
 
@@ -91,7 +91,7 @@ void cGameObjectSprite::TilePos( eeVector2i pos ) {
 
 eeSize cGameObjectSprite::Size() {
 	if ( NULL != mSprite )
-		return mSprite->GetShape(0)->RealSize();
+		return mSprite->GetSubTexture(0)->RealSize();
 
 	return eeSize();
 }
@@ -114,14 +114,14 @@ void cGameObjectSprite::FlagSet( const Uint32& Flag ) {
 }
 
 Uint32 cGameObjectSprite::DataId() {
-	return mSprite->GetShape(0)->Id();
+	return mSprite->GetSubTexture(0)->Id();
 }
 
 void cGameObjectSprite::DataId( Uint32 Id ) {
 	cSprite * tSprite = NULL;
 
 	if ( mFlags & GObjFlags::GAMEOBJECT_ANIMATED ) {
-		std::vector<cShape*> tShapeVec = cShapeGroupManager::instance()->GetShapesByPatternId( Id );
+		std::vector<cSubTexture*> tShapeVec = cTextureAtlasManager::instance()->GetSubTexturesByPatternId( Id );
 
 		if ( tShapeVec.size() ) {
 			tSprite = eeNew( cSprite, () );
@@ -131,7 +131,7 @@ void cGameObjectSprite::DataId( Uint32 Id ) {
 			Sprite( tSprite );
 		}
 	} else {
-		cShape * tShape = cShapeGroupManager::instance()->GetShapeById( Id );
+		cSubTexture * tShape = cTextureAtlasManager::instance()->GetSubTextureById( Id );
 
 		if ( NULL != tShape ) {
 			Sprite( eeNew( cSprite, ( tShape ) ) );

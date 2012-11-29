@@ -12,7 +12,7 @@ cUIPushButton::cUIPushButton( const cUIPushButton::CreateParams& Params ) :
 {
 	cUIGfx::CreateParams GfxParams;
 	GfxParams.Parent( this );
-	GfxParams.Shape = Params.Icon;
+	GfxParams.SubTexture = Params.Icon;
 
 	if ( Params.IconMinSize.x != 0 && Params.IconMinSize.y != 0 ) {
 		GfxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
@@ -80,7 +80,7 @@ void cUIPushButton::OnSizeChange() {
 				mTextBox->Size( mSize.Width() - mIcon->Pos().x + mIcon->Size().Width(), mSize.Height() );
 				break;
 			case UI_HALIGN_CENTER:
-				if ( NULL != mIcon->Shape() ) {
+				if ( NULL != mIcon->SubTexture() ) {
 					if ( mIcon->Pos().x + mIcon->Size().Width() >= mTextBox->AlignOffset().x ) {
 						mTextBox->Pos( mIcon->Pos().x + mIcon->Size().Width() + 1 - mTextBox->AlignOffset().x, mTextBox->Pos().y );
 					}
@@ -143,7 +143,7 @@ void cUIPushButton::DoAfterSetTheme() {
 	}
 
 	if ( mFlags & UI_AUTO_SIZE ) {
-		mSize.Height( GetSkinShapeSize().Height() );
+		mSize.Height( GetSkinSize().Height() );
 	}
 
 	AutoPadding();
@@ -157,8 +157,8 @@ void cUIPushButton::AutoPadding() {
 	}
 }
 
-void cUIPushButton::Icon( cShape * Icon ) {
-	mIcon->Shape( Icon );
+void cUIPushButton::Icon( cSubTexture * Icon ) {
+	mIcon->SubTexture( Icon );
 	OnSizeChange();
 }
 

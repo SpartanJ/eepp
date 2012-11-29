@@ -49,26 +49,26 @@ void cUIMenuCheckBox::Active( const bool& active ) {
 	if ( mActive ) {
 		if ( NULL != mSkinActive ) {
 			if ( mSkinState->GetState() == cUISkinState::StateSelected )
-				Icon( mSkinActive->GetShape( cUISkinState::StateMouseEnter ) );
+				Icon( mSkinActive->GetSubTexture( cUISkinState::StateMouseEnter ) );
 			else
-				Icon( mSkinActive->GetShape( cUISkinState::StateNormal ) );
+				Icon( mSkinActive->GetSubTexture( cUISkinState::StateNormal ) );
 		} else
-			mIcon->Shape( NULL );
+			mIcon->SubTexture( NULL );
 	} else {
 		if ( NULL != mSkinInactive )
 			if ( mSkinState->GetState() == cUISkinState::StateSelected )
-				Icon( mSkinInactive->GetShape( cUISkinState::StateMouseEnter ) );
+				Icon( mSkinInactive->GetSubTexture( cUISkinState::StateMouseEnter ) );
 			else
-				Icon( mSkinInactive->GetShape( cUISkinState::StateNormal ) );
+				Icon( mSkinInactive->GetSubTexture( cUISkinState::StateNormal ) );
 		else
-			mIcon->Shape( NULL );
+			mIcon->SubTexture( NULL );
 	}
 
 	if ( oActive != active ) {
 		cUIMenu * Menu = reinterpret_cast<cUIMenu*> ( Parent() );
 
 		if ( !Menu->CheckControlSize( this ) ) {
-			if ( NULL != Icon()->Shape() ) {
+			if ( NULL != Icon()->SubTexture() ) {
 				Padding( eeRecti( 0, 0, 0, 0 ) );
 			}
 		}

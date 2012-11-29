@@ -227,7 +227,7 @@ class EE_API cUIControl {
 
 		void SendCommonEvent( const Uint32& Event );
 
-		eeSize GetSkinShapeSize();
+		eeSize GetSkinSize();
 
 		cUIControl * NextComplexControl();
 
@@ -369,7 +369,7 @@ class EE_API cUIControl {
 
 		void SafeDeleteSkinState();
 
-		eeSize GetSkinShapeSize( cUISkin * Skin, const Uint32& State = cUISkinState::StateNormal );
+		eeSize GetSkinSize( cUISkin * Skin, const Uint32& State = cUISkinState::StateNormal );
 };
 
 }}

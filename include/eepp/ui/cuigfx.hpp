@@ -11,17 +11,17 @@ class EE_API cUIGfx : public cUIComplexControl {
 			public:
 				inline CreateParams() :
 					cUIComplexControl::CreateParams(),
-					Shape( NULL ),
-					ShapeColor(),
-					ShapeRender( RN_NORMAL )
+					SubTexture( NULL ),
+					SubTextureColor(),
+					SubTextureRender( RN_NORMAL )
 				{
 				}
 
 				inline ~CreateParams() {}
 
-				cShape * 		Shape;
-				eeColorA 		ShapeColor;
-				EE_RENDERTYPE 	ShapeRender;
+				cSubTexture * 	SubTexture;
+				eeColorA 		SubTextureColor;
+				EE_RENDERTYPE 	SubTextureRender;
 		};
 
 		cUIGfx( const cUIGfx::CreateParams& Params );
@@ -36,9 +36,9 @@ class EE_API cUIGfx : public cUIComplexControl {
 
 		virtual void Alpha( const eeFloat& alpha );
 
-		cShape * Shape() const;
+		cSubTexture * SubTexture() const;
 
-		void Shape( cShape * shape );
+		void SubTexture( cSubTexture * subTexture );
 
 		const eeColorA& Color() const;
 
@@ -50,7 +50,7 @@ class EE_API cUIGfx : public cUIComplexControl {
 
 		const eeVector2i& AlignOffset() const;
 	protected:
-		cShape * 		mShape;
+		cSubTexture * 	mSubTexture;
 		eeColorA 		mColor;
 		EE_RENDERTYPE 	mRender;
 		eeVector2i		mAlignOffset;
@@ -61,7 +61,7 @@ class EE_API cUIGfx : public cUIComplexControl {
 
 		void AutoAlign();
 
-		void DrawShape();
+		void DrawSubTexture();
 };
 
 }}

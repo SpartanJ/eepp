@@ -165,7 +165,7 @@ void cUITextInput::SetTheme( cUITheme * Theme ) {
 
 void cUITextInput::AutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		Size( mSize.x, GetSkinShapeSize().Height() );
+		Size( mSize.x, GetSkinSize().Height() );
 	}
 }
 

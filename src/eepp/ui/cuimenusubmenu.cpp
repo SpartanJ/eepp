@@ -16,7 +16,7 @@ cUIMenuSubMenu::cUIMenuSubMenu( cUIMenuSubMenu::CreateParams& Params ) :
 {
 	cUIGfx::CreateParams GfxParams;
 	GfxParams.Parent( this );
-	GfxParams.Shape = NULL;
+	GfxParams.SubTexture = NULL;
 	GfxParams.Flags = UI_AUTO_SIZE;
 	mArrow = eeNew( cUIGfx, ( GfxParams ) );
 	mArrow->Visible( true );
@@ -58,9 +58,9 @@ void cUIMenuSubMenu::OnStateChange() {
 
 	if ( NULL != mSkinArrow ) {
 		if ( mSkinState->GetState() == cUISkinState::StateSelected )
-			mArrow->Shape( mSkinArrow->GetShape( cUISkinState::StateMouseEnter ) );
+			mArrow->SubTexture( mSkinArrow->GetSubTexture( cUISkinState::StateMouseEnter ) );
 		else
-			mArrow->Shape( mSkinArrow->GetShape( cUISkinState::StateNormal ) );
+			mArrow->SubTexture( mSkinArrow->GetSubTexture( cUISkinState::StateNormal ) );
 
 		OnSizeChange();
 	}

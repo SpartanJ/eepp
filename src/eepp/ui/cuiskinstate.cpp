@@ -66,7 +66,7 @@ void cUISkinState::SetStateTypeSimple( const Uint32& State ) {
 	if ( mCurState == State )
 		return;
 
-	if ( !mSkin->GetColorDefault( State ) || NULL != mSkin->GetShape( State ) ) {
+	if ( !mSkin->GetColorDefault( State ) || NULL != mSkin->GetSubTexture( State ) ) {
 		mSkin->StateNormalToState( State );
 
 		mLastState	= mCurState;
@@ -93,7 +93,7 @@ bool cUISkinState::StateExists( const Uint32& State ) {
 	{
 		case cUISkin::UISkinSimple:
 		case cUISkin::UISkinComplex:
-			return NULL != mSkin->GetShape( State );
+			return NULL != mSkin->GetSubTexture( State );
 	}
 
 	return true;

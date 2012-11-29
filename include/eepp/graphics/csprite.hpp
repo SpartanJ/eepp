@@ -3,8 +3,8 @@
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
-#include <eepp/graphics/cshape.hpp>
-#include <eepp/graphics/cshapegroup.hpp>
+#include <eepp/graphics/csubtexture.hpp>
+#include <eepp/graphics/ctextureatlas.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -21,9 +21,9 @@ class EE_API cSprite {
 
 		cSprite();
 
-		cSprite( const std::string& name, const std::string& extension = "", cShapeGroup * SearchInShapeGroup = NULL );
+		cSprite( const std::string& name, const std::string& extension = "", cTextureAtlas * SearchInTextureAtlas = NULL );
 
-		cSprite( cShape * Shape );
+		cSprite( cSubTexture * SubTexture );
 
 		cSprite( const Uint32& TexId, const eeFloat& DestWidth = 0, const eeFloat& DestHeight = 0, const eeFloat& offSetX = 0, const eeFloat& offSetY = 0, const eeRecti& TexSector = eeRecti(0,0,0,0) );
 
@@ -61,7 +61,7 @@ class EE_API cSprite {
 		*/
 		void Width( const eeFloat& Width, const eeUint& FrameNum, const eeUint& SubFrame);
 
-		/** Set the current Shape Width */
+		/** Set the current SubTexture Width */
 		void Width( const eeFloat& Width );
 
 		/** Get the Frame Number Sprite Width */
@@ -174,10 +174,10 @@ class EE_API cSprite {
 		void DisableVertexColors();
 
 		/** Creates an static sprite (no animation)
-		* @param Shape The sprite shape
+		* @param SubTexture The sprite SubTexture
 		* @return True if success
 		*/
-		bool CreateStatic( cShape * Shape );
+		bool CreateStatic( cSubTexture * SubTexture );
 
 		/** Creates an static sprite (no animation)
 		* @param TexId The internal Texture Id
@@ -207,20 +207,20 @@ class EE_API cSprite {
 		eeUint AddFrame( const Uint32& TexId, const eeFloat& DestWidth = 0, const eeFloat& DestHeight = 0, const eeFloat& offSetX = 0, const eeFloat& offSetY = 0, const eeRecti& TexSector = eeRecti(0,0,0,0) );
 
 		/** Add a frame to the sprite (on the current sub frame)
-		* @param Shape The Shape used in the frame
+		* @param SubTexture The SubTexture used in the frame
 		* @return The frame position or 0 if fails
 		*/
-		eeUint AddFrame( cShape * Shape );
+		eeUint AddFrame( cSubTexture * SubTexture );
 
-		/** Add a vector of shapes as an animation.
-		* @param Shapes The Frames
+		/** Add a vector of SubTexture as an animation.
+		* @param SubTextures The Frames
 		*/
-		bool AddFrames( const std::vector<cShape*> Shapes );
+		bool AddFrames( const std::vector<cSubTexture*> SubTextures );
 
-		/** @see cShapeGroupManager::GetShapesByPattern */
-		bool AddFramesByPattern( const std::string& name, const std::string& extension = "", cShapeGroup * SearchInShapeGroup = NULL );
+		/** @see cTextureAtlasManager::GetSubTexturesByPattern */
+		bool AddFramesByPattern( const std::string& name, const std::string& extension = "", cTextureAtlas * SearchInTextureAtlas = NULL );
 
-		bool AddFramesByPatternId( const Uint32& ShapeId, const std::string& extension, cShapeGroup * SearchInShapeGroup );
+		bool AddFramesByPatternId( const Uint32& SubTextureId, const std::string& extension, cTextureAtlas * SearchInTextureAtlas );
 
 		/** Add a frame on an specific subframe to the sprite
 		* @param TexId The internal Texture Id
@@ -236,12 +236,12 @@ class EE_API cSprite {
 		bool AddSubFrame( const Uint32& TexId, const eeUint& NumFrame, const eeUint& NumSubFrame, const eeFloat& DestWidth = 0, const eeFloat& DestHeight = 0, const Int32& offSetX = 0, const Int32& offSetY = 0, const eeRecti& TexSector = eeRecti(0,0,0,0) );
 
 		/** Add a frame on an specific subframe to the sprite
-		* @param Shape The Shape used in the frame
+		* @param SubTexture The SubTexture used in the frame
 		* @param NumFrame The Frame Number
 		* @param NumSubFrame The Sub Frame Number
 		* @return True if success
 		*/
-		bool AddSubFrame( cShape * Shape, const eeUint& NumFrame, const eeUint& NumSubFrame );
+		bool AddSubFrame( cSubTexture * SubTexture, const eeUint& NumFrame, const eeUint& NumSubFrame );
 
 		/** Draw the sprite to the screen */
 		void Draw();
@@ -304,14 +304,14 @@ class EE_API cSprite {
 		/** Will set Reverse active and set the first frame as the last frame */
 		void SetReverseFromStart();
 
-		/** @return The Current Shape */
-		cShape * GetCurrentShape();
+		/** @return The Current SubTexture */
+		cSubTexture * GetCurrentSubTexture();
 
-		/** @return The Shape Frame from the current sub frame */
-		cShape * GetShape( const eeUint& frame );
+		/** @return The SubTexture Frame from the current sub frame */
+		cSubTexture * GetSubTexture( const eeUint& frame );
 
-		/** @return The Shape Frame from the SubFrame */
-		cShape * GetShape( const eeUint& frame, const eeUint& SubFrame );
+		/** @return The SubTexture Frame from the SubFrame */
+		cSubTexture * GetSubTexture( const eeUint& frame, const eeUint& SubFrame );
 
 		/** Start playing from
 		** @param GoTo Frame that goes from 1 to Number of Frames
@@ -374,7 +374,7 @@ class EE_API cSprite {
 
 		class cFrame {
 			public:
-				std::vector<cShape *> Spr;
+				std::vector<cSubTexture *> Spr;
 		};
 		std::vector<cFrame> mFrames;
 

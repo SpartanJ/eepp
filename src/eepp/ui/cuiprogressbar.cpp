@@ -57,17 +57,17 @@ void cUIProgressBar::SetTheme( cUITheme * Theme ) {
 	cUISkin * tSkin = Theme->GetByName( Theme->Abbr() + "_progressbar_filler" );
 
 	if ( tSkin ) {
-		cShape * tShape = tSkin->GetShape( cUISkinState::StateNormal );
+		cSubTexture * tSubTexture = tSkin->GetSubTexture( cUISkinState::StateNormal );
 
-		if ( NULL != tShape ) {
+		if ( NULL != tSubTexture ) {
 			eeSAFE_DELETE( mParallax );
 
 			eeFloat Height = (eeFloat)mSize.Height();
 
 			if ( !mVerticalExpand )
-				Height = (eeFloat)tShape->RealSize().Height();
+				Height = (eeFloat)tSubTexture->RealSize().Height();
 
-			mParallax = eeNew( cScrollParallax, ( tShape, mScreenPos.x + mFillerMargin.Left, mScreenPos.y + mFillerMargin.Top, ( ( mSize.Width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom, mSpeed ) );
+			mParallax = eeNew( cScrollParallax, ( tSubTexture, mScreenPos.x + mFillerMargin.Left, mScreenPos.y + mFillerMargin.Top, ( ( mSize.Width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom, mSpeed ) );
 		}
 	}
 }
@@ -84,8 +84,8 @@ void cUIProgressBar::OnSizeChange() {
 	if ( NULL != mParallax ) {
 		eeFloat Height = (eeFloat)mSize.Height();
 
-		if ( !mVerticalExpand && mParallax->Shape() )
-			Height = (eeFloat)mParallax->Shape()->RealSize().Height();
+		if ( !mVerticalExpand && mParallax->SubTexture() )
+			Height = (eeFloat)mParallax->SubTexture()->RealSize().Height();
 
 		mParallax->Size( ( ( mSize.Width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom );
 	}

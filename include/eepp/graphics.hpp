@@ -10,10 +10,10 @@
 #include <eepp/graphics/ctextureloader.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/graphics/ctexturepacker.hpp>
-#include <eepp/graphics/cshape.hpp>
-#include <eepp/graphics/cshapegroup.hpp>
-#include <eepp/graphics/cglobalshapegroup.hpp>
-#include <eepp/graphics/cshapegroupmanager.hpp>
+#include <eepp/graphics/csubtexture.hpp>
+#include <eepp/graphics/ctextureatlas.hpp>
+#include <eepp/graphics/cglobaltextureatlas.hpp>
+#include <eepp/graphics/ctextureatlasmanager.hpp>
 #include <eepp/graphics/csprite.hpp>
 #include <eepp/graphics/cparticle.hpp>
 #include <eepp/graphics/cparticlesystem.hpp>
@@ -33,7 +33,7 @@
 #include <eepp/graphics/cshader.hpp>
 #include <eepp/graphics/cshaderprogram.hpp>
 #include <eepp/graphics/cshaderprogrammanager.hpp>
-#include <eepp/graphics/ctexturegrouploader.hpp>
+#include <eepp/graphics/ctextureatlasloader.hpp>
 #include <eepp/graphics/cframebuffer.hpp>
 #include <eepp/graphics/cvertexbuffer.hpp>
 #include <eepp/graphics/cvertexbufferogl.hpp>

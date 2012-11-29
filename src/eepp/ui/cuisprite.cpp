@@ -7,14 +7,14 @@ cUISprite::cUISprite( const cUISprite::CreateParams& Params ) :
 	mSprite( Params.Sprite ),
 	mRender( Params.SpriteRender ),
 	mAlignOffset(0,0),
-	mShapeLast(NULL)
+	mSubTextureLast(NULL)
 {
 	if ( Params.DeallocSprite )
 		mControlFlags |= UI_CTRL_FLAG_FREE_USE;
 
 	if ( ( Flags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) {
-		if ( NULL != mSprite && NULL != mSprite->GetCurrentShape() ) {
-			Size( mSprite->GetCurrentShape()->Size() );
+		if ( NULL != mSprite && NULL != mSprite->GetCurrentSubTexture() ) {
+			Size( mSprite->GetCurrentSubTexture()->Size() );
 		}
 	}
 }
@@ -50,18 +50,18 @@ void cUISprite::Draw() {
 
 	if ( mVisible ) {
 		if ( NULL != mSprite && 0.f != mAlpha ) {
-			CheckShapeUpdate();
+			CheckSubTextureUpdate();
 			mSprite->Position( (eeFloat)( mScreenPos.x + mAlignOffset.x ), (eeFloat)( mScreenPos.y + mAlignOffset.y ) );
 			mSprite->Draw( Blend(), mRender );
 		}
 	}
 }
 
-void cUISprite::CheckShapeUpdate() {
-	if ( NULL != mSprite && NULL != mSprite->GetCurrentShape() && mSprite->GetCurrentShape() != mShapeLast ) {
+void cUISprite::CheckSubTextureUpdate() {
+	if ( NULL != mSprite && NULL != mSprite->GetCurrentSubTexture() && mSprite->GetCurrentSubTexture() != mSubTextureLast ) {
 		UpdateSize();
 		AutoAlign();
-		mShapeLast = mSprite->GetCurrentShape();
+		mSubTextureLast = mSprite->GetCurrentSubTexture();
 	}
 }
 
@@ -101,30 +101,30 @@ void cUISprite::RenderType( const EE_RENDERTYPE& render ) {
 void cUISprite::UpdateSize() {
 	if ( Flags() & UI_AUTO_SIZE ) {
 		if ( NULL != mSprite ) {
-			if ( NULL != mSprite->GetCurrentShape() && mSprite->GetCurrentShape()->Size() != mSize )
-				Size( mSprite->GetCurrentShape()->Size() );
+			if ( NULL != mSprite->GetCurrentSubTexture() && mSprite->GetCurrentSubTexture()->Size() != mSize )
+				Size( mSprite->GetCurrentSubTexture()->Size() );
 		}
 	}
 }
 
 void cUISprite::AutoAlign() {
-	if ( NULL == mSprite || NULL == mSprite->GetCurrentShape() )
+	if ( NULL == mSprite || NULL == mSprite->GetCurrentSubTexture() )
 		return;
 
-	cShape * tShape = mSprite->GetCurrentShape();
+	cSubTexture * tSubTexture = mSprite->GetCurrentSubTexture();
 
 	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = mSize.Width() / 2 - tShape->Size().Width() / 2;
+		mAlignOffset.x = mSize.Width() / 2 - tSubTexture->Size().Width() / 2;
 	} else if ( FontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mSize.Width() - tShape->Size().Width();
+		mAlignOffset.x =  mSize.Width() - tSubTexture->Size().Width();
 	} else {
 		mAlignOffset.x = 0;
 	}
 
 	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = mSize.Height() / 2 - tShape->Size().Height() / 2;
+		mAlignOffset.y = mSize.Height() / 2 - tSubTexture->Size().Height() / 2;
 	} else if ( FontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.Height() - tShape->Size().Height();
+		mAlignOffset.y = mSize.Height() - tSubTexture->Size().Height();
 	} else {
 		mAlignOffset.y = 0;
 	}

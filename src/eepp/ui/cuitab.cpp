@@ -70,7 +70,7 @@ void cUITab::OnStateChange() {
 	cUITabWidget * tTabW = GetTabWidget();
 
 	if ( NULL != tTabW ) {
-		Size( mSize.Width(), GetSkinShapeSize( GetSkin(), mSkinState->GetState() ).Height() );
+		Size( mSize.Width(), GetSkinSize( GetSkin(), mSkinState->GetState() ).Height() );
 
 		if ( mSkinState->GetState() == cUISkinState::StateSelected ) {
 			mTextBox->Color( tTabW->mFontSelectedColor );
@@ -106,7 +106,7 @@ void cUITab::Text( const String &text ) {
 
 void cUITab::SetRealSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		Uint32 w = mTextBox->GetTextWidth() + GetSkinShapeSize().Width();
+		Uint32 w = mTextBox->GetTextWidth() + GetSkinSize().Width();
 
 		cUITabWidget * tTabW = GetTabWidget();
 

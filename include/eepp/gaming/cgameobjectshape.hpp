@@ -4,14 +4,14 @@
 #include <eepp/gaming/base.hpp>
 #include <eepp/gaming/cgameobject.hpp>
 
-#include <eepp/graphics/cshape.hpp>
+#include <eepp/graphics/csubtexture.hpp>
 using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {
 
 class EE_API cGameObjectShape : public cGameObject {
 	public:
-		cGameObjectShape( const Uint32& Flags, cLayer * Layer, cShape * Shape = NULL, const eeVector2f& Pos = eeVector2f() );
+		cGameObjectShape( const Uint32& Flags, cLayer * Layer, cSubTexture * Shape = NULL, const eeVector2f& Pos = eeVector2f() );
 
 		virtual ~cGameObjectShape();
 
@@ -27,9 +27,9 @@ class EE_API cGameObjectShape : public cGameObject {
 
 		virtual eeSize Size();
 
-		cShape * Shape() const;
+		cSubTexture * Shape() const;
 
-		void Shape( cShape * shape );
+		void Shape( cSubTexture * shape );
 
 		virtual Uint32 Type() const;
 
@@ -39,7 +39,7 @@ class EE_API cGameObjectShape : public cGameObject {
 
 		virtual void DataId( Uint32 Id );
 	protected:
-		cShape *	mShape;
+		cSubTexture *	mShape;
 		eeVector2f	mPos;
 		eeVector2i	mTilePos;
 };

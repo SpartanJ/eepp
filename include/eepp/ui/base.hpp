@@ -23,7 +23,7 @@ using namespace EE::System;
 using namespace EE::Window;
 
 #include <eepp/graphics/renders.hpp>
-#include <eepp/graphics/cshape.hpp>
+#include <eepp/graphics/csubtexture.hpp>
 #include <eepp/graphics/csprite.hpp>
 #include <eepp/graphics/cfont.hpp>
 #include <eepp/graphics/cprimitives.hpp>

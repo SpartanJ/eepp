@@ -539,7 +539,7 @@ void cTexturePacker::Save( const std::string& Filepath, const EE_SAVE_TYPE& Form
 
 	ChildSave( Format );
 
-	SaveShapes();
+	SaveSubTextures();
 }
 
 Int32 cTexturePacker::GetChildCount() {
@@ -554,7 +554,7 @@ Int32 cTexturePacker::GetChildCount() {
 	return ChildCount;
 }
 
-void cTexturePacker::SaveShapes() {
+void cTexturePacker::SaveSubTextures() {
 	if ( NULL != mParent )
 		return;
 
@@ -590,7 +590,7 @@ void cTexturePacker::SaveShapes() {
 		HdrPos++;
 	}
 
-	std::vector<sShapeHdr> tShapesHdr;
+	std::vector<sSubTextureHdr> tSubTexturesHdr;
 
 	std::string path = FileSystem::FileRemoveExtension( mFilepath ) + ".etg";
 	cIOStreamFile fs ( path , std::ios::out | std::ios::binary );
@@ -600,10 +600,10 @@ void cTexturePacker::SaveShapes() {
 
 		fs.Write( reinterpret_cast<const char*> (&TexHdr[ 0 ]), sizeof(sTextureHdr) );
 
-		CreateShapesHdr( this, tShapesHdr );
+		CreateSubTexturesHdr( this, tSubTexturesHdr );
 
-		if ( tShapesHdr.size() )
-			fs.Write( reinterpret_cast<const char*> (&tShapesHdr[ 0 ]), sizeof(sShapeHdr) * (std::streamsize)tShapesHdr.size() );
+		if ( tSubTexturesHdr.size() )
+			fs.Write( reinterpret_cast<const char*> (&tSubTexturesHdr[ 0 ]), sizeof(sSubTextureHdr) * (std::streamsize)tSubTexturesHdr.size() );
 
 		Int32 HdrPos 				= 1;
 		cTexturePacker * Child 		= mChild;
@@ -611,10 +611,10 @@ void cTexturePacker::SaveShapes() {
 		while ( NULL != Child ) {
 			fs.Write( reinterpret_cast<const char*> (&TexHdr[ HdrPos ]), sizeof(sTextureHdr) );
 
-			CreateShapesHdr( Child, tShapesHdr );
+			CreateSubTexturesHdr( Child, tSubTexturesHdr );
 
-			if ( tShapesHdr.size() )
-				fs.Write( reinterpret_cast<const char*> (&tShapesHdr[ 0 ]), sizeof(sShapeHdr) * (std::streamsize)tShapesHdr.size() );
+			if ( tSubTexturesHdr.size() )
+				fs.Write( reinterpret_cast<const char*> (&tSubTexturesHdr[ 0 ]), sizeof(sSubTextureHdr) * (std::streamsize)tSubTexturesHdr.size() );
 
 			Child 				= Child->GetChild();
 
@@ -623,17 +623,17 @@ void cTexturePacker::SaveShapes() {
 	}
 }
 
-void cTexturePacker::CreateShapesHdr( cTexturePacker * Packer, std::vector<sShapeHdr>& Shapes ) {
-	Shapes.clear();
+void cTexturePacker::CreateSubTexturesHdr( cTexturePacker * Packer, std::vector<sSubTextureHdr>& SubTextures ) {
+	SubTextures.clear();
 
-	sShapeHdr tShapeHdr;
+	sSubTextureHdr tSubTextureHdr;
 	Uint32 c = 0;
 
 	std::list<cTexturePackerTex> tTextures = *(Packer->GetTexturePackPtr());
 	std::list<cTexturePackerTex>::iterator it;
 	cTexturePackerTex * tTex;
 
-	Shapes.resize( tTextures.size() );
+	SubTextures.resize( tTextures.size() );
 
 	for ( it = tTextures.begin(); it != tTextures.end(); it++ ) {
 		tTex = &(*it);
@@ -641,30 +641,30 @@ void cTexturePacker::CreateShapesHdr( cTexturePacker * Packer, std::vector<sShap
 		if ( tTex->Placed() ) {
 			std::string name = FileSystem::FileNameFromPath( tTex->Name() );
 
-			memset( tShapeHdr.Name, 0, HDR_NAME_SIZE );
+			memset( tSubTextureHdr.Name, 0, HDR_NAME_SIZE );
 
-			String::StrCopy( tShapeHdr.Name, name.c_str(), HDR_NAME_SIZE );
+			String::StrCopy( tSubTextureHdr.Name, name.c_str(), HDR_NAME_SIZE );
 
 			if ( !mSaveExtensions )
 				name = FileSystem::FileRemoveExtension( name );
 
-			tShapeHdr.ResourceID	= MakeHash( name );
-			tShapeHdr.Width 		= tTex->Width();
-			tShapeHdr.Height 		= tTex->Height();
-			tShapeHdr.Channels		= tTex->Channels();
-			tShapeHdr.DestWidth 	= tTex->Width();
-			tShapeHdr.DestHeight 	= tTex->Height();
-			tShapeHdr.OffsetX		= 0;
-			tShapeHdr.OffsetY		= 0;
-			tShapeHdr.X				= tTex->X();
-			tShapeHdr.Y				= tTex->Y();
-			tShapeHdr.Date			= FileSystem::FileGetModificationDate( tTex->Name() );
-			tShapeHdr.Flags			= 0;
+			tSubTextureHdr.ResourceID	= MakeHash( name );
+			tSubTextureHdr.Width 		= tTex->Width();
+			tSubTextureHdr.Height 		= tTex->Height();
+			tSubTextureHdr.Channels		= tTex->Channels();
+			tSubTextureHdr.DestWidth 	= tTex->Width();
+			tSubTextureHdr.DestHeight 	= tTex->Height();
+			tSubTextureHdr.OffsetX		= 0;
+			tSubTextureHdr.OffsetY		= 0;
+			tSubTextureHdr.X				= tTex->X();
+			tSubTextureHdr.Y				= tTex->Y();
+			tSubTextureHdr.Date			= FileSystem::FileGetModificationDate( tTex->Name() );
+			tSubTextureHdr.Flags			= 0;
 
 			if ( tTex->Flipped() )
-				tShapeHdr.Flags |= HDR_SHAPE_FLAG_FLIPED;
+				tSubTextureHdr.Flags |= HDR_SUBTEXTURE_FLAG_FLIPED;
 
-			Shapes[c] = tShapeHdr;
+			SubTextures[c] = tSubTextureHdr;
 
 			c++;
 		}
@@ -682,7 +682,7 @@ sTextureHdr	cTexturePacker::CreateTextureHdr( cTexturePacker * Packer ) {
 
 	TexHdr.ResourceID 	= MakeHash( name );
 	TexHdr.Size			= FileSystem::FileSize( Packer->GetFilepath() );
-	TexHdr.ShapeCount 	= Packer->GetPlacedCount();
+	TexHdr.SubTextureCount 	= Packer->GetPlacedCount();
 
 	return TexHdr;
 }

@@ -82,16 +82,16 @@ void cUISlider::OnSizeChange() {
 }
 
 void cUISlider::AdjustChilds() {
-	cShape * tShape = NULL;
+	cSubTexture * tSubTexture = NULL;
 	cUISkin * tSkin = NULL;
 
 	tSkin = mSlider->GetSkin();
 
 	if ( NULL != tSkin ) {
-		tShape = tSkin->GetShape( cUISkinState::StateNormal );
+		tSubTexture = tSkin->GetSubTexture( cUISkinState::StateNormal );
 
-		if ( NULL != tShape ) {
-			mSlider->Size( tShape->RealSize() );
+		if ( NULL != tSubTexture ) {
+			mSlider->Size( tSubTexture->RealSize() );
 
 			if ( !mVertical )
 				mSlider->CenterVertical();
@@ -103,16 +103,16 @@ void cUISlider::AdjustChilds() {
 	tSkin = mBackSlider->GetSkin();
 
 	if ( NULL != tSkin ) {
-		tShape = tSkin->GetShape( cUISkinState::StateNormal );
+		tSubTexture = tSkin->GetSubTexture( cUISkinState::StateNormal );
 
-		if ( NULL != tShape ) {
+		if ( NULL != tSubTexture ) {
 			if ( !mVertical ) {
 				Int32 Height;
 
 				if ( mExpandBackground )
 					Height = mSize.Height();
 				else
-					Height = tShape->RealSize().Height();
+					Height = tSubTexture->RealSize().Height();
 
 				if ( mAllowHalfSliderOut )
 					mBackSlider->Size( eeSize( mSize.Width() - mSlider->Size().Width(), Height ) );
@@ -124,7 +124,7 @@ void cUISlider::AdjustChilds() {
 				if ( mExpandBackground )
 					Width = mSize.Width();
 				else
-					Width = tShape->RealSize().Width();
+					Width = tSubTexture->RealSize().Width();
 
 				if ( mAllowHalfSliderOut )
 					mBackSlider->Size( eeSize( Width, mSize.Height() - mSlider->Size().Height() ) );

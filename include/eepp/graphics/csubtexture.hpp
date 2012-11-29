@@ -1,25 +1,25 @@
-#ifndef EE_GRAPHICSCSHAPE_H
-#define EE_GRAPHICSCSHAPE_H
+#ifndef EE_GRAPHICSCSUBTEXTURE_H
+#define EE_GRAPHICSCSUBTEXTURE_H
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/ctexture.hpp>
 
 namespace EE { namespace Graphics {
 
-/** @brief A Shape is a part of a texture that represent an sprite.*/
-class EE_API cShape {
+/** @brief A cSubTexture is a part of a texture that represent an sprite.*/
+class EE_API cSubTexture {
 	public:
-		cShape();
+		cSubTexture();
 
-		cShape( const Uint32& TexId, const std::string& Name = "" );
+		cSubTexture( const Uint32& TexId, const std::string& Name = "" );
 
-		cShape( const Uint32& TexId, const eeRecti& SrcRect, const std::string& Name = "" );
+		cSubTexture( const Uint32& TexId, const eeRecti& SrcRect, const std::string& Name = "" );
 
-		cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const std::string& Name = "" );
+		cSubTexture( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const std::string& Name = "" );
 
-		cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const Int32& OffsetX, const Int32& OffsetY, const std::string& Name = "" );
+		cSubTexture( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const Int32& OffsetX, const Int32& OffsetY, const std::string& Name = "" );
 
-		virtual ~cShape();
+		virtual ~cSubTexture();
 
 		const Uint32& Id() const;
 

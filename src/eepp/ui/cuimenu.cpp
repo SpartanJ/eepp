@@ -50,7 +50,7 @@ void cUIMenu::DoAfterSetTheme() {
 	OnSizeChange();
 }
 
-cUIMenuItem * cUIMenu::CreateMenuItem( const String& Text, cShape * Icon ) {
+cUIMenuItem * cUIMenu::CreateMenuItem( const String& Text, cSubTexture * Icon ) {
 	cUIMenuItem::CreateParams Params;
 	Params.Parent( this );
 	Params.Font 			= mFont;
@@ -79,7 +79,7 @@ cUIMenuItem * cUIMenu::CreateMenuItem( const String& Text, cShape * Icon ) {
 	return tCtrl;
 }
 
-Uint32 cUIMenu::Add( const String& Text, cShape * Icon ) {
+Uint32 cUIMenu::Add( const String& Text, cSubTexture * Icon ) {
 	return Add( CreateMenuItem( Text, Icon ) );
 }
 
@@ -116,7 +116,7 @@ Uint32 cUIMenu::AddCheckBox( const String& Text ) {
 	return Add( CreateMenuCheckBox( Text ) );
 }
 
-cUIMenuSubMenu * cUIMenu::CreateSubMenu( const String& Text, cShape * Icon, cUIMenu * SubMenu ) {
+cUIMenuSubMenu * cUIMenu::CreateSubMenu( const String& Text, cSubTexture * Icon, cUIMenu * SubMenu ) {
 	cUIMenuSubMenu::CreateParams Params;
 	Params.Parent( this );
 	Params.Font 			= mFont;
@@ -146,7 +146,7 @@ cUIMenuSubMenu * cUIMenu::CreateSubMenu( const String& Text, cShape * Icon, cUIM
 	return tCtrl;
 }
 
-Uint32 cUIMenu::AddSubMenu( const String& Text, cShape * Icon, cUIMenu * SubMenu ) {
+Uint32 cUIMenu::AddSubMenu( const String& Text, cSubTexture * Icon, cUIMenu * SubMenu ) {
 	return Add( CreateSubMenu( Text, Icon, SubMenu ) );
 }
 
@@ -299,7 +299,7 @@ void cUIMenu::RemoveAll() {
 	ResizeMe();
 }
 
-void cUIMenu::Insert( const String& Text, cShape * Icon, const Uint32& Index ) {
+void cUIMenu::Insert( const String& Text, cSubTexture * Icon, const Uint32& Index ) {
 	Insert( CreateMenuItem( Text, Icon ), Index );
 }
 

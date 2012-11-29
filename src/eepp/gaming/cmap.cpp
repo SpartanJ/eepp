@@ -9,8 +9,8 @@
 #include <eepp/system/cpackmanager.hpp>
 
 #include <eepp/graphics/cprimitives.hpp>
-#include <eepp/graphics/cshapegroupmanager.hpp>
-#include <eepp/graphics/ctexturegrouploader.hpp>
+#include <eepp/graphics/ctextureatlasmanager.hpp>
+#include <eepp/graphics/ctextureatlasloader.hpp>
 #include <eepp/ui/cuithememanager.hpp>
 using namespace EE::Graphics;
 
@@ -604,7 +604,7 @@ cGameObject * cMap::CreateGameObject( const Uint32& Type, const Uint32& Flags, c
 				return mCreateGOCb( Type, Flags, Layer, DataId );
 			} else {
 				cGameObjectVirtual * tVirtual;
-				cShape * tIsShape = cShapeGroupManager::instance()->GetShapeById( DataId );
+				cSubTexture * tIsShape = cTextureAtlasManager::instance()->GetSubTextureById( DataId );
 
 				if ( NULL != tIsShape ) {
 					tVirtual = eeNew( cGameObjectVirtual, ( tIsShape, Layer, Flags, Type ) );
@@ -767,25 +767,25 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 			}
 
 			//! Load Shape Groups
-			if ( MapHdr.ShapeGroupCount ) {
-				sMapShapeGroup * tSG = eeNewArray( sMapShapeGroup, MapHdr.ShapeGroupCount );
+			if ( MapHdr.TextureAtlasCount ) {
+				sMapTextureAtlas * tSG = eeNewArray( sMapTextureAtlas, MapHdr.TextureAtlasCount );
 
-				IOS.Read( (char*)&tSG[0], sizeof(sMapShapeGroup) * MapHdr.ShapeGroupCount );
+				IOS.Read( (char*)&tSG[0], sizeof(sMapTextureAtlas) * MapHdr.TextureAtlasCount );
 
-				std::vector<std::string> ShapeGroups;
+				std::vector<std::string> TextureAtlases;
 
-				for ( i = 0; i < MapHdr.ShapeGroupCount; i++ ) {
-					ShapeGroups.push_back( std::string( tSG[i].Path ) );
+				for ( i = 0; i < MapHdr.TextureAtlasCount; i++ ) {
+					TextureAtlases.push_back( std::string( tSG[i].Path ) );
 				}
 
 				//! Load the Texture groups if needed
-				for ( i = 0; i < ShapeGroups.size(); i++ ) {
-					std::string sgname = FileSystem::FileRemoveExtension( FileSystem::FileNameFromPath( ShapeGroups[i] ) );
+				for ( i = 0; i < TextureAtlases.size(); i++ ) {
+					std::string sgname = FileSystem::FileRemoveExtension( FileSystem::FileNameFromPath( TextureAtlases[i] ) );
 
-					if ( NULL == cShapeGroupManager::instance()->GetByName( sgname ) ) {
-						cTextureGroupLoader * tgl = eeNew( cTextureGroupLoader, () );
+					if ( NULL == cTextureAtlasManager::instance()->GetByName( sgname ) ) {
+						cTextureAtlasLoader * tgl = eeNew( cTextureAtlasLoader, () );
 
-						tgl->Load( tgl->AppPath() + ShapeGroups[i] );
+						tgl->Load( tgl->AppPath() + TextureAtlases[i] );
 
 						eeSAFE_DELETE( tgl );
 					}
@@ -980,7 +980,7 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 	sMapHdr MapHdr;
 	cLayer * tLayer;
 
-	std::vector<std::string> ShapeGroups = GetShapeGroups();
+	std::vector<std::string> TextureAtlases = GetTextureAtlases();
 
 	MapHdr.Magic					= ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'M' << 16 ) | ( 'P' << 24 ) );
 	MapHdr.Flags					= mFlags;
@@ -991,7 +991,7 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 	MapHdr.TileSizeY				= mTileSize.Height();
 	MapHdr.LayerCount				= mLayerCount;
 	MapHdr.PropertyCount			= mProperties.size();
-	MapHdr.ShapeGroupCount			= ShapeGroups.size();
+	MapHdr.TextureAtlasCount			= TextureAtlases.size();
 	MapHdr.VirtualObjectTypesCount	= mObjTypes.size();	//! This is only usefull for the Map Editor, to auto add on the load the virtual object types that where used to create the map.
 	MapHdr.BaseColor				= mBaseColor.GetUint32();
 
@@ -1018,14 +1018,14 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 		}
 
 		//! Writes the shape groups that the map will need and load
-		for ( i = 0; i < ShapeGroups.size(); i++ ) {
-			sMapShapeGroup tSG;
+		for ( i = 0; i < TextureAtlases.size(); i++ ) {
+			sMapTextureAtlas tSG;
 
-			memset( tSG.Path, 0, MAP_SHAPEGROUP_PATH_SIZE );
+			memset( tSG.Path, 0, MAP_TEXTUREATLAS_PATH_SIZE );
 
-			String::StrCopy( tSG.Path, ShapeGroups[i].c_str(), MAP_SHAPEGROUP_PATH_SIZE );
+			String::StrCopy( tSG.Path, TextureAtlases[i].c_str(), MAP_TEXTUREATLAS_PATH_SIZE );
 
-			IOS.Write( (const char*)&tSG, sizeof(sMapShapeGroup) );
+			IOS.Write( (const char*)&tSG, sizeof(sMapTextureAtlas) );
 		}
 
 		//! Writes the names of the virtual object types created in the map editor
@@ -1225,17 +1225,17 @@ void cMap::Save( const std::string& path ) {
 	}
 }
 
-std::vector<std::string> cMap::GetShapeGroups() {
-	cShapeGroupManager * SGM = cShapeGroupManager::instance();
-	std::list<cShapeGroup*>& Res = SGM->GetResources();
+std::vector<std::string> cMap::GetTextureAtlases() {
+	cTextureAtlasManager * SGM = cTextureAtlasManager::instance();
+	std::list<cTextureAtlas*>& Res = SGM->GetResources();
 
 	std::vector<std::string> items;
 
 	//! Ugly ugly ugly, but i don't see another way
 	Uint32 Restricted1 = MakeHash( std::string( "global" ) );
-	Uint32 Restricted2 = MakeHash( UI::cUIThemeManager::instance()->DefaultTheme()->ShapeGroup()->Name() );
+	Uint32 Restricted2 = MakeHash( UI::cUIThemeManager::instance()->DefaultTheme()->TextureAtlas()->Name() );
 
-	for ( std::list<cShapeGroup*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
+	for ( std::list<cTextureAtlas*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
 		if ( (*it)->Id() != Restricted1 && (*it)->Id() != Restricted2 )
 			items.push_back( (*it)->Path() );
 	}

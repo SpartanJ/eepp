@@ -2,7 +2,7 @@
 #include <eepp/ui/cuiskinsimple.hpp>
 #include <eepp/ui/cuiskincomplex.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
-#include <eepp/graphics/cshapegroupmanager.hpp>
+#include <eepp/graphics/ctextureatlasmanager.hpp>
 #include <eepp/system/filesystem.hpp>
 
 #include <eepp/ui/cuicheckbox.hpp>
@@ -126,7 +126,7 @@ void cUITheme::AddThemeIcon( const std::string& Icon ) {
 	UI_THEME_ICONS.push_back( Icon );
 }
 
-cUITheme * cUITheme::LoadFromShapeGroup( cUITheme * tTheme, cShapeGroup * ShapeGroup ) {
+cUITheme * cUITheme::LoadFromTextureAtlas( cUITheme * tTheme, cTextureAtlas * TextureAtlas ) {
 	cTimeElapsed TE;
 
 	LoadThemeElements();
@@ -137,14 +137,14 @@ cUITheme * cUITheme::LoadFromShapeGroup( cUITheme * tTheme, cShapeGroup * ShapeG
 	std::vector<std::string> 	ElemFound;
 	std::vector<Uint32> 		ElemType;
 
-	tTheme->ShapeGroup( ShapeGroup );
+	tTheme->TextureAtlas( TextureAtlas );
 
 	for ( std::list<std::string>::iterator it = UI_THEME_ELEMENTS.begin() ; it != UI_THEME_ELEMENTS.end(); it++ ) {
 		Uint32 IsComplex = 0;
 
 		Element = std::string( tTheme->Abbr() + "_" + *it );
 
-		Found 	= SearchFilesInGroup( ShapeGroup, Element, IsComplex );
+		Found 	= SearchFilesInGroup( TextureAtlas, Element, IsComplex );
 
 		if ( Found ) {
 			ElemFound.push_back( Element );
@@ -159,7 +159,7 @@ cUITheme * cUITheme::LoadFromShapeGroup( cUITheme * tTheme, cShapeGroup * ShapeG
 			tTheme->Add( eeNew( cUISkinSimple, ( ElemFound[i] ) ) );
 	}
 
-	cLog::instance()->Write( "UI Theme Loaded in: " + String::toStr( TE.ElapsedSinceStart() ) + " ( from ShapeGroup )" );
+	cLog::instance()->Write( "UI Theme Loaded in: " + String::toStr( TE.ElapsedSinceStart() ) + " ( from TextureAtlas )" );
 
 	return tTheme;
 }
@@ -183,9 +183,9 @@ cUITheme * cUITheme::LoadFromPath( cUITheme * tTheme, const std::string& Path, c
 	std::vector<std::string> 	ElemFound;
 	std::vector<Uint32> 		ElemType;
 
-	cShapeGroup * tSG = eeNew( cShapeGroup, ( tTheme->Abbr() ) );
+	cTextureAtlas * tSG = eeNew( cTextureAtlas, ( tTheme->Abbr() ) );
 
-	tTheme->ShapeGroup( tSG );
+	tTheme->TextureAtlas( tSG );
 
 	for ( std::list<std::string>::iterator it = UI_THEME_ELEMENTS.begin() ; it != UI_THEME_ELEMENTS.end(); it++ ) {
 		Uint32 IsComplex = 0;
@@ -206,12 +206,12 @@ cUITheme * cUITheme::LoadFromPath( cUITheme * tTheme, const std::string& Path, c
 		Element		= RPath + ElemName + "." + ImgExt;
 
 		if ( FileSystem::FileExists( Element ) ) {
-			tSG->Add( eeNew( cShape, ( cTextureFactory::instance()->Load( Element ), ElemName ) ) );
+			tSG->Add( eeNew( cSubTexture, ( cTextureFactory::instance()->Load( Element ), ElemName ) ) );
 		}
 	}
 
 	if ( tSG->Count() )
-		cShapeGroupManager::instance()->Add( tSG );
+		cTextureAtlasManager::instance()->Add( tSG );
 	else
 		eeSAFE_DELETE( tSG );
 
@@ -231,11 +231,11 @@ cUITheme * cUITheme::LoadFromPath( const std::string& Path, const std::string& N
 	return LoadFromPath( eeNew( cUITheme, ( Name, NameAbbr ) ), Path, ImgExt );
 }
 
-cUITheme * cUITheme::LoadFromShapeGroup( cShapeGroup * ShapeGroup, const std::string& Name, const std::string NameAbbr ) {
-	return LoadFromShapeGroup( eeNew( cUITheme, ( Name, NameAbbr ) ), ShapeGroup );
+cUITheme * cUITheme::LoadFromTextureAtlas( cTextureAtlas * TextureAtlas, const std::string& Name, const std::string NameAbbr ) {
+	return LoadFromTextureAtlas( eeNew( cUITheme, ( Name, NameAbbr ) ), TextureAtlas );
 }
 
-bool cUITheme::SearchFilesInGroup( cShapeGroup * SG, std::string Element, Uint32& IsComplex ) {
+bool cUITheme::SearchFilesInGroup( cTextureAtlas * SG, std::string Element, Uint32& IsComplex ) {
 	bool Found = false;
 	Uint32 i = 0, s = 0;
 	std::string ElemName;
@@ -269,7 +269,7 @@ bool cUITheme::SearchFilesInGroup( cShapeGroup * SG, std::string Element, Uint32
 	return Found;
 }
 
-bool cUITheme::SearchFilesOfElement( cShapeGroup * SG, const std::string& Path, std::string Element, Uint32& IsComplex, const std::string ImgExt ) {
+bool cUITheme::SearchFilesOfElement( cTextureAtlas * SG, const std::string& Path, std::string Element, Uint32& IsComplex, const std::string ImgExt ) {
 	bool Found = false;
 	Uint32 i = 0, s = 0;
 	std::string ElemPath;
@@ -285,7 +285,7 @@ bool cUITheme::SearchFilesOfElement( cShapeGroup * SG, const std::string& Path, 
 			ElemFullPath = ElemPath + "." + ImgExt;
 
 			if ( FileSystem::FileExists( ElemFullPath ) ) {
-				SG->Add( eeNew( cShape, ( cTextureFactory::instance()->Load( ElemFullPath ), ElemName ) ) );
+				SG->Add( eeNew( cSubTexture, ( cTextureFactory::instance()->Load( ElemFullPath ), ElemName ) ) );
 
 				IsComplex = 1;
 				Found = true;
@@ -302,7 +302,7 @@ bool cUITheme::SearchFilesOfElement( cShapeGroup * SG, const std::string& Path, 
 			ElemFullPath = ElemPath + "." + ImgExt;
 
 			if ( FileSystem::FileExists( ElemFullPath ) ) {
-				SG->Add( eeNew( cShape, ( cTextureFactory::instance()->Load( ElemFullPath ), ElemName ) ) );
+				SG->Add( eeNew( cSubTexture, ( cTextureFactory::instance()->Load( ElemFullPath ), ElemName ) ) );
 
 				Found = true;
 			}
@@ -317,7 +317,7 @@ cUITheme::cUITheme( const std::string& Name, const std::string& Abbr, cFont * De
 	mName( Name ),
 	mNameHash( MakeHash( mName ) ),
 	mAbbr( Abbr ),
-	mShapeGroup( NULL ),
+	mTextureAtlas( NULL ),
 	mFont( DefaultFont ),
 	mFontColor( 0, 0, 0, 255 ),
 	mFontShadowColor( 255, 255, 255, 200 ),
@@ -402,30 +402,30 @@ const bool& cUITheme::UseDefaultThemeValues() const {
 	return mUseDefaultThemeValues;
 }
 
-cShapeGroup * cUITheme::ShapeGroup() const {
-	return mShapeGroup;
+cTextureAtlas * cUITheme::TextureAtlas() const {
+	return mTextureAtlas;
 }
 
-void cUITheme::ShapeGroup( cShapeGroup * SG ) {
-	mShapeGroup = SG;
+void cUITheme::TextureAtlas( cTextureAtlas * SG ) {
+	mTextureAtlas = SG;
 }
 
-cShape * cUITheme::GetIconByName( const std::string& name ) {
-	if ( NULL != mShapeGroup )
-		return mShapeGroup->GetByName( mAbbr + "_icon_" + name );
+cSubTexture * cUITheme::GetIconByName( const std::string& name ) {
+	if ( NULL != mTextureAtlas )
+		return mTextureAtlas->GetByName( mAbbr + "_icon_" + name );
 
 	return NULL;
 }
 
-cUIGfx * cUITheme::CreateGfx( cShape * Shape, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, eeColorA ShapeColor, EE_RENDERTYPE ShapeRender ) {
+cUIGfx * cUITheme::CreateGfx( cSubTexture * SubTexture, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, eeColorA SubTextureColor, EE_RENDERTYPE SubTextureRender ) {
 	cUIGfx::CreateParams GfxParams;
 	GfxParams.Parent( Parent );
 	GfxParams.PosSet( Pos );
 	GfxParams.SizeSet( Size );
 	GfxParams.Flags = Flags;
-	GfxParams.Shape = Shape;
-	GfxParams.ShapeColor = ShapeColor;
-	GfxParams.ShapeRender = ShapeRender;
+	GfxParams.SubTexture = SubTexture;
+	GfxParams.SubTextureColor = SubTextureColor;
+	GfxParams.SubTextureRender = SubTextureRender;
 	cUIGfx * Gfx = eeNew( cUIGfx, ( GfxParams ) );
 	Gfx->Visible( true );
 	Gfx->Enabled( true );
@@ -663,7 +663,7 @@ cUIProgressBar * cUITheme::CreateProgressBar( cUIControl * Parent, const eeSize&
 	return Ctrl;
 }
 
-cUIPushButton * cUITheme::CreatePushButton( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, cShape * Icon, Int32 IconHorizontalMargin, bool IconAutoMargin ) {
+cUIPushButton * cUITheme::CreatePushButton( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, cSubTexture * Icon, Int32 IconHorizontalMargin, bool IconAutoMargin ) {
 	cUIPushButton::CreateParams ButtonParams;
 	ButtonParams.Parent( Parent );
 	ButtonParams.PosSet( Pos );

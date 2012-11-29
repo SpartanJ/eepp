@@ -2,11 +2,11 @@
 #include <eepp/gaming/cmap.hpp>
 #include <eepp/gaming/ctilelayer.hpp>
 #include <eepp/gaming/clightmanager.hpp>
-#include <eepp/graphics/cshapegroupmanager.hpp>
+#include <eepp/graphics/ctextureatlasmanager.hpp>
 
 namespace EE { namespace Gaming {
 
-cGameObjectShape::cGameObjectShape( const Uint32& Flags, cLayer * Layer, cShape * Shape, const eeVector2f& Pos ) :
+cGameObjectShape::cGameObjectShape( const Uint32& Flags, cLayer * Layer, cSubTexture * Shape, const eeVector2f& Pos ) :
 	cGameObject( Flags, Layer ),
 	mShape( Shape ),
 	mPos( Pos )
@@ -97,11 +97,11 @@ eeSize cGameObjectShape::Size() {
 	return eeSize();
 }
 
-cShape * cGameObjectShape::Shape() const {
+cSubTexture * cGameObjectShape::Shape() const {
 	return mShape;
 }
 
-void cGameObjectShape::Shape( cShape * shape ) {
+void cGameObjectShape::Shape( cSubTexture * shape ) {
 	mShape = shape;
 }
 
@@ -110,7 +110,7 @@ Uint32 cGameObjectShape::DataId() {
 }
 
 void cGameObjectShape::DataId( Uint32 Id ) {
-	Shape( cShapeGroupManager::instance()->GetShapeById( Id ) );
+	Shape( cTextureAtlasManager::instance()->GetSubTextureById( Id ) );
 }
 
 }}

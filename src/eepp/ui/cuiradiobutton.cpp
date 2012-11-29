@@ -47,14 +47,14 @@ void cUIRadioButton::SetTheme( cUITheme * Theme ) {
 	mActiveButton->SetThemeControl	( Theme, "radiobutton_active" );
 	mInactiveButton->SetThemeControl( Theme, "radiobutton_inactive" );
 
-	cShape * tShape = NULL;
+	cSubTexture * tSubTexture = NULL;
 	cUISkin * tSkin = mActiveButton->GetSkin();
 
 	if ( tSkin ) {
-		tShape = tSkin->GetShape( cUISkinState::StateNormal );
+		tSubTexture = tSkin->GetSubTexture( cUISkinState::StateNormal );
 
-		if ( NULL != tShape ) {
-			mActiveButton->Size( tShape->RealSize() );
+		if ( NULL != tSubTexture ) {
+			mActiveButton->Size( tSubTexture->RealSize() );
 			mActiveButton->CenterVertical();
 		}
 	}
@@ -62,10 +62,10 @@ void cUIRadioButton::SetTheme( cUITheme * Theme ) {
 	tSkin = mInactiveButton->GetSkin();
 
 	if ( NULL != tSkin ) {
-		tShape = tSkin->GetShape( cUISkinState::StateNormal );
+		tSubTexture = tSkin->GetSubTexture( cUISkinState::StateNormal );
 
-		if ( NULL != tShape ) {
-			mInactiveButton->Size( tShape->RealSize() );
+		if ( NULL != tSubTexture ) {
+			mInactiveButton->Size( tSubTexture->RealSize() );
 			mInactiveButton->CenterVertical();
 		}
 	}

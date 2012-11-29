@@ -73,7 +73,7 @@ cIsoTile& cIsoMap::Tile( const eeUint& MapTileX, const eeUint& MapTileY ) {
 	return Map[ MapTileX + MapTileY * mMapWidth ];
 }
 
-void cIsoMap::Layer( const eeUint& MapTileX, const eeUint& MapTileY, const eeUint& LayerNum, cShape * LayerData ) {
+void cIsoMap::Layer( const eeUint& MapTileX, const eeUint& MapTileY, const eeUint& LayerNum, cSubTexture * LayerData ) {
 	if( LayerNum < mMapLayers )
 		Tile(MapTileX, MapTileY).Layers[LayerNum] = LayerData;
 }
@@ -149,7 +149,7 @@ void cIsoMap::Draw() {
 					}
 				} else {
 					if ( T->Layers[L] != NULL ) {
-						cShape * Shape = T->Layers[L];
+						cSubTexture * Shape = T->Layers[L];
 
 						if ( T != NULL ) {
 							eeVector2f TileCenter( T->Q.V[1].x + (T->Q.V[3].x - T->Q.V[1].x) * 0.5f, T->Q.V[0].y + (T->Q.V[2].y - T->Q.V[0].y) * 0.5f );

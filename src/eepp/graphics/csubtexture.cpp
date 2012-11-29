@@ -1,10 +1,10 @@
-#include <eepp/graphics/cshape.hpp>
+#include <eepp/graphics/csubtexture.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
 
 namespace EE { namespace Graphics {
 
-cShape::cShape() :
+cSubTexture::cSubTexture() :
 	mPixels(NULL),
 	mAlpha(NULL),
 	mId(0),
@@ -19,7 +19,7 @@ cShape::cShape() :
 	CreateUnnamed();
 }
 
-cShape::cShape( const Uint32& TexId, const std::string& Name ) :
+cSubTexture::cSubTexture( const Uint32& TexId, const std::string& Name ) :
 	mPixels(NULL),
 	mAlpha(NULL),
 	mName( Name ),
@@ -39,7 +39,7 @@ cShape::cShape( const Uint32& TexId, const std::string& Name ) :
 	CreateUnnamed();
 }
 
-cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const std::string& Name ) :
+cSubTexture::cSubTexture( const Uint32& TexId, const eeRecti& SrcRect, const std::string& Name ) :
 	mPixels(NULL),
 	mAlpha(NULL),
 	mName( Name ),
@@ -55,7 +55,7 @@ cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const std::string& 
 	CreateUnnamed();
 }
 
-cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const std::string& Name ) :
+cSubTexture::cSubTexture( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const std::string& Name ) :
 	mPixels(NULL),
 	mAlpha(NULL),
 	mName( Name ),
@@ -71,7 +71,7 @@ cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& Dest
 	CreateUnnamed();
 }
 
-cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const Int32& OffsetX, const Int32& OffsetY, const std::string& Name ) :
+cSubTexture::cSubTexture( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const Int32& OffsetX, const Int32& OffsetY, const std::string& Name ) :
 	mPixels(NULL),
 	mAlpha(NULL),
 	mName( Name ),
@@ -87,42 +87,42 @@ cShape::cShape( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& Dest
 	CreateUnnamed();
 }
 
-cShape::~cShape() {
+cSubTexture::~cSubTexture() {
 	ClearCache();
 }
 
-void cShape::CreateUnnamed() {
+void cSubTexture::CreateUnnamed() {
 	if ( !mName.size() )
 		Name( std::string( "unnamed" ) );
 }
 
-const Uint32& cShape::Id() const {
+const Uint32& cSubTexture::Id() const {
 	return mId;
 }
 
-const std::string cShape::Name() const {
+const std::string cSubTexture::Name() const {
 	return mName;
 }
 
-void cShape::Name( const std::string& name ) {
+void cSubTexture::Name( const std::string& name ) {
 	mName = name;
 	mId = MakeHash( mName );
 }
 
-const Uint32& cShape::Texture() {
+const Uint32& cSubTexture::Texture() {
 	return mTexId;
 }
 
-void cShape::Texture( const Uint32& TexId ) {
+void cSubTexture::Texture( const Uint32& TexId ) {
 	mTexId = TexId;
 	mTexture = cTextureFactory::instance()->GetTexture( TexId );
 }
 
-const eeRecti& cShape::SrcRect() const {
+const eeRecti& cSubTexture::SrcRect() const {
 	return mSrcRect;
 }
 
-void cShape::SrcRect( const eeRecti& Rect ) {
+void cSubTexture::SrcRect( const eeRecti& Rect ) {
 	mSrcRect = Rect;
 
 	if ( NULL != mPixels )
@@ -132,58 +132,58 @@ void cShape::SrcRect( const eeRecti& Rect ) {
 		CacheAlphaMask();
 }
 
-const eeFloat& cShape::DestWidth() const {
+const eeFloat& cSubTexture::DestWidth() const {
 	return mDestWidth;
 }
 
-void cShape::DestWidth( const eeFloat& width ) {
+void cSubTexture::DestWidth( const eeFloat& width ) {
 	mDestWidth = width;
 }
 
-const eeFloat& cShape::DestHeight() const {
+const eeFloat& cSubTexture::DestHeight() const {
 	return mDestHeight;
 }
 
-void cShape::DestHeight( const eeFloat& height ) {
+void cSubTexture::DestHeight( const eeFloat& height ) {
 	mDestHeight = height;
 }
 
-const Int32& cShape::OffsetX() const {
+const Int32& cSubTexture::OffsetX() const {
 	return mOffsetX;
 }
 
-void cShape::OffsetX( const Int32& offsetx ) {
+void cSubTexture::OffsetX( const Int32& offsetx ) {
 	mOffsetX = offsetx;
 }
 
-const Int32& cShape::OffsetY() const {
+const Int32& cSubTexture::OffsetY() const {
 	return mOffsetY;
 }
 
-void cShape::OffsetY( const Int32& offsety ) {
+void cSubTexture::OffsetY( const Int32& offsety ) {
 	mOffsetY = offsety;
 }
 
-void cShape::Draw( const eeFloat& X, const eeFloat& Y, const eeColorA& Color, const eeFloat& Angle, const eeFloat& Scale, const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
+void cSubTexture::Draw( const eeFloat& X, const eeFloat& Y, const eeColorA& Color, const eeFloat& Angle, const eeFloat& Scale, const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
 	if ( NULL != mTexture )
 		mTexture->DrawEx( X + mOffsetX, Y + mOffsetY, mDestWidth, mDestHeight, Angle, Scale, Color, Color, Color, Color, Blend, Effect, ScaleRendered, mSrcRect );
 }
 
-void cShape::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
+void cSubTexture::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
 	if ( NULL != mTexture )
 		mTexture->DrawEx( X + mOffsetX, Y + mOffsetY, mDestWidth, mDestHeight, Angle, Scale, Color0, Color1, Color2, Color3, Blend, Effect, ScaleRendered, mSrcRect );
 }
 
-void cShape::Draw( const eeQuad2f Q, const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_PRE_BLEND_FUNC& Blend ) {
+void cSubTexture::Draw( const eeQuad2f Q, const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_PRE_BLEND_FUNC& Blend ) {
 	if ( NULL != mTexture )
 		mTexture->DrawQuadEx( Q, X, Y, Angle, Scale, Color0, Color1, Color2, Color3, Blend, mSrcRect );
 }
 
-cTexture * cShape::GetTexture() {
+cTexture * cSubTexture::GetTexture() {
 	return mTexture;
 }
 
-void cShape::ReplaceColor( eeColorA ColorKey, eeColorA NewColor ) {
+void cSubTexture::ReplaceColor( eeColorA ColorKey, eeColorA NewColor ) {
 	mTexture->Lock();
 
 	for ( eeInt y = mSrcRect.Top; y < mSrcRect.Bottom; y++ ) {
@@ -196,15 +196,15 @@ void cShape::ReplaceColor( eeColorA ColorKey, eeColorA NewColor ) {
 	mTexture->Unlock( false, true );
 }
 
-void cShape::CreateMaskFromColor(eeColorA ColorKey, Uint8 Alpha) {
+void cSubTexture::CreateMaskFromColor(eeColorA ColorKey, Uint8 Alpha) {
 	ReplaceColor( ColorKey, eeColorA( ColorKey.R(), ColorKey.G(), ColorKey.B(), Alpha ) );
 }
 
-void cShape::CreateMaskFromColor(eeColor ColorKey, Uint8 Alpha) {
+void cSubTexture::CreateMaskFromColor(eeColor ColorKey, Uint8 Alpha) {
 	CreateMaskFromColor( eeColorA( ColorKey.R(), ColorKey.G(), ColorKey.B(), 255 ), Alpha );
 }
 
-void cShape::CacheAlphaMask() {
+void cSubTexture::CacheAlphaMask() {
 	Uint32 size = ( mSrcRect.Right - mSrcRect.Left ) * ( mSrcRect.Bottom - mSrcRect.Top );
 
 	eeSAFE_DELETE_ARRAY( mAlpha );
@@ -229,7 +229,7 @@ void cShape::CacheAlphaMask() {
 	mTexture->Unlock();
 }
 
-void cShape::CacheColors() {
+void cSubTexture::CacheColors() {
 	mTexture->Lock();
 
 	Uint32 size =  ( mSrcRect.Right - mSrcRect.Left ) * ( mSrcRect.Bottom - mSrcRect.Top ) * mTexture->Channels();
@@ -265,7 +265,7 @@ void cShape::CacheColors() {
 	mTexture->Unlock();
 }
 
-Uint8 cShape::GetAlphaAt( const Int32& X, const Int32& Y ) {
+Uint8 cSubTexture::GetAlphaAt( const Int32& X, const Int32& Y ) {
 	if ( mTexture->LocalCopy() )
 		return mTexture->GetPixel( mSrcRect.Left + X, mSrcRect.Right + Y ).A();
 
@@ -280,7 +280,7 @@ Uint8 cShape::GetAlphaAt( const Int32& X, const Int32& Y ) {
 	return GetAlphaAt( X, Y );
 }
 
-eeColorA cShape::GetColorAt( const Int32& X, const Int32& Y ) {
+eeColorA cSubTexture::GetColorAt( const Int32& X, const Int32& Y ) {
 	if ( mTexture->LocalCopy() )
 		return mTexture->GetPixel( mSrcRect.Left + X, mSrcRect.Right + Y );
 
@@ -303,7 +303,7 @@ eeColorA cShape::GetColorAt( const Int32& X, const Int32& Y ) {
 	return GetColorAt( X, Y );
 }
 
-void cShape::SetColorAt( const Int32& X, const Int32& Y, const eeColorA& Color ) {
+void cSubTexture::SetColorAt( const Int32& X, const Int32& Y, const eeColorA& Color ) {
 	if ( NULL != mPixels ) {
 		Uint32 Channels = mTexture->Channels();
 		eeUint Pos = ( X + Y * ( mSrcRect.Right - mSrcRect.Left ) ) * Channels;
@@ -318,18 +318,18 @@ void cShape::SetColorAt( const Int32& X, const Int32& Y, const eeColorA& Color )
 	}
 }
 
-void cShape::ClearCache() {
+void cSubTexture::ClearCache() {
 	eeSAFE_DELETE_ARRAY( mPixels );
 	eeSAFE_DELETE_ARRAY( mAlpha );
 }
 
-Uint8 * cShape::Lock() {
+Uint8 * cSubTexture::Lock() {
 	CacheColors();
 
 	return &mPixels[0];
 }
 
-bool cShape::Unlock( const bool& KeepData, const bool& Modified ) {
+bool cSubTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 	if ( NULL != mPixels ) {
 		if ( Modified ) {
 			GLint PreviousTexture;
@@ -364,15 +364,15 @@ bool cShape::Unlock( const bool& KeepData, const bool& Modified ) {
 	return false;
 }
 
-eeSize cShape::RealSize() {
+eeSize cSubTexture::RealSize() {
 	return mSrcRect.Size();
 }
 
-eeSize cShape::Size() {
+eeSize cSubTexture::Size() {
 	return eeSize( (Int32)mDestWidth, (Int32)mDestHeight );
 }
 
-const Uint8* cShape::GetPixelsPtr() {
+const Uint8* cSubTexture::GetPixelsPtr() {
 	if ( mPixels == NULL ) {
 		Lock();
 		Unlock(true);
@@ -381,7 +381,7 @@ const Uint8* cShape::GetPixelsPtr() {
 	return reinterpret_cast<const Uint8*> (&mPixels[0]);
 }
 
-bool cShape::SaveToFile(const std::string& filepath, const EE_SAVE_TYPE& Format) {
+bool cSubTexture::SaveToFile(const std::string& filepath, const EE_SAVE_TYPE& Format) {
 	bool Res = false;
 
 	Lock();
@@ -394,7 +394,7 @@ bool cShape::SaveToFile(const std::string& filepath, const EE_SAVE_TYPE& Format)
 	return Res;
 }
 
-void cShape::ResetDestWidthAndHeight() {
+void cSubTexture::ResetDestWidthAndHeight() {
 	eeSize Size = mSrcRect.Size();
 	mDestWidth 	= (eeFloat)Size.Width();
 	mDestHeight = (eeFloat)Size.Height();

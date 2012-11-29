@@ -60,7 +60,7 @@ void cUIDropDownList::OnSizeChange() {
 
 void cUIDropDownList::AutoSizeControl() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		Size( mSize.x, GetSkinShapeSize().Height() );
+		Size( mSize.x, GetSkinSize().Height() );
 	}
 }
 

@@ -2,24 +2,24 @@
 #define EE_UITOOLSCTEXTUREGROUPEDITOR_HPP
 
 #include <eepp/ui/base.hpp>
-#include <eepp/ui/tools/ctexturegroupshapeeditor.hpp>
+#include <eepp/ui/tools/ctextureatlassubtextureeditor.hpp>
 #include <eepp/ui/cuiwindow.hpp>
 #include <eepp/ui/cuispinbox.hpp>
 #include <eepp/ui/cuilistbox.hpp>
 #include <eepp/ui/cuiwinmenu.hpp>
 #include <eepp/graphics/ctexturepacker.hpp>
-#include <eepp/graphics/ctexturegrouploader.hpp>
-#include <eepp/graphics/cshapegroupmanager.hpp>
+#include <eepp/graphics/ctextureatlasloader.hpp>
+#include <eepp/graphics/ctextureatlasmanager.hpp>
 
 namespace EE { namespace UI { namespace Tools {
 
-class EE_API cTextureGroupEditor {
+class EE_API cTextureAtlasEditor {
 	public:
 		typedef cb::Callback0<void> TGEditorCloseCb;
 
-		cTextureGroupEditor( cUIWindow * AttatchTo = NULL, const TGEditorCloseCb& callback = TGEditorCloseCb() );
+		cTextureAtlasEditor( cUIWindow * AttatchTo = NULL, const TGEditorCloseCb& callback = TGEditorCloseCb() );
 
-		virtual ~cTextureGroupEditor();
+		virtual ~cTextureAtlasEditor();
 
 		cUISpinBox *			SpinOffX() const { return mSpinOffX; }
 
@@ -28,10 +28,10 @@ class EE_API cTextureGroupEditor {
 		class cUITGEUpdater : public cUIControl
 		{
 			public:
-				cUITGEUpdater( const CreateParams& Params, cTextureGroupEditor * TGEditor ) : cUIControl( Params ), mTGEditor( TGEditor ) {}
+				cUITGEUpdater( const CreateParams& Params, cTextureAtlasEditor * TGEditor ) : cUIControl( Params ), mTGEditor( TGEditor ) {}
 				virtual void Update() { mTGEditor->Update(); }
 			protected:
-				cTextureGroupEditor * mTGEditor;
+				cTextureAtlasEditor * mTGEditor;
 		};
 		friend class cUITGEUpdater;
 
@@ -40,15 +40,15 @@ class EE_API cTextureGroupEditor {
 		cUITheme *				mTheme;
 		TGEditorCloseCb			mCloseCb;
 		cTexturePacker *		mTexturePacker;
-		cTextureGroupLoader *	mTextureGroupLoader;
-		cShape *				mCurShape;
+		cTextureAtlasLoader *	mTextureGroupLoader;
+		cSubTexture *			mCurSubTexture;
 		cUISpinBox *			mSpinOffX;
 		cUISpinBox *			mSpinOffY;
 		cUISpinBox *			mSpinDestW;
 		cUISpinBox *			mSpinDestH;
-		cUIListBox *			mShapeList;
+		cUIListBox *			mSubTextureList;
 		cUIWinMenu *			mWinMenu;
-		cTextureGroupShapeEditor * mShapeEditor;
+		cTextureAtlasSubTextureEditor * mSubTextureEditor;
 		cUITGEUpdater *			mTGEU;
 
 		void WindowClose( const cUIEvent * Event );
@@ -67,13 +67,13 @@ class EE_API cTextureGroupEditor {
 
 		void OnTextureGroupClose( const cUIEvent * Event );
 
-		void OnShapeChange( const cUIEvent * Event );
+		void OnSubTextureChange( const cUIEvent * Event );
 
 		cUITextBox * CreateTxtBox( eeVector2i Pos, const String& Text );
 
 		void UpdateControls();
 
-		void FillShapeList();
+		void FillSubTextureList();
 
 		void OnOffXChange( const cUIEvent * Event );
 
@@ -91,7 +91,7 @@ class EE_API cTextureGroupEditor {
 
 		void OnHBOffset( const cUIEvent * Event );
 
-		void OnTextureGroupLoaded( cTextureGroupLoader * TGLoader );
+		void OnTextureGroupLoaded( cTextureAtlasLoader * TGLoader );
 
 		void Update();
 };

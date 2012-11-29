@@ -53,14 +53,14 @@ class EE_API cUISprite : public cUIComplexControl {
 		cSprite * 			mSprite;
 		EE_RENDERTYPE 		mRender;
 		eeVector2i			mAlignOffset;
-		cShape *			mShapeLast;
+		cSubTexture *			mSubTextureLast;
 		bool				mDealloc;
 
 		void UpdateSize();
 
 		void AutoAlign();
 
-		void CheckShapeUpdate();
+		void CheckSubTextureUpdate();
 
 		virtual void OnSizeChange();
 

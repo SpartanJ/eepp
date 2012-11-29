@@ -43,10 +43,10 @@ void cUIComboBox::CreateButton() {
 		if ( mSkinState->GetSkin()->GetType() == cUISkin::UISkinComplex ) {
 			cUISkinComplex * tComplex = reinterpret_cast<cUISkinComplex*> ( mSkinState->GetSkin() );
 
-			cShape * tShape = tComplex->GetShapeSide( cUISkinState::StateNormal, cUISkinComplex::Right );
+			cSubTexture * tSubTexture = tComplex->GetSubTextureSide( cUISkinState::StateNormal, cUISkinComplex::Right );
 
-			if ( NULL != tShape )
-				btnWidth = tShape->RealSize().Width();
+			if ( NULL != tSubTexture )
+				btnWidth = tSubTexture->RealSize().Width();
 		}
 	}
 

@@ -1,7 +1,7 @@
 #include <eepp/graphics/csprite.hpp>
 #include <eepp/window/cengine.hpp>
-#include <eepp/graphics/cglobalshapegroup.hpp>
-#include <eepp/graphics/cshapegroupmanager.hpp>
+#include <eepp/graphics/cglobaltextureatlas.hpp>
+#include <eepp/graphics/ctextureatlasmanager.hpp>
 
 using namespace EE::Window;
 
@@ -29,7 +29,7 @@ cSprite::cSprite() :
 	mCb.Reset();
 }
 
-cSprite::cSprite( const std::string& name, const std::string& extension, cShapeGroup * SearchInShapeGroup )  :
+cSprite::cSprite( const std::string& name, const std::string& extension, cTextureAtlas * SearchInTextureAtlas )  :
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_SCALE_CENTERED | SPRITE_FLAG_EVENTS_ENABLED ),
 	mPos(),
 	mAngle( 0.f ),
@@ -47,10 +47,10 @@ cSprite::cSprite( const std::string& name, const std::string& extension, cShapeG
 	mAnimTo( 0 )
 {
 	mCb.Reset();
-	AddFramesByPattern( name, extension, SearchInShapeGroup );
+	AddFramesByPattern( name, extension, SearchInTextureAtlas );
 }
 
-cSprite::cSprite( cShape * Shape ) :
+cSprite::cSprite( cSubTexture * SubTexture ) :
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_SCALE_CENTERED | SPRITE_FLAG_EVENTS_ENABLED ),
 	mPos(),
 	mAngle( 0.f ),
@@ -68,7 +68,7 @@ cSprite::cSprite( cShape * Shape ) :
 	mAnimTo( 0 )
 {
 	mCb.Reset();
-	CreateStatic( Shape );
+	CreateStatic( SubTexture );
 }
 
 cSprite::cSprite( const Uint32& TexId, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeFloat& offSetX, const eeFloat& offSetY, const eeRecti& TexSector ) :
@@ -238,7 +238,7 @@ eeAABB cSprite::GetAABB() {
 			TmpR.Top = MinY;
 			TmpR.Bottom = MaxY;
 		} else { // The method used if mAngle != 0 works for mAngle = 0, but i prefer to use the faster way
-			cShape * S = GetCurrentShape();
+			cSubTexture * S = GetCurrentSubTexture();
 
 			if ( S != NULL ) {
 				if ( SPR_FGET( SPRITE_FLAG_SCALE_CENTERED ) ) {
@@ -291,10 +291,10 @@ eeUint cSprite::FramePos() {
 	return (eeUint)mFrames.size() - 1;
 }
 
-bool cSprite::CreateStatic( cShape * Shape ) {
+bool cSprite::CreateStatic( cSubTexture * SubTexture ) {
 	Reset();
 
-	AddFrame( Shape );
+	AddFrame( SubTexture );
 
 	return true;
 }
@@ -320,11 +320,11 @@ void cSprite::CreateAnimation( const eeUint& SubFramesNum ) {
 		mSubFrames = SubFramesNum;
 }
 
-bool cSprite::AddFrames( const std::vector<cShape*> Shapes ) {
-	if ( Shapes.size() ) {
-		for ( eeUint i = 0; i < Shapes.size(); i++ ) {
-			if ( NULL != Shapes[i] ) {
-				AddFrame( Shapes[i] );
+bool cSprite::AddFrames( const std::vector<cSubTexture*> SubTextures ) {
+	if ( SubTextures.size() ) {
+		for ( eeUint i = 0; i < SubTextures.size(); i++ ) {
+			if ( NULL != SubTextures[i] ) {
+				AddFrame( SubTextures[i] );
 			}
 		}
 
@@ -334,23 +334,11 @@ bool cSprite::AddFrames( const std::vector<cShape*> Shapes ) {
 	return false;
 }
 
-bool cSprite::AddFramesByPatternId( const Uint32& ShapeId, const std::string& extension, cShapeGroup * SearchInShapeGroup ) {
-	std::vector<cShape*> Shapes = cShapeGroupManager::instance()->GetShapesByPatternId( ShapeId, extension, SearchInShapeGroup );
+bool cSprite::AddFramesByPatternId( const Uint32& SubTextureId, const std::string& extension, cTextureAtlas * SearchInTextureAtlas ) {
+	std::vector<cSubTexture*> SubTextures = cTextureAtlasManager::instance()->GetSubTexturesByPatternId( SubTextureId, extension, SearchInTextureAtlas );
 
-	if ( Shapes.size() ) {
-		AddFrames( Shapes );
-
-		return true;
-	}
-
-	return false;
-}
-
-bool cSprite::AddFramesByPattern( const std::string& name, const std::string& extension, cShapeGroup * SearchInShapeGroup ) {
-	std::vector<cShape*> Shapes = cShapeGroupManager::instance()->GetShapesByPattern( name, extension, SearchInShapeGroup );
-
-	if ( Shapes.size() ) {
-		AddFrames( Shapes );
+	if ( SubTextures.size() ) {
+		AddFrames( SubTextures );
 
 		return true;
 	}
@@ -358,7 +346,19 @@ bool cSprite::AddFramesByPattern( const std::string& name, const std::string& ex
 	return false;
 }
 
-bool cSprite::AddSubFrame( cShape * Shape, const eeUint& NumFrame, const eeUint& NumSubFrame ) {
+bool cSprite::AddFramesByPattern( const std::string& name, const std::string& extension, cTextureAtlas * SearchInTextureAtlas ) {
+	std::vector<cSubTexture*> SubTextures = cTextureAtlasManager::instance()->GetSubTexturesByPattern( name, extension, SearchInTextureAtlas );
+
+	if ( SubTextures.size() ) {
+		AddFrames( SubTextures );
+
+		return true;
+	}
+
+	return false;
+}
+
+bool cSprite::AddSubFrame( cSubTexture * SubTexture, const eeUint& NumFrame, const eeUint& NumSubFrame ) {
 	eeUint NF, NSF;
 
 	if ( NumFrame >= mFrames.size() )
@@ -374,15 +374,15 @@ bool cSprite::AddSubFrame( cShape * Shape, const eeUint& NumFrame, const eeUint&
 	if ( mFrames[NF].Spr.size() != (eeUint)mSubFrames )
 		mFrames[NF].Spr.resize( mSubFrames );
 
-	mFrames[NF].Spr[NSF] = Shape;
+	mFrames[NF].Spr[NSF] = SubTexture;
 
 	return true;
 }
 
-eeUint cSprite::AddFrame( cShape * Shape ) {
+eeUint cSprite::AddFrame( cSubTexture * SubTexture ) {
 	eeUint id = FramePos();
 
-	AddSubFrame( Shape, id, mCurrentSubFrame );
+	AddSubFrame( SubTexture, id, mCurrentSubFrame );
 
 	return id;
 }
@@ -401,7 +401,7 @@ bool cSprite::AddSubFrame(const Uint32& TexId, const eeUint& NumFrame, const eeU
 		return false;
 
 	cTexture * Tex = cTextureFactory::instance()->GetTexture( TexId );
-	cShape * S = cGlobalShapeGroup::instance()->Add( eeNew( cShape, () ) );
+	cSubTexture * S = cGlobalTextureAtlas::instance()->Add( eeNew( cSubTexture, () ) );
 
 	S->Texture( TexId );
 
@@ -530,7 +530,7 @@ void cSprite::Draw( const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect 
 	if ( SPR_FGET( SPRITE_FLAG_AUTO_ANIM ) )
 		Update();
 
-	cShape * S = GetCurrentShape();
+	cSubTexture * S = GetCurrentSubTexture();
 
 	if ( S == NULL )
 		return;
@@ -576,7 +576,7 @@ eeUint cSprite::GetSubFrame( const eeUint& SubFrame ) {
 }
 
 Int32 cSprite::OffsetX() {
-	cShape* S = GetCurrentShape();
+	cSubTexture* S = GetCurrentSubTexture();
 
 	if ( S != NULL )
 		return S->OffsetX();
@@ -585,14 +585,14 @@ Int32 cSprite::OffsetX() {
 }
 
 void cSprite::OffsetX( const Int32& offsetx ) {
-	cShape* S = GetCurrentShape();
+	cSubTexture* S = GetCurrentSubTexture();
 
 	if ( S != NULL )
 		S->OffsetX( offsetx );
 }
 
 Int32 cSprite::OffsetY() {
-	cShape* S = GetCurrentShape();
+	cSubTexture* S = GetCurrentSubTexture();
 
 	if ( S != NULL )
 		return S->OffsetY();
@@ -601,14 +601,14 @@ Int32 cSprite::OffsetY() {
 }
 
 void cSprite::OffsetY( const Int32& offsety ) {
-	cShape* S = GetCurrentShape();
+	cSubTexture* S = GetCurrentSubTexture();
 
 	if ( S != NULL )
 		S->OffsetY( offsety );
 }
 
 void cSprite::Offset( const eeVector2i& offset ) {
-	cShape* S = GetCurrentShape();
+	cSubTexture* S = GetCurrentSubTexture();
 
 	if ( S != NULL ) {
 		S->OffsetX( offset.x );
@@ -669,7 +669,7 @@ bool cSprite::AutoAnimate() const {
 
 eeQuad2f cSprite::GetQuad() {
 	if ( mFrames.size() ) {
-		cShape* S = GetCurrentShape();
+		cSubTexture* S = GetCurrentSubTexture();
 		eeRectf TmpR;
 
 		if ( SPR_FGET( SPRITE_FLAG_SCALE_CENTERED ) ) {
@@ -731,21 +731,21 @@ eeQuad2f cSprite::GetQuad() {
 	return eeQuad2f();
 }
 
-cShape* cSprite::GetCurrentShape() {
+cSubTexture* cSprite::GetCurrentSubTexture() {
 	if ( mFrames.size() )
 		return mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ];
 
 	return NULL;
 }
 
-cShape * cSprite::GetShape( const eeUint& frame ) {
+cSubTexture * cSprite::GetSubTexture( const eeUint& frame ) {
 	if ( frame < mFrames.size() )
 		return mFrames[ frame ].Spr[ mCurrentSubFrame ];
 
 	return NULL;
 }
 
-cShape * cSprite::GetShape( const eeUint& frame, const eeUint& SubFrame ) {
+cSubTexture * cSprite::GetSubTexture( const eeUint& frame, const eeUint& SubFrame ) {
 	if ( frame < mFrames.size() )
 		return mFrames[ frame ].Spr[ SubFrame ];
 

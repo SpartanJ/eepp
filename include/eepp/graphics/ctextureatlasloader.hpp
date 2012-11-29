@@ -12,21 +12,21 @@ namespace EE { namespace Graphics {
 
 using namespace Private;
 
-class cShapeGroup;
+class cTextureAtlas;
 
-class EE_API cTextureGroupLoader {
+class EE_API cTextureAtlasLoader {
 	public:
-		typedef cb::Callback1<void, cTextureGroupLoader *> GLLoadCallback;
+		typedef cb::Callback1<void, cTextureAtlasLoader *> GLLoadCallback;
 
-		cTextureGroupLoader();
+		cTextureAtlasLoader();
 
-		cTextureGroupLoader( const std::string& TextureGroupPath, const bool& Threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
+		cTextureAtlasLoader( const std::string& TextureGroupPath, const bool& Threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
 
-		cTextureGroupLoader( const Uint8* Data, const Uint32& DataSize, const std::string& TextureGroupName, const bool& Threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
+		cTextureAtlasLoader( const Uint8* Data, const Uint32& DataSize, const std::string& TextureGroupName, const bool& Threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
 
-		cTextureGroupLoader( cPack * Pack, const std::string& FilePackPath, const bool& Threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
+		cTextureAtlasLoader( cPack * Pack, const std::string& FilePackPath, const bool& Threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
 
-		~cTextureGroupLoader();
+		~cTextureAtlasLoader();
 
 		void					Update();
 
@@ -55,7 +55,7 @@ class EE_API cTextureGroupLoader {
 
 		Uint32					GetTexturesLoadedCount();
 
-		cShapeGroup *			GetShapeGroup() const;
+		cTextureAtlas *			GetTextureAtlas() const;
 
 		void					SetLoadCallback( GLLoadCallback LoadCallback );
 
@@ -69,19 +69,19 @@ class EE_API cTextureGroupLoader {
 		cPack *					mPack;
 		bool					mSkipResourceLoad;
 		bool					mIsLoading;
-		cShapeGroup *			mShapeGroup;
+		cTextureAtlas *			mTextureAtlas;
 		GLLoadCallback			mLoadCallback;
 		std::vector<cTexture*>	mTexuresLoaded;
 
 		typedef struct sTempTexGroupS {
 			sTextureHdr 			Texture;
-			std::vector<sShapeHdr>	Shapes;
+			std::vector<sSubTextureHdr>	SubTextures;
 		} sTempTexGroup;
 
 		sTextureGroupHdr mTexGrHdr;
 		std::vector<sTempTexGroup> mTempGroups;
 
-		void CreateShapes();
+		void CreateSubTextures();
 };
 
 }}

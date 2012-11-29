@@ -25,11 +25,11 @@ class EE_API cMapEditor {
 		cUITheme *			mTheme;
 		cUIMap *			mUIMap;
 		MapEditorCloseCb	mCloseCb;
-		cUIDropDownList *	mShapeGroupsList;
+		cUIDropDownList *	mTextureAtlasesList;
 		cUIControl *		mWinContainer;
 		cUIListBox *		mShapeList;
 		cUIGfx *			mGfxPreview;
-		cShapeGroup *		mCurSG;
+		cTextureAtlas *	mCurSG;
 		cUIScrollBar *		mMapHScroll;
 		cUIScrollBar *		mMapVScroll;
 		cUIDropDownList *	mGOTypeList;
@@ -104,7 +104,7 @@ class EE_API cMapEditor {
 
 		void LayerMenuClick( const cUIEvent * Event );
 
-		void OnShapeGroupChange( const cUIEvent * Event );
+		void OnTextureAtlasChange( const cUIEvent * Event );
 
 		void MapOpen( const cUIEvent * Event );
 

@@ -37,7 +37,7 @@ class EE_API cUIPushButton : public cUIComplexControl {
 
 				inline ~CreateParams() {}
 
-				inline void SetIcon( cShape * icon ) {
+				inline void SetIcon( cSubTexture * icon ) {
 					Icon = icon;
 
 					if ( !IconHorizontalMargin )
@@ -48,7 +48,7 @@ class EE_API cUIPushButton : public cUIComplexControl {
 				eeColorA 	FontColor;
 				eeColorA	FontShadowColor;
 				eeColorA 	FontOverColor;
-				cShape * 	Icon;
+				cSubTexture * 	Icon;
 				Int32 		IconHorizontalMargin;
 				bool 		IconAutoMargin;
 				eeSize		IconMinSize;
@@ -66,7 +66,7 @@ class EE_API cUIPushButton : public cUIComplexControl {
 
 		virtual void SetTheme( cUITheme * Theme );
 
-		virtual void Icon( cShape * Icon );
+		virtual void Icon( cSubTexture * Icon );
 
 		virtual cUIGfx * Icon() const;
 

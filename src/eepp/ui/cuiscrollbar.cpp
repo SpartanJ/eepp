@@ -69,26 +69,26 @@ void cUIScrollBar::SetTheme( cUITheme * Theme ) {
 		mBtnDown->SetThemeControl( Theme, "vscrollbar_btndown" );
 	}
 
-	cShape * tShape = NULL;
+	cSubTexture * tSubTexture = NULL;
 	cUISkin * tSkin = NULL;
 
 	tSkin = mBtnUp->GetSkin();
 
 	if ( NULL != tSkin ) {
-		tShape = tSkin->GetShape( cUISkinState::StateNormal );
+		tSubTexture = tSkin->GetSubTexture( cUISkinState::StateNormal );
 
-		if ( NULL != tShape ) {
-			mBtnUp->Size( tShape->RealSize() );
+		if ( NULL != tSubTexture ) {
+			mBtnUp->Size( tSubTexture->RealSize() );
 		}
 	}
 
 	tSkin = mBtnDown->GetSkin();
 
 	if ( NULL != tSkin ) {
-		tShape = tSkin->GetShape( cUISkinState::StateNormal );
+		tSubTexture = tSkin->GetSubTexture( cUISkinState::StateNormal );
 
-		if ( NULL != tShape ) {
-			mBtnDown->Size( tShape->RealSize() );
+		if ( NULL != tSubTexture ) {
+			mBtnDown->Size( tSubTexture->RealSize() );
 		}
 	}
 
@@ -96,15 +96,15 @@ void cUIScrollBar::SetTheme( cUITheme * Theme ) {
 		tSkin = mSlider->GetBackSlider()->GetSkin();
 
 		if ( NULL != tSkin ) {
-			tShape = tSkin->GetShape( cUISkinState::StateNormal );
+			tSubTexture = tSkin->GetSubTexture( cUISkinState::StateNormal );
 
-			if ( NULL != tShape ) {
+			if ( NULL != tSubTexture ) {
 				if ( mSlider->IsVertical() ) {
-					mSlider->Size( tShape->RealSize().Width() , mSize.Height() );
-					Size( tShape->RealSize().Width() , mSize.Height() );
+					mSlider->Size( tSubTexture->RealSize().Width() , mSize.Height() );
+					Size( tSubTexture->RealSize().Width() , mSize.Height() );
 				} else {
-					mSlider->Size( mSize.Width(), tShape->RealSize().Height() );
-					Size( mSize.Width(), tShape->RealSize().Height() );
+					mSlider->Size( mSize.Width(), tSubTexture->RealSize().Height() );
+					Size( mSize.Width(), tSubTexture->RealSize().Height() );
 				}
 			}
 		}
