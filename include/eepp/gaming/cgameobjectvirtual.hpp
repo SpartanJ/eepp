@@ -14,7 +14,7 @@ class EE_API cGameObjectVirtual : public cGameObject {
 	public:
 		cGameObjectVirtual( Uint32 DataId, cLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC, Uint32 RealType = GAMEOBJECT_TYPE_VIRTUAL, const eeVector2f& Pos = eeVector2f() );
 
-		cGameObjectVirtual( cSubTexture * Shape, cLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC, Uint32 RealType = GAMEOBJECT_TYPE_VIRTUAL, const eeVector2f& Pos = eeVector2f() );
+		cGameObjectVirtual( cSubTexture * SubTexture, cLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC, Uint32 RealType = GAMEOBJECT_TYPE_VIRTUAL, const eeVector2f& Pos = eeVector2f() );
 
 		virtual ~cGameObjectVirtual();
 
@@ -42,7 +42,7 @@ class EE_API cGameObjectVirtual : public cGameObject {
 		Uint32		mDataId;
 		eeVector2f	mPos;
 		cLayer *	mLayer;
-		cSubTexture *	mShape;
+		cSubTexture *	mSubTexture;
 };
 
 }}

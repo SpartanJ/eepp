@@ -82,11 +82,13 @@ class GObjFlags {
 };
 
 enum EE_GAMEOBJECT_TYPE {
-	GAMEOBJECT_TYPE_BASE		= 236430550u,	//MakeHash( "Base" ),
-	GAMEOBJECT_TYPE_VIRTUAL		= 4069800883u,	//MakeHash( "Virtual" ),
-	GAMEOBJECT_TYPE_SHAPE		= 3517332124u,	//MakeHash( "Shape" ),
-	GAMEOBJECT_TYPE_SHAPEEX		= 3708695628u,	//MakeHash( "ShapeEx" ),
-	GAMEOBJECT_TYPE_SPRITE		= 2088954976u	//MakeHash( "Sprite" )
+	GAMEOBJECT_TYPE_BASE			= 236430550u,	//MakeHash( "Base" ),
+	GAMEOBJECT_TYPE_VIRTUAL			= 4069800883u,	//MakeHash( "Virtual" ),
+	GAMEOBJECT_TYPE_SHAPE			= 3517332124u,	//MakeHash( "Shape" ) == 3517332124u for backward compatibility
+	GAMEOBJECT_TYPE_SUBTEXTURE		= 1772101792u,	//MakeHash( "SubTexture" ) == 1772101792u,
+	GAMEOBJECT_TYPE_SHAPEEX			= 3708695628u,	//MakeHash( "ShapeEx" ) == 3708695628u for backward compatibility
+	GAMEOBJECT_TYPE_SUBTEXTUREEX	= 1378537981u,	//MakeHash( "SubTextureEx" ) == 1378537981u,
+	GAMEOBJECT_TYPE_SPRITE			= 2088954976u	//MakeHash( "Sprite" )
 };
 
 enum EE_LAYER_TYPE {

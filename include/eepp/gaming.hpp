@@ -4,8 +4,8 @@
 #include <eepp/gaming/clight.hpp>
 #include <eepp/gaming/cisomap.hpp>
 #include <eepp/gaming/cgameobject.hpp>
-#include <eepp/gaming/cgameobjectshape.hpp>
-#include <eepp/gaming/cgameobjectshapeex.hpp>
+#include <eepp/gaming/cgameobjectsubtexture.hpp>
+#include <eepp/gaming/cgameobjectsubtextureex.hpp>
 #include <eepp/gaming/cgameobjectsprite.hpp>
 #include <eepp/gaming/clayer.hpp>
 #include <eepp/gaming/ctilelayer.hpp>

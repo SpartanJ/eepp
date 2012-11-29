@@ -27,7 +27,7 @@ class EE_API cMapEditor {
 		MapEditorCloseCb	mCloseCb;
 		cUIDropDownList *	mTextureAtlasesList;
 		cUIControl *		mWinContainer;
-		cUIListBox *		mShapeList;
+		cUIListBox *		mSubTextureList;
 		cUIGfx *			mGfxPreview;
 		cTextureAtlas *	mCurSG;
 		cUIScrollBar *		mMapHScroll;
@@ -44,7 +44,7 @@ class EE_API cMapEditor {
 		cUIPushButton *		mBtnGOTypeAdd;
 		Uint32				mCurGOType;
 		Uint32				mCurGOFlags;
-		cUIComplexControl * mShapeCont;
+		cUIComplexControl * mSubTextureCont;
 		cUIComplexControl * mLightCont;
 		cUIComplexControl * mSGCont;
 		cUIComplexControl * mDICont;
@@ -76,7 +76,7 @@ class EE_API cMapEditor {
 
 		void CreateLightContainer();
 
-		void CreateShapeContainer( Int32 Width );
+		void CreateSubTextureContainer( Int32 Width );
 
 		void WindowClose( const cUIEvent * Event );
 
@@ -92,7 +92,7 @@ class EE_API cMapEditor {
 
 		void FillSGCombo();
 
-		void FillShapeList();
+		void FillSubTextureList();
 
 		void CreateNewMap();
 
@@ -110,7 +110,7 @@ class EE_API cMapEditor {
 
 		void MapSave( const cUIEvent * Event );
 
-		void OnShapeChange( const cUIEvent * Event );
+		void OnSubTextureChange( const cUIEvent * Event );
 
 		void OnTypeChange( const cUIEvent * Event );
 
@@ -148,7 +148,7 @@ class EE_API cMapEditor {
 
 		void OnMapClose( const cUIEvent * Event );
 
-		void OnShapeContClick( const cUIEvent * Event );
+		void OnSubTextureContClick( const cUIEvent * Event );
 
 		void OnLightContClick( const cUIEvent * Event );
 

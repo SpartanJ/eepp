@@ -1,5 +1,5 @@
-#ifndef EE_GAMINGCGAMEOBJECTSHAPE_HPP
-#define EE_GAMINGCGAMEOBJECTSHAPE_HPP
+#ifndef EE_GAMINGCGAMEOBJECTSUBTEXTURE_HPP
+#define EE_GAMINGCGAMEOBJECTSUBTEXTURE_HPP
 
 #include <eepp/gaming/base.hpp>
 #include <eepp/gaming/cgameobject.hpp>
@@ -9,11 +9,11 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {
 
-class EE_API cGameObjectShape : public cGameObject {
+class EE_API cGameObjectSubTexture : public cGameObject {
 	public:
-		cGameObjectShape( const Uint32& Flags, cLayer * Layer, cSubTexture * Shape = NULL, const eeVector2f& Pos = eeVector2f() );
+		cGameObjectSubTexture( const Uint32& Flags, cLayer * Layer, cSubTexture * SubTexture = NULL, const eeVector2f& Pos = eeVector2f() );
 
-		virtual ~cGameObjectShape();
+		virtual ~cGameObjectSubTexture();
 
 		virtual void Draw();
 
@@ -27,9 +27,9 @@ class EE_API cGameObjectShape : public cGameObject {
 
 		virtual eeSize Size();
 
-		cSubTexture * Shape() const;
+		cSubTexture * SubTexture() const;
 
-		void Shape( cSubTexture * shape );
+		void SubTexture( cSubTexture * subTexture );
 
 		virtual Uint32 Type() const;
 
@@ -39,7 +39,7 @@ class EE_API cGameObjectShape : public cGameObject {
 
 		virtual void DataId( Uint32 Id );
 	protected:
-		cSubTexture *	mShape;
+		cSubTexture *	mSubTexture;
 		eeVector2f	mPos;
 		eeVector2i	mTilePos;
 };

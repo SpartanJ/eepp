@@ -92,8 +92,8 @@
 ../../include/eepp/gaming/cisomap.hpp
 ../../include/eepp/gaming/cgameobjectvirtual.hpp
 ../../include/eepp/gaming/cgameobjectsprite.hpp
-../../include/eepp/gaming/cgameobjectshapeex.hpp
-../../include/eepp/gaming/cgameobjectshape.hpp
+../../include/eepp/gaming/cgameobjectsubtextureex.hpp
+../../include/eepp/gaming/cgameobjectsubtexture.hpp
 ../../include/eepp/gaming/cgameobject.hpp
 ../../include/eepp/gaming/base.hpp
 ../../include/eepp/gaming/mapeditor/cuimapnew.hpp
@@ -113,8 +113,8 @@
 ../../src/eepp/gaming/cisomap.cpp
 ../../src/eepp/gaming/cgameobjectvirtual.cpp
 ../../src/eepp/gaming/cgameobjectsprite.cpp
-../../src/eepp/gaming/cgameobjectshapeex.cpp
-../../src/eepp/gaming/cgameobjectshape.cpp
+../../src/eepp/gaming/cgameobjectsubtextureex.cpp
+../../src/eepp/gaming/cgameobjectsubtexture.cpp
 ../../src/eepp/gaming/cgameobject.cpp
 ../../src/eepp/gaming/mapeditor/cuimapnew.cpp
 ../../src/eepp/gaming/mapeditor/cuimap.cpp

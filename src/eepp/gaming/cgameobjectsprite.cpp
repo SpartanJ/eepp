@@ -121,20 +121,20 @@ void cGameObjectSprite::DataId( Uint32 Id ) {
 	cSprite * tSprite = NULL;
 
 	if ( mFlags & GObjFlags::GAMEOBJECT_ANIMATED ) {
-		std::vector<cSubTexture*> tShapeVec = cTextureAtlasManager::instance()->GetSubTexturesByPatternId( Id );
+		std::vector<cSubTexture*> tSubTextureVec = cTextureAtlasManager::instance()->GetSubTexturesByPatternId( Id );
 
-		if ( tShapeVec.size() ) {
+		if ( tSubTextureVec.size() ) {
 			tSprite = eeNew( cSprite, () );
 			tSprite->CreateAnimation();
-			tSprite->AddFrames( tShapeVec );
+			tSprite->AddFrames( tSubTextureVec );
 
 			Sprite( tSprite );
 		}
 	} else {
-		cSubTexture * tShape = cTextureAtlasManager::instance()->GetSubTextureById( Id );
+		cSubTexture * tSubTexture = cTextureAtlasManager::instance()->GetSubTextureById( Id );
 
-		if ( NULL != tShape ) {
-			Sprite( eeNew( cSprite, ( tShape ) ) );
+		if ( NULL != tSubTexture ) {
+			Sprite( eeNew( cSprite, ( tSubTexture ) ) );
 		}
 	}
 }

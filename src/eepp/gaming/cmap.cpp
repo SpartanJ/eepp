@@ -1,7 +1,7 @@
 #include <eepp/gaming/cmap.hpp>
 #include <eepp/gaming/cgameobjectvirtual.hpp>
-#include <eepp/gaming/cgameobjectshape.hpp>
-#include <eepp/gaming/cgameobjectshapeex.hpp>
+#include <eepp/gaming/cgameobjectsubtexture.hpp>
+#include <eepp/gaming/cgameobjectsubtextureex.hpp>
 #include <eepp/gaming/cgameobjectsprite.hpp>
 #include <eepp/gaming/ctilelayer.hpp>
 #include <eepp/gaming/cobjectlayer.hpp>
@@ -575,20 +575,22 @@ void cMap::Move( const eeFloat& offsetx, const eeFloat& offsety ) {
 cGameObject * cMap::CreateGameObject( const Uint32& Type, const Uint32& Flags, cLayer * Layer, const Uint32& DataId ) {
 	switch ( Type ) {
 		case GAMEOBJECT_TYPE_SHAPE:
+		case GAMEOBJECT_TYPE_SUBTEXTURE:
 		{
-			cGameObjectShape * tShape = eeNew( cGameObjectShape, ( Flags, Layer ) );
+			cGameObjectSubTexture * tSubTexture = eeNew( cGameObjectSubTexture, ( Flags, Layer ) );
 
-			tShape->DataId( DataId );
+			tSubTexture->DataId( DataId );
 
-			return tShape;
+			return tSubTexture;
 		}
 		case GAMEOBJECT_TYPE_SHAPEEX:
+		case GAMEOBJECT_TYPE_SUBTEXTUREEX:
 		{
-			cGameObjectShapeEx * tShapeEx = eeNew( cGameObjectShapeEx, ( Flags, Layer ) );
+			cGameObjectSubTextureEx * tSubTextureEx = eeNew( cGameObjectSubTextureEx, ( Flags, Layer ) );
 
-			tShapeEx->DataId( DataId );
+			tSubTextureEx->DataId( DataId );
 
-			return tShapeEx;
+			return tSubTextureEx;
 		}
 		case GAMEOBJECT_TYPE_SPRITE:
 		{
@@ -604,10 +606,10 @@ cGameObject * cMap::CreateGameObject( const Uint32& Type, const Uint32& Flags, c
 				return mCreateGOCb( Type, Flags, Layer, DataId );
 			} else {
 				cGameObjectVirtual * tVirtual;
-				cSubTexture * tIsShape = cTextureAtlasManager::instance()->GetSubTextureById( DataId );
+				cSubTexture * tIsSubTexture = cTextureAtlasManager::instance()->GetSubTextureById( DataId );
 
-				if ( NULL != tIsShape ) {
-					tVirtual = eeNew( cGameObjectVirtual, ( tIsShape, Layer, Flags, Type ) );
+				if ( NULL != tIsSubTexture ) {
+					tVirtual = eeNew( cGameObjectVirtual, ( tIsSubTexture, Layer, Flags, Type ) );
 				} else {
 					tVirtual = eeNew( cGameObjectVirtual, ( DataId, Layer, Flags, Type ) );
 				}
@@ -766,7 +768,7 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 				eeSAFE_DELETE_ARRAY( tProp );
 			}
 
-			//! Load Shape Groups
+			//! Load SubTexture Groups
 			if ( MapHdr.TextureAtlasCount ) {
 				sMapTextureAtlas * tSG = eeNewArray( sMapTextureAtlas, MapHdr.TextureAtlasCount );
 
@@ -1017,7 +1019,7 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 			IOS.Write( (const char*)&tProp, sizeof(sPropertyHdr) );
 		}
 
-		//! Writes the shape groups that the map will need and load
+		//! Writes the texture atlases that the map will need and load
 		for ( i = 0; i < TextureAtlases.size(); i++ ) {
 			sMapTextureAtlas tSG;
 
@@ -1134,7 +1136,7 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 
 							sMapTileGOHdr tTGOHdr;
 
-							//! The DataId should be the Shape hash name ( at least in the cases of type Shape, ShapeEx and Sprite.
+							//! The DataId should be the SubTexture hash name ( at least in the cases of type SubTexture, SubTextureEx and Sprite.
 							tTGOHdr.Id		= tObj->DataId();
 
 							//! If the object type is virtual, means that the real type is stored elsewhere.
@@ -1171,7 +1173,7 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 
 					sMapObjGOHdr tOGOHdr;
 
-					//! The DataId should be the Shape hash name ( at least in the cases of type Shape, ShapeEx and Sprite.
+					//! The DataId should be the SubTexture hash name ( at least in the cases of type SubTexture, SubTextureEx and Sprite.
 					tOGOHdr.Id		= tObj->DataId();
 
 					//! If the object type is virtual, means that the real type is stored elsewhere.

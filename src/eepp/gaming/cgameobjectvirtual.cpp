@@ -14,20 +14,20 @@ cGameObjectVirtual::cGameObjectVirtual( Uint32 DataId, cLayer * Layer, const Uin
 	mDataId( DataId ),
 	mPos( Pos ),
 	mLayer( NULL ),
-	mShape( NULL )
+	mSubTexture( NULL )
 {
 }
 
-cGameObjectVirtual::cGameObjectVirtual( cSubTexture * Shape, cLayer * Layer, const Uint32& Flags, Uint32 Type, const eeVector2f& Pos ) :
+cGameObjectVirtual::cGameObjectVirtual( cSubTexture * SubTexture, cLayer * Layer, const Uint32& Flags, Uint32 Type, const eeVector2f& Pos ) :
 	cGameObject( Flags, Layer ),
 	mType( Type ),
 	mDataId( 0 ),
 	mPos( Pos ),
 	mLayer( Layer ),
-	mShape( Shape )
+	mSubTexture( SubTexture )
 {
-	if ( NULL != Shape )
-		mDataId = Shape->Id();
+	if ( NULL != SubTexture )
+		mDataId = SubTexture->Id();
 }
 
 cGameObjectVirtual::~cGameObjectVirtual() {
@@ -46,8 +46,8 @@ Uint32 cGameObjectVirtual::RealType() const {
 }
 
 eeSize cGameObjectVirtual::Size() {
-	if ( NULL != mShape )
-		return mShape->RealSize();
+	if ( NULL != mSubTexture )
+		return mSubTexture->RealSize();
 
 	if ( NULL != mLayer )
 		return mLayer->Map()->TileSize();
@@ -56,7 +56,7 @@ eeSize cGameObjectVirtual::Size() {
 }
 
 void cGameObjectVirtual::Draw() {
-	if ( NULL != mShape ) {
+	if ( NULL != mSubTexture ) {
 		if ( mLayer->Map()->LightsEnabled() && mLayer->LightsEnabled() ) {
 			cLightManager * LM = mLayer->Map()->GetLightManager();
 
@@ -64,7 +64,7 @@ void cGameObjectVirtual::Draw() {
 				eeVector2i Tile = reinterpret_cast<cTileLayer*> ( mLayer )->GetCurrentTile();
 
 				if ( LM->IsByVertex() ) {
-					mShape->Draw(
+					mSubTexture->Draw(
 						mPos.x,
 						mPos.y,
 						GetAngle(),
@@ -77,28 +77,28 @@ void cGameObjectVirtual::Draw() {
 						RenderTypeFromFlags()
 					);
 				} else {
-					mShape->Draw( mPos.x, mPos.y, *LM->GetTileColor( Tile ), GetAngle(), 1.f, ALPHA_NORMAL, RenderTypeFromFlags() );
+					mSubTexture->Draw( mPos.x, mPos.y, *LM->GetTileColor( Tile ), GetAngle(), 1.f, ALPHA_NORMAL, RenderTypeFromFlags() );
 				}
 			} else {
 				if ( LM->IsByVertex() ) {
-					mShape->Draw(
+					mSubTexture->Draw(
 						mPos.x,
 						mPos.y,
 						GetAngle(),
 						1.f,
 						LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y ) ),
-						LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y + mShape->DestHeight() ) ),
-						LM->GetColorFromPos( eeVector2f( mPos.x + mShape->DestWidth(), mPos.y + mShape->DestHeight() ) ),
-						LM->GetColorFromPos( eeVector2f( mPos.x + mShape->DestWidth(), mPos.y ) ),
+						LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y + mSubTexture->DestHeight() ) ),
+						LM->GetColorFromPos( eeVector2f( mPos.x + mSubTexture->DestWidth(), mPos.y + mSubTexture->DestHeight() ) ),
+						LM->GetColorFromPos( eeVector2f( mPos.x + mSubTexture->DestWidth(), mPos.y ) ),
 						ALPHA_NORMAL,
 						RenderTypeFromFlags()
 					);
 				} else {
-					mShape->Draw( mPos.x, mPos.y, LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y ) ), GetAngle(), 1.f, ALPHA_NORMAL, RenderTypeFromFlags() );
+					mSubTexture->Draw( mPos.x, mPos.y, LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y ) ), GetAngle(), 1.f, ALPHA_NORMAL, RenderTypeFromFlags() );
 				}
 			}
 		} else {
-			mShape->Draw( mPos.x, mPos.y, eeColorA(), GetAngle(), 1.f, ALPHA_NORMAL, RenderTypeFromFlags() );
+			mSubTexture->Draw( mPos.x, mPos.y, eeColorA(), GetAngle(), 1.f, ALPHA_NORMAL, RenderTypeFromFlags() );
 		}
 	} else {
 		cPrimitives P;
