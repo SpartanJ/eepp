@@ -94,7 +94,7 @@ cGameObject * cObjectLayer::GetObjectOver( const eeVector2i& pos ) {
 		tPos = tObj->Pos();
 		tSize = tObj->Size();
 
-		if ( Contains( eeRecti( tPos.x, tPos.y, tPos.x + tSize.x, tPos.y + tSize.y ), pos ) )
+		if ( Math::Contains( eeRecti( tPos.x, tPos.y, tPos.x + tSize.x, tPos.y + tSize.y ), pos ) )
 			return tObj;
 	}
 

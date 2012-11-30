@@ -29,7 +29,7 @@ class EE_API cMapEditor {
 		cUIControl *		mWinContainer;
 		cUIListBox *		mSubTextureList;
 		cUIGfx *			mGfxPreview;
-		cTextureAtlas *	mCurSG;
+		cTextureAtlas *		mCurSG;
 		cUIScrollBar *		mMapHScroll;
 		cUIScrollBar *		mMapVScroll;
 		cUIDropDownList *	mGOTypeList;

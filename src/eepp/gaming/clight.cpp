@@ -32,7 +32,7 @@ eeColor cLight::ProcessVertex( const eeFloat& PointX, const eeFloat& PointY, con
 
 	if ( mActive ) {
 		if ( mType == LIGHT_NORMAL )
-			VertexDist = eeabs( Distance( mPos.x, mPos.y, PointX, PointY ) );
+			VertexDist = eeabs( Math::Distance( mPos.x, mPos.y, PointX, PointY ) );
 		else {
 			eeFloat XDist = eeabs(mPos.x - PointX) * 0.5f;
 			eeFloat YDist = eeabs(mPos.y - PointY);
@@ -72,7 +72,7 @@ eeColorA cLight::ProcessVertex( const eeFloat& PointX, const eeFloat& PointY, co
 
 	if ( mActive ) {
 		if ( mType == LIGHT_NORMAL )
-			VertexDist = eeabs( Distance( mPos.x, mPos.y, PointX, PointY ) );
+			VertexDist = eeabs( Math::Distance( mPos.x, mPos.y, PointX, PointY ) );
 		else {
 			eeFloat XDist = eeabs(mPos.x - PointX) * 0.5f;
 			eeFloat YDist = eeabs(mPos.y - PointY);

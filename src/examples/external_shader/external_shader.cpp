@@ -119,7 +119,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 			/// Since fixed-pipeline OpenGL use gl_FrontColor for glColorPointer, we need to replace the color attribute
 			/// This is all to show how it works, in a real world scenario, you will choose to work fixed-pipeline or programmable-pipeline.
 			if ( GLi->Version() == GLv_2 ) {
-				ReplaceSubStr( fs, "gl_FragColor = dgl_Color", "gl_FragColor = gl_FrontColor" );
+				String::ReplaceSubStr( fs, "gl_FragColor = dgl_Color", "gl_FragColor = gl_FrontColor" );
 			}
 
 			/// Create the new shader program
@@ -140,8 +140,8 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		for (i = 0; i < ParticlesNum; i++ )
 		{
 			vertices[i]		= eeVector3ff( 0, 0, 1.83 );
-			velocities[i]	= eeVector3ff( (eeRandf() * 2 - 1)*.05, (eeRandf() * 2 - 1)*.05, .93 + eeRandf()*.02 );
-			colors[i]		= eeColorAf( eeRandf() * 0.5, 0.1, 0.8, 0.5 );
+			velocities[i]	= eeVector3ff( (Randf() * 2 - 1)*.05, (Randf() * 2 - 1)*.05, .93 + Randf()*.02 );
+			colors[i]		= eeColorAf( Randf() * 0.5, 0.1, 0.8, 0.5 );
 		}
 
 		while ( win->Running() )
@@ -213,8 +213,8 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 					if ( d < 2.f ) {
 						if ( d < 0.03f ) {
-							vertices[i+1].x = eeRandf( -1, 1 ) * aspectRatio;
-							vertices[i+1].y = eeRandf( -1, 1 );
+							vertices[i+1].x = Randf( -1, 1 ) * aspectRatio;
+							vertices[i+1].y = Randf( -1, 1 );
 							velocities[i].x = 0;
 							velocities[i].y = 0;
 						} else {

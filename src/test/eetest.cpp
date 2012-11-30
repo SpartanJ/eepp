@@ -762,7 +762,7 @@ void cEETest::ButtonClick( const cUIEvent * Event ) {
 		Gfx->Enabled( false );
 
 		Gfx->StartRotation( 0, 2500, 2500 );
-		Gfx->StartMovement( eeVector2i( eeRandi( 0, mWindow->GetWidth() ), -64 ), eeVector2i( eeRandi( 0, mWindow->GetWidth() ), mWindow->GetHeight() + 64 ), 2500 );
+		Gfx->StartMovement( eeVector2i( Math::Randi( 0, mWindow->GetWidth() ), -64 ), eeVector2i( Math::Randi( 0, mWindow->GetWidth() ), mWindow->GetHeight() + 64 ), 2500 );
 		Gfx->CloseFadeOut( 3500 );
 
 		mListBox->AddListBoxItem( "Test ListBox " + String::toStr( mListBox->Count() + 1 ) + " testing it right now!" );
@@ -871,9 +871,9 @@ void cEETest::LoadTextures() {
 				eeColorA C = Tex->GetPixel(x, y);
 
 				if ( C.R() > 200 && C.G() > 200 && C.B() > 200 )
-					Tex->SetPixel(x, y, eeColorA( eeRandi(0, 255), eeRandi(0, 255), eeRandi(0, 255), C.A() ) );
+					Tex->SetPixel(x, y, eeColorA( Math::Randi(0, 255), Math::Randi(0, 255), Math::Randi(0, 255), C.A() ) );
 				else
-					Tex->SetPixel(x, y, eeColorA( eeRandi(200, 255), eeRandi(200, 255), eeRandi(200, 255), C.A() ) );
+					Tex->SetPixel(x, y, eeColorA( Math::Randi(200, 255), Math::Randi(200, 255), Math::Randi(200, 255), C.A() ) );
 			}
 		}
 
@@ -1567,11 +1567,11 @@ void cEETest::ParticlesCallback( cParticle * P, cParticleSystem * Me ) {
 	eeFloat x, y, radio;
 	eeVector2f MePos( Me->Position() );
 
-	radio = (eeRandf(1.f, 1.2f) + sin( 20.0f / P->Id() )) * 24;
+	radio = (Math::Randf(1.f, 1.2f) + sin( 20.0f / P->Id() )) * 24;
 	x = MePos.x + radio * cos( (eeFloat)P->Id() );
 	y = MePos.y + radio * sin( (eeFloat)P->Id() );
-	P->Reset(x, y, eeRandf(-10.f, 10.f), eeRandf(-10.f, 10.f), eeRandf(-10.f, 10.f), eeRandf(-10.f, 10.f));
-	P->Color( eeColorAf(1.f, 0.6f, 0.3f, 1.f), 0.02f + eeRandf() * 0.3f );
+	P->Reset(x, y, Math::Randf(-10.f, 10.f), Math::Randf(-10.f, 10.f), Math::Randf(-10.f, 10.f), Math::Randf(-10.f, 10.f));
+	P->Color( eeColorAf(1.f, 0.6f, 0.3f, 1.f), 0.02f + Math::Randf() * 0.3f );
 }
 
 void cEETest::Particles() {
@@ -1581,8 +1581,8 @@ void cEETest::Particles() {
 		PS[1].Position( Mousef );
 
 	PS[2].Position( HWidth, HHeight );
-	PS[3].Position(  cosAng(Ang) * 220.f + HWidth + eeRandf(0.f, 10.f),  sinAng(Ang) * 220.f + HHeight + eeRandf(0.f, 10.f) );
-	PS[4].Position( -cosAng(Ang) * 220.f + HWidth + eeRandf(0.f, 10.f), -sinAng(Ang) * 220.f + HHeight + eeRandf(0.f, 10.f) );
+	PS[3].Position(  cosAng(Ang) * 220.f + HWidth + Math::Randf(0.f, 10.f),  sinAng(Ang) * 220.f + HHeight + Math::Randf(0.f, 10.f) );
+	PS[4].Position( -cosAng(Ang) * 220.f + HWidth + Math::Randf(0.f, 10.f), -sinAng(Ang) * 220.f + HHeight + Math::Randf(0.f, 10.f) );
 
 	for ( Uint32 i = 0; i < PS.size(); i++ )
 		PS[i].Draw();
@@ -1783,7 +1783,7 @@ void cEETest::Demo2Update() {
 
 		cBody * body = mSpace->AddBody( cBody::New( 1.0f, Moment::ForCircle(1.0f, 15.0f, 0.0f, cVectZero ) ) );
 		body->Pos( emitterInstance.position );
-		body->Vel( cVectNew( eeRandf(-1,1), eeRandf(-1,1) ) * (cpFloat)100 );
+		body->Vel( cVectNew( Math::Randf(-1,1), Math::Randf(-1,1) ) * (cpFloat)100 );
 
 		cShape *shape = mSpace->AddShape( cShapeCircle::New( body, 15.0f, cVectZero ) );
 		shape->CollisionType( BALL_TYPE );

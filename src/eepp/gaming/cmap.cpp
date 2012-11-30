@@ -330,8 +330,8 @@ void cMap::CalcTilesClip() {
 		if ( mStartTile.y < 0 )
 			mStartTile.y = 0;
 
-		mEndTile.x		= mStartTile.x + eeRoundUp( (eeFloat)mViewSize.x / ( (eeFloat)mTileSize.x * mScale ) ) + 1 + mExtraTiles.x;
-		mEndTile.y		= mStartTile.y + eeRoundUp( (eeFloat)mViewSize.y / ( (eeFloat)mTileSize.y * mScale ) ) + 1 + mExtraTiles.y;
+		mEndTile.x		= mStartTile.x + Math::RoundUp( (eeFloat)mViewSize.x / ( (eeFloat)mTileSize.x * mScale ) ) + 1 + mExtraTiles.x;
+		mEndTile.y		= mStartTile.y + Math::RoundUp( (eeFloat)mViewSize.y / ( (eeFloat)mTileSize.y * mScale ) ) + 1 + mExtraTiles.y;
 
 		if ( mEndTile.x > mSize.x )
 			mEndTile.x = mSize.x;

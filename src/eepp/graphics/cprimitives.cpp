@@ -22,7 +22,7 @@ void cPrimitives::DrawRoundedRectangle(const eeFloat& x, const eeFloat& y, const
 	eeVector2f poly;
 	eeVector2f Center( x + width * 0.5f + xscalediff, y + height * 0.5f + yscalediff );
 
-	eePolygon2f Poly = CreateRoundedPolygon( x - xscalediff, y - yscalediff, width + xscalediff, height + yscalediff, Corners );
+	eePolygon2f Poly = Math::CreateRoundedPolygon( x - xscalediff, y - yscalediff, width + xscalediff, height + yscalediff, Corners );
 	Poly.Rotate( Angle, Center );
 
 	switch(fillmode) {
@@ -170,7 +170,7 @@ void cPrimitives::DrawCircle( const eeFloat& x, const eeFloat& y, const eeFloat&
 			mBR->LineLoopSetColor( mColor );
 
 			for( eeFloat i = 0; i < 360; i+= ( angle_shift + angle_shift ) )
-				mBR->BatchLineLoop( x + radius * sinAng(i), y + radius * cosAng(i), x + radius * sinAng( i + angle_shift ), y + radius * cosAng( i + angle_shift ) );
+				mBR->BatchLineLoop( x + radius * Math::sinAng(i), y + radius * Math::cosAng(i), x + radius * Math::sinAng( i + angle_shift ), y + radius * Math::cosAng( i + angle_shift ) );
 
 			break;
 		case EE_DRAW_FILL:
@@ -178,7 +178,7 @@ void cPrimitives::DrawCircle( const eeFloat& x, const eeFloat& y, const eeFloat&
 			mBR->TriangleFanSetColor( mColor );
 
 			for( eeFloat i = 0; i < 360; i+= ( angle_shift + angle_shift + angle_shift ) )
-				mBR->BatchTriangleFan( x + radius * sinAng(i), y + radius * cosAng(i), x + radius * sinAng( i + angle_shift ), y + radius * cosAng( i + angle_shift ), x + radius * sinAng( i + angle_shift + angle_shift ), y + radius * cosAng( i + angle_shift + angle_shift ) );
+				mBR->BatchTriangleFan( x + radius * Math::sinAng(i), y + radius * Math::cosAng(i), x + radius * Math::sinAng( i + angle_shift ), y + radius * Math::cosAng( i + angle_shift ), x + radius * Math::sinAng( i + angle_shift + angle_shift ), y + radius * Math::cosAng( i + angle_shift + angle_shift ) );
 
 			break;
 	}

@@ -68,7 +68,7 @@ void cUIMap::Update() {
 
 							mSelLight = NULL;
 						} else if ( NULL != mSelLight ) {
-							if ( Contains( mSelLight->GetAABB(), mMap->GetMouseMapPosf() ) ) {
+							if ( Math::Contains( mSelLight->GetAABB(), mMap->GetMouseMapPosf() ) ) {
 								mMap->GetLightManager()->RemoveLight( mSelLight );
 
 								eeSAFE_DELETE( mSelLight );

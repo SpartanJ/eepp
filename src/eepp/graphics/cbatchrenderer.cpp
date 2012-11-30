@@ -476,7 +476,7 @@ void cBatchRenderer::BatchQuadFreeEx( const eeFloat& x0, const eeFloat& y0, cons
 	}
 
 	if ( Angle != 0 )
-		mQ = RotateQuadCentered( mQ, Angle, QCenter );
+		mQ = Math::RotateQuadCentered( mQ, Angle, QCenter );
 
 	SetBlendMode( DM_QUADS, mForceBlendMode );
 
@@ -581,8 +581,8 @@ void cBatchRenderer::Rotate( const eeVector2f& center, eeVector2f* point, const 
 	if ( angle ) {
 		eeFloat x = point->x - center.x;
 		eeFloat y = point->y - center.y;
-		point->x = x * cosAng(angle) - y * sinAng(angle) + center.x;
-		point->y = x * sinAng(angle) + y * cosAng(angle) + center.y;
+		point->x = x * Math::cosAng(angle) - y * Math::sinAng(angle) + center.x;
+		point->y = x * Math::sinAng(angle) + y * Math::cosAng(angle) + center.y;
 	}
 }
 

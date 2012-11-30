@@ -9,34 +9,47 @@ namespace EE { namespace Math {
 /** Set a Random Seed to the Randomizer */
 Uint32 EE_API SetRandomSeed();
 
-/** Generate a eeFloating point random number
+/** Generate a floating point random number
 * @param fMin The minimun value
 * @param fMax the maximun value
 * @return The random number generated
 */
-eeFloat EE_API eeRandf( const eeFloat& fMin = 0.0f, const eeFloat& fMax = 1.0f );
+inline eeFloat Randf( const eeFloat& fMin = 0.0f, const eeFloat& fMax = 1.0f ) {
+	return (fMin + (fMax - fMin) * ( rand() / ( (eeFloat) RAND_MAX + 1) ) );
+}
 
 /** Generate a integer random number
 * @param fMin The minimun value
 * @param fMax the maximun value
 * @return The random number generated
 */
-eeInt EE_API eeRandi( const eeInt& fMin = 0, const eeInt& fMax = 1 );
+inline eeInt Randi( const eeInt& fMin = 0, const eeInt& fMax = 1 ) {
+	return (eeInt)(fMin + (fMax - fMin + 1) * ( rand() / ( (eeFloat) RAND_MAX + 1) ) );
+}
 
 /** Cosine from an Angle in Degress */
-eeFloat EE_API cosAng( const eeFloat& Ang );
-
+inline eeFloat cosAng( const eeFloat& Ang ) {
+	return eecos(Ang * EE_PI_180);
+}
 /** Sinus from an Angle in Degress */
-eeFloat EE_API sinAng( const eeFloat& Ang );
+inline eeFloat sinAng( const eeFloat& Ang ) {
+	return eesin(Ang * EE_PI_180);
+}
 
 /** Tangen from an Angle in Degress */
-eeFloat EE_API tanAng( const eeFloat& Ang );
+inline eeFloat tanAng( const eeFloat& Ang ) {
+	return tan(Ang * EE_PI_180);
+}
 
 /** Convert an Angle from Degrees to Radians */
-eeFloat EE_API Radians( const eeFloat& Ang );
+inline eeFloat Radians( const eeFloat& Ang ) {
+	return Ang * EE_PI_180;
+}
 
-/** Convert an Angle from Radians to Degrees */
-eeFloat EE_API Degrees( const eeFloat& Radians );
+/** Convert an Angle from Math::Radians to Degrees */
+inline eeFloat Degrees( const eeFloat& Radians ) {
+	return Radians * EE_180_PI;
+}
 
 template <typename T>
 T NextPowOfTwo( T Size ) {
@@ -59,46 +72,114 @@ T LineAngle( const T& X1, const T& Y1, const T& X2, const T& Y2 ) {
 }
 
 #ifndef EE_64BIT
-eeDouble EE_API eeRound( eeDouble r );
+inline eeDouble Round( eeDouble r ) {
+	return (r > 0.0) ? floor(r + 0.5) : ceil(r - 0.5);
+}
 #endif
 
-eeFloat EE_API eeRound( eeFloat r );
+inline eeFloat Round( eeFloat r ) {
+	return (r > 0.0f) ? floor(r + 0.5f) : ceil(r - 0.5f);
+}
 
 #ifndef EE_64BIT
-eeDouble EE_API eeRoundUp( eeDouble r );
+inline eeDouble RoundUp( eeDouble r ) {
+	return (r > 0.0) ? ceil(r) : ceil(r - 0.5);
+}
 #endif
 
-eeFloat EE_API eeRoundUp( eeFloat r );
+inline eeFloat RoundUp( eeFloat r ) {
+	return (r > 0.0f) ? ceil(r) : ceil(r - 0.5f);
+}
 
-eeFloat EE_API LineAngle( const eeVector2f& p1, const eeVector2f& p2 );
+inline eeFloat RotatePointFromX ( const eeFloat& x, const eeFloat& y, const eeFloat& Angle ) {
+	return x * cosAng(Angle) - y * sinAng(Angle);
+}
 
-eeFloat EE_API RotatePointFromX ( const eeFloat& x, const eeFloat& y, const eeFloat& Angle );
+inline eeFloat RotatePointFromY ( const eeFloat& x, const eeFloat& y, const eeFloat& Angle ) {
+	return y * cosAng(Angle) + x * sinAng(Angle);
+}
 
-eeFloat EE_API RotatePointFromY ( const eeFloat& x, const eeFloat& y, const eeFloat& Angle );
+inline eeFloat RotatePointFromX ( const eeVector2f& p, const eeFloat& Angle ) {
+	return RotatePointFromX( p.x, p.y, Angle );
+}
 
-eeFloat EE_API RotatePointFromX ( const eeVector2f& p, const eeFloat& Angle );
+inline eeFloat RotatePointFromY ( const eeVector2f& p, const eeFloat& Angle ) {
+	return RotatePointFromY( p.x, p.y, Angle );
+}
 
-eeFloat EE_API RotatePointFromY ( const eeVector2f& p, const eeFloat& Angle );
+inline eeVector2f RotateVector( const eeVector2f& p, const eeFloat& Angle ) {
+	return eeVector2f( RotatePointFromX( p, Angle ), RotatePointFromY( p, Angle ) );
+}
 
-eeVector2f EE_API RotateVector( const eeVector2f& p, const eeFloat& Angle );
+inline void RotateVector( eeVector2f* p, const eeFloat& Angle ) {
+	eeFloat x = p->x;
+	x = p->x * cosAng(Angle) - p->y * sinAng(Angle);
+	p->y = p->y * cosAng(Angle) + p->x * sinAng(Angle);
+	p->x = x;
+}
 
-eeVector2f EE_API RotateVectorCentered( const eeVector2f& p, const eeFloat& Angle, const eeVector2f& RotationCenter );
+inline void RotateVectorCentered( eeVector2f* p, const eeFloat& Angle, const eeVector2f& RotationCenter ) {
+	*p -= RotationCenter;
+	RotateVector( p, Angle );
+	*p += RotationCenter;
+}
 
-eeVector2f EE_API GetQuadCenter( const eeQuad2f& Q );
+inline eeVector2f RotateVectorCentered( const eeVector2f& p, const eeFloat& Angle, const eeVector2f& RotationCenter ) {
+	return RotationCenter + RotateVector( (p - RotationCenter), Angle );
+}
 
-eeQuad2f EE_API RotateQuadCentered( const eeQuad2f& p, const eeFloat& Angle, const eeVector2f& RotationCenter );
-
-eeQuad2f EE_API ScaleQuadCentered( const eeQuad2f& Quad, const eeFloat& Scale, const eeVector2f& RotationCenter );
-
-void EE_API RotateVector( eeVector2f* p, const eeFloat& Angle );
-
-void EE_API RotateVectorCentered( eeVector2f* p, const eeFloat& Angle, const eeVector2f& RotationCenter );
+inline eeQuad2f RotateQuadCentered( const eeQuad2f& p, const eeFloat& Angle, const eeVector2f& RotationCenter ) {
+	return eeQuad2f( RotateVectorCentered( p.V[0], Angle, RotationCenter ), RotateVectorCentered( p.V[1], Angle, RotationCenter ), RotateVectorCentered( p.V[2], Angle, RotationCenter ), RotateVectorCentered( p.V[3], Angle, RotationCenter ) );
+}
 
 template <typename T>
 T Distance( T x1, T y1, T x2, T y2 ) {
 	return  eesqrt( (eeFloat)( (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2) ) );
 }
-eeFloat EE_API Distance( const eeVector2f& p1, const eeVector2f& p2);
+
+inline eeVector2f GetQuadCenter( const eeQuad2f& Q ) {
+	eeVector2f QCenter;
+	eeFloat MinX = Q.V[0].x, MaxX = Q.V[0].x, MinY = Q.V[0].y, MaxY = Q.V[0].y;
+
+	for (Uint8 i = 1; i < 4; i++ ) {
+		if ( MinX > Q.V[i].x ) MinX = Q.V[i].x;
+		if ( MaxX < Q.V[i].x ) MaxX = Q.V[i].x;
+		if ( MinY > Q.V[i].y ) MinY = Q.V[i].y;
+		if ( MaxY < Q.V[i].y ) MaxY = Q.V[i].y;
+	}
+
+	QCenter.x = MinX + ( MaxX - MinX ) * 0.5f;
+	QCenter.y = MinY + ( MaxY - MinY ) * 0.5f;
+
+	return QCenter;
+}
+
+inline eeQuad2f ScaleQuadCentered( const eeQuad2f& Quad, const eeFloat& Scale, const eeVector2f& RotationCenter ) {
+	eeQuad2f mQ = Quad;
+	eeVector2f QCenter = RotationCenter;
+
+	for (Uint8 i = 0; i < 4; i++ ) {
+		if ( mQ.V[i].x < QCenter.x )
+			mQ.V[i].x = QCenter.x - eeabs(QCenter.x - mQ.V[i].x) * Scale;
+		else
+			mQ.V[i].x = QCenter.x + eeabs(QCenter.x - mQ.V[i].x) * Scale;
+
+		if ( mQ.V[i].y < QCenter.y )
+			mQ.V[i].y = QCenter.y - eeabs(QCenter.y - mQ.V[i].y) * Scale;
+		else
+			mQ.V[i].y = QCenter.y + eeabs(QCenter.y - mQ.V[i].y) * Scale;
+	}
+
+	return mQ;
+}
+
+inline eeFloat LineAngle( const eeVector2f& p1, const eeVector2f& p2 ) {
+	return LineAngle( p1.x, p1.y, p2.x, p2.y );
+}
+
+inline eeFloat Distance( const eeVector2f& p1, const eeVector2f& p2 ) {
+	return Distance( p1.x, p1.y, p2.x, p2.y );
+}
 
 template <typename T>
 bool Intersect( const tRECT<T>& a, const tRECT<T>& b ) {
@@ -202,9 +283,13 @@ bool IntersectLines( T Ax, T Ay, T Bx, T By, T Cx, T Cy, T Dx, T Dy, T* X, T* Y 
 	return true;
 }
 
-bool EE_API IntersectLines( const eeFloat& Ax, const eeFloat& Ay, const eeFloat& Bx, const eeFloat& By, const eeFloat& Cx, const eeFloat& Cy, const eeFloat& Dx, const eeFloat& Dy, eeFloat *X = NULL, eeFloat *Y = NULL);
+inline bool IntersectLines( const eeFloat& Ax, const eeFloat& Ay, const eeFloat& Bx, const eeFloat& By, const eeFloat& Cx, const eeFloat& Cy, const eeFloat& Dx, const eeFloat& Dy, eeFloat * X = NULL, eeFloat * Y = NULL ) {
+	return IntersectLines<eeFloat> (Ax, Ay, Bx, By, Cx, Cy, Dx, Dy, X, Y);
+}
 
-bool EE_API IntersectLines( const eeVector2f& l1p1, const eeVector2f& l1p2, const eeVector2f& l2p1, const eeVector2f& l2p2, eeFloat *X = NULL, eeFloat *Y = NULL);
+inline bool IntersectLines( const eeVector2f& l1p1, const eeVector2f& l1p2, const eeVector2f& l2p1, const eeVector2f& l2p2, eeFloat * X = NULL, eeFloat * Y = NULL ) {
+	return IntersectLines<eeFloat> (l1p1.x, l1p1.y, l1p2.x, l1p2.y, l2p1.x, l2p1.y, l2p2.x, l2p2.y, X, Y);
+}
 
 /** @return The Dot Product of two Vectors */
 template <typename T>

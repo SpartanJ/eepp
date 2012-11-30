@@ -245,7 +245,6 @@
 using namespace EE::Utils;
 
 #include <eepp/math/math.hpp>
-using namespace EE::Math;
 
 #include <eepp/system/ctimeelapsed.hpp>
 #include <eepp/system/tsingleton.hpp>
