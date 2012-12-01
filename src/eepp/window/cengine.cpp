@@ -321,7 +321,7 @@ WindowSettings cEngine::CreateWindowSettings( cIniFile * ini, std::string iniKey
 	std::string Icon	= ini->GetValue( iniKeyName, "WinIcon", "" );
 	std::string Caption	= ini->GetValue( iniKeyName, "WinCaption", "" );
 
-	WindowSettings WinSettings( Width, Height, BitColor, Style, Icon, Caption, WinBackend );
+	WindowSettings WinSettings( Width, Height, Caption, Style, WinBackend, BitColor, Icon );
 
 	#if EE_PLATFORM == EE_PLATFORM_IOS
 	//! @TODO: Check if SDL2 default win settings are being forced ( it wasn't working fine some time ago )

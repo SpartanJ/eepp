@@ -3,6 +3,7 @@
 #include <eepp/window/cinput.hpp>
 #include <eepp/window/ccursormanager.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
+#include <eepp/graphics/cglobalbatchrenderer.hpp>
 #include <eepp/window/platform/null/cnullimpl.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
@@ -122,7 +123,7 @@ void cWindow::Setup2D( const bool& KeepView ) {
 		mCurrentView->NeedUpdate();
 	}
 
-	cTextureFactory::instance()->SetPreBlendFunc( ALPHA_NORMAL, true );
+	BlendMode::SetMode( ALPHA_NORMAL, true );
 
 	if ( GLv_3 != GLi->Version() ) {
 		#if !defined( EE_GLES2 ) || defined( EE_GLES_BOTH )
@@ -274,7 +275,11 @@ void cWindow::ViewCheckUpdate() {
 	}
 }
 
-void cWindow::Display() {
+void cWindow::Clear() {
+	GLi->Clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+}
+
+void cWindow::Display( bool clear ) {
 	cGlobalBatchRenderer::instance()->Draw();
 
 	if ( mCurrentView->NeedUpdate() )
@@ -282,7 +287,8 @@ void cWindow::Display() {
 
 	SwapBuffers();
 
-	GLi->Clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
+	if ( clear )
+		Clear();
 
 	GetElapsedTime();
 

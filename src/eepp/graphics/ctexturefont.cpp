@@ -1,4 +1,5 @@
 #include <eepp/graphics/ctexturefont.hpp>
+#include <eepp/graphics/ctexture.hpp>
 #include <eepp/system/ciostreamfile.hpp>
 #include <eepp/system/ciostreammemory.hpp>
 

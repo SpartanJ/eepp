@@ -526,7 +526,7 @@ void cSprite::SetReverseFromStart() {
 	mCurrentFrame = Size;
 }
 
-void cSprite::Draw( const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect ) {
+void cSprite::Draw( const EE_BLEND_MODE& Blend, const EE_RENDERTYPE& Effect ) {
 	if ( SPR_FGET( SPRITE_FLAG_AUTO_ANIM ) )
 		Update();
 
@@ -545,7 +545,7 @@ void cSprite::Draw() {
 	Draw( mBlend, mEffect );
 }
 
-void cSprite::Draw( const EE_PRE_BLEND_FUNC& Blend ) {
+void cSprite::Draw( const EE_BLEND_MODE& Blend ) {
 	Draw( Blend, mEffect );
 }
 
@@ -860,11 +860,11 @@ const EE_RENDERTYPE& cSprite::RenderType() const {
 	return mEffect;
 }
 
-void cSprite::BlendMode( const EE_PRE_BLEND_FUNC& Blend ) {
+void cSprite::BlendMode( const EE_BLEND_MODE& Blend ) {
 	mBlend = Blend;
 }
 
-const EE_PRE_BLEND_FUNC& cSprite::BlendMode() const {
+const EE_BLEND_MODE& cSprite::BlendMode() const {
 	return mBlend;
 }
 

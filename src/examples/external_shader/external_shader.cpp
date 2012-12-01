@@ -53,7 +53,7 @@ void videoResize() {
 	GLi->EnableClientState( GL_COLOR_ARRAY );
 
 	/// Reset the default blend func ( by default eepp use ALPHA_NORMAL )
-	cTextureFactory::instance()->SetPreBlendFunc( ALPHA_BLENDONE );
+	BlendMode::SetMode( ALPHA_BLENDONE );
 
 	/// Set the line width
 	cGlobalBatchRenderer::instance()->SetLineWidth( 2 );
@@ -83,7 +83,7 @@ using namespace Demo_ExternalShader;
 
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
-	win = cEngine::instance()->CreateWindow( WindowSettings( 960, 640, 32, WindowStyle::Default, "", "eepp - External Shaders" ), ContextSettings( true ) );
+	win = cEngine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - External Shaders" ), ContextSettings( true ) );
 
 	if ( win->Created() )
 	{

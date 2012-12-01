@@ -4,8 +4,6 @@
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/csubtexture.hpp>
 
-#define SUBTEXTURE_NONE 0xFFFFFFFF
-
 namespace EE { namespace Graphics {
 
 class EE_API cTextureAtlas : public tResourceManager<cSubTexture> {

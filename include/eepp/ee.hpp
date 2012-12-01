@@ -22,6 +22,7 @@
 **/
 
 /**
+	@TODO Add PVRTC and ETC support.
 	@TODO Check for endianness problems, and make EEPP endianness agnostic.
 	@TODO Support for Android ( work in progress, it's working ) and iOS.
 	@TODO Add Scripting support ( squirrel or angel script ).

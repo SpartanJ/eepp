@@ -17,14 +17,14 @@ cUIBackground::cUIBackground( const cUIBackground& Back ) :
 	mColor = b->Colors();
 }
 
-cUIBackground::cUIBackground( const eeColorA& Color, const eeUint& Corners, const EE_PRE_BLEND_FUNC& BlendMode ) :
+cUIBackground::cUIBackground( const eeColorA& Color, const eeUint& Corners, const EE_BLEND_MODE& BlendMode ) :
 	mBlendMode( BlendMode ),
 	mCorners( Corners )
 {
 	mColor.push_back( Color );
 }
 
-cUIBackground::cUIBackground( const eeColorA& TopLeftColor, const eeColorA& BottomLeftColor, const eeColorA& BottomRightColor, const eeColorA& TopRightColor, const eeUint& Corners, const EE_PRE_BLEND_FUNC& BlendMode ) :
+cUIBackground::cUIBackground( const eeColorA& TopLeftColor, const eeColorA& BottomLeftColor, const eeColorA& BottomRightColor, const eeColorA& TopRightColor, const eeUint& Corners, const EE_BLEND_MODE& BlendMode ) :
 	mBlendMode( BlendMode ),
 	mCorners( Corners )
 {
@@ -70,11 +70,11 @@ void cUIBackground::Color( const eeColorA& Col ) {
 	mColor[0] = Col;
 }
 
-const EE_PRE_BLEND_FUNC& cUIBackground::Blend() const {
+const EE_BLEND_MODE& cUIBackground::Blend() const {
 	return mBlendMode;
 }
 
-void cUIBackground::Blend( const EE_PRE_BLEND_FUNC& blend ) {
+void cUIBackground::Blend( const EE_BLEND_MODE& blend ) {
 	mBlendMode = blend;
 }
 

@@ -1,6 +1,7 @@
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/graphics/ctextureloader.hpp>
 #include <eepp/graphics/glhelper.hpp>
+#include <eepp/graphics/ctexture.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
 
@@ -15,8 +16,6 @@ cTextureFactory::cTextureFactory() :
 {
 	mTextures.clear();
 	mTextures.push_back( NULL );
-
-	mAppPath = Sys::GetProcessPath();
 
 	memset( &mCurrentTexture[0], 0, EE_MAX_TEXTURE_UNITS );
 }
@@ -210,58 +209,6 @@ void cTextureFactory::UngrabTextures() {
 	}
 }
 
-void cTextureFactory::SetBlendFunc( const EE_BLEND_FUNC& SrcFactor, const EE_BLEND_FUNC& DestFactor ) {
-	GLi->Enable( GL_BLEND );
-
-	GLi->BlendFunc( (GLenum)SrcFactor, (GLenum)DestFactor );
-
-	mLastBlend = ALPHA_CUSTOM;
-}
-
-void cTextureFactory::SetPreBlendFunc( const EE_PRE_BLEND_FUNC& blend, bool force ) {
-	if ( mLastBlend != blend || force ) {
-		if (blend == ALPHA_NONE) {
-			GLi->Disable( GL_BLEND );
-		} else {
-			GLi->Enable( GL_BLEND );
-
-			switch (blend) {
-				case ALPHA_NORMAL:
-					GLi->BlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA);
-					break;
-				case ALPHA_BLENDONE:
-					GLi->BlendFunc(GL_SRC_ALPHA , GL_ONE);
-					break;
-				case ALPHA_BLENDTWO:
-					GLi->BlendFunc(GL_SRC_ALPHA , GL_SRC_ALPHA);
-					GLi->BlendFunc(GL_DST_ALPHA , GL_ONE);
-					break;
-				case ALPHA_BLENDTHREE:
-					GLi->BlendFunc(GL_SRC_ALPHA , GL_ONE);
-					GLi->BlendFunc(GL_DST_ALPHA , GL_SRC_ALPHA);
-					break;
-				case ALPHA_ALPHACHANNELS:
-					GLi->BlendFunc(GL_SRC_ALPHA , GL_SRC_ALPHA);
-					break;
-				case ALPHA_DESTALPHA:
-					GLi->BlendFunc(GL_SRC_ALPHA , GL_DST_ALPHA);
-					break;
-				case ALPHA_MULTIPLY:
-					GLi->BlendFunc(GL_DST_COLOR,GL_ZERO);
-					break;
-				case ALPHA_NONE:
-					// Avoid compiler warning
-					break;
-				case ALPHA_CUSTOM:
-					break;
-			}
-
-		}
-
-		mLastBlend = blend;
-	}
-}
-
 void cTextureFactory::SetActiveTextureUnit( const Uint32& Unit ) {
 	GLi->ActiveTexture( GL_TEXTURE0 + Unit );
 }
@@ -282,10 +229,6 @@ void cTextureFactory::SetTextureEnv( const EE_TEXTURE_PARAM& Param, const Int32&
 		GLi->TexEnvi( GL_TEXTURE_ENV, lParam, Val );
 	}
 	#endif
-}
-
-const EE_PRE_BLEND_FUNC& cTextureFactory::GetPreBlendFunc() const {
-	return mLastBlend;
 }
 
 eeUint cTextureFactory::GetValidTextureSize( const eeUint& Size ) {

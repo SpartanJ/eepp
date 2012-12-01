@@ -3,7 +3,6 @@
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/cshader.hpp>
-#include <eepp/math/vector3.hpp>
 
 namespace EE { namespace Graphics {
 

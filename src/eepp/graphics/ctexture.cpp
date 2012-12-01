@@ -200,6 +200,10 @@ void cTexture::SetPixel( const eeUint& x, const eeUint& y, const eeColorA& Color
 	mFlags |= TEX_FLAG_MODIFIED;
 }
 
+void cTexture::Bind() {
+	cTextureFactory::instance()->Bind( this );
+}
+
 bool cTexture::SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format ) {
 	bool Res = false;
 
@@ -407,11 +411,11 @@ bool cTexture::Compressed() const {
 	return 0 != ( mFlags & TEX_FLAG_COMPRESSED );
 }
 
-void cTexture::Draw( const eeFloat &x, const eeFloat &y, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color, const EE_PRE_BLEND_FUNC &blend, const EE_RENDERTYPE &Effect, const bool &ScaleCentered, const eeRecti& texSector) {
+void cTexture::Draw( const eeFloat &x, const eeFloat &y, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color, const EE_BLEND_MODE &blend, const EE_RENDERTYPE &Effect, const bool &ScaleCentered, const eeRecti& texSector) {
 	DrawEx( x, y, 0, 0, Angle, Scale, Color, Color, Color, Color, blend, Effect, ScaleCentered, texSector);
 }
 
-void cTexture::DrawFast( const eeFloat& x, const eeFloat& y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color, const EE_PRE_BLEND_FUNC &blend, const eeFloat &width, const eeFloat &height ) {
+void cTexture::DrawFast( const eeFloat& x, const eeFloat& y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color, const EE_BLEND_MODE &blend, const eeFloat &width, const eeFloat &height ) {
 	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
 
 	eeFloat w = width, h = height;
@@ -419,7 +423,7 @@ void cTexture::DrawFast( const eeFloat& x, const eeFloat& y, const eeFloat& Angl
 	if (!h) h = (eeFloat)ImgHeight();
 
 	BR->SetTexture( this );
-	BR->SetPreBlendFunc( blend );
+	BR->SetBlendMode( blend );
 
 	BR->QuadsBegin();
 	BR->QuadsSetColor( Color );
@@ -432,7 +436,7 @@ void cTexture::DrawFast( const eeFloat& x, const eeFloat& y, const eeFloat& Angl
 	BR->DrawOpt();
 }
 
-void cTexture::DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width, const eeFloat &height, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_PRE_BLEND_FUNC &blend, const EE_RENDERTYPE &Effect, const bool &ScaleCentered, const eeRecti& texSector) {
+void cTexture::DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width, const eeFloat &height, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_BLEND_MODE &blend, const EE_RENDERTYPE &Effect, const bool &ScaleCentered, const eeRecti& texSector) {
 	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
 
 	bool renderdiv = true;
@@ -475,12 +479,12 @@ void cTexture::DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width,
 		renderdiv = false;
 
 	BR->SetTexture( this );
-	BR->SetPreBlendFunc( blend );
+	BR->SetBlendMode( blend );
 
 	BR->QuadsBegin();
 	BR->QuadsSetColorFree( Color0, Color1, Color2, Color3 );
 
-	if ( Effect <= 3 ) {
+	if ( Effect <= RN_FLIPMIRROR ) {
 		if ( ClampMode() == EE_CLAMP_REPEAT ) {
 			if ( Effect == RN_NORMAL )
 				if ( renderdiv ) {
@@ -587,15 +591,15 @@ void cTexture::DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width,
 	BR->DrawOpt();
 }
 
-void cTexture::DrawEx2( const eeFloat &x, const eeFloat &y, const eeFloat &width, const eeFloat &height, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color, const EE_PRE_BLEND_FUNC &blend, const EE_RENDERTYPE &Effect, const bool &ScaleCentered, const eeRecti& texSector ) {
+void cTexture::DrawEx2( const eeFloat &x, const eeFloat &y, const eeFloat &width, const eeFloat &height, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color, const EE_BLEND_MODE &blend, const EE_RENDERTYPE &Effect, const bool &ScaleCentered, const eeRecti& texSector ) {
 	DrawEx( x, y, width, height, Angle, Scale, Color, Color, Color, Color, blend, Effect, ScaleCentered, texSector );
 }
 
-void cTexture::DrawQuad( const eeQuad2f& Q, const eeFloat &offsetx, const eeFloat &offsety, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color, const EE_PRE_BLEND_FUNC &blend, const eeRecti& texSector) {
+void cTexture::DrawQuad( const eeQuad2f& Q, const eeFloat &offsetx, const eeFloat &offsety, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color, const EE_BLEND_MODE &blend, const eeRecti& texSector) {
 	DrawQuadEx( Q, offsetx, offsety, Angle, Scale, Color, Color, Color, Color, blend, texSector);
 }
 
-void cTexture::DrawQuadEx( const eeQuad2f& Q, const eeFloat &offsetx, const eeFloat &offsety, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_PRE_BLEND_FUNC &blend, const eeRecti& texSector ) {
+void cTexture::DrawQuadEx( const eeQuad2f& Q, const eeFloat &offsetx, const eeFloat &offsety, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_BLEND_MODE &blend, const eeRecti& texSector ) {
 	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
 
 	bool renderdiv = true;
@@ -619,7 +623,7 @@ void cTexture::DrawQuadEx( const eeQuad2f& Q, const eeFloat &offsetx, const eeFl
 		renderdiv = false;
 
 	BR->SetTexture( this );
-	BR->SetPreBlendFunc( blend );
+	BR->SetBlendMode( blend );
 
 	BR->QuadsBegin();
 	BR->QuadsSetColorFree( Color0, Color1, Color2, Color3 );

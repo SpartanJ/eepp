@@ -17,9 +17,9 @@ class EE_API cEngine {
 		~cEngine();
 
 		/** Creates a new window.
-		* Allegro 5 and SDL2 backends support more than one window creation, SDL 1.2 backend only 1 window.
+		* Allegro 5, SDL2, SFML backends support more than one window creation, SDL 1.2 backend only 1 window.
 		*/
-		Window::cWindow * CreateWindow( WindowSettings Settings, ContextSettings Context );
+		Window::cWindow * CreateWindow( WindowSettings Settings, ContextSettings Context = ContextSettings() );
 
 		/** Destroy the window instance, and set as current other window running ( if any ).
 		* This function is only usefull for multi-window environment. Avoid using it with one window context.

@@ -38,7 +38,7 @@ class EE_API cTextCache {
 
 		std::vector<eeColorA>& Colors();
 
-		void Draw( const eeFloat& X, const eeFloat& Y, const Uint32& Flags = 0, const eeFloat& Scale = 1.0f, const eeFloat& Angle = 0, EE_PRE_BLEND_FUNC Effect = ALPHA_NORMAL );
+		void Draw( const eeFloat& X, const eeFloat& Y, const Uint32& Flags = 0, const eeFloat& Scale = 1.0f, const eeFloat& Angle = 0, EE_BLEND_MODE Effect = ALPHA_NORMAL );
 
 		void Cache();
 

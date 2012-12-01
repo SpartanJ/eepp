@@ -1,6 +1,7 @@
 #include <eepp/gaming/cobjectlayer.hpp>
 #include <eepp/gaming/cmap.hpp>
 
+#include <eepp/graphics/ctexture.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 using namespace EE::Graphics;

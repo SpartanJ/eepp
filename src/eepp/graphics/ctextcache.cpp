@@ -1,5 +1,6 @@
 #include <eepp/graphics/ctextcache.hpp>
 #include <eepp/graphics/cfont.hpp>
+#include <eepp/graphics/cglobalbatchrenderer.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -126,7 +127,7 @@ const std::vector<eeFloat>& cTextCache::LinesWidth() {
 	return mLinesWidth;
 }
 
-void cTextCache::Draw( const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, EE_PRE_BLEND_FUNC Effect ) {
+void cTextCache::Draw( const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, EE_BLEND_MODE Effect ) {
 	if ( NULL != mFont ) {
 		if ( mFlags != Flags ) {
 			mFlags = Flags;

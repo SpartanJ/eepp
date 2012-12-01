@@ -288,7 +288,7 @@ void cSpace::Draw() {
 	#ifdef PHYSICS_RENDERER_ENABLED
 
 	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
-	BR->SetPreBlendFunc( ALPHA_NORMAL );
+	BR->SetBlendMode( ALPHA_NORMAL );
 
 	cPhysicsManager::cDrawSpaceOptions * options = cPhysicsManager::instance()->GetDrawOptions();
 

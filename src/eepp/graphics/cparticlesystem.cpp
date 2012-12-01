@@ -1,6 +1,8 @@
 #include <eepp/graphics/cparticlesystem.hpp>
 #include <eepp/graphics/glhelper.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
+#include <eepp/graphics/cbatchrenderer.hpp>
+#include <eepp/graphics/cglobalbatchrenderer.hpp>
 #include <eepp/window/cengine.hpp>
 
 using namespace EE::Window;
@@ -319,7 +321,7 @@ void cParticleSystem::Draw() {
 	cTextureFactory * TF = cTextureFactory::instance();
 
 	TF->Bind( mTexId );
-	TF->SetPreBlendFunc( mBlend );
+	BlendMode::SetMode( mBlend );
 
 	if ( mPointsSup ) {
 		GLi->Enable( GL_POINT_SPRITE );
@@ -343,7 +345,7 @@ void cParticleSystem::Draw() {
 
 		cBatchRenderer * BR = cGlobalBatchRenderer::instance();
 		BR->SetTexture( Tex );
-		BR->SetPreBlendFunc( mBlend );
+		BR->SetBlendMode( mBlend );
 		BR->QuadsBegin();
 
 		for ( Uint32 i = 0; i < mPCount; i++ ) {
@@ -459,11 +461,11 @@ bool cParticleSystem::Using() const {
 	return mUsed;
 }
 
-const EE_PRE_BLEND_FUNC& cParticleSystem::BlendMode() const {
+const EE_BLEND_MODE& cParticleSystem::BlendMode() const {
 	return mBlend;
 }
 
-void cParticleSystem::BlendMode( const EE_PRE_BLEND_FUNC& mode ) {
+void cParticleSystem::BlendMode( const EE_BLEND_MODE& mode ) {
 	mBlend = mode;
 }
 

@@ -51,11 +51,11 @@ class EE_API cSubTexture {
 
 		void OffsetY( const Int32& offsety );
 
-		void Draw( const eeFloat& X, const eeFloat& Y, const eeColorA& Color = eeColorA(), const eeFloat& Angle = 0.f, const eeFloat& Scale = 1.f, const EE_PRE_BLEND_FUNC& Blend = ALPHA_NORMAL, const EE_RENDERTYPE& Effect = RN_NORMAL, const bool& ScaleRendered = true );
+		void Draw( const eeFloat& X, const eeFloat& Y, const eeColorA& Color = eeColorA(), const eeFloat& Angle = 0.f, const eeFloat& Scale = 1.f, const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDERTYPE& Effect = RN_NORMAL, const bool& ScaleRendered = true );
 
-		void Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color0 = eeColorA(), const eeColorA& Color1 = eeColorA(), const eeColorA& Color2 = eeColorA(), const eeColorA& Color3 = eeColorA(), const EE_PRE_BLEND_FUNC& Blend = ALPHA_NORMAL, const EE_RENDERTYPE& Effect = RN_NORMAL, const bool& ScaleRendered = true );
+		void Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color0 = eeColorA(), const eeColorA& Color1 = eeColorA(), const eeColorA& Color2 = eeColorA(), const eeColorA& Color3 = eeColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDERTYPE& Effect = RN_NORMAL, const bool& ScaleRendered = true );
 
-		void Draw( const eeQuad2f Q, const eeFloat& X, const eeFloat& Y, const eeFloat& Angle = 0.f, const eeFloat& Scale = 1.f, const eeColorA& Color0 = eeColorA(), const eeColorA& Color1 = eeColorA(), const eeColorA& Color2 = eeColorA(), const eeColorA& Color3 = eeColorA(), const EE_PRE_BLEND_FUNC& Blend = ALPHA_NORMAL );
+		void Draw( const eeQuad2f Q, const eeFloat& X, const eeFloat& Y, const eeFloat& Angle = 0.f, const eeFloat& Scale = 1.f, const eeColorA& Color0 = eeColorA(), const eeColorA& Color1 = eeColorA(), const eeColorA& Color2 = eeColorA(), const eeColorA& Color3 = eeColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
 
 		cTexture * GetTexture();
 

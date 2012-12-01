@@ -444,12 +444,12 @@ void cUIControl::Flags( const Uint32& flags ) {
 	mFlags |= flags;
 }
 
-void cUIControl::Blend( const EE_PRE_BLEND_FUNC& blend ) {
+void cUIControl::Blend( const EE_BLEND_MODE& blend ) {
 	mBlend = static_cast<Uint16> ( blend );
 }
 
-EE_PRE_BLEND_FUNC cUIControl::Blend() {
-	return static_cast<EE_PRE_BLEND_FUNC> ( mBlend );
+EE_BLEND_MODE cUIControl::Blend() {
+	return static_cast<EE_BLEND_MODE> ( mBlend );
 }
 
 void cUIControl::ToFront() {

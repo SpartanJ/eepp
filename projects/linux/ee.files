@@ -123,6 +123,8 @@
 ../../src/eepp/gaming/mapeditor/cmapproperties.cpp
 ../../src/eepp/gaming/mapeditor/cmapeditor.cpp
 ../../src/eepp/gaming/mapeditor/clayerproperties.cpp
+../../include/eepp/graphics/blendmode.hpp
+../../src/eepp/graphics/blendmode.cpp
 ../../include/eepp/graphics/vbohelper.hpp
 ../../include/eepp/graphics/renders.hpp
 ../../include/eepp/graphics/pixelperfect.hpp

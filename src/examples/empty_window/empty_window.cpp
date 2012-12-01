@@ -4,7 +4,7 @@
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	// Create a new window
-	cWindow * win = cEngine::instance()->CreateWindow( WindowSettings( 960, 640, 32, WindowStyle::Default, "", "eepp - Empty Window" ), ContextSettings(  ) );
+	cWindow * win = cEngine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - Empty Window" ) );
 
 	// Set window background color
 	win->BackColor( eeColor( 50, 50, 50 ) );
@@ -12,37 +12,24 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	// Check if created
 	if ( win->Created() )
 	{
-		// Get input pointer
-		cInput * imp = win->GetInput();
+		// Create an instance of the primitive renderer
+		cPrimitives p;
 
-		eeFloat ang = 0;
+		// Change the color
+		p.SetColor( eeColorA( 0, 255, 0, 150 ) );
 
 		// Application loop
 		while ( win->Running() )
 		{
 			// Update the input
-			imp->Update();
+			win->GetInput()->Update();
 
 			// Check if ESCAPE key is pressed
-			if ( imp->IsKeyDown( KEY_ESCAPE ) )
+			if ( win->GetInput()->IsKeyDown( KEY_ESCAPE ) )
 			{
 				// Close the window
 				win->Close();
 			}
-
-			ang += cEngine::instance()->Elapsed() * 0.01;
-
-			// Create an instance of the primitive renderer
-			cPrimitives p;
-
-			// Set the primitive color
-			p.SetColor( eeColorA( 0, 150, 0, 150 ) );
-
-			// Draw a rectangle
-			p.DrawRectangle( 100, 100, win->GetWidth() - 200, win->GetHeight() - 200, ang );
-
-			// Change the color
-			p.SetColor( eeColorA( 0, 255, 0, 150 ) );
 
 			// Draw a circle
 			p.DrawCircle( win->GetWidth() / 2, win->GetHeight() / 2, 200 );

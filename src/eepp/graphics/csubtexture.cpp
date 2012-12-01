@@ -1,5 +1,6 @@
 #include <eepp/graphics/csubtexture.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
+#include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
 
 namespace EE { namespace Graphics {
@@ -114,8 +115,8 @@ const Uint32& cSubTexture::Texture() {
 }
 
 void cSubTexture::Texture( const Uint32& TexId ) {
-	mTexId = TexId;
-	mTexture = cTextureFactory::instance()->GetTexture( TexId );
+	mTexId		= TexId;
+	mTexture	= cTextureFactory::instance()->GetTexture( TexId );
 }
 
 const eeRecti& cSubTexture::SrcRect() const {
@@ -164,17 +165,17 @@ void cSubTexture::OffsetY( const Int32& offsety ) {
 	mOffsetY = offsety;
 }
 
-void cSubTexture::Draw( const eeFloat& X, const eeFloat& Y, const eeColorA& Color, const eeFloat& Angle, const eeFloat& Scale, const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
+void cSubTexture::Draw( const eeFloat& X, const eeFloat& Y, const eeColorA& Color, const eeFloat& Angle, const eeFloat& Scale, const EE_BLEND_MODE& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
 	if ( NULL != mTexture )
 		mTexture->DrawEx( X + mOffsetX, Y + mOffsetY, mDestWidth, mDestHeight, Angle, Scale, Color, Color, Color, Color, Blend, Effect, ScaleRendered, mSrcRect );
 }
 
-void cSubTexture::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_PRE_BLEND_FUNC& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
+void cSubTexture::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_BLEND_MODE& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
 	if ( NULL != mTexture )
 		mTexture->DrawEx( X + mOffsetX, Y + mOffsetY, mDestWidth, mDestHeight, Angle, Scale, Color0, Color1, Color2, Color3, Blend, Effect, ScaleRendered, mSrcRect );
 }
 
-void cSubTexture::Draw( const eeQuad2f Q, const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_PRE_BLEND_FUNC& Blend ) {
+void cSubTexture::Draw( const eeQuad2f Q, const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_BLEND_MODE& Blend ) {
 	if ( NULL != mTexture )
 		mTexture->DrawQuadEx( Q, X, Y, Angle, Scale, Color0, Color1, Color2, Color3, Blend, mSrcRect );
 }
@@ -386,7 +387,7 @@ bool cSubTexture::SaveToFile(const std::string& filepath, const EE_SAVE_TYPE& Fo
 
 	Lock();
 
-	if ( mTexture )
+	if ( NULL != mTexture )
 		Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, RealSize().Width(), RealSize().Height(), 4, GetPixelsPtr() ) );
 
 	Unlock();

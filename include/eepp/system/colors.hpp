@@ -8,16 +8,20 @@ namespace EE { namespace System {
 template <typename T>
 class tColor {
 	public:
-		T Red;
-		T Green;
-		T Blue;
+		T Red;		//! Red color component
+		T Green;	//! Green color component
+		T Blue;		//! Blue color component
 
 		tColor();
+
 		tColor(T r, T g, T b);
 
-		T R() const;
-		T G() const;
-		T B() const;
+		/** ARGB ( Alpha ignored ) */
+		tColor( const Uint32& Col );
+
+		T R() const;	//! @return the Red component
+		T G() const;	//! @return the Green component
+		T B() const;	//! @return the Blue component
 		
 		bool operator==(tColor<T>& Col);
 		bool operator!=(tColor<T>& Col);
@@ -26,11 +30,29 @@ class tColor {
 };
 
 template <typename T>
-tColor<T>::tColor() : Red(255), Green(255), Blue(255) {}
+tColor<T>::tColor() :
+	Red(255),
+	Green(255),
+	Blue(255)
+{}
 
 template <typename T>
-tColor<T>::tColor(T r, T g, T b) {
-	Red = r; Green = g; Blue = b;
+tColor<T>::tColor( const Uint32& Col ) :
+	Red(0),
+	Green(0),
+	Blue(0)
+{
+	Red		|= Col >> 16;
+	Green	|= Col >> 8;
+	Blue	|= Col;
+}
+
+template <typename T>
+tColor<T>::tColor(T r, T g, T b) :
+	Red( r ),
+	Green( g ),
+	Blue( b )
+{
 }
 
 template <typename T>
@@ -64,36 +86,78 @@ bool tColor<T>::operator!= (tColor<T>& Col) {
 template <typename T>
 class tColorA : public tColor<T> {
 	public:
-		using tColor<T>::Red;
+		static const tColorA<T> Transparent;	///< Transparent predefined color
+		static const tColorA<T> Black;			///< Black predefined color
+
+		using tColor<T>::Red;	//! Uses Red Green and Blue component from the RGB color
 		using tColor<T>::Green;
 		using tColor<T>::Blue;
-		T Alpha;
+
+		T Alpha;	//! Alpha color component ( transparency )
 
 		tColorA();
+
 		tColorA(T r, T g, T b, T a);
+
 		tColorA( const tColor<T>& Col );
 		
 		/** ARGB format */
 		tColorA( const Uint32& Col );
 		
-		T A() const;
+		T A() const;	//! @return the Alpha component
 
-		bool operator==( const tColorA<T>& Col ) const;
-		bool operator!=( const tColorA<T>& Col ) const;
-
-		static const tColorA<T> Black;   ///< Black predefined color
-		
-		Uint32 GetUint32();
+		Uint32 GetUint32();	//! The color represented as an Uint32
 
 		void Assign( T r, T g, T b, T a );
 
 		void Assign( const tColorA<T>& Col );
+
+		bool operator==( const tColorA<T>& Col ) const;
+
+		bool operator!=( const tColorA<T>& Col ) const;
+
+		tColorA<T> operator+( const tColorA<T>& Col ) const;
+
+		tColorA<T> operator-( const tColorA<T>& Col ) const;
+
+		tColorA<T> operator*( const tColorA<T>& Col ) const;
 };
 
 template <typename T>
-tColorA<T>::tColorA( const Uint32& Col )
+tColorA<T> tColorA<T>::operator+( const tColorA<T>& Col ) const
 {
-	Alpha = Red = Green = Blue = 0;
+	return tColorA<T>(	eemin( this->Red	+ Col.Red	, 255 ),
+						eemin( this->Green	+ Col.Green	, 255 ),
+						eemin( this->Blue	+ Col.Blue	, 255 ),
+						eemin( this->Alpha	+ Col.Alpha	, 255 )
+	);
+}
+
+template <typename T>
+tColorA<T> tColorA<T>::operator-( const tColorA<T>& Col ) const
+{
+	return tColorA<T>(	eemax( this->Red	- Col.Red	, 0 ),
+						eemax( this->Green	- Col.Green	, 0 ),
+						eemax( this->Blue	- Col.Blue	, 0 ),
+						eemax( this->Alpha	- Col.Alpha	, 0 )
+	);
+}
+
+template <typename T>
+tColorA<T> tColorA<T>::operator*( const tColorA<T>& Col ) const
+{
+	return tColorA<T>(	( this->Red		* Col.Red	/ 255 ),
+						( this->Green	* Col.Green	/ 255 ),
+						( this->Blue	* Col.Blue	/ 255 ),
+						( this->Alpha	* Col.Alpha	/ 255 )
+	);
+}
+
+template <typename T>
+tColorA<T>::tColorA( const Uint32& Col ) :
+	tColor<T>( 0, 0, 0 ),
+	Alpha(0)
+{
 	Alpha	|= Col >> 24;
 	Red		|= Col >> 16;
 	Green	|= Col >> 8;
@@ -132,15 +196,20 @@ template <typename T>
 tColorA<T>::tColorA() : tColor<T>(), Alpha(255) {}
 
 template <typename T>
-tColorA<T>::tColorA(T r, T g, T b, T a) : tColor<T>(r, g, b) {
-	Alpha = a;
+tColorA<T>::tColorA(T r, T g, T b, T a) :
+	tColor<T>(r, g, b),
+	Alpha( a )
+{
 }
 
 template <typename T>
 tColorA<T>::tColorA( const tColor<T>& Col ) : tColor<T>( Col.R(), Col.G(), Col.B() ), Alpha(255) {}
 
 template <typename T>
-const tColorA<T> tColorA<T>::Black = tColorA<T>(0,0,0,0);
+const tColorA<T> tColorA<T>::Transparent = tColorA<T>(0,0,0,0);
+
+template <typename T>
+const tColorA<T> tColorA<T>::Black = tColorA<T>(0,0,0,255);
 
 template <typename T>
 T tColorA<T>::A() const {

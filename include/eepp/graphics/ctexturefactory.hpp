@@ -2,18 +2,14 @@
 #define EECTEXTUREFACTORY_H
 
 #include <eepp/graphics/base.hpp>
-#include <eepp/graphics/ctexture.hpp>
-#include <eepp/graphics/cglobalbatchrenderer.hpp>
 #include <eepp/system/cmutex.hpp>
 
 namespace EE { namespace Graphics {
 
-#define TEXTURE_NONE 0xFFFFFFFF
-
-class cGlobalBatchRenderer;
+class cTexture;
 
 /** @brief The Texture Manager Class. Here we do all the textures stuff. (Singleton Class) */
-class EE_API cTextureFactory: protected cMutex {
+class EE_API cTextureFactory : protected cMutex {
 	SINGLETON_DECLARE_HEADERS(cTextureFactory)
 
 	public:
@@ -118,21 +114,6 @@ class EE_API cTextureFactory: protected cMutex {
 		/** Returns the number of textures loaded */
 		Uint32 GetNumTextures() const { return (Uint32)mTextures.size(); }
 
-		/** Set a blend function.
-		* @param SrcFactor Source Factor
-		* @param DestFactor Destination Factor
-		*/
-		void SetBlendFunc( const EE_BLEND_FUNC& SrcFactor, const EE_BLEND_FUNC& DestFactor );
-
-		/** Set a Predefined Blend Function
-		* @param blend The Blend Mode
-		* @param force If force to apply the blend ( no matters if the last blend was the same blend )
-		*/
-		void SetPreBlendFunc( const EE_PRE_BLEND_FUNC& blend, bool force = false );
-
-		/** @return The last used predefined blend func */
-		const EE_PRE_BLEND_FUNC& GetPreBlendFunc() const;
-
 		/** Set the texture enviroment
 		* @param Param The texture param
 		* @param Val The EE_TEXTURE_OP or EE_TEXTURE_FUNC or EE_TEXTURE_SOURCE
@@ -211,13 +192,11 @@ class EE_API cTextureFactory: protected cMutex {
 
 		GLint mCurrentTexture[ EE_MAX_TEXTURE_UNITS ];
 
-		EE_PRE_BLEND_FUNC mLastBlend;
+		EE_BLEND_MODE mLastBlend;
 
 		std::vector<cTexture*> mTextures;
 
 		eeUint mMemSize;
-
-		std::string mAppPath;
 
 		std::list<Uint32> mVectorFreeSlots;
 

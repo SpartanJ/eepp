@@ -107,7 +107,7 @@ void cEETest::Init() {
 		WP.Start();
 
 		Batch.AllocVertexs( 2048 );
-		Batch.SetPreBlendFunc( ALPHA_BLENDONE );
+		Batch.SetBlendMode( ALPHA_BLENDONE );
 
 		mFBO = cFrameBuffer::CreateNew( 256, 256, false );
 

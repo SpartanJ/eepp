@@ -21,7 +21,7 @@ class EE_API cUIComplexControl : public cUIControlAnim {
 					const eeVector2i& pos = eeVector2i( 0, 0 ),
 					const eeSize& size = eeSize( -1, -1 ),
 					const Uint32& flags = UI_CONTROL_DEFAULT_FLAGS,
-					const EE_PRE_BLEND_FUNC& blend = ALPHA_NORMAL,
+					const EE_BLEND_MODE& blend = ALPHA_NORMAL,
 					const cUIBackground& Back = cUIBackground(),
 					const cUIBorder& Bord = cUIBorder(),
 					const eeSize& MinCtrlSize = eeSize(0,0)

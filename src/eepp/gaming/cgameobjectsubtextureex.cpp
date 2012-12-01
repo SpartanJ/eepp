@@ -4,7 +4,7 @@
 
 namespace EE { namespace Gaming {
 
-cGameObjectSubTextureEx::cGameObjectSubTextureEx( const Uint32& Flags, cLayer * Layer, cSubTexture * SubTexture, const eeVector2f& Pos, EE_PRE_BLEND_FUNC Blend, EE_RENDERTYPE Render, eeFloat Angle, eeFloat Scale, eeColorA Color ) :
+cGameObjectSubTextureEx::cGameObjectSubTextureEx( const Uint32& Flags, cLayer * Layer, cSubTexture * SubTexture, const eeVector2f& Pos, EE_BLEND_MODE Blend, EE_RENDERTYPE Render, eeFloat Angle, eeFloat Scale, eeColorA Color ) :
 	cGameObjectSubTexture( Flags, Layer, SubTexture, Pos ),
 	mBlend( Blend ),
 	mRender( Render ),

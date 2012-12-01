@@ -173,7 +173,7 @@ const Uint8* cImage::GetPixelsPtr() {
 
 eeColorA cImage::GetPixel( const eeUint& x, const eeUint& y ) {
 	if ( mPixels == NULL || x > mWidth || y > mHeight ) {
-		return eeColorA::Black;
+		return eeColorA::Transparent;
 	}
 
 	eeUint Pos = ( x + y * mWidth ) * mChannels;

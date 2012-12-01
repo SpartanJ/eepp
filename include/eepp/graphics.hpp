@@ -1,6 +1,7 @@
 #ifndef EEPP_GRAPHICS_HPP
 #define EEPP_GRAPHICS_HPP
 
+#include <eepp/graphics/blendmode.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/renderer/crenderergl.hpp>
 #include <eepp/graphics/renderer/crenderergl3.hpp>

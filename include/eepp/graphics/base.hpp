@@ -104,7 +104,6 @@
 #define glBindRenderbufferEXT glBindRenderbuffer
 #define glFramebufferRenderbufferEXT glFramebufferRenderbuffer
 #define glFramebufferTexture2DEXT glFramebufferTexture2D
-
 #define glVertexAttribPointerARB glVertexAttribPointer
 
 #endif
@@ -137,6 +136,8 @@
 #define GL_POINT_SPRITE 0x8861
 #define GL_VERTEX_PROGRAM_POINT_SIZE 0x8642
 
+#define glBlendFuncSeparateEXT glBlendFuncSeparate
+
 #endif
 
 #if defined( EE_GLES1 ) && !defined( EE_GLES2 ) || defined( EE_GLES_BOTH )
@@ -164,6 +165,7 @@
 #define glBindRenderbufferEXT glBindRenderbufferOES
 #define glFramebufferRenderbufferEXT glFramebufferRenderbufferOES
 #define glFramebufferTexture2DEXT glFramebufferTexture2DOES
+#define glBlendFuncSeparateEXT glBlendFuncSeparateOES
 
 #define GL_FRAMEBUFFER GL_FRAMEBUFFER_OES
 #define GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE_OES
@@ -237,7 +239,8 @@
 	#define EE_QUAD_VERTEX 4
 #endif
 
-
+#include <eepp/math/vector2.hpp>
+#include <eepp/math/vector3.hpp>
 #include <eepp/math/rect.hpp>
 #include <eepp/math/vector2.hpp>
 #include <eepp/math/polygon2.hpp>
@@ -257,5 +260,6 @@ using namespace EE::Math;
 using namespace EE::System;
 
 #include <eepp/graphics/renders.hpp>
+#include <eepp/graphics/blendmode.hpp>
 
 #endif

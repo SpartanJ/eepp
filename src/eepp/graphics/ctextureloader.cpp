@@ -1,4 +1,5 @@
 #include <eepp/graphics/ctextureloader.hpp>
+#include <eepp/graphics/ctexture.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/graphics/glhelper.hpp>
 #include <eepp/system/ciostreamfile.hpp>

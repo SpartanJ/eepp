@@ -1,5 +1,6 @@
 #include <eepp/graphics/cfont.hpp>
 #include <eepp/graphics/cfontmanager.hpp>
+#include <eepp/graphics/cglobalbatchrenderer.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -128,21 +129,21 @@ const std::vector<eeFloat>& cFont::GetLinesWidth() const {
 	return mLinesWidth;
 }
 
-void cFont::Draw( const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, const EE_PRE_BLEND_FUNC& Effect) {
+void cFont::Draw( const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, const EE_BLEND_MODE& Effect) {
 	SubDraw( mText, X, Y, Flags, Scale, Angle, true, Effect );
 }
 
-void cFont::Draw( const String& Text, const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, const EE_PRE_BLEND_FUNC& Effect ) {
+void cFont::Draw( const String& Text, const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, const EE_BLEND_MODE& Effect ) {
 	SubDraw( Text, X, Y, Flags, Scale, Angle, false, Effect );
 }
 
-void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, const EE_PRE_BLEND_FUNC& Effect ) {
+void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, const EE_BLEND_MODE& Effect ) {
 	if ( !TextCache.Text().size() )
 		return;
 
 	cGlobalBatchRenderer::instance()->Draw();
 	cTextureFactory::instance()->Bind( mTexId );
-	cTextureFactory::instance()->SetPreBlendFunc( Effect );
+	BlendMode::SetMode( Effect );
 
 	if ( Flags & FONT_DRAW_SHADOW ) {
 		Uint32 f = Flags;
@@ -334,13 +335,13 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 	}
 }
 
-void cFont::SubDraw( const String& Text, const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, const bool& Cached, const EE_PRE_BLEND_FUNC& Effect ) {
+void cFont::SubDraw( const String& Text, const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, const bool& Cached, const EE_BLEND_MODE& Effect ) {
 	if ( !Text.size() )
 		return;
 
 	cGlobalBatchRenderer::instance()->Draw();
 	cTextureFactory::instance()->Bind( mTexId );
-	cTextureFactory::instance()->SetPreBlendFunc( Effect );
+	BlendMode::SetMode( Effect );
 
 	if ( !Cached && ( Text.size() != mRenderCoords.size() / EE_QUAD_VERTEX || Angle != 0.f || Scale != 1.f || FontHAlignGet( Flags ) == FONT_DRAW_CENTER || FontHAlignGet( Flags ) == FONT_DRAW_RIGHT ) ) {
 		SetText( Text );

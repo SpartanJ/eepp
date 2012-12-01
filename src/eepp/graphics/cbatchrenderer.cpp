@@ -1,4 +1,5 @@
 #include <eepp/graphics/cbatchrenderer.hpp>
+#include <eepp/graphics/ctexture.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
 
@@ -70,7 +71,7 @@ void cBatchRenderer::SetTexture( const cTexture * Tex ) {
 	mTexture = Tex;
 }
 
-void cBatchRenderer::SetPreBlendFunc( const EE_PRE_BLEND_FUNC& Blend ) {
+void cBatchRenderer::SetBlendMode( const EE_BLEND_MODE& Blend ) {
 	if ( Blend != mBlend )
 		Flush();
 
@@ -103,7 +104,7 @@ void cBatchRenderer::Flush() {
 
 	bool CreateMatrix = ( mRotation || mScale != 1.0f || mPosition.x || mPosition.y );
 
-	mTF->SetPreBlendFunc( mBlend );
+	BlendMode::SetMode( mBlend );
 
 	if ( mCurrentMode == DM_POINTS && NULL != mTexture ) {
 		GLi->Enable( GL_POINT_SPRITE );

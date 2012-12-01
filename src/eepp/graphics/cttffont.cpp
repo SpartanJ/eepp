@@ -1,4 +1,5 @@
 #include <eepp/graphics/cttffont.hpp>
+#include <eepp/graphics/ctexture.hpp>
 #include <eepp/system/ciostreamfile.hpp>
 #include <eepp/helper/haikuttf/haikuttf.hpp>
 using namespace HaikuTTF;

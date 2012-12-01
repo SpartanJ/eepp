@@ -41,7 +41,7 @@ namespace WindowBackend {
 class WindowSettings {
 	public:
 
-	inline WindowSettings( Uint32 width, Uint32 height, Uint32 bpp = 32, Uint32 style = WindowStyle::Default, const std::string& icon = std::string(), const std::string& caption = std::string(), Uint32 backend = WindowBackend::Default ) :
+	inline WindowSettings( Uint32 width, Uint32 height, const std::string& caption = std::string(), Uint32 style = WindowStyle::Default, Uint32 backend = WindowBackend::Default, Uint32 bpp = 32, const std::string& icon = std::string() ) :
 		Style( style ),
 		Width( width ),
 		Height( height ),
@@ -193,8 +193,15 @@ class EE_API cWindow {
 		/** @return The window handler */
 		virtual eeWindowHandler	GetWindowHandler() = 0;
 
-		/** Render the Scene to Screen */
-		virtual void Display();
+		/** Clear the current window
+		This function is usually called once every frame, to clear the previous frame content.
+		*/
+		virtual void Clear();
+
+		/** Render the Scene to Screen
+		@param clear Clear after swapping buffers?
+		*/
+		virtual void Display( bool clear = true );
 
 		/** @return The elapsed time for the last frame rendered */
 		virtual eeFloat Elapsed() const;

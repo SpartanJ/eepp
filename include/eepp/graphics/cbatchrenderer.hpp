@@ -2,7 +2,6 @@
 #define EE_GRAPHICSCBATCHRENDERER_H
 
 #include <eepp/graphics/base.hpp>
-#include <eepp/graphics/ctexture.hpp>
 #include <eepp/graphics/glhelper.hpp>
 
 namespace EE { namespace Graphics {
@@ -19,6 +18,7 @@ struct eeVertex {
 };
 
 class cTextureFactory;
+class cTexture;
 
 /** @brief A batch rendering class. */
 class EE_API cBatchRenderer {
@@ -37,7 +37,7 @@ class EE_API cBatchRenderer {
 		void SetTexture( const cTexture * Tex );
 
 		/** Set the predefined blending function to use on the batch */
-		void SetPreBlendFunc( const EE_PRE_BLEND_FUNC& Blend );
+		void SetBlendMode( const EE_BLEND_MODE& Blend );
 
 		/** Set if every batch call have to be immediately rendered */
 		void BatchForceRendering( const bool& force ) { mForceRendering = force; }
@@ -208,7 +208,7 @@ class EE_API cBatchRenderer {
 
 		const cTexture *	mTexture;
 		cTextureFactory *	mTF;
-		EE_PRE_BLEND_FUNC	mBlend;
+		EE_BLEND_MODE	mBlend;
 
 		eeTexCoord			mTexCoord[4];
 		eeColorA			mVerColor[4];

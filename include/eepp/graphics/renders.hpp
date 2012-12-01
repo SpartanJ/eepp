@@ -17,8 +17,8 @@ enum EE_TEX_FILTER {
 	TEX_FILTER_NEAREST 			//!< No filtering (Pixeled Zoom)
 };
 
-/** @enum EE_PRE_BLEND_FUNC Predefined blend functions */
-enum EE_PRE_BLEND_FUNC {
+/** @enum EE_BLEND_MODE Predefined blend modes */
+enum EE_BLEND_MODE {
 	ALPHA_NONE, 			//!< Disable the blend
 	ALPHA_NORMAL, 			//!< src SRC_ALPHA dst ONE_MINUS_SRC_ALPHA
 	ALPHA_BLENDONE, 		//!< src SRC_ALPHA dst ONE
@@ -27,7 +27,7 @@ enum EE_PRE_BLEND_FUNC {
 	ALPHA_ALPHACHANNELS, 	//!< src SRC_ALPHA dst SRC_ALPHA
 	ALPHA_DESTALPHA, 		//!< src SRC_ALPHA dst DST_ALPHA
 	ALPHA_MULTIPLY, 		//!< src DST_COLOR dst ZERO
-	ALPHA_CUSTOM			//!< Disable the Predefined blend function for the use of custom blend funcs.
+	ALPHA_CUSTOM			//!< Disable the Predefined blend mode for the use of custom blend funcs.
 };
 
 /** @enum EE_RENDERTYPE Defines the method to use to render a texture. */
