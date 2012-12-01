@@ -1,5 +1,5 @@
-#ifndef EE_UITOOLSCTEXTUREGROUPEDITOR_HPP
-#define EE_UITOOLSCTEXTUREGROUPEDITOR_HPP
+#ifndef EE_UITOOLSCTEXTUREATLASEDITOR_HPP
+#define EE_UITOOLSCTEXTUREATLASEDITOR_HPP
 
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/tools/ctextureatlassubtextureeditor.hpp>
@@ -40,7 +40,7 @@ class EE_API cTextureAtlasEditor {
 		cUITheme *				mTheme;
 		TGEditorCloseCb			mCloseCb;
 		cTexturePacker *		mTexturePacker;
-		cTextureAtlasLoader *	mTextureGroupLoader;
+		cTextureAtlasLoader *	mTextureAtlasLoader;
 		cSubTexture *			mCurSubTexture;
 		cUISpinBox *			mSpinOffX;
 		cUISpinBox *			mSpinOffY;
@@ -59,13 +59,13 @@ class EE_API cTextureAtlasEditor {
 
 		void FileMenuClick( const cUIEvent * Event );
 
-		void OnTextureGroupCreate( cTexturePacker * TexPacker );
+		void OnTextureAtlasCreate( cTexturePacker * TexPacker );
 
-		void OpenTextureGroup( const cUIEvent * Event );
+		void OpenTextureAtlas( const cUIEvent * Event );
 
-		void SaveTextureGroup( const cUIEvent * Event );
+		void SaveTextureAtlas( const cUIEvent * Event );
 
-		void OnTextureGroupClose( const cUIEvent * Event );
+		void OnTextureAtlasClose( const cUIEvent * Event );
 
 		void OnSubTextureChange( const cUIEvent * Event );
 
@@ -91,7 +91,7 @@ class EE_API cTextureAtlasEditor {
 
 		void OnHBOffset( const cUIEvent * Event );
 
-		void OnTextureGroupLoaded( cTextureAtlasLoader * TGLoader );
+		void OnTextureAtlasLoaded( cTextureAtlasLoader * TGLoader );
 
 		void Update();
 };

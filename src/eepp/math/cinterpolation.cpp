@@ -1,8 +1,8 @@
-#include <eepp/utils/cinterpolation.hpp>
-#include <eepp/utils/easing.hpp>
-using namespace EE::Utils::easing;
+#include <eepp/math/cinterpolation.hpp>
+#include <eepp/math/easing.hpp>
+using namespace EE::Math::easing;
 
-namespace EE { namespace Utils {
+namespace EE { namespace Math {
 
 cInterpolation::cInterpolation() :
 	mType(LINEAR),

@@ -32,7 +32,7 @@ typedef struct sTextureHdrS {
 	Int32	SubTextureCount;
 } sTextureHdr;
 
-typedef struct sTextureGroupHdrS {
+typedef struct sTextureAtlasHdrS {
 	Uint32	Magic;
 	Uint32	TextureCount;
 	Uint32	Format;
@@ -40,11 +40,15 @@ typedef struct sTextureGroupHdrS {
 	Int32	Height;
 	Uint32	PixelBorder;
 	Uint32	Flags;
-} sTextureGroupHdr;
+} sTextureAtlasHdr;
 
-#define HDR_TEXTURE_GROUP_ALLOW_FLIPPING		( 1 << 0 )
-#define HDR_TEXTURE_GROUP_REMOVE_EXTENSION		( 1 << 1 )
-#define HDR_TEXTURE_GROUP_POW_OF_TWO			( 1 << 2 )
+#define HDR_TEXTURE_ATLAS_ALLOW_FLIPPING		( 1 << 0 )
+#define HDR_TEXTURE_ATLAS_REMOVE_EXTENSION		( 1 << 1 )
+#define HDR_TEXTURE_ATLAS_POW_OF_TWO			( 1 << 2 )
+
+#define EE_TEXTURE_ATLAS_MAGIC_OLD ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'T' << 16 ) | ( 'G' << 24 ) )
+#define EE_TEXTURE_ATLAS_MAGIC ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'T' << 16 ) | ( 'A' << 24 ) )
+#define EE_TEXTURE_ATLAS_EXTENSION ".eta"
 
 }}}
 

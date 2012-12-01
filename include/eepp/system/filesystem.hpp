@@ -2,6 +2,7 @@
 #define EE_SYSTEM_FILESYSTEM_HPP
 
 #include <eepp/system/base.hpp>
+#include <eepp/system/safedatapointer.hpp>
 
 namespace EE { namespace System {
 

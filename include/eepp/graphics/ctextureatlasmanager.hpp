@@ -22,7 +22,7 @@ class EE_API cTextureAtlasManager : public tResourceManager<cTextureAtlas> {
 		/** Search for a pattern name
 		* @param name First part of the sub texture name
 		* @param extension Extension of the sub texture name ( if have one, otherwise "" )
-		* @param SearchInTextureAtlas If you want only to search in a especific group ( NULL if you want to search in all groups )
+		* @param SearchInTextureAtlas If you want only to search in a especific atlas ( NULL if you want to search in all atlases )
 		* @example Search for name "car" with extensions "png", i will try to find car00.png car01.png car02.png, and so on, it will continue if find something, otherwise it will stop ( it will always search at least for car00.png and car01.png )
 		*/
 		std::vector<cSubTexture*> GetSubTexturesByPattern( const std::string& name, const std::string& extension = "", cTextureAtlas * SearchInTextureAtlas = NULL );

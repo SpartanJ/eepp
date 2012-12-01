@@ -58,8 +58,8 @@
 // Adapted to EE++ ( this is not the original file ).
 // Added RandRange.
 
-#ifndef EE_UTILSCMTRAND_HPP
-#define EE_UTILSCMTRAND_HPP
+#ifndef EE_MATHCMTRAND_HPP
+#define EE_MATHCMTRAND_HPP
 
 #include <eepp/math/base.hpp>
 

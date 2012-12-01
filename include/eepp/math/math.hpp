@@ -1,8 +1,13 @@
-#ifndef EECMATH_H
-#define EECMATH_H
+#ifndef EE_MATH_HPP
+#define EE_MATH_HPP
 
-#include <eepp/math/base.hpp>
 #include <cmath>
+#include <eepp/math/base.hpp>
+#include <eepp/math/line2.hpp>
+#include <eepp/math/vector2.hpp>
+#include <eepp/math/triangle2.hpp>
+#include <eepp/math/quad2.hpp>
+#include <eepp/math/polygon2.hpp>
 
 namespace EE { namespace Math {
 

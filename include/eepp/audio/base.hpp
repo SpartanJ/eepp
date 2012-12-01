@@ -10,8 +10,8 @@
 #include <eepp/system/filesystem.hpp>
 using namespace EE::System;
 
-#include <eepp/utils/vector3.hpp>
-using namespace EE::Utils;
+#include <eepp/math/vector3.hpp>
+using namespace EE::Math;
 
 /**
 This module is based on the sfml-audio module.

@@ -1,12 +1,12 @@
-#ifndef EE_UTILSPOLIGON2_H
-#define EE_UTILSPOLIGON2_H
+#ifndef EE_MATHPOLIGON2_H
+#define EE_MATHPOLIGON2_H
 
-#include <eepp/utils/triangle2.hpp>
-#include <eepp/utils/quad2.hpp>
-#include <eepp/utils/rect.hpp>
+#include <eepp/math/triangle2.hpp>
+#include <eepp/math/quad2.hpp>
+#include <eepp/math/rect.hpp>
 #include <vector>
 
-namespace EE { namespace Utils {
+namespace EE { namespace Math {
 
 template <typename T>
 class Polygon2 {

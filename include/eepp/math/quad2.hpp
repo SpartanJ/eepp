@@ -1,7 +1,9 @@
-#ifndef EE_UTILSQUAD2_HPP
-#define EE_UTILSQUAD2_HPP
+#ifndef EE_MATHQUAD2_HPP
+#define EE_MATHQUAD2_HPP
 
-namespace EE { namespace Utils {
+#include <eepp/math/vector2.hpp>
+
+namespace EE { namespace Math {
 
 template <typename T>
 class Quad2 {

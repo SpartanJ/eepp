@@ -1,10 +1,10 @@
-#ifndef EE_UTILSCRECT_H
-#define EE_UTILSCRECT_H
+#ifndef EE_MATHCRECT_H
+#define EE_MATHCRECT_H
 
-#include <eepp/utils/vector2.hpp>
-#include <eepp/utils/size.hpp>
+#include <eepp/math/vector2.hpp>
+#include <eepp/math/size.hpp>
 
-namespace EE { namespace Utils {
+namespace EE { namespace Math {
 
 template <typename T>
 class tRECT {

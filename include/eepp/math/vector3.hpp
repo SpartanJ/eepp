@@ -1,7 +1,9 @@
-#ifndef EE_UTILSVECTOR3_H
-#define EE_UTILSVECTOR3_H
+#ifndef EE_MATHVECTOR3_H
+#define EE_MATHVECTOR3_H
 
-namespace EE { namespace Utils {
+#include <eepp/declares.hpp>
+
+namespace EE { namespace Math {
 
 template <typename T>
 class Vector3 {

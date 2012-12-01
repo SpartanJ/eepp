@@ -3,6 +3,7 @@
 
 #include <eepp/system/base.hpp>
 #include <eepp/system/cmutex.hpp>
+#include <eepp/system/safedatapointer.hpp>
 
 namespace EE { namespace System {
 

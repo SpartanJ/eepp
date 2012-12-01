@@ -1,6 +1,8 @@
-#include <eepp/utils/safedatapointer.hpp>
+#include <eepp/system/safedatapointer.hpp>
+#include <eepp/base/memorymanager.hpp>
+#include <cstddef>
 
-namespace EE { namespace Utils {
+namespace EE { namespace System {
 
 SafeDataPointer::SafeDataPointer() :
 	Data( NULL ),

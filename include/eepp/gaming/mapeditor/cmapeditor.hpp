@@ -80,7 +80,7 @@ class EE_API cMapEditor {
 
 		void WindowClose( const cUIEvent * Event );
 
-		void TextureGroupOpen( const cUIEvent * Event );
+		void TextureAtlasOpen( const cUIEvent * Event );
 
 		void CreateME();
 

@@ -237,15 +237,15 @@
 	#define EE_QUAD_VERTEX 4
 #endif
 
-#include <eepp/utils/colors.hpp>
-#include <eepp/utils/rect.hpp>
-#include <eepp/utils/vector2.hpp>
-#include <eepp/utils/utils.hpp>
-#include <eepp/utils/polygon2.hpp>
-using namespace EE::Utils;
 
+#include <eepp/math/rect.hpp>
+#include <eepp/math/vector2.hpp>
+#include <eepp/math/polygon2.hpp>
 #include <eepp/math/math.hpp>
+using namespace EE::Math;
 
+#include <eepp/system/colors.hpp>
+#include <eepp/system/utils.hpp>
 #include <eepp/system/ctimeelapsed.hpp>
 #include <eepp/system/tsingleton.hpp>
 #include <eepp/system/clog.hpp>

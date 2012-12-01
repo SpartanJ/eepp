@@ -750,7 +750,6 @@ typedef Utf<32> Utf32;
 
 ////////////////////////////////////////////////////////////
 /// \class EE::Utf
-/// \ingroup system
 ///
 /// Utility class providing generic functions for UTF conversions.
 ///

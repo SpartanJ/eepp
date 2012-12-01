@@ -18,7 +18,7 @@ cTextureAtlasNew::cTextureAtlasNew( TGCreateCb NewTGCb ) :
 
 	mUIWindow	= mTheme->CreateWindow( NULL, eeSize( 378, 244 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL );
 	mUIWindow->AddEventListener( cUIEvent::EventOnWindowClose, cb::Make1( this, &cTextureAtlasNew::WindowClose ) );
-	mUIWindow->Title( "New Texture Group" );
+	mUIWindow->Title( "New Texture Atlas" );
 
 	Int32 PosX = mUIWindow->Container()->Size().Width() - 110;
 
@@ -53,10 +53,10 @@ cTextureAtlasNew::cTextureAtlasNew( TGCreateCb NewTGCb ) :
 	mComboWidth->ListBox()->SetSelected( "512" );
 	mComboHeight->ListBox()->SetSelected( "512" );
 
-	CreateTxtBox( eeVector2i( 10, 110 ), "Space between sub texturesF (pixels):" );
+	CreateTxtBox( eeVector2i( 10, 110 ), "Space between sub textures (pixels):" );
 	mPixelSpace = mTheme->CreateSpinBox( mUIWindow->Container(), eeSize( 100, 22 ), eeVector2i( PosX, 110 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_SIZE, 0, false );
 
-	CreateTxtBox( eeVector2i( 10, 140 ), "Texture Group Folder Path:" );
+	CreateTxtBox( eeVector2i( 10, 140 ), "Texture Atlas Folder Path:" );
 	mTGPath = mTheme->CreateTextInput( mUIWindow->Container(), eeSize( mUIWindow->Container()->Size().Width() - 60, 22 ), eeVector2i( 10, 160 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE , false, 512 );
 	mTGPath->AllowEditing( false );
 
@@ -90,8 +90,8 @@ void cTextureAtlasNew::OKClick( const cUIEvent * Event ) {
 
 	cUICommonDialog * TGDialog = mTheme->CreateCommonDialog( NULL, eeSize(), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, eeSize(), 255, UI_CDL_DEFAULT_FLAGS | CDL_FLAG_SAVE_DIALOG, "*." + ext );
 
-	TGDialog->Title( "Save Texture Group" );
-	TGDialog->AddEventListener( cUIEvent::EventSaveFile, cb::Make1( this, &cTextureAtlasNew::TextureGroupSave ) );
+	TGDialog->Title( "Save Texture Atlas" );
+	TGDialog->AddEventListener( cUIEvent::EventSaveFile, cb::Make1( this, &cTextureAtlasNew::TextureAtlasSave ) );
 	TGDialog->Center();
 	TGDialog->Show();
 }
@@ -108,7 +108,7 @@ static bool IsValidExtension( const std::string& ext ) {
 	return ext == "png" || ext == "bmp" || ext == "dds" || ext == "tga";
 }
 
-void cTextureAtlasNew::TextureGroupSave( const cUIEvent * Event ) {
+void cTextureAtlasNew::TextureAtlasSave( const cUIEvent * Event ) {
 	cUICommonDialog * CDL = reinterpret_cast<cUICommonDialog*> ( Event->Ctrl() );
 	std::string FPath( CDL->GetFullPath() );
 
@@ -153,7 +153,7 @@ void cTextureAtlasNew::OnDialogFolderSelect( const cUIEvent * Event ) {
 	if ( MouseEvent->Flags() & EE_BUTTON_LMASK ) {
 		cUICommonDialog * TGDialog = mTheme->CreateCommonDialog( NULL, eeSize(), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, eeSize(), 255, UI_CDL_DEFAULT_FLAGS | CDL_FLAG_ALLOW_FOLDER_SELECT, "*" );
 
-		TGDialog->Title( "Create Texture Group ( Select Folder Containing Textures )" );
+		TGDialog->Title( "Create Texture Atlas ( Select Folder Containing Textures )" );
 		TGDialog->AddEventListener( cUIEvent::EventOpenFile, cb::Make1( this, &cTextureAtlasNew::OnSelectFolder ) );
 		TGDialog->Center();
 		TGDialog->Show();

@@ -1,8 +1,8 @@
-#include <eepp/utils/cwaypoints.hpp>
-#include <eepp/utils/easing.hpp>
-using namespace EE::Utils::easing;
+#include <eepp/math/cwaypoints.hpp>
+#include <eepp/math/easing.hpp>
+using namespace EE::Math::easing;
 
-namespace EE { namespace Utils {
+namespace EE { namespace Math {
 
 cWaypoints::cWaypoints() :
 	mType(LINEAR),

@@ -1,9 +1,9 @@
-#ifndef EE_UTILS_SAFEDATAPOINTER
-#define EE_UTILS_SAFEDATAPOINTER
+#ifndef EE_SYSTEM_SAFEDATAPOINTER
+#define EE_SYSTEM_SAFEDATAPOINTER
 
-#include <eepp/utils/base.hpp>
+#include <eepp/declares.hpp>
 
-namespace EE { namespace Utils {
+namespace EE { namespace System {
 
 class EE_API SafeDataPointer {
 	public:

@@ -2,6 +2,7 @@
 #define EE_SYSTEMTRESOURCEMANAGER_HPP
 
 #include <eepp/system/base.hpp>
+#include <eepp/system/utils.hpp>
 #include <list>
 
 namespace EE { namespace System {
@@ -207,4 +208,3 @@ Uint32 tResourceManager<T>::Count( const std::string& Name ) {
 }}
 
 #endif
-

@@ -1,5 +1,5 @@
-#ifndef EE_UITOOLSCTEXTUREGROUPNEW_HPP
-#define EE_UITOOLSCTEXTUREGROUPNEW_HPP
+#ifndef EE_UITOOLSCTEXTUREATLASNEW_HPP
+#define EE_UITOOLSCTEXTUREATLASNEW_HPP
 
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/cuiwindow.hpp>
@@ -40,7 +40,7 @@ class EE_API cTextureAtlasNew {
 
 		void OnSelectFolder( const cUIEvent * Event );
 
-		void TextureGroupSave( const cUIEvent * Event );
+		void TextureAtlasSave( const cUIEvent * Event );
 };
 
 }}}

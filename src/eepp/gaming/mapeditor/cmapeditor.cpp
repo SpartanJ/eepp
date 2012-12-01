@@ -109,8 +109,8 @@ void cMapEditor::CreateWinMenu() {
 	WinMenu->AddMenuButton( "View", PU3 );
 
 	cUIPopUpMenu * PU4 = mTheme->CreatePopUpMenu( mUIContainer );
-	PU4->Add( "New Texture Group..." );
-	PU4->Add( "Add External Texture Group..." );
+	PU4->Add( "New Texture Atlas..." );
+	PU4->Add( "Add External Texture Atlas..." );
 	PU4->AddSeparator();
 	PU4->Add( "Map Properties..." );
 
@@ -277,7 +277,7 @@ void cMapEditor::CreateSubTextureContainer( Int32 Width ) {
 	mSGCont->Enabled( true );
 	mSGCont->Visible( true );
 
-	Txt = mTheme->CreateTextBox( "SubTexture Groups:", mSGCont, eeSize( Width, 16 ), eeVector2i( 0, 0 ), TxtFlags );
+	Txt = mTheme->CreateTextBox( "Texture Atlases:", mSGCont, eeSize( Width, 16 ), eeVector2i( 0, 0 ), TxtFlags );
 
 	mTextureAtlasesList = mTheme->CreateDropDownList( mSGCont, eeSize( Width, 21 ), eeVector2i( 0, Txt->Pos().y +Txt->Size().Height() + 4 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mTextureAtlasesList->AddEventListener( cUIEvent::EventOnItemSelected, cb::Make1( this, &cMapEditor::OnTextureAtlasChange ) );
@@ -883,16 +883,16 @@ void cMapEditor::MapMenuClick( const cUIEvent * Event ) {
 
 	const String& txt = reinterpret_cast<cUIMenuItem*> ( Event->Ctrl() )->Text();
 
-	if ( "New Texture Group..." == txt ) {
+	if ( "New Texture Atlas..." == txt ) {
 		cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 1024, 768 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, eeSize( 1024, 768 ) );
 		eeNew ( Tools::cTextureAtlasEditor, ( tWin ) );
 		tWin->Center();
 		tWin->Show();
-	} else if ( "Add External Texture Group..." == txt ) {
-		cUICommonDialog * TGDialog = mTheme->CreateCommonDialog( NULL, eeSize(), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, eeSize(), 255, UI_CDL_DEFAULT_FLAGS, "*.etg" );
+	} else if ( "Add External Texture Atlas..." == txt ) {
+		cUICommonDialog * TGDialog = mTheme->CreateCommonDialog( NULL, eeSize(), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, eeSize(), 255, UI_CDL_DEFAULT_FLAGS, std::string( "*" ) + EE_TEXTURE_ATLAS_EXTENSION );
 
-		TGDialog->Title( "Load texture group..." );
-		TGDialog->AddEventListener( cUIEvent::EventOpenFile, cb::Make1( this, &cMapEditor::TextureGroupOpen ) );
+		TGDialog->Title( "Load Texture Atlas..." );
+		TGDialog->AddEventListener( cUIEvent::EventOpenFile, cb::Make1( this, &cMapEditor::TextureAtlasOpen ) );
 		TGDialog->Center();
 		TGDialog->Show();
 	} else if ( "Map Properties..." == txt ) {
@@ -990,7 +990,7 @@ void cMapEditor::RefreshLayersList() {
 	}
 }
 
-void cMapEditor::TextureGroupOpen( const cUIEvent * Event ) {
+void cMapEditor::TextureAtlasOpen( const cUIEvent * Event ) {
 	cUICommonDialog * CDL = reinterpret_cast<cUICommonDialog*> ( Event->Ctrl() );
 
 	std::string sgname = FileSystem::FileRemoveExtension( FileSystem::FileNameFromPath( CDL->GetFullPath() ) );

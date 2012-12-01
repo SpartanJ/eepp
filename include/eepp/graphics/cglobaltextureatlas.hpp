@@ -6,6 +6,7 @@
 
 namespace EE { namespace Graphics {
 
+/** @brief Any SubTexture that doesn't belong to an specific TextureAtlas ( a real texture atlas texture ), goes here. */
 class EE_API cGlobalTextureAtlas : public cTextureAtlas {
 	SINGLETON_DECLARE_HEADERS(cGlobalTextureAtlas)
 

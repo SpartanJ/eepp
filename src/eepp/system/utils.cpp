@@ -1,6 +1,6 @@
-#include <eepp/utils/utils.hpp>
+#include <eepp/system/utils.hpp>
 
-namespace EE { namespace Utils {
+namespace EE { namespace System {
 
 Uint32 MakeHash( const std::string& str ) {
 	return MakeHash( reinterpret_cast<const Uint8*>( &str[0] ) );

@@ -1,7 +1,9 @@
-#ifndef EE_UTILSCCOLORS_H
-#define EE_UTILSCCOLORS_H
+#ifndef EE_SYSTEMCCOLORS_H
+#define EE_SYSTEMCCOLORS_H
 
-namespace EE { namespace Utils {
+#include <eepp/declares.hpp>
+
+namespace EE { namespace System {
 
 template <typename T>
 class tColor {

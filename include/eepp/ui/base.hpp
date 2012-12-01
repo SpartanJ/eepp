@@ -3,17 +3,16 @@
 
 #include <eepp/base.hpp>
 
-#include <eepp/utils/helper.hpp>
-#include <eepp/utils/rect.hpp>
-#include <eepp/utils/utils.hpp>
-#include <eepp/utils/colors.hpp>
-#include <eepp/utils/vector2.hpp>
-#include <eepp/utils/cinterpolation.hpp>
-#include <eepp/utils/cwaypoints.hpp>
-using namespace EE::Utils;
-
+#include <eepp/math/helper.hpp>
+#include <eepp/math/rect.hpp>
+#include <eepp/math/vector2.hpp>
+#include <eepp/math/cinterpolation.hpp>
+#include <eepp/math/cwaypoints.hpp>
 #include <eepp/math/math.hpp>
+using namespace EE::Math;
 
+#include <eepp/system/utils.hpp>
+#include <eepp/system/colors.hpp>
 #include <eepp/system/tsingleton.hpp>
 #include <eepp/system/sys.hpp>
 using namespace EE::System;

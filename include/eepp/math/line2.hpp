@@ -1,7 +1,9 @@
-#ifndef EE_UTILSLINE2_HPP
-#define EE_UTILSLINE2_HPP
+#ifndef EE_MATHLINE2_HPP
+#define EE_MATHLINE2_HPP
 
-namespace EE { namespace Utils {
+#include <eepp/math/vector2.hpp>
+
+namespace EE { namespace Math {
 
 template <typename T>
 class Line2 {

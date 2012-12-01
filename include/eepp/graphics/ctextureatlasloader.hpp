@@ -1,5 +1,5 @@
-#ifndef EE_GRAPHICSCTEXTUREGROUPLOADER_HPP
-#define EE_GRAPHICSCTEXTUREGROUPLOADER_HPP
+#ifndef EE_GRAPHICSCTEXTUREATLASLOADER_HPP
+#define EE_GRAPHICSCTEXTUREATLASLOADER_HPP
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/packerhelper.hpp>
@@ -20,9 +20,9 @@ class EE_API cTextureAtlasLoader {
 
 		cTextureAtlasLoader();
 
-		cTextureAtlasLoader( const std::string& TextureGroupPath, const bool& Threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
+		cTextureAtlasLoader( const std::string& TextureAtlasPath, const bool& Threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
 
-		cTextureAtlasLoader( const Uint8* Data, const Uint32& DataSize, const std::string& TextureGroupName, const bool& Threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
+		cTextureAtlasLoader( const Uint8* Data, const Uint32& DataSize, const std::string& TextureAtlasName, const bool& Threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
 
 		cTextureAtlasLoader( cPack * Pack, const std::string& FilePackPath, const bool& Threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
 
@@ -30,11 +30,11 @@ class EE_API cTextureAtlasLoader {
 
 		void					Update();
 
-		void					Load( const std::string& TextureGroupPath = "" );
+		void					Load( const std::string& TextureAtlasPath = "" );
 
 		void					LoadFromStream( cIOStream& IOS );
 
-		void					LoadFromMemory( const Uint8* Data, const Uint32& DataSize, const std::string& TextureGroupName );
+		void					LoadFromMemory( const Uint8* Data, const Uint32& DataSize, const std::string& TextureAtlasName );
 
 		void					LoadFromPack( cPack * Pack, const std::string& FilePackPath );
 
@@ -60,7 +60,7 @@ class EE_API cTextureAtlasLoader {
 		void					SetLoadCallback( GLLoadCallback LoadCallback );
 	protected:
 		cResourceLoader			mRL;
-		std::string				mTextureGroupPath;
+		std::string				mTextureAtlasPath;
 		bool					mThreaded;
 		bool					mLoaded;
 		cPack *					mPack;
@@ -70,13 +70,13 @@ class EE_API cTextureAtlasLoader {
 		GLLoadCallback			mLoadCallback;
 		std::vector<cTexture*>	mTexuresLoaded;
 
-		typedef struct sTempTexGroupS {
+		typedef struct sTempTexAtlasS {
 			sTextureHdr 			Texture;
 			std::vector<sSubTextureHdr>	SubTextures;
-		} sTempTexGroup;
+		} sTempTexAtlas;
 
-		sTextureGroupHdr mTexGrHdr;
-		std::vector<sTempTexGroup> mTempGroups;
+		sTextureAtlasHdr mTexGrHdr;
+		std::vector<sTempTexAtlas> mTempAtlass;
 
 		void CreateSubTextures();
 };

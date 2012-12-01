@@ -1,7 +1,7 @@
-#ifndef EE_UTILS_HELPER
-#define EE_UTILS_HELPER
+#ifndef EE_MATH_HELPER
+#define EE_MATH_HELPER
 
-namespace EE { namespace Utils {
+namespace EE { namespace Math {
 
 /** @enum EE_INTERPOLATION Define the type of interpolation used. */
 enum EE_INTERPOLATION {

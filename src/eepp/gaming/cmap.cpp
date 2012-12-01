@@ -768,7 +768,7 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 				eeSAFE_DELETE_ARRAY( tProp );
 			}
 
-			//! Load SubTexture Groups
+			//! Load Texture Atlases
 			if ( MapHdr.TextureAtlasCount ) {
 				sMapTextureAtlas * tSG = eeNewArray( sMapTextureAtlas, MapHdr.TextureAtlasCount );
 
@@ -780,7 +780,7 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 					TextureAtlases.push_back( std::string( tSG[i].Path ) );
 				}
 
-				//! Load the Texture groups if needed
+				//! Load the Texture Atlases if needed
 				for ( i = 0; i < TextureAtlases.size(); i++ ) {
 					std::string sgname = FileSystem::FileRemoveExtension( FileSystem::FileNameFromPath( TextureAtlases[i] ) );
 

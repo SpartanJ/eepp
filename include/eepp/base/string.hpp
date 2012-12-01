@@ -667,7 +667,6 @@ EE_API String operator +( const String& left, const String& right );
 #endif
 
 /** @class EE::String
-** @ingroup system
 ** EE::String is a utility string class defined mainly for
 ** convenience. It is a Unicode string (implemented using
 ** UTF-32), thus it can store any character in the world

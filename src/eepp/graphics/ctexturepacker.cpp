@@ -558,9 +558,9 @@ void cTexturePacker::SaveSubTextures() {
 	if ( NULL != mParent )
 		return;
 
-	sTextureGroupHdr TexGrHdr;
+	sTextureAtlasHdr TexGrHdr;
 
-	TexGrHdr.Magic 			= ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'T' << 16 ) | ( 'G' << 24 ) );
+	TexGrHdr.Magic 			= EE_TEXTURE_ATLAS_MAGIC;
 	TexGrHdr.TextureCount 	= 1 + GetChildCount();
 	TexGrHdr.Format			= mFormat;
 	TexGrHdr.Width			= mWidth;
@@ -569,13 +569,13 @@ void cTexturePacker::SaveSubTextures() {
 	TexGrHdr.Flags			= 0;
 
 	if ( mAllowFlipping )
-		TexGrHdr.Flags |= HDR_TEXTURE_GROUP_ALLOW_FLIPPING;
+		TexGrHdr.Flags |= HDR_TEXTURE_ATLAS_ALLOW_FLIPPING;
 
 	if ( !mSaveExtensions )
-		TexGrHdr.Flags |= HDR_TEXTURE_GROUP_REMOVE_EXTENSION;
+		TexGrHdr.Flags |= HDR_TEXTURE_ATLAS_REMOVE_EXTENSION;
 
 	if ( mForcePowOfTwo )
-		TexGrHdr.Flags |= HDR_TEXTURE_GROUP_POW_OF_TWO;
+		TexGrHdr.Flags |= HDR_TEXTURE_ATLAS_POW_OF_TWO;
 
 	std::vector<sTextureHdr> TexHdr( TexGrHdr.TextureCount );
 
@@ -592,11 +592,11 @@ void cTexturePacker::SaveSubTextures() {
 
 	std::vector<sSubTextureHdr> tSubTexturesHdr;
 
-	std::string path = FileSystem::FileRemoveExtension( mFilepath ) + ".etg";
+	std::string path = FileSystem::FileRemoveExtension( mFilepath ) + EE_TEXTURE_ATLAS_EXTENSION;
 	cIOStreamFile fs ( path , std::ios::out | std::ios::binary );
 
 	if ( fs.IsOpen() ) {
-		fs.Write( reinterpret_cast<const char*> (&TexGrHdr), sizeof(sTextureGroupHdr) );
+		fs.Write( reinterpret_cast<const char*> (&TexGrHdr), sizeof(sTextureAtlasHdr) );
 
 		fs.Write( reinterpret_cast<const char*> (&TexHdr[ 0 ]), sizeof(sTextureHdr) );
 

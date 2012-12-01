@@ -144,7 +144,7 @@ cUITheme * cUITheme::LoadFromTextureAtlas( cUITheme * tTheme, cTextureAtlas * Te
 
 		Element = std::string( tTheme->Abbr() + "_" + *it );
 
-		Found 	= SearchFilesInGroup( TextureAtlas, Element, IsComplex );
+		Found 	= SearchFilesInAtlas( TextureAtlas, Element, IsComplex );
 
 		if ( Found ) {
 			ElemFound.push_back( Element );
@@ -235,7 +235,7 @@ cUITheme * cUITheme::LoadFromTextureAtlas( cTextureAtlas * TextureAtlas, const s
 	return LoadFromTextureAtlas( eeNew( cUITheme, ( Name, NameAbbr ) ), TextureAtlas );
 }
 
-bool cUITheme::SearchFilesInGroup( cTextureAtlas * SG, std::string Element, Uint32& IsComplex ) {
+bool cUITheme::SearchFilesInAtlas( cTextureAtlas * SG, std::string Element, Uint32& IsComplex ) {
 	bool Found = false;
 	Uint32 i = 0, s = 0;
 	std::string ElemName;

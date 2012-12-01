@@ -151,7 +151,7 @@ class EE_API cUITheme : public tResourceManager<cUISkin> {
 
 		static bool SearchFilesOfElement( cTextureAtlas * SG, const std::string& Path, std::string Element, Uint32& IsComplex, const std::string ImgExt );
 
-		static bool SearchFilesInGroup( cTextureAtlas * SG, std::string Element, Uint32& IsComplex );
+		static bool SearchFilesInAtlas( cTextureAtlas * SG, std::string Element, Uint32& IsComplex );
 };
 
 }}

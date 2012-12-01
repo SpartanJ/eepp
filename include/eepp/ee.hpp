@@ -31,14 +31,10 @@
 	#include "base.hpp"
 	using namespace EE;
 
-	// Utils
-	#include <eepp/utils.hpp>
-	using namespace EE::Utils;
-	using namespace EE::Utils::easing;
-
 	// Math
 	#include <eepp/math.hpp>
 	using namespace EE::Math;
+	using namespace EE::Math::easing;
 
 	// System
 	#include <eepp/system.hpp>

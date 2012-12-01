@@ -1,10 +1,10 @@
-#ifndef EE_UTILSCINTERPOLATION_H
-#define EE_UTILSCINTERPOLATION_H
+#ifndef EE_MATHCINTERPOLATION_H
+#define EE_MATHCINTERPOLATION_H
 
-#include <eepp/utils/base.hpp>
+#include <eepp/math/base.hpp>
 #include <vector>
 
-namespace EE { namespace Utils {
+namespace EE { namespace Math {
 
 /** @brief The basic 1d point template. */
 template <typename T>

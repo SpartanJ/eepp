@@ -13,7 +13,7 @@ cTextureAtlasEditor::cTextureAtlasEditor( cUIWindow * AttatchTo, const TGEditorC
 	mUIWindow( AttatchTo ),
 	mCloseCb( callback ),
 	mTexturePacker( NULL ),
-	mTextureGroupLoader( NULL ),
+	mTextureAtlasLoader( NULL ),
 	mCurSubTexture( NULL )
 {
 	if ( NULL == cUIThemeManager::instance()->DefaultTheme() ) {
@@ -102,7 +102,7 @@ cTextureAtlasEditor::cTextureAtlasEditor( cUIWindow * AttatchTo, const TGEditorC
 	HBOffsetButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cTextureAtlasEditor::OnHBOffset ) );
 	HBOffsetButton->Text( "Half-Bottom Offset" );
 
-	mUIWindow->Title( "Texture Group Editor" );
+	mUIWindow->Title( "Texture Atlas Editor" );
 	mUIWindow->AddEventListener( cUIEvent::EventOnWindowClose, cb::Make1( this, &cTextureAtlasEditor::WindowClose ) );
 
 	CreateTGEditor();
@@ -122,7 +122,7 @@ cTextureAtlasEditor::cTextureAtlasEditor( cUIWindow * AttatchTo, const TGEditorC
 
 cTextureAtlasEditor::~cTextureAtlasEditor() {
 	eeSAFE_DELETE( mTexturePacker );
-	eeSAFE_DELETE( mTextureGroupLoader );
+	eeSAFE_DELETE( mTextureAtlasLoader );
 
 	if ( !cUIManager::instance()->IsShootingDown() ) {
 		mTGEU->Close();
@@ -236,27 +236,27 @@ void cTextureAtlasEditor::FileMenuClick( const cUIEvent * Event ) {
 	const String& txt = reinterpret_cast<cUIMenuItem*> ( Event->Ctrl() )->Text();
 
 	if ( "New..." == txt ) {
-		eeNew( cTextureAtlasNew, ( cb::Make1( this, &cTextureAtlasEditor::OnTextureGroupCreate ) ) );
+		eeNew( cTextureAtlasNew, ( cb::Make1( this, &cTextureAtlasEditor::OnTextureAtlasCreate ) ) );
 	} else if ( "Open..." == txt ) {
-		cUICommonDialog * TGDialog = mTheme->CreateCommonDialog( NULL, eeSize(), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, eeSize(), 255, UI_CDL_DEFAULT_FLAGS, "*.etg" );
+		cUICommonDialog * TGDialog = mTheme->CreateCommonDialog( NULL, eeSize(), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, eeSize(), 255, UI_CDL_DEFAULT_FLAGS, std::string( "*" ) + EE_TEXTURE_ATLAS_EXTENSION );
 
-		TGDialog->Title( "Open Texture Group" );
-		TGDialog->AddEventListener( cUIEvent::EventOpenFile, cb::Make1( this, &cTextureAtlasEditor::OpenTextureGroup ) );
+		TGDialog->Title( "Open Texture Atlas" );
+		TGDialog->AddEventListener( cUIEvent::EventOpenFile, cb::Make1( this, &cTextureAtlasEditor::OpenTextureAtlas ) );
 		TGDialog->Center();
 		TGDialog->Show();
 	} else if ( "Save" == txt ) {
-		if ( NULL != mTextureGroupLoader && mTextureGroupLoader->IsLoaded() ) {
-			mTextureGroupLoader->UpdateTextureAtlas();
+		if ( NULL != mTextureAtlasLoader && mTextureAtlasLoader->IsLoaded() ) {
+			mTextureAtlasLoader->UpdateTextureAtlas();
 		}
 	} else if ( "Close" == txt ) {
-		if ( NULL != mTextureGroupLoader && mTextureGroupLoader->IsLoaded()  ) {
-			cUIMessageBox * MsgBox = mTheme->CreateMessageBox( MSGBOX_OKCANCEL, "Do you really want to close the current texture group?\nAll changes will be lost." );
-			MsgBox->AddEventListener( cUIEvent::EventMsgBoxConfirmClick, cb::Make1( this, &cTextureAtlasEditor::OnTextureGroupClose ) );
-			MsgBox->Title( "Close Texture Group?" );
+		if ( NULL != mTextureAtlasLoader && mTextureAtlasLoader->IsLoaded()  ) {
+			cUIMessageBox * MsgBox = mTheme->CreateMessageBox( MSGBOX_OKCANCEL, "Do you really want to close the current texture atlas?\nAll changes will be lost." );
+			MsgBox->AddEventListener( cUIEvent::EventMsgBoxConfirmClick, cb::Make1( this, &cTextureAtlasEditor::OnTextureAtlasClose ) );
+			MsgBox->Title( "Close Texture Atlas?" );
 			MsgBox->Center();
 			MsgBox->Show();
 		} else {
-			OnTextureGroupClose( NULL );
+			OnTextureAtlasClose( NULL );
 		}
 	} else if ( "Quit" == txt ) {
 		if ( mUIWindow == cUIManager::instance()->MainControl() ) {
@@ -267,28 +267,28 @@ void cTextureAtlasEditor::FileMenuClick( const cUIEvent * Event ) {
 	}
 }
 
-void cTextureAtlasEditor::OnTextureGroupCreate( cTexturePacker * TexPacker ) {
+void cTextureAtlasEditor::OnTextureAtlasCreate( cTexturePacker * TexPacker ) {
 	eeSAFE_DELETE( mTexturePacker );
 	mTexturePacker = TexPacker;
 
-	eeSAFE_DELETE( mTextureGroupLoader );
+	eeSAFE_DELETE( mTextureAtlasLoader );
 
-	std::string FPath( FileSystem::FileRemoveExtension( mTexturePacker->GetFilepath() ) + ".etg" );
+	std::string FPath( FileSystem::FileRemoveExtension( mTexturePacker->GetFilepath() + EE_TEXTURE_ATLAS_EXTENSION ) );
 
-	mTextureGroupLoader = eeNew( cTextureAtlasLoader, ( FPath, true, cb::Make1( this, &cTextureAtlasEditor::OnTextureGroupLoaded ) ) );
+	mTextureAtlasLoader = eeNew( cTextureAtlasLoader, ( FPath, true, cb::Make1( this, &cTextureAtlasEditor::OnTextureAtlasLoaded ) ) );
 }
 
 void cTextureAtlasEditor::UpdateControls() {
-	if ( NULL != mTextureGroupLoader && mTextureGroupLoader->IsLoaded()  ) {
+	if ( NULL != mTextureAtlasLoader && mTextureAtlasLoader->IsLoaded()  ) {
 		FillSubTextureList();
 	}
 }
 
 void cTextureAtlasEditor::FillSubTextureList() {
-	if ( NULL == mTextureGroupLoader || NULL == mTextureGroupLoader->GetTextureAtlas() || !mTextureGroupLoader->IsLoaded()  )
+	if ( NULL == mTextureAtlasLoader || NULL == mTextureAtlasLoader->GetTextureAtlas() || !mTextureAtlasLoader->IsLoaded()  )
 		return;
 
-	std::list<cSubTexture*>& Res = mTextureGroupLoader->GetTextureAtlas()->GetResources();
+	std::list<cSubTexture*>& Res = mTextureAtlasLoader->GetTextureAtlas()->GetResources();
 
 	mSubTextureList->Clear();
 
@@ -309,8 +309,8 @@ void cTextureAtlasEditor::FillSubTextureList() {
 }
 
 void cTextureAtlasEditor::OnSubTextureChange( const cUIEvent * Event ) {
-	if ( NULL != mTextureGroupLoader && NULL != mTextureGroupLoader->GetTextureAtlas() ) {
-		mCurSubTexture = mTextureGroupLoader->GetTextureAtlas()->GetByName( mSubTextureList->GetItemSelectedText() );
+	if ( NULL != mTextureAtlasLoader && NULL != mTextureAtlasLoader->GetTextureAtlas() ) {
+		mCurSubTexture = mTextureAtlasLoader->GetTextureAtlas()->GetByName( mSubTextureList->GetItemSelectedText() );
 
 		if ( NULL != mCurSubTexture ) {
 			mSubTextureEditor->SubTexture( mCurSubTexture );
@@ -323,32 +323,32 @@ void cTextureAtlasEditor::OnSubTextureChange( const cUIEvent * Event ) {
 }
 
 void cTextureAtlasEditor::Update() {
-	if ( NULL != mTextureGroupLoader && !mTextureGroupLoader->IsLoaded() ) {
-		mTextureGroupLoader->Update();
+	if ( NULL != mTextureAtlasLoader && !mTextureAtlasLoader->IsLoaded() ) {
+		mTextureAtlasLoader->Update();
 	}
 }
 
-void cTextureAtlasEditor::OpenTextureGroup( const cUIEvent * Event ) {
+void cTextureAtlasEditor::OpenTextureAtlas( const cUIEvent * Event ) {
 	cUICommonDialog * CDL = reinterpret_cast<cUICommonDialog*> ( Event->Ctrl() );
 
-	eeSAFE_DELETE( mTextureGroupLoader );
-	mTextureGroupLoader = eeNew( cTextureAtlasLoader, ( CDL->GetFullPath(), true, cb::Make1( this, &cTextureAtlasEditor::OnTextureGroupLoaded ) ) );
+	eeSAFE_DELETE( mTextureAtlasLoader );
+	mTextureAtlasLoader = eeNew( cTextureAtlasLoader, ( CDL->GetFullPath(), true, cb::Make1( this, &cTextureAtlasEditor::OnTextureAtlasLoaded ) ) );
 }
 
-void cTextureAtlasEditor::OnTextureGroupLoaded( cTextureAtlasLoader * TGLoader ) {
-	if ( NULL != mTextureGroupLoader && mTextureGroupLoader->IsLoaded() ) {
+void cTextureAtlasEditor::OnTextureAtlasLoaded( cTextureAtlasLoader * TGLoader ) {
+	if ( NULL != mTextureAtlasLoader && mTextureAtlasLoader->IsLoaded() ) {
 		UpdateControls();
 	}
 }
 
-void cTextureAtlasEditor::SaveTextureGroup( const cUIEvent * Event ) {
-	if ( NULL != mTextureGroupLoader && mTextureGroupLoader->IsLoaded() ) {
-		mTextureGroupLoader->UpdateTextureAtlas();
+void cTextureAtlasEditor::SaveTextureAtlas( const cUIEvent * Event ) {
+	if ( NULL != mTextureAtlasLoader && mTextureAtlasLoader->IsLoaded() ) {
+		mTextureAtlasLoader->UpdateTextureAtlas();
 	}
 }
 
-void cTextureAtlasEditor::OnTextureGroupClose( const cUIEvent * Event ) {
-	eeSAFE_DELETE( mTextureGroupLoader );
+void cTextureAtlasEditor::OnTextureAtlasClose( const cUIEvent * Event ) {
+	eeSAFE_DELETE( mTextureAtlasLoader );
 	mSubTextureList->Clear();
 	mSpinOffX->Value( 0 );
 	mSpinOffY->Value( 0 );

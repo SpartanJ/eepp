@@ -1,7 +1,9 @@
-#ifndef EE_UTILSSIZE_HPP
-#define EE_UTILSSIZE_HPP
+#ifndef EE_MATHSIZE_HPP
+#define EE_MATHSIZE_HPP
 
-namespace EE { namespace Utils {
+#include <eepp/math/vector2.hpp>
+
+namespace EE { namespace Math {
 
 template<typename T>
 class tSize : public Vector2<T>

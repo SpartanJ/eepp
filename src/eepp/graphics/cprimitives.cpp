@@ -1,5 +1,5 @@
 #include <eepp/graphics/cprimitives.hpp>
-#include <eepp/utils/polygon2.hpp>
+#include <eepp/math/polygon2.hpp>
 
 namespace EE { namespace Graphics {
 

@@ -3,9 +3,7 @@
 
 #include <eepp/base.hpp>
 
-#include <eepp/utils/colors.hpp>
-using namespace EE::Utils;
-
+#include <eepp/system/colors.hpp>
 #include <eepp/system/clog.hpp>
 #include <eepp/system/cpack.hpp>
 #include <eepp/system/cpackmanager.hpp>

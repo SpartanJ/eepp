@@ -1,11 +1,11 @@
-#ifndef EE_UTILSCWAYPOINTS_H
-#define EE_UTILSCWAYPOINTS_H
+#ifndef EE_MATHCWAYPOINTS_H
+#define EE_MATHCWAYPOINTS_H
 
-#include <eepp/utils/base.hpp>
-#include <eepp/utils/vector2.hpp>
+#include <eepp/math/base.hpp>
+#include <eepp/math/vector2.hpp>
 #include <vector>
 
-namespace EE { namespace Utils {
+namespace EE { namespace Math {
 
 /** @brief The basic waypoint class. */
 template <typename T>

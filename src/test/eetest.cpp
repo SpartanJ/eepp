@@ -145,14 +145,14 @@ void cEETest::CreateAquaTextureAtlas() {
 	std::string tgpath( MyPath + "data/aquatg/aqua" );
 	std::string Path( MyPath + "data/aqua" );
 
-	if ( !FileSystem::FileExists( tgpath + ".etg" ) ) {
+	if ( !FileSystem::FileExists( tgpath + EE_TEXTURE_ATLAS_EXTENSION ) ) {
 		cTexturePacker tp( 256, 256, true, 2 );
 		tp.AddTexturesPath( Path );
 		tp.PackTextures();
 		tp.Save( tgpath + ".png", EE_SAVE_TYPE_PNG );
 	} else {
 		cTextureAtlasLoader tgl;
-		tgl.UpdateTextureAtlas( tgpath + ".etg", Path );
+		tgl.UpdateTextureAtlas( tgpath + EE_TEXTURE_ATLAS_EXTENSION, Path );
 	}
 }
 
@@ -258,7 +258,7 @@ void cEETest::CreateUI() {
 
 	//mTheme = cUITheme::LoadFromPath( eeNew( cUIAquaTheme, ( "aqua", "aqua" ) ), MyPath + "data/aqua/" );
 
-	cTextureAtlasLoader tgl( MyPath + "data/aquatg/aqua.etg" );
+	cTextureAtlasLoader tgl( MyPath + "data/aquatg/aqua" + EE_TEXTURE_ATLAS_EXTENSION );
 	tgl.GetTexture()->TextureFilter( TEX_FILTER_NEAREST );
 
 	mTheme = cUITheme::LoadFromTextureAtlas( eeNew( cUIAquaTheme, ( "aqua", "aqua" ) ), cTextureAtlasManager::instance()->GetByName( "aqua" ) );
@@ -470,7 +470,7 @@ void cEETest::CreateUI() {
 	Menu->Add( "Open...", mTheme->GetIconByName( "document-open" ) );
 	Menu->AddSeparator();
 	Menu->Add( "Map Editor" );
-	Menu->Add( "Texture Group Editor" );
+	Menu->Add( "Texture Atlas Editor" );
 	Menu->AddSeparator();
 	Menu->Add( "Show Screen 1" );
 	Menu->Add( "Show Screen 2" );
@@ -707,7 +707,7 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 		mUIWindow->Show();
 	} else if ( "Map Editor" == txt ) {
 		CreateMapEditor();
-	} else if ( "Texture Group Editor" == txt ) {
+	} else if ( "Texture Atlas Editor" == txt ) {
 		CreateETGEditor();
 	} else if ( "Multi Viewport" == txt ) {
 		MultiViewportMode = !MultiViewportMode;
@@ -902,7 +902,7 @@ void cEETest::LoadTextures() {
 
 	if ( cImage::GetInfo( MyPath + "data/extra/bnb.png", &x, &y, &c ) )
 	{
-		mTGL = eeNew( cTextureAtlasLoader, ( MyPath + "data/extra/bnb.etg" ) );
+		mTGL = eeNew( cTextureAtlasLoader, ( MyPath + "data/extra/bnb" + EE_TEXTURE_ATLAS_EXTENSION ) );
 	}
 
 	mBlindy.AddFramesByPattern( "rn" );

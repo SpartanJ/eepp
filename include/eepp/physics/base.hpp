@@ -5,12 +5,13 @@
 #include <eepp/helper/chipmunk/chipmunk_private.h>
 
 //! EE includes needed for the wrapper, all templates, so it will be easy to port this.
-#include <eepp/base.hpp>
-#include <eepp/utils/vector2.hpp>
-#include <eepp/utils/rect.hpp>
-#include <eepp/utils/colors.hpp>
-using namespace EE::Utils;
 
+#include <eepp/math/vector2.hpp>
+#include <eepp/math/rect.hpp>
+using namespace EE::Math;
+
+#include <eepp/base.hpp>
+#include <eepp/system/colors.hpp>
 #include <eepp/system/tsingleton.hpp>
 using namespace EE::System;
 

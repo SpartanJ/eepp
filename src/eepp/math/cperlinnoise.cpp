@@ -1,6 +1,6 @@
-#include <eepp/utils/cperlinnoise.hpp>
+#include <eepp/math/cperlinnoise.hpp>
 
-namespace EE { namespace Utils {
+namespace EE { namespace Math {
 
 cPerlinNoise::cPerlinNoise() {
 	Init();

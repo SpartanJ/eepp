@@ -1,7 +1,9 @@
-#ifndef EE_UTILSTRIANGLE2_HPP
-#define EE_UTILSTRIANGLE2_HPP
+#ifndef EE_MATHTRIANGLE2_HPP
+#define EE_MATHTRIANGLE2_HPP
 
-namespace EE { namespace Utils {
+#include <eepp/math/vector2.hpp>
+
+namespace EE { namespace Math {
 
 template <typename T>
 class Triangle2 {
