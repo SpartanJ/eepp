@@ -8,7 +8,7 @@ cLayer::cLayer( cMap * map, Uint32 type, Uint32 flags, std::string name, eeVecto
 	mType( type ),
 	mFlags( flags ),
 	mOffset( offset ),
-	mNameHash( MakeHash( name ) ),
+	mNameHash( String::Hash( name ) ),
 	mName( name )
 {
 }

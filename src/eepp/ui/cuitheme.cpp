@@ -315,7 +315,7 @@ bool cUITheme::SearchFilesOfElement( cTextureAtlas * SG, const std::string& Path
 cUITheme::cUITheme( const std::string& Name, const std::string& Abbr, cFont * DefaultFont ) :
 	tResourceManager<cUISkin> ( false ),
 	mName( Name ),
-	mNameHash( MakeHash( mName ) ),
+	mNameHash( String::Hash( mName ) ),
 	mAbbr( Abbr ),
 	mTextureAtlas( NULL ),
 	mFont( DefaultFont ),
@@ -337,7 +337,7 @@ const std::string& cUITheme::Name() const {
 
 void cUITheme::Name( const std::string& name ) {
 	mName = name;
-	mNameHash = MakeHash( mName );
+	mNameHash = String::Hash( mName );
 }
 
 const Uint32& cUITheme::Id() const {

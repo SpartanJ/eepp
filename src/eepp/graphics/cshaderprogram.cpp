@@ -424,7 +424,7 @@ const std::string& cShaderProgram::Name() const {
 
 void cShaderProgram::Name( const std::string& name ) {
 	mName = name;
-	mId = MakeHash( mName );
+	mId = String::Hash( mName );
 
 	Uint32 NameCount = cShaderProgramManager::instance()->Exists( mName );
 

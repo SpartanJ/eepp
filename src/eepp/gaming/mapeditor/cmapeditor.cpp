@@ -547,7 +547,7 @@ void cMapEditor::OnTypeChange( const cUIEvent * Event ) {
 	else if ( mGOTypeList->Text() == "Sprite" )
 		mCurGOType = GAMEOBJECT_TYPE_SPRITE;
 	else
-		mCurGOType = MakeHash( mGOTypeList->Text().ToUtf8() );
+		mCurGOType = String::Hash( mGOTypeList->Text().ToUtf8() );
 
 	if ( NULL != mChkAnim && NULL != mGOTypeList && mChkAnim->Active() && mGOTypeList->Text() != "Sprite" ) {
 		if ( mGOTypeList->Text() == "SubTexture" || mGOTypeList->Text() == "SubTextureEx" ) {
@@ -613,8 +613,8 @@ void cMapEditor::FillSGCombo() {
 
 	std::vector<String> items;
 
-	Uint32 Restricted1 = MakeHash( std::string( "global" ) );
-	Uint32 Restricted2 = MakeHash( mTheme->TextureAtlas()->Name() );
+	Uint32 Restricted1 = String::Hash( std::string( "global" ) );
+	Uint32 Restricted2 = String::Hash( mTheme->TextureAtlas()->Name() );
 
 	for ( std::list<cTextureAtlas*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
 		if ( (*it)->Id() != Restricted1 && (*it)->Id() != Restricted2 )
@@ -1068,7 +1068,7 @@ cGameObject * cMapEditor::CreateGameObject() {
 		//! Creates an empty game object. The client will interpret the GameObject Type, and instanciate the corresponding class.
 
 		if ( mChkDI->Active() )
-			tObj = eeNew( cGameObjectVirtual, ( MakeHash( mDataIdInput->Text().ToUtf8() ), mCurLayer, mCurGOFlags, mCurGOType ) );
+			tObj = eeNew( cGameObjectVirtual, ( String::Hash( mDataIdInput->Text().ToUtf8() ), mCurLayer, mCurGOFlags, mCurGOType ) );
 		else
 			tObj = eeNew( cGameObjectVirtual, ( mGfxPreview->SubTexture(), mCurLayer, mCurGOFlags, mCurGOType ) );
 	}

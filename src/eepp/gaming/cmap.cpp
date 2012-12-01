@@ -187,7 +187,7 @@ Uint32 cMap::GetLayerIndex( cLayer * Layer ) {
 }
 
 cLayer* cMap::GetLayer( const std::string& name ) {
-	return GetLayerByHash( MakeHash( name ) );
+	return GetLayerByHash( String::Hash( name ) );
 }
 
 void cMap::Draw() {
@@ -1234,8 +1234,8 @@ std::vector<std::string> cMap::GetTextureAtlases() {
 	std::vector<std::string> items;
 
 	//! Ugly ugly ugly, but i don't see another way
-	Uint32 Restricted1 = MakeHash( std::string( "global" ) );
-	Uint32 Restricted2 = MakeHash( UI::cUIThemeManager::instance()->DefaultTheme()->TextureAtlas()->Name() );
+	Uint32 Restricted1 = String::Hash( std::string( "global" ) );
+	Uint32 Restricted2 = String::Hash( UI::cUIThemeManager::instance()->DefaultTheme()->TextureAtlas()->Name() );
 
 	for ( std::list<cTextureAtlas*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
 		if ( (*it)->Id() != Restricted1 && (*it)->Id() != Restricted2 )

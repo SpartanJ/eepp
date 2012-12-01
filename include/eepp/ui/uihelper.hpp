@@ -5,10 +5,6 @@
 
 namespace EE { namespace UI {
 
-Uint32 EE_API HAlignGet( Uint32 Flags );
-
-Uint32 EE_API VAlignGet( Uint32 Flags );
-
 enum UI_CONTROL_FLAGS_VALUES {
 	UI_CTRL_FLAG_CLOSE								= (1<<0),
 	UI_CTRL_FLAG_CLOSE_FO							= (1<<1),
@@ -29,6 +25,14 @@ enum UI_CONTROL_FLAGS_VALUES {
 #define UI_HALIGN_MASK		FONT_DRAW_HALIGN_MASK
 #define UI_VALIGN_TOP		FONT_DRAW_TOP
 #define UI_VALIGN_MASK		FONT_DRAW_VALIGN_MASK
+
+inline Uint32 HAlignGet( Uint32 Flags ) {
+	return Flags & UI_HALIGN_MASK;
+}
+
+inline Uint32 VAlignGet( Uint32 Flags ) {
+	return Flags & UI_VALIGN_MASK;
+}
 
 enum UI_FLAGS {
 	UI_HALIGN_RIGHT					= FONT_DRAW_RIGHT,

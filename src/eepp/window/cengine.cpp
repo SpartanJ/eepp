@@ -27,7 +27,7 @@
 
 #ifndef DEFAULT_BACKEND
 
-#if defined( EE_BACKEND_SDL_2 )
+#if defined( EE_BACKEND_SDL2 )
 #define DEFAULT_BACKEND		BACKEND_SDL2
 #elif defined( EE_BACKEND_SDL_1_2 )
 #define DEFAULT_BACKEND		BACKEND_SDL

@@ -1,6 +1,11 @@
 #include <eepp/system/clog.hpp>
 #include <cstdarg>
 
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+	#include <android/log.h>
+	#define ANDROID_LOGI(...) __android_log_print(ANDROID_LOG_INFO   , "eepp", __VA_ARGS__)
+#endif
+
 namespace EE { namespace System {
 
 SINGLETON_DECLARE_IMPLEMENTATION(cLog)

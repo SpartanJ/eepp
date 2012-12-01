@@ -648,7 +648,7 @@ void cTexturePacker::CreateSubTexturesHdr( cTexturePacker * Packer, std::vector<
 			if ( !mSaveExtensions )
 				name = FileSystem::FileRemoveExtension( name );
 
-			tSubTextureHdr.ResourceID	= MakeHash( name );
+			tSubTextureHdr.ResourceID	= String::Hash( name );
 			tSubTextureHdr.Width 		= tTex->Width();
 			tSubTextureHdr.Height 		= tTex->Height();
 			tSubTextureHdr.Channels		= tTex->Channels();
@@ -680,7 +680,7 @@ sTextureHdr	cTexturePacker::CreateTextureHdr( cTexturePacker * Packer ) {
 
 	String::StrCopy( TexHdr.Name, name.c_str(), HDR_NAME_SIZE );
 
-	TexHdr.ResourceID 	= MakeHash( name );
+	TexHdr.ResourceID 	= String::Hash( name );
 	TexHdr.Size			= FileSystem::FileSize( Packer->GetFilepath() );
 	TexHdr.SubTextureCount 	= Packer->GetPlacedCount();
 

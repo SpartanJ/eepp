@@ -16,7 +16,7 @@ cTextureAtlasManager::~cTextureAtlasManager() {
 }
 
 cSubTexture * cTextureAtlasManager::GetSubTextureByName( const std::string& Name ) {
-	cSubTexture * tSubTexture = GetSubTextureById( MakeHash( Name ) );
+	cSubTexture * tSubTexture = GetSubTextureById( String::Hash( Name ) );
 
 	if ( mWarnings ) {
 		eePRINTC( NULL == tSubTexture, "cTextureAtlasManager::GetSubTextureByName SubTexture '%s' not found\n", Name.c_str() );

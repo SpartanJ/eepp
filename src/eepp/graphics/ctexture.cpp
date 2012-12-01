@@ -63,7 +63,7 @@ cTexture::cTexture( const Uint32& texture, const eeUint& width, const eeUint& he
 
 void cTexture::Create( const Uint32& texture, const eeUint& width, const eeUint& height, const eeUint& imgwidth, const eeUint& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) {
 	mFilepath 	= filepath;
-	mId 		= MakeHash( mFilepath );
+	mId 		= String::Hash( mFilepath );
 	mTexture 	= texture;
 	mWidth 		= width;
 	mHeight 	= height;

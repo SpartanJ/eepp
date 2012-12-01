@@ -149,7 +149,7 @@ Uint32 tResourceManager<T>::ExistsId( const Uint32& Id ) {
 
 template <class T>
 T * tResourceManager<T>::GetByName( const std::string& Name ) {
-	return GetById( MakeHash( Name ) );
+	return GetById( String::Hash( Name ) );
 }
 
 template <class T>
@@ -202,7 +202,7 @@ Uint32 tResourceManager<T>::Count( const Uint32& Id ) {
 
 template <class T>
 Uint32 tResourceManager<T>::Count( const std::string& Name ) {
-	return Count( MakeHash( Name ) );
+	return Count( String::Hash( Name ) );
 }
 
 }}

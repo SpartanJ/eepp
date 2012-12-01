@@ -18,7 +18,7 @@ const char * cUISkin::GetSkinStateName( const Uint32& State ) {
 cUISkin::cUISkin( const std::string& Name, const Uint32& Type ) :
 	mType( Type ),
 	mName( Name ),
-	mNameHash( MakeHash( mName ) ),
+	mNameHash( String::Hash( mName ) ),
 	mTheme(NULL)
 {
 	mColorDefault	= 0xFFFFFFFF;
@@ -50,7 +50,7 @@ const std::string& cUISkin::Name() const {
 
 void cUISkin::Name( const std::string& name ) {
 	mName = name;
-	mNameHash = MakeHash( mName );
+	mNameHash = String::Hash( mName );
 }
 
 const Uint32& cUISkin::Id() const {

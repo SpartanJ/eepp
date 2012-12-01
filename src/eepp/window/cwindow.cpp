@@ -342,7 +342,20 @@ void cWindow::SendVideoResizeCb() {
 }
 
 void cWindow::LogSuccessfulInit( const std::string& BackendName ) {
-	cLog::instance()->Write( "Engine Initialized Succesfully.\n\tOS: " + Sys::GetOSName() + "\n\tArch: " + Sys::GetOSArchitecture() + " \n\tWindow/Input Backend: " + BackendName + "\n\tGL Backend: " + GLi->VersionStr() + "\n\tGL Vendor: " + GLi->GetVendor() + "\n\tGL Renderer: " + GLi->GetRenderer() + "\n\tGL Version: " + GLi->GetVersion() + "\n\tGL Shading Language Version: " + GLi->GetShadingLanguageVersion() + "\n\tResolution: " + String::toStr( GetWidth() ) + "x" + String::toStr( GetHeight() ) + "\n\tGL extensions supported:\n" + GLi->GetExtensions() );
+	cLog::instance()->Write( "Engine Initialized Succesfully.\n\tOS: " + Sys::GetOSName() +
+							 "\n\tArch: " + Sys::GetOSArchitecture() +
+							 "\n\tCPU Cores: " + String::toStr( Sys::GetCPUCount() ) +
+							 "\n\tProcess Path: " + Sys::GetProcessPath() +
+							 "\n\tDisk Free Space: " + String::toStr( FileSystem::SizeToString( Sys::GetDiskFreeSpace( Sys::GetProcessPath() ) ) ) +
+							 "\n\tWindow/Input Backend: " + BackendName +
+							 "\n\tGL Backend: " + GLi->VersionStr() +
+							 "\n\tGL Vendor: " + GLi->GetVendor() +
+							 "\n\tGL Renderer: " + GLi->GetRenderer() +
+							 "\n\tGL Version: " + GLi->GetVersion() +
+							 "\n\tGL Shading Language Version: " + GLi->GetShadingLanguageVersion() +
+							 "\n\tResolution: " + String::toStr( GetWidth() ) + "x" + String::toStr( GetHeight() ) +
+							 "\n\tGL extensions supported:\n\t\t" + GLi->GetExtensions()
+	);
 }
 
 void cWindow::LogFailureInit( const std::string& ClassName, const std::string& BackendName ) {

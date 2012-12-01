@@ -52,7 +52,16 @@ class EE_API String {
 	typedef StringType::const_reverse_iterator	ConstReverseIterator;	//! Constant iterator type
 
 	static const std::size_t InvalidPos; ///< Represents an invalid position in the string
-	
+
+	/** @return string hash */
+	static Uint32 Hash( const Uint8 * str );
+
+	/** @return string hash */
+	static Uint32 Hash( const std::string& str );
+
+	/** @return string hash. Note: String::Hash( std::string( "text" ) ) is != to String::Hash( String( "text" ) ) */
+	static Uint32 Hash( const String& str );
+
 	/** @return If the value passed is a character */
 	static bool IsCharacter( const eeInt& mValue );
 
@@ -272,7 +281,11 @@ class EE_API String {
 	String ToWideString() const;
 #endif
 
+	/** Convert the string to a Utf8 string */
 	std::string ToUtf8() const;
+
+	/** @return The hash code of the String */
+	Uint32 GetHash() const;
 
 	/** @brief Overload of assignment operator
 	** @param right Instance to assign
@@ -451,7 +464,6 @@ class EE_API String {
 	** @see begin
 	**/
 	ReverseIterator rend();
-
 
 	/** @brief Return an reverse iterator to the beginning of the string
 	** The end reverse iterator refers to 1 position past the last character;

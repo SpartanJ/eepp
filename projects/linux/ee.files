@@ -278,7 +278,6 @@
 ../../include/eepp/ui/tools/ctextureatlassubtextureeditor.hpp
 ../../include/eepp/ui/tools/ctextureatlasnew.hpp
 ../../include/eepp/ui/tools/ctextureatlaseditor.hpp
-../../src/eepp/ui/uihelper.cpp
 ../../src/eepp/ui/cuiwinmenu.cpp
 ../../src/eepp/ui/cuiwindow.cpp
 ../../src/eepp/ui/cuitooltip.cpp
@@ -351,7 +350,6 @@
 ../../include/eepp/math/cperlinnoise.hpp
 ../../include/eepp/system/colors.hpp
 ../../include/eepp/math/cinterpolation.hpp
-../../src/eepp/system/utils.cpp
 ../../src/eepp/system/safedatapointer.cpp
 ../../src/eepp/math/easing.cpp
 ../../src/eepp/math/cwaypoints.cpp

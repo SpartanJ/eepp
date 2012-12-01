@@ -9,6 +9,29 @@ namespace EE {
 
 const std::size_t String::InvalidPos = StringType::npos;
 
+Uint32 String::Hash( const Uint8 * str ) {
+	//! djb2
+	if ( NULL != str ) {
+		Uint32 hash = 5381;
+		Int32 c;
+
+		while ( ( c = *str++ ) )
+			hash = ( ( hash << 5 ) + hash ) + c;
+
+		return hash;
+	}
+
+	return 0;
+}
+
+Uint32 String::Hash( const std::string& str ) {
+	return String::Hash( reinterpret_cast<const Uint8*>( &str[0] ) );
+}
+
+Uint32 String::Hash( const String& str ) {
+	return String::Hash( reinterpret_cast<const Uint8*>( &(str.mString[0]) ) );
+}
+
 bool String::IsCharacter( const eeInt& mValue ) {
 	return (mValue >= 32 && mValue <= 126) || (mValue >= 161 && mValue <= 255) || (mValue == 9);
 }
@@ -349,6 +372,11 @@ std::string String::ToUtf8() const {
 	Utf32::ToUtf8(mString.begin(), mString.end(), std::back_inserter(output) );
 
 	return output;
+}
+
+Uint32 String::GetHash() const
+{
+	return String::Hash( *this );
 }
 
 String& String::operator =(const String& right)

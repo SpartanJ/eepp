@@ -692,7 +692,7 @@ const std::string& cFont::Name() const {
 
 void cFont::Name( const std::string& name ) {
 	mFontName = name;
-	mFontHash = MakeHash( mFontName );
+	mFontHash = String::Hash( mFontName );
 }
 
 const Uint32& cFont::Id() {

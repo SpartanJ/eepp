@@ -58,6 +58,8 @@ void cUIComboBox::CreateButton() {
 	mButton->Visible( true );
 	mButton->Enabled( true );
 	mButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cUIComboBox::OnButtonClick ) );
+	mButton->AddEventListener( cUIEvent::EventMouseEnter, cb::Make1( this, &cUIComboBox::OnButtonEnter ) );
+	mButton->AddEventListener( cUIEvent::EventMouseExit, cb::Make1( this, &cUIComboBox::OnButtonExit ) );
 }
 
 void cUIComboBox::OnButtonClick( const cUIEvent * Event ) {
@@ -66,6 +68,14 @@ void cUIComboBox::OnButtonClick( const cUIEvent * Event ) {
 	if ( MEvent->Flags() & EE_BUTTON_LMASK ) {
 		ShowListBox();
 	}
+}
+
+void cUIComboBox::OnButtonEnter( const cUIEvent * Event ) {
+	SetSkinState( cUISkinState::StateMouseEnter );
+}
+
+void cUIComboBox::OnButtonExit( const cUIEvent * Event ) {
+	SetSkinState( cUISkinState::StateMouseExit );
 }
 
 Uint32 cUIComboBox::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {

@@ -17,7 +17,7 @@ const std::string& cTextureAtlas::Name() const {
 
 void cTextureAtlas::Name( const std::string& name ) {
 	mName = name;
-	mId = MakeHash( mName );
+	mId = String::Hash( mName );
 }
 
 const std::string& cTextureAtlas::Path() const {

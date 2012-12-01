@@ -32,7 +32,7 @@ void cCursorManager::Remove( cCursor * cursor, bool Delete ) {
 }
 
 void cCursorManager::Remove( const std::string& name, bool Delete ) {
-	Remove( MakeHash( name ), Delete );
+	Remove( String::Hash( name ), Delete );
 }
 
 void cCursorManager::Remove( const Uint32& id, bool Delete ) {
@@ -45,7 +45,7 @@ void cCursorManager::Remove( const Uint32& id, bool Delete ) {
 }
 
 cCursor * cCursorManager::Get( const std::string& name ) {
-	return Get( MakeHash( name ) );
+	return Get( String::Hash( name ) );
 }
 
 cCursor * cCursorManager::Get( const Uint32& id ) {
@@ -59,7 +59,7 @@ cCursor * cCursorManager::Get( const Uint32& id ) {
 }
 
 void cCursorManager::Set( const std::string& name ) {
-	Set( MakeHash( name ) );
+	Set( String::Hash( name ) );
 }
 
 void cCursorManager::Set( const Uint32& id ) {

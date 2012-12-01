@@ -34,7 +34,7 @@ class EE_API Sys {
 		/** @return The Number of CPUs of the system. */
 		static eeInt GetCPUCount();
 
-		/** @return Returns free disk space for a given path */
+		/** @return Returns free disk space for a given path in bytes */
 		static Int64 GetDiskFreeSpace(const std::string& path);
 };
 

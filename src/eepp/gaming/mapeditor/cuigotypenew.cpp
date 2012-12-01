@@ -49,7 +49,7 @@ cUIGOTypeNew::~cUIGOTypeNew() {
 void cUIGOTypeNew::OKClick( const cUIEvent * Event ) {
 	if ( mUIInput->Text().size() ) {
 		if ( mCb.IsSet() )
-			mCb( mUIInput->Text().ToUtf8(), MakeHash( mUIInput->Text().ToUtf8() ) );
+			mCb( mUIInput->Text().ToUtf8(), String::Hash( mUIInput->Text().ToUtf8() ) );
 	}
 
 	mUIWindow->CloseWindow();

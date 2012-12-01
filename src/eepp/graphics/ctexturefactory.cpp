@@ -348,7 +348,7 @@ eeUint cTextureFactory::GetTexMemSize( const eeUint& TexId ) {
 }
 
 cTexture * cTextureFactory::GetByName( const std::string& Name ) {
-	return GetByHash( MakeHash( Name ) );
+	return GetByHash( String::Hash( Name ) );
 }
 
 cTexture * cTextureFactory::GetByHash( const Uint32& Hash ) {

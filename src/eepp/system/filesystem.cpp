@@ -400,9 +400,9 @@ bool FileSystem::FileExists( const std::string& Filepath ) {
 	return ( stat( Filepath.c_str(), &st ) == 0 ) && !S_ISDIR( st.st_mode );
 }
 
-std::string FileSystem::SizeToString( const Uint32& MemSize ) {
+std::string FileSystem::SizeToString( const Int64& Size ) {
 	std::string size = " bytes";
-	eeDouble mem = static_cast<eeDouble>( MemSize );
+	eeDouble mem = static_cast<eeDouble>( Size );
 	Uint8 c = 0;
 
 	while ( mem > 1024 ) {

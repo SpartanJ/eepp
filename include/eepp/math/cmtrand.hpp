@@ -61,7 +61,7 @@
 #ifndef EE_MATHCMTRAND_HPP
 #define EE_MATHCMTRAND_HPP
 
-#include <eepp/math/base.hpp>
+#include <eepp/declares.hpp>
 
 namespace EE { namespace Math {
 

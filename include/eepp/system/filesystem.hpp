@@ -89,7 +89,7 @@ class EE_API FileSystem {
 		/** Convert a size represented in bytes, to a string converted in byes/kb/mb/tb.
 		* @example 10485760 -> "10.0 MB"
 		*/
-		static std::string SizeToString( const Uint32& MemSize );
+		static std::string SizeToString(const Int64& Size );
 
 };
 

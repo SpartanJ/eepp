@@ -34,7 +34,6 @@
 	// Math
 	#include <eepp/math.hpp>
 	using namespace EE::Math;
-	using namespace EE::Math::easing;
 
 	// System
 	#include <eepp/system.hpp>

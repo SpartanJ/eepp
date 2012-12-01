@@ -216,15 +216,6 @@
 #define eeSAFE_DELETE_ARRAY(p)  { if(p) { eeDeleteArray(p);		(p)=NULL; } }
 #define eeINDEX_NOT_FOUND 0xFFFFFFFF
 
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-	#include <android/log.h>
-	#define ANDROID_LOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, "eepp", __VA_ARGS__)
-	#define ANDROID_LOGD(...) __android_log_print(ANDROID_LOG_DEBUG  , "eepp", __VA_ARGS__)
-	#define ANDROID_LOGI(...) __android_log_print(ANDROID_LOG_INFO   , "eepp", __VA_ARGS__)
-	#define ANDROID_LOGW(...) __android_log_print(ANDROID_LOG_WARN   , "eepp", __VA_ARGS__)
-	#define ANDROID_LOGE(...) __android_log_print(ANDROID_LOG_ERROR  , "eepp", __VA_ARGS__)
-#endif
-
 namespace EE {
 #if 1 == EE_USE_DOUBLES
 	#define EE_SIZE_OF_FLOAT 8

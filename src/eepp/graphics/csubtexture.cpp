@@ -23,7 +23,7 @@ cSubTexture::cSubTexture( const Uint32& TexId, const std::string& Name ) :
 	mPixels(NULL),
 	mAlpha(NULL),
 	mName( Name ),
-	mId( MakeHash( mName ) ),
+	mId( String::Hash( mName ) ),
 	mTexId( TexId ),
 	mTexture( cTextureFactory::instance()->GetTexture( TexId ) ),
 	mSrcRect( eeRecti( 0, 0, mTexture->Width(), mTexture->Height() ) ),
@@ -43,7 +43,7 @@ cSubTexture::cSubTexture( const Uint32& TexId, const eeRecti& SrcRect, const std
 	mPixels(NULL),
 	mAlpha(NULL),
 	mName( Name ),
-	mId( MakeHash( mName ) ),
+	mId( String::Hash( mName ) ),
 	mTexId( TexId ),
 	mTexture( cTextureFactory::instance()->GetTexture( TexId ) ),
 	mSrcRect(SrcRect),
@@ -59,7 +59,7 @@ cSubTexture::cSubTexture( const Uint32& TexId, const eeRecti& SrcRect, const eeF
 	mPixels(NULL),
 	mAlpha(NULL),
 	mName( Name ),
-	mId( MakeHash( mName ) ),
+	mId( String::Hash( mName ) ),
 	mTexId( TexId ),
 	mTexture( cTextureFactory::instance()->GetTexture( TexId ) ),
 	mSrcRect(SrcRect),
@@ -75,7 +75,7 @@ cSubTexture::cSubTexture( const Uint32& TexId, const eeRecti& SrcRect, const eeF
 	mPixels(NULL),
 	mAlpha(NULL),
 	mName( Name ),
-	mId( MakeHash( mName ) ),
+	mId( String::Hash( mName ) ),
 	mTexId( TexId ),
 	mTexture( cTextureFactory::instance()->GetTexture( TexId ) ),
 	mSrcRect(SrcRect),
@@ -106,7 +106,7 @@ const std::string cSubTexture::Name() const {
 
 void cSubTexture::Name( const std::string& name ) {
 	mName = name;
-	mId = MakeHash( mName );
+	mId = String::Hash( mName );
 }
 
 const Uint32& cSubTexture::Texture() {
