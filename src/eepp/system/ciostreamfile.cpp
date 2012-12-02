@@ -2,7 +2,9 @@
 
 namespace EE { namespace System {
 
-cIOStreamFile::cIOStreamFile( const std::string& path, std::ios_base::openmode mode ) {
+cIOStreamFile::cIOStreamFile( const std::string& path, std::ios_base::openmode mode ) :
+	mSize(0)
+{
 	mFS.open( path.c_str(), mode );
 }
 
@@ -36,21 +38,23 @@ ios_size cIOStreamFile::Seek( ios_size position ) {
 	return position;
 }
 
-ios_size cIOStreamFile::GetPosition() {
+ios_size cIOStreamFile::Tell() {
 	return mFS.tellg();
 }
 
 ios_size cIOStreamFile::GetSize() {
 	if ( IsOpen() ) {
-		ios_size Pos = GetPosition();
+		if ( 0 == mSize ) {
+			ios_size Pos = Tell();
 
-		mFS.seekg ( 0, std::ios::end );
+			mFS.seekg ( 0, std::ios::end );
 
-		ios_size Length = mFS.tellg();
+			mSize = mFS.tellg();
 
-		mFS.seekg ( Pos, std::ios::beg );
+			mFS.seekg ( Pos, std::ios::beg );
+		}
 
-		return Length;
+		return mSize;
 	}
 
 	return 0;

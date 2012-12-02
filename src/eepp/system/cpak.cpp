@@ -335,7 +335,7 @@ bool cPak::EraseFiles( const std::vector<std::string>& paths ) {
 	std::vector<Uint8> data;
 	for ( i = 0; i < uEntry.size(); i++ )
 		if ( ExtractFileToMemory( std::string( uEntry[i].filename ), data ) ) {
-			uEntry[i].file_position = nPf.fs->GetPosition();
+			uEntry[i].file_position = nPf.fs->Tell();
 			uEntry[i].file_length = (Uint32)data.size();
 			nPf.fs->Write( reinterpret_cast<const char*>(&data[0]), (std::streamsize)data.size() );
 		}

@@ -48,7 +48,7 @@ ios_size cIOStreamMemory::Seek( ios_size position ) {
 	return mPos;
 }
 
-ios_size cIOStreamMemory::GetPosition() {
+ios_size cIOStreamMemory::Tell() {
 	return mPos;
 }
 

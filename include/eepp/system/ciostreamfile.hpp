@@ -9,7 +9,7 @@ namespace EE { namespace System {
 
 class EE_API cIOStreamFile : public cIOStream {
 	public:
-		cIOStreamFile( const std::string& path, std::ios_base::openmode mode );
+		cIOStreamFile( const std::string& path, std::ios_base::openmode mode = std::ios::in | std::ios::binary );
 
 		virtual ~cIOStreamFile();
 
@@ -19,13 +19,14 @@ class EE_API cIOStreamFile : public cIOStream {
 
 		ios_size Seek( ios_size position );
 
-		ios_size GetPosition();
+		ios_size Tell();
 
 		ios_size GetSize();
 
 		bool IsOpen();
 	protected:
 		std::fstream	mFS;
+		ios_size		mSize;
 };
 
 }}

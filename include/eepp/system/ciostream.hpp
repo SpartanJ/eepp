@@ -19,7 +19,7 @@ class EE_API cIOStream {
 
 		virtual ios_size Seek( ios_size position ) = 0;
 
-		virtual ios_size GetPosition() = 0;
+		virtual ios_size Tell() = 0;
 
 		virtual ios_size GetSize() = 0;
 

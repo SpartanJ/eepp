@@ -6,15 +6,12 @@
 
 namespace EE { namespace Graphics {
 
-#define TEX_LT_PATH 	(1)
-#define TEX_LT_MEM 		(2)
-#define TEX_LT_PACK 	(3)
-#define TEX_LT_PIXELS	(4)
-
 class cTexture;
 
 class EE_API cTextureLoader : public cObjectLoader {
 	public:
+		cTextureLoader( cIOStream& Stream, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+
 		cTextureLoader( const std::string& Filepath, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		cTextureLoader( const unsigned char * ImagePtr, const eeUint& Size, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
@@ -52,6 +49,7 @@ class EE_API cTextureLoader : public cObjectLoader {
 		bool 			mCompressTexture;
 		bool 			mLocalCopy;
 		cPack * 		mPack;
+		cIOStream *		mStream;
 
 		const Uint8 *	mImagePtr;
 		Uint32			mSize;
@@ -70,6 +68,7 @@ class EE_API cTextureLoader : public cObjectLoader {
 		void			LoadFromMemory();
 		void			LoadFromPack();
 		void 			LoadFromPixels();
+		void			LoadFromStream();
 };
 
 }}

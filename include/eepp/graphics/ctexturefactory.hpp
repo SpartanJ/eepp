@@ -63,6 +63,16 @@ class EE_API cTextureFactory : protected cMutex {
 		Uint32 LoadFromMemory( const unsigned char* ImagePtr, const eeUint& Size, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Load a Texture from a file path
+		* @param Stream The cIOStream instance
+		* @param mipmap Use mipmaps?
+		* @param ClampMode Defines the CLAMP MODE
+		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
+		* @param KeepLocalCopy Keep the array data copy. ( usefull if want to reload the texture )
+		* @return The internal Texture Id
+		*/
+		Uint32 LoadFromStream( cIOStream& Stream, const bool& mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+
+		/** Load a Texture from a file path
 		* @param filepath The path for the texture
 		* @param mipmap Use mipmaps?
 		* @param ClampMode Defines the CLAMP MODE

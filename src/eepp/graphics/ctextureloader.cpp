@@ -6,8 +6,65 @@
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
 
+#define TEX_LT_PATH 	(1)
+#define TEX_LT_MEM 		(2)
+#define TEX_LT_PACK 	(3)
+#define TEX_LT_PIXELS	(4)
+#define TEX_LT_STREAM	(5)
+
 namespace EE { namespace Graphics {
 
+namespace IOCb
+{
+	// stb_image callbacks that operate on a sf::InputStream
+	int read(void* user, char* data, int size)
+	{
+		cIOStream * stream = static_cast<cIOStream*>(user);
+		return static_cast<int>(stream->Read(data, size));
+	}
+
+	void skip(void* user, unsigned int size)
+	{
+		cIOStream * stream = static_cast<cIOStream*>(user);
+		stream->Seek(stream->Tell() + size);
+	}
+
+	int eof(void* user)
+	{
+		cIOStream* stream = static_cast<cIOStream*>(user);
+		return stream->Tell() >= stream->GetSize();
+	}
+}
+
+cTextureLoader::cTextureLoader( cIOStream& Stream,
+	const bool& Mipmap,
+	const EE_CLAMP_MODE& ClampMode,
+	const bool& CompressTexture,
+	const bool& KeepLocalCopy
+) : cObjectLoader( cObjectLoader::TextureLoader ),
+	mLoadType(TEX_LT_STREAM),
+	mPixels(NULL),
+	mTexId(0),
+	mImgWidth(0),
+	mImgHeight(0),
+	mFilepath(""),
+	mWidth(0),
+	mHeight(0),
+	mMipmap(Mipmap),
+	mChannels(0),
+	mClampMode(ClampMode),
+	mCompressTexture(CompressTexture),
+	mLocalCopy(KeepLocalCopy),
+	mPack(NULL),
+	mStream(&Stream),
+	mImagePtr(NULL),
+	mSize(0),
+	mColorKey(NULL),
+	mTexLoaded(false),
+	mIsDDS(false),
+	mIsDDSCompressed(0)
+{
+}
 cTextureLoader::cTextureLoader( const std::string& Filepath,
 	const bool& Mipmap,
 	const EE_CLAMP_MODE& ClampMode,
@@ -28,6 +85,7 @@ cTextureLoader::cTextureLoader( const std::string& Filepath,
 	mCompressTexture(CompressTexture),
 	mLocalCopy(KeepLocalCopy),
 	mPack(NULL),
+	mStream(NULL),
 	mImagePtr(NULL),
 	mSize(0),
 	mColorKey(NULL),
@@ -58,6 +116,7 @@ cTextureLoader::cTextureLoader( const unsigned char * ImagePtr,
 	mCompressTexture(CompressTexture),
 	mLocalCopy(KeepLocalCopy),
 	mPack(NULL),
+	mStream(NULL),
 	mImagePtr(ImagePtr),
 	mSize(Size),
 	mColorKey(NULL),
@@ -88,6 +147,7 @@ cTextureLoader::cTextureLoader( cPack * Pack,
 	mCompressTexture(CompressTexture),
 	mLocalCopy(KeepLocalCopy),
 	mPack(Pack),
+	mStream(NULL),
 	mImagePtr(NULL),
 	mSize(0),
 	mColorKey(NULL),
@@ -121,6 +181,7 @@ cTextureLoader::cTextureLoader( const unsigned char * Pixels,
 	mCompressTexture(CompressTexture),
 	mLocalCopy(KeepLocalCopy),
 	mPack(NULL),
+	mStream(NULL),
 	mImagePtr(NULL),
 	mSize(0),
 	mColorKey(NULL),
@@ -146,6 +207,8 @@ void cTextureLoader::Start() {
 		LoadFromMemory();
 	else if ( TEX_LT_PACK == mLoadType )
 		LoadFromPack();
+	else if ( TEX_LT_STREAM == mLoadType )
+		LoadFromStream();
 
 	mTexLoaded = true;
 
@@ -169,7 +232,7 @@ void cTextureLoader::LoadFromPath() {
 
 			stbi_dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsDDSCompressed );
 		} else {
-			mPixels = stbi_load( mFilepath.c_str(), &mImgWidth, &mImgHeight, &mChannels, 0 );
+			mPixels = stbi_load( mFilepath.c_str(), &mImgWidth, &mImgHeight, &mChannels, STBI_default );
 		}
 
 		if ( NULL == mPixels )
@@ -205,11 +268,44 @@ void cTextureLoader::LoadFromMemory() {
 		memcpy( mPixels, mImagePtr, mSize );
 		stbi_dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsDDSCompressed );
 	} else {
-		mPixels = stbi_load_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels, 0 );
+		mPixels = stbi_load_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels, STBI_default );
 	}
 
 	if ( NULL == mPixels )
 		cLog::instance()->Write( stbi_failure_reason() );
+}
+
+void cTextureLoader::LoadFromStream() {
+	if ( mStream->IsOpen() ) {
+		mSize = mStream->GetSize();
+
+		stbi_io_callbacks callbacks;
+		callbacks.read = &IOCb::read;
+		callbacks.skip = &IOCb::skip;
+		callbacks.eof  = &IOCb::eof;
+
+		if ( GLi->IsExtension( EEGL_EXT_texture_compression_s3tc ) )
+			mIsDDS = 0 != stbi_dds_test_callbacks( &callbacks, mStream );
+
+		if ( mIsDDS ) {
+			mSize	= mStream->GetSize();
+			mPixels	= (Uint8*) eeMalloc( mSize );
+
+			mStream->Seek( 0 );
+			mStream->Read( reinterpret_cast<char*> ( mPixels ), mSize );
+
+			mStream->Seek( 0 );
+			stbi_dds_info_from_callbacks( &callbacks, mStream, &mImgWidth, &mImgHeight, &mChannels, &mIsDDSCompressed );
+			mStream->Seek( 0 );
+		} else {
+			mStream->Seek( 0 );
+			mPixels = stbi_load_from_callbacks( &callbacks, mStream, &mImgWidth, &mImgHeight, &mChannels, STBI_default );
+			mStream->Seek( 0 );
+		}
+
+		if ( NULL == mPixels )
+			cLog::instance()->Write( stbi_failure_reason() );
+	}
 }
 
 void cTextureLoader::LoadFromPixels() {

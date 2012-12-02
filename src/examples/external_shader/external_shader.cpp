@@ -231,7 +231,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 			/// VertexPointer assigns values by default to the attribute "dgl_Vertex"
 			/// TextureCoordPointer to "dgl_MultiTexCoord0"
-			GLi->VertexPointer( 3, GL_FP, sizeof(eeVector3ff), reinterpret_cast<char*> ( &vertices[0] ), 0 );
+			GLi->VertexPointer( 3, GL_FLOAT, sizeof(eeVector3ff), reinterpret_cast<char*> ( &vertices[0] ), 0 );
 
 			/// ColorPointer to "dgl_FrontColor"
 			GLi->ColorPointer( 4, GL_FP, sizeof(eeColorAf), reinterpret_cast<char*> ( &colors[0] ), 0  );

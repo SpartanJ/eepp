@@ -19,7 +19,7 @@ class EE_API cIOStreamMemory : public cIOStream {
 
 		ios_size Seek( ios_size position );
 
-		ios_size GetPosition();
+		ios_size Tell();
 
 		ios_size GetSize();
 

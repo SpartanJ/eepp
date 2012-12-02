@@ -106,22 +106,6 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ve
 	bool lastWasWidth = false;
 	Uint32 ReqSize;
 
-	// Find the larger glyph
-	/*
-	int maxWidth = 0, maxHeight = 0;
-
-	for ( eeUint i = 0; i < mNumChars; i++) {
-		TempGlyphSurface = mFont->GlyphRender( i, 0x00000000 );
-
-		maxWidth = eemax( mFont->Current()->Pixmap()->width, maxWidth );
-		maxHeight = eemax( mFont->Current()->Pixmap()->rows, maxHeight );
-
-		hkSAFE_DELETE_ARRAY( TempGlyphSurface );
-	}
-
-	//ReqSize = mNumChars * mHeight * mHeight;
-	*/
-
 	// Find the best size for the texture ( aprox )
 	// Totally wild guessing, but it's working
 	Int32 tWildGuessW = ( mAscent + PixelSep + OutlineTotal );
@@ -150,7 +134,7 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONTSTYLE Style, const bool& Ve
 
 	//Loop through all chars
 	for ( eeUint i = 0; i < mNumChars; i++) {
-		TempGlyphSurface = mFont->GlyphRender( i, 0x00000000 );
+		TempGlyphSurface = mFont->GlyphRender( i );
 
 		//New temp glyph
 		eeGlyph TempGlyph;
