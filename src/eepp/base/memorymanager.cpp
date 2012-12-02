@@ -3,36 +3,11 @@
 #include <eepp/base/memorymanager.hpp>
 #include <eepp/base/debug.hpp>
 #include <eepp/system/clog.hpp>
+#include <eepp/system/filesystem.hpp>
+
 using namespace EE::System;
 
 namespace EE {
-
-#ifdef EE_MEMORY_MANAGER
-static std::string SizeToString( const unsigned int& MemSize ) {
-	std::string size = " bytes";
-	double mem = static_cast<double>( MemSize );
-	unsigned int c = 0;
-
-	while ( mem > 1024 ) {
-		c++;
-		mem = mem / 1024;
-	}
-
-	switch (c) {
-		case 0: size = " bytes"; break;
-		case 1: size = " KB"; break;
-		case 2: size = " MB"; break;
-		case 3: size = " GB"; break;
-		case 4: size = " TB"; break;
-		default: size = " WTF";
-	}
-
-	std::ostringstream ss;
-	ss << mem;
-
-	return std::string( ss.str() + size );
-}
-#endif
 
 tAllocatedPointerMap MemoryManager::mMapPointers;
 size_t MemoryManager::mTotalMemoryUsage = 0;
@@ -142,10 +117,10 @@ void MemoryManager::LogResults() {
 	}
 
 	eePRINT( "|\n" );
-	eePRINT( "| Memory left: %s\n", SizeToString( mTotalMemoryUsage ).c_str() );
+	eePRINT( "| Memory left: %s\n", FileSystem::SizeToString( mTotalMemoryUsage ).c_str() );
 	eePRINT( "| Biggest allocation:\n" );
-	eePRINT( "| %s in file: %s at line: %d\n", SizeToString( mBiggestAllocation.mMemory ).c_str(), mBiggestAllocation.mFile.c_str(), mBiggestAllocation.mLine );
-	eePRINT( "| Peak Memory Usage: %s\n", SizeToString( mPeakMemoryUsage ).c_str() );
+	eePRINT( "| %s in file: %s at line: %d\n", FileSystem::SizeToString( mBiggestAllocation.mMemory ).c_str(), mBiggestAllocation.mFile.c_str(), mBiggestAllocation.mLine );
+	eePRINT( "| Peak Memory Usage: %s\n", FileSystem::SizeToString( mPeakMemoryUsage ).c_str() );
 	eePRINT( "|------------------------------------------------------------|\n\n" );
 
 	#endif

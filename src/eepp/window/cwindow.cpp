@@ -25,6 +25,16 @@
 
 namespace EE { namespace Window {
 
+cWindow::cFrameData::cFrameData() :
+	FrameElapsed(NULL),
+	ElapsedTime(0)
+{}
+
+cWindow::cFrameData::~cFrameData()
+{
+	eeSAFE_DELETE( FrameElapsed );
+}
+
 cWindow::cWindow( WindowSettings Settings, ContextSettings Context, cClipboard * Clipboard, cInput * Input, cCursorManager * CursorManager ) :
 	mClipboard( Clipboard ),
 	mInput( Input ),
