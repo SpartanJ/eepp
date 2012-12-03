@@ -35,7 +35,7 @@ class EE_API cLight {
 
 		void UpdatePos( const eeVector2f& newPos );
 
-		const eeAABB& GetAABB() const;
+		eeAABB GetAABB() const;
 
 		const eeFloat& Radius() const;
 

@@ -49,7 +49,7 @@ void cLightManager::UpdateByVertex() {
 	for ( LightsList::iterator it = mLights.begin(); it != mLights.end(); it++ ) {
 		cLight * Light = (*it);
 
-		if ( firstLight || Math::Intersect( VisibleArea, Light->GetAABB() ) ) {
+		if ( firstLight || VisibleArea.Intersect( Light->GetAABB() ) ) {
 			for ( Int32 x = start.x; x < end.x; x++ ) {
 				for ( Int32 y = start.y; y < end.y; y++ ) {
 					if ( firstLight ) {
@@ -63,7 +63,7 @@ void cLightManager::UpdateByVertex() {
 
 					eeAABB TileAABB( Pos.x, Pos.y, Pos.x + TileSize.x, Pos.y + TileSize.y );
 
-					if ( Math::Intersect( TileAABB, Light->GetAABB() ) ) {
+					if ( TileAABB.Intersect( Light->GetAABB() ) ) {
 						if ( y > 0 )
 							mTileColors[x][y][0]->Assign( *mTileColors[x][y - 1][1] );
 						else
@@ -102,7 +102,7 @@ void cLightManager::UpdateByTile() {
 	for ( LightsList::iterator it = mLights.begin(); it != mLights.end(); it++ ) {
 		cLight * Light = (*it);
 
-		if (  firstLight || Math::Intersect( VisibleArea, Light->GetAABB() ) ) {
+		if (  firstLight || VisibleArea.Intersect( Light->GetAABB() ) ) {
 			for ( Int32 x = start.x; x < end.x; x++ ) {
 				for ( Int32 y = start.y; y < end.y; y++ ) {
 					if ( firstLight ) {
@@ -116,7 +116,7 @@ void cLightManager::UpdateByTile() {
 
 					eeAABB TileAABB( Pos.x, Pos.y, Pos.x + TileSize.x, Pos.y + TileSize.y );
 
-					if ( Math::Intersect( TileAABB, Light->GetAABB() ) ) {
+					if ( TileAABB.Intersect( Light->GetAABB() ) ) {
 						mTileColors[x][y][0]->Assign( Light->ProcessVertex( Pos.x + HalfTileSize.Width(), Pos.y + HalfTileSize.Height(), *(mTileColors[x][y][0]), *(mTileColors[x][y][0]) ) );
 					}
 				}
@@ -136,7 +136,7 @@ eeColorA cLightManager::GetColorFromPos( const eeVector2f& Pos ) {
 	for ( LightsList::iterator it = mLights.begin(); it != mLights.end(); it++ ) {
 		cLight * Light = (*it);
 
-		if ( Math::Contains( Light->GetAABB(), Pos ) ) {
+		if ( Light->GetAABB().Contains( Pos ) ) {
 			Col = Light->ProcessVertex( Pos, Col, Col );
 		}
 	}
@@ -159,7 +159,7 @@ void cLightManager::RemoveLight( const eeVector2f& OverPos ) {
 	for ( LightsList::reverse_iterator it = mLights.rbegin(); it != mLights.rend(); it++ ) {
 		cLight * Light = (*it);
 
-		if ( Math::Contains( Light->GetAABB(), OverPos ) ) {
+		if ( Light->GetAABB().Contains( OverPos ) ) {
 			mLights.remove( Light );
 			eeSAFE_DELETE( Light );
 			break;
@@ -243,7 +243,7 @@ cLight * cLightManager::GetLightOver( const eeVector2f& OverPos, cLight * LightC
 	for ( LightsList::reverse_iterator it = mLights.rbegin(); it != mLights.rend(); it++ ) {
 		cLight * Light = (*it);
 
-		if ( Math::Contains( Light->GetAABB(), OverPos ) ) {
+		if ( Light->GetAABB().Contains( OverPos ) ) {
 			if ( NULL == FirstLight ) {
 				FirstLight = Light;
 			}
@@ -268,7 +268,7 @@ cLight * cLightManager::GetLightOver( const eeVector2f& OverPos, cLight * LightC
 		return FirstLight;
 	}
 
-	if ( NULL == PivotLight && NULL != LightCurrent && Math::Contains( LightCurrent->GetAABB(), OverPos ) ) {
+	if ( NULL == PivotLight && NULL != LightCurrent && LightCurrent->GetAABB().Contains( OverPos ) ) {
 		return LightCurrent;
 	}
 

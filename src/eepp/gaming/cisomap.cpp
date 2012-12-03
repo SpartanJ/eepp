@@ -56,7 +56,7 @@ void cIsoMap::CreateBaseVertexBuffer() {
 				T->Layers.resize( mMapLayers );
 
 			T->Q			= TileQBaseCoords( x, y );
-			T->Box			= Math::Quad2toAABB( T->Q );
+			T->Box			= T->Q.ToAABB();
 			T->TilePosStr	= String::ToStr( x) + " - " + String::ToStr( y );
 
 			for ( i = 0; i < 4; i++ )
@@ -128,10 +128,10 @@ void cIsoMap::Draw() {
 				if ( L == 0 ) {
 					TileAABB = T->Box;
 
-					if ( Math::Intersect( mScreenAABB, TileAABB )  ) {
+					if ( mScreenAABB.Intersect( TileAABB )  ) {
 						T->Color[0] = T->Color[1] = T->Color[2] = T->Color[3] = mMapAmbientColor;
 
-						if ( Math::Intersect( mLight.GetAABB(), TileAABB ) ) {
+						if ( mLight.GetAABB().Intersect( TileAABB ) ) {
 							T->Color[0] = mLight.ProcessVertex( T->Q.V[0].x, T->Q.V[0].y, T->Color[0], T->Color[0] ); 	// Left - Top Vertex
 							T->Color[1] = mLight.ProcessVertex( T->Q.V[1].x, T->Q.V[1].y, T->Color[1], T->Color[1] ); 	// Left - Bottom Vertex
 							T->Color[2] = mLight.ProcessVertex( T->Q.V[2].x, T->Q.V[2].y, T->Color[2], T->Color[2] );	// Right - Bottom Vertex
@@ -141,7 +141,7 @@ void cIsoMap::Draw() {
 						T->Layers[L]->Draw( T->Q, 0.f, 0.f, 0.f, 1.f, T->Color[0], T->Color[1], T->Color[2], T->Color[3] );
 
 						if ( TileAABB.Contains( mMouseMapPos ) ) {
-							if ( Math::IntersectQuad2( T->Q, eeQuad2f( mMouseMapPos, mMouseMapPos, mMouseMapPos, mMouseMapPos ) ) ) {
+							if ( eePolygon2f::IntersectQuad2( T->Q, eeQuad2f( mMouseMapPos, mMouseMapPos, mMouseMapPos, mMouseMapPos ) ) ) {
 								mMouseTilePos.x = x;
 								mMouseTilePos.y = y;
 							}
@@ -158,11 +158,11 @@ void cIsoMap::Draw() {
 							eeAABB LayerAABB( TileCenter.x - SubTexture->DestWidth() * 0.5f, TileCenter.y - SubTexture->DestHeight(), TileCenter.x + SubTexture->DestWidth() * 0.5f, TileCenter.y  );
 							eeAABB ShadowAABB( ObjPos.x, TileCenter.y - SubTexture->DestHeight(), TileCenter.x + SubTexture->DestWidth(), TileCenter.y );
 
-							if ( Math::Intersect( mScreenAABB, ShadowAABB ) ) {
+							if ( mScreenAABB.Intersect( ShadowAABB ) ) {
 								SubTexture->Draw( mOffsetX + ObjPos.x, mOffsetY + ObjPos.y, 0, 1, SC, SC, SC, SC, ALPHA_NORMAL, RN_ISOMETRIC );
 							}
 
-							if ( Math::Intersect( mScreenAABB, LayerAABB )  ) {
+							if ( mScreenAABB.Intersect( LayerAABB )  ) {
 								SubTexture->Draw( mOffsetX + TileCenter.x - (eeFloat)SubTexture->DestWidth() * 0.5f, mOffsetY + TileCenter.y - (eeFloat)SubTexture->DestHeight(), 0, 1, eeColorA(T->Color[0]), eeColorA(T->Color[1]), eeColorA(T->Color[2]), eeColorA(T->Color[3]) );
 							}
 						}
@@ -270,7 +270,7 @@ void cIsoMap::VertexChangeHeight( const eeInt& MapTileX, const eeInt& MapTileY, 
 
 		if ( ( JointUp && T->Q.V[JointNum].y >= NewJointHeight ) || ( !JointUp && T->Q.V[JointNum].y <= NewJointHeight ) ) {
 			T->Q.V[JointNum].y += Height;
-			T->Box = Math::Quad2toAABB( T->Q );
+			T->Box = T->Q.ToAABB();
 		}
 	}
 }

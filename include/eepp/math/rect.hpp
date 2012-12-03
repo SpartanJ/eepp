@@ -35,6 +35,16 @@ class tRECT {
 
 		bool IntersectsSegment( const Vector2<T>& a, const Vector2<T>& b );
 
+		/** Determine if a RECT and a Circle are intersecting
+		* @param pos Circle position
+		* @param radius Circle Radius
+		* @return True if are intersecting
+		*/
+		bool IntersectCircle( Vector2<T> pos, const T& radius );
+
+		/** Determine if a RECT ( representing a circle ) is intersecting another RECT ( also representing a circle ) */
+		bool IntersectCircles( const tRECT<T>& b );
+
 		Vector2<T> ClampVector( const Vector2<T>& Vect );
 
 		Vector2<T> WrapVector( const Vector2<T>& Vect );
@@ -138,6 +148,35 @@ bool tRECT<T>::IntersectsSegment( const Vector2<T>& a, const Vector2<T>& b ) {
 		return ( eeabs( axis.Dot( offset ) ) < eeabs( axis.x * extents.x ) + eeabs( axis.y * extents.y ) );
 	}
 
+	return false;
+}
+
+template <typename T>
+bool tRECT<T>::IntersectCircle( Vector2<T> pos, const T& radius ) {
+	Vector2<T> tPos( pos );
+
+	if (tPos.x < Left)		tPos.x = Left;
+	if (tPos.x > Right)		tPos.x = Right;
+	if (tPos.y < Top)		tPos.y = Top;
+	if (tPos.y > Bottom)	tPos.y = Bottom;
+
+	if ( pos.Distance( tPos ) < radius )
+		return true;
+
+	return false;
+}
+
+template <typename T>
+bool tRECT<T>::IntersectCircles( const tRECT<T>& b ) {
+	eeFloat ra = (eeFloat)(Right - Left) * 0.5f;
+	eeFloat rb = (eeFloat)(b.Right - b.Left) * 0.5f;
+	eeFloat dist = ra + rb;
+	eeFloat dx = (b.Left + rb) - (Left + ra);
+	eeFloat dy = (b.Top + rb) - (Top + ra);
+	eeFloat res = (dx * dx) + (dy * dy);
+
+	if ( res <= (dist * dist))
+		return true;
 	return false;
 }
 

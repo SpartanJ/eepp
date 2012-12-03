@@ -44,7 +44,7 @@ void videoResize() {
 	GLi->LoadMatrixf( perspectiveMatrix );
 	GLi->MatrixMode( GL_MODELVIEW );
 
-	/// eepp enables some this client states by default, and textures by default
+	/// eepp enables some client states by default, and textures by default
 	GLi->Disable( GL_TEXTURE_2D );
 	GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
 
@@ -140,8 +140,8 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		for (i = 0; i < ParticlesNum; i++ )
 		{
 			vertices[i]		= eeVector3ff( 0, 0, 1.83 );
-			velocities[i]	= eeVector3ff( (Randf() * 2 - 1)*.05, (Randf() * 2 - 1)*.05, .93 + Randf()*.02 );
-			colors[i]		= eeColorAf( Randf() * 0.5, 0.1, 0.8, 0.5 );
+			velocities[i]	= eeVector3ff( (Math::Randf() * 2 - 1)*.05, (Math::Randf() * 2 - 1)*.05, .93 + Math::Randf()*.02 );
+			colors[i]		= eeColorAf( Math::Randf() * 0.5, 0.1, 0.8, 0.5 );
 		}
 
 		while ( win->Running() )
@@ -213,8 +213,8 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 					if ( d < 2.f ) {
 						if ( d < 0.03f ) {
-							vertices[i+1].x = Randf( -1, 1 ) * aspectRatio;
-							vertices[i+1].y = Randf( -1, 1 );
+							vertices[i+1].x = Math::Randf( -1, 1 ) * aspectRatio;
+							vertices[i+1].y = Math::Randf( -1, 1 );
 							velocities[i].x = 0;
 							velocities[i].y = 0;
 						} else {

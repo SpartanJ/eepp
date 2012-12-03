@@ -2,6 +2,7 @@
 #define EE_MATHQUAD2_HPP
 
 #include <eepp/math/vector2.hpp>
+#include <eepp/math/rect.hpp>
 
 namespace EE { namespace Math {
 
@@ -9,11 +10,13 @@ template <typename T>
 class Quad2 {
 	public:
 		Quad2();
+
 		Quad2( const Vector2<T>& v1, const Vector2<T>& v2, const Vector2<T>& v3, const Vector2<T>& v4 );
 
 		const Vector2<T>& operator[] ( const Uint32& Pos ) const;
 
 		Vector2<T> V[4];
+
 		/**
 		Vector2<T> V[0]; //! Left - Top Vector
 		Vector2<T> V[1]; //! Left - Bottom Vector
@@ -22,9 +25,16 @@ class Quad2 {
 		*/
 		Vector2<T> GetCenter();
 
+		static Quad2<T> FromAABB( const tRECT<T>& R );
+
+		tRECT<T> ToAABB( const T& OffsetX = 0, const T& OffsetY = 0 );
+
 		void Rotate( const T& Angle, const Vector2<T>& Center );
+
 		void Rotate( const T& Angle );
+
 		void Scale( const T& scale );
+
 		void Scale( const T& scale, const Vector2<T>& Center );
 };
 
@@ -70,13 +80,41 @@ void Quad2<T>::Scale( const T& scale ) {
 template <typename T>
 Vector2<T> Quad2<T>::GetCenter() {
 	eeFloat MinX = V[0].x, MaxX = V[0].x, MinY = V[0].y, MaxY = V[0].y;
+
 	for (Uint8 i = 1; i < 4; i++ ) {
 		if ( MinX > V[i].x ) MinX = V[i].x;
 		if ( MaxX < V[i].x ) MaxX = V[i].x;
 		if ( MinY > V[i].y ) MinY = V[i].y;
 		if ( MaxY < V[i].y ) MaxY = V[i].y;
 	}
+
 	return Vector2<T>( MinX + (MaxX - MinX) * 0.5f, MinY + (MaxY - MinX) * 0.5f );
+}
+
+template <typename T>
+Quad2<T> Quad2<T>::FromAABB( const tRECT<T>& R ) {
+	return Quad2<T>( Vector2<T>( R.Left, R.Top ), Vector2<T>( R.Left, R.Bottom ), Vector2<T>( R.Right, R.Bottom ), Vector2<T>( R.Right, R.Top ) );
+}
+
+template <typename T>
+tRECT<T> Quad2<T>::ToAABB( const T& OffsetX, const T& OffsetY ) {
+	tRECT<T> TmpR;
+
+	eeFloat MinX = V[0].x, MaxX = V[0].x, MinY = V[0].y, MaxY = V[0].y;
+
+	for (Uint8 i = 1; i < 4; i++ ) {
+		if ( MinX > V[i].x ) MinX = V[i].x;
+		if ( MaxX < V[i].x ) MaxX = V[i].x;
+		if ( MinY > V[i].y ) MinY = V[i].y;
+		if ( MaxY < V[i].y ) MaxY = V[i].y;
+	}
+
+	TmpR.Left	= MinX + OffsetX;
+	TmpR.Right	= MaxX + OffsetX;
+	TmpR.Top	= MinY + OffsetY;
+	TmpR.Bottom	= MaxY + OffsetY;
+
+	return TmpR;
 }
 
 template <typename T>

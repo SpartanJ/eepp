@@ -209,7 +209,7 @@ class EE_API cUIControl {
 
 		bool IsMouseOverMeOrChilds();
 
-		const eePolygon2f& GetPolygon() const;
+		eePolygon2f &GetPolygon();
 
 		const eeVector2f& GetPolygonCenter() const;
 

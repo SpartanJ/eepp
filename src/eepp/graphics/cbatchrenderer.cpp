@@ -477,7 +477,7 @@ void cBatchRenderer::BatchQuadFreeEx( const eeFloat& x0, const eeFloat& y0, cons
 	}
 
 	if ( Angle != 0 )
-		mQ = Math::RotateQuadCentered( mQ, Angle, QCenter );
+		mQ.Rotate( Angle, QCenter );
 
 	SetBlendMode( DM_QUADS, mForceBlendMode );
 

@@ -174,7 +174,6 @@
 ../../include/eepp/math/math.hpp
 ../../include/eepp/math/cmtrand.hpp
 ../../include/eepp/math/base.hpp
-../../src/eepp/math/math.cpp
 ../../src/eepp/math/cmtrand.cpp
 ../../include/eepp/physics/settings.hpp
 ../../include/eepp/physics/physicshelper.hpp

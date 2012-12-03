@@ -79,7 +79,7 @@ void cEETest::Init() {
 		InBuf.Start();
 		InBuf.SupportNewLine( true );
 
-		SetRandomSeed();
+		SetRandomSeed( static_cast<Uint32>( Sys::GetSystemTime() * 1000 ) );
 
 		LoadTextures();
 
@@ -114,7 +114,7 @@ void cEETest::Init() {
 		if ( NULL != mFBO )
 			mFBO->ClearColor( eeColorAf( 0, 0, 0, 0.5f ) );
 
-		eePolygon2f Poly = CreateRoundedPolygon<eeFloat>( 0, 0, 256, 50 );
+		eePolygon2f Poly = eePolygon2f::CreateRoundedPolygon( 0, 0, 256, 50 );
 
 		mVBO = cVertexBuffer::Create( VERTEX_FLAG_GET( VERTEX_FLAG_POSITION ) | VERTEX_FLAG_GET( VERTEX_FLAG_COLOR ), DM_TRIANGLE_FAN );
 
@@ -1080,12 +1080,12 @@ void cEETest::Screen2() {
 	#ifndef EE_GLES
 	CL1.RenderType( RN_ISOMETRIC );
 
-	if (IntersectRectCircle( CL1.GetAABB(), Mousef.x, Mousef.y, 80.f ))
+	if ( CL1.GetAABB().IntersectCircle( Mousef, 80.f ) )
 		CL1.Color( eeColorA(255, 0, 0, 200) );
 	else
 		CL1.Color( eeColorA(255, 255, 255, 200) );
 
-	if ( IntersectQuad2( CL1.GetQuad() , CL2.GetQuad() ) ) {
+	if ( eePolygon2f::IntersectQuad2( CL1.GetQuad() , CL2.GetQuad() ) ) {
 		CL1.Color( eeColorA(0, 255, 0, 255) );
 		CL2.Color( eeColorA(0, 255, 0, 255) );
 	} else
@@ -1113,11 +1113,20 @@ void cEETest::Screen2() {
 
 	PR.SetColor( eeColorA(0, 255, 0, 50) );
 
-	if (IntersectLines( eeVector2f(0.f, 0.f), eeVector2f( (eeFloat)mWindow->GetWidth(), (eeFloat)mWindow->GetHeight() ), eeVector2f(Mousef.x - 80.f, Mousef.y - 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y + 80.f) ) )
-		iL1 = true; else iL1 = false;
+	eeLine2f Line( eeVector2f(0.f, 0.f), eeVector2f( (eeFloat)mWindow->GetWidth(), (eeFloat)mWindow->GetHeight() ) );
+	eeLine2f Line2( eeVector2f(Mousef.x - 80.f, Mousef.y - 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y + 80.f) );
+	eeLine2f Line3( eeVector2f((eeFloat)mWindow->GetWidth(), 0.f), eeVector2f( 0.f, (eeFloat)mWindow->GetHeight() ) );
+	eeLine2f Line4( eeVector2f(Mousef.x - 80.f, Mousef.y + 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y - 80.f) );
 
-	if (IntersectLines( eeVector2f((eeFloat)mWindow->GetWidth(), 0.f), eeVector2f( 0.f, (eeFloat)mWindow->GetHeight() ), eeVector2f(Mousef.x - 80.f, Mousef.y + 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y - 80.f) ) )
-		iL2 = true; else iL2 = false;
+	if ( Line.Intersect( Line2 ) )
+		iL1 = true;
+	else
+		iL1 = false;
+
+	if ( Line3.Intersect( Line4 ) )
+		iL2 = true;
+	else
+		iL2 = false;
 
 	if (iL1 && iL2)
 		PR.SetColor( eeColorA(255, 0, 0, 255) );
@@ -1156,7 +1165,7 @@ void cEETest::Screen3() {
 	Batch.SetTexture( TNP[3] );
 	Batch.LineLoopBegin();
 	for ( eeFloat j = 0; j < 360; j++ ) {
-		Batch.BatchLineLoop( HWidth + 350 * sinAng(j), HHeight + 350 * cosAng(j), HWidth + AnimVal * sinAng(j+1), HHeight + AnimVal * cosAng(j+1) );
+		Batch.BatchLineLoop( HWidth + 350 * Math::sinAng(j), HHeight + 350 * Math::cosAng(j), HWidth + AnimVal * Math::sinAng(j+1), HHeight + AnimVal * Math::cosAng(j+1) );
 	}
 	Batch.Draw();
 }
@@ -1492,7 +1501,7 @@ void cEETest::Input() {
 				eeVector2i P = Map.GetMouseTilePos();
 
 				if ( NULL != mTerrainBut ) {
-					if ( !PointInsidePolygon2( mTerrainBut->GetPolygon(), KM->GetMousePosf() ) ) {
+					if ( !mTerrainBut->GetPolygon().PointInside( KM->GetMousePosf() ) ) {
 						if ( mTerrainUp ) {
 							Map.SetTileHeight( P.x, P.y );
 						} else {
@@ -1581,8 +1590,8 @@ void cEETest::Particles() {
 		PS[1].Position( Mousef );
 
 	PS[2].Position( HWidth, HHeight );
-	PS[3].Position(  cosAng(Ang) * 220.f + HWidth + Math::Randf(0.f, 10.f),  sinAng(Ang) * 220.f + HHeight + Math::Randf(0.f, 10.f) );
-	PS[4].Position( -cosAng(Ang) * 220.f + HWidth + Math::Randf(0.f, 10.f), -sinAng(Ang) * 220.f + HHeight + Math::Randf(0.f, 10.f) );
+	PS[3].Position(  Math::cosAng(Ang) * 220.f + HWidth + Math::Randf(0.f, 10.f),  Math::sinAng(Ang) * 220.f + HHeight + Math::Randf(0.f, 10.f) );
+	PS[4].Position( -Math::cosAng(Ang) * 220.f + HWidth + Math::Randf(0.f, 10.f), -Math::sinAng(Ang) * 220.f + HHeight + Math::Randf(0.f, 10.f) );
 
 	for ( Uint32 i = 0; i < PS.size(); i++ )
 		PS[i].Draw();

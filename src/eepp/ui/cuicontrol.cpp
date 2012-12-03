@@ -733,7 +733,7 @@ cUIControl * cUIControl::OverFind( const eeVector2f& Point ) {
 	if ( mEnabled && mVisible ) {
 		UpdateQuad();
 
-		if ( Math::PointInsidePolygon2( mPoly, Point ) ) {
+		if ( mPoly.PointInside( Point ) ) {
 			WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
 
 			cUIControl * ChildLoop = mChildLast;
@@ -795,7 +795,7 @@ Uint32 cUIControl::IsClipped() {
 	return mFlags & UI_CLIP_ENABLE;
 }
 
-const eePolygon2f& cUIControl::GetPolygon() const {
+eePolygon2f& cUIControl::GetPolygon() {
 	return mPoly;
 }
 

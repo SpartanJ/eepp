@@ -22,7 +22,8 @@ void cPrimitives::DrawRoundedRectangle(const eeFloat& x, const eeFloat& y, const
 	eeVector2f poly;
 	eeVector2f Center( x + width * 0.5f + xscalediff, y + height * 0.5f + yscalediff );
 
-	eePolygon2f Poly = Math::CreateRoundedPolygon( x - xscalediff, y - yscalediff, width + xscalediff, height + yscalediff, Corners );
+	eePolygon2f Poly = eePolygon2f::CreateRoundedPolygon( x - xscalediff, y - yscalediff, width + xscalediff, height + yscalediff, Corners );
+
 	Poly.Rotate( Angle, Center );
 
 	switch(fillmode) {

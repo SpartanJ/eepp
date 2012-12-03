@@ -62,7 +62,7 @@ cUIControl * tUIItemContainer<TContainer>::OverFind( const eeVector2f& Point ) {
 	if ( mEnabled && mVisible && tParent->mItems.size() ) {
 		UpdateQuad();
 
-		if ( Math::PointInsidePolygon2( mPoly, Point ) ) {
+		if ( mPoly.PointInside( Point ) ) {
 			WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD, 1 );
 
 			for ( Uint32 i = tParent->mVisibleFirst; i <= tParent->mVisibleLast; i++ ) {
