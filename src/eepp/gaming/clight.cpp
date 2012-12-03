@@ -111,6 +111,10 @@ eeColor cLight::ProcessVertex( const eeVector2f& Pos, const eeColor& VertexColor
 	return ProcessVertex( Pos.x, Pos.y, VertexColor, BaseColor );
 }
 
+eeColorA cLight::ProcessVertex( const eeVector2f& Pos, const eeColorA& VertexColor, const eeColorA& BaseColor ) {
+	return ProcessVertex( Pos.x, Pos.y, VertexColor, BaseColor );
+}
+
 void cLight::UpdatePos( const eeFloat& x, const eeFloat& y ) {
 	mPos.x = x;
 	mPos.y = y;

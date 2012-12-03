@@ -103,7 +103,7 @@ class tColorA : public tColor<T> {
 		
 		/** ARGB format */
 		tColorA( const Uint32& Col );
-		
+
 		T A() const;	//! @return the Alpha component
 
 		Uint32 GetUint32();	//! The color represented as an Uint32

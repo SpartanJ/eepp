@@ -27,6 +27,8 @@ class EE_API cLight {
 
 		eeColor ProcessVertex( const eeVector2f& Pos, const eeColor& VertexColor, const eeColor& BaseColor );
 
+		eeColorA ProcessVertex( const eeVector2f& Pos, const eeColorA& VertexColor, const eeColorA& BaseColor );
+
 		void Move( const eeFloat& addtox, const eeFloat& addtoy );
 
 		void UpdatePos( const eeFloat& x, const eeFloat& y );

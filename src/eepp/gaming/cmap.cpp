@@ -126,7 +126,7 @@ void cMap::CreateEmptyTile() {
 			Img.Width(),
 			Img.Height(),
 			Img.Channels(),
-			false,
+			true,
 			EE_CLAMP_TO_EDGE,
 			false,
 			false,
@@ -183,7 +183,7 @@ Uint32 cMap::GetLayerIndex( cLayer * Layer ) {
 		}
 	}
 
-	return MAP_LAYER_UNKNOWN;
+	return EE_MAP_LAYER_UNKNOWN;
 }
 
 cLayer* cMap::GetLayer( const std::string& name ) {
@@ -649,7 +649,7 @@ const Uint32& cMap::MaxLayers() const {
 bool cMap::MoveLayerUp( cLayer * Layer ) {
 	Uint32 Lindex = GetLayerIndex( Layer );
 
-	if ( Lindex != MAP_LAYER_UNKNOWN && mLayerCount > 1 && ( Lindex < mLayerCount - 1 ) && ( Lindex + 1 < mLayerCount ) ) {
+	if ( Lindex != EE_MAP_LAYER_UNKNOWN && mLayerCount > 1 && ( Lindex < mLayerCount - 1 ) && ( Lindex + 1 < mLayerCount ) ) {
 		cLayer * tLayer = mLayers[ Lindex + 1 ];
 
 		mLayers[ Lindex ]		= tLayer;
@@ -664,7 +664,7 @@ bool cMap::MoveLayerUp( cLayer * Layer ) {
 bool cMap::MoveLayerDown( cLayer * Layer ) {
 	Uint32 Lindex = GetLayerIndex( Layer );
 
-	if ( Lindex != MAP_LAYER_UNKNOWN && mLayerCount > 1 && Lindex >= 1 ) {
+	if ( Lindex != EE_MAP_LAYER_UNKNOWN && mLayerCount > 1 && Lindex >= 1 ) {
 		cLayer * tLayer = mLayers[ Lindex - 1 ];
 
 		mLayers[ Lindex ]		= tLayer;
@@ -679,7 +679,7 @@ bool cMap::MoveLayerDown( cLayer * Layer ) {
 bool cMap::RemoveLayer( cLayer * Layer ) {
 	Uint32 Lindex = GetLayerIndex( Layer );
 
-	if ( Lindex != MAP_LAYER_UNKNOWN ) {
+	if ( Lindex != EE_MAP_LAYER_UNKNOWN ) {
 		eeSAFE_DELETE( mLayers[ Lindex ] );
 
 		cLayer * LastLayer = NULL;
@@ -750,7 +750,7 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 	if ( IOS.IsOpen() ) {
 		IOS.Read( (char*)&MapHdr, sizeof(sMapHdr) );
 
-		if ( MapHdr.Magic == ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'M' << 16 ) | ( 'P' << 24 ) ) ) {
+		if ( MapHdr.Magic == EE_MAP_MAGIC ) {
 			Create( eeSize( MapHdr.SizeX, MapHdr.SizeY ), MapHdr.MaxLayers, eeSize( MapHdr.TileSizeX, MapHdr.TileSizeY ), MapHdr.Flags );
 
 			BaseColor( eeColorA( MapHdr.BaseColor ) );
@@ -984,7 +984,7 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 
 	std::vector<std::string> TextureAtlases = GetTextureAtlases();
 
-	MapHdr.Magic					= ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'M' << 16 ) | ( 'P' << 24 ) );
+	MapHdr.Magic					= EE_MAP_MAGIC;
 	MapHdr.Flags					= mFlags;
 	MapHdr.MaxLayers				= mMaxLayers;
 	MapHdr.SizeX					= mSize.Width();
@@ -993,7 +993,7 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 	MapHdr.TileSizeY				= mTileSize.Height();
 	MapHdr.LayerCount				= mLayerCount;
 	MapHdr.PropertyCount			= mProperties.size();
-	MapHdr.TextureAtlasCount			= TextureAtlases.size();
+	MapHdr.TextureAtlasCount		= TextureAtlases.size();
 	MapHdr.VirtualObjectTypesCount	= mObjTypes.size();	//! This is only usefull for the Map Editor, to auto add on the load the virtual object types that where used to create the map.
 	MapHdr.BaseColor				= mBaseColor.GetUint32();
 

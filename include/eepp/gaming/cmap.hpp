@@ -15,7 +15,8 @@ using namespace EE::Window;
 
 namespace EE { namespace Gaming {
 
-#define MAP_LAYER_UNKNOWN 0xFFFFFFFF
+#define EE_MAP_LAYER_UNKNOWN 0xFFFFFFFF
+#define EE_MAP_MAGIC ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'M' << 16 ) | ( 'P' << 24 ) )
 
 class EE_API cMap {
 	public:
