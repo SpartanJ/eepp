@@ -369,17 +369,17 @@ bool cUICommonDialog::AllowFolderSelect() {
 }
 
 void cUICommonDialog::SortAlphabetically( const bool& sortAlphabetically ) {
-	SetFlagValue( &mCDLFlags, CDL_FLAG_SORT_ALPHABETICALLY, sortAlphabetically ? 1 : 0 );
+	BitOp::SetBitFlagValue( &mCDLFlags, CDL_FLAG_SORT_ALPHABETICALLY, sortAlphabetically ? 1 : 0 );
 	RefreshFolder();
 }
 
 void cUICommonDialog::FoldersFirst( const bool& foldersFirst ) {
-	SetFlagValue( &mCDLFlags, CDL_FLAG_FOLDERS_FISRT , foldersFirst ? 1 : 0 );
+	BitOp::SetBitFlagValue( &mCDLFlags, CDL_FLAG_FOLDERS_FISRT , foldersFirst ? 1 : 0 );
 	RefreshFolder();
 }
 
 void cUICommonDialog::AllowFolderSelect( const bool& allowFolderSelect ) {
-	SetFlagValue( &mCDLFlags, CDL_FLAG_ALLOW_FOLDER_SELECT, allowFolderSelect ? 1 : 0 );
+	BitOp::SetBitFlagValue( &mCDLFlags, CDL_FLAG_ALLOW_FOLDER_SELECT, allowFolderSelect ? 1 : 0 );
 }
 
 std::string cUICommonDialog::GetFullPath() {

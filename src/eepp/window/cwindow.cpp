@@ -203,7 +203,8 @@ bool cWindow::TakeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format )
 
 		return 0 != SOIL_save_screenshot(TmpPath.c_str(), Format, 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 	} else {
-		std::string Direc = filepath.substr( 0, filepath.find_last_of("/\\") );
+		std::string Direc = FileSystem::FileRemoveFileName( filepath );
+
 		if ( !FileSystem::IsDirectory( Direc ) )
 			FileSystem::MakeDir( Direc );
 
@@ -360,16 +361,16 @@ void cWindow::SendVideoResizeCb() {
 void cWindow::LogSuccessfulInit( const std::string& BackendName ) {
 	cLog::instance()->Write( "Engine Initialized Succesfully.\n\tOS: " + Sys::GetOSName() +
 							 "\n\tArch: " + Sys::GetOSArchitecture() +
-							 "\n\tCPU Cores: " + String::toStr( Sys::GetCPUCount() ) +
+							 "\n\tCPU Cores: " + String::ToStr( Sys::GetCPUCount() ) +
 							 "\n\tProcess Path: " + Sys::GetProcessPath() +
-							 "\n\tDisk Free Space: " + String::toStr( FileSystem::SizeToString( Sys::GetDiskFreeSpace( Sys::GetProcessPath() ) ) ) +
+							 "\n\tDisk Free Space: " + String::ToStr( FileSystem::SizeToString( Sys::GetDiskFreeSpace( Sys::GetProcessPath() ) ) ) +
 							 "\n\tWindow/Input Backend: " + BackendName +
 							 "\n\tGL Backend: " + GLi->VersionStr() +
 							 "\n\tGL Vendor: " + GLi->GetVendor() +
 							 "\n\tGL Renderer: " + GLi->GetRenderer() +
 							 "\n\tGL Version: " + GLi->GetVersion() +
 							 "\n\tGL Shading Language Version: " + GLi->GetShadingLanguageVersion() +
-							 "\n\tResolution: " + String::toStr( GetWidth() ) + "x" + String::toStr( GetHeight() ) +
+							 "\n\tResolution: " + String::ToStr( GetWidth() ) + "x" + String::ToStr( GetHeight() ) +
 							 "\n\tGL extensions supported:\n\t\t" + GLi->GetExtensions()
 	);
 }

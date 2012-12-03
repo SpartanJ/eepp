@@ -13,7 +13,7 @@ class EE_API Sys {
 		/** @return A storage path for config files for every platform */
 		static std::string GetStoragePath( std::string appname );
 
-		/** @return The number of milliseconds since the EE++ library initialization. Note that this value wraps if the program runs for more than ~49 days. */
+		/** @return The number of milliseconds since the first call. Note that this value wraps if the program runs for more than ~49 days. */
 		static Uint32 GetTicks();
 
 		/** Wait a specified number of milliseconds before returning. */

@@ -8,7 +8,7 @@
 #include <eepp/math/math.hpp>
 using namespace EE::Math;
 
-#include <eepp/system/utils.hpp>
+#include <eepp/system/bitop.hpp>
 #include <eepp/system/colors.hpp>
 #include <eepp/system/ciostream.hpp>
 #include <eepp/system/ciostreamfile.hpp>

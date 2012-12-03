@@ -281,7 +281,7 @@ void cUIManager::ClipDisable() {
 }
 
 void cUIManager::HighlightFocus( bool Highlight ) {
-	SetFlagValue( &mFlags, UI_MANAGER_HIGHLIGHT_FOCUS, Highlight ? 1 : 0 );
+	BitOp::SetBitFlagValue( &mFlags, UI_MANAGER_HIGHLIGHT_FOCUS, Highlight ? 1 : 0 );
 }
 
 bool cUIManager::HighlightFocus() const {

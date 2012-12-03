@@ -333,7 +333,7 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 			Position( mWinPos.x, mWinPos.y );
 		}
 
-		SetFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !Windowed );
+		BitOp::SetBitFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !Windowed );
 
 		mDefaultView.SetView( 0, 0, Width, Height );
 

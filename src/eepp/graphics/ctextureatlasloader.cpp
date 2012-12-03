@@ -439,7 +439,7 @@ bool cTextureAtlasLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 
 			for ( Uint32 z = 0; z < mTempAtlass.size(); z++ ) {
 				if ( z != 0 ) {
-					tapath = FileSystem::FileRemoveExtension( TextureAtlasPath ) + "_ch" + String::toStr( z ) + "." + cImage::SaveTypeToExtension( mTexGrHdr.Format );
+					tapath = FileSystem::FileRemoveExtension( TextureAtlasPath ) + "_ch" + String::ToStr( z ) + "." + cImage::SaveTypeToExtension( mTexGrHdr.Format );
 				}
 
 				unsigned char * imgPtr = stbi_load( tapath.c_str(), &x, &y, &c, 0 );

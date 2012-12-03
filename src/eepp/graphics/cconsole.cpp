@@ -178,7 +178,7 @@ void cConsole::Draw() {
 	if ( mShowFps ) {
 		eeColorA OldColor1( mFont->Color() );
 		mFont->Color( eeColorA () );
-		mFont->SetText( "FPS: " + String::toStr( mWindow->FPS() ) );
+		mFont->SetText( "FPS: " + String::ToStr( mWindow->FPS() ) );
 		mFont->Draw( mWindow->GetWidth() - mFont->GetTextWidth() - 15, 6 );
 		mFont->Color( OldColor1 );
 	}
@@ -489,11 +489,11 @@ void cConsole::CmdShowCursor ( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
-		bool Res = String::fromString<Int32>( tInt, params[1] );
+		bool Res = String::FromString<Int32>( tInt, params[1] );
 
 		if ( Res && ( tInt == 0 || tInt == 1 ) ) {
 			mWindow->GetCursorManager()->Visible( 0 != tInt );
-			PushText( "showcursor " + String::toStr( tInt ) );
+			PushText( "showcursor " + String::ToStr( tInt ) );
 		} else
 			PushText( "Valid parameters are 0 or 1." );
 	} else {
@@ -505,11 +505,11 @@ void cConsole::CmdFrameLimit ( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
-		bool Res = String::fromString<Int32>( tInt, params[1] );
+		bool Res = String::FromString<Int32>( tInt, params[1] );
 
 		if ( Res && ( tInt >= 0 && tInt <= 10000 ) ) {
 			mWindow->FrameRateLimit( tInt );
-			PushText( "setfpslimit " + String::toStr( tInt ) );
+			PushText( "setfpslimit " + String::ToStr( tInt ) );
 			return;
 		}
 	}
@@ -518,7 +518,7 @@ void cConsole::CmdFrameLimit ( const std::vector < String >& params ) {
 }
 
 void cConsole::CmdGetLog() {
-	std::vector < String > tvec = String::SplitString( String( String::toStr( cLog::instance()->Buffer() ) ) );
+	std::vector < String > tvec = String::SplitString( String( String::ToStr( cLog::instance()->Buffer() ) ) );
 	if ( tvec.size() > 0 ) {
 		for ( eeUint i = 0; i < tvec.size(); i++ )
 			PushText( tvec[i] );
@@ -531,7 +531,7 @@ void cConsole::CmdGetLog( const std::vector < String >& params ) {
 
 void cConsole::CmdGetGpuExtensions() {
 	char *Exts = GLi->GetExtensions();
-	std::vector < String > tvec = String::SplitString( String( String::toStr( std::string( Exts ) ) ), ' ' );
+	std::vector < String > tvec = String::SplitString( String( String::ToStr( std::string( Exts ) ) ), ' ' );
 	if ( tvec.size() > 0 ) {
 		for ( eeUint i = 0; i < tvec.size(); i++ )
 			PushText( tvec[i] );
@@ -546,11 +546,11 @@ void cConsole::CmdSetGamma( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		eeFloat tFloat = 0.f;
 
-		bool Res = String::fromString<eeFloat>( tFloat, params[1] );
+		bool Res = String::FromString<eeFloat>( tFloat, params[1] );
 
 		if ( Res && ( tFloat > 0.1f && tFloat <= 10.0f ) ) {
 			mWindow->SetGamma( tFloat, tFloat, tFloat );
-			PushText( "setgamma " + String::toStr( tFloat ) );
+			PushText( "setgamma " + String::ToStr( tFloat ) );
 			return;
 		}
 	}
@@ -562,11 +562,11 @@ void cConsole::CmdSetVolume( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		eeFloat tFloat = 0.f;
 
-		bool Res = String::fromString<eeFloat>( tFloat, params[1] );
+		bool Res = String::FromString<eeFloat>( tFloat, params[1] );
 
 		if ( Res && ( tFloat >= 0.0f && tFloat <= 100.0f ) ) {
 			EE::Audio::cAudioListener::GlobalVolume( tFloat );
-			PushText( "setvolume " + String::toStr( tFloat ) );
+			PushText( "setvolume " + String::ToStr( tFloat ) );
 			return;
 		}
 	}
@@ -648,11 +648,11 @@ void cConsole::CmdShowFps( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
-		bool Res = String::fromString<Int32>( tInt, params[1] );
+		bool Res = String::FromString<Int32>( tInt, params[1] );
 
 		if ( Res && ( tInt == 0 || tInt == 1 ) ) {
 			mShowFps = 0 != tInt;
-			PushText( "showfps " + String::toStr( tInt ) );
+			PushText( "showfps " + String::ToStr( tInt ) );
 			return;
 		}
 	}

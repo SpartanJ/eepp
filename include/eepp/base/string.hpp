@@ -127,7 +127,7 @@ class EE_API String {
 
 	/** Converts from any basic type to std::string */
 	template <class T>
-	static std::string toStr(const T& i) {
+	static std::string ToStr(const T& i) {
 		std::ostringstream ss;
 		ss << i;
 		return ss.str();
@@ -135,14 +135,14 @@ class EE_API String {
 
 	/** Converts from a string to type */
 	template <class T>
-	static bool fromString(T& t, const std::string& s, std::ios_base& (*f)(std::ios_base&) = std::dec  ) {
+	static bool FromString(T& t, const std::string& s, std::ios_base& (*f)(std::ios_base&) = std::dec  ) {
 		std::istringstream iss(s);
 		return !(iss >> f >> t).fail();
 	}
 
 	/** Converts from a String to type */
 	template <class T>
-	static bool fromString(T& t, const String& s, std::ios_base& (*f)(std::ios_base&) = std::dec ) {
+	static bool FromString(T& t, const String& s, std::ios_base& (*f)(std::ios_base&) = std::dec ) {
 		std::istringstream iss( s.ToUtf8() );
 		return !(iss >> f >> t).fail();
 	}

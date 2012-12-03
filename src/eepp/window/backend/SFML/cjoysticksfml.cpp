@@ -20,7 +20,7 @@ cJoystickSFML::~cJoystickSFML() {
 }
 
 void cJoystickSFML::Open() {
-	mName		= "Joystick " + String::toStr( mIndex );
+	mName		= "Joystick " + String::ToStr( mIndex );
 	mHats		= 0;
 	mButtons	= eemin( sf::Joystick::getButtonCount( mIndex ), (unsigned int)32 );
 	mAxes		= sf::Joystick::AxisCount;

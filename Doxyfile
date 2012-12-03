@@ -95,7 +95,9 @@ WARN_LOGFILE           =
 #---------------------------------------------------------------------------
 # configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT                  = ./src/eepp
+INPUT                  = ./include/eepp
+						 ./src/eepp
+
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = *.c \
                          *.cc \
@@ -147,15 +149,8 @@ FILE_PATTERNS          = *.c \
                          *.xpm \
                          *.dox
 RECURSIVE              = YES
-EXCLUDE                = ./src/eepp/helper/glew \
-                         ./src/eepp/helper/chipmunk \
-                         ./src/eepp/helper/glm \
-                         ./src/eepp/helper/libzip \
-                         ./src/eepp/helper/SOIL \
-                         ./src/eepp/helper/stb_vorbis \
-                         ./src/eepp/helper/zlib \
-                         ./src/eepp/helper/PlusCallback \
-                         ./src/eepp/helper/sophist
+EXCLUDE                = ./include/eepp/helper/ \
+                         ./src/eepp/helper/
                          
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = 

@@ -702,7 +702,7 @@ void cTexturePacker::ChildSave( const EE_SAVE_TYPE& Format ) {
 
 		std::string fFpath	= FileSystem::FileRemoveExtension( LastParent->GetFilepath() );
 		std::string fExt	= FileSystem::FileExtension( LastParent->GetFilepath() );
-		std::string fName	= fFpath + "_ch" + String::toStr( ParentCount ) + "." + fExt;
+		std::string fName	= fFpath + "_ch" + String::ToStr( ParentCount ) + "." + fExt;
 
 		mChild->Save( fName, Format, mSaveExtensions );
 	}

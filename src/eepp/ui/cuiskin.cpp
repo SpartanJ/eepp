@@ -33,7 +33,7 @@ cUISkin::~cUISkin() {
 void cUISkin::SetColor( const Uint32& State, const eeColorA& Color ) {
 	eeASSERT ( State < cUISkinState::StateCount );
 
-	Write32BitKey( &mColorDefault, State, 0 );
+	BitOp::WriteBitKey( &mColorDefault, State, 0 );
 
 	mColor[ State ] = Color;
 }
@@ -75,7 +75,7 @@ const Uint32& cUISkin::GetType() const {
 }
 
 bool cUISkin::GetColorDefault( const Uint32& State ) {
-	return Read32BitKey( &mColorDefault, State );
+	return BitOp::ReadBitKey( &mColorDefault, State );
 }
 
 }}

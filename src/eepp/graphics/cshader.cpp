@@ -105,7 +105,7 @@ std::string cShader::GetName() {
 	if ( mFilename.size() ) {
 		name = mFilename;
 	} else {
-		name = String::toStr( mGLId );
+		name = String::ToStr( mGLId );
 	}
 
 	return name;

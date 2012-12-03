@@ -419,7 +419,7 @@ std::string FileSystem::SizeToString( const Int64& Size ) {
 		default: size = " WTF";
 	}
 
-	return std::string( String::toStr( mem ) + size );
+	return std::string( String::ToStr( mem ) + size );
 }
 
 }}

@@ -43,7 +43,7 @@ cTextureAtlasNew::cTextureAtlasNew( TGCreateCb NewTGCb ) :
 	std::vector<String> Sizes;
 
 	for ( Uint32 i = 6; i < 14; i++ ) {
-		Sizes.push_back( String::toStr( 1 << i ) );
+		Sizes.push_back( String::ToStr( 1 << i ) );
 	}
 
 	mComboWidth->ListBox()->AddListBoxItems( Sizes );
@@ -114,8 +114,8 @@ void cTextureAtlasNew::TextureAtlasSave( const cUIEvent * Event ) {
 
 	if ( !FileSystem::IsDirectory( FPath ) ) {
 		Int32 w,h,b;
-		bool Res1 = String::fromString<Int32>( w, mComboWidth->Text() );
-		bool Res2 = String::fromString<Int32>( h, mComboHeight->Text() );
+		bool Res1 = String::FromString<Int32>( w, mComboWidth->Text() );
+		bool Res2 = String::FromString<Int32>( h, mComboHeight->Text() );
 		b = static_cast<Int32>( mPixelSpace->Value() );
 
 		if ( Res1 && Res2 ) {

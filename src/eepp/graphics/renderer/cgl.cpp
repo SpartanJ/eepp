@@ -102,7 +102,7 @@ cRendererGLES2 * cGL::GetRendererGLES2() {
 }
 
 void cGL::WriteExtension( Uint8 Pos, Uint32 BitWrite ) {
-	Write32BitKey( &mExtensions, Pos, BitWrite );
+	BitOp::WriteBitKey( &mExtensions, Pos, BitWrite );
 }
 
 void cGL::Init() {
@@ -317,7 +317,7 @@ void cGL::SetShader( cShaderProgram * Shader ) {
 }
 
 bool cGL::IsLineSmooth() {
-	return Read32BitKey( &mStateFlags, GLSF_LINE_SMOOTH );
+	return BitOp::ReadBitKey( &mStateFlags, GLSF_LINE_SMOOTH );
 }
 
 void cGL::LineSmooth() {
@@ -331,13 +331,13 @@ void cGL::LineSmooth( const bool& Enable ) {
 		GLi->Disable( GL_LINE_SMOOTH );
 	}
 
-	Write32BitKey( &mStateFlags, GLSF_LINE_SMOOTH, Enable ? 1 : 0 );
+	BitOp::WriteBitKey( &mStateFlags, GLSF_LINE_SMOOTH, Enable ? 1 : 0 );
 }
 
 void cGL::PolygonMode() {
 	EE_FILL_MODE Mode = EE_DRAW_FILL;
 
-	if ( Read32BitKey( &mStateFlags, GLSF_POLYGON_MODE ) )
+	if ( BitOp::ReadBitKey( &mStateFlags, GLSF_POLYGON_MODE ) )
 		Mode = EE_DRAW_LINE;
 
 	PolygonMode( Mode );
@@ -349,7 +349,7 @@ void cGL::PolygonMode( const EE_FILL_MODE& Mode ) {
 	else
 		PolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 
-	Write32BitKey( &mStateFlags, GLSF_POLYGON_MODE, Mode == EE_DRAW_LINE ? 1 : 0 );
+	BitOp::WriteBitKey( &mStateFlags, GLSF_POLYGON_MODE, Mode == EE_DRAW_LINE ? 1 : 0 );
 }
 
 std::string cGL::GetVendor() {

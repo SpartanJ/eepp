@@ -1,0 +1,25 @@
+syntax: glob
+data/**
+fonts/**
+obj/**
+libs/**
+make/**
+bin/**
+projects/windows/vc2010/eepp/cdeps/Debug/**
+projects/windows/vc2010/eepp/cdeps/Release/**
+projects/windows/vc2010/empty_window/Debug/**
+projects/windows/vc2010/empty_window/Release/**
+projects/windows/vc2010/eepp/Debug/**
+projects/windows/vc2010/eepp/Release/**
+projects/windows/vc2010/eepp/DebugDynamic/**
+projects/windows/vc2010/eepp/ReleaseDynamic/**
+projects/windows/vc2010/eepp/eepp/DebugDynamic/**
+projects/windows/vc2010/eepp/eepp/ReleaseDynamic/**
+projects/windows/vc2010/eepp/eepp/Debug/**
+projects/windows/vc2010/eepp/eepp/Release/**
+projects/windows/vc2010/empty_window/empty_window.vcxproj.filters
+projects/windows/vc2010/empty_window/empty_window.vcxproj.user
+projects/src/**
+projects/android-project/data/**
+log.log
+ee*

@@ -57,7 +57,7 @@ void cIsoMap::CreateBaseVertexBuffer() {
 
 			T->Q			= TileQBaseCoords( x, y );
 			T->Box			= Math::Quad2toAABB( T->Q );
-			T->TilePosStr	= String::toStr( x) + " - " + String::toStr( y );
+			T->TilePosStr	= String::ToStr( x) + " - " + String::ToStr( y );
 
 			for ( i = 0; i < 4; i++ )
 				T->Color[i] = mMapAmbientColor;

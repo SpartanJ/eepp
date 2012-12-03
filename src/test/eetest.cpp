@@ -429,7 +429,7 @@ void cEETest::CreateUI() {
 		std::vector<String> str(wsize);
 
 		for ( Int32 i = 1; i <= wsize; i++ )
-			str[i-1] = "Test ListBox " + String::toStr(i) + " testing it right now!";
+			str[i-1] = "Test ListBox " + String::ToStr(i) + " testing it right now!";
 
 		mListBox->AddListBoxItems( str );
 	}
@@ -544,7 +544,7 @@ void cEETest::CreateUI() {
 		cUITextInput * TxtInput		= eeNew( cUITextInput, ( TxtInputParams ) );
 		cUIGfx * TxtGfx				= eeNew( cUIGfx, ( TxtGfxParams )  );
 
-		TxtBox->Text( "Test " + String::toStr( i+1 ) );
+		TxtBox->Text( "Test " + String::ToStr( i+1 ) );
 
 		Cell->Cell( 0, TxtBox );
 		Cell->Cell( 1, TxtGfx );
@@ -721,7 +721,7 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 }
 
 void cEETest::OnValueChange( const cUIEvent * Event ) {
-	mTextBoxValue->Text( "Scroll Value:\n" + String::toStr( mScrollBar->Value() ) );
+	mTextBoxValue->Text( "Scroll Value:\n" + String::ToStr( mScrollBar->Value() ) );
 
 	mProgressBar->Progress( mScrollBar->Value() * 100.f );
 }
@@ -765,7 +765,7 @@ void cEETest::ButtonClick( const cUIEvent * Event ) {
 		Gfx->StartMovement( eeVector2i( Math::Randi( 0, mWindow->GetWidth() ), -64 ), eeVector2i( Math::Randi( 0, mWindow->GetWidth() ), mWindow->GetHeight() + 64 ), 2500 );
 		Gfx->CloseFadeOut( 3500 );
 
-		mListBox->AddListBoxItem( "Test ListBox " + String::toStr( mListBox->Count() + 1 ) + " testing it right now!" );
+		mListBox->AddListBoxItem( "Test ListBox " + String::ToStr( mListBox->Count() + 1 ) + " testing it right now!" );
 	}
 }
 
@@ -785,11 +785,11 @@ void cEETest::CmdSetPartsNum ( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
-		bool Res = String::fromString<Int32>( tInt, params[1] );
+		bool Res = String::FromString<Int32>( tInt, params[1] );
 
 		if ( Res && ( tInt >= 0 && tInt <= 100000 ) ) {
 			PS[2].Create( PSE_WormHole, tInt, TN[5], eeVector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 32, true );
-			Con.PushText( "Wormhole Particles Number Changed to: " + String::toStr(tInt) );
+			Con.PushText( "Wormhole Particles Number Changed to: " + String::ToStr(tInt) );
 		} else
 			Con.PushText( "Valid parameters are between 0 and 100000 (0 = no limit)." );
 	}
@@ -828,7 +828,7 @@ void cEETest::LoadTextures() {
 	TNP.resize(12);
 
 	for ( i = 0; i <= 7; i++ ) {
-		TN[i] = TF->LoadFromPack( PAK, "t" + String::toStr(i+1) + ".png", ( (i+1) == 7 ) ? true : false, ( (i+1) == 4 ) ? EE_CLAMP_REPEAT : EE_CLAMP_TO_EDGE );
+		TN[i] = TF->LoadFromPack( PAK, "t" + String::ToStr(i+1) + ".png", ( (i+1) == 7 ) ? true : false, ( (i+1) == 4 ) ? EE_CLAMP_REPEAT : EE_CLAMP_TO_EDGE );
 		TNP[i] = TF->GetTexture( TN[i] );
 	}
 
@@ -838,7 +838,7 @@ void cEETest::LoadTextures() {
 	cTextureAtlas * SG = cTextureAtlasManager::instance()->GetByName( "tiles" );
 
 	for ( i = 0; i < 6; i++ ) {
-		Tiles[i] = SG->GetByName( String::toStr( i+1 ) );
+		Tiles[i] = SG->GetByName( String::ToStr( i+1 ) );
 	}
 
 	Tiles[6] = SG->Add( TF->LoadFromPack( PAK, "objects/1.png" ), "7" );
@@ -1270,7 +1270,7 @@ void cEETest::Render() {
 		FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f + (eeFloat)LineNum * (eeFloat)FF2->GetFontHeight() );
 	}
 
-	FF2->SetText( "FPS: " + String::toStr( mWindow->FPS() ) );
+	FF2->SetText( "FPS: " + String::ToStr( mWindow->FPS() ) );
 	FF2->Draw( mWindow->GetWidth() - FF2->GetTextWidth() - 15, 0 );
 
 	FF2->SetText( InBuf.Buffer() );

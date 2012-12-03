@@ -114,6 +114,7 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 			mReleaseTrigger		|= EE_BUTTON_MASK( Event->button.button );
 			mClickTrigger		|= EE_BUTTON_MASK( Event->button.button );
 
+			// I know this is ugly, but i'm to lazy to fix it, it works...
 			if ( Event->button.button == EE_BUTTON_LEFT ) {
 				mLastButtonLeftClicked		= mLastButtonLeftClick;
 				mLastButtonLeftClick		= Sys::GetTicks();

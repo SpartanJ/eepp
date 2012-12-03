@@ -329,7 +329,7 @@ void cMapEditor::CreateLightContainer() {
 	mUIRedSlider->Value( 255 );
 	mUIRedSlider->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cMapEditor::OnRedChange ) );
 
-	mUIRedTxt = mTheme->CreateTextBox( String::toStr( (Uint32)255 ), mLightCont, eeSize(), eeVector2i( mUIRedSlider->Pos().x + mUIRedSlider->Size().Width() + 4, mUIRedSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	mUIRedTxt = mTheme->CreateTextBox( String::ToStr( (Uint32)255 ), mLightCont, eeSize(), eeVector2i( mUIRedSlider->Pos().x + mUIRedSlider->Size().Width() + 4, mUIRedSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	Txt = mTheme->CreateTextBox( "G:", mLightCont, eeSize(), eeVector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIRedSlider->Pos().y + mUIRedSlider->Size().Height() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 	mUIGreenSlider = mTheme->CreateSlider( mLightCont, eeSize( 100, 20 ), eeVector2i( mUIRedSlider->Pos().x, Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
@@ -337,7 +337,7 @@ void cMapEditor::CreateLightContainer() {
 	mUIGreenSlider->Value( 255 );
 	mUIGreenSlider->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cMapEditor::OnGreenChange ) );
 
-	mUIGreenTxt = mTheme->CreateTextBox( String::toStr( (Uint32)255 ), mLightCont, eeSize(), eeVector2i( mUIGreenSlider->Pos().x + mUIGreenSlider->Size().Width() + 4, mUIGreenSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	mUIGreenTxt = mTheme->CreateTextBox( String::ToStr( (Uint32)255 ), mLightCont, eeSize(), eeVector2i( mUIGreenSlider->Pos().x + mUIGreenSlider->Size().Width() + 4, mUIGreenSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	Txt = mTheme->CreateTextBox( "B:", mLightCont, eeSize(), eeVector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIGreenSlider->Pos().y + mUIGreenSlider->Size().Height() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 	mUIBlueSlider = mTheme->CreateSlider( mLightCont, eeSize( 100, 20 ), eeVector2i( mUIRedSlider->Pos().x, Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
@@ -345,7 +345,7 @@ void cMapEditor::CreateLightContainer() {
 	mUIBlueSlider->Value( 255 );
 	mUIBlueSlider->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cMapEditor::OnBlueChange ) );
 
-	mUIBlueTxt = mTheme->CreateTextBox( String::toStr( (Uint32)255 ), mLightCont, eeSize(), eeVector2i( mUIBlueSlider->Pos().x + mUIBlueSlider->Size().Width() + 4, mUIBlueSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	mUIBlueTxt = mTheme->CreateTextBox( String::ToStr( (Uint32)255 ), mLightCont, eeSize(), eeVector2i( mUIBlueSlider->Pos().x + mUIBlueSlider->Size().Width() + 4, mUIBlueSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	Txt = mTheme->CreateTextBox( "Light Radius:", mLightCont, eeSize(), eeVector2i( 0, mUIBlueTxt->Pos().y + mUIBlueTxt->Size().Height() + 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
@@ -428,7 +428,7 @@ void cMapEditor::OnRedChange( const cUIEvent * Event ) {
 	eeColorA Col = mUIBaseColor->Background()->Color();
 	Col.Red = (Uint8)mUIRedSlider->Value();
 	mUIBaseColor->Background()->Color( Col );
-	mUIRedTxt->Text( String::toStr( (Int32)mUIRedSlider->Value() ) );
+	mUIRedTxt->Text( String::ToStr( (Int32)mUIRedSlider->Value() ) );
 
 	if ( NULL != mUIMap->GetSelectedLight() ) {
 		eeColor lCol( mUIMap->GetSelectedLight()->Color() );
@@ -441,7 +441,7 @@ void cMapEditor::OnGreenChange( const cUIEvent * Event ) {
 	eeColorA Col = mUIBaseColor->Background()->Color();
 	Col.Green = (Uint8)mUIGreenSlider->Value();
 	mUIBaseColor->Background()->Color( Col );
-	mUIGreenTxt->Text( String::toStr( (Uint32)mUIGreenSlider->Value() ) );
+	mUIGreenTxt->Text( String::ToStr( (Uint32)mUIGreenSlider->Value() ) );
 
 	if ( NULL != mUIMap->GetSelectedLight() ) {
 		eeColor lCol( mUIMap->GetSelectedLight()->Color() );
@@ -454,7 +454,7 @@ void cMapEditor::OnBlueChange( const cUIEvent * Event ) {
 	eeColorA Col = mUIBaseColor->Background()->Color();
 	Col.Blue = (Uint8)mUIBlueSlider->Value();
 	mUIBaseColor->Background()->Color( Col );
-	mUIBlueTxt->Text( String::toStr( (Uint32)mUIBlueSlider->Value() ) );
+	mUIBlueTxt->Text( String::ToStr( (Uint32)mUIBlueSlider->Value() ) );
 
 	if ( NULL != mUIMap->GetSelectedLight() ) {
 		eeColor lCol( mUIMap->GetSelectedLight()->Color() );

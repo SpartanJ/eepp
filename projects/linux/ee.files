@@ -336,7 +336,7 @@
 ../../src/eepp/ui/tools/ctextureatlaseditor.cpp
 ../../include/eepp/math/vector3.hpp
 ../../include/eepp/math/vector2.hpp
-../../include/eepp/system/utils.hpp
+../../include/eepp/system/bitop.hpp
 ../../include/eepp/math/triangle2.hpp
 ../../include/eepp/system/sys.hpp
 ../../src/eepp/system/sys.cpp

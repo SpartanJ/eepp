@@ -304,7 +304,7 @@ void cWindowAl::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 		Uint32 oldWidth		= mWindow.WindowConfig.Width;
 		Uint32 oldHeight	= mWindow.WindowConfig.Height;
 
-		SetFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !Windowed );
+		BitOp::SetBitFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !Windowed );
 
 		mWindow.WindowConfig.Width    = Width;
 		mWindow.WindowConfig.Height   = Height;

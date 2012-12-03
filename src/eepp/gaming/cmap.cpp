@@ -99,7 +99,7 @@ void cMap::CreateLightManager() {
 void cMap::CreateEmptyTile() {
 	//! I create a texture representing an empty tile to render instead of rendering with primitives because is a lot faster, at least with NVIDIA GPUs.
 	cTextureFactory * TF = cTextureFactory::instance();
-	std::string tileName( "maptile-" + String::toStr( mTileSize.Width() ) + "x" + String::toStr( mTileSize.Height() ) );
+	std::string tileName( "maptile-" + String::ToStr( mTileSize.Width() ) + "x" + String::ToStr( mTileSize.Height() ) );
 
 	cTexture * Tex = TF->GetByName( tileName );
 
@@ -509,7 +509,7 @@ const eeColorA& cMap::BaseColor() const {
 }
 
 void cMap::DrawGrid( const bool& draw ) {
-	SetFlagValue( &mFlags, MAP_FLAG_DRAW_GRID, draw ? 1 : 0 );
+	BitOp::SetBitFlagValue( &mFlags, MAP_FLAG_DRAW_GRID, draw ? 1 : 0 );
 }
 
 Uint32 cMap::DrawGrid() const {
@@ -517,11 +517,11 @@ Uint32 cMap::DrawGrid() const {
 }
 
 void cMap::DrawBackground( const bool& draw ) {
-	SetFlagValue( &mFlags, MAP_FLAG_DRAW_BACKGROUND, draw ? 1 : 0 );
+	BitOp::SetBitFlagValue( &mFlags, MAP_FLAG_DRAW_BACKGROUND, draw ? 1 : 0 );
 }
 
 void cMap::ShowBlocked( const bool& show ) {
-	SetFlagValue( &mFlags, MAP_FLAG_SHOW_BLOCKED, show ? 1 : 0 );
+	BitOp::SetBitFlagValue( &mFlags, MAP_FLAG_SHOW_BLOCKED, show ? 1 : 0 );
 }
 
 Uint32 cMap::ShowBlocked() const {
@@ -537,7 +537,7 @@ Uint32 cMap::ClipedArea() const {
 }
 
 void cMap::ClipedArea( const bool& clip ) {
-	SetFlagValue( &mFlags, MAP_FLAG_CLIP_AREA, clip ? 1 : 0 );
+	BitOp::SetBitFlagValue( &mFlags, MAP_FLAG_CLIP_AREA, clip ? 1 : 0 );
 }
 
 Uint32 cMap::ClampBorders() const {
@@ -545,7 +545,7 @@ Uint32 cMap::ClampBorders() const {
 }
 
 void cMap::ClampBorders( const bool& clamp ) {
-	SetFlagValue( &mFlags, MAP_FLAG_CLAMP_BORDERS, clamp ? 1 : 0 );
+	BitOp::SetBitFlagValue( &mFlags, MAP_FLAG_CLAMP_BORDERS, clamp ? 1 : 0 );
 }
 
 Uint32 cMap::DrawTileOver() const {
@@ -553,7 +553,7 @@ Uint32 cMap::DrawTileOver() const {
 }
 
 void cMap::DrawTileOver( const bool& draw ) {
-	SetFlagValue( &mFlags, MAP_FLAG_DRAW_TILE_OVER, draw ? 1 : 0 );
+	BitOp::SetBitFlagValue( &mFlags, MAP_FLAG_DRAW_TILE_OVER, draw ? 1 : 0 );
 }
 
 Uint32 cMap::LightsEnabled() {
@@ -561,7 +561,7 @@ Uint32 cMap::LightsEnabled() {
 }
 
 void cMap::LightsEnabled( const bool& enabled ) {
-	SetFlagValue( &mFlags, MAP_FLAG_LIGHTS_ENABLED, enabled ? 1 : 0 );
+	BitOp::SetBitFlagValue( &mFlags, MAP_FLAG_LIGHTS_ENABLED, enabled ? 1 : 0 );
 }
 
 void cMap::Move( const eeVector2f& offset )  {

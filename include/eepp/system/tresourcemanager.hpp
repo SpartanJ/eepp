@@ -2,7 +2,6 @@
 #define EE_SYSTEMTRESOURCEMANAGER_HPP
 
 #include <eepp/system/base.hpp>
-#include <eepp/system/utils.hpp>
 #include <list>
 
 namespace EE { namespace System {
@@ -98,7 +97,7 @@ T * tResourceManager<T>::Add( T * Resource ) {
 
 				while ( Count( Resource->Id() ) ) {
 					c++;
-					Resource->Name( RealName + String::toStr( c ) );
+					Resource->Name( RealName + String::ToStr( c ) );
 				}
 
 				return Add( Resource );

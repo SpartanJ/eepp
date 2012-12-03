@@ -522,11 +522,11 @@ bool cInputTextBuffer::ChangedSinceLastUpdate() {
 }
 
 void cInputTextBuffer::ChangedSinceLastUpdate( const bool& Changed ) {
-	Write32BitKey( &mFlags, INPUT_TB_CHANGE_SINCE_LAST_UPDATE, Changed == true );
+	BitOp::WriteBitKey( &mFlags, INPUT_TB_CHANGE_SINCE_LAST_UPDATE, Changed == true );
 }
 
 void cInputTextBuffer::AutoPrompt( const bool& set ) {
-	Write32BitKey( &mFlags, INPUT_TB_PROMPT_AUTO_POS, set == true );
+	BitOp::WriteBitKey( &mFlags, INPUT_TB_PROMPT_AUTO_POS, set == true );
 
 	if ( set ) {
 		mPromptPos		= (eeInt)mText.size();
@@ -542,7 +542,7 @@ bool cInputTextBuffer::Active() const {
 }
 
 void cInputTextBuffer::Active( const bool& Active ) {
-	Write32BitKey( &mFlags, INPUT_TB_ACTIVE, Active == true );
+	BitOp::WriteBitKey( &mFlags, INPUT_TB_ACTIVE, Active == true );
 }
 
 bool cInputTextBuffer::SupportNewLine() {
@@ -550,12 +550,12 @@ bool cInputTextBuffer::SupportNewLine() {
 }
 
 void cInputTextBuffer::SupportNewLine( const bool& SupportNewLine ) {
-	Write32BitKey( &mFlags, INPUT_TB_SUPPORT_NEW_LINE, SupportNewLine == true );
+	BitOp::WriteBitKey( &mFlags, INPUT_TB_SUPPORT_NEW_LINE, SupportNewLine == true );
 }
 
 void cInputTextBuffer::AllowOnlyNumbers( const bool& onlynums, const bool& allowdots ) {
-	Write32BitKey( &mFlags, INPUT_TB_ALLOW_ONLY_NUMBERS, onlynums == true );
-	Write32BitKey( &mFlags, INPUT_TB_ALLOW_DOT_IN_NUMBERS, allowdots == true );
+	BitOp::WriteBitKey( &mFlags, INPUT_TB_ALLOW_ONLY_NUMBERS, onlynums == true );
+	BitOp::WriteBitKey( &mFlags, INPUT_TB_ALLOW_DOT_IN_NUMBERS, allowdots == true );
 }
 
 bool cInputTextBuffer::AllowOnlyNumbers() {
@@ -571,11 +571,11 @@ bool cInputTextBuffer::SupportFreeEditing() const {
 }
 
 void cInputTextBuffer::SupportFreeEditing( const bool& Support ) {
-	Write32BitKey( &mFlags, INPUT_TB_FREE_EDITING, Support == true );
+	BitOp::WriteBitKey( &mFlags, INPUT_TB_FREE_EDITING, Support == true );
 }
 
 void cInputTextBuffer::SupportCopyPaste( const bool& support ) {
-	Write32BitKey( &mFlags, INPUT_TB_SUPPORT_COPY_PASTE, support == true );
+	BitOp::WriteBitKey( &mFlags, INPUT_TB_SUPPORT_COPY_PASTE, support == true );
 }
 
 bool cInputTextBuffer::SupportCopyPaste() {

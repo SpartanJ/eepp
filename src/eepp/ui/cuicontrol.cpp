@@ -975,7 +975,7 @@ cUISkin * cUIControl::GetSkin() {
 }
 
 void cUIControl::WriteCtrlFlag( const Uint32& Flag, const Uint32& Val ) {
-	SetFlagValue( &mControlFlags, Flag, Val );
+	BitOp::SetBitFlagValue( &mControlFlags, Flag, Val );
 }
 
 void cUIControl::WriteFlag( const Uint32& Flag, const Uint32& Val ) {
