@@ -20,7 +20,7 @@ class EE_API cUISprite : public cUIComplexControl {
 				inline ~CreateParams() {}
 
 				cSprite * 			Sprite;
-				EE_RENDERTYPE		SpriteRender;
+				EE_RENDER_MODE		SpriteRender;
 				bool				DeallocSprite;
 		};
 
@@ -44,14 +44,14 @@ class EE_API cUISprite : public cUIComplexControl {
 
 		void Color( const eeColorA& color );
 
-		const EE_RENDERTYPE& RenderType() const;
+		const EE_RENDER_MODE& RenderType() const;
 
-		void RenderType( const EE_RENDERTYPE& render );
+		void RenderType( const EE_RENDER_MODE& render );
 
 		const eeVector2i& AlignOffset() const;
 	protected:
 		cSprite * 			mSprite;
-		EE_RENDERTYPE 		mRender;
+		EE_RENDER_MODE 		mRender;
 		eeVector2i			mAlignOffset;
 		cSubTexture *			mSubTextureLast;
 		bool				mDealloc;

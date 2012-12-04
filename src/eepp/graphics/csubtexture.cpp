@@ -165,12 +165,12 @@ void cSubTexture::OffsetY( const Int32& offsety ) {
 	mOffsetY = offsety;
 }
 
-void cSubTexture::Draw( const eeFloat& X, const eeFloat& Y, const eeColorA& Color, const eeFloat& Angle, const eeFloat& Scale, const EE_BLEND_MODE& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
+void cSubTexture::Draw( const eeFloat& X, const eeFloat& Y, const eeColorA& Color, const eeFloat& Angle, const eeFloat& Scale, const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect, const bool& ScaleRendered ) {
 	if ( NULL != mTexture )
 		mTexture->DrawEx( X + mOffsetX, Y + mOffsetY, mDestWidth, mDestHeight, Angle, Scale, Color, Color, Color, Color, Blend, Effect, ScaleRendered, mSrcRect );
 }
 
-void cSubTexture::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_BLEND_MODE& Blend, const EE_RENDERTYPE& Effect, const bool& ScaleRendered ) {
+void cSubTexture::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect, const bool& ScaleRendered ) {
 	if ( NULL != mTexture )
 		mTexture->DrawEx( X + mOffsetX, Y + mOffsetY, mDestWidth, mDestHeight, Angle, Scale, Color0, Color1, Color2, Color3, Blend, Effect, ScaleRendered, mSrcRect );
 }

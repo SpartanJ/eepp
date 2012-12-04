@@ -417,7 +417,7 @@ cSubTexture * cUITheme::GetIconByName( const std::string& name ) {
 	return NULL;
 }
 
-cUIGfx * cUITheme::CreateGfx( cSubTexture * SubTexture, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, eeColorA SubTextureColor, EE_RENDERTYPE SubTextureRender ) {
+cUIGfx * cUITheme::CreateGfx( cSubTexture * SubTexture, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, eeColorA SubTextureColor, EE_RENDER_MODE SubTextureRender ) {
 	cUIGfx::CreateParams GfxParams;
 	GfxParams.Parent( Parent );
 	GfxParams.PosSet( Pos );
@@ -432,7 +432,7 @@ cUIGfx * cUITheme::CreateGfx( cSubTexture * SubTexture, cUIControl * Parent, con
 	return Gfx;
 }
 
-cUISprite * cUITheme::CreateSprite( cSprite * Sprite, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool DeallocSprite, EE_RENDERTYPE SpriteRender ) {
+cUISprite * cUITheme::CreateSprite( cSprite * Sprite, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool DeallocSprite, EE_RENDER_MODE SpriteRender ) {
 	cUISprite::CreateParams SpriteParams;
 	SpriteParams.Parent( Parent );
 	SpriteParams.PosSet( Pos );

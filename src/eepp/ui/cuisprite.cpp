@@ -90,11 +90,11 @@ void cUISprite::Color( const eeColorA& color ) {
 	Alpha( color.A() );
 }
 
-const EE_RENDERTYPE& cUISprite::RenderType() const {
+const EE_RENDER_MODE& cUISprite::RenderType() const {
 	return mRender;
 }
 
-void cUISprite::RenderType( const EE_RENDERTYPE& render ) {
+void cUISprite::RenderType( const EE_RENDER_MODE& render ) {
 	mRender = render;
 }
 

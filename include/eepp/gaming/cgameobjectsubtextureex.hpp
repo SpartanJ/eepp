@@ -8,7 +8,7 @@ namespace EE { namespace Gaming {
 
 class EE_API cGameObjectSubTextureEx : public cGameObjectSubTexture {
 	public:
-		cGameObjectSubTextureEx( const Uint32& Flags, cLayer * Layer, cSubTexture * SubTexture = NULL, const eeVector2f& Pos = eeVector2f(), EE_BLEND_MODE Blend = ALPHA_NORMAL, EE_RENDERTYPE Render = RN_NORMAL, eeFloat Angle = 0.f, eeFloat Scale = 1.f, eeColorA Color = eeColorA() );
+		cGameObjectSubTextureEx( const Uint32& Flags, cLayer * Layer, cSubTexture * SubTexture = NULL, const eeVector2f& Pos = eeVector2f(), EE_BLEND_MODE Blend = ALPHA_NORMAL, EE_RENDER_MODE Render = RN_NORMAL, eeFloat Angle = 0.f, eeFloat Scale = 1.f, eeColorA Color = eeColorA() );
 
 		virtual ~cGameObjectSubTextureEx();
 
@@ -21,7 +21,7 @@ class EE_API cGameObjectSubTextureEx : public cGameObjectSubTexture {
 		virtual void FlagSet( const Uint32& Flag );
 	protected:
 		EE_BLEND_MODE	mBlend;
-		EE_RENDERTYPE		mRender;
+		EE_RENDER_MODE		mRender;
 		eeFloat				mAngle;
 		eeFloat				mScale;
 		eeColorA			mColor;

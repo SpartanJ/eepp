@@ -30,8 +30,8 @@ enum EE_BLEND_MODE {
 	ALPHA_CUSTOM			//!< Disable the Predefined blend mode for the use of custom blend funcs.
 };
 
-/** @enum EE_RENDERTYPE Defines the method to use to render a texture. */
-enum EE_RENDERTYPE {
+/** @enum EE_RENDER_MODE Defines the method to use to render a texture. */
+enum EE_RENDER_MODE {
 	RN_NORMAL 						= 0, 	//!< Render the texture without any change
 	RN_MIRROR 						= 1, 	//!< Render the texture mirrored
 	RN_FLIP 						= 2, 	//!< Render the texture fliped
@@ -50,8 +50,8 @@ enum EE_SAVE_TYPE {
 	EE_SAVE_TYPE_DDS 		= 3
 };
 
-/** @enum EE_TTF_FONTSTYLE Set the TTF Font style. */
-enum EE_TTF_FONTSTYLE {
+/** @enum EE_TTF_FONT_STYLE Set the TTF Font style. */
+enum EE_TTF_FONT_STYLE {
 	EE_TTF_STYLE_NORMAL 	= 0,
 	EE_TTF_STYLE_BOLD 		= 1,
 	EE_TTF_STYLE_ITALIC 	= 2,

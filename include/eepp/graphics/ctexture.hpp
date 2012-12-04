@@ -126,7 +126,7 @@ class EE_API cTexture : public cImage {
 		* @param ScaleCentered If true the texture will be scaled centered, otherwise will be scale from the Top - Left Corner
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
-		void Draw( const eeFloat &x, const eeFloat &y, const eeFloat &Angle = 0, const eeFloat &Scale = 1.0f, const eeColorA& Color = eeColorA(255,255,255,255), const EE_BLEND_MODE &blend = ALPHA_NORMAL, const EE_RENDERTYPE &Effect = RN_NORMAL, const bool &ScaleCentered = true, const eeRecti& texSector = eeRecti(0,0,0,0) );
+		void Draw( const eeFloat &x, const eeFloat &y, const eeFloat &Angle = 0, const eeFloat &Scale = 1.0f, const eeColorA& Color = eeColorA(255,255,255,255), const EE_BLEND_MODE &blend = ALPHA_NORMAL, const EE_RENDER_MODE &Effect = RN_NORMAL, const bool &ScaleCentered = true, const eeRecti& texSector = eeRecti(0,0,0,0) );
 
 		/** Render the texture on screen. Extended because can set the vertex colors individually
 		* @param x The x position on screen
@@ -144,7 +144,7 @@ class EE_API cTexture : public cImage {
 		* @param ScaleCentered If true the texture will be scaled centered, otherwise will be scale from the Top - Left Corner
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
-		void DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width = 0.0f, const eeFloat &height = 0.0f, const eeFloat &Angle = 0, const eeFloat &Scale = 1.0f, const eeColorA& Color0 = eeColorA(255,255,255,255), const eeColorA& Color1 = eeColorA(255,255,255,255), const eeColorA& Color2 = eeColorA(255,255,255,255), const eeColorA& Color3 = eeColorA(255,255,255,255), const EE_BLEND_MODE &blend = ALPHA_NORMAL, const EE_RENDERTYPE &Effect = RN_NORMAL, const bool &ScaleCentered = true, const eeRecti& texSector = eeRecti(0,0,0,0) );
+		void DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width = 0.0f, const eeFloat &height = 0.0f, const eeFloat &Angle = 0, const eeFloat &Scale = 1.0f, const eeColorA& Color0 = eeColorA(255,255,255,255), const eeColorA& Color1 = eeColorA(255,255,255,255), const eeColorA& Color2 = eeColorA(255,255,255,255), const eeColorA& Color3 = eeColorA(255,255,255,255), const EE_BLEND_MODE &blend = ALPHA_NORMAL, const EE_RENDER_MODE &Effect = RN_NORMAL, const bool &ScaleCentered = true, const eeRecti& texSector = eeRecti(0,0,0,0) );
 
 		/** Render the texture on screen
 		* @param x The x position on screen
@@ -159,7 +159,7 @@ class EE_API cTexture : public cImage {
 		* @param ScaleCentered If true the texture will be scaled centered, otherwise will be scale from the Top - Left Corner
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
-		void DrawEx2( const eeFloat &x, const eeFloat &y, const eeFloat &width = 0.0f, const eeFloat &height = 0.0f, const eeFloat &Angle = 0, const eeFloat &Scale = 1.0f, const eeColorA& Color = eeColorA(255,255,255,255), const EE_BLEND_MODE &blend = ALPHA_NORMAL, const EE_RENDERTYPE &Effect = RN_NORMAL, const bool &ScaleCentered = true, const eeRecti& texSector = eeRecti(0,0,0,0) );
+		void DrawEx2( const eeFloat &x, const eeFloat &y, const eeFloat &width = 0.0f, const eeFloat &height = 0.0f, const eeFloat &Angle = 0, const eeFloat &Scale = 1.0f, const eeColorA& Color = eeColorA(255,255,255,255), const EE_BLEND_MODE &blend = ALPHA_NORMAL, const EE_RENDER_MODE &Effect = RN_NORMAL, const bool &ScaleCentered = true, const eeRecti& texSector = eeRecti(0,0,0,0) );
 
 		/** Render a GL_QUAD on Screen
 		* @param Q The eeQuad2f

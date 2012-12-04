@@ -90,9 +90,9 @@ class EE_API cUITheme : public tResourceManager<cUISkin> {
 
 		cSubTexture * GetIconByName( const std::string& name );
 
-		virtual cUIGfx * CreateGfx( cSubTexture * SubTexture, cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, eeColorA SubTextureColor = eeColorA(255,255,255,255), EE_RENDERTYPE SubTextureRender = RN_NORMAL );
+		virtual cUIGfx * CreateGfx( cSubTexture * SubTexture, cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, eeColorA SubTextureColor = eeColorA(255,255,255,255), EE_RENDER_MODE SubTextureRender = RN_NORMAL );
 
-		virtual cUISprite * CreateSprite( cSprite * Sprite, cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, bool DeallocSprite = true, EE_RENDERTYPE SpriteRender = RN_NORMAL );
+		virtual cUISprite * CreateSprite( cSprite * Sprite, cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, bool DeallocSprite = true, EE_RENDER_MODE SpriteRender = RN_NORMAL );
 
 		virtual cUICheckBox * CreateCheckBox( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS );
 

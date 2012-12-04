@@ -8,9 +8,6 @@
 
 namespace EE { namespace Graphics {
 
-#define FONT_TYPE_TTF (1)
-#define FONT_TYPE_TEX (2)
-
 /** @brief Font interface class. */
 class EE_API cFont {
 	public:

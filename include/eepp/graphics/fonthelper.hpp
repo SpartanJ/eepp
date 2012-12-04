@@ -3,23 +3,28 @@
 
 namespace EE { namespace Graphics {
 
-enum FONT_HALIGN {
+enum EE_FONT_TYPE {
+	FONT_TYPE_TTF = 1,
+	FONT_TYPE_TEX = 2
+};
+
+enum EE_FONT_HALIGN {
 	FONT_DRAW_LEFT			= (0 << 0),
 	FONT_DRAW_RIGHT			= (1 << 0),
 	FONT_DRAW_CENTER		= (2 << 0),
 	FONT_DRAW_HALIGN_MASK	= (3 << 0)
 };
 
-inline Uint32 FontHAlignGet( Uint32 Flags ) {
-	return Flags & FONT_DRAW_HALIGN_MASK;
-}
-
-enum FONT_VALIGN {
+enum EE_FONT_VALIGN {
 	FONT_DRAW_TOP			= (0 << 2),
 	FONT_DRAW_BOTTOM		= (1 << 2),
 	FONT_DRAW_MIDDLE		= (2 << 2),
 	FONT_DRAW_VALIGN_MASK	= (3 << 2)
 };
+
+inline Uint32 FontHAlignGet( Uint32 Flags ) {
+	return Flags & FONT_DRAW_HALIGN_MASK;
+}
 
 inline Uint32 FontVAlignGet( Uint32 Flags ) {
 	return Flags & FONT_DRAW_VALIGN_MASK;

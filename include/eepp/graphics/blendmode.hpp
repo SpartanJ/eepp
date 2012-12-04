@@ -1,11 +1,12 @@
 #ifndef EE_GRAPHICS_BLENDMODE_HPP
 #define EE_GRAPHICS_BLENDMODE_HPP
 
+#include <eepp/declares.hpp>
 #include <eepp/graphics/renders.hpp>
 
 namespace EE { namespace Graphics {
 
-class BlendMode {
+class EE_API BlendMode {
 	public:
 		/** Set a blend function.
 		* @param SrcFactor Source Factor

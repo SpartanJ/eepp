@@ -126,11 +126,11 @@ void cUIGfx::Color( const eeColorA& color ) {
 	Alpha( color.A() );
 }
 
-const EE_RENDERTYPE& cUIGfx::RenderType() const {
+const EE_RENDER_MODE& cUIGfx::RenderType() const {
 	return mRender;
 }
 
-void cUIGfx::RenderType( const EE_RENDERTYPE& render ) {
+void cUIGfx::RenderType( const EE_RENDER_MODE& render ) {
 	mRender = render;
 }
 

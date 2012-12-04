@@ -136,10 +136,10 @@ class EE_API cSprite {
 		const eeUint& CurrentSubFrame() const;
 
 		/** Set the Render Type */
-		void RenderType( const EE_RENDERTYPE& Effect );
+		void RenderType( const EE_RENDER_MODE& Effect );
 
 		/** Get the Render Type */
-		const EE_RENDERTYPE& RenderType() const;
+		const EE_RENDER_MODE& RenderType() const;
 
 		/** Set the Blend Mode */
 		void BlendMode( const EE_BLEND_MODE& Blend );
@@ -250,7 +250,7 @@ class EE_API cSprite {
 		* @param Blend The Blend Mode
 		* @param Effect The Render Type
 		*/
-		void Draw( const EE_BLEND_MODE& Blend, const EE_RENDERTYPE& Effect );
+		void Draw( const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect );
 
 		/** Draw the sprite to the screen forcing the Blend Mode
 		* @param Blend The Blend Mode
@@ -260,7 +260,7 @@ class EE_API cSprite {
 		/** Draw the sprite to the screen forcing the Render Type
 		* @param Effect The Render Type
 		*/
-		void Draw( const EE_RENDERTYPE& Effect );
+		void Draw( const EE_RENDER_MODE& Effect );
 
 		/** Set the number of repeations of the animation. Any number below 0 the animation will loop. */
 		void SetRepeations( const int& Repeations );
@@ -362,7 +362,7 @@ class EE_API cSprite {
 		eeInt				mRepeations; //!< Number of repetions of the animation, default -1 that equals to loop.
 
 		EE_BLEND_MODE	mBlend;
-		EE_RENDERTYPE		mEffect;
+		EE_RENDER_MODE		mEffect;
 
 		eeUint				mCurrentFrame;
 		eeFloat				mfCurrentFrame;

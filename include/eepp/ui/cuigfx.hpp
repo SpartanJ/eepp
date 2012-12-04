@@ -21,7 +21,7 @@ class EE_API cUIGfx : public cUIComplexControl {
 
 				cSubTexture * 	SubTexture;
 				eeColorA 		SubTextureColor;
-				EE_RENDERTYPE 	SubTextureRender;
+				EE_RENDER_MODE 	SubTextureRender;
 		};
 
 		cUIGfx( const cUIGfx::CreateParams& Params );
@@ -44,15 +44,15 @@ class EE_API cUIGfx : public cUIComplexControl {
 
 		void Color( const eeColorA& color );
 
-		const EE_RENDERTYPE& RenderType() const;
+		const EE_RENDER_MODE& RenderType() const;
 
-		void RenderType( const EE_RENDERTYPE& render );
+		void RenderType( const EE_RENDER_MODE& render );
 
 		const eeVector2i& AlignOffset() const;
 	protected:
 		cSubTexture * 	mSubTexture;
 		eeColorA 		mColor;
-		EE_RENDERTYPE 	mRender;
+		EE_RENDER_MODE 	mRender;
 		eeVector2i		mAlignOffset;
 
 		virtual void OnSizeChange();
