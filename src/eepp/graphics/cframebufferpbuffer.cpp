@@ -2,6 +2,20 @@
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/window/cengine.hpp>
 
+
+#ifdef EE_GLEW_AVAILABLE
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+#include <eepp/helper/glew/wglew.h>
+#elif defined( EE_X11_PLATFORM )
+#include <eepp/helper/glew/glxew.h>
+#include <X11/Xlib.h>
+#else
+#warning No PBuffer implemented on this platform
+#endif
+
+#endif
+
 namespace EE { namespace Graphics {
 
 cFrameBufferPBuffer::cFrameBufferPBuffer( Window::cWindow * window )

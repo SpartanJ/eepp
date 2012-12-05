@@ -153,9 +153,11 @@ ifeq ($(BACKENDS_ALL),yes)
 endif
 
 ifeq ($(BACKEND_SDL),)
-	ifeq ($(BACKEND_ALLEGRO),)
-		ifeq ($(BACKEND_SFML),)
-			TRY_USE_SDL	= yes
+	ifeq ($(BACKEND_SDL2),)
+		ifeq ($(BACKEND_ALLEGRO),)
+			ifeq ($(BACKEND_SFML),)
+				TRY_USE_SDL	= yes
+			endif
 		endif
 	endif
 endif

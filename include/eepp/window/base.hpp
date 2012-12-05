@@ -23,6 +23,7 @@ using namespace EE::Graphics;
 		#define WIN32_LEAN_AND_MEAN
 	#endif
 	#include <windows.h>
+	#undef GetDiskFreeSpace
 
 	inline BOOL WIN_ShowWindow( HWND hWnd, int nCmdShow ) {
 		return ShowWindow( hWnd, nCmdShow );
