@@ -13,6 +13,7 @@
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/window/platform/platformimpl.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
+#include <eepp/graphics/renderer/cgl.hpp>
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 

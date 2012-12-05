@@ -2,10 +2,14 @@
 #include <eepp/window/cclipboard.hpp>
 #include <eepp/window/cinput.hpp>
 #include <eepp/window/ccursormanager.hpp>
+#include <eepp/window/platform/null/cnullimpl.hpp>
+
+#include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
-#include <eepp/window/platform/null/cnullimpl.hpp>
+
 #include <eepp/system/filesystem.hpp>
+
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
 
 #ifdef EE_GLES1_LATE_INCLUDE

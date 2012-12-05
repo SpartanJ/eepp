@@ -1,5 +1,5 @@
 #include <eepp/graphics/cparticlesystem.hpp>
-#include <eepp/graphics/glhelper.hpp>
+#include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/graphics/cbatchrenderer.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>

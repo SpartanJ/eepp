@@ -1,7 +1,7 @@
 #include <eepp/physics/constraints/cdampedspring.hpp>
 
 #ifdef PHYSICS_RENDERER_ENABLED
-#include <eepp/graphics/glhelper.hpp>
+#include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
 using namespace EE::Graphics;
 #endif

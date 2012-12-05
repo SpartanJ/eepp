@@ -4,7 +4,8 @@
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/ctexture.hpp>
 #include <eepp/window/cview.hpp>
-#include <eepp/window/cwindow.hpp>
+
+namespace EE { namespace Window { class cWindow; } }
 
 using namespace EE::Window;
 

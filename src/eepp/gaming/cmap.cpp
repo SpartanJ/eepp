@@ -8,11 +8,13 @@
 
 #include <eepp/system/cpackmanager.hpp>
 
+#include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/cprimitives.hpp>
 #include <eepp/graphics/ctextureatlasmanager.hpp>
 #include <eepp/graphics/ctextureatlasloader.hpp>
-#include <eepp/ui/cuithememanager.hpp>
 using namespace EE::Graphics;
+
+#include <eepp/ui/cuithememanager.hpp>
 
 namespace EE { namespace Gaming {
 

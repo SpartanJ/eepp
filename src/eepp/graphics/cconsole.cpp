@@ -1,5 +1,5 @@
 #include <eepp/graphics/cconsole.hpp>
-#include <eepp/graphics/glhelper.hpp>
+#include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/audio/caudiolistener.hpp>
 #include <eepp/window/cinput.hpp>
 #include <eepp/window/cengine.hpp>

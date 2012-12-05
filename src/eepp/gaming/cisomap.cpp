@@ -1,4 +1,5 @@
 #include <eepp/gaming/cisomap.hpp>
+#include <eepp/graphics/renderer/cgl.hpp>
 
 namespace EE { namespace Gaming {
 

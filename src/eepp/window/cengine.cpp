@@ -10,7 +10,7 @@
 #include <eepp/graphics/cvertexbuffermanager.hpp>
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/audio/caudiolistener.hpp>
-#include <eepp/graphics/glhelper.hpp>
+#include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/helper/haikuttf/hkfontmanager.hpp>
 #include <eepp/physics/cphysicsmanager.hpp>
 

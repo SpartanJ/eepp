@@ -1,5 +1,5 @@
 #include <eepp/graphics/cshader.hpp>
-#include <eepp/graphics/glhelper.hpp>
+#include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/renderer/crenderergl3.hpp>
 #include <eepp/graphics/renderer/crenderergles2.hpp>
 

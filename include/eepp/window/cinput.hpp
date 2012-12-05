@@ -7,6 +7,7 @@
 #include <eepp/window/inputevent.hpp>
 #include <eepp/window/cjoystickmanager.hpp>
 #include <eepp/window/cinputfinger.hpp>
+#include <list>
 
 namespace EE { namespace Window {
 

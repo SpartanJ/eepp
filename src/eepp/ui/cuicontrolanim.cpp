@@ -1,5 +1,6 @@
 #include <eepp/ui/cuicontrolanim.hpp>
 #include <eepp/ui/cuimanager.hpp>
+#include <eepp/graphics/renderer/cgl.hpp>
 
 namespace EE { namespace UI {
 

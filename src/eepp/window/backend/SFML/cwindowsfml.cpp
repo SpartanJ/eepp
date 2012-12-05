@@ -1,12 +1,15 @@
 #include <eepp/window/backend/SFML/cwindowsfml.hpp>
+
+#ifdef EE_BACKEND_SFML_ACTIVE
+
+#include <SFML/Graphics.hpp>
+
 #include <eepp/window/backend/SFML/cclipboardsfml.hpp>
 #include <eepp/window/backend/SFML/cinputsfml.hpp>
 #include <eepp/window/backend/SFML/ccursormanagersfml.hpp>
 #include <eepp/window/platform/platformimpl.hpp>
 
-#ifdef EE_BACKEND_SFML_ACTIVE
-
-#include <SFML/Graphics.hpp>
+#include <eepp/graphics/renderer/cgl.hpp>
 
 namespace EE { namespace Window { namespace Backend { namespace SFML {
 

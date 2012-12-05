@@ -3,6 +3,7 @@
 
 #include <eepp/window/base.hpp>
 #include <eepp/window/cwindow.hpp>
+#include <list>
 
 namespace EE { namespace System { class cIniFile; } }
 namespace EE { namespace Window { namespace Backend { class cBackend; } } }

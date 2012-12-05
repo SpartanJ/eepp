@@ -1,7 +1,7 @@
 #include <eepp/graphics/cframebufferfbo.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/window/cengine.hpp>
-#include <eepp/graphics/glhelper.hpp>
+#include <eepp/graphics/renderer/cgl.hpp>
 
 namespace EE { namespace Graphics {
 

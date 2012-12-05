@@ -1,6 +1,6 @@
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/graphics/ctextureloader.hpp>
-#include <eepp/graphics/glhelper.hpp>
+#include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/ctexture.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
@@ -171,12 +171,12 @@ const bool& cTextureFactory::IsErasing() const {
 	return mErasing;
 }
 
-GLint cTextureFactory::GetCurrentTexture( const Uint32& TextureUnit ) const {
+int cTextureFactory::GetCurrentTexture( const Uint32& TextureUnit ) const {
 	eeASSERT( TextureUnit < EE_MAX_TEXTURE_UNITS );
 	return mCurrentTexture[ TextureUnit ];
 }
 
-void cTextureFactory::SetCurrentTexture( const GLint& TexId, const Uint32& TextureUnit ) {
+void cTextureFactory::SetCurrentTexture( const int& TexId, const Uint32& TextureUnit ) {
 	eeASSERT( TextureUnit < EE_MAX_TEXTURE_UNITS );
 	mCurrentTexture[ TextureUnit ] = TexId;
 }

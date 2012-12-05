@@ -78,7 +78,7 @@ typedef cpBB					cBB;
 
 #ifdef PHYSICS_RENDERER_ENABLED
 
-static const GLfloat pillVAR[] = {
+static const float pillVAR[] = {
 	 0.0000f,  1.0000f, 1.0f,
 	 0.2588f,  0.9659f, 1.0f,
 	 0.5000f,  0.8660f, 1.0f,
@@ -107,7 +107,7 @@ static const GLfloat pillVAR[] = {
 	-0.2588f,  0.9659f, 0.0f,
 	 0.0000f,  1.0000f, 0.0f,
 };
-static const int pillVAR_count = sizeof(pillVAR)/sizeof(GLfloat)/3;
+static const int pillVAR_count = sizeof(pillVAR)/sizeof(float)/3;
 
 inline eeColorA ColorFromPointer(void *ptr) {
 	unsigned long val = (long)ptr;
@@ -120,11 +120,11 @@ inline eeColorA ColorFromPointer(void *ptr) {
 	val = (val+0xfd7046c5) + (val<<3);
 	val = (val^0xb55a4f09) ^ (val>>16);
 
-	GLubyte r = (val>>0) & 0xFF;
-	GLubyte g = (val>>8) & 0xFF;
-	GLubyte b = (val>>16) & 0xFF;
+	unsigned char r = (val>>0) & 0xFF;
+	unsigned char g = (val>>8) & 0xFF;
+	unsigned char b = (val>>16) & 0xFF;
 
-	GLubyte max = r>g ? (r>b ? r : b) : (g>b ? g : b);
+	unsigned char max = r>g ? (r>b ? r : b) : (g>b ? g : b);
 
 	const int mult = 127;
 	const int add = 63;
@@ -141,11 +141,11 @@ inline eeColorA ColorForShape( cpShape *shape, cpSpace *space ) {
 
 	if(body){
 		if(cpBodyIsSleeping(body)){
-			GLfloat v = 0.25f;
+			float v = 0.25f;
 			nc = (int)( v * 255 );
 			return eeColorA( nc, nc, nc, 255 );
 		} else if(body->CP_PRIVATE(node).idleTime > space->sleepTimeThreshold) {
-			GLfloat v = 0.9f;
+			float v = 0.9f;
 			nc = (int)( v * 255 );
 			return eeColorA( nc, nc, nc, 255 );
 		}
@@ -154,7 +154,7 @@ inline eeColorA ColorForShape( cpShape *shape, cpSpace *space ) {
 	return ColorFromPointer( shape );
 }
 
-static const GLfloat springVAR[] = {
+static const float springVAR[] = {
 	0.00f, 0.0f,
 	0.20f, 0.0f,
 	0.25f, 3.0f,
@@ -171,7 +171,7 @@ static const GLfloat springVAR[] = {
 	0.80f, 0.0f,
 	1.00f, 0.0f,
 };
-static const int springVAR_count = sizeof(springVAR)/sizeof(GLfloat)/2;
+static const int springVAR_count = sizeof(springVAR)/sizeof(float)/2;
 
 #endif
 

@@ -113,13 +113,13 @@ class EE_API cTextureFactory : protected cMutex {
 		* @return The real current texture id (OpenGL Texture Id)
 		* @param TextureUnit The Texture Unit binded
 		*/
-		GLint GetCurrentTexture( const Uint32& TextureUnit = 0 ) const;
+		int GetCurrentTexture( const Uint32& TextureUnit = 0 ) const;
 
 		/** Set the current internal texture id. This will set the TexId as the current texture binded.
-		* @param TexId The internal Texture Id
+		* @param TexId The real current texture id (OpenGL Texture Id)
 		* @param TextureUnit The Texture Unit binded
 		*/
-		void SetCurrentTexture( const GLint& TexId, const Uint32& TextureUnit );
+		void SetCurrentTexture( const int& TexId, const Uint32& TextureUnit );
 
 		/** Returns the number of textures loaded */
 		Uint32 GetNumTextures() const { return (Uint32)mTextures.size(); }
@@ -200,7 +200,7 @@ class EE_API cTextureFactory : protected cMutex {
 
 		cTextureFactory();
 
-		GLint mCurrentTexture[ EE_MAX_TEXTURE_UNITS ];
+		int mCurrentTexture[ EE_MAX_TEXTURE_UNITS ];
 
 		EE_BLEND_MODE mLastBlend;
 

@@ -1,7 +1,7 @@
 #include <eepp/graphics/cshaderprogram.hpp>
 #include <eepp/graphics/cshaderprogrammanager.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
-#include <eepp/graphics/glhelper.hpp>
+#include <eepp/graphics/renderer/cgl.hpp>
 
 namespace EE { namespace Graphics {
 

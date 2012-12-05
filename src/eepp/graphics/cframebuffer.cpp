@@ -2,9 +2,11 @@
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
 #include <eepp/window/cengine.hpp>
+#include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/cframebufferfbo.hpp>
 #include <eepp/graphics/cframebufferpbuffer.hpp>
 #include <eepp/graphics/cframebuffermanager.hpp>
+#include <eepp/window/cwindow.hpp>
 using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {

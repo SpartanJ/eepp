@@ -1,6 +1,7 @@
 #include <eepp/ui/cuitextinput.hpp>
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/window/cengine.hpp>
+#include <eepp/graphics/renderer/cgl.hpp>
 
 namespace EE { namespace UI {
 

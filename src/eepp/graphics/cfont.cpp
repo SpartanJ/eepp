@@ -1,6 +1,7 @@
 #include <eepp/graphics/cfont.hpp>
 #include <eepp/graphics/cfontmanager.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
+#include <eepp/graphics/renderer/cgl.hpp>
 
 namespace EE { namespace Graphics {
 

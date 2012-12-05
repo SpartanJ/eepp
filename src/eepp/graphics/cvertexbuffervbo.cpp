@@ -1,5 +1,5 @@
 #include <eepp/graphics/cvertexbuffervbo.hpp>
-#include <eepp/graphics/glhelper.hpp>
+#include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/renderer/crenderergl3.hpp>
 
 namespace EE { namespace Graphics {

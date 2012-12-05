@@ -15,7 +15,7 @@ using namespace EE::Math;
 using namespace EE::System;
 
 #include <eepp/graphics/renders.hpp>
-#include <eepp/graphics/glhelper.hpp>
+#include <eepp/graphics/opengl.hpp>
 using namespace EE::Graphics;
 
 #if EE_PLATFORM == EE_PLATFORM_WIN

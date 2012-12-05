@@ -2,7 +2,6 @@
 #define EE_GRAPHICSCBATCHRENDERER_H
 
 #include <eepp/graphics/base.hpp>
-#include <eepp/graphics/glhelper.hpp>
 
 namespace EE { namespace Graphics {
 

@@ -31,7 +31,7 @@ class EE_API cVertexBufferVBO : public cVertexBuffer {
 
 		bool mTextured;
 
-		GLuint mVAO;
+		Uint32 mVAO;
 
 		Uint32 mElementHandle;
 

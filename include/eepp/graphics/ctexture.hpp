@@ -16,10 +16,10 @@ namespace EE { namespace Graphics {
 class EE_API cTexture : public cImage {
 	public:
 		/** Set the OpenGL Texture Id (texture handle) */
-		void Handle( const Uint32& texture ) { mTexture = texture; }
+		void Handle( const int& texture ) { mTexture = texture; }
 
 		/** @return The OpenGL Texture Id (texture handle) */
-		Uint32 Handle() const { return mTexture; }
+		int Handle() const { return mTexture; }
 
 		/** @return The hash of the filename */
 		const Uint32& HashName() const;
@@ -233,7 +233,7 @@ class EE_API cTexture : public cImage {
 
 		Uint32 			mId;
 		Uint32 			mTexId;
-		GLint 			mTexture;
+		int 			mTexture;
 
 		eeUint 			mImgWidth;
 		eeUint 			mImgHeight;
@@ -243,7 +243,7 @@ class EE_API cTexture : public cImage {
 		EE_CLAMP_MODE 	mClampMode;
 		EE_TEX_FILTER 	mFilter;
 
-		GLint			mInternalFormat;
+		int				mInternalFormat;
 
 		void 			ApplyClampMode();
 
