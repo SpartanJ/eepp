@@ -46,7 +46,7 @@ class EE_API cWindowSFML : public cWindow {
 
 		eeWindowContex GetContext() const;
 
-		eeWindowHandler	GetWindowHandler();
+		eeWindowHandle	GetWindowHandler();
 
 		void SetDefaultContext();
 
@@ -57,7 +57,7 @@ class EE_API cWindowSFML : public cWindow {
 
 		sf::Window mSFMLWindow;
 
-		eeWindowHandler mWinHandler;
+		eeWindowHandle mWinHandler;
 
 		bool mVisible;
 

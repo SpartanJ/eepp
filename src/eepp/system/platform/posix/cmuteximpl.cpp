@@ -23,6 +23,10 @@ void cMutexImpl::Unlock() {
 	pthread_mutex_unlock(&mMutex);
 }
 
+int cMutexImpl::TryLock() {
+	return pthread_mutex_trylock(&mMutex);
+}
+
 }}}
 
 #endif

@@ -64,21 +64,21 @@ cFrameBufferPBuffer::~cFrameBufferPBuffer() {
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	if ( mContext )
-		wglDeleteContext( mContext );
+		wglDeleteContext( (HGLRC)mContext );
 
 	if ( mPBuffer && mDeviceContext ) {
-		wglReleasePbufferDCARB( mPBuffer, mDeviceContext );
-		wglDestroyPbufferARB( mPBuffer );
+		wglReleasePbufferDCARB( (HPBUFFERARB)mPBuffer, (HDC)mDeviceContext );
+		wglDestroyPbufferARB( (HPBUFFERARB)mPBuffer );
 	}
 #elif defined( EE_X11_PLATFORM )
     if ( mContext )
-        glXDestroyContext( mDisplay, mContext );
+		glXDestroyContext( (Display*)mDisplay, (GLXContext)mContext );
 
     if ( mPBuffer )
-        glXDestroyGLXPbufferSGIX( mDisplay, mPBuffer );
+		glXDestroyGLXPbufferSGIX( (Display*)mDisplay, mPBuffer );
 
 	if ( mDisplay )
-		XCloseDisplay( mDisplay );
+		XCloseDisplay( (Display*)mDisplay );
 #endif
 
 #endif
@@ -145,15 +145,15 @@ bool cFrameBufferPBuffer::Create( const Uint32& Width, const Uint32& Height, boo
 		return false;
 
 	mPBuffer       = wglCreatePbufferARB( currentDC, pixelFormat, Width, Height, NULL );
-	mDeviceContext = wglGetPbufferDCARB( mPBuffer );
-	mContext       = wglCreateContext( mDeviceContext );
+	mDeviceContext = wglGetPbufferDCARB( (HPBUFFERARB)mPBuffer );
+	mContext       = wglCreateContext( (HDC)mDeviceContext );
 
 	if ( !mPBuffer || !mDeviceContext || !mContext )
 		return false;
 
 	int actualWidth, actualHeight;
-	wglQueryPbufferARB( mPBuffer, WGL_PBUFFER_WIDTH_ARB, &actualWidth );
-	wglQueryPbufferARB( mPBuffer, WGL_PBUFFER_HEIGHT_ARB, &actualHeight );
+	wglQueryPbufferARB( (HPBUFFERARB)mPBuffer, WGL_PBUFFER_WIDTH_ARB, &actualWidth );
+	wglQueryPbufferARB( (HPBUFFERARB)mPBuffer, WGL_PBUFFER_HEIGHT_ARB, &actualHeight );
 
 	if ( ( actualWidth != static_cast<int>(Width) ) || ( actualHeight != static_cast<int>(Height) ) )
 		return false;
@@ -161,7 +161,7 @@ bool cFrameBufferPBuffer::Create( const Uint32& Width, const Uint32& Height, boo
 	HGLRC currentContext = wglGetCurrentContext();
 	if (currentContext) {
 		wglMakeCurrent( NULL, NULL );
-		wglShareLists( currentContext, mContext );
+		wglShareLists( currentContext, (HGLRC)mContext );
 		wglMakeCurrent( currentDC, currentContext );
 	}
 #elif defined( EE_X11_PLATFORM )
@@ -185,12 +185,12 @@ bool cFrameBufferPBuffer::Create( const Uint32& Width, const Uint32& Height, boo
 	};
 
 	int nbConfigs = 0;
-	GLXFBConfig* configs = glXChooseFBConfigSGIX( mDisplay, DefaultScreen( mDisplay ), visualAttributes, &nbConfigs );
+	GLXFBConfig* configs = glXChooseFBConfigSGIX( (Display*)mDisplay, DefaultScreen( (Display*)mDisplay ), visualAttributes, &nbConfigs );
 
 	if (!configs || !nbConfigs)
 		return false;
 
-	mPBuffer = glXCreateGLXPbufferSGIX( mDisplay, configs[0], Width, Height, PBufferAttributes );
+	mPBuffer = glXCreateGLXPbufferSGIX( (Display*)mDisplay, configs[0], Width, Height, PBufferAttributes );
 
 	if ( !mPBuffer ) {
 		XFree(configs);
@@ -198,8 +198,8 @@ bool cFrameBufferPBuffer::Create( const Uint32& Width, const Uint32& Height, boo
 	}
 
 	unsigned int actualWidth, actualHeight;
-	glXQueryGLXPbufferSGIX( mDisplay, mPBuffer, GLX_WIDTH_SGIX, &actualWidth);
-	glXQueryGLXPbufferSGIX( mDisplay, mPBuffer, GLX_HEIGHT_SGIX, &actualHeight);
+	glXQueryGLXPbufferSGIX( (Display*)mDisplay, mPBuffer, GLX_WIDTH_SGIX, &actualWidth);
+	glXQueryGLXPbufferSGIX( (Display*)mDisplay, mPBuffer, GLX_HEIGHT_SGIX, &actualHeight);
 
 	if ( ( actualWidth != Width ) || ( actualHeight != Height ) ) {
 		XFree(configs);
@@ -210,10 +210,10 @@ bool cFrameBufferPBuffer::Create( const Uint32& Width, const Uint32& Height, boo
 	GLXContext currentContext = glXGetCurrentContext();
 
 	if ( currentContext )
-		glXMakeCurrent( mDisplay, 0, NULL );
+		glXMakeCurrent( (Display*)mDisplay, 0, NULL );
 
-	XVisualInfo* visual = glXGetVisualFromFBConfig( mDisplay, configs[0] );
-	mContext = glXCreateContext( mDisplay, visual, currentContext, true );
+	XVisualInfo* visual = glXGetVisualFromFBConfig( (Display*)mDisplay, configs[0] );
+	mContext = glXCreateContext( (Display*)mDisplay, visual, currentContext, true );
 
 	if ( !mContext ) {
 		XFree(configs);
@@ -222,7 +222,7 @@ bool cFrameBufferPBuffer::Create( const Uint32& Width, const Uint32& Height, boo
 	}
 
 	if ( currentContext )
-		glXMakeCurrent( mDisplay, currentDrawable, currentContext );
+		glXMakeCurrent( (Display*)mDisplay, currentDrawable, currentContext );
 
 	XFree(configs);
 	XFree(visual);
@@ -252,14 +252,14 @@ void cFrameBufferPBuffer::Bind() {
 	if ( mDeviceContext && mContext ) {
 		if ( wglGetCurrentContext() != mContext ) {
 			ChangeContext = true;
-			wglMakeCurrent( mDeviceContext, mContext );
+			wglMakeCurrent( (HDC)mDeviceContext, (HGLRC)mContext );
 		}
 	}
 	#elif defined( EE_X11_PLATFORM )
 	if ( mPBuffer && mContext ) {
 		if ( glXGetCurrentContext() != mContext ) {
 			ChangeContext = true;
-			glXMakeCurrent( mDisplay, mPBuffer, mContext );
+			glXMakeCurrent( (Display*)mDisplay, mPBuffer, (GLXContext)mContext );
 		}
 	}
 	#endif

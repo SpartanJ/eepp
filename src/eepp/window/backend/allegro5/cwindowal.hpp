@@ -38,7 +38,7 @@ class EE_API cWindowAl : public cWindow {
 
 		void SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue );
 
-		eeWindowHandler	GetWindowHandler();
+		eeWindowHandle	GetWindowHandler();
 
 		#if defined( EE_X11_PLATFORM )
 		X11Window GetX11Window();

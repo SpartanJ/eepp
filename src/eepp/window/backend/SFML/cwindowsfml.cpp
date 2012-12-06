@@ -198,7 +198,7 @@ eeWindowContex cWindowSFML::GetContext() const {
 void cWindowSFML::GetMainContext() {
 }
 
-eeWindowHandler	cWindowSFML::GetWindowHandler() {
+eeWindowHandle	cWindowSFML::GetWindowHandler() {
 #if defined( EE_X11_PLATFORM )
 	if ( 0 == mWinHandler ) {
 		#ifdef EE_SUPPORT_EXCEPTIONS
@@ -214,9 +214,9 @@ eeWindowHandler	cWindowSFML::GetWindowHandler() {
 
 	return mWinHandler;
 #elif EE_PLATFORM == EE_PLATFORM_WIN
-	return (eeWindowHandler)mSFMLWindow.getSystemHandle();
+	return (eeWindowHandle)mSFMLWindow.getSystemHandle();
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
-	return (eeWindowHandler)mSFMLWindow.getSystemHandle();
+	return (eeWindowHandle)mSFMLWindow.getSystemHandle();
 #else
 	return 0;
 #endif

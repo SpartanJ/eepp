@@ -90,7 +90,7 @@ void cLog::openfs() {
         std::string str = mFilePath + "log.log";
 
 		mFS = eeNew( cIOStreamFile, ( str, std::ios::app | std::ios::out | std::ios::binary ) );
-    }
+	}
 }
 
 void cLog::closefs() {
@@ -173,7 +173,7 @@ const bool& cLog::LiveWrite() const {
 }
 
 void cLog::LiveWrite( const bool& lw ) {
-    mLiveWrite = lw;
+	mLiveWrite = lw;
 }
 
 }}

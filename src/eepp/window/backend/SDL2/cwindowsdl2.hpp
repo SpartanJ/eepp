@@ -38,7 +38,7 @@ class EE_API cWindowSDL : public cWindow {
 
 		void SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue );
 
-		eeWindowHandler	GetWindowHandler();
+		eeWindowHandle	GetWindowHandler();
 
 		virtual void Minimize();
 

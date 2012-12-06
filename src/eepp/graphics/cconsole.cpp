@@ -4,6 +4,7 @@
 #include <eepp/window/cinput.hpp>
 #include <eepp/window/cengine.hpp>
 #include <eepp/window/ccursormanager.hpp>
+#include <eepp/window/cwindow.hpp>
 #include <algorithm>
 #include <cstdarg>
 
@@ -27,6 +28,7 @@ cConsole::cConsole( Window::cWindow * window ) :
 	mVidCb(0),
 	mMaxLogLines(1024),
 	mLastLogPos(0),
+	mTBuf( eeNew( cInputTextBuffer, () ) ),
 	mFont(NULL),
 	mTexId(0),
 	mCurAlpha(0),
@@ -57,6 +59,8 @@ cConsole::~cConsole() {
 		mWindow->GetInput()->PopCallback( mMyCallback );
 		mWindow->PopResizeCallback( mVidCb );
 	}
+
+	eeSAFE_DELETE( mTBuf );
 }
 
 void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const eeUint& MaxLogLines, const Uint32& TextureId ) {
@@ -93,10 +97,10 @@ void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const eeUin
 		mVidCb = mWindow->PushResizeCallback( cb::Make0( this, &cConsole::PrivVideoResize )  );
 	}
 
-	mTBuf.SetReturnCallback( cb::Make0( this, &cConsole::ProcessLine ) );
-	mTBuf.Start();
-	mTBuf.SupportNewLine( false );
-	mTBuf.Active( false );
+	mTBuf->SetReturnCallback( cb::Make0( this, &cConsole::ProcessLine ) );
+	mTBuf->Start();
+	mTBuf->SupportNewLine( false );
+	mTBuf->Active( false );
 	IgnoreCharOnPrompt( KEY_TAB );
 
 	mCon.ConModif = 0;
@@ -159,17 +163,17 @@ void cConsole::Draw() {
 			CurY = mTempY + mY + mCurHeight - mFontSize - 1;
 
 			mFont->Color( eeColorA ( mFontLineColor.R(), mFontLineColor.G(), mFontLineColor.B(), static_cast<Uint8>(mA) ) );
-			mFont->SetText( "> " + mTBuf.Buffer() );
+			mFont->SetText( "> " + mTBuf->Buffer() );
 			mFont->Draw( mFontSize, CurY );
 
 			mFont->Color( eeColorA ( mFontLineColor.R(), mFontLineColor.G(), mFontLineColor.B(), static_cast<Uint8>(mCurAlpha) ) );
 
 			mFont->Color( OldColor );
 
-			if ( (eeUint)mTBuf.CurPos() == mTBuf.Buffer().size() ) {
+			if ( (eeUint)mTBuf->CurPos() == mTBuf->Buffer().size() ) {
 				mFont->Draw( "_", mFontSize + mFont->GetTextWidth() , CurY );
 			} else {
-				mFont->SetText( "> " + mTBuf.Buffer().substr( 0, mTBuf.CurPos() ) );
+				mFont->SetText( "> " + mTBuf->Buffer().substr( 0, mTBuf->CurPos() ) );
 				mFont->Draw( "_", mFontSize + mFont->GetTextWidth() , CurY );
 			}
 		}
@@ -190,7 +194,7 @@ void cConsole::FadeIn() {
 		mFadeIn = true;
 		mVisible = true;
 		mY = 0.0f;
-		mTBuf.Active( true );
+		mTBuf->Active( true );
 	}
 }
 
@@ -199,12 +203,12 @@ void cConsole::FadeOut() {
 		mFading = true;
 		mFadeOut = true;
 		mVisible = false;
-		mTBuf.Active( false );
+		mTBuf->Active( false );
 	}
 }
 
 void cConsole::ProcessLine() {
-	String str = mTBuf.Buffer();
+	String str = mTBuf->Buffer();
 	std::vector < String > params = String::SplitString( str, ' ' );
 
 	mLastCommands.push_back( str );
@@ -222,7 +226,7 @@ void cConsole::ProcessLine() {
 			PushText( "Unknown Command: '" + params[0] + "'" );
 		}
 	}
-	mTBuf.Clear();
+	mTBuf->Clear();
 }
 
 void cConsole::PrivPushText( const String& str ) {
@@ -332,7 +336,7 @@ void cConsole::PrintCommandsStartingWith( const String& start ) {
 	}
 
 	if ( cmds.size() > 1 ) {
-		PushText( "> " + mTBuf.Buffer() );
+		PushText( "> " + mTBuf->Buffer() );
 
 		std::list<String>::iterator ite;
 
@@ -340,8 +344,8 @@ void cConsole::PrintCommandsStartingWith( const String& start ) {
 			PushText( (*ite) );
 
 	} else if ( cmds.size() ) {
-		mTBuf.Buffer( cmds.front() );
-		mTBuf.CursorToEnd();
+		mTBuf->Buffer( cmds.front() );
+		mTBuf->CursorToEnd();
 	}
 }
 
@@ -367,8 +371,8 @@ void cConsole::PrivInputCallback( InputEvent * Event ) {
 		Uint32 Button	= Event->button.button;
 
 		if ( InputEvent::KeyDown == etype ) {
-			if ( ( KeyCode == KEY_TAB ) && (eeUint)mTBuf.CurPos() == mTBuf.Buffer().size() ) {
-				PrintCommandsStartingWith( mTBuf.Buffer() );
+			if ( ( KeyCode == KEY_TAB ) && (eeUint)mTBuf->CurPos() == mTBuf->Buffer().size() ) {
+				PrintCommandsStartingWith( mTBuf->Buffer() );
 			}
 
 			if ( mLastCommands.size() > 0 ) {
@@ -382,10 +386,10 @@ void cConsole::PrivInputCallback( InputEvent * Event ) {
 
 				if ( KeyCode == KEY_UP || KeyCode == KEY_DOWN ) {
 					if ( mLastLogPos == static_cast<eeInt>( mLastCommands.size() ) ) {
-						mTBuf.Buffer( "" );
+						mTBuf->Buffer( "" );
 					} else {
-						mTBuf.Buffer( mLastCommands[mLastLogPos] );
-						mTBuf.CursorToEnd();
+						mTBuf->Buffer( mLastCommands[mLastLogPos] );
+						mTBuf->CursorToEnd();
 					}
 				}
 			}
@@ -661,7 +665,7 @@ void cConsole::CmdShowFps( const std::vector < String >& params ) {
 }
 
 void cConsole::IgnoreCharOnPrompt( const Uint32& ch ) {
-	mTBuf.PushIgnoredChar( ch );
+	mTBuf->PushIgnoredChar( ch );
 }
 
 const bool& cConsole::IsShowingFps() const {

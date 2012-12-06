@@ -21,6 +21,8 @@ class cMutexImpl {
 		void Lock();
 
 		void Unlock();
+
+		int TryLock();
 	private:
 		CRITICAL_SECTION mMutex;
 };

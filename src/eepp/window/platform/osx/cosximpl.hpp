@@ -2,9 +2,10 @@
 #define EE_WINDOWCOSXIMPL_HPP
 
 #include <eepp/window/base.hpp>
-#include <eepp/window/cplatformimpl.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
+
+#include <eepp/window/cplatformimpl.hpp>
 
 namespace EE { namespace Window { namespace Platform {
 

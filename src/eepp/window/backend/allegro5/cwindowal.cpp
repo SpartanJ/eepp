@@ -388,7 +388,7 @@ std::vector< std::pair<unsigned int, unsigned int> > cWindowAl::GetPossibleResol
 void cWindowAl::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {
 }
 
-eeWindowHandler	cWindowAl::GetWindowHandler() {
+eeWindowHandle	cWindowAl::GetWindowHandler() {
 	#if EE_PLATFORM == EE_PLATFORM_WIN
 	return al_get_win_window_handle( mDisplay );
 	#elif defined( EE_X11_PLATFORM )

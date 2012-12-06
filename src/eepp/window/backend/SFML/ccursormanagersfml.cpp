@@ -8,7 +8,7 @@
 #undef None
 #endif
 #include <SFML/Window.hpp>
-
+#include <eepp/window/cplatformimpl.hpp>
 
 namespace EE { namespace Window { namespace Backend { namespace SFML {
 

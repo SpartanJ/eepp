@@ -47,7 +47,7 @@ class EE_API cWindowNull : public cWindow {
 
 		eeWindowContex GetContext() const;
 
-		eeWindowHandler	GetWindowHandler();
+		eeWindowHandle	GetWindowHandler();
 
 		void SetDefaultContext();
 	protected:

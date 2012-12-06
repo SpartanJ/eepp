@@ -2,9 +2,10 @@
 #define EE_WINDOWCWINIMPL_HPP
 
 #include <eepp/window/base.hpp>
-#include <eepp/window/cplatformimpl.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
+
+#include <eepp/window/cplatformimpl.hpp>
 
 namespace EE { namespace Window { namespace Platform {
 
@@ -12,7 +13,7 @@ using namespace EE::Window;
 
 class cWinImpl : public cPlatformImpl {
 	public:
-		cWinImpl( Window::cWindow * window, eeWindowHandler handler );
+		cWinImpl( Window::cWindow * window, eeWindowHandle handler );
 
 		~cWinImpl();
 
@@ -48,10 +49,10 @@ class cWinImpl : public cPlatformImpl {
 
 		void RestoreCursor();
 
-		eeWindowHandler GetHandler() const;
+		eeWindowHandle GetHandler() const;
 	protected:
-		eeWindowHandler mHandler;
-		HCURSOR			mCursorCurrent;
+		eeWindowHandle	mHandler;
+		void *			mCursorCurrent;
 		bool			mCursorHidden;
 };
 

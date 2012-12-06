@@ -3,9 +3,10 @@
 
 #include <eepp/window/base.hpp>
 #include <eepp/window/cview.hpp>
-#include <eepp/window/cplatformimpl.hpp>
 
 namespace EE { namespace Window {
+
+namespace Platform { class cPlatformImpl; }
 
 class cClipboard;
 class cInput;
@@ -191,7 +192,7 @@ class EE_API cWindow {
 		virtual eeWindowContex GetContext() const;
 
 		/** @return The window handler */
-		virtual eeWindowHandler	GetWindowHandler() = 0;
+		virtual eeWindowHandle	GetWindowHandler() = 0;
 
 		/** Clear the current window
 		This function is usually called once every frame, to clear the previous frame content.

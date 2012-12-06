@@ -380,7 +380,7 @@ void cWindowSDL::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {
 	SDL_SetWindowGammaRamp( mSDLWindow, red_ramp, green_ramp, blue_ramp );
 }
 
-eeWindowHandler	cWindowSDL::GetWindowHandler() {
+eeWindowHandle	cWindowSDL::GetWindowHandler() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	return mWMinfo.info.win.window;
 #elif defined( EE_X11_PLATFORM )

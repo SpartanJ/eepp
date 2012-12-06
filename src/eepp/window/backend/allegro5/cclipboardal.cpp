@@ -28,7 +28,7 @@ String cClipboardAl::GetWideText() {
 	/** Not sure if activate this, sometimes freeze the application because of the notification delay. */
 	/**
 	cWindowAl * win = reinterpret_cast<cWindowAl*> ( mWindow );
-	eeWindowHandler mDisplay = win->GetWindowHandler();
+	eeWindowHandle mDisplay = win->GetWindowHandler();
 	X11Window mWin = win->GetX11Window();
 
 	Atom clipboard = XInternAtom(mDisplay, "CLIPBOARD", True);

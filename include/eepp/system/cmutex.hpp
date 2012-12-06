@@ -19,6 +19,9 @@ class EE_API cMutex {
 
 		/** Unlock the mutex */
 		void Unlock();
+
+		/** Tries to lock de mutex */
+		int TryLock();
 	private:
 		Platform::cMutexImpl *		mMutexImpl;
 };

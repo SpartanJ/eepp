@@ -7,7 +7,7 @@ using namespace EE::Window::Cursor;
 
 namespace EE { namespace Window { namespace Platform {
 
-cX11Impl::cX11Impl( cWindow * window, eeWindowHandler display, X11Window xwindow, X11Window mainwindow, LockFunc lock, UnlockFunc unlock ) :
+cX11Impl::cX11Impl( cWindow * window, eeWindowHandle display, X11Window xwindow, X11Window mainwindow, LockFunc lock, UnlockFunc unlock ) :
 	cPlatformImpl( window ),
 	mDisplay( display ),
 	mX11Window( xwindow ),
@@ -279,7 +279,7 @@ void cX11Impl::SetSystemMouseCursor( Cursor::EE_SYSTEM_CURSOR syscursor ) {
 	Unlock();
 }
 
-eeWindowHandler cX11Impl::GetDisplay() const {
+eeWindowHandle cX11Impl::GetDisplay() const {
 	return mDisplay;
 }
 

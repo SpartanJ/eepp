@@ -13,6 +13,9 @@
 #include <eepp/window/cwindow.hpp>
 using namespace EE::Window;
 
+#include <eepp/graphics/ctexture.hpp>
+using namespace EE::Graphics;
+
 namespace EE { namespace Gaming {
 
 #define EE_MAP_LAYER_UNKNOWN 0xFFFFFFFF

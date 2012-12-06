@@ -2,11 +2,12 @@
 #define EE_GRAPHICSCCONSOLE_H
 
 #include <eepp/graphics/base.hpp>
-#include <eepp/window/cwindow.hpp>
 #include <eepp/window/cinputtextbuffer.hpp>
 #include <eepp/graphics/cprimitives.hpp>
 #include <eepp/graphics/cfont.hpp>
 #include <deque>
+
+namespace EE { namespace Window { class cWindow; class cInputTextBuffer; class InputEvent; } }
 
 using namespace EE::Window;
 
@@ -148,7 +149,7 @@ class EE_API cConsole{
 		Uint32 mMaxLogLines;
 		eeInt mLastLogPos;
 
-		cInputTextBuffer mTBuf;
+		cInputTextBuffer * mTBuf;
 
 		cFont * mFont;
 

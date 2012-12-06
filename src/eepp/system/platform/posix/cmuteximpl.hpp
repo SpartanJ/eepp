@@ -18,6 +18,8 @@ class cMutexImpl {
 		void Lock();
 
 		void Unlock();
+
+		int TryLock();
 	private:
 		pthread_mutex_t mMutex;
 };

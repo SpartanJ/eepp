@@ -1,16 +1,26 @@
-#include <eepp/window/platform/win/cwinimpl.hpp>
+#include <eepp/declares.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
-#include <eepp/window/cwindow.hpp>
+#ifndef WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#undef CreateWindow
 
+static BOOL WIN_ShowWindow( HWND hWnd, int nCmdShow ) {
+	return ShowWindow( hWnd, nCmdShow );
+}
+
+#include <eepp/window/platform/win/cwinimpl.hpp>
+#include <eepp/window/cwindow.hpp>
 #include <eepp/window/platform/win/ccursorwin.hpp>
 
 using namespace EE::Window::Cursor;
 
 namespace EE { namespace Window { namespace Platform {
 
-cWinImpl::cWinImpl( cWindow * window, eeWindowHandler handler ) :
+cWinImpl::cWinImpl( cWindow * window, eeWindowHandle handler ) :
 	cPlatformImpl( window ),
 	mHandler( handler ),
 	mCursorCurrent( NULL ),
@@ -53,7 +63,7 @@ void cWinImpl::MoveWindow( int left, int top ) {
 }
 
 void cWinImpl::SetContext( eeWindowContex Context ) {
-	wglMakeCurrent( GetDC( mHandler ), Context );
+	wglMakeCurrent( (HDC)GetDC( mHandler ), (HGLRC)Context );
 }
 
 eeVector2i cWinImpl::Position() {
@@ -68,7 +78,7 @@ void cWinImpl::ShowMouseCursor() {
 	if ( !mCursorCurrent ) {
 		SetSystemMouseCursor( Cursor::SYS_CURSOR_DEFAULT );
 	} else {
-        SetCursor( mCursorCurrent );
+		SetCursor( (HCURSOR)mCursorCurrent );
         POINT p;
         GetCursorPos( &p );
         SetCursorPos( p.x, p.y );
@@ -100,7 +110,7 @@ void cWinImpl::SetMouseCursor( cCursor * cursor ) {
     mCursorCurrent = reinterpret_cast<cCursorWin*> ( cursor )->GetCursor();
 
     if ( !mCursorHidden ) {
-        SetCursor( mCursorCurrent );
+		SetCursor( (HCURSOR)mCursorCurrent );
         POINT p;
         GetCursorPos( &p );
         SetCursorPos( p.x, p.y );
@@ -166,7 +176,7 @@ void cWinImpl::RestoreCursor() {
 	}
 }
 
-eeWindowHandler cWinImpl::GetHandler() const {
+eeWindowHandle cWinImpl::GetHandler() const {
     return mHandler;
 }
 

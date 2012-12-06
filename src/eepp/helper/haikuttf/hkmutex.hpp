@@ -5,6 +5,8 @@
 
 namespace HaikuTTF {
 
+class hkMutexImpl;
+
 class hkMutex {
 	public:
 		hkMutex();
@@ -15,11 +17,7 @@ class hkMutex {
 		
 		void Unlock();
 	protected:
-		#if HK_PLATFORM == HK_PLATFORM_WIN
-		CRITICAL_SECTION mMutex;
-		#elif defined( HK_PLATFORM_POSIX )
-		pthread_mutex_t mMutex;
-		#endif
+		hkMutexImpl * mImpl;
 };
 
 }

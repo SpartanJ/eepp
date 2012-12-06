@@ -39,15 +39,6 @@ typedef SOPHIST_uint32		u32;
 	#define HK_PLATFORM_POSIX
 #endif
 
-#if HK_PLATFORM == HK_PLATFORM_WIN
-#ifndef WIN32_LEAN_AND_MEAN
-	#define WIN32_LEAN_AND_MEAN
-#endif
-#include <windows.h>
-#elif defined( HK_PLATFORM_POSIX )
-#include <pthread.h>
-#endif
-
 #include <ft2build.h>
 #include FT_FREETYPE_H
 #include FT_OUTLINE_H

@@ -2,36 +2,75 @@
 
 namespace HaikuTTF {
 
-hkMutex::hkMutex() {
-	#if HK_PLATFORM == HK_PLATFORM_WIN
-	InitializeCriticalSection(&mMutex);
-	#elif defined( HK_PLATFORM_POSIX )
-	pthread_mutex_init(&mMutex, NULL);
-	#endif
+#if HK_PLATFORM == HK_PLATFORM_WIN
+
+#ifndef WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+
+class hkMutexImpl {
+	public:
+		hkMutexImpl() {
+			InitializeCriticalSection(&mMutex);
+		}
+
+		~hkMutexImpl() {
+			DeleteCriticalSection(&mMutex);
+		}
+
+		void Lock() {
+			EnterCriticalSection(&mMutex);
+		}
+
+		void Unlock() {
+			LeaveCriticalSection(&mMutex);
+		}
+	protected:
+		CRITICAL_SECTION mMutex;
+};
+
+#elif defined( HK_PLATFORM_POSIX )
+
+#include <pthread.h>
+class hkMutexImpl {
+	public:
+		hkMutexImpl() {
+			pthread_mutex_init(&mMutex, NULL);
+		}
+
+		~hkMutexImpl() {
+			pthread_mutex_destroy(&mMutex);
+		}
+
+		void Lock() {
+			pthread_mutex_lock(&mMutex);
+		}
+
+		void Unlock() {
+			pthread_mutex_unlock(&mMutex);
+		}
+	protected:
+		pthread_mutex_t mMutex;
+};
+
+#endif
+
+hkMutex::hkMutex() :
+	mImpl( hkNew( hkMutexImpl, () ) )
+{
 }
 
 hkMutex::~hkMutex() {
-	#if HK_PLATFORM == HK_PLATFORM_WIN
-	DeleteCriticalSection(&mMutex);
-	#elif defined( HK_PLATFORM_POSIX )
-	pthread_mutex_destroy(&mMutex);
-	#endif
+	hkSAFE_DELETE( mImpl )
 }
 
 void hkMutex::Lock() {
-	#if HK_PLATFORM == HK_PLATFORM_WIN
-	EnterCriticalSection(&mMutex);
-	#elif defined( HK_PLATFORM_POSIX )
-	pthread_mutex_lock(&mMutex);
-	#endif
+	mImpl->Lock();
 }
 
 void hkMutex::Unlock() {
-	#if HK_PLATFORM == HK_PLATFORM_WIN
-	LeaveCriticalSection(&mMutex);
-	#elif defined( HK_PLATFORM_POSIX )
-	pthread_mutex_unlock(&mMutex);
-	#endif
+	mImpl->Unlock();
 }
 
 }

@@ -2,6 +2,8 @@
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
+#include <windows.h>
+
 #include <eepp/window/platform/win/cwinimpl.hpp>
 
 #define WINDOWS_RGB(r,g,b)  ((COLORREF)(((BYTE)(r)|((WORD)((BYTE)(g))<<8))|(((DWORD)(BYTE)(b))<<16)))
@@ -28,7 +30,7 @@ cCursorWin::cCursorWin( const std::string& path, const eeVector2i& hotspot, cons
 
 cCursorWin::~cCursorWin() {
     if ( NULL != mCursor )
-        DestroyIcon( mCursor );
+		DestroyIcon( (HCURSOR)mCursor );
 }
 
 static BITMAPINFO *get_bitmap_info( cImage * bitmap ) {
@@ -200,14 +202,14 @@ void cCursorWin::Create() {
     DeleteObject(and_mask);
     DeleteObject(xor_mask);
 
-    mCursor = (HCURSOR)icon;
+	mCursor = (void*)icon;
 }
 
 cWinImpl * cCursorWin::GetPlatform() {
     return reinterpret_cast<cWinImpl*>( mWindow->GetPlatform() );
 }
 
-HCURSOR cCursorWin::GetCursor() const {
+void * cCursorWin::GetCursor() const {
     return mCursor;
 }
 

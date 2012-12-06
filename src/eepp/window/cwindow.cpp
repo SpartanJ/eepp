@@ -3,6 +3,7 @@
 #include <eepp/window/cinput.hpp>
 #include <eepp/window/ccursormanager.hpp>
 #include <eepp/window/platform/null/cnullimpl.hpp>
+#include <eepp/window/cplatformimpl.hpp>
 
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
@@ -11,6 +12,17 @@
 #include <eepp/system/filesystem.hpp>
 
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
+
+#ifdef EE_GLEW_AVAILABLE
+	#if EE_PLATFORM == EE_PLATFORM_WIN
+		#include <eepp/helper/glew/wglew.h>
+		#undef GetDiskFreeSpace
+	#elif defined( EE_X11_PLATFORM )
+		#include <eepp/helper/glew/glxew.h>
+	#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+		#include <AGL/agl.h>
+	#endif
+#endif
 
 #ifdef EE_GLES1_LATE_INCLUDE
 	#if EE_PLATFORM == EE_PLATFORM_IOS

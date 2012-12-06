@@ -54,13 +54,13 @@ class EE_API cFrameBufferPBuffer : public cFrameBuffer {
 		#ifdef EE_GLEW_AVAILABLE
 
 		#if EE_PLATFORM == EE_PLATFORM_WIN
-		HDC				mDeviceContext;
-		HPBUFFERARB		mPBuffer;
-		HGLRC			mContext;
+		void *			mDeviceContext;
+		void *			mPBuffer;
+		void *			mContext;
 		#elif defined( EE_X11_PLATFORM )
-		::Display *		mDisplay;
-		GLXPbuffer		mPBuffer;
-		GLXContext		mContext;
+		void *			mDisplay;
+		unsigned long	mPBuffer;
+		void *			mContext;
 		#endif
 
 		#endif

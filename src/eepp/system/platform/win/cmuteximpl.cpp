@@ -20,6 +20,10 @@ void cMutexImpl::Unlock() {
 	LeaveCriticalSection(&mMutex);
 }
 
+int cMutexImpl::TryLock() {
+	return TryEnterCriticalSection(&mMutex);
+}
+
 }}}
 
 #endif

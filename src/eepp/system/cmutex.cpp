@@ -20,4 +20,8 @@ void cMutex::Unlock() {
 	mMutexImpl->Unlock();
 }
 
+int cMutex::TryLock() {
+	return mMutexImpl->TryLock();
+}
+
 }}

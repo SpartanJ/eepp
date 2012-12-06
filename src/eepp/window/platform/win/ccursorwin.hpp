@@ -13,11 +13,11 @@ class cWinImpl;
 
 class cCursorWin : public cCursor {
     public:
-        HCURSOR     GetCursor() const;
+		void *		GetCursor() const;
 	protected:
 		friend class cWinImpl;
 
-		HCURSOR       mCursor;
+		void *		mCursor;
 
 		cCursorWin( cTexture * tex, const eeVector2i& hotspot, const std::string& name, cWindow * window );
 

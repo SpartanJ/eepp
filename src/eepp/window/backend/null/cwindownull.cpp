@@ -82,7 +82,7 @@ eeWindowContex cWindowNull::GetContext() const {
 void cWindowNull::GetMainContext() {
 }
 
-eeWindowHandler	cWindowNull::GetWindowHandler() {
+eeWindowHandle	cWindowNull::GetWindowHandler() {
 	return 0;
 }
 

@@ -27,13 +27,13 @@ namespace EE { namespace Window { namespace Backend { namespace SDL {
 cWindowSDL::cWindowSDL( WindowSettings Settings, ContextSettings Context ) :
 	cWindow( Settings, Context, eeNew( cClipboardSDL, ( this ) ), eeNew( cInputSDL, ( this ) ), eeNew( cCursorManagerSDL, ( this ) ) ),
 	mSurface( NULL ),
-	mWMinfo( (SDL_SysWMinfo*)eeMalloc( sizeof( mWMinfo ) ) )
+	mWMinfo( eeNew( SDL_SysWMinfo, () ) )
 {
 	Create( Settings, Context );
 }
 
 cWindowSDL::~cWindowSDL() {
-	eeSAFE_FREE( mWMinfo );
+	eeSAFE_DELETE( mWMinfo );
 }
 
 bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
@@ -382,7 +382,7 @@ void cWindowSDL::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {
 	SDL_SetGamma( Red, Green, Blue );
 }
 
-eeWindowHandler	cWindowSDL::GetWindowHandler() {
+eeWindowHandle	cWindowSDL::GetWindowHandler() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	return mWMinfo->window;
 #elif defined( EE_X11_PLATFORM )

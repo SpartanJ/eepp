@@ -2,9 +2,10 @@
 #define EE_WINDOWCX11IMPL_HPP
 
 #include <eepp/window/base.hpp>
-#include <eepp/window/cplatformimpl.hpp>
 
 #if defined( EE_X11_PLATFORM )
+
+#include <eepp/window/cplatformimpl.hpp>
 
 namespace EE { namespace Window { namespace Platform {
 
@@ -15,7 +16,7 @@ class cX11Impl : public cPlatformImpl {
 		typedef void (*LockFunc)(void);
 		typedef void (*UnlockFunc)(void);
 		
-		cX11Impl( Window::cWindow * window, eeWindowHandler display, X11Window xwindow, X11Window mainwindow, LockFunc lock, UnlockFunc unlock );
+		cX11Impl( Window::cWindow * window, eeWindowHandle display, X11Window xwindow, X11Window mainwindow, LockFunc lock, UnlockFunc unlock );
 		
 		~cX11Impl();
 		
@@ -51,13 +52,13 @@ class cX11Impl : public cPlatformImpl {
 
 		void RestoreCursor();
 
-		eeWindowHandler GetDisplay() const;
+		eeWindowHandle GetDisplay() const;
 
 		void Lock();
 
 		void Unlock();
 	protected:
-		eeWindowHandler	mDisplay;
+		eeWindowHandle	mDisplay;
 		X11Window		mX11Window;
 		X11Window		mMainWindow;
 		LockFunc		mLock;

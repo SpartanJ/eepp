@@ -6,6 +6,20 @@
 #include <climits>
 #include <SDL/SDL.h>
 
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
+	#include <SDL/SDL_syswm.h>
+#endif
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	#ifndef WIN32_LEAN_AND_MEAN
+		#define WIN32_LEAN_AND_MEAN
+	#endif
+	#include <windows.h>
+#elif defined( EE_X11_PLATFORM )
+	#include <X11/Xlib.h>
+	#include <X11/Xatom.h>
+#endif
+
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
 #define T(A, B, C, D)	(int)((A<<24)|(B<<16)|(C<<8)|(D<<0))
@@ -103,7 +117,7 @@ void cClipboardSDL::Init() {
 
 void cClipboardSDL::SetText( const std::string& Text ) {
 	#if defined( EE_X11_PLATFORM )
-	eeWindowHandler display	= mInfo->info.x11.display;
+	eeWindowHandle display	= mInfo->info.x11.display;
 	X11Window window		= mInfo->info.x11.wmwindow;
 	Atom format				= TEXT_FORMAT;
 
