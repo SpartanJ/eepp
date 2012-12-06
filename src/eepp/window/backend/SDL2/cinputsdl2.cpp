@@ -1,9 +1,11 @@
+#include <eepp/window/backend/SDL2/base.hpp>
+
+#ifdef EE_BACKEND_SDL2
+
 #include <eepp/window/backend/SDL2/cinputsdl2.hpp>
 #include <eepp/window/backend/SDL2/cjoystickmanagersdl2.hpp>
 #include <eepp/window/backend/SDL2/ccursormanagersdl2.hpp>
 #include <eepp/window/backend/SDL2/cwindowsdl2.hpp>
-
-#ifdef EE_BACKEND_SDL2
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 

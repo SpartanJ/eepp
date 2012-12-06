@@ -2,6 +2,11 @@
 
 #ifdef EE_BACKEND_SFML_ACTIVE
 
+#if defined( EE_X11_PLATFORM )
+	#include <X11/Xlib.h>
+#endif
+#undef None
+
 #include <SFML/Graphics.hpp>
 
 #include <eepp/window/backend/SFML/cclipboardsfml.hpp>

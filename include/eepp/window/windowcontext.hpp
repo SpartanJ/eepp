@@ -10,15 +10,22 @@
 		
 	#elif defined( EE_X11_PLATFORM )
 
-		#include <eepp/helper/glew/glxew.h>
-		#undef Window
-		#undef Display
-		#undef Cursor
+		#ifdef __sun
+		struct __glXContextRec;
+		typedef struct __glXContextRec *GLXContext;
+		#else
+		struct __GLXcontextRec;
+		typedef struct __GLXcontextRec *GLXContext;
+		#endif
+
 		typedef GLXContext	eeWindowContex;
 
 	#elif EE_PLATFORM == EE_PLATFORM_MACOSX
 	
-		#include <AGL/agl.h>
+		struct __AGLContextRec;
+
+		typedef struct __AGLContextRec       *AGLContext;
+
 		typedef AGLContext	eeWindowContex;
 		
 	#endif

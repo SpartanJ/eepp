@@ -1,6 +1,4 @@
-#include <eepp/window/backend/SDL/cinputsdl.hpp>
-#include <eepp/window/backend/SDL/cjoystickmanagersdl.hpp>
-#include <eepp/window/backend/SDL/ccursormanagersdl.hpp>
+#include <eepp/window/backend/SDL/base.hpp>
 
 #ifdef EE_BACKEND_SDL_1_2
 
@@ -9,6 +7,10 @@
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
 	#include <SDL/SDL_syswm.h>
 #endif
+
+#include <eepp/window/backend/SDL/cinputsdl.hpp>
+#include <eepp/window/backend/SDL/cjoystickmanagersdl.hpp>
+#include <eepp/window/backend/SDL/ccursormanagersdl.hpp>
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 

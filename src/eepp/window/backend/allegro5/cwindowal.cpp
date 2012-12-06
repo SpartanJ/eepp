@@ -5,16 +5,6 @@
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
 
 #include <eepp/graphics/renderer/cgl.hpp>
-#include <eepp/graphics/cglobalbatchrenderer.hpp>
-#include <eepp/graphics/cshaderprogrammanager.hpp>
-#include <eepp/graphics/cvertexbuffermanager.hpp>
-#include <eepp/graphics/cframebuffermanager.hpp>
-#include <eepp/graphics/ctexturefactory.hpp>
-
-#include <eepp/window/platform/platformimpl.hpp>
-#include <eepp/window/backend/allegro5/cclipboardal.hpp>
-#include <eepp/window/backend/allegro5/cinputal.hpp>
-#include <eepp/window/backend/allegro5/ccursormanageral.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	#include <allegro5/allegro_windows.h>
@@ -27,6 +17,20 @@
 #include <allegro5/allegro_opengl.h>
 #include <allegro5/internal/aintern_system.h>
 #include <allegro5/internal/aintern_thread.h>
+#undef Cursor
+#undef Window
+
+#include <eepp/window/backend/allegro5/cclipboardal.hpp>
+#include <eepp/window/backend/allegro5/cinputal.hpp>
+#include <eepp/window/backend/allegro5/ccursormanageral.hpp>
+
+#include <eepp/graphics/cglobalbatchrenderer.hpp>
+#include <eepp/graphics/cshaderprogrammanager.hpp>
+#include <eepp/graphics/cvertexbuffermanager.hpp>
+#include <eepp/graphics/cframebuffermanager.hpp>
+#include <eepp/graphics/ctexturefactory.hpp>
+
+#include <eepp/window/platform/platformimpl.hpp>
 
 namespace EE { namespace Window { namespace Backend { namespace Al {
 

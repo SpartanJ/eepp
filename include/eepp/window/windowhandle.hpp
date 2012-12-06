@@ -9,19 +9,13 @@
 	typedef HWND__*			eeWindowHandle;
 
 #elif defined( EE_X11_PLATFORM )
-	#include <X11/Xlib.h>
-	#include <X11/Xcursor/Xcursor.h>
-	#include <X11/cursorfont.h>
-	#undef Window
-	#undef Display
-	#undef Cursor
-	
+
 	typedef unsigned long			X11Window;
 	typedef unsigned long			X11Cursor;
 	
-	typedef Display	*		eeWindowHandle;
+	struct _XDisplay;
+	typedef struct _XDisplay *		eeWindowHandle;
 	
-
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
 	typedef void *			eeWindowHandle; // NSWindow *
 #else

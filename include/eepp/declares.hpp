@@ -35,7 +35,7 @@
 	#define EE_PLATFORM EE_PLATFORM_LINUX
 #elif defined( __FreeBSD__ ) || defined(__OpenBSD__) || defined( __NetBSD__ ) || defined( __DragonFly__ )
 	#define EE_PLATFORM EE_PLATFORM_BSD
-#elif defined( __SVR4 )
+#elif defined( __SVR4 ) || defined( __sun )
 	#define EE_PLATFORM EE_PLATFORM_SOLARIS
 #elif defined( __HAIKU__ ) || defined( __BEOS__ )
 	#define EE_PLATFORM EE_PLATFORM_HAIKU
@@ -57,7 +57,7 @@
 
 #if defined ( linux ) || defined( __linux__ ) \
 	|| defined( __FreeBSD__ ) || defined(__OpenBSD__) || defined( __NetBSD__ ) || defined( __DragonFly__ ) \
-	|| defined( __SVR4 )
+	|| defined( __SVR4 ) || defined( __sun )
 
 #if !defined( EE_GLES1 ) && !defined( EE_GLES2 )
 
@@ -68,7 +68,7 @@
 #endif
 
 //! Since EE just use basic POSIX stuff, declare as POSIX some OS that are mostly POSIX-compliant
-#if defined ( linux ) || defined( __linux__ ) || defined( __FreeBSD__ ) || defined(__OpenBSD__) || defined( __NetBSD__ ) || defined( __DragonFly__ ) || defined( __SVR4 ) || defined( __APPLE_CC__ ) || defined ( __APPLE__ ) || defined( __HAIKU__ ) || defined( __BEOS__ )
+#if defined ( linux ) || defined( __linux__ ) || defined( __FreeBSD__ ) || defined(__OpenBSD__) || defined( __NetBSD__ ) || defined( __DragonFly__ ) || defined( __SVR4 ) || defined( __sun ) || defined( __APPLE_CC__ ) || defined ( __APPLE__ ) || defined( __HAIKU__ ) || defined( __BEOS__ )
 	#define EE_PLATFORM_POSIX
 #endif
 

@@ -2,6 +2,8 @@
 
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 
+#include <AGL/agl.h>
+
 namespace EE { namespace Window { namespace Platform {
 
 cOSXImpl::cOSXImpl( cWindow * window ) :

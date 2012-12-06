@@ -1,7 +1,12 @@
-#include <eepp/window/backend/SDL2/cwindowsdl2.hpp>
+#include <eepp/window/backend/SDL2/base.hpp>
 
 #ifdef EE_BACKEND_SDL2
 
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
+	#include <SDL2/SDL_syswm.h>
+#endif
+
+#include <eepp/window/backend/SDL2/cwindowsdl2.hpp>
 #include <eepp/window/backend/SDL2/cclipboardsdl2.hpp>
 #include <eepp/window/backend/SDL2/cinputsdl2.hpp>
 #include <eepp/window/backend/SDL2/ccursormanagersdl2.hpp>
@@ -20,7 +25,8 @@ namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 cWindowSDL::cWindowSDL( WindowSettings Settings, ContextSettings Context ) :
 	cWindow( Settings, Context, eeNew( cClipboardSDL, ( this ) ), eeNew( cInputSDL, ( this ) ), eeNew( cCursorManagerSDL, ( this ) ) ),
 	mSDLWindow( NULL ),
-	mGLContext( NULL )
+	mGLContext( NULL ),
+	mWMinfo( eeNew( SDL_SysWMinfo, () ) )
 {
 	Create( Settings, Context );
 }
@@ -29,6 +35,8 @@ cWindowSDL::~cWindowSDL() {
 	if ( NULL != mGLContext ) {
 		SDL_GL_DeleteContext( mGLContext );
 	}
+
+	eeSAFE_DELETE( mWMinfo );
 }
 
 bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
@@ -172,12 +180,12 @@ std::string cWindowSDL::GetVersion() {
 void cWindowSDL::CreatePlatform() {
 	eeSAFE_DELETE( mPlatform );
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
-	SDL_VERSION( &mWMinfo.version );
-	SDL_GetWindowWMInfo ( mSDLWindow, &mWMinfo );
+	SDL_VERSION( &mWMinfo->version );
+	SDL_GetWindowWMInfo ( mSDLWindow, mWMinfo );
 #endif
 
 #if defined( EE_X11_PLATFORM )
-	mPlatform = eeNew( Platform::cX11Impl, ( this, mWMinfo.info.x11.display, mWMinfo.info.x11.window, mWMinfo.info.x11.window, NULL, NULL ) );
+	mPlatform = eeNew( Platform::cX11Impl, ( this, mWMinfo->info.x11.display, mWMinfo->info.x11.window, mWMinfo->info.x11.window, NULL, NULL ) );
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	mPlatform = eeNew( Platform::cWinImpl, ( this, GetWindowHandler() ) );
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
@@ -382,11 +390,11 @@ void cWindowSDL::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {
 
 eeWindowHandle	cWindowSDL::GetWindowHandler() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
-	return mWMinfo.info.win.window;
+	return mWMinfo->info.win.window;
 #elif defined( EE_X11_PLATFORM )
-	return mWMinfo.info.x11.display;
+	return mWMinfo->info.x11.display;
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
-	return mWMinfo.info.cocoa.window;
+	return mWMinfo->info.cocoa.window;
 #else
 	return 0;
 #endif

@@ -569,3 +569,5 @@
 ../../include/eepp/system/filesystem.hpp
 ../../src/eepp/system/filesystem.cpp
 ../../include/eepp/graphics/glhelper.hpp
+../../include/eepp/window/windowhandle.hpp
+../../include/eepp/window/windowcontext.hpp

@@ -1,7 +1,16 @@
-#include <eepp/window/platform/x11/ccursorx11.hpp>
-#include <eepp/window/platform/x11/cx11impl.hpp>
+#include <eepp/declares.hpp>
 
 #if defined( EE_X11_PLATFORM )
+
+#include <X11/Xlib.h>
+#include <X11/Xcursor/Xcursor.h>
+#include <X11/cursorfont.h>
+#undef Window
+#undef Display
+#undef Cursor
+
+#include <eepp/window/platform/x11/ccursorx11.hpp>
+#include <eepp/window/platform/x11/cx11impl.hpp>
 
 namespace EE { namespace Window { namespace Platform {
 
