@@ -12,6 +12,8 @@ class cClipboard;
 class cInput;
 class cCursorManager;
 
+
+/** @namespace WindowStyle Define the Windows Styles */
 namespace WindowStyle {
 	enum
 	{
@@ -28,6 +30,7 @@ namespace WindowStyle {
 	};
 }
 
+/** @namespace WindowBackend Define the window backends supported by eepp */
 namespace WindowBackend {
 	enum
 	{
@@ -39,6 +42,7 @@ namespace WindowBackend {
 	};
 }
 
+/** @class WindowSettings A small class that contains the window settings */
 class WindowSettings {
 	public:
 
@@ -69,6 +73,7 @@ class WindowSettings {
 	Uint32			Backend;
 };
 
+/** @class ContextSettings Small class that contains the renderer context information */
 class ContextSettings {
 	public:
 
@@ -95,6 +100,7 @@ class ContextSettings {
 	bool			DoubleBuffering;
 };
 
+/** @class WindowInfo Contains the window state information */
 class WindowInfo {
 	public:
 

@@ -3,6 +3,7 @@
 
 namespace EE { namespace Window {
 
+/** @enum EE_HAT_POS Indicates the code for every hat position posible */
 enum EE_HAT_POS {
 	HAT_CENTERED	= 0x00,
 	HAT_UP			= 0x01,
@@ -15,6 +16,7 @@ enum EE_HAT_POS {
 	HAT_LEFTDOWN	= (HAT_LEFT|HAT_DOWN)
 };
 
+/** @enum EE_JOYAXIS enumarates the joysticks axis */
 enum EE_JOYAXIS {
 	AXIS_X		= 0,
 	AXIS_Y		= 1,

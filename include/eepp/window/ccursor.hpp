@@ -13,12 +13,16 @@ namespace EE { namespace Window {
 
 class EE_API cCursor {
 	public:
+		/** @return The cursor id */
 		const Uint32& Id() const;
 
+		/** @return The cursor name */
 		const std::string& Name() const;
 
+		/** @return The cursor hotspot, this means, the position inside the cursor image, where the click is taken */
 		const eeVector2i& HotSpot() const;
 
+		/** @return The pointer to the image that represents the cursor */
 		cImage * Image() const;
 		
 		virtual ~cCursor();

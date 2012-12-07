@@ -436,6 +436,10 @@ cJoystickManager * cInput::GetJoystickManager() const {
 	return mJoystickManager;
 }
 
+Uint32 cInput::GetFingerCount() {
+	 return EE_MAX_FINGERS;
+}
+
 cInputFinger * cInput::GetFingerIndex( const Uint32 &Index ) {
 	eeASSERT( Index < EE_MAX_FINGERS );
 	return &mFingers[Index];

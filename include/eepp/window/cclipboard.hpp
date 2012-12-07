@@ -18,6 +18,7 @@ class EE_API cClipboard {
 		/** Set the current clipboard text */
 		virtual void SetText( const std::string& Text ) = 0;
 
+		/** @return The parent window of the clipboard */
 		Window::cWindow * GetWindow() const;
 	protected:
 		friend class cWindow;

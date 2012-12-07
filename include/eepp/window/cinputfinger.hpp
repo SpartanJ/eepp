@@ -7,6 +7,7 @@ namespace EE { namespace Window {
 
 #define EE_MAX_FINGERS (10)
 
+/** @brief A representation of the current state of a finger touching a screen */
 class cInputFinger {
 	public:
 		cInputFinger();
@@ -23,10 +24,13 @@ class cInputFinger {
 		bool down;
 		bool was_down;
 
+		/** @return If is currently pressed */
 		bool IsDown();
 
+		/** @return If was down in the last update */
 		bool WasDown();
 
+		/** @return The current position of the finger */
 		eeVector2i Pos();
 	protected:
 		friend class cInput;

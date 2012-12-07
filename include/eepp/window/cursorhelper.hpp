@@ -3,6 +3,7 @@
 
 namespace EE { namespace Window { namespace Cursor {
 
+/** @enum EE_SYSTEM_CURSOR list the system cursors that can be used */
 enum EE_SYSTEM_CURSOR {
    SYS_CURSOR_NONE        =  0,
    SYS_CURSOR_DEFAULT     =  1,

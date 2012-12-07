@@ -259,6 +259,7 @@ enum EE_KEY {
 	KEY_LAST
 };
 
+/** @enum EE_KEY_MOD Keyboard Modes */
 enum EE_KEY_MOD {
 	KEYMOD_NONE			=	0x0000,
 	KEYMOD_LSHIFT		=	0x0001,
@@ -281,6 +282,7 @@ enum EE_KEY_MOD {
 #define KEYMOD_ALT		(	KEYMOD_LALT		| KEYMOD_RALT		)
 #define KEYMOD_META		(	KEYMOD_LMETA	| KEYMOD_RMETA		)
 
+/** @enum EE_BUTTON Mouse buttons */
 enum EE_BUTTON {
 	EE_BUTTON_LEFT		= 1,
 	EE_BUTTON_MIDDLE	= 2,
@@ -293,6 +295,7 @@ enum EE_BUTTON {
 
 #define EE_BUTTON_MASK(X)		( 1 << ( ( X ) - 1 ) )
 
+/** @enum EE_BUTTON_MASK Mouse buttons mask, to check the current state of every button. */
 enum EE_BUTTON_MASKS {
 	EE_BUTTON_LMASK		= EE_BUTTON_MASK( EE_BUTTON_LEFT ),
 	EE_BUTTON_MMASK		= EE_BUTTON_MASK( EE_BUTTON_MIDDLE ),

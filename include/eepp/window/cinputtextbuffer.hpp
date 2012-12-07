@@ -20,6 +20,7 @@ enum INPUT_TEXTBUFFER_FLAGS {
 
 #define INPUT_LENGHT_MAX 0xFFFFFFFF
 
+/** @brief A class to keep a buffer of the user writed text */
 class EE_API cInputTextBuffer {
 	public:
 		typedef cb::Callback0<void> EnterCallback;
@@ -89,7 +90,7 @@ class EE_API cInputTextBuffer {
 
 		/** This function it's for helping the cFont class to locate the cursor position for the correct rendering of it.
 		* @param LastNewLinePos This will return the position of the closest "\n" to the current Cursor Pos
-		* @return One which line it's the cursor
+		* @return On which line it's the cursor
 		*/
 		Uint32 GetCurPosLinePos( Uint32& LastNewLinePos );
 

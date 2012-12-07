@@ -160,14 +160,19 @@ class EE_API cInput {
 		/** @return The joystick manager */
 		cJoystickManager * GetJoystickManager() const;
 
-		const Uint32& GetFingerCount();
+		/** @return The maximun number of fingers */
+		Uint32 GetFingerCount();
 
+		/** @return The input finger from it's index */
 		cInputFinger * GetFingerIndex( const Uint32& Index );
 
+		/** @return The Input Finder from it's id */
 		cInputFinger * GetFinger( const Int64& fingerId );
 
+		/** @return A list of the input finders that are currently down */
 		std::list<cInputFinger *> GetFingersDown();
 
+		/** @return A list of the input finders that were down in the last update */
 		std::list<cInputFinger *> GetFingersWasDown();
 	protected:
 		friend class cWindow;

@@ -67,6 +67,20 @@ class EE_API cEngine {
 		*/
 		WindowSettings CreateWindowSettings( std::string iniPath, std::string iniKeyName = "EEPP" );
 
+		/** Constructs WindowSettings from an ini file instance
+		It will search for the following properties:
+			Width			Window width
+			Height			Window height
+			BitColor		32,16,8
+			Windowed		bool
+			Resizeable		bool
+			Backend			SDL or allegro
+			WinIcon			The path to the window icon
+			WinCaption		The window default title
+
+			@param ini The ini file instance
+			@param iniKeyName The ini key name to search the properties
+		*/
 		WindowSettings CreateWindowSettings( cIniFile * ini, std::string iniKeyName = "EEPP" );
 
 		/** Constructs ContextSettings from an ini file\n
@@ -82,6 +96,17 @@ class EE_API cEngine {
 		*/
 		ContextSettings CreateContextSettings( std::string iniPath, std::string iniKeyName = "EEPP" );
 
+		/** Constructs ContextSettings from an ini file instance\n
+		It will search for the following properties:
+			VSync				bool
+			GLVersion			Selects the default renderer: 2 for OpenGL 2, 3 for OpenGL 3, 4 for OpenGL ES 2
+			DoubleBuffering		bool
+			DepthBufferSize		int
+			StencilBufferSize	int
+
+			@param ini The ini file instance
+			@param iniKeyName The ini key name to search the properties
+		*/
 		ContextSettings CreateContextSettings( cIniFile * ini, std::string iniKeyName = "EEPP" );
 	protected:
 		friend class cWindow;

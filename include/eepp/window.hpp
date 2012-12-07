@@ -1,6 +1,8 @@
 #ifndef EEPP_WINDOW_HPP
 #define EEPP_WINDOW_HPP
 
+#include <eepp/window/windowhandle.hpp>
+#include <eepp/window/windowcontext.hpp>
 #include <eepp/window/cinput.hpp>
 #include <eepp/window/cinputtextbuffer.hpp>
 #include <eepp/window/cview.hpp>

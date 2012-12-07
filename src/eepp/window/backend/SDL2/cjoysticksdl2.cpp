@@ -73,11 +73,9 @@ eeVector2i cJoystickSDL::GetBallMotion( const Int32& ball ) {
 	return v;
 }
 
-
 bool cJoystickSDL::Plugged() const {
 	return NULL != mJoystick;
 }
-
 
 }}}}
 
