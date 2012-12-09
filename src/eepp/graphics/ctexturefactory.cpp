@@ -4,6 +4,7 @@
 #include <eepp/graphics/ctexture.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
+#include <eepp/helper/jpeg-compressor/jpge.h>
 
 namespace EE { namespace Graphics {
 
@@ -245,7 +246,16 @@ eeUint cTextureFactory::GetValidTextureSize( const eeUint& Size ) {
 }
 
 bool cTextureFactory::SaveImage( const std::string& filepath, const EE_SAVE_TYPE& Format, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const unsigned char* data ) {
-	return 0 != SOIL_save_image ( filepath.c_str(), Format, Width, Height, Channels, data );
+	bool Res;
+
+	if ( EE_SAVE_TYPE_JPG != Format ) {
+		Res = 0 != SOIL_save_image ( filepath.c_str(), Format, Width, Height, Channels, data );
+	} else {
+		jpge::params params;
+		Res = jpge::compress_image_to_jpeg_file( filepath.c_str(), Width, Height, Channels, data, params);
+	}
+
+	return Res;
 }
 
 bool cTextureFactory::TextureIdExists( const Uint32& TexId ) {

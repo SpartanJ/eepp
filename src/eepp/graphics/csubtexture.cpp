@@ -2,6 +2,7 @@
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
+#include <eepp/helper/jpeg-compressor/jpge.h>
 
 namespace EE { namespace Graphics {
 
@@ -387,8 +388,14 @@ bool cSubTexture::SaveToFile(const std::string& filepath, const EE_SAVE_TYPE& Fo
 
 	Lock();
 
-	if ( NULL != mTexture )
-		Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, RealSize().Width(), RealSize().Height(), 4, GetPixelsPtr() ) );
+	if ( NULL != mTexture ) {
+		if ( EE_SAVE_TYPE_JPG != Format ) {
+			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, RealSize().Width(), RealSize().Height(), 4, GetPixelsPtr() ) );
+		} else {
+			jpge::params params;
+			Res = jpge::compress_image_to_jpeg_file( filepath.c_str(), RealSize().Width(), RealSize().Height(), 4, GetPixelsPtr(), params);
+		}
+	}
 
 	Unlock();
 

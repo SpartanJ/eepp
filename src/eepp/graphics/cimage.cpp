@@ -2,6 +2,7 @@
 #include <eepp/helper/SOIL2/src/SOIL2/image_helper.h>
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
+#include <eepp/helper/jpeg-compressor/jpge.h>
 
 namespace EE { namespace Graphics {
 
@@ -11,6 +12,7 @@ std::string cImage::SaveTypeToExtension( const Int32& Format ) {
 		case EE_SAVE_TYPE_BMP: return "bmp";
 		case EE_SAVE_TYPE_PNG: return "png";
 		case EE_SAVE_TYPE_DDS: return "dds";
+		case EE_SAVE_TYPE_JPG: return "jpg";
 		case EE_SAVE_TYPE_UNKNOWN:
 		default:
 			break;
@@ -26,6 +28,7 @@ EE_SAVE_TYPE cImage::ExtensionToSaveType( const std::string& Extension ) {
 	else if ( Extension == "bmp" )	saveType = EE_SAVE_TYPE_BMP;
 	else if ( Extension == "png" )	saveType = EE_SAVE_TYPE_PNG;
 	else if ( Extension == "dds" )	saveType = EE_SAVE_TYPE_DDS;
+	else if ( Extension == "jpg" || Extension == "jpeg" ) saveType = EE_SAVE_TYPE_JPG;
 
 	return saveType;
 }
@@ -265,7 +268,12 @@ bool cImage::SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format
 	bool Res = false;
 
 	if ( NULL != mPixels && 0 != mWidth && 0 != mHeight && 0 != mChannels ) {
-		Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, (Int32)mWidth, (Int32)mHeight, mChannels, GetPixelsPtr() ) );
+		if ( EE_SAVE_TYPE_JPG != Format ) {
+			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, (Int32)mWidth, (Int32)mHeight, mChannels, GetPixelsPtr() ) );
+		} else {
+			jpge::params params;
+			Res = jpge::compress_image_to_jpeg_file( filepath.c_str(), mWidth, mHeight, mChannels, GetPixelsPtr(), params);
+		}
 	}
 
 	return Res;

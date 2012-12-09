@@ -58,6 +58,7 @@ dirs:
 	@$(MKDIR) $(OBJDIR)/src/eepp/helper/chipmunk
 	@$(MKDIR) $(OBJDIR)/src/eepp/helper/chipmunk/constraints
 	@$(MKDIR) $(OBJDIR)/src/eepp/helper/haikuttf
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/jpeg-compressor
 	@$(MKDIR) $(LIBPATH)
 	@$(MKDIR) $(OBJDIR)/src/eepp/base
 	@$(MKDIR) $(OBJDIR)/src/eepp/audio

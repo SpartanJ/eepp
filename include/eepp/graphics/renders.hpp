@@ -47,7 +47,8 @@ enum EE_SAVE_TYPE {
 	EE_SAVE_TYPE_TGA 		= 0,
 	EE_SAVE_TYPE_BMP 		= 1,
 	EE_SAVE_TYPE_PNG 		= 2,
-	EE_SAVE_TYPE_DDS 		= 3
+	EE_SAVE_TYPE_DDS 		= 3,
+	EE_SAVE_TYPE_JPG		= 4
 };
 
 /** @enum EE_TTF_FONT_STYLE Set the TTF Font style. */

@@ -5,6 +5,7 @@
 #include <eepp/system/ciostreamfile.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
+#include <eepp/helper/jpeg-compressor/jpgd.h>
 
 #define TEX_LT_PATH 	(1)
 #define TEX_LT_MEM 		(2)
@@ -34,6 +35,24 @@ namespace IOCb
 		cIOStream* stream = static_cast<cIOStream*>(user);
 		return stream->Tell() >= stream->GetSize();
 	}
+}
+
+namespace jpeg
+{
+	class jpeg_decoder_stream_steam : public jpgd::jpeg_decoder_stream {
+		public:
+			cIOStream * mStream;
+
+			jpeg_decoder_stream_steam( cIOStream * stream ) :
+				mStream( stream )
+			{}
+
+			virtual ~jpeg_decoder_stream_steam() {}
+
+			virtual int read(jpgd::uint8 *pBuf, int max_bytes_to_read, bool *pEOF_flag) {
+				return mStream->Read( (char*)pBuf, max_bytes_to_read );
+			}
+	};
 }
 
 cTextureLoader::cTextureLoader( cIOStream& Stream,
@@ -235,8 +254,19 @@ void cTextureLoader::LoadFromPath() {
 			mPixels = stbi_load( mFilepath.c_str(), &mImgWidth, &mImgHeight, &mChannels, STBI_default );
 		}
 
-		if ( NULL == mPixels )
+		if ( NULL == mPixels ) {
 			cLog::instance()->Write( "Filed to load: " + mFilepath + " Reason: " + std::string( stbi_failure_reason() ) );
+
+			if ( !mIsDDS ) {
+				mPixels = jpgd::decompress_jpeg_image_from_file( mFilepath.c_str(), &mImgWidth, &mImgHeight, &mChannels, 3 );
+
+				if ( NULL != mPixels ) {
+					cLog::instance()->Write( "Loaded: " + mFilepath + " using jpeg-compressor." );
+				} else {
+
+				}
+			}
+		}
 	} else if ( cPackManager::instance()->FallbackToPacks() ) {
 		mPack = cPackManager::instance()->Exists( mFilepath );
 
@@ -271,8 +301,17 @@ void cTextureLoader::LoadFromMemory() {
 		mPixels = stbi_load_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels, STBI_default );
 	}
 
-	if ( NULL == mPixels )
+	if ( NULL == mPixels ) {
 		cLog::instance()->Write( stbi_failure_reason() );
+
+		if ( !mIsDDS ) {
+			mPixels = jpgd::decompress_jpeg_image_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels, 3 );
+
+			if ( NULL != mPixels ) {
+				cLog::instance()->Write( "Loaded: image using jpeg-compressor." );
+			}
+		}
+	}
 }
 
 void cTextureLoader::LoadFromStream() {
@@ -303,8 +342,16 @@ void cTextureLoader::LoadFromStream() {
 			mStream->Seek( 0 );
 		}
 
-		if ( NULL == mPixels )
+		if ( NULL == mPixels ) {
 			cLog::instance()->Write( stbi_failure_reason() );
+
+			if ( !mIsDDS ) {
+				jpeg::jpeg_decoder_stream_steam stream( mStream );
+
+				mPixels = jpgd::decompress_jpeg_image_from_stream( &stream, &mImgWidth, &mImgHeight, &mChannels, 3 );
+				mStream->Seek( 0 );
+			}
+		}
 	}
 }
 
