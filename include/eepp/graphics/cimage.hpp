@@ -15,6 +15,12 @@ namespace EE { namespace Graphics {
 
 class EE_API cImage {
 	public:
+		/** @return The current Jpeg save quality */
+		static Uint32 JpegQuality();
+
+		/** Set the save quality of Jpeg files ( between 0 and 100 )  */
+		static void JpegQuality( Uint32 level );
+
 		/** @return The File Extension of a Save Type */
 		static std::string SaveTypeToExtension( const Int32& Format );
 
@@ -125,6 +131,8 @@ class EE_API cImage {
 		/** Set as true if you dont want to free the image data ( false as default ). */
 		void AvoidFreeImage( const bool& AvoidFree ) { mAvoidFree = AvoidFree; }
 	protected:
+		static Uint32 sJpegQuality;
+
 		Uint8 *			mPixels;
 		eeUint 			mWidth;
 		eeUint 			mHeight;

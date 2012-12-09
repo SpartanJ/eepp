@@ -485,7 +485,7 @@ void cConsole::CmdGetTextureMemory ( const std::vector < String >& params ) {
 void cConsole::CmdCmdList ( const std::vector < String >& params ) {
 	std::map < String, ConsoleCallback >::iterator itr;
 	for (itr = mCallbacks.begin(); itr != mCallbacks.end(); itr++) {
-		PushText( itr->first );
+		PushText( "\t" + itr->first );
 	}
 }
 

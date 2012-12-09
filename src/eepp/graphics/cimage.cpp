@@ -6,6 +6,17 @@
 
 namespace EE { namespace Graphics {
 
+Uint32 cImage::sJpegQuality = 85;
+
+Uint32 cImage::JpegQuality() {
+	return sJpegQuality;
+}
+
+void cImage::JpegQuality( Uint32 level ) {
+	level = eemin( level, (Uint32)100 );
+	sJpegQuality = level;
+}
+
 std::string cImage::SaveTypeToExtension( const Int32& Format ) {
 	switch( Format ) {
 		case EE_SAVE_TYPE_TGA: return "tga";
@@ -272,6 +283,7 @@ bool cImage::SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format
 			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, (Int32)mWidth, (Int32)mHeight, mChannels, GetPixelsPtr() ) );
 		} else {
 			jpge::params params;
+			params.m_quality = JpegQuality();
 			Res = jpge::compress_image_to_jpeg_file( filepath.c_str(), mWidth, mHeight, mChannels, GetPixelsPtr(), params);
 		}
 	}
