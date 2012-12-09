@@ -118,7 +118,7 @@ class EE_API cMapEditor {
 
 		void OnScrollMapV( const cUIEvent * Event );
 
-		void OnMapSizeChange( const cUIEvent * Event );
+		void OnMapSizeChange( const cUIEvent * Event = NULL );
 
 		void OnLayerSelect( const cUIEvent * Event );
 

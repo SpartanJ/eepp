@@ -1,7 +1,9 @@
 #include <eepp/graphics/cframebufferpbuffer.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/window/cengine.hpp>
-
+#include <eepp/graphics/renderer/cgl.hpp>
+#include <eepp/graphics/renderer/crenderergl3.hpp>
+#include <eepp/graphics/renderer/crenderergles2.hpp>
 
 #ifdef EE_GLEW_AVAILABLE
 
@@ -267,7 +269,18 @@ void cFrameBufferPBuffer::Bind() {
 #endif
 
 	if ( ChangeContext ) {
+		#ifdef EE_GL3_ENABLED
+		if ( GLv_3 == GLi->Version() ) {
+			GLi->GetRendererGL3()->ReloadCurrentShader();
+		}
+
+		if ( GLv_ES2 == GLi->Version() ) {
+			GLi->GetRendererGLES2()->ReloadCurrentShader();
+		}
+		#endif
+
 		mWindow->Setup2D( true );
+
 		SetBufferView();
 	}
 }

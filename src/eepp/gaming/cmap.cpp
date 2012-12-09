@@ -211,7 +211,7 @@ void cMap::Draw() {
 
 	GLi->LoadIdentity();
 	GLi->PushMatrix();
-	GLi->Translatef( (eeFloat)static_cast<Int32>( mScreenPos.x + mFixedOffset.x ), (eeFloat)static_cast<Int32>( mScreenPos.y + mFixedOffset.y ), 0 );
+	GLi->Translatef( (eeFloat)static_cast<Int32>( mScreenPos.x + mOffset.x ), (eeFloat)static_cast<Int32>( mScreenPos.y + mOffset.y ), 0 );
 	GLi->Scalef( mScale, mScale, 0 );
 
 	GridDraw();
@@ -297,7 +297,7 @@ const bool& cMap::IsMouseOver() const {
 void cMap::GetMouseOverTile() {
 	eeVector2i mouse = mWindow->GetInput()->GetMousePos();
 
-	eeVector2i MapPos( static_cast<eeFloat>( mouse.x - mScreenPos.x - mFixedOffset.x ) / mScale, static_cast<eeFloat>( mouse.y - mScreenPos.y - mFixedOffset.y ) / mScale );
+	eeVector2i MapPos( static_cast<eeFloat>( mouse.x - mScreenPos.x - mOffset.x ) / mScale, static_cast<eeFloat>( mouse.y - mScreenPos.y - mOffset.y ) / mScale );
 
 	mMouseOver = !( MapPos.x < 0 || MapPos.y < 0 || MapPos.x > mPixelSize.x || MapPos.y > mPixelSize.y );
 
@@ -320,7 +320,7 @@ void cMap::GetMouseOverTile() {
 
 void cMap::CalcTilesClip() {
 	if ( mTileSize.x > 0 && mTileSize.y > 0 ) {
-		eeVector2f ffoff( mFixedOffset );
+		eeVector2f ffoff( mOffset );
 		eeVector2i foff( (Int32)ffoff.x, (Int32)ffoff.y );
 
 		mStartTile.x	= -foff.x / ( mTileSize.x * mScale ) - mExtraTiles.x;
@@ -353,7 +353,7 @@ void cMap::Clamp() {
 	if ( mOffset.y > 0 )
 		mOffset.y = 0;
 
-	eeSize totSize( mTileSize * mSize );
+	eeVector2f totSize( mTileSize.x * mSize.x * mScale, mTileSize.y * mSize.y * mScale );
 
 	if ( -mOffset.x + mViewSize.x > totSize.x )
 		mOffset.x = -( totSize.x - mViewSize.x );
@@ -370,43 +370,35 @@ void cMap::Clamp() {
 	totSize.x = (Int32)( (eeFloat)( mTileSize.x * mSize.x ) * mScale );
 	totSize.y = (Int32)( (eeFloat)( mTileSize.y * mSize.y ) * mScale );
 
-	if ( -mFixedOffset.x + mViewSize.x > totSize.x )
-		mFixedOffset.x = -( totSize.x - mViewSize.x );
+	if ( -mOffset.x + mViewSize.x > totSize.x )
+		mOffset.x = -( totSize.x - mViewSize.x );
 
-	if ( -mFixedOffset.y + mViewSize.y > totSize.y )
-		mFixedOffset.y = -( totSize.y - mViewSize.y );
+	if ( -mOffset.y + mViewSize.y > totSize.y )
+		mOffset.y = -( totSize.y - mViewSize.y );
 
 	if ( totSize.x < mViewSize.x )
-		mFixedOffset.x = 0;
+		mOffset.x = 0;
 
 	if ( totSize.y < mViewSize.y )
-		mFixedOffset.y = 0;
+		mOffset.y = 0;
 }
 
 void cMap::Offset( const eeVector2f& offset ) {
 	mOffset			= offset;
-	mFixedOffset	= mOffset * mOffscale;
 
 	Clamp();
 
 	CalcTilesClip();
 }
 
-void cMap::UpdateOffscale() {
-	eeVector2f totSizeT( mTileSize.x * mSize.x - mViewSize.x			, mTileSize.y * mSize.y - mViewSize.y			);
-	eeVector2f totSizeS( mTileSize.x * mSize.x * mScale - mViewSize.x	, mTileSize.y * mSize.y * mScale - mViewSize.y	);
+eeVector2i cMap::GetMaxOffset() {
+	eeVector2i v(  ( mTileSize.x * mSize.x * mScale ) - mViewSize.x,
+				   ( mTileSize.y * mSize.y * mScale ) - mViewSize.y );
 
-	if ( 0 == totSizeT.x ) {
-		mOffscale.x = 0;
-	} else {
-		mOffscale.x = totSizeS.x / totSizeT.x;
-	}
+	eemax( 0, v.x );
+	eemax( 0, v.y );
 
-	if ( 0 == totSizeT.y ) {
-		mOffscale.y = 0;
-	} else {
-		mOffscale.y = totSizeS.y / totSizeT.y;
-	}
+	return v;
 }
 
 const eeFloat& cMap::Scale() const {
@@ -415,8 +407,6 @@ const eeFloat& cMap::Scale() const {
 
 void cMap::Scale( const eeFloat& scale ) {
 	mScale = scale;
-
-	UpdateOffscale();
 
 	Offset( mOffset );
 }
@@ -466,8 +456,6 @@ eeVector2f cMap::GetMouseMapPosf() const {
 
 void cMap::ViewSize( const eeSize& viewSize ) {
 	mViewSize = viewSize;
-
-	UpdateOffscale();
 
 	Clamp();
 

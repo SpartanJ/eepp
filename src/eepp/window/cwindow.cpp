@@ -10,6 +10,7 @@
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
 
 #include <eepp/system/filesystem.hpp>
+#include <eepp/version.hpp>
 
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
 
@@ -375,7 +376,8 @@ void cWindow::SendVideoResizeCb() {
 }
 
 void cWindow::LogSuccessfulInit( const std::string& BackendName ) {
-	cLog::instance()->Write( "Engine Initialized Succesfully.\n\tOS: " + Sys::GetOSName() +
+	cLog::instance()->Write( "Engine Initialized Succesfully.\n\tVersion: " + Version::GetVersionName() +
+							 "\n\tOS: " + Sys::GetOSName() +
 							 "\n\tArch: " + Sys::GetOSArchitecture() +
 							 "\n\tCPU Cores: " + String::ToStr( Sys::GetCPUCount() ) +
 							 "\n\tProcess Path: " + Sys::GetProcessPath() +

@@ -201,6 +201,8 @@ class EE_API cMap {
 		const eeFloat& Scale() const;
 
 		void Scale( const eeFloat& scale );
+
+		eeVector2i GetMaxOffset();
 	protected:
 		Window::cWindow *		mWindow;
 		cLayer**		mLayers;
@@ -212,7 +214,6 @@ class EE_API cMap {
 		eeSize			mTileSize;
 		eeSize			mViewSize;
 		eeVector2f		mOffset;
-		eeVector2f		mFixedOffset;
 		eeVector2i		mScreenPos;
 		eeVector2i		mStartTile;
 		eeVector2i		mEndTile;
@@ -261,8 +262,6 @@ class EE_API cMap {
 		void			CreateLightManager();
 
 		virtual void	OnMapLoaded();
-
-		void			UpdateOffscale();
 };
 
 }}

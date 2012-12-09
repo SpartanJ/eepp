@@ -33,18 +33,17 @@ namespace EE { namespace Gaming { namespace MapEditor {
 
 cMapEditor::cMapEditor( cUIWindow * AttatchTo, const MapEditorCloseCb& callback ) :
 	mUIWindow( AttatchTo ),
+	mTheme( cUIThemeManager::instance()->DefaultTheme() ),
 	mUIMap( NULL ),
 	mCloseCb( callback ),
 	mGOTypeList( NULL ),
 	mChkAnim( NULL ),
 	mCurLayer( NULL )
 {
-	if ( NULL == cUIThemeManager::instance()->DefaultTheme() ) {
+	if ( NULL == mTheme ) {
 		eePRINT( "cMapEditor needs a default theme seted to work." );
 		return;
 	}
-
-	mTheme = cUIThemeManager::instance()->DefaultTheme();
 
 	if ( NULL == mUIWindow ) {
 		mUIWindow = cUIManager::instance()->MainControl();
@@ -363,11 +362,7 @@ void cMapEditor::CreateUIMap() {
 	cUIComplexControl::CreateParams Params;
 	Params.Parent( mWinContainer );
 	Params.PosSet( 0, 0 );
-
-	if ( mWinContainer->Size().Width() > 800 && mWinContainer->Size().Height() > 600 )
-		Params.SizeSet( 800, 600 );
-	else
-		Params.SizeSet( mWinContainer->Size().Width() - 220, mWinContainer->Size().Height() - 16 );
+	Params.SizeSet( mWinContainer->Size().Width() - 220, mWinContainer->Size().Height() - 16 );
 
 	Params.Flags |= UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT;
 	mUIMap = eeNew( cUIMap, ( Params ) );
@@ -695,12 +690,14 @@ void cMapEditor::MapCreated() {
 }
 
 void cMapEditor::OnMapSizeChange( const cUIEvent *Event ) {
+	eeVector2i v( mUIMap->Map()->GetMaxOffset() );
+
 	mMapHScroll->MinValue( 0 );
-	mMapHScroll->MaxValue( mUIMap->Map()->TotalSize().Width() - mUIMap->Size().Width() );
-	mMapHScroll->ClickStep( mUIMap->Map()->TileSize().Width() );
+	mMapHScroll->MaxValue( v.x );
+	mMapHScroll->ClickStep( mUIMap->Map()->TileSize().Width() * mUIMap->Map()->Scale() );
 	mMapVScroll->MinValue( 0 );
-	mMapVScroll->MaxValue( mUIMap->Map()->TotalSize().Height() - mUIMap->Size().Height() );
-	mMapVScroll->ClickStep( mUIMap->Map()->TileSize().Height() );
+	mMapVScroll->MaxValue( v.y );
+	mMapVScroll->ClickStep( mUIMap->Map()->TileSize().Height() * mUIMap->Map()->Scale() );
 }
 
 void cMapEditor::OnScrollMapH( const cUIEvent * Event ) {
@@ -848,6 +845,8 @@ void cMapEditor::ZoomIn() {
 			Map->Scale( 4.0f );
 		}
 	}
+
+	OnMapSizeChange();
 }
 
 void cMapEditor::ZoomOut() {
@@ -875,6 +874,8 @@ void cMapEditor::ZoomOut() {
 			Map->Scale( 3.0f );
 		}
 	}
+
+	OnMapSizeChange();
 }
 
 void cMapEditor::MapMenuClick( const cUIEvent * Event ) {

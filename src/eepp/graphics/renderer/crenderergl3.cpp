@@ -60,6 +60,8 @@ cRendererGL3::cRendererGL3() :
 {
 	mStack->mProjectionMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
 	mStack->mModelViewMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
+
+	cGL::Enable( GL_VERTEX_PROGRAM_POINT_SIZE );
 }
 
 cRendererGL3::~cRendererGL3() {
@@ -123,6 +125,10 @@ void cRendererGL3::Init() {
 
 GLuint cRendererGL3::BaseShaderId() {
 	return mCurShader->Handler();
+}
+
+void cRendererGL3::ReloadCurrentShader() {
+	ReloadShader( mCurShader );
 }
 
 void cRendererGL3::ReloadShader( cShaderProgram * Shader ) {
@@ -242,8 +248,6 @@ void cRendererGL3::Enable( GLenum cap ) {
 		{
 			mCurShader->SetUniform( mPointSpriteLoc, 1 );
 
-			cGL::Enable( GL_VERTEX_PROGRAM_POINT_SIZE );
-
 			break;
 		}
 	}
@@ -285,8 +289,6 @@ void cRendererGL3::Disable ( GLenum cap ) {
 		case GL_POINT_SPRITE:
 		{
 			mCurShader->SetUniform( mPointSpriteLoc, 0 );
-
-			cGL::Disable( GL_VERTEX_PROGRAM_POINT_SIZE );
 
 			break;
 		}

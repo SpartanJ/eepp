@@ -2,6 +2,11 @@
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/renderer/crenderergl3.hpp>
 
+#if !defined( EE_GLES ) && EE_PLATFORM != EE_PLATFORM_HAIKU
+// Disabled VAO for the moment, we really don't need them
+//#define EE_VBO_USE_VAO
+#endif
+
 namespace EE { namespace Graphics {
 
 cVertexBufferVBO::cVertexBufferVBO( const Uint32& VertexFlags, EE_DRAW_MODE DrawType, const Int32& ReserveVertexSize, const Int32& ReserveIndexSize, EE_VBO_USAGE_TYPE UsageType ) :
@@ -25,7 +30,7 @@ cVertexBufferVBO::~cVertexBufferVBO() {
 		glDeleteBuffersARB( 1, (GLuint *)&mElementHandle );
 	}
 
-	#if !defined( EE_GLES ) && EE_PLATFORM != EE_PLATFORM_HAIKU
+	#ifdef EE_VBO_USE_VAO
 	if ( GLv_3 == GLi->Version() ) {
 		glDeleteVertexArrays( 1, &mVAO );
 	}
@@ -47,7 +52,7 @@ bool cVertexBufferVBO::Compile() {
 	if( mCompiled )
 		return false;
 
-	#if !defined( EE_GLES ) && EE_PLATFORM != EE_PLATFORM_HAIKU
+	#ifdef EE_VBO_USE_VAO
 	GLint curVAO = 0;
 	if ( GLv_3 == GLi->Version() ) {
 		glGetIntegerv( GL_VERTEX_ARRAY_BINDING, &curVAO );
@@ -91,7 +96,7 @@ bool cVertexBufferVBO::Compile() {
 		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER, 0 );
 	}
 
-	#if !defined( EE_GLES ) && EE_PLATFORM != EE_PLATFORM_HAIKU
+	#ifdef EE_VBO_USE_VAO
 	if ( GLv_3 == GLi->Version() ) {
 		glBindVertexArray( curVAO );
 	}
@@ -107,11 +112,11 @@ void cVertexBufferVBO::Draw() {
 	if ( !mCompiled )
 		return;
 
-	#if !defined( EE_GLES ) && EE_PLATFORM != EE_PLATFORM_HAIKU
+	#ifdef EE_VBO_USE_VAO
 	GLint curVAO = 0;
 	#endif
 	if ( GLv_3 == GLi->Version() || GLv_ES2 == GLi->Version() ) {
-		#if !defined( EE_GLES ) && EE_PLATFORM != EE_PLATFORM_HAIKU
+		#ifdef EE_VBO_USE_VAO
 		if ( GLv_3 == GLi->Version() ) {
 			glGetIntegerv( GL_VERTEX_ARRAY_BINDING, &curVAO );
 			glBindVertexArray( mVAO );
@@ -138,7 +143,7 @@ void cVertexBufferVBO::Draw() {
 		glDrawArrays( mDrawType, 0, GetVertexCount() );
 	}
 
-	#if !defined( EE_GLES ) && EE_PLATFORM != EE_PLATFORM_HAIKU
+	#ifdef EE_VBO_USE_VAO
 	if ( GLv_3 == GLi->Version() ) {
 		glBindVertexArray( curVAO );
 	}
@@ -156,7 +161,7 @@ void cVertexBufferVBO::SetVertexStates() {
 	GLint index;
 	#endif
 
-	#if !defined( EE_GLES ) && EE_PLATFORM != EE_PLATFORM_HAIKU
+	#ifdef EE_VBO_USE_VAO
 	GLint curVAO = 0;
 
 	if ( GLv_3 == GLi->Version() ) {
@@ -275,7 +280,7 @@ void cVertexBufferVBO::SetVertexStates() {
 
 	glBindBufferARB( GL_ARRAY_BUFFER, 0 );
 
-	#if !defined( EE_GLES ) && EE_PLATFORM != EE_PLATFORM_HAIKU
+	#ifdef EE_VBO_USE_VAO
 	if ( GLv_3 == GLi->Version() ) {
 		glBindVertexArray( curVAO );
 	}

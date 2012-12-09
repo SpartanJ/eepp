@@ -179,7 +179,7 @@
 		#endif
 	#endif
 #else
-	#if ( __GNUC__ >= 4 ) && defined( EE_EXPORTS )
+	#if ( __GNUC__ >= 4 )
 		#define EE_API __attribute__ ((visibility("default")))
 	#endif
 
@@ -272,22 +272,12 @@ namespace EE {
 
 	template<typename T>
 	T eeclamp( T val, T min, T max ) {
-		if ( val < min ) {
-			return min;
-		} else if ( val > max ) {
-			return max;
-		}
-
-		return val;
+		return ( val < min ) ? min : max;
 	}
 
 	template<typename T>
 	void eeclamp( T* val, T min, T max ) {
-		if ( *val < min ) {
-			*val = min;
-		} else if ( *val > max ) {
-			*val = max;
-		}
+		( *val < min ) ? *val = min : *val = max;
 	}
 
 	typedef SOPHIST_int8	Int8;

@@ -28,7 +28,8 @@
 */
 
 	// General includes and declarations
-	#include "base.hpp"
+	#include <eepp/base.hpp>
+	#include <eepp/version.hpp>
 	using namespace EE;
 
 	// Math

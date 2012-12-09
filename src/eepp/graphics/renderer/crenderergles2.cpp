@@ -163,6 +163,10 @@ GLuint cRendererGLES2::BaseShaderId() {
 	return mCurShader->Handler();
 }
 
+void cRendererGLES2::ReloadCurrentShader() {
+	ReloadShader( mCurShader );
+}
+
 void cRendererGLES2::ReloadShader( cShaderProgram * Shader ) {
 	mCurShader = NULL;
 

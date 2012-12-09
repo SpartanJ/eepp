@@ -102,6 +102,8 @@ class EE_API cRendererGLES2 : public cGL {
 		GLint Project( GLfloat objx, GLfloat objy, GLfloat objz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *winx, GLfloat *winy, GLfloat *winz );
 
 		GLint UnProject( GLfloat winx, GLfloat winy, GLfloat winz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *objx, GLfloat *objy, GLfloat *objz );
+
+		void ReloadCurrentShader();
 	protected:
 		Private::cMatrixStack *	mStack;
 		GLint					mProjectionMatrix_id;	// cpu-side hook to shader uniform
