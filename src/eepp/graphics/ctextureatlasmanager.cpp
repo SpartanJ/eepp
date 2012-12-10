@@ -1,6 +1,6 @@
 #include <eepp/graphics/ctextureatlasmanager.hpp>
 #include <eepp/graphics/cglobaltextureatlas.hpp>
-
+#include <eepp/graphics/ctextureatlasloader.hpp>
 namespace EE { namespace Graphics {
 
 SINGLETON_DECLARE_IMPLEMENTATION(cTextureAtlasManager)
@@ -13,6 +13,30 @@ cTextureAtlasManager::cTextureAtlasManager() :
 }
 
 cTextureAtlasManager::~cTextureAtlasManager() {
+}
+
+cTextureAtlas * cTextureAtlasManager::Load( const std::string& TextureAtlasPath ) {
+	cTextureAtlasLoader loader( TextureAtlasPath );
+
+	return loader.GetTextureAtlas();
+}
+
+cTextureAtlas * cTextureAtlasManager::LoadFromStream( cIOStream& IOS ) {
+	cTextureAtlasLoader loader( IOS );
+
+	return loader.GetTextureAtlas();
+}
+
+cTextureAtlas * cTextureAtlasManager::LoadFromMemory( const Uint8* Data, const Uint32& DataSize, const std::string& TextureAtlasName ) {
+	cTextureAtlasLoader loader( Data, DataSize, TextureAtlasName );
+
+	return loader.GetTextureAtlas();
+}
+
+cTextureAtlas * cTextureAtlasManager::LoadFromPack( cPack * Pack, const std::string& FilePackPath ) {
+	cTextureAtlasLoader loader( Pack, FilePackPath );
+
+	return loader.GetTextureAtlas();
 }
 
 cSubTexture * cTextureAtlasManager::GetSubTextureByName( const std::string& Name ) {

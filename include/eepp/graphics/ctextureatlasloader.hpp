@@ -26,6 +26,8 @@ class EE_API cTextureAtlasLoader {
 
 		cTextureAtlasLoader( cPack * Pack, const std::string& FilePackPath, const bool& Threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
 
+		cTextureAtlasLoader( cIOStream& IOS, const bool& Threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
+
 		~cTextureAtlasLoader();
 
 		void					Update();

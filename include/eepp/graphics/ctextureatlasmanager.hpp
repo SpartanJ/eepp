@@ -15,6 +15,14 @@ class EE_API cTextureAtlasManager : public tResourceManager<cTextureAtlas> {
 
 		virtual ~cTextureAtlasManager();
 
+		cTextureAtlas * Load( const std::string& TextureAtlasPath );
+
+		cTextureAtlas * LoadFromStream( cIOStream& IOS );
+
+		cTextureAtlas * LoadFromMemory( const Uint8* Data, const Uint32& DataSize, const std::string& TextureAtlasName );
+
+		cTextureAtlas * LoadFromPack( cPack * Pack, const std::string& FilePackPath );
+
 		cSubTexture * GetSubTextureByName( const std::string& Name );
 
 		cSubTexture * GetSubTextureById( const Uint32& Id );

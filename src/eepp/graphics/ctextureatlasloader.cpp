@@ -61,6 +61,18 @@ cTextureAtlasLoader::cTextureAtlasLoader( cPack * Pack, const std::string& FileP
 	LoadFromPack( Pack, FilePackPath );
 }
 
+cTextureAtlasLoader::cTextureAtlasLoader( cIOStream& IOS, const bool& Threaded, GLLoadCallback LoadCallback ) :
+	mThreaded( Threaded ),
+	mLoaded(false),
+	mPack(NULL),
+	mSkipResourceLoad(false),
+	mIsLoading(false),
+	mTextureAtlas(NULL),
+	mLoadCallback( LoadCallback )
+{
+	LoadFromStream( IOS );
+}
+
 cTextureAtlasLoader::~cTextureAtlasLoader()
 {
 }
