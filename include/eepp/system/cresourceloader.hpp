@@ -12,7 +12,7 @@ class EE_API cResourceLoader {
 	public:
 		typedef cb::Callback1<void, cResourceLoader *> ResLoadCallback;
 
-		/** @param MaxThreads Set the maximun simultaneous threads to load resources, if not value is seted it will use Num Cores - 1 or 1 thread if single core. */
+		/** @param MaxThreads Set the maximun simultaneous threads to load resources, THREADS_AUTO will use the cpu number of cores. */
 		cResourceLoader( const Uint32& MaxThreads = THREADS_AUTO );
 
 		virtual ~cResourceLoader();
@@ -37,6 +37,7 @@ class EE_API cResourceLoader {
 
 		bool			Clear( const bool& ClearObjectsLoaded = true );
 
+		/** @return The aproximate percent of progress ( between 0 and 100 ) */
 		eeFloat			Progress();
 
 		Uint32			Count() const;

@@ -6,6 +6,7 @@
 
 namespace EE { namespace System {
 
+/** @brief A simple resource container template */
 template <class T>
 class tContainer {
 	public:

@@ -10,6 +10,12 @@ SafeDataPointer::SafeDataPointer() :
 {
 }
 
+SafeDataPointer::SafeDataPointer( Uint8 *data, Uint32 size ) :
+	Data( data ),
+	DataSize( size )
+{
+}
+
 SafeDataPointer::~SafeDataPointer() {
 	eeSAFE_DELETE_ARRAY( Data );
 }

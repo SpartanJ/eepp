@@ -22,9 +22,17 @@
 **/
 
 /**
+	@TODO Improve documentation.
+	@TODO Improve Premake4 support. It should be really easy to compile eepp in Windows and OS X ( Linux is always easy thanks to package managers ).
+	@TODO Add more examples, showing at least the basic usage of the engine ( 10 or more examples at least ).
+	@TODO Create a default UI Theme for the engine ( get rid off the ugly Aqua Theme ).
+	@TODO And may be, add some kind of support for TMX map files ( Tiles Map Editor ).
+	@TODO Improve the map editor ( add triggers, tiles selection to copy paste in other zones of the map, undo/redo actions ).
 	@TODO Add PVRTC and ETC support.
-	@TODO Check for endianness problems, and make EEPP endianness agnostic.
-	@TODO Add Scripting support ( squirrel or angel script or lua ).
+	@TODO Add Networking support ( may be just use SFML Network, i don't want to reinvent the wheel ).
+	@TODO Support UI Theming from scripts or XML.
+	@TODO Add Scripting support ( squirrel or angel script or lua ), at least some parts of the engine. Binding everthing seems too much work.
+	@TODO Check for endianness problems, and make EEPP endianness agnostic ( binary maps and texture fonts ). Not a priority, all the eepp target os use little endian.
 */
 
 	// General includes and declarations

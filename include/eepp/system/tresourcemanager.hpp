@@ -6,9 +6,13 @@
 
 namespace EE { namespace System {
 
+/** @brief A simple resource manager. It keeps a list of the resources, and free the instances of the resources when the manager is closed.
+* Resources must have Id() and Name() properties. Id() is the string hash of Name().
+*/
 template <class T>
 class tResourceManager {
 	public:
+		/** @param UniqueId Indicates if the resources id must be unique */
 		tResourceManager( bool UniqueId = true );
 
 		virtual ~tResourceManager();
