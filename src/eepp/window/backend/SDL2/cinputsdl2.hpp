@@ -28,8 +28,6 @@ class EE_API cInputSDL : public cInput {
 		
 		virtual void Init();
 
-		Uint32 mKeyCodesTable[ SDL_NUM_SCANCODES ];
-
 		void InitializeTables();
 };
 

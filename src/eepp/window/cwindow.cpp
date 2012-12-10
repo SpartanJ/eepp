@@ -439,6 +439,13 @@ void cWindow::Maximize() {
 		mPlatform->MaximizeWindow();
 }
 
+bool cWindow::IsMaximized() {
+	if ( NULL != mPlatform )
+		return mPlatform->IsWindowMaximized();
+
+	return false;
+}
+
 void cWindow::Hide() {
 	if ( NULL != mPlatform )
 		mPlatform->HideWindow();

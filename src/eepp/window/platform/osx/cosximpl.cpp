@@ -20,6 +20,10 @@ void cOSXImpl::MinimizeWindow() {
 void cOSXImpl::MaximizeWindow() {
 }
 
+bool cOSXImpl::IsWindowMaximized() {
+	return false;
+}
+
 void cOSXImpl::HideWindow() {
 }
 

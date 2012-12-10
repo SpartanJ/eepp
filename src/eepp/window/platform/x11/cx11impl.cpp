@@ -5,9 +5,11 @@
 #include <eepp/helper/glew/glxew.h>
 #include <X11/Xcursor/Xcursor.h>
 #include <X11/cursorfont.h>
+#include <climits>
 #undef Window
 #undef Display
 #undef Cursor
+#define XAtom(str) XInternAtom( mDisplay, str, False )
 
 #include <eepp/window/platform/x11/cx11impl.hpp>
 #include <eepp/window/platform/x11/ccursorx11.hpp>
@@ -53,9 +55,9 @@ void cX11Impl::MaximizeWindow() {
 	Lock();
 
 	XEvent xev;
-	Atom wm_state =  XInternAtom( mDisplay, "_NET_WM_STATE", False);
-	Atom maximizeV = XInternAtom( mDisplay, "_NET_WM_STATE_MAXIMIZED_VERT", False);
-	Atom maximizeH = XInternAtom( mDisplay, "_NET_WM_STATE_MAXIMIZED_HORZ", False);
+	Atom wm_state =  XAtom( "_NET_WM_STATE" );
+	Atom maximizeV = XAtom( "_NET_WM_STATE_MAXIMIZED_VERT" );
+	Atom maximizeH = XAtom( "_NET_WM_STATE_MAXIMIZED_HORZ" );
 
 	memset( &xev, 0, sizeof(xev) );
 	xev.type = ClientMessage;
@@ -71,6 +73,58 @@ void cX11Impl::MaximizeWindow() {
 	XFlush(mDisplay);
 
 	Unlock();
+}
+
+bool cX11Impl::IsWindowMaximized() {
+	Lock();
+
+	//bool minimized = false;
+	bool maximizedhorz = false;
+	bool maximizedvert = false;
+	Atom type;
+	int format;
+	unsigned long numitems, bytesafter;
+	unsigned char * properties = 0;
+
+	XGetWindowProperty( mDisplay,
+						mX11Window,
+						XAtom("_NET_WM_STATE"),
+						0,
+						LONG_MAX,
+						false,
+						AnyPropertyType,
+						&type,
+						&format,
+						&numitems,
+						&bytesafter, &properties
+	);
+
+	if( properties && ( format == 32 ) ) {
+		for(unsigned int i = 0; i < numitems; ++i) {
+			const Atom prop = (reinterpret_cast<ulong *>(properties))[i];
+
+			if (prop == XAtom("_NET_WM_STATE_MAXIMIZED_HORZ"))
+				maximizedhorz = true;
+
+			if (prop == XAtom("_NET_WM_STATE_MAXIMIZED_VERT"))
+				maximizedvert = true;
+
+			/*if (prop == XAtom("_NET_WM_STATE_HIDDEN"))
+				minimized = true;*/
+		}
+	}
+
+	XFree(properties);
+
+	XFlush(mDisplay);
+
+	Unlock();
+
+	if( maximizedhorz && maximizedvert ) {
+		return true;
+	}
+
+	return false;
 }
 
 void cX11Impl::HideWindow() {

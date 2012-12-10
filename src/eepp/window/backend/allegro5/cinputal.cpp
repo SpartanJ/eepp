@@ -6,12 +6,15 @@
 
 namespace EE { namespace Window { namespace Backend { namespace Al {
 
+static Uint32	KeyCodesTable[ ALLEGRO_KEY_MAX ];
+static bool		KeyCodesTableInit = false;
+
 cInputAl::cInputAl( cWindow * window ) :
 	cInput( window, eeNew( cJoystickManagerAl, () ) ),
 	mGrab( false ),
 	mZ( 0 )
 {
-	memset( mKeyCodesTable, 0, KEY_LAST );
+	memset( KeyCodesTable, 0, KEY_LAST );
 }
 
 cInputAl::~cInputAl() {
@@ -56,7 +59,7 @@ void cInputAl::Update() {
 					EEEvent.Type = InputEvent::KeyDown;
 				}
 
-				EEEvent.key.keysym.sym = mKeyCodesTable[ ALEvent.keyboard.keycode ];
+				EEEvent.key.keysym.sym = KeyCodesTable[ ALEvent.keyboard.keycode ];
 				EEEvent.key.keysym.unicode = ALEvent.keyboard.unichar;
 
 				break;
@@ -69,7 +72,7 @@ void cInputAl::Update() {
 					 ALLEGRO_KEY_BACKSPACE != ALEvent.keyboard.keycode
 				) {
 					EEEvent.Type = InputEvent::KeyDown;
-					EEEvent.key.keysym.sym = mKeyCodesTable[ ALEvent.keyboard.keycode ];
+					EEEvent.key.keysym.sym = KeyCodesTable[ ALEvent.keyboard.keycode ];
 					EEEvent.key.keysym.mod = SetMod( ALEvent.keyboard.modifiers );
 					EEEvent.key.keysym.unicode = ALEvent.keyboard.unichar;
 				} else {
@@ -80,7 +83,7 @@ void cInputAl::Update() {
 			case ALLEGRO_EVENT_KEY_UP:
 			{
 				EEEvent.Type = InputEvent::KeyUp;
-				EEEvent.key.keysym.sym = mKeyCodesTable[ ALEvent.keyboard.keycode ];
+				EEEvent.key.keysym.sym = KeyCodesTable[ ALEvent.keyboard.keycode ];
 				EEEvent.key.keysym.mod = SetMod( ALEvent.keyboard.modifiers );
 				EEEvent.key.keysym.unicode = ALEvent.keyboard.unichar;
 				break;
@@ -269,104 +272,109 @@ ALLEGRO_DISPLAY * cInputAl::GetDisplay() {
 }
 
 void cInputAl::InitializeTables() {
+	if ( KeyCodesTableInit )
+		return;
+
 	Uint32 i;
 
 	for ( i = ALLEGRO_KEY_A; i <= ALLEGRO_KEY_Z; i++ )
-		mKeyCodesTable[ i ] = KEY_A - 1 + i;
+		KeyCodesTable[ i ] = KEY_A - 1 + i;
 
-	mKeyCodesTable[ ALLEGRO_KEY_0 ] = KEY_0;
-	mKeyCodesTable[ ALLEGRO_KEY_1 ] = KEY_1;
-	mKeyCodesTable[ ALLEGRO_KEY_2 ] = KEY_2;
-	mKeyCodesTable[ ALLEGRO_KEY_3 ] = KEY_3;
-	mKeyCodesTable[ ALLEGRO_KEY_4 ] = KEY_4;
-	mKeyCodesTable[ ALLEGRO_KEY_5 ] = KEY_5;
-	mKeyCodesTable[ ALLEGRO_KEY_6 ] = KEY_6;
-	mKeyCodesTable[ ALLEGRO_KEY_7 ] = KEY_7;
-	mKeyCodesTable[ ALLEGRO_KEY_8 ] = KEY_8;
-	mKeyCodesTable[ ALLEGRO_KEY_9 ] = KEY_9;
-	mKeyCodesTable[ ALLEGRO_KEY_PAD_0 ] = KEY_KP0;
-	mKeyCodesTable[ ALLEGRO_KEY_PAD_1 ] = KEY_KP1;
-	mKeyCodesTable[ ALLEGRO_KEY_PAD_2 ] = KEY_KP2;
-	mKeyCodesTable[ ALLEGRO_KEY_PAD_3 ] = KEY_KP3;
-	mKeyCodesTable[ ALLEGRO_KEY_PAD_4 ] = KEY_KP4;
-	mKeyCodesTable[ ALLEGRO_KEY_PAD_5 ] = KEY_KP5;
-	mKeyCodesTable[ ALLEGRO_KEY_PAD_6 ] = KEY_KP6;
-	mKeyCodesTable[ ALLEGRO_KEY_PAD_7 ] = KEY_KP7;
-	mKeyCodesTable[ ALLEGRO_KEY_PAD_8 ] = KEY_KP8;
-	mKeyCodesTable[ ALLEGRO_KEY_PAD_9 ] = KEY_KP9;
-	mKeyCodesTable[ ALLEGRO_KEY_F1 ] = KEY_F1;
-	mKeyCodesTable[ ALLEGRO_KEY_F2 ] = KEY_F2;
-	mKeyCodesTable[ ALLEGRO_KEY_F3 ] = KEY_F3;
-	mKeyCodesTable[ ALLEGRO_KEY_F4 ] = KEY_F4;
-	mKeyCodesTable[ ALLEGRO_KEY_F5 ] = KEY_F5;
-	mKeyCodesTable[ ALLEGRO_KEY_F6 ] = KEY_F6;
-	mKeyCodesTable[ ALLEGRO_KEY_F7 ] = KEY_F7;
-	mKeyCodesTable[ ALLEGRO_KEY_F8 ] = KEY_F8;
-	mKeyCodesTable[ ALLEGRO_KEY_F9 ] = KEY_F9;
-	mKeyCodesTable[ ALLEGRO_KEY_F10 ] = KEY_F10;
-	mKeyCodesTable[ ALLEGRO_KEY_F11 ] = KEY_F11;
-	mKeyCodesTable[ ALLEGRO_KEY_F12 ] = KEY_F12;
-	mKeyCodesTable[ ALLEGRO_KEY_ESCAPE ] = KEY_ESCAPE;
-	//mKeyCodesTable[ ALLEGRO_KEY_TILDE ] = KEY_?;
-	mKeyCodesTable[ ALLEGRO_KEY_MINUS ] = KEY_MINUS;
-	mKeyCodesTable[ ALLEGRO_KEY_EQUALS ] = KEY_EQUALS;
-	mKeyCodesTable[ ALLEGRO_KEY_BACKSPACE ] = KEY_BACKSPACE;
-	mKeyCodesTable[ ALLEGRO_KEY_TAB ] = KEY_TAB;
-	//mKeyCodesTable[ ALLEGRO_KEY_OPENBRACE ] = KEY_?;
-	//mKeyCodesTable[ ALLEGRO_KEY_CLOSEBRACE ] = KEY_?;
-	mKeyCodesTable[ ALLEGRO_KEY_ENTER ] = KEY_RETURN;
-	mKeyCodesTable[ ALLEGRO_KEY_SEMICOLON ] = KEY_SEMICOLON;
-	mKeyCodesTable[ ALLEGRO_KEY_QUOTE ] = KEY_QUOTE;
-	mKeyCodesTable[ ALLEGRO_KEY_BACKSLASH ] = KEY_BACKSLASH;
-	//mKeyCodesTable[ ALLEGRO_KEY_BACKSLASH2 ] = KEY_?;
-	mKeyCodesTable[ ALLEGRO_KEY_COMMA ] = KEY_COMMA;
-	//mKeyCodesTable[ ALLEGRO_KEY_FULLSTOP ] = KEY_?;
-	mKeyCodesTable[ ALLEGRO_KEY_SLASH ] = KEY_SLASH;
-	mKeyCodesTable[ ALLEGRO_KEY_SPACE ] = KEY_SPACE;
-	mKeyCodesTable[ ALLEGRO_KEY_INSERT] = KEY_INSERT;
-	mKeyCodesTable[ ALLEGRO_KEY_DELETE ] = KEY_DELETE;
-	mKeyCodesTable[ ALLEGRO_KEY_HOME ] = KEY_HOME;
-	mKeyCodesTable[ ALLEGRO_KEY_END ] = KEY_END;
-	mKeyCodesTable[ ALLEGRO_KEY_PGUP ] = KEY_PAGEUP;
-	mKeyCodesTable[ ALLEGRO_KEY_PGDN ] = KEY_PAGEDOWN;
-	mKeyCodesTable[ ALLEGRO_KEY_LEFT ] = KEY_LEFT;
-	mKeyCodesTable[ ALLEGRO_KEY_RIGHT ] = KEY_RIGHT;
-	mKeyCodesTable[ ALLEGRO_KEY_UP ] = KEY_UP;
-	mKeyCodesTable[ ALLEGRO_KEY_DOWN ] = KEY_DOWN;
-	mKeyCodesTable[ ALLEGRO_KEY_PAD_SLASH ] = KEY_KP_DIVIDE;
-	mKeyCodesTable[ ALLEGRO_KEY_PAD_ASTERISK ] = KEY_KP_MULTIPLY;
-	mKeyCodesTable[ ALLEGRO_KEY_PAD_MINUS ] = KEY_KP_MINUS;
-	mKeyCodesTable[ ALLEGRO_KEY_PAD_PLUS ] = KEY_KP_PLUS;
-	//mKeyCodesTable[ ALLEGRO_KEY_PAD_DELETE ] = KEY_KP_?;
-	mKeyCodesTable[ ALLEGRO_KEY_PAD_ENTER ] = KEY_KP_ENTER;
-	mKeyCodesTable[ ALLEGRO_KEY_PRINTSCREEN ] = KEY_PRINT;
-	mKeyCodesTable[ ALLEGRO_KEY_PAUSE ] = KEY_PAUSE;
-	//mKeyCodesTable[ ALLEGRO_KEY_ABNT_C1 ] = KEY_KP_?;
-	//mKeyCodesTable[ ALLEGRO_KEY_YEN ] = KEY_KP_?;
-	//mKeyCodesTable[ ALLEGRO_KEY_KANA ] = KEY_KP_?;
-	//mKeyCodesTable[ ALLEGRO_KEY_CONVERT ] = KEY_KP_?;
-	//mKeyCodesTable[ ALLEGRO_KEY_NOCONVERT ] = KEY_KP_?;
-	//mKeyCodesTable[ ALLEGRO_KEY_AT ] = KEY_KP_?;
-	//mKeyCodesTable[ ALLEGRO_KEY_CIRCUMFLEX ] = KEY_KP_?;
-	//mKeyCodesTable[ ALLEGRO_KEY_COLON2 ] = KEY_KP_?;
-	//mKeyCodesTable[ ALLEGRO_KEY_KANJI ] = KEY_KP_?;
-	mKeyCodesTable[ ALLEGRO_KEY_PAD_EQUALS ] = KEY_KP_EQUALS;
-	mKeyCodesTable[ ALLEGRO_KEY_BACKQUOTE ] = KEY_BACKQUOTE;
-	//mKeyCodesTable[ ALLEGRO_KEY_SEMICOLON2 ] = KEY_?;
-	//mKeyCodesTable[ ALLEGRO_KEY_COMMAND ] = KEY_?;
-	mKeyCodesTable[ ALLEGRO_KEY_UNKNOWN ] = KEY_UNKNOWN;
-	mKeyCodesTable[ ALLEGRO_KEY_LSHIFT ] = KEY_LSHIFT;
-	mKeyCodesTable[ ALLEGRO_KEY_RSHIFT ] = KEY_RSHIFT;
-	mKeyCodesTable[ ALLEGRO_KEY_LCTRL ] = KEY_LCTRL;
-	mKeyCodesTable[ ALLEGRO_KEY_RCTRL ] = KEY_RCTRL;
-	mKeyCodesTable[ ALLEGRO_KEY_ALT ] = KEY_LALT;
-	mKeyCodesTable[ ALLEGRO_KEY_ALTGR ] = KEY_MODE; //KEY_RALT;
-	mKeyCodesTable[ ALLEGRO_KEY_LWIN ] = KEY_LSUPER;
-	mKeyCodesTable[ ALLEGRO_KEY_RWIN ] = KEY_RSUPER;
-	//mKeyCodesTable[ ALLEGRO_KEY_MENU ] = KEY_?;
-	mKeyCodesTable[ ALLEGRO_KEY_SCROLLLOCK ] = KEY_SCROLLOCK;
-	mKeyCodesTable[ ALLEGRO_KEY_NUMLOCK ] = KEY_NUMLOCK;
-	mKeyCodesTable[ ALLEGRO_KEY_CAPSLOCK ] = KEY_CAPSLOCK;
+	KeyCodesTable[ ALLEGRO_KEY_0 ] = KEY_0;
+	KeyCodesTable[ ALLEGRO_KEY_1 ] = KEY_1;
+	KeyCodesTable[ ALLEGRO_KEY_2 ] = KEY_2;
+	KeyCodesTable[ ALLEGRO_KEY_3 ] = KEY_3;
+	KeyCodesTable[ ALLEGRO_KEY_4 ] = KEY_4;
+	KeyCodesTable[ ALLEGRO_KEY_5 ] = KEY_5;
+	KeyCodesTable[ ALLEGRO_KEY_6 ] = KEY_6;
+	KeyCodesTable[ ALLEGRO_KEY_7 ] = KEY_7;
+	KeyCodesTable[ ALLEGRO_KEY_8 ] = KEY_8;
+	KeyCodesTable[ ALLEGRO_KEY_9 ] = KEY_9;
+	KeyCodesTable[ ALLEGRO_KEY_PAD_0 ] = KEY_KP0;
+	KeyCodesTable[ ALLEGRO_KEY_PAD_1 ] = KEY_KP1;
+	KeyCodesTable[ ALLEGRO_KEY_PAD_2 ] = KEY_KP2;
+	KeyCodesTable[ ALLEGRO_KEY_PAD_3 ] = KEY_KP3;
+	KeyCodesTable[ ALLEGRO_KEY_PAD_4 ] = KEY_KP4;
+	KeyCodesTable[ ALLEGRO_KEY_PAD_5 ] = KEY_KP5;
+	KeyCodesTable[ ALLEGRO_KEY_PAD_6 ] = KEY_KP6;
+	KeyCodesTable[ ALLEGRO_KEY_PAD_7 ] = KEY_KP7;
+	KeyCodesTable[ ALLEGRO_KEY_PAD_8 ] = KEY_KP8;
+	KeyCodesTable[ ALLEGRO_KEY_PAD_9 ] = KEY_KP9;
+	KeyCodesTable[ ALLEGRO_KEY_F1 ] = KEY_F1;
+	KeyCodesTable[ ALLEGRO_KEY_F2 ] = KEY_F2;
+	KeyCodesTable[ ALLEGRO_KEY_F3 ] = KEY_F3;
+	KeyCodesTable[ ALLEGRO_KEY_F4 ] = KEY_F4;
+	KeyCodesTable[ ALLEGRO_KEY_F5 ] = KEY_F5;
+	KeyCodesTable[ ALLEGRO_KEY_F6 ] = KEY_F6;
+	KeyCodesTable[ ALLEGRO_KEY_F7 ] = KEY_F7;
+	KeyCodesTable[ ALLEGRO_KEY_F8 ] = KEY_F8;
+	KeyCodesTable[ ALLEGRO_KEY_F9 ] = KEY_F9;
+	KeyCodesTable[ ALLEGRO_KEY_F10 ] = KEY_F10;
+	KeyCodesTable[ ALLEGRO_KEY_F11 ] = KEY_F11;
+	KeyCodesTable[ ALLEGRO_KEY_F12 ] = KEY_F12;
+	KeyCodesTable[ ALLEGRO_KEY_ESCAPE ] = KEY_ESCAPE;
+	//KeyCodesTable[ ALLEGRO_KEY_TILDE ] = KEY_?;
+	KeyCodesTable[ ALLEGRO_KEY_MINUS ] = KEY_MINUS;
+	KeyCodesTable[ ALLEGRO_KEY_EQUALS ] = KEY_EQUALS;
+	KeyCodesTable[ ALLEGRO_KEY_BACKSPACE ] = KEY_BACKSPACE;
+	KeyCodesTable[ ALLEGRO_KEY_TAB ] = KEY_TAB;
+	//KeyCodesTable[ ALLEGRO_KEY_OPENBRACE ] = KEY_?;
+	//KeyCodesTable[ ALLEGRO_KEY_CLOSEBRACE ] = KEY_?;
+	KeyCodesTable[ ALLEGRO_KEY_ENTER ] = KEY_RETURN;
+	KeyCodesTable[ ALLEGRO_KEY_SEMICOLON ] = KEY_SEMICOLON;
+	KeyCodesTable[ ALLEGRO_KEY_QUOTE ] = KEY_QUOTE;
+	KeyCodesTable[ ALLEGRO_KEY_BACKSLASH ] = KEY_BACKSLASH;
+	//KeyCodesTable[ ALLEGRO_KEY_BACKSLASH2 ] = KEY_?;
+	KeyCodesTable[ ALLEGRO_KEY_COMMA ] = KEY_COMMA;
+	//KeyCodesTable[ ALLEGRO_KEY_FULLSTOP ] = KEY_?;
+	KeyCodesTable[ ALLEGRO_KEY_SLASH ] = KEY_SLASH;
+	KeyCodesTable[ ALLEGRO_KEY_SPACE ] = KEY_SPACE;
+	KeyCodesTable[ ALLEGRO_KEY_INSERT] = KEY_INSERT;
+	KeyCodesTable[ ALLEGRO_KEY_DELETE ] = KEY_DELETE;
+	KeyCodesTable[ ALLEGRO_KEY_HOME ] = KEY_HOME;
+	KeyCodesTable[ ALLEGRO_KEY_END ] = KEY_END;
+	KeyCodesTable[ ALLEGRO_KEY_PGUP ] = KEY_PAGEUP;
+	KeyCodesTable[ ALLEGRO_KEY_PGDN ] = KEY_PAGEDOWN;
+	KeyCodesTable[ ALLEGRO_KEY_LEFT ] = KEY_LEFT;
+	KeyCodesTable[ ALLEGRO_KEY_RIGHT ] = KEY_RIGHT;
+	KeyCodesTable[ ALLEGRO_KEY_UP ] = KEY_UP;
+	KeyCodesTable[ ALLEGRO_KEY_DOWN ] = KEY_DOWN;
+	KeyCodesTable[ ALLEGRO_KEY_PAD_SLASH ] = KEY_KP_DIVIDE;
+	KeyCodesTable[ ALLEGRO_KEY_PAD_ASTERISK ] = KEY_KP_MULTIPLY;
+	KeyCodesTable[ ALLEGRO_KEY_PAD_MINUS ] = KEY_KP_MINUS;
+	KeyCodesTable[ ALLEGRO_KEY_PAD_PLUS ] = KEY_KP_PLUS;
+	//KeyCodesTable[ ALLEGRO_KEY_PAD_DELETE ] = KEY_KP_?;
+	KeyCodesTable[ ALLEGRO_KEY_PAD_ENTER ] = KEY_KP_ENTER;
+	KeyCodesTable[ ALLEGRO_KEY_PRINTSCREEN ] = KEY_PRINT;
+	KeyCodesTable[ ALLEGRO_KEY_PAUSE ] = KEY_PAUSE;
+	//KeyCodesTable[ ALLEGRO_KEY_ABNT_C1 ] = KEY_KP_?;
+	//KeyCodesTable[ ALLEGRO_KEY_YEN ] = KEY_KP_?;
+	//KeyCodesTable[ ALLEGRO_KEY_KANA ] = KEY_KP_?;
+	//KeyCodesTable[ ALLEGRO_KEY_CONVERT ] = KEY_KP_?;
+	//KeyCodesTable[ ALLEGRO_KEY_NOCONVERT ] = KEY_KP_?;
+	//KeyCodesTable[ ALLEGRO_KEY_AT ] = KEY_KP_?;
+	//KeyCodesTable[ ALLEGRO_KEY_CIRCUMFLEX ] = KEY_KP_?;
+	//KeyCodesTable[ ALLEGRO_KEY_COLON2 ] = KEY_KP_?;
+	//KeyCodesTable[ ALLEGRO_KEY_KANJI ] = KEY_KP_?;
+	KeyCodesTable[ ALLEGRO_KEY_PAD_EQUALS ] = KEY_KP_EQUALS;
+	KeyCodesTable[ ALLEGRO_KEY_BACKQUOTE ] = KEY_BACKQUOTE;
+	//KeyCodesTable[ ALLEGRO_KEY_SEMICOLON2 ] = KEY_?;
+	//KeyCodesTable[ ALLEGRO_KEY_COMMAND ] = KEY_?;
+	KeyCodesTable[ ALLEGRO_KEY_UNKNOWN ] = KEY_UNKNOWN;
+	KeyCodesTable[ ALLEGRO_KEY_LSHIFT ] = KEY_LSHIFT;
+	KeyCodesTable[ ALLEGRO_KEY_RSHIFT ] = KEY_RSHIFT;
+	KeyCodesTable[ ALLEGRO_KEY_LCTRL ] = KEY_LCTRL;
+	KeyCodesTable[ ALLEGRO_KEY_RCTRL ] = KEY_RCTRL;
+	KeyCodesTable[ ALLEGRO_KEY_ALT ] = KEY_LALT;
+	KeyCodesTable[ ALLEGRO_KEY_ALTGR ] = KEY_MODE; //KEY_RALT;
+	KeyCodesTable[ ALLEGRO_KEY_LWIN ] = KEY_LSUPER;
+	KeyCodesTable[ ALLEGRO_KEY_RWIN ] = KEY_RSUPER;
+	//KeyCodesTable[ ALLEGRO_KEY_MENU ] = KEY_?;
+	KeyCodesTable[ ALLEGRO_KEY_SCROLLLOCK ] = KEY_SCROLLOCK;
+	KeyCodesTable[ ALLEGRO_KEY_NUMLOCK ] = KEY_NUMLOCK;
+	KeyCodesTable[ ALLEGRO_KEY_CAPSLOCK ] = KEY_CAPSLOCK;
+
+	KeyCodesTableInit = true;
 }
 
 Uint32 cInputAl::SetMod( Uint32 Mod ) {

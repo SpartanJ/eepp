@@ -41,8 +41,6 @@ class EE_API cInputAl : public cInput {
 
 		Uint32 SetMod( Uint32 Mod );
 
-		Uint32 mKeyCodesTable[ ALLEGRO_KEY_MAX ];
-
 		Int32 mZ;
 };
 

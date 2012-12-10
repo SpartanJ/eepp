@@ -8,6 +8,9 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SFML {
 
+static Uint32	KeyCodesTable[ sf::Keyboard::KeyCount ];
+static bool		KeyCodesTableInit = false;
+
 cInputSFML::cInputSFML( cWindow * window ) :
 	cInput( window, eeNew( cJoystickManagerSFML, () ) ),
 	mWinActive( true )
@@ -101,7 +104,7 @@ void cInputSFML::Update() {
 					 sf::Keyboard::BackSpace != event.key.code
 				) {
 					EEEvent.Type = InputEvent::KeyDown;
-					EEEvent.key.keysym.sym = mKeyCodesTable[ event.key.code ];
+					EEEvent.key.keysym.sym = KeyCodesTable[ event.key.code ];
 					EEEvent.key.keysym.mod = SetMod( event.key );
 					EEEvent.key.keysym.unicode = 0;
 				} else {
@@ -113,7 +116,7 @@ void cInputSFML::Update() {
 			case sf::Event::KeyReleased:
 			{
 				EEEvent.Type = InputEvent::KeyUp;
-				EEEvent.key.keysym.sym = mKeyCodesTable[ event.key.code ];
+				EEEvent.key.keysym.sym = KeyCodesTable[ event.key.code ];
 				EEEvent.key.keysym.mod = SetMod( event.key );
 				EEEvent.key.keysym.unicode = 0;
 				break;
@@ -229,86 +232,91 @@ Uint32 cInputSFML::SetMod( sf::Event::KeyEvent& key ) {
 }
 
 void cInputSFML::InitializeTables() {
+	if ( KeyCodesTableInit )
+		return;
+
 	Uint32 i;
 
 	for ( i = sf::Keyboard::A; i <= sf::Keyboard::Z; i++ )
-		mKeyCodesTable[ i ] = KEY_A + i;
+		KeyCodesTable[ i ] = KEY_A + i;
 
-	mKeyCodesTable[ sf::Keyboard::Num0 ] = KEY_0;
-	mKeyCodesTable[ sf::Keyboard::Num1 ] = KEY_1;
-	mKeyCodesTable[ sf::Keyboard::Num2 ] = KEY_2;
-	mKeyCodesTable[ sf::Keyboard::Num3 ] = KEY_3;
-	mKeyCodesTable[ sf::Keyboard::Num4 ] = KEY_4;
-	mKeyCodesTable[ sf::Keyboard::Num5 ] = KEY_5;
-	mKeyCodesTable[ sf::Keyboard::Num6 ] = KEY_6;
-	mKeyCodesTable[ sf::Keyboard::Num7 ] = KEY_7;
-	mKeyCodesTable[ sf::Keyboard::Num8 ] = KEY_8;
-	mKeyCodesTable[ sf::Keyboard::Num9 ] = KEY_9;
-	mKeyCodesTable[ sf::Keyboard::Escape ] = KEY_ESCAPE;
-	mKeyCodesTable[ sf::Keyboard::LControl ] = KEY_LCTRL;
-	mKeyCodesTable[ sf::Keyboard::LShift ] = KEY_LSHIFT;
-	mKeyCodesTable[ sf::Keyboard::LAlt ] = KEY_LALT;
-	mKeyCodesTable[ sf::Keyboard::LSystem ] = KEY_LMETA;
-	mKeyCodesTable[ sf::Keyboard::RControl ] = KEY_RCTRL;
-	mKeyCodesTable[ sf::Keyboard::RShift ] = KEY_RSHIFT;
-	mKeyCodesTable[ sf::Keyboard::RAlt ] = KEY_RALT;
-	mKeyCodesTable[ sf::Keyboard::RSystem ] = KEY_RMETA;
-	mKeyCodesTable[ sf::Keyboard::Menu ] = KEY_MENU;
-	mKeyCodesTable[ sf::Keyboard::LBracket ] = KEY_LEFTBRACKET;
-	mKeyCodesTable[ sf::Keyboard::RBracket ] = KEY_RIGHTBRACKET;
-	mKeyCodesTable[ sf::Keyboard::SemiColon ] = KEY_SEMICOLON;
-	mKeyCodesTable[ sf::Keyboard::Comma ] = KEY_COMMA;
-	mKeyCodesTable[ sf::Keyboard::Period ] = KEY_PERIOD;
-	mKeyCodesTable[ sf::Keyboard::Quote ] = KEY_QUOTE;
-	mKeyCodesTable[ sf::Keyboard::Slash ] = KEY_SLASH;
-	mKeyCodesTable[ sf::Keyboard::BackSlash ] = KEY_BACKSLASH;
-	mKeyCodesTable[ sf::Keyboard::Tilde ] = KEY_BACKQUOTE;
-	mKeyCodesTable[ sf::Keyboard::Equal ] = KEY_EQUALS;
-	mKeyCodesTable[ sf::Keyboard::Dash ] = KEY_MINUS;
-	mKeyCodesTable[ sf::Keyboard::Space ] = KEY_SPACE;
-	mKeyCodesTable[ sf::Keyboard::Return ] = KEY_RETURN;
-	mKeyCodesTable[ sf::Keyboard::BackSpace ] = KEY_BACKSPACE;
-	mKeyCodesTable[ sf::Keyboard::Tab ] = KEY_TAB;
-	mKeyCodesTable[ sf::Keyboard::PageUp ] = KEY_PAGEUP;
-	mKeyCodesTable[ sf::Keyboard::PageDown ] = KEY_PAGEDOWN;
-	mKeyCodesTable[ sf::Keyboard::End ] = KEY_END;
-	mKeyCodesTable[ sf::Keyboard::Home ] = KEY_HOME;
-	mKeyCodesTable[ sf::Keyboard::Insert ] = KEY_INSERT;
-	mKeyCodesTable[ sf::Keyboard::Delete ] = KEY_DELETE;
-	mKeyCodesTable[ sf::Keyboard::Add ] = KEY_KP_PLUS;
-	mKeyCodesTable[ sf::Keyboard::Subtract ] = KEY_KP_MINUS;
-	mKeyCodesTable[ sf::Keyboard::Multiply ] = KEY_KP_MULTIPLY;
-	mKeyCodesTable[ sf::Keyboard::Divide ] = KEY_KP_DIVIDE;
-	mKeyCodesTable[ sf::Keyboard::Left ] = KEY_LEFT;
-	mKeyCodesTable[ sf::Keyboard::Right ] = KEY_RIGHT;
-	mKeyCodesTable[ sf::Keyboard::Up ] = KEY_UP;
-	mKeyCodesTable[ sf::Keyboard::Down ] = KEY_DOWN;
-	mKeyCodesTable[ sf::Keyboard::Numpad0 ] = KEY_KP0;
-	mKeyCodesTable[ sf::Keyboard::Numpad1 ] = KEY_KP1;
-	mKeyCodesTable[ sf::Keyboard::Numpad2 ] = KEY_KP2;
-	mKeyCodesTable[ sf::Keyboard::Numpad3 ] = KEY_KP3;
-	mKeyCodesTable[ sf::Keyboard::Numpad4 ] = KEY_KP4;
-	mKeyCodesTable[ sf::Keyboard::Numpad5 ] = KEY_KP5;
-	mKeyCodesTable[ sf::Keyboard::Numpad6 ] = KEY_KP6;
-	mKeyCodesTable[ sf::Keyboard::Numpad7 ] = KEY_KP7;
-	mKeyCodesTable[ sf::Keyboard::Numpad8 ] = KEY_KP8;
-	mKeyCodesTable[ sf::Keyboard::Numpad9 ] = KEY_KP9;
-	mKeyCodesTable[ sf::Keyboard::F1 ] = KEY_F1;
-	mKeyCodesTable[ sf::Keyboard::F2 ] = KEY_F2;
-	mKeyCodesTable[ sf::Keyboard::F3 ] = KEY_F3;
-	mKeyCodesTable[ sf::Keyboard::F4 ] = KEY_F4;
-	mKeyCodesTable[ sf::Keyboard::F5 ] = KEY_F5;
-	mKeyCodesTable[ sf::Keyboard::F6 ] = KEY_F6;
-	mKeyCodesTable[ sf::Keyboard::F7 ] = KEY_F7;
-	mKeyCodesTable[ sf::Keyboard::F8 ] = KEY_F8;
-	mKeyCodesTable[ sf::Keyboard::F9 ] = KEY_F9;
-	mKeyCodesTable[ sf::Keyboard::F10 ] = KEY_F10;
-	mKeyCodesTable[ sf::Keyboard::F11 ] = KEY_F11;
-	mKeyCodesTable[ sf::Keyboard::F12 ] = KEY_F12;
-	mKeyCodesTable[ sf::Keyboard::F13 ] = KEY_F13;
-	mKeyCodesTable[ sf::Keyboard::F14 ] = KEY_F14;
-	mKeyCodesTable[ sf::Keyboard::F15 ] = KEY_F15;
-	mKeyCodesTable[ sf::Keyboard::Pause ] = KEY_PAUSE;
+	KeyCodesTable[ sf::Keyboard::Num0 ] = KEY_0;
+	KeyCodesTable[ sf::Keyboard::Num1 ] = KEY_1;
+	KeyCodesTable[ sf::Keyboard::Num2 ] = KEY_2;
+	KeyCodesTable[ sf::Keyboard::Num3 ] = KEY_3;
+	KeyCodesTable[ sf::Keyboard::Num4 ] = KEY_4;
+	KeyCodesTable[ sf::Keyboard::Num5 ] = KEY_5;
+	KeyCodesTable[ sf::Keyboard::Num6 ] = KEY_6;
+	KeyCodesTable[ sf::Keyboard::Num7 ] = KEY_7;
+	KeyCodesTable[ sf::Keyboard::Num8 ] = KEY_8;
+	KeyCodesTable[ sf::Keyboard::Num9 ] = KEY_9;
+	KeyCodesTable[ sf::Keyboard::Escape ] = KEY_ESCAPE;
+	KeyCodesTable[ sf::Keyboard::LControl ] = KEY_LCTRL;
+	KeyCodesTable[ sf::Keyboard::LShift ] = KEY_LSHIFT;
+	KeyCodesTable[ sf::Keyboard::LAlt ] = KEY_LALT;
+	KeyCodesTable[ sf::Keyboard::LSystem ] = KEY_LMETA;
+	KeyCodesTable[ sf::Keyboard::RControl ] = KEY_RCTRL;
+	KeyCodesTable[ sf::Keyboard::RShift ] = KEY_RSHIFT;
+	KeyCodesTable[ sf::Keyboard::RAlt ] = KEY_RALT;
+	KeyCodesTable[ sf::Keyboard::RSystem ] = KEY_RMETA;
+	KeyCodesTable[ sf::Keyboard::Menu ] = KEY_MENU;
+	KeyCodesTable[ sf::Keyboard::LBracket ] = KEY_LEFTBRACKET;
+	KeyCodesTable[ sf::Keyboard::RBracket ] = KEY_RIGHTBRACKET;
+	KeyCodesTable[ sf::Keyboard::SemiColon ] = KEY_SEMICOLON;
+	KeyCodesTable[ sf::Keyboard::Comma ] = KEY_COMMA;
+	KeyCodesTable[ sf::Keyboard::Period ] = KEY_PERIOD;
+	KeyCodesTable[ sf::Keyboard::Quote ] = KEY_QUOTE;
+	KeyCodesTable[ sf::Keyboard::Slash ] = KEY_SLASH;
+	KeyCodesTable[ sf::Keyboard::BackSlash ] = KEY_BACKSLASH;
+	KeyCodesTable[ sf::Keyboard::Tilde ] = KEY_BACKQUOTE;
+	KeyCodesTable[ sf::Keyboard::Equal ] = KEY_EQUALS;
+	KeyCodesTable[ sf::Keyboard::Dash ] = KEY_MINUS;
+	KeyCodesTable[ sf::Keyboard::Space ] = KEY_SPACE;
+	KeyCodesTable[ sf::Keyboard::Return ] = KEY_RETURN;
+	KeyCodesTable[ sf::Keyboard::BackSpace ] = KEY_BACKSPACE;
+	KeyCodesTable[ sf::Keyboard::Tab ] = KEY_TAB;
+	KeyCodesTable[ sf::Keyboard::PageUp ] = KEY_PAGEUP;
+	KeyCodesTable[ sf::Keyboard::PageDown ] = KEY_PAGEDOWN;
+	KeyCodesTable[ sf::Keyboard::End ] = KEY_END;
+	KeyCodesTable[ sf::Keyboard::Home ] = KEY_HOME;
+	KeyCodesTable[ sf::Keyboard::Insert ] = KEY_INSERT;
+	KeyCodesTable[ sf::Keyboard::Delete ] = KEY_DELETE;
+	KeyCodesTable[ sf::Keyboard::Add ] = KEY_KP_PLUS;
+	KeyCodesTable[ sf::Keyboard::Subtract ] = KEY_KP_MINUS;
+	KeyCodesTable[ sf::Keyboard::Multiply ] = KEY_KP_MULTIPLY;
+	KeyCodesTable[ sf::Keyboard::Divide ] = KEY_KP_DIVIDE;
+	KeyCodesTable[ sf::Keyboard::Left ] = KEY_LEFT;
+	KeyCodesTable[ sf::Keyboard::Right ] = KEY_RIGHT;
+	KeyCodesTable[ sf::Keyboard::Up ] = KEY_UP;
+	KeyCodesTable[ sf::Keyboard::Down ] = KEY_DOWN;
+	KeyCodesTable[ sf::Keyboard::Numpad0 ] = KEY_KP0;
+	KeyCodesTable[ sf::Keyboard::Numpad1 ] = KEY_KP1;
+	KeyCodesTable[ sf::Keyboard::Numpad2 ] = KEY_KP2;
+	KeyCodesTable[ sf::Keyboard::Numpad3 ] = KEY_KP3;
+	KeyCodesTable[ sf::Keyboard::Numpad4 ] = KEY_KP4;
+	KeyCodesTable[ sf::Keyboard::Numpad5 ] = KEY_KP5;
+	KeyCodesTable[ sf::Keyboard::Numpad6 ] = KEY_KP6;
+	KeyCodesTable[ sf::Keyboard::Numpad7 ] = KEY_KP7;
+	KeyCodesTable[ sf::Keyboard::Numpad8 ] = KEY_KP8;
+	KeyCodesTable[ sf::Keyboard::Numpad9 ] = KEY_KP9;
+	KeyCodesTable[ sf::Keyboard::F1 ] = KEY_F1;
+	KeyCodesTable[ sf::Keyboard::F2 ] = KEY_F2;
+	KeyCodesTable[ sf::Keyboard::F3 ] = KEY_F3;
+	KeyCodesTable[ sf::Keyboard::F4 ] = KEY_F4;
+	KeyCodesTable[ sf::Keyboard::F5 ] = KEY_F5;
+	KeyCodesTable[ sf::Keyboard::F6 ] = KEY_F6;
+	KeyCodesTable[ sf::Keyboard::F7 ] = KEY_F7;
+	KeyCodesTable[ sf::Keyboard::F8 ] = KEY_F8;
+	KeyCodesTable[ sf::Keyboard::F9 ] = KEY_F9;
+	KeyCodesTable[ sf::Keyboard::F10 ] = KEY_F10;
+	KeyCodesTable[ sf::Keyboard::F11 ] = KEY_F11;
+	KeyCodesTable[ sf::Keyboard::F12 ] = KEY_F12;
+	KeyCodesTable[ sf::Keyboard::F13 ] = KEY_F13;
+	KeyCodesTable[ sf::Keyboard::F14 ] = KEY_F14;
+	KeyCodesTable[ sf::Keyboard::F15 ] = KEY_F15;
+	KeyCodesTable[ sf::Keyboard::Pause ] = KEY_PAUSE;
+
+	KeyCodesTableInit = true;
 }
 
 }}}}

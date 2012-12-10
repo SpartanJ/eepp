@@ -16,6 +16,10 @@ void cNullImpl::MinimizeWindow() {
 void cNullImpl::MaximizeWindow() {
 }
 
+bool cNullImpl::IsWindowMaximized() {
+	return false;
+}
+
 void cNullImpl::HideWindow() {
 }
 

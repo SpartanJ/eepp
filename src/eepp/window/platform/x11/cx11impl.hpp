@@ -24,6 +24,8 @@ class cX11Impl : public cPlatformImpl {
 
 		void MaximizeWindow();
 
+		bool IsWindowMaximized();
+
 		void HideWindow();
 
 		void RaiseWindow();

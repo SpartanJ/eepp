@@ -142,7 +142,7 @@ void cEETest::CreateAquaTextureAtlas() {
 	return;
 	#endif
 
-	std::string tgpath( MyPath + "data/aquatg/aqua" );
+	std::string tgpath( MyPath + "data/aquata/aqua" );
 	std::string Path( MyPath + "data/aqua" );
 
 	if ( !FileSystem::FileExists( tgpath + EE_TEXTURE_ATLAS_EXTENSION ) ) {
@@ -258,7 +258,7 @@ void cEETest::CreateUI() {
 
 	//mTheme = cUITheme::LoadFromPath( eeNew( cUIAquaTheme, ( "aqua", "aqua" ) ), MyPath + "data/aqua/" );
 
-	cTextureAtlasLoader tgl( MyPath + "data/aquatg/aqua" + EE_TEXTURE_ATLAS_EXTENSION );
+	cTextureAtlasLoader tgl( MyPath + "data/aquata/aqua" + EE_TEXTURE_ATLAS_EXTENSION );
 	tgl.GetTexture()->TextureFilter( TEX_FILTER_NEAREST );
 
 	mTheme = cUITheme::LoadFromTextureAtlas( eeNew( cUIAquaTheme, ( "aqua", "aqua" ) ), cTextureAtlasManager::instance()->GetByName( "aqua" ) );
@@ -1335,8 +1335,10 @@ void cEETest::Input() {
 	if ( KM->AltPressed() && KM->IsKeyUp( KEY_C ) )
 		mWindow->Center();
 
-	if ( KM->AltPressed() && KM->IsKeyUp( KEY_M ) && !Con.Active() )
-		mWindow->Maximize();
+	if ( KM->AltPressed() && KM->IsKeyUp( KEY_M ) && !Con.Active() ) {
+		if ( !mWindow->IsMaximized() )
+			mWindow->Maximize();
+	}
 
 	if ( KM->IsKeyUp(KEY_F4) )
 		TF->ReloadAllTextures();

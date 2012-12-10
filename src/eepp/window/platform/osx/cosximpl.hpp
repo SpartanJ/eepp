@@ -21,6 +21,8 @@ class cOSXImpl : public cPlatformImpl {
 
 		void MaximizeWindow();
 
+		bool IsWindowMaximized();
+
 		void HideWindow();
 
 		void RaiseWindow();

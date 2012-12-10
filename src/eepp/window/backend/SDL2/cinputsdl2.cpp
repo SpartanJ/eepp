@@ -9,6 +9,9 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
+static Uint32	KeyCodesTable[ SDL_NUM_SCANCODES ];
+static bool		KeyCodesTableInit = false;
+
 cInputSDL::cInputSDL( cWindow * window ) :
 	cInput( window, eeNew( cJoystickManagerSDL, () ) )
 {
@@ -115,7 +118,7 @@ void cInputSDL::Update() {
 				EEEvent.Type = InputEvent::KeyDown;
 				EEEvent.key.state = SDLEvent.key.state;
 				EEEvent.key.which = SDLEvent.key.windowID;
-				EEEvent.key.keysym.sym = mKeyCodesTable[ SDLEvent.key.keysym.scancode ];
+				EEEvent.key.keysym.sym = KeyCodesTable[ SDLEvent.key.keysym.scancode ];
 				EEEvent.key.keysym.mod = SDLEvent.key.keysym.mod;
 				EEEvent.key.keysym.unicode = 0;
 				break;
@@ -125,7 +128,7 @@ void cInputSDL::Update() {
 				EEEvent.Type = InputEvent::KeyUp;
 				EEEvent.key.state = SDLEvent.key.state;
 				EEEvent.key.which = SDLEvent.key.windowID;
-				EEEvent.key.keysym.sym = mKeyCodesTable[ SDLEvent.key.keysym.scancode ];
+				EEEvent.key.keysym.sym = KeyCodesTable[ SDLEvent.key.keysym.scancode ];
 
 				if ( SDLEvent.key.keysym.scancode == SDL_SCANCODE_1 ) {
 					EEEvent.key.state = SDLEvent.key.state;
@@ -369,86 +372,91 @@ void cInputSDL::Init() {
 }
 
 void cInputSDL::InitializeTables() {
+	if ( KeyCodesTableInit )
+		return;
+
 	Uint32 i;
 
-	memset( &mKeyCodesTable[0], 0, SDL_NUM_SCANCODES );
+	memset( &KeyCodesTable[0], 0, SDL_NUM_SCANCODES );
 
 	for ( i = SDL_SCANCODE_A; i <= SDL_SCANCODE_Z; i++ )
-		mKeyCodesTable[ i ] = KEY_A + i - SDL_SCANCODE_A;
+		KeyCodesTable[ i ] = KEY_A + i - SDL_SCANCODE_A;
 
-	mKeyCodesTable[ SDL_SCANCODE_0 ] = KEY_0;
-	mKeyCodesTable[ SDL_SCANCODE_1 ] = KEY_1;
-	mKeyCodesTable[ SDL_SCANCODE_2 ] = KEY_2;
-	mKeyCodesTable[ SDL_SCANCODE_3 ] = KEY_3;
-	mKeyCodesTable[ SDL_SCANCODE_4 ] = KEY_4;
-	mKeyCodesTable[ SDL_SCANCODE_5 ] = KEY_5;
-	mKeyCodesTable[ SDL_SCANCODE_6 ] = KEY_6;
-	mKeyCodesTable[ SDL_SCANCODE_7 ] = KEY_7;
-	mKeyCodesTable[ SDL_SCANCODE_8 ] = KEY_8;
-	mKeyCodesTable[ SDL_SCANCODE_9 ] = KEY_9;
-	mKeyCodesTable[ SDL_SCANCODE_KP_0 ] = KEY_KP0;
-	mKeyCodesTable[ SDL_SCANCODE_KP_1 ] = KEY_KP1;
-	mKeyCodesTable[ SDL_SCANCODE_KP_2 ] = KEY_KP2;
-	mKeyCodesTable[ SDL_SCANCODE_KP_3 ] = KEY_KP3;
-	mKeyCodesTable[ SDL_SCANCODE_KP_4 ] = KEY_KP4;
-	mKeyCodesTable[ SDL_SCANCODE_KP_5 ] = KEY_KP5;
-	mKeyCodesTable[ SDL_SCANCODE_KP_6 ] = KEY_KP6;
-	mKeyCodesTable[ SDL_SCANCODE_KP_7 ] = KEY_KP7;
-	mKeyCodesTable[ SDL_SCANCODE_KP_8 ] = KEY_KP8;
-	mKeyCodesTable[ SDL_SCANCODE_KP_9 ] = KEY_KP9;
-	mKeyCodesTable[ SDL_SCANCODE_F1 ] = KEY_F1;
-	mKeyCodesTable[ SDL_SCANCODE_F2 ] = KEY_F2;
-	mKeyCodesTable[ SDL_SCANCODE_F3 ] = KEY_F3;
-	mKeyCodesTable[ SDL_SCANCODE_F4 ] = KEY_F4;
-	mKeyCodesTable[ SDL_SCANCODE_F5 ] = KEY_F5;
-	mKeyCodesTable[ SDL_SCANCODE_F6 ] = KEY_F6;
-	mKeyCodesTable[ SDL_SCANCODE_F7 ] = KEY_F7;
-	mKeyCodesTable[ SDL_SCANCODE_F8 ] = KEY_F8;
-	mKeyCodesTable[ SDL_SCANCODE_F9 ] = KEY_F9;
-	mKeyCodesTable[ SDL_SCANCODE_F10 ] = KEY_F10;
-	mKeyCodesTable[ SDL_SCANCODE_F11 ] = KEY_F11;
-	mKeyCodesTable[ SDL_SCANCODE_F12 ] = KEY_F12;
-	mKeyCodesTable[ SDL_SCANCODE_ESCAPE ] = KEY_ESCAPE;
-	mKeyCodesTable[ SDL_SCANCODE_MINUS ] = KEY_MINUS;
-	mKeyCodesTable[ SDL_SCANCODE_EQUALS ] = KEY_EQUALS;
-	mKeyCodesTable[ SDL_SCANCODE_BACKSPACE ] = KEY_BACKSPACE;
-	mKeyCodesTable[ SDL_SCANCODE_TAB ] = KEY_TAB;
-	mKeyCodesTable[ SDL_SCANCODE_RETURN ] = KEY_RETURN;
-	mKeyCodesTable[ SDL_SCANCODE_SEMICOLON ] = KEY_SEMICOLON;
-	mKeyCodesTable[ SDL_SCANCODE_BACKSLASH ] = KEY_BACKSLASH;
-	mKeyCodesTable[ SDL_SCANCODE_COMMA ] = KEY_COMMA;
-	mKeyCodesTable[ SDL_SCANCODE_SLASH ] = KEY_SLASH;
-	mKeyCodesTable[ SDL_SCANCODE_KP_SPACE ] = KEY_SPACE;
-	mKeyCodesTable[ SDL_SCANCODE_INSERT] = KEY_INSERT;
-	mKeyCodesTable[ SDL_SCANCODE_DELETE ] = KEY_DELETE;
-	mKeyCodesTable[ SDL_SCANCODE_HOME ] = KEY_HOME;
-	mKeyCodesTable[ SDL_SCANCODE_END ] = KEY_END;
-	mKeyCodesTable[ SDL_SCANCODE_PAGEUP ] = KEY_PAGEUP;
-	mKeyCodesTable[ SDL_SCANCODE_PAGEDOWN ] = KEY_PAGEDOWN;
-	mKeyCodesTable[ SDL_SCANCODE_LEFT ] = KEY_LEFT;
-	mKeyCodesTable[ SDL_SCANCODE_RIGHT ] = KEY_RIGHT;
-	mKeyCodesTable[ SDL_SCANCODE_UP ] = KEY_UP;
-	mKeyCodesTable[ SDL_SCANCODE_DOWN ] = KEY_DOWN;
-	mKeyCodesTable[ SDL_SCANCODE_KP_DIVIDE ] = KEY_KP_DIVIDE;
-	mKeyCodesTable[ SDL_SCANCODE_KP_MULTIPLY ] = KEY_KP_MULTIPLY;
-	mKeyCodesTable[ SDL_SCANCODE_KP_MINUS ] = KEY_KP_MINUS;
-	mKeyCodesTable[ SDL_SCANCODE_KP_PLUS ] = KEY_KP_PLUS;
-	mKeyCodesTable[ SDL_SCANCODE_KP_ENTER ] = KEY_KP_ENTER;
-	mKeyCodesTable[ SDL_SCANCODE_PRINTSCREEN ] = KEY_PRINT;
-	mKeyCodesTable[ SDL_SCANCODE_PAUSE ] = KEY_PAUSE;
-	mKeyCodesTable[ SDL_SCANCODE_KP_EQUALS ] = KEY_KP_EQUALS;
-	mKeyCodesTable[ SDL_SCANCODE_LSHIFT ] = KEY_LSHIFT;
-	mKeyCodesTable[ SDL_SCANCODE_RSHIFT ] = KEY_RSHIFT;
-	mKeyCodesTable[ SDL_SCANCODE_LCTRL ] = KEY_LCTRL;
-	mKeyCodesTable[ SDL_SCANCODE_RCTRL ] = KEY_RCTRL;
-	mKeyCodesTable[ SDL_SCANCODE_LALT ] = KEY_LALT;
-	mKeyCodesTable[ SDL_SCANCODE_RALT ] = KEY_RALT;
-	mKeyCodesTable[ SDL_SCANCODE_MODE ] = KEY_MODE;
-	mKeyCodesTable[ SDL_SCANCODE_LGUI ] = KEY_LSUPER;
-	mKeyCodesTable[ SDL_SCANCODE_RGUI ] = KEY_RSUPER;
-	mKeyCodesTable[ SDL_SCANCODE_SCROLLLOCK ] = KEY_SCROLLOCK;
-	mKeyCodesTable[ SDL_SCANCODE_NUMLOCKCLEAR ] = KEY_NUMLOCK;
-	mKeyCodesTable[ SDL_SCANCODE_CAPSLOCK ] = KEY_CAPSLOCK;
+	KeyCodesTable[ SDL_SCANCODE_0 ] = KEY_0;
+	KeyCodesTable[ SDL_SCANCODE_1 ] = KEY_1;
+	KeyCodesTable[ SDL_SCANCODE_2 ] = KEY_2;
+	KeyCodesTable[ SDL_SCANCODE_3 ] = KEY_3;
+	KeyCodesTable[ SDL_SCANCODE_4 ] = KEY_4;
+	KeyCodesTable[ SDL_SCANCODE_5 ] = KEY_5;
+	KeyCodesTable[ SDL_SCANCODE_6 ] = KEY_6;
+	KeyCodesTable[ SDL_SCANCODE_7 ] = KEY_7;
+	KeyCodesTable[ SDL_SCANCODE_8 ] = KEY_8;
+	KeyCodesTable[ SDL_SCANCODE_9 ] = KEY_9;
+	KeyCodesTable[ SDL_SCANCODE_KP_0 ] = KEY_KP0;
+	KeyCodesTable[ SDL_SCANCODE_KP_1 ] = KEY_KP1;
+	KeyCodesTable[ SDL_SCANCODE_KP_2 ] = KEY_KP2;
+	KeyCodesTable[ SDL_SCANCODE_KP_3 ] = KEY_KP3;
+	KeyCodesTable[ SDL_SCANCODE_KP_4 ] = KEY_KP4;
+	KeyCodesTable[ SDL_SCANCODE_KP_5 ] = KEY_KP5;
+	KeyCodesTable[ SDL_SCANCODE_KP_6 ] = KEY_KP6;
+	KeyCodesTable[ SDL_SCANCODE_KP_7 ] = KEY_KP7;
+	KeyCodesTable[ SDL_SCANCODE_KP_8 ] = KEY_KP8;
+	KeyCodesTable[ SDL_SCANCODE_KP_9 ] = KEY_KP9;
+	KeyCodesTable[ SDL_SCANCODE_F1 ] = KEY_F1;
+	KeyCodesTable[ SDL_SCANCODE_F2 ] = KEY_F2;
+	KeyCodesTable[ SDL_SCANCODE_F3 ] = KEY_F3;
+	KeyCodesTable[ SDL_SCANCODE_F4 ] = KEY_F4;
+	KeyCodesTable[ SDL_SCANCODE_F5 ] = KEY_F5;
+	KeyCodesTable[ SDL_SCANCODE_F6 ] = KEY_F6;
+	KeyCodesTable[ SDL_SCANCODE_F7 ] = KEY_F7;
+	KeyCodesTable[ SDL_SCANCODE_F8 ] = KEY_F8;
+	KeyCodesTable[ SDL_SCANCODE_F9 ] = KEY_F9;
+	KeyCodesTable[ SDL_SCANCODE_F10 ] = KEY_F10;
+	KeyCodesTable[ SDL_SCANCODE_F11 ] = KEY_F11;
+	KeyCodesTable[ SDL_SCANCODE_F12 ] = KEY_F12;
+	KeyCodesTable[ SDL_SCANCODE_ESCAPE ] = KEY_ESCAPE;
+	KeyCodesTable[ SDL_SCANCODE_MINUS ] = KEY_MINUS;
+	KeyCodesTable[ SDL_SCANCODE_EQUALS ] = KEY_EQUALS;
+	KeyCodesTable[ SDL_SCANCODE_BACKSPACE ] = KEY_BACKSPACE;
+	KeyCodesTable[ SDL_SCANCODE_TAB ] = KEY_TAB;
+	KeyCodesTable[ SDL_SCANCODE_RETURN ] = KEY_RETURN;
+	KeyCodesTable[ SDL_SCANCODE_SEMICOLON ] = KEY_SEMICOLON;
+	KeyCodesTable[ SDL_SCANCODE_BACKSLASH ] = KEY_BACKSLASH;
+	KeyCodesTable[ SDL_SCANCODE_COMMA ] = KEY_COMMA;
+	KeyCodesTable[ SDL_SCANCODE_SLASH ] = KEY_SLASH;
+	KeyCodesTable[ SDL_SCANCODE_KP_SPACE ] = KEY_SPACE;
+	KeyCodesTable[ SDL_SCANCODE_INSERT] = KEY_INSERT;
+	KeyCodesTable[ SDL_SCANCODE_DELETE ] = KEY_DELETE;
+	KeyCodesTable[ SDL_SCANCODE_HOME ] = KEY_HOME;
+	KeyCodesTable[ SDL_SCANCODE_END ] = KEY_END;
+	KeyCodesTable[ SDL_SCANCODE_PAGEUP ] = KEY_PAGEUP;
+	KeyCodesTable[ SDL_SCANCODE_PAGEDOWN ] = KEY_PAGEDOWN;
+	KeyCodesTable[ SDL_SCANCODE_LEFT ] = KEY_LEFT;
+	KeyCodesTable[ SDL_SCANCODE_RIGHT ] = KEY_RIGHT;
+	KeyCodesTable[ SDL_SCANCODE_UP ] = KEY_UP;
+	KeyCodesTable[ SDL_SCANCODE_DOWN ] = KEY_DOWN;
+	KeyCodesTable[ SDL_SCANCODE_KP_DIVIDE ] = KEY_KP_DIVIDE;
+	KeyCodesTable[ SDL_SCANCODE_KP_MULTIPLY ] = KEY_KP_MULTIPLY;
+	KeyCodesTable[ SDL_SCANCODE_KP_MINUS ] = KEY_KP_MINUS;
+	KeyCodesTable[ SDL_SCANCODE_KP_PLUS ] = KEY_KP_PLUS;
+	KeyCodesTable[ SDL_SCANCODE_KP_ENTER ] = KEY_KP_ENTER;
+	KeyCodesTable[ SDL_SCANCODE_PRINTSCREEN ] = KEY_PRINT;
+	KeyCodesTable[ SDL_SCANCODE_PAUSE ] = KEY_PAUSE;
+	KeyCodesTable[ SDL_SCANCODE_KP_EQUALS ] = KEY_KP_EQUALS;
+	KeyCodesTable[ SDL_SCANCODE_LSHIFT ] = KEY_LSHIFT;
+	KeyCodesTable[ SDL_SCANCODE_RSHIFT ] = KEY_RSHIFT;
+	KeyCodesTable[ SDL_SCANCODE_LCTRL ] = KEY_LCTRL;
+	KeyCodesTable[ SDL_SCANCODE_RCTRL ] = KEY_RCTRL;
+	KeyCodesTable[ SDL_SCANCODE_LALT ] = KEY_LALT;
+	KeyCodesTable[ SDL_SCANCODE_RALT ] = KEY_RALT;
+	KeyCodesTable[ SDL_SCANCODE_MODE ] = KEY_MODE;
+	KeyCodesTable[ SDL_SCANCODE_LGUI ] = KEY_LSUPER;
+	KeyCodesTable[ SDL_SCANCODE_RGUI ] = KEY_RSUPER;
+	KeyCodesTable[ SDL_SCANCODE_SCROLLLOCK ] = KEY_SCROLLOCK;
+	KeyCodesTable[ SDL_SCANCODE_NUMLOCKCLEAR ] = KEY_NUMLOCK;
+	KeyCodesTable[ SDL_SCANCODE_CAPSLOCK ] = KEY_CAPSLOCK;
+
+	KeyCodesTableInit = true;
 }
 
 }}}}

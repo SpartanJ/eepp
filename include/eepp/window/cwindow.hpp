@@ -148,6 +148,9 @@ class EE_API cWindow {
 		/** Maximize the Window */
 		virtual void Maximize();
 
+		/** @return true if the window is maximized */
+		virtual bool IsMaximized();
+
 		/** This will attempt to hide the window */
 		virtual void Hide();
 

@@ -25,8 +25,6 @@ class EE_API cInputSFML : public cInput {
 	protected:
 		friend class cWindowSFML;
 
-		Uint32 mKeyCodesTable[ sf::Keyboard::KeyCount ];
-
 		bool mWinActive;
 
 		cInputSFML( Window::cWindow * window );

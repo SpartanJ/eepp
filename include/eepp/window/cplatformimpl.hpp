@@ -38,6 +38,9 @@ class cPlatformImpl {
 		/** Maximize the window */
 		virtual void MaximizeWindow() = 0;
 
+		/** @return true if the window is maximized */
+		virtual bool IsWindowMaximized() = 0;
+
 		/** Hide the window */
 		virtual void HideWindow() = 0;
 

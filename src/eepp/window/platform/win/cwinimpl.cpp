@@ -39,6 +39,10 @@ void cWinImpl::MaximizeWindow() {
 	WIN_ShowWindow( mHandler, SW_MAXIMIZE );
 }
 
+bool cWinImpl::IsWindowMaximized() {
+	return 0 != IsZoomed( mHandler );
+}
+
 void cWinImpl::HideWindow() {
 	WIN_ShowWindow( mHandler, SW_HIDE );
 }
