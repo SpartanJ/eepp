@@ -23,6 +23,7 @@
 
 /**
 	@TODO Improve documentation.
+	@TODO Add support for the native on-screen keyboard on iOS and Android.
 	@TODO Improve Premake4 support. It should be really easy to compile eepp in Windows and OS X ( Linux is always easy thanks to package managers ).
 	@TODO Add more examples, showing at least the basic usage of the engine ( 10 or more examples at least ).
 	@TODO Create a default UI Theme for the engine ( get rid off the ugly Aqua Theme ).

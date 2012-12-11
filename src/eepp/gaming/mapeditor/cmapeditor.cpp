@@ -4,6 +4,7 @@
 #include <eepp/gaming/mapeditor/cuigotypenew.hpp>
 #include <eepp/gaming/mapeditor/cmapproperties.hpp>
 #include <eepp/gaming/mapeditor/clayerproperties.hpp>
+#include <eepp/gaming/mapeditor/cuimap.hpp>
 
 #include <eepp/gaming/ctilelayer.hpp>
 #include <eepp/gaming/cobjectlayer.hpp>

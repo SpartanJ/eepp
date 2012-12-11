@@ -1,4 +1,5 @@
 #include <eepp/ui/tools/ctextureatlaseditor.hpp>
+#include <eepp/ui/tools/ctextureatlassubtextureeditor.hpp>
 #include <eepp/ui/tools/ctextureatlasnew.hpp>
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/ui/cuipopupmenu.hpp>

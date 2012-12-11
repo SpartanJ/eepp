@@ -4,13 +4,16 @@
 #include <eepp/gaming/base.hpp>
 #include <eepp/ui/cuiwindow.hpp>
 #include <eepp/ui/cuimenucheckbox.hpp>
-#include <eepp/gaming/mapeditor/cuimap.hpp>
+#include <eepp/gaming/clayer.hpp>
+#include <eepp/gaming/clight.hpp>
+#include <eepp/gaming/cgameobject.hpp>
 
 using namespace EE::UI;
 
 namespace EE { namespace Gaming { namespace MapEditor {
 
 class cUILayerNew;
+class cUIMap;
 
 class EE_API cMapEditor {
 	public:

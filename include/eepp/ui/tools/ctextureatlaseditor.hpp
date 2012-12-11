@@ -2,7 +2,6 @@
 #define EE_UITOOLSCTEXTUREATLASEDITOR_HPP
 
 #include <eepp/ui/base.hpp>
-#include <eepp/ui/tools/ctextureatlassubtextureeditor.hpp>
 #include <eepp/ui/cuiwindow.hpp>
 #include <eepp/ui/cuispinbox.hpp>
 #include <eepp/ui/cuilistbox.hpp>
@@ -12,6 +11,8 @@
 #include <eepp/graphics/ctextureatlasmanager.hpp>
 
 namespace EE { namespace UI { namespace Tools {
+
+class cTextureAtlasSubTextureEditor;
 
 class EE_API cTextureAtlasEditor {
 	public:
