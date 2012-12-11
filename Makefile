@@ -147,11 +147,11 @@ os:
 objdir:
 	@echo $(OBJDIR)
 
-test: dirs $(EXETEST)
+test: dirs libeepp.a $(EXETEST)
 
-ew: dirs $(EXEEMPTYWINDOW)
+ew: dirs libeepp.a $(EXEEMPTYWINDOW)
 
-es: dirs $(EXEEXTSHADER)
+es: dirs libeepp.a $(EXEEXTSHADER)
 
 docs:
 	doxygen ./Doxyfile

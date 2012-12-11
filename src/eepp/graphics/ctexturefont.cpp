@@ -61,10 +61,19 @@ void cTextureFont::BuildFont() {
 
 	cTextureFactory::instance()->Bind( mTexId );
 
+	int c = 0;
+
 	for (eeUint i = 0; i < mNumChars; i++) {
-		if ( i >= mStartChar ) {
-			cX = (eeFloat)( (i-mStartChar) % mTexColumns ) / (eeFloat)mTexColumns;
-			cY = (eeFloat)( (i-mStartChar) / mTexColumns ) / (eeFloat)mTexRows;
+		if ( i >= mStartChar || ( mStartChar <= 32 && i == 9 ) ) {
+			c = i;
+
+			// Little hack to always provide a tab
+			if ( 9 == i ) {
+				c = 32;
+			}
+
+			cX = (eeFloat)( (c-mStartChar) % mTexColumns ) / (eeFloat)mTexColumns;
+			cY = (eeFloat)( (c-mStartChar) / mTexColumns ) / (eeFloat)mTexRows;
 
 			mGlyphs[i].Advance = mSpacing;
 

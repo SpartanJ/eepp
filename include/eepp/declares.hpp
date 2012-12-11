@@ -272,12 +272,12 @@ namespace EE {
 
 	template<typename T>
 	T eeclamp( T val, T min, T max ) {
-		return ( val < min ) ? min : max;
+		return ( val < min ) ? min : ( ( val > max ) ? max : val );
 	}
 
 	template<typename T>
 	void eeclamp( T* val, T min, T max ) {
-		( *val < min ) ? *val = min : *val = max;
+		( *val < min ) ? *val = min : ( ( *val > max ) ? *val = max : *val );
 	}
 
 	typedef SOPHIST_int8	Int8;
