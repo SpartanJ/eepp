@@ -79,13 +79,16 @@
 #include "SDL_endian.h"
 #include "SDL_error.h"
 #include "SDL_events.h"
+#include "SDL_gamecontroller.h"
 #include "SDL_hints.h"
 #include "SDL_loadso.h"
 #include "SDL_log.h"
+#include "SDL_messagebox.h"
 #include "SDL_mutex.h"
 #include "SDL_power.h"
 #include "SDL_render.h"
 #include "SDL_rwops.h"
+#include "SDL_system.h"
 #include "SDL_thread.h"
 #include "SDL_timer.h"
 #include "SDL_version.h"
@@ -113,6 +116,7 @@ extern "C" {
 #define SDL_INIT_VIDEO          0x00000020
 #define SDL_INIT_JOYSTICK       0x00000200
 #define SDL_INIT_HAPTIC         0x00001000
+#define SDL_INIT_GAMECONTROLLER 0x00002000		/**< turn on game controller also implicitly does JOYSTICK */
 #define SDL_INIT_NOPARACHUTE    0x00100000      /**< Don't catch fatal signals */
 #define SDL_INIT_EVERYTHING     0x0000FFFF
 /*@}*/

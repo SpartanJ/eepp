@@ -238,7 +238,7 @@ SDL_JoystickIsHaptic(SDL_Joystick * joystick)
     int ret;
 
     /* Must be a valid joystick */
-    if (!SDL_PrivateJoystickValid(&joystick)) {
+    if (!SDL_PrivateJoystickValid(joystick)) {
         return -1;
     }
 
@@ -263,7 +263,7 @@ SDL_HapticOpenFromJoystick(SDL_Joystick * joystick)
     SDL_Haptic *haptic;
 
     /* Must be a valid joystick */
-    if (!SDL_PrivateJoystickValid(&joystick)) {
+    if (!SDL_PrivateJoystickValid(joystick)) {
         SDL_SetError("Haptic: Joystick isn't valid.");
         return NULL;
     }
@@ -766,7 +766,6 @@ SDL_HapticRumbleInit(SDL_Haptic * haptic)
 int
 SDL_HapticRumblePlay(SDL_Haptic * haptic, float strength, Uint32 length)
 {
-    int ret;
     SDL_HapticPeriodic *efx;
 
     if (!ValidHaptic(haptic)) {
@@ -790,7 +789,7 @@ SDL_HapticRumblePlay(SDL_Haptic * haptic, float strength, Uint32 length)
     efx = &haptic->rumble_effect.periodic;
     efx->magnitude = (Sint16)(32767.0f*strength);
     efx->length = length;
-    ret = SDL_HapticUpdateEffect(haptic, haptic->rumble_id, &haptic->rumble_effect);
+    SDL_HapticUpdateEffect(haptic, haptic->rumble_id, &haptic->rumble_effect);
 
     return SDL_HapticRunEffect(haptic, haptic->rumble_id, 1);
 }

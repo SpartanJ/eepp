@@ -14,6 +14,8 @@ class SDL_SysWMinfo;
 #define EE_USE_WMINFO
 #endif
 
+namespace EE { namespace System { class cZip; } }
+
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 class EE_API cWindowSDL : public cWindow {
@@ -71,6 +73,20 @@ class EE_API cWindowSDL : public cWindow {
 		bool HasScreenKeyboardSupport();
 
 		bool IsScreenKeyboardShown();
+
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+		void * GetJNIEnv();
+
+		void * GetActivity();
+
+		int GetExternalStorageState();
+
+		std::string GetInternalStoragePath();
+
+		std::string GetExternalStoragePath();
+
+		std::string GetApkPath();
+#endif
 	protected:
 		friend class cClipboardSDL;
 
@@ -79,6 +95,10 @@ class EE_API cWindowSDL : public cWindow {
 
 		#ifdef EE_USE_WMINFO
 		SDL_SysWMinfo * mWMinfo;
+		#endif
+
+		#if EE_PLATFORM == EE_PLATFORM_ANDROID
+		cZip *			mZip;
 		#endif
 
 		eeVector2i		mWinPos;

@@ -21,5 +21,6 @@ projects/windows/vc2010/empty_window/empty_window.vcxproj.filters
 projects/windows/vc2010/empty_window/empty_window.vcxproj.user
 projects/src/**
 projects/android-project/data/**
+projects/android-project/gen/**
 log.log
 ee*

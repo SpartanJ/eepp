@@ -5,7 +5,6 @@
 
 /* Include the SDL main definition header */
 #include "SDL_main.h"
-#include <AL/android.h>
 
 /*******************************************************************************
                  Functions called by JNI
@@ -15,24 +14,20 @@
 // Called before SDL_main() to initialize JNI bindings in SDL library
 extern "C" void SDL_Android_Init(JNIEnv* env, jclass cls);
 
-// Library init
-extern "C" jint JNI_OnLoad(JavaVM* vm, void* reserved)
-{
-	AL_SetJavaVM( vm );
-	
-    return JNI_VERSION_1_4;
-}
-
 // Start up the SDL app
-extern "C" void Java_org_libsdl_app_SDLActivity_nativeInit(JNIEnv* env, jclass cls, jobject obj)
+extern "C" void Java_org_libsdl_app_SDLActivity_nativeInit(JNIEnv* env, jclass cls, jstring apkPath)
 {
     /* This interface could expand with ABI negotiation, calbacks, etc. */
     SDL_Android_Init(env, cls);
 
+	const char* str;
+	jboolean isCopy;
+	str = env->GetStringUTFChars(apkPath, &isCopy);
+	
     /* Run the application code! */
     int status;
     char *argv[2];
-    argv[0] = strdup("SDL_app");
+    argv[0] = strdup(str);
     argv[1] = NULL;
     status = SDL_main(1, argv);
 

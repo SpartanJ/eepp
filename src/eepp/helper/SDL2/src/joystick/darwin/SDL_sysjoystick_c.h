@@ -25,6 +25,7 @@
 
 #include <IOKit/hid/IOHIDLib.h>
 #include <IOKit/hid/IOHIDKeys.h>
+#include <IOKit/IOKitLib.h>
 
 
 struct recElement
@@ -58,7 +59,9 @@ struct joystick_hwdata
 {
     io_service_t ffservice;     /* Interface for force feedback, 0 = no ff */
     IOHIDDeviceInterface **interface;   /* interface to device, NULL = no interface */
-
+	IONotificationPortRef notificationPort; /* port to be notified on joystick removal */
+	io_iterator_t portIterator; /* iterator for removal callback */
+	
     char product[256];          /* name of product */
     long usage;                 /* usage page from IOUSBHID Parser.h which defines general usage */
     long usagePage;             /* usage within above page from IOUSBHID Parser.h which defines specific usage */
@@ -74,6 +77,10 @@ struct joystick_hwdata
 
     int removed;
     int uncentered;
+	
+	int instance_id;
+	SDL_JoystickGUID guid;
+	Uint8 send_open_event;		/* 1 if we need to send an Added event for this device */
 
     struct joystick_hwdata *pNext;      /* next device */
 };

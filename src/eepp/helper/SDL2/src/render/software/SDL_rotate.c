@@ -272,7 +272,7 @@ Assumes dst surface was allocated with the correct dimensions.
 */
 void transformSurfaceY(SDL_Surface * src, SDL_Surface * dst, int cx, int cy, int isin, int icos, int flipx, int flipy)
 {
-    int x, y, dx, dy, xd, yd, sdx, sdy, ax, ay, sw, sh;
+    int x, y, dx, dy, xd, yd, sdx, sdy, ax, ay;
     tColorY *pc, *sp;
     int gap;
 
@@ -283,8 +283,6 @@ void transformSurfaceY(SDL_Surface * src, SDL_Surface * dst, int cx, int cy, int
     yd = ((src->h - dst->h) << 15);
     ax = (cx << 16) - (icos * cx);
     ay = (cy << 16) - (isin * cx);
-    sw = src->w - 1;
-    sh = src->h - 1;
     pc = (tColorY*) dst->pixels;
     gap = dst->pitch - dst->w;
     /*

@@ -63,14 +63,14 @@ static struct
     SDL_Event event[MAXEVENTS];
     int wmmsg_next;
     struct SDL_SysWMmsg wmmsg[MAXEVENTS];
-} SDL_EventQ;
+} SDL_EventQ = { NULL, 1 };
 
 
 static __inline__ SDL_bool
 SDL_ShouldPollJoystick()
 {
 #if !SDL_JOYSTICK_DISABLED
-    if (SDL_numjoysticks &&
+    if (SDL_PrivateJoystickNeedsPolling() &&
         (!SDL_disabled_events[SDL_JOYAXISMOTION >> 8] ||
          SDL_JoystickEventState(SDL_QUERY))) {
         return SDL_TRUE;
@@ -85,6 +85,8 @@ void
 SDL_StopEventLoop(void)
 {
     int i;
+
+    SDL_EventQ.active = 0;
 
     if (SDL_EventQ.lock) {
         SDL_DestroyMutex(SDL_EventQ.lock);
@@ -115,18 +117,23 @@ SDL_StopEventLoop(void)
 int
 SDL_StartEventLoop(void)
 {
-    /* Clean out the event queue */
-    SDL_EventQ.lock = NULL;
-    SDL_StopEventLoop();
+    /* We'll leave the event queue alone, since we might have gotten
+       some important events at launch (like SDL_DROPFILE)
+
+       FIXME: Does this introduce any other bugs with events at startup?
+     */
 
     /* No filter to start with, process most event types */
     SDL_EventOK = NULL;
-    SDL_EventState(SDL_DROPFILE, SDL_DISABLE);
+    SDL_EventState(SDL_TEXTINPUT, SDL_DISABLE);
+    SDL_EventState(SDL_TEXTEDITING, SDL_DISABLE);
     SDL_EventState(SDL_SYSWMEVENT, SDL_DISABLE);
 
     /* Create the lock and set ourselves active */
 #if !SDL_THREADS_DISABLED
-    SDL_EventQ.lock = SDL_CreateMutex();
+    if (!SDL_EventQ.lock) {
+        SDL_EventQ.lock = SDL_CreateMutex();
+    }
     if (SDL_EventQ.lock == NULL) {
         return (-1);
     }
@@ -205,7 +212,7 @@ SDL_PeepEvents(SDL_Event * events, int numevents, SDL_eventaction action,
     }
     /* Lock the event queue */
     used = 0;
-    if (SDL_mutexP(SDL_EventQ.lock) == 0) {
+    if (!SDL_EventQ.lock || SDL_mutexP(SDL_EventQ.lock) == 0) {
         if (action == SDL_ADDEVENT) {
             for (i = 0; i < numevents; ++i) {
                 used += SDL_AddEvent(&events[i]);
@@ -372,7 +379,6 @@ SDL_PushEvent(SDL_Event * event)
     }
 
     SDL_GestureProcessEvent(event);
-    
 
     return 1;
 }

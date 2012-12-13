@@ -70,6 +70,7 @@
 #undef HAVE_SIGNAL_H
 #undef HAVE_ALTIVEC_H
 #undef HAVE_PTHREAD_NP_H
+#undef HAVE_LIBUDEV_H
 
 /* C library functions */
 #undef HAVE_MALLOC
@@ -139,6 +140,8 @@
 #undef HAVE_SIN
 #undef HAVE_SINF
 #undef HAVE_SQRT
+#undef HAVE_FSEEKO
+#undef HAVE_FSEEKO64
 #undef HAVE_SIGACTION
 #undef HAVE_SA_SIGACTION
 #undef HAVE_SETJMP
@@ -242,7 +245,6 @@
 #undef SDL_TIMER_NDS
 #undef SDL_TIMER_UNIX
 #undef SDL_TIMER_WINDOWS
-#undef SDL_TIMER_WINCE
 
 /* Enable various video drivers */
 #undef SDL_VIDEO_DRIVER_BWINDOW

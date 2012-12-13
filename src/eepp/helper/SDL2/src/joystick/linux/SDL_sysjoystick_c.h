@@ -19,14 +19,16 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
-#if SDL_INPUT_LINUXEV
 #include <linux/input.h>
-#endif
 
 /* The private structure used to keep track of a joystick */
 struct joystick_hwdata
 {
     int fd;
+    int device_instance;
+    SDL_bool removed;
+
+    SDL_JoystickGUID guid;
     char *fname;                /* Used in haptic subsystem */
 
     /* The current linux joystick driver maps hats to two axes */
@@ -41,8 +43,6 @@ struct joystick_hwdata
     } *balls;
 
     /* Support for the Linux 2.4 unified input interface */
-#if SDL_INPUT_LINUXEV
-    SDL_bool is_hid;
     Uint8 key_map[KEY_MAX - BTN_MISC];
     Uint8 abs_map[ABS_MAX];
     struct axis_correct
@@ -50,5 +50,4 @@ struct joystick_hwdata
         int used;
         int coef[3];
     } abs_correct[ABS_MAX];
-#endif
 };

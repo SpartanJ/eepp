@@ -29,16 +29,19 @@
 
 #define MAX_AXIS 16
 
+#if SDL_VIDEO_DRIVER_X11_XINPUT2
 static int xinput2_initialized = 0;
+
+#if SDL_VIDEO_DRIVER_X11_XINPUT2_SUPPORTS_MULTITOUCH
 static int xinput2_multitouch_supported = 0;
-/* Opcode returned XQueryExtension 
+#endif
+
+/* Opcode returned XQueryExtension
  * It will be used in event processing
  * to know that the event came from
  * this extension */ 
 static int xinput2_opcode;
 
-
-#if SDL_VIDEO_DRIVER_X11_XINPUT2
 static void parse_valuators(const double *input_values,unsigned char *mask,int mask_len,
                             double *output_values,int output_values_len) {
     int i = 0,z = 0;
@@ -217,6 +220,10 @@ X11_InitXinput2Multitouch(_THIS) {
 void 
 X11_Xinput2SelectTouch(_THIS, SDL_Window *window) {
 #if SDL_VIDEO_DRIVER_X11_XINPUT2_SUPPORTS_MULTITOUCH
+    if (!X11_Xinput2IsMultitouchSupported()) {
+        return;
+    }
+
     SDL_VideoData *data = (SDL_VideoData *) _this->driverdata;
     XIEventMask eventmask;
     unsigned char mask[3] = { 0,0,0 };
@@ -237,12 +244,20 @@ X11_Xinput2SelectTouch(_THIS, SDL_Window *window) {
 
 int 
 X11_Xinput2IsInitialized() {
+#if SDL_VIDEO_DRIVER_X11_XINPUT2
     return xinput2_initialized;
+#else
+    return 0;
+#endif
 }
 
 int
-X11_Xinput2IsMutitouchSupported() {
+X11_Xinput2IsMultitouchSupported() {
+#if SDL_VIDEO_DRIVER_X11_XINPUT2_SUPPORTS_MULTITOUCH
     return xinput2_initialized && xinput2_multitouch_supported;
+#else
+    return 0;
+#endif
 }
 
 #endif /* SDL_VIDEO_DRIVER_X11 */

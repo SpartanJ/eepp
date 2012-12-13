@@ -58,6 +58,25 @@ extern "C" {
 
 typedef struct SDL_Cursor SDL_Cursor;   /* Implementation dependent */
 
+/**
+ * \brief Cursor types for SDL_CreateSystemCursor.
+ */
+typedef enum
+{
+    SDL_SYSTEM_CURSOR_ARROW,     // Arrow
+    SDL_SYSTEM_CURSOR_IBEAM,     // I-beam
+    SDL_SYSTEM_CURSOR_WAIT,      // Wait
+    SDL_SYSTEM_CURSOR_CROSSHAIR, // Crosshair
+    SDL_SYSTEM_CURSOR_WAITARROW, // Small wait cursor (or Wait if not available)
+    SDL_SYSTEM_CURSOR_SIZENWSE,  // Double arrow pointing northwest and southeast
+    SDL_SYSTEM_CURSOR_SIZENESW,  // Double arrow pointing northeast and southwest
+    SDL_SYSTEM_CURSOR_SIZEWE,    // Double arrow pointing west and east
+    SDL_SYSTEM_CURSOR_SIZENS,    // Double arrow pointing north and south
+    SDL_SYSTEM_CURSOR_SIZEALL,   // Four pointed arrow pointing north, south, east, and west
+    SDL_SYSTEM_CURSOR_NO,        // Slashed circle or crossbones
+    SDL_SYSTEM_CURSOR_HAND,      // Hand
+    SDL_NUM_SYSTEM_CURSORS
+} SDL_SystemCursor;
 
 /* Function prototypes */
 
@@ -74,7 +93,7 @@ extern DECLSPEC SDL_Window * SDLCALL SDL_GetMouseFocus(void);
  *  mouse cursor position relative to the focus window for the currently
  *  selected mouse.  You can pass NULL for either x or y.
  */
-extern DECLSPEC Uint8 SDLCALL SDL_GetMouseState(int *x, int *y);
+extern DECLSPEC Uint32 SDLCALL SDL_GetMouseState(int *x, int *y);
 
 /**
  *  \brief Retrieve the relative state of the mouse.
@@ -83,7 +102,7 @@ extern DECLSPEC Uint8 SDLCALL SDL_GetMouseState(int *x, int *y);
  *  be tested using the SDL_BUTTON(X) macros, and x and y are set to the
  *  mouse deltas since the last call to SDL_GetRelativeMouseState().
  */
-extern DECLSPEC Uint8 SDLCALL SDL_GetRelativeMouseState(int *x, int *y);
+extern DECLSPEC Uint32 SDLCALL SDL_GetRelativeMouseState(int *x, int *y);
 
 /**
  *  \brief Moves the mouse to the given position within the window.
@@ -153,6 +172,13 @@ extern DECLSPEC SDL_Cursor *SDLCALL SDL_CreateCursor(const Uint8 * data,
 extern DECLSPEC SDL_Cursor *SDLCALL SDL_CreateColorCursor(SDL_Surface *surface,
                                                           int hot_x,
                                                           int hot_y);
+
+/**
+ *  \brief Create a system cursor.
+ *
+ *  \sa SDL_FreeCursor()
+ */
+extern DECLSPEC SDL_Cursor *SDLCALL SDL_CreateSystemCursor(SDL_SystemCursor id);
 
 /**
  *  \brief Set the active cursor.

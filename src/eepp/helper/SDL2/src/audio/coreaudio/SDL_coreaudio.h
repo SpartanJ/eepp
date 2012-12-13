@@ -35,6 +35,8 @@
 #if MAC_OS_X_VERSION_MAX_ALLOWED <= 1050
 #include <AudioUnit/AUNTComponent.h>
 #endif
+#else
+#include <AudioToolbox/AudioToolbox.h>
 #endif
 
 #include <AudioUnit/AudioUnit.h>

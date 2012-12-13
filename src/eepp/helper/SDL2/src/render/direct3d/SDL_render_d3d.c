@@ -188,16 +188,16 @@ static int D3D_SetRenderTarget(SDL_Renderer * renderer, SDL_Texture * texture);
 static int D3D_UpdateViewport(SDL_Renderer * renderer);
 static int D3D_RenderClear(SDL_Renderer * renderer);
 static int D3D_RenderDrawPoints(SDL_Renderer * renderer,
-                                const SDL_Point * points, int count);
+                                const SDL_FPoint * points, int count);
 static int D3D_RenderDrawLines(SDL_Renderer * renderer,
-                               const SDL_Point * points, int count);
+                               const SDL_FPoint * points, int count);
 static int D3D_RenderFillRects(SDL_Renderer * renderer,
-                               const SDL_Rect * rects, int count);
+                               const SDL_FRect * rects, int count);
 static int D3D_RenderCopy(SDL_Renderer * renderer, SDL_Texture * texture,
-                          const SDL_Rect * srcrect, const SDL_Rect * dstrect);
+                          const SDL_Rect * srcrect, const SDL_FRect * dstrect);
 static int D3D_RenderCopyEx(SDL_Renderer * renderer, SDL_Texture * texture,
-                          const SDL_Rect * srcrect, const SDL_Rect * dstrect,
-                          const double angle, const SDL_Point * center, const SDL_RendererFlip flip);
+                          const SDL_Rect * srcrect, const SDL_FRect * dstrect,
+                          const double angle, const SDL_FPoint * center, const SDL_RendererFlip flip);
 static int D3D_RenderReadPixels(SDL_Renderer * renderer, const SDL_Rect * rect,
                                 Uint32 format, void * pixels, int pitch);
 static void D3D_RenderPresent(SDL_Renderer * renderer);
@@ -682,8 +682,6 @@ static int
 D3D_CreateTexture(SDL_Renderer * renderer, SDL_Texture * texture)
 {
     D3D_RenderData *renderdata = (D3D_RenderData *) renderer->driverdata;
-    SDL_Window *window = renderer->window;
-    D3DFORMAT display_format = renderdata->pparams.BackBufferFormat;
     D3D_TextureData *data;
     D3DPOOL pool;
     DWORD usage;
@@ -731,7 +729,6 @@ D3D_UpdateTexture(SDL_Renderer * renderer, SDL_Texture * texture,
                   const SDL_Rect * rect, const void *pixels, int pitch)
 {
     D3D_TextureData *data = (D3D_TextureData *) texture->driverdata;
-    D3D_RenderData *renderdata = (D3D_RenderData *) renderer->driverdata;
     RECT d3drect;
     D3DLOCKED_RECT locked;
     const Uint8 *src;
@@ -966,7 +963,7 @@ D3D_SetBlendMode(D3D_RenderData * data, int blendMode)
 }
 
 static int
-D3D_RenderDrawPoints(SDL_Renderer * renderer, const SDL_Point * points,
+D3D_RenderDrawPoints(SDL_Renderer * renderer, const SDL_FPoint * points,
                      int count)
 {
     D3D_RenderData *data = (D3D_RenderData *) renderer->driverdata;
@@ -993,8 +990,8 @@ D3D_RenderDrawPoints(SDL_Renderer * renderer, const SDL_Point * points,
 
     vertices = SDL_stack_alloc(Vertex, count);
     for (i = 0; i < count; ++i) {
-        vertices[i].x = (float) points[i].x;
-        vertices[i].y = (float) points[i].y;
+        vertices[i].x = points[i].x;
+        vertices[i].y = points[i].y;
         vertices[i].z = 0.0f;
         vertices[i].color = color;
         vertices[i].u = 0.0f;
@@ -1012,7 +1009,7 @@ D3D_RenderDrawPoints(SDL_Renderer * renderer, const SDL_Point * points,
 }
 
 static int
-D3D_RenderDrawLines(SDL_Renderer * renderer, const SDL_Point * points,
+D3D_RenderDrawLines(SDL_Renderer * renderer, const SDL_FPoint * points,
                     int count)
 {
     D3D_RenderData *data = (D3D_RenderData *) renderer->driverdata;
@@ -1039,8 +1036,8 @@ D3D_RenderDrawLines(SDL_Renderer * renderer, const SDL_Point * points,
 
     vertices = SDL_stack_alloc(Vertex, count);
     for (i = 0; i < count; ++i) {
-        vertices[i].x = (float) points[i].x;
-        vertices[i].y = (float) points[i].y;
+        vertices[i].x = points[i].x;
+        vertices[i].y = points[i].y;
         vertices[i].z = 0.0f;
         vertices[i].color = color;
         vertices[i].u = 0.0f;
@@ -1054,8 +1051,8 @@ D3D_RenderDrawLines(SDL_Renderer * renderer, const SDL_Point * points,
        so we need to close the endpoint of the line */
     if (count == 2 ||
         points[0].x != points[count-1].x || points[0].y != points[count-1].y) {
-        vertices[0].x = (float) points[count-1].x;
-        vertices[0].y = (float) points[count-1].y;
+        vertices[0].x = points[count-1].x;
+        vertices[0].y = points[count-1].y;
         result = IDirect3DDevice9_DrawPrimitiveUP(data->device, D3DPT_POINTLIST, 1, vertices, sizeof(*vertices));
     }
 
@@ -1068,7 +1065,7 @@ D3D_RenderDrawLines(SDL_Renderer * renderer, const SDL_Point * points,
 }
 
 static int
-D3D_RenderFillRects(SDL_Renderer * renderer, const SDL_Rect * rects,
+D3D_RenderFillRects(SDL_Renderer * renderer, const SDL_FRect * rects,
                     int count)
 {
     D3D_RenderData *data = (D3D_RenderData *) renderer->driverdata;
@@ -1095,12 +1092,12 @@ D3D_RenderFillRects(SDL_Renderer * renderer, const SDL_Rect * rects,
     color = D3DCOLOR_ARGB(renderer->a, renderer->r, renderer->g, renderer->b);
 
     for (i = 0; i < count; ++i) {
-        const SDL_Rect *rect = &rects[i];
+        const SDL_FRect *rect = &rects[i];
 
-        minx = (float) rect->x;
-        miny = (float) rect->y;
-        maxx = (float) rect->x + rect->w;
-        maxy = (float) rect->y + rect->h;
+        minx = rect->x;
+        miny = rect->y;
+        maxx = rect->x + rect->w;
+        maxy = rect->y + rect->h;
 
         vertices[0].x = minx;
         vertices[0].y = miny;
@@ -1143,7 +1140,7 @@ D3D_RenderFillRects(SDL_Renderer * renderer, const SDL_Rect * rects,
 
 static int
 D3D_RenderCopy(SDL_Renderer * renderer, SDL_Texture * texture,
-               const SDL_Rect * srcrect, const SDL_Rect * dstrect)
+               const SDL_Rect * srcrect, const SDL_FRect * dstrect)
 {
     D3D_RenderData *data = (D3D_RenderData *) renderer->driverdata;
     D3D_TextureData *texturedata = (D3D_TextureData *) texture->driverdata;
@@ -1158,10 +1155,10 @@ D3D_RenderCopy(SDL_Renderer * renderer, SDL_Texture * texture,
         return -1;
     }
 
-    minx = (float) dstrect->x - 0.5f;
-    miny = (float) dstrect->y - 0.5f;
-    maxx = (float) dstrect->x + dstrect->w - 0.5f;
-    maxy = (float) dstrect->y + dstrect->h - 0.5f;
+    minx = dstrect->x - 0.5f;
+    miny = dstrect->y - 0.5f;
+    maxx = dstrect->x + dstrect->w - 0.5f;
+    maxy = dstrect->y + dstrect->h - 0.5f;
 
     minu = (float) srcrect->x / texture->w;
     maxu = (float) (srcrect->x + srcrect->w) / texture->w;
@@ -1242,8 +1239,8 @@ D3D_RenderCopy(SDL_Renderer * renderer, SDL_Texture * texture,
 
 static int
 D3D_RenderCopyEx(SDL_Renderer * renderer, SDL_Texture * texture,
-               const SDL_Rect * srcrect, const SDL_Rect * dstrect,
-               const double angle, const SDL_Point * center, const SDL_RendererFlip flip)
+               const SDL_Rect * srcrect, const SDL_FRect * dstrect,
+               const double angle, const SDL_FPoint * center, const SDL_RendererFlip flip)
 {
     D3D_RenderData *data = (D3D_RenderData *) renderer->driverdata;
     D3D_TextureData *texturedata = (D3D_TextureData *) texture->driverdata;
@@ -1259,25 +1256,25 @@ D3D_RenderCopyEx(SDL_Renderer * renderer, SDL_Texture * texture,
         return -1;
     }
 
-    centerx = (float)center->x;
-    centery = (float)center->y;
+    centerx = center->x;
+    centery = center->y;
 
     if (flip & SDL_FLIP_HORIZONTAL) {
-        minx = (float) dstrect->w - centerx - 0.5f;
-        maxx = (float) -centerx - 0.5f;
+        minx = dstrect->w - centerx - 0.5f;
+        maxx = -centerx - 0.5f;
     }
     else {
-        minx = (float) -centerx - 0.5f;
-        maxx = (float) dstrect->w - centerx - 0.5f;
+        minx = -centerx - 0.5f;
+        maxx = dstrect->w - centerx - 0.5f;
     }
 
     if (flip & SDL_FLIP_VERTICAL) {
-        miny = (float) dstrect->h - centery - 0.5f;
-        maxy = (float) -centery - 0.5f;
+        miny = dstrect->h - centery - 0.5f;
+        maxy = -centery - 0.5f;
     }
     else {
-        miny = (float) -centery - 0.5f;
-        maxy = (float) dstrect->h - centery - 0.5f;
+        miny = -centery - 0.5f;
+        maxy = dstrect->h - centery - 0.5f;
     }
 
     minu = (float) srcrect->x / texture->w;
@@ -1320,7 +1317,7 @@ D3D_RenderCopyEx(SDL_Renderer * renderer, SDL_Texture * texture,
     // Rotate and translate
     ID3DXMatrixStack_Push(data->matrixStack);
     ID3DXMatrixStack_LoadIdentity(data->matrixStack);
-    ID3DXMatrixStack_RotateYawPitchRoll(data->matrixStack, 0.0, 0.0, M_PI * (float) angle / 180.0f);
+    ID3DXMatrixStack_RotateYawPitchRoll(data->matrixStack, 0.0, 0.0, (float)(M_PI * (float) angle / 180.0f));
     ID3DXMatrixStack_Translate(data->matrixStack, (float)dstrect->x + centerx, (float)dstrect->y + centery, (float)0.0);
     IDirect3DDevice9_SetTransform(data->device, D3DTS_VIEW, (D3DMATRIX*)ID3DXMatrixStack_GetTop(data->matrixStack));
 

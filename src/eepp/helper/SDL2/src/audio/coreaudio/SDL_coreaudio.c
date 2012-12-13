@@ -280,8 +280,6 @@ outputCallback(void *inRefCon,
         while (remaining > 0) {
             if (this->hidden->bufferOffset >= this->hidden->bufferSize) {
                 /* Generate the data */
-                SDL_memset(this->hidden->buffer, this->spec.silence,
-                           this->hidden->bufferSize);
                 SDL_mutexP(this->mixer_lock);
                 (*this->spec.callback)(this->spec.userdata,
                             this->hidden->buffer, this->hidden->bufferSize);
@@ -336,15 +334,16 @@ COREAUDIO_CloseDevice(_THIS)
             result = AudioOutputUnitStop(this->hidden->audioUnit);
 
             /* Remove the input callback */
-            SDL_memset(&callback, '\0', sizeof(AURenderCallbackStruct));
+            SDL_memset(&callback, 0, sizeof(AURenderCallbackStruct));
             result = AudioUnitSetProperty(this->hidden->audioUnit,
                                           kAudioUnitProperty_SetRenderCallback,
                                           scope, bus, &callback,
                                           sizeof(callback));
 
-            /* !!! FIXME: how does iOS free this? */
             #if MACOSX_COREAUDIO
             CloseComponent(this->hidden->audioUnit);
+            #else
+            AudioComponentInstanceDispose(this->hidden->audioUnit);
             #endif
 
             this->hidden->audioUnitOpened = 0;
@@ -390,7 +389,7 @@ prepare_audiounit(_THIS, const char *devname, int iscapture,
     desc.componentSubType = kAudioUnitSubType_DefaultOutput;
     comp = FindNextComponent(NULL, &desc);
 #else
-    desc.componentSubType = kAudioUnitSubType_RemoteIO;  /* !!! FIXME: ? */
+    desc.componentSubType = kAudioUnitSubType_RemoteIO;
     comp = AudioComponentFindNext(NULL, &desc);
 #endif
 
@@ -431,7 +430,7 @@ prepare_audiounit(_THIS, const char *devname, int iscapture,
     CHECK_RESULT("AudioUnitSetProperty (kAudioUnitProperty_StreamFormat)");
 
     /* Set the audio callback */
-    SDL_memset(&callback, '\0', sizeof(AURenderCallbackStruct));
+    SDL_memset(&callback, 0, sizeof(AURenderCallbackStruct));
     callback.inputProc = ((iscapture) ? inputCallback : outputCallback);
     callback.inputProcRefCon = this;
     result = AudioUnitSetProperty(this->hidden->audioUnit,
@@ -540,8 +539,16 @@ COREAUDIO_Init(SDL_AudioDriverImpl * impl)
     impl->DetectDevices = COREAUDIO_DetectDevices;
 #else
     impl->OnlyHasDefaultOutputDevice = 1;
+
+    /* Set category to ambient sound so that other music continues playing.
+       You can change this at runtime in your own code if you need different
+       behavior.  If this is common, we can add an SDL hint for this.
+    */
+    AudioSessionInitialize(NULL, NULL, NULL, nil);
+    UInt32 category = kAudioSessionCategory_AmbientSound;
+    AudioSessionSetProperty(kAudioSessionProperty_AudioCategory, sizeof(UInt32), &category);
 #endif
-    
+
     impl->ProvidesOwnCallbackThread = 1;
 
     return 1;   /* this audio target is available. */

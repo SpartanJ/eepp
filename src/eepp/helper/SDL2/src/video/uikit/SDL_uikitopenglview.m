@@ -22,9 +22,10 @@
 
 #if SDL_VIDEO_DRIVER_UIKIT
 
-#import <QuartzCore/QuartzCore.h>
-#import <OpenGLES/EAGLDrawable.h>
-#import "SDL_uikitopenglview.h"
+#include <QuartzCore/QuartzCore.h>
+#include <OpenGLES/EAGLDrawable.h>
+#include "SDL_uikitopenglview.h"
+#include "SDL_uikitmessagebox.h"
 
 
 @implementation SDL_uikitopenglview
@@ -121,7 +122,8 @@
         }
         /* end create buffers */
 
-        self.autoresizingMask = 0;  // don't allow autoresize, since we need to do some magic in -(void)updateFrame.
+        self.autoresizingMask = (UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight);
+        self.autoresizesSubviews = YES;
     }
     return self;
 }
@@ -147,6 +149,44 @@
     }
 }
 
+- (void)setAnimationCallback:(int)interval
+    callback:(void (*)(void*))callback
+    callbackParam:(void*)callbackParam
+{
+    [self stopAnimation];
+
+    animationInterval = interval;
+    animationCallback = callback;
+    animationCallbackParam = callbackParam;
+
+    if (animationCallback)
+        [self startAnimation];
+}
+
+- (void)startAnimation
+{
+    // CADisplayLink is API new to iPhone SDK 3.1. Compiling against earlier versions will result in a warning, but can be dismissed
+    // if the system version runtime check for CADisplayLink exists in -initWithCoder:. 
+    
+    displayLink = [NSClassFromString(@"CADisplayLink") displayLinkWithTarget:self selector:@selector(doLoop:)];
+    [displayLink setFrameInterval:animationInterval];
+    [displayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+}
+
+- (void)stopAnimation
+{
+    [displayLink invalidate];
+    displayLink = nil;
+}
+
+- (void)doLoop:(id)sender
+{
+    // Don't run the game loop while a messagebox is up
+    if (!UIKit_ShowingMessageBox()) {
+        animationCallback(animationCallbackParam);
+    }
+}
+
 - (void)setCurrentContext
 {
     [EAGLContext setCurrentContext:context];
@@ -163,6 +203,7 @@
 - (void)layoutSubviews
 {
     [EAGLContext setCurrentContext:context];
+    [self updateFrame];
 }
 
 - (void)destroyFramebuffer

@@ -122,6 +122,13 @@ class WindowInfo {
 	eeWindowContex		Context;
 };
 
+
+/* See the official Android developer guide for more information:
+   http://developer.android.com/guide/topics/data/data-storage.html
+*/
+#define EE_ANDROID_EXTERNAL_STORAGE_READ   0x01
+#define EE_ANDROID_EXTERNAL_STORAGE_WRITE  0x02
+
 class EE_API cWindow {
 	public:
 		typedef cb::Callback0<void>					WindowResizeCallback;
@@ -372,6 +379,40 @@ class EE_API cWindow {
 		* @sa HasScreenKeyboardSupport()
 		*/
 		virtual bool IsScreenKeyboardShown();
+
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+		/** @return The JNI environment for the current thread
+		* This returns JNIEnv*, but the prototype is void* so we don't need jni.h
+		*/
+		virtual void * GetJNIEnv();
+
+		/** @return The SDL Activity object for the application
+		* This returns jobject, but the prototype is void* so we don't need jni.h
+		*/
+		virtual void * GetActivity();
+
+		/** @return The current state of external storage, a bitmask of these values:
+		* EE_ANDROID_EXTERNAL_STORAGE_READ
+		* EE_ANDROID_EXTERNAL_STORAGE_WRITE
+		* If external storage is currently unavailable, this will return 0.
+		*/
+		virtual int GetExternalStorageState();
+
+		/** @return The path used for internal storage for this application.
+		* This path is unique to your application and cannot be written to
+		* by other applications.
+		*/
+		virtual std::string GetInternalStoragePath();
+
+		/** @return The path used for external storage for this application.
+		* This path is unique to your application, but is public and can be
+		* written to by other applications.
+		*/
+		virtual std::string GetExternalStoragePath();
+
+		/** @return The application APK file path */
+		virtual std::string GetApkPath();
+#endif
 	protected:
 		friend class cEngine;
 

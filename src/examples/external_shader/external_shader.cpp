@@ -239,6 +239,12 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 			/// Draw the lines
 			GLi->DrawArrays( DM_LINES, 0, ParticlesNum );
 
+			/// Stop the simulation if the window is not visible
+			while ( !win->Visible() ) {
+				imp->Update();	/// To get the real state of the window you need to update the window input
+				Sys::Sleep( 100 ); /// Sleep 100 ms
+			}
+
 			win->Display();
 		}
 

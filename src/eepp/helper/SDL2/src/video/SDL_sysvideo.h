@@ -23,6 +23,7 @@
 #ifndef _SDL_sysvideo_h
 #define _SDL_sysvideo_h
 
+#include "SDL_messagebox.h"
 #include "SDL_shape.h"
 
 /* The SDL video driver */
@@ -73,6 +74,7 @@ struct SDL_Window
     char *title;
     int x, y;
     int w, h;
+    int min_w, min_h;
     Uint32 flags;
 
     /* Stored position and size for windowed mode */
@@ -180,16 +182,18 @@ struct SDL_VideoDevice
     void (*SetWindowIcon) (_THIS, SDL_Window * window, SDL_Surface * icon);
     void (*SetWindowPosition) (_THIS, SDL_Window * window);
     void (*SetWindowSize) (_THIS, SDL_Window * window);
+    void (*SetWindowMinimumSize) (_THIS, SDL_Window * window);
     void (*ShowWindow) (_THIS, SDL_Window * window);
     void (*HideWindow) (_THIS, SDL_Window * window);
     void (*RaiseWindow) (_THIS, SDL_Window * window);
     void (*MaximizeWindow) (_THIS, SDL_Window * window);
     void (*MinimizeWindow) (_THIS, SDL_Window * window);
     void (*RestoreWindow) (_THIS, SDL_Window * window);
+    void (*SetWindowBordered) (_THIS, SDL_Window * window, SDL_bool bordered);
     void (*SetWindowFullscreen) (_THIS, SDL_Window * window, SDL_VideoDisplay * display, SDL_bool fullscreen);
     int (*SetWindowGammaRamp) (_THIS, SDL_Window * window, const Uint16 * ramp);
     int (*GetWindowGammaRamp) (_THIS, SDL_Window * window, Uint16 * ramp);
-    void (*SetWindowGrab) (_THIS, SDL_Window * window);
+    void (*SetWindowGrab) (_THIS, SDL_Window * window, SDL_bool grabbed);
     void (*DestroyWindow) (_THIS, SDL_Window * window);
     int (*CreateWindowFramebuffer) (_THIS, SDL_Window * window, Uint32 * format, void ** pixels, int *pitch);
     int (*UpdateWindowFramebuffer) (_THIS, SDL_Window * window, SDL_Rect * rects, int numrects);
@@ -233,10 +237,19 @@ struct SDL_VideoDevice
     void (*StopTextInput) (_THIS);
     void (*SetTextInputRect) (_THIS, SDL_Rect *rect);
 
+    /* Screen keyboard */
+    SDL_bool (*SDL_HasScreenKeyboardSupport) (_THIS);
+    void (*SDL_ShowScreenKeyboard) (_THIS, SDL_Window *window);
+    void (*SDL_HideScreenKeyboard) (_THIS, SDL_Window *window);
+    SDL_bool (*SDL_IsScreenKeyboardShown) (_THIS, SDL_Window *window);
+
     /* Clipboard */
     int (*SetClipboardText) (_THIS, const char *text);
     char * (*GetClipboardText) (_THIS);
     SDL_bool (*HasClipboardText) (_THIS);
+
+    /* MessageBox */
+    int (*ShowMessageBox) (_THIS, const SDL_MessageBoxData *messageboxdata, int *buttonid);
 
     /* * * */
     /* Data common to all drivers */
@@ -272,6 +285,8 @@ struct SDL_VideoDevice
         int minor_version;
         int flags;
         int profile_mask;
+        int use_egl;
+        int share_with_current_context;
         int retained_backing;
         int driver_loaded;
         char driver_path[256];
@@ -288,7 +303,7 @@ struct SDL_VideoDevice
     void *driverdata;
     struct SDL_GLDriverData *gl_data;
 
-#if SDL_VIDEO_OPENGL_ES
+#if SDL_VIDEO_OPENGL_ES || SDL_VIDEO_OPENGL_ES2
     struct SDL_PrivateGLESData *gles_data;
 #endif
 
@@ -351,6 +366,7 @@ extern void SDL_OnWindowMinimized(SDL_Window * window);
 extern void SDL_OnWindowRestored(SDL_Window * window);
 extern void SDL_OnWindowFocusGained(SDL_Window * window);
 extern void SDL_OnWindowFocusLost(SDL_Window * window);
+extern void SDL_UpdateWindowGrab(SDL_Window * window);
 extern SDL_Window * SDL_GetFocusWindow(void);
 
 #endif /* _SDL_sysvideo_h */

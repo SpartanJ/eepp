@@ -27,11 +27,15 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
+#include "SDL_rect.h"
+
 /* Interface from the SDL library into the Android Java activity */
 extern SDL_bool Android_JNI_CreateContext(int majorVersion, int minorVersion);
 extern void Android_JNI_SwapWindow();
 extern void Android_JNI_SetActivityTitle(const char *title);
 extern SDL_bool Android_JNI_GetAccelerometerValues(float values[3]);
+extern void Android_JNI_ShowTextInput(SDL_Rect *inputRect);
+extern void Android_JNI_HideTextInput();
 
 // Audio support
 extern int Android_JNI_OpenAudioDevice(int sampleRate, int is16Bit, int channelCount, int desiredBufferFrames);
@@ -42,10 +46,28 @@ extern void Android_JNI_CloseAudioDevice();
 #include "SDL_rwops.h"
 
 int Android_JNI_FileOpen(SDL_RWops* ctx, const char* fileName, const char* mode);
-long Android_JNI_FileSeek(SDL_RWops* ctx, long offset, int whence);
+Sint64 Android_JNI_FileSize(SDL_RWops* ctx);
+Sint64 Android_JNI_FileSeek(SDL_RWops* ctx, Sint64 offset, int whence);
 size_t Android_JNI_FileRead(SDL_RWops* ctx, void* buffer, size_t size, size_t maxnum);
 size_t Android_JNI_FileWrite(SDL_RWops* ctx, const void* buffer, size_t size, size_t num);
 int Android_JNI_FileClose(SDL_RWops* ctx);
+
+/* Clipboard support */
+int Android_JNI_SetClipboardText(const char* text);
+char* Android_JNI_GetClipboardText();
+SDL_bool Android_JNI_HasClipboardText();
+
+/* Power support */
+int Android_JNI_GetPowerInfo(int* plugged, int* charged, int* battery, int* seconds, int* percent);
+
+// Threads
+#include <jni.h>
+static void Android_JNI_ThreadDestroyed(void*);
+JNIEnv *Android_JNI_GetEnv(void);
+int Android_JNI_SetupThread(void);
+
+// Generic messages
+int Android_JNI_SendMessage(int command, int param);
 
 /* Ends C function definitions when using C++ */
 #ifdef __cplusplus

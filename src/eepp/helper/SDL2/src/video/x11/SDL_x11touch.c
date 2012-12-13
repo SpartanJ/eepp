@@ -39,13 +39,14 @@ X11_InitTouch(_THIS)
     /*Initilized Xinput2 multitouch 
     * and return in order to not initialize
     * evtouch also*/
-    if(X11_Xinput2IsMutitouchSupported()) {
+    if(X11_Xinput2IsMultitouchSupported()) {
         X11_InitXinput2Multitouch(_this);
         return;
     }
 #ifdef SDL_INPUT_LINUXEV
     FILE *fd;
     fd = fopen("/proc/bus/input/devices","r");
+    if (!fd) return;
 
     int i = 0;
     int tsfd;

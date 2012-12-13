@@ -12,7 +12,7 @@ MY_C_INCLUDES := \
 	$(MY_SDL_PATH)/include \
 	$(MY_PATH)/helper/chipmunk \
 	$(INC_PATH)/eepp/helper/chipmunk \
-	$(MY_PATH)/helper/SOIL2/include/SOIL2 \
+	$(MY_PATH)/helper/SOIL2/src/SOIL2 \
 	$(MY_PATH)/helper/stb_vorbis \
 	$(INC_PATH)/eepp/helper/chipmunk
 

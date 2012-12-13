@@ -200,10 +200,8 @@ static __inline__ void ConvertNSRect(NSRect *r)
         y = (int)(window->h - point.y);
 
         if (x >= 0 && x < window->w && y >= 0 && y < window->h) {
-            if (SDL_GetMouseFocus() != window) {
-                [self mouseEntered:nil];
-            }
             SDL_SendMouseMotion(window, 0, x, y);
+            SDL_SetCursor(NULL);
         }
     }
 
@@ -222,6 +220,29 @@ static __inline__ void ConvertNSRect(NSRect *r)
     if (SDL_GetKeyboardFocus() == _data->window) {
         SDL_SetKeyboardFocus(NULL);
     }
+}
+
+// We'll respond to key events by doing nothing so we don't beep.
+// We could handle key messages here, but we lose some in the NSApp dispatch,
+// where they get converted to action messages, etc.
+- (void)flagsChanged:(NSEvent *)theEvent
+{
+    //Cocoa_HandleKeyEvent(SDL_GetVideoDevice(), theEvent);
+}
+- (void)keyDown:(NSEvent *)theEvent
+{
+    //Cocoa_HandleKeyEvent(SDL_GetVideoDevice(), theEvent);
+}
+- (void)keyUp:(NSEvent *)theEvent
+{
+    //Cocoa_HandleKeyEvent(SDL_GetVideoDevice(), theEvent);
+}
+
+// We'll respond to selectors by doing nothing so we don't beep.
+// The escape key gets converted to a "cancel" selector, etc.
+- (void)doCommandBySelector:(SEL)aSelector
+{
+    //NSLog(@"doCommandBySelector: %@\n", NSStringFromSelector(aSelector));
 }
 
 - (void)mouseDown:(NSEvent *)theEvent
@@ -286,38 +307,6 @@ static __inline__ void ConvertNSRect(NSRect *r)
     [self mouseUp:theEvent];
 }
 
-- (void)mouseEntered:(NSEvent *)theEvent
-{
-    SDL_SetMouseFocus(_data->window);
-
-    SDL_SetCursor(NULL);
-}
-
-- (void)mouseExited:(NSEvent *)theEvent
-{
-    SDL_Window *window = _data->window;
-
-    if (SDL_GetMouseFocus() == window) {
-        if (window->flags & SDL_WINDOW_INPUT_GRABBED) {
-            int x, y;
-            NSPoint point;
-            CGPoint cgpoint;
-
-            point = [theEvent locationInWindow];
-            point.y = window->h - point.y;
-
-            SDL_SendMouseMotion(window, 0, (int)point.x, (int)point.y);
-            SDL_GetMouseState(&x, &y);
-            cgpoint.x = window->x + x;
-            cgpoint.y = window->y + y;
-            CGDisplayMoveCursorToPoint(kCGDirectMainDisplay, cgpoint);
-        } else {
-            SDL_SetMouseFocus(NULL);
-            SDL_SetCursor(NULL);
-        }
-    }
-}
-
 - (void)mouseMoved:(NSEvent *)theEvent
 {
     SDL_Mouse *mouse = SDL_GetMouse();
@@ -334,15 +323,26 @@ static __inline__ void ConvertNSRect(NSRect *r)
     y = (int)(window->h - point.y);
 
     if (x < 0 || x >= window->w || y < 0 || y >= window->h) {
-        if (SDL_GetMouseFocus() == window) {
-            [self mouseExited:theEvent];
+        if (window->flags & SDL_WINDOW_INPUT_GRABBED) {
+            CGPoint cgpoint;
+
+            if (x < 0) {
+                x = 0;
+            } else if (x >= window->w) {
+                x = window->w - 1;
+            }
+            if (y < 0) {
+                y = 0;
+            } else if (y >= window->h) {
+                y = window->h - 1;
+            }
+
+            cgpoint.x = window->x + x;
+            cgpoint.y = window->y + y;
+            CGDisplayMoveCursorToPoint(kCGDirectMainDisplay, cgpoint);
         }
-    } else {
-        if (SDL_GetMouseFocus() != window) {
-            [self mouseEntered:theEvent];
-        }
-        SDL_SendMouseMotion(window, 0, x, y);
     }
+    SDL_SendMouseMotion(window, 0, x, y);
 }
 
 - (void)mouseDragged:(NSEvent *)theEvent
@@ -530,14 +530,6 @@ SetupWindowData(_THIS, SDL_Window * window, NSWindow *nswindow, SDL_bool created
     /* Fill in the SDL window with the window data */
     {
         NSRect rect = [nswindow contentRectForFrameRect:[nswindow frame]];
-        NSView *contentView = [ nswindow contentView ];
-        /* Create view if not already exists */
-        if (!contentView) {
-            contentView = [[SDLView alloc] initWithFrame:rect];
-            [nswindow setContentView: contentView];
-            [contentView release];
-        }
-
         ConvertNSRect(&rect);
         window->x = (int)rect.origin.x;
         window->y = (int)rect.origin.y;
@@ -626,6 +618,12 @@ Cocoa_CreateWindow(_THIS, SDL_Window * window)
         }
     }
     nswindow = [[SDLWindow alloc] initWithContentRect:rect styleMask:style backing:NSBackingStoreBuffered defer:YES screen:screen];
+
+    // Create a default view for this window
+    rect = [nswindow contentRectForFrameRect:[nswindow frame]];
+    NSView *contentView = [[SDLView alloc] initWithFrame:rect];
+    [nswindow setContentView: contentView];
+    [contentView release];
 
     [pool release];
 
@@ -733,6 +731,21 @@ Cocoa_SetWindowSize(_THIS, SDL_Window * window)
 }
 
 void
+Cocoa_SetWindowMinimumSize(_THIS, SDL_Window * window)
+{
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    SDL_WindowData *windata = (SDL_WindowData *) window->driverdata;
+        
+    NSSize minSize;
+    minSize.width = window->min_w;
+    minSize.height = window->min_h;
+        
+    [windata->nswindow setMinSize:minSize];
+    
+    [pool release];
+}
+
+void
 Cocoa_ShowWindow(_THIS, SDL_Window * window)
 {
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
@@ -819,6 +832,23 @@ Cocoa_RebuildWindow(SDL_WindowData * data, NSWindow * nswindow, unsigned style)
     [nswindow close];
 
     return data->nswindow;
+}
+
+void
+Cocoa_SetWindowBordered(_THIS, SDL_Window * window, SDL_bool bordered)
+{
+    /* this message arrived in 10.6. You're out of luck on older OSes. */
+#if MAC_OS_X_VERSION_MAX_ALLOWED >= 1060
+    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+    NSWindow *nswindow = ((SDL_WindowData *) window->driverdata)->nswindow;
+    if ([nswindow respondsToSelector:@selector(setStyleMask:)]) {
+        [nswindow setStyleMask:GetWindowStyle(window)];
+        if (bordered) {
+            Cocoa_SetWindowTitle(_this, window);  // this got blanked out.
+        }
+    }
+    [pool release];
+#endif
 }
 
 void
@@ -954,11 +984,10 @@ Cocoa_GetWindowGammaRamp(_THIS, SDL_Window * window, Uint16 * ramp)
 }
 
 void
-Cocoa_SetWindowGrab(_THIS, SDL_Window * window)
+Cocoa_SetWindowGrab(_THIS, SDL_Window * window, SDL_bool grabbed)
 {
     /* Move the cursor to the nearest point in the window */
-    if ((window->flags & SDL_WINDOW_INPUT_GRABBED) &&
-        (window->flags & SDL_WINDOW_INPUT_FOCUS)) {
+    if (grabbed) {
         int x, y;
         CGPoint cgpoint;
 

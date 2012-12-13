@@ -518,4 +518,30 @@ bool cWindow::IsScreenKeyboardShown() {
 	return false;
 }
 
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+void * cWindow::GetJNIEnv() {
+	return NULL;
+}
+
+void * cWindow::GetActivity() {
+	return NULL;
+}
+
+int cWindow::GetExternalStorageState() {
+	return 0;
+}
+
+std::string cWindow::GetInternalStoragePath() {
+	return std::string("");
+}
+
+std::string cWindow::GetExternalStoragePath() {
+	return std::string("");
+}
+
+std::string cWindow::GetApkPath() {
+	return std::string("");
+}
+#endif
+
 }}

@@ -322,10 +322,10 @@ SDL_PROC(void, glReadPixels,
 SDL_PROC_UNUSED(void, glRectd,
                 (GLdouble x1, GLdouble y1, GLdouble x2, GLdouble y2))
 SDL_PROC_UNUSED(void, glRectdv, (const GLdouble * v1, const GLdouble * v2))
-SDL_PROC_UNUSED(void, glRectf,
+SDL_PROC(void, glRectf,
                 (GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2))
 SDL_PROC_UNUSED(void, glRectfv, (const GLfloat * v1, const GLfloat * v2))
-SDL_PROC(void, glRecti, (GLint x1, GLint y1, GLint x2, GLint y2))
+SDL_PROC_UNUSED(void, glRecti, (GLint x1, GLint y1, GLint x2, GLint y2))
 SDL_PROC_UNUSED(void, glRectiv, (const GLint * v1, const GLint * v2))
 SDL_PROC_UNUSED(void, glRects,
                 (GLshort x1, GLshort y1, GLshort x2, GLshort y2))

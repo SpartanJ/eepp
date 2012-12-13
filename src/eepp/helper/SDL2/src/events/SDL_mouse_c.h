@@ -36,6 +36,9 @@ typedef struct
     /* Create a cursor from a surface */
     SDL_Cursor *(*CreateCursor) (SDL_Surface * surface, int hot_x, int hot_y);
 
+    /* Create a system cursor */
+	SDL_Cursor *(*CreateSystemCursor) (SDL_SystemCursor id);
+
     /* Show the specified cursor, or hide if cursor is NULL */
     int (*ShowCursor) (SDL_Cursor * cursor);
 
@@ -58,7 +61,7 @@ typedef struct
     int xdelta;
     int ydelta;
     int last_x, last_y;         /* the last reported x and y coordinates */
-    Uint8 buttonstate;
+    Uint32 buttonstate;
     SDL_bool relative_mode;
     /* the x and y coordinates when relative mode was activated */
     int original_x, original_y;

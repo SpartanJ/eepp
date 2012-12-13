@@ -19,9 +19,18 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
-#ifndef sdl_uikitkeyboard_h
-#define sdl_uikitkeyboard_h
+/**
+ *  \file SDL_test_font.h
+ *  
+ *  Include file for SDL test framework.
+ *
+ *  This code is a part of the SDL2_test library, not the main SDL library.
+ */
 
+#ifndef _SDL_test_font_h
+#define _SDL_test_font_h
+
+#include "begin_code.h"
 /* Set up for C function definitions, even when using C++ */
 #ifdef __cplusplus
 /* *INDENT-OFF* */
@@ -29,10 +38,20 @@ extern "C" {
 /* *INDENT-ON* */
 #endif
 
-extern DECLSPEC int SDLCALL SDL_iPhoneKeyboardShow(SDL_Window * window);
-extern DECLSPEC int SDLCALL SDL_iPhoneKeyboardHide(SDL_Window * window);
-extern DECLSPEC SDL_bool SDLCALL SDL_iPhoneKeyboardIsShown(SDL_Window * window);
-extern DECLSPEC int SDLCALL SDL_iPhoneKeyboardToggle(SDL_Window * window);
+/* Function prototypes */
+
+/**
+ *  \brief Draw a string in the currently set font.
+ *
+ *  \param renderer The renderer to draw on.
+ *  \param x The X coordinate of the upper left corner of the string.
+ *  \param y The Y coordinate of the upper left corner of the string.
+ *  \param s The string to draw.
+ *
+ *  \returns Returns 0 on success, -1 on failure.
+ */
+int SDLTest_DrawString(SDL_Renderer * renderer, int x, int y, const char *s);
+
 
 /* Ends C function definitions when using C++ */
 #ifdef __cplusplus
@@ -40,7 +59,8 @@ extern DECLSPEC int SDLCALL SDL_iPhoneKeyboardToggle(SDL_Window * window);
 }
 /* *INDENT-ON* */
 #endif
+#include "close_code.h"
 
-#endif /* sdl_uikitkeyboard_h */
+#endif /* _SDL_test_font_h */
 
 /* vi: set ts=4 sw=4 expandtab: */

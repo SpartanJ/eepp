@@ -20,6 +20,44 @@
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
 #include <eepp/graphics/renderer/cgl.hpp>
 
+
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+#include <eepp/system/czip.hpp>
+#include <jni.h>
+
+static std::string SDL_AndroidGetApkPath() {
+	static std::string apkPath = "";
+
+	if ( "" == apkPath ) {
+		jmethodID mid;
+		jobject context;
+		jobject fileObject;
+		const char *path;
+
+		JNIEnv *env = (JNIEnv*)SDL_AndroidGetJNIEnv();
+
+		jclass ActivityClass = env->GetObjectClass((jobject)SDL_AndroidGetActivity());
+
+		// context = SDLActivity.getContext();
+		mid = env->GetStaticMethodID(ActivityClass,"getContext","()Landroid/content/Context;");
+
+		context = env->CallStaticObjectMethod(ActivityClass, mid);
+
+		// fileObj = context.getFilesDir();
+		mid = env->GetMethodID(env->GetObjectClass(context),"getPackageCodePath", "()Ljava/lang/String;");
+
+		fileObject = env->CallObjectMethod(context, mid);
+
+		jboolean isCopy;
+		path = env->GetStringUTFChars((jstring)fileObject, &isCopy);
+
+		apkPath = std::string( path );
+	}
+
+	return apkPath;
+}
+#endif
+
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 cWindowSDL::cWindowSDL( WindowSettings Settings, ContextSettings Context ) :
@@ -29,6 +67,10 @@ cWindowSDL::cWindowSDL( WindowSettings Settings, ContextSettings Context ) :
 #ifdef EE_USE_WMINFO
 	,
 	mWMinfo( eeNew( SDL_SysWMinfo, () ) )
+#endif
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+	,
+	mZip( eeNew( cZip, () ) )
 #endif
 {
 	Create( Settings, Context );
@@ -41,6 +83,10 @@ cWindowSDL::~cWindowSDL() {
 
 #ifdef EE_USE_WMINFO
 	eeSAFE_DELETE( mWMinfo );
+#endif
+
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+	eeSAFE_DELETE( mZip );
 #endif
 }
 
@@ -170,6 +216,17 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	mCursorManager->Set( Cursor::SYS_CURSOR_DEFAULT );
 
 	LogSuccessfulInit( GetVersion() );
+
+	#if EE_PLATFORM == EE_PLATFORM_ANDROID
+	std::string apkPath( SDL_AndroidGetApkPath() );
+
+	cLog::instance()->Write( "Opening application APK in: " + apkPath );
+
+	if ( mZip->Open( apkPath ) )
+		cLog::instance()->Write( "APK opened succesfully!" );
+	else
+		cLog::instance()->Write( "Failed to open APK!" );
+	#endif
 
 	return true;
 }
@@ -545,6 +602,32 @@ bool cWindowSDL::HasScreenKeyboardSupport() {
 bool cWindowSDL::IsScreenKeyboardShown() {
 	return SDL_TRUE == SDL_IsScreenKeyboardShown( mSDLWindow );
 }
+
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+void * cWindowSDL::GetJNIEnv() {
+	return SDL_AndroidGetJNIEnv();
+}
+
+void * cWindowSDL::GetActivity() {
+	return SDL_AndroidGetActivity();
+}
+
+int cWindowSDL::GetExternalStorageState() {
+	return SDL_AndroidGetExternalStorageState();
+}
+
+std::string cWindowSDL::GetInternalStoragePath() {
+	return std::string( SDL_AndroidGetInternalStoragePath() );
+}
+
+std::string cWindowSDL::GetExternalStoragePath() {
+	return std::string( SDL_AndroidGetExternalStoragePath() );
+}
+
+std::string cWindowSDL::GetApkPath() {
+	return SDL_AndroidGetApkPath();
+}
+#endif
 
 }}}}
 

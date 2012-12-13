@@ -140,4 +140,7 @@
 	#define SDL_VIDEO_RENDER_OGL_ES	1
 #endif
 
-#endif /* _SDL_config_minimal_h */
+/* Enable system power support */
+#define SDL_POWER_ANDROID 1
+
+#endif /* _SDL_config_android_h */

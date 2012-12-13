@@ -30,9 +30,20 @@
 #import <Foundation/Foundation.h>
 #include "jumphack.h"
 
+static BOOL UIKit_EventPumpEnabled = YES;
+
+void
+SDL_iPhoneSetEventPump(SDL_bool enabled)
+{
+    UIKit_EventPumpEnabled = enabled;
+}
+
 void
 UIKit_PumpEvents(_THIS)
 {
+    if (!UIKit_EventPumpEnabled)
+        return;
+
     /*
         When the user presses the 'home' button on the iPod
         the application exits -- immediatly.
@@ -46,10 +57,25 @@ UIKit_PumpEvents(_THIS)
      */
     if (setjmp(*jump_env()) == 0) {
         /* if we're setting the jump, rather than jumping back */
+		
+		/* Let the run loop run for a short amount of time: long enough for
+		   touch events to get processed (which is important to get certain
+		   elements of Game Center's GKLeaderboardViewController to respond
+		   to touch input), but not long enough to introduce a significant
+		   delay in the rest of the app.
+		*/
+		const CFTimeInterval seconds = 0.000002;
+		
+		/* Pump most event types. */
         SInt32 result;
         do {
-            result = CFRunLoopRunInMode(kCFRunLoopDefaultMode, 0, TRUE);
+            result = CFRunLoopRunInMode(kCFRunLoopDefaultMode, seconds, TRUE);
         } while (result == kCFRunLoopRunHandledSource);
+		
+		/* Make sure UIScrollView objects scroll properly. */
+		do {
+			result = CFRunLoopRunInMode((CFStringRef)UITrackingRunLoopMode, seconds, TRUE);
+		} while(result == kCFRunLoopRunHandledSource);
     }
 }
 
