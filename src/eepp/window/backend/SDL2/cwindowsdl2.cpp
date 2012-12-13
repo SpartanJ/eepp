@@ -25,8 +25,11 @@ namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 cWindowSDL::cWindowSDL( WindowSettings Settings, ContextSettings Context ) :
 	cWindow( Settings, Context, eeNew( cClipboardSDL, ( this ) ), eeNew( cInputSDL, ( this ) ), eeNew( cCursorManagerSDL, ( this ) ) ),
 	mSDLWindow( NULL ),
-	mGLContext( NULL ),
+	mGLContext( NULL )
+#ifdef EE_USE_WMINFO
+	,
 	mWMinfo( eeNew( SDL_SysWMinfo, () ) )
+#endif
 {
 	Create( Settings, Context );
 }
@@ -36,7 +39,9 @@ cWindowSDL::~cWindowSDL() {
 		SDL_GL_DeleteContext( mGLContext );
 	}
 
+#ifdef EE_USE_WMINFO
 	eeSAFE_DELETE( mWMinfo );
+#endif
 }
 
 bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
@@ -179,7 +184,7 @@ std::string cWindowSDL::GetVersion() {
 
 void cWindowSDL::CreatePlatform() {
 	eeSAFE_DELETE( mPlatform );
-#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
+#ifdef EE_USE_WMINFO
 	SDL_VERSION( &mWMinfo->version );
 	SDL_GetWindowWMInfo ( mSDLWindow, mWMinfo );
 #endif
@@ -503,6 +508,42 @@ const eeSize& cWindowSDL::GetDesktopResolution() {
 
 SDL_Window * cWindowSDL::GetSDLWindow() const {
 	return mSDLWindow;
+}
+
+void cWindowSDL::StartTextInput() {
+	SDL_StartTextInput();
+}
+
+bool cWindowSDL::IsTextInputActive() {
+	return SDL_TRUE == SDL_IsTextInputActive();
+}
+
+void cWindowSDL::StopTextInput() {
+	SDL_StopTextInput();
+}
+
+void cWindowSDL::SetTextInputRect( eeRecti& rect ) {
+	SDL_Rect r;
+
+	r.x = rect.Left;
+	r.y = rect.Top;
+	r.w = rect.Size().Width();
+	r.h = rect.Size().Height();
+
+	SDL_SetTextInputRect( &r );
+
+	rect.Left	= r.x;
+	rect.Top	= r.y;
+	rect.Right	= rect.Left + r.w;
+	rect.Bottom	= rect.Top + r.h;
+}
+
+bool cWindowSDL::HasScreenKeyboardSupport() {
+	return SDL_TRUE == SDL_HasScreenKeyboardSupport();
+}
+
+bool cWindowSDL::IsScreenKeyboardShown() {
+	return SDL_TRUE == SDL_IsScreenKeyboardShown( mSDLWindow );
 }
 
 }}}}

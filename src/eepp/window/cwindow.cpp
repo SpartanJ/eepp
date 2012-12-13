@@ -496,4 +496,26 @@ Platform::cPlatformImpl * cWindow::GetPlatform() const {
 	return mPlatform;
 }
 
+void cWindow::StartTextInput() {
+}
+
+bool cWindow::IsTextInputActive() {
+	return false;
+}
+
+void cWindow::StopTextInput() {
+}
+
+void cWindow::SetTextInputRect( eeRecti& rect ) {
+}
+
+bool cWindow::HasScreenKeyboardSupport()
+{
+	return false;
+}
+
+bool cWindow::IsScreenKeyboardShown() {
+	return false;
+}
+
 }}

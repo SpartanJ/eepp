@@ -19,7 +19,9 @@ void cJoystickSDL::Open() {
 	mJoystick 	= SDL_JoystickOpen( mIndex );
 
 	if ( NULL != mJoystick ) {
-		mName 		= SDL_JoystickName( mIndex );
+		// @TODO SDL2 changed the API, i'll wait until the new changes became stable
+		//mName 		= SDL_JoystickName( mJoystick );
+		mName		= std::string( "USB Joysick " ) + String::ToStr( mIndex );
 		mHats		= SDL_JoystickNumHats( mJoystick );
 		mButtons	= eemin( SDL_JoystickNumButtons( mJoystick ), 32 );
 		mAxes		= SDL_JoystickNumAxes( mJoystick );
@@ -30,7 +32,7 @@ void cJoystickSDL::Open() {
 }
 
 void cJoystickSDL::Close() {
-	if( SDL_JoystickOpened( mIndex ) )
+	if( NULL != mJoystick )
 		SDL_JoystickClose( mJoystick );
 
 	mJoystick 	= NULL;

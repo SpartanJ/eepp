@@ -12,8 +12,8 @@ MY_C_INCLUDES := \
 	$(MY_SDL_PATH)/include \
 	$(MY_PATH)/helper/chipmunk \
 	$(INC_PATH)/eepp/helper/chipmunk \
-	$(INC_PATH)/eepp/helper/SOIL \
-	$(INC_PATH)/eepp/helper/stb_vorbis \
+	$(MY_PATH)/helper/SOIL2/include/SOIL2 \
+	$(MY_PATH)/helper/stb_vorbis \
 	$(INC_PATH)/eepp/helper/chipmunk
 
 MY_C_FLAGS	:=	-DANDROID \
@@ -43,22 +43,20 @@ LOCAL_LDLIBS 	:= $(MY_LDLIBS)
 LOCAL_CFLAGS	:= $(MY_C_FLAGS)
 
 CODE_SRCS :=  \
-	helper/SOIL/*.c \
+	helper/SOIL2/src/SOIL2/*.c \
 	helper/stb_vorbis/*.c \
 	helper/zlib/*.c \
 	helper/libzip/*.c \
+	helper/jpeg-compressor/*.cpp \
 	helper/haikuttf/*.cpp \
-	utils/*.cpp \
 	system/*.cpp \
 	system/platform/posix/*.cpp \
 	base/*.cpp \
 	math/*.cpp \
 	audio/*.cpp \
 	window/*.cpp \
-	window/backend/SDL/*.cpp \
 	window/backend/SDL2/*.cpp \
 	window/backend/allegro5/*.cpp \
-	window/backend/null/*.cpp \
 	window/platform/null/*.cpp \
 	graphics/*.cpp \
 	graphics/renderer/*.cpp \
@@ -147,7 +145,8 @@ LOCAL_PATH := $(MY_SDL_PATH)
 
 LOCAL_MODULE := SDL2
 
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/include \
+	$(MY_PATH)/helper/android/openal/include/
 
 LOCAL_CFLAGS := -O3 -D__ANDROID__ -DANDROID -DGL_GLEXT_PROTOTYPES \
 	$(EE_GLES_VERSION)

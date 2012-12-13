@@ -10,6 +10,10 @@
 
 class SDL_SysWMinfo;
 
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
+#define EE_USE_WMINFO
+#endif
+
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 class EE_API cWindowSDL : public cWindow {
@@ -55,13 +59,25 @@ class EE_API cWindowSDL : public cWindow {
 		const eeSize& GetDesktopResolution();
 
 		SDL_Window *	GetSDLWindow() const;
+
+		void StartTextInput();
+
+		bool IsTextInputActive();
+
+		void StopTextInput();
+
+		void SetTextInputRect( eeRecti& rect );
+
+		bool HasScreenKeyboardSupport();
+
+		bool IsScreenKeyboardShown();
 	protected:
 		friend class cClipboardSDL;
 
 		SDL_Window *	mSDLWindow;
 		SDL_GLContext	mGLContext;
 
-		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
+		#ifdef EE_USE_WMINFO
 		SDL_SysWMinfo * mWMinfo;
 		#endif
 

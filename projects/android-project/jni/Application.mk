@@ -4,6 +4,7 @@ APP_PROJECT_PATH := $(call my-dir)/..
 #EE_GLES_LINK		:= -lGLESv2
 
 EE_SDL_VERSION		:= EE_SDL_VERSION_2
+
 EE_GLES_VERSION		:= -DEE_GLES1 -DSOIL_GLES1 -DSDL_GLES1
 EE_GLES_LINK		:= -lGLESv1_CM
 
@@ -20,3 +21,4 @@ APP_CFLAGS			:= -fno-strict-aliasing -O3 -s -DNDEBUG -ffast-math
 APP_PLATFORM		:= android-7
 APP_MODULES			:= main
 #APP_ABI				:= armeabi-v7a
+APP_ABI				:= x86

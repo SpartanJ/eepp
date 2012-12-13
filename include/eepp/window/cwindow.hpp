@@ -320,6 +320,58 @@ class EE_API cWindow {
 
 		/** @return The pointer to the instance of the platform implementation functions. */
 		Platform::cPlatformImpl * GetPlatform() const;
+
+		/**
+		* @brief Start accepting Unicode text input events.
+		*        This function will show the on-screen keyboard if supported.
+		*
+		* @sa StopTextInput()
+		* @sa SetTextInputRect()
+		* @sa HasScreenKeyboardSupport()
+		*/
+		virtual void StartTextInput();
+
+		/**
+		* @brief Return whether or not Unicode text input events are enabled.
+		*
+		* @sa StartTextInput()
+		* @sa StopTextInput()
+		*/
+		virtual bool IsTextInputActive();
+
+		/**
+		* @brief Stop receiving any text input events.
+		*        This function will hide the on-screen keyboard if supported.
+		*
+		* @sa StartTextInput()
+		* @sa HasScreenKeyboardSupport()
+		*/
+		virtual void StopTextInput();
+
+		/**
+		* @brief Set the rectangle used to type Unicode text inputs.
+		*        This is used as a hint for IME and on-screen keyboard placement.
+		*
+		* @sa StartTextInput()
+		*/
+		virtual void SetTextInputRect( eeRecti& rect );
+
+		/**
+		* @brief Returns whether the platform has some screen keyboard support.
+		* @return true if some keyboard support is available else false.
+		* @note Not all screen keyboard functions are supported on all platforms.
+		*
+		* @sa IsScreenKeyboardShown()
+		*/
+		virtual bool HasScreenKeyboardSupport();
+
+		/**
+		* @brief Returns whether the screen keyboard is shown for given window.
+		* @return true if screen keyboard is shown else false.
+		*
+		* @sa HasScreenKeyboardSupport()
+		*/
+		virtual bool IsScreenKeyboardShown();
 	protected:
 		friend class cEngine;
 

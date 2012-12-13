@@ -27,6 +27,7 @@
 #define __CALLBACK_HPP__
 
 #include <string.h>
+#include <string>
 
 #if !defined( __ANDROID__ ) && !defined( ANDROID )
 	#define EXCEPTIONS_SUPPORTED

@@ -2,6 +2,7 @@
 #include <ctime>
 #include <cstdlib>
 #include <climits>
+#include <ctype.h>
 
 #if defined( EE_PLATFORM_POSIX )
 	#include <sys/utsname.h>
@@ -526,7 +527,7 @@ std::string Sys::GetStoragePath( std::string appname ) {
         #else
             snprintf(path, 256, "%s/.%s", home, appname.c_str() );
             for(i = strlen(home)+2; path[i]; i++)
-				path[i] = std::tolower(path[i]);
+				path[i] = tolower(path[i]);
         #endif
     #endif
 

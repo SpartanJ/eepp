@@ -22,6 +22,7 @@
 **/
 
 /**
+	@TODO Update OpenAL Soft version for Android.
 	@TODO Improve documentation.
 	@TODO Add support for the native on-screen keyboard on iOS and Android.
 	@TODO Improve Premake4 support. It should be really easy to compile eepp in Windows and OS X ( Linux is always easy thanks to package managers ).
