@@ -47,7 +47,7 @@ bool String::IsLetter( const eeInt& mValue ) {
 	return ( ( (mValue >= 65 && mValue <= 90) || (mValue >= 97 && mValue <= 122) || (mValue >= 192 && mValue <= 255) ) && (mValue != 215) && (mValue != 247) );
 }
 
-std::vector < String > String::SplitString ( const String& str, const Uint32& splitchar, const bool& pushEmptyString ) {
+std::vector < String > String::Split ( const String& str, const Uint32& splitchar, const bool& pushEmptyString ) {
 	std::vector < String > tmp;
 	String tmpstr;
 
@@ -68,7 +68,7 @@ std::vector < String > String::SplitString ( const String& str, const Uint32& sp
 	return tmp;
 }
 
-std::vector < std::string > String::SplitString ( const std::string& str, const Int8& splitchar, const bool& pushEmptyString ) {
+std::vector < std::string > String::Split ( const std::string& str, const Int8& splitchar, const bool& pushEmptyString ) {
 	std::vector < std::string > tmp;
 	std::string tmpstr;
 
@@ -109,11 +109,11 @@ void String::ToLower( std::string & str ) {
 	std::transform(str.begin(), str.end(), str.begin(), (int(*)(int)) std::tolower);
 }
 
-std::vector<Uint8> String::stringToUint8( const std::string& str ) {
+std::vector<Uint8> String::StringToUint8( const std::string& str ) {
 	return std::vector<Uint8>( str.begin(), str.end() );
 }
 
-std::string String::Uint8Tostring( const std::vector<Uint8> v ) {
+std::string String::Uint8ToString( const std::vector<Uint8> v ) {
 	return std::string( v.begin(), v.end() );
 }
 
@@ -129,7 +129,7 @@ void String::StrCopy( char * Dst, const char * Src, eeUint DstSize ) {
 	*Dst = 0;
 }
 
-Int32 String::StrStartsWith( const std::string& Start, const std::string Str ) {
+Int32 String::StartsWith( const std::string& Start, const std::string Str ) {
 	Int32 Pos = -1;
 
 	if ( Str.size() >= Start.size() ) {
@@ -146,7 +146,7 @@ Int32 String::StrStartsWith( const std::string& Start, const std::string Str ) {
 	return Pos;
 }
 
-Int32 String::StrStartsWith( const String& Start, const String Str ) {
+Int32 String::StartsWith( const String& Start, const String Str ) {
 	Int32 Pos = -1;
 
 	if ( Str.size() >= Start.size() ) {

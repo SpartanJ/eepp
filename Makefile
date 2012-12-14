@@ -157,7 +157,7 @@ docs:
 	doxygen ./Doxyfile
 
 clean:
-	$(RM) $(FOBJALL) $(DEPSALL)
+	$(RM) $(OBJDIR)
 
 cleantemp:
 	@$(RM) $(FOBJEEPP) $(DEPSEEPP)

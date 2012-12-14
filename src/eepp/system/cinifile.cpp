@@ -52,7 +52,7 @@ bool cIniFile::LoadFromMemory( const Uint8* RAWData, const Uint32& size ) {
 	myfile.assign( reinterpret_cast<const char*> (RAWData), size );
 
 	mLines.clear();
-	mLines = String::SplitString( myfile );
+	mLines = String::Split( myfile );
 
 	mIniReaded = false;
 
@@ -73,7 +73,7 @@ bool cIniFile::LoadFromFile( const std::string& iniPath ) {
 		f.Read( (char*)&myfile[0], f.GetSize() );
 
 		mLines.clear();
-		mLines = String::SplitString( myfile );
+		mLines = String::Split( myfile );
 
 		mIniReaded = false;
 

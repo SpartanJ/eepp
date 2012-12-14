@@ -29,8 +29,6 @@ void cInputSDL::Update() {
 
 	CleanStates();
 
-	/** @TODO: Filter by windowId */
-
 	while ( SDL_PollEvent( &SDLEvent ) ) {
 		switch( SDLEvent.type ) {
 			case SDL_WINDOWEVENT:

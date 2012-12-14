@@ -72,10 +72,10 @@ class EE_API String {
 	static bool IsLetter( const eeInt& mValue );
 
 	/** Split a String and hold it on a vector */
-	static std::vector < String > SplitString ( const String& str, const Uint32& splitchar = '\n', const bool& pushEmptyString = false );
+	static std::vector < String > Split( const String& str, const Uint32& splitchar = '\n', const bool& pushEmptyString = false );
 
 	/** Split a string and hold it on a vector */
-	static std::vector < std::string > SplitString ( const std::string& str, const Int8& splitchar = '\n', const bool& pushEmptyString = false );
+	static std::vector < std::string > Split( const std::string& str, const Int8& splitchar = '\n', const bool& pushEmptyString = false );
 
 	/** Remove the first space on the string */
 	static std::string LTrim( const std::string & str );
@@ -90,10 +90,10 @@ class EE_API String {
 	static void ToLower( std::string & str );
 
 	/** Convert the string to an std::vector<Uint8> */
-	static std::vector<Uint8> stringToUint8( const std::string& str );
+	static std::vector<Uint8> StringToUint8( const std::string& str );
 
 	/** Convert the std::vector<Uint8> to an string */
-	static std::string Uint8Tostring( const std::vector<Uint8> v );
+	static std::string Uint8ToString( const std::vector<Uint8> v );
 
 	/** Insert a char into String on pos (added this function to avoid a bug on String) */
 	static void InsertChar( String& str, const eeUint& pos, const Uint32& tchar );
@@ -110,14 +110,14 @@ class EE_API String {
 	* @param Str String to compare
 	* @return The position of the last char compared ( -1 if fails )
 	*/
-	static Int32 StrStartsWith( const std::string& Start, const std::string Str );
+	static Int32 StartsWith( const std::string& Start, const std::string Str );
 
 	/** Compare two strings from its beginning.
 	* @param Start String start
 	* @param Str String to compare
 	* @return The position of the last char compared ( -1 if fails )
 	*/
-	static Int32 StrStartsWith( const String& Start, const String Str );
+	static Int32 StartsWith( const String& Start, const String Str );
 
 	/** Replaces a substring by another string inside a string */
 	static void ReplaceSubStr(std::string &target, const std::string& that, const std::string& with );

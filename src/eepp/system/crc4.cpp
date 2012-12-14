@@ -54,11 +54,11 @@ void cRC4::EncryptByte( std::vector<Uint8>& buffer ) {
 }
 
 void cRC4::EncryptString( std::string& buffer ) {
-	std::vector<Uint8> intbuf = String::stringToUint8( buffer );
+	std::vector<Uint8> intbuf = String::StringToUint8( buffer );
 
 	EncryptByte( intbuf );
 
-	buffer = String::Uint8Tostring( intbuf );
+	buffer = String::Uint8ToString( intbuf );
 }
 
 bool cRC4::EncryptFile( const std::string& SourceFile, const std::string& DestFile ) {
@@ -108,11 +108,11 @@ bool cRC4::EncryptFile( const std::string& SourceFile, const std::string& DestFi
 }
 
 void cRC4::SetKey( const std::string& Key ) {
-	SetKey( String::stringToUint8( Key ) );
+	SetKey( String::StringToUint8( Key ) );
 }
 
 void cRC4::EncryptByte( std::vector<Uint8>& buffer, const std::string& Key ) {
-	EncryptByte( buffer, String::stringToUint8( Key ) );
+	EncryptByte( buffer, String::StringToUint8( Key ) );
 }
 
 void cRC4::DecryptByte( std::vector<Uint8>& buffer, const std::vector<Uint8>& Key ) {
@@ -120,7 +120,7 @@ void cRC4::DecryptByte( std::vector<Uint8>& buffer, const std::vector<Uint8>& Ke
 }
 
 void cRC4::DecryptByte( std::vector<Uint8>& buffer, const std::string& Key ) {
-	EncryptByte( buffer, String::stringToUint8( Key ) );
+	EncryptByte( buffer, String::StringToUint8( Key ) );
 }
 
 void cRC4::DecryptByte( std::vector<Uint8>& buffer ) {
@@ -128,7 +128,7 @@ void cRC4::DecryptByte( std::vector<Uint8>& buffer ) {
 }
 
 void cRC4::EncryptString( std::string& buffer, const std::string& Key ) {
-	EncryptString( buffer, String::stringToUint8( Key ) );
+	EncryptString( buffer, String::StringToUint8( Key ) );
 }
 
 void cRC4::DecryptString( std::string& buffer, const std::vector<Uint8>& Key ) {
@@ -144,7 +144,7 @@ void cRC4::DecryptString( std::string& buffer ) {
 }
 
 bool cRC4::EncryptFile( const std::string& SourceFile, const std::string& DestFile, const std::string& Key ) {
-	return EncryptFile( SourceFile, DestFile, String::stringToUint8( Key ) );
+	return EncryptFile( SourceFile, DestFile, String::StringToUint8( Key ) );
 }
 
 bool cRC4::DecryptFile( const std::string& SourceFile, const std::string& DestFile ) {

@@ -168,7 +168,7 @@ void cUICommonDialog::RefreshFolder() {
 	Uint32 i, z;
 
 	if ( "*" != mFiletype->Text() ) {
-		patterns = String::SplitString( mFiletype->Text().ToUtf8(), ';' );
+		patterns = String::Split( mFiletype->Text().ToUtf8(), ';' );
 
 		for ( i = 0; i < patterns.size(); i++ )
 			patterns[i] = FileSystem::FileExtension( patterns[i] );

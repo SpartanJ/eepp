@@ -209,7 +209,7 @@ void cConsole::FadeOut() {
 
 void cConsole::ProcessLine() {
 	String str = mTBuf->Buffer();
-	std::vector < String > params = String::SplitString( str, ' ' );
+	std::vector < String > params = String::Split( str, ' ' );
 
 	mLastCommands.push_back( str );
 	mLastLogPos = (eeInt)mLastCommands.size();
@@ -330,7 +330,7 @@ void cConsole::PrintCommandsStartingWith( const String& start ) {
 	std::map < String, ConsoleCallback >::iterator it;
 
 	for ( it = mCallbacks.begin(); it != mCallbacks.end(); it++ ) {
-		if ( -1 != String::StrStartsWith( start, it->first ) ) {
+		if ( -1 != String::StartsWith( start, it->first ) ) {
 			cmds.push_back( it->first );
 		}
 	}
@@ -522,7 +522,7 @@ void cConsole::CmdFrameLimit ( const std::vector < String >& params ) {
 }
 
 void cConsole::CmdGetLog() {
-	std::vector < String > tvec = String::SplitString( String( String::ToStr( cLog::instance()->Buffer() ) ) );
+	std::vector < String > tvec = String::Split( String( String::ToStr( cLog::instance()->Buffer() ) ) );
 	if ( tvec.size() > 0 ) {
 		for ( eeUint i = 0; i < tvec.size(); i++ )
 			PushText( tvec[i] );
@@ -535,7 +535,7 @@ void cConsole::CmdGetLog( const std::vector < String >& params ) {
 
 void cConsole::CmdGetGpuExtensions() {
 	char *Exts = GLi->GetExtensions();
-	std::vector < String > tvec = String::SplitString( String( String::ToStr( std::string( Exts ) ) ), ' ' );
+	std::vector < String > tvec = String::Split( String( String::ToStr( std::string( Exts ) ) ), ' ' );
 	if ( tvec.size() > 0 ) {
 		for ( eeUint i = 0; i < tvec.size(); i++ )
 			PushText( tvec[i] );

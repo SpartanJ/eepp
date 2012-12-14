@@ -27,8 +27,6 @@ void cInputAl::Update() {
 
 	CleanStates();
 
-	/** @TODO: Filter by windowId */
-
 	while ( al_get_next_event( mQueue, &ALEvent ) ) {
 		switch ( ALEvent.type ) {
 			case ALLEGRO_EVENT_KEY_CHAR:
