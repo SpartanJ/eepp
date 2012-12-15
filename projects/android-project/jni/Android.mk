@@ -71,7 +71,7 @@ LOCAL_C_INCLUDES := $(MY_C_INCLUDES)
 
 LOCAL_SRC_FILES := $(foreach F, $(CODE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
-LOCAL_STATIC_LIBRARIES := SDL2 chipmunk freetype openal
+LOCAL_STATIC_LIBRARIES := openal SDL2 chipmunk freetype
 
 include $(BUILD_STATIC_LIBRARY) 
 #*************** EEPP ***************
@@ -122,20 +122,36 @@ include $(BUILD_STATIC_LIBRARY)
 #*************** OPENAL *****************
 include $(CLEAR_VARS)
 
-LOCAL_PATH := $(MY_PATH)/helper/android/openal
+LOCAL_PATH := $(MY_PATH)/helper/android/openal-soft
 
 LOCAL_MODULE := openal
 
-APP_SUBDIRS := $(patsubst $(LOCAL_PATH)/%, %, $(shell find $(LOCAL_PATH)/src -type d))
+LOCAL_CFLAGS := -O3 -DHAVE_CONFIG_H -DAL_ALEXT_PROTOTYPES -DHAVE_OPENSL
 
-LOCAL_C_INCLUDES := $(foreach D, $(APP_SUBDIRS), $(LOCAL_PATH)/$(D)) $(LOCAL_PATH)/include
-LOCAL_CFLAGS := -O3 -DHAVE_CONFIG_H -DAL_ALEXT_PROTOTYPES
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/ \
+	$(LOCAL_PATH)/include \
+	$(LOCAL_PATH)/OpenAL32/Include
 
-LOCAL_SRC_FILES += $(foreach F, $(APP_SUBDIRS), $(addprefix $(F)/,$(notdir $(wildcard $(LOCAL_PATH)/$(F)/*.c))))
+LOCAL_SRC_FILES := \
+	$(subst $(LOCAL_PATH)/,, \
+	$(wildcard $(LOCAL_PATH)/OpenAL32/*.c) \
+	$(wildcard $(LOCAL_PATH)/Alc/AL*.c) \
+	$(wildcard $(LOCAL_PATH)/Alc/alc*.c) \
+	$(LOCAL_PATH)/Alc/bs2b.c \
+	$(LOCAL_PATH)/Alc/helpers.c \
+	$(LOCAL_PATH)/Alc/hrtf.c \
+	$(LOCAL_PATH)/Alc/mixer.c \
+	$(LOCAL_PATH)/Alc/mixer_c.c \
+	$(LOCAL_PATH)/Alc/panning.c \
+	$(LOCAL_PATH)/Alc/backends/opensl.c \
+	$(LOCAL_PATH)/Alc/backends/loopback.c \
+	$(LOCAL_PATH)/Alc/backends/wave.c \
+	$(LOCAL_PATH)/Alc/backends/null.c \
+	$(wildcard $(LOCAL_PATH)/src/video/android/*.c))
 
-LOCAL_LDLIBS := -llog
+LOCAL_LDLIBS := -llog -lOpenSLES
 
-include $(BUILD_STATIC_LIBRARY)
+include $(BUILD_SHARED_LIBRARY)
 #*************** OPENAL *****************
 
 #**************** SDL 2 ***************
@@ -191,7 +207,7 @@ include $(CLEAR_VARS)
 
 LOCAL_PATH := $(MY_PATH)
 
-LOCAL_MODULE := empty_window
+LOCAL_MODULE := main
 
 LOCAL_LDLIBS 	:= $(MY_LDLIBS)
 
@@ -215,7 +231,7 @@ include $(CLEAR_VARS)
 
 LOCAL_PATH := $(MY_PATH)
 
-LOCAL_MODULE := main
+LOCAL_MODULE := external_shader
 
 LOCAL_LDLIBS 	:= $(MY_LDLIBS)
 

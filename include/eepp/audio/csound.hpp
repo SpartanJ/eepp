@@ -14,7 +14,7 @@ enum EE_SOUND_STATE {
 	SOUND_PLAYING
 };
 
-class EE_API cSound : public cAudioResource {
+class EE_API cSound {
 	public :
 		cSound();
 

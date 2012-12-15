@@ -16,7 +16,6 @@ cSoundBuffer::cSoundBuffer() :
 }
 
 cSoundBuffer::cSoundBuffer(const cSoundBuffer& Copy) :
-	cAudioResource(Copy),
 	mBuffer(0),
 	mSamples(Copy.mSamples),
 	mDuration(Copy.mDuration),
@@ -60,7 +59,7 @@ bool cSoundBuffer::LoadFromFile(const std::string& Filename) {
 		// Get the sound parameters
 		std::size_t  NbSamples		= File->GetSamplesCount();
 		unsigned int ChannelsCount	= File->GetChannelsCount();
-		unsigned int SampleRate	= File->GetSampleRate();
+		unsigned int SampleRate		= File->GetSampleRate();
 
 		// Read the samples from the opened file
 		mSamples.resize( NbSamples );
@@ -105,7 +104,7 @@ bool cSoundBuffer::LoadFromMemory( const char* Data, std::size_t SizeInBytes ) {
 		// Get the sound parameters
 		std::size_t  NbSamples		= File->GetSamplesCount();
 		unsigned int ChannelsCount	= File->GetChannelsCount();
-		unsigned int SampleRate	= File->GetSampleRate();
+		unsigned int SampleRate		= File->GetSampleRate();
 
 		// Read the samples from the opened file
 		mSamples.resize( NbSamples );

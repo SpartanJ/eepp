@@ -2,12 +2,20 @@
 
 namespace EE { namespace Audio {
 
-cSound::cSound() : mBuffer(NULL) {
+cSound::cSound() :
+	mBuffer(NULL)
+{
+	EnsureALInit();
+
 	ALCheck( alGenSources( 1, &mSource ) );
 	ALCheck( alSourcei( mSource, AL_BUFFER, 0 ) );
 }
 
-cSound::cSound( const cSoundBuffer& Buffer, const bool& Loop, const eeFloat& Pitch, const eeFloat& Volume, const Vector3AL& Position ) : mBuffer(&Buffer) {
+cSound::cSound( const cSoundBuffer& Buffer, const bool& Loop, const eeFloat& Pitch, const eeFloat& Volume, const Vector3AL& Position ) :
+	mBuffer(&Buffer)
+{
+	EnsureALInit();
+
 	ALCheck( alGenSources(1, &mSource) );
 
 	ALCheck( alSourcei ( mSource, AL_BUFFER,   Buffer.mBuffer ) );
@@ -18,9 +26,10 @@ cSound::cSound( const cSoundBuffer& Buffer, const bool& Loop, const eeFloat& Pit
 }
 
 cSound::cSound(const cSound& Copy) :
-	cAudioResource(Copy),
 	mBuffer(Copy.mBuffer)
 {
+	EnsureALInit();
+
 	ALCheck( alGenSources( 1, &mSource ) );
 
 	ALCheck( alSourcei ( mSource, AL_BUFFER,   mBuffer ? mBuffer->mBuffer : 0) );

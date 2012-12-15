@@ -27,7 +27,6 @@
 
 #include "SDL_system.h"
 #include "SDL_android.h"
-#include <AL/android.h>
 
 extern "C" {
 #include "../../events/SDL_events_c.h"
@@ -103,8 +102,6 @@ extern "C" jint JNI_OnLoad(JavaVM* vm, void* reserved)
         Android_JNI_SetupThread();
     }
     
-    AL_SetJavaVM( vm );
-
     return JNI_VERSION_1_4;
 }
 

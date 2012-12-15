@@ -570,3 +570,5 @@
 ../../include/eepp/graphics/glhelper.hpp
 ../../include/eepp/window/windowhandle.hpp
 ../../include/eepp/window/windowcontext.hpp
+../../include/eepp/version.hpp
+../../src/eepp/base/version.cpp

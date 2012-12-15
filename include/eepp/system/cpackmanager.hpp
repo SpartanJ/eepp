@@ -17,6 +17,8 @@ class EE_API cPackManager : public tContainer<cPack> {
 
 		cPack * Exists( std::string& path );
 
+		cPack * GetPackByPath( std::string path );
+
 		const bool& FallbackToPacks() const;
 
 		void FallbackToPacks( const bool& fallback );

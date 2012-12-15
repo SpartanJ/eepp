@@ -20,8 +20,10 @@ cAudioDevice::cAudioDevice() {
 			alcMakeContextCurrent( mContext );
 
 			// Initialize the listener, located at the origin and looking along the Z axis
-			//cAudioListener::Position(0.f, 0.f, 0.f);
-			//cAudioListener::Target(0.f, 0.f, -1.f);
+			ALCheck( alListenerf( AL_GAIN, 1.f ) );
+			ALCheck( alListener3f( AL_POSITION, 0.f, 0.f, 0.f ) );
+			ALfloat Orientation[] = {0.f, 0.f, -1.f, 0.f, 1.f, 0.f};
+			ALCheck( alListenerfv( AL_ORIENTATION, Orientation ) );
 
 			std::string log( "OpenAL current device:\n" );
 			log += "\t" + std::string( (const char *)alcGetString(mDevice, ALC_DEVICE_SPECIFIER) );

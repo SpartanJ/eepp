@@ -55,6 +55,7 @@ bool cMusic::OpenFromFile( const std::string& Filename ) {
 	Initialize( mFile->GetChannelsCount(), mFile->GetSampleRate() );
 
 	cLog::instance()->Write( "Music file " + Filename + " loaded." );
+
 	return true;
 }
 
@@ -75,6 +76,7 @@ bool cMusic::OpenFromMemory( const char * Data, std::size_t SizeInBytes ) {
 	Initialize( mFile->GetChannelsCount(), mFile->GetSampleRate() ); // Initialize the stream
 
 	cLog::instance()->Write( "Music file loaded from memory." );
+
 	return true;
 }
 

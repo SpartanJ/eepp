@@ -22,6 +22,8 @@
 
 #define EEPP_VERSION_ATLEAST(X, Y, Z)	(EEPP_COMPILEDVERSION >= EEPP_VERSIONNUM(X, Y, Z))
 
+#define EEPP_CODENAME "Sakkaya"
+
 namespace EE {
 
 class EE_API Version {
@@ -38,6 +40,9 @@ class EE_API Version {
 		
 		/** @return The library version name: "eepp version major.minor.patch" */
 		static std::string GetVersionName();
+
+		/** @return The version codename */
+		static std::string GetCodename();
 };
 
 }

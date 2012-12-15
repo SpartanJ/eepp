@@ -366,4 +366,12 @@ std::vector<std::string> cPak::GetFileList() {
 	return tmpv;
 }
 
+bool cPak::IsOpen() const {
+	return mIsOpen;
+}
+
+std::string cPak::GetPackPath() {
+	return mPak.pakPath;
+}
+
 }}

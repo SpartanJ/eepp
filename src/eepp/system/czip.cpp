@@ -245,4 +245,9 @@ std::vector<std::string> cZip::GetFileList() {
 	return tmpv;
 }
 
+/** @return The file path of the opened package */
+std::string cZip::GetPackPath() {
+	return mZipPath;
+}
+
 }}

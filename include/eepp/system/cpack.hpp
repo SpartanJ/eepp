@@ -65,6 +65,9 @@ class EE_API cPack : protected cMutex {
 
 		/** @return If the pack file is open */
 		virtual bool IsOpen() const;
+
+		/** @return The file path of the opened package */
+		virtual std::string GetPackPath() = 0;
 	protected:
 		bool mIsOpen;
 };

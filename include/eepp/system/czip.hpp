@@ -63,6 +63,9 @@ class EE_API cZip : public cPack {
 
 		/** Add a new file from memory */
 		bool AddFile( std::vector<Uint8>& data, const std::string& inpack );
+
+		/** @return The file path of the opened package */
+		std::string GetPackPath();
 	protected:
 		struct zip * mZip;
 

@@ -63,7 +63,10 @@ class EE_API cPak : public cPack {
 		std::vector<std::string> GetFileList();
 
 		/** @return If the PAK file is open */
-		bool IsOpen() const { return mIsOpen; }
+		bool IsOpen() const;
+
+		/** @return The file path of the opened package */
+		std::string GetPackPath();
 	protected:
 
 	private:

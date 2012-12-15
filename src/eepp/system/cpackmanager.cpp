@@ -1,5 +1,6 @@
 #include <eepp/system/cpackmanager.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/clog.hpp>
 
 namespace EE { namespace System {
 
@@ -26,6 +27,18 @@ cPack * cPackManager::Exists( std::string& path ) {
 				path = tpath;
 			}
 
+			return (*it);
+		}
+	}
+
+	return NULL;
+}
+
+cPack * cPackManager::GetPackByPath( std::string path ) {
+	std::list<cPack*>::iterator it;
+
+	for ( it = mResources.begin(); it != mResources.end(); it++ ) {
+		if ( path == (*it)->GetPackPath() ) {
 			return (*it);
 		}
 	}

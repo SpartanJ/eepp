@@ -59,7 +59,7 @@ bool cSoundFileOgg::OpenRead( const std::string& Filename, std::size_t& NbSample
 	stb_vorbis_info Infos = stb_vorbis_get_info( mStream );
 	ChannelsCount	= mChannelsCount = Infos.channels;
 	SampleRate		= Infos.sample_rate;
-	NbSamples		= static_cast<std::size_t>(stb_vorbis_stream_length_in_samples(mStream) * ChannelsCount);
+	NbSamples		= static_cast<std::size_t>( stb_vorbis_stream_length_in_samples( mStream ) * ChannelsCount );
 
 	return true;
 }
@@ -84,7 +84,7 @@ bool cSoundFileOgg::OpenRead( const char* Data, std::size_t SizeInBytes, std::si
 	stb_vorbis_info Infos = stb_vorbis_get_info( mStream );
 	ChannelsCount	= mChannelsCount = Infos.channels;
 	SampleRate		= Infos.sample_rate;
-	NbSamples		= static_cast<std::size_t>( stb_vorbis_stream_length_in_samples( mStream ) );
+	NbSamples		= static_cast<std::size_t>( stb_vorbis_stream_length_in_samples( mStream ) * ChannelsCount );
 
 	return true;
 }
@@ -92,9 +92,13 @@ bool cSoundFileOgg::OpenRead( const char* Data, std::size_t SizeInBytes, std::si
 std::size_t cSoundFileOgg::Read( Int16 * Data, std::size_t NbSamples ) {
 	if ( NULL != mStream && Data && NbSamples ) {
 		int Read = stb_vorbis_get_samples_short_interleaved( mStream, mChannelsCount, Data, static_cast<int>( NbSamples ) );
-		return static_cast<std::size_t>( Read * mChannelsCount );
-	} else
-		return 0;
+
+		std::size_t scount = Read * mChannelsCount;
+
+		return scount;
+	}
+
+	return 0;
 }
 
 void cSoundFileOgg::Seek( Uint32 timeOffset ) {

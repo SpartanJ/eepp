@@ -10,7 +10,7 @@ namespace EE { namespace Audio {
 
 class cSound;
 
-class EE_API cSoundBuffer : public cAudioResource {
+class EE_API cSoundBuffer {
 	public :
 		cSoundBuffer();
 

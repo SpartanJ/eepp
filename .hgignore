@@ -5,6 +5,7 @@ obj/**
 libs/**
 make/**
 bin/**
+assets/**
 projects/windows/vc2010/eepp/cdeps/Debug/**
 projects/windows/vc2010/eepp/cdeps/Release/**
 projects/windows/vc2010/empty_window/Debug/**
