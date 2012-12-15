@@ -4,7 +4,6 @@
 #include <eepp/audio/openal.hpp>
 #include <eepp/audio/caudiodevice.hpp>
 #include <eepp/audio/caudiolistener.hpp>
-#include <eepp/audio/caudioresource.hpp>
 #include <eepp/audio/csoundfile.hpp>
 #include <eepp/audio/csoundfiledefault.hpp>
 #include <eepp/audio/csoundfileogg.hpp>

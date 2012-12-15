@@ -8,7 +8,6 @@
 ../../include/eepp/audio/csoundbuffer.hpp
 ../../include/eepp/audio/csound.hpp
 ../../include/eepp/audio/cmusic.hpp
-../../include/eepp/audio/caudioresource.hpp
 ../../include/eepp/audio/caudiolistener.hpp
 ../../include/eepp/audio/caudiodevice.hpp
 ../../include/eepp/audio/base.hpp
@@ -20,7 +19,6 @@
 ../../src/eepp/audio/csoundbuffer.cpp
 ../../src/eepp/audio/csound.cpp
 ../../src/eepp/audio/cmusic.cpp
-../../src/eepp/audio/caudioresource.cpp
 ../../src/eepp/audio/caudiolistener.cpp
 ../../src/eepp/audio/caudiodevice.cpp
 ../../include/eepp/base/utf.hpp

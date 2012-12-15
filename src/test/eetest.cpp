@@ -34,9 +34,9 @@ void cEETest::Init() {
 	mShowMenu			= NULL;
 	mTerrainUp			= true;
 
-	MyPath 				= Sys::GetProcessPath();
+	MyPath 				= Sys::GetProcessPath() + "assets/";
 
-	cIniFile Ini( MyPath + "data/ee.ini" );
+	cIniFile Ini( MyPath + "ee.ini" );
 	Ini.ReadFile();
 
 	PartsNum			= Ini.GetValueI( "EEPP", "ParticlesNum", 1000);
@@ -49,7 +49,7 @@ void cEETest::Init() {
 	ContextSettings ConSettings	= EE->CreateContextSettings( &Ini );
 
 	PAK = eeNew( cZip, () );
-	PAK->Open( MyPath + "data/ee.zip" );
+	PAK->Open( MyPath + "ee.zip" );
 
 	mWindow = EE->CreateWindow( WinSettings, ConSettings );
 
@@ -87,11 +87,13 @@ void cEETest::Init() {
 
 		CreateShaders();
 
-		Mus = eeNew( cMusic, () );
+		if ( mMusEnabled ) {
+			Mus = eeNew( cMusic, () );
 
-		if ( mMusEnabled && Mus->OpenFromPack( PAK, "music.ogg" ) ) {
-			Mus->Loop( true );
-			Mus->Play();
+			if ( Mus->OpenFromPack( PAK, "music.ogg" ) ) {
+				Mus->Loop( true );
+				Mus->Play();
+			}
 		}
 
 		WP.Type( QUARTICINOUT );
@@ -142,8 +144,8 @@ void cEETest::CreateAquaTextureAtlas() {
 	return;
 	#endif
 
-	std::string tgpath( MyPath + "data/aquata/aqua" );
-	std::string Path( MyPath + "data/aqua" );
+	std::string tgpath( MyPath + "aquata/aqua" );
+	std::string Path( MyPath + "aqua" );
 
 	if ( !FileSystem::FileExists( tgpath + EE_TEXTURE_ATLAS_EXTENSION ) ) {
 		cTexturePacker tp( 256, 256, true, 2 );
@@ -202,7 +204,7 @@ void cEETest::CreateShaders() {
 
 	if ( mUseShaders ) {
 		mBlurFactor = 0.01f;
-		mShaderProgram = eeNew( cShaderProgram, ( MyPath + "data/shader/blur.vert", MyPath + "data/shader/blur.frag" ) );
+		mShaderProgram = eeNew( cShaderProgram, ( MyPath + "shader/blur.vert", MyPath + "shader/blur.frag" ) );
 	}
 }
 
@@ -256,9 +258,9 @@ void cEETest::CreateUI() {
 
 	cUIManager::instance()->Init(); //UI_MANAGER_HIGHLIGHT_FOCUS
 
-	//mTheme = cUITheme::LoadFromPath( eeNew( cUIAquaTheme, ( "aqua", "aqua" ) ), MyPath + "data/aqua/" );
+	//mTheme = cUITheme::LoadFromPath( eeNew( cUIAquaTheme, ( "aqua", "aqua" ) ), MyPath + "aqua/" );
 
-	cTextureAtlasLoader tgl( MyPath + "data/aquata/aqua" + EE_TEXTURE_ATLAS_EXTENSION );
+	cTextureAtlasLoader tgl( MyPath + "aquata/aqua" + EE_TEXTURE_ATLAS_EXTENSION );
 	tgl.GetTexture()->TextureFilter( TEX_FILTER_NEAREST );
 
 	mTheme = cUITheme::LoadFromTextureAtlas( eeNew( cUIAquaTheme, ( "aqua", "aqua" ) ), cTextureAtlasManager::instance()->GetByName( "aqua" ) );
@@ -560,8 +562,8 @@ void cEETest::CreateUI() {
 #ifdef EE_PLATFORM_TOUCH
 	cTextureAtlas * SG = cGlobalTextureAtlas::instance();
 
-	SG->Add( TF->Load( MyPath + "data/extra/button-te_normal.png" ), "button-te_normal" );
-	SG->Add( TF->Load( MyPath + "data/extra/button-te_mdown.png" ), "button-te_mdown" );
+	SG->Add( TF->Load( MyPath + "extra/button-te_normal.png" ), "button-te_normal" );
+	SG->Add( TF->Load( MyPath + "extra/button-te_mdown.png" ), "button-te_mdown" );
 
 	cUISkinSimple * nSkin = eeNew( cUISkinSimple, ( "button-te" ) );
 
@@ -807,7 +809,7 @@ void cEETest::LoadTextures() {
 	PakTest = eeNew( cZip, () );
 
 	#ifndef EE_GLES
-	PakTest->Open( MyPath + "data/test.zip" );
+	PakTest->Open( MyPath + "test.zip" );
 
 	std::vector<std::string> files = PakTest->GetFileList();
 
@@ -900,9 +902,9 @@ void cEETest::LoadTextures() {
 
 	int x, y, c;
 
-	if ( cImage::GetInfo( MyPath + "data/extra/bnb.png", &x, &y, &c ) )
+	if ( cImage::GetInfo( MyPath + "extra/bnb.png", &x, &y, &c ) )
 	{
-		mTGL = eeNew( cTextureAtlasLoader, ( MyPath + "data/extra/bnb" + EE_TEXTURE_ATLAS_EXTENSION ) );
+		mTGL = eeNew( cTextureAtlasLoader, ( MyPath + "extra/bnb" + EE_TEXTURE_ATLAS_EXTENSION ) );
 	}
 
 	mBlindy.AddFramesByPattern( "rn" );
@@ -1565,7 +1567,7 @@ void cEETest::Process() {
 				mFontLoader.Update();
 			}
 
-			if ( KM->IsKeyUp(KEY_F12) ) mWindow->TakeScreenshot( MyPath + "data/screenshots/" ); //After render and before Display
+			if ( KM->IsKeyUp(KEY_F12) ) mWindow->TakeScreenshot( MyPath + "screenshots/" ); //After render and before Display
 
 			mWindow->Display();
 		} while( mWindow->Running() );

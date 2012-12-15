@@ -2,7 +2,7 @@
 #define EE_AUDIOCSOUND_H
 
 #include <eepp/audio/base.hpp>
-#include <eepp/audio/caudioresource.hpp>
+#include <eepp/audio/caudiodevice.hpp>
 #include <eepp/audio/csoundbuffer.hpp>
 
 namespace EE { namespace Audio {
