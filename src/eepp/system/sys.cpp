@@ -577,7 +577,11 @@ Int64 Sys::GetDiskFreeSpace(const std::string& path) {
 #if defined( EE_PLATFORM_POSIX )
 	struct statvfs data;
 	statvfs(path.c_str(),  &data);
+	#if EE_PLATFORM != EE_PLATFORM_MACOSX
 	return (Int64)data.f_bsize * (Int64)data.f_bfree;
+	#else
+	return (Int64)data.f_frsize * (Int64)data.f_bfree;
+	#endif
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	Int64 AvailableBytes;
 	Int64 TotalBytes;

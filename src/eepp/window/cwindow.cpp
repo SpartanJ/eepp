@@ -376,7 +376,7 @@ void cWindow::SendVideoResizeCb() {
 }
 
 void cWindow::LogSuccessfulInit( const std::string& BackendName ) {
-	cLog::instance()->Write( "Engine Initialized Succesfully.\n\tVersion: " + Version::GetVersionName() +
+	cLog::instance()->Write( "Engine Initialized Succesfully.\n\tVersion: " + Version::GetVersionName() + " (codename: \"" + Version::GetCodename() + "\")" +
 							 "\n\tOS: " + Sys::GetOSName() +
 							 "\n\tArch: " + Sys::GetOSArchitecture() +
 							 "\n\tCPU Cores: " + String::ToStr( Sys::GetCPUCount() ) +
