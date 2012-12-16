@@ -22,7 +22,6 @@
 **/
 
 /**
-	@TODO Update OpenAL Soft version for Android.
 	@TODO Improve documentation.
 	@TODO Improve Premake4 support. It should be really easy to compile eepp in Windows and OS X ( Linux is always easy thanks to package managers ).
 	@TODO Add more examples, showing at least the basic usage of the engine ( 10 or more examples at least ).

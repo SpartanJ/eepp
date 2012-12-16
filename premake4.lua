@@ -31,7 +31,7 @@ solution "eepp"
 	if os.is("linux") then
 		multiple_insert( os_links, { "rt", "pthread", "X11", "openal", "GL", "Xcursor" } )
 	elseif os.is("windows") then
-		multiple_insert( os_links, { "OpenAL32", "opengl32", "mingw32", "glu32", "gdi32", "-static-libgcc -static-libstdc++ -mwindows" } )
+		multiple_insert( os_links, { "OpenAL32", "opengl32", "mingw32", "glu32", "gdi32" } )
 	elseif os.is("macosx") then
 		multiple_insert( os_links, { "OpenGL.framework", "OpenAL.framework", "CoreFoundation.framework", "AGL.framework" } )
 	elseif os.is("freebsd") then
@@ -272,6 +272,7 @@ solution "eepp"
 		
 		configuration "windows"
 			files { "src/eepp/window/platform/win/*.cpp" }
+			linkoptions { "static-libgcc", "static-libstdc++", "mwindows" }
 		
 		configuration "linux"
 			files { "src/eepp/window/platform/x11/*.cpp" }
