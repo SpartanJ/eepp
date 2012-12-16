@@ -53,7 +53,7 @@ void cEETest::Init() {
 
 	mWindow = EE->CreateWindow( WinSettings, ConSettings );
 
-	run = ( mWindow->Created() && PAK->IsOpen() );
+	run = ( NULL != mWindow && mWindow->Created() && PAK->IsOpen() );
 
 	if ( run ) {
 		SetScreen( StartScreen );
