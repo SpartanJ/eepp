@@ -38,6 +38,22 @@ function build_base_configuration( package_name )
 		targetname ( package_name )
 end
 
+
+function build_base_cpp_configuration( package_name )
+	configuration "debug"
+		defines { "DEBUG" }
+		flags { "Symbols" }
+		buildoptions{ "-Wall" }
+		targetname ( package_name .. "-debug" )
+
+	configuration "release"
+		defines { "NDEBUG" }
+		flags { "Optimize" }
+		buildoptions{ "-Wall" }
+		targetname ( package_name )
+end
+
+
 function build_link_configuration( package_name )
 	links { link_list }
 	
@@ -73,7 +89,11 @@ function generate_os_links()
 	if os.is("linux") then
 		multiple_insert( os_links, { "rt", "pthread", "X11", "openal", "GL", "Xcursor" } )
 	elseif os.is("windows") then
-		multiple_insert( os_links, { "OpenAL32", "opengl32", "mingw32", "glu32", "gdi32" } )
+		multiple_insert( os_links, { "OpenAL32", "opengl32", "glu32", "gdi32" } )
+		
+		if ( _ACTION == "gmake" ) then
+			table.insert( os_links, "mingw32" )
+		end
 	elseif os.is("macosx") then
 		multiple_insert( os_links, { "OpenGL.framework", "OpenAL.framework", "CoreFoundation.framework", "AGL.framework" } )
 	elseif os.is("freebsd") then
@@ -92,24 +112,28 @@ function parse_args()
 		defines { "EE_GLES1", "SOIL_GLES1" }
 	end	
 
-	if not args_contains( "STATIC_FT2" ) and os.findlib("freetype") then
+	if not args_contains( "--with-static-freetype" ) and os.findlib("freetype") then
 		table.insert( link_list, "freetype" )
 	end
 end
 
 function add_static_links()
+	-- The linking order DOES matter
+	
+	links { "haikuttf-static" }
+	
+	if args_contains( "--with-static-freetype" ) or not os.findlib("freetype") then
+		links { "freetype-static" }
+	end
+	
 	links { "SOIL2-static",
 			"chipmunk-static",
 			"glew-static",
-			"haikuttf-static",
 			"libzip-static",
 			"stb_vorbis-static",
-			"jpeg-compressor-static"
+			"jpeg-compressor-static",
+			"zlib-static"
 	}
-	
-	if args_contains( "STATIC_FT2" ) or not os.findlib("freetype") then
-		links { "freetype-static", "z" }
-	end
 end
 
 function select_backend()
@@ -190,7 +214,11 @@ function build_eepp( build_name )
 	
 	configuration "windows"
 		files { "src/eepp/window/platform/win/*.cpp" }
-		linkoptions { "static-libgcc", "static-libstdc++", "mwindows" }
+		linkoptions { "mwindows" }
+		
+		if _ACTION == "gmake" then
+			linkoptions { "static-libgcc", "static-libstdc++" }
+		end
 	
 	configuration "linux"
 		files { "src/eepp/window/platform/x11/*.cpp" }
@@ -225,13 +253,19 @@ solution "eepp"
 		files { "src/eepp/helper/glew/*.c" }
 		includedirs { "include/eepp/helper/glew" }
 		build_base_configuration( "glew" )
+		
+	project "zlib-static"
+		kind "StaticLib"
+		language "C"
+		targetdir("libs/" .. os.get() .. "/helpers/")
+		files { "src/eepp/helper/zlib/*.c", "src/eepp/helper/libzip/*.c" }
+		build_base_configuration( "zlib" )
 
 	project "libzip-static"
 		kind "StaticLib"
 		language "C"
 		targetdir("libs/" .. os.get() .. "/helpers/")
-		targetdir("libs/" .. os.get() .. "/helpers/")
-		files { "src/eepp/helper/zlib/*.c", "src/eepp/helper/libzip/*.c" }
+		files { "src/eepp/helper/libzip/*.c" }
 		includedirs { "src/eepp/helper/zlib" }
 		build_base_configuration( "libzip" )
 
@@ -265,20 +299,14 @@ solution "eepp"
 		targetdir("libs/" .. os.get() .. "/helpers/")
 		files { "src/eepp/helper/haikuttf/*.cpp" }
 		includedirs { "src/eepp/helper/freetype2/include" }
-		build_base_configuration( "haikuttf" )
+		build_base_cpp_configuration( "haikuttf" )
 
 	project "jpeg-compressor-static"
 		kind "StaticLib"
 		language "C++"
 		targetdir("libs/" .. os.get() .. "/helpers/")
 		files { "src/eepp/helper/jpeg-compressor/*.cpp" }
-		build_base_configuration( "jpeg-compressor" )
-
-	project "eepp-shared"
-		kind "SharedLib"
-		language "C++"
-		targetdir("libs/" .. os.get() .. "/")
-		build_eepp( "eepp" )
+		build_base_cpp_configuration( "jpeg-compressor" )
 
 	project "eepp-static"
 		kind "StaticLib"
@@ -286,6 +314,12 @@ solution "eepp"
 		targetdir("libs/" .. os.get() .. "/")
 		build_eepp( "eepp-static" )
 	
+	project "eepp-shared"
+		kind "SharedLib"
+		language "C++"
+		targetdir("libs/" .. os.get() .. "/")
+		build_eepp( "eepp" )
+
 	project "eepp-test"
 		kind "ConsoleApp"
 		language "C++"
