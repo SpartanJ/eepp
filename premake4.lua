@@ -33,7 +33,7 @@ solution "eepp"
 	elseif os.is("windows") then
 		multiple_insert( os_links, { "OpenAL32", "opengl32", "mingw32", "glu32", "gdi32", "-static-libgcc -static-libstdc++ -mwindows" } )
 	elseif os.is("macosx") then
-		multiple_insert( os_links, { "-framework OpenGL -framework OpenAL -framework CoreFoundation -framework AGL" } )
+		multiple_insert( os_links, { "OpenGL.framework", "OpenAL.framework", "CoreFoundation.framework", "AGL.framework" } )
 	elseif os.is("freebsd") then
 		multiple_insert( os_links, { "rt", "pthread", "X11", "openal", "GL", "Xcursor" } )
 	elseif os.is("haiku") then
@@ -183,6 +183,24 @@ solution "eepp"
 			buildoptions{ "-Wall" }
 			targetname "haikuttf"
 
+	project "jpeg-compressor-static"
+		kind "StaticLib"
+		language "C++"
+		targetdir("libs/" .. os.get() .. "/helpers/")
+		files { "src/eepp/helper/jpeg-compressor/*.cpp" }
+		
+		configuration "debug"
+			defines { "DEBUG" }
+			flags { "Symbols" }
+			buildoptions{ "-Wall" }
+			targetname "jpeg-compressor-debug"
+
+		configuration "release"
+			defines { "NDEBUG" }
+			flags { "Optimize" }
+			buildoptions{ "-Wall" }
+			targetname "jpeg-compressor"
+
 	project "eepp-shared"
 		kind "SharedLib"
 		language "C++"
@@ -194,7 +212,8 @@ solution "eepp"
 				"haikuttf-static",
 				"zlib-static",
 				"libzip-static",
-				"stb_vorbis-static"
+				"stb_vorbis-static",
+				"jpeg-compressor-static"
 		}
 		
 		if os.is("windows") then
@@ -248,6 +267,8 @@ solution "eepp"
 		end
 
 		multiple_insert( link_list, os_links )
+
+		links { link_list }
 		
 		configuration "windows"
 			files { "src/eepp/window/platform/win/*.cpp" }

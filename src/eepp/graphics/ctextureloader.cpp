@@ -406,8 +406,10 @@ void cTextureLoader::LoadFromPixels() {
 
 			mPixels = NULL;
 
-		} else
-			cLog::instance()->Write( stbi_failure_reason() );
+		} else {
+			if ( NULL != stbi_failure_reason() )
+				cLog::instance()->Write( stbi_failure_reason() );
+		}
 
 		SetLoaded();
 	}
