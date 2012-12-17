@@ -1938,7 +1938,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 
 	eeDelete( Test );
 
-	EE::MemoryManager::LogResults();
+	EE::MemoryManager::ShowResults();
 
 	return 0;
 }

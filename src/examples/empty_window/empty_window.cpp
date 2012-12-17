@@ -46,7 +46,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	cEngine::DestroySingleton();
 
 	// If was compiled in debug mode it will print the memory manager report
-	EE::MemoryManager::LogResults();
+	EE::MemoryManager::ShowResults();
 
 	return 0;
 }

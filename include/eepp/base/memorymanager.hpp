@@ -31,7 +31,7 @@ class EE_API MemoryManager {
 
 		static bool RemovePointer( void * Data );
 
-		static void LogResults();
+		static void ShowResults();
 
 		template<class T>
 		static T* Delete( T * Data ) {

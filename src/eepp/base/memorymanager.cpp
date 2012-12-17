@@ -63,7 +63,7 @@ bool MemoryManager::RemovePointer( void * Data ) {
 	return true;
 }
 
-void MemoryManager::LogResults() {
+void MemoryManager::ShowResults() {
 	#ifdef EE_MEMORY_MANAGER
 
 	if ( EE::PrintDebugInLog ) {
