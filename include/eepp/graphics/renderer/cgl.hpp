@@ -192,7 +192,7 @@ class EE_API cGL {
 		void WriteExtension( Uint8 Pos, Uint32 BitWrite );
 };
 
-extern cGL * GLi;
+extern EE_API cGL * GLi;
 
 }}
 

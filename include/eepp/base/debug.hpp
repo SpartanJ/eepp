@@ -9,7 +9,7 @@ extern bool PrintDebugInLog;
 
 #ifdef EE_DEBUG
 
-void eeREPORT_ASSERT( const char * File, const int Line, const char * Exp );
+void EE_API eeREPORT_ASSERT( const char * File, const int Line, const char * Exp );
 
 #define eeASSERT( expr )		if ( !(expr) ) { eeREPORT_ASSERT( __FILE__, __LINE__, #expr	);	}
 #define eeASSERTM( expr, msg )	if ( !(expr) ) { eeREPORT_ASSERT( __FILE__, __LINE__, #msg	);	}

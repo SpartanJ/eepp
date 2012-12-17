@@ -21,7 +21,7 @@ class EE_API BlendMode {
 		static void SetMode( const EE_BLEND_MODE& blend, bool force = false );
 
 		/** @return The last used predefined blend func */
-		static const EE_BLEND_MODE& GetPreBlendFunc();
+		static EE_BLEND_MODE GetPreBlendFunc();
 	protected:
 		static EE_BLEND_MODE sLastBlend;
 };

@@ -60,8 +60,9 @@ void BlendMode::SetBlendFunc( const EE_BLEND_FUNC& SrcFactor, const EE_BLEND_FUN
 	sLastBlend = ALPHA_CUSTOM;
 }
 
-const EE_BLEND_MODE& BlendMode::GetPreBlendFunc() {
+EE_BLEND_MODE BlendMode::GetPreBlendFunc() {
 	return sLastBlend;
 }
 
 }}
+

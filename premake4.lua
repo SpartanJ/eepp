@@ -58,8 +58,13 @@ function build_link_configuration( package_name )
 	links { link_list }
 	
 	if package_name ~= "eepp" and package_name ~= "eepp-static" then
-		links { "eepp-static" }
-		add_static_links()
+		links { "eepp-shared" }
+		
+		if os.is("windows") then
+			linkoptions { "-mwindows" }
+		end
+		
+		--add_static_links()
 	end
 	
 	configuration "debug"
@@ -180,7 +185,7 @@ function select_backend()
 end
 
 function build_eepp( build_name )
-	includedirs { "include", "src", "src/eepp/helper/freetype2/include" }
+	includedirs { "include", "src", "src/eepp/helper/freetype2/include", "src/eepp/helper/zlib" }
 
 	add_static_links()
 
@@ -214,10 +219,10 @@ function build_eepp( build_name )
 	
 	configuration "windows"
 		files { "src/eepp/window/platform/win/*.cpp" }
-		linkoptions { "mwindows" }
+		linkoptions { "-mwindows" }
 		
 		if _ACTION == "gmake" then
-			linkoptions { "static-libgcc", "static-libstdc++" }
+			linkoptions { "-static-libgcc" } --, "-static-libstdc++"
 		end
 	
 	configuration "linux"
