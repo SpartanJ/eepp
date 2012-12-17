@@ -7,21 +7,13 @@ CP_NAMESPACE_BEGIN
 
 class CP_API Area {
 	public:
+		cpFloat ForCircle( cpFloat r1, cpFloat r2 );
 
-	inline static cpFloat ForCircle( cpFloat r1, cpFloat r2 ) {
-		return cpAreaForCircle( r1, r2 );
-	}
+		cpFloat ForSegment( cVect a, cVect b, cpFloat r );
 
-	inline static cpFloat ForSegment( cVect a, cVect b, cpFloat r ) {
-		return cpAreaForSegment( tocpv( a ), tocpv( b ), r );
-	}
-
-	inline static cpFloat ForPoly( const int numVerts, const cVect * verts ) {
-		return cpAreaForPoly( numVerts, constcasttocpv( verts ) );
-	}
+		cpFloat ForPoly( const int numVerts, const cVect * verts );
 };
 
 CP_NAMESPACE_END
 
 #endif
-

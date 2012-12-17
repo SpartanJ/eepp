@@ -570,3 +570,5 @@
 ../../include/eepp/window/windowcontext.hpp
 ../../include/eepp/version.hpp
 ../../src/eepp/base/version.cpp
+../../src/eepp/physics/moment.cpp
+../../src/eepp/physics/area.cpp
