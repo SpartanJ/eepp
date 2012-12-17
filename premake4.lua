@@ -84,10 +84,6 @@ function build_link_configuration( package_name )
 			links { "eepp-static" }
 			add_static_links()
 		end
-		
-		if os.is("windows") then
-			linkoptions { "-mwindows" }
-		end
 	end
 	
 	configuration "debug"
