@@ -19,17 +19,8 @@ backends = { }
 static_backends = { }
 backend_selected = false
 
-function table_contains( tb, element )
-	for _, value in pairs( tb ) do
-		if value == element then
-			return true
-		end
-	end
-	return false
-end
-
 function args_contains( element )
-	return table_contains( _ARGS, element )
+	return table.contains( _ARGS, element )
 end
 
 function print_table( table_ref )
@@ -42,6 +33,30 @@ function multiple_insert( parent_table, insert_table )
 	for _, value in pairs( insert_table ) do
 		table.insert( parent_table, value )
 	end
+end
+
+function os_findlib( name )
+	if os.is("macosx") then
+		local path = os.findlib( name .. ".framework" )
+		
+		if path then
+			return path
+		end
+	end
+	
+	return os.findlib( name )
+end
+
+function get_backend_link_name( name )
+	if os.is("macosx") then
+		local fname = name .. ".framework"
+		
+		if os.findlib( fname ) then -- Search for the framework
+			return fname
+		end
+	end
+	
+	return name
 end
 
 function build_base_configuration( package_name )
@@ -75,12 +90,13 @@ function build_base_cpp_configuration( package_name )
 end
 
 function build_link_configuration( package_name )
-	links { link_list }
+	includedirs { "include", "src" }
 	
 	if package_name ~= "eepp" and package_name ~= "eepp-static" then
 		if not _OPTIONS["with-eepp-static"] then
 			links { "eepp-shared" }
 		else
+			links { link_list }
 			links { "eepp-static" }
 			add_static_links()
 		end
@@ -150,7 +166,7 @@ function add_static_links()
 	
 	links { "haikuttf-static" }
 	
-	if _OPTIONS["with-static-freetype"] or not os.findlib("freetype") then
+	if _OPTIONS["with-static-freetype"] or not os_findlib("freetype") then
 		links { "freetype-static" }
 	end
 	
@@ -180,7 +196,7 @@ function add_sdl2()
 	defines { "EE_BACKEND_SDL_ACTIVE", "EE_SDL_VERSION_2" }
 	
 	if not can_add_static_backend("SDL2") then
-		table.insert( link_list, "SDL2" )
+		table.insert( link_list, get_backend_link_name( "SDL2" ) )
 	else
 		insert_static_backend( "SDL2" )
 	end
@@ -188,7 +204,7 @@ end
 
 function add_sdl()
 	--- SDL is LGPL. It can't be build as static library
-	table.insert( link_list, "SDL" )
+	table.insert( link_list, get_backend_link_name( "SDL" ) )
 	files { "src/eepp/window/backend/SDL/*.cpp" }
 	defines { "EE_BACKEND_SDL_ACTIVE", "EE_SDL_VERSION_1_2" }
 end
@@ -198,7 +214,7 @@ function add_allegro5()
 	defines { "EE_BACKEND_ALLEGRO_ACTIVE" }
 	
 	if not can_add_static_backend("allegro5") then
-		table.insert( link_list, "allegro5" )
+		table.insert( link_list, get_backend_link_name( "allegro5" ) )
 	else
 		insert_static_backend( "allegro5" )
 	end
@@ -209,7 +225,7 @@ function add_sfml()
 	defines { "EE_BACKEND_SFML_ACTIVE" }
 	
 	if not can_add_static_backend("SFML") then
-		table.insert( link_list, "SFML" )
+		table.insert( link_list, get_backend_link_name( "SFML" ) )
 	else
 		insert_static_backend( "SFML" )
 	end
@@ -224,9 +240,9 @@ function backend_is( name )
 		backends = string.explode(_OPTIONS["with-backend"],",")
 	end
 	
-	local backend_sel = table_contains( backends, name )
+	local backend_sel = table.contains( backends, name )
 	
-	local ret_val = os.findlib( name ) and backend_sel
+	local ret_val = os_findlib( name ) and backend_sel
 	
 	if ret_val then
 		backend_selected = true
@@ -254,13 +270,13 @@ function select_backend()
 	
 	-- If the selected backend is not present, try to find one present
 	if not backend_selected then
-		if os.findlib("SDL") then
+		if os_findlib("SDL") then
 			add_sdl()
-		elseif os.findlib("SDL2") then
+		elseif os_findlib("SDL2") then
 			add_sdl2()
-		elseif os.findlib("allegro5") then
+		elseif os_findlib("allegro5") then
 			add_allegro5()
-		elseif os.findlib("SFML") then
+		elseif os_findlib("SFML") then
 			add_sfml()
 		end
 	end
@@ -295,8 +311,8 @@ function build_eepp( build_name )
 	
 	select_backend()
 	
-	if not _OPTIONS["with-static-freetype"] and os.findlib("freetype") then
-		table.insert( link_list, "freetype" )
+	if not _OPTIONS["with-static-freetype"] and os_findlib("freetype") then
+		table.insert( link_list, get_backend_link_name( "freetype" ) )
 	end
 	
 	if _OPTIONS["with-libsndfile"] then
@@ -425,19 +441,16 @@ solution "eepp"
 		kind "WindowedApp"
 		language "C++"
 		files { "src/test/*.cpp" }
-		includedirs { "include", "src" }
 		build_link_configuration( "eetest" )
 
 	project "eepp-es"
 		kind "WindowedApp"
 		language "C++"
 		files { "src/examples/external_shader/*.cpp" }
-		includedirs { "include", "src" }
 		build_link_configuration( "eees" )
 
 	project "eepp-ew"
 		kind "WindowedApp"
 		language "C++"
 		files { "src/examples/empty_window/*.cpp" }
-		includedirs { "include", "src" }
 		build_link_configuration( "eeew" )
