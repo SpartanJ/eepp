@@ -1,6 +1,6 @@
 newoption { trigger = "with-libsndfile", description = "Build with libsndfile support." }
 newoption { trigger = "with-static-freetype", description = "Build freetype as a static library." }
-newoption { trigger = "with-eepp-static", description = "Force to build the demos and tests with eepp compiled statically" }
+newoption { trigger = "with-static-eepp", description = "Force to build the demos and tests with eepp compiled statically" }
 newoption { trigger = "with-static-backend", description = "It will try to compile the library with a static backend (only for gcc and mingw).\n\t\t\t\tThe backend should be placed in libs/your_platform/libYourBackend.a" }
 newoption { trigger = "with-gles2", description = "Compile with GLES2 support" }
 newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
@@ -95,7 +95,7 @@ function build_link_configuration( package_name )
 	includedirs { "include", "src" }
 	
 	if package_name ~= "eepp" and package_name ~= "eepp-static" then
-		if not _OPTIONS["with-eepp-static"] then
+		if not _OPTIONS["with-static-eepp"] then
 			links { "eepp-shared" }
 		else
 			links { "eepp-static" }
@@ -106,6 +106,7 @@ function build_link_configuration( package_name )
 	
 	configuration "windows"
 		if _ACTION == "gmake" then
+			links { "mingw32" }
 			linkoptions { "-static-libgcc", "-static-libstdc++" }
 		end
 	
@@ -137,10 +138,6 @@ function generate_os_links()
 		multiple_insert( os_links, { "rt", "pthread", "X11", "openal", "GL", "Xcursor" } )
 	elseif os.is("windows") then
 		multiple_insert( os_links, { "OpenAL32", "opengl32", "glu32", "gdi32" } )
-		
-		if ( _ACTION == "gmake" ) then
-			table.insert( os_links, "mingw32" )
-		end
 	elseif os.is("macosx") then
 		multiple_insert( os_links, { "OpenGL.framework", "OpenAL.framework", "CoreFoundation.framework", "AGL.framework" } )
 	elseif os.is("freebsd") then
@@ -285,6 +282,8 @@ function select_backend()
 			add_allegro5()
 		elseif os_findlib("SFML") then
 			add_sfml()
+		else
+			print("ERROR: Couldnt find any backend")
 		end
 	end
 end
@@ -340,6 +339,7 @@ function build_eepp( build_name )
 		files { "src/eepp/window/platform/win/*.cpp" }
 
 		if _ACTION == "gmake" then
+			links { "mingw32" }
 			linkoptions { "-static-libgcc", "-static-libstdc++" }
 		end
 	

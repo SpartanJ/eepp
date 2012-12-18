@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by Qt Creator 2.6.0, 2012-12-18T00:53:44. -->
+<!-- Written by Qt Creator 2.6.0, 2012-12-18T02:36:22. -->
 <qtcreator>
  <data>
   <variable>ProjectExplorer.Project.ActiveTarget</variable>
@@ -275,7 +275,7 @@
     <value type="bool" key="ProjectExplorer.BuildConfiguration.ClearSystemEnvironment">false</value>
     <valuelist type="QVariantList" key="ProjectExplorer.BuildConfiguration.UserEnvironmentChanges"/>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.DefaultDisplayName">debug-test</value>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">debig-win-all</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">debug-win-all</value>
     <value type="QByteArray" key="ProjectExplorer.ProjectConfiguration.Id">GenericProjectManager.GenericBuildConfiguration</value>
    </valuemap>
    <valuemap type="QVariantMap" key="ProjectExplorer.Target.BuildConfiguration.13">

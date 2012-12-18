@@ -572,3 +572,4 @@
 ../../src/eepp/base/version.cpp
 ../../src/eepp/physics/moment.cpp
 ../../src/eepp/physics/area.cpp
+../../premake4.lua
