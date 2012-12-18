@@ -96,11 +96,16 @@ function build_link_configuration( package_name )
 		if not _OPTIONS["with-eepp-static"] then
 			links { "eepp-shared" }
 		else
-			links { link_list }
 			links { "eepp-static" }
 			add_static_links()
+			links { link_list }
 		end
 	end
+	
+	configuration "windows"
+		if _ACTION == "gmake" then
+			linkoptions { "-static-libgcc", "-static-libstdc++" }
+		end
 	
 	configuration "debug"
 		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
@@ -331,10 +336,9 @@ function build_eepp( build_name )
 	
 	configuration "windows"
 		files { "src/eepp/window/platform/win/*.cpp" }
-		linkoptions { "-mwindows" }
-		
+
 		if _ACTION == "gmake" then
-			linkoptions { "-static-libgcc" } --, "-static-libstdc++" -- this should work, but it's not working with my mingw installation
+			linkoptions { "-static-libgcc", "-static-libstdc++" }
 		end
 	
 	configuration "linux"
