@@ -2,6 +2,8 @@ newoption { trigger = "with-libsndfile", description = "Build with libsndfile su
 newoption { trigger = "with-static-freetype", description = "Build freetype as a static library." }
 newoption { trigger = "with-eepp-static", description = "Force to build the demos and tests with eepp compiled statically" }
 newoption { trigger = "with-static-backend", description = "It will try to compile the library with a static backend (only for gcc and mingw).\n\t\t\t\tThe backend should be placed in libs/your_platform/libYourBackend.a" }
+newoption { trigger = "with-gles2", description = "Compile with GLES2 support" }
+newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
 newoption { 
 	trigger = "with-backend", 
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.\n\t\t\tIt's possible to build with more than one backend support.\n\t\t\t\tUse comma to separate the backends to build ( you can't mix SDL and SDL2, you'll get random crashes ).\n\t\t\t\tExample: --with-backend=SDL2,SFML2",
@@ -149,11 +151,11 @@ function generate_os_links()
 end
 
 function parse_args()
-	if args_contains( "GLES2" ) then
+	if _OPTIONS["with-gles2"] then
 		defines { "EE_GLES2", "SOIL_GLES2" }
 	end
 	
-	if args_contains( "GLES1" ) then
+	if _OPTIONS["with-gles1"] then
 		defines { "EE_GLES1", "SOIL_GLES1" }
 	end	
 end
@@ -354,7 +356,7 @@ solution "eepp"
 	location("./make/" .. os.get() .. "/")
 	targetdir("./")
 	configurations { "debug", "release" }
-	objdir("obj/" .. os.get() .. "/premake4/")
+	objdir("obj/" .. os.get() .. "/")
 
 	generate_os_links()
 	parse_args()
