@@ -1,3 +1,80 @@
+function newplatform(plf)
+    local name = plf.name
+    local description = plf.description
+ 
+    -- Register new platform
+    premake.platforms[name] = {
+        cfgsuffix = "_"..name,
+        iscrosscompiler = true
+    }
+ 
+    -- Allow use of new platform in --platfroms
+    table.insert(premake.option.list["platform"].allowed, { name, description })
+    table.insert(premake.fields.platforms.allowed, name)
+ 
+    -- Add compiler support
+    premake.gcc.platforms[name] = plf.gcc
+end
+
+function newgcctoolchain(toolchain)
+    newplatform {
+        name = toolchain.name,
+        description = toolchain.description,
+        gcc = {
+            cc = toolchain.prefix .. "gcc",
+            cxx = toolchain.prefix .. "g++",
+            ar = toolchain.prefix .. "ar",
+            cppflags = "-MMD " .. toolchain.cppflags
+        }
+    }
+end
+
+newplatform {
+	name = "clang",
+	description = "Clang",
+	gcc = {
+		cc = "clang",
+		cxx = "clang++",
+		ar = "ar",
+		cppflags = "-MMD "
+	}
+}
+
+newgcctoolchain {
+    name = "mingw32",
+    description = "Mingw32 to cross-compile windows binaries from *nix",
+    prefix = "i686-w64-mingw32-",
+    cppflags = ""
+}
+
+--[[
+newgcctoolchain {
+	name ="android-arm7",
+	description = "Android ARMv7 (not implemented)",
+	prefix = iif( os.getenv("ANDROID_NDK"), os.getenv("ANDROID_NDK"), "" ) .. "arm-linux-androideabi-",
+	cppflags = "-arch=armv7 -march=armv7 -marm -mcpu=cortex-a8"
+}
+
+newgcctoolchain {
+	name ="ios-arm7",
+	description = "iOS ARMv7 (not implemented)",
+	prefix = iif( os.getenv("IOS_TOOLCHAINPATH"), os.getenv("IOS_TOOLCHAINPATH"), "" ),
+	cppflags = "-arch=armv7 -march=armv7 -marm -mcpu=cortex-a8"
+}
+
+newgcctoolchain {
+	name ="ios-x86",
+	description = "iOS x86 (not implemented)",
+	prefix = iif( os.getenv("IOS_TOOLCHAINPATH"), os.getenv("IOS_TOOLCHAINPATH"), "" ),
+	cppflags = "-m32 -march=i386"
+}
+--]]
+
+if _OPTIONS.platform then
+	-- overwrite the native platform with the options::platform
+	premake.gcc.platforms['Native'] = premake.gcc.platforms[_OPTIONS.platform]
+end
+
 newoption { trigger = "with-libsndfile", description = "Build with libsndfile support." }
 newoption { trigger = "with-static-freetype", description = "Build freetype as a static library." }
 newoption { trigger = "with-static-eepp", description = "Force to build the demos and tests with eepp compiled statically" }
@@ -15,20 +92,22 @@ newoption {
 	}
 }
 
-link_list = { }
-os_links = { }
-backends = { }
-static_backends = { }
-backend_selected = false
+function os.get_real()
+	if _OPTIONS.platform == "mingw32" or _OPTIONS.platform == "android-arm7" then
+		return _OPTIONS.platform
+	end
 
-function args_contains( element )
-	return table.contains( _ARGS, element )
+	return os.get()
 end
 
 function print_table( table_ref )
 	for _, value in pairs( table_ref ) do
 		print(value)
 	end
+end
+
+function args_contains( element )
+	return table.contains( _ARGS, element )
 end
 
 function multiple_insert( parent_table, insert_table )
@@ -61,6 +140,12 @@ function get_backend_link_name( name )
 	return name
 end
 
+link_list = { }
+os_links = { }
+backends = { }
+static_backends = { }
+backend_selected = false
+
 function build_base_configuration( package_name )
 	includedirs { "src/eepp/helper/zlib" }
 	
@@ -91,6 +176,15 @@ function build_base_cpp_configuration( package_name )
 		targetname ( package_name )
 end
 
+function add_cross_config_links()
+	if _ACTION == "gmake" then
+		if _OPTIONS.platform == "mingw32" then -- if is crosscompiling from *nix
+			links { "mingw32" }
+			linkoptions { "-static-libgcc", "-static-libstdc++" }
+		end
+	end
+end
+
 function build_link_configuration( package_name )
 	includedirs { "include", "src" }
 	
@@ -105,10 +199,7 @@ function build_link_configuration( package_name )
 	end
 	
 	configuration "windows"
-		if _ACTION == "gmake" then
-			links { "mingw32" }
-			linkoptions { "-static-libgcc", "-static-libstdc++" }
-		end
+		add_cross_config_links()
 	
 	configuration "debug"
 		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
@@ -186,13 +277,13 @@ end
 
 function can_add_static_backend( name )
 	if _OPTIONS["with-static-backend"] then
-		local path = "libs/linux/lib" .. name .. ".a"
+		local path = "libs/" .. os.get_real() .. "/lib" .. name .. ".a"
 		return os.isfile(path)
 	end
 end
 
 function insert_static_backend( name )
-	table.insert( static_backends, path.getrelative( "libs/" .. os.get(), "./" ) .. "/libs/linux/lib" .. name .. ".a" )
+	table.insert( static_backends, path.getrelative( "libs/" .. os.get_real(), "./" ) .. name .. ".a" )
 end
 
 function add_sdl2()
@@ -283,7 +374,8 @@ function select_backend()
 		elseif os_findlib("SFML") then
 			add_sfml()
 		else
-			print("ERROR: Couldnt find any backend")
+			print("ERROR: Couldnt find any backend. Forced SDL.")
+			add_sdl()
 		end
 	end
 end
@@ -337,11 +429,7 @@ function build_eepp( build_name )
 	
 	configuration "windows"
 		files { "src/eepp/window/platform/win/*.cpp" }
-
-		if _ACTION == "gmake" then
-			links { "mingw32" }
-			linkoptions { "-static-libgcc", "-static-libstdc++" }
-		end
+		add_cross_config_links()
 	
 	configuration "linux"
 		files { "src/eepp/window/platform/x11/*.cpp" }
@@ -353,10 +441,10 @@ function build_eepp( build_name )
 end
 
 solution "eepp"
-	location("./make/" .. os.get() .. "/")
+	location("./make/" .. os.get_real() .. "/")
 	targetdir("./")
 	configurations { "debug", "release" }
-	objdir("obj/" .. os.get() .. "/")
+	objdir("obj/" .. os.get_real() .. "/")
 
 	generate_os_links()
 	parse_args()
@@ -364,7 +452,7 @@ solution "eepp"
 	project "SOIL2-static"
 		kind "StaticLib"
 		language "C"
-		targetdir("libs/" .. os.get() .. "/helpers/")
+		targetdir("libs/" .. os.get_real() .. "/helpers/")
 		files { "src/eepp/helper/SOIL2/src/SOIL2/*.c" }
 		includedirs { "include/eepp/helper/SOIL2" }
 		build_base_configuration( "SOIL2" )
@@ -372,7 +460,7 @@ solution "eepp"
 	project "glew-static"
 		kind "StaticLib"
 		language "C"
-		targetdir("libs/" .. os.get() .. "/helpers/")
+		targetdir("libs/" .. os.get_real() .. "/helpers/")
 		files { "src/eepp/helper/glew/*.c" }
 		includedirs { "include/eepp/helper/glew" }
 		build_base_configuration( "glew" )
@@ -380,14 +468,14 @@ solution "eepp"
 	project "zlib-static"
 		kind "StaticLib"
 		language "C"
-		targetdir("libs/" .. os.get() .. "/helpers/")
+		targetdir("libs/" .. os.get_real() .. "/helpers/")
 		files { "src/eepp/helper/zlib/*.c", "src/eepp/helper/libzip/*.c" }
 		build_base_configuration( "zlib" )
 
 	project "libzip-static"
 		kind "StaticLib"
 		language "C"
-		targetdir("libs/" .. os.get() .. "/helpers/")
+		targetdir("libs/" .. os.get_real() .. "/helpers/")
 		files { "src/eepp/helper/libzip/*.c" }
 		includedirs { "src/eepp/helper/zlib" }
 		build_base_configuration( "libzip" )
@@ -395,7 +483,7 @@ solution "eepp"
 	project "freetype-static"
 		kind "StaticLib"
 		language "C"
-		targetdir("libs/" .. os.get() .. "/helpers/")
+		targetdir("libs/" .. os.get_real() .. "/helpers/")
 		defines { "FT2_BUILD_LIBRARY" }
 		files { "src/eepp/helper/freetype2/src/**.c" }
 		includedirs { "src/eepp/helper/freetype2/include" }
@@ -404,14 +492,14 @@ solution "eepp"
 	project "stb_vorbis-static"
 		kind "StaticLib"
 		language "C"
-		targetdir("libs/" .. os.get() .. "/helpers/")
+		targetdir("libs/" .. os.get_real() .. "/helpers/")
 		files { "src/eepp/helper/stb_vorbis/*.c" }
 		build_base_configuration( "stb_vorbis" )
 		
 	project "chipmunk-static"
 		kind "StaticLib"
 		language "C"
-		targetdir("libs/" .. os.get() .. "/helpers/")
+		targetdir("libs/" .. os.get_real() .. "/helpers/")
 		files { "src/eepp/helper/chipmunk/*.c", "src/eepp/helper/chipmunk/constraints/*.c" }
 		includedirs { "include/eepp/helper/chipmunk" }
 		build_base_configuration( "chipmunk" )
@@ -419,7 +507,7 @@ solution "eepp"
 	project "haikuttf-static"
 		kind "StaticLib"
 		language "C++"
-		targetdir("libs/" .. os.get() .. "/helpers/")
+		targetdir("libs/" .. os.get_real() .. "/helpers/")
 		files { "src/eepp/helper/haikuttf/*.cpp" }
 		includedirs { "src/eepp/helper/freetype2/include" }
 		build_base_cpp_configuration( "haikuttf" )
@@ -427,20 +515,20 @@ solution "eepp"
 	project "jpeg-compressor-static"
 		kind "StaticLib"
 		language "C++"
-		targetdir("libs/" .. os.get() .. "/helpers/")
+		targetdir("libs/" .. os.get_real() .. "/helpers/")
 		files { "src/eepp/helper/jpeg-compressor/*.cpp" }
 		build_base_cpp_configuration( "jpeg-compressor" )
 
 	project "eepp-static"
 		kind "StaticLib"
 		language "C++"
-		targetdir("libs/" .. os.get() .. "/")
+		targetdir("libs/" .. os.get_real() .. "/")
 		build_eepp( "eepp-static" )
 	
 	project "eepp-shared"
 		kind "SharedLib"
 		language "C++"
-		targetdir("libs/" .. os.get() .. "/")
+		targetdir("libs/" .. os.get_real() .. "/")
 		build_eepp( "eepp" )
 
 	project "eepp-test"

@@ -1,4 +1,5 @@
 #!/bin/sh
 cd $(dirname "$0")
-cd ../../make/windows/
-make -e CC=i686-w64-mingw32-gcc CXX=i686-w64-mingw32-g++ AR=i686-w64-mingw32-ar $@ 
+cd ../../make/mingw32/
+premake4 --file=../../premake4.lua --os=windows --platform=mingw32 --with-static-eepp --with-static-freetype gmake
+time make $@
