@@ -31,7 +31,7 @@
 	@TODO Add PVRTC and ETC support.
 	@TODO Add Networking support ( may be just use SFML Network, i don't want to reinvent the wheel ).
 	@TODO Support UI Theming from scripts or XML.
-	@TODO Add Scripting support ( squirrel or angel script or lua ), at least some parts of the engine. Binding everthing seems too much work.
+	@TODO Add Scripting support ( squirrel or angel script or lua ), at least some parts of the engine. Binding everything seems too much work.
 	@TODO Check for endianness problems, and make EEPP endianness agnostic ( binary maps and texture fonts ). Not a priority, all the eepp target os use little endian.
 */
 

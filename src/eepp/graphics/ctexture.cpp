@@ -408,7 +408,7 @@ bool cTexture::Grabed() const {
 	return 0 != ( mFlags & TEX_FLAG_GRABED );
 }
 
-bool cTexture::Compressed() const {
+bool cTexture::IsCompressed() const {
 	return 0 != ( mFlags & TEX_FLAG_COMPRESSED );
 }
 

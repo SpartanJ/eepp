@@ -25,10 +25,14 @@ void eeREPORT_ASSERT( const char * File, int Line, const char * Exp ) {
 
 	#else
 
-	printf( "ASSERT: %s file:%s line:%d", Exp, File, Line );
-
-	if ( PrintDebugInLog )
+	if ( PrintDebugInLog ) {
 		cLog::instance()->Writef( "ASSERT: %s file:%s line:%d", Exp, File, Line );
+
+		if ( !cLog::instance()->ConsoleOutput() )
+			printf( "ASSERT: %s file:%s line:%d", Exp, File, Line );
+	} else {
+		printf( "ASSERT: %s file:%s line:%d", Exp, File, Line );
+	}
 
 	#if defined(EE_COMPILER_GCC) && defined(EE_32BIT) && !defined(EE_ARM)
 	asm("int3");

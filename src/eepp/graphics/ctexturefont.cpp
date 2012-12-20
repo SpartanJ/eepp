@@ -48,7 +48,7 @@ bool cTextureFont::Load( const Uint32& TexId, const eeUint& StartChar, const eeU
 		return true;
 	}
 
-	cLog::instance()->Write( "Failed to load Texture Font " );
+	cLog::instance()->Write( "Failed to load Texture Font: unknown texture." );
 
 	return false;
 }

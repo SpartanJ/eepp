@@ -283,21 +283,25 @@ eeUint cTextureFactory::GetTexMemSize( const eeUint& TexId ) {
 		cTexture* Tex = mTextures[ TexId ];
 
 		if ( Tex != NULL ) {
-			eeUint w = Tex->Width();
-			eeUint h = Tex->Height();
-			eeUint c = Tex->Channels();
+			if ( !Tex->IsCompressed() ) {
+				eeUint w = Tex->Width();
+				eeUint h = Tex->Height();
+				eeUint c = Tex->Channels();
 
-			if ( 0 != Tex->Size() )
-				Size = Tex->Size();
-			else
-				Size = ( w * h * c );
+				if ( 0 != Tex->Size() )
+					Size = Tex->Size();
+				else
+					Size = ( w * h * c );
 
-			if( Tex->Mipmap() ) {
-				while( w > 2 && h > 2 ) {
-					w>>=1;
-					h>>=1;
-					Size += ( w * h * c );
+				if( Tex->Mipmap() ) {
+					while( w > 2 && h > 2 ) {
+						w>>=1;
+						h>>=1;
+						Size += ( w * h * c );
+					}
 				}
+			} else {
+				Size = Tex->Size();
 			}
 		}
 

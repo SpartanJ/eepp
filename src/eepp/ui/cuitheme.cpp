@@ -127,6 +127,8 @@ void cUITheme::AddThemeIcon( const std::string& Icon ) {
 }
 
 cUITheme * cUITheme::LoadFromTextureAtlas( cUITheme * tTheme, cTextureAtlas * TextureAtlas ) {
+	eeASSERT( NULL != tTheme && NULL != TextureAtlas );
+
 	cTimeElapsed TE;
 
 	LoadThemeElements();

@@ -58,14 +58,14 @@ newgcctoolchain {
 newgcctoolchain {
 	name ="ios-arm7",
 	description = "iOS ARMv7 (not implemented)",
-	prefix = iif( os.getenv("IOS_TOOLCHAINPATH"), os.getenv("IOS_TOOLCHAINPATH"), "" ),
+	prefix = iif( os.getenv("TOOLCHAINPATH"), os.getenv("TOOLCHAINPATH"), "" ),
 	cppflags = "-arch=armv7 -march=armv7 -marm -mcpu=cortex-a8"
 }
 
 newgcctoolchain {
 	name ="ios-x86",
 	description = "iOS x86 (not implemented)",
-	prefix = iif( os.getenv("IOS_TOOLCHAINPATH"), os.getenv("IOS_TOOLCHAINPATH"), "" ),
+	prefix = iif( os.getenv("TOOLCHAINPATH"), os.getenv("TOOLCHAINPATH"), "" ),
 	cppflags = "-m32 -march=i386"
 }
 --]]
@@ -93,7 +93,7 @@ newoption {
 }
 
 function os.get_real()
-	if _OPTIONS.platform == "mingw32" or _OPTIONS.platform == "android-arm7" then
+	if _OPTIONS.platform == "mingw32" or _OPTIONS.platform == "android-arm7" or _OPTIONS.platform == "ios-arm7" or _OPTIONS.platform == "ios-x86" then
 		return _OPTIONS.platform
 	end
 
@@ -198,9 +198,6 @@ function build_link_configuration( package_name )
 		end
 	end
 	
-	configuration "windows"
-		add_cross_config_links()
-	
 	configuration "debug"
 		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
 		
@@ -222,6 +219,11 @@ function build_link_configuration( package_name )
 		flags { "Optimize" }
 		buildoptions { "-fno-strict-aliasing -O3 -s -ffast-math" }
 		targetname ( package_name )
+		
+	configuration "windows"
+		add_cross_config_links()
+	
+	set_ios_config()
 end
 
 function generate_os_links()
@@ -283,7 +285,7 @@ function can_add_static_backend( name )
 end
 
 function insert_static_backend( name )
-	table.insert( static_backends, path.getrelative( "libs/" .. os.get_real(), "./" ) .. name .. ".a" )
+	table.insert( static_backends, path.getrelative( "libs/" .. os.get_real(), "./" ) .. "/libs/" .. os.get_real() .. "/lib" .. name .. ".a" )
 end
 
 function add_sdl2()
@@ -324,6 +326,45 @@ function add_sfml()
 	else
 		insert_static_backend( "SFML" )
 	end
+end
+
+function set_ios_config()
+	if _OPTIONS.platform == "ios-arm" or _OPTIONS.platform == "ios-x86" then
+		local err = false
+		
+		if nil == os.getenv("TOOLCHAINPATH") then
+			print("You must set TOOLCHAINPATH enviroment variable.")
+			print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/")
+			err = true
+		end
+		
+		if nil == os.getenv("SYSROOTPATH") then
+			print("You must set SYSROOTPATH enviroment variable.")
+			print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS5.0.sdk")
+			err = true
+		end
+
+		if nil == os.getenv("IOSVERSION") then
+			print("You must set IOSVERSION enviroment variable.")
+			print("\tExample: 5.0")
+			err = true
+		end
+		
+		if err then
+			os.exit(1)
+		end
+
+		local sysroot_path = os.getenv("SYSROOTPATH")
+		local framework_path = sysroot_path .. "/System/Library/Frameworks"
+		local framework_libs_path = framework_path .. "/usr/lib"
+		local sysroot_ver = "-miphoneos-version-min=" .. os.getenv("IOSVERSION") .. " -isysroot " .. sysroot_path
+
+		configuration { "ios-arm", "ios-x86" }
+			buildoptions { sysroot_ver .. "-I" .. sysroot_path .. "/usr/include" }
+			linkoptions { sysroot_ver }
+			libdirs { framework_libs_path }
+			linkoptions { "-F" .. framework_path .. " -L" .. framework_libs_path .. " -isysroot " .. sysroot_path }
+   end
 end
 
 function backend_is( name )
@@ -427,6 +468,8 @@ function build_eepp( build_name )
 
 	links { link_list }
 	
+	build_link_configuration( build_name )
+	
 	configuration "windows"
 		files { "src/eepp/window/platform/win/*.cpp" }
 		add_cross_config_links()
@@ -437,7 +480,7 @@ function build_eepp( build_name )
 	configuration "macosx"
 		files { "src/eepp/window/platform/osx/*.cpp" }
 	
-	build_link_configuration( build_name )
+	set_ios_config()
 end
 
 solution "eepp"

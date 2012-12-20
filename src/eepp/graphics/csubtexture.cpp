@@ -28,9 +28,9 @@ cSubTexture::cSubTexture( const Uint32& TexId, const std::string& Name ) :
 	mId( String::Hash( mName ) ),
 	mTexId( TexId ),
 	mTexture( cTextureFactory::instance()->GetTexture( TexId ) ),
-	mSrcRect( eeRecti( 0, 0, mTexture->Width(), mTexture->Height() ) ),
-	mDestWidth( (eeFloat)mTexture->Width() ),
-	mDestHeight( (eeFloat)mTexture->Height() ),
+	mSrcRect( eeRecti( 0, 0, NULL != mTexture ? mTexture->Width() : 0, NULL != mTexture ? mTexture->Height() : 0 ) ),
+	mDestWidth( (eeFloat)mSrcRect.Size().Width() ),
+	mDestHeight( (eeFloat)mSrcRect.Size().Height() ),
 	mOffsetX(0),
 	mOffsetY(0)
 {

@@ -9,7 +9,7 @@ cCursor::cCursor( cTexture * tex, const eeVector2i& hotspot, const std::string& 
 	mHotSpot( hotspot ),
 	mWindow( window )
 {
-	if ( tex->Lock() ) {
+	if ( NULL != tex && tex->Lock() ) {
 		mImage = eeNew( cImage, ( tex->GetPixelsPtr(), tex->Width(), tex->Height(), tex->Channels() ) );
 
 		tex->Unlock();

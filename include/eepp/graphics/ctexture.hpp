@@ -99,7 +99,7 @@ class EE_API cTexture : public cImage {
 		EE_TEX_FILTER Filter() const { return mFilter; }
 
 		/** @return If the texture was compressed on load (DXT compression) */
-		bool Compressed() const;
+		bool IsCompressed() const;
 
 		/** Render the texture on screen ( with less internal mess, a little bit faster way )
 		* @param x The x position on screen

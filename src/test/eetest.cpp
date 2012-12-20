@@ -839,13 +839,16 @@ void cEETest::LoadTextures() {
 	cTextureAtlasLoader tgl( PAK, "tiles.etg" );
 	cTextureAtlas * SG = cTextureAtlasManager::instance()->GetByName( "tiles" );
 
-	for ( i = 0; i < 6; i++ ) {
-		Tiles[i] = SG->GetByName( String::ToStr( i+1 ) );
-	}
+	if ( NULL != SG ) {
+		for ( i = 0; i < 6; i++ ) {
+			Tiles[i] = SG->GetByName( String::ToStr( i+1 ) );
+		}
 
-	Tiles[6] = SG->Add( TF->LoadFromPack( PAK, "objects/1.png" ), "7" );
-	Tiles[7] = SG->Add( TF->LoadFromPack( PAK, "objects/2.png" ), "8" );
-	Tiles[7]->GetTexture()->CreateMaskFromColor( eeColorA(0,0,0,255), 0 );
+		Tiles[6] = SG->Add( TF->LoadFromPack( PAK, "objects/1.png" ), "7" );
+		Tiles[7] = SG->Add( TF->LoadFromPack( PAK, "objects/2.png" ), "8" );
+
+		Tiles[7]->GetTexture()->CreateMaskFromColor( eeColorA(0,0,0,255), 0 );
+	}
 
 	eeInt w, h;
 
@@ -864,7 +867,7 @@ void cEETest::LoadTextures() {
 
 	cTexture * Tex = TF->GetTexture( TN[2] );
 
-	if ( Tex->Lock() ) {
+	if ( NULL != Tex && Tex->Lock() ) {
 		w = (eeInt)Tex->Width();
 		h = (eeInt)Tex->Height();
 

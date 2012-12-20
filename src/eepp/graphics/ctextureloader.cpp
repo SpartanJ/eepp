@@ -407,8 +407,15 @@ void cTextureLoader::LoadFromPixels() {
 			mPixels = NULL;
 
 		} else {
-			if ( NULL != stbi_failure_reason() )
+			if ( NULL != stbi_failure_reason() ) {
 				cLog::instance()->Write( stbi_failure_reason() );
+			} else {
+				std::string failText( "Texture " + mFilepath + " failed to load" );
+
+				failText += ( NULL != mPack ) ? ( " from Pack " + mPack->GetPackPath() + "." ) : ".";
+
+				cLog::instance()->Write( failText );
+			}
 		}
 
 		SetLoaded();
