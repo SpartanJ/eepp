@@ -48,6 +48,11 @@ bool cImage::GetInfo( const std::string& path, int * width, int * height, int * 
 	return stbi_info( path.c_str(), width, height, channels ) != 0;
 }
 
+bool cImage::IsImage( const std::string& path ) {
+	int w, h, c;
+	return GetInfo( path, &w, &h, &c );
+}
+
 std::string cImage::GetLastFailureReason()
 {
 	return std::string( stbi_failure_reason() );
@@ -124,7 +129,13 @@ cImage::cImage( std::string Path ) :
 	} else if ( cPackManager::instance()->FallbackToPacks() && NULL != ( tPack = cPackManager::instance()->Exists( Path ) ) ) {
 		LoadFromPack( tPack, Path );
 	} else {
-		cLog::instance()->Write( "Failed to load image, reason: " + std::string( stbi_failure_reason() ) );
+		std::string reason = ".";
+
+		if ( NULL != stbi_failure_reason() ) {
+			reason = ", reason: " + std::string( stbi_failure_reason() );
+		}
+
+		cLog::instance()->Write( "Failed to load image" + reason );
 	}
 }
 

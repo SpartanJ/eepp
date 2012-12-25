@@ -47,7 +47,6 @@ newgcctoolchain {
     cppflags = ""
 }
 
---[[
 newgcctoolchain {
 	name ="android-arm7",
 	description = "Android ARMv7 (not implemented)",
@@ -55,11 +54,29 @@ newgcctoolchain {
 	cppflags = "-arch=armv7 -march=armv7 -marm -mcpu=cortex-a8"
 }
 
+toolchain_path = os.getenv("TOOLCHAINPATH")
+
+if not toolchain_path then
+	toolchain_path = ""
+end
+
+-- cross compiling from linux, totally experimental, using: http://code.google.com/p/ios-toolchain-based-on-clang-for-linux/
+newplatform {
+	name = "ios-cross-arm7",
+	description = "iOS ARMv7 (not implemented)",
+	gcc = {
+		cc = iif( toolchain_path, toolchain_path .. "ios-clang", "clang" ),
+		cxx = iif( toolchain_path, toolchain_path .. "ios-clang++", "clang++" ),
+		ar = iif( toolchain_path, "ar", "ar" ),
+		cppflags = "-MMD"
+	}
+}
+
 newgcctoolchain {
 	name ="ios-arm7",
 	description = "iOS ARMv7 (not implemented)",
 	prefix = iif( os.getenv("TOOLCHAINPATH"), os.getenv("TOOLCHAINPATH"), "" ),
-	cppflags = "-arch=armv7 -march=armv7 -marm -mcpu=cortex-a8"
+	cppflags = "-MMD -arch=armv7 -march=armv7 -marm -mcpu=cortex-a8"
 }
 
 newgcctoolchain {
@@ -68,7 +85,6 @@ newgcctoolchain {
 	prefix = iif( os.getenv("TOOLCHAINPATH"), os.getenv("TOOLCHAINPATH"), "" ),
 	cppflags = "-m32 -march=i386"
 }
---]]
 
 if _OPTIONS.platform then
 	-- overwrite the native platform with the options::platform
@@ -93,11 +109,25 @@ newoption {
 }
 
 function os.get_real()
-	if _OPTIONS.platform == "mingw32" or _OPTIONS.platform == "android-arm7" or _OPTIONS.platform == "ios-arm7" or _OPTIONS.platform == "ios-x86" then
+	if 	_OPTIONS.platform == "ios-arm7" or 
+		_OPTIONS.platform == "ios-x86" or
+		_OPTIONS.platform == "ios-cross-arm7" then
+		return "ios"
+	end
+	
+	if _OPTIONS.platform == "android-arm7" then
+		return "android"
+	end
+	
+	if 	_OPTIONS.platform == "mingw32" then
 		return _OPTIONS.platform
 	end
 
 	return os.get()
+end
+
+function os.is_real( os_name )
+	return os.get_real() == os_name
 end
 
 function print_table( table_ref )
@@ -178,8 +208,10 @@ end
 
 function add_cross_config_links()
 	if _ACTION == "gmake" then
-		if _OPTIONS.platform == "mingw32" then -- if is crosscompiling from *nix
-			links { "mingw32" }
+		if os.is_real("mingw32") or os.is_real("ios") then -- if is crosscompiling from *nix
+			if os.is_real("mingw32") then
+				links { "mingw32" }
+			end
 			linkoptions { "-static-libgcc", "-static-libstdc++" }
 		end
 	end
@@ -227,16 +259,18 @@ function build_link_configuration( package_name )
 end
 
 function generate_os_links()
-	if os.is("linux") then
+	if os.is_real("linux") then
 		multiple_insert( os_links, { "rt", "pthread", "X11", "openal", "GL", "Xcursor" } )
-	elseif os.is("windows") then
+	elseif os.is_real("windows") then
 		multiple_insert( os_links, { "OpenAL32", "opengl32", "glu32", "gdi32" } )
-	elseif os.is("macosx") then
+	elseif os.is_real("macosx") then
 		multiple_insert( os_links, { "OpenGL.framework", "OpenAL.framework", "CoreFoundation.framework", "AGL.framework" } )
-	elseif os.is("freebsd") then
+	elseif os.is_real("freebsd") then
 		multiple_insert( os_links, { "rt", "pthread", "X11", "openal", "GL", "Xcursor" } )
-	elseif os.is("haiku") then
+	elseif os.is_real("haiku") then
 		multiple_insert( os_links, { "openal", "GL" } )
+	elseif os.is_real("ios") then
+		multiple_insert( os_links, { "OpenGLES.framework", "OpenAL.framework", "AudioToolbox.framework", "CoreAudio.framework", "Foundation.framework", "CoreFoundation.framework", "UIKit.framework", "QuartzCore.framework", "CoreGraphics.framework" } )
 	end
 end
 
@@ -329,7 +363,10 @@ function add_sfml()
 end
 
 function set_ios_config()
-	if _OPTIONS.platform == "ios-arm" or _OPTIONS.platform == "ios-x86" then
+	if 	_OPTIONS.platform == "ios-arm7" or 
+		_OPTIONS.platform == "ios-x86" or 
+		_OPTIONS.platform == "ios-cross-arm7" then
+	
 		local err = false
 		
 		if nil == os.getenv("TOOLCHAINPATH") then
@@ -358,7 +395,7 @@ function set_ios_config()
 		local framework_path = sysroot_path .. "/System/Library/Frameworks"
 		local framework_libs_path = framework_path .. "/usr/lib"
 		local sysroot_ver = "-miphoneos-version-min=" .. os.getenv("IOSVERSION") .. " -isysroot " .. sysroot_path
-
+		
 		configuration { "ios-arm", "ios-x86" }
 			buildoptions { sysroot_ver .. "-I" .. sysroot_path .. "/usr/include" }
 			linkoptions { sysroot_ver }
@@ -470,6 +507,8 @@ function build_eepp( build_name )
 	
 	build_link_configuration( build_name )
 	
+	set_ios_config()
+	
 	configuration "windows"
 		files { "src/eepp/window/platform/win/*.cpp" }
 		add_cross_config_links()
@@ -479,8 +518,6 @@ function build_eepp( build_name )
 	
 	configuration "macosx"
 		files { "src/eepp/window/platform/osx/*.cpp" }
-	
-	set_ios_config()
 end
 
 solution "eepp"

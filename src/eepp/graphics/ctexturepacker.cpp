@@ -31,8 +31,8 @@ cTexturePacker::cTexturePacker() :
 	mLongestEdge(0),
 	mTotalArea(0),
 	mFreeList(NULL),
-	mWidth(0),
-	mHeight(0),
+	mWidth(1024),
+	mHeight(1024),
 	mPacked(false),
 	mAllowFlipping(false),
 	mChild(NULL),
@@ -384,38 +384,48 @@ bool cTexturePacker::AddTexturesPath( std::string TexturesPath ) {
 	return false;
 }
 
+bool cTexturePacker::AddPackerText( cTexturePackerTex& TPack ) {
+	if ( TPack.LoadedInfo() ) {
+		// Only add the texture if can fit inside the atlas, otherwise it will ignore it
+		if ( ( TPack.Width() + mPixelBorder <= mWidth && TPack.Height() + mPixelBorder <= mHeight ) ||
+			( mAllowFlipping && ( TPack.Width() + mPixelBorder <= mHeight && TPack.Height() + mPixelBorder <= mWidth ) )
+		)
+		{
+			mTotalArea += TPack.Area();
+
+			// Insert ordered
+			std::list<cTexturePackerTex>::iterator it;
+
+			bool Added = false;
+
+			for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+				if ( (*it).Area() < TPack.Area() ) {
+					mTextures.insert( it, TPack );
+					Added = true;
+					break;
+				}
+			}
+
+			if ( !Added ) {
+				mTextures.push_back( TPack );
+
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+bool cTexturePacker::AddImage( cImage * Img, const std::string& Name ) {
+	cTexturePackerTex TPack( Img, Name );
+	return AddPackerText( TPack );
+}
+
 bool cTexturePacker::AddTexture( const std::string& TexturePath ) {
 	if ( FileSystem::FileExists( TexturePath ) ) {
 		cTexturePackerTex TPack( TexturePath );
-
-		if ( TPack.LoadedInfo() ) {
-			// Only add the texture if can fit inside the atlas, otherwise it will ignore it
-			if ( ( TPack.Width() + mPixelBorder <= mWidth && TPack.Height() + mPixelBorder <= mHeight ) ||
-				( mAllowFlipping && ( TPack.Width() + mPixelBorder <= mHeight && TPack.Height() + mPixelBorder <= mWidth ) )
-			)
-			{
-				mTotalArea += TPack.Area();
-
-				// Insert ordered
-				std::list<cTexturePackerTex>::iterator it;
-
-				bool Added = false;
-
-				for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
-					if ( (*it).Area() < TPack.Area() ) {
-						mTextures.insert( it, TPack );
-						Added = true;
-						break;
-					}
-				}
-
-				if ( !Added ) {
-					mTextures.push_back( TPack );
-
-					return true;
-				}
-			}
-		}
+		return AddPackerText( TPack );
 	}
 
 	return false;
@@ -511,24 +521,39 @@ void cTexturePacker::Save( const std::string& Filepath, const EE_SAVE_TYPE& Form
 		t = &(*it);
 
 		if ( t->Placed() ) {
-			Uint8 * data = stbi_load( t->Name().c_str(), &w, &h, &c, 0 );
+			Uint8 * data;
 
-			if ( NULL != data && t->Width() == w && t->Height() == h ) {
-				cImage * ImgCopy = eeNew( cImage, ( data, w, h, c ) );
+			if ( NULL == t->Image() ) {
+				data = stbi_load( t->Name().c_str(), &w, &h, &c, 0 );
 
-				if ( t->Flipped() )
-					Img.Flip();
+				if ( NULL != data && t->Width() == w && t->Height() == h ) {
+					cImage * ImgCopy = eeNew( cImage, ( data, w, h, c ) );
 
-				Img.CopyImage( ImgCopy, t->X(), t->Y() );
+					if ( t->Flipped() )
+						ImgCopy->Flip();
 
-				ImgCopy->AvoidFreeImage( true );
+					Img.CopyImage( ImgCopy, t->X(), t->Y() );
 
-				eeSAFE_DELETE( ImgCopy );
+					ImgCopy->AvoidFreeImage( true );
 
-				if ( data )
-					free( data );
+					eeSAFE_DELETE( ImgCopy );
 
-				mPlacedCount++;
+					if ( data )
+						free( data );
+
+					mPlacedCount++;
+				}
+			} else {
+				data = t->Image()->GetPixels();
+
+				if ( NULL != data ) {
+					if ( t->Flipped() )
+						t->Image()->Flip();
+
+					Img.CopyImage( t->Image(), t->X(), t->Y() );
+
+					mPlacedCount++;
+				}
 			}
 		}
 	}
@@ -656,10 +681,10 @@ void cTexturePacker::CreateSubTexturesHdr( cTexturePacker * Packer, std::vector<
 			tSubTextureHdr.DestHeight 	= tTex->Height();
 			tSubTextureHdr.OffsetX		= 0;
 			tSubTextureHdr.OffsetY		= 0;
-			tSubTextureHdr.X				= tTex->X();
-			tSubTextureHdr.Y				= tTex->Y();
+			tSubTextureHdr.X			= tTex->X();
+			tSubTextureHdr.Y			= tTex->Y();
 			tSubTextureHdr.Date			= FileSystem::FileGetModificationDate( tTex->Name() );
-			tSubTextureHdr.Flags			= 0;
+			tSubTextureHdr.Flags		= 0;
 
 			if ( tTex->Flipped() )
 				tSubTextureHdr.Flags |= HDR_SUBTEXTURE_FLAG_FLIPED;

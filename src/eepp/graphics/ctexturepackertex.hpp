@@ -3,11 +3,16 @@
 
 #include <eepp/graphics/base.hpp>
 
-namespace EE { namespace Graphics { namespace Private {
+namespace EE { namespace Graphics {
+class cImage;
+
+namespace Private {
 
 class cTexturePackerTex {
 	public:
 		cTexturePackerTex( const std::string& Name );
+
+		cTexturePackerTex( cImage * Img, const std::string& Name );
 
 		void 					Place( Int32 x, Int32 y, bool flipped );
 
@@ -60,6 +65,8 @@ class cTexturePackerTex {
 		inline void 			OffsetX( const Int32& offx ){ mOffsetX = offx; }
 
 		inline void 			OffsetY( const Int32& offy ){ mDestHeight = offy; }
+
+		cImage *				Image() const;
 	protected:
 		std::string mName;
 		Int32 		mWidth;
@@ -77,6 +84,7 @@ class cTexturePackerTex {
 		bool  		mPlaced;
 		bool		mLoadedInfo;
 		bool		mDisabled;
+		cImage *	mImg;
 };
 
 }}}

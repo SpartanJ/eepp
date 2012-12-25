@@ -35,6 +35,7 @@
 #include <eepp/graphics/packerhelper.hpp>
 
 namespace EE { namespace Graphics {
+class cImage;
 
 namespace Private { class cTexturePackerNode; class cTexturePackerTex; }
 
@@ -49,6 +50,8 @@ class EE_API cTexturePacker {
 		~cTexturePacker();
 
 		bool				AddTexture( const std::string& TexturePath );
+
+		bool				AddImage( cImage * Img, const std::string& Name );
 
 		bool				AddTexturesPath( std::string TexturesPath );
 
@@ -132,6 +135,8 @@ class EE_API cTexturePacker {
     	void							AddBorderToTextures( const Int32& BorderSize );
 
     	void							CreateChild();
+
+		bool							AddPackerText( cTexturePackerTex& TPack );
 };
 
 }}

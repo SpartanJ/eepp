@@ -28,11 +28,17 @@ class EE_API cImage {
 		static EE_SAVE_TYPE ExtensionToSaveType( const std::string& Extension );
 
 		/** @return True if success to get the info.
+		* @param path the image path
 		* @param width the var to store the image width
 		* @param height the var to store the image height
 		* @param channels the var to store the image channels count
 		*/
 		static bool GetInfo( const std::string& path, int * width, int * height, int * channels );
+
+		/** @return True if the file is a valid image
+		* @param path the image path
+		*/
+		static bool IsImage( const std::string& path );
 
 		/** @return The last failure image loading/info reason */
 		static std::string GetLastFailureReason();
