@@ -92,7 +92,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 		cInput * imp = win->GetInput();
 
-		/// We real don't need shaders for this, but the purpose of the example is to show how to work with external shaders
+		/// We really don't need shaders for this, but the purpose of the example is to show how to work with external shaders
 		if ( ShadersSupported ) {
 			/// Disable the automatic shader conversion from fixed-pipeline to programmable-pipeline
 			cShader::Ensure = false;

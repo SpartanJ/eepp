@@ -4,6 +4,7 @@ syntax: glob
 ./libs
 ./make
 ./assets
+./data
 ./projects/android-project/bin
 ./projects/android-project/obj
 ./projects/android-project/data

@@ -141,25 +141,10 @@ void cInputSDL::Update() {
 				EEEvent.Type = InputEvent::MouseMotion;
 				EEEvent.motion.which = SDLEvent.motion.windowID;
 				EEEvent.motion.state = SDLEvent.motion.state;
-
-				#if EE_PLATFORM == EE_PLATFORM_IOS
-				if ( mWindow->GetWidth() == 960 || mWindow->GetWidth() == 640 ) {
-					EEEvent.motion.x = SDLEvent.motion.x * 2;
-					EEEvent.motion.y = SDLEvent.motion.y * 2;
-					EEEvent.motion.xrel = SDLEvent.motion.xrel * 2;
-					EEEvent.motion.yrel = SDLEvent.motion.yrel * 2;
-				} else {
-					EEEvent.motion.x = SDLEvent.motion.x;
-					EEEvent.motion.y = SDLEvent.motion.y;
-					EEEvent.motion.xrel = SDLEvent.motion.xrel;
-					EEEvent.motion.yrel = SDLEvent.motion.yrel;
-				}
-				#else
 				EEEvent.motion.x = SDLEvent.motion.x;
 				EEEvent.motion.y = SDLEvent.motion.y;
 				EEEvent.motion.xrel = SDLEvent.motion.xrel;
 				EEEvent.motion.yrel = SDLEvent.motion.yrel;
-				#endif
 				break;
 			}
 			case SDL_MOUSEBUTTONDOWN:

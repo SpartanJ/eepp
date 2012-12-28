@@ -479,7 +479,7 @@ else
 ifeq ($(BUILD_OS), ios)
 
 LIBS 		= -static-libgcc -static-libstdc++ -framework OpenGLES -framework OpenAL -framework AudioToolbox -framework CoreAudio -framework Foundation -framework CoreFoundation -framework UIKit -framework QuartzCore -framework CoreGraphics $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(SFML_BACKEND_LINK)
-OTHERINC	+= $(INCFREETYPE2)
+OTHERINC	+= $(INCFREETYPE2) -I./src/eepp/helper/SDL2/include
 
 ifeq ($(ARCH),armv7)
 OTHERINC += -DU_HAVE_GCC_ATOMICS=0
