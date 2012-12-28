@@ -4,6 +4,11 @@
 #include <climits>
 #include <ctype.h>
 
+// This taints the System module!
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+#include <eepp/window/cengine.hpp>
+#endif
+
 #if defined( EE_PLATFORM_POSIX )
 	#include <sys/utsname.h>
 
@@ -436,6 +441,9 @@ static std::string sGetProcessPath() {
 
 	return FileRemoveFileName( std::string( info.name ) );
 #elif EE_PLATFORM == EE_PLATFORM_ANDROID
+	if ( NULL != Window::cEngine::instance() )
+		return Window::cEngine::instance()->GetCurrentWindow()->GetExternalStoragePath();
+
 	return "/sdcard/";
 #else
 	#warning Sys::GetProcessPath() not implemented on this platform. ( will return "./" )
@@ -486,7 +494,7 @@ std::string Sys::GetDateTimeStr() {
 #endif
 }
 
-std::string Sys::GetStoragePath( std::string appname ) {
+std::string Sys::GetConfigPath( std::string appname ) {
 	char path[256];
 
 	#if EE_PLATFORM == EE_PLATFORM_WIN
@@ -513,22 +521,53 @@ std::string Sys::GetStoragePath( std::string appname ) {
 		_snprintf(path, 256, "%s\\%s", home, appname.c_str() );
 
 		#endif
+	#elif EE_PLATFORM == EE_PLATFORM_MACOSX
+		char *home = getenv("HOME");
+
+		if( NULL == home ) {
+			return std::string();
+		}
+
+		snprintf(path, 256, "%s/Library/Application Support/%s", home, appname.c_str() );
+	#elif EE_PLATFORM == EE_PLATFORM_HAIKU
+		char *home = getenv("HOME");
+
+		if( NULL == home ) {
+			return std::string();
+		}
+
+		snprintf(path, 256, "%s/config/settings/%s", home, appname.c_str() );
+	#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || EE_PLATFORM == EE_PLATFORM_SOLARIS
+		char * config = getenv("XDG_CONFIG_HOME");
+
+		if ( NULL != config ) {
+			String::StrCopy( path, config, 256 );
+		} else {
+			char *home = getenv("HOME");
+
+			if( NULL == home ) {
+				return std::string();
+			}
+
+			snprintf(path, 256, "%s/.config/%s", home, appname.c_str() );
+		}
+	#elif EE_PLATFORM == EE_PLATFORM_IOS
+		return GetProcessPath() + "config";
+	#elif EE_PLATFORM == EE_PLATFORM_ANDROID
+		if ( NULL != Window::cEngine::instance() )
+			return Window::cEngine::instance()->GetCurrentWindow()->GetInternalStoragePath();
+
+		return std::string();
 	#else
-        char *home = getenv("HOME");
+		#warning Sys::GetConfigPath not implemented for this platform ( it will use HOME directory + /.appname )
 
-        #if EE_PLATFORM != EE_PLATFORM_MACOSX
-        int i;
-        #endif
-        if(!home)
-            return std::string();
+		char *home = getenv("HOME");
 
-        #if EE_PLATFORM == EE_PLATFORM_MACOSX
-            snprintf(path, 256, "%s/Library/Application Support/%s", home, appname.c_str() );
-        #else
-            snprintf(path, 256, "%s/.%s", home, appname.c_str() );
-            for(i = strlen(home)+2; path[i]; i++)
-				path[i] = tolower(path[i]);
-        #endif
+		if( NULL == home ) {
+			return std::string();
+		}
+
+		snprintf(path, 256, "%s/.%s", home, appname.c_str() );
     #endif
 
 	return std::string( path );

@@ -11,7 +11,7 @@ class EE_API Sys {
 		static std::string GetDateTimeStr();
 
 		/** @return A storage path for config files for every platform */
-		static std::string GetStoragePath( std::string appname );
+		static std::string GetConfigPath( std::string appname );
 
 		/** @return The number of milliseconds since the first call. Note that this value wraps if the program runs for more than ~49 days. */
 		static Uint32 GetTicks();
