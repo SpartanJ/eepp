@@ -51,7 +51,7 @@ newgcctoolchain {
 	name ="android-arm7",
 	description = "Android ARMv7 (not implemented)",
 	prefix = iif( os.getenv("ANDROID_NDK"), os.getenv("ANDROID_NDK"), "" ) .. "arm-linux-androideabi-",
-	cppflags = "-arch=armv7 -march=armv7 -marm -mcpu=cortex-a8"
+	cppflags = "-MMD -arch=armv7 -march=armv7 -marm -mcpu=cortex-a8"
 }
 
 toolchain_path = os.getenv("TOOLCHAINPATH")
