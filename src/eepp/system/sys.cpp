@@ -494,18 +494,19 @@ std::string Sys::GetDateTimeStr() {
 #endif
 }
 
+#define EE_MAX_CFG_PATH_LEN 1024
 std::string Sys::GetConfigPath( std::string appname ) {
-	char path[256];
+	char path[EE_MAX_CFG_PATH_LEN];
 
 	#if EE_PLATFORM == EE_PLATFORM_WIN
 		#ifdef EE_COMPILER_MSVC
 
 		char * ppath;
-		size_t ssize = 256;
+		size_t ssize = EE_MAX_CFG_PATH_LEN;
 
 		_dupenv_s( &ppath, &ssize, "APPDATA" );
 
-		StrCopy( path, ppath, 256 );
+		String::StrCopy( path, ppath, EE_MAX_CFG_PATH_LEN );
 
 		free( ppath );
 
@@ -518,7 +519,7 @@ std::string Sys::GetConfigPath( std::string appname ) {
 		if( !home )
 			return std::string();
 
-		_snprintf(path, 256, "%s\\%s", home, appname.c_str() );
+		_snprintf(path, EE_MAX_CFG_PATH_LEN, "%s\\%s", home, appname.c_str() );
 
 		#endif
 	#elif EE_PLATFORM == EE_PLATFORM_MACOSX
@@ -528,7 +529,7 @@ std::string Sys::GetConfigPath( std::string appname ) {
 			return std::string();
 		}
 
-		snprintf(path, 256, "%s/Library/Application Support/%s", home, appname.c_str() );
+		snprintf(path, EE_MAX_CFG_PATH_LEN, "%s/Library/Application Support/%s", home, appname.c_str() );
 	#elif EE_PLATFORM == EE_PLATFORM_HAIKU
 		char *home = getenv("HOME");
 
@@ -536,12 +537,12 @@ std::string Sys::GetConfigPath( std::string appname ) {
 			return std::string();
 		}
 
-		snprintf(path, 256, "%s/config/settings/%s", home, appname.c_str() );
+		snprintf(path, EE_MAX_CFG_PATH_LEN, "%s/config/settings/%s", home, appname.c_str() );
 	#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || EE_PLATFORM == EE_PLATFORM_SOLARIS
 		char * config = getenv("XDG_CONFIG_HOME");
 
 		if ( NULL != config ) {
-			String::StrCopy( path, config, 256 );
+			snprintf(path, EE_MAX_CFG_PATH_LEN, "%s/%s", config, appname.c_str() );
 		} else {
 			char *home = getenv("HOME");
 
@@ -549,7 +550,7 @@ std::string Sys::GetConfigPath( std::string appname ) {
 				return std::string();
 			}
 
-			snprintf(path, 256, "%s/.config/%s", home, appname.c_str() );
+			snprintf(path, EE_MAX_CFG_PATH_LEN, "%s/.config/%s", home, appname.c_str() );
 		}
 	#elif EE_PLATFORM == EE_PLATFORM_IOS
 		return GetProcessPath() + "config";
@@ -567,7 +568,7 @@ std::string Sys::GetConfigPath( std::string appname ) {
 			return std::string();
 		}
 
-		snprintf(path, 256, "%s/.%s", home, appname.c_str() );
+		snprintf(path, EE_MAX_CFG_PATH_LEN, "%s/.%s", home, appname.c_str() );
     #endif
 
 	return std::string( path );
