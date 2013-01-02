@@ -69,11 +69,11 @@ bool cZip::Close() {
 }
 
 bool cZip::AddFile( const std::string& path, const std::string& inpack ) {
-	std::vector<Uint8> file;
+	SafeDataPointer file;
 
 	FileSystem::FileGet( path, file );
 
-	return AddFile( file, inpack );
+	return AddFile( file.Data, file.DataSize, inpack );
 }
 
 bool cZip::AddFile( const Uint8 * data, const Uint32& dataSize, const std::string& inpack ) {

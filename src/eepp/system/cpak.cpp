@@ -270,11 +270,11 @@ bool cPak::AddFile( const std::string& path, const std::string& inpack ) {
 	if ( path.size() > 56 )
 		return false;
 
-	std::vector<Uint8> file;
+	SafeDataPointer file;
 
 	FileSystem::FileGet( path, file );
 
-	return AddFile( file, inpack );
+	return AddFile( file.Data, file.DataSize, inpack );
 }
 
 bool cPak::AddFiles( std::map<std::string, std::string> paths ) {
