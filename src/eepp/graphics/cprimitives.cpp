@@ -138,9 +138,10 @@ void cPrimitives::DrawRectangle( const eeRectf& R, const eeColorA& TopLeft, cons
 
 			if ( Scale != 1.0f || Angle != 0.0f ) {
 				eeQuad2f Q( R );
+				eeSizef size = const_cast<eeRectf*>(&R)->Size();
 
 				Q.Scale( Scale );
-				Q.Rotate( Angle, Q.GetCenter() );
+				Q.Rotate( Angle, eeVector2f( R.Left + size.Width() * 0.5f, R.Top + size.Height() * 0.5f ) );
 
 				sBR->BatchLineLoop( Q[0].x, Q[0].y, Q[1].x, Q[1].y );
 				sBR->LineLoopSetColorFree( BottomRight, TopRight );
