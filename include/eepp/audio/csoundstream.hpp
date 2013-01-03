@@ -34,9 +34,9 @@ class EE_API cSoundStream : private cThread, private cSound {
 
 		unsigned int GetSampleRate() const;
 
-		EE_SOUND_STATE 	GetState() const;
+		Status 	GetState() const;
 
-		EE_SOUND_STATE 	State() const ;
+		Status 	State() const ;
 
 		Uint32 PlayingOffset() const;
 

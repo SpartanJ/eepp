@@ -148,18 +148,18 @@ eeFloat cSound::Attenuation() const {
 	return Attenuation;
 }
 
-EE_SOUND_STATE cSound::GetState() const {
+cSound::Status cSound::GetState() const {
 	ALint State;
 	ALCheck( alGetSourcei( mSource, AL_SOURCE_STATE, &State ) );
 
 	switch (State) {
 		case AL_INITIAL :
-		case AL_STOPPED : return SOUND_STOPPED;
-		case AL_PAUSED :  return SOUND_PAUSED;
-		case AL_PLAYING : return SOUND_PLAYING;
+		case AL_STOPPED : return cSound::Stopped;
+		case AL_PAUSED :  return cSound::Paused;
+		case AL_PLAYING : return cSound::Playing;
 	}
 
-	return SOUND_STOPPED;
+	return cSound::Stopped;
 }
 
 Uint32 cSound::PlayingOffset() const {
@@ -216,7 +216,7 @@ void cSound::ResetBuffer() {
 	mBuffer = NULL;
 }
 
-EE_SOUND_STATE cSound::State() const {
+cSound::Status cSound::State() const {
 	return GetState();
 }
 

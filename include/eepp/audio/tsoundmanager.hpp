@@ -111,7 +111,7 @@ cSound& tSoundManager<T>::GetFreeSound( const T& id ) {
 
 		for ( Uint32 i = 0; i < tSize; i++ ) {
 			// If there is a free slot, use it.
-			if ( tSound->Snd[i].GetState() != SOUND_PLAYING ) {
+			if ( tSound->Snd[i].GetState() != cSound::Playing ) {
 				return tSound->Snd[i];
 			}
 		}
@@ -142,7 +142,7 @@ void tSoundManager<T>::Play( const T& id ) {
 
 		for ( Uint32 i = 0; i < tSize; i++ ) {
 			// If there is a free slot, use it.
-			if ( tSound->Snd[i].GetState() != SOUND_PLAYING ) {
+			if ( tSound->Snd[i].GetState() != cSound::Playing ) {
 				tSound->Snd[i].Play();
 				return;
 			}

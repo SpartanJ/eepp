@@ -1321,7 +1321,7 @@ void cEETest::Input() {
 
 		mWindow->FrameRateLimit( 10 );
 
-		if ( mMusEnabled && Mus->State() == SOUND_PLAYING )
+		if ( mMusEnabled && Mus->State() == cSound::Playing )
 			Mus->Pause();
 
 	} else {
@@ -1337,7 +1337,7 @@ void cEETest::Input() {
 
 		mWindow->FrameRateLimit( mLastFPSLimit );
 
-		if ( mMusEnabled && Mus->State() == SOUND_PAUSED )
+		if ( mMusEnabled && Mus->State() == cSound::Paused )
 			Mus->Play();
 	}
 

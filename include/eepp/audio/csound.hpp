@@ -7,15 +7,15 @@
 
 namespace EE { namespace Audio {
 
-/** @enum EE_SOUND_STATE The state of the sound */
-enum EE_SOUND_STATE {
-	SOUND_STOPPED,
-	SOUND_PAUSED,
-	SOUND_PLAYING
-};
-
 class EE_API cSound {
 	public :
+		/** @enum EE_SOUND_STATE The state of the sound */
+		enum Status {
+			Stopped,
+			Paused,
+			Playing
+		};
+
 		cSound();
 
 		~cSound();
@@ -81,10 +81,10 @@ class EE_API cSound {
 		eeFloat Attenuation() const;
 
 		/** Get the Sound State */
-		EE_SOUND_STATE GetState() const;
+		Status GetState() const;
 
 		/** Get the Sound State */
-		EE_SOUND_STATE State() const;
+		Status State() const;
 
 		/** Get the current playing position of the sound */
 		virtual Uint32 PlayingOffset() const;

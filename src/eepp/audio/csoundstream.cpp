@@ -68,13 +68,13 @@ unsigned int cSoundStream::GetSampleRate() const {
 	return mSampleRate;
 }
 
-EE_SOUND_STATE cSoundStream::GetState() const {
-	EE_SOUND_STATE Status = cSound::GetState();
+cSound::Status cSoundStream::GetState() const {
+	Status status = cSound::GetState();
 
-	if ( ( Status == SOUND_STOPPED ) && mIsStreaming ) // To compensate for the lag between Play() and alSourcePlay()
-		Status = SOUND_PLAYING;
+	if ( ( status == cSound::Stopped ) && mIsStreaming ) // To compensate for the lag between Play() and alSourcePlay()
+		status = cSound::Playing;
 
-	return Status;
+	return status;
 }
 
 Uint32 cSoundStream::PlayingOffset() const {
@@ -117,7 +117,7 @@ void cSoundStream::Run() {
 
 	while ( mIsStreaming ) {
 		// The stream has been interrupted !
-		if ( cSound::GetState() == SOUND_STOPPED ) {
+		if ( cSound::GetState() == cSound::Stopped ) {
 			// User requested to stop : finish the streaming loop
 			if ( !RequestStop ) {
 				cSound::Play();
@@ -165,7 +165,7 @@ void cSoundStream::Run() {
 		}
 
 		// Leave some time for the other threads if the stream is still playing
-		if ( cSound::GetState() != SOUND_STOPPED )
+		if ( cSound::GetState() != cSound::Stopped )
 			Sys::Sleep(10);
 	}
 
@@ -244,7 +244,7 @@ void cSoundStream::ClearQueue() {
         ALCheck( alSourceUnqueueBuffers( cSound::mSource, 1, &Buffer ) );
 }
 
-EE_SOUND_STATE cSoundStream::State() const {
+cSound::Status cSoundStream::State() const {
 	return GetState();
 }
 

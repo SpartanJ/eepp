@@ -2,8 +2,6 @@
 ../../include/eepp/audio/tsoundloader.hpp
 ../../include/eepp/audio/openal.hpp
 ../../include/eepp/audio/csoundstream.hpp
-../../include/eepp/audio/csoundfileogg.hpp
-../../include/eepp/audio/csoundfiledefault.hpp
 ../../include/eepp/audio/csoundfile.hpp
 ../../include/eepp/audio/csoundbuffer.hpp
 ../../include/eepp/audio/csound.hpp
@@ -573,3 +571,5 @@
 ../../src/eepp/physics/moment.cpp
 ../../src/eepp/physics/area.cpp
 ../../premake4.lua
+../../src/eepp/audio/csoundfileogg.hpp
+../../src/eepp/audio/csoundfiledefault.hpp
