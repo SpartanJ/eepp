@@ -1,5 +1,6 @@
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/window/cengine.hpp>
+#include <eepp/graphics/cglobalbatchrenderer.hpp>
 #include <algorithm>
 
 namespace EE { namespace UI {

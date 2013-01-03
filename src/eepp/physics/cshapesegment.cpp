@@ -105,7 +105,7 @@ void cShapeSegment::Draw( cSpace * space ) {
 		GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
 	} else {
 		cPrimitives p;
-		p.DrawLine( eeVector2f( a.x, a.y ), eeVector2f( b.x, b.y ) );
+		p.DrawLine( eeLine2f( eeVector2f( a.x, a.y ), eeVector2f( b.x, b.y ) ) );
 	}
 	#endif
 }

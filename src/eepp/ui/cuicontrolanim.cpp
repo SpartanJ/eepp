@@ -1,6 +1,7 @@
 #include <eepp/ui/cuicontrolanim.hpp>
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
+#include <eepp/graphics/cglobalbatchrenderer.hpp>
 
 namespace EE { namespace UI {
 
@@ -45,8 +46,10 @@ void cUIControlAnim::Draw() {
 
 		if ( cUIManager::instance()->HighlightFocus() && cUIManager::instance()->FocusControl() == this ) {
 			cPrimitives P;
+			P.FillMode( EE_DRAW_LINE );
+			P.BlendMode( Blend() );
 			P.SetColor( cUIManager::instance()->HighlightColor() );
-			P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_LINE, Blend(), 1, 0 );
+			P.DrawRectangle( GetRectf() );
 		}
 	}
 }
@@ -262,23 +265,48 @@ void cUIControlAnim::DisableFadeOut( const eeFloat& Time, const bool& AlphaChild
 
 void cUIControlAnim::BackgroundDraw() {
 	cPrimitives P;
+	eeRectf R = GetRectf();
+	P.BlendMode( mBackground->Blend() );
 	P.SetColor( GetColor( mBackground->Color() ) );
 
 	if ( 4 == mBackground->Colors().size() ) {
-		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), GetColor( mBackground->Colors()[0] ), GetColor( mBackground->Colors()[1] ), GetColor( mBackground->Colors()[2] ), GetColor( mBackground->Colors()[3] ), 0.f, 1.f, EE_DRAW_FILL, mBackground->Blend(), 1.0f, mBackground->Corners() );
+		if ( mBackground->Corners() ) {
+			P.DrawRoundedRectangle( R, GetColor( mBackground->Colors()[0] ), GetColor( mBackground->Colors()[1] ), GetColor( mBackground->Colors()[2] ), GetColor( mBackground->Colors()[3] ), mBackground->Corners() );
+		} else {
+			P.DrawRectangle( R, GetColor( mBackground->Colors()[0] ), GetColor( mBackground->Colors()[1] ), GetColor( mBackground->Colors()[2] ), GetColor( mBackground->Colors()[3] ) );
+		}
 	} else {
-		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_FILL, mBackground->Blend(), 1.0f, mBackground->Corners() );
+		if ( mBackground->Corners() ) {
+			P.DrawRoundedRectangle( R, 0.f, 1.f, mBackground->Corners() );
+		} else {
+			P.DrawRectangle( R );
+		}
 	}
 }
 
 void cUIControlAnim::BorderDraw() {
 	cPrimitives P;
+	P.FillMode( EE_DRAW_LINE );
+	P.BlendMode( Blend() );
+	P.LineWidth( (eeFloat)mBorder->Width() );
 	P.SetColor( GetColor( mBorder->Color() ) );
 
-	if ( mFlags & UI_CLIP_ENABLE )
-		P.DrawRectangle( (eeFloat)mScreenPos.x + 0.1f, (eeFloat)mScreenPos.y + 0.1f, (eeFloat)mSize.Width() - 0.1f, (eeFloat)mSize.Height() - 0.1f, 0.f, 1.f, EE_DRAW_LINE, Blend(), (eeFloat)mBorder->Width(), mBackground->Corners() );
-	else
-		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_LINE, Blend(), (eeFloat)mBorder->Width(), mBackground->Corners() );
+	//! @TODO: Check why was this +0.1f -0.1f?
+	if ( mFlags & UI_CLIP_ENABLE ) {
+		eeRectf R( eeVector2f( (eeFloat)mScreenPos.x + 0.1f, (eeFloat)mScreenPos.y + 0.1f ), eeSizef( (eeFloat)mSize.Width() - 0.1f, (eeFloat)mSize.Height() - 0.1f ) );
+
+		if ( mBackground->Corners() ) {
+			P.DrawRoundedRectangle( GetRectf(), 0.f, 1.f, mBackground->Corners() );
+		} else {
+			P.DrawRectangle( R );
+		}
+	} else {
+		if ( mBackground->Corners() ) {
+			P.DrawRoundedRectangle( GetRectf(), 0.f, 1.f, mBackground->Corners() );
+		} else {
+			P.DrawRectangle( GetRectf() );
+		}
+	}
 }
 
 eeColorA cUIControlAnim::GetColor( const eeColorA& Col ) {

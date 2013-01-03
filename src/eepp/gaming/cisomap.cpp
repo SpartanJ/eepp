@@ -1,5 +1,6 @@
 #include <eepp/gaming/cisomap.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
+#include <eepp/graphics/cglobalbatchrenderer.hpp>
 
 namespace EE { namespace Gaming {
 

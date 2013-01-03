@@ -199,7 +199,7 @@ class EE_API cUIControl {
 
 		void SetSkinFromTheme( cUITheme * Theme, const std::string& ControlName );
 
-		virtual void SetSkin( cUISkin * Skin );
+		virtual void SetSkin( const cUISkin& Skin );
 
 		cUIControl * ChildGetFirst() const;
 
@@ -319,6 +319,8 @@ class EE_API cUIControl {
 
 		virtual void DrawChilds();
 
+		virtual void DoAfterSetTheme();
+
 		virtual cUIControl * OverFind( const eeVector2f& Point );
 
 		void ClipMe();
@@ -370,6 +372,8 @@ class EE_API cUIControl {
 		void SafeDeleteSkinState();
 
 		eeSize GetSkinSize( cUISkin * Skin, const Uint32& State = cUISkinState::StateNormal );
+
+		eeRectf GetRectf();
 };
 
 }}

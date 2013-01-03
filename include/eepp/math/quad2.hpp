@@ -11,6 +11,8 @@ class Quad2 {
 	public:
 		Quad2();
 
+		Quad2( const tRECT<T>& R );
+
 		Quad2( const Vector2<T>& v1, const Vector2<T>& v2, const Vector2<T>& v3, const Vector2<T>& v4 );
 
 		const Vector2<T>& operator[] ( const Uint32& Pos ) const;
@@ -37,6 +39,30 @@ class Quad2 {
 
 		void Scale( const T& scale, const Vector2<T>& Center );
 };
+
+template <typename T>
+Quad2<T>::Quad2() {
+	V[0] = Vector2<T>();
+	V[1] = Vector2<T>();
+	V[2] = Vector2<T>();
+	V[3] = Vector2<T>();
+}
+
+template <typename T>
+Quad2<T>::Quad2( const Vector2<T>& v1, const Vector2<T>& v2, const Vector2<T>& v3, const Vector2<T>& v4 ) {
+	V[0] = v1;
+	V[1] = v2;
+	V[2] = v3;
+	V[3] = v4;
+}
+
+template <typename T>
+Quad2<T>::Quad2( const tRECT<T>& R ) {
+	V[0] = Vector2<T>( R.Left, R.Top );
+	V[1] = Vector2<T>( R.Left, R.Bottom );
+	V[2] = Vector2<T>( R.Right, R.Bottom );
+	V[3] = Vector2<T>( R.Right, R.Top );
+}
 
 template <typename T>
 void Quad2<T>::Rotate( const T& Angle ) {
@@ -123,22 +149,6 @@ const Vector2<T>& Quad2<T>::operator[] ( const Uint32& Pos ) const {
 		return V[Pos];
 
 	return V[0];
-}
-
-template <typename T>
-Quad2<T>::Quad2() {
-	V[0] = Vector2<T>();
-	V[1] = Vector2<T>();
-	V[2] = Vector2<T>();
-	V[3] = Vector2<T>();
-}
-
-template <typename T>
-Quad2<T>::Quad2( const Vector2<T>& v1, const Vector2<T>& v2, const Vector2<T>& v3, const Vector2<T>& v4 ) {
-	V[0] = v1;
-	V[1] = v2;
-	V[2] = v3;
-	V[3] = v4;
 }
 
 typedef Quad2<eeFloat> eeQuad2f;

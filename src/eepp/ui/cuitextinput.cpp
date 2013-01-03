@@ -84,7 +84,7 @@ void cUITextInput::Draw() {
 			if ( CurPosX > (eeFloat)mScreenPos.x + (eeFloat)mSize.x )
 				CurPosX = (eeFloat)mScreenPos.x + (eeFloat)mSize.x;
 
-			P.DrawLine( CurPosX, CurPosY, CurPosX, CurPosY + mTextCache->Font()->GetFontHeight(), 1.f );
+			P.DrawLine( eeLine2f( eeVector2f( CurPosX, CurPosY ), eeVector2f( CurPosX, CurPosY + mTextCache->Font()->GetFontHeight() ) ) );
 
 			if ( disableSmooth )
 				GLi->LineSmooth( true );

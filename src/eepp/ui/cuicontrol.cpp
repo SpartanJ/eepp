@@ -497,25 +497,54 @@ void cUIControl::OnSizeChange() {
 	SendCommonEvent( cUIEvent::EventOnSizeChange );
 }
 
+eeRectf cUIControl::GetRectf() {
+	return eeRectf( eeVector2f( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y ), eeSizef( (eeFloat)mSize.Width(), (eeFloat)mSize.Height() ) );
+}
+
 void cUIControl::BackgroundDraw() {
 	cPrimitives P;
+	eeRectf R = GetRectf();
+	P.BlendMode( mBackground->Blend() );
 	P.SetColor( mBackground->Color() );
 
 	if ( 4 == mBackground->Colors().size() ) {
-		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), mBackground->Colors()[0], mBackground->Colors()[1], mBackground->Colors()[2], mBackground->Colors()[3], 0.f, 1.f, EE_DRAW_FILL, mBackground->Blend(), 1.0f, mBackground->Corners() );
+		if ( mBackground->Corners() ) {
+			P.DrawRoundedRectangle( R, mBackground->Colors()[0], mBackground->Colors()[1], mBackground->Colors()[2], mBackground->Colors()[3], mBackground->Corners() );
+		} else {
+			P.DrawRectangle( R, mBackground->Colors()[0], mBackground->Colors()[1], mBackground->Colors()[2], mBackground->Colors()[3] );
+		}
 	} else {
-		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_FILL, mBackground->Blend(), 1.0f, mBackground->Corners() );
+		if ( mBackground->Corners() ) {
+			P.DrawRoundedRectangle( R, 0.f, 1.f, mBackground->Corners() );
+		} else {
+			P.DrawRectangle( R );
+		}
 	}
 }
 
 void cUIControl::BorderDraw() {
 	cPrimitives P;
+	P.FillMode( EE_DRAW_LINE );
+	P.BlendMode( Blend() );
+	P.LineWidth( (eeFloat)mBorder->Width() );
 	P.SetColor( mBorder->Color() );
 
-	if ( mFlags & UI_CLIP_ENABLE )
-		P.DrawRectangle( (eeFloat)mScreenPos.x + 0.1f, (eeFloat)mScreenPos.y + 0.1f, (eeFloat)mSize.Width() - 0.1f, (eeFloat)mSize.Height() - 0.1f, 0.f, 1.f, EE_DRAW_LINE, Blend(), (eeFloat)mBorder->Width(), mBackground->Corners() );
-	else
-		P.DrawRectangle( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 0.f, 1.f, EE_DRAW_LINE, Blend(), (eeFloat)mBorder->Width(), mBackground->Corners() );
+	//! @TODO: Check why was this +0.1f -0.1f?
+	if ( mFlags & UI_CLIP_ENABLE ) {
+		eeRectf R( eeVector2f( (eeFloat)mScreenPos.x + 0.1f, (eeFloat)mScreenPos.y + 0.1f ), eeSizef( (eeFloat)mSize.Width() - 0.1f, (eeFloat)mSize.Height() - 0.1f ) );
+
+		if ( mBackground->Corners() ) {
+			P.DrawRoundedRectangle( GetRectf(), 0.f, 1.f, mBackground->Corners() );
+		} else {
+			P.DrawRectangle( R );
+		}
+	} else {
+		if ( mBackground->Corners() ) {
+			P.DrawRoundedRectangle( GetRectf(), 0.f, 1.f, mBackground->Corners() );
+		} else {
+			P.DrawRectangle( GetRectf() );
+		}
+	}
 }
 
 const Uint32& cUIControl::ControlFlags() const {
@@ -908,14 +937,16 @@ void cUIControl::SetSkinFromTheme( cUITheme * Theme, const std::string& ControlN
 	SetThemeControl( Theme, ControlName );
 }
 
-void cUIControl::SetSkin( cUISkin * Skin ) {
-	if ( NULL != Skin ) {
-		SafeDeleteSkinState();
+void cUIControl::SetSkin( const cUISkin& Skin ) {
+	SafeDeleteSkinState();
 
-		WriteCtrlFlag( UI_CTRL_FLAG_SKIN_OWNER, 1 );
+	WriteCtrlFlag( UI_CTRL_FLAG_SKIN_OWNER, 1 );
 
-		mSkinState = eeNew( cUISkinState, ( Skin ) );
-	}
+	cUISkin * SkinCopy = const_cast<cUISkin*>( &Skin )->Copy();
+
+	mSkinState = eeNew( cUISkinState, ( SkinCopy ) );
+
+	DoAfterSetTheme();
 }
 
 void cUIControl::OnStateChange() {
@@ -1143,6 +1174,9 @@ cUIControl * cUIControl::NextComplexControl() {
 	}
 
 	return cUIManager::instance()->MainControl();
+}
+
+void cUIControl::DoAfterSetTheme() {
 }
 
 }}

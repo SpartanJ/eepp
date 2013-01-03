@@ -41,7 +41,7 @@ void cShapeCircle::Draw( cSpace * space ) {
 	cpCircleShape * cs = (cpCircleShape*)mShape;
 	p.SetColor( ColorForShape( mShape, space->Space() ) );
 
-	p.DrawCircle( cs->CP_PRIVATE(tc).x, cs->CP_PRIVATE(tc).y, cs->CP_PRIVATE(r) );
+	p.DrawCircle( eeVector2f( cs->CP_PRIVATE(tc).x, cs->CP_PRIVATE(tc).y ), cs->CP_PRIVATE(r) );
 	#endif
 }
 

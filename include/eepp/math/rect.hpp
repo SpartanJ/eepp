@@ -51,6 +51,8 @@ class tRECT {
 
 		Vector2<T> Pos();
 
+		Vector2<T> Center();
+
 		tSize<T> Size();
 };
 
@@ -103,6 +105,11 @@ bool tRECT<T>::Contains( const Vector2<T>& Vect ) {
 template <typename T>
 Vector2<T> tRECT<T>::Pos() {
 	return Vector2<T>( Left, Top );
+}
+
+template <typename T>
+Vector2<T> tRECT<T>::Center() {
+	return Vector2<T>( Left + ( ( Right - Left ) * 0.5 ), Top + ( ( Bottom - Top ) * 0.5 ) );
 }
 
 template <typename T>

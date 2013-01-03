@@ -163,9 +163,9 @@ void cUIMap::MapDraw() {
 
 		eeVector2f Pos( mSelLight->GetAABB().Left, mSelLight->GetAABB().Top );
 		eeAABB AB( mSelLight->GetAABB() );
-		eeSizef Size( AB.Size() );
 
-		P.DrawRectangle( Pos.x, Pos.y, Size.Width(), Size.Height(), 0, 1, EE_DRAW_LINE );
+		P.FillMode( EE_DRAW_LINE );
+		P.DrawRectangle( eeRectf( Pos, AB.Size() ) );
 	}
 }
 

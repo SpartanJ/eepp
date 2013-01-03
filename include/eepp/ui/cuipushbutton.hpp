@@ -62,8 +62,6 @@ class EE_API cUIPushButton : public cUIComplexControl {
 
 		virtual bool IsType( const Uint32& type ) const;
 
-		virtual void SetSkin( cUISkin * Skin );
-
 		virtual void SetTheme( cUITheme * Theme );
 
 		virtual void Icon( cSubTexture * Icon );
@@ -98,7 +96,7 @@ class EE_API cUIPushButton : public cUIComplexControl {
 
 		virtual void OnStateChange();
 
-		void DoAfterSetTheme();
+		virtual void DoAfterSetTheme();
 
 		virtual Uint32 OnKeyDown( const cUIEventKey& Event );
 

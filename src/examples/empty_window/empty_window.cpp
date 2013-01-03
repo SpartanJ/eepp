@@ -32,7 +32,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 			}
 
 			// Draw a circle
-			p.DrawCircle( win->GetWidth() / 2, win->GetHeight() / 2, 200 );
+			p.DrawCircle( eeVector2f( win->GetWidth() * 0.5f, win->GetHeight() * 0.5f ), 200 );
 
 			// Draw frame
 			win->Display();

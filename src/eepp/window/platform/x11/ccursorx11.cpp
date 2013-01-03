@@ -41,7 +41,7 @@ cCursorX11::~cCursorX11() {
 }
 
 void cCursorX11::Create() {
-	if ( NULL == mImage && mImage->Size() )
+	if ( NULL == mImage && mImage->MemSize() )
 		return;
 
 	XcursorImage * image;

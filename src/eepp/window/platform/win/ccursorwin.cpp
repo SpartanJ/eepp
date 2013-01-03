@@ -126,7 +126,7 @@ static void local_draw_to_hdc( HDC dc, cImage * bitmap, int x, int y ) {
 }
 
 void cCursorWin::Create() {
-	if ( NULL == mImage && mImage->Size() )
+	if ( NULL == mImage && mImage->MemSize() )
 		return;
 
     int x, y;

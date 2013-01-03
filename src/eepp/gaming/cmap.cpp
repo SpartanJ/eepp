@@ -12,6 +12,7 @@
 #include <eepp/graphics/cprimitives.hpp>
 #include <eepp/graphics/ctextureatlasmanager.hpp>
 #include <eepp/graphics/ctextureatlasloader.hpp>
+#include <eepp/graphics/cglobalbatchrenderer.hpp>
 using namespace EE::Graphics;
 
 #include <eepp/ui/cuithememanager.hpp>
@@ -205,7 +206,7 @@ void cMap::Draw() {
 		Uint8 Alpha = static_cast<Uint8>( (eeFloat)mBackColor.A() * ( (eeFloat)mBackAlpha / 255.f ) );
 
 		P.SetColor( eeColorA( mBackColor.R(), mBackColor.G(), mBackColor.B(), Alpha ) );
-		P.DrawRectangle( mScreenPos.x, mScreenPos.y, mViewSize.x, mViewSize.y, 0.f, 1.f );
+		P.DrawRectangle( eeRectf( eeVector2f( mScreenPos.x, mScreenPos.y ), eeSizef( mViewSize.x, mViewSize.y ) ), 0.f, 1.f );
 		P.SetColor( eeColorA( 255, 255, 255, 255 ) );
 	}
 

@@ -13,7 +13,7 @@ Uint32 cImage::JpegQuality() {
 }
 
 void cImage::JpegQuality( Uint32 level ) {
-	level = eemin( level, (Uint32)100 );
+	level = eemin<Uint32>( level, 100 );
 	sJpegQuality = level;
 }
 
@@ -250,8 +250,12 @@ void cImage::Allocate( const Uint32& size, eeColorA DefaultColor ) {
 	mSize 	= size;
 }
 
-eeUint cImage::Size() const {
+eeUint cImage::MemSize() const {
 	return mSize;
+}
+
+eeSize cImage::Size() {
+	return eeSize( mWidth, mHeight );
 }
 
 void cImage::ClearCache() {

@@ -122,7 +122,7 @@ void cConsole::Draw() {
 		if ( mY > 0.0f ) {
 			if ( mTexId == 0 ) {
 				mPri.SetColor( eeColorA( mConColor.R(), mConColor.G(), mConColor.B(), static_cast<Uint8>(mA) ) );
-				mPri.DrawRectangle( 0.0f, 0.0f, mWidth, mY );
+				mPri.DrawRectangle( eeRectf( eeVector2f( 0.0f, 0.0f ), eeSizef( mWidth, mY ) ) );
 			} else {
 				eeColorA C( mConColor.R(), mConColor.G(), mConColor.B(), static_cast<Uint8>(mA) );
 
@@ -132,7 +132,7 @@ void cConsole::Draw() {
 					Tex->DrawEx( 0.0f, 0.0f, mWidth, mY, 0.0f, 1.0f, C, C, C, C );
 			}
 			mPri.SetColor( eeColorA( mConLineColor.R(), mConLineColor.G(), mConLineColor.B(), static_cast<Uint8>(mA) ) );
-			mPri.DrawRectangle( 0.0f, mY, mWidth, 4.0f );
+			mPri.DrawRectangle( eeRectf( eeVector2f( 0.0f, mY ), eeSizef( mWidth, 4.0f ) ) );
 
 			Int16 LinesInScreen = (Int16) ( (mCurHeight / mFontSize) - 1 );
 

@@ -110,9 +110,9 @@ void cGameObjectVirtual::Draw() {
 
 		if ( NULL != mLayer ) {
 			eeSize ts = mLayer->Map()->TileSize();
-			P.DrawRectangle( mPos.x, mPos.y, ts.x ,ts.y, 0, 1 );
+			P.DrawRectangle( eeRectf( eeVector2f( mPos.x, mPos.y ), eeSizef( ts.x ,ts.y ) ), 0, 1 );
 		} else {
-			P.DrawRectangle( mPos.x, mPos.y, 32 ,32, 0, 1 );
+			P.DrawRectangle( eeRectf( eeVector2f( mPos.x, mPos.y ), eeSizef( 32 ,32 ) ), 0, 1 );
 		}
 	}
 }

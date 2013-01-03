@@ -171,10 +171,10 @@ void cShape::DrawBB() {
 	cPrimitives P;
 	P.SetColor( eeColorA( 76, 128, 76, 255 ) );
 	P.ForceDraw( false );
-	P.DrawLine( eeVector2f( mShape->bb.l, mShape->bb.t ), eeVector2f( mShape->bb.r, mShape->bb.t ) );
-	P.DrawLine( eeVector2f( mShape->bb.l, mShape->bb.t ), eeVector2f( mShape->bb.l, mShape->bb.b ) );
-	P.DrawLine( eeVector2f( mShape->bb.l, mShape->bb.b ), eeVector2f( mShape->bb.r, mShape->bb.b ) );
-	P.DrawLine( eeVector2f( mShape->bb.r, mShape->bb.t ), eeVector2f( mShape->bb.r, mShape->bb.b ) );
+	P.DrawLine( eeLine2f( eeVector2f( mShape->bb.l, mShape->bb.t ), eeVector2f( mShape->bb.r, mShape->bb.t ) ) );
+	P.DrawLine( eeLine2f( eeVector2f( mShape->bb.l, mShape->bb.t ), eeVector2f( mShape->bb.l, mShape->bb.b ) ) );
+	P.DrawLine( eeLine2f( eeVector2f( mShape->bb.l, mShape->bb.b ), eeVector2f( mShape->bb.r, mShape->bb.b ) ) );
+	P.DrawLine( eeLine2f( eeVector2f( mShape->bb.r, mShape->bb.t ), eeVector2f( mShape->bb.r, mShape->bb.b ) ) );
 	#endif
 }
 

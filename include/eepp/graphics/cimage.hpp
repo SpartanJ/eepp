@@ -3,6 +3,9 @@
 
 #include <eepp/base.hpp>
 
+#include <eepp/math/size.hpp>
+using namespace EE::Math;
+
 #include <eepp/system/colors.hpp>
 #include <eepp/system/clog.hpp>
 #include <eepp/system/cpack.hpp>
@@ -102,7 +105,10 @@ class EE_API cImage {
 		void ClearCache();
 
 		/** @return The Image Size on Memory (in bytes) */
-		eeUint Size() const;
+		eeUint MemSize() const;
+
+		/** @return The image dimensions */
+		eeSize Size();
 
 		/** Save the Image to a new File in a specific format */
 		virtual bool SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format );

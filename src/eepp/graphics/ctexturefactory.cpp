@@ -288,8 +288,8 @@ eeUint cTextureFactory::GetTexMemSize( const eeUint& TexId ) {
 				eeUint h = Tex->Height();
 				eeUint c = Tex->Channels();
 
-				if ( 0 != Tex->Size() )
-					Size = Tex->Size();
+				if ( 0 != Tex->MemSize() )
+					Size = Tex->MemSize();
 				else
 					Size = ( w * h * c );
 
@@ -301,7 +301,7 @@ eeUint cTextureFactory::GetTexMemSize( const eeUint& TexId ) {
 					}
 				}
 			} else {
-				Size = Tex->Size();
+				Size = Tex->MemSize();
 			}
 		}
 

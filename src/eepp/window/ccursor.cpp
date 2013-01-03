@@ -25,7 +25,7 @@ cCursor::cCursor( cImage * img, const eeVector2i& hotspot, const std::string& na
 	mHotSpot( hotspot ),
 	mWindow( window )
 {
-	if ( img->Size() ) {
+	if ( img->MemSize() ) {
 		mImage = eeNew( cImage, ( img->GetPixelsPtr(), img->Width(), img->Height(), img->Channels() ) );
 	} else {
 		cLog::instance()->Write( "cCursor::cCursor: Error creating cursor from cImage." );

@@ -127,12 +127,6 @@ void cUIPushButton::SetTheme( cUITheme * Theme ) {
 	DoAfterSetTheme();
 }
 
-void cUIPushButton::SetSkin( cUISkin * Skin ) {
-	cUIControl::SetSkin( Skin );
-
-	DoAfterSetTheme();
-}
-
 void cUIPushButton::DoAfterSetTheme() {
 	if ( NULL != mTextBox && NULL == mTextBox->Font() && NULL != mSkinState && NULL != mSkinState->GetSkin() && NULL != mSkinState->GetSkin()->Theme() && NULL != mSkinState->GetSkin()->Theme()->Font() )
 		mTextBox->Font( mSkinState->GetSkin()->Theme()->Font() );
