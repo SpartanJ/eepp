@@ -416,7 +416,7 @@ void cMapEditor::OnNewLight( const cUIEvent * Event ) {
 
 	if ( MEvent->Flags() & EE_BUTTON_LMASK ) {
 		eeVector2i Pos = mUIMap->Map()->GetMouseMapPos();
-		mUIMap->AddLight( eeNew( cLight, ( mLightRadius->Value(), Pos.x, Pos.y, mUIBaseColor->Background()->Color(), mLightTypeChk->Active() ? LIGHT_ISOMETRIC : LIGHT_NORMAL ) ) );
+		mUIMap->AddLight( eeNew( cLight, ( mLightRadius->Value(), Pos.x, Pos.y, mUIBaseColor->Background()->Color().ToColor(), mLightTypeChk->Active() ? LIGHT_ISOMETRIC : LIGHT_NORMAL ) ) );
 	}
 }
 

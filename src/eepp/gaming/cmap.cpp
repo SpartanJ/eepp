@@ -986,7 +986,7 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 	MapHdr.PropertyCount			= mProperties.size();
 	MapHdr.TextureAtlasCount		= TextureAtlases.size();
 	MapHdr.VirtualObjectTypesCount	= mObjTypes.size();	//! This is only usefull for the Map Editor, to auto add on the load the virtual object types that where used to create the map.
-	MapHdr.BaseColor				= mBaseColor.GetUint32();
+	MapHdr.BaseColor				= mBaseColor.GetValue();
 
 	if ( LightsEnabled() && NULL != mLightManager )
 		MapHdr.LightsCount = mLightManager->Count();
@@ -1199,7 +1199,7 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 				tLightHdr.Radius	= Light->Radius();
 				tLightHdr.PosX		= (Int32)Light->Position().x;
 				tLightHdr.PosY		= (Int32)Light->Position().y;
-				tLightHdr.Color		= eeColorA( Light->Color() ).GetUint32();
+				tLightHdr.Color		= eeColorA( Light->Color() ).GetValue();
 				tLightHdr.Type		= Light->Type();
 
 				IOS.Write( (const char*)&tLightHdr, sizeof(sMapLightHdr) );

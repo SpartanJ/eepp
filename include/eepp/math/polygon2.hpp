@@ -32,6 +32,14 @@ class Polygon2 {
 
 		const Vector2<T>& operator[] ( const Uint32& Pos ) const;
 
+		Vector2<T> GetAt( const Uint32& Pos )
+		{
+			if ( Vector.size() > 0 && Pos < Vector.size() )
+				return Vector[Pos];
+
+			return Vector[0];
+		}
+
 		std::size_t Size() const;
 
 		Vector2<T> Position() { return Vector2<T>(cOffsetX, cOffsetY); }

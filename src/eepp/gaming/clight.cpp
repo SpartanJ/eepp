@@ -80,9 +80,9 @@ eeColorA cLight::ProcessVertex( const eeFloat& PointX, const eeFloat& PointY, co
 		}
 
 		if ( VertexDist <= mRadius ) {
-			eeColor	TmpRGB;
-			Uint8	TmpColor;
-			eeFloat	LightC;
+			eeColorA	TmpRGB;
+			Uint8		TmpColor;
+			eeFloat		LightC;
 
 			LightC			= eeabs( static_cast<eeFloat> ( mColor.R() - BaseColor.R() ) ) / mRadius;
 			TmpColor		= Uint8( (eeFloat)mColor.R() - (VertexDist * LightC) );

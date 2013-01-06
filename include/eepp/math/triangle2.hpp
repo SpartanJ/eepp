@@ -11,6 +11,7 @@ class Triangle2 {
 		Triangle2();
 		Triangle2( const Vector2<T>& v1, const Vector2<T>& v2, const Vector2<T>& v3 );
 		Vector2<T> V[3];
+		Vector2<T>& GetAt( Uint32 Index ) { return V[Index]; }
 };
 
 template <typename T>

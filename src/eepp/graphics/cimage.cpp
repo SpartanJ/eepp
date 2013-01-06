@@ -243,7 +243,7 @@ void cImage::Allocate( const Uint32& size, eeColorA DefaultColor ) {
 
 	mPixels = eeNewArray( unsigned char, size );
 
-	Int32 c = (Int32)DefaultColor.GetUint32();
+	Int32 c = (Int32)DefaultColor.GetValue();
 
 	memset( mPixels, c, size );
 

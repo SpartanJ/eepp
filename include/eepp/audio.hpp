@@ -5,8 +5,6 @@
 #include <eepp/audio/caudiodevice.hpp>
 #include <eepp/audio/caudiolistener.hpp>
 #include <eepp/audio/csoundfile.hpp>
-#include <eepp/audio/csoundfiledefault.hpp>
-#include <eepp/audio/csoundfileogg.hpp>
 #include <eepp/audio/csound.hpp>
 #include <eepp/audio/csoundbuffer.hpp>
 #include <eepp/audio/csoundstream.hpp>

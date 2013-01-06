@@ -34,9 +34,9 @@ class Vector2 {
 
 		void Clamp( T len );
 
-		Vector2<T> forAngle( const T& a );
+		Vector2<T> ForAngle( const T& a );
 
-		T toAngle();
+		T ToAngle();
 
 		void RotateVector( const T& Angle );
 
@@ -70,7 +70,9 @@ Vector2<T> Vector2<T>::Lerp( const Vector2<T>& Vec, T Time ) {
 
 template <typename T>
 Vector2<T> Vector2<T>::LerpConst( const Vector2<T>& Vec, T Dist ) {
-	return *this + ( Vec - *this ).Clamp( Dist );
+	Vector2<T> t( *this + ( Vec - *this ) );
+	t.Clamp( Dist );
+	return t;
 }
 
 template <typename T>
@@ -80,7 +82,7 @@ Vector2<T> Vector2<T>::SphericalLerp( const Vector2<T>& Vec, T Time ) {
 	if( omega ) {
 		T denom = 1 / eesin( omega );
 
-		return ( Vector2<T>( x, y ) * ( eesin( ( 1 - Time ) * omega ) * denom ) + Vec * ( eesin( Time * omega ) * denom ) );
+		return ( Vector2<T>( x, y ) * (T)( eesin( ( 1 - Time ) * omega ) * denom ) + Vec * (T)( eesin( Time * omega ) * denom ) );
 	} else {
 		return Vector2<T>( x, y );
 	}
@@ -125,8 +127,18 @@ Vector2<T> operator +(const Vector2<T>& V1, const Vector2<T>& V2) {
 }
 
 template <typename T>
+Vector2<T> operator +(const Vector2<T>& V1, T X) {
+	return Vector2<T>(V1.x + X, V1.y + X);
+}
+
+template <typename T>
 Vector2<T> operator -(const Vector2<T>& V1, const Vector2<T>& V2) {
 	return Vector2<T>(V1.x - V2.x, V1.y - V2.y);
+}
+
+template <typename T>
+Vector2<T> operator -(const Vector2<T>& V1, T X) {
+	return Vector2<T>(V1.x - X, V1.y - X);
 }
 
 template <typename T>
@@ -150,6 +162,11 @@ Vector2<T>& operator *=(Vector2<T>& V, T X) {
 	V.y *= X;
 
 	return V;
+}
+
+template <typename T>
+Vector2<T> operator /(const Vector2<T>& V1, const Vector2<T>& V2) {
+	return Vector2<T>(V1.x / V2.x, V1.y / V2.y);
 }
 
 template <typename T>
@@ -256,12 +273,12 @@ void Vector2<T>::Normalize() {
 }
 
 template <typename T>
-Vector2<T> Vector2<T>::forAngle( const T& a ) {
+Vector2<T> Vector2<T>::ForAngle( const T& a ) {
 	return Vector2<T>( eecos(a), eesin(a) );
 }
 
 template <typename T>
-T Vector2<T>::toAngle() {
+T Vector2<T>::ToAngle() {
 	return eeatan2( y, x );
 }
 
@@ -272,7 +289,7 @@ T Vector2<T>::Distance( const Vector2<T>& Vec ) {
 
 template <typename T>
 T Vector2<T>::DistanceSq( const Vector2<T>& Vec ) {
-	return LengthSq( *this - Vec );
+	return ( *this - Vec ).LengthSq();
 }
 
 template <typename T>

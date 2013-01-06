@@ -27,6 +27,8 @@ class Quad2 {
 		*/
 		Vector2<T> GetCenter();
 
+		Vector2<T>& GetAt( Uint32 Index ) { return V[Index]; }
+
 		static Quad2<T> FromAABB( const tRECT<T>& R );
 
 		tRECT<T> ToAABB( const T& OffsetX = 0, const T& OffsetY = 0 );

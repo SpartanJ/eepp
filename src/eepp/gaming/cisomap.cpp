@@ -189,7 +189,8 @@ void cIsoMap::Draw() {
 		}
 	}
 
-	mPR.DrawQuad( Tile( mMouseTilePos.x, mMouseTilePos.y ).Q, EE_DRAW_LINE, ALPHA_NORMAL, 1.0f, mOffsetX, mOffsetY );
+	mPR.FillMode( EE_DRAW_LINE );
+	mPR.DrawQuad( Tile( mMouseTilePos.x, mMouseTilePos.y ).Q, mOffsetX, mOffsetY );
 }
 
 void cIsoMap::Move( const eeFloat& offsetx, const eeFloat& offsety ) {
