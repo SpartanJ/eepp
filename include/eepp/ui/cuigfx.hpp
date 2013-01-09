@@ -44,9 +44,9 @@ class EE_API cUIGfx : public cUIComplexControl {
 
 		void Color( const eeColorA& color );
 
-		const EE_RENDER_MODE& RenderType() const;
+		const EE_RENDER_MODE& RenderMode() const;
 
-		void RenderType( const EE_RENDER_MODE& render );
+		void RenderMode( const EE_RENDER_MODE& render );
 
 		const eeVector2i& AlignOffset() const;
 	protected:

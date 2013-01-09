@@ -5,7 +5,9 @@
 
 #ifdef PHYSICS_RENDERER_ENABLED
 
-#include <eepp/graphics/csprite.hpp>
+namespace EE { namespace Graphics {
+class cSprite;
+}}
 using namespace EE::Graphics;
 
 CP_NAMESPACE_BEGIN

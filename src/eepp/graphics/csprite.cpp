@@ -852,11 +852,11 @@ const eeUint& cSprite::CurrentSubFrame() const {
 	return mCurrentSubFrame;
 }
 
-void cSprite::RenderType( const EE_RENDER_MODE& Effect ) {
+void cSprite::RenderMode( const EE_RENDER_MODE& Effect ) {
 	mEffect = Effect;
 }
 
-const EE_RENDER_MODE& cSprite::RenderType() const {
+const EE_RENDER_MODE& cSprite::RenderMode() const {
 	return mEffect;
 }
 

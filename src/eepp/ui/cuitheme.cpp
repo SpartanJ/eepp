@@ -1,6 +1,9 @@
 #include <eepp/ui/cuitheme.hpp>
 #include <eepp/ui/cuiskinsimple.hpp>
 #include <eepp/ui/cuiskincomplex.hpp>
+#include <eepp/graphics/csprite.hpp>
+#include <eepp/graphics/ctextureatlas.hpp>
+#include <eepp/graphics/cfont.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/graphics/ctextureatlasmanager.hpp>
 #include <eepp/system/filesystem.hpp>

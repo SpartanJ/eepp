@@ -15,8 +15,6 @@ class EE_API cFrameBuffer {
 	public:
 		static cFrameBuffer * CreateNew( const Uint32& Width, const Uint32& Height, bool DepthBuffer = false, Window::cWindow * window = NULL );
 
-		cFrameBuffer( Window::cWindow * window );
-
 		virtual ~cFrameBuffer();
 
 		virtual bool Create( const Uint32& Width, const Uint32& Height ) = 0;
@@ -40,7 +38,9 @@ class EE_API cFrameBuffer {
 		const Int32& GetHeight() const;
 
 		const bool& HasDepthBuffer() const;
-	protected:
+	protected:		
+		cFrameBuffer( Window::cWindow * window );
+
 		Window::cWindow *	mWindow;
 		Int32		mWidth;
 		Int32		mHeight;

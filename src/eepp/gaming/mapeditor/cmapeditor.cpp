@@ -22,6 +22,7 @@
 #include <eepp/ui/cuimessagebox.hpp>
 #include <eepp/ui/cuitabwidget.hpp>
 #include <eepp/ui/tools/ctextureatlaseditor.hpp>
+#include <eepp/graphics/csprite.hpp>
 #include <eepp/graphics/ctextureatlasmanager.hpp>
 #include <eepp/graphics/cglobaltextureatlas.hpp>
 #include <eepp/graphics/ctextureatlasloader.hpp>
@@ -499,13 +500,13 @@ void cMapEditor::ChkClickDI( const cUIEvent * Event ) {
 
 void cMapEditor::UpdateGfx() {
 	if ( mChkMirrored->Active() && mChkFliped->Active() )
-		mGfxPreview->RenderType( RN_FLIPMIRROR );
+		mGfxPreview->RenderMode( RN_FLIPMIRROR );
 	else if( mChkMirrored->Active() )
-		mGfxPreview->RenderType( RN_MIRROR );
+		mGfxPreview->RenderMode( RN_MIRROR );
 	else if ( mChkFliped->Active() )
-		mGfxPreview->RenderType( RN_FLIP );
+		mGfxPreview->RenderMode( RN_FLIP );
 	else
-		mGfxPreview->RenderType( RN_NORMAL );
+		mGfxPreview->RenderMode( RN_NORMAL );
 
 	if ( mChkRot90->Active() )
 		mGfxPreview->Angle( 90 );

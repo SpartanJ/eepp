@@ -3,9 +3,13 @@
 
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uihelper.hpp>
-#include <eepp/graphics/ctextureatlas.hpp>
-#include <eepp/graphics/cfont.hpp>
 #include <eepp/ui/cuiskin.hpp>
+
+namespace EE { namespace Graphics {
+class cSprite;
+class cTextureAtlas;
+class cFont;
+}}
 
 namespace EE { namespace UI {
 

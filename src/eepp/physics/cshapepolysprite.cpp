@@ -2,6 +2,8 @@
 
 #ifdef PHYSICS_RENDERER_ENABLED
 
+#include <eepp/graphics/csprite.hpp>
+
 CP_NAMESPACE_BEGIN
 
 cShapePolySprite * cShapePolySprite::New( cBody * body, int numVerts, cVect *verts, cVect offset, cSprite * Sprite, bool AutoDeleteSprite ) {

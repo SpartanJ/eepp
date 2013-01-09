@@ -13,7 +13,7 @@ cGameObjectSubTextureEx::cGameObjectSubTextureEx( const Uint32& Flags, cLayer * 
 	mColor( Color ),
 	mVertexColors( NULL )
 {
-	mRender = RenderTypeFromFlags();
+	mRender = RenderModeFromFlags();
 
 	if ( 0 == mAngle )
 		mAngle = GetAngle();
@@ -84,7 +84,7 @@ void cGameObjectSubTextureEx::Draw() {
 }
 
 void cGameObjectSubTextureEx::FlagSet( const Uint32& Flag ) {
-	mRender = RenderTypeFromFlags();
+	mRender = RenderModeFromFlags();
 
 	cGameObject::FlagSet( Flag );
 }

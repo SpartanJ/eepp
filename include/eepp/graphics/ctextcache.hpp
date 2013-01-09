@@ -45,13 +45,20 @@ class EE_API cTextCache {
 		const eeColorA& Color() const;
 
 		/** Set the color of the string rendered */
-		void Color(const eeColorA& Color);
+		void Color(const eeColorA& color);
+
+		/** Set the color of the substring
+		* @Color The color
+		* @from The first char to change the color
+		* @to The last char to change the color
+		*/
+		void Color(const eeColorA& color, Uint32 from, Uint32 to );
 
 		/** @return The Shadow Font Color */
 		const eeColorA& ShadowColor() const;
 
 		/** Set the shadow color of the string rendered */
-		void ShadowColor(const eeColorA& Color);
+		void ShadowColor(const eeColorA& color);
 
 		const eeInt& GetNumLines() const;
 	protected:

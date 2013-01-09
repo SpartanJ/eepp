@@ -1,4 +1,5 @@
 #include <eepp/ui/cuicontrol.hpp>
+#include <eepp/ui/cuitheme.hpp>
 #include <eepp/ui/cuimanager.hpp>
 
 namespace EE { namespace UI {

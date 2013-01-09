@@ -13,11 +13,11 @@
 #include <eepp/ui/cuiskinstate.hpp>
 #include <eepp/ui/cuiskinsimple.hpp>
 #include <eepp/ui/cuiskincomplex.hpp>
-#include <eepp/ui/cuitheme.hpp>
 #include <eepp/ui/cuithememanager.hpp>
 
 namespace EE { namespace UI {
 
+class cUITheme;
 class cUIManager;
 
 class EE_API cUIControl {

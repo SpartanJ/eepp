@@ -1,4 +1,5 @@
 #include <eepp/gaming/cgameobjectsprite.hpp>
+#include <eepp/graphics/csprite.hpp>
 #include <eepp/graphics/ctextureatlasmanager.hpp>
 #include <eepp/gaming/cmap.hpp>
 #include <eepp/gaming/ctilelayer.hpp>
@@ -10,7 +11,7 @@ cGameObjectSprite::cGameObjectSprite( const Uint32& Flags, cLayer * Layer, cSpri
 	mSprite( Sprite )
 {
 	if ( NULL != mSprite )
-		mSprite->RenderType( RenderTypeFromFlags() );
+		mSprite->RenderMode( RenderModeFromFlags() );
 
 	AssignTilePos();
 }
@@ -103,12 +104,12 @@ cSprite * cGameObjectSprite::Sprite() const {
 void cGameObjectSprite::Sprite( cSprite * sprite ) {
 	eeSAFE_DELETE( mSprite );
 	mSprite = sprite;
-	mSprite->RenderType( RenderTypeFromFlags() );
+	mSprite->RenderMode( RenderModeFromFlags() );
 }
 
 void cGameObjectSprite::FlagSet( const Uint32& Flag ) {
 	if ( NULL != mSprite )
-		mSprite->RenderType( RenderTypeFromFlags() );
+		mSprite->RenderMode( RenderModeFromFlags() );
 
 	cGameObject::FlagSet( Flag );
 }

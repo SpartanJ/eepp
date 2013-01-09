@@ -105,7 +105,7 @@ Uint32 cGameObject::DataId() {
 void cGameObject::DataId( Uint32 Id ){
 }
 
-EE_RENDER_MODE cGameObject::RenderTypeFromFlags() {
+EE_RENDER_MODE cGameObject::RenderModeFromFlags() {
 	EE_RENDER_MODE Render = RN_NORMAL;
 
 	if ( ( mFlags & GObjFlags::GAMEOBJECT_MIRRORED ) && ( mFlags & GObjFlags::GAMEOBJECT_FLIPED ) ) {

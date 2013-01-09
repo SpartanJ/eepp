@@ -78,11 +78,23 @@ const eeColorA& cTextCache::Color() const {
 	return mFontColor;
 }
 
-void cTextCache::Color(const eeColorA& Color) {
-	if ( mFontColor != Color ) {
-		mFontColor = Color;
+void cTextCache::Color( const eeColorA& color ) {
+	if ( mFontColor != color ) {
+		mFontColor = color;
 
 		mColors.assign( mText.size() * EE_QUAD_VERTEX, mFontColor );
+	}
+}
+
+void cTextCache::Color( const eeColorA& color, Uint32 from, Uint32 to ) {
+	std::size_t s = mText.size();
+
+	if ( to >= s ) { to = s - 1; }
+
+	if ( from <= to && from < s && to < s ) {
+		for ( Uint32 i = from * EE_QUAD_VERTEX; i < to * EE_QUAD_VERTEX; i++ ) {
+			mColors[ i ] = color;
+		}
 	}
 }
 
@@ -90,8 +102,8 @@ const eeColorA& cTextCache::ShadowColor() const {
 	return mFontShadowColor;
 }
 
-void cTextCache::ShadowColor(const eeColorA& Color) {
-	mFontShadowColor = Color;
+void cTextCache::ShadowColor(const eeColorA& color) {
+	mFontShadowColor = color;
 }
 
 std::vector<eeVertexCoords>& cTextCache::VertextCoords() {

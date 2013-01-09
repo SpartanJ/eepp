@@ -1,4 +1,5 @@
 #include <eepp/ui/cuisprite.hpp>
+#include <eepp/graphics/csprite.hpp>
 
 namespace EE { namespace UI {
 
@@ -90,11 +91,11 @@ void cUISprite::Color( const eeColorA& color ) {
 	Alpha( color.A() );
 }
 
-const EE_RENDER_MODE& cUISprite::RenderType() const {
+const EE_RENDER_MODE& cUISprite::RenderMode() const {
 	return mRender;
 }
 
-void cUISprite::RenderType( const EE_RENDER_MODE& render ) {
+void cUISprite::RenderMode( const EE_RENDER_MODE& render ) {
 	mRender = render;
 }
 

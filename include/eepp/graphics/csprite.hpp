@@ -136,10 +136,10 @@ class EE_API cSprite {
 		const eeUint& CurrentSubFrame() const;
 
 		/** Set the Render Type */
-		void RenderType( const EE_RENDER_MODE& Effect );
+		void RenderMode( const EE_RENDER_MODE& Effect );
 
 		/** Get the Render Type */
-		const EE_RENDER_MODE& RenderType() const;
+		const EE_RENDER_MODE& RenderMode() const;
 
 		/** Set the Blend Mode */
 		void BlendMode( const EE_BLEND_MODE& Blend );
@@ -361,7 +361,7 @@ class EE_API cSprite {
 
 		eeInt				mRepeations; //!< Number of repetions of the animation, default -1 that equals to loop.
 
-		EE_BLEND_MODE	mBlend;
+		EE_BLEND_MODE		mBlend;
 		EE_RENDER_MODE		mEffect;
 
 		eeUint				mCurrentFrame;

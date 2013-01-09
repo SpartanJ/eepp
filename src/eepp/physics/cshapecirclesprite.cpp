@@ -2,6 +2,8 @@
 
 #ifdef PHYSICS_RENDERER_ENABLED
 
+#include <eepp/graphics/csprite.hpp>
+
 CP_NAMESPACE_BEGIN
 
 cShapeCircleSprite * cShapeCircleSprite::New( cBody * body, cpFloat radius, cVect offset, cSprite * Sprite, bool AutoDeleteSprite ) {

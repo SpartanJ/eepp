@@ -67,7 +67,7 @@ class EE_API cGameObject {
 		Uint32		mFlags;
 		cLayer *	mLayer;
 
-		virtual EE_RENDER_MODE RenderTypeFromFlags();
+		virtual EE_RENDER_MODE RenderModeFromFlags();
 
 		void AutoFixTilePos();
 

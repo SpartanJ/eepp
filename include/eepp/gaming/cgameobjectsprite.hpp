@@ -4,8 +4,9 @@
 #include <eepp/gaming/base.hpp>
 #include <eepp/gaming/cgameobject.hpp>
 
-#include <eepp/graphics/csprite.hpp>
-using namespace EE::Graphics;
+namespace EE { namespace Graphics {
+class cSprite;
+}}
 
 namespace EE { namespace Gaming {
 
