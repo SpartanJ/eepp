@@ -13,8 +13,6 @@ class EE_API cTextureFont : public cFont {
 		/** Creates an instance of a texture font */
 		static cTextureFont * New( const std::string FontName );
 
-		cTextureFont( const std::string FontName );
-
 		/** The destructor will not unload the texture from memory. If you want that you'll have to remove it manually ( cTextureFactory::instance()->Remove( MyFontInstance->GetTexId() ) ). */
 		virtual ~cTextureFont();
 
@@ -76,6 +74,8 @@ class EE_API cTextureFont : public cFont {
 		eeFloat mFHeight;
 
 		bool mLoadedCoords;
+
+		cTextureFont( const std::string FontName );
 
 		void BuildFont();
 
