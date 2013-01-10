@@ -5,6 +5,10 @@
 
 namespace EE { namespace Graphics {
 
+cTextureFont * cTextureFont::New( const std::string FontName ) {
+	return eeNew( cTextureFont, ( FontName ) );
+}
+
 cTextureFont::cTextureFont( const std::string FontName ) :
 	cFont( FONT_TYPE_TEX, FontName ),
 	mStartChar(0),

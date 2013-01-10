@@ -1,6 +1,7 @@
 #ifndef EECLOG_H
 #define EECLOG_H
 
+#include <list>
 #include <eepp/system/base.hpp>
 #include <eepp/system/tsingleton.hpp>
 #include <eepp/system/ciostreamfile.hpp>
@@ -9,13 +10,19 @@
 
 namespace EE { namespace System {
 
+/** @brief The reader interface is usefull if you want to keep track of what is write in the log, for example for a console. */
+class iLogReader {
+	public:
+		virtual void WriteLog( const std::string& Text ) = 0;
+};
+
 class EE_API cLog : protected cMutex {
 	SINGLETON_DECLARE_HEADERS(cLog)
 
 	public:
 		void Save(const std::string& filepath = "" );
 
-		void Write(const std::string& Text, const bool& newLine = true);
+		void Write( std::string Text, const bool& newLine = true);
 
 		void Writef( const char* format, ... );
 
@@ -29,20 +36,27 @@ class EE_API cLog : protected cMutex {
 
 		void LiveWrite( const bool& lw );
 
+		void AddLogReader( iLogReader * reader );
+
+		void RemoveLogReader( iLogReader * reader );
+
 		~cLog();
 	protected:
 		cLog();
-	private:
-		std::string		mData;
-		std::string		mFilePath;
-		bool			mSave;
-		bool			mConsoleOutput;
-		bool			mLiveWrite;
-		cIOStreamFile *	mFS;
 
-		void openfs();
+		std::string				mData;
+		std::string				mFilePath;
+		bool					mSave;
+		bool					mConsoleOutput;
+		bool					mLiveWrite;
+		cIOStreamFile *			mFS;
+		std::list<iLogReader*>	mReaders;
 
-		void closefs();
+		void OpenFS();
+
+		void CloseFS();
+
+		void WriteToReaders( std::string& text );
 };
 
 }}

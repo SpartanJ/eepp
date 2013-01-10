@@ -46,6 +46,42 @@ cConsole::cConsole( Window::cWindow * window ) :
 	}
 }
 
+cConsole::cConsole( cFont* Font, const bool& MakeDefaultCommands, const bool& AttachToLog, const eeUint& MaxLogLines, const Uint32& TextureId, Window::cWindow * window ) :
+	mWindow( window ),
+	mConColor(35, 47, 73, 230),
+	mConLineColor(55, 67, 93, 230),
+	mFontColor(153, 153, 179, 230),
+	mFontLineColor(255, 255, 255, 230),
+	mWidth(0),
+	mHeight(0),
+	mHeightMin(0),
+	mY(0.0f),
+	mA(0.0f),
+	mFadeSpeed(250.f),
+	mMyCallback(0),
+	mVidCb(0),
+	mMaxLogLines(1024),
+	mLastLogPos(0),
+	mTBuf( eeNew( cInputTextBuffer, () ) ),
+	mFont(NULL),
+	mTexId(0),
+	mCurAlpha(0),
+	mEnabled(false),
+	mVisible(false),
+	mFadeIn(false),
+	mFadeOut(false),
+	mExpand(false),
+	mFading(false),
+	mShowFps(false),
+	mCurSide(false)
+{
+	if ( NULL == mWindow ) {
+		mWindow = cEngine::instance()->GetCurrentWindow();
+	}
+
+	Create( Font, MakeDefaultCommands, AttachToLog, MaxLogLines, TextureId );
+}
+
 cConsole::~cConsole() {
 	mCallbacks.clear();
 	mCmdLog.clear();
@@ -61,9 +97,13 @@ cConsole::~cConsole() {
 	}
 
 	eeSAFE_DELETE( mTBuf );
+
+	if ( cLog::ExistsSingleton() ) {
+		cLog::instance()->RemoveLogReader( this );
+	}
 }
 
-void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const eeUint& MaxLogLines, const Uint32& TextureId ) {
+void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const bool& AttachToLog, const eeUint& MaxLogLines, const Uint32& TextureId ) {
 	if ( NULL == mWindow ) {
 		mWindow = cEngine::instance()->GetCurrentWindow();
 	}
@@ -106,6 +146,10 @@ void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const eeUin
 	mCon.ConModif = 0;
 
 	CmdGetLog();
+
+	if ( AttachToLog ) {
+		cLog::instance()->AddLogReader( this );
+	}
 }
 
 void cConsole::AddCommand( const String& Command, ConsoleCallback CB ) {
@@ -218,12 +262,12 @@ void cConsole::ProcessLine() {
 		mLastCommands.pop_front();
 
 	if ( str.size() > 0 ) {
-		PushText( "> " + params[0] );
+		PrivPushText( "> " + params[0] );
 
 		if ( mCallbacks.find( params[0] ) != mCallbacks.end() ) {
 			mCallbacks[ params[0] ]( params );
 		} else {
-			PushText( "Unknown Command: '" + params[0] + "'" );
+			PrivPushText( "Unknown Command: '" + params[0] + "'" );
 		}
 	}
 	mTBuf->Clear();
@@ -237,7 +281,15 @@ void cConsole::PrivPushText( const String& str ) {
 }
 
 void cConsole::PushText( const String& str ) {
-	PrivPushText( str );
+	if ( std::string::npos != str.find_first_of( '\n' ) ) {
+		std::vector<String> Strings = String::Split( String( str ) );
+
+		for ( Uint32 i = 0; i < Strings.size(); i++ ) {
+			PrivPushText( Strings[i] );
+		}
+	} else {
+		PrivPushText( str );
+	}
 }
 
 void cConsole::PushText( const char * format, ... ) {
@@ -336,12 +388,12 @@ void cConsole::PrintCommandsStartingWith( const String& start ) {
 	}
 
 	if ( cmds.size() > 1 ) {
-		PushText( "> " + mTBuf->Buffer() );
+		PrivPushText( "> " + mTBuf->Buffer() );
 
 		std::list<String>::iterator ite;
 
 		for ( ite = cmds.begin(); ite != cmds.end(); ite++ )
-			PushText( (*ite) );
+			PrivPushText( (*ite) );
 
 	} else if ( cmds.size() ) {
 		mTBuf->Buffer( cmds.front() );
@@ -455,7 +507,7 @@ void cConsole::CmdClear	() {
 	}
 
 	for (Uint16 i = 0; i < CutLines; i++ )
-		PushText( "" );
+		PrivPushText( "" );
 }
 
 void cConsole::CmdClear	( const std::vector < String >& params ) {
@@ -465,13 +517,13 @@ void cConsole::CmdClear	( const std::vector < String >& params ) {
 void cConsole::CmdMaximize ( const std::vector < String >& params ) {
 	mExpand = true;
 	mY = mHeight;
-	PushText( "Console Maximized" );
+	PrivPushText( "Console Maximized" );
 }
 
 void cConsole::CmdMinimize ( const std::vector < String >& params ) {
 	mExpand = false;
 	mY = mHeightMin;
-	PushText( "Console Minimized" );
+	PrivPushText( "Console Minimized" );
 }
 
 void cConsole::CmdQuit ( const std::vector < String >& params ) {
@@ -479,13 +531,13 @@ void cConsole::CmdQuit ( const std::vector < String >& params ) {
 }
 
 void cConsole::CmdGetTextureMemory ( const std::vector < String >& params ) {
-	PushText( "Total texture memory used: " + FileSystem::SizeToString( cTextureFactory::instance()->MemorySize() ) );
+	PrivPushText( "Total texture memory used: " + FileSystem::SizeToString( cTextureFactory::instance()->MemorySize() ) );
 }
 
 void cConsole::CmdCmdList ( const std::vector < String >& params ) {
 	std::map < String, ConsoleCallback >::iterator itr;
 	for (itr = mCallbacks.begin(); itr != mCallbacks.end(); itr++) {
-		PushText( "\t" + itr->first );
+		PrivPushText( "\t" + itr->first );
 	}
 }
 
@@ -497,11 +549,11 @@ void cConsole::CmdShowCursor ( const std::vector < String >& params ) {
 
 		if ( Res && ( tInt == 0 || tInt == 1 ) ) {
 			mWindow->GetCursorManager()->Visible( 0 != tInt );
-			PushText( "showcursor " + String::ToStr( tInt ) );
+			PrivPushText( "showcursor " + String::ToStr( tInt ) );
 		} else
-			PushText( "Valid parameters are 0 or 1." );
+			PrivPushText( "Valid parameters are 0 or 1." );
 	} else {
-		PushText( "No parameters. Valid parameters are 0 ( hide ) or 1 ( show )." );
+		PrivPushText( "No parameters. Valid parameters are 0 ( hide ) or 1 ( show )." );
 	}
 }
 
@@ -513,19 +565,19 @@ void cConsole::CmdFrameLimit ( const std::vector < String >& params ) {
 
 		if ( Res && ( tInt >= 0 && tInt <= 10000 ) ) {
 			mWindow->FrameRateLimit( tInt );
-			PushText( "setfpslimit " + String::ToStr( tInt ) );
+			PrivPushText( "setfpslimit " + String::ToStr( tInt ) );
 			return;
 		}
 	}
 
-	PushText( "Valid parameters are between 0 and 10000 (0 = no limit)." );
+	PrivPushText( "Valid parameters are between 0 and 10000 (0 = no limit)." );
 }
 
 void cConsole::CmdGetLog() {
 	std::vector < String > tvec = String::Split( String( String::ToStr( cLog::instance()->Buffer() ) ) );
 	if ( tvec.size() > 0 ) {
 		for ( eeUint i = 0; i < tvec.size(); i++ )
-			PushText( tvec[i] );
+			PrivPushText( tvec[i] );
 	}
 }
 
@@ -538,7 +590,7 @@ void cConsole::CmdGetGpuExtensions() {
 	std::vector < String > tvec = String::Split( String( String::ToStr( std::string( Exts ) ) ), ' ' );
 	if ( tvec.size() > 0 ) {
 		for ( eeUint i = 0; i < tvec.size(); i++ )
-			PushText( tvec[i] );
+			PrivPushText( tvec[i] );
 	}
 }
 
@@ -554,12 +606,12 @@ void cConsole::CmdSetGamma( const std::vector < String >& params ) {
 
 		if ( Res && ( tFloat > 0.1f && tFloat <= 10.0f ) ) {
 			mWindow->SetGamma( tFloat, tFloat, tFloat );
-			PushText( "setgamma " + String::ToStr( tFloat ) );
+			PrivPushText( "setgamma " + String::ToStr( tFloat ) );
 			return;
 		}
 	}
 
-	PushText( "Valid parameters are between 0.1 and 10." );
+	PrivPushText( "Valid parameters are between 0.1 and 10." );
 }
 
 void cConsole::CmdSetVolume( const std::vector < String >& params ) {
@@ -570,21 +622,17 @@ void cConsole::CmdSetVolume( const std::vector < String >& params ) {
 
 		if ( Res && ( tFloat >= 0.0f && tFloat <= 100.0f ) ) {
 			EE::Audio::cAudioListener::GlobalVolume( tFloat );
-			PushText( "setvolume " + String::ToStr( tFloat ) );
+			PrivPushText( "setvolume " + String::ToStr( tFloat ) );
 			return;
 		}
 	}
 
-	PushText( "Valid parameters are between 0 and 100." );
+	PrivPushText( "Valid parameters are between 0 and 100." );
 }
 
 void cConsole::CmdDir( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
-		#if EE_PLATFORM == EE_PLATFORM_WIN
-		String Slash( "/\\" );
-		#else
-		String Slash( "/" );
-		#endif
+		String Slash( FileSystem::GetOSlash() );
 		String myPath = params[1];
 		String myOrder;
 
@@ -607,7 +655,7 @@ void cConsole::CmdDir( const std::vector < String >& params ) {
 			std::vector<String> mFiles = FileSystem::FilesGetInPath( myPath );
 			std::sort( mFiles.begin(), mFiles.end() );
 
-			PushText( "Directory: " + myPath );
+			PrivPushText( "Directory: " + myPath );
 
 			if ( myOrder == "ff" ) {
 				std::vector<String> mFolders;
@@ -622,29 +670,29 @@ void cConsole::CmdDir( const std::vector < String >& params ) {
 				}
 
 				if ( mFolders.size() )
-					PushText( "Folders: " );
+					PrivPushText( "Folders: " );
 
 				for ( i = 0; i < mFolders.size(); i++ )
-					PushText( "	" + mFolders[i] );
+					PrivPushText( "	" + mFolders[i] );
 
 				if ( mFolders.size() )
-					PushText( "Files: " );
+					PrivPushText( "Files: " );
 
 				for ( i = 0; i < mFile.size(); i++ )
-					PushText( "	" + mFile[i] );
+					PrivPushText( "	" + mFile[i] );
 
 			} else {
 				for ( i = 0; i < mFiles.size(); i++ )
-					PushText( "	" + mFiles[i] );
+					PrivPushText( "	" + mFiles[i] );
 			}
 		} else {
 			if ( myPath == "help" )
-				PushText( "You can use a third parameter to show folders first, the parameter is ff." );
+				PrivPushText( "You can use a third parameter to show folders first, the parameter is ff." );
 			else
-				PushText( "Path is not a directory." );
+				PrivPushText( "Path is not a directory." );
 		}
 	} else {
-		PushText( "Expected a path to list. Example of usage: ls /home" );
+		PrivPushText( "Expected a path to list. Example of usage: ls /home" );
 	}
 }
 
@@ -656,12 +704,12 @@ void cConsole::CmdShowFps( const std::vector < String >& params ) {
 
 		if ( Res && ( tInt == 0 || tInt == 1 ) ) {
 			mShowFps = 0 != tInt;
-			PushText( "showfps " + String::ToStr( tInt ) );
+			PrivPushText( "showfps " + String::ToStr( tInt ) );
 			return;
 		}
 	}
 
-	PushText( "Valid parameters are 0 ( hide ) or 1 ( show )." );
+	PrivPushText( "Valid parameters are 0 ( hide ) or 1 ( show )." );
 }
 
 void cConsole::IgnoreCharOnPrompt( const Uint32& ch ) {
@@ -674,6 +722,14 @@ const bool& cConsole::IsShowingFps() const {
 
 void cConsole::ShowFps( const bool& Show ) {
 	mShowFps = Show;
+}
+
+void cConsole::WriteLog( const std::string& Text ) {
+	std::vector<String> Strings = String::Split( String( Text ) );
+
+	for ( Uint32 i = 0; i < Strings.size(); i++ ) {
+		PrivPushText( Strings[i] );
+	}
 }
 
 }}

@@ -64,6 +64,8 @@ class EE_API cTextureLoader : public cObjectLoader {
 		bool			mIsDDS;
 		int				mIsDDSCompressed;
 
+		cTimeElapsed	mTE;
+
 		void 			LoadFromPath();
 		void			LoadFromMemory();
 		void			LoadFromPack();

@@ -13,12 +13,14 @@ using namespace EE::Window;
 
 namespace EE { namespace Graphics {
 
-class EE_API cConsole{
+class EE_API cConsole : protected iLogReader {
 	public:
 		//! The Console Callback return a vector of parameters ( String )
 		typedef cb::Callback1<void, const std::vector < String >& > ConsoleCallback;
 
 		cConsole( Window::cWindow * window = NULL );
+
+		cConsole( cFont* Font, const bool& MakeDefaultCommands = true, const bool& AttachToLog = true, const eeUint& MaxLogLines = 1024, const Uint32& TextureId = 0, Window::cWindow * window = NULL );
 
 		~cConsole();
 
@@ -85,6 +87,7 @@ class EE_API cConsole{
 		/** Creates the new console
 		* @param Font The cFont pointer to class
 		* @param MakeDefaultCommands Register the default commands provided by the class?
+		* @param AttachToLog Attach the console to the cLog instance
 		* @param MaxLogLines Maximun number of lines stored on the console
 		* @param Background texture ( 0 if don't want a texture )
 		* @param ConsoleColor The Console Background Color
@@ -92,7 +95,7 @@ class EE_API cConsole{
 		* @param FontColor The Console Font Color
 		* @param FontLineColor The Console Line Font Color ( The Client Input )
 		*/
-		void Create( cFont* Font, const bool& MakeDefaultCommands = true, const eeUint& MaxLogLines = 1024, const Uint32& TextureId = 0 );
+		void Create( cFont* Font, const bool& MakeDefaultCommands = true, const bool& AttachToLog = true, const eeUint& MaxLogLines = 1024, const Uint32& TextureId = 0 );
 
 		/** Add Text to Console */
 		void PushText( const String& str );
@@ -240,6 +243,8 @@ class EE_API cConsole{
 		void PrintCommandsStartingWith( const String& start );
 
 		void PrivVideoResize();
+
+		void WriteLog( const std::string& Text );
 };
 
 }}

@@ -25,12 +25,12 @@ cLog::~cLog() {
 	Write( "...::: Entropia Engine++ Unloaded :::...\n" );
 
 	if ( mSave && !mLiveWrite ) {
-        openfs();
+		OpenFS();
 
 		mFS->Write( mData.c_str(), mData.size() );
 	}
 
-	closefs();
+	CloseFS();
 }
 
 void cLog::Save( const std::string& filepath ) {
@@ -43,48 +43,38 @@ void cLog::Save( const std::string& filepath ) {
 	mSave		= true;
 }
 
-void cLog::Write( const std::string& Text, const bool& newLine ) {
+void cLog::Write( std::string Text, const bool& newLine ) {
+	if ( newLine ) {
+		Text += '\n';
+	}
+
 	mData += Text;
 
-	if ( newLine ) {
-		mData += '\n';
-	}
-	
+	WriteToReaders( Text );
+
 	if ( mConsoleOutput ) {
 	#if EE_PLATFORM == EE_PLATFORM_ANDROID
-		if ( newLine ) {
-			ANDROID_LOGI( ( Text + std::string( "\n" ) ).c_str() );
-		} else {
-			ANDROID_LOGI( Text.c_str() );
-		}
+		ANDROID_LOGI( Text.c_str() );
 	#else
-		if ( newLine ) {
-			std::cout << Text << std::endl;
-		} else {
-			std::cout << Text;
-		}
+		std::cout << Text;
 	#endif
 	}
 	
 	if ( mLiveWrite ) {
-        openfs();
+		OpenFS();
 
 		mFS->Write( Text.c_str(), Text.size() );
-
-		if ( newLine ) {
-			mFS->Write( "\n", 1 );
-		}
 
 		mFS->Flush();
 	}
 }
 
-void cLog::openfs() {
+void cLog::OpenFS() {
 	if ( mFilePath.empty() ) {
 		mFilePath = Sys::GetProcessPath();
 	}
 
-	closefs();
+	CloseFS();
 
 	if ( NULL == mFS ) {
         std::string str = mFilePath + "log.log";
@@ -93,7 +83,7 @@ void cLog::openfs() {
 	}
 }
 
-void cLog::closefs() {
+void cLog::CloseFS() {
 	Lock();
 
 	eeSAFE_DELETE( mFS );
@@ -114,21 +104,22 @@ void cLog::Writef( const char* format, ... ) {
 
 		if ( n > -1 && n < size ) {
 			tstr.resize( n );
+			tstr += '\n';
 
-			mData += tstr + '\n';
+			mData += tstr;
+
+			WriteToReaders( tstr );
 
 			if ( mConsoleOutput ) {
 				#if EE_PLATFORM != EE_PLATFORM_ANDROID
-				std::cout << tstr << std::endl;
+				std::cout << tstr;
 				#else
-				ANDROID_LOGI( ( tstr + std::string( "\n" ) ).c_str() );
+				ANDROID_LOGI( tstr.c_str() );
 				#endif
 			}
 
             if ( mLiveWrite ) {
-                openfs();
-
-				tstr += '\n';
+				OpenFS();
 
 				mFS->Write( tstr.c_str(), tstr.size() );
 
@@ -174,6 +165,20 @@ const bool& cLog::LiveWrite() const {
 
 void cLog::LiveWrite( const bool& lw ) {
 	mLiveWrite = lw;
+}
+
+void cLog::AddLogReader( iLogReader * reader ) {
+	mReaders.push_back( reader );
+}
+
+void cLog::RemoveLogReader( iLogReader * reader ) {
+	mReaders.remove( reader );
+}
+
+void cLog::WriteToReaders( std::string& text ) {
+	for ( std::list<iLogReader*>::iterator it = mReaders.begin(); it != mReaders.end(); it++ ) {
+		(*it)->WriteLog( text );
+	}
 }
 
 }}

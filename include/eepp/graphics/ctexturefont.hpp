@@ -10,6 +10,9 @@ namespace EE { namespace Graphics {
 /** @brief This class loads texture fonts and draw strings to the screen. */
 class EE_API cTextureFont : public cFont {
 	public:
+		/** Creates an instance of a texture font */
+		static cTextureFont * New( const std::string FontName );
+
 		cTextureFont( const std::string FontName );
 
 		/** The destructor will not unload the texture from memory. If you want that you'll have to remove it manually ( cTextureFactory::instance()->Remove( MyFontInstance->GetTexId() ) ). */

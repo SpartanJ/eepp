@@ -220,6 +220,8 @@ cTextureLoader::~cTextureLoader() {
 void cTextureLoader::Start() {
 	cObjectLoader::Start();
 
+	mTE.Reset();
+
 	if ( TEX_LT_PATH == mLoadType )
 		LoadFromPath();
 	else if ( TEX_LT_MEM == mLoadType )
@@ -388,6 +390,8 @@ void cTextureLoader::LoadFromPixels() {
 				}
 
 				mTexId = cTextureFactory::instance()->PushTexture( mFilepath, tTexId, mImgWidth, mImgHeight, width, height, mMipmap, mChannels, mClampMode, mCompressTexture || mIsDDSCompressed, mLocalCopy, mSize );
+
+				cLog::instance()->Write( "Texture " + mFilepath  + " loaded in " + String::ToStr( mTE.Elapsed() ) + " ms." );
 
 				if ( NULL != mColorKey && 0 != mTexId )
 					cTextureFactory::instance()->GetTexture( mTexId )->CreateMaskFromColor( eeColorA( mColorKey->R(), mColorKey->G(), mColorKey->B(), 255 ), 0 );

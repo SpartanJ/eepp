@@ -17,6 +17,8 @@ class EE_API cTTFFont : public cFont {
 		/** Creates an instance of a true type font */
 		static cTTFFont * New( const std::string FontName );
 
+		cTTFFont( const std::string FontName );
+
 		/** The destructor will not unload the texture from memory. If you want that you'll have to remove it manually ( cTextureFactory::instance()->Remove( MyFontInstance->GetTexId() ) ). */
 		virtual ~cTTFFont();
 
@@ -91,8 +93,6 @@ class EE_API cTTFFont : public cFont {
 		bool		mLoadedFromMemory;
 		bool		mThreadedLoading;
 		bool		mTexReady;
-
-		cTTFFont( const std::string FontName );
 
 		bool ThreadedLoading() const;
 
