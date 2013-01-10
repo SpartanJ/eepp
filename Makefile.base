@@ -483,7 +483,7 @@ ifndef CROSSIOS
 LIBS += -static-libgcc -static-libstdc++
 endif
 
-OTHERINC	+= $(INCFREETYPE2)
+OTHERINC	+= $(INCFREETYPE2) -I./src/eepp/helper/SDL2/include
 
 ifeq ($(ARCH),armv7)
 OTHERINC += -DU_HAVE_GCC_ATOMICS=0
