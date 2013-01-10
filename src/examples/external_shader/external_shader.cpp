@@ -144,6 +144,16 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 			colors[i]		= eeColorAf( Math::Randf() * 0.5, 0.1, 0.8, 0.5 );
 		}
 
+		/** Optimized for ARM ( pre-cache sqrt ) */
+		#ifdef EE_ARM
+		static eeFloat sqrt_aprox[20001];
+		eeFloat tFloat = 0;
+		for ( int i = 0; i <= 20000; i++ ) {
+			sqrt_aprox[i] = eesqrt( tFloat );
+			tFloat += 0.001;
+		}
+		#endif
+
 		while ( win->Running() )
 		{
 			imp->Update();
@@ -209,7 +219,13 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 				if ( touch ) {
 					eeFloat dx	= touchX - vertices[i].x;
 					eeFloat dy	= touchY - vertices[i].y;
-					eeFloat d	= eesqrt( dx * dx + dy * dy );
+					eeFloat distance = dx * dx + dy * dy;
+
+					#ifndef EE_ARM
+					eeFloat d	= eesqrt( distance );
+					#else
+					eeFloat d = sqrt_aprox[ (Int32)(distance * 1000) ];
+					#endif
 
 					if ( d < 2.f ) {
 						if ( d < 0.03f ) {
