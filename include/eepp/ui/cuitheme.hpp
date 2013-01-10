@@ -38,8 +38,13 @@ class cUICommonDialog;
 class cUIMessageBox;
 class cUITabWidget;
 
-class EE_API cUITheme : public tResourceManager<cUISkin> {
+class EE_API cUITheme : protected tResourceManager<cUISkin> {
 	public:
+		using tResourceManager<cUISkin>::GetById;
+		using tResourceManager<cUISkin>::GetByName;
+		using tResourceManager<cUISkin>::Exists;
+		using tResourceManager<cUISkin>::ExistsId;
+
 		static cUITheme * LoadFromTextureAtlas( cUITheme * tTheme, cTextureAtlas * TextureAtlas );
 
 		static cUITheme * LoadFromPath( cUITheme * tTheme, const std::string& Path, const std::string ImgExt = "png" );

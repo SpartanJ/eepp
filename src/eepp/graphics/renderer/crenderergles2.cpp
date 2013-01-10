@@ -122,25 +122,25 @@ void cRendererGLES2::Init() {
 
 		cShader::Ensure = false;
 
-		mShaders[ EEGLES2_SHADER_BASE ]			= eeNew( cShaderProgram, ( vs.c_str(), vs.size(), fs.c_str(), fs.size() ) );
+		mShaders[ EEGLES2_SHADER_BASE ]			= cShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
 		mShaders[ EEGLES2_SHADER_BASE ]->SetReloadCb( cb::Make1( this, &cRendererGLES2::ReloadShader ) );
 
 		vs = EEGLES2_SHADER_CLIPPED_VS;
 		fs = EEGLES2_SHADER_CLIPPED_FS;
 
-		mShaders[ EEGLES2_SHADER_CLIPPED ]			= eeNew( cShaderProgram, ( vs.c_str(), vs.size(), fs.c_str(), fs.size() ) );
+		mShaders[ EEGLES2_SHADER_CLIPPED ]			= cShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
 		mShaders[ EEGLES2_SHADER_CLIPPED ]->SetReloadCb( cb::Make1( this, &cRendererGLES2::ReloadShader ) );
 
 		vs = EEGLES2_SHADER_POINTSPRITE_VS;
 		fs = EEGLES2_SHADER_POINTSPRITE_FS;
 
-		mShaders[ EEGLES2_SHADER_POINTSPRITE ]		= eeNew( cShaderProgram, ( vs.c_str(), vs.size(), fs.c_str(), fs.size() ) );
+		mShaders[ EEGLES2_SHADER_POINTSPRITE ]		= cShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
 		mShaders[ EEGLES2_SHADER_POINTSPRITE ]->SetReloadCb( cb::Make1( this, &cRendererGLES2::ReloadShader ) );
 
 		vs = EEGLES2_SHADER_PRIMITIVE_VS;
 		fs = EEGLES2_SHADER_PRIMITIVE_FS;
 
-		mShaders[ EEGLES2_SHADER_PRIMITIVE ]		= eeNew( cShaderProgram, ( vs.c_str(), vs.size(), fs.c_str(), fs.size() ) );
+		mShaders[ EEGLES2_SHADER_PRIMITIVE ]		= cShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
 		mShaders[ EEGLES2_SHADER_PRIMITIVE ]->SetReloadCb( cb::Make1( this, &cRendererGLES2::ReloadShader ) );
 
 		cShader::Ensure = true;

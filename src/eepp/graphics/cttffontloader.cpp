@@ -63,7 +63,7 @@ cTTFFontLoader::~cTTFFontLoader() {
 }
 
 void cTTFFontLoader::Create() {
-	mFont = eeNew( cTTFFont, ( mFontName ) );
+	mFont = cTTFFont::New( mFontName );
 }
 
 void cTTFFontLoader::Start() {

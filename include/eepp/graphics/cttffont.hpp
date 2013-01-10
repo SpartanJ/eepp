@@ -14,7 +14,8 @@ namespace EE { namespace Graphics {
 /** @brief This class loads True Type Font and then draw strings to the screen. */
 class EE_API cTTFFont : public cFont {
 	public:
-		cTTFFont( const std::string FontName );
+		/** Creates an instance of a true type font */
+		static cTTFFont * New( const std::string FontName );
 
 		/** The destructor will not unload the texture from memory. If you want that you'll have to remove it manually ( cTextureFactory::instance()->Remove( MyFontInstance->GetTexId() ) ). */
 		virtual ~cTTFFont();
@@ -90,6 +91,8 @@ class EE_API cTTFFont : public cFont {
 		bool		mLoadedFromMemory;
 		bool		mThreadedLoading;
 		bool		mTexReady;
+
+		cTTFFont( const std::string FontName );
 
 		bool ThreadedLoading() const;
 

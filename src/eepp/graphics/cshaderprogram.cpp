@@ -5,6 +5,30 @@
 
 namespace EE { namespace Graphics {
 
+cShaderProgram * cShaderProgram::New( const std::string& name ) {
+	return eeNew( cShaderProgram, ( name ) );
+}
+
+cShaderProgram * cShaderProgram::New( const std::vector<cShader*>& Shaders, const std::string& name ) {
+	return eeNew( cShaderProgram, ( Shaders, name ) );
+}
+
+cShaderProgram * cShaderProgram::New( const std::string& VertexShaderFile, const std::string& FragmentShaderFile, const std::string& name ) {
+	return eeNew( cShaderProgram, ( VertexShaderFile, FragmentShaderFile, name ) );
+}
+
+cShaderProgram * cShaderProgram::New( const char * VertexShaderData, const Uint32& VertexShaderDataSize, const char * FragmentShaderData, const Uint32& FragmentShaderDataSize, const std::string& name ) {
+	return eeNew( cShaderProgram, ( VertexShaderData, VertexShaderDataSize, FragmentShaderData, FragmentShaderDataSize, name ) );
+}
+
+cShaderProgram * cShaderProgram::New( cPack * Pack, const std::string& VertexShaderPath, const std::string& FragmentShaderPath, const std::string& name ) {
+	return eeNew( cShaderProgram, ( Pack, VertexShaderPath, FragmentShaderPath, name ) );
+}
+
+cShaderProgram * cShaderProgram::New( const char ** VertexShaderData, const Uint32& NumLinesVS, const char ** FragmentShaderData, const Uint32& NumLinesFS, const std::string& name ) {
+	return eeNew( cShaderProgram, ( VertexShaderData, NumLinesVS, FragmentShaderData, NumLinesFS, name ) );
+}
+
 cShaderProgram::cShaderProgram( const std::string& name ) :
 	mHandler(0),
 	mId(0)

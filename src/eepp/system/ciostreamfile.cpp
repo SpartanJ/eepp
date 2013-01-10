@@ -64,4 +64,8 @@ bool cIOStreamFile::IsOpen() {
 	return mFS.is_open();
 }
 
+void cIOStreamFile::Flush() {
+	mFS.flush();
+}
+
 }}

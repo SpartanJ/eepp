@@ -104,7 +104,7 @@ void cRendererGL3::Init() {
 
 		cShader::Ensure = false;
 
-		mShaders[ EEGL3_SHADER_BASE ]			= eeNew( cShaderProgram, ( vs.c_str(), vs.size(), fs.c_str(), fs.size() ) );
+		mShaders[ EEGL3_SHADER_BASE ]			= cShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
 		mShaders[ EEGL3_SHADER_BASE ]->SetReloadCb( cb::Make1( this, &cRendererGL3::ReloadShader ) );
 
 		cShader::Ensure = true;

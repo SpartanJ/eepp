@@ -75,7 +75,7 @@ void cLog::Write( const std::string& Text, const bool& newLine ) {
 			mFS->Write( "\n", 1 );
 		}
 
-		closefs();
+		mFS->Flush();
 	}
 }
 
@@ -132,7 +132,7 @@ void cLog::Writef( const char* format, ... ) {
 
 				mFS->Write( tstr.c_str(), tstr.size() );
 
-				closefs();
+				mFS->Flush();
             }
 
 			return;

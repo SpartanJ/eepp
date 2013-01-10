@@ -123,7 +123,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 			}
 
 			/// Create the new shader program
-			ShaderProgram = eeNew( cShaderProgram, ( vs.c_str(), vs.size(), fs.c_str(), fs.size() ) );
+			ShaderProgram = cShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
 		}
 
 		/// Set the projection

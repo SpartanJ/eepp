@@ -12,23 +12,25 @@ namespace EE { namespace Graphics {
 */
 class EE_API cShaderProgram {
 	public:
+		/** Creates an empty shader program */
+		static cShaderProgram * New( const std::string& name = "" );
+
+		/** Creates a program shader with a vector of shaders and link them. */
+		static cShaderProgram * New( const std::vector<cShader*>& Shaders, const std::string& name = "" );
+
+		/** Creates a VertexShader from file and a Fragment Shader from file, and link them. */
+		static cShaderProgram * New( const std::string& VertexShaderFile, const std::string& FragmentShaderFile, const std::string& name = "" );
+
+		/** Creates a VertexShader from memory and a Fragment Shader from memory, and link them. */
+		static cShaderProgram * New( const char * VertexShaderData, const Uint32& VertexShaderDataSize, const char * FragmentShaderData, const Uint32& FragmentShaderDataSize, const std::string& name = "" );
+
+		/** Creates the vertex shader and fragment shader from two files inside a pack */
+		static cShaderProgram * New( cPack * Pack, const std::string& VertexShaderPath, const std::string& FragmentShaderPath, const std::string& name = "" );
+
+		/** Creates the vertex and fragment shader from an array of strings */
+		static cShaderProgram * New( const char ** VertexShaderData, const Uint32& NumLinesVS, const char ** FragmentShaderData, const Uint32& NumLinesFS, const std::string& name = "" );
+
 		typedef cb::Callback1<void, cShaderProgram*> ShaderProgramReloadCb;
-
-		cShaderProgram( const std::string& name = "" );
-
-		/** Construct a program shader with a vector of shaders and link them. */
-		cShaderProgram( const std::vector<cShader*>& Shaders, const std::string& name = "" );
-
-		/** Constructor that creates a VertexShader from file and a Fragment Shader from file, and link them. */
-		cShaderProgram( const std::string& VertexShaderFile, const std::string& FragmentShaderFile, const std::string& name = "" );
-
-		/** Constructor that creates a VertexShader from memory and a Fragment Shader from memory, and link them. */
-		cShaderProgram( const char * VertexShaderData, const Uint32& VertexShaderDataSize, const char * FragmentShaderData, const Uint32& FragmentShaderDataSize, const std::string& name = "" );
-
-		/** Constructor that creates the vertex shader and fragment shader from two files inside a pack */
-		cShaderProgram( cPack * Pack, const std::string& VertexShaderPath, const std::string& FragmentShaderPath, const std::string& name = "" );
-
-		cShaderProgram( const char ** VertexShaderData, const Uint32& NumLinesVS, const char ** FragmentShaderData, const Uint32& NumLinesFS, const std::string& name = "" );
 
 		virtual ~cShaderProgram();
 
@@ -146,6 +148,24 @@ class EE_API cShaderProgram {
 		void AddToManager( const std::string& name );
 
 		void RemoveFromManager();
+
+		/** Creates an empty shader program */
+		cShaderProgram( const std::string& name = "" );
+
+		/** Construct a program shader with a vector of shaders and link them. */
+		cShaderProgram( const std::vector<cShader*>& Shaders, const std::string& name = "" );
+
+		/** Constructor that creates a VertexShader from file and a Fragment Shader from file, and link them. */
+		cShaderProgram( const std::string& VertexShaderFile, const std::string& FragmentShaderFile, const std::string& name = "" );
+
+		/** Constructor that creates a VertexShader from memory and a Fragment Shader from memory, and link them. */
+		cShaderProgram( const char * VertexShaderData, const Uint32& VertexShaderDataSize, const char * FragmentShaderData, const Uint32& FragmentShaderDataSize, const std::string& name = "" );
+
+		/** Constructor that creates the vertex shader and fragment shader from two files inside a pack */
+		cShaderProgram( cPack * Pack, const std::string& VertexShaderPath, const std::string& FragmentShaderPath, const std::string& name = "" );
+
+		/** Constructor that creates the vertex and fragment shader from an array of strings */
+		cShaderProgram( const char ** VertexShaderData, const Uint32& NumLinesVS, const char ** FragmentShaderData, const Uint32& NumLinesFS, const std::string& name = "" );
 };
 
 }}

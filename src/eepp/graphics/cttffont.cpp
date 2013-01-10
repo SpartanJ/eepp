@@ -6,6 +6,10 @@ using namespace HaikuTTF;
 
 namespace EE { namespace Graphics {
 
+cTTFFont * cTTFFont::New( const std::string FontName ) {
+	return eeNew( cTTFFont, ( FontName ) );
+}
+
 cTTFFont::cTTFFont( const std::string FontName ) :
 	cFont( FONT_TYPE_TTF, FontName ),
 	mFont(0),

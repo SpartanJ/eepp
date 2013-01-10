@@ -24,6 +24,8 @@ class EE_API cIOStreamFile : public cIOStream {
 		ios_size GetSize();
 
 		bool IsOpen();
+
+		void Flush();
 	protected:
 		std::fstream	mFS;
 		ios_size		mSize;

@@ -111,14 +111,14 @@ void cEETest::Init() {
 		Batch.AllocVertexs( 2048 );
 		Batch.SetBlendMode( ALPHA_BLENDONE );
 
-		mFBO = cFrameBuffer::CreateNew( 256, 256, false );
+		mFBO = cFrameBuffer::New( 256, 256, false );
 
 		if ( NULL != mFBO )
 			mFBO->ClearColor( eeColorAf( 0, 0, 0, 0.5f ) );
 
 		eePolygon2f Poly = eePolygon2f::CreateRoundedPolygon( 0, 0, 256, 50 );
 
-		mVBO = cVertexBuffer::Create( VERTEX_FLAG_GET( VERTEX_FLAG_POSITION ) | VERTEX_FLAG_GET( VERTEX_FLAG_COLOR ), DM_TRIANGLE_FAN );
+		mVBO = cVertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
 
         if ( NULL != mVBO ) {
             for ( Uint32 i = 0; i < Poly.Size(); i++ ) {
@@ -207,7 +207,7 @@ void cEETest::CreateShaders() {
 
 	if ( mUseShaders ) {
 		mBlurFactor = 0.01f;
-		mShaderProgram = eeNew( cShaderProgram, ( MyPath + "shader/blur.vert", MyPath + "shader/blur.frag" ) );
+		mShaderProgram = cShaderProgram::New( MyPath + "shader/blur.vert", MyPath + "shader/blur.frag" );
 	}
 }
 

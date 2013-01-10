@@ -146,22 +146,7 @@ class EE_API cTexture : public cImage {
 		*/
 		void DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width = 0.0f, const eeFloat &height = 0.0f, const eeFloat &Angle = 0, const eeFloat &Scale = 1.0f, const eeColorA& Color0 = eeColorA(255,255,255,255), const eeColorA& Color1 = eeColorA(255,255,255,255), const eeColorA& Color2 = eeColorA(255,255,255,255), const eeColorA& Color3 = eeColorA(255,255,255,255), const EE_BLEND_MODE &blend = ALPHA_NORMAL, const EE_RENDER_MODE &Effect = RN_NORMAL, const bool &ScaleCentered = true, const eeRecti& texSector = eeRecti(0,0,0,0) );
 
-		/** Render the texture on screen
-		* @param x The x position on screen
-		* @param y The y position on screen
-		* @param width The width of the texture rendered ( when Scale = 1, otherwise this width will be scaled like width * Scale )
-		* @param height The height of the texture rendered ( when Scale = 1, otherwise this height will be scaled like height * Scale )
-		* @param Angle The Angle of the texture rendered
-		* @param Scale The Scale factor of the rendered texture
-		* @param Color The texture color
-		* @param blend Set the Blend Mode ( default ALPHA_NORMAL )
-		* @param Effect Set the Render Effect ( default RN_NORMAL, no effect )
-		* @param ScaleCentered If true the texture will be scaled centered, otherwise will be scale from the Top - Left Corner
-		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
-		*/
-		void DrawEx2( const eeFloat &x, const eeFloat &y, const eeFloat &width = 0.0f, const eeFloat &height = 0.0f, const eeFloat &Angle = 0, const eeFloat &Scale = 1.0f, const eeColorA& Color = eeColorA(255,255,255,255), const EE_BLEND_MODE &blend = ALPHA_NORMAL, const EE_RENDER_MODE &Effect = RN_NORMAL, const bool &ScaleCentered = true, const eeRecti& texSector = eeRecti(0,0,0,0) );
-
-		/** Render a GL_QUAD on Screen
+		/** Render a quad on Screen
 		* @param Q The eeQuad2f
 		* @param offsetx The Offset X applyed to all the coordinates on eeQuad2f
 		* @param offsety The Offset Y applyed to all the coordinates on eeQuad2f
@@ -173,7 +158,7 @@ class EE_API cTexture : public cImage {
 		*/
 		void DrawQuad( const eeQuad2f& Q, const eeFloat &offsetx = 0.0f, const eeFloat &offsety = 0.0f, const eeFloat &Angle = 0.0f, const eeFloat &Scale = 1.0f, const eeColorA& Color = eeColorA(255,255,255,255), const EE_BLEND_MODE &blend = ALPHA_NORMAL, const eeRecti& texSector = eeRecti(0,0,0,0) );
 
-		/** Render a GL_QUAD on Screen
+		/** Render a quad on Screen
 		* @param Q The eeQuad2f
 		* @param offsetx The Offset X applyed to all the coordinates on eeQuad2f
 		* @param offsety The Offset X applyed to all the coordinates on eeQuad2f

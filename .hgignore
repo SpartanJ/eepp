@@ -13,7 +13,7 @@ syntax: glob
 *\.filters
 *\.suo
 *\.DS_Store
-./eees-*
-./eeew-*
-./eetest-*
+./eees*
+./eeew*
+./eetest*
 log.log

@@ -6,6 +6,8 @@
 
 namespace EE { namespace Graphics {
 
+static cBatchRenderer * sBR = NULL;
+
 cTexture::cTexture() :
 	cImage(),
 	mFilepath(""),
@@ -17,6 +19,9 @@ cTexture::cTexture() :
 	mClampMode( EE_CLAMP_TO_EDGE ),
 	mFilter( TEX_FILTER_LINEAR )
 {
+	if ( NULL == sBR ) {
+		sBR = cGlobalBatchRenderer::instance();
+	}
 }
 
 cTexture::cTexture( const cTexture& Copy ) :
@@ -417,30 +422,26 @@ void cTexture::Draw( const eeFloat &x, const eeFloat &y, const eeFloat &Angle, c
 }
 
 void cTexture::DrawFast( const eeFloat& x, const eeFloat& y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color, const EE_BLEND_MODE &blend, const eeFloat &width, const eeFloat &height ) {
-	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
-
 	eeFloat w = width, h = height;
 	if (!w) w = (eeFloat)ImgWidth();
 	if (!h) h = (eeFloat)ImgHeight();
 
-	BR->SetTexture( this );
-	BR->SetBlendMode( blend );
+	sBR->SetTexture( this );
+	sBR->SetBlendMode( blend );
 
-	BR->QuadsBegin();
-	BR->QuadsSetColor( Color );
+	sBR->QuadsBegin();
+	sBR->QuadsSetColor( Color );
 
 	if ( ClampMode() == EE_CLAMP_REPEAT )
-		BR->QuadsSetSubsetFree( 0, 0, 0, height / h, width / w, height / h, width / w, 0 );
+		sBR->QuadsSetSubsetFree( 0, 0, 0, height / h, width / w, height / h, width / w, 0 );
 
-	BR->BatchQuadEx( x, y, w, h, Angle, Scale );
+	sBR->BatchQuadEx( x, y, w, h, Angle, Scale );
 
-	BR->DrawOpt();
+	sBR->DrawOpt();
 }
 
 void cTexture::DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width, const eeFloat &height, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_BLEND_MODE &blend, const EE_RENDER_MODE &Effect, const bool &ScaleCentered, const eeRecti& texSector) {
-	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
-
-	bool renderdiv = true;
+	bool renderSector = true;
 	eeFloat mx = x;
 	eeFloat my = y;
 	eeFloat iwidth, iheight;
@@ -477,19 +478,19 @@ void cTexture::DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width,
 	}
 
 	if ( Sector.Left == 0 && Sector.Top == 0 && Sector.Right == w && Sector.Bottom == h )
-		renderdiv = false;
+		renderSector = false;
 
-	BR->SetTexture( this );
-	BR->SetBlendMode( blend );
+	sBR->SetTexture( this );
+	sBR->SetBlendMode( blend );
 
-	BR->QuadsBegin();
-	BR->QuadsSetColorFree( Color0, Color1, Color2, Color3 );
+	sBR->QuadsBegin();
+	sBR->QuadsSetColorFree( Color0, Color1, Color2, Color3 );
 
 	if ( Effect <= RN_FLIPMIRROR ) {
 		if ( ClampMode() == EE_CLAMP_REPEAT ) {
-			if ( Effect == RN_NORMAL )
-				if ( renderdiv ) {
-					BR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
+			if ( Effect == RN_NORMAL ) {
+				if ( renderSector ) {
+					sBR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
 
 					eeFloat sw = (eeFloat)( Sector.Right - Sector.Left );
 					eeFloat sh = (eeFloat)( Sector.Bottom - Sector.Top );
@@ -502,7 +503,7 @@ void cTexture::DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width,
 
 					for ( tmpY = 0; tmpY < tty; tmpY++ ) {
 						for ( tmpX = 0; tmpX < ttx; tmpX++ ) {
-							BR->BatchQuad( mx + tmpX * sw, my + tmpY * sh, sw, sh );
+							sBR->BatchQuad( mx + tmpX * sw, my + tmpY * sh, sw, sh );
 						}
 					}
 
@@ -510,10 +511,10 @@ void cTexture::DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width,
 						eeFloat swn = ( Sector.Right - Sector.Left ) * ( tx - (eeFloat)ttx );
 						eeFloat tor = Sector.Left + swn ;
 
-						BR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, tor / w, Sector.Bottom / h, tor / w, Sector.Top / h );
+						sBR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, tor / w, Sector.Bottom / h, tor / w, Sector.Top / h );
 
 						for ( Int32 tmpY = 0; tmpY < tty; tmpY++ ) {
-							BR->BatchQuad( mx + ttx * sw, my + tmpY * sh, swn, sh );
+							sBR->BatchQuad( mx + ttx * sw, my + tmpY * sh, swn, sh );
 						}
 					}
 
@@ -521,50 +522,52 @@ void cTexture::DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width,
 						eeFloat shn = ( Sector.Bottom - Sector.Top ) * ( ty - (eeFloat)tty );
 						eeFloat tob = Sector.Top + shn;
 
-						BR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, tob / h, Sector.Right / w, tob / h, Sector.Right / w, Sector.Top / h );
+						sBR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, tob / h, Sector.Right / w, tob / h, Sector.Right / w, Sector.Top / h );
 
 						for ( Int32 tmpX = 0; tmpX < ttx; tmpX++ ) {
-							BR->BatchQuad( mx + tmpX * sw, my + tty * sh, sw, shn );
+							sBR->BatchQuad( mx + tmpX * sw, my + tty * sh, sw, shn );
 						}
 					}
 
-					BR->DrawOpt();
+					sBR->DrawOpt();
 
 					return;
-				} else
-					BR->QuadsSetSubsetFree( 0, 0, 0, height / h, width / w, height / h, width / w, 0 );
-			else if ( Effect == RN_MIRROR )
-				BR->QuadsSetSubsetFree( width / w, 0, width / w, height / h, 0, height / h, 0, 0 );
-			else if ( RN_FLIP )
-				BR->QuadsSetSubsetFree( 0, height / h, 0, 0, width / w, 0, width / w, height / h );
-			else
-				BR->QuadsSetSubsetFree( width / w, height / h, width / w, 0, 0, 0, 0, height / h );
+				} else {
+					sBR->QuadsSetSubsetFree( 0, 0, 0, height / h, width / w, height / h, width / w, 0 );
+				}
+			} else if ( Effect == RN_MIRROR ) {
+				sBR->QuadsSetSubsetFree( width / w, 0, width / w, height / h, 0, height / h, 0, 0 );
+			} else if ( RN_FLIP ) {
+				sBR->QuadsSetSubsetFree( 0, height / h, 0, 0, width / w, 0, width / w, height / h );
+			} else {
+				sBR->QuadsSetSubsetFree( width / w, height / h, width / w, 0, 0, 0, 0, height / h );
+			}
 		} else {
 			if ( Effect == RN_NORMAL ) {
-				if ( renderdiv )
-					BR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
+				if ( renderSector )
+					sBR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
 			} else if ( Effect == RN_MIRROR ) {
-				if ( renderdiv )
-					BR->QuadsSetSubsetFree( Sector.Right / w, Sector.Top / h, Sector.Right / w, Sector.Bottom / h, Sector.Left / w, Sector.Bottom / h, Sector.Left / w, Sector.Top / h );
+				if ( renderSector )
+					sBR->QuadsSetSubsetFree( Sector.Right / w, Sector.Top / h, Sector.Right / w, Sector.Bottom / h, Sector.Left / w, Sector.Bottom / h, Sector.Left / w, Sector.Top / h );
 				else
-					BR->QuadsSetSubsetFree( 1, 0, 1, 1, 0, 1, 0, 0 );
+					sBR->QuadsSetSubsetFree( 1, 0, 1, 1, 0, 1, 0, 0 );
 			} else if ( Effect == RN_FLIP ) {
-				if ( renderdiv )
-					BR->QuadsSetSubsetFree( Sector.Left / w, Sector.Bottom / h, Sector.Left / w, Sector.Top / h, Sector.Right / w, Sector.Top / h, Sector.Right / w, Sector.Bottom / h );
+				if ( renderSector )
+					sBR->QuadsSetSubsetFree( Sector.Left / w, Sector.Bottom / h, Sector.Left / w, Sector.Top / h, Sector.Right / w, Sector.Top / h, Sector.Right / w, Sector.Bottom / h );
 				else
-					BR->QuadsSetSubsetFree( 0, 1, 0, 0, 1, 0, 1, 1 );
+					sBR->QuadsSetSubsetFree( 0, 1, 0, 0, 1, 0, 1, 1 );
 			} else if ( Effect == RN_FLIPMIRROR ) {
-				if ( renderdiv )
-					BR->QuadsSetSubsetFree( Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h, Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h );
+				if ( renderSector )
+					sBR->QuadsSetSubsetFree( Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h, Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h );
 				else
-					BR->QuadsSetSubsetFree( 1, 1, 1, 0, 0, 0, 0, 1 );
+					sBR->QuadsSetSubsetFree( 1, 1, 1, 0, 0, 0, 0, 1 );
 			}
 		}
 
-		BR->BatchQuad( mx, my, iwidth, iheight, Angle );
+		sBR->BatchQuad( mx, my, iwidth, iheight, Angle );
 	} else {
-		if ( renderdiv )
-			BR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
+		if ( renderSector )
+			sBR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
 
 		eeRectf TmpR( mx, my, mx + iwidth, my + iheight );
 		eeQuad2f Q = eeQuad2f( eeVector2f( TmpR.Left, TmpR.Top ), eeVector2f( TmpR.Left, TmpR.Bottom ), eeVector2f( TmpR.Right, TmpR.Bottom ), eeVector2f( TmpR.Right, TmpR.Top ) );
@@ -586,14 +589,10 @@ void cTexture::DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width,
 			Q.Rotate( Angle, Center );
 		}
 
-		BR->BatchQuadFree( Q[0].x, Q[0].y, Q[1].x, Q[1].y, Q[2].x, Q[2].y, Q[3].x, Q[3].y );
+		sBR->BatchQuadFree( Q[0].x, Q[0].y, Q[1].x, Q[1].y, Q[2].x, Q[2].y, Q[3].x, Q[3].y );
 	}
 
-	BR->DrawOpt();
-}
-
-void cTexture::DrawEx2( const eeFloat &x, const eeFloat &y, const eeFloat &width, const eeFloat &height, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color, const EE_BLEND_MODE &blend, const EE_RENDER_MODE &Effect, const bool &ScaleCentered, const eeRecti& texSector ) {
-	DrawEx( x, y, width, height, Angle, Scale, Color, Color, Color, Color, blend, Effect, ScaleCentered, texSector );
+	sBR->DrawOpt();
 }
 
 void cTexture::DrawQuad( const eeQuad2f& Q, const eeFloat &offsetx, const eeFloat &offsety, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color, const EE_BLEND_MODE &blend, const eeRecti& texSector) {
@@ -601,9 +600,7 @@ void cTexture::DrawQuad( const eeQuad2f& Q, const eeFloat &offsetx, const eeFloa
 }
 
 void cTexture::DrawQuadEx( const eeQuad2f& Q, const eeFloat &offsetx, const eeFloat &offsety, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_BLEND_MODE &blend, const eeRecti& texSector ) {
-	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
-
-	bool renderdiv = true;
+	bool renderSector = true;
 	eeQuad2f mQ = Q;
 	eeFloat MinX = mQ.V[0].x, MaxX = mQ.V[0].x, MinY = mQ.V[0].y, MaxY = mQ.V[0].y;
 	eeVector2f QCenter;
@@ -621,13 +618,13 @@ void cTexture::DrawQuadEx( const eeQuad2f& Q, const eeFloat &offsetx, const eeFl
 	}
 
 	if ( Sector.Left == 0 && Sector.Top == 0 && Sector.Right == w && Sector.Bottom == h )
-		renderdiv = false;
+		renderSector = false;
 
-	BR->SetTexture( this );
-	BR->SetBlendMode( blend );
+	sBR->SetTexture( this );
+	sBR->SetBlendMode( blend );
 
-	BR->QuadsBegin();
-	BR->QuadsSetColorFree( Color0, Color1, Color2, Color3 );
+	sBR->QuadsBegin();
+	sBR->QuadsSetColorFree( Color0, Color1, Color2, Color3 );
 
 	if ( Angle != 0 ||  Scale != 1.0f || ClampMode() == EE_CLAMP_REPEAT ) {
 		for (Uint8 i = 1; i < 4; i++ ) {
@@ -659,13 +656,13 @@ void cTexture::DrawQuadEx( const eeQuad2f& Q, const eeFloat &offsetx, const eeFl
 		mQ.Rotate( Angle, QCenter );
 
 	if ( ClampMode() == EE_CLAMP_REPEAT )
-		BR->QuadsSetSubsetFree( 0, 0, 0, (MaxY - MinY) / h, ( MaxX - MinX ) / w, (MaxY - MinY) / h, ( MaxX - MinX ) / w, 0 );
-	else if ( renderdiv )
-		BR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
+		sBR->QuadsSetSubsetFree( 0, 0, 0, (MaxY - MinY) / h, ( MaxX - MinX ) / w, (MaxY - MinY) / h, ( MaxX - MinX ) / w, 0 );
+	else if ( renderSector )
+		sBR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
 
-	BR->BatchQuadFreeEx( offsetx + mQ[0].x, offsety + mQ[0].y, offsetx + mQ[1].x, offsety + mQ[1].y, offsetx + mQ[2].x, offsety + mQ[2].y, offsetx + mQ[3].x, offsety + mQ[3].y );
+	sBR->BatchQuadFreeEx( offsetx + mQ[0].x, offsety + mQ[0].y, offsetx + mQ[1].x, offsety + mQ[1].y, offsetx + mQ[2].x, offsety + mQ[2].y, offsetx + mQ[3].x, offsety + mQ[3].y );
 
-	BR->DrawOpt();
+	sBR->DrawOpt();
 }
 
 }}

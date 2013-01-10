@@ -11,7 +11,7 @@ using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
-cFrameBuffer * cFrameBuffer::CreateNew( const Uint32& Width, const Uint32& Height, bool DepthBuffer, Window::cWindow * window ) {
+cFrameBuffer * cFrameBuffer::New( const Uint32& Width, const Uint32& Height, bool DepthBuffer, Window::cWindow * window ) {
 	if ( cFrameBufferFBO::IsSupported() )
 		return eeNew( cFrameBufferFBO, ( Width, Height, DepthBuffer, window ) );
 
