@@ -48,5 +48,5 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	// If was compiled in debug mode it will print the memory manager report
 	EE::MemoryManager::ShowResults();
 
-	return 0;
+	return EXIT_SUCCESS;
 }

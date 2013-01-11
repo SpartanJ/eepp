@@ -20,7 +20,10 @@ void BlendMode::SetMode( const EE_BLEND_MODE& blend, bool force ) {
 						GLi->BlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA);
 					break;
 				case ALPHA_BLENDONE:
-					GLi->BlendFunc(GL_SRC_ALPHA , GL_ONE);
+					if ( GLi->IsExtension( EEGL_EXT_blend_func_separate ) )
+						glBlendFuncSeparateEXT( GL_SRC_ALPHA, GL_ONE, GL_ONE, GL_ONE );
+					else
+						GLi->BlendFunc(GL_SRC_ALPHA , GL_ONE);
 					break;
 				case ALPHA_BLENDTWO:
 					GLi->BlendFunc(GL_SRC_ALPHA , GL_SRC_ALPHA);

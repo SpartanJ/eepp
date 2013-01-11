@@ -455,6 +455,14 @@ eeVector2f cMap::GetMouseMapPosf() const {
 	return eeVector2f( (eeFloat)mMouseMapPos.x, (eeFloat)mMouseMapPos.y );
 }
 
+eeVector2i cMap::GetMouseTilePosCoords() {
+	return GetTileCoords( GetMouseTilePos() );
+}
+
+eeVector2i cMap::GetTileCoords( const eeVector2i& TilePos ) {
+	return ( TilePos * mTileSize );
+}
+
 void cMap::ViewSize( const eeSize& viewSize ) {
 	mViewSize = viewSize;
 

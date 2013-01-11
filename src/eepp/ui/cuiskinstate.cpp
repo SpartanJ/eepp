@@ -42,6 +42,10 @@ void cUISkinState::SetPrevState() {
 	}
 }
 
+const Uint32& cUISkinState::GetPrevState() const {
+	return mLastState;
+}
+
 const Uint32& cUISkinState::GetState() const {
 	return mCurState;
 }

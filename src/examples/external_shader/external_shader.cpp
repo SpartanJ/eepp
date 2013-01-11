@@ -273,5 +273,5 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 	EE::MemoryManager::ShowResults();
 
-	return 0;
+	return EXIT_SUCCESS;
 }

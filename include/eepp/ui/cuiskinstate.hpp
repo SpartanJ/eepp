@@ -32,6 +32,8 @@ class EE_API cUISkinState {
 		void Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Width, const eeFloat& Height, const Uint32& Alpha );
 
 		bool StateExists( const Uint32& State );
+
+		const Uint32& GetPrevState() const;
 	protected:
 		friend class cUIControl;
 

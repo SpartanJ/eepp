@@ -4,6 +4,7 @@
 #include <eepp/gaming/base.hpp>
 #include <eepp/ui/cuiwindow.hpp>
 #include <eepp/ui/cuimenucheckbox.hpp>
+#include <eepp/ui/cuiselectbutton.hpp>
 #include <eepp/gaming/clayer.hpp>
 #include <eepp/gaming/clight.hpp>
 #include <eepp/gaming/cgameobject.hpp>
@@ -49,6 +50,7 @@ class EE_API cMapEditor {
 		Uint32				mCurGOFlags;
 		cUIComplexControl * mSubTextureCont;
 		cUIComplexControl * mLightCont;
+		cUIComplexControl * mObjectCont;
 		cUIComplexControl * mSGCont;
 		cUIComplexControl * mDICont;
 		cUICheckBox *		mChkDI;
@@ -71,6 +73,8 @@ class EE_API cMapEditor {
 		cUISpinBox *		mLightRadius;
 		cUICheckBox *		mLightTypeChk;
 
+		std::list<cUISelectButton*> mObjContButton;
+
 		void OnRedChange( const cUIEvent * Event );
 
 		void OnGreenChange( const cUIEvent * Event );
@@ -78,6 +82,10 @@ class EE_API cMapEditor {
 		void OnBlueChange( const cUIEvent * Event );
 
 		void CreateLightContainer();
+
+		void AddObjContButton( String text );
+
+		void CreateObjectsContainer();
 
 		void CreateSubTextureContainer( Int32 Width );
 
@@ -151,10 +159,6 @@ class EE_API cMapEditor {
 
 		void OnMapClose( const cUIEvent * Event );
 
-		void OnSubTextureContClick( const cUIEvent * Event );
-
-		void OnLightContClick( const cUIEvent * Event );
-
 		void OnNewLight( const cUIEvent * Event );
 
 		void OnLightRadiusChangeVal( const cUIEvent * Event );
@@ -164,6 +168,8 @@ class EE_API cMapEditor {
 		void OnLightSelect( cLight * Light );
 
 		void OnLightRadiusChange( cLight * Light );
+
+		void OnObjectModeSel( const cUIEvent * Event );
 
 		void OnNewGOTypeAdded( std::string name, Uint32 hash );
 

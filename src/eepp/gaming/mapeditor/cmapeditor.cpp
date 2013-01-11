@@ -166,6 +166,8 @@ void cMapEditor::CreateETGMenu() {
 
 	mLightCont = eeNew( cUIComplexControl, ( CParams ) );
 
+	mObjectCont = eeNew( cUIComplexControl, ( CParams ) );
+
 	mTabWidget = mTheme->CreateTabWidget( mWinContainer, eeSize( Width + DistToBorder, mWinContainer->Size().Height() ), eeVector2i( ContPosX, 4 ), UI_HALIGN_CENTER | UI_VALIGN_BOTTOM | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mTabWidget->AddEventListener( cUIEvent::EventOnTabSelected, cb::Make1( this, &cMapEditor::OnTabSelected ) );
 	CreateTabs();
@@ -173,6 +175,8 @@ void cMapEditor::CreateETGMenu() {
 	CreateLightContainer();
 
 	CreateSubTextureContainer( Width );
+
+	CreateObjectsContainer();
 }
 
 void cMapEditor::CreateTabs() {
@@ -184,16 +188,21 @@ void cMapEditor::CreateTabs() {
 			mTabWidget->Add( "Lights", mLightCont );
 		}
 	}
+
+	mTabWidget->Add( "Objects", mObjectCont );
 }
 
 void cMapEditor::OnTabSelected( const cUIEvent * Event ) {
 	if ( NULL != mUIMap ) {
 		switch ( mTabWidget->GetSelectedTabIndex() ) {
 			case 0:
-				mUIMap->EditingLights( false );
+				mUIMap->EditingDisabled();
 				break;
 			case 1:
 				mUIMap->EditingLights( true );
+				break;
+			case 2:
+				mUIMap->EditingObjects( true );
 				break;
 		}
 	}
@@ -360,6 +369,41 @@ void cMapEditor::CreateLightContainer() {
 	mLightTypeChk->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cMapEditor::OnLightTypeChange ) );
 }
 
+void cMapEditor::AddObjContButton( String text ) {
+	static Int32 lastY = 0;
+
+	cUISelectButton * Button = mTheme->CreateSelectButton( mObjectCont, eeSize( mObjectCont->Size().Width(), 22 ), eeVector2i( 0, lastY ) );
+
+	Button->Text( text );
+
+	Button->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::OnObjectModeSel ) );
+
+	lastY += Button->Size().Height() + 4;
+
+	mObjContButton.push_back( Button );
+}
+
+void cMapEditor::CreateObjectsContainer() {
+	AddObjContButton( "Select Objects" );
+	AddObjContButton( "Edit Polygons" );
+	AddObjContButton( "Insert Object" );
+	AddObjContButton( "Insert Polygon" );
+	AddObjContButton( "Select Polyline" );
+}
+
+void cMapEditor::OnObjectModeSel( const cUIEvent * Event ) {
+	cUISelectButton * Button = static_cast<cUISelectButton*>( Event->Ctrl() );
+	cUISelectButton * ButtonT = NULL;
+
+	for ( std::list<cUISelectButton*>::iterator it = mObjContButton.begin(); it != mObjContButton.end(); it++ ) {
+		ButtonT = *it;
+
+		ButtonT->Unselect();
+	}
+
+	Button->Select();
+}
+
 void cMapEditor::CreateUIMap() {
 	cUIComplexControl::CreateParams Params;
 	Params.Parent( mWinContainer );
@@ -457,30 +501,6 @@ void cMapEditor::OnBlueChange( const cUIEvent * Event ) {
 		eeColor lCol( mUIMap->GetSelectedLight()->Color() );
 		lCol.Blue = Col.B();
 		mUIMap->GetSelectedLight()->Color( lCol );
-	}
-}
-
-void cMapEditor::OnSubTextureContClick( const cUIEvent * Event ) {
-	const cUIEventMouse * MEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
-
-	if ( MEvent->Flags() & EE_BUTTON_LMASK ) {
-		mUIMap->EditingLights( false );
-		mSubTextureCont->Enabled( true );
-		mSubTextureCont->Visible( true );
-		mLightCont->Enabled( false );
-		mLightCont->Visible( false );
-	}
-}
-
-void cMapEditor::OnLightContClick( const cUIEvent * Event ) {
-	const cUIEventMouse * MEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
-
-	if ( MEvent->Flags() & EE_BUTTON_LMASK ) {
-		mUIMap->EditingLights( true );
-		mSubTextureCont->Enabled( false );
-		mSubTextureCont->Visible( false );
-		mLightCont->Enabled( true );
-		mLightCont->Visible( true );
 	}
 }
 
@@ -1109,6 +1129,10 @@ void cMapEditor::AddGameObject() {
 			reinterpret_cast<cGameObjectVirtual*> ( tObj )->SetLayer( tLayer );
 
 		eeVector2i p( tMap->GetMouseMapPos() );
+
+		if ( cUIManager::instance()->GetInput()->IsKeyDown( KEY_LCTRL ) ) {
+			p = tMap->GetMouseTilePosCoords();
+		}
 
 		tObj->Pos( eeVector2f( p.x, p.y ) );
 		tLayer->AddGameObject( tObj );

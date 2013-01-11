@@ -7,6 +7,8 @@ cUIMap::cUIMap( const cUIComplexControl::CreateParams& Params, cMap * Map ) :
 	cUIComplexControl( Params ),
 	mMap( Map ),
 	mEditingLights( false ),
+	mEditingObjects( false ),
+	mEditingObjMode( INSERT_OBJECT ),
 	mAddLight( NULL ),
 	mSelLight( NULL )
 {
@@ -46,8 +48,8 @@ void cUIMap::Update() {
 	if ( NULL != mMap ) {
 		mMap->Update();
 
-		if ( mEnabled && mVisible && mEditingLights ) {
-			if ( IsMouseOver() ) {
+		if ( mEnabled && mVisible ) {
+			if ( mEditingLights && IsMouseOver() ) {
 				Uint32 Flags 			= cUIManager::instance()->GetInput()->ClickTrigger();
 
 				if ( NULL != mSelLight ) {
@@ -146,16 +148,6 @@ void cUIMap::AddLight( cLight * Light ) {
 	}
 }
 
-void cUIMap::EditingLights( const bool& editing ) {
-	mEditingLights = editing;
-
-	if ( editing && NULL != mMap->GetLightManager() && NULL != mAddLight ) {
-		mMap->GetLightManager()->RemoveLight( mAddLight );
-
-		mAddLight = NULL;
-	}
-}
-
 void cUIMap::MapDraw() {
 	if ( mEditingLights && NULL != mSelLight ) {
 		cPrimitives P;
@@ -169,8 +161,47 @@ void cUIMap::MapDraw() {
 	}
 }
 
+void cUIMap::PrivEditingLights( const bool& editing ) {
+	mEditingLights = editing;
+
+	if ( editing && NULL != mMap->GetLightManager() && NULL != mAddLight ) {
+		mMap->GetLightManager()->RemoveLight( mAddLight );
+
+		mAddLight = NULL;
+	}
+}
+
+void cUIMap::EditingLights( const bool& editing ) {
+	PrivEditingLights( editing );
+
+	if ( editing ) {
+		PrivEditingObjects( false );
+	}
+}
+
 const bool& cUIMap::EditingLights() {
 	return mEditingLights;
+}
+
+void cUIMap::PrivEditingObjects( const bool& editing ) {
+	mEditingObjects = false;
+}
+
+void cUIMap::EditingObjects( const bool& editing ) {
+	PrivEditingObjects( editing );
+
+	if ( editing ) {
+		PrivEditingLights( false );
+	}
+}
+
+const bool& cUIMap::EditingObjects() {
+	return mEditingObjects;
+}
+
+void cUIMap::EditingDisabled() {
+	EditingLights( false );
+	EditingObjects( false );
 }
 
 cLight * cUIMap::GetSelectedLight() {

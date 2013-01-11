@@ -687,6 +687,25 @@ cUIPushButton * cUITheme::CreatePushButton( cUIControl * Parent, const eeSize& S
 	return Ctrl;
 }
 
+cUISelectButton * cUITheme::CreateSelectButton( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, cSubTexture * Icon, Int32 IconHorizontalMargin, bool IconAutoMargin ) {
+	cUIPushButton::CreateParams ButtonParams;
+	ButtonParams.Parent( Parent );
+	ButtonParams.PosSet( Pos );
+	ButtonParams.SizeSet( Size );
+	ButtonParams.Flags = Flags;
+	ButtonParams.Icon = Icon;
+	ButtonParams.IconHorizontalMargin = IconHorizontalMargin;
+	ButtonParams.IconAutoMargin = IconAutoMargin;
+
+	if ( NULL != Icon )
+		ButtonParams.SetIcon( Icon );
+
+	cUISelectButton * Ctrl = eeNew( cUISelectButton, ( ButtonParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
+}
+
 cUIWinMenu * cUITheme::CreateWinMenu( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 MarginBetweenButtons, Uint32 ButtonMargin, Uint32 MenuHeight, Uint32 FirstButtonMargin ) {
 	cUIWinMenu::CreateParams WinMenuParams;
 	WinMenuParams.Parent( Parent );

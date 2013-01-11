@@ -30,6 +30,12 @@ class EE_API cUIMap : public cUIComplexControl {
 
 		const bool& EditingLights();
 
+		void EditingObjects( const bool& editing );
+
+		void EditingDisabled();
+
+		const bool& EditingObjects();
+
 		cLight * GetSelectedLight();
 
 		cLight * GetAddLight();
@@ -44,8 +50,21 @@ class EE_API cUIMap : public cUIComplexControl {
 	protected:
 		cMap *				mMap;
 		bool				mEditingLights;
+		bool				mEditingObjects;
+
+		enum EDITING_OBJ_MODE {
+			SELECT_OBJECTS,
+			EDIT_POLYGONS,
+			INSERT_OBJECT,
+			INSERT_POLYGON,
+			INSERT_POLYLINE
+		};
+
+		Uint32				mEditingObjMode;
+
 		cLight *			mAddLight;
 		cLight *			mSelLight;
+
 		LightSelectCb		mLightSelCb;
 		LightRadiusChangeCb	mLightRadiusChangeCb;
 
@@ -60,6 +79,10 @@ class EE_API cUIMap : public cUIComplexControl {
 		void MapDraw();
 
 		void TryToSelectLight();
+
+		void PrivEditingLights( const bool& editing );
+
+		void PrivEditingObjects( const bool& editing );
 };
 
 }}}

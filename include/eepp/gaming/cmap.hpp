@@ -131,6 +131,10 @@ class EE_API cMap {
 
 		const eeVector2i& GetMouseTilePos() const;
 
+		eeVector2i GetMouseTilePosCoords();
+
+		eeVector2i GetTileCoords( const eeVector2i& TilePos );
+
 		const eeVector2i& GetRealMouseTilePos() const;
 
 		const eeVector2i& GetMouseMapPos() const;
