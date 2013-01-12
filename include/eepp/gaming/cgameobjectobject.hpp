@@ -14,9 +14,7 @@ class EE_API cGameObjectObject : public cGameObject {
 	public:
 		typedef std::map<std::string, std::string> PropertiesMap;
 
-		cGameObjectObject( Uint32 DataId, cLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC );
-
-		cGameObjectObject( Uint32 DataId, const eeRecti& rect, cLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC );
+		cGameObjectObject( Uint32 DataId, const eeRectf& rect, cLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC );
 
 		virtual ~cGameObjectObject();
 
@@ -42,9 +40,23 @@ class EE_API cGameObjectObject : public cGameObject {
 
 		void RemoveProperty( std::string Text );
 
+		void SetProperties( const PropertiesMap& prop );
+
 		void ClearProperties();
 
 		PropertiesMap& GetProperties();
+
+		Uint32 GetPropertyCount();
+
+		const std::string& Name() const;
+
+		void Name( const std::string& name );
+
+		const std::string& TypeName() const;
+
+		void TypeName( const std::string& type );
+
+		virtual eePolygon2f GetPolygon();
 	protected:
 		eeRectf			mRect;
 		eeVector2f		mPos;
@@ -52,6 +64,14 @@ class EE_API cGameObjectObject : public cGameObject {
 		std::string		mName;
 		std::string		mType;
 		PropertiesMap	mProperties;
+};
+
+class cGameObjectPolyData {
+	public:
+		std::string		Name;
+		std::string		Type;
+		cGameObjectObject::PropertiesMap	Properties;
+		eePolygon2f		Poly;
 };
 
 }}

@@ -13,6 +13,14 @@ namespace EE { namespace Gaming { namespace MapEditor {
 
 class EE_API cUIMap : public cUIComplexControl {
 	public:
+		enum EDITING_OBJ_MODE {
+			SELECT_OBJECTS,
+			EDIT_POLYGONS,
+			INSERT_OBJECT,
+			INSERT_POLYGON,
+			INSERT_POLYLINE
+		};
+
 		typedef cb::Callback1<void, cLight *> LightSelectCb;
 		typedef cb::Callback1<void, cLight *> LightRadiusChangeCb;
 		typedef cb::Callback2<void, Uint32, eePolygon2f> ObjAddCb;
@@ -29,13 +37,13 @@ class EE_API cUIMap : public cUIComplexControl {
 
 		void EditingLights( const bool& editing );
 
-		const bool& EditingLights();
+		bool EditingLights();
 
 		void EditingObjects( const bool& editing );
 
 		void EditingDisabled();
 
-		const bool& EditingObjects();
+		bool EditingObjects();
 
 		cLight * GetSelectedLight();
 
@@ -54,33 +62,34 @@ class EE_API cUIMap : public cUIComplexControl {
 		void ClampToTile( const bool& clamp );
 
 		const bool& ClampToTile() const;
-	protected:
-		cMap *				mMap;
-		bool				mEditingLights;
-		bool				mEditingObjects;
 
-		enum EDITING_OBJ_MODE {
-			SELECT_OBJECTS,
-			EDIT_POLYGONS,
-			INSERT_OBJECT,
-			INSERT_POLYGON,
-			INSERT_POLYLINE
+		void EditingObjMode( EDITING_OBJ_MODE mode );
+	protected:		
+		enum EDITING_MODE {
+			EDITING_LIGHT = 1,
+			EDITING_OBJECT
 		};
 
+		cMap *				mMap;
+		Uint32				mEditingMode;
+		cPrimitives			mP;
+
 		Uint32				mEditingObjMode;
-		Uint32				mObjAddType;
 
 		cLight *			mAddLight;
 		cLight *			mSelLight;
 
 		LightSelectCb		mLightSelCb;
 		LightRadiusChangeCb	mLightRadiusChangeCb;
+		ObjAddCb			mAddObjectCallback;
+
+		bool				mClampToTile;
 
 		bool				mObjRECTEditing;
-		bool				mClampToTile;
 		eeRectf				mObjRECT;
-		cPrimitives			mP;
-		ObjAddCb			mAddObjectCallback;
+
+		bool				mObjPolyEditing;
+		eePolygon2f			mObjPoly;
 
 		virtual Uint32 OnMouseMove( const eeVector2i& Pos, const Uint32 Flags );
 
@@ -94,11 +103,9 @@ class EE_API cUIMap : public cUIComplexControl {
 
 		void TryToSelectLight();
 
-		void PrivEditingLights( const bool& editing );
-
-		void PrivEditingObjects( const bool& editing );
-
 		void ManageObject( Uint32 Flags );
+
+		eeVector2f GetMouseMapPos();
 };
 
 }}}

@@ -71,11 +71,10 @@ typedef struct sMapLightHdrS {
 } sMapLightHdr;
 
 typedef struct sMapObjObjHdrS {
-	Uint32	ObjId;
 	char	Name[ MAP_PROPERTY_SIZE ];
 	char	Type[ MAP_PROPERTY_SIZE ];
-	Uint32	PropertyCount;
 	Uint32	PointCount;
+	Uint32	PropertyCount;
 } sMapObjObjHdr;
 
 class GObjFlags {

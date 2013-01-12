@@ -4,6 +4,7 @@
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/cimage.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
+#include <eepp/math/polygon2.hpp>
 
 namespace EE { namespace Graphics {
 

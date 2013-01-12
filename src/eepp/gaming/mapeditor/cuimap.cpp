@@ -6,13 +6,13 @@ namespace EE { namespace Gaming { namespace MapEditor {
 cUIMap::cUIMap( const cUIComplexControl::CreateParams& Params, cMap * Map ) :
 	cUIComplexControl( Params ),
 	mMap( Map ),
-	mEditingLights( false ),
-	mEditingObjects( false ),
+	mEditingMode( 0 ),
 	mEditingObjMode( INSERT_OBJECT ),
-	mObjAddType( GAMEOBJECT_TYPE_OBJECT ),
 	mAddLight( NULL ),
 	mSelLight( NULL ),
-	mClampToTile(true)
+	mClampToTile(true),
+	mObjRECTEditing(false),
+	mObjPolyEditing(false)
 {
 	if ( NULL == Map ) {
 		mMap = eeNew( cMap, () );
@@ -54,7 +54,7 @@ void cUIMap::Update() {
 		if ( mEnabled && mVisible && IsMouseOver() ) {
 			Uint32 Flags 			= cUIManager::instance()->GetInput()->ClickTrigger();
 
-			if ( mEditingLights ) {
+			if ( EDITING_LIGHT == mEditingMode ) {
 				if ( NULL != mSelLight ) {
 					if ( Flags & EE_BUTTONS_WUWD ) {
 						if ( Flags & EE_BUTTON_WUMASK ) {
@@ -97,11 +97,22 @@ void cUIMap::Update() {
 						TryToSelectLight();
 					}
 				}
-			} else if ( mEditingObjects ) {
+			} else if ( EDITING_OBJECT == mEditingMode ) {
 				ManageObject( Flags );
 			}
 		}
 	}
+}
+
+eeVector2f cUIMap::GetMouseMapPos() {
+	eeVector2f mp( mMap->GetMouseMapPosf() );
+
+	if ( mClampToTile ) {
+		eeVector2i mpc( mMap->GetTileCoords( mMap->GetMouseTilePos() + 1 ) );
+		mp = eeVector2f( mpc.x, mpc.y );
+	}
+
+	return mp;
 }
 
 void cUIMap::ManageObject( Uint32 Flags ) {
@@ -112,12 +123,7 @@ void cUIMap::ManageObject( Uint32 Flags ) {
 		case INSERT_OBJECT:
 		{
 			if ( PFlags & EE_BUTTON_LMASK ) {
-				eeVector2f mp( mMap->GetMouseMapPosf() );
-
-				if ( mClampToTile ) {
-					eeVector2i mpc( mMap->GetTileCoords( mMap->GetMouseTilePos() + 1 ) );
-					mp = eeVector2f( mpc.x, mpc.y );
-				}
+				eeVector2f mp( GetMouseMapPos() );
 
 				if ( !mObjRECTEditing ) {
 					mObjRECTEditing = true;
@@ -131,9 +137,22 @@ void cUIMap::ManageObject( Uint32 Flags ) {
 
 			if ( Flags & EE_BUTTON_LMASK ){
 				if ( mObjRECTEditing ) {
-					mAddObjectCallback( mObjAddType, eePolygon2f( mObjRECT ) );
+					mAddObjectCallback( GAMEOBJECT_TYPE_OBJECT, eePolygon2f( mObjRECT ) );
 					mObjRECTEditing = false;
 				}
+			}
+
+			break;
+		}
+		case INSERT_POLYLINE:
+		case INSERT_POLYGON:
+		{
+			if ( Flags & EE_BUTTON_LMASK ) {
+				mObjPoly.PushBack( GetMouseMapPos() );
+			} else if ( Flags & EE_BUTTON_RMASK ) {
+				mAddObjectCallback( ( INSERT_POLYGON == mEditingObjMode ) ? GAMEOBJECT_TYPE_POLYGON : GAMEOBJECT_TYPE_POLYLINE, mObjPoly );
+
+				mObjPoly.Clear();
 			}
 
 			break;
@@ -165,7 +184,7 @@ void cUIMap::OnSizeChange() {
 
 Uint32 cUIMap::OnMouseMove( const eeVector2i& Pos, const Uint32 Flags ) {
 	if ( NULL != mMap ) {
-		if ( mEditingLights && NULL != mAddLight ) {
+		if ( EDITING_LIGHT == mEditingMode && NULL != mAddLight ) {
 			mAddLight->Position( mMap->GetMouseMapPosf() );
 		}
 	}
@@ -193,7 +212,7 @@ void cUIMap::AddLight( cLight * Light ) {
 }
 
 void cUIMap::MapDraw() {
-	if ( mEditingLights ) {
+	if ( EDITING_LIGHT == mEditingMode ) {
 		if ( NULL != mSelLight ) {
 			mP.SetColor( eeColorA( 255, 0, 0, (Uint8)mAlpha ) );
 
@@ -203,21 +222,66 @@ void cUIMap::MapDraw() {
 			mP.FillMode( EE_DRAW_LINE );
 			mP.DrawRectangle( eeRectf( Pos, AB.Size() ) );
 		}
-	} else if ( mEditingObjects ) {
-		if ( mObjRECTEditing ) {
-			mP.FillMode( EE_DRAW_FILL );
-			mP.SetColor( eeColorA( 100, 100, 100, (Uint8)( 50 * mAlpha ) ) );
-			mP.DrawRectangle( mObjRECT );
+	} else if ( EDITING_OBJECT == mEditingMode ) {
+		switch ( mEditingObjMode ) {
+			case INSERT_OBJECT:
+			{
+				if ( mObjRECTEditing ) {
+					mP.FillMode( EE_DRAW_FILL );
+					mP.SetColor( eeColorA( 100, 100, 100, 20 ) );
+					mP.DrawRectangle( mObjRECT );
 
-			mP.FillMode( EE_DRAW_LINE );
-			mP.SetColor( eeColorA( 255, 0, 0, (Uint8)( 200 * mAlpha ) ) );
-			mP.DrawRectangle( mObjRECT );
+					mP.FillMode( EE_DRAW_LINE );
+					mP.SetColor( eeColorA( 255, 0, 0, 200 ) );
+					mP.DrawRectangle( mObjRECT );
+				}
+
+				break;
+			}
+			case INSERT_POLYGON:
+			{
+				mP.FillMode( EE_DRAW_FILL );
+				mP.SetColor( eeColorA( 50, 50, 50, 50 ) );
+				mP.DrawPolygon( mObjPoly );
+
+				mP.FillMode( EE_DRAW_LINE );
+				mP.SetColor( eeColorA( 255, 0, 0, 200 ) );
+				mP.DrawPolygon( mObjPoly );
+
+				eePolygon2f polyN( mObjPoly );
+				polyN.PushBack( GetMouseMapPos() );
+
+				mP.FillMode( EE_DRAW_FILL );
+				mP.SetColor( eeColorA( 100, 100, 100, 100 ) );
+				mP.DrawPolygon( polyN );
+
+				mP.FillMode( EE_DRAW_LINE );
+				mP.SetColor( eeColorA( 255, 255, 0, 200 ) );
+				mP.DrawPolygon( polyN );
+
+				break;
+			}
+			case INSERT_POLYLINE:
+			{
+				mP.FillMode( EE_DRAW_LINE );
+				mP.SetColor( eeColorA( 255, 0, 0, 200 ) );
+				mP.DrawPolygon( mObjPoly );
+
+				eePolygon2f polyN( mObjPoly );
+				polyN.PushBack( GetMouseMapPos() );
+
+				mP.FillMode( EE_DRAW_LINE );
+				mP.SetColor( eeColorA( 255, 255, 0, 200 ) );
+				mP.DrawPolygon( polyN );
+
+				break;
+			}
 		}
 	}
 }
 
-void cUIMap::PrivEditingLights( const bool& editing ) {
-	mEditingLights = editing;
+void cUIMap::EditingLights( const bool& editing ) {
+	mEditingMode = ( editing ) ? EDITING_LIGHT : 0;
 
 	if ( editing && NULL != mMap->GetLightManager() && NULL != mAddLight ) {
 		mMap->GetLightManager()->RemoveLight( mAddLight );
@@ -226,37 +290,20 @@ void cUIMap::PrivEditingLights( const bool& editing ) {
 	}
 }
 
-void cUIMap::EditingLights( const bool& editing ) {
-	PrivEditingLights( editing );
-
-	if ( editing ) {
-		PrivEditingObjects( false );
-	}
-}
-
-const bool& cUIMap::EditingLights() {
-	return mEditingLights;
-}
-
-void cUIMap::PrivEditingObjects( const bool& editing ) {
-	mEditingObjects = editing;
+bool cUIMap::EditingLights() {
+	return EDITING_LIGHT == mEditingMode;
 }
 
 void cUIMap::EditingObjects( const bool& editing ) {
-	PrivEditingObjects( editing );
-
-	if ( editing ) {
-		PrivEditingLights( false );
-	}
+	mEditingMode = ( editing ) ? EDITING_OBJECT : 0;
 }
 
-const bool& cUIMap::EditingObjects() {
-	return mEditingObjects;
+bool cUIMap::EditingObjects() {
+	return EDITING_OBJECT == mEditingMode;
 }
 
 void cUIMap::EditingDisabled() {
-	EditingLights( false );
-	EditingObjects( false );
+	mEditingMode = 0;
 }
 
 cLight * cUIMap::GetSelectedLight() {
@@ -298,6 +345,12 @@ void cUIMap::ClampToTile( const bool& clamp ) {
 
 const bool& cUIMap::ClampToTile() const {
 	return mClampToTile;
+}
+
+void cUIMap::EditingObjMode( EDITING_OBJ_MODE mode ) {
+	mObjPoly.Clear();
+
+	mEditingObjMode = mode;
 }
 
 }}}

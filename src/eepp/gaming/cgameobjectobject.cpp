@@ -8,18 +8,9 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {
 
-
-cGameObjectObject::cGameObjectObject( Uint32 DataId, cLayer * Layer, const Uint32& Flags ) :
+cGameObjectObject::cGameObjectObject( Uint32 DataId, const eeRectf& rect, cLayer * Layer, const Uint32& Flags ) :
 	cGameObject( Flags, Layer ),
-	//mRect( Layer->Map()->GetObjPoly( DataId ) ),
-	mPos( mRect.Pos() ),
-	mDataId( DataId )
-{
-}
-
-cGameObjectObject::cGameObjectObject( Uint32 DataId, const eeRecti& rect, cLayer * Layer, const Uint32& Flags ) :
-	cGameObject( Flags, Layer ),
-	mRect( rect.Left, rect.Top, rect.Right, rect.Bottom ),
+	mRect( rect ),
 	mPos( mRect.Pos() ),
 	mDataId( DataId )
 {
@@ -43,11 +34,11 @@ eeSize cGameObjectObject::Size() {
 void cGameObjectObject::Draw() {
 	cPrimitives P;
 	P.FillMode( EE_DRAW_FILL );
-	P.SetColor( eeColorA( 100, 100, 100, 30 ) );
+	P.SetColor( eeColorA( 100, 100, 100, 100 ) );
 	P.DrawRectangle( mRect );
 
 	P.FillMode( EE_DRAW_LINE );
-	P.SetColor( eeColorA( 50, 50, 50, 200 ) );
+	P.SetColor( eeColorA( 200, 200, 200, 200 ) );
 	P.DrawRectangle( mRect );
 }
 
@@ -86,6 +77,34 @@ void cGameObjectObject::RemoveProperty( std::string Text ) {
 
 cGameObjectObject::PropertiesMap& cGameObjectObject::GetProperties() {
 	return mProperties;
+}
+
+Uint32 cGameObjectObject::GetPropertyCount() {
+	return mProperties.size();
+}
+
+const std::string& cGameObjectObject::Name() const {
+	return mName;
+}
+
+void cGameObjectObject::Name( const std::string& name ) {
+	mName = name;
+}
+
+const std::string& cGameObjectObject::TypeName() const {
+	return mType;
+}
+
+void cGameObjectObject::TypeName( const std::string& type ) {
+	mType = type;
+}
+
+eePolygon2f cGameObjectObject::GetPolygon() {
+	return eePolygon2f( mRect );
+}
+
+void cGameObjectObject::SetProperties( const PropertiesMap& prop ) {
+	mProperties = prop;
 }
 
 }}

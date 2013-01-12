@@ -4,6 +4,8 @@
 #include <eepp/gaming/cgameobjectsubtextureex.hpp>
 #include <eepp/gaming/cgameobjectsprite.hpp>
 #include <eepp/gaming/cgameobjectobject.hpp>
+#include <eepp/gaming/cgameobjectpolygon.hpp>
+#include <eepp/gaming/cgameobjectpolyline.hpp>
 #include <eepp/gaming/ctilelayer.hpp>
 #include <eepp/gaming/cobjectlayer.hpp>
 
@@ -573,6 +575,10 @@ void cMap::Move( const eeFloat& offsetx, const eeFloat& offsety ) {
 	Offset( eeVector2f( mOffset.x + offsetx, mOffset.y + offsety ) );
 }
 
+cGameObjectPolyData& cMap::GetPolyObjData( Uint32 Id ) {
+	return mPolyObjs[ Id ];
+}
+
 cGameObject * cMap::CreateGameObject( const Uint32& Type, const Uint32& Flags, cLayer * Layer, const Uint32& DataId ) {
 	switch ( Type ) {
 		case GAMEOBJECT_TYPE_SUBTEXTURE:
@@ -600,8 +606,26 @@ cGameObject * cMap::CreateGameObject( const Uint32& Type, const Uint32& Flags, c
 			return tSprite;
 		}
 		case GAMEOBJECT_TYPE_OBJECT:
+		case GAMEOBJECT_TYPE_POLYGON:
+		case GAMEOBJECT_TYPE_POLYLINE:
 		{
-			//cGameObjectObject * tObject = eeNew( cGameObjectObject, ( Layer, Flags ) );
+			cGameObjectPolyData& ObjData = GetPolyObjData( DataId );
+
+			cGameObjectObject * tObject;
+
+			if ( GAMEOBJECT_TYPE_OBJECT == Type ) {
+				tObject = eeNew( cGameObjectObject, ( DataId, ObjData.Poly.ToAABB(), Layer, Flags ) );
+			} else if ( GAMEOBJECT_TYPE_POLYGON == Type ) {
+				tObject = eeNew( cGameObjectPolygon, ( DataId, ObjData.Poly, Layer, Flags ) );
+			} else if ( GAMEOBJECT_TYPE_POLYLINE == Type ) {
+				tObject = eeNew( cGameObjectPolyline, ( DataId, ObjData.Poly, Layer, Flags ) );
+			}
+
+			tObject->Name( ObjData.Name );
+			tObject->TypeName( ObjData.Type );
+			tObject->SetProperties( ObjData.Properties );
+
+			return tObject;
 		}
 		default:
 		{
@@ -884,22 +908,56 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 						tLayerHdr	= &( tLayersHdr[i] );
 						tOLayer		= reinterpret_cast<cObjectLayer*> ( mLayers[i] );
 
-						sMapObjGOHdr * tOGOsHdr = eeNewArray( sMapObjGOHdr, tLayerHdr->ObjectCount );
-						sMapObjGOHdr * tOGOHdr;
+						for ( Uint32 objCount = 0; objCount < tLayerHdr->ObjectCount; objCount++ ) {
+							sMapObjGOHdr tOGOHdr;
 
-						IOS.Read( (char*)&tOGOsHdr, sizeof(sMapObjGOHdr) * tLayerHdr->ObjectCount );
+							IOS.Read( (char*)&tOGOHdr, sizeof(sMapObjGOHdr) );
 
-						for ( z = 0; z < tLayerHdr->ObjectCount; z++ ) {
-							tOGOHdr = &( tOGOsHdr[z] );
+							//! For the polygon objects wee need to read the polygon points, the Name, the TypeName and the Properties.
+							if (	tOGOHdr.Type == GAMEOBJECT_TYPE_OBJECT		||
+									tOGOHdr.Type == GAMEOBJECT_TYPE_POLYGON		||
+									tOGOHdr.Type == GAMEOBJECT_TYPE_POLYLINE )
+							{
+								cGameObjectPolyData tObjData;
 
-							tGO = CreateGameObject( tOGOHdr->Type, tOGOHdr->Flags, mLayers[i], tOGOHdr->Id );
+								//! First we read the poly obj header
+								sMapObjObjHdr tObjObjHdr;
 
-							tGO->Pos( eeVector2f( tOGOHdr->PosX, tOGOHdr->PosY ) );
+								IOS.Read( (char*)&tObjObjHdr, sizeof(sMapObjObjHdr) );
+
+								tObjData.Name = std::string( tObjObjHdr.Name );
+								tObjData.Type = std::string( tObjObjHdr.Type );
+
+								//! Reads the properties
+								for ( Uint32 iProp = 0; iProp < tObjObjHdr.PropertyCount; i++ ) {
+									sPropertyHdr tObjProp;
+
+									IOS.Read( (char*)&tObjProp, sizeof(sPropertyHdr) );
+
+									tObjData.Properties[ std::string( tObjProp.Name ) ] = std::string( tObjProp.Value );
+								}
+
+								//! Reads the polygon points
+								for ( Uint32 iPoint = 0; iPoint < tObjObjHdr.PointCount; iPoint++ ) {
+									eeVector2if p;
+
+									IOS.Read( (char*)&p, sizeof(eeVector2if) );
+
+									tObjData.Poly.PushBack( eeVector2f( p.x, p.y ) );
+								}
+
+								mPolyObjs[ tOGOHdr.Id ] = tObjData;
+
+								//! Recover the last max id
+								mLastObjId	= eemax( mLastObjId, tOGOHdr.Id );
+							}
+
+							tGO = CreateGameObject( tOGOHdr.Type, tOGOHdr.Flags, mLayers[i], tOGOHdr.Id );
+
+							tGO->Pos( eeVector2f( tOGOHdr.PosX, tOGOHdr.PosY ) );
 
 							tOLayer->AddGameObject( tGO );
 						}
-
-						eeSAFE_DELETE_ARRAY( tOGOsHdr );
 					}
 				}
 
@@ -910,16 +968,13 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 					sMapLightHdr * tLighsHdr = eeNewArray( sMapLightHdr, MapHdr.LightsCount );
 					sMapLightHdr * tLightHdr;
 
-					IOS.Read( (char*)&tLighsHdr, sizeof(sMapLightHdr) * MapHdr.LightsCount );
+					IOS.Read( (char*)tLighsHdr, sizeof(sMapLightHdr) * MapHdr.LightsCount );
 
 					for ( i = 0; i < MapHdr.LightsCount; i++ ) {
 						tLightHdr = &( tLighsHdr[ i ] );
 
-						eeColorA tLightColA( tLightHdr->Color );
-						eeColor tLightCol( tLightColA.R(), tLightColA.G(), tLightColA.B() );
-
 						mLightManager->AddLight(
-							eeNew( cLight, ( tLightHdr->Radius, tLightHdr->PosX, tLightHdr->PosY, tLightCol, (LIGHT_TYPE)tLightHdr->Type ) )
+							eeNew( cLight, ( tLightHdr->Radius, tLightHdr->PosX, tLightHdr->PosY, eeColorA( tLightHdr->Color ).ToColor(), (LIGHT_TYPE)tLightHdr->Type ) )
 						);
 					}
 
@@ -930,6 +985,8 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 			}
 
 			OnMapLoaded();
+
+			mPolyObjs.clear();
 
 			return true;
 		}
@@ -1177,6 +1234,7 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 					sMapObjGOHdr tOGOHdr;
 
 					//! The DataId should be the SubTexture hash name ( at least in the cases of type SubTexture, SubTextureEx and Sprite.
+					//! And for the Poly Obj should be an arbitrary value assigned by the map on the moment of creation
 					tOGOHdr.Id		= tObj->DataId();
 
 					//! If the object type is virtual, means that the real type is stored elsewhere.
@@ -1195,6 +1253,50 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 					tOGOHdr.PosY	= (Int32)tObj->Pos().y;
 
 					IOS.Write( (const char*)&tOGOHdr, sizeof(sMapObjGOHdr) );
+
+					//! For the polygon objects wee need to write the polygon points, the Name, the TypeName and the Properties.
+					if (	tObj->Type() == GAMEOBJECT_TYPE_OBJECT		||
+							tObj->Type() == GAMEOBJECT_TYPE_POLYGON		||
+							tObj->Type() == GAMEOBJECT_TYPE_POLYLINE )
+					{
+						cGameObjectObject * tObjObj						= reinterpret_cast<cGameObjectObject*>( tObj );
+						eePolygon2f tPoly								= tObjObj->GetPolygon();
+						cGameObjectObject::PropertiesMap tObjObjProp	= tObjObj->GetProperties();
+						sMapObjObjHdr tObjObjHdr;
+
+						memset( tObjObjHdr.Name, 0, MAP_PROPERTY_SIZE );
+						memset( tObjObjHdr.Type, 0, MAP_PROPERTY_SIZE );
+
+						String::StrCopy( tObjObjHdr.Name, tObjObj->Name().c_str(), MAP_PROPERTY_SIZE );
+						String::StrCopy( tObjObjHdr.Type, tObjObj->TypeName().c_str(), MAP_PROPERTY_SIZE );
+
+						tObjObjHdr.PointCount		= tPoly.Size();
+						tObjObjHdr.PropertyCount	= tObjObjProp.size();
+
+						//! Writes the ObjObj header
+						IOS.Write( (const char*)&tObjObjHdr, sizeof(sMapObjObjHdr) );
+
+						//! Writes the properties of the current polygon object
+						for ( cGameObjectObject::PropertiesMap::iterator ooit = tObjObjProp.begin(); ooit != tObjObjProp.end(); ooit++ ) {
+							sPropertyHdr tProp;
+
+							memset( tProp.Name, 0, MAP_PROPERTY_SIZE );
+							memset( tProp.Value, 0, MAP_PROPERTY_SIZE );
+
+							String::StrCopy( tProp.Name, ooit->first.c_str(), MAP_PROPERTY_SIZE );
+							String::StrCopy( tProp.Value, ooit->second.c_str(), MAP_PROPERTY_SIZE );
+
+							IOS.Write( (const char*)&tProp, sizeof(sPropertyHdr) );
+						}
+
+						//! Writes the polygon points
+						for ( Uint32 tPoint = 0; tPoint < tPoly.Size(); tPoint++ ) {
+							eeVector2f pf( tPoly.GetAt( tPoint ) );
+							eeVector2if p( pf.x, pf.y );	//! Convert it to Int32
+
+							IOS.Write( (const char*)&p, sizeof(eeVector2if) );
+						}
+					}
 				}
 			}
 		}

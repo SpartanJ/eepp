@@ -13,6 +13,8 @@
 #include <eepp/gaming/cgameobjectsubtextureex.hpp>
 #include <eepp/gaming/cgameobjectsprite.hpp>
 #include <eepp/gaming/cgameobjectobject.hpp>
+#include <eepp/gaming/cgameobjectpolygon.hpp>
+#include <eepp/gaming/cgameobjectpolyline.hpp>
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/ui/cuithememanager.hpp>
 #include <eepp/ui/cuiwinmenu.hpp>
@@ -370,12 +372,13 @@ void cMapEditor::CreateLightContainer() {
 	mLightTypeChk->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cMapEditor::OnLightTypeChange ) );
 }
 
-cUISelectButton * cMapEditor::AddObjContButton( String text ) {
+cUISelectButton * cMapEditor::AddObjContButton( String text, Uint32 mode ) {
 	static Int32 lastY = 0;
 
 	cUISelectButton * Button = mTheme->CreateSelectButton( mObjectCont, eeSize( mObjectCont->Size().Width(), 22 ), eeVector2i( 0, lastY ) );
 
 	Button->Text( text );
+	Button->Data( mode );
 
 	Button->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::OnObjectModeSel ) );
 
@@ -387,11 +390,11 @@ cUISelectButton * cMapEditor::AddObjContButton( String text ) {
 }
 
 void cMapEditor::CreateObjectsContainer() {
-	AddObjContButton( "Select Objects" );
-	AddObjContButton( "Edit Polygons" );
-	AddObjContButton( "Insert Object" )->Select();
-	AddObjContButton( "Insert Polygon" );
-	cUISelectButton * Button = AddObjContButton( "Select Polyline" );
+	AddObjContButton( "Select Objects", cUIMap::SELECT_OBJECTS );
+	AddObjContButton( "Edit Polygons", cUIMap::EDIT_POLYGONS );
+	AddObjContButton( "Insert Object", cUIMap::INSERT_OBJECT )->Select();
+	AddObjContButton( "Insert Polygon", cUIMap::INSERT_POLYGON );
+	cUISelectButton * Button = AddObjContButton( "Insert Polyline", cUIMap::INSERT_POLYLINE );
 
 	Int32 nextY = Button->Pos().y + Button->Size().Height() + 4;
 
@@ -415,6 +418,8 @@ void cMapEditor::OnObjectModeSel( const cUIEvent * Event ) {
 	}
 
 	Button->Select();
+
+	mUIMap->EditingObjMode( (cUIMap::EDITING_OBJ_MODE)Button->Data() );
 }
 
 void cMapEditor::CreateUIMap() {
@@ -455,17 +460,14 @@ void cMapEditor::OnAddObject( Uint32 Type, eePolygon2f poly ) {
 		return;
 	}
 
+	cObjectLayer * OL = static_cast<cObjectLayer*> ( mCurLayer );
+
 	if ( GAMEOBJECT_TYPE_OBJECT == Type ) {
-		cObjectLayer * OL = static_cast<cObjectLayer*> ( mCurLayer );
-
-		eeRectf Rect = poly.ToAABB();
-
-		cGameObjectObject * tObj = eeNew( cGameObjectObject, ( mUIMap->Map()->GetNewObjectId(), eeRecti( Rect.Left, Rect.Top, Rect.Right, Rect.Bottom ), mCurLayer ) );
-
-		OL->AddGameObject( tObj );
-
-	} else if ( GAMEOBJECT_TYPE_POLYGON == Type || GAMEOBJECT_TYPE_POLYGON == Type ) {
-
+		OL->AddGameObject( eeNew( cGameObjectObject, ( mUIMap->Map()->GetNewObjectId(), poly.ToAABB(), mCurLayer ) ) );
+	} else if ( GAMEOBJECT_TYPE_POLYGON == Type ) {
+		OL->AddGameObject( eeNew( cGameObjectPolygon, ( mUIMap->Map()->GetNewObjectId(), poly, mCurLayer ) ) );
+	} else if ( GAMEOBJECT_TYPE_POLYLINE == Type ) {
+		OL->AddGameObject( eeNew( cGameObjectPolyline, ( mUIMap->Map()->GetNewObjectId(), poly, mCurLayer ) ) );
 	}
 }
 

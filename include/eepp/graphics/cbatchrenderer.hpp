@@ -2,6 +2,7 @@
 #define EE_GRAPHICSCBATCHRENDERER_H
 
 #include <eepp/graphics/base.hpp>
+#include <eepp/math/polygon2.hpp>
 
 namespace EE { namespace Graphics {
 

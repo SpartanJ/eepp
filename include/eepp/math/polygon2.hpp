@@ -16,6 +16,8 @@ class Polygon2 {
 
 		~Polygon2();
 
+		Polygon2( const Polygon2<T>& fromPoly );
+
 		Polygon2( const Triangle2<T>& fromTrig );
 
 		Polygon2( const Quad2<T>& fromQuad );
@@ -28,7 +30,7 @@ class Polygon2 {
 
 		void PopBack();
 
-		void Reset();
+		void Clear();
 
 		const Vector2<T>& operator[] ( const Uint32& Pos ) const;
 
@@ -73,8 +75,19 @@ class Polygon2 {
 };
 
 template <typename T>
-Polygon2<T>::Polygon2() : cOffsetX(0), cOffsetY(0) {
-	Reset();
+Polygon2<T>::Polygon2() :
+	cOffsetX(0),
+	cOffsetY(0)
+{
+	Clear();
+}
+
+template <typename T>
+Polygon2<T>::Polygon2( const Polygon2<T>& fromPoly ) :
+	Vector( fromPoly.Vector ),
+	cOffsetX( fromPoly.cOffsetX ),
+	cOffsetY( fromPoly.cOffsetY )
+{
 }
 
 template <typename T>
@@ -105,11 +118,11 @@ Polygon2<T>::Polygon2( const tRECT<T>& fromRect ) : cOffsetX(0), cOffsetY(0) {
 
 template <typename T>
 Polygon2<T>::~Polygon2() {
-	Reset();
+	Clear();
 }
 
 template <typename T>
-void Polygon2<T>::Reset() {
+void Polygon2<T>::Clear() {
 	Vector.clear();
 }
 

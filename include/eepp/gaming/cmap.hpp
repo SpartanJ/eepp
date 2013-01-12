@@ -4,6 +4,7 @@
 #include <eepp/gaming/base.hpp>
 
 #include <eepp/gaming/cgameobject.hpp>
+#include <eepp/gaming/cgameobjectobject.hpp>
 #include <eepp/gaming/clight.hpp>
 #include <eepp/gaming/clightmanager.hpp>
 #include <eepp/gaming/clayer.hpp>
@@ -209,7 +210,11 @@ class EE_API cMap {
 		eeVector2i GetMaxOffset();
 
 		Uint32 GetNewObjectId();
+
+		cGameObjectPolyData& GetPolyObjData( Uint32 Id );
 	protected:
+		typedef std::map<Uint32, cGameObjectPolyData> PolyObjMap;
+
 		Window::cWindow *		mWindow;
 		cLayer**		mLayers;
 		Uint32			mFlags;
@@ -245,6 +250,7 @@ class EE_API cMap {
 		eeFloat			mScale;
 		eeVector2f		mOffscale;
 		Uint32			mLastObjId;
+		PolyObjMap		mPolyObjs;
 
 		virtual cGameObject *	CreateGameObject( const Uint32& Type, const Uint32& Flags, cLayer * Layer, const Uint32& DataId = 0 );
 
