@@ -15,6 +15,7 @@ class EE_API cUIMap : public cUIComplexControl {
 	public:
 		typedef cb::Callback1<void, cLight *> LightSelectCb;
 		typedef cb::Callback1<void, cLight *> LightRadiusChangeCb;
+		typedef cb::Callback2<void, Uint32, eePolygon2f> ObjAddCb;
 
 		cUIMap( const cUIComplexControl::CreateParams& Params, cMap * Map = NULL );
 
@@ -46,7 +47,13 @@ class EE_API cUIMap : public cUIComplexControl {
 
 		void SetLightRadiusChangeCb( LightRadiusChangeCb Cb );
 
+		void SetAddObjectCallback( ObjAddCb Cb );
+
 		void ClearLights();
+
+		void ClampToTile( const bool& clamp );
+
+		const bool& ClampToTile() const;
 	protected:
 		cMap *				mMap;
 		bool				mEditingLights;
@@ -61,12 +68,19 @@ class EE_API cUIMap : public cUIComplexControl {
 		};
 
 		Uint32				mEditingObjMode;
+		Uint32				mObjAddType;
 
 		cLight *			mAddLight;
 		cLight *			mSelLight;
 
 		LightSelectCb		mLightSelCb;
 		LightRadiusChangeCb	mLightRadiusChangeCb;
+
+		bool				mObjRECTEditing;
+		bool				mClampToTile;
+		eeRectf				mObjRECT;
+		cPrimitives			mP;
+		ObjAddCb			mAddObjectCallback;
 
 		virtual Uint32 OnMouseMove( const eeVector2i& Pos, const Uint32 Flags );
 
@@ -83,6 +97,8 @@ class EE_API cUIMap : public cUIComplexControl {
 		void PrivEditingLights( const bool& editing );
 
 		void PrivEditingObjects( const bool& editing );
+
+		void ManageObject( Uint32 Flags );
 };
 
 }}}

@@ -57,6 +57,9 @@ class EE_API String {
 	static Uint32 Hash( const Uint8 * str );
 
 	/** @return string hash */
+	static Uint32 Hash( const char * str );
+
+	/** @return string hash */
 	static Uint32 Hash( const std::string& str );
 
 	/** @return string hash. Note: String::Hash( std::string( "text" ) ) is != to String::Hash( String( "text" ) ) */

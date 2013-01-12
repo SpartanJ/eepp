@@ -24,6 +24,10 @@ Uint32 String::Hash( const Uint8 * str ) {
 	return 0;
 }
 
+Uint32 String::Hash( const char * str ) {
+	return String::Hash( reinterpret_cast<const Uint8*>( str ) );
+}
+
 Uint32 String::Hash( const std::string& str ) {
 	return String::Hash( reinterpret_cast<const Uint8*>( &str[0] ) );
 }

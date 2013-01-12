@@ -33,6 +33,8 @@ class EE_API cLayer {
 
 		void Offset( const eeVector2f& offset );
 
+		void Name( const std::string& name );
+
 		const std::string& Name() const;
 
 		const Uint32& Id() const;

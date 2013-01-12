@@ -9,6 +9,10 @@
 #include <eepp/gaming/clight.hpp>
 #include <eepp/gaming/cgameobject.hpp>
 
+namespace EE { namespace UI {
+class cUIMessageBox;
+}}
+
 using namespace EE::UI;
 
 namespace EE { namespace Gaming { namespace MapEditor {
@@ -61,6 +65,7 @@ class EE_API cMapEditor {
 		cUIMenuCheckBox	*	mChkShowGrid;
 		cUIMenuCheckBox	*	mChkMarkTileOver;
 		cUIMenuCheckBox	*	mChkShowBlocked;
+		cUICheckBox	*		mChkClampToTile;
 
 		//! Light Color
 		cUIComplexControl *	mUIBaseColor;
@@ -83,7 +88,7 @@ class EE_API cMapEditor {
 
 		void CreateLightContainer();
 
-		void AddObjContButton( String text );
+		cUISelectButton * AddObjContButton( String text );
 
 		void CreateObjectsContainer();
 
@@ -149,6 +154,8 @@ class EE_API cMapEditor {
 
 		void ChkClickDI( const cUIEvent * Event );
 
+		void ChkClickClampToTile( const cUIEvent * Event );
+
 		void OnMapMouseDown( const cUIEvent * Event );
 
 		void OnMapMouseClick( const cUIEvent * Event );
@@ -172,6 +179,8 @@ class EE_API cMapEditor {
 		void OnObjectModeSel( const cUIEvent * Event );
 
 		void OnNewGOTypeAdded( std::string name, Uint32 hash );
+
+		void OnAddObject( Uint32 Type, eePolygon2f poly );
 
 		void UpdateGfx();
 
@@ -209,7 +218,9 @@ class EE_API cMapEditor {
 
 		void ZoomOut();
 
-		void CreateNoLayerAlert( const String title );
+		cUIMessageBox * CreateAlert( const String& title, const String& text );
+
+		cUIMessageBox * CreateNoLayerAlert( const String title );
 
 		void OnTabSelected( const cUIEvent * Event );
 

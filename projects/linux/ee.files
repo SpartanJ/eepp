@@ -573,3 +573,5 @@
 ../../premake4.lua
 ../../src/eepp/audio/csoundfileogg.hpp
 ../../src/eepp/audio/csoundfiledefault.hpp
+../../include/eepp/gaming/cgameobjectobject.hpp
+../../src/eepp/gaming/cgameobjectobject.cpp

@@ -62,6 +62,8 @@ class Polygon2 {
 
 		bool PointInside( const Vector2<T>& point );
 
+		tRECT<T> ToAABB();
+
 		static Polygon2<T> CreateRoundedPolygon( const T& x, const T& y, const T& width, const T& height, const eeUint& Radius = 8 );
 
 		static bool IntersectQuad2( const Quad2<T>& q0, const Quad2<T>& q1, const Vector2<T>& q0Pos = Vector2<T>(0,0), const Vector2<T>& q1Pos = Vector2<T>(0,0) );
@@ -326,6 +328,30 @@ bool Polygon2<T>::IntersectQuad2( const Quad2<T>& q0, const Quad2<T>& q1, const 
 	return Tmp1.Intersect( Tmp2 );
 }
 
+template <typename T>
+tRECT<T> Polygon2<T>::ToAABB() {
+	tRECT<T> TmpR;
+
+	if ( Vector.size() < 4 ) {
+		return TmpR;
+	}
+
+	eeFloat MinX = Vector[0].x, MaxX = Vector[0].x, MinY = Vector[0].y, MaxY = Vector[0].y;
+
+	for (Uint8 i = 1; i < Vector.size(); i++ ) {
+		if ( MinX > Vector[i].x ) MinX = Vector[i].x;
+		if ( MaxX < Vector[i].x ) MaxX = Vector[i].x;
+		if ( MinY > Vector[i].y ) MinY = Vector[i].y;
+		if ( MaxY < Vector[i].y ) MaxY = Vector[i].y;
+	}
+
+	TmpR.Left	= MinX + cOffsetX;
+	TmpR.Right	= MaxX + cOffsetX;
+	TmpR.Top	= MinY + cOffsetY;
+	TmpR.Bottom	= MaxY + cOffsetY;
+
+	return TmpR;
+}
 
 typedef Polygon2<eeFloat> eePolygon2f;
 

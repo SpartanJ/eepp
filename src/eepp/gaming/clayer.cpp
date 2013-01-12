@@ -53,6 +53,11 @@ void cLayer::Offset( const eeVector2f& offset ) {
 	mOffset = offset;
 }
 
+void cLayer::Name( const std::string& name ) {
+	mName		= name;
+	mNameHash	= String::Hash( mName );
+}
+
 const std::string& cLayer::Name() const {
 	return mName;
 }

@@ -207,6 +207,8 @@ class EE_API cMap {
 		void Scale( const eeFloat& scale );
 
 		eeVector2i GetMaxOffset();
+
+		Uint32 GetNewObjectId();
 	protected:
 		Window::cWindow *		mWindow;
 		cLayer**		mLayers;
@@ -242,6 +244,7 @@ class EE_API cMap {
 		std::string		mPath;
 		eeFloat			mScale;
 		eeVector2f		mOffscale;
+		Uint32			mLastObjId;
 
 		virtual cGameObject *	CreateGameObject( const Uint32& Type, const Uint32& Flags, cLayer * Layer, const Uint32& DataId = 0 );
 

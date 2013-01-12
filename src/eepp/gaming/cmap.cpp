@@ -3,6 +3,7 @@
 #include <eepp/gaming/cgameobjectsubtexture.hpp>
 #include <eepp/gaming/cgameobjectsubtextureex.hpp>
 #include <eepp/gaming/cgameobjectsprite.hpp>
+#include <eepp/gaming/cgameobjectobject.hpp>
 #include <eepp/gaming/ctilelayer.hpp>
 #include <eepp/gaming/cobjectlayer.hpp>
 
@@ -35,7 +36,8 @@ cMap::cMap() :
 	mBackAlpha( 255 ),
 	mMouseOver( false ),
 	mScale( 1 ),
-	mOffscale( 1, 1 )
+	mOffscale( 1, 1 ),
+	mLastObjId( 0 )
 {
 	ViewSize( mViewSize );
 }
@@ -573,7 +575,6 @@ void cMap::Move( const eeFloat& offsetx, const eeFloat& offsety ) {
 
 cGameObject * cMap::CreateGameObject( const Uint32& Type, const Uint32& Flags, cLayer * Layer, const Uint32& DataId ) {
 	switch ( Type ) {
-		case GAMEOBJECT_TYPE_SHAPE:
 		case GAMEOBJECT_TYPE_SUBTEXTURE:
 		{
 			cGameObjectSubTexture * tSubTexture = eeNew( cGameObjectSubTexture, ( Flags, Layer ) );
@@ -582,7 +583,6 @@ cGameObject * cMap::CreateGameObject( const Uint32& Type, const Uint32& Flags, c
 
 			return tSubTexture;
 		}
-		case GAMEOBJECT_TYPE_SHAPEEX:
 		case GAMEOBJECT_TYPE_SUBTEXTUREEX:
 		{
 			cGameObjectSubTextureEx * tSubTextureEx = eeNew( cGameObjectSubTextureEx, ( Flags, Layer ) );
@@ -598,6 +598,10 @@ cGameObject * cMap::CreateGameObject( const Uint32& Type, const Uint32& Flags, c
 			tSprite->DataId( DataId );
 
 			return tSprite;
+		}
+		case GAMEOBJECT_TYPE_OBJECT:
+		{
+			//cGameObjectObject * tObject = eeNew( cGameObjectObject, ( Layer, Flags ) );
 		}
 		default:
 		{
@@ -1316,6 +1320,10 @@ const eeColorA& cMap::BackColor() const {
 
 void cMap::BackColor( const eeColorA& col ) {
 	mBackColor = col;
+}
+
+Uint32 cMap::GetNewObjectId() {
+	return ++mLastObjId;
 }
 
 }}

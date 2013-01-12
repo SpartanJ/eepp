@@ -12,6 +12,7 @@
 #include <eepp/gaming/cgameobjectsubtexture.hpp>
 #include <eepp/gaming/cgameobjectsubtextureex.hpp>
 #include <eepp/gaming/cgameobjectsprite.hpp>
+#include <eepp/gaming/cgameobjectobject.hpp>
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/ui/cuithememanager.hpp>
 #include <eepp/ui/cuiwinmenu.hpp>
@@ -369,7 +370,7 @@ void cMapEditor::CreateLightContainer() {
 	mLightTypeChk->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cMapEditor::OnLightTypeChange ) );
 }
 
-void cMapEditor::AddObjContButton( String text ) {
+cUISelectButton * cMapEditor::AddObjContButton( String text ) {
 	static Int32 lastY = 0;
 
 	cUISelectButton * Button = mTheme->CreateSelectButton( mObjectCont, eeSize( mObjectCont->Size().Width(), 22 ), eeVector2i( 0, lastY ) );
@@ -381,14 +382,26 @@ void cMapEditor::AddObjContButton( String text ) {
 	lastY += Button->Size().Height() + 4;
 
 	mObjContButton.push_back( Button );
+
+	return Button;
 }
 
 void cMapEditor::CreateObjectsContainer() {
 	AddObjContButton( "Select Objects" );
 	AddObjContButton( "Edit Polygons" );
-	AddObjContButton( "Insert Object" );
+	AddObjContButton( "Insert Object" )->Select();
 	AddObjContButton( "Insert Polygon" );
-	AddObjContButton( "Select Polyline" );
+	cUISelectButton * Button = AddObjContButton( "Select Polyline" );
+
+	Int32 nextY = Button->Pos().y + Button->Size().Height() + 4;
+
+	Uint32 ChkFlags = UI_CONTROL_DEFAULT_ALIGN | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP;
+
+	mChkClampToTile = mTheme->CreateCheckBox( mObjectCont, eeSize(), eeVector2i( 12, nextY ), ChkFlags );
+	mChkClampToTile->Text( "Clamp Position to Tile" );
+	mChkClampToTile->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::ChkClickClampToTile ) );
+	mChkClampToTile->Active( true );
+
 }
 
 void cMapEditor::OnObjectModeSel( const cUIEvent * Event ) {
@@ -420,6 +433,7 @@ void cMapEditor::CreateUIMap() {
 	mUIMap->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::OnMapMouseClick ) );
 	mUIMap->SetLightSelectCb( cb::Make1( this, &cMapEditor::OnLightSelect ) );
 	mUIMap->SetLightRadiusChangeCb( cb::Make1( this, &cMapEditor::OnLightRadiusChange ) );
+	mUIMap->SetAddObjectCallback( cb::Make2( this, &cMapEditor::OnAddObject ) );
 
 	mMapHScroll = mTheme->CreateScrollBar( mWinContainer, eeSize( Params.Size.Width(), 15 ), eeVector2i( 0, Params.Size.Height() ), UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 	mMapHScroll->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cMapEditor::OnScrollMapH ) );
@@ -428,6 +442,31 @@ void cMapEditor::CreateUIMap() {
 	mMapVScroll->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cMapEditor::OnScrollMapV ) );
 
 	MapCreated();
+}
+
+void cMapEditor::OnAddObject( Uint32 Type, eePolygon2f poly ) {
+	if ( NULL == mCurLayer ) {
+		CreateNoLayerAlert( "No layers found" )->SetFocus();
+		return;
+	}
+
+	if ( mCurLayer->Type() != MAP_LAYER_OBJECT ) {
+		CreateAlert( "Wrong Layer", "Objects only can be added to an Object Layer" )->SetFocus();
+		return;
+	}
+
+	if ( GAMEOBJECT_TYPE_OBJECT == Type ) {
+		cObjectLayer * OL = static_cast<cObjectLayer*> ( mCurLayer );
+
+		eeRectf Rect = poly.ToAABB();
+
+		cGameObjectObject * tObj = eeNew( cGameObjectObject, ( mUIMap->Map()->GetNewObjectId(), eeRecti( Rect.Left, Rect.Top, Rect.Right, Rect.Bottom ), mCurLayer ) );
+
+		OL->AddGameObject( tObj );
+
+	} else if ( GAMEOBJECT_TYPE_POLYGON == Type || GAMEOBJECT_TYPE_POLYGON == Type ) {
+
+	}
 }
 
 void cMapEditor::OnLightTypeChange( const cUIEvent * Event ) {
@@ -516,6 +555,10 @@ void cMapEditor::ChkClickDI( const cUIEvent * Event ) {
 		mDICont->Enabled( false );
 		mDICont->Visible( false );
 	}
+}
+
+void cMapEditor::ChkClickClampToTile( const cUIEvent * Event ) {
+	mUIMap->ClampToTile( mChkClampToTile->Active() );
 }
 
 void cMapEditor::UpdateGfx() {
@@ -956,11 +999,16 @@ void cMapEditor::LayerMenuClick( const cUIEvent * Event ) {
 	}
 }
 
-void cMapEditor::CreateNoLayerAlert( const String title ) {
-	cUIMessageBox * MsgBox = mTheme->CreateMessageBox( MSGBOX_OK, "First select and add a new layer." );
+cUIMessageBox * cMapEditor::CreateAlert( const String& title, const String& text ) {
+	cUIMessageBox * MsgBox = mTheme->CreateMessageBox( MSGBOX_OK, text );
 	MsgBox->Title( title );
 	MsgBox->Center();
 	MsgBox->Show();
+	return MsgBox;
+}
+
+cUIMessageBox * cMapEditor::CreateNoLayerAlert( const String title ) {
+	return CreateAlert( title, "First select and add a new layer." );
 }
 
 void cMapEditor::MoveLayerUp() {

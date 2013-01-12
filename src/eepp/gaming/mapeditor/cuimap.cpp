@@ -9,13 +9,16 @@ cUIMap::cUIMap( const cUIComplexControl::CreateParams& Params, cMap * Map ) :
 	mEditingLights( false ),
 	mEditingObjects( false ),
 	mEditingObjMode( INSERT_OBJECT ),
+	mObjAddType( GAMEOBJECT_TYPE_OBJECT ),
 	mAddLight( NULL ),
-	mSelLight( NULL )
+	mSelLight( NULL ),
+	mClampToTile(true)
 {
 	if ( NULL == Map ) {
 		mMap = eeNew( cMap, () );
-		mMap->SetDrawCallback( cb::Make0( this, &cUIMap::MapDraw ) );
 	}
+
+	mMap->SetDrawCallback( cb::Make0( this, &cUIMap::MapDraw ) );
 }
 
 cUIMap::~cUIMap() {
@@ -48,10 +51,10 @@ void cUIMap::Update() {
 	if ( NULL != mMap ) {
 		mMap->Update();
 
-		if ( mEnabled && mVisible ) {
-			if ( mEditingLights && IsMouseOver() ) {
-				Uint32 Flags 			= cUIManager::instance()->GetInput()->ClickTrigger();
+		if ( mEnabled && mVisible && IsMouseOver() ) {
+			Uint32 Flags 			= cUIManager::instance()->GetInput()->ClickTrigger();
 
+			if ( mEditingLights ) {
 				if ( NULL != mSelLight ) {
 					if ( Flags & EE_BUTTONS_WUWD ) {
 						if ( Flags & EE_BUTTON_WUMASK ) {
@@ -84,7 +87,6 @@ void cUIMap::Update() {
 						}
 					}
 
-
 					Flags = cUIManager::instance()->GetInput()->PressTrigger();
 
 					if ( Flags & EE_BUTTON_MMASK ) {
@@ -95,7 +97,49 @@ void cUIMap::Update() {
 						TryToSelectLight();
 					}
 				}
+			} else if ( mEditingObjects ) {
+				ManageObject( Flags );
 			}
+		}
+	}
+}
+
+void cUIMap::ManageObject( Uint32 Flags ) {
+	Uint32 PFlags = cUIManager::instance()->GetInput()->PressTrigger();
+
+	switch ( mEditingObjMode )
+	{
+		case INSERT_OBJECT:
+		{
+			if ( PFlags & EE_BUTTON_LMASK ) {
+				eeVector2f mp( mMap->GetMouseMapPosf() );
+
+				if ( mClampToTile ) {
+					eeVector2i mpc( mMap->GetTileCoords( mMap->GetMouseTilePos() + 1 ) );
+					mp = eeVector2f( mpc.x, mpc.y );
+				}
+
+				if ( !mObjRECTEditing ) {
+					mObjRECTEditing = true;
+					mObjRECT		= eeRectf( mp, eeSizef(0,0) );
+				} else {
+					if ( mObjRECT.Pos().x < mp.x && mObjRECT.Pos().y < mp.y ) {
+						mObjRECT		= eeRectf( mObjRECT.Pos(), eeSizef( mp - mObjRECT.Pos() ) );
+					}
+				}
+			}
+
+			if ( Flags & EE_BUTTON_LMASK ){
+				if ( mObjRECTEditing ) {
+					mAddObjectCallback( mObjAddType, eePolygon2f( mObjRECT ) );
+					mObjRECTEditing = false;
+				}
+			}
+
+			break;
+		}
+		default:
+		{
 		}
 	}
 }
@@ -149,15 +193,26 @@ void cUIMap::AddLight( cLight * Light ) {
 }
 
 void cUIMap::MapDraw() {
-	if ( mEditingLights && NULL != mSelLight ) {
-		cPrimitives P;
-		P.SetColor( eeColorA( 255, 0, 0, (Uint8)mAlpha ) );
+	if ( mEditingLights ) {
+		if ( NULL != mSelLight ) {
+			mP.SetColor( eeColorA( 255, 0, 0, (Uint8)mAlpha ) );
 
-		eeVector2f Pos( mSelLight->GetAABB().Left, mSelLight->GetAABB().Top );
-		eeAABB AB( mSelLight->GetAABB() );
+			eeVector2f Pos( mSelLight->GetAABB().Left, mSelLight->GetAABB().Top );
+			eeAABB AB( mSelLight->GetAABB() );
 
-		P.FillMode( EE_DRAW_LINE );
-		P.DrawRectangle( eeRectf( Pos, AB.Size() ) );
+			mP.FillMode( EE_DRAW_LINE );
+			mP.DrawRectangle( eeRectf( Pos, AB.Size() ) );
+		}
+	} else if ( mEditingObjects ) {
+		if ( mObjRECTEditing ) {
+			mP.FillMode( EE_DRAW_FILL );
+			mP.SetColor( eeColorA( 100, 100, 100, (Uint8)( 50 * mAlpha ) ) );
+			mP.DrawRectangle( mObjRECT );
+
+			mP.FillMode( EE_DRAW_LINE );
+			mP.SetColor( eeColorA( 255, 0, 0, (Uint8)( 200 * mAlpha ) ) );
+			mP.DrawRectangle( mObjRECT );
+		}
 	}
 }
 
@@ -184,7 +239,7 @@ const bool& cUIMap::EditingLights() {
 }
 
 void cUIMap::PrivEditingObjects( const bool& editing ) {
-	mEditingObjects = false;
+	mEditingObjects = editing;
 }
 
 void cUIMap::EditingObjects( const bool& editing ) {
@@ -220,6 +275,10 @@ void cUIMap::SetLightRadiusChangeCb( LightRadiusChangeCb Cb ) {
 	mLightRadiusChangeCb = Cb;
 }
 
+void cUIMap::SetAddObjectCallback( ObjAddCb Cb ) {
+	mAddObjectCallback = Cb;
+}
+
 void cUIMap::ClearLights() {
 	mSelLight = NULL;
 	mAddLight = NULL;
@@ -231,6 +290,14 @@ void cUIMap::OnAlphaChange() {
 	if ( NULL != mMap ) {
 		mMap->BackAlpha( (Uint8)mAlpha );
 	}
+}
+
+void cUIMap::ClampToTile( const bool& clamp ) {
+	mClampToTile = clamp;
+}
+
+const bool& cUIMap::ClampToTile() const {
+	return mClampToTile;
 }
 
 }}}

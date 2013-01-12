@@ -1,6 +1,8 @@
 #ifndef EE_GAMINGMAPHELPER_HPP
 #define EE_GAMINGMAPHELPER_HPP
 
+#include <eepp/declares.hpp>
+
 namespace EE { namespace Gaming {
 
 #define MAP_PROPERTY_SIZE			(64)
@@ -68,6 +70,14 @@ typedef struct sMapLightHdrS {
 	Uint32	Type;
 } sMapLightHdr;
 
+typedef struct sMapObjObjHdrS {
+	Uint32	ObjId;
+	char	Name[ MAP_PROPERTY_SIZE ];
+	char	Type[ MAP_PROPERTY_SIZE ];
+	Uint32	PropertyCount;
+	Uint32	PointCount;
+} sMapObjObjHdr;
+
 class GObjFlags {
 	public:
 		enum EE_GAMEOBJECT_FLAGS {
@@ -82,13 +92,14 @@ class GObjFlags {
 };
 
 enum EE_GAMEOBJECT_TYPE {
-	GAMEOBJECT_TYPE_BASE			= 236430550u,	//String::Hash( "Base" ),
-	GAMEOBJECT_TYPE_VIRTUAL			= 4069800883u,	//String::Hash( "Virtual" ),
-	GAMEOBJECT_TYPE_SHAPE			= 3517332124u,	//String::Hash( "Shape" ) == 3517332124u for backward compatibility
-	GAMEOBJECT_TYPE_SUBTEXTURE		= 1772101792u,	//String::Hash( "SubTexture" ) == 1772101792u,
-	GAMEOBJECT_TYPE_SHAPEEX			= 3708695628u,	//String::Hash( "ShapeEx" ) == 3708695628u for backward compatibility
-	GAMEOBJECT_TYPE_SUBTEXTUREEX	= 1378537981u,	//String::Hash( "SubTextureEx" ) == 1378537981u,
-	GAMEOBJECT_TYPE_SPRITE			= 2088954976u	//String::Hash( "Sprite" )
+	GAMEOBJECT_TYPE_BASE			= 2088954976UL,	//String::Hash( "Base" )
+	GAMEOBJECT_TYPE_VIRTUAL			= 3708695628UL,	//String::Hash( "Virtual" )
+	GAMEOBJECT_TYPE_SUBTEXTURE		= 1772101792UL,	//String::Hash( "SubTexture" )
+	GAMEOBJECT_TYPE_SUBTEXTUREEX	= 1378537981UL,	//String::Hash( "SubTextureEx" )
+	GAMEOBJECT_TYPE_SPRITE			= 3517332124UL,	//String::Hash( "Sprite" )
+	GAMEOBJECT_TYPE_OBJECT			= 3343895260UL,	//String::Hash( "Object" )
+	GAMEOBJECT_TYPE_POLYGON			= 482716845UL,	//String::Hash( "Polygon" )
+	GAMEOBJECT_TYPE_POLYLINE		= 3044927249UL	//String::Hash( "Polyline" )
 };
 
 enum EE_LAYER_TYPE {
