@@ -24,6 +24,8 @@ class EE_API cGameObjectPolygon : public cGameObjectObject {
 		virtual bool IsType( const Uint32& type );
 
 		virtual eePolygon2f GetPolygon();
+
+		virtual bool PointInside( const eeVector2f& p );
 	protected:
 		eePolygon2f mPoly;
 };

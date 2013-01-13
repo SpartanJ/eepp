@@ -1,4 +1,6 @@
 #include <eepp/gaming/cobjectlayer.hpp>
+#include <eepp/gaming/cgameobjectobject.hpp>
+#include <eepp/gaming/cgameobjectpolygon.hpp>
 #include <eepp/gaming/cmap.hpp>
 
 #include <eepp/graphics/ctexture.hpp>
@@ -77,28 +79,54 @@ void cObjectLayer::RemoveGameObject( cGameObject * obj ) {
 }
 
 void cObjectLayer::RemoveGameObject( const eeVector2i& pos ) {
-	cGameObject * tObj = GetObjectOver( pos );
+	cGameObject * tObj = GetObjectOver( pos, SEARCH_OBJECT );
 
 	if ( NULL != tObj ) {
 		RemoveGameObject( tObj );
 	}
 }
 
-cGameObject * cObjectLayer::GetObjectOver( const eeVector2i& pos ) {
+cGameObject * cObjectLayer::GetObjectOver( const eeVector2i& pos, SEARCH_TYPE type ) {
 	cGameObject * tObj;
-	register eeVector2f tPos;
-	register eeSize tSize;
+	eeVector2f tPos;
+	eeSize tSize;
 
 	for ( ObjList::reverse_iterator it = mObjects.rbegin(); it != mObjects.rend(); it++ ) {
 		tObj = (*it);
 
-		tPos = tObj->Pos();
-		tSize = tObj->Size();
+		if ( type & SEARCH_POLY ) {
+			if ( tObj->IsType( GAMEOBJECT_TYPE_OBJECT ) ) {
+				cGameObjectObject * tObjObj = reinterpret_cast<cGameObjectObject*> ( tObj );
 
-		eeRecti objR( tPos.x, tPos.y, tPos.x + tSize.x, tPos.y + tSize.y );
+				if ( tObjObj->PointInside( eeVector2f( pos.x, pos.y ) ) )
+					return tObj;
+			}
+		} else if ( type & SEARCH_OBJECT ) {
+			if ( !tObj->IsType( GAMEOBJECT_TYPE_OBJECT ) ) {
+				tPos = tObj->Pos();
+				tSize = tObj->Size();
 
-		if ( objR.Contains( pos ) )
-			return tObj;
+				eeRecti objR( tPos.x, tPos.y, tPos.x + tSize.x, tPos.y + tSize.y );
+
+				if ( objR.Contains( pos ) )
+					return tObj;
+			}
+		} else {
+			if ( tObj->IsType( GAMEOBJECT_TYPE_OBJECT ) ) {
+				cGameObjectObject * tObjObj = reinterpret_cast<cGameObjectObject*> ( tObj );
+
+				if ( tObjObj->PointInside( eeVector2f( pos.x, pos.y ) ) )
+					return tObj;
+			} else {
+				tPos = tObj->Pos();
+				tSize = tObj->Size();
+
+				eeRecti objR( tPos.x, tPos.y, tPos.x + tSize.x, tPos.y + tSize.y );
+
+				if ( objR.Contains( pos ) )
+					return tObj;
+			}
+		}
 	}
 
 	return NULL;

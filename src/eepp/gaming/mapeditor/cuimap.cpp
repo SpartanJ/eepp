@@ -1,4 +1,6 @@
 #include <eepp/gaming/mapeditor/cuimap.hpp>
+#include <eepp/gaming/cgameobjectobject.hpp>
+#include <eepp/gaming/cobjectlayer.hpp>
 #include <eepp/ui/cuimanager.hpp>
 
 namespace EE { namespace Gaming { namespace MapEditor {
@@ -6,13 +8,16 @@ namespace EE { namespace Gaming { namespace MapEditor {
 cUIMap::cUIMap( const cUIComplexControl::CreateParams& Params, cMap * Map ) :
 	cUIComplexControl( Params ),
 	mMap( Map ),
+	mCurLayer( NULL ),
 	mEditingMode( 0 ),
-	mEditingObjMode( INSERT_OBJECT ),
+	mEditingObjMode( SELECT_OBJECTS ),
 	mAddLight( NULL ),
 	mSelLight( NULL ),
 	mClampToTile(true),
 	mObjRECTEditing(false),
-	mObjPolyEditing(false)
+	mObjPolyEditing(false),
+	mObjDragging( false ),
+	mSelObj( NULL )
 {
 	if ( NULL == Map ) {
 		mMap = eeNew( cMap, () );
@@ -153,6 +158,50 @@ void cUIMap::ManageObject( Uint32 Flags ) {
 				mAddObjectCallback( ( INSERT_POLYGON == mEditingObjMode ) ? GAMEOBJECT_TYPE_POLYGON : GAMEOBJECT_TYPE_POLYLINE, mObjPoly );
 
 				mObjPoly.Clear();
+			}
+
+			break;
+		}
+		case SELECT_OBJECTS:
+		{
+			if ( ( Flags & EE_BUTTON_LMASK ) ) {
+				if ( NULL != mCurLayer && mCurLayer->Type() == MAP_LAYER_OBJECT ) {
+					cObjectLayer * tLayer = reinterpret_cast<cObjectLayer*>( mCurLayer );
+
+					cGameObject * tObj = tLayer->GetObjectOver( mMap->GetMouseMapPos(), cObjectLayer::SEARCH_POLY );
+
+					if ( NULL != tObj ) {
+						if ( NULL != mSelObj ) {
+							mSelObj->Selected( false );
+						}
+
+						mSelObj = reinterpret_cast<cGameObjectObject*>( tObj );
+						mSelObj->Selected( true );
+					} else {
+						if ( NULL != mSelObj ) {
+							mSelObj->Selected( false );
+							mSelObj = NULL;
+						}
+					}
+				} else {
+					if ( mAlertCb.IsSet() ) {
+						mAlertCb( "No layer found", "An Object Layer must be selected first." )->SetFocus();
+					}
+				}
+			} else if ( ( PFlags & EE_BUTTON_MMASK ) && NULL != mSelObj ) {
+				if ( mSelObj->PointInside( mMap->GetMouseMapPosf() ) ) {
+					if ( !mObjDragging ) {
+						mObjDragging = true;
+						mObjDragDist = GetMouseMapPos() - mSelObj->Pos();
+					}
+
+					mSelObj->Pos( GetMouseMapPos() - mObjDragDist );
+				}
+			} else if ( ( Flags & EE_BUTTON_MMASK ) && NULL != mSelObj ) {
+				if ( mObjDragging ) {
+					mObjDragging = false;
+					mObjDragDist = eeVector2f(0,0);
+				}
 			}
 
 			break;
@@ -351,6 +400,14 @@ void cUIMap::EditingObjMode( EDITING_OBJ_MODE mode ) {
 	mObjPoly.Clear();
 
 	mEditingObjMode = mode;
+}
+
+void cUIMap::CurLayer( cLayer * layer ) {
+	mCurLayer = layer;
+}
+
+void cUIMap::SetAlertCb( AlertCb Cb ) {
+	mAlertCb = Cb;
 }
 
 }}}

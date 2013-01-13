@@ -88,7 +88,7 @@ class EE_API cMapEditor {
 
 		void CreateLightContainer();
 
-		cUISelectButton * AddObjContButton( String text, Uint32 mode );
+		cUISelectButton * AddObjContButton( String text , Uint32 mode );
 
 		void CreateObjectsContainer();
 

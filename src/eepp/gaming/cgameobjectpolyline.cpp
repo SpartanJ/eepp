@@ -24,6 +24,13 @@ bool cGameObjectPolyline::IsType( const Uint32& type ) {
 
 void cGameObjectPolyline::Draw() {
 	cPrimitives P;
+
+	if ( mSelected ) {
+		P.FillMode( EE_DRAW_FILL );
+		P.SetColor( eeColorA( 150, 150, 150, 150 ) );
+		P.DrawPolygon( mPoly );
+	}
+
 	P.FillMode( EE_DRAW_LINE );
 	P.SetColor( eeColorA( 255, 255, 0, 200 ) );
 	P.DrawPolygon( mPoly );

@@ -12,7 +12,8 @@ cGameObjectObject::cGameObjectObject( Uint32 DataId, const eeRectf& rect, cLayer
 	cGameObject( Flags, Layer ),
 	mRect( rect ),
 	mPos( mRect.Pos() ),
-	mDataId( DataId )
+	mDataId( DataId ),
+	mSelected( false )
 {
 }
 
@@ -32,13 +33,16 @@ eeSize cGameObjectObject::Size() {
 }
 
 void cGameObjectObject::Draw() {
+	Int32 selAdd	= mSelected ? 50 : 0;
+	Int32 colFill	= 100 + selAdd;
+
 	cPrimitives P;
 	P.FillMode( EE_DRAW_FILL );
-	P.SetColor( eeColorA( 100, 100, 100, 100 ) );
+	P.SetColor( eeColorA( colFill, colFill, colFill, colFill ) );
 	P.DrawRectangle( mRect );
 
 	P.FillMode( EE_DRAW_LINE );
-	P.SetColor( eeColorA( 200, 200, 200, 200 ) );
+	P.SetColor( eeColorA( 255, 255, 0, 200 ) );
 	P.DrawRectangle( mRect );
 }
 
@@ -103,8 +107,24 @@ eePolygon2f cGameObjectObject::GetPolygon() {
 	return eePolygon2f( mRect );
 }
 
+bool cGameObjectObject::PointInside( const eeVector2f& p ) {
+	return mRect.Contains( p );
+}
+
 void cGameObjectObject::SetProperties( const PropertiesMap& prop ) {
 	mProperties = prop;
+}
+
+eeRectf& cGameObjectObject::Rect() {
+	return mRect;
+}
+
+const bool& cGameObjectObject::Selected() const {
+	return mSelected;
+}
+
+void cGameObjectObject::Selected( const bool& sel ) {
+	mSelected = sel;
 }
 
 }}

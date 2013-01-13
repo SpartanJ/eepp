@@ -390,9 +390,9 @@ cUISelectButton * cMapEditor::AddObjContButton( String text, Uint32 mode ) {
 }
 
 void cMapEditor::CreateObjectsContainer() {
-	AddObjContButton( "Select Objects", cUIMap::SELECT_OBJECTS );
+	AddObjContButton( "Select Objects", cUIMap::SELECT_OBJECTS )->Select();
 	AddObjContButton( "Edit Polygons", cUIMap::EDIT_POLYGONS );
-	AddObjContButton( "Insert Object", cUIMap::INSERT_OBJECT )->Select();
+	AddObjContButton( "Insert Object", cUIMap::INSERT_OBJECT );
 	AddObjContButton( "Insert Polygon", cUIMap::INSERT_POLYGON );
 	cUISelectButton * Button = AddObjContButton( "Insert Polyline", cUIMap::INSERT_POLYLINE );
 
@@ -404,7 +404,6 @@ void cMapEditor::CreateObjectsContainer() {
 	mChkClampToTile->Text( "Clamp Position to Tile" );
 	mChkClampToTile->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::ChkClickClampToTile ) );
 	mChkClampToTile->Active( true );
-
 }
 
 void cMapEditor::OnObjectModeSel( const cUIEvent * Event ) {
@@ -439,6 +438,7 @@ void cMapEditor::CreateUIMap() {
 	mUIMap->SetLightSelectCb( cb::Make1( this, &cMapEditor::OnLightSelect ) );
 	mUIMap->SetLightRadiusChangeCb( cb::Make1( this, &cMapEditor::OnLightRadiusChange ) );
 	mUIMap->SetAddObjectCallback( cb::Make2( this, &cMapEditor::OnAddObject ) );
+	mUIMap->SetAlertCb( cb::Make2( this, &cMapEditor::CreateAlert ) );
 
 	mMapHScroll = mTheme->CreateScrollBar( mWinContainer, eeSize( Params.Size.Width(), 15 ), eeVector2i( 0, Params.Size.Height() ), UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 	mMapHScroll->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cMapEditor::OnScrollMapH ) );
@@ -1090,6 +1090,9 @@ void cMapEditor::OnLayerAdd( cUILayerNew * UILayer ) {
 
 	if ( SetSelected ) {
 		mCurLayer = UILayer->Layer();
+
+		mUIMap->CurLayer( mCurLayer );
+
 		mLayerList->ListBox()->SetSelected(0);
 	}
 }
@@ -1099,6 +1102,8 @@ void cMapEditor::OnLayerSelect( const cUIEvent * Event ) {
 
 	if ( NULL != tLayer ) {
 		mCurLayer = tLayer;
+
+		mUIMap->CurLayer( mCurLayer );
 
 		mLayerChkVisible->Active( mCurLayer->Visible() );
 

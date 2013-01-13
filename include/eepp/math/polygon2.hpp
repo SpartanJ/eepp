@@ -46,6 +46,8 @@ class Polygon2 {
 
 		Vector2<T> Position() { return Vector2<T>(cOffsetX, cOffsetY); }
 
+		void Move( Vector2<T> dist );
+
 		T X() const { return cOffsetX; }
 
 		T Y() const { return cOffsetY; }
@@ -246,7 +248,9 @@ bool Polygon2<T>::PointInside( const Vector2<T>& point ) {
 	int nvert = (int)Size();
 
 	for ( i = 0, j = nvert - 1; i < nvert; j = i++ ) {
-		if ( ( ( Vector[i].y > point.y ) != ( Vector[j].y > point.y ) ) && ( point.x < ( Vector[j].x - Vector[i].x ) * ( point.y - Vector[i].y ) / ( Vector[j].y - Vector[i].y ) + Vector[i].x ) ) {
+		if ( ( ( Vector[i].y > point.y ) != ( Vector[j].y > point.y ) ) &&
+			 ( point.x < ( Vector[j].x - Vector[i].x ) * ( point.y - Vector[i].y ) / ( Vector[j].y - Vector[i].y ) + Vector[i].x ) )
+		{
 			c = !c;
 		}
 	}
@@ -364,6 +368,13 @@ tRECT<T> Polygon2<T>::ToAABB() {
 	TmpR.Bottom	= MaxY + cOffsetY;
 
 	return TmpR;
+}
+
+template <typename T>
+void Polygon2<T>::Move( Vector2<T> dist ) {
+	for ( Uint32 i = 0; i < Vector.size(); i++ ) {
+		Vector[i] += dist;
+	}
 }
 
 typedef Polygon2<eeFloat> eePolygon2f;

@@ -20,7 +20,7 @@ Uint32 cGameObjectPolygon::Type() const {
 }
 
 bool cGameObjectPolygon::IsType( const Uint32& type ) {
-	return ( cGameObjectPolygon::Type() == type ) ? true : cGameObject::IsType( type );
+	return ( cGameObjectPolygon::Type() == type ) ? true : cGameObjectObject::IsType( type );
 }
 
 eeSize cGameObjectPolygon::Size() {
@@ -28,9 +28,12 @@ eeSize cGameObjectPolygon::Size() {
 }
 
 void cGameObjectPolygon::Draw() {
+	Int32 selAdd	= mSelected ? 50 : 0;
+	Int32 colFill	= 100 + selAdd;
+
 	cPrimitives P;
 	P.FillMode( EE_DRAW_FILL );
-	P.SetColor( eeColorA( 100, 100, 100, 100 ) );
+	P.SetColor( eeColorA( colFill, colFill, colFill, colFill ) );
 	P.DrawPolygon( mPoly );
 
 	P.FillMode( EE_DRAW_LINE );
@@ -43,13 +46,21 @@ eeVector2f cGameObjectPolygon::Pos() const {
 }
 
 void cGameObjectPolygon::Pos( eeVector2f pos ) {
-	mPos	= pos;
-	mPoly.Position( pos );
+	mPoly.Move( pos - mPos );
+
+	cGameObjectObject::Pos( pos );
 }
 
 eePolygon2f cGameObjectPolygon::GetPolygon() {
 	return mPoly;
 }
 
+bool cGameObjectPolygon::PointInside( const eeVector2f& p ) {
+	if ( cGameObjectObject::PointInside( p ) ) {
+		return mPoly.PointInside( p );
+	}
+
+	return false;
+}
 
 }}

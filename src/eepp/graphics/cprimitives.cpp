@@ -291,7 +291,7 @@ void cPrimitives::DrawPolygon( const eePolygon2f& p ) {
 			sBR->LineLoopSetColor( mColor );
 
 			for ( Uint32 i = 0; i < p.Size(); i += 2 )
-				sBR->BatchLineLoop( p[i].x, p[i].y, p[i+1].x, p[i+1].y );
+				sBR->BatchLineLoop( p.X() + p[i].x, p.Y() + p[i].y, p.X() + p[i+1].x, p.Y() + p[i+1].y );
 
 			break;
 		}

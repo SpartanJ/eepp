@@ -3,13 +3,18 @@
 
 #include <eepp/gaming/base.hpp>
 #include <eepp/ui/cuicomplexcontrol.hpp>
+#include <eepp/ui/cuimessagebox.hpp>
 #include <eepp/gaming/cmap.hpp>
 #include <eepp/gaming/clightmanager.hpp>
 #include <eepp/gaming/clight.hpp>
 
 using namespace EE::UI;
 
-namespace EE { namespace Gaming { namespace MapEditor {
+namespace EE { namespace Gaming {
+
+class cGameObjectObject;
+
+namespace MapEditor {
 
 class EE_API cUIMap : public cUIComplexControl {
 	public:
@@ -24,6 +29,7 @@ class EE_API cUIMap : public cUIComplexControl {
 		typedef cb::Callback1<void, cLight *> LightSelectCb;
 		typedef cb::Callback1<void, cLight *> LightRadiusChangeCb;
 		typedef cb::Callback2<void, Uint32, eePolygon2f> ObjAddCb;
+		typedef cb::Callback2<cUIMessageBox*, const String&, const String&> AlertCb;
 
 		cUIMap( const cUIComplexControl::CreateParams& Params, cMap * Map = NULL );
 
@@ -57,6 +63,8 @@ class EE_API cUIMap : public cUIComplexControl {
 
 		void SetAddObjectCallback( ObjAddCb Cb );
 
+		void SetAlertCb( AlertCb Cb );
+
 		void ClearLights();
 
 		void ClampToTile( const bool& clamp );
@@ -64,6 +72,8 @@ class EE_API cUIMap : public cUIComplexControl {
 		const bool& ClampToTile() const;
 
 		void EditingObjMode( EDITING_OBJ_MODE mode );
+
+		void CurLayer( cLayer * layer );
 	protected:		
 		enum EDITING_MODE {
 			EDITING_LIGHT = 1,
@@ -71,6 +81,7 @@ class EE_API cUIMap : public cUIComplexControl {
 		};
 
 		cMap *				mMap;
+		cLayer *			mCurLayer;
 		Uint32				mEditingMode;
 		cPrimitives			mP;
 
@@ -90,6 +101,13 @@ class EE_API cUIMap : public cUIComplexControl {
 
 		bool				mObjPolyEditing;
 		eePolygon2f			mObjPoly;
+
+		bool				mObjDragging;
+
+		cGameObjectObject *	mSelObj;
+		eeVector2f			mObjDragDist;
+
+		AlertCb				mAlertCb;
 
 		virtual Uint32 OnMouseMove( const eeVector2i& Pos, const Uint32 Flags );
 

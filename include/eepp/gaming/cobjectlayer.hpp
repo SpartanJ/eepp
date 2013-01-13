@@ -11,6 +11,12 @@ class cMap;
 
 class EE_API cObjectLayer : public cLayer {
 	public:
+		enum SEARCH_TYPE {
+			SEARCH_OBJECT = 1,
+			SEARCH_POLY,
+			SEARCH_ALL
+		};
+
 		typedef std::list<cGameObject*> ObjList;
 
 		virtual ~cObjectLayer();
@@ -25,7 +31,7 @@ class EE_API cObjectLayer : public cLayer {
 
 		virtual void RemoveGameObject( const eeVector2i& pos );
 
-		virtual cGameObject * GetObjectOver( const eeVector2i& pos );
+		virtual cGameObject * GetObjectOver( const eeVector2i& pos, SEARCH_TYPE type = SEARCH_ALL );
 
 		virtual Uint32 GetObjectCount() const;
 	protected:
