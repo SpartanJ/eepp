@@ -49,7 +49,9 @@ void cObjectLayer::Draw( const eeVector2f &Offset ) {
 		for ( it = mObjects.begin(); it != mObjects.end(); it++ ) {
 			cGameObject * Obj = (*it);
 
-			Tex->DrawEx( Obj->Pos().x, Obj->Pos().y, Obj->Size().Width(), Obj->Size().Height(), 0, 1, Col, Col, Col, Col );
+			if ( Obj->Blocked() ) {
+				Tex->DrawEx( Obj->Pos().x, Obj->Pos().y, Obj->Size().Width(), Obj->Size().Height(), 0, 1, Col, Col, Col, Col );
+			}
 		}
 	}
 
