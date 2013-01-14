@@ -71,6 +71,8 @@ class Polygon2 {
 		static Polygon2<T> CreateRoundedPolygon( const T& x, const T& y, const T& width, const T& height, const eeUint& Radius = 8 );
 
 		static bool IntersectQuad2( const Quad2<T>& q0, const Quad2<T>& q1, const Vector2<T>& q0Pos = Vector2<T>(0,0), const Vector2<T>& q1Pos = Vector2<T>(0,0) );
+
+		Uint32 ClosestPoint( const Vector2<T> &to, T * distance = NULL );
 	private:
 		std::vector< Vector2<T> > Vector;
 		T cOffsetX, cOffsetY;
@@ -355,7 +357,7 @@ tRECT<T> Polygon2<T>::ToAABB() {
 
 	eeFloat MinX = Vector[0].x, MaxX = Vector[0].x, MinY = Vector[0].y, MaxY = Vector[0].y;
 
-	for (Uint8 i = 1; i < Vector.size(); i++ ) {
+	for (Uint32 i = 1; i < Vector.size(); i++ ) {
 		if ( MinX > Vector[i].x ) MinX = Vector[i].x;
 		if ( MaxX < Vector[i].x ) MaxX = Vector[i].x;
 		if ( MinY > Vector[i].y ) MinY = Vector[i].y;
@@ -375,6 +377,28 @@ void Polygon2<T>::Move( Vector2<T> dist ) {
 	for ( Uint32 i = 0; i < Vector.size(); i++ ) {
 		Vector[i] += dist;
 	}
+}
+
+template <typename T>
+Uint32 Polygon2<T>::ClosestPoint( const Vector2<T>& to, T * distance ) {
+	Uint32 Index	= 0;
+	T Dist			= 99999999;
+	T tDist;
+
+	for ( Uint32 i = 0; i < Vector.size(); i++ ) {
+		tDist = Vector[i].Distance( to );
+
+		if ( tDist < Dist  ) {
+			Index	= i;
+			Dist	= tDist;
+		}
+	}
+
+	if ( NULL != distance ) {
+		*distance = Dist;
+	}
+
+	return Index;
 }
 
 typedef Polygon2<eeFloat> eePolygon2f;

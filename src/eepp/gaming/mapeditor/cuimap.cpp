@@ -20,7 +20,8 @@ cUIMap::cUIMap( const cUIComplexControl::CreateParams& Params, cUITheme * Theme,
 	mObjPolyEditing(false),
 	mObjDragging( false ),
 	mSelObj( NULL ),
-	mTheme( Theme )
+	mTheme( Theme ),
+	mSelPointIndex( eeINDEX_NOT_FOUND )
 {
 	if ( NULL == Map ) {
 		mMap = eeNew( cMap, () );
@@ -123,6 +124,32 @@ eeVector2f cUIMap::GetMouseMapPos() {
 	return mp;
 }
 
+void cUIMap::SelectPolyObj() {
+	if ( NULL != mCurLayer && mCurLayer->Type() == MAP_LAYER_OBJECT ) {
+		cObjectLayer * tLayer = reinterpret_cast<cObjectLayer*>( mCurLayer );
+
+		cGameObject * tObj = tLayer->GetObjectOver( mMap->GetMouseMapPos(), cObjectLayer::SEARCH_POLY );
+
+		if ( NULL != tObj ) {
+			if ( NULL != mSelObj ) {
+				mSelObj->Selected( false );
+			}
+
+			mSelObj = reinterpret_cast<cGameObjectObject*>( tObj );
+			mSelObj->Selected( true );
+		} else {
+			if ( NULL != mSelObj ) {
+				mSelObj->Selected( false );
+				mSelObj = NULL;
+			}
+		}
+	} else {
+		if ( mAlertCb.IsSet() ) {
+			mAlertCb( "No layer found", "An Object Layer must be selected first." )->SetFocus();
+		}
+	}
+}
+
 void cUIMap::ManageObject( Uint32 Flags ) {
 	Uint32 PFlags = cUIManager::instance()->GetInput()->PressTrigger();
 
@@ -168,29 +195,7 @@ void cUIMap::ManageObject( Uint32 Flags ) {
 		case SELECT_OBJECTS:
 		{
 			if ( ( Flags & EE_BUTTON_LMASK ) ) {
-				if ( NULL != mCurLayer && mCurLayer->Type() == MAP_LAYER_OBJECT ) {
-					cObjectLayer * tLayer = reinterpret_cast<cObjectLayer*>( mCurLayer );
-
-					cGameObject * tObj = tLayer->GetObjectOver( mMap->GetMouseMapPos(), cObjectLayer::SEARCH_POLY );
-
-					if ( NULL != tObj ) {
-						if ( NULL != mSelObj ) {
-							mSelObj->Selected( false );
-						}
-
-						mSelObj = reinterpret_cast<cGameObjectObject*>( tObj );
-						mSelObj->Selected( true );
-					} else {
-						if ( NULL != mSelObj ) {
-							mSelObj->Selected( false );
-							mSelObj = NULL;
-						}
-					}
-				} else {
-					if ( mAlertCb.IsSet() ) {
-						mAlertCb( "No layer found", "An Object Layer must be selected first." )->SetFocus();
-					}
-				}
+				SelectPolyObj();
 			} else if ( ( PFlags & EE_BUTTON_MMASK ) && NULL != mSelObj ) {
 				if ( mSelObj->PointInside( mMap->GetMouseMapPosf() ) ) {
 					if ( !mObjDragging ) {
@@ -204,6 +209,24 @@ void cUIMap::ManageObject( Uint32 Flags ) {
 				if ( mObjDragging ) {
 					mObjDragging = false;
 					mObjDragDist = eeVector2f(0,0);
+				}
+			}
+
+			break;
+		}
+		case EDIT_POLYGONS:
+		{
+			if ( ( Flags & EE_BUTTON_LMASK ) ) {
+				if ( NULL != mCurLayer && mCurLayer->Type() == MAP_LAYER_OBJECT ) {
+					SelectPolyObj();
+
+					if ( NULL != mSelObj ) {
+						if ( mSelObj->PointInside( mMap->GetMouseMapPosf() ) ) {
+							mSelPointIndex = mSelObj->GetPolygon().ClosestPoint( mMap->GetMouseMapPosf() );
+							eeVector2f p( mSelObj->GetPolygon().GetAt( mSelPointIndex ) );
+							mSelPointRect = eeRectf( eeVector2f( p.x - 10, p.y - 10 ), eeSizef( 20, 20 ) );
+						}
+					}
 				}
 			}
 
@@ -328,6 +351,20 @@ void cUIMap::MapDraw() {
 
 				break;
 			}
+			case EDIT_POLYGONS:
+			{
+				if ( NULL != mSelObj && eeINDEX_NOT_FOUND != mSelPointIndex ) {
+					mP.SetColor( eeColorA( 255, 255, 100, 100 ) );
+
+					mP.FillMode( EE_DRAW_FILL );
+					mP.DrawRectangle( mSelPointRect );
+
+					mP.FillMode( EE_DRAW_LINE );
+					mP.DrawRectangle( mSelPointRect );
+				}
+
+				break;
+			}
 		}
 	}
 }
@@ -401,6 +438,7 @@ const bool& cUIMap::ClampToTile() const {
 
 void cUIMap::EditingObjMode( EDITING_OBJ_MODE mode ) {
 	mObjPoly.Clear();
+	mSelPointIndex = eeINDEX_NOT_FOUND;
 
 	mEditingObjMode = mode;
 }
