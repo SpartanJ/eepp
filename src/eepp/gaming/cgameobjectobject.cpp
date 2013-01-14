@@ -127,4 +127,8 @@ void cGameObjectObject::Selected( const bool& sel ) {
 	mSelected = sel;
 }
 
+cGameObjectObject * cGameObjectObject::Copy() {
+	return eeNew( cGameObjectObject, ( mDataId, mRect, mLayer, mFlags ) );
+}
+
 }}

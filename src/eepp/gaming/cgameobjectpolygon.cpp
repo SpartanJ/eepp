@@ -63,4 +63,8 @@ bool cGameObjectPolygon::PointInside( const eeVector2f& p ) {
 	return false;
 }
 
+cGameObjectObject * cGameObjectPolygon::Copy() {
+	return eeNew( cGameObjectPolygon, ( mDataId, mPoly, mLayer, mFlags ) );
+}
+
 }}

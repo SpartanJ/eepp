@@ -652,7 +652,7 @@ void cRendererGLES2::Clip2DPlaneDisable() {
 
 void cRendererGLES2::PointSize( GLfloat size ) {
 	#ifndef EE_GLES2
-	glPointSize( size );;
+	glPointSize( size );
 	#endif
 
 	mCurShader->SetUniform( "dgl_PointSize", size );

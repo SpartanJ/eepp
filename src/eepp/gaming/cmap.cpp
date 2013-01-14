@@ -929,7 +929,7 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 								tObjData.Type = std::string( tObjObjHdr.Type );
 
 								//! Reads the properties
-								for ( Uint32 iProp = 0; iProp < tObjObjHdr.PropertyCount; i++ ) {
+								for ( Uint32 iProp = 0; iProp < tObjObjHdr.PropertyCount; iProp++ ) {
 									sPropertyHdr tObjProp;
 
 									IOS.Read( (char*)&tObjProp, sizeof(sPropertyHdr) );

@@ -65,6 +65,8 @@ class EE_API cGameObjectObject : public cGameObject {
 		const bool& Selected() const;
 
 		void Selected( const bool& sel );
+
+		virtual cGameObjectObject * Copy();
 	protected:
 		eeRectf			mRect;
 		eeVector2f		mPos;

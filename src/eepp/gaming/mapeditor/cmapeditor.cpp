@@ -428,7 +428,7 @@ void cMapEditor::CreateUIMap() {
 	Params.SizeSet( mWinContainer->Size().Width() - 220, mWinContainer->Size().Height() - 16 );
 
 	Params.Flags |= UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT;
-	mUIMap = eeNew( cUIMap, ( Params ) );
+	mUIMap = eeNew( cUIMap, ( Params, mTheme ) );
 	mUIMap->Visible( true );
 	mUIMap->Enabled( true );
 	CreateNewEmptyMap();
@@ -986,7 +986,7 @@ void cMapEditor::LayerMenuClick( const cUIEvent * Event ) {
 		MoveLayerDown();
 	} else if ( "Layer Properties..." == txt ) {
 		if ( NULL != mCurLayer) {
-			eeNew( cLayerProperties, ( mCurLayer ) );
+			eeNew( cLayerProperties, ( mCurLayer, cb::Make0( this, &cMapEditor::RefreshLayersList ) ) );
 		} else {
 			CreateNoLayerAlert( "Error retrieving layer properties" );
 		}

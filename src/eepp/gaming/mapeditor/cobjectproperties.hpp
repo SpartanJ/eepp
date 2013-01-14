@@ -3,7 +3,7 @@
 
 #include <eepp/gaming/base.hpp>
 #include <eepp/gaming/maphelper.hpp>
-#include <eepp/gaming/clayer.hpp>
+#include <eepp/gaming/cgameobjectobject.hpp>
 #include <eepp/ui/cuiwindow.hpp>
 #include <eepp/ui/cuigenericgrid.hpp>
 #include <eepp/ui/cuitextinput.hpp>
@@ -14,21 +14,19 @@ namespace EE { namespace Gaming { namespace MapEditor {
 
 class cMapEditor;
 
-class EE_API cLayerProperties {
+class cObjectProperties {
 	public:
-		typedef cb::Callback0<void> RefreshLayerListCb;
+		cObjectProperties( cGameObjectObject * Obj );
 
-		cLayerProperties( cLayer * Map, RefreshLayerListCb Cb = RefreshLayerListCb() );
-
-		virtual ~cLayerProperties();
+		virtual ~cObjectProperties();
 
 	protected:
 		cUITheme *			mUITheme;
 		cUIWindow *			mUIWindow;
 		cUIGenericGrid *	mGenGrid;
-		cLayer *			mLayer;
+		cGameObjectObject *	mObj;
 		cUITextInput *		mUIInput;
-		RefreshLayerListCb	mRefreshCb;
+		cUITextInput *		mUIInput2;
 
 		void WindowClose( const cUIEvent * Event );
 

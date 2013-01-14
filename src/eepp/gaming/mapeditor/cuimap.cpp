@@ -1,11 +1,13 @@
 #include <eepp/gaming/mapeditor/cuimap.hpp>
+#include <eepp/gaming/mapeditor/cobjectproperties.hpp>
 #include <eepp/gaming/cgameobjectobject.hpp>
 #include <eepp/gaming/cobjectlayer.hpp>
 #include <eepp/ui/cuimanager.hpp>
+#include <eepp/ui/cuipopupmenu.hpp>
 
 namespace EE { namespace Gaming { namespace MapEditor {
 
-cUIMap::cUIMap( const cUIComplexControl::CreateParams& Params, cMap * Map ) :
+cUIMap::cUIMap( const cUIComplexControl::CreateParams& Params, cUITheme * Theme, cMap * Map ) :
 	cUIComplexControl( Params ),
 	mMap( Map ),
 	mCurLayer( NULL ),
@@ -17,7 +19,8 @@ cUIMap::cUIMap( const cUIComplexControl::CreateParams& Params, cMap * Map ) :
 	mObjRECTEditing(false),
 	mObjPolyEditing(false),
 	mObjDragging( false ),
-	mSelObj( NULL )
+	mSelObj( NULL ),
+	mTheme( Theme )
 {
 	if ( NULL == Map ) {
 		mMap = eeNew( cMap, () );
@@ -408,6 +411,54 @@ void cUIMap::CurLayer( cLayer * layer ) {
 
 void cUIMap::SetAlertCb( AlertCb Cb ) {
 	mAlertCb = Cb;
+}
+
+Uint32 cUIMap::OnMessage( const cUIMessage * Msg ) {
+	if ( Msg->Msg() == cUIMessage::MsgClick && Msg->Sender() == this && ( Msg->Flags() & EE_BUTTON_RMASK ) ) {
+		if ( SELECT_OBJECTS == mEditingObjMode && NULL != mSelObj && mSelObj->PointInside( mMap->GetMouseMapPosf() ) ) {
+			CreateObjPopUpMenu();
+		}
+	}
+
+	return 0;
+}
+
+void cUIMap::ObjItemClick( const cUIEvent * Event ) {
+	if ( !Event->Ctrl()->IsType( UI_TYPE_MENUITEM ) )
+		return;
+
+	if ( NULL != mSelObj && NULL != mCurLayer && mCurLayer->Type() == MAP_LAYER_OBJECT && mSelObj->Layer() == mCurLayer ) {
+		const String& txt = reinterpret_cast<cUIMenuItem*> ( Event->Ctrl() )->Text();
+
+		cObjectLayer * tLayer = reinterpret_cast<cObjectLayer*>( mCurLayer );
+
+		if ( "Duplicate Object" == txt ) {
+			tLayer->AddGameObject( mSelObj->Copy() );
+		} else if ( "Remove Object" == txt ) {
+			tLayer->RemoveGameObject( mSelObj );
+
+			mSelObj->Selected( false );
+			mSelObj = NULL;
+		} else if ( "Object Properties..." == txt ) {
+			eeNew( cObjectProperties, ( mSelObj ) );
+		}
+	}
+}
+
+void cUIMap::CreateObjPopUpMenu() {
+	cUIPopUpMenu * Menu = mTheme->CreatePopUpMenu();
+
+	Menu->Add( "Duplicate Object" );
+	Menu->Add( "Remove Object" );
+	Menu->AddSeparator();
+	Menu->Add( "Object Properties..." );
+	Menu->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cUIMap::ObjItemClick ) );
+
+	if ( Menu->Show() ) {
+		eeVector2i Pos = cUIManager::instance()->GetInput()->GetMousePos();
+		cUIMenu::FixMenuPos( Pos , Menu );
+		Menu->Pos( Pos );
+	}
 }
 
 }}}

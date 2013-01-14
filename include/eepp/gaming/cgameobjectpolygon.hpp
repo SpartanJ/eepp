@@ -26,6 +26,8 @@ class EE_API cGameObjectPolygon : public cGameObjectObject {
 		virtual eePolygon2f GetPolygon();
 
 		virtual bool PointInside( const eeVector2f& p );
+
+		virtual cGameObjectObject * Copy();
 	protected:
 		eePolygon2f mPoly;
 };

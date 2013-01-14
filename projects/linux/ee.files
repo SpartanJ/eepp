@@ -579,3 +579,5 @@
 ../../src/eepp/gaming/cgameobjectpolygon.cpp
 ../../include/eepp/gaming/cgameobjectpolyline.hpp
 ../../include/eepp/gaming/cgameobjectpolygon.hpp
+../../src/eepp/gaming/mapeditor/cobjectproperties.hpp
+../../src/eepp/gaming/mapeditor/cobjectproperties.cpp

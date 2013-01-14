@@ -16,6 +16,8 @@ class EE_API cGameObjectPolyline : public cGameObjectPolygon {
 		virtual bool IsType( const Uint32& type );
 
 		virtual void Draw();
+
+		virtual cGameObjectObject * Copy();
 };
 
 }}

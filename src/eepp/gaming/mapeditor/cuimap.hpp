@@ -31,7 +31,7 @@ class EE_API cUIMap : public cUIComplexControl {
 		typedef cb::Callback2<void, Uint32, eePolygon2f> ObjAddCb;
 		typedef cb::Callback2<cUIMessageBox*, const String&, const String&> AlertCb;
 
-		cUIMap( const cUIComplexControl::CreateParams& Params, cMap * Map = NULL );
+		cUIMap( const cUIComplexControl::CreateParams& Params, cUITheme * Theme, cMap * Map = NULL );
 
 		virtual ~cUIMap();
 
@@ -74,6 +74,8 @@ class EE_API cUIMap : public cUIComplexControl {
 		void EditingObjMode( EDITING_OBJ_MODE mode );
 
 		void CurLayer( cLayer * layer );
+
+		void CreateObjPopUpMenu();
 	protected:		
 		enum EDITING_MODE {
 			EDITING_LIGHT = 1,
@@ -108,6 +110,9 @@ class EE_API cUIMap : public cUIComplexControl {
 		eeVector2f			mObjDragDist;
 
 		AlertCb				mAlertCb;
+		cUITheme *			mTheme;
+
+		virtual Uint32 OnMessage( const cUIMessage * Msg );
 
 		virtual Uint32 OnMouseMove( const eeVector2i& Pos, const Uint32 Flags );
 
@@ -116,6 +121,8 @@ class EE_API cUIMap : public cUIComplexControl {
 		virtual void UpdateScreenPos();
 
 		virtual void OnAlphaChange();
+
+		void ObjItemClick( const cUIEvent * Event );
 
 		void MapDraw();
 

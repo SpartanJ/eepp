@@ -36,4 +36,8 @@ void cGameObjectPolyline::Draw() {
 	P.DrawPolygon( mPoly );
 }
 
+cGameObjectObject * cGameObjectPolyline::Copy() {
+	return eeNew( cGameObjectPolyline, ( mDataId, mPoly, mLayer, mFlags ) );
+}
+
 }}
