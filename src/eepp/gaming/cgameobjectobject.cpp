@@ -11,6 +11,7 @@ namespace EE { namespace Gaming {
 cGameObjectObject::cGameObjectObject( Uint32 DataId, const eeRectf& rect, cLayer * Layer, const Uint32& Flags ) :
 	cGameObject( Flags, Layer ),
 	mRect( rect ),
+	mPoly( rect ),
 	mPos( mRect.Pos() ),
 	mDataId( DataId ),
 	mSelected( false )
@@ -29,7 +30,8 @@ bool cGameObjectObject::IsType( const Uint32& type ) {
 }
 
 eeSize cGameObjectObject::Size() {
-	return eeSize( mRect.Size().x, mRect.Size().y );
+	eeSizef size( mRect.Size() );
+	return eeSize( size.x, size.y );
 }
 
 void cGameObjectObject::Draw() {
@@ -51,8 +53,44 @@ eeVector2f cGameObjectObject::Pos() const {
 }
 
 void cGameObjectObject::Pos( eeVector2f pos ) {
+	mPoly.Move( pos - mPos );
 	mPos	= pos;
 	mRect	= eeRectf( pos, eeSizef( Size().x, Size().y ) );
+}
+
+void cGameObjectObject::SetPolygonPoint( Uint32 index, eeVector2f p ) {
+	switch ( index ) {
+		case 0:
+		{
+			mPoly.SetAt( 1, eeVector2f( p.x, mPoly[1].y ) );
+			mPoly.SetAt( 3, eeVector2f( mPoly[3].x, p.y ) );
+			break;
+		}
+		case 1:
+		{
+			mPoly.SetAt( 0, eeVector2f( p.x, mPoly[0].y ) );
+			mPoly.SetAt( 2, eeVector2f( mPoly[2].x, p.y ) );
+			break;
+		}
+		case 2:
+		{
+			mPoly.SetAt( 3, eeVector2f( p.x, mPoly[3].y ) );
+			mPoly.SetAt( 1, eeVector2f( mPoly[1].x, p.y ) );
+			break;
+		}
+		case 3:
+		default:
+		{
+			mPoly.SetAt( 2, eeVector2f( p.x, mPoly[2].y ) );
+			mPoly.SetAt( 0, eeVector2f( mPoly[0].x, p.y ) );
+			break;
+		}
+	}
+
+	mPoly.SetAt( index, p );
+	mRect	= mPoly.ToAABB();
+	mPos	= eeVector2f( mRect.Left, mRect.Top );
+	mPoly	= mRect;
 }
 
 Uint32 cGameObjectObject::DataId() {
@@ -103,8 +141,8 @@ void cGameObjectObject::TypeName( const std::string& type ) {
 	mType = type;
 }
 
-eePolygon2f cGameObjectObject::GetPolygon() {
-	return eePolygon2f( mRect );
+eePolygon2f& cGameObjectObject::GetPolygon() {
+	return mPoly;
 }
 
 bool cGameObjectObject::PointInside( const eeVector2f& p ) {
@@ -113,10 +151,6 @@ bool cGameObjectObject::PointInside( const eeVector2f& p ) {
 
 void cGameObjectObject::SetProperties( const PropertiesMap& prop ) {
 	mProperties = prop;
-}
-
-eeRectf& cGameObjectObject::Rect() {
-	return mRect;
 }
 
 const bool& cGameObjectObject::Selected() const {

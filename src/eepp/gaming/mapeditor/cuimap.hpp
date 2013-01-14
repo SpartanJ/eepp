@@ -114,6 +114,7 @@ class EE_API cUIMap : public cUIComplexControl {
 
 		Uint32				mSelPointIndex;
 		eeRectf				mSelPointRect;
+		bool				mSelPoint;
 
 		virtual Uint32 OnMessage( const cUIMessage * Msg );
 
@@ -136,6 +137,12 @@ class EE_API cUIMap : public cUIComplexControl {
 		eeVector2f GetMouseMapPos();
 
 		void SelectPolyObj();
+
+		void SelectPolyPoint();
+
+		void SetPointRect( eeVector2f p );
+
+		void DragPoly( Uint32 Flags, Uint32 PFlags );
 };
 
 }}}

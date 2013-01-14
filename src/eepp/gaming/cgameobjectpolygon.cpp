@@ -7,9 +7,9 @@ using namespace EE::Graphics;
 namespace EE { namespace Gaming {
 
 cGameObjectPolygon::cGameObjectPolygon( Uint32 DataId, eePolygon2f poly, cLayer * Layer, const Uint32& Flags ) :
-	cGameObjectObject( DataId, poly.ToAABB(), Layer, Flags ),
-	mPoly( poly )
+	cGameObjectObject( DataId, poly.ToAABB(), Layer, Flags )
 {
+	mPoly = eePolygon2f( poly );
 }
 
 cGameObjectPolygon::~cGameObjectPolygon() {
@@ -41,18 +41,10 @@ void cGameObjectPolygon::Draw() {
 	P.DrawPolygon( mPoly );
 }
 
-eeVector2f cGameObjectPolygon::Pos() const {
-	return mPos;
-}
-
-void cGameObjectPolygon::Pos( eeVector2f pos ) {
-	mPoly.Move( pos - mPos );
-
-	cGameObjectObject::Pos( pos );
-}
-
-eePolygon2f cGameObjectPolygon::GetPolygon() {
-	return mPoly;
+void cGameObjectPolygon::SetPolygonPoint( Uint32 index, eeVector2f p ) {
+	mPoly.SetAt( index, p );
+	mRect	= mPoly.ToAABB();
+	mPos	= eeVector2f( mRect.Left, mRect.Top );
 }
 
 bool cGameObjectPolygon::PointInside( const eeVector2f& p ) {

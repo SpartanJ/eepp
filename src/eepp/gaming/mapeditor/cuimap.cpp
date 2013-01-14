@@ -21,7 +21,8 @@ cUIMap::cUIMap( const cUIComplexControl::CreateParams& Params, cUITheme * Theme,
 	mObjDragging( false ),
 	mSelObj( NULL ),
 	mTheme( Theme ),
-	mSelPointIndex( eeINDEX_NOT_FOUND )
+	mSelPointIndex( eeINDEX_NOT_FOUND ),
+	mSelPoint( false )
 {
 	if ( NULL == Map ) {
 		mMap = eeNew( cMap, () );
@@ -150,8 +151,40 @@ void cUIMap::SelectPolyObj() {
 	}
 }
 
+void cUIMap::SelectPolyPoint() {
+	if ( NULL != mCurLayer && mCurLayer->Type() == MAP_LAYER_OBJECT && NULL != mSelObj ) {
+		if ( mSelObj->PointInside( mMap->GetMouseMapPosf() ) ) {
+			mSelPointIndex = mSelObj->GetPolygon().ClosestPoint( mMap->GetMouseMapPosf() );
+			SetPointRect( mSelObj->GetPolygon().GetAt( mSelPointIndex ) );
+		}
+	}
+}
+
+void cUIMap::DragPoly( Uint32 Flags, Uint32 PFlags ) {
+	if ( ( PFlags & EE_BUTTON_MMASK ) && NULL != mSelObj ) {
+		if ( mSelObj->PointInside( mMap->GetMouseMapPosf() ) ) {
+			if ( !mObjDragging ) {
+				mObjDragging = true;
+				mObjDragDist = GetMouseMapPos() - mSelObj->Pos();
+			}
+		}
+
+		mSelObj->Pos( GetMouseMapPos() - mObjDragDist );
+
+		if ( EDIT_POLYGONS == mEditingObjMode ) {
+			SelectPolyPoint();
+		}
+	} else if ( Flags & EE_BUTTON_MMASK ) {
+		if ( mObjDragging ) {
+			mObjDragging = false;
+			mObjDragDist = eeVector2f(0,0);
+		}
+	}
+}
+
 void cUIMap::ManageObject( Uint32 Flags ) {
-	Uint32 PFlags = cUIManager::instance()->GetInput()->PressTrigger();
+	Uint32 PFlags	= cUIManager::instance()->GetInput()->PressTrigger();
+	Uint32 LPFlags	= cUIManager::instance()->GetInput()->LastPressTrigger();
 
 	switch ( mEditingObjMode )
 	{
@@ -196,20 +229,8 @@ void cUIMap::ManageObject( Uint32 Flags ) {
 		{
 			if ( ( Flags & EE_BUTTON_LMASK ) ) {
 				SelectPolyObj();
-			} else if ( ( PFlags & EE_BUTTON_MMASK ) && NULL != mSelObj ) {
-				if ( mSelObj->PointInside( mMap->GetMouseMapPosf() ) ) {
-					if ( !mObjDragging ) {
-						mObjDragging = true;
-						mObjDragDist = GetMouseMapPos() - mSelObj->Pos();
-					}
-
-					mSelObj->Pos( GetMouseMapPos() - mObjDragDist );
-				}
-			} else if ( ( Flags & EE_BUTTON_MMASK ) && NULL != mSelObj ) {
-				if ( mObjDragging ) {
-					mObjDragging = false;
-					mObjDragDist = eeVector2f(0,0);
-				}
+			} else {
+				DragPoly( Flags, PFlags );
 			}
 
 			break;
@@ -217,17 +238,23 @@ void cUIMap::ManageObject( Uint32 Flags ) {
 		case EDIT_POLYGONS:
 		{
 			if ( ( Flags & EE_BUTTON_LMASK ) ) {
-				if ( NULL != mCurLayer && mCurLayer->Type() == MAP_LAYER_OBJECT ) {
+				if ( !mSelPoint ) {
 					SelectPolyObj();
-
-					if ( NULL != mSelObj ) {
-						if ( mSelObj->PointInside( mMap->GetMouseMapPosf() ) ) {
-							mSelPointIndex = mSelObj->GetPolygon().ClosestPoint( mMap->GetMouseMapPosf() );
-							eeVector2f p( mSelObj->GetPolygon().GetAt( mSelPointIndex ) );
-							mSelPointRect = eeRectf( eeVector2f( p.x - 10, p.y - 10 ), eeSizef( 20, 20 ) );
-						}
-					}
+					SelectPolyPoint();
+				} else {
+					mSelPoint = false;
 				}
+			} else if ( !( LPFlags & EE_BUTTON_LMASK  ) && ( PFlags & EE_BUTTON_LMASK ) ) {
+				if ( NULL != mSelObj && eeINDEX_NOT_FOUND != mSelPointIndex && mSelPointRect.Contains( mMap->GetMouseMapPosf() ) ) {
+					mSelPoint = true;
+				}
+			} else if ( ( PFlags & EE_BUTTON_LMASK ) ) {
+				if ( mSelPoint && NULL != mSelObj && eeINDEX_NOT_FOUND != mSelPointIndex ) {
+					mSelObj->SetPolygonPoint( mSelPointIndex, GetMouseMapPos() );
+					SetPointRect( GetMouseMapPos() );
+				}
+			} else {
+				DragPoly( Flags, PFlags );
 			}
 
 			break;
@@ -236,6 +263,10 @@ void cUIMap::ManageObject( Uint32 Flags ) {
 		{
 		}
 	}
+}
+
+void cUIMap::SetPointRect( eeVector2f p ) {
+	mSelPointRect = eeRectf( eeVector2f( p.x - 10, p.y - 10 ), eeSizef( 20, 20 ) );
 }
 
 void cUIMap::TryToSelectLight() {

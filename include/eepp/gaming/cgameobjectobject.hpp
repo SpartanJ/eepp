@@ -56,19 +56,20 @@ class EE_API cGameObjectObject : public cGameObject {
 
 		void TypeName( const std::string& type );
 
-		eeRectf& Rect();
-
 		virtual bool PointInside( const eeVector2f& p );
 
-		virtual eePolygon2f GetPolygon();
+		eePolygon2f& GetPolygon();
 
 		const bool& Selected() const;
 
 		void Selected( const bool& sel );
 
+		virtual void SetPolygonPoint( Uint32 index, eeVector2f p );
+
 		virtual cGameObjectObject * Copy();
 	protected:
 		eeRectf			mRect;
+		eePolygon2f		mPoly;
 		eeVector2f		mPos;
 		Uint32			mDataId;
 		bool			mSelected;

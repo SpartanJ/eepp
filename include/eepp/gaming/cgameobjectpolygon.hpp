@@ -13,23 +13,17 @@ class EE_API cGameObjectPolygon : public cGameObjectObject {
 
 		virtual void Draw();
 
-		virtual eeVector2f Pos() const;
-
 		virtual eeSize Size();
-
-		virtual void Pos( eeVector2f pos );
 
 		virtual Uint32 Type() const;
 
 		virtual bool IsType( const Uint32& type );
 
-		virtual eePolygon2f GetPolygon();
-
 		virtual bool PointInside( const eeVector2f& p );
 
+		virtual void SetPolygonPoint( Uint32 index, eeVector2f p );
+
 		virtual cGameObjectObject * Copy();
-	protected:
-		eePolygon2f mPoly;
 };
 
 }}

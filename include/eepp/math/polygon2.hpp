@@ -34,12 +34,15 @@ class Polygon2 {
 
 		const Vector2<T>& operator[] ( const Uint32& Pos ) const;
 
-		Vector2<T> GetAt( const Uint32& Pos )
+		Vector2<T>& GetAt( const Uint32& Pos )
 		{
-			if ( Vector.size() > 0 && Pos < Vector.size() )
-				return Vector[Pos];
+			return Vector[Pos];
+		}
 
-			return Vector[0];
+		Vector2<T>& SetAt( const Uint32& Pos, Vector2<T> newPos )
+		{
+			Vector[Pos] = newPos;
+			return Vector[Pos];
 		}
 
 		std::size_t Size() const;
@@ -384,6 +387,10 @@ Uint32 Polygon2<T>::ClosestPoint( const Vector2<T>& to, T * distance ) {
 	Uint32 Index	= 0;
 	T Dist			= 99999999;
 	T tDist;
+
+	if ( !Vector.size() ) {
+		return eeINDEX_NOT_FOUND;
+	}
 
 	for ( Uint32 i = 0; i < Vector.size(); i++ ) {
 		tDist = Vector[i].Distance( to );
