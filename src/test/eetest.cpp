@@ -178,7 +178,7 @@ void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
 	TTF		= cFontManager::instance()->GetByName( "arial" );
 	TTFB	= cFontManager::instance()->GetByName( "arialb" );
 
-	Log->Writef( "Fonts loading time: %f", mFTE.Elapsed() );
+	Log->Writef( "Fonts loading time: %f ms.", mFTE.Elapsed() );
 
 	eeASSERT( TTF != NULL );
 	eeASSERT( TTFB != NULL );
@@ -257,7 +257,7 @@ void cEETest::CreateUI() {
 
 	CreateAquaTextureAtlas();
 
-	Log->Writef( "Texture Atlas Loading Time: %f", TE.ElapsedSinceStart() );
+	Log->Writef( "Texture Atlas Loading Time: %f ms.", TE.ElapsedSinceStart() );
 
 	cUIManager::instance()->Init(); //UI_MANAGER_HIGHLIGHT_FOCUS
 
@@ -586,7 +586,7 @@ void cEETest::CreateUI() {
 
 	C = reinterpret_cast<cUIControlAnim*> ( C->Parent() );
 
-	Log->Writef( "CreateUI time: %f", TE.ElapsedSinceStart() );
+	Log->Writef( "CreateUI time: %f ms.", TE.ElapsedSinceStart() );
 }
 
 void cEETest::CreateMapEditor() {
@@ -921,7 +921,7 @@ void cEETest::LoadTextures() {
 	mBoxSprite = eeNew( cSprite, ( cGlobalTextureAtlas::instance()->Add( eeNew( cSubTexture, ( TN[3], "ilmare" ) ) ) ) );
 	mCircleSprite = eeNew( cSprite, ( cGlobalTextureAtlas::instance()->Add( eeNew( cSubTexture, ( TN[1], "thecircle" ) ) ) ) );
 
-	Log->Writef( "Textures loading time: %f", te.Elapsed() );
+	Log->Writef( "Textures loading time: %f ms.", te.Elapsed() );
 
 	Map.Create( 100, 100, 2, 128, 64, eeColor(175,175,175) );
 	RandomizeHeights();
@@ -929,7 +929,7 @@ void cEETest::LoadTextures() {
 	TreeTilingCreated = false;
 	CreateTiling(Wireframe);
 
-	Log->Writef( "Map creation time: %f", te.Elapsed() );
+	Log->Writef( "Map creation time: %f ms.", te.Elapsed() );
 }
 
 void cEETest::RandomizeHeights() {
@@ -1219,7 +1219,7 @@ void cEETest::Render() {
 	if ( Sys::GetTicks() - lasttick >= 50 ) {
 		lasttick = Sys::GetTicks();
 		#ifdef EE_DEBUG
-		mInfo = String::StrFormated( "EE - FPS: %d Elapsed Time: %4.8f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s\nApp Memory Usage: %s\nApp Peak Memory Usage: %s",
+		mInfo = String::StrFormated( "EE - FPS: %d Elapsed Time: %4.2f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s\nApp Memory Usage: %s\nApp Peak Memory Usage: %s",
 							mWindow->FPS(),
 							et,
 							(Int32)Mouse.x,
@@ -1229,7 +1229,7 @@ void cEETest::Render() {
 							FileSystem::SizeToString( (Uint32)MemoryManager::GetPeakMemoryUsage() ).c_str()
 						);
 		#else
-		mInfo = String::StrFormated( "EE - FPS: %d Elapsed Time: %4.8f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s",
+		mInfo = String::StrFormated( "EE - FPS: %d Elapsed Time: %4.2f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s",
 							mWindow->FPS(),
 							et,
 							(Int32)Mouse.x,
