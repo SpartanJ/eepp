@@ -7,7 +7,7 @@
 
 namespace EE { namespace System {
 
-/** @brief Base class for al packing classes */
+/** @brief Base class for all packing classes */
 class EE_API cPack : protected cMutex {
 	public:
 		cPack();

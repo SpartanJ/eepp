@@ -5,6 +5,7 @@
 
 namespace EE { namespace System {
 
+/** @brief Template class for a RGB color */
 template<typename T>
 class tColor {
 	public:
@@ -19,6 +20,11 @@ class tColor {
 		{
 		}
 
+		/** Creates an RGB color from each component.
+		**	@param r Red component
+		**	@param g Green component
+		**	@param b Blue component
+		*/
 		tColor(T r, T g, T b) :
 			Red(r),
 			Green(g),
@@ -39,6 +45,7 @@ class tColor {
 		}
 };
 
+/** @brief Template class for a RGBA color */
 template<typename T>
 class tColorA {
 	public:
@@ -65,6 +72,12 @@ class tColorA {
 		{
 		}
 
+		/** Creates an RGBA color from each component.
+		**	@param r Red component
+		**	@param g Green component
+		**	@param b Blue component
+		**  @param a Alpha component
+		*/
 		tColorA(T r, T g, T b, T a) :
 			Red(r),
 			Green(g),
@@ -73,6 +86,7 @@ class tColorA {
 		{
 		}
 
+		/** @brief Creates a RGBA color from a RGB color, the Alpha component is set as non-transparent. */
 		tColorA( const tColor<T>& Col ) :
 			Red( Col.Red ),
 			Green( Col.Green ),
@@ -81,6 +95,10 @@ class tColorA {
 		{
 		}
 
+		/** @brief Creates a RGBA color from a RGB color.
+		**	@param Col The RGB color
+		**	@param a The Alpha component value
+		*/
 		tColorA( const tColor<T>& Col, T a ) :
 			Red( Col.Red ),
 			Green( Col.Green ),
@@ -105,15 +123,17 @@ class tColorA {
 		T B() const { return Blue;	}	//! @return the Blue component
 		T A() const { return Alpha;	}	//! @return the Alpha component
 
-		 //! The color represented as an Uint32
+		 //! @return The color represented as an Uint32 ( as 0xAABBGGRR for Little Endian )
 		Uint32 GetValue() const {
 			return Value;
 		}
 
+		/** @brief Assign the RGBA colors, from each component. */
 		void Assign( T r, T g, T b, T a ) {
 			Red = r; Green = g; Blue = b; Alpha = a;
 		}
 
+		/** @brief Assign the color value from other RGBA color. */
 		void Assign( const tColorA<T>& Col ) {
 			Value = Col.Value;
 		}

@@ -5,46 +5,47 @@
 
 namespace EE { namespace System {
 
-/** @brief RC4 Encryption Class. For more information check Wikipedia: http://en.wikipedia.org/wiki/RC4. \n All the Decrypting functions call the Encrypting functions, there are there only for clarity, not really usefull. Use them as you wish.  */
+/** @brief RC4 Encryption Class. For more information check Wikipedia: http://en.wikipedia.org/wiki/RC4. */
 class EE_API cRC4 {
 	public:
 		cRC4();
+
 		~cRC4();
+
+		/** @brief Set the encryption Key.
+		**	@param key the key data
+		**	@param size the key size
+		*/
+		void SetKey( const Uint8 * key, Uint32 size );
 		
-		/** Set the encryption Key. */
+		/** @brief Set the encryption Key. */
 		void SetKey( const std::vector<Uint8>& Key );
 		
-		/** Set the encryption Key. */
+		/** @brief Set the encryption Key. */
 		void SetKey( const std::string& Key );
-		
-		void EncryptByte( std::vector<Uint8>& buffer, const std::vector<Uint8>& Key );
-		void EncryptByte( std::vector<Uint8>& buffer, const std::string& Key );
-		
-		/** Ecrypt a vector of bytes if the key is already set it. */
+
+		/** @brief Encrypt the buffer ( you must set the key first ).
+		**	@param data The buffer to encrypt
+		**	@param size The buffer size
+		*/
+		void EncryptByte( Uint8 * data, Uint32 size );
+
+		/** @brief Encrypt a vector of bytes ( you must set the key first ). */
 		void EncryptByte( std::vector<Uint8>& buffer );
-		
-		void DecryptByte( std::vector<Uint8>& buffer, const std::vector<Uint8>& Key );
-		void DecryptByte( std::vector<Uint8>& buffer, const std::string& Key );
+
+		/** @brief Decrypt a vector of bytes ( you must set the key first ). */
 		void DecryptByte( std::vector<Uint8>& buffer );
 		
-		void EncryptString( std::string& buffer, const std::vector<Uint8>& Key );
-		void EncryptString( std::string& buffer, const std::string& Key );
-		
-		/** Ecrypt a string if the key is already set it. */
+		/** @brief Encrypt a string ( you must set the key first ). */
 		void EncryptString( std::string& buffer );
-		
-		void DecryptString( std::string& buffer, const std::vector<Uint8>& Key );
-		void DecryptString( std::string& buffer, const std::string& Key );
+
+		/** @brief Decrypt a string ( you must set the key first ). */
 		void DecryptString( std::string& buffer );
-		
-		bool EncryptFile( const std::string& SourceFile, const std::string& DestFile, const std::vector<Uint8>& Key );
-		bool EncryptFile( const std::string& SourceFile, const std::string& DestFile, const std::string& Key );
-		
-		/** Ecrypt a file if the key is already set it. */
+
+		/** @brief Encrypt a file ( you must set the key first ). */
 		bool EncryptFile( const std::string& SourceFile, const std::string& DestFile );
-		
-		bool DecryptFile( const std::string& SourceFile, const std::string& DestFile, const std::vector<Uint8>& Key );
-		bool DecryptFile( const std::string& SourceFile, const std::string& DestFile, const std::string& Key );
+
+		/** @brief Decrypt a file ( you must set the key first ). */
 		bool DecryptFile( const std::string& SourceFile, const std::string& DestFile );
 	private:
 		typedef struct _RC4Key {

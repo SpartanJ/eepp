@@ -138,9 +138,9 @@ bool cIniFile::ReadFile() {
 					case ';':
 					case '#':
 						if ( !mNames.size() )
-							HeaderComment ( line.substr ( pLeft + 1 ) );
+							AddHeaderComment ( line.substr ( pLeft + 1 ) );
 						else
-							KeyComment ( keyname, line.substr ( pLeft + 1 ) );
+							AddKeyComment ( keyname, line.substr ( pLeft + 1 ) );
 						break;
 				}
 			}
@@ -230,37 +230,37 @@ unsigned cIniFile::AddKeyName ( std::string const keyname ) {
 	return (unsigned int)(mNames.size() - 1);
 }
 
-std::string cIniFile::KeyName ( unsigned const keyID ) const {
+std::string cIniFile::GetKeyName ( unsigned const keyID ) const {
 	if ( keyID < mNames.size() )
 		return mNames[keyID];
 	else
 		return "";
 }
 
-unsigned cIniFile::NumValues ( unsigned const keyID ) {
+unsigned cIniFile::GetNumValues ( unsigned const keyID ) {
 	if ( keyID < mKeys.size() )
 		return (unsigned int)mKeys[keyID].names.size();
 	return 0;
 }
 
-unsigned cIniFile::NumValues ( std::string const keyname ) {
+unsigned cIniFile::GetNumValues ( std::string const keyname ) {
 	long keyID = FindKey ( keyname );
 	if ( keyID == noID )
 		return 0;
 	return (unsigned int)mKeys[keyID].names.size();
 }
 
-std::string cIniFile::ValueName ( unsigned const keyID, unsigned const valueID ) const {
+std::string cIniFile::GetValueName ( unsigned const keyID, unsigned const valueID ) const {
 	if ( keyID < mKeys.size() && valueID < mKeys[keyID].names.size() )
 		return mKeys[keyID].names[valueID];
 	return "";
 }
 
-std::string cIniFile::ValueName ( std::string const keyname, unsigned const valueID ) const {
+std::string cIniFile::GetValueName ( std::string const keyname, unsigned const valueID ) const {
 	long keyID = FindKey ( keyname );
 	if ( keyID == noID )
 		return "";
-	return ValueName ( keyID, valueID );
+	return GetValueName ( keyID, valueID );
 }
 
 bool cIniFile::SetValue ( unsigned const keyID, unsigned const valueID, std::string const value ) {
@@ -421,7 +421,7 @@ bool cIniFile::DeleteKey ( std::string const keyname ) {
 	return true;
 }
 
-void cIniFile::Erase() {
+void cIniFile::Clear() {
 	// This loop not needed. The vector<> destructor seems to do
 	// all the work itself. memleak_test.cpp shows this.
 	//for ( unsigned i = 0; i < mKeys.size(); ++i) {
@@ -433,11 +433,11 @@ void cIniFile::Erase() {
 	mComments.clear();
 }
 
-void cIniFile::HeaderComment ( std::string const comment ) {
+void cIniFile::AddHeaderComment ( std::string const comment ) {
 	mComments.resize ( mComments.size() + 1, comment );
 }
 
-std::string cIniFile::HeaderComment ( unsigned const commentID ) const {
+std::string cIniFile::GetHeaderComment ( unsigned const commentID ) const {
 	if ( commentID < mComments.size() )
 		return mComments[commentID];
 	return "";
@@ -452,20 +452,20 @@ bool cIniFile::DeleteHeaderComment ( unsigned commentID ) {
 	return false;
 }
 
-unsigned cIniFile::NumKeyComments ( unsigned const keyID ) const {
+unsigned cIniFile::GetNumKeyComments ( unsigned const keyID ) const {
 	if ( keyID < mKeys.size() )
 		return (unsigned int)mKeys[keyID].comments.size();
 	return 0;
 }
 
-unsigned cIniFile::NumKeyComments ( std::string const keyname ) const {
+unsigned cIniFile::GetNumKeyComments ( std::string const keyname ) const {
 	long keyID = FindKey ( keyname );
 	if ( keyID == noID )
 		return 0;
 	return (unsigned int)mKeys[keyID].comments.size();
 }
 
-bool cIniFile::KeyComment ( unsigned const keyID, std::string const comment ) {
+bool cIniFile::AddKeyComment ( unsigned const keyID, std::string const comment ) {
 	if ( keyID < mKeys.size() ) {
 		mKeys[keyID].comments.resize ( mKeys[keyID].comments.size() + 1, comment );
 		return true;
@@ -473,24 +473,24 @@ bool cIniFile::KeyComment ( unsigned const keyID, std::string const comment ) {
 	return false;
 }
 
-bool cIniFile::KeyComment ( std::string const keyname, std::string const comment ) {
+bool cIniFile::AddKeyComment ( std::string const keyname, std::string const comment ) {
 	long keyID = FindKey ( keyname );
 	if ( keyID == noID )
 		return false;
-	return KeyComment ( unsigned ( keyID ), comment );
+	return AddKeyComment ( unsigned ( keyID ), comment );
 }
 
-std::string cIniFile::KeyComment ( unsigned const keyID, unsigned const commentID ) const {
+std::string cIniFile::GetKeyComment ( unsigned const keyID, unsigned const commentID ) const {
 	if ( keyID < mKeys.size() && commentID < mKeys[keyID].comments.size() )
 		return mKeys[keyID].comments[commentID];
 	return "";
 }
 
-std::string cIniFile::KeyComment ( std::string const keyname, unsigned const commentID ) const {
+std::string cIniFile::GetKeyComment ( std::string const keyname, unsigned const commentID ) const {
 	long keyID = FindKey ( keyname );
 	if ( keyID == noID )
 		return "";
-	return KeyComment ( unsigned ( keyID ), commentID );
+	return GetKeyComment ( unsigned ( keyID ), commentID );
 }
 
 bool cIniFile::DeleteKeyComment ( unsigned const keyID, unsigned const commentID ) {

@@ -7,20 +7,23 @@ namespace EE { namespace System {
 	
 namespace Platform { class cMutexImpl; }
 
-/** Simple mutex class */
+/** @brief Blocks concurrent access to shared resources from multiple threads */
 class EE_API cMutex {
 	public:
 		cMutex();
 
 		~cMutex();
 
-		/** Lock the mutex */
+		/** @brief Lock the mutex
+		**	If the mutex is already locked in another thread,
+		**	this call will block the execution until the mutex
+		**	is released. */
 		void Lock();
 
-		/** Unlock the mutex */
+		/** @brief Unlock the mutex */
 		void Unlock();
 
-		/** Tries to lock de mutex */
+		/** @brief Tries to lock de mutex if possible */
 		int TryLock();
 	private:
 		Platform::cMutexImpl *		mMutexImpl;

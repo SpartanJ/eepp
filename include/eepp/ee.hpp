@@ -30,8 +30,8 @@
 
 	@TODO Improve documentation.
 				STATE:	EE ( Base ) commented what is needed.
-						EE::Window mostly commented, need to add some examples for the input triggers.
-						EE::System 60 % commented, easy to understand.
+						EE::Window commented.
+						EE::System 80 % commented, easy to understand.
 						EE::Graphics 50 % commented.
 						EE::Audio 50 % commented.
 						EE::Math 30 to 40 % commented.
