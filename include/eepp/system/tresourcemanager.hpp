@@ -7,44 +7,64 @@
 namespace EE { namespace System {
 
 /** @brief A simple resource manager. It keeps a list of the resources, and free the instances of the resources when the manager is closed.
-* Resources must have Id() and Name() properties. Id() is the string hash of Name().
-*/
+**	Resources must have Id() and Name() properties. Id() is the string hash of Name(). */
 template <class T>
 class tResourceManager {
 	public:
 		/** @param UniqueId Indicates if the resources id must be unique */
 		tResourceManager( bool UniqueId = true );
 
+		/** @brief The destructor will call Destroy() and destroy all the resources added to the manager */
 		virtual ~tResourceManager();
 
+		/** @brief Add the resource to the resource manager
+		**	@param Resource The resource to be managed by the manager */
 		virtual T * Add( T * Resource );
 
+		/** @brief Removes the resource from the manager
+		**	@param Resource The resource to remove
+		**	@param Delete Indicates if the resource must be destroyed after being removed from the manager */
 		bool Remove( T * Resource, bool Delete = true );
 
+		/** @brief Removes the resource by its id
+		**	@see Remove */
 		bool RemoveById( const Uint32& Id, bool Delete = true );
 
+		/** @brief Removes the resource by its name
+		**	@see Remove */
 		bool RemoveByName( const std::string& Name, bool Delete = true );
 
+		/** @returns A resource by its name. If not found returns NULL. */
 		T * GetByName( const std::string& Name );
 
+		/** @returns A resource by its id. If not found returns NULL. */
 		T * GetById( const Uint32& Id );
 
+		/** @returns The number of resources added */
 		Uint32 Count();
 
+		/** @returns The number of resources that where added with the indicated name. */
 		Uint32 Count( const std::string& Name );
 
+		/** @returns The number of resources that where added with the indicated id. */
 		Uint32 Count( const Uint32& Id );
 
-		Uint32 Exists( const std::string& Name );
+		/** @returns If the resource name exists in the resources list. */
+		bool Exists( const std::string& Name );
 
-		Uint32 ExistsId( const Uint32& Id );
+		/** @returns If the resource id exists in the resources list. */
+		bool ExistsId( const Uint32& Id );
 
+		/** @brief Destroy all the resources added ( delete the instances of the resources ) */
 		void Destroy();
 
+		/** @brief Prints all the resources names added to the manager. */
 		void PrintNames();
 
+		/** @returns A reference to the resources list of the manager. */
 		std::list<T*>& GetResources();
 
+		/** @brief Indicates if the resource manager is destroy the resources. */
 		const bool& IsDestroying() const;
 	protected:
 		std::list<T*> mResources;
@@ -75,8 +95,11 @@ void tResourceManager<T>::Destroy() {
 
 	mIsDestroying = true;
 
-	for ( it = mResources.begin() ; it != mResources.end(); it++ )
+	for ( it = mResources.begin() ; it != mResources.end(); it++ ) {
 		eeSAFE_DELETE( (*it) );
+	}
+
+	mResources.clear();
 
 	mIsDestroying = false;
 }
@@ -141,13 +164,19 @@ bool tResourceManager<T>::RemoveByName( const std::string& Name, bool Delete ) {
 }
 
 template <class T>
-Uint32 tResourceManager<T>::Exists( const std::string& Name ) {
-	return Count( Name );
+bool tResourceManager<T>::Exists( const std::string& Name ) {
+	return ExistsId( String::Hash( Name ) );
 }
 
 template <class T>
-Uint32 tResourceManager<T>::ExistsId( const Uint32& Id ) {
-	return Count( Id );
+bool tResourceManager<T>::ExistsId( const Uint32& Id ) {
+	typename std::list<T*>::iterator it;
+
+	for ( it = mResources.begin() ; it != mResources.end(); it++ )
+		if ( (*it)->Id() == Id )
+			return true;
+
+	return false;
 }
 
 template <class T>

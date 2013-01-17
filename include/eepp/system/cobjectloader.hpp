@@ -30,8 +30,7 @@ class EE_API cObjectLoader : protected cThread {
 		void 			Load();
 
 		/** @brief Starts loading the resource.
-		**	@param Cb A callback that is called when the resources is loaded.
-		*/
+		**	@param Cb A callback that is called when the resource finished loading. */
 		void 			Load( ObjLoadCallback Cb );
 
 		/** @brief Force to unload the resource from memory in case that it was already loaded. */
@@ -56,8 +55,7 @@ class EE_API cObjectLoader : protected cThread {
 		bool			Threaded() const;
 
 		/** @brief Sets if the loader is asynchronous.
-		**	This must be called before the load starts.
-		*/
+		**	This must be called before the load starts. */
 		void			Threaded( const bool& threaded );
 
 		/** @return The object loader type */

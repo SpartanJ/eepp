@@ -29,9 +29,9 @@
 				STATE:	It's looking good.
 
 	@TODO Improve documentation.
-				STATE:	EE ( Base ) commented what is needed.
-						EE::Window commented.
-						EE::System 80 % commented, easy to understand.
+				STATE:	EE ( Base ) documented what is needed.
+						EE::Window documented.
+						EE::System documented.
 						EE::Graphics 50 % commented.
 						EE::Audio 50 % commented.
 						EE::Math 30 to 40 % commented.
