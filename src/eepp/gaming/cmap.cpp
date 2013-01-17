@@ -34,7 +34,7 @@ cMap::cMap() :
 	mLightManager( NULL ),
 	mData( NULL ),
 	mTileOverColor( 255, 0, 0, 200 ),
-	mBackColor( 0, 0, 0, 50 ),
+	mBackColor( 204, 204, 204, 255 ),
 	mBackAlpha( 255 ),
 	mMouseOver( false ),
 	mScale( 1 ),

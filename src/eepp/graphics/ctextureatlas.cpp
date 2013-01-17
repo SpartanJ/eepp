@@ -56,4 +56,17 @@ Uint32 cTextureAtlas::Count() {
 	return tResourceManager<cSubTexture>::Count();
 }
 
+void cTextureAtlas::SetTextures( std::vector<cTexture*> textures ) {
+	mTextures = textures;
+}
+
+cTexture * cTextureAtlas::GetTexture( const Uint32& texnum ) const {
+	eeASSERT( texnum < mTextures.size() );
+	return mTextures[ texnum ];
+}
+
+Uint32 cTextureAtlas::GetTexturesCount() {
+	return mTextures.size();
+}
+
 }}

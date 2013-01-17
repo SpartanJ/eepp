@@ -247,6 +247,10 @@ void cTextureAtlasLoader::CreateSubTextures() {
 		}
 	}
 
+	if ( NULL != mTextureAtlas && mTexuresLoaded.size() ) {
+		mTextureAtlas->SetTextures( mTexuresLoaded );
+	}
+
 	mLoaded = true;
 
 	if ( mLoadCallback.IsSet() ) {

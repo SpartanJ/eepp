@@ -29,6 +29,8 @@ cUIMap::cUIMap( const cUIComplexControl::CreateParams& Params, cUITheme * Theme,
 	}
 
 	mMap->SetDrawCallback( cb::Make0( this, &cUIMap::MapDraw ) );
+
+	UpdateScreenPos();
 }
 
 cUIMap::~cUIMap() {

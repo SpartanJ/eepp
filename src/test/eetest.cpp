@@ -264,7 +264,6 @@ void cEETest::CreateUI() {
 	//mTheme = cUITheme::LoadFromPath( eeNew( cUIAquaTheme, ( "aqua", "aqua" ) ), MyPath + "aqua/" );
 
 	cTextureAtlasLoader tgl( MyPath + "aquata/aqua" + EE_TEXTURE_ATLAS_EXTENSION );
-	tgl.GetTexture()->TextureFilter( TEX_FILTER_NEAREST );
 
 	mTheme = cUITheme::LoadFromTextureAtlas( eeNew( cUIAquaTheme, ( "aqua", "aqua" ) ), cTextureAtlasManager::instance()->GetByName( "aqua" ) );
 

@@ -132,6 +132,11 @@ void cUITheme::AddThemeIcon( const std::string& Icon ) {
 cUITheme * cUITheme::LoadFromTextureAtlas( cUITheme * tTheme, cTextureAtlas * TextureAtlas ) {
 	eeASSERT( NULL != tTheme && NULL != TextureAtlas );
 
+	/** Themes use nearest filter by default, force the filter to the textures. */
+	for ( Uint32 tC = 0; tC < TextureAtlas->GetTexturesCount(); tC++ ) {
+		TextureAtlas->GetTexture( tC )->TextureFilter( TEX_FILTER_NEAREST );
+	}
+
 	cTimeElapsed TE;
 
 	LoadThemeElements();

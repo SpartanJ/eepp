@@ -33,10 +33,19 @@ class EE_API cTextureAtlas : public tResourceManager<cSubTexture> {
 		const Uint32& Id() const;
 		
 		Uint32 Count();
+
+		cTexture * GetTexture( const Uint32& texnum = 0 ) const;
+
+		Uint32 GetTexturesCount();
 	protected:
-		std::string 	mName;
-		Uint32 			mId;
-		std::string		mPath;
+		friend class cTextureAtlasLoader;
+
+		std::string				mName;
+		Uint32					mId;
+		std::string				mPath;
+		std::vector<cTexture*>	mTextures;
+
+		void SetTextures( std::vector<cTexture*> textures );
 };
 
 }}
