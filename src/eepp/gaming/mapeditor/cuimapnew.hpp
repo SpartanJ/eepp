@@ -11,7 +11,7 @@ namespace EE { namespace Gaming { namespace MapEditor {
 
 class EE_API cUIMapNew {
 	public:
-		cUIMapNew( cUIMap * Map, cb::Callback0<void> NewMapCb = cb::Callback0<void>() );
+		cUIMapNew( cUIMap * Map, cb::Callback0<void> NewMapCb = cb::Callback0<void>(), bool ResizeMap = false );
 
 		virtual ~cUIMapNew();
 	protected:
@@ -36,6 +36,9 @@ class EE_API cUIMapNew {
 		cUITextBox *		mUIBlueTxt;
 
 		cb::Callback0<void> mNewMapCb;
+
+		eeSize				mNewSize;
+		bool				mResizeMap;
 
 		void WindowClose( const cUIEvent * Event );
 

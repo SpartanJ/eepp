@@ -74,8 +74,6 @@ void cLog::OpenFS() {
 		mFilePath = Sys::GetProcessPath();
 	}
 
-	CloseFS();
-
 	if ( NULL == mFS ) {
         std::string str = mFilePath + "log.log";
 

@@ -11,6 +11,7 @@
 
 namespace EE { namespace UI {
 class cUIMessageBox;
+class cUITextBox;
 }}
 
 using namespace EE::UI;
@@ -77,6 +78,8 @@ class EE_API cMapEditor {
 		cUITextBox *		mUIBlueTxt;
 		cUISpinBox *		mLightRadius;
 		cUICheckBox *		mLightTypeChk;
+		cUITextBox *		mTileBox;
+		Int32				mLastSelButtonY;
 
 		std::list<cUISelectButton*> mObjContButton;
 
@@ -225,6 +228,8 @@ class EE_API cMapEditor {
 		void OnTabSelected( const cUIEvent * Event );
 
 		void CreateTabs();
+
+		void OnMapLoad();
 };
 
 }}}

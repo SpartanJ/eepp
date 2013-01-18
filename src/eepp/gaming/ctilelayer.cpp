@@ -101,18 +101,22 @@ void cTileLayer::DeallocateLayer() {
 void cTileLayer::AddGameObject( cGameObject * obj, const eeVector2i& TilePos ) {
 	eeASSERT( TilePos.x >= 0 && TilePos.y >= 0 );
 
-	RemoveGameObject( TilePos );
+	if ( TilePos.x < mSize.x && TilePos.y < mSize.y ) {
+		RemoveGameObject( TilePos );
 
-	mTiles[ TilePos.x ][ TilePos.y ] = obj;
+		mTiles[ TilePos.x ][ TilePos.y ] = obj;
 
-	obj->Pos( eeVector2f( TilePos.x * mMap->TileSize().x, TilePos.y * mMap->TileSize().y ) );
+		obj->Pos( eeVector2f( TilePos.x * mMap->TileSize().x, TilePos.y * mMap->TileSize().y ) );
+	}
 }
 
 void cTileLayer::RemoveGameObject( const eeVector2i& TilePos ) {
 	eeASSERT( TilePos.x >= 0 && TilePos.y >= 0 );
 
-	if ( NULL != mTiles[ TilePos.x ][ TilePos.y ] ) {
-		eeSAFE_DELETE( mTiles[ TilePos.x ][ TilePos.y ] );
+	if ( TilePos.x < mSize.x && TilePos.y < mSize.y ) {
+		if ( NULL != mTiles[ TilePos.x ][ TilePos.y ] ) {
+			eeSAFE_DELETE( mTiles[ TilePos.x ][ TilePos.y ] );
+		}
 	}
 }
 

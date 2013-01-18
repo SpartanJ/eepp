@@ -43,7 +43,8 @@ cMapEditor::cMapEditor( cUIWindow * AttatchTo, const MapEditorCloseCb& callback 
 	mCloseCb( callback ),
 	mGOTypeList( NULL ),
 	mChkAnim( NULL ),
-	mCurLayer( NULL )
+	mCurLayer( NULL ),
+	mLastSelButtonY(0)
 {
 	if ( NULL == mTheme ) {
 		eePRINT( "cMapEditor needs a default theme seted to work." );
@@ -80,6 +81,11 @@ void cMapEditor::CreateME() {
 void cMapEditor::CreateWinMenu() {
 	cUIWinMenu * WinMenu = mTheme->CreateWinMenu( mUIContainer );
 
+	mTileBox = mTheme->CreateTextBox( "", mUIContainer, eeSize(), eeVector2i(), UI_HALIGN_RIGHT | UI_VALIGN_CENTER | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT );
+	mTileBox->Size( 100, WinMenu->Size().Height() );
+	mTileBox->Pos( eeVector2i( mUIContainer->Size().Width() - mTileBox->Size().Width(), 0 ) );
+	mTileBox->UpdateAnchorsDistances();
+
 	cUIPopUpMenu * PU1 = mTheme->CreatePopUpMenu( mUIContainer );
 	PU1->Add( "New...", mTheme->GetIconByName( "document-new" ) );
 	PU1->Add( "Open...", mTheme->GetIconByName( "document-open" ) );
@@ -113,10 +119,8 @@ void cMapEditor::CreateWinMenu() {
 	WinMenu->AddMenuButton( "View", PU3 );
 
 	cUIPopUpMenu * PU4 = mTheme->CreatePopUpMenu( mUIContainer );
-	PU4->Add( "New Texture Atlas..." );
-	PU4->Add( "Add External Texture Atlas..." );
-	PU4->AddSeparator();
-	PU4->Add( "Map Properties..." );
+	PU4->Add( "Properties..." );
+	PU4->Add( "Resize..." );
 
 	PU4->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cMapEditor::MapMenuClick ) );
 	WinMenu->AddMenuButton( "Map", PU4 );
@@ -143,6 +147,12 @@ void cMapEditor::CreateWinMenu() {
 
 	PU5->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cMapEditor::LayerMenuClick ) );
 	WinMenu->AddMenuButton( "Layer", PU5 );
+
+	cUIPopUpMenu * PU6 = mTheme->CreatePopUpMenu( mUIContainer );
+	PU6->Add( "New Texture Atlas..." );
+	PU6->Add( "Add External Texture Atlas..." );
+	WinMenu->AddMenuButton( "Atlases", PU6 );
+	PU6->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cMapEditor::MapMenuClick ) );
 
 	cUIComplexControl::CreateParams Params;
 	Params.Parent( mUIContainer );
@@ -373,16 +383,14 @@ void cMapEditor::CreateLightContainer() {
 }
 
 cUISelectButton * cMapEditor::AddObjContButton( String text, Uint32 mode ) {
-	static Int32 lastY = 0;
-
-	cUISelectButton * Button = mTheme->CreateSelectButton( mObjectCont, eeSize( mObjectCont->Size().Width(), 22 ), eeVector2i( 0, lastY ) );
+	cUISelectButton * Button = mTheme->CreateSelectButton( mObjectCont, eeSize( mObjectCont->Size().Width(), 22 ), eeVector2i( 0, mLastSelButtonY ) );
 
 	Button->Text( text );
 	Button->Data( mode );
 
 	Button->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::OnObjectModeSel ) );
 
-	lastY += Button->Size().Height() + 4;
+	mLastSelButtonY += Button->Size().Height() + 4;
 
 	mObjContButton.push_back( Button );
 
@@ -439,6 +447,7 @@ void cMapEditor::CreateUIMap() {
 	mUIMap->SetLightRadiusChangeCb( cb::Make1( this, &cMapEditor::OnLightRadiusChange ) );
 	mUIMap->SetAddObjectCallback( cb::Make2( this, &cMapEditor::OnAddObject ) );
 	mUIMap->SetAlertCb( cb::Make2( this, &cMapEditor::CreateAlert ) );
+	mUIMap->SetTileBox( mTileBox );
 
 	mMapHScroll = mTheme->CreateScrollBar( mWinContainer, eeSize( Params.Size.Width(), 15 ), eeVector2i( 0, Params.Size.Height() ), UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
 	mMapHScroll->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cMapEditor::OnScrollMapH ) );
@@ -791,16 +800,20 @@ void cMapEditor::MapOpen( const cUIEvent * Event ) {
 	cUICommonDialog * CDL = reinterpret_cast<cUICommonDialog*> ( Event->Ctrl() );
 
 	if ( mUIMap->Map()->Load( CDL->GetFullPath() ) ) {
-		mCurLayer = NULL;
-
-		mUIMap->Map()->ViewSize( mUIMap->Size() );
-
-		MapCreated();
-
-		RefreshLayersList();
-
-		RefreshGotyList();
+		OnMapLoad();
 	}
+}
+
+void cMapEditor::OnMapLoad() {
+	mCurLayer = NULL;
+
+	mUIMap->Map()->ViewSize( mUIMap->Size() );
+
+	MapCreated();
+
+	RefreshLayersList();
+
+	RefreshGotyList();
 }
 
 void cMapEditor::MapSave( const cUIEvent * Event ) {
@@ -963,8 +976,10 @@ void cMapEditor::MapMenuClick( const cUIEvent * Event ) {
 		TGDialog->AddEventListener( cUIEvent::EventOpenFile, cb::Make1( this, &cMapEditor::TextureAtlasOpen ) );
 		TGDialog->Center();
 		TGDialog->Show();
-	} else if ( "Map Properties..." == txt ) {
+	} else if ( "Properties..." == txt ) {
 		eeNew( cMapProperties, ( mUIMap->Map() ) );
+	} else if ( "Resize..." ) {
+		eeNew( cUIMapNew, ( mUIMap, cb::Make0( this, &cMapEditor::OnMapLoad ), true ) );
 	}
 }
 

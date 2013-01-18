@@ -10,7 +10,7 @@ cUIComplexControl::cUIComplexControl( const cUIComplexControl::CreateParams& Par
 {
 	mControlFlags |= UI_CTRL_FLAG_COMPLEX;
 
-	CalcDistToBorder();
+	UpdateAnchorsDistances();
 
 	TooltipText( Params.TooltipText );
 }
@@ -27,7 +27,7 @@ bool cUIComplexControl::IsType( const Uint32& type ) const {
 	return cUIComplexControl::Type() == type ? true : cUIControlAnim::IsType( type );
 }
 
-void cUIComplexControl::CalcDistToBorder() {
+void cUIComplexControl::UpdateAnchorsDistances() {
 	if ( NULL != mParentCtrl ) {
 		mDistToBorder	= eeRecti( mPos.x, mPos.y, mParentCtrl->Size().x - ( mPos.x + mSize.x ), mParentCtrl->Size().y - ( mPos.y + mSize.y ) );
 	}
@@ -150,7 +150,7 @@ void cUIComplexControl::OnParentSizeChange( const eeVector2i& SizeChange ) {
 			newSize.x = mParentCtrl->Size().Width() - mPos.x - mDistToBorder.Right;
 
 			if ( newSize.x < mMinControlSize.Width() )
-				newSize.y = mMinControlSize.Width();
+				newSize.x = mMinControlSize.Width();
 		}
 	}
 

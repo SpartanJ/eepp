@@ -22,7 +22,8 @@ cUIMap::cUIMap( const cUIComplexControl::CreateParams& Params, cUITheme * Theme,
 	mSelObj( NULL ),
 	mTheme( Theme ),
 	mSelPointIndex( eeINDEX_NOT_FOUND ),
-	mSelPoint( false )
+	mSelPoint( false ),
+	mTileBox( NULL )
 {
 	if ( NULL == Map ) {
 		mMap = eeNew( cMap, () );
@@ -35,6 +36,12 @@ cUIMap::cUIMap( const cUIComplexControl::CreateParams& Params, cUITheme * Theme,
 
 cUIMap::~cUIMap() {
 	eeSAFE_DELETE( mMap );
+}
+
+void cUIMap::ReplaceMap( cMap * newMap ) {
+	eeSAFE_DELETE( mMap );
+	mMap = newMap;
+	UpdateScreenPos();
 }
 
 cMap * cUIMap::Map() const {
@@ -297,6 +304,15 @@ Uint32 cUIMap::OnMouseMove( const eeVector2i& Pos, const Uint32 Flags ) {
 		}
 	}
 
+	if ( NULL != mTileBox ) {
+		eeVector2i mp( mMap->GetMouseTilePos() );
+
+		if ( mLastMouseTilePos != mp ) {
+			mLastMouseTilePos = mp;
+			mTileBox->Text( String::ToStr( mp.x ) + "," + String::ToStr( mp.y ) );
+		}
+	}
+
 	return cUIComplexControl::OnMouseMove( Pos, Flags );
 }
 
@@ -530,6 +546,10 @@ void cUIMap::CreateObjPopUpMenu() {
 		cUIMenu::FixMenuPos( Pos , Menu );
 		Menu->Pos( Pos );
 	}
+}
+
+void cUIMap::SetTileBox( cUITextBox * tilebox ) {
+	mTileBox = tilebox;
 }
 
 }}}

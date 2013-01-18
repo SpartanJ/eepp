@@ -19,7 +19,7 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {
 
-#define EE_MAP_LAYER_UNKNOWN 0xFFFFFFFF
+#define EE_MAP_LAYER_UNKNOWN eeINDEX_NOT_FOUND
 #define EE_MAP_MAGIC ( ( 'E' << 0 ) | ( 'E' << 8 ) | ( 'M' << 16 ) | ( 'P' << 24 ) )
 
 class EE_API cMap {
@@ -94,11 +94,11 @@ class EE_API cMap {
 
 		const Uint32& Flags() const;
 
-		Uint32 ClampBorders() const;
+		bool ClampBorders() const;
 
 		void ClampBorders( const bool& clamp );
 
-		Uint32 ClipedArea() const;
+		bool ClipedArea() const;
 
 		void ClipedArea( const bool& clip );
 
@@ -118,9 +118,11 @@ class EE_API cMap {
 
 		void DrawTileOver( const bool& draw );
 
-		Uint32 LightsEnabled();
+		bool LightsEnabled();
 
 		void LightsEnabled( const bool& enabled );
+
+		bool LightsByVertex();
 
 		void Reset();
 
@@ -212,7 +214,27 @@ class EE_API cMap {
 		Uint32 GetNewObjectId();
 
 		cGameObjectPolyData& GetPolyObjData( Uint32 Id );
+
+		void ForceHeadersOnLoad( eeSize mapSize, eeSize tileSize, Uint32 numLayers, Uint32 flags );
+
+		void DisableForcedHeaders();
 	protected:
+		class cForcedHeaders
+		{
+			public:
+				cForcedHeaders( eeSize mapSize, eeSize tileSize, Uint32 numLayers, Uint32 flags ) :
+					MapSize( mapSize ),
+					TileSize( tileSize ),
+					NumLayers( numLayers ),
+					Flags( flags )
+				{}
+
+				eeSize MapSize;
+				eeSize TileSize;
+				Uint32 NumLayers;
+				Uint32 Flags;
+		};
+
 		typedef std::map<Uint32, cGameObjectPolyData> PolyObjMap;
 
 		Window::cWindow *		mWindow;
@@ -251,6 +273,7 @@ class EE_API cMap {
 		eeVector2f		mOffscale;
 		Uint32			mLastObjId;
 		PolyObjMap		mPolyObjs;
+		cForcedHeaders*	mForcedHeaders;
 
 		virtual cGameObject *	CreateGameObject( const Uint32& Type, const Uint32& Flags, cLayer * Layer, const Uint32& DataId = 0 );
 

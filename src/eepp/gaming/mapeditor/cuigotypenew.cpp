@@ -14,7 +14,7 @@ cUIGOTypeNew::cUIGOTypeNew( cb::Callback2<void, std::string, Uint32> Cb ) :
 	if ( NULL == mUITheme )
 		return;
 
-	mUIWindow	= mUITheme->CreateWindow( NULL, eeSize( 278, 114 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL );
+	mUIWindow	= mUITheme->CreateWindow( NULL, eeSize( 278, 114 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL, eeSize( 278, 114 ) );
 	mUIWindow->AddEventListener( cUIEvent::EventOnWindowClose, cb::Make1( this, &cUIGOTypeNew::WindowClose ) );
 	mUIWindow->Title( "Add GameObject Type" );
 

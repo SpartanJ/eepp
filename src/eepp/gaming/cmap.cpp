@@ -39,13 +39,15 @@ cMap::cMap() :
 	mMouseOver( false ),
 	mScale( 1 ),
 	mOffscale( 1, 1 ),
-	mLastObjId( 0 )
+	mLastObjId( 0 ),
+	mForcedHeaders( NULL )
 {
 	ViewSize( mViewSize );
 }
 
 cMap::~cMap() {
 	DeleteLayers();
+	DisableForcedHeaders();
 }
 
 void cMap::Reset() {
@@ -59,6 +61,15 @@ void cMap::Reset() {
 	mMouseOver = false;
 	mViewSize = eeSize( 800, 600 );
 	mBaseColor = eeColorA( 255, 255, 255, 255 );
+}
+
+void cMap::ForceHeadersOnLoad( eeSize mapSize, eeSize tileSize, Uint32 numLayers, Uint32 flags ) {
+	DisableForcedHeaders();
+	mForcedHeaders = eeNew( cForcedHeaders, ( mapSize, tileSize, numLayers, flags ) );
+}
+
+void cMap::DisableForcedHeaders() {
+	eeSAFE_DELETE( mForcedHeaders );
 }
 
 void cMap::DeleteLayers() {
@@ -535,7 +546,7 @@ Uint32 cMap::DrawBackground() const {
 	return mFlags & MAP_FLAG_DRAW_BACKGROUND;
 }
 
-Uint32 cMap::ClipedArea() const {
+bool cMap::ClipedArea() const {
 	return mFlags & MAP_FLAG_CLIP_AREA;
 }
 
@@ -543,7 +554,7 @@ void cMap::ClipedArea( const bool& clip ) {
 	BitOp::SetBitFlagValue( &mFlags, MAP_FLAG_CLIP_AREA, clip ? 1 : 0 );
 }
 
-Uint32 cMap::ClampBorders() const {
+bool cMap::ClampBorders() const {
 	return mFlags & MAP_FLAG_CLAMP_BORDERS;
 }
 
@@ -559,12 +570,16 @@ void cMap::DrawTileOver( const bool& draw ) {
 	BitOp::SetBitFlagValue( &mFlags, MAP_FLAG_DRAW_TILE_OVER, draw ? 1 : 0 );
 }
 
-Uint32 cMap::LightsEnabled() {
+bool cMap::LightsEnabled() {
 	return mFlags & MAP_FLAG_LIGHTS_ENABLED;
 }
 
 void cMap::LightsEnabled( const bool& enabled ) {
 	BitOp::SetBitFlagValue( &mFlags, MAP_FLAG_LIGHTS_ENABLED, enabled ? 1 : 0 );
+}
+
+bool cMap::LightsByVertex() {
+	return mFlags & MAP_FLAG_LIGHTS_BYVERTEX;
 }
 
 void cMap::Move( const eeVector2f& offset )  {
@@ -778,7 +793,11 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 		IOS.Read( (char*)&MapHdr, sizeof(sMapHdr) );
 
 		if ( MapHdr.Magic == EE_MAP_MAGIC ) {
-			Create( eeSize( MapHdr.SizeX, MapHdr.SizeY ), MapHdr.MaxLayers, eeSize( MapHdr.TileSizeX, MapHdr.TileSizeY ), MapHdr.Flags );
+			if ( NULL == mForcedHeaders ) {
+				Create( eeSize( MapHdr.SizeX, MapHdr.SizeY ), MapHdr.MaxLayers, eeSize( MapHdr.TileSizeX, MapHdr.TileSizeY ), MapHdr.Flags );
+			} else {
+				Create( mForcedHeaders->MapSize, mForcedHeaders->NumLayers, mForcedHeaders->TileSize, mForcedHeaders->Flags );
+			}
 
 			BaseColor( eeColorA( MapHdr.BaseColor ) );
 
@@ -874,6 +893,10 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 				cTileLayer * tTLayer;
 				cGameObject * tGO;
 
+				if ( NULL != mForcedHeaders ) {
+					mSize = eeSize( MapHdr.SizeX, MapHdr.SizeY );
+				}
+
 				if ( ThereIsTiled ) {
 					//! First we read the tiled layers.
 					for ( y = 0; y < mSize.y; y++ ) {
@@ -898,6 +921,10 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 							}
 						}
 					}
+				}
+
+				if ( NULL != mForcedHeaders ) {
+					mSize = mForcedHeaders->MapSize;
 				}
 
 				//! Load the game objects from the object layers

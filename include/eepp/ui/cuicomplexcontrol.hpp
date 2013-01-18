@@ -60,6 +60,8 @@ class EE_API cUIComplexControl : public cUIControlAnim {
 		void TooltipText( const String& Text );
 
 		String TooltipText();
+
+		void UpdateAnchorsDistances();
 	protected:
 		cUITooltip *	mTooltip;
 		eeSize			mMinControlSize;
@@ -68,8 +70,6 @@ class EE_API cUIComplexControl : public cUIControlAnim {
 		void CreateTooltip();
 
 		virtual void OnParentSizeChange( const eeVector2i& SizeChange );
-
-		void CalcDistToBorder();
 };
 
 }}

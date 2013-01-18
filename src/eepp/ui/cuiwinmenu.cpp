@@ -21,7 +21,7 @@ cUIWinMenu::cUIWinMenu( const cUIWinMenu::CreateParams& Params ) :
 
 	Size( Parent()->Size().Width(), mMenuHeight );
 
-	CalcDistToBorder();
+	UpdateAnchorsDistances();
 
 	ApplyDefaultTheme();
 }
@@ -81,7 +81,7 @@ void cUIWinMenu::SetTheme( cUITheme * Theme ) {
 
 		Size( Parent()->Size().Width(), mMenuHeight );
 
-		CalcDistToBorder();
+		UpdateAnchorsDistances();
 	}
 }
 

@@ -3,6 +3,7 @@
 
 #include <eepp/gaming/base.hpp>
 #include <eepp/ui/cuicomplexcontrol.hpp>
+#include <eepp/ui/cuitextbox.hpp>
 #include <eepp/ui/cuimessagebox.hpp>
 #include <eepp/gaming/cmap.hpp>
 #include <eepp/gaming/clightmanager.hpp>
@@ -30,6 +31,7 @@ class EE_API cUIMap : public cUIComplexControl {
 		typedef cb::Callback1<void, cLight *> LightRadiusChangeCb;
 		typedef cb::Callback2<void, Uint32, eePolygon2f> ObjAddCb;
 		typedef cb::Callback2<cUIMessageBox*, const String&, const String&> AlertCb;
+		typedef cb::Callback0<void> OnMapLoadCb;
 
 		cUIMap( const cUIComplexControl::CreateParams& Params, cUITheme * Theme, cMap * Map = NULL );
 
@@ -76,6 +78,10 @@ class EE_API cUIMap : public cUIComplexControl {
 		void CurLayer( cLayer * layer );
 
 		void CreateObjPopUpMenu();
+
+		void SetTileBox( cUITextBox * tilebox );
+
+		void ReplaceMap( cMap * newMap );
 	protected:		
 		enum EDITING_MODE {
 			EDITING_LIGHT = 1,
@@ -115,6 +121,9 @@ class EE_API cUIMap : public cUIComplexControl {
 		Uint32				mSelPointIndex;
 		eeRectf				mSelPointRect;
 		bool				mSelPoint;
+
+		cUITextBox *		mTileBox;
+		eeVector2i			mLastMouseTilePos;
 
 		virtual Uint32 OnMessage( const cUIMessage * Msg );
 

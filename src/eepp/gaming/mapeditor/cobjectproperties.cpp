@@ -19,7 +19,7 @@ cObjectProperties::cObjectProperties( cGameObjectObject * Obj ) :
 	if ( NULL == mUITheme )
 		return;
 
-	mUIWindow	= mUITheme->CreateWindow( NULL, eeSize( 500, 500 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL );
+	mUIWindow	= mUITheme->CreateWindow( NULL, eeSize( 500, 500 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL, eeSize( 500, 500 ) );
 	mUIWindow->AddEventListener( cUIEvent::EventOnWindowClose, cb::Make1( this, &cObjectProperties::WindowClose ) );
 	mUIWindow->Title( "Object Properties" );
 

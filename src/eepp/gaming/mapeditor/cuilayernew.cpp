@@ -16,7 +16,7 @@ cUILayerNew::cUILayerNew( cUIMap * Map, EE_LAYER_TYPE Type, NewLayerCb newLayerC
 	if ( NULL == mTheme )
 		return;
 
-	mUIWindow	= mTheme->CreateWindow( NULL, eeSize( 278, 114 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL );
+	mUIWindow	= mTheme->CreateWindow( NULL, eeSize( 278, 114 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL, eeSize( 278, 114 ) );
 	mUIWindow->AddEventListener( cUIEvent::EventOnWindowClose, cb::Make1( this, &cUILayerNew::WindowClose ) );
 
 	if ( MAP_LAYER_TILED == mType )
