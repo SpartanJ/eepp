@@ -44,12 +44,12 @@ cSubTexture * cTextureAtlas::Add( const Uint32& TexId, const eeRecti& SrcRect, c
 	return Add( eeNew( cSubTexture, ( TexId, SrcRect, Name ) ) );
 }
 
-cSubTexture * cTextureAtlas::Add( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const std::string& Name ) {
-	return Add( eeNew ( cSubTexture, ( TexId, SrcRect, DestWidth, DestHeight, Name ) ) );
+cSubTexture * cTextureAtlas::Add( const Uint32& TexId, const eeRecti& SrcRect, const eeSizef& DestSize, const std::string& Name ) {
+	return Add( eeNew ( cSubTexture, ( TexId, SrcRect, DestSize, Name ) ) );
 }
 
-cSubTexture * cTextureAtlas::Add( const Uint32& TexId, const eeRecti& SrcRect, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeFloat& OffsetX, const eeFloat& OffsetY, const std::string& Name ) {
-	return Add( eeNew ( cSubTexture, ( TexId, SrcRect, DestWidth, DestHeight, OffsetX, OffsetY, Name ) ) );
+cSubTexture * cTextureAtlas::Add( const Uint32& TexId, const eeRecti& SrcRect, const eeSizef& DestSize, const eeVector2i& Offset, const std::string& Name ) {
+	return Add( eeNew ( cSubTexture, ( TexId, SrcRect, DestSize, Offset, Name ) ) );
 }
 
 Uint32 cTextureAtlas::Count() {

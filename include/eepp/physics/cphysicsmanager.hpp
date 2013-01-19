@@ -37,8 +37,6 @@ class CP_API cPhysicsManager {
 				cpFloat LineThickness;
 		};
 
-		cPhysicsManager();
-
 		~cPhysicsManager();
 
 		/** The Memory Manager will keep track of all the allocations from cSpace, cBody, cShape and cConstraint and will release any non-released pointer.
@@ -63,6 +61,8 @@ class CP_API cPhysicsManager {
 		std::list<cShape *>			mShapesFree;
 		std::list<cConstraint *>	mConstraintFree;
 		std::list<cSpace*>			mSpaces;
+
+		cPhysicsManager();
 
 		void AddBodyFree( cBody * body );
 

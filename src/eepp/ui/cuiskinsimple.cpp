@@ -23,8 +23,7 @@ void cUISkinSimple::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wid
 	mTempColor		= mColor[ State ];
 
 	if ( NULL != tSubTexture ) {
-		tSubTexture->DestWidth( Width );
-		tSubTexture->DestHeight( Height );
+		tSubTexture->DestSize( eeSizef( Width, Height ) );
 
 		if ( mTempColor.Alpha != Alpha ) {
 			mTempColor.Alpha = (Uint8)( (eeFloat)mTempColor.Alpha * ( (eeFloat)Alpha / 255.f ) );
@@ -32,7 +31,7 @@ void cUISkinSimple::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wid
 
 		tSubTexture->Draw( X, Y, mTempColor );
 
-		tSubTexture->ResetDestWidthAndHeight();
+		tSubTexture->ResetDestSize();
 	}
 }
 

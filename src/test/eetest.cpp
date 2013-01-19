@@ -858,7 +858,7 @@ void cEETest::LoadTextures() {
 
 	for ( Int32 my = 0; my < 4; my++ )
 		for( Int32 mx = 0; mx < 8; mx++ )
-			SP.AddFrame( TN[4], 0, 0, 0, 0, eeRecti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
+			SP.AddFrame( TN[4], eeSizef( 0, 0 ), eeVector2i( 0, 0 ), eeRecti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
 
 	PS[0].SetCallbackReset( cb::Make2( this, &cEETest::ParticlesCallback ) );
 	PS[0].Create( PSE_Callback, 500, TN[5], eeVector2f( 0, 0 ), 16, true );
@@ -904,13 +904,10 @@ void cEETest::LoadTextures() {
 	CL1.Position( 500, 400 );
 	CL1.Scale( 0.5f );
 
-	CL2.AddFrame(TN[0], 96, 96);
+	CL2.AddFrame(TN[0], eeSizef(96, 96) );
 	CL2.Color( eeColorA( 255, 255, 255, 255 ) );
 
-	int x, y, c;
-
-	if ( cImage::GetInfo( MyPath + "extra/bnb.png", &x, &y, &c ) )
-	{
+	if ( cImage::IsImage( MyPath + "extra/bnb.png" ) ) {
 		mTGL = eeNew( cTextureAtlasLoader, ( MyPath + "extra/bnb" + EE_TEXTURE_ATLAS_EXTENSION ) );
 	}
 

@@ -13,19 +13,37 @@ class EE_API cSprite {
 	public:
 		typedef cb::Callback2< void, Uint32, cSprite * > SpriteCallback;
 
+		/** @enum The events that can be reported by the Sprite */
 		enum SpriteEvents {
 			SPRITE_EVENT_LAST_FRAME,
 			SPRITE_EVENT_FIRST_FRAME,
 			SPRITE_EVENT_END_ANIM_TO
 		};
 
+		/** Instanciate an empty sprite */
 		cSprite();
 
+		/** Creates an animated Sprite from a animation name. It will search for a pattern name.
+		* @param name First part of the sub texture name
+		* @param extension Extension of the sub texture name ( if have one, otherwise is empty )
+		* @param SearchInTextureAtlas If you want only to search in a especific atlas ( NULL if you want to search in all atlases )
+		* @example Search for name "car" with extensions "png", i will try to find car00.png car01.png car02.png, and so on, it will continue if find something, otherwise it will stop ( it will always search at least for car00.png and car01.png ).
+		* @note Texture atlases saves the SubTextures names without extension by default.
+		* @see cTextureAtlasManager::GetSubTexturesByPattern
+*/
 		cSprite( const std::string& name, const std::string& extension = "", cTextureAtlas * SearchInTextureAtlas = NULL );
 
+		/** Creates a Sprite from a SubTexture
+		**	@param SubTexture The subtexture to use */
 		cSprite( cSubTexture * SubTexture );
 
-		cSprite( const Uint32& TexId, const eeFloat& DestWidth = 0, const eeFloat& DestHeight = 0, const eeFloat& offSetX = 0, const eeFloat& offSetY = 0, const eeRecti& TexSector = eeRecti(0,0,0,0) );
+		/** Creates a Sprite instance that holds a new SubTexture from a texture already loaded.
+		*	@param TexId The texture Id used to create the SubTexture
+		*	@param DestSize The destination size of the SubTexture created
+		*	@param Offset The offset added to the position of the frame ( the SubTexture )
+		*	@param TexSector The sector of the texture used by the SubTexture to be rendered
+		*/
+		cSprite( const Uint32& TexId, const eeSizef &DestSize = eeSizef(0,0), const eeVector2i &Offset = eeVector2i(0,0), const eeRecti& TexSector = eeRecti(0,0,0,0) );
 
 		virtual ~cSprite();
 
@@ -34,61 +52,50 @@ class EE_API cSprite {
 		/** Set the x axis position */
 		void X( const eeFloat& X );
 
-		/** Get the x axis position */
+		/** @return The x axis position */
 		eeFloat X() const;
 
 		/** Set the y axis position */
 		void Y( const eeFloat& Y );
 
-		/** Get the y axis position */
+		/** @return The y axis position */
 		eeFloat Y() const;
 
 		/** Set the Angle for the rendered sprite */
 		void Angle( const eeFloat& Angle );
 
-		/** Get the Angle for the rendered sprite */
+		/** @return The Angle for the rendered sprite */
 		eeFloat Angle() const;
 
 		/** Set the Scale for the rendered sprite */
 		void Scale( const eeFloat& Scale );
 
-		/** Get the Scale for the rendered sprite */
+		/** @return The Scale for the rendered sprite */
 		eeFloat Scale() const;
 
-		/** Set the Frame Number Sprite Width
-		* @param FrameNum If the Frame Number is 0 use the Current Frame Number
-		* @param SubFrame If the Sub Frame Number is 0 use the Current Sub Frame Number
+		/** Set the Frame Number Sprite Size
+		* @param Size The new size
+		* @param FrameNum If the Frame Number is 0 it will use the Current Frame Number
+		* @param SubFrame If the Sub Frame Number is 0 it will use the Current Sub Frame Number
 		*/
-		void Width( const eeFloat& Width, const eeUint& FrameNum, const eeUint& SubFrame);
+		void Size( const eeSizef& Size, const eeUint& FrameNum, const eeUint& SubFrame );
 
-		/** Set the current SubTexture Width */
-		void Width( const eeFloat& Width );
+		/** Set the current SubTexture Size ( destination size ) */
+		void Size( const eeSizef& Size );
 
-		/** Get the Frame Number Sprite Width */
-		eeFloat Width( const eeUint& FrameNum, const eeUint& SubFrame );
-
-		/** Get the current Frame Width */
-		eeFloat Width();
-
-		/** Set the Frame Number Sprite Height
-		* @param FrameNum If the Frame Number is 0 use the Current Frame Number
-		* @param SubFrame If the Sub Frame Number is 0 use the Current Sub Frame Number
+		/** @return the Frame Number Sprite Size
+		* @param FrameNum If the Frame Number is 0 it will use the Current Frame Number
+		* @param SubFrame If the Sub Frame Number is 0 it will use the Current Sub Frame Number
 		*/
-		void Height( const eeFloat& Height, const eeUint& FrameNum, const eeUint& SubFrame );
+		eeSizef Size( const eeUint& FrameNum, const eeUint& SubFrame );
 
-		/** Set the current Frame Width */
-		void Height( const eeFloat& Height );
-
-		/** Get the Frame Number Sprite Height */
-		eeFloat Height( const eeUint& FrameNum, const eeUint& SubFrame );
-
-		/** Get the current Frame Width */
-		eeFloat Height();
+		/** @return The current Frame Size */
+		eeSizef Size();
 
 		/** Set the sprite animation speed ( AnimSpeed equals to Animation Frames per Second ) */
 		void AnimSpeed( const eeFloat& AnimSpeed );
 
-		/** Get the sprite animation speed ( AnimSpeed equals to Animation Frames per Second ) */
+		/** @return The sprite animation speed ( AnimSpeed equals to Animation Frames per Second ) */
 		eeFloat AnimSpeed() const;
 
 		/** @return If the animation is paused */
@@ -100,16 +107,16 @@ class EE_API cSprite {
 		/** Set the sprite color */
 		void Color( const eeColorA& Color);
 
-		/** Get the sprite color */
+		/** @return The sprite color */
 		const eeColorA& Color() const;
 
 		/** Set the sprite Color Alpha */
 		void Alpha( const Uint8& Alpha );
 
-		/** Get the sprite Color Alpha */
+		/** @return The sprite Color Alpha */
 		const Uint8& Alpha() const;
 
-		/** Get if the sprite it's scaled from the center */
+		/** @return If the sprite it's scaled from the center */
 		bool ScaleCentered() const;
 
 		/** Set if the sprite it's scaled centered or scaled from the Left - Top position of the sprite ( default True ) */
@@ -118,10 +125,10 @@ class EE_API cSprite {
 		/** Set the Current Frame */
 		void CurrentFrame( eeUint CurFrame );
 
-		/** Get the Current Frame */
+		/** @return The Current Frame */
 		const eeUint& CurrentFrame() const;
 
-		/** Get the Exact Current FrameData
+		/** @return The Exact Current FrameData
 		* @return The eeFloat fpoint of the current frame, the exact position of the interpolation.
 		*/
 		const eeFloat& ExactCurrentFrame() const;
@@ -132,19 +139,19 @@ class EE_API cSprite {
 		/** Set the Current Sub Frame */
 		void CurrentSubFrame( const eeUint &CurSubFrame );
 
-		/** Get the Current Sub Frame */
+		/** @return The Current Sub Frame */
 		const eeUint& CurrentSubFrame() const;
 
 		/** Set the Render Type */
 		void RenderMode( const EE_RENDER_MODE& Effect );
 
-		/** Get the Render Type */
+		/** @return The Render Type */
 		const EE_RENDER_MODE& RenderMode() const;
 
 		/** Set the Blend Mode */
 		void BlendMode( const EE_BLEND_MODE& Blend );
 
-		/** Get the Blend Mode */
+		/** @return The Blend Mode */
 		const EE_BLEND_MODE& BlendMode() const;
 
 		/** Reset the sprite as a new one. */
@@ -179,16 +186,14 @@ class EE_API cSprite {
 		*/
 		bool CreateStatic( cSubTexture * SubTexture );
 
-		/** Creates an static sprite (no animation)
+		/** Creates an static sprite (no animation). It creates a new SubTexture.
 		* @param TexId The internal Texture Id
-		* @param DestWidth The default destination width of the sprite
-		* @param DestHeight The default destination height of the sprite
-		* @param offSetX The default offset on axis x added to the x position
-		* @param offSetY The default offset on axis y added to the y position
+		* @param DestSize The destination size of the SubTexture created
+		* @param Offset The offset added to the position of the frame ( the SubTexture )
 		* @param TexSector The texture sector to be rendered ( default all the texture )
 		* @return True if success
 		*/
-		bool CreateStatic( const Uint32& TexId, const eeFloat& DestWidth = 0, const eeFloat& DestHeight = 0, const eeFloat& offSetX = 0, const eeFloat& offSetY = 0, const eeRecti& TexSector = eeRecti(0,0,0,0) );
+		bool CreateStatic(const Uint32& TexId, const eeSizef &DestSize = eeSizef(0,0), const eeVector2i &Offset = eeVector2i(0,0), const eeRecti& TexSector = eeRecti(0,0,0,0) );
 
 		/** Creates an animated sprite
 		* @param SubFramesNum The number of subframes of the sprite
@@ -197,14 +202,12 @@ class EE_API cSprite {
 
 		/** Add a frame to the sprite (on the current sub frame)
 		* @param TexId The internal Texture Id
-		* @param DestWidth The destination width of the frame
-		* @param DestHeight The destination height of the frame
-		* @param offSetX The offset on axis x added to the x position of the frame
-		* @param offSetY The offset on axis y added to the y position of the frame
+		* @param DestSize The destination size of the frame
+		* @param Offset The offset added to the position of the frame
 		* @param TexSector The texture sector to be rendered ( default all the texture )
 		* @return The frame position or 0 if fails
 		*/
-		eeUint AddFrame( const Uint32& TexId, const eeFloat& DestWidth = 0, const eeFloat& DestHeight = 0, const eeFloat& offSetX = 0, const eeFloat& offSetY = 0, const eeRecti& TexSector = eeRecti(0,0,0,0) );
+		eeUint AddFrame( const Uint32& TexId, const eeSizef& DestSize = eeSizef(0,0), const eeVector2i& Offset = eeVector2i(0,0), const eeRecti& TexSector = eeRecti(0,0,0,0) );
 
 		/** Add a frame to the sprite (on the current sub frame)
 		* @param SubTexture The SubTexture used in the frame
@@ -226,14 +229,12 @@ class EE_API cSprite {
 		* @param TexId The internal Texture Id
 		* @param NumFrame The Frame Number
 		* @param NumSubFrame The Sub Frame Number
-		* @param DestWidth The destination width of the frame
-		* @param DestHeight The destination height of the frame
-		* @param offSetX The offset on axis x added to the x position of the frame
-		* @param offSetY The offset on axis y added to the y position of the frame
+		* @param DestSize The destination size of the frame
+		* @param Offset The offset added to the x position of the frame
 		* @param TexSector The texture sector to be rendered ( default all the texture )
 		* @return True if success
 		*/
-		bool AddSubFrame( const Uint32& TexId, const eeUint& NumFrame, const eeUint& NumSubFrame, const eeFloat& DestWidth = 0, const eeFloat& DestHeight = 0, const Int32& offSetX = 0, const Int32& offSetY = 0, const eeRecti& TexSector = eeRecti(0,0,0,0) );
+		bool AddSubFrame( const Uint32& TexId, const eeUint& NumFrame, const eeUint& NumSubFrame, const eeSizef& DestSize = eeSizef(0,0), const eeVector2i& Offset = eeVector2i(0,0), const eeRecti& TexSector = eeRecti(0,0,0,0) );
 
 		/** Add a frame on an specific subframe to the sprite
 		* @param SubTexture The SubTexture used in the frame
@@ -268,23 +269,14 @@ class EE_API cSprite {
 		/** Set if the class auto-animate the sprite ( default it's active ) */
 		void AutoAnimate( const bool& Autoanim );
 
-		/** Get if the class is auto-animated */
+		/** @return If the class is auto-animated */
 		bool AutoAnimate() const;
 
 		/** @return The four vertex position of the Sprite */
 		eeQuad2f GetQuad();
 
-		/** @return The OffsetX of the current frame */
-		Int32 OffsetX();
-
-		/** Set the OffsetX of the current frame */
-		void OffsetX( const Int32& offsetx );
-
-		/** @return The OffsetY of the current frame */
-		Int32 OffsetY();
-
-		/** Set the OffsetY of the current frame */
-		void OffsetY( const Int32& offsety );
+		/** @return The Offset of the current frame */
+		eeVector2i Offset();
 
 		/** Set the Offset of the current frame */
 		void Offset( const eeVector2i& offset );

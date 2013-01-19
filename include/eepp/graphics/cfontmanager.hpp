@@ -13,12 +13,12 @@ class EE_API cFontManager : public tResourceManager<cFont> {
 	SINGLETON_DECLARE_HEADERS(cFontManager)
 
 	public:
-		cFontManager();
-
 		virtual ~cFontManager();
 
 		/** @brief Adds a new font to the manager */
 		cFont * Add( cFont * Font );
+	protected:
+		cFontManager();
 };
 
 }}

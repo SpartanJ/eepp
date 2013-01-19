@@ -79,11 +79,11 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 	tSubTexture = mSubTexture[ State ][ Left ];
 
 	if ( NULL != tSubTexture ) {
-		tSubTexture->DestHeight( Height - uls.Height() - dls.Height() );
+		tSubTexture->DestSize( eeSizef( tSubTexture->DestSize().x, Height - uls.Height() - dls.Height() ) );
 
 		tSubTexture->Draw( X, Y + uls.Height(), mTempColor );
 
-		tSubTexture->ResetDestWidthAndHeight();
+		tSubTexture->ResetDestSize();
 
 		if ( uls.Width() == 0 )
 			uls.x = tSubTexture->RealSize().Width();
@@ -92,11 +92,11 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 	tSubTexture = mSubTexture[ State ][ Up ];
 
 	if ( NULL != tSubTexture ) {
-		tSubTexture->DestWidth( Width - uls.Width() - urs.Width() );
+		tSubTexture->DestSize( eeSizef( Width - uls.Width() - urs.Width(), tSubTexture->DestSize().y ) );
 
 		tSubTexture->Draw( X + uls.Width(), Y, mTempColor );
 
-		tSubTexture->ResetDestWidthAndHeight();
+		tSubTexture->ResetDestSize();
 
 		if ( urs.Height() == 0 )
 			urs.y = tSubTexture->RealSize().Height();
@@ -111,21 +111,21 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 		if ( urs.Width() == 0 )
 			urs.x = tSubTexture->RealSize().Width();
 
-		tSubTexture->DestHeight( Height - urs.Height() - drs.Height() );
+		tSubTexture->DestSize( eeSizef( tSubTexture->DestSize().x, Height - urs.Height() - drs.Height() ) );
 
 		tSubTexture->Draw( X + Width - tSubTexture->RealSize().Width(), Y + urs.Height(), mTempColor );
 
-		tSubTexture->ResetDestWidthAndHeight();
+		tSubTexture->ResetDestSize();
 	}
 
 	tSubTexture = mSubTexture[ State ][ Down ];
 
 	if ( NULL != tSubTexture ) {
-		tSubTexture->DestWidth( Width - dls.Width() - drs.Width() );
+		tSubTexture->DestSize( eeSizef( Width - dls.Width() - drs.Width(), tSubTexture->DestSize().y ) );
 
 		tSubTexture->Draw( X + dls.Width(), Y + Height - tSubTexture->RealSize().Height(), mTempColor );
 
-		tSubTexture->ResetDestWidthAndHeight();
+		tSubTexture->ResetDestSize();
 
 		if ( dls.Height() == 0 && drs.Height() == 0 )
 			dls.Height( tSubTexture->RealSize().Height() );
@@ -134,12 +134,11 @@ void cUISkinComplex::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wi
 	tSubTexture = mSubTexture[ State ][ Center ];
 
 	if ( NULL != tSubTexture ) {
-		tSubTexture->DestWidth( Width - uls.Width() - urs.Width() );
-		tSubTexture->DestHeight( Height - uls.Height() - dls.Height() );
+		tSubTexture->DestSize( eeSizef( Width - uls.Width() - urs.Width(), Height - uls.Height() - dls.Height() ) );
 
 		tSubTexture->Draw( X + uls.Width(), Y + uls.Height(), mTempColor );
 
-		tSubTexture->ResetDestWidthAndHeight();
+		tSubTexture->ResetDestSize();
 	}
 }
 

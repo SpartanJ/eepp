@@ -50,53 +50,41 @@ void cUIGfx::Draw() {
 
 	if ( mVisible ) {
 		if ( NULL != mSubTexture && 0.f != mAlpha ) {
-			eeFloat oDestWidth	= mSubTexture->DestWidth();
-			eeFloat oDestHeight	= mSubTexture->DestHeight();
-			Int32 oOffX = mSubTexture->OffsetX();
-			Int32 oOffY = mSubTexture->OffsetY();
+			eeSizef oDestSize	= mSubTexture->DestSize();
+			eeVector2i oOff		= mSubTexture->Offset();
 
 			if ( mFlags & UI_FIT_TO_CONTROL ) {
-				mSubTexture->OffsetX( 0 );
-				mSubTexture->OffsetY( 0 );
-
-				mSubTexture->DestWidth( (eeFloat)mSize.x );
-				mSubTexture->DestHeight( (eeFloat)mSize.y );
+				mSubTexture->Offset( eeVector2i( 0, 0 ) );
+				mSubTexture->DestSize( eeVector2f( mSize.x, mSize.y ) );
 
 				DrawSubTexture();
 
-				mSubTexture->DestWidth( oDestWidth );
-				mSubTexture->DestHeight( oDestHeight );
-
-				mSubTexture->OffsetX( oOffX );
-				mSubTexture->OffsetY( oOffY );
+				mSubTexture->DestSize( oDestSize );
+				mSubTexture->Offset( oOff );
 			} else if ( mFlags & UI_AUTO_FIT ) {
-				mSubTexture->OffsetX( 0 );
-				mSubTexture->OffsetY( 0 );
+				mSubTexture->Offset( eeVector2i( 0, 0 ) );
 
-				eeFloat Scale1 = mSize.x / oDestWidth;
-				eeFloat Scale2 = mSize.y / oDestHeight;
+				eeFloat Scale1 = mSize.x / oDestSize.x;
+				eeFloat Scale2 = mSize.y / oDestSize.y;
 
 				if ( Scale1 < 1 || Scale2 < 1 ) {
 					if ( Scale2 < Scale1 )
 						Scale1 = Scale2;
 
-					mSubTexture->DestWidth( oDestWidth * Scale1 );
-					mSubTexture->DestHeight( oDestHeight * Scale1 );
+					mSubTexture->DestSize( eeSizef( oDestSize.x * Scale1, oDestSize.y * Scale1 ) );
 
 					AutoAlign();
 
 					DrawSubTexture();
 
-					mSubTexture->DestWidth( oDestWidth );
-					mSubTexture->DestHeight( oDestHeight );
+					mSubTexture->DestSize( oDestSize );
 
 					AutoAlign();
 				} else {
 					DrawSubTexture();
 				}
 
-				mSubTexture->OffsetX( oOffX );
-				mSubTexture->OffsetY( oOffY );
+				mSubTexture->Offset( oOff );
 			} else {
 				DrawSubTexture();
 			}
@@ -139,17 +127,17 @@ void cUIGfx::AutoAlign() {
 		return;
 
 	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
-		mAlignOffset.x = mSize.Width() / 2 - mSubTexture->DestWidth() / 2;
+		mAlignOffset.x = mSize.Width() / 2 - mSubTexture->DestSize().x / 2;
 	} else if ( FontHAlignGet( mFlags ) == UI_HALIGN_RIGHT ) {
-		mAlignOffset.x =  mSize.Width() - mSubTexture->DestWidth();
+		mAlignOffset.x =  mSize.Width() - mSubTexture->DestSize().x;
 	} else {
 		mAlignOffset.x = 0;
 	}
 
 	if ( VAlignGet( mFlags ) == UI_VALIGN_CENTER ) {
-		mAlignOffset.y = mSize.Height() / 2 - mSubTexture->DestHeight() / 2;
+		mAlignOffset.y = mSize.Height() / 2 - mSubTexture->DestSize().y / 2;
 	} else if ( FontVAlignGet( mFlags ) == UI_VALIGN_BOTTOM ) {
-		mAlignOffset.y = mSize.Height() - mSubTexture->DestHeight();
+		mAlignOffset.y = mSize.Height() - mSubTexture->DestSize().y;
 	} else {
 		mAlignOffset.y = 0;
 	}

@@ -5,6 +5,9 @@
 
 namespace EE { namespace Graphics {
 
+/** The Vertex Buffer OGL is the implementation of a Vertex Buffer without using the specific VBOs extensions from OpenGL.
+* @see cVertexBuffer
+*/
 class EE_API cVertexBufferOGL : public cVertexBuffer {
 	public:
 		cVertexBufferOGL( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT, EE_DRAW_MODE DrawType = DM_QUADS, const Int32& ReserveVertexSize = 0, const Int32& ReserveIndexSize = 0, EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
@@ -30,4 +33,3 @@ class EE_API cVertexBufferOGL : public cVertexBuffer {
 }}
 
 #endif
-

@@ -64,6 +64,8 @@ Uint32 eeConvertKeyCharacter( const Uint32& KeyCode, const Uint16& Unicode, cons
 		default:				break;
 	}
 
+/** @TODO: Report SDL2 bug not reporting Key Modifiers correctly. */
+#ifndef EE_SDL_VERSION_2
 	if ( !( Modifiers & KEYMOD_NUM ) ) {
 		switch ( KeyCode ) {
 			case KEY_KP0:		value = KEY_INSERT;		break;
@@ -79,6 +81,7 @@ Uint32 eeConvertKeyCharacter( const Uint32& KeyCode, const Uint16& Unicode, cons
 			default:			break;
 		}
 	}
+#endif
 
 	return value;
 }

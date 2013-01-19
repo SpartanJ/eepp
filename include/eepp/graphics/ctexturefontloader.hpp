@@ -9,11 +9,6 @@
 
 namespace EE { namespace Graphics {
 
-#define TEF_LT_PATH 	(1)
-#define TEF_LT_MEM 		(2)
-#define TEF_LT_PACK 	(3)
-#define TEF_LT_TEX		(4)
-
 class EE_API cTextureFontLoader : public cObjectLoader {
 	public:
 		cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, const eeUint& StartChar = 0, const eeUint& Spacing = 0, const bool& VerticalDraw = false, const eeUint& TexColumns = 16, const eeUint& TexRows = 16, const Uint16& NumChars = 256 );
@@ -34,6 +29,14 @@ class EE_API cTextureFontLoader : public cObjectLoader {
 
 		cFont *				Font() const;
 	protected:
+		enum TEXTURE_FONT_LOAD_TYPE
+		{
+			TEF_LT_PATH	= 1,
+			TEF_LT_MEM	= 2,
+			TEF_LT_PACK	= 3,
+			TEF_LT_TEX	= 4
+		};
+
 		Uint32				mLoadType; 	// From memory, from path, from pack
 
 		cTextureFont *		mFont;

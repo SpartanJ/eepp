@@ -13,9 +13,9 @@ class EE_API cGlobalTextureAtlas : public cTextureAtlas {
 	SINGLETON_DECLARE_HEADERS(cGlobalTextureAtlas)
 
 	public:
-		cGlobalTextureAtlas();
-
 		~cGlobalTextureAtlas();
+	protected:
+		cGlobalTextureAtlas();
 };
 
 }}

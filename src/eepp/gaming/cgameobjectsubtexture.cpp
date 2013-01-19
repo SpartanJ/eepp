@@ -57,9 +57,9 @@ void cGameObjectSubTexture::Draw() {
 						GetAngle(),
 						1.f,
 						LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y ) ),
-						LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y + mSubTexture->DestHeight() ) ),
-						LM->GetColorFromPos( eeVector2f( mPos.x + mSubTexture->DestWidth(), mPos.y + mSubTexture->DestHeight() ) ),
-						LM->GetColorFromPos( eeVector2f( mPos.x + mSubTexture->DestWidth(), mPos.y ) ),
+						LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y + mSubTexture->DestSize().y ) ),
+						LM->GetColorFromPos( eeVector2f( mPos.x + mSubTexture->DestSize().x, mPos.y + mSubTexture->DestSize().y ) ),
+						LM->GetColorFromPos( eeVector2f( mPos.x + mSubTexture->DestSize().y, mPos.y ) ),
 						ALPHA_NORMAL,
 						RenderModeFromFlags()
 					);

@@ -13,7 +13,7 @@ class EE_API cTextureFactory : protected cMutex {
 	SINGLETON_DECLARE_HEADERS(cTextureFactory)
 
 	public:
-		/** Create an empty texture
+		/** Creates an empty texture
 		* @param Width Texture Width
 		* @param Height Texture Height
 		* @param Channels Texture Number of Channels (in bytes)
@@ -62,7 +62,7 @@ class EE_API cTextureFactory : protected cMutex {
 		*/
 		Uint32 LoadFromMemory( const unsigned char* ImagePtr, const eeUint& Size, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
-		/** Load a Texture from a file path
+		/** Load a Texture from stream
 		* @param Stream The cIOStream instance
 		* @param mipmap Use mipmaps?
 		* @param ClampMode Defines the CLAMP MODE

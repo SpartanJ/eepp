@@ -12,8 +12,6 @@ class EE_API cUIManager {
 	SINGLETON_DECLARE_HEADERS(cUIManager)
 
 	public:
-		cUIManager();
-
 		~cUIManager();
 
 		cUIWindow * MainControl() const;
@@ -102,6 +100,8 @@ class EE_API cUIManager {
 		bool				mInit;
 		bool 				mFirstPress;
 		bool				mShootingDown;
+
+		cUIManager();
 
 		void				InputCallback( InputEvent * Event );
 

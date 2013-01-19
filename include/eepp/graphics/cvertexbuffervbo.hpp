@@ -5,6 +5,9 @@
 
 namespace EE { namespace Graphics {
 
+/** @brief The Vertex Buffer VBO class is the implementation of a Vertex Buffer using the GPU's VBO.
+	@see cVertexBuffer
+*/
 class EE_API cVertexBufferVBO : public cVertexBuffer {
 	public:
 		cVertexBufferVBO( const Uint32& VertexFlags = VERTEX_FLAGS_DEFAULT, EE_DRAW_MODE DrawType = DM_QUADS, const Int32& ReserveVertexSize = 0, const Int32& ReserveIndexSize = 0, EE_VBO_USAGE_TYPE UsageType = VBO_USAGE_TYPE_STATIC );
@@ -23,19 +26,14 @@ class EE_API cVertexBufferVBO : public cVertexBuffer {
 
 		void Unbind();
 	protected:
-		void SetVertexStates();
-
 		bool mCompiled;
-
 		bool mBuffersSet;
-
 		bool mTextured;
-
 		Uint32 mVAO;
-
 		Uint32 mElementHandle;
-
 		Uint32 mArrayHandle[ VERTEX_FLAGS_COUNT ];
+
+		void SetVertexStates();
 };
 
 }}

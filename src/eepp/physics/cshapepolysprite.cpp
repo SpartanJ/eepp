@@ -27,8 +27,7 @@ cShapePolySprite::cShapePolySprite( cBody * body, cpFloat width, cpFloat height,
 	mSprite( Sprite ),
 	mSpriteAutoDelete( AutoDeleteSprite )
 {
-	mSprite->Width( width );
-	mSprite->Height( height );
+	mSprite->Size( eeSizef( width, height ) );
 	OffsetSet( cVectNew( width / 2, height / 2 ) );
 }
 
@@ -47,7 +46,7 @@ void cShapePolySprite::Draw( cSpace * space ) {
 }
 
 void cShapePolySprite::OffsetSet( cVect center ) {
-	cVect myCenter = cVectNew( ( mSprite->Width() / 2	), ( mSprite->Height() / 2	) );
+	cVect myCenter = cVectNew( ( mSprite->Size().x / 2 ), ( mSprite->Size().y / 2 ) );
 
 	mOffset = eeVector2i(  (Int32)( -myCenter.x + ( center.x - myCenter.x ) ) , (Int32)( -myCenter.y + ( center.y - myCenter.y ) ) );
 }

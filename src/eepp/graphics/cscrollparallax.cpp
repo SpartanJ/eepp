@@ -126,7 +126,7 @@ void cScrollParallax::Draw() {
 					}
 
 					mSubTexture->SrcRect( Rect );
-					mSubTexture->ResetDestWidthAndHeight();
+					mSubTexture->ResetDestSize();
 
 					if ( !( Rect.Right == 0 || Rect.Bottom == 0 ) )
 						mSubTexture->Draw( AABB.Left, AABB.Top, mColor, 0.f, 1.f, mBlend );
@@ -144,7 +144,7 @@ void cScrollParallax::Draw() {
 		}
 
 		mSubTexture->SrcRect( mRect );
-		mSubTexture->ResetDestWidthAndHeight();
+		mSubTexture->ResetDestSize();
 	}
 }
 

@@ -155,17 +155,17 @@ void cIsoMap::Draw() {
 
 						if ( T != NULL ) {
 							eeVector2f TileCenter( T->Q.V[1].x + (T->Q.V[3].x - T->Q.V[1].x) * 0.5f, T->Q.V[0].y + (T->Q.V[2].y - T->Q.V[0].y) * 0.5f );
-							eeVector2f ObjPos( TileCenter.x - SubTexture->DestWidth() * 0.5f, TileCenter.y - SubTexture->DestHeight() * 0.80f );
+							eeVector2f ObjPos( TileCenter.x - SubTexture->DestSize().x * 0.5f, TileCenter.y - SubTexture->DestSize().y * 0.80f );
 
-							eeAABB LayerAABB( TileCenter.x - SubTexture->DestWidth() * 0.5f, TileCenter.y - SubTexture->DestHeight(), TileCenter.x + SubTexture->DestWidth() * 0.5f, TileCenter.y  );
-							eeAABB ShadowAABB( ObjPos.x, TileCenter.y - SubTexture->DestHeight(), TileCenter.x + SubTexture->DestWidth(), TileCenter.y );
+							eeAABB LayerAABB( TileCenter.x - SubTexture->DestSize().x * 0.5f, TileCenter.y - SubTexture->DestSize().y, TileCenter.x + SubTexture->DestSize().x * 0.5f, TileCenter.y  );
+							eeAABB ShadowAABB( ObjPos.x, TileCenter.y - SubTexture->DestSize().y, TileCenter.x + SubTexture->DestSize().x, TileCenter.y );
 
 							if ( mScreenAABB.Intersect( ShadowAABB ) ) {
 								SubTexture->Draw( mOffsetX + ObjPos.x, mOffsetY + ObjPos.y, 0, 1, SC, SC, SC, SC, ALPHA_NORMAL, RN_ISOMETRIC );
 							}
 
 							if ( mScreenAABB.Intersect( LayerAABB )  ) {
-								SubTexture->Draw( mOffsetX + TileCenter.x - (eeFloat)SubTexture->DestWidth() * 0.5f, mOffsetY + TileCenter.y - (eeFloat)SubTexture->DestHeight(), 0, 1, eeColorA(T->Color[0]), eeColorA(T->Color[1]), eeColorA(T->Color[2]), eeColorA(T->Color[3]) );
+								SubTexture->Draw( mOffsetX + TileCenter.x - (eeFloat)SubTexture->DestSize().x * 0.5f, mOffsetY + TileCenter.y - (eeFloat)SubTexture->DestSize().y, 0, 1, eeColorA(T->Color[0]), eeColorA(T->Color[1]), eeColorA(T->Color[2]), eeColorA(T->Color[3]) );
 							}
 						}
 					}

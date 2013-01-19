@@ -41,33 +41,65 @@ namespace Private { class cTexturePackerNode; class cTexturePackerTex; }
 
 using namespace Private;
 
+/** @brief The Texture Packer class is used to create new Texture Atlases.
+*	Atlases can be created indicating the texture atlas size and adding textures to the atlases.
+*/
 class EE_API cTexturePacker {
 	public:
+		/** Creates a new texture packer ( you will need to call SetOptions before adding any texture or image ). */
 		cTexturePacker();
 
+		/** Creates a new texture packer indicating the size of the texture atlas.
+		*	@param MaxWidth The maximum width that the texture atlas will use.
+		*	@param MaxHeight The maximum height that the texture atlas will use.
+		*	@param ForcePowOfTwo Indicates that if the max with and height must be adjusted to fit a power of two texture.
+		*	@param PixelBorder Indicates how many pixels will be added to separate one image to another in the texture atlas. Usefull to avoid artifacts when rendered scaled SubTextures. Use at least 1 pixel to separate images if you will scale any SubTexture.
+		*	@param AllowFlipping Indicates if the images can be flipped inside the texture atlas. This is not compatible with eepp ( since it can't flip the textures back to the original orientation ). So avoid it for eepp.
+		*/
 		cTexturePacker( const Uint32& MaxWidth, const Uint32& MaxHeight, const bool& ForcePowOfTwo = true, const Uint32& PixelBorder = 0, const bool& AllowFlipping = false );
 
 		~cTexturePacker();
 
+		/** Adds a image/texture from its path to the texture atlas.
+		*	@param TexturePath The image path. */
 		bool				AddTexture( const std::string& TexturePath );
 
+		/** Adds a image to the texture atlas. The image instance must remain in memory until the texture atlas is saved. */
 		bool				AddImage( cImage * Img, const std::string& Name );
 
+		/** Adds a directory with images. It will try to add all the images inside that directory to the texture atlas.  */
 		bool				AddTexturesPath( std::string TexturesPath );
 
+		/** After adding all the images that will be used to create the texture atlas. Packing the textures will generate the texture atlas information ( it will fit the images inside the texture atlas, etc ). */
 		Int32				PackTextures();
 
-		void				Save( const std::string& Filepath, const EE_SAVE_TYPE& Format = EE_SAVE_TYPE_DDS, const bool& SaveExtensions = false );
+		/** @brief Save the texture atlas to a file, in the indicated format.
+		*	If PackTexture() has not been called, it will be called automatically by the function ( so you don't need to call it ).
+		*	@param Filepath The path were it will be saved the new texture atlas.
+		*	@param Format The image format of the new texture atlas.
+		*	@param SaveExtensions Indicates if the extensions of the image files must be saved. Usually you wan't to find the SubTextures by its name without extension, but this can be changed here.
+		*/
+		void				Save( const std::string& Filepath, const EE_SAVE_TYPE& Format = EE_SAVE_TYPE_PNG, const bool& SaveExtensions = false );
 
 		void				Close();
 
-		/** First of all you need to set at least the max dimensions of the texture atlas. */
+		/** First of all you need to set at least the max dimensions of the texture atlas.
+		*	If the instance of the texture packer was created without indicating this data, this must be called before adding any texture or image.
+		*	@param MaxWidth The maximum width that the texture atlas will use.
+		*	@param MaxHeight The maximum height that the texture atlas will use.
+		*	@param ForcePowOfTwo Indicates that if the max with and height must be adjusted to fit a power of two texture.
+		*	@param PixelBorder Indicates how many pixels will be added to separate one image to another in the texture atlas. Usefull to avoid artifacts when rendered scaled SubTextures. Use at least 1 pixel to separate images if you will scale any SubTexture.
+		*	@param AllowFlipping Indicates if the images can be flipped inside the texture atlas. This is not compatible with eepp ( since it can't flip the textures back to the original orientation ). So avoid it for eepp.
+		*/
 		void				SetOptions( const Uint32& MaxWidth, const Uint32& MaxHeight, const bool& ForcePowOfTwo = true, const Uint32& PixelBorder = 0, const bool& AllowFlipping = false );
 
+		/** @return The texture atlas to generate width. */
 		const Int32&		Width() const;
 
+		/** @return The texture atlas to generate height */
 		const Int32&		Height() const;
 
+		/** @return If the texture atlas has already been saved, returns the file path to the texture atlas. */
 		const std::string&	GetFilepath() const;
 	protected:
 		enum PackStrategy {

@@ -71,7 +71,7 @@ cSprite::cSprite( cSubTexture * SubTexture ) :
 	CreateStatic( SubTexture );
 }
 
-cSprite::cSprite( const Uint32& TexId, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeFloat& offSetX, const eeFloat& offSetY, const eeRecti& TexSector ) :
+cSprite::cSprite( const Uint32& TexId, const eeSizef &DestSize, const eeVector2i &Offset, const eeRecti& TexSector ) :
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_SCALE_CENTERED | SPRITE_FLAG_EVENTS_ENABLED ),
 	mPos(),
 	mAngle( 0.f ),
@@ -89,7 +89,7 @@ cSprite::cSprite( const Uint32& TexId, const eeFloat& DestWidth, const eeFloat& 
 	mAnimTo( 0 )
 {
 	mCb.Reset();
-	CreateStatic( TexId, DestWidth, DestHeight, offSetX, offSetY, TexSector );
+	CreateStatic( TexId, DestSize, Offset, TexSector );
 }
 
 
@@ -243,14 +243,14 @@ eeAABB cSprite::GetAABB() {
 			if ( S != NULL ) {
 				if ( SPR_FGET( SPRITE_FLAG_SCALE_CENTERED ) ) {
 					if ( mScale == 1.f ) {
-						TmpR = eeRectf( mPos.x, mPos.y, mPos.x + S->DestWidth(), mPos.y + S->DestHeight() );
+						TmpR = eeRectf( mPos.x, mPos.y, mPos.x + S->DestSize().x, mPos.y + S->DestSize().y );
 					} else {
-						eeFloat halfW = S->DestWidth() * 0.5f;
-						eeFloat halfH = S->DestHeight() * 0.5f;
+						eeFloat halfW = S->DestSize().x * 0.5f;
+						eeFloat halfH = S->DestSize().y * 0.5f;
 						TmpR = eeRectf( mPos.x + halfW - halfW * mScale, mPos.y + halfH - halfH * mScale, mPos.x + halfW + halfW * mScale, mPos.y + halfH + halfH * mScale );
 					}
 				} else {
-					TmpR = eeRectf(mPos.x, mPos.y, mPos.x + S->DestWidth() * mScale, mPos.y + + S->DestHeight() * mScale);
+					TmpR = eeRectf(mPos.x, mPos.y, mPos.x + S->DestSize().x * mScale, mPos.y + + S->DestSize().y * mScale);
 				}
 			}
 		}
@@ -299,11 +299,11 @@ bool cSprite::CreateStatic( cSubTexture * SubTexture ) {
 	return true;
 }
 
-bool cSprite::CreateStatic( const Uint32& TexId, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeFloat& offSetX, const eeFloat& offSetY, const eeRecti& TexSector ) {
+bool cSprite::CreateStatic( const Uint32& TexId, const eeSizef& DestSize, const eeVector2i& Offset, const eeRecti& TexSector ) {
 	if ( cTextureFactory::instance()->TextureIdExists( TexId ) ) {
 		Reset();
 
-		AddFrame( TexId, DestWidth, DestHeight, offSetX, offSetY, TexSector );
+		AddFrame( TexId, DestSize, Offset, TexSector );
 
 		return true;
 	}
@@ -387,16 +387,16 @@ eeUint cSprite::AddFrame( cSubTexture * SubTexture ) {
 	return id;
 }
 
-eeUint cSprite::AddFrame(const Uint32& TexId, const eeFloat& DestWidth, const eeFloat& DestHeight, const eeFloat& offSetX, const eeFloat& offSetY, const eeRecti& TexSector) {
+eeUint cSprite::AddFrame( const Uint32& TexId, const eeSizef& DestSize, const eeVector2i& Offset, const eeRecti& TexSector ) {
 	eeUint id = FramePos();
 
-	if ( AddSubFrame( TexId, id, mCurrentSubFrame, DestWidth, DestHeight, offSetX, offSetY, TexSector ) )
+	if ( AddSubFrame( TexId, id, mCurrentSubFrame, DestSize, Offset, TexSector ) )
 		return id;
 
 	return 0;
 }
 
-bool cSprite::AddSubFrame(const Uint32& TexId, const eeUint& NumFrame, const eeUint& NumSubFrame, const eeFloat& DestWidth, const eeFloat& DestHeight, const Int32& offSetX, const Int32& offSetY, const eeRecti& TexSector) {
+bool cSprite::AddSubFrame(const Uint32& TexId, const eeUint& NumFrame, const eeUint& NumSubFrame, const eeSizef& DestSize, const eeVector2i& Offset, const eeRecti& TexSector) {
 	if ( !cTextureFactory::instance()->TextureIdExists( TexId ) )
 		return false;
 
@@ -410,18 +410,18 @@ bool cSprite::AddSubFrame(const Uint32& TexId, const eeUint& NumFrame, const eeU
 	else
 		S->SrcRect( eeRecti( 0, 0, (Int32)Tex->Width(), (Int32)Tex->Height() ) );
 
-	if ( DestWidth > 0 )
-		S->DestWidth( DestWidth );
-	else
-		S->DestWidth( static_cast<eeFloat> ( S->SrcRect().Right - S->SrcRect().Left ) );
+	eeSizef destSize( DestSize );
 
-	if ( DestHeight > 0 )
-		S->DestHeight( DestHeight );
-	else
-		S->DestHeight( static_cast<eeFloat> ( S->SrcRect().Bottom - S->SrcRect().Top ) );
+	if ( destSize.x <= 0 ) {
+		destSize.x = static_cast<eeFloat> ( S->SrcRect().Right - S->SrcRect().Left );
+	}
 
-	S->OffsetX( offSetX );
-	S->OffsetY( offSetY );
+	if ( destSize.y <= 0 ) {
+		destSize.y = static_cast<eeFloat> ( S->SrcRect().Bottom - S->SrcRect().Top );
+	}
+
+	S->DestSize( destSize );
+	S->Offset( Offset );
 
 	AddSubFrame( S, NumFrame, NumSubFrame );
 
@@ -575,77 +575,37 @@ eeUint cSprite::GetSubFrame( const eeUint& SubFrame ) {
 	return SFN;
 }
 
-Int32 cSprite::OffsetX() {
+eeVector2i cSprite::Offset() {
 	cSubTexture* S = GetCurrentSubTexture();
 
 	if ( S != NULL )
-		return S->OffsetX();
+		return S->Offset();
 
-	return 0;
-}
-
-void cSprite::OffsetX( const Int32& offsetx ) {
-	cSubTexture* S = GetCurrentSubTexture();
-
-	if ( S != NULL )
-		S->OffsetX( offsetx );
-}
-
-Int32 cSprite::OffsetY() {
-	cSubTexture* S = GetCurrentSubTexture();
-
-	if ( S != NULL )
-		return S->OffsetY();
-
-	return 0;
-}
-
-void cSprite::OffsetY( const Int32& offsety ) {
-	cSubTexture* S = GetCurrentSubTexture();
-
-	if ( S != NULL )
-		S->OffsetY( offsety );
+	return eeVector2i();
 }
 
 void cSprite::Offset( const eeVector2i& offset ) {
 	cSubTexture* S = GetCurrentSubTexture();
 
 	if ( S != NULL ) {
-		S->OffsetX( offset.x );
-		S->OffsetY( offset.y );
+		S->Offset( offset );
 	}
 }
 
-void cSprite::Width( const eeFloat& Width, const eeUint& FrameNum, const eeUint& SubFrame ) {
-	mFrames[ GetFrame(FrameNum) ].Spr[ GetSubFrame(SubFrame) ]->DestWidth( Width );
+void cSprite::Size( const eeSizef& Size, const eeUint& FrameNum, const eeUint& SubFrame ) {
+	mFrames[ GetFrame(FrameNum) ].Spr[ GetSubFrame(SubFrame) ]->DestSize( Size );
 }
 
-void cSprite::Width( const eeFloat& Width ) {
-	mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ]->DestWidth( Width );
+void cSprite::Size( const eeSizef& Size ) {
+	mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ]->DestSize( Size );
 }
 
-eeFloat cSprite::Width( const eeUint& FrameNum, const eeUint& SubFrame ) {
-	return mFrames[ GetFrame(FrameNum) ].Spr[ GetSubFrame(SubFrame) ]->DestWidth();
+eeSizef cSprite::Size( const eeUint& FrameNum, const eeUint& SubFrame ) {
+	return mFrames[ GetFrame(FrameNum) ].Spr[ GetSubFrame(SubFrame) ]->DestSize();
 }
 
-eeFloat cSprite::Width() {
-	return mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ]->DestWidth();
-}
-
-void cSprite::Height( const eeFloat& Height, const eeUint& FrameNum, const eeUint& SubFrame ) {
-	mFrames[ GetFrame(FrameNum) ].Spr[ GetSubFrame(SubFrame) ]->DestHeight( Height );
-}
-
-void cSprite::Height( const eeFloat& Height ) {
-	mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ]->DestHeight( Height );
-}
-
-eeFloat cSprite::Height( const eeUint& FrameNum, const eeUint& SubFrame ) {
-	return mFrames[ GetFrame(FrameNum) ].Spr[ GetSubFrame(SubFrame) ]->DestHeight();
-}
-
-eeFloat cSprite::Height() {
-	return mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ]->DestHeight();
+eeSizef cSprite::Size() {
+	return mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ]->DestSize();
 }
 
 void cSprite::SetRepeations( const int& Repeations ) {
@@ -674,14 +634,14 @@ eeQuad2f cSprite::GetQuad() {
 
 		if ( SPR_FGET( SPRITE_FLAG_SCALE_CENTERED ) ) {
 			if ( mScale == 1.0f )
-				TmpR = eeRectf( mPos.x, mPos.y, mPos.x + S->DestWidth(), mPos.y + S->DestHeight() );
+				TmpR = eeRectf( mPos.x, mPos.y, mPos.x + S->DestSize().x, mPos.y + S->DestSize().y );
 			else {
-				eeFloat halfW = S->DestWidth() * 0.5f;
-				eeFloat halfH = S->DestHeight() * 0.5f;
+				eeFloat halfW = S->DestSize().x * 0.5f;
+				eeFloat halfH = S->DestSize().y * 0.5f;
 				TmpR = eeRectf( mPos.x + halfW - halfW * mScale, mPos.y + halfH - halfH * mScale, mPos.x + halfW + halfW * mScale, mPos.y + halfH + halfH * mScale );
 			}
 		} else {
-			TmpR = eeRectf( mPos.x, mPos.y, mPos.x + S->DestWidth() * mScale, mPos.y + S->DestHeight() * mScale );
+			TmpR = eeRectf( mPos.x, mPos.y, mPos.x + S->DestSize().x * mScale, mPos.y + S->DestSize().y * mScale );
 		}
 
 		eeQuad2f Q = eeQuad2f( eeVector2f( TmpR.Left, TmpR.Top ), eeVector2f( TmpR.Left, TmpR.Bottom ), eeVector2f( TmpR.Right, TmpR.Bottom ), eeVector2f( TmpR.Right, TmpR.Top ) );

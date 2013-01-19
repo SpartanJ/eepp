@@ -14,8 +14,6 @@ class EE_API cPackManager : public tContainer<cPack> {
 	SINGLETON_DECLARE_HEADERS(cPackManager)
 
 	public:
-		cPackManager();
-
 		virtual ~cPackManager();
 
 		/** @brief Searchs for the filepath in the packs, if the file is found it will return the pack that belongs to.
@@ -39,6 +37,8 @@ class EE_API cPackManager : public tContainer<cPack> {
 		void FallbackToPacks( const bool& fallback );
 	protected:
 		bool	mFallback;
+
+		cPackManager();
 };
 
 }}

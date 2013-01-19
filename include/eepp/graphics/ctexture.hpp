@@ -8,12 +8,6 @@
 
 namespace EE { namespace Graphics {
 
-#define TEX_FLAG_MIPMAP 	( 1 << 0 )
-#define TEX_FLAG_MODIFIED	( 1 << 1 )
-#define TEX_FLAG_COMPRESSED ( 1 << 2 )
-#define TEX_FLAG_LOCKED 	( 1 << 3 )
-#define TEX_FLAG_GRABED		( 1 << 4 )
-
 class EE_API cTexture : public cImage {
 	public:
 		/** Set the OpenGL Texture Id (texture handle) */
@@ -49,10 +43,15 @@ class EE_API cTexture : public cImage {
 		/** @return The Texture Clamp Mode */
 		EE_CLAMP_MODE ClampMode() const { return mClampMode; }
 
-		/** Lock the Texture for direct access */
+		/** Lock the Texture for direct access.
+		**	It is needed to have any read/write access to the texture. This feature is not supported in OpenGL ES. */
 		Uint8 * Lock( const bool& ForceRGBA = false );
 
-		/** Unlock the previously locked Texture */
+		/** @brief Unlock the previously locked Texture.
+		*	Unlocking the texture will upload the local copy of the texture ( that could have been modified ) to the GPU.
+		*	@param KeepData If true keeps the local copy of the texture un memory, otherwise it will be released.
+		*	@param Modified The flag indicates of the texture was modified between the Lock and Unlock calls. This is to force reloading the texture from memory to VRAM. In the case that the texture in ram was modified using the cTexture methods to do this, it will already know that this is true, so it will upload the changes to the GPU.
+		*/
 		bool Unlock(const bool& KeepData = false, const bool& Modified = false);
 
 		/** @return A pointer to the first pixel of the texture ( keeped with a local copy ). \n You must have a copy of the texture on local memory. For that you need to Lock the texture first. */
@@ -61,6 +60,7 @@ class EE_API cTexture : public cImage {
 		/** Set the Texture Filter Mode */
 		void TextureFilter( const EE_TEX_FILTER& filter );
 
+		/** @return The texture filter used by the texture */
 		const EE_TEX_FILTER& TextureFilter() const;
 
 		/** Save the Texture to a new File */
@@ -191,6 +191,15 @@ class EE_API cTexture : public cImage {
 
 		virtual ~cTexture();
 	protected:
+		enum TEXTURE_FLAGS
+		{
+			TEX_FLAG_MIPMAP		=	( 1 << 0 ),
+			TEX_FLAG_MODIFIED	=	( 1 << 1 ),
+			TEX_FLAG_COMPRESSED	=	( 1 << 2 ),
+			TEX_FLAG_LOCKED		= 	( 1 << 3 ),
+			TEX_FLAG_GRABED		=	( 1 << 4 )
+		};
+
 		friend class cTextureFactory;
 
 		cTexture();

@@ -26,13 +26,13 @@
 	Short-term plans:
 
 	@TODO Stabilize the API
-				STATE:	It's looking good.
+				STATE:	It's looking good. But i'm changing things.
 
 	@TODO Improve documentation.
 				STATE:	EE ( Base ) documented what is needed.
 						EE::Window documented.
 						EE::System documented.
-						EE::Graphics 50 % commented.
+						EE::Graphics 85 % commented.
 						EE::Audio 50 % commented.
 						EE::Math 30 to 40 % commented.
 						EE::UI Not commented at all.
@@ -54,6 +54,10 @@
 				STATE:	Not started.
 
 	@TODO Add a cLock class in EE::System.
+				STATE: Not implemented.
+
+	@TODO Add a NonCopyable class and inherit from it the classes that are non copyable.
+				STATE: Not implemented.
 
 	Middle-term plans:
 

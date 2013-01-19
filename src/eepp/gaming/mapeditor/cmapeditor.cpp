@@ -469,6 +469,10 @@ void cMapEditor::OnAddObject( Uint32 Type, eePolygon2f poly ) {
 		return;
 	}
 
+	if ( poly.Size() < 3 ) {
+		return;
+	}
+
 	cObjectLayer * OL = static_cast<cObjectLayer*> ( mCurLayer );
 
 	if ( GAMEOBJECT_TYPE_OBJECT == Type ) {
@@ -965,7 +969,7 @@ void cMapEditor::MapMenuClick( const cUIEvent * Event ) {
 	const String& txt = reinterpret_cast<cUIMenuItem*> ( Event->Ctrl() )->Text();
 
 	if ( "New Texture Atlas..." == txt ) {
-		cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 1024, 768 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, eeSize( 1024, 768 ) );
+		cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 1024, 768 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, eeSize( 1024, 768 ) );
 		eeNew ( Tools::cTextureAtlasEditor, ( tWin ) );
 		tWin->Center();
 		tWin->Show();

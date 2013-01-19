@@ -32,10 +32,8 @@ void cShapeCircleSprite::Draw( cSpace * space ) {
 }
 
 void cShapeCircleSprite::OffsetSet() {
-	mSprite->Width( cShapeCircle::Radius() * 2 );
-	mSprite->Height( cShapeCircle::Radius() * 2 );
-	mSprite->OffsetX( -cShapeCircle::Radius() + cShapeCircle::Offset().x );
-	mSprite->OffsetY( -cShapeCircle::Radius() + cShapeCircle::Offset().y );
+	mSprite->Size( eeSizef( cShapeCircle::Radius() * 2, cShapeCircle::Radius() * 2 ) );
+	mSprite->Offset( eeVector2i( -cShapeCircle::Radius() + cShapeCircle::Offset().x, -cShapeCircle::Radius() + cShapeCircle::Offset().y ) );
 }
 
 cSprite * cShapeCircleSprite::GetSprite() const {

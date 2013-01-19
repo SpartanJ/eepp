@@ -20,7 +20,7 @@ class EE_API cTextureLoader : public cObjectLoader {
 
 		cTextureLoader( const unsigned char * Pixels, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const std::string& FileName = std::string("") );
 
-		~cTextureLoader();
+		virtual ~cTextureLoader();
 
 		void			SetColorKey( eeColor Color );
 

@@ -11,9 +11,9 @@ class EE_API cGlobalBatchRenderer : public cBatchRenderer {
 	SINGLETON_DECLARE_HEADERS(cGlobalBatchRenderer)
 
 	public:
-    	cGlobalBatchRenderer();
-
-    	~cGlobalBatchRenderer();
+		~cGlobalBatchRenderer();
+	protected:
+		cGlobalBatchRenderer();
 };
 
 }}

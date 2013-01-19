@@ -12,8 +12,6 @@ class EE_API cUIThemeManager : public tResourceManager<cUITheme> {
 	SINGLETON_DECLARE_HEADERS(cUIThemeManager)
 
 	public:
-		cUIThemeManager();
-
 		virtual ~cUIThemeManager();
 
 		void DefaultFont( cFont * Font );
@@ -72,6 +70,8 @@ class EE_API cUIThemeManager : public tResourceManager<cUITheme> {
 		bool				mTooltipFollowMouse;
 
 		eeSize				mCursorSize;
+
+		cUIThemeManager();
 };
 
 }}

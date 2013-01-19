@@ -3,6 +3,7 @@
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
 #include <eepp/graphics/renderer/cgl.hpp>
+#include <eepp/math/polygon2.hpp>
 
 namespace EE { namespace Graphics {
 

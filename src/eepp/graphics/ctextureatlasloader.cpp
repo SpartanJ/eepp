@@ -230,7 +230,7 @@ void cTextureAtlasLoader::CreateSubTextures() {
 
 					eeRecti tRect( tSh->X, tSh->Y, tSh->X + tSh->Width, tSh->Y + tSh->Height );
 
-					cSubTexture * tSubTexture = eeNew( cSubTexture, ( tTex->Id(), tRect, (eeFloat)tSh->DestWidth, (eeFloat)tSh->DestHeight, tSh->OffsetX, tSh->OffsetY, SubTextureName ) );
+					cSubTexture * tSubTexture = eeNew( cSubTexture, ( tTex->Id(), tRect, eeSizef( (eeFloat)tSh->DestWidth, (eeFloat)tSh->DestHeight ), eeVector2i( tSh->OffsetX, tSh->OffsetY ), SubTextureName ) );
 
 					//if ( tSh->Flags & HDR_SUBTEXTURE_FLAG_FLIPED )
 						// Should rotate the sub texture, but.. sub texture rotation is not stored.
@@ -297,10 +297,10 @@ bool cTextureAtlasLoader::UpdateTextureAtlas() {
 			cSubTexture * tSubTexture = mTextureAtlas->GetById( tSh->ResourceID );
 
 			if ( NULL != tSubTexture ) {
-				tSh->OffsetX = tSubTexture->OffsetX();
-				tSh->OffsetY = tSubTexture->OffsetY();
-				tSh->DestWidth = (Int32)tSubTexture->DestWidth();
-				tSh->DestHeight = (Int32)tSubTexture->DestHeight();
+				tSh->OffsetX = tSubTexture->Offset().x;
+				tSh->OffsetY = tSubTexture->Offset().x;
+				tSh->DestWidth = (Int32)tSubTexture->DestSize().x;
+				tSh->DestHeight = (Int32)tSubTexture->DestSize().x;
 			}
 		}
 	}

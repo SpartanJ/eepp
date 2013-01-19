@@ -8,10 +8,6 @@
 
 namespace EE { namespace Graphics {
 
-#define TTF_LT_PATH 	(1)
-#define TTF_LT_MEM 		(2)
-#define TTF_LT_PACK 	(3)
-
 class EE_API cTTFFontLoader : public cObjectLoader {
 	public:
 		cTTFFontLoader( const std::string& FontName, const std::string& Filepath, const eeUint& Size, EE_TTF_FONT_STYLE Style = EE_TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true );
@@ -20,7 +16,7 @@ class EE_API cTTFFontLoader : public cObjectLoader {
 
 		cTTFFontLoader( const std::string& FontName, Uint8* TTFData, const eeUint& TTFDataSize, const eeUint& Size, EE_TTF_FONT_STYLE Style = EE_TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true );
 
-		~cTTFFontLoader();
+		virtual ~cTTFFontLoader();
 
 		void 				Update();
 
@@ -30,6 +26,13 @@ class EE_API cTTFFontLoader : public cObjectLoader {
 
 		cFont *				Font() const;
 	protected:
+		enum TTF_LOAD_TYPE
+		{
+			TTF_LT_PATH	= 1,
+			TTF_LT_MEM	= 2,
+			TTF_LT_PACK	= 3
+		};
+
 		Uint32				mLoadType; 	// From memory, from path, from pack
 
 		cTTFFont *			mFont;

@@ -49,11 +49,10 @@ void cTextureAtlasSubTextureEditor::Update() {
 	if ( NULL != mGfx->SubTexture() && mDrag->DragEnable() && mDrag->Dragging() && Pos != mDrag->Pos() ) {
 		eeVector2i Diff = -( Pos - mDrag->Pos() );
 
-		mGfx->SubTexture()->OffsetX( mGfx->SubTexture()->OffsetX() + Diff.x );
-		mGfx->SubTexture()->OffsetY( mGfx->SubTexture()->OffsetY() + Diff.y );
+		mGfx->SubTexture()->Offset( eeVector2i( mGfx->SubTexture()->Offset().x + Diff.x, mGfx->SubTexture()->Offset().y + Diff.y ) );
 
-		mEditor->SpinOffX()->Value( mGfx->SubTexture()->OffsetX() );
-		mEditor->SpinOffY()->Value( mGfx->SubTexture()->OffsetY() );
+		mEditor->SpinOffX()->Value( mGfx->SubTexture()->Offset().x );
+		mEditor->SpinOffY()->Value( mGfx->SubTexture()->Offset().y );
 	}
 
 	mGfx->Pos( mUICenter );
