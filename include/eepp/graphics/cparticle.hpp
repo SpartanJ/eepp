@@ -5,6 +5,8 @@
 
 namespace EE { namespace Graphics {
 
+/** @brief A simple particle class used by the particle system.
+**	Probably not useful for the end user. */
 class EE_API cParticle{
 	public:
 		cParticle();

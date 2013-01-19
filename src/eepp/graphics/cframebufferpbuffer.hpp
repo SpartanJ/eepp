@@ -39,10 +39,6 @@ class EE_API cFrameBufferPBuffer : public cFrameBuffer {
 
 		cFrameBufferPBuffer( const Uint32& Width, const Uint32& Height, bool DepthBuffer = false, Window::cWindow * window = NULL );
 
-		bool Create( const Uint32& Width, const Uint32& Height );
-
-		bool Create( const Uint32& Width, const Uint32& Height, bool DepthBuffer );
-
 		void Bind();
 
 		void Unbind();
@@ -64,6 +60,10 @@ class EE_API cFrameBufferPBuffer : public cFrameBuffer {
 		#endif
 
 		#endif
+
+		bool Create( const Uint32& Width, const Uint32& Height );
+
+		bool Create( const Uint32& Width, const Uint32& Height, bool DepthBuffer );
 };
 
 }}

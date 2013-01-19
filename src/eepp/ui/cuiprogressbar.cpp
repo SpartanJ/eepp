@@ -67,7 +67,7 @@ void cUIProgressBar::SetTheme( cUITheme * Theme ) {
 			if ( !mVerticalExpand )
 				Height = (eeFloat)tSubTexture->RealSize().Height();
 
-			mParallax = eeNew( cScrollParallax, ( tSubTexture, mScreenPos.x + mFillerMargin.Left, mScreenPos.y + mFillerMargin.Top, ( ( mSize.Width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom, mSpeed ) );
+			mParallax = eeNew( cScrollParallax, ( tSubTexture, eeVector2f( mScreenPos.x + mFillerMargin.Left, mScreenPos.y + mFillerMargin.Top ), eeSizef( ( ( mSize.Width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom ), mSpeed ) );
 		}
 	}
 }
@@ -87,7 +87,7 @@ void cUIProgressBar::OnSizeChange() {
 		if ( !mVerticalExpand && mParallax->SubTexture() )
 			Height = (eeFloat)mParallax->SubTexture()->RealSize().Height();
 
-		mParallax->Size( ( ( mSize.Width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom );
+		mParallax->Size( eeSizef( ( ( mSize.Width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom ) );
 	}
 
 	UpdateTextBox();

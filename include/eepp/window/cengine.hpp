@@ -23,7 +23,7 @@ class EE_API cEngine {
 		Window::cWindow * CreateWindow( WindowSettings Settings, ContextSettings Context = ContextSettings() );
 
 		/** Destroy the window instance, and set as current other window running ( if any ).
-		* This function is only usefull for multi-window environment. Avoid using it with one window context.
+		* This function is only useful for multi-window environment. Avoid using it with one window context.
 		*/
 		void DestroyWindow( Window::cWindow * window );
 

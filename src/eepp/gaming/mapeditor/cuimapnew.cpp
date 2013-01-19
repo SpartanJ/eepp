@@ -78,6 +78,7 @@ cUIMapNew::cUIMapNew( cUIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap
 
 	mUILightsEnabled = mTheme->CreateCheckBox( mUIWindow->Container(), eeSize(), eeVector2i( Txt->Pos().x + DistFromTitle, Txt->Pos().y + Txt->Size().Height() + 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	mUILightsEnabled->Text( "Lights Enabled" );
+	mUILightsEnabled->Active( true );
 
 	if ( ResizeMap ) {
 		mUILightsEnabled->Active( 0 != mUIMap->Map()->LightsEnabled() );
@@ -85,6 +86,7 @@ cUIMapNew::cUIMapNew( cUIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap
 
 	mUILightsByVertex = mTheme->CreateCheckBox( mUIWindow->Container(), eeSize(), eeVector2i( mUIWindow->Container()->Size().Width() / 2, mUILightsEnabled->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	mUILightsByVertex->Text( "Lights By Vertex" );
+	mUILightsByVertex->Active( true );
 
 	if ( ResizeMap ) {
 		mUILightsByVertex->Active( 0 != mUIMap->Map()->LightsByVertex() );
@@ -100,6 +102,7 @@ cUIMapNew::cUIMapNew( cUIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap
 
 	mUIClipArea = mTheme->CreateCheckBox( mUIWindow->Container(), eeSize(), eeVector2i( mUIWindow->Container()->Size().Width() / 2, mUIClampBorders->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
 	mUIClipArea->Text( "Clip View Area" );
+	mUIClipArea->Active( true );
 
 	if ( ResizeMap ) {
 		mUIClipArea->Active( 0 != mUIMap->Map()->ClipedArea() );

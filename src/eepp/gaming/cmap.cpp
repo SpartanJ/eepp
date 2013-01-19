@@ -1081,7 +1081,7 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 	MapHdr.LayerCount				= mLayerCount;
 	MapHdr.PropertyCount			= mProperties.size();
 	MapHdr.TextureAtlasCount		= TextureAtlases.size();
-	MapHdr.VirtualObjectTypesCount	= mObjTypes.size();	//! This is only usefull for the Map Editor, to auto add on the load the virtual object types that where used to create the map.
+	MapHdr.VirtualObjectTypesCount	= mObjTypes.size();	//! This is only useful for the Map Editor, to auto add on the load the virtual object types that where used to create the map.
 	MapHdr.BaseColor				= mBaseColor.GetValue();
 
 	if ( LightsEnabled() && NULL != mLightManager )

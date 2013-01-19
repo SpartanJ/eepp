@@ -135,10 +135,13 @@ class EE_API cBatchRenderer {
 		/** Add to the batch a line ( this will change your batch rendering method to DM_LINE_LOOP, so if you were using another one will Draw all the batched vertexs first ) */
 		void BatchLineLoop( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1 );
 
-		void BatchLineLoop( const eeFloat& x0, const eeFloat& y0);
+		/** Add to the batch a point to the line loop batch ( this will change your batch rendering method to DM_LINE_LOOP, so if you were using another one will Draw all the batched vertexs first ) */
+		void BatchLineLoop( const eeFloat& x0, const eeFloat& y0 );
 
+		/** Add to the batch a line ( this will change your batch rendering method to DM_LINE_LOOP, so if you were using another one will Draw all the batched vertexs first ) */
 		void BatchLineLoop( const eeVector2f& vector1, const eeVector2f& vector2 );
 
+		/** Add to the batch a point to the line loop batch ( this will change your batch rendering method to DM_LINE_LOOP, so if you were using another one will Draw all the batched vertexs first ) */
 		void BatchLineLoop( const eeVector2f& vector1 );
 
 		/** This will set as the default batch rendering to DM_TRIANGLE_FAN. And will reset the line color to eeColorA(255,255,255,255). */

@@ -8,7 +8,7 @@ namespace EE { namespace Graphics {
 
 /** @brief The Shader Program Class.
 	@short Program is a GPU-executed program that is ready to be used for manipulating geometry and colors.
-    * Program can encapsulate vertex and fragment shaders or just one of them. If only either vertex or fragment shader is used, then traditional fixed-function pipeline is used for the other stage.
+*	ShaderProgram can encapsulate vertex and fragment shaders or just one of them. If only either vertex or fragment shader is used, then traditional fixed-function pipeline is used for the other stage.
 */
 class EE_API cShaderProgram {
 	public:
@@ -96,8 +96,10 @@ class EE_API cShaderProgram {
 		/** @overload */
 		bool SetUniform( const Int32& Location, float x, float y, float z, float w );
 
+		/** Sets an uniform matrix from its name. */
 		bool SetUniformMatrix( const std::string Name, const float * Value );
 
+		/** Sets an uniform matrix from its location. */
 		bool SetUniformMatrix( const Int32& Location, const float * Value );
 
 		/** @return The id of the program (the handle) */

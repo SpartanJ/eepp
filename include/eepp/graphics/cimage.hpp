@@ -16,6 +16,7 @@ using namespace EE::System;
 
 namespace EE { namespace Graphics {
 
+/** @brief A simple image class to manipulate them. */
 class EE_API cImage {
 	public:
 		/** @return The current Jpeg save quality */

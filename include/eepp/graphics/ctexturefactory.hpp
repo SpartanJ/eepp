@@ -21,7 +21,7 @@ class EE_API cTextureFactory : protected cMutex {
 		* @param mipmap Create Mipmap?
 		* @param ClampMode Defines the CLAMP MODE
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
-		* @param KeepLocalCopy Keep the array data copy. ( usefull if want to reload the texture )
+		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return Internal Texture Id
 		*/
 		Uint32 CreateEmptyTexture( const eeUint& Width, const eeUint& Height, const eeUint& Channels = 4, const eeColorA& DefaultColor = eeColorA(0,0,0,255), const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
@@ -34,7 +34,7 @@ class EE_API cTextureFactory : protected cMutex {
 		* @param Mipmap Create Mipmap?
 		* @param ClampMode Defines the CLAMP MODE
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
-		* @param KeepLocalCopy Keep the array data copy. ( usefull if want to reload the texture )
+		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @param FileName A filename to recognize the texture ( the path in case that was loaded from outside the texture factory ).
 		* @return Internal Texture Id
 		*/
@@ -46,7 +46,7 @@ class EE_API cTextureFactory : protected cMutex {
 		* @param Mipmap Create Mipmap?
 		* @param ClampMode Defines the CLAMP MODE
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
-		* @param KeepLocalCopy Keep the array data copy. ( usefull if want to reload the texture )
+		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return Internal Texture Id
 		*/
 		Uint32 LoadFromPack( cPack* Pack, const std::string& FilePackPath, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
@@ -57,7 +57,7 @@ class EE_API cTextureFactory : protected cMutex {
 		* @param Mipmap Use mipmaps?
 		* @param ClampMode Defines the CLAMP MODE
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
-		* @param KeepLocalCopy Keep the array data copy. ( usefull if want to reload the texture )
+		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return The internal Texture Id
 		*/
 		Uint32 LoadFromMemory( const unsigned char* ImagePtr, const eeUint& Size, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
@@ -67,7 +67,7 @@ class EE_API cTextureFactory : protected cMutex {
 		* @param mipmap Use mipmaps?
 		* @param ClampMode Defines the CLAMP MODE
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
-		* @param KeepLocalCopy Keep the array data copy. ( usefull if want to reload the texture )
+		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return The internal Texture Id
 		*/
 		Uint32 LoadFromStream( cIOStream& Stream, const bool& mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
@@ -77,7 +77,7 @@ class EE_API cTextureFactory : protected cMutex {
 		* @param mipmap Use mipmaps?
 		* @param ClampMode Defines the CLAMP MODE
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
-		* @param KeepLocalCopy Keep the array data copy. ( usefull if want to reload the texture )
+		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return The internal Texture Id
 		*/
 		Uint32 Load( const std::string& Filepath, const bool& mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
@@ -91,13 +91,13 @@ class EE_API cTextureFactory : protected cMutex {
 		/** Reload all loaded textures to recover the OpenGL context */
 		void ReloadAllTextures();
 
-		/** Bind the the internal Texture Id indicated. This is usefull if you are rendering a texture outside this class.
+		/** Bind the the internal Texture Id indicated. This is useful if you are rendering a texture outside this class.
 		* @param TexId The internal Texture Id
 		* @param TextureUnit The Texture Unit binded
 		*/
 		void Bind( const Uint32& TexId, const Uint32& TextureUnit = 0 );
 
-		/** Bind the the Texture indicated. This is usefull if you are rendering a texture outside this class.
+		/** Bind the the Texture indicated. This is useful if you are rendering a texture outside this class.
 		* @param Tex The Texture Pointer
 		* @param TextureUnit The Texture Unit binded
 		*/
@@ -178,7 +178,7 @@ class EE_API cTextureFactory : protected cMutex {
 		* @param ClampMode The Texture Clamp Mode
 		* @param CompressTexture The texture is compressed?
 		* @param LocalCopy If keep a local copy in memory of the texture
-		* @param MemSize The size of the texture in memory ( just if you need to specify the real size in memory, just usefull to calculate the total texture memory ).
+		* @param MemSize The size of the texture in memory ( just if you need to specify the real size in memory, just useful to calculate the total texture memory ).
 		*/
 		Uint32 PushTexture( const std::string& Filepath, const Uint32& TexId, const eeUint& Width, const eeUint& Height, const eeUint& ImgWidth, const eeUint& ImgHeight, const bool& Mipmap, const eeUint& Channels, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy = false, const Uint32& MemSize = 0 );
 

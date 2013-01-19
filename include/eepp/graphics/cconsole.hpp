@@ -18,8 +18,10 @@ class EE_API cConsole : protected iLogReader {
 		//! The Console Callback return a vector of parameters ( String )
 		typedef cb::Callback1<void, const std::vector < String >& > ConsoleCallback;
 
+		/** Instances the console but doesn't create it, you must call Create to initialize the console. */
 		cConsole( Window::cWindow * window = NULL );
 
+		/** Creates the console */
 		cConsole( cFont* Font, const bool& MakeDefaultCommands = true, const bool& AttachToLog = true, const eeUint& MaxLogLines = 1024, const Uint32& TextureId = 0, Window::cWindow * window = NULL );
 
 		~cConsole();

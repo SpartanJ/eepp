@@ -10,7 +10,7 @@
 
 namespace EE { namespace System {
 
-/** @brief The reader interface is usefull if you want to keep track of what is write in the log, for example for a console. */
+/** @brief The reader interface is useful if you want to keep track of what is write in the log, for example for a console. */
 class iLogReader {
 	public:
 		virtual void WriteLog( const std::string& Text ) = 0;
