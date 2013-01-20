@@ -53,12 +53,6 @@
 	@TODO Add PVRTC and ETC support.
 				STATE:	Not started.
 
-	@TODO Add a cLock class in EE::System.
-				STATE: Not implemented.
-
-	@TODO Add a NonCopyable class and inherit from it the classes that are non copyable.
-				STATE: Not implemented.
-
 	Middle-term plans:
 
 	@TODO Create a default UI Theme for the engine ( get rid off the ugly Aqua Theme ).

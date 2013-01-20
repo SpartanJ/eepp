@@ -581,3 +581,6 @@
 ../../include/eepp/gaming/cgameobjectpolygon.hpp
 ../../src/eepp/gaming/mapeditor/cobjectproperties.hpp
 ../../src/eepp/gaming/mapeditor/cobjectproperties.cpp
+../../include/eepp/base/noncopyable.hpp
+../../include/eepp/system/clock.hpp
+../../src/eepp/system/clock.cpp

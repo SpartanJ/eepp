@@ -2,6 +2,7 @@
 #define EE_SYSTEMCTHREAD_H
 
 #include <eepp/system/base.hpp>
+#include <eepp/base/noncopyable.hpp>
 
 namespace EE { namespace System {
 
@@ -9,7 +10,7 @@ namespace Platform { class cThreadImpl; }
 namespace Private { struct ThreadFunc; }
 
 /** @brief Thread manager class */
-class EE_API cThread {
+class EE_API cThread : NonCopyable {
 	public:
 		typedef void (*FuncType)(void*);
 
@@ -74,7 +75,7 @@ class EE_API cThread {
 
 		/** @brief Destructor
 		**	This destructor calls Wait(), so that the internal thread
-		**	cannot survive after its sf::Thread instance is destroyed. */
+		**	cannot survive after its cThread instance is destroyed. */
 		virtual ~cThread();
 
 		/** @brief Run the thread

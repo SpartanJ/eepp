@@ -2,13 +2,14 @@
 #define EE_SYSTEMCMUTEX_H
 
 #include <eepp/base.hpp>
+#include <eepp/base/noncopyable.hpp>
 
 namespace EE { namespace System {
 	
 namespace Platform { class cMutexImpl; }
 
 /** @brief Blocks concurrent access to shared resources from multiple threads */
-class EE_API cMutex {
+class EE_API cMutex : NonCopyable {
 	public:
 		cMutex();
 

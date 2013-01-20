@@ -17,7 +17,7 @@ namespace EE { namespace Graphics {
 
 namespace IOCb
 {
-	// stb_image callbacks that operate on a sf::InputStream
+	// stb_image callbacks that operate on a cIOStream
 	int read(void* user, char* data, int size)
 	{
 		cIOStream * stream = static_cast<cIOStream*>(user);

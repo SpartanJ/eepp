@@ -8,6 +8,7 @@
 #include <eepp/system/tsingleton.hpp>
 #include <eepp/system/cthread.hpp>
 #include <eepp/system/cmutex.hpp>
+#include <eepp/system/clock.hpp>
 #include <eepp/system/clog.hpp>
 #include <eepp/system/ctimer.hpp>
 #include <eepp/system/ctimeelapsed.hpp>
