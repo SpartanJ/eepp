@@ -86,16 +86,12 @@ class EE_API cConsole : protected iLogReader {
 		/** @return The fading speed in ms */
 		eeFloat FadeSpeed() const { return mFadeSpeed; }
 
-		/** Creates the new console
+		/** @brief Creates the new console
 		* @param Font The cFont pointer to class
 		* @param MakeDefaultCommands Register the default commands provided by the class?
 		* @param AttachToLog Attach the console to the cLog instance
 		* @param MaxLogLines Maximun number of lines stored on the console
-		* @param Background texture ( 0 if don't want a texture )
-		* @param ConsoleColor The Console Background Color
-		* @param ConsoleLineColor The Console Line Background Color
-		* @param FontColor The Console Font Color
-		* @param FontLineColor The Console Line Font Color ( The Client Input )
+		* @param TextureId Background texture id ( 0 for no texture )
 		*/
 		void Create( cFont* Font, const bool& MakeDefaultCommands = true, const bool& AttachToLog = true, const eeUint& MaxLogLines = 1024, const Uint32& TextureId = 0 );
 

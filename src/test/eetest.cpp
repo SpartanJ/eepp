@@ -116,7 +116,7 @@ void cEETest::Init() {
 		if ( NULL != mFBO )
 			mFBO->ClearColor( eeColorAf( 0, 0, 0, 0.5f ) );
 
-		eePolygon2f Poly = eePolygon2f::CreateRoundedPolygon( 0, 0, 256, 50 );
+		eePolygon2f Poly = eePolygon2f::CreateRoundedRectangle( 0, 0, 256, 50 );
 
 		mVBO = cVertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
 

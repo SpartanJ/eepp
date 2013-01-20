@@ -71,7 +71,7 @@ class Polygon2 {
 
 		tRECT<T> ToAABB();
 
-		static Polygon2<T> CreateRoundedPolygon( const T& x, const T& y, const T& width, const T& height, const eeUint& Radius = 8 );
+		static Polygon2<T> CreateRoundedRectangle( const T& x, const T& y, const T& width, const T& height, const eeUint& Radius = 8 );
 
 		static bool IntersectQuad2( const Quad2<T>& q0, const Quad2<T>& q1, const Vector2<T>& q0Pos = Vector2<T>(0,0), const Vector2<T>& q1Pos = Vector2<T>(0,0) );
 
@@ -184,7 +184,7 @@ void Polygon2<T>::Scale( const T& scale, const Vector2<T>& Center ) {
 }
 
 template<typename T>
-Polygon2<T> Polygon2<T>::CreateRoundedPolygon( const T& x, const T& y, const T& width, const T& height, const eeUint& Radius ) {
+Polygon2<T> Polygon2<T>::CreateRoundedRectangle( const T& x, const T& y, const T& width, const T& height, const eeUint& Radius ) {
 	T PI05 = EE_PI * 0.5f;
 	T PI15 = EE_PI * 1.5f;
 	T PI20 = EE_PI2;

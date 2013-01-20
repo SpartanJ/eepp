@@ -163,7 +163,7 @@ class EE_API String {
 	static void StrFormat( char * Buffer, int BufferSize, const char * format, ... );
 
 	/** @brief Construct from an UTF-8 string to UTF-32 according
-	** @param uf8String UTF-8 string to convert
+	** @param utf8String UTF-8 string to convert
 	**/
 	static String FromUtf8( const std::string& utf8String );
 
@@ -199,7 +199,7 @@ class EE_API String {
 	String( const char* uf8String );
 
 	/** @brief Construct from an UTF-8 string to UTF-32 according
-	** @param uf8String UTF-8 string to convert
+	** @param utf8String UTF-8 string to convert
 	**/
 	String( const std::string& utf8String );
 

@@ -18,7 +18,7 @@ class EE_API cTextureFactory : protected cMutex {
 		* @param Height Texture Height
 		* @param Channels Texture Number of Channels (in bytes)
 		* @param DefaultColor The background color for the texture
-		* @param mipmap Create Mipmap?
+		* @param Mipmap Create Mipmap?
 		* @param ClampMode Defines the CLAMP MODE
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
@@ -40,7 +40,7 @@ class EE_API cTextureFactory : protected cMutex {
 		*/
 		Uint32 LoadFromPixels( const unsigned char * Pixels, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const std::string& FileName = std::string("") );
 
-		/** Load a texture from Pack
+		/** Load a texture from Pack file
 		* @param Pack Pointer to the pack instance
 		* @param FilePackPath The path of the file inside the pack
 		* @param Mipmap Create Mipmap?
@@ -51,7 +51,7 @@ class EE_API cTextureFactory : protected cMutex {
 		*/
 		Uint32 LoadFromPack( cPack* Pack, const std::string& FilePackPath, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
-		/** Load a texture from memory (RGBA Format)
+		/** Load a texture from memory
 		* @param ImagePtr The image data in RAM just as if it were still in a file
 		* @param Size The size of the texture ( Width * Height * BytesPerPixel )
 		* @param Mipmap Use mipmaps?
@@ -64,23 +64,23 @@ class EE_API cTextureFactory : protected cMutex {
 
 		/** Load a Texture from stream
 		* @param Stream The cIOStream instance
-		* @param mipmap Use mipmaps?
+		* @param Mipmap Use mipmaps?
 		* @param ClampMode Defines the CLAMP MODE
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return The internal Texture Id
 		*/
-		Uint32 LoadFromStream( cIOStream& Stream, const bool& mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 LoadFromStream( cIOStream& Stream, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Load a Texture from a file path
-		* @param filepath The path for the texture
-		* @param mipmap Use mipmaps?
+		* @param Filepath The path for the texture
+		* @param Mipmap Use mipmaps?
 		* @param ClampMode Defines the CLAMP MODE
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return The internal Texture Id
 		*/
-		Uint32 Load( const std::string& Filepath, const bool& mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 Load( const std::string& Filepath, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Remove and Unload the Texture Id
 		* @param TexId
@@ -174,7 +174,6 @@ class EE_API cTextureFactory : protected cMutex {
 		* @param ImgHeight Image Height
 		* @param Mipmap Tell if the texture has mipmaps
 		* @param Channels Texture number of Channels ( bytes per pixel )
-		* @param ColorKey The transparent color key for the texture
 		* @param ClampMode The Texture Clamp Mode
 		* @param CompressTexture The texture is compressed?
 		* @param LocalCopy If keep a local copy in memory of the texture

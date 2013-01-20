@@ -39,7 +39,8 @@ class EE_API cWaypoints {
 		bool EraseWaypoint( const eeUint& PointNum );
 
 		/** Start the animation ( will reset the current state, and start from the beginning )
-		@param PathEndCallback An optional callback fired when the animation ends.
+		*	@param PathEndCallback An optional callback fired when the animation ends.
+		*	@param StepCallback An optional callback that is fired every time that a step is completed.
 		*/
 		void Start( OnPathEndCallback PathEndCallback = OnPathEndCallback(), OnStepCallback StepCallback = OnStepCallback() );
 

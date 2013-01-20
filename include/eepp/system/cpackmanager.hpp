@@ -29,7 +29,7 @@ class EE_API cPackManager : public tContainer<cPack> {
 		const bool& FallbackToPacks() const;
 
 		/**	@brief Sets if the files that failed to be loaded from the file system should try to be loaded from the currently open packs.
-		**	@example For example if you try to load a texture from the file system a fails it will search the same path in the opened packs, and load it from there.
+		**	For example if you try to load a texture from the file system a fails it will search the same path in the opened packs, and load it from there.
 		**			cTextureFactory::instance()->Load( "mytexture.png" );
 		**			If the file is not in the file system, it will be searched in the opened packs, and loaded if is found.
 		**			In case that the process path is appended to the path... like Sys::GetProcessPath() + "mytexture.png", the process path will be removed from the file path.

@@ -59,7 +59,7 @@ class EE_API cCursorManager {
 		virtual void			Remove( const std::string& name, bool Delete = false );
 
 		/** Removes the cursor by its id
-		* @param cursor The cursor pointer
+		* @param id The cursor pointer id
 		* @param Delete Indicates if the cursor must be delete after being removed from the cursor manager
 		*/
 		virtual void			Remove( const Uint32& id, bool Delete = false );

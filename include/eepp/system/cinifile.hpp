@@ -135,16 +135,25 @@ class EE_API cIniFile {
 		bool SetValue ( unsigned const keyID, unsigned const valueID, std::string const value );
 
 		/** Sets the value from a keyname and a valuename
+		*	@param keyname The key name
+		*	@param valuename The value name
+		*	@param value The value to assign
 		*	@param create If true it will create the keyname if doesn't exists
 		*/
 		bool SetValue ( std::string const keyname, std::string const valuename, std::string const value, bool create = true );
 
 		/** Sets a integer value from a keyname and a valuename
+		*	@param keyname The key name
+		*	@param valuename The value name
+		*	@param value The value to assign
 		*	@param create If true it will create the keyname if doesn't exists
 		*/
 		bool SetValueI ( std::string const keyname, std::string const valuename, int const value, bool create = true );
 
 		/** Sets a boolean value from a keyname and a valuename
+		*	@param keyname The key name
+		*	@param valuename The value name
+		*	@param value The value to assign
 		*	@param create If true it will create the keyname if doesn't exists
 		*/
 		bool SetValueB ( std::string const keyname, std::string const valuename, bool const value, bool create = true ) {
@@ -152,6 +161,9 @@ class EE_API cIniFile {
 		}
 
 		/** Sets a double value from a keyname and a valuename
+		*	@param keyname The key name
+		*	@param valuename The value name
+		*	@param value The value to assign
 		*	@param create If true it will create the keyname if doesn't exists
 		*/
 		bool SetValueF ( std::string const keyname, std::string const valuename, double const value, bool create = true );

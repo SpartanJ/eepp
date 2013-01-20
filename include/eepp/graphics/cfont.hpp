@@ -15,7 +15,6 @@ class EE_API cFont {
 
 		/** Set a text to render
 		 * @param Text The Text
-		 * @param SupportNewLine If active will search for "\n" and back to a new line.
 		 */
 		void SetText( const String& Text );
 

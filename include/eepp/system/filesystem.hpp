@@ -87,7 +87,7 @@ class EE_API FileSystem {
 		static bool MakeDir( const std::string& path, const Uint16& mode = 0770 );
 
 		/** Convert a size represented in bytes, to a string converted in byes/kb/mb/tb.
-		* @example 10485760 -> "10.0 MB"
+		* For example 10485760 -> "10.0 MB"
 		*/
 		static std::string SizeToString(const Int64& Size );
 

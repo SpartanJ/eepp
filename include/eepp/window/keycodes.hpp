@@ -295,7 +295,7 @@ enum EE_BUTTON {
 
 #define EE_BUTTON_MASK(X)		( 1 << ( ( X ) - 1 ) )
 
-/** @enum EE_BUTTON_MASK Mouse buttons mask, to check the current state of every button. */
+/** @enum EE_BUTTON_MASKS Mouse buttons mask, to check the current state of every button. */
 enum EE_BUTTON_MASKS {
 	EE_BUTTON_LMASK		= EE_BUTTON_MASK( EE_BUTTON_LEFT ),
 	EE_BUTTON_MMASK		= EE_BUTTON_MASK( EE_BUTTON_MIDDLE ),

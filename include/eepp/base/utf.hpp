@@ -147,8 +147,7 @@ public :
     ///
     /// \param begin  Iterator pointing to the beginning of the input sequence
     /// \param end    Iterator pointing to the end of the input sequence
-    /// \param output Iterator pointing to the beginning of the output sequence
-    /// \param locale Locale to use for conversion
+	/// \param output Iterator pointing to the beginning of the output sequence
     ///
     /// \return Iterator to the end of the output sequence which has been written
     ///
@@ -357,8 +356,7 @@ public :
     ///
     /// \param begin  Iterator pointing to the beginning of the input sequence
     /// \param end    Iterator pointing to the end of the input sequence
-    /// \param output Iterator pointing to the beginning of the output sequence
-    /// \param locale Locale to use for conversion
+	/// \param output Iterator pointing to the beginning of the output sequence
     ///
     /// \return Iterator to the end of the output sequence which has been written
     ///
@@ -568,8 +566,7 @@ public :
     ///
     /// \param begin  Iterator pointing to the beginning of the input sequence
     /// \param end    Iterator pointing to the end of the input sequence
-    /// \param output Iterator pointing to the beginning of the output sequence
-    /// \param locale Locale to use for conversion
+	/// \param output Iterator pointing to the beginning of the output sequence
     ///
     /// \return Iterator to the end of the output sequence which has been written
     ///

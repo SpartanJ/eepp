@@ -43,7 +43,7 @@ class EE_API cFrameBuffer {
 		/** @return The frame buffer texture. Everything is rendered to this texture.
 		** To render the frame buffer you just need to draw the texture as any other texture.
 		** The frame buffer must be unbinded before any rendering is done outside the frame buffer.
-		** @example MyFrameBufferPtr->GetTexture()->Draw(0,0);
+		** For example MyFrameBufferPtr->GetTexture()->Draw(0,0);
 		*/
 		cTexture * GetTexture() const;
 

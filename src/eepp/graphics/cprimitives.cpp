@@ -172,7 +172,7 @@ void cPrimitives::DrawRoundedRectangle( const eeRectf& R, const eeColorA& TopLef
 	eeFloat xscalediff	= size.Width()	* Scale - size.Width();
 	eeFloat yscalediff	= size.Height()	* Scale - size.Height();
 	eeVector2f Center( R.Left + size.Width() * 0.5f + xscalediff, R.Top + size.Height() * 0.5f + yscalediff );
-	eePolygon2f Poly	= eePolygon2f::CreateRoundedPolygon( R.Left - xscalediff, R.Top - yscalediff, size.Width() + xscalediff, size.Height() + yscalediff, Corners );
+	eePolygon2f Poly	= eePolygon2f::CreateRoundedRectangle( R.Left - xscalediff, R.Top - yscalediff, size.Width() + xscalediff, size.Height() + yscalediff, Corners );
 	eeVector2f poly;
 
 	Poly.Rotate( Angle, Center );

@@ -113,7 +113,7 @@ class EE_API cThread {
 		Private::ThreadFunc *		mEntryPoint; ///< Abstraction of the function to run
 };
 
-//! Taken from SFML threads
+// Taken from SFML threads
 namespace Private {
 
 // Base class for abstract thread functions

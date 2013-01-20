@@ -6,10 +6,10 @@
 namespace EE { namespace Graphics {
 
 /** Pixel Perfect Collition implementation.
-* @param TexId_1 First Texture Id
+* @param Tex1 First Texture Id
 * @param x1 Screen X axis position for the first texture
 * @param y1 Screen Y axis position for the first texture
-* @param TexId_2 Second Texture Id
+* @param Tex2 Second Texture Id
 * @param x2 Screen X axis position for the second texture
 * @param y2 Screen Y axis position for the second texture
 * @param Tex1_SrcRECT The sector of the texture from TexId_1 that you are rendering, the sector you want to collide ( on cSprite the SprSrcRECT )
@@ -20,7 +20,7 @@ namespace EE { namespace Graphics {
 bool EE_API PixelPerfectCollide( cTexture * Tex1, const eeUint& x1, const eeUint& y1, cTexture * Tex2, const eeUint& x2, const eeUint& y2, const eeRectu& Tex1_SrcRECT = eeRectu(0,0,0,0), const eeRectu& Tex2_SrcRECT = eeRectu(0,0,0,0) );
 
 /** Pixel Perfect Collition implementation between texture and a point
-* @param TexId_1 First Texture Id
+* @param Tex First Texture Id
 * @param x1 Screen X axis position for the first texture
 * @param y1 Screen Y axis position for the first texture
 * @param x2 Screen X axis position for the point on screen

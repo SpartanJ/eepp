@@ -32,7 +32,7 @@
 				STATE:	EE ( Base ) documented what is needed.
 						EE::Window documented.
 						EE::System documented.
-						EE::Graphics 85 % commented.
+						EE::Graphics documented.
 						EE::Audio 50 % commented.
 						EE::Math 30 to 40 % commented.
 						EE::UI Not commented at all.

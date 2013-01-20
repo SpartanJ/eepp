@@ -43,7 +43,7 @@ class EE_API cTextureAtlasLoader {
 		/** Loads a texture atlas from a pack file.
 		*	If the loader is not threaded, it will load the atlas immediately.
 		*	@param Pack The pointer of the pack instance to be used to load the file.
-		*	@param FilePathPath The path of the file inside the pack.
+		*	@param FilePackPath The path of the file inside the pack.
 		*	@param Threaded Indicates if the loading is done in another thread.
 		*	@param LoadCallback The load notification callback.
 		*/
@@ -85,7 +85,7 @@ class EE_API cTextureAtlasLoader {
 		/** Loads a texture atlas from a pack file.
 		*	If the loader is not threaded, it will load the atlas immediately.
 		*	@param Pack The pointer of the pack instance to be used to load the file.
-		*	@param FilePathPath The path of the file inside the pack.
+		*	@param FilePackPath The path of the file inside the pack.
 		*/
 		void					LoadFromPack( cPack * Pack, const std::string& FilePackPath );
 

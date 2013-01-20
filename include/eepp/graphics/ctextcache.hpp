@@ -8,7 +8,7 @@ namespace EE { namespace Graphics {
 
 class cFont;
 
-/** @brief Cached text for a fast font rendering. */
+/** @brief Caches text for a fast font rendering. */
 class EE_API cTextCache {
 	public:
 		cTextCache( cFont * font, const String& text = "", eeColorA FontColor = eeColorA(255,255,255,255), eeColorA FontShadowColor = eeColorA(0,0,0,255) );
@@ -48,9 +48,9 @@ class EE_API cTextCache {
 		void Color(const eeColorA& color);
 
 		/** Set the color of the substring
-		* @Color The color
-		* @from The first char to change the color
-		* @to The last char to change the color
+		* @param color The color
+		* @param from The first char to change the color
+		* @param to The last char to change the color
 		*/
 		void Color(const eeColorA& color, Uint32 from, Uint32 to );
 

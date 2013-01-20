@@ -1,5 +1,6 @@
 #include <eepp/graphics/cttffontloader.hpp>
 #include <eepp/graphics/cfontmanager.hpp>
+#include <eepp/graphics/ctexturefactory.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -114,6 +115,8 @@ cFont * cTTFFontLoader::Font() const {
 
 void cTTFFontLoader::Unload() {
 	if ( mLoaded ) {
+		cTextureFactory::instance()->Remove( mFont->GetTexId() );
+
 		cFontManager::instance()->Remove( mFont );
 
 		Reset();

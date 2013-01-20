@@ -108,26 +108,24 @@ class EE_API cTexture : public cImage {
 		* @param Angle The Angle of the texture rendered
 		* @param Scale The Scale factor of the rendered texture
 		* @param Color The texture color
-		* @param blend Set the Blend Mode ( default ALPHA_NORMAL )
+		* @param Blend Set the Blend Mode ( default ALPHA_NORMAL )
 		* @param width The width of the texture rendered
 		* @param height The height of the texture rendered
 		*/
-		void DrawFast( const eeFloat& x, const eeFloat& y, const eeFloat& Angle = 0.0f, const eeFloat& Scale = 1.0f, const eeColorA& Color = eeColorA(), const EE_BLEND_MODE &blend = ALPHA_NORMAL, const eeFloat &width = 0, const eeFloat &height = 0 );
+		void DrawFast( const eeFloat& x, const eeFloat& y, const eeFloat& Angle = 0.0f, const eeFloat& Scale = 1.0f, const eeColorA& Color = eeColorA(), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const eeFloat &width = 0, const eeFloat &height = 0 );
 
 		/** Render the texture on screen
 		* @param x The x position on screen
 		* @param y The y position on screen
-		* @param width The width of the texture rendered ( when Scale = 1, otherwise this width will be scaled like width * Scale )
-		* @param height The height of the texture rendered ( when Scale = 1, otherwise this height will be scaled like height * Scale )
 		* @param Angle The Angle of the texture rendered
 		* @param Scale The Scale factor of the rendered texture
 		* @param Color The texture color
-		* @param blend Set the Blend Mode ( default ALPHA_NORMAL )
+		* @param Blend Set the Blend Mode ( default ALPHA_NORMAL )
 		* @param Effect Set the Render Effect ( default RN_NORMAL, no effect )
 		* @param ScaleCentered If true the texture will be scaled centered, otherwise will be scale from the Top - Left Corner
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
-		void Draw( const eeFloat &x, const eeFloat &y, const eeFloat &Angle = 0, const eeFloat &Scale = 1.0f, const eeColorA& Color = eeColorA(255,255,255,255), const EE_BLEND_MODE &blend = ALPHA_NORMAL, const EE_RENDER_MODE &Effect = RN_NORMAL, const bool &ScaleCentered = true, const eeRecti& texSector = eeRecti(0,0,0,0) );
+		void Draw( const eeFloat &x, const eeFloat &y, const eeFloat &Angle = 0, const eeFloat &Scale = 1.0f, const eeColorA& Color = eeColorA(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const EE_RENDER_MODE &Effect = RN_NORMAL, const bool &ScaleCentered = true, const eeRecti& texSector = eeRecti(0,0,0,0) );
 
 		/** Render the texture on screen. Extended because can set the vertex colors individually
 		* @param x The x position on screen
@@ -208,20 +206,6 @@ class EE_API cTexture : public cImage {
 
 		cTexture( const cTexture& Copy );
 
-		/** Create the Texture
-		* @param texture The OpenGL Texture Id (texture handler)
-		* @param width The Texture Width
-		* @param height The Texture Height
-		* @param imgwidth The Image Width
-		* @param imgheight The Image Height
-		* @param UseMipmap Set if Texture has Mipmaps
-		* @param Channels The Texture number of channels.
-		* @param filepath The Texture File path
-		* @param ColorKey The Texture Color Key
-		* @param ClampMode The Texture Clamp Mode
-		* @param CompressedTexture The Texture was compressed on loading
-		* @param data The Texture (raw texture)
-		*/
 		void Create( const Uint32& texture, const eeUint& width, const eeUint& height, const eeUint& imgwidth, const eeUint& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize = 0, const Uint8* data = NULL );
 
 		std::string 	mFilepath;

@@ -418,17 +418,17 @@ bool cTexture::IsCompressed() const {
 	return 0 != ( mFlags & TEX_FLAG_COMPRESSED );
 }
 
-void cTexture::Draw( const eeFloat &x, const eeFloat &y, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color, const EE_BLEND_MODE &blend, const EE_RENDER_MODE &Effect, const bool &ScaleCentered, const eeRecti& texSector) {
-	DrawEx( x, y, 0, 0, Angle, Scale, Color, Color, Color, Color, blend, Effect, ScaleCentered, texSector);
+void cTexture::Draw( const eeFloat &x, const eeFloat &y, const eeFloat &Angle, const eeFloat &Scale, const eeColorA& Color, const EE_BLEND_MODE &Blend, const EE_RENDER_MODE &Effect, const bool &ScaleCentered, const eeRecti& texSector) {
+	DrawEx( x, y, 0, 0, Angle, Scale, Color, Color, Color, Color, Blend, Effect, ScaleCentered, texSector);
 }
 
-void cTexture::DrawFast( const eeFloat& x, const eeFloat& y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color, const EE_BLEND_MODE &blend, const eeFloat &width, const eeFloat &height ) {
+void cTexture::DrawFast( const eeFloat& x, const eeFloat& y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color, const EE_BLEND_MODE &Blend, const eeFloat &width, const eeFloat &height ) {
 	eeFloat w = width, h = height;
 	if (!w) w = (eeFloat)ImgWidth();
 	if (!h) h = (eeFloat)ImgHeight();
 
 	sBR->SetTexture( this );
-	sBR->SetBlendMode( blend );
+	sBR->SetBlendMode( Blend );
 
 	sBR->QuadsBegin();
 	sBR->QuadsSetColor( Color );

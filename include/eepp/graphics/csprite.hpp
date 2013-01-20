@@ -13,7 +13,7 @@ class EE_API cSprite {
 	public:
 		typedef cb::Callback2< void, Uint32, cSprite * > SpriteCallback;
 
-		/** @enum The events that can be reported by the Sprite */
+		/** @enum cSprite::SpriteEvents The events that can be reported by the Sprite */
 		enum SpriteEvents {
 			SPRITE_EVENT_LAST_FRAME,
 			SPRITE_EVENT_FIRST_FRAME,
@@ -24,10 +24,10 @@ class EE_API cSprite {
 		cSprite();
 
 		/** Creates an animated Sprite from a animation name. It will search for a pattern name.
+		* For example search for name "car" with extensions "png", i will try to find car00.png car01.png car02.png, and so on, it will continue if find something, otherwise it will stop ( it will always search at least for car00.png and car01.png ).
 		* @param name First part of the sub texture name
 		* @param extension Extension of the sub texture name ( if have one, otherwise is empty )
 		* @param SearchInTextureAtlas If you want only to search in a especific atlas ( NULL if you want to search in all atlases )
-		* @example Search for name "car" with extensions "png", i will try to find car00.png car01.png car02.png, and so on, it will continue if find something, otherwise it will stop ( it will always search at least for car00.png and car01.png ).
 		* @note Texture atlases saves the SubTextures names without extension by default.
 		* @see cTextureAtlasManager::GetSubTexturesByPattern
 */

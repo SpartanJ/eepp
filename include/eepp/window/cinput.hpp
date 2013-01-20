@@ -134,10 +134,10 @@ class EE_API cInput {
 		const Uint32& LastPressTrigger() const;
 
 		/** @return The current state as flags of the mouse press trigger
-			@example The usage is simple, to know if the left mouse click is pressed you need to check against the left mouse flag mask
-					 if ( myInput->PressTrigger() & EE_BUTTON_LMASK ) ...
 			@brief 	Triggers are used mostly for the UI components. They are simple to manage.
 					The mouse flags are defined in keycodes.hpp
+			For Example The usage is simple, to know if the left mouse click is pressed you need to check against the left mouse flag mask
+					 if ( myInput->PressTrigger() & EE_BUTTON_LMASK ) ...
 		*/
 		const Uint32& PressTrigger() const;
 

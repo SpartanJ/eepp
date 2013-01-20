@@ -6,7 +6,7 @@
 namespace EE { namespace Graphics {
 
 /** The Vertex Buffer OGL is the implementation of a Vertex Buffer without using the specific VBOs extensions from OpenGL.
-* @see cVertexBuffer
+	@see cVertexBuffer
 */
 class EE_API cVertexBufferOGL : public cVertexBuffer {
 	public:

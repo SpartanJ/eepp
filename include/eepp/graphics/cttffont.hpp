@@ -20,7 +20,7 @@ class EE_API cTTFFont : public cFont {
 		/** The destructor will not unload the texture from memory. If you want that you'll have to remove it manually ( cTextureFactory::instance()->Remove( MyFontInstance->GetTexId() ) ). */
 		virtual ~cTTFFont();
 
-		/** Load a True Type Font from path
+		/** Loads a True Type Font from path
 		* @param Filepath The TTF file path
 		* @param Size The Size Width and Height for the font.
 		* @param Style The Font Style
@@ -29,11 +29,12 @@ class EE_API cTTFFont : public cFont {
 		* @param FontColor The Font color (this is the texture font color, if you plan to use a custom color and use outline, set it )
 		* @param OutlineSize The Ouline Size
 		* @param OutlineColor The Outline Color
+		* @param AddPixelSeparator Indicates if separates the glyphs by a pixel to avoid problems with font scaling
 		* @return If success
 		*/
 		bool Load( const std::string& Filepath, const eeUint& Size, EE_TTF_FONT_STYLE Style = EE_TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true );
 
-		/** Load Font from pack
+		/** Loads a True Type Font from pack
 		* @param Pack Pointer to the pack instance
 		* @param FilePackPath The path of the file inside the pack
 		* @param Size The Size of the Font
@@ -43,11 +44,12 @@ class EE_API cTTFFont : public cFont {
 		* @param FontColor The Font color (this is the texture font color, if you plan to use a custom color and use outline, set it )
 		* @param OutlineSize The Ouline Size
 		* @param OutlineColor The Outline Color
+		* @param AddPixelSeparator Indicates if separates the glyphs by a pixel to avoid problems with font scaling
 		* @return If success
 		*/
 		bool LoadFromPack( cPack* Pack, const std::string& FilePackPath, const eeUint& Size, EE_TTF_FONT_STYLE Style = EE_TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true  );
 
-		/** Load a True Type Font from memory
+		/** Loads a True Type Font from memory
 		* @param TTFData The pointer to the data
 		* @param TTFDataSize The size of the data
 		* @param Size The Size of the Font
@@ -57,6 +59,7 @@ class EE_API cTTFFont : public cFont {
 		* @param FontColor The Font color (this is the texture font color, if you plan to use a custom color and use outline, set it )
 		* @param OutlineSize The Ouline Size
 		* @param OutlineColor The Outline Color
+		* @param AddPixelSeparator Indicates if separates the glyphs by a pixel to avoid problems with font scaling
 		* @return If success
 		*/
 		bool LoadFromMemory( Uint8* TTFData, const eeUint& TTFDataSize, const eeUint& Size, EE_TTF_FONT_STYLE Style = EE_TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true );

@@ -9,7 +9,7 @@ namespace EE { namespace Audio {
 
 class EE_API cSound {
 	public :
-		/** @enum Status The state of the sound */
+		/** @enum cSound::Status The state of the sound */
 		enum Status {
 			Stopped,
 			Paused,

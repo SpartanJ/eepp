@@ -5,8 +5,9 @@
 
 namespace EE { namespace Graphics {
 
-/** @brief The Vertex Buffer VBO class is the implementation of a Vertex Buffer using the GPU's VBO.
+/** @brief The Vertex Buffer VBO class is the implementation of a Vertex Buffer using the OpenGL VBOs.
 	@see cVertexBuffer
+	More information in http://en.wikipedia.org/wiki/Vertex_Buffer_Object
 */
 class EE_API cVertexBufferVBO : public cVertexBuffer {
 	public:

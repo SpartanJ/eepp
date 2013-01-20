@@ -15,6 +15,12 @@ class cRendererGL;
 class cRendererGL3;
 class cRendererGLES2;
 
+/** @brief This class is an abstraction of some OpenGL functionality.
+*	eepp have 3 different rendering pipelines: OpenGL 2, OpenGL 3 and OpenGL ES 2. This abstraction is to encapsulate this pipelines.
+*	eepp implements its own state machine to simulate fixed-pipeline commands with OpenGL 3 and OpenGL ES 2.
+*	Most of the commands can be found in the OpenGL documentation.
+*	This is only useful for advanced users that want some control of the OpenGL pipeline. It's mostly used internally by the engine.
+*/
 class EE_API cGL {
 	static cGL * ms_singleton;
 	public:

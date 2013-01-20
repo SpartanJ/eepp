@@ -52,6 +52,7 @@ T Line2<T>::GetAngle() {
 
 
 /** Determine if two lines are intersecting
+* @param line The line to intersect
 * @param X Optional Pointer returning the X point position of intersection
 * @param Y Optional Pointer returning the Y point position of intersection
 * @return True if the lines are intersecting
