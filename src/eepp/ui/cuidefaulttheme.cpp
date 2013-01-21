@@ -143,7 +143,7 @@ cUIMessageBox * cUIDefaultTheme::CreateMessageBox( UI_MSGBOX_TYPE Type, const St
 		MsgBoxParams.Flags |= UI_DRAW_SHADOW;
 		MsgBoxParams.WinFlags |= UI_WIN_DRAW_SHADOW;
 		MsgBoxParams.ButtonsPositionFixer.x = -2;
-		MsgBoxParams.TitleFontColor = eeColorA( 0, 0, 0, 255 );
+		MsgBoxParams.TitleFontColor = eeColorA( 230, 230, 230, 255 );
 	}
 
 	return eeNew( cUIMessageBox, ( MsgBoxParams ) );

@@ -135,6 +135,8 @@ class EE_API cUIMap : public cUIComplexControl {
 
 		virtual void OnAlphaChange();
 
+		virtual Uint32 OnDrag( const eeVector2i& Pos );
+
 		void ObjItemClick( const cUIEvent * Event );
 
 		void MapDraw();

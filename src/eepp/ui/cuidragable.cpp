@@ -64,13 +64,19 @@ void cUIDragable::Update() {
 		eeVector2i Pos( cUIManager::instance()->GetMousePos() );
 
 		if ( mDragPoint != Pos ) {
-			mPos += -( mDragPoint - Pos );
+			if ( OnDrag( Pos ) ) {
+				mPos += -( mDragPoint - Pos );
 
-			mDragPoint = Pos;
+				mDragPoint = Pos;
 
-			OnPosChange();
+				OnPosChange();
+			}
 		}
 	}
+}
+
+Uint32 cUIDragable::OnDrag( const eeVector2i& Pos ) {
+	return 1;
 }
 
 bool cUIDragable::DragEnable() const {

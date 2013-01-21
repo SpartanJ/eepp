@@ -34,11 +34,32 @@ cUIMap::cUIMap( const cUIComplexControl::CreateParams& Params, cUITheme * Theme,
 
 	mMap->SetDrawCallback( cb::Make0( this, &cUIMap::MapDraw ) );
 
+	mDragButton = EE_BUTTON_MMASK;
+	DragEnable( true );
+
 	UpdateScreenPos();
 }
 
 cUIMap::~cUIMap() {
 	eeSAFE_DELETE( mMap );
+}
+
+Uint32 cUIMap::OnDrag( const eeVector2i& Pos ) {
+
+	if (	( EDITING_OBJECT == mEditingMode && NULL != mSelObj ) ||
+			( EDITING_LIGHT == mEditingMode && NULL != mSelLight ) ) {
+		mDragPoint = Pos;
+		return 0;
+	}
+
+	eeVector2i nPos( -( mDragPoint - Pos ) );
+	eeVector2f nPosf( nPos.x, nPos.y );
+
+	mMap->Move( nPosf );
+
+	mDragPoint = Pos;
+
+	return 0;
 }
 
 void cUIMap::ReplaceMap( cMap * newMap ) {
