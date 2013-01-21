@@ -45,7 +45,9 @@
 #include <eepp/ui/cuimessagebox.hpp>
 #include <eepp/ui/cuitab.hpp>
 #include <eepp/ui/cuitabwidget.hpp>
-#include <eepp/ui/cuiaquatheme.hpp>
 #include <eepp/ui/tools/ctextureatlaseditor.hpp>
+
+#include <eepp/ui/cuiaquatheme.hpp>
+#include <eepp/ui/cuidefaulttheme.hpp>
 
 #endif

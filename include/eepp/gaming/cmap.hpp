@@ -218,6 +218,10 @@ class EE_API cMap {
 		void ForceHeadersOnLoad( eeSize mapSize, eeSize tileSize, Uint32 numLayers, Uint32 flags );
 
 		void DisableForcedHeaders();
+
+		void GridLinesColor( const eeColorA& Col );
+
+		const eeColorA& GridLinesColor() const;
 	protected:
 		class cForcedHeaders
 		{
@@ -266,6 +270,7 @@ class EE_API cMap {
 		void *			mData;
 		eeColorA		mTileOverColor;
 		eeColorA		mBackColor;
+		eeColorA		mGridLinesColor;
 		Uint8			mBackAlpha;
 		bool			mMouseOver;
 		std::string		mPath;

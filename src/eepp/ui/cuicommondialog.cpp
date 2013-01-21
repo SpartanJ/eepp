@@ -8,7 +8,7 @@
 namespace EE { namespace UI {
 
 #define CDLG_MIN_WIDTH 420
-#define CDLG_MIN_HEIGHT 267
+#define CDLG_MIN_HEIGHT 300
 
 cUICommonDialog::cUICommonDialog( const cUICommonDialog::CreateParams& Params ) :
 	cUIWindow( Params ),
@@ -43,10 +43,18 @@ cUICommonDialog::cUICommonDialog( const cUICommonDialog::CreateParams& Params ) 
 	TBox->Text( "Look in:" );
 
 	cUIPushButton::CreateParams ButtonParams;
-	ButtonParams.Parent( Container() );
-	ButtonParams.PosSet( Container()->Size().Width() - 86, Container()->Size().Height() - 54 );
-	ButtonParams.SizeSet( 80, 22 );
 	ButtonParams.Flags = UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_VALIGN_CENTER | UI_AUTO_SIZE;
+	ButtonParams.Parent( Container() );
+	ButtonParams.PosSet( Container()->Size().Width() - 86, Container()->Size().Height() - 24 );
+	ButtonParams.SizeSet( 80, 22 );
+	mButtonCancel = eeNew( cUIPushButton, ( ButtonParams ) );
+	mButtonCancel->Visible( true );
+	mButtonCancel->Enabled( true );
+	mButtonCancel->Text( "Cancel" );
+	mButtonCancel->Pos( eeVector2i( mButtonCancel->Pos().x, Container()->Size().Height() - mButtonCancel->Size().Height() - 2 ) );
+	mButtonCancel->UpdateAnchorsDistances();
+
+	ButtonParams.PosSet( mButtonCancel->Pos().x, mButtonCancel->Pos().y - mButtonCancel->Size().Height() );
 	mButtonOpen = eeNew( cUIPushButton, ( ButtonParams ) );
 	mButtonOpen->Visible( true );
 	mButtonOpen->Enabled( true );
@@ -55,12 +63,6 @@ cUICommonDialog::cUICommonDialog( const cUICommonDialog::CreateParams& Params ) 
 		mButtonOpen->Text( "Save" );
 	else
 		mButtonOpen->Text( "Open" );
-
-	ButtonParams.Pos.y = mButtonOpen->Pos().y + mButtonOpen->Size().Height() + 6;
-	mButtonCancel = eeNew( cUIPushButton, ( ButtonParams ) );
-	mButtonCancel->Visible( true );
-	mButtonCancel->Enabled( true );
-	mButtonCancel->Text( "Cancel" );
 
 	cUITextInput::CreateParams TInputParams;
 	TInputParams.Parent( Container() );
@@ -83,8 +85,16 @@ cUICommonDialog::cUICommonDialog( const cUICommonDialog::CreateParams& Params ) 
 
 	cUIListBox::CreateParams LBParams;
 	LBParams.Parent( Container() );
-	LBParams.PosSet( 6, 33 );
-	LBParams.Size = eeSize( Container()->Size().Width() - 12, Container()->Size().Height() - 92 );
+	LBParams.PosSet( 6, mButtonUp->Pos().y + mButtonUp->Size().Height() + 4 );
+	LBParams.Size = eeSize( Container()->Size().Width() - 12,
+							Container()->Size().Height() -
+								mButtonUp->Size().Height() -
+								mButtonUp->Pos().y -
+								mButtonOpen->Size().Height() -
+								mButtonCancel->Size().Height() -
+								8
+						);
+
 	LBParams.Flags = UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM | UI_CLIP_ENABLE;
 	LBParams.FontSelectedColor = eeColorA( 255, 255, 255, 255 );
 
@@ -124,7 +134,7 @@ cUICommonDialog::cUICommonDialog( const cUICommonDialog::CreateParams& Params ) 
 	DDLParams.Parent( Container() );
 	DDLParams.PosSet( TBox2->Pos().x + TBox2->Size().Width(), TBox2->Pos().y );
 	DDLParams.SizeSet( Container()->Size().Width() - mButtonCancel->Size().Width() - DDLParams.Pos.x - 20, 22 );
-	DDLParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT;
+	DDLParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_AUTO_SIZE;
 	DDLParams.PopUpToMainControl = true;
 	mFiletype = eeNew( cUIDropDownList, ( DDLParams ) );
 	mFiletype->Visible( true );

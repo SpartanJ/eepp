@@ -430,10 +430,32 @@ void cMapEditor::OnObjectModeSel( const cUIEvent * Event ) {
 }
 
 void cMapEditor::CreateUIMap() {
+	cUISkin * HScrollSkin = mTheme->GetByName( mTheme->Abbr() + "_" + "hscrollbar_bg" );
+	cUISkin * VScrollSkin = mTheme->GetByName( mTheme->Abbr() + "_" + "vscrollbar_bg" );
+
+	eeFloat ScrollH = 16;
+	eeFloat ScrollV = 16;
+
+	if ( NULL != HScrollSkin ) {
+		cSubTexture * tTex = HScrollSkin->GetSubTexture( cUISkinState::StateNormal );
+
+		if ( NULL != tTex ) {
+			ScrollH = tTex->Size().Height();
+		}
+	}
+
+	if ( NULL != VScrollSkin ) {
+		cSubTexture * tTex = VScrollSkin->GetSubTexture( cUISkinState::StateNormal );
+
+		if ( NULL != tTex ) {
+			ScrollV = tTex->Size().Height();
+		}
+	}
+
 	cUIComplexControl::CreateParams Params;
 	Params.Parent( mWinContainer );
 	Params.PosSet( 0, 0 );
-	Params.SizeSet( mWinContainer->Size().Width() - 220, mWinContainer->Size().Height() - 16 );
+	Params.SizeSet( mWinContainer->Size().Width() - 225 - ScrollV, mWinContainer->Size().Height() - ScrollH );
 
 	Params.Flags |= UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT;
 	mUIMap = eeNew( cUIMap, ( Params, mTheme ) );
@@ -449,10 +471,10 @@ void cMapEditor::CreateUIMap() {
 	mUIMap->SetAlertCb( cb::Make2( this, &cMapEditor::CreateAlert ) );
 	mUIMap->SetTileBox( mTileBox );
 
-	mMapHScroll = mTheme->CreateScrollBar( mWinContainer, eeSize( Params.Size.Width(), 15 ), eeVector2i( 0, Params.Size.Height() ), UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
+	mMapHScroll = mTheme->CreateScrollBar( mWinContainer, eeSize( Params.Size.Width(), 15 ), eeVector2i( 0, Params.Size.Height() ), UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_AUTO_SIZE );
 	mMapHScroll->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cMapEditor::OnScrollMapH ) );
 
-	mMapVScroll = mTheme->CreateScrollBar( mWinContainer, eeSize( 15, Params.Size.Height() ), eeVector2i( Params.Size.Width(), 0 ), UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM, true );
+	mMapVScroll = mTheme->CreateScrollBar( mWinContainer, eeSize( 15, Params.Size.Height() ), eeVector2i( Params.Size.Width(), 0 ), UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_AUTO_SIZE , true );
 	mMapVScroll->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cMapEditor::OnScrollMapV ) );
 
 	MapCreated();

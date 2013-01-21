@@ -35,6 +35,7 @@ cMap::cMap() :
 	mData( NULL ),
 	mTileOverColor( 255, 0, 0, 200 ),
 	mBackColor( 204, 204, 204, 255 ),
+	mGridLinesColor( 255, 255, 255 ,255 ),
 	mBackAlpha( 255 ),
 	mMouseOver( false ),
 	mScale( 1 ),
@@ -123,7 +124,7 @@ void cMap::CreateEmptyTile() {
 
 	if ( NULL == Tex ) {
 		Uint32 x, y;
-		eeColorA Col( 255, 255, 255, 255 );
+		eeColorA Col( mGridLinesColor );
 
 		cImage Img( mTileSize.Width(), mTileSize.Height(), 4 );
 
@@ -1453,6 +1454,14 @@ void cMap::BackColor( const eeColorA& col ) {
 
 Uint32 cMap::GetNewObjectId() {
 	return ++mLastObjId;
+}
+
+void cMap::GridLinesColor( const eeColorA& Col ) {
+	mGridLinesColor = Col;
+}
+
+const eeColorA& cMap::GridLinesColor() const {
+	return mGridLinesColor;
 }
 
 }}

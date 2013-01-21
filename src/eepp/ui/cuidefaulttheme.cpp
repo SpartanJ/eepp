@@ -1,4 +1,4 @@
-#include <eepp/ui/cuiaquatheme.hpp>
+#include <eepp/ui/cuidefaulttheme.hpp>
 #include <eepp/ui/cuiwindow.hpp>
 #include <eepp/ui/cuiwinmenu.hpp>
 #include <eepp/ui/cuipopupmenu.hpp>
@@ -9,14 +9,16 @@
 
 namespace EE { namespace UI {
 
-cUIAquaTheme::cUIAquaTheme( const std::string& Name, const std::string& Abbr, cFont * DefaultFont ) :
+cUIDefaultTheme::cUIDefaultTheme( const std::string& Name, const std::string& Abbr, cFont * DefaultFont ) :
 	cUITheme( Name, Abbr, DefaultFont )
 {
+	FontColor( eeColorA( 230, 230, 230, 255 ) );
+	FontOverColor( eeColorA( 255, 255, 255, 255 ) );
 	FontSelectedColor( eeColorA( 255, 255, 255, 255 ) );
-	FontShadowColor( eeColorA( 255, 255, 255, 150 ) );
+	FontShadowColor( eeColorA( 50, 50, 50, 150 ) );
 }
 
-cUIPopUpMenu * cUIAquaTheme::CreatePopUpMenu( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 RowHeight, eeRecti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
+cUIPopUpMenu * cUIDefaultTheme::CreatePopUpMenu( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 RowHeight, eeRecti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
 	cUIPopUpMenu::CreateParams MenuParams;
 	MenuParams.Parent( Parent );
 	MenuParams.PosSet( Pos );
@@ -32,12 +34,13 @@ cUIPopUpMenu * cUIAquaTheme::CreatePopUpMenu( cUIControl * Parent, const eeSize&
 		MenuParams.MinWidth = 100;
 		MenuParams.MinSpaceForIcons = 24;
 		MenuParams.MinRightMargin = 8;
+		MenuParams.FontColor = eeColorA( 230, 230, 230, 255 );
 	}
 
 	return eeNew( cUIPopUpMenu, ( MenuParams ) );
 }
 
-cUIProgressBar * cUIAquaTheme::CreateProgressBar( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool DisplayPercent, bool VerticalExpand, eeVector2f MovementSpeed, eeRectf FillerMargin ) {
+cUIProgressBar * cUIDefaultTheme::CreateProgressBar( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool DisplayPercent, bool VerticalExpand, eeVector2f MovementSpeed, eeRectf FillerMargin ) {
 	cUIProgressBar::CreateParams PBParams;
 	PBParams.Parent( Parent );
 	PBParams.PosSet( Pos );
@@ -49,7 +52,10 @@ cUIProgressBar * cUIAquaTheme::CreateProgressBar( cUIControl * Parent, const eeS
 	PBParams.FillerMargin = FillerMargin;
 
 	if ( UseDefaultThemeValues() ) {
+		PBParams.Flags |= UI_AUTO_SIZE;
 		PBParams.DisplayPercent = true;
+		PBParams.VerticalExpand = true;
+		PBParams.FillerMargin = eeRectf( 2, 2, 2, 2 );
 	}
 
 	cUIProgressBar * Ctrl = eeNew( cUIProgressBar, ( PBParams ) );
@@ -57,7 +63,7 @@ cUIProgressBar * cUIAquaTheme::CreateProgressBar( cUIControl * Parent, const eeS
 	Ctrl->Enabled( true );
 	return Ctrl;
 }
-cUIWinMenu * cUIAquaTheme::CreateWinMenu( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 MarginBetweenButtons, Uint32 ButtonMargin, Uint32 MenuHeight, Uint32 FirstButtonMargin ) {
+cUIWinMenu * cUIDefaultTheme::CreateWinMenu( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 MarginBetweenButtons, Uint32 ButtonMargin, Uint32 MenuHeight, Uint32 FirstButtonMargin ) {
 	cUIWinMenu::CreateParams WinMenuParams;
 	WinMenuParams.Parent( Parent );
 	WinMenuParams.PosSet( Pos );
@@ -78,7 +84,7 @@ cUIWinMenu * cUIAquaTheme::CreateWinMenu( cUIControl * Parent, const eeSize& Siz
 	return Ctrl;
 }
 
-cUIWindow * cUIAquaTheme::CreateWindow( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 WinFlags, eeSize MinWindowSize, Uint8 BaseAlpha ) {
+cUIWindow * cUIDefaultTheme::CreateWindow( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 WinFlags, eeSize MinWindowSize, Uint8 BaseAlpha ) {
 	cUIWindow::CreateParams WinParams;
 	WinParams.Parent( Parent );
 	WinParams.PosSet( Pos );
@@ -92,13 +98,13 @@ cUIWindow * cUIAquaTheme::CreateWindow( cUIControl * Parent, const eeSize& Size,
 		WinParams.Flags |= UI_DRAW_SHADOW;
 		WinParams.WinFlags |= UI_WIN_DRAW_SHADOW;
 		WinParams.ButtonsPositionFixer.x = -2;
-		WinParams.TitleFontColor = eeColorA( 0, 0, 0, 255 );
+		WinParams.TitleFontColor = eeColorA( 230, 230, 230, 255 );
 	}
 
 	return eeNew( cUIWindow, ( WinParams ) );
 }
 
-cUICommonDialog * cUIAquaTheme::CreateCommonDialog( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 WinFlags, eeSize MinWindowSize, Uint8 BaseAlpha, Uint32 CDLFlags, std::string DefaultFilePattern, std::string DefaultDirectory ) {
+cUICommonDialog * cUIDefaultTheme::CreateCommonDialog( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 WinFlags, eeSize MinWindowSize, Uint8 BaseAlpha, Uint32 CDLFlags, std::string DefaultFilePattern, std::string DefaultDirectory ) {
 	cUICommonDialog::CreateParams DLGParams;
 	DLGParams.Parent( Parent );
 	DLGParams.PosSet( Pos );
@@ -115,13 +121,13 @@ cUICommonDialog * cUIAquaTheme::CreateCommonDialog( cUIControl * Parent, const e
 		DLGParams.Flags |= UI_DRAW_SHADOW;
 		DLGParams.WinFlags |= UI_WIN_DRAW_SHADOW;
 		DLGParams.ButtonsPositionFixer.x = -2;
-		DLGParams.TitleFontColor = eeColorA( 0, 0, 0, 255 );
+		DLGParams.TitleFontColor = eeColorA( 230, 230, 230, 255 );
 	}
 
 	return eeNew( cUICommonDialog, ( DLGParams ) );
 }
 
-cUIMessageBox * cUIAquaTheme::CreateMessageBox( UI_MSGBOX_TYPE Type, const String& Message, Uint32 WinFlags, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, eeSize MinWindowSize, Uint8 BaseAlpha ) {
+cUIMessageBox * cUIDefaultTheme::CreateMessageBox( UI_MSGBOX_TYPE Type, const String& Message, Uint32 WinFlags, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, eeSize MinWindowSize, Uint8 BaseAlpha ) {
 	cUIMessageBox::CreateParams MsgBoxParams;
 	MsgBoxParams.Parent( Parent );
 	MsgBoxParams.PosSet( Pos );
@@ -143,7 +149,7 @@ cUIMessageBox * cUIAquaTheme::CreateMessageBox( UI_MSGBOX_TYPE Type, const Strin
 	return eeNew( cUIMessageBox, ( MsgBoxParams ) );
 }
 
-cUIComboBox * cUIAquaTheme::CreateComboBox( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, cUIListBox * ListBox ) {
+cUIComboBox * cUIDefaultTheme::CreateComboBox( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, cUIListBox * ListBox ) {
 	cUIComboBox::CreateParams ComboParams;
 	ComboParams.Parent( Parent );
 	ComboParams.PosSet( Pos );
@@ -163,7 +169,7 @@ cUIComboBox * cUIAquaTheme::CreateComboBox( cUIControl * Parent, const eeSize& S
 	return Ctrl;
 }
 
-cUIDropDownList * cUIAquaTheme::CreateDropDownList( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, cUIListBox * ListBox ) {
+cUIDropDownList * cUIDefaultTheme::CreateDropDownList( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, cUIListBox * ListBox ) {
 	cUIDropDownList::CreateParams DDLParams;
 	DDLParams.Parent( Parent );
 	DDLParams.PosSet( Pos );
@@ -184,7 +190,7 @@ cUIDropDownList * cUIAquaTheme::CreateDropDownList( cUIControl * Parent, const e
 }
 
 
-cUITabWidget * cUIAquaTheme::CreateTabWidget( cUIControl *Parent, const eeSize &Size, const eeVector2i &Pos, const Uint32 &Flags, const bool &TabsClosable, const bool &SpecialBorderTabs, const Int32 &TabSeparation, const Uint32 &MaxTextLength, const Uint32 &TabWidgetHeight, const Uint32 &TabTextAlign, const Uint32 &MinTabWidth, const Uint32 &MaxTabWidth ) {
+cUITabWidget * cUIDefaultTheme::CreateTabWidget( cUIControl *Parent, const eeSize &Size, const eeVector2i &Pos, const Uint32 &Flags, const bool &TabsClosable, const bool &SpecialBorderTabs, const Int32 &TabSeparation, const Uint32 &MaxTextLength, const Uint32 &TabWidgetHeight, const Uint32 &TabTextAlign, const Uint32 &MinTabWidth, const Uint32 &MaxTabWidth ) {
 	cUITabWidget::CreateParams TabWidgetParams;
 	TabWidgetParams.Parent( Parent );
 	TabWidgetParams.PosSet( Pos );
@@ -200,11 +206,28 @@ cUITabWidget * cUIAquaTheme::CreateTabWidget( cUIControl *Parent, const eeSize &
 	TabWidgetParams.MaxTabWidth = MaxTabWidth;
 
 	if ( UseDefaultThemeValues() ) {
-		TabWidgetParams.TabSeparation = -15;
-		TabWidgetParams.FontSelectedColor = eeColorA( 0, 0, 0, 255 );
+		TabWidgetParams.TabSeparation = -1;
+		TabWidgetParams.FontSelectedColor = eeColorA( 255, 255, 255, 255 );
 	}
 
 	cUITabWidget * Ctrl = eeNew( cUITabWidget, ( TabWidgetParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
+}
+
+cUITooltip * cUIDefaultTheme::CreateTooltip( cUIControl * TooltipOf, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags ) {
+	cUITooltip::CreateParams TooltipParams;
+	TooltipParams.Parent( Parent );
+	TooltipParams.PosSet( Pos );
+	TooltipParams.SizeSet( Size );
+	TooltipParams.Flags = Flags;
+
+	if ( UseDefaultThemeValues() ) {
+		TooltipParams.FontColor = eeColorA( 0, 0, 0, 255 );
+	}
+
+	cUITooltip * Ctrl = eeNew( cUITooltip, ( TooltipParams, TooltipOf ) );
 	Ctrl->Visible( true );
 	Ctrl->Enabled( true );
 	return Ctrl;

@@ -229,12 +229,19 @@ void cUIMapNew::OKClick( const cUIEvent * Event ) {
 			mUIMap->Map()->Create( eeSize( w, h ), ml, eeSize( tw, th ), Flags, mUIMap->Map()->ViewSize() );
 			mUIMap->Map()->BaseColor( mUIBaseColor->Background()->Color() );
 		} else {
-			std::string path( mUIMap->Map()->Path() );
+			std::string mapPath( Sys::GetTempPath() + "temp.eepp.map.eem" );
+			mUIMap->Map()->Save( mapPath );
+
 			cMap * Map = eeNew( cMap, () );
+			Map->BackColor( eeColorA( 100, 100, 100, 100 ) );
+			Map->GridLinesColor( eeColorA( 150, 150, 150, 150 ) );
 			Map->ForceHeadersOnLoad( eeSize( w, h ), eeSize( tw, th ), ml, Flags );
-			Map->Load( path );
+			Map->Load( mapPath );
 			Map->DisableForcedHeaders();
+
 			mUIMap->ReplaceMap( Map );
+
+			FileSystem::FileRemove( mapPath );
 		}
 
 		if ( mNewMapCb.IsSet() )

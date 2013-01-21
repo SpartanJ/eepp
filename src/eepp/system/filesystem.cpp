@@ -137,6 +137,10 @@ bool FileSystem::FileWrite( const std::string& filepath, const std::vector<Uint8
 	return FileWrite( filepath, reinterpret_cast<const Uint8*> ( &data[0] ), (Uint32)data.size() );
 }
 
+bool FileSystem::FileRemove( const std::string& filepath ) {
+	return 0 == remove( filepath.c_str() );
+}
+
 Uint32 FileSystem::FileGetModificationDate( const std::string& Filepath ) {
 	struct stat st;
 	int res = stat( Filepath.c_str(), &st );

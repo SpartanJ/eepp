@@ -1,4 +1,5 @@
 #include <eepp/system/sys.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <ctime>
 #include <cstdlib>
 #include <climits>
@@ -26,6 +27,7 @@
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	#include <windows.h>
 	#undef GetDiskFreeSpace
+	#undef GetTempPath
 #elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_ANDROID
 	#include <libgen.h>
 	#include <unistd.h>
@@ -572,6 +574,38 @@ std::string Sys::GetConfigPath( std::string appname ) {
     #endif
 
 	return std::string( path );
+}
+
+std::string Sys::GetTempPath() {
+	char path[EE_MAX_CFG_PATH_LEN];
+
+	#if EE_PLATFORM == EE_PLATFORM_WIN
+		DWORD dwRetVal = GetTempPathA(EE_MAX_CFG_PATH_LEN, path);
+
+		if ( 0 <= dwRetVal || dwRetVal > EE_MAX_CFG_PATH_LEN ) {
+			return std::string( "C:\\WINDOWS\\TEMP\\" );
+		}
+	#elif EE_PLATFORM == EE_PLATFORM_ANDROID
+		if ( NULL != Window::cEngine::instance() ) {
+			String::StrCopy( path, Window::cEngine::instance()->GetCurrentWindow()->GetInternalStoragePath().c_str(), EE_MAX_CFG_PATH_LEN );
+		} else {
+			String::StrCopy( path, "/tmp", EE_MAX_CFG_PATH_LEN );
+		}
+	#else
+		char * tmpdir = getenv("TMPDIR");
+
+		if ( NULL != tmpdir ) {
+			String::StrCopy( path, tmpdir, EE_MAX_CFG_PATH_LEN );
+		} else {
+			String::StrCopy( path, "/tmp", EE_MAX_CFG_PATH_LEN );
+		}
+	#endif
+
+	std::string rpath( path );
+
+	FileSystem::DirPathAddSlashAtEnd( rpath );
+
+	return rpath;
 }
 
 eeInt Sys::GetCPUCount() {

@@ -139,13 +139,13 @@ void cEETest::Init() {
 	}
 }
 
-void cEETest::CreateAquaTextureAtlas() {
+void cEETest::CreateUIThemeTextureAtlas() {
 	#if !defined( EE_DEBUG ) || defined( EE_GLES )
 	return;
 	#endif
 
-	std::string tgpath( MyPath + "aquata/aqua" );
-	std::string Path( MyPath + "aqua" );
+	std::string tgpath( MyPath + "uithemeta/uitheme" );
+	std::string Path( MyPath + "uitheme" );
 
 	if ( !FileSystem::FileExists( tgpath + EE_TEXTURE_ATLAS_EXTENSION ) ) {
 		cTexturePacker tp( 256, 256, true, 2 );
@@ -255,22 +255,22 @@ void cEETest::OnShowMenu( const cUIEvent * Event ) {
 void cEETest::CreateUI() {
 	cTimeElapsed TE;
 
-	CreateAquaTextureAtlas();
+	CreateUIThemeTextureAtlas();
 
 	Log->Writef( "Texture Atlas Loading Time: %f ms.", TE.ElapsedSinceStart() );
 
 	cUIManager::instance()->Init(); //UI_MANAGER_HIGHLIGHT_FOCUS
 
-	//mTheme = cUITheme::LoadFromPath( eeNew( cUIAquaTheme, ( "aqua", "aqua" ) ), MyPath + "aqua/" );
+	//mTheme = cUITheme::LoadFromPath( eeNew( cUIDefaultTheme, ( "uitheme", "uitheme" ) ), MyPath + "uitheme/" );
 
-	cTextureAtlasLoader tgl( MyPath + "aquata/aqua" + EE_TEXTURE_ATLAS_EXTENSION );
+	cTextureAtlasLoader tgl( MyPath + "uithemeta/uitheme" + EE_TEXTURE_ATLAS_EXTENSION );
 
-	mTheme = cUITheme::LoadFromTextureAtlas( eeNew( cUIAquaTheme, ( "aqua", "aqua" ) ), cTextureAtlasManager::instance()->GetByName( "aqua" ) );
+	mTheme = cUITheme::LoadFromTextureAtlas( eeNew( cUIDefaultTheme, ( "uitheme", "uitheme" ) ), cTextureAtlasManager::instance()->GetByName( "uitheme" ) );
 
 	cUIThemeManager::instance()->Add( mTheme );
 	cUIThemeManager::instance()->DefaultEffectsEnabled( true );
 	cUIThemeManager::instance()->DefaultFont( TTF );
-	cUIThemeManager::instance()->DefaultTheme( "aqua" );
+	cUIThemeManager::instance()->DefaultTheme( "uitheme" );
 
 	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
@@ -403,15 +403,7 @@ void cEETest::CreateUI() {
 	mScrollBar->Enabled( true );
 	mScrollBar->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cEETest::OnValueChange ) );
 
-	cUIProgressBar::CreateParams PBParams;
-	PBParams.Parent( C );
-	PBParams.PosSet( 20, 197 );
-	PBParams.Size = eeSize( 200, 16 );
-	PBParams.DisplayPercent = true;
-	PBParams.MovementSpeed = eeVector2f( -64, 0 );
-	mProgressBar = eeNew( cUIProgressBar, ( PBParams ) );
-	mProgressBar->Visible( true );
-	mProgressBar->Enabled( true );
+	mProgressBar = mTheme->CreateProgressBar( C, eeSize( 200, 20 ), eeVector2i( 20, 190 ) );
 
 	TextParams.PosSet( 20, 5 );
 	mTextBoxValue = eeNew( cUITextBox, ( TextParams ) );
@@ -1144,12 +1136,13 @@ void cEETest::Screen2() {
 
 	PR.FillMode( EE_DRAW_LINE );
 	PR.DrawCircle( eeVector2f( Mousef.x, Mousef.y ), 80.f, (Uint32)(Ang/3) );
-
 	PR.DrawTriangle( eeTriangle2f( eeVector2f( Mousef.x, Mousef.y - 10.f ), eeVector2f( Mousef.x - 10.f, Mousef.y + 10.f ), eeVector2f( Mousef.x + 10.f, Mousef.y + 10.f ) ) );
 	PR.DrawLine( eeLine2f( eeVector2f(Mousef.x - 80.f, Mousef.y - 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y + 80.f) ) );
 	PR.DrawLine( eeLine2f( eeVector2f(Mousef.x - 80.f, Mousef.y + 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y - 80.f) ) );
 	PR.DrawLine( eeLine2f( eeVector2f((eeFloat)mWindow->GetWidth(), 0.f), eeVector2f( 0.f, (eeFloat)mWindow->GetHeight() ) ) );
+	PR.FillMode( EE_DRAW_FILL );
 	PR.DrawQuad( eeQuad2f( eeVector2f(0.f, 0.f), eeVector2f(0.f, 100.f), eeVector2f(150.f, 150.f), eeVector2f(200.f, 150.f) ), eeColorA(220, 240, 0, 125), eeColorA(100, 0, 240, 125), eeColorA(250, 50, 25, 125), eeColorA(50, 150, 150, 125) );
+	PR.FillMode( EE_DRAW_LINE );
 	PR.DrawRectangle( eeRectf( eeVector2f( Mousef.x - 80.f, Mousef.y - 80.f ), eeSizef( 160.f, 160.f ) ), 45.f );
 	PR.DrawLine( eeLine2f( eeVector2f(0.f, 0.f), eeVector2f( (eeFloat)mWindow->GetWidth(), (eeFloat)mWindow->GetHeight() ) ) );
 

@@ -216,7 +216,7 @@ class cEETest : private cThread {
 		void OnWinMouseUp( const cUIEvent * Event );
 		void CreateDecoratedWindow();
 		void CreateWinMenu();
-		void CreateAquaTextureAtlas();
+		void CreateUIThemeTextureAtlas();
 
 		cUIControlAnim * C;
 		cUIScrollBar * mScrollBar;

@@ -59,6 +59,9 @@ class EE_API FileSystem {
 		/** Write a file in binary mode and close it. */
 		static bool FileWrite( const std::string& filepath, const std::vector<Uint8>& data );
 
+		/** Deletes a file from the file system. */
+		static bool FileRemove( const std::string& filepath );
+
 		/** @return The modification date of the file */
 		static Uint32 FileGetModificationDate( const std::string& Filepath );
 

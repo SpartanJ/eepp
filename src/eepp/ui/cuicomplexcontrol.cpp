@@ -87,10 +87,18 @@ void cUIComplexControl::CreateTooltip() {
 	if ( NULL != mTooltip )
 		return;
 
-	cUITooltip::CreateParams Params;
-	Params.Parent( cUIManager::instance()->MainControl() );
-	Params.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_PADDING | UI_AUTO_SIZE;
-	mTooltip = eeNew( cUITooltip, ( Params, this ) );
+	cUITheme * tTheme = cUIThemeManager::instance()->DefaultTheme();
+
+	if ( NULL != tTheme ) {
+		mTooltip = tTheme->CreateTooltip( this, cUIManager::instance()->MainControl() );
+		mTooltip->Visible( false );
+		mTooltip->Enabled( false );
+	} else {
+		cUITooltip::CreateParams Params;
+		Params.Parent( cUIManager::instance()->MainControl() );
+		Params.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_PADDING | UI_AUTO_SIZE;
+		mTooltip = eeNew( cUITooltip, ( Params, this ) );
+	}
 }
 
 void cUIComplexControl::TooltipText( const String& Text ) {

@@ -29,6 +29,9 @@ cUIMap::cUIMap( const cUIComplexControl::CreateParams& Params, cUITheme * Theme,
 		mMap = eeNew( cMap, () );
 	}
 
+	mMap->BackColor( eeColorA( 100, 100, 100, 100 ) );
+	mMap->GridLinesColor( eeColorA( 150, 150, 150, 150 ) );
+
 	mMap->SetDrawCallback( cb::Make0( this, &cUIMap::MapDraw ) );
 
 	UpdateScreenPos();

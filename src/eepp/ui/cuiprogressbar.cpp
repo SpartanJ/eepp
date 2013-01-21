@@ -54,6 +54,10 @@ void cUIProgressBar::Draw() {
 void cUIProgressBar::SetTheme( cUITheme * Theme ) {
 	cUIControl::SetThemeControl( Theme, "progressbar" );
 
+	if ( mFlags & UI_AUTO_SIZE ) {
+		Size( mSize.x, GetSkinSize().Height() );
+	}
+
 	cUISkin * tSkin = Theme->GetByName( Theme->Abbr() + "_progressbar_filler" );
 
 	if ( tSkin ) {
@@ -62,10 +66,13 @@ void cUIProgressBar::SetTheme( cUITheme * Theme ) {
 		if ( NULL != tSubTexture ) {
 			eeSAFE_DELETE( mParallax );
 
-			eeFloat Height = (eeFloat)mSize.Height();
+			eeFloat Height = (eeFloat)GetSkinSize().Height();
 
 			if ( !mVerticalExpand )
 				Height = (eeFloat)tSubTexture->RealSize().Height();
+
+			if ( Height > mSize.Height() )
+				Height = mSize.Height();
 
 			mParallax = eeNew( cScrollParallax, ( tSubTexture, eeVector2f( mScreenPos.x + mFillerMargin.Left, mScreenPos.y + mFillerMargin.Top ), eeSizef( ( ( mSize.Width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom ), mSpeed ) );
 		}
@@ -86,6 +93,9 @@ void cUIProgressBar::OnSizeChange() {
 
 		if ( !mVerticalExpand && mParallax->SubTexture() )
 			Height = (eeFloat)mParallax->SubTexture()->RealSize().Height();
+
+		if ( Height > mSize.Height() )
+			Height = mSize.Height();
 
 		mParallax->Size( eeSizef( ( ( mSize.Width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom ) );
 	}
