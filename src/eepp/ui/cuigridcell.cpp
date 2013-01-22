@@ -163,4 +163,10 @@ void cUIGridCell::AutoSize() {
 	Size( MyParent->mTotalWidth, MyParent->mRowHeight );
 }
 
+void cUIGridCell::OnStateChange() {
+	if ( Selected() && mSkinState->GetState() != cUISkinState::StateSelected ) {
+		SetSkinState( cUISkinState::StateSelected );
+	}
+}
+
 }}

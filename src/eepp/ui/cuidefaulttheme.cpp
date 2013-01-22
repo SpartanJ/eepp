@@ -224,7 +224,9 @@ cUITooltip * cUIDefaultTheme::CreateTooltip( cUIControl * TooltipOf, cUIControl 
 	TooltipParams.Flags = Flags;
 
 	if ( UseDefaultThemeValues() ) {
+		TooltipParams.Flags &= ~UI_AUTO_PADDING;
 		TooltipParams.FontColor = eeColorA( 0, 0, 0, 255 );
+		TooltipParams.Padding = eeRecti( 4, 6, 4, 6 );
 	}
 
 	cUITooltip * Ctrl = eeNew( cUITooltip, ( TooltipParams, TooltipOf ) );

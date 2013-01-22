@@ -23,7 +23,9 @@ enum EEGL_extensions  {
 	EEGL_EXT_texture_compression_s3tc,
 	EEGL_ARB_vertex_buffer_object,
 	EEGL_ARB_vertex_array_object,
-	EEGL_EXT_blend_func_separate
+	EEGL_EXT_blend_func_separate,
+	EEGL_IMG_texture_compression_pvrtc,
+	EEGL_OES_compressed_ETC1_RGB8_texture
 };
 
 enum EEGL_version {

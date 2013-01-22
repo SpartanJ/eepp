@@ -140,6 +140,24 @@ void cGL::Init() {
 		WriteExtension( EEGL_ARB_vertex_buffer_object		, IsExtension( "GL_ARB_vertex_buffer_object" )		);
 		WriteExtension( EEGL_ARB_vertex_array_object		, IsExtension( "GL_ARB_vertex_array_object" )		);
 		WriteExtension( EEGL_EXT_blend_func_separate		, IsExtension( "GL_EXT_blend_func_separate" )		);
+
+	}
+
+	WriteExtension( EEGL_IMG_texture_compression_pvrtc		, IsExtension( "GL_IMG_texture_compression_pvrtc" ) );
+	WriteExtension( EEGL_OES_compressed_ETC1_RGB8_texture	, IsExtension( "GL_OES_compressed_ETC1_RGB8_texture" ) );
+
+	if ( !IsExtension( EEGL_EXT_texture_compression_s3tc ) ) {
+		WriteExtension(	EEGL_EXT_texture_compression_s3tc	, IsExtension( "GL_OES_texture_compression_S3TC" ) );
+	}
+
+	if ( !IsExtension( EEGL_EXT_framebuffer_object ) ) {
+		WriteExtension(	EEGL_EXT_framebuffer_object			, IsExtension( "GL_OES_framebuffer_object" ) );
+	}
+
+	if ( !IsExtension( EEGL_ARB_texture_non_power_of_two ) ) {
+		WriteExtension( EEGL_ARB_texture_non_power_of_two	, IsExtension( "GL_IMG_texture_npot" )	||
+															  IsExtension( "GL_OES_texture_npot" )	||
+															  IsExtension( "GL_APPLE_texture_2D_limited_npot" ) );
 	}
 }
 

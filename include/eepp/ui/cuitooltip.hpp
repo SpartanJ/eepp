@@ -32,6 +32,7 @@ class EE_API cUITooltip : public cUIControlAnim {
 				cFont * 	Font;
 				eeColorA 	FontColor;
 				eeColorA 	FontShadowColor;
+				eeRecti		Padding;
 		};
 
 		cUITooltip( cUITooltip::CreateParams& Params, cUIControl * TooltipOf );

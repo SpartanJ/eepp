@@ -111,6 +111,10 @@ bool cUIListBoxItem::Selected() const {
 void cUIListBoxItem::OnStateChange() {
 	cUIListBox * LBParent = reinterpret_cast<cUIListBox*> ( Parent()->Parent() );
 
+	if ( Selected() && mSkinState->GetState() != cUISkinState::StateSelected ) {
+		SetSkinState( cUISkinState::StateSelected );
+	}
+
 	if ( mSkinState->GetState() == cUISkinState::StateSelected ) {
 		Color( LBParent->FontSelectedColor() );
 	} else if ( mSkinState->GetState() == cUISkinState::StateMouseEnter ) {

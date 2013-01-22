@@ -28,7 +28,7 @@ class EE_API cUIGridCell : public cUIComplexControl {
 
 		void Select();
 
-		Uint32 OnMessage( const cUIMessage * Msg );
+		virtual Uint32 OnMessage( const cUIMessage * Msg );
 
 		void AutoSize();
 	protected:
@@ -41,7 +41,9 @@ class EE_API cUIGridCell : public cUIComplexControl {
 
 		void FixCell();
 
-		Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags );
+
+		virtual void OnStateChange();
 };
 
 }}

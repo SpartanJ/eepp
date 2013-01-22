@@ -9,6 +9,7 @@ cUITooltip::cUITooltip( cUITooltip::CreateParams& Params, cUIControl * TooltipOf
 	mFontColor( Params.FontColor ),
 	mFontShadowColor( Params.FontShadowColor ),
 	mAlignOffset( 0.f, 0.f ),
+	mPadding( Params.Padding ),
 	mTooltipTime( 0.f ),
 	mTooltipOf( TooltipOf )
 {

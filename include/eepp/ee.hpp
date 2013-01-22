@@ -40,23 +40,20 @@
 						EE::Gaming Not commented at all.
 
 	@TODO Improve Premake4 support. It should be really easy to compile eepp in Windows and OS X ( Linux is always easy thanks to package managers ).
-				STATE:	Seems to be done, need more testing.
+				STATE:	Seems to be done, needs more testing.
 
 	@TODO Add more commented examples, showing at least the basic usage of the engine ( 10 or more examples at least ).
 				STATE:	2 examples available. ( 20 % )
 
 	@TODO Improve the map editor ( add triggers, tiles selection to copy paste in other zones of the map, undo/redo actions ).
-				STATE:	Features are implemented.
-						Copy-Paste will be moved for a middle to long plan,
+				STATE:	Needs at least to reoffset tiles and objects for the map resizing.
 						Tile selection i'm not decided yet.
+						Copy-Paste will be moved for a middle to long term plan.
 
 	@TODO Add PVRTC and ETC support.
 				STATE:	Not started.
 
 	Middle-term plans:
-
-	@TODO Create a default UI Theme for the engine ( get rid off the ugly Aqua Theme ).
-				STATE:	Not started, i need an... artist.
 
 	@TODO Add Networking support.
 				STATE:	I'll use SFML network adapted to the engine coding style.

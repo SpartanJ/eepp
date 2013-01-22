@@ -14,11 +14,17 @@ cUIDropDownList::cUIDropDownList( cUIDropDownList::CreateParams& Params ) :
 	ApplyDefaultTheme();
 
 	if ( NULL == mListBox ) {
-		cUIListBox::CreateParams LBParams;
-		LBParams.Size 				= eeSize( mSize.Width(), mMinNumVisibleItems * mSize.Height() );
-		LBParams.Flags 				= UI_CLIP_ENABLE | UI_AUTO_PADDING;
-		LBParams.FontSelectedColor	= eeColorA( 255, 255, 255, 255 );
-		mListBox = eeNew( cUIListBox, ( LBParams ) );
+		cUITheme * Theme = cUIThemeManager::instance()->DefaultTheme();
+
+		if ( NULL != Theme ) {
+			mListBox = Theme->CreateListBox( NULL, eeSize( mSize.Width(), mMinNumVisibleItems * mSize.Height() ) );
+		} else {
+			cUIListBox::CreateParams LBParams;
+			LBParams.Size 				= eeSize( mSize.Width(), mMinNumVisibleItems * mSize.Height() );
+			LBParams.Flags 				= UI_CLIP_ENABLE | UI_AUTO_PADDING;
+			LBParams.FontSelectedColor	= eeColorA( 255, 255, 255, 255 );
+			mListBox = eeNew( cUIListBox, ( LBParams ) );
+		}
 	}
 
 	mListBox->Enabled( false );
