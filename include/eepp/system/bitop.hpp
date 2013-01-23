@@ -34,6 +34,85 @@ class BitOp {
 	static inline void SetBitFlagValue( Uint32 * Key, Uint32 Val, Uint32 BitWrite ) {
 		( BitWrite ) ? ( * Key ) |= Val : ( * Key ) &= ~Val;
 	}
+
+	/** Swap the bytes order for a 16 bit value */
+	static inline Uint16 Swap16( Uint16 Key ) {
+		return static_cast<Uint16>( ( Key << 8 ) | ( Key >> 8 ) );
+	}
+
+	/** Swap the bytes order for a 32 bit value */
+	static inline Uint32 Swap32( Uint32 Key ) {
+		return static_cast<Uint32>( ( Key << 24 ) | ( ( Key << 8 ) & 0x00FF0000 ) | ( ( Key >> 8 ) & 0x0000FF00 ) | ( Key >> 24 ) );
+	}
+
+	/** Swap the bytes order for a 64 bit value */
+	static inline Uint64 Swap64( Uint64 Key ) {
+		Uint32 hi, lo;
+
+		/* Separate into high and low 32-bit values and swap them */
+		lo = static_cast<Uint32> ( Key & 0xFFFFFFFF );
+		Key >>= 32;
+		hi = static_cast<Uint32>( Key & 0xFFFFFFFF );
+		Key = Swap32( lo );
+		Key	<<= 32;
+		Key |= Swap32( hi );
+
+		return Key;
+	}
+
+	/** Swap little endian 16 bit value to big endian */
+	static inline Uint32 SwapBE16( Uint32 Key ) {
+		#if EE_ENDIAN == EE_LITTLE_ENDIAN
+			return Swap16( Key );
+		#else
+			return Key;
+		#endif
+	}
+
+	/** Swap big endian 16 bit value to little endian */
+	static inline Uint32 SwapLE16( Uint32 Key ) {
+		#if EE_ENDIAN == EE_BIG_ENDIAN
+			return Swap16( Key );
+		#else
+			return Key;
+		#endif
+	}
+
+	/** Swap little endian 32 bit value to big endian */
+	static inline Uint32 SwapBE32( Uint32 Key ) {
+		#if EE_ENDIAN == EE_LITTLE_ENDIAN
+			return Swap32( Key );
+		#else
+			return Key;
+		#endif
+	}
+
+	/** Swap big endian 32 bit value to little endian */
+	static inline Uint32 SwapLE32( Uint32 Key ) {
+		#if EE_ENDIAN == EE_BIG_ENDIAN
+			return Swap32( Key );
+		#else
+			return Key;
+		#endif
+	}
+
+	/** Swap little endian 64 bit value to big endian */
+	static inline Uint32 SwapBE64( Uint32 Key ) {
+		#if EE_ENDIAN == EE_LITTLE_ENDIAN
+			return Swap64( Key );
+		#else
+			return Key;
+		#endif
+	}
+
+	/** Swap big endian 64 bit value to little endian */
+	static inline Uint32 SwapLE64( Uint32 Key ) {
+		#if EE_ENDIAN == EE_BIG_ENDIAN
+			return Swap64( Key );
+		#else
+			return Key;
+		#endif
+	}
 };
 
 }

@@ -56,6 +56,7 @@ cUIProgressBar * cUIDefaultTheme::CreateProgressBar( cUIControl * Parent, const 
 		PBParams.DisplayPercent = true;
 		PBParams.VerticalExpand = true;
 		PBParams.FillerMargin = eeRectf( 2, 2, 2, 2 );
+		PBParams.MovementSpeed = eeVector2f( 32, 0 );
 	}
 
 	cUIProgressBar * Ctrl = eeNew( cUIProgressBar, ( PBParams ) );
@@ -208,6 +209,9 @@ cUITabWidget * cUIDefaultTheme::CreateTabWidget( cUIControl *Parent, const eeSiz
 	if ( UseDefaultThemeValues() ) {
 		TabWidgetParams.TabSeparation = -1;
 		TabWidgetParams.FontSelectedColor = eeColorA( 255, 255, 255, 255 );
+		TabWidgetParams.DrawLineBelowTabs = true;
+		TabWidgetParams.LineBelowTabsColor = eeColorA( 0, 0, 0, 255 );
+		TabWidgetParams.LineBewowTabsYOffset = -1;
 	}
 
 	cUITabWidget * Ctrl = eeNew( cUITabWidget, ( TabWidgetParams ) );

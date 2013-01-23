@@ -133,7 +133,7 @@ void cInputSFML::Update() {
 
 				EEEvent.Type = InputEvent::KeyDown;
 				EEEvent.key.keysym.sym = 0;
-				EEEvent.key.keysym.mod = 0xFFFFFFFF;
+				EEEvent.key.keysym.mod = eeINDEX_NOT_FOUND;
 				EEEvent.key.keysym.unicode = event.text.unicode;
 
 				break;

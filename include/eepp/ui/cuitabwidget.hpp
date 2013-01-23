@@ -24,7 +24,9 @@ class EE_API cUITabWidget : public cUIComplexControl {
 					MinTabWidth( 32 ),
 					MaxTabWidth( 210 ),
 					TabsClosable( false ),
-					SpecialBorderTabs( false )
+					SpecialBorderTabs( false ),
+					DrawLineBelowTabs( false ),
+					LineBewowTabsYOffset( 0 )
 				{
 					Flags = ( UI_VALIGN_BOTTOM | UI_HALIGN_LEFT | UI_ANCHOR_LEFT | UI_ANCHOR_TOP );
 
@@ -57,6 +59,10 @@ class EE_API cUITabWidget : public cUIComplexControl {
 				Uint32		MaxTabWidth;
 				bool		TabsClosable;
 				bool		SpecialBorderTabs; //! Indicates if the periferical tabs ( the left and right border tab ) are different from the central tabs.
+				bool		DrawLineBelowTabs;
+				eeColorA	LineBelowTabsColor;
+				Int32		LineBewowTabsYOffset;
+
 		};
 
 		cUITabWidget( cUITabWidget::CreateParams& Params );
@@ -98,6 +104,8 @@ class EE_API cUITabWidget : public cUIComplexControl {
 		cUIComplexControl * TabContainer() const;
 
 		cUIComplexControl * ControlContainer() const;
+
+		virtual void Draw();
 	protected:
 		friend class cUITab;
 
@@ -115,6 +123,9 @@ class EE_API cUITabWidget : public cUIComplexControl {
 		Uint32					mMaxTabWidth;
 		bool					mTabsClosable;
 		bool					mSpecialBorderTabs;
+		bool					mDrawLineBelowTabs;
+		eeColorA				mLineBelowTabsColor;
+		Int32					mLineBewowTabsYOffset;
 
 		std::deque<cUITab*>		mTabs;
 		cUITab *				mTabSelected;

@@ -21,10 +21,13 @@ cUISkin::cUISkin( const std::string& Name, const Uint32& Type ) :
 	mNameHash( String::Hash( mName ) ),
 	mTheme(NULL)
 {
-	mColorDefault	= 0xFFFFFFFF;
+	eeColorA tColor( 255, 255, 255, 255 );
 
-	for ( Int32 i = 0; i < cUISkinState::StateCount; i++ )
-		mColor[ i ] = eeColorA( 255, 255, 255, 255 );
+	mColorDefault	= tColor.GetValue();
+
+	for ( Int32 i = 0; i < cUISkinState::StateCount; i++ ) {
+		mColor[ i ] = tColor;
+	}
 }
 
 cUISkin::~cUISkin() {

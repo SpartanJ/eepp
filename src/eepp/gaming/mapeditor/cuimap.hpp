@@ -32,6 +32,7 @@ class EE_API cUIMap : public cUIComplexControl {
 		typedef cb::Callback2<void, Uint32, eePolygon2f> ObjAddCb;
 		typedef cb::Callback2<cUIMessageBox*, const String&, const String&> AlertCb;
 		typedef cb::Callback0<void> OnMapLoadCb;
+		typedef cb::Callback0<void> UpdateScrollCb;
 
 		cUIMap( const cUIComplexControl::CreateParams& Params, cUITheme * Theme, cMap * Map = NULL );
 
@@ -66,6 +67,8 @@ class EE_API cUIMap : public cUIComplexControl {
 		void SetAddObjectCallback( ObjAddCb Cb );
 
 		void SetAlertCb( AlertCb Cb );
+
+		void SetUpdateScrollCb( UpdateScrollCb Cb );
 
 		void ClearLights();
 
@@ -124,6 +127,8 @@ class EE_API cUIMap : public cUIComplexControl {
 
 		cUITextBox *		mTileBox;
 		eeVector2i			mLastMouseTilePos;
+
+		UpdateScrollCb		mUpdateScrollCb;
 
 		virtual Uint32 OnMessage( const cUIMessage * Msg );
 

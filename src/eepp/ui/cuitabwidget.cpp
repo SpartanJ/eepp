@@ -1,5 +1,6 @@
 #include <eepp/ui/cuitabwidget.hpp>
 #include <eepp/ui/cuimanager.hpp>
+#include <eepp/graphics/renderer/cgl.hpp>
 
 namespace EE { namespace UI {
 
@@ -17,6 +18,9 @@ cUITabWidget::cUITabWidget( cUITabWidget::CreateParams& Params ) :
 	mMaxTabWidth( Params.MaxTabWidth ),
 	mTabsClosable( Params.TabsClosable ),
 	mSpecialBorderTabs( Params.SpecialBorderTabs ),
+	mDrawLineBelowTabs( Params.DrawLineBelowTabs ),
+	mLineBelowTabsColor( Params.LineBelowTabsColor ),
+	mLineBewowTabsYOffset( Params.LineBewowTabsYOffset ),
 	mTabSelected( NULL ),
 	mTabSelectedIndex( eeINDEX_NOT_FOUND )
 {
@@ -84,6 +88,34 @@ void cUITabWidget::SetContainerSize() {
 	mTabContainer->Size( mSize.Width(), mTabWidgetHeight );
 	mCtrlContainer->Pos( 0, mTabWidgetHeight );
 	mCtrlContainer->Size( mSize.Width(), mSize.Height() - mTabWidgetHeight );
+}
+
+void cUITabWidget::Draw() {
+	if ( mDrawLineBelowTabs ) {
+		bool smooth = GLi->IsLineSmooth();
+		if ( smooth ) GLi->LineSmooth( false );
+
+		cPrimitives P;
+		eeVector2i p1( mPos.x, mPos.y + mTabContainer->Size().Height() + mLineBewowTabsYOffset );
+		eeVector2i p2( mPos.x + mTabContainer->Pos().x, p1.y );
+
+		ControlToScreen( p1 );
+		ControlToScreen( p2 );
+
+		P.LineWidth( 1 );
+		P.SetColor( mLineBelowTabsColor );
+		P.DrawLine( eeLine2f( eeVector2f( p1.x, p1.y ), eeVector2f( p2.x, p2.y ) ) );
+
+		eeVector2i p3( mPos.x + mTabContainer->Pos().x + mTabContainer->Size().Width(), mPos.y + mTabContainer->Size().Height() + mLineBewowTabsYOffset );
+		eeVector2i p4( mPos.x + mSize.Width(), p3.y );
+
+		ControlToScreen( p3 );
+		ControlToScreen( p4 );
+
+		P.DrawLine( eeLine2f( eeVector2f( p3.x, p3.y ), eeVector2f( p4.x, p4.y ) ) );
+
+		if ( smooth ) GLi->LineSmooth( true );
+	}
 }
 
 void cUITabWidget::SetTabContainerSize() {

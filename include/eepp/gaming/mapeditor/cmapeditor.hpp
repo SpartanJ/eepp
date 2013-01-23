@@ -80,6 +80,7 @@ class EE_API cMapEditor {
 		cUICheckBox *		mLightTypeChk;
 		cUITextBox *		mTileBox;
 		Int32				mLastSelButtonY;
+		bool				mMouseScrolling;
 
 		std::list<cUISelectButton*> mObjContButton;
 
@@ -230,6 +231,8 @@ class EE_API cMapEditor {
 		void CreateTabs();
 
 		void OnMapLoad();
+
+		void UpdateScroll();
 };
 
 }}}

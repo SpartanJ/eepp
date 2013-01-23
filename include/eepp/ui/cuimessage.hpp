@@ -23,7 +23,7 @@ class EE_API cUIMessage {
 			MsgCellClicked,
 			MsgSelected,
 			MsgUser,
-			MsgForceDWord = 0xFFFFFFFF
+			MsgForceDWord = eeINDEX_NOT_FOUND
 		};
 
 		cUIMessage( cUIControl * Ctrl, const Uint32& Msg, const Uint32& Flags = MsgForceDWord );

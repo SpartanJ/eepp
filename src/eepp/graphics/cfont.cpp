@@ -9,7 +9,7 @@ cFont::cFont( const Uint32& Type, const std::string& Name ) :
 	mType( Type ),
 	mCacheData(true),
 	mColor(255,255,255,255),
-	mShadowColor(0xFF000000),
+	mShadowColor(0,0,0,255),
 	mNumLines(1),
 	mTexId(0),
 	mCachedWidth(0.f),

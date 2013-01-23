@@ -51,7 +51,7 @@ class EE_API cUIEvent {
 			EventOnTabSelected,
 			EventOnClose, // Warning: Only some controls will report this event.
 			EventUser,
-			EventForceDWord = 0xFFFFFFFF
+			EventForceDWord = eeINDEX_NOT_FOUND
 		};
 
 		cUIEvent( cUIControl * Ctrl, const Uint32& EventType = EventForceDWord );

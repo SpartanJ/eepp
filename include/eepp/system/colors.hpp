@@ -2,6 +2,7 @@
 #define EE_SYSTEMCCOLORS_H
 
 #include <eepp/declares.hpp>
+#include <eepp/system/bitop.hpp>
 
 namespace EE { namespace System {
 
@@ -30,6 +31,15 @@ class tColor {
 			Green(g),
 			Blue(b)
 		{
+		}
+
+		/** From 32 bits value with RGB(A) byte order */
+		tColor( Uint32 Col )
+		{
+			Col		= BitOp::SwapLE32( Col );
+			Red		= static_cast<T>( Col >> 16	);
+			Green	= static_cast<T>( Col >> 8	);
+			Blue	= static_cast<T>( Col >> 0	);
 		}
 
 		T R() const { return Red;	}	//! @return the Red component
@@ -112,9 +122,9 @@ class tColorA {
 		{
 		}
 
-		/** ARGB format */
+		/** From a 32 bits value with RGBA byte order */
 		tColorA( const Uint32& Col ) :
-			Value( Col )
+			Value( BitOp::SwapBE32( Col ) )
 		{
 		}
 

@@ -59,6 +59,10 @@ Uint32 cUIMap::OnDrag( const eeVector2i& Pos ) {
 
 	mDragPoint = Pos;
 
+	if ( mUpdateScrollCb.IsSet() ) {
+		mUpdateScrollCb();
+	}
+
 	return 0;
 }
 
@@ -522,6 +526,10 @@ void cUIMap::CurLayer( cLayer * layer ) {
 
 void cUIMap::SetAlertCb( AlertCb Cb ) {
 	mAlertCb = Cb;
+}
+
+void cUIMap::SetUpdateScrollCb( UpdateScrollCb Cb ) {
+	mUpdateScrollCb = Cb;
 }
 
 Uint32 cUIMap::OnMessage( const cUIMessage * Msg ) {

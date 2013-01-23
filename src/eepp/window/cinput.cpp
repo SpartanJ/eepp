@@ -46,7 +46,7 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 			if ( Event->key.keysym.sym > EE_KEYS_NUM )
 				break;
 
-			if ( Event->key.keysym.mod != 0xFFFFFFFF )
+			if ( Event->key.keysym.mod != eeINDEX_NOT_FOUND )
 				mInputMod = Event->key.keysym.mod;
 
 			PushKey( &mKeysDown	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, true );

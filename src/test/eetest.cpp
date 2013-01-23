@@ -275,8 +275,8 @@ void cEETest::CreateUI() {
 	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
 	Params.Border.Width( 2 );
-	Params.Border.Color( 0xFF979797 );
-	Params.Background.Colors( eeColorA( 0x66EDEDED ), eeColorA( 0xCCEDEDED ), eeColorA( 0xCCEDEDED ), eeColorA( 0x66EDEDED ) );
+	Params.Border.Color( 0x979797CC );
+	Params.Background.Colors( eeColorA( 0xEDEDED66 ), eeColorA( 0xEDEDEDCC ), eeColorA( 0xEDEDEDCC ), eeColorA( 0xEDEDED66 ) );
 
 	cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 530, 405 ), eeVector2i( 320, 240 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DRAGABLE_CONTAINER , eeSize( 530, 405 ), 200 );
 	C = tWin->Container();
@@ -288,7 +288,7 @@ void cEETest::CreateUI() {
 
 	Params.Flags &= ~UI_CLIP_ENABLE;
 	Params.Background.Corners(0);
-	Params.Background.Colors( eeColorA( 0x7700FF00 ), eeColorA( 0x7700CC00 ), eeColorA( 0x7700CC00 ), eeColorA( 0x7700FF00 ) );
+	Params.Background.Colors( eeColorA( 0x00FF0077 ), eeColorA( 0x00CC0077 ), eeColorA( 0x00CC0077 ), eeColorA( 0x00FF0077 ) );
 	Params.Parent( C );
 	Params.Size = eeSize( 50, 50 );
 	cUITest * Child = eeNew( cUITest, ( Params ) );
@@ -298,7 +298,7 @@ void cEETest::CreateUI() {
 	Child->StartRotation( 0.f, 360.f, 5000.f );
 	Child->AngleInterpolation()->Loop( true );
 
-	Params.Background.Colors( eeColorA( 0x77FFFF00 ), eeColorA( 0x77CCCC00 ), eeColorA( 0x77CCCC00 ), eeColorA( 0x77FFFF00 ) );
+	Params.Background.Colors( eeColorA( 0xFFFF0077 ), eeColorA( 0xCCCC0077 ), eeColorA( 0xCCCC0077 ), eeColorA( 0xFFFF0077 ) );
 	Params.Parent( Child );
 	Params.Size = eeSize( 25, 25 );
 	cUITest * Child2 = eeNew( cUITest, ( Params ) );

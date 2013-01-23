@@ -107,7 +107,7 @@ void cInputSDL::Update() {
 				EEEvent.key.state = SDLEvent.key.state;
 				EEEvent.key.which = SDLEvent.key.windowID;
 				EEEvent.key.keysym.sym = 0;
-				EEEvent.key.keysym.mod = 0xFFFFFFFF;
+				EEEvent.key.keysym.mod = eeINDEX_NOT_FOUND;
 				EEEvent.key.keysym.unicode = txt[0];
 				break;
 			}

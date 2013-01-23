@@ -6,7 +6,7 @@
 
 namespace EE { namespace System {
 
-#define THREADS_AUTO (0xFFFFFFFF)
+#define THREADS_AUTO (eeINDEX_NOT_FOUND)
 
 /** @brief A simple resource loader that can load a batch of resources synchronously or asynchronously */
 class EE_API cResourceLoader {
