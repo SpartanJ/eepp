@@ -12,7 +12,6 @@ SINGLETON_DECLARE_IMPLEMENTATION(cPhysicsManager)
 cPhysicsManager::cPhysicsManager() :
 	mMemoryManager( false )
 {
-	cpInitChipmunk();
 }
 
 cPhysicsManager::~cPhysicsManager() {

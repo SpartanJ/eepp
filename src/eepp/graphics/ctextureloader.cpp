@@ -15,6 +15,8 @@
 
 namespace EE { namespace Graphics {
 
+/** @TODO: Fix the cTextureLoader mess. */
+
 namespace IOCb
 {
 	// stb_image callbacks that operate on a cIOStream
@@ -81,7 +83,8 @@ cTextureLoader::cTextureLoader( cIOStream& Stream,
 	mColorKey(NULL),
 	mTexLoaded(false),
 	mIsDDS(false),
-	mIsDDSCompressed(0)
+	mIsPVR(false),
+	mIsCompressed(0)
 {
 }
 cTextureLoader::cTextureLoader( const std::string& Filepath,
@@ -110,7 +113,8 @@ cTextureLoader::cTextureLoader( const std::string& Filepath,
 	mColorKey(NULL),
 	mTexLoaded(false),
 	mIsDDS(false),
-	mIsDDSCompressed(0)
+	mIsPVR(false),
+	mIsCompressed(0)
 {
 }
 
@@ -141,7 +145,8 @@ cTextureLoader::cTextureLoader( const unsigned char * ImagePtr,
 	mColorKey(NULL),
 	mTexLoaded(false),
 	mIsDDS(false),
-	mIsDDSCompressed(0)
+	mIsPVR(false),
+	mIsCompressed(0)
 {
 }
 
@@ -172,7 +177,8 @@ cTextureLoader::cTextureLoader( cPack * Pack,
 	mColorKey(NULL),
 	mTexLoaded(false),
 	mIsDDS(false),
-	mIsDDSCompressed(0)
+	mIsPVR(false),
+	mIsCompressed(0)
 {
 }
 
@@ -206,7 +212,8 @@ cTextureLoader::cTextureLoader( const unsigned char * Pixels,
 	mColorKey(NULL),
 	mTexLoaded(false),
 	mIsDDS(false),
-	mIsDDSCompressed(0)
+	mIsPVR(false),
+	mIsCompressed(0)
 {
 }
 
@@ -237,21 +244,37 @@ void cTextureLoader::Start() {
 		LoadFromPixels();
 }
 
+void cTextureLoader::LoadFile() {
+	cIOStreamFile fs( mFilepath , std::ios::in | std::ios::binary );
+
+	mSize		= FileSystem::FileSize( mFilepath );
+	mPixels		= (Uint8*) eeMalloc( mSize );
+	fs.Read( reinterpret_cast<char*> ( mPixels ), mSize );
+}
+
 void cTextureLoader::LoadFromPath() {
 	if ( FileSystem::FileExists( mFilepath ) ) {
 		if ( GLi->IsExtension( EEGL_EXT_texture_compression_s3tc ) )
 			mIsDDS = 0 != stbi_dds_test_filename( mFilepath.c_str() );
 
+		if ( !mIsDDS )
+			mIsPVR = 0 != stbi_pvr_test_filename( mFilepath.c_str() );
+
 		if ( mIsDDS ) {
-			cIOStreamFile fs( mFilepath , std::ios::in | std::ios::binary );
-
-			mSize = FileSystem::FileSize( mFilepath );
-
-			mPixels = (Uint8*) eeMalloc( mSize );
-
-			fs.Read( reinterpret_cast<char*> ( mPixels ), mSize );
-
-			stbi_dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsDDSCompressed );
+			LoadFile();
+			stbi_dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed );
+		} else if ( mIsPVR ) {
+			// If the PVR is valid, and the pvrtc extension is present or it's not compressed ( so it doesn't need the extension )
+			// means that it can be upload directly to the GPU.
+			if ( stbi_pvr_info_from_path( mFilepath.c_str(), &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed ) &&
+				 ( !mIsCompressed || GLi->IsExtension( EEGL_IMG_texture_compression_pvrtc ) ) )
+			{
+				LoadFile();
+				stbi_pvr_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed );
+			} else {
+				mIsPVR	= false;
+				mPixels	= stbi_load( mFilepath.c_str(), &mImgWidth, &mImgHeight, &mChannels, STBI_default );
+			}
 		} else {
 			mPixels = stbi_load( mFilepath.c_str(), &mImgWidth, &mImgHeight, &mChannels, STBI_default );
 		}
@@ -259,13 +282,11 @@ void cTextureLoader::LoadFromPath() {
 		if ( NULL == mPixels ) {
 			cLog::instance()->Write( "Filed to load: " + mFilepath + " Reason: " + std::string( stbi_failure_reason() ) );
 
-			if ( !mIsDDS ) {
+			if ( !mIsDDS && !mIsPVR ) {
 				mPixels = jpgd::decompress_jpeg_image_from_file( mFilepath.c_str(), &mImgWidth, &mImgHeight, &mChannels, 3 );
 
 				if ( NULL != mPixels ) {
 					cLog::instance()->Write( "Loaded: " + mFilepath + " using jpeg-compressor." );
-				} else {
-
 				}
 			}
 		}
@@ -295,10 +316,23 @@ void cTextureLoader::LoadFromMemory() {
 	if ( GLi->IsExtension( EEGL_EXT_texture_compression_s3tc ) )
 		mIsDDS = 0 != stbi_dds_test_memory( mImagePtr, mSize );
 
+	if ( !mIsDDS )
+		mIsPVR = 0 != stbi_pvr_test_memory( mImagePtr, mSize );
+
 	if ( mIsDDS ) {
 		mPixels = (Uint8*) eeMalloc( mSize );
 		memcpy( mPixels, mImagePtr, mSize );
-		stbi_dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsDDSCompressed );
+		stbi_dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed );
+	} else if ( mIsPVR ) {
+		if ( stbi_pvr_info_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed ) &&
+			 ( !mIsCompressed || GLi->IsExtension( EEGL_IMG_texture_compression_pvrtc ) ) )
+		{
+			mPixels = (Uint8*) eeMalloc( mSize );
+			memcpy( mPixels, mImagePtr, mSize );
+		} else {
+			mIsPVR	= false;
+			mPixels	= stbi_load_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels, STBI_default );
+		}
 	} else {
 		mPixels = stbi_load_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels, STBI_default );
 	}
@@ -306,7 +340,7 @@ void cTextureLoader::LoadFromMemory() {
 	if ( NULL == mPixels ) {
 		cLog::instance()->Write( stbi_failure_reason() );
 
-		if ( !mIsDDS ) {
+		if ( !mIsDDS && !mIsPVR ) {
 			mPixels = jpgd::decompress_jpeg_image_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels, 3 );
 
 			if ( NULL != mPixels ) {
@@ -328,15 +362,33 @@ void cTextureLoader::LoadFromStream() {
 		if ( GLi->IsExtension( EEGL_EXT_texture_compression_s3tc ) )
 			mIsDDS = 0 != stbi_dds_test_callbacks( &callbacks, mStream );
 
+		if ( !mIsDDS )
+			mIsPVR = 0 != stbi_pvr_test_callbacks( &callbacks, mStream );
+
 		if ( mIsDDS ) {
 			mSize	= mStream->GetSize();
 			mPixels	= (Uint8*) eeMalloc( mSize );
-
 			mStream->Seek( 0 );
 			mStream->Read( reinterpret_cast<char*> ( mPixels ), mSize );
-
 			mStream->Seek( 0 );
-			stbi_dds_info_from_callbacks( &callbacks, mStream, &mImgWidth, &mImgHeight, &mChannels, &mIsDDSCompressed );
+			stbi_dds_info_from_callbacks( &callbacks, mStream, &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed );
+			mStream->Seek( 0 );
+		} else if ( mIsPVR ) {
+			// If the PVR is valid, and the pvrtc extension is present or it's not compressed ( so it doesn't need the extension )
+			// means that it can be upload directly to the GPU.
+			if ( stbi_pvr_info_from_callbacks( &callbacks, mStream, &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed ) &&
+				 ( !mIsCompressed || GLi->IsExtension( EEGL_IMG_texture_compression_pvrtc ) ) )
+			{
+				mSize	= mStream->GetSize();
+				mPixels	= (Uint8*) eeMalloc( mSize );
+				mStream->Seek( 0 );
+				mStream->Read( reinterpret_cast<char*> ( mPixels ), mSize );
+				mStream->Seek( 0 );
+			} else {
+				mIsPVR	= false;
+				mPixels	= stbi_load( mFilepath.c_str(), &mImgWidth, &mImgHeight, &mChannels, STBI_default );
+			}
+
 			mStream->Seek( 0 );
 		} else {
 			mStream->Seek( 0 );
@@ -347,7 +399,7 @@ void cTextureLoader::LoadFromStream() {
 		if ( NULL == mPixels ) {
 			cLog::instance()->Write( stbi_failure_reason() );
 
-			if ( !mIsDDS ) {
+			if ( !mIsDDS && !mIsPVR ) {
 				jpeg::jpeg_decoder_stream_steam stream( mStream );
 
 				mPixels = jpgd::decompress_jpeg_image_from_stream( &stream, &mImgWidth, &mImgHeight, &mChannels, 3 );
@@ -373,15 +425,18 @@ void cTextureLoader::LoadFromPixels() {
 			GLint PreviousTexture;
 			glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
 
-			if ( mIsDDS )
+			if ( mIsDDS ) {
 				tTexId = SOIL_direct_load_DDS_from_memory( mPixels, mSize, SOIL_CREATE_NEW_ID, flags, 0 );
-			else
+			} else if ( mIsPVR ) {
+				tTexId = SOIL_direct_load_PVR_from_memory( mPixels, mSize, SOIL_CREATE_NEW_ID, flags, 0 );
+			} else {
 				tTexId = SOIL_create_OGL_texture( mPixels, &width, &height, mChannels, SOIL_CREATE_NEW_ID, flags );
+			}
 
 			glBindTexture(GL_TEXTURE_2D, PreviousTexture);
 
 			if ( tTexId ) {
-				if ( mIsDDS && mIsDDSCompressed && mSize > 128 ) {
+				if ( mIsDDS && mIsCompressed && mSize > 128 ) {
 					mSize -= 128; // Remove the header size
 				} else {
 					mWidth	= width;
@@ -389,7 +444,7 @@ void cTextureLoader::LoadFromPixels() {
 					mSize	= mWidth * mHeight * mChannels;
 				}
 
-				mTexId = cTextureFactory::instance()->PushTexture( mFilepath, tTexId, mImgWidth, mImgHeight, width, height, mMipmap, mChannels, mClampMode, mCompressTexture || mIsDDSCompressed, mLocalCopy, mSize );
+				mTexId = cTextureFactory::instance()->PushTexture( mFilepath, tTexId, mImgWidth, mImgHeight, width, height, mMipmap, mChannels, mClampMode, mCompressTexture || mIsCompressed, mLocalCopy, mSize );
 
 				cLog::instance()->Write( "Texture " + mFilepath  + " loaded in " + String::ToStr( mTE.Elapsed() ) + " ms." );
 
@@ -400,7 +455,7 @@ void cTextureLoader::LoadFromPixels() {
 			}
 
 			if ( TEX_LT_PIXELS != mLoadType ) {
-				if ( mIsDDS ) {
+				if ( mIsDDS || mIsPVR ) {
 					eeFree( mPixels );
 				} else {
 					if ( mPixels )
@@ -471,7 +526,8 @@ void cTextureLoader::Reset() {
 	mSize				= 0;
 	mTexLoaded			= false;
 	mIsDDS				= false;
-	mIsDDSCompressed	= 0;
+	mIsPVR				= false;
+	mIsCompressed		= 0;
 }
 
 }}

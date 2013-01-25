@@ -14,4 +14,3 @@ cGlobalTextureAtlas::~cGlobalTextureAtlas() {
 }
 
 }}
-

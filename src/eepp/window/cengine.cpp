@@ -47,6 +47,7 @@ cEngine::cEngine() :
 	mBackend( NULL ),
 	mWindow( NULL )
 {
+	cTextureAtlasManager::CreateSingleton();
 }
 
 cEngine::~cEngine() {

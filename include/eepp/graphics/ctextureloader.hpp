@@ -114,10 +114,12 @@ class EE_API cTextureLoader : public cObjectLoader {
 	private:
 		bool			mTexLoaded;
 		bool			mIsDDS;
-		int				mIsDDSCompressed;
+		bool			mIsPVR;
+		int				mIsCompressed;
 
 		cTimeElapsed	mTE;
 
+		void			LoadFile();
 		void 			LoadFromPath();
 		void			LoadFromMemory();
 		void			LoadFromPack();
