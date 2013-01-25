@@ -26,9 +26,17 @@ ios_size cIOStreamMemory::Read( char * data, ios_size size ) {
 		memcpy( data, mReadPtr + mPos, size );
 
 		mPos += size;
+
+		return size;
+	} else if ( mPos != mSize ) {
+		memcpy( data, mReadPtr + mPos, mSize - mPos );
+
+		mPos = mSize;
+
+		return size;
 	}
 
-	return mPos;
+	return 0;
 }
 
 ios_size cIOStreamMemory::Write( const char * data, ios_size size ) {
