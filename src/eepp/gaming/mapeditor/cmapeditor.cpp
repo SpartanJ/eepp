@@ -457,8 +457,6 @@ void cMapEditor::CreateUIMap() {
 		}
 	}
 
-	ScrollH++;
-
 	cUIComplexControl::CreateParams Params;
 	Params.Parent( mWinContainer );
 	Params.PosSet( 0, 0 );
