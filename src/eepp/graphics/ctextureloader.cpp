@@ -15,8 +15,6 @@
 
 namespace EE { namespace Graphics {
 
-/** @TODO: Fix the cTextureLoader mess. */
-
 namespace IOCb
 {
 	// stb_image callbacks that operate on a cIOStream
