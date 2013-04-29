@@ -111,7 +111,7 @@
 #define HAVE_MALLOC_H
 
 /* Define if we have cpuid.h */
-#define HAVE_CPUID_H
+/* #define HAVE_CPUID_H */
 
 /* Define if we have guiddef.h */
 /* #undef HAVE_GUIDDEF_H */

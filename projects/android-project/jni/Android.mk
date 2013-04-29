@@ -7,7 +7,7 @@ MY_SDL_PATH			:= $(MY_PATH)/helper/SDL2
 MY_SDL_MAIN_PATH	:= helper/SDL2/src/main/android/*.cpp
 
 MY_C_INCLUDES := \
-	$(MY_PATH)/helper/android/openal/include/ \
+	$(MY_PATH)/helper/android/openal-soft/include/ \
 	$(MY_PATH)/helper/freetype2/include \
 	$(MY_SDL_PATH)/include \
 	$(MY_PATH)/helper/chipmunk \
@@ -161,10 +161,9 @@ LOCAL_PATH := $(MY_SDL_PATH)
 
 LOCAL_MODULE := SDL2
 
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/include \
-	$(MY_PATH)/helper/android/openal/include/
+LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
 
-LOCAL_CFLAGS := -O3 -D__ANDROID__ -DANDROID -DGL_GLEXT_PROTOTYPES \
+LOCAL_CFLAGS := -D__ANDROID__ -DANDROID -DGL_GLEXT_PROTOTYPES \
 	$(EE_GLES_VERSION)
 
 LOCAL_SRC_FILES := \
@@ -207,7 +206,7 @@ include $(CLEAR_VARS)
 
 LOCAL_PATH := $(MY_PATH)
 
-LOCAL_MODULE := main
+LOCAL_MODULE := empty_window
 
 LOCAL_LDLIBS 	:= $(MY_LDLIBS)
 
@@ -255,7 +254,7 @@ include $(CLEAR_VARS)
 
 LOCAL_PATH := $(MY_PATH)
 
-LOCAL_MODULE := eetest
+LOCAL_MODULE := main
 
 LOCAL_LDLIBS 	:= $(MY_LDLIBS)
 

@@ -1,8 +1,8 @@
 #!/bin/sh
 cd $(dirname "$0")
 export NDK_PROJECT_PATH=$(dirname "$0")
-ndk-build -j4
+ndk-build NDK_LOG=1 NDK_DEBUG=1 -j4
 rm -rf ./bin
 ant debug
 adb install -r bin/EEPPApp-debug.apk
-ndk-gdb --force --start
+ndk-gdb --force --start --verbose

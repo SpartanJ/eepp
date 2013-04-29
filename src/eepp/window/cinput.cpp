@@ -49,7 +49,7 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 			if ( Event->key.keysym.mod != eeINDEX_NOT_FOUND )
 				mInputMod = Event->key.keysym.mod;
 
-			PushKey( &mKeysDown	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, true );
+			BitOp::WriteBitKey( &mKeysDown	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, 1 );
 			break;
 		}
 		case InputEvent::KeyUp:
@@ -57,8 +57,8 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 			if ( Event->key.keysym.sym > EE_KEYS_NUM )
 				break;
 
-			PushKey( &mKeysDown	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, false );
-			PushKey( &mKeysUp	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, true );
+			BitOp::WriteBitKey( &mKeysDown	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, 0 );
+			BitOp::WriteBitKey( &mKeysUp	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, 1 );
 			break;
 		}
 		case InputEvent::MouseMotion:
@@ -244,36 +244,20 @@ void cInput::ResetFingerWasDown() {
 	}
 }
 
-bool cInput::GetKey( Uint8 * Key, Uint8 Pos ) {
-	if ( ( * Key ) & ( 1 << Pos ) )
-		return true;
-
-	return false;
-}
-
-void cInput::PushKey( Uint8 * Key, Uint8 Pos, bool BitWrite ) {
-	if ( BitWrite )
-		( * Key ) |= ( 1 << Pos );
-	else {
-		if ( ( * Key ) & ( 1 << Pos ) )
-			( * Key ) &= ~( 1 << Pos );
-	}
-}
-
 bool cInput::IsKeyDown( const EE_KEY& Key ) {
-	return GetKey( &mKeysDown[ Key / 8 ], Key % 8 );
+	return 0 != BitOp::ReadBitKey( &mKeysDown[ Key / 8 ], Key % 8 );
 }
 
 bool cInput::IsKeyUp( const EE_KEY& Key ) {
-	return GetKey( &mKeysUp[ Key / 8 ], Key % 8 );
+	return 0 != BitOp::ReadBitKey( &mKeysUp[ Key / 8 ], Key % 8 );
 }
 
 void cInput::InjectKeyDown( const EE_KEY& Key ) {
-	PushKey( &mKeysDown	[ Key / 8 ], Key % 8, true );
+	BitOp::WriteBitKey( &mKeysDown	[ Key / 8 ], Key % 8, 1 );
 }
 
 void cInput::InjectKeyUp( const EE_KEY& Key ) {
-	PushKey( &mKeysUp	[ Key / 8 ], Key % 8, true );
+	BitOp::WriteBitKey( &mKeysUp	[ Key / 8 ], Key % 8, 1 );
 }
 
 void cInput::InjectButtonPress( const Uint32& Button ) {

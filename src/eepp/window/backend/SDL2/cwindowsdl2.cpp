@@ -215,8 +215,6 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 
 	mCursorManager->Set( Cursor::SYS_CURSOR_DEFAULT );
 
-	LogSuccessfulInit( GetVersion() );
-
 	#if EE_PLATFORM == EE_PLATFORM_ANDROID
 	std::string apkPath( SDL_AndroidGetApkPath() );
 
@@ -226,6 +224,10 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 		cLog::instance()->Write( "APK opened succesfully!" );
 	else
 		cLog::instance()->Write( "Failed to open APK!" );
+
+	LogSuccessfulInit( GetVersion(), apkPath );
+	#else
+	LogSuccessfulInit( GetVersion() );
 	#endif
 
 	return true;

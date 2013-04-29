@@ -443,7 +443,7 @@ static std::string sGetProcessPath() {
 
 	return FileRemoveFileName( std::string( info.name ) );
 #elif EE_PLATFORM == EE_PLATFORM_ANDROID
-	if ( NULL != Window::cEngine::instance() )
+	if ( NULL != Window::cEngine::instance() && NULL != Window::cEngine::instance()->GetCurrentWindow() )
 		return Window::cEngine::instance()->GetCurrentWindow()->GetExternalStoragePath();
 
 	return "/sdcard/";

@@ -18,5 +18,5 @@
 
 	<supports-screens android:anyDensity="true" />
 
-	<uses-sdk android:minSdkVersion="7" />
+	<uses-sdk android:minSdkVersion="9" />
 </manifest> 

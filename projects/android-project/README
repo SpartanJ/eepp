@@ -1,5 +1,5 @@
 Inside:
 
-src/eepp/helper/android/SDL2/include/ 
+src/eepp/helper/SDL2/include
 
 add a symbolic link to the same folder in a subfolder called SDL ( ln -s . SDL )

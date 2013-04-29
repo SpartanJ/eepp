@@ -13,7 +13,8 @@ class BitOp {
 	* @param Pos The Position of the bit
 	* @param BitWrite 0 for write 0, any other to write 1.
 	*/
-	static inline void WriteBitKey( unsigned int * Key, unsigned int Pos, unsigned int BitWrite ) {
+	template <typename T>
+	static inline void WriteBitKey( T * Key, unsigned int Pos, unsigned int BitWrite ) {
 		( BitWrite ) ? ( * Key ) |= ( 1 << Pos ) : ( * Key ) &= ~( 1 << Pos );
 	}
 
@@ -22,7 +23,8 @@ class BitOp {
 	* @param Pos The Position in the key to read
 	* @return True if the bit is 1
 	*/
-	static inline bool ReadBitKey( Uint32 * Key, Uint32 Pos ) {
+	template <typename T>
+	static inline bool ReadBitKey( T * Key, Uint32 Pos ) {
 		return 0 != ( ( * Key ) & ( 1 << Pos ) );
 	}
 
@@ -31,7 +33,8 @@ class BitOp {
 	* @param Val The Value to write or remove
 	* @param BitWrite 0 to remove, any value to write
 	*/
-	static inline void SetBitFlagValue( Uint32 * Key, Uint32 Val, Uint32 BitWrite ) {
+	template <typename T>
+	static inline void SetBitFlagValue( T * Key, Uint32 Val, Uint32 BitWrite ) {
 		( BitWrite ) ? ( * Key ) |= Val : ( * Key ) &= ~Val;
 	}
 

@@ -212,10 +212,6 @@ class EE_API cInput {
 		
 		std::map<Uint32, InputCallback> mCallbacks;
 		
-		bool GetKey( Uint8 * Key, Uint8 Pos );
-		
-		void PushKey( Uint8 * Key, Uint8 Pos, bool BitWrite );
-		
 		void ProcessEvent( InputEvent * Event );
 
 		cInputFinger * GetFingerId( const Int64& fingerId );
