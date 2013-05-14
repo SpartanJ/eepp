@@ -182,6 +182,25 @@ void cUIManager::Update() {
 
 	mControl->Update();
 
+	cUIControl * pOver = mControl->OverFind( mKM->GetMousePosf() );
+
+	if ( pOver != mOverControl ) {
+		if ( NULL != mOverControl ) {
+			SendMsg( mOverControl, cUIMessage::MsgMouseExit );
+			mOverControl->OnMouseExit( mKM->GetMousePos(), 0 );
+		}
+
+		mOverControl = pOver;
+
+		if ( NULL != mOverControl ) {
+			SendMsg( mOverControl, cUIMessage::MsgMouseEnter );
+			mOverControl->OnMouseEnter( mKM->GetMousePos(), 0 );
+		}
+	} else {
+		if ( NULL != mOverControl )
+			mOverControl->OnMouseMove( mKM->GetMousePos(), mKM->PressTrigger() );
+	}
+
 	if ( mKM->PressTrigger() ) {
 		if ( NULL != mOverControl ) {
 			if ( mOverControl != mFocusControl )
@@ -215,25 +234,6 @@ void cUIManager::Update() {
 		}
 
 		mFirstPress = false;
-	}
-
-	cUIControl * pOver = mControl->OverFind( mKM->GetMousePosf() );
-
-	if ( pOver != mOverControl ) {
-		if ( NULL != mOverControl ) {
-			SendMsg( mOverControl, cUIMessage::MsgMouseExit );
-			mOverControl->OnMouseExit( mKM->GetMousePos(), 0 );
-		}
-
-		mOverControl = pOver;
-
-		if ( NULL != mOverControl ) {
-			SendMsg( mOverControl, cUIMessage::MsgMouseEnter );
-			mOverControl->OnMouseEnter( mKM->GetMousePos(), 0 );
-		}
-	} else {
-		if ( NULL != mOverControl )
-			mOverControl->OnMouseMove( mKM->GetMousePos(), mKM->PressTrigger() );
 	}
 
 	CheckClose();
