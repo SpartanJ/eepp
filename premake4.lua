@@ -170,6 +170,14 @@ function get_backend_link_name( name )
 	return name
 end
 
+function string.starts(String,Start)
+   return string.sub(String,1,string.len(Start))==Start
+end
+
+function is_vs()
+	return string.starts(_ACTION,"vs")
+end
+
 link_list = { }
 os_links = { }
 backends = { }
@@ -182,13 +190,17 @@ function build_base_configuration( package_name )
 	configuration "debug"
 		defines { "DEBUG" }
 		flags { "Symbols" }
-		buildoptions{ "-Wall", "-std=gnu99" }
+		if not is_vs() then
+			buildoptions{ "-Wall", "-std=gnu99" }
+		end
 		targetname ( package_name .. "-debug" )
 
 	configuration "release"
 		defines { "NDEBUG" }
 		flags { "Optimize" }
-		buildoptions{ "-Wall", "-std=gnu99" }
+		if not is_vs() then
+			buildoptions{ "-Wall", "-std=gnu99" }
+		end
 		targetname ( package_name )
 end
 
@@ -196,18 +208,22 @@ function build_base_cpp_configuration( package_name )
 	configuration "debug"
 		defines { "DEBUG" }
 		flags { "Symbols" }
-		buildoptions{ "-Wall" }
+		if not is_vs() then
+			buildoptions{ "-Wall" }
+		end
 		targetname ( package_name .. "-debug" )
 
 	configuration "release"
 		defines { "NDEBUG" }
 		flags { "Optimize" }
-		buildoptions{ "-Wall" }
+		if not is_vs() then
+			buildoptions{ "-Wall" }
+		end
 		targetname ( package_name )
 end
 
 function add_cross_config_links()
-	if _ACTION == "gmake" then
+	if not is_vs() then
 		if os.is_real("mingw32") or os.is_real("ios") then -- if is crosscompiling from *nix
 			if os.is_real("mingw32") then
 				links { "mingw32" }
@@ -238,7 +254,11 @@ function build_link_configuration( package_name )
 		end
 		
 		flags { "Symbols" }
-		buildoptions{ "-Wall -Wno-long-long" }
+
+		if not is_vs() then
+			buildoptions{ "-Wall -Wno-long-long" }
+		end
+
 		targetname ( package_name .. "-debug" )
 
 	configuration "release"
@@ -249,7 +269,11 @@ function build_link_configuration( package_name )
 		end
 		
 		flags { "Optimize" }
-		buildoptions { "-fno-strict-aliasing -O3 -s -ffast-math" }
+
+		if not is_vs() then
+			buildoptions { "-fno-strict-aliasing -O3 -s -ffast-math" }
+		end
+
 		targetname ( package_name )
 		
 	configuration "windows"
@@ -533,7 +557,13 @@ solution "eepp"
 
 	project "SOIL2-static"
 		kind "StaticLib"
-		language "C"
+
+		if is_vs() then
+			language "C++"
+		else
+			language "C"
+		end
+
 		targetdir("libs/" .. os.get_real() .. "/helpers/")
 		files { "src/eepp/helper/SOIL2/src/SOIL2/*.c" }
 		includedirs { "include/eepp/helper/SOIL2" }
@@ -560,6 +590,11 @@ solution "eepp"
 		targetdir("libs/" .. os.get_real() .. "/helpers/")
 		files { "src/eepp/helper/libzip/*.c" }
 		includedirs { "src/eepp/helper/zlib" }
+
+		if is_vs() then
+			includedirs { "src/eepp/helper/libzip/vs" }
+		end
+
 		build_base_configuration( "libzip" )
 
 	project "freetype-static"
@@ -580,7 +615,13 @@ solution "eepp"
 		
 	project "chipmunk-static"
 		kind "StaticLib"
-		language "C"
+
+		if is_vs() then
+			language "C++"
+		else
+			language "C"
+		end
+
 		targetdir("libs/" .. os.get_real() .. "/helpers/")
 		files { "src/eepp/helper/chipmunk/*.c", "src/eepp/helper/chipmunk/constraints/*.c" }
 		includedirs { "include/eepp/helper/chipmunk" }
