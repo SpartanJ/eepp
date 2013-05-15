@@ -3,9 +3,17 @@
 #include <eepp/system/sys.hpp>
 #include <sys/stat.h>
 
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	#ifndef WIN32_LEAN_AND_MEAN
+		#define WIN32_LEAN_AND_MEAN
+	#endif
+	#include <windows.h>
+#endif
+
 #ifndef EE_COMPILER_MSVC
 	#include <dirent.h>
 #else
+	#include <direct.h>
 	#ifndef S_ISDIR
 	#define S_ISDIR(mode)  (((mode) & S_IFMT) == S_IFDIR)
 	#endif

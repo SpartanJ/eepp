@@ -53,6 +53,13 @@ cTexturePacker::~cTexturePacker()
 void cTexturePacker::Close() {
 	mLongestEdge 	= 0;
 	mTotalArea 		= 0;
+
+	std::list<cTexturePackerTex*>::iterator it;
+
+	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
+		eeSAFE_DELETE( (*it) );
+	}
+
 	mTextures.clear();
 
 	if ( NULL != mFreeList ) {
@@ -144,11 +151,11 @@ void cTexturePacker::Validate() {
 
 cTexturePackerTex * cTexturePacker::GetLonguestEdge() {
 	cTexturePackerTex * t = NULL;
-	std::list<cTexturePackerTex>::iterator it;
+	std::list<cTexturePackerTex*>::iterator it;
 
 	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
-		if ( !(*it).Placed() ) {
-			t = &(*it);
+		if ( !(*it)->Placed() ) {
+			t = (*it);
 			break;
 		}
 	}
@@ -158,11 +165,11 @@ cTexturePackerTex * cTexturePacker::GetLonguestEdge() {
 
 cTexturePackerTex * cTexturePacker::GetShortestEdge() {
 	cTexturePackerTex * t = NULL;
-	std::list<cTexturePackerTex>::reverse_iterator it;
+	std::list<cTexturePackerTex*>::reverse_iterator it;
 
 	for ( it = mTextures.rbegin(); it != mTextures.rend(); it++ ) {
-		if ( !(*it).Placed() ) {
-			t = &(*it);
+		if ( !(*it)->Placed() ) {
+			t = (*it);
 			break;
 		}
 	}
@@ -174,10 +181,10 @@ void cTexturePacker::AddBorderToTextures( const Int32& BorderSize ) {
 	cTexturePackerTex * t;
 
 	if ( 0 != BorderSize ) {
-		std::list<cTexturePackerTex>::iterator it;
+		std::list<cTexturePackerTex*>::iterator it;
 
 		for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
-			t = &(*it);
+			t = (*it);
 
 			t->Width	( t->Width() 	+ BorderSize );
 			t->Height	( t->Height() 	+ BorderSize );
@@ -334,13 +341,13 @@ void cTexturePacker::InsertTexture( cTexturePackerTex * t, cTexturePackerNode * 
 void cTexturePacker::CreateChild() {
 	mChild = eeNew( cTexturePacker, ( mWidth, mHeight, mForcePowOfTwo, mPixelBorder, mAllowFlipping ) );
 
-	std::list<cTexturePackerTex>::iterator it;
-	std::list< std::list<cTexturePackerTex>::iterator > remove;
+	std::list<cTexturePackerTex*>::iterator it;
+	std::list< std::list<cTexturePackerTex*>::iterator > remove;
 
 	cTexturePackerTex * t = NULL;
 
 	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
-		t = &(*it);
+		t = (*it);
 
 		if ( !t->Placed() ) {
 			mChild->AddTexture( t->Name() );
@@ -355,7 +362,7 @@ void cTexturePacker::CreateChild() {
 	}
 
 	// Removes the non-placed textures from the pack
-	std::list< std::list<cTexturePackerTex>::iterator >::iterator itit;
+	std::list< std::list<cTexturePackerTex*>::iterator >::iterator itit;
 
 	for ( itit = remove.begin(); itit != remove.end(); itit++ ) {
 		mTextures.erase( *itit );
@@ -384,22 +391,22 @@ bool cTexturePacker::AddTexturesPath( std::string TexturesPath ) {
 	return false;
 }
 
-bool cTexturePacker::AddPackerText( cTexturePackerTex& TPack ) {
-	if ( TPack.LoadedInfo() ) {
+bool cTexturePacker::AddPackerText( cTexturePackerTex * TPack ) {
+	if ( TPack->LoadedInfo() ) {
 		// Only add the texture if can fit inside the atlas, otherwise it will ignore it
-		if ( ( TPack.Width() + mPixelBorder <= mWidth && TPack.Height() + mPixelBorder <= mHeight ) ||
-			( mAllowFlipping && ( TPack.Width() + mPixelBorder <= mHeight && TPack.Height() + mPixelBorder <= mWidth ) )
+		if ( ( TPack->Width() + mPixelBorder <= mWidth && TPack->Height() + mPixelBorder <= mHeight ) ||
+			( mAllowFlipping && ( TPack->Width() + mPixelBorder <= mHeight && TPack->Height() + mPixelBorder <= mWidth ) )
 		)
 		{
-			mTotalArea += TPack.Area();
+			mTotalArea += TPack->Area();
 
 			// Insert ordered
-			std::list<cTexturePackerTex>::iterator it;
+			std::list<cTexturePackerTex*>::iterator it;
 
 			bool Added = false;
 
 			for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
-				if ( (*it).Area() < TPack.Area() ) {
+				if ( (*it)->Area() < TPack->Area() ) {
 					mTextures.insert( it, TPack );
 					Added = true;
 					break;
@@ -418,13 +425,13 @@ bool cTexturePacker::AddPackerText( cTexturePackerTex& TPack ) {
 }
 
 bool cTexturePacker::AddImage( cImage * Img, const std::string& Name ) {
-	cTexturePackerTex TPack( Img, Name );
+	cTexturePackerTex * TPack = eeNew( cTexturePackerTex, ( Img, Name ) );
 	return AddPackerText( TPack );
 }
 
 bool cTexturePacker::AddTexture( const std::string& TexturePath ) {
 	if ( FileSystem::FileExists( TexturePath ) ) {
-		cTexturePackerTex TPack( TexturePath );
+		cTexturePackerTex * TPack = eeNew( cTexturePackerTex, ( TexturePath ) );
 		return AddPackerText( TPack );
 	}
 
@@ -444,7 +451,7 @@ Int32 cTexturePacker::PackTextures() { // pack the textures, the return code is 
 	mCount = (Int32)mTextures.size();
 
 	// We must place each texture
-	std::list<cTexturePackerTex>::iterator it;
+	std::list<cTexturePackerTex*>::iterator it;
 	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
 		// For the texture with the longest edge we place it according to this criteria.
 		//   (1) If it is a perfect match, we always accept it as it causes the least amount of fragmentation.
@@ -490,8 +497,8 @@ Int32 cTexturePacker::PackTextures() { // pack the textures, the return code is 
 	mPacked = true;
 
 	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
-		if ( !(*it).Placed() )
-			mTotalArea -= (*it).Area();
+		if ( !(*it)->Placed() )
+			mTotalArea -= (*it)->Area();
 	}
 
 	eePRINT( "Total Area Used: %d. This represents the %4.2f percent \n", mTotalArea, ( (eeDouble)mTotalArea / (eeDouble)( mWidth * mHeight ) ) * 100.0 );
@@ -515,10 +522,10 @@ void cTexturePacker::Save( const std::string& Filepath, const EE_SAVE_TYPE& Form
 
 	cTexturePackerTex * t = NULL;
 	int w, h, c;
-	std::list<cTexturePackerTex>::iterator it;
+	std::list<cTexturePackerTex*>::iterator it;
 
 	for ( it = mTextures.begin(); it != mTextures.end(); it++ ) {
-		t = &(*it);
+		t = (*it);
 
 		if ( t->Placed() ) {
 			Uint8 * data;
@@ -654,14 +661,14 @@ void cTexturePacker::CreateSubTexturesHdr( cTexturePacker * Packer, std::vector<
 	sSubTextureHdr tSubTextureHdr;
 	Uint32 c = 0;
 
-	std::list<cTexturePackerTex> tTextures = *(Packer->GetTexturePackPtr());
-	std::list<cTexturePackerTex>::iterator it;
+	std::list<cTexturePackerTex*> tTextures = *(Packer->GetTexturePackPtr());
+	std::list<cTexturePackerTex*>::iterator it;
 	cTexturePackerTex * tTex;
 
 	SubTextures.resize( tTextures.size() );
 
 	for ( it = tTextures.begin(); it != tTextures.end(); it++ ) {
-		tTex = &(*it);
+		tTex = (*it);
 
 		if ( tTex->Placed() ) {
 			std::string name = FileSystem::FileNameFromPath( tTex->Name() );
@@ -741,7 +748,7 @@ cTexturePacker * cTexturePacker::GetParent() const {
 	return mParent;
 }
 
-std::list<cTexturePackerTex> * cTexturePacker::GetTexturePackPtr() {
+std::list<cTexturePackerTex*> * cTexturePacker::GetTexturePackPtr() {
 	return &mTextures;
 }
 

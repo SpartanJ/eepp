@@ -108,7 +108,7 @@ class EE_API cTexturePacker {
 			PackFail
 		};
 
-		std::list<cTexturePackerTex>	mTextures;
+		std::list<cTexturePackerTex*>	mTextures;
 
     	Int32 							mLongestEdge;
     	Int32							mTotalArea;
@@ -132,7 +132,7 @@ class EE_API cTexturePacker {
 
 		cTexturePacker * 				GetParent() const;
 
-		std::list<cTexturePackerTex> *	GetTexturePackPtr();
+		std::list<cTexturePackerTex*> *	GetTexturePackPtr();
 
 		void							ChildSave( const EE_SAVE_TYPE& Format );
 
@@ -168,7 +168,7 @@ class EE_API cTexturePacker {
 
     	void							CreateChild();
 
-		bool							AddPackerText( cTexturePackerTex& TPack );
+		bool							AddPackerText( cTexturePackerTex * TPack );
 };
 
 }}
