@@ -19,7 +19,8 @@ class EE_API cUIGenericGrid : public cUIComplexControl {
 					HScrollMode( UI_SCROLLBAR_AUTO ),
 					CollumnsCount(1),
 					RowHeight( 24 ),
-					GridWidth( 0 )
+					GridWidth( 0 ),
+					TouchDragDeceleration( 0.01f )
 				{
 				}
 
@@ -32,6 +33,7 @@ class EE_API cUIGenericGrid : public cUIComplexControl {
 				Uint32				RowHeight;
 				Uint32				GridWidth;
 				eeRecti				PaddingContainer;
+				eeFloat				TouchDragDeceleration;
 		};
 
 		cUIGenericGrid( const cUIGenericGrid::CreateParams& Params );
@@ -126,6 +128,7 @@ class EE_API cUIGenericGrid : public cUIComplexControl {
 
 		eeVector2i					mTouchDragPoint;
 		eeFloat						mTouchDragAcceleration;
+		eeFloat						mTouchDragDeceleration;
 
 		bool						mCollWidthAssigned;
 

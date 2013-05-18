@@ -22,6 +22,7 @@ cUIGenericGrid::cUIGenericGrid( const cUIGenericGrid::CreateParams& Params ) :
 	mItemsNotVisible(0),
 	mSelected(-1),
 	mTouchDragAcceleration(0),
+	mTouchDragDeceleration( Params.TouchDragDeceleration ),
 	mCollWidthAssigned( false )
 {
 	mCollumnsWidth.resize( mCollumnsCount, 0 );
@@ -578,11 +579,11 @@ void cUIGenericGrid::Update() {
 
 					mVScrollBar->Value( mVScrollBar->Value() + ( -diff.y / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) ) );
 
-					mTouchDragAcceleration += Elapsed() * diff.y * 0.01;
+					mTouchDragAcceleration += Elapsed() * diff.y * mTouchDragDeceleration;
 
 					mTouchDragPoint = Pos;
 				} else {
-					mTouchDragAcceleration -= Elapsed() * mTouchDragAcceleration * 0.01;
+					mTouchDragAcceleration -= Elapsed() * mTouchDragAcceleration * 0.01f;
 				}
 			} else {
 				// Mouse Down
@@ -604,7 +605,7 @@ void cUIGenericGrid::Update() {
 				if ( mTouchDragAcceleration > 0.01f || mTouchDragAcceleration < -0.01f ) {
 					mVScrollBar->Value( mVScrollBar->Value() + ( -mTouchDragAcceleration / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) ) );
 
-					mTouchDragAcceleration -= mTouchDragAcceleration * 0.01 * Elapsed();
+					mTouchDragAcceleration -= mTouchDragAcceleration * mTouchDragDeceleration * Elapsed();
 				}
 			}
 		}

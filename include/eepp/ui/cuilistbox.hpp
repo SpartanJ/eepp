@@ -22,7 +22,8 @@ class EE_API cUIListBox : public cUIComplexControl {
 					Font( NULL ),
 					FontColor( 0, 0, 0, 255 ),
 					FontOverColor( 0, 0, 0, 255 ),
-					FontSelectedColor( 0, 0, 0, 255 )
+					FontSelectedColor( 0, 0, 0, 255 ),
+					TouchDragDeceleration( 0.01f )
 				{
 					cUITheme * Theme = cUIThemeManager::instance()->DefaultTheme();
 
@@ -48,6 +49,7 @@ class EE_API cUIListBox : public cUIComplexControl {
 				eeColorA			FontColor;
 				eeColorA			FontOverColor;
 				eeColorA			FontSelectedColor;
+				eeFloat				TouchDragDeceleration;
 		};
 
 		cUIListBox( cUIListBox::CreateParams& Params );
@@ -185,6 +187,7 @@ class EE_API cUIListBox : public cUIComplexControl {
 
 		eeVector2i			mTouchDragPoint;
 		eeFloat				mTouchDragAcceleration;
+		eeFloat				mTouchDragDeceleration;
 
 		std::list<Uint32>				mSelected;
 		std::vector<cUIListBoxItem *> 	mItems;
