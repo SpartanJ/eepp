@@ -25,7 +25,8 @@ cUIListBox::cUIListBox( cUIListBox::CreateParams& Params ) :
 	mItemsNotVisible(0),
 	mLastTickMove(0),
 	mVisibleFirst(0),
-	mVisibleLast(0)
+	mVisibleLast(0),
+	mTouchDragAcceleration(0)
 {
 	if ( NULL == Params.Font && NULL != cUIThemeManager::instance()->DefaultFont() )
 		mFont = cUIThemeManager::instance()->DefaultFont();
@@ -929,6 +930,77 @@ void cUIListBox::HorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode ) {
 
 const UI_SCROLLBAR_MODE& cUIListBox::HorizontalScrollMode() {
 	return mHScrollMode;
+}
+
+bool cUIListBox::TouchDragEnable() const {
+	return 0 != ( mFlags & UI_TOUCH_DRAG_ENABLED );
+}
+
+void cUIListBox::TouchDragEnable( const bool& enable ) {
+	WriteFlag( UI_TOUCH_DRAG_ENABLED, true == enable );
+}
+
+bool cUIListBox::TouchDragging() const {
+	return 0 != ( mControlFlags & UI_CTRL_FLAG_TOUCH_DRAGGING );
+}
+
+void cUIListBox::TouchDragging( const bool& dragging ) {
+	WriteCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, true == dragging );
+}
+
+void cUIListBox::Update() {
+	if ( mEnabled && mVisible ) {
+		if ( mFlags & UI_TOUCH_DRAG_ENABLED ) {
+			Uint32 Press	= cUIManager::instance()->PressTrigger();
+			Uint32 LPress	= cUIManager::instance()->LastPressTrigger();
+
+			if ( ( mControlFlags & UI_CTRL_FLAG_TOUCH_DRAGGING ) ) {
+				// Mouse Not Down
+				if ( !( Press & EE_BUTTON_LMASK ) ) {
+					WriteCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 0 );
+					return;
+				}
+
+				eeVector2i Pos( cUIManager::instance()->GetMousePos() );
+
+				if ( mTouchDragPoint != Pos ) {
+					eeVector2i diff = -( mTouchDragPoint - Pos );
+
+					mVScrollBar->Value( mVScrollBar->Value() + ( -diff.y / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) ) );
+
+					mTouchDragAcceleration += Elapsed() * diff.y * 0.01;
+
+					mTouchDragPoint = Pos;
+				} else {
+					mTouchDragAcceleration -= Elapsed() * mTouchDragAcceleration * 0.01;
+				}
+			} else {
+				// Mouse Down
+				if ( IsMouseOverMeOrChilds() && !mVScrollBar->IsMouseOverMeOrChilds() && !mHScrollBar->IsMouseOverMeOrChilds() ) {
+					if ( !( LPress & EE_BUTTON_LMASK ) && ( Press & EE_BUTTON_LMASK ) ) {
+						WriteCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 1 );
+
+						mTouchDragPoint			= cUIManager::instance()->GetMousePos();
+						mTouchDragAcceleration	= 0;
+					}
+				}
+
+				// Mouse Up
+				if ( ( LPress & EE_BUTTON_LMASK ) && !( Press & EE_BUTTON_LMASK ) ) {
+					WriteCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 0 );
+				}
+
+				// Deaccelerate
+				if ( mTouchDragAcceleration > 0.01f || mTouchDragAcceleration < -0.01f ) {
+					mVScrollBar->Value( mVScrollBar->Value() + ( -mTouchDragAcceleration / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) ) );
+
+					mTouchDragAcceleration -= mTouchDragAcceleration * 0.01 * Elapsed();
+				}
+			}
+		}
+	}
+
+	cUIComplexControl::Update();
 }
 
 }}

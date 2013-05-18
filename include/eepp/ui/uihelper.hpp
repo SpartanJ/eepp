@@ -18,6 +18,7 @@ enum UI_CONTROL_FLAGS_VALUES {
 	UI_CTRL_FLAG_DRAGABLE							= (1<<9),
 	UI_CTRL_FLAG_COMPLEX							= (1<<10),
 	UI_CTRL_FLAG_SKIN_OWNER							= (1<<11),
+	UI_CTRL_FLAG_TOUCH_DRAGGING						= (1<<12),
 	UI_CTRL_FLAG_FREE_USE							= (1<<31)
 };
 
@@ -56,7 +57,8 @@ enum UI_FLAGS {
 	UI_ANCHOR_BOTTOM				= (1 << 19),
 	UI_ANCHOR_LEFT					= (1 << 20),
 	UI_ANCHOR_RIGHT					= (1 << 21),
-	UI_AUTO_FIT						= (1 << 22)
+	UI_AUTO_FIT						= (1 << 22),
+	UI_TOUCH_DRAG_ENABLED			= (1 << 23)
 };
 
 enum UI_CONTROL_TYPES {

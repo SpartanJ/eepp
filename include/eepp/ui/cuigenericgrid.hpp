@@ -8,12 +8,12 @@
 
 namespace EE { namespace UI {
 
-class EE_API cUIGenericGrid : public cUIControlAnim {
+class EE_API cUIGenericGrid : public cUIComplexControl {
 	public:
-		class CreateParams : public cUIControlAnim::CreateParams {
+		class CreateParams : public cUIComplexControl::CreateParams {
 			public:
 				inline CreateParams() :
-					cUIControlAnim::CreateParams(),
+					cUIComplexControl::CreateParams(),
 					SmoothScroll( true ),
 					VScrollMode( UI_SCROLLBAR_AUTO ),
 					HScrollMode( UI_SCROLLBAR_AUTO ),
@@ -89,6 +89,16 @@ class EE_API cUIGenericGrid : public cUIControlAnim {
 		Uint32 OnMessage( const cUIMessage * Msg );
 
 		tUIItemContainer<cUIGenericGrid> * Container() const;
+
+		virtual void Update();
+
+		bool TouchDragEnable() const;
+
+		void TouchDragEnable( const bool& enable );
+
+		bool TouchDragging() const;
+
+		void TouchDragging( const bool& dragging );
 	protected:
 		friend class tUIItemContainer<cUIGenericGrid>;
 		friend class cUIGridCell;
@@ -113,6 +123,10 @@ class EE_API cUIGenericGrid : public cUIControlAnim {
 		Int32						mHScrollInit;
 		Int32						mItemsNotVisible;
 		Int32						mSelected;
+
+		eeVector2i					mTouchDragPoint;
+		eeFloat						mTouchDragAcceleration;
+
 		bool						mCollWidthAssigned;
 
 		void UpdateCells();

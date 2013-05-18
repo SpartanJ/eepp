@@ -414,7 +414,7 @@ void cEETest::CreateUI() {
 	LBParams.Parent( C );
 	LBParams.PosSet( 325, 8 );
 	LBParams.Size = eeSize( 200, 240-16 );
-	LBParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING; // | UI_MULTI_SELECT
+	LBParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_TOUCH_DRAG_ENABLED; // | UI_MULTI_SELECT
 	mListBox = eeNew( cUIListBox, ( LBParams ) );
 	mListBox->Visible( true );
 	mListBox->Enabled( true );
@@ -516,7 +516,7 @@ void cEETest::CreateUI() {
 	GridParams.Parent( C );
 	GridParams.PosSet( 325, 245 );
 	GridParams.SizeSet( 200, 130 );
-	GridParams.Flags = UI_AUTO_PADDING;
+	GridParams.Flags = UI_AUTO_PADDING | UI_TOUCH_DRAG_ENABLED;
 	GridParams.RowHeight = 24;
 	GridParams.CollumnsCount = 3;
 	cUIGenericGrid * mGenGrid = eeNew( cUIGenericGrid, ( GridParams ) );

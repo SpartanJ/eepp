@@ -147,6 +147,16 @@ class EE_API cUIListBox : public cUIComplexControl {
 		void HorizontalScrollMode( const UI_SCROLLBAR_MODE& Mode );
 
 		const UI_SCROLLBAR_MODE& HorizontalScrollMode();
+
+		virtual void Update();
+
+		bool TouchDragEnable() const;
+
+		void TouchDragEnable( const bool& enable );
+
+		bool TouchDragging() const;
+
+		void TouchDragging( const bool& dragging );
 	protected:
 		friend class cUIListBoxItem;
 		friend class tUIItemContainer<cUIListBox>;
@@ -172,6 +182,9 @@ class EE_API cUIListBox : public cUIComplexControl {
 
 		Uint32				mVisibleFirst;
 		Uint32				mVisibleLast;
+
+		eeVector2i			mTouchDragPoint;
+		eeFloat				mTouchDragAcceleration;
 
 		std::list<Uint32>				mSelected;
 		std::vector<cUIListBoxItem *> 	mItems;
