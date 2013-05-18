@@ -171,11 +171,15 @@ function get_backend_link_name( name )
 end
 
 function string.starts(String,Start)
-   return string.sub(String,1,string.len(Start))==Start
+	if ( _ACTION ) then
+		return string.sub(String,1,string.len(Start))==Start
+	end
+	
+	return false
 end
 
 function is_vs()
-	return string.starts(_ACTION,"vs")
+	return ( string.starts(_ACTION,"vs") )
 end
 
 link_list = { }
@@ -244,6 +248,10 @@ function build_link_configuration( package_name )
 			add_static_links()
 			links { link_list }
 		end
+		
+		if ( is_vs() and backend_is("SDL") ) then
+			links { get_backend_link_name( "SDL" ), "SDLmain" }
+		end
 	end
 	
 	configuration "debug"
@@ -251,6 +259,8 @@ function build_link_configuration( package_name )
 		
 		if package_name == "eepp" then
 			defines { "EE_DYNAMIC", "EE_EXPORTS" }
+		else
+			defines { "EE_DYNAMIC" }
 		end
 		
 		flags { "Symbols" }
@@ -266,6 +276,8 @@ function build_link_configuration( package_name )
 		
 		if package_name == "eepp" then
 			defines { "EE_DYNAMIC", "EE_EXPORTS" }
+		else
+			defines { "EE_DYNAMIC" }
 		end
 		
 		flags { "Optimize" }
@@ -432,7 +444,11 @@ end
 
 function backend_is( name )
 	if not _OPTIONS["with-backend"] then
-		_OPTIONS["with-backend"] = "SDL2"
+		if ( is_vs() ) then
+			_OPTIONS["with-backend"] = "SDL"
+		else
+			_OPTIONS["with-backend"] = "SDL2"
+		end
 	end
 	
 	if next(backends) == nil then
@@ -560,6 +576,7 @@ solution "eepp"
 
 		if is_vs() then
 			language "C++"
+			buildoptions { "/TP" }
 		else
 			language "C"
 		end
@@ -618,6 +635,7 @@ solution "eepp"
 
 		if is_vs() then
 			language "C++"
+			buildoptions { "/TP" }
 		else
 			language "C"
 		end

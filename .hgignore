@@ -21,3 +21,4 @@ ee.tag
 log.log
 eepp-debug.dll
 eepp.dll
+*.pdb
