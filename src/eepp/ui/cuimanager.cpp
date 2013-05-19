@@ -18,7 +18,8 @@ cUIManager::cUIManager() :
 	mCbId(-1),
 	mResizeCb(0),
 	mFlags( 0 ),
-	mHighlightColor( 234, 195, 123, 255 ),
+	mHighlightFocusColor( 234, 195, 123, 255 ),
+	mHighlightOverColor( 195, 123, 234, 255 ),
 	mInit( false ),
 	mFirstPress( false ),
 	mShootingDown( false )
@@ -289,12 +290,28 @@ bool cUIManager::HighlightFocus() const {
 	return 0 != ( mFlags & UI_MANAGER_HIGHLIGHT_FOCUS );
 }
 
-void cUIManager::HighlightColor( const eeColorA& Color ) {
-	mHighlightColor = Color;
+void cUIManager::HighlightFocusColor( const eeColorA& Color ) {
+	mHighlightFocusColor = Color;
 }
 
-const eeColorA& cUIManager::HighlightColor() const {
-	return mHighlightColor;
+const eeColorA& cUIManager::HighlightFocusColor() const {
+	return mHighlightFocusColor;
+}
+
+void cUIManager::HighlightOver( bool Highlight ) {
+	BitOp::SetBitFlagValue( &mFlags, UI_MANAGER_HIGHLIGHT_OVER, Highlight ? 1 : 0 );
+}
+
+bool cUIManager::HighlightOver() const {
+	return 0 != ( mFlags & UI_MANAGER_HIGHLIGHT_OVER );
+}
+
+void cUIManager::HighlightOverColor( const eeColorA& Color ) {
+	mHighlightOverColor = Color;
+}
+
+const eeColorA& cUIManager::HighlightOverColor() const {
+	return mHighlightOverColor;
 }
 
 void cUIManager::CheckTabPress( const Uint32& KeyCode ) {

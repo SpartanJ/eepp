@@ -480,7 +480,7 @@ void cMapEditor::CreateUIMap() {
 	mMapHScroll = mTheme->CreateScrollBar( mWinContainer, eeSize( Params.Size.Width(), ScrollH ), eeVector2i( 0, mWinContainer->Size().Height() - ScrollH ), UI_ANCHOR_LEFT | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_AUTO_SIZE );
 	mMapHScroll->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cMapEditor::OnScrollMapH ) );
 
-	mMapVScroll = mTheme->CreateScrollBar( mWinContainer, eeSize( ScrollV, Params.Size.Height() ), eeVector2i( Params.Size.Width() + ScrollV, 0 ), UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_AUTO_SIZE , true );
+	mMapVScroll = mTheme->CreateScrollBar( mWinContainer, eeSize( ScrollV, Params.Size.Height() ), eeVector2i( Params.Size.Width() + ScrollV, 0 ), UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM | UI_AUTO_SIZE , true );
 	mMapVScroll->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cMapEditor::OnScrollMapV ) );
 
 	MapCreated();

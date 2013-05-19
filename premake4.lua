@@ -249,8 +249,26 @@ function build_link_configuration( package_name )
 			links { link_list }
 		end
 		
-		if ( is_vs() and backend_is("SDL") ) then
-			links { get_backend_link_name( "SDL" ), "SDLmain" }
+		if ( is_vs() ) then
+			if ( backend_is("SDL") ) then
+				links { get_backend_link_name( "SDL" ), "SDLmain" }
+			elseif ( backend_is("SDL2") ) then
+				links { get_backend_link_name( "SDL2" ), "SDL2main" }
+			elseif ( backend_is("allegro5") ) then
+				links { get_backend_link_name( "allegro" ), "allegro_main" }
+			elseif ( backend_is("SFML") ) then
+				links { get_backend_link_name( "SFML" ) }
+			end
+		else
+			if ( os.is_real("macosx") ) then
+				if ( backend_is("SDL") ) then
+					links { "SDLmain" }
+				elseif ( backend_is("SDL2") ) then
+					links { "SDL2main" }
+				elseif ( backend_is("allegro5") ) then
+					links { "allegro_main" }
+				end
+			end
 		end
 	end
 	
@@ -382,8 +400,8 @@ function add_allegro5()
 	files { "src/eepp/window/backend/allegro5/*.cpp" }
 	defines { "EE_BACKEND_ALLEGRO_ACTIVE" }
 	
-	if not can_add_static_backend("allegro5") then
-		table.insert( link_list, get_backend_link_name( "allegro5" ) )
+	if not can_add_static_backend("allegro") then
+		table.insert( link_list, get_backend_link_name( "allegro" ) )
 	else
 		insert_static_backend( "allegro5" )
 	end

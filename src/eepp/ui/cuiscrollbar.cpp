@@ -102,9 +102,11 @@ void cUIScrollBar::SetTheme( cUITheme * Theme ) {
 				if ( mSlider->IsVertical() ) {
 					mSlider->Size( tSubTexture->RealSize().Width() , mSize.Height() );
 					Size( tSubTexture->RealSize().Width() , mSize.Height() );
+					mMinControlSize.x = mSize.Width();
 				} else {
 					mSlider->Size( mSize.Width(), tSubTexture->RealSize().Height() );
 					Size( mSize.Width(), tSubTexture->RealSize().Height() );
+					mMinControlSize.y = mSize.Height();
 				}
 			}
 		}

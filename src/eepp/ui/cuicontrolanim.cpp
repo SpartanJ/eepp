@@ -48,7 +48,15 @@ void cUIControlAnim::Draw() {
 			cPrimitives P;
 			P.FillMode( EE_DRAW_LINE );
 			P.BlendMode( Blend() );
-			P.SetColor( cUIManager::instance()->HighlightColor() );
+			P.SetColor( cUIManager::instance()->HighlightFocusColor() );
+			P.DrawRectangle( GetRectf() );
+		}
+
+		if ( cUIManager::instance()->HighlightOver() && cUIManager::instance()->OverControl() == this ) {
+			cPrimitives P;
+			P.FillMode( EE_DRAW_LINE );
+			P.BlendMode( Blend() );
+			P.SetColor( cUIManager::instance()->HighlightOverColor() );
 			P.DrawRectangle( GetRectf() );
 		}
 	}

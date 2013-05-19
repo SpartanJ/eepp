@@ -259,7 +259,7 @@ void cEETest::CreateUI() {
 
 	Log->Writef( "Texture Atlas Loading Time: %f ms.", TE.ElapsedSinceStart() );
 
-	cUIManager::instance()->Init(); //UI_MANAGER_HIGHLIGHT_FOCUS
+	cUIManager::instance()->Init(); //UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
 
 	//mTheme = cUITheme::LoadFromPath( eeNew( cUIDefaultTheme, ( "uitheme", "uitheme" ) ), MyPath + "uitheme/" );
 

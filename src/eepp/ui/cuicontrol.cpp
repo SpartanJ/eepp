@@ -248,6 +248,22 @@ void cUIControl::Draw() {
 
 		if ( NULL != mSkinState )
 			mSkinState->Draw( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 255 );
+
+		if ( cUIManager::instance()->HighlightFocus() && cUIManager::instance()->FocusControl() == this ) {
+			cPrimitives P;
+			P.FillMode( EE_DRAW_LINE );
+			P.BlendMode( Blend() );
+			P.SetColor( cUIManager::instance()->HighlightFocusColor() );
+			P.DrawRectangle( GetRectf() );
+		}
+
+		if ( cUIManager::instance()->HighlightOver() && cUIManager::instance()->OverControl() == this ) {
+			cPrimitives P;
+			P.FillMode( EE_DRAW_LINE );
+			P.BlendMode( Blend() );
+			P.SetColor( cUIManager::instance()->HighlightOverColor() );
+			P.DrawRectangle( GetRectf() );
+		}
 	}
 }
 

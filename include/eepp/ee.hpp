@@ -51,7 +51,7 @@
 						Copy-Paste will be moved for a middle to long term plan.
 
 	@TODO Add PVRTC and ETC support.
-				STATE:	Not started.
+				STATE:	DONE.
 
 	Middle-term plans:
 
