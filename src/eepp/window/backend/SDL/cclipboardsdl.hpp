@@ -8,7 +8,7 @@
 
 #include <eepp/window/cclipboard.hpp>
 
-class SDL_SysWMinfo;
+struct SDL_SysWMinfo;
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 

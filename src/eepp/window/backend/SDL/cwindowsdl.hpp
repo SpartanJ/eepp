@@ -8,8 +8,8 @@
 
 #include <eepp/window/cwindow.hpp>
 
-class SDL_Surface;
-class SDL_SysWMinfo;
+struct SDL_Surface;
+struct SDL_SysWMinfo;
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 

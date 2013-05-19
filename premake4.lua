@@ -278,7 +278,9 @@ function build_link_configuration( package_name )
 		if package_name == "eepp" then
 			defines { "EE_DYNAMIC", "EE_EXPORTS" }
 		else
-			defines { "EE_DYNAMIC" }
+			if package_name ~= "eepp-static" then
+				defines { "EE_DYNAMIC" }
+			end
 		end
 		
 		flags { "Symbols" }
@@ -295,7 +297,9 @@ function build_link_configuration( package_name )
 		if package_name == "eepp" then
 			defines { "EE_DYNAMIC", "EE_EXPORTS" }
 		else
-			defines { "EE_DYNAMIC" }
+			if package_name ~= "eepp-static" then
+				defines { "EE_DYNAMIC" }
+			end
 		end
 		
 		flags { "Optimize" }

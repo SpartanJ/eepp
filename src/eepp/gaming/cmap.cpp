@@ -548,7 +548,7 @@ Uint32 cMap::DrawBackground() const {
 }
 
 bool cMap::ClipedArea() const {
-	return mFlags & MAP_FLAG_CLIP_AREA;
+	return 0 != ( mFlags & MAP_FLAG_CLIP_AREA );
 }
 
 void cMap::ClipedArea( const bool& clip ) {
@@ -556,7 +556,7 @@ void cMap::ClipedArea( const bool& clip ) {
 }
 
 bool cMap::ClampBorders() const {
-	return mFlags & MAP_FLAG_CLAMP_BORDERS;
+	return 0 != ( mFlags & MAP_FLAG_CLAMP_BORDERS );
 }
 
 void cMap::ClampBorders( const bool& clamp ) {
@@ -564,7 +564,7 @@ void cMap::ClampBorders( const bool& clamp ) {
 }
 
 Uint32 cMap::DrawTileOver() const {
-	return mFlags & MAP_FLAG_DRAW_TILE_OVER;
+	return 0 != ( mFlags & MAP_FLAG_DRAW_TILE_OVER );
 }
 
 void cMap::DrawTileOver( const bool& draw ) {
@@ -572,7 +572,7 @@ void cMap::DrawTileOver( const bool& draw ) {
 }
 
 bool cMap::LightsEnabled() {
-	return mFlags & MAP_FLAG_LIGHTS_ENABLED;
+	return 0 != ( mFlags & MAP_FLAG_LIGHTS_ENABLED );
 }
 
 void cMap::LightsEnabled( const bool& enabled ) {
@@ -580,7 +580,7 @@ void cMap::LightsEnabled( const bool& enabled ) {
 }
 
 bool cMap::LightsByVertex() {
-	return mFlags & MAP_FLAG_LIGHTS_BYVERTEX;
+	return 0 != ( mFlags & MAP_FLAG_LIGHTS_BYVERTEX );
 }
 
 void cMap::Move( const eeVector2f& offset )  {

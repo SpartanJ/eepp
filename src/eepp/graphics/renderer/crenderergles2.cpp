@@ -120,7 +120,7 @@ void cRendererGLES2::Init() {
 			mTextureUnitsStates[i]	= 0;
 		}
 
-		cShader::Ensure = false;
+		cShader::Ensure( false );
 
 		mShaders[ EEGLES2_SHADER_BASE ]			= cShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
 		mShaders[ EEGLES2_SHADER_BASE ]->SetReloadCb( cb::Make1( this, &cRendererGLES2::ReloadShader ) );
@@ -143,7 +143,7 @@ void cRendererGLES2::Init() {
 		mShaders[ EEGLES2_SHADER_PRIMITIVE ]		= cShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
 		mShaders[ EEGLES2_SHADER_PRIMITIVE ]->SetReloadCb( cb::Make1( this, &cRendererGLES2::ReloadShader ) );
 
-		cShader::Ensure = true;
+		cShader::Ensure( true );
 
 		SetShader( EEGLES2_SHADER_BASE );
 	} else {

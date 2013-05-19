@@ -185,9 +185,9 @@ void Polygon2<T>::Scale( const T& scale, const Vector2<T>& Center ) {
 
 template<typename T>
 Polygon2<T> Polygon2<T>::CreateRoundedRectangle( const T& x, const T& y, const T& width, const T& height, const eeUint& Radius ) {
-	T PI05 = EE_PI * 0.5f;
-	T PI15 = EE_PI * 1.5f;
-	T PI20 = EE_PI2;
+	T PI05 = (T)EE_PI * 0.5f;
+	T PI15 = (T)EE_PI * 1.5f;
+	T PI20 = (T)EE_PI2;
 	T sx, sy;
 	T t;
 
@@ -196,7 +196,7 @@ Polygon2<T> Polygon2<T>::CreateRoundedRectangle( const T& x, const T& y, const T
 	Poly.PushBack( Vector2<T>( x, y + height - Radius) );
 	Poly.PushBack( Vector2<T>( x, y + Radius ) );
 
-	for( t = EE_PI; t < PI15; t += 0.1f ) {
+	for( t = (T)EE_PI; t < PI15; t += 0.1f ) {
 		sx = x + Radius + (eeFloat)cosf(t) * Radius;
 		sy = y + Radius + (eeFloat)sinf(t) * Radius;
 
@@ -226,7 +226,7 @@ Polygon2<T> Polygon2<T>::CreateRoundedRectangle( const T& x, const T& y, const T
 	Poly.PushBack( Vector2<T> ( x + width - Radius, y + height ) );
 	Poly.PushBack( Vector2<T> ( x + Radius, y + height ) );
 
-	for( t = PI05; t < EE_PI; t += 0.1f ) {
+	for( t = PI05; t < (T)EE_PI; t += 0.1f ) {
 		sx = x + Radius + (eeFloat)cosf(t) * Radius;
 		sy = y + height - Radius + (eeFloat)sinf(t) * Radius;
 
@@ -385,7 +385,7 @@ void Polygon2<T>::Move( Vector2<T> dist ) {
 template <typename T>
 Uint32 Polygon2<T>::ClosestPoint( const Vector2<T>& to, T * distance ) {
 	Uint32 Index	= 0;
-	T Dist			= 99999999;
+	T Dist			= (T)99999999;
 	T tDist;
 
 	if ( !Vector.size() ) {

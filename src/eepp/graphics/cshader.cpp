@@ -5,7 +5,15 @@
 
 namespace EE { namespace Graphics {
 
-bool cShader::Ensure = true;
+bool cShader::sEnsure = true;
+
+void cShader::Ensure( bool ensure ) {
+	sEnsure = ensure;
+}
+
+bool cShader::Ensure() {
+	return sEnsure;
+}
 
 cShader::cShader( const Uint32& Type ) {
 	Init( Type );
@@ -92,9 +100,9 @@ void cShader::Init( const Uint32& Type ) {
 void cShader::Reload() {
 	Init( mType );
 
-	cShader::Ensure = false;
+	cShader::Ensure( false );
 	SetSource( mSource );
-	cShader::Ensure = true;
+	cShader::Ensure( true );
 
 	Compile();
 }
@@ -113,7 +121,7 @@ std::string cShader::GetName() {
 
 void cShader::EnsureVersion() {
 	#ifdef EE_GL3_ENABLED
-	if ( cShader::Ensure && ( GLi->Version() == GLv_3 || GLi->Version() == GLv_ES2 ) ) {
+	if ( cShader::Ensure() && ( GLi->Version() == GLv_3 || GLi->Version() == GLv_ES2 ) ) {
 		cLog::instance()->Write( "Shader " + GetName() + " converted to programmable pipeline automatically." );
 
 		if ( GL_VERTEX_SHADER == mType ) {

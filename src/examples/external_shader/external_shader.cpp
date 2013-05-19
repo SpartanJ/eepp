@@ -95,7 +95,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		/// We really don't need shaders for this, but the purpose of the example is to show how to work with external shaders
 		if ( ShadersSupported ) {
 			/// Disable the automatic shader conversion from fixed-pipeline to programmable-pipeline
-			cShader::Ensure = false;
+			cShader::Ensure( false );
 
 			std::string fs( "#ifdef GL_ES\n\
 				precision highp float;\n\

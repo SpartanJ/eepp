@@ -9,7 +9,10 @@ namespace EE { namespace Graphics {
 class EE_API cShader {
 	public:
 		/** Activates/Deactivates shader convertion from fixed pipeline to programmable pipeline ( activated by default ) */
-		static bool			Ensure;
+		static void Ensure( bool ensure );
+
+		/** @return If automatic Shader conversion is activated */
+		static bool Ensure();
 
 		/** Constructor with type of shader, next you'll need to set the source and compile it. */
     	cShader( const Uint32& Type );
@@ -62,6 +65,7 @@ class EE_API cShader {
     	void Reload();
     protected:
 		friend class cRendererGL3;
+		static bool			sEnsure;
 		Uint32 				mGLId;
 		Uint32 				mType;
 		std::string			mFilename;
