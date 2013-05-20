@@ -155,20 +155,39 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	mWindow.WindowConfig.Height	= h;
 	mWindow.WindowSize			= eeSize( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 
-	#if EE_PLAFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
-		if ( GLv_default == Context.Version || GLv_ES1 == Context.Version || GLv_2 == Context.Version ) {
-		#ifdef EE_GLES1
-			if ( GLv_2 == Context.Version )
-				mWindow.ContextConfig.Version = GLv_default;
+	cLog::instance()->Write( "Creating Context" );
 
-			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
-			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-		#endif
+	#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
+		if ( GLv_default != Context.Version ) {
+			if ( GLv_ES1 == Context.Version || GLv_2 == Context.Version ) {
+			#ifdef EE_GLES1
+				if ( GLv_2 == Context.Version )
+					mWindow.ContextConfig.Version = GLv_default;
+
+				cLog::instance()->Write( "Starting GLES1" );
+
+				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
+				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+			#endif
+			} else {
+			#ifdef EE_GLES2
+				cLog::instance()->Write( "Starting GLES2" );
+
+				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+			#endif
+			}
 		} else {
-		#ifdef EE_GLES2
-			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
-			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-		#endif
+			#if defined( EE_GLES2 ) && !defined( EE_GLES1 )
+				cLog::instance()->Write( "Starting GLES2 default" );
+				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+			#else
+				cLog::instance()->Write( "Starting GLES1 default" );
+
+				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
+				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
+			#endif
 		}
 	#endif
 

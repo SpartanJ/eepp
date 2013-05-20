@@ -39,7 +39,7 @@ void cEETest::Init() {
 	cIniFile Ini( MyPath + "ee.ini" );
 	Ini.ReadFile();
 
-	PartsNum			= Ini.GetValueI( "EEPP", "ParticlesNum", 1000);
+	PartsNum			= Ini.GetValueI( "EEPP", "ParticlesNum", 1000 );
 	mUseShaders			= Ini.GetValueB( "EEPP", "UseShaders", false );
 	mJoyEnabled			= Ini.GetValueB( "EEPP", "JoystickEnabled", false );
 	mMusEnabled			= Ini.GetValueB( "EEPP", "Music", false );

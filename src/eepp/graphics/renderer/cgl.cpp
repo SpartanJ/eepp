@@ -15,7 +15,11 @@ cGL * cGL::CreateSingleton( EEGL_version ver ) {
 		ver = GLv_2;
 	#else
 	if ( GLv_default == ver )
+		#ifdef EE_GLES1
 		ver = GLv_ES1;
+		#else
+		ver = GLv_ES2;
+		#endif
 	#endif
 
 	switch ( ver ) {
