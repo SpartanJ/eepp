@@ -1175,18 +1175,20 @@ void cEETest::Screen4() {
 	if ( NULL != mFBO ) {
 		mFBO->Bind();
 		mFBO->Clear();
+	}
 
+	if ( NULL != mVBO ) {
 		mBlindy.Position( 128-16, 128-16 );
 		mBlindy.Draw();
 
-        if ( NULL != mVBO ) {
-            mVBO->Bind();
-            mVBO->Draw();
-            mVBO->Unbind();
-        }
+		mVBO->Bind();
+		mVBO->Draw();
+		mVBO->Unbind();
 
 		mFBOText.Draw( 128.f - (eeFloat)(Int32)( mFBOText.GetTextWidth() * 0.5f ), 25.f - (eeFloat)(Int32)( mFBOText.GetTextHeight() * 0.5f ), FONT_DRAW_CENTER );
+	}
 
+	if ( NULL != mFBO ) {
 		mFBO->Unbind();
 
 		if ( NULL != mFBO->GetTexture() ) {
@@ -1392,15 +1394,6 @@ void cEETest::Input() {
 
 	if ( KM->IsKeyUp(KEY_6) && KM->ControlPressed() )
 		SetScreen( 5 );
-
-	#ifdef EE_PLATFORM_TOUCH
-	std::list<cInputFinger*> Fingers = KM->GetFingersDown();
-	std::list<cInputFinger*> FingersDown = KM->GetFingersWasDown();
-
-	if ( Fingers.size() == 1 && FingersDown.size() == 1 ) {
-		ShowMenu();
-	}
-	#endif
 
 	cJoystick * Joy = JM->GetJoystick(0);
 

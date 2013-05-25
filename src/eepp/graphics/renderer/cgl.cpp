@@ -147,22 +147,42 @@ void cGL::Init() {
 
 	}
 
-	WriteExtension( EEGL_IMG_texture_compression_pvrtc		, IsExtension( "GL_IMG_texture_compression_pvrtc" ) );
-	WriteExtension( EEGL_OES_compressed_ETC1_RGB8_texture	, IsExtension( "GL_OES_compressed_ETC1_RGB8_texture" ) );
+	#ifdef EE_GLES
+
+	WriteExtension( EEGL_ARB_point_parameters				, 1													);
+	WriteExtension( EEGL_ARB_point_sprite					, 1													);
+	WriteExtension( EEGL_ARB_multitexture					, 1													);
+
+	WriteExtension( EEGL_IMG_texture_compression_pvrtc		, IsExtension( "GL_IMG_texture_compression_pvrtc" )	);
+	WriteExtension( EEGL_OES_compressed_ETC1_RGB8_texture	, IsExtension( "GL_OES_compressed_ETC1_RGB8_texture" )	);
 
 	if ( !IsExtension( EEGL_EXT_texture_compression_s3tc ) ) {
-		WriteExtension(	EEGL_EXT_texture_compression_s3tc	, IsExtension( "GL_OES_texture_compression_S3TC" ) );
+		WriteExtension(	EEGL_EXT_texture_compression_s3tc	, IsExtension( "GL_OES_texture_compression_S3TC" )	);
 	}
 
 	if ( !IsExtension( EEGL_EXT_framebuffer_object ) ) {
-		WriteExtension(	EEGL_EXT_framebuffer_object			, IsExtension( "GL_OES_framebuffer_object" ) );
+		WriteExtension(	EEGL_EXT_framebuffer_object			, IsExtension( "GL_OES_framebuffer_object" )		);
 	}
 
 	if ( !IsExtension( EEGL_ARB_texture_non_power_of_two ) ) {
 		WriteExtension( EEGL_ARB_texture_non_power_of_two	, IsExtension( "GL_IMG_texture_npot" )	||
 															  IsExtension( "GL_OES_texture_npot" )	||
-															  IsExtension( "GL_APPLE_texture_2D_limited_npot" ) );
+															  IsExtension( "GL_APPLE_texture_2D_limited_npot" )	);
 	}
+
+	if ( !IsExtension( EEGL_ARB_vertex_array_object ) ) {
+		WriteExtension( EEGL_ARB_vertex_array_object		, IsExtension( "GL_OES_vertex_array_object"	)		);
+	}
+
+	#endif
+
+	#ifdef EE_GLES2
+	WriteExtension( EEGL_EXT_framebuffer_object				, 1													);
+	WriteExtension( EEGL_ARB_vertex_buffer_object			, 1													);
+	WriteExtension( EEGL_ARB_shader_objects					, 1													);
+	WriteExtension( EEGL_ARB_vertex_shader					, 1													);
+	WriteExtension( EEGL_ARB_fragment_shader				, 1													);
+	#endif
 }
 
 bool cGL::IsExtension( const std::string& name ) {
@@ -193,11 +213,7 @@ bool cGL::PointSpriteSupported() {
 
 bool cGL::ShadersSupported() {
 #ifdef EE_GLES
-	if ( GLv_ES2 == Version() || GLv_3 == Version() )
-		return true;
-
-	/// GLES1
-	return false;
+	return ( GLv_ES2 == Version() || GLv_3 == Version() );
 #else
 	return IsExtension( EEGL_ARB_shading_language_100 ) && IsExtension( EEGL_ARB_shader_objects ) && IsExtension( EEGL_ARB_vertex_shader ) && IsExtension( EEGL_ARB_fragment_shader );
 #endif
@@ -375,7 +391,7 @@ void cGL::PolygonMode( const EE_FILL_MODE& Mode ) {
 }
 
 std::string cGL::GetVendor() {
-	char * str = cGL::instance()->GetString( GL_VENDOR );
+	char * str = GetString( GL_VENDOR );
 
 	if ( NULL != str )
 		return std::string( reinterpret_cast<const char*> ( str ) );
@@ -384,7 +400,7 @@ std::string cGL::GetVendor() {
 }
 
 std::string cGL::GetRenderer() {
-	char * str = cGL::instance()->GetString( GL_RENDERER );
+	char * str = GetString( GL_RENDERER );
 
 	if ( NULL != str )
 		return std::string( reinterpret_cast<const char*> ( str ) );
@@ -393,7 +409,7 @@ std::string cGL::GetRenderer() {
 }
 
 std::string cGL::GetVersion() {
-	char * str = cGL::instance()->GetString( GL_VERSION );
+	char * str = GetString( GL_VERSION );
 
 	if ( NULL != str )
 		return std::string( reinterpret_cast<const char*> ( str ) );
@@ -404,7 +420,7 @@ std::string cGL::GetVersion() {
 std::string cGL::GetShadingLanguageVersion() {
 	if ( ShadersSupported() ) {
 		#ifdef GL_SHADING_LANGUAGE_VERSION
-			char * str = cGL::instance()->GetString( GL_SHADING_LANGUAGE_VERSION );
+			char * str = GetString( GL_SHADING_LANGUAGE_VERSION );
 
 			if ( NULL != str )
 				return std::string( reinterpret_cast<const char*> ( str ) );

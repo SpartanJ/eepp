@@ -271,9 +271,7 @@ void cRendererGLES2::Enable( GLenum cap ) {
 			if ( 0 == mTexActive ) {
 				mTexActive = 1;
 
-				#ifdef EE_GLES2
 				SetShader( EEGLES2_SHADER_BASE );
-				#endif
 			}
 
 			return;

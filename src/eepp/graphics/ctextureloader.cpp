@@ -436,18 +436,12 @@ void cTextureLoader::LoadFromPixels() {
 				mWidth	= width;
 				mHeight	= height;
 
-				if ( STBI_dds == mImgType ) {
-					if ( mIsCompressed && mSize > 128 ) {
-						mSize -= 128;	// Remove the DDS header size
-					}
-				} else if ( STBI_pvr == mImgType ) {
-					if ( mIsCompressed && mSize > 52 ) {
-						mSize -= 52;	// Remove the PVR header size
-					}
-				} else if ( STBI_pkm == mImgType ) {
-					if ( mIsCompressed && mSize > 16 ) {
-						mSize -= 16;	// Remove the PKM header size
-					}
+				if ( STBI_dds == mImgType && mIsCompressed && mSize > 128 ) {
+					mSize -= 128;	// Remove the DDS header size
+				} else if ( STBI_pvr == mImgType && mIsCompressed && mSize > 52 ) {
+					mSize -= 52;	// Remove the PVR header size
+				} else if ( STBI_pkm == mImgType && mIsCompressed && mSize > 16 ) {
+					mSize -= 16;	// Remove the PKM header size
 				} else {
 					mSize	= mWidth * mHeight * mChannels;
 				}

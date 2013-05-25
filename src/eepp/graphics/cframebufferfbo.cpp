@@ -6,12 +6,6 @@
 namespace EE { namespace Graphics {
 
 bool cFrameBufferFBO::IsSupported() {
-	#ifdef EE_GLES
-	if ( GLi->Version() == GLv_ES2 ) {
-		return true;
-	}
-	#endif
-
 	return 0 != GLi->IsExtension( EEGL_EXT_framebuffer_object );
 }
 

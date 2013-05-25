@@ -1,6 +1,7 @@
 #include <eepp/graphics/cvertexbuffervbo.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/renderer/crenderergl3.hpp>
+#include <eepp/graphics/renderer/crenderergles2.hpp>
 
 #if !defined( EE_GLES ) && EE_PLATFORM != EE_PLATFORM_HAIKU
 // Disabled VAO for the moment, we really don't need them
@@ -96,14 +97,14 @@ bool cVertexBufferVBO::Compile() {
 		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER, 0 );
 	}
 
+	mCompiled	= true;
+	mBuffersSet	= false;
+
 	#ifdef EE_VBO_USE_VAO
 	if ( GLv_3 == GLi->Version() ) {
 		glBindVertexArray( curVAO );
 	}
 	#endif
-
-	mCompiled	= true;
-	mBuffersSet	= false;
 
 	return true;
 }
@@ -148,12 +149,6 @@ void cVertexBufferVBO::Draw() {
 		glBindVertexArray( curVAO );
 	}
 	#endif
-
-	if ( GLv_3 == GLi->Version() || GLv_ES2 == GLi->Version() ) {
-		if ( !mTextured ) {
-			GLi->Enable( GL_TEXTURE_2D );
-		}
-	}
 }
 
 void cVertexBufferVBO::SetVertexStates() {
@@ -174,50 +169,10 @@ void cVertexBufferVBO::SetVertexStates() {
 	}
 	#endif
 
-	/// POSITION
-	if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
-		GLi->EnableClientState( GL_VERTEX_ARRAY );
-		glBindBufferARB( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_POSITION ] );
-		#ifdef EE_GL3_ENABLED
-		if ( GLv_3 == GLi->Version() ) {
-			index = GLi->GetRendererGL3()->GetStateIndex( EEGL_VERTEX_ARRAY );
-
-			if ( -1 != index ) {
-				glVertexAttribPointerARB( index, eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FP, GL_FALSE, 0, 0 );
-			}
-		}
-		else
-		#endif
-		{
-			GLi->VertexPointer( eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FP, 0, (char*)NULL, 0 );
-		}
-	} else {
-		GLi->DisableClientState( GL_VERTEX_ARRAY );
-	}
-
-	/// COLOR
-	if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) ) {
-		GLi->EnableClientState( GL_COLOR_ARRAY );
-		glBindBufferARB( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_COLOR ] );
-
-		#ifdef EE_GL3_ENABLED
-		if ( GLv_3 == GLi->Version() ) {
-			index = GLi->GetRendererGL3()->GetStateIndex( EEGL_COLOR_ARRAY );
-
-			if ( -1 != index )
-				glVertexAttribPointerARB( index, eeVertexElements[ VERTEX_FLAG_COLOR ], GL_UNSIGNED_BYTE, GL_TRUE, 0, 0 );
-		}
-		else
-		#endif
-		{
-			GLi->ColorPointer( eeVertexElements[ VERTEX_FLAG_COLOR ], GL_UNSIGNED_BYTE, 0, (char*)NULL, 0 );
-		}
-	} else {
-		GLi->DisableClientState( GL_COLOR_ARRAY );
-	}
-
 	/// TEXTURES
 	if ( GLi->IsExtension( EEGL_ARB_multitexture ) ) {
+		mTextured = false;
+
 		for ( Int32 i = 0; i < EE_MAX_TEXTURE_UNITS; i++ ) {
 			if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 + i ) ) {
 				GLi->ClientActiveTexture( GL_TEXTURE0 + i );
@@ -226,10 +181,12 @@ void cVertexBufferVBO::SetVertexStates() {
 				glBindBufferARB( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_TEXTURE0 + i ] );
 
 				#ifdef EE_GL3_ENABLED
-				if ( GLv_3 == GLi->Version() ) {
-					index = GLi->GetRendererGL3()->GetStateIndex( EEGL_TEXTURE_COORD_ARRAY );
+				if ( GLv_3 == GLi->Version() || GLv_ES2 == GLi->Version() ) {
+					index = GLv_3 == GLi->Version() ?
+							GLi->GetRendererGL3()->GetStateIndex( EEGL_TEXTURE_COORD_ARRAY ) :
+							GLi->GetRendererGLES2()->GetStateIndex( EEGL_TEXTURE_COORD_ARRAY );
 
-					if ( -1 != index && 0 == i )
+					if ( -1 != index )
 						glVertexAttribPointerARB( index, eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], GL_FP, GL_FALSE, 0, 0 );
 				}
 				else
@@ -242,9 +199,6 @@ void cVertexBufferVBO::SetVertexStates() {
 			} else {
 				GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
 				GLi->Disable( GL_TEXTURE_2D );
-
-				mTextured = false;
-
 				break;
 			}
 		}
@@ -254,8 +208,10 @@ void cVertexBufferVBO::SetVertexStates() {
 			glBindBufferARB( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_TEXTURE0 ] );
 
 			#ifdef EE_GL3_ENABLED
-			if ( GLv_3 == GLi->Version() ) {
-				index = GLi->GetRendererGL3()->GetStateIndex( EEGL_TEXTURE_COORD_ARRAY );
+			if ( GLv_3 == GLi->Version() || GLv_ES2 == GLi->Version() ) {
+				index = GLv_3 == GLi->Version() ?
+						GLi->GetRendererGL3()->GetStateIndex( EEGL_TEXTURE_COORD_ARRAY ) :
+						GLi->GetRendererGLES2()->GetStateIndex( EEGL_TEXTURE_COORD_ARRAY );
 
 				if ( -1 != index )
 					glVertexAttribPointerARB( index, eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], GL_FP, GL_FALSE, 0, 0 );
@@ -275,18 +231,59 @@ void cVertexBufferVBO::SetVertexStates() {
 		}
 	}
 
-	GLi->ActiveTexture( GL_TEXTURE0 );
-	GLi->ClientActiveTexture( GL_TEXTURE0 );
+	/// POSITION
+	if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
+		GLi->EnableClientState( GL_VERTEX_ARRAY );
+		glBindBufferARB( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_POSITION ] );
 
-	glBindBufferARB( GL_ARRAY_BUFFER, 0 );
+		#ifdef EE_GL3_ENABLED
+		if ( GLv_3 == GLi->Version() || GLv_ES2 == GLi->Version() ) {
+			index = GLv_3 == GLi->Version() ?
+					GLi->GetRendererGL3()->GetStateIndex( EEGL_VERTEX_ARRAY ) :
+					GLi->GetRendererGLES2()->GetStateIndex( EEGL_VERTEX_ARRAY );
+
+			if ( -1 != index )
+				glVertexAttribPointerARB( index, eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FP, GL_FALSE, 0, 0 );
+		}
+		else
+		#endif
+		{
+			GLi->VertexPointer( eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FP, 0, (char*)NULL, 0 );
+		}
+	} else {
+		GLi->DisableClientState( GL_VERTEX_ARRAY );
+	}
+
+	/// COLOR
+	if ( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) ) {
+		GLi->EnableClientState( GL_COLOR_ARRAY );
+		glBindBufferARB( GL_ARRAY_BUFFER, mArrayHandle[ VERTEX_FLAG_COLOR ] );
+
+		#ifdef EE_GL3_ENABLED
+		if ( GLv_3 == GLi->Version() || GLv_ES2 == GLi->Version() ) {
+			index = GLv_3 == GLi->Version() ?
+					GLi->GetRendererGL3()->GetStateIndex( EEGL_COLOR_ARRAY ) :
+					GLi->GetRendererGLES2()->GetStateIndex( EEGL_COLOR_ARRAY );
+
+			if ( -1 != index )
+				glVertexAttribPointerARB( index, eeVertexElements[ VERTEX_FLAG_COLOR ], GL_UNSIGNED_BYTE, GL_TRUE, 0, 0 );
+		}
+		else
+		#endif
+		{
+			GLi->ColorPointer( eeVertexElements[ VERTEX_FLAG_COLOR ], GL_UNSIGNED_BYTE, 0, (char*)NULL, 0 );
+		}
+	} else {
+		GLi->DisableClientState( GL_COLOR_ARRAY );
+	}
+
+	mBuffersSet = true;
 
 	#ifdef EE_VBO_USE_VAO
 	if ( GLv_3 == GLi->Version() ) {
 		glBindVertexArray( curVAO );
 	}
 	#endif
-
-	mBuffersSet = true;
 }
 
 void cVertexBufferVBO::Update( const Uint32& Types, bool Indices ) {
@@ -329,17 +326,22 @@ void cVertexBufferVBO::Reload() {
 
 
 void cVertexBufferVBO::Unbind() {
+	glBindBufferARB( GL_ARRAY_BUFFER, 0 );
+
+	if ( !mTextured ) {
+		GLi->Enable( GL_TEXTURE_2D );
+		GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
+	}
+
+	GLi->ActiveTexture( GL_TEXTURE0 );
+	GLi->ClientActiveTexture( GL_TEXTURE0 );
+
 	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {
 		GLi->EnableClientState( GL_VERTEX_ARRAY );
 	}
 
 	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) ) {
 		GLi->EnableClientState( GL_COLOR_ARRAY );
-	}
-
-	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_TEXTURE0 ) ) {
-		GLi->Enable( GL_TEXTURE_2D );
-		GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
 	}
 }
 
