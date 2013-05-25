@@ -475,6 +475,8 @@ void cEETest::CreateUI() {
 	Menu->Add( "Show Screen 5" );
 	Menu->Add( "Show Screen 6" );
 	Menu->AddSeparator();
+	Menu->Add( "Show Console" );
+	Menu->AddSeparator();
 	Menu->AddCheckBox( "Show Window" );
 	Menu->Add( "Show Window 2" );
 	Menu->AddCheckBox( "Multi Viewport" );
@@ -681,6 +683,15 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 		SetScreen( 4 );
 	} else if ( "Show Screen 6" == txt ) {
 		SetScreen( 5 );
+	} else if ( "Show Console" == txt ) {
+		Con.Toggle();
+		InBuf.Active( !Con.Active() );
+
+		if ( Con.Active() ) {
+			mWindow->StartTextInput();
+		} else {
+			mWindow->StopTextInput();
+		}
 	} else if ( "Show Window" == txt ) {
 		cUIMenuCheckBox * Chk = reinterpret_cast<cUIMenuCheckBox*> ( Event->Ctrl() );
 
@@ -841,9 +852,15 @@ void cEETest::LoadTextures() {
 		}
 
 		Tiles[6] = SG->Add( TF->LoadFromPack( PAK, "objects/1.png" ), "7" );
-		Tiles[7] = SG->Add( TF->LoadFromPack( PAK, "objects/2.png" ), "8" );
 
+		#ifdef EE_GLES
+		cImage tImg( PAK, "objects/2.png", 4 );
+		tImg.CreateMaskFromColor( eeColorA(0,0,0,255), 0 );
+		Tiles[7] = SG->Add( TF->LoadFromPixels( tImg.GetPixelsPtr(), tImg.Width(), tImg.Height(), tImg.Channels() ), "8" );
+		#else
+		Tiles[7] = SG->Add( TF->LoadFromPack( PAK, "objects/2.png" ), "8" );
 		Tiles[7]->GetTexture()->CreateMaskFromColor( eeColorA(0,0,0,255), 0 );
+		#endif
 	}
 
 	eeInt w, h;
@@ -861,7 +878,7 @@ void cEETest::LoadTextures() {
 
 	Con.AddCommand( "setparticlesnum", cb::Make1( this, &cEETest::CmdSetPartsNum ) );
 
-	cTexture * Tex = TF->GetTexture( TN[2] );
+	cTexture * Tex = TNP[2];
 
 	if ( NULL != Tex && Tex->Lock() ) {
 		w = (eeInt)Tex->Width();

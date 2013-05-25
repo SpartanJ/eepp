@@ -408,7 +408,7 @@ bool cSprite::AddSubFrame(const Uint32& TexId, const eeUint& NumFrame, const eeU
 	if ( TexSector.Right > 0 && TexSector.Bottom > 0 )
 		S->SrcRect( TexSector );
 	else
-		S->SrcRect( eeRecti( 0, 0, (Int32)Tex->Width(), (Int32)Tex->Height() ) );
+		S->SrcRect( eeRecti( 0, 0, (Int32)Tex->ImgWidth(), (Int32)Tex->ImgHeight() ) );
 
 	eeSizef destSize( DestSize );
 

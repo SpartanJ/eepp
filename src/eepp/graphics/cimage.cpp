@@ -104,24 +104,26 @@ cImage::cImage( Uint8* data, const eeUint& Width, const eeUint& Height, const ee
 {
 }
 
-cImage::cImage( std::string Path ) :
+cImage::cImage( std::string Path, const eeUint& forceChannels ) :
 	mPixels(NULL),
 	mWidth(0),
 	mHeight(0),
-	mChannels(0),
+	mChannels(forceChannels),
 	mSize(0),
 	mAvoidFree(false),
 	mLoadedFromStbi(false)
 {
 	int w, h, c;
 	cPack * tPack = NULL;
-	Uint8 * data = stbi_load( Path.c_str(), &w, &h, &c, 0 );
+	Uint8 * data = stbi_load( Path.c_str(), &w, &h, &c, mChannels );
 
 	if ( NULL != data ) {
 		mPixels		= data;
 		mWidth		= (eeUint)w;
 		mHeight		= (eeUint)h;
-		mChannels	= (eeUint)c;
+
+		if ( STBI_default == mChannels )
+			mChannels	= (eeUint)c;
 
 		mSize	= mWidth * mHeight * mChannels;
 
@@ -139,11 +141,11 @@ cImage::cImage( std::string Path ) :
 	}
 }
 
-cImage::cImage( cPack * Pack, std::string FilePackPath ) :
+cImage::cImage( cPack * Pack, std::string FilePackPath, const eeUint& forceChannels ) :
 	mPixels(NULL),
 	mWidth(0),
 	mHeight(0),
-	mChannels(0),
+	mChannels(forceChannels),
 	mSize(0),
 	mAvoidFree(false),
 	mLoadedFromStbi(false)
@@ -163,13 +165,15 @@ void cImage::LoadFromPack( cPack * Pack, const std::string& FilePackPath ) {
 		Pack->ExtractFileToMemory( FilePackPath, PData );
 
 		int w, h, c;
-		Uint8 * data = stbi_load_from_memory( PData.Data, PData.DataSize, &w, &h, &c, 0 );
+		Uint8 * data = stbi_load_from_memory( PData.Data, PData.DataSize, &w, &h, &c, mChannels );
 
 		if ( NULL != data ) {
 			mPixels		= data;
 			mWidth		= (eeUint)w;
 			mHeight		= (eeUint)h;
-			mChannels	= (eeUint)c;
+
+			if ( STBI_default == mChannels )
+				mChannels	= (eeUint)c;
 
 			mSize	= mWidth * mHeight * mChannels;
 
@@ -312,7 +316,9 @@ void cImage::ReplaceColor( const eeColorA& ColorKey, const eeColorA& NewColor ) 
 	if ( NULL == mPixels )
 		return;
 
-	for ( eeUint i = 0; i < mWidth * mHeight; i++ ) {
+	eeUint size = mWidth * mHeight;
+
+	for ( eeUint i = 0; i < size; i++ ) {
 		Pos = i * mChannels;
 
 		if ( 4 == mChannels ) {
@@ -354,8 +360,9 @@ void cImage::FillWithColor( const eeColorA& Color ) {
 		return;
 
 	eeUint z;
+	eeUint size = mWidth * mHeight;
 
-	for ( eeUint i = 0; i < mWidth * mHeight; i += mChannels ) {
+	for ( eeUint i = 0; i < size; i += mChannels ) {
 		for ( z = 0; z < mChannels; z++ ) {
 			if ( 0 == z )
 				mPixels[ i + z ] = Color.R();

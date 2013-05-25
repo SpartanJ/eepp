@@ -128,7 +128,7 @@ void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const bool&
 
 	mWidth = (eeFloat) mWindow->GetWidth();
 	mHeight = (eeFloat) mWindow->GetHeight();
-	mHeightMin = (eeFloat) mWindow->GetHeight() * 0.4f;
+	mHeightMin = (eeFloat) mWindow->GetHeight() * 0.5f;
 
 	if ( NULL != cEngine::ExistsSingleton() &&
 		cEngine::instance()->ExistsWindow( mWindow ) )
@@ -496,6 +496,7 @@ void cConsole::CreateDefaultCommands() {
 	AddCommand( "ls", cb::Make1( this, &cConsole::CmdDir) );
 	AddCommand( "showfps", cb::Make1( this, &cConsole::CmdShowFps) );
 	AddCommand( "gettexturememory", cb::Make1( this, &cConsole::CmdGetTextureMemory) );
+	AddCommand( "hide", cb::Make1( this, &cConsole::CmdHideConsole ) );
 }
 
 void cConsole::CmdClear	() {
@@ -710,6 +711,10 @@ void cConsole::CmdShowFps( const std::vector < String >& params ) {
 	}
 
 	PrivPushText( "Valid parameters are 0 ( hide ) or 1 ( show )." );
+}
+
+void cConsole::CmdHideConsole( const std::vector < String >& params ) {
+	FadeOut();
 }
 
 void cConsole::IgnoreCharOnPrompt( const Uint32& ch ) {

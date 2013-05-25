@@ -627,7 +627,7 @@ cGameObject * cMap::CreateGameObject( const Uint32& Type, const Uint32& Flags, c
 		{
 			cGameObjectPolyData& ObjData = GetPolyObjData( DataId );
 
-			cGameObjectObject * tObject;
+			cGameObjectObject * tObject = NULL;
 
 			if ( GAMEOBJECT_TYPE_OBJECT == Type ) {
 				tObject = eeNew( cGameObjectObject, ( DataId, ObjData.Poly.ToAABB(), Layer, Flags ) );
@@ -637,9 +637,11 @@ cGameObject * cMap::CreateGameObject( const Uint32& Type, const Uint32& Flags, c
 				tObject = eeNew( cGameObjectPolyline, ( DataId, ObjData.Poly, Layer, Flags ) );
 			}
 
-			tObject->Name( ObjData.Name );
-			tObject->TypeName( ObjData.Type );
-			tObject->SetProperties( ObjData.Properties );
+			if ( NULL != tObject ) {
+				tObject->Name( ObjData.Name );
+				tObject->TypeName( ObjData.Type );
+				tObject->SetProperties( ObjData.Properties );
+			}
 
 			return tObject;
 		}

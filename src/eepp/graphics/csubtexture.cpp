@@ -26,14 +26,10 @@ cSubTexture::cSubTexture( const Uint32& TexId, const std::string& Name ) :
 	mId( String::Hash( mName ) ),
 	mTexId( TexId ),
 	mTexture( cTextureFactory::instance()->GetTexture( TexId ) ),
-	mSrcRect( eeRecti( 0, 0, NULL != mTexture ? mTexture->Width() : 0, NULL != mTexture ? mTexture->Height() : 0 ) ),
+	mSrcRect( eeRecti( 0, 0, NULL != mTexture ? mTexture->ImgWidth() : 0, NULL != mTexture ? mTexture->ImgHeight() : 0 ) ),
 	mDestSize( (eeFloat)mSrcRect.Size().Width(), (eeFloat)mSrcRect.Size().Height() ),
 	mOffset(0,0)
 {
-	if ( !GLi->IsExtension( EEGL_ARB_texture_non_power_of_two ) ) {
-		mSrcRect = eeRecti( 0, 0, mTexture->ImgWidth(), mTexture->ImgHeight() );
-	}
-
 	CreateUnnamed();
 }
 

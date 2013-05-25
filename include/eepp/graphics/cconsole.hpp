@@ -219,7 +219,10 @@ class EE_API cConsole : protected iLogReader {
 		void CmdShowFps( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( gettexturememory ) */
-		void CmdGetTextureMemory ( const std::vector < String >& params );
+		void CmdGetTextureMemory( const std::vector < String >& params );
+
+		/** Internal Callback for default command ( hide ) */
+		void CmdHideConsole( const std::vector < String >& params );
 
 		/** The Default Commands Callbacks for the Console ( don't call it ) */
 		void PrivInputCallback( InputEvent * Event );

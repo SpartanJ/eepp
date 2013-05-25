@@ -271,7 +271,7 @@ void cTextureLoader::LoadFromPath() {
 			mIsCompressed =  mDirectUpload = true;
 			stbi_pkm_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels );
 		} else {
-			mPixels = stbi_load( mFilepath.c_str(), &mImgWidth, &mImgHeight, &mChannels, STBI_default );
+			mPixels = stbi_load( mFilepath.c_str(), &mImgWidth, &mImgHeight, &mChannels, ( NULL != mColorKey ) ? STBI_rgb_alpha : STBI_default );
 		}
 
 		if ( NULL == mPixels ) {
@@ -328,7 +328,7 @@ void cTextureLoader::LoadFromMemory() {
 		stbi_pkm_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels );
 		mIsCompressed = mDirectUpload = true;
 	} else {
-		mPixels = stbi_load_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels, STBI_default );
+		mPixels = stbi_load_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels, ( NULL != mColorKey ) ? STBI_rgb_alpha : STBI_default );
 	}
 
 	if ( NULL == mPixels ) {
@@ -385,7 +385,7 @@ void cTextureLoader::LoadFromStream() {
 			mIsCompressed = mDirectUpload = true;
 		} else {
 			mStream->Seek( 0 );
-			mPixels = stbi_load_from_callbacks( &callbacks, mStream, &mImgWidth, &mImgHeight, &mChannels, STBI_default );
+			mPixels = stbi_load_from_callbacks( &callbacks, mStream, &mImgWidth, &mImgHeight, &mChannels, ( NULL != mColorKey ) ? STBI_rgb_alpha : STBI_default );
 			mStream->Seek( 0 );
 		}
 
@@ -427,6 +427,18 @@ void cTextureLoader::LoadFromPixels() {
 					tTexId = SOIL_direct_load_ETC1_from_memory( mPixels, mSize, SOIL_CREATE_NEW_ID, flags );
 				}
 			} else {
+				if ( NULL != mColorKey ) {
+					mChannels = STBI_rgb_alpha;
+
+					cImage * tImg = eeNew ( cImage, ( mPixels, mImgWidth, mImgHeight, mChannels ) );
+
+					tImg->CreateMaskFromColor( eeColorA( mColorKey->R(), mColorKey->G(), mColorKey->B(), 255 ), 0 );
+
+					tImg->AvoidFreeImage( true  );
+
+					eeSAFE_DELETE( tImg );
+				}
+
 				tTexId = SOIL_create_OGL_texture( mPixels, &width, &height, mChannels, SOIL_CREATE_NEW_ID, flags );
 			}
 
@@ -446,12 +458,9 @@ void cTextureLoader::LoadFromPixels() {
 					mSize	= mWidth * mHeight * mChannels;
 				}
 
-				mTexId = cTextureFactory::instance()->PushTexture( mFilepath, tTexId, mImgWidth, mImgHeight, width, height, mMipmap, mChannels, mClampMode, mCompressTexture || mIsCompressed, mLocalCopy, mSize );
+				mTexId = cTextureFactory::instance()->PushTexture( mFilepath, tTexId, width, height, mImgWidth, mImgHeight, mMipmap, mChannels, mClampMode, mCompressTexture || mIsCompressed, mLocalCopy, mSize );
 
 				cLog::instance()->Write( "Texture " + mFilepath  + " loaded in " + String::ToStr( mTE.Elapsed() ) + " ms." );
-
-				if ( NULL != mColorKey && 0 != mTexId )
-					cTextureFactory::instance()->GetTexture( mTexId )->CreateMaskFromColor( eeColorA( mColorKey->R(), mColorKey->G(), mColorKey->B(), 255 ), 0 );
 			} else {
 				cLog::instance()->Write( "Failed to create texture. Reason: " + std::string( SOIL_last_result() ) );
 			}

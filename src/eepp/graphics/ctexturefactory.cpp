@@ -65,8 +65,6 @@ Uint32 cTextureFactory::PushTexture( const std::string& Filepath, const Uint32& 
 
 	cTexture * Tex 		= NULL;
 	Uint32 Pos;
-	eeInt MyWidth 		= ImgWidth;
-	eeInt MyHeight 		= ImgHeight;
 
 	std::string FPath( Filepath );
 
@@ -75,7 +73,7 @@ Uint32 cTextureFactory::PushTexture( const std::string& Filepath, const Uint32& 
 	Pos = FindFreeSlot();
 	Tex = mTextures[ Pos ] = eeNew( cTexture, () );
 
-	Tex->Create( TexId, Width, Height, MyWidth, MyHeight, Mipmap, Channels, FPath, ClampMode, CompressTexture, MemSize );
+	Tex->Create( TexId, Width, Height, ImgWidth, ImgHeight, Mipmap, Channels, FPath, ClampMode, CompressTexture, MemSize );
 	Tex->Id( Pos );
 
 	if ( LocalCopy ) {
@@ -83,7 +81,7 @@ Uint32 cTextureFactory::PushTexture( const std::string& Filepath, const Uint32& 
 		Tex->Unlock( true, false );
 	}
 
-	mMemSize += GetTexMemSize( Pos );
+	mMemSize += MemSize;
 
 	Unlock();
 

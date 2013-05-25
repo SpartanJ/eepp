@@ -58,11 +58,15 @@ class EE_API cImage {
 		/** Create an empty image */
 		cImage( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const eeColorA& DefaultColor = eeColorA(0,0,0,0) );
 
-		/** Load an image from path */
-		cImage( std::string Path );
+		/** Load an image from path
+		* @param forceChannels Number of channels to use for the image, default 0 means that it use the default image channels.
+		*/
+		cImage( std::string Path, const eeUint& forceChannels = 0 );
 
-		/** Load an image from pack */
-		cImage( cPack * Pack, std::string FilePackPath );
+		/** Load an image from pack
+		* @param forceChannels Number of channels to use for the image, default 0 means that it use the default image channels.
+		*/
+		cImage( cPack * Pack, std::string FilePackPath, const eeUint& forceChannels = 0 );
 
 		virtual ~cImage();
 
