@@ -1,8 +1,6 @@
 ../../include/eepp/audio/tsoundmanager.hpp
 ../../include/eepp/audio/tsoundloader.hpp
-../../include/eepp/audio/openal.hpp
 ../../include/eepp/audio/csoundstream.hpp
-../../include/eepp/audio/csoundfile.hpp
 ../../include/eepp/audio/csoundbuffer.hpp
 ../../include/eepp/audio/csound.hpp
 ../../include/eepp/audio/cmusic.hpp
@@ -608,3 +606,5 @@
 ../../src/eepp/helper/SOIL2/src/SOIL2/SOIL2.c
 ../../src/eepp/helper/SOIL2/src/SOIL2/stbi_ext_c.h
 ../../src/eepp/helper/SOIL2/src/SOIL2/stbi_ext.h
+../../src/eepp/audio/csoundfile.hpp
+../../src/eepp/audio/openal.hpp

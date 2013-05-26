@@ -1,5 +1,6 @@
 #include <eepp/audio/csound.hpp>
 #include <eepp/audio/caudiodevice.hpp>
+#include <eepp/audio/openal.hpp>
 
 namespace EE { namespace Audio {
 
@@ -12,7 +13,7 @@ cSound::cSound() :
 	ALCheck( alSourcei( mSource, AL_BUFFER, 0 ) );
 }
 
-cSound::cSound( const cSoundBuffer& Buffer, const bool& Loop, const eeFloat& Pitch, const eeFloat& Volume, const Vector3AL& Position ) :
+cSound::cSound( const cSoundBuffer& Buffer, const bool& Loop, const float& Pitch, const float& Volume, const eeVector3ff& Position ) :
 	mBuffer(&Buffer)
 {
 	EnsureALInit();
@@ -79,27 +80,27 @@ void cSound::Loop( const bool& Loop ) {
 	ALCheck( alSourcei( mSource, AL_LOOPING, Loop ) );
 }
 
-void cSound::Pitch( const eeFloat& Pitch ) {
+void cSound::Pitch( const float& Pitch ) {
 	ALCheck( alSourcef( mSource, AL_PITCH, Pitch ) );
 }
 
-void cSound::Volume( const eeFloat& Volume ) {
+void cSound::Volume( const float& Volume ) {
 	ALCheck( alSourcef( mSource, AL_GAIN, Volume * 0.01f ) );
 }
 
-void cSound::Position( const eeFloat& X, const eeFloat& Y, const eeFloat& Z ) {
+void cSound::Position( const float& X, const float& Y, const float& Z ) {
 	ALCheck( alSource3f( mSource, AL_POSITION, X, Y, Z ) );
 }
 
-void cSound::Position( const Vector3AL& Position ) {
+void cSound::Position( const eeVector3ff& Position ) {
 	this->Position( Position.x, Position.y, Position.z );
 }
 
-void cSound::MinDistance( const eeFloat& MinDistance ) {
+void cSound::MinDistance( const float& MinDistance ) {
 	ALCheck( alSourcef( mSource, AL_REFERENCE_DISTANCE, MinDistance ) );
 }
 
-void cSound::Attenuation( const eeFloat& Attenuation ) {
+void cSound::Attenuation( const float& Attenuation ) {
 	ALCheck( alSourcef( mSource, AL_ROLLOFF_FACTOR, Attenuation ) );
 }
 
@@ -114,36 +115,36 @@ bool cSound::Loop() const {
 	return Loop != 0;
 }
 
-eeFloat cSound::Pitch() const {
-	ALfloat Pitch;
+float cSound::Pitch() const {
+	float Pitch;
 	ALCheck( alGetSourcef( mSource, AL_PITCH, &Pitch ) );
 
 	return Pitch;
 }
 
-eeFloat cSound::Volume() const {
-	ALfloat Gain;
+float cSound::Volume() const {
+	float Gain;
 	ALCheck( alGetSourcef( mSource, AL_GAIN, &Gain ) );
 
 	return Gain * 100.f;
 }
 
-Vector3AL cSound::Position() const {
-	Vector3AL Position;
+eeVector3ff cSound::Position() const {
+	eeVector3ff Position;
 	ALCheck( alGetSource3f( mSource, AL_POSITION, &Position.x, &Position.y, &Position.z ) );
 
 	return Position;
 }
 
-eeFloat cSound::MinDistance() const {
-	ALfloat MinDistance;
+float cSound::MinDistance() const {
+	float MinDistance;
 	ALCheck( alGetSourcef( mSource, AL_REFERENCE_DISTANCE, &MinDistance ) );
 
 	return MinDistance;
 }
 
-eeFloat cSound::Attenuation() const {
-	ALfloat Attenuation;
+float cSound::Attenuation() const {
+	float Attenuation;
 	ALCheck( alGetSourcef( mSource, AL_ROLLOFF_FACTOR, &Attenuation ) );
 
 	return Attenuation;
@@ -164,7 +165,7 @@ cSound::Status cSound::GetState() const {
 }
 
 Uint32 cSound::PlayingOffset() const {
-	ALfloat Seconds = 0.f;
+	float Seconds = 0.f;
 	ALCheck( alGetSourcef( mSource, AL_SEC_OFFSET, &Seconds ) );
 
 	return static_cast<Uint32> ( Seconds * 1000 );

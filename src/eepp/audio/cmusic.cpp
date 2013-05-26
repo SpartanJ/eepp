@@ -50,7 +50,7 @@ bool cMusic::OpenFromFile( const std::string& Filename ) {
 	}
 
 	// Compute the duration
-	mDuration = static_cast<eeFloat>( mFile->GetSamplesCount() ) / mFile->GetSampleRate() / mFile->GetChannelsCount();
+	mDuration = static_cast<float>( mFile->GetSamplesCount() ) / mFile->GetSampleRate() / mFile->GetChannelsCount();
 
 	// Initialize the stream
 	Initialize( mFile->GetChannelsCount(), mFile->GetSampleRate() );
@@ -72,7 +72,7 @@ bool cMusic::OpenFromMemory( const char * Data, std::size_t SizeInBytes ) {
 		return false;
 	}
 
-	mDuration = static_cast<eeFloat>( mFile->GetSamplesCount() ) / mFile->GetSampleRate(); // Compute the duration
+	mDuration = static_cast<float>( mFile->GetSamplesCount() ) / mFile->GetSampleRate(); // Compute the duration
 
 	Initialize( mFile->GetChannelsCount(), mFile->GetSampleRate() ); // Initialize the stream
 
@@ -98,7 +98,7 @@ bool cMusic::OnGetData( cSoundStream::Chunk& Data ) {
 	return false;
 }
 
-eeFloat cMusic::GetDuration() const {
+float cMusic::GetDuration() const {
 	return mDuration;
 }
 

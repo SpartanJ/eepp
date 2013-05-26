@@ -26,7 +26,7 @@ class EE_API cMusic : public cSoundStream {
 		bool OpenFromPack( cPack * Pack, const std::string& FilePackPath );
 
 		/** Get the Music Duration */
-		eeFloat GetDuration() const;
+		float GetDuration() const;
 	private :
 		virtual bool OnStart();
 
@@ -35,7 +35,7 @@ class EE_API cMusic : public cSoundStream {
 		virtual void OnSeek(float timeOffset);
 
 		cSoundFile * 		mFile; 		///< Sound file
-		eeFloat 			mDuration; 	///< Music duration, in seconds
+		float 			mDuration; 	///< Music duration, in seconds
 		std::vector<Int16>	mSamples; 	///< Temporary buffer of samples
 		SafeDataPointer		mData;
 };

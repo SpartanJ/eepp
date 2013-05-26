@@ -1,5 +1,6 @@
 #include <eepp/audio/caudiodevice.hpp>
 #include <eepp/audio/caudiolistener.hpp>
+#include <eepp/audio/openal.hpp>
 
 namespace EE { namespace Audio {
 
@@ -22,7 +23,7 @@ cAudioDevice::cAudioDevice() {
 			// Initialize the listener, located at the origin and looking along the Z axis
 			ALCheck( alListenerf( AL_GAIN, 1.f ) );
 			ALCheck( alListener3f( AL_POSITION, 0.f, 0.f, 0.f ) );
-			ALfloat Orientation[] = {0.f, 0.f, -1.f, 0.f, 1.f, 0.f};
+			float Orientation[] = {0.f, 0.f, -1.f, 0.f, 1.f, 0.f};
 			ALCheck( alListenerfv( AL_ORIENTATION, Orientation ) );
 
 			std::string log( "OpenAL current device:\n" );
@@ -77,7 +78,7 @@ bool cAudioDevice::IsExtensionSupported( const std::string& extension ) {
         return alIsExtensionPresent( extension.c_str() ) != AL_FALSE;
 }
 
-ALenum cAudioDevice::GetFormatFromChannelsCount( unsigned int ChannelsCount ) {
+int cAudioDevice::GetFormatFromChannelsCount( unsigned int ChannelsCount ) {
 	EnsureALInit();
 
 	switch ( ChannelsCount ) {

@@ -2,7 +2,6 @@
 #define EE_AUDIO_BASE
 
 #include <eepp/base.hpp>
-#include <eepp/audio/openal.hpp>
 
 #include <eepp/system/clog.hpp>
 #include <eepp/system/cpack.hpp>
