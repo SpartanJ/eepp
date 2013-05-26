@@ -2,11 +2,12 @@
 #define EE_AUDIOCSOUND_H
 
 #include <eepp/audio/base.hpp>
-#include <eepp/audio/caudiodevice.hpp>
+#include <eepp/audio/caudiolistener.hpp>
 #include <eepp/audio/csoundbuffer.hpp>
 
 namespace EE { namespace Audio {
 
+/** @brief Regular sound that can be played in the audio environment */
 class EE_API cSound {
 	public :
 		/** @enum cSound::Status The state of the sound */
@@ -20,7 +21,7 @@ class EE_API cSound {
 
 		~cSound();
 
-		/** Construct the sound from its parameters */
+		/** Construct the sound with a buffer. */
 		cSound( const cSoundBuffer& Buffer, const bool& Loop = false, const eeFloat& Pitch = 1.f, const eeFloat& Volume = 100.f, const Vector3AL& Position = Vector3AL(0, 0, 0) );
 
 		/** Copy constructor */

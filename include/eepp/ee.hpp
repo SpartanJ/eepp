@@ -19,28 +19,22 @@
 		* Jean-loup Gailly and Mark Adler for zlib \n
 		* Milan Ikits and Marcelo Magallon for GLEW \n
 		* And a lot more people!
-**/
 
-/** PLANS:
+
+	ROADMAP:
 
 	Short-term plans:
-
-	@TODO Stabilize the API
-				STATE:	It's looking good. But i'm changing things.
 
 	@TODO Improve documentation.
 				STATE:	EE ( Base ) documented what is needed.
 						EE::Window documented.
 						EE::System documented.
 						EE::Graphics documented.
-						EE::Audio 50 % commented.
-						EE::Math 30 to 40 % commented.
-						EE::UI Not commented at all.
-						EE::Physics Not commented at all, chipmunk documentation should help.
-						EE::Gaming Not commented at all.
-
-	@TODO Improve Premake4 support. It should be really easy to compile eepp in Windows and OS X ( Linux is always easy thanks to package managers ).
-				STATE:	Seems to be done, needs more testing.
+						EE::Audio documented.
+						EE::Math 30 to 40 % documented.
+						EE::UI Not documented at all.
+						EE::Physics Not documented at all, chipmunk documentation should help.
+						EE::Gaming Not documented at all.
 
 	@TODO Add more commented examples, showing at least the basic usage of the engine ( 10 or more examples at least ).
 				STATE:	2 examples available. ( 20 % )
@@ -49,6 +43,12 @@
 				STATE:	Needs at least to reoffset tiles and objects for the map resizing.
 						Tile selection i'm not decided yet.
 						Copy-Paste will be moved for a middle to long term plan.
+
+	@TODO Stabilize the API
+				STATE:	DONE.
+
+	@TODO Improve Premake4 support. It should be really easy to compile eepp in Windows and OS X ( Linux is always easy thanks to package managers ).
+				STATE:	DONE.
 
 	@TODO Add PVRTC and ETC support.
 				STATE:	DONE.
@@ -69,6 +69,8 @@
 	@TODO Support UI Theming from scripts or XML.
 
 	@TODO Add some kind of support for TMX map files ( Tiles Map Editor ).
+
+	@TODO Pathfinding and AI helpers ( A*, FSM ).
 
 */
 

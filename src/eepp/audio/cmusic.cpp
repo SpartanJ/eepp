@@ -1,4 +1,5 @@
 #include <eepp/audio/cmusic.hpp>
+#include <eepp/audio/csoundfile.hpp>
 #include <eepp/system/cpackmanager.hpp>
 
 namespace EE { namespace Audio {

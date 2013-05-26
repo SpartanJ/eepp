@@ -5,16 +5,24 @@
 
 namespace EE { namespace Audio {
 
+/**
+ @brief High-level wrapper around the audio API, it manages
+		the creation and destruction of the audio device and
+		context and stores the device capabilities
+*/
 class EE_API cAudioDevice {
 	public :
 		cAudioDevice();
 
 		~cAudioDevice();
 
+		/** Get the OpenAL format that matches the given number of channels */
 		static ALenum GetFormatFromChannelsCount( unsigned int ChannelsCount );
 
+		/** Checks if a AL or ALC extension is supported */
 		static bool IsExtensionSupported( const std::string& extension );
 
+		/** @return True if the audio device was initialized */
 		static bool IsAvailable();
 	private :
 		void PrintInfo();

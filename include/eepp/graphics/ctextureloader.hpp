@@ -33,7 +33,7 @@ class EE_API cTextureLoader : public cObjectLoader {
 		cTextureLoader( const std::string& Filepath, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Load a texture from memory
-		* @param ImagePtr The image data in RAM just as if it were still in a file
+		* @param ImagePtr The image data in memory just as if it were still in a file
 		* @param Size The size of the texture ( Width * Height * BytesPerPixel )
 		* @param Mipmap Use mipmaps?
 		* @param ClampMode Defines the CLAMP MODE

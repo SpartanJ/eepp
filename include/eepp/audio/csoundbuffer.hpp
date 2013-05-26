@@ -2,13 +2,13 @@
 #define EE_AUDIOCSOUNDBUFFER_H
 
 #include <eepp/audio/base.hpp>
-#include <eepp/audio/csoundfile.hpp>
 #include <set>
 
 namespace EE { namespace Audio {
 
 class cSound;
 
+/** @brief Storage for audio samples defining a sound */
 class EE_API cSoundBuffer {
 	public :
 		cSoundBuffer();

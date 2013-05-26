@@ -1,4 +1,5 @@
 #include <eepp/audio/csound.hpp>
+#include <eepp/audio/caudiodevice.hpp>
 
 namespace EE { namespace Audio {
 

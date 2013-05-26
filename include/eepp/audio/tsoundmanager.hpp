@@ -11,23 +11,47 @@ namespace EE { namespace Audio {
 template <typename T>
 class tSoundManager {
 	public:
+		/** @brief Load the sound from file
+		**	@param id The sound Id
+		**	@param filepath The sound path
+		*/
 		bool LoadFromFile( const T& id, const std::string& filepath );
 
+		/** @brief Load the sound from memory
+		**	@param id The sound id
+		**	@param Data The pointer to the data
+		**	@param SizeInBytes The size of the file to load */
 		bool LoadFromMemory( const T& id, const char* Data, std::size_t SizeInBytes );
 
+		/**	@brief Load the sound from an array of samples.
+		**	@param id The sound id
+		**	@param Samples Pointer to the array of samples in memory
+		**	@param SamplesCount Number of samples in the array
+		**	@param ChannelsCount Number of channels (1 = mono, 2 = stereo, ...)
+		**	@param SampleRate Sample rate (number of samples to play per second) */
 		bool LoadFromSamples( const T& id, const Int16* Samples, std::size_t SamplesCount, unsigned int ChannelsCount, unsigned int SampleRate );
 
+		/**	@brief Load the sound from a Pack file
+		**	@param Pack The Pack file
+		**	@param FilePackPath The pack file path */
 		bool LoadFromPack( const T& id, cPack* Pack, const std::string& FilePackPath );
 
+		/** @return The sound buffer of the sound id */
 		cSoundBuffer& GetBuffer( const T& id );
 
-		/** This method will open a new channel if the channel seted for the sound is playing. */
+		/** Play the sound. This method will open a new channel if the channel seted for the sound is already playing.
+		**	@param id The sound id to play */
 		void Play( const T& id );
 
+		/** Remove a sound from the sound manager.
+		**	@param id The sound id to remove */
 		bool Remove( const T& id );
 
+		/** @return The sound id if exists */
 		cSound& operator[] ( const T& id );
 
+		/** @brief Search for the sound id, and return a sound that is not playing, if all the sounds are playing, creates a new sound.
+		**	@return The sound */
 		cSound& GetFreeSound( const T& id );
 
 		~tSoundManager();

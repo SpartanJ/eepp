@@ -1,5 +1,6 @@
 #include <eepp/audio/csoundbuffer.hpp>
 #include <eepp/audio/csound.hpp>
+#include <eepp/audio/csoundfile.hpp>
 #include <eepp/audio/caudiodevice.hpp>
 #include <eepp/system/cpackmanager.hpp>
 #include <memory>

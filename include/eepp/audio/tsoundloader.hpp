@@ -12,23 +12,29 @@ namespace EE { namespace Audio {
 #define SND_LT_PACK 	(3)
 #define SND_LT_SAMPLES	(4)
 
+/** @brief A helper template to load sounds in synchronous or asynchronous mode.
+**	@see cObjectLoader */
 template <typename T>
 class tSoundLoader : public cObjectLoader {
 	public:
+		/** @brief Load the sound from file */
 		tSoundLoader( tSoundManager<T> * SndMngr, const T& id, const std::string& filepath );
 
+		/** @brief Load the sound from memory */
 		tSoundLoader( tSoundManager<T> * SndMngr, const T& id, const char* Data, std::size_t SizeInBytes );
 
+		/** @brief Load the sound from an array of samples */
 		tSoundLoader( tSoundManager<T> * SndMngr, const T& id, const Int16* Samples, std::size_t SamplesCount, unsigned int ChannelsCount, unsigned int SampleRate );
 
+		/** @brief Load the sound from the Pack file */
 		tSoundLoader( tSoundManager<T> * SndMngr, const T& id, cPack* Pack, const std::string& FilePackPath );
 
 		~tSoundLoader();
 
-		void 					Update();
-
+		/** Unload the sound if was already loaded. */
 		void					Unload();
 
+		/** @return The sound id */
 		const T&				Id() const;
 	protected:
 		Uint32					mLoadType;
@@ -110,12 +116,6 @@ tSoundLoader<T>::tSoundLoader( tSoundManager<T> * SndMngr,
 
 template <typename T>
 tSoundLoader<T>::~tSoundLoader() {
-
-}
-
-template <typename T>
-void tSoundLoader<T>::Update() {
-
 }
 
 template <typename T>

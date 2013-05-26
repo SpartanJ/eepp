@@ -2,11 +2,13 @@
 #define EE_AUDIOCMUSIC_H
 
 #include <eepp/audio/base.hpp>
-#include <eepp/audio/csoundfile.hpp>
 #include <eepp/audio/csoundstream.hpp>
 
 namespace EE { namespace Audio {
 
+class cSoundFile;
+
+/** @brief Streamed music played from an audio file */
 class EE_API cMusic : public cSoundStream {
 	public :
 		/** Construct the music with a buffer size */
