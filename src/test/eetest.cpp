@@ -1420,12 +1420,12 @@ void cEETest::Input() {
 		if ( Joy->IsButtonDown(2) )		KM->InjectButtonPress(EE_BUTTON_MIDDLE);
 		if ( Joy->IsButtonUp(0) )		KM->InjectButtonRelease(EE_BUTTON_LEFT);
 		if ( Joy->IsButtonUp(1) )		KM->InjectButtonRelease(EE_BUTTON_RIGHT);
-		if ( Joy->IsButtonUp(2) )		KM->InjectButtonRelease(EE_BUTTON_WHEELUP);
-		if ( Joy->IsButtonUp(3) )		KM->InjectButtonRelease(EE_BUTTON_WHEELDOWN);
+		if ( Joy->IsButtonUp(2) )		KM->InjectButtonRelease(EE_BUTTON_MIDDLE);
+		if ( Joy->IsButtonUp(3) )		KM->InjectButtonRelease(EE_BUTTON_WHEELUP);
+		if ( Joy->IsButtonUp(7) )		KM->InjectButtonRelease(EE_BUTTON_WHEELDOWN);
 		if ( Joy->IsButtonUp(4) )		SetScreen( 0 );
 		if ( Joy->IsButtonUp(5) )		SetScreen( 1 );
 		if ( Joy->IsButtonUp(6) )		SetScreen( 2 );
-		if ( Joy->IsButtonUp(7) )		KM->InjectButtonRelease(EE_BUTTON_MIDDLE);
 
 		eeFloat aX = Joy->GetAxis( AXIS_X );
 		eeFloat aY = Joy->GetAxis( AXIS_Y );
@@ -1439,6 +1439,11 @@ void cEETest::Input() {
 		if ( ( mAxisX != 0 && ( mAxisX >= 1.f || mAxisX <= -1.f ) ) || ( mAxisY != 0 && ( mAxisY >= 1.f || mAxisY <= -1.f )  ) ) {
 			eeFloat nmX = Mousef.x + mAxisX;
 			eeFloat nmY = Mousef.y + mAxisY;
+
+			nmX = eemax( nmX, 0.f );
+			nmY = eemax( nmY, 0.f );
+			nmX = eemin( nmX, (eeFloat)EE->GetWidth() );
+			nmY = eemin( nmY, (eeFloat)EE->GetHeight() );
 
 			KM->InjectMousePos( (Int32)nmX, (Int32)nmY );
 
