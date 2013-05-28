@@ -5,7 +5,7 @@ namespace EE { namespace Audio {
 
 cSoundFileOgg::cSoundFileOgg() :
 	mStream (NULL),
-	mChannelsCount(0)
+	mChannelCount(0)
 {
 }
 
@@ -42,7 +42,7 @@ bool cSoundFileOgg::IsFileSupported( const char* Data, std::size_t SizeInBytes )
 		return false;
 }
 
-bool cSoundFileOgg::OpenRead( const std::string& Filename, std::size_t& NbSamples, unsigned int& ChannelsCount, unsigned int& SampleRate ) {
+bool cSoundFileOgg::OpenRead( const std::string& Filename, std::size_t& NbSamples, unsigned int& ChannelCount, unsigned int& SampleRate ) {
 	// Close the file if already opened
 	if ( NULL != mStream )
 		stb_vorbis_close( mStream );
@@ -57,14 +57,14 @@ bool cSoundFileOgg::OpenRead( const std::string& Filename, std::size_t& NbSample
 
 	// Get the music parameters
 	stb_vorbis_info Infos = stb_vorbis_get_info( mStream );
-	ChannelsCount	= mChannelsCount = Infos.channels;
+	ChannelCount	= mChannelCount = Infos.channels;
 	SampleRate		= Infos.sample_rate;
-	NbSamples		= static_cast<std::size_t>( stb_vorbis_stream_length_in_samples( mStream ) * ChannelsCount );
+	NbSamples		= static_cast<std::size_t>( stb_vorbis_stream_length_in_samples( mStream ) * ChannelCount );
 
 	return true;
 }
 
-bool cSoundFileOgg::OpenRead( const char* Data, std::size_t SizeInBytes, std::size_t& NbSamples, unsigned int& ChannelsCount, unsigned int& SampleRate ) {
+bool cSoundFileOgg::OpenRead( const char* Data, std::size_t SizeInBytes, std::size_t& NbSamples, unsigned int& ChannelCount, unsigned int& SampleRate ) {
 	// Close the file if already opened
 	if ( NULL != mStream )
 		stb_vorbis_close( mStream );
@@ -82,18 +82,18 @@ bool cSoundFileOgg::OpenRead( const char* Data, std::size_t SizeInBytes, std::si
 
 	// Get the music parameters
 	stb_vorbis_info Infos = stb_vorbis_get_info( mStream );
-	ChannelsCount	= mChannelsCount = Infos.channels;
+	ChannelCount	= mChannelCount = Infos.channels;
 	SampleRate		= Infos.sample_rate;
-	NbSamples		= static_cast<std::size_t>( stb_vorbis_stream_length_in_samples( mStream ) * ChannelsCount );
+	NbSamples		= static_cast<std::size_t>( stb_vorbis_stream_length_in_samples( mStream ) * ChannelCount );
 
 	return true;
 }
 
 std::size_t cSoundFileOgg::Read( Int16 * Data, std::size_t NbSamples ) {
 	if ( NULL != mStream && Data && NbSamples ) {
-		int Read = stb_vorbis_get_samples_short_interleaved( mStream, mChannelsCount, Data, static_cast<int>( NbSamples ) );
+		int Read = stb_vorbis_get_samples_short_interleaved( mStream, mChannelCount, Data, static_cast<int>( NbSamples ) );
 
-		std::size_t scount = Read * mChannelsCount;
+		std::size_t scount = Read * mChannelCount;
 
 		return scount;
 	}

@@ -28,11 +28,11 @@ class EE_API cSoundFileDefault : public cSoundFile {
 
 		virtual void Seek( Uint32 timeOffset );
 	private :
-		virtual bool OpenRead( const std::string& Filename, std::size_t& NbSamples, unsigned int& ChannelsCount, unsigned int& SampleRate );
+		virtual bool OpenRead( const std::string& Filename, std::size_t& NbSamples, unsigned int& ChannelCount, unsigned int& SampleRate );
 
-		virtual bool OpenRead( const char* Data, std::size_t SizeInBytes, std::size_t& NbSamples, unsigned int& ChannelsCount, unsigned int& SampleRate );
+		virtual bool OpenRead( const char* Data, std::size_t SizeInBytes, std::size_t& NbSamples, unsigned int& ChannelCount, unsigned int& SampleRate );
 
-		virtual bool OpenWrite( const std::string& Filename, unsigned int ChannelsCount, unsigned int SampleRate );
+		virtual bool OpenWrite( const std::string& Filename, unsigned int ChannelCount, unsigned int SampleRate );
 
 		static int GetFormatFromFilename(const std::string& Filename);
 

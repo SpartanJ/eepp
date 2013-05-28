@@ -27,9 +27,9 @@ class tSoundManager {
 		**	@param id The sound id
 		**	@param Samples Pointer to the array of samples in memory
 		**	@param SamplesCount Number of samples in the array
-		**	@param ChannelsCount Number of channels (1 = mono, 2 = stereo, ...)
+		**	@param ChannelCount Number of channels (1 = mono, 2 = stereo, ...)
 		**	@param SampleRate Sample rate (number of samples to play per second) */
-		bool LoadFromSamples( const T& id, const Int16* Samples, std::size_t SamplesCount, unsigned int ChannelsCount, unsigned int SampleRate );
+		bool LoadFromSamples( const T& id, const Int16* Samples, std::size_t SamplesCount, unsigned int ChannelCount, unsigned int SampleRate );
 
 		/**	@brief Load the sound from a Pack file
 		**	@param Pack The Pack file
@@ -106,11 +106,11 @@ bool tSoundManager<T>::LoadFromMemory( const T& id, const char* Data, std::size_
 }
 
 template <typename T>
-bool tSoundManager<T>::LoadFromSamples( const T& id, const Int16* Samples, std::size_t SamplesCount, unsigned int ChannelsCount, unsigned int SampleRate ) {
+bool tSoundManager<T>::LoadFromSamples( const T& id, const Int16* Samples, std::size_t SamplesCount, unsigned int ChannelCount, unsigned int SampleRate ) {
 	if ( tSounds.find( id ) == tSounds.end() ) { // if id doesn't exists
 		sSound * tSound = &tSounds[id];
 
-		if ( tSound->Buf.LoadFromSamples( Samples, SamplesCount, ChannelsCount, SampleRate ) ) {
+		if ( tSound->Buf.LoadFromSamples( Samples, SamplesCount, ChannelCount, SampleRate ) ) {
 			tSound->Snd.push_back( cSound( tSound->Buf ) );
 			return true;
 		}
@@ -123,6 +123,9 @@ template <typename T>
 cSoundBuffer& tSoundManager<T>::GetBuffer( const T& id ) {
 	if ( tSounds.find( id ) != tSounds.end() )
 		return tSounds[id].Buf;
+
+	static cSoundBuffer soundBuf;
+	return soundBuf;
 }
 
 template <typename T>

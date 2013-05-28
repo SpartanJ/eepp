@@ -23,12 +23,12 @@ class EE_API cSoundFileOgg : public cSoundFile {
 
 		virtual void Seek( Uint32 timeOffset );
 	private :
-		virtual bool OpenRead(const std::string& Filename, std::size_t& NbSamples, unsigned int& ChannelsCount, unsigned int& SampleRate);
+		virtual bool OpenRead(const std::string& Filename, std::size_t& NbSamples, unsigned int& ChannelCount, unsigned int& SampleRate);
 
-		virtual bool OpenRead(const char* Data, std::size_t SizeInBytes, std::size_t& NbSamples, unsigned int& ChannelsCount, unsigned int& SampleRate);
+		virtual bool OpenRead(const char* Data, std::size_t SizeInBytes, std::size_t& NbSamples, unsigned int& ChannelCount, unsigned int& SampleRate);
 
 		stb_vorbis *	mStream;			///< Vorbis stream
-		unsigned int	mChannelsCount;		///< Number of channels (1 = mono, 2 = stereo)
+		unsigned int	mChannelCount;		///< Number of channels (1 = mono, 2 = stereo)
 };
 
 }}

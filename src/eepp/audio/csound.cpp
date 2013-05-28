@@ -164,15 +164,16 @@ cSound::Status cSound::GetState() const {
 	return cSound::Stopped;
 }
 
-Uint32 cSound::PlayingOffset() const {
+float cSound::PlayingOffset() const {
 	float Seconds = 0.f;
+
 	ALCheck( alGetSourcef( mSource, AL_SEC_OFFSET, &Seconds ) );
 
-	return static_cast<Uint32> ( Seconds * 1000 );
+	return Seconds;
 }
 
-void cSound::PlayingOffset( const Uint32& TimeOffset ) {
-	ALCheck( alSourcef( mSource, AL_SEC_OFFSET, TimeOffset / 1000.f ) );
+void cSound::PlayingOffset( const float &TimeOffset ) {
+	ALCheck( alSourcef( mSource, AL_SEC_OFFSET, TimeOffset ) );
 }
 
 cSound& cSound::operator =( const cSound& Other ) {

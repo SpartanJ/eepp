@@ -51,7 +51,7 @@ class EE_API cSoundStream : private cThread, private cSound {
 		/** @brief Return the number of channels of the stream
 		**	1 channel means a mono sound, 2 means stereo, etc.
 		**	@return Number of channels */
-		unsigned int GetChannelsCount() const;
+		unsigned int GetChannelCount() const;
 
 		/** @brief Get the stream sample rate of the stream
 		**	The sample rate is the number of audio samples played per
@@ -68,14 +68,13 @@ class EE_API cSoundStream : private cThread, private cSound {
 		Status 	State() const ;
 
 		/**	@brief Get the current playing position of the stream
-		**	@return Current playing position, from the beginning of the stream. */
-		Uint32 PlayingOffset() const;
+		**	@return Current playing position, from the beginning of the stream in seconds. */
+		float PlayingOffset() const;
 
 		/**	@brief Change the current playing position of the stream
-		**	The playing position can be changed when the stream is
-		**	either paused or playing.
-		**	@param timeOffset New playing position, from the beginning of the stream */
-		void PlayingOffset( const Uint32& timeOffset );
+		**	The playing position can be changed when the stream is either paused or playing.
+		**	@param timeOffset New playing position, from the beginning of the stream ( in seconds ). */
+		void PlayingOffset( const float &timeOffset );
 
 		/** Set the stream loop state. This parameter is disabled by default
 		* @param Loop True to play in loop, false to play once
@@ -90,7 +89,7 @@ class EE_API cSoundStream : private cThread, private cSound {
 	protected:
 		cSoundStream();
 
-		void Initialize(unsigned int ChannelsCount, unsigned int SampleRate);
+		void Initialize(unsigned int ChannelCount, unsigned int SampleRate);
 	private :
 		virtual void Run();
 
@@ -117,7 +116,7 @@ class EE_API cSoundStream : private cThread, private cSound {
 
 		bool			mIsStreaming;		   		///< Streaming state (true = playing, false = stopped)
 		unsigned int	mBuffers[BuffersCount]; 	///< Sound buffers used to store temporary audio data
-		unsigned int	mChannelsCount;		 		///< Number of channels (1 = mono, 2 = stereo, ...)
+		unsigned int	mChannelCount;		 		///< Number of channels (1 = mono, 2 = stereo, ...)
 		unsigned int	mSampleRate;				///< Frequency (samples / second)
 		unsigned long	mFormat;					///< Format of the internal sound buffers
 		bool			mLoop;                  	///< Loop flag (true to loop, false to play once)

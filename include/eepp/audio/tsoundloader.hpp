@@ -24,7 +24,7 @@ class tSoundLoader : public cObjectLoader {
 		tSoundLoader( tSoundManager<T> * SndMngr, const T& id, const char* Data, std::size_t SizeInBytes );
 
 		/** @brief Load the sound from an array of samples */
-		tSoundLoader( tSoundManager<T> * SndMngr, const T& id, const Int16* Samples, std::size_t SamplesCount, unsigned int ChannelsCount, unsigned int SampleRate );
+		tSoundLoader( tSoundManager<T> * SndMngr, const T& id, const Int16* Samples, std::size_t SamplesCount, unsigned int ChannelCount, unsigned int SampleRate );
 
 		/** @brief Load the sound from the Pack file */
 		tSoundLoader( tSoundManager<T> * SndMngr, const T& id, cPack* Pack, const std::string& FilePackPath );
@@ -45,7 +45,7 @@ class tSoundLoader : public cObjectLoader {
 		Uint32					mDataSize;
 		const Int16 *			mSamples;
 		Uint32					mSamplesCount;
-		Uint32					mChannelsCount;
+		Uint32					mChannelCount;
 		Uint32					mSampleRate;
 		cPack *					mPack;
 
@@ -88,7 +88,7 @@ tSoundLoader<T>::tSoundLoader( tSoundManager<T> * SndMngr,
 	const T& id,
 	const Int16* Samples,
 	std::size_t SamplesCount,
-	unsigned int ChannelsCount,
+	unsigned int ChannelCount,
 	unsigned int SampleRate
 ) : cObjectLoader( cObjectLoader::SoundLoader ),
 	mLoadType(SND_LT_SAMPLES),
@@ -96,7 +96,7 @@ tSoundLoader<T>::tSoundLoader( tSoundManager<T> * SndMngr,
 	mId(id),
 	mSamples(Samples),
 	mSamplesCount(SamplesCount),
-	mChannelsCount(ChannelsCount),
+	mChannelCount(ChannelCount),
 	mSampleRate(SampleRate)
 {
 }
@@ -153,7 +153,7 @@ void tSoundLoader<T>::LoadFromPack() {
 
 template <typename T>
 void tSoundLoader<T>::LoadFromSamples() {
-	mSndMngr->LoadFromSamples( mId, mSamples, mSamplesCount, mChannelsCount, mSampleRate );
+	mSndMngr->LoadFromSamples( mId, mSamples, mSamplesCount, mChannelCount, mSampleRate );
 }
 
 template <typename T>

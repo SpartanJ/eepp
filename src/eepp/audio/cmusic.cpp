@@ -50,10 +50,10 @@ bool cMusic::OpenFromFile( const std::string& Filename ) {
 	}
 
 	// Compute the duration
-	mDuration = static_cast<float>( mFile->GetSamplesCount() ) / mFile->GetSampleRate() / mFile->GetChannelsCount();
+	mDuration = static_cast<float>( mFile->GetSamplesCount() ) / mFile->GetSampleRate() / mFile->GetChannelCount();
 
 	// Initialize the stream
-	Initialize( mFile->GetChannelsCount(), mFile->GetSampleRate() );
+	Initialize( mFile->GetChannelCount(), mFile->GetSampleRate() );
 
 	cLog::instance()->Write( "Music file " + Filename + " loaded." );
 
@@ -74,7 +74,7 @@ bool cMusic::OpenFromMemory( const char * Data, std::size_t SizeInBytes ) {
 
 	mDuration = static_cast<float>( mFile->GetSamplesCount() ) / mFile->GetSampleRate(); // Compute the duration
 
-	Initialize( mFile->GetChannelsCount(), mFile->GetSampleRate() ); // Initialize the stream
+	Initialize( mFile->GetChannelCount(), mFile->GetSampleRate() ); // Initialize the stream
 
 	cLog::instance()->Write( "Music file loaded from memory." );
 

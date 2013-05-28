@@ -49,7 +49,7 @@ bool cSoundFileDefault::IsFileSupported( const char* Data, std::size_t SizeInByt
 	return false;
 }
 
-bool cSoundFileDefault::OpenRead( const std::string& Filename, std::size_t& NbSamples, unsigned int& ChannelsCount, unsigned int& SampleRate ) {
+bool cSoundFileDefault::OpenRead( const std::string& Filename, std::size_t& NbSamples, unsigned int& ChannelCount, unsigned int& SampleRate ) {
 	// If the file is already opened, first close it
 	if ( NULL != mFile )
 		sf_close( mFile );
@@ -64,18 +64,18 @@ bool cSoundFileDefault::OpenRead( const std::string& Filename, std::size_t& NbSa
 	}
 
 	// Set the sound parameters
-    mChannelsCount	= fileInfos.channels;
+    mChannelCount	= fileInfos.channels;
     mSampleRate		= fileInfos.samplerate;
-    mNbSamples		= static_cast<std::size_t>(fileInfos.frames) * mChannelsCount;
+    mNbSamples		= static_cast<std::size_t>(fileInfos.frames) * mChannelCount;
 
-	ChannelsCount	= mChannelsCount;
+	ChannelCount	= mChannelCount;
 	SampleRate		= mSampleRate;
 	NbSamples		= mNbSamples;
 
 	return true;
 }
 
-bool cSoundFileDefault::OpenRead( const char* Data, std::size_t SizeInBytes, std::size_t& NbSamples, unsigned int& ChannelsCount, unsigned int& SampleRate ) {
+bool cSoundFileDefault::OpenRead( const char* Data, std::size_t SizeInBytes, std::size_t& NbSamples, unsigned int& ChannelCount, unsigned int& SampleRate ) {
     // If the file is already opened, first close it
     if ( NULL != mFile )
         sf_close( mFile );
@@ -93,18 +93,18 @@ bool cSoundFileDefault::OpenRead( const char* Data, std::size_t SizeInBytes, std
     }
 
     // Set the sound parameters
-    mChannelsCount	= fileInfos.channels;
+    mChannelCount	= fileInfos.channels;
     mSampleRate		= fileInfos.samplerate;
-    mNbSamples		= static_cast<std::size_t>(fileInfos.frames) * mChannelsCount;
+    mNbSamples		= static_cast<std::size_t>(fileInfos.frames) * mChannelCount;
 
-	ChannelsCount	= mChannelsCount;
+	ChannelCount	= mChannelCount;
 	SampleRate		= mSampleRate;
 	NbSamples		= mNbSamples;
 
     return true;
 }
 
-bool cSoundFileDefault::OpenWrite( const std::string& Filename, unsigned int ChannelsCount, unsigned int SampleRate ) {
+bool cSoundFileDefault::OpenWrite( const std::string& Filename, unsigned int ChannelCount, unsigned int SampleRate ) {
 	// If the file is already opened, first close it
 	if ( NULL != mFile )
 		sf_close( mFile );
@@ -119,7 +119,7 @@ bool cSoundFileDefault::OpenWrite( const std::string& Filename, unsigned int Cha
 
 	// Fill the sound infos with parameters
 	SF_INFO fileInfos;
-	fileInfos.channels   = ChannelsCount;
+	fileInfos.channels   = ChannelCount;
 	fileInfos.samplerate = SampleRate;
 	fileInfos.format	 = Format | (Format == SF_FORMAT_OGG ? SF_FORMAT_VORBIS : SF_FORMAT_PCM_16);
 

@@ -8,7 +8,7 @@ namespace EE { namespace Audio {
 
 cSoundStream::cSoundStream() :
 	mIsStreaming(false),
-	mChannelsCount(0),
+	mChannelCount(0),
 	mSampleRate (0),
 	mFormat (0),
 	mLoop(false),
@@ -20,15 +20,15 @@ cSoundStream::~cSoundStream() {
 	Stop(); // Stop the sound if it was playing
 }
 
-void cSoundStream::Initialize(unsigned int ChannelsCount, unsigned int SampleRate) {
-	mChannelsCount	= ChannelsCount;
+void cSoundStream::Initialize(unsigned int ChannelCount, unsigned int SampleRate) {
+	mChannelCount	= ChannelCount;
 	mSampleRate		= SampleRate;
 
 	// Deduce the format from the number of channels
-	mFormat = cAudioDevice::GetFormatFromChannelsCount(ChannelsCount);
+	mFormat = cAudioDevice::GetFormatFromChannelCount(ChannelCount);
 
 	if ( mFormat == 0 ) { // Check if the format is valid
-		mChannelsCount = 0;
+		mChannelCount = 0;
 		mSampleRate	= 0;
 		cLog::instance()->Write( "Unsupported number of channels." );
 	}
@@ -61,8 +61,8 @@ void cSoundStream::Stop() {
 	Wait();
 }
 
-unsigned int cSoundStream::GetChannelsCount() const {
-	return mChannelsCount;
+unsigned int cSoundStream::GetChannelCount() const {
+	return mChannelCount;
 }
 
 unsigned int cSoundStream::GetSampleRate() const {
@@ -78,11 +78,21 @@ cSound::Status cSoundStream::GetState() const {
 	return status;
 }
 
-Uint32 cSoundStream::PlayingOffset() const {
-	return static_cast<Uint32>( cSound::PlayingOffset() ) * 1000 + 1000 * mSamplesProcessed / mSampleRate / mChannelsCount;
+float cSoundStream::PlayingOffset() const {
+	//return static_cast<Uint32>( cSound::PlayingOffset() ) * 1000 + 1000 * mSamplesProcessed / mSampleRate / mChannelCount;
+
+	if ( mSampleRate && mChannelCount ) {
+		float secs = 0.f;
+
+		ALCheck( alGetSourcef( mSource, AL_SEC_OFFSET, &secs ) );
+
+		return secs + (float)mSamplesProcessed / (float)mSampleRate / (float)mChannelCount;
+	} else {
+		return 0;
+	}
 }
 
-void cSoundStream::PlayingOffset( const Uint32& timeOffset ) {
+void cSoundStream::PlayingOffset(const float &timeOffset ) {
     // Stop the stream
     Stop();
 
@@ -90,7 +100,7 @@ void cSoundStream::PlayingOffset( const Uint32& timeOffset ) {
     OnSeek( timeOffset );
 
     // Restart streaming
-	mSamplesProcessed = static_cast<Uint32>( timeOffset ) * mSampleRate * mChannelsCount / 1000;
+	mSamplesProcessed = static_cast<Uint32>( timeOffset ) * mSampleRate * mChannelCount;
 
     mIsStreaming = true;
 

@@ -26,7 +26,7 @@ cSoundBuffer::cSoundBuffer(const cSoundBuffer& Copy) :
 	EnsureALInit();
 
 	ALCheck( alGenBuffers( 1, &mBuffer ) );
-	Update( Copy.GetChannelsCount(), Copy.GetSampleRate() );
+	Update( Copy.GetChannelCount(), Copy.GetSampleRate() );
 }
 
 cSoundBuffer::~cSoundBuffer() {
@@ -60,7 +60,7 @@ bool cSoundBuffer::LoadFromFile(const std::string& Filename) {
 	if ( NULL != File ) {
 		// Get the sound parameters
 		std::size_t  NbSamples		= File->GetSamplesCount();
-		unsigned int ChannelsCount	= File->GetChannelsCount();
+		unsigned int ChannelCount	= File->GetChannelCount();
 		unsigned int SampleRate		= File->GetSampleRate();
 
 		// Read the samples from the opened file
@@ -72,7 +72,7 @@ bool cSoundBuffer::LoadFromFile(const std::string& Filename) {
 			// Update the internal buffer with the new samples
 			eeDelete( File );
 
-			return Update( ChannelsCount, SampleRate );
+			return Update( ChannelCount, SampleRate );
 		} else {
 			cLog::instance()->Write( "Failed to read audio data from file \"" + Filename + "\"" );
 
@@ -105,7 +105,7 @@ bool cSoundBuffer::LoadFromMemory( const char* Data, std::size_t SizeInBytes ) {
 	if ( NULL != File ) {
 		// Get the sound parameters
 		std::size_t  NbSamples		= File->GetSamplesCount();
-		unsigned int ChannelsCount	= File->GetChannelsCount();
+		unsigned int ChannelCount	= File->GetChannelCount();
 		unsigned int SampleRate		= File->GetSampleRate();
 
 		// Read the samples from the opened file
@@ -117,7 +117,7 @@ bool cSoundBuffer::LoadFromMemory( const char* Data, std::size_t SizeInBytes ) {
 			// Update the internal buffer with the new samples
 			eeDelete( File );
 
-			return Update( ChannelsCount, SampleRate );
+			return Update( ChannelCount, SampleRate );
 		} else {
 			cLog::instance()->Write( "Failed to read audio data from file in memory" );
 
@@ -131,15 +131,15 @@ bool cSoundBuffer::LoadFromMemory( const char* Data, std::size_t SizeInBytes ) {
 	}
 }
 
-bool cSoundBuffer::LoadFromSamples( const Int16 * Samples, std::size_t SamplesCount, unsigned int ChannelsCount, unsigned int SampleRate ) {
-	if ( Samples && SamplesCount && ChannelsCount && SampleRate ) {
+bool cSoundBuffer::LoadFromSamples( const Int16 * Samples, std::size_t SamplesCount, unsigned int ChannelCount, unsigned int SampleRate ) {
+	if ( Samples && SamplesCount && ChannelCount && SampleRate ) {
 		// Copy the new audio samples
 		mSamples.assign( Samples, Samples + SamplesCount );
 
 		cLog::instance()->Write( "Sound file loaded from memory samples." );
 
 		// Update the internal buffer with the new samples
-		return Update( ChannelsCount, SampleRate );
+		return Update( ChannelCount, SampleRate );
 	} else {
 		// Error...
 		cLog::instance()->Write( "Failed to load sound buffer from memory Samples" );
@@ -149,7 +149,7 @@ bool cSoundBuffer::LoadFromSamples( const Int16 * Samples, std::size_t SamplesCo
 
 bool cSoundBuffer::SaveToFile(const std::string& Filename) const {
 	// Create the sound file in write mode
-	std::auto_ptr<cSoundFile> File( cSoundFile::CreateWrite( Filename, GetChannelsCount(), GetSampleRate() ) );
+	std::auto_ptr<cSoundFile> File( cSoundFile::CreateWrite( Filename, GetChannelCount(), GetSampleRate() ) );
 
 	if ( File.get() ) {
 		// Write the samples to the opened file
@@ -176,13 +176,13 @@ unsigned int cSoundBuffer::GetSampleRate() const {
 	return SampleRate;
 }
 
-unsigned int cSoundBuffer::GetChannelsCount() const {
-	ALint ChannelsCount;
-	ALCheck( alGetBufferi( mBuffer, AL_CHANNELS, &ChannelsCount ) );
-	return ChannelsCount;
+unsigned int cSoundBuffer::GetChannelCount() const {
+	ALint ChannelCount;
+	ALCheck( alGetBufferi( mBuffer, AL_CHANNELS, &ChannelCount ) );
+	return ChannelCount;
 }
 
-Uint32 cSoundBuffer::GetDuration() const {
+float cSoundBuffer::GetDuration() const {
 	return mDuration;
 }
 
@@ -197,13 +197,13 @@ cSoundBuffer& cSoundBuffer::operator =( const cSoundBuffer& Other ) {
 	return *this;
 }
 
-bool cSoundBuffer::Update( unsigned int ChannelsCount, unsigned int SampleRate ) {
+bool cSoundBuffer::Update( unsigned int ChannelCount, unsigned int SampleRate ) {
 	// Check parameters
-	if ( !SampleRate || !ChannelsCount || mSamples.empty() )
+	if ( !SampleRate || !ChannelCount || mSamples.empty() )
 		return false;
 
 	// Find the good format according to the number of channels
-	ALenum Format = cAudioDevice::GetFormatFromChannelsCount( ChannelsCount );
+	ALenum Format = cAudioDevice::GetFormatFromChannelCount( ChannelCount );
 
 	// Check if the format is valid
 	if ( Format == 0 ) {
@@ -216,7 +216,7 @@ bool cSoundBuffer::Update( unsigned int ChannelsCount, unsigned int SampleRate )
 	ALCheck( alBufferData( mBuffer, Format, &mSamples[0], Size, SampleRate ) );
 
 	// Compute the duration
-	mDuration = static_cast<Uint32>( 1000 * mSamples.size() ) / SampleRate / ChannelsCount;
+	mDuration = (float)mSamples.size() / (float)SampleRate / (float)ChannelCount;
 
 	return true;
 }

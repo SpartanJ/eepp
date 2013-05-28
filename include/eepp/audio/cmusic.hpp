@@ -25,7 +25,7 @@ class EE_API cMusic : public cSoundStream {
 		/** Open a Music file from a file inside a pack file */
 		bool OpenFromPack( cPack * Pack, const std::string& FilePackPath );
 
-		/** Get the Music Duration */
+		/** Get the Music Duration in seconds */
 		float GetDuration() const;
 	private :
 		virtual bool OnStart();

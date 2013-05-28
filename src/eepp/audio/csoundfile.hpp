@@ -15,7 +15,7 @@ class EE_API cSoundFile {
 		static cSoundFile * CreateRead(const char* Data, std::size_t SizeInBytes);
 
 		/**	@brief Open a sound file for writing */
-		static cSoundFile * CreateWrite(const std::string& Filename, unsigned int ChannelsCount, unsigned int SampleRate);
+		static cSoundFile * CreateWrite(const std::string& Filename, unsigned int ChannelCount, unsigned int SampleRate);
 
 		virtual ~cSoundFile();
 
@@ -25,7 +25,7 @@ class EE_API cSoundFile {
 		/** @brief Get the number of channels used by the sound
 		*	@return Number of channels (1 = mono, 2 = stereo)
 		*/
-		unsigned int GetChannelsCount() const;
+		unsigned int GetChannelCount() const;
 
 		/** @brief Get the sample rate of the sound
 		*	@return Sample rate, in samples per second
@@ -52,14 +52,14 @@ class EE_API cSoundFile {
 	protected :
 		cSoundFile();
 
-		virtual bool OpenRead(const std::string& Filename, std::size_t& NbSamples, unsigned int& ChannelsCount, unsigned int& SampleRate);
+		virtual bool OpenRead(const std::string& Filename, std::size_t& NbSamples, unsigned int& ChannelCount, unsigned int& SampleRate);
 
-		virtual bool OpenRead(const char* Data, std::size_t SizeInBytes, std::size_t& NbSamples, unsigned int& ChannelsCount, unsigned int& SampleRate);
+		virtual bool OpenRead(const char* Data, std::size_t SizeInBytes, std::size_t& NbSamples, unsigned int& ChannelCount, unsigned int& SampleRate);
 
-		virtual bool OpenWrite(const std::string& Filename, unsigned int ChannelsCount, unsigned int SampleRate);
+		virtual bool OpenWrite(const std::string& Filename, unsigned int ChannelCount, unsigned int SampleRate);
 
 		std::size_t		mNbSamples;
-		unsigned int	mChannelsCount;
+		unsigned int	mChannelCount;
 		unsigned int	mSampleRate;
 		std::string		mFilename;
 		const char *	mData;

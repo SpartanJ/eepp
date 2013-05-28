@@ -17,7 +17,7 @@ class EE_API cAudioDevice {
 		~cAudioDevice();
 
 		/** Get the OpenAL format that matches the given number of channels */
-		static int GetFormatFromChannelsCount( unsigned int ChannelsCount );
+		static int GetFormatFromChannelCount( unsigned int ChannelCount );
 
 		/** Checks if a AL or ALC extension is supported */
 		static bool IsExtensionSupported( const std::string& extension );

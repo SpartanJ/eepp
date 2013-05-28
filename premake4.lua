@@ -99,7 +99,7 @@ newoption { trigger = "with-gles2", description = "Compile with GLES2 support" }
 newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
 newoption { 
 	trigger = "with-backend", 
-	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.\n\t\t\tIt's possible to build with more than one backend support.\n\t\t\t\tUse comma to separate the backends to build ( you can't mix SDL and SDL2, you'll get random crashes ).\n\t\t\t\tExample: --with-backend=SDL2,SFML2",
+	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.\n\t\t\tIt's possible to build with more than one backend support.\n\t\t\t\tUse comma to separate the backends to build ( you can't mix SDL and SDL2, you'll get random crashes ).\n\t\t\t\tExample: --with-backend=SDL2,SFML",
 	allowed = {
 		{ "SDL",    "SDL 1.2" },
 		{ "SDL2",  "SDL2 (default and recommended)" },
@@ -257,7 +257,8 @@ function build_link_configuration( package_name )
 			elseif ( backend_is("allegro5") ) then
 				links { get_backend_link_name( "allegro" ), "allegro_main" }
 			elseif ( backend_is("SFML") ) then
-				links { get_backend_link_name( "SFML" ) }
+				links { get_backend_link_name( "sfml-system" ) }
+				links { get_backend_link_name( "sfml-window" ) }
 			end
 		else
 			if ( os.is_real("macosx") ) then
@@ -267,6 +268,9 @@ function build_link_configuration( package_name )
 					links { "SDL2main" }
 				elseif ( backend_is("allegro5") ) then
 					links { "allegro_main" }
+				elseif ( backend_is("SFML") ) then
+					links { get_backend_link_name( "sfml-system" ) }
+					links { get_backend_link_name( "sfml-window" ) }
 				end
 			end
 		end
@@ -416,9 +420,11 @@ function add_sfml()
 	defines { "EE_BACKEND_SFML_ACTIVE" }
 	
 	if not can_add_static_backend("SFML") then
-		table.insert( link_list, get_backend_link_name( "SFML" ) )
+		table.insert( link_list, get_backend_link_name( "sfml-system" ) )
+		table.insert( link_list, get_backend_link_name( "sfml-window" ) )
 	else
-		insert_static_backend( "SFML" )
+		insert_static_backend( "libsfml-system" )
+		insert_static_backend( "libsfml-window" )
 	end
 end
 
@@ -700,6 +706,7 @@ solution "eepp"
 		files { "src/test/*.cpp" }
 		build_link_configuration( "eetest" )
 
+	-- Examples
 	project "eepp-es"
 		kind "WindowedApp"
 		language "C++"
@@ -711,3 +718,9 @@ solution "eepp"
 		language "C++"
 		files { "src/examples/empty_window/*.cpp" }
 		build_link_configuration( "eeew" )
+
+	project "eepp-sound"
+		kind "WindowedApp"
+		language "C++"
+		files { "src/examples/sound/*.cpp" }
+		build_link_configuration( "eesound" )

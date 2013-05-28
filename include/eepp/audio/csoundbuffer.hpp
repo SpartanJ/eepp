@@ -28,7 +28,7 @@ class EE_API cSoundBuffer {
 		bool LoadFromMemory( const char* Data, std::size_t SizeInBytes );
 
 		/** Load the Sound Buffer from an array of samples. Assumed format for samples is 16 bits signed integer */
-		bool LoadFromSamples( const Int16* Samples, std::size_t SamplesCount, unsigned int ChannelsCount, unsigned int SampleRate );
+		bool LoadFromSamples( const Int16* Samples, std::size_t SamplesCount, unsigned int ChannelCount, unsigned int SampleRate );
 
 		/** Save the Sound Buffer to a file */
 		bool SaveToFile( const std::string& Filename ) const;
@@ -43,10 +43,10 @@ class EE_API cSoundBuffer {
 		unsigned int GetSampleRate() const;
 
 		/** Return the number of Channels */
-		unsigned int GetChannelsCount() const;
+		unsigned int GetChannelCount() const;
 
-		/** Get the Sound Duration */
-		Uint32 GetDuration() const;
+		/** Get the Sound Duration in seconds */
+		float GetDuration() const;
 
 		/** Assignment operator */
 		cSoundBuffer& operator =(const 	cSoundBuffer& Other);
@@ -55,13 +55,13 @@ class EE_API cSoundBuffer {
 
 		unsigned int		mBuffer;   ///< OpenAL buffer identifier
 		std::vector<Int16>	mSamples;  ///< Samples buffer
-		Uint32				mDuration; ///< Sound duration, in miliseconds
+		float				mDuration; ///< Sound duration, in seconds
 
 		typedef std::set<cSound*> SoundList;
 		mutable SoundList	mSounds;
 
 		/** Update the internal buffer with the audio samples */
-		bool Update( unsigned int ChannelsCount, unsigned int SampleRate );
+		bool Update( unsigned int ChannelCount, unsigned int SampleRate );
 
 		void AttachSound( cSound* sound ) const;
 
