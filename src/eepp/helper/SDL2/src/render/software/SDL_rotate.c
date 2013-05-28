@@ -398,7 +398,7 @@ SDL_Surface *_rotateSurface(SDL_Surface * src, double angle, int centerx, int ce
 
 
     /* Determine target size */
-    //_rotozoomSurfaceSizeTrig(rz_src->w, rz_src->h, angle, &dstwidth, &dstheight, &cangle, &sangle);
+    /*_rotozoomSurfaceSizeTrig(rz_src->w, rz_src->h, angle, &dstwidth, &dstheight, &cangle, &sangle); */
 
     /*
     * Calculate target factors from sin/cos and zoom
@@ -459,7 +459,7 @@ SDL_Surface *_rotateSurface(SDL_Surface * src, double angle, int centerx, int ce
         /*
         * Turn on source-alpha support
         */
-        //SDL_SetAlpha(rz_dst, SDL_SRCALPHA, 255);
+        /*SDL_SetAlpha(rz_dst, SDL_SRCALPHA, 255);*/
         SDL_SetColorKey(rz_dst, /*SDL_SRCCOLORKEY*/ SDL_TRUE | SDL_RLEACCEL, _colorkey(rz_src));
     } else {
         /*

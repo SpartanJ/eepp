@@ -15,19 +15,15 @@
 extern "C" void SDL_Android_Init(JNIEnv* env, jclass cls);
 
 // Start up the SDL app
-extern "C" void Java_org_libsdl_app_SDLActivity_nativeInit(JNIEnv* env, jclass cls, jstring apkPath)
+extern "C" void Java_org_libsdl_app_SDLActivity_nativeInit(JNIEnv* env, jclass cls, jobject obj)
 {
     /* This interface could expand with ABI negotiation, calbacks, etc. */
     SDL_Android_Init(env, cls);
 
-	const char* str;
-	jboolean isCopy;
-	str = env->GetStringUTFChars(apkPath, &isCopy);
-	
     /* Run the application code! */
     int status;
     char *argv[2];
-    argv[0] = strdup(str);
+    argv[0] = strdup("SDL_app");
     argv[1] = NULL;
     status = SDL_main(1, argv);
 

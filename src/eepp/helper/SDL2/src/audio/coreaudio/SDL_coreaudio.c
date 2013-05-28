@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -280,10 +280,10 @@ outputCallback(void *inRefCon,
         while (remaining > 0) {
             if (this->hidden->bufferOffset >= this->hidden->bufferSize) {
                 /* Generate the data */
-                SDL_mutexP(this->mixer_lock);
+                SDL_LockMutex(this->mixer_lock);
                 (*this->spec.callback)(this->spec.userdata,
                             this->hidden->buffer, this->hidden->bufferSize);
-                SDL_mutexV(this->mixer_lock);
+                SDL_UnlockMutex(this->mixer_lock);
                 this->hidden->bufferOffset = 0;
             }
 
@@ -308,8 +308,8 @@ inputCallback(void *inRefCon,
               UInt32 inBusNumber, UInt32 inNumberFrames,
               AudioBufferList * ioData)
 {
-    //err = AudioUnitRender(afr->fAudioUnit, ioActionFlags, inTimeStamp, inBusNumber, inNumberFrames, afr->fAudioBuffer);
-    // !!! FIXME: write me!
+    /* err = AudioUnitRender(afr->fAudioUnit, ioActionFlags, inTimeStamp, inBusNumber, inNumberFrames, afr->fAudioBuffer); */
+    /* !!! FIXME: write me! */
     return noErr;
 }
 
@@ -380,7 +380,7 @@ prepare_audiounit(_THIS, const char *devname, int iscapture,
         return 0;
     }
 #endif
-    
+
     SDL_zero(desc);
     desc.componentType = kAudioUnitType_Output;
     desc.componentManufacturer = kAudioUnitManufacturer_Apple;
@@ -469,8 +469,7 @@ COREAUDIO_OpenDevice(_THIS, const char *devname, int iscapture)
     this->hidden = (struct SDL_PrivateAudioData *)
         SDL_malloc((sizeof *this->hidden));
     if (this->hidden == NULL) {
-        SDL_OutOfMemory();
-        return (0);
+        return SDL_OutOfMemory();
     }
     SDL_memset(this->hidden, 0, (sizeof *this->hidden));
 
@@ -511,8 +510,7 @@ COREAUDIO_OpenDevice(_THIS, const char *devname, int iscapture)
 
     if (!valid_datatype) {      /* shouldn't happen, but just in case... */
         COREAUDIO_CloseDevice(this);
-        SDL_SetError("Unsupported audio format");
-        return 0;
+        return SDL_SetError("Unsupported audio format");
     }
 
     strdesc.mBytesPerFrame =
@@ -522,10 +520,10 @@ COREAUDIO_OpenDevice(_THIS, const char *devname, int iscapture)
 
     if (!prepare_audiounit(this, devname, iscapture, &strdesc)) {
         COREAUDIO_CloseDevice(this);
-        return 0;               /* prepare_audiounit() will call SDL_SetError()... */
+        return -1;      /* prepare_audiounit() will call SDL_SetError()... */
     }
 
-    return 1;                   /* good to go. */
+    return 0;   /* good to go. */
 }
 
 static int

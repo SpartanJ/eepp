@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -33,13 +33,13 @@
 
 #if defined(__IRIX__)
 /* IRIX doesn't have a GL library versioning system */
-#define DEFAULT_OPENGL	"libGL.so"
+#define DEFAULT_OPENGL  "libGL.so"
 #elif defined(__MACOSX__)
-#define DEFAULT_OPENGL	"/usr/X11R6/lib/libGL.1.dylib"
+#define DEFAULT_OPENGL  "/usr/X11R6/lib/libGL.1.dylib"
 #elif defined(__QNXNTO__)
-#define DEFAULT_OPENGL	"libGL.so.3"
+#define DEFAULT_OPENGL  "libGL.so.3"
 #else
-#define DEFAULT_OPENGL	"libGL.so.1"
+#define DEFAULT_OPENGL  "libGL.so.1"
 #endif
 
 #ifndef GLX_NONE_EXT
@@ -118,13 +118,13 @@ typedef GLXContext(*PFNGLXCREATECONTEXTATTRIBSARBPROC) (Display * dpy,
 #define OPENGL_REQUIRES_DLOPEN
 #if defined(OPENGL_REQUIRES_DLOPEN) && defined(SDL_LOADSO_DLOPEN)
 #include <dlfcn.h>
-#define GL_LoadObject(X)	dlopen(X, (RTLD_NOW|RTLD_GLOBAL))
-#define GL_LoadFunction		dlsym
-#define GL_UnloadObject		dlclose
+#define GL_LoadObject(X)    dlopen(X, (RTLD_NOW|RTLD_GLOBAL))
+#define GL_LoadFunction     dlsym
+#define GL_UnloadObject     dlclose
 #else
-#define GL_LoadObject	SDL_LoadObject
-#define GL_LoadFunction	SDL_LoadFunction
-#define GL_UnloadObject	SDL_UnloadObject
+#define GL_LoadObject   SDL_LoadObject
+#define GL_LoadFunction SDL_LoadFunction
+#define GL_UnloadObject SDL_UnloadObject
 #endif
 
 static void X11_GL_InitExtensions(_THIS);
@@ -136,8 +136,7 @@ X11_GL_LoadLibrary(_THIS, const char *path)
     void *handle;
 
     if (_this->gl_data) {
-        SDL_SetError("OpenGL context already created");
-        return -1;
+        return SDL_SetError("OpenGL context already created");
     }
 
     /* If SDL_GL_CONTEXT_EGL has been changed to 1, switch over to X11_GLES functions  */
@@ -154,8 +153,7 @@ X11_GL_LoadLibrary(_THIS, const char *path)
         _this->GL_DeleteContext = X11_GLES_DeleteContext;
         return X11_GLES_LoadLibrary(_this, path);
 #else
-        SDL_SetError("SDL not configured with OpenGL ES/EGL support");
-        return -1;
+        return SDL_SetError("SDL not configured with OpenGL ES/EGL support");
 #endif
     }
 
@@ -183,8 +181,7 @@ X11_GL_LoadLibrary(_THIS, const char *path)
                                                sizeof(struct
                                                       SDL_GLDriverData));
     if (!_this->gl_data) {
-        SDL_OutOfMemory();
-        return -1;
+        return SDL_OutOfMemory();
     }
 
     /* Load function pointers */
@@ -216,8 +213,7 @@ X11_GL_LoadLibrary(_THIS, const char *path)
         !_this->gl_data->glXDestroyContext ||
         !_this->gl_data->glXMakeCurrent ||
         !_this->gl_data->glXSwapBuffers) {
-        SDL_SetError("Could not retrieve OpenGL functions");
-        return -1;
+        return SDL_SetError("Could not retrieve OpenGL functions");
     }
 
     /* Initialize extensions */
@@ -332,7 +328,7 @@ X11_GL_InitExtensions(_THIS)
     _this->gl_data->HAS_GLX_EXT_swap_control_tear = SDL_FALSE;
     if (HasExtension("GLX_EXT_swap_control", extensions)) {
         _this->gl_data->glXSwapIntervalEXT =
-            (int (*)(Display*,GLXDrawable,int))
+            (void (*)(Display*,GLXDrawable,int))
                 X11_GL_GetProcAddress(_this, "glXSwapIntervalEXT");
         if (HasExtension("GLX_EXT_swap_control_tear", extensions)) {
             _this->gl_data->HAS_GLX_EXT_swap_control_tear = SDL_TRUE;
@@ -373,21 +369,21 @@ X11_GL_InitExtensions(_THIS)
 }
 
 /* glXChooseVisual and glXChooseFBConfig have some small differences in
- * the attribute encoding, it can be chosen with the for_FBConfig parameter. 
+ * the attribute encoding, it can be chosen with the for_FBConfig parameter.
  */
-int 
+int
 X11_GL_GetAttributes(_THIS, Display * display, int screen, int * attribs, int size, Bool for_FBConfig)
 {
     int i = 0;
-	const int MAX_ATTRIBUTES = 64;
+    const int MAX_ATTRIBUTES = 64;
 
-    /* assert buffer is large enough to hold all SDL attributes. */ 
+    /* assert buffer is large enough to hold all SDL attributes. */
     SDL_assert(size >= MAX_ATTRIBUTES);
 
     /* Setup our GLX attributes according to the gl_config. */
     if( for_FBConfig ) {
         attribs[i++] = GLX_RENDER_TYPE;
-	attribs[i++] = GLX_RGBA_BIT;
+    attribs[i++] = GLX_RGBA_BIT;
     } else {
         attribs[i++] = GLX_RGBA;
     }
@@ -405,8 +401,8 @@ X11_GL_GetAttributes(_THIS, Display * display, int screen, int * attribs, int si
 
     if (_this->gl_config.double_buffer) {
         attribs[i++] = GLX_DOUBLEBUFFER;
-	if( for_FBConfig )
-	    attribs[i++] = True;
+    if( for_FBConfig )
+        attribs[i++] = True;
     }
 
     attribs[i++] = GLX_DEPTH_SIZE;
@@ -439,8 +435,8 @@ X11_GL_GetAttributes(_THIS, Display * display, int screen, int * attribs, int si
 
     if (_this->gl_config.stereo) {
         attribs[i++] = GLX_STEREO;
-	if( for_FBConfig )
-	    attribs[i++] = True;
+    if( for_FBConfig )
+        attribs[i++] = True;
     }
 
     if (_this->gl_config.multisamplebuffers) {
@@ -460,8 +456,8 @@ X11_GL_GetAttributes(_THIS, Display * display, int screen, int * attribs, int si
                                                       GLX_SLOW_VISUAL_EXT;
     }
 
-    // If we're supposed to use DirectColor visuals, and we've got the EXT_visual_info
-    //  extension, then add GLX_X_VISUAL_TYPE_EXT.
+    /* If we're supposed to use DirectColor visuals, and we've got the
+       EXT_visual_info extension, then add GLX_X_VISUAL_TYPE_EXT. */
     if (X11_UseDirectColorVisuals() &&
         _this->gl_data->HAS_GLX_EXT_visual_info) {
         attribs[i++] = GLX_X_VISUAL_TYPE_EXT;
@@ -471,7 +467,7 @@ X11_GL_GetAttributes(_THIS, Display * display, int screen, int * attribs, int si
     attribs[i++] = None;
 
     SDL_assert(i <= MAX_ATTRIBUTES);
- 
+
     return i;
 }
 
@@ -496,6 +492,33 @@ X11_GL_GetVisual(_THIS, Display * display, int screen)
     return vinfo;
 }
 
+#ifndef GLXBadContext
+#define GLXBadContext 0
+#endif
+#ifndef GLXBadFBConfig
+#define GLXBadFBConfig 9
+#endif
+#ifndef GLXBadProfileARB
+#define GLXBadProfileARB 13
+#endif
+static int (*handler) (Display *, XErrorEvent *) = NULL;
+static int
+X11_GL_CreateContextErrorHandler(Display * d, XErrorEvent * e)
+{
+    switch (e->error_code) {
+    case GLXBadContext:
+    case GLXBadFBConfig:
+    case GLXBadProfileARB:
+    case BadRequest:
+    case BadMatch:
+    case BadValue:
+    case BadAlloc:
+        return (0);
+    default:
+        return (handler(d, e));
+    }
+}
+
 SDL_GLContext
 X11_GL_CreateContext(_THIS, SDL_Window * window)
 {
@@ -516,6 +539,7 @@ X11_GL_CreateContext(_THIS, SDL_Window * window)
 
     /* We do this to create a clean separation between X and GLX errors. */
     XSync(display, False);
+    handler = XSetErrorHandler(X11_GL_CreateContextErrorHandler);
     XGetWindowAttributes(display, data->xwindow, &xattr);
     v.screen = screen;
     v.visualid = XVisualIDFromVisual(xattr.visual);
@@ -532,10 +556,7 @@ X11_GL_CreateContext(_THIS, SDL_Window * window)
                context to grab the new context creation function */
             GLXContext temp_context =
                 _this->gl_data->glXCreateContext(display, vinfo, NULL, True);
-            if (!temp_context) {
-                SDL_SetError("Could not create GL context");
-                return NULL;
-            } else {
+            if (temp_context) {
                 /* max 8 attributes plus terminator */
                 int attribs[9] = {
                     GLX_CONTEXT_MAJOR_VERSION_ARB,
@@ -609,6 +630,7 @@ X11_GL_CreateContext(_THIS, SDL_Window * window)
         XFree(vinfo);
     }
     XSync(display, False);
+    XSetErrorHandler(handler);
 
     if (!context) {
         SDL_SetError("Could not create GL context");
@@ -628,26 +650,21 @@ X11_GL_MakeCurrent(_THIS, SDL_Window * window, SDL_GLContext context)
 {
     Display *display = ((SDL_VideoData *) _this->driverdata)->display;
     Window drawable =
-        (window ? ((SDL_WindowData *) window->driverdata)->xwindow : None);
+        (context ? ((SDL_WindowData *) window->driverdata)->xwindow : None);
     GLXContext glx_context = (GLXContext) context;
-    int status;
 
     if (!_this->gl_data) {
-        SDL_SetError("OpenGL not initialized");
-        return -1;
+        return SDL_SetError("OpenGL not initialized");
     }
 
-    status = 0;
     if (!_this->gl_data->glXMakeCurrent(display, drawable, glx_context)) {
-        SDL_SetError("Unable to make GL context current");
-        status = -1;
+        return SDL_SetError("Unable to make GL context current");
     }
-    XSync(display, False);
 
-    return (status);
+    return 0;
 }
 
-/* 
+/*
    0 is a valid argument to glxSwapInterval(MESA|EXT) and setting it to 0
    will undo the effect of a previous call with a value that is greater
    than zero (or at least that is what the docs say). OTOH, 0 is an invalid
@@ -667,13 +684,23 @@ X11_GL_SetSwapInterval(_THIS, int interval)
         Display *display = ((SDL_VideoData *) _this->driverdata)->display;
         const SDL_WindowData *windowdata = (SDL_WindowData *)
             _this->current_glwin->driverdata;
+
         Window drawable = windowdata->xwindow;
-        status = _this->gl_data->glXSwapIntervalEXT(display,drawable,interval);
-        if (status != 0) {
-            SDL_SetError("glxSwapIntervalEXT failed");
-        } else {
-            swapinterval = interval;
-        }
+
+        /*
+         * This is a workaround for a bug in NVIDIA drivers. Bug has been reported
+         * and will be fixed in a future release (probably 319.xx).
+         *
+         * There's a bug where glXSetSwapIntervalEXT ignores updates because
+         * it has the wrong value cached. To work around it, we just run a no-op
+         * update to the current value.
+         */
+        int currentInterval = X11_GL_GetSwapInterval(_this);
+        _this->gl_data->glXSwapIntervalEXT(display, drawable, currentInterval);
+        _this->gl_data->glXSwapIntervalEXT(display, drawable, interval);
+
+        status = 0;
+        swapinterval = interval;
     } else if (_this->gl_data->glXSwapIntervalMESA) {
         status = _this->gl_data->glXSwapIntervalMESA(interval);
         if (status != 0) {

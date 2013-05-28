@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -861,6 +861,11 @@ SDL_GetKeyFromScancode(SDL_Scancode scancode)
 {
     SDL_Keyboard *keyboard = &SDL_keyboard;
 
+    if (scancode < SDL_SCANCODE_UNKNOWN || scancode >= SDL_NUM_SCANCODES) {
+          SDL_InvalidParamError("scancode");
+          return 0;
+    }
+
     return keyboard->keymap[scancode];
 }
 
@@ -882,8 +887,13 @@ SDL_GetScancodeFromKey(SDL_Keycode key)
 const char *
 SDL_GetScancodeName(SDL_Scancode scancode)
 {
-    const char *name = SDL_scancode_names[scancode];
+    const char *name;
+    if (scancode < SDL_SCANCODE_UNKNOWN || scancode >= SDL_NUM_SCANCODES) {
+          SDL_InvalidParamError("scancode");
+          return "";
+    }
 
+    name = SDL_scancode_names[scancode];
     if (name)
         return name;
     else
@@ -892,21 +902,24 @@ SDL_GetScancodeName(SDL_Scancode scancode)
 
 SDL_Scancode SDL_GetScancodeFromName(const char *name)
 {
-	int i;
+    int i;
 
-	if (!name || !*name) {
-		return SDL_SCANCODE_UNKNOWN;
-	}
+    if (!name || !*name) {
+            SDL_InvalidParamError("name");
+        return SDL_SCANCODE_UNKNOWN;
+    }
 
-	for (i = 0; i < SDL_arraysize(SDL_scancode_names); ++i) {
-		if (!SDL_scancode_names[i]) {
-			continue;
-		}
-		if (SDL_strcasecmp(name, SDL_scancode_names[i]) == 0) {
-			return (SDL_Scancode)i;
-		}
-	}
-	return SDL_SCANCODE_UNKNOWN;
+    for (i = 0; i < SDL_arraysize(SDL_scancode_names); ++i) {
+        if (!SDL_scancode_names[i]) {
+            continue;
+        }
+        if (SDL_strcasecmp(name, SDL_scancode_names[i]) == 0) {
+            return (SDL_Scancode)i;
+        }
+    }
+
+    SDL_InvalidParamError("name");
+    return SDL_SCANCODE_UNKNOWN;
 }
 
 const char *
@@ -951,48 +964,51 @@ SDL_GetKeyName(SDL_Keycode key)
 SDL_Keycode
 SDL_GetKeyFromName(const char *name)
 {
-	SDL_Keycode key;
+    SDL_Keycode key;
 
-	/* If it's a single UTF-8 character, then that's the keycode itself */
-	key = *(const unsigned char *)name;
-	if (key >= 0xF0) {
-		if (SDL_strlen(name) == 4) {
-			int i = 0;
-			key  = (Uint16)(name[i]&0x07) << 18;
-			key |= (Uint16)(name[++i]&0x3F) << 12;
-			key |= (Uint16)(name[++i]&0x3F) << 6;
-			key |= (Uint16)(name[++i]&0x3F);
-			return key;
-		}
-		return SDLK_UNKNOWN;
-	} else if (key >= 0xE0) {
-		if (SDL_strlen(name) == 3) {
-			int i = 0;
-			key  = (Uint16)(name[i]&0x0F) << 12;
-			key |= (Uint16)(name[++i]&0x3F) << 6;
-			key |= (Uint16)(name[++i]&0x3F);
-			return key;
-		}
-		return SDLK_UNKNOWN;
-	} else if (key >= 0xC0) {
-		if (SDL_strlen(name) == 2) {
-			int i = 0;
-			key  = (Uint16)(name[i]&0x1F) << 6;
-			key |= (Uint16)(name[++i]&0x3F);
-			return key;
-		}
-		return SDLK_UNKNOWN;
-	} else {
-		if (SDL_strlen(name) == 1) {
-			if (key >= 'A' && key <= 'Z') {
-				key += 32;
-			}
-			return key;
-		}
+        /* Check input */
+        if (name == NULL) return SDLK_UNKNOWN;
 
-		/* Get the scancode for this name, and the associated keycode */
-		return SDL_default_keymap[SDL_GetScancodeFromName(name)];
-	}
+    /* If it's a single UTF-8 character, then that's the keycode itself */
+    key = *(const unsigned char *)name;
+    if (key >= 0xF0) {
+        if (SDL_strlen(name) == 4) {
+            int i = 0;
+            key  = (Uint16)(name[i]&0x07) << 18;
+            key |= (Uint16)(name[++i]&0x3F) << 12;
+            key |= (Uint16)(name[++i]&0x3F) << 6;
+            key |= (Uint16)(name[++i]&0x3F);
+            return key;
+        }
+        return SDLK_UNKNOWN;
+    } else if (key >= 0xE0) {
+        if (SDL_strlen(name) == 3) {
+            int i = 0;
+            key  = (Uint16)(name[i]&0x0F) << 12;
+            key |= (Uint16)(name[++i]&0x3F) << 6;
+            key |= (Uint16)(name[++i]&0x3F);
+            return key;
+        }
+        return SDLK_UNKNOWN;
+    } else if (key >= 0xC0) {
+        if (SDL_strlen(name) == 2) {
+            int i = 0;
+            key  = (Uint16)(name[i]&0x1F) << 6;
+            key |= (Uint16)(name[++i]&0x3F);
+            return key;
+        }
+        return SDLK_UNKNOWN;
+    } else {
+        if (SDL_strlen(name) == 1) {
+            if (key >= 'A' && key <= 'Z') {
+                key += 32;
+            }
+            return key;
+        }
+
+        /* Get the scancode for this name, and the associated keycode */
+        return SDL_default_keymap[SDL_GetScancodeFromName(name)];
+    }
 }
 
 /* vi: set ts=4 sw=4 expandtab: */

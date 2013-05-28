@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -57,6 +57,8 @@ typedef struct
     Uint32 pending_focus_time;
     XConfigureEvent last_xconfigure;
     struct SDL_VideoData *videodata;
+    Atom xdnd_req;
+    Window xdnd_source;
 } SDL_WindowData;
 
 extern void X11_SetNetWMState(_THIS, Window xwindow, Uint32 flags);

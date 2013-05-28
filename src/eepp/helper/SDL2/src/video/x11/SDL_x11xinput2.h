@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -24,11 +24,11 @@
 #define _SDL_x11xinput2_h
 
 #ifndef SDL_VIDEO_DRIVER_X11_SUPPORTS_GENERIC_EVENTS
-/*Define XGenericEventCookie as forward declaration when 
+/*Define XGenericEventCookie as forward declaration when
  *xinput2 is not available in order to compile*/
 struct XGenericEventCookie;
 typedef struct XGenericEventCookie XGenericEventCookie;
-#endif 
+#endif
 
 extern void X11_InitXinput2(_THIS);
 extern void X11_InitXinput2Multitouch(_THIS);

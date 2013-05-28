@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -26,11 +26,45 @@
 #include "SDL_windowsvideo.h"
 
 
+#ifndef SS_EDITCONTROL
+#define SS_EDITCONTROL  0x2000
+#endif
+
 /* Display a Windows message box */
+
+#pragma pack(push, 1)
 
 typedef struct
 {
-    LPDLGTEMPLATE lpDialog;
+    WORD dlgVer;
+    WORD signature;
+    DWORD helpID;
+    DWORD exStyle;
+    DWORD style;
+    WORD cDlgItems;
+    short x;
+    short y;
+    short cx;
+    short cy;
+} DLGTEMPLATEEX;
+
+typedef struct
+{
+    DWORD helpID;
+    DWORD exStyle;
+    DWORD style;
+    short x;
+    short y;
+    short cx;
+    short cy;
+    DWORD id;
+} DLGITEMTEMPLATEEX;
+
+#pragma pack(pop)
+
+typedef struct
+{
+    DLGTEMPLATEEX* lpDialog;
     Uint8 *data;
     size_t size;
     size_t used;
@@ -42,7 +76,7 @@ static INT_PTR MessageBoxDialogProc(HWND hDlg, UINT iMessage, WPARAM wParam, LPA
     switch ( iMessage ) {
     case WM_COMMAND:
         /* Return the ID of the button that was pushed */
-		EndDialog(hDlg, LOWORD(wParam));
+        EndDialog(hDlg, LOWORD(wParam));
         return TRUE;
 
     default:
@@ -70,11 +104,11 @@ static SDL_bool ExpandDialogSpace(WIN_DialogData *dialog, size_t space)
         }
         dialog->data = data;
         dialog->size = size;
-        dialog->lpDialog = (LPDLGTEMPLATE)dialog->data;
+        dialog->lpDialog = (DLGTEMPLATEEX*)dialog->data;
     }
     return SDL_TRUE;
 }
- 
+
 static SDL_bool AlignDialogData(WIN_DialogData *dialog, size_t size)
 {
     size_t padding = (dialog->used % size);
@@ -128,20 +162,34 @@ static SDL_bool AddDialogString(WIN_DialogData *dialog, const char *string)
     return status;
 }
 
+static int s_BaseUnitsX;
+static int s_BaseUnitsY;
+static void Vec2ToDLU(short *x, short *y)
+{
+    SDL_assert(s_BaseUnitsX != 0); /* we init in WIN_ShowMessageBox(), which is the only public function... */
+
+    *x = MulDiv(*x, 4, s_BaseUnitsX);
+    *y = MulDiv(*y, 8, s_BaseUnitsY);
+}
+
+
 static SDL_bool AddDialogControl(WIN_DialogData *dialog, WORD type, DWORD style, DWORD exStyle, int x, int y, int w, int h, int id, const char *caption)
 {
-    DLGITEMTEMPLATE item;
+    DLGITEMTEMPLATEEX item;
     WORD marker = 0xFFFF;
     WORD extraData = 0;
 
     SDL_zero(item);
     item.style = style;
-    item.dwExtendedStyle = exStyle;
+    item.exStyle = exStyle;
     item.x = x;
     item.y = y;
     item.cx = w;
     item.cy = h;
     item.id = id;
+
+    Vec2ToDLU(&item.x, &item.y);
+    Vec2ToDLU(&item.cx, &item.cy);
 
     if (!AlignDialogData(dialog, sizeof(DWORD))) {
         return SDL_FALSE;
@@ -161,14 +209,14 @@ static SDL_bool AddDialogControl(WIN_DialogData *dialog, WORD type, DWORD style,
     if (!AddDialogData(dialog, &extraData, sizeof(extraData))) {
         return SDL_FALSE;
     }
-    ++dialog->lpDialog->cdit;
+    ++dialog->lpDialog->cDlgItems;
 
     return SDL_TRUE;
 }
 
 static SDL_bool AddDialogStatic(WIN_DialogData *dialog, int x, int y, int w, int h, const char *text)
 {
-    DWORD style = WS_VISIBLE | WS_CHILD | SS_LEFT | SS_NOPREFIX;
+    DWORD style = WS_VISIBLE | WS_CHILD | SS_LEFT | SS_NOPREFIX | SS_EDITCONTROL;
     return AddDialogControl(dialog, 0x0082, style, 0, x, y, w, h, -1, text);
 }
 
@@ -194,14 +242,18 @@ static void FreeDialogData(WIN_DialogData *dialog)
 static WIN_DialogData *CreateDialogData(int w, int h, const char *caption)
 {
     WIN_DialogData *dialog;
-    DLGTEMPLATE dialogTemplate;
+    DLGTEMPLATEEX dialogTemplate;
+    WORD WordToPass;
 
     SDL_zero(dialogTemplate);
-    dialogTemplate.style = (WS_CAPTION | DS_CENTER);
+    dialogTemplate.dlgVer = 1;
+    dialogTemplate.signature = 0xffff;
+    dialogTemplate.style = (WS_CAPTION | DS_CENTER | DS_SHELLFONT);
     dialogTemplate.x = 0;
     dialogTemplate.y = 0;
     dialogTemplate.cx = w;
     dialogTemplate.cy = h;
+    Vec2ToDLU(&dialogTemplate.cx, &dialogTemplate.cy);
 
     dialog = (WIN_DialogData *)SDL_calloc(1, sizeof(*dialog));
     if (!dialog) {
@@ -213,15 +265,74 @@ static WIN_DialogData *CreateDialogData(int w, int h, const char *caption)
         return NULL;
     }
 
-    /* There is no menu or special class */
-    if (!AddDialogString(dialog, "") || !AddDialogString(dialog, "")) {
+    /* No menu */
+    WordToPass = 0;
+    if (!AddDialogData(dialog, &WordToPass, 2)) {
         FreeDialogData(dialog);
         return NULL;
     }
 
+    /* No custom class */
+    if (!AddDialogData(dialog, &WordToPass, 2)) {
+        FreeDialogData(dialog);
+        return NULL;
+    }
+
+    /* title */
     if (!AddDialogString(dialog, caption)) {
         FreeDialogData(dialog);
         return NULL;
+    }
+
+    /* Font stuff */
+    {
+        /*
+         * We want to use the system messagebox font.
+         */
+        BYTE ToPass;
+
+        NONCLIENTMETRICSA NCM;
+        NCM.cbSize = sizeof(NCM);
+        SystemParametersInfoA(SPI_GETNONCLIENTMETRICS, 0, &NCM, 0);
+
+        /* Font size - convert to logical font size for dialog parameter. */
+        {
+            HDC ScreenDC = GetDC(0);
+            WordToPass = (WORD)(-72 * NCM.lfMessageFont.lfHeight / GetDeviceCaps(ScreenDC, LOGPIXELSY));
+            ReleaseDC(0, ScreenDC);
+        }
+
+        if (!AddDialogData(dialog, &WordToPass, 2)) {
+            FreeDialogData(dialog);
+            return NULL;
+        }
+
+        /* Font weight */
+        WordToPass = (WORD)NCM.lfMessageFont.lfWeight;
+        if (!AddDialogData(dialog, &WordToPass, 2)) {
+            FreeDialogData(dialog);
+            return NULL;
+        }
+
+        /* italic? */
+        ToPass = NCM.lfMessageFont.lfItalic;
+        if (!AddDialogData(dialog, &ToPass, 1)) {
+            FreeDialogData(dialog);
+            return NULL;
+        }
+
+        /* charset? */
+        ToPass = NCM.lfMessageFont.lfCharSet;
+        if (!AddDialogData(dialog, &ToPass, 1)) {
+            FreeDialogData(dialog);
+            return NULL;
+        }
+
+        /* font typeface. */
+        if (!AddDialogString(dialog, NCM.lfMessageFont.lfFaceName)) {
+            FreeDialogData(dialog);
+            return NULL;
+        }
     }
 
     return dialog;
@@ -231,29 +342,114 @@ int
 WIN_ShowMessageBox(const SDL_MessageBoxData *messageboxdata, int *buttonid)
 {
     WIN_DialogData *dialog;
-    int i, x, y, w, h, gap, which;
+    int i, x, y, which;
     const SDL_MessageBoxButtonData *buttons = messageboxdata->buttons;
- 
-    /* FIXME: Need a better algorithm for laying out the message box */
+    HFONT DialogFont;
+    SIZE Size;
+    RECT TextSize;
+    wchar_t* wmessage;
+    TEXTMETRIC TM;
 
-    dialog = CreateDialogData(570, 260, messageboxdata->title);
+
+    const int ButtonWidth = 88;
+    const int ButtonHeight = 26;
+    const int TextMargin = 16;
+    const int ButtonMargin = 12;
+
+
+    /* Jan 25th, 2013 - dant@fleetsa.com
+     *
+     *
+     * I've tried to make this more reasonable, but I've run in to a lot
+     * of nonsense.
+     *
+     * The original issue is the code was written in pixels and not
+     * dialog units (DLUs). All DialogBox functions use DLUs, which
+     * vary based on the selected font (yay).
+     *
+     * According to MSDN, the most reliable way to convert is via
+     * MapDialogUnits, which requires an HWND, which we don't have
+     * at time of template creation.
+     *
+     * We do however have:
+     *  The system font (DLU width 8 for me)
+     *  The font we select for the dialog (DLU width 6 for me)
+     *
+     * Based on experimentation, *neither* of these return the value
+     * actually used. Stepping in to MapDialogUnits(), the conversion
+     * is fairly clear, and uses 7 for me.
+     *
+     * As a result, some of this is hacky to ensure the sizing is
+     * somewhat correct.
+     *
+     * Honestly, a long term solution is to use CreateWindow, not CreateDialog.
+     *
+
+     *
+     * In order to get text dimensions we need to have a DC with the desired font.
+     * I'm assuming a dialog box in SDL is rare enough we can to the create.
+     */
+    HDC FontDC = CreateCompatibleDC(0);
+
+    {
+        /* Create a duplicate of the font used in system message boxes. */
+        LOGFONT lf;
+        NONCLIENTMETRICS NCM;
+        NCM.cbSize = sizeof(NCM);
+        SystemParametersInfo(SPI_GETNONCLIENTMETRICS, 0, &NCM, 0);
+        lf = NCM.lfMessageFont;
+        DialogFont = CreateFontIndirect(&lf);
+    }
+
+    /* Select the font in to our DC */
+    SelectObject(FontDC, DialogFont);
+
+    {
+        /* Get the metrics to try and figure our DLU conversion. */
+        GetTextMetrics(FontDC, &TM);
+        s_BaseUnitsX = TM.tmAveCharWidth + 1;
+        s_BaseUnitsY = TM.tmHeight;
+    }
+
+    /* Measure the *pixel* size of the string. */
+    wmessage = WIN_UTF8ToString(messageboxdata->message);
+    SDL_zero(TextSize);
+    Size.cx = DrawText(FontDC, wmessage, -1, &TextSize, DT_CALCRECT);
+
+    /* Add some padding for hangs, etc. */
+    TextSize.right += 2;
+    TextSize.bottom += 2;
+
+    /* Done with the DC, and the string */
+    DeleteDC(FontDC);
+    SDL_free(wmessage);
+
+    /* Increase the size of the dialog by some border spacing around the text. */
+    Size.cx = TextSize.right - TextSize.left;
+    Size.cy = TextSize.bottom - TextSize.top;
+    Size.cx += TextMargin * 2;
+    Size.cy += TextMargin * 2;
+
+    /* Ensure the size is wide enough for all of the buttons. */
+    if (Size.cx < messageboxdata->numbuttons * (ButtonWidth + ButtonMargin) + ButtonMargin)
+        Size.cx = messageboxdata->numbuttons * (ButtonWidth + ButtonMargin) + ButtonMargin;
+
+    /* Add vertical space for the buttons and border. */
+    Size.cy += ButtonHeight + TextMargin;
+
+    dialog = CreateDialogData(Size.cx, Size.cy, messageboxdata->title);
     if (!dialog) {
         return -1;
     }
 
-    w = 100;
-    h = 25;
-    gap = 10;
-    x = gap;
-    y = 50;
-
-    if (!AddDialogStatic(dialog, x, y, 550, 100, messageboxdata->message)) {
+    if (!AddDialogStatic(dialog, TextMargin, TextMargin, TextSize.right - TextSize.left, TextSize.bottom - TextSize.top, messageboxdata->message)) {
         FreeDialogData(dialog);
         return -1;
     }
 
-    y += 110;
-
+    /* Align the buttons to the right/bottom. */
+    x = Size.cx - ButtonWidth - ButtonMargin;
+    y = Size.cy - ButtonHeight - ButtonMargin;
     for (i = 0; i < messageboxdata->numbuttons; ++i) {
         SDL_bool isDefault;
 
@@ -262,15 +458,15 @@ WIN_ShowMessageBox(const SDL_MessageBoxData *messageboxdata, int *buttonid)
         } else {
             isDefault = SDL_FALSE;
         }
-        if (!AddDialogButton(dialog, x, y, w, h, buttons[i].text, i, isDefault)) {
+        if (!AddDialogButton(dialog, x, y, ButtonWidth, ButtonHeight, buttons[i].text, i, isDefault)) {
             FreeDialogData(dialog);
             return -1;
         }
-        x += w + gap;
+        x -= ButtonWidth + ButtonMargin;
     }
 
     /* FIXME: If we have a parent window, get the Instance and HWND for them */
-    which = DialogBoxIndirect(NULL, dialog->lpDialog, NULL, (DLGPROC)MessageBoxDialogProc);
+    which = DialogBoxIndirect(NULL, (DLGTEMPLATE*)dialog->lpDialog, NULL, (DLGPROC)MessageBoxDialogProc);
     *buttonid = buttons[which].buttonid;
 
     FreeDialogData(dialog);

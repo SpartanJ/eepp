@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -214,13 +214,12 @@ SetupWindowData(_THIS, SDL_Window * window, Window w, BOOL created)
     /* Allocate the window data */
     data = (SDL_WindowData *) SDL_calloc(1, sizeof(*data));
     if (!data) {
-        SDL_OutOfMemory();
-        return -1;
+        return SDL_OutOfMemory();
     }
     data->window = window;
     data->xwindow = w;
 #ifdef X_HAVE_UTF8_STRING
-    if (SDL_X11_HAVE_UTF8) {
+    if (SDL_X11_HAVE_UTF8 && videodata->im) {
         data->ic =
             pXCreateIC(videodata->im, XNClientWindow, w, XNFocusWindow, w,
                        XNInputStyle, XIMPreeditNothing | XIMStatusNothing,
@@ -242,9 +241,8 @@ SetupWindowData(_THIS, SDL_Window * window, Window w, BOOL created)
                                             (numwindows +
                                              1) * sizeof(*windowlist));
         if (!windowlist) {
-            SDL_OutOfMemory();
             SDL_free(data);
-            return -1;
+            return SDL_OutOfMemory();
         }
         windowlist[numwindows] = data;
         videodata->numwindows++;
@@ -344,13 +342,14 @@ X11_CreateWindow(_THIS, SDL_Window * window)
     Atom _NET_WM_WINDOW_TYPE;
     Atom _NET_WM_WINDOW_TYPE_NORMAL;
     Atom _NET_WM_PID;
+    Atom XdndAware, xdnd_version = 5;
     Uint32 fevent = 0;
 
 #if SDL_VIDEO_OPENGL_GLX || SDL_VIDEO_OPENGL_ES || SDL_VIDEO_OPENGL_ES2
     if (window->flags & SDL_WINDOW_OPENGL) {
         XVisualInfo *vinfo;
 
-#if SDL_VIDEO_OPENGL_ES || SDL_VIDEO_OPENGL_ES2        
+#if SDL_VIDEO_OPENGL_ES || SDL_VIDEO_OPENGL_ES2
         if (_this->gl_config.use_egl == 1) {
             vinfo = X11_GLES_GetVisual(_this, display, screen);
         } else
@@ -391,15 +390,13 @@ X11_CreateWindow(_THIS, SDL_Window * window)
 
         /* If we can't create a colormap, then we must die */
         if (!xattr.colormap) {
-            SDL_SetError("Could not create writable colormap");
-            return -1;
+            return SDL_SetError("Could not create writable colormap");
         }
 
         /* OK, we got a colormap, now fill it in as best as we can */
         colorcells = SDL_malloc(visual->map_entries * sizeof(XColor));
         if (!colorcells) {
-            SDL_OutOfMemory();
-            return -1;
+            return SDL_OutOfMemory();
         }
         ncolors = visual->map_entries;
         rmax = 0xffff;
@@ -464,8 +461,7 @@ X11_CreateWindow(_THIS, SDL_Window * window)
                       (CWOverrideRedirect | CWBackPixel | CWBorderPixel |
                        CWColormap), &xattr);
     if (!w) {
-        SDL_SetError("Couldn't create window");
-        return -1;
+        return SDL_SetError("Couldn't create window");
     }
 #if SDL_VIDEO_OPENGL_ES || SDL_VIDEO_OPENGL_ES2
     if ((window->flags & SDL_WINDOW_OPENGL) && (_this->gl_config.use_egl == 1)) {
@@ -482,9 +478,8 @@ X11_CreateWindow(_THIS, SDL_Window * window)
                                                  (NativeWindowType) w, NULL);
 
         if (_this->gles_data->egl_surface == EGL_NO_SURFACE) {
-            SDL_SetError("Could not create GLES window surface");
             XDestroyWindow(display, w);
-            return -1;
+            return SDL_SetError("Could not create GLES window surface");
         }
     }
 #endif
@@ -537,7 +532,7 @@ X11_CreateWindow(_THIS, SDL_Window * window)
                     PropModeReplace,
                     (unsigned char *)&_NET_WM_WINDOW_TYPE_NORMAL, 1);
 
-    
+
     {
         Atom protocols[] = {
             data->WM_DELETE_WINDOW, /* Allow window to be deleted by the WM */
@@ -566,6 +561,11 @@ X11_CreateWindow(_THIS, SDL_Window * window)
                  PointerMotionMask | KeyPressMask | KeyReleaseMask |
                  PropertyChangeMask | StructureNotifyMask |
                  KeymapStateMask | fevent));
+
+    XdndAware = XInternAtom(display, "XdndAware", False);
+    XChangeProperty(display, w, XdndAware, XA_ATOM, 32,
+                 PropModeReplace,
+                 (unsigned char*)&xdnd_version, 1);
 
     XFlush(display);
 
@@ -768,37 +768,28 @@ X11_SetWindowSize(_THIS, SDL_Window * window)
          XFree(sizehints);
 
         /* From Pierre-Loup:
-           For the windowed resize problem; WMs each have their little quirks with
-           that.  When you change the size hints, they get a ConfigureNotify event
-           with the WM_NORMAL_SIZE_HINTS Atom.  They all save the hints then, but
-           they don't all resize the window right away to enforce the new hints.
-           Those who do properly do it are:
-          
-             - XFWM
-             - metacity
-             - KWin
+           WMs each have their little quirks with that.  When you change the
+           size hints, they get a ConfigureNotify event with the
+           WM_NORMAL_SIZE_HINTS Atom.  They all save the hints then, but they
+           don't all resize the window right away to enforce the new hints.
 
-           These are great.  Now, others are more problematic as you could observe
-           first hand.  Compiz/Unity only falls into the code that does it on select
-           actions, such as window move, raise, map, etc.
+           Some of them resize only after:
+            - A user-initiated move or resize
+            - A code-initiated move or resize
+            - Hiding & showing window (Unmap & map)
 
-           WindowMaker is even more difficult and will _only_ do it on map.
-
-           Awesome only does it on user-initiated moves as far as I can tell.
-          
-           Your raise workaround only fixes compiz/Unity.  With that all "modern"
-           window managers are covered.  Trying to Hide/Show on windowed resize
-           (UnMap/Map) fixes both Unity and WindowMaker, but introduces subtle
-           problems with transitioning from Windowed to Fullscreen on Unity.  Since
-           some window moves happen after the transitions to fullscreen, that forces
-           SDL to fall from windowed to fullscreen repeatedly and it sometimes leaves
-           itself in a state where the fullscreen window is slightly offset by what
-           used to be the window decoration titlebar.
-        */
+           The following move & resize seems to help a lot of WMs that didn't
+           properly update after the hints were changed. We don't do a
+           hide/show, because there are supposedly subtle problems with doing so
+           and transitioning from windowed to fullscreen in Unity.
+         */
+        XResizeWindow(display, data->xwindow, window->w, window->h);
+        XMoveWindow(display, data->xwindow, window->x, window->y);
         XRaiseWindow(display, data->xwindow);
     } else {
         XResizeWindow(display, data->xwindow, window->w, window->h);
     }
+
     XFlush(display);
 }
 
@@ -845,7 +836,7 @@ X11_ShowWindow(_THIS, SDL_Window * window)
     if (!X11_IsWindowMapped(_this, window)) {
         XMapRaised(display, data->xwindow);
         /* Blocking wait for "MapNotify" event.
-         * We use XIfEvent because XWindowEvent takes a mask rather than a type, 
+         * We use XIfEvent because XWindowEvent takes a mask rather than a type,
          * and XCheckTypedWindowEvent doesn't block */
         XIfEvent(display, &event, &isMapNotify, (XPointer)&data->xwindow);
         XFlush(display);
@@ -862,7 +853,7 @@ X11_HideWindow(_THIS, SDL_Window * window)
     if (X11_IsWindowMapped(_this, window)) {
         XUnmapWindow(display, data->xwindow);
         /* Blocking wait for "UnmapNotify" event */
-        XIfEvent(display, &event, &isUnmapNotify, (XPointer)&data->xwindow);    
+        XIfEvent(display, &event, &isUnmapNotify, (XPointer)&data->xwindow);
         XFlush(display);
     }
 }
@@ -931,15 +922,44 @@ X11_MinimizeWindow(_THIS, SDL_Window * window)
     SDL_DisplayData *displaydata =
         (SDL_DisplayData *) SDL_GetDisplayForWindow(window)->driverdata;
     Display *display = data->videodata->display;
- 
+
     XIconifyWindow(display, data->xwindow, displaydata->screen);
     XFlush(display);
+}
+
+static void
+SetWindowActive(_THIS, SDL_Window * window)
+{
+    SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
+    SDL_DisplayData *displaydata =
+        (SDL_DisplayData *) SDL_GetDisplayForWindow(window)->driverdata;
+    Display *display = data->videodata->display;
+    Atom _NET_ACTIVE_WINDOW = data->videodata->_NET_ACTIVE_WINDOW;
+
+    if (X11_IsWindowMapped(_this, window)) {
+        XEvent e;
+
+        SDL_zero(e);
+        e.xany.type = ClientMessage;
+        e.xclient.message_type = _NET_ACTIVE_WINDOW;
+        e.xclient.format = 32;
+        e.xclient.window = data->xwindow;
+        e.xclient.data.l[0] = 1;  /* source indication. 1 = application */
+        e.xclient.data.l[1] = CurrentTime;
+        e.xclient.data.l[2] = 0;
+
+        XSendEvent(display, RootWindow(display, displaydata->screen), 0,
+                   SubstructureNotifyMask | SubstructureRedirectMask, &e);
+
+        XFlush(display);
+    }
 }
 
 void
 X11_RestoreWindow(_THIS, SDL_Window * window)
 {
     SetWindowMaximized(_this, window, SDL_FALSE);
+    SetWindowActive(_this, window);
     X11_ShowWindow(_this, window);
 }
 
@@ -1183,15 +1203,13 @@ X11_SetWindowGammaRamp(_THIS, SDL_Window * window, const Uint16 * ramp)
     int i;
 
     if (visual->class != DirectColor) {
-        SDL_SetError("Window doesn't have DirectColor visual");
-        return -1;
+        return SDL_SetError("Window doesn't have DirectColor visual");
     }
 
     ncolors = visual->map_entries;
     colorcells = SDL_malloc(ncolors * sizeof(XColor));
     if (!colorcells) {
-        SDL_OutOfMemory();
-        return -1;
+        return SDL_OutOfMemory();
     }
 
     rshift = 0;

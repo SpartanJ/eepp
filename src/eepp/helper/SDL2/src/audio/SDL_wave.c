@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -134,8 +134,7 @@ MS_ADPCM_decode(Uint8 ** audio_buf, Uint32 * audio_len)
         MS_ADPCM_state.wavefmt.channels * sizeof(Sint16);
     *audio_buf = (Uint8 *) SDL_malloc(*audio_len);
     if (*audio_buf == NULL) {
-        SDL_Error(SDL_ENOMEM);
-        return (-1);
+        return SDL_OutOfMemory();
     }
     decoded = *audio_buf;
 
@@ -359,8 +358,7 @@ IMA_ADPCM_decode(Uint8 ** audio_buf, Uint32 * audio_len)
         IMA_ADPCM_state.wavefmt.channels * sizeof(Sint16);
     *audio_buf = (Uint8 *) SDL_malloc(*audio_len);
     if (*audio_buf == NULL) {
-        SDL_Error(SDL_ENOMEM);
-        return (-1);
+        return SDL_OutOfMemory();
     }
     decoded = *audio_buf;
 
@@ -620,14 +618,12 @@ ReadChunk(SDL_RWops * src, Chunk * chunk)
     chunk->length = SDL_ReadLE32(src);
     chunk->data = (Uint8 *) SDL_malloc(chunk->length);
     if (chunk->data == NULL) {
-        SDL_Error(SDL_ENOMEM);
-        return (-1);
+        return SDL_OutOfMemory();
     }
     if (SDL_RWread(src, chunk->data, chunk->length, 1) != 1) {
-        SDL_Error(SDL_EFREAD);
         SDL_free(chunk->data);
         chunk->data = NULL;
-        return (-1);
+        return SDL_Error(SDL_EFREAD);
     }
     return (chunk->length);
 }

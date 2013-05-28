@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -73,8 +73,7 @@ SDL_JoystickID SDL_SYS_GetInstanceIdOfDeviceIndex(int device_index)
 int
 SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index)
 {
-    SDL_SetError("Logic error: No joysticks available");
-    return (-1);
+    return SDL_SetError("Logic error: No joysticks available");
 }
 
 /* Function to determine is this joystick is attached to the system right now */
@@ -111,7 +110,7 @@ SDL_SYS_JoystickQuit(void)
 SDL_JoystickGUID SDL_SYS_JoystickGetDeviceGUID( int device_index )
 {
     SDL_JoystickGUID guid;
-    // the GUID is just the first 16 chars of the name for now
+    /* the GUID is just the first 16 chars of the name for now */
     const char *name = SDL_SYS_JoystickNameForDeviceIndex( device_index );
     SDL_zero( guid );
     SDL_memcpy( &guid, name, SDL_min( sizeof(guid), SDL_strlen( name ) ) );
@@ -122,7 +121,7 @@ SDL_JoystickGUID SDL_SYS_JoystickGetDeviceGUID( int device_index )
 SDL_JoystickGUID SDL_SYS_JoystickGetGUID(SDL_Joystick * joystick)
 {
     SDL_JoystickGUID guid;
-    // the GUID is just the first 16 chars of the name for now
+    /* the GUID is just the first 16 chars of the name for now */
     const char *name = joystick->name;
     SDL_zero( guid );
     SDL_memcpy( &guid, name, SDL_min( sizeof(guid), SDL_strlen( name ) ) );

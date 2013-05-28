@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -34,9 +34,13 @@ typedef struct SDL_WindowData SDL_WindowData;
 @interface Cocoa_WindowListener : NSResponder {
 #endif
     SDL_WindowData *_data;
+    BOOL observingVisible;
+    BOOL wasVisible;
 }
 
 -(void) listen:(SDL_WindowData *) data;
+-(void) pauseVisibleObservation;
+-(void) resumeVisibleObservation;
 -(void) close;
 
 /* Window delegate functionality */
@@ -95,6 +99,7 @@ extern void Cocoa_SetWindowIcon(_THIS, SDL_Window * window, SDL_Surface * icon);
 extern void Cocoa_SetWindowPosition(_THIS, SDL_Window * window);
 extern void Cocoa_SetWindowSize(_THIS, SDL_Window * window);
 extern void Cocoa_SetWindowMinimumSize(_THIS, SDL_Window * window);
+extern void Cocoa_SetWindowMaximumSize(_THIS, SDL_Window * window);
 extern void Cocoa_ShowWindow(_THIS, SDL_Window * window);
 extern void Cocoa_HideWindow(_THIS, SDL_Window * window);
 extern void Cocoa_RaiseWindow(_THIS, SDL_Window * window);

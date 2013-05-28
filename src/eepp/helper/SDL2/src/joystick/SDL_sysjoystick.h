@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -28,8 +28,8 @@
 /* The SDL joystick structure */
 struct _SDL_Joystick
 {
-    int instance_id;                /* Device instance, monotonically increasing from 0 */
-    char *name;          		 /* Joystick name - system dependent */
+    SDL_JoystickID instance_id; /* Device instance, monotonically increasing from 0 */
+    char *name;                 /* Joystick name - system dependent */
 
     int naxes;                  /* Number of axis controls on the joystick */
     Sint16 *axes;               /* Current axis states */
@@ -38,8 +38,7 @@ struct _SDL_Joystick
     Uint8 *hats;                /* Current hat states */
 
     int nballs;                 /* Number of trackballs on the joystick */
-    struct balldelta
-    {
+    struct balldelta {
         int dx;
         int dy;
     } *balls;                   /* Current ball motion deltas */
@@ -50,10 +49,10 @@ struct _SDL_Joystick
     struct joystick_hwdata *hwdata;     /* Driver dependent information */
 
     int ref_count;              /* Reference count for multiple opens */
-	
-	Uint8 closed;				/* 1 if this device is no longer valid */
-	Uint8 uncentered;			/* 1 if this device needs to have its state reset to 0 */
-	struct _SDL_Joystick *next; /* pointer to next joystick we have allocated */
+
+    Uint8 closed;               /* 1 if this device is no longer valid */
+    Uint8 uncentered;           /* 1 if this device needs to have its state reset to 0 */
+    struct _SDL_Joystick *next; /* pointer to next joystick we have allocated */
 };
 
 /* Function to scan the system for joysticks.

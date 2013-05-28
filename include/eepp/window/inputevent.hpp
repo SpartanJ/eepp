@@ -56,12 +56,11 @@ class InputEvent {
 			Uint32 timestamp;
 			Int64 touchId;		/** The touch device id */
 			Int64 fingerId;		/** The finger id */
-			Uint8 state;		/** The current button state */
-			Uint16 x;			/** The x coordinate of the touch */
-			Uint16 y;			/** The y coordinate of the touch */
-			Int16 dx;			/** Change in x coordinate during this motion event */
-			Int16 dy;			/** Change in y coordinate during this motion event */
-			Uint16 pressure;	/** The pressure of the touch */
+			float x;			/** The x coordinate of the touch. Normalized in the range 0...1 */
+			float y;			/** The y coordinate of the touch. Normalized in the range 0...1 */
+			float dx;			/** Change in x coordinate during this motion event. Normalized in the range 0...1 */
+			float dy;			/** Change in y coordinate during this motion event. Normalized in the range 0...1 */
+			float pressure;		/** The pressure of the touch. Normalized in the range 0...1 */
 		};
 
 		/** Keyboard text editing event */

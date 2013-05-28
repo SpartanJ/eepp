@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -41,12 +41,62 @@
 
 #include <stdio.h>
 
-#ifdef SDL_INPUT_LINUXEV
-//Touch Input/event* includes
-#include <linux/input.h>
-#include <fcntl.h>
-#endif
+typedef struct {
+    unsigned char *data;
+    int format, count;
+    Atom type;
+} SDL_x11Prop;
 
+/* Reads property
+   Must call XFree on results
+ */
+static void X11_ReadProperty(SDL_x11Prop *p, Display *disp, Window w, Atom prop)
+{
+    unsigned char *ret=NULL;
+    Atom type;
+    int fmt;
+    unsigned long count;
+    unsigned long bytes_left;
+    int bytes_fetch = 0;
+
+    do {
+        if (ret != 0) XFree(ret);
+        XGetWindowProperty(disp, w, prop, 0, bytes_fetch, False, AnyPropertyType, &type, &fmt, &count, &bytes_left, &ret);
+        bytes_fetch += bytes_left;
+    } while (bytes_left != 0);
+
+    p->data=ret;
+    p->format=fmt;
+    p->count=count;
+    p->type=type;
+}
+
+/* Find text-uri-list in a list of targets and return it's atom
+   if available, else return None */
+static Atom X11_PickTarget(Display *disp, Atom list[], int list_count)
+{
+    Atom request = None;
+    char *name;
+    int i;
+    for (i=0; i < list_count && request == None; i++) {
+        name = XGetAtomName(disp, list[i]);
+        if (strcmp("text/uri-list", name)==0) request = list[i];
+        XFree(name);
+    }
+    return request;
+}
+
+/* Wrapper for X11_PickTarget for a maximum of three targets, a special
+   case in the Xdnd protocol */
+static Atom X11_PickTargetFromAtoms(Display *disp, Atom a0, Atom a1, Atom a2)
+{
+    int count=0;
+    Atom atom[3];
+    if (a0 != None) atom[count++] = a0;
+    if (a1 != None) atom[count++] = a1;
+    if (a2 != None) atom[count++] = a2;
+    return X11_PickTarget(disp, atom, count);
+}
 /*#define DEBUG_XEVENTS*/
 
 /* Check to see if this is a repeated key.
@@ -74,7 +124,7 @@ static SDL_bool X11_IsWheelEvent(Display * display,XEvent * event,int * ticks)
         /* according to the xlib docs, no specific mouse wheel events exist.
            however, mouse wheel events trigger a button press and a button release
            immediately. thus, checking if the same button was released at the same
-           time as it was pressed, should be an adequate hack to derive a mouse 
+           time as it was pressed, should be an adequate hack to derive a mouse
            wheel event. */
         XPeekEvent(display,&peekevent);
         if ((peekevent.type           == ButtonRelease) &&
@@ -98,14 +148,50 @@ static SDL_bool X11_IsWheelEvent(Display * display,XEvent * event,int * ticks)
     return SDL_FALSE;
 }
 
+/* Convert URI to local filename
+   return filename if possible, else NULL
+*/
+static char* X11_URIToLocal(char* uri) {
+    char *file = NULL;
+
+    if (memcmp(uri,"file:/",6) == 0) uri += 6;      /* local file? */
+    else if (strstr(uri,":/") != NULL) return file; /* wrong scheme */
+
+    SDL_bool local = uri[0] != '/' || ( uri[0] != '\0' && uri[1] == '/' );
+
+    /* got a hostname? */
+    if ( !local && uri[0] == '/' && uri[2] != '/' ) {
+      char* hostname_end = strchr( uri+1, '/' );
+      if ( hostname_end != NULL ) {
+          char hostname[ 257 ];
+          if ( gethostname( hostname, 255 ) == 0 ) {
+            hostname[ 256 ] = '\0';
+            if ( memcmp( uri+1, hostname, hostname_end - ( uri+1 )) == 0 ) {
+                uri = hostname_end + 1;
+                local = SDL_TRUE;
+            }
+          }
+      }
+    }
+    if ( local ) {
+      file = uri;
+      if ( uri[1] == '/' ) {
+          file++;
+      } else {
+          file--;
+      }
+    }
+    return file;
+}
 
 #if SDL_VIDEO_DRIVER_X11_SUPPORTS_GENERIC_EVENTS
 static void X11_HandleGenericEvent(SDL_VideoData *videodata,XEvent event)
 {
-    XGenericEventCookie *cookie = &event.xcookie;
-    XGetEventData(videodata->display, cookie);
-    X11_HandleXinput2Event(videodata,cookie);
-    XFreeEventData(videodata->display,cookie);
+    if (XGetEventData(videodata->display, &event)) {
+        XGenericEventCookie *cookie = &event.xcookie;
+        X11_HandleXinput2Event(videodata, cookie);
+        XFreeEventData(videodata->display, cookie);
+    }
 }
 #endif /* SDL_VIDEO_DRIVER_X11_SUPPORTS_GENERIC_EVENTS */
 
@@ -225,6 +311,10 @@ X11_DispatchEvent(_THIS)
                 printf("Mode: NotifyUngrab\n");
 #endif
             SDL_SetMouseFocus(data->window);
+
+            if (!SDL_GetMouse()->relative_mode) {
+                SDL_SendMouseMotion(data->window, 0, 0, xevent.xcrossing.x, xevent.xcrossing.y);
+            }
         }
         break;
         /* Losing mouse coverage? */
@@ -239,6 +329,10 @@ X11_DispatchEvent(_THIS)
             if (xevent.xcrossing.mode == NotifyUngrab)
                 printf("Mode: NotifyUngrab\n");
 #endif
+            if (!SDL_GetMouse()->relative_mode) {
+                SDL_SendMouseMotion(data->window, 0, 0, xevent.xcrossing.x, xevent.xcrossing.y);
+            }
+
             if (xevent.xcrossing.mode != NotifyGrab &&
                 xevent.xcrossing.mode != NotifyUngrab &&
                 xevent.xcrossing.detail != NotifyInferior) {
@@ -263,7 +357,13 @@ X11_DispatchEvent(_THIS)
                 /* We want to reset the keyboard here, because we may have
                    missed keyboard messages after our previous FocusOut.
                  */
-                SDL_ResetKeyboard();
+                /* Actually, if we do this we clear the ALT key on Unity
+                   because it briefly takes focus for their dashboard.
+
+                   I think it's better to think the ALT key is held down
+                   when it's not, then always lose the ALT modifier on Unity.
+                 */
+                /*SDL_ResetKeyboard();*/
             }
             data->pending_focus = PENDING_FOCUS_IN;
             data->pending_focus_time = SDL_GetTicks() + PENDING_FOCUS_IN_TIME;
@@ -406,7 +506,68 @@ X11_DispatchEvent(_THIS)
 
         /* Have we been requested to quit (or another client message?) */
     case ClientMessage:{
-            if ((xevent.xclient.message_type == videodata->WM_PROTOCOLS) &&
+
+            int xdnd_version=0;
+
+            if (xevent.xclient.message_type == videodata->XdndEnter) {
+                SDL_bool use_list = xevent.xclient.data.l[1] & 1;
+                data->xdnd_source = xevent.xclient.data.l[0];
+                xdnd_version = ( xevent.xclient.data.l[1] >> 24);
+                if (use_list) {
+                    /* fetch conversion targets */
+                    SDL_x11Prop p;
+                    X11_ReadProperty(&p, display, data->xdnd_source, videodata->XdndTypeList);
+                    /* pick one */
+                    data->xdnd_req = X11_PickTarget(display, (Atom*)p.data, p.count);
+                    XFree(p.data);
+                } else {
+                    /* pick from list of three */
+                    data->xdnd_req = X11_PickTargetFromAtoms(display, xevent.xclient.data.l[2], xevent.xclient.data.l[3], xevent.xclient.data.l[4]);
+                }
+            }
+            else if (xevent.xclient.message_type == videodata->XdndPosition) {
+
+                /* reply with status */
+                XClientMessageEvent m;
+                memset(&m, 0, sizeof(XClientMessageEvent));
+                m.type = ClientMessage;
+                m.display = xevent.xclient.display;
+                m.window = xevent.xclient.data.l[0];
+                m.message_type = videodata->XdndStatus;
+                m.format=32;
+                m.data.l[0] = data->xwindow;
+                m.data.l[1] = (data->xdnd_req != None);
+                m.data.l[2] = 0; /* specify an empty rectangle */
+                m.data.l[3] = 0;
+                m.data.l[4] = videodata->XdndActionCopy; /* we only accept copying anyway */
+
+                XSendEvent(display, xevent.xclient.data.l[0], False, NoEventMask, (XEvent*)&m);
+                XFlush(display);
+            }
+            else if(xevent.xclient.message_type == videodata->XdndDrop) {
+                if (data->xdnd_req == None) {
+                    /* say again - not interested! */
+                    XClientMessageEvent m;
+                    memset(&m, 0, sizeof(XClientMessageEvent));
+                    m.type = ClientMessage;
+                    m.display = xevent.xclient.display;
+                    m.window = xevent.xclient.data.l[0];
+                    m.message_type = videodata->XdndFinished;
+                    m.format=32;
+                    m.data.l[0] = data->xwindow;
+                    m.data.l[1] = 0;
+                    m.data.l[2] = None; /* fail! */
+                    XSendEvent(display, xevent.xclient.data.l[0], False, NoEventMask, (XEvent*)&m);
+                } else {
+                    /* convert */
+                    if(xdnd_version >= 1) {
+                        XConvertSelection(display, videodata->XdndSelection, data->xdnd_req, videodata->PRIMARY, data->xwindow, xevent.xclient.data.l[2]);
+                    } else {
+                        XConvertSelection(display, videodata->XdndSelection, data->xdnd_req, videodata->PRIMARY, data->xwindow, CurrentTime);
+                    }
+                }
+            }
+            else if ((xevent.xclient.message_type == videodata->WM_PROTOCOLS) &&
                 (xevent.xclient.format == 32) &&
                 (xevent.xclient.data.l[0] == videodata->_NET_WM_PING)) {
                 Window root = DefaultRootWindow(display);
@@ -442,30 +603,29 @@ X11_DispatchEvent(_THIS)
         break;
 
     case MotionNotify:{
-            SDL_Mouse *mouse = SDL_GetMouse();  
+            SDL_Mouse *mouse = SDL_GetMouse();
             if(!mouse->relative_mode) {
 #ifdef DEBUG_MOTION
                 printf("window %p: X11 motion: %d,%d\n", xevent.xmotion.x, xevent.xmotion.y);
 #endif
 
-                SDL_SendMouseMotion(data->window, 0, xevent.xmotion.x, xevent.xmotion.y);
+                SDL_SendMouseMotion(data->window, 0, 0, xevent.xmotion.x, xevent.xmotion.y);
             }
         }
         break;
 
     case ButtonPress:{
             int ticks = 0;
-            if (X11_IsWheelEvent(display,&xevent,&ticks) == SDL_TRUE) {
-                SDL_SendMouseWheel(data->window, 0, ticks);
-            }
-            else {
-                SDL_SendMouseButton(data->window, SDL_PRESSED, xevent.xbutton.button);
+            if (X11_IsWheelEvent(display,&xevent,&ticks)) {
+                SDL_SendMouseWheel(data->window, 0, 0, ticks);
+            } else {
+                SDL_SendMouseButton(data->window, 0, SDL_PRESSED, xevent.xbutton.button);
             }
         }
         break;
 
     case ButtonRelease:{
-            SDL_SendMouseButton(data->window, SDL_RELEASED, xevent.xbutton.button);
+            SDL_SendMouseButton(data->window, 0, SDL_RELEASED, xevent.xbutton.button);
         }
         break;
 
@@ -590,10 +750,18 @@ X11_DispatchEvent(_THIS)
                     XA_CUT_BUFFER0, 0, INT_MAX/4, False, req->target,
                     &sevent.xselection.target, &seln_format, &nbytes,
                     &overflow, &seln_data) == Success) {
+                Atom XA_TARGETS = XInternAtom(display, "TARGETS", 0);
                 if (sevent.xselection.target == req->target) {
                     XChangeProperty(display, req->requestor, req->property,
                         sevent.xselection.target, seln_format, PropModeReplace,
                         seln_data, nbytes);
+                    sevent.xselection.property = req->property;
+                } else if (XA_TARGETS == req->target) {
+                    Atom SupportedFormats[] = { sevent.xselection.target, XA_TARGETS };
+                    XChangeProperty(display, req->requestor, req->property,
+                        XA_ATOM, 32, PropModeReplace,
+                        (unsigned char*)SupportedFormats,
+                        sizeof(SupportedFormats)/sizeof(*SupportedFormats));
                     sevent.xselection.property = req->property;
                 }
                 XFree(seln_data);
@@ -608,7 +776,66 @@ X11_DispatchEvent(_THIS)
             printf("window %p: SelectionNotify (requestor = %ld, target = %ld)\n", data,
                 xevent.xselection.requestor, xevent.xselection.target);
 #endif
-            videodata->selection_waiting = SDL_FALSE;
+            Atom target = xevent.xselection.target;
+            if (target == data->xdnd_req) {
+
+                /* read data */
+                SDL_x11Prop p;
+                X11_ReadProperty(&p, display, data->xwindow, videodata->PRIMARY);
+
+                if(p.format==8) {
+                    SDL_bool expect_lf = SDL_FALSE;
+                    char *start = NULL;
+                    char *scan = (char*)p.data;
+                    char *fn;
+                    char *uri;
+                    int length = 0;
+                    while (p.count--) {
+                        if (!expect_lf) {
+                            if (*scan==0x0D) {
+                                expect_lf = SDL_TRUE;
+                            } else if(start == NULL) {
+                                start = scan;
+                                length = 0;
+                            }
+                            length++;
+                        } else {
+                            if (*scan==0x0A && length>0) {
+                                uri = malloc(length--);
+                                memcpy(uri, start, length);
+                                uri[length] = 0;
+                                fn = X11_URIToLocal(uri);
+                                if (fn) SDL_SendDropFile(fn);
+                                free(uri);
+                            }
+                            expect_lf = SDL_FALSE;
+                            start = NULL;
+                        }
+                        scan++;
+                    }
+                }
+
+                XFree(p.data);
+
+                /* send reply */
+                XClientMessageEvent m;
+                memset(&m, 0, sizeof(XClientMessageEvent));
+                m.type = ClientMessage;
+                m.display = display;
+                m.window = data->xdnd_source;
+                m.message_type = videodata->XdndFinished;
+                m.format=32;
+                m.data.l[0] = data->xwindow;
+                m.data.l[1] = 1;
+                m.data.l[2] = videodata->XdndActionCopy;
+                XSendEvent(display, data->xdnd_source, False, NoEventMask, (XEvent*)&m);
+
+                XSync(display, False);
+
+            } else {
+                videodata->selection_waiting = SDL_FALSE;
+            }
+
         }
         break;
 
@@ -675,7 +902,7 @@ X11_Pending(Display * display)
 
 /* !!! FIXME: this should be exposed in a header, or something. */
 int SDL_GetNumTouch(void);
-
+void SDL_dbus_screensaver_tickle(_THIS);
 
 void
 X11_PumpEvents(_THIS)
@@ -688,9 +915,14 @@ X11_PumpEvents(_THIS)
         if (!data->screensaver_activity ||
             (int) (now - data->screensaver_activity) >= 30000) {
             XResetScreenSaver(data->display);
+
+            #if SDL_USE_LIBDBUS
+            SDL_dbus_screensaver_tickle(_this);
+            #endif
+
             data->screensaver_activity = now;
         }
-    }   
+    }
 
     /* Keep processing pending events */
     while (X11_Pending(data->display)) {
@@ -699,119 +931,8 @@ X11_PumpEvents(_THIS)
 
     /* FIXME: Only need to do this when there are pending focus changes */
     X11_HandleFocusChanges(_this);
-
-    /*Dont process evtouch events if XInput2 multitouch is supported*/
-    if(X11_Xinput2IsMultitouchSupported()) {
-        return;
-    }
-
-#ifdef SDL_INPUT_LINUXEV
-    /* Process Touch events*/
-    int i = 0,rd;
-    struct input_event ev[64];
-    int size = sizeof (struct input_event);
-
-/* !!! FIXME: clean the tabstops out of here. */
-    for(i = 0;i < SDL_GetNumTouch();++i) {
-	SDL_Touch* touch = SDL_GetTouchIndex(i);
-	if(!touch) printf("Touch %i/%i DNE\n",i,SDL_GetNumTouch());
-	EventTouchData* data;
-	data = (EventTouchData*)(touch->driverdata);
-	if(data == NULL) {
-	  printf("No driver data\n");
-	  continue;
-	}
-	if(data->eventStream <= 0) 
-	    printf("Error: Couldn't open stream\n");
-	rd = read(data->eventStream, ev, size * 64);
-	if(rd >= size) {
-	    for (i = 0; i < rd / sizeof(struct input_event); i++) {
-		switch (ev[i].type) {
-		case EV_ABS:
-		    switch (ev[i].code) {
-			case ABS_X:
-			    data->x = ev[i].value;
-			    break;
-			case ABS_Y:
-			    data->y = ev[i].value;
-			    break;
-			case ABS_PRESSURE:
-			    data->pressure = ev[i].value;
-			    if(data->pressure < 0) data->pressure = 0;
-			    break;
-			case ABS_MISC:
-			    if(ev[i].value == 0)
-			        data->up = SDL_TRUE;			    
-			    break;
-			}
-		    break;
-		case EV_MSC:
-			if(ev[i].code == MSC_SERIAL)
-				data->finger = ev[i].value;
-			break;
-		case EV_KEY:
-			if(ev[i].code == BTN_TOUCH)
-			    if(ev[i].value == 0)
-			        data->up = SDL_TRUE;
-			break;
-		case EV_SYN:
-		  if(!data->down) {
-		      data->down = SDL_TRUE;
-		      SDL_SendFingerDown(touch->id,data->finger,
-		    		  data->down, data->x, data->y,
-		    		  data->pressure);
-		  }
-		  else if(!data->up)
-		    SDL_SendTouchMotion(touch->id,data->finger, 
-					SDL_FALSE, data->x,data->y,
-					data->pressure);
-		  else
-		  {
-		      data->down = SDL_FALSE;
-			  SDL_SendFingerDown(touch->id,data->finger,
-					  data->down, data->x,data->y,
-					  data->pressure);
-			  data->x = -1;
-			  data->y = -1;
-			  data->pressure = -1;
-			  data->finger = 0;
-			  data->up = SDL_FALSE;
-		  }
-		  break;		
-		}
-	    }
-	}
-    }
-#endif
 }
 
-/* This is so wrong it hurts */
-#define GNOME_SCREENSAVER_HACK
-#ifdef GNOME_SCREENSAVER_HACK
-#include <unistd.h>
-static pid_t screensaver_inhibit_pid;
-static void
-gnome_screensaver_disable()
-{
-    screensaver_inhibit_pid = fork();
-    if (screensaver_inhibit_pid == 0) {
-        close(0);
-        close(1);
-        close(2);
-        execl("/usr/bin/gnome-screensaver-command",
-              "gnome-screensaver-command",
-              "--inhibit",
-              "--reason",
-              "GNOME screensaver doesn't respect MIT-SCREEN-SAVER", NULL);
-        exit(2);
-    }
-}
-static void
-gnome_screensaver_enable()
-{
-    kill(screensaver_inhibit_pid, 15);
-}
-#endif
 
 void
 X11_SuspendScreenSaver(_THIS)
@@ -835,11 +956,9 @@ X11_SuspendScreenSaver(_THIS)
     }
 #endif
 
-#ifdef GNOME_SCREENSAVER_HACK
+#if SDL_USE_LIBDBUS
     if (_this->suspend_screensaver) {
-        gnome_screensaver_disable();
-    } else {
-        gnome_screensaver_enable();
+        SDL_dbus_screensaver_tickle(_this);
     }
 #endif
 }

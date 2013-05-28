@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -75,7 +75,7 @@ static const Uint8 GLES2_FragmentSrc_TextureABGRSrc_[] = " \
     } \
 ";
 
-// ARGB to ABGR conversion
+/* ARGB to ABGR conversion */
 static const Uint8 GLES2_FragmentSrc_TextureARGBSrc_[] = " \
     precision mediump float; \
     uniform sampler2D u_texture; \
@@ -92,7 +92,7 @@ static const Uint8 GLES2_FragmentSrc_TextureARGBSrc_[] = " \
     } \
 ";
 
-// RGB to ABGR conversion
+/* RGB to ABGR conversion */
 static const Uint8 GLES2_FragmentSrc_TextureRGBSrc_[] = " \
     precision mediump float; \
     uniform sampler2D u_texture; \
@@ -110,7 +110,7 @@ static const Uint8 GLES2_FragmentSrc_TextureRGBSrc_[] = " \
     } \
 ";
 
-// BGR to ABGR conversion
+/* BGR to ABGR conversion */
 static const Uint8 GLES2_FragmentSrc_TextureBGRSrc_[] = " \
     precision mediump float; \
     uniform sampler2D u_texture; \
@@ -744,7 +744,7 @@ const GLES2_Shader *GLES2_GetShader(GLES2_ShaderType type, SDL_BlendMode blendMo
         default:
             return NULL;
     }
-        
+
     case GLES2_SHADER_FRAGMENT_TEXTURE_RGB_SRC:
         switch (blendMode)
     {
@@ -759,7 +759,7 @@ const GLES2_Shader *GLES2_GetShader(GLES2_ShaderType type, SDL_BlendMode blendMo
         default:
             return NULL;
     }
-        
+
     case GLES2_SHADER_FRAGMENT_TEXTURE_BGR_SRC:
         switch (blendMode)
     {
@@ -774,7 +774,7 @@ const GLES2_Shader *GLES2_GetShader(GLES2_ShaderType type, SDL_BlendMode blendMo
         default:
             return NULL;
     }
-        
+
     default:
         return NULL;
     }

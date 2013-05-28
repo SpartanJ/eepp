@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -129,8 +129,14 @@ X11_CreatePixmapCursor(SDL_Surface * surface, int hot_x, int hot_y)
     unsigned int width_bytes = ((surface->w + 7) & ~7) / 8;
 
     data_bits = SDL_calloc(1, surface->h * width_bytes);
+    if (!data_bits) {
+        SDL_OutOfMemory();
+        return None;
+    }
+
     mask_bits = SDL_calloc(1, surface->h * width_bytes);
-    if (!data_bits || !mask_bits) {
+    if (!mask_bits) {
+        SDL_free(data_bits);
         SDL_OutOfMemory();
         return None;
     }
@@ -188,8 +194,8 @@ X11_CreatePixmapCursor(SDL_Surface * surface, int hot_x, int hot_y)
                                         surface->w, surface->h);
     cursor = XCreatePixmapCursor(display, data_pixmap, mask_pixmap,
                                  &fg, &bg, hot_x, hot_y);
-	XFreePixmap(display, data_pixmap);
-	XFreePixmap(display, mask_pixmap);
+    XFreePixmap(display, data_pixmap);
+    XFreePixmap(display, mask_pixmap);
 
     return cursor;
 }
@@ -230,9 +236,9 @@ X11_CreateSystemCursor(SDL_SystemCursor id)
     default:
         SDL_assert(0);
         return NULL;
-	// X Font Cursors reference:
-	//   http://tronche.com/gui/x/xlib/appendix/b/
-    case SDL_SYSTEM_CURSOR_ARROW:     shape = XC_arrow; break;
+    /* X Font Cursors reference: */
+    /*   http://tronche.com/gui/x/xlib/appendix/b/ */
+    case SDL_SYSTEM_CURSOR_ARROW:     shape = XC_left_ptr; break;
     case SDL_SYSTEM_CURSOR_IBEAM:     shape = XC_xterm; break;
     case SDL_SYSTEM_CURSOR_WAIT:      shape = XC_watch; break;
     case SDL_SYSTEM_CURSOR_CROSSHAIR: shape = XC_tcross; break;
@@ -330,7 +336,7 @@ X11_InitMouse(_THIS)
     SDL_Mouse *mouse = SDL_GetMouse();
 
     mouse->CreateCursor = X11_CreateCursor;
-	mouse->CreateSystemCursor = X11_CreateSystemCursor;
+    mouse->CreateSystemCursor = X11_CreateSystemCursor;
     mouse->ShowCursor = X11_ShowCursor;
     mouse->FreeCursor = X11_FreeCursor;
     mouse->WarpMouse = X11_WarpMouse;

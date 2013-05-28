@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -21,13 +21,13 @@
 
 /**
  *  \file SDL_test_assert.h
- *  
+ *
  *  Include file for SDL test framework.
  *
  *  This code is a part of the SDL2_test library, not the main SDL library.
  */
 
-/* 
+/*
  *
  * Assert API for test code and test cases
  *
@@ -39,20 +39,18 @@
 #include "begin_code.h"
 /* Set up for C function definitions, even when using C++ */
 #ifdef __cplusplus
-/* *INDENT-OFF* */
 extern "C" {
-/* *INDENT-ON* */
 #endif
 
 /**
  * \brief Fails the assert.
  */
-#define ASSERT_FAIL		0
+#define ASSERT_FAIL     0
 
 /**
  * \brief Passes the assert.
  */
-#define ASSERT_PASS		1
+#define ASSERT_PASS     1
 
 /**
  * \brief Assert that logs and break execution flow on failures.
@@ -60,17 +58,24 @@ extern "C" {
  * \param assertCondition Evaluated condition or variable to assert; fail (==0) or pass (!=0).
  * \param assertDescription Message to log with the assert describing it.
  */
-void SDLTest_Assert(int assertCondition, char *assertDescription);
+void SDLTest_Assert(int assertCondition, const char *assertDescription, ...);
 
 /**
- * \brief Assert for test cases that logs but does not break execution flow on failures.
+ * \brief Assert for test cases that logs but does not break execution flow on failures. Updates assertion counters.
  *
  * \param assertCondition Evaluated condition or variable to assert; fail (==0) or pass (!=0).
  * \param assertDescription Message to log with the assert describing it.
  *
- * \returns Returns the assertCondition so it can be used to externall to break execution flow if desired.
+ * \returns Returns the assertCondition so it can be used to externally to break execution flow if desired.
  */
-int SDLTest_AssertCheck(int assertCondition, char *assertDescription);
+int SDLTest_AssertCheck(int assertCondition, const char *assertDescription, ...);
+
+/**
+ * \brief Explicitely pass without checking an assertion condition. Updates assertion counter.
+ *
+ * \param assertDescription Message to log with the assert describing it.
+ */
+void SDLTest_AssertPass(const char *assertDescription, ...);
 
 /**
  * \brief Resets the assert summary counters to zero.
@@ -91,9 +96,7 @@ void SDLTest_LogAssertSummary();
 int SDLTest_AssertSummaryToTestResult();
 
 #ifdef __cplusplus
-/* *INDENT-OFF* */
 }
-/* *INDENT-ON* */
 #endif
 #include "close_code.h"
 

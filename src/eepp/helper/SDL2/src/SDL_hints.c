@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -41,14 +41,14 @@ SDL_bool
 SDL_RegisterHintChangedCb(const char *name, SDL_HintChangedCb hintCb)
 {
     SDL_Hint *hint;
-	
+
     for (hint = SDL_hints; hint; hint = hint->next) {
         if (SDL_strcmp(name, hint->name) == 0) {
             hint->callback = hintCb;
             return SDL_TRUE;
         }
     }
-	
+
     return SDL_FALSE;
 }
 

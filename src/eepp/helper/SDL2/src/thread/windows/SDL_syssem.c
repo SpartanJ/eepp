@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -78,8 +78,7 @@ SDL_SemWaitTimeout(SDL_sem * sem, Uint32 timeout)
     DWORD dwMilliseconds;
 
     if (!sem) {
-        SDL_SetError("Passed a NULL sem");
-        return -1;
+        return SDL_SetError("Passed a NULL sem");
     }
 
     if (timeout == SDL_MUTEX_MAXWAIT) {
@@ -96,8 +95,7 @@ SDL_SemWaitTimeout(SDL_sem * sem, Uint32 timeout)
         retval = SDL_MUTEX_TIMEDOUT;
         break;
     default:
-        SDL_SetError("WaitForSingleObject() failed");
-        retval = -1;
+        retval = SDL_SetError("WaitForSingleObject() failed");
         break;
     }
     return retval;
@@ -130,8 +128,7 @@ int
 SDL_SemPost(SDL_sem * sem)
 {
     if (!sem) {
-        SDL_SetError("Passed a NULL sem");
-        return -1;
+        return SDL_SetError("Passed a NULL sem");
     }
     /* Increase the counter in the first place, because
      * after a successful release the semaphore may
@@ -141,8 +138,7 @@ SDL_SemPost(SDL_sem * sem)
     InterlockedIncrement(&sem->count);
     if (ReleaseSemaphore(sem->id, 1, NULL) == FALSE) {
         InterlockedDecrement(&sem->count);      /* restore */
-        SDL_SetError("ReleaseSemaphore() failed");
-        return -1;
+        return SDL_SetError("ReleaseSemaphore() failed");
     }
     return 0;
 }

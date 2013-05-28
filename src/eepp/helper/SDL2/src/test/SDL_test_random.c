@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -23,7 +23,7 @@
 
  A portable "32-bit Multiply with carry" random number generator.
 
- Used by the fuzzer component. 
+ Used by the fuzzer component.
  Original source code contributed by A. Schiffler for GSOC project.
 
 */
@@ -41,13 +41,13 @@
 void SDLTest_RandomInit(SDLTest_RandomContext * rndContext, unsigned int xi, unsigned int ci)
 {
   if (rndContext==NULL) return;
-  
+
   /*
    * Choose a value for 'a' from this list
    * 1791398085 1929682203 1683268614 1965537969 1675393560
    * 1967773755 1517746329 1447497129 1655692410 1606218150
    * 2051013963 1075433238 1557985959 1781943330 1893513180
-   * 1631296680 2131995753 2083801278 1873196400 1554115554 
+   * 1631296680 2131995753 2083801278 1873196400 1554115554
    */
   rndContext->a = 1655692410;
   rndContext->x = 30903;
@@ -65,9 +65,9 @@ void SDLTest_RandomInit(SDLTest_RandomContext * rndContext, unsigned int xi, uns
 void SDLTest_RandomInitTime(SDLTest_RandomContext * rndContext)
 {
   int a, b;
-  
+
   if (rndContext==NULL) return;
-  
+
   srand((unsigned int)time(NULL));
   a=rand();
   srand(clock());
@@ -82,7 +82,7 @@ unsigned int SDLTest_Random(SDLTest_RandomContext * rndContext)
   unsigned int xh, xl;
 
   if (rndContext==NULL) return -1;
-  
+
   xh = rndContext->x >> 16, xl = rndContext->x & 65535;
   rndContext->x = rndContext->x * rndContext->a + rndContext->c;
   rndContext->c =

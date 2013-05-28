@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -93,6 +93,7 @@ struct SDL_Renderer
     void (*UnlockTexture) (SDL_Renderer * renderer, SDL_Texture * texture);
     int (*SetRenderTarget) (SDL_Renderer * renderer, SDL_Texture * texture);
     int (*UpdateViewport) (SDL_Renderer * renderer);
+    int (*UpdateClipRect) (SDL_Renderer * renderer);
     int (*RenderClear) (SDL_Renderer * renderer);
     int (*RenderDrawPoints) (SDL_Renderer * renderer, const SDL_FPoint * points,
                              int count);
@@ -132,6 +133,10 @@ struct SDL_Renderer
     /* The drawable area within the window */
     SDL_Rect viewport;
     SDL_Rect viewport_backup;
+
+    /* The clip rectangle within the window */
+    SDL_Rect clip_rect;
+    SDL_Rect clip_rect_backup;
 
     /* The render output coordinate scale */
     SDL_FPoint scale;
@@ -173,8 +178,8 @@ extern SDL_RenderDriver GLES_RenderDriver;
 #if SDL_VIDEO_RENDER_DIRECTFB
 extern SDL_RenderDriver DirectFB_RenderDriver;
 #endif
-#if SDL_VIDEO_RENDER_NDS
-extern SDL_RenderDriver NDS_RenderDriver;
+#if SDL_VIDEO_RENDER_PSP
+extern SDL_RenderDriver PSP_RenderDriver;
 #endif
 extern SDL_RenderDriver SW_RenderDriver;
 

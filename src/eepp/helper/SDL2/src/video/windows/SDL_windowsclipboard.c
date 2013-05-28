@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -89,8 +89,7 @@ WIN_SetClipboardText(_THIS, const char *text)
 
             EmptyClipboard();
             if (!SetClipboardData(TEXT_FORMAT, hMem)) {
-                WIN_SetError("Couldn't set clipboard data");
-                result = -1;
+                result = WIN_SetError("Couldn't set clipboard data");
             }
             data->clipboard_count = GetClipboardSequenceNumber();
         }
@@ -98,8 +97,7 @@ WIN_SetClipboardText(_THIS, const char *text)
 
         CloseClipboard();
     } else {
-        WIN_SetError("Couldn't open clipboard");
-        result = -1;
+        result = WIN_SetError("Couldn't open clipboard");
     }
     return result;
 }
@@ -139,7 +137,7 @@ WIN_HasClipboardText(_THIS)
     if (text) {
         result = (SDL_strlen(text)>0) ? SDL_TRUE : SDL_FALSE;
         SDL_free(text);
-    } 
+    }
     return result;
 }
 

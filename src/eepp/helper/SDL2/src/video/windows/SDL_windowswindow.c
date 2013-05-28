@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -82,14 +82,13 @@ SetupWindowData(_THIS, SDL_Window * window, HWND hwnd, SDL_bool created)
     /* Allocate the window data */
     data = (SDL_WindowData *) SDL_malloc(sizeof(*data));
     if (!data) {
-        SDL_OutOfMemory();
-        return -1;
+        return SDL_OutOfMemory();
     }
     data->window = window;
     data->hwnd = hwnd;
     data->hdc = GetDC(hwnd);
     data->created = created;
-    data->mouse_pressed = SDL_FALSE;
+    data->mouse_button_flags = 0;
     data->videodata = videodata;
 
     window->driverdata = data;
@@ -98,8 +97,7 @@ SetupWindowData(_THIS, SDL_Window * window, HWND hwnd, SDL_bool created)
     if (!SetProp(hwnd, TEXT("SDL_WindowData"), data)) {
         ReleaseDC(hwnd, data->hdc);
         SDL_free(data);
-        WIN_SetError("SetProp() failed");
-        return -1;
+        return WIN_SetError("SetProp() failed");
     }
 
     /* Set up the window proc function */
@@ -203,7 +201,7 @@ WIN_CreateWindow(_THIS, SDL_Window * window)
     DWORD style = STYLE_BASIC;
     int x, y;
     int w, h;
-    
+
     style |= GetWindowStyle(window);
 
     /* Figure out what the window area will be */
@@ -221,8 +219,7 @@ WIN_CreateWindow(_THIS, SDL_Window * window)
         CreateWindow(SDL_Appname, TEXT(""), style, x, y, w, h, NULL, NULL,
                      SDL_Instance, NULL);
     if (!hwnd) {
-        WIN_SetError("Couldn't create window");
-        return -1;
+        return WIN_SetError("Couldn't create window");
     }
 
     WIN_PumpEvents(_this);
@@ -354,7 +351,7 @@ WIN_SetWindowPositionInternal(_THIS, SDL_Window * window, UINT flags)
     int w, h;
 
     /* Figure out what the window area will be */
-    if (window->flags & SDL_WINDOW_FULLSCREEN) {
+    if ( SDL_ShouldAllowTopmost() && (window->flags & (SDL_WINDOW_FULLSCREEN|SDL_WINDOW_INPUT_FOCUS)) == (SDL_WINDOW_FULLSCREEN|SDL_WINDOW_INPUT_FOCUS )) {
         top = HWND_TOPMOST;
     } else {
         top = HWND_NOTOPMOST;
@@ -406,7 +403,7 @@ WIN_RaiseWindow(_THIS, SDL_Window * window)
     HWND hwnd = ((SDL_WindowData *) window->driverdata)->hwnd;
     HWND top;
 
-    if (window->flags & SDL_WINDOW_FULLSCREEN) {
+    if ( SDL_ShouldAllowTopmost() && (window->flags & (SDL_WINDOW_FULLSCREEN|SDL_WINDOW_INPUT_FOCUS)) == (SDL_WINDOW_FULLSCREEN|SDL_WINDOW_INPUT_FOCUS )) {
         top = HWND_TOPMOST;
     } else {
         top = HWND_NOTOPMOST;
@@ -467,11 +464,12 @@ WIN_SetWindowFullscreen(_THIS, SDL_Window * window, SDL_VideoDisplay * display, 
     int x, y;
     int w, h;
 
-    if (fullscreen) {
+    if ( SDL_ShouldAllowTopmost() && (window->flags & (SDL_WINDOW_FULLSCREEN|SDL_WINDOW_INPUT_FOCUS)) == (SDL_WINDOW_FULLSCREEN|SDL_WINDOW_INPUT_FOCUS )) {
         top = HWND_TOPMOST;
     } else {
         top = HWND_NOTOPMOST;
     }
+
     style = GetWindowLong(hwnd, GWL_STYLE);
     style &= ~STYLE_MASK;
     style |= GetWindowStyle(window);
@@ -551,6 +549,23 @@ WIN_SetWindowGrab(_THIS, SDL_Window * window, SDL_bool grabbed)
     } else {
         ClipCursor(NULL);
     }
+
+    if ( window->flags & SDL_WINDOW_FULLSCREEN )
+    {
+        HWND top;
+        SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
+        HWND hwnd = data->hwnd;
+        UINT flags = SWP_NOMOVE | SWP_NOSIZE;
+
+        if ( SDL_ShouldAllowTopmost() && (window->flags & SDL_WINDOW_INPUT_FOCUS ) ) {
+            top = HWND_TOPMOST;
+        } else {
+            top = HWND_NOTOPMOST;
+            flags |= SWP_NOZORDER;
+        }
+
+        SetWindowPos(hwnd, top, 0, 0, 0, 0, flags);
+    }
 }
 
 void
@@ -617,8 +632,7 @@ SDL_HelperWindowCreate(void)
     /* Register the class. */
     SDL_HelperWindowClass = RegisterClass(&wce);
     if (SDL_HelperWindowClass == 0) {
-        WIN_SetError("Unable to create Helper Window Class");
-        return -1;
+        return WIN_SetError("Unable to create Helper Window Class");
     }
 
     /* Create the window. */
@@ -630,8 +644,7 @@ SDL_HelperWindowCreate(void)
                                       hInstance, NULL);
     if (SDL_HelperWindow == NULL) {
         UnregisterClass(SDL_HelperWindowClassName, hInstance);
-        WIN_SetError("Unable to create Helper Window");
-        return -1;
+        return WIN_SetError("Unable to create Helper Window");
     }
 
     return 0;
@@ -663,6 +676,25 @@ SDL_HelperWindowDestroy(void)
         }
         SDL_HelperWindowClass = 0;
     }
+}
+
+void WIN_OnWindowEnter(_THIS, SDL_Window * window)
+{
+#ifdef WM_MOUSELEAVE
+    SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
+    TRACKMOUSEEVENT trackMouseEvent;
+
+    if (!data || !data->hwnd) {
+        /* The window wasn't fully initialized */
+        return;
+    }
+
+    trackMouseEvent.cbSize = sizeof(TRACKMOUSEEVENT);
+    trackMouseEvent.dwFlags = TME_LEAVE;
+    trackMouseEvent.hwndTrack = data->hwnd;
+
+    TrackMouseEvent(&trackMouseEvent);
+#endif /* WM_MOUSELEAVE */
 }
 
 #endif /* SDL_VIDEO_DRIVER_WINDOWS */

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -59,9 +59,9 @@ struct joystick_hwdata
 {
     io_service_t ffservice;     /* Interface for force feedback, 0 = no ff */
     IOHIDDeviceInterface **interface;   /* interface to device, NULL = no interface */
-	IONotificationPortRef notificationPort; /* port to be notified on joystick removal */
-	io_iterator_t portIterator; /* iterator for removal callback */
-	
+    IONotificationPortRef notificationPort; /* port to be notified on joystick removal */
+    io_iterator_t portIterator; /* iterator for removal callback */
+
     char product[256];          /* name of product */
     long usage;                 /* usage page from IOUSBHID Parser.h which defines general usage */
     long usagePage;             /* usage within above page from IOUSBHID Parser.h which defines specific usage */
@@ -69,7 +69,7 @@ struct joystick_hwdata
     long axes;                  /* number of axis (calculated, not reported by device) */
     long buttons;               /* number of buttons (calculated, not reported by device) */
     long hats;                  /* number of hat switches (calculated, not reported by device) */
-    long elements;              /* number of total elements (shouldbe total of above) (calculated, not reported by device) */
+    long elements;              /* number of total elements (should be total of above) (calculated, not reported by device) */
 
     recElement *firstAxis;
     recElement *firstButton;
@@ -77,10 +77,10 @@ struct joystick_hwdata
 
     int removed;
     int uncentered;
-	
-	int instance_id;
-	SDL_JoystickGUID guid;
-	Uint8 send_open_event;		/* 1 if we need to send an Added event for this device */
+
+    int instance_id;
+    SDL_JoystickGUID guid;
+    Uint8 send_open_event;      /* 1 if we need to send an Added event for this device */
 
     struct joystick_hwdata *pNext;      /* next device */
 };

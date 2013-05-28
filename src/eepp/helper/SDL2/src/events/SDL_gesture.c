@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -27,17 +27,17 @@
 #include "SDL_events_c.h"
 #include "SDL_gesture_c.h"
 
+#if !defined(__PSP__)
 #include <memory.h>
+#endif
+
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
 
-//TODO: Replace with malloc
+/* TODO: Replace with malloc */
 
 #define MAXPATHSIZE 1024
-
-
-
 
 #define DOLLARNPOINTS 64
 #define DOLLARSIZE 256
@@ -64,7 +64,6 @@ typedef struct {
 
 typedef struct {
     SDL_TouchID id;
-    SDL_FloatPoint res;
     SDL_FloatPoint centroid;
     SDL_DollarPath dollarPath;
     Uint16 numDownFingers;
@@ -156,8 +155,7 @@ int SDL_SaveDollarTemplate(SDL_GestureID gestureId, SDL_RWops *src)
             }
         }
     }
-    SDL_SetError("Unknown gestureId");
-    return -1;
+    return SDL_SetError("Unknown gestureId");
 }
 
 //path is an already sampled set of points
@@ -174,8 +172,7 @@ static int SDL_AddDollarGesture_one(SDL_GestureTouch* inTouch, SDL_FloatPoint* p
                                           (index + 1) *
                                           sizeof(SDL_DollarTemplate));
     if (!dollarTemplate) {
-        SDL_OutOfMemory();
-        return -1;
+        return SDL_OutOfMemory();
     }
     inTouch->dollarTemplate = dollarTemplate;
 
@@ -410,25 +407,20 @@ static float dollarRecognize(const SDL_DollarPath *path,int *bestTempl,SDL_Gestu
     return bestDiff;
 }
 
-int SDL_GestureAddTouch(SDL_Touch* touch)
+int SDL_GestureAddTouch(SDL_TouchID touchId)
 {
     SDL_GestureTouch *gestureTouch = (SDL_GestureTouch *)SDL_realloc(SDL_gestureTouch,
                                                                      (SDL_numGestureTouches + 1) *
                                                                      sizeof(SDL_GestureTouch));
 
     if (!gestureTouch) {
-        SDL_OutOfMemory();
-        return -1;
+        return SDL_OutOfMemory();
     }
 
     SDL_gestureTouch = gestureTouch;
 
-    SDL_gestureTouch[SDL_numGestureTouches].res.x = touch->xres;
-    SDL_gestureTouch[SDL_numGestureTouches].res.y = touch->yres;
     SDL_gestureTouch[SDL_numGestureTouches].numDownFingers = 0;
-
-    SDL_gestureTouch[SDL_numGestureTouches].res.x = touch->xres;
-    SDL_gestureTouch[SDL_numGestureTouches].id = touch->id;
+    SDL_gestureTouch[SDL_numGestureTouches].id = touchId;
 
     SDL_gestureTouch[SDL_numGestureTouches].numDollarTemplates = 0;
 
@@ -468,11 +460,8 @@ static int SDL_SendGestureDollar(SDL_GestureTouch* touch,
     SDL_Event event;
     event.dgesture.type = SDL_DOLLARGESTURE;
     event.dgesture.touchId = touch->id;
-    /*
-    //TODO: Add this to give location of gesture?
     event.mgesture.x = touch->centroid.x;
     event.mgesture.y = touch->centroid.y;
-    */
     event.dgesture.gestureId = gestureId;
     event.dgesture.error = error;
     //A finger came up to trigger this event.
@@ -513,14 +502,8 @@ void SDL_GestureProcessEvent(SDL_Event* event)
         //Shouldn't be possible
         if (inTouch == NULL) return;
 
-        //printf("@ (%i,%i) with res: (%i,%i)\n",(int)event->tfinger.x,
-        //           (int)event->tfinger.y,
-        //   (int)inTouch->res.x,(int)inTouch->res.y);
-
-
-        x = ((float)event->tfinger.x)/(float)inTouch->res.x;
-        y = ((float)event->tfinger.y)/(float)inTouch->res.y;
-
+        x = event->tfinger.x;
+        y = event->tfinger.y;
 
         //Finger Up
         if (event->type == SDL_FINGERUP) {
@@ -569,9 +552,8 @@ void SDL_GestureProcessEvent(SDL_Event* event)
             }
         }
         else if (event->type == SDL_FINGERMOTION) {
-            float dx = ((float)event->tfinger.dx)/(float)inTouch->res.x;
-            float dy = ((float)event->tfinger.dy)/(float)inTouch->res.y;
-            //printf("dx,dy: (%f,%f)\n",dx,dy);
+            float dx = event->tfinger.dx;
+            float dy = event->tfinger.dy;
 #ifdef ENABLE_DOLLAR
             SDL_DollarPath* path = &inTouch->dollarPath;
             if (path->numPoints < MAXPATHSIZE) {

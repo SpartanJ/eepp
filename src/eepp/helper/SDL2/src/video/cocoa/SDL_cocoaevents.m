@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -68,7 +68,7 @@ GetApplicationName(void)
     dict = (NSDictionary *)CFBundleGetInfoDictionary(CFBundleGetMainBundle());
     if (dict)
         appName = [dict objectForKey: @"CFBundleName"];
-    
+
     if (![appName length])
         appName = [[NSProcessInfo processInfo] processName];
 
@@ -84,14 +84,14 @@ CreateApplicationMenus(void)
     NSMenu *serviceMenu;
     NSMenu *windowMenu;
     NSMenuItem *menuItem;
-    
+
     /* Create the main menu bar */
     [NSApp setMainMenu:[[NSMenu alloc] init]];
 
     /* Create the application menu */
     appName = GetApplicationName();
     appleMenu = [[NSMenu alloc] initWithTitle:@""];
-    
+
     /* Add menu items */
     title = [@"About " stringByAppendingString:appName];
     [appleMenu addItemWithTitle:title action:@selector(orderFrontStandardAboutPanel:) keyEquivalent:@""];
@@ -107,6 +107,7 @@ CreateApplicationMenus(void)
     [menuItem setSubmenu:serviceMenu];
 
     [NSApp setServicesMenu:serviceMenu];
+    [serviceMenu release];
 
     [appleMenu addItem:[NSMenuItem separatorItem]];
 
@@ -122,7 +123,7 @@ CreateApplicationMenus(void)
 
     title = [@"Quit " stringByAppendingString:appName];
     [appleMenu addItemWithTitle:title action:@selector(terminate:) keyEquivalent:@"q"];
-    
+
     /* Put menu into the menubar */
     menuItem = [[NSMenuItem alloc] initWithTitle:@"" action:nil keyEquivalent:@""];
     [menuItem setSubmenu:appleMenu];
@@ -136,10 +137,10 @@ CreateApplicationMenus(void)
 
     /* Create the window menu */
     windowMenu = [[NSMenu alloc] initWithTitle:@"Window"];
-    
+
     /* Add menu items */
     [windowMenu addItemWithTitle:@"Minimize" action:@selector(performMiniaturize:) keyEquivalent:@"m"];
-    
+
     [windowMenu addItemWithTitle:@"Zoom" action:@selector(performZoom:) keyEquivalent:@""];
 
     /* Put menu into the menubar */
@@ -147,7 +148,7 @@ CreateApplicationMenus(void)
     [menuItem setSubmenu:windowMenu];
     [[NSApp mainMenu] addItem:menuItem];
     [menuItem release];
-    
+
     /* Tell the application object that this is now the window menu */
     [NSApp setWindowsMenu:windowMenu];
     [windowMenu release];
@@ -202,7 +203,7 @@ Cocoa_PumpEvents(_THIS)
         if ( event == nil ) {
             break;
         }
-		
+
         switch ([event type]) {
         case NSLeftMouseDown:
         case NSOtherMouseDown:

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -76,14 +76,16 @@
 #include "../SDL_sysjoystick.h"
 #include "../SDL_joystick_c.h"
 
-#define MAX_UHID_JOYS	16
-#define MAX_JOY_JOYS	2
-#define MAX_JOYS	(MAX_UHID_JOYS + MAX_JOY_JOYS)
+#define MAX_UHID_JOYS   16
+#define MAX_JOY_JOYS    2
+#define MAX_JOYS    (MAX_UHID_JOYS + MAX_JOY_JOYS)
 
 
 struct report
 {
-#if defined(__FREEBSD__) && (__FreeBSD_kernel_version > 800063)
+#if defined(__FREEBSD__) && (__FreeBSD_kernel_version > 900000)
+    void *buf; /* Buffer */
+#elif defined(__FREEBSD__) && (__FreeBSD_kernel_version > 800063)
     struct usb_gen_descriptor *buf; /* Buffer */
 #else
     struct usb_ctl_report *buf; /* Buffer */
@@ -149,8 +151,10 @@ static char *joydevnames[MAX_JOYS];
 static int report_alloc(struct report *, struct report_desc *, int);
 static void report_free(struct report *);
 
-#if defined(USBHID_UCR_DATA)
+#if defined(USBHID_UCR_DATA) || (defined(__FreeBSD_kernel__) && __FreeBSD_kernel_version <= 800063)
 #define REP_BUF_DATA(rep) ((rep)->buf->ucr_data)
+#elif (defined(__FREEBSD__) && (__FreeBSD_kernel_version > 900000))
+#define REP_BUF_DATA(rep) ((rep)->buf)
 #elif (defined(__FREEBSD__) && (__FreeBSD_kernel_version > 800063))
 #define REP_BUF_DATA(rep) ((rep)->buf->ugd_data)
 #else
@@ -293,17 +297,15 @@ SDL_SYS_JoystickOpen(SDL_Joystick * joy, int device_index)
 
     fd = open(path, O_RDONLY);
     if (fd == -1) {
-        SDL_SetError("%s: %s", path, strerror(errno));
-        return (-1);
+        return SDL_SetError("%s: %s", path, strerror(errno));
     }
 
     joy->instance_id = device_index;
     hw = (struct joystick_hwdata *)
         SDL_malloc(sizeof(struct joystick_hwdata));
     if (hw == NULL) {
-        SDL_OutOfMemory();
         close(fd);
-        return (-1);
+        return SDL_OutOfMemory();
     }
     joy->hwdata = hw;
     hw->fd = fd;
@@ -587,7 +589,7 @@ SDL_SYS_JoystickQuit(void)
 SDL_JoystickGUID SDL_SYS_JoystickGetDeviceGUID( int device_index )
 {
     SDL_JoystickGUID guid;
-    // the GUID is just the first 16 chars of the name for now
+    /* the GUID is just the first 16 chars of the name for now */
     const char *name = SDL_SYS_JoystickNameForDeviceIndex( device_index );
     SDL_zero( guid );
     SDL_memcpy( &guid, name, SDL_min( sizeof(guid), SDL_strlen( name ) ) );
@@ -597,7 +599,7 @@ SDL_JoystickGUID SDL_SYS_JoystickGetDeviceGUID( int device_index )
 SDL_JoystickGUID SDL_SYS_JoystickGetGUID(SDL_Joystick * joystick)
 {
     SDL_JoystickGUID guid;
-    // the GUID is just the first 16 chars of the name for now
+    /* the GUID is just the first 16 chars of the name for now */
     const char *name = joystick->name;
     SDL_zero( guid );
     SDL_memcpy( &guid, name, SDL_min( sizeof(guid), SDL_strlen( name ) ) );
@@ -630,24 +632,26 @@ report_alloc(struct report *r, struct report_desc *rd, int repind)
 #endif
 
     if (len < 0) {
-        SDL_SetError("Negative HID report size");
-        return (-1);
+        return SDL_SetError("Negative HID report size");
     }
     r->size = len;
 
     if (r->size > 0) {
+#if defined(__FREEBSD__) && (__FreeBSD_kernel_version > 900000)
+        r->buf = SDL_malloc(r->size);
+#else
         r->buf = SDL_malloc(sizeof(*r->buf) - sizeof(REP_BUF_DATA(r)) +
                             r->size);
+#endif
         if (r->buf == NULL) {
-            SDL_OutOfMemory();
-            return (-1);
+            return SDL_OutOfMemory();
         }
     } else {
         r->buf = NULL;
     }
 
     r->status = SREPORT_CLEAN;
-    return (0);
+    return 0;
 }
 
 static void

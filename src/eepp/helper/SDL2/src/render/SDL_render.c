@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -44,8 +44,8 @@
     }
 
 
-static const SDL_RenderDriver *render_drivers[] = {
 #if !SDL_RENDER_DISABLED
+static const SDL_RenderDriver *render_drivers[] = {
 #if SDL_VIDEO_RENDER_D3D
     &D3D_RenderDriver,
 #endif
@@ -61,12 +61,13 @@ static const SDL_RenderDriver *render_drivers[] = {
 #if SDL_VIDEO_RENDER_DIRECTFB
     &DirectFB_RenderDriver,
 #endif
-#if SDL_VIDEO_RENDER_NDS
-    &NDS_RenderDriver,
+#if SDL_VIDEO_RENDER_PSP
+    &PSP_RenderDriver,
 #endif
     &SW_RenderDriver
-#endif /* !SDL_RENDER_DISABLED */
 };
+#endif /* !SDL_RENDER_DISABLED */
+
 static char renderer_magic;
 static char texture_magic;
 
@@ -75,19 +76,26 @@ static int UpdateLogicalSize(SDL_Renderer *renderer);
 int
 SDL_GetNumRenderDrivers(void)
 {
+#if !SDL_RENDER_DISABLED
     return SDL_arraysize(render_drivers);
+#else
+    return 0;
+#endif
 }
 
 int
 SDL_GetRenderDriverInfo(int index, SDL_RendererInfo * info)
 {
+#if !SDL_RENDER_DISABLED
     if (index < 0 || index >= SDL_GetNumRenderDrivers()) {
-        SDL_SetError("index must be in the range of 0 - %d",
-                     SDL_GetNumRenderDrivers() - 1);
-        return -1;
+        return SDL_SetError("index must be in the range of 0 - %d",
+                            SDL_GetNumRenderDrivers() - 1);
     }
     *info = render_drivers[index]->info;
     return 0;
+#else
+    return SDL_SetError("SDL not built with rendering support");
+#endif
 }
 
 static int
@@ -198,6 +206,7 @@ SDL_CreateWindowAndRenderer(int width, int height, Uint32 window_flags,
 SDL_Renderer *
 SDL_CreateRenderer(SDL_Window * window, int index, Uint32 flags)
 {
+#if !SDL_RENDER_DISABLED
     SDL_Renderer *renderer = NULL;
     int n = SDL_GetNumRenderDrivers();
     const char *hint;
@@ -285,6 +294,10 @@ SDL_CreateRenderer(SDL_Window * window, int index, Uint32 flags)
                     "Created renderer: %s", renderer->info.name);
     }
     return renderer;
+#else
+    SDL_SetError("SDL not built with rendering support");
+    return NULL;
+#endif
 }
 
 SDL_Renderer *
@@ -695,8 +708,7 @@ SDL_UpdateTextureYUV(SDL_Texture * texture, const SDL_Rect * rect,
         temp_pitch = (((rect->w * SDL_BYTESPERPIXEL(native->format)) + 3) & ~3);
         temp_pixels = SDL_malloc(rect->h * temp_pitch);
         if (!temp_pixels) {
-            SDL_OutOfMemory();
-            return -1;
+            return SDL_OutOfMemory();
         }
         SDL_SW_CopyYUVToRGB(texture->yuv, rect, native->format,
                             rect->w, rect->h, temp_pixels, temp_pitch);
@@ -732,8 +744,7 @@ SDL_UpdateTextureNative(SDL_Texture * texture, const SDL_Rect * rect,
         temp_pitch = (((rect->w * SDL_BYTESPERPIXEL(native->format)) + 3) & ~3);
         temp_pixels = SDL_malloc(rect->h * temp_pitch);
         if (!temp_pixels) {
-            SDL_OutOfMemory();
-            return -1;
+            return SDL_OutOfMemory();
         }
         SDL_ConvertPixels(rect->w, rect->h,
                           texture->format, pixels, pitch,
@@ -800,8 +811,7 @@ SDL_LockTexture(SDL_Texture * texture, const SDL_Rect * rect,
     CHECK_TEXTURE_MAGIC(texture, -1);
 
     if (texture->access != SDL_TEXTUREACCESS_STREAMING) {
-        SDL_SetError("SDL_LockTexture(): texture must be streaming");
-        return -1;
+        return SDL_SetError("SDL_LockTexture(): texture must be streaming");
     }
 
     if (!rect) {
@@ -897,8 +907,7 @@ int
 SDL_SetRenderTarget(SDL_Renderer *renderer, SDL_Texture *texture)
 {
     if (!SDL_RenderTargetSupported(renderer)) {
-        SDL_Unsupported();
-        return -1;
+        return SDL_Unsupported();
     }
     if (texture == renderer->target) {
         /* Nothing to do! */
@@ -909,12 +918,10 @@ SDL_SetRenderTarget(SDL_Renderer *renderer, SDL_Texture *texture)
     if (texture) {
         CHECK_TEXTURE_MAGIC(texture, -1);
         if (renderer != texture->renderer) {
-            SDL_SetError("Texture was not created with this renderer");
-            return -1;
+            return SDL_SetError("Texture was not created with this renderer");
         }
         if (texture->access != SDL_TEXTUREACCESS_TARGET) {
-            SDL_SetError("Texture not created with SDL_TEXTUREACCESS_TARGET");
-            return -1;
+            return SDL_SetError("Texture not created with SDL_TEXTUREACCESS_TARGET");
         }
         if (texture->native) {
             /* Always render to the native texture */
@@ -925,6 +932,7 @@ SDL_SetRenderTarget(SDL_Renderer *renderer, SDL_Texture *texture)
     if (texture && !renderer->target) {
         /* Make a backup of the viewport */
         renderer->viewport_backup = renderer->viewport;
+        renderer->clip_rect_backup = renderer->clip_rect;
         renderer->scale_backup = renderer->scale;
         renderer->logical_w_backup = renderer->logical_w;
         renderer->logical_h_backup = renderer->logical_h;
@@ -946,11 +954,15 @@ SDL_SetRenderTarget(SDL_Renderer *renderer, SDL_Texture *texture)
         renderer->logical_h = 0;
     } else {
         renderer->viewport = renderer->viewport_backup;
+        renderer->clip_rect = renderer->clip_rect_backup;
         renderer->scale = renderer->scale_backup;
         renderer->logical_w = renderer->logical_w_backup;
         renderer->logical_h = renderer->logical_h_backup;
     }
     if (renderer->UpdateViewport(renderer) < 0) {
+        return -1;
+    }
+    if (renderer->UpdateClipRect(renderer) < 0) {
         return -1;
     }
 
@@ -979,8 +991,7 @@ UpdateLogicalSize(SDL_Renderer *renderer)
         SDL_GetWindowSize(renderer->window, &w, &h);
     } else {
         /* FIXME */
-        SDL_SetError("Internal error: No way to get output resolution");
-        return -1;
+        return SDL_SetError("Internal error: No way to get output resolution");
     }
 
     want_aspect = (float)renderer->logical_w / renderer->logical_h;
@@ -1092,6 +1103,35 @@ SDL_RenderGetViewport(SDL_Renderer * renderer, SDL_Rect * rect)
 }
 
 int
+SDL_RenderSetClipRect(SDL_Renderer * renderer, const SDL_Rect * rect)
+{
+    CHECK_RENDERER_MAGIC(renderer, -1)
+
+    if (rect) {
+        renderer->clip_rect.x = (int)SDL_floor(rect->x * renderer->scale.x);
+        renderer->clip_rect.y = (int)SDL_floor(rect->y * renderer->scale.y);
+        renderer->clip_rect.w = (int)SDL_ceil(rect->w * renderer->scale.x);
+        renderer->clip_rect.h = (int)SDL_ceil(rect->h * renderer->scale.y);
+    } else {
+        SDL_zero(renderer->clip_rect);
+    }
+    return renderer->UpdateClipRect(renderer);
+}
+
+void
+SDL_RenderGetClipRect(SDL_Renderer * renderer, SDL_Rect * rect)
+{
+    CHECK_RENDERER_MAGIC(renderer, )
+
+    if (rect) {
+        rect->x = (int)(renderer->clip_rect.x / renderer->scale.x);
+        rect->y = (int)(renderer->clip_rect.y / renderer->scale.y);
+        rect->w = (int)(renderer->clip_rect.w / renderer->scale.x);
+        rect->h = (int)(renderer->clip_rect.h / renderer->scale.y);
+    }
+}
+
+int
 SDL_RenderSetScale(SDL_Renderer * renderer, float scaleX, float scaleY)
 {
     CHECK_RENDERER_MAGIC(renderer, -1);
@@ -1198,8 +1238,7 @@ RenderDrawPointsWithRects(SDL_Renderer * renderer,
 
     frects = SDL_stack_alloc(SDL_FRect, count);
     if (!frects) {
-        SDL_OutOfMemory();
-        return -1;
+        return SDL_OutOfMemory();
     }
     for (i = 0; i < count; ++i) {
         frects[i].x = points[i].x * renderer->scale.x;
@@ -1226,8 +1265,7 @@ SDL_RenderDrawPoints(SDL_Renderer * renderer,
     CHECK_RENDERER_MAGIC(renderer, -1);
 
     if (!points) {
-        SDL_SetError("SDL_RenderDrawPoints(): Passed NULL points");
-        return -1;
+        return SDL_SetError("SDL_RenderDrawPoints(): Passed NULL points");
     }
     if (count < 1) {
         return 0;
@@ -1243,8 +1281,7 @@ SDL_RenderDrawPoints(SDL_Renderer * renderer,
 
     fpoints = SDL_stack_alloc(SDL_FPoint, count);
     if (!fpoints) {
-        SDL_OutOfMemory();
-        return -1;
+        return SDL_OutOfMemory();
     }
     for (i = 0; i < count; ++i) {
         fpoints[i].x = points[i].x * renderer->scale.x;
@@ -1282,8 +1319,7 @@ RenderDrawLinesWithRects(SDL_Renderer * renderer,
 
     frects = SDL_stack_alloc(SDL_FRect, count-1);
     if (!frects) {
-        SDL_OutOfMemory();
-        return -1;
+        return SDL_OutOfMemory();
     }
 
     status = 0;
@@ -1309,10 +1345,10 @@ RenderDrawLinesWithRects(SDL_Renderer * renderer,
             frect->h = renderer->scale.y;
         } else {
             /* FIXME: We can't use a rect for this line... */
-            frects[0].x = points[i].x * renderer->scale.x;
-            frects[0].y = points[i].y * renderer->scale.y;
-            frects[1].x = points[i+1].x * renderer->scale.x;
-            frects[1].y = points[i+1].y * renderer->scale.y;
+            fpoints[0].x = points[i].x * renderer->scale.x;
+            fpoints[0].y = points[i].y * renderer->scale.y;
+            fpoints[1].x = points[i+1].x * renderer->scale.x;
+            fpoints[1].y = points[i+1].y * renderer->scale.y;
             status += renderer->RenderDrawLines(renderer, fpoints, 2);
         }
     }
@@ -1338,8 +1374,7 @@ SDL_RenderDrawLines(SDL_Renderer * renderer,
     CHECK_RENDERER_MAGIC(renderer, -1);
 
     if (!points) {
-        SDL_SetError("SDL_RenderDrawLines(): Passed NULL points");
-        return -1;
+        return SDL_SetError("SDL_RenderDrawLines(): Passed NULL points");
     }
     if (count < 2) {
         return 0;
@@ -1355,8 +1390,7 @@ SDL_RenderDrawLines(SDL_Renderer * renderer,
 
     fpoints = SDL_stack_alloc(SDL_FPoint, count);
     if (!fpoints) {
-        SDL_OutOfMemory();
-        return -1;
+        return SDL_OutOfMemory();
     }
     for (i = 0; i < count; ++i) {
         fpoints[i].x = points[i].x * renderer->scale.x;
@@ -1408,8 +1442,7 @@ SDL_RenderDrawRects(SDL_Renderer * renderer,
     CHECK_RENDERER_MAGIC(renderer, -1);
 
     if (!rects) {
-        SDL_SetError("SDL_RenderDrawRects(): Passed NULL rects");
-        return -1;
+        return SDL_SetError("SDL_RenderDrawRects(): Passed NULL rects");
     }
     if (count < 1) {
         return 0;
@@ -1455,8 +1488,7 @@ SDL_RenderFillRects(SDL_Renderer * renderer,
     CHECK_RENDERER_MAGIC(renderer, -1);
 
     if (!rects) {
-        SDL_SetError("SDL_RenderFillRects(): Passed NULL rects");
-        return -1;
+        return SDL_SetError("SDL_RenderFillRects(): Passed NULL rects");
     }
     if (count < 1) {
         return 0;
@@ -1468,8 +1500,7 @@ SDL_RenderFillRects(SDL_Renderer * renderer,
 
     frects = SDL_stack_alloc(SDL_FRect, count);
     if (!frects) {
-        SDL_OutOfMemory();
-        return -1;
+        return SDL_OutOfMemory();
     }
     for (i = 0; i < count; ++i) {
         frects[i].x = rects[i].x * renderer->scale.x;
@@ -1497,8 +1528,7 @@ SDL_RenderCopy(SDL_Renderer * renderer, SDL_Texture * texture,
     CHECK_TEXTURE_MAGIC(texture, -1);
 
     if (renderer != texture->renderer) {
-        SDL_SetError("Texture was not created with this renderer");
-        return -1;
+        return SDL_SetError("Texture was not created with this renderer");
     }
 
     real_srcrect.x = 0;
@@ -1566,14 +1596,12 @@ SDL_RenderCopyEx(SDL_Renderer * renderer, SDL_Texture * texture,
     CHECK_TEXTURE_MAGIC(texture, -1);
 
     if (renderer != texture->renderer) {
-        SDL_SetError("Texture was not created with this renderer");
-        return -1;
+        return SDL_SetError("Texture was not created with this renderer");
     }
     if (!renderer->RenderCopyEx) {
-        SDL_SetError("Renderer does not support RenderCopyEx");
-        return -1;
+        return SDL_SetError("Renderer does not support RenderCopyEx");
     }
-    
+
     real_srcrect.x = 0;
     real_srcrect.y = 0;
     real_srcrect.w = texture->w;
@@ -1623,8 +1651,7 @@ SDL_RenderReadPixels(SDL_Renderer * renderer, const SDL_Rect * rect,
     CHECK_RENDERER_MAGIC(renderer, -1);
 
     if (!renderer->RenderReadPixels) {
-        SDL_Unsupported();
-        return -1;
+        return SDL_Unsupported();
     }
 
     if (!format) {
@@ -1729,8 +1756,7 @@ int SDL_GL_BindTexture(SDL_Texture *texture, float *texw, float *texh)
         return renderer->GL_BindTexture(renderer, texture, texw, texh);
     }
 
-    SDL_Unsupported();
-    return -1;
+    return SDL_Unsupported();
 }
 
 int SDL_GL_UnbindTexture(SDL_Texture *texture)
@@ -1743,8 +1769,7 @@ int SDL_GL_UnbindTexture(SDL_Texture *texture)
         return renderer->GL_UnbindTexture(renderer, texture);
     }
 
-    SDL_Unsupported();
-    return -1;
+    return SDL_Unsupported();
 }
 
 /* vi: set ts=4 sw=4 expandtab: */

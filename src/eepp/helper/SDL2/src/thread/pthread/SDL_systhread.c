@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -34,7 +34,7 @@
 #include <sys/resource.h>
 #include <sys/syscall.h>
 #include <unistd.h>
-#endif // __LINUX__
+#endif /* __LINUX__ */
 
 #if defined(__LINUX__) || defined(__MACOSX__) || defined(__IPHONEOS__)
 #include <dlfcn.h>
@@ -97,18 +97,16 @@ SDL_SYS_CreateThread(SDL_Thread * thread, void *args)
 
     /* Set the thread attributes */
     if (pthread_attr_init(&type) != 0) {
-        SDL_SetError("Couldn't initialize pthread attributes");
-        return (-1);
+        return SDL_SetError("Couldn't initialize pthread attributes");
     }
     pthread_attr_setdetachstate(&type, PTHREAD_CREATE_JOINABLE);
 
     /* Create the thread and go! */
     if (pthread_create(&thread->handle, &type, RunThread, args) != 0) {
-        SDL_SetError("Not enough resources to create thread");
-        return (-1);
+        return SDL_SetError("Not enough resources to create thread");
     }
 
-    return (0);
+    return 0;
 }
 
 void
@@ -173,8 +171,7 @@ SDL_SYS_SetThreadPriority(SDL_ThreadPriority priority)
         /* Note that this fails if you're trying to set high priority
            and you don't have root permission. BUT DON'T RUN AS ROOT!
          */
-        SDL_SetError("setpriority() failed");
-        return -1;
+        return SDL_SetError("setpriority() failed");
     }
     return 0;
 #else
@@ -183,8 +180,7 @@ SDL_SYS_SetThreadPriority(SDL_ThreadPriority priority)
     pthread_t thread = pthread_self();
 
     if (pthread_getschedparam(thread, &policy, &sched) < 0) {
-        SDL_SetError("pthread_getschedparam() failed");
-        return -1;
+        return SDL_SetError("pthread_getschedparam() failed");
     }
     if (priority == SDL_THREAD_PRIORITY_LOW) {
         sched.sched_priority = sched_get_priority_min(policy);
@@ -196,8 +192,7 @@ SDL_SYS_SetThreadPriority(SDL_ThreadPriority priority)
         sched.sched_priority = (min_priority + (max_priority - min_priority) / 2);
     }
     if (pthread_setschedparam(thread, policy, &sched) < 0) {
-        SDL_SetError("pthread_setschedparam() failed");
-        return -1;
+        return SDL_SetError("pthread_setschedparam() failed");
     }
     return 0;
 #endif /* linux */

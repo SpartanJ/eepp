@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -54,6 +54,7 @@ static int SW_LockTexture(SDL_Renderer * renderer, SDL_Texture * texture,
 static void SW_UnlockTexture(SDL_Renderer * renderer, SDL_Texture * texture);
 static int SW_SetRenderTarget(SDL_Renderer * renderer, SDL_Texture * texture);
 static int SW_UpdateViewport(SDL_Renderer * renderer);
+static int SW_UpdateClipRect(SDL_Renderer * renderer);
 static int SW_RenderClear(SDL_Renderer * renderer);
 static int SW_RenderDrawPoints(SDL_Renderer * renderer,
                                const SDL_FPoint * points, int count);
@@ -151,6 +152,7 @@ SW_CreateRendererForSurface(SDL_Surface * surface)
     renderer->UnlockTexture = SW_UnlockTexture;
     renderer->SetRenderTarget = SW_SetRenderTarget;
     renderer->UpdateViewport = SW_UpdateViewport;
+    renderer->UpdateClipRect = SW_UpdateClipRect;
     renderer->RenderClear = SW_RenderClear;
     renderer->RenderDrawPoints = SW_RenderDrawPoints;
     renderer->RenderDrawLines = SW_RenderDrawLines;
@@ -200,8 +202,7 @@ SW_CreateTexture(SDL_Renderer * renderer, SDL_Texture * texture)
 
     if (!SDL_PixelFormatEnumToMasks
         (texture->format, &bpp, &Rmask, &Gmask, &Bmask, &Amask)) {
-        SDL_SetError("Unknown texture format");
-        return -1;
+        return SDL_SetError("Unknown texture format");
     }
 
     texture->driverdata =
@@ -322,6 +323,20 @@ SW_UpdateViewport(SDL_Renderer * renderer)
 }
 
 static int
+SW_UpdateClipRect(SDL_Renderer * renderer)
+{
+    const SDL_Rect *rect = &renderer->clip_rect;
+    SDL_Surface* framebuffer = (SDL_Surface *) renderer->driverdata;
+
+    if (!SDL_RectEmpty(rect)) {
+        SDL_SetClipRect(framebuffer, rect);
+    } else {
+        SDL_SetClipRect(framebuffer, NULL);
+    }
+    return 0;
+}
+
+static int
 SW_RenderClear(SDL_Renderer * renderer)
 {
     SDL_Surface *surface = SW_ActivateRenderer(renderer);
@@ -357,8 +372,7 @@ SW_RenderDrawPoints(SDL_Renderer * renderer, const SDL_FPoint * points,
 
     final_points = SDL_stack_alloc(SDL_Point, count);
     if (!final_points) {
-        SDL_OutOfMemory();
-        return -1;
+        return SDL_OutOfMemory();
     }
     if (renderer->viewport.x || renderer->viewport.y) {
         int x = renderer->viewport.x;
@@ -407,8 +421,7 @@ SW_RenderDrawLines(SDL_Renderer * renderer, const SDL_FPoint * points,
 
     final_points = SDL_stack_alloc(SDL_Point, count);
     if (!final_points) {
-        SDL_OutOfMemory();
-        return -1;
+        return SDL_OutOfMemory();
     }
     if (renderer->viewport.x || renderer->viewport.y) {
         int x = renderer->viewport.x;
@@ -456,8 +469,7 @@ SW_RenderFillRects(SDL_Renderer * renderer, const SDL_FRect * rects, int count)
 
     final_rects = SDL_stack_alloc(SDL_Rect, count);
     if (!final_rects) {
-        SDL_OutOfMemory();
-        return -1;
+        return SDL_OutOfMemory();
     }
     if (renderer->viewport.x || renderer->viewport.y) {
         int x = renderer->viewport.x;
@@ -647,8 +659,7 @@ SW_RenderReadPixels(SDL_Renderer * renderer, const SDL_Rect * rect,
 
     if (rect->x < 0 || rect->x+rect->w > surface->w ||
         rect->y < 0 || rect->y+rect->h > surface->h) {
-        SDL_SetError("Tried to read outside of surface bounds");
-        return -1;
+        return SDL_SetError("Tried to read outside of surface bounds");
     }
 
     src_format = surface->format->format;

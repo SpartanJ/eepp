@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -26,7 +26,7 @@
 
 /**
  *  \file SDL_config_minimal.h
- *  
+ *
  *  This is the minimal configuration that can be used to build SDL.
  */
 
@@ -51,24 +51,24 @@ typedef unsigned long uintptr_t;
 #endif
 
 /* Enable the dummy audio driver (src/audio/dummy/\*.c) */
-#define SDL_AUDIO_DRIVER_DUMMY	1
+#define SDL_AUDIO_DRIVER_DUMMY  1
 
 /* Enable the stub joystick driver (src/joystick/dummy/\*.c) */
-#define SDL_JOYSTICK_DISABLED	1
+#define SDL_JOYSTICK_DISABLED   1
 
 /* Enable the stub haptic driver (src/haptic/dummy/\*.c) */
-#define SDL_HAPTIC_DISABLED	1
+#define SDL_HAPTIC_DISABLED 1
 
 /* Enable the stub shared object loader (src/loadso/dummy/\*.c) */
-#define SDL_LOADSO_DISABLED	1
+#define SDL_LOADSO_DISABLED 1
 
 /* Enable the stub thread support (src/thread/generic/\*.c) */
-#define SDL_THREADS_DISABLED	1
+#define SDL_THREADS_DISABLED    1
 
 /* Enable the stub timer support (src/timer/dummy/\*.c) */
-#define SDL_TIMERS_DISABLED	1
+#define SDL_TIMERS_DISABLED 1
 
 /* Enable the dummy video driver (src/video/dummy/\*.c) */
-#define SDL_VIDEO_DRIVER_DUMMY	1
+#define SDL_VIDEO_DRIVER_DUMMY  1
 
 #endif /* _SDL_config_minimal_h */

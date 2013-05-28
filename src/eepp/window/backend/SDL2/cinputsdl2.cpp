@@ -203,7 +203,6 @@ void cInputSDL::Update() {
 				EEEvent.finger.timestamp = SDLEvent.tfinger.timestamp;
 				EEEvent.finger.touchId = SDLEvent.tfinger.touchId;
 				EEEvent.finger.fingerId = SDLEvent.tfinger.fingerId;
-				EEEvent.finger.state = SDLEvent.tfinger.state;
 				EEEvent.finger.x = SDLEvent.tfinger.x;
 				EEEvent.finger.y = SDLEvent.tfinger.y;
 				EEEvent.finger.dx = SDLEvent.tfinger.dx;
@@ -217,7 +216,6 @@ void cInputSDL::Update() {
 				EEEvent.finger.timestamp = SDLEvent.tfinger.timestamp;
 				EEEvent.finger.touchId = SDLEvent.tfinger.touchId;
 				EEEvent.finger.fingerId = SDLEvent.tfinger.fingerId;
-				EEEvent.finger.state = SDLEvent.tfinger.state;
 				EEEvent.finger.x = SDLEvent.tfinger.x;
 				EEEvent.finger.y = SDLEvent.tfinger.y;
 				EEEvent.finger.dx = SDLEvent.tfinger.dx;
@@ -231,7 +229,6 @@ void cInputSDL::Update() {
 				EEEvent.finger.timestamp = SDLEvent.tfinger.timestamp;
 				EEEvent.finger.touchId = SDLEvent.tfinger.touchId;
 				EEEvent.finger.fingerId = SDLEvent.tfinger.fingerId;
-				EEEvent.finger.state = SDLEvent.tfinger.state;
 				EEEvent.finger.x = SDLEvent.tfinger.x;
 				EEEvent.finger.y = SDLEvent.tfinger.y;
 				EEEvent.finger.dx = SDLEvent.tfinger.dx;
@@ -333,10 +330,8 @@ void cInputSDL::Init() {
 	mMousePos.y = (eeInt)mTempMouse.y;
 
 	InitializeTables();
-	
-	#if EE_PLATFORM != EE_PLATFORM_ANDROID
+
 	mJoystickManager->Open();
-	#endif
 }
 
 void cInputSDL::InitializeTables() {

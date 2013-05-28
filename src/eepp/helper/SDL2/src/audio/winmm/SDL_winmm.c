@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -91,7 +91,7 @@ FillSound(HWAVEOUT hwo, UINT uMsg, DWORD_PTR dwInstance,
     ReleaseSemaphore(this->hidden->audio_sem, 1, NULL);
 }
 
-static void
+static int
 SetMMerror(char *function, MMRESULT code)
 {
     size_t len;
@@ -105,7 +105,7 @@ SetMMerror(char *function, MMRESULT code)
     WideCharToMultiByte(CP_ACP, 0, werrbuf, -1, errbuf + len,
                         MAXERRORLENGTH - len, NULL, NULL);
 
-    SDL_SetError("%s", errbuf);
+    return SDL_SetError("%s", errbuf);
 }
 
 static void
@@ -234,8 +234,7 @@ WINMM_OpenDevice(_THIS, const char *devname, int iscapture)
         }
 
         if (devId == WAVE_MAPPER) {
-            SDL_SetError("Requested device not found");
-            return 0;
+            return SDL_SetError("Requested device not found");
         }
     }
 
@@ -243,8 +242,7 @@ WINMM_OpenDevice(_THIS, const char *devname, int iscapture)
     this->hidden = (struct SDL_PrivateAudioData *)
         SDL_malloc((sizeof *this->hidden));
     if (this->hidden == NULL) {
-        SDL_OutOfMemory();
-        return 0;
+        return SDL_OutOfMemory();
     }
     SDL_memset(this->hidden, 0, (sizeof *this->hidden));
 
@@ -270,8 +268,7 @@ WINMM_OpenDevice(_THIS, const char *devname, int iscapture)
 
     if (!valid_datatype) {
         WINMM_CloseDevice(this);
-        SDL_SetError("Unsupported audio format");
-        return 0;
+        return SDL_SetError("Unsupported audio format");
     }
 
     /* Set basic WAVE format parameters */
@@ -309,8 +306,7 @@ WINMM_OpenDevice(_THIS, const char *devname, int iscapture)
 
     if (result != MMSYSERR_NOERROR) {
         WINMM_CloseDevice(this);
-        SetMMerror("waveOutOpen()", result);
-        return 0;
+        return SetMMerror("waveOutOpen()", result);
     }
 #ifdef SOUND_DEBUG
     /* Check the sound device we retrieved */
@@ -321,8 +317,7 @@ WINMM_OpenDevice(_THIS, const char *devname, int iscapture)
                                    &caps, sizeof(caps));
         if (result != MMSYSERR_NOERROR) {
             WINMM_CloseDevice(this);
-            SetMMerror("waveOutGetDevCaps()", result);
-            return 0;
+            return SetMMerror("waveOutGetDevCaps()", result);
         }
         printf("Audio device: %s\n", caps.szPname);
     }
@@ -333,8 +328,7 @@ WINMM_OpenDevice(_THIS, const char *devname, int iscapture)
         CreateSemaphore(NULL, NUM_BUFFERS - 1, NUM_BUFFERS, NULL);
     if (this->hidden->audio_sem == NULL) {
         WINMM_CloseDevice(this);
-        SDL_SetError("Couldn't create semaphore");
-        return 0;
+        return SDL_SetError("Couldn't create semaphore");
     }
 
     /* Create the sound buffers */
@@ -342,8 +336,7 @@ WINMM_OpenDevice(_THIS, const char *devname, int iscapture)
         (Uint8 *) SDL_malloc(NUM_BUFFERS * this->spec.size);
     if (this->hidden->mixbuf == NULL) {
         WINMM_CloseDevice(this);
-        SDL_OutOfMemory();
-        return 0;
+        return SDL_OutOfMemory();
     }
     for (i = 0; i < NUM_BUFFERS; ++i) {
         SDL_memset(&this->hidden->wavebuf[i], 0,
@@ -357,12 +350,11 @@ WINMM_OpenDevice(_THIS, const char *devname, int iscapture)
                                       sizeof(this->hidden->wavebuf[i]));
         if (result != MMSYSERR_NOERROR) {
             WINMM_CloseDevice(this);
-            SetMMerror("waveOutPrepareHeader()", result);
-            return 0;
+            return SetMMerror("waveOutPrepareHeader()", result);
         }
     }
 
-    return 1;                   /* Ready to go! */
+    return 0;                   /* Ready to go! */
 }
 
 

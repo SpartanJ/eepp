@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -32,7 +32,7 @@ typedef struct
     HBITMAP hbm;
     WNDPROC wndproc;
     SDL_bool created;
-    int mouse_pressed;
+    WPARAM mouse_button_flags;
     struct SDL_VideoData *videodata;
 } SDL_WindowData;
 
@@ -56,6 +56,7 @@ extern void WIN_SetWindowGrab(_THIS, SDL_Window * window, SDL_bool grabbed);
 extern void WIN_DestroyWindow(_THIS, SDL_Window * window);
 extern SDL_bool WIN_GetWindowWMInfo(_THIS, SDL_Window * window,
                                     struct SDL_SysWMinfo *info);
+extern void WIN_OnWindowEnter(_THIS, SDL_Window * window);
 
 #endif /* _SDL_windowswindow_h */
 

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -121,23 +121,23 @@ HRESULT WINAPI D3DXCreateMatrixStack(DWORD flags, LPD3DXMATRIXSTACK* ppstack);
 #endif
 
 #ifdef ASSEMBLE_SHADER
-///////////////////////////////////////////////////////////////////////////
-// ID3DXBuffer:
-// ------------
-// The buffer object is used by D3DX to return arbitrary size data.
-//
-// GetBufferPointer -
-//    Returns a pointer to the beginning of the buffer.
-//
-// GetBufferSize -
-//    Returns the size of the buffer, in bytes.
-///////////////////////////////////////////////////////////////////////////
+/**************************************************************************
+ * ID3DXBuffer:
+ * ------------
+ * The buffer object is used by D3DX to return arbitrary size data.
+ *
+ * GetBufferPointer -
+ *    Returns a pointer to the beginning of the buffer.
+ *
+ * GetBufferSize -
+ *    Returns the size of the buffer, in bytes.
+ **************************************************************************/
 
 typedef interface ID3DXBuffer ID3DXBuffer;
 typedef interface ID3DXBuffer *LPD3DXBUFFER;
 
-// {8BA5FB08-5195-40e2-AC58-0D989C3A0102}
-DEFINE_GUID(IID_ID3DXBuffer, 
+/* {8BA5FB08-5195-40e2-AC58-0D989C3A0102} */
+DEFINE_GUID(IID_ID3DXBuffer,
 0x8ba5fb08, 0x5195, 0x40e2, 0xac, 0x58, 0xd, 0x98, 0x9c, 0x3a, 0x1, 0x2);
 
 #undef INTERFACE
@@ -149,12 +149,12 @@ typedef interface ID3DXBuffer {
 typedef const struct ID3DXBufferVtbl ID3DXBufferVtbl;
 const struct ID3DXBufferVtbl
 {
-    // IUnknown
+    /* IUnknown */
     STDMETHOD(QueryInterface)(THIS_ REFIID iid, LPVOID *ppv) PURE;
     STDMETHOD_(ULONG, AddRef)(THIS) PURE;
     STDMETHOD_(ULONG, Release)(THIS) PURE;
 
-    // ID3DXBuffer
+    /* ID3DXBuffer */
     STDMETHOD_(LPVOID, GetBufferPointer)(THIS) PURE;
     STDMETHOD_(DWORD, GetBufferSize)(THIS) PURE;
 };
@@ -186,6 +186,7 @@ static int D3D_LockTexture(SDL_Renderer * renderer, SDL_Texture * texture,
 static void D3D_UnlockTexture(SDL_Renderer * renderer, SDL_Texture * texture);
 static int D3D_SetRenderTarget(SDL_Renderer * renderer, SDL_Texture * texture);
 static int D3D_UpdateViewport(SDL_Renderer * renderer);
+static int D3D_UpdateClipRect(SDL_Renderer * renderer);
 static int D3D_RenderClear(SDL_Renderer * renderer);
 static int D3D_RenderDrawPoints(SDL_Renderer * renderer,
                                 const SDL_FPoint * points, int count);
@@ -246,7 +247,7 @@ typedef struct
     float u, v;
 } Vertex;
 
-static void
+static int
 D3D_SetError(const char *prefix, HRESULT result)
 {
     const char *error;
@@ -322,7 +323,7 @@ D3D_SetError(const char *prefix, HRESULT result)
         error = "UNKNOWN";
         break;
     }
-    SDL_SetError("%s: %s", prefix, error);
+    return SDL_SetError("%s: %s", prefix, error);
 }
 
 static D3DFORMAT
@@ -361,14 +362,19 @@ D3D_Reset(SDL_Renderer * renderer)
     D3D_RenderData *data = (D3D_RenderData *) renderer->driverdata;
     HRESULT result;
 
+    /* Release the default render target before reset */
+    if (data->defaultRenderTarget) {
+        IDirect3DSurface9_Release(data->defaultRenderTarget);
+        data->defaultRenderTarget = NULL;
+    }
+
     result = IDirect3DDevice9_Reset(data->device, &data->pparams);
     if (FAILED(result)) {
         if (result == D3DERR_DEVICELOST) {
             /* Don't worry about it, we'll reset later... */
             return 0;
         } else {
-            D3D_SetError("Reset()", result);
-            return -1;
+            return D3D_SetError("Reset()", result);
         }
     }
     IDirect3DDevice9_SetVertexShader(data->device, NULL);
@@ -377,6 +383,7 @@ D3D_Reset(SDL_Renderer * renderer)
     IDirect3DDevice9_SetRenderState(data->device, D3DRS_CULLMODE,
                                     D3DCULL_NONE);
     IDirect3DDevice9_SetRenderState(data->device, D3DRS_LIGHTING, FALSE);
+    IDirect3DDevice9_GetRenderTarget(data->device, 0, &data->defaultRenderTarget);
     return 0;
 }
 
@@ -415,8 +422,7 @@ D3D_ActivateRenderer(SDL_Renderer * renderer)
             result = IDirect3DDevice9_BeginScene(data->device);
         }
         if (FAILED(result)) {
-            D3D_SetError("BeginScene()", result);
-            return -1;
+            return D3D_SetError("BeginScene()", result);
         }
         data->beginScene = SDL_FALSE;
     }
@@ -438,7 +444,7 @@ D3D_CreateRenderer(SDL_Window * window, Uint32 flags)
     SDL_DisplayMode fullscreen_mode;
     D3DMATRIX matrix;
     int d3dxVersion;
-	char d3dxDLLFile[50];
+    char d3dxDLLFile[50];
 
     renderer = (SDL_Renderer *) SDL_calloc(1, sizeof(*renderer));
     if (!renderer) {
@@ -469,8 +475,11 @@ D3D_CreateRenderer(SDL_Window * window, Uint32 flags)
         }
 
         for (d3dxVersion=50;d3dxVersion>0;d3dxVersion--) {
-            SDL_snprintf(d3dxDLLFile, 49, "D3DX9_%02d.dll", d3dxVersion);
-            data->d3dxDLL = SDL_LoadObject(d3dxDLLFile);
+            LPTSTR dllName;
+            SDL_snprintf(d3dxDLLFile, sizeof(d3dxDLLFile), "D3DX9_%02d.dll", d3dxVersion);
+            dllName = WIN_UTF8ToString(d3dxDLLFile);
+            data->d3dxDLL = (void *)LoadLibrary(dllName); /* not using SDL_LoadObject() as we want silently fail - no error message */
+            SDL_free(dllName);
             if (data->d3dxDLL) {
                 HRESULT (WINAPI *D3DXCreateMatrixStack) (DWORD Flags, LPD3DXMATRIXSTACK*  ppStack);
                 D3DXCreateMatrixStack = (HRESULT (WINAPI *) (DWORD, LPD3DXMATRIXSTACK*)) SDL_LoadFunction(data->d3dxDLL, "D3DXCreateMatrixStack");
@@ -487,7 +496,7 @@ D3D_CreateRenderer(SDL_Window * window, Uint32 flags)
     }
 
 
-    
+
     if (!data->d3d || !data->matrixStack) {
         SDL_free(renderer);
         SDL_free(data);
@@ -502,6 +511,7 @@ D3D_CreateRenderer(SDL_Window * window, Uint32 flags)
     renderer->UnlockTexture = D3D_UnlockTexture;
     renderer->SetRenderTarget = D3D_SetRenderTarget;
     renderer->UpdateViewport = D3D_UpdateViewport;
+    renderer->UpdateClipRect = D3D_UpdateClipRect;
     renderer->RenderClear = D3D_RenderClear;
     renderer->RenderDrawPoints = D3D_RenderDrawPoints;
     renderer->RenderDrawLines = D3D_RenderDrawLines;
@@ -538,9 +548,14 @@ D3D_CreateRenderer(SDL_Window * window, Uint32 flags)
     pparams.SwapEffect = D3DSWAPEFFECT_DISCARD;
 
     if (window_flags & SDL_WINDOW_FULLSCREEN) {
+        if ( ( window_flags & SDL_WINDOW_FULLSCREEN_DESKTOP ) == SDL_WINDOW_FULLSCREEN_DESKTOP )  {
+            pparams.Windowed = TRUE;
+            pparams.FullScreen_RefreshRateInHz = 0;
+        } else {
         pparams.Windowed = FALSE;
         pparams.FullScreen_RefreshRateInHz =
             fullscreen_mode.refresh_rate;
+        }
     } else {
         pparams.Windowed = TRUE;
         pparams.FullScreen_RefreshRateInHz = 0;
@@ -689,8 +704,7 @@ D3D_CreateTexture(SDL_Renderer * renderer, SDL_Texture * texture)
 
     data = (D3D_TextureData *) SDL_calloc(1, sizeof(*data));
     if (!data) {
-        SDL_OutOfMemory();
-        return -1;
+        return SDL_OutOfMemory();
     }
     data->scaleMode = GetScaleQuality();
 
@@ -717,8 +731,7 @@ D3D_CreateTexture(SDL_Renderer * renderer, SDL_Texture * texture)
                                        PixelFormatToD3DFMT(texture->format),
                                        pool, &data->texture, NULL);
     if (FAILED(result)) {
-        D3D_SetError("CreateTexture()", result);
-        return -1;
+        return D3D_SetError("CreateTexture()", result);
     }
 
     return 0;
@@ -752,8 +765,7 @@ D3D_UpdateTexture(SDL_Renderer * renderer, SDL_Texture * texture,
     }
 
     if (FAILED(result)) {
-        D3D_SetError("LockRect()", result);
-        return -1;
+        return D3D_SetError("LockRect()", result);
     }
 
     src = pixels;
@@ -789,8 +801,7 @@ D3D_LockTexture(SDL_Renderer * renderer, SDL_Texture * texture,
 
     result = IDirect3DTexture9_LockRect(data->texture, 0, &locked, &d3drect, 0);
     if (FAILED(result)) {
-        D3D_SetError("LockRect()", result);
-        return -1;
+        return D3D_SetError("LockRect()", result);
     }
     *pixels = locked.pBits;
     *pitch = locked.Pitch;
@@ -803,6 +814,39 @@ D3D_UnlockTexture(SDL_Renderer * renderer, SDL_Texture * texture)
     D3D_TextureData *data = (D3D_TextureData *) texture->driverdata;
 
     IDirect3DTexture9_UnlockRect(data->texture, 0);
+}
+
+static int
+D3D_SetRenderTarget(SDL_Renderer * renderer, SDL_Texture * texture)
+{
+    D3D_RenderData *data = (D3D_RenderData *) renderer->driverdata;
+    D3D_TextureData *texturedata;
+    HRESULT result;
+
+    D3D_ActivateRenderer(renderer);
+
+    /* Release the previous render target if it wasn't the default one */
+    if (data->currentRenderTarget != NULL) {
+        IDirect3DSurface9_Release(data->currentRenderTarget);
+        data->currentRenderTarget = NULL;
+    }
+
+    if (texture == NULL) {
+        IDirect3DDevice9_SetRenderTarget(data->device, 0, data->defaultRenderTarget);
+        return 0;
+    }
+
+    texturedata = (D3D_TextureData *) texture->driverdata;
+    result = IDirect3DTexture9_GetSurfaceLevel(texturedata->texture, 0, &data->currentRenderTarget);
+    if(FAILED(result)) {
+        return D3D_SetError("GetSurfaceLevel()", result);
+    }
+    result = IDirect3DDevice9_SetRenderTarget(data->device, 0, data->currentRenderTarget);
+    if(FAILED(result)) {
+        return D3D_SetError("SetRenderTarget()", result);
+    }
+
+    return 0;
 }
 
 static int
@@ -844,37 +888,28 @@ D3D_UpdateViewport(SDL_Renderer * renderer)
 }
 
 static int
-D3D_SetRenderTarget(SDL_Renderer * renderer, SDL_Texture * texture)
+D3D_UpdateClipRect(SDL_Renderer * renderer)
 {
+    const SDL_Rect *rect = &renderer->clip_rect;
     D3D_RenderData *data = (D3D_RenderData *) renderer->driverdata;
-    D3D_TextureData *texturedata;
+    RECT r;
     HRESULT result;
 
-    D3D_ActivateRenderer(renderer);
+    if (!SDL_RectEmpty(rect)) {
+        IDirect3DDevice9_SetRenderState(data->device, D3DRS_SCISSORTESTENABLE, TRUE);
+        r.left = rect->x;
+        r.top = rect->y;
+        r.right = rect->w + rect->w;
+        r.bottom = rect->y + rect->h;
 
-    /* Release the previous render target if it wasn't the default one */
-    if (data->currentRenderTarget != NULL) {
-        IDirect3DSurface9_Release(data->currentRenderTarget);
-        data->currentRenderTarget = NULL;
+        result = IDirect3DDevice9_SetScissorRect(data->device, &r);
+        if (result != D3D_OK) {
+            D3D_SetError("SetScissor()", result);
+            return -1;
+        }
+    } else {
+        IDirect3DDevice9_SetRenderState(data->device, D3DRS_SCISSORTESTENABLE, FALSE);
     }
-
-    if (texture == NULL) {
-        IDirect3DDevice9_SetRenderTarget(data->device, 0, data->defaultRenderTarget);
-        return 0;
-    }
-
-    texturedata = (D3D_TextureData *) texture->driverdata;
-    result = IDirect3DTexture9_GetSurfaceLevel(texturedata->texture, 0, &data->currentRenderTarget);
-    if(FAILED(result)) {
-        D3D_SetError("GetSurfaceLevel()", result);
-        return -1;
-    }
-    result = IDirect3DDevice9_SetRenderTarget(data->device, 0, data->currentRenderTarget);
-    if(FAILED(result)) {
-        D3D_SetError("SetRenderTarget()", result);
-        return -1;
-    }
-
     return 0;
 }
 
@@ -921,8 +956,7 @@ D3D_RenderClear(SDL_Renderer * renderer)
     }
 
     if (FAILED(result)) {
-        D3D_SetError("Clear()", result);
-        return -1;
+        return D3D_SetError("Clear()", result);
     }
     return 0;
 }
@@ -982,8 +1016,7 @@ D3D_RenderDrawPoints(SDL_Renderer * renderer, const SDL_FPoint * points,
         IDirect3DDevice9_SetTexture(data->device, 0,
                                     (IDirect3DBaseTexture9 *) 0);
     if (FAILED(result)) {
-        D3D_SetError("SetTexture()", result);
-        return -1;
+        return D3D_SetError("SetTexture()", result);
     }
 
     color = D3DCOLOR_ARGB(renderer->a, renderer->r, renderer->g, renderer->b);
@@ -1002,8 +1035,7 @@ D3D_RenderDrawPoints(SDL_Renderer * renderer, const SDL_FPoint * points,
                                          vertices, sizeof(*vertices));
     SDL_stack_free(vertices);
     if (FAILED(result)) {
-        D3D_SetError("DrawPrimitiveUP()", result);
-        return -1;
+        return D3D_SetError("DrawPrimitiveUP()", result);
     }
     return 0;
 }
@@ -1028,8 +1060,7 @@ D3D_RenderDrawLines(SDL_Renderer * renderer, const SDL_FPoint * points,
         IDirect3DDevice9_SetTexture(data->device, 0,
                                     (IDirect3DBaseTexture9 *) 0);
     if (FAILED(result)) {
-        D3D_SetError("SetTexture()", result);
-        return -1;
+        return D3D_SetError("SetTexture()", result);
     }
 
     color = D3DCOLOR_ARGB(renderer->a, renderer->r, renderer->g, renderer->b);
@@ -1058,8 +1089,7 @@ D3D_RenderDrawLines(SDL_Renderer * renderer, const SDL_FPoint * points,
 
     SDL_stack_free(vertices);
     if (FAILED(result)) {
-        D3D_SetError("DrawPrimitiveUP()", result);
-        return -1;
+        return D3D_SetError("DrawPrimitiveUP()", result);
     }
     return 0;
 }
@@ -1085,8 +1115,7 @@ D3D_RenderFillRects(SDL_Renderer * renderer, const SDL_FRect * rects,
         IDirect3DDevice9_SetTexture(data->device, 0,
                                     (IDirect3DBaseTexture9 *) 0);
     if (FAILED(result)) {
-        D3D_SetError("SetTexture()", result);
-        return -1;
+        return D3D_SetError("SetTexture()", result);
     }
 
     color = D3DCOLOR_ARGB(renderer->a, renderer->r, renderer->g, renderer->b);
@@ -1131,8 +1160,7 @@ D3D_RenderFillRects(SDL_Renderer * renderer, const SDL_FRect * rects,
             IDirect3DDevice9_DrawPrimitiveUP(data->device, D3DPT_TRIANGLEFAN,
                                              2, vertices, sizeof(*vertices));
         if (FAILED(result)) {
-            D3D_SetError("DrawPrimitiveUP()", result);
-            return -1;
+            return D3D_SetError("DrawPrimitiveUP()", result);
         }
     }
     return 0;
@@ -1209,28 +1237,24 @@ D3D_RenderCopy(SDL_Renderer * renderer, SDL_Texture * texture,
         IDirect3DDevice9_SetTexture(data->device, 0, (IDirect3DBaseTexture9 *)
                                     texturedata->texture);
     if (FAILED(result)) {
-        D3D_SetError("SetTexture()", result);
-        return -1;
+        return D3D_SetError("SetTexture()", result);
     }
     if (shader) {
         result = IDirect3DDevice9_SetPixelShader(data->device, shader);
         if (FAILED(result)) {
-            D3D_SetError("SetShader()", result);
-            return -1;
+            return D3D_SetError("SetShader()", result);
         }
     }
     result =
         IDirect3DDevice9_DrawPrimitiveUP(data->device, D3DPT_TRIANGLEFAN, 2,
                                          vertices, sizeof(*vertices));
     if (FAILED(result)) {
-        D3D_SetError("DrawPrimitiveUP()", result);
-        return -1;
+        return D3D_SetError("DrawPrimitiveUP()", result);
     }
     if (shader) {
         result = IDirect3DDevice9_SetPixelShader(data->device, NULL);
         if (FAILED(result)) {
-            D3D_SetError("SetShader()", result);
-            return -1;
+            return D3D_SetError("SetShader()", result);
         }
     }
     return 0;
@@ -1314,7 +1338,7 @@ D3D_RenderCopyEx(SDL_Renderer * renderer, SDL_Texture * texture,
 
     D3D_SetBlendMode(data, texture->blendMode);
 
-    // Rotate and translate
+    /* Rotate and translate */
     ID3DXMatrixStack_Push(data->matrixStack);
     ID3DXMatrixStack_LoadIdentity(data->matrixStack);
     ID3DXMatrixStack_RotateYawPitchRoll(data->matrixStack, 0.0, 0.0, (float)(M_PI * (float) angle / 180.0f));
@@ -1333,28 +1357,24 @@ D3D_RenderCopyEx(SDL_Renderer * renderer, SDL_Texture * texture,
         IDirect3DDevice9_SetTexture(data->device, 0, (IDirect3DBaseTexture9 *)
                                     texturedata->texture);
     if (FAILED(result)) {
-        D3D_SetError("SetTexture()", result);
-        return -1;
+        return D3D_SetError("SetTexture()", result);
     }
     if (shader) {
         result = IDirect3DDevice9_SetPixelShader(data->device, shader);
         if (FAILED(result)) {
-            D3D_SetError("SetShader()", result);
-            return -1;
+            return D3D_SetError("SetShader()", result);
         }
     }
     result =
         IDirect3DDevice9_DrawPrimitiveUP(data->device, D3DPT_TRIANGLEFAN, 2,
                                          vertices, sizeof(*vertices));
     if (FAILED(result)) {
-        D3D_SetError("DrawPrimitiveUP()", result);
-        return -1;
+        return D3D_SetError("DrawPrimitiveUP()", result);
     }
     if (shader) {
         result = IDirect3DDevice9_SetPixelShader(data->device, NULL);
         if (FAILED(result)) {
-            D3D_SetError("SetShader()", result);
-            return -1;
+            return D3D_SetError("SetShader()", result);
         }
     }
     ID3DXMatrixStack_Pop(data->matrixStack);
@@ -1379,30 +1399,26 @@ D3D_RenderReadPixels(SDL_Renderer * renderer, const SDL_Rect * rect,
 
     result = IDirect3DDevice9_GetBackBuffer(data->device, 0, 0, D3DBACKBUFFER_TYPE_MONO, &backBuffer);
     if (FAILED(result)) {
-        D3D_SetError("GetBackBuffer()", result);
-        return -1;
+        return D3D_SetError("GetBackBuffer()", result);
     }
 
     result = IDirect3DSurface9_GetDesc(backBuffer, &desc);
     if (FAILED(result)) {
-        D3D_SetError("GetDesc()", result);
         IDirect3DSurface9_Release(backBuffer);
-        return -1;
+        return D3D_SetError("GetDesc()", result);
     }
 
     result = IDirect3DDevice9_CreateOffscreenPlainSurface(data->device, desc.Width, desc.Height, desc.Format, D3DPOOL_SYSTEMMEM, &surface, NULL);
     if (FAILED(result)) {
-        D3D_SetError("CreateOffscreenPlainSurface()", result);
         IDirect3DSurface9_Release(backBuffer);
-        return -1;
+        return D3D_SetError("CreateOffscreenPlainSurface()", result);
     }
 
     result = IDirect3DDevice9_GetRenderTargetData(data->device, backBuffer, surface);
     if (FAILED(result)) {
-        D3D_SetError("GetRenderTargetData()", result);
         IDirect3DSurface9_Release(surface);
         IDirect3DSurface9_Release(backBuffer);
-        return -1;
+        return D3D_SetError("GetRenderTargetData()", result);
     }
 
     d3drect.left = rect->x;
@@ -1412,10 +1428,9 @@ D3D_RenderReadPixels(SDL_Renderer * renderer, const SDL_Rect * rect,
 
     result = IDirect3DSurface9_LockRect(surface, &locked, &d3drect, D3DLOCK_READONLY);
     if (FAILED(result)) {
-        D3D_SetError("LockRect()", result);
         IDirect3DSurface9_Release(surface);
         IDirect3DSurface9_Release(backBuffer);
-        return -1;
+        return D3D_SetError("LockRect()", result);
     }
 
     SDL_ConvertPixels(rect->w, rect->h,
@@ -1476,18 +1491,22 @@ D3D_DestroyRenderer(SDL_Renderer * renderer)
     D3D_RenderData *data = (D3D_RenderData *) renderer->driverdata;
 
     if (data) {
-        // Release the render target
-        IDirect3DSurface9_Release(data->defaultRenderTarget);
+        /* Release the render target */
+        if (data->defaultRenderTarget) {
+            IDirect3DSurface9_Release(data->defaultRenderTarget);
+            data->defaultRenderTarget = NULL;
+        }
         if (data->currentRenderTarget != NULL) {
             IDirect3DSurface9_Release(data->currentRenderTarget);
             data->currentRenderTarget = NULL;
         }
-        
+
         if (data->device) {
             IDirect3DDevice9_Release(data->device);
         }
         if (data->d3d) {
             IDirect3D9_Release(data->d3d);
+            ID3DXMatrixStack_Release(data->matrixStack);
             SDL_UnloadObject(data->d3dDLL);
         }
         SDL_free(data);

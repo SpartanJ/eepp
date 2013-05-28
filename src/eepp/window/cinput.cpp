@@ -157,8 +157,8 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 			cInputFinger * Finger = GetFingerId( Event->finger.fingerId );
 
 			Finger->WriteLast();
-			Finger->x			= (Uint16)( ( (eeFloat)Event->finger.x / (eeFloat)32768 ) * (eeFloat)mWindow->GetWidth() );
-			Finger->y			= (Uint16)( ( (eeFloat)Event->finger.y / (eeFloat)32768 ) * (eeFloat)mWindow->GetHeight() );
+			Finger->x			= (Uint16)( Event->finger.x * (eeFloat)mWindow->GetWidth() );
+			Finger->y			= (Uint16)( Event->finger.y * (eeFloat)mWindow->GetHeight() );
 			Finger->pressure	= Event->finger.pressure;
 			Finger->down		= true;
 			Finger->xdelta		= Event->finger.dx;
@@ -171,8 +171,8 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 			cInputFinger * Finger = GetFingerId( Event->finger.fingerId );
 
 			Finger->WriteLast();
-			Finger->x			= (Uint16)( ( (eeFloat)Event->finger.x / (eeFloat)32768 ) * (eeFloat)mWindow->GetWidth() );
-			Finger->y			= (Uint16)( ( (eeFloat)Event->finger.y / (eeFloat)32768 ) * (eeFloat)mWindow->GetHeight() );
+			Finger->x			= (Uint16)( Event->finger.x * (eeFloat)mWindow->GetWidth() );
+			Finger->y			= (Uint16)( Event->finger.y * (eeFloat)mWindow->GetHeight() );
 			Finger->pressure	= Event->finger.pressure;
 			Finger->down		= false;
 			Finger->was_down	= true;
@@ -186,8 +186,8 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 			cInputFinger * Finger = GetFingerId( Event->finger.fingerId );
 
 			Finger->WriteLast();
-			Finger->x			= (Uint16)( ( (eeFloat)Event->finger.x / (eeFloat)32768 ) * (eeFloat)mWindow->GetWidth() );
-			Finger->y			= (Uint16)( ( (eeFloat)Event->finger.y / (eeFloat)32768 ) * (eeFloat)mWindow->GetHeight() );
+			Finger->x			= (Uint16)( Event->finger.x * (eeFloat)mWindow->GetWidth() );
+			Finger->y			= (Uint16)( Event->finger.y * (eeFloat)mWindow->GetHeight() );
 			Finger->pressure	= Event->finger.pressure;
 			Finger->down		= true;
 			Finger->xdelta		= Event->finger.dx;

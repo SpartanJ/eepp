@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -49,7 +49,7 @@ static SDL_bool s_showingMessageBox = SDL_FALSE;
         return nil;
     }
     self->clickedButtonIndex = buttonIndex;
-    
+
     return self;
 }
 
@@ -58,7 +58,7 @@ static SDL_bool s_showingMessageBox = SDL_FALSE;
     *clickedButtonIndex = buttonIndex;
 }
 
-@end // UIKit_UIAlertViewDelegate
+@end /* UIKit_UIAlertViewDelegate */
 
 
 SDL_bool
@@ -71,7 +71,7 @@ int
 UIKit_ShowMessageBox(const SDL_MessageBoxData *messageboxdata, int *buttonid)
 {
     int clicked;
-    
+
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 
     UIAlertView* alert = [[UIAlertView alloc] init];
@@ -86,13 +86,13 @@ UIKit_ShowMessageBox(const SDL_MessageBoxData *messageboxdata, int *buttonid)
         [alert addButtonWithTitle:[[NSString alloc] initWithUTF8String:buttons[i].text]];
     }
 
-    // Set up for showing the alert
+    /* Set up for showing the alert */
     clicked = messageboxdata->numbuttons;
 
     [alert show];
-    
-    // Run the main event loop until the alert has finished
-    // Note that this needs to be done on the main thread
+
+    /* Run the main event loop until the alert has finished */
+    /* Note that this needs to be done on the main thread */
     s_showingMessageBox = SDL_TRUE;
     while (clicked == messageboxdata->numbuttons) {
         [[NSRunLoop currentRunLoop] runMode:NSDefaultRunLoopMode beforeDate:[NSDate distantFuture]];
@@ -100,7 +100,7 @@ UIKit_ShowMessageBox(const SDL_MessageBoxData *messageboxdata, int *buttonid)
     s_showingMessageBox = SDL_FALSE;
 
     *buttonid = messageboxdata->buttons[clicked].buttonid;
- 
+
     [alert.delegate release];
     [alert release];
 

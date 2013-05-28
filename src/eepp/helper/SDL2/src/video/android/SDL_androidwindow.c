@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -27,12 +27,13 @@
 #include "SDL_androidvideo.h"
 #include "SDL_androidwindow.h"
 
+#include "../../core/android/SDL_android.h"
+
 int
 Android_CreateWindow(_THIS, SDL_Window * window)
 {
     if (Android_Window) {
-        SDL_SetError("Android only supports one window");
-        return -1;
+        return SDL_SetError("Android only supports one window");
     }
     Android_Window = window;
     Android_PauseSem = SDL_CreateSemaphore(0);
@@ -48,7 +49,7 @@ Android_CreateWindow(_THIS, SDL_Window * window)
     window->flags |= SDL_WINDOW_FULLSCREEN;     /* window is always fullscreen */
     window->flags &= ~SDL_WINDOW_HIDDEN;
     window->flags |= SDL_WINDOW_SHOWN;          /* only one window on Android */
-    window->flags |= SDL_WINDOW_INPUT_FOCUS;    /* always has input focus */    
+    window->flags |= SDL_WINDOW_INPUT_FOCUS;    /* always has input focus */
 
     /* One window, it always has focus */
     SDL_SetMouseFocus(window);

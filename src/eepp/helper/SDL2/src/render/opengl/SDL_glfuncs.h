@@ -1,6 +1,6 @@
 /* list of OpenGL functions sorted alphabetically
    If you need to use a GL function from the SDL video subsystem,
-   change it's entry from SDL_PROC_UNUSED to SDL_PROC and rebuild.
+   change its entry from SDL_PROC_UNUSED to SDL_PROC and rebuild.
 */
 #define SDL_PROC_UNUSED(ret,func,params)
 
@@ -152,7 +152,7 @@ SDL_PROC_UNUSED(void, glGetMaterialiv,
 SDL_PROC_UNUSED(void, glGetPixelMapfv, (GLenum map, GLfloat * values))
 SDL_PROC_UNUSED(void, glGetPixelMapuiv, (GLenum map, GLuint * values))
 SDL_PROC_UNUSED(void, glGetPixelMapusv, (GLenum map, GLushort * values))
-SDL_PROC_UNUSED(void, glGetPointerv, (GLenum pname, GLvoid * *params))
+SDL_PROC(void, glGetPointerv, (GLenum pname, GLvoid * *params))
 SDL_PROC_UNUSED(void, glGetPolygonStipple, (GLubyte * mask))
 SDL_PROC(const GLubyte *, glGetString, (GLenum name))
 SDL_PROC_UNUSED(void, glGetTexEnvfv,

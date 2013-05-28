@@ -2,7 +2,11 @@
 
 #ifdef EE_BACKEND_SDL2
 
-#include <SDL2/SDL.h>
+#if EE_PLATFORM != EE_PLATFORM_ANDROID
+	#include <SDL2/SDL.h>
+#else
+	#include <SDL.h>
+#endif
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 

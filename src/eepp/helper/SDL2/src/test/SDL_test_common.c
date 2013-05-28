@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -27,7 +27,7 @@
 #include <stdio.h>
 
 #define VIDEO_USAGE \
-"[--video driver] [--renderer driver] [--info all|video|modes|render|event] [--log all|error|system|audio|video|render|input] [--display N] [--fullscreen | --windows N] [--title title] [--icon icon.bmp] [--center | --position X,Y] [--geometry WxH] [--depth N] [--refresh R] [--vsync] [--noframe] [--resize] [--minimize] [--maximize] [--grab]"
+"[--video driver] [--renderer driver] [--gldebug] [--info all|video|modes|render|event] [--log all|error|system|audio|video|render|input] [--display N] [--fullscreen | --fullscreen-desktop | --windows N] [--title title] [--icon icon.bmp] [--center | --position X,Y] [--geometry WxH] [--min-geometry WxH] [--max-geometry WxH] [--depth N] [--refresh R] [--vsync] [--noframe] [--resize] [--minimize] [--maximize] [--grab]"
 
 #define AUDIO_USAGE \
 "[--rate N] [--format U8|S8|U16|U16LE|U16BE|S16|S16LE|S16BE] [--channels N] [--samples N]"
@@ -44,11 +44,7 @@ SDLTest_CommonCreateState(char **argv, Uint32 flags)
     /* Initialize some defaults */
     state->argv = argv;
     state->flags = flags;
-#ifdef __NDS__
-    state->window_title = "";
-#else
     state->window_title = argv[0];
-#endif
     state->window_flags = 0;
     state->window_x = SDL_WINDOWPOS_UNDEFINED;
     state->window_y = SDL_WINDOWPOS_UNDEFINED;
@@ -78,6 +74,7 @@ SDLTest_CommonCreateState(char **argv, Uint32 flags)
     state->gl_multisamplesamples = 0;
     state->gl_retained_backing = 1;
     state->gl_accelerated = -1;
+    state->gl_debug = 0;
 
     return state;
 }
@@ -86,10 +83,6 @@ int
 SDLTest_CommonArg(SDLTest_CommonState * state, int index)
 {
     char **argv = state->argv;
-
-#ifdef __NDS__
-    return 0;
-#endif
 
     if (SDL_strcasecmp(argv[index], "--video") == 0) {
         ++index;
@@ -106,6 +99,10 @@ SDLTest_CommonArg(SDLTest_CommonState * state, int index)
         }
         state->renderdriver = argv[index];
         return 2;
+    }
+    if (SDL_strcasecmp(argv[index], "--gldebug") == 0) {
+        state->gl_debug = 1;
+        return 1;
     }
     if (SDL_strcasecmp(argv[index], "--info") == 0) {
         ++index;
@@ -192,6 +189,11 @@ SDLTest_CommonArg(SDLTest_CommonState * state, int index)
         state->num_windows = 1;
         return 1;
     }
+    if (SDL_strcasecmp(argv[index], "--fullscreen-desktop") == 0) {
+        state->window_flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+        state->num_windows = 1;
+        return 1;
+    }
     if (SDL_strcasecmp(argv[index], "--windows") == 0) {
         ++index;
         if (!argv[index] || !SDL_isdigit(*argv[index])) {
@@ -259,6 +261,44 @@ SDLTest_CommonArg(SDLTest_CommonState * state, int index)
         *h++ = '\0';
         state->window_w = SDL_atoi(w);
         state->window_h = SDL_atoi(h);
+        return 2;
+    }
+    if (SDL_strcasecmp(argv[index], "--min-geometry") == 0) {
+        char *w, *h;
+        ++index;
+        if (!argv[index]) {
+            return -1;
+        }
+        w = argv[index];
+        h = argv[index];
+        while (*h && *h != 'x') {
+            ++h;
+        }
+        if (!*h) {
+            return -1;
+        }
+        *h++ = '\0';
+        state->window_minW = SDL_atoi(w);
+        state->window_minH = SDL_atoi(h);
+        return 2;
+    }
+    if (SDL_strcasecmp(argv[index], "--max-geometry") == 0) {
+        char *w, *h;
+        ++index;
+        if (!argv[index]) {
+            return -1;
+        }
+        w = argv[index];
+        h = argv[index];
+        while (*h && *h != 'x') {
+            ++h;
+        }
+        if (!*h) {
+            return -1;
+        }
+        *h++ = '\0';
+        state->window_maxW = SDL_atoi(w);
+        state->window_maxH = SDL_atoi(h);
         return 2;
     }
     if (SDL_strcasecmp(argv[index], "--depth") == 0) {
@@ -370,7 +410,7 @@ SDLTest_CommonArg(SDLTest_CommonState * state, int index)
         return -1;
     }
     if (SDL_strcmp(argv[index], "-NSDocumentRevisionsDebugMode") == 0) {
-	/* Debug flag sent by Xcode */
+    /* Debug flag sent by Xcode */
         return 2;
     }
     return 0;
@@ -621,6 +661,9 @@ SDLTest_CommonInit(SDLTest_CommonState * state)
             SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, state->gl_major_version);
             SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, state->gl_minor_version);
         }
+        if (state->gl_debug) {
+            SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
+        }
 
         if (state->verbose & VERBOSE_MODES) {
             SDL_Rect bounds;
@@ -631,7 +674,7 @@ SDLTest_CommonInit(SDLTest_CommonState * state)
             n = SDL_GetNumVideoDisplays();
             fprintf(stderr, "Number of displays: %d\n", n);
             for (i = 0; i < n; ++i) {
-                fprintf(stderr, "Display %d:\n", i);
+                fprintf(stderr, "Display %d: %s\n", i, SDL_GetDisplayName(i));
 
                 SDL_zero(bounds);
                 SDL_GetDisplayBounds(i, &bounds);
@@ -746,6 +789,12 @@ SDLTest_CommonInit(SDLTest_CommonState * state)
                         SDL_GetError());
                 return SDL_FALSE;
             }
+            if (state->window_minW || state->window_minH) {
+                SDL_SetWindowMinimumSize(state->windows[i], state->window_minW, state->window_minH);
+            }
+            if (state->window_maxW || state->window_maxH) {
+                SDL_SetWindowMaximumSize(state->windows[i], state->window_maxW, state->window_maxH);
+            }
             SDL_GetWindowSize(state->windows[i], &w, &h);
             if (!(state->window_flags & SDL_WINDOW_RESIZABLE) &&
                 (w != state->window_w || h != state->window_h)) {
@@ -851,7 +900,7 @@ SDLTest_PrintEvent(SDL_Event * event)
 {
     if (event->type == SDL_MOUSEMOTION) {
         /* Mouse motion is really spammy */
-        //return;
+        return;
     }
 
     fprintf(stderr, "SDL EVENT: ");
@@ -1056,10 +1105,33 @@ SDLTest_ScreenShot(SDL_Renderer *renderer)
     }
 }
 
+static void
+FullscreenTo(int index, int windowId)
+{
+    Uint32 flags;
+    struct SDL_Rect rect = { 0, 0, 0, 0 };
+    SDL_Window *window = SDL_GetWindowFromID(windowId);
+    if (!window) {
+        return;
+    }
+
+    SDL_GetDisplayBounds( index, &rect );
+
+    flags = SDL_GetWindowFlags(window);
+    if (flags & SDL_WINDOW_FULLSCREEN) {
+        SDL_SetWindowFullscreen( window, SDL_FALSE );
+        SDL_Delay( 15 );
+    }
+
+    SDL_SetWindowPosition( window, rect.x, rect.y );
+    SDL_SetWindowFullscreen( window, SDL_TRUE );
+}
+
 void
 SDLTest_CommonEvent(SDLTest_CommonState * state, SDL_Event * event, int *done)
 {
     int i;
+    static SDL_MouseMotionEvent lastEvent;
 
     if (state->verbose & VERBOSE_EVENT) {
         SDLTest_PrintEvent(event);
@@ -1087,12 +1159,12 @@ SDLTest_CommonEvent(SDLTest_CommonState * state, SDL_Event * event, int *done)
             }
             break;
         case SDL_WINDOWEVENT_CLOSE:
-			{
+            {
                 SDL_Window *window = SDL_GetWindowFromID(event->window.windowID);
                 if (window) {
-					SDL_DestroyWindow(window);
-				}
-			}
+                    SDL_DestroyWindow(window);
+                }
+            }
             break;
         }
         break;
@@ -1137,6 +1209,26 @@ SDLTest_CommonEvent(SDLTest_CommonState * state, SDL_Event * event, int *done)
                 /* Ctrl-C copy awesome text! */
                 SDL_SetClipboardText("SDL rocks!\nYou know it!");
                 printf("Copied text to clipboard\n");
+            }
+            if (event->key.keysym.mod & KMOD_ALT) {
+                /* Alt-C toggle a render clip rectangle */
+                for (i = 0; i < state->num_windows; ++i) {
+                    int w, h;
+                    if (state->renderers[i]) {
+                        SDL_Rect clip;
+                        SDL_GetWindowSize(state->windows[i], &w, &h);
+                        SDL_RenderGetClipRect(state->renderers[i], &clip);
+                        if (SDL_RectEmpty(&clip)) {
+                            clip.x = w/4;
+                            clip.y = h/4;
+                            clip.w = w/2;
+                            clip.h = h/2;
+                            SDL_RenderSetClipRect(state->renderers[i], &clip);
+                        } else {
+                            SDL_RenderSetClipRect(state->renderers[i], NULL);
+                        }
+                    }
+                }
             }
             break;
         case SDLK_v:
@@ -1214,21 +1306,43 @@ SDLTest_CommonEvent(SDLTest_CommonState * state, SDL_Event * event, int *done)
                 }
             }
             break;
-        case SDLK_1:
+        case SDLK_0:
             if (event->key.keysym.mod & KMOD_CTRL) {
                 SDL_Window *window = SDL_GetWindowFromID(event->key.windowID);
                 SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Test Message", "You're awesome!", window);
             }
             break;
+        case SDLK_1:
+            if (event->key.keysym.mod & KMOD_CTRL) {
+                FullscreenTo(0, event->key.windowID);
+            }
+            break;
+        case SDLK_2:
+            if (event->key.keysym.mod & KMOD_CTRL) {
+                FullscreenTo(1, event->key.windowID);
+            }
+            break;
         case SDLK_ESCAPE:
             *done = 1;
             break;
+        case SDLK_SPACE:
+        {
+            char message[256];
+            SDL_Window *window = SDL_GetWindowFromID(event->key.windowID);
+
+            SDL_snprintf(message, sizeof(message), "(%i, %i), rel (%i, %i)\n", lastEvent.x, lastEvent.y, lastEvent.xrel, lastEvent.yrel);
+            SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_INFORMATION, "Last mouse position", message, window);
+            break;
+        }
         default:
             break;
         }
         break;
     case SDL_QUIT:
         *done = 1;
+        break;
+    case SDL_MOUSEMOTION:
+        lastEvent = event->motion;
         break;
     }
 }

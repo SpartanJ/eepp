@@ -13,14 +13,14 @@ class cInputFinger {
 		cInputFinger();
 		
 		Int64 id;
-		Uint16 x;
-		Uint16 y;
-		Uint16 pressure;
-		Uint16 xdelta;
-		Uint16 ydelta;
-		Uint16 last_x;
-		Uint16 last_y;
-		Uint16 last_pressure;
+		Int32 x;
+		Int32 y;
+		float pressure;
+		float xdelta;
+		float ydelta;
+		Int32 last_x;
+		Int32 last_y;
+		float last_pressure;
 		bool down;
 		bool was_down;
 

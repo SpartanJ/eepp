@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -38,6 +38,20 @@
 
 #include <errno.h>
 
+SDL_COMPILE_TIME_ASSERT(iconv_t, sizeof (iconv_t) <= sizeof (SDL_iconv_t));
+
+SDL_iconv_t
+SDL_iconv_open(const char *tocode, const char *fromcode)
+{
+    return (SDL_iconv_t) ((size_t) iconv_open(tocode, fromcode));
+}
+
+int
+SDL_iconv_close(SDL_iconv_t cd)
+{
+    return iconv_close((iconv_t) ((size_t) cd));
+}
+
 size_t
 SDL_iconv(SDL_iconv_t cd,
           const char **inbuf, size_t * inbytesleft,
@@ -45,9 +59,9 @@ SDL_iconv(SDL_iconv_t cd,
 {
     size_t retCode;
 #ifdef ICONV_INBUF_NONCONST
-    retCode = iconv(cd, (char **) inbuf, inbytesleft, outbuf, outbytesleft);
+    retCode = iconv((iconv_t) ((size_t) cd), (char **) inbuf, inbytesleft, outbuf, outbytesleft);
 #else
-    retCode = iconv(cd, inbuf, inbytesleft, outbuf, outbytesleft);
+    retCode = iconv((iconv_t) ((size_t) cd), inbuf, inbytesleft, outbuf, outbytesleft);
 #endif
     if (retCode == (size_t) - 1) {
         switch (errno) {

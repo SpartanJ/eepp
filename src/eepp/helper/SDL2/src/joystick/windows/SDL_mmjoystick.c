@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -33,14 +33,14 @@
 #include "../SDL_sysjoystick.h"
 #include "../SDL_joystick_c.h"
 
-#define MAX_JOYSTICKS	16
-#define MAX_AXES	6       /* each joystick can have up to 6 axes */
-#define MAX_BUTTONS	32      /* and 32 buttons                      */
-#define AXIS_MIN	-32768  /* minimum value for axis coordinate */
-#define AXIS_MAX	32767   /* maximum value for axis coordinate */
+#define MAX_JOYSTICKS   16
+#define MAX_AXES    6       /* each joystick can have up to 6 axes */
+#define MAX_BUTTONS 32      /* and 32 buttons                      */
+#define AXIS_MIN    -32768  /* minimum value for axis coordinate */
+#define AXIS_MAX    32767   /* maximum value for axis coordinate */
 /* limit axis to 256 possible positions to filter out noise */
 #define JOY_AXIS_THRESHOLD      (((AXIS_MAX)-(AXIS_MIN))/256)
-#define JOY_BUTTON_FLAG(n)	(1<<n)
+#define JOY_BUTTON_FLAG(n)  (1<<n)
 
 
 /* array to hold joystick ID values */
@@ -244,8 +244,7 @@ SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index)
     joystick->hwdata =
         (struct joystick_hwdata *) SDL_malloc(sizeof(*joystick->hwdata));
     if (joystick->hwdata == NULL) {
-        SDL_OutOfMemory();
-        return (-1);
+        return SDL_OutOfMemory();
     }
     SDL_memset(joystick->hwdata, 0, sizeof(*joystick->hwdata));
 
@@ -408,7 +407,7 @@ SDL_SYS_JoystickQuit(void)
 SDL_JoystickGUID SDL_SYS_JoystickGetDeviceGUID( int device_index )
 {
     SDL_JoystickGUID guid;
-    // the GUID is just the first 16 chars of the name for now
+    /* the GUID is just the first 16 chars of the name for now */
     const char *name = SDL_SYS_JoystickNameForDeviceIndex( device_index );
     SDL_zero( guid );
     SDL_memcpy( &guid, name, SDL_min( sizeof(guid), SDL_strlen( name ) ) );
@@ -418,7 +417,7 @@ SDL_JoystickGUID SDL_SYS_JoystickGetDeviceGUID( int device_index )
 SDL_JoystickGUID SDL_SYS_JoystickGetGUID(SDL_Joystick * joystick)
 {
     SDL_JoystickGUID guid;
-    // the GUID is just the first 16 chars of the name for now
+    /* the GUID is just the first 16 chars of the name for now */
     const char *name = joystick->name;
     SDL_zero( guid );
     SDL_memcpy( &guid, name, SDL_min( sizeof(guid), SDL_strlen( name ) ) );

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -117,7 +117,7 @@ static void SDL_IdleTimerDisabledChanged(const char *name, const char *oldValue,
     if (self->splashLandscape) {
         [self->splashLandscape retain];
     }
- 
+
     [self updateSplashImage:[[UIApplication sharedApplication] statusBarOrientation]];
 
     return self;
@@ -126,8 +126,8 @@ static void SDL_IdleTimerDisabledChanged(const char *name, const char *oldValue,
 - (NSUInteger)supportedInterfaceOrientations
 {
     NSUInteger orientationMask = UIInterfaceOrientationMaskAll;
-    
-    // Don't allow upside-down orientation on the phone, so answering calls is in the natural orientation
+
+    /* Don't allow upside-down orientation on the phone, so answering calls is in the natural orientation */
     if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
         orientationMask &= ~UIInterfaceOrientationMaskPortraitUpsideDown;
     }
@@ -148,7 +148,7 @@ static void SDL_IdleTimerDisabledChanged(const char *name, const char *oldValue,
 - (void)updateSplashImage:(UIInterfaceOrientation)interfaceOrientation
 {
     UIImage *image;
-    
+
     if (UIInterfaceOrientationIsLandscape(interfaceOrientation)) {
         image = self->splashLandscape;
     } else {
@@ -199,9 +199,10 @@ static void SDL_IdleTimerDisabledChanged(const char *name, const char *oldValue,
     }
 
     /* exit, passing the return status from the user's application */
-    // We don't actually exit to support applications that do setup in
-    // their main function and then allow the Cocoa event loop to run.
-    // exit(exit_status);
+    /* We don't actually exit to support applications that do setup in
+     * their main function and then allow the Cocoa event loop to run.
+     */
+    /* exit(exit_status); */
 }
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
@@ -228,42 +229,48 @@ static void SDL_IdleTimerDisabledChanged(const char *name, const char *oldValue,
 
 - (void)applicationWillTerminate:(UIApplication *)application
 {
-    SDL_SendQuit();
-     /* hack to prevent automatic termination.  See SDL_uikitevents.m for details */
-    longjmp(*(jump_env()), 1);
+    SDL_SendAppEvent(SDL_APP_TERMINATING);
+}
+
+- (void)applicationDidReceiveMemoryWarning:(UIApplication *)application
+{
+    SDL_SendAppEvent(SDL_APP_LOWMEMORY);
 }
 
 - (void) applicationWillResignActive:(UIApplication*)application
 {
-    //NSLog(@"%@", NSStringFromSelector(_cmd));
-
-    // Send every window on every screen a MINIMIZED event.
     SDL_VideoDevice *_this = SDL_GetVideoDevice();
-    if (!_this) {
-        return;
+    if (_this) {
+        SDL_Window *window;
+        for (window = _this->windows; window != nil; window = window->next) {
+            SDL_SendWindowEvent(window, SDL_WINDOWEVENT_FOCUS_LOST, 0, 0);
+            SDL_SendWindowEvent(window, SDL_WINDOWEVENT_MINIMIZED, 0, 0);
+        }
     }
+    SDL_SendAppEvent(SDL_APP_WILLENTERBACKGROUND);
+}
 
-    SDL_Window *window;
-    for (window = _this->windows; window != nil; window = window->next) {
-        SDL_SendWindowEvent(window, SDL_WINDOWEVENT_FOCUS_LOST, 0, 0);
-        SDL_SendWindowEvent(window, SDL_WINDOWEVENT_MINIMIZED, 0, 0);
-    }
+- (void) applicationDidEnterBackground:(UIApplication*)application
+{
+    SDL_SendAppEvent(SDL_APP_DIDENTERBACKGROUND);
+}
+
+- (void) applicationWillEnterForeground:(UIApplication*)application
+{
+    SDL_SendAppEvent(SDL_APP_WILLENTERFOREGROUND);
 }
 
 - (void) applicationDidBecomeActive:(UIApplication*)application
 {
-    //NSLog(@"%@", NSStringFromSelector(_cmd));
+    SDL_SendAppEvent(SDL_APP_DIDENTERFOREGROUND);
 
-    // Send every window on every screen a RESTORED event.
     SDL_VideoDevice *_this = SDL_GetVideoDevice();
-    if (!_this) {
-        return;
-    }
-
-    SDL_Window *window;
-    for (window = _this->windows; window != nil; window = window->next) {
-        SDL_SendWindowEvent(window, SDL_WINDOWEVENT_FOCUS_GAINED, 0, 0);
-        SDL_SendWindowEvent(window, SDL_WINDOWEVENT_RESTORED, 0, 0);
+    if (_this) {
+        SDL_Window *window;
+        for (window = _this->windows; window != nil; window = window->next) {
+            SDL_SendWindowEvent(window, SDL_WINDOWEVENT_FOCUS_GAINED, 0, 0);
+            SDL_SendWindowEvent(window, SDL_WINDOWEVENT_RESTORED, 0, 0);
+        }
     }
 }
 

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -59,8 +59,7 @@ X11_SetClipboardText(_THIS, const char *text)
     /* Get the SDL window that will own the selection */
     window = GetWindow(_this);
     if (window == None) {
-        SDL_SetError("Couldn't find a window to own the selection");
-        return -1;
+        return SDL_SetError("Couldn't find a window to own the selection");
     }
 
     /* Save the selection on the root window */
@@ -140,7 +139,7 @@ X11_GetClipboardText(_THIS)
     if (!text) {
         text = SDL_strdup("");
     }
-    
+
     return text;
 }
 
@@ -152,7 +151,7 @@ X11_HasClipboardText(_THIS)
     if (text) {
         result = (SDL_strlen(text)>0) ? SDL_TRUE : SDL_FALSE;
         SDL_free(text);
-    }    
+    }
     return result;
 }
 

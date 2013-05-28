@@ -10,7 +10,11 @@
 			#define EE_BACKEND_SDL2
 		#endif
 
-		#include <SDL2/SDL.h>
+		#if EE_PLATFORM != EE_PLATFORM_ANDROID
+			#include <SDL2/SDL.h>
+		#else
+			#include <SDL.h>
+		#endif
 	#else
 		#ifndef EE_BACKEND_SDL_1_2
 			#define EE_BACKEND_SDL_1_2

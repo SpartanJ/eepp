@@ -2,6 +2,12 @@
 
 #ifdef EE_BACKEND_SDL2
 
+#if EE_PLATFORM != EE_PLATFORM_ANDROID
+	#include <SDL2/SDL_revision.h>
+#else
+	#include <SDL_revision.h>
+#endif
+
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 cJoystickSDL::cJoystickSDL( const Uint32& index ) :
@@ -19,9 +25,12 @@ void cJoystickSDL::Open() {
 	mJoystick 	= SDL_JoystickOpen( mIndex );
 
 	if ( NULL != mJoystick ) {
-		// @TODO SDL2 changed the API, i'll wait until the new changes became stable
-		//mName 		= SDL_JoystickName( mJoystick );
-		mName		= std::string( "USB Joysick " ) + String::ToStr( mIndex );
+		#if defined(SDL_REVISION_NUMBER) && SDL_REVISION_NUMBER >= 7236
+			mName 		= SDL_JoystickName( mJoystick );
+		#else
+			mName		= std::string( "USB Joysick " ) + String::ToStr( mIndex );
+		#endif
+
 		mHats		= SDL_JoystickNumHats( mJoystick );
 		mButtons	= eemin( SDL_JoystickNumButtons( mJoystick ), 32 );
 		mAxes		= SDL_JoystickNumAxes( mJoystick );

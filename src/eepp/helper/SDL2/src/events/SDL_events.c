@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2012 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -53,7 +53,7 @@ static SDL_DisabledEventBlock *SDL_disabled_events[256];
 static Uint32 SDL_userevents = SDL_USEREVENT;
 
 /* Private data -- event queue */
-#define MAXEVENTS	128
+#define MAXEVENTS   128
 static struct
 {
     SDL_mutex *lock;
@@ -70,9 +70,9 @@ static __inline__ SDL_bool
 SDL_ShouldPollJoystick()
 {
 #if !SDL_JOYSTICK_DISABLED
-    if (SDL_PrivateJoystickNeedsPolling() &&
-        (!SDL_disabled_events[SDL_JOYAXISMOTION >> 8] ||
-         SDL_JoystickEventState(SDL_QUERY))) {
+    if ((!SDL_disabled_events[SDL_JOYAXISMOTION >> 8] ||
+         SDL_JoystickEventState(SDL_QUERY)) &&
+        SDL_PrivateJoystickNeedsPolling()) {
         return SDL_TRUE;
     }
 #endif
@@ -111,6 +111,7 @@ SDL_StopEventLoop(void)
         SDL_event_watchers = tmp->next;
         SDL_free(tmp);
     }
+    SDL_EventOK = NULL;
 }
 
 /* This function (and associated calls) may be called more than once */
@@ -123,12 +124,6 @@ SDL_StartEventLoop(void)
        FIXME: Does this introduce any other bugs with events at startup?
      */
 
-    /* No filter to start with, process most event types */
-    SDL_EventOK = NULL;
-    SDL_EventState(SDL_TEXTINPUT, SDL_DISABLE);
-    SDL_EventState(SDL_TEXTEDITING, SDL_DISABLE);
-    SDL_EventState(SDL_SYSWMEVENT, SDL_DISABLE);
-
     /* Create the lock and set ourselves active */
 #if !SDL_THREADS_DISABLED
     if (!SDL_EventQ.lock) {
@@ -138,6 +133,12 @@ SDL_StartEventLoop(void)
         return (-1);
     }
 #endif /* !SDL_THREADS_DISABLED */
+
+    /* Process most event types */
+    SDL_EventState(SDL_TEXTINPUT, SDL_DISABLE);
+    SDL_EventState(SDL_TEXTEDITING, SDL_DISABLE);
+    SDL_EventState(SDL_SYSWMEVENT, SDL_DISABLE);
+
     SDL_EventQ.active = 1;
 
     return (0);
@@ -212,7 +213,7 @@ SDL_PeepEvents(SDL_Event * events, int numevents, SDL_eventaction action,
     }
     /* Lock the event queue */
     used = 0;
-    if (!SDL_EventQ.lock || SDL_mutexP(SDL_EventQ.lock) == 0) {
+    if (!SDL_EventQ.lock || SDL_LockMutex(SDL_EventQ.lock) == 0) {
         if (action == SDL_ADDEVENT) {
             for (i = 0; i < numevents; ++i) {
                 used += SDL_AddEvent(&events[i]);
@@ -242,10 +243,9 @@ SDL_PeepEvents(SDL_Event * events, int numevents, SDL_eventaction action,
                 }
             }
         }
-        SDL_mutexV(SDL_EventQ.lock);
+        SDL_UnlockMutex(SDL_EventQ.lock);
     } else {
-        SDL_SetError("Couldn't lock event queue");
-        used = -1;
+        return SDL_SetError("Couldn't lock event queue");
     }
     return (used);
 }
@@ -285,7 +285,7 @@ SDL_FlushEvents(Uint32 minType, Uint32 maxType)
 #endif
 
     /* Lock the event queue */
-    if (SDL_mutexP(SDL_EventQ.lock) == 0) {
+    if (SDL_LockMutex(SDL_EventQ.lock) == 0) {
         int spot = SDL_EventQ.head;
         while (spot != SDL_EventQ.tail) {
             Uint32 type = SDL_EventQ.event[spot].type;
@@ -295,7 +295,7 @@ SDL_FlushEvents(Uint32 minType, Uint32 maxType)
                 spot = (spot + 1) % MAXEVENTS;
             }
         }
-        SDL_mutexV(SDL_EventQ.lock);
+        SDL_UnlockMutex(SDL_EventQ.lock);
     }
 }
 
@@ -365,7 +365,9 @@ int
 SDL_PushEvent(SDL_Event * event)
 {
     SDL_EventWatcher *curr;
-    event->window.timestamp = SDL_GetTicks();
+
+    event->common.timestamp = SDL_GetTicks();
+
     if (SDL_EventOK && !SDL_EventOK(SDL_EventOKParam, event)) {
         return 0;
     }
@@ -386,12 +388,11 @@ SDL_PushEvent(SDL_Event * event)
 void
 SDL_SetEventFilter(SDL_EventFilter filter, void *userdata)
 {
-    SDL_Event bitbucket;
-
     /* Set filter and discard pending events */
-    SDL_EventOK = filter;
+    SDL_EventOK = NULL;
+    SDL_FlushEvents(SDL_FIRSTEVENT, SDL_LASTEVENT);
     SDL_EventOKParam = userdata;
-    while (SDL_PollEvent(&bitbucket) > 0);
+    SDL_EventOK = filter;
 }
 
 SDL_bool
@@ -446,7 +447,7 @@ SDL_DelEventWatch(SDL_EventFilter filter, void *userdata)
 void
 SDL_FilterEvents(SDL_EventFilter filter, void *userdata)
 {
-    if (SDL_mutexP(SDL_EventQ.lock) == 0) {
+    if (SDL_LockMutex(SDL_EventQ.lock) == 0) {
         int spot;
 
         spot = SDL_EventQ.head;
@@ -458,7 +459,7 @@ SDL_FilterEvents(SDL_EventFilter filter, void *userdata)
             }
         }
     }
-    SDL_mutexV(SDL_EventQ.lock);
+    SDL_UnlockMutex(SDL_EventQ.lock);
 }
 
 Uint8
@@ -516,8 +517,20 @@ SDL_RegisterEvents(int numevents)
     return event_base;
 }
 
-/* This is a generic event handler.
- */
+int
+SDL_SendAppEvent(SDL_EventType eventType)
+{
+    int posted;
+
+    posted = 0;
+    if (SDL_GetEventState(eventType) == SDL_ENABLE) {
+        SDL_Event event;
+        event.type = eventType;
+        posted = (SDL_PushEvent(&event) > 0);
+    }
+    return (posted);
+}
+
 int
 SDL_SendSysWMEvent(SDL_SysWMmsg * message)
 {
