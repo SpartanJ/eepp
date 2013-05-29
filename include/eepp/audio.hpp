@@ -1,10 +1,8 @@
 #ifndef EEPP_AUDIO_HPP
 #define EEPP_AUDIO_HPP
 
-#include <eepp/audio/openal.hpp>
 #include <eepp/audio/caudiodevice.hpp>
 #include <eepp/audio/caudiolistener.hpp>
-#include <eepp/audio/csoundfile.hpp>
 #include <eepp/audio/csound.hpp>
 #include <eepp/audio/csoundbuffer.hpp>
 #include <eepp/audio/csoundstream.hpp>

@@ -26,46 +26,49 @@ void playSound() {
 
 /// Play a music
 void playMusic() {
-    // Load an ogg music file
+	// Load an ogg music file
 	cMusic music;
 
 	if (!music.OpenFromFile( AppPath + "assets/sounds/music.ogg" ) )
-        return;
+		return;
 
-    // Display music informations
+	// Display music informations
 	std::cout << "music.ogg :" << std::endl;
 	std::cout << " " << music.GetDuration()			<< " seconds"       << std::endl;
 	std::cout << " " << music.GetSampleRate()		<< " samples / sec" << std::endl;
 	std::cout << " " << music.GetChannelCount()		<< " channels"      << std::endl;
 
-    // Play it
+	// Play it
 	music.Play();
 
-    // Loop while the music is playing
+	// Loop while the music is playing
 	while ( music.State() == cSound::Playing ) {
-        // Leave some CPU time for other processes
+		// Leave some CPU time for other processes
 		Sys::Sleep( 100 );
 
-        // Display the playing position
+		// Display the playing position
 		std::cout << "\rPlaying... " << music.PlayingOffset() << " sec   ";
-        std::cout << std::flush;
-    }
+		std::cout << std::flush;
+	}
 
-    std::cout << std::endl;
+	std::cout << std::endl;
 }
 
 /// Entry point of application
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
-    // Play a sound
-    playSound();
+	// Play a sound
+	playSound();
 
-    // Play a music
+	// Play a music
 	playMusic();
 
-    // Wait until the user presses 'enter' key
-    std::cout << "Press enter to exit..." << std::endl;
-    std::cin.ignore(10000, '\n');
+	// Wait until the user presses 'enter' key
+	std::cout << "Press enter to exit..." << std::endl;
+	std::cin.ignore(10000, '\n');
 
-    return EXIT_SUCCESS;
+	// If was compiled in debug mode it will print the memory manager report
+	EE::MemoryManager::ShowResults();
+
+	return EXIT_SUCCESS;
 }

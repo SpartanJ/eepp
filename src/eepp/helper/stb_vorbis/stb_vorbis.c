@@ -484,7 +484,7 @@ extern int my_prof(int slot);
 //#define stb_prof my_prof
 
 #ifndef stb_prof
-#define stb_prof(x)  0
+#define stb_prof(x)  //x
 #endif
 
 #if defined(STB_VORBIS_NO_PUSHDATA_API)
@@ -1143,9 +1143,10 @@ static int next_segment(vorb *f)
 
 static int get8_packet_raw(vorb *f)
 {
-   if (!f->bytes_in_seg)
+   if (!f->bytes_in_seg) {
       if (f->last_seg) return EOP;
       else if (!next_segment(f)) return EOP;
+   }
    assert(f->bytes_in_seg > 0);
    --f->bytes_in_seg;
    ++f->packet_bytes;
@@ -1194,14 +1195,6 @@ static uint32 get_bits(vorb *f, int n)
    f->acc >>= n;
    f->valid_bits -= n;
    return z;
-}
-
-static int32 get_bits_signed(vorb *f, int n)
-{
-   uint32 z = get_bits(f, n);
-   if (z & (1 << (n-1)))
-      z += ~((1 << n) - 1);
-   return (int32) z;
 }
 
 // @OPTIMIZE: primary accumulator for huffman
@@ -1285,23 +1278,6 @@ static int codebook_decode_scalar_raw(vorb *f, Codebook *c)
    error(f, VORBIS_invalid_stream);
    f->valid_bits = 0;
    return -1;
-}
-
-static int codebook_decode_scalar(vorb *f, Codebook *c)
-{
-   int i;
-   if (f->valid_bits < STB_VORBIS_FAST_HUFFMAN_LENGTH)
-      prep_huffman(f);
-   // fast huffman table lookup
-   i = f->acc & FAST_HUFFMAN_TABLE_MASK;
-   i = c->fast_huffman[i];
-   if (i >= 0) {
-      f->acc >>= c->codeword_lengths[i];
-      f->valid_bits -= c->codeword_lengths[i];
-      if (f->valid_bits < 0) { f->valid_bits = 0; return -1; }
-      return i;
-   }
-   return codebook_decode_scalar_raw(f,c);
 }
 
 #ifndef STB_VORBIS_NO_INLINE_DECODE
@@ -1770,7 +1746,6 @@ static void decode_residue(vorb *f, float *residue_buffers[], int ch, int n, int
          memset(residue_buffers[i], 0, sizeof(float) * n);
 
    if (rtype == 2 && ch != 1) {
-      int len = ch * n;
       for (j=0; j < ch; ++j)
          if (!do_not_decode[j])
             break;
@@ -2024,7 +1999,7 @@ void dct_iv_slow(float *buffer, int n)
    float mcos[16384];
    float x[2048];
    int i,j;
-   int n2 = n >> 1, nmask = (n << 3) - 1;
+   int nmask = (n << 3) - 1;
    memcpy(x, buffer, sizeof(*x) * n);
    for (i=0; i < 8*n; ++i)
       mcos[i] = (float) cos(M_PI / 4 * i / n);
@@ -2276,7 +2251,6 @@ static __forceinline void iter_54(float *z)
 
 static void imdct_step3_inner_s_loop_ld654(int n, float *e, int i_off, float *A, int base_n)
 {
-   int k_off = -8;
    int a_off = base_n >> 3;
    float A2 = A[0+a_off];
    float *z = e + i_off;
@@ -2322,7 +2296,7 @@ static void imdct_step3_inner_s_loop_ld654(int n, float *e, int i_off, float *A,
 static void inverse_mdct(float *buffer, int n, vorb *f, int blocktype)
 {
    int n2 = n >> 1, n4 = n >> 2, n8 = n >> 3, l;
-   int n3_4 = n - n4, ld;
+   int ld;
    // @OPTIMIZE: reduce register pressure by using fewer variables?
    int save_point = temp_alloc_save(f);
    float *buf2 = (float *) temp_alloc(f, n2 * sizeof(*buf2));
@@ -2856,12 +2830,10 @@ static int vorbis_decode_packet_rest(vorb *f, int *len, Mode *m, int left_start,
    int i,j,k,n,n2;
    int zero_channel[256];
    int really_zero_channel[256];
-   int window_center;
 
 // WINDOWING
 
    n = f->blocksize[m->blockflag];
-   window_center = n >> 1;
 
    map = &f->mapping[m->mapping];
 
@@ -2976,7 +2948,7 @@ static int vorbis_decode_packet_rest(vorb *f, int *len, Mode *m, int left_start,
 // RESIDUE DECODE
    for (i=0; i < map->submaps; ++i) {
       float *residue_buffers[STB_VORBIS_MAX_CHANNELS];
-      int r,t;
+	  int r;
       uint8 do_not_decode[256];
       int ch = 0;
       for (j=0; j < f->channels; ++j) {
@@ -2991,8 +2963,7 @@ static int vorbis_decode_packet_rest(vorb *f, int *len, Mode *m, int left_start,
             ++ch;
          }
       }
-      r = map->submap_residue[i];
-      t = f->residue_types[r];
+	  r = map->submap_residue[i];
       decode_residue(f, residue_buffers, ch, n2, r, do_not_decode);
    }
 
@@ -3586,7 +3557,7 @@ static int start_decoder(vorb *f)
             g->sorted_order[j] = (uint8) p[j].y;
          // precompute the neighbors
          for (j=2; j < g->values; ++j) {
-            int low,hi;
+			int low=0,hi=0;
             neighbors(g->Xlist, j, &low,&hi);
             g->neighbors[j][0] = low;
             g->neighbors[j][1] = hi;
@@ -4149,11 +4120,12 @@ static uint32 vorbis_find_page(stb_vorbis *f, uint32 *end, uint32 *last)
                // invalid-but-useful files?
                if (end)
                   *end = stb_vorbis_get_file_offset(f);
-               if (last)
+			   if (last) {
                   if (header[5] & 0x04)
                      *last = 1;
                   else
-                     *last = 0;
+					 *last = 0;
+			   }
                set_file_offset(f, retry_loc-1);
                return 1;
             }
@@ -4186,7 +4158,7 @@ static int vorbis_analyze_page(stb_vorbis *f, ProbedPage *z)
 {
    uint8 header[27], lacing[255];
    uint8 packet_type[255];
-   int num_packet, packet_start, previous =0;
+   int num_packet, packet_start;
    int i,len;
    uint32 samples;
 
@@ -4227,18 +4199,15 @@ static int vorbis_analyze_page(stb_vorbis *f, ProbedPage *z)
 
    for (i=0; i < header[26]; ++i) {
       if (packet_start) {
-         uint8 n,b,m;
+		 uint8 n,b;
          if (lacing[i] == 0) goto bail; // trying to read from zero-length packet
          n = get8(f);
          // if bottom bit is non-zero, we've got corruption
          if (n & 1) goto bail;
          n >>= 1;
          b = ilog(f->mode_count-1);
-         m = n >> b;
          n &= (1 << b)-1;
          if (n >= f->mode_count) goto bail;
-         if (num_packet == 0 && f->mode_config[n].blockflag)
-            previous = (m & 1);
          packet_type[num_packet++] = f->mode_config[n].blockflag;
          skip(f, lacing[i]-1);
       } else
@@ -4769,7 +4738,6 @@ static void compute_samples(int mask, short *output, int num_c, float **data, in
    }
 }
 
-static int channel_selector[3][2] = { {0}, {PLAYBACK_MONO}, {PLAYBACK_LEFT, PLAYBACK_RIGHT} };
 static void compute_stereo_samples(short *output, int num_c, float **data, int d_offset, int len)
 {
    #define BUFFER_SIZE  32

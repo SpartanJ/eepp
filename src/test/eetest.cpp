@@ -90,7 +90,7 @@ void cEETest::Init() {
 		if ( mMusEnabled ) {
 			Mus = eeNew( cMusic, () );
 
-			if ( Mus->OpenFromPack( PAK, "music.ogg" ) ) {
+			if ( Mus->OpenFromFile( MyPath + "sounds/music.ogg" ) ) {
 				Mus->Loop( true );
 				Mus->Play();
 			}
