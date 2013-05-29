@@ -48,7 +48,22 @@ EE_SAVE_TYPE cImage::ExtensionToSaveType( const std::string& Extension ) {
 }
 
 bool cImage::GetInfo( const std::string& path, int * width, int * height, int * channels ) {
-	return stbi_info( path.c_str(), width, height, channels ) != 0;
+	bool res = stbi_info( path.c_str(), width, height, channels ) != 0;
+
+	if ( !res && cPackManager::instance()->FallbackToPacks() ) {
+		std::string npath( path );
+		cPack * tPack = cPackManager::instance()->Exists( npath );
+
+		if ( NULL != tPack ) {
+			SafeDataPointer PData;
+
+			tPack->ExtractFileToMemory( npath, PData );
+
+			res = stbi_info_from_memory( PData.Data, PData.DataSize, width, height, channels );
+		}
+	}
+
+	return res;
 }
 
 bool cImage::IsImage( const std::string& path ) {

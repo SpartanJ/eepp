@@ -52,7 +52,7 @@ void cEETest::Init() {
 	if ( NULL != mWindow && mWindow->Created() ) {
 		SetScreen( StartScreen );
 
-		mWindow->Caption( "EE++ Test Application" );
+		mWindow->Caption( "eepp - Test Application" );
 
 		TF = cTextureFactory::instance();
 		TF->Allocate(40);
@@ -138,8 +138,8 @@ void cEETest::CreateUIThemeTextureAtlas() {
 	return;
 	#endif
 
-	std::string tgpath( MyPath + "uithemeta/uitheme" );
-	std::string Path( MyPath + "uitheme" );
+	std::string tgpath( MyPath + "ui/uitheme" );
+	std::string Path( MyPath + "ui/uitheme" );
 
 	if ( !FileSystem::FileExists( tgpath + EE_TEXTURE_ATLAS_EXTENSION ) ) {
 		cTexturePacker tp( 256, 256, true, 2 );
