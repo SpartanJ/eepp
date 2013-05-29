@@ -135,6 +135,10 @@ cImage::cImage( std::string Path, const eeUint& forceChannels ) :
 	cPack * tPack = NULL;
 	Uint8 * data = stbi_load( Path.c_str(), &w, &h, &c, mChannels );
 
+	if ( NULL == data ) {
+		data = stbi_load( ( Sys::GetProcessPath() + Path ).c_str(), &w, &h, &c, mChannels );
+	}
+
 	if ( NULL != data ) {
 		mPixels		= data;
 		mWidth		= (eeUint)w;
@@ -155,7 +159,7 @@ cImage::cImage( std::string Path, const eeUint& forceChannels ) :
 			reason = ", reason: " + std::string( stbi_failure_reason() );
 		}
 
-		cLog::instance()->Write( "Failed to load image" + reason );
+		cLog::instance()->Write( "Failed to load image " + Path + reason );
 	}
 }
 
@@ -197,7 +201,7 @@ void cImage::LoadFromPack( cPack * Pack, const std::string& FilePackPath ) {
 
 			mLoadedFromStbi = true;
 		} else {
-			cLog::instance()->Write( "Failed to load image, reason: " + std::string( stbi_failure_reason() ) );
+			cLog::instance()->Write( "Failed to load image " + FilePackPath + ", reason: " + std::string( stbi_failure_reason() ) );
 		}
 	} else {
 		cLog::instance()->Write( "Failed to load image " + FilePackPath + " from pack." );

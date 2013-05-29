@@ -424,18 +424,13 @@ bool cWindowAl::Icon( const std::string& Path ) {
 		return false;
 	}
 
-	cImage * Img = eeNew( cImage, ( Path ) );
+	cImage Img( Path );
 
-	if ( NULL == Img->GetPixelsPtr() ) {
-		eeSAFE_DELETE( Img );
-		Img = eeNew( cImage, ( Sys::GetProcessPath() + Path ) );
-	}
-
-	if ( NULL != Img->GetPixelsPtr() ) {
-		const Uint8 * Ptr = Img->GetPixelsPtr();
-		Int32 W = Img->Width();
-		Int32 H = Img->Height();
-		c = Img->Channels();
+	if ( NULL != Img.GetPixelsPtr() ) {
+		const Uint8 * Ptr = Img.GetPixelsPtr();
+		Int32 W = Img.Width();
+		Int32 H = Img.Height();
+		c = Img.Channels();
 
 		if ( ( W  % 8 ) == 0 && ( H % 8 ) == 0 ) {
 			int nbfl = al_get_new_bitmap_flags();
@@ -475,13 +470,9 @@ bool cWindowAl::Icon( const std::string& Path ) {
 
 			mWindow.WindowConfig.Icon 	= Path;
 
-			eeSAFE_DELETE( Img );
-
 			return true;
 		}
 	}
-
-	eeSAFE_DELETE( Img );
 
 	return false;
 }

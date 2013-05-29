@@ -124,16 +124,9 @@ void cWindowSFML::Caption( const std::string& Caption ) {
 bool cWindowSFML::Icon( const std::string& Path ) {
 	mWindow.WindowConfig.Icon 	= Path;
 
-	cImage * Img = eeNew( cImage, ( Path ) );
+	cImage Img( Path );
 
-	if ( NULL == Img->GetPixelsPtr() ) {
-		eeSAFE_DELETE( Img );
-		Img = eeNew( cImage, ( Sys::GetProcessPath() + Path ) );
-	}
-
-	mSFMLWindow.setIcon( Img->Width(), Img->Height(), Img->GetPixelsPtr() );
-
-	eeSAFE_DELETE( Img );
+	mSFMLWindow.setIcon( Img.Width(), Img.Height(), Img.GetPixelsPtr() );
 
 	return true;
 }
