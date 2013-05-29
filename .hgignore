@@ -17,6 +17,7 @@ syntax: glob
 ./eeew*
 ./eetest*
 ./eesound*
+./eesprite*
 ./docs
 ee.tag
 log.log

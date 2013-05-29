@@ -724,3 +724,9 @@ solution "eepp"
 		language "C++"
 		files { "src/examples/sound/*.cpp" }
 		build_link_configuration( "eesound" )
+
+	project "eepp-sprites"
+		kind "WindowedApp"
+		language "C++"
+		files { "src/examples/sprites/*.cpp" }
+		build_link_configuration( "eesprites" )

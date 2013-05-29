@@ -217,13 +217,18 @@ bool cWindowSDL::Icon( const std::string& Path ) {
 		return false;
 	}
 
-	cImage Img( Path );
+	cImage * Img = eeNew( cImage, ( Path ) );
 
-	if ( NULL != Img.GetPixelsPtr() ) {
-		const Uint8 * Ptr = Img.GetPixelsPtr();
-		x = Img.Width();
-		y = Img.Height();
-		c = Img.Channels();
+	if ( NULL == Img->GetPixelsPtr() ) {
+		eeSAFE_DELETE( Img );
+		Img = eeNew( cImage, ( Sys::GetProcessPath() + Path ) );
+	}
+
+	if ( NULL != Img->GetPixelsPtr() ) {
+		const Uint8 * Ptr = Img->GetPixelsPtr();
+		x = Img->Width();
+		y = Img->Height();
+		c = Img->Channels();
 
 		if ( ( x  % 8 ) == 0 && ( y % 8 ) == 0 ) {
 			Uint32 rmask, gmask, bmask, amask;

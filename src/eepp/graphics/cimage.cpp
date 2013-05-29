@@ -1,4 +1,7 @@
 #include <eepp/graphics/cimage.hpp>
+#include <eepp/system/clog.hpp>
+#include <eepp/system/cpack.hpp>
+#include <eepp/system/cpackmanager.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/image_helper.h>
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>

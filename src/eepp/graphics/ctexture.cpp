@@ -469,8 +469,8 @@ void cTexture::DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width,
 
 	if ( Scale != 1.0f ) {
 		if ( ScaleCentered ) {
-			eeFloat halfW = w * 0.5f;
-			eeFloat halfH = h * 0.5f;
+			eeFloat halfW = width * 0.5f;
+			eeFloat halfH = height * 0.5f;
 			mx = mx + halfW - halfW * Scale;
 			my = my + halfH - halfH * Scale;
 		}

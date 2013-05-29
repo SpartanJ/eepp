@@ -93,7 +93,7 @@ class cEETest : private cThread {
 		cInput* KM;
 		cInputTextBuffer InBuf;
 
-		bool run, side, aside;
+		bool side, aside;
 		eeFloat ang, scale, alpha, Ang;
 		eeFloat et;
 		Int32 x, y;
@@ -152,7 +152,6 @@ class cEETest : private cThread {
 		void Screen4();
 		void Screen5();
 
-		cZip * PAK;
 		cZip * PakTest;
 
 		std::vector<Uint8> tmpv;

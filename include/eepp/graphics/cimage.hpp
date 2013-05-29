@@ -7,12 +7,13 @@
 using namespace EE::Math;
 
 #include <eepp/system/colors.hpp>
-#include <eepp/system/clog.hpp>
-#include <eepp/system/cpack.hpp>
-#include <eepp/system/cpackmanager.hpp>
 using namespace EE::System;
 
 #include <eepp/graphics/renders.hpp>
+
+namespace EE { namespace System {
+class cPack;
+}}
 
 namespace EE { namespace Graphics {
 

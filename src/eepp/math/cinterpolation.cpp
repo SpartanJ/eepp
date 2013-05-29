@@ -11,6 +11,7 @@ cInterpolation::cInterpolation() :
 	mLoop(false),
 	mEnded(false),
 	mTotDist(0.f),
+	mCurPos(0.f),
 	mCurPoint(0),
 	mCurTime(0),
 	mSpeed(1.3f),

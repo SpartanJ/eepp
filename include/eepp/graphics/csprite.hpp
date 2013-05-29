@@ -11,13 +11,15 @@ namespace EE { namespace Graphics {
 /** @brief A Sprite controller class, can hold and control sprites animations. */
 class EE_API cSprite {
 	public:
-		typedef cb::Callback2< void, Uint32, cSprite * > SpriteCallback;
+		/// Event ID - Sprite - User Data
+		typedef cb::Callback3< void, Uint32, cSprite *, void * > SpriteCallback;
 
 		/** @enum cSprite::SpriteEvents The events that can be reported by the Sprite */
 		enum SpriteEvents {
 			SPRITE_EVENT_LAST_FRAME,
 			SPRITE_EVENT_FIRST_FRAME,
-			SPRITE_EVENT_END_ANIM_TO
+			SPRITE_EVENT_END_ANIM_TO,
+			SPRITE_EVENT_USER			// User Events
 		};
 
 		/** Instanciate an empty sprite */
@@ -319,7 +321,7 @@ class EE_API cSprite {
 		void AnimToFrameAndStop( Uint32 GoTo );
 
 		/** Set the sprite events callback */
-		void SetEventsCallback( const SpriteCallback& Cb );
+		void SetEventsCallback( const SpriteCallback& Cb, void * UserData = NULL );
 
 		/** Removes the current callback */
 		void ClearCallback();
@@ -332,6 +334,9 @@ class EE_API cSprite {
 
 		/** Update the sprite animation using the current elapsed time provided by cEngine */
 		void Update();
+
+		/** Fire a User Event in the sprite */
+		void FireEvent( const Uint32& Event );
 	protected:
 		enum SpriteFlags {
 			SPRITE_FLAG_AUTO_ANIM				= ( 1 << 0 ),
@@ -363,6 +368,7 @@ class EE_API cSprite {
 		eeUint				mAnimTo;
 
 		SpriteCallback		mCb;
+		void *				mUserData;
 
 		class cFrame {
 			public:
@@ -379,8 +385,6 @@ class EE_API cSprite {
 		eeUint GetFrame( const eeUint& FrameNum );
 
 		eeUint GetSubFrame( const eeUint& SubFrame );
-
-		void FireEvent( const Uint32& Event );
 };
 
 }}

@@ -24,7 +24,8 @@ cSprite::cSprite() :
 	mfCurrentFrame( 0.f ),
 	mCurrentSubFrame( 0 ),
 	mSubFrames( 1 ),
-	mAnimTo( 0 )
+	mAnimTo( 0 ),
+	mUserData( NULL )
 {
 	mCb.Reset();
 }
@@ -44,7 +45,8 @@ cSprite::cSprite( const std::string& name, const std::string& extension, cTextur
 	mfCurrentFrame( 0.f ),
 	mCurrentSubFrame( 0 ),
 	mSubFrames( 1 ),
-	mAnimTo( 0 )
+	mAnimTo( 0 ),
+	mUserData( NULL )
 {
 	mCb.Reset();
 	AddFramesByPattern( name, extension, SearchInTextureAtlas );
@@ -65,7 +67,8 @@ cSprite::cSprite( cSubTexture * SubTexture ) :
 	mfCurrentFrame( 0.f ),
 	mCurrentSubFrame( 0 ),
 	mSubFrames( 1 ),
-	mAnimTo( 0 )
+	mAnimTo( 0 ),
+	mUserData( NULL )
 {
 	mCb.Reset();
 	CreateStatic( SubTexture );
@@ -86,12 +89,12 @@ cSprite::cSprite( const Uint32& TexId, const eeSizef &DestSize, const eeVector2i
 	mfCurrentFrame( 0.f ),
 	mCurrentSubFrame( 0 ),
 	mSubFrames( 1 ),
-	mAnimTo( 0 )
+	mAnimTo( 0 ),
+	mUserData( NULL )
 {
 	mCb.Reset();
 	CreateStatic( TexId, DestSize, Offset, TexSector );
 }
-
 
 cSprite::~cSprite() {
 	eeSAFE_DELETE_ARRAY( mVertexColors );
@@ -876,8 +879,9 @@ void cSprite::AnimToFrameAndStop( Uint32 GoTo ) {
 	}
 }
 
-void cSprite::SetEventsCallback( const SpriteCallback& Cb ) {
-	mCb = Cb;
+void cSprite::SetEventsCallback(const SpriteCallback& Cb , void * UserData ) {
+	mCb			= Cb;
+	mUserData	= UserData;
 }
 
 void cSprite::ClearCallback() {
@@ -886,7 +890,7 @@ void cSprite::ClearCallback() {
 
 void cSprite::FireEvent( const Uint32& Event ) {
 	if ( SPR_FGET( SPRITE_FLAG_EVENTS_ENABLED ) && mCb.IsSet() ) {
-		mCb( Event, this );
+		mCb( Event, this, mUserData );
 	}
 }
 

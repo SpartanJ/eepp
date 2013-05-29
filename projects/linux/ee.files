@@ -609,3 +609,4 @@
 ../../src/eepp/audio/openal.hpp
 ../../src/eepp/window/backend/SDL2/cbackendsdl2.cpp
 ../../src/examples/sound/sound.cpp
+../../src/examples/sprites/sprites.cpp

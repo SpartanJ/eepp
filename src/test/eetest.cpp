@@ -8,7 +8,6 @@ void cEETest::Init() {
 	cLog::instance()->LiveWrite( true );
 	cLog::instance()->ConsoleOutput( true );
 
-	run 				= false;
 	DrawBack 			= false;
 	MultiViewportMode 	= false;
 
@@ -48,14 +47,9 @@ void cEETest::Init() {
 	WindowSettings WinSettings	= EE->CreateWindowSettings( &Ini );
 	ContextSettings ConSettings	= EE->CreateContextSettings( &Ini );
 
-	PAK = eeNew( cZip, () );
-	PAK->Open( MyPath + "ee.zip" );
-
 	mWindow = EE->CreateWindow( WinSettings, ConSettings );
 
-	run = ( NULL != mWindow && mWindow->Created() && PAK->IsOpen() );
-
-	if ( run ) {
+	if ( NULL != mWindow && mWindow->Created() ) {
 		SetScreen( StartScreen );
 
 		mWindow->Caption( "EE++ Test Application" );
@@ -161,13 +155,13 @@ void cEETest::CreateUIThemeTextureAtlas() {
 void cEETest::LoadFonts() {
 	mFTE.Reset();
 
-	cTextureLoader * tl = eeNew( cTextureLoader, ( PAK, "conchars.png" ) );
+	cTextureLoader * tl = eeNew( cTextureLoader, ( MyPath + "fonts/conchars.png" ) );
 	tl->SetColorKey( eeColor(0,0,0) );
 
 	mFontLoader.Add( eeNew( cTextureFontLoader, ( "conchars", tl, (eeUint)32 ) ) );
-	mFontLoader.Add( eeNew( cTextureFontLoader, ( "ProggySquareSZ", eeNew( cTextureLoader, ( PAK, "ProggySquareSZ.png" ) ), PAK, "ProggySquareSZ.dat" ) ) );
-	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255) ) ) );
-	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arialb", PAK, "arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255), 1, eeColor(0,0,0), true ) ) );
+	mFontLoader.Add( eeNew( cTextureFontLoader, ( "ProggySquareSZ", eeNew( cTextureLoader, ( MyPath + "fonts/ProggySquareSZ.png" ) ), MyPath + "fonts/ProggySquareSZ.dat" ) ) );
+	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", MyPath + "fonts/arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255) ) ) );
+	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arialb", MyPath + "fonts/arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255), 1, eeColor(0,0,0), true ) ) );
 
 	mFontLoader.Load( cb::Make1( this, &cEETest::OnFontLoaded ) );
 }
@@ -207,7 +201,7 @@ void cEETest::CreateShaders() {
 
 	if ( mUseShaders ) {
 		mBlurFactor = 0.01f;
-		mShaderProgram = cShaderProgram::New( MyPath + "shader/blur.vert", MyPath + "shader/blur.frag" );
+		mShaderProgram = cShaderProgram::New( MyPath + "shaders/blur.vert", MyPath + "shaders/blur.frag" );
 	}
 }
 
@@ -263,7 +257,7 @@ void cEETest::CreateUI() {
 
 	//mTheme = cUITheme::LoadFromPath( eeNew( cUIDefaultTheme, ( "uitheme", "uitheme" ) ), MyPath + "uitheme/" );
 
-	cTextureAtlasLoader tgl( MyPath + "uithemeta/uitheme" + EE_TEXTURE_ATLAS_EXTENSION );
+	cTextureAtlasLoader tgl( MyPath + "ui/uitheme" + EE_TEXTURE_ATLAS_EXTENSION );
 
 	mTheme = cUITheme::LoadFromTextureAtlas( eeNew( cUIDefaultTheme, ( "uitheme", "uitheme" ) ), cTextureAtlasManager::instance()->GetByName( "uitheme" ) );
 
@@ -558,10 +552,10 @@ void cEETest::CreateUI() {
 #ifdef EE_PLATFORM_TOUCH
 	cTextureAtlas * SG = cGlobalTextureAtlas::instance();
 
-	cTexture * butTex = TF->GetTexture( TF->Load( MyPath + "extra/button-te_normal.png" ) );
+	cTexture * butTex = TF->GetTexture( TF->Load( MyPath + "sprites/button-te_normal.png" ) );
 
 	SG->Add( butTex->Id(), "button-te_normal" );
-	SG->Add( TF->Load( MyPath + "extra/button-te_mdown.png" ), "button-te_mdown" );
+	SG->Add( TF->Load( MyPath + "sprites/button-te_mdown.png" ), "button-te_mdown" );
 
 	cUISkinSimple nSkin( "button-te" );
 
@@ -829,7 +823,7 @@ void cEETest::LoadTextures() {
 	}
 	#endif
 
-	mResLoad.Add( eeNew( cSoundLoader, ( &SndMng, "mysound", PAK, "sound.ogg" ) ) );
+	mResLoad.Add( eeNew( cSoundLoader, ( &SndMng, "mysound", MyPath + "sounds/sound.ogg" ) ) );
 
 	mResLoad.Load( cb::Make1( this, &cEETest::OnTextureLoaded ) );
 
@@ -837,13 +831,13 @@ void cEETest::LoadTextures() {
 	TNP.resize(12);
 
 	for ( i = 0; i <= 7; i++ ) {
-		TN[i] = TF->LoadFromPack( PAK, "t" + String::ToStr(i+1) + ".png", ( (i+1) == 7 ) ? true : false, ( (i+1) == 4 ) ? EE_CLAMP_REPEAT : EE_CLAMP_TO_EDGE );
+		TN[i] = TF->Load( MyPath + "sprites/t" + String::ToStr(i+1) + ".png", ( (i+1) == 7 ) ? true : false, ( (i+1) == 4 ) ? EE_CLAMP_REPEAT : EE_CLAMP_TO_EDGE );
 		TNP[i] = TF->GetTexture( TN[i] );
 	}
 
 	Tiles.resize(10);
 
-	cTextureAtlasLoader tgl( PAK, "tiles.etg" );
+	cTextureAtlasLoader tgl( MyPath + "atlases/tiles.etg" );
 	cTextureAtlas * SG = cTextureAtlasManager::instance()->GetByName( "tiles" );
 
 	if ( NULL != SG ) {
@@ -851,14 +845,14 @@ void cEETest::LoadTextures() {
 			Tiles[i] = SG->GetByName( String::ToStr( i+1 ) );
 		}
 
-		Tiles[6] = SG->Add( TF->LoadFromPack( PAK, "objects/1.png" ), "7" );
+		Tiles[6] = SG->Add( TF->Load( MyPath + "sprites/objects/1.png" ), "7" );
 
 		#ifdef EE_GLES
-		cImage tImg( PAK, "objects/2.png", 4 );
+		cImage tImg( MyPath + "sprites/objects/2.png", 4 );
 		tImg.CreateMaskFromColor( eeColorA(0,0,0,255), 0 );
 		Tiles[7] = SG->Add( TF->LoadFromPixels( tImg.GetPixelsPtr(), tImg.Width(), tImg.Height(), tImg.Channels() ), "8" );
 		#else
-		Tiles[7] = SG->Add( TF->LoadFromPack( PAK, "objects/2.png" ), "8" );
+		Tiles[7] = SG->Add( TF->Load( MyPath + "sprites/objects/2.png" ), "8" );
 		Tiles[7]->GetTexture()->CreateMaskFromColor( eeColorA(0,0,0,255), 0 );
 		#endif
 	}
@@ -898,9 +892,9 @@ void cEETest::LoadTextures() {
 		Tex->Unlock(false, true);
 	}
 
-	Cursor[0] = TF->LoadFromPack( PAK, "cursor.png" );
+	Cursor[0] = TF->Load( MyPath + "cursors/cursor.png" );
 	CursorP[0] = TF->GetTexture( Cursor[0] );
-	Cursor[1] = TF->LoadFromPack( PAK, "cursor.tga" );
+	Cursor[1] = TF->Load( MyPath + "cursors/cursor.tga" );
 	CursorP[1] = TF->GetTexture( Cursor[1] );
 
 	cCursorManager * CurMan = mWindow->GetCursorManager();
@@ -916,8 +910,8 @@ void cEETest::LoadTextures() {
 	CL2.AddFrame(TN[0], eeSizef(96, 96) );
 	CL2.Color( eeColorA( 255, 255, 255, 255 ) );
 
-	if ( cImage::IsImage( MyPath + "extra/bnb.png" ) ) {
-		mTGL = eeNew( cTextureAtlasLoader, ( MyPath + "extra/bnb" + EE_TEXTURE_ATLAS_EXTENSION ) );
+	if ( cImage::IsImage( MyPath + "atlases/bnb.png" ) ) {
+		mTGL = eeNew( cTextureAtlasLoader, ( MyPath + "atlases/bnb" + EE_TEXTURE_ATLAS_EXTENSION ) );
 	}
 
 	mBlindy.AddFramesByPattern( "rn" );
@@ -1575,7 +1569,7 @@ void cEETest::Input() {
 void cEETest::Process() {
 	Init();
 
-	if ( run ) {
+	if ( NULL != mWindow && mWindow->Created() ) {
 		do {
 			et = mWindow->Elapsed();
 
@@ -1941,7 +1935,6 @@ void cEETest::End() {
 	eeSAFE_DELETE( mVBO );
 	eeSAFE_DELETE( mBoxSprite );
 	eeSAFE_DELETE( mCircleSprite );
-	eeSAFE_DELETE( PAK );
 	eeSAFE_DELETE( PakTest );
 
 	cLog::instance()->Save();

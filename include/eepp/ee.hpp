@@ -37,7 +37,7 @@
 						EE::Gaming Not documented at all.
 
 	@TODO Add more commented examples, showing at least the basic usage of the engine ( 10 or more examples at least ).
-				STATE:	3 examples available. ( 30 % )
+				STATE:	4 examples available. ( 40 % )
 
 	@TODO Improve the map editor ( add triggers, tiles selection to copy paste in other zones of the map, undo/redo actions ).
 				STATE:	Needs at least to reoffset tiles and objects for the map resizing.
