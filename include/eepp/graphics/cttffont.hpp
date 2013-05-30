@@ -32,7 +32,7 @@ class EE_API cTTFFont : public cFont {
 		* @param AddPixelSeparator Indicates if separates the glyphs by a pixel to avoid problems with font scaling
 		* @return If success
 		*/
-		bool Load( const std::string& Filepath, const eeUint& Size, EE_TTF_FONT_STYLE Style = EE_TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true );
+		bool Load( const std::string& Filepath, const eeUint& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true );
 
 		/** Loads a True Type Font from pack
 		* @param Pack Pointer to the pack instance
@@ -47,7 +47,7 @@ class EE_API cTTFFont : public cFont {
 		* @param AddPixelSeparator Indicates if separates the glyphs by a pixel to avoid problems with font scaling
 		* @return If success
 		*/
-		bool LoadFromPack( cPack* Pack, const std::string& FilePackPath, const eeUint& Size, EE_TTF_FONT_STYLE Style = EE_TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true  );
+		bool LoadFromPack( cPack* Pack, const std::string& FilePackPath, const eeUint& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true  );
 
 		/** Loads a True Type Font from memory
 		* @param TTFData The pointer to the data
@@ -62,16 +62,16 @@ class EE_API cTTFFont : public cFont {
 		* @param AddPixelSeparator Indicates if separates the glyphs by a pixel to avoid problems with font scaling
 		* @return If success
 		*/
-		bool LoadFromMemory( Uint8* TTFData, const eeUint& TTFDataSize, const eeUint& Size, EE_TTF_FONT_STYLE Style = EE_TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true );
+		bool LoadFromMemory( Uint8* TTFData, const eeUint& TTFDataSize, const eeUint& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true );
 
 		/** Save the texture generated from the TTF file to disk */
-		bool SaveTexture( const std::string& Filepath, const EE_SAVE_TYPE& Format = EE_SAVE_TYPE_PNG );
+		bool SaveTexture( const std::string& Filepath, const EE_SAVE_TYPE& Format = SAVE_TYPE_PNG );
 
 		/** Save the characters coordinates to use it later to load the Texture Font */
 		bool SaveCoordinates( const std::string& Filepath );
 
 		/** Save the texture generated from the TTF file and the character coordinates. */
-		bool Save( const std::string& TexturePath, const std::string& CoordinatesDatPath, const EE_SAVE_TYPE& Format = EE_SAVE_TYPE_PNG );
+		bool Save( const std::string& TexturePath, const std::string& CoordinatesDatPath, const EE_SAVE_TYPE& Format = SAVE_TYPE_PNG );
 
 	protected:
 		friend class cTTFFontLoader;

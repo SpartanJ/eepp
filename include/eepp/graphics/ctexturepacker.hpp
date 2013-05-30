@@ -79,7 +79,7 @@ class EE_API cTexturePacker {
 		*	@param Format The image format of the new texture atlas.
 		*	@param SaveExtensions Indicates if the extensions of the image files must be saved. Usually you wan't to find the SubTextures by its name without extension, but this can be changed here.
 		*/
-		void				Save( const std::string& Filepath, const EE_SAVE_TYPE& Format = EE_SAVE_TYPE_PNG, const bool& SaveExtensions = false );
+		void				Save( const std::string& Filepath, const EE_SAVE_TYPE& Format = SAVE_TYPE_PNG, const bool& SaveExtensions = false );
 
 		void				Close();
 

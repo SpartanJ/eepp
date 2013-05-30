@@ -22,12 +22,12 @@ void cImage::JpegQuality( Uint32 level ) {
 
 std::string cImage::SaveTypeToExtension( const Int32& Format ) {
 	switch( Format ) {
-		case EE_SAVE_TYPE_TGA: return "tga";
-		case EE_SAVE_TYPE_BMP: return "bmp";
-		case EE_SAVE_TYPE_PNG: return "png";
-		case EE_SAVE_TYPE_DDS: return "dds";
-		case EE_SAVE_TYPE_JPG: return "jpg";
-		case EE_SAVE_TYPE_UNKNOWN:
+		case SAVE_TYPE_TGA: return "tga";
+		case SAVE_TYPE_BMP: return "bmp";
+		case SAVE_TYPE_PNG: return "png";
+		case SAVE_TYPE_DDS: return "dds";
+		case SAVE_TYPE_JPG: return "jpg";
+		case SAVE_TYPE_UNKNOWN:
 		default:
 			break;
 	}
@@ -36,13 +36,13 @@ std::string cImage::SaveTypeToExtension( const Int32& Format ) {
 }
 
 EE_SAVE_TYPE cImage::ExtensionToSaveType( const std::string& Extension ) {
-	EE_SAVE_TYPE saveType = EE_SAVE_TYPE_UNKNOWN;
+	EE_SAVE_TYPE saveType = SAVE_TYPE_UNKNOWN;
 
-	if ( Extension == "tga" )		saveType = EE_SAVE_TYPE_TGA;
-	else if ( Extension == "bmp" )	saveType = EE_SAVE_TYPE_BMP;
-	else if ( Extension == "png" )	saveType = EE_SAVE_TYPE_PNG;
-	else if ( Extension == "dds" )	saveType = EE_SAVE_TYPE_DDS;
-	else if ( Extension == "jpg" || Extension == "jpeg" ) saveType = EE_SAVE_TYPE_JPG;
+	if ( Extension == "tga" )		saveType = SAVE_TYPE_TGA;
+	else if ( Extension == "bmp" )	saveType = SAVE_TYPE_BMP;
+	else if ( Extension == "png" )	saveType = SAVE_TYPE_PNG;
+	else if ( Extension == "dds" )	saveType = SAVE_TYPE_DDS;
+	else if ( Extension == "jpg" || Extension == "jpeg" ) saveType = SAVE_TYPE_JPG;
 
 	return saveType;
 }
@@ -320,7 +320,7 @@ bool cImage::SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format
 	bool Res = false;
 
 	if ( NULL != mPixels && 0 != mWidth && 0 != mHeight && 0 != mChannels ) {
-		if ( EE_SAVE_TYPE_JPG != Format ) {
+		if ( SAVE_TYPE_JPG != Format ) {
 			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, (Int32)mWidth, (Int32)mHeight, mChannels, GetPixelsPtr() ) );
 		} else {
 			jpge::params params;

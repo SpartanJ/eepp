@@ -24,7 +24,7 @@ class EE_API cTextureFactory : protected cMutex {
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return Internal Texture Id
 		*/
-		Uint32 CreateEmptyTexture( const eeUint& Width, const eeUint& Height, const eeUint& Channels = 4, const eeColorA& DefaultColor = eeColorA(0,0,0,255), const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 CreateEmptyTexture( const eeUint& Width, const eeUint& Height, const eeUint& Channels = 4, const eeColorA& DefaultColor = eeColorA(0,0,0,255), const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Loads a RAW Texture from Memory
 		* @param Pixels The Texture array
@@ -38,7 +38,7 @@ class EE_API cTextureFactory : protected cMutex {
 		* @param FileName A filename to recognize the texture ( the path in case that was loaded from outside the texture factory ).
 		* @return Internal Texture Id
 		*/
-		Uint32 LoadFromPixels( const unsigned char * Pixels, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const std::string& FileName = std::string("") );
+		Uint32 LoadFromPixels( const unsigned char * Pixels, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const std::string& FileName = std::string("") );
 
 		/** Load a texture from Pack file
 		* @param Pack Pointer to the pack instance
@@ -49,7 +49,7 @@ class EE_API cTextureFactory : protected cMutex {
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return Internal Texture Id
 		*/
-		Uint32 LoadFromPack( cPack* Pack, const std::string& FilePackPath, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 LoadFromPack( cPack* Pack, const std::string& FilePackPath, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Load a texture from memory
 		* @param ImagePtr The image data in RAM just as if it were still in a file
@@ -60,7 +60,7 @@ class EE_API cTextureFactory : protected cMutex {
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return The internal Texture Id
 		*/
-		Uint32 LoadFromMemory( const unsigned char* ImagePtr, const eeUint& Size, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 LoadFromMemory( const unsigned char* ImagePtr, const eeUint& Size, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Load a Texture from stream
 		* @param Stream The cIOStream instance
@@ -70,7 +70,7 @@ class EE_API cTextureFactory : protected cMutex {
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return The internal Texture Id
 		*/
-		Uint32 LoadFromStream( cIOStream& Stream, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 LoadFromStream( cIOStream& Stream, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Load a Texture from a file path
 		* @param Filepath The path for the texture
@@ -80,7 +80,7 @@ class EE_API cTextureFactory : protected cMutex {
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return The internal Texture Id
 		*/
-		Uint32 Load( const std::string& Filepath, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = EE_CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 Load( const std::string& Filepath, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Remove and Unload the Texture Id
 		* @param TexId

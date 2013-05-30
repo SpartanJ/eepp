@@ -3,7 +3,7 @@
 
 #include <eepp/base.hpp>
 
-#include <eepp/math/helper.hpp>
+#include <eepp/math/ease.hpp>
 #include <eepp/math/rect.hpp>
 #include <eepp/math/vector2.hpp>
 #include <eepp/math/cinterpolation.hpp>

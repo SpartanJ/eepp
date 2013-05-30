@@ -103,7 +103,7 @@ class EE_API cInterpolation {
 		const eeFloat& GetEndPos();
 
 		/** Set the type of interpolation to be used */
-		void Type( EE_INTERPOLATION InterpolationType );
+		void Type( Ease::Interpolation InterpolationType );
 
 		/** @return The type of the interpolation */
 		const eeInt& Type() const;

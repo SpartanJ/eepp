@@ -32,11 +32,11 @@ void cGameObjectPolygon::Draw() {
 	Int32 colFill	= 100 + selAdd;
 
 	cPrimitives P;
-	P.FillMode( EE_DRAW_FILL );
+	P.FillMode( DRAW_FILL );
 	P.SetColor( eeColorA( colFill, colFill, colFill, colFill ) );
 	P.DrawPolygon( mPoly );
 
-	P.FillMode( EE_DRAW_LINE );
+	P.FillMode( DRAW_LINE );
 	P.SetColor( eeColorA( 255, 255, 0, 200 ) );
 	P.DrawPolygon( mPoly );
 }

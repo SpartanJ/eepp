@@ -146,7 +146,7 @@ void cMap::CreateEmptyTile() {
 			Img.Height(),
 			Img.Channels(),
 			true,
-			EE_CLAMP_TO_EDGE,
+			CLAMP_TO_EDGE,
 			false,
 			false,
 			tileName

@@ -337,7 +337,7 @@
 ../../include/eepp/math/quad2.hpp
 ../../include/eepp/math/polygon2.hpp
 ../../include/eepp/math/line2.hpp
-../../include/eepp/math/helper.hpp
+../../include/eepp/math/ease.hpp
 ../../include/eepp/math/easing.hpp
 ../../include/eepp/math/cwaypoints.hpp
 ../../include/eepp/math/cperlinnoise.hpp

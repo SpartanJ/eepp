@@ -8,7 +8,7 @@ namespace EE { namespace Graphics {
 static cGlobalBatchRenderer * sBR = NULL;
 
 cPrimitives::cPrimitives() :
-	mFillMode( EE_DRAW_FILL ),
+	mFillMode( DRAW_FILL ),
 	mBlendMode( ALPHA_NORMAL ),
 	mLineWidth( 1.f ),
 	mForceDraw( true )
@@ -50,7 +50,7 @@ void cPrimitives::DrawTriangle( const eeTriangle2f& t, const eeColorA& Color1, c
 	sBR->SetBlendMode( mBlendMode );
 
 	switch( mFillMode ) {
-		case EE_DRAW_LINE:
+		case DRAW_LINE:
 		{
 			sBR->SetLineWidth( mLineWidth );
 
@@ -63,7 +63,7 @@ void cPrimitives::DrawTriangle( const eeTriangle2f& t, const eeColorA& Color1, c
 			break;
 		}
 		default:
-		case EE_DRAW_FILL:
+		case DRAW_FILL:
 		{
 			sBR->TrianglesBegin();
 
@@ -88,7 +88,7 @@ void cPrimitives::DrawCircle( const eeVector2f& p, const eeFloat& radius, Uint32
 	sBR->SetTexture( NULL );
 
 	switch( mFillMode ) {
-		case EE_DRAW_LINE:
+		case DRAW_LINE:
 		{
 			sBR->SetLineWidth( mLineWidth );
 			sBR->LineLoopBegin();
@@ -99,7 +99,7 @@ void cPrimitives::DrawCircle( const eeVector2f& p, const eeFloat& radius, Uint32
 
 			break;
 		}
-		case EE_DRAW_FILL:
+		case DRAW_FILL:
 		{
 			sBR->TriangleFanBegin();
 			sBR->TriangleFanSetColor( mColor );
@@ -119,7 +119,7 @@ void cPrimitives::DrawRectangle( const eeRectf& R, const eeColorA& TopLeft, cons
 	sBR->SetBlendMode( mBlendMode );
 
 	switch( mFillMode ) {
-		case EE_DRAW_FILL:
+		case DRAW_FILL:
 		{
 			sBR->QuadsBegin();
 			sBR->QuadsSetColorFree( TopLeft, BottomLeft, BottomRight, TopRight );
@@ -129,7 +129,7 @@ void cPrimitives::DrawRectangle( const eeRectf& R, const eeColorA& TopLeft, cons
 			sBR->BatchQuadEx( R.Left, R.Top, size.Width(), size.Height(), Angle, Scale );
 			break;
 		}
-		case EE_DRAW_LINE:
+		case DRAW_LINE:
 		{
 			sBR->SetLineWidth( mLineWidth );
 
@@ -178,7 +178,7 @@ void cPrimitives::DrawRoundedRectangle( const eeRectf& R, const eeColorA& TopLef
 	Poly.Rotate( Angle, Center );
 
 	switch( mFillMode ) {
-		case EE_DRAW_FILL:
+		case DRAW_FILL:
 		{
 			if ( TopLeft == BottomLeft && BottomLeft == BottomRight && BottomRight == TopRight ) {
 				sBR->PolygonSetColor( TopLeft );
@@ -205,7 +205,7 @@ void cPrimitives::DrawRoundedRectangle( const eeRectf& R, const eeColorA& TopLef
 
 			break;
 		}
-		case EE_DRAW_LINE:
+		case DRAW_LINE:
 		{
 			sBR->SetLineWidth( mLineWidth );
 
@@ -251,7 +251,7 @@ void cPrimitives::DrawQuad( const eeQuad2f& q, const eeColorA& Color1, const eeC
 	sBR->SetBlendMode( mBlendMode );
 
 	switch( mFillMode ) {
-		case EE_DRAW_LINE:
+		case DRAW_LINE:
 		{
 			sBR->SetLineWidth( mLineWidth );
 
@@ -262,7 +262,7 @@ void cPrimitives::DrawQuad( const eeQuad2f& q, const eeColorA& Color1, const eeC
 			sBR->BatchLineLoop( OffsetX + q[2].x, OffsetY + q[2].y, OffsetX + q[3].x, OffsetY + q[3].y );
 			break;
 		}
-		case EE_DRAW_FILL:
+		case DRAW_FILL:
 		{
 			sBR->QuadsBegin();
 			sBR->QuadsSetColorFree( Color1, Color2, Color3, Color4 );
@@ -283,7 +283,7 @@ void cPrimitives::DrawPolygon( const eePolygon2f& p ) {
 	sBR->SetBlendMode( mBlendMode );
 
 	switch( mFillMode ) {
-		case EE_DRAW_LINE:
+		case DRAW_LINE:
 		{
 			sBR->SetLineWidth( mLineWidth );
 
@@ -295,7 +295,7 @@ void cPrimitives::DrawPolygon( const eePolygon2f& p ) {
 
 			break;
 		}
-		case EE_DRAW_FILL:
+		case DRAW_FILL:
 		{
 			sBR->PolygonSetColor( mColor );
 			sBR->BatchPolygon( p );

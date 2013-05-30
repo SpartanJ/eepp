@@ -5,7 +5,7 @@ using namespace EE::Math::easing;
 namespace EE { namespace Math {
 
 cInterpolation::cInterpolation() :
-	mType(LINEAR),
+	mType(Ease::Linear),
 	mEnable(false),
 	mUpdate(true),
 	mLoop(false),
@@ -225,7 +225,7 @@ void cInterpolation::Speed( const eeFloat Speed ) {
 	}
 }
 
-void cInterpolation::Type( EE_INTERPOLATION InterpolationType ) {
+void cInterpolation::Type( Ease::Interpolation InterpolationType ) {
 	mType = InterpolationType;
 }
 

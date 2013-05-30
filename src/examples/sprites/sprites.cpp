@@ -16,7 +16,7 @@ void spriteCallback( Uint32 Event, cSprite * Sprite, void * UserData ) {
 		AngleInterpolation->AddWaypoint( Sprite->Angle() );
 		AngleInterpolation->AddWaypoint( Sprite->Angle() + 45.f );
 		AngleInterpolation->SetTotalTime( 500 );
-		AngleInterpolation->Type( BOUNCEOUT ); // Set the easing effect used for the interpolation
+		AngleInterpolation->Type( Ease::BounceOut ); // Set the easing effect used for the interpolation
 		AngleInterpolation->Start();
 
 		// Scale the sprite
@@ -78,7 +78,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 		// Create a primitive drawer instance to draw the AABB of the Rock
 		cPrimitives P;
-		P.FillMode( EE_DRAW_LINE );
+		P.FillMode( DRAW_LINE );
 
 		// Set the sprites position to the screen center
 		eeVector2i ScreenCenter( cEngine::instance()->GetWidth() / 2, cEngine::instance()->GetHeight() / 2 );

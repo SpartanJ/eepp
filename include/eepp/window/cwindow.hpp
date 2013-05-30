@@ -285,7 +285,7 @@ class EE_API cWindow {
 		* You can set only the path to save the files, like "screenshots/"
 		* @return False if failed, otherwise returns True
 		*/
-		bool TakeScreenshot( std::string filepath = "", const EE_SAVE_TYPE& Format = EE_SAVE_TYPE_PNG );
+		bool TakeScreenshot( std::string filepath = "", const EE_SAVE_TYPE& Format = SAVE_TYPE_PNG );
 
 		/** @return The pointer to the Window Info ( read only ) */
 		const WindowInfo * GetWindowInfo() const;

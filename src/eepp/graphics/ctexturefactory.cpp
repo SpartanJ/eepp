@@ -244,7 +244,7 @@ eeUint cTextureFactory::GetValidTextureSize( const eeUint& Size ) {
 bool cTextureFactory::SaveImage( const std::string& filepath, const EE_SAVE_TYPE& Format, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const unsigned char* data ) {
 	bool Res;
 
-	if ( EE_SAVE_TYPE_JPG != Format ) {
+	if ( SAVE_TYPE_JPG != Format ) {
 		Res = 0 != SOIL_save_image ( filepath.c_str(), Format, Width, Height, Channels, data );
 	} else {
 		jpge::params params;

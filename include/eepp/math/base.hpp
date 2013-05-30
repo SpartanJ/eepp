@@ -2,6 +2,6 @@
 #define EE_MATH_BASE
 
 #include <eepp/base.hpp>
-#include <eepp/math/helper.hpp>
+#include <eepp/math/ease.hpp>
 
 #endif

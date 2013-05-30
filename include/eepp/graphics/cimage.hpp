@@ -29,7 +29,7 @@ class EE_API cImage {
 		/** @return The File Extension of a Save Type */
 		static std::string SaveTypeToExtension( const Int32& Format );
 
-		/** @return The save type from a given extension ( example: "png" => EE_SAVE_TYPE_PNG ) */
+		/** @return The save type from a given extension ( example: "png" => SAVE_TYPE_PNG ) */
 		static EE_SAVE_TYPE ExtensionToSaveType( const std::string& Extension );
 
 		/** @return True if success to get the info.

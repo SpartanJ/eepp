@@ -90,7 +90,7 @@ void cEETest::Init() {
 			}
 		}
 
-		WP.Type( QUARTICINOUT );
+		WP.Type( Ease::QuarticInOut );
 		WP.AddWaypoint( eeVector2f(0,0), 100 );
 		WP.AddWaypoint( eeVector2f(800,0), 100 );
 		WP.AddWaypoint( eeVector2f(0,0), 100 );
@@ -145,7 +145,7 @@ void cEETest::CreateUIThemeTextureAtlas() {
 		cTexturePacker tp( 256, 256, true, 2 );
 		tp.AddTexturesPath( Path );
 		tp.PackTextures();
-		tp.Save( tgpath + ".png", EE_SAVE_TYPE_PNG );
+		tp.Save( tgpath + ".png", SAVE_TYPE_PNG );
 	} else {
 		cTextureAtlasLoader tgl;
 		tgl.UpdateTextureAtlas( tgpath + EE_TEXTURE_ATLAS_EXTENSION, Path );
@@ -160,8 +160,8 @@ void cEETest::LoadFonts() {
 
 	mFontLoader.Add( eeNew( cTextureFontLoader, ( "conchars", tl, (eeUint)32 ) ) );
 	mFontLoader.Add( eeNew( cTextureFontLoader, ( "ProggySquareSZ", eeNew( cTextureLoader, ( MyPath + "fonts/ProggySquareSZ.png" ) ), MyPath + "fonts/ProggySquareSZ.dat" ) ) );
-	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", MyPath + "fonts/arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255) ) ) );
-	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arialb", MyPath + "fonts/arial.ttf", 12, EE_TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255), 1, eeColor(0,0,0), true ) ) );
+	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255) ) ) );
+	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arialb", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255), 1, eeColor(0,0,0), true ) ) );
 
 	mFontLoader.Load( cb::Make1( this, &cEETest::OnFontLoaded ) );
 }
@@ -694,13 +694,13 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 
 		if ( Chk->Active() ) {
 			if ( C->Scale() == 1.f ) C->Scale( 0.f );
-			C->StartScaleAnim( C->Scale(), 1.f, 500.f, SINEOUT );
+			C->StartScaleAnim( C->Scale(), 1.f, 500.f, Ease::SineOut );
 			C->StartAlphaAnim( C->Alpha(), 255.f, 500.f );
-			C->StartRotation( 0, 360, 500.f, SINEOUT );
+			C->StartRotation( 0, 360, 500.f, Ease::SineOut );
 		} else {
-			C->StartScaleAnim( C->Scale(), 0.f, 500.f, SINEIN );
+			C->StartScaleAnim( C->Scale(), 0.f, 500.f, Ease::SineIn );
 			C->StartAlphaAnim( C->Alpha(), 0.f, 500.f );
-			C->StartRotation( 0, 360, 500.f, SINEIN );
+			C->StartRotation( 0, 360, 500.f, Ease::SineIn );
 		}
 	} else if ( "Show Window 2" == txt ) {
 		if ( NULL == mUIWindow ) {
@@ -831,7 +831,7 @@ void cEETest::LoadTextures() {
 	TNP.resize(12);
 
 	for ( i = 0; i <= 7; i++ ) {
-		TN[i] = TF->Load( MyPath + "sprites/t" + String::ToStr(i+1) + ".png", ( (i+1) == 7 ) ? true : false, ( (i+1) == 4 ) ? EE_CLAMP_REPEAT : EE_CLAMP_TO_EDGE );
+		TN[i] = TF->Load( MyPath + "sprites/t" + String::ToStr(i+1) + ".png", ( (i+1) == 7 ) ? true : false, ( (i+1) == 4 ) ? CLAMP_REPEAT : CLAMP_TO_EDGE );
 		TNP[i] = TF->GetTexture( TN[i] );
 	}
 
@@ -1109,7 +1109,7 @@ void cEETest::Screen2() {
 	CL1.Draw();
 	CL2.Draw();
 
-	PR.FillMode( EE_DRAW_LINE );
+	PR.FillMode( DRAW_LINE );
 	PR.DrawRectangle( CL1.GetAABB() );
 
 	PR.DrawQuad( CL1.GetQuad() );
@@ -1145,15 +1145,15 @@ void cEETest::Screen2() {
 	else if (iL2)
 		PR.SetColor( eeColorA(255, 255, 0, 255) );
 
-	PR.FillMode( EE_DRAW_LINE );
+	PR.FillMode( DRAW_LINE );
 	PR.DrawCircle( eeVector2f( Mousef.x, Mousef.y ), 80.f, (Uint32)(Ang/3) );
 	PR.DrawTriangle( eeTriangle2f( eeVector2f( Mousef.x, Mousef.y - 10.f ), eeVector2f( Mousef.x - 10.f, Mousef.y + 10.f ), eeVector2f( Mousef.x + 10.f, Mousef.y + 10.f ) ) );
 	PR.DrawLine( eeLine2f( eeVector2f(Mousef.x - 80.f, Mousef.y - 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y + 80.f) ) );
 	PR.DrawLine( eeLine2f( eeVector2f(Mousef.x - 80.f, Mousef.y + 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y - 80.f) ) );
 	PR.DrawLine( eeLine2f( eeVector2f((eeFloat)mWindow->GetWidth(), 0.f), eeVector2f( 0.f, (eeFloat)mWindow->GetHeight() ) ) );
-	PR.FillMode( EE_DRAW_FILL );
+	PR.FillMode( DRAW_FILL );
 	PR.DrawQuad( eeQuad2f( eeVector2f(0.f, 0.f), eeVector2f(0.f, 100.f), eeVector2f(150.f, 150.f), eeVector2f(200.f, 150.f) ), eeColorA(220, 240, 0, 125), eeColorA(100, 0, 240, 125), eeColorA(250, 50, 25, 125), eeColorA(50, 150, 150, 125) );
-	PR.FillMode( EE_DRAW_LINE );
+	PR.FillMode( DRAW_LINE );
 	PR.DrawRectangle( eeRectf( eeVector2f( Mousef.x - 80.f, Mousef.y - 80.f ), eeSizef( 160.f, 160.f ) ), 45.f );
 	PR.DrawLine( eeLine2f( eeVector2f(0.f, 0.f), eeVector2f( (eeFloat)mWindow->GetWidth(), (eeFloat)mWindow->GetHeight() ) ) );
 
@@ -1271,7 +1271,7 @@ void cEETest::Render() {
 	eeColorA ColRR3( 100, 100, 100, 220 );
 
 	PR.SetColor( eeColorA(150, 150, 150, 220) );
-	PR.FillMode( EE_DRAW_FILL );
+	PR.FillMode( DRAW_FILL );
 	PR.DrawRectangle(
 				eeRectf(
 					eeVector2f(

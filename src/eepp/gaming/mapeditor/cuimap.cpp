@@ -371,7 +371,7 @@ void cUIMap::MapDraw() {
 			eeVector2f Pos( mSelLight->GetAABB().Left, mSelLight->GetAABB().Top );
 			eeAABB AB( mSelLight->GetAABB() );
 
-			mP.FillMode( EE_DRAW_LINE );
+			mP.FillMode( DRAW_LINE );
 			mP.DrawRectangle( eeRectf( Pos, AB.Size() ) );
 		}
 	} else if ( EDITING_OBJECT == mEditingMode ) {
@@ -379,11 +379,11 @@ void cUIMap::MapDraw() {
 			case INSERT_OBJECT:
 			{
 				if ( mObjRECTEditing ) {
-					mP.FillMode( EE_DRAW_FILL );
+					mP.FillMode( DRAW_FILL );
 					mP.SetColor( eeColorA( 100, 100, 100, 20 ) );
 					mP.DrawRectangle( mObjRECT );
 
-					mP.FillMode( EE_DRAW_LINE );
+					mP.FillMode( DRAW_LINE );
 					mP.SetColor( eeColorA( 255, 0, 0, 200 ) );
 					mP.DrawRectangle( mObjRECT );
 				}
@@ -392,22 +392,22 @@ void cUIMap::MapDraw() {
 			}
 			case INSERT_POLYGON:
 			{
-				mP.FillMode( EE_DRAW_FILL );
+				mP.FillMode( DRAW_FILL );
 				mP.SetColor( eeColorA( 50, 50, 50, 50 ) );
 				mP.DrawPolygon( mObjPoly );
 
-				mP.FillMode( EE_DRAW_LINE );
+				mP.FillMode( DRAW_LINE );
 				mP.SetColor( eeColorA( 255, 0, 0, 200 ) );
 				mP.DrawPolygon( mObjPoly );
 
 				eePolygon2f polyN( mObjPoly );
 				polyN.PushBack( GetMouseMapPos() );
 
-				mP.FillMode( EE_DRAW_FILL );
+				mP.FillMode( DRAW_FILL );
 				mP.SetColor( eeColorA( 100, 100, 100, 100 ) );
 				mP.DrawPolygon( polyN );
 
-				mP.FillMode( EE_DRAW_LINE );
+				mP.FillMode( DRAW_LINE );
 				mP.SetColor( eeColorA( 255, 255, 0, 200 ) );
 				mP.DrawPolygon( polyN );
 
@@ -415,14 +415,14 @@ void cUIMap::MapDraw() {
 			}
 			case INSERT_POLYLINE:
 			{
-				mP.FillMode( EE_DRAW_LINE );
+				mP.FillMode( DRAW_LINE );
 				mP.SetColor( eeColorA( 255, 0, 0, 200 ) );
 				mP.DrawPolygon( mObjPoly );
 
 				eePolygon2f polyN( mObjPoly );
 				polyN.PushBack( GetMouseMapPos() );
 
-				mP.FillMode( EE_DRAW_LINE );
+				mP.FillMode( DRAW_LINE );
 				mP.SetColor( eeColorA( 255, 255, 0, 200 ) );
 				mP.DrawPolygon( polyN );
 
@@ -433,10 +433,10 @@ void cUIMap::MapDraw() {
 				if ( NULL != mSelObj && eeINDEX_NOT_FOUND != mSelPointIndex ) {
 					mP.SetColor( eeColorA( 255, 255, 100, 100 ) );
 
-					mP.FillMode( EE_DRAW_FILL );
+					mP.FillMode( DRAW_FILL );
 					mP.DrawRectangle( mSelPointRect );
 
-					mP.FillMode( EE_DRAW_LINE );
+					mP.FillMode( DRAW_LINE );
 					mP.DrawRectangle( mSelPointRect );
 				}
 

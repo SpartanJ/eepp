@@ -359,7 +359,7 @@ bool cSubTexture::SaveToFile(const std::string& filepath, const EE_SAVE_TYPE& Fo
 	Lock();
 
 	if ( NULL != mTexture ) {
-		if ( EE_SAVE_TYPE_JPG != Format ) {
+		if ( SAVE_TYPE_JPG != Format ) {
 			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, RealSize().Width(), RealSize().Height(), 4, GetPixelsPtr() ) );
 		} else {
 			jpge::params params;

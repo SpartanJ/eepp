@@ -251,7 +251,7 @@ void cUIControl::Draw() {
 
 		if ( cUIManager::instance()->HighlightFocus() && cUIManager::instance()->FocusControl() == this ) {
 			cPrimitives P;
-			P.FillMode( EE_DRAW_LINE );
+			P.FillMode( DRAW_LINE );
 			P.BlendMode( Blend() );
 			P.SetColor( cUIManager::instance()->HighlightFocusColor() );
 			P.DrawRectangle( GetRectf() );
@@ -259,7 +259,7 @@ void cUIControl::Draw() {
 
 		if ( cUIManager::instance()->HighlightOver() && cUIManager::instance()->OverControl() == this ) {
 			cPrimitives P;
-			P.FillMode( EE_DRAW_LINE );
+			P.FillMode( DRAW_LINE );
 			P.BlendMode( Blend() );
 			P.SetColor( cUIManager::instance()->HighlightOverColor() );
 			P.DrawRectangle( GetRectf() );
@@ -541,7 +541,7 @@ void cUIControl::BackgroundDraw() {
 
 void cUIControl::BorderDraw() {
 	cPrimitives P;
-	P.FillMode( EE_DRAW_LINE );
+	P.FillMode( DRAW_LINE );
 	P.BlendMode( Blend() );
 	P.LineWidth( (eeFloat)mBorder->Width() );
 	P.SetColor( mBorder->Color() );

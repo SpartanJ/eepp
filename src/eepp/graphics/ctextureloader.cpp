@@ -412,7 +412,7 @@ void cTextureLoader::LoadFromPixels() {
 
 			Uint32 flags = mMipmap ? SOIL_FLAG_MIPMAPS : 0;
 
-			flags = ( mClampMode == EE_CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
+			flags = ( mClampMode == CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 			flags = ( mCompressTexture ) ? ( flags | SOIL_FLAG_COMPRESS_TO_DXT ) : flags;
 
 			GLint PreviousTexture;

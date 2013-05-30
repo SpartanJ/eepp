@@ -5,7 +5,7 @@ using namespace EE::Math::easing;
 namespace EE { namespace Math {
 
 cWaypoints::cWaypoints() :
-	mType(LINEAR),
+	mType(Ease::Linear),
 	mEnable(false),
 	mUpdate(true),
 	mLoop(false),
@@ -216,7 +216,7 @@ void cWaypoints::SetTotalTime( const eeFloat& TotTime ) {
 		mPoints[i].t = mPoints[i].p.Distance( mPoints[i + 1].p ) * TotTime / tdist;
 }
 
-void cWaypoints::Type( EE_INTERPOLATION InterpolationType ) {
+void cWaypoints::Type( Ease::Interpolation InterpolationType ) {
 	mType = InterpolationType;
 }
 

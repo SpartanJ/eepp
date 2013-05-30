@@ -373,21 +373,21 @@ void cGL::LineSmooth( const bool& Enable ) {
 }
 
 void cGL::PolygonMode() {
-	EE_FILL_MODE Mode = EE_DRAW_FILL;
+	EE_FILL_MODE Mode = DRAW_FILL;
 
 	if ( BitOp::ReadBitKey( &mStateFlags, GLSF_POLYGON_MODE ) )
-		Mode = EE_DRAW_LINE;
+		Mode = DRAW_LINE;
 
 	PolygonMode( Mode );
 }
 
 void cGL::PolygonMode( const EE_FILL_MODE& Mode ) {
-	if ( Mode == EE_DRAW_FILL )
+	if ( Mode == DRAW_FILL )
 		PolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 	else
 		PolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 
-	BitOp::WriteBitKey( &mStateFlags, GLSF_POLYGON_MODE, Mode == EE_DRAW_LINE ? 1 : 0 );
+	BitOp::WriteBitKey( &mStateFlags, GLSF_POLYGON_MODE, Mode == DRAW_LINE ? 1 : 0 );
 }
 
 std::string cGL::GetVendor() {

@@ -7,8 +7,8 @@ namespace EE { namespace Graphics {
 
 /** @enum EE_FILL_MODE Defines the fill mode for the primitives. */
 enum EE_FILL_MODE {
-	EE_DRAW_LINE, 				//!< Draw only lines
-	EE_DRAW_FILL 				//!< Draw filled objects
+	DRAW_LINE, 				//!< Draw only lines
+	DRAW_FILL 				//!< Draw filled objects
 };
 
 /** @enum EE_TEX_FILTER Defines the texture filter used. */
@@ -43,26 +43,26 @@ enum EE_RENDER_MODE {
 
 /** @enum EE_SAVE_TYPE Defines the format to save a texture. */
 enum EE_SAVE_TYPE {
-	EE_SAVE_TYPE_UNKNOWN	= -1,
-	EE_SAVE_TYPE_TGA 		= 0,
-	EE_SAVE_TYPE_BMP 		= 1,
-	EE_SAVE_TYPE_PNG 		= 2,
-	EE_SAVE_TYPE_DDS 		= 3,
-	EE_SAVE_TYPE_JPG		= 4
+	SAVE_TYPE_UNKNOWN	= -1,
+	SAVE_TYPE_TGA 		= 0,
+	SAVE_TYPE_BMP 		= 1,
+	SAVE_TYPE_PNG 		= 2,
+	SAVE_TYPE_DDS 		= 3,
+	SAVE_TYPE_JPG		= 4
 };
 
 /** @enum EE_TTF_FONT_STYLE Set the TTF Font style. */
 enum EE_TTF_FONT_STYLE {
-	EE_TTF_STYLE_NORMAL 	= 0,
-	EE_TTF_STYLE_BOLD 		= 1,
-	EE_TTF_STYLE_ITALIC 	= 2,
-	EE_TTF_STYLE_UNDERLINE 	= 4
+	TTF_STYLE_NORMAL		= 0,
+	TTF_STYLE_BOLD			= 1,
+	TTF_STYLE_ITALIC		= 2,
+	TTF_STYLE_UNDERLINE 	= 4
 };
 
 /** @enum EE_CLAMP_MODE Set the clamp mode of the texture. */
 enum EE_CLAMP_MODE {
-	EE_CLAMP_TO_EDGE,
-	EE_CLAMP_REPEAT
+	CLAMP_TO_EDGE,
+	CLAMP_REPEAT
 };
 
 /** @enum EE_DRAW_MODE The batch renderer, rendering methods */

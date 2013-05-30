@@ -17,7 +17,7 @@ cTexture::cTexture() :
 	mImgWidth(0),
 	mImgHeight(0),
 	mFlags(0),
-	mClampMode( EE_CLAMP_TO_EDGE ),
+	mClampMode( CLAMP_TO_EDGE ),
 	mFilter( TEX_FILTER_LINEAR )
 {
 	if ( NULL == sBR ) {
@@ -162,7 +162,7 @@ bool cTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 				glBindTexture(GL_TEXTURE_2D, mTexture);
 
 			Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
-			flags = (mClampMode == EE_CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
+			flags = (mClampMode == CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 
 			NTexId = SOIL_create_OGL_texture( reinterpret_cast<Uint8*>(&mPixels[0]), &width, &height, mChannels, mTexture, flags );
 
@@ -327,7 +327,7 @@ void cTexture::ApplyClampMode() {
 		if ( PreviousTexture != (GLint)mTexture )
 			glBindTexture(GL_TEXTURE_2D, mTexture);
 
-		if( mClampMode == EE_CLAMP_REPEAT ) {
+		if( mClampMode == CLAMP_REPEAT ) {
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
 		} else {
@@ -358,7 +358,7 @@ void cTexture::Reload()  {
 		glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
 
 		Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
-		flags = (mClampMode == EE_CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
+		flags = (mClampMode == CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 
 		if ( ( mFlags & TEX_FLAG_COMPRESSED ) ) {
 			if ( mTexture != PreviousTexture )
@@ -433,7 +433,7 @@ void cTexture::DrawFast( const eeFloat& x, const eeFloat& y, const eeFloat& Angl
 	sBR->QuadsBegin();
 	sBR->QuadsSetColor( Color );
 
-	if ( ClampMode() == EE_CLAMP_REPEAT )
+	if ( ClampMode() == CLAMP_REPEAT )
 		sBR->QuadsSetSubsetFree( 0, 0, 0, height / h, width / w, height / h, width / w, 0 );
 
 	sBR->BatchQuadEx( x, y, w, h, Angle, Scale );
@@ -488,7 +488,7 @@ void cTexture::DrawEx( const eeFloat &x, const eeFloat &y, const eeFloat &width,
 	sBR->QuadsSetColorFree( Color0, Color1, Color2, Color3 );
 
 	if ( Effect <= RN_FLIPMIRROR ) {
-		if ( ClampMode() == EE_CLAMP_REPEAT ) {
+		if ( ClampMode() == CLAMP_REPEAT ) {
 			if ( Effect == RN_NORMAL ) {
 				if ( renderSector ) {
 					sBR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
@@ -627,7 +627,7 @@ void cTexture::DrawQuadEx( const eeQuad2f& Q, const eeFloat &offsetx, const eeFl
 	sBR->QuadsBegin();
 	sBR->QuadsSetColorFree( Color0, Color1, Color2, Color3 );
 
-	if ( Angle != 0 ||  Scale != 1.0f || ClampMode() == EE_CLAMP_REPEAT ) {
+	if ( Angle != 0 ||  Scale != 1.0f || ClampMode() == CLAMP_REPEAT ) {
 		for (Uint8 i = 1; i < 4; i++ ) {
 			if ( MinX > Q.V[i].x ) MinX = Q.V[i].x;
 			if ( MaxX < Q.V[i].x ) MaxX = Q.V[i].x;
@@ -656,7 +656,7 @@ void cTexture::DrawQuadEx( const eeQuad2f& Q, const eeFloat &offsetx, const eeFl
 	if ( Angle != 0.0f )
 		mQ.Rotate( Angle, QCenter );
 
-	if ( ClampMode() == EE_CLAMP_REPEAT )
+	if ( ClampMode() == CLAMP_REPEAT )
 		sBR->QuadsSetSubsetFree( 0, 0, 0, (MaxY - MinY) / h, ( MaxX - MinX ) / w, (MaxY - MinY) / h, ( MaxX - MinX ) / w, 0 );
 	else if ( renderSector )
 		sBR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
