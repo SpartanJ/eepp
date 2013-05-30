@@ -55,6 +55,7 @@ inline eeFloat Degrees( const eeFloat& Radians ) {
 	return Radians * EE_180_PI;
 }
 
+/** @return The next power of two of the given Size */
 template <typename T>
 T NextPowOfTwo( T Size ) {
 	T p = 1;
@@ -65,16 +66,19 @@ T NextPowOfTwo( T Size ) {
 	return p;
 }
 
+/** @return If the number given is power of two */
 template <typename T>
 T IsPow2( T v ) {
 	return ( ( v & ( v - 1 ) ) == 0 );
 }
 
+/** Round the number */
 template <typename T>
 inline T Round( T r ) {
 	return (r > 0.0f) ? floor(r + 0.5f) : ceil(r - 0.5f);
 }
 
+/** Round the number always to the upper value */
 template <typename T >
 inline T RoundUp( T r ) {
 	return (r > 0.0f) ? ceil(r) : ceil(r - 0.5f);

@@ -9,72 +9,106 @@
 
 namespace EE { namespace Math {
 
+/** @brief Utility template class for manipulating polygons */
 template <typename T>
 class Polygon2 {
 	public:
+		/** Default constructor. Creates an empty object. */
 		Polygon2();
 
 		~Polygon2();
 
+		/** Creates a polygon from other polygon */
 		Polygon2( const Polygon2<T>& fromPoly );
 
+		/** Creates a polygon from a triangle */
 		Polygon2( const Triangle2<T>& fromTrig );
 
+		/** Creates a polygon from a quad */
 		Polygon2( const Quad2<T>& fromQuad );
 
+		/** Creates a polygon from a rectangle */
 		Polygon2( const tRECT<T>& fromRect );
 
+		/** Creates a polygon from a vector of Vector2 ( 2D vector ) */
 		Polygon2( const std::vector< Vector2<T> >& theVecs );
 
+		/** Adds a new Vector2 to the polygon */
 		Uint32 PushBack( const Vector2<T>& V );
 
+		/** Removes the las Vector2 from the polygon */
 		void PopBack();
 
+		/** Clear the polygon vectors */
 		void Clear();
 
+		/** @return The polygon Vector2 from the position ( from 0 to polygon size -1 ) */
 		const Vector2<T>& operator[] ( const Uint32& Pos ) const;
 
+		/** @return The polygon Vector2 from the position ( from 0 to polygon size -1 ) */
 		Vector2<T>& GetAt( const Uint32& Pos )
 		{
 			return Vector[Pos];
 		}
 
+		/** Change the polygon vector in the position specified
+		**	@return The Vector2 changed */
 		Vector2<T>& SetAt( const Uint32& Pos, Vector2<T> newPos )
 		{
 			Vector[Pos] = newPos;
 			return Vector[Pos];
 		}
 
+		/** @return The number of vectors of the polygon */
 		std::size_t Size() const;
 
+		/** @return The position of the polygon ( also known as the offset of the polygon ) */
 		Vector2<T> Position() { return Vector2<T>(cOffsetX, cOffsetY); }
 
+		/** Move the polygon Vector2s, add to every point the distance specified  */
 		void Move( Vector2<T> dist );
 
+		/** @return The X position of the polygon ( the X-axis Offset ) */
 		T X() const { return cOffsetX; }
 
+		/** @return The Y position of the polygon ( the Y-axis Offset ) */
 		T Y() const { return cOffsetY; }
 
+		/** @return The position of the polygon  ( the offset )*/
 		void Position( const Vector2<T>& V ) { cOffsetX = V.x; cOffsetY = V.y; }
 
+		/** Set the new position of the x-axis ( the x-axis offset ) */
 		T X( const T& x ) { cOffsetX = x; }
 
+		/** Set the new position of the y-axis ( the y-axis offset ) */
 		T Y( const T& y ) { cOffsetY = y; }
 
+		/** @return True if the polygons intersect */
 		bool Intersect( const Polygon2<T>& p1 );
 
+		/** Rotates the polygon from a rotation center */
 		void Rotate( const T& Angle, const Vector2<T>& Center );
 
+		/** Scale the polygon from a center point */
 		void Scale( const T& scale, const Vector2<T>& Center );
 
+		/** @return True if the point is inside the polygon */
 		bool PointInside( const Vector2<T>& point );
 
+		/** @return The polygon axis-aligned bounding box */
 		tRECT<T> ToAABB();
 
+		/** Creates a rounded rectangle polygon */
 		static Polygon2<T> CreateRoundedRectangle( const T& x, const T& y, const T& width, const T& height, const eeUint& Radius = 8 );
 
+		/** @brief Intersect to Quads
+		**	Convert the two quads in two polygons, and execute a polygon to polygon collition.
+		**	@param q0Pos The q0 quad polygon offset
+		**	@param q1Pos The q1 quad polygon offset */
 		static bool IntersectQuad2( const Quad2<T>& q0, const Quad2<T>& q1, const Vector2<T>& q0Pos = Vector2<T>(0,0), const Vector2<T>& q1Pos = Vector2<T>(0,0) );
 
+		/** @return Th closest polygon point to the point (to).
+		**	@param distance A pointer that returns the distance between the point and the closest point to the point */
 		Uint32 ClosestPoint( const Vector2<T> &to, T * distance = NULL );
 	private:
 		std::vector< Vector2<T> > Vector;

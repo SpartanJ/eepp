@@ -11,22 +11,26 @@ And for the C++ implementation of Henrik Krysell.
 
 namespace EE { namespace Math {
 
+/** @brief Perlin noise can be used to generate gradients, textures and effects. For more information go to http://en.wikipedia.org/wiki/Perlin_noise
+**	To get a better understanding of the variables to generate the noise, visit http://freespace.virgin.net/hugo.elias/models/m_perlin.htm */
 class EE_API cPerlinNoise {
 	public:
 		cPerlinNoise();
 		
 		~cPerlinNoise();
 
+		/** Reset the initial values */
 		void Init();
 
+		/** @return The noise value for the 2D coordinates */
 		eeFloat PerlinNoise2D(eeFloat x, eeFloat y);
 
 		void Octaves( const eeInt& octaves ) { mOctaves = octaves; }
 		
 		void Persistence( const eeFloat& pers)  { mPersistence = pers; }
-		
+
 		void Frequency( const eeFloat& freq ) { mFrequency = freq; }
-		
+
 		void Amplitude( const eeFloat& amp ) { mAmplitude = amp; }
 		
 		void FrequencyOctaveDep( const bool& dep ) { mFreqOctaveDep =  dep; }

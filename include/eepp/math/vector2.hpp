@@ -5,55 +5,80 @@
 
 namespace EE { namespace Math {
 
+/** @brief Utility template class for manipulating 2-dimensional vectors */
 template <typename T>
 class Vector2 {
 	public :
+		/** Default constructor creates Vector2(0,0) */
 		Vector2();
 
+		/** Creates a vector from its coordinates */
 		Vector2(T X, T Y);
 
+		/** @return A copy of the Vector2 */
 		Vector2<T> Copy();
 
+		/** @return The Dot product of the 2D vectors. */
 		T Dot( const Vector2<T>& V2 );
 
+		/** @return The Cross product of the 2D vectors.  */
 		T Cross( const Vector2<T>& V2 );
 
+		/** @return The perpendicular vector */
 		Vector2<T> Perp();
 
+		/** @return The reveser perpendicular vector */
 		Vector2<T> RPerp();
 
+		/** Uses complex multiplication to rotate self by vec. Scaling will occur if self is not a unit vector. */
 		Vector2<T> Rotate( const Vector2<T>& V2 );
 
+		/** Inverse of Vector2::Rotate */
 		Vector2<T> UnRotate( const Vector2<T>& V2 );
 
+		/** @return The vector Length */
 		T Length();
 
+		/** @return The square of the length of the 2D vector. */
 		T LengthSq();
 
+		/** Normalize the vector */
 		void Normalize();
 
+		/** @return Clamp the vector to a magnitude length. */
 		void Clamp( T len );
 
+		/** @return The unit length vector for the given angle (radians) */
 		Vector2<T> ForAngle( const T& a );
 
+		/** @return The angular direction vector is pointing in (radians). */
 		T ToAngle();
 
+		/** Rotates the vector */
 		void RotateVector( const T& Angle );
 
+		/** Rotates the vector against a defined rotation center */
 		void RotateVectorCentered( const T& Angle, const Vector2<T>& RotationCenter );
 
+		/** @return The distance between two vectors */
 		T Distance( const Vector2<T>& Vec );
 
+		/** @return The square of the distance between two vectors */
 		T DistanceSq( const Vector2<T>& Vec );
 
+		/** @return True if the distance between the two vectors is less than Dist */
 		bool Near( const Vector2<T>& Vec, T Dist );
 
+		/** @return The spherical linear interpolation between two 2D vectors. */
 		Vector2<T> SphericalLerp( const Vector2<T>& Vec, T Time );
 
+		/** Spherical linear interpolation between two vectors */
 		Vector2<T> SphericalLerpConst( const Vector2<T>& Vec, T Angle );
 
+		/** Performs a linear interpolation between two 2D vectors. */
 		Vector2<T> Lerp( const Vector2<T>& Vec, T Time );
 
+		/**	@return A vector interpolated from self towards Vec with length Dist. */
 		Vector2<T> LerpConst( const Vector2<T>& Vec, T Dist );
 
 		T x;

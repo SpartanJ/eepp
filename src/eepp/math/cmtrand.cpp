@@ -12,7 +12,7 @@ cMTRand::cMTRand() {
 
 cMTRand::cMTRand( const cMTRand& o ) {
     register const Uint32 *t	= o.mState;
-    register Uint32	* s		= mState;
+	register Uint32	* s			= mState;
     register int	i			= N;
 
     for ( ; i--; *s++ = *t++ )

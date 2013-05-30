@@ -31,7 +31,7 @@
 						EE::System documented.
 						EE::Graphics documented.
 						EE::Audio documented.
-						EE::Math 30 to 40 % documented.
+						EE::Math documented.
 						EE::UI Not documented at all.
 						EE::Physics Not documented at all, chipmunk documentation should help.
 						EE::Gaming Not documented at all.

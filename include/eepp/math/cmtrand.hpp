@@ -71,13 +71,16 @@ class EE_API cMTRand {
 		static const Int32 N		= 624;
 		static const Uint32 SAVE	= N + 1;
 
+		/** Initialize with a defined user seed */
 		cMTRand( const Uint32 oneSeed );
 
 		/** Initialize with a predefined seed */
 		cMTRand();
 
+		/** Initialize with a copy of another MTRand object */
 		cMTRand( const cMTRand& o );
 
+		/** Copy MTRand object */
 		cMTRand& operator=( const cMTRand& o );
 
 		/** @return integer in [0,2^32-1] */

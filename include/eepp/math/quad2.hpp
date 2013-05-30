@@ -6,39 +6,52 @@
 
 namespace EE { namespace Math {
 
+/** @brief Utility template class for manipulating quads */
 template <typename T>
 class Quad2 {
 	public:
+		/** Default constructor creates an empty quad ( four Vector2(0,0) */
 		Quad2();
 
+		/** Creates a quad from a Rectangle */
 		Quad2( const tRECT<T>& R );
 
+		/** Creates a quad from four Vector2 */
 		Quad2( const Vector2<T>& v1, const Vector2<T>& v2, const Vector2<T>& v3, const Vector2<T>& v4 );
 
+		/** @return The vector from the position ( position from 0 to 3 ) */
 		const Vector2<T>& operator[] ( const Uint32& Pos ) const;
 
 		Vector2<T> V[4];
 
 		/**
-		Vector2<T> V[0]; //! Left - Top Vector
-		Vector2<T> V[1]; //! Left - Bottom Vector
-		Vector2<T> V[2]; //! Right - Bottom Vertex
-		Vector2<T> V[3]; //! Right - Top Vertex
+		Vector2<T> V[0]; //! Left - Top Vector2
+		Vector2<T> V[1]; //! Left - Bottom Vector2
+		Vector2<T> V[2]; //! Right - Bottom Vector2
+		Vector2<T> V[3]; //! Right - Top Vector2
+		@return The center point of the quad
 		*/
 		Vector2<T> GetCenter();
 
+		/** @return The Vector2 from the position index ( from 0 to 3 ) */
 		Vector2<T>& GetAt( Uint32 Index ) { return V[Index]; }
 
+		/** Creates a quad from a rectangle */
 		static Quad2<T> FromAABB( const tRECT<T>& R );
 
+		/** @return The Axis-Aligned bounding box of the Quad */
 		tRECT<T> ToAABB( const T& OffsetX = 0, const T& OffsetY = 0 );
 
+		/** Rotates the quad from a rotation center */
 		void Rotate( const T& Angle, const Vector2<T>& Center );
 
+		/** Rotates the quad from its rotation center */
 		void Rotate( const T& Angle );
 
+		/** Scale the quad from its rotation center */
 		void Scale( const T& scale );
 
+		/** Scale the quad from an specified center */
 		void Scale( const T& scale, const Vector2<T>& Center );
 };
 

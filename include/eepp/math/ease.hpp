@@ -3,10 +3,10 @@
 
 namespace EE { namespace Math {
 
-/** @enum Ease::Interpolation Define the type of interpolation used. */
-
+/** @brief Container class of the Interpolation types. */
 class Ease {
 	public:
+		/** @enum Ease::Interpolation Define the type of interpolation used. */
 		enum Interpolation {
 			Linear,
 			QuadraticIn,

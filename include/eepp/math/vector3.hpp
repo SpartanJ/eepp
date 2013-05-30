@@ -5,6 +5,7 @@
 
 namespace EE { namespace Math {
 
+/** @brief Utility template class for manipulating 3-dimensional vectors */
 template <typename T>
 class Vector3 {
 	public:
@@ -12,7 +13,10 @@ class Vector3 {
 		T y;
 		T z;
 
+		/** Default constructor. Creates Vector3(0,0,0) */
 		Vector3() : x(0), y(0), z(0) {}
+
+		/** Creates a vector from its coordinates */
 		Vector3(T X, T Y, T Z) : x(X), y(Y), z(Z) {}
 };
 

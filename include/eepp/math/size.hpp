@@ -5,18 +5,33 @@
 
 namespace EE { namespace Math {
 
+/** @brief A template class to manipulate sizes */
 template<typename T>
 class tSize : public Vector2<T>
 {
 	public:
+		/** Default constructor, creates a tSize(0,0) */
 		tSize();
+
+		/** Creates a tSize of the width and height */
 		tSize( const T& Width, const T& Height );
+
+		/** Creates a copy of a size */
 		tSize( const tSize<T>& Size );
+
+		/** Creates a size from a Vector2 */
 		tSize( const Vector2<T>& Vec );
 
+		/** @return The size width */
 		const T& Width() const;
+
+		/** @return The size height */
 		const T& Height() const;
+
+		/** Set a new width */
 		void Width( const T& width );
+
+		/** Set a new height */
 		void Height( const T& height );
 };
 
