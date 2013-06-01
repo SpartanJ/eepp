@@ -13,14 +13,16 @@ syntax: glob
 *\.filters
 *\.suo
 *\.DS_Store
+*.pdb
 ./eees*
 ./eeew*
 ./eetest*
 ./eesound*
 ./eesprite*
+./eeiv*
 ./docs
 ee.tag
 log.log
 eepp-debug.dll
 eepp.dll
-*.pdb
+external_projects.lua

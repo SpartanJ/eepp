@@ -735,3 +735,7 @@ solution "eepp"
 		language "C++"
 		files { "src/examples/sprites/*.cpp" }
 		build_link_configuration( "eesprites" )
+
+if os.isfile("external_projects.lua") then
+	dofile("external_projects.lua")
+end
