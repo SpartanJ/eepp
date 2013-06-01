@@ -26,14 +26,19 @@ namespace EE { namespace Window { namespace Backend { namespace SDL {
 
 cWindowSDL::cWindowSDL( WindowSettings Settings, ContextSettings Context ) :
 	cWindow( Settings, Context, eeNew( cClipboardSDL, ( this ) ), eeNew( cInputSDL, ( this ) ), eeNew( cCursorManagerSDL, ( this ) ) ),
-	mSurface( NULL ),
+	mSurface( NULL )
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
+	,
 	mWMinfo( eeNew( SDL_SysWMinfo, () ) )
+#endif
 {
 	Create( Settings, Context );
 }
 
 cWindowSDL::~cWindowSDL() {
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
 	eeSAFE_DELETE( mWMinfo );
+#endif
 }
 
 bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {

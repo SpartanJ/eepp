@@ -813,10 +813,18 @@ namespace detail
 #			if(GLM_PLATFORM & GLM_PLATFORM_ANDROID)
 				return _isnan(x) != 0;
 #			else
-				return std::isnan(x);
+#				if defined(__HAIKU__) || defined(__BEOS__)
+					return isnan(x) != 0;
+#				else
+					return std::isnan(x);
+#				endif
 #			endif
 #       else
-			return std::isnan(x);
+#			if defined(__HAIKU__) || defined(__BEOS__)
+				return isnan(x) != 0;
+#			else
+				return std::isnan(x);
+#			endif
 #       endif
 	}
 
@@ -868,10 +876,18 @@ namespace detail
 #			if(GLM_PLATFORM & GLM_PLATFORM_ANDROID)
 				return _isinf(x) != 0;
 #			else
-				return std::isinf(x);
+#				if defined(__HAIKU__) || defined(__BEOS__)
+					return isinf(x) != 0;
+#				else
+					return std::isinf(x);
+#				endif
 #			endif
 #       else
-			return std::isinf(x);
+#			if defined(__HAIKU__) || defined(__BEOS__)
+				return isinf(x) != 0;
+#			else
+				return std::isinf(x);
+#			endif
 #       endif
 /*
 #       if(GLM_COMPILER & GLM_COMPILER_VC)

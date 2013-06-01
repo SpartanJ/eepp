@@ -8,16 +8,16 @@
 	2D Game Engine designed for an easy cross-platform game development.
 	The project aims to provide a simple and powerfull framework that takes advantage of C++, OpenGL, OpenAL, SDL and more.
 
-	Thanks to: \n
-		* Sean Barrett for the stb_vorbis and stb_image libraries. \n
-		* Sam Latinga for Simple DirectMedia Layer library. \n
-		* Jonathan Dummer for the Simple OpenGL Image Library. \n
-		* Laurent Gomila for the SFML library ( eepp audio module is heavily based on the SFML audio module ) \n
-		* OGRE staff for the Timer implementation \n
-		* Lewis Van Winkle for PlusCallback \n
-		* Dieter Baron and Thomas Klausner for libzip \n
-		* Jean-loup Gailly and Mark Adler for zlib \n
-		* Milan Ikits and Marcelo Magallon for GLEW \n
+	Thanks to:
+		* Sean Barrett for the stb_vorbis and stb_image libraries.
+		* Sam Latinga for Simple DirectMedia Layer library.
+		* Jonathan Dummer for the Simple OpenGL Image Library.
+		* Laurent Gomila for the SFML library ( eepp audio module is heavily based on the SFML audio module )
+		* OGRE staff for the Timer implementation
+		* Lewis Van Winkle for PlusCallback
+		* Dieter Baron and Thomas Klausner for libzip
+		* Jean-loup Gailly and Mark Adler for zlib
+		* Milan Ikits and Marcelo Magallon for GLEW
 		* And a lot more people!
 
 

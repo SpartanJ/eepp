@@ -367,12 +367,15 @@ function add_static_links()
 	
 	links { "SOIL2-static",
 			"chipmunk-static",
-			"glew-static",
 			"libzip-static",
 			"stb_vorbis-static",
 			"jpeg-compressor-static",
 			"zlib-static"
 	}
+	
+	if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") then
+		links{ "glew-static" }
+	end
 end
 
 function can_add_static_backend( name )
@@ -618,7 +621,9 @@ solution "eepp"
 		kind "StaticLib"
 		language "C"
 		targetdir("libs/" .. os.get_real() .. "/helpers/")
-		files { "src/eepp/helper/glew/*.c" }
+		if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") then
+			files { "src/eepp/helper/glew/*.c" }
+		end
 		includedirs { "include/eepp/helper/glew" }
 		build_base_configuration( "glew" )
 		
