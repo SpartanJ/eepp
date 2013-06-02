@@ -8,6 +8,8 @@ namespace EE { namespace Graphics {
 
 cBatchRenderer::cBatchRenderer() :
 	mVertex( NULL ),
+	mVertexSize( 0 ),
+	mTVertex( NULL ),
 	mNumVertex(0),
 	mTexture(NULL),
 	mTF( cTextureFactory::instance() ),
@@ -25,6 +27,9 @@ cBatchRenderer::cBatchRenderer() :
 }
 
 cBatchRenderer::cBatchRenderer( const eeUint& Prealloc ) :
+	mVertex( NULL ),
+	mVertexSize( 0 ),
+	mTVertex( NULL ),
 	mNumVertex(0),
 	mTexture(NULL),
 	mTF( cTextureFactory::instance() ),

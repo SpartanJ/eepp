@@ -746,6 +746,12 @@ solution "eepp"
 		files { "src/examples/fonts/*.cpp" }
 		build_link_configuration( "eefonts" )
 
+	project "eepp-vbo-fbo-batch"
+		kind "WindowedApp"
+		language "C++"
+		files { "src/examples/vbo_fbo_batch/*.cpp" }
+		build_link_configuration( "eevbo-fbo-batch" )
+
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")
 end
