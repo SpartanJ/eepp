@@ -337,7 +337,7 @@ void cRendererGL3::DisableClientState( GLenum array ) {
 	}
 }
 
-void cRendererGL3::VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid * pointer, GLuint allocate ) {
+void cRendererGL3::VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid * pointer ) {
 	const GLint index = mAttribsLoc[ EEGL_VERTEX_ARRAY ];
 
 	if ( -1 != index ) {
@@ -351,7 +351,7 @@ void cRendererGL3::VertexPointer ( GLint size, GLenum type, GLsizei stride, cons
 	}
 }
 
-void cRendererGL3::ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
+void cRendererGL3::ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) {
 	const GLint index = mAttribsLoc[ EEGL_COLOR_ARRAY ];
 
 	if ( -1 != index ) {
@@ -369,7 +369,7 @@ void cRendererGL3::ColorPointer ( GLint size, GLenum type, GLsizei stride, const
 	}
 }
 
-void cRendererGL3::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
+void cRendererGL3::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) {
 	const GLint index = mTextureUnits[ mCurActiveTex ];
 
 	if ( -1 != index ) {

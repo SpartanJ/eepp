@@ -1,4 +1,5 @@
 #include <eepp/graphics/cimage.hpp>
+#include <eepp/system/filesystem.hpp>
 #include <eepp/system/clog.hpp>
 #include <eepp/system/cpack.hpp>
 #include <eepp/system/cpackmanager.hpp>
@@ -318,6 +319,11 @@ eeUint cImage::Channels() const {
 
 bool cImage::SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format ) {
 	bool Res = false;
+
+	std::string fpath( FileSystem::FileRemoveFileName( filepath ));
+
+	if ( !FileSystem::IsDirectory( fpath ) )
+		FileSystem::MakeDir( fpath );
 
 	if ( NULL != mPixels && 0 != mWidth && 0 != mHeight && 0 != mChannels ) {
 		if ( SAVE_TYPE_JPG != Format ) {

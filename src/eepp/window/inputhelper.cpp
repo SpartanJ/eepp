@@ -64,25 +64,6 @@ Uint32 eeConvertKeyCharacter( const Uint32& KeyCode, const Uint16& Unicode, cons
 		default:				break;
 	}
 
-/** @TODO: Report SDL2 bug not reporting Key Modifiers correctly. */
-#ifndef EE_SDL_VERSION_2
-	if ( !( Modifiers & KEYMOD_NUM ) ) {
-		switch ( KeyCode ) {
-			case KEY_KP0:		value = KEY_INSERT;		break;
-			case KEY_KP1:		value = KEY_END;		break;
-			case KEY_KP2:		value = KEY_DOWN;		break;
-			case KEY_KP3:		value = KEY_PAGEDOWN;	break;
-			case KEY_KP4:		value = KEY_LEFT;		break;
-			case KEY_KP5:		value = 0;				break;
-			case KEY_KP6:		value = KEY_RIGHT;		break;
-			case KEY_KP7:		value = KEY_HOME;		break;
-			case KEY_KP8:		value = KEY_UP;			break;
-			case KEY_KP9:		value = KEY_PAGEUP;		break;
-			default:			break;
-		}
-	}
-#endif
-
 	return value;
 }
 

@@ -31,9 +31,6 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	// Create a new window
 	cWindow * win = cEngine::instance()->CreateWindow( WindowSettings( 640, 480, "eepp - Sprites" ), ContextSettings( true ) );
 
-	// Set window background color
-	win->BackColor( eeColor( 0, 0, 0 ) );
-
 	// Check if created
 	if ( win->Created() ) {
 		// Get the application path

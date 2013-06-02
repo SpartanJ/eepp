@@ -398,7 +398,7 @@ void cRendererGLES2::DisableClientState( GLenum array ) {
 	}
 }
 
-void cRendererGLES2::VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid * pointer, GLuint allocate ) {
+void cRendererGLES2::VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid * pointer ) {
 	const GLint index = mAttribsLoc[ EEGL_VERTEX_ARRAY ];
 
 	if ( -1 != index ) {
@@ -412,7 +412,7 @@ void cRendererGLES2::VertexPointer ( GLint size, GLenum type, GLsizei stride, co
 	}
 }
 
-void cRendererGLES2::ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
+void cRendererGLES2::ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) {
 	const GLint index = mAttribsLoc[ EEGL_COLOR_ARRAY ];
 
 	if ( -1 != index ) {
@@ -430,7 +430,7 @@ void cRendererGLES2::ColorPointer ( GLint size, GLenum type, GLsizei stride, con
 	}
 }
 
-void cRendererGLES2::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
+void cRendererGLES2::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) {
 	if ( mCurShaderLocal ) {
 		if ( 1 == mTexActive ) {
 			if ( mCurShader == mShaders[ EEGLES2_SHADER_PRIMITIVE ] ) {

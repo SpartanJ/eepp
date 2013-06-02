@@ -327,10 +327,8 @@ void cParticleSystem::Draw() {
 		GLi->Enable( GL_POINT_SPRITE );
 		GLi->PointSize( mSize );
 
-		Uint32 alloc = mPCount * sizeof(cParticle);
-
-		GLi->ColorPointer	( 4, GL_FP, sizeof(cParticle), reinterpret_cast<char*>( &mParticle[0] ) + sizeof(eeFloat) * 2	, alloc );
-		GLi->VertexPointer	( 2, GL_FP, sizeof(cParticle), reinterpret_cast<char*>( &mParticle[0] )							, alloc );
+		GLi->ColorPointer	( 4, GL_FP, sizeof(cParticle), reinterpret_cast<char*>( &mParticle[0] ) + sizeof(eeFloat) * 2	);
+		GLi->VertexPointer	( 2, GL_FP, sizeof(cParticle), reinterpret_cast<char*>( &mParticle[0] )							);
 
 		GLi->DrawArrays( GL_POINTS, 0, (GLsizei)mPCount );
 

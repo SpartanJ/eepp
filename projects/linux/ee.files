@@ -455,7 +455,6 @@
 ../../src/eepp/window/platform/x11/ccursorx11.cpp
 ../../src/eepp/window/platform/platformimpl.hpp
 ../../src/eepp/graphics/pixelperfect.cpp
-../../src/eepp/graphics/glhelper.cpp
 ../../src/eepp/graphics/cvertexbuffervbo.cpp
 ../../src/eepp/graphics/cvertexbufferogl.cpp
 ../../src/eepp/graphics/cvertexbuffermanager.cpp
@@ -610,3 +609,4 @@
 ../../src/eepp/window/backend/SDL2/cbackendsdl2.cpp
 ../../src/examples/sound/sound.cpp
 ../../src/examples/sprites/sprites.cpp
+../../src/examples/fonts/fonts.cpp

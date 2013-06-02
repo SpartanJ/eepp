@@ -323,6 +323,10 @@ end
 function generate_os_links()
 	if os.is_real("linux") then
 		multiple_insert( os_links, { "rt", "pthread", "X11", "openal", "GL", "Xcursor" } )
+		
+		if _OPTIONS["with-static-eepp"] then
+			table.insert( os_links, "dl" )
+		end
 	elseif os.is_real("windows") then
 		multiple_insert( os_links, { "OpenAL32", "opengl32", "glu32", "gdi32" } )
 	elseif os.is_real("mingw32") then
@@ -735,6 +739,12 @@ solution "eepp"
 		language "C++"
 		files { "src/examples/sprites/*.cpp" }
 		build_link_configuration( "eesprites" )
+
+	project "eepp-fonts"
+		kind "WindowedApp"
+		language "C++"
+		files { "src/examples/fonts/*.cpp" }
+		build_link_configuration( "eefonts" )
 
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")

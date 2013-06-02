@@ -122,18 +122,16 @@ void cBatchRenderer::Flush() {
 		GLi->Translatef( -mCenter.x, -mCenter.y, 0.0f);
 	}
 
-	Uint32 alloc = sizeof(eeVertex) * NumVertex;
-
 	if ( NULL != mTexture ) {
 		mTF->Bind( mTexture );
-		GLi->TexCoordPointer( 2, GL_FP		, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f)							, alloc	);
+		GLi->TexCoordPointer( 2, GL_FP		, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f)								);
 	} else {
 		GLi->Disable( GL_TEXTURE_2D );
 		GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
 	}
 
-	GLi->VertexPointer	( 2, GL_FP				, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] )												, alloc	);
-	GLi->ColorPointer	( 4, GL_UNSIGNED_BYTE	, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f) + sizeof(eeTexCoord)	, alloc	);
+	GLi->VertexPointer	( 2, GL_FP				, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] )													);
+	GLi->ColorPointer	( 4, GL_UNSIGNED_BYTE	, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f) + sizeof(eeTexCoord)		);
 
 	#ifdef EE_GLES
 	if ( DM_QUADS == mCurrentMode ) {

@@ -81,21 +81,21 @@ void cShapeSegment::Draw( cSpace * space ) {
 
 		GLi->MultMatrixf( matrix );
 
-		GLi->VertexPointer( 3, GL_FLOAT, 0, pillVAR, pillVAR_count * sizeof(GLfloat) * 3 );
+		GLi->VertexPointer( 3, GL_FLOAT, 0, pillVAR );
 
 		if( !seg->CP_PRIVATE(shape).sensor ) {
 			eeColorA C = ColorForShape( mShape, space->Space() );
 
 			tcolors.assign( tcolors.size(), C );
 
-			GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const GLvoid*>( &tcolors[0] ), pillVAR_count * sizeof(GLfloat) * 4 );
+			GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const GLvoid*>( &tcolors[0] ) );
 
 			GLi->DrawArrays( GL_TRIANGLE_FAN, 0, pillVAR_count );
 		}
 
 		tcolors.assign( tcolors.size(), eeColorA( 102, 102, 102, 255 ) );
 
-		GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const GLvoid*>( &tcolors[0] ), pillVAR_count * sizeof(GLfloat) * 4 );
+		GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const GLvoid*>( &tcolors[0] ) );
 
 		GLi->DrawArrays( GL_LINE_LOOP, 0, pillVAR_count );
 

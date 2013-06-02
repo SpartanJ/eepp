@@ -10,8 +10,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	win->BackColor( eeColor( 50, 50, 50 ) );
 
 	// Check if created
-	if ( win->Created() )
-	{
+	if ( win->Created() ) {
 		// Create an instance of the primitive renderer
 		cPrimitives p;
 
@@ -19,14 +18,12 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		p.SetColor( eeColorA( 0, 255, 0, 150 ) );
 
 		// Application loop
-		while ( win->Running() )
-		{
+		while ( win->Running() ) {
 			// Update the input
 			win->GetInput()->Update();
 
 			// Check if ESCAPE key is pressed
-			if ( win->GetInput()->IsKeyDown( KEY_ESCAPE ) )
-			{
+			if ( win->GetInput()->IsKeyDown( KEY_ESCAPE ) ) {
 				// Close the window
 				win->Close();
 			}

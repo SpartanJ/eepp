@@ -224,9 +224,9 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const bool& V
 	if ( OutlineSize ) {
 		Uint32 Pos = 0;
 
-		std::vector<Uint8> TexO( TexSize, 0 );
-		std::vector<Uint8> TexN( TexSize, 0 );
-		std::vector<Uint8> TexI( TexSize, 0 );
+		Uint8 * TexO = eeNewArray( Uint8, TexSize );
+		Uint8 * TexN = eeNewArray( Uint8, TexSize );
+		Uint8 * TexI = eeNewArray( Uint8, TexSize );
 
 		// Fill the TexO ( the default font alpha channels ) and the TexN ( the new outline )
 		for ( Int32 y = 0; y < mTexHeight; y++ ) {
@@ -234,33 +234,32 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const bool& V
 				Pos = x + y * (Uint32)mTexWidth;
 				TexO[ Pos ] = mPixels[ Pos ].A();
 				TexN[ Pos ] = TexO[ Pos ];
+				TexI[ Pos ] = 0;
 			}
 		}
 
-		Uint8* alpha = reinterpret_cast<Uint8*>( &TexN[0] );
-		Uint8* alpha2 = reinterpret_cast<Uint8*>( &TexI[0] );
+		Uint8* alpha	= reinterpret_cast<Uint8*>( &TexN[0] );
+		Uint8* alpha2	= reinterpret_cast<Uint8*>( &TexI[0] );
 
 		// Create the outline
-		for ( Uint8 passes = 0; passes < OutlineSize; passes++ ) {
-			MakeOutline( alpha, alpha2, static_cast<Int16>( mTexWidth ), static_cast<Int16>( mTexHeight ) );
-
-			Uint8* temp = alpha;
-			alpha = alpha2;
-			alpha2 = temp;
-		}
+		MakeOutline( alpha, alpha2, static_cast<Int16>( mTexWidth ), static_cast<Int16>( mTexHeight ), OutlineSize );
 
 		for ( Int32 y = 0; y < mTexHeight; y++ ) {
 			for( Int32 x = 0; x < mTexWidth; x++) {
 				Pos = x + y * (Uint32)mTexWidth;
 
 				// Fill the outline color
-				mPixels[ Pos ] = eeColorA( OutlineColor.R(), OutlineColor.G(), OutlineColor.B(), alpha[ Pos ] );
+				mPixels[ Pos ] = eeColorA( OutlineColor.R(), OutlineColor.G(), OutlineColor.B(), alpha2[ Pos ] );
 
 				// Fill the font color
 				if ( TexO[ Pos ] > 50 )
 					mPixels[ Pos ] = eeColorA( FontColor.R(), FontColor.G(), FontColor.B(), TexO[ Pos ] );
 			}
 		}
+
+		eeSAFE_DELETE_ARRAY( TexO );
+		eeSAFE_DELETE_ARRAY( TexN );
+		eeSAFE_DELETE_ARRAY( TexI );
 	}
 
 	hkFontManager::instance()->CloseFont( mFont );
@@ -374,13 +373,13 @@ bool cTTFFont::Save( const std::string& TexturePath, const std::string& Coordina
 	return SaveTexture(TexturePath, Format) && SaveCoordinates( CoordinatesDatPath );
 }
 
-void cTTFFont::MakeOutline( Uint8 *in, Uint8 *out, Int16 w, Int16 h) {
+void cTTFFont::MakeOutline( Uint8 *in, Uint8 *out, Int16 w, Int16 h , Int16 OutlineSize ) {
 	for ( eeInt y = 0; y < h; y++ ) {
 		for( eeInt x = 0; x < w; x++ ) {
-			eeInt c = in[ y * w + x ];
+			eeInt c = ( in[ y * w + x ]  >> 24 ) & 0xFF;
 
-			for ( eeInt s_y = -1; s_y <= 1; s_y++ ) {
-				for ( eeInt s_x = -1; s_x <= 1; s_x++ ) {
+			for ( eeInt s_y = -OutlineSize; s_y <= OutlineSize; s_y++ ) {
+				for ( eeInt s_x = -OutlineSize; s_x <= OutlineSize; s_x++ ) {
 					eeInt get_x = x + s_x;
 					eeInt get_y = y + s_y;
 

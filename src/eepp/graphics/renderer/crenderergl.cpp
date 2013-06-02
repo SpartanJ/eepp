@@ -201,15 +201,15 @@ void cRendererGL::DisableClientState( GLenum array ) {
 	glDisableClientState( array );
 }
 
-void cRendererGL::VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
+void cRendererGL::VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) {
 	glVertexPointer( size, type, stride, pointer );
 }
 
-void cRendererGL::ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
+void cRendererGL::ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) {
 	glColorPointer( size, type, stride, pointer );
 }
 
-void cRendererGL::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
+void cRendererGL::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) {
 	glTexCoordPointer( size, type, stride, pointer );
 }
 

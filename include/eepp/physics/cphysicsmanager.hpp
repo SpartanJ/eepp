@@ -41,7 +41,7 @@ class CP_API cPhysicsManager {
 
 		/** The Memory Manager will keep track of all the allocations from cSpace, cBody, cShape and cConstraint and will release any non-released pointer.
 		***	This is a lazy deallocation for the lazy programmers. It is disabled by default.
-		*** To work properly set as active before allocating anything, activate it just before the singleton instantiation.
+		*** To work properly set as active before allocating anything, activate it just after the singleton instantiation.
 		*/
 		void MemoryManager( bool MemoryManager );
 

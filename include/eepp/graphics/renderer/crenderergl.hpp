@@ -48,11 +48,11 @@ class EE_API cRendererGL : public cGL {
 
 		void DisableClientState( GLenum array );
 
-		void VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate );
+		void VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer );
 
-		void ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate );
+		void ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer );
 
-		void TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate );
+		void TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer );
 
 		void ClipPlane( GLenum plane, const GLdouble *equation );
 

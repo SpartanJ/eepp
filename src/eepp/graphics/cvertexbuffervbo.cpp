@@ -192,14 +192,16 @@ void cVertexBufferVBO::SetVertexStates() {
 				else
 				#endif
 				{
-					GLi->TexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], GL_FP, 0, (char*)NULL, 0 );
+					GLi->TexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 + i ], GL_FP, 0, (char*)NULL );
 				}
 
 				mTextured = true;
 			} else {
-				GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
-				GLi->Disable( GL_TEXTURE_2D );
-				break;
+				if ( 0 == i ) {
+					GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
+					GLi->Disable( GL_TEXTURE_2D );
+					break;
+				}
 			}
 		}
 	} else {
@@ -219,7 +221,7 @@ void cVertexBufferVBO::SetVertexStates() {
 			else
 			#endif
 			{
-				GLi->TexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], GL_FP, 0, (char*)NULL, 0 );
+				GLi->TexCoordPointer( eeVertexElements[ VERTEX_FLAG_TEXTURE0 ], GL_FP, 0, (char*)NULL );
 			}
 
 			mTextured = true;
@@ -248,7 +250,7 @@ void cVertexBufferVBO::SetVertexStates() {
 		else
 		#endif
 		{
-			GLi->VertexPointer( eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FP, 0, (char*)NULL, 0 );
+			GLi->VertexPointer( eeVertexElements[ VERTEX_FLAG_POSITION ], GL_FP, 0, (char*)NULL );
 		}
 	} else {
 		GLi->DisableClientState( GL_VERTEX_ARRAY );
@@ -271,7 +273,7 @@ void cVertexBufferVBO::SetVertexStates() {
 		else
 		#endif
 		{
-			GLi->ColorPointer( eeVertexElements[ VERTEX_FLAG_COLOR ], GL_UNSIGNED_BYTE, 0, (char*)NULL, 0 );
+			GLi->ColorPointer( eeVertexElements[ VERTEX_FLAG_COLOR ], GL_UNSIGNED_BYTE, 0, (char*)NULL );
 		}
 	} else {
 		GLi->DisableClientState( GL_COLOR_ARRAY );

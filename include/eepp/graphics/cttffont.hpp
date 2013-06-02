@@ -105,7 +105,7 @@ class EE_API cTTFFont : public cFont {
 
 		bool iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const bool& VerticalDraw, const Uint16& NumCharsToGen, const eeColor& FontColor, Uint8 OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator );
 
-		void MakeOutline( Uint8 *in, Uint8 *out, Int16 w, Int16 h);
+		void MakeOutline( Uint8 *in, Uint8 *out, Int16 w, Int16 h, Int16 OutlineSize );
 
 		void RebuildFromGlyphs();
 };

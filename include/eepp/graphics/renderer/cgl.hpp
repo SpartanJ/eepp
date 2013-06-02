@@ -151,11 +151,11 @@ class EE_API cGL {
 
 		virtual void DisableClientState( GLenum array ) = 0;
 
-		virtual void VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) = 0;
+		virtual void VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) = 0;
 
-		virtual void ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) = 0;
+		virtual void ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) = 0;
 
-		virtual void TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) = 0;
+		virtual void TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) = 0;
 
 		virtual void SetShader( cShaderProgram * Shader );
 
