@@ -67,6 +67,9 @@ void cFrameBuffer::SetBufferView() {
 
 	mPrevView = mWindow->GetView();
 
+	// Get the user projection matrix
+	GLi->GetCurrentMatrix( GL_PROJECTION_MATRIX, mProjMat );
+
 	GLi->Viewport( 0, 0, mWidth, mHeight );
 	GLi->MatrixMode( GL_PROJECTION );
 	GLi->LoadIdentity();
@@ -79,6 +82,13 @@ void cFrameBuffer::RecoverView() {
 	cGlobalBatchRenderer::instance()->Draw();
 
 	mWindow->SetView( mPrevView );
+
+	// Recover the user projection matrix
+	GLi->LoadIdentity();
+	GLi->MatrixMode( GL_PROJECTION );
+	GLi->LoadMatrixf( mProjMat );
+	GLi->MatrixMode( GL_MODELVIEW );
+	GLi->LoadIdentity();
 }
 
 const Int32& cFrameBuffer::GetWidth() const {

@@ -69,6 +69,7 @@ class EE_API cFrameBuffer {
 		cTexture *	mTexture;
 		eeColorAf	mClearColor;
 		cView 		mPrevView;
+		GLfloat		mProjMat[16];
 
 		cFrameBuffer( Window::cWindow * window );
 

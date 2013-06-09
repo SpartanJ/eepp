@@ -837,7 +837,7 @@ void cEETest::LoadTextures() {
 
 	Tiles.resize(10);
 
-	cTextureAtlasLoader tgl( MyPath + "atlases/tiles.etg" );
+	cTextureAtlasLoader tgl( MyPath + "atlases/tiles.eta" );
 	cTextureAtlas * SG = cTextureAtlasManager::instance()->GetByName( "tiles" );
 
 	if ( NULL != SG ) {

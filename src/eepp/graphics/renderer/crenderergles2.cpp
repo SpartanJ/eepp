@@ -639,13 +639,28 @@ void cRendererGLES2::Clip2DPlaneEnable( const Int32& x, const Int32& y, const In
 	glUniform4fv( mPlanes[1], 1, static_cast<const GLfloat*>( &vclip_right[0]	)	);
 	glUniform4fv( mPlanes[2], 1, static_cast<const GLfloat*>( &vclip_top[0]		)	);
 	glUniform4fv( mPlanes[3], 1, static_cast<const GLfloat*>( &vclip_bottom[0]	)	);
+
+	if ( mPushClip ) {
+		mPlanesClipped.push_back( eeRectf( x, y, Width, Height ) );
+	}
 }
 
 void cRendererGLES2::Clip2DPlaneDisable() {
-	GLi->Disable(GL_CLIP_PLANE0);
-	GLi->Disable(GL_CLIP_PLANE1);
-	GLi->Disable(GL_CLIP_PLANE2);
-	GLi->Disable(GL_CLIP_PLANE3);
+	if ( ! mPlanesClipped.empty() ) { // This should always be true
+		mPlanesClipped.pop_back();
+	}
+
+	if ( mPlanesClipped.empty() ) {
+		GLi->Disable(GL_CLIP_PLANE0);
+		GLi->Disable(GL_CLIP_PLANE1);
+		GLi->Disable(GL_CLIP_PLANE2);
+		GLi->Disable(GL_CLIP_PLANE3);
+	} else {
+		eeRectf R( mPlanesClipped.back() );
+		mPushClip = false;
+		Clip2DPlaneEnable( R.Left, R.Top, R.Right, R.Bottom );
+		mPushClip = true;
+	}
 }
 
 void cRendererGLES2::PointSize( GLfloat size ) {

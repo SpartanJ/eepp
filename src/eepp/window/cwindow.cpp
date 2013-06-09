@@ -98,17 +98,21 @@ bool cWindow::Resizeable() const {
 	return 0 != ( mWindow.WindowConfig.Style & WindowStyle::Resize );
 }
 
+void cWindow::Set2DProjection( const Uint32& Width, const Uint32& Height ) {
+	GLi->MatrixMode( GL_PROJECTION );
+	GLi->LoadIdentity();
+
+	GLi->Ortho( 0.0f, Width, Height, 0.0f, -1000.0f, 1000.0f );
+
+	GLi->MatrixMode( GL_MODELVIEW );
+	GLi->LoadIdentity();
+}
+
 void cWindow::SetViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height, const bool& UpdateProjectionMatrix ) {
 	GLi->Viewport( x, GetHeight() - ( y + Height ), Width, Height );
 
 	if ( UpdateProjectionMatrix ) {
-		GLi->MatrixMode( GL_PROJECTION );
-		GLi->LoadIdentity();
-
-		GLi->Ortho( 0.0f, Width, Height, 0.0f, -1000.0f, 1000.0f );
-
-		GLi->MatrixMode( GL_MODELVIEW );
-		GLi->LoadIdentity();
+		Set2DProjection( Width, Height );
 	}
 }
 

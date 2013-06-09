@@ -84,7 +84,8 @@ void cGL::DestroySingleton() {
 
 cGL::cGL() :
 	mExtensions(0),
-	mStateFlags( 1 << GLSF_LINE_SMOOTH )
+	mStateFlags( 1 << GLSF_LINE_SMOOTH ),
+	mPushClip( true )
 {
 	GLi = this;
 }

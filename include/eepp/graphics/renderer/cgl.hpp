@@ -194,6 +194,8 @@ class EE_API cGL {
 
 		Uint32 mExtensions;
 		Uint32 mStateFlags;
+		bool mPushClip;
+		std::list<eeRectf> mPlanesClipped;
 	private:
 		void WriteExtension( Uint8 Pos, Uint32 BitWrite );
 };

@@ -270,7 +270,10 @@ class EE_API cWindow {
 		/** This will set the default rendering states and view to render in 2D mode */
 		void Setup2D( const bool& KeepView = false );
 
-		/**  Set the current Viewport ( and creates a new ortho proyection if needed ) */
+		/** Set a new 2D projection matrix */
+		void Set2DProjection( const Uint32& Width, const Uint32& Height );
+
+		/** Set the current Viewport ( and creates a new ortho proyection if needed ) */
 		void SetViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height, const bool& UpdateProjectionMatrix = true );
 
 		/** Set the window background color */
