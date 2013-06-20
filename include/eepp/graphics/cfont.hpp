@@ -19,7 +19,7 @@ class EE_API cFont {
 		void SetText( const String& Text );
 
 		/** @return The width of the string rendered */
-		eeFloat GetTextWidth() const;
+		eeFloat GetTextWidth();
 
 		/** @return Assign a new text and then returns his width */
 		eeFloat GetTextWidth( const String& Text );
@@ -60,14 +60,8 @@ class EE_API cFont {
 		/** @return The current text */
 		String GetText();
 
-		/** Set if the font will cache de text width and the number of lines ( default: true ). */
-		void CacheData( bool Cache );
-
-		/** @return If the font is caching the text data. */
-		const bool& CacheData() const;
-
 		/** @return The last text rendered or setted lines width */
-		const std::vector<eeFloat>& GetLinesWidth() const;
+		const std::vector<eeFloat>& GetLinesWidth();
 
 		/** Draw a String on the screen
 		* @param Text The text to draw
@@ -114,7 +108,7 @@ class EE_API cFont {
 		void ShrinkText( std::string& Str, const Uint32& MaxWidth );
 
 		/** Cache the with of the current text */
-		void CacheWidth( const String& Text, std::vector<eeFloat>& LinesWidth, eeFloat& CachedWidth, eeInt& NumLines );
+		void CacheWidth( const String& Text, std::vector<eeFloat>& LinesWidth, eeFloat& CachedWidth, eeInt& NumLines, eeInt& LargestLineCharCount );
 
 		/** @return The font texture id */
 		const Uint32& GetTexId() const;
@@ -134,33 +128,21 @@ class EE_API cFont {
 		Uint32 						mType;
 		std::string					mFontName;
 		Uint32						mFontHash;
-
-		String						mText;
-		bool 						mCacheData;
-		eeColorA 					mColor;
-		eeColorA 					mShadowColor;
-		eeInt 						mNumLines;
-		bool 						mVerticalDraw;
 		Uint32 						mTexId;
-		eeFloat 					mCachedWidth;
 		Uint32 						mHeight;
 		Uint32 						mSize;
 		Int32						mLineSkip;
 		Int32						mAscent;
 		Int32						mDescent;
 
-		std::vector<eeFloat> 		mLinesWidth;
 		std::vector<eeGlyph> 		mGlyphs;
 		std::vector<eeTexCoords> 	mTexCoords;
 
-		std::vector<eeVertexCoords> mRenderCoords;
-		std::vector<eeColorA> 		mColors;
+		cTextCache					mTextCache;
 
 		cFont( const Uint32& Type, const std::string& Name );
 
 		void CacheWidth();
-		void CacheNumLines();
-		void SubDraw( const String& Text, const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, const bool& Cached, const EE_BLEND_MODE& Effect );
 };
 
 }}

@@ -20,7 +20,7 @@ cTextureFont::cTextureFont( const std::string FontName ) :
 cTextureFont::~cTextureFont() {
 }
 
-bool cTextureFont::Load( const Uint32& TexId, const eeUint& StartChar, const eeUint& Spacing, const bool& VerticalDraw, const eeUint& TexColumns, const eeUint& TexRows, const Uint16& NumChars ) {
+bool cTextureFont::Load( const Uint32& TexId, const eeUint& StartChar, const eeUint& Spacing, const eeUint& TexColumns, const eeUint& TexRows, const Uint16& NumChars ) {
 	cTexture * Tex = cTextureFactory::instance()->GetTexture( TexId );
 
 	mTexId = TexId;
@@ -37,8 +37,6 @@ bool cTextureFont::Load( const Uint32& TexId, const eeUint& StartChar, const eeU
 		mFWidth			= (eeFloat)( Tex->Width() / mTexColumns );
 		mFHeight		= (eeFloat)( Tex->Height() / mTexRows );
 		mHeight			= mSize = mLineSkip = (eeUint)mFHeight;
-
-		mVerticalDraw	= VerticalDraw;
 
 		if ( Spacing == 0 )
 			mSpacing = static_cast<eeUint>( mFWidth );
@@ -144,48 +142,46 @@ void cTextureFont::BuildFromGlyphs() {
 	}
 }
 
-bool cTextureFont::Load( const Uint32& TexId, const std::string& CoordinatesDatPath, const bool& VerticalDraw ) {
+bool cTextureFont::Load( const Uint32& TexId, const std::string& CoordinatesDatPath ) {
 	if ( FileSystem::FileExists( CoordinatesDatPath ) ) {
 		cIOStreamFile IOS( CoordinatesDatPath, std::ios::in | std::ios::binary );
 
-		return LoadFromStream( TexId, IOS, VerticalDraw );
+		return LoadFromStream( TexId, IOS );
 	} else if ( cPackManager::instance()->FallbackToPacks() ) {
 		std::string tPath( CoordinatesDatPath );
 
 		cPack * tPack = cPackManager::instance()->Exists( tPath );
 
 		if ( NULL != tPack ) {
-			return LoadFromPack( TexId, tPack, tPath, VerticalDraw );
+			return LoadFromPack( TexId, tPack, tPath );
 		}
 	}
 
 	return false;
 }
 
-bool cTextureFont::LoadFromPack( const Uint32& TexId, cPack* Pack, const std::string& FilePackPath, const bool& VerticalDraw ) {
+bool cTextureFont::LoadFromPack( const Uint32& TexId, cPack* Pack, const std::string& FilePackPath ) {
 	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( FilePackPath ) ) {
 		SafeDataPointer PData;
 
 		Pack->ExtractFileToMemory( FilePackPath, PData );
 
-		return LoadFromMemory( TexId, reinterpret_cast<const char*> ( PData.Data ), PData.DataSize, VerticalDraw );
+		return LoadFromMemory( TexId, reinterpret_cast<const char*> ( PData.Data ), PData.DataSize );
 	}
 
 	return false;
 }
 
-bool cTextureFont::LoadFromMemory( const Uint32& TexId, const char* CoordData, const Uint32& CoordDataSize, const bool& VerticalDraw ) {
+bool cTextureFont::LoadFromMemory( const Uint32& TexId, const char* CoordData, const Uint32& CoordDataSize ) {
 	cIOStreamMemory IOS( CoordData, CoordDataSize );
 
-	return LoadFromStream( TexId, IOS, VerticalDraw );
+	return LoadFromStream( TexId, IOS );
 }
 
-bool cTextureFont::LoadFromStream( const Uint32& TexId, cIOStream& IOS, const bool& VerticalDraw ) {
+bool cTextureFont::LoadFromStream( const Uint32& TexId, cIOStream& IOS ) {
 	mTexId = TexId;
 
 	if ( mTexId > 0 ) {
-		mVerticalDraw = VerticalDraw;
-
 		if ( IOS.IsOpen() ) {
 			sFntHdr FntHdr;
 

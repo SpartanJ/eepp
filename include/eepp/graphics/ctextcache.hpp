@@ -11,35 +11,45 @@ class cFont;
 /** @brief Caches text for a fast font rendering. */
 class EE_API cTextCache {
 	public:
+		/** Create a text from a font */
 		cTextCache( cFont * font, const String& text = "", eeColorA FontColor = eeColorA(255,255,255,255), eeColorA FontShadowColor = eeColorA(0,0,0,255) );
 
 		cTextCache();
 
 		~cTextCache();
 
+		/** Create a text from a font */
 		void Create( cFont * font, const String& text = "", eeColorA FontColor = eeColorA(255,255,255,255), eeColorA FontShadowColor = eeColorA(0,0,0,255) );
 
+		/** @return The font used for the text cache */
 		cFont * Font() const;
 
+		/** Change the font used for the text cache */
 		void Font( cFont * font );
 
+		/** @return The text cached */
 		String& Text();
 
+		/** Set the text to be cached */
 		void Text( const String& text );
 
+		/** @return The cached text width */
 		eeFloat GetTextWidth();
 
+		/** @return The cached text height */
 		eeFloat GetTextHeight();
 
+		/** @return Every cached text line width */
 		const std::vector<eeFloat>& LinesWidth();
 
+		/** @return The vertex coordinates cached */
 		std::vector<eeVertexCoords>& VertextCoords();
 
+		/** @return The text colors cached */
 		std::vector<eeColorA>& Colors();
 
-		void Draw( const eeFloat& X, const eeFloat& Y, const Uint32& Flags = 0, const eeFloat& Scale = 1.0f, const eeFloat& Angle = 0, EE_BLEND_MODE Effect = ALPHA_NORMAL );
-
-		void Cache();
+		/** Draw the cached text on screen */
+		void Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Scale = 1.0f, const eeFloat& Angle = 0, EE_BLEND_MODE Effect = ALPHA_NORMAL );
 
 		/** @return The Font Color */
 		const eeColorA& Color() const;
@@ -60,26 +70,38 @@ class EE_API cTextCache {
 		/** Set the shadow color of the string rendered */
 		void ShadowColor(const eeColorA& color);
 
+		/** @return The number of lines that the cached text contains */
 		const eeInt& GetNumLines() const;
+
+		/** Set the font draw flags */
+		void Flags( const Uint32& flags );
+
+		/** @return The font draw flags */
+		const Uint32& Flags() const;
+
+		/** Force to cache the width of the current text */
+		void Cache();
 	protected:
 		friend class cFont;
 
 		String						mText;
 		cFont * 					mFont;
-		std::vector<eeFloat> 		mLinesWidth;
+
 		eeFloat 					mCachedWidth;
 		eeInt 						mNumLines;
+		eeInt						mLargestLineCharCount;
 
 		eeColorA					mFontColor;
 		eeColorA					mFontShadowColor;
-
-		std::vector<eeVertexCoords>	mRenderCoords;
-		std::vector<eeColorA>		mColors;
 
 		Uint32						mFlags;
 		Uint32						mVertexNumCached;
 
 		bool						mCachedCoords;
+
+		std::vector<eeFloat> 		mLinesWidth;
+		std::vector<eeVertexCoords>	mRenderCoords;
+		std::vector<eeColorA>		mColors;
 
 		void UpdateCoords();
 

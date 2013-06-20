@@ -18,14 +18,13 @@ class EE_API cTTFFontLoader : public cObjectLoader {
 		* @param Filepath The TTF file path
 		* @param Size The Size Width and Height for the font.
 		* @param Style The Font Style
-		* @param VerticalDraw If draw in vertical instead of horizontal
 		* @param NumCharsToGen Determine the number of characters to generate ( from char 0 to ... x )
 		* @param FontColor The Font color (this is the texture font color, if you plan to use a custom color and use outline, set it )
 		* @param OutlineSize The Ouline Size
 		* @param OutlineColor The Outline Color
 		* @param AddPixelSeparator Indicates if separates the glyphs by a pixel to avoid problems with font scaling
 		*/
-		cTTFFontLoader( const std::string& FontName, const std::string& Filepath, const eeUint& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true );
+		cTTFFontLoader( const std::string& FontName, const std::string& Filepath, const eeUint& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true );
 
 		/** Load a True Type Font from a Pack
 		* @param FontName The font name
@@ -33,14 +32,13 @@ class EE_API cTTFFontLoader : public cObjectLoader {
 		* @param FilePackPath The path of the file inside the pack
 		* @param Size The Size of the Font
 		* @param Style The Font Style
-		* @param VerticalDraw If draw in vertical instead of horizontal
 		* @param NumCharsToGen Determine the number of characters to generate ( from char 0 to ... x )
 		* @param FontColor The Font color (this is the texture font color, if you plan to use a custom color and use outline, set it )
 		* @param OutlineSize The Ouline Size
 		* @param OutlineColor The Outline Color
 		* @param AddPixelSeparator Indicates if separates the glyphs by a pixel to avoid problems with font scaling
 		*/
-		cTTFFontLoader( const std::string& FontName, cPack * Pack, const std::string& FilePackPath, const eeUint& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true );
+		cTTFFontLoader( const std::string& FontName, cPack * Pack, const std::string& FilePackPath, const eeUint& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true );
 
 		/** Loads a True Type Font from memory
 		* @param FontName The font name
@@ -48,14 +46,13 @@ class EE_API cTTFFontLoader : public cObjectLoader {
 		* @param TTFDataSize The size of the data
 		* @param Size The Size of the Font
 		* @param Style The Font Style
-		* @param VerticalDraw If draw in vertical instead of horizontal
 		* @param NumCharsToGen Determine the number of characters to generate ( from char 0 to ... x )
 		* @param FontColor The Font color (this is the texture font color, if you plan to use a custom color and use outline, set it )
 		* @param OutlineSize The Ouline Size
 		* @param OutlineColor The Outline Color
 		* @param AddPixelSeparator Indicates if separates the glyphs by a pixel to avoid problems with font scaling
 		*/
-		cTTFFontLoader( const std::string& FontName, Uint8* TTFData, const eeUint& TTFDataSize, const eeUint& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const bool& VerticalDraw = false, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true );
+		cTTFFontLoader( const std::string& FontName, Uint8* TTFData, const eeUint& TTFDataSize, const eeUint& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true );
 
 		virtual ~cTTFFontLoader();
 
@@ -88,7 +85,6 @@ class EE_API cTTFFontLoader : public cObjectLoader {
 		std::string			mFilepath;
 		eeUint				mSize;
 		EE_TTF_FONT_STYLE	mStyle;
-		bool				mVerticalDraw;
 		Uint16				mNumCharsToGen;
 		eeColor				mFontColor;
 		Uint8				mOutlineSize;

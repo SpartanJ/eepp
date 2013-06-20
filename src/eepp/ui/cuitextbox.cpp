@@ -51,7 +51,8 @@ void cUITextBox::Draw() {
 				);
 			}
 
-			mTextCache->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x + (eeFloat)mPadding.Left, (eeFloat)mScreenPos.y + mAlignOffset.y + (eeFloat)mPadding.Top, Flags(), 1.f, 0.f, Blend() );
+			mTextCache->Flags( Flags() );
+			mTextCache->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x + (eeFloat)mPadding.Left, (eeFloat)mScreenPos.y + mAlignOffset.y + (eeFloat)mPadding.Top, 1.f, 0.f, Blend() );
 
 			if ( mFlags & UI_CLIP_ENABLE ) {
 				cUIManager::instance()->ClipDisable();

@@ -3,13 +3,12 @@
 
 namespace EE { namespace Graphics {
 
-cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, const eeUint& StartChar, const eeUint& Spacing, const bool& VerticalDraw, const eeUint& TexColumns, const eeUint& TexRows, const Uint16& NumChars ) :
+cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, const eeUint& StartChar, const eeUint& Spacing, const eeUint& TexColumns, const eeUint& TexRows, const Uint16& NumChars ) :
 	cObjectLoader( FontTexLoader ),
 	mLoadType( TEF_LT_TEX ),
 	mFontName( FontName ),
 	mStartChar( StartChar ),
 	mSpacing( Spacing ),
-	mVerticalDraw( VerticalDraw ),
 	mTexColumns( TexColumns ),
 	mTexRows( TexRows ),
 	mNumChars( NumChars ),
@@ -19,24 +18,22 @@ cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoad
 	mTexLoader = TexLoader;
 }
 
-cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, const std::string& CoordinatesDatPath, const bool& VerticalDraw ) :
+cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, const std::string& CoordinatesDatPath ) :
 	cObjectLoader( FontTexLoader ),
 	mLoadType( TEF_LT_PATH ),
 	mFontName( FontName ),
 	mFilepath( CoordinatesDatPath ),
-	mVerticalDraw( VerticalDraw ),
 	mTexLoaded( false ),
 	mFontLoaded( false )
 {
 	mTexLoader = TexLoader;
 }
 
-cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, cPack * Pack, const std::string& FilePackPath, const bool& VerticalDraw ) :
+cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, cPack * Pack, const std::string& FilePackPath ) :
 	cObjectLoader( FontTexLoader ),
 	mLoadType( TEF_LT_PACK ),
 	mFontName( FontName ),
 	mFilepath( FilePackPath ),
-	mVerticalDraw( VerticalDraw ),
 	mPack( Pack ),
 	mTexLoaded( false ),
 	mFontLoaded( false )
@@ -44,11 +41,10 @@ cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoad
 	mTexLoader = TexLoader;
 }
 
-cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, const char* CoordData, const Uint32& CoordDataSize, const bool& VerticalDraw ) :
+cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, const char* CoordData, const Uint32& CoordDataSize ) :
 	cObjectLoader( FontTexLoader ),
 	mLoadType( TEF_LT_MEM ),
 	mFontName( FontName ),
-	mVerticalDraw( VerticalDraw ),
 	mData( CoordData ),
 	mDataSize( CoordDataSize ),
 	mTexLoaded( false ),
@@ -96,19 +92,19 @@ const std::string& cTextureFontLoader::Id() const {
 }
 
 void cTextureFontLoader::LoadFromPath() {
-	mFont->Load( mTexLoader->Id(), mFilepath, mVerticalDraw );
+	mFont->Load( mTexLoader->Id(), mFilepath );
 }
 
 void cTextureFontLoader::LoadFromMemory() {
-	mFont->LoadFromMemory( mTexLoader->Id(), mData, mDataSize, mVerticalDraw );
+	mFont->LoadFromMemory( mTexLoader->Id(), mData, mDataSize );
 }
 
 void cTextureFontLoader::LoadFromPack() {
-	mFont->LoadFromPack( mTexLoader->Id(), mPack, mFilepath, mVerticalDraw );
+	mFont->LoadFromPack( mTexLoader->Id(), mPack, mFilepath );
 }
 
 void cTextureFontLoader::LoadFromTex() {
-	mFont->Load( mTexLoader->Id(), mStartChar, mSpacing, mVerticalDraw, mTexColumns, mTexRows, mNumChars );
+	mFont->Load( mTexLoader->Id(), mStartChar, mSpacing, mTexColumns, mTexRows, mNumChars );
 }
 
 void cTextureFontLoader::LoadFont() {

@@ -31,6 +31,8 @@ inline Uint32 FontVAlignGet( Uint32 Flags ) {
 }
 
 #define FONT_DRAW_SHADOW		(1 << 5)
+#define FONT_DRAW_VERTICAL		(1 << 6)
+
 #define FONT_DRAW_ALIGN_MASK	( FONT_DRAW_VALIGN_MASK | FONT_DRAW_HALIGN_MASK )
 
 /** Basic Glyph structure used by the engine */

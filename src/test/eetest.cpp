@@ -160,8 +160,8 @@ void cEETest::LoadFonts() {
 
 	mFontLoader.Add( eeNew( cTextureFontLoader, ( "conchars", tl, (eeUint)32 ) ) );
 	mFontLoader.Add( eeNew( cTextureFontLoader, ( "ProggySquareSZ", eeNew( cTextureLoader, ( MyPath + "fonts/ProggySquareSZ.png" ) ), MyPath + "fonts/ProggySquareSZ.dat" ) ) );
-	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255) ) ) );
-	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arialb", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, false, 256, eeColor(255,255,255), 1, eeColor(0,0,0), true ) ) );
+	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, eeColor(255,255,255) ) ) );
+	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arialb", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, eeColor(255,255,255), 1, eeColor(0,0,0), true ) ) );
 
 	mFontLoader.Load( cb::Make1( this, &cEETest::OnFontLoaded ) );
 }
@@ -1196,7 +1196,8 @@ void cEETest::Screen4() {
 		mVBO->Draw();
 		mVBO->Unbind();
 
-		mFBOText.Draw( 128.f - (eeFloat)(Int32)( mFBOText.GetTextWidth() * 0.5f ), 25.f - (eeFloat)(Int32)( mFBOText.GetTextHeight() * 0.5f ), FONT_DRAW_CENTER );
+		mFBOText.Flags( FONT_DRAW_CENTER );
+		mFBOText.Draw( 128.f - (eeFloat)(Int32)( mFBOText.GetTextWidth() * 0.5f ), 25.f - (eeFloat)(Int32)( mFBOText.GetTextHeight() * 0.5f ) );
 	}
 
 	if ( NULL != mFBO ) {
@@ -1270,6 +1271,8 @@ void cEETest::Render() {
 	eeColorA ColRR2( 100, 100, 100, 220 );
 	eeColorA ColRR3( 100, 100, 100, 220 );
 
+	mEEText.Flags( FONT_DRAW_CENTER );
+
 	PR.SetColor( eeColorA(150, 150, 150, 220) );
 	PR.FillMode( DRAW_FILL );
 	PR.DrawRectangle(
@@ -1286,7 +1289,7 @@ void cEETest::Render() {
 				ColRR1, ColRR2, ColRR3, ColRR4
 	);
 
-	mEEText.Draw( 0.f, (eeFloat)mWindow->GetHeight() - mEEText.GetTextHeight(), FONT_DRAW_CENTER );
+	mEEText.Draw( 0.f, (eeFloat)mWindow->GetHeight() - mEEText.GetTextHeight() );
 
 	mInfoText.Draw( 6.f, 6.f );
 
