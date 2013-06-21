@@ -83,10 +83,6 @@ cConsole::cConsole( cFont* Font, const bool& MakeDefaultCommands, const bool& At
 }
 
 cConsole::~cConsole() {
-	mCallbacks.clear();
-	mCmdLog.clear();
-	mLastCommands.clear();
-
 	if ( mMyCallback &&
 		NULL != cEngine::ExistsSingleton() &&
 		cEngine::instance()->ExistsWindow( mWindow )
@@ -128,7 +124,7 @@ void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const bool&
 
 	mWidth = (eeFloat) mWindow->GetWidth();
 	mHeight = (eeFloat) mWindow->GetHeight();
-	mHeightMin = (eeFloat) mWindow->GetHeight() * 0.5f;
+	mHeightMin = (eeFloat) ( mWindow->GetHeight() / 2 );
 
 	if ( NULL != cEngine::ExistsSingleton() &&
 		cEngine::instance()->ExistsWindow( mWindow ) )

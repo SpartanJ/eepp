@@ -20,8 +20,8 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		cTextureFont * TexF2	= cTextureFont::New( "conchars" );
 
 		// Load the TTF font
-		TTF->Load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 18, TTF_STYLE_NORMAL, false, 128, eeColor(255,255,255), 3, eeColor(0,0,0), true );
-		TTF2->Load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 24, TTF_STYLE_NORMAL, false, 128, eeColor(255,255,255), 0, eeColor(0,0,0), true );
+		TTF->Load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 18, TTF_STYLE_NORMAL, 128, eeColor(255,255,255), 3, eeColor(0,0,0), true );
+		TTF2->Load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 24, TTF_STYLE_NORMAL, 128, eeColor(255,255,255), 0, eeColor(0,0,0), true );
 
 		// Save the TTF font so then it can be loaded as a cTextureFont
 		TTF->Save( AppPath + "assets/temp/DejaVuSansMono.png", AppPath + "assets/temp/DejaVuSansMono.fnt" );
@@ -57,6 +57,9 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		// The cached text will
 		cTextCache TxtCache( TTF2, Txt, eeColorA(0,0,0,255) );
 
+		// Set the text cache to be centered
+		TxtCache.Flags( FONT_DRAW_CENTER );
+
 		// Set the font color to a substring of the text
 		// To be able to set the color of the font, create the font as white
 		// Create a gradient
@@ -89,7 +92,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 			TexF2->Draw( win->GetWidth() * 0.5f - TexF2->GetTextWidth() * 0.5f, ( YPos += TexF->GetTextHeight() + 24 ) );
 
 			// Draw the cached text
-			TxtCache.Draw( 48, ( YPos += TexF2->GetTextHeight() + 24 ), FONT_DRAW_CENTER );
+			TxtCache.Draw( 48, ( YPos += TexF2->GetTextHeight() + 24 ) );
 
 			// Text rotated and scaled
 			TTF->Draw( win->GetWidth() * 0.5f - TTF->GetTextWidth() * 0.5f, 512, FONT_DRAW_LEFT, 0.75f, 12.5f );

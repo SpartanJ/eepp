@@ -611,3 +611,6 @@
 ../../src/examples/sprites/sprites.cpp
 ../../src/examples/fonts/fonts.cpp
 ../../src/examples/vbo_fbo_batch/vbo_fbo_batch.cpp
+../../src/examples/physics/physics.cpp
+../../src/eepp/physics/cshapepoint.cpp
+../../include/eepp/physics/cshapepoint.hpp

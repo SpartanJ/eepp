@@ -4,6 +4,7 @@
 #include <eepp/physics/cphysicsmanager.hpp>
 #include <eepp/physics/cshape.hpp>
 #include <eepp/physics/cshapecircle.hpp>
+#include <eepp/physics/cshapepoint.hpp>
 #include <eepp/physics/cshapesegment.hpp>
 #include <eepp/physics/cshapepoly.hpp>
 #include <eepp/physics/cspace.hpp>

@@ -6,11 +6,11 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	// Create a new window
 	cWindow * win = cEngine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - Empty Window" ) );
 
-	// Set window background color
-	win->BackColor( eeColor( 50, 50, 50 ) );
-
 	// Check if created
 	if ( win->Created() ) {
+		// Set window background color
+		win->BackColor( eeColor( 50, 50, 50 ) );
+
 		// Create an instance of the primitive renderer
 		cPrimitives p;
 

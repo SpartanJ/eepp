@@ -752,6 +752,12 @@ solution "eepp"
 		files { "src/examples/vbo_fbo_batch/*.cpp" }
 		build_link_configuration( "eevbo-fbo-batch" )
 
+	project "eepp-physics"
+		kind "WindowedApp"
+		language "C++"
+		files { "src/examples/physics/*.cpp" }
+		build_link_configuration( "eephysics" )
+
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")
 end
