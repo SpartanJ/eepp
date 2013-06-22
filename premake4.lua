@@ -261,13 +261,17 @@ function build_link_configuration( package_name )
 				links { get_backend_link_name( "sfml-window" ) }
 			end
 		else
-			if ( os.is_real("macosx") ) then
+			if ( os.is_real("macosx") or os.is_real("windows") ) then
+				if ( os.is_real("windows") ) then
+					links {  "mingw32" }
+				end
+				
 				if ( backend_is("SDL") ) then
-					links { "SDLmain" }
+					links { "SDLmain", get_backend_link_name( "SDL" ) }
 				elseif ( backend_is("SDL2") ) then
-					links { "SDL2main" }
+					links { "SDL2main", get_backend_link_name( "SDL2" ) }
 				elseif ( backend_is("allegro5") ) then
-					links { "allegro_main" }
+					links { "allegro_main", get_backend_link_name( "allegro" ) }
 				elseif ( backend_is("SFML") ) then
 					links { get_backend_link_name( "sfml-system" ) }
 					links { get_backend_link_name( "sfml-window" ) }

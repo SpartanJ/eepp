@@ -89,7 +89,7 @@
 	#define EE_BACKEND_SDL_ACTIVE
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS || defined(  EE_COMPILER_MSVC )
+#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS || defined( EE_COMPILER_MSVC )
 	#if EE_PLATFORM == EE_PLATFORM_ANDROID
 		#define EE_NO_WIDECHAR
 	#endif
@@ -119,6 +119,12 @@
 		#endif
 	#endif
 #else
+	#if defined( EE_BACKEND_SDL_ACTIVE ) && EE_PLATFORM == EE_PLATFORM_WIN
+		#define main	SDL_main
+		#define EE_MAIN_FUNC extern "C"
+		extern "C" int SDL_main(int argc, char *argv[]);
+	#endif
+
 	#ifndef EE_MAIN_FUNC
 		#define EE_MAIN_FUNC
 	#endif
