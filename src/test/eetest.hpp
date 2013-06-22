@@ -159,8 +159,8 @@ class cEETest : private cThread {
 
 		cWaypoints WP;
 		Int32 PartsNum;
-		Uint32 Cursor[2];
-		cTexture * CursorP[2];
+		Uint32 Cursor[1];
+		cTexture * CursorP[1];
 		std::string mInfo;
 
 		bool MultiViewportMode;

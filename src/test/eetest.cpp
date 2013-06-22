@@ -830,8 +830,8 @@ void cEETest::LoadTextures() {
 	TN.resize(12);
 	TNP.resize(12);
 
-	for ( i = 0; i <= 7; i++ ) {
-		TN[i] = TF->Load( MyPath + "sprites/t" + String::ToStr(i+1) + ".png", ( (i+1) == 7 ) ? true : false, ( (i+1) == 4 ) ? CLAMP_REPEAT : CLAMP_TO_EDGE );
+	for ( i = 0; i <= 6; i++ ) {
+		TN[i] = TF->Load( MyPath + "sprites/" + String::ToStr(i+1) + ".png", false, ( (i+1) == 4 ) ? CLAMP_REPEAT : CLAMP_TO_EDGE );
 		TNP[i] = TF->GetTexture( TN[i] );
 	}
 
@@ -892,18 +892,16 @@ void cEETest::LoadTextures() {
 		Tex->Unlock(false, true);
 	}
 
-	Cursor[0] = TF->Load( MyPath + "cursors/cursor.png" );
+	Cursor[0] = TF->Load( MyPath + "cursors/cursor.tga" );
 	CursorP[0] = TF->GetTexture( Cursor[0] );
-	Cursor[1] = TF->Load( MyPath + "cursors/cursor.tga" );
-	CursorP[1] = TF->GetTexture( Cursor[1] );
 
 	cCursorManager * CurMan = mWindow->GetCursorManager();
 	CurMan->Visible( false );
 	CurMan->Visible( true );
 	CurMan->Set( Window::Cursor::SYS_CURSOR_LINK );
-	CurMan->Set( CurMan->Add( CurMan->Create( CursorP[1], eeVector2i( 1, 1 ), "cursor_special" ) ) );
+	CurMan->Set( CurMan->Add( CurMan->Create( CursorP[0], eeVector2i( 1, 1 ), "cursor_special" ) ) );
 
-	CL1.AddFrame(TN[2]);
+	CL1.AddFrame( TN[2] );
 	CL1.Position( 500, 400 );
 	CL1.Scale( 0.5f );
 

@@ -193,7 +193,6 @@ void Demo2Create() {
 	body = mSpace->AddBody( cBody::New( 10.0f, Moment::ForCircle( 10.0f, 0.0f, radius, cVectZero ) ) );
 	body->Pos( cVectNew( hw, mWindow->GetHeight() - radius - 5 ) );
 
-	//shape = mSpace->AddShape( cShapeCircleSprite::New( body, radius, cVectZero, mCircleSprite ) );
 	shape = mSpace->AddShape( cShapeCircle::New( body, radius, cVectZero ) );
 	shape->e( 0.0f );
 	shape->u( 0.9f );
@@ -254,7 +253,7 @@ void postStepRemove( cSpace *space, void * tshape, void * unused ) {
 	cShape::Free( shape, true );
 }
 
-cpBool catcherBarBegin(cArbiter *arb, Physics::cSpace *space, void *unused) {
+cpBool catcherBarBegin(cArbiter *arb, cSpace *space, void *unused) {
 	cShape * a, * b;
 	arb->GetShapes( &a, &b );
 
