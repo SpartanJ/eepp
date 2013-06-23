@@ -1,4 +1,4 @@
-#ifdef EE_GL3_ENABLED
+#ifdef EE_GLES2
 "precision mediump float;\n"
 "precision lowp int;\n"
 #else
