@@ -1,5 +1,4 @@
-"#define MAX_CLIP_PLANES 6\n\
-#ifdef GL_ES\n\
+"#ifdef GL_ES\n\
 precision lowp float;\n\
 precision lowp int;\n\
 #else\n\
@@ -16,4 +15,3 @@ void main(void)\n\
 {\n\
 	gl_FragColor = dgl_Color * texture2D( textureUnit0, dgl_TexCoord[ 0 ].xy );\n\
 }";
-

@@ -1,10 +1,10 @@
-"#define MAX_CLIP_PLANES 6\n\
-#ifdef GL_ES\n\
+"#ifdef GL_ES\n\
 precision mediump float;\n\
 precision lowp int;\n\
 #else\n\
 #version 120\n\
 #endif\n\
+#define MAX_CLIP_PLANES 6\n\
 uniform		sampler2D	textureUnit0;\n\
 uniform		int			dgl_TexActive;\n\
 uniform		int			dgl_PointSpriteActive;\n\

@@ -1,5 +1,4 @@
-"#define MAX_CLIP_PLANES 6\n\
-#ifdef GL_ES\n\
+"#ifdef GL_ES\n\
 precision lowp float;\n\
 precision lowp int;\n\
 #else\n\
