@@ -340,16 +340,13 @@ static bool IsImage( std::string path ) {
 			 Ext == "dds" ||
 			 Ext == "psd" ||
 			 Ext == "hdr" ||
-			 Ext == "pic"
+			 Ext == "pic" ||
+			 Ext == "pvr" ||
+			 Ext == "pkm"
 		) {
 			return true;
 		} else {
-			int x,y,c;
-
-			int res = stbi_info( path.c_str(), &x, &y, &c );
-
-			if ( res )
-				return true;
+			return cImage::IsImage( path );
 		}
 	}
 

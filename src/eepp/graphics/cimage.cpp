@@ -68,12 +68,10 @@ bool cImage::GetInfo( const std::string& path, int * width, int * height, int * 
 }
 
 bool cImage::IsImage( const std::string& path ) {
-	int w, h, c;
-	return GetInfo( path, &w, &h, &c );
+	return STBI_unknown != stbi_test( path.c_str() );
 }
 
-std::string cImage::GetLastFailureReason()
-{
+std::string cImage::GetLastFailureReason() {
 	return std::string( stbi_failure_reason() );
 }
 
