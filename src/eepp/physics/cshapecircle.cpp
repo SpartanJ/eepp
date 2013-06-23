@@ -3,6 +3,7 @@
 #include <eepp/helper/chipmunk/chipmunk_unsafe.h>
 
 #ifdef PHYSICS_RENDERER_ENABLED
+#include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/cprimitives.hpp>
 using namespace EE::Graphics;
 #endif
@@ -33,6 +34,7 @@ cpFloat cShapeCircle::Radius() {
 void cShapeCircle::Radius( const cpFloat& radius ) {
 	cpCircleShapeSetRadius( mShape, radius );
 }
+
 
 void cShapeCircle::Draw( cSpace * space ) {
 	#ifdef PHYSICS_RENDERER_ENABLED

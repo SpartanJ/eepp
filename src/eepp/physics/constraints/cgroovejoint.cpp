@@ -7,7 +7,11 @@ using namespace EE::Graphics;
 
 CP_NAMESPACE_BEGIN
 
-cGrooveJoint::cGrooveJoint( cBody * a, cBody * b, cVect groove_a, cVect groove_b, cVect anchr2 ) {
+cGrooveJoint::cGrooveJoint( cBody * a, cBody * b, cVect groove_a, cVect groove_b, cVect anchr2 )
+#ifdef PHYSICS_RENDERER_ENABLED
+	: mDrawPointSize( 5.f )
+#endif
+{
 	mConstraint = cpGrooveJointNew( a->Body(), b->Body(), tocpv( groove_a ), tocpv( groove_b ), tocpv( anchr2 ) );
 	SetData();
 }
@@ -38,6 +42,9 @@ void cGrooveJoint::GrooveB( const cVect& groove_b ) {
 
 void cGrooveJoint::Draw() {
 	#ifdef PHYSICS_RENDERER_ENABLED
+	if ( mDrawPointSize <= 0 )
+		return;
+
 	cpGrooveJoint *joint= (cpGrooveJoint *)mConstraint;
 	cpBody * body_a		= mConstraint->a;
 	cpBody * body_b		= mConstraint->b;
@@ -48,7 +55,7 @@ void cGrooveJoint::Draw() {
 
 	cpFloat ps = BR->GetPointSize();
 	BR->SetTexture( NULL );
-	BR->SetPointSize( 5.0f );
+	BR->SetPointSize( mDrawPointSize );
 	BR->PointsBegin();
 	BR->PointSetColor( eeColorA( 128, 255, 128, 255 ) );
 	BR->BatchPoint( c.x, c.y );
@@ -57,9 +64,18 @@ void cGrooveJoint::Draw() {
 	BR->LinesSetColor( eeColorA( 128, 255, 128, 255 ) );
 	BR->BatchLine( a.x, a.y, b.x, b.y );
 	BR->Draw();
-
 	BR->SetPointSize( ps );
 	#endif
 }
+
+#ifdef PHYSICS_RENDERER_ENABLED
+cpFloat cGrooveJoint::DrawPointSize() {
+	return mDrawPointSize;
+}
+
+void cGrooveJoint::DrawPointSize( const cpFloat& size ) {
+	mDrawPointSize = size;
+}
+#endif
 
 CP_NAMESPACE_END

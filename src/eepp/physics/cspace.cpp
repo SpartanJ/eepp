@@ -635,4 +635,12 @@ void cSpace::OnEachShape( cShape * Shape, cShapeIterator * it ) {
 	}
 }
 
+void cSpace::ConvertBodyToDynamic( cBody * body, cpFloat mass, cpFloat moment ) {
+	cpSpaceConvertBodyToDynamic( mSpace, body->Body(), mass, moment );
+}
+
+void cSpace::ConvertBodyToStatic(cBody * body ) {
+	cpSpaceConvertBodyToStatic( mSpace, body->Body() );
+}
+
 CP_NAMESPACE_END

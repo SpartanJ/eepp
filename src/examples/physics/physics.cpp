@@ -1,5 +1,14 @@
 #include <eepp/ee.hpp>
 
+/**
+The physics module is a OOP wrapper for Chipmunk Physics.
+To understand the conceptos of space, body, shapes, etc you can read the
+Chipmunk documentation:
+http://chipmunk-physics.net/release/ChipmunkLatest-Docs/
+
+
+
+*/
 typedef cb::Callback0<void> SceneCb;
 
 struct physicDemo {
@@ -9,7 +18,7 @@ struct physicDemo {
 };
 
 std::vector<physicDemo> mDemo;
-eeInt					mCurDemo = eeINDEX_NOT_FOUND;
+eeInt mCurDemo = eeINDEX_NOT_FOUND;
 cSpace * mSpace;
 cBody * mMouseBody;
 cVect mMousePoint;
@@ -27,8 +36,19 @@ void CreateJointAndBody() {
 cWindow * mWindow;
 cInput * KM;
 
-void DestroyBody() {
+void DefaultDrawOptions() {
+	cPhysicsManager::cDrawSpaceOptions * DSO = cPhysicsManager::instance()->GetDrawOptions();
+	DSO->DrawBBs			= false;
+	DSO->DrawShapes			= true;
+	DSO->DrawShapesBorders	= true;
+	DSO->CollisionPointSize	= 4;
+	DSO->BodyPointSize		= 0;
+	DSO->LineThickness		= 1;
+}
+
+void DestroyDemo() {
 	eeSAFE_DELETE( mMouseBody );
+	eeSAFE_DELETE( mSpace );
 }
 
 static const int image_width = 188;
@@ -92,7 +112,11 @@ cShape * make_ball( cpFloat x, cpFloat y ) {
 static int bodyCount = 0;
 
 void Demo1Create() {
+	DefaultDrawOptions();
+
 	CreateJointAndBody();
+
+	mWindow->Caption( "eepp - Physics - Logo Smash" );
 
 	mSpace = Physics::cSpace::New();
 	mSpace->Iterations( 1 );
@@ -139,12 +163,15 @@ void Demo1Update(){
 }
 
 void Demo1Destroy() {
-	DestroyBody();
-	eeSAFE_DELETE( mSpace );
+	DestroyDemo();
 }
 
 void Demo2Create() {
+	DefaultDrawOptions();
+
 	CreateJointAndBody();
+
+	mWindow->Caption( "eepp - Physics - Pyramid Stack" );
 
 	cShape::ResetShapeIdCounter();
 
@@ -202,8 +229,7 @@ void Demo2Update() {
 }
 
 void Demo2Destroy() {
-	DestroyBody();
-	eeSAFE_DELETE( mSpace );
+	DestroyDemo();
 }
 
 enum CollisionTypes {
@@ -243,12 +269,12 @@ void postStepRemove( cSpace *space, void * tshape, void * unused ) {
 	cShape * shape = reinterpret_cast<cShape*>( tshape );
 
 	if ( NULL != mMouseJoint && ( mMouseJoint->A() == shape->Body() || mMouseJoint->B() == shape->Body() ) ) {
-		mSpace->RemoveConstraint( mMouseJoint );
+		space->RemoveConstraint( mMouseJoint );
 		eeSAFE_DELETE( mMouseJoint );
 	}
 
-	mSpace->RemoveBody( shape->Body() );
-	mSpace->RemoveShape( shape );
+	space->RemoveBody( shape->Body() );
+	space->RemoveShape( shape );
 
 	cShape::Free( shape, true );
 }
@@ -261,13 +287,17 @@ cpBool catcherBarBegin(cArbiter *arb, cSpace *space, void *unused) {
 
 	emitter->queue++;
 
-	mSpace->AddPostStepCallback( cb::Make3( &postStepRemove ), b, NULL );
+	space->AddPostStepCallback( cb::Make3( &postStepRemove ), b, NULL );
 
 	return cpFalse;
 }
 
 void Demo3Create() {
+	DefaultDrawOptions();
+
 	CreateJointAndBody();
+
+	mWindow->Caption( "eepp - Physics - Sensor" );
 
 	cShape::ResetShapeIdCounter();
 
@@ -322,8 +352,182 @@ void Demo3Update() {
 }
 
 void Demo3Destroy() {
-	DestroyBody();
-	eeSAFE_DELETE( mSpace );
+	DestroyDemo();
+}
+
+enum {
+	COLLIDE_STICK_SENSOR = 1
+};
+
+#define STICK_SENSOR_THICKNESS 2.5f
+
+void PostStepAddJoint(cSpace *space, void *key, void *data)
+{
+	cConstraint *joint = (cConstraint *)key;
+	space->AddConstraint( joint );
+}
+
+cpBool StickyPreSolve( cArbiter *arb, cSpace *space, void *data )
+{
+	// We want to fudge the collisions a bit to allow shapes to overlap more.
+	// This simulates their squishy sticky surface, and more importantly
+	// keeps them from separating and destroying the joint.
+
+	// Track the deepest collision point and use that to determine if a rigid collision should occur.
+	cpFloat deepest = INFINITY;
+
+	// Grab the contact set and iterate over them.
+	cpContactPointSet contacts = arb->ContactPointSet();
+
+	for(int i=0; i<contacts.count; i++){
+		// Increase the distance (negative means overlaping) of the
+		// collision to allow them to overlap more.
+		// This value is used only for fixing the positions of overlapping shapes.
+		cpFloat dist = contacts.points[i].dist + 2.0f*STICK_SENSOR_THICKNESS;
+		contacts.points[i].dist = eemin<eeFloat>(0.0f, dist);
+		deepest = eemin<eeFloat>(deepest, dist);
+	}
+
+	// Set the new contact point data.
+	arb->ContactPointSet( &contacts );
+
+	// If the shapes are overlapping enough, then create a
+	// joint that sticks them together at the first contact point.
+
+	if(!arb->UserData() && deepest <= 0.0f){
+		cBody *bodyA, *bodyB;
+		arb->GetBodies( &bodyA, &bodyB );
+
+		// Create a joint at the contact point to hold the body in place.
+		cPivotJoint * joint = cpNew( cPivotJoint, ( bodyA, bodyB, tovect( contacts.points[0].point ) ) );
+
+		// Dont draw the constraint
+		joint->DrawPointSize( 0 );
+
+		// Give it a finite force for the stickyness.
+		joint->MaxForce( 3e3 );
+
+		// Schedule a post-step() callback to add the joint.
+		space->AddPostStepCallback( cb::Make3( &PostStepAddJoint ), joint, NULL );
+
+		// Store the joint on the arbiter so we can remove it later.
+		arb->UserData(joint);
+	}
+
+	// Position correction and velocity are handled separately so changing
+	// the overlap distance alone won't prevent the collision from occuring.
+	// Explicitly the collision for this frame if the shapes don't overlap using the new distance.
+	return (deepest <= 0.0f);
+
+	// Lots more that you could improve upon here as well:
+	// * Modify the joint over time to make it plastic.
+	// * Modify the joint in the post-step to make it conditionally plastic (like clay).
+	// * Track a joint for the deepest contact point instead of the first.
+	// * Track a joint for each contact point. (more complicated since you only get one data pointer).
+}
+
+void PostStepRemoveJoint(cSpace *space, void *key, void *data)
+{
+	cConstraint *joint = (cConstraint *)key;
+	space->RemoveConstraint( joint );
+	cConstraint::Free( joint );
+}
+
+void StickySeparate(cArbiter *arb, cSpace *space, void *data)
+{
+	cConstraint *joint = (cConstraint *)arb->UserData();
+
+	if(joint){
+		// The joint won't be removed until the step is done.
+		// Need to disable it so that it won't apply itself.
+		// Setting the force to 0 will do just that
+		joint->MaxForce( 0.0f );
+
+		// Perform the removal in a post-step() callback.
+		space->AddPostStepCallback( cb::Make3( &PostStepRemoveJoint ), joint, NULL );
+
+		// NULL out the reference to the joint.
+		// Not required, but it's a good practice.
+		arb->UserData( NULL );
+	}
+}
+
+void Demo4Create() {
+	cPhysicsManager::cDrawSpaceOptions * DSO = cPhysicsManager::instance()->GetDrawOptions();
+	DSO->DrawBBs			= false;
+	DSO->DrawShapes			= true;
+	DSO->DrawShapesBorders	= false;
+	DSO->CollisionPointSize	= 0;
+	DSO->BodyPointSize		= 0;
+	DSO->LineThickness		= 0;
+
+	CreateJointAndBody();
+
+	mWindow->Caption( "eepp - Physics - Sticky collisions using the cArbiter data pointer." );
+
+	mSpace = cSpace::New();
+	mSpace->Iterations( 10 );
+	mSpace->Gravity( cVectNew( 0, 1000 ) );
+	mSpace->CollisionSlop( 2.0 );
+
+	cBody * staticBody = mSpace->StaticBody();
+	cShape * shape;
+
+	cpFloat x = 500;
+	cpFloat y = 400;
+
+	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( x + -340, y -260 ), cVectNew( x -340, y + 260 ), 20.0f ) );
+	shape->Elasticity( 1.0f );
+	shape->Friction( 1.0f );
+	shape->CollisionType( COLLIDE_STICK_SENSOR );
+	shape->Layers( NOT_GRABABLE_MASK );
+
+	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( x + 340, y -260 ), cVectNew( x + 340, y + 260 ), 20.0f ) );
+	shape->Elasticity( 1.0f );
+	shape->Friction( 1.0f );
+	shape->CollisionType( COLLIDE_STICK_SENSOR );
+	shape->Layers( NOT_GRABABLE_MASK );
+
+	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( x -340, y -260 ), cVectNew( x + 340, y -260 ), 20.0f ) );
+	shape->Elasticity( 1.0f );
+	shape->Friction( 1.0f );
+	shape->CollisionType( COLLIDE_STICK_SENSOR );
+	shape->Layers( NOT_GRABABLE_MASK );
+
+	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( x -340, y + 260 ), cVectNew( x + 340, y + 260 ), 20.0f ) );
+	shape->Elasticity( 1.0f );
+	shape->Friction( 1.0f );
+	shape->CollisionType( COLLIDE_STICK_SENSOR );
+	shape->Layers( NOT_GRABABLE_MASK );
+
+	for(int i=0; i<200; i++){
+		cpFloat mass = 0.15f;
+		cpFloat radius = 10.0f;
+
+		cBody * body = mSpace->AddBody( cBody::New( mass, Moment::ForCircle( mass, 0.0f, radius, cVectZero ) ) );
+		body->Pos( cVectNew( x + easing::LinearInterpolation( Math::Randf(), -150.0f, 150.0f, 1 ),
+							 y + easing::LinearInterpolation( Math::Randf(), -150.0f, 150.0f, 1 )
+					) );
+
+		cShape * shape = mSpace->AddShape( cShapeCircle::New( body, radius + STICK_SENSOR_THICKNESS, cVectZero ) );
+		shape->Friction( 0.9f );
+		shape->CollisionType( COLLIDE_STICK_SENSOR );
+	}
+
+	cSpace::cCollisionHandler c;
+	c.a = COLLIDE_STICK_SENSOR;
+	c.b = COLLIDE_STICK_SENSOR;
+	c.preSolve = cb::Make3( &StickyPreSolve );
+	c.separate = cb::Make3( &StickySeparate );
+
+	mSpace->AddCollisionHandler( c );
+}
+
+void Demo4Update() {
+}
+
+void Demo4Destroy() {
+	DestroyDemo();
 }
 
 void ChangeDemo( eeInt num ) {
@@ -338,19 +542,12 @@ void ChangeDemo( eeInt num ) {
 }
 
 void PhysicsCreate() {
+	// Initialize the physics engine
 	cPhysicsManager::CreateSingleton();
-	cPhysicsManager * PM = cPhysicsManager::instance();
-	cPhysicsManager::cDrawSpaceOptions * DSO = PM->GetDrawOptions();
-
-	DSO->DrawBBs			= false;
-	DSO->DrawShapes			= true;
-	DSO->DrawShapesBorders	= true;
-	DSO->CollisionPointSize	= 4;
-	DSO->BodyPointSize		= 0;
-	DSO->LineThickness		= 1;
 
 	mDemo.clear();
 
+	// Add the demos
 	physicDemo demo;
 
 	demo.init		= cb::Make0( &Demo1Create );
@@ -368,10 +565,16 @@ void PhysicsCreate() {
 	demo.destroy	= cb::Make0( &Demo3Destroy );
 	mDemo.push_back( demo );
 
+	demo.init		= cb::Make0( &Demo4Create );
+	demo.update		= cb::Make0( &Demo4Update );
+	demo.destroy	= cb::Make0( &Demo4Destroy );
+	mDemo.push_back( demo );
+
 	ChangeDemo( 0 );
 }
 
 void PhysicsUpdate() {
+	// Creates a joint to drag any grabable object on the scene
 	mMousePoint = cVectNew( KM->GetMousePosf().x, KM->GetMousePosf().y );
 	cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last ), tocpv( mMousePoint ), 0.25 ) );
 	mMouseBody->Pos( newPoint );

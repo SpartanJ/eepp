@@ -31,7 +31,9 @@ class CP_API cArbiter {
 
 		cpFloat GetDepth( int i );
 
-		cpContactPointSet GetContactPointSet();
+		cpContactPointSet ContactPointSet();
+
+		void ContactPointSet( cpContactPointSet * contact );
 
 		cpArbiter *	Arbiter() const;
 
@@ -46,6 +48,10 @@ class CP_API cArbiter {
 		cVect SurfaceVelocity();
 
 		void SurfaceVelocity( cVect value );
+
+		void UserData( cpDataPointer value );
+
+		cpDataPointer UserData() const;
 	protected:
 		cpArbiter *		mArbiter;
 };

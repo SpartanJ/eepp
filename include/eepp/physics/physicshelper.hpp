@@ -78,37 +78,6 @@ typedef cpBB					cBB;
 
 #ifdef PHYSICS_RENDERER_ENABLED
 
-static const float pillVAR[] = {
-	 0.0000f,  1.0000f, 1.0f,
-	 0.2588f,  0.9659f, 1.0f,
-	 0.5000f,  0.8660f, 1.0f,
-	 0.7071f,  0.7071f, 1.0f,
-	 0.8660f,  0.5000f, 1.0f,
-	 0.9659f,  0.2588f, 1.0f,
-	 1.0000f,  0.0000f, 1.0f,
-	 0.9659f, -0.2588f, 1.0f,
-	 0.8660f, -0.5000f, 1.0f,
-	 0.7071f, -0.7071f, 1.0f,
-	 0.5000f, -0.8660f, 1.0f,
-	 0.2588f, -0.9659f, 1.0f,
-	 0.0000f, -1.0000f, 1.0f,
-
-	 0.0000f, -1.0000f, 0.0f,
-	-0.2588f, -0.9659f, 0.0f,
-	-0.5000f, -0.8660f, 0.0f,
-	-0.7071f, -0.7071f, 0.0f,
-	-0.8660f, -0.5000f, 0.0f,
-	-0.9659f, -0.2588f, 0.0f,
-	-1.0000f, -0.0000f, 0.0f,
-	-0.9659f,  0.2588f, 0.0f,
-	-0.8660f,  0.5000f, 0.0f,
-	-0.7071f,  0.7071f, 0.0f,
-	-0.5000f,  0.8660f, 0.0f,
-	-0.2588f,  0.9659f, 0.0f,
-	 0.0000f,  1.0000f, 0.0f,
-};
-static const int pillVAR_count = sizeof(pillVAR)/sizeof(float)/3;
-
 inline eeColorA ColorFromPointer(void *ptr) {
 	unsigned long val = (long)ptr;
 
@@ -153,25 +122,6 @@ inline eeColorA ColorForShape( cpShape *shape, cpSpace *space ) {
 
 	return ColorFromPointer( shape );
 }
-
-static const float springVAR[] = {
-	0.00f, 0.0f,
-	0.20f, 0.0f,
-	0.25f, 3.0f,
-	0.30f,-6.0f,
-	0.35f, 6.0f,
-	0.40f,-6.0f,
-	0.45f, 6.0f,
-	0.50f,-6.0f,
-	0.55f, 6.0f,
-	0.60f,-6.0f,
-	0.65f, 6.0f,
-	0.70f,-3.0f,
-	0.75f, 6.0f,
-	0.80f, 0.0f,
-	1.00f, 0.0f,
-};
-static const int springVAR_count = sizeof(springVAR)/sizeof(float)/2;
 
 #endif
 

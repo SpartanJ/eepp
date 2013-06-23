@@ -7,7 +7,11 @@ using namespace EE::Graphics;
 
 CP_NAMESPACE_BEGIN
 
-cPinJoint::cPinJoint( cBody * a, cBody * b, cVect anchr1, cVect anchr2 ) {
+cPinJoint::cPinJoint( cBody * a, cBody * b, cVect anchr1, cVect anchr2 )
+#ifdef PHYSICS_RENDERER_ENABLED
+	: mDrawPointSize( 5.f )
+#endif
+{
 	mConstraint = cpPinJointNew( a->Body(), b->Body(), tocpv( anchr1 ), tocpv( anchr2 ) );
 	SetData();
 }
@@ -38,6 +42,9 @@ void cPinJoint::Dist( const cpFloat& dist ) {
 
 void cPinJoint::Draw() {
 	#ifdef PHYSICS_RENDERER_ENABLED
+	if ( mDrawPointSize <= 0 )
+		return;
+
 	cpPinJoint *joint	= (cpPinJoint *)mConstraint;
 	cpBody * body_a		= mConstraint->a;
 	cpBody * body_b		= mConstraint->b;
@@ -47,7 +54,7 @@ void cPinJoint::Draw() {
 
 	cpFloat ps = BR->GetPointSize();
 	BR->SetTexture( NULL );
-	BR->SetPointSize( 5.0f );
+	BR->SetPointSize( mDrawPointSize );
 	BR->PointsBegin();
 	BR->PointSetColor( eeColorA( 128, 255, 128, 255 ) );
 	BR->BatchPoint( a.x, a.y );
@@ -62,5 +69,15 @@ void cPinJoint::Draw() {
 	BR->SetPointSize( ps );
 	#endif
 }
+
+#ifdef PHYSICS_RENDERER_ENABLED
+cpFloat cPinJoint::DrawPointSize() {
+	return mDrawPointSize;
+}
+
+void cPinJoint::DrawPointSize( const cpFloat& size ) {
+	mDrawPointSize = size;
+}
+#endif
 
 CP_NAMESPACE_END

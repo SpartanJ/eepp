@@ -20,6 +20,14 @@ class CP_API cPivotJoint : public cConstraint {
 		void Anchr2( const cVect& anchr2 );
 
 		virtual void Draw();
+
+#ifdef PHYSICS_RENDERER_ENABLED
+		cpFloat DrawPointSize();
+
+		virtual void DrawPointSize( const cpFloat& size );
+	protected:
+		cpFloat mDrawPointSize;
+#endif
 };
 
 CP_NAMESPACE_END

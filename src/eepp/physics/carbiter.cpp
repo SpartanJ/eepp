@@ -72,8 +72,12 @@ cpFloat cArbiter::GetDepth( int i ) {
 	return cpArbiterGetDepth( mArbiter, i );
 }
 
-cpContactPointSet cArbiter::GetContactPointSet() {
+cpContactPointSet cArbiter::ContactPointSet() {
 	return cpArbiterGetContactPointSet( mArbiter );
+}
+
+void cArbiter::ContactPointSet( cpContactPointSet * contact ) {
+	cpArbiterSetContactPointSet( mArbiter, contact );
 }
 
 cpArbiter *	cArbiter::Arbiter() const {
@@ -102,6 +106,14 @@ cVect cArbiter::SurfaceVelocity() {
 
 void cArbiter::SurfaceVelocity( cVect value ) {
 	cpArbiterSetSurfaceVelocity( mArbiter, tocpv( value ) );
+}
+
+void cArbiter::UserData( cpDataPointer value ) {
+	cpArbiterSetUserData( mArbiter, value );
+}
+
+cpDataPointer cArbiter::UserData() const {
+	return cpArbiterGetUserData( mArbiter );
 }
 
 CP_NAMESPACE_END

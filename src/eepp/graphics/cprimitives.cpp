@@ -2,6 +2,7 @@
 #include <eepp/math/polygon2.hpp>
 #include <eepp/graphics/cbatchrenderer.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
+#include <eepp/graphics/renderer/cgl.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -82,6 +83,76 @@ void cPrimitives::DrawTriangle( const eeTriangle2f& t ) {
 }
 
 void cPrimitives::DrawCircle( const eeVector2f& p, const eeFloat& radius, Uint32 points ) {
+	if ( 0 == points ) {
+		// Optimized circle rendering
+		static const GLfloat circleVAR[] = {
+			 0.0000f,  1.0000f,
+			 0.2588f,  0.9659f,
+			 0.5000f,  0.8660f,
+			 0.7071f,  0.7071f,
+			 0.8660f,  0.5000f,
+			 0.9659f,  0.2588f,
+			 1.0000f,  0.0000f,
+			 0.9659f, -0.2588f,
+			 0.8660f, -0.5000f,
+			 0.7071f, -0.7071f,
+			 0.5000f, -0.8660f,
+			 0.2588f, -0.9659f,
+			 0.0000f, -1.0000f,
+			-0.2588f, -0.9659f,
+			-0.5000f, -0.8660f,
+			-0.7071f, -0.7071f,
+			-0.8660f, -0.5000f,
+			-0.9659f, -0.2588f,
+			-1.0000f, -0.0000f,
+			-0.9659f,  0.2588f,
+			-0.8660f,  0.5000f,
+			-0.7071f,  0.7071f,
+			-0.5000f,  0.8660f,
+			-0.2588f,  0.9659f,
+			 0.0000f,  1.0000f,
+			 0.0f, 0.0f, // For an extra line to see the rotation.
+		};
+		static const int circleVAR_count = sizeof(circleVAR)/sizeof(GLfloat)/2;
+
+		GLi->Disable( GL_TEXTURE_2D );
+
+		GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
+
+		GLi->PushMatrix();
+
+		GLi->Translatef( p.x, p.y, 0.0f );
+
+		GLi->Scalef( radius, radius, 1.0f);
+
+		GLi->VertexPointer( 2, GL_FLOAT, 0, circleVAR );
+
+		std::vector<eeColorA> colors( circleVAR_count - 1 ,mColor );
+
+		GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, &colors[0] );
+
+		switch( mFillMode ) {
+			case DRAW_LINE:
+			{
+				GLi->DrawArrays( GL_LINE_LOOP, 0, circleVAR_count - 1 );
+				break;
+			}
+			case DRAW_FILL:
+			{
+				GLi->DrawArrays( GL_TRIANGLE_FAN, 0, circleVAR_count - 1 );
+				break;
+			}
+		}
+
+		GLi->PopMatrix();
+
+		GLi->Enable( GL_TEXTURE_2D );
+
+		GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
+
+		return;
+	}
+
 	if(points < 6) points = 6;
 	eeFloat angle_shift =  360 / static_cast<eeFloat>(points);
 

@@ -22,6 +22,14 @@ class CP_API cPinJoint : public cConstraint {
 		void Dist( const cpFloat& dist );
 
 		virtual void Draw();
+
+#ifdef PHYSICS_RENDERER_ENABLED
+		cpFloat DrawPointSize();
+
+		virtual void DrawPointSize( const cpFloat& size );
+	protected:
+		cpFloat mDrawPointSize;
+#endif
 };
 
 CP_NAMESPACE_END

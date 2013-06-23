@@ -249,6 +249,10 @@ class CP_API cSpace {
 		void EachBody( BodyIteratorFunc Func, void * data );
 
 		virtual void OnEachBody( cBody * Body, cBodyIterator * it );
+
+		void ConvertBodyToDynamic( cBody * body, cpFloat mass, cpFloat moment );
+
+		void ConvertBodyToStatic( cBody * body );
 	protected:
 		cpSpace *									mSpace;
 		cBody *										mStaticBody;

@@ -7,7 +7,11 @@ using namespace EE::Graphics;
 
 CP_NAMESPACE_BEGIN
 
-cSlideJoint::cSlideJoint( cBody * a, cBody *b, cVect anchr1, cVect anchr2, cpFloat min, cpFloat max ) {
+cSlideJoint::cSlideJoint( cBody * a, cBody *b, cVect anchr1, cVect anchr2, cpFloat min, cpFloat max )
+#ifdef PHYSICS_RENDERER_ENABLED
+	: mDrawPointSize( 5.f )
+#endif
+{
 	mConstraint = cpSlideJointNew( a->Body(), b->Body(), tocpv( anchr1 ), tocpv( anchr2 ), min, max );
 	SetData();
 }
@@ -46,6 +50,9 @@ void cSlideJoint::Max( const cpFloat& max ) {
 
 void cSlideJoint::Draw() {
 	#ifdef PHYSICS_RENDERER_ENABLED
+	if ( mDrawPointSize <= 0 )
+		return;
+
 	cpBody * body_a		= mConstraint->a;
 	cpBody * body_b		= mConstraint->b;
 	cpSlideJoint *joint = (cpSlideJoint *)mConstraint;
@@ -56,7 +63,7 @@ void cSlideJoint::Draw() {
 	cpFloat ps			= BR->GetPointSize();
 
 	BR->SetTexture( NULL );
-	BR->SetPointSize( 5.0f );
+	BR->SetPointSize( mDrawPointSize );
 	BR->PointsBegin();
 	BR->PointSetColor( eeColorA( 128, 255, 128, 255 ) );
 	BR->BatchPoint( a.x, a.y );
@@ -68,5 +75,15 @@ void cSlideJoint::Draw() {
 	BR->SetPointSize( ps );
 	#endif
 }
+
+#ifdef PHYSICS_RENDERER_ENABLED
+cpFloat cSlideJoint::DrawPointSize() {
+	return mDrawPointSize;
+}
+
+void cSlideJoint::DrawPointSize( const cpFloat& size ) {
+	mDrawPointSize = size;
+}
+#endif
 
 CP_NAMESPACE_END

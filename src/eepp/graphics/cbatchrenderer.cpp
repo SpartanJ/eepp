@@ -731,7 +731,7 @@ void cBatchRenderer::TriangleFanSetSubset( const eeFloat& x0, const eeFloat& y0,
 
 void cBatchRenderer::BatchTriangleFan( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2 ) {
 
-	if ( mNumVertex + 2 >= mVertexSize )
+	if ( mNumVertex + 3 >= mVertexSize )
 		return;
 
 	SetBlendMode( DM_TRIANGLE_FAN, mForceBlendMode );
@@ -755,6 +755,21 @@ void cBatchRenderer::BatchTriangleFan( const eeFloat& x0, const eeFloat& y0, con
 	mTVertex->color = mVerColor[2];
 
 	AddVertexs(3);
+}
+
+void cBatchRenderer::BatchTriangleFan( const eeFloat& x0, const eeFloat& y0 ) {
+	if ( mNumVertex + 1 >= mVertexSize )
+		return;
+
+	SetBlendMode( DM_TRIANGLE_FAN, mForceBlendMode );
+
+	mTVertex 		= &mVertex[ mNumVertex ];
+	mTVertex->pos.x = x0;
+	mTVertex->pos.y = y0;
+	mTVertex->tex 	= mTexCoord[0];
+	mTVertex->color = mVerColor[0];
+
+	AddVertexs(1);
 }
 
 void cBatchRenderer::TrianglesBegin() {

@@ -7,12 +7,20 @@ using namespace EE::Graphics;
 
 CP_NAMESPACE_BEGIN
 
-cPivotJoint::cPivotJoint( cBody * a, cBody * b, cVect pivot ) {
+cPivotJoint::cPivotJoint( cBody * a, cBody * b, cVect pivot )
+#ifdef PHYSICS_RENDERER_ENABLED
+	: mDrawPointSize( 10.f )
+#endif
+{
 	mConstraint = cpPivotJointNew( a->Body(), b->Body(), tocpv( pivot ) );
 	SetData();
 }
 
-cPivotJoint::cPivotJoint( cBody * a, cBody * b, cVect anchr1, cVect anchr2 ) {
+cPivotJoint::cPivotJoint( cBody * a, cBody * b, cVect anchr1, cVect anchr2 )
+#ifdef PHYSICS_RENDERER_ENABLED
+	: mDrawPointSize( 10.f )
+#endif
+{
 	mConstraint = cpPivotJointNew2( a->Body(), b->Body(), tocpv( anchr1 ), tocpv( anchr2 ) );
 	SetData();
 }
@@ -35,6 +43,9 @@ void cPivotJoint::Anchr2( const cVect& anchr2 ) {
 
 void cPivotJoint::Draw() {
 	#ifdef PHYSICS_RENDERER_ENABLED
+	if ( mDrawPointSize <= 0 )
+		return;
+
 	cpBody * body_a		= mConstraint->a;
 	cpBody * body_b		= mConstraint->b;
 	cpPivotJoint* joint	= (cpPivotJoint *)mConstraint;
@@ -44,7 +55,7 @@ void cPivotJoint::Draw() {
 
 	cpFloat ps = BR->GetPointSize();
 	BR->SetTexture( NULL );
-	BR->SetPointSize( 10.f );
+	BR->SetPointSize( mDrawPointSize );
 	BR->PointsBegin();
 	BR->PointSetColor( eeColorA( 128, 255, 128, 255 ) );
 	BR->BatchPoint( a.x, a.y );
@@ -53,5 +64,15 @@ void cPivotJoint::Draw() {
 	BR->SetPointSize( ps );
 	#endif
 }
+
+#ifdef PHYSICS_RENDERER_ENABLED
+cpFloat cPivotJoint::DrawPointSize() {
+	return mDrawPointSize;
+}
+
+void cPivotJoint::DrawPointSize( const cpFloat& size ) {
+	mDrawPointSize = size;
+}
+#endif
 
 CP_NAMESPACE_END

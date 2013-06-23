@@ -9,7 +9,11 @@ using namespace EE::Graphics;
 
 CP_NAMESPACE_BEGIN
 
-cDampedSpring::cDampedSpring( cBody * a, cBody * b, cVect anchr1, cVect anchr2, cpFloat restLength, cpFloat stiffness, cpFloat damping ) {
+cDampedSpring::cDampedSpring( cBody * a, cBody * b, cVect anchr1, cVect anchr2, cpFloat restLength, cpFloat stiffness, cpFloat damping )
+#ifdef PHYSICS_RENDERER_ENABLED
+	: mDrawPointSize( 5.f )
+#endif
+{
 	mConstraint = cpDampedSpringNew( a->Body(), b->Body(), tocpv( anchr1 ), tocpv( anchr2 ), restLength, stiffness, damping );
 	SetData();
 }
@@ -56,6 +60,28 @@ void cDampedSpring::Damping( const cpFloat& damping ) {
 
 void cDampedSpring::Draw() {
 	#ifdef PHYSICS_RENDERER_ENABLED
+	static const float springVAR[] = {
+		0.00f, 0.0f,
+		0.20f, 0.0f,
+		0.25f, 3.0f,
+		0.30f,-6.0f,
+		0.35f, 6.0f,
+		0.40f,-6.0f,
+		0.45f, 6.0f,
+		0.50f,-6.0f,
+		0.55f, 6.0f,
+		0.60f,-6.0f,
+		0.65f, 6.0f,
+		0.70f,-3.0f,
+		0.75f, 6.0f,
+		0.80f, 0.0f,
+		1.00f, 0.0f,
+	};
+	static const int springVAR_count = sizeof(springVAR)/sizeof(float)/2;
+
+	if ( mDrawPointSize <= 0 )
+		return;
+
 	cpDampedSpring * spring = (cpDampedSpring*)mConstraint;
 	cpBody * body_a = mConstraint->a;
 	cpBody * body_b = mConstraint->b;
@@ -63,7 +89,7 @@ void cDampedSpring::Draw() {
 	cVect a = tovect( cpvadd(body_a->p, cpvrotate(spring->anchr1, body_a->rot)) );
 	cVect b = tovect( cpvadd(body_b->p, cpvrotate(spring->anchr2, body_b->rot)) );
 
-	GLi->PointSize( 5.0f );
+	GLi->PointSize( mDrawPointSize );
 
 	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
 	BR->SetTexture( NULL );
@@ -105,5 +131,16 @@ void cDampedSpring::Draw() {
 	GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
 	#endif
 }
+
+
+#ifdef PHYSICS_RENDERER_ENABLED
+cpFloat cDampedSpring::DrawPointSize() {
+	return mDrawPointSize;
+}
+
+void cDampedSpring::DrawPointSize( const cpFloat& size ) {
+	mDrawPointSize = size;
+}
+#endif
 
 CP_NAMESPACE_END

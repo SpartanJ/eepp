@@ -26,6 +26,14 @@ class CP_API cSlideJoint : public cConstraint {
 		void Max( const cpFloat& max );
 
 		virtual void Draw();
+
+#ifdef PHYSICS_RENDERER_ENABLED
+		cpFloat DrawPointSize();
+
+		virtual void DrawPointSize( const cpFloat& size );
+	protected:
+		cpFloat mDrawPointSize;
+#endif
 };
 
 CP_NAMESPACE_END

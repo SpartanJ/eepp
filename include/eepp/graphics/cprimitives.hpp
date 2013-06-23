@@ -27,9 +27,9 @@ class EE_API cPrimitives {
 		/** Draw a circle on the screen
 		* @param p The coordinates ( x and y represents the center of the circle )
 		* @param radius The Circle Radius
-		* @param points Number of points to represent the circle
+		* @param points Number of points to represent the circle. If points is equal to 0 by default will use an optimized circle rendering ( precached coordinates ).
 		*/
-		void DrawCircle( const eeVector2f& p, const eeFloat& radius, Uint32 points = 360 );
+		void DrawCircle( const eeVector2f& p, const eeFloat& radius, Uint32 points = 0 );
 
 		/** Draw a triangle on the screen
 		* @param t The Triangle (eeTriangle2f)

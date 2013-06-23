@@ -30,6 +30,14 @@ class CP_API cDampedSpring : public cConstraint {
 		void Damping( const cpFloat& damping );
 
 		virtual void Draw();
+
+#ifdef PHYSICS_RENDERER_ENABLED
+		cpFloat DrawPointSize();
+
+		virtual void DrawPointSize( const cpFloat& size );
+	protected:
+		cpFloat mDrawPointSize;
+#endif
 };
 
 CP_NAMESPACE_END

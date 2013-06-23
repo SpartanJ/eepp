@@ -22,6 +22,14 @@ class CP_API cGrooveJoint : public cConstraint {
 		void GrooveB( const cVect& groove_b );
 
 		virtual void Draw();
+
+#ifdef PHYSICS_RENDERER_ENABLED
+		cpFloat DrawPointSize();
+
+		virtual void DrawPointSize( const cpFloat& size );
+	protected:
+		cpFloat mDrawPointSize;
+#endif
 };
 
 CP_NAMESPACE_END
