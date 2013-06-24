@@ -237,7 +237,7 @@ function add_cross_config_links()
 	end
 end
 
-function build_link_configuration( package_name )
+function build_link_configuration( package_name, use_ee_icon )
 	includedirs { "include", "src" }
 	
 	if package_name ~= "eepp" and package_name ~= "eepp-static" then
@@ -264,6 +264,10 @@ function build_link_configuration( package_name )
 			if ( os.is_real("macosx") or os.is_real("windows") ) then
 				if ( os.is_real("windows") ) then
 					links {  "mingw32" }
+					
+					if ( true == use_ee_icon ) then
+						linkoptions { "../../assets/icon/ee.res" }
+					end
 				end
 				
 				if ( backend_is("SDL") ) then
@@ -717,50 +721,50 @@ solution "eepp"
 		kind "WindowedApp"
 		language "C++"
 		files { "src/test/*.cpp" }
-		build_link_configuration( "eetest" )
+		build_link_configuration( "eetest", true )
 
 	-- Examples
 	project "eepp-es"
 		kind "WindowedApp"
 		language "C++"
 		files { "src/examples/external_shader/*.cpp" }
-		build_link_configuration( "eees" )
+		build_link_configuration( "eees", true )
 
 	project "eepp-ew"
 		kind "WindowedApp"
 		language "C++"
 		files { "src/examples/empty_window/*.cpp" }
-		build_link_configuration( "eeew" )
+		build_link_configuration( "eeew", true )
 
 	project "eepp-sound"
 		kind "WindowedApp"
 		language "C++"
 		files { "src/examples/sound/*.cpp" }
-		build_link_configuration( "eesound" )
+		build_link_configuration( "eesound", true )
 
 	project "eepp-sprites"
 		kind "WindowedApp"
 		language "C++"
 		files { "src/examples/sprites/*.cpp" }
-		build_link_configuration( "eesprites" )
+		build_link_configuration( "eesprites", true )
 
 	project "eepp-fonts"
 		kind "WindowedApp"
 		language "C++"
 		files { "src/examples/fonts/*.cpp" }
-		build_link_configuration( "eefonts" )
+		build_link_configuration( "eefonts", true )
 
 	project "eepp-vbo-fbo-batch"
 		kind "WindowedApp"
 		language "C++"
 		files { "src/examples/vbo_fbo_batch/*.cpp" }
-		build_link_configuration( "eevbo-fbo-batch" )
+		build_link_configuration( "eevbo-fbo-batch", true )
 
 	project "eepp-physics"
 		kind "WindowedApp"
 		language "C++"
 		files { "src/examples/physics/*.cpp" }
-		build_link_configuration( "eephysics" )
+		build_link_configuration( "eephysics", true )
 
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")
