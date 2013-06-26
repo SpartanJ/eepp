@@ -261,9 +261,9 @@ function build_link_configuration( package_name, use_ee_icon )
 				links { get_backend_link_name( "sfml-window" ) }
 			end
 		else
-			if ( os.is_real("macosx") or os.is_real("windows") ) then
+			if ( os.is_real("macosx") or os.is_real("windows") or os.is_real("mingw32") ) then
 				if ( os.is_real("windows") ) then
-					links {  "mingw32" }
+					links { "mingw32" }
 					
 					if ( true == use_ee_icon ) then
 						linkoptions { "../../assets/icon/ee.res" }

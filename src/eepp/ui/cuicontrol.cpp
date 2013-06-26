@@ -798,7 +798,7 @@ cUIControl * cUIControl::OverFind( const eeVector2f& Point ) {
 
 
 			if ( NULL == pOver )
-				pOver = const_cast<cUIControl *>( reinterpret_cast<const cUIControl *>( this ) );
+				pOver = this;
 		}
 	}
 

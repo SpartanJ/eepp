@@ -1,5 +1,4 @@
 #include <eepp/graphics/cframebuffer.hpp>
-#include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
 #include <eepp/window/cengine.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
