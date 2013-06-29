@@ -1212,8 +1212,6 @@ void cEETest::Screen5() {
 }
 
 void cEETest::Render() {
-	mResLoad.Update();
-
 	HWidth = mWindow->GetWidth() * 0.5f;
 	HHeight = mWindow->GetHeight() * 0.5f;
 
@@ -1575,6 +1573,8 @@ void cEETest::Process() {
 			et = mWindow->Elapsed();
 
 			Input();
+
+			mResLoad.Update();
 
 			if ( mFontLoader.IsLoaded() ) {
 				Render();

@@ -4,6 +4,7 @@
 #include <eepp/window/ccursormanager.hpp>
 #include <eepp/window/platform/null/cnullimpl.hpp>
 #include <eepp/window/cplatformimpl.hpp>
+#include <eepp/window/cengine.hpp>
 
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
@@ -520,6 +521,24 @@ bool cWindow::HasScreenKeyboardSupport()
 
 bool cWindow::IsScreenKeyboardShown() {
 	return false;
+}
+
+bool cWindow::IsThreadedGLContext() {
+	return false;
+}
+
+void cWindow::SetGLContextThread() {
+}
+
+void cWindow::UnsetGLContextThread() {
+}
+
+void cWindow::GLThreadMutexLock() {
+	cEngine::instance()->mGLThreadMutex.Lock();
+}
+
+void cWindow::GLThreadMutexUnlock() {
+	cEngine::instance()->mGLThreadMutex.Unlock();
 }
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID

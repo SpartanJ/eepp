@@ -108,12 +108,28 @@ class EE_API cEngine {
 			@param iniKeyName The ini key name to search the properties
 		*/
 		ContextSettings CreateContextSettings( cIniFile * ini, std::string iniKeyName = "EEPP" );
+
+		/** Enabling Shared GL Context allows asynchronous OpenGL resource loading ( only if is supported by the backend, SDL 2 backend is the only one supported ).
+		**	If the cTextureLoader is threaded, will upload the texture un another thread to the GPU. So, it will not block the main rendering thread.
+		**	Shared GL Context is disabled by default.
+		*/
+		void EnableSharedGLContext();
+
+		/** Disable the Shared GL Context
+		**	@see EnableSharedGLContext()
+		*/
+		void DisableSharedGLContext();
+
+		/** @return If the Shared GL Context is enabled and ready to use. */
+		bool IsSharedGLContextEnabled();
 	protected:
 		friend class cWindow;
 
 		Backend::cBackend *	mBackend;
 		std::list<cWindow*>	mWindows;
 		cWindow *			mWindow;
+		cMutex				mGLThreadMutex;
+		bool				mSharedGLContext;
 
 		cEngine();
 

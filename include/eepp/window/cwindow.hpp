@@ -416,6 +416,12 @@ class EE_API cWindow {
 		/** @return The application APK file path */
 		virtual std::string GetApkPath();
 #endif
+
+		virtual bool IsThreadedGLContext();
+
+		virtual void SetGLContextThread();
+
+		virtual void UnsetGLContextThread();
 	protected:
 		friend class cEngine;
 
@@ -485,6 +491,10 @@ class EE_API cWindow {
 		void LogSuccessfulInit( const std::string& BackendName, const std::string& ProcessPath = "" );
 
 		void LogFailureInit( const std::string& ClassName, const std::string& BackendName );
+
+		void GLThreadMutexLock();
+
+		void GLThreadMutexUnlock();
 };
 
 }}

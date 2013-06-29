@@ -32,7 +32,7 @@ class EE_API cSprite {
 		* @param SearchInTextureAtlas If you want only to search in a especific atlas ( NULL if you want to search in all atlases )
 		* @note Texture atlases saves the SubTextures names without extension by default.
 		* @see cTextureAtlasManager::GetSubTexturesByPattern
-*/
+		*/
 		cSprite( const std::string& name, const std::string& extension = "", cTextureAtlas * SearchInTextureAtlas = NULL );
 
 		/** Creates a Sprite from a SubTexture

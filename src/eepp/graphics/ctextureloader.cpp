@@ -6,6 +6,8 @@
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
 #include <eepp/helper/jpeg-compressor/jpgd.h>
+#include <eepp/window/cengine.hpp>
+using namespace EE::Window;
 
 #define TEX_LT_PATH 	(1)
 #define TEX_LT_MEM 		(2)
@@ -238,8 +240,9 @@ void cTextureLoader::Start() {
 
 	mTexLoaded = true;
 
-	if ( !mThreaded )
+	if ( !mThreaded || ( cEngine::instance()->IsSharedGLContextEnabled() && cEngine::instance()->GetCurrentWindow()->IsThreadedGLContext() ) ) {
 		LoadFromPixels();
+	}
 }
 
 void cTextureLoader::LoadFile() {
@@ -415,6 +418,10 @@ void cTextureLoader::LoadFromPixels() {
 			flags = ( mClampMode == CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 			flags = ( mCompressTexture ) ? ( flags | SOIL_FLAG_COMPRESS_TO_DXT ) : flags;
 
+			if ( mThreaded && cEngine::instance()->IsSharedGLContextEnabled() && cEngine::instance()->GetCurrentWindow()->IsThreadedGLContext() ) {
+				cEngine::instance()->GetCurrentWindow()->SetGLContextThread();
+			}
+
 			GLint PreviousTexture;
 			glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
 
@@ -443,6 +450,10 @@ void cTextureLoader::LoadFromPixels() {
 			}
 
 			glBindTexture( GL_TEXTURE_2D, PreviousTexture );
+
+			if ( mThreaded && cEngine::instance()->IsSharedGLContextEnabled() && cEngine::instance()->GetCurrentWindow()->IsThreadedGLContext() ) {
+				cEngine::instance()->GetCurrentWindow()->UnsetGLContextThread();
+			}
 
 			if ( tTexId ) {
 				mWidth	= width;
@@ -474,7 +485,6 @@ void cTextureLoader::LoadFromPixels() {
 			}
 
 			mPixels = NULL;
-
 		} else {
 			if ( NULL != stbi_failure_reason() ) {
 				cLog::instance()->Write( stbi_failure_reason() );
@@ -492,7 +502,9 @@ void cTextureLoader::LoadFromPixels() {
 }
 
 void cTextureLoader::Update() {
-	LoadFromPixels();
+	if ( !( cEngine::instance()->IsSharedGLContextEnabled() && cEngine::instance()->GetCurrentWindow()->IsThreadedGLContext() ) ) {
+		LoadFromPixels();
+	}
 }
 
 const Uint32& cTextureLoader::Id() const {

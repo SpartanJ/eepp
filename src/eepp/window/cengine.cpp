@@ -45,7 +45,8 @@ SINGLETON_DECLARE_IMPLEMENTATION(cEngine)
 
 cEngine::cEngine() :
 	mBackend( NULL ),
-	mWindow( NULL )
+	mWindow( NULL ),
+	mSharedGLContext( false )
 {
 	cTextureAtlasManager::CreateSingleton();
 }
@@ -364,6 +365,18 @@ ContextSettings cEngine::CreateContextSettings( std::string iniPath, std::string
 	cIniFile Ini( iniPath );
 
 	return CreateContextSettings( &Ini );
+}
+
+void cEngine::EnableSharedGLContext() {
+	mSharedGLContext = true;
+}
+
+void cEngine::DisableSharedGLContext() {
+	mSharedGLContext = false;
+}
+
+bool cEngine::IsSharedGLContextEnabled() {
+	return mSharedGLContext;
 }
 
 }}

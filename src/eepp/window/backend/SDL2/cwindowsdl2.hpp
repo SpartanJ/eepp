@@ -87,11 +87,18 @@ class EE_API cWindowSDL : public cWindow {
 
 		std::string GetApkPath();
 #endif
+
+		bool IsThreadedGLContext();
+
+		void SetGLContextThread();
+
+		void UnsetGLContextThread();
 	protected:
 		friend class cClipboardSDL;
 
 		SDL_Window *	mSDLWindow;
 		SDL_GLContext	mGLContext;
+		SDL_GLContext	mGLContextThread;
 
 		#ifdef EE_USE_WMINFO
 		SDL_SysWMinfo * mWMinfo;

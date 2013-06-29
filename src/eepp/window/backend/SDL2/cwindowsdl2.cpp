@@ -6,6 +6,10 @@
 	#include <SDL2/SDL_syswm.h>
 #endif
 
+#include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
+
+#include <eepp/window/cengine.hpp>
+#include <eepp/window/platform/platformimpl.hpp>
 #include <eepp/window/backend/SDL2/cwindowsdl2.hpp>
 #include <eepp/window/backend/SDL2/cclipboardsdl2.hpp>
 #include <eepp/window/backend/SDL2/cinputsdl2.hpp>
@@ -16,10 +20,7 @@
 #include <eepp/graphics/cvertexbuffermanager.hpp>
 #include <eepp/graphics/cframebuffermanager.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
-#include <eepp/window/platform/platformimpl.hpp>
-#include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
 #include <eepp/graphics/renderer/cgl.hpp>
-
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 #include <eepp/system/czip.hpp>
@@ -191,7 +192,10 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 		}
 	#endif
 
-	mGLContext = SDL_GL_CreateContext( mSDLWindow );
+	SDL_GL_SetAttribute( SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1 );
+
+	mGLContext			= SDL_GL_CreateContext( mSDLWindow );
+	mGLContextThread	= SDL_GL_CreateContext( mSDLWindow );
 
 	if ( NULL == mGLContext ) {
 		cLog::instance()->Write( "Unable to create context: " + std::string( SDL_GetError() ) );
@@ -250,6 +254,20 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	#endif
 
 	return true;
+}
+
+bool cWindowSDL::IsThreadedGLContext() {
+	return true;
+}
+
+void cWindowSDL::SetGLContextThread() {
+	GLThreadMutexLock();
+	SDL_GL_MakeCurrent( mSDLWindow, mGLContextThread );
+}
+
+void cWindowSDL::UnsetGLContextThread() {
+	SDL_GL_MakeCurrent( mSDLWindow, NULL );
+	GLThreadMutexUnlock();
 }
 
 std::string cWindowSDL::GetVersion() {
