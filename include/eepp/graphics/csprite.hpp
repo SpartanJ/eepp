@@ -1,5 +1,5 @@
-#ifndef EECSPRITE_H
-#define EECSPRITE_H
+#ifndef EE_GRAPHICSCSPRITE_HPP
+#define EE_GRAPHICSCSPRITE_HPP
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
@@ -69,11 +69,27 @@ class EE_API cSprite {
 		/** @return The Angle for the rendered sprite */
 		eeFloat Angle() const;
 
+		/** Rotates the sprite. Adds the new angle to the current rotation. Same as:
+		**	@core sprite.Angle( sprite.Angle() + angle );
+		*/
+		void Rotate( const eeFloat& angle );
+
 		/** Set the Scale for the rendered sprite */
 		void Scale( const eeFloat& Scale );
 
 		/** @return The Scale for the rendered sprite */
 		eeFloat Scale() const;
+
+		/**	@brief Set the local origin of the sprite
+		**	The origin of an object defines the center point for
+		**	all transformations (scale, rotation).
+		**	The coordinates of this point must be relative to the
+		**	top-left corner of the sprite.
+		**	The default origin point is the center of the sprite. */
+		void Origin( const eeOriginPoint& origin );
+
+		/** @return The local origin of the sprite */
+		const eeOriginPoint& Origin() const;
 
 		/** Set the Frame Number Sprite Size
 		* @param Size The new size
@@ -117,12 +133,6 @@ class EE_API cSprite {
 
 		/** @return The sprite Color Alpha */
 		const Uint8& Alpha() const;
-
-		/** @return If the sprite it's scaled from the center */
-		bool ScaleCentered() const;
-
-		/** Set if the sprite it's scaled centered or scaled from the Left - Top position of the sprite ( default True ) */
-		void ScaleCentered( const bool& ScaleCentered );
 
 		/** Set the Current Frame */
 		void CurrentFrame( eeUint CurFrame );
@@ -340,15 +350,15 @@ class EE_API cSprite {
 	protected:
 		enum SpriteFlags {
 			SPRITE_FLAG_AUTO_ANIM				= ( 1 << 0 ),
-			SPRITE_FLAG_SCALE_CENTERED			= ( 1 << 1 ),
-			SPRITE_FLAG_REVERSE_ANIM			= ( 1 << 2 ),
-			SPRITE_FLAG_ANIM_PAUSED				= ( 1 << 3 ),
-			SPRITE_FLAG_ANIM_TO_FRAME_AND_STOP	= ( 1 << 4 ),
-			SPRITE_FLAG_EVENTS_ENABLED			= ( 1 << 5 )
+			SPRITE_FLAG_REVERSE_ANIM			= ( 1 << 1 ),
+			SPRITE_FLAG_ANIM_PAUSED				= ( 1 << 2 ),
+			SPRITE_FLAG_ANIM_TO_FRAME_AND_STOP	= ( 1 << 3 ),
+			SPRITE_FLAG_EVENTS_ENABLED			= ( 1 << 4 )
 		};
 
 		Uint32				mFlags;
 		eeVector2f			mPos;
+		eeOriginPoint		mOrigin;
 		eeFloat				mAngle;
 		eeFloat				mScale;
 		eeFloat				mAnimSpeed;
@@ -379,8 +389,6 @@ class EE_API cSprite {
 		eeUint FramePos();
 
 		void ClearFrame();
-
-		eeVector2f GetRotationCenter( const eeRectf& DestRECT );
 
 		eeUint GetFrame( const eeUint& FrameNum );
 

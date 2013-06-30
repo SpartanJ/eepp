@@ -2,6 +2,9 @@
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/window/cengine.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
+#include <eepp/graphics/cprimitives.hpp>
+#include <eepp/graphics/cfont.hpp>
+#include <eepp/graphics/ctextcache.hpp>
 
 namespace EE { namespace UI {
 

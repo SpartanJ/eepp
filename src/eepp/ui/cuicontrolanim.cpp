@@ -2,6 +2,7 @@
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
+#include <eepp/graphics/cprimitives.hpp>
 
 namespace EE { namespace UI {
 

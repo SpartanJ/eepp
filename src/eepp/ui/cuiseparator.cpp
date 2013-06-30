@@ -1,5 +1,6 @@
 #include <eepp/ui/cuiseparator.hpp>
- 
+#include <eepp/graphics/csubtexture.hpp>
+
 namespace EE { namespace UI {
 
 cUISeparator::cUISeparator( cUIControlAnim::CreateParams Params ) :

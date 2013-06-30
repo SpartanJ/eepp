@@ -3,6 +3,7 @@
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/ctexture.hpp>
+#include <eepp/math/originpoint.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -79,11 +80,11 @@ class EE_API cSubTexture {
 		/** Set the SubTexture offset. */
 		void Offset( const eeVector2i& offset );
 
-		void Draw( const eeFloat& X, const eeFloat& Y, const eeColorA& Color = eeColorA(), const eeFloat& Angle = 0.f, const eeFloat& Scale = 1.f, const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDER_MODE& Effect = RN_NORMAL, const bool& ScaleCentered = true );
+		void Draw( const eeFloat& X, const eeFloat& Y, const eeColorA& Color = eeColorA(), const eeFloat& Angle = 0.f, const eeFloat& Scale = 1.f, const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDER_MODE& Effect = RN_NORMAL, eeOriginPoint Center = eeOriginPoint(eeOriginPoint::OriginCenter) );
 
-		void Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color0 = eeColorA(), const eeColorA& Color1 = eeColorA(), const eeColorA& Color2 = eeColorA(), const eeColorA& Color3 = eeColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDER_MODE& Effect = RN_NORMAL, const bool& ScaleCentered = true );
+		void Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeFloat& Scale, const eeColorA& Color0 = eeColorA(), const eeColorA& Color1 = eeColorA(), const eeColorA& Color2 = eeColorA(), const eeColorA& Color3 = eeColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDER_MODE& Effect = RN_NORMAL, eeOriginPoint Center = eeOriginPoint(eeOriginPoint::OriginCenter) );
 
-		void Draw( const eeQuad2f Q, const eeFloat& X, const eeFloat& Y, const eeFloat& Angle = 0.f, const eeFloat& Scale = 1.f, const eeColorA& Color0 = eeColorA(), const eeColorA& Color1 = eeColorA(), const eeColorA& Color2 = eeColorA(), const eeColorA& Color3 = eeColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
+		void Draw( const eeQuad2f Q, const eeVector2f& Offset = eeVector2f(), const eeFloat& Angle = 0.f, const eeFloat& Scale = 1.f, const eeColorA& Color0 = eeColorA(), const eeColorA& Color1 = eeColorA(), const eeColorA& Color2 = eeColorA(), const eeColorA& Color3 = eeColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
 
 		/** @return The texture instance used by the SubTexture. */
 		cTexture * GetTexture();

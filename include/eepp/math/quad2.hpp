@@ -53,6 +53,9 @@ class Quad2 {
 
 		/** Scale the quad from an specified center */
 		void Scale( const T& scale, const Vector2<T>& Center );
+
+		/** Move the polygon Vector2s, add to every point the distance specified  */
+		void Move( Vector2<T> dist );
 };
 
 template <typename T>
@@ -164,6 +167,16 @@ const Vector2<T>& Quad2<T>::operator[] ( const Uint32& Pos ) const {
 		return V[Pos];
 
 	return V[0];
+}
+
+template <typename T>
+void Quad2<T>::Move( Vector2<T> dist ) {
+	if ( dist.x == 0 && dist.y == 0 )
+		return;
+
+	for ( Uint32 i = 0; i < 4; i++ ) {
+		V[i] += dist;
+	}
 }
 
 typedef Quad2<eeFloat> eeQuad2f;

@@ -164,99 +164,10 @@ void cBatchRenderer::Flush() {
 }
 
 void cBatchRenderer::BatchQuad( const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& angle ) {
-#ifndef EE_GLES
-	if ( mNumVertex + 3 >= mVertexSize )
-			return;
-#else
-	if ( mNumVertex + 5 >= mVertexSize )
-			return;
-#endif
-
-	eeVector2f center;
-
-	if ( angle ) {
-		center.x = x + width  * 0.5f;
-		center.y = y + height * 0.5f;
-	}
-
-	SetBlendMode( DM_QUADS, mForceBlendMode );
-
-#ifndef EE_GLES
-	mTVertex 		= &mVertex[ mNumVertex ];
-	mTVertex->pos.x = x;
-	mTVertex->pos.y = y;
-	mTVertex->tex 	= mTexCoord[0];
-	mTVertex->color = mVerColor[0];
-	Rotate(center, &mTVertex->pos, angle);
-
-	mTVertex 		= &mVertex[ mNumVertex + 1 ];
-	mTVertex->pos.x = x;
-	mTVertex->pos.y = y + height;
-	mTVertex->tex 	= mTexCoord[1];
-	mTVertex->color = mVerColor[1];
-	Rotate(center, &mTVertex->pos, angle);
-
-	mTVertex 		= &mVertex[ mNumVertex + 2 ];
-	mTVertex->pos.x = x + width;
-	mTVertex->pos.y = y + height;
-	mTVertex->tex 	= mTexCoord[2];
-	mTVertex->color = mVerColor[2];
-	Rotate(center, &mTVertex->pos, angle);
-
-	mTVertex 		= &mVertex[ mNumVertex + 3 ];
-	mTVertex->pos.x = x + width;
-	mTVertex->pos.y = y;
-	mTVertex->tex 	= mTexCoord[3];
-	mTVertex->color = mVerColor[3];
-	Rotate(center, &mTVertex->pos, angle);
-#else
-	mTVertex 		= &mVertex[ mNumVertex ];
-	mTVertex->pos.x = x;
-	mTVertex->pos.y = y + height;
-	mTVertex->tex 	= mTexCoord[1];
-	mTVertex->color = mVerColor[1];
-	Rotate(center, &mTVertex->pos, angle);
-
-	mTVertex 		= &mVertex[ mNumVertex + 1 ];
-	mTVertex->pos.x = x;
-	mTVertex->pos.y = y;
-	mTVertex->tex 	= mTexCoord[0];
-	mTVertex->color = mVerColor[0];
-	Rotate(center, &mTVertex->pos, angle);
-
-	mTVertex 		= &mVertex[ mNumVertex + 2 ];
-	mTVertex->pos.x = x + width;
-	mTVertex->pos.y = y;
-	mTVertex->tex 	= mTexCoord[3];
-	mTVertex->color = mVerColor[3];
-	Rotate(center, &mTVertex->pos, angle);
-
-	mTVertex 		= &mVertex[ mNumVertex + 3 ];
-	mTVertex->pos.x = x;
-	mTVertex->pos.y = y + height;
-	mTVertex->tex 	= mTexCoord[1];
-	mTVertex->color = mVerColor[1];
-	Rotate(center, &mTVertex->pos, angle);
-
-	mTVertex 		= &mVertex[ mNumVertex + 4 ];
-	mTVertex->pos.x = x + width;
-	mTVertex->pos.y = y + height;
-	mTVertex->tex 	= mTexCoord[2];
-	mTVertex->color = mVerColor[2];
-	Rotate(center, &mTVertex->pos, angle);
-
-	mTVertex 		= &mVertex[ mNumVertex + 5 ];
-	mTVertex->pos.x = x + width;
-	mTVertex->pos.y = y;
-	mTVertex->tex 	= mTexCoord[3];
-	mTVertex->color = mVerColor[3];
-	Rotate(center, &mTVertex->pos, angle);
-#endif
-
-	AddVertexs( EE_QUAD_VERTEX );
+	BatchQuadEx( x, y, width, height, angle );
 }
 
-void cBatchRenderer::BatchQuadEx( const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& angle, const eeFloat& scale, const bool& scalefromcenter ) {
+void cBatchRenderer::BatchQuadEx( eeFloat x, eeFloat y, eeFloat width, eeFloat height, eeFloat angle, eeFloat scale, eeOriginPoint originPoint ) {
 #ifndef EE_GLES
 	if ( mNumVertex + 3 >= mVertexSize )
 		return;
@@ -265,99 +176,94 @@ void cBatchRenderer::BatchQuadEx( const eeFloat& x, const eeFloat& y, const eeFl
 		return;
 #endif
 
-	eeVector2f center;
-	eeFloat mx = x;
-	eeFloat my = y;
-	eeFloat mwidth = width;
-	eeFloat mheight = height;
-
-	center.x = width  * 0.5f;
-	center.y = height * 0.5f;
-
-	if ( scale != 1.0f ) {
-		if ( scalefromcenter ) {
-			mx = mx + center.x - center.x * scale;
-			my = my + center.y - center.y * scale;
-		}
-		mwidth *= scale;
-		mheight *= scale;
+	if ( originPoint.OriginType == eeOriginPoint::OriginCenter ) {
+		originPoint.x = width  * 0.5f;
+		originPoint.y = height * 0.5f;
 	}
 
-	center.x += x;
-	center.y += y;
+	if ( scale != 1.0f ) {
+		x				= x + originPoint.x - originPoint.x * scale;
+		y				= y + originPoint.y - originPoint.y * scale;
+		width			*= scale;
+		height			*= scale;
+		originPoint		*= scale;
+	}
+
+	originPoint.x += x;
+	originPoint.y += y;
 
 	SetBlendMode( DM_QUADS, mForceBlendMode );
 
 #ifndef EE_GLES
 	mTVertex 		= &mVertex[ mNumVertex ];
-	mTVertex->pos.x = mx;
-	mTVertex->pos.y = my;
+	mTVertex->pos.x = x;
+	mTVertex->pos.y = y;
 	mTVertex->tex 	= mTexCoord[0];
 	mTVertex->color = mVerColor[0];
-	Rotate(center, &mTVertex->pos, angle);
+	Rotate(originPoint, &mTVertex->pos, angle);
 
 	mTVertex 		= &mVertex[ mNumVertex + 1 ];
-	mTVertex->pos.x = mx;
-	mTVertex->pos.y = my + mheight;
+	mTVertex->pos.x = x;
+	mTVertex->pos.y = y + height;
 	mTVertex->tex 	= mTexCoord[1];
 	mTVertex->color = mVerColor[1];
-	Rotate(center, &mTVertex->pos, angle);
+	Rotate(originPoint, &mTVertex->pos, angle);
 
 	mTVertex 		= &mVertex[ mNumVertex + 2 ];
-	mTVertex->pos.x = mx + mwidth;
-	mTVertex->pos.y = my + mheight;
+	mTVertex->pos.x = x + width;
+	mTVertex->pos.y = y + height;
 	mTVertex->tex 	= mTexCoord[2];
 	mTVertex->color = mVerColor[2];
-	Rotate(center, &mTVertex->pos, angle);
+	Rotate(originPoint, &mTVertex->pos, angle);
 
 	mTVertex 		= &mVertex[ mNumVertex + 3 ];
-	mTVertex->pos.x = mx + mwidth;
-	mTVertex->pos.y = my;
+	mTVertex->pos.x = x + width;
+	mTVertex->pos.y = y;
 	mTVertex->tex 	= mTexCoord[3];
 	mTVertex->color = mVerColor[3];
-	Rotate(center, &mTVertex->pos, angle);
+	Rotate(originPoint, &mTVertex->pos, angle);
 #else
 	mTVertex 		= &mVertex[ mNumVertex ];
-	mTVertex->pos.x = mx;
-	mTVertex->pos.y = my + mheight;
+	mTVertex->pos.x = x;
+	mTVertex->pos.y = y + height;
 	mTVertex->tex 	= mTexCoord[1];
 	mTVertex->color = mVerColor[1];
-	Rotate(center, &mTVertex->pos, angle);
+	Rotate(originPoint, &mTVertex->pos, angle);
 
 	mTVertex 		= &mVertex[ mNumVertex + 1 ];
-	mTVertex->pos.x = mx;
-	mTVertex->pos.y = my;
+	mTVertex->pos.x = x;
+	mTVertex->pos.y = y;
 	mTVertex->tex 	= mTexCoord[0];
 	mTVertex->color = mVerColor[0];
-	Rotate(center, &mTVertex->pos, angle);
+	Rotate(originPoint, &mTVertex->pos, angle);
 
 	mTVertex 		= &mVertex[ mNumVertex + 2 ];
-	mTVertex->pos.x = mx + mwidth;
-	mTVertex->pos.y = my;
+	mTVertex->pos.x = x + width;
+	mTVertex->pos.y = y;
 	mTVertex->tex 	= mTexCoord[3];
 	mTVertex->color = mVerColor[3];
-	Rotate(center, &mTVertex->pos, angle);
+	Rotate(originPoint, &mTVertex->pos, angle);
 
 	mTVertex 		= &mVertex[ mNumVertex + 3 ];
-	mTVertex->pos.x = mx;
-	mTVertex->pos.y = my + mheight;
+	mTVertex->pos.x = x;
+	mTVertex->pos.y = y + height;
 	mTVertex->tex 	= mTexCoord[1];
 	mTVertex->color = mVerColor[1];
-	Rotate(center, &mTVertex->pos, angle);
+	Rotate(originPoint, &mTVertex->pos, angle);
 
 	mTVertex 		= &mVertex[ mNumVertex + 4 ];
-	mTVertex->pos.x = mx + mwidth;
-	mTVertex->pos.y = my + mheight;
+	mTVertex->pos.x = x + width;
+	mTVertex->pos.y = y + height;
 	mTVertex->tex 	= mTexCoord[2];
 	mTVertex->color = mVerColor[2];
-	Rotate(center, &mTVertex->pos, angle);
+	Rotate(originPoint, &mTVertex->pos, angle);
 
 	mTVertex 		= &mVertex[ mNumVertex + 5 ];
-	mTVertex->pos.x = mx + mwidth;
-	mTVertex->pos.y = my;
+	mTVertex->pos.x = x + width;
+	mTVertex->pos.y = y;
 	mTVertex->tex 	= mTexCoord[3];
 	mTVertex->color = mVerColor[3];
-	Rotate(center, &mTVertex->pos, angle);
+	Rotate(originPoint, &mTVertex->pos, angle);
 #endif
 
 	AddVertexs( EE_QUAD_VERTEX );

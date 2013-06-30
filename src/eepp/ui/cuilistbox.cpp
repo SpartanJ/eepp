@@ -2,6 +2,7 @@
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/ui/cuilistboxitem.hpp>
 #include <eepp/ui/tuiitemcontainer.hpp>
+#include <eepp/graphics/cfont.hpp>
 
 namespace EE { namespace UI {
 

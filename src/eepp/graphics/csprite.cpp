@@ -2,6 +2,7 @@
 #include <eepp/window/cengine.hpp>
 #include <eepp/graphics/cglobaltextureatlas.hpp>
 #include <eepp/graphics/ctextureatlasmanager.hpp>
+#include <eepp/math/originpoint.hpp>
 
 using namespace EE::Window;
 
@@ -10,7 +11,7 @@ using namespace EE::Window;
 namespace EE { namespace Graphics {
 
 cSprite::cSprite() :
-	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_SCALE_CENTERED | SPRITE_FLAG_EVENTS_ENABLED ),
+	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
 	mPos(),
 	mAngle( 0.f ),
 	mScale( 1.f ),
@@ -31,7 +32,7 @@ cSprite::cSprite() :
 }
 
 cSprite::cSprite( const std::string& name, const std::string& extension, cTextureAtlas * SearchInTextureAtlas )  :
-	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_SCALE_CENTERED | SPRITE_FLAG_EVENTS_ENABLED ),
+	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
 	mPos(),
 	mAngle( 0.f ),
 	mScale( 1.f ),
@@ -53,7 +54,7 @@ cSprite::cSprite( const std::string& name, const std::string& extension, cTextur
 }
 
 cSprite::cSprite( cSubTexture * SubTexture ) :
-	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_SCALE_CENTERED | SPRITE_FLAG_EVENTS_ENABLED ),
+	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
 	mPos(),
 	mAngle( 0.f ),
 	mScale( 1.f ),
@@ -75,7 +76,7 @@ cSprite::cSprite( cSubTexture * SubTexture ) :
 }
 
 cSprite::cSprite( const Uint32& TexId, const eeSizef &DestSize, const eeVector2i &Offset, const eeRecti& TexSector ) :
-	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_SCALE_CENTERED | SPRITE_FLAG_EVENTS_ENABLED ),
+	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
 	mPos(),
 	mAngle( 0.f ),
 	mScale( 1.f ),
@@ -174,7 +175,7 @@ void cSprite::ClearFrame() {
 void cSprite::Reset() {
 	ClearFrame();
 
-	mFlags				= SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_SCALE_CENTERED | SPRITE_FLAG_EVENTS_ENABLED;
+	mFlags				= SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED;
 
 	mAnimSpeed			= 16.f;
 	mScale				= 1;
@@ -218,44 +219,84 @@ void cSprite::CurrentSubFrame( const eeUint& CurSubFrame ) {
 		mCurrentSubFrame = CurSubFrame;
 }
 
-eeVector2f cSprite::GetRotationCenter( const eeRectf& DestRECT ) {
-	return eeVector2f ( DestRECT.Left + (DestRECT.Right - DestRECT.Left - 1.0f) * 0.5f , DestRECT.Top + (DestRECT.Bottom - DestRECT.Top - 1.0f) * 0.5f );
+eeQuad2f cSprite::GetQuad() {
+	cSubTexture * S;
+
+	if ( mFrames.size() && ( S = GetCurrentSubTexture() ) ) {
+		eeRectf TmpR( mPos.x,
+					  mPos.y,
+					  mPos.x + S->DestSize().x,
+					  mPos.y + S->DestSize().y
+					);
+
+		eeQuad2f Q = eeQuad2f( eeVector2f( TmpR.Left, TmpR.Top ),
+							   eeVector2f( TmpR.Left, TmpR.Bottom ),
+							   eeVector2f( TmpR.Right, TmpR.Bottom ),
+							   eeVector2f( TmpR.Right, TmpR.Top )
+					);
+
+		eeVector2f Center;
+
+		if ( mOrigin.OriginType == eeOriginPoint::OriginCenter ) {
+			Center	= TmpR.Center();
+		} else if ( mOrigin.OriginType == eeOriginPoint::OriginTopLeft ) {
+			Center	= mPos;
+		} else {
+			Center	+= mPos;
+		}
+
+		switch ( mEffect ) {
+			case RN_NORMAL:
+			case RN_MIRROR:
+			case RN_FLIP:
+			case RN_FLIPMIRROR:
+				break;
+			case RN_ISOMETRIC:
+				Q.V[0].x += ( TmpR.Right - TmpR.Left );
+				Q.V[1].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
+				Q.V[3].x += ( TmpR.Right - TmpR.Left );
+				Q.V[3].y += ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
+				break;
+			case RN_ISOMETRICVERTICAL:
+				Q.V[0].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
+				Q.V[1].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
+				break;
+			case RN_ISOMETRICVERTICALNEGATIVE:
+				Q.V[2].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
+				Q.V[3].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
+				break;
+		}
+
+		Q.Rotate( mAngle, Center );
+		Q.Scale( mScale, Center );
+
+		return Q;
+	}
+
+	return eeQuad2f();
 }
 
 eeAABB cSprite::GetAABB() {
 	eeAABB TmpR;
+	cSubTexture * S;
 
-	if ( mFrames.size() ) {
+	if ( mFrames.size() && ( S = GetCurrentSubTexture() ) ) {
 		if ( mAngle != 0 || mEffect >= 4 ) {
-			eeQuad2f Q = GetQuad();
-			eeFloat MinX = Q.V[0].x, MaxX = Q.V[0].x, MinY = Q.V[0].y, MaxY = Q.V[0].y;
-			for (Uint8 i = 1; i < 4; i++ ) {
-				if ( MinX > Q.V[i].x ) MinX = Q.V[i].x;
-				if ( MaxX < Q.V[i].x ) MaxX = Q.V[i].x;
-				if ( MinY > Q.V[i].y ) MinY = Q.V[i].y;
-				if ( MaxY < Q.V[i].y ) MaxY = Q.V[i].y;
-			}
-
-			TmpR.Left = MinX;
-			TmpR.Right = MaxX;
-			TmpR.Top = MinY;
-			TmpR.Bottom = MaxY;
+			return GetQuad().ToAABB();
 		} else { // The method used if mAngle != 0 works for mAngle = 0, but i prefer to use the faster way
-			cSubTexture * S = GetCurrentSubTexture();
+			TmpR = eeRectf( mPos.x, mPos.y, mPos.x + S->DestSize().x, mPos.y + S->DestSize().y );
 
-			if ( S != NULL ) {
-				if ( SPR_FGET( SPRITE_FLAG_SCALE_CENTERED ) ) {
-					if ( mScale == 1.f ) {
-						TmpR = eeRectf( mPos.x, mPos.y, mPos.x + S->DestSize().x, mPos.y + S->DestSize().y );
-					} else {
-						eeFloat halfW = S->DestSize().x * 0.5f;
-						eeFloat halfH = S->DestSize().y * 0.5f;
-						TmpR = eeRectf( mPos.x + halfW - halfW * mScale, mPos.y + halfH - halfH * mScale, mPos.x + halfW + halfW * mScale, mPos.y + halfH + halfH * mScale );
-					}
-				} else {
-					TmpR = eeRectf(mPos.x, mPos.y, mPos.x + S->DestSize().x * mScale, mPos.y + + S->DestSize().y * mScale);
-				}
+			eeVector2f Center;
+
+			if ( mOrigin.OriginType == eeOriginPoint::OriginCenter ) {
+				Center	= TmpR.Center();
+			} else if ( mOrigin.OriginType == eeOriginPoint::OriginTopLeft ) {
+				Center	= mPos;
+			} else {
+				Center	+= mPos;
 			}
+
+			TmpR.Scale( mScale, mOrigin );
 		}
 	}
 
@@ -547,9 +588,9 @@ void cSprite::Draw( const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect ) {
 		return;
 
 	if ( NULL == mVertexColors )
-		S->Draw( mPos.x, mPos.y, mColor, mAngle, mScale, Blend, Effect, 0 != SPR_FGET( SPRITE_FLAG_SCALE_CENTERED ) );
+		S->Draw( mPos.x, mPos.y, mColor, mAngle, mScale, Blend, Effect, mOrigin );
 	else
-		S->Draw( mPos.x, mPos.y, mAngle, mScale, mVertexColors[0], mVertexColors[1], mVertexColors[2], mVertexColors[3], Blend, Effect, 0 != SPR_FGET( SPRITE_FLAG_SCALE_CENTERED ) );
+		S->Draw( mPos.x, mPos.y, mAngle, mScale, mVertexColors[0], mVertexColors[1], mVertexColors[2], mVertexColors[3], Blend, Effect, mOrigin );
 }
 
 void cSprite::Draw() {
@@ -636,70 +677,6 @@ void cSprite::AutoAnimate( const bool& Autoanim ) {
 
 bool cSprite::AutoAnimate() const {
 	return 0 != SPR_FGET( SPRITE_FLAG_AUTO_ANIM );
-}
-
-eeQuad2f cSprite::GetQuad() {
-	if ( mFrames.size() ) {
-		cSubTexture* S = GetCurrentSubTexture();
-		eeRectf TmpR;
-
-		if ( SPR_FGET( SPRITE_FLAG_SCALE_CENTERED ) ) {
-			if ( mScale == 1.0f )
-				TmpR = eeRectf( mPos.x, mPos.y, mPos.x + S->DestSize().x, mPos.y + S->DestSize().y );
-			else {
-				eeFloat halfW = S->DestSize().x * 0.5f;
-				eeFloat halfH = S->DestSize().y * 0.5f;
-				TmpR = eeRectf( mPos.x + halfW - halfW * mScale, mPos.y + halfH - halfH * mScale, mPos.x + halfW + halfW * mScale, mPos.y + halfH + halfH * mScale );
-			}
-		} else {
-			TmpR = eeRectf( mPos.x, mPos.y, mPos.x + S->DestSize().x * mScale, mPos.y + S->DestSize().y * mScale );
-		}
-
-		eeQuad2f Q = eeQuad2f( eeVector2f( TmpR.Left, TmpR.Top ), eeVector2f( TmpR.Left, TmpR.Bottom ), eeVector2f( TmpR.Right, TmpR.Bottom ), eeVector2f( TmpR.Right, TmpR.Top ) );
-
-		switch ( mEffect ) {
-			case RN_NORMAL:
-			case RN_MIRROR:
-			case RN_FLIP:
-			case RN_FLIPMIRROR:
-				if ( mAngle != 0.0f )
-					Q.Rotate( mAngle, GetRotationCenter(TmpR) );
-
-				return Q;
-
-				break;
-			case RN_ISOMETRIC:
-				Q.V[0].x += ( TmpR.Right - TmpR.Left );
-				Q.V[1].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
-				Q.V[3].x += ( TmpR.Right - TmpR.Left );
-				Q.V[3].y += ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
-
-				if ( mAngle != 0.0f )
-					Q.Rotate( mAngle, GetRotationCenter(TmpR) );
-				return Q;
-
-				break;
-			case RN_ISOMETRICVERTICAL:
-				Q.V[0].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
-				Q.V[1].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
-
-				if ( mAngle != 0.0f )
-					Q.Rotate( mAngle, GetRotationCenter(TmpR) );
-				return Q;
-
-				break;
-			case RN_ISOMETRICVERTICALNEGATIVE:
-				Q.V[2].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
-				Q.V[3].y -= ( ( TmpR.Bottom - TmpR.Top ) * 0.5f );
-
-				if ( mAngle != 0.0f )
-					Q.Rotate( mAngle, GetRotationCenter(TmpR) );
-				return Q;
-
-				break;
-		}
-	}
-	return eeQuad2f();
 }
 
 cSubTexture* cSprite::GetCurrentSubTexture() {
@@ -791,20 +768,6 @@ void cSprite::Alpha( const Uint8& Alpha ) {
 
 const Uint8& cSprite::Alpha() const {
 	return mColor.Alpha;
-}
-
-bool cSprite::ScaleCentered() const {
-	return 0 != SPR_FGET( SPRITE_FLAG_SCALE_CENTERED );
-}
-
-void cSprite::ScaleCentered( const bool& ScaleCentered ) {
-	if ( ScaleCentered ) {
-		if ( !SPR_FGET( SPRITE_FLAG_SCALE_CENTERED ) )
-			mFlags |= SPRITE_FLAG_SCALE_CENTERED;
-	} else {
-		if ( SPR_FGET( SPRITE_FLAG_SCALE_CENTERED ) )
-			mFlags &= ~SPRITE_FLAG_SCALE_CENTERED;
-	}
 }
 
 const eeUint& cSprite::CurrentFrame() const {
@@ -900,6 +863,18 @@ void cSprite::FireEvent( const Uint32& Event ) {
 	if ( SPR_FGET( SPRITE_FLAG_EVENTS_ENABLED ) && mCb.IsSet() ) {
 		mCb( Event, this, mUserData );
 	}
+}
+
+void cSprite::Origin( const eeOriginPoint& origin ) {
+	mOrigin = origin;
+}
+
+const eeOriginPoint& cSprite:: Origin() const {
+	return mOrigin;
+}
+
+void cSprite::Rotate( const eeFloat& angle ) {
+	mAngle += angle;
 }
 
 }}

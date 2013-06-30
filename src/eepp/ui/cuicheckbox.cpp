@@ -1,5 +1,7 @@
 #include <eepp/ui/cuicheckbox.hpp>
 #include <eepp/ui/cuimanager.hpp>
+#include <eepp/graphics/csubtexture.hpp>
+#include <eepp/graphics/ctextcache.hpp>
 
 namespace EE { namespace UI {
 

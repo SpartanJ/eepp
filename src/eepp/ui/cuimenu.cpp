@@ -1,5 +1,6 @@
 #include <eepp/ui/cuimenu.hpp>
 #include <eepp/ui/cuimanager.hpp>
+#include <eepp/graphics/cfont.hpp>
 
 namespace EE { namespace UI {
 

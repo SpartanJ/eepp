@@ -1,5 +1,7 @@
 #include <eepp/ui/cuitextedit.hpp>
 #include <eepp/ui/cuimanager.hpp>
+#include <eepp/graphics/ctextcache.hpp>
+#include <eepp/graphics/cfont.hpp>
 
 namespace EE { namespace UI {
 

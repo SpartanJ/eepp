@@ -1,6 +1,7 @@
 #include <eepp/ui/cuitooltip.hpp>
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/ui/cuicomplexcontrol.hpp>
+#include <eepp/graphics/ctextcache.hpp>
 
 namespace EE { namespace UI {
 

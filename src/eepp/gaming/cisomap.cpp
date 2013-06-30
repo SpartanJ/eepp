@@ -140,7 +140,7 @@ void cIsoMap::Draw() {
 							T->Color[3] = mLight.ProcessVertex( T->Q.V[3].x, T->Q.V[3].y, T->Color[3], T->Color[3] );	// Right - Top Vertex
 						}
 
-						T->Layers[L]->Draw( T->Q, 0.f, 0.f, 0.f, 1.f, T->Color[0], T->Color[1], T->Color[2], T->Color[3] );
+						T->Layers[L]->Draw( T->Q, eeVector2f(), 0.f, 1.f, T->Color[0], T->Color[1], T->Color[2], T->Color[3] );
 
 						if ( TileAABB.Contains( mMouseMapPos ) ) {
 							if ( eePolygon2f::IntersectQuad2( T->Q, eeQuad2f( mMouseMapPos, mMouseMapPos, mMouseMapPos, mMouseMapPos ) ) ) {

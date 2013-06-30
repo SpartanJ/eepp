@@ -54,6 +54,10 @@ class tRECT {
 		Vector2<T> Center();
 
 		tSize<T> Size();
+
+		void Scale( T scale, const Vector2<T>& center );
+
+		void Scale( T scale );
 };
 
 template <typename T>
@@ -206,6 +210,21 @@ Vector2<T> tRECT<T>::WrapVector( const Vector2<T>& Vect ) {
 	T y		= ( mody > 0 ) ? mody : mody + iy;
 
 	return Vector2<T>( x + Left, y + Top );
+}
+
+template <typename T>
+void tRECT<T>::Scale( T scale, const Vector2<T>& center ) {
+	if ( scale != 1.0f ) {
+		Left			= Left	+ center.x - center.x * scale;
+		Top				= Top	+ center.y - center.y * scale;
+		Right			= Left	+ ( Right - Left ) * scale;
+		Bottom			= Top	+ ( Bottom - Top ) * scale;
+	}
+}
+
+template <typename T>
+void tRECT<T>::Scale( T scale ) {
+	Scale( scale, Center() );
 }
 
 typedef tRECT<eeUint>		eeRectu;

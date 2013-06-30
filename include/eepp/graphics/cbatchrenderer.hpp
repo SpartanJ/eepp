@@ -3,6 +3,7 @@
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/math/polygon2.hpp>
+#include <eepp/math/originpoint.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -76,7 +77,7 @@ class EE_API cBatchRenderer {
 		eeVector2f BatchCenter() const { return mCenter; }
 
 		/** Add to the batch a quad ( this will change your batch rendering method to DM_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchQuadEx( const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& angle = 0.0f, const eeFloat& scale = 1.0f, const bool& scalefromcenter = true );
+		void BatchQuadEx( eeFloat x, eeFloat y, eeFloat width, eeFloat height, eeFloat angle = 0.0f, eeFloat scale = 1.0f, eeOriginPoint originPoint = eeOriginPoint(eeOriginPoint::OriginCenter) );
 
 		/** Add to the batch a quad ( this will change your batch rendering method to DM_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
 		void BatchQuad( const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& angle = 0.0f );
@@ -230,9 +231,13 @@ class EE_API cBatchRenderer {
 		bool				mForceBlendMode;
 
 		void Flush();
+
 		void Init();
+
 		void AddVertexs( const eeUint& num );
+
 		void Rotate( const eeVector2f& center, eeVector2f* point, const eeFloat& angle );
+
 		void SetBlendMode( EE_DRAW_MODE Mode, const bool& Force );
 };
 

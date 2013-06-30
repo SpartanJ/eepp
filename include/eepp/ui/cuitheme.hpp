@@ -4,6 +4,7 @@
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uihelper.hpp>
 #include <eepp/ui/cuiskin.hpp>
+#include <eepp/system/tresourcemanager.hpp>
 
 namespace EE { namespace Graphics {
 class cSprite;

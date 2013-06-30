@@ -1,6 +1,8 @@
 #include <eepp/ui/cuicontrol.hpp>
 #include <eepp/ui/cuitheme.hpp>
 #include <eepp/ui/cuimanager.hpp>
+#include <eepp/graphics/cprimitives.hpp>
+#include <eepp/graphics/csubtexture.hpp>
 
 namespace EE { namespace UI {
 

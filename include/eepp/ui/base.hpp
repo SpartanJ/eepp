@@ -6,6 +6,7 @@
 #include <eepp/math/ease.hpp>
 #include <eepp/math/rect.hpp>
 #include <eepp/math/vector2.hpp>
+#include <eepp/math/polygon2.hpp>
 #include <eepp/math/cinterpolation.hpp>
 #include <eepp/math/cwaypoints.hpp>
 #include <eepp/math/math.hpp>
@@ -21,9 +22,7 @@ using namespace EE::System;
 using namespace EE::Window;
 
 #include <eepp/graphics/renders.hpp>
-#include <eepp/graphics/csubtexture.hpp>
-#include <eepp/graphics/cfont.hpp>
-#include <eepp/graphics/cprimitives.hpp>
+#include <eepp/graphics/fonthelper.hpp>
 using namespace EE::Graphics;
 
 #endif

@@ -3,6 +3,10 @@
 
 #include <eepp/ui/cuicontrolanim.hpp>
 
+namespace EE { namespace Graphics {
+class cTextCache;
+}}
+
 namespace EE { namespace UI {
 
 class EE_API cUITooltip : public cUIControlAnim {

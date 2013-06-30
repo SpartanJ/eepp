@@ -8,6 +8,7 @@
 #include <eepp/gaming/cmap.hpp>
 #include <eepp/gaming/clightmanager.hpp>
 #include <eepp/gaming/clight.hpp>
+#include <eepp/graphics/cprimitives.hpp>
 
 using namespace EE::UI;
 

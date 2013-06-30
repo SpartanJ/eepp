@@ -1,5 +1,6 @@
 #include <eepp/ui/cuislider.hpp>
 #include <eepp/ui/cuimanager.hpp>
+#include <eepp/graphics/csubtexture.hpp>
 
 namespace EE { namespace UI {
 

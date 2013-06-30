@@ -1,4 +1,5 @@
 #include <eepp/ui/cuicombobox.hpp>
+#include <eepp/graphics/csubtexture.hpp>
 
 namespace EE { namespace UI {
 
