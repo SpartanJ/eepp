@@ -193,9 +193,8 @@ bool cWindowAl::Create( WindowSettings Settings, ContextSettings Context ) {
 
 		if ( NULL == cGL::ExistsSingleton() ) {
 			cGL::CreateSingleton( mWindow.ContextConfig.Version );
+			cGL::instance()->Init();
 		}
-
-		cGL::instance()->Init();
 
 		CreatePlatform();
 

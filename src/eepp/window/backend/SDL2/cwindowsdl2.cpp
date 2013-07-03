@@ -64,7 +64,8 @@ namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 cWindowSDL::cWindowSDL( WindowSettings Settings, ContextSettings Context ) :
 	cWindow( Settings, Context, eeNew( cClipboardSDL, ( this ) ), eeNew( cInputSDL, ( this ) ), eeNew( cCursorManagerSDL, ( this ) ) ),
 	mSDLWindow( NULL ),
-	mGLContext( NULL )
+	mGLContext( NULL ),
+	mGLContextThread( NULL )
 #ifdef EE_USE_WMINFO
 	,
 	mWMinfo( eeNew( SDL_SysWMinfo, () ) )
@@ -197,7 +198,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	mGLContext			= SDL_GL_CreateContext( mSDLWindow );
 	mGLContextThread	= SDL_GL_CreateContext( mSDLWindow );
 
-	if ( NULL == mGLContext ) {
+	if ( NULL == mGLContext || NULL == mGLContextThread ) {
 		cLog::instance()->Write( "Unable to create context: " + std::string( SDL_GetError() ) );
 
 		LogFailureInit( "cWindowSDL", GetVersion() );
@@ -207,12 +208,12 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 
 	SDL_GL_SetSwapInterval( ( mWindow.ContextConfig.VSync ? 1 : 0 ) );								// VSync
 
+	SDL_GL_MakeCurrent( mSDLWindow, mGLContext );
+
 	if ( NULL == cGL::ExistsSingleton() ) {
 		cGL::CreateSingleton( mWindow.ContextConfig.Version );
 		cGL::instance()->Init();
 	}
-
-	SDL_GL_MakeCurrent( mSDLWindow, mGLContext );
 
 	CreatePlatform();
 
