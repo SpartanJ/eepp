@@ -193,12 +193,21 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 		}
 	#endif
 
-	SDL_GL_SetAttribute( SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1 );
+	#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
+		SDL_GL_SetAttribute( SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1 );
 
-	mGLContext			= SDL_GL_CreateContext( mSDLWindow );
-	mGLContextThread	= SDL_GL_CreateContext( mSDLWindow );
+		mGLContext			= SDL_GL_CreateContext( mSDLWindow );
+		mGLContextThread	= SDL_GL_CreateContext( mSDLWindow );
+	#else
+		mGLContext			= SDL_GL_CreateContext( mSDLWindow );
+	#endif
 
-	if ( NULL == mGLContext || NULL == mGLContextThread ) {
+	if ( NULL == mGLContext
+	#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
+		 || NULL == mGLContextThread
+	#endif
+	)
+	{
 		cLog::instance()->Write( "Unable to create context: " + std::string( SDL_GetError() ) );
 
 		LogFailureInit( "cWindowSDL", GetVersion() );

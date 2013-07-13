@@ -215,10 +215,10 @@ Vector2<T> tRECT<T>::WrapVector( const Vector2<T>& Vect ) {
 template <typename T>
 void tRECT<T>::Scale( T scale, const Vector2<T>& center ) {
 	if ( scale != 1.0f ) {
-		Left			= Left	+ center.x - center.x * scale;
-		Top				= Top	+ center.y - center.y * scale;
-		Right			= Left	+ ( Right - Left ) * scale;
-		Bottom			= Top	+ ( Bottom - Top ) * scale;
+		Left			= center.x	+	(	Left	-	center.x	)	*	scale;
+		Top				= center.y	+	(	Top		-	center.y	)	*	scale;
+		Right			= center.x	+	(	Right	-	center.x	)	*	scale;
+		Bottom			= center.y	+	(	Bottom	-	center.y	)	*	scale;
 	}
 }
 

@@ -130,7 +130,7 @@ void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const bool&
 		cEngine::instance()->ExistsWindow( mWindow ) )
 	{
 		mMyCallback = mWindow->GetInput()->PushCallback( cb::Make1( this, &cConsole::PrivInputCallback ) );
-		mVidCb = mWindow->PushResizeCallback( cb::Make0( this, &cConsole::PrivVideoResize )  );
+		mVidCb = mWindow->PushResizeCallback( cb::Make1( this, &cConsole::PrivVideoResize )  );
 	}
 
 	mTBuf->SetReturnCallback( cb::Make0( this, &cConsole::ProcessLine ) );
@@ -397,7 +397,7 @@ void cConsole::PrintCommandsStartingWith( const String& start ) {
 	}
 }
 
-void cConsole::PrivVideoResize() {
+void cConsole::PrivVideoResize( cWindow * win ) {
 	mWidth		= (eeFloat) mWindow->GetWidth();
 	mHeight		= (eeFloat) mWindow->GetHeight();
 

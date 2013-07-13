@@ -18,21 +18,22 @@ cVertexBufferVBO::cVertexBufferVBO( const Uint32& VertexFlags, EE_DRAW_MODE Draw
 	mVAO( 0 ),
 	mElementHandle( 0 )
 {
+	memset( mArrayHandle, VERTEX_FLAGS_COUNT, 0 );
 }
 
 cVertexBufferVBO::~cVertexBufferVBO() {
 	for( Int32 i = 0; i < VERTEX_FLAGS_COUNT; i++ ) {
-		if( VERTEX_FLAG_QUERY( mVertexFlags, i ) ) {
+		if( VERTEX_FLAG_QUERY( mVertexFlags, i ) && mArrayHandle[ i ] ) {
 			glDeleteBuffersARB( 1,(GLuint *)&mArrayHandle[ i ] );
 		}
 	}
 
-	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) ) {
+	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) && mElementHandle ) {
 		glDeleteBuffersARB( 1, (GLuint *)&mElementHandle );
 	}
 
 	#ifdef EE_VBO_USE_VAO
-	if ( GLv_3 == GLi->Version() ) {
+	if ( GLv_3 == GLi->Version() && mVAO ) {
 		glDeleteVertexArrays( 1, &mVAO );
 	}
 	#endif
@@ -345,6 +346,12 @@ void cVertexBufferVBO::Unbind() {
 	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_COLOR ) ) {
 		GLi->EnableClientState( GL_COLOR_ARRAY );
 	}
+}
+
+void cVertexBufferVBO::Clear() {
+	mCompiled	= false;
+	mBuffersSet	= false;
+	cVertexBuffer::Clear();
 }
 
 

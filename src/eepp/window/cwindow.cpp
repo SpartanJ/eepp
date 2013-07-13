@@ -376,7 +376,7 @@ void cWindow::PopResizeCallback( const Uint32& CallbackId ) {
 
 void cWindow::SendVideoResizeCb() {
 	for ( std::map<Uint32, WindowResizeCallback>::iterator i = mCallbacks.begin(); i != mCallbacks.end(); i++ ) {
-		i->second();
+		i->second( this );
 	}
 }
 

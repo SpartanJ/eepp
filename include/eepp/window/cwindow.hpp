@@ -131,7 +131,7 @@ class WindowInfo {
 
 class EE_API cWindow {
 	public:
-		typedef cb::Callback0<void>					WindowResizeCallback;
+		typedef cb::Callback1<void, cWindow*>			WindowResizeCallback;
 
 		cWindow( WindowSettings Settings, ContextSettings Context, cClipboard * Clipboard, cInput * Input, cCursorManager * CursorManager );
 		

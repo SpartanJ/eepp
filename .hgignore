@@ -12,6 +12,8 @@ syntax: regexp
 ^projects/android-project/gen$
 ^projects/android-project/assets$
 ^projects/android-project/libs$
+^projects/android-project-*
+^src/examples/strobe$
 .*.dll
 eees*
 eeew*
@@ -21,6 +23,7 @@ eesprite*
 eefonts*
 eevbo-fbo-batch*
 eephysics*
+eestrobe*
 eeiv*
 ee.tag
 log.log

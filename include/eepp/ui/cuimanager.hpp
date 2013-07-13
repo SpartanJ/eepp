@@ -34,7 +34,7 @@ class EE_API cUIManager {
 
 		const eeFloat& Elapsed() const;
 
-		void ResizeControl();
+		void ResizeControl( cWindow * win );
 
 		void SendMsg( cUIControl * Ctrl, const Uint32& Msg, const Uint32& Flags = 0 );
 

@@ -26,6 +26,8 @@ class EE_API cVertexBufferVBO : public cVertexBuffer {
 		void Reload();
 
 		void Unbind();
+
+		void Clear();
 	protected:
 		bool mCompiled;
 		bool mBuffersSet;

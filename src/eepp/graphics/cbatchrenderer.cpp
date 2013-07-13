@@ -245,11 +245,9 @@ void cBatchRenderer::BatchQuadEx( eeFloat x, eeFloat y, eeFloat width, eeFloat h
 	Rotate(originPoint, &mTVertex->pos, angle);
 
 	mTVertex 		= &mVertex[ mNumVertex + 3 ];
-	mTVertex->pos.x = x;
-	mTVertex->pos.y = y + height;
+	mTVertex->pos	= mVertex[ mNumVertex ].pos;
 	mTVertex->tex 	= mTexCoord[1];
 	mTVertex->color = mVerColor[1];
-	Rotate(originPoint, &mTVertex->pos, angle);
 
 	mTVertex 		= &mVertex[ mNumVertex + 4 ];
 	mTVertex->pos.x = x + width;
@@ -259,11 +257,9 @@ void cBatchRenderer::BatchQuadEx( eeFloat x, eeFloat y, eeFloat width, eeFloat h
 	Rotate(originPoint, &mTVertex->pos, angle);
 
 	mTVertex 		= &mVertex[ mNumVertex + 5 ];
-	mTVertex->pos.x = x + width;
-	mTVertex->pos.y = y;
+	mTVertex->pos	= mVertex[ mNumVertex + 2 ].pos;
 	mTVertex->tex 	= mTexCoord[3];
 	mTVertex->color = mVerColor[3];
-	Rotate(originPoint, &mTVertex->pos, angle);
 #endif
 
 	AddVertexs( EE_QUAD_VERTEX );
@@ -355,39 +351,15 @@ void cBatchRenderer::BatchQuadFreeEx( const eeFloat& x0, const eeFloat& y0, cons
 	#endif
 
 	eeQuad2f mQ;
+	eeVector2f QCenter;
 	mQ.V[0].x = x0; mQ.V[1].x = x1; mQ.V[2].x = x2; mQ.V[3].x = x3;
 	mQ.V[0].y = y0; mQ.V[1].y = y1; mQ.V[2].y = y2; mQ.V[3].y = y3;
-	eeFloat MinX = mQ.V[0].x, MaxX = mQ.V[0].x, MinY = mQ.V[0].y, MaxY = mQ.V[0].y;
-	eeVector2f QCenter;
 
 	if ( Angle != 0 ||  Scale != 1.0f ) {
-		for (Uint8 i = 1; i < 4; i++ ) {
-			if ( MinX > mQ.V[i].x ) MinX = mQ.V[i].x;
-			if ( MaxX < mQ.V[i].x ) MaxX = mQ.V[i].x;
-			if ( MinY > mQ.V[i].y ) MinY = mQ.V[i].y;
-			if ( MaxY < mQ.V[i].y ) MaxY = mQ.V[i].y;
-		}
-
-		QCenter.x = MinX + ( MaxX - MinX ) * 0.5f;
-		QCenter.y = MinY + ( MaxY - MinY ) * 0.5f;
-	}
-
-	if ( Scale != 1.0f ) {
-		for (Uint8 i = 0; i < 4; i++ ) {
-			if ( mQ.V[i].x < QCenter.x )
-				mQ.V[i].x = QCenter.x - eeabs(QCenter.x - mQ.V[i].x) * Scale;
-			else
-				mQ.V[i].x = QCenter.x + eeabs(QCenter.x - mQ.V[i].x) * Scale;
-
-			if ( mQ.V[i].y < QCenter.y )
-				mQ.V[i].y = QCenter.y - eeabs(QCenter.y - mQ.V[i].y) * Scale;
-			else
-				mQ.V[i].y = QCenter.y + eeabs(QCenter.y - mQ.V[i].y) * Scale;
-		}
-	}
-
-	if ( Angle != 0 )
+		QCenter = mQ.GetCenter();
 		mQ.Rotate( Angle, QCenter );
+		mQ.Scale( Scale, QCenter );
+	}
 
 	SetBlendMode( DM_QUADS, mForceBlendMode );
 

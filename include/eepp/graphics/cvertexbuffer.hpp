@@ -115,6 +115,9 @@ class EE_API cVertexBuffer {
 
 		/** @brief Reupload all the data to the GPU. */
 		virtual void Reload() = 0;
+
+		/** Clear the cached data and destroy the buffers */
+		virtual void Clear();
 	protected:
 		Uint32 					mVertexFlags;
 		EE_DRAW_MODE			mDrawType;

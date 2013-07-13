@@ -469,4 +469,20 @@ eeVector3f cGL::UnProjectCurrent( const eeVector3f& point ) {
 	return eeVector3f( tv3.x, tv3.y, tv3.z );
 }
 
+void cGL::StencilFunc( GLenum func, GLint ref, GLuint mask ) {
+	glStencilFunc( func, ref, mask );
+}
+
+void cGL::StencilOp( GLenum fail, GLenum zfail, GLenum zpass ) {
+	glStencilOp( fail, zfail, zpass );
+}
+
+void cGL::StencilMask ( GLuint mask ) {
+	glStencilMask( mask );
+}
+
+void cGL::ColorMask ( GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha ) {
+	glColorMask( red, green, blue, alpha );
+}
+
 }}

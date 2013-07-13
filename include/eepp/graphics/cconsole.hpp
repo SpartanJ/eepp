@@ -243,7 +243,7 @@ class EE_API cConsole : protected iLogReader {
 
 		void PrintCommandsStartingWith( const String& start );
 
-		void PrivVideoResize();
+		void PrivVideoResize( cWindow * win );
 
 		void WriteLog( const std::string& Text );
 };

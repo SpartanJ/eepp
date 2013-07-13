@@ -65,7 +65,7 @@ void cUIManager::Init( Uint32 Flags, Window::cWindow * window ) {
 	mOverControl	= mControl;
 
 	mCbId = mKM->PushCallback( cb::Make1( this, &cUIManager::InputCallback ) );
-	mResizeCb = mWindow->PushResizeCallback( cb::Make0( this, &cUIManager::ResizeControl ) );
+	mResizeCb = mWindow->PushResizeCallback( cb::Make1( this, &cUIManager::ResizeControl ) );
 }
 
 void cUIManager::Shutdown() {
@@ -107,7 +107,7 @@ void cUIManager::InputCallback( InputEvent * Event ) {
 	}
 }
 
-void cUIManager::ResizeControl() {
+void cUIManager::ResizeControl( cWindow * win ) {
 	mControl->Size( mWindow->GetWidth(), mWindow->GetHeight() );
 	SendMsg( mControl, cUIMessage::MsgWindowResize );
 

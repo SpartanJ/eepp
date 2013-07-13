@@ -186,6 +186,14 @@ class EE_API cGL {
 		eeVector3f ProjectCurrent( const eeVector3f& point );
 
 		eeVector3f UnProjectCurrent( const eeVector3f& point );
+
+		void StencilFunc( GLenum func, GLint ref, GLuint mask );
+
+		void StencilOp( GLenum fail, GLenum zfail, GLenum zpass );
+
+		void StencilMask ( GLuint mask );
+
+		void ColorMask ( GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha );
 	protected:
 		enum GLStateFlags {
 			GLSF_LINE_SMOOTH	= 0,

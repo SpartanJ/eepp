@@ -135,4 +135,12 @@ const Int32& cVertexBuffer::GetElementNum() const {
 	return mElemDraw;
 }
 
+void cVertexBuffer::Clear() {
+	for ( int i = 0; i < VERTEX_FLAGS_COUNT; i++ )
+		mVertexArray[i].clear();
+
+	mColorArray.clear();
+	mIndexArray.clear();
+}
+
 }}

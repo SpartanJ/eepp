@@ -11,7 +11,7 @@ eeFloat tw;
 eeFloat th;
 eeFloat aspectRatio;
 
-void videoResize() {
+void videoResize( cWindow * w ) {
 	/// Video Resize event will re-setup the 2D projection and states, so we must rebuild them.
 	aspectRatio	= (eeFloat)win->GetWidth()	/ (eeFloat)win->GetHeight();
 	tw			= (eeFloat)win->GetWidth()	/ 2;
@@ -127,10 +127,10 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		}
 
 		/// Set the projection
-		videoResize();
+		videoResize( win );
 
 		/// Push a window resize callback the reset the projection when needed
-		win->PushResizeCallback( cb::Make0( &videoResize ) );
+		win->PushResizeCallback( cb::Make1( &videoResize ) );
 
 		Uint32 i;
 		eeVector3ff * vertices		= eeNewArray( eeVector3ff, ParticlesNum );
