@@ -5,5 +5,5 @@ ndk-build NDK_LOG=1 NDK_DEBUG=1 -j4
 rm -rf ./bin
 rm -rf ./gen
 ant debug
-adb install -r bin/EEPPApp-debug.apk
+adb install -r bin/eepp-app-debug.apk
 ndk-gdb --force --start --verbose
