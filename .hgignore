@@ -12,7 +12,8 @@ syntax: regexp
 ^projects/android-project/gen$
 ^projects/android-project/assets$
 ^projects/android-project/libs$
-^projects/android-project-*
+^projects/android-project-fluGL*
+^projects/android-project-strobe*
 ^src/examples/strobe$
 .*.dll
 eees*
