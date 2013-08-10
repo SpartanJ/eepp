@@ -615,3 +615,9 @@
 ../../src/eepp/physics/cshapepoint.cpp
 ../../include/eepp/physics/cshapepoint.hpp
 ../../include/eepp/math/originpoint.hpp
+../../include/eepp/system/ccondition.hpp
+../../src/eepp/system/ccondition.cpp
+../../src/eepp/system/platform/win/cconditionimpl.hpp
+../../src/eepp/system/platform/win/cconditionimpl.cpp
+../../src/eepp/system/platform/posix/cconditionimpl.hpp
+../../src/eepp/system/platform/posix/cconditionimpl.cpp

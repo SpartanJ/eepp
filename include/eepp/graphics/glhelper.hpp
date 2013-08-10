@@ -22,6 +22,7 @@ enum EEGL_extensions  {
 	EEGL_ARB_multitexture,
 	EEGL_EXT_texture_compression_s3tc,
 	EEGL_ARB_vertex_buffer_object,
+	EEGL_ARB_pixel_buffer_object,
 	EEGL_ARB_vertex_array_object,
 	EEGL_EXT_blend_func_separate,
 	EEGL_IMG_texture_compression_pvrtc,

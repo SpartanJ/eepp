@@ -17,8 +17,9 @@ cSoundFileDefault::~cSoundFileDefault() {
 bool cSoundFileDefault::IsFileSupported( const std::string& Filename, bool Read ) {
 	if ( Read ) {
 		// Open the sound file
-		SF_INFO FileInfos;
-		SNDFILE * File = sf_open( Filename.c_str(), SFM_READ, &FileInfos );
+		SF_INFO fileInfos;
+		fileInfos.format = 0;
+		SNDFILE * File = sf_open( Filename.c_str(), SFM_READ, &fileInfos );
 
 		if ( NULL != File ) {
 			sf_close( File );
@@ -38,8 +39,9 @@ bool cSoundFileDefault::IsFileSupported( const char* Data, std::size_t SizeInByt
 	SF_VIRTUAL_IO io = tMemoryIO.Prepare( Data, SizeInBytes );
 
 	// Open the sound file
-	SF_INFO FileInfos;
-	SNDFILE * File = sf_open_virtual( &io, SFM_READ, &FileInfos, &tMemoryIO );
+	SF_INFO fileInfos;
+	fileInfos.format = 0;
+	SNDFILE * File = sf_open_virtual( &io, SFM_READ, &fileInfos, &tMemoryIO );
 
 	if ( NULL != File ) {
 		sf_close( File );
@@ -56,6 +58,7 @@ bool cSoundFileDefault::OpenRead( const std::string& Filename, std::size_t& NbSa
 
 	// Open the sound file
 	SF_INFO fileInfos;
+	fileInfos.format = 0;
 	mFile = sf_open(Filename.c_str(), SFM_READ, &fileInfos);
 
 	if ( NULL == mFile ) {
@@ -85,6 +88,7 @@ bool cSoundFileDefault::OpenRead( const char* Data, std::size_t SizeInBytes, std
 
     // Open the sound file
     SF_INFO fileInfos;
+	fileInfos.format = 0;
     mFile = sf_open_virtual( &io, SFM_READ, &fileInfos, &mMemoryIO );
 
     if ( !mFile ) {

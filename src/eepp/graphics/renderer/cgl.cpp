@@ -126,6 +126,7 @@ void cGL::Init() {
 		WriteExtension( EEGL_ARB_multitexture				, GLEW_ARB_multitexture 							);
 		WriteExtension( EEGL_EXT_texture_compression_s3tc	, GLEW_EXT_texture_compression_s3tc 				);
 		WriteExtension( EEGL_ARB_vertex_buffer_object		, GLEW_ARB_vertex_buffer_object						);
+		WriteExtension( EEGL_ARB_pixel_buffer_object		, GLEW_ARB_pixel_buffer_object						);
 		WriteExtension( EEGL_ARB_vertex_array_object		, GLEW_ARB_vertex_array_object 						);
 		WriteExtension( EEGL_EXT_blend_func_separate		, GLEW_EXT_blend_func_separate						);
 	}
@@ -143,6 +144,7 @@ void cGL::Init() {
 		WriteExtension( EEGL_ARB_multitexture				, IsExtension( "GL_ARB_multitexture" )				);
 		WriteExtension( EEGL_EXT_texture_compression_s3tc	, IsExtension( "GL_EXT_texture_compression_s3tc" )	);
 		WriteExtension( EEGL_ARB_vertex_buffer_object		, IsExtension( "GL_ARB_vertex_buffer_object" )		);
+		WriteExtension( EEGL_ARB_pixel_buffer_object		, IsExtension( "GL_ARB_pixel_buffer_object" )		);
 		WriteExtension( EEGL_ARB_vertex_array_object		, IsExtension( "GL_ARB_vertex_array_object" )		);
 		WriteExtension( EEGL_EXT_blend_func_separate		, IsExtension( "GL_EXT_blend_func_separate" )		);
 
