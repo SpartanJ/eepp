@@ -112,6 +112,8 @@ void cGL::WriteExtension( Uint8 Pos, Uint32 BitWrite ) {
 
 void cGL::Init() {
 	#ifdef EE_GLEW_AVAILABLE
+	glewExperimental = 1;
+
 	bool glewOn = ( GLEW_OK == glewInit() );
 
 	if ( glewOn ) {
@@ -147,7 +149,6 @@ void cGL::Init() {
 		WriteExtension( EEGL_ARB_pixel_buffer_object		, IsExtension( "GL_ARB_pixel_buffer_object" )		);
 		WriteExtension( EEGL_ARB_vertex_array_object		, IsExtension( "GL_ARB_vertex_array_object" )		);
 		WriteExtension( EEGL_EXT_blend_func_separate		, IsExtension( "GL_EXT_blend_func_separate" )		);
-
 	}
 
 	#ifdef EE_GLES
@@ -289,8 +290,15 @@ Uint32 cGL::GetTextureOpEnum( const EE_TEXTURE_OP& Type ) {
 	return 0;
 }
 
-char * cGL::GetExtensions() {
-	return (char *)glGetString( GL_EXTENSIONS );
+std::string cGL::GetExtensions() {
+	const char * extsc = (const char*)glGetString( GL_EXTENSIONS );
+	std::string exts;
+
+	if ( NULL != extsc ) {
+		exts = std::string( extsc );
+	}
+
+	return exts;
 }
 
 void cGL::Viewport( GLint x, GLint y, GLsizei width, GLsizei height ) {
@@ -305,8 +313,8 @@ void cGL::Enable( GLenum cap ) {
 	glEnable( cap );
 }
 
-char * cGL::GetString( GLenum name ) {
-	return (char*)glGetString( name );
+const char * cGL::GetString( GLenum name ) {
+	return (const char*)glGetString( name );
 }
 
 void cGL::Clear ( GLbitfield mask ) {
@@ -394,28 +402,28 @@ void cGL::PolygonMode( const EE_FILL_MODE& Mode ) {
 }
 
 std::string cGL::GetVendor() {
-	char * str = GetString( GL_VENDOR );
+	const char * str = GetString( GL_VENDOR );
 
 	if ( NULL != str )
-		return std::string( reinterpret_cast<const char*> ( str ) );
+		return std::string( str );
 
 	return std::string();
 }
 
 std::string cGL::GetRenderer() {
-	char * str = GetString( GL_RENDERER );
+	const char * str = GetString( GL_RENDERER );
 
 	if ( NULL != str )
-		return std::string( reinterpret_cast<const char*> ( str ) );
+		return std::string( str );
 
 	return std::string();
 }
 
 std::string cGL::GetVersion() {
-	char * str = GetString( GL_VERSION );
+	const char * str = GetString( GL_VERSION );
 
 	if ( NULL != str )
-		return std::string( reinterpret_cast<const char*> ( str ) );
+		return std::string( str );
 
 	return std::string();
 }
@@ -423,10 +431,10 @@ std::string cGL::GetVersion() {
 std::string cGL::GetShadingLanguageVersion() {
 	if ( ShadersSupported() ) {
 		#ifdef GL_SHADING_LANGUAGE_VERSION
-			char * str = GetString( GL_SHADING_LANGUAGE_VERSION );
+			const char * str = GetString( GL_SHADING_LANGUAGE_VERSION );
 
 			if ( NULL != str )
-				return std::string( reinterpret_cast<const char*> ( str ) );
+				return std::string( str );
 		#endif
 	}
 

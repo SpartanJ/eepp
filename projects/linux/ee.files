@@ -621,3 +621,4 @@
 ../../src/eepp/system/platform/win/cconditionimpl.cpp
 ../../src/eepp/system/platform/posix/cconditionimpl.hpp
 ../../src/eepp/system/platform/posix/cconditionimpl.cpp
+../../include/eepp/graphics/opengl.hpp

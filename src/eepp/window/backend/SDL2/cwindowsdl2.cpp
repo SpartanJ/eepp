@@ -191,6 +191,13 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 			#endif
 		}
+	#else
+		/* @TODO Add OpenGL Core Profile support? */
+		/**if ( GLv_3 == Context.Version ) {
+			SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+		}*/
 	#endif
 
 	#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )

@@ -583,8 +583,7 @@ void cConsole::CmdGetLog( const std::vector < String >& params ) {
 }
 
 void cConsole::CmdGetGpuExtensions() {
-	char *Exts = GLi->GetExtensions();
-	std::vector < String > tvec = String::Split( String( String::ToStr( std::string( Exts ) ) ), ' ' );
+	std::vector < String > tvec = String::Split( String( GLi->GetExtensions() ), ' ' );
 	if ( tvec.size() > 0 ) {
 		for ( eeUint i = 0; i < tvec.size(); i++ )
 			PrivPushText( tvec[i] );

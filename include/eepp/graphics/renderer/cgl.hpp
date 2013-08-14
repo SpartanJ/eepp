@@ -78,9 +78,9 @@ class EE_API cGL {
 
 		void PolygonMode( GLenum face, GLenum mode );
 
-		char * GetExtensions();
+		std::string GetExtensions();
 
-		char * GetString( GLenum name );
+		const char * GetString( GLenum name );
 
 		void DrawArrays (GLenum mode, GLint first, GLsizei count);
 
