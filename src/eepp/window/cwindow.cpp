@@ -147,7 +147,10 @@ void cWindow::Setup2D( const bool& KeepView ) {
 
 	GLi->Enable	( GL_TEXTURE_2D ); 						// Enable Textures
 	GLi->Disable( GL_DEPTH_TEST );
-	GLi->Disable( GL_LIGHTING );
+
+	if ( GLv_2 == GLi->Version() || GLv_ES1 == GLi->Version() ) {
+		GLi->Disable( GL_LIGHTING );
+	}
 
 	if ( !KeepView ) {
 		SetView( mDefaultView );
