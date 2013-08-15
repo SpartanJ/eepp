@@ -388,6 +388,7 @@ void cInputSDL::InitializeTables() {
 	KeyCodesTable[ SDL_SCANCODE_COMMA ] = KEY_COMMA;
 	KeyCodesTable[ SDL_SCANCODE_SLASH ] = KEY_SLASH;
 	KeyCodesTable[ SDL_SCANCODE_KP_SPACE ] = KEY_SPACE;
+	KeyCodesTable[ SDL_SCANCODE_SPACE ] = KEY_SPACE;
 	KeyCodesTable[ SDL_SCANCODE_INSERT] = KEY_INSERT;
 	KeyCodesTable[ SDL_SCANCODE_DELETE ] = KEY_DELETE;
 	KeyCodesTable[ SDL_SCANCODE_HOME ] = KEY_HOME;
