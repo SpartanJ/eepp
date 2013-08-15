@@ -45,7 +45,7 @@ void cSoundStream::Play() {
 		return;
 	}
 
-	OnSeek( 0 );
+	OnSeek( cTime::Zero );
 
 	mSamplesProcessed = 0;
 	mIsStreaming = true; // Start updating the stream in a separate thread to avoid blocking the application
@@ -78,21 +78,19 @@ cSound::Status cSoundStream::GetState() const {
 	return status;
 }
 
-float cSoundStream::PlayingOffset() const {
-	//return static_cast<Uint32>( cSound::PlayingOffset() ) * 1000 + 1000 * mSamplesProcessed / mSampleRate / mChannelCount;
-
+cTime cSoundStream::PlayingOffset() const {
 	if ( mSampleRate && mChannelCount ) {
 		float secs = 0.f;
 
 		ALCheck( alGetSourcef( mSource, AL_SEC_OFFSET, &secs ) );
 
-		return secs + (float)mSamplesProcessed / (float)mSampleRate / (float)mChannelCount;
-	} else {
-		return 0;
+		return Seconds( secs + (float)mSamplesProcessed / (float)mSampleRate / (float)mChannelCount );
 	}
+
+	return cTime::Zero;
 }
 
-void cSoundStream::PlayingOffset(const float &timeOffset ) {
+void cSoundStream::PlayingOffset( const cTime &timeOffset ) {
     // Stop the stream
     Stop();
 
@@ -100,7 +98,7 @@ void cSoundStream::PlayingOffset(const float &timeOffset ) {
     OnSeek( timeOffset );
 
     // Restart streaming
-	mSamplesProcessed = static_cast<Uint32>( timeOffset ) * mSampleRate * mChannelCount;
+	mSamplesProcessed = static_cast<Uint32>( timeOffset.AsSeconds() ) * mSampleRate * mChannelCount;
 
     mIsStreaming = true;
 
@@ -204,7 +202,7 @@ bool cSoundStream::FillAndPushBuffer( const unsigned int& Buffer ) {
 		// Check if the stream must loop or stop
 		if ( mLoop ) {
 			// Return to the beginning of the stream source
-			OnSeek( 0 );
+			OnSeek( cTime::Zero );
 
 			// If we previously had no data, try to fill the buffer once again
 			if ( !Data.Samples || ( Data.NbSamples == 0 ) ) {

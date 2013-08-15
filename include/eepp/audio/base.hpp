@@ -7,6 +7,7 @@
 #include <eepp/system/cpack.hpp>
 #include <eepp/system/cthread.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/ctime.hpp>
 using namespace EE::System;
 
 #include <eepp/math/vector3.hpp>

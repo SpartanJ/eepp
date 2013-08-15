@@ -156,7 +156,7 @@ void cSoundFile::Write(const Int16*, std::size_t) {
 	cLog::instance()->Write( "Failed to write to sound file (not supported)" );
 }
 
-void cSoundFile::Seek( Uint32 timeOffset ) {
+void cSoundFile::Seek( cTime timeOffset ) {
 	cLog::instance()->Write( "Trying to seek a file that doesn't support seeking." );
 }
 

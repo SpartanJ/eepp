@@ -26,7 +26,7 @@ class EE_API cSoundFileDefault : public cSoundFile {
 
 		virtual void Write(const Int16* Data, std::size_t NbSamples);
 
-		virtual void Seek( Uint32 timeOffset );
+		virtual void Seek( cTime timeOffset );
 	private :
 		virtual bool OpenRead( const std::string& Filename, std::size_t& NbSamples, unsigned int& ChannelCount, unsigned int& SampleRate );
 

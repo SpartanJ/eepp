@@ -123,7 +123,7 @@ float cSound::Pitch() const {
 }
 
 float cSound::Volume() const {
-	float Gain;
+	float Gain = 1;
 	ALCheck( alGetSourcef( mSource, AL_GAIN, &Gain ) );
 
 	return Gain * 100.f;
@@ -164,16 +164,16 @@ cSound::Status cSound::GetState() const {
 	return cSound::Stopped;
 }
 
-float cSound::PlayingOffset() const {
-	float Seconds = 0.f;
+cTime cSound::PlayingOffset() const {
+	float secs = 0.f;
 
-	ALCheck( alGetSourcef( mSource, AL_SEC_OFFSET, &Seconds ) );
+	ALCheck( alGetSourcef( mSource, AL_SEC_OFFSET, &secs ) );
 
-	return Seconds;
+	return Seconds( secs );
 }
 
-void cSound::PlayingOffset( const float &TimeOffset ) {
-	ALCheck( alSourcef( mSource, AL_SEC_OFFSET, TimeOffset ) );
+void cSound::PlayingOffset( const cTime &TimeOffset ) {
+	ALCheck( alSourcef( mSource, AL_SEC_OFFSET, TimeOffset.AsSeconds() ) );
 }
 
 cSound& cSound::operator =( const cSound& Other ) {

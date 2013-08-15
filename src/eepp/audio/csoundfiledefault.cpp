@@ -79,27 +79,27 @@ bool cSoundFileDefault::OpenRead( const std::string& Filename, std::size_t& NbSa
 }
 
 bool cSoundFileDefault::OpenRead( const char* Data, std::size_t SizeInBytes, std::size_t& NbSamples, unsigned int& ChannelCount, unsigned int& SampleRate ) {
-    // If the file is already opened, first close it
-    if ( NULL != mFile )
-        sf_close( mFile );
+	// If the file is already opened, first close it
+	if ( NULL != mFile )
+		sf_close( mFile );
 
-    // Prepare the memory I/O structure
-    SF_VIRTUAL_IO io = mMemoryIO.Prepare( Data, SizeInBytes );
+	// Prepare the memory I/O structure
+	SF_VIRTUAL_IO io = mMemoryIO.Prepare( Data, SizeInBytes );
 
-    // Open the sound file
-    SF_INFO fileInfos;
+	// Open the sound file
+	SF_INFO fileInfos;
 	fileInfos.format = 0;
-    mFile = sf_open_virtual( &io, SFM_READ, &fileInfos, &mMemoryIO );
+	mFile = sf_open_virtual( &io, SFM_READ, &fileInfos, &mMemoryIO );
 
-    if ( !mFile ) {
-        cLog::instance()->Write( "Failed to read sound file from memory ( " + std::string( sf_strerror( mFile ) ) + " )" );
-        return false;
-    }
+	if ( !mFile ) {
+		cLog::instance()->Write( "Failed to read sound file from memory ( " + std::string( sf_strerror( mFile ) ) + " )" );
+		return false;
+	}
 
-    // Set the sound parameters
-    mChannelCount	= fileInfos.channels;
-    mSampleRate		= fileInfos.samplerate;
-    mNbSamples		= static_cast<std::size_t>(fileInfos.frames) * mChannelCount;
+	// Set the sound parameters
+	mChannelCount	= fileInfos.channels;
+	mSampleRate		= fileInfos.samplerate;
+	mNbSamples		= static_cast<std::size_t>(fileInfos.frames) * mChannelCount;
 
 	ChannelCount	= mChannelCount;
 	SampleRate		= mSampleRate;
@@ -150,11 +150,11 @@ void cSoundFileDefault::Write( const Int16 * Data, std::size_t NbSamples ) {
 		sf_write_short( mFile, Data, NbSamples );
 }
 
-void cSoundFileDefault::Seek( Uint32 timeOffset ) {
-    if ( NULL != mFile ) {
-		sf_count_t frameOffset = static_cast<sf_count_t>( timeOffset * mSampleRate / 1000 );
-        sf_seek( mFile, frameOffset, SEEK_SET );
-    }
+void cSoundFileDefault::Seek( cTime timeOffset ) {
+	if ( NULL != mFile ) {
+		sf_count_t frameOffset = static_cast<sf_count_t>( timeOffset.AsSeconds() * mSampleRate / 1000 );
+		sf_seek( mFile, frameOffset, SEEK_SET );
+	}
 }
 
 int cSoundFileDefault::GetFormatFromFilename(const std::string& Filename) {
@@ -166,30 +166,30 @@ int cSoundFileDefault::GetFormatFromFilename(const std::string& Filename) {
 
 	// Match every supported extension with its format constant
 	if (ext == "ogg"   || ext == "OGG")   return SF_FORMAT_OGG;
-    if (ext == "wav"   || ext == "WAV" )  return SF_FORMAT_WAV;
-    if (ext == "aif"   || ext == "AIF" )  return SF_FORMAT_AIFF;
-    if (ext == "aiff"  || ext == "AIFF")  return SF_FORMAT_AIFF;
-    if (ext == "au"    || ext == "AU"  )  return SF_FORMAT_AU;
-    if (ext == "raw"   || ext == "RAW" )  return SF_FORMAT_RAW;
-    if (ext == "paf"   || ext == "PAF" )  return SF_FORMAT_PAF;
-    if (ext == "svx"   || ext == "SVX" )  return SF_FORMAT_SVX;
-    if (ext == "nist"  || ext == "NIST")  return SF_FORMAT_NIST;
-    if (ext == "voc"   || ext == "VOC" )  return SF_FORMAT_VOC;
-    if (ext == "sf"    || ext == "SF"  )  return SF_FORMAT_IRCAM;
-    if (ext == "w64"   || ext == "W64" )  return SF_FORMAT_W64;
-    if (ext == "mat4"  || ext == "MAT4")  return SF_FORMAT_MAT4;
-    if (ext == "mat5"  || ext == "MAT5")  return SF_FORMAT_MAT5;
-    if (ext == "pvf"   || ext == "PVF" )  return SF_FORMAT_PVF;
-    if (ext == "xi"    || ext == "XI" )   return SF_FORMAT_XI;
-    if (ext == "htk"   || ext == "HTK" )  return SF_FORMAT_HTK;
-    if (ext == "sds"   || ext == "SDS" )  return SF_FORMAT_SDS;
-    if (ext == "avr"   || ext == "AVR" )  return SF_FORMAT_AVR;
-    if (ext == "sd2"   || ext == "SD2" )  return SF_FORMAT_SD2;
-    if (ext == "flac"  || ext == "FLAC")  return SF_FORMAT_FLAC;
-    if (ext == "caf"   || ext == "CAF" )  return SF_FORMAT_CAF;
-    if (ext == "wve"   || ext == "WVE" )  return SF_FORMAT_WVE;
-    if (ext == "mpc2k" || ext == "MPC2K") return SF_FORMAT_MPC2K;
-    if (ext == "rf64"  || ext == "RF64")  return SF_FORMAT_RF64;
+	if (ext == "wav"   || ext == "WAV" )  return SF_FORMAT_WAV;
+	if (ext == "aif"   || ext == "AIF" )  return SF_FORMAT_AIFF;
+	if (ext == "aiff"  || ext == "AIFF")  return SF_FORMAT_AIFF;
+	if (ext == "au"    || ext == "AU"  )  return SF_FORMAT_AU;
+	if (ext == "raw"   || ext == "RAW" )  return SF_FORMAT_RAW;
+	if (ext == "paf"   || ext == "PAF" )  return SF_FORMAT_PAF;
+	if (ext == "svx"   || ext == "SVX" )  return SF_FORMAT_SVX;
+	if (ext == "nist"  || ext == "NIST")  return SF_FORMAT_NIST;
+	if (ext == "voc"   || ext == "VOC" )  return SF_FORMAT_VOC;
+	if (ext == "sf"    || ext == "SF"  )  return SF_FORMAT_IRCAM;
+	if (ext == "w64"   || ext == "W64" )  return SF_FORMAT_W64;
+	if (ext == "mat4"  || ext == "MAT4")  return SF_FORMAT_MAT4;
+	if (ext == "mat5"  || ext == "MAT5")  return SF_FORMAT_MAT5;
+	if (ext == "pvf"   || ext == "PVF" )  return SF_FORMAT_PVF;
+	if (ext == "xi"    || ext == "XI" )   return SF_FORMAT_XI;
+	if (ext == "htk"   || ext == "HTK" )  return SF_FORMAT_HTK;
+	if (ext == "sds"   || ext == "SDS" )  return SF_FORMAT_SDS;
+	if (ext == "avr"   || ext == "AVR" )  return SF_FORMAT_AVR;
+	if (ext == "sd2"   || ext == "SD2" )  return SF_FORMAT_SD2;
+	if (ext == "flac"  || ext == "FLAC")  return SF_FORMAT_FLAC;
+	if (ext == "caf"   || ext == "CAF" )  return SF_FORMAT_CAF;
+	if (ext == "wve"   || ext == "WVE" )  return SF_FORMAT_WVE;
+	if (ext == "mpc2k" || ext == "MPC2K") return SF_FORMAT_MPC2K;
+	if (ext == "rf64"  || ext == "RF64")  return SF_FORMAT_RF64;
 
 	return -1;
 }

@@ -45,8 +45,8 @@ class EE_API cSoundBuffer {
 		/** Return the number of Channels */
 		unsigned int GetChannelCount() const;
 
-		/** Get the Sound Duration in seconds */
-		float GetDuration() const;
+		/** Get the Sound Duration */
+		cTime GetDuration() const;
 
 		/** Assignment operator */
 		cSoundBuffer& operator =(const 	cSoundBuffer& Other);

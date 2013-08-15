@@ -15,9 +15,9 @@ void playSound() {
 
 		// Display sound informations
 		std::cout << "sound.ogg :" << std::endl;
-		std::cout << " " << buffer.GetDuration()		<< " seconds"       << std::endl;
-		std::cout << " " << buffer.GetSampleRate()		<< " samples / sec" << std::endl;
-		std::cout << " " << buffer.GetChannelCount()	<< " channels"      << std::endl;
+		std::cout << " " << buffer.GetDuration().AsSeconds()	<< " seconds"       << std::endl;
+		std::cout << " " << buffer.GetSampleRate()				<< " samples / sec" << std::endl;
+		std::cout << " " << buffer.GetChannelCount()			<< " channels"      << std::endl;
 
 		// Play the sound
 		SoundManager.Play( "sound" );
@@ -34,9 +34,9 @@ void playMusic() {
 
 	// Display music informations
 	std::cout << "music.ogg :" << std::endl;
-	std::cout << " " << music.GetDuration()			<< " seconds"       << std::endl;
-	std::cout << " " << music.GetSampleRate()		<< " samples / sec" << std::endl;
-	std::cout << " " << music.GetChannelCount()		<< " channels"      << std::endl;
+	std::cout << " " << music.GetDuration().AsSeconds()		<< " seconds"       << std::endl;
+	std::cout << " " << music.GetSampleRate()				<< " samples / sec" << std::endl;
+	std::cout << " " << music.GetChannelCount()				<< " channels"      << std::endl;
 
 	// Play it
 	music.Play();
@@ -47,7 +47,7 @@ void playMusic() {
 		Sys::Sleep( 100 );
 
 		// Display the playing position
-		std::cout << "\rPlaying... " << music.PlayingOffset() << " sec   ";
+		std::cout << "\rPlaying... " << music.PlayingOffset().AsSeconds() << " sec   ";
 		std::cout << std::flush;
 	}
 

@@ -98,11 +98,11 @@ bool cMusic::OnGetData( cSoundStream::Chunk& Data ) {
 	return false;
 }
 
-float cMusic::GetDuration() const {
-	return mDuration;
+cTime cMusic::GetDuration() const {
+	return Seconds( mDuration );
 }
 
-void cMusic::OnSeek( float timeOffset ) {
+void cMusic::OnSeek( cTime timeOffset ) {
 	if ( NULL != mFile ) {
 		mFile->Seek( timeOffset );
 	}

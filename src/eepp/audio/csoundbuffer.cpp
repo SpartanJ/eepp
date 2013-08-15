@@ -182,8 +182,8 @@ unsigned int cSoundBuffer::GetChannelCount() const {
 	return ChannelCount;
 }
 
-float cSoundBuffer::GetDuration() const {
-	return mDuration;
+cTime cSoundBuffer::GetDuration() const {
+	return Seconds( mDuration );
 }
 
 cSoundBuffer& cSoundBuffer::operator =( const cSoundBuffer& Other ) {

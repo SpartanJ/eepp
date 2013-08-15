@@ -68,13 +68,13 @@ class EE_API cSoundStream : private cThread, private cSound {
 		Status 	State() const ;
 
 		/**	@brief Get the current playing position of the stream
-		**	@return Current playing position, from the beginning of the stream in seconds. */
-		float PlayingOffset() const;
+		**	@return Current playing position, from the beginning of the stream. */
+		cTime PlayingOffset() const;
 
 		/**	@brief Change the current playing position of the stream
 		**	The playing position can be changed when the stream is either paused or playing.
-		**	@param timeOffset New playing position, from the beginning of the stream ( in seconds ). */
-		void PlayingOffset( const float &timeOffset );
+		**	@param timeOffset New playing position, from the beginning of the stream. */
+		void PlayingOffset( const cTime &timeOffset );
 
 		/** Set the stream loop state. This parameter is disabled by default
 		* @param Loop True to play in loop, false to play once
@@ -95,7 +95,7 @@ class EE_API cSoundStream : private cThread, private cSound {
 
 		virtual bool OnGetData( Chunk& Data ) = 0;
 
-		virtual void OnSeek( float timeOffset ) = 0;
+		virtual void OnSeek( cTime timeOffset ) = 0;
 
 		/** Fill a new buffer with audio data, and push it to the playing queue
 		* @param Buffer Buffer to fill

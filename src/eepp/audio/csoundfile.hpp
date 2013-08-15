@@ -48,7 +48,7 @@ class EE_API cSoundFile {
 
 		/** @brief Change the current read position in the file
 		**	@param timeOffset New playing position, from the beginning of the file */
-		virtual void Seek( Uint32 timeOffset );
+		virtual void Seek( cTime timeOffset );
 	protected :
 		cSoundFile();
 
