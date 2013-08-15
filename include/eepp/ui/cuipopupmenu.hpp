@@ -26,7 +26,7 @@ class EE_API cUIPopUpMenu : public cUIMenu {
 		virtual Uint32 OnMessage( const cUIMessage * Msg );
 
 		#ifdef EE_PLATFORM_TOUCH
-		cTimeElapsed mTE;
+		cClock mTE;
 		#endif
 };
 

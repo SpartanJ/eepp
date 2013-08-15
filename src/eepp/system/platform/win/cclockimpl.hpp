@@ -1,5 +1,5 @@
-#ifndef EE_SYSTEMCTIMERIMPLWIN_H
-#define EE_SYSTEMCTIMERIMPLWIN_H
+#ifndef EE_SYSTEMCCLOCKIMPLWIN_H
+#define EE_SYSTEMCCLOCKIMPLWIN_H
 
 #include <eepp/base.hpp>
 
@@ -23,17 +23,15 @@
 
 namespace EE { namespace System { namespace Platform {
 
-class cTimerImpl {
+class cClockImpl {
 	public:
-		cTimerImpl();
+		cClockImpl();
 
-		~cTimerImpl();
+		~cClockImpl();
 
 		void Reset();
 
-		unsigned long GetMilliseconds();
-
-		unsigned long GetMicroseconds();
+		unsigned long GetElapsedTime();
 	private:
 		unsigned long		mStartTick;
 		LONGLONG			mLastTime;

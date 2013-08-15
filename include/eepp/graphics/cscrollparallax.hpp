@@ -85,7 +85,7 @@ class EE_API cScrollParallax {
 		eeVector2f			mSpeed;
 		eeSizef				mSize;
 		eeRecti				mRect;
-		cTimeElapsed		mElapsed;
+		cClock		mElapsed;
 		eeVector2i			mTiles;
 		eeRectf				mAABB;
 		eeSizef				mRealSize;

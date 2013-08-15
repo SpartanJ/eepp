@@ -12,7 +12,7 @@ using namespace EE::Math;
 
 #include <eepp/system/colors.hpp>
 #include <eepp/system/bitop.hpp>
-#include <eepp/system/ctimeelapsed.hpp>
+#include <eepp/system/cclock.hpp>
 #include <eepp/system/tsingleton.hpp>
 #include <eepp/system/clog.hpp>
 #include <eepp/system/cpack.hpp>

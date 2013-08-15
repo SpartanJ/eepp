@@ -247,11 +247,11 @@ void cEETest::OnShowMenu( const cUIEvent * Event ) {
 
 
 void cEETest::CreateUI() {
-	cTimeElapsed TE;
+	cClock TE;
 
 	CreateUIThemeTextureAtlas();
 
-	Log->Writef( "Texture Atlas Loading Time: %f ms.", TE.ElapsedSinceStart() );
+	Log->Writef( "Texture Atlas Loading Time: %f ms.", TE.Elapsed() );
 
 	cUIManager::instance()->Init(); //UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
 
@@ -573,7 +573,7 @@ void cEETest::CreateUI() {
 
 	C = reinterpret_cast<cUIControlAnim*> ( C->Parent() );
 
-	Log->Writef( "CreateUI time: %f ms.", TE.ElapsedSinceStart() );
+	Log->Writef( "CreateUI time: %f ms.", TE.Elapsed() );
 }
 
 void cEETest::CreateMapEditor() {
@@ -803,7 +803,7 @@ void cEETest::OnTextureLoaded( cResourceLoader * ResLoaded ) {
 }
 
 void cEETest::LoadTextures() {
-	cTimeElapsed te;
+	cClock te;
 
 	Uint32 i;
 

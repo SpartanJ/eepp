@@ -1,16 +1,16 @@
-#include <eepp/system/platform/posix/ctimerimpl.hpp>
+#include <eepp/system/platform/posix/cclockimpl.hpp>
 
 #if defined( EE_PLATFORM_POSIX )
 
 namespace EE { namespace System { namespace Platform { 
 
-cTimerImpl::cTimerImpl() {
+cClockImpl::cClockImpl() {
 }
 
-cTimerImpl::~cTimerImpl() {
+cClockImpl::~cClockImpl() {
 }
 
-void cTimerImpl::Reset() {
+void cClockImpl::Reset() {
 #ifdef EE_HAVE_CLOCK_GETTIME
 	clock_gettime( CLOCK_MONOTONIC, &mStart );
 #else
@@ -18,19 +18,7 @@ void cTimerImpl::Reset() {
 #endif
 }
 
-unsigned long cTimerImpl::GetMilliseconds() {
-#ifdef EE_HAVE_CLOCK_GETTIME
-	struct timespec now;
-	clock_gettime( CLOCK_MONOTONIC, &now );
-	return ( now.tv_sec - mStart.tv_sec ) * 1000 + ( now.tv_nsec - mStart.tv_nsec ) / 1000000;
-#else
-	struct timeval now;
-	gettimeofday( &now, NULL );
-	return ( now.tv_sec - mStart.tv_sec ) * 1000 + ( now.tv_usec - mStart.tv_usec ) / 1000;
-#endif
-}
-
-unsigned long cTimerImpl::GetMicroseconds() {
+unsigned long cClockImpl::GetElapsedTime() {
 #ifdef EE_HAVE_CLOCK_GETTIME
 	timespec time;
 	clock_gettime( CLOCK_MONOTONIC, &time );

@@ -455,7 +455,7 @@ class EE_API cWindow {
 				};
 
 				cFPSData		FPS;
-				cTimeElapsed *	FrameElapsed;
+				cClock *	FrameElapsed;
 				eeFloat			ElapsedTime;
 
 				cFrameData();

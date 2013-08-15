@@ -1,5 +1,5 @@
-#ifndef EE_SYSTEMCTIMERIMPLPOSIX_H
-#define EE_SYSTEMCTIMERIMPLPOSIX_H
+#ifndef EE_SYSTEMCCLOCKIMPLPOSIX_H
+#define EE_SYSTEMCCLOCKIMPLPOSIX_H
 
 #include <eepp/base.hpp>
 
@@ -13,17 +13,15 @@
 
 namespace EE { namespace System { namespace Platform {
 
-class cTimerImpl {
+class cClockImpl {
 	public:
-		cTimerImpl();
+		cClockImpl();
 
-		~cTimerImpl();
+		~cClockImpl();
 
 		void Reset();
 
-		unsigned long GetMilliseconds();
-
-		unsigned long GetMicroseconds();
+		unsigned long GetElapsedTime();
 	private:
 		#ifdef EE_HAVE_CLOCK_GETTIME
 		struct timespec mStart;

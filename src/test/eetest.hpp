@@ -83,7 +83,7 @@ class cEETest : private cThread {
 		void LoadTextures();
 		void CmdSetPartsNum ( const std::vector < String >& params );
 
-		cTimeElapsed cElapsed;
+		cClock cElapsed;
 		eeFloat PSElapsed;
 	private:
 		cEngine * EE;
@@ -203,7 +203,7 @@ class cEETest : private cThread {
 		cFrameBuffer * mFBO;
 		cVertexBuffer * mVBO;
 
-		cTimeElapsed	mFTE;
+		cClock	mFTE;
 
 		void CreateCommonDialog();
 		void ItemClick( const cUIEvent * Event );

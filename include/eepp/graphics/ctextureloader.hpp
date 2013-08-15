@@ -117,7 +117,7 @@ class EE_API cTextureLoader : public cObjectLoader {
 		int				mImgType;
 		int				mIsCompressed;
 
-		cTimeElapsed	mTE;
+		cClock	mTE;
 
 		void			LoadFile();
 		void 			LoadFromPath();

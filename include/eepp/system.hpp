@@ -9,9 +9,10 @@
 #include <eepp/system/cthread.hpp>
 #include <eepp/system/cmutex.hpp>
 #include <eepp/system/clock.hpp>
+#include <eepp/system/ccondition.hpp>
 #include <eepp/system/clog.hpp>
-#include <eepp/system/ctimer.hpp>
-#include <eepp/system/ctimeelapsed.hpp>
+#include <eepp/system/ctime.hpp>
+#include <eepp/system/cclock.hpp>
 #include <eepp/system/cinifile.hpp>
 #include <eepp/system/cpack.hpp>
 #include <eepp/system/cpak.hpp>

@@ -137,7 +137,7 @@ cUITheme * cUITheme::LoadFromTextureAtlas( cUITheme * tTheme, cTextureAtlas * Te
 		TextureAtlas->GetTexture( tC )->TextureFilter( TEX_FILTER_NEAREST );
 	}
 
-	cTimeElapsed TE;
+	cClock TE;
 
 	LoadThemeElements();
 
@@ -169,13 +169,13 @@ cUITheme * cUITheme::LoadFromTextureAtlas( cUITheme * tTheme, cTextureAtlas * Te
 			tTheme->Add( eeNew( cUISkinSimple, ( ElemFound[i] ) ) );
 	}
 
-	cLog::instance()->Write( "UI Theme Loaded in: " + String::ToStr( TE.ElapsedSinceStart() ) + " ( from TextureAtlas )" );
+	cLog::instance()->Write( "UI Theme Loaded in: " + String::ToStr( TE.Elapsed() ) + " ( from TextureAtlas )" );
 
 	return tTheme;
 }
 
 cUITheme * cUITheme::LoadFromPath( cUITheme * tTheme, const std::string& Path, const std::string ImgExt ) {
-	cTimeElapsed TE;
+	cClock TE;
 
 	LoadThemeElements();
 
@@ -232,7 +232,7 @@ cUITheme * cUITheme::LoadFromPath( cUITheme * tTheme, const std::string& Path, c
 			tTheme->Add( eeNew( cUISkinSimple, ( ElemFound[i] ) ) );
 	}
 
-	cLog::instance()->Write( "UI Theme Loaded in: " + String::ToStr( TE.ElapsedSinceStart() ) + " ( from path )" );
+	cLog::instance()->Write( "UI Theme Loaded in: " + String::ToStr( TE.Elapsed() ) + " ( from path )" );
 
 	return tTheme;
 }

@@ -1,18 +1,18 @@
-#include <eepp/system/platform/win/ctimerimpl.hpp>
+#include <eepp/system/platform/win/cclockimpl.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
 namespace EE { namespace System { namespace Platform { 
 
-cTimerImpl::cTimerImpl() : 
+cClockImpl::cClockImpl() : 
 	mTimerMask( 0 )
 {
 }
 
-cTimerImpl::~cTimerImpl() {
+cClockImpl::~cClockImpl() {
 }
 
-void cTimerImpl::Reset() {
+void cClockImpl::Reset() {
 	// Get the current process core mask
 	DWORD procMask;
 	DWORD sysMask;
@@ -51,46 +51,7 @@ void cTimerImpl::Reset() {
 	mLastTime	= 0;
 }
 
-unsigned long cTimerImpl::GetMilliseconds() {
-	LARGE_INTEGER curTime;
-
-	HANDLE thread = GetCurrentThread();
-
-	// Set affinity to the first core
-	DWORD_PTR oldMask = SetThreadAffinityMask(thread, mTimerMask);
-
-	// Query the cTimer
-	QueryPerformanceCounter(&curTime);
-
-	// Reset affinity
-	SetThreadAffinityMask(thread, oldMask);
-
-	LONGLONG newTime = curTime.QuadPart - mStartTime.QuadPart;
-
-	// scale by 1000 for milliseconds
-	unsigned long newTicks = (unsigned long) (1000 * newTime / mFrequency.QuadPart);
-
-	// detect and compensate for performance counter leaps
-	// (surprisingly common, see Microsoft KB: Q274323)
-	unsigned long check = GetTickCount() - mStartTick;
-	signed long msecOff = (signed long)(newTicks - check);
-	if (msecOff < -100 || msecOff > 100) {
-		// We must keep the cTimer running forward :)
-		LONGLONG adjust = (std::min)(msecOff * mFrequency.QuadPart / 1000, newTime - mLastTime);
-		mStartTime.QuadPart += adjust;
-		newTime -= adjust;
-
-		// Re-calculate milliseconds
-		newTicks = (unsigned long) (1000 * newTime / mFrequency.QuadPart);
-	}
-
-	// Record last time for adjust
-	mLastTime = newTime;
-
-	return newTicks;
-}
-
-unsigned long cTimerImpl::GetMicroseconds() {
+unsigned long cClockImpl::GetElapsedTime() {
 	LARGE_INTEGER curTime;
 
 	HANDLE thread = GetCurrentThread();
@@ -129,7 +90,7 @@ unsigned long cTimerImpl::GetMicroseconds() {
 	return newMicro;
 }
 
-bool cTimerImpl::isPO2( Uint32 n )  {
+bool cClockImpl::isPO2( Uint32 n )  {
 	return (n & (n-1)) == 0;
 }
 
