@@ -81,7 +81,6 @@ class EE_API cSoundStream : private cThread, private cSound {
 		*/
 		void Loop( const bool& Loop);
 
-
 		/** Tell whether or not the stream is looping
 		* @return True if the music is looping, false otherwise
 		*/

@@ -81,16 +81,22 @@ bool cAudioDevice::IsExtensionSupported( const std::string& extension ) {
 int cAudioDevice::GetFormatFromChannelCount( unsigned int ChannelCount ) {
 	EnsureALInit();
 
+	int format = 0;
+
 	switch ( ChannelCount ) {
-		case 1 : return AL_FORMAT_MONO16;
-		case 2 : return AL_FORMAT_STEREO16;
-		case 4 : return alGetEnumValue("AL_FORMAT_QUAD16");
-		case 6 : return alGetEnumValue("AL_FORMAT_51CHN16");
-		case 7 : return alGetEnumValue("AL_FORMAT_61CHN16");
-		case 8 : return alGetEnumValue("AL_FORMAT_71CHN16");
+		case 1 : format = AL_FORMAT_MONO16;						break;
+		case 2 : format = AL_FORMAT_STEREO16;					break;
+		case 4 : format = alGetEnumValue("AL_FORMAT_QUAD16");	break;
+		case 6 : format = alGetEnumValue("AL_FORMAT_51CHN16");	break;
+		case 7 : format = alGetEnumValue("AL_FORMAT_61CHN16");	break;
+		case 8 : format = alGetEnumValue("AL_FORMAT_71CHN16");	break;
+		default: format = 0;
 	}
 
-	return 0;
+	if ( -1 == format )
+		format = 0;
+
+	return format;
 }
 
 bool cAudioDevice::IsAvailable() {

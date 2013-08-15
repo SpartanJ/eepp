@@ -382,6 +382,21 @@ void cTexture::Reload()  {
 	}
 }
 
+void cTexture::Update( const Uint8* pixels, Uint32 width, Uint32 height, Uint32 x, Uint32 y, EE_PIXEL_FORMAT pf ) {
+	if ( NULL != pixels && mTexture && x + width <= mWidth && y + height <= mHeight ) {
+		GLint PreviousTexture;
+		glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
+
+		if ( mTexture != PreviousTexture )
+			glBindTexture( GL_TEXTURE_2D, mTexture );
+
+		glTexSubImage2D( GL_TEXTURE_2D, 0, x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels );
+
+		if ( mTexture != PreviousTexture )
+			glBindTexture(GL_TEXTURE_2D, PreviousTexture);
+	}
+}
+
 const Uint32& cTexture::HashName() const {
 	return mId;
 }

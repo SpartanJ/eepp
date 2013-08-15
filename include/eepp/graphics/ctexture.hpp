@@ -82,6 +82,21 @@ class EE_API cTexture : public cImage {
 		/** Copy an image inside the texture */
 		void CopyImage( cImage * Img, const eeUint& x, const eeUint& y );
 
+		/** @brief Update a part of the texture from an array of pixels
+		**	The size of the @a pixel array must match the @a width and
+		**	@a height arguments.
+		**	No additional check is performed on the size of the pixel
+		**	array or the bounds of the area to update, passing invalid
+		**	arguments will lead to an undefined behaviour.
+		**	This function does nothing if @a pixels is null or if the
+		**	texture was not previously created.
+		**	@param pixels Array of pixels to copy to the texture
+		**	@param width  Width of the pixel region contained in @a pixels
+		**	@param height Height of the pixel region contained in @a pixels
+		**	@param x X offset in the texture where to copy the source pixels
+		**	@param y Y offset in the texture where to copy the source pixels */
+		void Update( const Uint8* pixels, Uint32 width, Uint32 height, Uint32 x = 0, Uint32 y = 0, EE_PIXEL_FORMAT pf = PF_RGBA );
+
 		/** Flip the texture ( rotate the texture 90º ). Warning: This is flipped in memory, a real flipping. */
 		void Flip();
 

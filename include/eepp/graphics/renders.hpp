@@ -154,6 +154,16 @@ enum EE_TEXTURE_SOURCE {
 	TEX_SRC_PREVIOUS
 };
 
+/** @enum EE_PIXEL_FORMAT Pixel formats to write into a texture image. */
+enum EE_PIXEL_FORMAT {
+	PF_RED	= 0x1903,
+	PF_RG	= 0x8227,
+	PF_RGB	= 0x1907,
+	PF_BGR	= 0x80E0,
+	PF_RGBA	= 0x1908,
+	PF_BGRA	= 0x80E1
+};
+
 }}
 
 #endif
