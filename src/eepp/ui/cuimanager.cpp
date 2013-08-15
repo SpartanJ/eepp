@@ -254,7 +254,7 @@ cUIWindow * cUIManager::MainControl() const {
 	return mControl;
 }
 
-const eeFloat& cUIManager::Elapsed() const {
+const cTime& cUIManager::Elapsed() const {
 	return mElapsed;
 }
 

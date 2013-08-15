@@ -970,11 +970,11 @@ void cUIListBox::Update() {
 
 					mVScrollBar->Value( mVScrollBar->Value() + ( -diff.y / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) ) );
 
-					mTouchDragAcceleration += Elapsed() * diff.y * mTouchDragDeceleration;
+					mTouchDragAcceleration += Elapsed().AsMilliseconds() * diff.y * mTouchDragDeceleration;
 
 					mTouchDragPoint = Pos;
 				} else {
-					mTouchDragAcceleration -= Elapsed() * mTouchDragAcceleration * 0.01f;
+					mTouchDragAcceleration -= Elapsed().AsMilliseconds() * mTouchDragAcceleration * 0.01f;
 				}
 			} else {
 				// Mouse Down
@@ -996,7 +996,7 @@ void cUIListBox::Update() {
 				if ( mTouchDragAcceleration > 0.01f || mTouchDragAcceleration < -0.01f ) {
 					mVScrollBar->Value( mVScrollBar->Value() + ( -mTouchDragAcceleration / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) ) );
 
-					mTouchDragAcceleration -= mTouchDragAcceleration * mTouchDragDeceleration * Elapsed();
+					mTouchDragAcceleration -= mTouchDragAcceleration * mTouchDragDeceleration * Elapsed().AsMilliseconds();
 				}
 			}
 		}

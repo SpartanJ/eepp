@@ -84,7 +84,7 @@ class cEETest : private cThread {
 		void CmdSetPartsNum ( const std::vector < String >& params );
 
 		cClock cElapsed;
-		eeFloat PSElapsed;
+		cTime PSElapsed;
 	private:
 		cEngine * EE;
 		Window::cWindow * mWindow;
@@ -95,7 +95,7 @@ class cEETest : private cThread {
 
 		bool side, aside;
 		eeFloat ang, scale, alpha, Ang;
-		eeFloat et;
+		cTime et;
 		Int32 x, y;
 		Uint32 lasttick;
 

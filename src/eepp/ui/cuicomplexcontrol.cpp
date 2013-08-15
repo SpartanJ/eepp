@@ -55,7 +55,7 @@ void cUIComplexControl::Update() {
 				mTooltip->Show();
 			} else {
 				if ( -1.f != mTooltip->TooltipTime() ) {
-					mTooltip->TooltipTimeAdd( cUIManager::instance()->Elapsed() );
+					mTooltip->TooltipTimeAdd( cUIManager::instance()->Elapsed().AsMilliseconds() );
 				}
 
 				if ( mTooltip->TooltipTime() >= cUIThemeManager::instance()->TooltipTimeToShow() ) {

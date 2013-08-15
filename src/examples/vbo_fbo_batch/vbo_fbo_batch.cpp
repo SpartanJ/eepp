@@ -126,7 +126,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 			Batch.Draw();
 
 			// Add the rotation angle
-			ang+=win->Elapsed() * 0.1f;
+			ang+=win->Elapsed().AsMilliseconds() * 0.1f;
 			ang = (ang>=360) ? 0 : ang;
 
 			// Change the scale value
@@ -137,7 +137,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 				side = false;
 				scale = 0.5f;
 			}
-			scale = (!side) ? scale+win->Elapsed() * 0.00025f : scale-win->Elapsed() * 0.00025f;
+			scale = (!side) ? scale+win->Elapsed().AsMilliseconds() * 0.00025f : scale-win->Elapsed().AsMilliseconds() * 0.00025f;
 
 			// Draw frame
 			win->Display();

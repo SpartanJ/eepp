@@ -82,7 +82,7 @@ const eeVector2f& cScrollParallax::Position() const {
 
 void cScrollParallax::Draw() {
 	if ( NULL != mSubTexture && mAABB.Left != mAABB.Right && mAABB.Top != mAABB.Bottom && 0 != mColor.Alpha ) {
-		mPos += ( ( mSpeed * (eeFloat)mElapsed.Elapsed() ) / (eeFloat)1000 );
+		mPos += mSpeed * (eeFloat)mElapsed.Elapsed().AsSeconds();
 
 		if ( mPos.x > mAABB.Left + mRealSize.Width() || mPos.x < mAABB.Left - mRealSize.Width() )
 			mPos.x = mAABB.Left;

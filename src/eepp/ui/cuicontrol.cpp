@@ -872,7 +872,7 @@ void cUIControl::UpdateQuad() {
 	};
 }
 
-eeFloat cUIControl::Elapsed() {
+cTime cUIControl::Elapsed() {
 	return cUIManager::instance()->Elapsed();
 }
 

@@ -620,3 +620,5 @@
 ../../src/eepp/system/platform/posix/cconditionimpl.hpp
 ../../src/eepp/system/platform/posix/cconditionimpl.cpp
 ../../include/eepp/graphics/opengl.hpp
+../../src/eepp/system/ctime.cpp
+../../include/eepp/system/ctime.hpp

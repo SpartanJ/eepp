@@ -40,7 +40,7 @@ class EE_API cEngine {
 		bool Running() const;
 
 		/** @return The current window elapsed time. */
-		eeFloat Elapsed() const;
+		cTime Elapsed() const;
 
 		/** @return The current window width. */
 		const Uint32& GetWidth() const;

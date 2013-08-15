@@ -327,13 +327,13 @@ void cConsole::Toggle() {
 
 void cConsole::Fade() {
 	if (mCurSide) {
-		mCurAlpha -= 255.f * mWindow->Elapsed() / mFadeSpeed;
+		mCurAlpha -= 255.f * mWindow->Elapsed().AsMilliseconds() / mFadeSpeed;
 		if ( mCurAlpha <= 0.0f ) {
 			mCurAlpha = 0.0f;
 			mCurSide = !mCurSide;
 		}
 	} else {
-		mCurAlpha += 255.f * mWindow->Elapsed() / mFadeSpeed;
+		mCurAlpha += 255.f * mWindow->Elapsed().AsMilliseconds() / mFadeSpeed;
 		if ( mCurAlpha >= 255.f ) {
 			mCurAlpha = 255.f;
 			mCurSide = !mCurSide;
@@ -347,7 +347,7 @@ void cConsole::Fade() {
 
 	if ( mFadeIn ) {
 		mFadeOut = false;
-		mY += mCurHeight * mWindow->Elapsed() / mFadeSpeed;
+		mY += mCurHeight * mWindow->Elapsed().AsMilliseconds() / mFadeSpeed;
 
 		mA = ( mY * mMaxAlpha / mCurHeight ) ;
 		if ( mY > mCurHeight ) {
@@ -359,7 +359,7 @@ void cConsole::Fade() {
 
 	if ( mFadeOut ) {
 		mFadeIn = false;
-		mY -= mCurHeight * mWindow->Elapsed() / mFadeSpeed;
+		mY -= mCurHeight * mWindow->Elapsed().AsMilliseconds() / mFadeSpeed;
 
 		mA = ( mY * mMaxAlpha / mCurHeight ) ;
 		if ( mY <= 0.0f ) {

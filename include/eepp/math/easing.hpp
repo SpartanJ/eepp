@@ -5,7 +5,7 @@
 
 namespace EE { namespace Math { namespace easing {
 
-typedef eeFloat( *easingCbFunc )( eeFloat, eeFloat, eeFloat, eeFloat );
+typedef eeDouble( *easingCbFunc )( eeDouble, eeDouble, eeDouble, eeDouble );
 
 extern EE_API easingCbFunc easingCb[];
 
@@ -18,7 +18,7 @@ extern EE_API easingCbFunc easingCb[];
 *  @param d Specifies the duration of the motion.
 *  @return The value of the interpolated property at the specified time.
 */
-inline eeFloat LinearInterpolation( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble LinearInterpolation( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	return b + t * c / d;
 }
 
@@ -31,7 +31,7 @@ inline eeFloat LinearInterpolation( eeFloat t, eeFloat b, eeFloat c, eeFloat d )
 *  @param d Specifies the duration of the motion.
 *  @return The value of the interpolated property at the specified time.
 */
-inline eeFloat QuadraticIn( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble QuadraticIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	t /= d;
 
 	return c * t * t + b;
@@ -47,7 +47,7 @@ inline eeFloat QuadraticIn( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 *  @param d Specifies the duration of the motion.
 *  @return The value of the interpolated property at the specified time.
 */
-inline eeFloat QuadraticOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble QuadraticOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	t /= d;
 
 	return -c * t * ( t - 2 ) + b;
@@ -65,7 +65,7 @@ inline eeFloat QuadraticOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 *  @param d Specifies the duration of the motion.
 *  @return The value of the interpolated property at the specified time.
 */
-inline eeFloat QuadraticInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble QuadraticInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	t /= d / 2;
 
 	if ( t < 1 )
@@ -86,7 +86,7 @@ inline eeFloat QuadraticInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 *  @param d Specifies the duration of the motion.
 *  @return The value of the interpolated property at the specified time.
 */
-inline eeFloat SineIn( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble SineIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	return -c * eecos( t / d * ( EE_PI / 2 ) ) + c + b;
 }
 
@@ -100,7 +100,7 @@ inline eeFloat SineIn( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 *  @param d Specifies the duration of the motion.
 *  @return The value of the interpolated property at the specified time.
 */
-inline eeFloat SineOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble SineOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	return c * eesin( t / d * ( EE_PI / 2 ) ) + b;
 }
 
@@ -116,7 +116,7 @@ inline eeFloat SineOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 *  @param d Specifies the duration of the motion.
 *  @return The value of the interpolated property at the specified time.
 */
-inline eeFloat SineInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble SineInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	return -c / 2 * ( eecos( EE_PI * t / d ) - 1 ) + b;
 }
 
@@ -130,7 +130,7 @@ inline eeFloat SineInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 *  @param d Specifies the duration of the effect, in milliseconds.
 *  @return Number corresponding to the position of the component.
 */
-inline eeFloat ExponentialIn( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble ExponentialIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	return t == 0 ? b : c * eepow( 2, 10 * ( t / d - 1 ) ) + b;
 }
 
@@ -144,7 +144,7 @@ inline eeFloat ExponentialIn( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 *  @param d Specifies the duration of the motion.
 *  @return The value of the interpolated property at the specified time.
 */
-inline eeFloat ExponentialOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble ExponentialOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	return t == d ? b + c : c * ( -eepow( 2, -10 * t / d ) + 1 ) + b;
 }
 
@@ -160,7 +160,7 @@ inline eeFloat ExponentialOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 *  @param d Specifies the duration of the motion.
 *  @return The value of the interpolated property at the specified time.
 */
-inline eeFloat ExponentialInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble ExponentialInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	if (t == 0)
 		return b;
 
@@ -173,19 +173,19 @@ inline eeFloat ExponentialInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 	return c / 2 * ( -eepow( 2, -10 * --t ) + 2 ) + b;
 }
 
-inline eeFloat QuarticIn( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble QuarticIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	t /= d;
 
 	return c * t * t * t * t + b;
 }
 
-inline eeFloat QuarticOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble QuarticOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	t = t / d - 1;
 
 	return -c * ( t * t * t * t - 1 ) + b;
 }
 
-inline eeFloat QuarticInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble QuarticInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	t /= d / 2;
 
 	if ( t < 1)
@@ -196,19 +196,19 @@ inline eeFloat QuarticInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 	return -c / 2 * ( t * t * t * t - 2 ) + b;
 }
 
-inline eeFloat QuinticIn( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble QuinticIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	t /= d;
 
 	return c * t * t * t * t * t + b;
 }
 
-inline eeFloat QuinticOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble QuinticOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	t = t / d - 1;
 
 	return c * ( t * t * t * t * t + 1) + b;
 }
 
-inline eeFloat QuinticInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble QuinticInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	t /= d / 2;
 
 	if ( t < 1 )
@@ -219,19 +219,19 @@ inline eeFloat QuinticInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 	return c / 2 * ( t * t * t * t * t + 2) + b;
 }
 
-inline eeFloat CircularIn( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble CircularIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	t /= d;
 
 	return -c * ( eesqrt( 1 - t * t ) - 1) + b;
 }
 
-inline eeFloat CircularOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble CircularOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	t = t / d - 1;
 
 	return c * eesqrt( 1 - t * t ) + b;
 }
 
-inline eeFloat CircularInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble CircularInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	t /= d / 2;
 
 	if ( t < 1 )
@@ -242,19 +242,19 @@ inline eeFloat CircularInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 	return c / 2 * ( eesqrt( 1 - t * t ) + 1) + b;
 }
 
-inline eeFloat CubicIn( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble CubicIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	t /= d;
 
 	return c * t * t * t + b;
 }
 
-inline eeFloat CubicOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble CubicOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	t = t / d - 1;
 
 	return c * ( t * t * t + 1) + b;
 }
 
-inline eeFloat CubicInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble CubicInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	t /= d / 2;
 
 	if ( t < 1 )
@@ -265,23 +265,23 @@ inline eeFloat CubicInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 	return c / 2 * ( t * t * t + 2 ) + b;
 }
 
-inline eeFloat BackIn( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
-	eeFloat s = 1.70158f;
+inline eeDouble BackIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+	eeDouble s = 1.70158f;
 
 	t /= d;
 
 	return c * t * t * ( ( s + 1 ) * t - s) + b;
 }
 
-inline eeFloat BackOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
-	eeFloat	s = 1.70158f;
+inline eeDouble BackOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+	eeDouble	s = 1.70158f;
 
 	t = t / d - 1;
 
 	return c * ( t * t * ( ( s + 1 ) * t + s ) + 1 ) + b;
 }
 
-inline eeFloat BackInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble BackInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	float s = 1.70158f;
 
 	t /= d / 2;
@@ -295,7 +295,7 @@ inline eeFloat BackInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 	return c / 2 * ( t * t * ( ( s + 1 ) * t + s ) + 2) + b;
 }
 
-inline eeFloat BounceOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble BounceOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	t /= d;
 
 	if ( t < ( 1.f / 2.75f ) ) {
@@ -315,18 +315,18 @@ inline eeFloat BounceOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 	}
 }
 
-inline eeFloat BounceIn( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble BounceIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	return c - BounceOut( d - t, 0, c, d ) + b;
 }
 
-inline eeFloat BounceInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble BounceInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	if ( t < d * 0.5f )
 		return BounceIn( t * 2.f, 0.f, c, d ) * 0.5f + b;
 
 	return BounceOut( t * 2.f - d, 0.f, c, d ) * 0.5f + c * 0.5f + b;
 }
 
-inline eeFloat ElasticIn( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble ElasticIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	if ( t == 0.f )
 		return b;
 
@@ -335,16 +335,16 @@ inline eeFloat ElasticIn( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 	if ( t == 1.f )
 		return b + c;
 
-	eeFloat p = d * 0.3f;
-	eeFloat s = p / 4.f;
-	eeFloat a = c;
+	eeDouble p = d * 0.3f;
+	eeDouble s = p / 4.f;
+	eeDouble a = c;
 
 	t -= 1.f;
 
 	return -( a * eepow( 2.f , 10.f * t ) * eesin( ( t * d - s ) * ( 2.f * EE_PI ) / p ) ) + b;
 }
 
-inline eeFloat ElasticOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble ElasticOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	if ( t == 0.f )
 		return b;
 
@@ -353,14 +353,14 @@ inline eeFloat ElasticOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 	if ( t ==1 )
 		return b + c;
 
-	eeFloat p = d * 0.3f;
-	eeFloat s = p / 4.f;
-	eeFloat a = c;
+	eeDouble p = d * 0.3f;
+	eeDouble s = p / 4.f;
+	eeDouble a = c;
 
 	return ( a * eepow( 2.f, -10.f * t ) * eesin( ( t * d - s ) * ( 2.f * EE_PI ) / p ) + c + b );
 }
 
-inline eeFloat ElasticInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
+inline eeDouble ElasticInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	if ( t == 0 )
 		return b;
 
@@ -369,9 +369,9 @@ inline eeFloat ElasticInOut( eeFloat t, eeFloat b, eeFloat c, eeFloat d ) {
 	if ( t == 2 )
 		return b + c;
 
-	eeFloat p = d * ( 0.3f * 1.5f );
-	eeFloat a = c;
-	eeFloat s = p / 4.f;
+	eeDouble p = d * ( 0.3f * 1.5f );
+	eeDouble a = c;
+	eeDouble s = p / 4.f;
 
 	if ( t < 1 ) {
 		t -= 1.f;

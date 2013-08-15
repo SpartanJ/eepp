@@ -481,20 +481,20 @@ bool cSprite::AddSubFrame(const Uint32& TexId, const eeUint& NumFrame, const eeU
 }
 
 void cSprite::Update() {
-	Update( (eeFloat)cEngine::instance()->Elapsed() );
+	Update( cEngine::instance()->Elapsed() );
 }
 
-void cSprite::Update( const eeFloat& ElapsedTime ) {
-	if ( mFrames.size() > 1 && !SPR_FGET( SPRITE_FLAG_ANIM_PAUSED ) && 0 != ElapsedTime ) {
+void cSprite::Update( const cTime& ElapsedTime ) {
+	if ( mFrames.size() > 1 && !SPR_FGET( SPRITE_FLAG_ANIM_PAUSED ) && cTime::Zero != ElapsedTime ) {
 		eeUint Size		= (eeUint)mFrames.size() - 1;
 
 		if ( mRepeations == 0 )
 			return;
 
 		if ( !SPR_FGET( SPRITE_FLAG_REVERSE_ANIM ) )
-			mfCurrentFrame += ( ( mAnimSpeed * ElapsedTime ) / 1000.f );
+			mfCurrentFrame += mAnimSpeed * ElapsedTime.AsSeconds();
 		else
-			mfCurrentFrame -= ( ( mAnimSpeed * ElapsedTime ) / 1000.f );
+			mfCurrentFrame -= mAnimSpeed * ElapsedTime.AsSeconds();
 
 		mCurrentFrame = (eeUint)mfCurrentFrame;
 

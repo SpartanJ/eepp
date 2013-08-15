@@ -16,13 +16,15 @@ class EE_API cClock {
 		~cClock();
 
 		/** Resets timer */
-		void Reset();
+		void Restart();
 
 		/** Returns microseconds since initialisation or last reset */
-		cTime GetElapsedTime();
+		cTime GetElapsedTime() const;
 
-		/** Time in milliseconds elapsed between this call and the last call to Elapsed() */
-		eeDouble Elapsed();
+		/** Time in milliseconds elapsed between this call and the last call to Elapsed()
+		* This is the equivalent to call GetElapsedTime() and then Reset().
+		*/
+		cTime Elapsed();
 	private:
 		Platform::cClockImpl *	mClockImpl;
 };

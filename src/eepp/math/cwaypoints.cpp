@@ -143,7 +143,7 @@ const eeVector2f& cWaypoints::GetPos() {
 	return mCurPos;
 }
 
-void cWaypoints::Update( const eeFloat& Elapsed ) {
+void cWaypoints::Update( const cTime& Elapsed ) {
 	if ( mEnable && mPoints.size() > 1 && mCurPoint != mPoints.size() ) {
 		if ( mUpdate ) {
 			mCurTime = 0;
@@ -177,7 +177,7 @@ void cWaypoints::Update( const eeFloat& Elapsed ) {
 			mUpdate = false;
 		}
 
-		mCurTime += Elapsed;
+		mCurTime += Elapsed.AsMilliseconds();
 
 		mCurPos.x = easingCb[ mType ]( mCurTime, mActP->p.x, ( mNexP->p.x - mActP->p.x ), mActP->t );
 		mCurPos.y = easingCb[ mType ]( mCurTime, mActP->p.y, ( mNexP->p.y - mActP->p.y ), mActP->t );
@@ -195,7 +195,7 @@ void cWaypoints::Update( const eeFloat& Elapsed ) {
 	}
 }
 
-void cWaypoints::SetTotalTime( const eeFloat& TotTime ) {
+void cWaypoints::SetTotalTime( const eeDouble& TotTime ) {
 	eeUint i;
 	eeFloat tdist = mTotDist;
 

@@ -64,7 +64,7 @@ void cSpace::Step( const cpFloat& dt ) {
 
 void cSpace::Update() {
 	#ifdef PHYSICS_RENDERER_ENABLED
-	Step( Window::cEngine::instance()->Elapsed() / 1000 );
+	Step( Window::cEngine::instance()->Elapsed().AsSeconds() );
 	#else
 	Step( 1 / 60 );
 	#endif

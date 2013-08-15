@@ -6,24 +6,24 @@ namespace EE { namespace System {
 cClock::cClock() :
 	mClockImpl( eeNew( Platform::cClockImpl, () ) )
 {
-	Reset();
+	Restart();
 }
 
 cClock::~cClock() {
 	eeSAFE_DELETE( mClockImpl );
 }
 
-void cClock::Reset() {
-	mClockImpl->Reset();
+void cClock::Restart() {
+	mClockImpl->Restart();
 }
 
-cTime cClock::GetElapsedTime() {
+cTime cClock::GetElapsedTime() const {
 	return Microseconds( mClockImpl->GetElapsedTime() );
 }
 
-eeDouble cClock::Elapsed() {
-	eeDouble r = GetElapsedTime().AsMicroseconds() / 1000.0;
-	Reset();
+cTime cClock::Elapsed() {
+	cTime r = GetElapsedTime();
+	Restart();
 	return r;
 }
 

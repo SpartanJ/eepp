@@ -363,7 +363,7 @@ void cParticleSystem::Update() {
 	Update( cEngine::instance()->Elapsed() );
 }
 
-void cParticleSystem::Update( const eeFloat& Time ) {
+void cParticleSystem::Update( const cTime& Time ) {
 	if ( !mUsed )
 		return;
 
@@ -373,7 +373,7 @@ void cParticleSystem::Update( const eeFloat& Time ) {
 		P = &mParticle[i];
 
 		if ( P->Used() || P->A() > 0.f ) {
-			P->Update( Time * mTime );
+			P->Update( Time.AsMilliseconds() * mTime );
 
 			// If not alive
 			if ( P->A() <= 0.f ) {

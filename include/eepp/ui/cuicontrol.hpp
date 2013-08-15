@@ -365,7 +365,7 @@ class EE_API cUIControl {
 
 		void SendParentSizeChange( const eeVector2i& SizeChange );
 
-		eeFloat Elapsed();
+		cTime Elapsed();
 
 		eeRecti MakePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
 

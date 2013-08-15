@@ -19,7 +19,7 @@ class cClockImpl {
 
 		~cClockImpl();
 
-		void Reset();
+		void Restart();
 
 		unsigned long GetElapsedTime();
 	private:

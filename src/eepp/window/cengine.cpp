@@ -261,7 +261,7 @@ bool cEngine::Running() const {
 	return NULL != mWindow;
 }
 
-eeFloat cEngine::Elapsed() const {
+cTime cEngine::Elapsed() const {
 	eeASSERT( Running() );
 
 	return mWindow->Elapsed();

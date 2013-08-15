@@ -70,7 +70,7 @@ void cUITextInput::Draw() {
 	cUITextBox::Draw();
 
 	if ( mVisible && mTextBuffer.Active() && mTextBuffer.SupportFreeEditing() ) {
-		mWaitCursorTime += cUIManager::instance()->Elapsed();
+		mWaitCursorTime += cUIManager::instance()->Elapsed().AsMilliseconds();
 
 		if ( mShowingWait ) {
 			bool disableSmooth = mShowingWait && GLi->IsLineSmooth();

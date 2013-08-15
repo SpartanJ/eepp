@@ -74,7 +74,7 @@ class EE_API cParticleSystem {
 		/** Update the particles effect
 		* @param Time The time transcurred between the last update.
 		*/
-		void Update( const eeFloat& Time );
+		void Update(const cTime &Time );
 
 		/** Update the particles effect taking the elapsed time from cEngine */
 		void Update();

@@ -32,7 +32,7 @@ class EE_API cUIManager {
 
 		void Draw();
 
-		const eeFloat& Elapsed() const;
+		const cTime& Elapsed() const;
 
 		void ResizeControl( cWindow * win );
 
@@ -98,7 +98,7 @@ class EE_API cUIManager {
 		std::list<cUIWindow*> mWindowsList;
 		std::list<cUIControl*> mCloseList;
 
-		eeFloat 			mElapsed;
+		cTime	 			mElapsed;
 		Int32 				mCbId;
 		Uint32				mResizeCb;
 

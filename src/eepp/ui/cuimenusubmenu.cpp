@@ -88,7 +88,7 @@ Uint32 cUIMenuSubMenu::OnMouseMove( const eeVector2i &Pos, const Uint32 Flags ) 
 	cUIMenuItem::OnMouseMove( Pos, Flags );
 
 	if ( NULL != mSubMenu && !mSubMenu->Visible() ) {
-		mTimeOver += cUIManager::instance()->Elapsed();
+		mTimeOver += cUIManager::instance()->Elapsed().AsMilliseconds();
 
 		if ( mTimeOver >= mMaxTime ) {
 			ShowSubMenu();

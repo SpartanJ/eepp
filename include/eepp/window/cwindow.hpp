@@ -221,7 +221,7 @@ class EE_API cWindow {
 		virtual void Display( bool clear = true );
 
 		/** @return The elapsed time for the last frame rendered */
-		virtual eeFloat Elapsed() const;
+		virtual cTime Elapsed() const;
 
 		/** @return The current frames per second of the screen */
 		virtual Uint32 FPS() const;
@@ -455,8 +455,8 @@ class EE_API cWindow {
 				};
 
 				cFPSData		FPS;
-				cClock *	FrameElapsed;
-				eeFloat			ElapsedTime;
+				cClock *		FrameElapsed;
+				cTime			ElapsedTime;
 
 				cFrameData();
 

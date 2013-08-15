@@ -14,7 +14,7 @@ eeDouble cTime::AsSeconds() const {
 }
 
 eeDouble cTime::AsMilliseconds() const {
-	return static_cast<Int32>(mMicroseconds / 1000.0);
+	return mMicroseconds / 1000.0;
 }
 
 Int64 cTime::AsMicroseconds() const {
@@ -86,7 +86,31 @@ cTime operator *(cTime left, cTime right) {
 	return Microseconds(left.AsMicroseconds() * right.AsMicroseconds());
 }
 
+cTime operator *(cTime left, eeDouble right) {
+	return Seconds(left.AsSeconds() * right);
+}
+
+cTime operator *(eeDouble left, cTime right) {
+	return right * left;
+}
+
+cTime operator *(cTime left, Int64 right) {
+	return Microseconds(left.AsMicroseconds() * right);
+}
+
+cTime operator *(Int64 left, cTime right) {
+	return right * left;
+}
+
 cTime& operator *=(cTime& left, cTime right) {
+	return left = left * right;
+}
+
+cTime& operator *=(cTime& left, eeDouble right) {
+	return left = left * right;
+}
+
+cTime& operator *=(cTime& left, Int64 right) {
 	return left = left * right;
 }
 
@@ -94,7 +118,19 @@ cTime operator /(cTime left, cTime right) {
 	return Microseconds(left.AsMicroseconds() / right.AsMicroseconds());
 }
 
+cTime operator /(cTime left, eeDouble right) {
+	return Seconds(left.AsSeconds() / right);
+}
+
+cTime operator /(cTime left, Int64 right) {
+	return Microseconds(left.AsMicroseconds() / right);
+}
+
 cTime& operator /=(cTime& left, cTime right) {
+	return left = left / right;
+}
+
+cTime& operator /=(cTime& left, Int64 right) {
 	return left = left / right;
 }
 

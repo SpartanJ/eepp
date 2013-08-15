@@ -2,7 +2,10 @@
 #define EE_MATHCINTERPOLATION_H
 
 #include <eepp/math/base.hpp>
+#include <eepp/system/ctime.hpp>
 #include <vector>
+
+using namespace EE::System;
 
 namespace EE { namespace Math {
 
@@ -50,7 +53,7 @@ class EE_API cInterpolation {
 		void SetStepCallback( OnStepCallback StepCallback );
 
 		/** Update the movement interpolation */
-		void Update( const eeFloat& Elapsed );
+		void Update( const cTime& Elapsed );
 
 		/** Reset the class */
 		void Reset();
@@ -117,7 +120,7 @@ class EE_API cInterpolation {
 		eeFloat mTotDist;
 		eeFloat mCurPos;
 		eeUint mCurPoint;
-		eeFloat mCurTime;
+		eeDouble mCurTime;
 
 		eeFloat mSpeed;
 

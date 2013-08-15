@@ -153,7 +153,7 @@ void cEETest::CreateUIThemeTextureAtlas() {
 }
 
 void cEETest::LoadFonts() {
-	mFTE.Reset();
+	mFTE.Restart();
 
 	cTextureLoader * tl = eeNew( cTextureLoader, ( MyPath + "fonts/conchars.png" ) );
 	tl->SetColorKey( eeColor(0,0,0) );
@@ -980,7 +980,7 @@ void cEETest::Run() {
 void cEETest::ParticlesThread() {
 	while ( mWindow->Running() ) {
 		if ( MultiViewportMode || Screen == 2 ) {
-			PSElapsed = (eeFloat)cElapsed.Elapsed();
+			PSElapsed = cElapsed.Elapsed();
 
 			for ( Uint8 i = 0; i < PS.size(); i++ )
 				PS[i].Update( PSElapsed );
@@ -1041,7 +1041,7 @@ void cEETest::Screen2() {
 	eeFloat PlanetX = HWidth  - TNP[6]->Width() * 0.5f;
 	eeFloat PlanetY = HHeight - TNP[6]->Height() * 0.5f;
 
-	ang+=et * 0.1f;
+	ang+=et.AsMilliseconds() * 0.1f;
 	ang = (ang>=360) ? 0 : ang;
 
 	if (scale>=1.5f) {
@@ -1051,7 +1051,7 @@ void cEETest::Screen2() {
 		side = false;
 		scale = 0.5f;
 	}
-	scale = (!side) ? scale+et * 0.00025f : scale-et * 0.00025f;
+	scale = (!side) ? scale+et.AsMilliseconds() * 0.00025f : scale-et.AsMilliseconds() * 0.00025f;
 
 	if ( mUseShaders ) {
 		mBlurFactor = ( 1.5f * 0.01f ) - ( scale * 0.01f );
@@ -1069,7 +1069,7 @@ void cEETest::Screen2() {
 	TNP[3]->Draw( HWidth - 128, HHeight, 0, 1, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICAL);
 	TNP[3]->Draw( HWidth, HHeight, 0, 1, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICALNEGATIVE);
 
-	alpha = (!aside) ? alpha+et * 0.1f : alpha-et * 0.1f;
+	alpha = (!aside) ? alpha+et.AsMilliseconds() * 0.1f : alpha-et.AsMilliseconds() * 0.1f;
 	if (alpha>=255) {
 		aside = true;
 		alpha = 255;
@@ -1113,7 +1113,7 @@ void cEETest::Screen2() {
 	PR.DrawQuad( CL1.GetQuad() );
 	#endif
 
-	Ang = Ang + mWindow->Elapsed() * 0.1f;
+	Ang = Ang + mWindow->Elapsed().AsMilliseconds() * 0.1f;
 	if (Ang > 360.f) Ang = 1.f;
 
 	if ( ShowParticles )
@@ -1170,7 +1170,7 @@ void cEETest::Screen3() {
 		AnimVal = 0.5f;
 		AnimSide = false;
 	}
-	AnimVal = (!AnimSide) ? AnimVal+et * 0.1f : AnimVal-et * 0.1f;
+	AnimVal = (!AnimSide) ? AnimVal+et.AsMilliseconds() * 0.1f : AnimVal-et.AsMilliseconds() * 0.1f;
 
 	Batch.SetTexture( TNP[3] );
 	Batch.LineLoopBegin();
@@ -1221,7 +1221,7 @@ void cEETest::Render() {
 		#ifdef EE_DEBUG
 		mInfo = String::StrFormated( "EE - FPS: %d Elapsed Time: %4.2f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s\nApp Memory Usage: %s\nApp Peak Memory Usage: %s",
 							mWindow->FPS(),
-							et,
+							et.AsMilliseconds(),
 							(Int32)Mouse.x,
 							(Int32)Mouse.y,
 							FileSystem::SizeToString( TF->MemorySize() ).c_str(),
@@ -1231,7 +1231,7 @@ void cEETest::Render() {
 		#else
 		mInfo = String::StrFormated( "EE - FPS: %d Elapsed Time: %4.2f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s",
 							mWindow->FPS(),
-							et,
+							et.AsMilliseconds(),
 							(Int32)Mouse.x,
 							(Int32)Mouse.y,
 							FileSystem::SizeToString( TF->MemorySize() ).c_str()
@@ -1425,7 +1425,7 @@ void cEETest::Input() {
 		eeFloat aY = Joy->GetAxis( AXIS_Y );
 
 		if ( 0 != aX || 0 != aY ) {
-			eeFloat rE = mWindow->Elapsed();
+			eeDouble rE = mWindow->Elapsed().AsMilliseconds();
 			mAxisX += aX * rE;
 			mAxisY += aY * rE;
 		}
@@ -1466,39 +1466,39 @@ void cEETest::Input() {
 				Uint8 hat = Joy->GetHat();
 
 				if ( HAT_LEFT == hat || HAT_LEFTDOWN == hat || HAT_LEFTUP == hat )
-					Map.Move( (mWindow->Elapsed() * 0.2f), 0 );
+					Map.Move( (mWindow->Elapsed().AsMilliseconds() * 0.2f), 0 );
 
 				if ( HAT_RIGHT == hat || HAT_RIGHTDOWN == hat || HAT_RIGHTUP == hat )
-					Map.Move( -mWindow->Elapsed() * 0.2f, 0 );
+					Map.Move( -mWindow->Elapsed().AsMilliseconds() * 0.2f, 0 );
 
 				if ( HAT_UP == hat || HAT_LEFTUP == hat || HAT_RIGHTUP == hat )
-					Map.Move( 0, (mWindow->Elapsed() * 0.2f) );
+					Map.Move( 0, (mWindow->Elapsed().AsMilliseconds() * 0.2f) );
 
 				if ( HAT_DOWN == hat || HAT_LEFTDOWN == hat || HAT_RIGHTDOWN == hat )
-					Map.Move( 0, -mWindow->Elapsed() * 0.2f );
+					Map.Move( 0, -mWindow->Elapsed().AsMilliseconds() * 0.2f );
 			}
 
 			if ( KM->IsKeyDown(KEY_LEFT) ) {
-				Map.Move( mWindow->Elapsed() * 0.2f, 0 );
+				Map.Move( mWindow->Elapsed().AsMilliseconds() * 0.2f, 0 );
 			}
 
 			if ( KM->IsKeyDown(KEY_RIGHT) ) {
-				Map.Move( -mWindow->Elapsed() * 0.2f, 0 );
+				Map.Move( -mWindow->Elapsed().AsMilliseconds() * 0.2f, 0 );
 			}
 
 			if ( KM->IsKeyDown(KEY_UP) ) {
-				Map.Move( 0, mWindow->Elapsed() * 0.2f );
+				Map.Move( 0, mWindow->Elapsed().AsMilliseconds() * 0.2f );
 			}
 
 			if ( KM->IsKeyDown(KEY_DOWN) ) {
-				Map.Move( 0, -mWindow->Elapsed() * 0.2f );
+				Map.Move( 0, -mWindow->Elapsed().AsMilliseconds() * 0.2f );
 			}
 
 			if ( KM->IsKeyDown(KEY_KP_MINUS) )
-				Map.BaseLight().Radius( Map.BaseLight().Radius() - mWindow->Elapsed() * 0.2f );
+				Map.BaseLight().Radius( Map.BaseLight().Radius() - mWindow->Elapsed().AsMilliseconds() * 0.2f );
 
 			if ( KM->IsKeyDown(KEY_KP_PLUS) )
-				Map.BaseLight().Radius( Map.BaseLight().Radius() + mWindow->Elapsed() * 0.2f );
+				Map.BaseLight().Radius( Map.BaseLight().Radius() + mWindow->Elapsed().AsMilliseconds() * 0.2f );
 
 			if ( KM->IsKeyUp(KEY_F6) ) {
 				Wireframe = !Wireframe;

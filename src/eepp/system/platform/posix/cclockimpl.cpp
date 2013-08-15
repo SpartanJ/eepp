@@ -10,7 +10,7 @@ cClockImpl::cClockImpl() {
 cClockImpl::~cClockImpl() {
 }
 
-void cClockImpl::Reset() {
+void cClockImpl::Restart() {
 #ifdef EE_HAVE_CLOCK_GETTIME
 	clock_gettime( CLOCK_MONOTONIC, &mStart );
 #else

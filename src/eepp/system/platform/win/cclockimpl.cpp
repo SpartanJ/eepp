@@ -12,7 +12,7 @@ cClockImpl::cClockImpl() :
 cClockImpl::~cClockImpl() {
 }
 
-void cClockImpl::Reset() {
+void cClockImpl::Restart() {
 	// Get the current process core mask
 	DWORD procMask;
 	DWORD sysMask;

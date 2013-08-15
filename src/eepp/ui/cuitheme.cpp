@@ -169,7 +169,7 @@ cUITheme * cUITheme::LoadFromTextureAtlas( cUITheme * tTheme, cTextureAtlas * Te
 			tTheme->Add( eeNew( cUISkinSimple, ( ElemFound[i] ) ) );
 	}
 
-	cLog::instance()->Write( "UI Theme Loaded in: " + String::ToStr( TE.Elapsed() ) + " ( from TextureAtlas )" );
+	cLog::instance()->Write( "UI Theme Loaded in: " + String::ToStr( TE.Elapsed().AsMilliseconds() ) + " ( from TextureAtlas )" );
 
 	return tTheme;
 }
@@ -232,7 +232,7 @@ cUITheme * cUITheme::LoadFromPath( cUITheme * tTheme, const std::string& Path, c
 			tTheme->Add( eeNew( cUISkinSimple, ( ElemFound[i] ) ) );
 	}
 
-	cLog::instance()->Write( "UI Theme Loaded in: " + String::ToStr( TE.Elapsed() ) + " ( from path )" );
+	cLog::instance()->Write( "UI Theme Loaded in: " + String::ToStr( TE.Elapsed().AsMilliseconds() ) + " ( from path )" );
 
 	return tTheme;
 }

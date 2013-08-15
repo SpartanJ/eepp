@@ -227,7 +227,7 @@ cTextureLoader::~cTextureLoader() {
 void cTextureLoader::Start() {
 	cObjectLoader::Start();
 
-	mTE.Reset();
+	mTE.Restart();
 
 	if ( TEX_LT_PATH == mLoadType )
 		LoadFromPath();
@@ -471,7 +471,7 @@ void cTextureLoader::LoadFromPixels() {
 
 				mTexId = cTextureFactory::instance()->PushTexture( mFilepath, tTexId, width, height, mImgWidth, mImgHeight, mMipmap, mChannels, mClampMode, mCompressTexture || mIsCompressed, mLocalCopy, mSize );
 
-				cLog::instance()->Write( "Texture " + mFilepath  + " loaded in " + String::ToStr( mTE.Elapsed() ) + " ms." );
+				cLog::instance()->Write( "Texture " + mFilepath  + " loaded in " + String::ToStr( mTE.Elapsed().AsMilliseconds() ) + " ms." );
 			} else {
 				cLog::instance()->Write( "Failed to create texture. Reason: " + std::string( SOIL_last_result() ) );
 			}

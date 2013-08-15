@@ -340,7 +340,7 @@ class EE_API cSprite {
 		cSprite * Copy();
 
 		/** Update the sprite animation */
-		void Update( const eeFloat& ElapsedTime );
+		void Update( const cTime& ElapsedTime );
 
 		/** Update the sprite animation using the current elapsed time provided by cEngine */
 		void Update();

@@ -127,7 +127,7 @@ const eeFloat& cInterpolation::GetRealPos() const {
 	return mCurPos;
 }
 
-void cInterpolation::Update( const eeFloat& Elapsed ) {
+void cInterpolation::Update( const cTime& Elapsed ) {
 	if ( mEnable && mPoints.size() > 1 && mCurPoint != mPoints.size() ) {
 		if ( mUpdate ) {
 			mCurTime = 0;
@@ -161,7 +161,7 @@ void cInterpolation::Update( const eeFloat& Elapsed ) {
 			mUpdate = false;
 		}
 
-		mCurTime += Elapsed;
+		mCurTime += Elapsed.AsMilliseconds();
 
 		mCurPos = easingCb[ mType ]( mCurTime, mActP->p, ( mNexP->p - mActP->p ), mActP->t );
 

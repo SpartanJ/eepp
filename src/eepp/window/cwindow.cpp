@@ -45,7 +45,7 @@ namespace EE { namespace Window {
 
 cWindow::cFrameData::cFrameData() :
 	FrameElapsed(NULL),
-	ElapsedTime(0)
+	ElapsedTime()
 {}
 
 cWindow::cFrameData::~cFrameData()
@@ -261,7 +261,7 @@ Uint32 cWindow::FPS() const {
 	return mFrameData.FPS.Current;
 }
 
-eeFloat cWindow::Elapsed() const {
+cTime cWindow::Elapsed() const {
 	return mFrameData.ElapsedTime;
 }
 
@@ -270,7 +270,7 @@ void cWindow::GetElapsedTime() {
 		mFrameData.FrameElapsed = eeNew( cClock, () );
 	}
 
-	mFrameData.ElapsedTime = static_cast<eeFloat> ( mFrameData.FrameElapsed->Elapsed() );
+	mFrameData.ElapsedTime = mFrameData.FrameElapsed->Elapsed();
 }
 
 void cWindow::CalculateFps() {
@@ -286,7 +286,7 @@ void cWindow::CalculateFps() {
 void cWindow::LimitFps() {
 	if ( mFrameData.FPS.Limit > 0 ) {
 		mFrameData.FPS.Error = 0;
-		eeFloat RemainT = 1000.f / mFrameData.FPS.Limit - ( mFrameData.ElapsedTime * 0.1f );
+		eeDouble RemainT = 1000.0 / mFrameData.FPS.Limit - ( mFrameData.ElapsedTime.AsMilliseconds() * 0.1f );
 
 		if ( RemainT < 0 ) {
 			mFrameData.FPS.Error = 0;
