@@ -225,7 +225,7 @@ bool cTexture::SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Form
 	return Res;
 }
 
-void cTexture::TextureFilter(const EE_TEX_FILTER& filter) {
+void cTexture::Filter(const EE_TEX_FILTER& filter) {
 	if ( mFilter != filter ) {
 		iTextureFilter( filter );
 	}
@@ -253,7 +253,7 @@ void cTexture::iTextureFilter( const EE_TEX_FILTER& filter ) {
 	}
 }
 
-const EE_TEX_FILTER& cTexture::TextureFilter() const {
+const EE_TEX_FILTER& cTexture::Filter() const {
 	return mFilter;
 }
 

@@ -59,10 +59,10 @@ class EE_API cTexture : public cImage {
 		const Uint8* GetPixelsPtr();
 
 		/** Set the Texture Filter Mode */
-		void TextureFilter( const EE_TEX_FILTER& filter );
+		void Filter( const EE_TEX_FILTER& filter );
 
 		/** @return The texture filter used by the texture */
-		const EE_TEX_FILTER& TextureFilter() const;
+		const EE_TEX_FILTER& Filter() const;
 
 		/** Save the Texture to a new File */
 		bool SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format );
@@ -111,9 +111,6 @@ class EE_API cTexture : public cImage {
 
 		/** @return If the texture is Grabed */
 		bool Grabed() const;
-
-		/** @return The current texture filter */
-		EE_TEX_FILTER Filter() const { return mFilter; }
 
 		/** @return If the texture was compressed on load (DXT compression) */
 		bool IsCompressed() const;

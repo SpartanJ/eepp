@@ -134,7 +134,7 @@ cUITheme * cUITheme::LoadFromTextureAtlas( cUITheme * tTheme, cTextureAtlas * Te
 
 	/** Themes use nearest filter by default, force the filter to the textures. */
 	for ( Uint32 tC = 0; tC < TextureAtlas->GetTexturesCount(); tC++ ) {
-		TextureAtlas->GetTexture( tC )->TextureFilter( TEX_FILTER_NEAREST );
+		TextureAtlas->GetTexture( tC )->Filter( TEX_FILTER_NEAREST );
 	}
 
 	cClock TE;
