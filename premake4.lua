@@ -484,7 +484,7 @@ end
 
 function backend_is( name )
 	if not _OPTIONS["with-backend"] then
-		if ( is_vs() or os.is_real("mingw32") ) then
+		if ( os.is_real("mingw32") ) then
 			_OPTIONS["with-backend"] = "SDL"
 		else
 			_OPTIONS["with-backend"] = "SDL2"

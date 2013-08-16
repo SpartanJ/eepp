@@ -60,7 +60,7 @@ bool cImage::GetInfo( const std::string& path, int * width, int * height, int * 
 
 			tPack->ExtractFileToMemory( npath, PData );
 
-			res = stbi_info_from_memory( PData.Data, PData.DataSize, width, height, channels );
+			res = 0 != stbi_info_from_memory( PData.Data, PData.DataSize, width, height, channels );
 		}
 	}
 

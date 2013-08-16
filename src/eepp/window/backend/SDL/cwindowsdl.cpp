@@ -2,10 +2,18 @@
 
 #ifdef EE_BACKEND_SDL_1_2
 
+#if !defined( EE_COMPILER_MSVC )
 #include <SDL/SDL.h>
+#else
+#include <SDL.h>
+#endif
 
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
-#include <SDL/SDL_syswm.h>
+	#if !defined( EE_COMPILER_MSVC )
+		#include <SDL/SDL_syswm.h>
+	#else
+		#include <SDL_syswm.h>
+	#endif
 #endif
 
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>

@@ -172,7 +172,7 @@ void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
 	TTF		= cFontManager::instance()->GetByName( "arial" );
 	TTFB	= cFontManager::instance()->GetByName( "arialb" );
 
-	Log->Writef( "Fonts loading time: %f ms.", mFTE.Elapsed() );
+	Log->Writef( "Fonts loading time: %f ms.", mFTE.Elapsed().AsMilliseconds() );
 
 	eeASSERT( TTF != NULL );
 	eeASSERT( TTFB != NULL );
@@ -251,7 +251,7 @@ void cEETest::CreateUI() {
 
 	CreateUIThemeTextureAtlas();
 
-	Log->Writef( "Texture Atlas Loading Time: %f ms.", TE.Elapsed() );
+	Log->Writef( "Texture Atlas Loading Time: %f ms.", TE.Elapsed().AsMilliseconds() );
 
 	cUIManager::instance()->Init(); //UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
 
@@ -573,7 +573,7 @@ void cEETest::CreateUI() {
 
 	C = reinterpret_cast<cUIControlAnim*> ( C->Parent() );
 
-	Log->Writef( "CreateUI time: %f ms.", TE.Elapsed() );
+	Log->Writef( "CreateUI time: %f ms.", TE.Elapsed().AsMilliseconds() );
 }
 
 void cEETest::CreateMapEditor() {
@@ -803,7 +803,7 @@ void cEETest::OnTextureLoaded( cResourceLoader * ResLoaded ) {
 }
 
 void cEETest::LoadTextures() {
-	cClock te;
+	cClock TE;
 
 	Uint32 i;
 
@@ -918,7 +918,7 @@ void cEETest::LoadTextures() {
 	mBoxSprite = eeNew( cSprite, ( cGlobalTextureAtlas::instance()->Add( eeNew( cSubTexture, ( TN[3], "ilmare" ) ) ) ) );
 	mCircleSprite = eeNew( cSprite, ( cGlobalTextureAtlas::instance()->Add( eeNew( cSubTexture, ( TN[1], "thecircle" ) ) ) ) );
 
-	Log->Writef( "Textures loading time: %f ms.", te.Elapsed() );
+	Log->Writef( "Textures loading time: %f ms.", TE.Elapsed().AsMilliseconds() );
 
 	Map.Create( 100, 100, 2, 128, 64, eeColor(175,175,175) );
 	RandomizeHeights();
@@ -926,7 +926,7 @@ void cEETest::LoadTextures() {
 	TreeTilingCreated = false;
 	CreateTiling(Wireframe);
 
-	Log->Writef( "Map creation time: %f ms.", te.Elapsed() );
+	Log->Writef( "Map creation time: %f ms.", TE.Elapsed().AsMilliseconds() );
 }
 
 void cEETest::RandomizeHeights() {

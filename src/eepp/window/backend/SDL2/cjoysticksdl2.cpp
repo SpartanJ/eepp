@@ -2,7 +2,7 @@
 
 #ifdef EE_BACKEND_SDL2
 
-#if EE_PLATFORM != EE_PLATFORM_ANDROID
+#if EE_PLATFORM != EE_PLATFORM_ANDROID && !defined( EE_COMPILER_MSVC )
 	#include <SDL2/SDL_revision.h>
 #else
 	#include <SDL_revision.h>

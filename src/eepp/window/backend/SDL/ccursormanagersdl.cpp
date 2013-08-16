@@ -4,7 +4,12 @@
 #ifdef EE_BACKEND_SDL_1_2
 
 #include <eepp/window/cplatformimpl.hpp>
+
+#if !defined( EE_COMPILER_MSVC )
 #include <SDL/SDL.h>
+#else
+#include <SDL.h>
+#endif
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 

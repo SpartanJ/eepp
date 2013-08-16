@@ -4,10 +4,19 @@
 
 #include <eepp/window/backend/SDL/cwindowsdl.hpp>
 #include <climits>
+
+#if !defined( EE_COMPILER_MSVC )
 #include <SDL/SDL.h>
+#else
+#include <SDL.h>
+#endif
 
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
-	#include <SDL/SDL_syswm.h>
+	#if !defined( EE_COMPILER_MSVC )
+		#include <SDL/SDL_syswm.h>
+	#else
+		#include <SDL_syswm.h>
+	#endif
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_WIN

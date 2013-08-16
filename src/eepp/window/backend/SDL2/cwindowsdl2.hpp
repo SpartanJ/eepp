@@ -8,7 +8,7 @@
 
 #include <eepp/window/cwindow.hpp>
 
-class SDL_SysWMinfo;
+struct SDL_SysWMinfo;
 
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
 #define EE_USE_WMINFO

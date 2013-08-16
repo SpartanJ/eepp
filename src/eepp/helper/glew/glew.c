@@ -267,13 +267,16 @@ static GLboolean _glewStrSame3 (GLubyte** a, GLuint* na, const GLubyte* b, GLuin
  */
 static GLboolean _glewSearchExtension (const char* name, const GLubyte *start, const GLubyte *end)
 {
+  const GLubyte *p, *ext;
+  GLuint len,n;
+  int i, max = 0;
+
   if (start != NULL) {
-	const GLubyte* p;
-	GLuint len = _glewStrLen((const GLubyte*)name);
+	len = _glewStrLen((const GLubyte*)name);
 	p = start;
 	while (p < end)
 	{
-		GLuint n = _glewStrCLen(p, ' ');
+		n = _glewStrCLen(p, ' ');
 		if (len == n && _glewStrSame((const GLubyte*)name, p, n)) return GL_TRUE;
 		p += n+1;
 	}
@@ -281,12 +284,9 @@ static GLboolean _glewSearchExtension (const char* name, const GLubyte *start, c
   }
   else {
 	if (glGetStringi != NULL) {
-	  int max = 0;
 	  glGetIntegerv(GL_NUM_EXTENSIONS, &max);
 
-	  const GLubyte* ext;
-	  int i;
-	  GLuint len = _glewStrLen((const GLubyte*)name);
+	  len = _glewStrLen((const GLubyte*)name);
 
 	  for (i = 0; i < max; i++) {
 		ext = (const GLubyte*)glGetStringi(GL_EXTENSIONS, i);

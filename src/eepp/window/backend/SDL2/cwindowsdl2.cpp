@@ -3,7 +3,12 @@
 #ifdef EE_BACKEND_SDL2
 
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
+	#if !defined( EE_COMPILER_MSVC )
 	#include <SDL2/SDL_syswm.h>
+	#else
+	#include <SDL_syswm.h>
+	#endif
+	#undef CreateWindow
 #endif
 
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
