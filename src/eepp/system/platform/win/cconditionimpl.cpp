@@ -1,4 +1,5 @@
 #include <eepp/system/platform/win/cconditionimpl.hpp>
+#include <iostream>
 
 namespace EE { namespace System { namespace Platform {
 
@@ -24,7 +25,7 @@ void cConditionImpl::Lock() {
 void cConditionImpl::Unlock() {
 	mMutex.Unlock();
 }
-	
+
 bool cConditionImpl::WaitAndRetain(int value) {
 	mMutex.Lock();
 	

@@ -229,9 +229,6 @@ end
 function add_cross_config_links()
 	if not is_vs() then
 		if os.is_real("mingw32") or os.is_real("ios") then -- if is crosscompiling from *nix
-			if os.is_real("mingw32") then
-				links { "mingw32" }
-			end
 			linkoptions { "-static-libgcc", "-static-libstdc++" }
 		end
 	end
@@ -262,14 +259,14 @@ function build_link_configuration( package_name, use_ee_icon )
 			end
 		else
 			if ( os.is_real("macosx") or os.is_real("windows") or os.is_real("mingw32") ) then
-				if ( os.is_real("windows") ) then
+				if os.is_real("windows") or os.is_real("mingw32") then
 					links { "mingw32" }
 					
 					if ( true == use_ee_icon ) then
 						linkoptions { "../../assets/icon/ee.res" }
 					end
 				end
-				
+
 				if ( backend_is("SDL") ) then
 					links { "SDLmain", get_backend_link_name( "SDL" ) }
 				elseif ( backend_is("SDL2") ) then
@@ -487,25 +484,29 @@ end
 
 function backend_is( name )
 	if not _OPTIONS["with-backend"] then
-		if ( is_vs() ) then
+		if ( is_vs() or os.is_real("mingw32") ) then
 			_OPTIONS["with-backend"] = "SDL"
 		else
 			_OPTIONS["with-backend"] = "SDL2"
 		end
 	end
-	
+
 	if next(backends) == nil then
 		backends = string.explode(_OPTIONS["with-backend"],",")
 	end
 	
 	local backend_sel = table.contains( backends, name )
-	
+
 	local ret_val = os_findlib( name ) and backend_sel
-	
+
+	if os.is_real("mingw32") then
+		ret_val = backend_sel
+	end
+
 	if ret_val then
 		backend_selected = true
 	end
-	
+
 	return ret_val
 end
 
