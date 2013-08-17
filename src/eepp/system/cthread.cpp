@@ -12,7 +12,8 @@ cThread::cThread() :
 cThread::~cThread() {
 	Wait();
 
-	eeSAFE_DELETE( mEntryPoint );
+	if ( NULL != mEntryPoint )
+		delete mEntryPoint;
 }
 
 void cThread::Launch() {

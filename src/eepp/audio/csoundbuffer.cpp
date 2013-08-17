@@ -59,14 +59,14 @@ bool cSoundBuffer::LoadFromFile(const std::string& Filename) {
 	// Open the sound file
 	if ( NULL != File ) {
 		// Get the sound parameters
-		std::size_t  NbSamples		= File->GetSamplesCount();
+		std::size_t  SamplesCount	= File->GetSamplesCount();
 		unsigned int ChannelCount	= File->GetChannelCount();
 		unsigned int SampleRate		= File->GetSampleRate();
 
 		// Read the samples from the opened file
-		mSamples.resize( NbSamples );
+		mSamples.resize( SamplesCount );
 
-		if ( File->Read( &mSamples[0], NbSamples ) == NbSamples ) {
+		if ( File->Read( &mSamples[0], SamplesCount ) == SamplesCount ) {
 			cLog::instance()->Write( "Sound file " + Filename + " loaded." );
 
 			// Update the internal buffer with the new samples
@@ -104,14 +104,14 @@ bool cSoundBuffer::LoadFromMemory( const char* Data, std::size_t SizeInBytes ) {
 	// Open the sound file
 	if ( NULL != File ) {
 		// Get the sound parameters
-		std::size_t  NbSamples		= File->GetSamplesCount();
+		std::size_t  SamplesCount	= File->GetSamplesCount();
 		unsigned int ChannelCount	= File->GetChannelCount();
 		unsigned int SampleRate		= File->GetSampleRate();
 
 		// Read the samples from the opened file
-		mSamples.resize( NbSamples );
+		mSamples.resize( SamplesCount );
 
-		if ( File->Read( &mSamples[0], NbSamples ) == NbSamples ) {
+		if ( File->Read( &mSamples[0], SamplesCount ) == SamplesCount ) {
 			cLog::instance()->Write( "Sound file loaded from memory." );
 
 			// Update the internal buffer with the new samples

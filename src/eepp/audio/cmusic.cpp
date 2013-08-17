@@ -89,10 +89,10 @@ bool cMusic::OnGetData( cSoundStream::Chunk& Data ) {
 	if ( NULL != mFile ) {
 		// Fill the chunk parameters
 		Data.Samples   = &mSamples[0];
-		Data.NbSamples = mFile->Read( &mSamples[0], mSamples.size() );
+		Data.SamplesCount = mFile->Read( &mSamples[0], mSamples.size() );
 
 		// Check if we have reached the end of the audio file
-		return Data.NbSamples == mSamples.size();
+		return Data.SamplesCount == mSamples.size();
 	}
 
 	return false;

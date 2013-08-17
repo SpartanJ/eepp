@@ -21,7 +21,7 @@ class EE_API cSoundStream : private cThread, private cSound {
 		/** @brief Structure defining a chunk of audio data to stream */
 		struct Chunk {
 			const Int16* Samples;   ///< Pointer to the audio samples
-			std::size_t  NbSamples; ///< Number of samples pointed by Samples
+			std::size_t  SamplesCount; ///< Number of samples pointed by Samples
 		};
 
 		virtual ~cSoundStream();

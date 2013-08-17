@@ -39,12 +39,12 @@ class EE_API cSoundFile {
 		**	@param data        Pointer to the sample array to fill
 		**	@param sampleCount Number of samples to read
 		**	@return Number of samples actually read (may be less than \a sampleCount) */
-		virtual std::size_t Read(Int16* Data, std::size_t NbSamples);
+		virtual std::size_t Read(Int16* Data, std::size_t SamplesCount);
 
 		/** @brief Write audio samples to the file
 		**	@param data        Pointer to the sample array to write
 		**	@param sampleCount Number of samples to write */
-		virtual void Write(const Int16* Data, std::size_t NbSamples);
+		virtual void Write(const Int16* Data, std::size_t SamplesCount);
 
 		/** @brief Change the current read position in the file
 		**	@param timeOffset New playing position, from the beginning of the file */
@@ -52,13 +52,13 @@ class EE_API cSoundFile {
 	protected :
 		cSoundFile();
 
-		virtual bool OpenRead(const std::string& Filename, std::size_t& NbSamples, unsigned int& ChannelCount, unsigned int& SampleRate);
+		virtual bool OpenRead(const std::string& Filename, std::size_t& SamplesCount, unsigned int& ChannelCount, unsigned int& SampleRate);
 
-		virtual bool OpenRead(const char* Data, std::size_t SizeInBytes, std::size_t& NbSamples, unsigned int& ChannelCount, unsigned int& SampleRate);
+		virtual bool OpenRead(const char* Data, std::size_t SizeInBytes, std::size_t& SamplesCount, unsigned int& ChannelCount, unsigned int& SampleRate);
 
 		virtual bool OpenWrite(const std::string& Filename, unsigned int ChannelCount, unsigned int SampleRate);
 
-		std::size_t		mNbSamples;
+		std::size_t		mSamplesCount;
 		unsigned int	mChannelCount;
 		unsigned int	mSampleRate;
 		std::string		mFilename;

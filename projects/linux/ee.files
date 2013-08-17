@@ -622,3 +622,5 @@
 ../../include/eepp/graphics/opengl.hpp
 ../../src/eepp/system/ctime.cpp
 ../../include/eepp/system/ctime.hpp
+../../src/eepp/graphics/ctexturesaver.hpp
+../../src/eepp/graphics/ctexturesaver.cpp

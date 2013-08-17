@@ -1,4 +1,7 @@
 #include <eepp/system/platform/win/cconditionimpl.hpp>
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+
 #include <iostream>
 
 namespace EE { namespace System { namespace Platform {
@@ -84,3 +87,5 @@ void cConditionImpl::Restore() {
 }
 
 }}}
+
+#endif

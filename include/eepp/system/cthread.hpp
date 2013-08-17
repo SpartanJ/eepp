@@ -157,22 +157,22 @@ struct ThreadMemberFunc : ThreadFunc
 
 template <typename F>
 cThread::cThread(F functor) :
-	mThreadImpl      (NULL),
-	mEntryPoint( eeNew( Private::ThreadFunctor<F>, (functor) ) )
+	mThreadImpl(NULL),
+	mEntryPoint( new Private::ThreadFunctor<F>(functor) )
 {
 }
 
 template <typename F, typename A>
 cThread::cThread(F function, A argument) :
 	mThreadImpl(NULL),
-	mEntryPoint( eeNew( Private::ThreadFunctorWithArg<F eeCOMMA A>, (function, argument) ) )
+	mEntryPoint( new Private::ThreadFunctorWithArg<F eeCOMMA A> (function, argument) )
 {
 }
 
 template <typename C>
 cThread::cThread(void(C::*function)(), C* object) :
 	mThreadImpl(NULL),
-	mEntryPoint( eeNew( Private::ThreadMemberFunc<C>, (function, object) ) )
+	mEntryPoint( new Private::ThreadMemberFunc<C> (function, object) )
 {
 }
 

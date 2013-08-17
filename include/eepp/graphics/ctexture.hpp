@@ -77,10 +77,10 @@ class EE_API cTexture : public cImage {
 		void FillWithColor( const eeColorA& Color );
 
 		/** Resize the texture */
-		void Resize( const eeUint& new_width, const eeUint& new_height );
+		void Resize( const Uint32& newWidth, const Uint32& newHeight );
 
 		/** Copy an image inside the texture */
-		void CopyImage( cImage * Img, const eeUint& x, const eeUint& y );
+		void CopyImage( cImage * image, const Uint32& x, const Uint32& y );
 
 		/** @brief Update a part of the texture from an array of pixels
 		**	The size of the @a pixel array must match the @a width and
@@ -94,8 +94,33 @@ class EE_API cTexture : public cImage {
 		**	@param width  Width of the pixel region contained in @a pixels
 		**	@param height Height of the pixel region contained in @a pixels
 		**	@param x X offset in the texture where to copy the source pixels
-		**	@param y Y offset in the texture where to copy the source pixels */
+		**	@param y Y offset in the texture where to copy the source pixels
+		**	@param pf The pixel format of the @a pixel */
 		void Update( const Uint8* pixels, Uint32 width, Uint32 height, Uint32 x = 0, Uint32 y = 0, EE_PIXEL_FORMAT pf = PF_RGBA );
+
+		/** @brief Update the whole texture from an array of pixels
+		**	The @a pixel array is assumed to have the same size as
+		**	the @a area rectangle.
+		**	No additional check is performed on the size of the pixel
+		**	array, passing invalid arguments will lead to an undefined
+		**	behaviour.
+		**	This function does nothing if @a pixels is null or if the
+		**	texture was not previously created.
+		**	@param pixels Array of pixels to copy to the texture
+		**	@param pf The pixel format of the @a pixel */
+		void Update( const Uint8* pixels );
+
+		/** @brief Update a part of the texture from an image
+		**	The pixel format is automatically detected
+		**	No additional check is performed on the size of the image,
+		**	passing an invalid combination of image size and offset
+		**	will lead to an undefined behaviour.
+		**	This function does nothing if the texture was not
+		**	previously created.
+		**	@param image Image to copy to the texture
+		**	@param x     X offset in the texture where to copy the source image
+		**	@param y     Y offset in the texture where to copy the source image */
+		void Update( cImage * image, Uint32 x = 0, Uint32 y = 0 );
 
 		/** Flip the texture ( rotate the texture 90º ). Warning: This is flipped in memory, a real flipping. */
 		void Flip();

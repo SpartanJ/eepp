@@ -4,6 +4,8 @@
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/math/polygon2.hpp>
+#include <eepp/graphics/ctexturesaver.hpp>
+using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
@@ -96,11 +98,7 @@ Uint8 * cTexture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
 		if ( ForceRGBA )
 			mChannels = 4;
 
-		GLint PreviousTexture;
-		glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
-
-		if ( PreviousTexture != (GLint)mTexture )
-			glBindTexture(GL_TEXTURE_2D, mTexture);
+		cTextureSaver saver( mTexture );
 
 		Int32 width = 0, height = 0;
 		glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width );
@@ -120,20 +118,17 @@ Uint8 * cTexture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
 		if ( KeepFormat && ( mFlags & TEX_FLAG_COMPRESSED ) ) {
 			glGetCompressedTexImage( GL_TEXTURE_2D, 0, reinterpret_cast<Uint8*> (&mPixels[0]) );
 		} else {
-            Uint32 Channel = GL_RGBA;
+			Uint32 Channel = GL_RGBA;
 
-            if ( 3 == mChannels )
-                Channel = GL_RGB;
-            else if ( 2 == mChannels )
-                Channel = GL_LUMINANCE_ALPHA;
-            else if ( 1 == mChannels )
-                Channel = GL_ALPHA;
+			if ( 3 == mChannels )
+				Channel = GL_RGB;
+			else if ( 2 == mChannels )
+				Channel = GL_LUMINANCE_ALPHA;
+			else if ( 1 == mChannels )
+				Channel = GL_ALPHA;
 
 			glGetTexImage( GL_TEXTURE_2D, 0, Channel, GL_UNSIGNED_BYTE, reinterpret_cast<Uint8*> (&mPixels[0]) );
 		}
-
-		if ( PreviousTexture != (GLint)mTexture )
-			glBindTexture(GL_TEXTURE_2D, PreviousTexture);
 
 		mFlags |= TEX_FLAG_LOCKED;
 	}
@@ -155,11 +150,7 @@ bool cTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 		GLuint NTexId = 0;
 
 		if ( Modified || ( mFlags & TEX_FLAG_MODIFIED ) )	{
-			GLint PreviousTexture;
-			glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
-
-			if ( PreviousTexture != (GLint)mTexture )
-				glBindTexture(GL_TEXTURE_2D, mTexture);
+			cTextureSaver saver( mTexture );
 
 			Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
 			flags = (mClampMode == CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
@@ -167,9 +158,6 @@ bool cTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 			NTexId = SOIL_create_OGL_texture( reinterpret_cast<Uint8*>(&mPixels[0]), &width, &height, mChannels, mTexture, flags );
 
 			iTextureFilter(mFilter);
-
-			if ( PreviousTexture != (GLint)mTexture )
-				glBindTexture(GL_TEXTURE_2D, PreviousTexture);
 
 			mFlags &= ~TEX_FLAG_MODIFIED;
 
@@ -235,11 +223,7 @@ void cTexture::iTextureFilter( const EE_TEX_FILTER& filter ) {
 	if (mTexture) {
 		mFilter = filter;
 
-		GLint PreviousTexture;
-		glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
-
-		if ( PreviousTexture != (GLint)mTexture )
-			glBindTexture(GL_TEXTURE_2D, mTexture);
+		cTextureSaver saver( mTexture );
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (mFilter == TEX_FILTER_LINEAR) ? GL_LINEAR : GL_NEAREST);
 
@@ -247,9 +231,6 @@ void cTexture::iTextureFilter( const EE_TEX_FILTER& filter ) {
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEX_FILTER_LINEAR) ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST);
 		else
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, (mFilter == TEX_FILTER_LINEAR) ? GL_LINEAR : GL_NEAREST);
-
-		if ( PreviousTexture != (GLint)mTexture )
-			glBindTexture(GL_TEXTURE_2D, PreviousTexture);
 	}
 }
 
@@ -281,18 +262,18 @@ void cTexture::FillWithColor( const eeColorA& Color ) {
 	Unlock( false, true );
 }
 
-void cTexture::Resize( const eeUint& new_width, const eeUint& new_height ) {
+void cTexture::Resize(const Uint32& newWidth, const Uint32& newHeight ) {
 	Lock();
 
-	cImage::Resize( new_width, new_height );
+	cImage::Resize( newWidth, newHeight );
 
 	Unlock( false, true );
 }
 
-void cTexture::CopyImage( cImage * Img, const eeUint& x, const eeUint& y ) {
+void cTexture::CopyImage(cImage * image, const Uint32& x, const Uint32& y ) {
 	Lock();
 
-	cImage::CopyImage( Img, x, y );
+	cImage::CopyImage( image, x, y );
 
 	Unlock( false, true );
 }
@@ -321,11 +302,7 @@ void cTexture::ClampMode( const EE_CLAMP_MODE& clampmode ) {
 
 void cTexture::ApplyClampMode() {
 	if (mTexture) {
-		GLint PreviousTexture;
-		glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
-
-		if ( PreviousTexture != (GLint)mTexture )
-			glBindTexture(GL_TEXTURE_2D, mTexture);
+		cTextureSaver saver( mTexture );
 
 		if( mClampMode == CLAMP_REPEAT ) {
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
@@ -335,9 +312,6 @@ void cTexture::ApplyClampMode() {
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, clamp_mode );
 			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, clamp_mode );
 		}
-
-		if ( PreviousTexture != (GLint)mTexture )
-			glBindTexture(GL_TEXTURE_2D, PreviousTexture);
 	}
 }
 
@@ -354,27 +328,20 @@ void cTexture::Reload()  {
 		Int32 width = (Int32)mWidth;
 		Int32 height = (Int32)mHeight;
 
-		GLint PreviousTexture;
-		glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
+		cTextureSaver saver( mTexture );
 
 		Uint32 flags = ( mFlags & TEX_FLAG_MIPMAP ) ? SOIL_FLAG_MIPMAPS : 0;
 		flags = (mClampMode == CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 
 		if ( ( mFlags & TEX_FLAG_COMPRESSED ) ) {
-			if ( mTexture != PreviousTexture )
-				glBindTexture( GL_TEXTURE_2D, mTexture );
-
-            if ( Grabed() )
-                mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8 *> ( &mPixels[0] ), &width, &height, mChannels, mTexture, flags | SOIL_FLAG_COMPRESS_TO_DXT );
-            else
-                glCompressedTexImage2D( mTexture, 0, mInternalFormat, width, height, 0, mSize, &mPixels[0] );
+			if ( Grabed() )
+				mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8 *> ( &mPixels[0] ), &width, &height, mChannels, mTexture, flags | SOIL_FLAG_COMPRESS_TO_DXT );
+			else
+				glCompressedTexImage2D( mTexture, 0, mInternalFormat, width, height, 0, mSize, &mPixels[0] );
 		} else
 			mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8 *> ( &mPixels[0] ), &width, &height, mChannels, mTexture, flags );
 
 		iTextureFilter( mFilter );
-
-		if ( mTexture != PreviousTexture )
-			glBindTexture(GL_TEXTURE_2D, PreviousTexture);
 	} else {
 		iLock(false,true);
 		Reload();
@@ -384,17 +351,18 @@ void cTexture::Reload()  {
 
 void cTexture::Update( const Uint8* pixels, Uint32 width, Uint32 height, Uint32 x, Uint32 y, EE_PIXEL_FORMAT pf ) {
 	if ( NULL != pixels && mTexture && x + width <= mWidth && y + height <= mHeight ) {
-		GLint PreviousTexture;
-		glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
-
-		if ( mTexture != PreviousTexture )
-			glBindTexture( GL_TEXTURE_2D, mTexture );
+		cTextureSaver saver( mTexture );
 
 		glTexSubImage2D( GL_TEXTURE_2D, 0, x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels );
-
-		if ( mTexture != PreviousTexture )
-			glBindTexture(GL_TEXTURE_2D, PreviousTexture);
 	}
+}
+
+void cTexture::Update( const Uint8* pixels ) {
+	Update( pixels, mWidth, mHeight );
+}
+
+void cTexture::Update( cImage *image, Uint32 x, Uint32 y ) {
+	Update( image->GetPixelsPtr(), image->Width(), image->Height(), x, y );
 }
 
 const Uint32& cTexture::HashName() const {

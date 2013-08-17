@@ -3,6 +3,8 @@
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
 #include <eepp/helper/jpeg-compressor/jpge.h>
+#include <eepp/graphics/ctexturesaver.hpp>
+using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
@@ -304,11 +306,7 @@ Uint8 * cSubTexture::Lock() {
 bool cSubTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 	if ( NULL != mPixels ) {
 		if ( Modified ) {
-			GLint PreviousTexture;
-			glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
-
-			if ( PreviousTexture != (Int32)mTexture->Handle() )
-				glBindTexture(GL_TEXTURE_2D, mTexture->Handle() );
+			cTextureSaver saver( mTexture->Handle() );
 
 			Uint32 Channels = mTexture->Channels();
 			Uint32 Channel = GL_RGBA;
@@ -321,9 +319,6 @@ bool cSubTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 				Channel = GL_ALPHA;
 
 			glTexSubImage2D( GL_TEXTURE_2D, 0, mSrcRect.Left, mSrcRect.Top, mSrcRect.Size().Width(), mSrcRect.Size().Height(), Channel, GL_UNSIGNED_BYTE, reinterpret_cast<const void *> ( &mPixels[0] ) );
-
-			if ( PreviousTexture != (Int32)mTexture->Handle() )
-				glBindTexture(GL_TEXTURE_2D, PreviousTexture);
 		}
 
 		if ( !KeepData ) {

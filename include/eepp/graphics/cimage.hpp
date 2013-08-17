@@ -132,19 +132,19 @@ class EE_API cImage {
 		virtual void FillWithColor( const eeColorA& Color );
 
 		/** Copy the image to this image data, starting from the position x,y */
-		virtual void CopyImage( cImage * Img, const eeUint& x, const eeUint& y );
+		virtual void CopyImage( cImage * image, const Uint32& x, const Uint32& y );
 
 		/** Scale the image */
 		virtual void Scale( const eeFloat& scale );
 
 		/** Resize the image */
-		virtual void Resize( const eeUint& new_width, const eeUint& new_height );
+		virtual void Resize( const Uint32& newWidth, const Uint32& newHeight );
 
 		/** Flip the image ( rotate the image 90º ) */
 		virtual void Flip();
 
 		/** Create a thumnail of the image */
-		cImage * Thumbnail( const eeUint& max_width, const eeUint& max_height );
+		cImage * Thumbnail( const Uint32& maxWidth, const Uint32& maxHeight );
 
 		/** Set as true if you dont want to free the image data ( false as default ). */
 		void AvoidFreeImage( const bool& AvoidFree ) { mAvoidFree = AvoidFree; }

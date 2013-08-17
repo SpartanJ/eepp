@@ -91,6 +91,8 @@ cTime cSoundStream::PlayingOffset() const {
 }
 
 void cSoundStream::PlayingOffset( const cTime &timeOffset ) {
+	Status oldStatus = State();
+
     // Stop the stream
     Stop();
 
@@ -103,6 +105,13 @@ void cSoundStream::PlayingOffset( const cTime &timeOffset ) {
     mIsStreaming = true;
 
     Launch();
+
+	// Recover old status
+	if ( oldStatus == Stopped ) {
+		Stop();
+	} else if ( oldStatus == Paused ) {
+		Pause();
+	}
 }
 
 void cSoundStream::Loop( const bool& Loop ) {
@@ -205,7 +214,7 @@ bool cSoundStream::FillAndPushBuffer( const unsigned int& Buffer ) {
 			OnSeek( cTime::Zero );
 
 			// If we previously had no data, try to fill the buffer once again
-			if ( !Data.Samples || ( Data.NbSamples == 0 ) ) {
+			if ( !Data.Samples || ( Data.SamplesCount == 0 ) ) {
 				return FillAndPushBuffer( Buffer );
 			}
 		} else {
@@ -215,11 +224,11 @@ bool cSoundStream::FillAndPushBuffer( const unsigned int& Buffer ) {
 	}
 
 	// Create and fill the buffer, and push it to the queue
-	if ( Data.Samples && Data.NbSamples ) {
+	if ( Data.Samples && Data.SamplesCount ) {
 		Uint32 buffer = mBuffers[ Buffer ];
 
 		// Fill the buffer
-		ALsizei Size = static_cast<ALsizei>( Data.NbSamples ) * sizeof(Int16);
+		ALsizei Size = static_cast<ALsizei>( Data.SamplesCount ) * sizeof(Int16);
 
 		ALCheck( alBufferData( buffer, mFormat, Data.Samples, Size, mSampleRate ) );
 

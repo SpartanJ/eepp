@@ -51,7 +51,7 @@ bool cSoundFileDefault::IsFileSupported( const char* Data, std::size_t SizeInByt
 	return false;
 }
 
-bool cSoundFileDefault::OpenRead( const std::string& Filename, std::size_t& NbSamples, unsigned int& ChannelCount, unsigned int& SampleRate ) {
+bool cSoundFileDefault::OpenRead( const std::string& Filename, std::size_t& SamplesCount, unsigned int& ChannelCount, unsigned int& SampleRate ) {
 	// If the file is already opened, first close it
 	if ( NULL != mFile )
 		sf_close( mFile );
@@ -69,16 +69,16 @@ bool cSoundFileDefault::OpenRead( const std::string& Filename, std::size_t& NbSa
 	// Set the sound parameters
     mChannelCount	= fileInfos.channels;
     mSampleRate		= fileInfos.samplerate;
-    mNbSamples		= static_cast<std::size_t>(fileInfos.frames) * mChannelCount;
+    mSamplesCount		= static_cast<std::size_t>(fileInfos.frames) * mChannelCount;
 
 	ChannelCount	= mChannelCount;
 	SampleRate		= mSampleRate;
-	NbSamples		= mNbSamples;
+	SamplesCount		= mSamplesCount;
 
 	return true;
 }
 
-bool cSoundFileDefault::OpenRead( const char* Data, std::size_t SizeInBytes, std::size_t& NbSamples, unsigned int& ChannelCount, unsigned int& SampleRate ) {
+bool cSoundFileDefault::OpenRead( const char* Data, std::size_t SizeInBytes, std::size_t& SamplesCount, unsigned int& ChannelCount, unsigned int& SampleRate ) {
 	// If the file is already opened, first close it
 	if ( NULL != mFile )
 		sf_close( mFile );
@@ -99,11 +99,11 @@ bool cSoundFileDefault::OpenRead( const char* Data, std::size_t SizeInBytes, std
 	// Set the sound parameters
 	mChannelCount	= fileInfos.channels;
 	mSampleRate		= fileInfos.samplerate;
-	mNbSamples		= static_cast<std::size_t>(fileInfos.frames) * mChannelCount;
+	mSamplesCount		= static_cast<std::size_t>(fileInfos.frames) * mChannelCount;
 
 	ChannelCount	= mChannelCount;
 	SampleRate		= mSampleRate;
-	NbSamples		= mNbSamples;
+	SamplesCount		= mSamplesCount;
 
     return true;
 }
@@ -138,16 +138,16 @@ bool cSoundFileDefault::OpenWrite( const std::string& Filename, unsigned int Cha
 	return true;
 }
 
-std::size_t cSoundFileDefault::Read( Int16 * Data, std::size_t NbSamples ) {
-	if ( NULL != mFile && Data && NbSamples )
-		return static_cast<std::size_t>( sf_read_short( mFile, Data, NbSamples ) );
+std::size_t cSoundFileDefault::Read( Int16 * Data, std::size_t SamplesCount ) {
+	if ( NULL != mFile && Data && SamplesCount )
+		return static_cast<std::size_t>( sf_read_short( mFile, Data, SamplesCount ) );
 	else
 		return 0;
 }
 
-void cSoundFileDefault::Write( const Int16 * Data, std::size_t NbSamples ) {
-	if ( NULL != mFile && Data && NbSamples )
-		sf_write_short( mFile, Data, NbSamples );
+void cSoundFileDefault::Write( const Int16 * Data, std::size_t SamplesCount ) {
+	if ( NULL != mFile && Data && SamplesCount )
+		sf_write_short( mFile, Data, SamplesCount );
 }
 
 void cSoundFileDefault::Seek( cTime timeOffset ) {

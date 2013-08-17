@@ -402,33 +402,34 @@ void cImage::FillWithColor( const eeColorA& Color ) {
 	}
 }
 
-void cImage::CopyImage( cImage * Img, const eeUint& x, const eeUint& y ) {
-	if ( NULL != mPixels && NULL != Img->GetPixels() && mWidth >= x + Img->Width() && mHeight >= y + Img->Height() ) {
-		eeUint dWidth 	= Img->Width();
-		eeUint dHeight 	= Img->Height();
+void cImage::CopyImage( cImage * image, const Uint32& x, const Uint32& y ) {
+	if ( NULL != mPixels && NULL != image->GetPixels() && mWidth >= x + image->Width() && mHeight >= y + image->Height() ) {
+		eeUint dWidth 	= image->Width();
+		eeUint dHeight 	= image->Height();
 
 		for ( eeUint ty = 0; ty < dHeight; ty++ ) {
 			for ( eeUint tx = 0; tx < dWidth; tx++ ) {
-				SetPixel( x + tx, y + ty, Img->GetPixel( tx, ty ) );
+				SetPixel( x + tx, y + ty, image->GetPixel( tx, ty ) );
 			}
 		}
 	}
 }
 
-void cImage::Resize( const eeUint& new_width, const eeUint& new_height ) {
-	if ( NULL != mPixels && mWidth != new_width && mHeight != new_height ) {
-		unsigned char * resampled = eeNewArray( unsigned char, mChannels * new_width * new_height );
+void cImage::Resize(const Uint32 &newWidth, const Uint32 &newHeight ) {
+	if ( NULL != mPixels && mWidth != newWidth && mHeight != newHeight ) {
+		unsigned char * resampled = eeNewArray( unsigned char, mChannels * newWidth * newHeight );
 
-		int res = up_scale_image( reinterpret_cast<const unsigned char*> ( mPixels ), mWidth, mHeight, mChannels, resampled, new_width, new_height );
+		int res = up_scale_image( reinterpret_cast<const unsigned char*> ( mPixels ), mWidth, mHeight, mChannels, resampled, newWidth, newHeight );
 
 		if ( res ) {
 			ClearCache();
 
 			mPixels 	= resampled;
-			mWidth 		= new_width;
-			mHeight 	= new_height;
-		} else
+			mWidth 		= newWidth;
+			mHeight 	= newHeight;
+		} else {
 			eeSAFE_DELETE_ARRAY( resampled );
+		}
 	}
 }
 
@@ -442,10 +443,10 @@ void cImage::Scale( const eeFloat& scale ) {
 	Resize( new_width, new_height );
 }
 
-cImage * cImage::Thumbnail( const eeUint& max_width, const eeUint& max_height ) {
-	if ( NULL != mPixels && mWidth > max_width && mHeight > max_height ) {
-		eeFloat iScaleX 	= ( (eeFloat)max_width / (eeFloat)mWidth );
-		eeFloat iScaleY 	= ( (eeFloat)max_height / (eeFloat)mHeight );
+cImage * cImage::Thumbnail( const Uint32& maxWidth, const Uint32& maxHeight ) {
+	if ( NULL != mPixels && mWidth > maxWidth && mHeight > maxHeight ) {
+		eeFloat iScaleX 	= ( (eeFloat)maxWidth / (eeFloat)mWidth );
+		eeFloat iScaleY 	= ( (eeFloat)maxHeight / (eeFloat)mHeight );
 		eeFloat iScale		= ( iScaleY < iScaleX ) ? iScaleY : iScaleX;
 		Int32 new_width 	= (Int32)( (eeFloat)mWidth * iScale );
 		Int32 new_height 	= (Int32)( (eeFloat)mHeight * iScale );

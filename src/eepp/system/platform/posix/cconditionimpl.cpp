@@ -1,4 +1,7 @@
 #include <eepp/system/platform/posix/cconditionimpl.hpp>
+
+#if defined( EE_PLATFORM_POSIX )
+
 #include <iostream>
 
 namespace EE { namespace System { namespace Platform {
@@ -10,18 +13,18 @@ cConditionImpl::cConditionImpl( int var ) :
 	mMutex()
 {
 	if ( 0 != pthread_cond_init( &mCond, NULL ) )
-		std::cerr << "pthread_cond_init() error\n";
-	
+		std::cerr << "cConditionImpl::cConditionImpl(): pthread_cond_init() error\n";
+
 	if ( 0 != pthread_mutex_init( &mMutex, NULL ) )
-		std::cerr << "pthread_mutex_init() error\n";
+		std::cerr << "cConditionImpl::cConditionImpl(): pthread_mutex_init() error\n";
 }
 
 cConditionImpl::~cConditionImpl() {
-	if ( 0 != pthread_mutex_destroy( &mMutex ) )
-		std::cerr << "pthread_mutex_destroy() error\n";
-	
 	if ( 0 != pthread_cond_destroy( &mCond ) )
-		std::cerr << "pthread_cond_destroy() error\n";
+		std::cerr << "cConditionImpl::~cConditionImpl(): pthread_cond_destroy() error\n";
+
+	if ( 0 != pthread_mutex_destroy( &mMutex ) )
+		std::cerr << "cConditionImpl::~cConditionImpl(): pthread_mutex_destroy() error\n";
 }
 
 void cConditionImpl::Lock() {
@@ -89,3 +92,5 @@ void cConditionImpl::Restore() {
 }
 
 }}}
+
+#endif
