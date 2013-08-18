@@ -362,7 +362,16 @@ void cTexture::Update( const Uint8* pixels ) {
 }
 
 void cTexture::Update( cImage *image, Uint32 x, Uint32 y ) {
-	Update( image->GetPixelsPtr(), image->Width(), image->Height(), x, y );
+	EE_PIXEL_FORMAT pf = PF_RGBA;;
+
+	if ( 3 == image->Channels() )
+		pf = PF_RGB;
+	else if ( 2 == image->Channels() )
+		pf = PF_RG;
+	else if ( 1 == image->Channels() )
+		pf = PF_RED;
+
+	Update( image->GetPixelsPtr(), image->Width(), image->Height(), x, y, pf );
 }
 
 const Uint32& cTexture::HashName() const {
