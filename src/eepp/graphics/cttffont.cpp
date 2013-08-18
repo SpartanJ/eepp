@@ -135,9 +135,14 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 	CurrentPos.Left = OutlineSize;
 	CurrentPos.Top 	= OutlineSize;
 
+	Uint32 * TexGlyph;
+	Uint32 w = (Uint32)mTexWidth;
+	Uint32 h = (Uint32)mTexHeight;
+	eeColorA fFontColor( FontColor );
+
 	//Loop through all chars
-	for ( eeUint i = 0; i < mNumChars; i++) {
-		TempGlyphSurface = mFont->GlyphRender( i );
+	for ( eeUint i = 0; i < mNumChars; i++ ) {
+		TempGlyphSurface = mFont->GlyphRender( i, fFontColor.GetValue() );
 
 		//New temp glyph
 		eeGlyph TempGlyph;
@@ -159,53 +164,41 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 		}
 
 		//Blit the glyph onto the glyph sheet
-		Uint32 * TexGlyph = reinterpret_cast<Uint32 *> ( TempGlyphSurface );
-		Uint32 Alpha;
-		Uint32 w = (Uint32)mTexWidth;
-		Uint32 h = (Uint32)mTexHeight;
-		Uint32 px, py;
+		TexGlyph = reinterpret_cast<Uint32 *> ( TempGlyphSurface );
 
 		for (int y = 0; y < GlyphRect.y; ++y ) {
-			for (int x = 0; x < GlyphRect.x; ++x ) {
-				Alpha = ( TexGlyph[ x + y * GlyphRect.x ] >> 24 ) & 0xFF;
-
-				px = CurrentPos.Left + x;
-				py = CurrentPos.Top + y;
-
-				if ( px < w && py < h ) {
-					mPixels[ px + py * w ] = eeColorA( FontColor.R(), FontColor.G(), FontColor.B(), Alpha );
-				}
-			}
+			// Copy per row
+			memcpy( &mPixels[ CurrentPos.Left + (CurrentPos.Top + y) * w ], &TexGlyph[ y * GlyphRect.x ], GlyphRect.x * sizeof(eeColorA) );
 		}
 
 		// Fixes the width and height of the current pos
 		CurrentPos.Right 	= GlyphRect.x;
 		CurrentPos.Bottom 	= GlyphRect.y;
 
-		// Set texture coordinates to te list
+		// Set texture coordinates to the list
 		eeRectf tR;
-		tR.Left = (eeFloat)( CurrentPos.Left - OutlineSize ) / mTexWidth;
-		tR.Top = (eeFloat)( CurrentPos.Top - OutlineSize ) / mTexHeight;
+		tR.Left		= (eeFloat)( CurrentPos.Left - OutlineSize ) / mTexWidth;
+		tR.Top		= (eeFloat)( CurrentPos.Top - OutlineSize ) / mTexHeight;
 
-		tR.Right = (eeFloat)(CurrentPos.Left + CurrentPos.Right + OutlineSize ) / mTexWidth;
-		tR.Bottom = (eeFloat)(CurrentPos.Top + CurrentPos.Bottom + OutlineSize ) / mTexHeight;
+		tR.Right	= (eeFloat)(CurrentPos.Left + CurrentPos.Right + OutlineSize ) / mTexWidth;
+		tR.Bottom	= (eeFloat)(CurrentPos.Top + CurrentPos.Bottom + OutlineSize ) / mTexHeight;
 
 		GlyphRect.y += OutlineSize;
 		TempGlyph.Advance += OutlineSize;
 
 		// Translate the Glyph coordinates to the new texture coordinates
-		TempGlyph.MinX -= OutlineSize;
-		TempGlyph.MinY -= OutlineSize;
-		TempGlyph.MaxX += OutlineSize;
-		TempGlyph.MaxY += OutlineSize;
-		TempGlyph.CurX = CurrentPos.Left - OutlineSize;
-		TempGlyph.CurW = CurrentPos.Right + OutlineTotal;
-		TempGlyph.CurY = CurrentPos.Top - OutlineSize;
-		TempGlyph.CurH = CurrentPos.Bottom + OutlineTotal;
-		TempGlyph.GlyphH = GlyphRect.y + OutlineSize;
+		TempGlyph.MinX		-= OutlineSize;
+		TempGlyph.MinY		-= OutlineSize;
+		TempGlyph.MaxX		+= OutlineSize;
+		TempGlyph.MaxY		+= OutlineSize;
+		TempGlyph.CurX		= CurrentPos.Left	- OutlineSize;
+		TempGlyph.CurW		= CurrentPos.Right	+ OutlineTotal;
+		TempGlyph.CurY		= CurrentPos.Top	- OutlineSize;
+		TempGlyph.CurH		= CurrentPos.Bottom	+ OutlineTotal;
+		TempGlyph.GlyphH	= GlyphRect.y		+ OutlineSize;
 
 		//Position xpos ready for next glyph
-		CurrentPos.Left += GlyphRect.x + OutlineTotal + PixelSep;
+		CurrentPos.Left		+= GlyphRect.x		+ OutlineTotal + PixelSep;
 
 		//If the next character will run off the edge of the glyph sheet, advance to next row
 		if ( CurrentPos.Left + CurrentPos.Right > mTexWidth ) {
@@ -223,42 +216,36 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 	if ( OutlineSize ) {
 		Uint32 Pos = 0;
 
-		Uint8 * TexO = eeNewArray( Uint8, TexSize );
-		Uint8 * TexN = eeNewArray( Uint8, TexSize );
-		Uint8 * TexI = eeNewArray( Uint8, TexSize );
+		Uint8 * alpha_init	= eeNewArray( Uint8, TexSize );
+		Uint8 * alpha_final	= eeNewArray( Uint8, TexSize );
 
-		// Fill the TexO ( the default font alpha channels ) and the TexN ( the new outline )
-		for ( Int32 y = 0; y < mTexHeight; y++ ) {
-			for( Int32 x = 0; x < mTexWidth; x++) {
-				Pos = x + y * (Uint32)mTexWidth;
-				TexO[ Pos ] = mPixels[ Pos ].A();
-				TexN[ Pos ] = TexO[ Pos ];
-				TexI[ Pos ] = 0;
+		// Fill the alpha_init ( the default font alpha channels ) and the alpha_final ( the new outline )
+		for ( Uint32 y = 0; y < h; y++ ) {
+			for( Uint32 x = 0; x < w; x++) {
+				Pos = x + y * w;
+				alpha_init[ Pos ] = mPixels[ Pos ].A();
+				alpha_final[ Pos ] = 0;
 			}
 		}
-
-		Uint8* alpha	= reinterpret_cast<Uint8*>( &TexN[0] );
-		Uint8* alpha2	= reinterpret_cast<Uint8*>( &TexI[0] );
 
 		// Create the outline
-		MakeOutline( alpha, alpha2, static_cast<Int16>( mTexWidth ), static_cast<Int16>( mTexHeight ), OutlineSize );
+		MakeOutline( alpha_init, alpha_final, w, h, OutlineSize );
 
-		for ( Int32 y = 0; y < mTexHeight; y++ ) {
-			for( Int32 x = 0; x < mTexWidth; x++) {
-				Pos = x + y * (Uint32)mTexWidth;
+		for ( Uint32 y = 0; y < h; y++ ) {
+			for( Uint32 x = 0; x < w; x++) {
+				Pos = x + y * w;
 
 				// Fill the outline color
-				mPixels[ Pos ] = eeColorA( OutlineColor.R(), OutlineColor.G(), OutlineColor.B(), alpha2[ Pos ] );
+				mPixels[ Pos ] = eeColorA( OutlineColor, alpha_final[ Pos ] );
 
 				// Fill the font color
-				if ( TexO[ Pos ] > 50 )
-					mPixels[ Pos ] = eeColorA( FontColor.R(), FontColor.G(), FontColor.B(), TexO[ Pos ] );
+				if ( alpha_init[ Pos ] > 50 )
+					mPixels[ Pos ] = eeColorA( FontColor, alpha_init[ Pos ] );
 			}
 		}
 
-		eeSAFE_DELETE_ARRAY( TexO );
-		eeSAFE_DELETE_ARRAY( TexN );
-		eeSAFE_DELETE_ARRAY( TexI );
+		eeSAFE_DELETE_ARRAY( alpha_init );
+		eeSAFE_DELETE_ARRAY( alpha_final );
 	}
 
 	hkFontManager::instance()->CloseFont( mFont );
@@ -373,25 +360,30 @@ bool cTTFFont::Save( const std::string& TexturePath, const std::string& Coordina
 }
 
 void cTTFFont::MakeOutline( Uint8 *in, Uint8 *out, Int16 w, Int16 h , Int16 OutlineSize ) {
-	for ( eeInt y = 0; y < h; y++ ) {
-		for( eeInt x = 0; x < w; x++ ) {
-			eeInt c = ( in[ y * w + x ]  >> 24 ) & 0xFF;
+	eeInt y, x, s_y, s_x, get_y, get_x, index, pos;
+	Uint8 c;
 
-			for ( eeInt s_y = -OutlineSize; s_y <= OutlineSize; s_y++ ) {
-				for ( eeInt s_x = -OutlineSize; s_x <= OutlineSize; s_x++ ) {
-					eeInt get_x = x + s_x;
-					eeInt get_y = y + s_y;
+	for ( y = 0; y < h; y++ ) {
+		for( x = 0; x < w; x++ ) {
+			pos = y * w + x;
+
+			c = in[ pos ];
+
+			for ( s_y = -OutlineSize; s_y <= OutlineSize; s_y++ ) {
+				for ( s_x = -OutlineSize; s_x <= OutlineSize; s_x++ ) {
+					get_x = x + s_x;
+					get_y = y + s_y;
 
 					if ( get_x >= 0 && get_y >= 0 && get_x < w && get_y < h ) {
-						eeInt index = get_y * w + get_x;
+						index = get_y * w + get_x;
 
 						if ( in[index] > c )
 							c = in[index];
 					}
 				}
-
-				out[ y * w + x ] = c;
 			}
+
+			out[ pos ] = c;
 		}
 	}
 }

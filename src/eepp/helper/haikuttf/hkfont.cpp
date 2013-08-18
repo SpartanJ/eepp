@@ -293,7 +293,7 @@ unsigned char * hkFont::GlyphRender( u16 ch, u32 fg ) {
 
 	u32 * buffu32 = reinterpret_cast<u32*> ( &textbuf[0] );
 
-	memset( buffu32, fg, bitmap->width * bitmap->rows );
+	memset( buffu32, fg, bitmap->width * bitmap->rows * 4 );
 
 	const u8* pixels = bitmap->buffer;
 	u32 index;
