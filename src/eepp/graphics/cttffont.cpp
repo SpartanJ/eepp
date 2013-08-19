@@ -137,7 +137,6 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 
 	Uint32 * TexGlyph;
 	Uint32 w = (Uint32)mTexWidth;
-	Uint32 h = (Uint32)mTexHeight;
 	eeColorA fFontColor( FontColor );
 
 	//Loop through all chars
@@ -166,6 +165,7 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 		//Blit the glyph onto the glyph sheet
 		TexGlyph = reinterpret_cast<Uint32 *> ( TempGlyphSurface );
 
+		// Copy the glyph to the texture
 		for (int y = 0; y < GlyphRect.y; ++y ) {
 			// Copy per row
 			memcpy( &mPixels[ CurrentPos.Left + (CurrentPos.Top + y) * w ], &TexGlyph[ y * GlyphRect.x ], GlyphRect.x * sizeof(eeColorA) );
@@ -183,8 +183,8 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 		tR.Right	= (eeFloat)(CurrentPos.Left + CurrentPos.Right + OutlineSize ) / mTexWidth;
 		tR.Bottom	= (eeFloat)(CurrentPos.Top + CurrentPos.Bottom + OutlineSize ) / mTexHeight;
 
-		GlyphRect.y += OutlineSize;
-		TempGlyph.Advance += OutlineSize;
+		GlyphRect.y			+= OutlineSize;
+		TempGlyph.Advance	+= OutlineSize;
 
 		// Translate the Glyph coordinates to the new texture coordinates
 		TempGlyph.MinX		-= OutlineSize;
@@ -206,46 +206,61 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 			CurrentPos.Top += mHeight;
 		}
 
+		// Create the outline for the glyph and copy the outline to the texture
+		if ( OutlineSize ) {
+			eeRecti nGlyphR(
+				TempGlyph.CurX,
+				TempGlyph.CurY,
+				TempGlyph.CurX + TempGlyph.CurW,
+				TempGlyph.CurY + TempGlyph.CurH
+			);
+			eeSize nGlyphS( nGlyphR.Size() );
+
+			if ( nGlyphS.x > 0 && nGlyphS.y > 0 ) {
+				Uint32 Pos			= 0;
+				Uint32 RPos			= 0;
+				Uint32 alphaSize	= nGlyphS.x * nGlyphS.y;
+				Uint8 * alpha_init	= eeNewArray( Uint8, alphaSize );
+				Uint8 * alpha_final	= eeNewArray( Uint8, alphaSize );
+
+				// Fill the alpha_init ( the default font alpha channels ) and the alpha_final ( the new outline )
+				for ( Int32 y = 0; y < nGlyphS.y; y++ ) {
+					for( Int32 x = 0; x < nGlyphS.x; x++) {
+						RPos	= ( nGlyphR.Left + x ) + ( nGlyphR.Top + y ) * w;
+						Pos		= x + y * nGlyphS.x;
+
+						alpha_init[ Pos ] = mPixels[ RPos ].A();
+						alpha_final[ Pos ] = 0;
+					}
+				}
+
+				// Create the outline
+				MakeOutline( alpha_init, alpha_final, nGlyphS.x, nGlyphS.y, OutlineSize );
+
+				for ( Int32 y = 0; y < nGlyphS.y; y++ ) {
+					for( Int32 x = 0; x < nGlyphS.x; x++) {
+						RPos	= ( nGlyphR.Left + x ) + ( nGlyphR.Top + y ) * w;
+						Pos		= x + y * nGlyphS.x;
+
+						// Fill the outline color
+						mPixels[ RPos ] = eeColorA( OutlineColor, alpha_final[ Pos ] );
+
+						// Fill the font color
+						if ( alpha_init[ Pos ] > 50 )
+							mPixels[ RPos ] = eeColorA( FontColor, alpha_init[ Pos ] );
+					}
+				}
+
+				eeSAFE_DELETE_ARRAY( alpha_init );
+				eeSAFE_DELETE_ARRAY( alpha_final );
+			}
+		}
+
 		//Push back to glyphs vector
 		mGlyphs[i] = TempGlyph;
 
 		//Free surface
 		hkSAFE_DELETE_ARRAY( TempGlyphSurface );
-	}
-
-	if ( OutlineSize ) {
-		Uint32 Pos = 0;
-
-		Uint8 * alpha_init	= eeNewArray( Uint8, TexSize );
-		Uint8 * alpha_final	= eeNewArray( Uint8, TexSize );
-
-		// Fill the alpha_init ( the default font alpha channels ) and the alpha_final ( the new outline )
-		for ( Uint32 y = 0; y < h; y++ ) {
-			for( Uint32 x = 0; x < w; x++) {
-				Pos = x + y * w;
-				alpha_init[ Pos ] = mPixels[ Pos ].A();
-				alpha_final[ Pos ] = 0;
-			}
-		}
-
-		// Create the outline
-		MakeOutline( alpha_init, alpha_final, w, h, OutlineSize );
-
-		for ( Uint32 y = 0; y < h; y++ ) {
-			for( Uint32 x = 0; x < w; x++) {
-				Pos = x + y * w;
-
-				// Fill the outline color
-				mPixels[ Pos ] = eeColorA( OutlineColor, alpha_final[ Pos ] );
-
-				// Fill the font color
-				if ( alpha_init[ Pos ] > 50 )
-					mPixels[ Pos ] = eeColorA( FontColor, alpha_init[ Pos ] );
-			}
-		}
-
-		eeSAFE_DELETE_ARRAY( alpha_init );
-		eeSAFE_DELETE_ARRAY( alpha_final );
 	}
 
 	hkFontManager::instance()->CloseFont( mFont );

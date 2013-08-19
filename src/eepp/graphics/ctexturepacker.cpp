@@ -391,7 +391,7 @@ bool cTexturePacker::AddTexturesPath( std::string TexturesPath ) {
 	return false;
 }
 
-bool cTexturePacker::AddPackerText( cTexturePackerTex * TPack ) {
+bool cTexturePacker::AddPackerTex( cTexturePackerTex * TPack ) {
 	if ( TPack->LoadedInfo() ) {
 		// Only add the texture if can fit inside the atlas, otherwise it will ignore it
 		if ( ( TPack->Width() + mPixelBorder <= mWidth && TPack->Height() + mPixelBorder <= mHeight ) ||
@@ -426,13 +426,13 @@ bool cTexturePacker::AddPackerText( cTexturePackerTex * TPack ) {
 
 bool cTexturePacker::AddImage( cImage * Img, const std::string& Name ) {
 	cTexturePackerTex * TPack = eeNew( cTexturePackerTex, ( Img, Name ) );
-	return AddPackerText( TPack );
+	return AddPackerTex( TPack );
 }
 
 bool cTexturePacker::AddTexture( const std::string& TexturePath ) {
 	if ( FileSystem::FileExists( TexturePath ) ) {
 		cTexturePackerTex * TPack = eeNew( cTexturePackerTex, ( TexturePath ) );
-		return AddPackerText( TPack );
+		return AddPackerTex( TPack );
 	}
 
 	return false;
