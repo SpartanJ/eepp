@@ -278,12 +278,8 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 						RPos	= ( nGlyphR.Left + x ) + ( nGlyphR.Top + y ) * w;
 						Pos		= x + y * nGlyphS.x;
 
-						// Fill the outline color
-						mPixels[ RPos ] = eeColorA( OutlineColor, alpha_final[ Pos ] );
-
-						// Fill the font color
-						if ( alpha_init[ Pos ] > 50 )
-							mPixels[ RPos ] = eeColorA( FontColor, alpha_init[ Pos ] );
+						// Blending the normal glyph color to the outline color
+						mPixels[ RPos ] = Color::Blend( eeColorA( FontColor, alpha_init[ Pos ] ), eeColorA( OutlineColor, alpha_final[ Pos ] ) );
 					}
 				}
 
