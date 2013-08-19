@@ -483,4 +483,37 @@ void cImage::Flip() {
 	}
 }
 
+void cImage::AvoidFreeImage( const bool& AvoidFree ) {
+	mAvoidFree = AvoidFree;
+}
+
+#define ee_ctb(f) (Uint8)(eefloor(f == 1.f ? 255 : f * 256.f))
+static eeColorA Blend( eeColorA src, eeColorA dst ) {
+	eeColorAf srcf( (eeFloat)src.Red / 255.f, (eeFloat)src.Green / 255.f, (eeFloat)src.Blue / 255.f, (eeFloat)src.Alpha / 255.f );
+	eeColorAf dstf( (eeFloat)dst.Red / 255.f, (eeFloat)dst.Green / 255.f, (eeFloat)dst.Blue / 255.f, (eeFloat)dst.Alpha / 255.f );
+	eeFloat alpha	= srcf.Alpha + dstf.Alpha * ( 1.f - srcf.Alpha );
+	eeFloat red		= ( srcf.Red	* srcf.Alpha + dstf.Red		* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
+	eeFloat green	= ( srcf.Green	* srcf.Alpha + dstf.Green	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
+	eeFloat blue	= ( srcf.Blue	* srcf.Alpha + dstf.Blue	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
+
+	return eeColorA( ee_ctb(red), ee_ctb(green), ee_ctb(blue), ee_ctb(alpha) );
+}
+
+void cImage::Blit( cImage * img, Uint32 x, Uint32 y ) {
+	if ( x < mWidth && y < mHeight ) {
+		eeUint dh = eemin( mHeight, y + img->Height() );
+		eeUint dw = eemin( mWidth, x + img->Width() );
+
+		for ( eeUint ty = y; ty < dh; ty++ ) {
+			for ( eeUint tx = x; tx < dw; tx++ ) {
+				eeColorA ts( img->GetPixel( tx - x, ty - y ) );
+				eeColorA td( GetPixel( tx, ty ) );
+
+				SetPixel( tx, ty, Blend( ts, td ) );
+			}
+		}
+	}
+}
+
+
 }}

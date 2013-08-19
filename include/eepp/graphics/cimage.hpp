@@ -146,8 +146,11 @@ class EE_API cImage {
 		/** Create a thumnail of the image */
 		cImage * Thumbnail( const Uint32& maxWidth, const Uint32& maxHeight );
 
-		/** Set as true if you dont want to free the image data ( false as default ). */
-		void AvoidFreeImage( const bool& AvoidFree ) { mAvoidFree = AvoidFree; }
+		/** Set as true if you dont want to free the image data in the cImage destruction ( false as default ). */
+		void AvoidFreeImage( const bool& AvoidFree );
+
+		/** Blit the image passed onto the current image */
+		void Blit( cImage * img, Uint32 x, Uint32 y );
 	protected:
 		static Uint32 sJpegQuality;
 

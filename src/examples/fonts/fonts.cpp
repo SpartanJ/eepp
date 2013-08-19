@@ -38,7 +38,13 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		TexF2->Load( TexLoader.Id(), 32 );
 
 		// Set a text to render
-		TTF->SetText( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );
+		String text;
+		text.clear();
+
+		for ( char i = 32; i < 96; i++ )
+			text += String::ToStr(  (char)i );
+
+		TTF->SetText( "Lorem ipsum dolor sit amet, consectetur adipisicing elit.\n" + text );
 		TTF2->SetText( TTF->GetText() );
 		TexF->SetText( TTF->GetText() );
 		TexF2->SetText( TTF->GetText() );

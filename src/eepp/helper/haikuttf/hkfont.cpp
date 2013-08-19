@@ -330,23 +330,23 @@ int hkFont::GlyphMetrics( u16 ch, int* minx, int* maxx, int* miny, int* maxy, in
 		return -1;
 
 	if ( NULL != minx )
-		*minx = mCurrent->MinX();
+		*minx = mCurrent->MinX() - mOutline;
 
 	if ( NULL !=maxx ) {
-		*maxx = mCurrent->MaxX();
+		*maxx = mCurrent->MaxX() + mOutline;
 
 		if( HK_TTF_HANDLE_STYLE_BOLD(this) )
 			*maxx += mGlyphOverhang;
 	}
 
 	if ( NULL !=miny )
-		*miny = mCurrent->MinY();
+		*miny = mCurrent->MinY() - mOutline;
 
 	if ( NULL !=maxy )
-		*maxy = mCurrent->MaxY();
+		*maxy = mCurrent->MaxY() + mOutline;
 
 	if ( NULL != advance ) {
-		*advance = mCurrent->Advance();
+		*advance = mCurrent->Advance() + mOutline;
 
 		if( HK_TTF_HANDLE_STYLE_BOLD(this) )
 			*advance += mGlyphOverhang;
@@ -407,7 +407,7 @@ void hkFont::Height( int height ) {
 }
 
 int	hkFont::Height() {
-	return mHeight;
+	return mHeight + mOutline;
 }
 
 void hkFont::Ascent( int ascent ) {
