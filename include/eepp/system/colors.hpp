@@ -196,6 +196,35 @@ typedef tColor<eeFloat> 	eeColorf;
 typedef tColorA<Uint8> 		eeColorA;
 typedef tColorA<eeFloat> 	eeColorAf;
 
+//! @brief Small class to help in some color operations
+class Color {
+public:
+	/** Blend a source color to destination color */
+	static inline eeColorAf Blend( eeColorAf srcf, eeColorAf dstf ) {
+		eeFloat alpha	= srcf.Alpha + dstf.Alpha * ( 1.f - srcf.Alpha );
+		eeFloat red		= ( srcf.Red	* srcf.Alpha + dstf.Red		* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
+		eeFloat green	= ( srcf.Green	* srcf.Alpha + dstf.Green	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
+		eeFloat blue	= ( srcf.Blue	* srcf.Alpha + dstf.Blue	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
+
+		return eeColorAf( red, green, blue, alpha );
+	}
+
+	#define EE_COLOR_BLEND_FTOU8(f) (Uint8)(eefloor(f == 1.f ? 255 : f * 256.f))
+
+	/** Blend a source color to destination color */
+	static inline eeColorA Blend( eeColorA src, eeColorA dst ) {
+		eeColorAf srcf( (eeFloat)src.Red / 255.f, (eeFloat)src.Green / 255.f, (eeFloat)src.Blue / 255.f, (eeFloat)src.Alpha / 255.f );
+		eeColorAf dstf( (eeFloat)dst.Red / 255.f, (eeFloat)dst.Green / 255.f, (eeFloat)dst.Blue / 255.f, (eeFloat)dst.Alpha / 255.f );
+		eeFloat alpha	= srcf.Alpha + dstf.Alpha * ( 1.f - srcf.Alpha );
+		eeFloat red		= ( srcf.Red	* srcf.Alpha + dstf.Red		* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
+		eeFloat green	= ( srcf.Green	* srcf.Alpha + dstf.Green	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
+		eeFloat blue	= ( srcf.Blue	* srcf.Alpha + dstf.Blue	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
+
+		return eeColorA( EE_COLOR_BLEND_FTOU8(red), EE_COLOR_BLEND_FTOU8(green), EE_COLOR_BLEND_FTOU8(blue), EE_COLOR_BLEND_FTOU8(alpha) );
+	}
+};
+
+
 }}
 
 #endif

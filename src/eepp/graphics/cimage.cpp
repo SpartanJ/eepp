@@ -222,33 +222,15 @@ const Uint8* cImage::GetPixelsPtr() {
 }
 
 eeColorA cImage::GetPixel( const eeUint& x, const eeUint& y ) {
-	if ( mPixels == NULL || x > mWidth || y > mHeight ) {
-		return eeColorA::Transparent;
-	}
-
-	eeUint Pos = ( x + y * mWidth ) * mChannels;
-
-	if ( 4 == mChannels ) {
-		return eeColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], mPixels[ Pos + 2 ], mPixels[ Pos + 3 ] );
-	} else if ( 3 == mChannels )
-		return eeColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], mPixels[ Pos + 2 ], 255 );
-	else if ( 2 == mChannels )
-		return eeColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], 255, 255 );
-	else
-		return eeColorA( mPixels[ Pos ], 255, 255, 255 );
+	eeASSERT( !( mPixels == NULL || x > mWidth || y > mHeight ) );
+	eeColorA dst;
+	memcpy( &dst, &mPixels[ ( ( x + y * mWidth ) * mChannels ) ], mChannels );
+	return dst;
 }
 
 void cImage::SetPixel(const eeUint& x, const eeUint& y, const eeColorA& Color) {
-	if ( mPixels == NULL || x > mWidth || y > mHeight ) {
-		return;
-	}
-
-	eeUint Pos = ( x + y * mWidth ) * mChannels;
-
-	if ( mChannels >= 1 ) mPixels[ Pos ]		= Color.R();
-	if ( mChannels >= 2 ) mPixels[ Pos + 1 ]	= Color.G();
-	if ( mChannels >= 3 ) mPixels[ Pos + 2 ]	= Color.B();
-	if ( mChannels >= 4 ) mPixels[ Pos + 3 ]	= Color.A();
+	eeASSERT( !( mPixels == NULL || x > mWidth || y > mHeight ) );
+	memcpy( &mPixels[ ( ( x + y * mWidth ) * mChannels ) ], &Color, mChannels );
 }
 
 void cImage::Create( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const eeColorA& DefaultColor ) {
@@ -487,33 +469,20 @@ void cImage::AvoidFreeImage( const bool& AvoidFree ) {
 	mAvoidFree = AvoidFree;
 }
 
-#define ee_ctb(f) (Uint8)(eefloor(f == 1.f ? 255 : f * 256.f))
-static eeColorA Blend( eeColorA src, eeColorA dst ) {
-	eeColorAf srcf( (eeFloat)src.Red / 255.f, (eeFloat)src.Green / 255.f, (eeFloat)src.Blue / 255.f, (eeFloat)src.Alpha / 255.f );
-	eeColorAf dstf( (eeFloat)dst.Red / 255.f, (eeFloat)dst.Green / 255.f, (eeFloat)dst.Blue / 255.f, (eeFloat)dst.Alpha / 255.f );
-	eeFloat alpha	= srcf.Alpha + dstf.Alpha * ( 1.f - srcf.Alpha );
-	eeFloat red		= ( srcf.Red	* srcf.Alpha + dstf.Red		* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
-	eeFloat green	= ( srcf.Green	* srcf.Alpha + dstf.Green	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
-	eeFloat blue	= ( srcf.Blue	* srcf.Alpha + dstf.Blue	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
-
-	return eeColorA( ee_ctb(red), ee_ctb(green), ee_ctb(blue), ee_ctb(alpha) );
-}
-
-void cImage::Blit( cImage * img, Uint32 x, Uint32 y ) {
-	if ( x < mWidth && y < mHeight ) {
-		eeUint dh = eemin( mHeight, y + img->Height() );
-		eeUint dw = eemin( mWidth, x + img->Width() );
+void cImage::Blit( cImage * image, const Uint32& x, const Uint32& y ) {
+	if ( NULL != image && NULL != image->GetPixelsPtr() && x < mWidth && y < mHeight ) {
+		eeUint dh = eemin( mHeight	, y	+ image->Height() );
+		eeUint dw = eemin( mWidth	, x	+ image->Width() );
 
 		for ( eeUint ty = y; ty < dh; ty++ ) {
 			for ( eeUint tx = x; tx < dw; tx++ ) {
-				eeColorA ts( img->GetPixel( tx - x, ty - y ) );
+				eeColorA ts( image->GetPixel( tx - x, ty - y ) );
 				eeColorA td( GetPixel( tx, ty ) );
 
-				SetPixel( tx, ty, Blend( ts, td ) );
+				SetPixel( tx, ty, Color::Blend( ts, td ) );
 			}
 		}
 	}
 }
-
 
 }}

@@ -132,7 +132,7 @@ class EE_API cImage {
 		virtual void FillWithColor( const eeColorA& Color );
 
 		/** Copy the image to this image data, starting from the position x,y */
-		virtual void CopyImage( cImage * image, const Uint32& x, const Uint32& y );
+		virtual void CopyImage( cImage * image, const Uint32& x = 0, const Uint32& y = 0 );
 
 		/** Scale the image */
 		virtual void Scale( const eeFloat& scale );
@@ -149,8 +149,11 @@ class EE_API cImage {
 		/** Set as true if you dont want to free the image data in the cImage destruction ( false as default ). */
 		void AvoidFreeImage( const bool& AvoidFree );
 
-		/** Blit the image passed onto the current image */
-		void Blit( cImage * img, Uint32 x, Uint32 y );
+		/** Blit the image passed onto the current image
+		**	@param img The source image to blit onto the image
+		**	@param x The x position to start drawing the image
+		**	@param y The y position to start drawing the image */
+		void Blit( cImage * image, const Uint32& x = 0, const Uint32& y = 0 );
 	protected:
 		static Uint32 sJpegQuality;
 
