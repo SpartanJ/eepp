@@ -14,6 +14,15 @@ namespace EE { namespace Graphics {
 /** @brief This class loads True Type Font and then draw strings to the screen. */
 class EE_API cTTFFont : public cFont {
 	public:
+		enum OutlineMethod
+		{
+			OutlineEntropia,	//! Slow, but better for small fonts
+			OutlineFreetype		//! Faster, usually better for big fonts
+		};
+
+		//! Let the user select the default method to use for outlining the glyphs
+		static OutlineMethod DefaultOutlineMethod;
+
 		/** Creates an instance of a true type font */
 		static cTTFFont * New( const std::string FontName );
 
@@ -69,11 +78,11 @@ class EE_API cTTFFont : public cFont {
 
 		/** Save the texture generated from the TTF file and the character coordinates. */
 		bool Save( const std::string& TexturePath, const std::string& CoordinatesDatPath, const EE_SAVE_TYPE& Format = SAVE_TYPE_PNG );
-
 	protected:
 		friend class cTTFFontLoader;
 
 		HaikuTTF::hkFont *	mFont;
+		HaikuTTF::hkFont *	mFontOutline;
 		eeColorA *	mPixels;
 
 		std::string	mFilepath;

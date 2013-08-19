@@ -6,13 +6,16 @@ using namespace HaikuTTF;
 
 namespace EE { namespace Graphics {
 
+cTTFFont::OutlineMethod cTTFFont::DefaultOutlineMethod = cTTFFont::OutlineEntropia;
+
 cTTFFont * cTTFFont::New( const std::string FontName ) {
 	return eeNew( cTTFFont, ( FontName ) );
 }
 
 cTTFFont::cTTFFont( const std::string FontName ) :
 	cFont( FONT_TYPE_TTF, FontName ),
-	mFont(0),
+	mFont(NULL),
+	mFontOutline(NULL),
 	mPixels(NULL),
 	mThreadedLoading(false),
 	mTexReady(false)
@@ -44,6 +47,11 @@ bool cTTFFont::LoadFromMemory( Uint8* TTFData, const eeUint& TTFDataSize, const 
 
 	mFont = hkFontManager::instance()->OpenFromMemory( reinterpret_cast<Uint8*>(&TTFData[0]), TTFDataSize, Size, 0, NumCharsToGen );
 
+	if ( OutlineSize ) {
+		mFontOutline = hkFontManager::instance()->OpenFromMemory( reinterpret_cast<Uint8*>(&TTFData[0]), TTFDataSize, Size, 0, NumCharsToGen );
+		mFontOutline->Outline( OutlineSize );
+	}
+
 	return iLoad( Size, Style, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
 }
 
@@ -54,6 +62,11 @@ bool cTTFFont::Load( const std::string& Filepath, const eeUint& Size, EE_TTF_FON
 		mLoadedFromMemory	= false;
 
 		mFont = hkFontManager::instance()->OpenFromFile( Filepath.c_str(), Size, 0, NumCharsToGen );
+
+		if ( OutlineSize ) {
+			mFontOutline = hkFontManager::instance()->OpenFromFile( Filepath.c_str(), Size, 0, NumCharsToGen );
+			mFontOutline->Outline( OutlineSize );
+		}
 
 		return iLoad( Size, Style, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
 	} else if ( cPackManager::instance()->FallbackToPacks() ) {
@@ -71,7 +84,8 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 	eeRect CurrentPos;
 	eeSize GlyphRect;
 
-	unsigned char * TempGlyphSurface;
+	unsigned char * TempGlyphSurface = NULL;
+	unsigned char * TempOutGlyphSurface = NULL;
 
 	// Change the outline size to add a pixel separating the character from the around characters to prevent ugly zooming of characters
 	Uint32 PixelSep = 0;
@@ -79,8 +93,9 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 	if ( AddPixelSeparator )
 		PixelSep = 1;
 
-	Uint8 OutlineTotal = OutlineSize * 2;
 	Uint32 TexSize;
+	Uint32 OutSize		 = ( OutlineFreetype == DefaultOutlineMethod ) ? 0 : OutlineSize;
+	Uint32 OutTotal		 = ( OutlineFreetype == DefaultOutlineMethod ) ? 0 : OutlineSize * 2;
 
 	if ( mFont == NULL ) {
 		cLog::instance()->Write( "Failed to load TTF Font " + mFilepath + "." );
@@ -88,13 +103,17 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 		return false;
 	}
 
+	mSize 			= Size;
+
 	mFont->Style( Style );
 
-	mSize 			= Size;
-	mHeight 		= mFont->Height() + OutlineTotal;
+	mHeight 		= mFont->Height()+ OutTotal;
 	mLineSkip		= mFont->LineSkip();
 	mAscent			= mFont->Ascent();
 	mDescent		= mFont->Descent();
+
+	if ( NULL != mFontOutline )
+		mHeight		= mFontOutline->Height();
 
 	mNumChars 		= NumCharsToGen;
 	mFontColor 		= FontColor;
@@ -111,8 +130,8 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 
 	// Find the best size for the texture ( aprox )
 	// Totally wild guessing, but it's working
-	Int32 tWildGuessW = ( mAscent + PixelSep + OutlineTotal );
-	Int32 tWildGuessH = tWildGuessW; //( mHeight );
+	Int32 tWildGuessW = ( mAscent + PixelSep );
+	Int32 tWildGuessH = tWildGuessW;
 
 	ReqSize = mNumChars * tWildGuessW * tWildGuessH;
 
@@ -132,8 +151,8 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 	mPixels = eeNewArray( eeColorA, TexSize );
 	memset( mPixels, 0x00000000, TexSize * 4 );
 
-	CurrentPos.Left = OutlineSize;
-	CurrentPos.Top 	= OutlineSize;
+	CurrentPos.Left = OutSize;
+	CurrentPos.Top 	= OutSize;
 
 	Uint32 * TexGlyph;
 	Uint32 w = (Uint32)mTexWidth;
@@ -153,17 +172,42 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 		GlyphRect.x = mFont->Current()->Pixmap()->width;
 		GlyphRect.y = mFont->Current()->Pixmap()->rows;
 
-		//Set size of current position rect
-		CurrentPos.Right 	= CurrentPos.Left + TempGlyph.MaxX;
-		CurrentPos.Bottom 	= CurrentPos.Top + TempGlyph.MaxY;
+		// Create the outline for the glyph and copy the outline to the texture
+		if ( OutlineSize && OutlineFreetype == DefaultOutlineMethod ) {
+			TempOutGlyphSurface = mFontOutline->GlyphRender( i, eeColorA( OutlineColor ).GetValue() );
 
-		if ( CurrentPos.Right >= mTexWidth ) {
-			CurrentPos.Left = 0 + OutlineSize;
-			CurrentPos.Top += mHeight;
+			mFontOutline->GlyphMetrics( i, &TempGlyph.MinX, &TempGlyph.MaxX, &TempGlyph.MinY, &TempGlyph.MaxY, &TempGlyph.Advance );
+
+			// Set size of glyph rect
+			GlyphRect.x = mFontOutline->Current()->Pixmap()->width;
+			GlyphRect.y = mFontOutline->Current()->Pixmap()->rows;
+
+			// Fix to ensure that the glyph is rendered with the real size
+			if ( eeabs( TempGlyph.MaxX - TempGlyph.MinX ) != GlyphRect.x ) {
+				TempGlyph.MaxX = TempGlyph.MinX + GlyphRect.x;
+			}
+
+			cImage out( TempOutGlyphSurface, GlyphRect.x, GlyphRect.y, 4 ); out.AvoidFreeImage( true );
+			cImage in( TempGlyphSurface, mFont->Current()->Pixmap()->width, mFont->Current()->Pixmap()->rows, 4 ); in.AvoidFreeImage( true );
+
+			Uint32 px = ( ( (eeFloat)out.Width()	- (eeFloat)in.Width() )		* 0.5f );
+			Uint32 py = ( ( (eeFloat)out.Height()	- (eeFloat)in.Height() )	* 0.5f );
+
+			out.Blit( &in, px, py );
+
+			TexGlyph = reinterpret_cast<Uint32 *> ( TempOutGlyphSurface );
+		} else {
+			TexGlyph = reinterpret_cast<Uint32 *> ( TempGlyphSurface );
 		}
 
-		//Blit the glyph onto the glyph sheet
-		TexGlyph = reinterpret_cast<Uint32 *> ( TempGlyphSurface );
+		//Set size of current position rect
+		CurrentPos.Right 	= CurrentPos.Left	+ TempGlyph.MaxX;
+		CurrentPos.Bottom 	= CurrentPos.Top	+ TempGlyph.MaxY;
+
+		if ( CurrentPos.Right >= mTexWidth ) {
+			CurrentPos.Left = OutSize;
+			CurrentPos.Top += mHeight;
+		}
 
 		// Copy the glyph to the texture
 		for (int y = 0; y < GlyphRect.y; ++y ) {
@@ -175,39 +219,31 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 		CurrentPos.Right 	= GlyphRect.x;
 		CurrentPos.Bottom 	= GlyphRect.y;
 
-		// Set texture coordinates to the list
-		eeRectf tR;
-		tR.Left		= (eeFloat)( CurrentPos.Left - OutlineSize ) / mTexWidth;
-		tR.Top		= (eeFloat)( CurrentPos.Top - OutlineSize ) / mTexHeight;
-
-		tR.Right	= (eeFloat)(CurrentPos.Left + CurrentPos.Right + OutlineSize ) / mTexWidth;
-		tR.Bottom	= (eeFloat)(CurrentPos.Top + CurrentPos.Bottom + OutlineSize ) / mTexHeight;
-
-		GlyphRect.y			+= OutlineSize;
-		TempGlyph.Advance	+= OutlineSize;
+		GlyphRect.y			+= OutSize;
+		TempGlyph.Advance	+= OutSize;
 
 		// Translate the Glyph coordinates to the new texture coordinates
-		TempGlyph.MinX		-= OutlineSize;
-		TempGlyph.MinY		-= OutlineSize;
-		TempGlyph.MaxX		+= OutlineSize;
-		TempGlyph.MaxY		+= OutlineSize;
-		TempGlyph.CurX		= CurrentPos.Left	- OutlineSize;
-		TempGlyph.CurW		= CurrentPos.Right	+ OutlineTotal;
-		TempGlyph.CurY		= CurrentPos.Top	- OutlineSize;
-		TempGlyph.CurH		= CurrentPos.Bottom	+ OutlineTotal;
-		TempGlyph.GlyphH	= GlyphRect.y		+ OutlineSize;
+		TempGlyph.MinX		-= OutSize;
+		TempGlyph.MinY		-= OutSize;
+		TempGlyph.MaxX		+= OutSize;
+		TempGlyph.MaxY		+= OutSize;
+		TempGlyph.CurX		= CurrentPos.Left	- OutSize;
+		TempGlyph.CurW		= CurrentPos.Right	+ OutTotal;
+		TempGlyph.CurY		= CurrentPos.Top	- OutSize;
+		TempGlyph.CurH		= CurrentPos.Bottom + OutTotal;
+		TempGlyph.GlyphH	= GlyphRect.y		+ OutSize;
 
 		//Position xpos ready for next glyph
-		CurrentPos.Left		+= GlyphRect.x		+ OutlineTotal + PixelSep;
+		CurrentPos.Left		+= GlyphRect.x		+ OutTotal + PixelSep;
 
 		//If the next character will run off the edge of the glyph sheet, advance to next row
 		if ( CurrentPos.Left + CurrentPos.Right > mTexWidth ) {
-			CurrentPos.Left = 0 + OutlineSize;
+			CurrentPos.Left = OutSize;
 			CurrentPos.Top += mHeight;
 		}
 
 		// Create the outline for the glyph and copy the outline to the texture
-		if ( OutlineSize ) {
+		if ( OutlineSize && OutlineEntropia == DefaultOutlineMethod ) {
 			eeRecti nGlyphR(
 				TempGlyph.CurX,
 				TempGlyph.CurY,
@@ -261,9 +297,14 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 
 		//Free surface
 		hkSAFE_DELETE_ARRAY( TempGlyphSurface );
+
+		hkSAFE_DELETE_ARRAY( TempOutGlyphSurface );
 	}
 
 	hkFontManager::instance()->CloseFont( mFont );
+
+	if ( NULL != mFontOutline )
+		hkFontManager::instance()->CloseFont( mFontOutline );
 
 	mTexReady = true;
 
@@ -301,6 +342,10 @@ void cTTFFont::RebuildFromGlyphs() {
 
 	for (eeUint i = 0; i < mNumChars; i++) {
 		tGlyph		= mGlyphs[i];
+
+		if ( 99 == i ) {
+			Top++;
+		}
 
 		tR.Left		= (eeFloat)tGlyph.CurX / Tex->Width();
 		tR.Top		= (eeFloat)tGlyph.CurY / Tex->Height();

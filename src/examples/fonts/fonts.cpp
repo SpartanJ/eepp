@@ -15,12 +15,20 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 		// Create a new True Type Font
 		cTTFFont * TTF			= cTTFFont::New( "DejaVuSansMonoOutline" );
+		cTTFFont * TTFO			= cTTFFont::New( "DejaVuSansMonoOutlineFreetype" );
 		cTTFFont * TTF2			= cTTFFont::New( "DejaVuSansMono" );
 		cTextureFont * TexF		= cTextureFont::New( "ProggySquareSZ" );
 		cTextureFont * TexF2	= cTextureFont::New( "conchars" );
 
 		// Load the TTF font
 		TTF->Load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 18, TTF_STYLE_NORMAL, 128, eeColor(255,255,255), 3, eeColor(0,0,0), true );
+
+		// Change the default method to use for outlining the font glyphs
+		cTTFFont::DefaultOutlineMethod = cTTFFont::OutlineFreetype;
+
+		// Create the exact same font than before but using the new outlining method
+		TTFO->Load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 18, TTF_STYLE_NORMAL, 128, eeColor(255,255,255), 3, eeColor(0,0,0), true );
+
 		TTF2->Load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 24, TTF_STYLE_NORMAL, 128, eeColor(255,255,255), 0, eeColor(0,0,0), true );
 
 		// Save the TTF font so then it can be loaded as a cTextureFont
@@ -38,13 +46,8 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		TexF2->Load( TexLoader.Id(), 32 );
 
 		// Set a text to render
-		String text;
-		text.clear();
-
-		for ( char i = 32; i < 96; i++ )
-			text += String::ToStr(  (char)i );
-
-		TTF->SetText( "Lorem ipsum dolor sit amet, consectetur adipisicing elit.\n" + text );
+		TTF->SetText( "Lorem ipsum dolor sit amet, consectetur adipisicing elit." );
+		TTFO->SetText( TTF->GetText() );
 		TTF2->SetText( TTF->GetText() );
 		TexF->SetText( TTF->GetText() );
 		TexF2->SetText( TTF->GetText() );
@@ -90,6 +93,8 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 			// Draw the text on screen
 			TTF->Draw( win->GetWidth() * 0.5f - TTF->GetTextWidth() * 0.5f, YPos );
+
+			TTFO->Draw( win->GetWidth() * 0.5f - TTF->GetTextWidth() * 0.5f, ( YPos += TTF->GetTextHeight() + 24 ) );
 
 			TTF2->Draw( win->GetWidth() * 0.5f - TTF2->GetTextWidth() * 0.5f, ( YPos += TTF->GetTextHeight() + 24 ) );
 
