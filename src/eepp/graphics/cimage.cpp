@@ -389,9 +389,19 @@ void cImage::CopyImage( cImage * image, const Uint32& x, const Uint32& y ) {
 		eeUint dWidth 	= image->Width();
 		eeUint dHeight 	= image->Height();
 
-		for ( eeUint ty = 0; ty < dHeight; ty++ ) {
-			for ( eeUint tx = 0; tx < dWidth; tx++ ) {
-				SetPixel( x + tx, y + ty, image->GetPixel( tx, ty ) );
+		if ( mChannels != image->Channels() ) {
+			for ( eeUint ty = 0; ty < dHeight; ty++ ) {
+				for ( eeUint tx = 0; tx < dWidth; tx++ ) {
+					SetPixel( x + tx, y + ty, image->GetPixel( tx, ty ) );
+				}
+			}
+		} else {
+			// Copy per row
+			for ( eeUint ty = 0; ty < dHeight; ty++ ) {
+				Uint8 *			pDst	= &mPixels[ ( x + ( ( ty + y ) * mWidth ) ) * mChannels ];
+				const Uint8 *	pSrc	= &( ( image->GetPixelsPtr() )[ ( ty * dWidth ) * mChannels  ] );
+
+				memcpy( pDst, pSrc, mChannels * dWidth );
 			}
 		}
 	}

@@ -339,10 +339,6 @@ void cTTFFont::RebuildFromGlyphs() {
 	for (eeUint i = 0; i < mNumChars; i++) {
 		tGlyph		= mGlyphs[i];
 
-		if ( 99 == i ) {
-			Top++;
-		}
-
 		tR.Left		= (eeFloat)tGlyph.CurX / Tex->Width();
 		tR.Top		= (eeFloat)tGlyph.CurY / Tex->Height();
 
