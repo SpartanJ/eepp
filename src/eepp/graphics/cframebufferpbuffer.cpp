@@ -4,6 +4,7 @@
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/renderer/crenderergl3.hpp>
 #include <eepp/graphics/renderer/crenderergles2.hpp>
+#include <eepp/graphics/cglobalbatchrenderer.hpp>
 
 #ifdef EE_GLEW_AVAILABLE
 
@@ -247,6 +248,8 @@ bool cFrameBufferPBuffer::Create( const Uint32& Width, const Uint32& Height, boo
 
 void cFrameBufferPBuffer::Bind() {
 	bool ChangeContext = false;
+
+	cGlobalBatchRenderer::instance()->Draw();
 
 #ifdef EE_GLEW_AVAILABLE
 

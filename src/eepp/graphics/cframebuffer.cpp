@@ -62,8 +62,6 @@ void cFrameBuffer::Clear() {
 }
 
 void cFrameBuffer::SetBufferView() {
-	cGlobalBatchRenderer::instance()->Draw();
-
 	mPrevView = mWindow->GetView();
 
 	// Get the user projection matrix

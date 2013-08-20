@@ -2,6 +2,7 @@
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/window/cengine.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
+#include <eepp/graphics/cglobalbatchrenderer.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -117,6 +118,8 @@ bool cFrameBufferFBO::Create( const Uint32& Width, const Uint32& Height, bool De
 
 void cFrameBufferFBO::Bind() {
 	if ( mFrameBuffer ) {
+		cGlobalBatchRenderer::instance()->Draw();
+
 		BindFrameBuffer();
 		BindRenderBuffer();
 
