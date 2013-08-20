@@ -30,9 +30,9 @@ hkFont::hkFont( hkFontManager * FontManager, unsigned int CacheSize ) :
 hkFont::~hkFont() {
 	CacheFlush();
 
-	if ( NULL != Face() ) {
-		FT_Done_Face( Face() );
-		Face( NULL );
+	if ( NULL != mFace ) {
+		FT_Done_Face( mFace );
+		mFace = NULL;
 	}
 
 	hkSAFE_DELETE_ARRAY( mCache );

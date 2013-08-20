@@ -9,12 +9,12 @@ const bool cCondition::AutoUnlock = true;
 const bool cCondition::ManualUnlock = false;
 
 cCondition::cCondition( int value ) :
-	mCondImpl( eeNew( cConditionImpl, ( value ) ) )
+	mCondImpl( new cConditionImpl( value ) )
 {
 }
 
 cCondition::~cCondition() {
-	eeSAFE_DELETE( mCondImpl );
+	delete mCondImpl;
 }
 
 void cCondition::Lock() {

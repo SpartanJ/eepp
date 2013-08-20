@@ -353,25 +353,16 @@ void cTexture::Update( const Uint8* pixels, Uint32 width, Uint32 height, Uint32 
 	if ( NULL != pixels && mTexture && x + width <= mWidth && y + height <= mHeight ) {
 		cTextureSaver saver( mTexture );
 
-		glTexSubImage2D( GL_TEXTURE_2D, 0, x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels );
+		glTexSubImage2D( GL_TEXTURE_2D, 0, x, y, width, height, (GLenum)pf, GL_UNSIGNED_BYTE, pixels );
 	}
 }
 
 void cTexture::Update( const Uint8* pixels ) {
-	Update( pixels, mWidth, mHeight );
+	Update( pixels, mWidth, mHeight, 0, 0, ChannelsToPixelFormat( mChannels ) );
 }
 
 void cTexture::Update( cImage *image, Uint32 x, Uint32 y ) {
-	EE_PIXEL_FORMAT pf = PF_RGBA;;
-
-	if ( 3 == image->Channels() )
-		pf = PF_RGB;
-	else if ( 2 == image->Channels() )
-		pf = PF_RG;
-	else if ( 1 == image->Channels() )
-		pf = PF_RED;
-
-	Update( image->GetPixelsPtr(), image->Width(), image->Height(), x, y, pf );
+	Update( image->GetPixelsPtr(), image->Width(), image->Height(), x, y, ChannelsToPixelFormat( image->Channels() ) );
 }
 
 const Uint32& cTexture::HashName() const {

@@ -32,6 +32,9 @@ class EE_API cImage {
 		/** @return The save type from a given extension ( example: "png" => SAVE_TYPE_PNG ) */
 		static EE_SAVE_TYPE ExtensionToSaveType( const std::string& Extension );
 
+		/** @return Convert the number of channels to a pixel format */
+		static EE_PIXEL_FORMAT ChannelsToPixelFormat( const Uint32& channels );
+
 		/** @return True if success to get the info.
 		* @param path the image path
 		* @param width the var to store the image width

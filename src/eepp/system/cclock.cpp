@@ -4,13 +4,13 @@
 namespace EE { namespace System {
 
 cClock::cClock() :
-	mClockImpl( eeNew( Platform::cClockImpl, () ) )
+	mClockImpl( new Platform::cClockImpl() )
 {
 	Restart();
 }
 
 cClock::~cClock() {
-	eeSAFE_DELETE( mClockImpl );
+	delete mClockImpl;
 }
 
 void cClock::Restart() {

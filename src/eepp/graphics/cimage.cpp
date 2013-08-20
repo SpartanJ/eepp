@@ -48,6 +48,19 @@ EE_SAVE_TYPE cImage::ExtensionToSaveType( const std::string& Extension ) {
 	return saveType;
 }
 
+EE_PIXEL_FORMAT cImage::ChannelsToPixelFormat( const Uint32& channels ) {
+	EE_PIXEL_FORMAT pf = PF_RGBA;;
+
+	if ( 3 == channels )
+		pf = PF_RGB;
+	else if ( 2 == channels )
+		pf = PF_RG;
+	else if ( 1 == channels )
+		pf = PF_RED;
+
+	return pf;
+}
+
 bool cImage::GetInfo( const std::string& path, int * width, int * height, int * channels ) {
 	bool res = stbi_info( path.c_str(), width, height, channels ) != 0;
 

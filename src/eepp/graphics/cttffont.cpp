@@ -47,7 +47,7 @@ bool cTTFFont::LoadFromMemory( Uint8* TTFData, const eeUint& TTFDataSize, const 
 
 	mFont = hkFontManager::instance()->OpenFromMemory( reinterpret_cast<Uint8*>(&TTFData[0]), TTFDataSize, Size, 0, NumCharsToGen );
 
-	if ( OutlineSize ) {
+	if ( OutlineSize && OutlineFreetype == DefaultOutlineMethod ) {
 		mFontOutline = hkFontManager::instance()->OpenFromMemory( reinterpret_cast<Uint8*>(&TTFData[0]), TTFDataSize, Size, 0, NumCharsToGen );
 		mFontOutline->Outline( OutlineSize );
 	}
@@ -63,7 +63,7 @@ bool cTTFFont::Load( const std::string& Filepath, const eeUint& Size, EE_TTF_FON
 
 		mFont = hkFontManager::instance()->OpenFromFile( Filepath.c_str(), Size, 0, NumCharsToGen );
 
-		if ( OutlineSize ) {
+		if ( OutlineSize && OutlineFreetype == DefaultOutlineMethod ) {
 			mFontOutline = hkFontManager::instance()->OpenFromFile( Filepath.c_str(), Size, 0, NumCharsToGen );
 			mFontOutline->Outline( OutlineSize );
 		}
@@ -130,7 +130,7 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 
 	// Find the best size for the texture ( aprox )
 	// Totally wild guessing, but it's working
-	Int32 tWildGuessW = ( mAscent + PixelSep );
+	Int32 tWildGuessW = ( mAscent + PixelSep + OutlineSize );
 	Int32 tWildGuessH = tWildGuessW;
 
 	ReqSize = mNumChars * tWildGuessW * tWildGuessH;
@@ -156,6 +156,7 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 
 	Uint32 * TexGlyph;
 	Uint32 w = (Uint32)mTexWidth;
+	//Uint32 h = (Uint32)mTexHeight;
 	eeColorA fFontColor( FontColor );
 
 	//Loop through all chars

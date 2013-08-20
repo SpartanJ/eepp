@@ -94,7 +94,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 			// Draw the text on screen
 			TTF->Draw( win->GetWidth() * 0.5f - TTF->GetTextWidth() * 0.5f, YPos );
 
-			TTFO->Draw( win->GetWidth() * 0.5f - TTF->GetTextWidth() * 0.5f, ( YPos += TTF->GetTextHeight() + 24 ) );
+			TTFO->Draw( win->GetWidth() * 0.5f - TTFO->GetTextWidth() * 0.5f, ( YPos += TTF->GetTextHeight() + 24 ) );
 
 			TTF2->Draw( win->GetWidth() * 0.5f - TTF2->GetTextWidth() * 0.5f, ( YPos += TTF->GetTextHeight() + 24 ) );
 

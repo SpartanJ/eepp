@@ -4,12 +4,12 @@
 namespace EE { namespace System {
 
 cMutex::cMutex() :
-	mMutexImpl( eeNew( Platform::cMutexImpl, () ) )
+	mMutexImpl( new Platform::cMutexImpl() )
 {
 }
 
 cMutex::~cMutex() {
-	eeSAFE_DELETE( mMutexImpl );
+	delete mMutexImpl;
 }
 
 void cMutex::Lock() {
