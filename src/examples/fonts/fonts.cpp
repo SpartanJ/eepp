@@ -24,7 +24,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		TTF->Load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 18, TTF_STYLE_NORMAL, 128, eeColor(255,255,255), 3, eeColor(0,0,0), true );
 
 		// Change the default method to use for outlining the font glyphs
-		cTTFFont::DefaultOutlineMethod = cTTFFont::OutlineFreetype;
+		cTTFFont::OutlineMethod = cTTFFont::OutlineFreetype;
 
 		// Create the exact same font than before but using the new outlining method
 		TTFO->Load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 18, TTF_STYLE_NORMAL, 128, eeColor(255,255,255), 3, eeColor(0,0,0), true );

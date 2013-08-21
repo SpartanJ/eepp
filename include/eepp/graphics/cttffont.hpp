@@ -14,14 +14,14 @@ namespace EE { namespace Graphics {
 /** @brief This class loads True Type Font and then draw strings to the screen. */
 class EE_API cTTFFont : public cFont {
 	public:
-		enum OutlineMethod
+		enum OutlineMethods
 		{
 			OutlineEntropia,	//! Slow, but better for small fonts
 			OutlineFreetype		//! Faster, usually better for big fonts
 		};
 
 		//! Let the user select the default method to use for outlining the glyphs
-		static OutlineMethod DefaultOutlineMethod;
+		static OutlineMethods OutlineMethod;
 
 		/** Creates an instance of a true type font */
 		static cTTFFont * New( const std::string FontName );

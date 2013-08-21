@@ -6,7 +6,7 @@ using namespace HaikuTTF;
 
 namespace EE { namespace Graphics {
 
-cTTFFont::OutlineMethod cTTFFont::DefaultOutlineMethod = cTTFFont::OutlineEntropia;
+cTTFFont::OutlineMethods cTTFFont::OutlineMethod = cTTFFont::OutlineEntropia;
 
 cTTFFont * cTTFFont::New( const std::string FontName ) {
 	return eeNew( cTTFFont, ( FontName ) );
@@ -47,7 +47,7 @@ bool cTTFFont::LoadFromMemory( Uint8* TTFData, const eeUint& TTFDataSize, const 
 
 	mFont = hkFontManager::instance()->OpenFromMemory( reinterpret_cast<Uint8*>(&TTFData[0]), TTFDataSize, Size, 0, NumCharsToGen );
 
-	if ( OutlineSize && OutlineFreetype == DefaultOutlineMethod ) {
+	if ( OutlineSize && OutlineFreetype == OutlineMethod ) {
 		mFontOutline = hkFontManager::instance()->OpenFromMemory( reinterpret_cast<Uint8*>(&TTFData[0]), TTFDataSize, Size, 0, NumCharsToGen );
 		mFontOutline->Outline( OutlineSize );
 	}
@@ -63,7 +63,7 @@ bool cTTFFont::Load( const std::string& Filepath, const eeUint& Size, EE_TTF_FON
 
 		mFont = hkFontManager::instance()->OpenFromFile( Filepath.c_str(), Size, 0, NumCharsToGen );
 
-		if ( OutlineSize && OutlineFreetype == DefaultOutlineMethod ) {
+		if ( OutlineSize && OutlineFreetype == OutlineMethod ) {
 			mFontOutline = hkFontManager::instance()->OpenFromFile( Filepath.c_str(), Size, 0, NumCharsToGen );
 			mFontOutline->Outline( OutlineSize );
 		}
@@ -94,8 +94,8 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 		PixelSep = 1;
 
 	Uint32 TexSize;
-	Uint32 OutSize		 = ( OutlineFreetype == DefaultOutlineMethod ) ? 0 : OutlineSize;
-	Uint32 OutTotal		 = ( OutlineFreetype == DefaultOutlineMethod ) ? 0 : OutlineSize * 2;
+	Uint32 OutSize		 = ( OutlineFreetype == OutlineMethod ) ? 0 : OutlineSize;
+	Uint32 OutTotal		 = ( OutlineFreetype == OutlineMethod ) ? 0 : OutlineSize * 2;
 
 	if ( mFont == NULL ) {
 		cLog::instance()->Write( "Failed to load TTF Font " + mFilepath + "." );
@@ -174,7 +174,7 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 		GlyphRect.y = mFont->Current()->Pixmap()->rows;
 
 		// Create the outline for the glyph and copy the outline to the texture
-		if ( OutlineSize && OutlineFreetype == DefaultOutlineMethod ) {
+		if ( OutlineSize && OutlineFreetype == OutlineMethod ) {
 			TempOutGlyphSurface = mFontOutline->GlyphRender( i, eeColorA( OutlineColor ).GetValue() );
 
 			mFontOutline->GlyphMetrics( i, &TempGlyph.MinX, &TempGlyph.MaxX, &TempGlyph.MinY, &TempGlyph.MaxY, &TempGlyph.Advance );
@@ -244,7 +244,7 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 		}
 
 		// Create the outline for the glyph and copy the outline to the texture
-		if ( OutlineSize && OutlineEntropia == DefaultOutlineMethod ) {
+		if ( OutlineSize && OutlineEntropia == OutlineMethod ) {
 			eeRecti nGlyphR(
 				TempGlyph.CurX,
 				TempGlyph.CurY,
