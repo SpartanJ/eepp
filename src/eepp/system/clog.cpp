@@ -6,6 +6,13 @@
 	#define ANDROID_LOGI(...) __android_log_print(ANDROID_LOG_INFO   , "eepp", __VA_ARGS__)
 #endif
 
+#if defined( EE_COMPILER_MSVC )
+	#ifndef WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN
+	#endif
+	#include <windows.h>
+#endif
+
 namespace EE { namespace System {
 
 SINGLETON_DECLARE_IMPLEMENTATION(cLog)
@@ -55,6 +62,8 @@ void cLog::Write( std::string Text, const bool& newLine ) {
 	if ( mConsoleOutput ) {
 	#if EE_PLATFORM == EE_PLATFORM_ANDROID
 		ANDROID_LOGI( Text.c_str() );
+	#elif defined( EE_COMPILER_MSVC )
+		OutputDebugString( Text.c_str() );
 	#else
 		std::cout << Text;
 	#endif
@@ -109,11 +118,13 @@ void cLog::Writef( const char* format, ... ) {
 			WriteToReaders( tstr );
 
 			if ( mConsoleOutput ) {
-				#if EE_PLATFORM != EE_PLATFORM_ANDROID
-				std::cout << tstr;
-				#else
+			#if EE_PLATFORM == EE_PLATFORM_ANDROID
 				ANDROID_LOGI( tstr.c_str() );
-				#endif
+			#elif defined( EE_COMPILER_MSVC )
+				OutputDebugString( tstr.c_str() );
+			#else
+				std::cout << tstr;
+			#endif
 			}
 
             if ( mLiveWrite ) {
