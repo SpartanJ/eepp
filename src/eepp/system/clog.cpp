@@ -17,7 +17,7 @@ cLog::cLog() :
 	mFS( NULL )
 {
 	Write("...::: Entropia Engine++ Loaded :::...");
-	Write( "Loaded on " + Sys::GetDateTimeStr() );
+	Write( "Loaded on " + Sys::GetDateTimeStr() + "\n" );
 }
 
 cLog::~cLog() {
