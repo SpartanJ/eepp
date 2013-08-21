@@ -5,9 +5,6 @@ using namespace EE::System::Platform;
 
 namespace EE { namespace System {
 
-const bool cCondition::AutoUnlock = true;
-const bool cCondition::ManualUnlock = false;
-
 cCondition::cCondition( int value ) :
 	mCondImpl( new cConditionImpl( value ) )
 {
@@ -20,8 +17,8 @@ cCondition::~cCondition() {
 void cCondition::Lock() {
 	mCondImpl->Lock();
 }
-	
-bool cCondition::WaitAndLock( int awaitedValue, bool autorelease ) {
+
+bool cCondition::WaitAndLock( int awaitedValue, int autorelease ) {
 	bool flag = mCondImpl->WaitAndRetain( awaitedValue );
 	
 	if ( autorelease ) {

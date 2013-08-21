@@ -19,6 +19,14 @@
 	#if ( defined( _MSCVER ) || defined( _MSC_VER ) )
 		#define EE_COMPILER_MSVC
 	#endif
+
+	#ifdef CreateWindow
+		#undef CreateWindow
+	#endif
+
+	#ifdef CreateCursor
+		#undef CreateCursor
+	#endif
 #elif defined( __APPLE_CC__ ) || defined ( __APPLE__ )
 
 	#include <TargetConditionals.h>

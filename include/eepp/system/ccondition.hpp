@@ -12,9 +12,12 @@ namespace Platform { class cConditionImpl; }
 class EE_API cCondition : NonCopyable {
 	public:
 		//! Constants for arg 2 of WaitAndLock()
-		static const bool AutoUnlock;		// true
-		static const bool ManualUnlock;	// false
-		
+		enum LockType
+		{
+			ManualUnlock	= 0,	// false
+			AutoUnlock		= 1		// true
+		};
+
 		/** Initializes a Condition object and sets its internal value to @value.
 		 * Thus using WaitAndLock(@value, ...) will immediately return.
 		 */
@@ -49,7 +52,7 @@ class EE_API cCondition : NonCopyable {
 		 * reached if the Condition has been disabled through Invalidate(). An
 		 * invalidated Condition always returns in an unlocked state.
 		 */
-		bool WaitAndLock( int awaitedValue, bool autoUnlock = false );
+		bool WaitAndLock( int awaitedValue, int autoUnlock = false );
 		
 		/** Unlocks a previously locked Condition with @value as
 		 * internal value. When the condition is unlocked, it is assumed
