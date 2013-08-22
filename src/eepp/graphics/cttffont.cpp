@@ -257,8 +257,8 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 				Uint32 Pos			= 0;
 				Uint32 RPos			= 0;
 				Uint32 alphaSize	= nGlyphS.x * nGlyphS.y;
-				Uint8 * alpha_init	= eeNewArray( Uint8, alphaSize );
-				Uint8 * alpha_final	= eeNewArray( Uint8, alphaSize );
+				Uint8 * alpha_init	= (Uint8*)eeMalloc( alphaSize );
+				Uint8 * alpha_final	= (Uint8*)eeMalloc( alphaSize );
 
 				// Fill the alpha_init ( the default font alpha channels ) and the alpha_final ( the new outline )
 				for ( Int32 y = 0; y < nGlyphS.y; y++ ) {
@@ -284,8 +284,8 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 					}
 				}
 
-				eeSAFE_DELETE_ARRAY( alpha_init );
-				eeSAFE_DELETE_ARRAY( alpha_final );
+				eeSAFE_FREE( alpha_init );
+				eeSAFE_FREE( alpha_final );
 			}
 		}
 

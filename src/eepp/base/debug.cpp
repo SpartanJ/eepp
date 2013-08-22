@@ -6,6 +6,9 @@
 using namespace EE::System;
 
 #ifdef EE_COMPILER_MSVC
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
 #include <windows.h>
 #include <crtdbg.h>
 #endif

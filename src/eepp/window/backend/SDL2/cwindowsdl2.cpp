@@ -388,12 +388,9 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	#endif
 		cLog::instance()->Writef( "Switching from %s to %s. Width: %d Height %d.", this->Windowed() ? "windowed" : "fullscreen", Windowed ? "windowed" : "fullscreen", Width, Height );
 
-		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
-		#if EE_PLATFORM == EE_PLATFORM_WIN
-		bool Reload = this->Windowed() != Windowed;
-		#else
+		// @TODO Test in OS X if this is still needed
+		#if EE_PLATFORM == EE_PLATFORM_MACOSX
 		bool Reload = true;
-		#endif
 
 		if ( Reload )
 			Graphics::cTextureFactory::instance()->GrabTextures();
@@ -427,7 +424,7 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 			SDL_SetWindowFullscreen( mSDLWindow, Windowed ? SDL_FALSE : SDL_TRUE );
 		}
 
-		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
+		#if EE_PLATFORM == EE_PLATFORM_MACOSX
 		if ( Reload ) {
 			cGL::instance()->Init();
 
