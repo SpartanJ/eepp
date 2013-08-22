@@ -28,7 +28,7 @@ cLog::cLog() :
 }
 
 cLog::~cLog() {
-	Write( "\nUnloaded on " + Sys::GetDateTimeStr(), false );
+	Write( "\nUnloaded on " + Sys::GetDateTimeStr() );
 	Write( "...::: Entropia Engine++ Unloaded :::...\n" );
 
 	if ( mSave && !mLiveWrite ) {
