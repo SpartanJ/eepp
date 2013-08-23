@@ -36,7 +36,6 @@ void cEETest::Init() {
 	MyPath 				= Sys::GetProcessPath() + "assets/";
 
 	cIniFile Ini( MyPath + "ee.ini" );
-	Ini.ReadFile();
 
 	PartsNum			= Ini.GetValueI( "EEPP", "ParticlesNum", 1000 );
 	mUseShaders			= Ini.GetValueB( "EEPP", "UseShaders", false );

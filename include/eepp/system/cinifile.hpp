@@ -31,15 +31,15 @@ class EE_API cIniFile {
 		enum errors { noID = -1 };
 
 		/** Initialize and load the ini file from path  */
-		cIniFile ( std::string const iniPath = "" );
+		cIniFile ( std::string const iniPath = "", const bool& readFile = true );
 
 		/** Initialize and load the ini file from memory  */
-		cIniFile ( const Uint8* RAWData, const Uint32& size );
+		cIniFile ( const Uint8* RAWData, const Uint32& size, const bool& readFile = true );
 
 		/** Initialize and load the ini file from a pack file  */
-		cIniFile ( cPack * Pack, std::string iniPackPath );
+		cIniFile ( cPack * Pack, std::string iniPackPath, const bool& readFile = true );
 
-		virtual ~cIniFile()                            {}
+		virtual ~cIniFile() {}
 
 		/** Loads an ini file from path */
 		bool LoadFromFile( const std::string& iniPath );

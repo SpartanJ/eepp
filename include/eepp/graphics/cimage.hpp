@@ -53,14 +53,17 @@ class EE_API cImage {
 
 		cImage();
 
-		/** Use an existing image */
+		/** Copy a image data to create the new image */
+		cImage( cImage * image );
+
+		/** Use an existing image ( and appropriates the data passed ) */
 		cImage( Uint8* data, const eeUint& Width, const eeUint& Height, const eeUint& Channels );
 
 		/** Copy a image data to create the image */
 		cImage( const Uint8* data, const eeUint& Width, const eeUint& Height, const eeUint& Channels );
 
 		/** Create an empty image */
-		cImage( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const eeColorA& DefaultColor = eeColorA(0,0,0,0) );
+		cImage( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const eeColorA& DefaultColor = eeColorA(0,0,0,0), const bool& initWithDefaultColor = true );
 
 		/** Load an image from path
 		* @param forceChannels Number of channels to use for the image, default 0 means that it use the default image channels.
@@ -75,7 +78,7 @@ class EE_API cImage {
 		virtual ~cImage();
 
 		/** Create an empty image data */
-		void Create(const Uint32& Width, const Uint32& Height, const Uint32& Channels, const eeColorA &DefaultColor = eeColorA(0,0,0,0) );
+		void Create( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const eeColorA &DefaultColor = eeColorA(0,0,0,0), const bool& initWithDefaultColor = true );
 
 		/** Return the pixel color from the image. \n You must have a copy of the image on local memory. For that you need to Lock the image first. */
 		virtual eeColorA GetPixel(const eeUint& x, const eeUint& y);
@@ -157,6 +160,12 @@ class EE_API cImage {
 		**	@param x The x position to start drawing the image
 		**	@param y The y position to start drawing the image */
 		void Blit( cImage * image, const Uint32& x = 0, const Uint32& y = 0 );
+
+		/** @return A copy of the original image */
+		cImage * Copy();
+
+		/** Overload the assigment operator to ensure the image copy */
+		cImage& operator =(const cImage& right);
 	protected:
 		static Uint32 sJpegQuality;
 
@@ -168,7 +177,7 @@ class EE_API cImage {
 		bool			mAvoidFree;
 		bool			mLoadedFromStbi;
 
-		void 			Allocate( const Uint32& size, eeColorA DefaultColor = eeColorA(0,0,0,0) );
+		void 			Allocate( const Uint32& size, eeColorA DefaultColor = eeColorA(0,0,0,0), bool memsetData = true );
 
 		void			LoadFromPack( cPack * Pack, const std::string& FilePackPath );
 };

@@ -99,6 +99,18 @@ cImage::cImage() :
 {
 }
 
+cImage::cImage( cImage * image ) :
+	mPixels(NULL),
+	mWidth(image->mWidth),
+	mHeight(image->mHeight),
+	mChannels(image->mChannels),
+	mSize(image->mSize),
+	mAvoidFree(image->mAvoidFree),
+	mLoadedFromStbi(image->mLoadedFromStbi)
+{
+	SetPixels( image->GetPixelsPtr() );
+}
+
 cImage::cImage( const Uint8* data, const eeUint& Width, const eeUint& Height, const eeUint& Channels ) :
 	mPixels(NULL),
 	mWidth(Width),
@@ -111,7 +123,7 @@ cImage::cImage( const Uint8* data, const eeUint& Width, const eeUint& Height, co
 	SetPixels( data );
 }
 
-cImage::cImage( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const eeColorA& DefaultColor ) :
+cImage::cImage( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const eeColorA& DefaultColor, const bool& initWithDefaultColor ) :
 	mPixels(NULL),
 	mWidth(Width),
 	mHeight(Height),
@@ -120,7 +132,7 @@ cImage::cImage( const Uint32& Width, const Uint32& Height, const Uint32& Channel
 	mAvoidFree(false),
 	mLoadedFromStbi(false)
 {
-	Create( Width, Height, Channels, DefaultColor );
+	Create( Width, Height, Channels, DefaultColor, initWithDefaultColor );
 }
 
 cImage::cImage( Uint8* data, const eeUint& Width, const eeUint& Height, const eeUint& Channels ) :
@@ -222,11 +234,9 @@ void cImage::LoadFromPack( cPack * Pack, const std::string& FilePackPath ) {
 
 void cImage::SetPixels( const Uint8* data ) {
 	if ( data != NULL ) {
-		eeUint size = (eeUint)mWidth * (eeUint)mHeight * mChannels;
+		Allocate( mWidth * mHeight * mChannels, eeColorA(0,0,0,0), false );
 
-		Allocate( size );
-
-		memcpy( reinterpret_cast<void*>( &mPixels[0] ), reinterpret_cast<const void*> ( data ), size );
+		memcpy( reinterpret_cast<void*>( &mPixels[0] ), reinterpret_cast<const void*> ( data ), mSize );
 	}
 }
 
@@ -246,28 +256,27 @@ void cImage::SetPixel(const eeUint& x, const eeUint& y, const eeColorA& Color) {
 	memcpy( &mPixels[ ( ( x + y * mWidth ) * mChannels ) ], &Color, mChannels );
 }
 
-void cImage::Create( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const eeColorA& DefaultColor ) {
+void cImage::Create( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const eeColorA& DefaultColor, const bool& initWithDefaultColor ) {
 	mWidth 		= Width;
 	mHeight 	= Height;
 	mChannels 	= Channels;
 
-	Allocate( mWidth * mHeight * mChannels );
+	Allocate( mWidth * mHeight * mChannels, DefaultColor, initWithDefaultColor );
 }
 
 Uint8* cImage::GetPixels() const {
 	return mPixels;
 }
 
-void cImage::Allocate( const Uint32& size, eeColorA DefaultColor ) {
+void cImage::Allocate( const Uint32& size, eeColorA DefaultColor, bool memsetData ) {
 	ClearCache();
 
 	mPixels = eeNewArray( unsigned char, size );
-
-	Int32 c = (Int32)DefaultColor.GetValue();
-
-	memset( mPixels, c, size );
-
 	mSize 	= size;
+
+	if ( memsetData ) {
+		memset( mPixels, (int)DefaultColor.GetValue(), size );
+	}
 }
 
 eeUint cImage::MemSize() const {
@@ -506,6 +515,27 @@ void cImage::Blit( cImage * image, const Uint32& x, const Uint32& y ) {
 			}
 		}
 	}
+}
+
+cImage * cImage::Copy() {
+	return eeNew( cImage, ( this ) );
+}
+
+cImage &cImage::operator =(const cImage &right) {
+	mWidth = right.mWidth;
+	mHeight = right.mHeight;
+	mChannels = right.mChannels;
+	mSize = right.mSize;
+	mAvoidFree = right.mAvoidFree;
+	mLoadedFromStbi = right.mLoadedFromStbi;
+
+	ClearCache();
+
+	if ( NULL != right.mPixels ) {
+		SetPixels( right.mPixels );
+	}
+
+	return *this;
 }
 
 }}

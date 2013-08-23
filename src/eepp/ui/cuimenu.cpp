@@ -84,7 +84,7 @@ Uint32 cUIMenu::Add( const String& Text, cSubTexture * Icon ) {
 	return Add( CreateMenuItem( Text, Icon ) );
 }
 
-cUIMenuCheckBox * cUIMenu::CreateMenuCheckBox( const String& Text ) {
+cUIMenuCheckBox * cUIMenu::CreateMenuCheckBox( const String& Text, const bool &Active ) {
 	cUIMenuCheckBox::CreateParams Params;
 	Params.Parent( this );
 	Params.Font 			= mFont;
@@ -110,11 +110,14 @@ cUIMenuCheckBox * cUIMenu::CreateMenuCheckBox( const String& Text ) {
 	tCtrl->Visible( true );
 	tCtrl->Enabled( true );
 
+	if ( Active )
+		tCtrl->Active( Active );
+
 	return tCtrl;
 }
 
-Uint32 cUIMenu::AddCheckBox( const String& Text ) {
-	return Add( CreateMenuCheckBox( Text ) );
+Uint32 cUIMenu::AddCheckBox( const String& Text, const bool& Active ) {
+	return Add( CreateMenuCheckBox( Text, Active ) );
 }
 
 cUIMenuSubMenu * cUIMenu::CreateSubMenu( const String& Text, cSubTexture * Icon, cUIMenu * SubMenu ) {

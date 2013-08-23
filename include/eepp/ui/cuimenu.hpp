@@ -71,7 +71,7 @@ class EE_API cUIMenu : public cUIComplexControl {
 
 		Uint32 AddSeparator();
 
-		Uint32 AddCheckBox( const String& Text );
+		Uint32 AddCheckBox( const String& Text, const bool& Active = false );
 
 		Uint32 AddSubMenu( const String& Text, cSubTexture * Icon = NULL, cUIMenu * SubMenu = NULL );
 
@@ -140,7 +140,7 @@ class EE_API cUIMenu : public cUIComplexControl {
 		
 		cUIMenuItem * CreateMenuItem( const String& Text, cSubTexture * Icon );
 
-		cUIMenuCheckBox * CreateMenuCheckBox( const String& Text );
+		cUIMenuCheckBox * CreateMenuCheckBox( const String& Text, const bool& Active );
 
 		cUIMenuSubMenu * CreateSubMenu( const String& Text, cSubTexture * Icon, cUIMenu * SubMenu );
 		

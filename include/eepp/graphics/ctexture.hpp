@@ -9,7 +9,7 @@
 
 namespace EE { namespace Graphics {
 
-class EE_API cTexture : public cImage {
+class EE_API cTexture : public cImage, private NonCopyable {
 	public:
 		/** Set the OpenGL Texture Id (texture handle) */
 		void Handle( const int& texture ) { mTexture = texture; }
