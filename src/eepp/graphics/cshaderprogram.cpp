@@ -236,6 +236,8 @@ bool cShaderProgram::Link() {
 		mLinkLog.resize( logarraysize );
 
 		glGetProgramInfoLog( Handler(), logarraysize, &logsize, reinterpret_cast<GLchar*>( &mLinkLog[0] ) );
+
+		mLinkLog.resize( logsize );
 	}
 	#endif
 
