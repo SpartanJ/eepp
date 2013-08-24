@@ -15,14 +15,14 @@ class EE_API cClock {
 
 		~cClock();
 
-		/** Resets timer */
+		/** Restarts the timer */
 		void Restart();
 
-		/** Returns microseconds since initialisation or last reset */
+		/** @returns time since initialisation or last reset */
 		cTime GetElapsedTime() const;
 
-		/** Time in milliseconds elapsed between this call and the last call to Elapsed()
-		* This is the equivalent to call GetElapsedTime() and then Reset().
+		/** Time in time elapsed between this call and the last call to Elapsed()
+		* This is the equivalent to call GetElapsedTime() and then Restart().
 		*/
 		cTime Elapsed();
 	private:
