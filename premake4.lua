@@ -252,22 +252,9 @@ function build_link_configuration( package_name, use_ee_icon )
 			links { link_list }
 		end
 		
-		if ( is_vs() ) then
-			if ( backend_is("SDL") ) then
-				links { get_backend_link_name( "SDL" ), "SDLmain" }
-			elseif ( backend_is("SDL2") ) then
-				links { get_backend_link_name( "SDL2" ), "SDL2main" }
-			elseif ( backend_is("SFML") ) then
-				links { get_backend_link_name( "sfml-system" ) }
-				links { get_backend_link_name( "sfml-window" ) }
-			end
-		else
-			if os.is_real("macosx") or os.is("windows") then
-				if os.is("windows") and not is_vs() then	
-					if ( true == use_ee_icon ) then
-						linkoptions { "../../assets/icon/ee.res" }
-					end
-				end
+		if os.is("windows") and not is_vs() then	
+			if ( true == use_ee_icon ) then
+				linkoptions { "../../assets/icon/ee.res" }
 			end
 		end
 	end	
