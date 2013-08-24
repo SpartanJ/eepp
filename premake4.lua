@@ -236,12 +236,19 @@ end
 
 function build_link_configuration( package_name, use_ee_icon )
 	includedirs { "include", "src" }
+
+	if package_name == "eepp" then
+		defines { "EE_EXPORTS" }
+	elseif package_name == "eepp-static" then
+		defines { "EE_STATIC" }
+	end
 	
 	if package_name ~= "eepp" and package_name ~= "eepp-static" then
 		if not _OPTIONS["with-static-eepp"] then
 			links { "eepp-shared" }
 		else
 			links { "eepp-static" }
+			defines { "EE_STATIC" }
 			add_static_links()
 			links { link_list }
 		end
@@ -258,40 +265,18 @@ function build_link_configuration( package_name, use_ee_icon )
 				links { get_backend_link_name( "sfml-window" ) }
 			end
 		else
-			if ( os.is_real("macosx") or os.is_real("windows") or os.is_real("mingw32") ) then
-				if os.is_real("windows") or os.is_real("mingw32") then
-					links { "mingw32" }
-					
+			if os.is_real("macosx") or os.is("windows") then
+				if os.is("windows") and not is_vs() then	
 					if ( true == use_ee_icon ) then
 						linkoptions { "../../assets/icon/ee.res" }
 					end
 				end
-
-				if ( backend_is("SDL") ) then
-					links { "SDLmain", get_backend_link_name( "SDL" ) }
-				elseif ( backend_is("SDL2") ) then
-					links { "SDL2main", get_backend_link_name( "SDL2" ) }
-				elseif ( backend_is("allegro5") ) then
-					links { "allegro_main", get_backend_link_name( "allegro" ) }
-				elseif ( backend_is("SFML") ) then
-					links { get_backend_link_name( "sfml-system" ) }
-					links { get_backend_link_name( "sfml-window" ) }
-				end
 			end
 		end
-	end
-	
+	end	
+
 	configuration "debug"
 		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
-		
-		if package_name == "eepp" then
-			defines { "EE_DYNAMIC", "EE_EXPORTS" }
-		else
-			if package_name ~= "eepp-static" then
-				defines { "EE_DYNAMIC" }
-			end
-		end
-		
 		flags { "Symbols" }
 
 		if not is_vs() then
@@ -302,15 +287,6 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	configuration "release"
 		defines { "NDEBUG" }
-		
-		if package_name == "eepp" then
-			defines { "EE_DYNAMIC", "EE_EXPORTS" }
-		else
-			if package_name ~= "eepp-static" then
-				defines { "EE_DYNAMIC" }
-			end
-		end
-		
 		flags { "Optimize" }
 
 		if not is_vs() then
@@ -484,11 +460,7 @@ end
 
 function backend_is( name )
 	if not _OPTIONS["with-backend"] then
-		if ( os.is_real("mingw32") ) then
-			_OPTIONS["with-backend"] = "SDL"
-		else
-			_OPTIONS["with-backend"] = "SDL2"
-		end
+		_OPTIONS["with-backend"] = "SDL2"
 	end
 
 	if next(backends) == nil then
@@ -706,6 +678,12 @@ solution "eepp"
 		files { "src/eepp/helper/jpeg-compressor/*.cpp" }
 		build_base_cpp_configuration( "jpeg-compressor" )
 
+	project "eepp-main"
+		kind "StaticLib"
+		language "C++"
+		targetdir("libs/" .. os.get_real() .. "/")
+		files { "src/eepp/main/eepp_main.cpp" }
+
 	project "eepp-static"
 		kind "StaticLib"
 		language "C++"
@@ -718,13 +696,13 @@ solution "eepp"
 		targetdir("libs/" .. os.get_real() .. "/")
 		build_eepp( "eepp" )
 
+	-- Examples
 	project "eepp-test"
 		kind "WindowedApp"
 		language "C++"
 		files { "src/test/*.cpp" }
 		build_link_configuration( "eetest", true )
 
-	-- Examples
 	project "eepp-es"
 		kind "WindowedApp"
 		language "C++"

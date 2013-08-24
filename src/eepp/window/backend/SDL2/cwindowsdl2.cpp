@@ -64,6 +64,10 @@ static std::string SDL_AndroidGetApkPath() {
 }
 #endif
 
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
+#define SDL2_THREADED_GLCONTEXT
+#endif
+
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 cWindowSDL::cWindowSDL( WindowSettings Settings, ContextSettings Context ) :
@@ -205,7 +209,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 		}*/
 	#endif
 
-	#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
+	#ifdef SDL2_THREADED_GLCONTEXT
 		SDL_GL_SetAttribute( SDL_GL_SHARE_WITH_CURRENT_CONTEXT, 1 );
 
 		mGLContext			= SDL_GL_CreateContext( mSDLWindow );
@@ -215,7 +219,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	#endif
 
 	if ( NULL == mGLContext
-	#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
+	#ifdef SDL2_THREADED_GLCONTEXT
 		 || NULL == mGLContextThread
 	#endif
 	)
@@ -279,7 +283,11 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 }
 
 bool cWindowSDL::IsThreadedGLContext() {
+#ifdef SDL2_THREADED_GLCONTEXT
 	return true;
+#else
+	return false;
+#endif
 }
 
 void cWindowSDL::SetGLContextThread() {

@@ -1,6 +1,6 @@
 #include <eepp/ee.hpp>
 
-EE_MAIN_FUNC int main (int argc, char * argv [])
+int main (int argc, char * argv [])
 {
 	// Create a new window
 	cWindow * win = cEngine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - Fonts" ), ContextSettings( true ) );

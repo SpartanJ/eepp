@@ -18,6 +18,13 @@
 
 	#if ( defined( _MSCVER ) || defined( _MSC_VER ) )
 		#define EE_COMPILER_MSVC
+
+		#pragma warning(disable : 4251)
+		#pragma warning(disable : 4244)
+		#pragma warning(disable : 4996)
+		#pragma warning(disable : 4311)
+		#pragma warning(disable : 4312)
+		#pragma warning(disable : 4068)
 	#endif
 
 	#ifdef CreateWindow
@@ -59,19 +66,13 @@
 	#endif
 #endif
 
-#if !defined( EE_GLES1 ) && !defined( EE_GLES2 )
-#define EE_PLATFORM_DESKTOP
-#endif
-
 #if defined ( linux ) || defined( __linux__ ) \
 	|| defined( __FreeBSD__ ) || defined(__OpenBSD__) || defined( __NetBSD__ ) || defined( __DragonFly__ ) \
 	|| defined( __SVR4 ) || defined( __sun )
 
-#if !defined( EE_GLES1 ) && !defined( EE_GLES2 )
-
-#define EE_X11_PLATFORM
-
-#endif
+	#if !defined( EE_GLES1 ) && !defined( EE_GLES2 )
+		#define EE_X11_PLATFORM
+	#endif
 
 #endif
 
@@ -80,7 +81,7 @@
 	#define EE_PLATFORM_POSIX
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || EE_PLATFORM == EE_PLATFORM_SOLARIS || EE_PLATFORM == EE_PLATFORM_HAIKU
+#if EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_BSD || EE_PLATFORM == EE_PLATFORM_SOLARIS || EE_PLATFORM == EE_PLATFORM_HAIKU || EE_PLATFORM == EE_PLATFORM_ANDROID
 	#define EE_HAVE_CLOCK_GETTIME
 #endif
 
@@ -97,51 +98,22 @@
 	#define EE_BACKEND_SDL_ACTIVE
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS || defined( EE_COMPILER_MSVC )
-	#if EE_PLATFORM == EE_PLATFORM_ANDROID
-		#define EE_NO_WIDECHAR
-	#endif
+#if EE_PLATFORM == EE_PLATFORM_ANDROID
+	#define EE_NO_WIDECHAR
+#endif
 
-	#ifdef EE_BACKEND_SDL_ACTIVE
+#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
+	#if defined( EE_BACKEND_SDL_ACTIVE )
 		#define main	SDL_main
 	#endif
+#endif
 
-	#ifdef EE_BACKEND_ALLEGRO_ACTIVE
-		#if EE_PLATFORM == EE_PLATFORM_IOS
-			#define ALLEGRO_MAGIC_MAIN
-			#define main _al_mangled_main
-		#elif EE_PLATFORM == EE_PLATFORM_ANDROID
-			#ifdef __cplusplus
-			extern "C" int main(int argc, char ** argv);
-			#else
-			extern int main(int argc, char ** argv);
-			#endif
-		#endif
-	#endif
-
-	#ifndef EE_MAIN_FUNC
-		#ifdef __cplusplus
-			#define EE_MAIN_FUNC extern "C"
-		#else
-			#define EE_MAIN_FUNC
-		#endif
-	#endif
-#else
-	#if defined( EE_BACKEND_SDL_ACTIVE ) && EE_PLATFORM == EE_PLATFORM_WIN
-		#define main	SDL_main
-		#define EE_MAIN_FUNC extern "C"
-		extern "C" int SDL_main(int argc, char *argv[]);
-	#endif
-
-	#ifndef EE_MAIN_FUNC
-		#define EE_MAIN_FUNC
-	#endif
-
+#if EE_PLATFORM != EE_PLATFORM_ANDROID
 	#define EE_SUPPORT_EXCEPTIONS
 #endif
 
 #ifndef EE_DEBUG
-	#if defined( DEBUG ) || defined( _DEBUG ) || defined( __DEBUG ) || defined( __DEBUG__ )
+	#ifndef NDEBUG
 		#define EE_DEBUG
 	#endif
 #endif
@@ -161,23 +133,8 @@
 	#define EE_ENDIAN EE_BIG_ENDIAN
 #endif
 
-#ifdef EE_PLATFORM
-	#define EE_SUPPORTED_PLATFORM
-#else
-	#error Platform not supported
-#endif
-
-#if EE_PLATFORM == EE_PLATFORM_WIN
-	#ifdef EE_COMPILER_MSVC
-		#pragma warning(disable : 4251)
-		#pragma warning(disable : 4244)
-		#pragma warning(disable : 4996)
-		#pragma warning(disable : 4311)
-		#pragma warning(disable : 4312)
-		#pragma warning(disable : 4068)
-	#endif
-
-	#ifdef EE_DYNAMIC
+#ifndef EE_STATIC
+	#if EE_PLATFORM == EE_PLATFORM_WIN
 		// Windows platforms
 		#ifdef EE_EXPORTS
 			// From DLL side, we must export
@@ -187,20 +144,14 @@
 			#define EE_API __declspec(dllimport)
 		#endif
 	#else
-		// No specific directive needed for static build
-		#ifndef EE_API
-		#define EE_API
+		#if ( __GNUC__ >= 4 )
+			#define EE_API __attribute__ ((visibility("default")))
 		#endif
 	#endif
-#else
-	#if ( __GNUC__ >= 4 )
-		#define EE_API __attribute__ ((visibility("default")))
-	#endif
+#endif
 
-	// Other platforms don't need to define anything
-	#ifndef EE_API
+#ifndef EE_API
 	#define EE_API
-	#endif
 #endif
 
 #ifndef EE_USE_DOUBLES
@@ -232,7 +183,6 @@
 
 namespace EE {
 #if 1 == EE_USE_DOUBLES
-	#define EE_SIZE_OF_FLOAT 8
 	typedef double eeFloat;
 	#define eesqrt sqrt
 	#define eesin sin
@@ -247,7 +197,6 @@ namespace EE {
 	#define eeceil ceil
 	#define eeabs abs
 #else
-	#define EE_SIZE_OF_FLOAT 4
 	typedef float eeFloat; //! The internal floating point used on EE++. \n This can help to improve compatibility with some platforms. \n And helps for an easy change from single precision to double precision.
 	#define eesqrt sqrtf
 	#define eesin sinf

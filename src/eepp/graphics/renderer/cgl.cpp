@@ -10,7 +10,7 @@ cGL * GLi = NULL;
 cGL * cGL::ms_singleton = NULL;
 
 cGL * cGL::CreateSingleton( EEGL_version ver ) {
-	#ifdef EE_PLATFORM_DESKTOP
+	#if !defined( EE_GLES1 ) && !defined( EE_GLES2 )
 	if ( GLv_default == ver )
 		ver = GLv_2;
 	#else

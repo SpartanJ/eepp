@@ -1,7 +1,6 @@
 #include <eepp/ee.hpp>
 
-// EE_MAIN_FUNC is needed for some platforms to export the main function as C function.
-EE_MAIN_FUNC int main (int argc, char * argv [])
+int main (int argc, char * argv [])
 {
 	// Create a new window
 	cWindow * win = cEngine::instance()->CreateWindow( WindowSettings( 1024, 768, "eepp - VBO - FBO and Batch Rendering" ), ContextSettings( true ) );

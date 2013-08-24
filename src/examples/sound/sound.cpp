@@ -55,7 +55,7 @@ void playMusic() {
 }
 
 /// Entry point of application
-EE_MAIN_FUNC int main (int argc, char * argv [])
+int main (int argc, char * argv [])
 {
 	// Play a sound
 	playSound();

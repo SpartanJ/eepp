@@ -81,7 +81,7 @@ void videoResize( cWindow * w ) {
 }
 using namespace Demo_ExternalShader;
 
-EE_MAIN_FUNC int main (int argc, char * argv [])
+int main (int argc, char * argv [])
 {
 	win = cEngine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - External Shaders" ), ContextSettings( true ) );
 

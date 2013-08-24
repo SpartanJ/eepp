@@ -1945,7 +1945,7 @@ void cEETest::End() {
 
 }
 
-EE_MAIN_FUNC int main (int argc, char * argv []) {
+int main (int argc, char * argv []) {
 	Demo_Test::cEETest * Test = eeNew( Demo_Test::cEETest, () );
 
 	Test->Process();
