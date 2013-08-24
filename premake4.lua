@@ -103,7 +103,6 @@ newoption {
 	allowed = {
 		{ "SDL",    "SDL 1.2" },
 		{ "SDL2",  "SDL2 (default and recommended)" },
-		{ "allegro5",  "Allegro 5" },
 		{ "SFML",  "SFML2 ( SFML 1.6 not supported )" }
 	}
 }
@@ -258,8 +257,6 @@ function build_link_configuration( package_name, use_ee_icon )
 				links { get_backend_link_name( "SDL" ), "SDLmain" }
 			elseif ( backend_is("SDL2") ) then
 				links { get_backend_link_name( "SDL2" ), "SDL2main" }
-			elseif ( backend_is("allegro5") ) then
-				links { get_backend_link_name( "allegro" ), "allegro_main" }
 			elseif ( backend_is("SFML") ) then
 				links { get_backend_link_name( "sfml-system" ) }
 				links { get_backend_link_name( "sfml-window" ) }
@@ -392,17 +389,6 @@ function add_sdl()
 	defines { "EE_BACKEND_SDL_ACTIVE", "EE_SDL_VERSION_1_2" }
 end
 
-function add_allegro5()
-	files { "src/eepp/window/backend/allegro5/*.cpp" }
-	defines { "EE_BACKEND_ALLEGRO_ACTIVE" }
-	
-	if not can_add_static_backend("allegro") then
-		table.insert( link_list, get_backend_link_name( "allegro" ) )
-	else
-		insert_static_backend( "allegro5" )
-	end
-end
-
 function add_sfml()
 	files { "src/eepp/window/backend/SFML/*.cpp" }
 	defines { "EE_BACKEND_SFML_ACTIVE" }
@@ -490,11 +476,7 @@ function select_backend()
 	if backend_is( "SDL" ) then
 		add_sdl()
 	end
-	
-	if backend_is( "allegro5" ) then
-		add_allegro5()
-	end
-	
+
 	if backend_is( "SFML" ) then
 		add_sfml()
 	end
@@ -505,8 +487,6 @@ function select_backend()
 			add_sdl()
 		elseif os_findlib("SDL2") then
 			add_sdl2()
-		elseif os_findlib("allegro5") then
-			add_allegro5()
 		elseif os_findlib("SFML") then
 			add_sfml()
 		else

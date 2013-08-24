@@ -18,7 +18,7 @@ class EE_API cEngine {
 		~cEngine();
 
 		/** Creates a new window.
-		* Allegro 5, SDL2, SFML backends support more than one window creation, SDL 1.2 backend only 1 window.
+		* SDL2, SFML backends support more than one window creation, SDL 1.2 backend only 1 window.
 		*/
 		Window::cWindow * CreateWindow( WindowSettings Settings, ContextSettings Context = ContextSettings() );
 
@@ -58,7 +58,7 @@ class EE_API cEngine {
 			BitColor		32,16,8
 			Windowed		bool
 			Resizeable		bool
-			Backend			SDL or allegro
+			Backend			SDL, SDL2 or SFML
 			WinIcon			The path to the window icon
 			WinCaption		The window default title
 
@@ -74,7 +74,7 @@ class EE_API cEngine {
 			BitColor		32,16,8
 			Windowed		bool
 			Resizeable		bool
-			Backend			SDL or allegro
+			Backend			SDL, SDL2 or SFML
 			WinIcon			The path to the window icon
 			WinCaption		The window default title
 
@@ -139,15 +139,11 @@ class EE_API cEngine {
 
 		Backend::cBackend * CreateSDL2Backend( const WindowSettings& Settings );
 
-		Backend::cBackend * CreateAllegroBackend( const WindowSettings& Settings );
-
 		Backend::cBackend * CreateSFMLBackend( const WindowSettings& Settings );
 
 		cWindow * CreateSDLWindow( const WindowSettings& Settings, const ContextSettings& Context );
 
 		cWindow * CreateSDL2Window( const WindowSettings& Settings, const ContextSettings& Context );
-
-		cWindow * CreateAllegroWindow( const WindowSettings& Settings, const ContextSettings& Context );
 
 		cWindow * CreateSFMLWindow( const WindowSettings& Settings, const ContextSettings& Context );
 

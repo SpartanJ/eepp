@@ -24,7 +24,7 @@ class EE_API cJoystickManager {
 
 		/** Rescan all joysticks to look for new joystick connected.
 		* This could be slow on some backends, and unnecessary on others.
-		* Is slow in SDL and allegro 5, SFML and SDL2 shouldn't need this.
+		* Is slow in SDL. SFML and SDL2 shouldn't need this.
 		*/
 		virtual void	Rescan();
 

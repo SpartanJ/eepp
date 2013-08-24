@@ -17,13 +17,11 @@
 #include <eepp/window/cbackend.hpp>
 #include <eepp/window/backend/SDL/cbackendsdl.hpp>
 #include <eepp/window/backend/SDL2/cbackendsdl2.hpp>
-#include <eepp/window/backend/allegro5/cbackendal.hpp>
 #include <eepp/window/backend/SFML/cbackendsfml.hpp>
 
 #define BACKEND_SDL			1
 #define BACKEND_SDL2		2
-#define BACKEND_ALLEGRO		3
-#define BACKEND_SFML		4
+#define BACKEND_SFML		3
 
 #ifndef DEFAULT_BACKEND
 
@@ -31,8 +29,6 @@
 #define DEFAULT_BACKEND		BACKEND_SDL2
 #elif defined( EE_BACKEND_SDL_1_2 )
 #define DEFAULT_BACKEND		BACKEND_SDL
-#elif defined( EE_BACKEND_ALLEGRO_ACTIVE )
-#define DEFAULT_BACKEND		BACKEND_ALLEGRO
 #elif defined( EE_BACKEND_SFML_ACTIVE )
 #define DEFAULT_BACKEND		BACKEND_SFML
 #endif
@@ -109,14 +105,6 @@ Backend::cBackend * cEngine::CreateSDL2Backend( const WindowSettings &Settings )
 #endif
 }
 
-Backend::cBackend * cEngine::CreateAllegroBackend( const WindowSettings &Settings ) {
-#if defined( EE_BACKEND_ALLEGRO_ACTIVE )
-	return eeNew( Backend::Al::cBackendAl, () );
-#else
-	return NULL;
-#endif
-}
-
 Backend::cBackend * cEngine::CreateSFMLBackend( const WindowSettings &Settings ) {
 #if defined( EE_BACKEND_SFML_ACTIVE )
 	return eeNew( Backend::SFML::cBackendSFML, () );
@@ -149,19 +137,6 @@ cWindow * cEngine::CreateSDL2Window( const WindowSettings& Settings, const Conte
 #endif
 }
 
-cWindow * cEngine::CreateAllegroWindow( const WindowSettings& Settings, const ContextSettings& Context ) {
-#if defined( EE_BACKEND_ALLEGRO_ACTIVE )
-
-	if ( NULL == mBackend ) {
-		mBackend	= CreateAllegroBackend( Settings );
-	}
-
-	return eeNew( Backend::Al::cWindowAl, ( Settings, Context ) );
-#else
-	return NULL;
-#endif
-}
-
 cWindow * cEngine::CreateSFMLWindow( const WindowSettings& Settings, const ContextSettings& Context ) {
 #if defined( EE_BACKEND_SFML_ACTIVE )
 
@@ -180,8 +155,6 @@ cWindow * cEngine::CreateDefaultWindow( const WindowSettings& Settings, const Co
 	return CreateSDLWindow( Settings, Context );
 #elif DEFAULT_BACKEND == BACKEND_SDL2
 	return CreateSDL2Window( Settings, Context );
-#elif DEFAULT_BACKEND == BACKEND_ALLEGRO
-	return CreateAllegroWindow( Settings, Context );
 #elif DEFAULT_BACKEND == BACKEND_SFML
 	return CreateSFMLWindow( Settings, Context );
 #endif
@@ -197,7 +170,6 @@ cWindow * cEngine::CreateWindow( WindowSettings Settings, ContextSettings Contex
 	switch ( Settings.Backend ) {
 		case WindowBackend::SDL:		window = CreateSDLWindow( Settings, Context );		break;
 		case WindowBackend::SDL2:		window = CreateSDL2Window( Settings, Context );		break;
-		case WindowBackend::Allegro:	window = CreateAllegroWindow( Settings, Context );	break;
 		case WindowBackend::SFML:		window = CreateSFMLWindow( Settings, Context );		break;
 		case WindowBackend::Default:
 		default:						window = CreateDefaultWindow( Settings, Context );	break;
@@ -284,8 +256,6 @@ Uint32 cEngine::GetDefaultBackend() const {
 	return WindowBackend::SDL;
 #elif DEFAULT_BACKEND == BACKEND_SDL2
 	return WindowBackend::SDL2;
-#elif DEFAULT_BACKEND == BACKEND_ALLEGRO
-	return WindowBackend::Allegro;
 #elif DEFAULT_BACKEND == BACKEND_SFML
 	return WindowBackend::SFML;
 #endif
@@ -307,8 +277,7 @@ WindowSettings cEngine::CreateWindowSettings( cIniFile * ini, std::string iniKey
 
 	String::ToLower( Backend );
 
-	if ( "allegro" == Backend )		WinBackend	= WindowBackend::Allegro;
-	else if ( "sdl2" == Backend )	WinBackend	= WindowBackend::SDL2;
+	if ( "sdl2" == Backend )		WinBackend	= WindowBackend::SDL2;
 	else if ( "sdl" == Backend )	WinBackend	= WindowBackend::SDL;
 	else if ( "sfml" == Backend )	WinBackend	= WindowBackend::SFML;
 

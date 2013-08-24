@@ -36,7 +36,6 @@ namespace WindowBackend {
 	{
 		SDL,
 		SDL2,
-		Allegro,
 		SFML,
 		Default
 	};
