@@ -1,7 +1,9 @@
 #ifndef EE_OPENGL_HPP
 #define EE_OPENGL_HPP
 
-#ifdef EE_64BIT
+#include <eepp/declares.hpp>
+
+#if 1 == EE_USE_DOUBLES
 #define GL_FP	GL_DOUBLE
 #else
 #define GL_FP	GL_FLOAT

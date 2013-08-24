@@ -209,6 +209,8 @@ public:
 		return eeColorAf( red, green, blue, alpha );
 	}
 
+	#define EE_COLOR_BLEND_FTOU8(color) (Uint8)( color == 1.f ? 255 : (color * 255.99f))
+
 	/** Blend a source color to destination color */
 	static inline eeColorA Blend( eeColorA src, eeColorA dst ) {
 		eeColorAf srcf( (eeFloat)src.Red / 255.f, (eeFloat)src.Green / 255.f, (eeFloat)src.Blue / 255.f, (eeFloat)src.Alpha / 255.f );
@@ -218,11 +220,7 @@ public:
 		eeFloat green	= ( srcf.Green	* srcf.Alpha + dstf.Green	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
 		eeFloat blue	= ( srcf.Blue	* srcf.Alpha + dstf.Blue	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
 
-		return eeColorA(	((Uint8)(eefloor(red == 1.f ? 255 : red * 256.f))), 
-							((Uint8)(eefloor(green == 1.f ? 255 : green * 256.f))), 
-							((Uint8)(eefloor(blue == 1.f ? 255 : blue * 256.f))), 
-							((Uint8)(eefloor(alpha == 1.f ? 255 : alpha * 256.f)))
-						);
+		return eeColorA( EE_COLOR_BLEND_FTOU8(red), EE_COLOR_BLEND_FTOU8(green), EE_COLOR_BLEND_FTOU8(blue), EE_COLOR_BLEND_FTOU8(alpha) );
 	}
 };
 

@@ -1433,8 +1433,8 @@ void cEETest::Input() {
 			eeFloat nmX = Mousef.x + mAxisX;
 			eeFloat nmY = Mousef.y + mAxisY;
 
-			nmX = eemax( nmX, 0.f );
-			nmY = eemax( nmY, 0.f );
+			nmX = eemax<eeFloat>( nmX, 0 );
+			nmY = eemax<eeFloat>( nmY, 0 );
 			nmX = eemin( nmX, (eeFloat)EE->GetWidth() );
 			nmY = eemin( nmY, (eeFloat)EE->GetHeight() );
 
