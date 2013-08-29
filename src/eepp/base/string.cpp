@@ -354,7 +354,7 @@ std::string String::ToAnsiString(const std::locale& locale) const
 }
 
 #ifndef EE_NO_WIDECHAR
-String String::ToWideString() const
+std::wstring String::ToWideString() const
 {
     // Prepare the output string
 	std::wstring output;

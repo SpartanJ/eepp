@@ -608,7 +608,7 @@ void PhysicsDestroy() {
 	mDemo[ mCurDemo ].destroy();
 }
 
-int main (int argc, char * argv [])
+EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	mWindow = cEngine::instance()->CreateWindow( WindowSettings( 1024, 768, "eepp - Physics" ), ContextSettings( true ) );
 

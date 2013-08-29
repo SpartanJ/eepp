@@ -281,7 +281,7 @@ class EE_API String {
 	** @return Converted wide string
 	** @see ToAnsiString, operator String
 	**/
-	String ToWideString() const;
+	std::wstring ToWideString() const;
 #endif
 
 	/** Convert the string to a Utf8 string */

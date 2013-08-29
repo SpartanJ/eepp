@@ -26,7 +26,7 @@ void spriteCallback( Uint32 Event, cSprite * Sprite, void * UserData ) {
 	}
 }
 
-int main (int argc, char * argv [])
+EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	// Create a new window
 	cWindow * win = cEngine::instance()->CreateWindow( WindowSettings( 640, 480, "eepp - Sprites" ), ContextSettings( true ) );

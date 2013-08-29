@@ -1,6 +1,6 @@
 #include <eepp/ee.hpp>
 
-int main (int argc, char * argv [])
+EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	// Create a new window
 	cWindow * win = cEngine::instance()->CreateWindow( WindowSettings( 1024, 768, "eepp - VBO - FBO and Batch Rendering" ), ContextSettings( true ) );

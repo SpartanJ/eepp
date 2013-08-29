@@ -98,15 +98,18 @@
 	#define EE_BACKEND_SDL_ACTIVE
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_ANDROID
-	#define EE_NO_WIDECHAR
-#endif
-
 #if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
 	#if defined( EE_BACKEND_SDL_ACTIVE )
 		#define main	SDL_main
 	#endif
 #endif
+
+#ifdef __cplusplus
+#define EE_MAIN_FUNC extern "C"
+#else
+#define EE_MAIN_FUNC
+#endif
+
 
 #if EE_PLATFORM != EE_PLATFORM_ANDROID
 	#define EE_SUPPORT_EXCEPTIONS
