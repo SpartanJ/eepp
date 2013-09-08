@@ -10,7 +10,7 @@ namespace EE { namespace Window { namespace Backend { class cBackend; } } }
 
 namespace EE { namespace Window {
 
-/** @brief The window management class. Here the engine start working. (Singleton Class). */
+/** @brief The window management class. Here the engine starts working. (Singleton Class). */
 class EE_API cEngine {
 	SINGLETON_DECLARE_HEADERS(cEngine)
 

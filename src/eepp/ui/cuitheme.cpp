@@ -262,9 +262,13 @@ bool cUITheme::SearchFilesInAtlas( cTextureAtlas * SG, std::string Element, Uint
 				break;
 			}
 		}
+
+		if ( Found ) {
+			break;
+		}
 	}
 
-	// Seach Simple Skin
+	// Search Simple Skin
 	if ( !IsComplex ) {
 		for ( i = 0; i < cUISkinState::StateCount; i++ ) {
 			ElemName = Element + "_" + cUISkin::GetSkinStateName( i );

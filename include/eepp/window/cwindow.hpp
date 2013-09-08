@@ -416,10 +416,14 @@ class EE_API cWindow {
 		virtual std::string GetApkPath();
 #endif
 
+		/** @return True if the current window support a threaded GL Context. This means that supports OpenGL Shared Contexts ( multithreaded opengl contexts ).
+		**	Only supported with SDL2 backend.*/
 		virtual bool IsThreadedGLContext();
 
+		/** Activates the shared GL context in the current thread. */
 		virtual void SetGLContextThread();
 
+		/** Deactviates the shared GL context in the current thread. */
 		virtual void UnsetGLContextThread();
 	protected:
 		friend class cEngine;

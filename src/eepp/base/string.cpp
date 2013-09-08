@@ -134,12 +134,13 @@ void String::StrCopy( char * Dst, const char * Src, eeUint DstSize ) {
 }
 
 Int32 String::StartsWith( const std::string& Start, const std::string Str ) {
-	Int32 Pos = -1;
+	Int32 Pos	= -1;
+	Int32 s		= (Int32)Start.size();
 
-	if ( Str.size() >= Start.size() ) {
-		for ( Uint32 i = 0; i < Start.size(); i++ ) {
+	if ( (Int32)Str.size() >= s ) {
+		for ( Int32 i = 0; i < s; i++ ) {
 			if ( Start[i] == Str[i] ) {
-				Pos = (Int32)i;
+				Pos = i;
 			} else {
 				Pos = -1;
 				break;

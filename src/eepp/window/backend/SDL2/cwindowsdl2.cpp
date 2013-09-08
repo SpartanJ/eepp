@@ -92,6 +92,10 @@ cWindowSDL::~cWindowSDL() {
 		SDL_GL_DeleteContext( mGLContext );
 	}
 
+	if ( NULL != mGLContextThread ) {
+		SDL_GL_DeleteContext( mGLContextThread );
+	}
+
 #ifdef EE_USE_WMINFO
 	eeSAFE_DELETE( mWMinfo );
 #endif
