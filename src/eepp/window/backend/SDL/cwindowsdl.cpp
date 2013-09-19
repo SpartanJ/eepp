@@ -374,16 +374,16 @@ void cWindowSDL::SwapBuffers() {
 	SDL_GL_SwapBuffers();
 }
 
-std::vector< std::pair<unsigned int, unsigned int> > cWindowSDL::GetPossibleResolutions() const {
+std::vector<DisplayMode> cWindowSDL::GetDisplayModes() const {
 	SDL_Rect **modes = SDL_ListModes( NULL, SDL_OPENGL | SDL_HWPALETTE | SDL_HWACCEL | SDL_FULLSCREEN );
 
 	if(modes == (SDL_Rect **)0)
 		cLog::instance()->Write("No VideoMode Found");
 
-	std::vector< std::pair<unsigned int, unsigned int> > result;
+	std::vector<DisplayMode> result;
 	if( modes != (SDL_Rect **)-1 )
 		for(unsigned int i = 0; modes[i]; ++i)
-			result.push_back( std::pair<unsigned int, unsigned int>(modes[i]->w, modes[i]->h) );
+			result.push_back( DisplayMode(modes[i]->w, modes[i]->h,60,0) );
 
 	return result;
 }

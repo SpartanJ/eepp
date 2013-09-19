@@ -68,8 +68,8 @@ void cWindowNull::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 void cWindowNull::SwapBuffers() {
 }
 
-std::vector< std::pair<unsigned int, unsigned int> > cWindowNull::GetPossibleResolutions() const {
-	return std::vector< std::pair<unsigned int, unsigned int> >();
+std::vector<DisplayMode> cWindowNull::GetDisplayModes() const {
+	return std::vector<DisplayMode>();
 }
 
 void cWindowNull::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {

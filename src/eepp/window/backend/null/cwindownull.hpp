@@ -41,7 +41,7 @@ class EE_API cWindowNull : public cWindow {
 
 		void Size( Uint32 Width, Uint32 Height, bool Windowed );
 
-		std::vector< std::pair<unsigned int, unsigned int> > GetPossibleResolutions() const;
+		std::vector<DisplayMode> GetDisplayModes() const;
 
 		void SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue );
 

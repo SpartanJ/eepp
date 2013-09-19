@@ -121,6 +121,24 @@ class WindowInfo {
 	eeWindowContex		Context;
 };
 
+/** @brief DisplayMode contains a display mode available to use */
+class DisplayMode {
+	public:
+
+	inline DisplayMode( int width, int height, int refreshRate, int screenIndex ) :
+		Width( width ),
+		Height( height ),
+		RefreshRate( refreshRate ),
+		ScreenIndex( screenIndex )
+	{
+	}
+
+	Uint32 Width;
+	Uint32 Height;
+	Uint32 RefreshRate;
+	Uint32 ScreenIndex;
+};
+
 
 /* See the official Android developer guide for more information:
    http://developer.android.com/guide/topics/data/data-storage.html
@@ -195,7 +213,7 @@ class EE_API cWindow {
 		virtual void Size( Uint32 Width, Uint32 Height, bool Windowed ) = 0;
 
 		/** @return The resolutions that support the video card */
-		virtual std::vector< std::pair<unsigned int, unsigned int> > GetPossibleResolutions() const = 0;
+		virtual std::vector<DisplayMode> GetDisplayModes() const = 0;
 
 		/** Set the Screen Gamma. Default is (1,1,1). Accept values between 0.1 and 10. */
 		virtual void SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) = 0;

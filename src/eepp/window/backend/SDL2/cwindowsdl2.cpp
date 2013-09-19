@@ -479,14 +479,20 @@ void cWindowSDL::SwapBuffers() {
 	SDL_GL_SwapWindow( mSDLWindow );
 }
 
-std::vector< std::pair<unsigned int, unsigned int> > cWindowSDL::GetPossibleResolutions() const {
-	std::vector< std::pair<unsigned int, unsigned int> > result;
+std::vector<DisplayMode> cWindowSDL::GetDisplayModes() const {
+	std::vector<DisplayMode> result;
 
-	for ( Int32 i = 0; i < SDL_GetNumDisplayModes(0); i++ ) {
-		SDL_DisplayMode mode;
-		SDL_GetDisplayMode( 0, i, &mode );
+	int displays = SDL_GetNumVideoDisplays();
 
-		result.push_back( std::pair<unsigned int, unsigned int>( mode.w, mode.h ) );
+	for ( int x = 0; x < displays; x++ ) {
+		int displayModes = SDL_GetNumDisplayModes(x);
+
+		for ( int i = 0; i < displayModes; i++ ) {
+			SDL_DisplayMode mode;
+			SDL_GetDisplayMode( x, i, &mode );
+
+			result.push_back( DisplayMode( mode.w, mode.h, mode.refresh_rate, x ) );
+		}
 	}
 
 	return result;

@@ -189,8 +189,18 @@ void cWindowSFML::SwapBuffers() {
 	mSFMLWindow.display();
 }
 
-std::vector< std::pair<unsigned int, unsigned int> > cWindowSFML::GetPossibleResolutions() const {
-	return std::vector< std::pair<unsigned int, unsigned int> >();
+std::vector<DisplayMode> cWindowSFML::GetDisplayModes() const {
+	std::vector<DisplayMode> result;
+
+	std::vector<sf::VideoMode> modes = sf::VideoMode::getFullscreenModes();
+
+	for (std::size_t i = 0; i < modes.size(); ++i) {
+		sf::VideoMode mode = modes[i];
+
+		result.push_back( DisplayMode( mode.width, mode.height, 60, x ) );
+	}
+
+	return result;
 }
 
 void cWindowSFML::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {
