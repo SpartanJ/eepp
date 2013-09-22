@@ -307,7 +307,7 @@ WindowSettings cEngine::CreateWindowSettings( cIniFile * ini, std::string iniKey
 WindowSettings cEngine::CreateWindowSettings( std::string iniPath, std::string iniKeyName ) {
 	cIniFile Ini( iniPath );
 
-	return CreateWindowSettings( &Ini );
+	return CreateWindowSettings( &Ini, iniKeyName );
 }
 
 ContextSettings cEngine::CreateContextSettings( cIniFile * ini, std::string iniKeyName ) {

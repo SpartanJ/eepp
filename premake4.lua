@@ -1,32 +1,32 @@
 function newplatform(plf)
-    local name = plf.name
-    local description = plf.description
- 
-    -- Register new platform
-    premake.platforms[name] = {
-        cfgsuffix = "_"..name,
-        iscrosscompiler = true
-    }
- 
-    -- Allow use of new platform in --platfroms
-    table.insert(premake.option.list["platform"].allowed, { name, description })
-    table.insert(premake.fields.platforms.allowed, name)
- 
-    -- Add compiler support
-    premake.gcc.platforms[name] = plf.gcc
+	local name = plf.name
+	local description = plf.description
+
+	-- Register new platform
+	premake.platforms[name] = {
+		cfgsuffix = "_"..name,
+		iscrosscompiler = true
+	}
+
+	-- Allow use of new platform in --platfroms
+	table.insert(premake.option.list["platform"].allowed, { name, description })
+	table.insert(premake.fields.platforms.allowed, name)
+
+	-- Add compiler support
+	premake.gcc.platforms[name] = plf.gcc
 end
 
 function newgcctoolchain(toolchain)
-    newplatform {
-        name = toolchain.name,
-        description = toolchain.description,
-        gcc = {
-            cc = toolchain.prefix .. "gcc",
-            cxx = toolchain.prefix .. "g++",
-            ar = toolchain.prefix .. "ar",
-            cppflags = "-MMD " .. toolchain.cppflags
-        }
-    }
+	newplatform {
+		name = toolchain.name,
+		description = toolchain.description,
+		gcc = {
+			cc = toolchain.prefix .. "gcc",
+			cxx = toolchain.prefix .. "g++",
+			ar = toolchain.prefix .. "ar",
+			cppflags = "-MMD " .. toolchain.cppflags
+		}
+	}
 end
 
 newplatform {
@@ -41,10 +41,10 @@ newplatform {
 }
 
 newgcctoolchain {
-    name = "mingw32",
-    description = "Mingw32 to cross-compile windows binaries from *nix",
-    prefix = "i686-w64-mingw32-",
-    cppflags = ""
+	name = "mingw32",
+	description = "Mingw32 to cross-compile windows binaries from *nix",
+	prefix = "i686-w64-mingw32-",
+	cppflags = ""
 }
 
 newgcctoolchain {
@@ -339,7 +339,8 @@ function add_static_links()
 			"libzip-static",
 			"stb_vorbis-static",
 			"jpeg-compressor-static",
-			"zlib-static"
+			"zlib-static",
+			"imageresampler-static"
 	}
 	
 	if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") then
@@ -644,6 +645,13 @@ solution "eepp"
 		targetdir("libs/" .. os.get_real() .. "/helpers/")
 		files { "src/eepp/helper/jpeg-compressor/*.cpp" }
 		build_base_cpp_configuration( "jpeg-compressor" )
+
+	project "imageresampler-static"
+		kind "StaticLib"
+		language "C++"
+		targetdir("libs/" .. os.get_real() .. "/helpers/")
+		files { "src/eepp/helper/imageresampler/*.cpp" }
+		build_base_cpp_configuration( "imageresampler" )
 
 	project "eepp-main"
 		kind "StaticLib"

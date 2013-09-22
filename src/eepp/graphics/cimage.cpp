@@ -7,8 +7,147 @@
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
 #include <eepp/helper/jpeg-compressor/jpge.h>
+#include <eepp/helper/imageresampler/resampler.h>
 
 namespace EE { namespace Graphics {
+
+static const char * get_resampler_name( EE_RESAMPLER_FILTER filter ) {
+	switch ( filter )
+	{
+		case RESAMPLER_BOX: return "box";
+		case RESAMPLER_TENT: return "tent";
+		case RESAMPLER_BELL: return "bell";
+		case RESAMPLER_BSPLINE: return "b-spline";
+		case RESAMPLER_MITCHELL: return "mitchell";
+		case RESAMPLER_LANCZOS3: return "lanczos3";
+		case RESAMPLER_BLACKMAN: return "blackman";
+		case RESAMPLER_LANCZOS4: return "lanczos4";
+		case RESAMPLER_LANCZOS6: return "lanczos6";
+		case RESAMPLER_LANCZOS12: return "lanczos12";
+		case RESAMPLER_KAISER: return "kaiser";
+		case RESAMPLER_GAUSSIAN: return "gaussian";
+		case RESAMPLER_CATMULLROM: return "catmullrom";
+		case RESAMPLER_QUADRATIC_INTERP: return "quadratic_interp";
+		case RESAMPLER_QUADRATIC_APPROX: return "quadratic_approx";
+		case RESAMPLER_QUADRATIC_MIX: return "quadratic_mix";
+	}
+
+	return "lanczos4";
+}
+
+static unsigned char * resample_image( unsigned char* pSrc_image, int src_width, int src_height, int n, int dst_width, int dst_height, EE_RESAMPLER_FILTER filter ) {
+	const int max_components = 4;
+
+	if ((std::max(src_width, src_height) > RESAMPLER_MAX_DIMENSION) || (n > max_components))
+	{
+		return NULL;
+	}
+
+	// Partial gamma correction looks better on mips. Set to 1.0 to disable gamma correction.
+	const float source_gamma = 1.0f;
+
+	// Filter scale - values < 1.0 cause aliasing, but create sharper looking mips.
+	const float filter_scale = 1.0f;//.75f;
+
+	const char* pFilter = get_resampler_name( filter );
+
+	float srgb_to_linear[256];
+	for (int i = 0; i < 256; ++i)
+		srgb_to_linear[i] = (float)pow(i * 1.0f/255.0f, source_gamma);
+
+	const int linear_to_srgb_table_size = 4096;
+	unsigned char linear_to_srgb[linear_to_srgb_table_size];
+
+	const float inv_linear_to_srgb_table_size = 1.0f / linear_to_srgb_table_size;
+	const float inv_source_gamma = 1.0f / source_gamma;
+
+	for (int i = 0; i < linear_to_srgb_table_size; ++i)
+	{
+		int k = (int)(255.0f * pow(i * inv_linear_to_srgb_table_size, inv_source_gamma) + .5f);
+		if (k < 0) k = 0; else if (k > 255) k = 255;
+		linear_to_srgb[i] = (unsigned char)k;
+	}
+
+	Resampler* resamplers[max_components];
+	std::vector<float> samples[max_components];
+
+	resamplers[0] = new Resampler(src_width, src_height, dst_width, dst_height, Resampler::BOUNDARY_CLAMP, 0.0f, 1.0f, pFilter, NULL, NULL, filter_scale, filter_scale);
+	samples[0].resize(src_width);
+	for (int i = 1; i < n; i++)
+	{
+		resamplers[i] = new Resampler(src_width, src_height, dst_width, dst_height, Resampler::BOUNDARY_CLAMP, 0.0f, 1.0f, pFilter, resamplers[0]->get_clist_x(), resamplers[0]->get_clist_y(), filter_scale, filter_scale);
+		samples[i].resize(src_width);
+	}
+
+	unsigned char* dst_image = eeNewArray( unsigned char, (dst_width * n * dst_height) );
+
+	const int src_pitch = src_width * n;
+	const int dst_pitch = dst_width * n;
+	int dst_y = 0;
+
+	for (int src_y = 0; src_y < src_height; src_y++)
+	{
+		const unsigned char* pSrc = &pSrc_image[src_y * src_pitch];
+
+		for (int x = 0; x < src_width; x++)
+		{
+			for (int c = 0; c < n; c++)
+			{
+				if ((c == 3) || ((n == 2) && (c == 1)))
+					samples[c][x] = *pSrc++ * (1.0f/255.0f);
+				else
+					samples[c][x] = srgb_to_linear[*pSrc++];
+			}
+		}
+
+		for (int c = 0; c < n; c++)
+		{
+			if (!resamplers[c]->put_line(&samples[c][0]))
+			{
+				return NULL;
+			}
+		}
+
+		for ( ; ; )
+		{
+			int c;
+			for (c = 0; c < n; c++)
+			{
+				const float* pOutput_samples = resamplers[c]->get_line();
+				if (!pOutput_samples)
+					break;
+
+				const bool alpha_channel = (c == 3) || ((n == 2) && (c == 1));
+				eeASSERT(dst_y < dst_height);
+				unsigned char* pDst = &dst_image[dst_y * dst_pitch + c];
+
+				for (int x = 0; x < dst_width; x++)
+				{
+					if (alpha_channel)
+					{
+						int c = (int)(255.0f * pOutput_samples[x] + .5f);
+						if (c < 0) c = 0; else if (c > 255) c = 255;
+							*pDst = (unsigned char)c;
+					}
+					else
+					{
+						int j = (int)(linear_to_srgb_table_size * pOutput_samples[x] + .5f);
+						if (j < 0) j = 0; else if (j >= linear_to_srgb_table_size) j = linear_to_srgb_table_size - 1;
+						*pDst = linear_to_srgb[j];
+					}
+
+					pDst += n;
+				}
+			}
+			if (c < n)
+				break;
+
+			dst_y++;
+		}
+	}
+
+	return dst_image;
+}
 
 Uint32 cImage::sJpegQuality = 85;
 
@@ -429,35 +568,32 @@ void cImage::CopyImage( cImage * image, const Uint32& x, const Uint32& y ) {
 	}
 }
 
-void cImage::Resize(const Uint32 &newWidth, const Uint32 &newHeight ) {
+void cImage::Resize( const Uint32 &newWidth, const Uint32 &newHeight , EE_RESAMPLER_FILTER filter ) {
 	if ( NULL != mPixels && mWidth != newWidth && mHeight != newHeight ) {
-		unsigned char * resampled = eeNewArray( unsigned char, mChannels * newWidth * newHeight );
 
-		int res = up_scale_image( reinterpret_cast<const unsigned char*> ( mPixels ), mWidth, mHeight, mChannels, resampled, newWidth, newHeight );
+		unsigned char * resampled = resample_image( mPixels, mWidth, mHeight, mChannels, newWidth, newHeight, filter );
 
-		if ( res ) {
+		if ( NULL != resampled ) {
 			ClearCache();
 
 			mPixels 	= resampled;
 			mWidth 		= newWidth;
 			mHeight 	= newHeight;
-		} else {
-			eeSAFE_DELETE_ARRAY( resampled );
 		}
 	}
 }
 
-void cImage::Scale( const eeFloat& scale ) {
+void cImage::Scale( const eeFloat& scale , EE_RESAMPLER_FILTER filter ) {
 	if ( 1.f == scale )
 		return;
 
 	Int32 new_width 	= (Int32)( (eeFloat)mWidth * scale );
 	Int32 new_height 	= (Int32)( (eeFloat)mHeight * scale );
 
-	Resize( new_width, new_height );
+	Resize( new_width, new_height, filter );
 }
 
-cImage * cImage::Thumbnail( const Uint32& maxWidth, const Uint32& maxHeight ) {
+cImage * cImage::Thumbnail( const Uint32& maxWidth, const Uint32& maxHeight, EE_RESAMPLER_FILTER filter ) {
 	if ( NULL != mPixels && mWidth > maxWidth && mHeight > maxHeight ) {
 		eeFloat iScaleX 	= ( (eeFloat)maxWidth / (eeFloat)mWidth );
 		eeFloat iScaleY 	= ( (eeFloat)maxHeight / (eeFloat)mHeight );
@@ -465,14 +601,10 @@ cImage * cImage::Thumbnail( const Uint32& maxWidth, const Uint32& maxHeight ) {
 		Int32 new_width 	= (Int32)( (eeFloat)mWidth * iScale );
 		Int32 new_height 	= (Int32)( (eeFloat)mHeight * iScale );
 
-		unsigned char * resampled = eeNewArray( unsigned char, mChannels * new_width * new_height );
+		unsigned char * resampled = resample_image( mPixels, mWidth, mHeight, mChannels, new_width, new_height, filter );
 
-		int res = up_scale_image( reinterpret_cast<const unsigned char*> ( mPixels ), mWidth, mHeight, mChannels, resampled, new_width, new_height );
-
-		if ( res ) {
+		if ( NULL != resampled ) {
 			return eeNew( cImage, ( (Uint8*)resampled, new_width, new_height, mChannels ) );
-		} else {
-			eeSAFE_DELETE_ARRAY( resampled );
 		}
 	}
 

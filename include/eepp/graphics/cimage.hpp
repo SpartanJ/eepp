@@ -141,16 +141,16 @@ class EE_API cImage {
 		virtual void CopyImage( cImage * image, const Uint32& x = 0, const Uint32& y = 0 );
 
 		/** Scale the image */
-		virtual void Scale( const eeFloat& scale );
+		virtual void Scale( const eeFloat& scale, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
 
 		/** Resize the image */
-		virtual void Resize( const Uint32& newWidth, const Uint32& newHeight );
+		virtual void Resize( const Uint32& newWidth, const Uint32& newHeight, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
 
 		/** Flip the image ( rotate the image 90º ) */
 		virtual void Flip();
 
 		/** Create a thumnail of the image */
-		cImage * Thumbnail( const Uint32& maxWidth, const Uint32& maxHeight );
+		cImage * Thumbnail( const Uint32& maxWidth, const Uint32& maxHeight, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
 
 		/** Set as true if you dont want to free the image data in the cImage destruction ( false as default ). */
 		void AvoidFreeImage( const bool& AvoidFree );
