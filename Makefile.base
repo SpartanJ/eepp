@@ -147,16 +147,13 @@ endif
 ifeq ($(BACKENDS_ALL),yes)
 	BACKEND_SDL		= yes
 	BACKEND_SDL2	= yes
-	BACKEND_ALLEGRO	= yes
 	BACKEND_SFML	= yes
 endif
 
 ifeq ($(BACKEND_SDL),)
 	ifeq ($(BACKEND_SDL2),)
-		ifeq ($(BACKEND_ALLEGRO),)
-			ifeq ($(BACKEND_SFML),)
-				TRY_USE_SDL	= yes
-			endif
+		ifeq ($(BACKEND_SFML),)
+			TRY_USE_SDL	= yes
 		endif
 	endif
 endif
@@ -303,28 +300,6 @@ endif
 
 endif
 
-ifeq ($(BACKEND_ALLEGRO), yes)
-	ifeq ($(STATIC_ALLEGRO),)
-		ifeq ($(BUILD_OS), darwin)
-			ALLEGRO_BACKEND_LINK	= -lallegro -lallegro_main
-		else
-			ALLEGRO_BACKEND_LINK	= -lallegro
-		endif
-		
-		DYLIBS_BACKENDS			+= $(ALLEGRO_BACKEND_LINK)
-	else
-		ALLEGRO_BACKEND_LINK	= libs/$(BUILD_OS)/liballegro.a libs/$(BUILD_OS)/liballegro_main.a
-		STATIC_LIBS				+= $(ALLEGRO_BACKEND_LINK)
-	endif
-
-	ALLEGRO_BACKEND_SRC		= $(wildcard ./src/eepp/window/backend/allegro5/*.cpp)
-	ALLEGRO_DEFINE			= -DEE_BACKEND_ALLEGRO_ACTIVE
-else
-	ALLEGRO_BACKEND_LINK	= 
-	ALLEGRO_BACKEND_SRC		= 
-	ALLEGRO_DEFINE			= 
-endif
-
 ifeq ($(BACKEND_SFML), yes)
 	ifeq ($(STATIC_SFML),)
 		SFML_BACKEND_LINK	= -lsfml-system -lsfml-window
@@ -342,7 +317,7 @@ else
 	SFML_DEFINE				=
 endif
 
-BACKENDFLAGS	= $(SDL_DEFINE) $(ALLEGRO_DEFINE) $(SFML_DEFINE)
+BACKENDFLAGS	= $(SDL_DEFINE) $(SFML_DEFINE)
 
 ifeq ($(LIBSNDFILE_ENABLE),yes)
 	ifeq ($(MINGW32),yes)
@@ -383,10 +358,6 @@ ifeq ($(BUILD_OS), ios)
 
 	ifeq ($(BACKEND_SDL2),yes)
 		BACKENDINCLUDE = -I./src/eepp/helper/SDL2/include
-	else
-		ifeq ($(BACKEND_ALLEGRO),yes)
-			BACKENDINCLUDE = -I./src/eepp/helper/allegro5/include
-		endif
 	endif
 
 	PLATFORMFLAGS += $(BACKENDINCLUDE)
@@ -436,7 +407,7 @@ else
 
 ifeq ($(BUILD_OS), darwin)
 
-LIBS 		= -framework OpenGL -framework OpenAL -framework CoreFoundation -framework AGL $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
+LIBS 		= -framework OpenGL -framework OpenAL -framework CoreFoundation -framework AGL $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	+= $(INCFREETYPE2) -I/usr/local/include/freetype2
 PLATFORMSRC = $(wildcard ./src/eepp/window/platform/osx/*.cpp) $(wildcard ./src/eepp/system/platform/posix/*.cpp)
 
@@ -452,7 +423,7 @@ else
 
 ifeq ($(BUILD_OS), freebsd)
 
-LIBS 		= -lrt -lpthread -lX11 -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
+LIBS 		= -lrt -lpthread -lX11 -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	+= $(INCFREETYPE2)
 PLATFORMSRC	= $(wildcard ./src/eepp/window/platform/x11/*.cpp) $(wildcard ./src/eepp/system/platform/posix/*.cpp)
 
@@ -460,7 +431,7 @@ else
 
 ifeq ($(BUILD_OS), mingw32)
 
-LIBS 		= -lOpenAL32 -lopengl32 -lmingw32 -lglu32 -lgdi32 -static-libgcc -static-libstdc++ -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
+LIBS 		= -lOpenAL32 -lopengl32 -lmingw32 -lglu32 -lgdi32 -static-libgcc -static-libstdc++ -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	+= $(INCFREETYPE2)
 PLATFORMSRC	= $(wildcard ./src/eepp/window/platform/win/*.cpp) $(wildcard ./src/eepp/system/platform/win/*.cpp)
 
@@ -469,7 +440,7 @@ else
 #if it is cygwin
 ifneq (,$(findstring cygwin,$(BUILD_OS)))
 
-LIBS 		= -lOpenAL32 -lmingw32 -lopengl32 -lglu32 -lgdi32 -static-libgcc -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
+LIBS 		= -lOpenAL32 -lmingw32 -lopengl32 -lglu32 -lgdi32 -static-libgcc -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	+= -I./src/eepp/helper/zlib $(INCFREETYPE2)
 PLATFORMSRC	= $(wildcard ./src/eepp/window/platform/win/*.cpp) $(wildcard ./src/eepp/system/platform/win/*.cpp)
 
@@ -477,7 +448,7 @@ else
 
 ifeq ($(BUILD_OS), ios)
 
-LIBS 		= -framework OpenGLES -framework OpenAL -framework AudioToolbox -framework CoreAudio -framework Foundation -framework CoreFoundation -framework UIKit -framework QuartzCore -framework CoreGraphics $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(ALLEGRO_BACKEND_LINK) $(SFML_BACKEND_LINK)
+LIBS 		= -framework OpenGLES -framework OpenAL -framework AudioToolbox -framework CoreAudio -framework Foundation -framework CoreFoundation -framework UIKit -framework QuartzCore -framework CoreGraphics $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(SFML_BACKEND_LINK)
 
 ifndef CROSSIOS
 LIBS += -static-libgcc -static-libstdc++
@@ -542,7 +513,7 @@ else
 endif
 
 SRCHELPERS			= $(SRCFREETYPE) $(SRCGLEW) $(wildcard ./src/eepp/helper/SOIL2/src/SOIL2/*.c) $(wildcard ./src/eepp/helper/stb_vorbis/*.c) $(wildcard ./src/eepp/helper/zlib/*.c) $(wildcard ./src/eepp/helper/libzip/*.c) $(wildcard ./src/eepp/helper/chipmunk/*.c) $(wildcard ./src/eepp/helper/chipmunk/constraints/*.c)
-SRCMODULES			= $(wildcard ./src/eepp/helper/jpeg-compressor/*.cpp) $(wildcard ./src/eepp/helper/haikuttf/*.cpp) $(wildcard ./src/eepp/base/*.cpp) $(wildcard ./src/eepp/audio/*.cpp) $(wildcard ./src/eepp/gaming/*.cpp) $(wildcard ./src/eepp/gaming/mapeditor/*.cpp) $(wildcard ./src/eepp/graphics/*.cpp) $(wildcard ./src/eepp/graphics/renderer/*.cpp) $(wildcard ./src/eepp/math/*.cpp) $(wildcard ./src/eepp/system/*.cpp) $(wildcard ./src/eepp/ui/*.cpp) $(wildcard ./src/eepp/ui/tools/*.cpp) $(wildcard ./src/eepp/utils/*.cpp) $(wildcard ./src/eepp/window/*.cpp) $(wildcard ./src/eepp/window/backend/null/*.cpp) $(wildcard ./src/eepp/window/platform/null/*.cpp) $(SDL_BACKEND_SRC) $(SDL2_BACKEND_SRC) $(ALLEGRO_BACKEND_SRC) $(SFML_BACKEND_SRC) $(PLATFORMSRC) $(wildcard ./src/eepp/physics/*.cpp) $(wildcard ./src/eepp/physics/constraints/*.cpp)
+SRCMODULES			= $(wildcard ./src/eepp/helper/imageresampler/*.cpp) $(wildcard ./src/eepp/helper/jpeg-compressor/*.cpp) $(wildcard ./src/eepp/helper/haikuttf/*.cpp) $(wildcard ./src/eepp/base/*.cpp) $(wildcard ./src/eepp/audio/*.cpp) $(wildcard ./src/eepp/gaming/*.cpp) $(wildcard ./src/eepp/gaming/mapeditor/*.cpp) $(wildcard ./src/eepp/graphics/*.cpp) $(wildcard ./src/eepp/graphics/renderer/*.cpp) $(wildcard ./src/eepp/math/*.cpp) $(wildcard ./src/eepp/system/*.cpp) $(wildcard ./src/eepp/ui/*.cpp) $(wildcard ./src/eepp/ui/tools/*.cpp) $(wildcard ./src/eepp/utils/*.cpp) $(wildcard ./src/eepp/window/*.cpp) $(wildcard ./src/eepp/window/backend/null/*.cpp) $(wildcard ./src/eepp/window/platform/null/*.cpp) $(SDL_BACKEND_SRC) $(SDL2_BACKEND_SRC) $(SFML_BACKEND_SRC) $(PLATFORMSRC) $(wildcard ./src/eepp/physics/*.cpp) $(wildcard ./src/eepp/physics/constraints/*.cpp)
 
 OBJHELPERS			= $(SRCHELPERS:.c=.o)
 OBJMODULES			= $(SRCMODULES:.cpp=.o)

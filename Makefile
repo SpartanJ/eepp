@@ -59,6 +59,7 @@ dirs:
 	@$(MKDIR) $(OBJDIR)/src/eepp/helper/chipmunk/constraints
 	@$(MKDIR) $(OBJDIR)/src/eepp/helper/haikuttf
 	@$(MKDIR) $(OBJDIR)/src/eepp/helper/jpeg-compressor
+	@$(MKDIR) $(OBJDIR)/src/eepp/helper/imageresampler
 	@$(MKDIR) $(LIBPATH)
 	@$(MKDIR) $(OBJDIR)/src/eepp/base
 	@$(MKDIR) $(OBJDIR)/src/eepp/audio
@@ -77,7 +78,6 @@ dirs:
 	@$(MKDIR) $(OBJDIR)/src/eepp/window/backend/SDL
 	@$(MKDIR) $(OBJDIR)/src/eepp/window/backend/SDL2
 	@$(MKDIR) $(OBJDIR)/src/eepp/window/backend/null
-	@$(MKDIR) $(OBJDIR)/src/eepp/window/backend/allegro5
 	@$(MKDIR) $(OBJDIR)/src/eepp/window/backend/SFML
 	@$(MKDIR) $(OBJDIR)/src/eepp/window/platform/x11
 	@$(MKDIR) $(OBJDIR)/src/eepp/window/platform/win

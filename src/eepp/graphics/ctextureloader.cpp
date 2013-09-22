@@ -87,6 +87,7 @@ cTextureLoader::cTextureLoader( cIOStream& Stream,
 	mIsCompressed(0)
 {
 }
+
 cTextureLoader::cTextureLoader( const std::string& Filepath,
 	const bool& Mipmap,
 	const EE_CLAMP_MODE& ClampMode,
