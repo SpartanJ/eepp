@@ -77,7 +77,10 @@ class EE_API cTexture : public cImage, private NonCopyable {
 		void FillWithColor( const eeColorA& Color );
 
 		/** Resize the texture */
-		void Resize( const Uint32& newWidth, const Uint32& newHeight );
+		void Resize( const Uint32& newWidth, const Uint32& newHeight, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
+
+		/** Scale the texture */
+		void Scale( const eeFloat& scale, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
 
 		/** Copy an image inside the texture */
 		void CopyImage( cImage * image, const Uint32& x, const Uint32& y );

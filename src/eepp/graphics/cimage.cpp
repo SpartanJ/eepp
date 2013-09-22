@@ -611,13 +611,31 @@ cImage * cImage::Thumbnail( const Uint32& maxWidth, const Uint32& maxHeight, EE_
 	return NULL;
 }
 
+cImage * cImage::Crop( eeRecti rect ) {
+	if ( rect.Left >= 0 && rect.Right <= (Int32)mWidth && rect.Top >= 0 && rect.Bottom <= (Int32)mHeight ) {
+		cImage * img = eeNew( cImage, ( rect.Size().Width(), rect.Size().Height(), mChannels ) );
+
+		// Copy per row
+		for ( eeUint ty = 0; ty < img->mHeight; ty++ ) {
+			Uint8 *			pDst	= &img->mPixels[ ( ty * img->mWidth ) * mChannels ];
+			const Uint8 *	pSrc	= &mPixels[ ( rect.Left + ( ( ty + rect.Top ) * mWidth ) ) * mChannels  ];
+
+			memcpy( pDst, pSrc, mChannels * img->mWidth );
+		}
+
+		return img;
+	}
+
+	return NULL;
+}
+
 void cImage::Flip() {
 	if ( NULL != mPixels ) {
 		cImage tImg( mHeight, mWidth, mChannels );
 
 		for ( eeUint y = 0; y < mHeight; y++ )
 			for ( eeUint x = 0; x < mWidth; x++ )
-				tImg.SetPixel( y, x, GetPixel( x, y ) );
+				tImg.SetPixel( y, x, GetPixel( x, mHeight - 1 - y ) );
 
 		ClearCache();
 

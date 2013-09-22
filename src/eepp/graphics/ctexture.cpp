@@ -262,10 +262,18 @@ void cTexture::FillWithColor( const eeColorA& Color ) {
 	Unlock( false, true );
 }
 
-void cTexture::Resize(const Uint32& newWidth, const Uint32& newHeight ) {
+void cTexture::Resize( const Uint32& newWidth, const Uint32& newHeight , EE_RESAMPLER_FILTER filter ) {
 	Lock();
 
-	cImage::Resize( newWidth, newHeight );
+	cImage::Resize( newWidth, newHeight, filter );
+
+	Unlock( false, true );
+}
+
+void cTexture::Scale( const eeFloat& scale, EE_RESAMPLER_FILTER filter ) {
+	Lock();
+
+	cImage::Scale( scale, filter );
 
 	Unlock( false, true );
 }

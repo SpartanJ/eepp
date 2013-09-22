@@ -4,6 +4,7 @@
 #include <eepp/base.hpp>
 
 #include <eepp/math/size.hpp>
+#include <eepp/math/rect.hpp>
 using namespace EE::Math;
 
 #include <eepp/system/colors.hpp>
@@ -151,6 +152,9 @@ class EE_API cImage {
 
 		/** Create a thumnail of the image */
 		cImage * Thumbnail( const Uint32& maxWidth, const Uint32& maxHeight, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
+
+		/** Creates a cropped image from the current image */
+		cImage * Crop( eeRecti rect );
 
 		/** Set as true if you dont want to free the image data in the cImage destruction ( false as default ). */
 		void AvoidFreeImage( const bool& AvoidFree );
