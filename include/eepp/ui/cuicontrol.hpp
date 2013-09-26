@@ -146,9 +146,9 @@ class EE_API cUIControl {
 
 		cUIControl * NextGetLoop() const;
 
-		void Data( const Uint32& data );
+		void Data( const UintPtr& data );
 
-		const Uint32& Data() const;
+		const UintPtr& Data() const;
 
 		cUIControl * ChildGetAt( eeVector2i CtrlPos, eeUint RecursiveLevel = 0 );
 

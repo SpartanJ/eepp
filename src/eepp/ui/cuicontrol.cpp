@@ -447,11 +447,11 @@ cUIControl * cUIControl::NextGetLoop() const {
 		return mNext;
 }
 
-void cUIControl::Data( const Uint32& data ) {
+void cUIControl::Data(const UintPtr& data ) {
 	mData = data;
 }
 
-const Uint32& cUIControl::Data() const {
+const UintPtr& cUIControl::Data() const {
 	return mData;
 }
 

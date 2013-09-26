@@ -255,6 +255,8 @@ namespace EE {
 	typedef double			eeDouble; 	//! The internal double floating point. It's only used when the engine needs some very high precision floating point ( for example the timer )
 	typedef unsigned int	eeUint;
 	typedef signed int		eeInt;
+	typedef SOPHIST_intptr	IntPtr;
+	typedef SOPHIST_uintptr	UintPtr;
 
 	#if SOPHIST_has_64
 	typedef SOPHIST_uint64	Uint64;
