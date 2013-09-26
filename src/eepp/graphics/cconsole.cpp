@@ -208,14 +208,14 @@ void cConsole::Draw() {
 
 			mFont->Color( eeColorA ( mFontLineColor.R(), mFontLineColor.G(), mFontLineColor.B(), static_cast<Uint8>(mCurAlpha) ) );
 
-			mFont->Color( OldColor );
-
 			if ( (eeUint)mTBuf->CurPos() == mTBuf->Buffer().size() ) {
 				mFont->Draw( "_", mFontSize + mFont->GetTextWidth() , CurY );
 			} else {
 				mFont->SetText( "> " + mTBuf->Buffer().substr( 0, mTBuf->CurPos() ) );
 				mFont->Draw( "_", mFontSize + mFont->GetTextWidth() , CurY );
 			}
+
+			mFont->Color( OldColor );
 		}
 	}
 

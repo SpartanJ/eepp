@@ -512,10 +512,6 @@ class EE_API cWindow {
 		void LogSuccessfulInit( const std::string& BackendName, const std::string& ProcessPath = "" );
 
 		void LogFailureInit( const std::string& ClassName, const std::string& BackendName );
-
-		void GLThreadMutexLock();
-
-		void GLThreadMutexUnlock();
 };
 
 }}

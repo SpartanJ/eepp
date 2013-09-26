@@ -128,7 +128,6 @@ class EE_API cEngine {
 		Backend::cBackend *	mBackend;
 		std::list<cWindow*>	mWindows;
 		cWindow *			mWindow;
-		cMutex				mGLThreadMutex;
 		bool				mSharedGLContext;
 
 		cEngine();

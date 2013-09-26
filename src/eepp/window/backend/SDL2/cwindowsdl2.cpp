@@ -295,13 +295,11 @@ bool cWindowSDL::IsThreadedGLContext() {
 }
 
 void cWindowSDL::SetGLContextThread() {
-	GLThreadMutexLock();
 	SDL_GL_MakeCurrent( mSDLWindow, mGLContextThread );
 }
 
 void cWindowSDL::UnsetGLContextThread() {
 	SDL_GL_MakeCurrent( mSDLWindow, NULL );
-	GLThreadMutexUnlock();
 }
 
 std::string cWindowSDL::GetVersion() {

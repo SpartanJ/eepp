@@ -536,14 +536,6 @@ void cWindow::SetGLContextThread() {
 void cWindow::UnsetGLContextThread() {
 }
 
-void cWindow::GLThreadMutexLock() {
-	cEngine::instance()->mGLThreadMutex.Lock();
-}
-
-void cWindow::GLThreadMutexUnlock() {
-	cEngine::instance()->mGLThreadMutex.Unlock();
-}
-
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 void * cWindow::GetJNIEnv() {
 	return NULL;

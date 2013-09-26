@@ -19,7 +19,6 @@ class EE_API cTextureLoader : public cObjectLoader {
 		* @param ClampMode Defines the CLAMP MODE
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
-		* @return The internal Texture Id
 		*/
 		cTextureLoader( cIOStream& Stream, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
@@ -85,6 +84,14 @@ class EE_API cTextureLoader : public cObjectLoader {
 
 		/** @return The texture instance ( if it was loaded ). */
 		cTexture *		GetTexture() const;
+
+		/** In the case that the image loading is made outside the GL context main thread,
+		**	you'll need to force the use of the GL Shared Context
+		**	@see cWindow::IsThreadedGLContext */
+		void			ForceUseGLSharedContext( bool force );
+
+		/** @return If the use of a gl shared context to load the texture is being forced */
+		const bool&		ForceUseGLSharedContext() const;
 	protected:
 		Uint32			mLoadType; 	// From memory, from path, from pack
 		Uint8 * 		mPixels;	// Texture Info
@@ -100,6 +107,7 @@ class EE_API cTextureLoader : public cObjectLoader {
 		EE_CLAMP_MODE 	mClampMode;
 		bool 			mCompressTexture;
 		bool 			mLocalCopy;
+		bool			mForceGLThreaded;
 		cPack * 		mPack;
 		cIOStream *		mStream;
 
