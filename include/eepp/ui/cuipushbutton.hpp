@@ -81,6 +81,14 @@ class EE_API cUIPushButton : public cUIComplexControl {
 		const Int32& IconHorizontalMargin() const;
 
 		cUITextBox * TextBox() const;
+
+		const eeColorA& FontColor() const;
+
+		void FontColor( const eeColorA& color );
+
+		const eeColorA& FontOverColor() const;
+
+		void FontOverColor( const eeColorA& color );
 	protected:
 		eeColorA		mFontColor;
 		eeColorA		mFontOverColor;

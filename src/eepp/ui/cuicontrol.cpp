@@ -1041,6 +1041,10 @@ void cUIControl::ApplyDefaultTheme() {
 	cUIThemeManager::instance()->ApplyDefaultTheme( this );
 }
 
+eeRecti cUIControl::GetScreenRect() {
+	return eeRecti( mScreenPos, mSize );
+}
+
 eeRecti cUIControl::MakePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBottom, bool SkipFlags ) {
 	eeRecti tPadding( 0, 0, 0, 0 );
 

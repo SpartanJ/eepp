@@ -542,7 +542,6 @@ tUIItemContainer<cUIGenericGrid> * cUIGenericGrid::Container() const {
 	return mContainer;
 }
 
-
 bool cUIGenericGrid::TouchDragEnable() const {
 	return 0 != ( mFlags & UI_TOUCH_DRAG_ENABLED );
 }

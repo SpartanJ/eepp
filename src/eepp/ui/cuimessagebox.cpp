@@ -6,19 +6,36 @@ cUIMessageBox::cUIMessageBox( const cUIMessageBox::CreateParams& Params ) :
 	cUIWindow( Params ),
 	mMsgBoxType( Params.Type )
 {
-	cUIPushButton::CreateParams ButtonParams;
-	ButtonParams.Parent( Container() );
-	ButtonParams.SizeSet( 90, 22 );
-	ButtonParams.PosSet( Container()->Size().Width() - 96, Container()->Size().Height() - ButtonParams.Size.Height() - 8 );
-	ButtonParams.Flags = UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_VALIGN_CENTER | UI_AUTO_SIZE;
-	mButtonOK = eeNew( cUIPushButton, ( ButtonParams ) );
-	mButtonOK->Visible( true );
-	mButtonOK->Enabled( true );
+	cUITheme * Theme = cUIThemeManager::instance()->DefaultTheme();
 
-	ButtonParams.Pos.x = mButtonOK->Pos().x - mButtonOK->Size().Width() - 8;
-	mButtonCancel = eeNew( cUIPushButton, ( ButtonParams ) );
-	mButtonCancel->Visible( true );
-	mButtonCancel->Enabled( true );
+	if ( NULL == Theme )
+	{
+		cUIPushButton::CreateParams ButtonParams;
+		ButtonParams.Parent( Container() );
+		ButtonParams.SizeSet( 90, 22 );
+		ButtonParams.PosSet( Container()->Size().Width() - 96, Container()->Size().Height() - ButtonParams.Size.Height() - 8 );
+		ButtonParams.Flags = UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_VALIGN_CENTER | UI_AUTO_SIZE;
+		mButtonOK = eeNew( cUIPushButton, ( ButtonParams ) );
+		mButtonOK->Visible( true );
+		mButtonOK->Enabled( true );
+
+		ButtonParams.Pos.x = mButtonOK->Pos().x - mButtonOK->Size().Width() - 8;
+		mButtonCancel = eeNew( cUIPushButton, ( ButtonParams ) );
+		mButtonCancel->Visible( true );
+		mButtonCancel->Enabled( true );
+	}
+	else
+	{
+		mButtonOK = Theme->CreatePushButton( Container(),
+								 eeSize( 90, 22 ),
+								 eeVector2i( Container()->Size().Width() - 96, Container()->Size().Height() - 22 - 8 ),
+								 UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_VALIGN_CENTER | UI_AUTO_SIZE );
+
+		mButtonCancel = Theme->CreatePushButton( Container(),
+								 mButtonOK->Size(),
+								 eeVector2i( mButtonOK->Pos().x - mButtonOK->Size().Width() - 8, mButtonOK->Pos().y ),
+								 mButtonOK->Flags() );
+	}
 
 	cUITextBox::CreateParams TxtParams;
 	TxtParams.Parent( Container() );
@@ -28,7 +45,6 @@ cUIMessageBox::cUIMessageBox( const cUIMessageBox::CreateParams& Params ) :
 	mTextBox = eeNew( cUITextBox, ( TxtParams ) );
 	mTextBox->Visible( true );
 	mTextBox->Enabled( true );
-
 	mTextBox->Text( Params.Message );
 
 	switch ( mMsgBoxType ) {
@@ -82,6 +98,9 @@ void cUIMessageBox::SetTheme( cUITheme * Theme ) {
 			mButtonCancel->Icon( CancelIcon );
 		}
 	}
+
+	mButtonOK->Pos( mButtonOK->Pos().x, Container()->Size().Height() - mButtonOK->Size().Height() - 8 );
+	mButtonCancel->Pos( mButtonCancel->Pos().x, mButtonOK->Pos().y );
 }
 
 Uint32 cUIMessageBox::OnMessage( const cUIMessage * Msg ) {

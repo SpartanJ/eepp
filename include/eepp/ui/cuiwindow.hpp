@@ -16,7 +16,7 @@ class EE_API cUIWindow : public cUIComplexControl {
 					WinFlags( UI_WIN_DEFAULT_FLAGS ),
 					ButtonsSeparation( 4 ),
 					MinCornerDistance( 24 ),
-					TitleFontColor( 255, 255, 255, 255),
+					TitleFontColor( 255, 255, 255, 255 ),
 					BaseAlpha( 255 ),
 					DecorationAutoSize( true ),
 					BorderAutoSize( true )
@@ -90,7 +90,7 @@ class EE_API cUIWindow : public cUIComplexControl {
 
 		bool IsModal();
 
-		cUIControl * GetModalControl() const;
+		cUIControlAnim * GetModalControl() const;
 
 		void Maximize();
 
@@ -142,7 +142,7 @@ class EE_API cUIWindow : public cUIComplexControl {
 		cUIComplexControl *	mButtonMaximize;
 		cUITextBox *		mTitle;
 
-		cUIControl *		mModalCtrl;
+		cUIControlAnim *	mModalCtrl;
 
 		eeSize				mDecoSize;
 		eeSize				mBorderSize;
@@ -204,6 +204,8 @@ class EE_API cUIWindow : public cUIComplexControl {
 		void CheckShortcuts( const Uint32& KeyCode, const Uint32& Mod );
 
 		KeyboardShortcuts::iterator ExistsShortcut( const Uint32& KeyCode, const Uint32& Mod );
+
+		void CreateModalControl();
 };
 
 }}

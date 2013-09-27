@@ -226,5 +226,22 @@ Uint32 cUIPushButton::OnKeyUp( const cUIEventKey& Event ) {
 
 	return cUIComplexControl::OnKeyUp( Event );
 }
+const eeColorA& cUIPushButton::FontColor() const {
+	return mFontColor;
+}
+
+void cUIPushButton::FontColor( const eeColorA& color ) {
+	mFontColor = color;
+	OnStateChange();
+}
+
+const eeColorA& cUIPushButton::FontOverColor() const {
+	return mFontOverColor;
+}
+
+void cUIPushButton::FontOverColor( const eeColorA& color ) {
+	mFontOverColor = color;
+	OnStateChange();
+}
 
 }}

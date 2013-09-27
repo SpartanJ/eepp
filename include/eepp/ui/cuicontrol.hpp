@@ -232,6 +232,8 @@ class EE_API cUIControl {
 		cUIControl * NextComplexControl();
 
 		void ApplyDefaultTheme();
+
+		eeRecti GetScreenRect();
 	protected:
 		typedef std::map< Uint32, std::map<Uint32, UIEventCallback> > UIEventsMap;
 		friend class cUIManager;

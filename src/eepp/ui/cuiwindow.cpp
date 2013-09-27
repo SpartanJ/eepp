@@ -96,6 +96,10 @@ cUIWindow::cUIWindow( const cUIWindow::CreateParams& Params ) :
 		DragEnable( true );
 	}
 
+	if ( IsModal() ) {
+		CreateModalControl();
+	}
+
 	Alpha( mBaseAlpha );
 
 	ApplyDefaultTheme();
@@ -107,6 +111,13 @@ cUIWindow::~cUIWindow() {
 	cUIManager::instance()->SetFocusLastWindow( this );
 
 	SendCommonEvent( cUIEvent::EventOnWindowClose );
+}
+
+void cUIWindow::CreateModalControl() {
+	if ( NULL == mModalCtrl ) {
+		cUIControl * Ctrl = cUIManager::instance()->MainControl();
+		mModalCtrl = eeNew( cUIControlAnim, ( cUIControlAnim::CreateParams( Ctrl , eeVector2i(0,0), Ctrl->Size(), UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) );
+	}
 }
 
 Uint32 cUIWindow::Type() const {
@@ -169,8 +180,9 @@ void cUIWindow::ButtonMinimizeClick( const cUIEvent * Event ) {
 void cUIWindow::SetTheme( cUITheme *Theme ) {
 	cUIComplexControl::SetTheme( Theme );
 
+	mContainer->SetThemeControl			( Theme, "winback"			);
+
 	if ( !( mWinFlags & UI_WIN_NO_BORDER ) ) {
-		mContainer->SetThemeControl			( Theme, "winback"			);
 		mWindowDecoration->SetThemeControl	( Theme, "windeco"			);
 		mBorderLeft->SetThemeControl		( Theme, "winborderleft"	);
 		mBorderRight->SetThemeControl		( Theme, "winborderright"	);
@@ -641,10 +653,7 @@ bool cUIWindow::Show() {
 		}
 
 		if ( IsModal() ) {
-			if ( NULL == mModalCtrl ) {
-				cUIControl * Ctrl = cUIManager::instance()->MainControl();
-				mModalCtrl = eeNew( cUIControl, ( cUIControl::CreateParams( Ctrl , eeVector2i(0,0), Ctrl->Size(), UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) );
-			}
+			CreateModalControl();
 
 			mModalCtrl->Enabled( true );
 			mModalCtrl->Visible( true );
@@ -831,7 +840,7 @@ bool cUIWindow::IsModal() {
 	return 0 != ( mWinFlags & UI_WIN_MODAL );
 }
 
-cUIControl * cUIWindow::GetModalControl() const {
+cUIControlAnim * cUIWindow::GetModalControl() const {
 	return mModalCtrl;
 }
 

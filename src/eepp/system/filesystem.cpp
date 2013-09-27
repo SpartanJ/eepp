@@ -350,32 +350,32 @@ std::vector<std::string> FileSystem::FilesGetInPath( const std::string& path ) {
 			FindClose( hFind );
 		}
 	#else
-        std::string mPath( path );
+		std::string mPath( path );
 
-        if ( mPath[ mPath.size() - 1 ] == '/' || mPath[ mPath.size() - 1 ] == '\\' ) {
-                mPath += "*";
-        } else {
-                mPath += "\\*";
-        }
+		if ( mPath[ mPath.size() - 1 ] == '/' || mPath[ mPath.size() - 1 ] == '\\' ) {
+				mPath += "*";
+		} else {
+				mPath += "\\*";
+		}
 
-        WIN32_FIND_DATA findFileData;
-        HANDLE hFind = FindFirstFile( (LPCTSTR) mPath.c_str(), &findFileData );
+		WIN32_FIND_DATA findFileData;
+		HANDLE hFind = FindFirstFile( (LPCTSTR) mPath.c_str(), &findFileData );
 
-        if( hFind != INVALID_HANDLE_VALUE ) {
-                std::string tmpstr( findFileData.cFileName );
+		if( hFind != INVALID_HANDLE_VALUE ) {
+				std::string tmpstr( findFileData.cFileName );
 
-                if ( tmpstr != "." && tmpstr != ".." )
-                        files.push_back( tmpstr );
+				if ( tmpstr != "." && tmpstr != ".." )
+						files.push_back( tmpstr );
 
-                while( FindNextFile(hFind, &findFileData ) ) {
-                        tmpstr = std::string( findFileData.cFileName );
+				while( FindNextFile(hFind, &findFileData ) ) {
+						tmpstr = std::string( findFileData.cFileName );
 
-                        if ( tmpstr != "." && tmpstr != ".." )
-                                files.push_back( std::string( findFileData.cFileName ) );
-                }
+						if ( tmpstr != "." && tmpstr != ".." )
+								files.push_back( std::string( findFileData.cFileName ) );
+				}
 
-                FindClose( hFind );
-        }
+				FindClose( hFind );
+		}
 	#endif
 
 	return files;
