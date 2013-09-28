@@ -32,6 +32,7 @@ class tSoundManager {
 		bool LoadFromSamples( const T& id, const Int16* Samples, std::size_t SamplesCount, unsigned int ChannelCount, unsigned int SampleRate );
 
 		/**	@brief Load the sound from a Pack file
+		**	@param id The id to use to identificate the sound
 		**	@param Pack The Pack file
 		**	@param FilePackPath The pack file path */
 		bool LoadFromPack( const T& id, cPack* Pack, const std::string& FilePackPath );

@@ -67,11 +67,14 @@ class EE_API cImage {
 		cImage( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const eeColorA& DefaultColor = eeColorA(0,0,0,0), const bool& initWithDefaultColor = true );
 
 		/** Load an image from path
+		* @param Path The path to the file.
 		* @param forceChannels Number of channels to use for the image, default 0 means that it use the default image channels.
 		*/
 		cImage( std::string Path, const eeUint& forceChannels = 0 );
 
 		/** Load an image from pack
+		* @param Pack The pack file to use to load the image.
+		* @param FilePackPath The path of the file inside the pack file.
 		* @param forceChannels Number of channels to use for the image, default 0 means that it use the default image channels.
 		*/
 		cImage( cPack * Pack, std::string FilePackPath, const eeUint& forceChannels = 0 );
@@ -160,7 +163,7 @@ class EE_API cImage {
 		void AvoidFreeImage( const bool& AvoidFree );
 
 		/** Blit the image passed onto the current image
-		**	@param img The source image to blit onto the image
+		**	@param image The source image to blit onto the image
 		**	@param x The x position to start drawing the image
 		**	@param y The y position to start drawing the image */
 		void Blit( cImage * image, const Uint32& x = 0, const Uint32& y = 0 );

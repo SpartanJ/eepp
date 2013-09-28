@@ -51,7 +51,7 @@ enum EE_SAVE_TYPE {
 	SAVE_TYPE_JPG		= 4
 };
 
-/** @enum The filter used to resample/resize an image. */
+/** @enum EE_RESAMPLER_FILTER The filter used to resample/resize an image. */
 enum EE_RESAMPLER_FILTER {
 	RESAMPLER_BOX,
 	RESAMPLER_TENT,

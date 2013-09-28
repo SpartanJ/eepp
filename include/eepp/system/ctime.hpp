@@ -2,13 +2,12 @@
 #ifndef EE_SYSTEMCTIME_HPP
 #define EE_SYSTEMCTIME_HPP
 
-//! Based on the SFML2 implementation ( not the same, this version uses doubles for seconds and milliseconds )
-
 #include <eepp/declares.hpp>
 
 namespace EE { namespace System {
 
-/**  @brief Represents a time value */
+/** @brief Represents a time value
+**  Based on the SFML2 implementation ( not the same, this version uses doubles for seconds and milliseconds ) */
 class EE_API cTime
 {
 	public :
@@ -38,10 +37,10 @@ class EE_API cTime
 		friend EE_API cTime Milliseconds(eeDouble);
 		friend EE_API cTime Microseconds(Int64);
 
-		/// @brief Construct from a number of microseconds
-		/// This function is internal. To construct time values,
-		/// use Seconds, Milliseconds or Microseconds instead.
-		/// @param microseconds Number of microseconds
+		/** @brief Construct from a number of microseconds
+		**  This function is internal. To construct time values,
+		**  use Seconds, Milliseconds or Microseconds instead.
+		** @param microseconds Number of microseconds */
 		explicit cTime(Int64 microseconds);
 
 		Int64 mMicroseconds; ///< cTime value stored as microseconds

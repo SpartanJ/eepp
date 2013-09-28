@@ -18,8 +18,8 @@ class EE_API cCondition : NonCopyable {
 			AutoUnlock		= 1		// true
 		};
 
-		/** Initializes a Condition object and sets its internal value to @value.
-		 * Thus using WaitAndLock(@value, ...) will immediately return.
+		/** Initializes a Condition object and sets its internal value to value.
+		 * Thus using WaitAndLock(value, ...) will immediately return.
 		 */
 		cCondition( int value = 0 );
 		
@@ -38,28 +38,28 @@ class EE_API cCondition : NonCopyable {
 		 * The Condition locking guarantees that the condition remains true until
 		 * you unlock it and that you are the only one that acquired the Condition.
 		 *
-		 * @awaitedValue: the value that should unlock the Condition
+		 * @param awaitedValue the value that should unlock the Condition
 		 *
-		 * @autoUnlock: Condition::AutoUnlock (true) to automatically unlock the Condition
+		 * @param autoUnlock Condition::AutoUnlock (true) to automatically unlock the Condition
 		 * protection after it has been validated, or ManualUnlock (false) to
 		 * manually choose when the Condition should be unlocked. While a Condition
 		 * is locked, both WaitAndLock() and operator=() will block
 		 * until the Condition is unlocked or invalidated. When a Condition is
 		 * *automatically* unlocked, its value is not updated.
 		 *
-		 * @return: true if the @awaitedValue has been reached, false otherwise.
-		 * WaitAndLock() may return even if @awaitedValue has not been
+		 * @return true if the awaitedValue has been reached, false otherwise.
+		 * WaitAndLock() may return even if awaitedValue has not been
 		 * reached if the Condition has been disabled through Invalidate(). An
 		 * invalidated Condition always returns in an unlocked state.
 		 */
 		bool WaitAndLock( int awaitedValue, int autoUnlock = false );
 		
-		/** Unlocks a previously locked Condition with @value as
+		/** Unlocks a previously locked Condition with value as
 		 * internal value. When the condition is unlocked, it is assumed
 		 * to have the given value. The condition is thereafter signaled.
 		 * Unlocking a non-locked Condition is undefined.
 		 *
-		 * @value: the value the Condition should have when it is unlocked
+		 * @param value the value the Condition should have when it is unlocked
 		 */
 		void Unlock( int value );
 		
@@ -71,9 +71,9 @@ class EE_API cCondition : NonCopyable {
 		 * to be updated, otherwise it'll block until the Condition
 		 * is unlocked.
 		 *
-		 * @value: the value to be assigned to the Condition
+		 * @param value the value to be assigned to the Condition
 		 *
-		 * @return: @value
+		 * @return value
 		 */
 		int operator=(int value);
 		

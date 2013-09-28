@@ -6,7 +6,7 @@ namespace EE { namespace Math {
 /** @brief Container class of the Interpolation types. */
 class Ease {
 	public:
-		/** @enum Ease::Interpolation Define the type of interpolation used. */
+		/** @brief Interpolation Define the type of interpolation used. */
 		enum Interpolation {
 			Linear,
 			QuadraticIn,

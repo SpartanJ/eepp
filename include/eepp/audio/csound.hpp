@@ -10,7 +10,7 @@ namespace EE { namespace Audio {
 /** @brief Regular sound that can be played in the audio environment */
 class EE_API cSound {
 	public :
-		/** @enum cSound::Status The state of the sound */
+		/** @brief The state of the sound */
 		enum Status {
 			Stopped,
 			Paused,

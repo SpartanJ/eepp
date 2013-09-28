@@ -103,11 +103,14 @@ class Polygon2 {
 
 		/** @brief Intersect to Quads
 		**	Convert the two quads in two polygons, and execute a polygon to polygon collition.
+		**	@param q0 First quad
+		**	@param q1 Second quad
 		**	@param q0Pos The q0 quad polygon offset
 		**	@param q1Pos The q1 quad polygon offset */
 		static bool IntersectQuad2( const Quad2<T>& q0, const Quad2<T>& q1, const Vector2<T>& q0Pos = Vector2<T>(0,0), const Vector2<T>& q1Pos = Vector2<T>(0,0) );
 
 		/** @return Th closest polygon point to the point (to).
+		**	@param to The point
 		**	@param distance A pointer that returns the distance between the point and the closest point to the point */
 		Uint32 ClosestPoint( const Vector2<T> &to, T * distance = NULL );
 	private:

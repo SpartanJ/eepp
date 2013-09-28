@@ -14,7 +14,7 @@ class EE_API cSprite {
 		/// Event ID - Sprite - User Data
 		typedef cb::Callback3< void, Uint32, cSprite *, void * > SpriteCallback;
 
-		/** @enum cSprite::SpriteEvents The events that can be reported by the Sprite */
+		/** @brief SpriteEvents The events that can be reported by the Sprite */
 		enum SpriteEvents {
 			SPRITE_EVENT_LAST_FRAME,
 			SPRITE_EVENT_FIRST_FRAME,
@@ -70,8 +70,7 @@ class EE_API cSprite {
 		eeFloat Angle() const;
 
 		/** Rotates the sprite. Adds the new angle to the current rotation. Same as:
-		**	@core sprite.Angle( sprite.Angle() + angle );
-		*/
+		**	@code sprite.Angle( sprite.Angle() + angle ); @endcode */
 		void Rotate( const eeFloat& angle );
 
 		/** Set the Scale for the rendered sprite */

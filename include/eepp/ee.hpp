@@ -12,7 +12,7 @@
 		* Sean Barrett for the stb_vorbis and stb_image libraries.
 		* Sam Latinga for Simple DirectMedia Layer library.
 		* Jonathan Dummer for the Simple OpenGL Image Library.
-		* Laurent Gomila for the SFML library ( eepp audio module is heavily based on the SFML audio module )
+		* Laurent Gomila for the SFML library ( eepp audio and network modules are heavily based on the SFML audio module )
 		* OGRE staff for the Timer implementation
 		* Lewis Van Winkle for PlusCallback
 		* Dieter Baron and Thomas Klausner for libzip
@@ -20,12 +20,11 @@
 		* Milan Ikits and Marcelo Magallon for GLEW
 		* And a lot more people!
 
-
 	ROADMAP:
 
 	Short-term plans:
 
-	@TODO Improve documentation.
+	@todo Improve documentation.
 				STATE:	EE ( Base ) documented what is needed.
 						EE::Window documented.
 						EE::System documented.
@@ -37,42 +36,32 @@
 						EE::Physics Not documented at all, chipmunk documentation should help.
 						EE::Gaming Not documented at all.
 
-	@TODO Add more commented examples, showing at least the basic usage of the engine ( 10 or more examples at least ).
+	@todo Add more commented examples, showing at least the basic usage of the engine ( 10 or more examples at least ).
 				STATE:	7 examples available.
 
-	@TODO Improve the map editor ( add triggers, tiles selection to copy paste in other zones of the map, undo/redo actions ).
+	@todo Improve the map editor ( add triggers, tiles selection to copy paste in other zones of the map, undo/redo actions ).
 				STATE:	Needs at least to reoffset tiles and objects for the map resizing.
 						Tile selection i'm not decided yet.
 						Copy-Paste will be moved for a middle to long term plan.
 
-	@TODO Stabilize the API
-				STATE:	DONE.
+	@todo Improve Premake4 support. It should be really easy to compile eepp in Windows and OS X ( Linux is always easy thanks to package managers ).
+				STATE:	Need to implement on App Bundles for OS X.
 
-	@TODO Improve Premake4 support. It should be really easy to compile eepp in Windows and OS X ( Linux is always easy thanks to package managers ).
-				STATE:	DONE.
-
-	@TODO Add PVRTC and ETC support.
-				STATE:	DONE.
+	@todo Add Thread-local storage class.
 
 	Middle-term plans:
 
-	@TODO Add Networking support.
-				STATE:	DONE
+	@todo Add audio recording from the SFML implementation, adapted to the engine coding style.
 
-	Long-term plans:
-
-	@TODO Add audio recording from the SFML implementation, adapted to the engine coding style.
-
-	@TODO Add Scripting support ( squirrel or angel script or lua ), at least some parts of the engine. Binding everything seems too much work.
+	@todo Add Scripting support ( squirrel or angel script or lua ), at least some parts of the engine. Binding everything seems too much work.
 				STATE:	I've binded some classes with lua+luabind and is awesome, but... luabind is bloated ( and for my needs it's the only good option ), and adds A LOT of compile time.
 						squirrel+sqrat almost does everything i need, but it have some bugs that seems to be unfixable ( none enum parameters, char parameters segfaults, no constructor overloading ).
 
-	@TODO Support UI Theming from scripts or XML.
+	@todo Support UI Theming from scripts or XML.
 
-	@TODO Add some kind of support for TMX map files ( Tiles Map Editor ).
+	@todo Add some kind of support for TMX map files ( Tiles Map Editor ).
 
-	@TODO Pathfinding and AI helpers ( A*, FSM ).
-
+	@todo Pathfinding and AI helpers ( A*, FSM ).
 */
 
 	// General includes and declarations

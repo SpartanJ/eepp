@@ -12,7 +12,7 @@ class EE_API cObjectLoader : protected cThread {
 	public:
 		typedef cb::Callback1<void, cObjectLoader *> ObjLoadCallback;
 
-		/** @enum cObjectLoader::ObjLoaderType Definition of the Object Loaders implemented by the engine. */
+		/** @brief LoaderType Definition of the Object Loaders implemented by the engine. */
 		enum ObjLoaderType {
 			TextureLoader	= 1,
 			SoundLoader		= 2,

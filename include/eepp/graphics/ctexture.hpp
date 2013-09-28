@@ -109,8 +109,7 @@ class EE_API cTexture : public cImage, private NonCopyable {
 		**	behaviour.
 		**	This function does nothing if @a pixels is null or if the
 		**	texture was not previously created.
-		**	@param pixels Array of pixels to copy to the texture
-		**	@param pf The pixel format of the @a pixel */
+		**	@param pixels Array of pixels to copy to the texture */
 		void Update( const Uint8* pixels );
 
 		/** @brief Update a part of the texture from an image
