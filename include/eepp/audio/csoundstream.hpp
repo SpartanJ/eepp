@@ -102,10 +102,10 @@ class EE_API cSoundStream : private cThread, private cSound {
 		*/
 		bool FillAndPushBuffer( const unsigned int& Buffer );
 
-    	/** Fill the buffers queue with all available buffers
-    	* @return True if the derived class has requested to stop
-    	*/
-    	bool FillQueue();
+		/** Fill the buffers queue with all available buffers
+		* @return True if the derived class has requested to stop
+		*/
+		bool FillQueue();
 
 		void ClearQueue();
 

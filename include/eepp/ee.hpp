@@ -32,12 +32,13 @@
 						EE::Graphics documented.
 						EE::Audio documented.
 						EE::Math documented.
+						EE::Network documented.
 						EE::UI Not documented at all.
 						EE::Physics Not documented at all, chipmunk documentation should help.
 						EE::Gaming Not documented at all.
 
 	@TODO Add more commented examples, showing at least the basic usage of the engine ( 10 or more examples at least ).
-				STATE:	6 examples available.
+				STATE:	7 examples available.
 
 	@TODO Improve the map editor ( add triggers, tiles selection to copy paste in other zones of the map, undo/redo actions ).
 				STATE:	Needs at least to reoffset tiles and objects for the map resizing.
@@ -56,7 +57,7 @@
 	Middle-term plans:
 
 	@TODO Add Networking support.
-				STATE:	I'll use SFML network adapted to the engine coding style.
+				STATE:	DONE
 
 	Long-term plans:
 
@@ -98,6 +99,10 @@
 	// Graphics
 	#include <eepp/graphics.hpp>
 	using namespace EE::Graphics;
+
+	// Network
+	#include <eepp/network.hpp>
+	using namespace EE::Network;
 
 	// UI
 	#include <eepp/ui.hpp>

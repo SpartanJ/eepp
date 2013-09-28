@@ -293,9 +293,9 @@ function generate_os_links()
 			table.insert( os_links, "dl" )
 		end
 	elseif os.is_real("windows") then
-		multiple_insert( os_links, { "OpenAL32", "opengl32", "glu32", "gdi32" } )
+		multiple_insert( os_links, { "OpenAL32", "opengl32", "glu32", "gdi32", "ws2_32" } )
 	elseif os.is_real("mingw32") then
-		multiple_insert( os_links, { "OpenAL32", "opengl32", "glu32", "gdi32" } )
+		multiple_insert( os_links, { "OpenAL32", "opengl32", "glu32", "gdi32", "ws2_32" } )
 	elseif os.is_real("macosx") then
 		multiple_insert( os_links, { "OpenGL.framework", "OpenAL.framework", "CoreFoundation.framework", "AGL.framework" } )
 	elseif os.is_real("freebsd") then
@@ -491,8 +491,10 @@ function build_eepp( build_name )
 
 	if os.is("windows") then
 		files { "src/eepp/system/platform/win/*.cpp" }
+		files { "src/eepp/network/platform/win/*.cpp" }
 	else
 		files { "src/eepp/system/platform/posix/*.cpp" }
+		files { "src/eepp/network/platform/unix/*.cpp" }
 	end
 
 	files { "src/eepp/base/*.cpp",
@@ -503,6 +505,7 @@ function build_eepp( build_name )
 			"src/eepp/graphics/renderer/*.cpp",
 			"src/eepp/window/*.cpp",
 			"src/eepp/window/platform/null/*.cpp",
+			"src/eepp/network/*.cpp",
 			"src/eepp/ui/*.cpp",
 			"src/eepp/ui/tools/*.cpp",
 			"src/eepp/physics/*.cpp",
@@ -691,7 +694,7 @@ solution "eepp"
 		build_link_configuration( "eeew", true )
 
 	project "eepp-sound"
-		kind "WindowedApp"
+		kind "ConsoleApp"
 		language "C++"
 		files { "src/examples/sound/*.cpp" }
 		build_link_configuration( "eesound", true )
@@ -719,6 +722,12 @@ solution "eepp"
 		language "C++"
 		files { "src/examples/physics/*.cpp" }
 		build_link_configuration( "eephysics", true )
+
+	project "eepp-http-request"
+		kind "ConsoleApp"
+		language "C++"
+		files { "src/examples/http_request/*.cpp" }
+		build_link_configuration( "eehttp-request", true )
 
 if os.isfile("external_projects.lua") then
 	dofile("external_projects.lua")

@@ -401,7 +401,7 @@ ifeq ($(BUILD_OS), linux)
 DYLIBS		= -lrt -lpthread -lX11 -lopenal -lGL -lXcursor $(LIBFREETYPE2) $(DYLIBS_BACKENDS)
 LIBS 		= $(DYLIBS) $(LIBSNDFILE) $(STATIC_LIBS)
 OTHERINC	+= $(INCFREETYPE2)
-PLATFORMSRC	= $(wildcard ./src/eepp/window/platform/x11/*.cpp) $(wildcard ./src/eepp/system/platform/posix/*.cpp)
+PLATFORMSRC	= $(wildcard ./src/eepp/window/platform/x11/*.cpp) $(wildcard ./src/eepp/system/platform/posix/*.cpp) $(wildcard ./src/eepp/network/platform/unix/*.cpp)
 
 else
 
@@ -409,7 +409,7 @@ ifeq ($(BUILD_OS), darwin)
 
 LIBS 		= -framework OpenGL -framework OpenAL -framework CoreFoundation -framework AGL $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	+= $(INCFREETYPE2) -I/usr/local/include/freetype2
-PLATFORMSRC = $(wildcard ./src/eepp/window/platform/osx/*.cpp) $(wildcard ./src/eepp/system/platform/posix/*.cpp)
+PLATFORMSRC = $(wildcard ./src/eepp/window/platform/osx/*.cpp) $(wildcard ./src/eepp/system/platform/posix/*.cpp) $(wildcard ./src/eepp/network/platform/unix/*.cpp)
 
 else
 
@@ -417,7 +417,7 @@ ifeq ($(BUILD_OS), haiku)
 
 LIBS 		= -lopenal -lGL $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	+= $(INCFREETYPE2)
-PLATFORMSRC	= $(wildcard ./src/eepp/system/platform/posix/*.cpp)
+PLATFORMSRC	= $(wildcard ./src/eepp/system/platform/posix/*.cpp) $(wildcard ./src/eepp/network/platform/unix/*.cpp)
 
 else
 
@@ -425,24 +425,24 @@ ifeq ($(BUILD_OS), freebsd)
 
 LIBS 		= -lrt -lpthread -lX11 -lopenal -lGL -lXcursor $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	+= $(INCFREETYPE2)
-PLATFORMSRC	= $(wildcard ./src/eepp/window/platform/x11/*.cpp) $(wildcard ./src/eepp/system/platform/posix/*.cpp)
+PLATFORMSRC	= $(wildcard ./src/eepp/window/platform/x11/*.cpp) $(wildcard ./src/eepp/system/platform/posix/*.cpp) $(wildcard ./src/eepp/network/platform/unix/*.cpp)
 
 else
 
 ifeq ($(BUILD_OS), mingw32)
 
-LIBS 		= -lOpenAL32 -lopengl32 -lmingw32 -lglu32 -lgdi32 -static-libgcc -static-libstdc++ -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
+LIBS 		= -lOpenAL32 -lopengl32 -lmingw32 -lglu32 -lgdi32 -lws2_32 -static-libgcc -static-libstdc++ -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	+= $(INCFREETYPE2)
-PLATFORMSRC	= $(wildcard ./src/eepp/window/platform/win/*.cpp) $(wildcard ./src/eepp/system/platform/win/*.cpp)
+PLATFORMSRC	= $(wildcard ./src/eepp/window/platform/win/*.cpp) $(wildcard ./src/eepp/system/platform/win/*.cpp) $(wildcard ./src/eepp/network/platform/win/*.cpp)
 
 else
 
 #if it is cygwin
 ifneq (,$(findstring cygwin,$(BUILD_OS)))
 
-LIBS 		= -lOpenAL32 -lmingw32 -lopengl32 -lglu32 -lgdi32 -static-libgcc -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
+LIBS 		= -lOpenAL32 -lmingw32 -lopengl32 -lglu32 -lgdi32 -lws2_32 -static-libgcc -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	+= -I./src/eepp/helper/zlib $(INCFREETYPE2)
-PLATFORMSRC	= $(wildcard ./src/eepp/window/platform/win/*.cpp) $(wildcard ./src/eepp/system/platform/win/*.cpp)
+PLATFORMSRC	= $(wildcard ./src/eepp/window/platform/win/*.cpp) $(wildcard ./src/eepp/system/platform/win/*.cpp) $(wildcard ./src/eepp/network/platform/win/*.cpp)
 
 else
 
@@ -460,7 +460,7 @@ ifeq ($(ARCH),armv7)
 OTHERINC += -DU_HAVE_GCC_ATOMICS=0
 endif
 
-PLATFORMSRC = $(wildcard ./src/eepp/system/platform/posix/*.cpp)
+PLATFORMSRC = $(wildcard ./src/eepp/system/platform/posix/*.cpp) $(wildcard ./src/eepp/network/platform/unix/*.cpp)
 
 endif
 #endif ios
@@ -513,7 +513,7 @@ else
 endif
 
 SRCHELPERS			= $(SRCFREETYPE) $(SRCGLEW) $(wildcard ./src/eepp/helper/SOIL2/src/SOIL2/*.c) $(wildcard ./src/eepp/helper/stb_vorbis/*.c) $(wildcard ./src/eepp/helper/zlib/*.c) $(wildcard ./src/eepp/helper/libzip/*.c) $(wildcard ./src/eepp/helper/chipmunk/*.c) $(wildcard ./src/eepp/helper/chipmunk/constraints/*.c)
-SRCMODULES			= $(wildcard ./src/eepp/helper/imageresampler/*.cpp) $(wildcard ./src/eepp/helper/jpeg-compressor/*.cpp) $(wildcard ./src/eepp/helper/haikuttf/*.cpp) $(wildcard ./src/eepp/base/*.cpp) $(wildcard ./src/eepp/audio/*.cpp) $(wildcard ./src/eepp/gaming/*.cpp) $(wildcard ./src/eepp/gaming/mapeditor/*.cpp) $(wildcard ./src/eepp/graphics/*.cpp) $(wildcard ./src/eepp/graphics/renderer/*.cpp) $(wildcard ./src/eepp/math/*.cpp) $(wildcard ./src/eepp/system/*.cpp) $(wildcard ./src/eepp/ui/*.cpp) $(wildcard ./src/eepp/ui/tools/*.cpp) $(wildcard ./src/eepp/utils/*.cpp) $(wildcard ./src/eepp/window/*.cpp) $(wildcard ./src/eepp/window/backend/null/*.cpp) $(wildcard ./src/eepp/window/platform/null/*.cpp) $(SDL_BACKEND_SRC) $(SDL2_BACKEND_SRC) $(SFML_BACKEND_SRC) $(PLATFORMSRC) $(wildcard ./src/eepp/physics/*.cpp) $(wildcard ./src/eepp/physics/constraints/*.cpp)
+SRCMODULES			= $(wildcard ./src/eepp/helper/imageresampler/*.cpp) $(wildcard ./src/eepp/helper/jpeg-compressor/*.cpp) $(wildcard ./src/eepp/helper/haikuttf/*.cpp) $(wildcard ./src/eepp/base/*.cpp) $(wildcard ./src/eepp/audio/*.cpp) $(wildcard ./src/eepp/gaming/*.cpp) $(wildcard ./src/eepp/gaming/mapeditor/*.cpp) $(wildcard ./src/eepp/graphics/*.cpp) $(wildcard ./src/eepp/graphics/renderer/*.cpp) $(wildcard ./src/eepp/math/*.cpp) $(wildcard ./src/eepp/system/*.cpp) $(wildcard ./src/eepp/network/*.cpp) $(wildcard ./src/eepp/ui/*.cpp) $(wildcard ./src/eepp/ui/tools/*.cpp) $(wildcard ./src/eepp/utils/*.cpp) $(wildcard ./src/eepp/window/*.cpp) $(wildcard ./src/eepp/window/backend/null/*.cpp) $(wildcard ./src/eepp/window/platform/null/*.cpp) $(SDL_BACKEND_SRC) $(SDL2_BACKEND_SRC) $(SFML_BACKEND_SRC) $(PLATFORMSRC) $(wildcard ./src/eepp/physics/*.cpp) $(wildcard ./src/eepp/physics/constraints/*.cpp)
 
 OBJHELPERS			= $(SRCHELPERS:.c=.o)
 OBJMODULES			= $(SRCMODULES:.cpp=.o)

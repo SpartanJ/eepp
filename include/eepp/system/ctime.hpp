@@ -86,28 +86,28 @@ EE_API bool operator !=(cTime left, cTime right);
 /// @brief Overload of < operator to compare two time values
 /// @param left  Left operand (a time)
 /// @param right Right operand (a time)
-/// @return True if \a left is lesser than \a right
+/// @return True if @a left is lesser than @a right
 EE_API bool operator <(cTime left, cTime right);
 
 /// @relates cTime
 /// @brief Overload of > operator to compare two time values
 /// @param left  Left operand (a time)
 /// @param right Right operand (a time)
-/// @return True if \a left is greater than \a right
+/// @return True if @a left is greater than @a right
 EE_API bool operator >(cTime left, cTime right);
 
 /// @relates cTime
 /// @brief Overload of <= operator to compare two time values
 /// @param left  Left operand (a time)
 /// @param right Right operand (a time)
-/// @return True if \a left is lesser or equal than \a right
+/// @return True if @a left is lesser or equal than @a right
 EE_API bool operator <=(cTime left, cTime right);
 
 /// @relates cTime
 /// @brief Overload of >= operator to compare two time values
 /// @param left  Left operand (a time)
 /// @param right Right operand (a time)
-/// @return True if \a left is greater or equal than \a right
+/// @return True if @a left is greater or equal than @a right
 EE_API bool operator >=(cTime left, cTime right);
 
 /// @relates cTime
@@ -148,154 +148,152 @@ EE_API cTime& operator -=(cTime& left, cTime right);
 /// @brief Overload of binary * operator to scale a time value
 /// @param left  Left operand (a time)
 /// @param right Right operand (a number)
-/// @return \a left multiplied by \a right
+/// @return @a left multiplied by @a right
 EE_API cTime operator *(cTime left, cTime right);
 
-/// @relates Time
+/// @relates cTime
 /// @brief Overload of binary * operator to scale a time value
 /// @param left  Left operand (a time)
 /// @param right Right operand (a number)
-/// @return \a left multiplied by \a right
+/// @return @a left multiplied by @a right
 EE_API cTime operator *(cTime left, eeDouble right);
 
-/// @relates Time
+/// @relates cTime
 /// @brief Overload of binary * operator to scale a time value
 /// @param left  Left operand (a number)
 /// @param right Right operand (a time)
-/// @return \a left multiplied by \a right
+/// @return @a left multiplied by @a right
 EE_API cTime operator *(eeDouble left, cTime right);
 
-/// @relates Time
+/// @relates cTime
 /// @brief Overload of binary * operator to scale a time value
 /// @param left  Left operand (a number)
 /// @param right Right operand (a time)
-/// @return \a left multiplied by \a right
+/// @return @a left multiplied by @a right
 EE_API cTime operator *(Int64 left, cTime right);
 
-/// @relates Time
+/// @relates cTime
 /// @brief Overload of binary * operator to scale a time value
 /// @param left  Left operand (a time)
 /// @param right Right operand (a number)
-/// @return \a left multiplied by \a right
+/// @return @a left multiplied by @a right
 EE_API cTime operator *(cTime left, Int64 right);
 
-/// @relates Time
+/// @relates cTime
 /// @brief Overload of binary *= operator to scale/assign a time value
 /// @param left  Left operand (a time)
 /// @param right Right operand (a number)
-/// @return \a left multiplied by \a right
+/// @return @a left multiplied by @a right
 EE_API cTime& operator *=(cTime& left, eeDouble right);
 
-/// @relates Time
+/// @relates cTime
 /// @brief Overload of binary *= operator to scale/assign a time value
 /// @param left  Left operand (a time)
 /// @param right Right operand (a number)
-/// @return \a left multiplied by \a right
+/// @return @a left multiplied by @a right
 EE_API cTime& operator *=(cTime& left, Int64 right);
 
 /// @relates cTime
 /// @brief Overload of binary *= operator to scale/assign a time value
 /// @param left  Left operand (a time)
 /// @param right Right operand (a time)
-/// @return \a left multiplied by \a right
+/// @return @a left multiplied by @a right
 EE_API cTime& operator *=(cTime& left, cTime right);
 
 /// @relates cTime
 /// @brief Overload of binary / operator to scale a time value
 /// @param left  Left operand (a time)
 /// @param right Right operand (a time)
-/// @return \a left divided by \a right
+/// @return @a left divided by @a right
 EE_API cTime operator /(cTime left, cTime right);
 
-/// @relates Time
+/// @relates cTime
 /// @brief Overload of binary / operator to scale a time value
 /// @param left  Left operand (a time)
 /// @param right Right operand (a number)
-/// @return \a left divided by \a right
+/// @return @a left divided by @a right
 EE_API cTime operator /(cTime left, eeDouble right);
 
-/// @relates Time
+/// @relates cTime
 /// @brief Overload of binary / operator to scale a time value
 /// @param left  Left operand (a time)
 /// @param right Right operand (a number)
-/// @return \a left divided by \a right
+/// @return @a left divided by @a right
 EE_API cTime operator /(cTime left, Int64 right);
 
-/// @relates Time
+/// @relates cTime
 /// @brief Overload of binary /= operator to scale/assign a time value
 /// @param left  Left operand (a time)
 /// @param right Right operand (a number)
-/// @return \a left divided by \a right
+/// @return @a left divided by @a right
 EE_API cTime& operator /=(cTime& left, Int64 right);
 
 /// @relates cTime
 /// @brief Overload of binary /= operator to scale/assign a time value
 /// @param left  Left operand (a time)
 /// @param right Right operand (a time)
-/// @return \a left divided by \a right
+/// @return @a left divided by @a right
 EE_API cTime& operator /=(cTime& left, cTime right);
 
 /// @relates cTime
 /// @brief Overload of binary % operator to compute remainder of a time value
 /// @param left  Left operand (a time)
 /// @param right Right operand (a time)
-/// @return \a left modulo \a right
+/// @return @a left modulo @a right
 EE_API cTime operator %(cTime left, cTime right);
 
 /// @relates cTime
 /// @brief Overload of binary %= operator to compute/assign remainder of a time value
 /// @param left  Left operand (a time)
 /// @param right Right operand (a time)
-/// @return \a left modulo \a right
+/// @return @a left modulo @a right
 EE_API cTime& operator %=(cTime& left, cTime right);
 
 }}
 
 #endif
 
-////////////////////////////////////////////////////////////
-/// \class EE::Systen::cTime
-/// \ingroup System
-///
-/// EE::Systen::cTime encapsulates a time value in a flexible way.
-/// It allows to define a time value either as a number of
-/// seconds, milliseconds or microseconds. It also works the
-/// other way round: you can read a time value as either
-/// a number of seconds, milliseconds or microseconds.
-///
-/// By using such a flexible interface, the API doesn't
-/// impose any fixed type or resolution for time values,
-/// and let the user choose its own favorite representation.
-///
-/// cTime values support the usual mathematical operations:
-/// you can add or subtract two times, multiply or divide
-/// a time by a number, compare two times, etc.
-///
-/// Since they represent a time span and not an absolute time
-/// value, times can also be negative.
-///
-/// Usage example:
-/// @code
-/// cTime t1 = Seconds(0.1f);
-/// eeDouble milli = t1.AsMilliseconds(); // 100
-///
-/// cTime t2 = Milliseconds(30);
-/// Int64 micro = t2.AsMicroseconds(); // 30000
-///
-/// cTime t3 = Microseconds(-800000);
-/// eeDouble sec = t3.AsSeconds(); // -0.8
-/// @endcode
-///
-/// @code
-/// void update(cTime elapsed)
-/// {
-///    position += speed * elapsed;
-/// }
-///
-/// update(Milliseconds(100));
-/// @endcode
-///
-/// @see cClock
-///
-////////////////////////////////////////////////////////////
- 
+/**
+@class cTime
+@ingroup System
+
+EE::Systen::cTime encapsulates a time value in a flexible way.
+It allows to define a time value either as a number of
+seconds, milliseconds or microseconds. It also works the
+other way round: you can read a time value as either
+a number of seconds, milliseconds or microseconds.
+
+By using such a flexible interface, the API doesn't
+impose any fixed type or resolution for time values,
+and let the user choose its own favorite representation.
+
+cTime values support the usual mathematical operations:
+you can add or subtract two times, multiply or divide
+a time by a number, compare two times, etc.
+
+Since they represent a time span and not an absolute time
+value, times can also be negative.
+
+Usage example:
+@code
+cTime t1 = Seconds(0.1f);
+eeDouble milli = t1.AsMilliseconds(); // 100
+
+cTime t2 = Milliseconds(30);
+Int64 micro = t2.AsMicroseconds(); // 30000
+
+cTime t3 = Microseconds(-800000);
+eeDouble sec = t3.AsSeconds(); // -0.8
+@endcode
+
+@code
+void update(cTime elapsed)
+{
+   position += speed * elapsed;
+}
+
+update(Milliseconds(100));
+@endcode
+
+@see cClock
+*/

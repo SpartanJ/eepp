@@ -26,6 +26,7 @@ eevbo-fbo-batch*
 eephysics*
 eestrobe*
 eeiv*
+eehttp-request*
 ee.tag
 log.log
 external_projects.lua

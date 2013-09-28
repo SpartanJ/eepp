@@ -209,7 +209,7 @@ class EE_API cConsole : protected iLogReader {
 		/** Internal Callback for default command ( setvolume ) */
 		void CmdSetVolume( const std::vector < String >& params );
 
-        /** Internal Callback for default command ( getgpuextensions ) */
+		/** Internal Callback for default command ( getgpuextensions ) */
 		void CmdGetGpuExtensions( const std::vector < String >& params );
 
 		/** Internal Callback for default command ( dir and ls ) */
@@ -233,8 +233,8 @@ class EE_API cConsole : protected iLogReader {
 		/** Add the current log to the console */
 		void CmdGetLog();
 
-        /** Add the GPU Extensions supported to the console */
-        void CmdGetGpuExtensions();
+		/** Add the GPU Extensions supported to the console */
+		void CmdGetGpuExtensions();
 
 		/** Internal Callback to Process the new line ( when return pressed ) */
 		void ProcessLine();

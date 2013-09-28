@@ -681,45 +681,46 @@ EE_API String operator +( const String& left, const String& right );
 
 #endif
 
-/** @class EE::String
-** EE::String is a utility string class defined mainly for
-** convenience. It is a Unicode string (implemented using
-** UTF-32), thus it can store any character in the world
-** (european, chinese, arabic, hebrew, etc.).
-** It automatically handles conversions from/to ANSI and
-** wide strings, so that you can work with standard string
-** classes and still be compatible with functions taking a
-** EE::String.
-** @code
-** EE::String s;
-** std::string s1 = s;  // automatically converted to ANSI string
-** String s2 = s; // automatically converted to wide string
-** s = "hello";         // automatically converted from ANSI string
-** s = L"hello";        // automatically converted from wide string
-** s += 'a';            // automatically converted from ANSI string
-** s += L'a';           // automatically converted from wide string
-** @endcode
-** Conversions involving ANSI strings use the default user locale. However
-** it is possible to use a custom locale if necessary:
-** @code
-** std::locale locale;
-** EE::String s;
-** ...
-** std::string s1 = s.ToAnsiString(locale);
-** s = EE::String("hello", locale);
-** @endcode
-**
-** EE::String defines the most important functions of the
-** standard std::string class: removing, random access, iterating,
-** appending, comparing, etc. However it is a simple class
-** provided for convenience, and you may have to consider using
-** a more optimized class if your program requires complex string
-** handling. The automatic conversion functions will then take
-** care of converting your string to EE::String whenever EE
-** requires it.
-**
-** Please note that EE also defines a low-level, generic
-** interface for Unicode handling, see the EE::Utf classes.
-**
-** All credits to Laurent Gomila, i just modified and expanded a little bit the implementation.
-**/
+/**
+@class EE::String
+EE::String is a utility string class defined mainly for
+convenience. It is a Unicode string (implemented using
+UTF-32), thus it can store any character in the world
+(european, chinese, arabic, hebrew, etc.).
+It automatically handles conversions from/to ANSI and
+wide strings, so that you can work with standard string
+classes and still be compatible with functions taking a
+EE::String.
+@code
+EE::String s;
+std::string s1 = s;  // automatically converted to ANSI string
+String s2 = s; // automatically converted to wide string
+s = "hello";         // automatically converted from ANSI string
+s = L"hello";        // automatically converted from wide string
+s += 'a';            // automatically converted from ANSI string
+s += L'a';           // automatically converted from wide string
+@endcode
+Conversions involving ANSI strings use the default user locale. However
+it is possible to use a custom locale if necessary:
+@code
+std::locale locale;
+EE::String s;
+...
+std::string s1 = s.ToAnsiString(locale);
+s = EE::String("hello", locale);
+@endcode
+
+EE::String defines the most important functions of the
+standard std::string class: removing, random access, iterating,
+appending, comparing, etc. However it is a simple class
+provided for convenience, and you may have to consider using
+a more optimized class if your program requires complex string
+handling. The automatic conversion functions will then take
+care of converting your string to EE::String whenever EE
+requires it.
+
+Please note that EE also defines a low-level, generic
+interface for Unicode handling, see the EE::Utf classes.
+
+All credits to Laurent Gomila, i just modified and expanded a little bit the implementation.
+*/

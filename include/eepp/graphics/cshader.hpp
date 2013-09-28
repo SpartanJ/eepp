@@ -15,55 +15,55 @@ class EE_API cShader {
 		static bool Ensure();
 
 		/** Constructor with type of shader, next you'll need to set the source and compile it. */
-    	cShader( const Uint32& Type );
+		cShader( const Uint32& Type );
 
-    	/** Create a type of shader and load the shader from a file, and compile it. */
-    	cShader( const Uint32& Type, const std::string& Filename );
+		/** Create a type of shader and load the shader from a file, and compile it. */
+		cShader( const Uint32& Type, const std::string& Filename );
 
-    	/** Create a type of shader from memory, and compile it. */
+		/** Create a type of shader from memory, and compile it. */
 		cShader( const Uint32& Type, const char * Data, const Uint32& DataSize );
 
-    	/** Create a type of shader loaded from a pack file */
-    	cShader( const Uint32& Type, cPack * Pack, const std::string& Filename );
+		/** Create a type of shader loaded from a pack file */
+		cShader( const Uint32& Type, cPack * Pack, const std::string& Filename );
 
 		/** Create a type of shader from memory, and compile it. */
 		cShader( const Uint32& Type, const char ** Data, const Uint32& NumLines );
 
-    	virtual ~cShader();
+		virtual ~cShader();
 
-    	/** Set the shader source */
-    	void SetSource( const std::string& Source );
+		/** Set the shader source */
+		void SetSource( const std::string& Source );
 
-    	/** Set the shader source */
-    	void SetSource( const std::vector<Uint8>& Source );
+		/** Set the shader source */
+		void SetSource( const std::vector<Uint8>& Source );
 
-    	/** Set the shader source */
+		/** Set the shader source */
 		void SetSource( const char * Data, const Uint32& DataSize );
 
 		/** Set the shader source */
 		void SetSource( const char** Data, const Uint32& NumLines );
 
-    	/** Compile the shader */
-    	bool Compile();
+		/** Compile the shader */
+		bool Compile();
 
-    	/** @return If the shader is valid */
+		/** @return If the shader is valid */
 		bool IsValid() const;
 
-    	/** @return If the shader is compiled */
+		/** @return If the shader is compiled */
 		bool IsCompiled() const;
 
-    	/** @return The log of the compilation */
+		/** @return The log of the compilation */
 		std::string CompileLog() const;
 
-    	/** @return The Shader Type */
+		/** @return The Shader Type */
 		Uint32 GetType() const;
 
-    	/** @return The Shader Id */
+		/** @return The Shader Id */
 		Uint32 GetId() const;
 
-    	/** Reloads the Shader. */
-    	void Reload();
-    protected:
+		/** Reloads the Shader. */
+		void Reload();
+	protected:
 		friend class cRendererGL3;
 		static bool			sEnsure;
 		Uint32 				mGLId;
@@ -71,10 +71,10 @@ class EE_API cShader {
 		std::string			mFilename;
 		std::string 		mCompileLog;
 		std::string         mSource;
-    	bool 				mValid;
-    	bool 				mCompiled;
+		bool 				mValid;
+		bool 				mCompiled;
 
-    	void Init( const Uint32& Type );
+		void Init( const Uint32& Type );
 
 		std::string GetName();
 
@@ -84,20 +84,20 @@ class EE_API cShader {
 /** @brief Prebuild Vertex Shader class */
 class EE_API cVertexShader : public cShader {
 	public:
-    	cVertexShader();
-    	cVertexShader( const std::string& Filename );
+		cVertexShader();
+		cVertexShader( const std::string& Filename );
 		cVertexShader( const char * Data, const Uint32& DataSize );
-    	cVertexShader( cPack * Pack, const std::string& Filename );
+		cVertexShader( cPack * Pack, const std::string& Filename );
 		cVertexShader( const char ** Data, const Uint32& NumLines );
 };
 
 /** @brief Prebuild Fragment Shader class */
 class EE_API cFragmentShader : public cShader {
 	public:
-    	cFragmentShader();
-    	cFragmentShader( const std::string& Filename );
+		cFragmentShader();
+		cFragmentShader( const std::string& Filename );
 		cFragmentShader( const char * Data, const Uint32& DataSize );
-    	cFragmentShader( cPack * Pack, const std::string& Filename );
+		cFragmentShader( cPack * Pack, const std::string& Filename );
 		cFragmentShader( const char ** Data, const Uint32& NumLines );
 };
 

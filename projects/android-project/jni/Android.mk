@@ -48,9 +48,12 @@ CODE_SRCS :=  \
 	helper/zlib/*.c \
 	helper/libzip/*.c \
 	helper/jpeg-compressor/*.cpp \
+	helper/imageresampler/*.cpp \
 	helper/haikuttf/*.cpp \
 	system/*.cpp \
 	system/platform/posix/*.cpp \
+	network/*.cpp \
+	network/platform/unix/*.cpp \
 	base/*.cpp \
 	math/*.cpp \
 	audio/*.cpp \
