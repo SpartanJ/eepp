@@ -57,7 +57,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	mWindow.ContextConfig	= Context;
 
 	if ( SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
-		cLog::instance()->Write( "Unable to initialize SDL: " + std::string( SDL_GetError() ) );
+		eePRINTL( "Unable to initialize SDL: %s", SDL_GetError() );
 
 		LogFailureInit( "cWindowSDL", GetVersion() );
 
@@ -100,7 +100,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	if ( SDL_VideoModeOK( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, mWindow.WindowConfig.BitsPerPixel, mTmpFlags ) ) {
 		mSurface = SDL_SetVideoMode( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, mWindow.WindowConfig.BitsPerPixel, mTmpFlags );
 	} else {
-		cLog::instance()->Write( "Video Mode Unsopported for this videocard: " );
+		eePRINTL( "Video Mode Unsopported for this videocard: " );
 
 		LogFailureInit( "cWindowSDL", GetVersion() );
 
@@ -110,7 +110,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	mWindow.WindowSize = eeSize( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 
 	if ( NULL == mSurface ) {
-		cLog::instance()->Write( "Unable to set video mode: " + std::string( SDL_GetError() ) );
+		eePRINTL( "Unable to set video mode: %s", SDL_GetError() );
 
 		LogFailureInit( "cWindowSDL", GetVersion() );
 
@@ -294,7 +294,7 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	#ifdef EE_SUPPORT_EXCEPTIONS
 	try {
 	#endif
-		cLog::instance()->Writef( "Switching from %s to %s. Width: %d Height %d.", this->Windowed() ? "windowed" : "fullscreen", Windowed ? "windowed" : "fullscreen", Width, Height );
+		eePRINTL( "Switching from %s to %s. Width: %d Height %d.", this->Windowed() ? "windowed" : "fullscreen", Windowed ? "windowed" : "fullscreen", Width, Height );
 
 		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
 		#if EE_PLATFORM == EE_PLATFORM_WIN
@@ -363,7 +363,7 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 		}
 	#ifdef EE_SUPPORT_EXCEPTIONS
 	} catch (...) {
-		cLog::instance()->Write( "Unable to change resolution: " + std::string( SDL_GetError() ) );
+		eePRINTL( "Unable to change resolution: %s", SDL_GetError() );
 		cLog::instance()->Save();
 		mWindow.Created = false;
 	}
@@ -378,7 +378,7 @@ std::vector<DisplayMode> cWindowSDL::GetDisplayModes() const {
 	SDL_Rect **modes = SDL_ListModes( NULL, SDL_OPENGL | SDL_HWPALETTE | SDL_HWACCEL | SDL_FULLSCREEN );
 
 	if(modes == (SDL_Rect **)0)
-		cLog::instance()->Write("No VideoMode Found");
+		eePRINTL("No VideoMode Found");
 
 	std::vector<DisplayMode> result;
 	if( modes != (SDL_Rect **)-1 )

@@ -45,12 +45,12 @@ bool cTextureFont::Load( const Uint32& TexId, const eeUint& StartChar, const eeU
 
 		BuildFont();
 
-		cLog::instance()->Write( "Texture Font " + Tex->Filepath() + " loaded." );
+		eePRINTL( "Texture Font %s loaded.", Tex->Filepath().c_str() );
 
 		return true;
 	}
 
-	cLog::instance()->Write( "Failed to load Texture Font: unknown texture." );
+	eePRINTL( "Failed to Load Texture Font: Unknown Texture." );
 
 	return false;
 }

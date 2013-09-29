@@ -50,7 +50,7 @@ cMapEditor::cMapEditor( cUIWindow * AttatchTo, const MapEditorCloseCb& callback 
 	mMouseScrolling( false )
 {
 	if ( NULL == mTheme ) {
-		eePRINT( "cMapEditor needs a default theme seted to work." );
+		eePRINTL( "cMapEditor needs a default theme seted to work." );
 		return;
 	}
 

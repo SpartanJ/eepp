@@ -15,9 +15,9 @@ using namespace EE::System;
 
 namespace EE {
 
-#ifdef EE_DEBUG
-
 bool PrintDebugInLog = true;
+
+#ifdef EE_DEBUG
 
 void eeREPORT_ASSERT( const char * File, int Line, const char * Exp ) {
 	#ifdef EE_COMPILER_MSVC
@@ -46,50 +46,120 @@ void eeREPORT_ASSERT( const char * File, int Line, const char * Exp ) {
 	#endif
 }
 
-void eePRINT( const char * format, ... ) {
-	char		buf[2048];
-	va_list		args;
+#endif
 
-	va_start( args, format );
+#ifndef EE_SILENT
 
-	eevsnprintf( buf, sizeof( buf ), format, args );
-
-	va_end( args );
+static void print_buffer( std::string& buf, bool newLine ) {
+	if ( newLine )
+		buf += "\n";
 
 	#ifdef EE_COMPILER_MSVC
-	OutputDebugStringA( buf );
+		OutputDebugStringA( buf.c_str() );
 	#else
-	if ( PrintDebugInLog && cLog::instance()->ConsoleOutput() && cLog::instance()->LiveWrite() )
-		cLog::instance()->Write( std::string( buf ) );
-	else
-		printf("%s", buf );
+		if ( PrintDebugInLog && cLog::instance()->ConsoleOutput() ) {
+			cLog::instance()->Write( buf, false );
+			return;
+		} else {
+			printf("%s", buf.c_str() );
+		}
 	#endif
 
 	if ( PrintDebugInLog )
-		cLog::instance()->Write( std::string( buf ) );
+		cLog::instance()->Write( buf, false );
+}
+
+void eePRINT( const char * format, ... ) {
+	int n, size = 2048;
+	std::string buf( size, '\0' );
+
+	va_list		args;
+
+	while ( 1 ) {
+		va_start( args, format );
+
+		n = eevsnprintf( &buf[0], buf.size(), format, args );
+
+		if ( n > -1 && n < size ) {
+			buf.resize( n );
+
+			print_buffer( buf, false );
+
+			va_end( args );
+
+			return;
+		}
+
+		if ( n > -1 )	// glibc 2.1
+			size = n+1; // precisely what is needed
+		else			// glibc 2.0
+			size *= 2;	// twice the old size
+
+		buf.resize( size );
+	}
+}
+
+void eePRINTL( const char * format, ... ) {
+	int n, size = 2048;
+	std::string buf( size, '\0' );
+
+	va_list		args;
+
+	while ( 1 ) {
+		va_start( args, format );
+
+		n = eevsnprintf( &buf[0], buf.size(), format, args );
+
+		if ( n > -1 && n < size ) {
+			buf.resize( n );
+
+			print_buffer( buf, true );
+
+			va_end( args );
+
+			return;
+		}
+
+		if ( n > -1 )	// glibc 2.1
+			size = n+1; // precisely what is needed
+		else			// glibc 2.0
+			size *= 2;	// twice the old size
+
+		buf.resize( size );
+	}
 }
 
 void eePRINTC( unsigned int cond, const char * format, ...) {
 	if ( 0 == cond )
 		return;
 
-	char		buf[2048];
+	int n, size = 2048;
+	std::string buf( size, '\0' );
+
 	va_list		args;
 
-	va_start( args, format );
+	while ( 1 ) {
+		va_start( args, format );
 
-	eevsnprintf( buf, sizeof( buf ) / sizeof( buf[0]), format, args );
+		n = eevsnprintf( &buf[0], buf.size(), format, args );
 
-	va_end( args );
+		if ( n > -1 && n < size ) {
+			buf.resize( n );
 
-	#ifdef EE_COMPILER_MSVC
-	OutputDebugStringA( buf );
-	#else
-	printf("%s", buf );
-	#endif
+			print_buffer( buf, false );
 
-	if ( PrintDebugInLog )
-		cLog::instance()->Write( std::string( buf ) );
+			va_end( args );
+
+			return;
+		}
+
+		if ( n > -1 )	// glibc 2.1
+			size = n+1; // precisely what is needed
+		else			// glibc 2.0
+			size *= 2;	// twice the old size
+
+		buf.resize( size );
+	}
 }
 
 #endif

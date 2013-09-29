@@ -80,11 +80,11 @@ class EE_API cConsole : protected iLogReader {
 		/** @return If console is maximized */
 		bool Expand() const { return mExpand; }
 
-		/** Set the fade speed in ms */
-		void FadeSpeed( const eeFloat& fadespeed ) { mFadeSpeed = fadespeed; }
+		/** Set the fade time */
+		void FadeSpeed( const cTime& fadespeed ) { mFadeSpeed = fadespeed; }
 
 		/** @return The fading speed in ms */
-		eeFloat FadeSpeed() const { return mFadeSpeed; }
+		const cTime& FadeSpeed() const { return mFadeSpeed; }
 
 		/** @brief Creates the new console
 		* @param Font The cFont pointer to class
@@ -142,7 +142,7 @@ class EE_API cConsole : protected iLogReader {
 		eeFloat mMaxAlpha;
 		eeFloat mTempY;
 		eeFloat mFontSize;
-		eeFloat mFadeSpeed;
+		cTime	mFadeSpeed;
 
 		Uint32 mMyCallback;
 		Uint32 mVidCb;

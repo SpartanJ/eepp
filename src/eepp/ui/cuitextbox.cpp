@@ -21,7 +21,7 @@ cUITextBox::cUITextBox( const cUITextBox::CreateParams& Params ) :
 		if ( NULL != cUIThemeManager::instance()->DefaultFont() )
 			mTextCache->Font( cUIThemeManager::instance()->DefaultFont() );
 		else
-			eePRINT( "cUITextBox::cUITextBox : Created a UI TextBox without a defined font.\n" );
+			eePRINTL( "cUITextBox::cUITextBox : Created a UI TextBox without a defined font." );
 	}
 
 	AutoAlign();

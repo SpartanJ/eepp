@@ -41,7 +41,7 @@ cShader::cShader( const Uint32& Type, const std::string& Filename ) {
 
 			SetSource( reinterpret_cast<char*> ( PData.Data ), PData.DataSize );
 		} else {
-			cLog::instance()->Write( std::string( "Couldn't open shader object: " ) + Filename );
+			eePRINTL( "Couldn't open shader object: %s", Filename.c_str() );
 		}
 	}
 
@@ -122,7 +122,7 @@ std::string cShader::GetName() {
 void cShader::EnsureVersion() {
 	#ifdef EE_GL3_ENABLED
 	if ( cShader::Ensure() && ( GLi->Version() == GLv_3 || GLi->Version() == GLv_ES2 ) ) {
-		cLog::instance()->Write( "Shader " + GetName() + " converted to programmable pipeline automatically." );
+		eePRINTL( "Shader %s converted to programmable pipeline automatically.", GetName().c_str() );
 
 		if ( GL_VERTEX_SHADER == mType ) {
 			if ( mSource.find( "ftransform" ) != std::string::npos || mSource.find("dgl_Vertex") == std::string::npos ) {
@@ -141,15 +141,13 @@ void cShader::EnsureVersion() {
 				String::ReplaceSubStr( mSource, "gl_TexCoord"	, "dgl_TexCoord"	);
 			}
 		}
-
-		/// cLog::instance()->Write( "Shader " + GetName() +  " converted looks like: \n" + mSource + "\n" );
 	}
 	#endif
 }
 
 void cShader::SetSource( const std::string& Source ) {
 	if ( IsCompiled() ) {
-		cLog::instance()->Write( "Shader " + GetName() +  " report: can't set source for compiled shaders" );
+		eePRINTL( "Shader %s report: can't set source for compiled shaders", GetName().c_str() );
 		return;
 	}
 
@@ -192,7 +190,7 @@ void cShader::SetSource( const std::vector<Uint8>& Source ) {
 
 bool cShader::Compile() {
 	if ( IsCompiled() ) {
-		cLog::instance()->Write( "Shader " + GetName() +  " report: can't compile a shader twice" );
+		eePRINTL( "Shader %s report: can't compile a shader twice", GetName().c_str() );
 		return false;
 	}
 
@@ -215,11 +213,11 @@ bool cShader::Compile() {
 			glGetShaderInfoLog( GetId(), logarraysize, &logsize, reinterpret_cast<GLchar*>( &mCompileLog[0] ) );
 		}
 
-		cLog::instance()->Write( "Couldn't compile shader " + GetName() + ". Log follows:\n" );
-		cLog::instance()->Write( mCompileLog );
-		cLog::instance()->Write( mSource );
+		eePRINTL( "Couldn't compile shader %s. Log follows:\n", GetName().c_str() );
+		eePRINTL( mCompileLog.c_str() );
+		eePRINTL( mSource.c_str() );
 	} else {
-		cLog::instance()->Write( "Shader " + GetName() + " compiled succesfully" );
+		eePRINTL( "Shader %s compiled succesfully", GetName().c_str() );
 	}
 
 	#endif

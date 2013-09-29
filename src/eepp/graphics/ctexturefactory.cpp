@@ -130,7 +130,7 @@ void cTextureFactory::UnloadTextures() {
 
 	mTextures.clear();
 
-	cLog::instance()->Write( "Textures Unloaded." );
+	eePRINTL( "Textures Unloaded." );
 }
 
 bool cTextureFactory::Remove( Uint32 TexId ) {
@@ -186,7 +186,7 @@ void cTextureFactory::ReloadAllTextures() {
 			Tex->Reload();
 	}
 
-	cLog::instance()->Write("Textures Reloaded.");
+	eePRINTL("Textures Reloaded.");
 }
 
 void cTextureFactory::GrabTextures() {

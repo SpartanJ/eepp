@@ -78,7 +78,7 @@ class EE_API cWaypoints {
 		bool Ended() const;
 
 		/** Instead if setting the time between every waypoing, this set a total time for all the movement interpolation. */
-		void SetTotalTime( const eeDouble& TotTime );
+		void SetTotalTime( const cTime & TotTime );
 
 		/** @return The Current Node */
 		cWaypoint * GetCurrentActual() const;

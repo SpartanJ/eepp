@@ -155,7 +155,7 @@ void cTcpSocket::Disconnect() {
 cSocket::Status cTcpSocket::Send(const void* data, std::size_t size) {
 	// Check the parameters
 	if (!data || (size == 0)) {
-		//err() << "Cannot send data over the network (no data to send)" << std::endl;
+		eePRINTL( "Cannot send data over the network (no data to send)" );
 		return Error;
 	}
 
@@ -180,7 +180,7 @@ cSocket::Status cTcpSocket::Receive(void* data, std::size_t size, std::size_t& r
 
 	// Check the destination buffer
 	if (!data) {
-		//err() << "Cannot receive data from the network (the destination buffer is invalid)" << std::endl;
+		eePRINTL( "Cannot receive data from the network (the destination buffer is invalid)" );
 		return Error;
 	}
 

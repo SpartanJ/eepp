@@ -98,7 +98,7 @@ void cEETest::Init() {
 		WP.EditWaypoint( 2, eeVector2f(800,600), 100 );
 		WP.EraseWaypoint( 3 );
 		WP.Loop(true);
-		WP.SetTotalTime(5000);
+		WP.SetTotalTime( Milliseconds( 5000 ) );
 		WP.Start();
 
 		Batch.AllocVertexs( 2048 );
@@ -171,7 +171,7 @@ void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
 	TTF		= cFontManager::instance()->GetByName( "arial" );
 	TTFB	= cFontManager::instance()->GetByName( "arialb" );
 
-	Log->Writef( "Fonts loading time: %f ms.", mFTE.Elapsed().AsMilliseconds() );
+	eePRINTL( "Fonts loading time: %4.3f ms.", mFTE.Elapsed().AsMilliseconds() );
 
 	eeASSERT( TTF != NULL );
 	eeASSERT( TTFB != NULL );
@@ -250,7 +250,7 @@ void cEETest::CreateUI() {
 
 	CreateUIThemeTextureAtlas();
 
-	Log->Writef( "Texture Atlas Loading Time: %f ms.", TE.Elapsed().AsMilliseconds() );
+	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.Elapsed().AsMilliseconds() );
 
 	cUIManager::instance()->Init(); //UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
 
@@ -288,7 +288,7 @@ void cEETest::CreateUI() {
 	Child->Pos( 240, 130 );
 	Child->Visible( true );
 	Child->Enabled( true );
-	Child->StartRotation( 0.f, 360.f, 5000.f );
+	Child->StartRotation( 0.f, 360.f, Milliseconds( 5000.f ) );
 	Child->AngleInterpolation()->Loop( true );
 
 	Params.Background.Colors( eeColorA( 0xFFFF0077 ), eeColorA( 0xCCCC0077 ), eeColorA( 0xCCCC0077 ), eeColorA( 0xFFFF0077 ) );
@@ -298,7 +298,7 @@ void cEETest::CreateUI() {
 	Child2->Pos( 15, 15 );
 	Child2->Visible( true );
 	Child2->Enabled( true );
-	Child2->StartRotation( 0.f, 360.f, 5000.f );
+	Child2->StartRotation( 0.f, 360.f, Milliseconds( 5000.f ) );
 	Child2->AngleInterpolation()->Loop( true );
 
 	mTheme->CreateSprite( eeNew( cSprite, ( "gn" ) ), C, eeSize(), eeVector2i( 160, 100 ) );
@@ -572,7 +572,7 @@ void cEETest::CreateUI() {
 
 	C = reinterpret_cast<cUIControlAnim*> ( C->Parent() );
 
-	Log->Writef( "CreateUI time: %f ms.", TE.Elapsed().AsMilliseconds() );
+	eePRINTL( "CreateUI time: %4.3f ms.", TE.Elapsed().AsMilliseconds() );
 }
 
 void cEETest::CreateMapEditor() {
@@ -693,13 +693,13 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 
 		if ( Chk->Active() ) {
 			if ( C->Scale() == 1.f ) C->Scale( 0.f );
-			C->StartScaleAnim( C->Scale(), 1.f, 500.f, Ease::SineOut );
-			C->StartAlphaAnim( C->Alpha(), 255.f, 500.f );
-			C->StartRotation( 0, 360, 500.f, Ease::SineOut );
+			C->StartScaleAnim( C->Scale(), 1.f, Milliseconds( 500.f ), Ease::SineOut );
+			C->StartAlphaAnim( C->Alpha(), 255.f, Milliseconds( 500.f ) );
+			C->StartRotation( 0, 360, Milliseconds( 500.f ), Ease::SineOut );
 		} else {
-			C->StartScaleAnim( C->Scale(), 0.f, 500.f, Ease::SineIn );
-			C->StartAlphaAnim( C->Alpha(), 0.f, 500.f );
-			C->StartRotation( 0, 360, 500.f, Ease::SineIn );
+			C->StartScaleAnim( C->Scale(), 0.f, Milliseconds( 500.f ), Ease::SineIn );
+			C->StartAlphaAnim( C->Alpha(), 0.f, Milliseconds( 500.f ) );
+			C->StartRotation( 0, 360, Milliseconds( 500.f ), Ease::SineIn );
 		}
 	} else if ( "Show Window 2" == txt ) {
 		if ( NULL == mUIWindow ) {
@@ -763,9 +763,9 @@ void cEETest::ButtonClick( const cUIEvent * Event ) {
 		Gfx->Visible( true );
 		Gfx->Enabled( false );
 
-		Gfx->StartRotation( 0, 2500, 2500 );
-		Gfx->StartMovement( eeVector2i( Math::Randi( 0, mWindow->GetWidth() ), -64 ), eeVector2i( Math::Randi( 0, mWindow->GetWidth() ), mWindow->GetHeight() + 64 ), 2500 );
-		Gfx->CloseFadeOut( 3500 );
+		Gfx->StartRotation( 0, 2500, Milliseconds( 2500 ) );
+		Gfx->StartMovement( eeVector2i( Math::Randi( 0, mWindow->GetWidth() ), -64 ), eeVector2i( Math::Randi( 0, mWindow->GetWidth() ), mWindow->GetHeight() + 64 ), Milliseconds( 2500 ) );
+		Gfx->CloseFadeOut( Milliseconds( 3500 ) );
 
 		mListBox->AddListBoxItem( "Test ListBox " + String::ToStr( mListBox->Count() + 1 ) + " testing it right now!" );
 	}
@@ -917,7 +917,7 @@ void cEETest::LoadTextures() {
 	mBoxSprite = eeNew( cSprite, ( cGlobalTextureAtlas::instance()->Add( eeNew( cSubTexture, ( TN[3], "ilmare" ) ) ) ) );
 	mCircleSprite = eeNew( cSprite, ( cGlobalTextureAtlas::instance()->Add( eeNew( cSubTexture, ( TN[1], "thecircle" ) ) ) ) );
 
-	Log->Writef( "Textures loading time: %f ms.", TE.Elapsed().AsMilliseconds() );
+	eePRINTL( "Textures loading time: %4.3f ms.", TE.Elapsed().AsMilliseconds() );
 
 	Map.Create( 100, 100, 2, 128, 64, eeColor(175,175,175) );
 	RandomizeHeights();
@@ -925,7 +925,7 @@ void cEETest::LoadTextures() {
 	TreeTilingCreated = false;
 	CreateTiling(Wireframe);
 
-	Log->Writef( "Map creation time: %f ms.", TE.Elapsed().AsMilliseconds() );
+	eePRINTL( "Map creation time: %4.3f ms.", TE.Elapsed().AsMilliseconds() );
 }
 
 void cEETest::RandomizeHeights() {

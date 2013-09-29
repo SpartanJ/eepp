@@ -159,7 +159,7 @@ void cUIWindow::CloseWindow() {
 		mModalCtrl = NULL;
 	}
 
-	if ( 0 != cUIThemeManager::instance()->ControlsFadeOutTime() )
+	if ( cTime::Zero != cUIThemeManager::instance()->ControlsFadeOutTime() )
 		CloseFadeOut( cUIThemeManager::instance()->ControlsFadeOutTime() );
 	else
 		Close();

@@ -51,7 +51,7 @@ bool cSoundFileOgg::OpenRead( const std::string& Filename, std::size_t& SamplesC
 	mStream = stb_vorbis_open_filename( const_cast<char*>( Filename.c_str() ), NULL, NULL );
 
 	if ( NULL == mStream ) {
-		cLog::instance()->Write( "Failed to read sound file \"" + Filename + "\" (cannot open the file)" );
+		eePRINTL( "Failed to read sound file %s (cannot open the file)", Filename.c_str() );
 		return false;
 	}
 
@@ -76,7 +76,7 @@ bool cSoundFileOgg::OpenRead( const char* Data, std::size_t SizeInBytes, std::si
 	mStream = stb_vorbis_open_memory( Buffer, Length, NULL, NULL );
 
 	if ( NULL == mStream ) {
-		cLog::instance()->Write( "Failed to read sound file from memory (cannot open the file)" );
+		eePRINTL( "Failed to read sound file from memory (cannot open the file)" );
 		return false;
 	}
 

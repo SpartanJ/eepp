@@ -48,23 +48,23 @@ void cUIComplexControl::Update() {
 				Pos.y = cUIManager::instance()->GetMousePos().y - mTooltip->Size().Height();
 			}
 
-			if ( 0 == cUIThemeManager::instance()->TooltipTimeToShow() ) {
+			if ( cTime::Zero == cUIThemeManager::instance()->TooltipTimeToShow() ) {
 				if ( !mTooltip->Visible() || cUIThemeManager::instance()->TooltipFollowMouse() )
 					mTooltip->Pos( Pos );
 
 				mTooltip->Show();
 			} else {
-				if ( -1.f != mTooltip->TooltipTime() ) {
-					mTooltip->TooltipTimeAdd( cUIManager::instance()->Elapsed().AsMilliseconds() );
+				if ( -1.f != mTooltip->TooltipTime().AsMilliseconds() ) {
+					mTooltip->TooltipTimeAdd( cUIManager::instance()->Elapsed() );
 				}
 
 				if ( mTooltip->TooltipTime() >= cUIThemeManager::instance()->TooltipTimeToShow() ) {
-					if ( mTooltip->TooltipTime() != -1.f ) {
+					if ( mTooltip->TooltipTime().AsMilliseconds() != -1.f ) {
 						mTooltip->Pos( Pos );
 
 						mTooltip->Show();
 
-						mTooltip->TooltipTime( -1.f );
+						mTooltip->TooltipTime( Milliseconds( -1.f ) );
 					}
 				}
 			}
@@ -73,7 +73,7 @@ void cUIComplexControl::Update() {
 				mTooltip->Pos( Pos );
 			}
 		} else {
-			mTooltip->TooltipTime( 0.f );
+			mTooltip->TooltipTime( Milliseconds( 0.f ) );
 
 			if ( mTooltip->Visible() )
 				mTooltip->Hide();

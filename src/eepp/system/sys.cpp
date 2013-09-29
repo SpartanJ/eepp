@@ -355,6 +355,10 @@ void Sys::Sleep( const Uint32& ms ) {
 #endif
 }
 
+void Sys::Sleep( const cTime& time ) {
+	Sleep( (Uint32)time.AsMilliseconds() );
+}
+
 static std::string sGetProcessPath() {
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 	char exe_file[PATH_MAX + 1];

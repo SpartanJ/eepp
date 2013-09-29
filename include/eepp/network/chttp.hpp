@@ -21,9 +21,11 @@ class EE_API cHttp : NonCopyable {
 			public :
 			/** @brief Enumerate the available HTTP methods for a request */
 			enum Method {
-				Get,  ///< Request in get mode, standard method to retrieve a page
-				Post, ///< Request in post mode, usually to send data to a page
-				Head  ///< Request a page's header only
+				Get,	///< Request in get mode, standard method to retrieve a page
+				Post,	///< Request in post mode, usually to send data to a page
+				Head,	///< Request a page's header only
+				Put,	///< Request in put mode, useful for a REST API
+				Delete	///< Request in delete mode, useful for a REST API
 			};
 
 			/** @brief Default constructor

@@ -2,6 +2,7 @@
 #define EE_SYSTEM_SYSTEM_HPP
 
 #include <eepp/system/base.hpp>
+#include <eepp/system/ctime.hpp>
 
 namespace EE { namespace System {
 
@@ -21,6 +22,9 @@ class EE_API Sys {
 
 		/** Wait a specified number of milliseconds before returning. */
 		static void Sleep( const Uint32& ms );
+
+		/** Wait the time defined before returning. */
+		static void Sleep( const cTime& time );
 
 		/** @return The application path ( the executable path ) */
 		static std::string GetProcessPath();

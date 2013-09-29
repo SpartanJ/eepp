@@ -195,7 +195,7 @@ void cWaypoints::Update( const cTime& Elapsed ) {
 	}
 }
 
-void cWaypoints::SetTotalTime( const eeDouble& TotTime ) {
+void cWaypoints::SetTotalTime( const cTime& TotTime ) {
 	eeUint i;
 	eeFloat tdist = mTotDist;
 
@@ -209,11 +209,11 @@ void cWaypoints::SetTotalTime( const eeDouble& TotTime ) {
 
 	if ( mLoop ) {
 		tdist += mPoints[ mPoints.size() - 1 ].p.Distance( mPoints[0].p );
-		mPoints[ mPoints.size() - 1 ].t = mPoints[ mPoints.size() - 1 ].p.Distance( mPoints[0].p ) * TotTime / tdist;
+		mPoints[ mPoints.size() - 1 ].t = mPoints[ mPoints.size() - 1 ].p.Distance( mPoints[0].p ) * TotTime.AsMilliseconds() / tdist;
 	}
 
 	for (i = 0; i < mPoints.size() - 1; i++)
-		mPoints[i].t = mPoints[i].p.Distance( mPoints[i + 1].p ) * TotTime / tdist;
+		mPoints[i].t = mPoints[i].p.Distance( mPoints[i + 1].p ) * TotTime.AsMilliseconds() / tdist;
 }
 
 void cWaypoints::Type( Ease::Interpolation InterpolationType ) {

@@ -35,21 +35,21 @@ class EE_API cUIControlAnim : public cUIDragable {
 
  		bool Animating();
 
-		void StartAlphaAnim( const eeFloat& From, const eeFloat& To, const eeFloat& TotalTime, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
+		void StartAlphaAnim( const eeFloat& From, const eeFloat& To, const cTime& TotalTime, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
 
-		void StartScaleAnim( const eeFloat& From, const eeFloat& To, const eeFloat& TotalTime, const Ease::Interpolation& Type = Ease::Linear, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
+		void StartScaleAnim( const eeFloat& From, const eeFloat& To, const cTime& TotalTime, const Ease::Interpolation& Type = Ease::Linear, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
 
-		void StartMovement( const eeVector2i& From, const eeVector2i& To, const eeFloat& TotalTime, const Ease::Interpolation& Type = Ease::Linear, cWaypoints::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
+		void StartMovement( const eeVector2i& From, const eeVector2i& To, const cTime& TotalTime, const Ease::Interpolation& Type = Ease::Linear, cWaypoints::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
 
-		void StartRotation( const eeFloat& From, const eeFloat& To, const eeFloat& TotalTime, const Ease::Interpolation& Type = Ease::Linear, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
+		void StartRotation( const eeFloat& From, const eeFloat& To, const cTime& TotalTime, const Ease::Interpolation& Type = Ease::Linear, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
 
-		void CreateFadeIn( const eeFloat& Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
+		void CreateFadeIn( const cTime& Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
 
-		void CreateFadeOut( const eeFloat& Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
+		void CreateFadeOut( const cTime& Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
 
-		void CloseFadeOut( const eeFloat& Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
+		void CloseFadeOut( const cTime& Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
 
-		void DisableFadeOut( const eeFloat& Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
+		void DisableFadeOut( const cTime & Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
 
 		cInterpolation * AngleInterpolation();
 

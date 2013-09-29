@@ -45,7 +45,7 @@ bool cMusic::OpenFromFile( const std::string& Filename ) {
 	mFile = cSoundFile::CreateRead( Filename );
 
 	if ( NULL == mFile ) {
-		cLog::instance()->Write( "Failed to open \"" + Filename + "\" for reading" );
+		eePRINTL( "Failed to open %s for reading", Filename.c_str() );
 		return false;
 	}
 
@@ -55,7 +55,7 @@ bool cMusic::OpenFromFile( const std::string& Filename ) {
 	// Initialize the stream
 	Initialize( mFile->GetChannelCount(), mFile->GetSampleRate() );
 
-	cLog::instance()->Write( "Music file " + Filename + " loaded." );
+	eePRINTL( "Music file %s loaded.", Filename.c_str() );
 
 	return true;
 }
@@ -68,7 +68,7 @@ bool cMusic::OpenFromMemory( const char * Data, std::size_t SizeInBytes ) {
 	mFile = cSoundFile::CreateRead( Data, SizeInBytes );
 
 	if ( NULL == mFile ) {
-		cLog::instance()->Write( "Failed to open music from memory for reading" );
+		eePRINTL( "Failed to open music from memory for reading" );
 		return false;
 	}
 
@@ -76,7 +76,7 @@ bool cMusic::OpenFromMemory( const char * Data, std::size_t SizeInBytes ) {
 
 	Initialize( mFile->GetChannelCount(), mFile->GetSampleRate() ); // Initialize the stream
 
-	cLog::instance()->Write( "Music file loaded from memory." );
+	eePRINTL( "Music file loaded from memory." );
 
 	return true;
 }

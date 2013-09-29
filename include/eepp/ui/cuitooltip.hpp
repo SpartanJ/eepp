@@ -91,18 +91,18 @@ class EE_API cUITooltip : public cUIControlAnim {
 
 		const eeVector2f& AlignOffset() const;
 
-		void TooltipTime( const eeFloat& Time );
+		void TooltipTime( const cTime& Time );
 
-		void TooltipTimeAdd( const eeFloat& Time );
+		void TooltipTimeAdd( const cTime & Time );
 
-		const eeFloat& TooltipTime() const;
+		const cTime & TooltipTime() const;
 	protected:
 		cTextCache *	mTextCache;
 		eeColorA 		mFontColor;
 		eeColorA 		mFontShadowColor;
 		eeVector2f 		mAlignOffset;
 		eeRecti			mPadding;
-		eeFloat			mTooltipTime;
+		cTime			mTooltipTime;
 		cUIControl *	mTooltipOf;
 
 		virtual void OnSizeChange();

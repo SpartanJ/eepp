@@ -113,7 +113,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	mWindow.ContextConfig	= Context;
 
 	if ( SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
-		cLog::instance()->Write( "Unable to initialize SDL: " + std::string( SDL_GetError() ) );
+		eePRINTL( "Unable to initialize SDL: %s", SDL_GetError() );
 
 		LogFailureInit( "cWindowSDL", GetVersion() );
 
@@ -155,7 +155,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	mSDLWindow = SDL_CreateWindow( mWindow.WindowConfig.Caption.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height, mTmpFlags );
 
 	if ( NULL == mSDLWindow ) {
-		cLog::instance()->Write( "Unable to create window: " + std::string( SDL_GetError() ) );
+		eePRINTL( "Unable to create window: %s", SDL_GetError() );
 
 		LogFailureInit( "cWindowSDL", GetVersion() );
 
@@ -170,8 +170,6 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	mWindow.WindowConfig.Height	= h;
 	mWindow.WindowSize			= eeSize( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 
-	cLog::instance()->Write( "Creating Context" );
-
 	#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
 		if ( GLv_default != Context.Version ) {
 			if ( GLv_ES1 == Context.Version || GLv_2 == Context.Version ) {
@@ -179,14 +177,14 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 				if ( GLv_2 == Context.Version )
 					mWindow.ContextConfig.Version = GLv_default;
 
-				cLog::instance()->Write( "Starting GLES1" );
+				eePRINTL( "Starting GLES1" );
 
 				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
 				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 			#endif
 			} else {
 			#ifdef EE_GLES2
-				cLog::instance()->Write( "Starting GLES2" );
+				eePRINTL( "Starting GLES2" );
 
 				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
 				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
@@ -194,18 +192,18 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 			}
 		} else {
 			#if defined( EE_GLES2 ) && !defined( EE_GLES1 )
-				cLog::instance()->Write( "Starting GLES2 default" );
+				eePRINTL( "Starting GLES2 default" );
 				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
 				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 			#else
-				cLog::instance()->Write( "Starting GLES1 default" );
+				eePRINTL( "Starting GLES1 default" );
 
 				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
 				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 			#endif
 		}
 	#else
-		/* @TODO Add OpenGL Core Profile support? */
+		/** @todo Add OpenGL Core Profile support? */
 		/**if ( GLv_3 == Context.Version ) {
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -228,7 +226,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	#endif
 	)
 	{
-		cLog::instance()->Write( "Unable to create context: " + std::string( SDL_GetError() ) );
+		eePRINTL( "Unable to create context: %s", SDL_GetError() );
 
 		LogFailureInit( "cWindowSDL", GetVersion() );
 
@@ -271,12 +269,12 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	#if EE_PLATFORM == EE_PLATFORM_ANDROID
 	std::string apkPath( SDL_AndroidGetApkPath() );
 
-	cLog::instance()->Write( "Opening application APK in: " + apkPath );
+	eePRINTL( "Opening application APK in: %s", apkPath.c_str() );
 
 	if ( mZip->Open( apkPath ) )
-		cLog::instance()->Write( "APK opened succesfully!" );
+		eePRINTL( "APK opened succesfully!" );
 	else
-		cLog::instance()->Write( "Failed to open APK!" );
+		eePRINTL( "Failed to open APK!" );
 
 	LogSuccessfulInit( GetVersion(), apkPath );
 	#else
@@ -396,7 +394,7 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	#ifdef EE_SUPPORT_EXCEPTIONS
 	try {
 	#endif
-		cLog::instance()->Writef( "Switching from %s to %s. Width: %d Height %d.", this->Windowed() ? "windowed" : "fullscreen", Windowed ? "windowed" : "fullscreen", Width, Height );
+		eePRINTL( "Switching from %s to %s. Width: %d Height %d.", this->Windowed() ? "windowed" : "fullscreen", Windowed ? "windowed" : "fullscreen", Width, Height );
 
 		// @TODO Test in OS X if this is still needed
 		#if EE_PLATFORM == EE_PLATFORM_MACOSX
@@ -466,7 +464,7 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 		SendVideoResizeCb();
 	#ifdef EE_SUPPORT_EXCEPTIONS
 	} catch (...) {
-		cLog::instance()->Write( "Unable to change resolution: " + std::string( SDL_GetError() ) );
+		eePRINTL( "Unable to change resolution: %s", SDL_GetError() );
 		cLog::instance()->Save();
 		mWindow.Created = false;
 	}

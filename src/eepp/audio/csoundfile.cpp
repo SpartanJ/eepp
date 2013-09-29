@@ -127,37 +127,37 @@ bool cSoundFile::Restart() {
 		// Reopen from file
 		return OpenRead( mFilename, mSamplesCount, mChannelCount, mSampleRate );
 	} else {
-		cLog::instance()->Write( "Warning : trying to restart a sound opened in write mode, which is not allowed" );
+		eePRINTL( "Warning : trying to restart a sound opened in write mode, which is not allowed" );
 		return false;
 	}
 }
 
 bool cSoundFile::OpenRead(const std::string& Filename, std::size_t&, unsigned int&, unsigned int&) {
-	cLog::instance()->Write( "Failed to open sound file \"" + Filename + "\", format is not supported by EE" );
+	eePRINTL( "Failed to open sound file %s, format is not supported by eepp", Filename.c_str() );
 	return false;
 }
 
 bool cSoundFile::OpenRead(const char*, std::size_t, std::size_t&, unsigned int&, unsigned int&) {
-	cLog::instance()->Write( "Failed to open sound file from memory, format is not supported by EE" );
+	eePRINTL( "Failed to open sound file from memory, format is not supported by eepp" );
 	return false;
 }
 
 bool cSoundFile::OpenWrite(const std::string& Filename, unsigned int, unsigned int) {
-	cLog::instance()->Write( "Failed to open sound file \"" + Filename + "\", format is not supported by EE");
+	eePRINTL( "Failed to open sound file %s, format is not supported by eepp", Filename.c_str() );
 	return false;
 }
 
 std::size_t cSoundFile::Read(Int16*, std::size_t) {
-	cLog::instance()->Write( "Failed to read from sound file (not supported)" );
+	eePRINTL( "Failed to read from sound file (not supported)" );
 	return 0;
 }
 
 void cSoundFile::Write(const Int16*, std::size_t) {
-	cLog::instance()->Write( "Failed to write to sound file (not supported)" );
+	eePRINTL( "Failed to write to sound file (not supported)" );
 }
 
 void cSoundFile::Seek( cTime timeOffset ) {
-	cLog::instance()->Write( "Trying to seek a file that doesn't support seeking." );
+	eePRINTL( "Trying to seek a file that doesn't support seeking." );
 }
 
 }}

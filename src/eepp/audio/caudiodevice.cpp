@@ -28,12 +28,12 @@ cAudioDevice::cAudioDevice() {
 
 			std::string log( "OpenAL current device:\n" );
 			log += "\t" + std::string( (const char *)alcGetString(mDevice, ALC_DEVICE_SPECIFIER) );
-			cLog::instance()->Write( log );
+			eePRINTL( log.c_str() );
 		} else {
-			cLog::instance()->Write("Failed to create the audio context");
+			eePRINTL("Failed to create the audio context");
 		}
 	} else {
-		cLog::instance()->Write("Failed to open the audio device");
+		eePRINTL("Failed to open the audio device");
 	}
 }
 
@@ -54,7 +54,7 @@ void cAudioDevice::PrintInfo() {
 	log += "OpenAL default device:\n";
 	log += "\t" + std::string( (const char *)alcGetString(NULL, ALC_DEFAULT_DEVICE_SPECIFIER) );
 
-	cLog::instance()->Write( log );
+	eePRINTL( log.c_str() );
 }
 
 cAudioDevice::~cAudioDevice() {

@@ -126,7 +126,7 @@ bool cIniFile::ReadFile() {
 			// Check that the user hasn't openned a binary file by checking the first
 			// character of each line!
 			if ( !isprint ( line[0] ) ) {
-				eePRINT ( "Failing on char %d\n", line[0] );
+				eePRINT ( "cIniFile::ReadFile(): Failing on char %d\n", line[0] );
 				return false;
 			}
 

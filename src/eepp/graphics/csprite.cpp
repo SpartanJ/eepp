@@ -387,9 +387,7 @@ bool cSprite::AddFramesByPatternId( const Uint32& SubTextureId, const std::strin
 		return true;
 	}
 
-	#ifdef EE_DEBUG
-	cLog::instance()->Write( "cSprite::AddFramesByPatternId: Couldn't find any pattern with Id: " + String::ToStr( SubTextureId ) );
-	#endif
+	eePRINTL( "cSprite::AddFramesByPatternId: Couldn't find any pattern with Id: %d", SubTextureId );
 
 	return false;
 }
@@ -403,9 +401,7 @@ bool cSprite::AddFramesByPattern( const std::string& name, const std::string& ex
 		return true;
 	}
 
-	#ifdef EE_DEBUG
-	cLog::instance()->Write( "cSprite::AddFramesByPattern: Couldn't find any pattern with: " + name );
-	#endif
+	eePRINTL( "cSprite::AddFramesByPattern: Couldn't find any pattern with: %s", name.c_str() );
 
 	return false;
 }

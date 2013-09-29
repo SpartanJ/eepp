@@ -33,7 +33,7 @@ cSocket::Status cUdpSocket::Bind(unsigned short port) {
 	// Bind the socket
 	sockaddr_in address = Private::cSocketImpl::CreateAddress(INADDR_ANY, port);
 	if (::bind(GetHandle(), reinterpret_cast<sockaddr*>(&address), sizeof(address)) == -1) {
-		//err() << "Failed to bind socket to port " << port << std::endl;
+		eePRINTL( "Failed to bind socket to port %d", port );
 		return Error;
 	}
 
@@ -52,8 +52,7 @@ cSocket::Status cUdpSocket::Send(const void* data, std::size_t size, const cIpAd
 	// Make sure that all the data will fit in one datagram
 	if (size > MaxDatagramSize)
 	{
-		/*err() << "Cannot send data over the network "
-			  << "(the number of bytes to send is greater than cUdpSocket::MaxDatagramSize)" << std::endl;*/
+		eePRINTL( "Cannot send data over the network (the number of bytes to send is greater than cUdpSocket::MaxDatagramSize)" );
 		return Error;
 	}
 
@@ -78,7 +77,7 @@ cSocket::Status cUdpSocket::Receive(void* data, std::size_t size, std::size_t& r
 
 	// Check the destination buffer
 	if (!data) {
-		//err() << "Cannot receive data from the network (the destination buffer is invalid)" << std::endl;
+		eePRINTL( "Cannot receive data from the network (the destination buffer is invalid)" );
 		return Error;
 	}
 

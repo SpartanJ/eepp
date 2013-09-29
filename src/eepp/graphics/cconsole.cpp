@@ -23,7 +23,7 @@ cConsole::cConsole( Window::cWindow * window ) :
 	mHeightMin(0),
 	mY(0.0f),
 	mA(0.0f),
-	mFadeSpeed(250.f),
+	mFadeSpeed( Milliseconds( 250.f ) ),
 	mMyCallback(0),
 	mVidCb(0),
 	mMaxLogLines(1024),
@@ -57,7 +57,7 @@ cConsole::cConsole( cFont* Font, const bool& MakeDefaultCommands, const bool& At
 	mHeightMin(0),
 	mY(0.0f),
 	mA(0.0f),
-	mFadeSpeed(250.f),
+	mFadeSpeed( Milliseconds( 250.f) ),
 	mMyCallback(0),
 	mVidCb(0),
 	mMaxLogLines(1024),
@@ -299,12 +299,12 @@ void cConsole::PushText( const char * format, ... ) {
 
 		n = eevsnprintf( &tstr[0], size, format, args );
 
-		va_end( args );
-
 		if ( n > -1 && n < size ) {
 			tstr.resize( n );
 
 			PushText( tstr );
+
+			va_end( args );
 
 			return;
 		}
@@ -314,7 +314,7 @@ void cConsole::PushText( const char * format, ... ) {
 		else			// glibc 2.0
 			size *= 2;	// twice the old size
 
-		tstr.resize( size, '\0' );
+		tstr.resize( size );
 	}
 }
 
@@ -327,13 +327,13 @@ void cConsole::Toggle() {
 
 void cConsole::Fade() {
 	if (mCurSide) {
-		mCurAlpha -= 255.f * mWindow->Elapsed().AsMilliseconds() / mFadeSpeed;
+		mCurAlpha -= 255.f * mWindow->Elapsed().AsMilliseconds() / mFadeSpeed.AsMilliseconds();
 		if ( mCurAlpha <= 0.0f ) {
 			mCurAlpha = 0.0f;
 			mCurSide = !mCurSide;
 		}
 	} else {
-		mCurAlpha += 255.f * mWindow->Elapsed().AsMilliseconds() / mFadeSpeed;
+		mCurAlpha += 255.f * mWindow->Elapsed().AsMilliseconds() / mFadeSpeed.AsMilliseconds();
 		if ( mCurAlpha >= 255.f ) {
 			mCurAlpha = 255.f;
 			mCurSide = !mCurSide;
@@ -347,7 +347,7 @@ void cConsole::Fade() {
 
 	if ( mFadeIn ) {
 		mFadeOut = false;
-		mY += mCurHeight * mWindow->Elapsed().AsMilliseconds() / mFadeSpeed;
+		mY += mCurHeight * mWindow->Elapsed().AsMilliseconds() / mFadeSpeed.AsMilliseconds();
 
 		mA = ( mY * mMaxAlpha / mCurHeight ) ;
 		if ( mY > mCurHeight ) {
@@ -359,7 +359,7 @@ void cConsole::Fade() {
 
 	if ( mFadeOut ) {
 		mFadeIn = false;
-		mY -= mCurHeight * mWindow->Elapsed().AsMilliseconds() / mFadeSpeed;
+		mY -= mCurHeight * mWindow->Elapsed().AsMilliseconds() / mFadeSpeed.AsMilliseconds();
 
 		mA = ( mY * mMaxAlpha / mCurHeight ) ;
 		if ( mY <= 0.0f ) {

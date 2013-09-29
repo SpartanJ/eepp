@@ -384,7 +384,7 @@ void cWindow::SendVideoResizeCb() {
 }
 
 void cWindow::LogSuccessfulInit(const std::string& BackendName , const std::string&ProcessPath ) {
-	cLog::instance()->Write( "Engine Initialized Succesfully.\n\tVersion: " + Version::GetVersionName() + " (codename: \"" + Version::GetCodename() + "\")" +
+	std::string msg( "Engine Initialized Succesfully.\n\tVersion: " + Version::GetVersionName() + " (codename: \"" + Version::GetCodename() + "\")" +
 							 "\n\tOS: " + Sys::GetOSName() +
 							 "\n\tArch: " + Sys::GetOSArchitecture() +
 							 "\n\tCPU Cores: " + String::ToStr( Sys::GetCPUCount() ) +
@@ -399,10 +399,16 @@ void cWindow::LogSuccessfulInit(const std::string& BackendName , const std::stri
 							 "\n\tResolution: " + String::ToStr( GetWidth() ) + "x" + String::ToStr( GetHeight() ) +
 							 "\n\tGL extensions supported:\n\t\t" + GLi->GetExtensions()
 	);
+
+	#ifndef EE_SILENT
+	eePRINTL( msg.c_str() );
+	#else
+	cLog::instance()->Write( msg );
+	#endif
 }
 
 void cWindow::LogFailureInit( const std::string& ClassName, const std::string& BackendName ) {
-	cLog::instance()->Write( "Error on " + ClassName + "::Init . Backend " + BackendName + " failed to start." );
+	eePRINTL( "Error on %s::Init. Backend %s failed to start.", ClassName.c_str(), BackendName.c_str() );
 }
 
 std::string cWindow::Caption() {

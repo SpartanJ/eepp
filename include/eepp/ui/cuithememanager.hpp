@@ -38,17 +38,17 @@ class EE_API cUIThemeManager : public tResourceManager<cUITheme> {
 
 		const bool& DefaultEffectsEnabled() const;
 
-		const eeFloat& ControlsFadeInTime() const;
+		const cTime& ControlsFadeInTime() const;
 
-		void ControlsFadeInTime( const eeFloat& Time );
+		void ControlsFadeInTime( const cTime & Time );
 
-		const eeFloat& ControlsFadeOutTime() const;
+		const cTime& ControlsFadeOutTime() const;
 
-		void ControlsFadeOutTime( const eeFloat& Time );
+		void ControlsFadeOutTime( const cTime& Time );
 
-		void TooltipTimeToShow( const Uint32& Time );
+		void TooltipTimeToShow( const cTime & Time );
 
-		const Uint32& TooltipTimeToShow() const;
+		const cTime& TooltipTimeToShow() const;
 
 		void TooltipFollowMouse( const bool& Follow );
 
@@ -63,10 +63,10 @@ class EE_API cUIThemeManager : public tResourceManager<cUITheme> {
 		bool				mAutoApplyDefaultTheme;
 
 		bool				mEnableDefaultEffects;
-		eeFloat				mFadeInTime;
-		eeFloat				mFadeOutTime;
+		cTime				mFadeInTime;
+		cTime				mFadeOutTime;
 
-		Uint32				mTooltipTimeToShow;
+		cTime				mTooltipTimeToShow;
 		bool				mTooltipFollowMouse;
 
 		eeSize				mCursorSize;

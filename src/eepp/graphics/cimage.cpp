@@ -322,7 +322,7 @@ cImage::cImage( std::string Path, const eeUint& forceChannels ) :
 			reason = ", reason: " + std::string( stbi_failure_reason() );
 		}
 
-		cLog::instance()->Write( "Failed to load image " + Path + reason );
+		eePRINTL( "Failed to load image %s. Reason: %s", Path.c_str(), reason.c_str() );
 	}
 }
 
@@ -364,10 +364,10 @@ void cImage::LoadFromPack( cPack * Pack, const std::string& FilePackPath ) {
 
 			mLoadedFromStbi = true;
 		} else {
-			cLog::instance()->Write( "Failed to load image " + FilePackPath + ", reason: " + std::string( stbi_failure_reason() ) );
+			eePRINTL( "Failed to load image %s. Reason: %s", stbi_failure_reason(), FilePackPath.c_str() );
 		}
 	} else {
-		cLog::instance()->Write( "Failed to load image " + FilePackPath + " from pack." );
+		eePRINTL( "Failed to load image %s from pack.", FilePackPath.c_str() );
 	}
 }
 

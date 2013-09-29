@@ -11,7 +11,7 @@ cUITooltip::cUITooltip( cUITooltip::CreateParams& Params, cUIControl * TooltipOf
 	mFontShadowColor( Params.FontShadowColor ),
 	mAlignOffset( 0.f, 0.f ),
 	mPadding( Params.Padding ),
-	mTooltipTime( 0.f ),
+	mTooltipTime( cTime::Zero ),
 	mTooltipOf( TooltipOf )
 {
 	mTextCache = eeNew( cTextCache, () );
@@ -23,7 +23,7 @@ cUITooltip::cUITooltip( cUITooltip::CreateParams& Params, cUIControl * TooltipOf
 		if ( NULL != cUIThemeManager::instance()->DefaultFont() )
 			mTextCache->Font( cUIThemeManager::instance()->DefaultFont() );
 		else
-			eePRINT( "cUITooltip::cUITextBox : Created a UI TextBox without a defined font.\n" );
+			eePRINTL( "cUITooltip::cUITextBox : Created a UI TextBox without a defined font." );
 	}
 
 	AutoPadding();
@@ -237,15 +237,15 @@ const eeVector2f& cUITooltip::AlignOffset() const {
 	return mAlignOffset;
 }
 
-void cUITooltip::TooltipTime( const eeFloat& Time ) {
+void cUITooltip::TooltipTime( const cTime& Time ) {
 	mTooltipTime = Time;
 }
 
-void cUITooltip::TooltipTimeAdd( const eeFloat& Time ) {
+void cUITooltip::TooltipTimeAdd( const cTime& Time ) {
 	mTooltipTime += Time;
 }
 
-const eeFloat& cUITooltip::TooltipTime() const {
+const cTime& cUITooltip::TooltipTime() const {
 	return mTooltipTime;
 }
 

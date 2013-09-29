@@ -32,14 +32,14 @@ cSocket::Status cTcpListener::Listen(unsigned short port) {
 	sockaddr_in address = Private::cSocketImpl::CreateAddress(INADDR_ANY, port);
 	if (bind(GetHandle(), reinterpret_cast<sockaddr*>(&address), sizeof(address)) == -1) {
 		// Not likely to happen, but...
-		//err() << "Failed to bind listener socket to port " << port << std::endl;
+		eePRINTL( "Failed to bind listener socket to port %d", port );
 		return Error;
 	}
 
 	// Listen to the bound port
 	if (::listen(GetHandle(), 0) == -1) {
 		// Oops, socket is deaf
-		//err() << "Failed to Listen to port " << port << std::endl;
+		eePRINTL( "Failed to Listen to port %d", port );
 		return Error;
 	}
 
@@ -54,7 +54,7 @@ void cTcpListener::Close() {
 cSocket::Status cTcpListener::Accept(cTcpSocket& socket) {
 	// Make sure that we're listening
 	if (GetHandle() == Private::cSocketImpl::InvalidSocket()) {
-		//err() << "Failed to accept a new connection, the socket is not listening" << std::endl;
+		eePRINTL( "Failed to accept a new connection, the socket is not listening" );
 		return Error;
 	}
 

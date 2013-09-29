@@ -30,13 +30,13 @@ void cSoundStream::Initialize(unsigned int ChannelCount, unsigned int SampleRate
 	if ( mFormat == 0 ) { // Check if the format is valid
 		mChannelCount = 0;
 		mSampleRate	= 0;
-		cLog::instance()->Write( "Unsupported number of channels." );
+		eePRINTL( "Unsupported number of channels." );
 	}
 }
 
 void cSoundStream::Play() {
 	if ( mFormat == 0 ) { // Check if the sound parameters have been set
-		cLog::instance()->Write( "Failed to play audio stream : sound parameters have not been initialized (call Initialize first)." );
+		eePRINTL( "Failed to play audio stream : sound parameters have not been initialized (call Initialize first)." );
 		return;
 	}
 

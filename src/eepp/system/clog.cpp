@@ -84,7 +84,7 @@ void cLog::OpenFS() {
 	}
 
 	if ( NULL == mFS ) {
-        std::string str = mFilePath + "log.log";
+		std::string str = mFilePath + "log.log";
 
 		mFS = eeNew( cIOStreamFile, ( str, std::ios::app | std::ios::out | std::ios::binary ) );
 	}
@@ -127,13 +127,15 @@ void cLog::Writef( const char* format, ... ) {
 			#endif
 			}
 
-            if ( mLiveWrite ) {
+			if ( mLiveWrite ) {
 				OpenFS();
 
 				mFS->Write( tstr.c_str(), tstr.size() );
 
 				mFS->Flush();
-            }
+			}
+
+			va_end( args );
 
 			return;
 		}

@@ -51,7 +51,7 @@ bool MemoryManager::RemovePointer( void * Data ) {
 	tAllocatedPointerMapIt it = mMapPointers.find( Data );
 
 	if ( it == mMapPointers.end() ) {
-		eePRINT( "Trying to delete pointer %p created that does not exist!\n", Data );
+		eePRINTL( "Trying to delete pointer %p created that does not exist!", Data );
 
 		return false;
 	}
@@ -71,16 +71,15 @@ void MemoryManager::ShowResults() {
 		EE::PrintDebugInLog = false;
 	}
 
-	eePRINT("\n|--Memory Manager Report-------------------------------------|\n");
-	eePRINT("|\n");
+	eePRINTL("\n|--Memory Manager Report-------------------------------------|");
+	eePRINTL("|");
 
 	if( mMapPointers.empty() ) {
-		eePRINT( "| No memory leaks detected.\n" );
+		eePRINTL( "| No memory leaks detected." );
 	} else {
-		eePRINT( "| Memory leaks detected: \n" );
-		eePRINT( "|\n");
-
-		eePRINT( "| address\t file" );
+		eePRINTL( "| Memory leaks detected: " );
+		eePRINTL( "|");
+		eePRINTL( "| address\t file" );
 
 		//Get max length of file name
 		int lMax =0;
@@ -98,9 +97,9 @@ void MemoryManager::ShowResults() {
 		for( int i = 0; i < lMax - 4; ++i )
 			eePRINT(" ");
 
-		eePRINT( "line\t\t memory usage\t  \n" );
+		eePRINTL( "line\t\t memory usage\t  " );
 
-		eePRINT( "|-----------------------------------------------------------|\n" );
+		eePRINTL( "|-----------------------------------------------------------|" );
 
 		it = mMapPointers.begin();
 
@@ -112,16 +111,16 @@ void MemoryManager::ShowResults() {
 			for ( int i=0; i < lMax - (int)ap.mFile.length(); ++i )
 				eePRINT(" ");
 
-			eePRINT( "%d\t\t %d\t\n", ap.mLine, ap.mMemory );
+			eePRINTL( "%d\t\t %d\t", ap.mLine, ap.mMemory );
 		}
 	}
 
-	eePRINT( "|\n" );
-	eePRINT( "| Memory left: %s\n", FileSystem::SizeToString( mTotalMemoryUsage ).c_str() );
-	eePRINT( "| Biggest allocation:\n" );
-	eePRINT( "| %s in file: %s at line: %d\n", FileSystem::SizeToString( mBiggestAllocation.mMemory ).c_str(), mBiggestAllocation.mFile.c_str(), mBiggestAllocation.mLine );
-	eePRINT( "| Peak Memory Usage: %s\n", FileSystem::SizeToString( mPeakMemoryUsage ).c_str() );
-	eePRINT( "|------------------------------------------------------------|\n\n" );
+	eePRINTL( "|" );
+	eePRINTL( "| Memory left: %s", FileSystem::SizeToString( mTotalMemoryUsage ).c_str() );
+	eePRINTL( "| Biggest allocation:" );
+	eePRINTL( "| %s in file: %s at line: %d", FileSystem::SizeToString( mBiggestAllocation.mMemory ).c_str(), mBiggestAllocation.mFile.c_str(), mBiggestAllocation.mLine );
+	eePRINTL( "| Peak Memory Usage: %s", FileSystem::SizeToString( mPeakMemoryUsage ).c_str() );
+	eePRINTL( "|------------------------------------------------------------|\n" );
 
 	#endif
 }

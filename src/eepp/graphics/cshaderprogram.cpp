@@ -176,7 +176,7 @@ void cShaderProgram::Init() {
 		mUniformLocations.clear();
 		mAttributeLocations.clear();
 	} else {
-		cLog::instance()->Write( "cShaderProgram::Init() " + mName + ": Couldn't create program." );
+		eePRINTL( "cShaderProgram::Init() %s: Couldn't create program.", mName.c_str() );
 	}
 }
 
@@ -203,7 +203,7 @@ void cShaderProgram::Reload() {
 
 void cShaderProgram::AddShader( cShader* Shader ) {
 	if ( !Shader->IsValid() ) {
-		cLog::instance()->Write( "cShaderProgram::AddShader() " + mName + ": Cannot add invalid shader" );
+		eePRINTL( "cShaderProgram::AddShader() %s: Cannot add invalid shader", mName.c_str() );
 		return;
 	}
 
@@ -242,10 +242,10 @@ bool cShaderProgram::Link() {
 	#endif
 
 	if ( !mValid ) {
-		cLog::instance()->Write( "cShaderProgram::Link() " + mName + ": Couldn't link program. Log follows:\n" + mLinkLog );
+		eePRINTL( "cShaderProgram::Link(): %s: Couldn't link program. Log follows:\n", mName.c_str(), mLinkLog.c_str() );
 	} else {
 		if ( mLinkLog.size() > 1 ) {
-			cLog::instance()->Write( "cShaderProgram::Link() " + mName + ": Program linked, but recibed some log:\n" + mLinkLog );
+			eePRINTL( "cShaderProgram::Link() %s: Program linked, but received some log:\n", mName.c_str(), mLinkLog.c_str() );
 		}
 
 		mUniformLocations.clear();

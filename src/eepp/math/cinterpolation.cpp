@@ -178,7 +178,7 @@ void cInterpolation::Update( const cTime& Elapsed ) {
 	}
 }
 
-void cInterpolation::SetTotalTime( const eeFloat TotTime ) {
+void cInterpolation::SetTotalTime( const cTime & TotTime ) {
 	eeFloat tdist = mTotDist;
 
 	if ( tdist == 0.0f ) {
@@ -188,12 +188,12 @@ void cInterpolation::SetTotalTime( const eeFloat TotTime ) {
 
 	if ( mLoop ) {
 		tdist += eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p );
-		mPoints[ mPoints.size() - 1 ].t = eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p ) * TotTime / tdist;
+		mPoints[ mPoints.size() - 1 ].t = eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p ) * TotTime.AsMilliseconds() / tdist;
 	}
 
 	for ( eeUint i = 0; i < mPoints.size() - 1; i++) {
 		eeFloat CurDist = eeabs( mPoints[i].p - mPoints[i + 1].p );
-		mPoints[i].t = CurDist * TotTime / tdist;
+		mPoints[i].t = CurDist * TotTime.AsMilliseconds() / tdist;
 	}
 }
 

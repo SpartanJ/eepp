@@ -49,7 +49,7 @@ bool cSoundBuffer::LoadFromFile(const std::string& Filename) {
 			}
 		}
 
-		cLog::instance()->Write( "Failed to load sound buffer from file \"" + Filename + "\"" );
+		eePRINTL( "Failed to load sound buffer from file %s", Filename.c_str() );
 		return false;
 	}
 
@@ -67,21 +67,21 @@ bool cSoundBuffer::LoadFromFile(const std::string& Filename) {
 		mSamples.resize( SamplesCount );
 
 		if ( File->Read( &mSamples[0], SamplesCount ) == SamplesCount ) {
-			cLog::instance()->Write( "Sound file " + Filename + " loaded." );
+			eePRINTL( "Sound file %s loaded.", Filename.c_str() );
 
 			// Update the internal buffer with the new samples
 			eeDelete( File );
 
 			return Update( ChannelCount, SampleRate );
 		} else {
-			cLog::instance()->Write( "Failed to read audio data from file \"" + Filename + "\"" );
+			eePRINTL( "Failed to read audio data from file %s", Filename.c_str() );
 
 			eeDelete( File );
 
 			return false;
 		}
 	} else {
-		cLog::instance()->Write( "Failed to load sound buffer from file \"" + Filename + "\"" );
+		eePRINTL( "Failed to load sound buffer from file %s", Filename.c_str() );
 
 		return false;
 	}
@@ -112,21 +112,21 @@ bool cSoundBuffer::LoadFromMemory( const char* Data, std::size_t SizeInBytes ) {
 		mSamples.resize( SamplesCount );
 
 		if ( File->Read( &mSamples[0], SamplesCount ) == SamplesCount ) {
-			cLog::instance()->Write( "Sound file loaded from memory." );
+			eePRINTL( "Sound file loaded from memory." );
 
 			// Update the internal buffer with the new samples
 			eeDelete( File );
 
 			return Update( ChannelCount, SampleRate );
 		} else {
-			cLog::instance()->Write( "Failed to read audio data from file in memory" );
+			eePRINTL( "Failed to read audio data from file in memory" );
 
 			eeDelete( File );
 
 			return false;
 		}
 	} else {
-		cLog::instance()->Write( "Failed to load sound buffer from file in memory" );
+		eePRINTL( "Failed to load sound buffer from file in memory" );
 		return false;
 	}
 }
@@ -136,13 +136,13 @@ bool cSoundBuffer::LoadFromSamples( const Int16 * Samples, std::size_t SamplesCo
 		// Copy the new audio samples
 		mSamples.assign( Samples, Samples + SamplesCount );
 
-		cLog::instance()->Write( "Sound file loaded from memory samples." );
+		eePRINTL( "Sound file loaded from memory samples." );
 
 		// Update the internal buffer with the new samples
 		return Update( ChannelCount, SampleRate );
 	} else {
 		// Error...
-		cLog::instance()->Write( "Failed to load sound buffer from memory Samples" );
+		eePRINTL( "Failed to load sound buffer from memory Samples" );
 		return false;
 	}
 }
@@ -157,7 +157,7 @@ bool cSoundBuffer::SaveToFile(const std::string& Filename) const {
 		return true;
 	} else {
 		// Error...
-		cLog::instance()->Write( "Failed to save sound buffer to file \"" + Filename + "\"" );
+		eePRINTL( "Failed to save sound buffer to file %s", Filename.c_str() );
 		return false;
 	}
 }
@@ -207,7 +207,7 @@ bool cSoundBuffer::Update( unsigned int ChannelCount, unsigned int SampleRate ) 
 
 	// Check if the format is valid
 	if ( Format == 0 ) {
-		cLog::instance()->Write( "Unsupported number of channels." );
+		eePRINTL( "Unsupported number of channels." );
 		return false;
 	}
 

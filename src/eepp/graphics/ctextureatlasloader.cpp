@@ -239,7 +239,7 @@ void cTextureAtlasLoader::CreateSubTextures() {
 				}
 			}
 		} else {
-			cLog::instance()->Write( "cTextureAtlasLoader::CreateSubTextures: Failed to find texture atlas texture, it seems that is not loaded for some reason. Couldn't find: " + path );
+			eePRINTL( "cTextureAtlasLoader::CreateSubTextures: Failed to find texture atlas texture, it seems that is not loaded for some reason. Couldn't find: %s", path.c_str() );
 
 			eeASSERT( NULL != tTex );
 

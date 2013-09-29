@@ -54,14 +54,13 @@ void cSocket::Create(SocketHandle handle) {
 			int yes = 1;
 
 			if (setsockopt(mSocket, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<char*>(&yes), sizeof(yes)) == -1) {
-				/*err() << "Failed to set socket option \"TCP_NODELAY\" ; "
-					  << "all your TCP packets will be buffered" << std::endl;*/
+				eePRINTL( "Failed to set socket option \"TCP_NODELAY\" ; all your TCP packets will be buffered" );
 			}
 
 			// On Mac OS X, disable the SIGPIPE signal on disconnection
 			#if EE_PLATFORM == EE_PLATFORM_MACOSX
 				if (setsockopt(mSocket, SOL_SOCKET, SO_NOSIGPIPE, reinterpret_cast<char*>(&yes), sizeof(yes)) == -1) {
-					//err() << "Failed to set socket option \"SO_NOSIGPIPE\"" << std::endl;
+					eePRINTL( "Failed to set socket option \"SO_NOSIGPIPE\"" );
 				}
 			#endif
 		} else {
@@ -69,7 +68,7 @@ void cSocket::Create(SocketHandle handle) {
 			int yes = 1;
 
 			if (setsockopt(mSocket, SOL_SOCKET, SO_BROADCAST, reinterpret_cast<char*>(&yes), sizeof(yes)) == -1) {
-				//err() << "Failed to enable broadcast on UDP socket" << std::endl;
+				eePRINTL( "Failed to enable broadcast on UDP socket" );
 			}
 		}
 	}

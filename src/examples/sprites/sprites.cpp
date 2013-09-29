@@ -15,7 +15,7 @@ void spriteCallback( Uint32 Event, cSprite * Sprite, void * UserData ) {
 		AngleInterpolation->ClearWaypoints();
 		AngleInterpolation->AddWaypoint( Sprite->Angle() );
 		AngleInterpolation->AddWaypoint( Sprite->Angle() + 45.f );
-		AngleInterpolation->SetTotalTime( 500 );
+		AngleInterpolation->SetTotalTime( Milliseconds( 500 ) );
 		AngleInterpolation->Type( Ease::BounceOut ); // Set the easing effect used for the interpolation
 		AngleInterpolation->Start();
 
@@ -92,7 +92,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		cInterpolation PlanetAngle;
 		PlanetAngle.AddWaypoint( 0 );
 		PlanetAngle.AddWaypoint( 360 );
-		PlanetAngle.SetTotalTime( 10000 );
+		PlanetAngle.SetTotalTime( Seconds( 10 ) );
 		PlanetAngle.Loop( true );
 		PlanetAngle.Start();
 

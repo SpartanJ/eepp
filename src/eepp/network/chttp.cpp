@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iterator>
 #include <sstream>
+#include <limits>
 
 namespace {
 	// Convert a string to lower case
@@ -10,6 +11,11 @@ namespace {
 		for (std::string::iterator i = str.begin(); i != str.end(); ++i)
 			*i = static_cast<char>(std::tolower(*i));
 		return str;
+	}
+
+	template<class InputIterator, class Size, class OutputIterator> OutputIterator copy_n(InputIterator in, Size n, OutputIterator out) {
+		for (Size i = 0; i < n; *out = *in, i++, ++out, ++in);
+		return out;
 	}
 }
 
@@ -54,9 +60,11 @@ std::string cHttp::Request::Prepare() const {
 	std::string method;
 	switch (mMethod) {
 		default :
-		case Get :  method = "GET";  break;
-		case Post : method = "POST"; break;
-		case Head : method = "HEAD"; break;
+		case Get:		method = "GET";  break;
+		case Post:		method = "POST"; break;
+		case Head:		method = "HEAD"; break;
+		case Put:		method = "PUT"; break;
+		case Delete:	method = "DELETE"; break;
 	}
 
 	// Write the first line containing the request type
@@ -169,7 +177,45 @@ void cHttp::Response::Parse(const std::string& data) {
 
 	// Finally extract the body
 	mBody.clear();
-	std::copy(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>(), std::back_inserter(mBody));
+
+	// Determine whether the transfer is chunked
+	if (toLower(GetField("transfer-encoding")).compare("chunked")) {
+		// Not chunked - everything at once
+		std::copy(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>(), std::back_inserter(mBody));
+	} else {
+		// Chunked - have to read chunk by chunk
+		unsigned long length;
+
+		// Read all chunks, identified by a chunk-size not being 0
+		while (in >> std::hex >> length) {
+			// Drop the rest of the line (chunk-extension)
+			in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+			// Copy the actual content data
+			::copy_n(std::istreambuf_iterator<char>(in), length, std::back_inserter(mBody));
+		}
+
+		// Drop the rest of the line (chunk-extension)
+		in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+		// Read all trailers (if present)
+		while (std::getline(in, line) && (line.size() > 2)) {
+			std::string::size_type pos = line.find(": ");
+
+			if (pos != std::string::npos) {
+				// Extract the field name and its value
+				std::string field = line.substr(0, pos);
+				std::string value = line.substr(pos + 2);
+
+				// Remove any trailing \r
+				if (!value.empty() && (*value.rbegin() == '\r'))
+					value.erase(value.size() - 1);
+
+				// Add the field
+				mFields[toLower(field)] = value;
+			}
+		}
+	}
 }
 
 cHttp::cHttp() :
@@ -190,7 +236,7 @@ void cHttp::SetHost(const std::string& host, unsigned short port) {
 		mPort	 = (port != 0 ? port : 80);
 	} else if (toLower(host.substr(0, 8)) == "https://") {
 		// HTTPS protocol -- unsupported (requires encryption and certificates and stuff...)
-		//err() << "HTTPS protocol is not supported by cHttp" << std::endl;
+		eePRINTL( "HTTPS protocol is not supported by cHttp" );
 		mHostName = "";
 		mPort	 = 0;
 	} else {

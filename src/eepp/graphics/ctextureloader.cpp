@@ -284,13 +284,13 @@ void cTextureLoader::LoadFromPath() {
 		}
 
 		if ( NULL == mPixels ) {
-			cLog::instance()->Write( "Filed to load: " + mFilepath + " Reason: " + std::string( stbi_failure_reason() ) );
+			eePRINTL( "Filed to load: %s. Reason: ", mFilepath.c_str(), stbi_failure_reason() );
 
 			if ( STBI_jpeg == mImgType ) {
 				mPixels = jpgd::decompress_jpeg_image_from_file( mFilepath.c_str(), &mImgWidth, &mImgHeight, &mChannels, 3 );
 
 				if ( NULL != mPixels ) {
-					cLog::instance()->Write( "Loaded: " + mFilepath + " using jpeg-compressor." );
+					eePRINTL( "Loaded: %s using jpeg-compressor.", mFilepath.c_str() );
 				}
 			}
 		}
@@ -341,13 +341,13 @@ void cTextureLoader::LoadFromMemory() {
 	}
 
 	if ( NULL == mPixels ) {
-		cLog::instance()->Write( stbi_failure_reason() );
+		eePRINTL( stbi_failure_reason() );
 
 		if ( STBI_jpeg == mImgType ) {
 			mPixels = jpgd::decompress_jpeg_image_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels, 3 );
 
 			if ( NULL != mPixels ) {
-				cLog::instance()->Write( "Loaded: image using jpeg-compressor." );
+				eePRINTL( "Loaded: image using jpeg-compressor." );
 			}
 		}
 	}
@@ -399,7 +399,7 @@ void cTextureLoader::LoadFromStream() {
 		}
 
 		if ( NULL == mPixels ) {
-			cLog::instance()->Write( stbi_failure_reason() );
+			eePRINTL( stbi_failure_reason() );
 
 			if ( STBI_jpeg == mImgType ) {
 				jpeg::jpeg_decoder_stream_steam stream( mStream );
@@ -483,9 +483,9 @@ void cTextureLoader::LoadFromPixels() {
 
 				mTexId = cTextureFactory::instance()->PushTexture( mFilepath, tTexId, width, height, mImgWidth, mImgHeight, mMipmap, mChannels, mClampMode, mCompressTexture || mIsCompressed, mLocalCopy, mSize );
 
-				cLog::instance()->Write( "Texture " + mFilepath  + " loaded in " + String::ToStr( mTE.Elapsed().AsMilliseconds() ) + " ms." );
+				eePRINTL( "Texture %s loaded in %4.3f ms.", mFilepath.c_str(), mTE.Elapsed().AsMilliseconds() );
 			} else {
-				cLog::instance()->Write( "Failed to create texture. Reason: " + std::string( SOIL_last_result() ) );
+				eePRINTL( "Failed to create texture. Reason: ", SOIL_last_result() );
 			}
 
 			if ( TEX_LT_PIXELS != mLoadType ) {
@@ -499,13 +499,13 @@ void cTextureLoader::LoadFromPixels() {
 			mPixels = NULL;
 		} else {
 			if ( NULL != stbi_failure_reason() ) {
-				cLog::instance()->Write( stbi_failure_reason() );
+				eePRINTL( stbi_failure_reason() );
 			} else {
 				std::string failText( "Texture " + mFilepath + " failed to load" );
 
 				failText += ( NULL != mPack ) ? ( " from Pack " + mPack->GetPackPath() + "." ) : ".";
 
-				cLog::instance()->Write( failText );
+				eePRINTL( failText.c_str() );
 			}
 		}
 

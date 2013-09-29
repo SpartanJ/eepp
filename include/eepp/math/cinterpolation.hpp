@@ -88,7 +88,7 @@ class EE_API cInterpolation {
 		void Enabled( const bool& Enabled );
 
 		/** Instead if setting the time between every waypoing, this set a total time for all the movement interpolation. */
-		void SetTotalTime( const eeFloat TotTime );
+		void SetTotalTime( const cTime& TotTime );
 
 		/** @return the vector of points */
 		const std::vector<cPoint1df>& GetPoints() const;

@@ -18,7 +18,7 @@ cTextureAtlasEditor::cTextureAtlasEditor( cUIWindow * AttatchTo, const TGEditorC
 	mCurSubTexture( NULL )
 {
 	if ( NULL == cUIThemeManager::instance()->DefaultTheme() ) {
-		eePRINT( "cTextureAtlasEditor needs a default theme seted to work." );
+		eePRINTL( "cTextureAtlasEditor needs a default theme assigned to work." );
 		return;
 	}
 

@@ -14,7 +14,7 @@ cCursor::cCursor( cTexture * tex, const eeVector2i& hotspot, const std::string& 
 
 		tex->Unlock();
 	} else {
-		cLog::instance()->Write( "cCursor::cCursor: Error creating cursor from cTexture." );
+		eePRINTL( "cCursor::cCursor: Error creating cursor from cTexture." );
 	}
 }
 
@@ -28,7 +28,7 @@ cCursor::cCursor( cImage * img, const eeVector2i& hotspot, const std::string& na
 	if ( img->MemSize() ) {
 		mImage = eeNew( cImage, ( img->GetPixelsPtr(), img->Width(), img->Height(), img->Channels() ) );
 	} else {
-		cLog::instance()->Write( "cCursor::cCursor: Error creating cursor from cImage." );
+		eePRINTL( "cCursor::cCursor: Error creating cursor from cImage." );
 	}
 }
 
@@ -42,7 +42,7 @@ cCursor::cCursor( const std::string& path, const eeVector2i& hotspot, const std:
 	mImage = eeNew( cImage, ( path ) );
 
 	if ( NULL == mImage->GetPixels() ) {
-		cLog::instance()->Write( "cCursor::cCursor: Error creating cursor from path." );
+		eePRINTL( "cCursor::cCursor: Error creating cursor from path." );
 	}
 }
 

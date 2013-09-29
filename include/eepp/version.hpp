@@ -6,7 +6,8 @@
 
 #define EEPP_MAJOR_VERSION	0
 #define EEPP_MINOR_VERSION	9
-#define EEPP_PATCHLEVEL		0
+#define EEPP_PATCHLEVEL		5
+#define EEPP_CODENAME		"Makyo"
 
 /** The compiled version of the library */
 #define EEPP_VERSION(x)						\
@@ -21,8 +22,6 @@
 #define EEPP_COMPILEDVERSION EEPP_VERSIONNUM(EEPP_MAJOR_VERSION, EEPP_MINOR_VERSION, EEPP_PATCHLEVEL)
 
 #define EEPP_VERSION_ATLEAST(X, Y, Z)	(EEPP_COMPILEDVERSION >= EEPP_VERSIONNUM(X, Y, Z))
-
-#define EEPP_CODENAME "Sakkaya"
 
 namespace EE {
 

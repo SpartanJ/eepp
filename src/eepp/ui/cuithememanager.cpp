@@ -12,9 +12,9 @@ cUIThemeManager::cUIThemeManager() :
 	mThemeDefault( NULL ),
 	mAutoApplyDefaultTheme( true ),
 	mEnableDefaultEffects( false ),
-	mFadeInTime( 100.f ),
-	mFadeOutTime( 100.f ),
-	mTooltipTimeToShow( 200 ),
+	mFadeInTime( Milliseconds( 100.f ) ),
+	mFadeOutTime( Milliseconds ( 100.f ) ),
+	mTooltipTimeToShow( Milliseconds( 200 ) ),
 	mTooltipFollowMouse( true ),
 	mCursorSize( 16, 16 )
 {
@@ -77,27 +77,27 @@ const bool& cUIThemeManager::DefaultEffectsEnabled() const {
 	return mEnableDefaultEffects;
 }
 
-const eeFloat& cUIThemeManager::ControlsFadeInTime() const {
+const cTime& cUIThemeManager::ControlsFadeInTime() const {
 	return mFadeInTime;
 }
 
-void cUIThemeManager::ControlsFadeInTime( const eeFloat& Time ) {
+void cUIThemeManager::ControlsFadeInTime( const cTime& Time ) {
 	mFadeInTime = Time;
 }
 
-const eeFloat& cUIThemeManager::ControlsFadeOutTime() const {
+const cTime& cUIThemeManager::ControlsFadeOutTime() const {
 	return mFadeOutTime;
 }
 
-void cUIThemeManager::ControlsFadeOutTime( const eeFloat& Time ) {
+void cUIThemeManager::ControlsFadeOutTime( const cTime& Time ) {
 	mFadeOutTime = Time;
 }
 
-void cUIThemeManager::TooltipTimeToShow( const Uint32& Time ) {
+void cUIThemeManager::TooltipTimeToShow( const cTime& Time ) {
 	mTooltipTimeToShow = Time;
 }
 
-const Uint32& cUIThemeManager::TooltipTimeToShow() const {
+const cTime& cUIThemeManager::TooltipTimeToShow() const {
 	return mTooltipTimeToShow;
 }
 

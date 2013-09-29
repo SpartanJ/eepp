@@ -62,7 +62,7 @@ bool cSoundFileDefault::OpenRead( const std::string& Filename, std::size_t& Samp
 	mFile = sf_open(Filename.c_str(), SFM_READ, &fileInfos);
 
 	if ( NULL == mFile ) {
-		cLog::instance()->Write( "Failed to read sound file \"" + Filename + "\"" );
+		eePRINTL( "Failed to read sound file %s", Filename.c_str() );
 		return false;
 	}
 
@@ -92,7 +92,7 @@ bool cSoundFileDefault::OpenRead( const char* Data, std::size_t SizeInBytes, std
 	mFile = sf_open_virtual( &io, SFM_READ, &fileInfos, &mMemoryIO );
 
 	if ( !mFile ) {
-		cLog::instance()->Write( "Failed to read sound file from memory ( " + std::string( sf_strerror( mFile ) ) + " )" );
+		eePRINTL( "Failed to read sound file from memory ( %s )", sf_strerror( mFile ) );
 		return false;
 	}
 
@@ -117,7 +117,7 @@ bool cSoundFileDefault::OpenWrite( const std::string& Filename, unsigned int Cha
 	int Format = GetFormatFromFilename( Filename );
 	if (Format == -1) {
 		// Error : unrecognized extension
-		cLog::instance()->Write( "Failed to create sound file \"" + Filename + "\" : unknown format" );
+		eePRINTL( "Failed to create sound file %s : unknown format", Filename.c_str() );
 		return false;
 	}
 
@@ -131,7 +131,7 @@ bool cSoundFileDefault::OpenWrite( const std::string& Filename, unsigned int Cha
 	mFile = sf_open( Filename.c_str(), SFM_WRITE, &fileInfos );
 
 	if ( NULL == mFile ) {
-		cLog::instance()->Write( "Failed to create sound file \"" + Filename + "\"" );
+		eePRINTL( "Failed to create sound file %s", Filename.c_str() );
 		return false;
 	}
 

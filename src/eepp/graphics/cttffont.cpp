@@ -98,7 +98,7 @@ bool cTTFFont::iLoad( const eeUint& Size, EE_TTF_FONT_STYLE Style, const Uint16&
 	Uint32 OutTotal		 = ( OutlineFreetype == OutlineMethod ) ? 0 : OutlineSize * 2;
 
 	if ( mFont == NULL ) {
-		cLog::instance()->Write( "Failed to load TTF Font " + mFilepath + "." );
+		eePRINTL( "Failed to load TTF Font %s.", mFilepath.c_str() );
 
 		return false;
 	}
@@ -321,7 +321,7 @@ void cTTFFont::UpdateLoading() {
 
 		RebuildFromGlyphs();
 
-		cLog::instance()->Write( "TTF Font " + mFilepath + " loaded." );
+		eePRINTL( "TTF Font %s loaded.", mFilepath.c_str() );
 	}
 }
 
@@ -402,7 +402,7 @@ bool cTTFFont::SaveCoordinates( const std::string& Filepath ) {
 
 		return true;
 	} else {
-		cLog::instance()->Write("Unable to write " + Filepath + " on cTTFFont::SaveCoordinates");
+		eePRINTL("cTTFFont::SaveCoordinates(): Unable to write file: %s.", Filepath.c_str() );
 	}
 
 	return false;
