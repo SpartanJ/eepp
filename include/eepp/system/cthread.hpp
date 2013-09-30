@@ -128,29 +128,29 @@ struct ThreadFunc
 template <typename T>
 struct ThreadFunctor : ThreadFunc
 {
-	ThreadFunctor(T functor) : m_functor(functor) {}
-	virtual void Run() {m_functor();}
-	T m_functor;
+	ThreadFunctor(T functor) : mFunctor(functor) {}
+	virtual void Run() {mFunctor();}
+	T mFunctor;
 };
 
 // Specialization using a functor (including free functions) with one argument
 template <typename F, typename A>
 struct ThreadFunctorWithArg : ThreadFunc
 {
-	ThreadFunctorWithArg(F function, A arg) : m_function(function), m_arg(arg) {}
-	virtual void Run() {m_function(m_arg);}
-	F m_function;
-	A m_arg;
+	ThreadFunctorWithArg(F function, A arg) : mFunction(function), mArg(arg) {}
+	virtual void Run() {mFunction(mArg);}
+	F mFunction;
+	A mArg;
 };
 
 // Specialization using a member function
 template <typename C>
 struct ThreadMemberFunc : ThreadFunc
 {
-	ThreadMemberFunc(void(C::*function)(), C* object) : m_function(function), m_object(object) {}
-	virtual void Run() {(m_object->*m_function)();}
-	void(C::*m_function)();
-	C* m_object;
+	ThreadMemberFunc(void(C::*function)(), C* object) : mFunction(function), mObject(object) {}
+	virtual void Run() {(mObject->*mFunction)();}
+	void(C::*mFunction)();
+	C* mObject;
 };
 
 }

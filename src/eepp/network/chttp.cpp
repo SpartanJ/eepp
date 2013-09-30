@@ -53,6 +53,10 @@ void cHttp::Request::SetBody(const std::string& body) {
 	mBody = body;
 }
 
+const std::string &cHttp::Request::GetUri() const {
+	return mUri;
+}
+
 std::string cHttp::Request::Prepare() const {
 	std::ostringstream out;
 
@@ -219,13 +223,34 @@ void cHttp::Response::Parse(const std::string& data) {
 }
 
 cHttp::cHttp() :
+	mConnection( NULL ),
 	mHost(),
 	mPort(0)
 {
 }
 
-cHttp::cHttp(const std::string& host, unsigned short port) {
+cHttp::cHttp(const std::string& host, unsigned short port) :
+	mConnection( NULL )
+{
 	SetHost(host, port);
+}
+
+cHttp::~cHttp() {
+	std::list<cAsyncRequest*>::iterator itt;
+
+	// First we wait to finish any request pending
+	for ( itt = mThreads.begin(); itt != mThreads.end(); itt++ ) {
+		(*itt)->Wait();
+	}
+
+	for ( itt = mThreads.begin(); itt != mThreads.end(); itt++ ) {
+		eeDelete( *itt );
+	}
+
+	// Then we destroy the last open connection
+	cTcpSocket * tcp = mConnection;
+
+	eeSAFE_DELETE( tcp );
 }
 
 void cHttp::SetHost(const std::string& host, unsigned short port) {
@@ -253,6 +278,11 @@ void cHttp::SetHost(const std::string& host, unsigned short port) {
 }
 
 cHttp::Response cHttp::SendRequest(const cHttp::Request& request, cTime timeout) {
+	if ( NULL == mConnection ) {
+		cTcpSocket * Conn	= eeNew( cTcpSocket, () );
+		mConnection			= Conn;
+	}
+
 	// First make sure that the request is valid -- add missing mandatory fields
 	Request toSend(request);
 
@@ -286,19 +316,19 @@ cHttp::Response cHttp::SendRequest(const cHttp::Request& request, cTime timeout)
 	Response received;
 
 	// Connect the socket to the host
-	if (mConnection.Connect(mHost, mPort, timeout) == cSocket::Done) {
+	if (mConnection->Connect(mHost, mPort, timeout) == cSocket::Done) {
 		// Convert the request to string and send it through the connected socket
 		std::string requestStr = toSend.Prepare();
 
 		if (!requestStr.empty()) {
 			// Send it through the socket
-			if (mConnection.Send(requestStr.c_str(), requestStr.size()) == cSocket::Done) {
+			if (mConnection->Send(requestStr.c_str(), requestStr.size()) == cSocket::Done) {
 				// Wait for the server's response
 				std::string receivedStr;
 				std::size_t size = 0;
 				char buffer[1024];
 
-				while (mConnection.Receive(buffer, sizeof(buffer), size) == cSocket::Done) {
+				while (mConnection->Receive(buffer, sizeof(buffer), size) == cSocket::Done) {
 					receivedStr.append(buffer, buffer + size);
 				}
 
@@ -308,10 +338,80 @@ cHttp::Response cHttp::SendRequest(const cHttp::Request& request, cTime timeout)
 		}
 
 		// Close the connection
-		mConnection.Disconnect();
+		mConnection->Disconnect();
 	}
 
 	return received;
+}
+
+cHttp::cAsyncRequest::cAsyncRequest(cHttp *http, AsyncResponseCallback cb, cHttp::Request request, cTime timeout) :
+	mHttp( http ),
+	mCb( cb ),
+	mRequest( request ),
+	mTimeout( timeout ),
+	mRunning( true )
+{
+}
+
+void cHttp::cAsyncRequest::Run() {
+	cHttp::Response response = mHttp->SendRequest( mRequest, mTimeout );
+
+	mCb( *mHttp, mRequest, response );
+
+	// The Async Request destroys the socket used to create the request
+	cTcpSocket * tcp = mHttp->mConnection;
+	eeSAFE_DELETE( tcp );
+	mHttp->mConnection = NULL;
+
+	mRunning = false;
+}
+
+void cHttp::RemoveOldThreads() {
+	std::list<cAsyncRequest*> remove;
+
+	std::list<cAsyncRequest*>::iterator it = mThreads.begin();
+
+	for ( ; it != mThreads.end(); it++ ) {
+		cAsyncRequest * ar = (*it);
+
+		if ( !ar->mRunning ) {
+			// We need to be sure, since the state is set in the thread, this will not block the thread anyway
+			ar->Wait();
+
+			eeDelete( ar );
+
+			remove.push_back( ar );
+		}
+	}
+
+	for ( it = remove.begin(); it != remove.end(); it++ ) {
+		mThreads.remove( (*it) );
+	}
+}
+
+void cHttp::SendAsyncRequest( AsyncResponseCallback cb, const cHttp::Request& request, cTime timeout ) {
+	cAsyncRequest * thread = eeNew( cAsyncRequest, ( this, cb, request, timeout ) );
+
+	thread->Launch();
+
+	// Clean old threads
+	cLock l( mThreadsMutex );
+
+	RemoveOldThreads();
+
+	mThreads.push_back( thread );
+}
+
+const cIpAddress &cHttp::GetHost() const {
+	return mHost;
+}
+
+const std::string &cHttp::GetHostName() const {
+	return mHostName;
+}
+
+const unsigned short& cHttp::GetPort() const {
+	return mPort;
 }
 
 }}

@@ -642,7 +642,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 	cEngine::DestroySingleton();
 
-	EE::MemoryManager::ShowResults();
+	MemoryManager::ShowResults();
 
 	return EXIT_SUCCESS;
 }

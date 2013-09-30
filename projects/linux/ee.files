@@ -653,3 +653,10 @@
 ../../Makefile.base
 ../../Makefile
 ../../src/examples/http_request/http_request.cpp
+../../include/eepp/system/cthreadlocal.hpp
+../../src/eepp/system/cthreadlocal.cpp
+../../src/eepp/system/platform/win/cthreadlocalimpl.hpp
+../../src/eepp/system/platform/win/cthreadlocalimpl.cpp
+../../src/eepp/system/platform/posix/cthreadlocalimpl.hpp
+../../src/eepp/system/platform/posix/cthreadlocalimpl.cpp
+../../include/eepp/system/tthreadlocalptr.hpp

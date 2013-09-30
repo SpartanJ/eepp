@@ -22,5 +22,7 @@
 #include <eepp/system/cresourceloader.hpp>
 #include <eepp/system/tresourcemanager.hpp>
 #include <eepp/system/cpackmanager.hpp>
+#include <eepp/system/cthreadlocal.hpp>
+#include <eepp/system/tthreadlocalptr.hpp>
 
 #endif

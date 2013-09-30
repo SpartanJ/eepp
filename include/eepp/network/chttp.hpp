@@ -6,8 +6,14 @@
 #include <eepp/network/ctcpsocket.hpp>
 #include <eepp/base/noncopyable.hpp>
 #include <eepp/system/ctime.hpp>
+#include <eepp/system/tthreadlocalptr.hpp>
+#include <eepp/system/cthread.hpp>
+#include <eepp/system/cmutex.hpp>
+#include <eepp/system/clock.hpp>
+#include <eepp/helper/PlusCallback/callback.hpp>
 #include <map>
 #include <string>
+#include <list>
 
 using namespace EE::System;
 
@@ -73,6 +79,9 @@ class EE_API cHttp : NonCopyable {
 			**  The body is empty by default.
 			**  @param body Content of the body */
 			void SetBody(const std::string& body);
+
+			/** @return The request Uri */
+			const std::string& GetUri() const;
 		private:
 			friend class cHttp;
 
@@ -212,6 +221,8 @@ class EE_API cHttp : NonCopyable {
 		**  @param port Port to use for connection */
 		cHttp(const std::string& host, unsigned short port = 0);
 
+		~cHttp();
+
 		/** @brief Set the target host
 		**  This function just stores the host address and port, it
 		**  doesn't actually connect to it until you send a request.
@@ -223,7 +234,6 @@ class EE_API cHttp : NonCopyable {
 		**  @param host Web server to connect to
 		**  @param port Port to use for connection */
 		void SetHost(const std::string& host, unsigned short port = 0);
-
 
 		/** @brief Send a HTTP request and return the server's response.
 		**  You must have a valid host before sending a request (see SetHost).
@@ -238,12 +248,46 @@ class EE_API cHttp : NonCopyable {
 		**  @param timeout Maximum time to wait
 		**  @return Server's response */
 		Response SendRequest(const Request& request, cTime timeout = cTime::Zero);
+
+		/** Definition of the async callback response */
+		typedef cb::Callback3<void, const cHttp&, cHttp::Request&, cHttp::Response&>		AsyncResponseCallback;
+
+		/** @brief Sends the request and creates a new thread, when got the response informs the result to the callback.
+		**	This function does not lock the caller thread.
+		**  @see SendRequest */
+		void SendAsyncRequest( AsyncResponseCallback cb, const cHttp::Request& request, cTime timeout = cTime::Zero );
+
+		/** @return The host address */
+		const cIpAddress& GetHost() const;
+
+		/** @return The host name */
+		const std::string& GetHostName() const;
+
+		/** @return The host port */
+		const unsigned short& GetPort() const;
 	private:
-		// Member data
-		cTcpSocket		mConnection;	///< Connection to the host
-		cIpAddress		mHost;			///< Web host address
-		std::string		mHostName;		///< Web host name
-		unsigned short	mPort;			///< Port used for connection with host
+		class cAsyncRequest : public cThread {
+			public:
+				cAsyncRequest( cHttp * http, AsyncResponseCallback cb, cHttp::Request request, cTime timeout );
+
+				void Run();
+			protected:
+				friend class cHttp;
+				cHttp *					mHttp;
+				AsyncResponseCallback	mCb;
+				cHttp::Request			mRequest;
+				cTime					mTimeout;
+				bool					mRunning;
+		};
+		friend class cAsyncRequest;
+		tThreadLocalPtr<cTcpSocket>		mConnection;	///< Connection to the host
+		cIpAddress						mHost;			///< Web host address
+		std::string						mHostName;		///< Web host name
+		unsigned short					mPort;			///< Port used for connection with host
+		std::list<cAsyncRequest*>		mThreads;
+		cMutex							mThreadsMutex;
+
+		void RemoveOldThreads();
 };
 
 }}
