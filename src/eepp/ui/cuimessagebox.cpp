@@ -4,7 +4,8 @@ namespace EE { namespace UI {
 
 cUIMessageBox::cUIMessageBox( const cUIMessageBox::CreateParams& Params ) :
 	cUIWindow( Params ),
-	mMsgBoxType( Params.Type )
+	mMsgBoxType( Params.Type ),
+	mCloseWithKey( Params.CloseWithKey )
 {
 	cUITheme * Theme = cUIThemeManager::instance()->DefaultTheme();
 
@@ -152,6 +153,14 @@ void cUIMessageBox::AutoSize() {
 
 		mMinWindowSize = nSize;
 	}
+}
+
+Uint32 cUIMessageBox::OnKeyUp( const cUIEventKey & Event ) {
+	if ( mCloseWithKey && Event.KeyCode() == mCloseWithKey ) {
+		CloseWindow();
+	}
+
+	return 1;
 }
 
 bool cUIMessageBox::Show() {

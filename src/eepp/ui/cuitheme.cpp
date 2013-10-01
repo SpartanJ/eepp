@@ -33,12 +33,7 @@
 
 namespace EE { namespace UI {
 
-static std::list<std::string> UI_THEME_ELEMENTS;
-
-static std::list<std::string> UI_THEME_ICONS;
-
-static void LoadThemeElements() {
-	if ( !UI_THEME_ELEMENTS.size() ) {
+static void LoadThemeElements( std::list<std::string>& UI_THEME_ELEMENTS, std::list<std::string>& UI_THEME_ICONS ) {
 		UI_THEME_ELEMENTS.push_back( "control" );
 		UI_THEME_ELEMENTS.push_back( "button" );
 		UI_THEME_ELEMENTS.push_back( "textinput" );
@@ -104,9 +99,7 @@ static void LoadThemeElements() {
 		UI_THEME_ELEMENTS.push_back( "tab" );
 		UI_THEME_ELEMENTS.push_back( "tab_left" );
 		UI_THEME_ELEMENTS.push_back( "tab_right" );
-	}
 
-	if ( !UI_THEME_ICONS.size() ) {
 		UI_THEME_ICONS.push_back( "ok" );
 		UI_THEME_ICONS.push_back( "cancel" );
 		UI_THEME_ICONS.push_back( "remove" );
@@ -118,15 +111,14 @@ static void LoadThemeElements() {
 		UI_THEME_ICONS.push_back( "document-new" );
 		UI_THEME_ICONS.push_back( "document-save" );
 		UI_THEME_ICONS.push_back( "document-save-as" );
-	}
 }
 
 void cUITheme::AddThemeElement( const std::string& Element ) {
-	UI_THEME_ELEMENTS.push_back( Element );
+	mUIElements.push_back( Element );
 }
 
 void cUITheme::AddThemeIcon( const std::string& Icon ) {
-	UI_THEME_ICONS.push_back( Icon );
+	mUIIcons.push_back( Icon );
 }
 
 cUITheme * cUITheme::LoadFromTextureAtlas( cUITheme * tTheme, cTextureAtlas * TextureAtlas ) {
@@ -139,7 +131,7 @@ cUITheme * cUITheme::LoadFromTextureAtlas( cUITheme * tTheme, cTextureAtlas * Te
 
 	cClock TE;
 
-	LoadThemeElements();
+	LoadThemeElements( tTheme->mUIElements, tTheme->mUIIcons );
 
 	Uint32 i;
 	bool Found;
@@ -149,7 +141,7 @@ cUITheme * cUITheme::LoadFromTextureAtlas( cUITheme * tTheme, cTextureAtlas * Te
 
 	tTheme->TextureAtlas( TextureAtlas );
 
-	for ( std::list<std::string>::iterator it = UI_THEME_ELEMENTS.begin() ; it != UI_THEME_ELEMENTS.end(); it++ ) {
+	for ( std::list<std::string>::iterator it = tTheme->mUIElements.begin() ; it != tTheme->mUIElements.end(); it++ ) {
 		Uint32 IsComplex = 0;
 
 		Element = std::string( tTheme->Abbr() + "_" + *it );
@@ -177,7 +169,7 @@ cUITheme * cUITheme::LoadFromTextureAtlas( cUITheme * tTheme, cTextureAtlas * Te
 cUITheme * cUITheme::LoadFromPath( cUITheme * tTheme, const std::string& Path, const std::string ImgExt ) {
 	cClock TE;
 
-	LoadThemeElements();
+	LoadThemeElements( tTheme->mUIElements, tTheme->mUIIcons );
 
 	Uint32 i;
 	bool Found;
@@ -197,7 +189,7 @@ cUITheme * cUITheme::LoadFromPath( cUITheme * tTheme, const std::string& Path, c
 
 	tTheme->TextureAtlas( tSG );
 
-	for ( std::list<std::string>::iterator it = UI_THEME_ELEMENTS.begin() ; it != UI_THEME_ELEMENTS.end(); it++ ) {
+	for ( std::list<std::string>::iterator it = tTheme->mUIElements.begin() ; it != tTheme->mUIElements.end(); it++ ) {
 		Uint32 IsComplex = 0;
 
 		Element = tTheme->Abbr() + "_" + *it;
@@ -211,7 +203,7 @@ cUITheme * cUITheme::LoadFromPath( cUITheme * tTheme, const std::string& Path, c
 	}
 
 	// Load the icons from path.
-	for ( std::list<std::string>::iterator it = UI_THEME_ICONS.begin() ; it != UI_THEME_ICONS.end(); it++ ) {
+	for ( std::list<std::string>::iterator it = tTheme->mUIIcons.begin() ; it != tTheme->mUIIcons.end(); it++ ) {
 		ElemName	= tTheme->Abbr() + "_icon_" + *it;
 		Element		= RPath + ElemName + "." + ImgExt;
 

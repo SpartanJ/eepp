@@ -55,9 +55,9 @@ class EE_API cUITheme : protected tResourceManager<cUISkin> {
 
 		static cUITheme * LoadFromPath( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt = "png" );
 
-		static void AddThemeElement( const std::string& Element );
+		void AddThemeElement( const std::string& Element );
 
-		static void AddThemeIcon( const std::string& Icon );
+		void AddThemeIcon( const std::string& Icon );
 
 		cUITheme( const std::string& Name, const std::string& Abbr, cFont * DefaultFont = NULL );
 
@@ -149,16 +149,18 @@ class EE_API cUITheme : protected tResourceManager<cUISkin> {
 
 		virtual cUITabWidget * CreateTabWidget( cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_HALIGN_CENTER | UI_VALIGN_BOTTOM | UI_CONTROL_DEFAULT_ANCHOR, const bool& TabsClosable = false, const bool& SpecialBorderTabs = false , const Int32& TabSeparation = 0, const Uint32& MaxTextLength = 30, const Uint32& TabWidgetHeight = 0, const Uint32& TabTextAlign = UI_HALIGN_CENTER | UI_VALIGN_CENTER, const Uint32& MinTabWidth = 32, const Uint32& MaxTabWidth = 210 );
 	protected:
-		std::string 		mName;
-		Uint32				mNameHash;
-		std::string			mAbbr;
-		cTextureAtlas *		mTextureAtlas;
-		cFont * 			mFont;
-		eeColorA			mFontColor;
-		eeColorA			mFontShadowColor;
-		eeColorA			mFontOverColor;
-		eeColorA			mFontSelectedColor;
-		bool				mUseDefaultThemeValues;
+		std::string				mName;
+		Uint32					mNameHash;
+		std::string				mAbbr;
+		cTextureAtlas *			mTextureAtlas;
+		cFont *					mFont;
+		eeColorA				mFontColor;
+		eeColorA				mFontShadowColor;
+		eeColorA				mFontOverColor;
+		eeColorA				mFontSelectedColor;
+		bool					mUseDefaultThemeValues;
+		std::list<std::string>	mUIElements;
+		std::list<std::string>	mUIIcons;
 
 		void TextureAtlas( cTextureAtlas * SG );
 

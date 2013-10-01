@@ -13,7 +13,8 @@ class EE_API cUIMessageBox : public cUIWindow {
 			public:
 				inline CreateParams() :
 					cUIWindow::CreateParams(),
-					Type( MSGBOX_OKCANCEL )
+					Type( MSGBOX_OKCANCEL ),
+					CloseWithKey( KEY_UNKNOWN )
 				{
 				}
 
@@ -21,6 +22,7 @@ class EE_API cUIMessageBox : public cUIWindow {
 
 				UI_MSGBOX_TYPE	Type;
 				String			Message;
+				Uint32			CloseWithKey;
 		};
 
 		cUIMessageBox( const cUIMessageBox::CreateParams& Params );
@@ -43,8 +45,11 @@ class EE_API cUIMessageBox : public cUIWindow {
 		cUITextBox *		mTextBox;
 		cUIPushButton *		mButtonOK;
 		cUIPushButton *		mButtonCancel;
+		Uint32				mCloseWithKey;
 
 		void				AutoSize();
+
+		virtual Uint32 OnKeyUp( const cUIEventKey& Event );
 };
 
 }}
