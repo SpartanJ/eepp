@@ -45,6 +45,8 @@ class EE_API cUIListBox : public cUIComplexControl {
 				UI_SCROLLBAR_MODE	VScrollMode;
 				UI_SCROLLBAR_MODE	HScrollMode;
 				eeRecti				PaddingContainer;
+				eeRecti				HScrollPadding;
+				eeRecti				VScrollPadding;
 				cFont *				Font;
 				eeColorA			FontColor;
 				eeColorA			FontOverColor;
@@ -169,6 +171,8 @@ class EE_API cUIListBox : public cUIComplexControl {
 		UI_SCROLLBAR_MODE	mHScrollMode;
 		bool 				mSmoothScroll;
 		eeRecti 			mPaddingContainer;
+		eeRecti				mHScrollPadding;
+		eeRecti				mVScrollPadding;
 		tUIItemContainer<cUIListBox> * mContainer;
 		cUIScrollBar * 		mVScrollBar;
 		cUIScrollBar * 		mHScrollBar;

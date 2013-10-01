@@ -13,6 +13,8 @@ cUIListBox::cUIListBox( cUIListBox::CreateParams& Params ) :
 	mHScrollMode( Params.HScrollMode ),
 	mSmoothScroll( Params.SmoothScroll ),
 	mPaddingContainer( Params.PaddingContainer ),
+	mHScrollPadding( Params.HScrollPadding ),
+	mVScrollPadding( Params.VScrollPadding ),
 	mContainer( NULL ),
 	mVScrollBar( NULL ),
 	mHScrollBar( NULL ),
@@ -277,11 +279,11 @@ void cUIListBox::OnHScrollValueChange( const cUIEvent * Event ) {
 }
 
 void cUIListBox::OnSizeChange() {
-	mVScrollBar->Pos( mSize.Width() - mVScrollBar->Size().Width(), 0 );
-	mVScrollBar->Size( mVScrollBar->Size().Width(), mSize.Height() );
+	mVScrollBar->Pos( mSize.Width() - mVScrollBar->Size().Width() + mVScrollPadding.Left, mVScrollPadding.Top );
+	mVScrollBar->Size( mVScrollBar->Size().Width() + mVScrollPadding.Right, mSize.Height() + mVScrollPadding.Bottom );
 
-	mHScrollBar->Pos( 0, mSize.Height() - mHScrollBar->Size().Height() );
-	mHScrollBar->Size( mSize.Width() - mVScrollBar->Size().Width(), mHScrollBar->Size().Height() );
+	mHScrollBar->Pos( mHScrollPadding.Left, mSize.Height() - mHScrollBar->Size().Height() + mHScrollPadding.Top );
+	mHScrollBar->Size( mSize.Width() - mVScrollBar->Size().Width() + mHScrollPadding.Right, mHScrollBar->Size().Height() + mHScrollPadding.Bottom );
 
 	if ( mContainer->IsClipped() && UI_SCROLLBAR_AUTO == mHScrollMode ) {
 		if ( (Int32)mMaxTextWidth <= mContainer->Size().Width() ) {
@@ -557,11 +559,11 @@ void cUIListBox::UpdateScroll( bool FromScrollChange ) {
 	
 	
 	if ( mHScrollBar->Visible() && !mVScrollBar->Visible() ) {
-		mHScrollBar->Pos( 0, mSize.Height() - mHScrollBar->Size().Height() );
-		mHScrollBar->Size( mSize.Width(), mHScrollBar->Size().Height() );
+		mHScrollBar->Pos( mHScrollPadding.Left, mSize.Height() - mHScrollBar->Size().Height() + mHScrollPadding.Top );
+		mHScrollBar->Size( mSize.Width() + mHScrollPadding.Right, mHScrollBar->Size().Height() + mHScrollPadding.Bottom );
 	} else {
-		mHScrollBar->Pos( 0, mSize.Height() - mHScrollBar->Size().Height() );
-		mHScrollBar->Size( mSize.Width() - mVScrollBar->Size().Width(), mHScrollBar->Size().Height() );
+		mHScrollBar->Pos( mHScrollPadding.Left, mSize.Height() - mHScrollBar->Size().Height() + mHScrollPadding.Top );
+		mHScrollBar->Size( mSize.Width() - mVScrollBar->Size().Width() + mHScrollPadding.Right, mHScrollBar->Size().Height() + mHScrollPadding.Bottom );
 	}
 }
 

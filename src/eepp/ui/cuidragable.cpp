@@ -58,6 +58,7 @@ void cUIDragable::Update() {
 	if ( Dragging() ) {
 		if ( !( cUIManager::instance()->PressTrigger() & mDragButton ) ) {
 			Dragging( false );
+			cUIManager::instance()->SetControlDragging( false );
 			return;
 		}
 
@@ -70,6 +71,8 @@ void cUIDragable::Update() {
 				mDragPoint = Pos;
 
 				OnPosChange();
+
+				cUIManager::instance()->SetControlDragging( true );
 			}
 		}
 	}

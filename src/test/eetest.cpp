@@ -437,6 +437,10 @@ void cEETest::CreateUI() {
 	combostrs.push_back( "Car" );
 	combostrs.push_back( "Bus" );
 	combostrs.push_back( "Train" );
+	combostrs.push_back( "Overcraft" );
+	combostrs.push_back( "Spaceship" );
+	combostrs.push_back( "Bike" );
+	combostrs.push_back( "Motorbike" );
 
 	mDropDownList->ListBox()->AddListBoxItems( combostrs );
 	mDropDownList->ListBox()->SetSelected( 0 );
