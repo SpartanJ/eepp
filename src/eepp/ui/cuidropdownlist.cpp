@@ -110,6 +110,8 @@ void cUIDropDownList::ShowListBox() {
 		if ( mListBox->Count() ) {
 			eeRecti tPadding = mListBox->PaddingContainer();
 
+			eeFloat sliderValue = mListBox->VerticalScrollBar()->Value();
+
 			if ( mMinNumVisibleItems < mListBox->Count() )
 				mListBox->Size( mSize.Width(), (Int32)( mMinNumVisibleItems * mListBox->RowHeight() ) + tPadding.Top + tPadding.Bottom );
 			else {
@@ -127,6 +129,8 @@ void cUIDropDownList::ShowListBox() {
 				mListBox->Parent()->ScreenToControl( Pos );
 				mListBox->Pos( Pos );
 			}
+
+			mListBox->VerticalScrollBar()->Value( sliderValue );
 
 			Show();
 
