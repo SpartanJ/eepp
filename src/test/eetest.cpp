@@ -252,7 +252,7 @@ void cEETest::CreateUI() {
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.Elapsed().AsMilliseconds() );
 
-	cUIManager::instance()->Init(); //UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
+	cUIManager::instance()->Init(UI_MANAGER_HIGHLIGHT_FOCUS); //UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
 
 	//mTheme = cUITheme::LoadFromPath( eeNew( cUIDefaultTheme, ( "uitheme", "uitheme" ) ), MyPath + "uitheme/" );
 
@@ -427,7 +427,7 @@ void cEETest::CreateUI() {
 	DDLParams.Parent( C );
 	DDLParams.PosSet( 20, 55 );
 	DDLParams.Size = eeSize( 100, 21 );
-	DDLParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT;
+	DDLParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_TOUCH_DRAG_ENABLED;
 	cUIDropDownList * mDropDownList = eeNew( cUIDropDownList, ( DDLParams ) );
 	mDropDownList->Visible( true );
 	mDropDownList->Enabled( true );
@@ -449,7 +449,7 @@ void cEETest::CreateUI() {
 	ComboParams.Parent( C );
 	ComboParams.PosSet( 20, 80 );
 	ComboParams.Size = eeSize( 100, 1 );
-	ComboParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_AUTO_SIZE;
+	ComboParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_AUTO_SIZE | UI_TOUCH_DRAG_ENABLED;
 	cUIComboBox * mComboBox = eeNew( cUIComboBox, ( ComboParams ) );
 	mComboBox->Visible( true );
 	mComboBox->Enabled( true );

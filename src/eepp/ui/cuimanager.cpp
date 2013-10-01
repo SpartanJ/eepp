@@ -205,6 +205,9 @@ void cUIManager::Update() {
 	}
 
 	if ( mKM->PressTrigger() ) {
+		/*if ( !wasDraggingControl && mOverControl != mFocusControl )
+			FocusControl( mOverControl );*/
+
 		if ( NULL != mOverControl ) {
 			mOverControl->OnMouseDown( mKM->GetMousePos(), mKM->PressTrigger() );
 			SendMsg( mOverControl, cUIMessage::MsgMouseDown, mKM->PressTrigger() );
@@ -221,13 +224,13 @@ void cUIManager::Update() {
 	if ( mKM->ReleaseTrigger() ) {
 		if ( NULL != mFocusControl ) {
 			if ( !wasDraggingControl ) {
-				 if ( mOverControl != mFocusControl )
-					 FocusControl( mOverControl );
+				if ( mOverControl != mFocusControl )
+					FocusControl( mOverControl );
 
 				mFocusControl->OnMouseUp( mKM->GetMousePos(), mKM->ReleaseTrigger() );
 				SendMsg( mFocusControl, cUIMessage::MsgMouseUp, mKM->ReleaseTrigger() );
 
-				if ( mDownControl == mOverControl && mKM->ClickTrigger() ) {
+				if ( mKM->ClickTrigger() ) { // mDownControl == mOverControl &&
 					SendMsg( mFocusControl, cUIMessage::MsgClick, mKM->ClickTrigger() );
 					mFocusControl->OnMouseClick( mKM->GetMousePos(), mKM->ClickTrigger() );
 

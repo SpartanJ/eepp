@@ -87,6 +87,8 @@ void cUIGfx::Draw() {
 
 				mSubTexture->Offset( oOff );
 			} else {
+				AutoAlign();
+
 				DrawSubTexture();
 			}
 		}
