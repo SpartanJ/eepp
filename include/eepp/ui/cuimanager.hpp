@@ -84,6 +84,15 @@ class EE_API cUIManager {
 		cUIControl * LossFocusControl() const;
 
 		const bool& IsShootingDown() const;
+
+		/** @return The position of the mouse when the event MouseDown was fired last time.
+		**	Useful to compare the mouse position of the MouseClick event
+		*/
+		const eeVector2i& GetMouseDownPos() const;
+
+		void SetControlDragging( bool dragging );
+
+		const bool& IsControlDragging() const;
 	protected:
 		friend class cUIControl;
 		friend class cUIWindow;
@@ -105,10 +114,12 @@ class EE_API cUIManager {
 		Uint32				mFlags;
 		eeColorA			mHighlightFocusColor;
 		eeColorA			mHighlightOverColor;
+		eeVector2i			mMouseDownPos;
 
 		bool				mInit;
 		bool 				mFirstPress;
 		bool				mShootingDown;
+		bool				mControlDragging;
 
 		cUIManager();
 

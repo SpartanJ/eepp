@@ -95,10 +95,14 @@ void cTextCache::Color( const eeColorA& color ) {
 void cTextCache::Color( const eeColorA& color, Uint32 from, Uint32 to ) {
 	std::size_t s = mText.size();
 
-	if ( to >= s ) { to = s - 1; }
+	if ( to >= s ) {
+		to = s - 1;
+	}
 
-	if ( from <= to && from < s && to < s ) {
-		for ( Uint32 i = from * EE_QUAD_VERTEX; i < to * EE_QUAD_VERTEX; i++ ) {
+	if ( from <= to && from < s && to <= s ) {
+		size_t rto = ( to * EE_QUAD_VERTEX ) + EE_QUAD_VERTEX;
+
+		for ( Uint32 i = from * EE_QUAD_VERTEX; i < rto; i++ ) {
 			mColors[ i ] = color;
 		}
 	}

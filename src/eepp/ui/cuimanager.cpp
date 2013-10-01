@@ -181,6 +181,8 @@ void cUIManager::SendMsg( cUIControl * Ctrl, const Uint32& Msg, const Uint32& Fl
 void cUIManager::Update() {
 	mElapsed = mWindow->Elapsed();
 
+	bool wasDraggingControl = IsControlDragging();
+
 	mControl->Update();
 
 	cUIControl * pOver = mControl->OverFind( mKM->GetMousePosf() );
@@ -204,15 +206,13 @@ void cUIManager::Update() {
 
 	if ( mKM->PressTrigger() ) {
 		if ( NULL != mOverControl ) {
-			if ( mOverControl != mFocusControl )
-				FocusControl( mOverControl );
-
 			mOverControl->OnMouseDown( mKM->GetMousePos(), mKM->PressTrigger() );
 			SendMsg( mOverControl, cUIMessage::MsgMouseDown, mKM->PressTrigger() );
 		}
 
 		if ( !mFirstPress ) {
 			mDownControl = mOverControl;
+			mMouseDownPos = mKM->GetMousePos();
 
 			mFirstPress = true;
 		}
@@ -220,16 +220,21 @@ void cUIManager::Update() {
 
 	if ( mKM->ReleaseTrigger() ) {
 		if ( NULL != mFocusControl ) {
-			mFocusControl->OnMouseUp( mKM->GetMousePos(), mKM->ReleaseTrigger() );
-			SendMsg( mFocusControl, cUIMessage::MsgMouseUp, mKM->ReleaseTrigger() );
+			if ( !wasDraggingControl ) {
+				 if ( mOverControl != mFocusControl )
+					 FocusControl( mOverControl );
 
-			if ( mDownControl == mOverControl && mKM->ClickTrigger() ) {
-				SendMsg( mFocusControl, cUIMessage::MsgClick, mKM->ClickTrigger() );
-				mFocusControl->OnMouseClick( mKM->GetMousePos(), mKM->ClickTrigger() );
+				mFocusControl->OnMouseUp( mKM->GetMousePos(), mKM->ReleaseTrigger() );
+				SendMsg( mFocusControl, cUIMessage::MsgMouseUp, mKM->ReleaseTrigger() );
 
-				if ( mKM->DoubleClickTrigger() ) {
-					SendMsg( mFocusControl, cUIMessage::MsgDoubleClick, mKM->DoubleClickTrigger() );
-					mFocusControl->OnMouseDoubleClick( mKM->GetMousePos(), mKM->DoubleClickTrigger() );
+				if ( mDownControl == mOverControl && mKM->ClickTrigger() ) {
+					SendMsg( mFocusControl, cUIMessage::MsgClick, mKM->ClickTrigger() );
+					mFocusControl->OnMouseClick( mKM->GetMousePos(), mKM->ClickTrigger() );
+
+					if ( mKM->DoubleClickTrigger() ) {
+						SendMsg( mFocusControl, cUIMessage::MsgDoubleClick, mKM->DoubleClickTrigger() );
+						mFocusControl->OnMouseDoubleClick( mKM->GetMousePos(), mKM->DoubleClickTrigger() );
+					}
 				}
 			}
 		}
@@ -372,6 +377,10 @@ const bool& cUIManager::IsShootingDown() const {
 	return mShootingDown;
 }
 
+const eeVector2i &cUIManager::GetMouseDownPos() const {
+	return mMouseDownPos;
+}
+
 void cUIManager::AddToCloseQueue( cUIControl * Ctrl ) {
 	eeASSERT( NULL != Ctrl );
 
@@ -423,6 +432,14 @@ void cUIManager::CheckClose() {
 
 		mCloseList.clear();
 	}
+}
+
+void cUIManager::SetControlDragging( bool dragging ) {
+	mControlDragging = dragging;
+}
+
+const bool& cUIManager::IsControlDragging() const {
+	return mControlDragging;
 }
 
 }}

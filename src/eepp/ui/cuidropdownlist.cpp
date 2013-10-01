@@ -14,14 +14,19 @@ cUIDropDownList::cUIDropDownList( cUIDropDownList::CreateParams& Params ) :
 	ApplyDefaultTheme();
 
 	if ( NULL == mListBox ) {
+		Uint32 flags = UI_CLIP_ENABLE | UI_AUTO_PADDING;
+
+		if ( Params.Flags & UI_TOUCH_DRAG_ENABLED )
+			flags |= UI_TOUCH_DRAG_ENABLED;
+
 		cUITheme * Theme = cUIThemeManager::instance()->DefaultTheme();
 
 		if ( NULL != Theme ) {
-			mListBox = Theme->CreateListBox( NULL, eeSize( mSize.Width(), mMinNumVisibleItems * mSize.Height() ) );
+			mListBox = Theme->CreateListBox( NULL, eeSize( mSize.Width(), mMinNumVisibleItems * mSize.Height() ),eeVector2i(), flags );
 		} else {
 			cUIListBox::CreateParams LBParams;
 			LBParams.Size 				= eeSize( mSize.Width(), mMinNumVisibleItems * mSize.Height() );
-			LBParams.Flags 				= UI_CLIP_ENABLE | UI_AUTO_PADDING;
+			LBParams.Flags 				= flags;
 			LBParams.FontSelectedColor	= eeColorA( 255, 255, 255, 255 );
 			mListBox = eeNew( cUIListBox, ( LBParams ) );
 		}
@@ -96,8 +101,11 @@ void cUIDropDownList::ShowListBox() {
 		eeVector2i Pos = mScreenPos;
 		Pos.y += mSize.Height();
 
+		mListBox->UpdateScreenPos();
+		mListBox->UpdateQuad();
 		mListBox->Parent()->ScreenToControl( Pos );
 		mListBox->Pos( Pos );
+		mListBox->UpdateQuad();
 
 		if ( mListBox->Count() ) {
 			eeRecti tPadding = mListBox->PaddingContainer();
@@ -106,6 +114,18 @@ void cUIDropDownList::ShowListBox() {
 				mListBox->Size( mSize.Width(), (Int32)( mMinNumVisibleItems * mListBox->RowHeight() ) + tPadding.Top + tPadding.Bottom );
 			else {
 				mListBox->Size( mSize.Width(), (Int32)( mListBox->Count() * mListBox->RowHeight() ) + tPadding.Top + tPadding.Bottom );
+			}
+
+			eeRectf aabb( mListBox->GetPolygon().ToAABB() );
+			eeRecti aabbi( aabb.Left, aabb.Top, aabb.Right, aabb.Bottom );
+
+			if ( !cUIManager::instance()->MainControl()->GetScreenRect().Contains( aabbi ) )
+			{
+				Pos = mScreenPos;
+				Pos.y -= mListBox->Size().Height();
+
+				mListBox->Parent()->ScreenToControl( Pos );
+				mListBox->Pos( Pos );
 			}
 
 			Show();

@@ -568,6 +568,7 @@ void cUIGenericGrid::Update() {
 				// Mouse Not Down
 				if ( !( Press & EE_BUTTON_LMASK ) ) {
 					WriteCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 0 );
+					cUIManager::instance()->SetControlDragging( false );
 					return;
 				}
 
@@ -581,6 +582,8 @@ void cUIGenericGrid::Update() {
 					mTouchDragAcceleration += Elapsed().AsMilliseconds() * diff.y * mTouchDragDeceleration;
 
 					mTouchDragPoint = Pos;
+
+					cUIManager::instance()->SetControlDragging( true );
 				} else {
 					mTouchDragAcceleration -= Elapsed().AsMilliseconds() * mTouchDragAcceleration * 0.01f;
 				}
@@ -598,6 +601,7 @@ void cUIGenericGrid::Update() {
 				// Mouse Up
 				if ( ( LPress & EE_BUTTON_LMASK ) && !( Press & EE_BUTTON_LMASK ) ) {
 					WriteCtrlFlag( UI_CTRL_FLAG_TOUCH_DRAGGING, 0 );
+					cUIManager::instance()->SetControlDragging( false );
 				}
 
 				// Deaccelerate
