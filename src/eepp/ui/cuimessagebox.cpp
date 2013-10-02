@@ -76,6 +76,9 @@ cUIMessageBox::cUIMessageBox( const cUIMessageBox::CreateParams& Params ) :
 		}
 	}
 
+	mButtonCancel->ToFront();
+	mButtonOK->ToFront();
+
 	AutoSize();
 
 	ApplyDefaultTheme();
