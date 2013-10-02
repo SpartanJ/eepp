@@ -134,7 +134,10 @@ bool FileSystem::FileWrite( const std::string& filepath, const Uint8* data, cons
 	cIOStreamFile fs( filepath, std::ios::out | std::ios::binary );
 
 	if ( fs.IsOpen() ) {
-		fs.Write( reinterpret_cast<const char*> (data), dataSize );
+		if ( dataSize ) {
+			fs.Write( reinterpret_cast<const char*> (data), dataSize );
+		}
+
 		return true;
 	}
 

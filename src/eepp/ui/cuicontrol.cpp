@@ -704,6 +704,15 @@ void cUIControl::ChildRemove( cUIControl * ChildCtrl ) {
 	}
 }
 
+void cUIControl::ChildsCloseAll() {
+	cUIControl * ChildLoop = mChild;
+
+	while ( NULL != ChildLoop ) {
+		ChildLoop->Close();
+		ChildLoop = ChildLoop->mNext;
+	}
+}
+
 bool cUIControl::IsChild( cUIControl * ChildCtrl ) const {
 	cUIControl * ChildLoop = mChild;
 

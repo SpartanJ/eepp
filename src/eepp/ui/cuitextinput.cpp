@@ -12,7 +12,8 @@ cUITextInput::cUITextInput( const cUITextInput::CreateParams& Params ) :
 	cUITextBox( Params ),
 	mCursorPos(0),
 	mAllowEditing( true ),
-	mShowingWait( true )
+	mShowingWait( true ),
+	mPassInput( Params.PassInput )
 {
 	mTextBuffer.Start();
 	mTextBuffer.Active( false );
@@ -67,7 +68,52 @@ void cUITextInput::OnCursorPosChange() {
 }
 
 void cUITextInput::Draw() {
-	cUITextBox::Draw();
+	if ( !mPassInput) {
+		cUITextBox::Draw();
+	} else {
+		if ( mVisible && 0.f != mAlpha ) {
+			cUIControlAnim::Draw();
+
+			cFont * font = Font();
+
+			eeColorA oColor = font->Color();
+
+			font->Color( mFontColor );
+
+			String str;
+			Uint32 s = Text().size();
+
+			for ( size_t i = 0; i < s; i++ ) {
+				str += '*';
+			}
+
+			font->SetText( str );
+
+			if ( font->GetTextWidth() ) {
+				if ( mFlags & UI_CLIP_ENABLE ) {
+					cUIManager::instance()->ClipEnable(
+							mScreenPos.x + mPadding.Left,
+							mScreenPos.y + mPadding.Top,
+							mSize.Width() - mPadding.Left - mPadding.Right,
+							mSize.Height() - mPadding.Top - mPadding.Bottom
+					);
+				}
+
+				font->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x + (eeFloat)mPadding.Left,
+							  (eeFloat)mScreenPos.y + mAlignOffset.y + (eeFloat)mPadding.Top,
+							  Flags(),
+							  1.f,
+							  0.f,
+							  Blend() );
+
+				if ( mFlags & UI_CLIP_ENABLE ) {
+					cUIManager::instance()->ClipDisable();
+				}
+			}
+
+			font->Color( oColor );
+		}
+	}
 
 	if ( mVisible && mTextBuffer.Active() && mTextBuffer.SupportFreeEditing() ) {
 		mWaitCursorTime += cUIManager::instance()->Elapsed().AsMilliseconds();
@@ -87,7 +133,12 @@ void cUITextInput::Draw() {
 			if ( CurPosX > (eeFloat)mScreenPos.x + (eeFloat)mSize.x )
 				CurPosX = (eeFloat)mScreenPos.x + (eeFloat)mSize.x;
 
-			P.DrawLine( eeLine2f( eeVector2f( CurPosX, CurPosY ), eeVector2f( CurPosX, CurPosY + mTextCache->Font()->GetFontHeight() ) ) );
+			if ( !mPassInput ) {
+				P.DrawLine( eeLine2f( eeVector2f( CurPosX, CurPosY ), eeVector2f( CurPosX, CurPosY + mTextCache->Font()->GetFontHeight() ) ) );
+			} else {
+				CurPosX = mScreenPos.x + mAlignOffset.x + Font()->GetTextWidth() + 1 + mPadding.Left;
+				P.DrawLine( eeLine2f( eeVector2f( CurPosX, CurPosY ), eeVector2f( CurPosX, CurPosY + mTextCache->Font()->GetFontHeight() ) ) );
+			}
 
 			if ( disableSmooth )
 				GLi->LineSmooth( true );
@@ -214,6 +265,14 @@ void cUITextInput::ShrinkText( const Uint32& MaxWidth ) {
 	mTextBuffer.Buffer( mTextCache->Text() );
 
 	AlignFix();
+}
+
+const bool& cUITextInput::PasswordInput() const {
+	return mPassInput;
+}
+
+void cUITextInput::PasswordInput( bool pass ) {
+	mPassInput = pass;
 }
 
 }}

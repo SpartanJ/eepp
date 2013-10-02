@@ -14,7 +14,8 @@ class EE_API cUITextInput : public cUITextBox {
 				inline CreateParams() :
 					cUITextBox::CreateParams(),
 					SupportFreeEditing( true ),
-					MaxLength( 256 )
+					MaxLength( 256 ),
+					PassInput( false )
 				{
 				}
 
@@ -22,6 +23,7 @@ class EE_API cUITextInput : public cUITextBox {
 
 				bool SupportFreeEditing;
 				Uint32 MaxLength;
+				bool PassInput;
 		};
 
 		cUITextInput( const cUITextInput::CreateParams& Params );
@@ -51,6 +53,10 @@ class EE_API cUITextInput : public cUITextBox {
 		virtual void Text( const String& text );
 
 		virtual void ShrinkText( const Uint32& MaxWidth );
+
+		const bool& PasswordInput() const;
+
+		void PasswordInput( bool pass );
 	protected:
 		cInputTextBuffer	mTextBuffer;
 		eeFloat				mWaitCursorTime;
@@ -58,6 +64,7 @@ class EE_API cUITextInput : public cUITextBox {
 		eeInt				mCursorPos;
 		bool				mAllowEditing;
 		bool				mShowingWait;
+		bool				mPassInput;
 
 		void ResetWaitCursor();
 
