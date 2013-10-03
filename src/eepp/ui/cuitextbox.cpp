@@ -104,6 +104,8 @@ const eeColorA& cUITextBox::Color() const {
 
 void cUITextBox::Color( const eeColorA& color ) {
 	mFontColor = color;
+	mTextCache->Color( color );
+
 	Alpha( color.A() );
 }
 
@@ -113,7 +115,6 @@ const eeColorA& cUITextBox::ShadowColor() const {
 
 void cUITextBox::ShadowColor( const eeColorA& color ) {
 	mFontShadowColor = color;
-	Alpha( color.A() );
 	mTextCache->ShadowColor( mFontColor );
 }
 
@@ -122,7 +123,7 @@ void cUITextBox::Alpha( const eeFloat& alpha ) {
 	mFontColor.Alpha = (Uint8)alpha;
 	mFontShadowColor.Alpha = (Uint8)alpha;
 
-	mTextCache->Color( mFontColor );
+	mTextCache->Alpha( mFontColor.Alpha );
 }
 
 void cUITextBox::AutoShrink() {

@@ -57,6 +57,10 @@ class EE_API cTextCache {
 		/** Set the color of the string rendered */
 		void Color(const eeColorA& color);
 
+		/** @see Set the alpha of each individual character.
+		**	This doesn't break any custom color per-character setted. */
+		void Alpha( const Uint8& alpha );
+
 		/** Set the color of the substring
 		* @param color The color
 		* @param from The first char to change the color

@@ -84,6 +84,13 @@ const eeColorA& cTextCache::Color() const {
 	return mFontColor;
 }
 
+void cTextCache::Alpha( const Uint8& alpha ) {
+	std::size_t s = mText.size();
+	for ( Uint32 i = 0; i < s; i++ ) {
+		mColors[ i ].Alpha = alpha;
+	}
+}
+
 void cTextCache::Color( const eeColorA& color ) {
 	if ( mFontColor != color ) {
 		mFontColor = color;

@@ -252,7 +252,7 @@ void cEETest::CreateUI() {
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.Elapsed().AsMilliseconds() );
 
-	cUIManager::instance()->Init(UI_MANAGER_HIGHLIGHT_FOCUS); //UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
+	cUIManager::instance()->Init(); //UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
 
 	//mTheme = cUITheme::LoadFromPath( eeNew( cUIDefaultTheme, ( "uitheme", "uitheme" ) ), MyPath + "uitheme/" );
 
