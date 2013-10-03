@@ -239,6 +239,7 @@ class EE_API cUIControl {
 	protected:
 		typedef std::map< Uint32, std::map<Uint32, UIEventCallback> > UIEventsMap;
 		friend class cUIManager;
+		friend class cUIWindow;
 
 		eeVector2i		mPos;
 		eeVector2i		mScreenPos;

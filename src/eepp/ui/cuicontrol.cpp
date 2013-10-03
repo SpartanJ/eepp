@@ -1168,7 +1168,7 @@ cUIControl * cUIControl::NextComplexControl() {
 	cUIControl * ChildLoop	= mChild;
 
 	while( NULL != ChildLoop ) {
-		if ( ChildLoop->Visible() ) {
+		if ( ChildLoop->Visible() && ChildLoop->Enabled() ) {
 			if ( ChildLoop->IsComplex() ) {
 				return ChildLoop;
 			} else {
@@ -1184,7 +1184,7 @@ cUIControl * cUIControl::NextComplexControl() {
 	}
 
 	if ( NULL != mNext ) {
-		if ( mNext->Visible() && mNext->IsComplex() ) {
+		if ( mNext->Visible() && mNext->Enabled() && mNext->IsComplex() ) {
 			return mNext;
 		} else {
 			return mNext->NextComplexControl();
@@ -1194,7 +1194,7 @@ cUIControl * cUIControl::NextComplexControl() {
 
 		while ( NULL != ChildLoop ) {
 			if ( NULL != ChildLoop->mNext ) {
-				if ( ChildLoop->mNext->Visible() && ChildLoop->mNext->IsComplex() ) {
+				if ( ChildLoop->mNext->Visible() && ChildLoop->mNext->Enabled() && ChildLoop->mNext->IsComplex() ) {
 					return ChildLoop->mNext;
 				} else {
 					return ChildLoop->mNext->NextComplexControl();

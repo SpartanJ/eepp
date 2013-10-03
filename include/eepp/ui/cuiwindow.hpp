@@ -74,6 +74,8 @@ class EE_API cUIWindow : public cUIComplexControl {
 
 		virtual void CloseWindow();
 
+		virtual void Close();
+
 		void BaseAlpha( const Uint8& Alpha );
 
 		const Uint8& BaseAlpha() const;
@@ -206,6 +208,10 @@ class EE_API cUIWindow : public cUIComplexControl {
 		KeyboardShortcuts::iterator ExistsShortcut( const Uint32& KeyCode, const Uint32& Mod );
 
 		void CreateModalControl();
+
+		void EnableByModal();
+
+		void DisableByModal();
 };
 
 }}

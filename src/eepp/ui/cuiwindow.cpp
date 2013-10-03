@@ -117,6 +117,46 @@ void cUIWindow::CreateModalControl() {
 	if ( NULL == mModalCtrl ) {
 		cUIControl * Ctrl = cUIManager::instance()->MainControl();
 		mModalCtrl = eeNew( cUIControlAnim, ( cUIControlAnim::CreateParams( Ctrl , eeVector2i(0,0), Ctrl->Size(), UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) );
+
+		DisableByModal();
+	}
+}
+
+void cUIWindow::EnableByModal() {
+	if ( IsModal() ) {
+		cUIControl * CtrlChild = cUIManager::instance()->MainControl()->ChildGetFirst();
+
+		while ( NULL != CtrlChild )
+		{
+			if ( CtrlChild != mModalCtrl &&
+				 CtrlChild != this &&
+				 CtrlChild->ControlFlags() & UI_CTRL_FLAG_DISABLED_BY_MODAL_WINDOW )
+			{
+				CtrlChild->Enabled( true );
+				CtrlChild->WriteCtrlFlag( UI_CTRL_FLAG_DISABLED_BY_MODAL_WINDOW, 0 );
+			}
+
+			CtrlChild = CtrlChild->NextGet();
+		}
+	}
+}
+
+void cUIWindow::DisableByModal() {
+	if ( IsModal() ) {
+		cUIControl * CtrlChild = cUIManager::instance()->MainControl()->ChildGetFirst();
+
+		while ( NULL != CtrlChild )
+		{
+			if ( CtrlChild != mModalCtrl &&
+				 CtrlChild != this &&
+				 CtrlChild->Enabled() )
+			{
+				CtrlChild->Enabled( false );
+				CtrlChild->WriteCtrlFlag( UI_CTRL_FLAG_DISABLED_BY_MODAL_WINDOW, 1 );
+			}
+
+			CtrlChild = CtrlChild->NextGet();
+		}
 	}
 }
 
@@ -163,6 +203,12 @@ void cUIWindow::CloseWindow() {
 		CloseFadeOut( cUIThemeManager::instance()->ControlsFadeOutTime() );
 	else
 		Close();
+}
+
+void cUIWindow::Close() {
+	cUIComplexControl::Close();
+
+	EnableByModal();
 }
 
 void cUIWindow::ButtonMaximizeClick( const cUIEvent * Event ) {

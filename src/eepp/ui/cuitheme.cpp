@@ -485,7 +485,7 @@ cUITextBox * cUITheme::CreateTextBox( const String& Text, cUIControl * Parent, c
 	TextBoxParams.Flags = Flags;
 	cUITextBox * Ctrl = eeNew( cUITextBox, ( TextBoxParams ) );
 	Ctrl->Visible( true );
-	Ctrl->Enabled( true );
+	Ctrl->Enabled( false );
 	Ctrl->Text( Text );
 	return Ctrl;
 }
