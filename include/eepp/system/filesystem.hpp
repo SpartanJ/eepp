@@ -72,10 +72,10 @@ class EE_API FileSystem {
 		static std::string RemoveLastFolderFromPath( std::string path );
 
 		/** @return The files and sub directories contained by a directory */
-		static std::vector<std::string> FilesGetInPath( const std::string& path );
+		static std::vector<std::string> FilesGetInPath( const std::string& path, const bool& sortByName = false, const bool& foldersFirst = false );
 
 		/** @return The files and sub directories contained by a directory */
-		static std::vector<String> FilesGetInPath( const String& path );
+		static std::vector<String> FilesGetInPath( const String& path, const bool& sortByName = false, const bool& foldersFirst = false );
 
 		/** @return The size of a file */
 		static Uint64 FileSize( const std::string& Filepath );

@@ -174,10 +174,10 @@ void cConsole::Draw() {
 			mPri.SetColor( eeColorA( mConLineColor.R(), mConLineColor.G(), mConLineColor.B(), static_cast<Uint8>(mA) ) );
 			mPri.DrawRectangle( eeRectf( eeVector2f( 0.0f, mY ), eeSizef( mWidth, 4.0f ) ) );
 
-			Int16 LinesInScreen = (Int16) ( (mCurHeight / mFontSize) - 1 );
+			Int32 linesInScreen = LinesInScreen();
 
-			if ( static_cast<Int16>( mCmdLog.size() ) > LinesInScreen )
-				mEx = (Uint32) ( mCmdLog.size() - LinesInScreen );
+			if ( static_cast<Int32>( mCmdLog.size() ) > linesInScreen )
+				mEx = (Uint32) ( mCmdLog.size() - linesInScreen );
 			else
 				mEx = 0;
 			mTempY = -mCurHeight;
@@ -411,55 +411,117 @@ void cConsole::PrivVideoResize( cWindow * win ) {
 	}
 }
 
+void cConsole::GetFilesFrom( std::string txt, const Uint32& curPos ) {
+	static char OSSlash = FileSystem::GetOSlash().at(0);
+	size_t pos;
+
+	if ( std::string::npos != ( pos = txt.find_last_of( OSSlash ) ) && pos <= curPos ) {
+		size_t fpos = txt.find_first_of( OSSlash );
+
+		std::string dir( txt.substr( fpos, pos - fpos + 1 ) );
+		std::string file( txt.substr( pos + 1 ) );
+
+		if ( FileSystem::IsDirectory( dir ) ) {
+			size_t count = 0, lasti = 0;
+			std::vector<std::string> files = FileSystem::FilesGetInPath( dir, true, true );
+			String res;
+
+			for ( size_t i = 0; i < files.size(); i++ ) {
+				if ( !file.size() || -1 != String::StartsWith( file, files[i] ) ) {
+					res += "\t" + files[i] + "\n";
+					count++;
+					lasti = i;
+				}
+			}
+
+			if ( count == 1 ) {
+				std::string slash = "";
+
+				if ( FileSystem::IsDirectory( dir + files[lasti] ) ) {
+					slash = FileSystem::GetOSlash();
+				}
+
+				mTBuf->Buffer( mTBuf->Buffer().substr( 0, pos + 1 ) + files[lasti] + slash );
+				mTBuf->CursorToEnd();
+			} else if ( count > 1 ) {
+				PrivPushText( "Directory file list:" );
+				PushText( res );
+			}
+		}
+	}
+}
+
+Int32 cConsole::LinesInScreen() {
+	return static_cast<Int32> ( (mCurHeight / mFontSize) - 1 );
+}
+
 void cConsole::PrivInputCallback( InputEvent * Event ) {
 	Uint8 etype = Event->Type;
 
 	if ( mVisible ) {
 		Uint32 KeyCode	= (Uint32)Event->key.keysym.sym;
+		Uint32 KeyMod	= (Uint32)Event->key.keysym.mod;
 		Uint32 Button	= Event->button.button;
 
 		if ( InputEvent::KeyDown == etype ) {
 			if ( ( KeyCode == KEY_TAB ) && (eeUint)mTBuf->CurPos() == mTBuf->Buffer().size() ) {
 				PrintCommandsStartingWith( mTBuf->Buffer() );
+				GetFilesFrom( mTBuf->Buffer().ToUtf8(), mTBuf->CurPos() );
 			}
 
-			if ( mLastCommands.size() > 0 ) {
-				if ( KeyCode == KEY_UP && mLastLogPos > 0 ) {
-					mLastLogPos--;
+			if ( KeyMod & KEYMOD_SHIFT ) {
+				if (  KeyCode == KEY_UP ) {
+					if ( mCon.ConMin - mCon.ConModif > 0 )
+						mCon.ConModif++;
 				}
 
-				if ( KeyCode == KEY_DOWN && mLastLogPos < static_cast<eeInt>( mLastCommands.size() ) ) {
-					mLastLogPos++;
+				if ( KeyCode == KEY_DOWN ) {
+					if ( mCon.ConModif > 0 )
+						mCon.ConModif--;
 				}
 
-				if ( KeyCode == KEY_UP || KeyCode == KEY_DOWN ) {
-					if ( mLastLogPos == static_cast<eeInt>( mLastCommands.size() ) ) {
-						mTBuf->Buffer( "" );
-					} else {
-						mTBuf->Buffer( mLastCommands[mLastLogPos] );
-						mTBuf->CursorToEnd();
+				if ( KeyCode == KEY_HOME ) {
+					if ( static_cast<Int32>( mCmdLog.size() ) > LinesInScreen() )
+						mCon.ConModif = mCon.ConMin;
+				}
+
+				if ( KeyCode == KEY_END ) {
+					mCon.ConModif = 0;
+				}
+
+				if ( KeyCode == KEY_PAGEUP ) {
+					if ( mCon.ConMin - mCon.ConModif - LinesInScreen() / 2 > 0 )
+						mCon.ConModif+=LinesInScreen() / 2;
+					else
+						mCon.ConModif = mCon.ConMin;
+				}
+
+				if ( KeyCode == KEY_PAGEDOWN ) {
+					if ( mCon.ConModif - LinesInScreen() / 2 > 0 )
+						mCon.ConModif-=LinesInScreen() / 2;
+					else
+						mCon.ConModif = 0;
+				}
+			} else {
+				if ( mLastCommands.size() > 0 ) {
+					if ( KeyCode == KEY_UP && mLastLogPos > 0 ) {
+						mLastLogPos--;
+					}
+
+					if ( KeyCode == KEY_DOWN && mLastLogPos < static_cast<eeInt>( mLastCommands.size() ) ) {
+						mLastLogPos++;
+					}
+
+					if ( KeyCode == KEY_UP || KeyCode == KEY_DOWN ) {
+						if ( mLastLogPos == static_cast<eeInt>( mLastCommands.size() ) ) {
+							mTBuf->Buffer( "" );
+						} else {
+							mTBuf->Buffer( mLastCommands[mLastLogPos] );
+							mTBuf->CursorToEnd();
+						}
 					}
 				}
-			}
 
-			if ( KeyCode == KEY_PAGEUP ) {
-				if ( mCon.ConMin - mCon.ConModif > 0 )
-					mCon.ConModif++;
-			}
-
-			if ( KeyCode == KEY_PAGEDOWN ) {
-				if ( mCon.ConModif > 0 )
-					mCon.ConModif--;
-			}
-
-			if ( KeyCode == KEY_HOME ) {
-				Int16 LinesInScreen = static_cast<Int16> ( (mCurHeight / mFontSize) - 1 );
-				if ( static_cast<Int16>( mCmdLog.size() ) > LinesInScreen )
-					mCon.ConModif = mCon.ConMin;
-			}
-
-			if ( KeyCode == KEY_END ) {
-				mCon.ConModif = 0;
 			}
 		} else if ( InputEvent::MouseButtonUp == etype ) {
 			if ( Button == EE_BUTTON_WHEELUP ) {

@@ -483,6 +483,17 @@ void cTextureLoader::LoadFromPixels() {
 					mSize -= 16;	// Remove the PKM header size
 				} else {
 					mSize	= mWidth * mHeight * mChannels;
+
+					if( mMipmap ) {
+						int w = mWidth;
+						int h = mHeight;
+
+						while( w > 2 && h > 2 ) {
+							w>>=1;
+							h>>=1;
+							mSize += ( w * h * mChannels );
+						}
+					}
 				}
 
 				mTexId = cTextureFactory::instance()->PushTexture( mFilepath, tTexId, width, height, mImgWidth, mImgHeight, mMipmap, mChannels, mClampMode, mCompressTexture || mIsCompressed, mLocalCopy, mSize );

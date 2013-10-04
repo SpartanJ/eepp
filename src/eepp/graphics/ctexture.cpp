@@ -346,8 +346,26 @@ void cTexture::Reload()  {
 				mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8 *> ( &mPixels[0] ), &width, &height, mChannels, mTexture, flags | SOIL_FLAG_COMPRESS_TO_DXT );
 			else
 				glCompressedTexImage2D( mTexture, 0, mInternalFormat, width, height, 0, mSize, &mPixels[0] );
-		} else
+		} else {
 			mTexture = SOIL_create_OGL_texture( reinterpret_cast<Uint8 *> ( &mPixels[0] ), &width, &height, mChannels, mTexture, flags );
+
+			cTextureFactory::instance()->mMemSize -= mSize;
+
+			mSize = mWidth * mHeight * mChannels;
+
+			if ( Mipmap() ) {
+				int w = mWidth;
+				int h = mHeight;
+
+				while( w > 2 && h > 2 ) {
+					w>>=1;
+					h>>=1;
+					mSize += ( w * h * mChannels );
+				}
+			}
+
+			cTextureFactory::instance()->mMemSize += mSize;
+		}
 
 		iTextureFilter( mFilter );
 	} else {

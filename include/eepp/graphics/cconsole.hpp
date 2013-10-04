@@ -246,6 +246,10 @@ class EE_API cConsole : protected iLogReader {
 		void PrivVideoResize( cWindow * win );
 
 		void WriteLog( const std::string& Text );
+
+		void GetFilesFrom( std::string txt, const Uint32& curPos );
+
+		Int32 LinesInScreen();
 };
 
 }}

@@ -2,6 +2,8 @@
 #include <eepp/system/ciostreamfile.hpp>
 #include <eepp/system/sys.hpp>
 #include <sys/stat.h>
+#include <list>
+#include <algorithm>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	#ifndef WIN32_LEAN_AND_MEAN
@@ -218,7 +220,7 @@ bool FileSystem::IsDirectory( const std::string& path ) {
 }
 
 bool FileSystem::MakeDir( const std::string& path, const Uint16& mode ) {
-    Int16 v;
+	Int16 v;
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	#ifdef EE_COMPILER_MSVC
 	v = _mkdir( path.c_str() );
@@ -228,10 +230,10 @@ bool FileSystem::MakeDir( const std::string& path, const Uint16& mode ) {
 #else
 	v = mkdir( path.c_str(), mode );
 #endif
-    return v == 0;
+	return v == 0;
 }
 
-std::vector<String> FileSystem::FilesGetInPath( const String& path ) {
+std::vector<String> FileSystem::FilesGetInPath( const String& path, const bool& sortByName, const bool& foldersFirst ) {
 	std::vector<String> files;
 
 #ifdef EE_COMPILER_MSVC
@@ -263,18 +265,18 @@ std::vector<String> FileSystem::FilesGetInPath( const String& path ) {
 			FindClose( hFind );
 		}
 	#else
-        String mPath( path );
+		String mPath( path );
 
 		if ( mPath[ mPath.size() - 1 ] == '/' || mPath[ mPath.size() - 1 ] == '\\' ) {
 				mPath += "*";
-        } else {
+		} else {
 				mPath += "\\*";
-        }
+		}
 
-        WIN32_FIND_DATA findFileData;
+		WIN32_FIND_DATA findFileData;
 		HANDLE hFind = FindFirstFile( (LPCTSTR) mPath.ToAnsiString().c_str(), &findFileData );
 
-        if( hFind != INVALID_HANDLE_VALUE ) {
+		if( hFind != INVALID_HANDLE_VALUE ) {
 			String tmpstr( String::FromUtf8( findFileData.cFileName ) );
 
 			if ( tmpstr != "." && tmpstr != ".." )
@@ -288,15 +290,13 @@ std::vector<String> FileSystem::FilesGetInPath( const String& path ) {
 			}
 
 			FindClose( hFind );
-        }
+		}
 	#endif
-
-	return files;
 #else
 	DIR *dp;
 	struct dirent *dirp;
 
-	if( ( dp = opendir( path.ToUtf8().c_str() ) ) == NULL)
+	if( ( dp = opendir( path.ToUtf8().c_str() ) ) == NULL )
 		return files;
 
 	while ( ( dirp = readdir(dp) ) != NULL) {
@@ -316,12 +316,46 @@ std::vector<String> FileSystem::FilesGetInPath( const String& path ) {
 	}
 
 	closedir(dp);
+#endif
+
+	if ( sortByName == true )
+	{
+		std::sort( files.begin(), files.end() );
+	}
+
+	if ( foldersFirst == true )
+	{
+		String fpath( path );
+
+		if ( fpath[ fpath.size() - 1 ] != '/' && fpath[ fpath.size() - 1 ] != '\\' )
+			fpath += GetOSlash();
+
+		std::list<String> folders;
+		std::list<String> file;
+
+		for ( size_t i = 0; i < files.size(); i++ ) {
+			if ( FileSystem::IsDirectory( fpath + files[i] ) ) {
+				folders.push_back( files[i] );
+			} else {
+				file.push_back( files[i] );
+			}
+		}
+
+		files.clear();
+
+		std::list<String>::iterator it;
+
+		for ( it = folders.begin(); it != folders.end(); it++ )
+			files.push_back( *it );
+
+		for ( it = file.begin(); it != file.end(); it++ )
+			files.push_back( *it );
+	}
 
 	return files;
-#endif
 }
 
-std::vector<std::string> FileSystem::FilesGetInPath( const std::string& path ) {
+std::vector<std::string> FileSystem::FilesGetInPath( const std::string& path, const bool& sortByName, const bool& foldersFirst ) {
 	std::vector<std::string> files;
 
 #ifdef EE_COMPILER_MSVC
@@ -380,8 +414,6 @@ std::vector<std::string> FileSystem::FilesGetInPath( const std::string& path ) {
 				FindClose( hFind );
 		}
 	#endif
-
-	return files;
 #else
 	DIR *dp;
 	struct dirent *dirp;
@@ -395,9 +427,43 @@ std::vector<std::string> FileSystem::FilesGetInPath( const std::string& path ) {
 	}
 
 	closedir(dp);
+#endif
+
+	if ( sortByName == true )
+	{
+		std::sort( files.begin(), files.end() );
+	}
+
+	if ( foldersFirst == true )
+	{
+		String fpath( path );
+
+		if ( fpath[ fpath.size() - 1 ] != '/' && fpath[ fpath.size() - 1 ] != '\\' )
+			fpath += GetOSlash();
+
+		std::list<String> folders;
+		std::list<String> file;
+
+		for ( size_t i = 0; i < files.size(); i++ ) {
+			if ( FileSystem::IsDirectory( fpath + files[i] ) ) {
+				folders.push_back( files[i] );
+			} else {
+				file.push_back( files[i] );
+			}
+		}
+
+		files.clear();
+
+		std::list<String>::iterator it;
+
+		for ( it = folders.begin(); it != folders.end(); it++ )
+			files.push_back( *it );
+
+		for ( it = file.begin(); it != file.end(); it++ )
+			files.push_back( *it );
+	}
 
 	return files;
-#endif
 }
 
 Uint64 FileSystem::FileSize( const std::string& Filepath ) {

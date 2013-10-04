@@ -162,9 +162,6 @@ class EE_API cTextureFactory : protected cMutex {
 		/** @return The memory used by the textures (in bytes) */
 		eeUint MemorySize() { return mMemSize; }
 
-		/** @return The texture size in memory (in bytes) */
-		eeUint GetTexMemSize( const eeUint& TexId );
-
 		/** It's possible to create textures outside the texture factory loader, but the library will need to know of this texture, so it's necessary to push the texture to the factory.
 		* @param Filepath The Texture path ( if exists )
 		* @param TexId The OpenGL Texture Id

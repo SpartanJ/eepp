@@ -660,3 +660,4 @@
 ../../src/eepp/system/platform/posix/cthreadlocalimpl.hpp
 ../../src/eepp/system/platform/posix/cthreadlocalimpl.cpp
 ../../include/eepp/system/tthreadlocalptr.hpp
+../../external_projects.lua

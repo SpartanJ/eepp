@@ -150,7 +150,7 @@ bool cTextureFactory::Remove( Uint32 TexId ) {
 }
 
 void cTextureFactory::RemoveReference( cTexture * Tex ) {
-	mMemSize -= GetTexMemSize( Tex->Id() );
+	mMemSize -= Tex->MemSize();
 
 	GLint glTexId = Tex->Handle();
 
@@ -270,41 +270,6 @@ void cTextureFactory::Allocate( const eeUint& size ) {
 		for ( eeUint i = 1; i < mTextures.size(); i++ )
 			mVectorFreeSlots.push_back( i );
 	}
-}
-
-eeUint cTextureFactory::GetTexMemSize( const eeUint& TexId ) {
-	eeUint Size = 0;
-
-	if ( TexId < mTextures.size() && TexId > 0 ) {
-		cTexture* Tex = mTextures[ TexId ];
-
-		if ( Tex != NULL ) {
-			if ( !Tex->IsCompressed() ) {
-				eeUint w = Tex->Width();
-				eeUint h = Tex->Height();
-				eeUint c = Tex->Channels();
-
-				if ( 0 != Tex->MemSize() )
-					Size = Tex->MemSize();
-				else
-					Size = ( w * h * c );
-
-				if( Tex->Mipmap() ) {
-					while( w > 2 && h > 2 ) {
-						w>>=1;
-						h>>=1;
-						Size += ( w * h * c );
-					}
-				}
-			} else {
-				Size = Tex->MemSize();
-			}
-		}
-
-		return Size;
-	}
-
-	return 0;
 }
 
 cTexture * cTextureFactory::GetByName( const std::string& Name ) {
