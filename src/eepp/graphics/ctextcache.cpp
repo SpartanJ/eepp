@@ -85,7 +85,7 @@ const eeColorA& cTextCache::Color() const {
 }
 
 void cTextCache::Alpha( const Uint8& alpha ) {
-	std::size_t s = mText.size();
+	std::size_t s = mColors.size();
 	for ( Uint32 i = 0; i < s; i++ ) {
 		mColors[ i ].Alpha = alpha;
 	}
