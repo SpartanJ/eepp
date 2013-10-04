@@ -85,19 +85,27 @@ cUITextBox * cTextureAtlasNew::CreateTxtBox( eeVector2i Pos, const String& Text 
 }
 
 void cTextureAtlasNew::OKClick( const cUIEvent * Event ) {
-	std::string ext( mSaveFileType->Text() );
-	String::ToLower( ext );
+	const cUIEventMouse * MouseEvent = reinterpret_cast<const cUIEventMouse*>( Event );
 
-	cUICommonDialog * TGDialog = mTheme->CreateCommonDialog( NULL, eeSize(), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, eeSize(), 255, UI_CDL_DEFAULT_FLAGS | CDL_FLAG_SAVE_DIALOG, "*." + ext );
+	if ( MouseEvent->Flags() & EE_BUTTON_LMASK ) {
+		std::string ext( mSaveFileType->Text() );
+		String::ToLower( ext );
 
-	TGDialog->Title( "Save Texture Atlas" );
-	TGDialog->AddEventListener( cUIEvent::EventSaveFile, cb::Make1( this, &cTextureAtlasNew::TextureAtlasSave ) );
-	TGDialog->Center();
-	TGDialog->Show();
+		cUICommonDialog * TGDialog = mTheme->CreateCommonDialog( NULL, eeSize(), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, eeSize(), 255, UI_CDL_DEFAULT_FLAGS | CDL_FLAG_SAVE_DIALOG, "*." + ext );
+
+		TGDialog->Title( "Save Texture Atlas" );
+		TGDialog->AddEventListener( cUIEvent::EventSaveFile, cb::Make1( this, &cTextureAtlasNew::TextureAtlasSave ) );
+		TGDialog->Center();
+		TGDialog->Show();
+	}
 }
 
 void cTextureAtlasNew::CancelClick( const cUIEvent * Event ) {
-	mUIWindow->CloseWindow();
+	const cUIEventMouse * MouseEvent = reinterpret_cast<const cUIEventMouse*>( Event );
+
+	if ( MouseEvent->Flags() & EE_BUTTON_LMASK ) {
+		mUIWindow->CloseWindow();
+	}
 }
 
 void cTextureAtlasNew::WindowClose( const cUIEvent * Event ) {

@@ -280,6 +280,10 @@ void cTextureLoader::LoadFromPath() {
 			mIsCompressed =  mDirectUpload = true;
 			stbi_pkm_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels );
 		} else {
+			if ( mCompressTexture ) {
+				mSize		= FileSystem::FileSize( mFilepath );
+			}
+
 			mPixels = stbi_load( mFilepath.c_str(), &mImgWidth, &mImgHeight, &mChannels, ( NULL != mColorKey ) ? STBI_rgb_alpha : STBI_default );
 		}
 
@@ -471,7 +475,7 @@ void cTextureLoader::LoadFromPixels() {
 				mWidth	= width;
 				mHeight	= height;
 
-				if ( STBI_dds == mImgType && mIsCompressed && mSize > 128 ) {
+				if ( ( ( STBI_dds == mImgType && mIsCompressed ) || mCompressTexture ) && mSize > 128 ) {
 					mSize -= 128;	// Remove the DDS header size
 				} else if ( STBI_pvr == mImgType && mIsCompressed && mSize > 52 ) {
 					mSize -= 52;	// Remove the PVR header size
