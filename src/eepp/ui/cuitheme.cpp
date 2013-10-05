@@ -22,6 +22,7 @@
 #include <eepp/ui/cuitextbox.hpp>
 #include <eepp/ui/cuitextedit.hpp>
 #include <eepp/ui/cuitextinput.hpp>
+#include <eepp/ui/cuitextinputpassword.hpp>
 #include <eepp/ui/cuitooltip.hpp>
 #include <eepp/ui/cuiwindow.hpp>
 #include <eepp/ui/cuiwinmenu.hpp>
@@ -526,6 +527,20 @@ cUITextInput * cUITheme::CreateTextInput( cUIControl * Parent, const eeSize& Siz
 	TextInputParams.SupportFreeEditing = SupportFreeEditing;
 	TextInputParams.MaxLength = MaxLength;
 	cUITextInput * Ctrl = eeNew( cUITextInput, ( TextInputParams ) );
+	Ctrl->Visible( true );
+	Ctrl->Enabled( true );
+	return Ctrl;
+}
+
+cUITextInputPassword * cUITheme::CreateTextInputPassword( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool SupportFreeEditing, Uint32 MaxLength ) {
+	cUITextInput::CreateParams TextInputParams;
+	TextInputParams.Parent( Parent );
+	TextInputParams.PosSet( Pos );
+	TextInputParams.SizeSet( Size );
+	TextInputParams.Flags = Flags;
+	TextInputParams.SupportFreeEditing = SupportFreeEditing;
+	TextInputParams.MaxLength = MaxLength;
+	cUITextInputPassword * Ctrl = eeNew( cUITextInputPassword, ( TextInputParams ) );
 	Ctrl->Visible( true );
 	Ctrl->Enabled( true );
 	return Ctrl;

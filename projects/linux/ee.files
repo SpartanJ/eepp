@@ -661,3 +661,5 @@
 ../../src/eepp/system/platform/posix/cthreadlocalimpl.cpp
 ../../include/eepp/system/tthreadlocalptr.hpp
 ../../external_projects.lua
+../../src/eepp/ui/cuitextinputpassword.cpp
+../../include/eepp/ui/cuitextinputpassword.hpp

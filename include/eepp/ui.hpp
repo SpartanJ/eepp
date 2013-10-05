@@ -19,6 +19,7 @@
 #include <eepp/ui/cuigfx.hpp>
 #include <eepp/ui/cuitextbox.hpp>
 #include <eepp/ui/cuitextinput.hpp>
+#include <eepp/ui/cuitextinputpassword.hpp>
 #include <eepp/ui/cuipushbutton.hpp>
 #include <eepp/ui/cuicheckbox.hpp>
 #include <eepp/ui/cuiradiobutton.hpp>

@@ -53,10 +53,6 @@ class EE_API cUITextInput : public cUITextBox {
 		virtual void Text( const String& text );
 
 		virtual void ShrinkText( const Uint32& MaxWidth );
-
-		const bool& PasswordInput() const;
-
-		void PasswordInput( bool pass );
 	protected:
 		cInputTextBuffer	mTextBuffer;
 		eeFloat				mWaitCursorTime;
@@ -64,11 +60,10 @@ class EE_API cUITextInput : public cUITextBox {
 		eeInt				mCursorPos;
 		bool				mAllowEditing;
 		bool				mShowingWait;
-		bool				mPassInput;
 
 		void ResetWaitCursor();
 
-		void AlignFix();
+		virtual void AlignFix();
 
 		virtual void AutoSize();
 
@@ -83,6 +78,10 @@ class EE_API cUITextInput : public cUITextBox {
 		virtual Uint32 OnPressEnter();
 
 		virtual void OnCursorPosChange();
+
+		void DrawWaitingCursor();
+
+		virtual void UpdateText();
 };
 
 }}
