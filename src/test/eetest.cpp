@@ -289,7 +289,7 @@ void cEETest::CreateUI() {
 	Child->Visible( true );
 	Child->Enabled( true );
 	Child->StartRotation( 0.f, 360.f, Milliseconds( 5000.f ) );
-	Child->AngleInterpolation()->Loop( true );
+	Child->RotationInterpolation()->Loop( true );
 
 	Params.Background.Colors( eeColorA( 0xFFFF0077 ), eeColorA( 0xCCCC0077 ), eeColorA( 0xCCCC0077 ), eeColorA( 0xFFFF0077 ) );
 	Params.Parent( Child );
@@ -299,7 +299,7 @@ void cEETest::CreateUI() {
 	Child2->Visible( true );
 	Child2->Enabled( true );
 	Child2->StartRotation( 0.f, 360.f, Milliseconds( 5000.f ) );
-	Child2->AngleInterpolation()->Loop( true );
+	Child2->RotationInterpolation()->Loop( true );
 
 	mTheme->CreateSprite( eeNew( cSprite, ( "gn" ) ), C, eeSize(), eeVector2i( 160, 100 ) );
 
@@ -834,7 +834,7 @@ void cEETest::LoadTextures() {
 	TNP.resize(12);
 
 	for ( i = 0; i <= 6; i++ ) {
-		TN[i] = TF->Load( MyPath + "sprites/" + String::ToStr(i+1) + ".png", false, ( (i+1) == 4 ) ? CLAMP_REPEAT : CLAMP_TO_EDGE );
+		TN[i] = TF->Load( MyPath + "sprites/" + String::ToStr(i+1) + ".png", (i+1) == 7 ? true : false, ( (i+1) == 4 ) ? CLAMP_REPEAT : CLAMP_TO_EDGE );
 		TNP[i] = TF->GetTexture( TN[i] );
 	}
 

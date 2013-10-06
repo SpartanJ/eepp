@@ -11,13 +11,13 @@ void spriteCallback( Uint32 Event, cSprite * Sprite, void * UserData ) {
 		Sprite->FireEvent( USER_SPRITE_EVENT );
 	} else if ( Event == USER_SPRITE_EVENT ) {
 		// Create an interpolation to change the angle of the sprite
-		cInterpolation * AngleInterpolation = reinterpret_cast<cInterpolation*>( UserData );
-		AngleInterpolation->ClearWaypoints();
-		AngleInterpolation->AddWaypoint( Sprite->Angle() );
-		AngleInterpolation->AddWaypoint( Sprite->Angle() + 45.f );
-		AngleInterpolation->SetTotalTime( Milliseconds( 500 ) );
-		AngleInterpolation->Type( Ease::BounceOut ); // Set the easing effect used for the interpolation
-		AngleInterpolation->Start();
+		cInterpolation * RotationInterpolation = reinterpret_cast<cInterpolation*>( UserData );
+		RotationInterpolation->ClearWaypoints();
+		RotationInterpolation->AddWaypoint( Sprite->Angle() );
+		RotationInterpolation->AddWaypoint( Sprite->Angle() + 45.f );
+		RotationInterpolation->SetTotalTime( Milliseconds( 500 ) );
+		RotationInterpolation->Type( Ease::BounceOut ); // Set the easing effect used for the interpolation
+		RotationInterpolation->Start();
 
 		// Scale the sprite
 		if ( Sprite->Scale() < 3 ) {

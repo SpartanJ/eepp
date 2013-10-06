@@ -96,6 +96,10 @@ cWindowSDL::~cWindowSDL() {
 		SDL_GL_DeleteContext( mGLContextThread );
 	}
 
+	if ( NULL != mSDLWindow ) {
+		SDL_DestroyWindow( mSDLWindow );
+	}
+
 #ifdef EE_USE_WMINFO
 	eeSAFE_DELETE( mWMinfo );
 #endif
@@ -204,7 +208,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 		}
 	#else
 		/** @todo Add OpenGL Core Profile support? */
-		/**if ( GLv_3 == Context.Version ) {
+		/*if ( GLv_3 == Context.Version || GLv_ES2 == Context.Version ) {
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);

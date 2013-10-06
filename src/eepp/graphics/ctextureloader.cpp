@@ -423,7 +423,7 @@ void cTextureLoader::LoadFromPixels() {
 			int width	= mImgWidth;
 			int height	= mImgHeight;
 
-			Uint32 flags = mMipmap ? SOIL_FLAG_MIPMAPS : 0;
+			Uint32 flags = mMipmap ? SOIL_FLAG_MIPMAPS | SOIL_FLAG_GL_MIPMAPS : 0;
 
 			flags = ( mClampMode == CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 			flags = ( mCompressTexture ) ? ( flags | SOIL_FLAG_COMPRESS_TO_DXT ) : flags;

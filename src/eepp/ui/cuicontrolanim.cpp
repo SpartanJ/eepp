@@ -347,7 +347,7 @@ void cUIControlAnim::UpdateQuad() {
 	};
 }
 
-cInterpolation * cUIControlAnim::AngleInterpolation() {
+cInterpolation * cUIControlAnim::RotationInterpolation() {
 	if ( NULL == mAngleAnim )
 		mAngleAnim = eeNew( cInterpolation, () );
 

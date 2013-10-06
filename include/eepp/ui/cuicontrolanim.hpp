@@ -51,7 +51,7 @@ class EE_API cUIControlAnim : public cUIDragable {
 
 		void DisableFadeOut( const cTime & Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
 
-		cInterpolation * AngleInterpolation();
+		cInterpolation * RotationInterpolation();
 
 		cInterpolation * ScaleInterpolation();
 

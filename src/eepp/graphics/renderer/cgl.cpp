@@ -2,6 +2,7 @@
 #include <eepp/graphics/renderer/crenderergl.hpp>
 #include <eepp/graphics/renderer/crenderergl3.hpp>
 #include <eepp/graphics/renderer/crenderergles2.hpp>
+#include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
 
 namespace EE { namespace Graphics {
 
@@ -151,6 +152,10 @@ void cGL::Init() {
 		WriteExtension( EEGL_EXT_blend_func_separate		, IsExtension( "GL_EXT_blend_func_separate" )		);
 	}
 
+	// NVIDIA added support for GL_OES_compressed_ETC1_RGB8_texture in desktop GPUs
+	// GLEW doesn't return the correct result
+	WriteExtension( EEGL_OES_compressed_ETC1_RGB8_texture	, SOIL_GL_ExtensionSupported( "GL_OES_compressed_ETC1_RGB8_texture" )	);
+
 	#ifdef EE_GLES
 
 	WriteExtension( EEGL_ARB_point_parameters				, 1													);
@@ -158,7 +163,6 @@ void cGL::Init() {
 	WriteExtension( EEGL_ARB_multitexture					, 1													);
 
 	WriteExtension( EEGL_IMG_texture_compression_pvrtc		, IsExtension( "GL_IMG_texture_compression_pvrtc" )	);
-	WriteExtension( EEGL_OES_compressed_ETC1_RGB8_texture	, IsExtension( "GL_OES_compressed_ETC1_RGB8_texture" )	);
 
 	if ( !IsExtension( EEGL_EXT_texture_compression_s3tc ) ) {
 		WriteExtension(	EEGL_EXT_texture_compression_s3tc	, IsExtension( "GL_OES_texture_compression_S3TC" )	);
@@ -193,13 +197,7 @@ bool cGL::IsExtension( const std::string& name ) {
 #ifdef EE_GLEW_AVAILABLE
 	return 0 != glewIsSupported( name.c_str() );
 #else
-	char *Exts = (char *)glGetString( GL_EXTENSIONS );
-
-	if ( NULL != Exts && strstr( Exts, name.c_str() ) ) {
-		return true;
-	}
-
-	return false;
+	return 0 != SOIL_GL_ExtensionSupported( name.c_str() );
 #endif
 }
 

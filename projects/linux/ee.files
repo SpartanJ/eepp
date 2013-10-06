@@ -663,3 +663,4 @@
 ../../external_projects.lua
 ../../src/eepp/ui/cuitextinputpassword.cpp
 ../../include/eepp/ui/cuitextinputpassword.hpp
+../../assets/ee.ini
