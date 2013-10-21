@@ -26,6 +26,7 @@ cTextureAtlasEditor::cTextureAtlasEditor( cUIWindow * AttatchTo, const TGEditorC
 
 	if ( NULL == mUIWindow ) {
 		mUIWindow = cUIManager::instance()->MainControl();
+		mUIWindow->SetSkinFromTheme( mTheme, "winback" );
 	}
 
 	if ( cUIManager::instance()->MainControl() == mUIWindow ) {

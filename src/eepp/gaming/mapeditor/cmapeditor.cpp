@@ -56,6 +56,7 @@ cMapEditor::cMapEditor( cUIWindow * AttatchTo, const MapEditorCloseCb& callback 
 
 	if ( NULL == mUIWindow ) {
 		mUIWindow = cUIManager::instance()->MainControl();
+		mUIWindow->SetSkinFromTheme( mTheme, "winback" );
 	}
 
 	if ( cUIManager::instance()->MainControl() == mUIWindow ) {

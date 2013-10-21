@@ -246,7 +246,7 @@ class EE_API cUIControl {
 		eeSize			mSize;
 
 		Uint32			mFlags;
-		Uint32 			mData;
+		UintPtr			mData;
 
 		cUIControl *	mParentCtrl;
 		cUIControl *	mChild;			//! Pointer to the first child of the control

@@ -190,6 +190,10 @@ backend_selected = false
 function build_base_configuration( package_name )
 	includedirs { "src/eepp/helper/zlib" }
 	
+	if not is_vs() then
+		buildoptions{ "-fPIC" }
+	end
+
 	configuration "debug"
 		defines { "DEBUG" }
 		flags { "Symbols" }
@@ -208,6 +212,10 @@ function build_base_configuration( package_name )
 end
 
 function build_base_cpp_configuration( package_name )
+	if not is_vs() then
+		buildoptions{ "-fPIC" }
+	end
+
 	configuration "debug"
 		defines { "DEBUG" }
 		flags { "Symbols" }

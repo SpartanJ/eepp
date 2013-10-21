@@ -17,20 +17,20 @@ void videoResize( cWindow * w ) {
 	tw			= (eeFloat)win->GetWidth()	/ 2;
 	th			= (eeFloat)win->GetHeight()	/ 2;
 
-	eeFloat fieldOfView	= 30.0;
-	eeFloat nearPlane	= 1.0;
-	eeFloat farPlane	= 10000.0;
-	eeFloat top			= nearPlane * eetan(fieldOfView * EE_PI_360);
-	eeFloat bottom		= -top;
-	eeFloat right		= top * aspectRatio;
-	eeFloat left		= -right;
+	GLfloat fieldOfView	= 30.0;
+	GLfloat nearPlane	= 1.0;
+	GLfloat farPlane	= 10000.0;
+	GLfloat top			= nearPlane * eetan(fieldOfView * EE_PI_360);
+	GLfloat bottom		= -top;
+	GLfloat right		= top * aspectRatio;
+	GLfloat left		= -right;
 
-	eeFloat a = (right + left) / (right - left);
-	eeFloat b = (top + bottom) / (top - bottom);
-	eeFloat c = (farPlane + nearPlane) / (farPlane - nearPlane);
-	eeFloat d = (2 * farPlane * nearPlane) / (farPlane - nearPlane);
-	eeFloat x = (2 * nearPlane) / (right - left);
-	eeFloat y = (2 * nearPlane) / (top - bottom);
+	GLfloat a = (right + left) / (right - left);
+	GLfloat b = (top + bottom) / (top - bottom);
+	GLfloat c = (farPlane + nearPlane) / (farPlane - nearPlane);
+	GLfloat d = (2 * farPlane * nearPlane) / (farPlane - nearPlane);
+	GLfloat x = (2 * nearPlane) / (right - left);
+	GLfloat y = (2 * nearPlane) / (top - bottom);
 
 	GLfloat perspectiveMatrix[16] = {
 		x, 0, a, 0,
