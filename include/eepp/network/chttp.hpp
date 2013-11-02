@@ -196,6 +196,12 @@ class EE_API cHttp : NonCopyable {
 			**  @param data Content of the response to parse */
 			void Parse(const std::string& data);
 
+			/** @brief Read values passed in the answer header
+			**  This function is used by Http to extract values passed
+			**  in the response.
+			**  @param in String stream containing the header values */
+			void ParseFields(std::istream &in);
+
 			// Types
 			typedef std::map<std::string, std::string> FieldTable;
 

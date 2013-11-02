@@ -10,10 +10,14 @@ namespace EE { namespace Network { namespace Private {
 
 sockaddr_in cSocketImpl::CreateAddress(Uint32 address, unsigned short port) {
 	sockaddr_in addr;
-	std::memset(addr.sin_zero, 0, sizeof(addr.sin_zero));
+	std::memset(&addr, 0, sizeof(addr));
 	addr.sin_addr.s_addr = htonl(address);
-	addr.sin_family	  = AF_INET;
+	addr.sin_family		= AF_INET;
 	addr.sin_port		= htons(port);
+
+#if EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_IOS
+	addr.sin_len = sizeof(addr);
+#endif
 
 	return addr;
 }

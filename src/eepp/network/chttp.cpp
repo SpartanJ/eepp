@@ -12,11 +12,6 @@ namespace {
 			*i = static_cast<char>(std::tolower(*i));
 		return str;
 	}
-
-	template<class InputIterator, class Size, class OutputIterator> OutputIterator copy_n(InputIterator in, Size n, OutputIterator out) {
-		for (Size i = 0; i < n; *out = *in, i++, ++out, ++in);
-		return out;
-	}
 }
 
 namespace EE { namespace Network {
@@ -158,9 +153,42 @@ void cHttp::Response::Parse(const std::string& data) {
 	}
 
 	// Ignore the end of the first line
-	in.ignore(10000, '\n');
+	in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
 	// Parse the other lines, which contain fields, one by one
+	ParseFields(in);
+
+	// Finally extract the body
+	mBody.clear();
+
+	// Determine whether the transfer is chunked
+	if (toLower(GetField("transfer-encoding")) != "chunked") {
+		// Not chunked - everything at once
+		std::copy(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>(), std::back_inserter(mBody));
+	} else {
+		// Chunked - have to read chunk by chunk
+		std::size_t length;
+
+		// Read all chunks, identified by a chunk-size not being 0
+		while (in >> std::hex >> length) {
+			// Drop the rest of the line (chunk-extension)
+			in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+			// Copy the actual content data
+			std::istreambuf_iterator<char> it(in);
+			for (std::size_t i = 0; i < length; i++)
+				mBody.push_back(*it++);
+		}
+
+		// Drop the rest of the line (chunk-extension)
+		in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+		// Read all trailers (if present)
+		ParseFields(in);
+	}
+}
+
+void cHttp::Response::ParseFields(std::istream &in) {
 	std::string line;
 	while (std::getline(in, line) && (line.size() > 2)) {
 		std::string::size_type pos = line.find(": ");
@@ -176,48 +204,6 @@ void cHttp::Response::Parse(const std::string& data) {
 
 			// Add the field
 			mFields[toLower(field)] = value;
-		}
-	}
-
-	// Finally extract the body
-	mBody.clear();
-
-	// Determine whether the transfer is chunked
-	if (toLower(GetField("transfer-encoding")).compare("chunked")) {
-		// Not chunked - everything at once
-		std::copy(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>(), std::back_inserter(mBody));
-	} else {
-		// Chunked - have to read chunk by chunk
-		unsigned long length;
-
-		// Read all chunks, identified by a chunk-size not being 0
-		while (in >> std::hex >> length) {
-			// Drop the rest of the line (chunk-extension)
-			in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
-			// Copy the actual content data
-			::copy_n(std::istreambuf_iterator<char>(in), length, std::back_inserter(mBody));
-		}
-
-		// Drop the rest of the line (chunk-extension)
-		in.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-
-		// Read all trailers (if present)
-		while (std::getline(in, line) && (line.size() > 2)) {
-			std::string::size_type pos = line.find(": ");
-
-			if (pos != std::string::npos) {
-				// Extract the field name and its value
-				std::string field = line.substr(0, pos);
-				std::string value = line.substr(pos + 2);
-
-				// Remove any trailing \r
-				if (!value.empty() && (*value.rbegin() == '\r'))
-					value.erase(value.size() - 1);
-
-				// Add the field
-				mFields[toLower(field)] = value;
-			}
 		}
 	}
 }

@@ -31,6 +31,7 @@
 #define EE_STRING_HPP
 
 #include <eepp/declares.hpp>
+#include <eepp/base/utf.hpp>
 #include <locale>
 #include <string>
 #include <cstring>
@@ -248,6 +249,42 @@ class EE_API String {
 	** @param str Instance to copy
 	**/
 	String( const String& str );
+
+	/** @brief Create a new String from a UTF-8 encoded string
+	**  @param begin Forward iterator to the begining of the UTF-8 sequence
+	**  @param end   Forward iterator to the end of the UTF-8 sequence
+	**  @return A String containing the source string
+	**  @see FromUtf16, FromUtf32 */
+	template <typename T>
+	static String FromUtf8(T begin, T end) {
+		String string;
+		Utf8::ToUtf32(begin, end, std::back_inserter(string.mString));
+		return string;
+	}
+
+	/** @brief Create a new String from a UTF-16 encoded string
+	**  @param begin Forward iterator to the begining of the UTF-16 sequence
+	**  @param end   Forward iterator to the end of the UTF-16 sequence
+	**  @return A String containing the source string
+	**  @see FromUtf8, FromUtf32 */
+	template <typename T>
+	static String FromUtf16(T begin, T end) {
+		String string;
+		Utf16::ToUtf32(begin, end, std::back_inserter(string.mString));
+		return string;
+	}
+
+	/** @brief Create a new String from a UTF-32 encoded string
+	**  @param begin Forward iterator to the begining of the UTF-32 sequence
+	**  @param end   Forward iterator to the end of the UTF-32 sequence
+	**  @return A String containing the source string
+	**  @see FromUtf8, FromUtf32 */
+	template <typename T>
+	static String FromUtf32(T begin, T end) {
+		String string;
+		Utf32::ToUtf32(begin, end, std::back_inserter(string.mString));
+		return string;
+	}
 
 	/** @brief Implicit cast operator to std::string (ANSI string)
 	** The current global locale is used for conversion. If you

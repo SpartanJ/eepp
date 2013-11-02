@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <climits>
 #include <ctype.h>
+#include <cerrno>
 
 // This taints the System module!
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
@@ -311,52 +312,38 @@ Uint32 Sys::GetTicks() {
 }
 
 void Sys::Sleep( const Uint32& ms ) {
-#if EE_PLATFORM == EE_PLATFORM_WIN
-	::Sleep( ms );
-#elif defined( EE_PLATFORM_POSIX )
-	// usleep( static_cast<unsigned long>( ms * 1000 ) );
-
-	// usleep is not reliable enough (it might block the
-	// whole process instead of just the current thread)
-	// so we must use pthread_cond_timedwait instead
-
-	// this implementation is inspired from Qt
-	// and taken from SFML
-
-	Uint64 usecs = ms * 1000;
-
-	// get the current time
-	timeval tv;
-	gettimeofday(&tv, NULL);
-
-	// construct the time limit (current time + time to wait)
-	timespec ti;
-	ti.tv_nsec = (tv.tv_usec + (usecs % 1000000)) * 1000;
-	ti.tv_sec = tv.tv_sec + (usecs / 1000000) + (ti.tv_nsec / 1000000000);
-	ti.tv_nsec %= 1000000000;
-
-	// create a mutex and thread condition
-	pthread_mutex_t mutex;
-	pthread_mutex_init(&mutex, 0);
-	pthread_cond_t condition;
-	pthread_cond_init(&condition, 0);
-
-	// wait...
-	pthread_mutex_lock(&mutex);
-	pthread_cond_timedwait(&condition, &mutex, &ti);
-	pthread_mutex_unlock(&mutex);
-
-	// destroy the mutex and condition
-	pthread_cond_destroy(&condition);
-	pthread_mutex_destroy(&mutex);
-
-#else
-	#warning Sys::Sleep not implemented in this platform.
-#endif
+	Sleep( Milliseconds( ms ) );
 }
 
 void Sys::Sleep( const cTime& time ) {
-	Sleep( (Uint32)time.AsMilliseconds() );
+#if EE_PLATFORM == EE_PLATFORM_WIN
+	TIMECAPS tc;
+	timeGetDevCaps(&tc, sizeof(TIMECAPS));
+
+	timeBeginPeriod(tc.wPeriodMin);
+
+	::Sleep( time.AsMilliseconds() );
+
+	timeEndPeriod(tc.wPeriodMin);
+#elif defined( EE_PLATFORM_POSIX )
+	Uint64 usecs = time.AsMicroseconds();
+
+	// Construct the time to wait
+	timespec ti;
+	ti.tv_nsec = (usecs % 1000000) * 1000;
+	ti.tv_sec = usecs / 1000000;
+
+	// Wait...
+	// If nanosleep returns -1, we check errno. If it is EINTR
+	// nanosleep was interrupted and has set ti to the remaining
+	// duration. We continue sleeping until the complete duration
+	// has passed. We stop sleeping if it was due to an error.
+	while ((nanosleep(&ti, &ti) == -1) && (errno == EINTR))
+	{
+	}
+#else
+	#warning Sys::Sleep not implemented in this platform.
+#endif
 }
 
 static std::string sGetProcessPath() {

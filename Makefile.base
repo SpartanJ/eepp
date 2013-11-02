@@ -431,7 +431,7 @@ else
 
 ifeq ($(BUILD_OS), mingw32)
 
-LIBS 		= -lOpenAL32 -lopengl32 -lmingw32 -lglu32 -lgdi32 -lws2_32 -static-libgcc -static-libstdc++ -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
+LIBS 		= -lOpenAL32 -lopengl32 -lmingw32 -lglu32 -lgdi32 -lws2_32 -lwinmm -static-libgcc -static-libstdc++ -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	+= $(INCFREETYPE2)
 PLATFORMSRC	= $(wildcard ./src/eepp/window/platform/win/*.cpp) $(wildcard ./src/eepp/system/platform/win/*.cpp) $(wildcard ./src/eepp/network/platform/win/*.cpp)
 
@@ -440,7 +440,7 @@ else
 #if it is cygwin
 ifneq (,$(findstring cygwin,$(BUILD_OS)))
 
-LIBS 		= -lOpenAL32 -lmingw32 -lopengl32 -lglu32 -lgdi32 -lws2_32 -static-libgcc -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
+LIBS 		= -lOpenAL32 -lmingw32 -lopengl32 -lglu32 -lgdi32 -lws2_32 -lwinmm -static-libgcc -mwindows $(LIBSNDFILE) $(SDL_BACKEND_LINK) $(SDL2_BACKEND_LINK) $(SFML_BACKEND_LINK) $(LIBFREETYPE2)
 OTHERINC	+= -I./src/eepp/helper/zlib $(INCFREETYPE2)
 PLATFORMSRC	= $(wildcard ./src/eepp/window/platform/win/*.cpp) $(wildcard ./src/eepp/system/platform/win/*.cpp) $(wildcard ./src/eepp/network/platform/win/*.cpp)
 

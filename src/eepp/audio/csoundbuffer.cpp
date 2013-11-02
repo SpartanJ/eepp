@@ -10,7 +10,7 @@ namespace EE { namespace Audio {
 
 cSoundBuffer::cSoundBuffer() :
 	mBuffer(0),
-	mDuration(0.f)
+	mDuration()
 {
 	EnsureALInit();
 
@@ -183,7 +183,7 @@ unsigned int cSoundBuffer::GetChannelCount() const {
 }
 
 cTime cSoundBuffer::GetDuration() const {
-	return Seconds( mDuration );
+	return mDuration;
 }
 
 cSoundBuffer& cSoundBuffer::operator =( const cSoundBuffer& Other ) {
@@ -216,7 +216,7 @@ bool cSoundBuffer::Update( unsigned int ChannelCount, unsigned int SampleRate ) 
 	ALCheck( alBufferData( mBuffer, Format, &mSamples[0], Size, SampleRate ) );
 
 	// Compute the duration
-	mDuration = (float)mSamples.size() / (float)SampleRate / (float)ChannelCount;
+	mDuration = Seconds(static_cast<float>(mSamples.size()) / SampleRate / ChannelCount);
 
 	return true;
 }

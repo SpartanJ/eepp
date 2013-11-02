@@ -55,7 +55,7 @@ class EE_API cSoundBuffer {
 
 		unsigned int		mBuffer;   ///< OpenAL buffer identifier
 		std::vector<Int16>	mSamples;  ///< Samples buffer
-		float				mDuration; ///< Sound duration, in seconds
+		cTime				mDuration; ///< Sound duration, in seconds
 
 		typedef std::set<cSound*> SoundList;
 		mutable SoundList	mSounds;
