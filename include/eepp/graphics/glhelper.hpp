@@ -32,6 +32,7 @@ enum EEGL_extensions  {
 enum EEGL_version {
 	GLv_2,
 	GLv_3,
+	GLv_3CP,
 	GLv_ES1,
 	GLv_ES2,
 	GLv_default

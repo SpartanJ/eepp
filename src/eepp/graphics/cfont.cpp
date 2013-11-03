@@ -226,15 +226,15 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 					}
 					default:
 					{
-						#ifndef EE_GLES
-						for ( Uint8 z = 0; z < 8; z+=2 ) {
-							RenderCoords[ numvert ].TexCoords[0]	= C->TexCoords[z];
-							RenderCoords[ numvert ].TexCoords[1]	= C->TexCoords[ z + 1 ];
-							RenderCoords[ numvert ].Vertex[0]		= cX + C->Vertex[z] + nX;
-							RenderCoords[ numvert ].Vertex[1]		= cY + C->Vertex[ z + 1 ] + nY;
-							numvert++;
-						}
-						#else
+						if ( GLi->QuadsSupported() ) {
+							for ( Uint8 z = 0; z < 8; z+=2 ) {
+								RenderCoords[ numvert ].TexCoords[0]	= C->TexCoords[z];
+								RenderCoords[ numvert ].TexCoords[1]	= C->TexCoords[ z + 1 ];
+								RenderCoords[ numvert ].Vertex[0]		= cX + C->Vertex[z] + nX;
+								RenderCoords[ numvert ].Vertex[1]		= cY + C->Vertex[ z + 1 ] + nY;
+								numvert++;
+							}
+						} else {
 							RenderCoords[ numvert ].TexCoords[0]	= C->TexCoords[2];
 							RenderCoords[ numvert ].TexCoords[1]	= C->TexCoords[ 2 + 1 ];
 							RenderCoords[ numvert ].Vertex[0]		= cX + C->Vertex[2] + nX;
@@ -270,7 +270,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 							RenderCoords[ numvert ].Vertex[0]		= cX + C->Vertex[6] + nX;
 							RenderCoords[ numvert ].Vertex[1]		= cY + C->Vertex[ 6 + 1 ] + nY;
 							numvert++;
-						#endif
+						}
 
 						if ( Flags & FONT_DRAW_VERTICAL )
 							nY += GetFontHeight();
@@ -287,15 +287,18 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 		numvert = TextCache.CachedVerts();
 	}
 
-	GLi->ColorPointer	( 4, GL_UNSIGNED_BYTE	, 0						, reinterpret_cast<char*>( &Colors[0] )								);
-	GLi->TexCoordPointer( 2, GL_FP				, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] )						);
-	GLi->VertexPointer	( 2, GL_FP				, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] ) + sizeof(eeFloat) * 2	);
+	Uint32 alloc	= numvert * sizeof(eeVertexCoords);
+	Uint32 allocC	= numvert * GLi->QuadVertexs();
 
-	#ifndef EE_GLES
-	GLi->DrawArrays( GL_QUADS, 0, numvert );
-	#else
-	GLi->DrawArrays( GL_TRIANGLES, 0, numvert );
-	#endif
+	GLi->ColorPointer	( 4, GL_UNSIGNED_BYTE	, 0						, reinterpret_cast<char*>( &Colors[0] )								, allocC	);
+	GLi->TexCoordPointer( 2, GL_FP				, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] )						, alloc		);
+	GLi->VertexPointer	( 2, GL_FP				, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] ) + sizeof(eeFloat) * 2	, alloc		);
+
+	if ( GLi->QuadsSupported() ) {
+		GLi->DrawArrays( GL_QUADS, 0, numvert );
+	} else {
+		GLi->DrawArrays( GL_TRIANGLES, 0, numvert );
+	}
 
 	if ( Angle != 0.0f || Scale != 1.0f ) {
 		GLi->PopMatrix();

@@ -664,3 +664,5 @@
 ../../src/eepp/ui/cuitextinputpassword.cpp
 ../../include/eepp/ui/cuitextinputpassword.hpp
 ../../assets/ee.ini
+../../src/eepp/graphics/renderer/crenderergl3cp.cpp
+../../include/eepp/graphics/renderer/crenderergl3cp.hpp

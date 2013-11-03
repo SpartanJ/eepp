@@ -462,7 +462,7 @@ void cTextureLoader::LoadFromPixels() {
 				tTexId = SOIL_create_OGL_texture( mPixels, &width, &height, mChannels, SOIL_CREATE_NEW_ID, flags );
 			}
 
-			glBindTexture( GL_TEXTURE_2D, PreviousTexture );
+			GLi->BindTexture( GL_TEXTURE_2D, PreviousTexture );
 
 			if ( ( mThreaded || mForceGLThreaded ) &&
 				 ( mForceGLThreaded || cEngine::instance()->IsSharedGLContextEnabled() ) &&

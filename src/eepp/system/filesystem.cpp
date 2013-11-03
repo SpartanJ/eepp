@@ -482,8 +482,8 @@ bool FileSystem::FileExists( const std::string& Filepath ) {
 }
 
 std::string FileSystem::SizeToString( const Int64& Size ) {
-	std::string size = " bytes";
 	eeDouble mem = static_cast<eeDouble>( Size );
+	std::string size;
 	Uint8 c = 0;
 
 	while ( mem > 1024 ) {
@@ -493,10 +493,10 @@ std::string FileSystem::SizeToString( const Int64& Size ) {
 
 	switch (c) {
 		case 0: size = " bytes"; break;
-		case 1: size = " KB"; break;
-		case 2: size = " MB"; break;
-		case 3: size = " GB"; break;
-		case 4: size = " TB"; break;
+		case 1: size = " KiB"; break;
+		case 2: size = " MiB"; break;
+		case 3: size = " GiB"; break;
+		case 4: size = " TiB"; break;
 		default: size = " WTF";
 	}
 

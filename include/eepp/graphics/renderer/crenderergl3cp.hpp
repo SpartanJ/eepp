@@ -1,5 +1,5 @@
-#ifndef EE_GRAPHICS_CRENDERERGLES2_HPP
-#define EE_GRAPHICS_CRENDERERGLES2_HPP
+#ifndef EE_GRAPHICS_CRENDERERGL3CP_HPP
+#define EE_GRAPHICS_CRENDERERGL3CP_HPP
 
 #include <eepp/graphics/renderer/cgl.hpp>
 
@@ -7,23 +7,20 @@
 
 namespace EE { namespace Graphics {
 
-enum EEGLES2_SHADERS {
-	EEGLES2_SHADER_BASE,
-	EEGLES2_SHADER_CLIPPED,
-	EEGLES2_SHADER_POINTSPRITE,
-	EEGLES2_SHADER_PRIMITIVE,
-	EEGLES2_SHADERS_COUNT
+enum EEGL3CP_SHADERS {
+	EEGL3CP_SHADER_BASE,
+	EEGL3CP_SHADERS_COUNT
 };
 
 namespace Private {
 class cMatrixStack;
 }
 
-class EE_API cRendererGLES2 : public cGL {
+class EE_API cRendererGL3CP : public cGL {
 	public:
-		cRendererGLES2();
+		cRendererGL3CP();
 
-		~cRendererGLES2();
+		~cRendererGL3CP();
 
 		EEGL_version Version();
 
@@ -75,7 +72,7 @@ class EE_API cRendererGLES2 : public cGL {
 
 		void SetShader( cShaderProgram * Shader );
 
-		void SetShader( const EEGLES2_SHADERS& Shader );
+		void SetShader( const EEGL3CP_SHADERS& Shader );
 
 		GLint GetStateIndex( const Uint32& State );
 
@@ -97,6 +94,8 @@ class EE_API cRendererGLES2 : public cGL {
 
 		GLenum GetCurrentMatrixMode();
 
+		void BindGlobalVAO();
+
 		std::string GetBaseVertexShader();
 
 		GLint Project( GLfloat objx, GLfloat objy, GLfloat objz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *winx, GLfloat *winy, GLfloat *winz );
@@ -109,8 +108,10 @@ class EE_API cRendererGLES2 : public cGL {
 		GLint					mProjectionMatrix_id;	// cpu-side hook to shader uniform
 		GLint					mModelViewMatrix_id;	// cpu-side hook to shader uniform
 		GLenum					mCurrentMode;
-		cShaderProgram *		mShaders[ EEGLES2_SHADERS_COUNT ];
+		cShaderProgram *		mShaders[ EEGL3CP_SHADERS_COUNT ];
 		cShaderProgram *		mCurShader;
+		GLuint					mVAO;
+		GLuint					mVBO[ 8 ];
 		GLint					mAttribsLoc[ EEGL_ARRAY_STATES_COUNT ];
 		GLint					mAttribsLocStates[ EEGL_ARRAY_STATES_COUNT ];
 		GLint					mPlanes[ EE_MAX_PLANES ];
@@ -118,15 +119,16 @@ class EE_API cRendererGLES2 : public cGL {
 		cShaderProgram *		mShaderPrev;
 		Int32					mTexActive;
 		GLint					mTexActiveLoc;
+		GLint					mPointSpriteLoc;
 		GLint					mClippingEnabledLoc;
 		GLfloat					mPointSize;
 		GLint					mTextureUnits[ EE_MAX_TEXTURE_UNITS ];
 		GLint					mTextureUnitsStates[ EE_MAX_TEXTURE_UNITS ];
 		GLint					mCurActiveTex;
-		Uint8					mClippingEnabled;
-		Uint8					mPointSpriteEnabled;
+		GLuint					mCurTexCoordArray;
+		Uint32					mVBOSizeAlloc;
+		Uint32					mBiggestAlloc;
 		bool					mLoaded;
-		bool					mCurShaderLocal;
 		std::string				mBaseVertexShader;
 
 		void UpdateMatrix();
@@ -135,7 +137,7 @@ class EE_API cRendererGLES2 : public cGL {
 
 		void ReloadShader( cShaderProgram * Shader );
 
-		void CheckLocalShader();
+		void AllocateBuffers( const Uint32& size );
 };
 
 }}

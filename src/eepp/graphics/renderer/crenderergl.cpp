@@ -52,6 +52,10 @@ namespace EE { namespace Graphics {
 #endif
 
 cRendererGL::cRendererGL() {
+	#ifdef EE_GLES1
+	mQuadsSupported = false;
+	mQuadVertexs = 6;
+	#endif
 }
 
 cRendererGL::~cRendererGL() {
@@ -201,15 +205,15 @@ void cRendererGL::DisableClientState( GLenum array ) {
 	glDisableClientState( array );
 }
 
-void cRendererGL::VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) {
+void cRendererGL::VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
 	glVertexPointer( size, type, stride, pointer );
 }
 
-void cRendererGL::ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) {
+void cRendererGL::ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
 	glColorPointer( size, type, stride, pointer );
 }
 
-void cRendererGL::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) {
+void cRendererGL::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
 	glTexCoordPointer( size, type, stride, pointer );
 }
 
@@ -266,7 +270,13 @@ void cRendererGL::Clip2DPlaneDisable() {
 }
 
 void cRendererGL::ClipPlane( GLenum plane, const GLdouble *equation ) {
+#ifdef EE_GLES1
+	GLfloat clip[] 	= { (GLfloat)equation[0], (GLfloat)equation[1], (GLfloat)equation[2], (GLfloat)equation[3] };
+
+	glClipPlane( plane, clip );
+#else
 	glClipPlane( plane, equation );
+#endif
 }
 
 void cRendererGL::MultMatrixf ( const GLfloat *m ) {

@@ -1,6 +1,7 @@
 #include <eepp/graphics/cshader.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/renderer/crenderergl3.hpp>
+#include <eepp/graphics/renderer/crenderergl3cp.hpp>
 #include <eepp/graphics/renderer/crenderergles2.hpp>
 
 namespace EE { namespace Graphics {
@@ -121,13 +122,15 @@ std::string cShader::GetName() {
 
 void cShader::EnsureVersion() {
 	#ifdef EE_GL3_ENABLED
-	if ( cShader::Ensure() && ( GLi->Version() == GLv_3 || GLi->Version() == GLv_ES2 ) ) {
+	if ( cShader::Ensure() && ( GLi->Version() == GLv_3 || GLi->Version() == GLv_3CP || GLi->Version() == GLv_ES2 ) ) {
 		eePRINTL( "Shader %s converted to programmable pipeline automatically.", GetName().c_str() );
 
 		if ( GL_VERTEX_SHADER == mType ) {
 			if ( mSource.find( "ftransform" ) != std::string::npos || mSource.find("dgl_Vertex") == std::string::npos ) {
 				if ( GLi->Version() == GLv_3 ) {
 					mSource = GLi->GetRendererGL3()->GetBaseVertexShader();
+				} else if ( GLi->Version() == GLv_3CP ) {
+					mSource = GLi->GetRendererGL3CP()->GetBaseVertexShader();
 				} else {
 					mSource = GLi->GetRendererGLES2()->GetBaseVertexShader();
 				}

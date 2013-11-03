@@ -9554,17 +9554,17 @@ GLenum GLEWAPIENTRY glewContextInit (GLEW_CONTEXT_ARG_DEF_LIST)
   }
 
   /* query opengl extensions string */
-  extStart = glGetString(GL_EXTENSIONS);
-  if (extStart == 0) {
-	if (GLEW_VERSION_3_0) {
-	  extStart = 0;
-	  extEnd   = 0;
-	} else {
-	extStart = (const GLubyte*)"";
-	extEnd = extStart + _glewStrLen(extStart);
-	}
+  if (GLEW_VERSION_3_0) {
+	extStart = 0;
+	extEnd   = 0;
   } else {
-	extEnd = extStart + _glewStrLen(extStart);
+	extStart = glGetString(GL_EXTENSIONS);
+	if (extStart == 0) {
+	  extStart = (const GLubyte*)"";
+	  extEnd = extStart + _glewStrLen(extStart);
+	} else {
+	  extEnd = extStart + _glewStrLen(extStart);
+	}
   }
 
   /* initialize extensions */

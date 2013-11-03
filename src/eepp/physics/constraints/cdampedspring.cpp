@@ -104,8 +104,8 @@ void cDampedSpring::Draw() {
 	GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
 
 	std::vector<eeColorA> tcolors( springVAR_count * 4, eeColorA( 0, 255, 0, 255 ) );
-	GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const GLvoid*>( &tcolors[0] ) );
-	GLi->VertexPointer( 2, GL_FLOAT, 0, springVAR );
+	GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const GLvoid*>( &tcolors[0] ), springVAR_count * 4 );
+	GLi->VertexPointer( 2, GL_FLOAT, 0, springVAR, springVAR_count * sizeof(GLfloat) * 2 );
 
 	GLi->PushMatrix();
 

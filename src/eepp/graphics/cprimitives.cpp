@@ -125,11 +125,11 @@ void cPrimitives::DrawCircle( const eeVector2f& p, const eeFloat& radius, Uint32
 
 		GLi->Scalef( radius, radius, 1.0f);
 
-		GLi->VertexPointer( 2, GL_FLOAT, 0, circleVAR );
+		GLi->VertexPointer( 2, GL_FLOAT, 0, circleVAR, circleVAR_count * sizeof(float) * 2 );
 
 		std::vector<eeColorA> colors( circleVAR_count - 1 ,mColor );
 
-		GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, &colors[0] );
+		GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, &colors[0], circleVAR_count * 4 );
 
 		switch( mFillMode ) {
 			case DRAW_LINE:

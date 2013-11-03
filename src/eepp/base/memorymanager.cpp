@@ -116,7 +116,7 @@ void MemoryManager::ShowResults() {
 	}
 
 	eePRINTL( "|" );
-	eePRINTL( "| Memory left: %s", FileSystem::SizeToString( mTotalMemoryUsage ).c_str() );
+	eePRINTL( "| Memory left: %s", FileSystem::SizeToString( static_cast<Int64>( mTotalMemoryUsage ) ).c_str() );
 	eePRINTL( "| Biggest allocation:" );
 	eePRINTL( "| %s in file: %s at line: %d", FileSystem::SizeToString( mBiggestAllocation.mMemory ).c_str(), mBiggestAllocation.mFile.c_str(), mBiggestAllocation.mLine );
 	eePRINTL( "| Peak Memory Usage: %s", FileSystem::SizeToString( mPeakMemoryUsage ).c_str() );

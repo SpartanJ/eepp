@@ -60,7 +60,7 @@ String& cTextCache::Text() {
 }
 
 void cTextCache::UpdateCoords() {
-	Uint32 size = (Uint32)mText.size() * EE_QUAD_VERTEX;
+	Uint32 size = (Uint32)mText.size() * GLi->QuadVertexs();
 	
 	mRenderCoords.resize( size );
 	mColors.resize( size, mFontColor );
@@ -95,7 +95,7 @@ void cTextCache::Color( const eeColorA& color ) {
 	if ( mFontColor != color ) {
 		mFontColor = color;
 
-		mColors.assign( mText.size() * EE_QUAD_VERTEX, mFontColor );
+		mColors.assign( mText.size() * GLi->QuadVertexs(), mFontColor );
 	}
 }
 
@@ -107,9 +107,9 @@ void cTextCache::Color( const eeColorA& color, Uint32 from, Uint32 to ) {
 	}
 
 	if ( from <= to && from < s && to <= s ) {
-		size_t rto = ( to * EE_QUAD_VERTEX ) + EE_QUAD_VERTEX;
+		size_t rto = ( to * GLi->QuadVertexs() ) + GLi->QuadVertexs();
 
-		for ( Uint32 i = from * EE_QUAD_VERTEX; i < rto; i++ ) {
+		for ( Uint32 i = from * GLi->QuadVertexs(); i < rto; i++ ) {
 			mColors[ i ] = color;
 		}
 	}

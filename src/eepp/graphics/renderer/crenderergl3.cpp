@@ -44,7 +44,6 @@ const GLchar * EEGL3_SHADER_BASE_FS =
 #include "shaders/basegl3.frag"
 
 cRendererGL3::cRendererGL3() :
-	mStack( eeNew( cMatrixStack, () ) ),
 	mProjectionMatrix_id(0),
 	mModelViewMatrix_id(0),
 	mCurrentMode(0),
@@ -58,6 +57,7 @@ cRendererGL3::cRendererGL3() :
 	mCurActiveTex( 0 ),
 	mLoaded( false )
 {
+	mStack = eeNew( cMatrixStack, () );
 	mStack->mProjectionMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
 	mStack->mModelViewMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
 
@@ -337,7 +337,7 @@ void cRendererGL3::DisableClientState( GLenum array ) {
 	}
 }
 
-void cRendererGL3::VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid * pointer ) {
+void cRendererGL3::VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid * pointer, GLuint allocate ) {
 	const GLint index = mAttribsLoc[ EEGL_VERTEX_ARRAY ];
 
 	if ( -1 != index ) {
@@ -351,7 +351,7 @@ void cRendererGL3::VertexPointer ( GLint size, GLenum type, GLsizei stride, cons
 	}
 }
 
-void cRendererGL3::ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) {
+void cRendererGL3::ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
 	const GLint index = mAttribsLoc[ EEGL_COLOR_ARRAY ];
 
 	if ( -1 != index ) {
@@ -369,7 +369,7 @@ void cRendererGL3::ColorPointer ( GLint size, GLenum type, GLsizei stride, const
 	}
 }
 
-void cRendererGL3::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) {
+void cRendererGL3::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
 	const GLint index = mTextureUnits[ mCurActiveTex ];
 
 	if ( -1 != index ) {

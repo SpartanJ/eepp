@@ -127,25 +127,28 @@ void cBatchRenderer::Flush() {
 		GLi->Translatef( -mCenter.x, -mCenter.y, 0.0f);
 	}
 
+	Uint32 alloc	= sizeof(eeVertex) * NumVertex;
+
 	if ( NULL != mTexture ) {
 		mTF->Bind( mTexture );
-		GLi->TexCoordPointer( 2, GL_FP		, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f)								);
+		GLi->TexCoordPointer( 2, GL_FP		, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f)							, alloc		);
 	} else {
 		GLi->Disable( GL_TEXTURE_2D );
 		GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
 	}
 
-	GLi->VertexPointer	( 2, GL_FP				, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] )													);
-	GLi->ColorPointer	( 4, GL_UNSIGNED_BYTE	, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f) + sizeof(eeTexCoord)		);
+	GLi->VertexPointer	( 2, GL_FP				, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] )												, alloc		);
+	GLi->ColorPointer	( 4, GL_UNSIGNED_BYTE	, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f) + sizeof(eeTexCoord)	, alloc		);
 
-	#ifdef EE_GLES
-	if ( DM_QUADS == mCurrentMode ) {
-		GLi->DrawArrays( DM_TRIANGLES, 0, NumVertex );
-	} else if ( DM_POLYGON == mCurrentMode ) {
-		GLi->DrawArrays( DM_TRIANGLE_FAN, 0, NumVertex );
-	} else
-	#endif
-	{
+	if ( !GLi->QuadsSupported() ) {
+		if ( DM_QUADS == mCurrentMode ) {
+			GLi->DrawArrays( DM_TRIANGLES, 0, NumVertex );
+		} else if ( DM_POLYGON == mCurrentMode ) {
+			GLi->DrawArrays( DM_TRIANGLE_FAN, 0, NumVertex );
+		} else {
+			GLi->DrawArrays( mCurrentMode, 0, NumVertex );
+		}
+	} else {
 		GLi->DrawArrays( mCurrentMode, 0, NumVertex );
 	}
 
@@ -168,13 +171,8 @@ void cBatchRenderer::BatchQuad( const eeFloat& x, const eeFloat& y, const eeFloa
 }
 
 void cBatchRenderer::BatchQuadEx( eeFloat x, eeFloat y, eeFloat width, eeFloat height, eeFloat angle, eeFloat scale, eeOriginPoint originPoint ) {
-#ifndef EE_GLES
-	if ( mNumVertex + 3 >= mVertexSize )
+	if ( mNumVertex + ( GLi->QuadsSupported() ? 3 : 5 ) >= mVertexSize )
 		return;
-#else
-	if ( mNumVertex + 5 >= mVertexSize )
-		return;
-#endif
 
 	if ( originPoint.OriginType == eeOriginPoint::OriginCenter ) {
 		originPoint.x = width  * 0.5f;
@@ -194,161 +192,155 @@ void cBatchRenderer::BatchQuadEx( eeFloat x, eeFloat y, eeFloat width, eeFloat h
 
 	SetBlendMode( DM_QUADS, mForceBlendMode );
 
-#ifndef EE_GLES
-	mTVertex 		= &mVertex[ mNumVertex ];
-	mTVertex->pos.x = x;
-	mTVertex->pos.y = y;
-	mTVertex->tex 	= mTexCoord[0];
-	mTVertex->color = mVerColor[0];
-	Rotate(originPoint, &mTVertex->pos, angle);
+	if ( GLi->QuadsSupported() ) {
+		mTVertex 		= &mVertex[ mNumVertex ];
+		mTVertex->pos.x = x;
+		mTVertex->pos.y = y;
+		mTVertex->tex 	= mTexCoord[0];
+		mTVertex->color = mVerColor[0];
+		Rotate(originPoint, &mTVertex->pos, angle);
 
-	mTVertex 		= &mVertex[ mNumVertex + 1 ];
-	mTVertex->pos.x = x;
-	mTVertex->pos.y = y + height;
-	mTVertex->tex 	= mTexCoord[1];
-	mTVertex->color = mVerColor[1];
-	Rotate(originPoint, &mTVertex->pos, angle);
+		mTVertex 		= &mVertex[ mNumVertex + 1 ];
+		mTVertex->pos.x = x;
+		mTVertex->pos.y = y + height;
+		mTVertex->tex 	= mTexCoord[1];
+		mTVertex->color = mVerColor[1];
+		Rotate(originPoint, &mTVertex->pos, angle);
 
-	mTVertex 		= &mVertex[ mNumVertex + 2 ];
-	mTVertex->pos.x = x + width;
-	mTVertex->pos.y = y + height;
-	mTVertex->tex 	= mTexCoord[2];
-	mTVertex->color = mVerColor[2];
-	Rotate(originPoint, &mTVertex->pos, angle);
+		mTVertex 		= &mVertex[ mNumVertex + 2 ];
+		mTVertex->pos.x = x + width;
+		mTVertex->pos.y = y + height;
+		mTVertex->tex 	= mTexCoord[2];
+		mTVertex->color = mVerColor[2];
+		Rotate(originPoint, &mTVertex->pos, angle);
 
-	mTVertex 		= &mVertex[ mNumVertex + 3 ];
-	mTVertex->pos.x = x + width;
-	mTVertex->pos.y = y;
-	mTVertex->tex 	= mTexCoord[3];
-	mTVertex->color = mVerColor[3];
-	Rotate(originPoint, &mTVertex->pos, angle);
-#else
-	mTVertex 		= &mVertex[ mNumVertex ];
-	mTVertex->pos.x = x;
-	mTVertex->pos.y = y + height;
-	mTVertex->tex 	= mTexCoord[1];
-	mTVertex->color = mVerColor[1];
-	Rotate(originPoint, &mTVertex->pos, angle);
+		mTVertex 		= &mVertex[ mNumVertex + 3 ];
+		mTVertex->pos.x = x + width;
+		mTVertex->pos.y = y;
+		mTVertex->tex 	= mTexCoord[3];
+		mTVertex->color = mVerColor[3];
+		Rotate(originPoint, &mTVertex->pos, angle);
 
-	mTVertex 		= &mVertex[ mNumVertex + 1 ];
-	mTVertex->pos.x = x;
-	mTVertex->pos.y = y;
-	mTVertex->tex 	= mTexCoord[0];
-	mTVertex->color = mVerColor[0];
-	Rotate(originPoint, &mTVertex->pos, angle);
+		AddVertexs( 4 );
+	} else {
+		mTVertex 		= &mVertex[ mNumVertex ];
+		mTVertex->pos.x = x;
+		mTVertex->pos.y = y + height;
+		mTVertex->tex 	= mTexCoord[1];
+		mTVertex->color = mVerColor[1];
+		Rotate(originPoint, &mTVertex->pos, angle);
 
-	mTVertex 		= &mVertex[ mNumVertex + 2 ];
-	mTVertex->pos.x = x + width;
-	mTVertex->pos.y = y;
-	mTVertex->tex 	= mTexCoord[3];
-	mTVertex->color = mVerColor[3];
-	Rotate(originPoint, &mTVertex->pos, angle);
+		mTVertex 		= &mVertex[ mNumVertex + 1 ];
+		mTVertex->pos.x = x;
+		mTVertex->pos.y = y;
+		mTVertex->tex 	= mTexCoord[0];
+		mTVertex->color = mVerColor[0];
+		Rotate(originPoint, &mTVertex->pos, angle);
 
-	mTVertex 		= &mVertex[ mNumVertex + 3 ];
-	mTVertex->pos	= mVertex[ mNumVertex ].pos;
-	mTVertex->tex 	= mTexCoord[1];
-	mTVertex->color = mVerColor[1];
+		mTVertex 		= &mVertex[ mNumVertex + 2 ];
+		mTVertex->pos.x = x + width;
+		mTVertex->pos.y = y;
+		mTVertex->tex 	= mTexCoord[3];
+		mTVertex->color = mVerColor[3];
+		Rotate(originPoint, &mTVertex->pos, angle);
 
-	mTVertex 		= &mVertex[ mNumVertex + 4 ];
-	mTVertex->pos.x = x + width;
-	mTVertex->pos.y = y + height;
-	mTVertex->tex 	= mTexCoord[2];
-	mTVertex->color = mVerColor[2];
-	Rotate(originPoint, &mTVertex->pos, angle);
+		mTVertex 		= &mVertex[ mNumVertex + 3 ];
+		mTVertex->pos	= mVertex[ mNumVertex ].pos;
+		mTVertex->tex 	= mTexCoord[1];
+		mTVertex->color = mVerColor[1];
 
-	mTVertex 		= &mVertex[ mNumVertex + 5 ];
-	mTVertex->pos	= mVertex[ mNumVertex + 2 ].pos;
-	mTVertex->tex 	= mTexCoord[3];
-	mTVertex->color = mVerColor[3];
-#endif
+		mTVertex 		= &mVertex[ mNumVertex + 4 ];
+		mTVertex->pos.x = x + width;
+		mTVertex->pos.y = y + height;
+		mTVertex->tex 	= mTexCoord[2];
+		mTVertex->color = mVerColor[2];
+		Rotate(originPoint, &mTVertex->pos, angle);
 
-	AddVertexs( EE_QUAD_VERTEX );
+		mTVertex 		= &mVertex[ mNumVertex + 5 ];
+		mTVertex->pos	= mVertex[ mNumVertex + 2 ].pos;
+		mTVertex->tex 	= mTexCoord[3];
+		mTVertex->color = mVerColor[3];
+
+		AddVertexs( 6 );
+	}
 }
 
 void cBatchRenderer::BatchQuadFree( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3 ) {
-#ifndef EE_GLES
-	if ( mNumVertex + 3 >= mVertexSize )
+	if ( mNumVertex + ( GLi->QuadsSupported() ? 3 : 5 ) >= mVertexSize )
 		return;
-#else
-	if ( mNumVertex + 5 >= mVertexSize )
-		return;
-#endif
 
 	SetBlendMode( DM_QUADS, mForceBlendMode );
 
-#ifndef EE_GLES
-	mTVertex 		= &mVertex[ mNumVertex ];
-	mTVertex->pos.x = x0;
-	mTVertex->pos.y = y0;
-	mTVertex->tex 	= mTexCoord[0];
-	mTVertex->color = mVerColor[0];
+	if ( GLi->QuadsSupported() ) {
+		mTVertex 		= &mVertex[ mNumVertex ];
+		mTVertex->pos.x = x0;
+		mTVertex->pos.y = y0;
+		mTVertex->tex 	= mTexCoord[0];
+		mTVertex->color = mVerColor[0];
 
-	mTVertex 		= &mVertex[ mNumVertex + 1 ];
-	mTVertex->pos.x = x1;
-	mTVertex->pos.y = y1;
-	mTVertex->tex 	= mTexCoord[1];
-	mTVertex->color = mVerColor[1];
+		mTVertex 		= &mVertex[ mNumVertex + 1 ];
+		mTVertex->pos.x = x1;
+		mTVertex->pos.y = y1;
+		mTVertex->tex 	= mTexCoord[1];
+		mTVertex->color = mVerColor[1];
 
-	mTVertex 		= &mVertex[ mNumVertex + 2 ];
-	mTVertex->pos.x = x2;
-	mTVertex->pos.y = y2;
-	mTVertex->tex 	= mTexCoord[2];
-	mTVertex->color = mVerColor[2];
+		mTVertex 		= &mVertex[ mNumVertex + 2 ];
+		mTVertex->pos.x = x2;
+		mTVertex->pos.y = y2;
+		mTVertex->tex 	= mTexCoord[2];
+		mTVertex->color = mVerColor[2];
 
-	mTVertex 		= &mVertex[ mNumVertex + 3 ];
-	mTVertex->pos.x = x3;
-	mTVertex->pos.y = y3;
-	mTVertex->tex 	= mTexCoord[3];
-	mTVertex->color = mVerColor[3];
-#else
-	mTVertex 		= &mVertex[ mNumVertex ];
-	mTVertex->pos.x = x1;
-	mTVertex->pos.y = y1;
-	mTVertex->tex 	= mTexCoord[1];
-	mTVertex->color = mVerColor[1];
+		mTVertex 		= &mVertex[ mNumVertex + 3 ];
+		mTVertex->pos.x = x3;
+		mTVertex->pos.y = y3;
+		mTVertex->tex 	= mTexCoord[3];
+		mTVertex->color = mVerColor[3];
 
-	mTVertex 		= &mVertex[ mNumVertex + 1 ];
-	mTVertex->pos.x = x0;
-	mTVertex->pos.y = y0;
-	mTVertex->tex 	= mTexCoord[0];
-	mTVertex->color = mVerColor[0];
+		AddVertexs( 4 );
+	} else {
+		mTVertex 		= &mVertex[ mNumVertex ];
+		mTVertex->pos.x = x1;
+		mTVertex->pos.y = y1;
+		mTVertex->tex 	= mTexCoord[1];
+		mTVertex->color = mVerColor[1];
 
-	mTVertex 		= &mVertex[ mNumVertex + 2 ];
-	mTVertex->pos.x = x3;
-	mTVertex->pos.y = y3;
-	mTVertex->tex 	= mTexCoord[3];
-	mTVertex->color = mVerColor[3];
+		mTVertex 		= &mVertex[ mNumVertex + 1 ];
+		mTVertex->pos.x = x0;
+		mTVertex->pos.y = y0;
+		mTVertex->tex 	= mTexCoord[0];
+		mTVertex->color = mVerColor[0];
 
-	mTVertex 		= &mVertex[ mNumVertex + 3 ];
-	mTVertex->pos.x = x1;
-	mTVertex->pos.y = y1;
-	mTVertex->tex 	= mTexCoord[1];
-	mTVertex->color = mVerColor[1];
+		mTVertex 		= &mVertex[ mNumVertex + 2 ];
+		mTVertex->pos.x = x3;
+		mTVertex->pos.y = y3;
+		mTVertex->tex 	= mTexCoord[3];
+		mTVertex->color = mVerColor[3];
 
-	mTVertex 		= &mVertex[ mNumVertex + 4 ];
-	mTVertex->pos.x = x2;
-	mTVertex->pos.y = y2;
-	mTVertex->tex 	= mTexCoord[2];
-	mTVertex->color = mVerColor[2];
+		mTVertex 		= &mVertex[ mNumVertex + 3 ];
+		mTVertex->pos.x = x1;
+		mTVertex->pos.y = y1;
+		mTVertex->tex 	= mTexCoord[1];
+		mTVertex->color = mVerColor[1];
 
-	mTVertex 		= &mVertex[ mNumVertex + 5 ];
-	mTVertex->pos.x = x3;
-	mTVertex->pos.y = y3;
-	mTVertex->tex 	= mTexCoord[3];
-	mTVertex->color = mVerColor[3];
-#endif
+		mTVertex 		= &mVertex[ mNumVertex + 4 ];
+		mTVertex->pos.x = x2;
+		mTVertex->pos.y = y2;
+		mTVertex->tex 	= mTexCoord[2];
+		mTVertex->color = mVerColor[2];
 
-	AddVertexs( EE_QUAD_VERTEX );
+		mTVertex 		= &mVertex[ mNumVertex + 5 ];
+		mTVertex->pos.x = x3;
+		mTVertex->pos.y = y3;
+		mTVertex->tex 	= mTexCoord[3];
+		mTVertex->color = mVerColor[3];
+
+		AddVertexs( 6 );
+	}
 }
 
 void cBatchRenderer::BatchQuadFreeEx( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const eeFloat& Angle, const eeFloat& Scale ) {
-	#ifndef EE_GLES
-	if ( mNumVertex + 3 >= mVertexSize )
+	if ( mNumVertex + ( GLi->QuadsSupported() ? 3 : 5 ) >= mVertexSize )
 		return;
-	#else
-	if ( mNumVertex + 5 >= mVertexSize )
-		return;
-	#endif
 
 	eeQuad2f mQ;
 	eeVector2f QCenter;
@@ -363,69 +355,71 @@ void cBatchRenderer::BatchQuadFreeEx( const eeFloat& x0, const eeFloat& y0, cons
 
 	SetBlendMode( DM_QUADS, mForceBlendMode );
 
-#ifndef EE_GLES
-	mTVertex 		= &mVertex[ mNumVertex ];
-	mTVertex->pos.x = mQ[0].x;
-	mTVertex->pos.y = mQ[0].y;
-	mTVertex->tex 	= mTexCoord[0];
-	mTVertex->color = mVerColor[0];
+	if ( GLi->QuadsSupported() ) {
+		mTVertex 		= &mVertex[ mNumVertex ];
+		mTVertex->pos.x = mQ[0].x;
+		mTVertex->pos.y = mQ[0].y;
+		mTVertex->tex 	= mTexCoord[0];
+		mTVertex->color = mVerColor[0];
 
-	mTVertex 		= &mVertex[ mNumVertex + 1 ];
-	mTVertex->pos.x = mQ[1].x;
-	mTVertex->pos.y = mQ[1].y;
-	mTVertex->tex 	= mTexCoord[1];
-	mTVertex->color = mVerColor[1];
+		mTVertex 		= &mVertex[ mNumVertex + 1 ];
+		mTVertex->pos.x = mQ[1].x;
+		mTVertex->pos.y = mQ[1].y;
+		mTVertex->tex 	= mTexCoord[1];
+		mTVertex->color = mVerColor[1];
 
-	mTVertex 		= &mVertex[ mNumVertex + 2 ];
-	mTVertex->pos.x = mQ[2].x;
-	mTVertex->pos.y = mQ[2].y;
-	mTVertex->tex 	= mTexCoord[2];
-	mTVertex->color = mVerColor[2];
+		mTVertex 		= &mVertex[ mNumVertex + 2 ];
+		mTVertex->pos.x = mQ[2].x;
+		mTVertex->pos.y = mQ[2].y;
+		mTVertex->tex 	= mTexCoord[2];
+		mTVertex->color = mVerColor[2];
 
-	mTVertex 		= &mVertex[ mNumVertex + 3 ];
-	mTVertex->pos.x = mQ[3].x;
-	mTVertex->pos.y = mQ[3].y;
-	mTVertex->tex 	= mTexCoord[3];
-	mTVertex->color = mVerColor[3];
-#else
-	mTVertex 		= &mVertex[ mNumVertex ];
-	mTVertex->pos.x = mQ[1].x;
-	mTVertex->pos.y = mQ[1].y;
-	mTVertex->tex 	= mTexCoord[1];
-	mTVertex->color = mVerColor[1];
+		mTVertex 		= &mVertex[ mNumVertex + 3 ];
+		mTVertex->pos.x = mQ[3].x;
+		mTVertex->pos.y = mQ[3].y;
+		mTVertex->tex 	= mTexCoord[3];
+		mTVertex->color = mVerColor[3];
 
-	mTVertex 		= &mVertex[ mNumVertex + 1 ];
-	mTVertex->pos.x = mQ[0].x;
-	mTVertex->pos.y = mQ[0].y;
-	mTVertex->tex 	= mTexCoord[0];
-	mTVertex->color = mVerColor[0];
+		AddVertexs( 4 );
+	} else {
+		mTVertex 		= &mVertex[ mNumVertex ];
+		mTVertex->pos.x = mQ[1].x;
+		mTVertex->pos.y = mQ[1].y;
+		mTVertex->tex 	= mTexCoord[1];
+		mTVertex->color = mVerColor[1];
 
-	mTVertex 		= &mVertex[ mNumVertex + 2 ];
-	mTVertex->pos.x = mQ[3].x;
-	mTVertex->pos.y = mQ[3].y;
-	mTVertex->tex 	= mTexCoord[3];
-	mTVertex->color = mVerColor[3];
+		mTVertex 		= &mVertex[ mNumVertex + 1 ];
+		mTVertex->pos.x = mQ[0].x;
+		mTVertex->pos.y = mQ[0].y;
+		mTVertex->tex 	= mTexCoord[0];
+		mTVertex->color = mVerColor[0];
 
-	mTVertex 		= &mVertex[ mNumVertex + 3 ];
-	mTVertex->pos.x = mQ[1].x;
-	mTVertex->pos.y = mQ[1].y;
-	mTVertex->tex 	= mTexCoord[1];
-	mTVertex->color = mVerColor[1];
+		mTVertex 		= &mVertex[ mNumVertex + 2 ];
+		mTVertex->pos.x = mQ[3].x;
+		mTVertex->pos.y = mQ[3].y;
+		mTVertex->tex 	= mTexCoord[3];
+		mTVertex->color = mVerColor[3];
 
-	mTVertex 		= &mVertex[ mNumVertex + 4 ];
-	mTVertex->pos.x = mQ[2].x;
-	mTVertex->pos.y = mQ[2].y;
-	mTVertex->tex 	= mTexCoord[2];
-	mTVertex->color = mVerColor[2];
+		mTVertex 		= &mVertex[ mNumVertex + 3 ];
+		mTVertex->pos.x = mQ[1].x;
+		mTVertex->pos.y = mQ[1].y;
+		mTVertex->tex 	= mTexCoord[1];
+		mTVertex->color = mVerColor[1];
 
-	mTVertex 		= &mVertex[ mNumVertex + 5 ];
-	mTVertex->pos.x = mQ[3].x;
-	mTVertex->pos.y = mQ[3].y;
-	mTVertex->tex 	= mTexCoord[3];
-	mTVertex->color = mVerColor[3];
-#endif
+		mTVertex 		= &mVertex[ mNumVertex + 4 ];
+		mTVertex->pos.x = mQ[2].x;
+		mTVertex->pos.y = mQ[2].y;
+		mTVertex->tex 	= mTexCoord[2];
+		mTVertex->color = mVerColor[2];
 
-	AddVertexs( EE_QUAD_VERTEX );
+		mTVertex 		= &mVertex[ mNumVertex + 5 ];
+		mTVertex->pos.x = mQ[3].x;
+		mTVertex->pos.y = mQ[3].y;
+		mTVertex->tex 	= mTexCoord[3];
+		mTVertex->color = mVerColor[3];
+
+		AddVertexs( 6 );
+	}
 }
 
 void cBatchRenderer::QuadsBegin() {
@@ -740,7 +734,7 @@ void cBatchRenderer::BatchPolygonByPoint( const eeVector2f& Vector ) {
 }
 
 void cBatchRenderer::SetLineWidth( const eeFloat& lineWidth ) {
-	glLineWidth( lineWidth );
+	GLi->LineWidth( lineWidth );
 }
 
 eeFloat cBatchRenderer::GetLineWidth() {

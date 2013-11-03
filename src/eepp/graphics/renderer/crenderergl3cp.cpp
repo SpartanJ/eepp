@@ -1,4 +1,4 @@
-#include <eepp/graphics/renderer/crenderergles2.hpp>
+#include <eepp/graphics/renderer/crenderergl3cp.hpp>
 
 #ifdef EE_GL3_ENABLED
 
@@ -6,20 +6,20 @@
 
 namespace EE { namespace Graphics {
 
-const char * EEGLES2_STATES_NAME[] = {
+const char * EEGL3CP_STATES_NAME[] = {
 	"dgl_Vertex",
 	"dgl_Normal",
 	"dgl_FrontColor"
 };
 
-const char * EEGLES2_TEXTUREUNIT_NAMES[] = {
+const char * EEGL3CP_TEXTUREUNIT_NAMES[] = {
 	"dgl_MultiTexCoord0",
 	"dgl_MultiTexCoord1",
 	"dgl_MultiTexCoord2",
 	"dgl_MultiTexCoord3"
 };
 
-const char * EEGLES2_PLANES_ENABLED_NAME[] = {
+const char * EEGL3CP_PLANES_ENABLED_NAME[] = {
 	"dgl_ClipEnabled[0]",
 	"dgl_ClipEnabled[1]",
 	"dgl_ClipEnabled[2]",
@@ -28,7 +28,7 @@ const char * EEGLES2_PLANES_ENABLED_NAME[] = {
 	"dgl_ClipEnabled[5]"
 };
 
-const char * EEGLES2_PLANES_NAMENABLED_NAME[] = {
+const char * EEGL3CP_PLANES_NAME[] = {
 	"dgl_ClipPlane[0]",
 	"dgl_ClipPlane[1]",
 	"dgl_ClipPlane[2]",
@@ -37,32 +37,13 @@ const char * EEGLES2_PLANES_NAMENABLED_NAME[] = {
 	"dgl_ClipPlane[5]"
 };
 
-const GLchar * EEGLES2_SHADER_BASE_VS =
-#include "shaders/base.vert"
+const GLchar * EEGL3CP_SHADER_BASE_VS =
+#include "shaders/basegl3.vert"
 
-const GLchar * EEGLES2_SHADER_BASE_FS =
-#include "shaders/base.frag"
+const GLchar * EEGL3CP_SHADER_BASE_FS =
+#include "shaders/basegl3.frag"
 
-const GLchar * EEGLES2_SHADER_CLIPPED_VS =
-#include "shaders/clipped.vert"
-
-const GLchar * EEGLES2_SHADER_CLIPPED_FS =
-#include "shaders/clipped.frag"
-
-const GLchar * EEGLES2_SHADER_POINTSPRITE_VS =
-#include "shaders/pointsprite.vert"
-
-const GLchar * EEGLES2_SHADER_POINTSPRITE_FS =
-#include "shaders/pointsprite.frag"
-
-const GLchar * EEGLES2_SHADER_PRIMITIVE_VS =
-#include "shaders/primitive.vert"
-
-const GLchar * EEGLES2_SHADER_PRIMITIVE_FS =
-#include "shaders/primitive.frag"
-
-cRendererGLES2::cRendererGLES2() :
-	mStack( eeNew( cMatrixStack, () ) ),
+cRendererGL3CP::cRendererGL3CP() :
 	mProjectionMatrix_id(0),
 	mModelViewMatrix_id(0),
 	mCurrentMode(0),
@@ -70,41 +51,58 @@ cRendererGLES2::cRendererGLES2() :
 	mShaderPrev(NULL),
 	mTexActive(1),
 	mTexActiveLoc(-1),
-	mClippingEnabledLoc(-1),
+	mPointSpriteLoc(-1),
 	mPointSize(1.f),
 	mCurActiveTex( 0 ),
-	mClippingEnabled( false ),
-	mPointSpriteEnabled( false ),
-	mLoaded( false ),
-	mCurShaderLocal( true )
+	mCurTexCoordArray( 0 ),
+	mVBOSizeAlloc( 1024 * 1024 ),
+	mBiggestAlloc( 0 ),
+	mLoaded( false )
 {
 	mQuadsSupported		= false;
 	mQuadVertexs		= 6;
 
+	mStack = eeNew( cMatrixStack, () );
 	mStack->mProjectionMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
 	mStack->mModelViewMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
+
+	cGL::Enable( GL_VERTEX_PROGRAM_POINT_SIZE );
 }
 
-cRendererGLES2::~cRendererGLES2() {
+cRendererGL3CP::~cRendererGL3CP() {
+	for ( Uint32 i = 0; i < eeARRAY_SIZE( mVBO ); i++ ) {
+		if ( 0 != mVBO[i] ) {
+			glDeleteBuffersARB( 1, &mVBO[i] );
+		}
+	}
+
+	#ifndef EE_GLES
+	glDeleteVertexArrays( 1, &mVAO );
+	#endif
+
 	eeSAFE_DELETE( mStack );
+
+	#ifdef EE_DEBUG
+	cLog::instance()->Write( "Biggest VBO allocation on GL3 Renderer: " + FileSystem::SizeToString( mBiggestAlloc ) );
+	#endif
 }
 
-EEGL_version cRendererGLES2::Version() {
-	return GLv_ES2;
+EEGL_version cRendererGL3CP::Version() {
+	return GLv_3CP;
 }
 
-std::string cRendererGLES2::VersionStr() {
-	return "OpenGL ES 2";
+std::string cRendererGL3CP::VersionStr() {
+	return "OpenGL 3 Core Profile";
 }
 
-void cRendererGLES2::Init() {
+void cRendererGL3CP::Init() {
 	if ( !mLoaded ) {
 		Uint32 i;
 
 		cGL::Init();
 
-		std::string vs( EEGLES2_SHADER_BASE_VS );
-		std::string fs( EEGLES2_SHADER_BASE_FS );
+		std::string vs( EEGL3CP_SHADER_BASE_VS );
+		std::string fs( EEGL3CP_SHADER_BASE_FS );
 
 		mBaseVertexShader = vs;
 
@@ -113,87 +111,68 @@ void cRendererGLES2::Init() {
 			mAttribsLocStates[ i ]	= 0;
 		}
 
+		for ( i = 0; i < eeARRAY_SIZE(mVBO); i++ )
+			mVBO[i] = 0;
+
 		for ( i = 0; i < EE_MAX_PLANES; i++ ) {
 			mPlanes[i]			= -1;
 			mPlanesStates[i]	= 0;
 		}
 
 		for ( i = 0; i < EE_MAX_TEXTURE_UNITS; i++ ) {
-			mTextureUnits[i]		= -1;
+			mTextureUnits[i] = -1;
 			mTextureUnitsStates[i]	= 0;
 		}
 
 		cShader::Ensure( false );
 
-		mShaders[ EEGLES2_SHADER_BASE ]			= cShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
-		mShaders[ EEGLES2_SHADER_BASE ]->SetReloadCb( cb::Make1( this, &cRendererGLES2::ReloadShader ) );
-
-		vs = EEGLES2_SHADER_CLIPPED_VS;
-		fs = EEGLES2_SHADER_CLIPPED_FS;
-
-		mShaders[ EEGLES2_SHADER_CLIPPED ]			= cShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
-		mShaders[ EEGLES2_SHADER_CLIPPED ]->SetReloadCb( cb::Make1( this, &cRendererGLES2::ReloadShader ) );
-
-		vs = EEGLES2_SHADER_POINTSPRITE_VS;
-		fs = EEGLES2_SHADER_POINTSPRITE_FS;
-
-		mShaders[ EEGLES2_SHADER_POINTSPRITE ]		= cShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
-		mShaders[ EEGLES2_SHADER_POINTSPRITE ]->SetReloadCb( cb::Make1( this, &cRendererGLES2::ReloadShader ) );
-
-		vs = EEGLES2_SHADER_PRIMITIVE_VS;
-		fs = EEGLES2_SHADER_PRIMITIVE_FS;
-
-		mShaders[ EEGLES2_SHADER_PRIMITIVE ]		= cShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
-		mShaders[ EEGLES2_SHADER_PRIMITIVE ]->SetReloadCb( cb::Make1( this, &cRendererGLES2::ReloadShader ) );
+		mShaders[ EEGL3CP_SHADER_BASE ]			= cShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
+		mShaders[ EEGL3CP_SHADER_BASE ]->SetReloadCb( cb::Make1( this, &cRendererGL3CP::ReloadShader ) );
 
 		cShader::Ensure( true );
-
-		SetShader( EEGLES2_SHADER_BASE );
 	} else {
 		mCurShader = NULL;
 
-		mShaders[ EEGLES2_SHADER_BASE ]->Reload();
-
-		SetShader( EEGLES2_SHADER_BASE );
+		mShaders[ EEGL3CP_SHADER_BASE ]->Reload();
 	}
 
+	#ifndef EE_GLES
+	glGenVertexArrays( 1, &mVAO );
+	glBindVertexArray( mVAO );
+	#endif
+
+	glGenBuffersARB( EEGL_ARRAY_STATES_COUNT+5, &mVBO[0] );
+
+	AllocateBuffers( mVBOSizeAlloc );
+
 	ClientActiveTexture( GL_TEXTURE0 );
+
+	SetShader( mShaders[ EEGL3CP_SHADER_BASE ] );
 
 	mLoaded = true;
 }
 
-GLuint cRendererGLES2::BaseShaderId() {
+GLuint cRendererGL3CP::BaseShaderId() {
 	return mCurShader->Handler();
 }
 
-void cRendererGLES2::ReloadCurrentShader() {
+void cRendererGL3CP::ReloadCurrentShader() {
 	ReloadShader( mCurShader );
 }
 
-void cRendererGLES2::ReloadShader( cShaderProgram * Shader ) {
+void cRendererGL3CP::ReloadShader( cShaderProgram * Shader ) {
 	mCurShader = NULL;
 
 	SetShader( Shader );
 }
 
-void cRendererGLES2::SetShader( const EEGLES2_SHADERS& Shader ) {
+void cRendererGL3CP::SetShader( const EEGL3CP_SHADERS& Shader ) {
 	SetShader( mShaders[ Shader ] );
 }
 
-void cRendererGLES2::CheckLocalShader() {
-	for ( Uint32 i = 0; i < EEGLES2_SHADERS_COUNT; i++ ) {
-		if ( mShaders[i] == mCurShader ) {
-			mCurShaderLocal = true;
-			return;
-		}
-	}
-
-	mCurShaderLocal = false;
-}
-
-void cRendererGLES2::SetShader( cShaderProgram * Shader ) {
+void cRendererGL3CP::SetShader( cShaderProgram * Shader ) {
 	if ( NULL == Shader ) {
-		Shader = mShaders[ EEGLES2_SHADER_BASE ];
+		Shader = mShaders[ EEGL3CP_SHADER_BASE ];
 	}
 
 	if ( mCurShader == Shader ) {
@@ -206,31 +185,25 @@ void cRendererGLES2::SetShader( cShaderProgram * Shader ) {
 
 	mShaderPrev				= mCurShader;
 	mCurShader				= Shader;
-
-	CheckLocalShader();
-
 	mProjectionMatrix_id	= mCurShader->UniformLocation( "dgl_ProjectionMatrix" );
 	mModelViewMatrix_id		= mCurShader->UniformLocation( "dgl_ModelViewMatrix" );
 	mTexActiveLoc			= mCurShader->UniformLocation( "dgl_TexActive" );
+	mPointSpriteLoc			= mCurShader->UniformLocation( "dgl_PointSpriteActive" );
 	mClippingEnabledLoc		= mCurShader->UniformLocation( "dgl_ClippingEnabled" );
 	mCurActiveTex			= 0;
 
 	Uint32 i;
 
 	for ( i = 0; i < EEGL_ARRAY_STATES_COUNT; i++ ) {
-		mAttribsLoc[ i ] = mCurShader->AttributeLocation( EEGLES2_STATES_NAME[ i ] );
+		mAttribsLoc[ i ] = mCurShader->AttributeLocation( EEGL3CP_STATES_NAME[ i ] );
 	}
 
 	for ( i = 0; i < EE_MAX_PLANES; i++ ) {
-		if ( -1 != mClippingEnabledLoc ) {
-			mPlanes[ i ] = mCurShader->UniformLocation( EEGLES2_PLANES_NAMENABLED_NAME[ i ] );
-		} else {
-			mPlanes[ i ] = -1;
-		}
+		mPlanes[ i ] = mCurShader->UniformLocation( EEGL3CP_PLANES_NAME[ i ] );
 	}
 
 	for ( i = 0; i < EE_MAX_TEXTURE_UNITS; i++ ) {
-		mTextureUnits[ i ] = mCurShader->AttributeLocation( EEGLES2_TEXTUREUNIT_NAMES[ i ] );
+		mTextureUnits[ i ] = mCurShader->AttributeLocation( EEGL3CP_TEXTUREUNIT_NAMES[ i ] );
 	}
 
 	glUseProgram( mCurShader->Handler() );
@@ -253,28 +226,31 @@ void cRendererGLES2::SetShader( cShaderProgram * Shader ) {
 	MatrixMode( CM );
 
 	if ( -1 != mTexActiveLoc ) {
-		mCurShader->SetUniform( mTexActiveLoc, mTexActive );
+		mCurShader->SetUniform( mTexActiveLoc, 1 );
 	}
 
-	if ( -1 != mClippingEnabledLoc ) {
-		mCurShader->SetUniform( mClippingEnabledLoc, 0 );
-	}
+	mCurShader->SetUniform( mClippingEnabledLoc, 0 );
 
 	for ( i = 0; i < EE_MAX_PLANES; i++ ) {
 		if ( -1 != mPlanes[ i ] ) {
-			mCurShader->SetUniform( EEGLES2_PLANES_ENABLED_NAME[ i ], 0 );
+			mCurShader->SetUniform( EEGL3CP_PLANES_ENABLED_NAME[ i ], 0 );
 		}
+	}
+
+	if ( -1 != mPointSpriteLoc ) {
+		mCurShader->SetUniform( mPointSpriteLoc, 0 );
 	}
 }
 
-void cRendererGLES2::Enable( GLenum cap ) {
+void cRendererGL3CP::Enable( GLenum cap ) {
 	switch ( cap ) {
 		case GL_TEXTURE_2D:
 		{
 			if ( 0 == mTexActive ) {
 				mTexActive = 1;
 
-				SetShader( EEGLES2_SHADER_BASE );
+				mCurShader->SetUniform( mTexActiveLoc, mTexActive );
+				mCurShader->SetUniform( mTextureUnits[ mCurActiveTex ], mCurActiveTex );
 			}
 
 			return;
@@ -288,41 +264,36 @@ void cRendererGLES2::Enable( GLenum cap ) {
 		{
 			GLint plane = cap - GL_CLIP_PLANE0;
 
-			SetShader( EEGLES2_SHADER_CLIPPED );
+			if ( 0 == mPlanesStates[ plane ] ) {
+				mPlanesStates[ plane ] = 1;
 
-			mPlanesStates[ plane ] = 1;
+				PlaneStateCheck( true );
 
-			PlaneStateCheck( true );
-
-			mCurShader->SetUniform( EEGLES2_PLANES_ENABLED_NAME[ plane ], 1 );
+				mCurShader->SetUniform( EEGL3CP_PLANES_ENABLED_NAME[ plane ], 1 );
+			}
 
 			return;
 		}
 		case GL_POINT_SPRITE:
 		{
-			mPointSpriteEnabled = 1;
+			mCurShader->SetUniform( mPointSpriteLoc, 1 );
 
-			cGL::Enable( GL_VERTEX_PROGRAM_POINT_SIZE );
-
-			SetShader( EEGLES2_SHADER_POINTSPRITE );
-
-			break;
+			return;
 		}
 	}
 
 	cGL::Enable( cap );
 }
 
-void cRendererGLES2::Disable ( GLenum cap ) {
+void cRendererGL3CP::Disable ( GLenum cap ) {
 	switch ( cap ) {
 		case GL_TEXTURE_2D:
 		{
 			if ( 1 == mTexActive ) {
 				mTexActive = 0;
 
-				SetShader( EEGLES2_SHADER_PRIMITIVE );
+				mCurShader->SetUniform( mTexActiveLoc, mTexActive );
 			}
-
 			return;
 		}
 		case GL_CLIP_PLANE0:
@@ -334,34 +305,28 @@ void cRendererGLES2::Disable ( GLenum cap ) {
 		{
 			GLint plane = cap - GL_CLIP_PLANE0;
 
-			if ( mTexActive ) {
-				SetShader( EEGLES2_SHADER_BASE );
-			} else {
-				SetShader( EEGLES2_SHADER_PRIMITIVE );
+			if ( 1 == mPlanesStates[ plane ] ) {
+				mPlanesStates[ plane ] = 0;
+
+				PlaneStateCheck( false );
+
+				mCurShader->SetUniform( EEGL3CP_PLANES_ENABLED_NAME[ plane ], 0 );
 			}
-
-			mPlanesStates[ plane ] = 0;
-
-			PlaneStateCheck( false );
 
 			return;
 		}
 		case GL_POINT_SPRITE:
 		{
-			mPointSpriteEnabled = 0;
+			mCurShader->SetUniform( mPointSpriteLoc, 0 );
 
-			cGL::Disable( GL_VERTEX_PROGRAM_POINT_SIZE );
-
-			SetShader( EEGLES2_SHADER_BASE );
-
-			break;
+			return;
 		}
 	}
 
 	cGL::Disable( cap );
 }
 
-void cRendererGLES2::EnableClientState( GLenum array ) {
+void cRendererGL3CP::EnableClientState( GLenum array ) {
 	GLint state;
 
 	if ( GL_TEXTURE_COORD_ARRAY == array ) {
@@ -381,7 +346,7 @@ void cRendererGLES2::EnableClientState( GLenum array ) {
 	}
 }
 
-void cRendererGLES2::DisableClientState( GLenum array ) {
+void cRendererGL3CP::DisableClientState( GLenum array ) {
 	GLint state;
 
 	if ( GL_TEXTURE_COORD_ARRAY == array ) {
@@ -401,24 +366,58 @@ void cRendererGLES2::DisableClientState( GLenum array ) {
 	}
 }
 
-void cRendererGLES2::VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid * pointer, GLuint allocate ) {
+void cRendererGL3CP::VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid * pointer, GLuint allocate ) {
 	const GLint index = mAttribsLoc[ EEGL_VERTEX_ARRAY ];
 
+	#ifdef EE_DEBUG
+	mBiggestAlloc = eemax( mBiggestAlloc, allocate );
+	#endif
+
 	if ( -1 != index ) {
+		#ifndef EE_GLES
+		glBindVertexArray( mVAO );
+		#endif
+
+		if ( allocate > mVBOSizeAlloc ) {
+			AllocateBuffers( allocate );
+		}
+
+		glBindBufferARB( GL_ARRAY_BUFFER, mVBO[ EEGL_VERTEX_ARRAY ]			);
+		glBufferSubDataARB( GL_ARRAY_BUFFER, 0, allocate, pointer );
+
 		if ( 0 == mAttribsLocStates[ EEGL_VERTEX_ARRAY ] ) {
 			mAttribsLocStates[ EEGL_VERTEX_ARRAY ] = 1;
 
 			glEnableVertexAttribArray( index );
 		}
 
-		glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, pointer );
+		if ( type == GL_UNSIGNED_BYTE ) {
+			glVertexAttribPointerARB( index, size, type, GL_TRUE, stride, 0 );
+		} else {
+			glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, 0 );
+		}
 	}
 }
 
-void cRendererGLES2::ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
+void cRendererGL3CP::ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
 	const GLint index = mAttribsLoc[ EEGL_COLOR_ARRAY ];
 
+	#ifdef EE_DEBUG
+	mBiggestAlloc = eemax( mBiggestAlloc, allocate );
+	#endif
+
 	if ( -1 != index ) {
+		#ifndef EE_GLES
+		glBindVertexArray( mVAO );
+		#endif
+
+		if ( allocate > mVBOSizeAlloc ) {
+			AllocateBuffers( allocate );
+		}
+
+		glBindBufferARB( GL_ARRAY_BUFFER, mVBO[ EEGL_COLOR_ARRAY ]				);
+		glBufferSubDataARB( GL_ARRAY_BUFFER, 0, allocate, pointer );
+
 		if ( 0 == mAttribsLocStates[ EEGL_COLOR_ARRAY ] ) {
 			mAttribsLocStates[ EEGL_COLOR_ARRAY ] = 1;
 
@@ -426,42 +425,43 @@ void cRendererGLES2::ColorPointer ( GLint size, GLenum type, GLsizei stride, con
 		}
 
 		if ( type == GL_UNSIGNED_BYTE ) {
-			glVertexAttribPointerARB( index, size, type, GL_TRUE, stride, pointer );
+			glVertexAttribPointerARB( index, size, type, GL_TRUE, stride, 0 );
 		} else {
-			glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, pointer );
+			glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, 0 );
 		}
 	}
 }
 
-void cRendererGLES2::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
-	if ( mCurShaderLocal ) {
-		if ( 1 == mTexActive ) {
-			if ( mCurShader == mShaders[ EEGLES2_SHADER_PRIMITIVE ] ) {
-				if ( mClippingEnabled ) {
-					SetShader( EEGLES2_SHADER_CLIPPED );
-				} else if ( mPointSpriteEnabled ) {
-					SetShader( EEGLES2_SHADER_POINTSPRITE );
-				} else {
-					SetShader( EEGLES2_SHADER_BASE );
-				}
-			}
-		}
-	}
-
+void cRendererGL3CP::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
 	const GLint index = mTextureUnits[ mCurActiveTex ];
 
+	#ifdef EE_DEBUG
+	mBiggestAlloc = eemax( mBiggestAlloc, allocate );
+	#endif
+
 	if ( -1 != index ) {
+		#ifndef EE_GLES
+		glBindVertexArray( mVAO );
+		#endif
+
+		if ( allocate > mVBOSizeAlloc ) {
+			AllocateBuffers( allocate );
+		}
+
+		glBindBufferARB( GL_ARRAY_BUFFER, mCurTexCoordArray );
+		glBufferSubDataARB( GL_ARRAY_BUFFER, 0, allocate, pointer );
+
 		if ( 0 == mTextureUnitsStates[ mCurActiveTex ] ) {
 			mTextureUnitsStates[ mCurActiveTex ] = 1;
 
 			glEnableVertexAttribArray( index );
 		}
 
-		glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, pointer );
+		glVertexAttribPointerARB( index, size, type, GL_FALSE, stride, 0 );
 	}
 }
 
-GLint cRendererGLES2::GetStateIndex( const Uint32& State ) {
+GLint cRendererGL3CP::GetStateIndex( const Uint32& State ) {
 	eeASSERT( State < EEGL_ARRAY_STATES_COUNT );
 
 	if ( EEGL_TEXTURE_COORD_ARRAY == State )
@@ -470,16 +470,13 @@ GLint cRendererGLES2::GetStateIndex( const Uint32& State ) {
 	return mAttribsLoc[ State ];
 }
 
-void cRendererGLES2::PlaneStateCheck( bool tryEnable ) {
+void cRendererGL3CP::PlaneStateCheck( bool tryEnable ) {
 	GLint i;
 
 	if (  tryEnable  ) {
 		for ( i = 0; i < EE_MAX_PLANES; i++ ) {
 			if ( 0 != mPlanesStates[ i ] ) {
 				mCurShader->SetUniform( mClippingEnabledLoc, 1 );
-
-				mClippingEnabled = 1;
-
 				return;
 			}
 		}
@@ -490,11 +487,11 @@ void cRendererGLES2::PlaneStateCheck( bool tryEnable ) {
 			}
 		}
 
-		mClippingEnabled = 0;
+		mCurShader->SetUniform( mClippingEnabledLoc, 0 );
 	}
 }
 
-void cRendererGLES2::UpdateMatrix() {
+void cRendererGL3CP::UpdateMatrix() {
 	switch ( mCurrentMode ) {
 		case GL_PROJECTION:
 		{
@@ -515,67 +512,67 @@ void cRendererGLES2::UpdateMatrix() {
 	}
 }
 
-void cRendererGLES2::PushMatrix() {
+void cRendererGL3CP::PushMatrix() {
 	mStack->mCurMatrix->push( mStack->mCurMatrix->top() );
 	UpdateMatrix();
 }
 
-void cRendererGLES2::PopMatrix() {
+void cRendererGL3CP::PopMatrix() {
 	mStack->mCurMatrix->pop();
 	UpdateMatrix();
 }
 
-void cRendererGLES2::LoadIdentity() {
+void cRendererGL3CP::LoadIdentity() {
 	mStack->mCurMatrix->top() = glm::mat4(1.0);
 	UpdateMatrix();
 }
 
-void cRendererGLES2::MultMatrixf ( const GLfloat * m ) {
+void cRendererGL3CP::MultMatrixf ( const GLfloat * m ) {
 	mStack->mCurMatrix->top() *= toGLMmat4( m );
 	UpdateMatrix();
 }
 
-void cRendererGLES2::Translatef( GLfloat x, GLfloat y, GLfloat z ) {
+void cRendererGL3CP::Translatef( GLfloat x, GLfloat y, GLfloat z ) {
 	mStack->mCurMatrix->top() *= glm::translate( glm::vec3( x, y, z ) );
 	UpdateMatrix();
 }
 
-void cRendererGLES2::Rotatef( GLfloat angle, GLfloat x, GLfloat y, GLfloat z ) {
+void cRendererGL3CP::Rotatef( GLfloat angle, GLfloat x, GLfloat y, GLfloat z ) {
 	mStack->mCurMatrix->top() *= glm::rotate( angle, glm::vec3( x, y, z ) );
 	UpdateMatrix();
 }
 
-void cRendererGLES2::Scalef( GLfloat x, GLfloat y, GLfloat z ) {
+void cRendererGL3CP::Scalef( GLfloat x, GLfloat y, GLfloat z ) {
 	mStack->mCurMatrix->top() *= glm::scale( glm::vec3( x, y, z ) );
 	UpdateMatrix();
 }
 
-void cRendererGLES2::Ortho( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar ) {
+void cRendererGL3CP::Ortho( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar ) {
 	mStack->mCurMatrix->top() *= glm::ortho( left, right, bottom, top , zNear, zFar );
 	UpdateMatrix();
 }
 
-void cRendererGLES2::LookAt( GLfloat eyeX, GLfloat eyeY, GLfloat eyeZ, GLfloat centerX, GLfloat centerY, GLfloat centerZ, GLfloat upX, GLfloat upY, GLfloat upZ ) {
+void cRendererGL3CP::LookAt( GLfloat eyeX, GLfloat eyeY, GLfloat eyeZ, GLfloat centerX, GLfloat centerY, GLfloat centerZ, GLfloat upX, GLfloat upY, GLfloat upZ ) {
 	mStack->mCurMatrix->top() *= glm::lookAt( glm::vec3(eyeX, eyeY, eyeZ), glm::vec3(centerX, centerY, centerZ), glm::vec3(upX, upY, upZ) );
 	UpdateMatrix();
 }
 
-void cRendererGLES2::Perspective ( GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar ) {
+void cRendererGL3CP::Perspective ( GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar ) {
 	mStack->mCurMatrix->top() *= glm::perspective( fovy, aspect, zNear, zFar );
 	UpdateMatrix();
 }
 
-void cRendererGLES2::LoadMatrixf( const GLfloat * m ) {
+void cRendererGL3CP::LoadMatrixf( const GLfloat * m ) {
 	mStack->mCurMatrix->top() = toGLMmat4( m );
 	UpdateMatrix();
 }
 
-void cRendererGLES2::Frustum( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near_val, GLfloat far_val ) {
+void cRendererGL3CP::Frustum( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near_val, GLfloat far_val ) {
 	mStack->mCurMatrix->top() *= glm::frustum( left, right, bottom, top, near_val, far_val );
 	UpdateMatrix();
 }
 
-void cRendererGLES2::GetCurrentMatrix( GLenum mode, GLfloat * m ) {
+void cRendererGL3CP::GetCurrentMatrix( GLenum mode, GLfloat * m ) {
 	switch ( mode ) {
 		case GL_PROJECTION:
 		case GL_PROJECTION_MATRIX:
@@ -592,11 +589,11 @@ void cRendererGLES2::GetCurrentMatrix( GLenum mode, GLfloat * m ) {
 	}
 }
 
-GLenum cRendererGLES2::GetCurrentMatrixMode() {
+GLenum cRendererGL3CP::GetCurrentMatrixMode() {
 	return mCurrentMode;
 }
 
-void cRendererGLES2::MatrixMode(GLenum mode) {
+void cRendererGL3CP::MatrixMode(GLenum mode) {
 	mCurrentMode = mode;
 
 	switch ( mCurrentMode ) {
@@ -615,7 +612,7 @@ void cRendererGLES2::MatrixMode(GLenum mode) {
 	}
 }
 
-void cRendererGLES2::Clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
+void cRendererGL3CP::Clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
 	GLfloat tX = (GLfloat)x;
 	GLfloat tY = (GLfloat)y;
 	GLfloat tW = (GLfloat)Width;
@@ -648,7 +645,7 @@ void cRendererGLES2::Clip2DPlaneEnable( const Int32& x, const Int32& y, const In
 	}
 }
 
-void cRendererGLES2::Clip2DPlaneDisable() {
+void cRendererGL3CP::Clip2DPlaneDisable() {
 	if ( ! mPlanesClipped.empty() ) { // This should always be true
 		mPlanesClipped.pop_back();
 	}
@@ -666,17 +663,13 @@ void cRendererGLES2::Clip2DPlaneDisable() {
 	}
 }
 
-void cRendererGLES2::PointSize( GLfloat size ) {
-	#ifndef EE_GLES2
-	glPointSize( size );
-	#endif
-
+void cRendererGL3CP::PointSize( GLfloat size ) {
 	mCurShader->SetUniform( "dgl_PointSize", size );
 
 	mPointSize = size;
 }
 
-void cRendererGLES2::ClipPlane( GLenum plane, const GLdouble * equation ) {
+void cRendererGL3CP::ClipPlane( GLenum plane, const GLdouble * equation ) {
 	Int32 nplane	= plane - GL_CLIP_PLANE0;
 	Int32 location;
 
@@ -695,26 +688,34 @@ void cRendererGLES2::ClipPlane( GLenum plane, const GLdouble * equation ) {
 	glUniform4f( location, (GLfloat)teq[0], (GLfloat)teq[1], (GLfloat)teq[2], (GLfloat)teq[3] );
 }
 
-GLfloat cRendererGLES2::PointSize() {
+GLfloat cRendererGL3CP::PointSize() {
 	return mPointSize;
 }
 
-void cRendererGLES2::ClientActiveTexture( GLenum texture ) {
+void cRendererGL3CP::ClientActiveTexture( GLenum texture ) {
 	mCurActiveTex = texture - GL_TEXTURE0;
 
 	if ( mCurActiveTex >= EE_MAX_TEXTURE_UNITS )
 		mCurActiveTex = 0;
+
+	switch ( mCurActiveTex )
+	{
+		case 0: mCurTexCoordArray = mVBO[ EEGL_TEXTURE_COORD_ARRAY ]; break;
+		case 1: mCurTexCoordArray = mVBO[ EEGL_TEXTURE_COORD_ARRAY+1 ]; break;
+		case 2: mCurTexCoordArray = mVBO[ EEGL_TEXTURE_COORD_ARRAY+2 ]; break;
+		case 3: mCurTexCoordArray = mVBO[ EEGL_TEXTURE_COORD_ARRAY+3 ]; break;
+	}
 }
 
-void cRendererGLES2::TexEnvi( GLenum target, GLenum pname, GLint param ) {
+void cRendererGL3CP::TexEnvi( GLenum target, GLenum pname, GLint param ) {
 	//! @TODO: Implement TexEnvi
 }
 
-std::string cRendererGLES2::GetBaseVertexShader() {
+std::string cRendererGL3CP::GetBaseVertexShader() {
 	return mBaseVertexShader;
 }
 
-GLint cRendererGLES2::Project( GLfloat objx, GLfloat objy, GLfloat objz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *winx, GLfloat *winy, GLfloat *winz ) {
+GLint cRendererGL3CP::Project( GLfloat objx, GLfloat objy, GLfloat objz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *winx, GLfloat *winy, GLfloat *winz ) {
 	glm::vec3 tv3( glm::project( glm::vec3( objx, objy, objz ), toGLMmat4( modelMatrix ), toGLMmat4( projMatrix ), glm::vec4( viewport[0], viewport[1], viewport[2], viewport[3] ) ) );
 
 	if ( NULL != winx )
@@ -729,7 +730,7 @@ GLint cRendererGLES2::Project( GLfloat objx, GLfloat objy, GLfloat objz, const G
 	return GL_TRUE;
 }
 
-GLint cRendererGLES2::UnProject( GLfloat winx, GLfloat winy, GLfloat winz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *objx, GLfloat *objy, GLfloat *objz ) {
+GLint cRendererGL3CP::UnProject( GLfloat winx, GLfloat winy, GLfloat winz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *objx, GLfloat *objy, GLfloat *objz ) {
 	glm::vec3 tv3( glm::unProject( glm::vec3( winx, winy, winz ), toGLMmat4( modelMatrix ), toGLMmat4( projMatrix ), glm::vec4( viewport[0], viewport[1], viewport[2], viewport[3] ) ) );
 
 	if ( NULL != objx )
@@ -742,6 +743,37 @@ GLint cRendererGLES2::UnProject( GLfloat winx, GLfloat winy, GLfloat winz, const
 		*objz = tv3.z;
 
 	return GL_TRUE;
+}
+
+void cRendererGL3CP::BindGlobalVAO() {
+	#ifndef EE_GLES
+	glBindVertexArray( mVAO );
+	#endif
+}
+
+void cRendererGL3CP::AllocateBuffers( const Uint32& size ) {
+	if ( mVBOSizeAlloc != size )
+		cLog::instance()->Write( "Allocating new VBO buffers size: " + String::ToStr( size ) );
+
+	mVBOSizeAlloc = size;
+
+	glBindBufferARB( GL_ARRAY_BUFFER, mVBO[ EEGL_VERTEX_ARRAY ] );
+	glBufferDataARB( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+
+	glBindBufferARB( GL_ARRAY_BUFFER, mVBO[ EEGL_COLOR_ARRAY ] );
+	glBufferDataARB( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+
+	glBindBufferARB( GL_ARRAY_BUFFER, mVBO[ EEGL_TEXTURE_COORD_ARRAY ] );
+	glBufferDataARB( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+
+	glBindBufferARB( GL_ARRAY_BUFFER, mVBO[ EEGL_TEXTURE_COORD_ARRAY+1 ] );
+	glBufferDataARB( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+
+	glBindBufferARB( GL_ARRAY_BUFFER, mVBO[ EEGL_TEXTURE_COORD_ARRAY+2 ] );
+	glBufferDataARB( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
+
+	glBindBufferARB( GL_ARRAY_BUFFER, mVBO[ EEGL_TEXTURE_COORD_ARRAY+3 ] );
+	glBufferDataARB( GL_ARRAY_BUFFER, mVBOSizeAlloc, NULL, GL_STREAM_DRAW );
 }
 
 }}

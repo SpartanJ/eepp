@@ -1,10 +1,13 @@
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/renderer/crenderergl.hpp>
 #include <eepp/graphics/renderer/crenderergl3.hpp>
+#include <eepp/graphics/renderer/crenderergl3cp.hpp>
 #include <eepp/graphics/renderer/crenderergles2.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
 
 namespace EE { namespace Graphics {
+
+typedef const GLubyte *( * pglGetStringiFunc) (GLenum, GLuint);
 
 cGL * GLi = NULL;
 
@@ -35,6 +38,13 @@ cGL * cGL::CreateSingleton( EEGL_version ver ) {
 		{
 			#if defined( EE_GL3_ENABLED ) || defined( EE_GLES2 )
 			ms_singleton = eeNew( cRendererGL3, () );
+			break;
+			#endif
+		}
+		case GLv_3CP:
+		{
+			#if defined( EE_GL3_ENABLED )
+			ms_singleton = eeNew( cRendererGL3CP, () );
 			break;
 			#endif
 		}
@@ -86,7 +96,9 @@ void cGL::DestroySingleton() {
 cGL::cGL() :
 	mExtensions(0),
 	mStateFlags( 1 << GLSF_LINE_SMOOTH ),
-	mPushClip( true )
+	mPushClip( true ),
+	mQuadsSupported( true ),
+	mQuadVertexs( 4 )
 {
 	GLi = this;
 }
@@ -101,6 +113,10 @@ cRendererGL * cGL::GetRendererGL() {
 
 cRendererGL3 * cGL::GetRendererGL3() {
 	return reinterpret_cast<cRendererGL3*>( this );
+}
+
+cRendererGL3CP * cGL::GetRendererGL3CP() {
+	return reinterpret_cast<cRendererGL3CP*>( this );
 }
 
 cRendererGLES2 * cGL::GetRendererGLES2() {
@@ -289,8 +305,39 @@ Uint32 cGL::GetTextureOpEnum( const EE_TEXTURE_OP& Type ) {
 }
 
 std::string cGL::GetExtensions() {
-	const char * extsc = (const char*)glGetString( GL_EXTENSIONS );
 	std::string exts;
+
+	#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_OSX
+	if ( GLv_3 == Version() || GLv_3CP == Version() ) {
+		static pglGetStringiFunc eeglGetStringiFunc = NULL;
+
+		GLint num_exts = 0;
+		GLint i;
+
+		if ( NULL == eeglGetStringiFunc ) {
+			eeglGetStringiFunc = (pglGetStringiFunc)SOIL_GL_GetProcAddress("glGetStringi");
+
+			if ( NULL == eeglGetStringiFunc ) {
+				return 0;
+			}
+		}
+
+		#ifndef GL_NUM_EXTENSIONS
+		#define GL_NUM_EXTENSIONS 0x821D
+		#endif
+		glGetIntegerv(GL_NUM_EXTENSIONS, &num_exts);
+		for (i = 0; i < num_exts; i++)
+		{
+			const char *thisext = (const char *) eeglGetStringiFunc(GL_EXTENSIONS, i);
+
+			exts += std::string( thisext ) + " ";
+		}
+
+		return exts;
+	}
+	#endif
+
+	const char * extsc = (const char*)glGetString( GL_EXTENSIONS );
 
 	if ( NULL != extsc ) {
 		exts = std::string( extsc );
@@ -342,6 +389,7 @@ void cGL::DrawElements( GLenum mode, GLsizei count, GLenum type, const GLvoid *i
 }
 
 void cGL::BindTexture ( GLenum target, GLuint texture ) {
+	if ( GLv_3CP == Version() && 0 == texture ) return;
 	glBindTexture( target, texture );
 }
 
@@ -379,6 +427,16 @@ void cGL::LineSmooth( const bool& Enable ) {
 	}
 
 	BitOp::WriteBitKey( &mStateFlags, GLSF_LINE_SMOOTH, Enable ? 1 : 0 );
+}
+
+void cGL::LineWidth(GLfloat width) {
+	if ( width != mLineWidth ) {
+		if ( GLv_3CP != Version() ) {
+			glLineWidth( width );
+		}
+		mLineWidth = width;
+	}
+
 }
 
 void cGL::PolygonMode() {
@@ -491,6 +549,14 @@ void cGL::StencilMask ( GLuint mask ) {
 
 void cGL::ColorMask ( GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha ) {
 	glColorMask( red, green, blue, alpha );
+}
+
+const int& cGL::QuadVertexs() const {
+	return mQuadVertexs;
+}
+
+const bool& cGL::QuadsSupported() const {
+	return mQuadsSupported;
 }
 
 }}

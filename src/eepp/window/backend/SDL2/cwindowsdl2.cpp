@@ -175,28 +175,27 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	mWindow.WindowSize			= eeSize( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 
 	#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
+		eePRINTL( "Choosing GL Version from: %d", Context.Version );
+
 		if ( GLv_default != Context.Version ) {
 			if ( GLv_ES1 == Context.Version || GLv_2 == Context.Version ) {
-			#ifdef EE_GLES1
 				if ( GLv_2 == Context.Version )
-					mWindow.ContextConfig.Version = GLv_default;
+					mWindow.ContextConfig.Version = GLv_ES1;
 
 				eePRINTL( "Starting GLES1" );
 
 				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 1);
 				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
-			#endif
 			} else {
-			#ifdef EE_GLES2
 				eePRINTL( "Starting GLES2" );
 
 				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
 				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-			#endif
 			}
 		} else {
 			#if defined( EE_GLES2 ) && !defined( EE_GLES1 )
 				eePRINTL( "Starting GLES2 default" );
+
 				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
 				SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 			#else
@@ -207,12 +206,11 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 			#endif
 		}
 	#else
-		/** @todo Add OpenGL Core Profile support? */
-		/*if ( GLv_3 == Context.Version || GLv_ES2 == Context.Version ) {
+		if ( GLv_3CP == Context.Version ) {
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 			SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-		}*/
+		}
 	#endif
 
 	#ifdef SDL2_THREADED_GLCONTEXT

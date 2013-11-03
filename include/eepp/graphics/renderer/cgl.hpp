@@ -13,6 +13,7 @@ namespace EE { namespace Graphics {
 
 class cRendererGL;
 class cRendererGL3;
+class cRendererGL3CP;
 class cRendererGLES2;
 
 /** @brief This class is an abstraction of some OpenGL functionality.
@@ -96,6 +97,8 @@ class EE_API cGL {
 
 		void LineSmooth( const bool& Enable );
 
+		void LineWidth ( GLfloat width );
+
 		/** Reapply the line smooth state */
 		void LineSmooth();
 
@@ -110,6 +113,8 @@ class EE_API cGL {
 		cRendererGL * GetRendererGL();
 
 		cRendererGL3 * GetRendererGL3();
+
+		cRendererGL3CP * GetRendererGL3CP();
 
 		cRendererGLES2 * GetRendererGLES2();
 
@@ -151,11 +156,11 @@ class EE_API cGL {
 
 		virtual void DisableClientState( GLenum array ) = 0;
 
-		virtual void VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) = 0;
+		virtual void VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) = 0;
 
-		virtual void ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) = 0;
+		virtual void ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) = 0;
 
-		virtual void TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer ) = 0;
+		virtual void TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) = 0;
 
 		virtual void SetShader( cShaderProgram * Shader );
 
@@ -194,15 +199,22 @@ class EE_API cGL {
 		void StencilMask ( GLuint mask );
 
 		void ColorMask ( GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha );
+
+		const bool& QuadsSupported() const;
+
+		const int& QuadVertexs() const;
 	protected:
 		enum GLStateFlags {
 			GLSF_LINE_SMOOTH	= 0,
 			GLSF_POLYGON_MODE
 		};
 
-		Uint32 mExtensions;
-		Uint32 mStateFlags;
-		bool mPushClip;
+		Uint32	mExtensions;
+		Uint32	mStateFlags;
+		bool	mPushClip;
+		bool	mQuadsSupported;
+		int		mQuadVertexs;
+		GLfloat mLineWidth;
 		std::list<eeRectf> mPlanesClipped;
 	private:
 		void WriteExtension( Uint8 Pos, Uint32 BitWrite );

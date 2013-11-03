@@ -42,6 +42,9 @@
 
 #else
 	//! Mobile platform ( Android / iPhone / Maemo )
+	#ifndef GL_GLEXT_PROTOTYPES
+		#define GL_GLEXT_PROTOTYPES
+	#endif
 
 	#ifdef EE_GLES_BOTH
 		#if EE_PLATFORM == EE_PLATFORM_IOS
@@ -72,11 +75,6 @@
 				#include <OpenGLES/ES1/glext.h>
 			#else
 				#include <GLES/gl.h>
-
-				#ifndef GL_GLEXT_PROTOTYPES
-					#define GL_GLEXT_PROTOTYPES
-				#endif
-
 				#include <GLES/glext.h>
 			#endif
 		#endif
@@ -92,6 +90,8 @@
 	#define glBindBufferARB glBindBuffer
 	#define glBufferDataARB glBufferData
 	#define glBufferSubDataARB glBufferSubData
+
+	#define GL_QUADS 0x0007
 #endif
 
 /// Wrap GLES2 functions
@@ -107,6 +107,11 @@
 #define glFramebufferRenderbufferEXT glFramebufferRenderbuffer
 #define glFramebufferTexture2DEXT glFramebufferTexture2D
 #define glVertexAttribPointerARB glVertexAttribPointer
+
+#define glGenVertexArrays glGenVertexArraysOES
+#define glDeleteVertexArrays glDeleteVertexArraysOES
+#define glBindVertexArray glBindVertexArrayOES
+#define GL_VERTEX_ARRAY_BINDING GL_VERTEX_ARRAY_BINDING_OES
 
 #endif
 
@@ -233,12 +238,14 @@
 #define GL_PRIMARY_COLOR_ARB GL_PRIMARY_COLOR
 #define GL_PREVIOUS_ARB GL_PREVIOUS
 
+#define glGenVertexArrays( a, b )
+#define glBindVertexArray( a )
+#define glDeleteVertexArrays( a, b )
+
+#ifndef GL_DOUBLE
+#define GL_DOUBLE 0x140A
 #endif
 
-#ifdef EE_GLES
-	#define EE_QUAD_VERTEX 6
-#else
-	#define EE_QUAD_VERTEX 4
 #endif
 
 #include <eepp/graphics/glhelper.hpp>

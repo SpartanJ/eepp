@@ -294,13 +294,6 @@ WindowSettings cEngine::CreateWindowSettings( cIniFile * ini, std::string iniKey
 
 	WindowSettings WinSettings( Width, Height, Caption, Style, WinBackend, BitColor, Icon );
 
-	#if EE_PLATFORM == EE_PLATFORM_IOS
-	//! @TODO: Check if SDL2 default win settings are being forced ( it wasn't working fine some time ago )
-	WinSettings.Width	= 960;
-	WinSettings.Height	= 640;
-	WinSettings.Style	= WindowStyle::NoBorder;
-	#endif
-
 	return WinSettings;
 }
 
@@ -316,12 +309,20 @@ ContextSettings cEngine::CreateContextSettings( cIniFile * ini, std::string iniK
 	ini->ReadFile();
 
 	bool VSync					= ini->GetValueB( iniKeyName, "VSync", true );
-	Int32 GLVersion				= ini->GetValueI( iniKeyName, "GLVersion", 2 );
+	std::string GLVersion		= ini->GetValue( iniKeyName, "GLVersion", "0" );
+
+	String::ToLower( GLVersion );
 
 	EEGL_version GLVer;
-	if ( 3 == GLVersion )		GLVer = GLv_3;
-	else if ( 4 == GLVersion )	GLVer = GLv_ES2;
-	else						GLVer = GLv_default;
+	if (		"3" == GLVersion || "opengl 3" == GLVersion || "gl3" == GLVersion || "opengl3" == GLVersion )									GLVer = GLv_3;
+	else if (	"4" == GLVersion || "opengl es 2" == GLVersion || "gles2" == GLVersion || "opengles2" == GLVersion || "es2" == GLVersion )		GLVer = GLv_ES2;
+	else if (	"5" == GLVersion || "opengl 3 core profile" == GLVersion ||
+				"gl3cp" == GLVersion || "opengl3cp" == GLVersion || "opengl core profile" == GLVersion ||
+				"core profile" == GLVersion || "cp" == GLVersion )																				GLVer = GLv_3CP;
+	else if (	"opengl es 1" == GLVersion || "gles1" == GLVersion || "gl es 1" == GLVersion || "opengl es1" == GLVersion ||
+				"opengles1" == GLVersion || "es1" == GLVersion || "gles 1" == GLVersion )														GLVer = GLv_ES1;
+	else if (	"2" == GLVersion || "opengl 2" == GLVersion || "gl2" == GLVersion || "gl 2" == GLVersion )										GLVer = GLv_2;
+	else																																		GLVer = GLv_default;
 
 	bool doubleBuffering 		= ini->GetValueB( iniKeyName, "DoubleBuffering", true );
 	int depthBufferSize 		= ini->GetValueI( iniKeyName, "DepthBufferSize", 24 );
