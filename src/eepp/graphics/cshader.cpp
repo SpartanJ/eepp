@@ -137,11 +137,25 @@ void cShader::EnsureVersion() {
 			}
 		} else {
 			if ( mSource.find( "gl_FragColor" ) != std::string::npos ) {
+				if ( GLi->Version() != GLv_3CP ) {
 
-				mSource = "#ifdef GL_ES\nprecision mediump float;\nprecision lowp int;\n#endif\nvarying	vec4		gl_Color;\nvarying	vec4		gl_TexCoord[ 1 ];\n" + mSource;
+					#ifdef EE_GLES
+					std::string preSource = "#ifdef GL_ES\nprecision mediump float;\nprecision lowp int;\n#endif";
+					#else
+					std::string preSource = "#version 120";
+					#endif
+
+					mSource = preSource + "\nvarying	vec4		gl_Color;\nvarying	vec4		gl_TexCoord[ 1 ];\n" + mSource;
+				} else {
+					mSource = "#version 330\nin	vec4		gl_Color;\nin	vec4		gl_TexCoord[ 1 ];\nout		vec4		gl_FragColor;\n" + mSource;
+				}
 
 				String::ReplaceSubStr( mSource, "gl_Color"		, "dgl_Color"		);
 				String::ReplaceSubStr( mSource, "gl_TexCoord"	, "dgl_TexCoord"	);
+
+				if ( GLi->Version() == GLv_3CP ) {
+					String::ReplaceSubStr( mSource, "gl_FragColor"	, "dgl_FragColor"	);
+				}
 			}
 		}
 	}

@@ -666,3 +666,5 @@
 ../../assets/ee.ini
 ../../src/eepp/graphics/renderer/crenderergl3cp.cpp
 ../../include/eepp/graphics/renderer/crenderergl3cp.hpp
+../../src/eepp/graphics/renderer/shaders/basegl3cp.vert
+../../src/eepp/graphics/renderer/shaders/basegl3cp.frag

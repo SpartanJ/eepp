@@ -38,10 +38,10 @@ const char * EEGL3CP_PLANES_NAME[] = {
 };
 
 const GLchar * EEGL3CP_SHADER_BASE_VS =
-#include "shaders/basegl3.vert"
+#include "shaders/basegl3cp.vert"
 
 const GLchar * EEGL3CP_SHADER_BASE_FS =
-#include "shaders/basegl3.frag"
+#include "shaders/basegl3cp.frag"
 
 cRendererGL3CP::cRendererGL3CP() :
 	mProjectionMatrix_id(0),
@@ -76,9 +76,7 @@ cRendererGL3CP::~cRendererGL3CP() {
 		}
 	}
 
-	#ifndef EE_GLES
-	glDeleteVertexArrays( 1, &mVAO );
-	#endif
+	DeleteVertexArrays( 1, &mVAO );
 
 	eeSAFE_DELETE( mStack );
 
@@ -136,10 +134,8 @@ void cRendererGL3CP::Init() {
 		mShaders[ EEGL3CP_SHADER_BASE ]->Reload();
 	}
 
-	#ifndef EE_GLES
-	glGenVertexArrays( 1, &mVAO );
-	glBindVertexArray( mVAO );
-	#endif
+	GenVertexArrays( 1, &mVAO );
+	BindVertexArray( mVAO );
 
 	glGenBuffersARB( EEGL_ARRAY_STATES_COUNT+5, &mVBO[0] );
 
@@ -374,9 +370,7 @@ void cRendererGL3CP::VertexPointer ( GLint size, GLenum type, GLsizei stride, co
 	#endif
 
 	if ( -1 != index ) {
-		#ifndef EE_GLES
-		glBindVertexArray( mVAO );
-		#endif
+		BindVertexArray( mVAO );
 
 		if ( allocate > mVBOSizeAlloc ) {
 			AllocateBuffers( allocate );
@@ -407,9 +401,7 @@ void cRendererGL3CP::ColorPointer ( GLint size, GLenum type, GLsizei stride, con
 	#endif
 
 	if ( -1 != index ) {
-		#ifndef EE_GLES
-		glBindVertexArray( mVAO );
-		#endif
+		BindVertexArray( mVAO );
 
 		if ( allocate > mVBOSizeAlloc ) {
 			AllocateBuffers( allocate );
@@ -440,9 +432,7 @@ void cRendererGL3CP::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, 
 	#endif
 
 	if ( -1 != index ) {
-		#ifndef EE_GLES
-		glBindVertexArray( mVAO );
-		#endif
+		BindVertexArray( mVAO );
 
 		if ( allocate > mVBOSizeAlloc ) {
 			AllocateBuffers( allocate );
@@ -746,9 +736,7 @@ GLint cRendererGL3CP::UnProject( GLfloat winx, GLfloat winy, GLfloat winz, const
 }
 
 void cRendererGL3CP::BindGlobalVAO() {
-	#ifndef EE_GLES
-	glBindVertexArray( mVAO );
-	#endif
+	BindVertexArray( mVAO );
 }
 
 void cRendererGL3CP::AllocateBuffers( const Uint32& size ) {

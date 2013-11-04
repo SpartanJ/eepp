@@ -200,6 +200,12 @@ class EE_API cGL {
 
 		void ColorMask ( GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha );
 
+		void BindVertexArray ( GLuint array );
+
+		void DeleteVertexArrays ( GLsizei n, const GLuint *arrays );
+
+		void GenVertexArrays ( GLsizei n, GLuint *arrays );
+
 		const bool& QuadsSupported() const;
 
 		const int& QuadVertexs() const;
@@ -215,6 +221,8 @@ class EE_API cGL {
 		bool	mQuadsSupported;
 		int		mQuadVertexs;
 		GLfloat mLineWidth;
+		GLuint	mCurVAO;
+
 		std::list<eeRectf> mPlanesClipped;
 	private:
 		void WriteExtension( Uint8 Pos, Uint32 BitWrite );

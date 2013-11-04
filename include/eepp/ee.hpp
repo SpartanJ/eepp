@@ -47,8 +47,6 @@
 	@todo Improve Premake4 support. It should be really easy to compile eepp in Windows and OS X ( Linux is always easy thanks to package managers ).
 				STATE:	Need to implement on App Bundles for OS X.
 
-	@todo Add Thread-local storage class.
-
 	Middle-term plans:
 
 	@todo Add audio recording from the SFML implementation, adapted to the engine coding style.

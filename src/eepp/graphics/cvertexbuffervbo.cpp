@@ -28,11 +28,9 @@ cVertexBufferVBO::~cVertexBufferVBO() {
 		glDeleteBuffersARB( 1, (GLuint *)&mElementHandle );
 	}
 
-	#ifndef EE_GLES
 	if ( GLv_3CP == GLi->Version() && mVAO ) {
-		glDeleteVertexArrays( 1, &mVAO );
+		GLi->DeleteVertexArrays( 1, &mVAO );
 	}
-	#endif
 }
 
 void cVertexBufferVBO::Bind() {
@@ -55,8 +53,8 @@ bool cVertexBufferVBO::Compile() {
 
 	if ( GLv_3CP == GLi->Version() ) {
 		glGetIntegerv( GL_VERTEX_ARRAY_BINDING, &curVAO );
-		glGenVertexArrays( 1, &mVAO );
-		glBindVertexArray( mVAO );
+		GLi->GenVertexArrays( 1, &mVAO );
+		GLi->BindVertexArray( mVAO );
 	}
 	#endif
 
@@ -100,11 +98,9 @@ bool cVertexBufferVBO::Compile() {
 	mCompiled	= true;
 	mBuffersSet	= false;
 
-	#ifndef EE_GLES
 	if ( GLv_3CP == GLi->Version() ) {
-		glBindVertexArray( curVAO );
+		GLi->BindVertexArray( curVAO );
 	}
-	#endif
 
 	return true;
 }
@@ -118,7 +114,7 @@ void cVertexBufferVBO::Draw() {
 
 	if ( GLv_3CP == GLi->Version() ) {
 		glGetIntegerv( GL_VERTEX_ARRAY_BINDING, &curVAO );
-		glBindVertexArray( mVAO );
+		GLi->BindVertexArray( mVAO );
 	}
 	#endif
 
@@ -143,11 +139,9 @@ void cVertexBufferVBO::Draw() {
 		glDrawArrays( mDrawType, 0, GetVertexCount() );
 	}
 
-	#ifndef EE_GLES
 	if ( GLv_3CP == GLi->Version() ) {
-		glBindVertexArray( curVAO );
+		GLi->BindVertexArray( curVAO );
 	}
-	#endif
 }
 
 void cVertexBufferVBO::SetVertexStates() {
@@ -164,7 +158,7 @@ void cVertexBufferVBO::SetVertexStates() {
 		}
 
 		glGetIntegerv( GL_VERTEX_ARRAY_BINDING, &curVAO );
-		glBindVertexArray( mVAO );
+		GLi->BindVertexArray( mVAO );
 	}
 	#endif
 
@@ -284,11 +278,9 @@ void cVertexBufferVBO::SetVertexStates() {
 
 	mBuffersSet = true;
 
-	#ifndef EE_GLES
 	if ( GLv_3CP == GLi->Version() ) {
-		glBindVertexArray( curVAO );
+		GLi->BindVertexArray( curVAO );
 	}
-	#endif
 }
 
 void cVertexBufferVBO::Update( const Uint32& Types, bool Indices ) {

@@ -355,11 +355,11 @@ bool cSubTexture::SaveToFile(const std::string& filepath, const EE_SAVE_TYPE& Fo
 
 	if ( NULL != mTexture ) {
 		if ( SAVE_TYPE_JPG != Format ) {
-			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, RealSize().Width(), RealSize().Height(), 4, GetPixelsPtr() ) );
+			Res = 0 != ( SOIL_save_image ( filepath.c_str(), Format, RealSize().Width(), RealSize().Height(), mTexture->Channels(), GetPixelsPtr() ) );
 		} else {
 			jpge::params params;
 			params.m_quality = cImage::JpegQuality();
-			Res = jpge::compress_image_to_jpeg_file( filepath.c_str(), RealSize().Width(), RealSize().Height(), 4, GetPixelsPtr(), params);
+			Res = jpge::compress_image_to_jpeg_file( filepath.c_str(), RealSize().Width(), RealSize().Height(), mTexture->Channels(), GetPixelsPtr(), params);
 		}
 	}
 

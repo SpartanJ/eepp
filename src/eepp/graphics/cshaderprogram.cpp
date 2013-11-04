@@ -242,10 +242,10 @@ bool cShaderProgram::Link() {
 	#endif
 
 	if ( !mValid ) {
-		eePRINTL( "cShaderProgram::Link(): %s: Couldn't link program. Log follows:\n", mName.c_str(), mLinkLog.c_str() );
+		eePRINTL( "cShaderProgram::Link(): %s: Couldn't link program. Log follows:\n%s", mName.c_str(), mLinkLog.c_str() );
 	} else {
 		if ( mLinkLog.size() > 1 ) {
-			eePRINTL( "cShaderProgram::Link() %s: Program linked, but received some log:\n", mName.c_str(), mLinkLog.c_str() );
+			eePRINTL( "cShaderProgram::Link() %s: Program linked, but received some log:\n%s", mName.c_str(), mLinkLog.c_str() );
 		}
 
 		mUniformLocations.clear();

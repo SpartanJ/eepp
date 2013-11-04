@@ -98,7 +98,9 @@ cGL::cGL() :
 	mStateFlags( 1 << GLSF_LINE_SMOOTH ),
 	mPushClip( true ),
 	mQuadsSupported( true ),
-	mQuadVertexs( 4 )
+	mQuadVertexs( 4 ),
+	mLineWidth( 1 ),
+	mCurVAO( 0 )
 {
 	GLi = this;
 }
@@ -553,6 +555,28 @@ void cGL::ColorMask ( GLboolean red, GLboolean green, GLboolean blue, GLboolean 
 
 const int& cGL::QuadVertexs() const {
 	return mQuadVertexs;
+}
+
+void cGL::BindVertexArray ( GLuint array ) {
+#ifndef EE_GLES
+	if ( mCurVAO != array ) {
+		glBindVertexArray( array );
+
+		mCurVAO = array;
+	}
+#endif
+}
+
+void cGL::DeleteVertexArrays ( GLsizei n, const GLuint *arrays ) {
+#ifndef EE_GLES
+	glDeleteVertexArrays( n, arrays );
+#endif
+}
+
+void cGL::GenVertexArrays ( GLsizei n, GLuint *arrays ) {
+#ifndef EE_GLES
+	glGenVertexArrays( n, arrays );
+#endif
 }
 
 const bool& cGL::QuadsSupported() const {
