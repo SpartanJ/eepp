@@ -332,7 +332,6 @@ void cVertexBufferVBO::Unbind() {
 		GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
 	}
 
-	GLi->ActiveTexture( GL_TEXTURE0 );
 	GLi->ClientActiveTexture( GL_TEXTURE0 );
 
 	if( !VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_POSITION ) ) {

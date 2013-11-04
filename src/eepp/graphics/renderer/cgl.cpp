@@ -98,6 +98,7 @@ cGL::cGL() :
 	mStateFlags( 1 << GLSF_LINE_SMOOTH ),
 	mPushClip( true ),
 	mQuadsSupported( true ),
+	mBlendEnabled( false ),
 	mQuadVertexs( 4 ),
 	mLineWidth( 1 ),
 	mCurVAO( 0 )
@@ -353,10 +354,38 @@ void cGL::Viewport( GLint x, GLint y, GLsizei width, GLsizei height ) {
 }
 
 void cGL::Disable ( GLenum cap ) {
+	switch ( cap )
+	{
+		case GL_BLEND:
+		{
+			if ( !mBlendEnabled ) {
+				return;
+			}
+
+			mBlendEnabled = false;
+
+			break;
+		}
+	}
+
 	glDisable( cap );
 }
 
 void cGL::Enable( GLenum cap ) {
+	switch ( cap )
+	{
+		case GL_BLEND:
+		{
+			if ( mBlendEnabled ) {
+				return;
+			}
+
+			mBlendEnabled = true;
+
+			break;
+		}
+	}
+
 	glEnable( cap );
 }
 

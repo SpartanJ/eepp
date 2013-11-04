@@ -157,14 +157,6 @@
 	#define EE_API
 #endif
 
-#ifndef EE_USE_DOUBLES
-	#ifdef EE_64BIT
-		#define EE_USE_DOUBLES 1
-	#else
-		#define EE_USE_DOUBLES 0
-	#endif
-#endif
-
 #if ( defined( EE_GLES2 ) || defined( EE_GLES1 ) ) && !defined( EE_GLES )
 	#define EE_GLES
 #endif
@@ -185,7 +177,7 @@
 #define eeINDEX_NOT_FOUND 0xFFFFFFFF
 
 namespace EE {
-#if 1 == EE_USE_DOUBLES
+#ifdef EE_USE_DOUBLES
 	typedef double eeFloat;
 	#define eesqrt sqrt
 	#define eesin sin

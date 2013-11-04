@@ -78,7 +78,6 @@ void cVertexBufferOGL::SetVertexStates() {
 		}
 	}
 
-	GLi->ActiveTexture( GL_TEXTURE0 );
 	GLi->ClientActiveTexture( GL_TEXTURE0 );
 }
 

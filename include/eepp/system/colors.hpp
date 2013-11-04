@@ -195,6 +195,7 @@ typedef tColor<Uint8> 		eeColor;
 typedef tColor<eeFloat> 	eeColorf;
 typedef tColorA<Uint8> 		eeColorA;
 typedef tColorA<eeFloat> 	eeColorAf;
+typedef tColorA<float>		eeColorAff;
 
 //! @brief Small class to help in some color operations
 class Color {

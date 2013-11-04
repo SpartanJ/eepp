@@ -219,6 +219,7 @@ class EE_API cGL {
 		Uint32	mStateFlags;
 		bool	mPushClip;
 		bool	mQuadsSupported;
+		bool	mBlendEnabled;
 		int		mQuadVertexs;
 		GLfloat mLineWidth;
 		GLuint	mCurVAO;

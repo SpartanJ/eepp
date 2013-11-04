@@ -3,7 +3,7 @@
 
 #include <eepp/declares.hpp>
 
-#if 1 == EE_USE_DOUBLES
+#ifdef EE_USE_DOUBLES
 #define GL_FP	GL_DOUBLE
 #else
 #define GL_FP	GL_FLOAT

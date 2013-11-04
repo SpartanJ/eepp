@@ -65,8 +65,6 @@ cRendererGL3CP::cRendererGL3CP() :
 	mStack = eeNew( cMatrixStack, () );
 	mStack->mProjectionMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
 	mStack->mModelViewMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
-
-	cGL::Enable( GL_VERTEX_PROGRAM_POINT_SIZE );
 }
 
 cRendererGL3CP::~cRendererGL3CP() {
