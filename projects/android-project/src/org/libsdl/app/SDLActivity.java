@@ -19,7 +19,7 @@ import android.util.Log;
 import android.graphics.*;
 import android.media.*;
 import android.hardware.*;
-
+import android.os.PowerManager;
 
 /**
     SDL Activity
@@ -49,7 +49,8 @@ public class SDLActivity extends Activity {
     protected static EGLDisplay  mEGLDisplay;
     protected static EGLConfig   mEGLConfig;
     protected static int mGLMajor, mGLMinor;
-
+	protected static PowerManager.WakeLock mWakeLock;
+	
     // Load the .so
     static {
 		System.loadLibrary("openal");
@@ -72,6 +73,12 @@ public class SDLActivity extends Activity {
         mLayout.addView(mSurface);
 
         setContentView(mLayout);
+        
+		final PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+		mWakeLock = pm.newWakeLock(PowerManager.FULL_WAKE_LOCK, "My Tag");
+		mWakeLock.acquire();
+		
+		getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
     // Events
@@ -98,6 +105,8 @@ public class SDLActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+		mWakeLock.release();
+		
         super.onDestroy();
         Log.v("SDL", "onDestroy()");
         // Send a quit message to the application

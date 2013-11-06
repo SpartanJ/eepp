@@ -48,9 +48,8 @@ bool cVertexBufferVBO::Compile() {
 	if( mCompiled )
 		return false;
 
-	#ifndef EE_GLES
 	GLint curVAO = 0;
-
+	#ifndef EE_GLES
 	if ( GLv_3CP == GLi->Version() ) {
 		glGetIntegerv( GL_VERTEX_ARRAY_BINDING, &curVAO );
 		GLi->GenVertexArrays( 1, &mVAO );
@@ -109,9 +108,8 @@ void cVertexBufferVBO::Draw() {
 	if ( !mCompiled )
 		return;
 
-	#ifndef EE_GLES
 	GLint curVAO = 0;
-
+	#ifndef EE_GLES
 	if ( GLv_3CP == GLi->Version() ) {
 		glGetIntegerv( GL_VERTEX_ARRAY_BINDING, &curVAO );
 		GLi->BindVertexArray( mVAO );
@@ -149,9 +147,8 @@ void cVertexBufferVBO::SetVertexStates() {
 	GLint index;
 	#endif
 
-	#ifndef EE_GLES
 	GLint curVAO = 0;
-
+	#ifndef EE_GLES
 	if ( GLv_3CP == GLi->Version() ) {
 		if ( mBuffersSet ) {
 			return;
