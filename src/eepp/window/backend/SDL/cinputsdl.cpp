@@ -16,6 +16,12 @@
 	#endif
 #endif
 
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+#ifndef SDL_NUMEVENTS
+#define SDL_NUMEVENTS SDL_LASTEVENT
+#endif
+#endif
+
 #include <eepp/window/backend/SDL/cinputsdl.hpp>
 #include <eepp/window/backend/SDL/cjoystickmanagersdl.hpp>
 #include <eepp/window/backend/SDL/ccursormanagersdl.hpp>
@@ -60,7 +66,9 @@ void cInputSDL::Update() {
 
 				EEEvent.Type = InputEvent::KeyDown;
 				EEEvent.key.state = SDLEvent.key.state;
+				#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 				EEEvent.key.which = SDLEvent.key.which;
+				#endif
 				EEEvent.key.keysym.sym = SDLEvent.key.keysym.sym;
 				EEEvent.key.keysym.mod = SDLEvent.key.keysym.mod;
 				EEEvent.key.keysym.unicode = SDLEvent.key.keysym.unicode;
@@ -70,7 +78,9 @@ void cInputSDL::Update() {
 			{
 				EEEvent.Type = InputEvent::KeyUp;
 				EEEvent.key.state = SDLEvent.key.state;
+				#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 				EEEvent.key.which = SDLEvent.key.which;
+				#endif
 				EEEvent.key.keysym.sym = SDLEvent.key.keysym.sym;
 				EEEvent.key.keysym.mod = SDLEvent.key.keysym.mod;
 				EEEvent.key.keysym.unicode = SDLEvent.key.keysym.unicode;
@@ -79,7 +89,9 @@ void cInputSDL::Update() {
 			case SDL_MOUSEMOTION:
 			{
 				EEEvent.Type = InputEvent::MouseMotion;
+				#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 				EEEvent.motion.which = SDLEvent.motion.which;
+				#endif
 				EEEvent.motion.state = SDLEvent.motion.state;
 				EEEvent.motion.x = SDLEvent.motion.x;
 				EEEvent.motion.y = SDLEvent.motion.y;
@@ -91,7 +103,9 @@ void cInputSDL::Update() {
 			{
 				EEEvent.Type = InputEvent::MouseButtonDown;
 				EEEvent.button.button = SDLEvent.button.button;
+				#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 				EEEvent.button.which = SDLEvent.button.which;
+				#endif
 				EEEvent.button.state = SDLEvent.button.state;
 				EEEvent.button.x = SDLEvent.button.x;
 				EEEvent.button.y = SDLEvent.button.y;
@@ -101,7 +115,9 @@ void cInputSDL::Update() {
 			{
 				EEEvent.Type = InputEvent::MouseButtonUp;
 				EEEvent.button.button = SDLEvent.button.button;
+				#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 				EEEvent.button.which = SDLEvent.button.which;
+				#endif
 				EEEvent.button.state = SDLEvent.button.state;
 				EEEvent.button.x = SDLEvent.button.x;
 				EEEvent.button.y = SDLEvent.button.y;

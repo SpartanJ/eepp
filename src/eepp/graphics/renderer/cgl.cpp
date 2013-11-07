@@ -587,7 +587,7 @@ const int& cGL::QuadVertexs() const {
 }
 
 void cGL::BindVertexArray ( GLuint array ) {
-#ifndef EE_GLES
+#if !defined( EE_GLES ) || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	if ( mCurVAO != array ) {
 		glBindVertexArray( array );
 
@@ -597,13 +597,13 @@ void cGL::BindVertexArray ( GLuint array ) {
 }
 
 void cGL::DeleteVertexArrays ( GLsizei n, const GLuint *arrays ) {
-#ifndef EE_GLES
+#if !defined( EE_GLES ) || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	glDeleteVertexArrays( n, arrays );
 #endif
 }
 
 void cGL::GenVertexArrays ( GLsizei n, GLuint *arrays ) {
-#ifndef EE_GLES
+#if !defined( EE_GLES ) || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	glGenVertexArrays( n, arrays );
 #endif
 }

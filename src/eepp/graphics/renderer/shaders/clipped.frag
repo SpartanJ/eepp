@@ -7,8 +7,13 @@
 "#define MAX_CLIP_PLANES 6\n\
 uniform				sampler2D	textureUnit0;\n\
 uniform				int			dgl_TexActive;\n\
+#ifndef GL_ES\n\
 uniform				int			dgl_ClippingEnabled;\n\
 uniform				int			dgl_ClipEnabled[ MAX_CLIP_PLANES ];\n\
+#else\n\
+uniform	lowp		int			dgl_ClippingEnabled;\n\
+uniform	lowp		int			dgl_ClipEnabled[ MAX_CLIP_PLANES ];\n\
+#endif\n\
 uniform				vec4		dgl_ClipPlane[ MAX_CLIP_PLANES ];\n\
 varying				vec4		dgl_Color;\n\
 #ifndef GL_ES\n\

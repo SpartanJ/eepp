@@ -40,6 +40,17 @@ newplatform {
 	}
 }
 
+newplatform {
+	name = "emscripten",
+	description = "Emscripten",
+	gcc = {
+		cc = "emcc",
+		cxx = "em++",
+		ar = "emar",
+		cppflags = "-MMD -D__emscripten__"
+	}
+}
+
 newgcctoolchain {
 	name = "mingw32",
 	description = "Mingw32 to cross-compile windows binaries from *nix",
@@ -119,6 +130,10 @@ function os.get_real()
 	end
 	
 	if 	_OPTIONS.platform == "mingw32" then
+		return _OPTIONS.platform
+	end
+	
+	if 	_OPTIONS.platform == "emscripten" then
 		return _OPTIONS.platform
 	end
 
@@ -244,6 +259,8 @@ end
 function build_link_configuration( package_name, use_ee_icon )
 	includedirs { "include", "src" }
 
+	local extension = "";
+	
 	if package_name == "eepp" then
 		defines { "EE_EXPORTS" }
 	elseif package_name == "eepp-static" then
@@ -265,8 +282,12 @@ function build_link_configuration( package_name, use_ee_icon )
 				linkoptions { "../../assets/icon/ee.res" }
 			end
 		end
-	end	
-
+		
+		if os.is_real("emscripten") then
+			extension = ".html"
+		end
+	end
+	
 	configuration "debug"
 		defines { "DEBUG", "EE_DEBUG", "EE_MEMORY_MANAGER" }
 		flags { "Symbols" }
@@ -275,7 +296,7 @@ function build_link_configuration( package_name, use_ee_icon )
 			buildoptions{ "-Wall -Wno-long-long" }
 		end
 
-		targetname ( package_name .. "-debug" )
+		targetname ( package_name .. "-debug" .. extension )
 
 	configuration "release"
 		defines { "NDEBUG" }
@@ -285,11 +306,20 @@ function build_link_configuration( package_name, use_ee_icon )
 			buildoptions { "-fno-strict-aliasing -O3 -s -ffast-math" }
 		end
 
-		targetname ( package_name )
+		targetname ( package_name .. extension )
 		
 	configuration "windows"
 		add_cross_config_links()
 	
+	configuration "emscripten"
+		if _OPTIONS["with-gles1"] then
+			linkoptions{ "-s LEGACY_GL_EMULATION=1" }
+		end
+
+		if _OPTIONS["with-gles2"] then
+			linkoptions{ "-s FULL_ES2=1" }
+		end
+
 	set_ios_config()
 end
 
@@ -351,7 +381,7 @@ function add_static_links()
 			"imageresampler-static"
 	}
 	
-	if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") then
+	if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") and not os.is_real("emscripten") then
 		links{ "glew-static" }
 	end
 end
@@ -453,7 +483,7 @@ function backend_is( name )
 
 	local ret_val = os_findlib( name ) and backend_sel
 
-	if os.is_real("mingw32") then
+	if os.is_real("mingw32") or os.is_real("emscripten") then
 		ret_val = backend_sel
 	end
 
@@ -585,7 +615,7 @@ solution "eepp"
 		kind "StaticLib"
 		language "C"
 		targetdir("libs/" .. os.get_real() .. "/helpers/")
-		if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") then
+		if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") and not os.is_real("emscripten") then
 			files { "src/eepp/helper/glew/*.c" }
 		end
 		includedirs { "include/eepp/helper/glew" }

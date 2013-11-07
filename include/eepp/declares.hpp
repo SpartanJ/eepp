@@ -4,14 +4,15 @@
 #include <eepp/helper/sophist/sophist.h>
 #include <cmath>
 
-#define EE_PLATFORM_WIN		1
-#define EE_PLATFORM_LINUX	2
-#define EE_PLATFORM_MACOSX	3
-#define EE_PLATFORM_BSD		4
-#define EE_PLATFORM_SOLARIS	5
-#define EE_PLATFORM_HAIKU	6
-#define EE_PLATFORM_ANDROID	7
-#define EE_PLATFORM_IOS		8
+#define EE_PLATFORM_WIN			1
+#define EE_PLATFORM_LINUX		2
+#define EE_PLATFORM_MACOSX		3
+#define EE_PLATFORM_BSD			4
+#define EE_PLATFORM_SOLARIS		5
+#define EE_PLATFORM_HAIKU		6
+#define EE_PLATFORM_ANDROID		7
+#define EE_PLATFORM_IOS			8
+#define EE_PLATFORM_EMSCRIPTEN	9
 
 #if defined( __WIN32__ ) || defined( _WIN32 ) || defined( _WIN64 )
 	#define EE_PLATFORM EE_PLATFORM_WIN
@@ -43,7 +44,8 @@
 	#else
 		#define EE_PLATFORM EE_PLATFORM_MACOSX
 	#endif
-
+#elif defined( __emscripten__ ) || defined( EMSCRIPTEN )
+	#define EE_PLATFORM EE_PLATFORM_EMSCRIPTEN
 #elif defined( __ANDROID__ ) || defined( ANDROID )
 	#define EE_PLATFORM EE_PLATFORM_ANDROID
 #elif defined ( linux ) || defined( __linux__ )
@@ -56,12 +58,12 @@
 	#define EE_PLATFORM EE_PLATFORM_HAIKU
 #endif
 
-#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
+#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	#if !defined( EE_GLES1 ) && !defined( EE_GLES2 )
 		#define EE_GLES2
 	#endif
 
-	#ifndef EE_PLATFORM_TOUCH
+	#if !defined( EE_PLATFORM_TOUCH ) && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		#define EE_PLATFORM_TOUCH
 	#endif
 #endif
@@ -77,7 +79,7 @@
 #endif
 
 //! Since EE just use basic POSIX stuff, declare as POSIX some OS that are mostly POSIX-compliant
-#if defined ( linux ) || defined( __linux__ ) || defined( __FreeBSD__ ) || defined(__OpenBSD__) || defined( __NetBSD__ ) || defined( __DragonFly__ ) || defined( __SVR4 ) || defined( __sun ) || defined( __APPLE_CC__ ) || defined ( __APPLE__ ) || defined( __HAIKU__ ) || defined( __BEOS__ )
+#if defined ( linux ) || defined( __linux__ ) || defined( __FreeBSD__ ) || defined(__OpenBSD__) || defined( __NetBSD__ ) || defined( __DragonFly__ ) || defined( __SVR4 ) || defined( __sun ) || defined( __APPLE_CC__ ) || defined ( __APPLE__ ) || defined( __HAIKU__ ) || defined( __BEOS__ ) || defined( __emscripten__ ) || defined( EMSCRIPTEN )
 	#define EE_PLATFORM_POSIX
 #endif
 

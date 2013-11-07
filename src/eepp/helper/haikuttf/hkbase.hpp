@@ -35,7 +35,7 @@ typedef SOPHIST_uint32		u32;
 	#define HK_PLATFORM HK_PLATFORM_HAIKU
 #endif
 
-#if defined ( linux ) || defined( __linux__ ) || defined( __FreeBSD__ ) || defined(__OpenBSD__) || defined( __NetBSD__ ) || defined( __DragonFly__ ) || defined( __SVR4 ) || defined( __APPLE_CC__ ) || defined ( __APPLE__ ) || defined( __HAIKU__ ) || defined( __BEOS__ )
+#if defined ( linux ) || defined( __linux__ ) || defined( __FreeBSD__ ) || defined(__OpenBSD__) || defined( __NetBSD__ ) || defined( __DragonFly__ ) || defined( __SVR4 ) || defined( __APPLE_CC__ ) || defined ( __APPLE__ ) || defined( __HAIKU__ ) || defined( __BEOS__ ) || defined( __emscripten__ ) || defined( EMSCRIPTEN )
 	#define HK_PLATFORM_POSIX
 #endif
 

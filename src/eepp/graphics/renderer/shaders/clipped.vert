@@ -7,8 +7,13 @@
 "#define MAX_CLIP_PLANES 6\n\
 uniform				mat4 dgl_ProjectionMatrix;\n\
 uniform				mat4 dgl_ModelViewMatrix;\n\
-uniform				int  dgl_ClippingEnabled;\n\
-uniform				int	 dgl_ClipEnabled[ MAX_CLIP_PLANES ];\n\
+#ifndef GL_ES\n\
+uniform				int			dgl_ClippingEnabled;\n\
+uniform				int			dgl_ClipEnabled[ MAX_CLIP_PLANES ];\n\
+#else\n\
+uniform	lowp		int			dgl_ClippingEnabled;\n\
+uniform	lowp		int			dgl_ClipEnabled[ MAX_CLIP_PLANES ];\n\
+#endif\n\
 uniform				vec4 dgl_ClipPlane[ MAX_CLIP_PLANES ];\n\
 attribute			vec4 dgl_Vertex;\n\
 attribute			vec4 dgl_FrontColor;\n\
