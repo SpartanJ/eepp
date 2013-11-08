@@ -312,7 +312,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		add_cross_config_links()
 	
 	configuration "emscripten"
-		if _OPTIONS["with-gles1"] then
+		if _OPTIONS["with-gles1"] and not _OPTIONS["with-gles2"] then
 			linkoptions{ "-s LEGACY_GL_EMULATION=1" }
 		end
 

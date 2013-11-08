@@ -43,7 +43,7 @@ cGL * cGL::CreateSingleton( EEGL_version ver ) {
 		}
 		case GLv_3CP:
 		{
-			#if defined( EE_GL3_ENABLED )
+			#if defined( EE_GL3_ENABLED ) || defined( EE_GLES2 )
 			ms_singleton = eeNew( cRendererGL3CP, () );
 			break;
 			#endif
@@ -234,7 +234,7 @@ bool cGL::PointSpriteSupported() {
 
 bool cGL::ShadersSupported() {
 #ifdef EE_GLES
-	return ( GLv_ES2 == Version() || GLv_3 == Version() );
+	return ( GLv_ES2 == Version() || GLv_3 == Version() || GLv_3CP == Version() );
 #else
 	return IsExtension( EEGL_ARB_shading_language_100 ) && IsExtension( EEGL_ARB_shader_objects ) && IsExtension( EEGL_ARB_vertex_shader ) && IsExtension( EEGL_ARB_fragment_shader );
 #endif
@@ -451,6 +451,7 @@ void cGL::LineSmooth() {
 }
 
 void cGL::LineSmooth( const bool& Enable ) {
+	#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	if ( Enable ) {
 		GLi->Enable( GL_LINE_SMOOTH );
 	} else {
@@ -458,11 +459,15 @@ void cGL::LineSmooth( const bool& Enable ) {
 	}
 
 	BitOp::WriteBitKey( &mStateFlags, GLSF_LINE_SMOOTH, Enable ? 1 : 0 );
+	#endif
 }
 
 void cGL::LineWidth(GLfloat width) {
 	if ( width != mLineWidth ) {
-		if ( GLv_3CP != Version() ) {
+		#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+		if ( GLv_3CP != Version() )
+		#endif
+		{
 			glLineWidth( width );
 		}
 		mLineWidth = width;
@@ -587,7 +592,7 @@ const int& cGL::QuadVertexs() const {
 }
 
 void cGL::BindVertexArray ( GLuint array ) {
-#if !defined( EE_GLES ) || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+#if !defined( EE_GLES )
 	if ( mCurVAO != array ) {
 		glBindVertexArray( array );
 
@@ -597,13 +602,13 @@ void cGL::BindVertexArray ( GLuint array ) {
 }
 
 void cGL::DeleteVertexArrays ( GLsizei n, const GLuint *arrays ) {
-#if !defined( EE_GLES ) || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+#if !defined( EE_GLES )
 	glDeleteVertexArrays( n, arrays );
 #endif
 }
 
 void cGL::GenVertexArrays ( GLsizei n, GLuint *arrays ) {
-#if !defined( EE_GLES ) || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+#if !defined( EE_GLES )
 	glGenVertexArrays( n, arrays );
 #endif
 }

@@ -131,7 +131,7 @@ void cBatchRenderer::Flush() {
 
 	if ( NULL != mTexture ) {
 		mTF->Bind( mTexture );
-		GLi->TexCoordPointer( 2, GL_FP		, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f)							, alloc		);
+		GLi->TexCoordPointer( 2, GL_FP			, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f)						, alloc		);
 	} else {
 		GLi->Disable( GL_TEXTURE_2D );
 		GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );

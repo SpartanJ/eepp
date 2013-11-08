@@ -37,11 +37,23 @@ const char * EEGL3CP_PLANES_NAME[] = {
 	"dgl_ClipPlane[5]"
 };
 
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+
 const GLchar * EEGL3CP_SHADER_BASE_VS =
 #include "shaders/basegl3cp.vert"
 
 const GLchar * EEGL3CP_SHADER_BASE_FS =
 #include "shaders/basegl3cp.frag"
+
+#else
+
+const GLchar * EEGL3CP_SHADER_BASE_VS =
+#include "shaders/basegl3.vert"
+
+const GLchar * EEGL3CP_SHADER_BASE_FS =
+#include "shaders/basegl3.frag"
+
+#endif
 
 cRendererGL3CP::cRendererGL3CP() :
 	mProjectionMatrix_id(0),
