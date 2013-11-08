@@ -667,7 +667,7 @@ void cRendererGLES2::Clip2DPlaneDisable() {
 }
 
 void cRendererGLES2::PointSize( GLfloat size ) {
-	#ifndef EE_GLES2
+	#if !defined( EE_GLES2 ) && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	glPointSize( size );
 	#endif
 

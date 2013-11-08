@@ -18,11 +18,24 @@ cGL * cGL::CreateSingleton( EEGL_version ver ) {
 	if ( GLv_default == ver )
 		ver = GLv_2;
 	#else
-	if ( GLv_default == ver )
-		#ifdef EE_GLES1
-		ver = GLv_ES1;
+		#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+		if ( GLv_default == ver )
+			#ifdef EE_GLES1
+			ver = GLv_ES1;
+			#else
+			ver = GLv_ES2;
+			#endif
 		#else
-		ver = GLv_ES2;
+			if ( GLv_default == ver )
+				#ifndef EE_GLES1_DEFAULT
+					#ifdef EE_GLES2
+					ver = GLv_3CP;
+					#else
+					ver = GLv_ES1;
+					#endif
+				#else
+					ver = GLv_ES1;
+				#endif
 		#endif
 	#endif
 

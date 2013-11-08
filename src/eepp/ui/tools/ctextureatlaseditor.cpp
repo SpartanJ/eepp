@@ -334,7 +334,12 @@ void cTextureAtlasEditor::OpenTextureAtlas( const cUIEvent * Event ) {
 	cUICommonDialog * CDL = reinterpret_cast<cUICommonDialog*> ( Event->Ctrl() );
 
 	eeSAFE_DELETE( mTextureAtlasLoader );
-	mTextureAtlasLoader = eeNew( cTextureAtlasLoader, ( CDL->GetFullPath(), true, cb::Make1( this, &cTextureAtlasEditor::OnTextureAtlasLoaded ) ) );
+	bool threaded = true;
+	#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	threaded = false;
+	#endif
+
+	mTextureAtlasLoader = eeNew( cTextureAtlasLoader, ( CDL->GetFullPath(), threaded, cb::Make1( this, &cTextureAtlasEditor::OnTextureAtlasLoaded ) ) );
 }
 
 void cTextureAtlasEditor::OnTextureAtlasLoaded( cTextureAtlasLoader * TGLoader ) {

@@ -6,7 +6,9 @@ namespace EE { namespace Audio {
 void cAudioListener::GlobalVolume( const float& Volume ) {
 	EnsureALInit();
 
+	#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	ALCheck( alListenerf( AL_GAIN, Volume * 0.01f ) );
+	#endif
 }
 
 float cAudioListener::GlobalVolume() {

@@ -21,8 +21,12 @@ cAudioDevice::cAudioDevice() {
 			alcMakeContextCurrent( mContext );
 
 			// Initialize the listener, located at the origin and looking along the Z axis
+			#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 			ALCheck( alListenerf( AL_GAIN, 1.f ) );
+
 			ALCheck( alListener3f( AL_POSITION, 0.f, 0.f, 0.f ) );
+			#endif
+
 			float Orientation[] = {0.f, 0.f, -1.f, 0.f, 1.f, 0.f};
 			ALCheck( alListenerfv( AL_ORIENTATION, Orientation ) );
 

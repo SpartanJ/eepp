@@ -312,12 +312,23 @@ function build_link_configuration( package_name, use_ee_icon )
 		add_cross_config_links()
 	
 	configuration "emscripten"
-		if _OPTIONS["with-gles1"] and not _OPTIONS["with-gles2"] then
+		if _OPTIONS["with-gles1"] and ( not _OPTIONS["with-gles2"] or _OPTIONS["force-gles1"] ) then
 			linkoptions{ "-s LEGACY_GL_EMULATION=1" }
 		end
 
-		if _OPTIONS["with-gles2"] then
+		if _OPTIONS["with-gles2"] and not _OPTIONS["force-gles1"] then
 			linkoptions{ "-s FULL_ES2=1" }
+		end
+		
+		if (	package_name ~= "eepp" and
+				package_name ~= "eepp-static" and
+				package_name ~= "eepp-ew" and
+				package_name ~= "eepp-es" and
+				package_name ~= "eepp-http-request" and
+				package_name ~= "eepp-physics" and
+				package_name ~= "eepp-vbo-fbo-batch"
+		) then
+			linkoptions { "--preload-file ../../assets@/" }
 		end
 
 	set_ios_config()
@@ -585,6 +596,11 @@ function build_eepp( build_name )
 	
 	configuration "macosx"
 		files { "src/eepp/window/platform/osx/*.cpp" }
+		
+	configuration "emscripten"
+		if _OPTIONS["force-gles1"] then
+			defines{ "EE_GLES1_DEFAULT" }
+		end
 end
 
 solution "eepp"

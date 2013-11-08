@@ -222,7 +222,9 @@ void cRendererGL::ClientActiveTexture( GLenum texture ) {
 }
 
 void cRendererGL::PointSize( GLfloat size ) {
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	glPointSize( size );
+#endif
 }
 
 void cRendererGL::Clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
@@ -294,7 +296,9 @@ void cRendererGL::TexEnvi( GLenum target, GLenum pname, GLint param ) {
 GLfloat cRendererGL::PointSize() {
 	float ps = 1;
 
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	glGetFloatv( GL_POINT_SIZE, &ps );
+#endif
 
 	return ps;
 }

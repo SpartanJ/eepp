@@ -740,7 +740,9 @@ void cBatchRenderer::SetLineWidth( const eeFloat& lineWidth ) {
 eeFloat cBatchRenderer::GetLineWidth() {
 	float lw = 1;
 
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	glGetFloatv( GL_LINE_WIDTH, &lw );
+#endif
 
 	return lw;
 }
