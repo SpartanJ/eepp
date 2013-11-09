@@ -131,7 +131,10 @@ float cSound::Volume() const {
 
 eeVector3ff cSound::Position() const {
 	eeVector3ff Position;
+
+	#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	ALCheck( alGetSource3f( mSource, AL_POSITION, &Position.x, &Position.y, &Position.z ) );
+	#endif
 
 	return Position;
 }

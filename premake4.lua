@@ -328,7 +328,7 @@ function build_link_configuration( package_name, use_ee_icon )
 				package_name ~= "eepp-physics" and
 				package_name ~= "eepp-vbo-fbo-batch"
 		) then
-			linkoptions { "--preload-file ../../assets@/" }
+			linkoptions { "--preload-file assets/" }
 		end
 
 	set_ios_config()
@@ -353,6 +353,8 @@ function generate_os_links()
 		multiple_insert( os_links, { "openal", "GL" } )
 	elseif os.is_real("ios") then
 		multiple_insert( os_links, { "OpenGLES.framework", "OpenAL.framework", "AudioToolbox.framework", "CoreAudio.framework", "Foundation.framework", "CoreFoundation.framework", "UIKit.framework", "QuartzCore.framework", "CoreGraphics.framework" } )
+	elseif os.is_real("emscripten") then
+		multiple_insert( os_links, { "openal" } )
 	end
 end
 
