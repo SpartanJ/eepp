@@ -76,10 +76,10 @@ newplatform {
 	name = "ios-cross-arm7",
 	description = "iOS ARMv7 (not implemented)",
 	gcc = {
-		cc = iif( toolchain_path, toolchain_path .. "ios-clang", "clang" ),
-		cxx = iif( toolchain_path, toolchain_path .. "ios-clang++", "clang++" ),
-		ar = iif( toolchain_path, "ar", "ar" ),
-		cppflags = "-MMD"
+		cc = "ios-clang",
+		cxx = "ios-clang++",
+		ar = "arm-apple-darwin11-ar",
+		cppflags = "-MMD -march=armv7 -marm -mcpu=cortex-a8"
 	}
 }
 
@@ -443,44 +443,45 @@ end
 
 function set_ios_config()
 	if 	_OPTIONS.platform == "ios-arm7" or 
-		_OPTIONS.platform == "ios-x86" or 
-		_OPTIONS.platform == "ios-cross-arm7" then
-	
-		local err = false
-		
-		if nil == os.getenv("TOOLCHAINPATH") then
-			print("You must set TOOLCHAINPATH enviroment variable.")
-			print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/")
-			err = true
-		end
-		
-		if nil == os.getenv("SYSROOTPATH") then
-			print("You must set SYSROOTPATH enviroment variable.")
-			print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS5.0.sdk")
-			err = true
-		end
+	_OPTIONS.platform == "ios-x86" then
+		configuration { "ios-arm or ios-x86" }
+			local err = false
+			
+			if nil == os.getenv("TOOLCHAINPATH") then
+				print("You must set TOOLCHAINPATH enviroment variable.")
+				print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/")
+				err = true
+			end
+			
+			if nil == os.getenv("SYSROOTPATH") then
+				print("You must set SYSROOTPATH enviroment variable.")
+				print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS5.0.sdk")
+				err = true
+			end
 
-		if nil == os.getenv("IOSVERSION") then
-			print("You must set IOSVERSION enviroment variable.")
-			print("\tExample: 5.0")
-			err = true
-		end
-		
-		if err then
-			os.exit(1)
-		end
+			if nil == os.getenv("IOSVERSION") then
+				print("You must set IOSVERSION enviroment variable.")
+				print("\tExample: 5.0")
+				err = true
+			end
+			
+			if err then
+				os.exit(1)
+			end
 
-		local sysroot_path = os.getenv("SYSROOTPATH")
-		local framework_path = sysroot_path .. "/System/Library/Frameworks"
-		local framework_libs_path = framework_path .. "/usr/lib"
-		local sysroot_ver = "-miphoneos-version-min=" .. os.getenv("IOSVERSION") .. " -isysroot " .. sysroot_path
-		
-		configuration { "ios-arm", "ios-x86" }
+			local sysroot_path = os.getenv("SYSROOTPATH")
+			local framework_path = sysroot_path .. "/System/Library/Frameworks"
+			local framework_libs_path = framework_path .. "/usr/lib"
+			local sysroot_ver = "-miphoneos-version-min=" .. os.getenv("IOSVERSION") .. " -isysroot " .. sysroot_path
+			
 			buildoptions { sysroot_ver .. "-I" .. sysroot_path .. "/usr/include" }
 			linkoptions { sysroot_ver }
 			libdirs { framework_libs_path }
 			linkoptions { "-F" .. framework_path .. " -L" .. framework_libs_path .. " -isysroot " .. sysroot_path }
-   end
+	end
+	
+	configuration "ios-cross-arm7"
+		includedirs { "src/eepp/helper/SDL2/include" }
 end
 
 function backend_is( name )

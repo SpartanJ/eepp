@@ -10,11 +10,11 @@ EE_GLES_LINK		:= -lGLESv2
 
 APP_STL				:= stlport_static
 
-APP_LDLIBS			:= -llog $(EE_GLES_LINK) -lm -lz -lOpenSLES
+APP_LDLIBS			:= -llog $(EE_GLES_LINK) -lm -lz -lOpenSLES -lEGL
 
 #Debug Build
 # arm-linux-androideabi-4.4.3 crashes in -O0 mode on SDL sources
-APP_CFLAGS			:= -g -DDEBUG -DEE_DEBUG -DEE_MEMORY_MANAGER
+APP_CFLAGS			:= -g -DDEBUG -DEE_DEBUG
 APP_OPTIM 			:=debug
 
 #Release Build

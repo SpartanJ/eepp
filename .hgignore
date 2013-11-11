@@ -35,3 +35,7 @@ external_projects.lua
 .*\.suo$
 .*\.DS_Store$
 .*.pdb$
+syntax: glob
+src/eepp/helper/SDL2/include/SDL2
+projects/ios/eepp.app/assets
+projects/ios/eepp.app/eepp

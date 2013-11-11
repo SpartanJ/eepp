@@ -443,6 +443,11 @@ class EE_API cWindow {
 
 		/** Deactviates the shared GL context in the current thread. */
 		virtual void UnsetGLContextThread();
+
+		/** Runs the main loop function passed as parameter
+		**	@param func The main loop function
+		**	@param fps The desired FPS ( 0 = infinite ) */
+		void RunMainLoop( void (*func)(), int fps = 0 );
 	protected:
 		friend class cEngine;
 

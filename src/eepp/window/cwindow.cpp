@@ -41,6 +41,10 @@
 	#endif
 #endif
 
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+#include <emscripten.h>
+#endif
+
 namespace EE { namespace Window {
 
 cWindow::cFrameData::cFrameData() :
@@ -323,8 +327,10 @@ void cWindow::Display( bool clear ) {
 
 	SwapBuffers();
 
+	#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	if ( clear )
 		Clear();
+	#endif
 
 	GetElapsedTime();
 
@@ -540,6 +546,18 @@ void cWindow::SetGLContextThread() {
 }
 
 void cWindow::UnsetGLContextThread() {
+}
+
+void cWindow::RunMainLoop( void (*func)(), int fps ) {
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	emscripten_set_main_loop(func, fps, 1);
+#else
+	FrameRateLimit( fps );
+
+	while ( Running() ) {
+		func();
+	}
+#endif
 }
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID

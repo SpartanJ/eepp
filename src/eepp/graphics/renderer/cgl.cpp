@@ -223,6 +223,14 @@ void cGL::Init() {
 	WriteExtension( EEGL_ARB_vertex_shader					, 1													);
 	WriteExtension( EEGL_ARB_fragment_shader				, 1													);
 	#endif
+
+	#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	if ( !IsExtension( EEGL_EXT_texture_compression_s3tc ) ) {
+		WriteExtension(	EEGL_EXT_texture_compression_s3tc	,	IsExtension( "WEBGL_compressed_texture_s3tc" ) ||
+																IsExtension( "WEBKIT_WEBGL_compressed_texture_s3tc" ) ||
+																IsExtension( "MOZ_WEBGL_compressed_texture_s3tc" ) );
+	}
+	#endif
 }
 
 bool cGL::IsExtension( const std::string& name ) {

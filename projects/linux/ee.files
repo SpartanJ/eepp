@@ -668,3 +668,4 @@
 ../../include/eepp/graphics/renderer/crenderergl3cp.hpp
 ../../src/eepp/graphics/renderer/shaders/basegl3cp.vert
 ../../src/eepp/graphics/renderer/shaders/basegl3cp.frag
+../../src/eepp/window/backend/SDL/cbackendsdl.cpp
