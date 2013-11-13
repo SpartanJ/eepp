@@ -72,6 +72,7 @@ class cEETest : private cThread {
 		typedef cb::Callback0<void> SceneCb;
 
 		void Init();
+		void Update();
 		void End();
 		void Process();
 		void Render();
@@ -80,6 +81,7 @@ class cEETest : private cThread {
 
 		void ParticlesThread();
 		void Particles();
+		void UpdateParticles();
 		void LoadTextures();
 		void CmdSetPartsNum ( const std::vector < String >& params );
 

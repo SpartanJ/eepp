@@ -3,13 +3,22 @@
 /// This example is based on the WebGL demo from http://minimal.be/lab/fluGL/
 namespace Demo_ExternalShader {
 
+#if defined( EE_ARM ) || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+static eeFloat sqrt_aprox[20001];
+#endif
+
 Uint32 ParticlesNum	= 30000;
+
 cWindow * win = NULL;
+cInput * imp = NULL;
 cShaderProgram * ShaderProgram = NULL;
 bool ShadersSupported = false;
 eeFloat tw;
 eeFloat th;
 eeFloat aspectRatio;
+eeVector3ff * vertices		= eeNewArray( eeVector3ff, ParticlesNum );
+eeVector3ff * velocities	= eeNewArray( eeVector3ff, ParticlesNum );
+eeColorAf * colors			= eeNewArray( eeColorAf, ParticlesNum );
 
 void videoResize( cWindow * w ) {
 	/// Video Resize event will re-setup the 2D projection and states, so we must rebuild them.
@@ -81,6 +90,118 @@ void videoResize( cWindow * w ) {
 }
 using namespace Demo_ExternalShader;
 
+void MainLoop()
+{
+	win->Clear();
+
+	imp->Update();
+
+	if ( imp->IsKeyDown( KEY_ESCAPE ) )
+	{
+		win->Close();
+	}
+
+	if ( imp->IsKeyUp( KEY_F ) )
+	{
+		if ( win->Windowed() ) {
+			win->Size( win->GetDesktopResolution().Width(), win->GetDesktopResolution().Height(), false );
+		} else {
+			win->Size( 960, 640, true );
+			win->Center();
+		}
+	}
+
+	eeFloat p;
+	eeVector2f mf	= imp->GetMousePosf();
+	eeFloat tratio	= tw / th;
+	eeFloat touchX	= ( mf.x / tw - 1 ) * tratio;
+	eeFloat touchY	= -( mf.y / th - 1 );
+	bool touch		= imp->MouseLeftPressed();
+
+	for( Uint32 i = 0; i < ParticlesNum; i+=2 )
+	{
+		// copy old positions
+		vertices[i].x = vertices[i+1].x;
+		vertices[i].y = vertices[i+1].y;
+
+		// inertia
+		velocities[i].x *= velocities[i].z;
+		velocities[i].y *= velocities[i].z;
+
+		// horizontal
+		p = vertices[i+1].x;
+		p += velocities[i].x;
+
+		if ( p < -aspectRatio ) {
+			p = -aspectRatio;
+			velocities[i].x = eeabs(velocities[i].x);
+		} else if ( p > aspectRatio ) {
+			p = aspectRatio;
+			velocities[i].x = -eeabs(velocities[i].x);
+		}
+		vertices[i+1].x = p;
+
+		// vertical
+		p = vertices[i+1].y;
+		p += velocities[i].y;
+		if ( p < -aspectRatio ) {
+			p = -aspectRatio;
+			velocities[i].y = eeabs(velocities[i].y);
+		} else if ( p > aspectRatio ) {
+			p = aspectRatio;
+			velocities[i].y = -eeabs(velocities[i].y);
+
+		}
+		vertices[i+1].y = p;
+
+		if ( touch ) {
+			eeFloat dx	= touchX - vertices[i].x;
+			eeFloat dy	= touchY - vertices[i].y;
+			eeFloat distance = dx * dx + dy * dy;
+
+			#if !defined( EE_ARM ) && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
+			eeFloat d	= eesqrt( distance );
+			#else
+			eeFloat d = sqrt_aprox[ (Int32)(distance * 1000) ];
+			#endif
+
+			if ( d < 2.f ) {
+				if ( d < 0.03f ) {
+					vertices[i+1].x = Math::Randf( -1, 1 ) * aspectRatio;
+					vertices[i+1].y = Math::Randf( -1, 1 );
+					velocities[i].x = 0;
+					velocities[i].y = 0;
+				} else {
+					dx /= d;
+					dy /= d;
+					d = ( 2 - d ) * 0.5;
+					d *= d;
+					velocities[i].x += dx * d * .01;
+					velocities[i].y += dy * d * .01;
+				}
+			}
+		}
+	}
+
+	/// VertexPointer assigns values by default to the attribute "dgl_Vertex"
+	/// TextureCoordPointer to "dgl_MultiTexCoord0"
+	GLi->VertexPointer( 3, GL_FLOAT, sizeof(eeVector3ff), reinterpret_cast<char*> ( &vertices[0] ), ParticlesNum * sizeof(float) * 3 );
+
+	/// ColorPointer to "dgl_FrontColor"
+	GLi->ColorPointer( 4, GL_FP, sizeof(eeColorAf), reinterpret_cast<char*> ( &colors[0] ), ParticlesNum * sizeof(eeFloat) * 4 );
+
+	/// Draw the lines
+	GLi->DrawArrays( DM_LINES, 0, ParticlesNum );
+
+	/// Stop the simulation if the window is not visible
+	while ( !win->Visible() ) {
+		imp->Update();	/// To get the real state of the window you need to update the window input
+		Sys::Sleep( 100 ); /// Sleep 100 ms
+	}
+
+	win->Display( false );
+}
+
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	win = cEngine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - External Shaders" ), ContextSettings( true ) );
@@ -90,7 +211,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		/// This will work without shaders too
 		ShadersSupported = GLi->ShadersSupported();
 
-		cInput * imp = win->GetInput();
+		imp = win->GetInput();
 
 		/// We really don't need shaders for this, but the purpose of the example is to show how to work with external shaders
 		if ( ShadersSupported ) {
@@ -133,9 +254,6 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		win->PushResizeCallback( cb::Make1( &videoResize ) );
 
 		Uint32 i;
-		eeVector3ff * vertices		= eeNewArray( eeVector3ff, ParticlesNum );
-		eeVector3ff * velocities	= eeNewArray( eeVector3ff, ParticlesNum );
-		eeColorAf * colors			= eeNewArray( eeColorAf, ParticlesNum );
 
 		for (i = 0; i < ParticlesNum; i++ )
 		{
@@ -145,8 +263,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		}
 
 		/** Optimized for ARM ( pre-cache sqrt ) */
-		#ifdef EE_ARM
-		static eeFloat sqrt_aprox[20001];
+		#if defined( EE_ARM ) || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 		eeFloat tFloat = 0;
 		for ( int i = 0; i <= 20000; i++ ) {
 			sqrt_aprox[i] = eesqrt( tFloat );
@@ -154,115 +271,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		}
 		#endif
 
-		while ( win->Running() )
-		{
-			imp->Update();
-
-			if ( imp->IsKeyDown( KEY_ESCAPE ) )
-			{
-				win->Close();
-			}
-
-			if ( imp->IsKeyUp( KEY_F ) )
-			{
-				if ( win->Windowed() ) {
-					win->Size( win->GetDesktopResolution().Width(), win->GetDesktopResolution().Height(), false );
-				} else {
-					win->Size( 960, 640, true );
-					win->Center();
-				}
-			}
-
-			eeFloat p;
-			eeVector2f mf	= imp->GetMousePosf();
-			eeFloat tratio	= tw / th;
-			eeFloat touchX	= ( mf.x / tw - 1 ) * tratio;
-			eeFloat touchY	= -( mf.y / th - 1 );
-			bool touch		= imp->MouseLeftPressed();
-
-			for( i = 0; i < ParticlesNum; i+=2 )
-			{
-				// copy old positions
-				vertices[i].x = vertices[i+1].x;
-				vertices[i].y = vertices[i+1].y;
-
-				// inertia
-				velocities[i].x *= velocities[i].z;
-				velocities[i].y *= velocities[i].z;
-
-				// horizontal
-				p = vertices[i+1].x;
-				p += velocities[i].x;
-
-				if ( p < -aspectRatio ) {
-					p = -aspectRatio;
-					velocities[i].x = eeabs(velocities[i].x);
-				} else if ( p > aspectRatio ) {
-					p = aspectRatio;
-					velocities[i].x = -eeabs(velocities[i].x);
-				}
-				vertices[i+1].x = p;
-
-				// vertical
-				p = vertices[i+1].y;
-				p += velocities[i].y;
-				if ( p < -aspectRatio ) {
-					p = -aspectRatio;
-					velocities[i].y = eeabs(velocities[i].y);
-				} else if ( p > aspectRatio ) {
-					p = aspectRatio;
-					velocities[i].y = -eeabs(velocities[i].y);
-
-				}
-				vertices[i+1].y = p;
-
-				if ( touch ) {
-					eeFloat dx	= touchX - vertices[i].x;
-					eeFloat dy	= touchY - vertices[i].y;
-					eeFloat distance = dx * dx + dy * dy;
-
-					#ifndef EE_ARM
-					eeFloat d	= eesqrt( distance );
-					#else
-					eeFloat d = sqrt_aprox[ (Int32)(distance * 1000) ];
-					#endif
-
-					if ( d < 2.f ) {
-						if ( d < 0.03f ) {
-							vertices[i+1].x = Math::Randf( -1, 1 ) * aspectRatio;
-							vertices[i+1].y = Math::Randf( -1, 1 );
-							velocities[i].x = 0;
-							velocities[i].y = 0;
-						} else {
-							dx /= d;
-							dy /= d;
-							d = ( 2 - d ) * 0.5;
-							d *= d;
-							velocities[i].x += dx * d * .01;
-							velocities[i].y += dy * d * .01;
-						}
-					}
-				}
-			}
-
-			/// VertexPointer assigns values by default to the attribute "dgl_Vertex"
-			/// TextureCoordPointer to "dgl_MultiTexCoord0"
-			GLi->VertexPointer( 3, GL_FLOAT, sizeof(eeVector3ff), reinterpret_cast<char*> ( &vertices[0] ), ParticlesNum * sizeof(float) * 3 );
-
-			/// ColorPointer to "dgl_FrontColor"
-			GLi->ColorPointer( 4, GL_FP, sizeof(eeColorAf), reinterpret_cast<char*> ( &colors[0] ), ParticlesNum * sizeof(eeFloat) );
-
-			/// Draw the lines
-			GLi->DrawArrays( DM_LINES, 0, ParticlesNum );
-
-			/// Stop the simulation if the window is not visible
-			while ( !win->Visible() ) {
-				imp->Update();	/// To get the real state of the window you need to update the window input
-				Sys::Sleep( 100 ); /// Sleep 100 ms
-			}
-
-			win->Display();
-		}
+		win->RunMainLoop( &MainLoop );
 
 		eeSAFE_DELETE_ARRAY( vertices );
 		eeSAFE_DELETE_ARRAY( velocities );

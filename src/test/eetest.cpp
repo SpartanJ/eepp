@@ -1,5 +1,15 @@
 #include "eetest.hpp"
 
+Demo_Test::cEETest * MY_INSTANCE = NULL;
+
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+#include <emscripten.h>
+
+void MainLoop() {
+	MY_INSTANCE->Update();
+}
+#endif
+
 namespace Demo_Test {
 
 void cEETest::Init() {
@@ -113,18 +123,21 @@ void cEETest::Init() {
 
 		mVBO = cVertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
 
-        if ( NULL != mVBO ) {
-            for ( Uint32 i = 0; i < Poly.Size(); i++ ) {
-                mVBO->AddVertex( Poly[i] );
-                mVBO->AddColor( eeColorA( 100 + i, 255 - i, 150 + i, 200 ) );
-            }
+		if ( NULL != mVBO ) {
+			for ( Uint32 i = 0; i < Poly.Size(); i++ ) {
+				mVBO->AddVertex( Poly[i] );
+				mVBO->AddColor( eeColorA( 100 + i, 255 - i, 150 + i, 200 ) );
+			}
 
-            mVBO->Compile();
-        }
+			mVBO->Compile();
+		}
 
 		PhysicsCreate();
 
+#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		Launch();
+#endif
+
 	} else {
 		cEngine::DestroySingleton();
 
@@ -911,9 +924,7 @@ void cEETest::LoadTextures() {
 	CL2.AddFrame(TN[0], eeSizef(96, 96) );
 	CL2.Color( eeColorA( 255, 255, 255, 255 ) );
 
-	if ( cImage::IsImage( MyPath + "atlases/bnb.png" ) ) {
-		mTGL = eeNew( cTextureAtlasLoader, ( MyPath + "atlases/bnb" + EE_TEXTURE_ATLAS_EXTENSION ) );
-	}
+	mTGL = eeNew( cTextureAtlasLoader, ( MyPath + "atlases/bnb" + EE_TEXTURE_ATLAS_EXTENSION ) );
 
 	mBlindy.AddFramesByPattern( "rn" );
 	mBlindy.Position( 320.f, 0.f );
@@ -982,13 +993,17 @@ void cEETest::Run() {
 
 void cEETest::ParticlesThread() {
 	while ( mWindow->Running() ) {
-		if ( MultiViewportMode || Screen == 2 ) {
-			PSElapsed = cElapsed.Elapsed();
-
-			for ( Uint8 i = 0; i < PS.size(); i++ )
-				PS[i].Update( PSElapsed );
-		}
+		UpdateParticles();
 		Sys::Sleep(10);
+	}
+}
+
+void cEETest::UpdateParticles() {
+	if ( MultiViewportMode || Screen == 2 ) {
+		PSElapsed = cElapsed.Elapsed();
+
+		for ( Uint8 i = 0; i < PS.size(); i++ )
+			PS[i].Update( PSElapsed );
 	}
 }
 
@@ -1569,27 +1584,45 @@ void cEETest::Input() {
 	}
 }
 
+void cEETest::Update() {
+	mWindow->Clear();
+
+	et = mWindow->Elapsed();
+
+	Input();
+
+	mResLoad.Update();
+
+	if ( mFontLoader.IsLoaded() ) {
+		Render();
+	} else {
+		mFontLoader.Update();
+	}
+
+#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+	UpdateParticles();
+#endif
+
+	if ( KM->IsKeyUp(KEY_F12) ) mWindow->TakeScreenshot( MyPath + "screenshots/" ); //After render and before Display
+
+	mWindow->Display(false);
+}
+
 void cEETest::Process() {
 	Init();
 
 	if ( NULL != mWindow && mWindow->Created() ) {
-		do {
-			et = mWindow->Elapsed();
+		#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
+			cLog::instance()->Write( "Entering the main loop" );
+			MY_INSTANCE = this;
 
-			Input();
-
-			mResLoad.Update();
-
-			if ( mFontLoader.IsLoaded() ) {
-				Render();
-			} else {
-				mFontLoader.Update();
+			emscripten_set_main_loop(MainLoop, 0, 1);
+		#else
+			// Application loop
+			while ( mWindow->Running() ) {
+				Update();
 			}
-
-			if ( KM->IsKeyUp(KEY_F12) ) mWindow->TakeScreenshot( MyPath + "screenshots/" ); //After render and before Display
-
-			mWindow->Display();
-		} while( mWindow->Running() );
+		#endif
 	}
 
 	End();
