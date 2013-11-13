@@ -161,22 +161,22 @@ function multiple_insert( parent_table, insert_table )
 end
 
 function os_findlib( name )
-	if os.is("macosx") then
-		local path = os.findlib( name .. ".framework" )
+	if os.is_real("macosx") and is_xcode() then
+		local path = "/Library/Frameworks/" .. name
 		
-		if path then
+		if os.isdir( path ) then
 			return path
 		end
 	end
-	
+
 	return os.findlib( name )
 end
 
 function get_backend_link_name( name )
-	if os.is("macosx") then
+	if os.is_real("macosx") and is_xcode() then
 		local fname = name .. ".framework"
 		
-		if os.findlib( fname ) then -- Search for the framework
+		if os_findlib( fname ) then -- Search for the framework
 			return fname
 		end
 	end
@@ -194,6 +194,18 @@ end
 
 function is_vs()
 	return ( string.starts(_ACTION,"vs") )
+end
+
+function is_xcode()
+	return ( string.starts(_ACTION,"xcode") )
+end
+
+function set_kind()
+	if os.is_real("macosx") then
+		kind("ConsoleApp")
+	else
+		kind("WindowedApp")
+	end
 end
 
 link_list = { }
@@ -482,6 +494,12 @@ function set_ios_config()
 	
 	configuration "ios-cross-arm7"
 		includedirs { "src/eepp/helper/SDL2/include" }
+
+	configuration "macosx"
+		if is_xcode() then
+			linkoptions { "-F/Library/Frameworks" }
+			includedirs { "/Library/Frameworks/SDL2.framework/Headers" }
+		end
 end
 
 function backend_is( name )
@@ -530,8 +548,8 @@ function select_backend()
 		elseif os_findlib("SFML") then
 			add_sfml()
 		else
-			print("ERROR: Couldnt find any backend. Forced SDL.")
-			add_sdl()
+			print("ERROR: Couldnt find any backend. Forced SDL2.")
+			add_sdl2( true )
 		end
 	end
 end
@@ -733,19 +751,19 @@ solution "eepp"
 
 	-- Examples
 	project "eepp-test"
-		kind "WindowedApp"
+		set_kind()
 		language "C++"
 		files { "src/test/*.cpp" }
 		build_link_configuration( "eetest", true )
 
 	project "eepp-es"
-		kind "WindowedApp"
+		set_kind()
 		language "C++"
 		files { "src/examples/external_shader/*.cpp" }
 		build_link_configuration( "eees", true )
 
 	project "eepp-ew"
-		kind "WindowedApp"
+		set_kind()
 		language "C++"
 		files { "src/examples/empty_window/*.cpp" }
 		build_link_configuration( "eeew", true )
@@ -757,25 +775,25 @@ solution "eepp"
 		build_link_configuration( "eesound", true )
 
 	project "eepp-sprites"
-		kind "WindowedApp"
+		set_kind()
 		language "C++"
 		files { "src/examples/sprites/*.cpp" }
 		build_link_configuration( "eesprites", true )
 
 	project "eepp-fonts"
-		kind "WindowedApp"
+		set_kind()
 		language "C++"
 		files { "src/examples/fonts/*.cpp" }
 		build_link_configuration( "eefonts", true )
 
 	project "eepp-vbo-fbo-batch"
-		kind "WindowedApp"
+		set_kind()
 		language "C++"
 		files { "src/examples/vbo_fbo_batch/*.cpp" }
 		build_link_configuration( "eevbo-fbo-batch", true )
 
 	project "eepp-physics"
-		kind "WindowedApp"
+		set_kind()
 		language "C++"
 		files { "src/examples/physics/*.cpp" }
 		build_link_configuration( "eephysics", true )

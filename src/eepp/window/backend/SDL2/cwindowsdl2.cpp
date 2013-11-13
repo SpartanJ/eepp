@@ -398,14 +398,6 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	#endif
 		eePRINTL( "Switching from %s to %s. Width: %d Height %d.", this->Windowed() ? "windowed" : "fullscreen", Windowed ? "windowed" : "fullscreen", Width, Height );
 
-		// @TODO Test in OS X if this is still needed
-		#if EE_PLATFORM == EE_PLATFORM_MACOSX
-		bool Reload = true;
-
-		if ( Reload )
-			Graphics::cTextureFactory::instance()->GrabTextures();
-		#endif
-
 		Uint32 oldWidth		= mWindow.WindowConfig.Width;
 		Uint32 oldHeight	= mWindow.WindowConfig.Height;
 
@@ -433,19 +425,6 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 
 			SDL_SetWindowFullscreen( mSDLWindow, Windowed ? SDL_FALSE : SDL_TRUE );
 		}
-
-		#if EE_PLATFORM == EE_PLATFORM_MACOSX
-		if ( Reload ) {
-			cGL::instance()->Init();
-
-			Graphics::cTextureFactory::instance()->UngrabTextures();		// Reload all textures
-			Graphics::cShaderProgramManager::instance()->Reload();			// Reload all shaders
-			Graphics::Private::cFrameBufferManager::instance()->Reload(); 	// Reload all frame buffers
-			Graphics::Private::cVertexBufferManager::instance()->Reload(); 	// Reload all vertex buffers
-			GetMainContext();												// Recover the context
-			CreatePlatform();
-		}
-		#endif
 
 		if ( !this->Windowed() && Windowed ) {
 			Position( mWinPos.x, mWinPos.y );
