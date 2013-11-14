@@ -199,7 +199,7 @@ void MainLoop()
 		Sys::Sleep( 100 ); /// Sleep 100 ms
 	}
 
-	win->Display( false );
+	win->Display();
 }
 
 EE_MAIN_FUNC int main (int argc, char * argv [])

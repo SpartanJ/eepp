@@ -1,5 +1,18 @@
 #include <eepp/ee.hpp>
 
+cWindow * win = NULL;
+
+// Define a interpolation to control the Rock sprite angle
+cInterpolation RockAngle;
+
+cInterpolation PlanetAngle;
+
+// Create a primitive drawer instance to draw the AABB of the Rock
+cPrimitives P;
+cSprite * Rock		= NULL;
+cSprite * Planet	= NULL;
+cSprite * Blindy	= NULL;
+
 // Define a user sprite event
 static const Uint32 USER_SPRITE_EVENT = cSprite::SPRITE_EVENT_USER + 1;
 
@@ -26,10 +39,59 @@ void spriteCallback( Uint32 Event, cSprite * Sprite, void * UserData ) {
 	}
 }
 
+void MainLoop()
+{
+	// Clear the screen buffer
+	win->Clear();
+
+	// Update the input
+	win->GetInput()->Update();
+
+	// Check if ESCAPE key is pressed
+	if ( win->GetInput()->IsKeyDown( KEY_ESCAPE ) ) {
+		// Close the window
+		win->Close();
+	}
+
+	// Check if the D key was pressed
+	if ( win->GetInput()->IsKeyUp( KEY_D ) ) {
+		// Reverse the Rock animation
+		Rock->ReverseAnim( !Rock->ReverseAnim() );
+	}
+
+	// Update the angle interpolation
+	PlanetAngle.Update( win->Elapsed() );
+	RockAngle.Update( win->Elapsed() );
+
+	// Set the Planet and Rock angle from the interpolation
+	Planet->Angle( PlanetAngle.GetPos() );
+	Rock->Angle( RockAngle.GetPos() );
+
+	// Draw the static planet sprite
+	Planet->Draw();
+
+	// Draw the animated Rock sprite
+	Rock->Draw();
+
+	// Draw the blindy animation
+	Blindy->Draw();
+
+	// Draw the Rock Axis-Aligned Bounding Box
+	P.SetColor( eeColorA( 255, 255, 255, 255 ) );
+	P.DrawRectangle( Rock->GetAABB() );
+
+	// Draw the Rock Quad
+	P.SetColor( eeColorA( 255, 0, 0, 255 ) );
+	P.DrawQuad( Rock->GetQuad() );
+
+	// Draw frame
+	win->Display();
+}
+
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	// Create a new window
-	cWindow * win = cEngine::instance()->CreateWindow( WindowSettings( 640, 480, "eepp - Sprites" ), ContextSettings( true ) );
+	win = cEngine::instance()->CreateWindow( WindowSettings( 640, 480, "eepp - Sprites" ), ContextSettings( true ) );
 
 	// Check if created
 	if ( win->Created() ) {
@@ -43,53 +105,50 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		// Load a previously generated texture atlas that contains the SubTextures needed to load an animated sprite
 		cTextureAtlasLoader Blindies( AppPath + "assets/atlases/bnb.eta" );
 
-		// Create some new sprites
-		cSprite Rock;
+		// Create the animated rock spriteR
+		Rock	= eeNew( cSprite, () );
 
 		// Load the rock frames from the texture, adding the frames manually
 		for ( Int32 my = 0; my < 4; my++ ) {
 			for( Int32 mx = 0; mx < 8; mx++ ) {
 				// DestSize as 0,0 will use the SubTexture size
-				Rock.AddFrame( RockId, eeSizef( 0, 0 ), eeVector2i( 0, 0 ), eeRecti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
+				Rock->AddFrame( RockId, eeSizef( 0, 0 ), eeVector2i( 0, 0 ), eeRecti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
 			}
 		}
 
-		// Set the sprite animation speed, set in Frames per Second
-		// Sprites are auto-animated by default.
-		Rock.AnimSpeed( 32 );
-
-		cSprite Planet( PlanetId ); // Create a static sprite
+		// Create a static sprite
+		Planet	= eeNew( cSprite, ( PlanetId ) );
 
 		// This constructor is the same that creating sprite and calling Sprite.AddFramesByPattern.
 		// It will look for a SubTexture ( in any Texture Atlas loaded, or the GlobalTextureAtlas ) animation by its name, it will search
 		// for "gn00" to "gnXX" to create a new animation
 		// see cTextureAtlasManager::GetSubTexturesByPattern for more information.
 		// This is the easiest way to load animated sprites.
-		cSprite Blindy( "gn" );
+		Blindy	= eeNew( cSprite, ( "gn" ) );
+
+		// Set the sprite animation speed, set in Frames per Second
+		// Sprites are auto-animated by default.
+		Rock->AnimSpeed( 32 );
 
 		// Set the render mode of the sprite
-		Blindy.RenderMode( RN_MIRROR );
+		Blindy->RenderMode( RN_MIRROR );
 
 		// Set the Blend Mode of the sprite
-		Blindy.BlendMode( ALPHA_BLENDONE );
+		Blindy->BlendMode( ALPHA_BLENDONE );
 
-		// Create a primitive drawer instance to draw the AABB of the Rock
-		cPrimitives P;
+		// Set the primitive fill mode
 		P.FillMode( DRAW_LINE );
 
 		// Set the sprites position to the screen center
 		eeVector2i ScreenCenter( cEngine::instance()->GetWidth() / 2, cEngine::instance()->GetHeight() / 2 );
 
-		Planet.Position( ScreenCenter.x - Planet.GetAABB().Size().Width() / 2, ScreenCenter.y - Planet.GetAABB().Size().Height() / 2 );
+		Planet->Position( ScreenCenter.x - Planet->GetAABB().Size().Width() / 2, ScreenCenter.y - Planet->GetAABB().Size().Height() / 2 );
 
-		Rock.Position( ScreenCenter.x - Rock.GetAABB().Size().Width() / 2, ScreenCenter.y - Rock.GetAABB().Size().Height() / 2 );
+		Rock->Position( ScreenCenter.x - Rock->GetAABB().Size().Width() / 2, ScreenCenter.y - Rock->GetAABB().Size().Height() / 2 );
 
-		Blindy.Position( ScreenCenter.x - Blindy.GetAABB().Size().Width() / 2, ScreenCenter.y - Blindy.GetAABB().Size().Height() / 2 );
+		Blindy->Position( ScreenCenter.x - Blindy->GetAABB().Size().Width() / 2, ScreenCenter.y - Blindy->GetAABB().Size().Height() / 2 );
 
-		// Define a interpolation to control the Rock sprite angle
-		cInterpolation RockAngle;
-
-		cInterpolation PlanetAngle;
+		// Set the planet angle interpolation
 		PlanetAngle.AddWaypoint( 0 );
 		PlanetAngle.AddWaypoint( 360 );
 		PlanetAngle.SetTotalTime( Seconds( 10 ) );
@@ -97,55 +156,15 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		PlanetAngle.Start();
 
 		// Create a Event callback for the rock sprite
-		Rock.SetEventsCallback( cb::Make3( &spriteCallback ), &RockAngle );
+		Rock->SetEventsCallback( cb::Make3( &spriteCallback ), &RockAngle );
 
 		// Application loop
-		while ( win->Running() )
-		{
-			// Update the input
-			win->GetInput()->Update();
-
-			// Check if ESCAPE key is pressed
-			if ( win->GetInput()->IsKeyDown( KEY_ESCAPE ) ) {
-				// Close the window
-				win->Close();
-			}
-
-			// Check if the D key was pressed
-			if ( win->GetInput()->IsKeyUp( KEY_D ) ) {
-				// Reverse the Rock animation
-				Rock.ReverseAnim( !Rock.ReverseAnim() );
-			}
-
-			// Update the angle interpolation
-			PlanetAngle.Update( win->Elapsed() );
-			RockAngle.Update( win->Elapsed() );
-
-			// Set the Planet and Rock angle from the interpolation
-			Planet.Angle( PlanetAngle.GetPos() );
-			Rock.Angle( RockAngle.GetPos() );
-
-			// Draw the static planet sprite
-			Planet.Draw();
-
-			// Draw the animated Rock sprite
-			Rock.Draw();
-
-			// Draw the blindy animation
-			Blindy.Draw();
-
-			// Draw the Rock Axis-Aligned Bounding Box
-			P.SetColor( eeColorA( 255, 255, 255, 255 ) );
-			P.DrawRectangle( Rock.GetAABB() );
-
-			// Draw the Rock Quad
-			P.SetColor( eeColorA( 255, 0, 0, 255 ) );
-			P.DrawQuad( Rock.GetQuad() );
-
-			// Draw frame
-			win->Display();
-		}
+		win->RunMainLoop( &MainLoop );
 	}
+
+	eeSAFE_DELETE( Rock );
+	eeSAFE_DELETE( Planet );
+	eeSAFE_DELETE( Blindy );
 
 	// Destroy the engine instance. Destroys all the windows and engine singletons.
 	cEngine::DestroySingleton();

@@ -227,15 +227,15 @@ class EE_API cWindow {
 		/** @return The window handler */
 		virtual eeWindowHandle	GetWindowHandler() = 0;
 
-		/** Clear the current window
+		/** @brief Clear the window back buffer
 		This function is usually called once every frame, to clear the previous frame content.
 		*/
 		virtual void Clear();
 
 		/** Render the Scene to Screen
-		@param clear Clear after swapping buffers?
+		@param clear Clear after swapping buffers? It will not work if the target platform is Emscripten. Since there's no swap buffers.
 		*/
-		virtual void Display( bool clear = true );
+		virtual void Display( bool clear = false );
 
 		/** @return The elapsed time for the last frame rendered */
 		virtual cTime Elapsed() const;

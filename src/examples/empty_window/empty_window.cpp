@@ -4,6 +4,7 @@ cWindow * win = NULL;
 
 void MainLoop()
 {
+	// Clear the screen buffer
 	win->Clear();
 
 	// Create an instance of the primitive renderer
@@ -22,12 +23,13 @@ void MainLoop()
 	}
 
 	// Draw a circle
-	p.DrawCircle( eeVector2f( win->GetWidth() * 0.5f, win->GetHeight() * 0.5f ), 200 );
+	p.DrawCircle( eeVector2f( win->GetWidth() * 0.5f, win->GetHeight() * 0.5f ), 200, 50 );
 
 	// Draw frame
-	win->Display(false);
+	win->Display();
 }
 
+// EE_MAIN_FUNC is needed by some platforms to be able to find the real application main
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	// Create a new window with vsync enabled
@@ -38,7 +40,15 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		// Set window background color
 		win->BackColor( eeColor( 50, 50, 50 ) );
 
-		win->RunMainLoop( &MainLoop, 60 );
+		// Set the MainLoop function and run it
+		// This is the application loop, it will loop until the window is closed.
+		// This is only a requirement if you want to support Emscripten builds ( WebGL + Canvas ).
+		// This is the same as, except for Emscripten.
+		// while ( win->Running() )
+		// {
+		//		MainLoop();
+		// }
+		win->RunMainLoop( &MainLoop );
 	}
 
 	// Destroy the engine instance. Destroys all the windows and engine singletons.

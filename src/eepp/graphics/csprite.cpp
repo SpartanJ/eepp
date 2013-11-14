@@ -296,7 +296,7 @@ eeAABB cSprite::GetAABB() {
 				Center	+= mPos;
 			}
 
-			TmpR.Scale( mScale, mOrigin );
+			TmpR.Scale( mScale, Center );
 		}
 	}
 

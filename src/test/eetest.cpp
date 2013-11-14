@@ -1,14 +1,10 @@
 #include "eetest.hpp"
 
-Demo_Test::cEETest * MY_INSTANCE = NULL;
+Demo_Test::cEETest * TestInstance = NULL;
 
-#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-#include <emscripten.h>
-
-void MainLoop() {
-	MY_INSTANCE->Update();
+static void MainLoop() {
+	TestInstance->Update();
 }
-#endif
 
 namespace Demo_Test {
 
@@ -1612,17 +1608,9 @@ void cEETest::Process() {
 	Init();
 
 	if ( NULL != mWindow && mWindow->Created() ) {
-		#if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-			cLog::instance()->Write( "Entering the main loop" );
-			MY_INSTANCE = this;
+		TestInstance = this;
 
-			emscripten_set_main_loop(MainLoop, 0, 1);
-		#else
-			// Application loop
-			while ( mWindow->Running() ) {
-				Update();
-			}
-		#endif
+		mWindow->RunMainLoop( &MainLoop );
 	}
 
 	End();

@@ -5,9 +5,6 @@ The physics module is a OOP wrapper for Chipmunk Physics.
 To understand the conceptos of space, body, shapes, etc you can read the
 Chipmunk documentation:
 http://chipmunk-physics.net/release/ChipmunkLatest-Docs/
-
-
-
 */
 typedef cb::Callback0<void> SceneCb;
 
@@ -608,6 +605,27 @@ void PhysicsDestroy() {
 	mDemo[ mCurDemo ].destroy();
 }
 
+void MainLoop()
+{
+	mWindow->Clear();
+
+	KM->Update();
+
+	if ( KM->IsKeyDown( KEY_ESCAPE ) ) {
+		mWindow->Close();
+	}
+
+	PhysicsUpdate();
+
+	if ( KM->IsKeyUp( KEY_LEFT ) || KM->IsKeyUp( KEY_A ) ) {
+		ChangeDemo( mCurDemo - 1 );
+	} else if ( KM->IsKeyUp( KEY_RIGHT ) || KM->IsKeyUp( KEY_D ) ) {
+		ChangeDemo( mCurDemo + 1 );
+	}
+
+	mWindow->Display();
+}
+
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	mWindow = cEngine::instance()->CreateWindow( WindowSettings( 1024, 768, "eepp - Physics" ), ContextSettings( true ) );
@@ -619,23 +637,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 		PhysicsCreate();
 
-		while ( mWindow->Running() ) {
-			KM->Update();
-
-			if ( KM->IsKeyDown( KEY_ESCAPE ) ) {
-				mWindow->Close();
-			}
-
-			PhysicsUpdate();
-
-			if ( KM->IsKeyUp( KEY_LEFT ) ) {
-				ChangeDemo( mCurDemo - 1 );
-			} else if ( KM->IsKeyUp( KEY_RIGHT ) ) {
-				ChangeDemo( mCurDemo + 1 );
-			}
-
-			mWindow->Display();
-		}
+		mWindow->RunMainLoop( &MainLoop );
 
 		PhysicsDestroy();
 	}

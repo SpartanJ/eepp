@@ -1,9 +1,54 @@
 #include <eepp/ee.hpp>
 
+cWindow * win			= NULL;
+cTTFFont * TTF			= NULL;
+cTTFFont * TTFO			= NULL;
+cTTFFont * TTF2			= NULL;
+cTextureFont * TexF		= NULL;
+cTextureFont * TexF2	= NULL;
+cTextCache * TxtCache	= NULL;
+
+void MainLoop()
+{
+	// Clear the screen buffer
+	win->Clear();
+
+	// Update the input
+	win->GetInput()->Update();
+
+	// Check if ESCAPE key is pressed
+	if ( win->GetInput()->IsKeyDown( KEY_ESCAPE ) ) {
+		// Close the window
+		win->Close();
+	}
+
+	eeFloat YPos = 32;
+
+	// Draw the text on screen
+	TTF->Draw( win->GetWidth() * 0.5f - TTF->GetTextWidth() * 0.5f, YPos );
+
+	TTFO->Draw( win->GetWidth() * 0.5f - TTFO->GetTextWidth() * 0.5f, ( YPos += TTF->GetTextHeight() + 24 ) );
+
+	TTF2->Draw( win->GetWidth() * 0.5f - TTF2->GetTextWidth() * 0.5f, ( YPos += TTF->GetTextHeight() + 24 ) );
+
+	TexF->Draw( win->GetWidth() * 0.5f - TexF->GetTextWidth() * 0.5f, ( YPos += TTF2->GetTextHeight() + 24 ) );
+
+	TexF2->Draw( win->GetWidth() * 0.5f - TexF2->GetTextWidth() * 0.5f, ( YPos += TexF->GetTextHeight() + 24 ) );
+
+	// Draw the cached text
+	TxtCache->Draw( 48, ( YPos += TexF2->GetTextHeight() + 24 ) );
+
+	// Text rotated and scaled
+	TTF->Draw( win->GetWidth() * 0.5f - TTF->GetTextWidth() * 0.5f, 512, FONT_DRAW_LEFT, 0.75f, 12.5f );
+
+	// Draw frame
+	win->Display();
+}
+
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	// Create a new window
-	cWindow * win = cEngine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - Fonts" ), ContextSettings( true ) );
+	win = cEngine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - Fonts" ), ContextSettings( true ) );
 
 	// Set window background color
 	win->BackColor( eeColor(255,255,255) );
@@ -14,11 +59,11 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		std::string AppPath = Sys::GetProcessPath();
 
 		// Create a new True Type Font
-		cTTFFont * TTF			= cTTFFont::New( "DejaVuSansMonoOutline" );
-		cTTFFont * TTFO			= cTTFFont::New( "DejaVuSansMonoOutlineFreetype" );
-		cTTFFont * TTF2			= cTTFFont::New( "DejaVuSansMono" );
-		cTextureFont * TexF		= cTextureFont::New( "ProggySquareSZ" );
-		cTextureFont * TexF2	= cTextureFont::New( "conchars" );
+		TTF		= cTTFFont::New( "DejaVuSansMonoOutline" );
+		TTFO	= cTTFFont::New( "DejaVuSansMonoOutlineFreetype" );
+		TTF2	= cTTFFont::New( "DejaVuSansMono" );
+		TexF	= cTextureFont::New( "ProggySquareSZ" );
+		TexF2	= cTextureFont::New( "conchars" );
 
 		// Load the TTF font
 		TTF->Load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 18, TTF_STYLE_NORMAL, 128, eeColor(255,255,255), 3, eeColor(0,0,0), true );
@@ -64,54 +109,25 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 		// Create a new text cache to draw on screen
 		// The cached text will
-		cTextCache TxtCache( TTF2, Txt, eeColorA(0,0,0,255) );
+		TxtCache = eeNew( cTextCache, ( TTF2, Txt, eeColorA(0,0,0,255) ) );
 
 		// Set the text cache to be centered
-		TxtCache.Flags( FONT_DRAW_CENTER );
+		TxtCache->Flags( FONT_DRAW_CENTER );
 
 		// Set the font color to a substring of the text
 		// To be able to set the color of the font, create the font as white
 		// Create a gradient
-		size_t size = TxtCache.Text().size();
+		size_t size = TxtCache->Text().size();
 
 		for ( size_t i = 0; i < size; i++ ) {
-			TxtCache.Color( eeColorA(255*i/size,0,0,255), i, i+1 );
+			TxtCache->Color( eeColorA(255*i/size,0,0,255), i, i+1 );
 		}
 
 		// Application loop
-		while ( win->Running() ) {
-			// Update the input
-			win->GetInput()->Update();
-
-			// Check if ESCAPE key is pressed
-			if ( win->GetInput()->IsKeyDown( KEY_ESCAPE ) ) {
-				// Close the window
-				win->Close();
-			}
-
-			eeFloat YPos = 32;
-
-			// Draw the text on screen
-			TTF->Draw( win->GetWidth() * 0.5f - TTF->GetTextWidth() * 0.5f, YPos );
-
-			TTFO->Draw( win->GetWidth() * 0.5f - TTFO->GetTextWidth() * 0.5f, ( YPos += TTF->GetTextHeight() + 24 ) );
-
-			TTF2->Draw( win->GetWidth() * 0.5f - TTF2->GetTextWidth() * 0.5f, ( YPos += TTF->GetTextHeight() + 24 ) );
-
-			TexF->Draw( win->GetWidth() * 0.5f - TexF->GetTextWidth() * 0.5f, ( YPos += TTF2->GetTextHeight() + 24 ) );
-
-			TexF2->Draw( win->GetWidth() * 0.5f - TexF2->GetTextWidth() * 0.5f, ( YPos += TexF->GetTextHeight() + 24 ) );
-
-			// Draw the cached text
-			TxtCache.Draw( 48, ( YPos += TexF2->GetTextHeight() + 24 ) );
-
-			// Text rotated and scaled
-			TTF->Draw( win->GetWidth() * 0.5f - TTF->GetTextWidth() * 0.5f, 512, FONT_DRAW_LEFT, 0.75f, 12.5f );
-
-			// Draw frame
-			win->Display();
-		}
+		win->RunMainLoop( &MainLoop );
 	}
+
+	eeSAFE_DELETE( TxtCache );
 
 	// Destroy the engine instance. Destroys all the windows and engine singletons.
 	// Fonts are autoreleased by the engine

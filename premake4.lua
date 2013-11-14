@@ -297,6 +297,15 @@ function build_link_configuration( package_name, use_ee_icon )
 		
 		if os.is_real("emscripten") then
 			extension = ".html"
+
+			if (	package_name ~= "eeew" and
+					package_name ~= "eees" and
+					package_name ~= "eehttp-request" and
+					package_name ~= "eephysics" and
+					package_name ~= "eevbo-fbo-batch"
+			) then
+				linkoptions { "--preload-file assets/" }
+			end
 		end
 	end
 	
@@ -330,17 +339,6 @@ function build_link_configuration( package_name, use_ee_icon )
 
 		if _OPTIONS["with-gles2"] and not _OPTIONS["force-gles1"] then
 			linkoptions{ "-s FULL_ES2=1" }
-		end
-		
-		if (	package_name ~= "eepp" and
-				package_name ~= "eepp-static" and
-				package_name ~= "eepp-ew" and
-				package_name ~= "eepp-es" and
-				package_name ~= "eepp-http-request" and
-				package_name ~= "eepp-physics" and
-				package_name ~= "eepp-vbo-fbo-batch"
-		) then
-			linkoptions { "--preload-file assets/" }
 		end
 
 	set_ios_config()
