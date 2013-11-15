@@ -100,6 +100,7 @@ void cTextCache::Color( const eeColorA& color ) {
 }
 
 void cTextCache::Color( const eeColorA& color, Uint32 from, Uint32 to ) {
+	std::vector<eeColorA> colors( GLi->QuadVertexs(), color );
 	std::size_t s = mText.size();
 
 	if ( to >= s ) {
@@ -107,10 +108,38 @@ void cTextCache::Color( const eeColorA& color, Uint32 from, Uint32 to ) {
 	}
 
 	if ( from <= to && from < s && to <= s ) {
-		size_t rto = ( to * GLi->QuadVertexs() ) + GLi->QuadVertexs();
+		size_t rto	= to + 1;
+		Int32 rpos	= from;
+		Int32 lpos	= 0;
+		Uint32 i;
+		Uint32 qsize = sizeof(eeColorA) * GLi->QuadVertexs();
+		String::StringBaseType curChar;
 
-		for ( Uint32 i = from * GLi->QuadVertexs(); i < rto; i++ ) {
-			mColors[ i ] = color;
+		// New lines and tabs are not rendered, and not counted as a color
+		// We need to skip those characters as nonexistent chars
+		for ( i = 0; i < from; i++ ) {
+			curChar = mText.at(i);
+			if ( '\n' == curChar || '\t' == curChar || '\v' == curChar ) {
+				if ( rpos > 0 ) {
+					rpos--;
+				}
+			}
+		}
+
+		for ( Uint32 i = from; i < rto; i++ ) {
+			curChar = mText.at(i);
+
+			lpos	= rpos;
+			rpos++;
+
+			// Same here
+			if ( '\n' == curChar || '\t' == curChar || '\v' == curChar ) {
+				if ( rpos > 0 ) {
+					rpos--;
+				}
+			}
+
+			memcpy( &(mColors[ lpos * GLi->QuadVertexs() ]), &colors[0], qsize );
 		}
 	}
 }

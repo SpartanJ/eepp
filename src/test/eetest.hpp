@@ -174,13 +174,14 @@ class cEETest : private cThread {
 		cView Views[2];
 
 		cShaderProgram * mShaderProgram;
-    	eeFloat mBlurFactor;
-    	bool mUseShaders;
+
+		eeFloat mBlurFactor;
+		bool mUseShaders;
 		bool mJoyEnabled;
 		bool mMusEnabled;
 
-    	Uint32 mLastFPSLimit;
-    	bool mWasMinimized;
+		Uint32 mLastFPSLimit;
+		bool mWasMinimized;
 
 		String mBuda;
 

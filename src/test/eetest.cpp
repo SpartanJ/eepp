@@ -196,8 +196,8 @@ void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
 
 	mEEText.Create( TTFB, "Entropia Engine++\nCTRL + Number to change Demo Screen\nRight click to see the PopUp Menu" );
 	mFBOText.Create( TTFB, "This is a VBO\nInside of a FBO" );
-	mFBOText.Color( eeColorA(255,255,0,255), 10, 13 );
-	mFBOText.Color( eeColorA(255,255,0,255), 25, 28 );
+	mFBOText.Color( eeColorA(255,255,0,255), mFBOText.Text().find( "VBO" ), mFBOText.Text().find( "VBO" ) + 2 );
+	mFBOText.Color( eeColorA(255,255,0,255), mFBOText.Text().find( "FBO" ), mFBOText.Text().find( "FBO" ) + 2 );
 
 	mInfoText.Create( FF, "", eeColorA(255,255,255,150) );
 }
