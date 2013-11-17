@@ -33,7 +33,7 @@ void spriteCallback( Uint32 Event, cSprite * Sprite, void * UserData ) {
 		RotationInterpolation->Start();
 
 		// Scale the sprite
-		if ( Sprite->Scale() < 3 ) {
+		if ( Sprite->Scale().x < 3 ) {
 			Sprite->Scale( Sprite->Scale() + 0.25f );
 		}
 	}

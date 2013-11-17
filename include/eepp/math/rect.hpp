@@ -58,6 +58,10 @@ class tRECT {
 		void Scale( T scale, const Vector2<T>& center );
 
 		void Scale( T scale );
+
+		void Scale( Vector2<T> scale, const Vector2<T>& center );
+
+		void Scale( Vector2<T> scale );
 };
 
 template <typename T>
@@ -213,17 +217,27 @@ Vector2<T> tRECT<T>::WrapVector( const Vector2<T>& Vect ) {
 }
 
 template <typename T>
-void tRECT<T>::Scale( T scale, const Vector2<T>& center ) {
+void tRECT<T>::Scale( Vector2<T> scale, const Vector2<T>& center ) {
 	if ( scale != 1.0f ) {
-		Left			= center.x	+	(	Left	-	center.x	)	*	scale;
-		Top				= center.y	+	(	Top		-	center.y	)	*	scale;
-		Right			= center.x	+	(	Right	-	center.x	)	*	scale;
-		Bottom			= center.y	+	(	Bottom	-	center.y	)	*	scale;
+		Left			= center.x	+	(	Left	-	center.x	)	*	scale.x;
+		Top				= center.y	+	(	Top		-	center.y	)	*	scale.y;
+		Right			= center.x	+	(	Right	-	center.x	)	*	scale.x;
+		Bottom			= center.y	+	(	Bottom	-	center.y	)	*	scale.y;
 	}
 }
 
 template <typename T>
+void tRECT<T>::Scale( T scale, const Vector2<T>& center ) {
+	Scale( eeVector2f( scale, scale ), center );
+}
+
+template <typename T>
 void tRECT<T>::Scale( T scale ) {
+	Scale( scale, Center() );
+}
+
+template <typename T>
+void tRECT<T>::Scale( Vector2<T> scale ) {
 	Scale( scale, Center() );
 }
 

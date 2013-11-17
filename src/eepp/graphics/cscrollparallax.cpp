@@ -129,7 +129,7 @@ void cScrollParallax::Draw() {
 					mSubTexture->ResetDestSize();
 
 					if ( !( Rect.Right == 0 || Rect.Bottom == 0 ) )
-						mSubTexture->Draw( AABB.Left, AABB.Top, mColor, 0.f, 1.f, mBlend );
+						mSubTexture->Draw( AABB.Left, AABB.Top, mColor, 0.f, eeVector2f::One, mBlend );
 				}
 
 				Pos.x += mRealSize.Width();

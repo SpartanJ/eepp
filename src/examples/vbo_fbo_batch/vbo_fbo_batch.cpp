@@ -51,7 +51,7 @@ void MainLoop()
 	// Draw the frame buffer many times
 	for ( int y = 0; y < 5; y++ ) {
 		for ( int x = 0; x < 5; x++ ) {
-			FBO->GetTexture()->Draw( x * 200, y * 200, -ang, 1.f, eeColorA(255,255,255,100) );
+			FBO->GetTexture()->Draw( x * 200, y * 200, -ang, eeVector2f::One, eeColorA(255,255,255,100) );
 		}
 	}
 

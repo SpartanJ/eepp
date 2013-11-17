@@ -185,7 +185,7 @@ void cPrimitives::DrawCircle( const eeVector2f& p, const eeFloat& radius, Uint32
 	DrawBatch();
 }
 
-void cPrimitives::DrawRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeFloat& Scale ) {
+void cPrimitives::DrawRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeVector2f& Scale ) {
 	sBR->SetTexture( NULL );
 	sBR->SetBlendMode( mBlendMode );
 
@@ -230,18 +230,18 @@ void cPrimitives::DrawRectangle( const eeRectf& R, const eeColorA& TopLeft, cons
 	DrawBatch();
 }
 
-void cPrimitives::DrawRectangle( const eeRectf& R, const eeFloat& Angle, const eeFloat& Scale ) {
+void cPrimitives::DrawRectangle( const eeRectf& R, const eeFloat& Angle, const eeVector2f& Scale ) {
 	DrawRectangle( R, mColor, mColor, mColor, mColor, Angle, Scale );
 }
 
-void cPrimitives::DrawRoundedRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeFloat& Scale, const eeUint& Corners ) {
+void cPrimitives::DrawRoundedRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle, const eeVector2f& Scale, const eeUint& Corners ) {
 	sBR->SetTexture( NULL );
 	sBR->SetBlendMode( mBlendMode );
 
 	eeUint i;
 	eeSizef size		= const_cast<eeRectf*>( &R )->Size();
-	eeFloat xscalediff	= size.Width()	* Scale - size.Width();
-	eeFloat yscalediff	= size.Height()	* Scale - size.Height();
+	eeFloat xscalediff	= size.Width()	* Scale.x - size.Width();
+	eeFloat yscalediff	= size.Height()	* Scale.y - size.Height();
 	eeVector2f Center( R.Left + size.Width() * 0.5f + xscalediff, R.Top + size.Height() * 0.5f + yscalediff );
 	eePolygon2f Poly	= eePolygon2f::CreateRoundedRectangle( R.Left - xscalediff, R.Top - yscalediff, size.Width() + xscalediff, size.Height() + yscalediff, Corners );
 	eeVector2f poly;
@@ -313,7 +313,7 @@ void cPrimitives::DrawRoundedRectangle( const eeRectf& R, const eeColorA& TopLef
 	DrawBatch();
 }
 
-void cPrimitives::DrawRoundedRectangle( const eeRectf& R, const eeFloat& Angle, const eeFloat& Scale, const eeUint& Corners ) {
+void cPrimitives::DrawRoundedRectangle( const eeRectf& R, const eeFloat& Angle, const eeVector2f& Scale, const eeUint& Corners ) {
 	DrawRoundedRectangle( R, mColor, mColor, mColor, mColor, Angle, Scale, Corners );
 }
 

@@ -49,7 +49,7 @@ class EE_API cPrimitives {
 		* @param Angle Rectangle Angle
 		* @param Scale Rectangle Scale ( default 1.0f )
 		*/
-		void DrawRectangle( const eeRectf& R, const eeFloat& Angle = 0, const eeFloat& Scale = 1 );
+		void DrawRectangle( const eeRectf& R, const eeFloat& Angle = 0, const eeVector2f& Scale = eeVector2f::One );
 
 		/** Draw a rounded rectangle on the screen
 		* @param R The Rectangle eeRectf
@@ -57,7 +57,7 @@ class EE_API cPrimitives {
 		* @param Scale Rectangle Scale ( default 1.0f )
 		* @param Corners Number of vertices per corner ( how rounded is each corner )
 		*/
-		void DrawRoundedRectangle( const eeRectf& R, const eeFloat& Angle = 0, const eeFloat& Scale = 1, const eeUint& Corners = 8 );
+		void DrawRoundedRectangle( const eeRectf& R, const eeFloat& Angle = 0, const eeVector2f& Scale = eeVector2f::One, const eeUint& Corners = 8 );
 
 		/** Draw a rectangle on the screen setting per vertex color
 		* @param R The Rectangle eeRectf
@@ -68,7 +68,7 @@ class EE_API cPrimitives {
 		* @param Angle Rectangle Angle
 		* @param Scale Rectangle Scale ( default 1.0f )
 		*/
-		void DrawRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle = 0, const eeFloat& Scale = 1 );
+		void DrawRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle = 0, const eeVector2f& Scale = eeVector2f::One );
 
 		/** Draw a rounded rectangle on the screen setting per vertex color
 		* @param R The Rectangle eeRectf
@@ -80,7 +80,7 @@ class EE_API cPrimitives {
 		* @param Scale Rectangle Scale ( default 1.0f )
 		* @param Corners Number of vertices per corner ( how rounded is each corner )
 		*/
-		void DrawRoundedRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle = 0, const eeFloat& Scale = 1, const eeUint& Corners = 8 );
+		void DrawRoundedRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle = 0, const eeVector2f& Scale = eeVector2f::One, const eeUint& Corners = 8 );
 
 		/** Draw a four edges polygon on screen
 		* @param q The Quad

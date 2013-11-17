@@ -534,7 +534,7 @@ void cUIControl::BackgroundDraw() {
 		}
 	} else {
 		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( R, 0.f, 1.f, mBackground->Corners() );
+			P.DrawRoundedRectangle( R, 0.f, eeVector2f::One, mBackground->Corners() );
 		} else {
 			P.DrawRectangle( R );
 		}
@@ -553,13 +553,13 @@ void cUIControl::BorderDraw() {
 		eeRectf R( eeVector2f( (eeFloat)mScreenPos.x + 0.1f, (eeFloat)mScreenPos.y + 0.1f ), eeSizef( (eeFloat)mSize.Width() - 0.1f, (eeFloat)mSize.Height() - 0.1f ) );
 
 		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( GetRectf(), 0.f, 1.f, mBackground->Corners() );
+			P.DrawRoundedRectangle( GetRectf(), 0.f, eeVector2f::One, mBackground->Corners() );
 		} else {
 			P.DrawRectangle( R );
 		}
 	} else {
 		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( GetRectf(), 0.f, 1.f, mBackground->Corners() );
+			P.DrawRoundedRectangle( GetRectf(), 0.f, eeVector2f::One, mBackground->Corners() );
 		} else {
 			P.DrawRectangle( GetRectf() );
 		}

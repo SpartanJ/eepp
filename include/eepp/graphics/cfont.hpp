@@ -72,7 +72,7 @@ class EE_API cFont {
 		* @param Angle The angle of the string rendered
 		* @param Effect Set the Blend Mode ( default ALPHA_NORMAL )
 		*/
-		void Draw( const String& Text, const eeFloat& X, const eeFloat& Y, const Uint32& Flags = FONT_DRAW_LEFT, const eeFloat& Scale = 1.0f, const eeFloat& Angle = 0, const EE_BLEND_MODE& Effect = ALPHA_NORMAL );
+		void Draw( const String& Text, const eeFloat& X, const eeFloat& Y, const Uint32& Flags = FONT_DRAW_LEFT, const eeVector2f& Scale = eeVector2f::One, const eeFloat& Angle = 0, const EE_BLEND_MODE& Effect = ALPHA_NORMAL );
 
 		/** Draw the string seted on the screen
 		* @param X The start x position
@@ -82,7 +82,7 @@ class EE_API cFont {
 		* @param Angle The angle of the string rendered
 		* @param Effect Set the Blend Mode ( default ALPHA_NORMAL )
 		*/
-		void Draw( const eeFloat& X, const eeFloat& Y, const Uint32& Flags = FONT_DRAW_LEFT, const eeFloat& Scale = 1.0f, const eeFloat& Angle = 0, const EE_BLEND_MODE& Effect = ALPHA_NORMAL );
+		void Draw( const eeFloat& X, const eeFloat& Y, const Uint32& Flags = FONT_DRAW_LEFT, const eeVector2f& Scale = eeVector2f::One, const eeFloat& Angle = 0, const EE_BLEND_MODE& Effect = ALPHA_NORMAL );
 
 		/** Draw a string on the screen from a cached text
 		* @param TextCache The cached text
@@ -93,7 +93,7 @@ class EE_API cFont {
 		* @param Angle The angle of the string rendered
 		* @param Effect Set the Blend Mode ( default ALPHA_NORMAL )
 		*/
-		void Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, const Uint32& Flags = FONT_DRAW_LEFT, const eeFloat& Scale = 1.0f, const eeFloat& Angle = 0, const EE_BLEND_MODE& Effect = ALPHA_NORMAL );
+		void Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, const Uint32& Flags = FONT_DRAW_LEFT, const eeVector2f& Scale = eeVector2f::One, const eeFloat& Angle = 0, const EE_BLEND_MODE& Effect = ALPHA_NORMAL );
 
 		/** Shrink the String to a max width
 		* @param Str The string to shrink

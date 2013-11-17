@@ -97,7 +97,7 @@ void cUITooltip::Draw() {
 
 		if ( mTextCache->GetTextWidth() ) {
 			mTextCache->Flags( Flags() );
-			mTextCache->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x, (eeFloat)mScreenPos.y + mAlignOffset.y, 1.f, 0.f, Blend() );
+			mTextCache->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x, (eeFloat)mScreenPos.y + mAlignOffset.y, eeVector2f::One, 0.f, Blend() );
 		}
 	}
 }

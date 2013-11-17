@@ -14,7 +14,7 @@ cSprite::cSprite() :
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
 	mPos(),
 	mAngle( 0.f ),
-	mScale( 1.f ),
+	mScale( 1.f, 1.f ),
 	mAnimSpeed( 16.f ),
 	mColor( 255,255,255,255 ),
 	mVertexColors( NULL ),
@@ -35,7 +35,7 @@ cSprite::cSprite( const std::string& name, const std::string& extension, cTextur
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
 	mPos(),
 	mAngle( 0.f ),
-	mScale( 1.f ),
+	mScale( 1.f, 1.f ),
 	mAnimSpeed( 16.f ),
 	mColor( 255,255,255,255 ),
 	mVertexColors( NULL ),
@@ -57,7 +57,7 @@ cSprite::cSprite( cSubTexture * SubTexture ) :
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
 	mPos(),
 	mAngle( 0.f ),
-	mScale( 1.f ),
+	mScale( 1.f, 1.f ),
 	mAnimSpeed( 16.f ),
 	mColor( 255,255,255,255 ),
 	mVertexColors( NULL ),
@@ -79,7 +79,7 @@ cSprite::cSprite( const Uint32& TexId, const eeSizef &DestSize, const eeVector2i
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
 	mPos(),
 	mAngle( 0.f ),
-	mScale( 1.f ),
+	mScale( 1.f, 1.f ),
 	mAnimSpeed( 16.f ),
 	mColor( 255,255,255,255 ),
 	mVertexColors( NULL ),
@@ -178,7 +178,7 @@ void cSprite::Reset() {
 	mFlags				= SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED;
 
 	mAnimSpeed			= 16.f;
-	mScale				= 1;
+	mScale				= eeVector2f::One;
 	mRepeations			= -1;
 
 	mAngle				= 0;
@@ -721,10 +721,14 @@ eeFloat cSprite::Angle() const {
 }
 
 void cSprite::Scale( const eeFloat& Scale ) {
+	this->Scale( eeVector2f( Scale, Scale ) );
+}
+
+void cSprite::Scale( const eeVector2f& Scale ) {
 	mScale = Scale;
 }
 
-eeFloat cSprite::Scale() const {
+const eeVector2f& cSprite::Scale() const {
 	return mScale;
 }
 

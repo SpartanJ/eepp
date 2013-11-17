@@ -92,17 +92,17 @@ const std::vector<eeFloat>& cFont::GetLinesWidth() {
 	return mTextCache.LinesWidth();
 }
 
-void cFont::Draw( const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, const EE_BLEND_MODE& Effect) {
+void cFont::Draw( const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeVector2f& Scale, const eeFloat& Angle, const EE_BLEND_MODE& Effect) {
 	Draw( mTextCache, X, Y, Flags, Scale, Angle, Effect );
 }
 
-void cFont::Draw( const String& Text, const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, const EE_BLEND_MODE& Effect ) {
+void cFont::Draw( const String& Text, const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeVector2f& Scale, const eeFloat& Angle, const EE_BLEND_MODE& Effect ) {
 	mTextCache.Text( Text );
 	mTextCache.Flags( Flags );
 	mTextCache.Draw( X, Y, Scale, Angle, Effect );
 }
 
-void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeFloat& Scale, const eeFloat& Angle, const EE_BLEND_MODE& Effect ) {
+void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeVector2f& Scale, const eeFloat& Angle, const EE_BLEND_MODE& Effect ) {
 	if ( !TextCache.Text().size() )
 		return;
 
@@ -150,7 +150,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 		eeVector2f Center( cX + TextCache.GetTextWidth() * 0.5f, cY + TextCache.GetTextHeight() * 0.5f );
 		GLi->Translatef( Center.x , Center.y, 0.f );
 		GLi->Rotatef( Angle, 0.0f, 0.0f, 1.0f );
-		GLi->Scalef( Scale, Scale, 1.0f );
+		GLi->Scalef( Scale.x, Scale.y, 1.0f );
 		GLi->Translatef( -Center.x + X, -Center.y + Y, 0.f );
 	}
 
@@ -202,7 +202,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 					case '\n':
 					{
 						if ( Flags & FONT_DRAW_VERTICAL ) {
-							nX += (GetFontHeight() * Scale);
+							nX += (GetFontHeight() * Scale.y);
 							nY = 0;
 						} else {
 							if ( i + 1 < TextCache.Text().size() ) {
@@ -218,7 +218,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 								}
 							}
 
-							nY += (GetFontHeight() * Scale);
+							nY += (GetFontHeight() * Scale.y);
 							Line++;
 						}
 

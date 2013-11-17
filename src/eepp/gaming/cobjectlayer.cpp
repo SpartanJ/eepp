@@ -50,7 +50,7 @@ void cObjectLayer::Draw( const eeVector2f &Offset ) {
 			cGameObject * Obj = (*it);
 
 			if ( Obj->Blocked() ) {
-				Tex->DrawEx( Obj->Pos().x, Obj->Pos().y, Obj->Size().Width(), Obj->Size().Height(), 0, 1, Col, Col, Col, Col );
+				Tex->DrawEx( Obj->Pos().x, Obj->Pos().y, Obj->Size().Width(), Obj->Size().Height(), 0, eeVector2f::One, Col, Col, Col, Col );
 			}
 		}
 	}

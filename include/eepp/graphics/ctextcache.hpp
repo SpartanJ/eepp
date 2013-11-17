@@ -49,7 +49,7 @@ class EE_API cTextCache {
 		std::vector<eeColorA>& Colors();
 
 		/** Draw the cached text on screen */
-		void Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Scale = 1.0f, const eeFloat& Angle = 0, EE_BLEND_MODE Effect = ALPHA_NORMAL );
+		void Draw( const eeFloat& X, const eeFloat& Y, const eeVector2f& Scale = eeVector2f::One, const eeFloat& Angle = 0, EE_BLEND_MODE Effect = ALPHA_NORMAL );
 
 		/** @return The Font Color */
 		const eeColorA& Color() const;

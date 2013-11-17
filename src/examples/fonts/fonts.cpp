@@ -39,7 +39,7 @@ void MainLoop()
 	TxtCache->Draw( 48, ( YPos += TexF2->GetTextHeight() + 24 ) );
 
 	// Text rotated and scaled
-	TTF->Draw( win->GetWidth() * 0.5f - TTF->GetTextWidth() * 0.5f, 512, FONT_DRAW_LEFT, 0.75f, 12.5f );
+	TTF->Draw( win->GetWidth() * 0.5f - TTF->GetTextWidth() * 0.5f, 512, FONT_DRAW_LEFT, eeVector2f( 0.75f, 0.75f ), 12.5f );
 
 	// Draw frame
 	win->Display();

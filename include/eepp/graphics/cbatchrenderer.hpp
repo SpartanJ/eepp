@@ -59,10 +59,13 @@ class EE_API cBatchRenderer {
 		eeFloat BatchRotation() const { return mRotation; }
 
 		/** Set the scale of the rendered vertex. */
-		void BatchScale( const eeFloat& Scale ) { mScale = Scale; }
+		void BatchScale( const eeVector2f& Scale ) { mScale = Scale; }
+
+		/** Set the scale of the rendered vertex. */
+		void BatchScale( const eeFloat& Scale ) { mScale = eeVector2f( Scale, Scale ); }
 
 		/** Get the scale of the rendered vertex. */
-		eeFloat BatchScale() const { return mScale; }
+		eeVector2f BatchScale() const { return mScale; }
 
 		/** The batch position */
 		void BatchPosition( const eeVector2f Pos ) { mPosition = Pos; }
@@ -77,7 +80,7 @@ class EE_API cBatchRenderer {
 		eeVector2f BatchCenter() const { return mCenter; }
 
 		/** Add to the batch a quad ( this will change your batch rendering method to DM_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchQuadEx( eeFloat x, eeFloat y, eeFloat width, eeFloat height, eeFloat angle = 0.0f, eeFloat scale = 1.0f, eeOriginPoint originPoint = eeOriginPoint(eeOriginPoint::OriginCenter) );
+		void BatchQuadEx( eeFloat x, eeFloat y, eeFloat width, eeFloat height, eeFloat angle = 0.0f, eeVector2f scale = eeVector2f::One, eeOriginPoint originPoint = eeOriginPoint(eeOriginPoint::OriginCenter) );
 
 		/** Add to the batch a quad ( this will change your batch rendering method to DM_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
 		void BatchQuad( const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& angle = 0.0f );
@@ -215,7 +218,7 @@ class EE_API cBatchRenderer {
 
 		const cTexture *	mTexture;
 		cTextureFactory *	mTF;
-		EE_BLEND_MODE	mBlend;
+		EE_BLEND_MODE		mBlend;
 
 		eeTexCoord			mTexCoord[4];
 		eeColorA			mVerColor[4];
@@ -223,7 +226,7 @@ class EE_API cBatchRenderer {
 		EE_DRAW_MODE		mCurrentMode;
 
 		eeFloat				mRotation;
-		eeFloat				mScale;
+		eeVector2f			mScale;
 		eeVector2f			mPosition;
 		eeVector2f			mCenter;
 

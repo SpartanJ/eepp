@@ -63,16 +63,20 @@ void cView::Move( const eeVector2i& Offset ) {
 	Move( Offset.x, Offset.y );
 }
 
-void cView::Scale( const eeFloat& Factor ) {
+void cView::Scale( const eeVector2f& Factor ) {
 	eeVector2f v( mView.Right * 0.5f, mView.Bottom * 0.5f );
 
-	mView.Left = mView.Left + static_cast<eeInt> ( v.x - v.x * Factor );
-	mView.Top = mView.Top + static_cast<eeInt> ( v.y - v.y * Factor );
-	mView.Right = static_cast<Int32>( (eeFloat)mView.Right * Factor );
-	mView.Bottom = static_cast<Int32>( (eeFloat)mView.Bottom * Factor );
+	mView.Left = mView.Left + static_cast<eeInt> ( v.x - v.x * Factor.x );
+	mView.Top = mView.Top + static_cast<eeInt> ( v.y - v.y * Factor.y );
+	mView.Right = static_cast<Int32>( (eeFloat)mView.Right * Factor.x );
+	mView.Bottom = static_cast<Int32>( (eeFloat)mView.Bottom * Factor.y );
 
 	CalcCenter();
 	mNeedUpdate = true;
+}
+
+void cView::Scale( const eeFloat& Factor ) {
+	Scale( eeVector2f( Factor, Factor ) );
 }
 
 void cView::SetPosition( const eeInt& X, const eeInt& Y ) {

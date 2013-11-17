@@ -54,6 +54,12 @@ class Quad2 {
 		/** Scale the quad from an specified center */
 		void Scale( const T& scale, const Vector2<T>& Center );
 
+		/** Scale the quad from its rotation center */
+		void Scale( const Vector2<T>& scale );
+
+		/** Scale the quad from an specified center */
+		void Scale( const Vector2<T>& scale, const Vector2<T>& Center );
+
 		/** Move the polygon Vector2s, add to every point the distance specified  */
 		void Move( Vector2<T> dist );
 };
@@ -98,22 +104,33 @@ void Quad2<T>::Rotate( const T& Angle, const Vector2<T>& Center ) {
 	V[3].RotateVectorCentered( Angle, Center );
 }
 
+
 template <typename T>
-void Quad2<T>::Scale( const T& scale, const Vector2<T>& Center ) {
+void Quad2<T>::Scale( const Vector2<T>& scale, const Vector2<T>& Center ) {
 	if ( scale == 1.0f )
 		return;
 
 	for ( Uint32 i = 0; i < 4; i++ ) {
 		if ( V[i].x < Center.x )
-			V[i].x = Center.x - eeabs( Center.x - V[i].x ) * scale;
+			V[i].x = Center.x - eeabs( Center.x - V[i].x ) * scale.x;
 		else
-			V[i].x = Center.x + eeabs( Center.x - V[i].x ) * scale;
+			V[i].x = Center.x + eeabs( Center.x - V[i].x ) * scale.x;
 
 		if ( V[i].y < Center.y )
-			V[i].y = Center.y - eeabs( Center.y - V[i].y ) * scale;
+			V[i].y = Center.y - eeabs( Center.y - V[i].y ) * scale.y;
 		else
-			V[i].y = Center.y + eeabs( Center.y - V[i].y ) * scale;
+			V[i].y = Center.y + eeabs( Center.y - V[i].y ) * scale.y;
 	}
+}
+
+template <typename T>
+void Quad2<T>::Scale( const Vector2<T>& scale ) {
+	Scale( scale, GetCenter() );
+}
+
+template <typename T>
+void Quad2<T>::Scale( const T& scale, const Vector2<T>& Center ) {
+	Scale( Vector2<T>( scale, scale ), Center );
 }
 
 template <typename T>

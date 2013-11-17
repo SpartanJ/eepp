@@ -25,6 +25,9 @@ class EE_API cView {
 		/** Scale the current view (from center) */
 		void Scale( const eeFloat& Factor );
 
+		/** Scale the current view (from center) */
+		void Scale( const eeVector2f& Factor );
+
 		/** @return The center position of the view */
 		eeVector2i Center() const;
 

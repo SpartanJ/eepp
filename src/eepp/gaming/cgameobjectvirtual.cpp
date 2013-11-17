@@ -68,7 +68,7 @@ void cGameObjectVirtual::Draw() {
 						mPos.x,
 						mPos.y,
 						GetAngle(),
-						1.f,
+						eeVector2f::One,
 						*LM->GetTileColor( Tile, 0 ),
 						*LM->GetTileColor( Tile, 1 ),
 						*LM->GetTileColor( Tile, 2 ),
@@ -77,7 +77,7 @@ void cGameObjectVirtual::Draw() {
 						RenderModeFromFlags()
 					);
 				} else {
-					mSubTexture->Draw( mPos.x, mPos.y, *LM->GetTileColor( Tile ), GetAngle(), 1.f, ALPHA_NORMAL, RenderModeFromFlags() );
+					mSubTexture->Draw( mPos.x, mPos.y, *LM->GetTileColor( Tile ), GetAngle(), eeVector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
 				}
 			} else {
 				if ( LM->IsByVertex() ) {
@@ -85,7 +85,7 @@ void cGameObjectVirtual::Draw() {
 						mPos.x,
 						mPos.y,
 						GetAngle(),
-						1.f,
+						eeVector2f::One,
 						LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y ) ),
 						LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y + mSubTexture->DestSize().y ) ),
 						LM->GetColorFromPos( eeVector2f( mPos.x + mSubTexture->DestSize().x, mPos.y + mSubTexture->DestSize().y ) ),
@@ -94,11 +94,11 @@ void cGameObjectVirtual::Draw() {
 						RenderModeFromFlags()
 					);
 				} else {
-					mSubTexture->Draw( mPos.x, mPos.y, LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y ) ), GetAngle(), 1.f, ALPHA_NORMAL, RenderModeFromFlags() );
+					mSubTexture->Draw( mPos.x, mPos.y, LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y ) ), GetAngle(), eeVector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
 				}
 			}
 		} else {
-			mSubTexture->Draw( mPos.x, mPos.y, eeColorA(), GetAngle(), 1.f, ALPHA_NORMAL, RenderModeFromFlags() );
+			mSubTexture->Draw( mPos.x, mPos.y, eeColorA(), GetAngle(), eeVector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
 		}
 	} else {
 		cPrimitives P;
@@ -110,9 +110,9 @@ void cGameObjectVirtual::Draw() {
 
 		if ( NULL != mLayer ) {
 			eeSize ts = mLayer->Map()->TileSize();
-			P.DrawRectangle( eeRectf( eeVector2f( mPos.x, mPos.y ), eeSizef( ts.x ,ts.y ) ), 0, 1 );
+			P.DrawRectangle( eeRectf( eeVector2f( mPos.x, mPos.y ), eeSizef( ts.x ,ts.y ) ), 0, eeVector2f::One );
 		} else {
-			P.DrawRectangle( eeRectf( eeVector2f( mPos.x, mPos.y ), eeSizef( 32 ,32 ) ), 0, 1 );
+			P.DrawRectangle( eeRectf( eeVector2f( mPos.x, mPos.y ), eeSizef( 32 ,32 ) ), 0, eeVector2f::One );
 		}
 	}
 }

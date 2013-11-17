@@ -96,7 +96,7 @@ void cUIGfx::Draw() {
 }
 
 void cUIGfx::DrawSubTexture() {
-	mSubTexture->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x, (eeFloat)mScreenPos.y + mAlignOffset.y, mColor, 0.f, 1.f, Blend(), mRender );
+	mSubTexture->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x, (eeFloat)mScreenPos.y + mAlignOffset.y, mColor, 0.f, eeVector2f::One, Blend(), mRender );
 }
 
 void cUIGfx::Alpha( const eeFloat& alpha ) {

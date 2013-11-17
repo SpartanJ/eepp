@@ -23,9 +23,11 @@ class EE_API cUIControlAnim : public cUIDragable {
 
  		void Angle( const eeFloat& angle );
 
- 		const eeFloat& Scale() const;
+		const eeVector2f& Scale() const;
 
- 		void Scale( const eeFloat& scale );
+		void Scale( const eeVector2f& scale );
+
+		void Scale( const eeFloat& scale );
 
  		const eeFloat& Alpha() const;
 
@@ -36,6 +38,8 @@ class EE_API cUIControlAnim : public cUIDragable {
  		bool Animating();
 
 		void StartAlphaAnim( const eeFloat& From, const eeFloat& To, const cTime& TotalTime, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
+
+		void StartScaleAnim( const eeVector2f& From, const eeVector2f& To, const cTime& TotalTime, const Ease::Interpolation& Type = Ease::Linear, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
 
 		void StartScaleAnim( const eeFloat& From, const eeFloat& To, const cTime& TotalTime, const Ease::Interpolation& Type = Ease::Linear, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
 
@@ -53,7 +57,7 @@ class EE_API cUIControlAnim : public cUIDragable {
 
 		cInterpolation * RotationInterpolation();
 
-		cInterpolation * ScaleInterpolation();
+		cWaypoints * ScaleInterpolation();
 
 		cInterpolation * AlphaInterpolation();
 
@@ -66,11 +70,11 @@ class EE_API cUIControlAnim : public cUIDragable {
     	friend class cUIManager;
 
 		eeFloat 			mAngle;
-		eeFloat 			mScale;
+		eeVector2f 			mScale;
 		eeFloat 			mAlpha;
 
 		cInterpolation * 	mAngleAnim;
-		cInterpolation * 	mScaleAnim;
+		cWaypoints *		mScaleAnim;
 		cInterpolation * 	mAlphaAnim;
 		cWaypoints * 		mMoveAnim;
 

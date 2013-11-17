@@ -16,7 +16,7 @@ cBatchRenderer::cBatchRenderer() :
 	mBlend(ALPHA_NORMAL),
 	mCurrentMode(DM_QUADS),
 	mRotation(0.0f),
-	mScale(1.0f),
+	mScale(1.0f,1.0f),
 	mPosition(0.0f, 0.0f),
 	mCenter(0.0f, 0.0f),
 	mForceRendering(false),
@@ -36,7 +36,7 @@ cBatchRenderer::cBatchRenderer( const eeUint& Prealloc ) :
 	mBlend(ALPHA_NORMAL),
 	mCurrentMode(DM_QUADS),
 	mRotation(0.0f),
-	mScale(1.0f),
+	mScale(1.0f,1.0f),
 	mPosition(0.0f, 0.0f),
 	mCenter(0.0f, 0.0f),
 	mForceRendering(false),
@@ -123,7 +123,7 @@ void cBatchRenderer::Flush() {
 
 		GLi->Translatef( mPosition.x + mCenter.x, mPosition.y + mCenter.y, 0.0f);
 		GLi->Rotatef( mRotation, 0.0f, 0.0f, 1.0f );
-		GLi->Scalef( mScale, mScale, 1.0f );
+		GLi->Scalef( mScale.x, mScale.y, 1.0f );
 		GLi->Translatef( -mCenter.x, -mCenter.y, 0.0f);
 	}
 
@@ -170,7 +170,7 @@ void cBatchRenderer::BatchQuad( const eeFloat& x, const eeFloat& y, const eeFloa
 	BatchQuadEx( x, y, width, height, angle );
 }
 
-void cBatchRenderer::BatchQuadEx( eeFloat x, eeFloat y, eeFloat width, eeFloat height, eeFloat angle, eeFloat scale, eeOriginPoint originPoint ) {
+void cBatchRenderer::BatchQuadEx( eeFloat x, eeFloat y, eeFloat width, eeFloat height, eeFloat angle, eeVector2f scale, eeOriginPoint originPoint ) {
 	if ( mNumVertex + ( GLi->QuadsSupported() ? 3 : 5 ) >= mVertexSize )
 		return;
 
@@ -180,10 +180,10 @@ void cBatchRenderer::BatchQuadEx( eeFloat x, eeFloat y, eeFloat width, eeFloat h
 	}
 
 	if ( scale != 1.0f ) {
-		x				= x + originPoint.x - originPoint.x * scale;
-		y				= y + originPoint.y - originPoint.y * scale;
-		width			*= scale;
-		height			*= scale;
+		x				= x + originPoint.x - originPoint.x * scale.x;
+		y				= y + originPoint.y - originPoint.y * scale.y;
+		width			*= scale.x;
+		height			*= scale.y;
 		originPoint		*= scale;
 	}
 

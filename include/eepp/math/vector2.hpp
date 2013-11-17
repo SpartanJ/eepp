@@ -9,6 +9,10 @@ namespace EE { namespace Math {
 template <typename T>
 class Vector2 {
 	public :
+		static const Vector2<T> Zero;
+
+		static const Vector2<T> One;
+
 		/** Default constructor creates Vector2(0,0) */
 		Vector2();
 
@@ -87,6 +91,12 @@ class Vector2 {
 		T cosAng( const T& Ang );
 		T sinAng( const T& Ang );
 };
+
+template <typename T>
+const Vector2<T> Vector2<T>::One = Vector2<T>(1,1);
+
+template <typename T>
+const Vector2<T> Vector2<T>::Zero = Vector2<T>(0,0);
 
 template <typename T>
 Vector2<T> Vector2<T>::Lerp( const Vector2<T>& Vec, T Time ) {
@@ -190,6 +200,14 @@ Vector2<T>& operator *=(Vector2<T>& V, T X) {
 }
 
 template <typename T>
+Vector2<T>& operator *=(Vector2<T>& V, const Vector2<T>& V2) {
+	V.x *= V2.x;
+	V.y *= V2.y;
+
+	return V;
+}
+
+template <typename T>
 Vector2<T> operator /(const Vector2<T>& V1, const Vector2<T>& V2) {
 	return Vector2<T>(V1.x / V2.x, V1.y / V2.y);
 }
@@ -213,8 +231,18 @@ bool operator ==(const Vector2<T>& V1, const Vector2<T>& V2) {
 }
 
 template <typename T>
+bool operator ==(const Vector2<T>& V1, const T& V) {
+	return (V1.x == V) && (V1.y == V);
+}
+
+template <typename T>
 bool operator !=(const Vector2<T>& V1, const Vector2<T>& V2) {
 	return (V1.x != V2.x) || (V1.y != V2.y);
+}
+
+template <typename T>
+bool operator !=(const Vector2<T>& V1, const T& V) {
+	return (V1.x != V) || (V1.y != V);
 }
 
 template <typename T>

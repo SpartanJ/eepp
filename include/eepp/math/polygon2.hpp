@@ -92,6 +92,9 @@ class Polygon2 {
 		/** Scale the polygon from a center point */
 		void Scale( const T& scale, const Vector2<T>& Center );
 
+		/** Scale the polygon from a center point */
+		void Scale( const Vector2<T>& scale, const Vector2<T>& Center );
+
 		/** @return True if the point is inside the polygon */
 		bool PointInside( const Vector2<T>& point );
 
@@ -203,21 +206,26 @@ void Polygon2<T>::Rotate( const T& Angle, const Vector2<T>& Center ) {
 }
 
 template <typename T>
-void Polygon2<T>::Scale( const T& scale, const Vector2<T>& Center ) {
+void Polygon2<T>::Scale( const Vector2<T>& scale, const Vector2<T>& Center ) {
 	if ( scale == 1.0f )
 		return;
 
 	for ( Uint32 i = 0; i < Vector.size(); i++ ) {
 		if ( Vector[i].x < Center.x )
-			Vector[i].x = Center.x - eeabs( Center.x - Vector[i].x ) * scale;
+			Vector[i].x = Center.x - eeabs( Center.x - Vector[i].x ) * scale.x;
 		else
-			Vector[i].x = Center.x + eeabs( Center.x - Vector[i].x ) * scale;
+			Vector[i].x = Center.x + eeabs( Center.x - Vector[i].x ) * scale.x;
 
 		if ( Vector[i].y < Center.y )
-			Vector[i].y = Center.y - eeabs( Center.y - Vector[i].y ) * scale;
+			Vector[i].y = Center.y - eeabs( Center.y - Vector[i].y ) * scale.y;
 		else
-			Vector[i].y = Center.y + eeabs( Center.y - Vector[i].y ) * scale;
+			Vector[i].y = Center.y + eeabs( Center.y - Vector[i].y ) * scale.y;
 	}
+}
+
+template <typename T>
+void Polygon2<T>::Scale( const T& scale, const Vector2<T>& Center ) {
+	Scale( Vector2<T>( scale, scale ), Center );
 }
 
 template<typename T>

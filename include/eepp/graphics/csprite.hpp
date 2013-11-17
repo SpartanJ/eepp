@@ -76,8 +76,11 @@ class EE_API cSprite {
 		/** Set the Scale for the rendered sprite */
 		void Scale( const eeFloat& Scale );
 
+		/** Set the Scale for the rendered sprite */
+		void Scale( const eeVector2f& Scale );
+
 		/** @return The Scale for the rendered sprite */
-		eeFloat Scale() const;
+		const eeVector2f& Scale() const;
 
 		/**	@brief Set the local origin of the sprite
 		**	The origin of an object defines the center point for
@@ -359,7 +362,7 @@ class EE_API cSprite {
 		eeVector2f			mPos;
 		eeOriginPoint		mOrigin;
 		eeFloat				mAngle;
-		eeFloat				mScale;
+		eeVector2f			mScale;
 		eeFloat				mAnimSpeed;
 
 		eeColorA			mColor;

@@ -706,11 +706,11 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 
 		if ( Chk->Active() ) {
 			if ( C->Scale() == 1.f ) C->Scale( 0.f );
-			C->StartScaleAnim( C->Scale(), 1.f, Milliseconds( 500.f ), Ease::SineOut );
+			C->StartScaleAnim( C->Scale(), eeVector2f::One, Milliseconds( 500.f ), Ease::SineOut );
 			C->StartAlphaAnim( C->Alpha(), 255.f, Milliseconds( 500.f ) );
 			C->StartRotation( 0, 360, Milliseconds( 500.f ), Ease::SineOut );
 		} else {
-			C->StartScaleAnim( C->Scale(), 0.f, Milliseconds( 500.f ), Ease::SineIn );
+			C->StartScaleAnim( C->Scale(), eeVector2f::Zero, Milliseconds( 500.f ), Ease::SineIn );
 			C->StartAlphaAnim( C->Alpha(), 0.f, Milliseconds( 500.f ) );
 			C->StartRotation( 0, 360, Milliseconds( 500.f ), Ease::SineIn );
 		}
@@ -1073,15 +1073,15 @@ void cEETest::Screen2() {
 		mShaderProgram->SetUniform( "blurfactor" , (float)mBlurFactor );
 	}
 
-	TNP[6]->DrawFast( PlanetX, PlanetY, ang, scale);
+	TNP[6]->DrawFast( PlanetX, PlanetY, ang, eeVector2f(scale,scale));
 
 	if ( mUseShaders )
 		mShaderProgram->Unbind();
 
-	TNP[3]->Draw( HWidth - 128, HHeight, 0, 1, eeColorA(255,255,255,150), ALPHA_NORMAL, RN_ISOMETRIC);
-	TNP[3]->Draw( HWidth - 128, HHeight - 128, 0, 1, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRIC);
-	TNP[3]->Draw( HWidth - 128, HHeight, 0, 1, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICAL);
-	TNP[3]->Draw( HWidth, HHeight, 0, 1, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICALNEGATIVE);
+	TNP[3]->Draw( HWidth - 128, HHeight, 0, eeVector2f::One, eeColorA(255,255,255,150), ALPHA_NORMAL, RN_ISOMETRIC);
+	TNP[3]->Draw( HWidth - 128, HHeight - 128, 0, eeVector2f::One, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRIC);
+	TNP[3]->Draw( HWidth - 128, HHeight, 0, eeVector2f::One, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICAL);
+	TNP[3]->Draw( HWidth, HHeight, 0, eeVector2f::One, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICALNEGATIVE);
 
 	alpha = (!aside) ? alpha+et.AsMilliseconds() * 0.1f : alpha-et.AsMilliseconds() * 0.1f;
 	if (alpha>=255) {
@@ -1093,7 +1093,7 @@ void cEETest::Screen2() {
 	}
 
 	eeColorA Col(255,255,255,(int)alpha);
-	TNP[1]->DrawEx( (eeFloat)mWindow->GetWidth() - 128.f, (eeFloat)mWindow->GetHeight() - 128.f, 128.f, 128.f, ang, 1, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
+	TNP[1]->DrawEx( (eeFloat)mWindow->GetWidth() - 128.f, (eeFloat)mWindow->GetHeight() - 128.f, 128.f, 128.f, ang, eeVector2f::One, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
 
 	SP.Position( alpha, alpha );
 	SP.Draw();
@@ -1169,7 +1169,7 @@ void cEETest::Screen2() {
 	PR.DrawRectangle( eeRectf( eeVector2f( Mousef.x - 80.f, Mousef.y - 80.f ), eeSizef( 160.f, 160.f ) ), 45.f );
 	PR.DrawLine( eeLine2f( eeVector2f(0.f, 0.f), eeVector2f( (eeFloat)mWindow->GetWidth(), (eeFloat)mWindow->GetHeight() ) ) );
 
-	TNP[3]->DrawQuadEx( eeQuad2f( eeVector2f(0.f, 0.f), eeVector2f(0.f, 100.f), eeVector2f(150.f, 150.f), eeVector2f(200.f, 150.f) ), eeVector2f(), ang, scale, eeColorA(220, 240, 0, 125), eeColorA(100, 0, 240, 125), eeColorA(250, 50, 25, 125), eeColorA(50, 150, 150, 125) );
+	TNP[3]->DrawQuadEx( eeQuad2f( eeVector2f(0.f, 0.f), eeVector2f(0.f, 100.f), eeVector2f(150.f, 150.f), eeVector2f(200.f, 150.f) ), eeVector2f(), ang, eeVector2f(scale,scale), eeColorA(220, 240, 0, 125), eeColorA(100, 0, 240, 125), eeColorA(250, 50, 25, 125), eeColorA(50, 150, 150, 125) );
 
 	WP.Update( et );
 	PR.SetColor( eeColorA(0, 255, 0, 255) );

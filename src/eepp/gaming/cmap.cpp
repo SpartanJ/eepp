@@ -222,7 +222,7 @@ void cMap::Draw() {
 		Uint8 Alpha = static_cast<Uint8>( (eeFloat)mBackColor.A() * ( (eeFloat)mBackAlpha / 255.f ) );
 
 		P.SetColor( eeColorA( mBackColor.R(), mBackColor.G(), mBackColor.B(), Alpha ) );
-		P.DrawRectangle( eeRectf( eeVector2f( mScreenPos.x, mScreenPos.y ), eeSizef( mViewSize.x, mViewSize.y ) ), 0.f, 1.f );
+		P.DrawRectangle( eeRectf( eeVector2f( mScreenPos.x, mScreenPos.y ), eeSizef( mViewSize.x, mViewSize.y ) ), 0.f, eeVector2f::One );
 		P.SetColor( eeColorA( 255, 255, 255, 255 ) );
 	}
 
@@ -256,7 +256,7 @@ void cMap::MouseOverDraw() {
 	if ( !DrawTileOver() || NULL == mTileTex )
 		return;
 
-	mTileTex->Draw( mMouseOverTileFinal.x * mTileSize.x, mMouseOverTileFinal.y * mTileSize.y, 0, 1, mTileOverColor );
+	mTileTex->Draw( mMouseOverTileFinal.x * mTileSize.x, mMouseOverTileFinal.y * mTileSize.y, 0, eeVector2f::One, mTileOverColor );
 }
 
 void cMap::GridDraw() {
@@ -291,15 +291,15 @@ void cMap::GridDraw() {
 
 					TileTexCol0.Alpha = TileTexCol1.Alpha = TileTexCol2.Alpha = TileTexCol3.Alpha	= mBackAlpha;
 
-					mTileTex->DrawEx( tx, ty, 0, 0, 0, 1, TileTexCol0, TileTexCol1, TileTexCol2, TileTexCol3 );
+					mTileTex->DrawEx( tx, ty, 0, 0, 0, eeVector2f::One, TileTexCol0, TileTexCol1, TileTexCol2, TileTexCol3 );
 				} else {
 					TileTexCol			= *mLightManager->GetTileColor( TPos );
 					TileTexCol.Alpha	= mBackAlpha;
 
-					mTileTex->Draw( tx, ty, 0, 1, TileTexCol );
+					mTileTex->Draw( tx, ty, 0, eeVector2f::One, TileTexCol );
 				}
 			} else {
-				mTileTex->Draw( tx, ty, 0, 1, TileTexCol );
+				mTileTex->Draw( tx, ty, 0, eeVector2f::One, TileTexCol );
 			}
 		}
 	}

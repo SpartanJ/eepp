@@ -140,7 +140,7 @@ void cIsoMap::Draw() {
 							T->Color[3] = mLight.ProcessVertex( T->Q.V[3].x, T->Q.V[3].y, T->Color[3], T->Color[3] );	// Right - Top Vertex
 						}
 
-						T->Layers[L]->Draw( T->Q, eeVector2f(), 0.f, 1.f, T->Color[0], T->Color[1], T->Color[2], T->Color[3] );
+						T->Layers[L]->Draw( T->Q, eeVector2f(), 0.f, eeVector2f::One, T->Color[0], T->Color[1], T->Color[2], T->Color[3] );
 
 						if ( TileAABB.Contains( mMouseMapPos ) ) {
 							if ( eePolygon2f::IntersectQuad2( T->Q, eeQuad2f( mMouseMapPos, mMouseMapPos, mMouseMapPos, mMouseMapPos ) ) ) {
@@ -161,11 +161,11 @@ void cIsoMap::Draw() {
 							eeAABB ShadowAABB( ObjPos.x, TileCenter.y - SubTexture->DestSize().y, TileCenter.x + SubTexture->DestSize().x, TileCenter.y );
 
 							if ( mScreenAABB.Intersect( ShadowAABB ) ) {
-								SubTexture->Draw( mOffsetX + ObjPos.x, mOffsetY + ObjPos.y, 0, 1, SC, SC, SC, SC, ALPHA_NORMAL, RN_ISOMETRIC );
+								SubTexture->Draw( mOffsetX + ObjPos.x, mOffsetY + ObjPos.y, 0, eeVector2f::One, SC, SC, SC, SC, ALPHA_NORMAL, RN_ISOMETRIC );
 							}
 
 							if ( mScreenAABB.Intersect( LayerAABB )  ) {
-								SubTexture->Draw( mOffsetX + TileCenter.x - (eeFloat)SubTexture->DestSize().x * 0.5f, mOffsetY + TileCenter.y - (eeFloat)SubTexture->DestSize().y, 0, 1, eeColorA(T->Color[0]), eeColorA(T->Color[1]), eeColorA(T->Color[2]), eeColorA(T->Color[3]) );
+								SubTexture->Draw( mOffsetX + TileCenter.x - (eeFloat)SubTexture->DestSize().x * 0.5f, mOffsetY + TileCenter.y - (eeFloat)SubTexture->DestSize().y, 0, eeVector2f::One, eeColorA(T->Color[0]), eeColorA(T->Color[1]), eeColorA(T->Color[2]), eeColorA(T->Color[3]) );
 							}
 						}
 					}

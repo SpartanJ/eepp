@@ -9,7 +9,7 @@ namespace EE { namespace UI {
 cUIControlAnim::cUIControlAnim( const CreateParams& Params ) :
 	cUIDragable( Params ),
 	mAngle(0.f),
-	mScale(1.f),
+	mScale(1.f,1.f),
 	mAlpha(255.f),
 	mAngleAnim(NULL),
 	mScaleAnim(NULL),
@@ -72,15 +72,17 @@ void cUIControlAnim::Angle( const eeFloat& angle ) {
 	OnAngleChange();
 }
 
-const eeFloat& cUIControlAnim::Scale() const {
+const eeVector2f& cUIControlAnim::Scale() const {
 	return mScale;
 }
 
+void cUIControlAnim::Scale( const eeVector2f& scale ) {
+	mScale = scale;
+	OnScaleChange();
+}
+
 void cUIControlAnim::Scale( const eeFloat& scale ) {
-	if ( scale >= 0.f ) {
-		mScale = scale;
-		OnScaleChange();
-	}
+	Scale( eeVector2f( scale, scale ) );
 }
 
 const eeFloat& cUIControlAnim::Alpha() const {
@@ -115,7 +117,7 @@ void cUIControlAnim::MatrixSet() {
 		eeVector2f Center( mScreenPos.x + mSize.Width() * 0.5f, mScreenPos.y + mSize.Height() * 0.5f );
 		GLi->Translatef( Center.x , Center.y, 0.f );
 		GLi->Rotatef( mAngle, 0.0f, 0.0f, 1.0f );
-		GLi->Scalef( mScale, mScale, 1.0f );
+		GLi->Scalef( mScale.x, mScale.y, 1.0f );
 		GLi->Translatef( -Center.x, -Center.y, 0.f );
 	}
 }
@@ -158,7 +160,7 @@ void cUIControlAnim::Update() {
 
 	if ( NULL != mScaleAnim && mScaleAnim->Enabled() ) {
 		mScaleAnim->Update( Elapsed() );
-		Scale( mScaleAnim->GetRealPos() );
+		Scale( mScaleAnim->GetPos() );
 
 		if ( mScaleAnim->Ended() )
 			eeSAFE_DELETE( mScaleAnim );
@@ -210,9 +212,9 @@ void cUIControlAnim::StartAlphaAnim( const eeFloat& From, const eeFloat& To, con
 	}
 }
 
-void cUIControlAnim::StartScaleAnim( const eeFloat& From, const eeFloat& To, const cTime& TotalTime, const Ease::Interpolation& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
+void cUIControlAnim::StartScaleAnim( const eeVector2f& From, const eeVector2f& To, const cTime& TotalTime, const Ease::Interpolation& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mScaleAnim )
-		mScaleAnim = eeNew( cInterpolation, () );
+		mScaleAnim = eeNew( cWaypoints, () );
 
 	mScaleAnim->ClearWaypoints();
 	mScaleAnim->AddWaypoint( From );
@@ -222,6 +224,10 @@ void cUIControlAnim::StartScaleAnim( const eeFloat& From, const eeFloat& To, con
 	mScaleAnim->Type( Type );
 
 	Scale( From );
+}
+
+void cUIControlAnim::StartScaleAnim( const eeFloat& From, const eeFloat& To, const cTime& TotalTime, const Ease::Interpolation& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
+	StartScaleAnim( eeVector2f( From, From ), eeVector2f( To, To ), TotalTime, Type, PathEndCallback );
 }
 
 void cUIControlAnim::StartMovement( const eeVector2i& From, const eeVector2i& To, const cTime& TotalTime, const Ease::Interpolation& Type, cWaypoints::OnPathEndCallback PathEndCallback ) {
@@ -287,7 +293,7 @@ void cUIControlAnim::BackgroundDraw() {
 		}
 	} else {
 		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( R, 0.f, 1.f, mBackground->Corners() );
+			P.DrawRoundedRectangle( R, 0.f, eeVector2f::One, mBackground->Corners() );
 		} else {
 			P.DrawRectangle( R );
 		}
@@ -306,13 +312,13 @@ void cUIControlAnim::BorderDraw() {
 		eeRectf R( eeVector2f( (eeFloat)mScreenPos.x + 0.1f, (eeFloat)mScreenPos.y + 0.1f ), eeSizef( (eeFloat)mSize.Width() - 0.1f, (eeFloat)mSize.Height() - 0.1f ) );
 
 		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( GetRectf(), 0.f, 1.f, mBackground->Corners() );
+			P.DrawRoundedRectangle( GetRectf(), 0.f, eeVector2f::One, mBackground->Corners() );
 		} else {
 			P.DrawRectangle( R );
 		}
 	} else {
 		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( GetRectf(), 0.f, 1.f, mBackground->Corners() );
+			P.DrawRoundedRectangle( GetRectf(), 0.f, eeVector2f::One, mBackground->Corners() );
 		} else {
 			P.DrawRectangle( GetRectf() );
 		}
@@ -354,9 +360,9 @@ cInterpolation * cUIControlAnim::RotationInterpolation() {
 	return mAngleAnim;
 }
 
-cInterpolation * cUIControlAnim::ScaleInterpolation() {
+cWaypoints * cUIControlAnim::ScaleInterpolation() {
 	if ( NULL == mScaleAnim )
-		mScaleAnim = eeNew( cInterpolation, () );
+		mScaleAnim = eeNew( cWaypoints, () );
 
 	return mScaleAnim;
 }
