@@ -293,7 +293,7 @@ eeAABB cSprite::GetAABB() {
 			} else if ( mOrigin.OriginType == eeOriginPoint::OriginTopLeft ) {
 				Center	= mPos;
 			} else {
-				Center	+= mPos;
+				Center	= mPos + mOrigin;
 			}
 
 			TmpR.Scale( mScale, Center );
