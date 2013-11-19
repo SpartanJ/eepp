@@ -822,6 +822,11 @@ void cEETest::LoadTextures() {
 	PakTest = eeNew( cZip, () );
 
 	#ifndef EE_GLES
+
+	#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
+	cEngine::instance()->EnableSharedGLContext();
+	#endif
+
 	PakTest->Open( MyPath + "test.zip" );
 
 	std::vector<std::string> files = PakTest->GetFileList();

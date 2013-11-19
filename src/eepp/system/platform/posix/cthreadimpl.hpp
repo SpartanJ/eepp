@@ -15,11 +15,15 @@ namespace Platform {
 
 class cThreadImpl {
 	public:
+		static Uint32 GetCurrentThreadId();
+
 		cThreadImpl( cThread * owner );
 		
 		void Wait();
 		
 		void Terminate();
+
+		Uint32 Id();
 	protected:
 		static void *	EntryPoint( void* userData );
 

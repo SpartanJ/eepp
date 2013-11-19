@@ -109,7 +109,7 @@ class EE_API cEngine {
 		*/
 		ContextSettings CreateContextSettings( cIniFile * ini, std::string iniKeyName = "EEPP" );
 
-		/** Enabling Shared GL Context allows asynchronous OpenGL resource loading ( only if is supported by the backend, SDL 2 backend is the only one supported ).
+		/** Enabling Shared GL Context allows asynchronous OpenGL resource loading ( only if is supported by the backend and the OS, SDL 2 backend is the only one supported ).
 		**	If the cTextureLoader is threaded, will upload the texture in another thread to the GPU. So, it will not block the main rendering thread.
 		**	Shared GL Context is disabled by default.
 		*/
@@ -122,6 +122,9 @@ class EE_API cEngine {
 
 		/** @return If the Shared GL Context is enabled and ready to use. */
 		bool IsSharedGLContextEnabled();
+
+		/** @return The id of the thread that was used to initialize the OpenGL Context. */
+		Uint32 GetMainThreadId();
 	protected:
 		friend class cWindow;
 
@@ -129,6 +132,7 @@ class EE_API cEngine {
 		std::list<cWindow*>	mWindows;
 		cWindow *			mWindow;
 		bool				mSharedGLContext;
+		Uint32				mMainThreadId;
 
 		cEngine();
 

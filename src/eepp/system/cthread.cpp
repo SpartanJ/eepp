@@ -3,6 +3,10 @@
 
 namespace EE { namespace System {
 
+Uint32 cThread::GetCurrentThreadId() {
+	return Platform::cThreadImpl::GetCurrentThreadId();
+}
+
 cThread::cThread() :
 	mThreadImpl(NULL),
 	mEntryPoint(NULL)
@@ -36,6 +40,10 @@ void cThread::Terminate() {
 
 		eeSAFE_DELETE( mThreadImpl );
 	}
+}
+
+Uint32 cThread::Id() {
+	return mThreadImpl->Id();
 }
 
 void cThread::Run() {

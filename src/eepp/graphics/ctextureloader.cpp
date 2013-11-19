@@ -76,7 +76,6 @@ cTextureLoader::cTextureLoader( cIOStream& Stream,
 	mClampMode(ClampMode),
 	mCompressTexture(CompressTexture),
 	mLocalCopy(KeepLocalCopy),
-	mForceGLThreaded(false),
 	mPack(NULL),
 	mStream(&Stream),
 	mImagePtr(NULL),
@@ -108,7 +107,6 @@ cTextureLoader::cTextureLoader( const std::string& Filepath,
 	mClampMode(ClampMode),
 	mCompressTexture(CompressTexture),
 	mLocalCopy(KeepLocalCopy),
-	mForceGLThreaded(false),
 	mPack(NULL),
 	mStream(NULL),
 	mImagePtr(NULL),
@@ -141,7 +139,6 @@ cTextureLoader::cTextureLoader( const unsigned char * ImagePtr,
 	mClampMode(ClampMode),
 	mCompressTexture(CompressTexture),
 	mLocalCopy(KeepLocalCopy),
-	mForceGLThreaded(false),
 	mPack(NULL),
 	mStream(NULL),
 	mImagePtr(ImagePtr),
@@ -174,7 +171,6 @@ cTextureLoader::cTextureLoader( cPack * Pack,
 	mClampMode(ClampMode),
 	mCompressTexture(CompressTexture),
 	mLocalCopy(KeepLocalCopy),
-	mForceGLThreaded(false),
 	mPack(Pack),
 	mStream(NULL),
 	mImagePtr(NULL),
@@ -210,7 +206,6 @@ cTextureLoader::cTextureLoader( const unsigned char * Pixels,
 	mClampMode(ClampMode),
 	mCompressTexture(CompressTexture),
 	mLocalCopy(KeepLocalCopy),
-	mForceGLThreaded(false),
 	mPack(NULL),
 	mStream(NULL),
 	mImagePtr(NULL),
@@ -288,7 +283,7 @@ void cTextureLoader::LoadFromPath() {
 		}
 
 		if ( NULL == mPixels ) {
-			eePRINTL( "Filed to load: %s. Reason: ", mFilepath.c_str(), stbi_failure_reason() );
+			eePRINTL( "Filed to load: %s. Reason: %s", mFilepath.c_str(), stbi_failure_reason() );
 
 			if ( STBI_jpeg == mImgType ) {
 				mPixels = jpgd::decompress_jpeg_image_from_file( mFilepath.c_str(), &mImgWidth, &mImgHeight, &mChannels, 3 );
@@ -345,7 +340,7 @@ void cTextureLoader::LoadFromMemory() {
 	}
 
 	if ( NULL == mPixels ) {
-		eePRINTL( stbi_failure_reason() );
+		eePRINTL( "Filed to load image from memory. Reason: %s", stbi_failure_reason() );
 
 		if ( STBI_jpeg == mImgType ) {
 			mPixels = jpgd::decompress_jpeg_image_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels, 3 );
@@ -428,8 +423,10 @@ void cTextureLoader::LoadFromPixels() {
 			flags = ( mClampMode == CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 			flags = ( mCompressTexture ) ? ( flags | SOIL_FLAG_COMPRESS_TO_DXT ) : flags;
 
-			if ( ( mThreaded || mForceGLThreaded ) &&
-				 ( mForceGLThreaded || cEngine::instance()->IsSharedGLContextEnabled() ) &&
+			bool ForceGLThreaded = cThread::GetCurrentThreadId() != cEngine::instance()->GetMainThreadId();
+
+			if ( ( mThreaded || ForceGLThreaded ) &&
+				 ( ForceGLThreaded || cEngine::instance()->IsSharedGLContextEnabled() ) &&
 				 cEngine::instance()->GetCurrentWindow()->IsThreadedGLContext() )
 			{
 				cEngine::instance()->GetCurrentWindow()->SetGLContextThread();
@@ -464,8 +461,8 @@ void cTextureLoader::LoadFromPixels() {
 
 			GLi->BindTexture( GL_TEXTURE_2D, PreviousTexture );
 
-			if ( ( mThreaded || mForceGLThreaded ) &&
-				 ( mForceGLThreaded || cEngine::instance()->IsSharedGLContextEnabled() ) &&
+			if ( ( mThreaded || ForceGLThreaded ) &&
+				 ( ForceGLThreaded || cEngine::instance()->IsSharedGLContextEnabled() ) &&
 				 cEngine::instance()->GetCurrentWindow()->IsThreadedGLContext() )
 			{
 				cEngine::instance()->GetCurrentWindow()->UnsetGLContextThread();
@@ -500,7 +497,7 @@ void cTextureLoader::LoadFromPixels() {
 
 				eePRINTL( "Texture %s loaded in %4.3f ms.", mFilepath.c_str(), mTE.Elapsed().AsMilliseconds() );
 			} else {
-				eePRINTL( "Failed to create texture. Reason: ", SOIL_last_result() );
+				eePRINTL( "Failed to create texture. Reason: %s", SOIL_last_result() );
 			}
 
 			if ( TEX_LT_PIXELS != mLoadType ) {
@@ -554,14 +551,6 @@ cTexture * cTextureLoader::GetTexture() const {
 	return NULL;
 }
 
-const bool& cTextureLoader::ForceUseGLSharedContext() const {
-	return mForceGLThreaded;
-}
-
-void cTextureLoader::ForceUseGLSharedContext( bool force ) {
-	mForceGLThreaded = force;
-}
-
 void cTextureLoader::Unload() {
 	if ( mLoaded ) {
 		cTextureFactory::instance()->Remove( mTexId );
@@ -583,7 +572,6 @@ void cTextureLoader::Reset() {
 	mSize				= 0;
 	mTexLoaded			= false;
 	mDirectUpload		= false;
-	mForceGLThreaded	= false;
 	mImgType			= STBI_unknown;
 	mIsCompressed		= 0;
 }

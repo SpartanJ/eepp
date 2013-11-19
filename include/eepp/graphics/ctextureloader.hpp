@@ -84,14 +84,6 @@ class EE_API cTextureLoader : public cObjectLoader {
 
 		/** @return The texture instance ( if it was loaded ). */
 		cTexture *		GetTexture() const;
-
-		/** In the case that the image loading is made outside the GL context main thread,
-		**	you'll need to force the use of the GL Shared Context
-		**	@see cWindow::IsThreadedGLContext */
-		void			ForceUseGLSharedContext( bool force );
-
-		/** @return If the use of a gl shared context to load the texture is being forced */
-		const bool&		ForceUseGLSharedContext() const;
 	protected:
 		Uint32			mLoadType; 	// From memory, from path, from pack
 		Uint8 * 		mPixels;	// Texture Info
@@ -107,7 +99,6 @@ class EE_API cTextureLoader : public cObjectLoader {
 		EE_CLAMP_MODE 	mClampMode;
 		bool 			mCompressTexture;
 		bool 			mLocalCopy;
-		bool			mForceGLThreaded;
 		cPack * 		mPack;
 		cIOStream *		mStream;
 
@@ -125,7 +116,7 @@ class EE_API cTextureLoader : public cObjectLoader {
 		int				mImgType;
 		int				mIsCompressed;
 
-		cClock	mTE;
+		cClock			mTE;
 
 		void			LoadFile();
 		void 			LoadFromPath();

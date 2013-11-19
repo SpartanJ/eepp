@@ -6,6 +6,10 @@ namespace EE { namespace System { namespace Platform {
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
+Uint32 cThreadImpl::GetCurrentThreadId() {
+	return (Uint32)::GetCurrentThreadId();
+}
+
 cThreadImpl::cThreadImpl( cThread * owner ) {
 	mThread = reinterpret_cast<HANDLE>( _beginthreadex( NULL, 0, &cThreadImpl::EntryPoint, owner, 0, &mThreadId ) );
 
@@ -26,6 +30,10 @@ void cThreadImpl::Terminate() {
 	if ( mThread ) {
 		TerminateThread( mThread, 0 );
 	}
+}
+
+Uint32 cThreadImpl::Id() {
+	return (Uint32)mThreadId;
 }
 
 unsigned int __stdcall cThreadImpl::EntryPoint( void * userData ) {

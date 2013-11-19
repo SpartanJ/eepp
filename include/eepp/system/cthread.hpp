@@ -14,6 +14,9 @@ class EE_API cThread : NonCopyable {
 	public:
 		typedef void (*FuncType)(void*);
 
+		/** @return The current thread id */
+		static Uint32 GetCurrentThreadId();
+
 		/** @brief Construct the thread from a functor with no argument
 		**	This constructor works for function objects, as well
 		**	as free function.
@@ -102,6 +105,9 @@ class EE_API cThread : NonCopyable {
 		**	on some operating systems. You should rather try to make
 		**	the thread function terminate by itself. */
 		void			Terminate();
+
+		/** @return The id of the thread */
+		Uint32			Id();
 	protected:
 		cThread();
 	private:

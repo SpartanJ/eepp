@@ -42,7 +42,8 @@ SINGLETON_DECLARE_IMPLEMENTATION(cEngine)
 cEngine::cEngine() :
 	mBackend( NULL ),
 	mWindow( NULL ),
-	mSharedGLContext( false )
+	mSharedGLContext( false ),
+	mMainThreadId( 0 )
 {
 	cTextureAtlasManager::CreateSingleton();
 }
@@ -165,6 +166,8 @@ cWindow * cEngine::CreateWindow( WindowSettings Settings, ContextSettings Contex
 
 	if ( NULL != mWindow ) {
 		Settings.Backend	= mWindow->GetWindowInfo()->WindowConfig.Backend;
+	} else {
+		mMainThreadId	= cThread::GetCurrentThreadId();
 	}
 
 	switch ( Settings.Backend ) {
@@ -354,6 +357,10 @@ void cEngine::DisableSharedGLContext() {
 
 bool cEngine::IsSharedGLContextEnabled() {
 	return mSharedGLContext;
+}
+
+Uint32 cEngine::GetMainThreadId() {
+	return mMainThreadId;
 }
 
 }}
