@@ -7,7 +7,7 @@ MY_SDL_PATH			:= $(MY_PATH)/helper/SDL2
 MY_SDL_MAIN_PATH	:= helper/SDL2/src/main/android/*.cpp
 
 MY_C_INCLUDES := \
-	$(MY_PATH)/helper/android/openal-soft/include/ \
+	$(MY_PATH)/helper/openal-soft/include/ \
 	$(MY_PATH)/helper/freetype2/include \
 	$(MY_SDL_PATH)/include \
 	$(MY_PATH)/helper/chipmunk \
@@ -125,7 +125,7 @@ include $(BUILD_STATIC_LIBRARY)
 #*************** OPENAL *****************
 include $(CLEAR_VARS)
 
-LOCAL_PATH := $(MY_PATH)/helper/android/openal-soft
+LOCAL_PATH := $(MY_PATH)/helper/openal-soft
 
 LOCAL_MODULE := openal
 
