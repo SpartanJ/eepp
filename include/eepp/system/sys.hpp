@@ -43,6 +43,21 @@ class EE_API Sys {
 
 		/** @return Returns free disk space for a given path in bytes */
 		static Int64 GetDiskFreeSpace(const std::string& path);
+
+		/** Dynamically load a shared object and return a pointer to the object handle.
+		**	@param sofile a system dependent name of the object file
+		**	@return The pointer to the object handle or NULL if there was an error */
+		static void * LoadObject( const std::string& sofile );
+
+		/** Unloads a shared object from memory.
+		**	@param The object handle of the shared object to unload */
+		static void UnloadObject( void * handle );
+
+		/** Looks up the address of the named function in the shared object and return it.
+		**	@param handle A valid shared object handle returned by Sys::LoadObject()
+		**	@param name The name of the function to look up
+		**	@return The pointer to the function or NULL if there was an error */
+		static void * LoadFunction( void * handle, const std::string& name );
 };
 
 }}

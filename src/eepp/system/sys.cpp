@@ -12,6 +12,7 @@
 #endif
 
 #if defined( EE_PLATFORM_POSIX )
+	#include <dlfcn.h>
 	#include <sys/utsname.h>
 
 	#if EE_PLATFORM != EE_PLATFORM_ANDROID
@@ -670,6 +671,83 @@ Int64 Sys::GetDiskFreeSpace(const std::string& path) {
 	return FreeBytes;
 #else
 	return -1;
+#endif
+}
+
+#if EE_PLATFORM == EE_PLATFORM_WIN
+int WIN_SetError( std::string prefix = "" ) {
+	TCHAR buffer[1024];
+	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(), 0, buffer, eeARRAY_SIZE(buffer), NULL);
+	eePRINTL("%s%s%s", prefix.c_str(), !prefix.empty() ? ": " : "", buffer );
+	return -1;
+}
+#endif
+
+void * Sys::LoadObject( const std::string& sofile ) {
+#if defined( EE_PLATFORM_POSIX )
+	void * handle = dlopen( sofile.c_str(), RTLD_NOW | RTLD_LOCAL );
+
+	const char * loaderror = (char *) dlerror();
+
+	if (handle == NULL) {
+		eePRINTL( "Failed loading %s: %s", sofile.c_str(), loaderror );
+	}
+
+	return (handle);
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+	LPTSTR tstr = const_cast<char*>( sofile.c_str() );
+	void * handle = (void *) LoadLibrary(tstr);
+
+	/* Generate an error message if all loads failed */
+	if ( handle == NULL ) {
+		WIN_SetError( "Failed loading " + sofile );
+	}
+	return handle;
+#else
+	#warning Sys::LoadObject not implemented in this platform
+#endif
+}
+
+void Sys::UnloadObject( void * handle ) {
+#if defined( EE_PLATFORM_POSIX )
+	if ( handle != NULL ) {
+		dlclose(handle);
+	}
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+	if ( handle != NULL ) {
+		FreeLibrary( (HMODULE) handle );
+	}
+#else
+	#warning Sys::UnloadObject not implemented in this platform
+#endif
+}
+
+void * Sys::LoadFunction( void * handle, const std::string& name ) {
+#if defined( EE_PLATFORM_POSIX )
+	void *symbol = dlsym( handle, name.c_str() );
+
+	if ( symbol == NULL) {
+		/* append an underscore for platforms that need that. */
+		std::string _name( "_" + name );
+
+		symbol = dlsym( handle, _name.c_str() );
+
+		if ( symbol == NULL ) {
+			eePRINTL( "Failed loading %s: %s", name.c_str(), (const char *) dlerror() );
+		}
+	}
+
+	return (symbol);
+#elif EE_PLATFORM == EE_PLATFORM_WIN
+	void * symbol = (void *) GetProcAddress( (HMODULE) handle, name.c_str() );
+
+	if ( symbol == NULL ) {
+		WIN_SetError( "Failed loading function " + name );
+	}
+
+	return symbol;
+#else
+	#warning Sys::LoadFunction not implemented in this platform
 #endif
 }
 
