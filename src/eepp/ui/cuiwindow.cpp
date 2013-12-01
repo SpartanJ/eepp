@@ -114,12 +114,16 @@ cUIWindow::~cUIWindow() {
 }
 
 void cUIWindow::CreateModalControl() {
-	if ( NULL == mModalCtrl ) {
-		cUIControl * Ctrl = cUIManager::instance()->MainControl();
-		mModalCtrl = eeNew( cUIControlAnim, ( cUIControlAnim::CreateParams( Ctrl , eeVector2i(0,0), Ctrl->Size(), UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) );
+	cUIControl * Ctrl = cUIManager::instance()->MainControl();
 
-		DisableByModal();
+	if ( NULL == mModalCtrl ) {
+		mModalCtrl = eeNew( cUIControlAnim, ( cUIControlAnim::CreateParams( Ctrl , eeVector2i(0,0), Ctrl->Size(), UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) );
+	} else {
+		mModalCtrl->Pos( 0, 0 );
+		mModalCtrl->Size( Ctrl->Size() );
 	}
+
+	DisableByModal();
 }
 
 void cUIWindow::EnableByModal() {

@@ -1,4 +1,5 @@
 #include <eepp/ui/cuimessagebox.hpp>
+#include <eepp/ui/cuimanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -112,7 +113,10 @@ Uint32 cUIMessageBox::OnMessage( const cUIMessage * Msg ) {
 		case cUIMessage::MsgClick:
 		{
 			if ( Msg->Flags() & EE_BUTTON_LMASK ) {
-				if ( Msg->Sender() == mButtonOK ) {
+				eeVector2i mousei( cUIManager::instance()->GetMousePos() );
+				eeVector2f mouse( mousei.x, mousei.y );
+
+				if ( Msg->Sender() == mButtonOK && mButtonOK->GetPolygon().PointInside( mouse ) ) {
 					SendCommonEvent( cUIEvent::EventMsgBoxConfirmClick );
 
 					CloseWindow();

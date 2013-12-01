@@ -525,13 +525,19 @@ void cConsole::PrivInputCallback( InputEvent * Event ) {
 			}
 		} else if ( InputEvent::MouseButtonUp == etype ) {
 			if ( Button == EE_BUTTON_WHEELUP ) {
-				if ( mCon.ConMin - mCon.ConModif > 0 )
-					mCon.ConModif++;
+				if ( mCon.ConMin - mCon.ConModif - 6 > 0 ) {
+					mCon.ConModif += 6;
+				} else {
+					mCon.ConModif = mCon.ConMin;
+				}
 			}
 
 			if ( Button == EE_BUTTON_WHEELDOWN ) {
-				if ( mCon.ConModif > 0 )
-					mCon.ConModif--;
+				if ( mCon.ConModif - 6 > 0 ) {
+					mCon.ConModif -= 6;
+				} else {
+					mCon.ConModif = 0;
+				}
 			}
 		}
 	}
