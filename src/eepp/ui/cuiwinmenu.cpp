@@ -62,7 +62,7 @@ void cUIWinMenu::AddMenuButton( const String& ButtonText, cUIPopUpMenu * Menu ) 
 
 	Menu->Visible( false );
 	Menu->Enabled( false );
-	Menu->Parent( cUIManager::instance()->MainControl() );
+	Menu->Parent( Parent() );
 	Menu->AddEventListener( cUIEvent::EventOnComplexControlFocusLoss, cb::Make1( this, &cUIWinMenu::OnMenuFocusLoss ) );
 
 	mButtons.push_back( std::make_pair( Button, Menu ) );
@@ -174,8 +174,7 @@ Uint32 cUIWinMenu::OnMessage( const cUIMessage * Msg ) {
 				cUISelectButton * tbut	= reinterpret_cast<cUISelectButton*> ( Msg->Sender() );
 				cUIPopUpMenu * tpop		= GetMenuFromButton( tbut );
 
-				eeVector2i pos( tbut->Pos().x, tbut->Size().Height() );
-				tbut->ControlToScreen( pos );
+				eeVector2i pos( tbut->Pos().x, tbut->Pos().y + tbut->Size().Height() );
 				tpop->Pos( pos );
 
 				if ( Msg->Msg() == cUIMessage::MsgMouseEnter ) {

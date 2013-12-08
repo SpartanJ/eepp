@@ -98,10 +98,10 @@ void Quad2<T>::Rotate( const T& Angle, const Vector2<T>& Center ) {
 	if ( Angle == 0.f )
 		return;
 
-	V[0].RotateVectorCentered( Angle, Center );
-	V[1].RotateVectorCentered( Angle, Center );
-	V[2].RotateVectorCentered( Angle, Center );
-	V[3].RotateVectorCentered( Angle, Center );
+	V[0].Rotate( Angle, Center );
+	V[1].Rotate( Angle, Center );
+	V[2].Rotate( Angle, Center );
+	V[3].Rotate( Angle, Center );
 }
 
 

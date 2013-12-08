@@ -342,11 +342,8 @@ void cUIControlAnim::UpdateQuad() {
 		if ( tParent->IsAnimated() ) {
 			cUIControlAnim * tP = reinterpret_cast<cUIControlAnim *> ( tParent );
 
-			if ( tP->Angle() != 0.f )
-				mPoly.Rotate( tP->Angle(), tP->GetPolygonCenter() );
-
-			if ( tP->Scale() != 1.f )
-				mPoly.Scale( tP->Scale(), tP->GetPolygonCenter() );
+			mPoly.Rotate( tP->Angle(), tP->GetPolygonCenter() );
+			mPoly.Scale( tP->Scale(), tP->GetPolygonCenter() );
 		}
 
 		tParent = tParent->Parent();

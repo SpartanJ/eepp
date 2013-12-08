@@ -202,7 +202,7 @@ void Polygon2<T>::Rotate( const T& Angle, const Vector2<T>& Center ) {
 		return;
 
 	for ( eeUint i = 0; i < Vector.size(); i++ )
-		Vector[ i ].RotateVectorCentered( Angle, Center );
+		Vector[ i ].Rotate( Angle, Center );
 }
 
 template <typename T>

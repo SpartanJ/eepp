@@ -226,6 +226,8 @@ void cMap::Draw() {
 		P.SetColor( eeColorA( 255, 255, 255, 255 ) );
 	}
 
+	GLfloat oldM[16];
+	GLi->GetCurrentMatrix( GL_MODELVIEW_MATRIX, oldM );
 	GLi->LoadIdentity();
 	GLi->PushMatrix();
 	GLi->Translatef( (eeFloat)static_cast<Int32>( mScreenPos.x + mOffset.x ), (eeFloat)static_cast<Int32>( mScreenPos.y + mOffset.y ), 0 );
@@ -246,6 +248,7 @@ void cMap::Draw() {
 	cGlobalBatchRenderer::instance()->Draw();
 
 	GLi->PopMatrix();
+	GLi->LoadMatrixf( oldM );
 
 	if ( ClipedArea() ) {
 		mWindow->ClipDisable();

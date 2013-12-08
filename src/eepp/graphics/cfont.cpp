@@ -356,6 +356,47 @@ void cFont::CacheWidth( const String& Text, std::vector<eeFloat>& LinesWidth, ee
 	NumLines = Lines;
 }
 
+Int32 cFont::FindClosestCursorPosFromPoint( const String& Text, const eeVector2i& pos ) {
+	eeFloat Width = 0, lWidth = 0, Height = GetFontHeight(), lHeight = 0;
+	Int32 CharID;
+	Int32 tGlyphSize = (Int32)mGlyphs.size();
+	std::size_t tSize = Text.size();
+
+	for (std::size_t i = 0; i < tSize; ++i) {
+		CharID = static_cast<Int32>( Text.at(i) );
+
+		if ( CharID >= 0 && CharID < tGlyphSize ) {
+			lWidth = Width;
+
+			Width += mGlyphs[CharID].Advance;
+
+			if ( CharID == '\t' ) {
+				Width += mGlyphs[CharID].Advance * 3;
+			}
+
+			if ( CharID == '\n' ) {
+				lWidth = 0;
+				Width = 0;
+			}
+
+			if ( pos.x <= Width && pos.x >= lWidth && pos.y <= Height && pos.y >= lHeight ) {
+				return i;
+			}
+
+			if ( CharID == '\n' ) {
+				lHeight = Height;
+				Height += GetFontHeight();
+			}
+		}
+	}
+
+	if ( pos.x >= Width ) {
+		return tSize;
+	}
+
+	return -1;
+}
+
 void cFont::CacheWidth() {
 	mTextCache.Cache();
 }

@@ -215,6 +215,7 @@ class cEETest : private cThread {
 		void CloseClick( const cUIEvent * Event );
 		void ButtonClick( const cUIEvent * Event );
 		void OnValueChange( const cUIEvent * Event );
+		void OnSliderValueChange( const cUIEvent * Event );
 		void OnWinMouseUp( const cUIEvent * Event );
 		void CreateDecoratedWindow();
 		void CreateWinMenu();

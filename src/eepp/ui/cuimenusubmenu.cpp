@@ -107,7 +107,7 @@ void cUIMenuSubMenu::ShowSubMenu() {
 
 	cUIMenu::FixMenuPos( Pos, mSubMenu, reinterpret_cast<cUIMenu*> ( Parent() ), this );
 
-	mSubMenu->Parent()->ScreenToControl( Pos );
+	mSubMenu->Parent()->WorldToControl( Pos );
 	mSubMenu->Pos( Pos );
 
 	if ( !mSubMenu->Visible() ) {

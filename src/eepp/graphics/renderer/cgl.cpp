@@ -568,9 +568,12 @@ eeVector3f cGL::ProjectCurrent( const eeVector3f& point ) {
 	GLint viewPort[4];
 	GetViewport( viewPort );
 
+	eeVector3f fPoint( point );
+	fPoint.y = viewPort[3] - point.y;
+
 	Vector3<GLfloat> tv3;
 
-	Project( (GLfloat)point.x, (GLfloat)point.y, (GLfloat)point.z, projMat, modelMat, viewPort, &tv3.x, &tv3.y, &tv3.z );
+	Project( (GLfloat)fPoint.x, (GLfloat)fPoint.y, (GLfloat)fPoint.z, projMat, modelMat, viewPort, &tv3.x, &tv3.y, &tv3.z );
 
 	return eeVector3f( tv3.x, tv3.y, tv3.z );
 }
@@ -585,9 +588,12 @@ eeVector3f cGL::UnProjectCurrent( const eeVector3f& point ) {
 	GLint viewPort[4];
 	GetViewport( viewPort );
 
+	eeVector3f fPoint( point );
+	fPoint.y = viewPort[3] - point.y;
+
 	Vector3<GLfloat> tv3;
 
-	UnProject( (GLfloat)point.x, (GLfloat)point.y, (GLfloat)point.z, projMat, modelMat, viewPort, &tv3.x, &tv3.y, &tv3.z );
+	UnProject( (GLfloat)fPoint.x, (GLfloat)fPoint.y, (GLfloat)fPoint.z, projMat, modelMat, viewPort, &tv3.x, &tv3.y, &tv3.z );
 
 	return eeVector3f( tv3.x, tv3.y, tv3.z );
 }

@@ -225,4 +225,25 @@ void cUITextInput::ShrinkText( const Uint32& MaxWidth ) {
 void cUITextInput::UpdateText() {
 }
 
+Uint32 cUITextInput::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
+	if ( Flags & EE_BUTTON_LMASK ) {
+		eeVector2i controlPos( Pos );
+		WorldToControl( controlPos );
+
+		eeVector2i globalPos( controlPos );
+		ControlToWorld( globalPos );
+
+		Int32 curPos = mTextCache->Font()->FindClosestCursorPosFromPoint( mTextCache->Text(), controlPos );
+
+		if ( -1 != curPos ) {
+			mTextBuffer.CurPos( curPos );
+
+			mShowingWait	= true;
+			mWaitCursorTime	= 0.f;
+		}
+	}
+
+	return cUITextBox::OnMouseClick( Pos, Flags );
+}
+
 }}

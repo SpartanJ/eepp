@@ -124,6 +124,9 @@ class EE_API cFont {
 
 		/** @return The font id */
 		const Uint32& Id();
+
+		/** Finds the closest cursor position to the point position */
+		Int32 FindClosestCursorPosFromPoint( const String & Text, const eeVector2i& pos );
 	protected:
 		Uint32 						mType;
 		std::string					mFontName;

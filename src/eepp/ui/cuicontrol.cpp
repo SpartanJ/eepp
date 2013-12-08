@@ -3,6 +3,7 @@
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/graphics/cprimitives.hpp>
 #include <eepp/graphics/csubtexture.hpp>
+#include <eepp/graphics/renderer/cgl.hpp>
 
 namespace EE { namespace UI {
 
@@ -870,11 +871,8 @@ void cUIControl::UpdateQuad() {
 		if ( tParent->IsAnimated() ) {
 			cUIControlAnim * tP = reinterpret_cast<cUIControlAnim *> ( tParent );
 
-			if ( tP->Angle() != 0.f )
-				mPoly.Rotate( tP->Angle(), tP->GetPolygonCenter() );
-
-			if ( tP->Scale() != 1.f )
-				mPoly.Scale( tP->Scale(), tP->GetPolygonCenter() );
+			mPoly.Rotate( tP->Angle(), tP->GetPolygonCenter() );
+			mPoly.Scale( tP->Scale(), tP->GetPolygonCenter() );
 		}
 
 		tParent = tParent->Parent();
@@ -1209,6 +1207,76 @@ cUIControl * cUIControl::NextComplexControl() {
 }
 
 void cUIControl::DoAfterSetTheme() {
+}
+
+void cUIControl::WorldToControl( eeVector2i& pos ) const {
+	eeVector2f Pos( pos.x, pos.y );
+
+	std::list<cUIControl*> parents;
+
+	cUIControl * ParentLoop = mParentCtrl;
+
+	while ( NULL != ParentLoop ) {
+		parents.push_front( ParentLoop );
+		ParentLoop = ParentLoop->Parent();
+	}
+
+	parents.push_back( const_cast<cUIControl*>( reinterpret_cast<const cUIControl*>( this ) ) );
+
+	eeVector2f scale(1,1);
+
+	for ( std::list<cUIControl*>::iterator it = parents.begin(); it != parents.end(); it++ ) {
+		cUIControl * tParent	= (*it);
+		cUIControlAnim * tP		= tParent->IsAnimated() ? reinterpret_cast<cUIControlAnim *> ( tParent ) : NULL;
+		eeVector2f pPos			( tParent->mPos.x * scale.x			, tParent->mPos.y * scale.y			);
+		eeVector2f Center		( tParent->mSize.x * 0.5f * scale.x	, tParent->mSize.y * 0.5f * scale.y	);
+
+		if ( NULL != tP && 1.f != tP->Scale() ) {
+			scale *= tP->Scale();
+
+			pPos.Scale( scale, pPos + Center );
+		}
+
+		Pos -= pPos;
+
+		if ( NULL != tP && 0.f != tP->Angle() ) {
+			Center = eeVector2f( tParent->mSize.x * 0.5f * scale.x	, tParent->mSize.y * 0.5f * scale.y	);
+			Pos.Rotate( -tP->Angle(), Center );
+		}
+	}
+
+	pos = eeVector2i( Pos.x / scale.x, Pos.y / scale.y );
+}
+
+void cUIControl::ControlToWorld( eeVector2i& pos ) const {
+	eeVector2f Pos( pos.x, pos.y );
+
+	std::list<cUIControl*> parents;
+
+	cUIControl * ParentLoop = mParentCtrl;
+
+	while ( NULL != ParentLoop ) {
+		parents.push_back( ParentLoop );
+		ParentLoop = ParentLoop->Parent();
+	}
+
+	parents.push_front( const_cast<cUIControl*>( reinterpret_cast<const cUIControl*>( this ) ) );
+
+	for ( std::list<cUIControl*>::iterator it = parents.begin(); it != parents.end(); it++ ) {
+		cUIControl * tParent	= (*it);
+		cUIControlAnim * tP		= tParent->IsAnimated() ? reinterpret_cast<cUIControlAnim *> ( tParent ) : NULL;
+		eeVector2f pPos			( tParent->mPos.x					, tParent->mPos.y					);
+		eeVector2f Center		( pPos.x + tParent->mSize.x * 0.5f	, pPos.y + tParent->mSize.y	* 0.5f	);
+
+		Pos += pPos;
+
+		if ( NULL != tP ) {
+			Pos.Rotate( tP->Angle(), Center );
+			Pos.Scale( tP->Scale(), Center );
+		}
+	}
+
+	pos = eeVector2i( eeceil( Pos.x ), eeceil( Pos.y ) );
 }
 
 }}

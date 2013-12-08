@@ -296,7 +296,7 @@ Uint32 cUISlider::OnKeyDown( const cUIEventKey &Event ) {
 void cUISlider::ManageClick( const Uint32& Flags ) {
 	if ( Flags ) {
 		eeVector2i ControlPos = cUIManager::instance()->GetMousePos();
-		mSlider->ScreenToControl( ControlPos );
+		mSlider->WorldToControl( ControlPos );
 
 		if ( Flags & EE_BUTTON_LMASK && !mSlider->IsMouseOver()  ) {
 			if ( !mVertical ) {

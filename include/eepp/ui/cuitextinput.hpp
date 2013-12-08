@@ -71,6 +71,8 @@ class EE_API cUITextInput : public cUITextBox {
 
 		void AutoPadding();
 
+		virtual Uint32 OnMouseClick( const eeVector2i& Pos, const Uint32 Flags );
+
 		virtual Uint32 OnFocus();
 
 		virtual Uint32 OnFocusLoss();

@@ -78,6 +78,10 @@ class EE_API cUIControl {
 
 		void ControlToScreen( eeVector2i& Pos ) const;
 
+		void WorldToControl( eeVector2i& pos ) const;
+
+		void ControlToWorld( eeVector2i& pos ) const;
+
 		virtual Uint32 Type() const;
 
 		virtual bool IsType( const Uint32& type ) const;

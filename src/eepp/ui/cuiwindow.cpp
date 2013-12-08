@@ -430,7 +430,7 @@ void cUIWindow::DoResize ( const cUIMessage * Msg ) {
 void cUIWindow::DecideResizeType( cUIControl * Control ) {
 	eeVector2i Pos = cUIManager::instance()->GetMousePos();
 
-	ScreenToControl( Pos );
+	WorldToControl( Pos );
 
 	if ( Control == this ) {
 		if ( Pos.x <= mBorderLeft->Size().Width() ) {
@@ -477,7 +477,7 @@ void cUIWindow::TryResize( const UI_RESIZE_TYPE& Type ) {
 
 	eeVector2i Pos = cUIManager::instance()->GetMousePos();
 
-	ScreenToControl( Pos );
+	WorldToControl( Pos );
 	
 	mResizeType = Type;
 	
@@ -549,7 +549,7 @@ void cUIWindow::UpdateResize() {
 
 	eeVector2i Pos = cUIManager::instance()->GetMousePos();
 
-	ScreenToControl( Pos );
+	WorldToControl( Pos );
 
 	switch ( mResizeType ) {
 		case RESIZE_RIGHT:

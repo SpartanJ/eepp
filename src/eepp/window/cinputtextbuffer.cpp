@@ -473,9 +473,13 @@ eeInt cInputTextBuffer::CurPos() const {
 }
 
 void cInputTextBuffer::CurPos( const Uint32& pos ) {
-	if ( SupportFreeEditing() && pos < mText.size() ) {
-		mPromptPos = pos;
-		AutoPrompt( false );
+	if ( SupportFreeEditing() ) {
+		if (  pos < mText.size() ) {
+			mPromptPos = pos;
+			AutoPrompt( false );
+		} else {
+			CursorToEnd();
+		}
 	}
 }
 

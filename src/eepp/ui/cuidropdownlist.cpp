@@ -98,14 +98,13 @@ void cUIDropDownList::ShowListBox() {
 
 		mListBox->ToFront();
 
-		eeVector2i Pos = mScreenPos;
-		Pos.y += mSize.Height();
+		eeVector2i Pos( mPos.x, mPos.y + mSize.Height() );
 
-		mListBox->UpdateScreenPos();
-		mListBox->UpdateQuad();
-		mListBox->Parent()->ScreenToControl( Pos );
+		if ( mPopUpToMainControl ) {
+			Parent()->ControlToWorld( Pos );
+		}
+
 		mListBox->Pos( Pos );
-		mListBox->UpdateQuad();
 
 		if ( mListBox->Count() ) {
 			eeRecti tPadding = mListBox->PaddingContainer();
@@ -118,15 +117,20 @@ void cUIDropDownList::ShowListBox() {
 				mListBox->Size( mSize.Width(), (Int32)( mListBox->Count() * mListBox->RowHeight() ) + tPadding.Top + tPadding.Bottom );
 			}
 
+			mListBox->UpdateQuad();
+
 			eeRectf aabb( mListBox->GetPolygon().ToAABB() );
 			eeRecti aabbi( aabb.Left, aabb.Top, aabb.Right, aabb.Bottom );
 
-			if ( !cUIManager::instance()->MainControl()->GetScreenRect().Contains( aabbi ) )
-			{
-				Pos = mScreenPos;
+			if ( !cUIManager::instance()->MainControl()->GetScreenRect().Contains( aabbi ) ) {
+				Pos = eeVector2i( mPos.x, mPos.y );
+
+				if ( mPopUpToMainControl ) {
+					Parent()->ControlToWorld( Pos );
+				}
+
 				Pos.y -= mListBox->Size().Height();
 
-				mListBox->Parent()->ScreenToControl( Pos );
 				mListBox->Pos( Pos );
 			}
 

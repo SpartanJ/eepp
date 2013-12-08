@@ -371,6 +371,7 @@ void cEETest::CreateUI() {
 	mSlider = eeNew( cUISlider, ( SliderParams ) );
 	mSlider->Visible( true );
 	mSlider->Enabled( true );
+	mSlider->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cEETest::OnSliderValueChange ) );
 
 	SliderParams.PosSet( 40, 110 );
 	SliderParams.Size = eeSize( 24, 80 );
@@ -739,6 +740,12 @@ void cEETest::OnValueChange( const cUIEvent * Event ) {
 	mTextBoxValue->Text( "Scroll Value:\n" + String::ToStr( mScrollBar->Value() ) );
 
 	mProgressBar->Progress( mScrollBar->Value() * 100.f );
+}
+
+void cEETest::OnSliderValueChange( const cUIEvent * Event ) {
+	cUISlider * slider = static_cast<cUISlider*>( Event->Ctrl() );
+
+	C->Angle( slider->Value() * 90.f );
 }
 
 void cEETest::QuitClick( const cUIEvent * Event ) {
@@ -1324,8 +1331,9 @@ void cEETest::Render() {
 	FF2->SetText( InBuf.Buffer() );
 	FF2->Draw( 6, 180, FONT_DRAW_SHADOW );
 
-	cUIManager::instance()->Update();
 	cUIManager::instance()->Draw();
+	cUIManager::instance()->Update();
+
 
 	Con.Draw();
 }

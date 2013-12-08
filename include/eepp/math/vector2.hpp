@@ -59,10 +59,10 @@ class Vector2 {
 		T ToAngle();
 
 		/** Rotates the vector */
-		void RotateVector( const T& Angle );
+		void Rotate( const T& Angle );
 
 		/** Rotates the vector against a defined rotation center */
-		void RotateVectorCentered( const T& Angle, const Vector2<T>& RotationCenter );
+		void Rotate( const T& Angle, const Vector2<T>& RotationCenter );
 
 		/** @return The distance between two vectors */
 		T Distance( const Vector2<T>& Vec );
@@ -84,6 +84,12 @@ class Vector2 {
 
 		/**	@return A vector interpolated from self towards Vec with length Dist. */
 		Vector2<T> LerpConst( const Vector2<T>& Vec, T Dist );
+
+		/** Scales the vector position against another vector */
+		void Scale( const Vector2<T>& scale, const Vector2<T>& Center );
+
+		/** Scales the vector position against another vector */
+		void Scale( const T& scale, const Vector2<T>& Center );
 
 		T x;
 		T y;
@@ -236,12 +242,22 @@ bool operator ==(const Vector2<T>& V1, const T& V) {
 }
 
 template <typename T>
+bool operator ==(const T& V, const Vector2<T>& V1) {
+	return (V1.x == V) && (V1.y == V);
+}
+
+template <typename T>
 bool operator !=(const Vector2<T>& V1, const Vector2<T>& V2) {
 	return (V1.x != V2.x) || (V1.y != V2.y);
 }
 
 template <typename T>
 bool operator !=(const Vector2<T>& V1, const T& V) {
+	return (V1.x != V) || (V1.y != V);
+}
+
+template <typename T>
+bool operator !=(const T& V, const Vector2<T>& V1) {
 	return (V1.x != V) || (V1.y != V);
 }
 
@@ -256,22 +272,45 @@ T Vector2<T>::sinAng( const T& Ang ) {
 }
 
 template <typename T>
-void Vector2<T>::RotateVector( const T& Angle ) {
+void Vector2<T>::Rotate( const T& Angle ) {
 	T nx = x * cosAng(Angle) - y * sinAng(Angle);
 	y = y * cosAng(Angle) + x * sinAng(Angle);
 	x = nx;
 }
 
 template <typename T>
-void Vector2<T>::RotateVectorCentered( const T& Angle, const Vector2<T>& RotationCenter ) {
-	x -= RotationCenter.x;
-	y -= RotationCenter.y;
+void Vector2<T>::Rotate( const T& Angle, const Vector2<T>& RotationCenter ) {
+	if ( 1.f != Angle ) {
+		x -= RotationCenter.x;
+		y -= RotationCenter.y;
 
-	RotateVector( Angle );
+		Rotate( Angle );
 
-	x += RotationCenter.x;
-	y += RotationCenter.y;
+		x += RotationCenter.x;
+		y += RotationCenter.y;
+	}
 }
+
+template <typename T>
+void Vector2<T>::Scale( const Vector2<T>& scale, const Vector2<T>& Center ) {
+	if ( 1.f != scale ) {
+		if ( x < Center.x )
+			x = Center.x - eeabs( Center.x - x ) * scale.x;
+		else
+			x = Center.x + eeabs( Center.x - x ) * scale.x;
+
+		if ( y < Center.y )
+			y = Center.y - eeabs( Center.y - y ) * scale.y;
+		else
+			y = Center.y + eeabs( Center.y - y ) * scale.y;
+	}
+}
+
+template <typename T>
+void Vector2<T>::Scale( const T& scale, const Vector2<T>& Center ) {
+	Scale( Vector2<T>( scale, scale ), Center );
+}
+
 
 template <typename T>
 T Vector2<T>::Dot( const Vector2<T>& V2 ) {
