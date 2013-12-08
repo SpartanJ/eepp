@@ -230,9 +230,6 @@ Uint32 cUITextInput::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
 		eeVector2i controlPos( Pos );
 		WorldToControl( controlPos );
 
-		eeVector2i globalPos( controlPos );
-		ControlToWorld( globalPos );
-
 		Int32 curPos = mTextCache->Font()->FindClosestCursorPosFromPoint( mTextCache->Text(), controlPos );
 
 		if ( -1 != curPos ) {

@@ -386,6 +386,10 @@ Int32 cFont::FindClosestCursorPosFromPoint( const String& Text, const eeVector2i
 			if ( CharID == '\n' ) {
 				lHeight = Height;
 				Height += GetFontHeight();
+
+				if ( pos.x > Width && pos.y <= lHeight ) {
+					return i;
+				}
 			}
 		}
 	}
