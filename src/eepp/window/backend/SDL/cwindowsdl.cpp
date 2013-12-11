@@ -154,7 +154,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	/// Init the input after the window creation
 	reinterpret_cast<cInputSDL*> ( mInput )->Init();
 
-	mCursorManager->Set( Cursor::SYS_CURSOR_DEFAULT );
+	mCursorManager->Set( Cursor::SYS_CURSOR_ARROW );
 
 	return true;
 }

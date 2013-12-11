@@ -32,11 +32,15 @@ class EE_API cUIDragable : public cUIControl {
 		eeVector2i 	mDragPoint;
 		Uint32 		mDragButton;
 
-		virtual Uint32	OnMouseDown( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseDown( const eeVector2i& Pos, const Uint32 Flags );
 
-		virtual Uint32 	OnMouseUp( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseUp( const eeVector2i& Pos, const Uint32 Flags );
 
-		virtual Uint32	OnDrag( const eeVector2i& Pos );
+		virtual Uint32 OnDrag( const eeVector2i& Pos );
+
+		virtual Uint32 OnDragStart( const eeVector2i& Pos );
+
+		virtual Uint32 OnDragEnd( const eeVector2i& Pos );
 };
 
 }}

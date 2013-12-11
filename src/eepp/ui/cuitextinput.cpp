@@ -35,6 +35,10 @@ bool cUITextInput::IsType( const Uint32& type ) const {
 }
 
 void cUITextInput::Update() {
+	if ( IsMouseOverMeOrChilds() ) {
+		cUIManager::instance()->SetCursor( EE_CURSOR_IBEAM );
+	}
+
 	cUITextBox::Update();
 
 	if ( mTextBuffer.ChangedSinceLastUpdate() ) {
@@ -241,6 +245,14 @@ Uint32 cUITextInput::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
 	}
 
 	return cUITextBox::OnMouseClick( Pos, Flags );
+}
+
+Uint32 cUITextInput::OnMouseExit( const eeVector2i& Pos, const Uint32 Flags ) {
+	cUIControl::OnMouseExit( Pos, Flags );
+
+	cUIManager::instance()->SetCursor( EE_CURSOR_ARROW );
+
+	return 1;
 }
 
 }}

@@ -24,19 +24,23 @@ cCursor * cCursorManagerSDL::Create( const std::string& path, const eeVector2i& 
 }
 
 void cCursorManagerSDL::Set( cCursor * cursor ) {
-	SDL_SetCursor( reinterpret_cast<cCursorSDL*>( cursor )->GetCursor() );
+	if ( NULL != cursor && cursor != mCurrent ) {
+		SDL_SetCursor( reinterpret_cast<cCursorSDL*>( cursor )->GetCursor() );
 
-	mCurrent		= cursor;
-	mCurSysCursor	= false;
-	mSysCursor		= Cursor::SYS_CURSOR_NONE;
+		mCurrent		= cursor;
+		mCurSysCursor	= false;
+		mSysCursor		= Cursor::SYS_CURSOR_NONE;
+	}
 }
 
 void cCursorManagerSDL::Set( EE_SYSTEM_CURSOR syscurid ) {
-	mWindow->GetPlatform()->SetSystemMouseCursor( syscurid );
+	if ( syscurid != mSysCursor ) {
+		mWindow->GetPlatform()->SetSystemMouseCursor( syscurid );
 
-	mCurrent		= NULL;
-	mCurSysCursor	= true;
-	mSysCursor		= syscurid;
+		mCurrent		= NULL;
+		mCurSysCursor	= true;
+		mSysCursor		= syscurid;
+	}
 }
 
 void cCursorManagerSDL::Show() {
@@ -58,7 +62,7 @@ void cCursorManagerSDL::Visible( bool visible ) {
 }
 
 void cCursorManagerSDL::Remove( cCursor * cursor, bool Delete ) {
-    cCursorManager::Remove( cursor, Delete );
+	cCursorManager::Remove( cursor, Delete );
 }
 
 void cCursorManagerSDL::Reload() {

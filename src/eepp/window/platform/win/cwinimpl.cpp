@@ -77,15 +77,15 @@ eeVector2i cWinImpl::Position() {
 }
 
 void cWinImpl::ShowMouseCursor() {
-    mCursorHidden = false;
+	mCursorHidden = false;
 
 	if ( !mCursorCurrent ) {
-		SetSystemMouseCursor( Cursor::SYS_CURSOR_DEFAULT );
+		SetSystemMouseCursor( Cursor::SYS_CURSOR_ARROW );
 	} else {
 		SetCursor( (HCURSOR)mCursorCurrent );
-        POINT p;
-        GetCursorPos( &p );
-        SetCursorPos( p.x, p.y );
+		POINT p;
+		GetCursorPos( &p );
+		SetCursorPos( p.x, p.y );
 	}
 }
 
@@ -111,57 +111,48 @@ cCursor * cWinImpl::CreateMouseCursor( const std::string& path, const eeVector2i
 }
 
 void cWinImpl::SetMouseCursor( cCursor * cursor ) {
-    mCursorCurrent = reinterpret_cast<cCursorWin*> ( cursor )->GetCursor();
+	mCursorCurrent = reinterpret_cast<cCursorWin*> ( cursor )->GetCursor();
 
-    if ( !mCursorHidden ) {
+	if ( !mCursorHidden ) {
 		SetCursor( (HCURSOR)mCursorCurrent );
-        POINT p;
-        GetCursorPos( &p );
-        SetCursorPos( p.x, p.y );
-    }
+		POINT p;
+		GetCursorPos( &p );
+		SetCursorPos( p.x, p.y );
+	}
 }
 
 void cWinImpl::SetSystemMouseCursor( Cursor::EE_SYSTEM_CURSOR syscursor ) {
 	HCURSOR mc;
 
 	switch ( syscursor ) {
-		case SYS_CURSOR_DEFAULT:
 		case SYS_CURSOR_ARROW:
 			mc = LoadCursor(NULL, IDC_ARROW); break;
-		case SYS_CURSOR_BUSY:
+		case SYS_CURSOR_WAIT:
 			mc = LoadCursor(NULL, IDC_WAIT); break;
-		case SYS_CURSOR_QUESTION:
-			mc = LoadCursor(NULL, IDC_HELP); break;
-		case SYS_CURSOR_EDIT:
-			mc = LoadCursor(NULL, IDC_IBEAM); break;
-		case SYS_CURSOR_MOVE:
-			mc = LoadCursor(NULL, IDC_SIZEALL); break;
-		case SYS_CURSOR_RESIZE_N:
-		case SYS_CURSOR_RESIZE_S:
-			mc = LoadCursor(NULL, IDC_SIZENS); break;
-		case SYS_CURSOR_RESIZE_E:
-		case SYS_CURSOR_RESIZE_W:
-			mc = LoadCursor(NULL, IDC_SIZEWE); break;
-		case SYS_CURSOR_RESIZE_NE:
-		case SYS_CURSOR_RESIZE_SW:
-			mc = LoadCursor(NULL, IDC_SIZENESW); break;
-		case SYS_CURSOR_RESIZE_NW:
-		case SYS_CURSOR_RESIZE_SE:
-			mc = LoadCursor(NULL, IDC_SIZENWSE); break;
-		case SYS_CURSOR_PROGRESS:
-			mc = LoadCursor(NULL, IDC_APPSTARTING); break;
-		case SYS_CURSOR_PRECISION:
+		case SYS_CURSOR_CROSSHAIR:
 			mc = LoadCursor(NULL, IDC_CROSS); break;
-		case SYS_CURSOR_LINK:
-			mc = LoadCursor(NULL, IDC_HAND); break;
-		case SYS_CURSOR_ALT_SELECT:
-			mc = LoadCursor(NULL, IDC_UPARROW); break;
-		case SYS_CURSOR_UNAVAILABLE:
+		case SYS_CURSOR_IBEAM:
+			mc = LoadCursor(NULL, IDC_IBEAM); break;
+		case SYS_CURSOR_WAITARROW:
+			mc = LoadCursor(NULL, IDC_WAIT); break;
+		case SYS_CURSOR_SIZENWSE:
+			mc = LoadCursor(NULL, IDC_SIZENWSE); break;
+		case SYS_CURSOR_SIZENESW:
+			mc = LoadCursor(NULL, IDC_SIZENESW); break;
+		case SYS_CURSOR_SIZEWE:
+			mc = LoadCursor(NULL, IDC_SIZEWE); break;
+		case SYS_CURSOR_SIZENS:
+			mc = LoadCursor(NULL, IDC_SIZENS); break;
+		case SYS_CURSOR_SIZEALL:
+			mc = LoadCursor(NULL, IDC_SIZEALL); break;
+		case SYS_CURSOR_NO:
 			mc = LoadCursor(NULL, IDC_NO); break;
+		case SYS_CURSOR_HAND:
+			mc = LoadCursor(NULL, IDC_HAND); break;
 		default:
 			return;
 
-        mCursorCurrent = mc;
+		mCursorCurrent = mc;
 
 		if ( !mCursorHidden ) {
 			SetCursor( mc );
@@ -181,7 +172,7 @@ void cWinImpl::RestoreCursor() {
 }
 
 eeWindowHandle cWinImpl::GetHandler() const {
-    return mHandler;
+	return mHandler;
 }
 
 }}}

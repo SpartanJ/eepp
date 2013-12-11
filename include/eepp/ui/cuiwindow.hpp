@@ -212,6 +212,8 @@ class EE_API cUIWindow : public cUIComplexControl {
 		void EnableByModal();
 
 		void DisableByModal();
+
+		void ResizeCursor();
 };
 
 }}

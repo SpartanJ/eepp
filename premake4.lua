@@ -269,7 +269,7 @@ function add_cross_config_links()
 end
 
 function build_link_configuration( package_name, use_ee_icon )
-	includedirs { "include", "src" }
+	includedirs { "include" }
 
 	local extension = "";
 	

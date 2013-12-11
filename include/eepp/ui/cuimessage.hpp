@@ -22,6 +22,8 @@ class EE_API cUIMessage {
 			MsgFocusLoss,
 			MsgCellClicked,
 			MsgSelected,
+			MsgDragStart,
+			MsgDragEnd,
 			MsgUser,
 			MsgForceDWord = eeINDEX_NOT_FOUND
 		};

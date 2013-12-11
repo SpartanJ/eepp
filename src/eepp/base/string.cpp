@@ -379,6 +379,17 @@ std::string String::ToUtf8() const {
 	return output;
 }
 
+std::basic_string<Uint16> String::ToUtf16() const {
+	// Prepare the output string
+	std::basic_string<Uint16> output;
+	output.reserve(mString.length());
+
+	// Convert
+	Utf32::ToUtf16(mString.begin(), mString.end(), std::back_inserter(output));
+
+	return output;
+}
+
 Uint32 String::GetHash() const
 {
 	return String::Hash( *this );

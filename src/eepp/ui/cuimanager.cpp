@@ -1,5 +1,6 @@
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/window/cengine.hpp>
+#include <eepp/window/ccursormanager.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
 #include <algorithm>
 
@@ -22,7 +23,8 @@ cUIManager::cUIManager() :
 	mHighlightOverColor( 195, 123, 234, 255 ),
 	mInit( false ),
 	mFirstPress( false ),
-	mShootingDown( false )
+	mShootingDown( false ),
+	mUseGlobalCursors( true )
 {
 }
 
@@ -443,6 +445,20 @@ void cUIManager::SetControlDragging( bool dragging ) {
 
 const bool& cUIManager::IsControlDragging() const {
 	return mControlDragging;
+}
+
+void cUIManager::UseGlobalCursors( const bool& use ) {
+	mUseGlobalCursors = use;
+}
+
+const bool& cUIManager::UseGlobalCursors() {
+	return mUseGlobalCursors;
+}
+
+void cUIManager::SetCursor( EE_CURSOR_TYPE cursor ) {
+	if ( mUseGlobalCursors ) {
+		mWindow->GetCursorManager()->Set( cursor );
+	}
 }
 
 }}

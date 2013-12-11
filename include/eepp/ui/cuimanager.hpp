@@ -5,6 +5,9 @@
 #include <eepp/ui/cuiwindow.hpp>
 #include <eepp/window/cinput.hpp>
 #include <eepp/window/cwindow.hpp>
+#include <eepp/window/cursorhelper.hpp>
+
+using namespace EE::Window::Cursor;
 
 namespace EE { namespace UI {
 
@@ -86,13 +89,18 @@ class EE_API cUIManager {
 		const bool& IsShootingDown() const;
 
 		/** @return The position of the mouse when the event MouseDown was fired last time.
-		**	Useful to compare the mouse position of the MouseClick event
-		*/
+		**	Useful to compare the mouse position of the MouseClick event */
 		const eeVector2i& GetMouseDownPos() const;
 
 		void SetControlDragging( bool dragging );
 
 		const bool& IsControlDragging() const;
+
+		void UseGlobalCursors( const bool& use );
+
+		const bool& UseGlobalCursors();
+
+		void SetCursor( EE_CURSOR_TYPE cursor );
 	protected:
 		friend class cUIControl;
 		friend class cUIWindow;
@@ -120,6 +128,7 @@ class EE_API cUIManager {
 		bool 				mFirstPress;
 		bool				mShootingDown;
 		bool				mControlDragging;
+		bool				mUseGlobalCursors;
 
 		cUIManager();
 

@@ -407,6 +407,23 @@ Uint32 cUIWindow::OnMessage( const cUIMessage * Msg ) {
 			if ( IsModal() && NULL != mModalCtrl ) {
 				mModalCtrl->Size( cUIManager::instance()->MainControl()->Size() );
 			}
+
+			break;
+		}
+		case cUIMessage::MsgMouseExit:
+		{
+			cUIManager::instance()->SetCursor( EE_CURSOR_ARROW );
+			break;
+		}
+		case cUIMessage::MsgDragStart:
+		{
+			cUIManager::instance()->SetCursor( EE_CURSOR_HAND );
+			break;
+		}
+		case cUIMessage::MsgDragEnd:
+		{
+			cUIManager::instance()->SetCursor( EE_CURSOR_ARROW );
+			break;
 		}
 	}
 
@@ -668,6 +685,8 @@ void cUIWindow::Draw() {
 }
 
 void cUIWindow::Update() {
+	ResizeCursor();
+
 	cUIComplexControl::Update();
 
 	UpdateResize();
@@ -892,6 +911,57 @@ bool cUIWindow::IsModal() {
 
 cUIControlAnim * cUIWindow::GetModalControl() const {
 	return mModalCtrl;
+}
+
+void cUIWindow::ResizeCursor() {
+	cUIManager * Man = cUIManager::instance();
+
+	if ( !IsMouseOverMeOrChilds() || !Man->UseGlobalCursors() || ( mWinFlags & UI_WIN_NO_BORDER ) || !( mWinFlags & UI_WIN_RESIZEABLE ) )
+		return;
+
+	eeVector2i Pos = Man->GetMousePos();
+
+	WorldToControl( Pos );
+
+	const cUIControl * Control = Man->OverControl();
+
+	if ( Control == this ) {
+		if ( Pos.x <= mBorderLeft->Size().Width() ) {
+			Man->SetCursor( EE_CURSOR_SIZENWSE ); // RESIZE_TOPLEFT
+		} else if ( Pos.x >= ( mSize.Width() - mBorderRight->Size().Width() ) ) {
+			Man->SetCursor( EE_CURSOR_SIZENESW ); // RESIZE_TOPRIGHT
+		} else if ( Pos.y <= mBorderBottom->Size().Height() ) {
+			if ( Pos.x < mMinCornerDistance ) {
+				Man->SetCursor( EE_CURSOR_SIZENWSE ); // RESIZE_TOPLEFT
+			} else if ( Pos.x > mSize.Width() - mMinCornerDistance ) {
+				Man->SetCursor( EE_CURSOR_SIZENESW ); // RESIZE_TOPRIGHT
+			} else {
+				Man->SetCursor( EE_CURSOR_SIZENS ); // RESIZE_TOP
+			}
+		} else if ( !( cUIManager::instance()->PressTrigger() & EE_BUTTON_LMASK ) ) {
+			Man->SetCursor( EE_CURSOR_ARROW );
+		}
+	} else if ( Control == mBorderBottom ) {
+		if ( Pos.x < mMinCornerDistance ) {
+			Man->SetCursor( EE_CURSOR_SIZENESW ); // RESIZE_LEFTBOTTOM
+		} else if ( Pos.x > mSize.Width() - mMinCornerDistance ) {
+			Man->SetCursor( EE_CURSOR_SIZENWSE ); // RESIZE_RIGHTBOTTOM
+		} else {
+			Man->SetCursor( EE_CURSOR_SIZENS ); // RESIZE_BOTTOM
+		}
+	} else if ( Control == mBorderLeft )  {
+		if ( Pos.y >= mSize.Height() - mMinCornerDistance ) {
+			Man->SetCursor( EE_CURSOR_SIZENESW ); // RESIZE_LEFTBOTTOM
+		} else {
+			Man->SetCursor( EE_CURSOR_SIZEWE ); // RESIZE_LEFT
+		}
+	} else if ( Control == mBorderRight ) {
+		if ( Pos.y >= mSize.Height() - mMinCornerDistance ) {
+			Man->SetCursor( EE_CURSOR_SIZENWSE ); // RESIZE_RIGHTBOTTOM
+		} else {
+			Man->SetCursor( EE_CURSOR_SIZEWE ); // RESIZE_RIGHT
+		}
+	}
 }
 
 }}

@@ -321,8 +321,11 @@ class EE_API String {
 	std::wstring ToWideString() const;
 #endif
 
-	/** Convert the string to a Utf8 string */
+	/** Convert the string to a UTF-8 string */
 	std::string ToUtf8() const;
+
+	/** Convert the string to a UTF-16 string */
+	std::basic_string<Uint16> ToUtf16() const;
 
 	/** @return The hash code of the String */
 	Uint32 GetHash() const;

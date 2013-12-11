@@ -266,7 +266,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	/// Init the input after the window creation
 	reinterpret_cast<cInputSDL*> ( mInput )->Init();
 
-	mCursorManager->Set( Cursor::SYS_CURSOR_DEFAULT );
+	mCursorManager->Set( Cursor::SYS_CURSOR_ARROW );
 
 	#if EE_PLATFORM == EE_PLATFORM_ANDROID
 	std::string apkPath( SDL_AndroidGetApkPath() );

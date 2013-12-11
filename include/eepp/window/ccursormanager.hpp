@@ -68,19 +68,31 @@ class EE_API cCursorManager {
 		virtual cCursor *		Get( const std::string& name );
 
 		/** @return The cursor pointer by its id */
-		virtual cCursor *		Get( const Uint32& id );
+		virtual cCursor *		GetById( const Uint32& id );
 
 		/** Set the the current cursor by its name */
 		virtual void			Set( const std::string& name );
 
 		/** Set the the current cursor by its id */
-		virtual void			Set( const Uint32& id );
+		virtual void			SetById( const Uint32& id );
 
 		/** Set the the current cursor by its cursor pointer */
 		virtual void			Set( cCursor * cursor ) = 0;
 
 		/** Set the cursor using a system cursor */
 		virtual void			Set( EE_SYSTEM_CURSOR syscurid ) = 0;
+
+		/** Set the cursor as the global cursor used in eepp
+		**	@see SetGlobalCursor */
+		virtual void			Set( EE_CURSOR_TYPE cursor );
+
+		/** A Global Cursor is a cursor setted to be used in eepp. It's the system cursor of the engine.
+		**	The global cursor can be a cCursor ( user created cursor ) or a system cursor ( the OS cursor ).
+		**	The system cursor is used by default, but can be override it with this function. */
+		virtual void			SetGlobalCursor( EE_CURSOR_TYPE cursor, cCursor * fromCursor );
+
+		/** @see SetGlobalCursor */
+		virtual void			SetGlobalCursor( EE_CURSOR_TYPE cursor, EE_SYSTEM_CURSOR fromCursor );
 
 		/** Force to show the cursor */
 		virtual void			Show() = 0;
@@ -107,12 +119,33 @@ class EE_API cCursorManager {
 		bool					CurrentIsSysCursor() const;
 	protected:
 		typedef	std::set<cCursor*> CursorsList;
+		class GlobalCursor
+		{
+			public:
+				GlobalCursor() :
+					SysCur( SYS_CURSOR_NONE ),
+					Cur( NULL )
+				{
+				}
+
+				GlobalCursor( EE_SYSTEM_CURSOR sysCur, cCursor * cur ) :
+					SysCur( sysCur ),
+					Cur( cur )
+				{
+				}
+
+				EE_SYSTEM_CURSOR	SysCur;
+				cCursor *			Cur;
+		};
+		GlobalCursor			mGlobalCursors[ EE_CURSOR_COUNT ];
 		cWindow *				mWindow;
 		cCursor *				mCurrent;
 		EE_SYSTEM_CURSOR		mSysCursor;
 		CursorsList				mCursors;
 		bool					mCurSysCursor;
 		bool					mVisible;
+
+		void InitGlobalCursors();
 };
 
 }}

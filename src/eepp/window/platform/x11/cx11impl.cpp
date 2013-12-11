@@ -269,61 +269,19 @@ void cX11Impl::SetSystemMouseCursor( Cursor::EE_SYSTEM_CURSOR syscursor ) {
 	unsigned int cursor_shape;
 
 	switch ( syscursor ) {
-	  case SYS_CURSOR_DEFAULT:
-	  case SYS_CURSOR_ARROW:
-	  case SYS_CURSOR_PROGRESS:
-		 cursor_shape = XC_left_ptr;
-		 break;
-	  case SYS_CURSOR_BUSY:
-		 cursor_shape = XC_watch;
-		 break;
-	  case SYS_CURSOR_QUESTION:
-		 cursor_shape = XC_question_arrow;
-		 break;
-	  case SYS_CURSOR_EDIT:
-		 cursor_shape = XC_xterm;
-		 break;
-	  case SYS_CURSOR_MOVE:
-		 cursor_shape = XC_fleur;
-		 break;
-	  case SYS_CURSOR_RESIZE_N:
-		 cursor_shape = XC_top_side;
-		 break;
-	  case SYS_CURSOR_RESIZE_S:
-		 cursor_shape = XC_bottom_side;
-		 break;
-	  case SYS_CURSOR_RESIZE_E:
-		 cursor_shape = XC_right_side;
-		 break;
-	  case SYS_CURSOR_RESIZE_W:
-		 cursor_shape = XC_left_side;
-		 break;
-	  case SYS_CURSOR_RESIZE_NE:
-		 cursor_shape = XC_top_right_corner;
-		 break;
-	  case SYS_CURSOR_RESIZE_SW:
-		 cursor_shape = XC_bottom_left_corner;
-		 break;
-	  case SYS_CURSOR_RESIZE_NW:
-		 cursor_shape = XC_top_left_corner;
-		 break;
-	  case SYS_CURSOR_RESIZE_SE:
-		 cursor_shape = XC_bottom_right_corner;
-		 break;
-	  case SYS_CURSOR_PRECISION:
-		 cursor_shape = XC_crosshair;
-		 break;
-	  case SYS_CURSOR_LINK:
-		 cursor_shape = XC_hand2;
-		 break;
-	  case SYS_CURSOR_ALT_SELECT:
-		 cursor_shape = XC_hand1;
-		 break;
-	  case SYS_CURSOR_UNAVAILABLE:
-		 cursor_shape = XC_X_cursor;
-		 break;
-	  default:
-		 return;
+		case SYS_CURSOR_ARROW:		cursor_shape = XC_arrow; break;
+		case SYS_CURSOR_WAIT:		cursor_shape = XC_watch; break;
+		case SYS_CURSOR_WAITARROW:	cursor_shape = XC_watch; break;
+		case SYS_CURSOR_IBEAM:		cursor_shape = XC_xterm; break;
+		case SYS_CURSOR_SIZEALL:	cursor_shape = XC_fleur; break;
+		case SYS_CURSOR_SIZENWSE:	cursor_shape = XC_fleur; break;
+		case SYS_CURSOR_SIZENESW:	cursor_shape = XC_fleur; break;
+		case SYS_CURSOR_SIZEWE:		cursor_shape = XC_sb_h_double_arrow; break;
+		case SYS_CURSOR_SIZENS:		cursor_shape = XC_sb_v_double_arrow; break;
+		case SYS_CURSOR_CROSSHAIR:	cursor_shape = XC_tcross; break;
+		case SYS_CURSOR_HAND:		cursor_shape = XC_hand2; break;
+		case SYS_CURSOR_NO:			cursor_shape = XC_pirate; break;
+		default:					return;
 	}
 
 	if ( None != mCursorCurrent ) {

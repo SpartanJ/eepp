@@ -82,6 +82,14 @@ Uint32 cUIDragable::OnDrag( const eeVector2i& Pos ) {
 	return 1;
 }
 
+Uint32 cUIDragable::OnDragStart( const eeVector2i& Pos ) {
+	return 1;
+}
+
+Uint32 cUIDragable::OnDragEnd( const eeVector2i& Pos ) {
+	return 1;
+}
+
 bool cUIDragable::DragEnable() const {
 	return 0 != ( mFlags & UI_DRAG_ENABLE );
 }
@@ -96,6 +104,18 @@ bool cUIDragable::Dragging() const {
 
 void cUIDragable::Dragging( const bool& dragging ) {
 	WriteCtrlFlag( UI_CTRL_FLAG_DRAGGING, true == dragging );
+
+	if ( dragging ) {
+		cUIMessage tMsg( this, cUIMessage::MsgDragStart, 0 );
+		MessagePost( &tMsg );
+
+		OnDragStart( cUIManager::instance()->GetMousePos() );
+	} else {
+		cUIMessage tMsg( this, cUIMessage::MsgDragEnd, 0 );
+		MessagePost( &tMsg );
+
+		OnDragEnd( cUIManager::instance()->GetMousePos() );
+	}
 }
 
 void cUIDragable::DragButton( const Uint32& Button ) {
