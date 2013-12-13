@@ -373,6 +373,43 @@ void cConsole::Fade() {
 	if ( mA < 0.0f ) mA = 0.0f;
 }
 
+String cConsole::GetLastCommonSubStr( std::list<String>& cmds ) {
+	String lastCommon( mTBuf->Buffer() );
+	String strTry( lastCommon );
+
+	std::list<String>::iterator ite;
+
+	bool found = false;
+
+	do {
+		found = false;
+
+		bool allEqual = true;
+
+		String strBeg( (*cmds.begin()) );
+
+		if ( strTry.size() + 1 <= strBeg.size() ) {
+			strTry = String( strBeg.substr( 0, strTry.size() + 1 ) );
+
+			for ( ite = ++cmds.begin(); ite != cmds.end(); ite++ ) {
+				String& strCur = (*ite);
+
+				if ( !( strTry.size() <= strCur.size() && strTry == strCur.substr( 0, strTry.size() ) ) ) {
+					allEqual = false;
+				}
+			}
+
+			if ( allEqual ) {
+				lastCommon = strTry;
+
+				found = true;
+			}
+		}
+	} while ( found );
+
+	return lastCommon;
+}
+
 void cConsole::PrintCommandsStartingWith( const String& start ) {
 	std::list<String> cmds;
 	std::map < String, ConsoleCallback >::iterator it;
@@ -391,6 +428,12 @@ void cConsole::PrintCommandsStartingWith( const String& start ) {
 		for ( ite = cmds.begin(); ite != cmds.end(); ite++ )
 			PrivPushText( (*ite) );
 
+		String newStr( GetLastCommonSubStr( cmds ) );
+
+		if ( newStr != mTBuf->Buffer() ) {
+			mTBuf->Buffer( newStr );
+			mTBuf->CursorToEnd();
+		}
 	} else if ( cmds.size() ) {
 		mTBuf->Buffer( cmds.front() );
 		mTBuf->CursorToEnd();
@@ -659,7 +702,7 @@ void cConsole::CmdGetGpuExtensions() {
 }
 
 void cConsole::CmdGetGpuExtensions( const std::vector < String >& params ) {
-    CmdGetGpuExtensions();
+	CmdGetGpuExtensions();
 }
 
 void cConsole::CmdSetGamma( const std::vector < String >& params ) {

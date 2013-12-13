@@ -594,7 +594,7 @@ void cImage::Scale( const eeFloat& scale , EE_RESAMPLER_FILTER filter ) {
 }
 
 cImage * cImage::Thumbnail( const Uint32& maxWidth, const Uint32& maxHeight, EE_RESAMPLER_FILTER filter ) {
-	if ( NULL != mPixels && mWidth > maxWidth && mHeight > maxHeight ) {
+	if ( NULL != mPixels ) {
 		eeFloat iScaleX 	= ( (eeFloat)maxWidth / (eeFloat)mWidth );
 		eeFloat iScaleY 	= ( (eeFloat)maxHeight / (eeFloat)mHeight );
 		eeFloat iScale		= ( iScaleY < iScaleX ) ? iScaleY : iScaleX;

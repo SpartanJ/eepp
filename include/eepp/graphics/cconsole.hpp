@@ -250,6 +250,8 @@ class EE_API cConsole : protected iLogReader {
 		void GetFilesFrom( std::string txt, const Uint32& curPos );
 
 		Int32 LinesInScreen();
+
+		String GetLastCommonSubStr( std::list<String>& cmds );
 };
 
 }}
