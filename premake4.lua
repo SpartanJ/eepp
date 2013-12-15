@@ -221,6 +221,10 @@ function build_base_configuration( package_name )
 		buildoptions{ "-fPIC" }
 	end
 
+	if is_vs() then
+		includedirs { "src/eepp/helper/libzip/vs" }
+	end
+
 	configuration "debug"
 		defines { "DEBUG" }
 		flags { "Symbols" }
@@ -560,6 +564,10 @@ function build_eepp( build_name )
 
 	add_static_links()
 
+	if is_vs() then
+		includedirs { "src/eepp/helper/libzip/vs" }
+	end
+
 	if os.is("windows") then
 		files { "src/eepp/system/platform/win/*.cpp" }
 		files { "src/eepp/network/platform/win/*.cpp" }
@@ -672,11 +680,6 @@ solution "eepp"
 		targetdir("libs/" .. os.get_real() .. "/helpers/")
 		files { "src/eepp/helper/libzip/*.c" }
 		includedirs { "src/eepp/helper/zlib" }
-
-		if is_vs() then
-			includedirs { "src/eepp/helper/libzip/vs" }
-		end
-
 		build_base_configuration( "libzip" )
 
 	project "freetype-static"

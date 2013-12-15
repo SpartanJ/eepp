@@ -78,7 +78,7 @@ void eePRINT( const char * format, ... ) {
 	while ( 1 ) {
 		va_start( args, format );
 
-		n = eevsnprintf( &buf[0], buf.size(), format, args );
+		n = vsnprintf( &buf[0], buf.size(), format, args );
 
 		if ( n > -1 && n < size ) {
 			buf.resize( n );
@@ -108,7 +108,7 @@ void eePRINTL( const char * format, ... ) {
 	while ( 1 ) {
 		va_start( args, format );
 
-		n = eevsnprintf( &buf[0], buf.size(), format, args );
+		n = vsnprintf( &buf[0], buf.size(), format, args );
 
 		if ( n > -1 && n < size ) {
 			buf.resize( n );
@@ -141,7 +141,7 @@ void eePRINTC( unsigned int cond, const char * format, ...) {
 	while ( 1 ) {
 		va_start( args, format );
 
-		n = eevsnprintf( &buf[0], buf.size(), format, args );
+		n = vsnprintf( &buf[0], buf.size(), format, args );
 
 		if ( n > -1 && n < size ) {
 			buf.resize( n );

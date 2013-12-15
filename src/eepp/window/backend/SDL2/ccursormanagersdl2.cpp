@@ -6,6 +6,16 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
+static SDL_Cursor * SDL_SYS_CURSORS[ SYS_CURSOR_COUNT ] = {0};
+
+static SDL_Cursor * GetLoadCursor( const EE_SYSTEM_CURSOR& cursor ) {
+	if ( 0 == SDL_SYS_CURSORS[ cursor ] ) {
+		SDL_SYS_CURSORS[ cursor ] = SDL_CreateSystemCursor( (SDL_SystemCursor)cursor );
+	}
+
+	return SDL_SYS_CURSORS[ cursor ];
+}
+
 cCursorManagerSDL::cCursorManagerSDL( cWindow * window ) :
 	cCursorManager( window )
 {
@@ -35,8 +45,8 @@ void cCursorManagerSDL::Set( cCursor * cursor ) {
 
 void cCursorManagerSDL::Set( EE_SYSTEM_CURSOR syscurid ) {
 	if ( syscurid != mSysCursor ) {
-		mWindow->GetPlatform()->SetSystemMouseCursor( syscurid );
-
+		SDL_SetCursor( GetLoadCursor( syscurid ) );
+		
 		mCurrent		= NULL;
 		mCurSysCursor	= true;
 		mSysCursor		= syscurid;

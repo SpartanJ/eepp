@@ -258,7 +258,7 @@ cSocket::Status cTcpSocket::Receive(cPacket& packet)
 	char buffer[1024];
 	while (mPendingPacket.Data.size() < packetSize) {
 		// Receive a chunk of data
-		std::size_t sizeToGet = std::min(static_cast<std::size_t>(packetSize - mPendingPacket.Data.size()), sizeof(buffer));
+		std::size_t sizeToGet = eemin(static_cast<std::size_t>(packetSize - mPendingPacket.Data.size()), sizeof(buffer));
 		Status status = Receive(buffer, sizeToGet, received);
 		if (status != Done)
 			return status;

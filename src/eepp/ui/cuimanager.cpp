@@ -24,6 +24,7 @@ cUIManager::cUIManager() :
 	mInit( false ),
 	mFirstPress( false ),
 	mShootingDown( false ),
+	mControlDragging( false ),
 	mUseGlobalCursors( true )
 {
 }

@@ -20,6 +20,16 @@ using namespace EE::Window::Cursor;
 
 namespace EE { namespace Window { namespace Platform {
 
+static HCURSOR SYS_CURSORS[ SYS_CURSOR_COUNT ] = {0};
+
+static HCURSOR GetLoadCursor( const EE_SYSTEM_CURSOR& cursor, LPCSTR syscur ) {
+	if ( 0 == SYS_CURSORS[ cursor ] ) {
+		SYS_CURSORS[ cursor ] = LoadCursor( NULL, syscur );
+	}
+
+	return SYS_CURSORS[ cursor ];
+}
+
 cWinImpl::cWinImpl( cWindow * window, eeWindowHandle handler ) :
 	cPlatformImpl( window ),
 	mHandler( handler ),
@@ -83,6 +93,8 @@ void cWinImpl::ShowMouseCursor() {
 		SetSystemMouseCursor( Cursor::SYS_CURSOR_ARROW );
 	} else {
 		SetCursor( (HCURSOR)mCursorCurrent );
+		SetClassLong( GetHandler(), GCL_HCURSOR, (DWORD)mCursorCurrent );
+
 		POINT p;
 		GetCursorPos( &p );
 		SetCursorPos( p.x, p.y );
@@ -115,6 +127,8 @@ void cWinImpl::SetMouseCursor( cCursor * cursor ) {
 
 	if ( !mCursorHidden ) {
 		SetCursor( (HCURSOR)mCursorCurrent );
+		SetClassLong( GetHandler(), GCL_HCURSOR, (DWORD)mCursorCurrent );
+
 		POINT p;
 		GetCursorPos( &p );
 		SetCursorPos( p.x, p.y );
@@ -126,40 +140,42 @@ void cWinImpl::SetSystemMouseCursor( Cursor::EE_SYSTEM_CURSOR syscursor ) {
 
 	switch ( syscursor ) {
 		case SYS_CURSOR_ARROW:
-			mc = LoadCursor(NULL, IDC_ARROW); break;
+			mc = GetLoadCursor(SYS_CURSOR_ARROW, IDC_ARROW); break;
 		case SYS_CURSOR_WAIT:
-			mc = LoadCursor(NULL, IDC_WAIT); break;
+			mc = GetLoadCursor(SYS_CURSOR_WAIT, IDC_WAIT); break;
 		case SYS_CURSOR_CROSSHAIR:
-			mc = LoadCursor(NULL, IDC_CROSS); break;
+			mc = GetLoadCursor(SYS_CURSOR_CROSSHAIR, IDC_CROSS); break;
 		case SYS_CURSOR_IBEAM:
-			mc = LoadCursor(NULL, IDC_IBEAM); break;
+			mc = GetLoadCursor(SYS_CURSOR_IBEAM, IDC_IBEAM); break;
 		case SYS_CURSOR_WAITARROW:
-			mc = LoadCursor(NULL, IDC_WAIT); break;
+			mc = GetLoadCursor(SYS_CURSOR_WAITARROW, IDC_WAIT); break;
 		case SYS_CURSOR_SIZENWSE:
-			mc = LoadCursor(NULL, IDC_SIZENWSE); break;
+			mc = GetLoadCursor(SYS_CURSOR_SIZENWSE, IDC_SIZENWSE); break;
 		case SYS_CURSOR_SIZENESW:
-			mc = LoadCursor(NULL, IDC_SIZENESW); break;
+			mc = GetLoadCursor(SYS_CURSOR_SIZENESW, IDC_SIZENESW); break;
 		case SYS_CURSOR_SIZEWE:
-			mc = LoadCursor(NULL, IDC_SIZEWE); break;
+			mc = GetLoadCursor(SYS_CURSOR_SIZEWE, IDC_SIZEWE); break;
 		case SYS_CURSOR_SIZENS:
-			mc = LoadCursor(NULL, IDC_SIZENS); break;
+			mc = GetLoadCursor(SYS_CURSOR_SIZENS, IDC_SIZENS); break;
 		case SYS_CURSOR_SIZEALL:
-			mc = LoadCursor(NULL, IDC_SIZEALL); break;
+			mc = GetLoadCursor(SYS_CURSOR_SIZEALL, IDC_SIZEALL); break;
 		case SYS_CURSOR_NO:
-			mc = LoadCursor(NULL, IDC_NO); break;
+			mc = GetLoadCursor(SYS_CURSOR_NO, IDC_NO); break;
 		case SYS_CURSOR_HAND:
-			mc = LoadCursor(NULL, IDC_HAND); break;
+			mc = GetLoadCursor(SYS_CURSOR_HAND, IDC_HAND); break;
 		default:
 			return;
+	}
 
-		mCursorCurrent = mc;
+	mCursorCurrent = mc;
 
-		if ( !mCursorHidden ) {
-			SetCursor( mc );
-			POINT p;
-			GetCursorPos( &p );
-			SetCursorPos( p.x, p.y );
-		}
+	if ( !mCursorHidden ) {
+		SetCursor( mc );
+		SetClassLong( GetHandler(), GCL_HCURSOR, (DWORD)mc );
+
+		POINT p;
+		GetCursorPos( &p );
+		SetCursorPos( p.x, p.y );
 	}
 }
 

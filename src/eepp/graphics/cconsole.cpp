@@ -297,7 +297,7 @@ void cConsole::PushText( const char * format, ... ) {
 	while (1) {
 		va_start( args, format );
 
-		n = eevsnprintf( &tstr[0], size, format, args );
+		n = vsnprintf( &tstr[0], size, format, args );
 
 		if ( n > -1 && n < size ) {
 			tstr.resize( n );
