@@ -3,6 +3,8 @@
 #include <eepp/ui/cuithememanager.hpp>
 #include <eepp/graphics/ctextcache.hpp>
 #include <eepp/graphics/cfont.hpp>
+#include <eepp/graphics/cprimitives.hpp>
+#include <eepp/window/cclipboard.hpp>
 
 namespace EE { namespace UI {
 
@@ -10,7 +12,10 @@ cUITextBox::cUITextBox( const cUITextBox::CreateParams& Params ) :
 	cUIComplexControl( Params ),
 	mFontColor( Params.FontColor ),
 	mFontShadowColor( Params.FontShadowColor ),
-	mAlignOffset( 0.f, 0.f )
+	mFontSelectionBackColor( Params.FontSelectionBackColor ),
+	mAlignOffset( 0.f, 0.f ),
+	mSelCurInit( -1 ),
+	mSelCurEnd( -1 )
 {
 	mTextCache = eeNew( cTextCache, () );
 	mTextCache->Font( Params.Font );
@@ -42,6 +47,8 @@ bool cUITextBox::IsType( const Uint32& type ) const {
 void cUITextBox::Draw() {
 	if ( mVisible && 0.f != mAlpha ) {
 		cUIControlAnim::Draw();
+
+		DrawSelection();
 
 		if ( mTextCache->GetTextWidth() ) {
 			if ( mFlags & UI_CLIP_ENABLE ) {
@@ -118,6 +125,14 @@ void cUITextBox::ShadowColor( const eeColorA& color ) {
 	mTextCache->ShadowColor( mFontColor );
 }
 
+const eeColorA& cUITextBox::SelectionBackColor() const {
+	return mFontSelectionBackColor;
+}
+
+void cUITextBox::SelectionBackColor( const eeColorA& color ) {
+	mFontSelectionBackColor = color;
+}
+
 void cUITextBox::Alpha( const eeFloat& alpha ) {
 	cUIControlAnim::Alpha( alpha );
 	mFontColor.Alpha = (Uint8)alpha;
@@ -173,6 +188,11 @@ void cUITextBox::AutoAlign() {
 	}
 }
 
+Uint32 cUITextBox::OnFocusLoss() {
+	mSelCurInit = mSelCurEnd = -1;
+	return 1;
+}
+
 void cUITextBox::OnSizeChange() {
 	AutoShrink();
 	AutoSize();
@@ -225,6 +245,112 @@ const eeInt& cUITextBox::GetNumLines() const {
 
 const eeVector2f& cUITextBox::AlignOffset() const {
 	return mAlignOffset;
+}
+
+Uint32 cUITextBox::OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags ) {
+	if ( IsTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
+		eeVector2i controlPos( Pos );
+		WorldToControl( controlPos );
+
+		Int32 curPos = mTextCache->Font()->FindClosestCursorPosFromPoint( mTextCache->Text(), controlPos );
+
+		if ( -1 != curPos ) {
+			mTextCache->Font()->SelectSubStringFromCursor( mTextCache->Text(), curPos, mSelCurInit, mSelCurEnd );
+
+			mControlFlags &= ~UI_CTRL_FLAG_SELECTING;
+		}
+	}
+
+	return cUIComplexControl::OnMouseDoubleClick( Pos, Flags );
+}
+
+Uint32 cUITextBox::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
+	if ( IsTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
+		if ( mSelCurInit == mSelCurEnd ) {
+			mSelCurInit = mSelCurEnd = -1;
+		}
+
+		mControlFlags &= ~UI_CTRL_FLAG_SELECTING;
+	}
+
+	return 1;
+}
+
+Uint32 cUITextBox::OnMouseDown( const eeVector2i& Pos, const Uint32 Flags ) {
+	if ( IsTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
+		eeVector2i controlPos( Pos );
+		WorldToControl( controlPos );
+
+		Int32 curPos = mTextCache->Font()->FindClosestCursorPosFromPoint( mTextCache->Text(), controlPos );
+
+		if ( -1 != curPos ) {
+			if ( -1 == mSelCurInit || !( mControlFlags & UI_CTRL_FLAG_SELECTING ) ) {
+				mSelCurInit	= curPos;
+				mSelCurEnd	= curPos;
+			} else {
+				mSelCurEnd	= curPos;
+			}
+		}
+
+		mControlFlags |= UI_CTRL_FLAG_SELECTING;
+	}
+
+	return cUIComplexControl::OnMouseDown( Pos, Flags );
+}
+
+Uint32 cUITextBox::OnKeyDown( const cUIEventKey & Event ) {
+	if ( IsTextSelectionEnabled() ) {
+		if ( ( Event.Mod() & KEYMOD_LCTRL ) && Event.KeyCode() == KEY_A ) {
+			mSelCurInit	= 0;
+			mSelCurEnd	= mTextCache->Text().size();
+		} else if ( mSelCurInit >= 0 && mSelCurInit != mSelCurEnd ) {
+			if ( ( Event.Mod() & KEYMOD_LCTRL ) && ( Event.KeyCode() == KEY_C || Event.KeyCode() == KEY_X ) ) {
+				Int32 init		= eemin( mSelCurInit, mSelCurEnd );
+				Int32 end		= eemax( mSelCurInit, mSelCurEnd );
+				std::string clipStr( mTextCache->Text().substr( init, end - init ).ToUtf8() );
+				cUIManager::instance()->GetWindow()->GetClipboard()->SetText( clipStr );
+			} else if ( !String::IsCharacter( Event.KeyCode() ) ) {
+				mSelCurInit = mSelCurEnd = -1;
+			}
+		}
+	}
+
+	return 1;
+}
+
+void cUITextBox::DrawSelection() {
+	if ( IsTextSelectionEnabled() && mSelCurInit != mSelCurEnd ) {
+		Int32 init		= eemin( mSelCurInit, mSelCurEnd );
+		Int32 end		= eemax( mSelCurInit, mSelCurEnd );
+		Int32 lastEnd	= end;
+		eeVector2i initPos, endPos;
+
+		cPrimitives P;
+		P.SetColor( mFontSelectionBackColor );
+
+		do {
+			initPos	= mTextCache->Font()->GetCursorPos( mTextCache->Text(), init );
+			lastEnd = mTextCache->Text().find_first_of( '\n', init );
+
+			if ( lastEnd < end && -1 != lastEnd ) {
+				endPos	= mTextCache->Font()->GetCursorPos( mTextCache->Text(), lastEnd );
+				init	= lastEnd + 1;
+			} else {
+				endPos	= mTextCache->Font()->GetCursorPos( mTextCache->Text(), end );
+				lastEnd = end;
+			}
+
+			P.DrawRectangle( eeRectf( mScreenPos.x + initPos.x + mAlignOffset.x + mPadding.Left,
+									  mScreenPos.y + initPos.y - mTextCache->Font()->GetFontHeight() + mAlignOffset.y + mPadding.Top,
+									  mScreenPos.x + endPos.x + mAlignOffset.x + mPadding.Left,
+									  mScreenPos.y + endPos.y + mAlignOffset.y + mPadding.Top )
+			);
+		} while ( end != lastEnd );
+	}
+}
+
+bool cUITextBox::IsTextSelectionEnabled() const {
+	return 0 != ( mFlags & UI_TEXT_SELECTION_ENABLED );
 }
 
 }}

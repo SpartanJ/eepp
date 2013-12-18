@@ -380,6 +380,15 @@ Int32 cFont::FindClosestCursorPosFromPoint( const String& Text, const eeVector2i
 			}
 
 			if ( pos.x <= Width && pos.x >= lWidth && pos.y <= Height && pos.y >= lHeight ) {
+				if ( i + 1 < tSize ) {
+					Int32 curDist	= eeabs( pos.x - lWidth );
+					Int32 nextDist	= eeabs( pos.x - ( lWidth + mGlyphs[CharID].Advance ) );
+
+					if ( nextDist < curDist ) {
+						return  i + 1;
+					}
+				}
+
 				return i;
 			}
 
@@ -399,6 +408,71 @@ Int32 cFont::FindClosestCursorPosFromPoint( const String& Text, const eeVector2i
 	}
 
 	return -1;
+}
+
+eeVector2i cFont::GetCursorPos( const String& Text, const Uint32& Pos ) {
+	eeFloat Width = 0, Height = GetFontHeight();
+	Int32 CharID;
+	Int32 tGlyphSize = mGlyphs.size();
+	std::size_t tSize = ( Pos < Text.size() ) ? Pos : Text.size();
+
+	for (std::size_t i = 0; i < tSize; ++i) {
+		CharID = static_cast<Int32>( Text.at(i) );
+
+		if ( CharID >= 0 && CharID < tGlyphSize ) {
+			Width += mGlyphs[CharID].Advance;
+
+			if ( CharID == '\t' ) {
+				Width += mGlyphs[CharID].Advance * 3;
+			}
+
+			if ( CharID == '\n' ) {
+				Width = 0;
+				Height += GetFontHeight();
+			}
+		}
+	}
+
+	return eeVector2i( Width, Height );
+}
+
+static bool IsStopSelChar( Uint32 c ) {
+	return ( !String::IsCharacter( c ) && !String::IsNumber( c ) ) ||
+			' ' == c ||
+			'.' == c ||
+			',' == c ||
+			';' == c ||
+			':' == c ||
+			'\n' == c ||
+			'"' == c ||
+			'\'' == c;
+}
+
+void cFont::SelectSubStringFromCursor( const String& Text, const Int32& CurPos, Int32& InitCur, Int32& EndCur ) {
+	InitCur	= 0;
+	EndCur	= Text.size();
+
+	for ( std::size_t i = CurPos; i < Text.size(); i++ ) {
+		if ( IsStopSelChar( Text[i] ) ) {
+			EndCur = i;
+			break;
+		}
+	}
+
+	if ( 0 == CurPos ) {
+		InitCur = 0;
+	}
+
+	for ( Int32 i = CurPos; i >= 0; i-- ) {
+		if ( IsStopSelChar( Text[i] ) ) {
+			InitCur = i + 1;
+			break;
+		}
+	}
+
+	if ( InitCur == EndCur ) {
+		InitCur = EndCur = -1;
+	}
 }
 
 void cFont::CacheWidth() {

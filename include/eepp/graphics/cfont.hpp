@@ -127,6 +127,12 @@ class EE_API cFont {
 
 		/** Finds the closest cursor position to the point position */
 		Int32 FindClosestCursorPosFromPoint( const String & Text, const eeVector2i& pos );
+
+		/** Simulates a selection request and return the initial and end cursor position when the selection worked. Otherwise both parameters will be -1. */
+		void SelectSubStringFromCursor( const String& Text, const Int32& CurPos, Int32& InitCur, Int32& EndCur );
+
+		/** @return The cursor position inside the string */
+		eeVector2i GetCursorPos( const String& Text, const Uint32& Pos );
 	protected:
 		Uint32 						mType;
 		std::string					mFontName;

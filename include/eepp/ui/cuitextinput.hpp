@@ -73,7 +73,13 @@ class EE_API cUITextInput : public cUITextBox {
 
 		virtual Uint32 OnMouseClick( const eeVector2i& Pos, const Uint32 Flags );
 
+		virtual Uint32 OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags );
+
 		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags );
+
+		virtual Uint32 OnMouseDown( const eeVector2i& Pos, const Uint32 Flags );
+
+		virtual Uint32 OnKeyDown( const cUIEventKey &Event );
 
 		virtual Uint32 OnFocus();
 

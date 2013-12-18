@@ -124,10 +124,7 @@ Uint32 cUITextInput::OnFocus() {
 
 Uint32 cUITextInput::OnFocusLoss() {
 	mTextBuffer.Active( false );
-
-	cUITextBox::OnFocusLoss();
-
-	return 1;
+	return cUITextBox::OnFocusLoss();
 }
 
 Uint32 cUITextInput::OnPressEnter() {
@@ -238,19 +235,68 @@ Uint32 cUITextInput::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
 
 		if ( -1 != curPos ) {
 			mTextBuffer.CurPos( curPos );
-
-			mShowingWait	= true;
-			mWaitCursorTime	= 0.f;
+			ResetWaitCursor();
 		}
 	}
 
 	return cUITextBox::OnMouseClick( Pos, Flags );
 }
 
+Uint32 cUITextInput::OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags ) {
+	cUITextBox::OnMouseDoubleClick( Pos, Flags );
+
+	if ( IsTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && mSelCurEnd != -1 ) {
+		mTextBuffer.CurPos( mSelCurEnd );
+		ResetWaitCursor();
+	}
+
+	return 1;
+}
+
+Uint32 cUITextInput::OnMouseDown( const eeVector2i& Pos, const Uint32 Flags ) {
+	cUITextBox::OnMouseDown( Pos, Flags );
+
+	if ( IsTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && mSelCurEnd != -1 ) {
+		mTextBuffer.CurPos( mSelCurEnd );
+		ResetWaitCursor();
+	}
+
+	return 1;
+}
+
 Uint32 cUITextInput::OnMouseExit( const eeVector2i& Pos, const Uint32 Flags ) {
 	cUIControl::OnMouseExit( Pos, Flags );
 
 	cUIManager::instance()->SetCursor( EE_CURSOR_ARROW );
+
+	return 1;
+}
+
+Uint32 cUITextInput::OnKeyDown( const cUIEventKey & Event ) {
+	cUITextBox::OnKeyDown( Event );
+
+	if ( IsTextSelectionEnabled() ) {
+		if ( ( Event.Mod() & KEYMOD_LCTRL ) && Event.KeyCode() == KEY_A && 0 == mSelCurInit && (Int32)mTextCache->Text().size() == mSelCurEnd ) {
+			mTextBuffer.CurPos( mSelCurEnd );
+			ResetWaitCursor();
+		}
+
+		if ( mSelCurInit >= 0 && mSelCurInit != mSelCurEnd ) {
+			if ( ( ( Event.Mod() & KEYMOD_LCTRL ) && ( Event.KeyCode() == KEY_X || Event.KeyCode() == KEY_V ) ) ) {
+				Int32 init		= eemin( mSelCurInit, mSelCurEnd );
+				Int32 end		= eemax( mSelCurInit, mSelCurEnd );
+				String iniStr( mTextCache->Text().substr( 0, init ) );
+				String endStr( mTextCache->Text().substr( end ) );
+
+				Text( iniStr + endStr );
+
+				mTextBuffer.CurPos( mSelCurInit );
+				ResetWaitCursor();
+
+				mSelCurInit = mSelCurEnd = -1;
+			}
+		}
+	}
 
 	return 1;
 }

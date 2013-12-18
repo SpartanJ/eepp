@@ -326,7 +326,7 @@ void cEETest::CreateUI() {
 	InputParams.Parent( C );
 	InputParams.PosSet( 20, 216 );
 	InputParams.Size = eeSize( 200, 22 );
-	InputParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE | UI_AUTO_PADDING;
+	InputParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED;
 	cUITextInput * Input = eeNew( cUITextInput, ( InputParams ) );
 	Input->Visible( true );
 	Input->Enabled( true );
@@ -459,7 +459,7 @@ void cEETest::CreateUI() {
 	ComboParams.Parent( C );
 	ComboParams.PosSet( 20, 80 );
 	ComboParams.Size = eeSize( 100, 1 );
-	ComboParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_AUTO_SIZE | UI_TOUCH_DRAG_ENABLED;
+	ComboParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_AUTO_SIZE | UI_TOUCH_DRAG_ENABLED | UI_TEXT_SELECTION_ENABLED;
 	cUIComboBox * mComboBox = eeNew( cUIComboBox, ( ComboParams ) );
 	mComboBox->Visible( true );
 	mComboBox->Enabled( true );
@@ -515,7 +515,7 @@ void cEETest::CreateUI() {
 	TEParams.Parent( C );
 	TEParams.PosSet( 5, 245 );
 	TEParams.Size	= eeSize( 315, 130 );
-	TEParams.Flags = UI_AUTO_PADDING | UI_CLIP_ENABLE;
+	TEParams.Flags = UI_AUTO_PADDING | UI_CLIP_ENABLE | UI_TEXT_SELECTION_ENABLED;
 	cUITextEdit * TextEdit = eeNew( cUITextEdit, ( TEParams ) );
 	TextEdit->Visible( true );
 	TextEdit->Enabled( true );
@@ -659,11 +659,11 @@ void cEETest::CreateDecoratedWindow() {
 	TEdit->Text( mBuda );
 	TabWidget->Add( "TextEdit", TEdit );
 
-	cUITextBox * Txt = mTheme->CreateTextInput( TabWidget, eeSize(), eeVector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT );
+	cUITextBox * Txt = mTheme->CreateTextInput( TabWidget, eeSize(), eeVector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT | UI_TEXT_SELECTION_ENABLED );
 	Txt->Text( mBuda );
 	TabWidget->Add( "TextInput", Txt );
 
-	TabWidget->Add( "TextBox", mTheme->CreateTextBox( mBuda, TabWidget, eeSize(), eeVector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT ) );
+	TabWidget->Add( "TextBox", mTheme->CreateTextBox( mBuda, TabWidget, eeSize(), eeVector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT | UI_TEXT_SELECTION_ENABLED ) );
 
 	CreateWinMenu();
 }

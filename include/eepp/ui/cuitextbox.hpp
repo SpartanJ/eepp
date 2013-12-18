@@ -13,7 +13,8 @@ class EE_API cUITextBox : public cUIComplexControl {
 					cUIComplexControl::CreateParams(),
 					Font( NULL ),
 					FontColor( 0, 0, 0, 255 ),
-					FontShadowColor( 255, 255, 255, 150 )
+					FontShadowColor( 255, 255, 255, 150 ),
+					FontSelectionBackColor( 150, 150, 150, 150 )
 				{
 					cUITheme * Theme = cUIThemeManager::instance()->DefaultTheme();
 
@@ -32,6 +33,7 @@ class EE_API cUITextBox : public cUIComplexControl {
 				cFont * 	Font;
 				eeColorA 	FontColor;
 				eeColorA 	FontShadowColor;
+				eeColorA	FontSelectionBackColor;
 		};
 
 		cUITextBox( const cUITextBox::CreateParams& Params );
@@ -62,6 +64,10 @@ class EE_API cUITextBox : public cUIComplexControl {
 
 		void ShadowColor( const eeColorA& color );
 
+		const eeColorA& SelectionBackColor() const;
+
+		void SelectionBackColor( const eeColorA& color );
+
 		virtual void OnTextChanged();
 
 		virtual void OnFontChanged();
@@ -83,13 +89,20 @@ class EE_API cUITextBox : public cUIComplexControl {
 		const eeVector2f& AlignOffset() const;
 
 		virtual void ShrinkText( const Uint32& MaxWidth );
+
+		bool IsTextSelectionEnabled() const;
 	protected:
 		cTextCache *	mTextCache;
 		String			mString;
 		eeColorA 		mFontColor;
 		eeColorA 		mFontShadowColor;
+		eeColorA		mFontSelectionBackColor;
 		eeVector2f 		mAlignOffset;
 		eeRecti			mPadding;
+		Int32			mSelCurInit;
+		Int32			mSelCurEnd;
+
+		virtual void DrawSelection();
 
 		virtual void OnSizeChange();
 
@@ -98,6 +111,17 @@ class EE_API cUITextBox : public cUIComplexControl {
 		virtual void AutoSize();
 
 		virtual void AutoAlign();
+
+		virtual Uint32 OnFocusLoss();
+
+		virtual Uint32 OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags );
+
+		virtual Uint32 OnMouseClick( const eeVector2i& Pos, const Uint32 Flags );
+
+		virtual Uint32 OnMouseDown( const eeVector2i& Pos, const Uint32 Flags );
+
+		virtual Uint32 OnKeyDown( const cUIEventKey &Event );
+
 };
 
 }}

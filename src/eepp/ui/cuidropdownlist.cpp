@@ -19,6 +19,9 @@ cUIDropDownList::cUIDropDownList( cUIDropDownList::CreateParams& Params ) :
 		if ( Params.Flags & UI_TOUCH_DRAG_ENABLED )
 			flags |= UI_TOUCH_DRAG_ENABLED;
 
+		if ( Params.Flags & UI_TEXT_SELECTION_ENABLED )
+			flags |= UI_TEXT_SELECTION_ENABLED;
+
 		cUITheme * Theme = cUIThemeManager::instance()->DefaultTheme();
 
 		if ( NULL != Theme ) {

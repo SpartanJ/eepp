@@ -27,6 +27,9 @@
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 	#include <CoreFoundation/CoreFoundation.h>
 #elif EE_PLATFORM == EE_PLATFORM_WIN
+	#ifndef NOMINMAX
+		#define NOMINMAX
+	#endif
 	#include <windows.h>
 	#undef GetDiskFreeSpace
 	#undef GetTempPath
@@ -143,6 +146,14 @@ static std::string GetWindowsVersion() {
 					os += "Windows 8";
 				} else {
 					os += "Windows Server 2012";
+				}
+			}
+
+			if ( osvi.dwMinorVersion == 3 ) {
+				if( osvi.wProductType == VER_NT_WORKSTATION ) {
+					os += "Windows 8.1";
+				} else {
+					os += "Windows Server 2012 R2";
 				}
 			}
 		}

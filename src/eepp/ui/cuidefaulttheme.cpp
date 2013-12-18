@@ -162,7 +162,7 @@ cUIComboBox * cUIDefaultTheme::CreateComboBox( cUIControl * Parent, const eeSize
 	ComboParams.ListBox = ListBox;
 
 	if ( UseDefaultThemeValues() ) {
-		ComboParams.Flags |= UI_AUTO_SIZE;
+		ComboParams.Flags |= UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED;
 	}
 
 	cUIComboBox * Ctrl = eeNew( cUIComboBox, ( ComboParams ) );

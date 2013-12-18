@@ -17,6 +17,9 @@ cUISpinBox::cUISpinBox( const cUISpinBox::CreateParams& Params ) :
 	if ( InputParams.Flags & UI_AUTO_SIZE )
 		InputParams.Flags &= ~UI_AUTO_SIZE;
 
+	if ( InputParams.Flags & UI_TEXT_SELECTION_ENABLED )
+		InputParams.Flags |= UI_TEXT_SELECTION_ENABLED;
+
 	InputParams.Flags |= UI_AUTO_PADDING;
 
 	mInput		= eeNew( cUITextInput, ( InputParams ) );

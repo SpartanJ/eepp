@@ -66,7 +66,7 @@ cUICommonDialog::cUICommonDialog( const cUICommonDialog::CreateParams& Params ) 
 
 	cUITextInput::CreateParams TInputParams;
 	TInputParams.Parent( Container() );
-	TInputParams.Flags = UI_AUTO_PADDING | UI_CLIP_ENABLE | UI_ANCHOR_RIGHT | UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_VALIGN_CENTER;
+	TInputParams.Flags = UI_AUTO_PADDING | UI_CLIP_ENABLE | UI_ANCHOR_RIGHT | UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_VALIGN_CENTER | UI_TEXT_SELECTION_ENABLED;
 	TInputParams.PosSet( 70, 6 );
 	TInputParams.SizeSet( Container()->Size().Width() - TInputParams.Pos.x - 42, 22 );
 	mPath = eeNew( cUITextInput, ( TInputParams ) );
