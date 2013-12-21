@@ -9,7 +9,9 @@ cInputTextBuffer::cInputTextBuffer( const bool& active, const bool& supportNewLi
 	mFlags(0),
 	mCallback(0),
 	mPromptPos(0),
-	mMaxLength(INPUT_LENGHT_MAX)
+	mMaxLength(INPUT_LENGHT_MAX),
+	mSelCurInit(-1),
+	mSelCurEnd(-1)
 {
 	if ( NULL == mWindow ) {
 		mWindow = cEngine::instance()->GetCurrentWindow();
@@ -33,7 +35,9 @@ cInputTextBuffer::cInputTextBuffer( cWindow * window ) :
 	mFlags(0),
 	mCallback(0),
 	mPromptPos(0),
-	mMaxLength(INPUT_LENGHT_MAX)
+	mMaxLength(INPUT_LENGHT_MAX),
+	mSelCurInit(-1),
+	mSelCurEnd(-1)
 {
 	if ( NULL == mWindow ) {
 		mWindow = cEngine::instance()->GetCurrentWindow();
@@ -204,6 +208,48 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 				}
 				case InputEvent::KeyDown:
 				{
+					if ( mSelCurInit >= 0 && mSelCurInit != mSelCurEnd ) {
+						if ( ( Event->key.keysym.mod & KEYMOD_CTRL ) && ( Event->key.keysym.sym == KEY_C || Event->key.keysym.sym == KEY_X ) ) {
+							Int32 init		= eemin( mSelCurInit, mSelCurEnd );
+							Int32 end		= eemax( mSelCurInit, mSelCurEnd );
+							std::string clipStr( mText.substr( init, end - init ).ToUtf8() );
+							mWindow->GetClipboard()->SetText( clipStr );
+						} else if (	( String::IsCharacter( Event->key.keysym.sym ) ||
+									( Event->key.keysym.sym >= KEY_UP && Event->key.keysym.sym <= KEY_END ) ) &&
+									!( Event->key.keysym.sym >= KEY_NUMLOCK && Event->key.keysym.sym <= KEY_COMPOSE )
+						) {
+							if ( ! ( Input->ShiftPressed() && ( Event->key.keysym.sym >= KEY_UP && Event->key.keysym.sym <= KEY_END ) ) ) {
+								SelCurInit( -1 );
+								SelCurEnd( -1 );
+							}
+						}
+
+						if ( ( ( Event->key.keysym.sym & KEYMOD_LCTRL ) &&
+							   ( Event->key.keysym.sym == KEY_X || Event->key.keysym.sym == KEY_V ) ) ||
+							Event->key.keysym.sym == KEY_DELETE
+						) {
+							if ( -1 != mSelCurInit && -1 != mSelCurEnd ) {
+								Int32 init		= eemin( mSelCurInit, mSelCurEnd );
+								Int32 end		= eemax( mSelCurInit, mSelCurEnd );
+								String iniStr( mText.substr( 0, init ) );
+								String endStr( mText.substr( end ) );
+
+								Buffer( iniStr + endStr );
+
+								CurPos( mSelCurInit );
+
+								SelCurInit( -1 );
+								SelCurEnd( -1 );
+							}
+						}
+					}
+
+					if ( ( Event->key.keysym.mod & KEYMOD_CTRL ) && Event->key.keysym.sym == KEY_A ) {
+						SelCurInit( 0 );
+						SelCurEnd( mText.size() );
+						CurPos( mSelCurEnd );
+					}
+
 					if ( Input->ShiftPressed() || Input->ControlPressed() ) {
 						if ( !AllowOnlyNumbers() &&
 							(	( ( Event->key.keysym.mod & KEYMOD_SHIFT ) && c == KEY_INSERT ) ||
@@ -284,11 +330,13 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 						if ( ( mPromptPos - 1 ) >= 0 ) {
 							mPromptPos--;
 							AutoPrompt( false );
+							ShiftSelection( mPromptPos + 1 );
 						}
 					} else if ( c == KEY_RIGHT ) {
 						if ( ( mPromptPos + 1 ) < (eeInt)mText.size() ) {
 							mPromptPos++;
 							AutoPrompt(false);
+							ShiftSelection( mPromptPos - 1 );
 						} else if ( ( mPromptPos + 1 ) == (eeInt)mText.size() ) {
 							AutoPrompt( true );
 						}
@@ -309,6 +357,8 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 				case InputEvent::KeyUp:
 				{
 					if ( SupportNewLine() ) {
+						eeInt lPromtpPos = mPromptPos;
+
 						if ( c == KEY_END ) {
 							for ( Uint32 i = mPromptPos; i < mText.size(); i++ )  {
 								if ( mText[i] == '\n' ) {
@@ -322,6 +372,8 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 									AutoPrompt( false );
 								}
 							}
+
+							ShiftSelection( lPromtpPos );
 						}
 
 						if ( c == KEY_HOME ) {
@@ -341,6 +393,8 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 									}
 								}
 							}
+
+							ShiftSelection( lPromtpPos );
 						}
 					} else {
 						if ( c == KEY_END ) {
@@ -375,8 +429,30 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 	}
 }
 
+void cInputTextBuffer::ShiftSelection( const eeInt& lastPromtpPos ) {
+	cInput * Input = mWindow->GetInput();
+
+	if ( Input->ShiftPressed() && !Input->ControlPressed() ) {
+		if ( SelCurInit() != CurPos() ) {
+			SelCurEnd( CurPos() );
+		} else {
+			SelCurInit( CurPos() );
+		}
+
+		if ( -1 == SelCurInit() ) {
+			SelCurInit( lastPromtpPos );
+		}
+
+		if ( -1 == SelCurEnd() ) {
+			SelCurEnd( lastPromtpPos );
+		}
+	}
+}
+
 void cInputTextBuffer::MovePromptRowDown( const bool& breakit ) {
 	if ( SupportFreeEditing() && SupportNewLine() ) {
+		eeInt lPromtpPos = mPromptPos;
+
 		Uint32 dNLPos	= 0;
 		GetCurPosLinePos( dNLPos );
 		Uint32 dCharsTo = mPromptPos - dNLPos;
@@ -413,11 +489,15 @@ void cInputTextBuffer::MovePromptRowDown( const bool& breakit ) {
 
 			AutoPrompt( false );
 		}
+
+		ShiftSelection( lPromtpPos );
 	}
 }
 
 void cInputTextBuffer::MovePromptRowUp( const bool& breakit ) {
 	if ( SupportFreeEditing() && SupportNewLine() ) {
+		eeInt lPromtpPos = mPromptPos;
+
 		Uint32 uNLPos	= 0;
 		Uint32 uLineNum	= GetCurPosLinePos( uNLPos );
 		Uint32 uCharsTo = mPromptPos - uNLPos;
@@ -449,6 +529,8 @@ void cInputTextBuffer::MovePromptRowUp( const bool& breakit ) {
 
 			AutoPrompt( false );
 		}
+
+		ShiftSelection( lPromtpPos );
 	}
 }
 
@@ -588,6 +670,22 @@ bool cInputTextBuffer::SupportCopyPaste() {
 
 void cInputTextBuffer::CursorToEnd() {
 	mPromptPos = mText.size();
+}
+
+void cInputTextBuffer::SelCurInit( const Int32& init ) {
+	mSelCurInit = init;
+}
+
+void cInputTextBuffer::SelCurEnd( const Int32& end ) {
+	mSelCurEnd = end;
+}
+
+const Int32& cInputTextBuffer::SelCurInit() const {
+	return mSelCurInit;
+}
+
+const Int32& cInputTextBuffer::SelCurEnd() const {
+	return mSelCurEnd;
 }
 
 }}

@@ -77,10 +77,6 @@ class EE_API cUITextInput : public cUITextBox {
 
 		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags );
 
-		virtual Uint32 OnMouseDown( const eeVector2i& Pos, const Uint32 Flags );
-
-		virtual Uint32 OnKeyDown( const cUIEventKey &Event );
-
 		virtual Uint32 OnFocus();
 
 		virtual Uint32 OnFocusLoss();
@@ -92,6 +88,14 @@ class EE_API cUITextInput : public cUITextBox {
 		void DrawWaitingCursor();
 
 		virtual void UpdateText();
+
+		virtual void SelCurInit( const Int32& init );
+
+		virtual void SelCurEnd( const Int32& end );
+
+		virtual Int32 SelCurInit();
+
+		virtual Int32 SelCurEnd();
 };
 
 }}

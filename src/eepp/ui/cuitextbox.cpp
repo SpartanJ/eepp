@@ -189,7 +189,9 @@ void cUITextBox::AutoAlign() {
 }
 
 Uint32 cUITextBox::OnFocusLoss() {
-	mSelCurInit = mSelCurEnd = -1;
+	SelCurInit( -1 );
+	SelCurEnd( -1 );
+
 	return 1;
 }
 
@@ -255,7 +257,12 @@ Uint32 cUITextBox::OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags
 		Int32 curPos = mTextCache->Font()->FindClosestCursorPosFromPoint( mTextCache->Text(), controlPos );
 
 		if ( -1 != curPos ) {
-			mTextCache->Font()->SelectSubStringFromCursor( mTextCache->Text(), curPos, mSelCurInit, mSelCurEnd );
+			Int32 tSelCurInit, tSelCurEnd;
+
+			mTextCache->Font()->SelectSubStringFromCursor( mTextCache->Text(), curPos, tSelCurInit, tSelCurEnd );
+
+			SelCurInit( tSelCurInit );
+			SelCurEnd( tSelCurEnd );
 
 			mControlFlags &= ~UI_CTRL_FLAG_SELECTING;
 		}
@@ -266,8 +273,9 @@ Uint32 cUITextBox::OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags
 
 Uint32 cUITextBox::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
 	if ( IsTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
-		if ( mSelCurInit == mSelCurEnd ) {
-			mSelCurInit = mSelCurEnd = -1;
+		if ( SelCurInit() == SelCurEnd() ) {
+			SelCurInit( -1 );
+			SelCurEnd( -1 );
 		}
 
 		mControlFlags &= ~UI_CTRL_FLAG_SELECTING;
@@ -284,11 +292,11 @@ Uint32 cUITextBox::OnMouseDown( const eeVector2i& Pos, const Uint32 Flags ) {
 		Int32 curPos = mTextCache->Font()->FindClosestCursorPosFromPoint( mTextCache->Text(), controlPos );
 
 		if ( -1 != curPos ) {
-			if ( -1 == mSelCurInit || !( mControlFlags & UI_CTRL_FLAG_SELECTING ) ) {
-				mSelCurInit	= curPos;
-				mSelCurEnd	= curPos;
+			if ( -1 == SelCurInit() || !( mControlFlags & UI_CTRL_FLAG_SELECTING ) ) {
+				SelCurInit( curPos );
+				SelCurEnd( curPos );
 			} else {
-				mSelCurEnd	= curPos;
+				SelCurEnd( curPos );
 			}
 		}
 
@@ -298,30 +306,10 @@ Uint32 cUITextBox::OnMouseDown( const eeVector2i& Pos, const Uint32 Flags ) {
 	return cUIComplexControl::OnMouseDown( Pos, Flags );
 }
 
-Uint32 cUITextBox::OnKeyDown( const cUIEventKey & Event ) {
-	if ( IsTextSelectionEnabled() ) {
-		if ( ( Event.Mod() & KEYMOD_LCTRL ) && Event.KeyCode() == KEY_A ) {
-			mSelCurInit	= 0;
-			mSelCurEnd	= mTextCache->Text().size();
-		} else if ( mSelCurInit >= 0 && mSelCurInit != mSelCurEnd ) {
-			if ( ( Event.Mod() & KEYMOD_LCTRL ) && ( Event.KeyCode() == KEY_C || Event.KeyCode() == KEY_X ) ) {
-				Int32 init		= eemin( mSelCurInit, mSelCurEnd );
-				Int32 end		= eemax( mSelCurInit, mSelCurEnd );
-				std::string clipStr( mTextCache->Text().substr( init, end - init ).ToUtf8() );
-				cUIManager::instance()->GetWindow()->GetClipboard()->SetText( clipStr );
-			} else if ( !String::IsCharacter( Event.KeyCode() ) ) {
-				mSelCurInit = mSelCurEnd = -1;
-			}
-		}
-	}
-
-	return 1;
-}
-
 void cUITextBox::DrawSelection() {
-	if ( IsTextSelectionEnabled() && mSelCurInit != mSelCurEnd ) {
-		Int32 init		= eemin( mSelCurInit, mSelCurEnd );
-		Int32 end		= eemax( mSelCurInit, mSelCurEnd );
+	if ( IsTextSelectionEnabled() && SelCurInit() != SelCurEnd() ) {
+		Int32 init		= eemin( SelCurInit(), SelCurEnd() );
+		Int32 end		= eemax( SelCurInit(), SelCurEnd() );
 		Int32 lastEnd	= end;
 		eeVector2i initPos, endPos;
 
@@ -351,6 +339,22 @@ void cUITextBox::DrawSelection() {
 
 bool cUITextBox::IsTextSelectionEnabled() const {
 	return 0 != ( mFlags & UI_TEXT_SELECTION_ENABLED );
+}
+
+void cUITextBox::SelCurInit( const Int32& init ) {
+	mSelCurInit = init;
+}
+
+void cUITextBox::SelCurEnd( const Int32& end ) {
+	mSelCurEnd = end;
+}
+
+Int32 cUITextBox::SelCurInit() {
+	return mSelCurInit;
+}
+
+Int32 cUITextBox::SelCurEnd() {
+	return mSelCurEnd;
 }
 
 }}

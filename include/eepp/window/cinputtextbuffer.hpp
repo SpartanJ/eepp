@@ -111,6 +111,18 @@ class EE_API cInputTextBuffer {
 
 		/** Set the cursor to the last character of the buffer. */
 		void CursorToEnd();
+
+		/** Set the selection cursor initial position */
+		void SelCurInit( const Int32& init );
+
+		/** Set the selection cursor final position */
+		void SelCurEnd( const Int32& end );
+
+		/** @return The selection cursor initial position */
+		const Int32& SelCurInit() const;
+
+		/** @return The selection cursor final position */
+		const Int32& SelCurEnd() const;
 	protected:
 		cWindow *			mWindow;
 		String				mText;
@@ -120,6 +132,8 @@ class EE_API cInputTextBuffer {
 		EnterCallback		mEnterCall;
 		Uint32				mMaxLength;
 		std::vector<Uint32>	mIgnoredChars;
+		Int32				mSelCurInit;
+		Int32				mSelCurEnd;
 
 		void AutoPrompt( const bool& set );
 
@@ -142,6 +156,8 @@ class EE_API cInputTextBuffer {
 		bool ValidChar( const Uint32& c );
 
 		void TryAddChar( const Uint32& c );
+
+		void ShiftSelection( const eeInt& lastPromtpPos );
 };
 
 }}

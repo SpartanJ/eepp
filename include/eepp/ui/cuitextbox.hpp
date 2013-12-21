@@ -120,7 +120,13 @@ class EE_API cUITextBox : public cUIComplexControl {
 
 		virtual Uint32 OnMouseDown( const eeVector2i& Pos, const Uint32 Flags );
 
-		virtual Uint32 OnKeyDown( const cUIEventKey &Event );
+		virtual void SelCurInit( const Int32& init );
+
+		virtual void SelCurEnd( const Int32& end );
+
+		virtual Int32 SelCurInit();
+
+		virtual Int32 SelCurEnd();
 
 };
 

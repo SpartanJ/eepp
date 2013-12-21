@@ -245,19 +245,8 @@ Uint32 cUITextInput::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
 Uint32 cUITextInput::OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags ) {
 	cUITextBox::OnMouseDoubleClick( Pos, Flags );
 
-	if ( IsTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && mSelCurEnd != -1 ) {
-		mTextBuffer.CurPos( mSelCurEnd );
-		ResetWaitCursor();
-	}
-
-	return 1;
-}
-
-Uint32 cUITextInput::OnMouseDown( const eeVector2i& Pos, const Uint32 Flags ) {
-	cUITextBox::OnMouseDown( Pos, Flags );
-
-	if ( IsTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && mSelCurEnd != -1 ) {
-		mTextBuffer.CurPos( mSelCurEnd );
+	if ( IsTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && SelCurEnd() != -1 ) {
+		mTextBuffer.CurPos( SelCurEnd() );
 		ResetWaitCursor();
 	}
 
@@ -272,33 +261,24 @@ Uint32 cUITextInput::OnMouseExit( const eeVector2i& Pos, const Uint32 Flags ) {
 	return 1;
 }
 
-Uint32 cUITextInput::OnKeyDown( const cUIEventKey & Event ) {
-	cUITextBox::OnKeyDown( Event );
+void cUITextInput::SelCurInit( const Int32& init ) {
+	mTextBuffer.SelCurInit( init );
+}
 
-	if ( IsTextSelectionEnabled() ) {
-		if ( ( Event.Mod() & KEYMOD_LCTRL ) && Event.KeyCode() == KEY_A && 0 == mSelCurInit && (Int32)mTextCache->Text().size() == mSelCurEnd ) {
-			mTextBuffer.CurPos( mSelCurEnd );
-			ResetWaitCursor();
-		}
+void cUITextInput::SelCurEnd( const Int32& end ) {
+	mTextBuffer.SelCurEnd( end );
 
-		if ( mSelCurInit >= 0 && mSelCurInit != mSelCurEnd ) {
-			if ( ( ( Event.Mod() & KEYMOD_LCTRL ) && ( Event.KeyCode() == KEY_X || Event.KeyCode() == KEY_V ) ) ) {
-				Int32 init		= eemin( mSelCurInit, mSelCurEnd );
-				Int32 end		= eemax( mSelCurInit, mSelCurEnd );
-				String iniStr( mTextCache->Text().substr( 0, init ) );
-				String endStr( mTextCache->Text().substr( end ) );
-
-				Text( iniStr + endStr );
-
-				mTextBuffer.CurPos( mSelCurInit );
-				ResetWaitCursor();
-
-				mSelCurInit = mSelCurEnd = -1;
-			}
-		}
+	if ( mTextBuffer.SelCurEnd() != mTextBuffer.SelCurInit() ) {
+		mTextBuffer.CurPos( end );
 	}
+}
 
-	return 1;
+Int32 cUITextInput::SelCurInit() {
+	return mTextBuffer.SelCurInit();
+}
+
+Int32 cUITextInput::SelCurEnd() {
+	return mTextBuffer.SelCurEnd();
 }
 
 }}
