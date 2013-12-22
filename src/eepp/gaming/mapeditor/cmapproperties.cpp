@@ -242,7 +242,7 @@ cUIGridCell * cMapProperties::CreateCell() {
 	CellParams.Parent( mGenGrid->Container() );
 
 	cUITextInput::CreateParams TxtInputParams;
-	TxtInputParams.Flags = UI_CLIP_ENABLE | UI_VALIGN_CENTER | UI_AUTO_PADDING;
+	TxtInputParams.Flags = UI_CLIP_ENABLE | UI_VALIGN_CENTER | UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED;
 	TxtInputParams.MaxLength = LAYER_NAME_SIZE;
 
 	cUIComplexControl::CreateParams CControl;

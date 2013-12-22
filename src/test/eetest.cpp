@@ -75,7 +75,7 @@ void cEETest::Init() {
 		Scenes[4] = cb::Make0( this, &cEETest::Screen4 );
 		Scenes[5] = cb::Make0( this, &cEETest::Screen5 );
 
-		InBuf.Start();
+		//InBuf.Start();
 		InBuf.SupportNewLine( true );
 
 		SetRandomSeed( static_cast<Uint32>( Sys::GetSystemTime() * 1000 ) );
@@ -537,7 +537,7 @@ void cEETest::CreateUI() {
 
 	cUITextBox::CreateParams TxtBoxParams;
 	cUITextInput::CreateParams TxtInputParams;
-	TxtInputParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER;
+	TxtInputParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_TEXT_SELECTION_ENABLED;
 
 	cUIGfx::CreateParams TxtGfxParams;
 	TxtGfxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
@@ -655,11 +655,11 @@ void cEETest::CreateDecoratedWindow() {
 
 	cUITabWidget * TabWidget = mTheme->CreateTabWidget( mUIWindow->Container(), eeSize( 510, 250 ), eeVector2i( 10, 55 ), UI_HALIGN_CENTER | UI_VALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_TOP );
 
-	cUITextEdit * TEdit = mTheme->CreateTextEdit( TabWidget, eeSize(), eeVector2i(), UI_AUTO_PADDING );
+	cUITextEdit * TEdit = mTheme->CreateTextEdit( TabWidget, eeSize(), eeVector2i() );
 	TEdit->Text( mBuda );
 	TabWidget->Add( "TextEdit", TEdit );
 
-	cUITextBox * Txt = mTheme->CreateTextInput( TabWidget, eeSize(), eeVector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT | UI_TEXT_SELECTION_ENABLED );
+	cUITextInput * Txt = mTheme->CreateTextInput( TabWidget, eeSize(), eeVector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT | UI_TEXT_SELECTION_ENABLED );
 	Txt->Text( mBuda );
 	TabWidget->Add( "TextInput", Txt );
 
@@ -1317,20 +1317,22 @@ void cEETest::Render() {
 
 	mInfoText.Draw( 6.f, 6.f );
 
-	Uint32 NLPos = 0;
-	Uint32 LineNum = InBuf.GetCurPosLinePos( NLPos );
-	if ( InBuf.CurPos() == (eeInt)InBuf.Buffer().size() && !LineNum ) {
-		FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f );
-	} else {
-		FF2->SetText( InBuf.Buffer().substr( NLPos, InBuf.CurPos() - NLPos ) );
-		FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f + (eeFloat)LineNum * (eeFloat)FF2->GetFontHeight() );
+	if ( InBuf.Active() ) {
+		Uint32 NLPos = 0;
+		Uint32 LineNum = InBuf.GetCurPosLinePos( NLPos );
+		if ( InBuf.CurPos() == (eeInt)InBuf.Buffer().size() && !LineNum ) {
+			FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f );
+		} else {
+			FF2->SetText( InBuf.Buffer().substr( NLPos, InBuf.CurPos() - NLPos ) );
+			FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f + (eeFloat)LineNum * (eeFloat)FF2->GetFontHeight() );
+		}
+
+		FF2->SetText( "FPS: " + String::ToStr( mWindow->FPS() ) );
+		FF2->Draw( mWindow->GetWidth() - FF2->GetTextWidth() - 15, 0 );
+
+		FF2->SetText( InBuf.Buffer() );
+		FF2->Draw( 6, 180, FONT_DRAW_SHADOW );
 	}
-
-	FF2->SetText( "FPS: " + String::ToStr( mWindow->FPS() ) );
-	FF2->Draw( mWindow->GetWidth() - FF2->GetTextWidth() - 15, 0 );
-
-	FF2->SetText( InBuf.Buffer() );
-	FF2->Draw( 6, 180, FONT_DRAW_SHADOW );
 
 	cUIManager::instance()->Draw();
 	cUIManager::instance()->Update();

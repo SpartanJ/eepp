@@ -307,9 +307,14 @@ Uint32 cUITextBox::OnMouseDown( const eeVector2i& Pos, const Uint32 Flags ) {
 }
 
 void cUITextBox::DrawSelection() {
-	if ( IsTextSelectionEnabled() && SelCurInit() != SelCurEnd() ) {
+	if ( SelCurInit() != SelCurEnd() ) {
 		Int32 init		= eemin( SelCurInit(), SelCurEnd() );
 		Int32 end		= eemax( SelCurInit(), SelCurEnd() );
+
+		if ( init < 0 && end > (Int32)mTextCache->Text().size() ) {
+			return;
+		}
+
 		Int32 lastEnd	= end;
 		eeVector2i initPos, endPos;
 

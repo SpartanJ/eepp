@@ -17,6 +17,7 @@ cUITextInput::cUITextInput( const cUITextInput::CreateParams& Params ) :
 	mTextBuffer.Start();
 	mTextBuffer.Active( false );
 	mTextBuffer.SupportFreeEditing( Params.SupportFreeEditing );
+	mTextBuffer.TextSelectionEnabled( IsTextSelectionEnabled() );
 	mTextBuffer.MaxLength( Params.MaxLength );
 	mTextBuffer.SetReturnCallback( cb::Make0( this, &cUITextInput::PrivOnPressEnter ) );
 

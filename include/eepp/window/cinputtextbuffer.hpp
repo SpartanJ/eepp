@@ -15,7 +15,8 @@ enum INPUT_TEXTBUFFER_FLAGS {
 	INPUT_TB_CHANGE_SINCE_LAST_UPDATE	= 4,
 	INPUT_TB_FREE_EDITING				= 5,
 	INPUT_TB_PROMPT_AUTO_POS			= 6,
-	INPUT_TB_SUPPORT_COPY_PASTE			= 7
+	INPUT_TB_SUPPORT_COPY_PASTE			= 7,
+	INPUT_TB_TEXT_SELECTION_ENABLED		= 8
 };
 
 #define INPUT_LENGHT_MAX 0xFFFFFFFF
@@ -63,6 +64,12 @@ class EE_API cInputTextBuffer {
 
 		/** @return If is only allowing numbers, it allow floating point numbers? */
 		bool AllowDotsInNumbers();
+
+		/** @return If text selection feature is enabled */
+		bool TextSelectionEnabled();
+
+		/** Enable text selection */
+		void TextSelectionEnabled( const bool& enabled );
 
 		/** Start the input buffer */
 		void Start();
@@ -149,6 +156,8 @@ class EE_API cInputTextBuffer {
 
 		void PromptToRightFirstNoChar();
 
+		void EraseToPrevNoChar();
+
 		void EraseToNextNoChar();
 
 		bool IsIgnoredChar( const Uint32& c );
@@ -158,6 +167,10 @@ class EE_API cInputTextBuffer {
 		void TryAddChar( const Uint32& c );
 
 		void ShiftSelection( const eeInt& lastPromtpPos );
+
+		void RemoveSelection();
+
+		void ResetSelection();
 };
 
 }}
