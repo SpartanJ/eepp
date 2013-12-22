@@ -57,6 +57,11 @@ cRendererGL3::cRendererGL3() :
 	mCurActiveTex( 0 ),
 	mLoaded( false )
 {
+#if defined( EE_GLES2 ) || defined( EE_GLES_BOTH )
+	mQuadsSupported		= false;
+	mQuadVertexs		= 6;
+#endif
+
 	mStack = eeNew( cMatrixStack, () );
 	mStack->mProjectionMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
 	mStack->mModelViewMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
