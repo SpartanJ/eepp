@@ -23,9 +23,9 @@
 #ifndef _SDL_windowsvideo_h
 #define _SDL_windowsvideo_h
 
-#include "../SDL_sysvideo.h"
-
 #include "../../core/windows/SDL_windows.h"
+
+#include "../SDL_sysvideo.h"
 
 #if defined(_MSC_VER)
 #include <msctf.h>
@@ -44,6 +44,7 @@
 #include "SDL_windowsmodes.h"
 #include "SDL_windowsmouse.h"
 #include "SDL_windowsopengl.h"
+#include "SDL_windowsopengles.h"
 #include "SDL_windowswindow.h"
 #include "SDL_events.h"
 #include "SDL_loadso.h"
@@ -169,6 +170,10 @@ typedef struct SDL_VideoData
     TSFSink *ime_uielemsink;
     TSFSink *ime_ippasink;
 } SDL_VideoData;
+
+
+typedef struct IDirect3D9 IDirect3D9;
+extern SDL_bool D3D_LoadDLL( void **pD3DDLL, IDirect3D9 **pDirect3D9Interface );
 
 #endif /* _SDL_windowsvideo_h */
 

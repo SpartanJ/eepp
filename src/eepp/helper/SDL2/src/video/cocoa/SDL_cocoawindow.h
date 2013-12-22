@@ -27,20 +27,31 @@
 
 typedef struct SDL_WindowData SDL_WindowData;
 
-/* *INDENT-OFF* */
-#if MAC_OS_X_VERSION_MIN_REQUIRED >= 1060
+typedef enum
+{
+    PENDING_OPERATION_NONE,
+    PENDING_OPERATION_ENTER_FULLSCREEN,
+    PENDING_OPERATION_LEAVE_FULLSCREEN,
+    PENDING_OPERATION_MINIMIZE
+} PendingWindowOperation;
+
 @interface Cocoa_WindowListener : NSResponder <NSWindowDelegate> {
-#else
-@interface Cocoa_WindowListener : NSResponder {
-#endif
     SDL_WindowData *_data;
     BOOL observingVisible;
+    BOOL wasCtrlLeft;
     BOOL wasVisible;
+    BOOL isFullscreenSpace;
+    BOOL inFullscreenTransition;
+    PendingWindowOperation pendingWindowOperation;
 }
 
 -(void) listen:(SDL_WindowData *) data;
 -(void) pauseVisibleObservation;
 -(void) resumeVisibleObservation;
+-(BOOL) setFullscreenSpace:(BOOL) state;
+-(BOOL) isInFullscreenSpace;
+-(BOOL) isInFullscreenSpaceTransition;
+-(void) addPendingWindowOperation:(PendingWindowOperation) operation;
 -(void) close;
 
 /* Window delegate functionality */
@@ -52,6 +63,10 @@ typedef struct SDL_WindowData SDL_WindowData;
 -(void) windowDidDeminiaturize:(NSNotification *) aNotification;
 -(void) windowDidBecomeKey:(NSNotification *) aNotification;
 -(void) windowDidResignKey:(NSNotification *) aNotification;
+-(void) windowWillEnterFullScreen:(NSNotification *) aNotification;
+-(void) windowDidEnterFullScreen:(NSNotification *) aNotification;
+-(void) windowWillExitFullScreen:(NSNotification *) aNotification;
+-(void) windowDidExitFullScreen:(NSNotification *) aNotification;
 
 /* Window event handling */
 -(void) mouseDown:(NSEvent *) theEvent;
@@ -82,10 +97,13 @@ typedef enum {
 @end
 /* *INDENT-ON* */
 
+@class SDLOpenGLContext;
+
 struct SDL_WindowData
 {
     SDL_Window *window;
     NSWindow *nswindow;
+    NSMutableArray *nscontexts;
     SDL_bool created;
     Cocoa_WindowListener *listener;
     struct SDL_VideoData *videodata;

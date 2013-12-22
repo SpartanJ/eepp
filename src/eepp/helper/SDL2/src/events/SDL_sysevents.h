@@ -24,7 +24,8 @@
 
 /* Useful functions and variables from SDL_sysevents.c */
 
-#ifdef __BEOS__                 /* The Be event loop runs in a separate thread */
+#if defined(__HAIKU__)
+/* The Haiku event loops run in a separate thread */
 #define MUST_THREAD_EVENTS
 #endif
 

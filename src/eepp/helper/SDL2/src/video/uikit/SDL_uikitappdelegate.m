@@ -25,19 +25,17 @@
 #include "../SDL_sysvideo.h"
 #include "SDL_assert.h"
 #include "SDL_hints.h"
-#include "../../SDL_hints_c.h"
 #include "SDL_system.h"
+#include "SDL_main.h"
 
 #include "SDL_uikitappdelegate.h"
 #include "SDL_uikitmodes.h"
 #include "../../events/SDL_events_c.h"
-#include "jumphack.h"
 
 #ifdef main
 #undef main
 #endif
 
-extern int SDL_main(int argc, char *argv[]);
 static int forward_argc;
 static char **forward_argv;
 static int exit_status;
@@ -70,11 +68,10 @@ int main(int argc, char **argv)
     return exit_status;
 }
 
-static void SDL_IdleTimerDisabledChanged(const char *name, const char *oldValue, const char *newValue)
+static void
+SDL_IdleTimerDisabledChanged(void *userdata, const char *name, const char *oldValue, const char *hint)
 {
-    SDL_assert(SDL_strcmp(name, SDL_HINT_IDLE_TIMER_DISABLED) == 0);
-
-    BOOL disable = (*newValue != '0');
+    BOOL disable = (hint && *hint != '0');
     [UIApplication sharedApplication].idleTimerDisabled = disable;
 }
 
@@ -219,9 +216,10 @@ static void SDL_IdleTimerDisabledChanged(const char *name, const char *oldValue,
     [[NSFileManager defaultManager] changeCurrentDirectoryPath: [[NSBundle mainBundle] resourcePath]];
 
     /* register a callback for the idletimer hint */
-    SDL_SetHint(SDL_HINT_IDLE_TIMER_DISABLED, "0");
-    SDL_RegisterHintChangedCb(SDL_HINT_IDLE_TIMER_DISABLED, &SDL_IdleTimerDisabledChanged);
+    SDL_AddHintCallback(SDL_HINT_IDLE_TIMER_DISABLED,
+                        SDL_IdleTimerDisabledChanged, NULL);
 
+    SDL_SetMainReady();
     [self performSelector:@selector(postFinishLaunch) withObject:nil afterDelay:0.0];
 
     return YES;

@@ -88,10 +88,8 @@ static void
 DISKAUD_CloseDevice(_THIS)
 {
     if (this->hidden != NULL) {
-        if (this->hidden->mixbuf != NULL) {
-            SDL_FreeAudioMem(this->hidden->mixbuf);
-            this->hidden->mixbuf = NULL;
-        }
+        SDL_FreeAudioMem(this->hidden->mixbuf);
+        this->hidden->mixbuf = NULL;
         if (this->hidden->output != NULL) {
             SDL_RWclose(this->hidden->output);
             this->hidden->output = NULL;
@@ -114,6 +112,10 @@ DISKAUD_OpenDevice(_THIS, const char *devname, int iscapture)
     }
     SDL_memset(this->hidden, 0, sizeof(*this->hidden));
 
+    this->hidden->mixlen = this->spec.size;
+    this->hidden->write_delay =
+        (envr) ? SDL_atoi(envr) : DISKDEFAULT_WRITEDELAY;
+
     /* Open the audio device */
     this->hidden->output = SDL_RWFromFile(fname, "wb");
     if (this->hidden->output == NULL) {
@@ -128,10 +130,6 @@ DISKAUD_OpenDevice(_THIS, const char *devname, int iscapture)
         return -1;
     }
     SDL_memset(this->hidden->mixbuf, this->spec.silence, this->spec.size);
-
-    this->hidden->mixlen = this->spec.size;
-    this->hidden->write_delay =
-        (envr) ? SDL_atoi(envr) : DISKDEFAULT_WRITEDELAY;
 
 #if HAVE_STDIO_H
     fprintf(stderr,

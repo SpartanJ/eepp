@@ -41,15 +41,77 @@
 - (void)setAppleMenu:(NSMenu *)menu;
 @end
 
-@interface SDLAppDelegate : NSObject
-- (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender;
+@interface SDLAppDelegate : NSObject {
+@public
+    BOOL seenFirstActivate;
+}
+
+- (id)init;
 @end
 
 @implementation SDLAppDelegate : NSObject
+- (id)init
+{
+    self = [super init];
+
+    if (self) {
+        seenFirstActivate = NO;
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(focusSomeWindow:)
+                                                     name:NSApplicationDidBecomeActiveNotification
+                                                   object:nil];
+    }
+
+    return self;
+}
+
+- (void)dealloc
+{
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
+    [super dealloc];
+}
+
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender
 {
     SDL_SendQuit();
     return NSTerminateCancel;
+}
+
+- (void)focusSomeWindow:(NSNotification *)aNotification
+{
+    /* HACK: Ignore the first call. The application gets a
+     * applicationDidBecomeActive: a little bit after the first window is
+     * created, and if we don't ignore it, a window that has been created with
+     * SDL_WINDOW_MINIZED will ~immediately be restored.
+     */
+    if (!seenFirstActivate) {
+        seenFirstActivate = YES;
+        return;
+    }
+
+    SDL_VideoDevice *device = SDL_GetVideoDevice();
+    if (device && device->windows)
+    {
+        SDL_Window *window = device->windows;
+        int i;
+        for (i = 0; i < device->num_displays; ++i)
+        {
+            SDL_Window *fullscreen_window = device->displays[i].fullscreen_window;
+            if (fullscreen_window)
+            {
+                if (fullscreen_window->flags & SDL_WINDOW_MINIMIZED) {
+                    SDL_RestoreWindow(fullscreen_window);
+                }
+                return;
+            }
+        }
+
+        if (window->flags & SDL_WINDOW_MINIMIZED) {
+            SDL_RestoreWindow(window);
+        } else {
+            SDL_RaiseWindow(window);
+        }
+    }
 }
 
 - (BOOL)application:(NSApplication *)theApplication openFile:(NSString *)filename
@@ -57,6 +119,8 @@
     return (BOOL)SDL_SendDropFile([filename UTF8String]);
 }
 @end
+
+static SDLAppDelegate *appDelegate = nil;
 
 static NSString *
 GetApplicationName(void)
@@ -83,8 +147,13 @@ CreateApplicationMenus(void)
     NSMenu *appleMenu;
     NSMenu *serviceMenu;
     NSMenu *windowMenu;
+    NSMenu *viewMenu;
     NSMenuItem *menuItem;
 
+    if (NSApp == nil) {
+        return;
+    }
+    
     /* Create the main menu bar */
     [NSApp setMainMenu:[[NSMenu alloc] init]];
 
@@ -152,6 +221,25 @@ CreateApplicationMenus(void)
     /* Tell the application object that this is now the window menu */
     [NSApp setWindowsMenu:windowMenu];
     [windowMenu release];
+
+
+    /* Add the fullscreen view toggle menu option, if supported */
+    if ([NSApp respondsToSelector:@selector(setPresentationOptions:)]) {
+        /* Create the view menu */
+        viewMenu = [[NSMenu alloc] initWithTitle:@"View"];
+
+        /* Add menu items */
+        menuItem = [viewMenu addItemWithTitle:@"Toggle Full Screen" action:@selector(toggleFullScreen:) keyEquivalent:@"f"];
+        [menuItem setKeyEquivalentModifierMask:NSControlKeyMask | NSCommandKeyMask];
+
+        /* Put menu into the menubar */
+        menuItem = [[NSMenuItem alloc] initWithTitle:@"View" action:nil keyEquivalent:@""];
+        [menuItem setSubmenu:viewMenu];
+        [[NSApp mainMenu] addItem:menuItem];
+        [menuItem release];
+
+        [viewMenu release];
+    }
 }
 
 void
@@ -174,9 +262,21 @@ Cocoa_RegisterApp(void)
             CreateApplicationMenus();
         }
         [NSApp finishLaunching];
+        NSDictionary *appDefaults = [NSDictionary dictionaryWithObject:@"NO" forKey:@"AppleMomentumScrollSupported"];
+        [[NSUserDefaults standardUserDefaults] registerDefaults:appDefaults];
+
     }
-    if ([NSApp delegate] == nil) {
-        [NSApp setDelegate:[[SDLAppDelegate alloc] init]];
+    if (NSApp && !appDelegate) {
+        appDelegate = [[SDLAppDelegate alloc] init];
+
+        /* If someone else has an app delegate, it means we can't turn a
+         * termination into SDL_Quit, and we can't handle application:openFile:
+         */
+        if (![NSApp delegate]) {
+            [NSApp setDelegate:appDelegate];
+        } else {
+            appDelegate->seenFirstActivate = YES;
+        }
     }
     [pool release];
 }
@@ -191,7 +291,7 @@ Cocoa_PumpEvents(_THIS)
         SDL_VideoData *data = (SDL_VideoData *)_this->driverdata;
         Uint32 now = SDL_GetTicks();
         if (!data->screensaver_activity ||
-            (int)(now-data->screensaver_activity) >= 30000) {
+            SDL_TICKS_PASSED(now, data->screensaver_activity + 30000)) {
             UpdateSystemActivity(UsrActivity);
             data->screensaver_activity = now;
         }

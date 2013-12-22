@@ -20,6 +20,10 @@
 */
 #include "SDL_config.h"
 
+#if defined(__WIN32__)
+#include "core/windows/SDL_windows.h"
+#endif
+
 /* Simple log messages in SDL */
 
 #include "SDL_log.h"
@@ -28,9 +32,7 @@
 #include <stdio.h>
 #endif
 
-#if defined(__WIN32__)
-#include "core/windows/SDL_windows.h"
-#elif defined(__ANDROID__)
+#if defined(__ANDROID__)
 #include <android/log.h>
 #endif
 
@@ -38,6 +40,9 @@
 #define DEFAULT_ASSERT_PRIORITY         SDL_LOG_PRIORITY_WARN
 #define DEFAULT_APPLICATION_PRIORITY    SDL_LOG_PRIORITY_INFO
 #define DEFAULT_TEST_PRIORITY           SDL_LOG_PRIORITY_VERBOSE
+
+/* Forward definition of error function */
+extern int SDL_SetError(const char *fmt, ...);
 
 typedef struct SDL_LogLevel
 {
@@ -81,6 +86,7 @@ static const char *SDL_category_prefixes[SDL_LOG_CATEGORY_RESERVED1] = {
 };
 
 static int SDL_android_priority[SDL_NUM_LOG_PRIORITIES] = {
+    ANDROID_LOG_UNKNOWN,
     ANDROID_LOG_VERBOSE,
     ANDROID_LOG_DEBUG,
     ANDROID_LOG_INFO,
@@ -263,6 +269,7 @@ void
 SDL_LogMessageV(int category, SDL_LogPriority priority, const char *fmt, va_list ap)
 {
     char *message;
+    size_t len;
 
     /* Nothing to do if we don't have an output function */
     if (!SDL_log_function) {
@@ -283,10 +290,29 @@ SDL_LogMessageV(int category, SDL_LogPriority priority, const char *fmt, va_list
     if (!message) {
         return;
     }
+
     SDL_vsnprintf(message, SDL_MAX_LOG_MESSAGE, fmt, ap);
+
+    /* Chop off final endline. */
+    len = SDL_strlen(message);
+    if ((len > 0) && (message[len-1] == '\n')) {
+        message[--len] = '\0';
+        if ((len > 0) && (message[len-1] == '\r')) {  /* catch "\r\n", too. */
+            message[--len] = '\0';
+        }
+    }
+
     SDL_log_function(SDL_log_userdata, category, priority, message);
     SDL_stack_free(message);
 }
+
+#if defined(__WIN32__)
+/* Flag tracking the attachment of the console: 0=unattached, 1=attached, -1=error */
+static int consoleAttached = 0;
+
+/* Handle to stderr output of console. */
+static HANDLE stderrHandle = NULL;
+#endif
 
 static void
 SDL_LogOutput(void *userdata, int category, SDL_LogPriority priority,
@@ -294,16 +320,61 @@ SDL_LogOutput(void *userdata, int category, SDL_LogPriority priority,
 {
 #if defined(__WIN32__)
     /* Way too many allocations here, urgh */
+    /* Note: One can't call SDL_SetError here, since that function itself logs. */
     {
         char *output;
         size_t length;
         LPTSTR tstr;
+        BOOL attachResult;
+        DWORD attachError;
+        unsigned long charsWritten; 
 
-        length = SDL_strlen(SDL_priority_prefixes[priority]) + 2 + SDL_strlen(message) + 1 + 1;
+        /* Maybe attach console and get stderr handle */
+        if (consoleAttached == 0) {
+            attachResult = AttachConsole(ATTACH_PARENT_PROCESS);
+            if (!attachResult) {
+                    attachError = GetLastError();
+                    if (attachError == ERROR_INVALID_HANDLE) {
+                        OutputDebugString(TEXT("Parent process has no console\r\n"));
+                        consoleAttached = -1;
+                    } else if (attachError == ERROR_GEN_FAILURE) {
+                         OutputDebugString(TEXT("Could not attach to console of parent process\r\n"));
+                         consoleAttached = -1;
+                    } else if (attachError == ERROR_ACCESS_DENIED) {  
+                         /* Already attached */
+                        consoleAttached = 1;
+                    } else {
+                        OutputDebugString(TEXT("Error attaching console\r\n"));
+                        consoleAttached = -1;
+                    }
+                } else {
+                    /* Newly attached */
+                    consoleAttached = 1;
+                }
+			
+                if (consoleAttached == 1) {
+                        stderrHandle = GetStdHandle(STD_ERROR_HANDLE);
+                }
+        }
+
+        length = SDL_strlen(SDL_priority_prefixes[priority]) + 2 + SDL_strlen(message) + 1 + 1 + 1;
         output = SDL_stack_alloc(char, length);
-        SDL_snprintf(output, length, "%s: %s\n", SDL_priority_prefixes[priority], message);
+        SDL_snprintf(output, length, "%s: %s\r\n", SDL_priority_prefixes[priority], message);
         tstr = WIN_UTF8ToString(output);
+        
+        /* Output to debugger */
         OutputDebugString(tstr);
+       
+        /* Screen output to stderr, if console was attached. */
+        if (consoleAttached == 1) {
+                if (!WriteConsole(stderrHandle, tstr, lstrlen(tstr), &charsWritten, NULL)) {
+                    OutputDebugString(TEXT("Error calling WriteConsole\r\n"));
+                }
+                if (charsWritten == ERROR_NOT_ENOUGH_MEMORY) {
+                    OutputDebugString(TEXT("Insufficient heap memory to write message\r\n"));
+                }
+        }
+
         SDL_free(tstr);
         SDL_stack_free(output);
     }
@@ -314,7 +385,9 @@ SDL_LogOutput(void *userdata, int category, SDL_LogPriority priority,
         SDL_snprintf(tag, SDL_arraysize(tag), "SDL/%s", GetCategoryPrefix(category));
         __android_log_write(SDL_android_priority[priority], tag, message);
     }
-#elif defined(__APPLE__)
+#elif defined(__APPLE__) && defined(SDL_VIDEO_DRIVER_COCOA)
+    /* Technically we don't need SDL_VIDEO_DRIVER_COCOA, but that's where this function is defined for now.
+    */
     extern void SDL_NSLog(const char *text);
     {
         char *text;
@@ -329,15 +402,9 @@ SDL_LogOutput(void *userdata, int category, SDL_LogPriority priority,
     }
 #elif defined(__PSP__)
     {
-        unsigned int length;
-        char*        output;
         FILE*        pFile;
-        length = SDL_strlen(SDL_priority_prefixes[priority]) + 2 + SDL_strlen(message) + 1;
-        output = SDL_stack_alloc(char, length);
-        SDL_snprintf(output, length, "%s: %s", SDL_priority_prefixes[priority], message);
         pFile = fopen ("SDL_Log.txt", "a");
-        fwrite (output, strlen (output), 1, pFile);
-        SDL_stack_free(output);
+        fprintf(pFile, "%s: %s\n", SDL_priority_prefixes[priority], message);
         fclose (pFile);
     }
 #endif

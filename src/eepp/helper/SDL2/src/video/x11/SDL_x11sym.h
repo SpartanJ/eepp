@@ -125,9 +125,9 @@ SDL_X11_SYM(int,XUngrabPointer,(Display* a,Time b),(a,b),return)
 SDL_X11_SYM(int,XUngrabServer,(Display* a),(a),return)
 SDL_X11_SYM(int,XUninstallColormap,(Display* a,Colormap b),(a,b),return)
 SDL_X11_SYM(int,XUnloadFont,(Display* a,Font b),(a,b),return)
-SDL_X11_SYM(int,XUnmapWindow,(Display* a,Window b),(a,b),return)
 SDL_X11_SYM(int,XWarpPointer,(Display* a,Window b,Window c,int d,int e,unsigned int f,unsigned int g,int h,int i),(a,b,c,d,e,f,g,h,i),return)
 SDL_X11_SYM(int,XWindowEvent,(Display* a,Window b,long c,XEvent* d),(a,b,c,d),return)
+SDL_X11_SYM(Status,XWithdrawWindow,(Display* a,Window b,int c),(a,b,c),return)
 SDL_X11_SYM(VisualID,XVisualIDFromVisual,(Visual* a),(a),return)
 #if SDL_VIDEO_DRIVER_X11_CONST_PARAM_XEXTADDDISPLAY
 SDL_X11_SYM(XExtDisplayInfo*,XextAddDisplay,(XExtensionInfo* a,Display* b,_Xconst char* c,XExtensionHooks* d,int e,XPointer f),(a,b,c,d,e,f),return)
@@ -176,9 +176,9 @@ SDL_X11_SYM(KeySym,XKeycodeToKeysym,(Display* a,KeyCode b,int c),(a,b,c),return)
 SDL_X11_MODULE(UTF8)
 SDL_X11_SYM(int,Xutf8TextListToTextProperty,(Display* a,char** b,int c,XICCEncodingStyle d,XTextProperty* e),(a,b,c,d,e),return)
 SDL_X11_SYM(int,Xutf8LookupString,(XIC a,XKeyPressedEvent* b,char* c,int d,KeySym* e,Status* f),(a,b,c,d,e,f),return)
-/*SDL_X11_SYM(XIC,XCreateIC,(XIM, ...),return)  !!! ARGH! */
+/* SDL_X11_SYM(XIC,XCreateIC,(XIM, ...),return)  !!! ARGH! */
 SDL_X11_SYM(void,XDestroyIC,(XIC a),(a),)
-/*SDL_X11_SYM(char*,XGetICValues,(XIC, ...),return)  !!! ARGH! */
+/* SDL_X11_SYM(char*,XGetICValues,(XIC, ...),return)  !!! ARGH! */
 SDL_X11_SYM(void,XSetICFocus,(XIC a),(a),)
 SDL_X11_SYM(void,XUnsetICFocus,(XIC a),(a),)
 SDL_X11_SYM(XIM,XOpenIM,(Display* a,struct _XrmHashBucketRec* b,char* c,char* d),(a,b,c,d),return)
@@ -203,7 +203,11 @@ SDL_X11_SYM(Bool,XShmQueryExtension,(Display* a),(a),return)
  */
 #ifdef LONG64
 SDL_X11_MODULE(IO_32BIT)
+#if SDL_VIDEO_DRIVER_X11_CONST_PARAM_XDATA32
+SDL_X11_SYM(int,_XData32,(Display *dpy,register _Xconst long *data,unsigned len),(dpy,data,len),return)
+#else
 SDL_X11_SYM(int,_XData32,(Display *dpy,register long *data,unsigned len),(dpy,data,len),return)
+#endif
 SDL_X11_SYM(void,_XRead32,(Display *dpy,register long *data,long len),(dpy,data,len),)
 #endif
 

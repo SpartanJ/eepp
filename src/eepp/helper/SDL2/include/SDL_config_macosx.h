@@ -36,10 +36,7 @@
 #endif
 
 /* Useful headers */
-/* If we specified an SDK or have a post-PowerPC chip, then alloca.h exists. */
-#if ( (MAC_OS_X_VERSION_MIN_REQUIRED >= 1030) || (!defined(__POWERPC__)) )
 #define HAVE_ALLOCA_H       1
-#endif
 #define HAVE_SYS_TYPES_H    1
 #define HAVE_STDIO_H    1
 #define STDC_HEADERS    1
@@ -107,6 +104,8 @@
 #define HAVE_SYSCTLBYNAME 1
 #define HAVE_ATAN 1
 #define HAVE_ATAN2 1
+#define HAVE_ACOS 1
+#define HAVE_ASIN 1
 
 /* Enable various audio drivers */
 #define SDL_AUDIO_DRIVER_COREAUDIO  1
@@ -173,6 +172,9 @@
 
 /* Enable system power support */
 #define SDL_POWER_MACOSX 1
+
+/* enable filesystem support */
+#define SDL_FILESYSTEM_COCOA   1
 
 /* Enable assembly routines */
 #define SDL_ASSEMBLY_ROUTINES   1

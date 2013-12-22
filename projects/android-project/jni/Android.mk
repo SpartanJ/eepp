@@ -4,7 +4,7 @@ INC_PATH := $(LOCAL_PATH)/../../../include
 BASE_PATH := $(LOCAL_PATH)/../../../src
 
 MY_SDL_PATH			:= $(MY_PATH)/helper/SDL2
-MY_SDL_MAIN_PATH	:= helper/SDL2/src/main/android/*.cpp
+MY_SDL_MAIN_PATH	:= helper/SDL2/src/main/android/*.c
 
 MY_C_INCLUDES := \
 	$(MY_PATH)/helper/openal-soft/include/ \
@@ -16,7 +16,8 @@ MY_C_INCLUDES := \
 	$(MY_PATH)/helper/stb_vorbis \
 	$(INC_PATH)/eepp/helper/chipmunk
 
-MY_C_FLAGS	:=	-DANDROID \
+MY_C_FLAGS	:=	-Wl,--undefined=Java_org_libsdl_app_SDLActivity_nativeInit \
+				-DANDROID \
 				-DANDROID_NDK \
 				-DDISABLE_IMPORTGL \
 				-Wall \
@@ -177,7 +178,7 @@ LOCAL_SRC_FILES := \
 	$(wildcard $(LOCAL_PATH)/src/audio/dummy/*.c) \
 	$(LOCAL_PATH)/src/atomic/SDL_atomic.c \
 	$(LOCAL_PATH)/src/atomic/SDL_spinlock.c.arm \
-	$(wildcard $(LOCAL_PATH)/src/core/android/*.cpp) \
+	$(wildcard $(LOCAL_PATH)/src/core/android/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/cpuinfo/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/events/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/file/*.c) \
@@ -187,10 +188,10 @@ LOCAL_SRC_FILES := \
 	$(wildcard $(LOCAL_PATH)/src/joystick/android/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/loadso/dlopen/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/power/*.c) \
+	$(wildcard $(LOCAL_PATH)/src/power/android/*.c) \
+	$(wildcard $(LOCAL_PATH)/src/filesystem/dummy/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/render/*.c) \
-	$(wildcard $(LOCAL_PATH)/src/render/opengles/*.c) \
-	$(wildcard $(LOCAL_PATH)/src/render/opengles2/*.c) \
-	$(wildcard $(LOCAL_PATH)/src/render/software/*.c) \
+	$(wildcard $(LOCAL_PATH)/src/render/*/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/stdlib/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/thread/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/thread/pthread/*.c) \
@@ -199,7 +200,7 @@ LOCAL_SRC_FILES := \
 	$(wildcard $(LOCAL_PATH)/src/video/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/video/android/*.c))
 
-LOCAL_LDLIBS := $(EE_GLES_LINK) -ldl -llog
+LOCAL_LDLIBS := $(EE_GLES_LINK) -ldl -llog -landroid
 
 include $(BUILD_STATIC_LIBRARY)
 #**************** SDL 2 ***************

@@ -25,13 +25,27 @@
 
 #if SDL_VIDEO_OPENGL_CGL
 
-/* Define this if you want to be able to toggle fullscreen mode seamlessly */
-#define FULLSCREEN_TOGGLEABLE
+#include "SDL_atomic.h"
+#import <Cocoa/Cocoa.h>
 
 struct SDL_GLDriverData
 {
     int initialized;
 };
+
+@interface SDLOpenGLContext : NSOpenGLContext {
+    SDL_atomic_t dirty;
+    SDL_Window *window;
+}
+
+- (id)initWithFormat:(NSOpenGLPixelFormat *)format
+        shareContext:(NSOpenGLContext *)share;
+- (void)scheduleUpdate;
+- (void)updateIfNeeded;
+- (void)setWindow:(SDL_Window *)window;
+
+@end
+
 
 /* OpenGL functions */
 extern int Cocoa_GL_LoadLibrary(_THIS, const char *path);
@@ -40,6 +54,8 @@ extern void Cocoa_GL_UnloadLibrary(_THIS);
 extern SDL_GLContext Cocoa_GL_CreateContext(_THIS, SDL_Window * window);
 extern int Cocoa_GL_MakeCurrent(_THIS, SDL_Window * window,
                                 SDL_GLContext context);
+extern void Cocoa_GL_GetDrawableSize(_THIS, SDL_Window * window,
+                                     int * w, int * h);
 extern int Cocoa_GL_SetSwapInterval(_THIS, int interval);
 extern int Cocoa_GL_GetSwapInterval(_THIS);
 extern void Cocoa_GL_SwapWindow(_THIS, SDL_Window * window);

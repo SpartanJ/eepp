@@ -32,6 +32,8 @@
 
 #include <stdarg.h>
 
+#define HAVE_GCC_ATOMICS    1
+
 #define HAVE_ALLOCA_H       1
 #define HAVE_SYS_TYPES_H    1
 #define HAVE_STDIO_H    1
@@ -85,6 +87,8 @@
 #define HAVE_M_PI   1
 #define HAVE_ATAN   1
 #define HAVE_ATAN2  1
+#define HAVE_ACOS  1
+#define HAVE_ASIN  1
 #define HAVE_CEIL   1
 #define HAVE_COPYSIGN   1
 #define HAVE_COS    1
@@ -126,21 +130,16 @@
 #define SDL_VIDEO_DRIVER_ANDROID 1
 
 /* Enable OpenGL ES */
-#define SDL_VIDEO_OPENGL_ES	1
-
-#ifdef SDL_GLES1
-	#define SDL_VIDEO_RENDER_OGL_ES	1
-#endif
-
-#ifdef SDL_GLES2
-	#define SDL_VIDEO_RENDER_OGL_ES2 1
-#endif
-
-#if !defined( SDL_VIDEO_RENDER_OGL_ES ) && !defined( SDL_VIDEO_RENDER_OGL_ES2 )
-	#define SDL_VIDEO_RENDER_OGL_ES	1
-#endif
+#define SDL_VIDEO_OPENGL_ES 1
+#define SDL_VIDEO_OPENGL_ES2 1
+#define SDL_VIDEO_OPENGL_EGL 1
+#define SDL_VIDEO_RENDER_OGL_ES 1
+#define SDL_VIDEO_RENDER_OGL_ES2    1
 
 /* Enable system power support */
 #define SDL_POWER_ANDROID 1
+
+/* !!! FIXME: what does Android do for filesystem stuff? */
+#define SDL_FILESYSTEM_DUMMY   1
 
 #endif /* _SDL_config_android_h */

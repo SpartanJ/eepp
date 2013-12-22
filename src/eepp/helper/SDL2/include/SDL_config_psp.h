@@ -85,6 +85,8 @@
 #define HAVE_M_PI   1
 #define HAVE_ATAN   1
 #define HAVE_ATAN2  1
+#define HAVE_ACOS  1
+#define HAVE_ASIN  1
 #define HAVE_CEIL   1
 #define HAVE_COPYSIGN   1
 #define HAVE_COS    1
@@ -99,8 +101,8 @@
 #define HAVE_SQRT   1
 #define HAVE_SETJMP 1
 #define HAVE_NANOSLEEP  1
-//#define HAVE_SYSCONF  1
-//#define HAVE_SIGACTION    1
+/* #define HAVE_SYSCONF  1 */
+/* #define HAVE_SIGACTION    1 */
 
 
 /* PSP isn't that sophisticated */
@@ -125,6 +127,9 @@
 #define SDL_VIDEO_RENDER_PSP   1
 
 #define SDL_POWER_PSP          1
+
+/* !!! FIXME: what does PSP do for filesystem stuff? */
+#define SDL_FILESYSTEM_DUMMY   1
 
 /* PSP doesn't have haptic device (src/haptic/dummy/\*.c) */
 #define SDL_HAPTIC_DISABLED    1

@@ -82,7 +82,6 @@ struct SDL_SysWMinfo;
 #include <Cocoa/Cocoa.h>
 #else
 typedef struct _NSWindow NSWindow;
-typedef struct _NSView NSView;
 #endif
 #endif
 
@@ -102,6 +101,7 @@ typedef enum
     SDL_SYSWM_UNKNOWN,
     SDL_SYSWM_WINDOWS,
     SDL_SYSWM_X11,
+    SDL_SYSWM_WAYLAND,
     SDL_SYSWM_DIRECTFB,
     SDL_SYSWM_COCOA,
     SDL_SYSWM_UIKIT,
@@ -176,6 +176,14 @@ struct SDL_SysWMinfo
             Window window;              /**< The X11 window */
         } x11;
 #endif
+#if defined(SDL_VIDEO_DRIVER_WAYLAND)
+        struct
+        {
+            struct wl_display *display;            /**< Wayland display */
+            struct wl_surface *surface;            /**< Wayland surface */
+            struct wl_shell_surface *shell_surface; /**< Wayland shell_surface (window manager handle) */
+        } wl;
+#endif
 #if defined(SDL_VIDEO_DRIVER_DIRECTFB)
         struct
         {
@@ -188,7 +196,6 @@ struct SDL_SysWMinfo
         struct
         {
             NSWindow *window;           /* The Cocoa window */
-            NSView *view;               /* The Cocoa view */
         } cocoa;
 #endif
 #if defined(SDL_VIDEO_DRIVER_UIKIT)
@@ -221,7 +228,7 @@ typedef struct SDL_SysWMinfo SDL_SysWMinfo;
  *  \code
  *  SDL_SysWMinfo info;
  *  SDL_VERSION(&info.version);
- *  if ( SDL_GetWindowWMInfo(&info) ) { ... }
+ *  if ( SDL_GetWindowWMInfo(window, &info) ) { ... }
  *  \endcode
  */
 extern DECLSPEC SDL_bool SDLCALL SDL_GetWindowWMInfo(SDL_Window * window,

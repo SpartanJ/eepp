@@ -63,9 +63,7 @@ UIKit_CreateDevice(int devindex)
     /* Initialize all variables that we clean on shutdown */
     device = (SDL_VideoDevice *) SDL_calloc(1, sizeof(SDL_VideoDevice));
     if (!device) {
-        if (device) {
-            SDL_free(device);
-        }
+        SDL_free(device);
         SDL_OutOfMemory();
         return (0);
     }
@@ -91,6 +89,7 @@ UIKit_CreateDevice(int devindex)
     device->ShowScreenKeyboard = UIKit_ShowScreenKeyboard;
     device->HideScreenKeyboard = UIKit_HideScreenKeyboard;
     device->IsScreenKeyboardShown = UIKit_IsScreenKeyboardShown;
+    device->SetTextInputRect = UIKit_SetTextInputRect;
 #endif
 
     /* OpenGL (ES) functions */

@@ -59,7 +59,7 @@ typedef enum
     /* Application events */
     SDL_QUIT           = 0x100, /**< User-requested quit */
 
-    /* These application events have special meaning on iOS, see README.iOS for details */
+    /* These application events have special meaning on iOS, see README-ios.txt for details */
     SDL_APP_TERMINATING,        /**< The application is being terminated by the OS
                                      Called on iOS in applicationWillTerminate()
                                      Called on Android in onDestroy()
@@ -412,7 +412,9 @@ typedef struct SDL_MultiGestureEvent
 } SDL_MultiGestureEvent;
 
 
-/* (event.dgesture.*) */
+/**
+ * \brief Dollar Gesture Event (event.dgesture.*)
+ */
 typedef struct SDL_DollarGestureEvent
 {
     Uint32 type;        /**< ::SDL_DOLLARGESTURE */
@@ -462,7 +464,7 @@ typedef struct SDL_OSEvent
  */
 typedef struct SDL_UserEvent
 {
-    Uint32 type;        /**< ::SDL_USEREVENT through ::SDL_NUMEVENTS-1 */
+    Uint32 type;        /**< ::SDL_USEREVENT through ::SDL_LASTEVENT-1 */
     Uint32 timestamp;
     Uint32 windowID;    /**< The associated window if any */
     Sint32 code;        /**< User defined event code */
@@ -539,7 +541,7 @@ typedef union SDL_Event
  */
 extern DECLSPEC void SDLCALL SDL_PumpEvents(void);
 
-/*@{*/
+/* @{ */
 typedef enum
 {
     SDL_ADDEVENT,
@@ -568,7 +570,7 @@ typedef enum
 extern DECLSPEC int SDLCALL SDL_PeepEvents(SDL_Event * events, int numevents,
                                            SDL_eventaction action,
                                            Uint32 minType, Uint32 maxType);
-/*@}*/
+/* @} */
 
 /**
  *  Checks to see if certain event types are in the event queue.
@@ -642,7 +644,7 @@ typedef int (SDLCALL * SDL_EventFilter) (void *userdata, SDL_Event * event);
  *  \warning  Be very careful of what you do in the event filter function, as
  *            it may run in a different thread!
  *
- *  There is one caveat when dealing with the ::SDL_QUITEVENT event type.  The
+ *  There is one caveat when dealing with the ::SDL_QuitEvent event type.  The
  *  event filter is only called when the window manager desires to close the
  *  application window.  If the event filter returns 1, then the window will
  *  be closed, otherwise the window will remain open if possible.
@@ -679,7 +681,7 @@ extern DECLSPEC void SDLCALL SDL_DelEventWatch(SDL_EventFilter filter,
 extern DECLSPEC void SDLCALL SDL_FilterEvents(SDL_EventFilter filter,
                                               void *userdata);
 
-/*@{*/
+/* @{ */
 #define SDL_QUERY   -1
 #define SDL_IGNORE   0
 #define SDL_DISABLE  0
@@ -695,7 +697,7 @@ extern DECLSPEC void SDLCALL SDL_FilterEvents(SDL_EventFilter filter,
  *     current processing state of the specified event.
  */
 extern DECLSPEC Uint8 SDLCALL SDL_EventState(Uint32 type, int state);
-/*@}*/
+/* @} */
 #define SDL_GetEventState(type) SDL_EventState(type, SDL_QUERY)
 
 /**

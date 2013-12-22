@@ -69,6 +69,9 @@ typedef struct
     int window_minH;
     int window_maxW;
     int window_maxH;
+    int logical_w;
+    int logical_h;
+    float scale;
     int depth;
     int refresh_rate;
     int num_windows;
@@ -79,6 +82,7 @@ typedef struct
     Uint32 render_flags;
     SDL_bool skip_renderer;
     SDL_Renderer **renderers;
+    SDL_Texture **targets;
 
     /* Audio info */
     const char *audiodriver;
@@ -105,6 +109,7 @@ typedef struct
     int gl_major_version;
     int gl_minor_version;
     int gl_debug;
+    int gl_profile_mask;
 } SDLTest_CommonState;
 
 #include "begin_code.h"

@@ -85,6 +85,8 @@
 #define HAVE_M_PI   1
 #define HAVE_ATAN   1
 #define HAVE_ATAN2  1
+#define HAVE_ACOS  1
+#define HAVE_ASIN  1
 #define HAVE_CEIL   1
 #define HAVE_COPYSIGN   1
 #define HAVE_COS    1
@@ -147,5 +149,8 @@
    See src/joystick/uikit/SDLUIAccelerationDelegate.m for notes on why this is needed
  */
 #define SDL_IPHONE_MAX_GFORCE 5.0
+
+/* enable filesystem support */
+#define SDL_FILESYSTEM_COCOA   1
 
 #endif /* _SDL_config_iphoneos_h */

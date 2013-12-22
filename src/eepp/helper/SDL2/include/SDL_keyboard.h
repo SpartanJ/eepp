@@ -41,13 +41,15 @@ extern "C" {
 
 /**
  *  \brief The SDL keysym structure, used in key events.
+ *
+ *  \note  If you are looking for translated character input, see the ::SDL_TEXTINPUT event.
  */
 typedef struct SDL_Keysym
 {
     SDL_Scancode scancode;      /**< SDL physical key code - see ::SDL_Scancode for details */
     SDL_Keycode sym;            /**< SDL virtual key code - see ::SDL_Keycode for details */
     Uint16 mod;                 /**< current key modifiers */
-    Uint32 unicode;             /**< \deprecated use SDL_TextInputEvent instead */
+    Uint32 unused;
 } SDL_Keysym;
 
 /* Function prototypes */
@@ -66,13 +68,13 @@ extern DECLSPEC SDL_Window * SDLCALL SDL_GetKeyboardFocus(void);
  *
  *  \b Example:
  *  \code
- *  Uint8 *state = SDL_GetKeyboardState(NULL);
+ *  const Uint8 *state = SDL_GetKeyboardState(NULL);
  *  if ( state[SDL_SCANCODE_RETURN] )   {
  *      printf("<RETURN> is pressed.\n");
  *  }
  *  \endcode
  */
-extern DECLSPEC Uint8 *SDLCALL SDL_GetKeyboardState(int *numkeys);
+extern DECLSPEC const Uint8 *SDLCALL SDL_GetKeyboardState(int *numkeys);
 
 /**
  *  \brief Get the current key modifier state for the keyboard.

@@ -28,7 +28,7 @@
 #include "../video/SDL_sysvideo.h"
 
 
-/*#define DEBUG_KEYBOARD*/
+/* #define DEBUG_KEYBOARD */
 
 /* Global keyboard information */
 
@@ -507,7 +507,7 @@ static const char *SDL_scancode_names[SDL_NUM_SCANCODES] = {
 };
 
 /* Taken from SDL_iconv() */
-static char *
+char *
 SDL_UCS4ToUTF8(Uint32 ch, char *dst)
 {
     Uint8 *p = (Uint8 *) dst;
@@ -774,7 +774,6 @@ SDL_SendKeyboardKey(Uint8 state, SDL_Scancode scancode)
         event.key.keysym.scancode = scancode;
         event.key.keysym.sym = keyboard->keymap[scancode];
         event.key.keysym.mod = modstate;
-        event.key.keysym.unicode = 0;
         event.key.windowID = keyboard->focus ? keyboard->focus->id : 0;
         posted = (SDL_PushEvent(&event) > 0);
     }
@@ -829,7 +828,7 @@ SDL_KeyboardQuit(void)
 {
 }
 
-Uint8 *
+const Uint8 *
 SDL_GetKeyboardState(int *numkeys)
 {
     SDL_Keyboard *keyboard = &SDL_keyboard;

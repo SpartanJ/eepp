@@ -39,6 +39,7 @@
 static SDL_Renderer *SW_CreateRenderer(SDL_Window * window, Uint32 flags);
 static void SW_WindowEvent(SDL_Renderer * renderer,
                            const SDL_WindowEvent *event);
+static int SW_GetOutputSize(SDL_Renderer * renderer, int *w, int *h);
 static int SW_CreateTexture(SDL_Renderer * renderer, SDL_Texture * texture);
 static int SW_SetTextureColorMod(SDL_Renderer * renderer,
                                  SDL_Texture * texture);
@@ -110,9 +111,13 @@ SW_ActivateRenderer(SDL_Renderer * renderer)
         data->surface = data->window;
     }
     if (!data->surface) {
-        data->surface = data->window = SDL_GetWindowSurface(renderer->window);
+        SDL_Surface *surface = SDL_GetWindowSurface(renderer->window);
+        if (surface) {
+            data->surface = data->window = surface;
 
-        SW_UpdateViewport(renderer);
+            SW_UpdateViewport(renderer);
+            SW_UpdateClipRect(renderer);
+        }
     }
     return data->surface;
 }
@@ -143,6 +148,7 @@ SW_CreateRendererForSurface(SDL_Surface * surface)
     data->surface = surface;
 
     renderer->WindowEvent = SW_WindowEvent;
+    renderer->GetOutputSize = SW_GetOutputSize;
     renderer->CreateTexture = SW_CreateTexture;
     renderer->SetTextureColorMod = SW_SetTextureColorMod;
     renderer->SetTextureAlphaMod = SW_SetTextureAlphaMod;
@@ -191,6 +197,25 @@ SW_WindowEvent(SDL_Renderer * renderer, const SDL_WindowEvent *event)
     if (event->event == SDL_WINDOWEVENT_SIZE_CHANGED) {
         data->surface = NULL;
         data->window = NULL;
+    }
+}
+
+static int
+SW_GetOutputSize(SDL_Renderer * renderer, int *w, int *h)
+{
+    SDL_Surface *surface = SW_ActivateRenderer(renderer);
+
+    if (surface) {
+        if (w) {
+            *w = surface->w;
+        }
+        if (h) {
+            *h = surface->h;
+        }
+        return 0;
+    } else {
+        SDL_SetError("Software renderer doesn't have an output surface");
+        return -1;
     }
 }
 
@@ -313,11 +338,6 @@ SW_UpdateViewport(SDL_Renderer * renderer)
         return 0;
     }
 
-    if (!renderer->viewport.w && !renderer->viewport.h) {
-        /* There may be no window, so update the viewport directly */
-        renderer->viewport.w = surface->w;
-        renderer->viewport.h = surface->h;
-    }
     SDL_SetClipRect(data->surface, &renderer->viewport);
     return 0;
 }
@@ -325,13 +345,16 @@ SW_UpdateViewport(SDL_Renderer * renderer)
 static int
 SW_UpdateClipRect(SDL_Renderer * renderer)
 {
+    SW_RenderData *data = (SW_RenderData *) renderer->driverdata;
+    SDL_Surface *surface = data->surface;
     const SDL_Rect *rect = &renderer->clip_rect;
-    SDL_Surface* framebuffer = (SDL_Surface *) renderer->driverdata;
 
-    if (!SDL_RectEmpty(rect)) {
-        SDL_SetClipRect(framebuffer, rect);
-    } else {
-        SDL_SetClipRect(framebuffer, NULL);
+    if (surface) {
+        if (!SDL_RectEmpty(rect)) {
+            SDL_SetClipRect(surface, rect);
+        } else {
+            SDL_SetClipRect(surface, NULL);
+        }
     }
     return 0;
 }
@@ -586,8 +609,8 @@ SW_RenderCopyEx(SDL_Renderer * renderer, SDL_Texture * texture,
 
         retval = SDL_BlitScaled(src, srcrect, surface_scaled, &tmp_rect);
         if (!retval) {
-            _rotozoomSurfaceSizeTrig(tmp_rect.w, tmp_rect.h, -angle, &dstwidth, &dstheight, &cangle, &sangle);
-            surface_rotated = _rotateSurface(surface_scaled, -angle, dstwidth/2, dstheight/2, GetScaleQuality(), flip & SDL_FLIP_HORIZONTAL, flip & SDL_FLIP_VERTICAL, dstwidth, dstheight, cangle, sangle);
+            SDLgfx_rotozoomSurfaceSizeTrig(tmp_rect.w, tmp_rect.h, -angle, &dstwidth, &dstheight, &cangle, &sangle);
+            surface_rotated = SDLgfx_rotateSurface(surface_scaled, -angle, dstwidth/2, dstheight/2, GetScaleQuality(), flip & SDL_FLIP_HORIZONTAL, flip & SDL_FLIP_VERTICAL, dstwidth, dstheight, cangle, sangle);
             if(surface_rotated) {
                 /* Find out where the new origin is by rotating the four final_rect points around the center and then taking the extremes */
                 abscenterx = final_rect.x + (int)center->x;
@@ -695,9 +718,7 @@ SW_DestroyRenderer(SDL_Renderer * renderer)
 {
     SW_RenderData *data = (SW_RenderData *) renderer->driverdata;
 
-    if (data) {
-        SDL_free(data);
-    }
+    SDL_free(data);
     SDL_free(renderer);
 }
 

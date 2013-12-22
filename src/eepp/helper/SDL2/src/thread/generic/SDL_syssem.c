@@ -32,7 +32,7 @@
 SDL_sem *
 SDL_CreateSemaphore(Uint32 initial_value)
 {
-    SDL_SetError("SDL not configured with thread support");
+    SDL_SetError("SDL not built with thread support");
     return (SDL_sem *) 0;
 }
 
@@ -44,19 +44,19 @@ SDL_DestroySemaphore(SDL_sem * sem)
 int
 SDL_SemTryWait(SDL_sem * sem)
 {
-    return SDL_SetError("SDL not configured with thread support");
+    return SDL_SetError("SDL not built with thread support");
 }
 
 int
 SDL_SemWaitTimeout(SDL_sem * sem, Uint32 timeout)
 {
-    return SDL_SetError("SDL not configured with thread support");
+    return SDL_SetError("SDL not built with thread support");
 }
 
 int
 SDL_SemWait(SDL_sem * sem)
 {
-    return SDL_SetError("SDL not configured with thread support");
+    return SDL_SetError("SDL not built with thread support");
 }
 
 Uint32
@@ -68,7 +68,7 @@ SDL_SemValue(SDL_sem * sem)
 int
 SDL_SemPost(SDL_sem * sem)
 {
-    return SDL_SetError("SDL not configured with thread support");
+    return SDL_SetError("SDL not built with thread support");
 }
 
 #else

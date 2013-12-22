@@ -30,7 +30,12 @@
 /* we need this for ShowMenuBar() and HideMenuBar(). */
 #include <Carbon/Carbon.h>
 
-static inline void Cocoa_ToggleMenuBar(const BOOL show)
+/* This gets us MAC_OS_X_VERSION_MIN_REQUIRED... */
+#include <AvailabilityMacros.h>
+
+
+static void
+Cocoa_ToggleMenuBar(const BOOL show)
 {
     /* !!! FIXME: keep an eye on this.
      * ShowMenuBar/HideMenuBar is officially unavailable for 64-bit binaries.
@@ -47,34 +52,14 @@ static inline void Cocoa_ToggleMenuBar(const BOOL show)
 
 
 /* !!! FIXME: clean out the pre-10.6 code when it makes sense to do so. */
-#define FORCE_OLD_API 0 || (MAC_OS_X_VERSION_MAX_ALLOWED < 1060)
+#define FORCE_OLD_API 0
 
 #if FORCE_OLD_API
 #undef MAC_OS_X_VERSION_MIN_REQUIRED
 #define MAC_OS_X_VERSION_MIN_REQUIRED 1050
 #endif
 
-#if MAC_OS_X_VERSION_MAX_ALLOWED < 1050
-/*
-    Add methods to get at private members of NSScreen.
-    Since there is a bug in Apple's screen switching code
-    that does not update this variable when switching
-    to fullscreen, we'll set it manually (but only for the
-    main screen).
-*/
-@interface NSScreen (NSScreenAccess)
-- (void) setFrame:(NSRect)frame;
-@end
-
-@implementation NSScreen (NSScreenAccess)
-- (void) setFrame:(NSRect)frame;
-{
-    _frame = frame;
-}
-@end
-#endif
-
-static inline BOOL
+static BOOL
 IS_SNOW_LEOPARD_OR_LATER(_THIS)
 {
 #if FORCE_OLD_API
@@ -142,7 +127,6 @@ GetDisplayMode(_THIS, const void *moderef, SDL_DisplayMode *mode)
     }
     data->moderef = moderef;
 
-    #if MAC_OS_X_VERSION_MAX_ALLOWED >= 1060
     if (IS_SNOW_LEOPARD_OR_LATER(_this)) {
         CGDisplayModeRef vidmode = (CGDisplayModeRef) moderef;
         CFStringRef fmt = CGDisplayModeCopyPixelEncoding(vidmode);
@@ -162,7 +146,6 @@ GetDisplayMode(_THIS, const void *moderef, SDL_DisplayMode *mode)
 
         CFRelease(fmt);
     }
-    #endif
 
     #if MAC_OS_X_VERSION_MIN_REQUIRED < 1060
     if (!IS_SNOW_LEOPARD_OR_LATER(_this)) {
@@ -198,26 +181,20 @@ GetDisplayMode(_THIS, const void *moderef, SDL_DisplayMode *mode)
     return SDL_TRUE;
 }
 
-static inline void
+static void
 Cocoa_ReleaseDisplayMode(_THIS, const void *moderef)
 {
-    /* We don't own moderef unless we use the 10.6+ APIs. */
-    #if MAC_OS_X_VERSION_MAX_ALLOWED >= 1060
     if (IS_SNOW_LEOPARD_OR_LATER(_this)) {
         CGDisplayModeRelease((CGDisplayModeRef) moderef);  /* NULL is ok */
     }
-    #endif
 }
 
-static inline void
+static void
 Cocoa_ReleaseDisplayModeList(_THIS, CFArrayRef modelist)
 {
-    /* We don't own modelis unless we use the 10.6+ APIs. */
-    #if MAC_OS_X_VERSION_MAX_ALLOWED >= 1060
     if (IS_SNOW_LEOPARD_OR_LATER(_this)) {
         CFRelease(modelist);  /* NULL is ok */
     }
-    #endif
 }
 
 static const char *
@@ -280,11 +257,9 @@ Cocoa_InitModes(_THIS)
                 continue;
             }
 
-            #if MAC_OS_X_VERSION_MAX_ALLOWED >= 1060
             if (IS_SNOW_LEOPARD_OR_LATER(_this)) {
                 moderef = CGDisplayCopyDisplayMode(displays[i]);
             }
-            #endif
 
             #if MAC_OS_X_VERSION_MIN_REQUIRED < 1060
             if (!IS_SNOW_LEOPARD_OR_LATER(_this)) {
@@ -308,7 +283,7 @@ Cocoa_InitModes(_THIS)
             display.name = (char *)Cocoa_GetDisplayName(displays[i]);
             if (!GetDisplayMode (_this, moderef, &mode)) {
                 Cocoa_ReleaseDisplayMode(_this, moderef);
-                if (display.name) SDL_free(display.name);
+                SDL_free(display.name);
                 SDL_free(displaydata);
                 continue;
             }
@@ -317,7 +292,7 @@ Cocoa_InitModes(_THIS)
             display.current_mode = mode;
             display.driverdata = displaydata;
             SDL_AddVideoDisplay(&display);
-            if (display.name) SDL_free(display.name);
+            SDL_free(display.name);
         }
     }
     SDL_stack_free(displays);
@@ -344,11 +319,9 @@ Cocoa_GetDisplayModes(_THIS, SDL_VideoDisplay * display)
     SDL_DisplayData *data = (SDL_DisplayData *) display->driverdata;
     CFArrayRef modes = NULL;
 
-    #if MAC_OS_X_VERSION_MAX_ALLOWED >= 1060
     if (IS_SNOW_LEOPARD_OR_LATER(_this)) {
         modes = CGDisplayCopyAllDisplayModes(data->display, NULL);
     }
-    #endif
 
     #if MAC_OS_X_VERSION_MIN_REQUIRED < 1060
     if (!IS_SNOW_LEOPARD_OR_LATER(_this)) {
@@ -364,11 +337,9 @@ Cocoa_GetDisplayModes(_THIS, SDL_VideoDisplay * display)
             const void *moderef = CFArrayGetValueAtIndex(modes, i);
             SDL_DisplayMode mode;
             if (GetDisplayMode(_this, moderef, &mode)) {
-                #if MAC_OS_X_VERSION_MAX_ALLOWED >= 1060
                 if (IS_SNOW_LEOPARD_OR_LATER(_this)) {
                     CGDisplayModeRetain((CGDisplayModeRef) moderef);
                 }
-                #endif
                 SDL_AddDisplayMode(display, &mode);
             }
         }
@@ -380,12 +351,10 @@ Cocoa_GetDisplayModes(_THIS, SDL_VideoDisplay * display)
 static CGError
 Cocoa_SwitchMode(_THIS, CGDirectDisplayID display, const void *mode)
 {
-    #if MAC_OS_X_VERSION_MAX_ALLOWED >= 1060
     if (IS_SNOW_LEOPARD_OR_LATER(_this)) {
         return CGDisplaySetDisplayMode(display, (CGDisplayModeRef) mode, NULL);
     }
-    #endif
-
+ 
     #if MAC_OS_X_VERSION_MIN_REQUIRED < 1060
     if (!IS_SNOW_LEOPARD_OR_LATER(_this)) {
         return CGDisplaySwitchToMode(display, (CFDictionaryRef) mode);

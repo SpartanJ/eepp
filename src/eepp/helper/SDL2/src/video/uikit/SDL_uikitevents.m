@@ -28,7 +28,6 @@
 #include "SDL_uikitevents.h"
 
 #import <Foundation/Foundation.h>
-#include "jumphack.h"
 
 static BOOL UIKit_EventPumpEnabled = YES;
 
@@ -44,39 +43,24 @@ UIKit_PumpEvents(_THIS)
     if (!UIKit_EventPumpEnabled)
         return;
 
-    /*
-        When the user presses the 'home' button on the iPod
-        the application exits -- immediatly.
+    /* Let the run loop run for a short amount of time: long enough for
+       touch events to get processed (which is important to get certain
+       elements of Game Center's GKLeaderboardViewController to respond
+       to touch input), but not long enough to introduce a significant
+       delay in the rest of the app.
+    */
+    const CFTimeInterval seconds = 0.000002;
 
-        Unlike in Mac OS X, it appears there is no way to cancel the termination.
+    /* Pump most event types. */
+    SInt32 result;
+    do {
+        result = CFRunLoopRunInMode(kCFRunLoopDefaultMode, seconds, TRUE);
+    } while (result == kCFRunLoopRunHandledSource);
 
-        This doesn't give the SDL user's application time to respond to an SDL_Quit event.
-        So what we do is that in the UIApplicationDelegate class (SDLUIApplicationDelegate),
-        when the delegate receives the ApplicationWillTerminate message, we execute
-        a longjmp statement to get back here, preventing an immediate exit.
-     */
-    if (setjmp(*jump_env()) == 0) {
-        /* if we're setting the jump, rather than jumping back */
-
-        /* Let the run loop run for a short amount of time: long enough for
-           touch events to get processed (which is important to get certain
-           elements of Game Center's GKLeaderboardViewController to respond
-           to touch input), but not long enough to introduce a significant
-           delay in the rest of the app.
-        */
-        const CFTimeInterval seconds = 0.000002;
-
-        /* Pump most event types. */
-        SInt32 result;
-        do {
-            result = CFRunLoopRunInMode(kCFRunLoopDefaultMode, seconds, TRUE);
-        } while (result == kCFRunLoopRunHandledSource);
-
-        /* Make sure UIScrollView objects scroll properly. */
-        do {
-            result = CFRunLoopRunInMode((CFStringRef)UITrackingRunLoopMode, seconds, TRUE);
-        } while(result == kCFRunLoopRunHandledSource);
-    }
+    /* Make sure UIScrollView objects scroll properly. */
+    do {
+        result = CFRunLoopRunInMode((CFStringRef)UITrackingRunLoopMode, seconds, TRUE);
+    } while(result == kCFRunLoopRunHandledSource);
 }
 
 #endif /* SDL_VIDEO_DRIVER_UIKIT */

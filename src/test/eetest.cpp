@@ -46,6 +46,11 @@ void cEETest::Init() {
 	PartsNum			= Ini.GetValueI( "EEPP", "ParticlesNum", 1000 );
 	mUseShaders			= Ini.GetValueB( "EEPP", "UseShaders", false );
 	mJoyEnabled			= Ini.GetValueB( "EEPP", "JoystickEnabled", false );
+
+#if defined( EE_PLATFORM_TOUCH )
+	mJoyEnabled = false;
+#endif
+
 	mMusEnabled			= Ini.GetValueB( "EEPP", "Music", false );
 	Int32 StartScreen	= Ini.GetValueI( "EEPP", "StartScreen", 0 );
 

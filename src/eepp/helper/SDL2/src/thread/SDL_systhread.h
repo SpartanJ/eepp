@@ -26,6 +26,7 @@
 #define _SDL_systhread_h
 
 #include "SDL_thread.h"
+#include "SDL_thread_c.h"
 
 /* This function creates a thread, passing args to SDL_RunThread(),
    saves a system-dependent thread id in thread->id, and returns 0
@@ -49,6 +50,15 @@ extern int SDL_SYS_SetThreadPriority(SDL_ThreadPriority priority);
    allocated by SDL_SYS_CreateThread()
  */
 extern void SDL_SYS_WaitThread(SDL_Thread * thread);
+
+/* Mark thread as cleaned up as soon as it exits, without joining. */
+extern void SDL_SYS_DetachThread(SDL_Thread * thread);
+
+/* Get the thread local storage for this thread */
+extern SDL_TLSData *SDL_SYS_GetTLSData();
+
+/* Set the thread local storage for this thread */
+extern int SDL_SYS_SetTLSData(SDL_TLSData *data);
 
 #endif /* _SDL_systhread_h */
 

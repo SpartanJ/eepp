@@ -7,11 +7,11 @@
 
 #ifdef __WIN32__
 
+/* Include this so we define UNICODE properly */
+#include "../../core/windows/SDL_windows.h"
+
 #include <stdio.h>
 #include <stdlib.h>
-
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
 
 /* Include the SDL main definition header */
 #include "SDL.h"
@@ -54,7 +54,7 @@ ParseCommandLine(char *cmdline, char **argv)
     argc = last_argc = 0;
     for (bufp = cmdline; *bufp;) {
         /* Skip leading whitespace */
-        while (isspace(*bufp)) {
+        while (SDL_isspace(*bufp)) {
             ++bufp;
         }
         /* Skip over argument */
@@ -80,7 +80,7 @@ ParseCommandLine(char *cmdline, char **argv)
                 ++argc;
             }
             /* Skip over word */
-            while (*bufp && !isspace(*bufp)) {
+            while (*bufp && !SDL_isspace(*bufp)) {
                 ++bufp;
             }
         }
@@ -134,6 +134,8 @@ console_main(int argc, char *argv[])
 {
     int status;
 
+    SDL_SetMainReady();
+
     /* Run the application main() code */
     status = SDL_main(argc, argv);
 
@@ -173,6 +175,8 @@ WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR szCmdLine, int sw)
 
     /* Run the main program */
     console_main(argc, argv);
+
+    SDL_stack_free(argv);
 
     SDL_free(cmdline);
 

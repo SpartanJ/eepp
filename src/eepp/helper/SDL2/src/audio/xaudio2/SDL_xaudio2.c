@@ -32,7 +32,11 @@
 /* The configure script already did any necessary checking */
 #  define SDL_XAUDIO2_HAS_SDK 1
 #else
-#include <dxsdkver.h> /* XAudio2 exists as of the March 2008 DirectX SDK */
+/* XAudio2 exists as of the March 2008 DirectX SDK 
+   The XAudio2 implementation available in the Windows 8 SDK targets Windows 8 and newer.
+   If you want to build SDL with XAudio2 support you should install the DirectX SDK.
+ */
+#include <dxsdkver.h>
 #if (!defined(_DXSDK_BUILD_MAJOR) || (_DXSDK_BUILD_MAJOR < 1284))
 #  pragma message("Your DirectX SDK is too old. Disabling XAudio2 support.")
 #else
@@ -48,6 +52,18 @@
 /* Hidden "this" pointer for the audio functions */
 #define _THIS   SDL_AudioDevice *this
 
+/* Fixes bug 1210 where some versions of gcc need named parameters */
+#ifdef __GNUC__
+#ifdef THIS
+#undef THIS
+#endif
+#define THIS    INTERFACE *p
+#ifdef THIS_
+#undef THIS_
+#endif
+#define THIS_   INTERFACE *p,
+#endif
+
 struct SDL_PrivateAudioData
 {
     IXAudio2 *ixa2;
@@ -59,14 +75,6 @@ struct SDL_PrivateAudioData
     Uint8 *nextbuf;
 };
 
-
-static __inline__ char *
-utf16_to_utf8(const WCHAR *S)
-{
-    /* !!! FIXME: this should be UTF-16, not UCS-2! */
-    return SDL_iconv_string("UTF-8", "UCS-2", (char *)(S),
-                            (SDL_wcslen(S)+1)*sizeof(WCHAR));
-}
 
 static void
 XAUDIO2_DetectDevices(int iscapture, SDL_AddAudioDevice addfn)
@@ -90,7 +98,7 @@ XAUDIO2_DetectDevices(int iscapture, SDL_AddAudioDevice addfn)
     for (i = 0; i < devcount; i++) {
         XAUDIO2_DEVICE_DETAILS details;
         if (IXAudio2_GetDeviceDetails(ixa2, i, &details) == S_OK) {
-            char *str = utf16_to_utf8(details.DisplayName);
+            char *str = WIN_StringToUTF8(details.DisplayName);
             if (str != NULL) {
                 addfn(str);
                 SDL_free(str);  /* addfn() made a copy of the string. */
@@ -213,9 +221,7 @@ XAUDIO2_CloseDevice(_THIS)
         if (ixa2 != NULL) {
             IXAudio2_Release(ixa2);
         }
-        if (this->hidden->mixbuf != NULL) {
-            SDL_free(this->hidden->mixbuf);
-        }
+        SDL_free(this->hidden->mixbuf);
         if (this->hidden->semaphore != NULL) {
             CloseHandle(this->hidden->semaphore);
         }
@@ -265,7 +271,7 @@ XAUDIO2_OpenDevice(_THIS, const char *devname, int iscapture)
         for (i = 0; i < devcount; i++) {
             XAUDIO2_DEVICE_DETAILS details;
             if (IXAudio2_GetDeviceDetails(ixa2, i, &details) == S_OK) {
-                char *str = utf16_to_utf8(details.DisplayName);
+                char *str = WIN_StringToUTF8(details.DisplayName);
                 if (str != NULL) {
                     const int match = (SDL_strcmp(str, devname) == 0);
                     SDL_free(str);

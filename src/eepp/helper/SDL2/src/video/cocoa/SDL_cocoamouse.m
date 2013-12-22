@@ -25,6 +25,7 @@
 #include "SDL_assert.h"
 #include "SDL_events.h"
 #include "SDL_cocoamouse.h"
+#include "SDL_cocoamousetap.h"
 
 #include "../../events/SDL_mouse_c.h"
 
@@ -94,6 +95,8 @@ Cocoa_CreateCursor(SDL_Surface * surface, int hot_x, int hot_y)
         cursor = SDL_calloc(1, sizeof(*cursor));
         if (cursor) {
             cursor->driverdata = nscursor;
+        } else {
+            [nscursor release];
         }
     }
 
@@ -201,10 +204,7 @@ static void
 Cocoa_WarpMouse(SDL_Window * window, int x, int y)
 {
     SDL_Mouse *mouse = SDL_GetMouse();
-    CGPoint point;
-
-    point.x = (float)window->x + x;
-    point.y = (float)window->y + y;
+    CGPoint point = CGPointMake(x + (float)window->x, y + (float)window->y);
 
     {
         /* This makes Cocoa_HandleMouseEvent ignore this delta in the next
@@ -224,10 +224,12 @@ Cocoa_WarpMouse(SDL_Window * window, int x, int y)
     CGWarpMouseCursorPosition(point);
     CGSetLocalEventsSuppressionInterval(0.25);
 
-    /* CGWarpMouseCursorPosition doesn't generate a window event, unlike our
-     * other implementations' APIs.
-     */
-    SDL_SendMouseMotion(mouse->focus, mouse->mouseID, 0, x, y);
+    if (!mouse->relative_mode) {
+        /* CGWarpMouseCursorPosition doesn't generate a window event, unlike our
+         * other implementations' APIs.
+         */
+        SDL_SendMouseMotion(mouse->focus, mouse->mouseID, 0, x, y);
+    }
 }
 
 static int
@@ -261,6 +263,8 @@ Cocoa_InitMouse(_THIS)
     mouse->SetRelativeMouseMode = Cocoa_SetRelativeMouseMode;
 
     SDL_SetDefaultCursor(Cocoa_CreateDefaultCursor());
+
+    Cocoa_InitMouseEventTap(mouse->driverdata);
 }
 
 void
@@ -308,6 +312,10 @@ Cocoa_QuitMouse(_THIS)
 {
     SDL_Mouse *mouse = SDL_GetMouse();
     if (mouse) {
+        if (mouse->driverdata) {
+            Cocoa_QuitMouseEventTap(((SDL_MouseData*)mouse->driverdata));
+        }
+
         SDL_free(mouse->driverdata);
     }
 }

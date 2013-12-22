@@ -47,10 +47,16 @@ static const float inv255f = 1.0f / 255.0f;
 static SDL_Renderer *GL_CreateRenderer(SDL_Window * window, Uint32 flags);
 static void GL_WindowEvent(SDL_Renderer * renderer,
                            const SDL_WindowEvent *event);
+static int GL_GetOutputSize(SDL_Renderer * renderer, int *w, int *h);
 static int GL_CreateTexture(SDL_Renderer * renderer, SDL_Texture * texture);
 static int GL_UpdateTexture(SDL_Renderer * renderer, SDL_Texture * texture,
                             const SDL_Rect * rect, const void *pixels,
                             int pitch);
+static int GL_UpdateTextureYUV(SDL_Renderer * renderer, SDL_Texture * texture,
+                               const SDL_Rect * rect,
+                               const Uint8 *Yplane, int Ypitch,
+                               const Uint8 *Uplane, int Upitch,
+                               const Uint8 *Vplane, int Vpitch);
 static int GL_LockTexture(SDL_Renderer * renderer, SDL_Texture * texture,
                           const SDL_Rect * rect, void **pixels, int *pitch);
 static void GL_UnlockTexture(SDL_Renderer * renderer, SDL_Texture * texture);
@@ -277,7 +283,6 @@ GL_ActivateRenderer(SDL_Renderer * renderer)
 {
     GL_RenderData *data = (GL_RenderData *) renderer->driverdata;
 
-    GL_ClearErrors(renderer);
     if (SDL_CurrentContext != data->context) {
         if (SDL_GL_MakeCurrent(renderer->window, data->context) < 0) {
             return -1;
@@ -286,6 +291,9 @@ GL_ActivateRenderer(SDL_Renderer * renderer)
 
         GL_UpdateViewport(renderer);
     }
+
+    GL_ClearErrors(renderer);
+
     return 0;
 }
 
@@ -308,7 +316,7 @@ GL_ResetState(SDL_Renderer *renderer)
     data->glDisable(GL_DEPTH_TEST);
     data->glDisable(GL_CULL_FACE);
     /* This ended up causing video discrepancies between OpenGL and Direct3D */
-    /*data->glEnable(GL_LINE_SMOOTH);*/
+    /* data->glEnable(GL_LINE_SMOOTH); */
 
     data->glMatrixMode(GL_MODELVIEW);
     data->glLoadIdentity();
@@ -397,8 +405,10 @@ GL_CreateRenderer(SDL_Window * window, Uint32 flags)
     }
 
     renderer->WindowEvent = GL_WindowEvent;
+    renderer->GetOutputSize = GL_GetOutputSize;
     renderer->CreateTexture = GL_CreateTexture;
     renderer->UpdateTexture = GL_UpdateTexture;
+    renderer->UpdateTextureYUV = GL_UpdateTextureYUV;
     renderer->LockTexture = GL_LockTexture;
     renderer->UnlockTexture = GL_UnlockTexture;
     renderer->SetRenderTarget = GL_SetRenderTarget;
@@ -504,6 +514,10 @@ GL_CreateRenderer(SDL_Window * window, Uint32 flags)
         renderer->info.texture_formats[renderer->info.num_texture_formats++] = SDL_PIXELFORMAT_IYUV;
     }
 
+#ifdef __MACOSX__
+    renderer->info.texture_formats[renderer->info.num_texture_formats++] = SDL_PIXELFORMAT_UYVY;
+#endif
+
     if (SDL_GL_ExtensionSupported("GL_EXT_framebuffer_object")) {
         data->GL_EXT_framebuffer_object_supported = SDL_TRUE;
         data->glGenFramebuffersEXT = (PFNGLGENFRAMEBUFFERSEXTPROC)
@@ -537,6 +551,14 @@ GL_WindowEvent(SDL_Renderer * renderer, const SDL_WindowEvent *event)
     }
 }
 
+static int
+GL_GetOutputSize(SDL_Renderer * renderer, int *w, int *h)
+{
+    SDL_GL_GetDrawableSize(renderer->window, w, h);
+
+    return 0;
+}
+
 SDL_FORCE_INLINE int
 power_of_2(int input)
 {
@@ -564,6 +586,13 @@ convert_format(GL_RenderData *renderdata, Uint32 pixel_format,
         *format = GL_LUMINANCE;
         *type = GL_UNSIGNED_BYTE;
         break;
+#ifdef __MACOSX__
+    case SDL_PIXELFORMAT_UYVY:
+		*internalFormat = GL_RGB8;
+		*format = GL_YCBCR_422_APPLE;
+		*type = GL_UNSIGNED_SHORT_8_8_APPLE;
+		break;
+#endif
     default:
         return SDL_FALSE;
     }
@@ -621,8 +650,6 @@ GL_CreateTexture(SDL_Renderer * renderer, SDL_Texture * texture)
         }
     }
 
-    texture->driverdata = data;
-
     if (texture->access == SDL_TEXTUREACCESS_TARGET) {
         data->fbo = GL_GetFBO(renderdata, texture->w, texture->h);
     } else {
@@ -631,8 +658,14 @@ GL_CreateTexture(SDL_Renderer * renderer, SDL_Texture * texture)
 
     GL_CheckError("", renderer);
     renderdata->glGenTextures(1, &data->texture);
+    if (GL_CheckError("glGenTexures()", renderer) < 0) {
+        SDL_free(data);
+        return -1;
+    }
+    texture->driverdata = data;
+
     if ((renderdata->GL_ARB_texture_rectangle_supported)
-        /*&& texture->access != SDL_TEXTUREACCESS_TARGET*/){
+        /* && texture->access != SDL_TEXTUREACCESS_TARGET */){
         data->type = GL_TEXTURE_RECTANGLE_ARB;
         texture_w = texture->w;
         texture_h = texture->h;
@@ -782,6 +815,43 @@ GL_UpdateTexture(SDL_Renderer * renderer, SDL_Texture * texture,
                                     data->format, data->formattype, pixels);
     }
     renderdata->glDisable(data->type);
+
+    return GL_CheckError("glTexSubImage2D()", renderer);
+}
+
+static int
+GL_UpdateTextureYUV(SDL_Renderer * renderer, SDL_Texture * texture,
+                    const SDL_Rect * rect,
+                    const Uint8 *Yplane, int Ypitch,
+                    const Uint8 *Uplane, int Upitch,
+                    const Uint8 *Vplane, int Vpitch)
+{
+    GL_RenderData *renderdata = (GL_RenderData *) renderer->driverdata;
+    GL_TextureData *data = (GL_TextureData *) texture->driverdata;
+
+    GL_ActivateRenderer(renderer);
+
+    renderdata->glEnable(data->type);
+    renderdata->glBindTexture(data->type, data->texture);
+    renderdata->glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+    renderdata->glPixelStorei(GL_UNPACK_ROW_LENGTH, Ypitch);
+    renderdata->glTexSubImage2D(data->type, 0, rect->x, rect->y, rect->w,
+                                rect->h, data->format, data->formattype,
+                                Yplane);
+
+    renderdata->glPixelStorei(GL_UNPACK_ROW_LENGTH, Upitch);
+    renderdata->glBindTexture(data->type, data->utexture);
+    renderdata->glTexSubImage2D(data->type, 0, rect->x/2, rect->y/2,
+                                rect->w/2, rect->h/2,
+                                data->format, data->formattype, Uplane);
+
+    renderdata->glPixelStorei(GL_UNPACK_ROW_LENGTH, Vpitch);
+    renderdata->glBindTexture(data->type, data->vtexture);
+    renderdata->glTexSubImage2D(data->type, 0, rect->x/2, rect->y/2,
+                                rect->w/2, rect->h/2,
+                                data->format, data->formattype, Vplane);
+    renderdata->glDisable(data->type);
+
     return GL_CheckError("glTexSubImage2D()", renderer);
 }
 
@@ -849,28 +919,33 @@ GL_UpdateViewport(SDL_Renderer * renderer)
         return 0;
     }
 
-    if (!renderer->viewport.w || !renderer->viewport.h) {
-        /* The viewport isn't set up yet, ignore it */
-        return -1;
-    }
+    if (renderer->target) {
+        data->glViewport(renderer->viewport.x, renderer->viewport.y,
+                         renderer->viewport.w, renderer->viewport.h);
+    } else {
+        int w, h;
 
-    data->glViewport(renderer->viewport.x, renderer->viewport.y,
-                     renderer->viewport.w, renderer->viewport.h);
+        SDL_GetRendererOutputSize(renderer, &w, &h);
+        data->glViewport(renderer->viewport.x, (h - renderer->viewport.y - renderer->viewport.h),
+                         renderer->viewport.w, renderer->viewport.h);
+    }
 
     data->glMatrixMode(GL_PROJECTION);
     data->glLoadIdentity();
-    if (renderer->target) {
-        data->glOrtho((GLdouble) 0,
-                      (GLdouble) renderer->viewport.w,
-                      (GLdouble) 0,
-                      (GLdouble) renderer->viewport.h,
-                       0.0, 1.0);
-    } else {
-        data->glOrtho((GLdouble) 0,
-                      (GLdouble) renderer->viewport.w,
-                      (GLdouble) renderer->viewport.h,
-                      (GLdouble) 0,
-                       0.0, 1.0);
+    if (renderer->viewport.w && renderer->viewport.h) {
+        if (renderer->target) {
+            data->glOrtho((GLdouble) 0,
+                          (GLdouble) renderer->viewport.w,
+                          (GLdouble) 0,
+                          (GLdouble) renderer->viewport.h,
+                           0.0, 1.0);
+        } else {
+            data->glOrtho((GLdouble) 0,
+                          (GLdouble) renderer->viewport.w,
+                          (GLdouble) renderer->viewport.h,
+                          (GLdouble) 0,
+                           0.0, 1.0);
+        }
     }
     return GL_CheckError("", renderer);
 }
@@ -925,17 +1000,17 @@ GL_SetBlendMode(GL_RenderData * data, int blendMode)
         case SDL_BLENDMODE_BLEND:
             data->glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
             data->glEnable(GL_BLEND);
-            data->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            data->glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
             break;
         case SDL_BLENDMODE_ADD:
             data->glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
             data->glEnable(GL_BLEND);
-            data->glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            data->glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE, GL_ZERO, GL_ONE);
             break;
         case SDL_BLENDMODE_MOD:
             data->glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
             data->glEnable(GL_BLEND);
-            data->glBlendFunc(GL_ZERO, GL_SRC_COLOR);
+            data->glBlendFuncSeparate(GL_ZERO, GL_SRC_COLOR, GL_ZERO, GL_ONE);
             break;
         }
         data->current.blendMode = blendMode;
@@ -1013,7 +1088,7 @@ GL_RenderDrawLines(SDL_Renderer * renderer, const SDL_FPoint * points,
         }
         data->glEnd();
     } else {
-#if defined(__APPLE__) || defined(__WIN32__)
+#if defined(__MACOSX__) || defined(__WIN32__)
 #else
         int x1, y1, x2, y2;
 #endif
@@ -1032,8 +1107,8 @@ GL_RenderDrawLines(SDL_Renderer * renderer, const SDL_FPoint * points,
          * least it would be pixel perfect.
          */
         data->glBegin(GL_POINTS);
-#if defined(__APPLE__) || defined(__WIN32__)
-        /* Mac OS X and Windows seem to always leave the second point open */
+#if defined(__MACOSX__) || defined(__WIN32__)
+        /* Mac OS X and Windows seem to always leave the last point open */
         data->glVertex2f(0.5f + points[count-1].x, 0.5f + points[count-1].y);
 #else
         /* Linux seems to leave the right-most or bottom-most point open */
@@ -1046,7 +1121,8 @@ GL_RenderDrawLines(SDL_Renderer * renderer, const SDL_FPoint * points,
             data->glVertex2f(0.5f + x1, 0.5f + y1);
         } else if (x2 > x1) {
             data->glVertex2f(0.5f + x2, 0.5f + y2);
-        } else if (y1 > y2) {
+        }
+        if (y1 > y2) {
             data->glVertex2f(0.5f + x1, 0.5f + y1);
         } else if (y2 > y1) {
             data->glVertex2f(0.5f + x2, 0.5f + y2);
@@ -1236,7 +1312,6 @@ GL_RenderReadPixels(SDL_Renderer * renderer, const SDL_Rect * rect,
                     Uint32 pixel_format, void * pixels, int pitch)
 {
     GL_RenderData *data = (GL_RenderData *) renderer->driverdata;
-    SDL_Window *window = renderer->window;
     Uint32 temp_format = SDL_PIXELFORMAT_ARGB8888;
     void *temp_pixels;
     int temp_pitch;
@@ -1256,7 +1331,7 @@ GL_RenderReadPixels(SDL_Renderer * renderer, const SDL_Rect * rect,
 
     convert_format(data, temp_format, &internalFormat, &format, &type);
 
-    SDL_GetWindowSize(window, &w, &h);
+    SDL_GetRendererOutputSize(renderer, &w, &h);
 
     data->glPixelStorei(GL_PACK_ALIGNMENT, 1);
     data->glPixelStorei(GL_PACK_ROW_LENGTH,
@@ -1265,7 +1340,9 @@ GL_RenderReadPixels(SDL_Renderer * renderer, const SDL_Rect * rect,
     data->glReadPixels(rect->x, (h-rect->y)-rect->h, rect->w, rect->h,
                        format, type, temp_pixels);
 
-    GL_CheckError("", renderer);
+    if (GL_CheckError("glReadPixels()", renderer) < 0) {
+        return -1;
+    }
 
     /* Flip the rows to be top-down */
     length = rect->w * SDL_BYTESPERPIXEL(temp_format);
@@ -1316,9 +1393,7 @@ GL_DestroyTexture(SDL_Renderer * renderer, SDL_Texture * texture)
         renderdata->glDeleteTextures(1, &data->utexture);
         renderdata->glDeleteTextures(1, &data->vtexture);
     }
-    if (data->pixels) {
-        SDL_free(data->pixels);
-    }
+    SDL_free(data->pixels);
     SDL_free(data);
     texture->driverdata = NULL;
 }

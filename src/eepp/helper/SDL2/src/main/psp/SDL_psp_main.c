@@ -37,8 +37,6 @@
    PSP_MAIN_THREAD_STACK_SIZE, etc.
 */
 
-extern int SDL_main(int argc, char *argv[]);
-
 PSP_MODULE_INFO("SDL App", 0, 1, 1);
 
 int sdl_psp_exit_callback(int arg1, int arg2, void *common)
@@ -74,6 +72,8 @@ int main(int argc, char *argv[])
 
     /* Register sceKernelExitGame() to be called when we exit */
     atexit(sceKernelExitGame);
+
+    SDL_SetMainReady();
 
     (void)SDL_main(argc, argv);
     return 0;
