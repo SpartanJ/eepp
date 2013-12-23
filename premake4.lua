@@ -295,7 +295,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		
 		if os.is("windows") and not is_vs() then	
 			if ( true == use_ee_icon ) then
-				linkoptions { "../../assets/icon/ee.res" }
+				linkoptions { "../../bin/assets/icon/ee.res" }
 			end
 		end
 		
@@ -310,6 +310,10 @@ function build_link_configuration( package_name, use_ee_icon )
 			) then
 				linkoptions { "--preload-file assets/" }
 			end
+		end
+		
+		if _OPTIONS.platform == "ios-cross-arm7" then
+			extension = ".ios"
 		end
 	end
 	
@@ -635,7 +639,7 @@ end
 
 solution "eepp"
 	location("./make/" .. os.get_real() .. "/")
-	targetdir("./")
+	targetdir("./bin/")
 	configurations { "debug", "release" }
 	objdir("obj/" .. os.get_real() .. "/")
 
@@ -657,16 +661,16 @@ solution "eepp"
 		includedirs { "include/eepp/helper/SOIL2" }
 		build_base_configuration( "SOIL2" )
 
-	project "glew-static"
-		kind "StaticLib"
-		language "C"
-		targetdir("libs/" .. os.get_real() .. "/helpers/")
-		if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") and not os.is_real("emscripten") then
+	if not os.is_real("haiku") and not os.is_real("ios") and not os.is_real("android") and not os.is_real("emscripten") then
+		project "glew-static"
+			kind "StaticLib"
+			language "C"
+			targetdir("libs/" .. os.get_real() .. "/helpers/")
 			files { "src/eepp/helper/glew/*.c" }
-		end
-		includedirs { "include/eepp/helper/glew" }
-		build_base_configuration( "glew" )
-		
+			includedirs { "include/eepp/helper/glew" }
+			build_base_configuration( "glew" )
+	end
+	
 	project "zlib-static"
 		kind "StaticLib"
 		language "C"

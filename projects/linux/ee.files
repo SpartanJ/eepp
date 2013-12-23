@@ -663,9 +663,9 @@
 ../../external_projects.lua
 ../../src/eepp/ui/cuitextinputpassword.cpp
 ../../include/eepp/ui/cuitextinputpassword.hpp
-../../assets/ee.ini
 ../../src/eepp/graphics/renderer/crenderergl3cp.cpp
 ../../include/eepp/graphics/renderer/crenderergl3cp.hpp
 ../../src/eepp/graphics/renderer/shaders/basegl3cp.vert
 ../../src/eepp/graphics/renderer/shaders/basegl3cp.frag
 ../../src/eepp/window/backend/SDL/cbackendsdl.cpp
+../../bin/assets/ee.ini
