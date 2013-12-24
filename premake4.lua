@@ -96,6 +96,17 @@ newplatform {
 	}
 }
 
+newplatform {
+	name = "ios-cross-x86",
+	description = "iOS x86 ( cross-compiling )",
+	gcc = {
+		cc = "ios-clang",
+		cxx = "ios-clang++",
+		ar = "arm-apple-darwin11-ar",
+		cppflags = "-MMD -march=i386 -m32"
+	}
+}
+
 newclangtoolchain {
 	name ="ios-arm7",
 	description = "iOS ARMv7",
@@ -105,7 +116,7 @@ newclangtoolchain {
 
 newclangtoolchain {
 	name ="ios-x86",
-	description = "iOS x86 (not implemented)",
+	description = "iOS x86",
 	prefix = iif( os.getenv("TOOLCHAINPATH"), os.getenv("TOOLCHAINPATH"), "" ),
 	cppflags = "-m32 -arch i386"
 }
@@ -145,7 +156,8 @@ end
 function os.get_real()
 	if 	_OPTIONS.platform == "ios-arm7" or 
 		_OPTIONS.platform == "ios-x86" or
-		_OPTIONS.platform == "ios-cross-arm7" then
+		_OPTIONS.platform == "ios-cross-arm7" or
+		_OPTIONS.platform == "ios-cross-x86" then
 		return "ios"
 	end
 	
@@ -283,6 +295,8 @@ function build_base_cpp_configuration( package_name )
 	if not is_vs() then
 		buildoptions{ "-fPIC" }
 	end
+	
+	set_ios_config()
 
 	configuration "debug"
 		defines { "DEBUG" }
@@ -299,8 +313,6 @@ function build_base_cpp_configuration( package_name )
 			buildoptions{ "-Wall" }
 		end
 		targetname ( package_name )
-
-	set_ios_config()
 end
 
 function add_cross_config_links()
@@ -353,6 +365,10 @@ function build_link_configuration( package_name, use_ee_icon )
 		
 		if _OPTIONS.platform == "ios-cross-arm7" then
 			extension = ".ios"
+		end
+		
+		if _OPTIONS.platform == "ios-cross-x86" then
+			extension = ".x86.ios"
 		end
 	end
 	
@@ -502,7 +518,7 @@ function add_sfml()
 end
 
 function set_ios_config()
-	configuration { "ios-arm7 or ios-x86" }
+	if _OPTIONS.platform == "ios-arm7" or _OPTIONS.platform == "ios-x86" then
 		local err = false
 		
 		if nil == os.getenv("TOOLCHAINPATH") then
@@ -537,15 +553,16 @@ function set_ios_config()
 		libdirs { framework_libs_path }
 		linkoptions { " -F" .. framework_path .. " -L" .. framework_libs_path .. " -isysroot " .. sysroot_path }
 		includedirs { "src/eepp/helper/SDL2/include" }
+	end
 	
-	configuration "ios-cross-arm7"
+	if _OPTIONS.platform == "ios-cross-arm7" or _OPTIONS.platform == "ios-cross-x86" then
 		includedirs { "src/eepp/helper/SDL2/include" }
-
-	configuration "macosx"
-		if is_xcode() then
-			linkoptions { "-F/Library/Frameworks" }
-			includedirs { "/Library/Frameworks/SDL2.framework/Headers" }
-		end
+	end
+	
+	if is_xcode() then
+		linkoptions { "-F/Library/Frameworks" }
+		includedirs { "/Library/Frameworks/SDL2.framework/Headers" }
+	end
 end
 
 function backend_is( name )
@@ -602,7 +619,9 @@ end
 
 function build_eepp( build_name )
 	includedirs { "include", "src", "src/eepp/helper/freetype2/include", "src/eepp/helper/zlib" }
-
+	
+	set_ios_config()
+	
 	add_static_links()
 
 	if is_vs() then
@@ -655,8 +674,6 @@ function build_eepp( build_name )
 	links { link_list }
 	
 	build_link_configuration( build_name )
-	
-	set_ios_config()
 	
 	configuration "windows"
 		files { "src/eepp/window/platform/win/*.cpp" }
