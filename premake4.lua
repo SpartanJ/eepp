@@ -29,6 +29,19 @@ function newgcctoolchain(toolchain)
 	}
 end
 
+function newclangtoolchain(toolchain)
+	newplatform {
+		name = toolchain.name,
+		description = toolchain.description,
+		gcc = {
+			cc = toolchain.prefix .. "clang",
+			cxx = toolchain.prefix .. "clang++",
+			ar = toolchain.prefix .. "ar",
+			cppflags = "-MMD " .. toolchain.cppflags
+		}
+	}
+end
+
 newplatform {
 	name = "clang",
 	description = "Clang",
@@ -74,7 +87,7 @@ end
 -- cross compiling from linux, totally experimental, using: http://code.google.com/p/ios-toolchain-based-on-clang-for-linux/
 newplatform {
 	name = "ios-cross-arm7",
-	description = "iOS ARMv7 (not implemented)",
+	description = "iOS ARMv7 ( cross-compiling )",
 	gcc = {
 		cc = "ios-clang",
 		cxx = "ios-clang++",
@@ -83,18 +96,18 @@ newplatform {
 	}
 }
 
-newgcctoolchain {
+newclangtoolchain {
 	name ="ios-arm7",
-	description = "iOS ARMv7 (not implemented)",
+	description = "iOS ARMv7",
 	prefix = iif( os.getenv("TOOLCHAINPATH"), os.getenv("TOOLCHAINPATH"), "" ),
-	cppflags = "-MMD -arch=armv7 -march=armv7 -marm -mcpu=cortex-a8"
+	cppflags = "-arch armv7 -mfpu=neon"
 }
 
-newgcctoolchain {
+newclangtoolchain {
 	name ="ios-x86",
 	description = "iOS x86 (not implemented)",
 	prefix = iif( os.getenv("TOOLCHAINPATH"), os.getenv("TOOLCHAINPATH"), "" ),
-	cppflags = "-m32 -march=i386"
+	cppflags = "-m32 -arch i386"
 }
 
 if _OPTIONS.platform then
@@ -117,6 +130,17 @@ newoption {
 		{ "SFML",  "SFML2 ( SFML 1.6 not supported )" }
 	}
 }
+
+function explode(div,str)
+    if (div=='') then return false end
+    local pos,arr = 0,{}
+    for st,sp in function() return string.find(str,div,pos,true) end do
+        table.insert(arr,string.sub(str,pos,st-1))
+        pos = sp + 1
+    end
+    table.insert(arr,string.sub(str,pos))
+    return arr
+end
 
 function os.get_real()
 	if 	_OPTIONS.platform == "ios-arm7" or 
@@ -150,6 +174,12 @@ function print_table( table_ref )
 	end
 end
 
+function table_length(T)
+  local count = 0
+  for _ in pairs(T) do count = count + 1 end
+  return count
+end
+
 function args_contains( element )
 	return table.contains( _ARGS, element )
 end
@@ -158,6 +188,11 @@ function multiple_insert( parent_table, insert_table )
 	for _, value in pairs( insert_table ) do
 		table.insert( parent_table, value )
 	end
+end
+
+function get_ios_arch()
+	local archs = explode( "-", _OPTIONS.platform )
+	return archs[ table_length( archs ) ]
 end
 
 function os_findlib( name )
@@ -240,6 +275,8 @@ function build_base_configuration( package_name )
 			buildoptions{ "-Wall", "-std=gnu99" }
 		end
 		targetname ( package_name )
+
+	set_ios_config()
 end
 
 function build_base_cpp_configuration( package_name )
@@ -262,6 +299,8 @@ function build_base_cpp_configuration( package_name )
 			buildoptions{ "-Wall" }
 		end
 		targetname ( package_name )
+
+	set_ios_config()
 end
 
 function add_cross_config_links()
@@ -463,43 +502,41 @@ function add_sfml()
 end
 
 function set_ios_config()
-	if 	_OPTIONS.platform == "ios-arm7" or 
-	_OPTIONS.platform == "ios-x86" then
-		configuration { "ios-arm or ios-x86" }
-			local err = false
-			
-			if nil == os.getenv("TOOLCHAINPATH") then
-				print("You must set TOOLCHAINPATH enviroment variable.")
-				print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/")
-				err = true
-			end
-			
-			if nil == os.getenv("SYSROOTPATH") then
-				print("You must set SYSROOTPATH enviroment variable.")
-				print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS5.0.sdk")
-				err = true
-			end
+	configuration { "ios-arm7 or ios-x86" }
+		local err = false
+		
+		if nil == os.getenv("TOOLCHAINPATH") then
+			print("You must set TOOLCHAINPATH enviroment variable.")
+			print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/")
+			err = true
+		end
+		
+		if nil == os.getenv("SYSROOTPATH") then
+			print("You must set SYSROOTPATH enviroment variable.")
+			print("\tExample: /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS5.0.sdk")
+			err = true
+		end
 
-			if nil == os.getenv("IOSVERSION") then
-				print("You must set IOSVERSION enviroment variable.")
-				print("\tExample: 5.0")
-				err = true
-			end
-			
-			if err then
-				os.exit(1)
-			end
+		if nil == os.getenv("IOSVERSION") then
+			print("You must set IOSVERSION enviroment variable.")
+			print("\tExample: 5.0")
+			err = true
+		end
+		
+		if err then
+			os.exit(1)
+		end
 
-			local sysroot_path = os.getenv("SYSROOTPATH")
-			local framework_path = sysroot_path .. "/System/Library/Frameworks"
-			local framework_libs_path = framework_path .. "/usr/lib"
-			local sysroot_ver = "-miphoneos-version-min=" .. os.getenv("IOSVERSION") .. " -isysroot " .. sysroot_path
-			
-			buildoptions { sysroot_ver .. "-I" .. sysroot_path .. "/usr/include" }
-			linkoptions { sysroot_ver }
-			libdirs { framework_libs_path }
-			linkoptions { "-F" .. framework_path .. " -L" .. framework_libs_path .. " -isysroot " .. sysroot_path }
-	end
+		local sysroot_path = os.getenv("SYSROOTPATH")
+		local framework_path = sysroot_path .. "/System/Library/Frameworks"
+		local framework_libs_path = framework_path .. "/usr/lib"
+		local sysroot_ver = " -miphoneos-version-min=" .. os.getenv("IOSVERSION") .. " -isysroot " .. sysroot_path
+		
+		buildoptions { sysroot_ver .. " -I" .. sysroot_path .. "/usr/include" }
+		linkoptions { sysroot_ver }
+		libdirs { framework_libs_path }
+		linkoptions { " -F" .. framework_path .. " -L" .. framework_libs_path .. " -isysroot " .. sysroot_path }
+		includedirs { "src/eepp/helper/SDL2/include" }
 	
 	configuration "ios-cross-arm7"
 		includedirs { "src/eepp/helper/SDL2/include" }
@@ -637,11 +674,26 @@ function build_eepp( build_name )
 		end
 end
 
+function set_targetdir( dir )
+	if os.is_real("ios") then
+		targetdir(dir .. get_ios_arch() .. "/" )
+	else
+		targetdir(dir)
+	end
+end
+
 solution "eepp"
-	location("./make/" .. os.get_real() .. "/")
+	
 	targetdir("./bin/")
 	configurations { "debug", "release" }
-	objdir("obj/" .. os.get_real() .. "/")
+
+	if os.is_real("ios") then
+		location("./make/" .. _OPTIONS.platform .. "/" )
+		objdir("obj/" .. os.get_real() .. "/" .. get_ios_arch() .. "/" )
+	else
+		location("./make/" .. os.get_real() .. "/")
+		objdir("obj/" .. os.get_real() .. "/")
+	end
 
 	generate_os_links()
 	parse_args()
@@ -656,7 +708,7 @@ solution "eepp"
 			language "C"
 		end
 
-		targetdir("libs/" .. os.get_real() .. "/helpers/")
+		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
 		files { "src/eepp/helper/SOIL2/src/SOIL2/*.c" }
 		includedirs { "include/eepp/helper/SOIL2" }
 		build_base_configuration( "SOIL2" )
@@ -665,7 +717,7 @@ solution "eepp"
 		project "glew-static"
 			kind "StaticLib"
 			language "C"
-			targetdir("libs/" .. os.get_real() .. "/helpers/")
+			set_targetdir("libs/" .. os.get_real() .. "/helpers/")
 			files { "src/eepp/helper/glew/*.c" }
 			includedirs { "include/eepp/helper/glew" }
 			build_base_configuration( "glew" )
@@ -674,14 +726,14 @@ solution "eepp"
 	project "zlib-static"
 		kind "StaticLib"
 		language "C"
-		targetdir("libs/" .. os.get_real() .. "/helpers/")
+		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
 		files { "src/eepp/helper/zlib/*.c", "src/eepp/helper/libzip/*.c" }
 		build_base_configuration( "zlib" )
 
 	project "libzip-static"
 		kind "StaticLib"
 		language "C"
-		targetdir("libs/" .. os.get_real() .. "/helpers/")
+		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
 		files { "src/eepp/helper/libzip/*.c" }
 		includedirs { "src/eepp/helper/zlib" }
 		build_base_configuration( "libzip" )
@@ -689,7 +741,7 @@ solution "eepp"
 	project "freetype-static"
 		kind "StaticLib"
 		language "C"
-		targetdir("libs/" .. os.get_real() .. "/helpers/")
+		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
 		defines { "FT2_BUILD_LIBRARY" }
 		files { "src/eepp/helper/freetype2/src/**.c" }
 		includedirs { "src/eepp/helper/freetype2/include" }
@@ -698,7 +750,7 @@ solution "eepp"
 	project "stb_vorbis-static"
 		kind "StaticLib"
 		language "C"
-		targetdir("libs/" .. os.get_real() .. "/helpers/")
+		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
 		files { "src/eepp/helper/stb_vorbis/*.c" }
 		build_base_configuration( "stb_vorbis" )
 		
@@ -712,7 +764,7 @@ solution "eepp"
 			language "C"
 		end
 
-		targetdir("libs/" .. os.get_real() .. "/helpers/")
+		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
 		files { "src/eepp/helper/chipmunk/*.c", "src/eepp/helper/chipmunk/constraints/*.c" }
 		includedirs { "include/eepp/helper/chipmunk" }
 		build_base_configuration( "chipmunk" )
@@ -720,7 +772,7 @@ solution "eepp"
 	project "haikuttf-static"
 		kind "StaticLib"
 		language "C++"
-		targetdir("libs/" .. os.get_real() .. "/helpers/")
+		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
 		files { "src/eepp/helper/haikuttf/*.cpp" }
 		includedirs { "src/eepp/helper/freetype2/include" }
 		build_base_cpp_configuration( "haikuttf" )
@@ -728,33 +780,33 @@ solution "eepp"
 	project "jpeg-compressor-static"
 		kind "StaticLib"
 		language "C++"
-		targetdir("libs/" .. os.get_real() .. "/helpers/")
+		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
 		files { "src/eepp/helper/jpeg-compressor/*.cpp" }
 		build_base_cpp_configuration( "jpeg-compressor" )
 
 	project "imageresampler-static"
 		kind "StaticLib"
 		language "C++"
-		targetdir("libs/" .. os.get_real() .. "/helpers/")
+		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
 		files { "src/eepp/helper/imageresampler/*.cpp" }
 		build_base_cpp_configuration( "imageresampler" )
 
 	project "eepp-main"
 		kind "StaticLib"
 		language "C++"
-		targetdir("libs/" .. os.get_real() .. "/")
+		set_targetdir("libs/" .. os.get_real() .. "/")
 		files { "src/eepp/main/eepp_main.cpp" }
 
 	project "eepp-static"
 		kind "StaticLib"
 		language "C++"
-		targetdir("libs/" .. os.get_real() .. "/")
+		set_targetdir("libs/" .. os.get_real() .. "/")
 		build_eepp( "eepp-static" )
 	
 	project "eepp-shared"
 		kind "SharedLib"
 		language "C++"
-		targetdir("libs/" .. os.get_real() .. "/")
+		set_targetdir("libs/" .. os.get_real() .. "/")
 		build_eepp( "eepp" )
 
 	-- Examples

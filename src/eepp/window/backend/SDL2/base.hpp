@@ -10,7 +10,7 @@
 			#define EE_BACKEND_SDL2
 		#endif
 
-		#if EE_PLATFORM != EE_PLATFORM_ANDROID && !defined( EE_COMPILER_MSVC )
+		#if EE_PLATFORM != EE_PLATFORM_ANDROID && EE_PLATFORM != EE_PLATFORM_IOS && !defined( EE_COMPILER_MSVC )
 			#include <SDL2/SDL.h>
 		#else
 			#include <SDL.h>
