@@ -3,7 +3,7 @@
 #ifdef EE_BACKEND_SDL2
 
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_IOS
-	#if !defined( EE_COMPILER_MSVC )
+	#if !defined( EE_COMPILER_MSVC ) && EE_PLATFORM != EE_PLATFORM_IOS
 	#include <SDL2/SDL_syswm.h>
 	#else
 	#include <SDL_syswm.h>
