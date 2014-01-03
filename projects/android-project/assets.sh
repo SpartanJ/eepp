@@ -1,4 +1,4 @@
 #!/bin/sh
 
-#adb push ../../assets /sdcard/assets
-ln -s ../../assets ./assets
+#adb push ../../bin/assets /sdcard/assets
+ln -s ../../bin/assets ./assets
