@@ -734,6 +734,7 @@ solution "eepp"
 		project "glew-static"
 			kind "StaticLib"
 			language "C"
+			defines { "GLEW_NO_GLU", "GLEW_STATIC" }
 			set_targetdir("libs/" .. os.get_real() .. "/helpers/")
 			files { "src/eepp/helper/glew/*.c" }
 			includedirs { "include/eepp/helper/glew" }
