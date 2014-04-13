@@ -55,14 +55,11 @@ class EE_API MemoryManager {
 			return malloc( size );
 		}
 
-		static size_t					GetPeakMemoryUsage()	{ return mPeakMemoryUsage;	}
-		static size_t					GetTotalMemoryUsage()	{ return mTotalMemoryUsage;	}
-		static const cAllocatedPointer&	GetBiggestAllocation()	{ return mBiggestAllocation; }
+		static size_t GetPeakMemoryUsage();
 
-		static tAllocatedPointerMap 	mMapPointers;
-		static size_t					mTotalMemoryUsage;
-		static size_t					mPeakMemoryUsage;
-		static cAllocatedPointer		mBiggestAllocation;
+		static size_t GetTotalMemoryUsage();
+
+		static const cAllocatedPointer&	GetBiggestAllocation();
 };
 
 #ifdef EE_MEMORY_MANAGER

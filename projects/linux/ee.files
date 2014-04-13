@@ -264,7 +264,6 @@
 ../../include/eepp/ui/cuicheckbox.hpp
 ../../include/eepp/ui/cuiborder.hpp
 ../../include/eepp/ui/cuibackground.hpp
-../../include/eepp/ui/cuiaquatheme.hpp
 ../../include/eepp/ui/base.hpp
 ../../src/eepp/ui/tools/ctextureatlassubtextureeditor.hpp
 ../../src/eepp/ui/tools/ctextureatlasnew.hpp
@@ -319,7 +318,6 @@
 ../../src/eepp/ui/cuicheckbox.cpp
 ../../src/eepp/ui/cuiborder.cpp
 ../../src/eepp/ui/cuibackground.cpp
-../../src/eepp/ui/cuiaquatheme.cpp
 ../../src/eepp/ui/tools/ctextureatlassubtextureeditor.cpp
 ../../src/eepp/ui/tools/ctextureatlasnew.cpp
 ../../src/eepp/ui/tools/ctextureatlaseditor.cpp
