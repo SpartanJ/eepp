@@ -249,7 +249,7 @@ bool cGL::PointSpriteSupported() {
 #ifdef EE_GLES
 	return true;
 #else
-	return IsExtension( EEGL_ARB_point_parameters ) && IsExtension( EEGL_ARB_point_sprite );
+	return IsExtension( EEGL_ARB_point_sprite );
 #endif
 }
 
@@ -257,7 +257,7 @@ bool cGL::ShadersSupported() {
 #ifdef EE_GLES
 	return ( GLv_ES2 == Version() || GLv_3 == Version() || GLv_3CP == Version() );
 #else
-	return IsExtension( EEGL_ARB_shading_language_100 ) && IsExtension( EEGL_ARB_shader_objects ) && IsExtension( EEGL_ARB_vertex_shader ) && IsExtension( EEGL_ARB_fragment_shader );
+	return IsExtension( EEGL_ARB_shader_objects ) && IsExtension( EEGL_ARB_vertex_shader ) && IsExtension( EEGL_ARB_fragment_shader );
 #endif
 }
 
