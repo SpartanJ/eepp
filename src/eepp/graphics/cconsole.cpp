@@ -219,7 +219,7 @@ void cConsole::Draw() {
 		}
 	}
 
-	if ( mShowFps ) {
+	if ( mShowFps && NULL != mFont ) {
 		eeColorA OldColor1( mFont->Color() );
 		mFont->Color( eeColorA () );
 		mFont->SetText( "FPS: " + String::ToStr( mWindow->FPS() ) );

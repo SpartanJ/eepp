@@ -419,12 +419,16 @@ bool cSprite::AddSubFrame( cSubTexture * SubTexture, const eeUint& NumFrame, con
 	else
 		NSF = NumSubFrame;
 
-	if ( mFrames[NF].Spr.size() != (eeUint)mSubFrames )
-		mFrames[NF].Spr.resize( mSubFrames );
+	if ( NF <= mFrames.size() ) {
+		if ( mFrames[NF].Spr.size() != (eeUint)mSubFrames )
+			mFrames[NF].Spr.resize( mSubFrames );
 
-	mFrames[NF].Spr[NSF] = SubTexture;
+		mFrames[NF].Spr[NSF] = SubTexture;
 
-	return true;
+		return true;
+	}
+
+	return false;
 }
 
 eeUint cSprite::AddFrame( cSubTexture * SubTexture ) {

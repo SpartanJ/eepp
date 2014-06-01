@@ -873,17 +873,19 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 
 					cLayer * tLayer = AddLayer( tLayerHdr->Type, tLayerHdr->Flags, std::string( tLayerHdr->Name ) );
 
-					tLayer->Offset( eeVector2f( (eeFloat)tLayerHdr->OffsetX, (eeFloat)tLayerHdr->OffsetY ) );
+					if ( NULL != tLayer ) {
+						tLayer->Offset( eeVector2f( (eeFloat)tLayerHdr->OffsetX, (eeFloat)tLayerHdr->OffsetY ) );
 
-					sPropertyHdr * tProps = eeNewArray( sPropertyHdr, tLayerHdr->PropertyCount );
+						sPropertyHdr * tProps = eeNewArray( sPropertyHdr, tLayerHdr->PropertyCount );
 
-					IOS.Read( (char*)&tProps[0], sizeof(sPropertyHdr) * tLayerHdr->PropertyCount );
+						IOS.Read( (char*)&tProps[0], sizeof(sPropertyHdr) * tLayerHdr->PropertyCount );
 
-					for ( z = 0; z < tLayerHdr->PropertyCount; z++ ) {
-						tLayer->AddProperty( std::string( tProps[z].Name ), std::string( tProps[z].Value ) );
+						for ( z = 0; z < tLayerHdr->PropertyCount; z++ ) {
+							tLayer->AddProperty( std::string( tProps[z].Name ), std::string( tProps[z].Value ) );
+						}
+
+						eeSAFE_DELETE_ARRAY( tProps );
 					}
-
-					eeSAFE_DELETE_ARRAY( tProps );
 				}
 
 				bool ThereIsTiled = false;

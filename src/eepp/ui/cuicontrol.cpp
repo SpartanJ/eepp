@@ -642,6 +642,8 @@ void cUIControl::ChildAdd( cUIControl * ChildCtrl ) {
 }
 
 void cUIControl::ChildAddAt( cUIControl * ChildCtrl, Uint32 Pos ) {
+	eeASSERT( NULL != ChildCtrl );
+
 	cUIControl * ChildLoop = mChild;
 	
 	ChildCtrl->Parent( this );
@@ -649,32 +651,36 @@ void cUIControl::ChildAddAt( cUIControl * ChildCtrl, Uint32 Pos ) {
 	ChildRemove( ChildCtrl );
 	ChildCtrl->mParentCtrl = this;
 	
-	if( Pos == 0 ) {
-		if ( mChild == NULL ) {
-			mChild 				= ChildCtrl;
-			mChildLast			= ChildCtrl;
-			ChildCtrl->mNext 	= NULL;
-			ChildCtrl->mPrev 	= NULL;
-		} else {
+	if ( ChildLoop == NULL ) {
+		mChild 				= ChildCtrl;
+		mChildLast			= ChildCtrl;
+		ChildCtrl->mNext 	= NULL;
+		ChildCtrl->mPrev 	= NULL;
+	} else {
+		if( Pos == 0 ) {
 			mChild->mPrev		= ChildCtrl;
 			ChildCtrl->mNext 	= mChild;
 			ChildCtrl->mPrev	= NULL;
 			mChild 				= ChildCtrl;
+		} else {
+			Uint32 i = 0;
+
+			while ( NULL != ChildLoop->mNext && i < Pos ) {
+				ChildLoop = ChildLoop->mNext;
+				i++;
+			}
+
+			cUIControl * ChildTmp = ChildLoop->mNext;
+			ChildLoop->mNext 	= ChildCtrl;
+			ChildCtrl->mPrev 	= ChildLoop;
+			ChildCtrl->mNext 	= ChildTmp;
+
+			if ( NULL != ChildTmp ) {
+				ChildTmp->mPrev = ChildCtrl;
+			} else {
+				mChildLast		= ChildCtrl;
+			}
 		}
-	} else {
-		Uint32 i = 0;
-
-		while ( NULL != ChildLoop->mNext && i < Pos ) {
-			ChildLoop = ChildLoop->mNext;
-			i++;
-		}
-
-		cUIControl * ChildTmp = ChildLoop->mNext;
-		ChildLoop->mNext 	= ChildCtrl;
-		ChildCtrl->mPrev 	= ChildLoop;
-
-		ChildCtrl->mNext 	= ChildTmp;
-		ChildTmp->mPrev 	= ChildCtrl;
 	}
 }
 

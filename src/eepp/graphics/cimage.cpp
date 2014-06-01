@@ -428,7 +428,8 @@ eeSize cImage::Size() {
 
 void cImage::ClearCache() {
 	if ( mLoadedFromStbi ) {
-		free( mPixels );
+		if ( NULL != mPixels )
+			free( mPixels );
 	} else {
 		eeSAFE_DELETE_ARRAY( mPixels );
 	}

@@ -304,7 +304,7 @@ Uint8 * cSubTexture::Lock() {
 }
 
 bool cSubTexture::Unlock( const bool& KeepData, const bool& Modified ) {
-	if ( NULL != mPixels ) {
+	if ( NULL != mPixels  && NULL != mTexture ) {
 		if ( Modified ) {
 			cTextureSaver saver( mTexture->Handle() );
 

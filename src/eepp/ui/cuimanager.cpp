@@ -326,6 +326,8 @@ const eeColorA& cUIManager::HighlightOverColor() const {
 }
 
 void cUIManager::CheckTabPress( const Uint32& KeyCode ) {
+	eeASSERT( NULL != mFocusControl );
+
 	if ( KeyCode == KEY_TAB ) {
 		cUIControl * Ctrl = mFocusControl->NextComplexControl();
 

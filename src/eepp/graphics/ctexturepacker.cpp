@@ -105,7 +105,7 @@ bool cTexturePacker::MergeNodes() {
 	cTexturePackerNode *f = mFreeList;
 
 	while ( f ) {
-		cTexturePackerNode * prev 	= 0;
+		cTexturePackerNode * prev 	= NULL;
 		cTexturePackerNode * c 		= mFreeList;
 
 		while ( c ) {
@@ -113,7 +113,9 @@ bool cTexturePacker::MergeNodes() {
 				if ( f->Merge( *c ) ) {
 					eeASSERT( prev );
 
-					prev->SetNext( c->GetNext() );
+					if ( NULL != prev ) {
+						prev->SetNext( c->GetNext() );
+					}
 
 					eeSAFE_DELETE( c );
 
@@ -732,11 +734,13 @@ void cTexturePacker::ChildSave( const EE_SAVE_TYPE& Format ) {
 			Parent 	= Parent->GetParent();
 		}
 
-		std::string fFpath	= FileSystem::FileRemoveExtension( LastParent->GetFilepath() );
-		std::string fExt	= FileSystem::FileExtension( LastParent->GetFilepath() );
-		std::string fName	= fFpath + "_ch" + String::ToStr( ParentCount ) + "." + fExt;
+		if ( NULL != LastParent ) {
+			std::string fFpath	= FileSystem::FileRemoveExtension( LastParent->GetFilepath() );
+			std::string fExt	= FileSystem::FileExtension( LastParent->GetFilepath() );
+			std::string fName	= fFpath + "_ch" + String::ToStr( ParentCount ) + "." + fExt;
 
-		mChild->Save( fName, Format, mSaveExtensions );
+			mChild->Save( fName, Format, mSaveExtensions );
+		}
 	}
 }
 

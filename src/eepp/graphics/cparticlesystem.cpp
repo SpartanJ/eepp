@@ -113,7 +113,7 @@ void cParticleSystem::Reset( cParticle * P ) {
 			x = ( mPos2.x - mPos.x + 1 ) * Math::Randf() + mPos.x;
 			y = ( mPos2.y - mPos.y + 1 ) * Math::Randf() + mPos.y;
 
-			P->Reset( mPos.x, mPos.y, Math::Randf() - 0.5f, ( Math::Randf() - 1.1f ) * 8.5f, 0.f, 0.05f, mSize );
+			P->Reset( x, y, Math::Randf() - 0.5f, ( Math::Randf() - 1.1f ) * 8.5f, 0.f, 0.05f, mSize );
 			P->Color( eeColorAf( 1.f, 0.5f, 0.1f, ( Math::Randf() * 0.5f ) ), Math::Randf() * 0.4f + 0.01f );
 			break;
 		}

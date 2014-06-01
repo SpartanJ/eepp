@@ -315,7 +315,7 @@ void cUITextBox::DrawSelection() {
 			return;
 		}
 
-		Int32 lastEnd	= end;
+		Int32 lastEnd;
 		eeVector2i initPos, endPos;
 
 		cPrimitives P;
