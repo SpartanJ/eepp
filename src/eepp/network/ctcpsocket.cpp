@@ -227,8 +227,7 @@ cSocket::Status cTcpSocket::Send(cPacket& packet) {
 	return Send(&blockToSend[0], blockToSend.size());
 }
 
-cSocket::Status cTcpSocket::Receive(cPacket& packet)
-{
+cSocket::Status cTcpSocket::Receive(cPacket& packet) {
 	// First clear the variables to fill
 	packet.Clear();
 

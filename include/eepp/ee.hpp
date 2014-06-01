@@ -87,6 +87,7 @@
 	// Network
 	#include <eepp/network.hpp>
 	using namespace EE::Network;
+	using namespace EE::Network::SSL;
 
 	// UI
 	#include <eepp/ui.hpp>

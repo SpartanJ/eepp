@@ -54,6 +54,17 @@ newplatform {
 }
 
 newplatform {
+	name = "clang-static-analyze",
+	description = "Clang static analysis build",
+	gcc = {
+		cc = "clang --analyze",
+		cxx = "clang++ --analyze",
+		ar = "ar",
+		cppflags = "-MMD"
+	}
+}
+
+newplatform {
 	name = "emscripten",
 	description = "Emscripten",
 	gcc = {
@@ -126,6 +137,7 @@ if _OPTIONS.platform then
 	premake.gcc.platforms['Native'] = premake.gcc.platforms[_OPTIONS.platform]
 end
 
+newoption { trigger = "with-ssl", description = "Enables SSL support for the Network module ( requires OpenSSL )." }
 newoption { trigger = "with-libsndfile", description = "Build with libsndfile support." }
 newoption { trigger = "with-static-freetype", description = "Build freetype as a static library." }
 newoption { trigger = "with-static-eepp", description = "Force to build the demos and tests with eepp compiled statically" }
@@ -617,6 +629,22 @@ function select_backend()
 	end
 end
 
+function check_ssl_support()
+	if _OPTIONS["with-ssl"] then
+		if os.is("windows") then
+			table.insert( link_list, get_backend_link_name( "libssl" ) )
+			table.insert( link_list, get_backend_link_name( "libcrypto" ) )
+		else
+			table.insert( link_list, get_backend_link_name( "ssl" ) )
+			table.insert( link_list, get_backend_link_name( "crypto" ) )
+		end
+		
+		files { "src/eepp/network/ssl/backend/openssl/*.cpp" }
+		
+		defines { "EE_SSL_SUPPORT", "EE_OPENSSL" }
+	end
+end
+
 function build_eepp( build_name )
 	includedirs { "include", "src", "src/eepp/helper/freetype2/include", "src/eepp/helper/zlib" }
 	
@@ -645,6 +673,7 @@ function build_eepp( build_name )
 			"src/eepp/window/*.cpp",
 			"src/eepp/window/platform/null/*.cpp",
 			"src/eepp/network/*.cpp",
+			"src/eepp/network/ssl/*.cpp",
 			"src/eepp/ui/*.cpp",
 			"src/eepp/ui/tools/*.cpp",
 			"src/eepp/physics/*.cpp",
@@ -652,6 +681,8 @@ function build_eepp( build_name )
 			"src/eepp/gaming/*.cpp",
 			"src/eepp/gaming/mapeditor/*.cpp"
 	}
+	
+	check_ssl_support()
 	
 	select_backend()
 	

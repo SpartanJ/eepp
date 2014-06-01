@@ -11,5 +11,6 @@
 #include <eepp/network/ctcplistener.hpp>
 #include <eepp/network/ctcpsocket.hpp>
 #include <eepp/network/cudpsocket.hpp>
+#include <eepp/network/ssl/csslsocket.hpp>
 
 #endif

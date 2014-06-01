@@ -15,7 +15,6 @@ cSocket::~cSocket() {
 	Close();
 }
 
-
 void cSocket::SetBlocking(bool blocking) {
 	// Apply if the socket is already created
 	if (mSocket != Private::cSocketImpl::InvalidSocket())

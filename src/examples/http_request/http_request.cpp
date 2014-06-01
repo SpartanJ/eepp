@@ -16,7 +16,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		cHttp http;
 
 		// We'll work on http://en.wikipedia.org
-		http.SetHost("http://en.wikipedia.org");
+		http.SetHost("https://en.wikipedia.org");
 
 		// Prepare a request to get the wikipedia main page
 		cHttp::Request request("/wiki/Main_Page");

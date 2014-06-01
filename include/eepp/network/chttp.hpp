@@ -39,8 +39,10 @@ class EE_API cHttp : NonCopyable {
 			**  URI ("/") and an empty body.
 			**  @param uri	Target URI
 			**  @param method Method to use for the request
-			**  @param body   Content of the request's body */
-			Request(const std::string& uri = "/", Method method = Get, const std::string& body = "");
+			**  @param body   Content of the request's body
+			**  @param validateCertificate Enables certificate validation for https request
+			**  @param validateHostname Enables hostname validation for https request */
+			Request(const std::string& uri = "/", Method method = Get, const std::string& body = "", bool validateCertificate = false, bool validateHostname = false );
 
 			/** @brief Set the value of a field
 			**  The field is created if it doesn't exist. The name of
@@ -48,7 +50,6 @@ class EE_API cHttp : NonCopyable {
 			**  By default, a request doesn't contain any field (but the
 			**  mandatory fields are added later by the HTTP client when
 			**  sending the request).
-			///
 			**  @param field Name of the field to set
 			**  @param value Value of the field */
 			void SetField(const std::string& field, const std::string& value);
@@ -82,6 +83,18 @@ class EE_API cHttp : NonCopyable {
 
 			/** @return The request Uri */
 			const std::string& GetUri() const;
+
+			/** @return If SSL certificate validation is enabled */
+			const bool& ValidateCertificate() const;
+
+			/** Enable/disable SSL certificate validation */
+			void ValidateCertificate( bool enable );
+
+			/** @return If SSL hostname validation is enabled */
+			const bool& ValidateHostname() const;
+
+			/** Enable/disable SSL hostname validation */
+			void ValidateHostname( bool enable );
 		private:
 			friend class cHttp;
 
@@ -101,12 +114,14 @@ class EE_API cHttp : NonCopyable {
 			typedef std::map<std::string, std::string> FieldTable;
 
 			// Member data
-			FieldTable		mFields;		///< Fields of the header associated to their value
-			Method			mMethod;		///< Method to use for the request
-			std::string		mUri;			///< Target URI of the request
-			unsigned int	mMajorVersion;	///< Major HTTP version
-			unsigned int	mMinorVersion;	///< Minor HTTP version
-			std::string		mBody;			///< Body of the request
+			FieldTable		mFields;				///< Fields of the header associated to their value
+			Method			mMethod;				///< Method to use for the request
+			std::string		mUri;					///< Target URI of the request
+			unsigned int	mMajorVersion;			///< Major HTTP version
+			unsigned int	mMinorVersion;			///< Minor HTTP version
+			std::string		mBody;					///< Body of the request
+			bool			mValidateCertificate;	///< Validates the SSL certificate in case of an HTTPS request
+			bool			mValidateHostname;		///< Validates the hostname in case of an HTTPS request
 		};
 
 		/** @brief Define a HTTP response */
@@ -292,6 +307,7 @@ class EE_API cHttp : NonCopyable {
 		unsigned short					mPort;			///< Port used for connection with host
 		std::list<cAsyncRequest*>		mThreads;
 		cMutex							mThreadsMutex;
+		bool							mIsSSL;
 
 		void RemoveOldThreads();
 };

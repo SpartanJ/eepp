@@ -48,13 +48,13 @@ class EE_API cTcpSocket : public cSocket {
 	**  @param timeout	   Optional maximum time to wait
 	**  @return Status code
 	**  @see Disconnect */
-	Status Connect(const cIpAddress& remoteAddress, unsigned short remotePort, cTime timeout = cTime::Zero);
+	virtual Status Connect(const cIpAddress& remoteAddress, unsigned short remotePort, cTime timeout = cTime::Zero);
 
 	/** @brief Disconnect the socket from its remote peer
 	**  This function gracefully closes the connection. If the
 	**  socket is not connected, this function has no effect.
 	**  @see Connect */
-	void Disconnect();
+	virtual void Disconnect();
 
 	/** @brief Send raw data to the remote peer
 	**  This function will fail if the socket is not connected.
@@ -62,7 +62,7 @@ class EE_API cTcpSocket : public cSocket {
 	**  @param size Number of bytes to send
 	**  @return Status code
 	**  @see Receive */
-	Status Send(const void* data, std::size_t size);
+	virtual Status Send(const void* data, std::size_t size);
 
 	/** @brief Receive raw data from the remote peer
 	**  In blocking mode, this function will wait until some
@@ -73,14 +73,14 @@ class EE_API cTcpSocket : public cSocket {
 	**  @param received This variable is filled with the actual number of bytes received
 	**  @return Status code
 	**  @see Send */
-	Status Receive(void* data, std::size_t size, std::size_t& received);
+	virtual Status Receive(void* data, std::size_t size, std::size_t& received);
 
 	/** @brief Send a formatted packet of data to the remote peer
 	**  This function will fail if the socket is not connected.
 	**  @param packet cPacket to send
 	**  @return Status code
 	**  @see Receive */
-	Status Send(cPacket& packet);
+	virtual Status Send(cPacket& packet);
 
 	/** @brief Receive a formatted packet of data from the remote peer
 	**  In blocking mode, this function will wait until the whole packet
@@ -89,7 +89,7 @@ class EE_API cTcpSocket : public cSocket {
 	**  @param packet cPacket to fill with the received data
 	**  @return Status code
 	**  @see Send */
-	Status Receive(cPacket& packet);
+	virtual Status Receive(cPacket& packet);
 
 	private:
 
@@ -100,7 +100,7 @@ class EE_API cTcpSocket : public cSocket {
 		PendingPacket();
 
 		Uint32			Size;		 ///< Data of packet size
-		std::size_t	   SizeReceived; ///< Number of size bytes received so far
+		std::size_t		SizeReceived; ///< Number of size bytes received so far
 		std::vector<char> Data;		 ///< Data of the packet
 	};
 

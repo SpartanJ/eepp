@@ -667,3 +667,10 @@
 ../../src/eepp/graphics/renderer/shaders/basegl3cp.frag
 ../../src/eepp/window/backend/SDL/cbackendsdl.cpp
 ../../bin/assets/ee.ini
+../../src/eepp/network/ssl/csslsocket.cpp
+../../src/eepp/network/ssl/csslsocketimpl.hpp
+../../src/eepp/network/ssl/backend/openssl/copensslsocket.hpp
+../../src/eepp/network/ssl/backend/openssl/copensslsocket.cpp
+../../include/eepp/network/ssl/csslsocket.hpp
+../../src/eepp/network/ssl/backend/openssl/curl_hostcheck.cpp
+../../src/eepp/network/ssl/backend/openssl/curl_hostcheck.h

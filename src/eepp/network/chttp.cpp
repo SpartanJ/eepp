@@ -1,9 +1,12 @@
 #include <eepp/network/chttp.hpp>
+#include <eepp/network/ssl/csslsocket.hpp>
 #include <cctype>
 #include <algorithm>
 #include <iterator>
 #include <sstream>
 #include <limits>
+
+using namespace EE::Network::SSL;
 
 namespace {
 	// Convert a string to lower case
@@ -16,7 +19,10 @@ namespace {
 
 namespace EE { namespace Network {
 
-cHttp::Request::Request(const std::string& uri, Method method, const std::string& body) {
+cHttp::Request::Request(const std::string& uri, Method method, const std::string& body, bool validateCertificate, bool validateHostname ) :
+	mValidateCertificate( validateCertificate ),
+	mValidateHostname( validateHostname )
+{
 	SetMethod(method);
 	SetUri(uri);
 	SetHttpVersion(1, 0);
@@ -50,6 +56,22 @@ void cHttp::Request::SetBody(const std::string& body) {
 
 const std::string &cHttp::Request::GetUri() const {
 	return mUri;
+}
+
+const bool& cHttp::Request::ValidateCertificate() const {
+	return mValidateCertificate;
+}
+
+void cHttp::Request::ValidateCertificate(bool enable) {
+	mValidateCertificate = enable;
+}
+
+const bool &cHttp::Request::ValidateHostname() const {
+	return mValidateHostname;
+}
+
+void cHttp::Request::ValidateHostname(bool enable) {
+	mValidateHostname = enable;
 }
 
 std::string cHttp::Request::Prepare() const {
@@ -211,12 +233,14 @@ void cHttp::Response::ParseFields(std::istream &in) {
 cHttp::cHttp() :
 	mConnection( NULL ),
 	mHost(),
-	mPort(0)
+	mPort(0),
+	mIsSSL( false )
 {
 }
 
 cHttp::cHttp(const std::string& host, unsigned short port) :
-	mConnection( NULL )
+	mConnection( NULL ),
+	mIsSSL( false )
 {
 	SetHost(host, port);
 }
@@ -246,10 +270,15 @@ void cHttp::SetHost(const std::string& host, unsigned short port) {
 		mHostName = host.substr(7);
 		mPort	 = (port != 0 ? port : 80);
 	} else if (toLower(host.substr(0, 8)) == "https://") {
-		// HTTPS protocol -- unsupported (requires encryption and certificates and stuff...)
-		eePRINTL( "HTTPS protocol is not supported by cHttp" );
-		mHostName = "";
-		mPort	 = 0;
+		// HTTPS protocol
+		#ifdef EE_SSL_SUPPORT
+		mIsSSL		= true;
+		mHostName	= host.substr(8);
+		mPort		= (port != 0 ? port : 443);
+		#else
+		mHostName	= "";
+		mPort		= 0;
+		#endif
 	} else {
 		// Undefined protocol - use HTTP
 		mHostName = host;
@@ -265,7 +294,7 @@ void cHttp::SetHost(const std::string& host, unsigned short port) {
 
 cHttp::Response cHttp::SendRequest(const cHttp::Request& request, cTime timeout) {
 	if ( NULL == mConnection ) {
-		cTcpSocket * Conn	= eeNew( cTcpSocket, () );
+		cTcpSocket * Conn	= mIsSSL ? eeNew( cSSLSocket, ( mHostName, request.ValidateCertificate(), request.ValidateHostname() ) ) : eeNew( cTcpSocket, () );
 		mConnection			= Conn;
 	}
 

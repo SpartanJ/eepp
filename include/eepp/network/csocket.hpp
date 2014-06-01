@@ -79,7 +79,7 @@ protected :
 	/** @brief Close the socket gracefully
 	**  This function can only be accessed by derived classes. */
 	void Close();
-private :
+protected :
 	friend class cSocketSelector;
 	// Member data
 	Type			mType;       ///< Type of the socket (TCP or UDP)
