@@ -94,7 +94,7 @@ int cOpenSSLSocket::CertVerifyCb( X509_STORE_CTX * x509_ctx, void * arg ) {
 	bool base_cert_valid = X509_verify_cert( x509_ctx );
 
 	if ( !base_cert_valid ) {
-		eePRINTL( "Cause: %s", ( X509_verify_cert_error_string( X509_STORE_CTX_get_error( x509_ctx ) ) ) );
+		eePRINTL( "Cause: %s", X509_verify_cert_error_string( X509_STORE_CTX_get_error( x509_ctx ) ) );
 		ERR_print_errors_fp( stdout );
 	}
 
@@ -103,8 +103,8 @@ int cOpenSSLSocket::CertVerifyCb( X509_STORE_CTX * x509_ctx, void * arg ) {
 	char cert_str[256];
 	X509_NAME_oneline( X509_get_subject_name ( server_cert ), cert_str, sizeof ( cert_str ) );
 
-	eePRINTL( "CERT STR: %s", ( cert_str ) );
-	eePRINTL( "VALID: %s", String::ToStr( base_cert_valid ).c_str() );
+	eePRINTL( "CERT STR: %s", cert_str );
+	eePRINTL( "VALID: %d", (int)base_cert_valid );
 
 	if ( !base_cert_valid ) {
 		return 0;
@@ -161,7 +161,7 @@ bool cOpenSSLSocket::Init() {
 			BIO_free(mem);
 		}
 
-		eePRINTL( "Loaded certs from '%s':  %d", cSSLSocket::CertificatesPath.c_str(), (int)sCerts.size() );
+		eePRINTL( "Loaded certs from '%s': %d", cSSLSocket::CertificatesPath.c_str(), (int)sCerts.size() );
 	}
 
 	return true;
@@ -243,12 +243,6 @@ cSocket::Status cOpenSSLSocket::Connect( const cIpAddress& remoteAddress, unsign
 	}
 
 	mSSL		= SSL_new( mCTX );
-	/**
-	mBIO		= BIO_new( &_bio_method );
-	mBIO->ptr	= this;
-
-	SSL_set_bio( mSSL, mBIO, mBIO );
-	*/
 
 	SSL_set_fd( mSSL, (int)mSSLSocket->mSocket );
 
@@ -260,7 +254,7 @@ cSocket::Status cOpenSSLSocket::Connect( const cIpAddress& remoteAddress, unsign
 	// Same as before, try to connect.
 	int result	= SSL_connect( mSSL );
 
-	eePRINTL( "CONNECTION RESULT: %s", String::ToStr(result).c_str() );
+	eePRINTL( "CONNECTION RESULT: %d", result );
 
 	if ( result < 1 ) {
 		ERR_print_errors_fp(stdout);
@@ -277,7 +271,7 @@ cSocket::Status cOpenSSLSocket::Connect( const cIpAddress& remoteAddress, unsign
 	if ( peer ) {
 		bool cert_ok = SSL_get_verify_result(mSSL) == X509_V_OK;
 
-		eePRINTL( "cert_ok: %s", String::ToStr(cert_ok).c_str() );
+		eePRINTL( "cert_ok: %d", (int)cert_ok );
 
 		mStatus	= cSocket::Done;
 	} else if ( mSSLSocket->mValidateCertificate ) {
@@ -301,7 +295,6 @@ void cOpenSSLSocket::Disconnect() {
 
 	mSSL		= NULL;
 	mCTX		= NULL;
-
 	mConnected	= false;
 	mStatus		= cSocket::Disconnected;
 }
