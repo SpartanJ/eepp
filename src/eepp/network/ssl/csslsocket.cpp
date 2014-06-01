@@ -70,6 +70,14 @@ bool cSSLSocket::End() {
 	return ret;
 }
 
+bool cSSLSocket::IsSupported() {
+#ifdef EE_SSL_SUPPORT
+	return true;
+#else
+	return false;
+#endif
+}
+
 cSSLSocket::cSSLSocket( std::string hostname , bool validateCertificate, bool validateHostname ) :
 #ifdef EE_OPENSSL
 	mImpl( eeNew( cOpenSSLSocket, ( this ) ) ),

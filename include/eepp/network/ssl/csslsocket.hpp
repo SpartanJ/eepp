@@ -15,6 +15,9 @@ class EE_API cSSLSocket : public cTcpSocket {
 		
 		static bool End();
 
+		/** @return True when the library was compiled with SSL support. */
+		static bool IsSupported();
+
 		cSSLSocket( std::string hostname, bool validateCertificate, bool validateHostname );
 
 		virtual ~cSSLSocket();
