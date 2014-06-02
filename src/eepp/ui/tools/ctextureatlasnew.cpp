@@ -54,7 +54,7 @@ cTextureAtlasNew::cTextureAtlasNew( TGCreateCb NewTGCb ) :
 	mComboHeight->ListBox()->SetSelected( "512" );
 
 	CreateTxtBox( eeVector2i( 10, 110 ), "Space between sub textures (pixels):" );
-	mPixelSpace = mTheme->CreateSpinBox( mUIWindow->Container(), eeSize( 100, 22 ), eeVector2i( PosX, 110 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_SIZE, 0, false );
+	mPixelSpace = mTheme->CreateSpinBox( mUIWindow->Container(), eeSize( 100, 22 ), eeVector2i( PosX, 110 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED, 0, false );
 
 	CreateTxtBox( eeVector2i( 10, 140 ), "Texture Atlas Folder Path:" );
 	mTGPath = mTheme->CreateTextInput( mUIWindow->Container(), eeSize( mUIWindow->Container()->Size().Width() - 60, 22 ), eeVector2i( 10, 160 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE , false, 512 );

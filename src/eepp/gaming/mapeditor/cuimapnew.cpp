@@ -33,7 +33,7 @@ cUIMapNew::cUIMapNew( cUIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap
 
 	Txt = mTheme->CreateTextBox( "Width:", mUIWindow->Container(), eeSize( 46, 24 ), eeVector2i( Txt->Pos().x + DistFromTitle, Txt->Pos().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW  );
 
-	mUIMapWidth = mTheme->CreateSpinBox( mUIWindow->Container(), eeSize( 53, 24 ), eeVector2i( Txt->Pos().x + Txt->Size().Width(), Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS, 100, false );
+	mUIMapWidth = mTheme->CreateSpinBox( mUIWindow->Container(), eeSize( 53, 24 ), eeVector2i( Txt->Pos().x + Txt->Size().Width(), Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_TEXT_SELECTION_ENABLED, 100, false );
 	mUIMapWidth->MinValue(1);
 
 	if ( ResizeMap ) {
@@ -42,7 +42,7 @@ cUIMapNew::cUIMapNew( cUIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap
 
 	Txt = mTheme->CreateTextBox( "Height:", mUIWindow->Container(), eeSize( 46, 24 ), eeVector2i( Txt->Pos().x, Txt->Pos().y + Txt->Size().Height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW  );
 
-	mUIMapHeight = mTheme->CreateSpinBox( mUIWindow->Container(), eeSize( 53, 24 ), eeVector2i( Txt->Pos().x + Txt->Size().Width(), Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS, 100, false );
+	mUIMapHeight = mTheme->CreateSpinBox( mUIWindow->Container(), eeSize( 53, 24 ), eeVector2i( Txt->Pos().x + Txt->Size().Width(), Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_TEXT_SELECTION_ENABLED, 100, false );
 	mUIMapHeight->MinValue(1);
 
 	if ( ResizeMap ) {
@@ -53,7 +53,7 @@ cUIMapNew::cUIMapNew( cUIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap
 
 	Txt = mTheme->CreateTextBox( "Width:", mUIWindow->Container(), eeSize( 46, 24 ), eeVector2i( Txt->Pos().x + DistFromTitle, Txt->Pos().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW  );
 
-	mUIMapTWidth = mTheme->CreateSpinBox( mUIWindow->Container(), eeSize( 53, 24 ), eeVector2i( Txt->Pos().x + Txt->Size().Width(), Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS, 32, false );
+	mUIMapTWidth = mTheme->CreateSpinBox( mUIWindow->Container(), eeSize( 53, 24 ), eeVector2i( Txt->Pos().x + Txt->Size().Width(), Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_TEXT_SELECTION_ENABLED, 32, false );
 	mUIMapTWidth->MinValue(1);
 
 	if ( ResizeMap ) {
@@ -62,7 +62,7 @@ cUIMapNew::cUIMapNew( cUIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap
 
 	Txt = mTheme->CreateTextBox( "Height:", mUIWindow->Container(), eeSize( 46, 24 ), eeVector2i( Txt->Pos().x, Txt->Pos().y + Txt->Size().Height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW  );
 
-	mUIMapTHeight = mTheme->CreateSpinBox( mUIWindow->Container(), eeSize( 53, 24 ), eeVector2i( Txt->Pos().x + Txt->Size().Width(), Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS, 32, false );
+	mUIMapTHeight = mTheme->CreateSpinBox( mUIWindow->Container(), eeSize( 53, 24 ), eeVector2i( Txt->Pos().x + Txt->Size().Width(), Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_TEXT_SELECTION_ENABLED, 32, false );
 	mUIMapTHeight->MinValue(1);
 
 	if ( ResizeMap ) {
@@ -71,7 +71,7 @@ cUIMapNew::cUIMapNew( cUIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap
 
 	Txt = mTheme->CreateTextBox( "Max Layers", mUIWindow->Container(), eeSize(), eeVector2i( 16, mUIMapTHeight->Pos().y + mUIMapTHeight->Size().Height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
-	mUIMapMaxLayers = mTheme->CreateSpinBox( mUIWindow->Container(), eeSize( 53, 24 ), eeVector2i( Txt->Pos().x + DistFromTitle, Txt->Pos().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS, 8, false );
+	mUIMapMaxLayers = mTheme->CreateSpinBox( mUIWindow->Container(), eeSize( 53, 24 ), eeVector2i( Txt->Pos().x + DistFromTitle, Txt->Pos().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_TEXT_SELECTION_ENABLED, 8, false );
 	mUIMapMaxLayers->MaxValue( 32 );
 
 	Txt = mTheme->CreateTextBox( "Map Flags:", mUIWindow->Container(), eeSize(), eeVector2i( Txt->Pos().x, mUIMapMaxLayers->Pos().y + mUIMapMaxLayers->Size().Height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
@@ -229,6 +229,7 @@ void cUIMapNew::OKClick( const cUIEvent * Event ) {
 			mUIMap->Map()->Create( eeSize( w, h ), ml, eeSize( tw, th ), Flags, mUIMap->Map()->ViewSize() );
 			mUIMap->Map()->BaseColor( mUIBaseColor->Background()->Color() );
 		} else {
+			std::string oldPath( mUIMap->Map()->Path() );
 			std::string mapPath( Sys::GetTempPath() + "temp.eepp.map.eem" );
 			mUIMap->Map()->Save( mapPath );
 
@@ -238,6 +239,7 @@ void cUIMapNew::OKClick( const cUIEvent * Event ) {
 			Map->ForceHeadersOnLoad( eeSize( w, h ), eeSize( tw, th ), ml, Flags );
 			Map->Load( mapPath );
 			Map->DisableForcedHeaders();
+			Map->mPath = oldPath;
 
 			mUIMap->ReplaceMap( Map );
 

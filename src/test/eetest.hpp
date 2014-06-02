@@ -134,14 +134,7 @@ class cEETest : private cThread {
 		std::string MyPath;
 		bool ShowParticles;
 
-		cIsoMap Map;
-
-		bool Wireframe;
-
-		void CreateTiling( const bool& Wire );
-		void RandomizeHeights();
-		cPerlinNoise PerlinNoise;
-		bool TreeTilingCreated;
+		cMap Map;
 
 		eeFloat H;
 		Int32 NH;
@@ -304,8 +297,9 @@ class cEETest : private cThread {
 
 		void DestroyBody();
 
-		void OnTerrainMouse( const cUIEvent * Event );
 		void OnShowMenu( const cUIEvent * Event );
+
+		void OnWindowResize( cWindow * win );
 };
 
 }

@@ -658,7 +658,10 @@ void cUIControl::ChildAddAt( cUIControl * ChildCtrl, Uint32 Pos ) {
 		ChildCtrl->mPrev 	= NULL;
 	} else {
 		if( Pos == 0 ) {
-			mChild->mPrev		= ChildCtrl;
+			if ( NULL != mChild ) {
+				mChild->mPrev		= ChildCtrl;
+			}
+
 			ChildCtrl->mNext 	= mChild;
 			ChildCtrl->mPrev	= NULL;
 			mChild 				= ChildCtrl;

@@ -22,8 +22,6 @@ void cEETest::Init() {
 	scale 				= 1.0f;
 	Ang = ang = alpha 	= 0;
 	lasttick 			= 0;
-	Wireframe 			= false;
-	TreeTilingCreated 	= false;
 	AnimVal 			= 0.5f;
 	mLastFPSLimit 		= 0;
 	mWasMinimized 		= false;
@@ -63,6 +61,7 @@ void cEETest::Init() {
 		SetScreen( StartScreen );
 
 		mWindow->Caption( "eepp - Test Application" );
+		mWindow->PushResizeCallback( cb::Make1( this, &cEETest::OnWindowResize ) );
 
 		TF = cTextureFactory::instance();
 		TF->Allocate(40);
@@ -190,8 +189,6 @@ void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
 	eeASSERT( TTF != NULL );
 	eeASSERT( TTFB != NULL );
 
-	Map.Font( FF );
-
 	Con.Create( FF, true );
 	Con.IgnoreCharOnPrompt( 186 ); // 'º'
 
@@ -236,18 +233,6 @@ void cEETest::OnWinMouseUp( const cUIEvent * Event ) {
 	}
 }
 
-void cEETest::OnTerrainMouse( const cUIEvent * Event ) {
-	cUIPushButton * PB = static_cast<cUIPushButton*>( Event->Ctrl() );
-
-	if ( PB->Text() == "Terrain Up" ) {
-		PB->Text( "Terrain Down" );
-		mTerrainUp = false;
-	} else {
-		PB->Text( "Terrain Up" );
-		mTerrainUp = true;
-	}
-}
-
 void cEETest::OnShowMenu( const cUIEvent * Event ) {
 	cUIPushButton * PB = static_cast<cUIPushButton*>( Event->Ctrl() );
 
@@ -258,6 +243,9 @@ void cEETest::OnShowMenu( const cUIEvent * Event ) {
 	}
 }
 
+void cEETest::OnWindowResize(cWindow * win) {
+	Map.ViewSize( win->Size() );
+}
 
 void cEETest::CreateUI() {
 	cClock TE;
@@ -566,28 +554,6 @@ void cEETest::CreateUI() {
 	mGenGrid->CollumnWidth( 0, 50 );
 	mGenGrid->CollumnWidth( 1, 24 );
 	mGenGrid->CollumnWidth( 2, 100 );
-
-#ifdef EE_PLATFORM_TOUCH
-	cTextureAtlas * SG = cGlobalTextureAtlas::instance();
-
-	cTexture * butTex = TF->GetTexture( TF->Load( MyPath + "sprites/button-te_normal.png" ) );
-
-	SG->Add( butTex->Id(), "button-te_normal" );
-	SG->Add( TF->Load( MyPath + "sprites/button-te_mdown.png" ), "button-te_mdown" );
-
-	cUISkinSimple nSkin( "button-te" );
-
-	mShowMenu = mTheme->CreatePushButton( NULL, butTex->Size(), eeVector2i( mWindow->GetWidth() - butTex->Width() - 20, mWindow->GetHeight() - butTex->Height() - 10 ), UI_CONTROL_ALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
-	mShowMenu->SetSkin( nSkin );
-	mShowMenu->Text( "Show Menu" );
-	mShowMenu->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::OnShowMenu ) );
-
-	mTerrainBut = mTheme->CreatePushButton( NULL, butTex->Size(), eeVector2i( mShowMenu->Pos().x - butTex->Width() - 20, mWindow->GetHeight() - butTex->Height() - 10 ), UI_CONTROL_ALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
-	mTerrainBut->SetSkin( nSkin );
-	mTerrainBut->Text( "Terrain Up" );
-	mTerrainBut->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::OnTerrainMouse ) );
-	mTerrainBut->Visible( 1 == Screen );
-#endif
 
 	C = reinterpret_cast<cUIControlAnim*> ( C->Parent() );
 
@@ -948,57 +914,10 @@ void cEETest::LoadTextures() {
 
 	eePRINTL( "Textures loading time: %4.3f ms.", TE.Elapsed().AsMilliseconds() );
 
-	Map.Create( 100, 100, 2, 128, 64, eeColor(175,175,175) );
-	RandomizeHeights();
-
-	TreeTilingCreated = false;
-	CreateTiling(Wireframe);
+	Map.Load( MyPath + "maps/test.eem" );
+	Map.ViewSize( mWindow->Size() );
 
 	eePRINTL( "Map creation time: %4.3f ms.", TE.Elapsed().AsMilliseconds() );
-}
-
-void cEETest::RandomizeHeights() {
-	Map.Reset();
-	PerlinNoise.Octaves(7);
-	PerlinNoise.Persistence(0.25f);
-	PerlinNoise.Frequency(0.015f);
-	PerlinNoise.Amplitude(1);
-
-	for ( x = 0; x < static_cast<Int32>( Map.Width() ); x++ ) {
-		for ( y = 0; y < static_cast<Int32>( Map.Height() ); y++ ) {
-			H = PerlinNoise.PerlinNoise2D((eeFloat)x,(eeFloat)y);
-			if (H < 0 ) H *= -1;
-
-			eeFloat nh = (eeFloat)( (Int32)( H * 100 ) % 255 );
-			eeFloat nf = (4 * nh / 25) / 2;
-			NH = Int32(nf);
-
-			Map.SetTileHeight( x, y, NH );
-		}
-	}
-}
-
-void cEETest::CreateTiling( const bool& Wire ) {
-	cMTRand Rand( 0xFF00FF00 );
-
-	for ( x = 0; x < static_cast<Int32>( Map.Width() ); x++ ) {
-		for ( y = 0; y < static_cast<Int32>( Map.Height() ); y++ ) {
-			if ( Wire )
-				Map.Layer(x, y, 0, Tiles[6] );
-			else
-				Map.Layer(x, y, 0, Tiles[ Rand.RandRange( 0, 5 ) ] );
-
-			if ( !TreeTilingCreated )
-				Map.Layer(x, y, 1, 0);
-		}
-	}
-
-	if ( !TreeTilingCreated ) {
-		for ( x = 0; x < 100; x++ )
-			Map.Layer( Rand.RandRange( 0, Map.Width() - 1 ), Rand.RandRange( 0, Map.Height() -1 ), 1, Tiles[7] );
-
-		TreeTilingCreated = true;
-	}
 }
 
 void cEETest::Run() {
@@ -1022,6 +941,7 @@ void cEETest::UpdateParticles() {
 }
 
 void cEETest::Screen1() {
+	Map.Update();
 	Map.Draw();
 }
 
@@ -1529,51 +1449,9 @@ void cEETest::Input() {
 				Map.Move( 0, -mWindow->Elapsed().AsMilliseconds() * 0.2f );
 			}
 
-			if ( KM->IsKeyDown(KEY_KP_MINUS) )
-				Map.BaseLight().Radius( Map.BaseLight().Radius() - mWindow->Elapsed().AsMilliseconds() * 0.2f );
-
-			if ( KM->IsKeyDown(KEY_KP_PLUS) )
-				Map.BaseLight().Radius( Map.BaseLight().Radius() + mWindow->Elapsed().AsMilliseconds() * 0.2f );
-
-			if ( KM->IsKeyUp(KEY_F6) ) {
-				Wireframe = !Wireframe;
-				Sys::Sleep(1);
-				CreateTiling(Wireframe);
-			}
-
-			if ( KM->IsKeyUp(KEY_F7) )
-				Map.DrawFont( !Map.DrawFont() );
-
 			if ( KM->IsKeyUp(KEY_F8) )
 				Map.Reset();
 
-			if ( KM->IsKeyUp(KEY_F9) )
-				RandomizeHeights();
-
-			if ( KM->MouseLeftClick() ) {
-				eeVector2i P = Map.GetMouseTilePos();
-
-				if ( NULL != mTerrainBut ) {
-					if ( !mTerrainBut->GetPolygon().PointInside( KM->GetMousePosf() ) ) {
-						if ( mTerrainUp ) {
-							Map.SetTileHeight( P.x, P.y );
-						} else {
-							Map.SetTileHeight( P.x, P.y, 1, false );
-						}
-					}
-				} else {
-					if ( mTerrainUp ) {
-						Map.SetTileHeight( P.x, P.y );
-					} else {
-						Map.SetTileHeight( P.x, P.y, 1, false );
-					}
-				}
-			}
-
-			if ( KM->MouseRightClick() ) {
-				eeVector2i P = Map.GetMouseTilePos();
-				Map.SetTileHeight( P.x, P.y, 1, false );
-			}
 			break;
 		case 2:
 			if ( KM->IsKeyUp(KEY_S) )

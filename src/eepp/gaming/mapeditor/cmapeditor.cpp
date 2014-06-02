@@ -378,7 +378,7 @@ void cMapEditor::CreateLightContainer() {
 
 	Txt = mTheme->CreateTextBox( "Light Radius:", mLightCont, eeSize(), eeVector2i( TAB_CONT_X_DIST, mUIBlueTxt->Pos().y + mUIBlueTxt->Size().Height() + 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
-	mLightRadius = mTheme->CreateSpinBox( mLightCont, eeSize( 100, 22 ), eeVector2i( Txt->Pos().x, Txt->Pos().y + Txt->Size().Height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_SIZE, 100, false );
+	mLightRadius = mTheme->CreateSpinBox( mLightCont, eeSize( 100, 22 ), eeVector2i( Txt->Pos().x, Txt->Pos().y + Txt->Size().Height() + 8 ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_SIZE | UI_TEXT_SELECTION_ENABLED, 100, false );
 	mLightRadius->MaxValue( 2000 );
 	mLightRadius->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cMapEditor::OnLightRadiusChangeVal ) );
 

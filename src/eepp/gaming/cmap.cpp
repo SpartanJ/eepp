@@ -118,7 +118,8 @@ void cMap::CreateLightManager() {
 void cMap::CreateEmptyTile() {
 	//! I create a texture representing an empty tile to render instead of rendering with primitives because is a lot faster, at least with NVIDIA GPUs.
 	cTextureFactory * TF = cTextureFactory::instance();
-	std::string tileName( "maptile-" + String::ToStr( mTileSize.Width() ) + "x" + String::ToStr( mTileSize.Height() ) );
+
+	std::string tileName( String::StrFormated( "maptile-%dx%d-%ul", mTileSize.Width(), mTileSize.Height(), mGridLinesColor.GetValue() ) );
 
 	cTexture * Tex = TF->GetByName( tileName );
 

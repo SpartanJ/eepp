@@ -2,7 +2,6 @@
 #define EEPP_GAMING_HPP
 
 #include <eepp/gaming/clight.hpp>
-#include <eepp/gaming/cisomap.hpp>
 #include <eepp/gaming/cgameobject.hpp>
 #include <eepp/gaming/cgameobjectsubtexture.hpp>
 #include <eepp/gaming/cgameobjectsubtextureex.hpp>

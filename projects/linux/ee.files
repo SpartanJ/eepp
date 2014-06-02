@@ -81,7 +81,6 @@
 ../../include/eepp/gaming/clightmanager.hpp
 ../../include/eepp/gaming/clight.hpp
 ../../include/eepp/gaming/clayer.hpp
-../../include/eepp/gaming/cisomap.hpp
 ../../include/eepp/gaming/cgameobjectvirtual.hpp
 ../../include/eepp/gaming/cgameobjectsprite.hpp
 ../../include/eepp/gaming/cgameobjectsubtextureex.hpp
@@ -101,7 +100,6 @@
 ../../src/eepp/gaming/clightmanager.cpp
 ../../src/eepp/gaming/clight.cpp
 ../../src/eepp/gaming/clayer.cpp
-../../src/eepp/gaming/cisomap.cpp
 ../../src/eepp/gaming/cgameobjectvirtual.cpp
 ../../src/eepp/gaming/cgameobjectsprite.cpp
 ../../src/eepp/gaming/cgameobjectsubtextureex.cpp
