@@ -238,11 +238,11 @@ cHttp::cHttp() :
 {
 }
 
-cHttp::cHttp(const std::string& host, unsigned short port) :
+cHttp::cHttp(const std::string& host, unsigned short port, bool useSSL) :
 	mConnection( NULL ),
 	mIsSSL( false )
 {
-	SetHost(host, port);
+	SetHost(host, port, useSSL);
 }
 
 cHttp::~cHttp() {
@@ -263,7 +263,7 @@ cHttp::~cHttp() {
 	eeSAFE_DELETE( tcp );
 }
 
-void cHttp::SetHost(const std::string& host, unsigned short port) {
+void cHttp::SetHost(const std::string& host, unsigned short port, bool useSSL) {
 	// Check the protocol
 	if (toLower(host.substr(0, 7)) == "http://") {
 		// HTTP protocol
@@ -280,9 +280,14 @@ void cHttp::SetHost(const std::string& host, unsigned short port) {
 		mPort		= 0;
 		#endif
 	} else {
-		// Undefined protocol - use HTTP
-		mHostName = host;
-		mPort	 = (port != 0 ? port : 80);
+		// Undefined protocol - use HTTP, unless SSL is specified
+		mHostName	= host;
+		mPort		= (port != 0 ? port : 80);
+
+		#ifdef EE_SSL_SUPPORT
+		mPort		= useSSL ? (port != 0 ? port : 443) : mPort;
+		mIsSSL		= useSSL;
+		#endif
 	}
 
 	// Remove any trailing '/' from the host name

@@ -239,8 +239,9 @@ class EE_API cHttp : NonCopyable {
 		**  leave it like this unless you really need a port other
 		**  than the standard one, or use an unknown protocol.
 		**  @param host Web server to connect to
-		**  @param port Port to use for connection */
-		cHttp(const std::string& host, unsigned short port = 0);
+		**  @param port Port to use for connection
+		**	@param useSSL force the SSL usage ( if compiled with the support of it ). If the host starts with https:// it will use it by default. */
+		cHttp(const std::string& host, unsigned short port = 0, bool useSSL = false);
 
 		~cHttp();
 
@@ -253,8 +254,9 @@ class EE_API cHttp : NonCopyable {
 		**  leave it like this unless you really need a port other
 		**  than the standard one, or use an unknown protocol.
 		**  @param host Web server to connect to
-		**  @param port Port to use for connection */
-		void SetHost(const std::string& host, unsigned short port = 0);
+		**  @param port Port to use for connection
+		**	@param useSSL force the SSL usage ( if compiled with the support of it ). If the host starts with https:// it will use it by default. */
+		void SetHost(const std::string& host, unsigned short port = 0, bool useSSL = false);
 
 		/** @brief Send a HTTP request and return the server's response.
 		**  You must have a valid host before sending a request (see SetHost).
