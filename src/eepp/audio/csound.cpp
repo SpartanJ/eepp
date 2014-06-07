@@ -217,9 +217,13 @@ void cSound::ResetBuffer() {
 	Stop();
 
 	// Detach the buffer
-	ALCheck( alSourcei( mSource, AL_BUFFER, 0 ) );
+	if ( NULL != mBuffer ) {
+		ALCheck( alSourcei( mSource, AL_BUFFER, 0 ) );
 
-	mBuffer = NULL;
+		mBuffer->DetachSound( this );
+
+		mBuffer = NULL;
+	}
 }
 
 cSound::Status cSound::State() const {

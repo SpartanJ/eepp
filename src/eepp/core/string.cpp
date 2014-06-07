@@ -2,8 +2,8 @@
 #include <cctype>
 #include <algorithm>
 #include <cstdarg>
-#include <eepp/base/string.hpp>
-#include <eepp/base/utf.hpp>
+#include <eepp/core/string.hpp>
+#include <eepp/core/utf.hpp>
 
 namespace EE {
 

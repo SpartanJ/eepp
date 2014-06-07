@@ -4,7 +4,7 @@
 #include <eepp/network/base.hpp>
 #include <eepp/network/cipaddress.hpp>
 #include <eepp/network/ctcpsocket.hpp>
-#include <eepp/base/noncopyable.hpp>
+#include <eepp/core/noncopyable.hpp>
 #include <eepp/system/ctime.hpp>
 #include <eepp/system/tthreadlocalptr.hpp>
 #include <eepp/system/cthread.hpp>

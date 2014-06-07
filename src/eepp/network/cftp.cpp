@@ -311,9 +311,6 @@ cFtp::Response cFtp::GetResponse() {
 					// We must make sure that the code is the same, otherwise it means
 					// we haven't reached the end of the multiline response
 					if ((separator != '-') && ((code == lastCode) || (lastCode == 0))) {
-						// Clear the multiline flag
-						isInsideMultiline = false;
-
 						// Extract the line
 						std::string line;
 						std::getline(in, line);

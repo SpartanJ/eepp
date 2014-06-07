@@ -60,7 +60,7 @@
 */
 
 	// General includes and declarations
-	#include <eepp/base.hpp>
+	#include <eepp/core.hpp>
 	#include <eepp/version.hpp>
 	using namespace EE;
 

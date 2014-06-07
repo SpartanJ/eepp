@@ -1,7 +1,7 @@
 #ifndef EE_SYSTEMCCLOCKIMPLPOSIX_H
 #define EE_SYSTEMCCLOCKIMPLPOSIX_H
 
-#include <eepp/base.hpp>
+#include <eepp/core.hpp>
 
 #if defined( EE_PLATFORM_POSIX )
 

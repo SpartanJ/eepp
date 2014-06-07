@@ -3,7 +3,7 @@
 
 #include <eepp/network/base.hpp>
 #include <eepp/network/sockethandle.hpp>
-#include <eepp/base/noncopyable.hpp>
+#include <eepp/core/noncopyable.hpp>
 #include <vector>
 
 namespace EE { namespace Network {

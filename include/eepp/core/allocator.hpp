@@ -1,7 +1,7 @@
 #ifndef EE_ALLOCATOR_HPP
 #define EE_ALLOCATOR_HPP
 
-#include <eepp/base/memorymanager.hpp>
+#include <eepp/core/memorymanager.hpp>
 #include <cstddef>
 
 namespace EE {

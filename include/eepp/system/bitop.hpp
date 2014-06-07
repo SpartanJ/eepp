@@ -1,7 +1,7 @@
 #ifndef EE_SYSTEMCUTILS_H
 #define EE_SYSTEMCUTILS_H
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 
 namespace EE { namespace System {
 

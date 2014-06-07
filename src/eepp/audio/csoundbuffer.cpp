@@ -211,6 +211,13 @@ bool cSoundBuffer::Update( unsigned int ChannelCount, unsigned int SampleRate ) 
 		return false;
 	}
 
+	// First make a copy of the list of sounds so we can reattach later
+	SoundList sounds( mSounds );
+
+	// Detach the buffer from the sounds that use it (to avoid OpenAL errors)
+	for (SoundList::const_iterator it = sounds.begin(); it != sounds.end(); ++it)
+		(*it)->ResetBuffer();
+
 	// Fill the buffer
 	ALsizei Size = static_cast<ALsizei>( mSamples.size() ) * sizeof(Int16);
 	ALCheck( alBufferData( mBuffer, Format, &mSamples[0], Size, SampleRate ) );

@@ -1,7 +1,8 @@
 #ifndef EE_MATHVECTOR2_H
 #define EE_MATHVECTOR2_H
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
+#include <cmath>
 
 namespace EE { namespace Math {
 

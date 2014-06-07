@@ -1,7 +1,7 @@
 #ifndef EE_SYSTEMSINGLETON_H
 #define EE_SYSTEMSINGLETON_H
 
-#include <eepp/base.hpp>
+#include <eepp/core.hpp>
 
 /** Internally we gonna use the macro singleton because it works with the engine compiled as dynamic libraries */
 

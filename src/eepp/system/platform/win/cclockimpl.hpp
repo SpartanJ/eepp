@@ -1,7 +1,7 @@
 #ifndef EE_SYSTEMCCLOCKIMPLWIN_H
 #define EE_SYSTEMCCLOCKIMPLWIN_H
 
-#include <eepp/base.hpp>
+#include <eepp/core.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 

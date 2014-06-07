@@ -1,7 +1,7 @@
 #ifndef EE_GAMINGMAPHELPER_HPP
 #define EE_GAMINGMAPHELPER_HPP
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 
 namespace EE { namespace Gaming {
 

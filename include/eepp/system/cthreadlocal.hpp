@@ -1,8 +1,8 @@
 #ifndef EE_SYSTEMCTHREADLOCAL_HPP
 #define EE_SYSTEMCTHREADLOCAL_HPP
 
-#include <eepp/base.hpp>
-#include <eepp/base/noncopyable.hpp>
+#include <eepp/core.hpp>
+#include <eepp/core/noncopyable.hpp>
 
 namespace EE { namespace System { namespace Private {
 class cThreadLocalImpl;

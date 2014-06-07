@@ -1,8 +1,8 @@
 #ifndef EE_SYSTEM_CLOCK_HPP
 #define EE_SYSTEM_CLOCK_HPP
 
-#include <eepp/declares.hpp>
-#include <eepp/base/noncopyable.hpp>
+#include <eepp/config.hpp>
+#include <eepp/core/noncopyable.hpp>
 
 namespace EE { namespace System {
 

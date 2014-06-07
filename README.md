@@ -74,7 +74,7 @@ Entropia Engine++
   * Provides all the basics stuffs for the full multi-threading support of the engine, file formats support for packing, clocks, resource manager, and much more.
 
 
-*Base Module:*
+*Core Module:*
 --------------
 
   * Customizable Memory Manager. Used by default in debug mode to track memory leaks.

@@ -1,4 +1,4 @@
-#include <eepp/base/debug.hpp>
+#include <eepp/core/debug.hpp>
 #include <eepp/system/clog.hpp>
 #include <cassert>
 #include <cstdarg>

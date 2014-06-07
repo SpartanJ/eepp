@@ -1,7 +1,7 @@
 #ifndef EE_MEMORY_MANAGER_HPP
 #define EE_MEMORY_MANAGER_HPP
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 #include <cstdlib>
 #include <cstdio>
 #include <string>

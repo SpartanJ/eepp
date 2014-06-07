@@ -1,7 +1,7 @@
 #ifndef EE_VERSION_HPP
 #define EE_VERSION_HPP
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 #include <string>
 
 #define EEPP_MAJOR_VERSION	0

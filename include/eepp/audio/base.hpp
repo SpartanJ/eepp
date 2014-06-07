@@ -1,7 +1,7 @@
 #ifndef EE_AUDIO_BASE
 #define EE_AUDIO_BASE
 
-#include <eepp/base.hpp>
+#include <eepp/core.hpp>
 
 #include <eepp/system/clog.hpp>
 #include <eepp/system/cpack.hpp>

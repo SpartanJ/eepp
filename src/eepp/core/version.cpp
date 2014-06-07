@@ -1,5 +1,5 @@
 #include <eepp/version.hpp>
-#include <eepp/base/string.hpp>
+#include <eepp/core/string.hpp>
 
 namespace EE {
 

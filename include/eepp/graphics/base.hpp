@@ -1,7 +1,7 @@
 #ifndef EE_GRAPHICS_BASE
 #define EE_GRAPHICS_BASE
 
-#include <eepp/base.hpp>
+#include <eepp/core.hpp>
 
 #include <eepp/math/vector2.hpp>
 #include <eepp/math/vector3.hpp>

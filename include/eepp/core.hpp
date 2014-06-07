@@ -3,8 +3,8 @@
 
 #include <eepp/helper/PlusCallback/callback.hpp>
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 
-#include <eepp/base/base.hpp>
+#include <eepp/core/core.hpp>
 
 #endif

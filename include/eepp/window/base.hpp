@@ -1,7 +1,7 @@
 #ifndef EE_WINDOW_BASE
 #define EE_WINDOW_BASE
 
-#include <eepp/base.hpp>
+#include <eepp/core.hpp>
 
 #include <eepp/math/rect.hpp>
 #include <eepp/math/vector2.hpp>

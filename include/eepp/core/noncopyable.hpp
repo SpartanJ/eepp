@@ -1,7 +1,7 @@
 #ifndef EE_NONCOPYABLE_HPP
 #define EE_NONCOPYABLE_HPP
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 
 namespace EE {
 

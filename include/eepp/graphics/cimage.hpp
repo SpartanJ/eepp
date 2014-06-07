@@ -1,7 +1,7 @@
 #ifndef EE_GRAPHICSCIMAGE_HPP
 #define EE_GRAPHICSCIMAGE_HPP
 
-#include <eepp/base.hpp>
+#include <eepp/core.hpp>
 
 #include <eepp/math/size.hpp>
 #include <eepp/math/rect.hpp>

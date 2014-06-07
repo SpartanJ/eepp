@@ -1,5 +1,5 @@
 #include <eepp/system/safedatapointer.hpp>
-#include <eepp/base/memorymanager.hpp>
+#include <eepp/core/memorymanager.hpp>
 #include <cstddef>
 
 namespace EE { namespace System {

@@ -1,7 +1,7 @@
 #ifndef EE_GRAPHICSTORIGINPOINT_HPP 
 #define EE_GRAPHICSTORIGINPOINT_HPP
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 #include <eepp/math/vector2.hpp>
 
 namespace EE { namespace Math {

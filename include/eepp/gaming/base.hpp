@@ -1,7 +1,7 @@
 #ifndef EE_GAMING_BASE
 #define EE_GAMING_BASE 
 
-#include <eepp/base.hpp>
+#include <eepp/core.hpp>
 
 #include <eepp/math/vector2.hpp>
 #include <eepp/math/rect.hpp>

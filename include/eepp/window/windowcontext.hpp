@@ -1,7 +1,7 @@
 #ifndef EE_WINDOWCONTEXT_HPP
 #define EE_WINDOWCONTEXT_HPP
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 
 #ifdef EE_GLEW_AVAILABLE
 	#if EE_PLATFORM == EE_PLATFORM_WIN

@@ -1,7 +1,8 @@
 #ifndef EE_MATH_EASINGEASING_H
 #define EE_MATH_EASINGEASING_H
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
+#include <cmath>
 
 namespace EE { namespace Math { namespace easing {
 

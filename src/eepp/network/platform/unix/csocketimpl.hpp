@@ -1,7 +1,7 @@
 #ifndef EE_NETWORKCSOCKETIMPL_UNIX_HPP
 #define EE_NETWORKCSOCKETIMPL_UNIX_HPP
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 
 #if defined( EE_PLATFORM_POSIX )
 

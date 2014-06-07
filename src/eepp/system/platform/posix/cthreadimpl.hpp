@@ -1,7 +1,7 @@
 #ifndef EE_SYSTEMCTHREADIMPLPOSIX_HPP
 #define EE_SYSTEMCTHREADIMPLPOSIX_HPP
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 
 #if defined( EE_PLATFORM_POSIX )
 

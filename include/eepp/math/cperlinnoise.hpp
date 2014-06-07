@@ -7,7 +7,7 @@ http://www.animeimaging.com/asp/PerlinNoise.aspx - by James Long
 And for the C++ implementation of Henrik Krysell.
 */
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 
 namespace EE { namespace Math {
 

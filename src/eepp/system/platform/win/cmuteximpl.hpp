@@ -1,7 +1,7 @@
 #ifndef EE_SYSTEMCMUTEXIMPLWIN_HPP
 #define EE_SYSTEMCMUTEXIMPLWIN_HPP
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 

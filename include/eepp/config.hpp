@@ -1,8 +1,7 @@
-#ifndef EE_DECLARES_HPP
-#define EE_DECLARES_HPP
+#ifndef EE_CONFIG_HPP
+#define EE_CONFIG_HPP
 
 #include <eepp/helper/sophist/sophist.h>
-#include <cmath>
 
 #define EE_PLATFORM_WIN			1
 #define EE_PLATFORM_LINUX		2

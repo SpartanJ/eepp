@@ -1,7 +1,7 @@
 #ifndef EE_WINDOWPLATFORMIMPL_HPP
 #define EE_WINDOWPLATFORMIMPL_HPP
 
-#include <eepp/base.hpp>
+#include <eepp/core.hpp>
 
 #if defined( EE_X11_PLATFORM )
 #include <eepp/window/platform/x11/cx11impl.hpp>

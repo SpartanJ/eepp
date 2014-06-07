@@ -1,8 +1,8 @@
 #ifndef EE_SYSTEMCTHREADLOCALIMPLWIN_HPP
 #define EE_SYSTEMCTHREADLOCALIMPLWIN_HPP
 
-#include <eepp/base.hpp>
-#include <eepp/base/noncopyable.hpp>
+#include <eepp/core.hpp>
+#include <eepp/core/noncopyable.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 

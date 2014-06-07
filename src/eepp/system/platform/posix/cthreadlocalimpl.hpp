@@ -1,8 +1,8 @@
 #ifndef EE_SYSTEMCTHREADLOCALIMPLPOSIX_HPP
 #define EE_SYSTEMCTHREADLOCALIMPLPOSIX_HPP
 
-#include <eepp/base.hpp>
-#include <eepp/base/noncopyable.hpp>
+#include <eepp/core.hpp>
+#include <eepp/core/noncopyable.hpp>
 
 #if defined( EE_PLATFORM_POSIX )
 

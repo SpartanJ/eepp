@@ -1,7 +1,7 @@
 #ifndef EE_DEBUG_HPP
 #define EE_DEBUG_HPP
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 
 namespace EE {
 

@@ -30,8 +30,8 @@
 #ifndef EE_STRING_HPP
 #define EE_STRING_HPP
 
-#include <eepp/declares.hpp>
-#include <eepp/base/utf.hpp>
+#include <eepp/config.hpp>
+#include <eepp/core/utf.hpp>
 #include <locale>
 #include <string>
 #include <cstring>

@@ -1,7 +1,7 @@
 #include <iostream>
 #include <sstream>
-#include <eepp/base/memorymanager.hpp>
-#include <eepp/base/debug.hpp>
+#include <eepp/core/memorymanager.hpp>
+#include <eepp/core/debug.hpp>
 #include <eepp/system/clog.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/system/cmutex.hpp>

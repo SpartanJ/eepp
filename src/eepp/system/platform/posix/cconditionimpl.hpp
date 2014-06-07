@@ -1,7 +1,7 @@
 #ifndef EE_SYSTEMCCONDITIONIMPLPOSIX_HPP
 #define EE_SYSTEMCCONDITIONIMPLPOSIX_HPP
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 
 #if defined( EE_PLATFORM_POSIX )
 

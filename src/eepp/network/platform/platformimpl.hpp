@@ -1,7 +1,7 @@
 #ifndef EE_NETWORK_PLATFORMIMPL_HPP
 #define EE_NETWORK_PLATFORMIMPL_HPP
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 
 #if defined( EE_PLATFORM_POSIX )
 	#include <eepp/network/platform/unix/csocketimpl.hpp>

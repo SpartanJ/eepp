@@ -1,7 +1,7 @@
 #ifndef EE_OPENGL_HPP
 #define EE_OPENGL_HPP
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 
 #ifdef EE_USE_DOUBLES
 #define GL_FP	GL_DOUBLE

@@ -3,7 +3,7 @@
 
 #include <eepp/network/base.hpp>
 #include <eepp/network/ctcpsocket.hpp>
-#include <eepp/base/noncopyable.hpp>
+#include <eepp/core/noncopyable.hpp>
 #include <eepp/system/ctime.hpp>
 #include <string>
 #include <vector>

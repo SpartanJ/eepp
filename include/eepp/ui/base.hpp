@@ -1,7 +1,7 @@
 #ifndef EE_UI_BASE
 #define EE_UI_BASE
 
-#include <eepp/base.hpp>
+#include <eepp/core.hpp>
 
 #include <eepp/math/ease.hpp>
 #include <eepp/math/rect.hpp>

@@ -1,7 +1,7 @@
 #ifndef EE_NETWORK_BASE
 #define EE_NETWORK_BASE
 
-#include <eepp/base.hpp>
+#include <eepp/core.hpp>
 
 /**
 This module is based on the sfml-network module.

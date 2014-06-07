@@ -1,7 +1,7 @@
 #ifndef EE_SYSTEMCCOLORS_H
 #define EE_SYSTEMCCOLORS_H
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 #include <eepp/system/bitop.hpp>
 
 namespace EE { namespace System {

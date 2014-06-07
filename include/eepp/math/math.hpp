@@ -3,7 +3,7 @@
 
 #include <cmath>
 #include <cstdlib>
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 
 namespace EE { namespace Math {
 

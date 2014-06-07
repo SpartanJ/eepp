@@ -1,4 +1,5 @@
 #include <eepp/math/cperlinnoise.hpp>
+#include <cmath>
 
 namespace EE { namespace Math {
 

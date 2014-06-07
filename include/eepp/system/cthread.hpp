@@ -2,7 +2,7 @@
 #define EE_SYSTEMCTHREAD_H
 
 #include <eepp/system/base.hpp>
-#include <eepp/base/noncopyable.hpp>
+#include <eepp/core/noncopyable.hpp>
 
 namespace EE { namespace System {
 

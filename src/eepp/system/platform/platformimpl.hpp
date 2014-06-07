@@ -1,7 +1,7 @@
 #ifndef EE_SYSTEMPLATFORMIMPL_HPP
 #define EE_SYSTEMPLATFORMIMPL_HPP
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 
 #if defined( EE_PLATFORM_POSIX )
 	#include <eepp/system/platform/posix/cthreadimpl.hpp>

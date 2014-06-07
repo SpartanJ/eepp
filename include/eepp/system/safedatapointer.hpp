@@ -1,7 +1,7 @@
 #ifndef EE_SYSTEM_SAFEDATAPOINTER
 #define EE_SYSTEM_SAFEDATAPOINTER
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 
 namespace EE { namespace System {
 

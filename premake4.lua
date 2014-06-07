@@ -275,8 +275,8 @@ backend_selected = false
 
 function build_base_configuration( package_name )
 	includedirs { "src/eepp/helper/zlib" }
-	
-	if not is_vs() then
+
+	if not os.is("windows") then
 		buildoptions{ "-fPIC" }
 	end
 
@@ -304,7 +304,7 @@ function build_base_configuration( package_name )
 end
 
 function build_base_cpp_configuration( package_name )
-	if not is_vs() then
+	if not os.is("windows") then
 		buildoptions{ "-fPIC" }
 	end
 	
@@ -664,7 +664,7 @@ function build_eepp( build_name )
 		files { "src/eepp/network/platform/unix/*.cpp" }
 	end
 
-	files { "src/eepp/base/*.cpp",
+	files { "src/eepp/core/*.cpp",
 			"src/eepp/math/*.cpp",
 			"src/eepp/system/*.cpp",
 			"src/eepp/audio/*.cpp",

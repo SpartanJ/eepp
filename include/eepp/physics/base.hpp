@@ -10,7 +10,7 @@
 #include <eepp/math/rect.hpp>
 using namespace EE::Math;
 
-#include <eepp/base.hpp>
+#include <eepp/core.hpp>
 #include <eepp/system/colors.hpp>
 #include <eepp/system/tsingleton.hpp>
 using namespace EE::System;

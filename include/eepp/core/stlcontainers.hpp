@@ -1,7 +1,7 @@
 #ifndef EE_STLCONTAINERS_HPP
 #define EE_STLCONTAINERS_HPP
 
-#include <eepp/base/memorymanager.hpp>
+#include <eepp/core/memorymanager.hpp>
 #include <stack>
 #include <set>
 #include <deque>

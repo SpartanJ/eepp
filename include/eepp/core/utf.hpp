@@ -34,7 +34,7 @@
 #include <locale>
 #include <string>
 #include <cstdlib>
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 
 namespace EE {
 

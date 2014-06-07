@@ -2,7 +2,7 @@
 #ifndef EE_SYSTEMCTIME_HPP
 #define EE_SYSTEMCTIME_HPP
 
-#include <eepp/declares.hpp>
+#include <eepp/config.hpp>
 
 namespace EE { namespace System {
 
