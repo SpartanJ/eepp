@@ -915,6 +915,9 @@ void cEETest::LoadTextures() {
 	eePRINTL( "Textures loading time: %4.3f ms.", TE.Elapsed().AsMilliseconds() );
 
 	Map.Load( MyPath + "maps/test.eem" );
+	Map.DrawGrid( false );
+	Map.ClipedArea( false );
+	Map.DrawBackground( false );
 	Map.ViewSize( mWindow->Size() );
 
 	eePRINTL( "Map creation time: %4.3f ms.", TE.Elapsed().AsMilliseconds() );
