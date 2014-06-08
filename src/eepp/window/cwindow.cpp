@@ -142,8 +142,8 @@ void cWindow::CreateView() {
 }
 
 void cWindow::Setup2D( const bool& KeepView ) {
-	glPixelStorei( GL_UNPACK_ALIGNMENT, 1 );
-	glPixelStorei( GL_PACK_ALIGNMENT, 1 );
+	GLi->PixelStorei( GL_UNPACK_ALIGNMENT, 1 );
+	GLi->PixelStorei( GL_PACK_ALIGNMENT, 1 );
 
 	BackColor( mWindow.BackgroundColor );
 

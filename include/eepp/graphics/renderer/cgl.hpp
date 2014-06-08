@@ -110,6 +110,8 @@ class EE_API cGL {
 		/** Reapply the polygon mode */
 		void PolygonMode();
 
+		void PixelStorei (GLenum pname, GLint param);
+
 		cRendererGL * GetRendererGL();
 
 		cRendererGL3 * GetRendererGL3();

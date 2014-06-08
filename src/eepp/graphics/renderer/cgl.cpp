@@ -505,6 +505,10 @@ void cGL::PolygonMode() {
 	PolygonMode( Mode );
 }
 
+void cGL::PixelStorei(GLenum pname, GLint param) {
+	glPixelStorei( pname, param );
+}
+
 void cGL::PolygonMode( const EE_FILL_MODE& Mode ) {
 	if ( Mode == DRAW_FILL )
 		PolygonMode( GL_FRONT_AND_BACK, GL_FILL );

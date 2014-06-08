@@ -5,7 +5,7 @@ namespace EE { namespace Graphics {
 SINGLETON_DECLARE_IMPLEMENTATION(cGlobalBatchRenderer)
 
 cGlobalBatchRenderer::cGlobalBatchRenderer() {
-	AllocVertexs( 1024 );
+	AllocVertexs( 4096 );
 }
 
 cGlobalBatchRenderer::~cGlobalBatchRenderer() {

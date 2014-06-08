@@ -38,15 +38,15 @@ cFrameBufferFBO::~cFrameBufferFBO() {
 	if ( curFB == mFrameBuffer )
 		Unbind();
 
-    if ( mDepthBuffer ) {
-        GLuint depthBuffer = static_cast<GLuint>( mDepthBuffer );
+	if ( mDepthBuffer ) {
+		GLuint depthBuffer = static_cast<GLuint>( mDepthBuffer );
 		glDeleteFramebuffersEXT( 1, &depthBuffer );
-    }
+	}
 
-    if ( mFrameBuffer ) {
-        GLuint frameBuffer = static_cast<GLuint>( mFrameBuffer );
+	if ( mFrameBuffer ) {
+		GLuint frameBuffer = static_cast<GLuint>( mFrameBuffer );
 		glDeleteFramebuffersEXT( 1, &frameBuffer );
-    }
+	}
 }
 
 bool cFrameBufferFBO::Create( const Uint32& Width, const Uint32& Height ) {
