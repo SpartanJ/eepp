@@ -257,7 +257,7 @@ bool cGL::ShadersSupported() {
 #ifdef EE_GLES
 	return ( GLv_ES2 == Version() || GLv_3 == Version() || GLv_3CP == Version() );
 #else
-	return IsExtension( EEGL_ARB_shader_objects ) && IsExtension( EEGL_ARB_vertex_shader ) && IsExtension( EEGL_ARB_fragment_shader );
+	return GLv_3CP == Version() || ( IsExtension( EEGL_ARB_shader_objects ) && IsExtension( EEGL_ARB_vertex_shader ) && IsExtension( EEGL_ARB_fragment_shader ) );
 #endif
 }
 
@@ -331,7 +331,7 @@ Uint32 cGL::GetTextureOpEnum( const EE_TEXTURE_OP& Type ) {
 std::string cGL::GetExtensions() {
 	std::string exts;
 
-	#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_OSX
+	#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
 	if ( GLv_3 == Version() || GLv_3CP == Version() ) {
 		static pglGetStringiFunc eeglGetStringiFunc = NULL;
 

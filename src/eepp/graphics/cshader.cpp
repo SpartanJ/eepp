@@ -165,6 +165,12 @@ void cShader::EnsureVersion() {
 			}
 		}
 	}
+
+	if ( GLi->Version() == GLv_3CP ) {
+		#ifndef EE_GLES
+		String::ReplaceSubStr( mSource, "texture2D"	, "texture"	);
+		#endif
+	}
 	#endif
 }
 
