@@ -136,9 +136,6 @@ class cEETest : private cThread {
 
 		cMap Map;
 
-		eeFloat H;
-		Int32 NH;
-
 		Uint8 Screen;
 		SceneCb Scenes[6];
 		void Screen1();

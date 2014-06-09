@@ -18,7 +18,7 @@ namespace Platform {
 
 class cThreadImpl {
 	public:
-		static Uint32 GetCurrentThreadId();
+		static UintPtr GetCurrentThreadId();
 
 		cThreadImpl( cThread * owner );
 		
@@ -26,7 +26,7 @@ class cThreadImpl {
 		
 		void Terminate();
 
-		Uint32 Id();
+		UintPtr Id();
 	protected:
 		static unsigned int __stdcall EntryPoint(void* userData);
 

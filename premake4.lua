@@ -144,6 +144,7 @@ newoption { trigger = "with-static-eepp", description = "Force to build the demo
 newoption { trigger = "with-static-backend", description = "It will try to compile the library with a static backend (only for gcc and mingw).\n\t\t\t\tThe backend should be placed in libs/your_platform/libYourBackend.a" }
 newoption { trigger = "with-gles2", description = "Compile with GLES2 support" }
 newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
+newoption { trigger = "use-frameworks", description = "In Mac OS X it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link agains SDL2.framework." }
 newoption { 
 	trigger = "with-backend", 
 	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.\n\t\t\tIt's possible to build with more than one backend support.\n\t\t\t\tUse comma to separate the backends to build ( you can't mix SDL and SDL2, you'll get random crashes ).\n\t\t\t\tExample: --with-backend=SDL2,SFML",
@@ -220,7 +221,7 @@ function get_ios_arch()
 end
 
 function os_findlib( name )
-	if os.is_real("macosx") and is_xcode() then
+	if os.is_real("macosx") and ( is_xcode() or _OPTIONS["use-frameworks"] ) then
 		local path = "/Library/Frameworks/" .. name
 		
 		if os.isdir( path ) then
@@ -232,7 +233,7 @@ function os_findlib( name )
 end
 
 function get_backend_link_name( name )
-	if os.is_real("macosx") and is_xcode() then
+	if os.is_real("macosx") and ( is_xcode() or _OPTIONS["use-frameworks"] ) then
 		local fname = name .. ".framework"
 		
 		if os_findlib( fname ) then -- Search for the framework

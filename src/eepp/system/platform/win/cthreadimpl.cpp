@@ -6,8 +6,8 @@ namespace EE { namespace System { namespace Platform {
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
-Uint32 cThreadImpl::GetCurrentThreadId() {
-	return (Uint32)::GetCurrentThreadId();
+UintPtr cThreadImpl::GetCurrentThreadId() {
+	return (UintPtr)::GetCurrentThreadId();
 }
 
 cThreadImpl::cThreadImpl( cThread * owner ) {
@@ -32,8 +32,8 @@ void cThreadImpl::Terminate() {
 	}
 }
 
-Uint32 cThreadImpl::Id() {
-	return (Uint32)mThreadId;
+UintPtr cThreadImpl::Id() {
+	return (UintPtr)mThreadId;
 }
 
 unsigned int __stdcall cThreadImpl::EntryPoint( void * userData ) {
