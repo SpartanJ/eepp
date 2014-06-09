@@ -393,6 +393,10 @@ function build_link_configuration( package_name, use_ee_icon )
 			buildoptions{ "-Wall -Wno-long-long" }
 		end
 
+		if os.is("macosx") and not is_xcode() and not _OPTIONS["with-static-eepp"] and package_name == "eepp" then
+			linkoptions { "-install_name @executable_path/../libs/macosx/libeepp-debug.dylib" }
+		end
+
 		targetname ( package_name .. "-debug" .. extension )
 
 	configuration "release"
@@ -401,6 +405,10 @@ function build_link_configuration( package_name, use_ee_icon )
 
 		if not is_vs() and not os.is_real("emscripten") then
 			buildoptions { "-fno-strict-aliasing -O3 -s -ffast-math" }
+		end
+
+		if os.is("macosx") and not is_xcode() and not _OPTIONS["with-static-eepp"] and package_name == "eepp" then
+			linkoptions { "-install_name @executable_path/../libs/macosx/libeepp.dylib" }
 		end
 
 		targetname ( package_name .. extension )
