@@ -393,8 +393,12 @@ function build_link_configuration( package_name, use_ee_icon )
 			buildoptions{ "-Wall -Wno-long-long" }
 		end
 
-		if os.is("macosx") and not is_xcode() and not _OPTIONS["with-static-eepp"] and package_name == "eepp" then
-			linkoptions { "-install_name @executable_path/../libs/macosx/libeepp-debug.dylib" }
+		if "4.4-beta5" == _PREMAKE_VERSION and not _OPTIONS["with-static-eepp"] and package_name == "eepp" then
+			if os.is("macosx") and not is_xcode() then
+				linkoptions { "-install_name @executable_path/../libs/macosx/libeepp-debug.dylib" }
+			elseif os.is("linux") then
+				linkoptions { "-Wl,-soname=\"libeepp-debug.so\"" }
+			end
 		end
 
 		targetname ( package_name .. "-debug" .. extension )
@@ -407,8 +411,12 @@ function build_link_configuration( package_name, use_ee_icon )
 			buildoptions { "-fno-strict-aliasing -O3 -s -ffast-math" }
 		end
 
-		if os.is("macosx") and not is_xcode() and not _OPTIONS["with-static-eepp"] and package_name == "eepp" then
-			linkoptions { "-install_name @executable_path/../libs/macosx/libeepp.dylib" }
+		if "4.4-beta5" == _PREMAKE_VERSION and not _OPTIONS["with-static-eepp"] and package_name == "eepp" then
+			if os.is("macosx") and not is_xcode() then
+				linkoptions { "-install_name @executable_path/../libs/macosx/libeepp.dylib" }
+			elseif os.is("linux") then
+				linkoptions { "-Wl,-soname=\"libeepp.so\"" }
+			end
 		end
 
 		targetname ( package_name .. extension )
