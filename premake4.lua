@@ -222,7 +222,7 @@ end
 
 function os_findlib( name )
 	if os.is_real("macosx") and ( is_xcode() or _OPTIONS["use-frameworks"] ) then
-		local path = "/Library/Frameworks/" .. name
+		local path = "/Library/Frameworks/" .. name .. ".framework"
 		
 		if os.isdir( path ) then
 			return path
@@ -336,6 +336,16 @@ function add_cross_config_links()
 	end
 end
 
+function fix_shared_lib_linking_path( libname )
+	if "4.4-beta5" == _PREMAKE_VERSION and not _OPTIONS["with-static-eepp"] and package_name == "eepp" then
+		if os.is("macosx") and not is_xcode() then
+			linkoptions { "-install_name " .. libname .. ".dylib" }
+		elseif os.is("linux") or os.is("freebsd") or os.is("haiku") then
+			linkoptions { "-Wl,-soname=\"" .. libname .. "\"" }
+		end
+	end
+end
+
 function build_link_configuration( package_name, use_ee_icon )
 	includedirs { "include" }
 
@@ -393,13 +403,7 @@ function build_link_configuration( package_name, use_ee_icon )
 			buildoptions{ "-Wall -Wno-long-long" }
 		end
 
-		if "4.4-beta5" == _PREMAKE_VERSION and not _OPTIONS["with-static-eepp"] and package_name == "eepp" then
-			if os.is("macosx") and not is_xcode() then
-				linkoptions { "-install_name @executable_path/../libs/macosx/libeepp-debug.dylib" }
-			elseif os.is("linux") then
-				linkoptions { "-Wl,-soname=\"libeepp-debug.so\"" }
-			end
-		end
+		fix_shared_lib_linking_path("libeepp-debug")
 
 		targetname ( package_name .. "-debug" .. extension )
 
@@ -411,13 +415,7 @@ function build_link_configuration( package_name, use_ee_icon )
 			buildoptions { "-fno-strict-aliasing -O3 -s -ffast-math" }
 		end
 
-		if "4.4-beta5" == _PREMAKE_VERSION and not _OPTIONS["with-static-eepp"] and package_name == "eepp" then
-			if os.is("macosx") and not is_xcode() then
-				linkoptions { "-install_name @executable_path/../libs/macosx/libeepp.dylib" }
-			elseif os.is("linux") then
-				linkoptions { "-Wl,-soname=\"libeepp.so\"" }
-			end
-		end
+		fix_shared_lib_linking_path("libeepp")
 
 		targetname ( package_name .. extension )
 		

@@ -39,3 +39,5 @@ syntax: glob
 src/eepp/helper/SDL2/include/SDL2
 projects/ios/eepp.app/assets
 projects/ios/eepp.app/eepp
+bin/libeepp-debug.dylib
+bin/libeepp.dylib
