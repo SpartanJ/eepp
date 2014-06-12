@@ -236,7 +236,7 @@ function get_backend_link_name( name )
 	if os.is_real("macosx") and ( is_xcode() or _OPTIONS["use-frameworks"] ) then
 		local fname = name .. ".framework"
 		
-		if os_findlib( fname ) then -- Search for the framework
+		if os_findlib( name ) then -- Search for the framework
 			return fname
 		end
 	end
@@ -295,7 +295,7 @@ function build_base_configuration( package_name )
 
 	configuration "release"
 		defines { "NDEBUG" }
-		flags { "Optimize" }
+		flags { "OptimizeSpeed" }
 		if not is_vs() then
 			buildoptions{ "-Wall", "-std=gnu99" }
 		end
@@ -321,7 +321,7 @@ function build_base_cpp_configuration( package_name )
 
 	configuration "release"
 		defines { "NDEBUG" }
-		flags { "Optimize" }
+		flags { "OptimizeSpeed" }
 		if not is_vs() then
 			buildoptions{ "-Wall" }
 		end
@@ -409,10 +409,10 @@ function build_link_configuration( package_name, use_ee_icon )
 
 	configuration "release"
 		defines { "NDEBUG" }
-		flags { "Optimize" }
+		flags { "OptimizeSpeed" }
 
 		if not is_vs() and not os.is_real("emscripten") then
-			buildoptions { "-fno-strict-aliasing -O3 -s -ffast-math" }
+			buildoptions { "-fno-strict-aliasing -s -ffast-math" }
 		end
 
 		fix_shared_lib_linking_path("libeepp")
@@ -791,7 +791,7 @@ solution "eepp"
 		kind "StaticLib"
 		language "C"
 		set_targetdir("libs/" .. os.get_real() .. "/helpers/")
-		files { "src/eepp/helper/zlib/*.c", "src/eepp/helper/libzip/*.c" }
+		files { "src/eepp/helper/zlib/*.c" }
 		build_base_configuration( "zlib" )
 
 	project "libzip-static"
