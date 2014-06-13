@@ -302,6 +302,7 @@ function build_base_configuration( package_name )
 		targetname ( package_name )
 
 	set_ios_config()
+	set_xcode_config()
 end
 
 function build_base_cpp_configuration( package_name )
@@ -310,6 +311,7 @@ function build_base_cpp_configuration( package_name )
 	end
 	
 	set_ios_config()
+	set_xcode_config()
 
 	configuration "debug"
 		defines { "DEBUG" }
@@ -439,6 +441,7 @@ function build_link_configuration( package_name, use_ee_icon )
 		end
 
 	set_ios_config()
+	set_xcode_config()
 end
 
 function generate_os_links()
@@ -548,6 +551,14 @@ function add_sfml()
 	end
 end
 
+function set_xcode_config()
+	if is_xcode() then
+		linkoptions { "-F/Library/Frameworks" }
+		includedirs { "/Library/Frameworks/SDL2.framework/Headers" }
+		defines { "EE_SDL2_FROM_ROOTPATH" }
+	end
+end
+
 function set_ios_config()
 	if _OPTIONS.platform == "ios-arm7" or _OPTIONS.platform == "ios-x86" then
 		local err = false
@@ -588,11 +599,6 @@ function set_ios_config()
 	
 	if _OPTIONS.platform == "ios-cross-arm7" or _OPTIONS.platform == "ios-cross-x86" then
 		includedirs { "src/eepp/helper/SDL2/include" }
-	end
-	
-	if is_xcode() then
-		linkoptions { "-F/Library/Frameworks" }
-		includedirs { "/Library/Frameworks/SDL2.framework/Headers" }
 	end
 end
 
@@ -668,6 +674,7 @@ function build_eepp( build_name )
 	includedirs { "include", "src", "src/eepp/helper/freetype2/include", "src/eepp/helper/zlib" }
 	
 	set_ios_config()
+	set_xcode_config()
 	
 	add_static_links()
 
