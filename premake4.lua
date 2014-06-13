@@ -336,9 +336,9 @@ function add_cross_config_links()
 	end
 end
 
-function fix_shared_lib_linking_path( libname )
-	if "4.4-beta5" == _PREMAKE_VERSION and not _OPTIONS["with-static-eepp"] and package_name == "eepp" then
-		if os.is("macosx") and not is_xcode() then
+function fix_shared_lib_linking_path( package_name, libname )
+	if ( "4.4-beta5" == _PREMAKE_VERSION or "HEAD" == _PREMAKE_VERSION ) and not _OPTIONS["with-static-eepp"] and package_name == "eepp" then
+		if os.is("macosx") then
 			linkoptions { "-install_name " .. libname .. ".dylib" }
 		elseif os.is("linux") or os.is("freebsd") or os.is("haiku") then
 			linkoptions { "-Wl,-soname=\"" .. libname .. "\"" }
@@ -403,7 +403,7 @@ function build_link_configuration( package_name, use_ee_icon )
 			buildoptions{ "-Wall -Wno-long-long" }
 		end
 
-		fix_shared_lib_linking_path("libeepp-debug")
+		fix_shared_lib_linking_path( package_name, "libeepp-debug" )
 
 		targetname ( package_name .. "-debug" .. extension )
 
@@ -412,10 +412,14 @@ function build_link_configuration( package_name, use_ee_icon )
 		flags { "OptimizeSpeed" }
 
 		if not is_vs() and not os.is_real("emscripten") then
-			buildoptions { "-fno-strict-aliasing -s -ffast-math" }
+			buildoptions { "-fno-strict-aliasing -ffast-math" }
 		end
 
-		fix_shared_lib_linking_path("libeepp")
+		if not is_vs() and not os.is_real("emscripten") and not os.is_real("macosx") then
+			buildoptions { "-s" }
+		end
+
+		fix_shared_lib_linking_path( package_name, "libeepp" )
 
 		targetname ( package_name .. extension )
 		
