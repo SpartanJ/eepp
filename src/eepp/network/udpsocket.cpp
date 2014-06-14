@@ -1,22 +1,22 @@
-#include <eepp/network/cudpsocket.hpp>
-#include <eepp/network/cipaddress.hpp>
-#include <eepp/network/cpacket.hpp>
+#include <eepp/network/udpsocket.hpp>
+#include <eepp/network/ipaddress.hpp>
+#include <eepp/network/packet.hpp>
 #include <eepp/network/platform/platformimpl.hpp>
 #include <algorithm>
 
 namespace EE { namespace Network {
 
-cUdpSocket::cUdpSocket() :
-	cSocket  (Udp),
+UdpSocket::UdpSocket() :
+	Socket  (Udp),
 	mBuffer(MaxDatagramSize)
 {
 }
 
-unsigned short cUdpSocket::GetLocalPort() const {
-	if (GetHandle() != Private::cSocketImpl::InvalidSocket()) {
+unsigned short UdpSocket::GetLocalPort() const {
+	if (GetHandle() != Private::SocketImpl::InvalidSocket()) {
 		// Retrieve informations about the local end of the socket
 		sockaddr_in address;
-		Private::cSocketImpl::AddrLength size = sizeof(address);
+		Private::SocketImpl::AddrLength size = sizeof(address);
 		if (getsockname(GetHandle(), reinterpret_cast<sockaddr*>(&address), &size) != -1) {
 			return ntohs(address.sin_port);
 		}
@@ -26,12 +26,12 @@ unsigned short cUdpSocket::GetLocalPort() const {
 	return 0;
 }
 
-cSocket::Status cUdpSocket::Bind(unsigned short port) {
+Socket::Status UdpSocket::Bind(unsigned short port) {
 	// Create the internal socket if it doesn't exist
 	Create();
 
 	// Bind the socket
-	sockaddr_in address = Private::cSocketImpl::CreateAddress(INADDR_ANY, port);
+	sockaddr_in address = Private::SocketImpl::CreateAddress(INADDR_ANY, port);
 	if (::bind(GetHandle(), reinterpret_cast<sockaddr*>(&address), sizeof(address)) == -1) {
 		eePRINTL( "Failed to bind socket to port %d", port );
 		return Error;
@@ -40,39 +40,39 @@ cSocket::Status cUdpSocket::Bind(unsigned short port) {
 	return Done;
 }
 
-void cUdpSocket::Unbind() {
+void UdpSocket::Unbind() {
 	// Simply close the socket
 	Close();
 }
 
-cSocket::Status cUdpSocket::Send(const void* data, std::size_t size, const cIpAddress& remoteAddress, unsigned short remotePort) {
+Socket::Status UdpSocket::Send(const void* data, std::size_t size, const IpAddress& remoteAddress, unsigned short remotePort) {
 	// Create the internal socket if it doesn't exist
 	Create();
 
 	// Make sure that all the data will fit in one datagram
 	if (size > MaxDatagramSize)
 	{
-		eePRINTL( "Cannot send data over the network (the number of bytes to send is greater than cUdpSocket::MaxDatagramSize)" );
+		eePRINTL( "Cannot send data over the network (the number of bytes to send is greater than UdpSocket::MaxDatagramSize)" );
 		return Error;
 	}
 
 	// Build the target address
-	sockaddr_in address = Private::cSocketImpl::CreateAddress(remoteAddress.ToInteger(), remotePort);
+	sockaddr_in address = Private::SocketImpl::CreateAddress(remoteAddress.ToInteger(), remotePort);
 
 	// Send the data (unlike TCP, all the data is always sent in one call)
 	int sent = sendto(GetHandle(), static_cast<const char*>(data), static_cast<int>(size), 0, reinterpret_cast<sockaddr*>(&address), sizeof(address));
 
 	// Check for errors
 	if (sent < 0)
-		return Private::cSocketImpl::GetErrorStatus();
+		return Private::SocketImpl::GetErrorStatus();
 
 	return Done;
 }
 
-cSocket::Status cUdpSocket::Receive(void* data, std::size_t size, std::size_t& received, cIpAddress& remoteAddress, unsigned short& remotePort) {
+Socket::Status UdpSocket::Receive(void* data, std::size_t size, std::size_t& received, IpAddress& remoteAddress, unsigned short& remotePort) {
 	// First clear the variables to fill
 	received	  = 0;
-	remoteAddress = cIpAddress();
+	remoteAddress = IpAddress();
 	remotePort	= 0;
 
 	// Check the destination buffer
@@ -82,25 +82,25 @@ cSocket::Status cUdpSocket::Receive(void* data, std::size_t size, std::size_t& r
 	}
 
 	// Data that will be filled with the other computer's address
-	sockaddr_in address = Private::cSocketImpl::CreateAddress(INADDR_ANY, 0);
+	sockaddr_in address = Private::SocketImpl::CreateAddress(INADDR_ANY, 0);
 
 	// Receive a chunk of bytes
-	Private::cSocketImpl::AddrLength addressSize = sizeof(address);
+	Private::SocketImpl::AddrLength addressSize = sizeof(address);
 	int sizeReceived = recvfrom(GetHandle(), static_cast<char*>(data), static_cast<int>(size), 0, reinterpret_cast<sockaddr*>(&address), &addressSize);
 
 	// Check for errors
 	if (sizeReceived < 0)
-		return Private::cSocketImpl::GetErrorStatus();
+		return Private::SocketImpl::GetErrorStatus();
 
 	// Fill the sender informations
 	received	  = static_cast<std::size_t>(sizeReceived);
-	remoteAddress = cIpAddress(ntohl(address.sin_addr.s_addr));
+	remoteAddress = IpAddress(ntohl(address.sin_addr.s_addr));
 	remotePort	= ntohs(address.sin_port);
 
 	return Done;
 }
 
-cSocket::Status cUdpSocket::Send(cPacket& packet, const cIpAddress& remoteAddress, unsigned short remotePort) {
+Socket::Status UdpSocket::Send(Packet& packet, const IpAddress& remoteAddress, unsigned short remotePort) {
 	// UDP is a datagram-oriented protocol (as opposed to TCP which is a stream protocol).
 	// Sending one datagram is almost safe: it may be lost but if it's received, then its data
 	// is guaranteed to be ok. However, splitting a packet into multiple datagrams would be highly
@@ -117,8 +117,8 @@ cSocket::Status cUdpSocket::Send(cPacket& packet, const cIpAddress& remoteAddres
 	return Send(data, size, remoteAddress, remotePort);
 }
 
-cSocket::Status cUdpSocket::Receive(cPacket& packet, cIpAddress& remoteAddress, unsigned short& remotePort) {
-	// See the detailed comment in Send(cPacket) above.
+Socket::Status UdpSocket::Receive(Packet& packet, IpAddress& remoteAddress, unsigned short& remotePort) {
+	// See the detailed comment in Send(Packet) above.
 
 	// Receive the datagram
 	std::size_t received = 0;

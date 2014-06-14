@@ -1,18 +1,18 @@
-#include <eepp/network/ssl/csslsocket.hpp>
-#include <eepp/network/ssl/csslsocketimpl.hpp>
+#include <eepp/network/ssl/sslsocket.hpp>
+#include <eepp/network/ssl/sslsocketimpl.hpp>
 #include <eepp/system/filesystem.hpp>
 
 #ifdef EE_OPENSSL
-#include <eepp/network/ssl/backend/openssl/copensslsocket.hpp>
+#include <eepp/network/ssl/backend/openssl/opensslsocket.hpp>
 #endif
 
 namespace EE { namespace Network { namespace SSL {
 
 static bool ssl_initialized = false;
 
-std::string cSSLSocket::CertificatesPath = "";
+std::string SSLSocket::CertificatesPath = "";
 
-bool cSSLSocket::Init() {
+bool SSLSocket::Init() {
 	bool ret = false;
 
 	if ( !ssl_initialized ) {
@@ -47,7 +47,7 @@ bool cSSLSocket::Init() {
 		}
 
 		#ifdef EE_OPENSSL
-		ret = cOpenSSLSocket::Init();
+		ret = OpenSSLSocket::Init();
 		#endif
 
 		ssl_initialized = true;
@@ -56,12 +56,12 @@ bool cSSLSocket::Init() {
 	return ret;
 }
 
-bool cSSLSocket::End() {
+bool SSLSocket::End() {
 	bool ret = false;
 
 	if ( ssl_initialized ) {
 		#ifdef EE_OPENSSL
-		ret = cOpenSSLSocket::End();
+		ret = OpenSSLSocket::End();
 		#endif
 		
 		ssl_initialized = false;
@@ -70,7 +70,7 @@ bool cSSLSocket::End() {
 	return ret;
 }
 
-bool cSSLSocket::IsSupported() {
+bool SSLSocket::IsSupported() {
 #ifdef EE_SSL_SUPPORT
 	return true;
 #else
@@ -78,9 +78,9 @@ bool cSSLSocket::IsSupported() {
 #endif
 }
 
-cSSLSocket::cSSLSocket( std::string hostname , bool validateCertificate, bool validateHostname ) :
+SSLSocket::SSLSocket( std::string hostname , bool validateCertificate, bool validateHostname ) :
 #ifdef EE_OPENSSL
-	mImpl( eeNew( cOpenSSLSocket, ( this ) ) ),
+	mImpl( eeNew( OpenSSLSocket, ( this ) ) ),
 #else
 	mImpl( NULL ),
 #endif
@@ -91,47 +91,47 @@ cSSLSocket::cSSLSocket( std::string hostname , bool validateCertificate, bool va
 	Init();
 }
 
-cSSLSocket::~cSSLSocket() {
+SSLSocket::~SSLSocket() {
 	eeSAFE_DELETE( mImpl );
 }
 
-cSocket::Status cSSLSocket::Connect( const cIpAddress& remoteAddress, unsigned short remotePort, cTime timeout ) {
-	Status status = cSocket::Disconnected;
+Socket::Status SSLSocket::Connect( const IpAddress& remoteAddress, unsigned short remotePort, cTime timeout ) {
+	Status status = Socket::Disconnected;
 	
-	if ( ( status = cTcpSocket::Connect( remoteAddress, remotePort, timeout ) ) == cSocket::Done ) {
+	if ( ( status = TcpSocket::Connect( remoteAddress, remotePort, timeout ) ) == Socket::Done ) {
 		status = mImpl->Connect( remoteAddress, remotePort, timeout );
 	}
 	
 	return status;
 }
 
-void cSSLSocket::Disconnect() {
+void SSLSocket::Disconnect() {
 	mImpl->Disconnect();
-	cTcpSocket::Disconnect();
+	TcpSocket::Disconnect();
 }
 
-cSocket::Status cSSLSocket::Send(const void* data, std::size_t size) {
+Socket::Status SSLSocket::Send(const void* data, std::size_t size) {
 	return mImpl->Send( data, size );
 }
 
-cSocket::Status cSSLSocket::Receive(void* data, std::size_t size, std::size_t& received) {
+Socket::Status SSLSocket::Receive(void* data, std::size_t size, std::size_t& received) {
 	return mImpl->Receive( data, size, received );
 }
 
-cSocket::Status cSSLSocket::Send(cPacket& packet) {
-	return cTcpSocket::Send( packet );
+Socket::Status SSLSocket::Send(Packet& packet) {
+	return TcpSocket::Send( packet );
 }
 
-cSocket::Status cSSLSocket::Receive(cPacket& packet) {
-	return cTcpSocket::Receive( packet );
+Socket::Status SSLSocket::Receive(Packet& packet) {
+	return TcpSocket::Receive( packet );
 }
 
-cSocket::Status cSSLSocket::TcpSend(const void* data, std::size_t size) {
-	return cTcpSocket::Send( data, size );
+Socket::Status SSLSocket::TcpSend(const void* data, std::size_t size) {
+	return TcpSocket::Send( data, size );
 }
 
-cSocket::Status cSSLSocket::TcpReceive(void* data, std::size_t size, std::size_t& received) {
-	return cTcpSocket::Receive( data, size, received );
+Socket::Status SSLSocket::TcpReceive(void* data, std::size_t size, std::size_t& received) {
+	return TcpSocket::Receive( data, size, received );
 }
 
 }}}

@@ -7,10 +7,10 @@
 #include <vector>
 
 namespace EE { namespace Network {
-class cSocketSelector;
+class SocketSelector;
 
 /** @brief Base class for all the socket types */
-class EE_API cSocket : NonCopyable {
+class EE_API Socket : NonCopyable {
 	public:
 		/** @brief Status codes that may be returned by socket functions */
 		enum Status {
@@ -26,7 +26,7 @@ class EE_API cSocket : NonCopyable {
 		};
 
 		/**  @brief Destructor */
-		virtual ~cSocket();
+		virtual ~Socket();
 
 		/** @brief Set the blocking state of the socket
 		**  In blocking mode, calls will not return until they have
@@ -56,7 +56,7 @@ protected :
 	/** @brief Default constructor
 	**  This constructor can only be accessed by derived classes.
 	**  @param type Type of the socket (TCP or UDP) */
-	cSocket(Type type);
+	Socket(Type type);
 
 	/** @brief Return the internal handle of the socket
 	**  The returned handle may be invalid if the socket
@@ -80,7 +80,7 @@ protected :
 	**  This function can only be accessed by derived classes. */
 	void Close();
 protected :
-	friend class cSocketSelector;
+	friend class SocketSelector;
 	// Member data
 	Type			mType;       ///< Type of the socket (TCP or UDP)
 	SocketHandle	mSocket;     ///< Socket descriptor
@@ -92,7 +92,7 @@ protected :
 #endif // EE_NETWORKCSOCKET_HPP
 
 /**
-@class cSocket
+@class Socket
 @ingroup Network
 This class mainly defines internal stuff to be used by
 derived classes.
@@ -111,7 +111,7 @@ operation to complete.
 In non-blocking mode, all the socket functions will
 return immediately. If the socket is not ready to complete
 the requested operation, the function simply returns
-the proper status code (cSocket::NotReady).
+the proper status code (Socket::NotReady).
 The default mode, which is blocking, is the one that is
 generally used, in combination with threads or selectors.
 
@@ -120,5 +120,5 @@ applications that run an endless loop that can poll
 the socket often enough, and cannot afford blocking
 this loop.
 
-@see cTcpListener, cTcpSocket, cUdpSocket
+@see TcpListener, TcpSocket, UdpSocket
 */

@@ -2,8 +2,8 @@
 #define EE_NETWORKCHTTP_HPP
 
 #include <eepp/network/base.hpp>
-#include <eepp/network/cipaddress.hpp>
-#include <eepp/network/ctcpsocket.hpp>
+#include <eepp/network/ipaddress.hpp>
+#include <eepp/network/tcpsocket.hpp>
 #include <eepp/core/noncopyable.hpp>
 #include <eepp/system/ctime.hpp>
 #include <eepp/system/tthreadlocalptr.hpp>
@@ -20,7 +20,7 @@ using namespace EE::System;
 namespace EE { namespace Network {
 
 /** @brief A HTTP client */
-class EE_API cHttp : NonCopyable {
+class EE_API Http : NonCopyable {
 	public :
 		/** @brief Define a HTTP request */
 		class EE_API Request {
@@ -57,7 +57,7 @@ class EE_API cHttp : NonCopyable {
 			/** @brief Set the request method
 			**  See the Method enumeration for a complete list of all
 			**  the availale methods.
-			**  The method is cHttp::Request::Get by default.
+			**  The method is Http::Request::Get by default.
 			**  @param method Method to use for the request */
 			void SetMethod(Method method);
 
@@ -96,10 +96,10 @@ class EE_API cHttp : NonCopyable {
 			/** Enable/disable SSL hostname validation */
 			void ValidateHostname( bool enable );
 		private:
-			friend class cHttp;
+			friend class Http;
 
 			/** @brief Prepare the final request to send to the server
-			**  This is used internally by cHttp before sending the
+			**  This is used internally by Http before sending the
 			**  request to the web server.
 			**  @return String containing the request, ready to be sent */
 			std::string Prepare() const;
@@ -203,10 +203,10 @@ class EE_API cHttp : NonCopyable {
 			**  @return The response body */
 			const std::string& GetBody() const;
 			private :
-			friend class cHttp;
+			friend class Http;
 
 			/** @brief Construct the header from a response string
-			**  This function is used by cHttp to build the response
+			**  This function is used by Http to build the response
 			**  of a request.
 			**  @param data Content of the response to parse */
 			void Parse(const std::string& data);
@@ -229,7 +229,7 @@ class EE_API cHttp : NonCopyable {
 		};
 
 		/** @brief Default constructor */
-		cHttp();
+		Http();
 
 		/** @brief Construct the HTTP client with the target host
 		**  This is equivalent to calling SetHost(host, port).
@@ -241,9 +241,9 @@ class EE_API cHttp : NonCopyable {
 		**  @param host Web server to connect to
 		**  @param port Port to use for connection
 		**	@param useSSL force the SSL usage ( if compiled with the support of it ). If the host starts with https:// it will use it by default. */
-		cHttp(const std::string& host, unsigned short port = 0, bool useSSL = false);
+		Http(const std::string& host, unsigned short port = 0, bool useSSL = false);
 
-		~cHttp();
+		~Http();
 
 		/** @brief Set the target host
 		**  This function just stores the host address and port, it
@@ -273,15 +273,15 @@ class EE_API cHttp : NonCopyable {
 		Response SendRequest(const Request& request, cTime timeout = cTime::Zero);
 
 		/** Definition of the async callback response */
-		typedef cb::Callback3<void, const cHttp&, cHttp::Request&, cHttp::Response&>		AsyncResponseCallback;
+		typedef cb::Callback3<void, const Http&, Http::Request&, Http::Response&>		AsyncResponseCallback;
 
 		/** @brief Sends the request and creates a new thread, when got the response informs the result to the callback.
 		**	This function does not lock the caller thread.
 		**  @see SendRequest */
-		void SendAsyncRequest( AsyncResponseCallback cb, const cHttp::Request& request, cTime timeout = cTime::Zero );
+		void SendAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, cTime timeout = cTime::Zero );
 
 		/** @return The host address */
-		const cIpAddress& GetHost() const;
+		const IpAddress& GetHost() const;
 
 		/** @return The host name */
 		const std::string& GetHostName() const;
@@ -291,20 +291,20 @@ class EE_API cHttp : NonCopyable {
 	private:
 		class cAsyncRequest : public cThread {
 			public:
-				cAsyncRequest( cHttp * http, AsyncResponseCallback cb, cHttp::Request request, cTime timeout );
+				cAsyncRequest( Http * http, AsyncResponseCallback cb, Http::Request request, cTime timeout );
 
 				void Run();
 			protected:
-				friend class cHttp;
-				cHttp *					mHttp;
+				friend class Http;
+				Http *					mHttp;
 				AsyncResponseCallback	mCb;
-				cHttp::Request			mRequest;
+				Http::Request			mRequest;
 				cTime					mTimeout;
 				bool					mRunning;
 		};
 		friend class cAsyncRequest;
-		tThreadLocalPtr<cTcpSocket>		mConnection;	///< Connection to the host
-		cIpAddress						mHost;			///< Web host address
+		tThreadLocalPtr<TcpSocket>		mConnection;	///< Connection to the host
+		IpAddress						mHost;			///< Web host address
 		std::string						mHostName;		///< Web host name
 		unsigned short					mPort;			///< Port used for connection with host
 		std::list<cAsyncRequest*>		mThreads;
@@ -319,47 +319,47 @@ class EE_API cHttp : NonCopyable {
 #endif // EE_NETWORKCHTTP_HPP
 
 /**
-@class cHttp
+@class Http
 @ingroup Network
-cHttp is a very simple HTTP client that allows you
+Http is a very simple HTTP client that allows you
 to communicate with a web server. You can retrieve
 web pages, send data to an interactive resource,
 download a remote file, etc.
 The HTTP client is split into 3 classes:
-@li cHttp::Request
-@li cHttp::Response
-@li cHttp
-cHttp::Request builds the request that will be
+@li Http::Request
+@li Http::Response
+@li Http
+Http::Request builds the request that will be
 sent to the server. A request is made of:
 @li a method (what you want to do)
 @li a target URI (usually the name of the web page or file)
 @li one or more header fields (options that you can pass to the server)
 @li an optional body (for POST requests)
-cHttp::Response parse the response from the web server
+Http::Response parse the response from the web server
 and provides getters to read them. The response contains:
 @li a status code
 @li header fields (that may be answers to the ones that you requested)
 @li a body, which contains the contents of the requested resource
-cHttp provides a simple function, SendRequest, to send a
-cHttp::Request and return the corresponding cHttp::Response
+Http provides a simple function, SendRequest, to send a
+Http::Request and return the corresponding Http::Response
 from the server.
 Usage example:
 @code
 // Create a new HTTP client
-cHttp http;
+Http http;
 
 // We'll work on http://www.google.com
 http.SetHost("http://www.google.com");
 
 // Prepare a request to get the 'features.php' page
-cHttp::Request request("features.php");
+Http::Request request("features.php");
 
 // Send the request
-cHttp::Response response = http.SendRequest(request);
+Http::Response response = http.SendRequest(request);
 
 // Check the status code and display the result
-cHttp::Response::Status status = response.GetStatus();
-if (status == cHttp::Response::Ok)
+Http::Response::Status status = response.GetStatus();
+if (status == Http::Response::Ok)
 {
 	std::cout << response.GetBody() << std::endl;
 }

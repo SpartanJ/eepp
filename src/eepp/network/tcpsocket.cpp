@@ -1,6 +1,6 @@
-#include <eepp/network/ctcpsocket.hpp>
-#include <eepp/network/cipaddress.hpp>
-#include <eepp/network/cpacket.hpp>
+#include <eepp/network/tcpsocket.hpp>
+#include <eepp/network/ipaddress.hpp>
+#include <eepp/network/packet.hpp>
 #include <eepp/network/platform/platformimpl.hpp>
 #include <algorithm>
 #include <cstring>
@@ -21,16 +21,16 @@ namespace
 
 namespace EE { namespace Network {
 
-cTcpSocket::cTcpSocket() :
-	cSocket(Tcp)
+TcpSocket::TcpSocket() :
+	Socket(Tcp)
 {
 }
 
-unsigned short cTcpSocket::GetLocalPort() const {
-	if (GetHandle() != Private::cSocketImpl::InvalidSocket()) {
+unsigned short TcpSocket::GetLocalPort() const {
+	if (GetHandle() != Private::SocketImpl::InvalidSocket()) {
 		// Retrieve informations about the local end of the socket
 		sockaddr_in address;
-		Private::cSocketImpl::AddrLength size = sizeof(address);
+		Private::SocketImpl::AddrLength size = sizeof(address);
 		if (getsockname(GetHandle(), reinterpret_cast<sockaddr*>(&address), &size) != -1) {
 			return ntohs(address.sin_port);
 		}
@@ -40,25 +40,25 @@ unsigned short cTcpSocket::GetLocalPort() const {
 	return 0;
 }
 
-cIpAddress cTcpSocket::GetRemoteAddress() const {
-	if (GetHandle() != Private::cSocketImpl::InvalidSocket()) {
+IpAddress TcpSocket::GetRemoteAddress() const {
+	if (GetHandle() != Private::SocketImpl::InvalidSocket()) {
 		// Retrieve informations about the remote end of the socket
 		sockaddr_in address;
-		Private::cSocketImpl::AddrLength size = sizeof(address);
+		Private::SocketImpl::AddrLength size = sizeof(address);
 		if (getpeername(GetHandle(), reinterpret_cast<sockaddr*>(&address), &size) != -1) {
-			return cIpAddress(ntohl(address.sin_addr.s_addr));
+			return IpAddress(ntohl(address.sin_addr.s_addr));
 		}
 	}
 
 	// We failed to retrieve the address
-	return cIpAddress::None;
+	return IpAddress::None;
 }
 
-unsigned short cTcpSocket::GetRemotePort() const {
-	if (GetHandle() != Private::cSocketImpl::InvalidSocket()) {
+unsigned short TcpSocket::GetRemotePort() const {
+	if (GetHandle() != Private::SocketImpl::InvalidSocket()) {
 		// Retrieve informations about the remote end of the socket
 		sockaddr_in address;
-		Private::cSocketImpl::AddrLength size = sizeof(address);
+		Private::SocketImpl::AddrLength size = sizeof(address);
 		if (getpeername(GetHandle(), reinterpret_cast<sockaddr*>(&address), &size) != -1) {
 			return ntohs(address.sin_port);
 		}
@@ -68,19 +68,19 @@ unsigned short cTcpSocket::GetRemotePort() const {
 	return 0;
 }
 
-cSocket::Status cTcpSocket::Connect(const cIpAddress& remoteAddress, unsigned short remotePort, cTime timeout) {
+Socket::Status TcpSocket::Connect(const IpAddress& remoteAddress, unsigned short remotePort, cTime timeout) {
 	// Create the internal socket if it doesn't exist
 	Create();
 
 	// Create the remote address
-	sockaddr_in address = Private::cSocketImpl::CreateAddress(remoteAddress.ToInteger(), remotePort);
+	sockaddr_in address = Private::SocketImpl::CreateAddress(remoteAddress.ToInteger(), remotePort);
 
 	if (timeout <= cTime::Zero) {
 		// ----- We're not using a timeout: just try to connect -----
 
 		// Connect the socket
 		if (::connect(GetHandle(), reinterpret_cast<sockaddr*>(&address), sizeof(address)) == -1)
-			return Private::cSocketImpl::GetErrorStatus();
+			return Private::SocketImpl::GetErrorStatus();
 
 		// Connection succeeded
 		return Done;
@@ -102,14 +102,14 @@ cSocket::Status cTcpSocket::Connect(const cIpAddress& remoteAddress, unsigned sh
 		}
 
 		// Get the error status
-		Status status = Private::cSocketImpl::GetErrorStatus();
+		Status status = Private::SocketImpl::GetErrorStatus();
 
 		// If we were in non-blocking mode, return immediatly
 		if (!blocking)
 			return status;
 
 		// Otherwise, wait until something happens to our socket (success, timeout or error)
-		if (status == cSocket::NotReady) {
+		if (status == Socket::NotReady) {
 			// Setup the selector
 			fd_set selector;
 			FD_ZERO(&selector);
@@ -124,16 +124,16 @@ cSocket::Status cTcpSocket::Connect(const cIpAddress& remoteAddress, unsigned sh
 			if (select(static_cast<int>(GetHandle() + 1), NULL, &selector, NULL, &time) > 0) {
 				// At this point the connection may have been either accepted or refused.
 				// To know whether it's a success or a failure, we must check the address of the connected peer
-				if (GetRemoteAddress() != cIpAddress::None) {
+				if (GetRemoteAddress() != IpAddress::None) {
 					// Connection accepted
 					status = Done;
 				} else {
 					// Connection refused
-					status = Private::cSocketImpl::GetErrorStatus();
+					status = Private::SocketImpl::GetErrorStatus();
 				}
 			} else {
 				// Failed to connect before timeout is over
-				status = Private::cSocketImpl::GetErrorStatus();
+				status = Private::SocketImpl::GetErrorStatus();
 			}
 		}
 
@@ -144,7 +144,7 @@ cSocket::Status cTcpSocket::Connect(const cIpAddress& remoteAddress, unsigned sh
 	}
 }
 
-void cTcpSocket::Disconnect() {
+void TcpSocket::Disconnect() {
 	// Close the socket
 	Close();
 
@@ -152,7 +152,7 @@ void cTcpSocket::Disconnect() {
 	mPendingPacket = PendingPacket();
 }
 
-cSocket::Status cTcpSocket::Send(const void* data, std::size_t size) {
+Socket::Status TcpSocket::Send(const void* data, std::size_t size) {
 	// Check the parameters
 	if (!data || (size == 0)) {
 		eePRINTL( "Cannot send data over the network (no data to send)" );
@@ -168,13 +168,13 @@ cSocket::Status cTcpSocket::Send(const void* data, std::size_t size) {
 
 		// Check for errors
 		if (sent < 0)
-			return Private::cSocketImpl::GetErrorStatus();
+			return Private::SocketImpl::GetErrorStatus();
 	}
 
 	return Done;
 }
 
-cSocket::Status cTcpSocket::Receive(void* data, std::size_t size, std::size_t& received) {
+Socket::Status TcpSocket::Receive(void* data, std::size_t size, std::size_t& received) {
 	// First clear the variables to fill
 	received = 0;
 
@@ -192,13 +192,13 @@ cSocket::Status cTcpSocket::Receive(void* data, std::size_t size, std::size_t& r
 		received = static_cast<std::size_t>(sizeReceived);
 		return Done;
 	} else if (sizeReceived == 0) {
-		return cSocket::Disconnected;
+		return Socket::Disconnected;
 	} else {
-		return Private::cSocketImpl::GetErrorStatus();
+		return Private::SocketImpl::GetErrorStatus();
 	}
 }
 
-cSocket::Status cTcpSocket::Send(cPacket& packet) {
+Socket::Status TcpSocket::Send(Packet& packet) {
 	// TCP is a stream protocol, it doesn't preserve messages boundaries.
 	// This means that we have to send the packet size first, so that the
 	// receiver knows the actual end of the packet in the data stream.
@@ -227,7 +227,7 @@ cSocket::Status cTcpSocket::Send(cPacket& packet) {
 	return Send(&blockToSend[0], blockToSend.size());
 }
 
-cSocket::Status cTcpSocket::Receive(cPacket& packet) {
+Socket::Status TcpSocket::Receive(Packet& packet) {
 	// First clear the variables to fill
 	packet.Clear();
 
@@ -280,7 +280,7 @@ cSocket::Status cTcpSocket::Receive(cPacket& packet) {
 	return Done;
 }
 
-cTcpSocket::PendingPacket::PendingPacket() :
+TcpSocket::PendingPacket::PendingPacket() :
 	Size		(0),
 	SizeReceived(0),
 	Data		()

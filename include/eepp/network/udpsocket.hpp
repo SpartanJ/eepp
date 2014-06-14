@@ -1,16 +1,16 @@
 #ifndef EE_NETWORKCUDPSOCKET_HPP
 #define EE_NETWORKCUDPSOCKET_HPP
 
-#include <eepp/network/csocket.hpp>
+#include <eepp/network/socket.hpp>
 #include <vector>
 
 namespace EE { namespace Network {
 
-class cIpAddress;
-class cPacket;
+class IpAddress;
+class Packet;
 
 /** @brief Specialized socket using the UDP protocol */
-class EE_API cUdpSocket : public cSocket {
+class EE_API UdpSocket : public Socket {
 	public:
 
 	// Constants
@@ -19,7 +19,7 @@ class EE_API cUdpSocket : public cSocket {
 	};
 
 	/** @brief Default constructor */
-	cUdpSocket();
+	UdpSocket();
 
 	/** @brief Get the port to which the socket is bound locally
 	**  If the socket is not bound to a port, this function
@@ -31,7 +31,7 @@ class EE_API cUdpSocket : public cSocket {
 	/** @brief Bind the socket to a specific port
 	**  Binding the socket to a port is necessary for being
 	**  able to receive data on that port.
-	**  You can use the special value cSocket::AnyPort to tell the
+	**  You can use the special value Socket::AnyPort to tell the
 	**  system to automatically pick an available port, and then
 	**  call GetLocalPort to retrieve the chosen port.
 	**  @param port Port to Bind the socket to
@@ -48,7 +48,7 @@ class EE_API cUdpSocket : public cSocket {
 
 	/** @brief Send raw data to a remote peer
 	**  Make sure that @a size is not greater than
-	**  cUdpSocket::MaxDatagramSize, otherwise this function will
+	**  UdpSocket::MaxDatagramSize, otherwise this function will
 	**  fail and no data will be sent.
 	**  @param data		  Pointer to the sequence of bytes to send
 	**  @param size		  Number of bytes to send
@@ -56,7 +56,7 @@ class EE_API cUdpSocket : public cSocket {
 	**  @param remotePort	Port of the receiver to send the data to
 	**  @return Status code
 	**  @see Receive */
-	Status Send(const void* data, std::size_t size, const cIpAddress& remoteAddress, unsigned short remotePort);
+	Status Send(const void* data, std::size_t size, const IpAddress& remoteAddress, unsigned short remotePort);
 
 	/** @brief Receive raw data from a remote peer
 	**  In blocking mode, this function will wait until some
@@ -72,31 +72,31 @@ class EE_API cUdpSocket : public cSocket {
 	**  @param remotePort	Port of the peer that sent the data
 	**  @return Status code
 	**  @see Send */
-	Status Receive(void* data, std::size_t size, std::size_t& received, cIpAddress& remoteAddress, unsigned short& remotePort);
+	Status Receive(void* data, std::size_t size, std::size_t& received, IpAddress& remoteAddress, unsigned short& remotePort);
 
 	/** @brief Send a formatted packet of data to a remote peer
 	**  Make sure that the packet size is not greater than
-	**  cUdpSocket::MaxDatagramSize, otherwise this function will
+	**  UdpSocket::MaxDatagramSize, otherwise this function will
 	**  fail and no data will be sent.
-	**  @param packet		cPacket to send
+	**  @param packet		Packet to send
 	**  @param remoteAddress Address of the receiver
 	**  @param remotePort	Port of the receiver to send the data to
 	**  @return Status code
 	**  @see Receive */
-	Status Send(cPacket& packet, const cIpAddress& remoteAddress, unsigned short remotePort);
+	Status Send(Packet& packet, const IpAddress& remoteAddress, unsigned short remotePort);
 
 	/** @brief Receive a formatted packet of data from a remote peer
 	**  In blocking mode, this function will wait until the whole packet
 	**  has been received.
-	**  @param packet		cPacket to fill with the received data
+	**  @param packet		Packet to fill with the received data
 	**  @param remoteAddress Address of the peer that sent the data
 	**  @param remotePort	Port of the peer that sent the data
 	**  @return Status code
 	**  @see Send */
-	Status Receive(cPacket& packet, cIpAddress& remoteAddress, unsigned short& remotePort);
+	Status Receive(Packet& packet, IpAddress& remoteAddress, unsigned short& remotePort);
 private:
 	// Member data
-	std::vector<char> mBuffer; ///< Temporary buffer holding the received data in Receive(cPacket)
+	std::vector<char> mBuffer; ///< Temporary buffer holding the received data in Receive(Packet)
 };
 
 }}
@@ -104,7 +104,7 @@ private:
 #endif // EE_NETWORKCUDPSOCKET_HPP
 
 /**
-@class cUdpSocket
+@class UdpSocket
 @ingroup Network
 
 A UDP socket is a connectionless socket. Instead of
@@ -129,12 +129,12 @@ speed is crucial and lost data doesn't matter much.
 Sending and receiving data can use either the low-level
 or the high-level functions. The low-level functions
 process a raw sequence of bytes, whereas the high-level
-interface uses packets (see cPacket), which are easier
+interface uses packets (see Packet), which are easier
 to use and provide more safety regarding the data that is
-exchanged. You can look at the cPacket class to get
+exchanged. You can look at the Packet class to get
 more details about how they work.
 
-It is important to note that cUdpSocket is unable to send
+It is important to note that UdpSocket is unable to send
 datagrams bigger than MaxDatagramSize. In this case, it
 returns an error and doesn't send anything. This applies
 to both raw data and packets. Indeed, even packets are
@@ -153,17 +153,17 @@ Usage example:
 // ----- The client -----
 
 // Create a socket and bind it to the port 55001
-cUdpSocket socket;
+UdpSocket socket;
 socket.Bind(55001);
 
 // Send a message to 192.168.1.50 on port 55002
-std::string message = "Hi, I am " + cIpAddress::GetLocalAddress().ToString();
+std::string message = "Hi, I am " + IpAddress::GetLocalAddress().ToString();
 socket.Send(message.c_str(), message.size() + 1, "192.168.1.50", 55002);
 
 // Receive an answer (most likely from 192.168.1.50, but could be anyone else)
 char buffer[1024];
 std::size_t received = 0;
-cIpAddress sender;
+IpAddress sender;
 unsigned short port;
 socket.Receive(buffer, sizeof(buffer), received, sender, port);
 std::cout << sender.ToString() << " said: " << buffer << std::endl;
@@ -171,13 +171,13 @@ std::cout << sender.ToString() << " said: " << buffer << std::endl;
 // ----- The server -----
 
 // Create a socket and bind it to the port 55002
-cUdpSocket socket;
+UdpSocket socket;
 socket.Bind(55002);
 
 // Receive a message from anyone
 char buffer[1024];
 std::size_t received = 0;
-cIpAddress sender;
+IpAddress sender;
 unsigned short port;
 socket.Receive(buffer, sizeof(buffer), received, sender, port);
 std::cout << sender.ToString() << " said: " << buffer << std::endl;
@@ -187,5 +187,5 @@ std::string message = "Welcome " + sender.ToString();
 socket.Send(message.c_str(), message.size() + 1, sender, port);
 @endcode
 
-@see cSocket, cTcpSocket, cPacket
+@see Socket, TcpSocket, Packet
 */

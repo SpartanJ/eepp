@@ -7,21 +7,21 @@ using namespace EE::System;
 
 namespace EE { namespace Network {
 
-class cSocket;
+class Socket;
 
 /** @brief Multiplexer that allows to read from multiple sockets */
-class EE_API cSocketSelector
+class EE_API SocketSelector
 {
 	public :
 		/** @brief Default constructor */
-		cSocketSelector();
+		SocketSelector();
 
 		/** @brief Copy constructor
 		**  @param copy Instance to copy */
-		cSocketSelector(const cSocketSelector& copy);
+		SocketSelector(const SocketSelector& copy);
 
 		/** @brief Destructor */
-		~cSocketSelector();
+		~SocketSelector();
 
 		/** @brief Add a new socket to the selector
 		**  This function keeps a weak reference to the socket,
@@ -30,14 +30,14 @@ class EE_API cSocketSelector
 		**  This function does nothing if the socket is not valid.
 		**  @param socket Reference to the socket to add
 		**  @see Remove, Clear */
-		void Add(cSocket& socket);
+		void Add(Socket& socket);
 
 		/** @brief Remove a socket from the selector
 		**  This function doesn't destroy the socket, it simply
 		**  removes the reference that the selector has to it.
 		**  @param socket Reference to the socket to remove
 		**  @see Add, Clear */
-		void Remove(cSocket& socket);
+		void Remove(Socket& socket);
 
 		/** @brief Remove all the sockets stored in the selector
 		**  This function doesn't destroy any instance, it simply
@@ -62,22 +62,22 @@ class EE_API cSocketSelector
 		**  which sockets are ready to receive data. If a socket is
 		**  ready, a call to receive will never block because we know
 		**  that there is data available to read.
-		**  Note that if this function returns true for a cTcpListener,
+		**  Note that if this function returns true for a TcpListener,
 		**  this means that it is ready to accept a new connection.
-		**  @param socket cSocket to test
+		**  @param socket Socket to test
 		**  @return True if the socket is ready to read, false otherwise
 		**  @see IsReady */
-		bool IsReady(cSocket& socket) const;
+		bool IsReady(Socket& socket) const;
 
 		/** @brief Overload of assignment operator
 		**  @param right Instance to assign
 		**  @return Reference to self */
-		cSocketSelector& operator =(const cSocketSelector& right);
+		SocketSelector& operator =(const SocketSelector& right);
 	private :
-		struct cSocketSelectorImpl;
+		struct SocketSelectorImpl;
 
 		// Member data
-		cSocketSelectorImpl* mImpl; ///< Opaque pointer to the implementation (which requires OS-specific types)
+		SocketSelectorImpl* mImpl; ///< Opaque pointer to the implementation (which requires OS-specific types)
 };
 
 }}
@@ -85,10 +85,10 @@ class EE_API cSocketSelector
 #endif // EE_NETWORKCSOCKETSELECTOR_HPP
 
 /**
-@class cSocketSelector
+@class SocketSelector
 @ingroup Network
 
-cSocket selectors provide a way to wait until some data is
+Socket selectors provide a way to wait until some data is
 available on a set of sockets, instead of just one. This
 is convenient when you have multiple sockets that may
 possibly receive data, but you don't know which one will
@@ -97,9 +97,9 @@ for each socket; with selectors, a single thread can handle
 all the sockets.
 
 All types of sockets can be used in a selector:
-@li cTcpListener
-@li cTcpSocket
-@li cUdpSocket
+@li TcpListener
+@li TcpSocket
+@li UdpSocket
 
 A selector doesn't store its own copies of the sockets
 (socket classes are not copyable anyway), it simply keeps
@@ -116,14 +116,14 @@ Using a selector is simple:
 Usage example:
 @code
 // Create a socket to listen to new connections
-cTcpListener listener;
+TcpListener listener;
 listener.Listen(55001);
 
 // Create a list to store the future clients
-std::list<cTcpSocket*> clients;
+std::list<TcpSocket*> clients;
 
 // Create a selector
-cSocketSelector selector;
+SocketSelector selector;
 
 // Add the listener to the selector
 selector.Add(listener);
@@ -138,8 +138,8 @@ while (running)
 		 if (selector.IsReady(listener))
 		 {
 			 // The listener is ready: there is a pending connection
-			 cTcpSocket* client = new cTcpSocket;
-			 if (listener.Accept(*client) == cSocket::Done)
+			 TcpSocket* client = new TcpSocket;
+			 if (listener.Accept(*client) == Socket::Done)
 			 {
 				 // Add the new client to the clients list
 				 clients.push_back(client);
@@ -157,14 +157,14 @@ while (running)
 		 else
 		 {
 			 // The listener socket is not ready, test all other sockets (the clients)
-			 for (std::list<cTcpSocket*>::iterator it = clients.begin(); it != clients.end(); ++it)
+			 for (std::list<TcpSocket*>::iterator it = clients.begin(); it != clients.end(); ++it)
 			 {
-				 cTcpSocket& client = **it;
+				 TcpSocket& client = **it;
 				 if (selector.IsReady(client))
 				 {
 					 // The client has sent some data, we can receive it
-					 cPacket packet;
-					 if (client.Receive(packet) == cSocket::Done)
+					 Packet packet;
+					 if (client.Receive(packet) == Socket::Done)
 					 {
 						 ...
 					 }
@@ -175,5 +175,5 @@ while (running)
 }
 @endcode
 
-@see cSocket
+@see Socket
 */

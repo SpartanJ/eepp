@@ -1,9 +1,9 @@
 #include <eepp/ee.hpp>
 
-void AsyncRequestCallback( const cHttp& http, cHttp::Request& request, cHttp::Response& response ) {
+void AsyncRequestCallback( const Http& http, Http::Request& request, Http::Response& response ) {
 	std::cout << "Got response from request: " << http.GetHostName() << request.GetUri() << std::endl;
 
-	if ( response.GetStatus() == cHttp::Response::Ok ) {
+	if ( response.GetStatus() == Http::Response::Ok ) {
 		std::cout << response.GetBody() << std::endl;
 	} else {
 		std::cout << "Error " << response.GetStatus() << std::endl;
@@ -13,31 +13,31 @@ void AsyncRequestCallback( const cHttp& http, cHttp::Request& request, cHttp::Re
 EE_MAIN_FUNC int main (int argc, char * argv []) {
 	{
 		// Create a new HTTP client
-		cHttp http;
+		Http http;
 
 		// We'll work on http://en.wikipedia.org
-		if ( cSSLSocket::IsSupported() ) {
+		if ( SSLSocket::IsSupported() ) {
 			http.SetHost("https://en.wikipedia.org");
 		} else {
 			http.SetHost("http://en.wikipedia.org");
 		}
 
 		// Prepare a request to get the wikipedia main page
-		cHttp::Request request("/wiki/Main_Page");
+		Http::Request request("/wiki/Main_Page");
 
 		// Send the request
-		cHttp::Response response = http.SendRequest(request);
+		Http::Response response = http.SendRequest(request);
 
 		// Check the status code and display the result
-		cHttp::Response::Status status = response.GetStatus();
+		Http::Response::Status status = response.GetStatus();
 
-		if ( status == cHttp::Response::Ok ) {
+		if ( status == Http::Response::Ok ) {
 			std::cout << response.GetBody() << std::endl;
 		} else {
 			std::cout << "Error " << status << std::endl;
 		}
 
-		cHttp::Request asyncRequest( "/wiki/" + Version::GetCodename() );
+		Http::Request asyncRequest( "/wiki/" + Version::GetCodename() );
 
 		http.SendAsyncRequest( cb::Make3( AsyncRequestCallback ), asyncRequest, Seconds( 5 ) );
 	}

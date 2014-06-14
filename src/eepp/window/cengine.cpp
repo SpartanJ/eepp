@@ -12,7 +12,7 @@
 #include <eepp/audio/audiolistener.hpp>
 #include <eepp/helper/haikuttf/hkfontmanager.hpp>
 #include <eepp/physics/cphysicsmanager.hpp>
-#include <eepp/network/ssl/csslsocket.hpp>
+#include <eepp/network/ssl/sslsocket.hpp>
 #include <eepp/window/cbackend.hpp>
 #include <eepp/window/backend/SDL/cbackendsdl.hpp>
 #include <eepp/window/backend/SDL2/cbackendsdl2.hpp>
@@ -76,7 +76,7 @@ cEngine::~cEngine() {
 	HaikuTTF::hkFontManager::DestroySingleton();
 
 	#ifdef EE_SSL_SUPPORT
-	Network::SSL::cSSLSocket::End();
+	Network::SSL::SSLSocket::End();
 	#endif
 
 	Destroy();

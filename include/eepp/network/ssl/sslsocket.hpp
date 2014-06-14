@@ -1,13 +1,13 @@
 #ifndef EE_NETWORKCSSLSOCKET_HPP
 #define EE_NETWORKCSSLSOCKET_HPP
 
-#include <eepp/network/ctcpsocket.hpp>
+#include <eepp/network/tcpsocket.hpp>
 
 namespace EE { namespace Network { namespace SSL {
 
-class cSSLSocketImpl;
+class SSLSocketImpl;
 
-class EE_API cSSLSocket : public cTcpSocket {
+class EE_API SSLSocket : public TcpSocket {
 	public:
 		static std::string CertificatesPath;
 
@@ -18,11 +18,11 @@ class EE_API cSSLSocket : public cTcpSocket {
 		/** @return True when the library was compiled with SSL support. */
 		static bool IsSupported();
 
-		cSSLSocket( std::string hostname, bool validateCertificate, bool validateHostname );
+		SSLSocket( std::string hostname, bool validateCertificate, bool validateHostname );
 
-		virtual ~cSSLSocket();
+		virtual ~SSLSocket();
 
-		Status Connect(const cIpAddress& remoteAddress, unsigned short remotePort, cTime timeout = cTime::Zero);
+		Status Connect(const IpAddress& remoteAddress, unsigned short remotePort, cTime timeout = cTime::Zero);
 
 		void Disconnect();
 
@@ -30,14 +30,14 @@ class EE_API cSSLSocket : public cTcpSocket {
 
 		Status Receive(void* data, std::size_t size, std::size_t& received);
 
-		Status Send(cPacket& packet);
+		Status Send(Packet& packet);
 
-		Status Receive(cPacket& packet);
+		Status Receive(Packet& packet);
 	protected:
-		friend class cSSLSocketImpl;
-		friend class cOpenSSLSocket;
+		friend class SSLSocketImpl;
+		friend class OpenSSLSocket;
 		
-		cSSLSocketImpl *		mImpl;
+		SSLSocketImpl *		mImpl;
 		std::string				mHostName;
 		bool					mValidateCertificate;
 		bool					mValidateHostname;

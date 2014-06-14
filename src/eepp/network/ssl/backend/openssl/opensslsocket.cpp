@@ -1,10 +1,10 @@
-#include <eepp/network/ssl/backend/openssl/copensslsocket.hpp>
+#include <eepp/network/ssl/backend/openssl/opensslsocket.hpp>
 
 /** This implementation is based on the Godo Game Engine implementation ( https://github.com/okamstudio/godot ), MIT licensed. */
 
 #ifdef EE_OPENSSL
 
-#include <eepp/network/cpacket.hpp>
+#include <eepp/network/packet.hpp>
 #include <eepp/network/ssl/backend/openssl/curl_hostcheck.h>
 #include <eepp/system/filesystem.hpp>
 
@@ -12,11 +12,11 @@ namespace EE { namespace Network { namespace SSL {
 
 static std::vector<X509*> sCerts;
 
-bool cOpenSSLSocket::MatchHostname( const char * name, const char * hostname ) {
+bool OpenSSLSocket::MatchHostname( const char * name, const char * hostname ) {
 	return Tool_Curl_cert_hostcheck( name, hostname )==CURL_HOST_MATCH;
 }
 
-bool cOpenSSLSocket::MatchCommonName( const char * hostname, const X509 * server_cert ) {
+bool OpenSSLSocket::MatchCommonName( const char * hostname, const X509 * server_cert ) {
 	int common_name_loc = -1;
 	X509_NAME_ENTRY *common_name_entry = NULL;
 	ASN1_STRING *common_name_asn1 = NULL;
@@ -45,7 +45,7 @@ bool cOpenSSLSocket::MatchCommonName( const char * hostname, const X509 * server
 }
 
 /** Tries to find a match for hostname in the certificate's Subject Alternative Name extension. */
-bool cOpenSSLSocket::MatchSubjectAlternativeName( const char * hostname, const X509 * server_cert ) {
+bool OpenSSLSocket::MatchSubjectAlternativeName( const char * hostname, const X509 * server_cert ) {
 	bool result = false;
 	int i;
 	int san_names_nb = -1;
@@ -87,7 +87,7 @@ bool cOpenSSLSocket::MatchSubjectAlternativeName( const char * hostname, const X
 	return result;
 }
 
-int cOpenSSLSocket::CertVerifyCb( X509_STORE_CTX * x509_ctx, void * arg ) {
+int OpenSSLSocket::CertVerifyCb( X509_STORE_CTX * x509_ctx, void * arg ) {
 	/* This is the function that OpenSSL would call if we hadn't called
 	 * SSL_CTX_set_cert_verify_callback().  Therefore, we are "wrapping"
 	 * the default functionality, rather than replacing it. */
@@ -110,7 +110,7 @@ int cOpenSSLSocket::CertVerifyCb( X509_STORE_CTX * x509_ctx, void * arg ) {
 		return 0;
 	}
 
-	cOpenSSLSocket * ssl = (cOpenSSLSocket *)arg;
+	OpenSSLSocket * ssl = (OpenSSLSocket *)arg;
 
 	if ( ssl->mSSLSocket->mValidateHostname ) {
 		bool err = !MatchSubjectAlternativeName( ssl->mSSLSocket->mHostName.c_str(), server_cert );
@@ -120,7 +120,7 @@ int cOpenSSLSocket::CertVerifyCb( X509_STORE_CTX * x509_ctx, void * arg ) {
 		}
 
 		if ( err ) {
-			ssl->mStatus = cSocket::Error;
+			ssl->mStatus = Socket::Error;
 			return 0;
 		}
 	}
@@ -128,7 +128,7 @@ int cOpenSSLSocket::CertVerifyCb( X509_STORE_CTX * x509_ctx, void * arg ) {
 	return 1;
 }
 
-bool cOpenSSLSocket::Init() {
+bool OpenSSLSocket::Init() {
 	CRYPTO_malloc_init(); // Initialize malloc, free, etc for OpenSSL's use
 
 	SSL_library_init(); // Initialize OpenSSL's SSL libraries
@@ -140,9 +140,9 @@ bool cOpenSSLSocket::Init() {
 	OpenSSL_add_all_algorithms(); // Load all available encryption algorithms
 
 	//! Load the certificates and config
-	if ( FileSystem::FileExists( cSSLSocket::CertificatesPath ) ) {
+	if ( FileSystem::FileExists( SSLSocket::CertificatesPath ) ) {
 		SafeDataPointer data;
-		FileSystem::FileGet( cSSLSocket::CertificatesPath, data );
+		FileSystem::FileGet( SSLSocket::CertificatesPath, data );
 
 		if ( data.DataSize > 0 ) {
 			BIO* mem = BIO_new(BIO_s_mem());
@@ -161,13 +161,13 @@ bool cOpenSSLSocket::Init() {
 			BIO_free(mem);
 		}
 
-		eePRINTL( "Loaded certs from '%s': %d", cSSLSocket::CertificatesPath.c_str(), (int)sCerts.size() );
+		eePRINTL( "Loaded certs from '%s': %d", SSLSocket::CertificatesPath.c_str(), (int)sCerts.size() );
 	}
 
 	return true;
 }
 
-bool cOpenSSLSocket::End() {
+bool OpenSSLSocket::End() {
 	if ( !sCerts.empty() ) {
 		for( size_t i = 0; i < sCerts.size(); i++ ) {
 			X509_free(sCerts[i]);
@@ -179,23 +179,23 @@ bool cOpenSSLSocket::End() {
 	return true;
 }
 
-cOpenSSLSocket::cOpenSSLSocket( cSSLSocket * socket ) :
-	cSSLSocketImpl( socket ),
+OpenSSLSocket::OpenSSLSocket( SSLSocket * socket ) :
+	SSLSocketImpl( socket ),
 	mCTX( NULL ),
 	mSSL( NULL ),
 	mBIO( NULL ),
 	mConnected( false ),
-	mStatus( cSocket::Disconnected ),
+	mStatus( Socket::Disconnected ),
 	mMaxCertChainDepth( 9 )
 {
 	mSSLSocket = socket;
 }
 
-cOpenSSLSocket::~cOpenSSLSocket() {
+OpenSSLSocket::~OpenSSLSocket() {
 	Disconnect();
 }
 
-cSocket::Status cOpenSSLSocket::Connect( const cIpAddress& remoteAddress, unsigned short remotePort, cTime timeout ) {
+Socket::Status OpenSSLSocket::Connect( const IpAddress& remoteAddress, unsigned short remotePort, cTime timeout ) {
 	if ( mConnected ) {
 		Disconnect();
 	}
@@ -249,7 +249,7 @@ cSocket::Status cOpenSSLSocket::Connect( const cIpAddress& remoteAddress, unsign
 	// Set the SSL to automatically retry on failure.
 	SSL_set_mode( mSSL , SSL_MODE_AUTO_RETRY );
 
-	mStatus		= cSocket::Done;
+	mStatus		= Socket::Done;
 
 	// Same as before, try to connect.
 	int result	= SSL_connect( mSSL );
@@ -261,7 +261,7 @@ cSocket::Status cOpenSSLSocket::Connect( const cIpAddress& remoteAddress, unsign
 
 		_print_error(result);
 
-		mStatus	= cSocket::Error;
+		mStatus	= Socket::Error;
 
 		return mStatus;
 	}
@@ -273,19 +273,19 @@ cSocket::Status cOpenSSLSocket::Connect( const cIpAddress& remoteAddress, unsign
 
 		eePRINTL( "cert_ok: %d", (int)cert_ok );
 
-		mStatus	= cSocket::Done;
+		mStatus	= Socket::Done;
 	} else if ( mSSLSocket->mValidateCertificate ) {
-		mStatus	= cSocket::Error;
+		mStatus	= Socket::Error;
 	}
 
-	if ( mStatus == cSocket::Done ) {
+	if ( mStatus == Socket::Done ) {
 		mConnected = true;
 	}
 
 	return mStatus;
 }
 
-void cOpenSSLSocket::Disconnect() {
+void OpenSSLSocket::Disconnect() {
 	if (!mConnected)
 		return;
 
@@ -296,10 +296,10 @@ void cOpenSSLSocket::Disconnect() {
 	mSSL		= NULL;
 	mCTX		= NULL;
 	mConnected	= false;
-	mStatus		= cSocket::Disconnected;
+	mStatus		= Socket::Disconnected;
 }
 
-void cOpenSSLSocket::_print_error(int err) {
+void OpenSSLSocket::_print_error(int err) {
 	err = SSL_get_error(mSSL,err);
 
 	switch(err) {
@@ -320,7 +320,7 @@ void cOpenSSLSocket::_print_error(int err) {
 	}
 }
 
-cSocket::Status cOpenSSLSocket::Send( const void * data, std::size_t size ) {
+Socket::Status OpenSSLSocket::Send( const void * data, std::size_t size ) {
 	Uint8 * buf = (Uint8*)data;
 
 	while( size > 0 ) {
@@ -331,20 +331,20 @@ cSocket::Status cOpenSSLSocket::Send( const void * data, std::size_t size ) {
 
 			Disconnect();
 
-			return cSocket::Disconnected;
+			return Socket::Disconnected;
 		}
 
 		buf+=ret;
 		size-=ret;
 	}
 
-	return cSocket::Done;
+	return Socket::Done;
 }
 
-cSocket::Status cOpenSSLSocket::Receive( void * data, std::size_t size, std::size_t& received ) {
+Socket::Status OpenSSLSocket::Receive( void * data, std::size_t size, std::size_t& received ) {
 	if ( size==0 ) {
 		received = 0;
-		return cSocket::Done;
+		return Socket::Done;
 	}
 
 	size_t iniSize = size;
@@ -359,15 +359,15 @@ cSocket::Status cOpenSSLSocket::Receive( void * data, std::size_t size, std::siz
 
 			Disconnect();
 
-			return cSocket::Disconnected;
+			return Socket::Disconnected;
 		} else if ( 0 == ret ) {
 			if ( size == iniSize ) {
-				return cSocket::Disconnected;
+				return Socket::Disconnected;
 			}
 
 			received = iniSize - size;
 
-			return cSocket::Done;
+			return Socket::Done;
 		}
 
 		buf+=ret;
@@ -376,7 +376,7 @@ cSocket::Status cOpenSSLSocket::Receive( void * data, std::size_t size, std::siz
 
 	received = iniSize;
 
-	return cSocket::Done;
+	return Socket::Done;
 }
 
 }}}

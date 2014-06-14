@@ -1,47 +1,47 @@
-#include <eepp/network/csocket.hpp>
+#include <eepp/network/socket.hpp>
 #include <eepp/network/platform/platformimpl.hpp>
 
 namespace EE { namespace Network {
 
-cSocket::cSocket(Type type) :
+Socket::Socket(Type type) :
 	mType(type),
-	mSocket	(Private::cSocketImpl::InvalidSocket()),
+	mSocket	(Private::SocketImpl::InvalidSocket()),
 	mIsBlocking(true)
 {
 }
 
-cSocket::~cSocket() {
+Socket::~Socket() {
 	// Close the socket before it gets destructed
 	Close();
 }
 
-void cSocket::SetBlocking(bool blocking) {
+void Socket::SetBlocking(bool blocking) {
 	// Apply if the socket is already created
-	if (mSocket != Private::cSocketImpl::InvalidSocket())
-		Private::cSocketImpl::SetBlocking(mSocket, blocking);
+	if (mSocket != Private::SocketImpl::InvalidSocket())
+		Private::SocketImpl::SetBlocking(mSocket, blocking);
 
 	mIsBlocking = blocking;
 }
 
-bool cSocket::IsBlocking() const {
+bool Socket::IsBlocking() const {
 	return mIsBlocking;
 }
 
-SocketHandle cSocket::GetHandle() const {
+SocketHandle Socket::GetHandle() const {
 	return mSocket;
 }
 
-void cSocket::Create() {
+void Socket::Create() {
 	// Don't create the socket if it already exists
-	if (mSocket == Private::cSocketImpl::InvalidSocket()) {
+	if (mSocket == Private::SocketImpl::InvalidSocket()) {
 		SocketHandle handle = socket(PF_INET, mType == Tcp ? SOCK_STREAM : SOCK_DGRAM, 0);
 		Create(handle);
 	}
 }
 
-void cSocket::Create(SocketHandle handle) {
+void Socket::Create(SocketHandle handle) {
 	// Don't create the socket if it already exists
-	if (mSocket == Private::cSocketImpl::InvalidSocket()) {
+	if (mSocket == Private::SocketImpl::InvalidSocket()) {
 		// Assign the new handle
 		mSocket = handle;
 
@@ -73,11 +73,11 @@ void cSocket::Create(SocketHandle handle) {
 	}
 }
 
-void cSocket::Close() {
+void Socket::Close() {
 	// Close the socket
-	if (mSocket != Private::cSocketImpl::InvalidSocket()) {
-		Private::cSocketImpl::Close(mSocket);
-		mSocket = Private::cSocketImpl::InvalidSocket();
+	if (mSocket != Private::SocketImpl::InvalidSocket()) {
+		Private::SocketImpl::Close(mSocket);
+		mSocket = Private::SocketImpl::InvalidSocket();
 	}
 }
 

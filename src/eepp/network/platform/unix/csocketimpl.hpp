@@ -5,7 +5,7 @@
 
 #if defined( EE_PLATFORM_POSIX )
 
-#include <eepp/network/csocket.hpp>
+#include <eepp/network/socket.hpp>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -17,7 +17,7 @@
 namespace EE { namespace Network { namespace Private {
 
 /** @brief Helper class implementing all the non-portable socket stuff; this is the Unix version */
-class cSocketImpl {
+class SocketImpl {
 	public :
 		// Types
 		typedef socklen_t AddrLength;
@@ -43,7 +43,7 @@ class cSocketImpl {
 
 		/** Get the last socket error status
 		**  @return Status corresponding to the last socket error */
-		static cSocket::Status GetErrorStatus();
+		static Socket::Status GetErrorStatus();
 };
 
 }}}

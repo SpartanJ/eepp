@@ -5,7 +5,7 @@
 
 namespace EE { namespace Network { namespace Private {
 
-sockaddr_in cSocketImpl::CreateAddress(Uint32 address, unsigned short port) {
+sockaddr_in SocketImpl::CreateAddress(Uint32 address, unsigned short port) {
 	sockaddr_in addr;
 	std::memset(&addr, 0, sizeof(addr));
 	addr.sin_addr.s_addr	= htonl(address);
@@ -15,30 +15,30 @@ sockaddr_in cSocketImpl::CreateAddress(Uint32 address, unsigned short port) {
 	return addr;
 }
 
-SocketHandle cSocketImpl::InvalidSocket() {
+SocketHandle SocketImpl::InvalidSocket() {
 	return INVALID_SOCKET;
 }
 
-void cSocketImpl::Close(SocketHandle sock) {
+void SocketImpl::Close(SocketHandle sock) {
 	closesocket(sock);
 }
 
-void cSocketImpl::SetBlocking(SocketHandle sock, bool block) {
+void SocketImpl::SetBlocking(SocketHandle sock, bool block) {
 	u_long blocking = block ? 0 : 1;
 	ioctlsocket(sock, FIONBIO, &blocking);
 }
 
-cSocket::Status cSocketImpl::GetErrorStatus() {
+Socket::Status SocketImpl::GetErrorStatus() {
 	switch (WSAGetLastError()) {
-		case WSAEWOULDBLOCK:	return cSocket::NotReady;
-		case WSAEALREADY:		return cSocket::NotReady;
-		case WSAECONNABORTED:	return cSocket::Disconnected;
-		case WSAECONNRESET:		return cSocket::Disconnected;
-		case WSAETIMEDOUT:		return cSocket::Disconnected;
-		case WSAENETRESET:		return cSocket::Disconnected;
-		case WSAENOTCONN:		return cSocket::Disconnected;
-		case WSAEISCONN:		return cSocket::Done; // when connecting a non-blocking socket
-		default:				return cSocket::Error;
+		case WSAEWOULDBLOCK:	return Socket::NotReady;
+		case WSAEALREADY:		return Socket::NotReady;
+		case WSAECONNABORTED:	return Socket::Disconnected;
+		case WSAECONNRESET:		return Socket::Disconnected;
+		case WSAETIMEDOUT:		return Socket::Disconnected;
+		case WSAENETRESET:		return Socket::Disconnected;
+		case WSAENOTCONN:		return Socket::Disconnected;
+		case WSAEISCONN:		return Socket::Done; // when connecting a non-blocking socket
+		default:				return Socket::Error;
 	}
 }
 

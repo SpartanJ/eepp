@@ -1,5 +1,5 @@
-#include <eepp/network/cipaddress.hpp>
-#include <eepp/network/chttp.hpp>
+#include <eepp/network/ipaddress.hpp>
+#include <eepp/network/http.hpp>
 #include <eepp/network/platform/platformimpl.hpp>
 #include <cstring>
 
@@ -37,11 +37,11 @@ namespace {
 
 namespace EE { namespace Network {
 
-const cIpAddress cIpAddress::None;
-const cIpAddress cIpAddress::LocalHost(127, 0, 0, 1);
-const cIpAddress cIpAddress::Broadcast(255, 255, 255, 255);
+const IpAddress IpAddress::None;
+const IpAddress IpAddress::LocalHost(127, 0, 0, 1);
+const IpAddress IpAddress::Broadcast(255, 255, 255, 255);
 
-cIpAddress::cIpAddress() :
+IpAddress::IpAddress() :
 	mAddress(0)
 {
 	// We're using 0 (INADDR_ANY) instead of INADDR_NONE to represent the invalid address,
@@ -49,27 +49,27 @@ cIpAddress::cIpAddress() :
 	// eepp doesn't publicly use INADDR_ANY (it is always used implicitely)
 }
 
-cIpAddress::cIpAddress(const std::string& address) :
+IpAddress::IpAddress(const std::string& address) :
 	mAddress(Resolve(address))
 {
 }
 
-cIpAddress::cIpAddress(const char* address) :
+IpAddress::IpAddress(const char* address) :
 	mAddress(Resolve(address))
 {
 }
 
-cIpAddress::cIpAddress(Uint8 byte0, Uint8 byte1, Uint8 byte2, Uint8 byte3) :
+IpAddress::IpAddress(Uint8 byte0, Uint8 byte1, Uint8 byte2, Uint8 byte3) :
 	mAddress(htonl((byte0 << 24) | (byte1 << 16) | (byte2 << 8) | byte3))
 {
 }
 
-cIpAddress::cIpAddress(Uint32 address) :
+IpAddress::IpAddress(Uint32 address) :
 	mAddress(htonl(address))
 {
 }
 
-std::string cIpAddress::ToString() const {
+std::string IpAddress::ToString() const {
 	in_addr address;
 	address.s_addr = mAddress;
 
@@ -77,94 +77,94 @@ std::string cIpAddress::ToString() const {
 }
 
 
-Uint32 cIpAddress::ToInteger() const {
+Uint32 IpAddress::ToInteger() const {
 	return ntohl(mAddress);
 }
 
-cIpAddress cIpAddress::GetLocalAddress() {
+IpAddress IpAddress::GetLocalAddress() {
 	// The method here is to connect a UDP socket to anyone (here to localhost),
 	// and get the local socket address with the getsockname function.
 	// UDP connection will not send anything to the network, so this function won't cause any overhead.
 
-	cIpAddress localAddress;
+	IpAddress localAddress;
 
 	// Create the socket
 	SocketHandle sock = socket(PF_INET, SOCK_DGRAM, 0);
-	if (sock == Private::cSocketImpl::InvalidSocket())
+	if (sock == Private::SocketImpl::InvalidSocket())
 		return localAddress;
 
 	// Connect the socket to localhost on any port
-	sockaddr_in address = Private::cSocketImpl::CreateAddress(ntohl(INADDR_LOOPBACK), 9);
+	sockaddr_in address = Private::SocketImpl::CreateAddress(ntohl(INADDR_LOOPBACK), 9);
 	if (connect(sock, reinterpret_cast<sockaddr*>(&address), sizeof(address)) == -1) {
-		Private::cSocketImpl::Close(sock);
+		Private::SocketImpl::Close(sock);
 		return localAddress;
 	}
 
 	// Get the local address of the socket connection
-	Private::cSocketImpl::AddrLength size = sizeof(address);
+	Private::SocketImpl::AddrLength size = sizeof(address);
 	if (getsockname(sock, reinterpret_cast<sockaddr*>(&address), &size) == -1) {
-		Private::cSocketImpl::Close(sock);
+		Private::SocketImpl::Close(sock);
 		return localAddress;
 	}
 
 	// Close the socket
-	Private::cSocketImpl::Close(sock);
+	Private::SocketImpl::Close(sock);
 
 	// Finally build the IP address
-	localAddress = cIpAddress(ntohl(address.sin_addr.s_addr));
+	localAddress = IpAddress(ntohl(address.sin_addr.s_addr));
 
 	return localAddress;
 }
 
-cIpAddress cIpAddress::GetPublicAddress(cTime timeout) {
+IpAddress IpAddress::GetPublicAddress(cTime timeout) {
 	// The trick here is more complicated, because the only way
 	// to get our public IP address is to get it from a distant computer.
 	// Here we get the web page from http://www.sfml-dev.org/ip-provider.php
 	// and parse the result to extract our IP address
 	// (not very hard: the web page contains only our IP address).
-	cHttp server("www.sfml-dev.org");
-	cHttp::Request request("/ip-provider.php", cHttp::Request::Get);
-	cHttp::Response page = server.SendRequest(request, timeout);
-	if (page.GetStatus() == cHttp::Response::Ok)
-		return cIpAddress(page.GetBody());
+	Http server("www.sfml-dev.org");
+	Http::Request request("/ip-provider.php", Http::Request::Get);
+	Http::Response page = server.SendRequest(request, timeout);
+	if (page.GetStatus() == Http::Response::Ok)
+		return IpAddress(page.GetBody());
 
 	// Something failed: return an invalid address
-	return cIpAddress();
+	return IpAddress();
 }
 
-bool operator ==(const cIpAddress& left, const cIpAddress& right) {
+bool operator ==(const IpAddress& left, const IpAddress& right) {
 	return left.ToInteger() == right.ToInteger();
 }
 
-bool operator !=(const cIpAddress& left, const cIpAddress& right) {
+bool operator !=(const IpAddress& left, const IpAddress& right) {
 	return !(left == right);
 }
 
-bool operator <(const cIpAddress& left, const cIpAddress& right) {
+bool operator <(const IpAddress& left, const IpAddress& right) {
 	return left.ToInteger() < right.ToInteger();
 }
 
-bool operator >(const cIpAddress& left, const cIpAddress& right) {
+bool operator >(const IpAddress& left, const IpAddress& right) {
 	return right < left;
 }
 
-bool operator <=(const cIpAddress& left, const cIpAddress& right) {
+bool operator <=(const IpAddress& left, const IpAddress& right) {
 	return !(right < left);
 }
 
-bool operator >=(const cIpAddress& left, const cIpAddress& right) {
+bool operator >=(const IpAddress& left, const IpAddress& right) {
 	return !(left < right);
 }
 
-std::istream& operator >>(std::istream& stream, cIpAddress& address) {
+std::istream& operator >>(std::istream& stream, IpAddress& address) {
 	std::string str;
 	stream >> str;
-	address = cIpAddress(str);
+	address = IpAddress(str);
 
 	return stream;
 }
 
-std::ostream& operator <<(std::ostream& stream, const cIpAddress& address) {
+std::ostream& operator <<(std::ostream& stream, const IpAddress& address) {
 	return stream << address.ToString();
 }
 

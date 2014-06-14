@@ -7,21 +7,21 @@
 
 namespace EE { namespace Network {
 
-class cTcpSocket;
-class cUdpSocket;
+class TcpSocket;
+class UdpSocket;
 
 /** @brief Utility class to build blocks of data to transfer over the network */
-class EE_API cPacket {
+class EE_API Packet {
 	// A bool-like type that cannot be converted to integer or pointer types
-	typedef bool (cPacket::*BoolType)(std::size_t);
+	typedef bool (Packet::*BoolType)(std::size_t);
 	public:
 
 	/** @brief Default constructor
 	**  Creates an empty packet. */
-	cPacket();
+	Packet();
 
 	/** @brief Virtual destructor */
-	virtual ~cPacket();
+	virtual ~Packet();
 
 	/** @brief Append data to the end of the packet
 	**  @param data		Pointer to the sequence of bytes to append
@@ -56,7 +56,7 @@ class EE_API cPacket {
 	**  left to be read, without actually reading it.
 	**  @return True if all data was read, false otherwise
 	**  @see operator bool */
-	bool EndOfcPacket() const;
+	bool EndOfPacket() const;
 
 	/** @brief Test the validity of the packet, for reading
 	**  This operator allows to test the packet as a boolean
@@ -88,47 +88,47 @@ class EE_API cPacket {
 	///
 	**  @return True if last data extraction from packet was successful
 	///
-	**  @see EndOfcPacket */
+	**  @see EndOfPacket */
 	operator BoolType() const;
 
 	/**  Overloads of operator >> to read data from the packet */
-	cPacket& operator >>(bool&		 data);
-	cPacket& operator >>(Int8&		 data);
-	cPacket& operator >>(Uint8&		data);
-	cPacket& operator >>(Int16&		data);
-	cPacket& operator >>(Uint16&	   data);
-	cPacket& operator >>(Int32&		data);
-	cPacket& operator >>(Uint32&	   data);
-	cPacket& operator >>(float&		data);
-	cPacket& operator >>(double&	   data);
-	cPacket& operator >>(char*		 data);
-	cPacket& operator >>(std::string&  data);
+	Packet& operator >>(bool&		 data);
+	Packet& operator >>(Int8&		 data);
+	Packet& operator >>(Uint8&		data);
+	Packet& operator >>(Int16&		data);
+	Packet& operator >>(Uint16&	   data);
+	Packet& operator >>(Int32&		data);
+	Packet& operator >>(Uint32&	   data);
+	Packet& operator >>(float&		data);
+	Packet& operator >>(double&	   data);
+	Packet& operator >>(char*		 data);
+	Packet& operator >>(std::string&  data);
 	#ifndef EE_NO_WIDECHAR
-	cPacket& operator >>(wchar_t*	  data);
-	cPacket& operator >>(std::wstring& data);
+	Packet& operator >>(wchar_t*	  data);
+	Packet& operator >>(std::wstring& data);
 	#endif
-	cPacket& operator >>(String&	   data);
+	Packet& operator >>(String&	   data);
 
 	/**  Overloads of operator << to write data into the packet */
-	cPacket& operator <<(bool				data);
-	cPacket& operator <<(Int8				data);
-	cPacket& operator <<(Uint8			   data);
-	cPacket& operator <<(Int16			   data);
-	cPacket& operator <<(Uint16			  data);
-	cPacket& operator <<(Int32			   data);
-	cPacket& operator <<(Uint32			  data);
-	cPacket& operator <<(float			   data);
-	cPacket& operator <<(double			  data);
-	cPacket& operator <<(const char*		 data);
-	cPacket& operator <<(const std::string&  data);
+	Packet& operator <<(bool				data);
+	Packet& operator <<(Int8				data);
+	Packet& operator <<(Uint8			   data);
+	Packet& operator <<(Int16			   data);
+	Packet& operator <<(Uint16			  data);
+	Packet& operator <<(Int32			   data);
+	Packet& operator <<(Uint32			  data);
+	Packet& operator <<(float			   data);
+	Packet& operator <<(double			  data);
+	Packet& operator <<(const char*		 data);
+	Packet& operator <<(const std::string&  data);
 	#ifndef EE_NO_WIDECHAR
-	cPacket& operator <<(const wchar_t*	  data);
-	cPacket& operator <<(const std::wstring& data);
+	Packet& operator <<(const wchar_t*	  data);
+	Packet& operator <<(const std::wstring& data);
 	#endif
-	cPacket& operator <<(const String&	   data);
+	Packet& operator <<(const String&	   data);
 protected:
-	friend class cTcpSocket;
-	friend class cUdpSocket;
+	friend class TcpSocket;
+	friend class UdpSocket;
 
 	/** @brief Called before the packet is sent over the network
 	**  This function can be defined by derived classes to
@@ -157,8 +157,8 @@ protected:
 	virtual void OnReceive(const void* data, std::size_t size);
 private:
 	/**  Disallow comparisons between packets */
-	bool operator ==(const cPacket& right) const;
-	bool operator !=(const cPacket& right) const;
+	bool operator ==(const Packet& right) const;
+	bool operator !=(const Packet& right) const;
 
 	/** @brief Check if the packet can extract a given number of bytes
 	**  This function updates accordingly the state of the packet.
@@ -177,19 +177,19 @@ private:
 #endif // EE_NETWORKCPACKET_HPP
 
 /**
-@class cPacket
+@class Packet
 @ingroup Network
 
-cPackets provide a safe and easy way to serialize data,
+Packets provide a safe and easy way to serialize data,
 in order to send it over the network using sockets
-(cTcpSocket, cUdpSocket).
+(TcpSocket, UdpSocket).
 
-cPackets solve 2 fundamental problems that arise when
+Packets solve 2 fundamental problems that arise when
 transfering data over the network:
 @li data is interpreted correctly according to the endianness
 @li the bounds of the packet are preserved (one send == one receive)
 
-The cPacket class provides both input and output modes.
+The Packet class provides both input and output modes.
 It is designed to follow the behaviour of standard C++ streams,
 using operators >> and << to extract and insert data.
 
@@ -205,16 +205,16 @@ std::string s = "hello";
 double d = 5.89;
 
 // Group the variables to send into a packet
-cPacket packet;
+Packet packet;
 packet << x << s << d;
 
-// Send it over the network (socket is a valid cTcpSocket)
+// Send it over the network (socket is a valid TcpSocket)
 socket.Send(packet);
 
 -----------------------------------------------------------------
 
 // Receive the packet at the other end
-cPacket packet;
+Packet packet;
 socket.Receive(packet);
 
 // Extract the variables contained in the packet
@@ -227,7 +227,7 @@ if (packet >> x >> s >> d)
 }
 @endcode
 
-cPackets have built-in operator >> and << overloads for
+Packets have built-in operator >> and << overloads for
 standard types:
 @li bool
 @li fixed-size integer types (Int8/16/32, Uint8/16/32)
@@ -246,27 +246,27 @@ struct MyStruct
 	 std::string str;
 };
 
-cPacket& operator <<(cPacket& packet, const MyStruct& m)
+Packet& operator <<(Packet& packet, const MyStruct& m)
 {
 	 return packet << m.number << m.integer << m.str;
 }
 
-cPacket& operator >>(cPacket& packet, MyStruct& m)
+Packet& operator >>(Packet& packet, MyStruct& m)
 {
 	 return packet >> m.number >> m.integer >> m.str;
 }
 @endcode
 
-cPackets also provide an extra feature that allows to apply
+Packets also provide an extra feature that allows to apply
 custom transformations to the data before it is sent,
 and after it is received. This is typically used to
 handle automatic compression or encryption of the data.
-This is achieved by inheriting from cPacket, and overriding
+This is achieved by inheriting from Packet, and overriding
 the OnSend and OnReceive functions.
 
 Here is an example:
 @code
-class ZipcPacket : public cPacket
+class ZipPacket : public Packet
 {
 	 virtual const void* OnSend(std::size_t& size)
 	 {
@@ -286,10 +286,10 @@ class ZipcPacket : public cPacket
 };
 
 // Use like regular packets:
-ZipcPacket packet;
+ZipPacket packet;
 packet << x << s << d;
 ...
 @endcode
 
-@see cTcpSocket, cUdpSocket
+@see TcpSocket, UdpSocket
 */

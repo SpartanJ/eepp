@@ -1,19 +1,19 @@
 #ifndef EE_NETWORKCTCPLISTENER_HPP
 #define EE_NETWORKCTCPLISTENER_HPP
 
-#include <eepp/network/csocket.hpp>
+#include <eepp/network/socket.hpp>
 
 namespace EE { namespace Network {
 
-class cTcpSocket;
+class TcpSocket;
 
 /** @brief Socket that listens to new TCP connections */
-class EE_API cTcpListener : public cSocket
+class EE_API TcpListener : public Socket
 {
 public :
 
 	/** @brief Default constructor */
-	cTcpListener();
+	TcpListener();
 
 	/** @brief Get the port to which the socket is bound locally
 	**  If the socket is not listening to a port, this function
@@ -44,7 +44,7 @@ public :
 	**  @param socket Socket that will hold the new connection
 	**  @return Status code
 	**  @see Listen */
-	Status Accept(cTcpSocket& socket);
+	Status Accept(TcpSocket& socket);
 };
 
 }}
@@ -52,7 +52,7 @@ public :
 #endif // EE_NETWORKCTCPLISTENER_HPP
 
 /**
-@class cTcpListener
+@class TcpListener
 @ingroup Network
 
 A listener socket is a special type of socket that listens to
@@ -60,14 +60,14 @@ a given port and waits for connections on that port.
 This is all it can do.
 
 When a new connection is received, you must call accept and
-the listener returns a new instance of cTcpSocket that
+the listener returns a new instance of TcpSocket that
 is properly initialized and can be used to communicate with
 the new client.
 
 Listener sockets are specific to the TCP protocol,
 UDP sockets are connectionless and can therefore communicate
 directly. As a consequence, a listener socket will always
-return the new connections as cTcpSocket instances.
+return the new connections as TcpSocket instances.
 
 A listener is automatically closed on destruction, like all
 other types of socket. However if you want to stop listening
@@ -78,14 +78,14 @@ Usage example:
 @code
 // Create a listener socket and make it wait for new
 // connections on port 55001
-cTcpListener listener;
+TcpListener listener;
 listener.Listen(55001);
 
 // Endless loop that waits for new connections
 while (running)
 {
-	 cTcpSocket client;
-	 if (listener.Accept(client) == cSocket::Done)
+	 TcpSocket client;
+	 if (listener.Accept(client) == Socket::Done)
 	 {
 		 // A new client just connected!
 		 std::cout << "New connection received from " << client.GetRemoteAddress() << std::endl;
@@ -94,5 +94,5 @@ while (running)
 }
 @endcode
 
-@see cTcpSocket, cSocket
+@see TcpSocket, Socket
 */

@@ -8,7 +8,7 @@
 
 namespace EE { namespace Network { namespace Private {
 
-sockaddr_in cSocketImpl::CreateAddress(Uint32 address, unsigned short port) {
+sockaddr_in SocketImpl::CreateAddress(Uint32 address, unsigned short port) {
 	sockaddr_in addr;
 	std::memset(&addr, 0, sizeof(addr));
 	addr.sin_addr.s_addr = htonl(address);
@@ -22,15 +22,15 @@ sockaddr_in cSocketImpl::CreateAddress(Uint32 address, unsigned short port) {
 	return addr;
 }
 
-SocketHandle cSocketImpl::InvalidSocket() {
+SocketHandle SocketImpl::InvalidSocket() {
 	return -1;
 }
 
-void cSocketImpl::Close(SocketHandle sock) {
+void SocketImpl::Close(SocketHandle sock) {
 	::close(sock);
 }
 
-void cSocketImpl::SetBlocking(SocketHandle sock, bool block) {
+void SocketImpl::SetBlocking(SocketHandle sock, bool block) {
 	int status = fcntl(sock, F_GETFL);
 	if (block)
 		fcntl(sock, F_SETFL, status & ~O_NONBLOCK);
@@ -38,22 +38,22 @@ void cSocketImpl::SetBlocking(SocketHandle sock, bool block) {
 		fcntl(sock, F_SETFL, status | O_NONBLOCK);
 }
 
-cSocket::Status cSocketImpl::GetErrorStatus() {
+Socket::Status SocketImpl::GetErrorStatus() {
 	// The followings are sometimes equal to EWOULDBLOCK,
 	// so we have to make a special case for them in order
 	// to avoid having double values in the switch case
 	if ((errno == EAGAIN) || (errno == EINPROGRESS))
-		return cSocket::NotReady;
+		return Socket::NotReady;
 
 	switch (errno) {
-		case EWOULDBLOCK:	return cSocket::NotReady;
-		case ECONNABORTED:	return cSocket::Disconnected;
-		case ECONNRESET:	return cSocket::Disconnected;
-		case ETIMEDOUT:		return cSocket::Disconnected;
-		case ENETRESET:		return cSocket::Disconnected;
-		case ENOTCONN:		return cSocket::Disconnected;
-		case EPIPE:			return cSocket::Disconnected;
-		default:			return cSocket::Error;
+		case EWOULDBLOCK:	return Socket::NotReady;
+		case ECONNABORTED:	return Socket::Disconnected;
+		case ECONNRESET:	return Socket::Disconnected;
+		case ETIMEDOUT:		return Socket::Disconnected;
+		case ENETRESET:		return Socket::Disconnected;
+		case ENOTCONN:		return Socket::Disconnected;
+		case EPIPE:			return Socket::Disconnected;
+		default:			return Socket::Error;
 	}
 }
 

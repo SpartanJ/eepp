@@ -1,22 +1,22 @@
 #ifndef EE_NETWORKCTCPSOCKET_HPP
 #define EE_NETWORKCTCPSOCKET_HPP
 
-#include <eepp/network/csocket.hpp>
+#include <eepp/network/socket.hpp>
 #include <eepp/system/ctime.hpp>
 using namespace EE::System;
 
 namespace EE { namespace Network {
 
-class cTcpListener;
-class cIpAddress;
-class cPacket;
+class TcpListener;
+class IpAddress;
+class Packet;
 
 /** @brief Specialized socket using the TCP protocol */
-class EE_API cTcpSocket : public cSocket {
+class EE_API TcpSocket : public Socket {
 	public:
 
 	/** @brief Default constructor */
-	cTcpSocket();
+	TcpSocket();
 
 	/** @brief Get the port to which the socket is bound locally
 	**  If the socket is not connected, this function returns 0.
@@ -26,10 +26,10 @@ class EE_API cTcpSocket : public cSocket {
 
 	/** @brief Get the address of the connected peer
 	**  It the socket is not connected, this function returns
-	**  cIpAddress::None.
+	**  IpAddress::None.
 	**  @return Address of the remote peer
 	**  @see GetRemotePort */
-	cIpAddress GetRemoteAddress() const;
+	IpAddress GetRemoteAddress() const;
 
 	/** @brief Get the port of the connected peer to which
 			the socket is connected
@@ -48,7 +48,7 @@ class EE_API cTcpSocket : public cSocket {
 	**  @param timeout	   Optional maximum time to wait
 	**  @return Status code
 	**  @see Disconnect */
-	virtual Status Connect(const cIpAddress& remoteAddress, unsigned short remotePort, cTime timeout = cTime::Zero);
+	virtual Status Connect(const IpAddress& remoteAddress, unsigned short remotePort, cTime timeout = cTime::Zero);
 
 	/** @brief Disconnect the socket from its remote peer
 	**  This function gracefully closes the connection. If the
@@ -77,23 +77,23 @@ class EE_API cTcpSocket : public cSocket {
 
 	/** @brief Send a formatted packet of data to the remote peer
 	**  This function will fail if the socket is not connected.
-	**  @param packet cPacket to send
+	**  @param packet Packet to send
 	**  @return Status code
 	**  @see Receive */
-	virtual Status Send(cPacket& packet);
+	virtual Status Send(Packet& packet);
 
 	/** @brief Receive a formatted packet of data from the remote peer
 	**  In blocking mode, this function will wait until the whole packet
 	**  has been received.
 	**  This function will fail if the socket is not connected.
-	**  @param packet cPacket to fill with the received data
+	**  @param packet Packet to fill with the received data
 	**  @return Status code
 	**  @see Send */
-	virtual Status Receive(cPacket& packet);
+	virtual Status Receive(Packet& packet);
 
 	private:
 
-	friend class cTcpListener;
+	friend class TcpListener;
 
 	/** @brief Structure holding the data of a pending packet */
 	struct PendingPacket {
@@ -113,7 +113,7 @@ class EE_API cTcpSocket : public cSocket {
 #endif // EE_NETWORKCTCPSOCKET_HPP
 
 /**
-@class cTcpSocket
+@class TcpSocket
 @ingroup Network
 
 TCP is a connected protocol, which means that a TCP
@@ -137,9 +137,9 @@ process a raw sequence of bytes, and cannot ensure that
 one call to Send will exactly match one call to Receive
 at the other end of the socket.
 
-The high-level interface uses packets (see cPacket),
+The high-level interface uses packets (see Packet),
 which are easier to use and provide more safety regarding
-the data that is exchanged. You can look at the cPacket
+the data that is exchanged. You can look at the Packet
 class to get more details about how they work.
 
 The socket is automatically disconnected when it is destroyed,
@@ -151,7 +151,7 @@ Usage example:
 // ----- The client -----
 
 // Create a socket and connect it to 192.168.1.50 on port 55001
-cTcpSocket socket;
+TcpSocket socket;
 socket.Connect("192.168.1.50", 55001);
 
 // Send a message to the connected host
@@ -167,11 +167,11 @@ std::cout << "The server said: " << buffer << std::endl;
 // ----- The server -----
 
 // Create a listener to wait for incoming connections on port 55001
-cTcpListener listener;
+TcpListener listener;
 listener.Listen(55001);
 
 // Wait for a connection
-cTcpSocket socket;
+TcpSocket socket;
 listener.Accept(socket);
 std::cout << "New client connected: " << socket.GetRemoteAddress() << std::endl;
 
@@ -186,5 +186,5 @@ std::string message = "Welcome, client";
 socket.Send(message.c_str(), message.size() + 1);
 @endcode
 
-@see cSocket, cUdpSocket, cPacket
+@see Socket, UdpSocket, Packet
 */

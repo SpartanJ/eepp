@@ -1,5 +1,5 @@
-#include <eepp/network/csocketselector.hpp>
-#include <eepp/network/csocket.hpp>
+#include <eepp/network/socketselector.hpp>
+#include <eepp/network/socket.hpp>
 #include <eepp/network/platform/platformimpl.hpp>
 #include <utility>
 
@@ -9,31 +9,31 @@
 
 namespace EE { namespace Network {
 
-struct cSocketSelector::cSocketSelectorImpl {
+struct SocketSelector::SocketSelectorImpl {
 	fd_set AllSockets;   ///< Set containing all the sockets handles
 	fd_set SocketsReady; ///< Set containing handles of the sockets that are ready
 	int	MaxSocket;	///< Maximum socket handle
 };
 
-cSocketSelector::cSocketSelector() :
-	mImpl( eeNew( cSocketSelectorImpl, () ) )
+SocketSelector::SocketSelector() :
+	mImpl( eeNew( SocketSelectorImpl, () ) )
 {
 	Clear();
 }
 
-cSocketSelector::cSocketSelector(const cSocketSelector& copy) :
-	mImpl( eeNew( cSocketSelectorImpl, (*copy.mImpl) ) )
+SocketSelector::SocketSelector(const SocketSelector& copy) :
+	mImpl( eeNew( SocketSelectorImpl, (*copy.mImpl) ) )
 {
 }
 
-cSocketSelector::~cSocketSelector() {
+SocketSelector::~SocketSelector() {
 	eeSAFE_DELETE( mImpl );
 }
 
-void cSocketSelector::Add(cSocket& socket) {
+void SocketSelector::Add(Socket& socket) {
 	SocketHandle handle = socket.GetHandle();
 
-	if (handle != Private::cSocketImpl::InvalidSocket()) {
+	if (handle != Private::SocketImpl::InvalidSocket()) {
 		FD_SET(handle, &mImpl->AllSockets);
 
 		int size = static_cast<int>(handle);
@@ -42,19 +42,19 @@ void cSocketSelector::Add(cSocket& socket) {
 	}
 }
 
-void cSocketSelector::Remove(cSocket& socket) {
+void SocketSelector::Remove(Socket& socket) {
 	FD_CLR(socket.GetHandle(), &mImpl->AllSockets);
 	FD_CLR(socket.GetHandle(), &mImpl->SocketsReady);
 }
 
-void cSocketSelector::Clear() {
+void SocketSelector::Clear() {
 	FD_ZERO(&mImpl->AllSockets);
 	FD_ZERO(&mImpl->SocketsReady);
 
 	mImpl->MaxSocket = 0;
 }
 
-bool cSocketSelector::Wait(cTime timeout) {
+bool SocketSelector::Wait(cTime timeout) {
 	// Setup the timeout
 	timeval time;
 	time.tv_sec  = static_cast<long>(timeout.AsMicroseconds() / 1000000);
@@ -69,12 +69,12 @@ bool cSocketSelector::Wait(cTime timeout) {
 	return count > 0;
 }
 
-bool cSocketSelector::IsReady(cSocket& socket) const {
+bool SocketSelector::IsReady(Socket& socket) const {
 	return FD_ISSET(socket.GetHandle(), &mImpl->SocketsReady) != 0;
 }
 
-cSocketSelector& cSocketSelector::operator =(const cSocketSelector& right) {
-	cSocketSelector temp(right);
+SocketSelector& SocketSelector::operator =(const SocketSelector& right) {
+	SocketSelector temp(right);
 
 	std::swap(mImpl, temp.mImpl);
 

@@ -1,7 +1,7 @@
 #ifndef EE_NETWORKCOPENLSSLSOCKET_HPP
 #define EE_NETWORKCOPENLSSLSOCKET_HPP
 
-#include <eepp/network/ssl/csslsocketimpl.hpp>
+#include <eepp/network/ssl/sslsocketimpl.hpp>
 
 #ifdef EE_OPENSSL
 
@@ -23,30 +23,30 @@ extern "C" {
 
 namespace EE { namespace Network { namespace SSL {
 
-class cOpenSSLSocket : public cSSLSocketImpl {
+class OpenSSLSocket : public SSLSocketImpl {
 	public:
 		static bool Init();
 
 		static bool End();
 
-		cOpenSSLSocket( cSSLSocket * socket );
+		OpenSSLSocket( SSLSocket * socket );
 
-		~cOpenSSLSocket();
+		~OpenSSLSocket();
 
-		cSocket::Status Connect(const cIpAddress& remoteAddress, unsigned short remotePort, cTime timeout = cTime::Zero);
+		Socket::Status Connect(const IpAddress& remoteAddress, unsigned short remotePort, cTime timeout = cTime::Zero);
 
 		void Disconnect();
 
-		cSocket::Status Send(const void* data, std::size_t size);
+		Socket::Status Send(const void* data, std::size_t size);
 
-		cSocket::Status Receive(void* data, std::size_t size, std::size_t& received);
+		Socket::Status Receive(void* data, std::size_t size, std::size_t& received);
 	protected:
 		SSL_CTX *		mCTX;
 		::SSL *			mSSL;
 		BIO *			mBIO;
-		cSSLSocket *	mSSLSocket;
+		SSLSocket *	mSSLSocket;
 		bool			mConnected;
-		cSocket::Status mStatus;
+		Socket::Status mStatus;
 		int				mMaxCertChainDepth;
 
 	private:

@@ -2,7 +2,7 @@
 #define EE_NETWORKCFTP_HPP
 
 #include <eepp/network/base.hpp>
-#include <eepp/network/ctcpsocket.hpp>
+#include <eepp/network/tcpsocket.hpp>
 #include <eepp/core/noncopyable.hpp>
 #include <eepp/system/ctime.hpp>
 #include <string>
@@ -12,10 +12,10 @@ using namespace EE::System;
 
 namespace EE { namespace Network {
 
-class cIpAddress;
+class IpAddress;
 
 /** @brief A FTP client */
-class EE_API cFtp : NonCopyable {
+class EE_API Ftp : NonCopyable {
 public:
 	/** @brief Enumeration of transfer modes */
 	enum TransferMode
@@ -164,7 +164,7 @@ public:
 	/** @brief Destructor
 	**  Automatically closes the connection with the server if
 	**  it is still opened. */
-	~cFtp();
+	~Ftp();
 
 
 	/** @brief Connect to the specified FTP server
@@ -181,7 +181,7 @@ public:
 	**  @param timeout Maximum time to wait
 	**  @return Server response to the request
 	**  @see Disconnect */
-	Response Connect(const cIpAddress& server, unsigned short port = 21, cTime timeout = cTime::Zero);
+	Response Connect(const IpAddress& server, unsigned short port = 21, cTime timeout = cTime::Zero);
 
 	/** @brief Close the connection with the server
 	**  @return Server response to the request
@@ -319,7 +319,7 @@ private :
 	friend class DataChannel;
 
 	// Member data
-	cTcpSocket mCommandSocket; ///< Socket holding the control connection with the server
+	TcpSocket mCommandSocket; ///< Socket holding the control connection with the server
 };
 
 }}
@@ -327,10 +327,10 @@ private :
 #endif // EE_NETWORKCFTP_HPP
 
 /**
-@class cFtp
+@class Ftp
 @ingroup Network
 
-cFtp is a very simple FTP client that allows you
+Ftp is a very simple FTP client that allows you
 to communicate with a FTP server. The FTP protocol allows
 you to manipulate a remote file system (list files,
 upload, download, create, remove, ...).
@@ -343,7 +343,7 @@ Every command returns a FTP response, which contains the
 status code as well as a message from the server. Some
 commands such as GetWorkingDirectory and GetDirectoryListing
 return additional data, and use a class derived from
-cFtp::Response to provide this data.
+Ftp::Response to provide this data.
 All commands, especially upload and download, may take some
 time to complete. This is important to know if you don't want
 to block your application while the server is completing
@@ -351,10 +351,10 @@ the task.
 Usage example:
 @code
 // Create a new FTP client
-cFtp ftp;
+Ftp ftp;
 
 // Connect to the server
-cFtp::Response response = ftp.Connect("ftp://ftp.myserver.com");
+Ftp::Response response = ftp.Connect("ftp://ftp.myserver.com");
 if (response.IsOk())
 	std::cout << "Connected" << std::endl;
 
@@ -364,7 +364,7 @@ if (response.IsOk())
 	std::cout << "Logged in" << std::endl;
 
 // Print the working directory
-cFtp::DirectoryResponse directory = ftp.GetWorkingDirectory();
+Ftp::DirectoryResponse directory = ftp.GetWorkingDirectory();
 if (directory.IsOk())
 	std::cout << "Working directory: " << directory.GetDirectory() << std::endl;
 
@@ -374,7 +374,7 @@ if (response.IsOk())
 	std::cout << "Created new directory" << std::endl;
 
 // Upload a file to this new directory
-response = ftp.Upload("local-path/file.txt", "files", cFtp::Ascii);
+response = ftp.Upload("local-path/file.txt", "files", Ftp::Ascii);
 if (response.IsOk())
 	std::cout << "File uploaded" << std::endl;
 

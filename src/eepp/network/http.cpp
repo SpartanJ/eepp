@@ -1,5 +1,5 @@
-#include <eepp/network/chttp.hpp>
-#include <eepp/network/ssl/csslsocket.hpp>
+#include <eepp/network/http.hpp>
+#include <eepp/network/ssl/sslsocket.hpp>
 #include <cctype>
 #include <algorithm>
 #include <iterator>
@@ -19,7 +19,7 @@ namespace {
 
 namespace EE { namespace Network {
 
-cHttp::Request::Request(const std::string& uri, Method method, const std::string& body, bool validateCertificate, bool validateHostname ) :
+Http::Request::Request(const std::string& uri, Method method, const std::string& body, bool validateCertificate, bool validateHostname ) :
 	mValidateCertificate( validateCertificate ),
 	mValidateHostname( validateHostname )
 {
@@ -29,15 +29,15 @@ cHttp::Request::Request(const std::string& uri, Method method, const std::string
 	SetBody(body);
 }
 
-void cHttp::Request::SetField(const std::string& field, const std::string& value) {
+void Http::Request::SetField(const std::string& field, const std::string& value) {
 	mFields[toLower(field)] = value;
 }
 
-void cHttp::Request::SetMethod(cHttp::Request::Method method) {
+void Http::Request::SetMethod(Http::Request::Method method) {
 	mMethod = method;
 }
 
-void cHttp::Request::SetUri(const std::string& uri) {
+void Http::Request::SetUri(const std::string& uri) {
 	mUri = uri;
 
 	// Make sure it starts with a '/'
@@ -45,36 +45,36 @@ void cHttp::Request::SetUri(const std::string& uri) {
 		mUri.insert(0, "/");
 }
 
-void cHttp::Request::SetHttpVersion(unsigned int major, unsigned int minor) {
+void Http::Request::SetHttpVersion(unsigned int major, unsigned int minor) {
 	mMajorVersion = major;
 	mMinorVersion = minor;
 }
 
-void cHttp::Request::SetBody(const std::string& body) {
+void Http::Request::SetBody(const std::string& body) {
 	mBody = body;
 }
 
-const std::string &cHttp::Request::GetUri() const {
+const std::string &Http::Request::GetUri() const {
 	return mUri;
 }
 
-const bool& cHttp::Request::ValidateCertificate() const {
+const bool& Http::Request::ValidateCertificate() const {
 	return mValidateCertificate;
 }
 
-void cHttp::Request::ValidateCertificate(bool enable) {
+void Http::Request::ValidateCertificate(bool enable) {
 	mValidateCertificate = enable;
 }
 
-const bool &cHttp::Request::ValidateHostname() const {
+const bool &Http::Request::ValidateHostname() const {
 	return mValidateHostname;
 }
 
-void cHttp::Request::ValidateHostname(bool enable) {
+void Http::Request::ValidateHostname(bool enable) {
 	mValidateHostname = enable;
 }
 
-std::string cHttp::Request::Prepare() const {
+std::string Http::Request::Prepare() const {
 	std::ostringstream out;
 
 	// Convert the method to its string representation
@@ -106,18 +106,18 @@ std::string cHttp::Request::Prepare() const {
 	return out.str();
 }
 
-bool cHttp::Request::HasField(const std::string& field) const {
+bool Http::Request::HasField(const std::string& field) const {
 	return mFields.find(toLower(field)) != mFields.end();
 }
 
-cHttp::Response::Response() :
+Http::Response::Response() :
 	mStatus	  (ConnectionFailed),
 	mMajorVersion(0),
 	mMinorVersion(0)
 {
 }
 
-const std::string& cHttp::Response::GetField(const std::string& field) const {
+const std::string& Http::Response::GetField(const std::string& field) const {
 	FieldTable::const_iterator it = mFields.find(toLower(field));
 	if (it != mFields.end()) {
 		return it->second;
@@ -127,23 +127,23 @@ const std::string& cHttp::Response::GetField(const std::string& field) const {
 	}
 }
 
-cHttp::Response::Status cHttp::Response::GetStatus() const {
+Http::Response::Status Http::Response::GetStatus() const {
 	return mStatus;
 }
 
-unsigned int cHttp::Response::GetMajorHttpVersion() const {
+unsigned int Http::Response::GetMajorHttpVersion() const {
 	return mMajorVersion;
 }
 
-unsigned int cHttp::Response::GetMinorHttpVersion() const {
+unsigned int Http::Response::GetMinorHttpVersion() const {
 	return mMinorVersion;
 }
 
-const std::string& cHttp::Response::GetBody() const {
+const std::string& Http::Response::GetBody() const {
 	return mBody;
 }
 
-void cHttp::Response::Parse(const std::string& data) {
+void Http::Response::Parse(const std::string& data) {
 	std::istringstream in(data);
 
 	// Extract the HTTP version from the first line
@@ -210,7 +210,7 @@ void cHttp::Response::Parse(const std::string& data) {
 	}
 }
 
-void cHttp::Response::ParseFields(std::istream &in) {
+void Http::Response::ParseFields(std::istream &in) {
 	std::string line;
 	while (std::getline(in, line) && (line.size() > 2)) {
 		std::string::size_type pos = line.find(": ");
@@ -230,7 +230,7 @@ void cHttp::Response::ParseFields(std::istream &in) {
 	}
 }
 
-cHttp::cHttp() :
+Http::Http() :
 	mConnection( NULL ),
 	mHost(),
 	mPort(0),
@@ -238,14 +238,14 @@ cHttp::cHttp() :
 {
 }
 
-cHttp::cHttp(const std::string& host, unsigned short port, bool useSSL) :
+Http::Http(const std::string& host, unsigned short port, bool useSSL) :
 	mConnection( NULL ),
 	mIsSSL( false )
 {
 	SetHost(host, port, useSSL);
 }
 
-cHttp::~cHttp() {
+Http::~Http() {
 	std::list<cAsyncRequest*>::iterator itt;
 
 	// First we wait to finish any request pending
@@ -258,12 +258,12 @@ cHttp::~cHttp() {
 	}
 
 	// Then we destroy the last open connection
-	cTcpSocket * tcp = mConnection;
+	TcpSocket * tcp = mConnection;
 
 	eeSAFE_DELETE( tcp );
 }
 
-void cHttp::SetHost(const std::string& host, unsigned short port, bool useSSL) {
+void Http::SetHost(const std::string& host, unsigned short port, bool useSSL) {
 	// Check the protocol
 	if (toLower(host.substr(0, 7)) == "http://") {
 		// HTTP protocol
@@ -294,12 +294,12 @@ void cHttp::SetHost(const std::string& host, unsigned short port, bool useSSL) {
 	if (!mHostName.empty() && (*mHostName.rbegin() == '/'))
 		mHostName.erase(mHostName.size() - 1);
 
-	mHost = cIpAddress(mHostName);
+	mHost = IpAddress(mHostName);
 }
 
-cHttp::Response cHttp::SendRequest(const cHttp::Request& request, cTime timeout) {
+Http::Response Http::SendRequest(const Http::Request& request, cTime timeout) {
 	if ( NULL == mConnection ) {
-		cTcpSocket * Conn	= mIsSSL ? eeNew( cSSLSocket, ( mHostName, request.ValidateCertificate(), request.ValidateHostname() ) ) : eeNew( cTcpSocket, () );
+		TcpSocket * Conn	= mIsSSL ? eeNew( SSLSocket, ( mHostName, request.ValidateCertificate(), request.ValidateHostname() ) ) : eeNew( TcpSocket, () );
 		mConnection			= Conn;
 	}
 
@@ -336,19 +336,19 @@ cHttp::Response cHttp::SendRequest(const cHttp::Request& request, cTime timeout)
 	Response received;
 
 	// Connect the socket to the host
-	if (mConnection->Connect(mHost, mPort, timeout) == cSocket::Done) {
+	if (mConnection->Connect(mHost, mPort, timeout) == Socket::Done) {
 		// Convert the request to string and send it through the connected socket
 		std::string requestStr = toSend.Prepare();
 
 		if (!requestStr.empty()) {
 			// Send it through the socket
-			if (mConnection->Send(requestStr.c_str(), requestStr.size()) == cSocket::Done) {
+			if (mConnection->Send(requestStr.c_str(), requestStr.size()) == Socket::Done) {
 				// Wait for the server's response
 				std::string receivedStr;
 				std::size_t size = 0;
 				char buffer[1024];
 
-				while (mConnection->Receive(buffer, sizeof(buffer), size) == cSocket::Done) {
+				while (mConnection->Receive(buffer, sizeof(buffer), size) == Socket::Done) {
 					receivedStr.append(buffer, buffer + size);
 				}
 
@@ -364,7 +364,7 @@ cHttp::Response cHttp::SendRequest(const cHttp::Request& request, cTime timeout)
 	return received;
 }
 
-cHttp::cAsyncRequest::cAsyncRequest(cHttp *http, AsyncResponseCallback cb, cHttp::Request request, cTime timeout) :
+Http::cAsyncRequest::cAsyncRequest(Http *http, AsyncResponseCallback cb, Http::Request request, cTime timeout) :
 	mHttp( http ),
 	mCb( cb ),
 	mRequest( request ),
@@ -373,20 +373,20 @@ cHttp::cAsyncRequest::cAsyncRequest(cHttp *http, AsyncResponseCallback cb, cHttp
 {
 }
 
-void cHttp::cAsyncRequest::Run() {
-	cHttp::Response response = mHttp->SendRequest( mRequest, mTimeout );
+void Http::cAsyncRequest::Run() {
+	Http::Response response = mHttp->SendRequest( mRequest, mTimeout );
 
 	mCb( *mHttp, mRequest, response );
 
 	// The Async Request destroys the socket used to create the request
-	cTcpSocket * tcp = mHttp->mConnection;
+	TcpSocket * tcp = mHttp->mConnection;
 	eeSAFE_DELETE( tcp );
 	mHttp->mConnection = NULL;
 
 	mRunning = false;
 }
 
-void cHttp::RemoveOldThreads() {
+void Http::RemoveOldThreads() {
 	std::list<cAsyncRequest*> remove;
 
 	std::list<cAsyncRequest*>::iterator it = mThreads.begin();
@@ -409,7 +409,7 @@ void cHttp::RemoveOldThreads() {
 	}
 }
 
-void cHttp::SendAsyncRequest( AsyncResponseCallback cb, const cHttp::Request& request, cTime timeout ) {
+void Http::SendAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, cTime timeout ) {
 	cAsyncRequest * thread = eeNew( cAsyncRequest, ( this, cb, request, timeout ) );
 
 	thread->Launch();
@@ -422,15 +422,15 @@ void cHttp::SendAsyncRequest( AsyncResponseCallback cb, const cHttp::Request& re
 	mThreads.push_back( thread );
 }
 
-const cIpAddress &cHttp::GetHost() const {
+const IpAddress &Http::GetHost() const {
 	return mHost;
 }
 
-const std::string &cHttp::GetHostName() const {
+const std::string &Http::GetHostName() const {
 	return mHostName;
 }
 
-const unsigned short& cHttp::GetPort() const {
+const unsigned short& Http::GetPort() const {
 	return mPort;
 }
 
