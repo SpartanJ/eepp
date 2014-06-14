@@ -7,15 +7,15 @@ using namespace EE::Window;
 
 namespace EE { namespace Window { namespace Backend { namespace Null {
 
-class cCursorNull : public cCursor {
+class CursorNull : public Cursor {
 	protected:
-		friend class cCursorManagerNull;
+		friend class CursorManagerNull;
 
-		cCursorNull( cTexture * tex, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
+		CursorNull( cTexture * tex, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
 
-		cCursorNull( cImage * img, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
+		CursorNull( cImage * img, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
 
-		cCursorNull( const std::string& path, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
+		CursorNull( const std::string& path, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
 
 		void Create();
 };

@@ -22,15 +22,15 @@ enum INPUT_TEXTBUFFER_FLAGS {
 #define INPUT_LENGHT_MAX 0xFFFFFFFF
 
 /** @brief A class to keep a buffer of the user writed text */
-class EE_API cInputTextBuffer {
+class EE_API InputTextBuffer {
 	public:
 		typedef cb::Callback0<void> EnterCallback;
 
-		cInputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, Window::cWindow * window = NULL, const Uint32& maxLength = INPUT_LENGHT_MAX );
+		InputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, Window::cWindow * window = NULL, const Uint32& maxLength = INPUT_LENGHT_MAX );
 
-		cInputTextBuffer( Window::cWindow * window = NULL );
+		InputTextBuffer( Window::cWindow * window = NULL );
 
-		~cInputTextBuffer();
+		~InputTextBuffer();
 
 		/** @return The current buffer */
 		String Buffer() const;

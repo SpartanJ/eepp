@@ -51,7 +51,7 @@ class EE_API cWindowNull : public cWindow {
 
 		void SetDefaultContext();
 	protected:
-		friend class cClipboardNull;
+		friend class ClipboardNull;
 
 		void SwapBuffers();
 

@@ -11,9 +11,9 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SFML {
 
-class EE_API cInputSFML : public cInput {
+class EE_API InputSFML : public Input {
 	public:
-		virtual ~cInputSFML();
+		virtual ~InputSFML();
 		
 		void Update();
 
@@ -27,7 +27,7 @@ class EE_API cInputSFML : public cInput {
 
 		bool mWinActive;
 
-		cInputSFML( Window::cWindow * window );
+		InputSFML( Window::cWindow * window );
 		
 		virtual void Init();
 

@@ -6,7 +6,7 @@
 namespace EE { namespace Window { namespace Backend { namespace Null {
 
 cWindowNull::cWindowNull( WindowSettings Settings, ContextSettings Context ) :
-	cWindow( Settings, Context, eeNew( cClipboardNull, ( this ) ), eeNew( cInputNull, ( this ) ), eeNew( cCursorManagerNull, ( this ) ) )
+	cWindow( Settings, Context, eeNew( ClipboardNull, ( this ) ), eeNew( InputNull, ( this ) ), eeNew( CursorManagerNull, ( this ) ) )
 {
 	Create( Settings, Context );
 }

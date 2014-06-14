@@ -3,12 +3,12 @@
 
 namespace EE { namespace Window { namespace Platform {
 
-cPlatformImpl::cPlatformImpl( cWindow * window ) :
+PlatformImpl::PlatformImpl( cWindow * window ) :
 	mWindow( window )
 {
 }
 
-cPlatformImpl::~cPlatformImpl() {
+PlatformImpl::~PlatformImpl() {
 }
 
 }}}

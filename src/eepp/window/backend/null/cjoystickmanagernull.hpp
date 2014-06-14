@@ -5,11 +5,11 @@
 
 namespace EE { namespace Window { namespace Backend { namespace Null {
 
-class EE_API cJoystickManagerNull : public cJoystickManager {
+class EE_API JoystickManagerNull : public JoystickManager {
 	public:
-		cJoystickManagerNull();
+		JoystickManagerNull();
 		
-		virtual ~cJoystickManagerNull();
+		virtual ~JoystickManagerNull();
 		
 		void Update();
 

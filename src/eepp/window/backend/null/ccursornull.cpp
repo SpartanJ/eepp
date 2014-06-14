@@ -2,22 +2,22 @@
 
 namespace EE { namespace Window { namespace Backend { namespace Null {
 
-cCursorNull::cCursorNull( cTexture * tex, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
-	cCursor( tex, hotspot, name, window )
+CursorNull::CursorNull( cTexture * tex, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
+	Cursor( tex, hotspot, name, window )
 {
 }
 
-cCursorNull::cCursorNull( cImage * img, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
-	cCursor( img, hotspot, name, window )
+CursorNull::CursorNull( cImage * img, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
+	Cursor( img, hotspot, name, window )
 {
 }
 
-cCursorNull::cCursorNull( const std::string& path, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
-	cCursor( path, hotspot, name, window )
+CursorNull::CursorNull( const std::string& path, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
+	Cursor( path, hotspot, name, window )
 {
 }
 
-void cCursorNull::Create() {
+void CursorNull::Create() {
 }
 
 }}}}

@@ -5,9 +5,9 @@
 
 namespace EE { namespace Window {
 
-class EE_API cClipboard {
+class EE_API Clipboard {
 	public:
-		virtual ~cClipboard();
+		virtual ~Clipboard();
 
 		/** @return The Clipboard Text if available */
 		virtual std::string GetText() = 0;
@@ -23,7 +23,7 @@ class EE_API cClipboard {
 	protected:
 		friend class cWindow;
 
-		cClipboard( Window::cWindow * window );
+		Clipboard( Window::cWindow * window );
 
 		/** Initialize the clipboard manager. This is needed because the backends first create the instance of the clipboard and then initialize the window context. */
 		virtual void Init() = 0;

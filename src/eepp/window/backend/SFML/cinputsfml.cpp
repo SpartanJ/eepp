@@ -11,16 +11,16 @@ namespace EE { namespace Window { namespace Backend { namespace SFML {
 static Uint32	KeyCodesTable[ sf::Keyboard::KeyCount ];
 static bool		KeyCodesTableInit = false;
 
-cInputSFML::cInputSFML( cWindow * window ) :
-	cInput( window, eeNew( cJoystickManagerSFML, () ) ),
+InputSFML::InputSFML( cWindow * window ) :
+	Input( window, eeNew( JoystickManagerSFML, () ) ),
 	mWinActive( true )
 {
 }
 
-cInputSFML::~cInputSFML() {
+InputSFML::~InputSFML() {
 }
 
-void cInputSFML::Update() {
+void InputSFML::Update() {
 	sf::Event	event;
 	InputEvent 	EEEvent;
 
@@ -189,26 +189,26 @@ void cInputSFML::Update() {
    }
 }
 
-bool cInputSFML::GrabInput() {
+bool InputSFML::GrabInput() {
 	return false;
 }
 
-void cInputSFML::GrabInput( const bool& Grab ) {
+void InputSFML::GrabInput( const bool& Grab ) {
 }
 
-void cInputSFML::InjectMousePos( const Uint16& x, const Uint16& y ) {
+void InputSFML::InjectMousePos( const Uint16& x, const Uint16& y ) {
 	cWindowSFML * win = reinterpret_cast<cWindowSFML*>( mWindow );
 	sf::Window * window = win->GetSFMLWindow();
 	sf::Mouse::setPosition( sf::Vector2i( x, y ), *window );
 }
 
-void cInputSFML::Init() {
+void InputSFML::Init() {
 	InitializeTables();
 
 	mJoystickManager->Open();
 }
 
-Uint32 cInputSFML::GetButton( const Uint32& sfmlBut ) {
+Uint32 InputSFML::GetButton( const Uint32& sfmlBut ) {
 	switch ( sfmlBut ) {
 		case sf::Mouse::Left:		return EE_BUTTON_LEFT;
 		case sf::Mouse::Right:		return EE_BUTTON_RIGHT;
@@ -220,7 +220,7 @@ Uint32 cInputSFML::GetButton( const Uint32& sfmlBut ) {
 	return EE_BUTTON_LEFT;
 }
 
-Uint32 cInputSFML::SetMod( sf::Event::KeyEvent& key ) {
+Uint32 InputSFML::SetMod( sf::Event::KeyEvent& key ) {
 	Uint32 Ret = 0;
 
 	if ( key.shift )		Ret |= KEYMOD_SHIFT;
@@ -231,7 +231,7 @@ Uint32 cInputSFML::SetMod( sf::Event::KeyEvent& key ) {
 	return Ret;
 }
 
-void cInputSFML::InitializeTables() {
+void InputSFML::InitializeTables() {
 	if ( KeyCodesTableInit )
 		return;
 

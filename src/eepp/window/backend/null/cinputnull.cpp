@@ -3,28 +3,28 @@
 
 namespace EE { namespace Window { namespace Backend { namespace Null {
 
-cInputNull::cInputNull( cWindow * window ) :
-	cInput( window, eeNew( cJoystickManagerNull, () ) )
+InputNull::InputNull( cWindow * window ) :
+	Input( window, eeNew( JoystickManagerNull, () ) )
 {
 }
 
-cInputNull::~cInputNull() {
+InputNull::~InputNull() {
 }
 
-void cInputNull::Update() {
+void InputNull::Update() {
 }
 
-bool cInputNull::GrabInput() {
+bool InputNull::GrabInput() {
 	return false;
 }
 
-void cInputNull::GrabInput( const bool& Grab ) {
+void InputNull::GrabInput( const bool& Grab ) {
 }
 
-void cInputNull::InjectMousePos( const Uint16& x, const Uint16& y ) {
+void InputNull::InjectMousePos( const Uint16& x, const Uint16& y ) {
 }
 
-void cInputNull::Init() {
+void InputNull::Init() {
 }
 
 }}}}

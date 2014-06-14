@@ -2,7 +2,7 @@
 
 namespace EE { namespace Window {
 
-cInputFinger::cInputFinger() :
+InputFinger::InputFinger() :
 	id(-1),
 	x(0),
 	y(0),
@@ -17,19 +17,19 @@ cInputFinger::cInputFinger() :
 {	
 }
 
-bool cInputFinger::IsDown() {
+bool InputFinger::IsDown() {
 	return down;
 }
 
-bool cInputFinger::WasDown() {
+bool InputFinger::WasDown() {
 	return was_down;
 }
 
-Vector2i cInputFinger::Pos() {
+Vector2i InputFinger::Pos() {
 	return Vector2i( x, y );
 }
 
-void cInputFinger::WriteLast() {
+void InputFinger::WriteLast() {
 	last_x = x;
 	last_y = y;
 	last_pressure = pressure;

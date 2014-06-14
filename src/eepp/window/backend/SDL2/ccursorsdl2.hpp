@@ -10,21 +10,21 @@ using namespace EE::Window;
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
-class cCursorSDL : public cCursor {
+class CursorSDL : public Cursor {
 	public:
 		SDL_Cursor * GetCursor() const;
 	protected:
-		friend class cCursorManagerSDL;
+		friend class CursorManagerSDL;
 
 		SDL_Cursor * mCursor;
 
-		cCursorSDL( cTexture * tex, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
+		CursorSDL( cTexture * tex, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
 
-		cCursorSDL( cImage * img, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
+		CursorSDL( cImage * img, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
 
-		cCursorSDL( const std::string& path, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
+		CursorSDL( const std::string& path, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
 
-		virtual ~cCursorSDL();
+		virtual ~CursorSDL();
 
 		void Create();
 };

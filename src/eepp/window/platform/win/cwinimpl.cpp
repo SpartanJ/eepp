@@ -19,8 +19,6 @@ static BOOL WIN_ShowWindow( HWND hWnd, int nCmdShow ) {
 #include <eepp/window/cwindow.hpp>
 #include <eepp/window/platform/win/ccursorwin.hpp>
 
-using namespace EE::Window::Cursor;
-
 namespace EE { namespace Window { namespace Platform {
 
 static HCURSOR SYS_CURSORS[ SYS_CURSOR_COUNT ] = {0};
@@ -34,7 +32,7 @@ static HCURSOR GetLoadCursor( const EE_SYSTEM_CURSOR& cursor, LPCSTR syscur ) {
 }
 
 cWinImpl::cWinImpl( cWindow * window, eeWindowHandle handler ) :
-	cPlatformImpl( window ),
+	PlatformImpl( window ),
 	mHandler( handler ),
 	mCursorCurrent( NULL ),
 	mCursorHidden( false )
@@ -93,7 +91,7 @@ void cWinImpl::ShowMouseCursor() {
 	mCursorHidden = false;
 
 	if ( !mCursorCurrent ) {
-		SetSystemMouseCursor( Cursor::SYS_CURSOR_ARROW );
+		SetSystemMouseCursor( SYS_CURSOR_ARROW );
 	} else {
 		SetCursor( (HCURSOR)mCursorCurrent );
 		SetClassLong( GetHandler(), GCL_HCURSOR, (DWORD)mCursorCurrent );
@@ -113,20 +111,20 @@ void cWinImpl::HideMouseCursor() {
 	PostMessage( mHandler, WM_SETCURSOR, 0, 0 );
 }
 
-cCursor * cWinImpl::CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
-	return eeNew( cCursorWin, ( tex, hotspot, name, mWindow ) );
+Cursor * cWinImpl::CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
+	return eeNew( CursorWin, ( tex, hotspot, name, mWindow ) );
 }
 
-cCursor * cWinImpl::CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name ) {
-	return eeNew( cCursorWin, ( img, hotspot, name, mWindow ) );
+Cursor * cWinImpl::CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name ) {
+	return eeNew( CursorWin, ( img, hotspot, name, mWindow ) );
 }
 
-cCursor * cWinImpl::CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
-	return eeNew( cCursorWin, ( path, hotspot, name, mWindow ) );
+Cursor * cWinImpl::CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
+	return eeNew( CursorWin, ( path, hotspot, name, mWindow ) );
 }
 
-void cWinImpl::SetMouseCursor( cCursor * cursor ) {
-	mCursorCurrent = reinterpret_cast<cCursorWin*> ( cursor )->GetCursor();
+void cWinImpl::SetMouseCursor( Cursor * cursor ) {
+	mCursorCurrent = reinterpret_cast<CursorWin*> ( cursor )->GetCursor();
 
 	if ( !mCursorHidden ) {
 		SetCursor( (HCURSOR)mCursorCurrent );
@@ -138,7 +136,7 @@ void cWinImpl::SetMouseCursor( cCursor * cursor ) {
 	}
 }
 
-void cWinImpl::SetSystemMouseCursor( Cursor::EE_SYSTEM_CURSOR syscursor ) {
+void cWinImpl::SetSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) {
 	HCURSOR mc;
 
 	switch ( syscursor ) {

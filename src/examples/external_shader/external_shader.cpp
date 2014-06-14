@@ -11,7 +11,7 @@ static Float sqrt_aprox[20001];
 Uint32 ParticlesNum	= 30000;
 
 cWindow * win = NULL;
-cInput * imp = NULL;
+Input * imp = NULL;
 cShaderProgram * ShaderProgram = NULL;
 bool ShadersSupported = false;
 Float tw;
@@ -205,7 +205,7 @@ void MainLoop()
 
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
-	win = cEngine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - External Shaders" ), ContextSettings( true ) );
+	win = Engine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - External Shaders" ), ContextSettings( true ) );
 
 	if ( win->Created() )
 	{
@@ -279,7 +279,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		eeSAFE_DELETE_ARRAY( colors );
 	}
 
-	cEngine::DestroySingleton();
+	Engine::DestroySingleton();
 
 	MemoryManager::ShowResults();
 

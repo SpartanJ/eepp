@@ -5,25 +5,25 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SFML {
 
-cClipboardSFML::cClipboardSFML( cWindow * window ) :
-	cClipboard( window )
+ClipboardSFML::ClipboardSFML( cWindow * window ) :
+	Clipboard( window )
 {
 }
 
-cClipboardSFML::~cClipboardSFML() {
+ClipboardSFML::~ClipboardSFML() {
 }
 
-void cClipboardSFML::Init() {
+void ClipboardSFML::Init() {
 }
 
-void cClipboardSFML::SetText( const std::string& Text ) {
+void ClipboardSFML::SetText( const std::string& Text ) {
 }
 
-std::string cClipboardSFML::GetText() {
+std::string ClipboardSFML::GetText() {
 	return std::string();
 }
 
-String cClipboardSFML::GetWideText() {
+String ClipboardSFML::GetWideText() {
 	return String();
 }
 

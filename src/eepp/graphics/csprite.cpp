@@ -481,7 +481,7 @@ bool cSprite::AddSubFrame(const Uint32& TexId, const unsigned int& NumFrame, con
 }
 
 void cSprite::Update() {
-	Update( cEngine::instance()->Elapsed() );
+	Update( Engine::instance()->Elapsed() );
 }
 
 void cSprite::Update( const Time& ElapsedTime ) {

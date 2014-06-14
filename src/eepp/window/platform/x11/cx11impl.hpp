@@ -11,7 +11,7 @@ namespace EE { namespace Window { namespace Platform {
 
 using namespace EE::Window;
 
-class cX11Impl : public cPlatformImpl {
+class cX11Impl : public PlatformImpl {
 	public:
 		typedef void (*LockFunc)(void);
 		typedef void (*UnlockFunc)(void);
@@ -42,15 +42,15 @@ class cX11Impl : public cPlatformImpl {
 
 		void HideMouseCursor();
 
-		cCursor * CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name );
+		Cursor * CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name );
 
-		cCursor * CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name );
+		Cursor * CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name );
 
-		cCursor * CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name );
+		Cursor * CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name );
 
-		void SetMouseCursor( cCursor * cursor );
+		void SetMouseCursor( Cursor * cursor );
 
-		void SetSystemMouseCursor( Cursor::EE_SYSTEM_CURSOR syscursor );
+		void SetSystemMouseCursor( EE_SYSTEM_CURSOR syscursor );
 
 		void RestoreCursor();
 

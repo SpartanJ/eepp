@@ -6,9 +6,9 @@
 
 namespace EE { namespace Window { namespace Backend { namespace Null {
 
-class EE_API cClipboardNull : public cClipboard {
+class EE_API ClipboardNull : public Clipboard {
 	public:
-		virtual ~cClipboardNull();
+		virtual ~ClipboardNull();
 
 		std::string GetText();
 
@@ -18,7 +18,7 @@ class EE_API cClipboardNull : public cClipboard {
 	protected:
 		friend class cWindowNull;
 
-		cClipboardNull( Window::cWindow * window );
+		ClipboardNull( Window::cWindow * window );
 
 		void Init();
 };

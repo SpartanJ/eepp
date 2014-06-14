@@ -19,7 +19,7 @@ class cImage;
 
 namespace Window {
 class cWindow;
-class cCursor;
+class Cursor;
 }
 
 }
@@ -33,11 +33,11 @@ using namespace EE::Graphics;
 * It's not garanteed that everything is implemented in every platform.
 * X11 and Win32 implementation are complete, OS X implementation still lacks of most features.
 */
-class cPlatformImpl {
+class PlatformImpl {
 	public:
-		cPlatformImpl( Window::cWindow * window );
+		PlatformImpl( Window::cWindow * window );
 		
-		virtual ~cPlatformImpl();
+		virtual ~PlatformImpl();
 		
 		/** Minimize the window */
 		virtual void MinimizeWindow() = 0;
@@ -80,27 +80,27 @@ class cPlatformImpl {
 		* @param hotspot The hotspot where the mouse click is taken
 		* @param name The name of the cursor
 		*/
-		virtual cCursor * CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name ) = 0;
+		virtual Cursor * CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name ) = 0;
 
 		/** Creates a cursor from a image
 		* @param img The image path
 		* @param hotspot The hotspot where the mouse click is taken
 		* @param name The name of the cursor
 		*/
-		virtual cCursor * CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name ) = 0;
+		virtual Cursor * CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name ) = 0;
 
 		/** Creates a cursor from a image path
 		* @param path The image pointer to use as cursor
 		* @param hotspot The hotspot where the mouse click is taken
 		* @param name The name of the cursor
 		*/
-		virtual cCursor * CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) = 0;
+		virtual Cursor * CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) = 0;
 
 		/** Set the the current cursor by its cursor pointer */
-		virtual void SetMouseCursor( cCursor * cursor ) = 0;
+		virtual void SetMouseCursor( Cursor * cursor ) = 0;
 
 		/** Set the cursor using a system cursor */
-		virtual void SetSystemMouseCursor( Cursor::EE_SYSTEM_CURSOR syscursor ) = 0;
+		virtual void SetSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) = 0;
 
 		/** Force to reset the state of the current seted cursor */
 		virtual void RestoreCursor() = 0;

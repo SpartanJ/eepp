@@ -7,11 +7,11 @@
 namespace EE { namespace Window {
 
 /** @brief Represents a physical Joystick, and contains all its states */
-class EE_API cJoystick {
+class EE_API Joystick {
 	public:
-		cJoystick( const Uint32& index );
+		Joystick( const Uint32& index );
 
-		virtual ~cJoystick();
+		virtual ~Joystick();
 
 		/** Close the joystick */
 		virtual void 		Close();
@@ -67,7 +67,7 @@ class EE_API cJoystick {
 		/** @return If the button index is up ( released ) */
 		bool				IsButtonUp( const Int32& index );
 	protected:
-		friend class cJoystickManager;
+		friend class JoystickManager;
 		Uint32 			mIndex;
 		std::string		mName;
 		Int32			mHats;

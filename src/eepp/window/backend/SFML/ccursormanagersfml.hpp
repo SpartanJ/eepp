@@ -9,17 +9,17 @@ using namespace EE::Window;
 
 namespace EE { namespace Window { namespace Backend { namespace SFML {
 
-class cCursorManagerSFML : public cCursorManager {
+class CursorManagerSFML : public CursorManager {
 	public:
-		cCursorManagerSFML( Window::cWindow * window );
+		CursorManagerSFML( Window::cWindow * window );
 
-		cCursor * Create( cTexture * tex, const Vector2i& hotspot, const std::string& name );
+		Cursor * Create( cTexture * tex, const Vector2i& hotspot, const std::string& name );
 
-		cCursor * Create( cImage * img, const Vector2i& hotspot, const std::string& name );
+		Cursor * Create( cImage * img, const Vector2i& hotspot, const std::string& name );
 
-		cCursor * Create( const std::string& path, const Vector2i& hotspot, const std::string& name );
+		Cursor * Create( const std::string& path, const Vector2i& hotspot, const std::string& name );
 
-		void Set( cCursor * cursor );
+		void Set( Cursor * cursor );
 
 		void Set( EE_SYSTEM_CURSOR syscurid );
 
@@ -29,7 +29,7 @@ class cCursorManagerSFML : public cCursorManager {
 
 		void Visible( bool visible );
 
-		void Remove( cCursor * cursor, bool Delete = false );
+		void Remove( Cursor * cursor, bool Delete = false );
 
 		void Reload();
 };

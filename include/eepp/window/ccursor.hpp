@@ -13,7 +13,7 @@ namespace EE { namespace Window {
 
 class cWindow;
 
-class EE_API cCursor {
+class EE_API Cursor {
 	public:
 		/** @return The cursor id */
 		const Uint32& Id() const;
@@ -27,9 +27,9 @@ class EE_API cCursor {
 		/** @return The pointer to the image that represents the cursor */
 		cImage * Image() const;
 		
-		virtual ~cCursor();
+		virtual ~Cursor();
 	protected:
-		friend class cCursorManager;
+		friend class CursorManager;
 
 		Uint32			mId;
 		std::string		mName;
@@ -37,11 +37,11 @@ class EE_API cCursor {
 		Vector2i		mHotSpot;
 		cWindow *		mWindow;
 
-		cCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
+		Cursor( cTexture * tex, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
 
-		cCursor( cImage * img, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
+		Cursor( cImage * img, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
 
-		cCursor( const std::string& path, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
+		Cursor( const std::string& path, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
 
 		virtual void Create() = 0;
 };

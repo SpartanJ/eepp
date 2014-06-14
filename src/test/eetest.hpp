@@ -36,9 +36,9 @@ class cUITest : public cUIControlAnim {
 		virtual Uint32 OnMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
 			cUIDragable::OnMouseUp( Pos, Flags );
 
-			if ( cEngine::instance()->GetCurrentWindow()->GetInput()->MouseWheelUp() )
+			if ( Engine::instance()->GetCurrentWindow()->GetInput()->MouseWheelUp() )
 				Scale( Scale() + 0.1f );
-			else if ( cEngine::instance()->GetCurrentWindow()->GetInput()->MouseWheelDown() )
+			else if ( Engine::instance()->GetCurrentWindow()->GetInput()->MouseWheelDown() )
 				Scale( Scale() - 0.1f );
 
 			return 1;
@@ -88,12 +88,12 @@ class cEETest : private Thread {
 		Clock cElapsed;
 		Time PSElapsed;
 	private:
-		cEngine * EE;
+		Engine * EE;
 		Window::cWindow * mWindow;
 		cTextureFactory* TF;
 		System::Log* Log;
-		cInput* KM;
-		cInputTextBuffer InBuf;
+		Window::Input* KM;
+		InputTextBuffer InBuf;
 
 		bool side, aside;
 		Float ang, scale, alpha, Ang;
@@ -161,7 +161,7 @@ class cEETest : private Thread {
 		Float AnimVal;
 		bool AnimSide;
 
-		cView Views[2];
+		View Views[2];
 
 		cShaderProgram * mShaderProgram;
 
@@ -186,7 +186,7 @@ class cEETest : private Thread {
 		ResourceLoader mFontLoader;
 		void OnFontLoaded( ResourceLoader * ObjLoaded );
 
-		cJoystickManager * JM;
+		JoystickManager * JM;
 		Float mAxisX;
 		Float mAxisY;
 

@@ -10,47 +10,46 @@ using namespace EE::Graphics;
 #include <eepp/window/cwindow.hpp>
 #include <eepp/window/cursorhelper.hpp>
 #include <eepp/window/ccursor.hpp>
-using namespace EE::Window::Cursor;
 
 #include <set>
 
 namespace EE { namespace Window {
 
-class EE_API cCursorManager {
+class EE_API CursorManager {
 	public:
-		cCursorManager( Window::cWindow * window );
+		CursorManager( Window::cWindow * window );
 
-		virtual ~cCursorManager();
+		virtual ~CursorManager();
 
 		/** Creates a cursor from a texture
 		* @param tex The texture pointer to use as cursor
 		* @param hotspot The hotspot where the mouse click is taken
 		* @param name The name of the cursor
 		*/
-		virtual cCursor *		Create( cTexture * tex, const Vector2i& hotspot, const std::string& name ) = 0;
+		virtual Cursor *		Create( cTexture * tex, const Vector2i& hotspot, const std::string& name ) = 0;
 
 		/** Creates a cursor from a image
 		* @param img The image path
 		* @param hotspot The hotspot where the mouse click is taken
 		* @param name The name of the cursor
 		*/
-		virtual cCursor *		Create( cImage * img, const Vector2i& hotspot, const std::string& name ) = 0;
+		virtual Cursor *		Create( cImage * img, const Vector2i& hotspot, const std::string& name ) = 0;
 
 		/** Creates a cursor from a image path
 		* @param path The image pointer to use as cursor
 		* @param hotspot The hotspot where the mouse click is taken
 		* @param name The name of the cursor
 		*/
-		virtual cCursor *		Create( const std::string& path, const Vector2i& hotspot, const std::string& name ) = 0;
+		virtual Cursor *		Create( const std::string& path, const Vector2i& hotspot, const std::string& name ) = 0;
 
 		/** Adds the cursor to the cursor manager */
-		virtual cCursor *		Add( cCursor * cursor );
+		virtual Cursor *		Add( Cursor * cursor );
 
 		/** Removes the cursor from the cursor manager
 		* @param cursor The cursor pointer
 		* @param Delete Indicates if the cursor must be delete after being removed from the cursor manager
 		*/
-		virtual void			Remove( cCursor * cursor, bool Delete = false ) = 0;
+		virtual void			Remove( Cursor * cursor, bool Delete = false ) = 0;
 
 		/** Removes the cursor by its name
 		* @param name The cursor name
@@ -65,10 +64,10 @@ class EE_API cCursorManager {
 		virtual void			Remove( const Uint32& id, bool Delete = false );
 
 		/** @return The cursor pointer by its name */
-		virtual cCursor *		Get( const std::string& name );
+		virtual Cursor *		Get( const std::string& name );
 
 		/** @return The cursor pointer by its id */
-		virtual cCursor *		GetById( const Uint32& id );
+		virtual Cursor *		GetById( const Uint32& id );
 
 		/** Set the the current cursor by its name */
 		virtual void			Set( const std::string& name );
@@ -77,7 +76,7 @@ class EE_API cCursorManager {
 		virtual void			SetById( const Uint32& id );
 
 		/** Set the the current cursor by its cursor pointer */
-		virtual void			Set( cCursor * cursor ) = 0;
+		virtual void			Set( Cursor * cursor ) = 0;
 
 		/** Set the cursor using a system cursor */
 		virtual void			Set( EE_SYSTEM_CURSOR syscurid ) = 0;
@@ -87,9 +86,9 @@ class EE_API cCursorManager {
 		virtual void			Set( EE_CURSOR_TYPE cursor );
 
 		/** A Global Cursor is a cursor setted to be used in eepp. It's the system cursor of the engine.
-		**	The global cursor can be a cCursor ( user created cursor ) or a system cursor ( the OS cursor ).
+		**	The global cursor can be a Cursor ( user created cursor ) or a system cursor ( the OS cursor ).
 		**	The system cursor is used by default, but can be override it with this function. */
-		virtual void			SetGlobalCursor( EE_CURSOR_TYPE cursor, cCursor * fromCursor );
+		virtual void			SetGlobalCursor( EE_CURSOR_TYPE cursor, Cursor * fromCursor );
 
 		/** @see SetGlobalCursor */
 		virtual void			SetGlobalCursor( EE_CURSOR_TYPE cursor, EE_SYSTEM_CURSOR fromCursor );
@@ -110,7 +109,7 @@ class EE_API cCursorManager {
 		virtual bool			Visible();
 
 		/** @return A pointer to the curent cursor */
-		cCursor *				Current() const;
+		Cursor *				Current() const;
 
 		/** @return The current system cursor */
 		EE_SYSTEM_CURSOR		CurrentSysCursor() const;
@@ -118,7 +117,7 @@ class EE_API cCursorManager {
 		/** @return True if the current cursor seted is a system cursor */
 		bool					CurrentIsSysCursor() const;
 	protected:
-		typedef	std::set<cCursor*> CursorsList;
+		typedef	std::set<Cursor*> CursorsList;
 		class GlobalCursor
 		{
 			public:
@@ -128,18 +127,18 @@ class EE_API cCursorManager {
 				{
 				}
 
-				GlobalCursor( EE_SYSTEM_CURSOR sysCur, cCursor * cur ) :
+				GlobalCursor( EE_SYSTEM_CURSOR sysCur, Cursor * cur ) :
 					SysCur( sysCur ),
 					Cur( cur )
 				{
 				}
 
 				EE_SYSTEM_CURSOR	SysCur;
-				cCursor *			Cur;
+				Cursor *			Cur;
 		};
 		GlobalCursor			mGlobalCursors[ EE_CURSOR_COUNT ];
 		cWindow *				mWindow;
-		cCursor *				mCurrent;
+		Cursor *				mCurrent;
 		EE_SYSTEM_CURSOR		mSysCursor;
 		CursorsList				mCursors;
 		bool					mCurSysCursor;

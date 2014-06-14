@@ -39,7 +39,7 @@ class EE_API cWindowSDL : public cWindow {
 
 		eeWindowHandle	GetWindowHandler();
 	protected:
-		friend class cClipboardSDL;
+		friend class ClipboardSDL;
 
 		SDL_Surface *	mSurface;
 

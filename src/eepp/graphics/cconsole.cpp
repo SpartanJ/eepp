@@ -28,7 +28,7 @@ cConsole::cConsole( Window::cWindow * window ) :
 	mVidCb(0),
 	mMaxLogLines(1024),
 	mLastLogPos(0),
-	mTBuf( eeNew( cInputTextBuffer, () ) ),
+	mTBuf( eeNew( InputTextBuffer, () ) ),
 	mFont(NULL),
 	mTexId(0),
 	mCurAlpha(0),
@@ -42,7 +42,7 @@ cConsole::cConsole( Window::cWindow * window ) :
 	mCurSide(false)
 {
 	if ( NULL == mWindow ) {
-		mWindow = cEngine::instance()->GetCurrentWindow();
+		mWindow = Engine::instance()->GetCurrentWindow();
 	}
 }
 
@@ -62,7 +62,7 @@ cConsole::cConsole( cFont* Font, const bool& MakeDefaultCommands, const bool& At
 	mVidCb(0),
 	mMaxLogLines(1024),
 	mLastLogPos(0),
-	mTBuf( eeNew( cInputTextBuffer, () ) ),
+	mTBuf( eeNew( InputTextBuffer, () ) ),
 	mFont(NULL),
 	mTexId(0),
 	mCurAlpha(0),
@@ -76,7 +76,7 @@ cConsole::cConsole( cFont* Font, const bool& MakeDefaultCommands, const bool& At
 	mCurSide(false)
 {
 	if ( NULL == mWindow ) {
-		mWindow = cEngine::instance()->GetCurrentWindow();
+		mWindow = Engine::instance()->GetCurrentWindow();
 	}
 
 	Create( Font, MakeDefaultCommands, AttachToLog, MaxLogLines, TextureId );
@@ -84,8 +84,8 @@ cConsole::cConsole( cFont* Font, const bool& MakeDefaultCommands, const bool& At
 
 cConsole::~cConsole() {
 	if ( mMyCallback &&
-		NULL != cEngine::ExistsSingleton() &&
-		cEngine::instance()->ExistsWindow( mWindow )
+		NULL != Engine::ExistsSingleton() &&
+		Engine::instance()->ExistsWindow( mWindow )
 	)
 	{
 		mWindow->GetInput()->PopCallback( mMyCallback );
@@ -101,7 +101,7 @@ cConsole::~cConsole() {
 
 void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const bool& AttachToLog, const unsigned int& MaxLogLines, const Uint32& TextureId ) {
 	if ( NULL == mWindow ) {
-		mWindow = cEngine::instance()->GetCurrentWindow();
+		mWindow = Engine::instance()->GetCurrentWindow();
 	}
 
 	mFont = Font;
@@ -126,8 +126,8 @@ void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const bool&
 	mHeight = (Float) mWindow->GetHeight();
 	mHeightMin = (Float) ( mWindow->GetHeight() / 2 );
 
-	if ( NULL != cEngine::ExistsSingleton() &&
-		cEngine::instance()->ExistsWindow( mWindow ) )
+	if ( NULL != Engine::ExistsSingleton() &&
+		Engine::instance()->ExistsWindow( mWindow ) )
 	{
 		mMyCallback = mWindow->GetInput()->PushCallback( cb::Make1( this, &cConsole::PrivInputCallback ) );
 		mVidCb = mWindow->PushResizeCallback( cb::Make1( this, &cConsole::PrivVideoResize )  );

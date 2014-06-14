@@ -44,7 +44,7 @@ cWindow::cFrameData::~cFrameData()
 	eeSAFE_DELETE( FrameElapsed );
 }
 
-cWindow::cWindow( WindowSettings Settings, ContextSettings Context, cClipboard * Clipboard, cInput * Input, cCursorManager * CursorManager ) :
+cWindow::cWindow( WindowSettings Settings, ContextSettings Context, Clipboard * Clipboard, Input * Input, CursorManager * CursorManager ) :
 	mClipboard( Clipboard ),
 	mInput( Input ),
 	mCursorManager( CursorManager ),
@@ -108,18 +108,18 @@ void cWindow::SetViewport( const Int32& x, const Int32& y, const Uint32& Width, 
 	}
 }
 
-void cWindow::SetView( const cView& View ) {
+void cWindow::SetView( const View& View ) {
 	mCurrentView = &View;
 
 	Recti RView = mCurrentView->GetView();
 	SetViewport( RView.Left, RView.Top, RView.Right, RView.Bottom );
 }
 
-const cView& cWindow::GetDefaultView() const {
+const View& cWindow::GetDefaultView() const {
 	return mDefaultView;
 }
 
-const cView& cWindow::GetView() const {
+const View& cWindow::GetView() const {
     return *mCurrentView;
 }
 
@@ -347,15 +347,15 @@ void cWindow::ClipPlaneDisable() {
 	GLi->Clip2DPlaneDisable();
 }
 
-cClipboard * cWindow::GetClipboard() const {
+Clipboard * cWindow::GetClipboard() const {
 	return mClipboard;
 }
 
-cInput * cWindow::GetInput() const {
+Input * cWindow::GetInput() const {
 	return mInput;
 }
 
-cCursorManager * cWindow::GetCursorManager() const {
+CursorManager * cWindow::GetCursorManager() const {
 	return mCursorManager;
 }
 
@@ -492,7 +492,7 @@ void cWindow::Center() {
 	}
 }
 
-Platform::cPlatformImpl * cWindow::GetPlatform() const {
+Platform::PlatformImpl * cWindow::GetPlatform() const {
 	return mPlatform;
 }
 

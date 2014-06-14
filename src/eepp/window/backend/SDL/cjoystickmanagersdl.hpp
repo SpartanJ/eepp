@@ -10,11 +10,11 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
-class EE_API cJoystickManagerSDL : public cJoystickManager {
+class EE_API JoystickManagerSDL : public JoystickManager {
 	public:
-		cJoystickManagerSDL();
+		JoystickManagerSDL();
 
-		virtual ~cJoystickManagerSDL();
+		virtual ~JoystickManagerSDL();
 
 		void Update();
 

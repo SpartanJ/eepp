@@ -4,33 +4,33 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
-cCursorSDL::cCursorSDL( cTexture * tex, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
-	cCursor( tex, hotspot, name, window ),
+CursorSDL::CursorSDL( cTexture * tex, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
+	Cursor( tex, hotspot, name, window ),
 	mCursor( NULL )
 {
 	Create();
 }
 
-cCursorSDL::cCursorSDL( cImage * img, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
-	cCursor( img, hotspot, name, window ),
+CursorSDL::CursorSDL( cImage * img, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
+	Cursor( img, hotspot, name, window ),
 	mCursor( NULL )
 {
 	Create();
 }
 
-cCursorSDL::cCursorSDL( const std::string& path, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
-	cCursor( path, hotspot, name, window ),
+CursorSDL::CursorSDL( const std::string& path, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
+	Cursor( path, hotspot, name, window ),
 	mCursor( NULL )
 {
 	Create();
 }
 
-cCursorSDL::~cCursorSDL() {
+CursorSDL::~CursorSDL() {
 	if ( NULL != mCursor )
 		SDL_FreeCursor( mCursor );
 }
 
-void cCursorSDL::Create() {
+void CursorSDL::Create() {
 	if ( NULL == mImage )
 		return;
 
@@ -65,7 +65,7 @@ void cCursorSDL::Create() {
 	SDL_FreeSurface( TempGlyphSheet );
 }
 
-SDL_Cursor * cCursorSDL::GetCursor() const {
+SDL_Cursor * CursorSDL::GetCursor() const {
 	return mCursor;
 }
 

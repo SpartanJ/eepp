@@ -96,16 +96,16 @@ static int clipboard_filter( const SDL_Event *event ) {
 }
 #endif
 
-cClipboardSDL::cClipboardSDL( cWindow * window ) :
-	cClipboard( window ),
+ClipboardSDL::ClipboardSDL( cWindow * window ) :
+	Clipboard( window ),
 	mInfo( NULL )
 {
 }
 
-cClipboardSDL::~cClipboardSDL() {
+ClipboardSDL::~ClipboardSDL() {
 }
 
-void cClipboardSDL::Init() {
+void ClipboardSDL::Init() {
 	#if defined( EE_X11_PLATFORM )
 	/// Enable the special window hook events
 	SDL_EventState( SDL_SYSWMEVENT, SDL_ENABLE );
@@ -127,7 +127,7 @@ void cClipboardSDL::Init() {
 #endif
 #endif
 
-void cClipboardSDL::SetText( const std::string& Text ) {
+void ClipboardSDL::SetText( const std::string& Text ) {
 	#if defined( EE_X11_PLATFORM )
 	eeWindowHandle display	= mInfo->info.x11.display;
 	X11Window window		= mInfo->info.x11.wmwindow;
@@ -143,7 +143,7 @@ void cClipboardSDL::SetText( const std::string& Text ) {
 	#endif
 }
 
-int cClipboardSDL::clipboard_convert_scrap( int type, char *dst, char *src, int srclen ) {
+int ClipboardSDL::clipboard_convert_scrap( int type, char *dst, char *src, int srclen ) {
 	int dstlen;
 
 	dstlen = 0;
@@ -196,7 +196,7 @@ int cClipboardSDL::clipboard_convert_scrap( int type, char *dst, char *src, int 
 	return dstlen;
 }
 
-eeScrapType cClipboardSDL::clipboard_convert_format( int type ) {
+eeScrapType ClipboardSDL::clipboard_convert_format( int type ) {
 	switch (type) {
 		case T('T', 'E', 'X', 'T'):
 			#if defined( EE_X11_PLATFORM )
@@ -223,7 +223,7 @@ eeScrapType cClipboardSDL::clipboard_convert_format( int type ) {
 	return 0;
 }
 
-void cClipboardSDL::clipboard_get_scrap( int type, int *dstlen, char **dst ) {
+void ClipboardSDL::clipboard_get_scrap( int type, int *dstlen, char **dst ) {
 	eeScrapType format;
 	*dstlen = 0;
 	format = clipboard_convert_format( type );
@@ -300,7 +300,7 @@ void cClipboardSDL::clipboard_get_scrap( int type, int *dstlen, char **dst ) {
 #endif
 }
 
-std::string cClipboardSDL::GetText() {
+std::string ClipboardSDL::GetText() {
 	std::string tStr;
 
 	#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN
@@ -323,13 +323,13 @@ std::string cClipboardSDL::GetText() {
 
 	eeSAFE_DELETE_ARRAY( scrap );
 	#else
-		#warning cClipboardSDL::GetClipboardText() not implemented on this platform.
+		#warning ClipboardSDL::GetClipboardText() not implemented on this platform.
 	#endif
 
 	return tStr;
 }
 
-String cClipboardSDL::GetWideText() {
+String ClipboardSDL::GetWideText() {
 	String tStr;
 
 	#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN
@@ -355,7 +355,7 @@ String cClipboardSDL::GetWideText() {
 
 	eeSAFE_DELETE_ARRAY( scrap );
 	#else
-		#warning cClipboardSDL::GetWideText() not implemented on this platform.
+		#warning ClipboardSDL::GetWideText() not implemented on this platform.
 	#endif
 
 	return tStr;

@@ -48,7 +48,7 @@ void MainLoop()
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	// Create a new window
-	win = cEngine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - Fonts" ), ContextSettings( true ) );
+	win = Engine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - Fonts" ), ContextSettings( true ) );
 
 	// Set window background color
 	win->BackColor( RGB(255,255,255) );
@@ -131,7 +131,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 	// Destroy the engine instance. Destroys all the windows and engine singletons.
 	// Fonts are autoreleased by the engine
-	cEngine::DestroySingleton();
+	Engine::DestroySingleton();
 
 	// If was compiled in debug mode it will print the memory manager report
 	MemoryManager::ShowResults();

@@ -91,7 +91,7 @@ void MainLoop()
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	// Create a new window
-	win = cEngine::instance()->CreateWindow( WindowSettings( 640, 480, "eepp - Sprites" ), ContextSettings( true ) );
+	win = Engine::instance()->CreateWindow( WindowSettings( 640, 480, "eepp - Sprites" ), ContextSettings( true ) );
 
 	// Check if created
 	if ( win->Created() ) {
@@ -140,7 +140,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		P.FillMode( DRAW_LINE );
 
 		// Set the sprites position to the screen center
-		Vector2i ScreenCenter( cEngine::instance()->GetWidth() / 2, cEngine::instance()->GetHeight() / 2 );
+		Vector2i ScreenCenter( Engine::instance()->GetWidth() / 2, Engine::instance()->GetHeight() / 2 );
 
 		Planet->Position( ScreenCenter.x - Planet->GetAABB().Size().Width() / 2, ScreenCenter.y - Planet->GetAABB().Size().Height() / 2 );
 
@@ -167,7 +167,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	eeSAFE_DELETE( Blindy );
 
 	// Destroy the engine instance. Destroys all the windows and engine singletons.
-	cEngine::DestroySingleton();
+	Engine::DestroySingleton();
 
 	// If was compiled in debug mode it will print the memory manager report
 	MemoryManager::ShowResults();

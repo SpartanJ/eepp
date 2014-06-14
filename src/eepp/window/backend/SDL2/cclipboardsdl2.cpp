@@ -5,29 +5,29 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
-cClipboardSDL::cClipboardSDL( cWindow * window ) :
-	cClipboard( window )
+ClipboardSDL::ClipboardSDL( cWindow * window ) :
+	Clipboard( window )
 {
 }
 
-cClipboardSDL::~cClipboardSDL() {
+ClipboardSDL::~ClipboardSDL() {
 }
 
-void cClipboardSDL::Init() {
+void ClipboardSDL::Init() {
 }
 
-void cClipboardSDL::SetText( const std::string& Text ) {
+void ClipboardSDL::SetText( const std::string& Text ) {
 	SDL_SetClipboardText( Text.c_str() );
 }
 
-std::string cClipboardSDL::GetText() {
+std::string ClipboardSDL::GetText() {
 	char * text = SDL_GetClipboardText();
 	std::string str( text );
 	SDL_free(text);
 	return str;
 }
 
-String cClipboardSDL::GetWideText() {
+String ClipboardSDL::GetWideText() {
 	char * text = SDL_GetClipboardText();
 	String str( String::FromUtf8( text ) );
 	SDL_free(text);

@@ -9,17 +9,17 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SFML {
 
-cJoystickSFML::cJoystickSFML( const Uint32& index ) :
-	cJoystick( index ),
+JoystickSFML::JoystickSFML( const Uint32& index ) :
+	Joystick( index ),
 	mHat( HAT_CENTERED )
 {
 	Open();
 }
 
-cJoystickSFML::~cJoystickSFML() {
+JoystickSFML::~JoystickSFML() {
 }
 
-void cJoystickSFML::Open() {
+void JoystickSFML::Open() {
 	mName		= "Joystick " + String::ToStr( mIndex );
 	mHats		= 0;
 	mButtons	= eemin( sf::Joystick::getButtonCount( mIndex ), (unsigned int)32 );
@@ -29,10 +29,10 @@ void cJoystickSFML::Open() {
 	mButtonDown	= mButtonDownLast = mButtonUp = 0;
 }
 
-void cJoystickSFML::Close() {
+void JoystickSFML::Close() {
 }
 
-void cJoystickSFML::Update() {
+void JoystickSFML::Update() {
 	ClearStates();
 
 	for ( Int32 i = 0; i < mButtons; i++ ) {
@@ -42,7 +42,7 @@ void cJoystickSFML::Update() {
 	CalcHat();
 }
 
-void cJoystickSFML::CalcHat() {
+void JoystickSFML::CalcHat() {
 	Float hatX = sf::Joystick::getAxisPosition( mIndex, sf::Joystick::PovX );
 	Float hatY = sf::Joystick::getAxisPosition( mIndex, sf::Joystick::PovY );
 
@@ -55,11 +55,11 @@ void cJoystickSFML::CalcHat() {
 	else if ( hatY > 0 ) mHat |= HAT_DOWN;
 }
 
-Uint8 cJoystickSFML::GetHat( const Int32& index ) {
+Uint8 JoystickSFML::GetHat( const Int32& index ) {
 	return mHat;
 }
 
-Float cJoystickSFML::GetAxis( const Int32& axis ) {
+Float JoystickSFML::GetAxis( const Int32& axis ) {
 	sf::Joystick::Axis raxis = sf::Joystick::X;
 
 	switch ( axis )
@@ -73,11 +73,11 @@ Float cJoystickSFML::GetAxis( const Int32& axis ) {
 	return sf::Joystick::getAxisPosition( mIndex, raxis ) * 0.01;
 }
 
-Vector2i cJoystickSFML::GetBallMotion( const Int32& ball ) {
+Vector2i JoystickSFML::GetBallMotion( const Int32& ball ) {
 	return Vector2i();
 }
 
-bool cJoystickSFML::Plugged() const {
+bool JoystickSFML::Plugged() const {
 	return sf::Joystick::isConnected( mIndex );
 }
 

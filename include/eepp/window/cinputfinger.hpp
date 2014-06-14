@@ -8,9 +8,9 @@ namespace EE { namespace Window {
 #define EE_MAX_FINGERS (10)
 
 /** @brief A representation of the current state of a finger touching a screen */
-class cInputFinger {
+class InputFinger {
 	public:
-		cInputFinger();
+		InputFinger();
 		
 		Int64 id;
 		Int32 x;
@@ -33,7 +33,7 @@ class cInputFinger {
 		/** @return The current position of the finger */
 		Vector2i Pos();
 	protected:
-		friend class cInput;
+		friend class Input;
 
 		void WriteLast();
 };

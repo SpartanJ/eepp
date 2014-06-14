@@ -13,52 +13,52 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
-cCursorManagerSDL::cCursorManagerSDL( cWindow * window ) :
-	cCursorManager( window )
+CursorManagerSDL::CursorManagerSDL( cWindow * window ) :
+	CursorManager( window )
 {
 }
 
-cCursor * cCursorManagerSDL::Create( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
+Cursor * CursorManagerSDL::Create( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
 	#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN
 	return mWindow->GetPlatform()->CreateMouseCursor( tex, hotspot, name );
 	#else
-	return eeNew( cCursorSDL, ( tex, hotspot, name, mWindow ) );
+	return eeNew( CursorSDL, ( tex, hotspot, name, mWindow ) );
 	#endif
 }
 
-cCursor * cCursorManagerSDL::Create( cImage * img, const Vector2i& hotspot, const std::string& name ) {
+Cursor * CursorManagerSDL::Create( cImage * img, const Vector2i& hotspot, const std::string& name ) {
 	#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN
 	return mWindow->GetPlatform()->CreateMouseCursor( img, hotspot, name );
 	#else
-	return eeNew( cCursorSDL, ( img, hotspot, name, mWindow ) );
+	return eeNew( CursorSDL, ( img, hotspot, name, mWindow ) );
 	#endif
 }
 
-cCursor * cCursorManagerSDL::Create( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
+Cursor * CursorManagerSDL::Create( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
 	#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN
 	return mWindow->GetPlatform()->CreateMouseCursor( path, hotspot, name );
 	#else
-	return eeNew( cCursorSDL, ( path, hotspot, name, mWindow ) );
+	return eeNew( CursorSDL, ( path, hotspot, name, mWindow ) );
 	#endif
 }
 
-void cCursorManagerSDL::Set( cCursor * cursor ) {
+void CursorManagerSDL::Set( Cursor * cursor ) {
 	mWindow->GetPlatform()->SetMouseCursor( cursor );
 }
 
-void cCursorManagerSDL::Set( EE_SYSTEM_CURSOR syscurid ) {
+void CursorManagerSDL::Set( EE_SYSTEM_CURSOR syscurid ) {
 	mWindow->GetPlatform()->SetSystemMouseCursor( syscurid );
 }
 
-void cCursorManagerSDL::Show() {
+void CursorManagerSDL::Show() {
 	Visible( true );
 }
 
-void cCursorManagerSDL::Hide() {
+void CursorManagerSDL::Hide() {
 	Visible( false );
 }
 
-void cCursorManagerSDL::Visible( bool visible ) {
+void CursorManagerSDL::Visible( bool visible ) {
 	if ( visible ) {
 		SDL_ShowCursor( SDL_ENABLE );
 
@@ -74,11 +74,11 @@ void cCursorManagerSDL::Visible( bool visible ) {
 	}
 }
 
-void cCursorManagerSDL::Remove( cCursor * cursor, bool Delete ) {
-    cCursorManager::Remove( cursor, Delete );
+void CursorManagerSDL::Remove( Cursor * cursor, bool Delete ) {
+    CursorManager::Remove( cursor, Delete );
 }
 
-void cCursorManagerSDL::Reload() {
+void CursorManagerSDL::Reload() {
 	if ( mVisible ) {
 		Show();
 

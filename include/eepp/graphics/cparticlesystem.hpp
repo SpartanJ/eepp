@@ -76,7 +76,7 @@ class EE_API cParticleSystem {
 		*/
 		void Update(const Time &time );
 
-		/** Update the particles effect taking the elapsed time from cEngine */
+		/** Update the particles effect taking the elapsed time from Engine */
 		void Update();
 
 		/** Stop using the effect but wait to end the animation */

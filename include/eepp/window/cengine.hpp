@@ -6,16 +6,16 @@
 #include <list>
 
 namespace EE { namespace System { class IniFile; } }
-namespace EE { namespace Window { namespace Backend { class cBackend; } } }
+namespace EE { namespace Window { namespace Backend { class WindowBackend; } } }
 
 namespace EE { namespace Window {
 
 /** @brief The window management class. Here the engine starts working. (Singleton Class). */
-class EE_API cEngine {
-	SINGLETON_DECLARE_HEADERS(cEngine)
+class EE_API Engine {
+	SINGLETON_DECLARE_HEADERS(Engine)
 
 	public:
-		~cEngine();
+		~Engine();
 
 		/** Creates a new window.
 		* SDL2, SFML backends support more than one window creation, SDL 1.2 backend only 1 window.
@@ -128,21 +128,21 @@ class EE_API cEngine {
 	protected:
 		friend class cWindow;
 
-		Backend::cBackend *	mBackend;
+		Backend::WindowBackend *	mBackend;
 		std::list<cWindow*>	mWindows;
 		cWindow *			mWindow;
 		bool				mSharedGLContext;
 		Uint32				mMainThreadId;
 
-		cEngine();
+		Engine();
 
 		void Destroy();
 
-		Backend::cBackend * CreateSDLBackend( const WindowSettings& Settings );
+		Backend::WindowBackend * CreateSDLBackend( const WindowSettings& Settings );
 
-		Backend::cBackend * CreateSDL2Backend( const WindowSettings& Settings );
+		Backend::WindowBackend * CreateSDL2Backend( const WindowSettings& Settings );
 
-		Backend::cBackend * CreateSFMLBackend( const WindowSettings& Settings );
+		Backend::WindowBackend * CreateSFMLBackend( const WindowSettings& Settings );
 
 		cWindow * CreateSDLWindow( const WindowSettings& Settings, const ContextSettings& Context );
 

@@ -3,43 +3,43 @@
 
 namespace EE { namespace Window { namespace Backend { namespace Null {
 
-cCursorManagerNull::cCursorManagerNull( cWindow * window ) :
-	cCursorManager( window )
+CursorManagerNull::CursorManagerNull( cWindow * window ) :
+	CursorManager( window )
 {
 }
 
-cCursor * cCursorManagerNull::Create( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
-	return eeNew( cCursorNull, ( tex, hotspot, name, mWindow ) );
+Cursor * CursorManagerNull::Create( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
+	return eeNew( CursorNull, ( tex, hotspot, name, mWindow ) );
 }
 
-cCursor * cCursorManagerNull::Create( cImage * img, const Vector2i& hotspot, const std::string& name ) {
-	return eeNew( cCursorNull, ( img, hotspot, name, mWindow ) );
+Cursor * CursorManagerNull::Create( cImage * img, const Vector2i& hotspot, const std::string& name ) {
+	return eeNew( CursorNull, ( img, hotspot, name, mWindow ) );
 }
 
-cCursor * cCursorManagerNull::Create( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
-	return eeNew( cCursorNull, ( path, hotspot, name, mWindow ) );
+Cursor * CursorManagerNull::Create( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
+	return eeNew( CursorNull, ( path, hotspot, name, mWindow ) );
 }
 
-void cCursorManagerNull::Set( cCursor * cursor ) {
+void CursorManagerNull::Set( Cursor * cursor ) {
 }
 
-void cCursorManagerNull::Set( EE_SYSTEM_CURSOR syscurid ) {
+void CursorManagerNull::Set( EE_SYSTEM_CURSOR syscurid ) {
 }
 
-void cCursorManagerNull::Show() {
+void CursorManagerNull::Show() {
 }
 
-void cCursorManagerNull::Hide() {
+void CursorManagerNull::Hide() {
 }
 
-void cCursorManagerNull::Visible( bool visible ) {
+void CursorManagerNull::Visible( bool visible ) {
 }
 
-void cCursorManagerNull::Remove( cCursor * cursor, bool Delete ) {
-    cCursorManager::Remove( cursor, Delete );
+void CursorManagerNull::Remove( Cursor * cursor, bool Delete ) {
+    CursorManager::Remove( cursor, Delete );
 }
 
-void cCursorManagerNull::Reload() {
+void CursorManagerNull::Reload() {
 }
 
 }}}}

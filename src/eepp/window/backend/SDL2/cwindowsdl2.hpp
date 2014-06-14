@@ -93,7 +93,7 @@ class EE_API cWindowSDL : public cWindow {
 
 		void UnsetGLContextThread();
 	protected:
-		friend class cClipboardSDL;
+		friend class ClipboardSDL;
 
 		SDL_Window *	mSDLWindow;
 		SDL_GLContext	mGLContext;

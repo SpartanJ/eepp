@@ -12,18 +12,18 @@ namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 static Uint32	KeyCodesTable[ SDL_NUM_SCANCODES ];
 static bool		KeyCodesTableInit = false;
 
-cInputSDL::cInputSDL( cWindow * window ) :
-	cInput( window, eeNew( cJoystickManagerSDL, () ) )
+InputSDL::InputSDL( cWindow * window ) :
+	Input( window, eeNew( JoystickManagerSDL, () ) )
 {
 	#if defined( EE_X11_PLATFORM )
 	mMouseSpeed = 1.75f;
 	#endif
 }
 
-cInputSDL::~cInputSDL() {
+InputSDL::~InputSDL() {
 }
 
-void cInputSDL::Update() {
+void InputSDL::Update() {
 	SDL_Event 	SDLEvent;
 	InputEvent 	EEEvent;
 
@@ -309,19 +309,19 @@ void cInputSDL::Update() {
 	}
 }
 
-bool cInputSDL::GrabInput() {
+bool InputSDL::GrabInput() {
 	return ( SDL_GetWindowGrab( reinterpret_cast<cWindowSDL*> ( mWindow )->GetSDLWindow() ) == SDL_TRUE ) ? true : false;
 }
 
-void cInputSDL::GrabInput( const bool& Grab ) {
+void InputSDL::GrabInput( const bool& Grab ) {
 	SDL_SetWindowGrab( reinterpret_cast<cWindowSDL*> ( mWindow )->GetSDLWindow(), Grab ? SDL_TRUE : SDL_FALSE );
 }
 
-void cInputSDL::InjectMousePos( const Uint16& x, const Uint16& y ) {
+void InputSDL::InjectMousePos( const Uint16& x, const Uint16& y ) {
 	SDL_WarpMouseInWindow( reinterpret_cast<cWindowSDL*>( mWindow )->GetSDLWindow(), x, y );
 }
 
-void cInputSDL::Init() {
+void InputSDL::Init() {
 	Vector2if mTempMouse;
 
 	SDL_GetMouseState( &mTempMouse.x, &mTempMouse.y );
@@ -334,7 +334,7 @@ void cInputSDL::Init() {
 	mJoystickManager->Open();
 }
 
-void cInputSDL::InitializeTables() {
+void InputSDL::InitializeTables() {
 	if ( KeyCodesTableInit )
 		return;
 

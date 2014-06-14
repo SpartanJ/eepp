@@ -11,14 +11,14 @@
 
 namespace EE { namespace Window {
 
-class cView;
+class View;
 
 /** @brief The basic input class. For mouse and keyboard. */
-class EE_API cInput {
+class EE_API Input {
 	public:
 		typedef cb::Callback1<void, InputEvent*>	InputCallback;
 		
-		virtual ~cInput();
+		virtual ~Input();
 
 		/** Update the Input */
 		virtual void Update() = 0;
@@ -116,7 +116,7 @@ class EE_API cInput {
 		void SetMousePos( const Vector2i& Pos );
 
 		/** @return The mouse position over the current view */
-		Vector2i GetMousePosFromView( const cView& View );
+		Vector2i GetMousePosFromView( const View& View );
 
 		/** @return The Mouse X axis position */
 		Uint16 MouseX() const;
@@ -163,31 +163,31 @@ class EE_API cInput {
 		void SendEvent( InputEvent * Event );
 		
 		/** @return The joystick manager */
-		cJoystickManager * GetJoystickManager() const;
+		JoystickManager * GetJoystickManager() const;
 
 		/** @return The maximun number of fingers */
 		Uint32 GetFingerCount();
 
 		/** @return The input finger from it's index */
-		cInputFinger * GetFingerIndex( const Uint32& Index );
+		InputFinger * GetFingerIndex( const Uint32& Index );
 
 		/** @return The Input Finder from it's id */
-		cInputFinger * GetFinger( const Int64& fingerId );
+		InputFinger * GetFinger( const Int64& fingerId );
 
 		/** @return A list of the input finders that are currently down */
-		std::list<cInputFinger *> GetFingersDown();
+		std::list<InputFinger *> GetFingersDown();
 
 		/** @return A list of the input finders that were down in the last update */
-		std::list<cInputFinger *> GetFingersWasDown();
+		std::list<InputFinger *> GetFingersWasDown();
 	protected:
 		friend class cWindow;
 		
-		cInput( Window::cWindow * window, cJoystickManager * joystickmanager );
+		Input( Window::cWindow * window, JoystickManager * joystickmanager );
 		
 		virtual void Init() = 0;
 
 		cWindow *	mWindow;
-		cJoystickManager * mJoystickManager;
+		JoystickManager * mJoystickManager;
 		Uint8 mKeysDown	[EE_KEYS_SPACE];
 		Uint8 mKeysUp	[EE_KEYS_SPACE];
 		Uint32		mPressTrigger;
@@ -208,13 +208,13 @@ class EE_API cInput {
 		Uint32		mNumCallBacks;
 		Float		mMouseSpeed;
 		bool		mInputGrabed;
-		cInputFinger mFingers[ EE_MAX_FINGERS ];
+		InputFinger mFingers[ EE_MAX_FINGERS ];
 		
 		std::map<Uint32, InputCallback> mCallbacks;
 		
 		void ProcessEvent( InputEvent * Event );
 
-		cInputFinger * GetFingerId( const Int64& fingerId );
+		InputFinger * GetFingerId( const Int64& fingerId );
 
 		void ResetFingerWasDown();
 };

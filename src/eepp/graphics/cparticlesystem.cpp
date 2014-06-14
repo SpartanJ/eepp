@@ -363,7 +363,7 @@ void cParticleSystem::Draw() {
 }
 
 void cParticleSystem::Update() {
-	Update( cEngine::instance()->Elapsed() );
+	Update( Engine::instance()->Elapsed() );
 }
 
 void cParticleSystem::Update( const System::Time& time ) {

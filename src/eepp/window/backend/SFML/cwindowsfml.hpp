@@ -52,8 +52,8 @@ class EE_API cWindowSFML : public cWindow {
 
 		sf::Window * GetSFMLWindow();
 	protected:
-		friend class cClipboardSFML;
-		friend class cInputSFML;
+		friend class ClipboardSFML;
+		friend class InputSFML;
 
 		sf::Window mSFMLWindow;
 

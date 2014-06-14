@@ -62,7 +62,7 @@ static std::string SDL_AndroidGetApkPath() {
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 cWindowSDL::cWindowSDL( WindowSettings Settings, ContextSettings Context ) :
-	cWindow( Settings, Context, eeNew( cClipboardSDL, ( this ) ), eeNew( cInputSDL, ( this ) ), eeNew( cCursorManagerSDL, ( this ) ) ),
+	cWindow( Settings, Context, eeNew( ClipboardSDL, ( this ) ), eeNew( InputSDL, ( this ) ), eeNew( CursorManagerSDL, ( this ) ) ),
 	mSDLWindow( NULL ),
 	mGLContext( NULL ),
 	mGLContextThread( NULL ),
@@ -249,12 +249,12 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	}
 
 	/// Init the clipboard after the window creation
-	reinterpret_cast<cClipboardSDL*> ( mClipboard )->Init();
+	reinterpret_cast<ClipboardSDL*> ( mClipboard )->Init();
 
 	/// Init the input after the window creation
-	reinterpret_cast<cInputSDL*> ( mInput )->Init();
+	reinterpret_cast<InputSDL*> ( mInput )->Init();
 
-	mCursorManager->Set( Cursor::SYS_CURSOR_ARROW );
+	mCursorManager->Set( SYS_CURSOR_ARROW );
 
 	#if EE_PLATFORM == EE_PLATFORM_ANDROID
 	std::string apkPath( SDL_AndroidGetApkPath() );

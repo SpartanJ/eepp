@@ -10,9 +10,9 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
-class EE_API cInputSDL : public cInput {
+class EE_API InputSDL : public Input {
 	public:
-		virtual ~cInputSDL();
+		virtual ~InputSDL();
 
 		void Update();
 
@@ -24,7 +24,7 @@ class EE_API cInputSDL : public cInput {
 	protected:
 		friend class cWindowSDL;
 
-		cInputSDL( Window::cWindow * window );
+		InputSDL( Window::cWindow * window );
 
 		virtual void Init();
 };

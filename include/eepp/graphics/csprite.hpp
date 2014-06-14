@@ -344,7 +344,7 @@ class EE_API cSprite {
 		/** Update the sprite animation */
 		void Update( const Time& ElapsedTime );
 
-		/** Update the sprite animation using the current elapsed time provided by cEngine */
+		/** Update the sprite animation using the current elapsed time provided by Engine */
 		void Update();
 
 		/** Fire a User Event in the sprite */

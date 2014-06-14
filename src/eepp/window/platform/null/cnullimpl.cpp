@@ -3,7 +3,7 @@
 namespace EE { namespace Window { namespace Platform {
 
 cNullImpl::cNullImpl( cWindow * window ) :
-	cPlatformImpl( window )
+	PlatformImpl( window )
 {
 }
 
@@ -45,22 +45,22 @@ void cNullImpl::ShowMouseCursor() {
 void cNullImpl::HideMouseCursor() {
 }
 
-cCursor * cNullImpl::CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
+Cursor * cNullImpl::CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-cCursor * cNullImpl::CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name ) {
+Cursor * cNullImpl::CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-cCursor * cNullImpl::CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
+Cursor * cNullImpl::CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-void cNullImpl::SetMouseCursor( cCursor * cursor ) {
+void cNullImpl::SetMouseCursor( Cursor * cursor ) {
 }
 
-void cNullImpl::SetSystemMouseCursor( Cursor::EE_SYSTEM_CURSOR syscursor ) {
+void cNullImpl::SetSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) {
 }
 
 void cNullImpl::RestoreCursor() {

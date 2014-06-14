@@ -8,13 +8,13 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SFML {
 
-class EE_API cBackendSFML : public cBackend {
+class EE_API WindowBackendSFML : public WindowBackend {
 	public:
-		inline cBackendSFML() : cBackend()
+		inline WindowBackendSFML() : WindowBackend()
 		{
 		}
 
-		inline ~cBackendSFML()
+		inline ~WindowBackendSFML()
 		{
 		}
 };

@@ -26,7 +26,7 @@ cFrameBuffer::cFrameBuffer( Window::cWindow * window  ) :
 	mClearColor(0,0,0,0)
 {
 	if ( NULL == mWindow ) {
-		mWindow = cEngine::instance()->GetCurrentWindow();
+		mWindow = Engine::instance()->GetCurrentWindow();
 	}
 
 	cFrameBufferManager::instance()->Add( this );

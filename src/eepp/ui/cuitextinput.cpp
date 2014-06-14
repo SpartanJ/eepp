@@ -187,7 +187,7 @@ void cUITextInput::AutoPadding() {
 	}
 }
 
-cInputTextBuffer * cUITextInput::GetInputTextBuffer() {
+InputTextBuffer * cUITextInput::GetInputTextBuffer() {
 	return &mTextBuffer;
 }
 

@@ -5,15 +5,15 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
-cJoystickManagerSDL::cJoystickManagerSDL() :
-	cJoystickManager()
+JoystickManagerSDL::JoystickManagerSDL() :
+	JoystickManager()
 {
 }
 
-cJoystickManagerSDL::~cJoystickManagerSDL() {
+JoystickManagerSDL::~JoystickManagerSDL() {
 }
 
-void cJoystickManagerSDL::Update() {
+void JoystickManagerSDL::Update() {
 	if ( mInit ) {
 		SDL_JoystickUpdate();
 
@@ -23,7 +23,7 @@ void cJoystickManagerSDL::Update() {
 	}
 }
 
-void cJoystickManagerSDL::Open() {
+void JoystickManagerSDL::Open() {
 	int error = SDL_InitSubSystem( SDL_INIT_JOYSTICK );
 
 	if ( !error ) {
@@ -36,7 +36,7 @@ void cJoystickManagerSDL::Open() {
 	}
 }
 
-void cJoystickManagerSDL::Close() {
+void JoystickManagerSDL::Close() {
 	if ( SDL_WasInit( SDL_INIT_JOYSTICK ) ) {
 		SDL_QuitSubSystem( SDL_INIT_JOYSTICK );
 		
@@ -44,11 +44,11 @@ void cJoystickManagerSDL::Close() {
 	}
 }
 
-void cJoystickManagerSDL::Create( const Uint32& index ) {
+void JoystickManagerSDL::Create( const Uint32& index ) {
 	if ( NULL != mJoysticks[ index ] )
 		mJoysticks[ index ]->ReOpen();
 	else
-		mJoysticks[ index ] = eeNew( cJoystickSDL, ( index ) );
+		mJoysticks[ index ] = eeNew( JoystickSDL, ( index ) );
 }
 
 }}}}

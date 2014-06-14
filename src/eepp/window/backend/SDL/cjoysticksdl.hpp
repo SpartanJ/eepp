@@ -15,11 +15,11 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
-class EE_API cJoystickSDL : public cJoystick {
+class EE_API JoystickSDL : public Joystick {
 	public:
-		cJoystickSDL( const Uint32& index );
+		JoystickSDL( const Uint32& index );
 
-		virtual ~cJoystickSDL();
+		virtual ~JoystickSDL();
 
 		void 		Close();
 

@@ -1,7 +1,7 @@
 #ifndef EE_WINDOWCURSORHELPER_HPP
 #define EE_WINDOWCURSORHELPER_HPP
 
-namespace EE { namespace Window { namespace Cursor {
+namespace EE { namespace Window {
 
 /** @enum EE_SYSTEM_CURSOR list the system cursors that can be used */
 enum EE_SYSTEM_CURSOR {
@@ -37,7 +37,7 @@ enum EE_CURSOR_TYPE {
 	EE_CURSOR_COUNT
 };
 
-}}}
+}}
 
 #endif
  

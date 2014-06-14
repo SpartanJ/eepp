@@ -28,18 +28,18 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
-cInputSDL::cInputSDL( cWindow * window ) :
-	cInput( window, eeNew( cJoystickManagerSDL, () ) )
+InputSDL::InputSDL( cWindow * window ) :
+	Input( window, eeNew( JoystickManagerSDL, () ) )
 {
 	#if defined( EE_X11_PLATFORM )
 	mMouseSpeed = 1.75f;
 	#endif
 }
 
-cInputSDL::~cInputSDL() {
+InputSDL::~InputSDL() {
 }
 
-void cInputSDL::Update() {
+void InputSDL::Update() {
 	SDL_Event 	SDLEvent;
 	InputEvent 	EEEvent;
 
@@ -209,22 +209,22 @@ void cInputSDL::Update() {
 	}
 }
 
-bool cInputSDL::GrabInput() {
+bool InputSDL::GrabInput() {
 	return ( SDL_WM_GrabInput( SDL_GRAB_QUERY ) == SDL_GRAB_ON ) ? true : false;
 }
 
-void cInputSDL::GrabInput( const bool& Grab ) {
+void InputSDL::GrabInput( const bool& Grab ) {
 	if ( Grab )
 		SDL_WM_GrabInput(SDL_GRAB_ON);
 	else
 		SDL_WM_GrabInput(SDL_GRAB_OFF);
 }
 
-void cInputSDL::InjectMousePos( const Uint16& x, const Uint16& y ) {
+void InputSDL::InjectMousePos( const Uint16& x, const Uint16& y ) {
 	SDL_WarpMouse( x, y );
 }
 
-void cInputSDL::Init() {
+void InputSDL::Init() {
 	Vector2if mTempMouse;
 	SDL_GetMouseState( &mTempMouse.x, &mTempMouse.y );
 	mMousePos.x = (int)mTempMouse.x;

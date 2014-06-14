@@ -4,18 +4,18 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
-cJoystickSDL::cJoystickSDL( const Uint32& index ) :
-	cJoystick( index ),
+JoystickSDL::JoystickSDL( const Uint32& index ) :
+	Joystick( index ),
 	mJoystick( NULL )
 {
 	Open();
 }
 
-cJoystickSDL::~cJoystickSDL() {
+JoystickSDL::~JoystickSDL() {
 	Close();
 }
 
-void cJoystickSDL::Open() {
+void JoystickSDL::Open() {
 	mJoystick 	= SDL_JoystickOpen( mIndex );
 
 	if ( NULL != mJoystick ) {
@@ -32,7 +32,7 @@ void cJoystickSDL::Open() {
 	}
 }
 
-void cJoystickSDL::Close() {
+void JoystickSDL::Close() {
 	if( SDL_JoystickOpened( mIndex ) )
 		SDL_JoystickClose( mJoystick );
 
@@ -41,7 +41,7 @@ void cJoystickSDL::Close() {
 	mHats = mButtons = mAxes = mBalls = 0;
 }
 
-void cJoystickSDL::Update() {
+void JoystickSDL::Update() {
 	if ( NULL != mJoystick ) {
 		ClearStates();
 
@@ -52,14 +52,14 @@ void cJoystickSDL::Update() {
 	}
 }
 
-Uint8 cJoystickSDL::GetHat( const Int32& index ) {
+Uint8 JoystickSDL::GetHat( const Int32& index ) {
 	if ( index >= 0 && index < mHats )
 		return SDL_JoystickGetHat( mJoystick, index );
 
 	return HAT_CENTERED;
 }
 
-Float cJoystickSDL::GetAxis( const Int32& axis ) {
+Float JoystickSDL::GetAxis( const Int32& axis ) {
 	if ( axis >= 0 && axis < mAxes ) {
 		return (Float)SDL_JoystickGetAxis( mJoystick, axis ) / 32768.f;
 	}
@@ -67,7 +67,7 @@ Float cJoystickSDL::GetAxis( const Int32& axis ) {
 	return 0;
 }
 
-Vector2i cJoystickSDL::GetBallMotion( const Int32& ball ) {
+Vector2i JoystickSDL::GetBallMotion( const Int32& ball ) {
 	Vector2i v;
 
 	if ( ball >= 0 && ball < mBalls )
@@ -77,7 +77,7 @@ Vector2i cJoystickSDL::GetBallMotion( const Int32& ball ) {
 }
 
 
-bool cJoystickSDL::Plugged() const {
+bool JoystickSDL::Plugged() const {
 	return NULL != mJoystick;
 }
 

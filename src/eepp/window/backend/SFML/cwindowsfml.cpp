@@ -19,7 +19,7 @@
 namespace EE { namespace Window { namespace Backend { namespace SFML {
 
 cWindowSFML::cWindowSFML( WindowSettings Settings, ContextSettings Context ) :
-	cWindow( Settings, Context, eeNew( cClipboardSFML, ( this ) ), eeNew( cInputSFML, ( this ) ), eeNew( cCursorManagerSFML, ( this ) ) ),
+	cWindow( Settings, Context, eeNew( ClipboardSFML, ( this ) ), eeNew( InputSFML, ( this ) ), eeNew( CursorManagerSFML, ( this ) ) ),
 	mWinHandler( 0 ),
 	mVisible( false )
 {
@@ -82,10 +82,10 @@ bool cWindowSFML::Create( WindowSettings Settings, ContextSettings Context ) {
 	}
 
 	/// Init the clipboard after the window creation
-	reinterpret_cast<cClipboardSFML*> ( mClipboard )->Init();
+	reinterpret_cast<ClipboardSFML*> ( mClipboard )->Init();
 
 	/// Init the input after the window creation
-	reinterpret_cast<cInputSFML*> ( mInput )->Init();
+	reinterpret_cast<InputSFML*> ( mInput )->Init();
 
 	LogSuccessfulInit( GetVersion() );
 
@@ -146,7 +146,7 @@ void cWindowSFML::Position( Int16 Left, Int16 Top ) {
 }
 
 bool cWindowSFML::Active() {
-	return reinterpret_cast<cInputSFML*> ( mInput )->mWinActive;
+	return reinterpret_cast<InputSFML*> ( mInput )->mWinActive;
 }
 
 bool cWindowSFML::Visible() {

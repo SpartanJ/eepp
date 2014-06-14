@@ -14,12 +14,10 @@
 #include <eepp/window/platform/x11/cx11impl.hpp>
 #include <eepp/window/platform/x11/ccursorx11.hpp>
 
-using namespace EE::Window::Cursor;
-
 namespace EE { namespace Window { namespace Platform {
 
 cX11Impl::cX11Impl( cWindow * window, eeWindowHandle display, X11Window xwindow, X11Window mainwindow, LockFunc lock, UnlockFunc unlock ) :
-	cPlatformImpl( window ),
+	PlatformImpl( window ),
 	mDisplay( display ),
 	mX11Window( xwindow ),
 	mMainWindow( mainwindow ),
@@ -229,20 +227,20 @@ void cX11Impl::HideMouseCursor() {
 	Unlock();
 }
 
-cCursor * cX11Impl::CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
-	return eeNew( cCursorX11, ( tex, hotspot, name, mWindow ) );
+Cursor * cX11Impl::CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
+	return eeNew( CursorX11, ( tex, hotspot, name, mWindow ) );
 }
 
-cCursor * cX11Impl::CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name ) {
-	return eeNew( cCursorX11, ( img, hotspot, name, mWindow ) );
+Cursor * cX11Impl::CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name ) {
+	return eeNew( CursorX11, ( img, hotspot, name, mWindow ) );
 }
 
-cCursor * cX11Impl::CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
-	return eeNew( cCursorX11, ( path, hotspot, name, mWindow ) );
+Cursor * cX11Impl::CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
+	return eeNew( CursorX11, ( path, hotspot, name, mWindow ) );
 }
 
-void cX11Impl::SetMouseCursor( cCursor * cursor ) {
-	mCursorCurrent = reinterpret_cast<cCursorX11*>( cursor )->GetCursor();
+void cX11Impl::SetMouseCursor( Cursor * cursor ) {
+	mCursorCurrent = reinterpret_cast<CursorX11*>( cursor )->GetCursor();
 
 	if ( !mCursorHidden ) {
 		Lock();
@@ -265,7 +263,7 @@ void cX11Impl::RestoreCursor() {
 	}
 }
 
-void cX11Impl::SetSystemMouseCursor( Cursor::EE_SYSTEM_CURSOR syscursor ) {
+void cX11Impl::SetSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) {
 	unsigned int cursor_shape;
 
 	switch ( syscursor ) {

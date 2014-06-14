@@ -9,15 +9,15 @@ using namespace EE::Window;
 
 namespace EE { namespace Window { namespace Backend { namespace SFML {
 
-class cCursorSFML : public cCursor {
+class CursorSFML : public Cursor {
 	protected:
-		friend class cCursorManagerSFML;
+		friend class CursorManagerSFML;
 
-		cCursorSFML( cTexture * tex, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
+		CursorSFML( cTexture * tex, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
 
-		cCursorSFML( cImage * img, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
+		CursorSFML( cImage * img, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
 
-		cCursorSFML( const std::string& path, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
+		CursorSFML( const std::string& path, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
 
 		void Create();
 };

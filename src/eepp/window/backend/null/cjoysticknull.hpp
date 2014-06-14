@@ -5,11 +5,11 @@
 
 namespace EE { namespace Window { namespace Backend { namespace Null {
 
-class EE_API cJoystickNull : public cJoystick {
+class EE_API JoystickNull : public Joystick {
 	public:
-		cJoystickNull( const Uint32& index );
+		JoystickNull( const Uint32& index );
 
-		virtual ~cJoystickNull();
+		virtual ~JoystickNull();
 
 		void 		Close();
 

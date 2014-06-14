@@ -68,7 +68,7 @@ class EE_API cFrameBuffer {
 		bool		mHasDepthBuffer;
 		cTexture *	mTexture;
 		ColorAf	mClearColor;
-		cView 		mPrevView;
+		View 		mPrevView;
 		float		mProjMat[16];
 
 		cFrameBuffer( Window::cWindow * window );

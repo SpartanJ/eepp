@@ -33,7 +33,7 @@ void MainLoop()
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	// Create a new window with vsync enabled
-	win = cEngine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - Empty Window" ), ContextSettings( true ) );
+	win = Engine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - Empty Window" ), ContextSettings( true ) );
 
 	// Check if created
 	if ( win->Created() ) {
@@ -52,7 +52,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	}
 
 	// Destroy the engine instance. Destroys all the windows and engine singletons.
-	cEngine::DestroySingleton();
+	Engine::DestroySingleton();
 
 	// If was compiled in debug mode it will print the memory manager report
 	MemoryManager::ShowResults();

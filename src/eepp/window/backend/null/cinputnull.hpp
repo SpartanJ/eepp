@@ -5,9 +5,9 @@
 
 namespace EE { namespace Window { namespace Backend { namespace Null {
 
-class EE_API cInputNull : public cInput {
+class EE_API InputNull : public Input {
 	public:
-		virtual ~cInputNull();
+		virtual ~InputNull();
 		
 		void Update();
 
@@ -19,7 +19,7 @@ class EE_API cInputNull : public cInput {
 	protected:
 		friend class cWindowNull;
 
-		cInputNull( Window::cWindow * window );
+		InputNull( Window::cWindow * window );
 		
 		virtual void Init();
 };

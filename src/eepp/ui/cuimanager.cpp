@@ -41,7 +41,7 @@ void cUIManager::Init( Uint32 Flags, Window::cWindow * window ) {
 	mFlags		= Flags;
 
 	if ( NULL == mWindow ) {
-		mWindow = cEngine::instance()->GetCurrentWindow();
+		mWindow = Engine::instance()->GetCurrentWindow();
 	}
 
 	mKM				= mWindow->GetInput();
@@ -51,7 +51,7 @@ void cUIManager::Init( Uint32 Flags, Window::cWindow * window ) {
 	cUIWindow::CreateParams Params;
 	Params.Parent( NULL );
 	Params.PosSet( 0, 0 );
-	Params.SizeSet( cEngine::instance()->GetWidth(), cEngine::instance()->GetHeight() );
+	Params.SizeSet( Engine::instance()->GetWidth(), Engine::instance()->GetHeight() );
 	Params.Flags = UI_CONTROL_DEFAULT_FLAGS | UI_REPORT_SIZE_CHANGE_TO_CHILDS;
 	Params.WinFlags = UI_WIN_NO_BORDER | UI_WIN_RESIZEABLE;
 	Params.MinWindowSize = Sizei( 0, 0 );
@@ -74,8 +74,8 @@ void cUIManager::Init( Uint32 Flags, Window::cWindow * window ) {
 void cUIManager::Shutdown() {
 	if ( mInit ) {
 		if ( -1 != mCbId &&
-			NULL != cEngine::ExistsSingleton() &&
-			cEngine::instance()->ExistsWindow( mWindow )
+			NULL != Engine::ExistsSingleton() &&
+			Engine::instance()->ExistsWindow( mWindow )
 		)
 		{
 			mKM->PopCallback( mCbId );
@@ -273,7 +273,7 @@ Vector2i cUIManager::GetMousePos() {
 	return mKM->GetMousePos();
 }
 
-cInput * cUIManager::GetInput() const {
+Input * cUIManager::GetInput() const {
 	return mKM;
 }
 

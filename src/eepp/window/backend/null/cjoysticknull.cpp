@@ -2,36 +2,36 @@
 
 namespace EE { namespace Window { namespace Backend { namespace Null {
 
-cJoystickNull::cJoystickNull( const Uint32& index ) :
-	cJoystick( index )
+JoystickNull::JoystickNull( const Uint32& index ) :
+	Joystick( index )
 {	
 }
 
-cJoystickNull::~cJoystickNull() {
+JoystickNull::~JoystickNull() {
 }
 
-void cJoystickNull::Open() {
+void JoystickNull::Open() {
 }
 
-void cJoystickNull::Close() {
+void JoystickNull::Close() {
 }
 
-void cJoystickNull::Update() {
+void JoystickNull::Update() {
 }
 
-Uint8 cJoystickNull::GetHat( const Int32& index ) {
+Uint8 JoystickNull::GetHat( const Int32& index ) {
 	return 0;
 }
 
-Float cJoystickNull::GetAxis( const Int32& axis ) {
+Float JoystickNull::GetAxis( const Int32& axis ) {
 	return 0;
 }
 
-Vector2i cJoystickNull::GetBallMotion( const Int32& ball ) {
+Vector2i JoystickNull::GetBallMotion( const Int32& ball ) {
 	return Vector2i();
 }
 
-bool cJoystickNull::Plugged() const {
+bool JoystickNull::Plugged() const {
 	return false;
 }
 

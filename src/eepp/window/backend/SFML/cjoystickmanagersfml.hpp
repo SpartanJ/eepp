@@ -7,11 +7,11 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SFML {
 
-class EE_API cJoystickManagerSFML : public cJoystickManager {
+class EE_API JoystickManagerSFML : public JoystickManager {
 	public:
-		cJoystickManagerSFML();
+		JoystickManagerSFML();
 		
-		virtual ~cJoystickManagerSFML();
+		virtual ~JoystickManagerSFML();
 		
 		void Update();
 

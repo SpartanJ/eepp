@@ -2,7 +2,7 @@
 
 namespace EE { namespace Window {
 
-cCursor::cCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
+Cursor::Cursor( cTexture * tex, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
 	mId( String::Hash( name ) ),
 	mName( name ),
 	mImage( NULL ),
@@ -14,11 +14,11 @@ cCursor::cCursor( cTexture * tex, const Vector2i& hotspot, const std::string& na
 
 		tex->Unlock();
 	} else {
-		eePRINTL( "cCursor::cCursor: Error creating cursor from cTexture." );
+		eePRINTL( "Cursor::Cursor: Error creating cursor from cTexture." );
 	}
 }
 
-cCursor::cCursor( cImage * img, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
+Cursor::Cursor( cImage * img, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
 	mId( String::Hash( name ) ),
 	mName( name ),
 	mImage( NULL ),
@@ -28,11 +28,11 @@ cCursor::cCursor( cImage * img, const Vector2i& hotspot, const std::string& name
 	if ( img->MemSize() ) {
 		mImage = eeNew( cImage, ( img->GetPixelsPtr(), img->Width(), img->Height(), img->Channels() ) );
 	} else {
-		eePRINTL( "cCursor::cCursor: Error creating cursor from cImage." );
+		eePRINTL( "Cursor::Cursor: Error creating cursor from cImage." );
 	}
 }
 
-cCursor::cCursor( const std::string& path, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
+Cursor::Cursor( const std::string& path, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
 	mId( String::Hash( name ) ),
 	mName( name ),
 	mImage( NULL ),
@@ -42,27 +42,27 @@ cCursor::cCursor( const std::string& path, const Vector2i& hotspot, const std::s
 	mImage = eeNew( cImage, ( path ) );
 
 	if ( NULL == mImage->GetPixels() ) {
-		eePRINTL( "cCursor::cCursor: Error creating cursor from path." );
+		eePRINTL( "Cursor::Cursor: Error creating cursor from path." );
 	}
 }
 
-cCursor::~cCursor() {
+Cursor::~Cursor() {
 	eeSAFE_DELETE( mImage );
 }
 
-const Vector2i& cCursor::HotSpot() const {
+const Vector2i& Cursor::HotSpot() const {
 	return mHotSpot;
 }
 
-const Uint32& cCursor::Id() const {
+const Uint32& Cursor::Id() const {
 	return mId;
 }
 
-const std::string& cCursor::Name() const {
+const std::string& Cursor::Name() const {
 	return mName;
 }
 
-cImage * cCursor::Image() const {
+cImage * Cursor::Image() const {
 	return mImage;
 }
 

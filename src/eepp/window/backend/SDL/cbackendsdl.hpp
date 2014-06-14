@@ -10,11 +10,11 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
-class EE_API cBackendSDL : public cBackend {
+class EE_API WindowBackendSDL : public WindowBackend {
 	public:
-		cBackendSDL();
+		WindowBackendSDL();
 
-		~cBackendSDL();
+		~WindowBackendSDL();
 };
 
 }}}}

@@ -10,12 +10,12 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
-cBackendSDL2::cBackendSDL2() : 
-	cBackend()
+WindowBackendSDL2::WindowBackendSDL2() : 
+	WindowBackend()
 {
 }
 
-cBackendSDL2::~cBackendSDL2()
+WindowBackendSDL2::~WindowBackendSDL2()
 {
 	SDL_Quit();
 }

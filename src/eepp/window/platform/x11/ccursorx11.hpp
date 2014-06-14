@@ -11,7 +11,7 @@ namespace EE { namespace Window { namespace Platform {
 
 class cX11Impl;
 
-class cCursorX11 : public cCursor {
+class CursorX11 : public Cursor {
 	public:
 		X11Cursor	GetCursor() const;
 	protected:
@@ -19,13 +19,13 @@ class cCursorX11 : public cCursor {
 
 		X11Cursor	mCursor;
 
-		cCursorX11( cTexture * tex, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
+		CursorX11( cTexture * tex, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
 
-		cCursorX11( cImage * img, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
+		CursorX11( cImage * img, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
 
-		cCursorX11( const std::string& path, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
+		CursorX11( const std::string& path, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
 
-		~cCursorX11();
+		~CursorX11();
 
 		void Create();
 

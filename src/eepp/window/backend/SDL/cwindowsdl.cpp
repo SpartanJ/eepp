@@ -33,7 +33,7 @@
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
 cWindowSDL::cWindowSDL( WindowSettings Settings, ContextSettings Context ) :
-	cWindow( Settings, Context, eeNew( cClipboardSDL, ( this ) ), eeNew( cInputSDL, ( this ) ), eeNew( cCursorManagerSDL, ( this ) ) ),
+	cWindow( Settings, Context, eeNew( ClipboardSDL, ( this ) ), eeNew( InputSDL, ( this ) ), eeNew( CursorManagerSDL, ( this ) ) ),
 	mSurface( NULL )
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
 	,
@@ -149,12 +149,12 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	LogSuccessfulInit( GetVersion() );
 
 	/// Init the clipboard after the window creation
-	reinterpret_cast<cClipboardSDL*> ( mClipboard )->Init();
+	reinterpret_cast<ClipboardSDL*> ( mClipboard )->Init();
 
 	/// Init the input after the window creation
-	reinterpret_cast<cInputSDL*> ( mInput )->Init();
+	reinterpret_cast<InputSDL*> ( mInput )->Init();
 
-	mCursorManager->Set( Cursor::SYS_CURSOR_ARROW );
+	mCursorManager->Set( SYS_CURSOR_ARROW );
 
 	return true;
 }

@@ -3,7 +3,7 @@
 
 namespace EE { namespace Window {
 
-cJoystick::cJoystick( const Uint32& index ) :
+Joystick::Joystick( const Uint32& index ) :
 	mIndex( index ),
 	mHats(0),
 	mButtons(0),
@@ -16,22 +16,22 @@ cJoystick::cJoystick( const Uint32& index ) :
 	Open();
 }
 
-cJoystick::~cJoystick() {
+Joystick::~Joystick() {
 	Close();
 }
 
-void cJoystick::ReOpen() {
+void Joystick::ReOpen() {
 	Close();
 
 	Open();
 }
 
-void cJoystick::ClearStates() {
+void Joystick::ClearStates() {
 	mButtonUp		= 0;
 	mButtonDownLast = mButtonDown;
 }
 
-void cJoystick::UpdateButton( const Uint32& index, const bool& down ) {
+void Joystick::UpdateButton( const Uint32& index, const bool& down ) {
 	if ( down ) {
 		mButtonDown |= ( 1 << index );
 	} else {
@@ -44,48 +44,48 @@ void cJoystick::UpdateButton( const Uint32& index, const bool& down ) {
 	}
 }
 
-const Int32& cJoystick::GetNumHats() const {
+const Int32& Joystick::GetNumHats() const {
 	return mHats;
 }
 
-const Int32& cJoystick::GetNumButtons() const {
+const Int32& Joystick::GetNumButtons() const {
 	return mButtons;
 }
 
-const Int32& cJoystick::GetNumAxes() const {
+const Int32& Joystick::GetNumAxes() const {
 	return mAxes;
 }
 
-const Int32& cJoystick::GetNumBalls() const {
+const Int32& Joystick::GetNumBalls() const {
 	return mBalls;
 }
 
-const Uint32& cJoystick::GetButtonTrigger() const {
+const Uint32& Joystick::GetButtonTrigger() const {
 	return mButtonDown;
 }
 
-const Uint32& cJoystick::GetButtonUpTrigger() const {
+const Uint32& Joystick::GetButtonUpTrigger() const {
 	return mButtonUp;
 }
 
-bool cJoystick::IsButtonDown( const Int32& index ) {
+bool Joystick::IsButtonDown( const Int32& index ) {
 	if ( index >= 0 && index < mButtons )
 		return 0 != ( mButtonDown & ( 1 << index ) );
 
 	return false;
 }
 
-bool cJoystick::IsButtonUp( const Int32& index ) {
+bool Joystick::IsButtonUp( const Int32& index ) {
 	if ( index >= 0 && index < mButtons )
 		return 0 != ( mButtonUp & ( 1 << index ) );
 
 	return false;
 }
 
-void cJoystick::Close() {
+void Joystick::Close() {
 }
 
-void cJoystick::Open() {
+void Joystick::Open() {
 }
 
 }}

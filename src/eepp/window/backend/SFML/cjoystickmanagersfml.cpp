@@ -10,18 +10,18 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SFML {
 
-cJoystickManagerSFML::cJoystickManagerSFML() :
-	cJoystickManager()
+JoystickManagerSFML::JoystickManagerSFML() :
+	JoystickManager()
 {
 }
 
-cJoystickManagerSFML::~cJoystickManagerSFML() {
+JoystickManagerSFML::~JoystickManagerSFML() {
 }
 
-void cJoystickManagerSFML::Update() {
+void JoystickManagerSFML::Update() {
 }
 
-void cJoystickManagerSFML::Open() {
+void JoystickManagerSFML::Open() {
 	mCount = sf::Joystick::Count;
 
 	for ( unsigned int i = 0; i < mCount; i++ )
@@ -30,15 +30,15 @@ void cJoystickManagerSFML::Open() {
 	mInit = true;
 }
 
-void cJoystickManagerSFML::Close() {
+void JoystickManagerSFML::Close() {
 	mInit = false;
 }
 
-void cJoystickManagerSFML::Create( const Uint32& index ) {
+void JoystickManagerSFML::Create( const Uint32& index ) {
 	if ( NULL != mJoysticks[ index ] )
 		mJoysticks[ index ]->ReOpen();
 	else
-		mJoysticks[ index ] = eeNew( cJoystickSFML, ( index ) );
+		mJoysticks[ index ] = eeNew( JoystickSFML, ( index ) );
 }
 
 }}}}

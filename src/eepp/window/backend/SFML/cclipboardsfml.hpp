@@ -8,9 +8,9 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SFML {
 
-class EE_API cClipboardSFML : public cClipboard {
+class EE_API ClipboardSFML : public Clipboard {
 	public:
-		virtual ~cClipboardSFML();
+		virtual ~ClipboardSFML();
 
 		std::string GetText();
 
@@ -20,7 +20,7 @@ class EE_API cClipboardSFML : public cClipboard {
 	protected:
 		friend class cWindowSFML;
 
-		cClipboardSFML( Window::cWindow * window );
+		ClipboardSFML( Window::cWindow * window );
 
 		void Init();
 };

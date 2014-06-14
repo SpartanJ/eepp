@@ -42,7 +42,7 @@ class EE_API cUITextInput : public cUITextBox {
 
 		virtual void SetTheme( cUITheme * Theme );
 
-		cInputTextBuffer * GetInputTextBuffer();
+		InputTextBuffer * GetInputTextBuffer();
 
 		void AllowEditing( const bool& allow );
 
@@ -54,7 +54,7 @@ class EE_API cUITextInput : public cUITextBox {
 
 		virtual void ShrinkText( const Uint32& MaxWidth );
 	protected:
-		cInputTextBuffer	mTextBuffer;
+		InputTextBuffer	mTextBuffer;
 		Float				mWaitCursorTime;
 		Vector2f			mCurPos;
 		int				mCursorPos;

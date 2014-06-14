@@ -23,7 +23,7 @@ using namespace EE::Graphics;
 namespace EE { namespace Gaming {
 
 cMap::cMap() :
-	mWindow( cEngine::instance()->GetCurrentWindow() ),
+	mWindow( Engine::instance()->GetCurrentWindow() ),
 	mLayers( NULL ),
 	mFlags( 0 ),
 	mMaxLayers( 0 ),
@@ -90,7 +90,7 @@ void cMap::Create( Sizei Size, Uint32 MaxLayers, Sizei TileSize, Uint32 Flags, S
 	mWindow		= Window;
 
 	if ( NULL == mWindow )
-		mWindow	= cEngine::instance()->GetCurrentWindow();
+		mWindow	= Engine::instance()->GetCurrentWindow();
 
 	mFlags		= Flags;
 	mMaxLayers	= MaxLayers;

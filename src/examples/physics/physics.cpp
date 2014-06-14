@@ -31,7 +31,7 @@ void CreateJointAndBody() {
 }
 
 cWindow * mWindow;
-cInput * KM;
+Input * KM;
 
 void DefaultDrawOptions() {
 	cPhysicsManager::cDrawSpaceOptions * DSO = cPhysicsManager::instance()->GetDrawOptions();
@@ -628,7 +628,7 @@ void MainLoop()
 
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
-	mWindow = cEngine::instance()->CreateWindow( WindowSettings( 1024, 768, "eepp - Physics" ), ContextSettings( true ) );
+	mWindow = Engine::instance()->CreateWindow( WindowSettings( 1024, 768, "eepp - Physics" ), ContextSettings( true ) );
 
 	if ( mWindow->Created() ) {
 		KM = mWindow->GetInput();
@@ -642,7 +642,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		PhysicsDestroy();
 	}
 
-	cEngine::DestroySingleton();
+	Engine::DestroySingleton();
 
 	MemoryManager::ShowResults();
 

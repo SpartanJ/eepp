@@ -16,34 +16,34 @@ static SDL_Cursor * GetLoadCursor( const EE_SYSTEM_CURSOR& cursor ) {
 	return SDL_SYS_CURSORS[ cursor ];
 }
 
-cCursorManagerSDL::cCursorManagerSDL( cWindow * window ) :
-	cCursorManager( window )
+CursorManagerSDL::CursorManagerSDL( cWindow * window ) :
+	CursorManager( window )
 {
 }
 
-cCursor * cCursorManagerSDL::Create( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
-	return eeNew( cCursorSDL, ( tex, hotspot, name, mWindow ) );
+Cursor * CursorManagerSDL::Create( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
+	return eeNew( CursorSDL, ( tex, hotspot, name, mWindow ) );
 }
 
-cCursor * cCursorManagerSDL::Create( cImage * img, const Vector2i& hotspot, const std::string& name ) {
-	return eeNew( cCursorSDL, ( img, hotspot, name, mWindow ) );
+Cursor * CursorManagerSDL::Create( cImage * img, const Vector2i& hotspot, const std::string& name ) {
+	return eeNew( CursorSDL, ( img, hotspot, name, mWindow ) );
 }
 
-cCursor * cCursorManagerSDL::Create( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
-	return eeNew( cCursorSDL, ( path, hotspot, name, mWindow ) );
+Cursor * CursorManagerSDL::Create( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
+	return eeNew( CursorSDL, ( path, hotspot, name, mWindow ) );
 }
 
-void cCursorManagerSDL::Set( cCursor * cursor ) {
+void CursorManagerSDL::Set( Cursor * cursor ) {
 	if ( NULL != cursor && cursor != mCurrent ) {
-		SDL_SetCursor( reinterpret_cast<cCursorSDL*>( cursor )->GetCursor() );
+		SDL_SetCursor( reinterpret_cast<CursorSDL*>( cursor )->GetCursor() );
 
 		mCurrent		= cursor;
 		mCurSysCursor	= false;
-		mSysCursor		= Cursor::SYS_CURSOR_NONE;
+		mSysCursor		= SYS_CURSOR_NONE;
 	}
 }
 
-void cCursorManagerSDL::Set( EE_SYSTEM_CURSOR syscurid ) {
+void CursorManagerSDL::Set( EE_SYSTEM_CURSOR syscurid ) {
 	if ( syscurid != mSysCursor ) {
 		SDL_SetCursor( GetLoadCursor( syscurid ) );
 		
@@ -53,15 +53,15 @@ void cCursorManagerSDL::Set( EE_SYSTEM_CURSOR syscurid ) {
 	}
 }
 
-void cCursorManagerSDL::Show() {
+void CursorManagerSDL::Show() {
 	Visible( true );
 }
 
-void cCursorManagerSDL::Hide() {
+void CursorManagerSDL::Hide() {
 	Visible( false );
 }
 
-void cCursorManagerSDL::Visible( bool visible ) {
+void CursorManagerSDL::Visible( bool visible ) {
 	if ( visible ) {
 		SDL_ShowCursor( SDL_ENABLE );
 		mVisible = true;
@@ -71,11 +71,11 @@ void cCursorManagerSDL::Visible( bool visible ) {
 	}
 }
 
-void cCursorManagerSDL::Remove( cCursor * cursor, bool Delete ) {
-	cCursorManager::Remove( cursor, Delete );
+void CursorManagerSDL::Remove( Cursor * cursor, bool Delete ) {
+	CursorManager::Remove( cursor, Delete );
 }
 
-void cCursorManagerSDL::Reload() {
+void CursorManagerSDL::Reload() {
 	if ( mVisible ) {
 		Show();
 

@@ -7,7 +7,7 @@
 namespace EE { namespace Window { namespace Platform {
 
 cOSXImpl::cOSXImpl( cWindow * window ) :
-	cPlatformImpl( window )
+	PlatformImpl( window )
 {
 }
 
@@ -50,22 +50,22 @@ void cOSXImpl::ShowMouseCursor() {
 void cOSXImpl::HideMouseCursor() {
 }
 
-cCursor * cOSXImpl::CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
+Cursor * cOSXImpl::CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-cCursor * cOSXImpl::CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name ) {
+Cursor * cOSXImpl::CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-cCursor * cOSXImpl::CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
+Cursor * cOSXImpl::CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-void cOSXImpl::SetMouseCursor( cCursor * cursor ) {
+void cOSXImpl::SetMouseCursor( Cursor * cursor ) {
 }
 
-void cOSXImpl::SetSystemMouseCursor( Cursor::EE_SYSTEM_CURSOR syscursor ) {
+void cOSXImpl::SetSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) {
 }
 
 void cOSXImpl::RestoreCursor() {

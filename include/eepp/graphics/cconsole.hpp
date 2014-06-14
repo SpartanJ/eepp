@@ -7,7 +7,7 @@
 #include <eepp/graphics/cfont.hpp>
 #include <deque>
 
-namespace EE { namespace Window { class cWindow; class cInputTextBuffer; class InputEvent; } }
+namespace EE { namespace Window { class cWindow; class InputTextBuffer; class InputEvent; } }
 
 using namespace EE::Window;
 
@@ -150,7 +150,7 @@ class EE_API cConsole : protected LogReaderInterface {
 		Uint32 mMaxLogLines;
 		int mLastLogPos;
 
-		cInputTextBuffer * mTBuf;
+		InputTextBuffer * mTBuf;
 
 		cFont * mFont;
 

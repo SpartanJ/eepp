@@ -5,11 +5,11 @@
 
 namespace EE { namespace Window { namespace Backend {
 
-class EE_API cBackend {
+class EE_API WindowBackend {
 	public:
-		inline cBackend() {}
+		inline WindowBackend() {}
 		
-		inline virtual ~cBackend() {}
+		inline virtual ~WindowBackend() {}
 };
 
 }}}

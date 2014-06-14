@@ -3,25 +3,25 @@
 
 namespace EE { namespace Window { namespace Backend { namespace Null {
 
-cClipboardNull::cClipboardNull( cWindow * window ) :
-	cClipboard( window )
+ClipboardNull::ClipboardNull( cWindow * window ) :
+	Clipboard( window )
 {
 }
 
-cClipboardNull::~cClipboardNull() {
+ClipboardNull::~ClipboardNull() {
 }
 
-void cClipboardNull::Init() {
+void ClipboardNull::Init() {
 }
 
-void cClipboardNull::SetText( const std::string& Text ) {
+void ClipboardNull::SetText( const std::string& Text ) {
 }
 
-std::string cClipboardNull::GetText() {
+std::string ClipboardNull::GetText() {
 	return std::string();
 }
 
-String cClipboardNull::GetWideText() {
+String ClipboardNull::GetWideText() {
 	return String();
 }
 

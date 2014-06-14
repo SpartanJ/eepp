@@ -15,33 +15,33 @@
 
 namespace EE { namespace Window { namespace Platform {
 
-cCursorX11::cCursorX11( cTexture * tex, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
-	cCursor( tex, hotspot, name, window ),
+CursorX11::CursorX11( cTexture * tex, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
+	Cursor( tex, hotspot, name, window ),
 	mCursor( None )
 {
 	Create();
 }
 
-cCursorX11::cCursorX11( cImage * img, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
-	cCursor( img, hotspot, name, window ),
+CursorX11::CursorX11( cImage * img, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
+	Cursor( img, hotspot, name, window ),
 	mCursor( None )
 {
 	Create();
 }
 
-cCursorX11::cCursorX11( const std::string& path, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
-	cCursor( path, hotspot, name, window ),
+CursorX11::CursorX11( const std::string& path, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
+	Cursor( path, hotspot, name, window ),
 	mCursor( None )
 {
 	Create();
 }
 
-cCursorX11::~cCursorX11() {
+CursorX11::~CursorX11() {
 	if ( None != mCursor )
 		XFreeCursor( GetPlatform()->GetDisplay(), mCursor );
 }
 
-void cCursorX11::Create() {
+void CursorX11::Create() {
 	if ( NULL == mImage || 0 == mImage->MemSize() )
 		return;
 
@@ -74,11 +74,11 @@ void cCursorX11::Create() {
 	XcursorImageDestroy( image );
 }
 
-cX11Impl * cCursorX11::GetPlatform() {
+cX11Impl * CursorX11::GetPlatform() {
 	return reinterpret_cast<cX11Impl*>( mWindow->GetPlatform() );
 }
 
-X11Cursor cCursorX11::GetCursor() const {
+X11Cursor CursorX11::GetCursor() const {
 	return mCursor;
 }
 

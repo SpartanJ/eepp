@@ -3,24 +3,24 @@
 
 namespace EE { namespace Window { namespace Backend { namespace Null {
 
-cJoystickManagerNull::cJoystickManagerNull() :
-	cJoystickManager()
+JoystickManagerNull::JoystickManagerNull() :
+	JoystickManager()
 {
 }
 
-cJoystickManagerNull::~cJoystickManagerNull() {
+JoystickManagerNull::~JoystickManagerNull() {
 }
 
-void cJoystickManagerNull::Update() {
+void JoystickManagerNull::Update() {
 }
 
-void cJoystickManagerNull::Open() {
+void JoystickManagerNull::Open() {
 }
 
-void cJoystickManagerNull::Close() {
+void JoystickManagerNull::Close() {
 }
 
-void cJoystickManagerNull::Create( const Uint32& index ) {
+void JoystickManagerNull::Create( const Uint32& index ) {
 }
 
 }}}}

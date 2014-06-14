@@ -6,11 +6,11 @@
 
 namespace EE { namespace Window {
 
-namespace Platform { class cPlatformImpl; }
+namespace Platform { class PlatformImpl; }
 
-class cClipboard;
-class cInput;
-class cCursorManager;
+class Clipboard;
+class Input;
+class CursorManager;
 
 
 /** @namespace EE::Window::WindowStyle Define the Windows Styles */
@@ -150,7 +150,7 @@ class EE_API cWindow {
 	public:
 		typedef cb::Callback1<void, cWindow*>			WindowResizeCallback;
 
-		cWindow( WindowSettings Settings, ContextSettings Context, cClipboard * Clipboard, cInput * Input, cCursorManager * CursorManager );
+		cWindow( WindowSettings Settings, ContextSettings Context, Clipboard * Clipboard, Input * Input, CursorManager * CursorManager );
 		
 		virtual ~cWindow();
 		
@@ -276,13 +276,13 @@ class EE_API cWindow {
 		/** Set the current active view
 		@param View New view to use (pass GetDefaultView() to set the default view)
 		*/
-		void SetView( const cView& View );
+		void SetView( const View& View );
 
 		/** Get the current view */
-		const cView& GetView() const;
+		const View& GetView() const;
 
 		/** Get the default view of the window */
-		const cView& GetDefaultView() const;
+		const View& GetDefaultView() const;
 
 		/** This will set the default rendering states and view to render in 2D mode */
 		void Setup2D( const bool& KeepView = false );
@@ -329,13 +329,13 @@ class EE_API cWindow {
 		void ClipPlaneDisable();
 
 		/** @return The clipboard manager */
-		cClipboard * GetClipboard() const;
+		Clipboard * GetClipboard() const;
 		
 		/** @return The input manager */
-		cInput * GetInput() const;
+		Input * GetInput() const;
 
 		/** @return The cursor manager */
-		cCursorManager * GetCursorManager() const;
+		CursorManager * GetCursorManager() const;
 
 		/** Push a new window resize callback.
 		* @return The Callback Id
@@ -346,7 +346,7 @@ class EE_API cWindow {
 		void PopResizeCallback( const Uint32& CallbackId );
 
 		/** @return The pointer to the instance of the platform implementation functions. */
-		Platform::cPlatformImpl * GetPlatform() const;
+		Platform::PlatformImpl * GetPlatform() const;
 
 		/**
 		* @brief Start accepting Unicode text input events.
@@ -449,15 +449,15 @@ class EE_API cWindow {
 		**	@param fps The desired FPS ( 0 = infinite ) */
 		void RunMainLoop( void (*func)(), int fps = 0 );
 	protected:
-		friend class cEngine;
+		friend class Engine;
 
 		WindowInfo					mWindow;
-		cClipboard *				mClipboard;
-		cInput *					mInput;
-		cCursorManager *			mCursorManager;
-		Platform::cPlatformImpl *	mPlatform;
-		cView						mDefaultView;
-		const cView *				mCurrentView;
+		Clipboard *				mClipboard;
+		Input *					mInput;
+		CursorManager *			mCursorManager;
+		Platform::PlatformImpl *	mPlatform;
+		View						mDefaultView;
+		const View *				mCurrentView;
 		Uint32						mNumCallBacks;
 		std::map<Uint32, WindowResizeCallback> mCallbacks;
 		

@@ -14,25 +14,25 @@
 
 namespace EE { namespace Window { namespace Platform {
 
-cCursorWin::cCursorWin( cTexture * tex, const Vector2i& hotspot, const std::string& name, cWindow * window ) :
-	cCursor( tex, hotspot, name, window )
+CursorWin::CursorWin( cTexture * tex, const Vector2i& hotspot, const std::string& name, cWindow * window ) :
+	Cursor( tex, hotspot, name, window )
 {
 	Create();
 }
 
-cCursorWin::cCursorWin( cImage * img, const Vector2i& hotspot, const std::string& name, cWindow * window ) :
-	cCursor( img, hotspot, name, window )
+CursorWin::CursorWin( cImage * img, const Vector2i& hotspot, const std::string& name, cWindow * window ) :
+	Cursor( img, hotspot, name, window )
 {
 	Create();
 }
 
-cCursorWin::cCursorWin( const std::string& path, const Vector2i& hotspot, const std::string& name, cWindow * window ) :
-	cCursor( path, hotspot, name, window )
+CursorWin::CursorWin( const std::string& path, const Vector2i& hotspot, const std::string& name, cWindow * window ) :
+	Cursor( path, hotspot, name, window )
 {
 	Create();
 }
 
-cCursorWin::~cCursorWin() {
+CursorWin::~CursorWin() {
 	if ( NULL != mCursor )
 		DestroyIcon( (HCURSOR)mCursor );
 }
@@ -128,7 +128,7 @@ static void local_draw_to_hdc( HDC dc, cImage * bitmap, int x, int y ) {
 	local_stretch_blit_to_hdc(bitmap, dc, 0, 0, w, h, x, y, w, h);
 }
 
-void cCursorWin::Create() {
+void CursorWin::Create() {
 	if ( NULL == mImage && mImage->MemSize() )
 		return;
 
@@ -208,11 +208,11 @@ void cCursorWin::Create() {
 	mCursor = (void*)icon;
 }
 
-cWinImpl * cCursorWin::GetPlatform() {
+cWinImpl * CursorWin::GetPlatform() {
 	return reinterpret_cast<cWinImpl*>( mWindow->GetPlatform() );
 }
 
-void * cCursorWin::GetCursor() const {
+void * CursorWin::GetCursor() const {
 	return mCursor;
 }
 

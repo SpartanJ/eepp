@@ -5,13 +5,13 @@
 
 namespace EE { namespace Window { namespace Backend { namespace Null {
 
-class EE_API cBackendNull : public cBackend {
+class EE_API WindowBackendNull : public WindowBackend {
 	public:
-		inline cBackendNull() : cBackend()
+		inline WindowBackendNull() : WindowBackend()
 		{
 		}
 
-		inline ~cBackendNull()
+		inline ~WindowBackendNull()
 		{
 		}
 };

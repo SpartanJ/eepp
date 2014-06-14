@@ -9,7 +9,7 @@ static void MainLoop() {
 namespace Demo_Test {
 
 void cEETest::Init() {
-	EE = cEngine::instance();
+	EE = Engine::instance();
 
 	Log::instance()->LiveWrite( true );
 	Log::instance()->ConsoleOutput( true );
@@ -139,7 +139,7 @@ void cEETest::Init() {
 #endif
 
 	} else {
-		cEngine::DestroySingleton();
+		Engine::DestroySingleton();
 
 		exit(0);
 	}
@@ -802,7 +802,7 @@ void cEETest::LoadTextures() {
 	#ifndef EE_GLES
 
 	#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
-	cEngine::instance()->EnableSharedGLContext();
+	Engine::instance()->EnableSharedGLContext();
 	#endif
 
 	PakTest->Open( MyPath + "test.zip" );
@@ -890,10 +890,10 @@ void cEETest::LoadTextures() {
 	Cursor[0] = TF->Load( MyPath + "cursors/cursor.tga" );
 	CursorP[0] = TF->GetTexture( Cursor[0] );
 
-	cCursorManager * CurMan = mWindow->GetCursorManager();
+	CursorManager * CurMan = mWindow->GetCursorManager();
 	CurMan->Visible( false );
 	CurMan->Visible( true );
-	CurMan->Set( Window::Cursor::SYS_CURSOR_HAND );
+	CurMan->Set( Window::SYS_CURSOR_HAND );
 	CurMan->SetGlobalCursor( EE_CURSOR_ARROW, CurMan->Add( CurMan->Create( CursorP[0], Vector2i( 1, 1 ), "cursor_special" ) ) );
 	CurMan->Set( EE_CURSOR_ARROW );
 
@@ -1364,7 +1364,7 @@ void cEETest::Input() {
 	if ( KM->IsKeyUp(KEY_6) && KM->ControlPressed() )
 		SetScreen( 5 );
 
-	cJoystick * Joy = JM->GetJoystick(0);
+	Joystick * Joy = JM->GetJoystick(0);
 
 	if ( mJoyEnabled && NULL != Joy ) {
 		if ( Joy->IsButtonDown(0) )		KM->InjectButtonPress(EE_BUTTON_LEFT);
@@ -1816,7 +1816,7 @@ void cEETest::PhysicsUpdate() {
 	}
 	#else
 	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
-		cInputFinger * Finger = KM->GetFingerIndex(i);
+		InputFinger * Finger = KM->GetFingerIndex(i);
 		mMousePoint[i] = cVectNew( Finger->x, Finger->y );
 		cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last[i] ), tocpv( mMousePoint[i] ), 0.25 ) );
 		mMouseBody[i]->Pos( newPoint );
@@ -1867,7 +1867,7 @@ void cEETest::End() {
 
 	Log::instance()->Save();
 
-	cEngine::DestroySingleton();
+	Engine::DestroySingleton();
 }
 
 }

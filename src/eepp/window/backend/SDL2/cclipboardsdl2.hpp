@@ -11,9 +11,9 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
-class EE_API cClipboardSDL : public cClipboard {
+class EE_API ClipboardSDL : public Clipboard {
 	public:
-		virtual ~cClipboardSDL();
+		virtual ~ClipboardSDL();
 
 		std::string GetText();
 
@@ -23,7 +23,7 @@ class EE_API cClipboardSDL : public cClipboard {
 	protected:
 		friend class cWindowSDL;
 
-		cClipboardSDL( Window::cWindow * window );
+		ClipboardSDL( Window::cWindow * window );
 
 		void Init();
 };

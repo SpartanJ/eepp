@@ -7,8 +7,6 @@
 #include <eepp/window/cwindow.hpp>
 #include <eepp/window/cursorhelper.hpp>
 
-using namespace EE::Window::Cursor;
-
 namespace EE { namespace UI {
 
 class EE_API cUIManager {
@@ -43,7 +41,7 @@ class EE_API cUIManager {
 
 		Vector2i GetMousePos();
 
-		cInput * GetInput() const;
+		Input * GetInput() const;
 
 		const Uint32& PressTrigger() const;
 
@@ -106,7 +104,7 @@ class EE_API cUIManager {
 		friend class cUIWindow;
 
 		Window::cWindow *			mWindow;
-		cInput *			mKM;
+		Input *			mKM;
 		cUIWindow *			mControl;
 		cUIControl *		mFocusControl;
 		cUIControl *		mOverControl;
