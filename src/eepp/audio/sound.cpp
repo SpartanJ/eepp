@@ -1,10 +1,10 @@
-#include <eepp/audio/csound.hpp>
-#include <eepp/audio/caudiodevice.hpp>
+#include <eepp/audio/sound.hpp>
+#include <eepp/audio/audiodevice.hpp>
 #include <eepp/audio/openal.hpp>
 
 namespace EE { namespace Audio {
 
-cSound::cSound() :
+Sound::Sound() :
 	mBuffer(NULL)
 {
 	EnsureALInit();
@@ -13,7 +13,7 @@ cSound::cSound() :
 	ALCheck( alSourcei( mSource, AL_BUFFER, 0 ) );
 }
 
-cSound::cSound( const cSoundBuffer& Buffer, const bool& Loop, const float& Pitch, const float& Volume, const eeVector3ff& Position ) :
+Sound::Sound( const SoundBuffer& Buffer, const bool& Loop, const float& Pitch, const float& Volume, const eeVector3ff& Position ) :
 	mBuffer(&Buffer)
 {
 	EnsureALInit();
@@ -27,7 +27,7 @@ cSound::cSound( const cSoundBuffer& Buffer, const bool& Loop, const float& Pitch
 	ALCheck( alSource3f( mSource, AL_POSITION, Position.x, Position.y, Position.z ) );
 }
 
-cSound::cSound(const cSound& Copy) :
+Sound::Sound(const Sound& Copy) :
 	mBuffer(Copy.mBuffer)
 {
 	EnsureALInit();
@@ -41,7 +41,7 @@ cSound::cSound(const cSound& Copy) :
 	ALCheck( alSource3f( mSource, AL_POSITION, Copy.Position().x, Copy.Position().y, Copy.Position().z) );
 }
 
-cSound::~cSound() {
+Sound::~Sound() {
 	if ( mSource ) {
 		if ( mBuffer ) {
 			Stop();
@@ -52,19 +52,19 @@ cSound::~cSound() {
 	}
 }
 
-void cSound::Play() {
+void Sound::Play() {
 	ALCheck( alSourcePlay( mSource ) );
 }
 
-void cSound::Pause() {
+void Sound::Pause() {
 	ALCheck( alSourcePause( mSource ) );
 }
 
-void cSound::Stop() {
+void Sound::Stop() {
 	ALCheck( alSourceStop( mSource ) );
 }
 
-void cSound::Buffer(const cSoundBuffer& Buffer) {
+void Sound::Buffer(const SoundBuffer& Buffer) {
 	if ( NULL != mBuffer ) {
 		Stop();
 		mBuffer->DetachSound( this );
@@ -76,60 +76,60 @@ void cSound::Buffer(const cSoundBuffer& Buffer) {
 	ALCheck( alSourcei( mSource, AL_BUFFER, mBuffer ? mBuffer->mBuffer : 0 ) );
 }
 
-void cSound::Loop( const bool& Loop ) {
+void Sound::Loop( const bool& Loop ) {
 	ALCheck( alSourcei( mSource, AL_LOOPING, Loop ) );
 }
 
-void cSound::Pitch( const float& Pitch ) {
+void Sound::Pitch( const float& Pitch ) {
 	ALCheck( alSourcef( mSource, AL_PITCH, Pitch ) );
 }
 
-void cSound::Volume( const float& Volume ) {
+void Sound::Volume( const float& Volume ) {
 	ALCheck( alSourcef( mSource, AL_GAIN, Volume * 0.01f ) );
 }
 
-void cSound::Position( const float& X, const float& Y, const float& Z ) {
+void Sound::Position( const float& X, const float& Y, const float& Z ) {
 	ALCheck( alSource3f( mSource, AL_POSITION, X, Y, Z ) );
 }
 
-void cSound::Position( const eeVector3ff& Position ) {
+void Sound::Position( const eeVector3ff& Position ) {
 	this->Position( Position.x, Position.y, Position.z );
 }
 
-void cSound::MinDistance( const float& MinDistance ) {
+void Sound::MinDistance( const float& MinDistance ) {
 	ALCheck( alSourcef( mSource, AL_REFERENCE_DISTANCE, MinDistance ) );
 }
 
-void cSound::Attenuation( const float& Attenuation ) {
+void Sound::Attenuation( const float& Attenuation ) {
 	ALCheck( alSourcef( mSource, AL_ROLLOFF_FACTOR, Attenuation ) );
 }
 
-const cSoundBuffer* cSound::Buffer() const {
+const SoundBuffer* Sound::Buffer() const {
 	return mBuffer;
 }
 
-bool cSound::Loop() const {
+bool Sound::Loop() const {
 	ALint Loop;
 	ALCheck( alGetSourcei( mSource, AL_LOOPING, &Loop ) );
 
 	return Loop != 0;
 }
 
-float cSound::Pitch() const {
+float Sound::Pitch() const {
 	float Pitch;
 	ALCheck( alGetSourcef( mSource, AL_PITCH, &Pitch ) );
 
 	return Pitch;
 }
 
-float cSound::Volume() const {
+float Sound::Volume() const {
 	float Gain = 1;
 	ALCheck( alGetSourcef( mSource, AL_GAIN, &Gain ) );
 
 	return Gain * 100.f;
 }
 
-eeVector3ff cSound::Position() const {
+eeVector3ff Sound::Position() const {
 	eeVector3ff Position;
 
 	#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
@@ -139,35 +139,35 @@ eeVector3ff cSound::Position() const {
 	return Position;
 }
 
-float cSound::MinDistance() const {
+float Sound::MinDistance() const {
 	float MinDistance;
 	ALCheck( alGetSourcef( mSource, AL_REFERENCE_DISTANCE, &MinDistance ) );
 
 	return MinDistance;
 }
 
-float cSound::Attenuation() const {
+float Sound::Attenuation() const {
 	float Attenuation;
 	ALCheck( alGetSourcef( mSource, AL_ROLLOFF_FACTOR, &Attenuation ) );
 
 	return Attenuation;
 }
 
-cSound::Status cSound::GetState() const {
+Sound::Status Sound::GetState() const {
 	ALint State;
 	ALCheck( alGetSourcei( mSource, AL_SOURCE_STATE, &State ) );
 
 	switch (State) {
 		case AL_INITIAL :
-		case AL_STOPPED : return cSound::Stopped;
-		case AL_PAUSED :  return cSound::Paused;
-		case AL_PLAYING : return cSound::Playing;
+		case AL_STOPPED : return Sound::Stopped;
+		case AL_PAUSED :  return Sound::Paused;
+		case AL_PLAYING : return Sound::Playing;
 	}
 
-	return cSound::Stopped;
+	return Sound::Stopped;
 }
 
-cTime cSound::PlayingOffset() const {
+cTime Sound::PlayingOffset() const {
 	float secs = 0.f;
 
 	ALCheck( alGetSourcef( mSource, AL_SEC_OFFSET, &secs ) );
@@ -175,11 +175,11 @@ cTime cSound::PlayingOffset() const {
 	return Seconds( secs );
 }
 
-void cSound::PlayingOffset( const cTime &TimeOffset ) {
+void Sound::PlayingOffset( const cTime &TimeOffset ) {
 	ALCheck( alSourcef( mSource, AL_SEC_OFFSET, TimeOffset.AsSeconds() ) );
 }
 
-cSound& cSound::operator =( const cSound& Other ) {
+Sound& Sound::operator =( const Sound& Other ) {
 	if ( NULL != mBuffer ) {
 		Stop();
 		mBuffer->DetachSound( this );
@@ -202,17 +202,17 @@ cSound& cSound::operator =( const cSound& Other ) {
 	return *this;
 }
 
-void cSound::SetRelativeToListener( const bool& Relative ) {
+void Sound::SetRelativeToListener( const bool& Relative ) {
 	ALCheck( alSourcei( mSource, AL_SOURCE_RELATIVE, Relative ) );
 }
 
-bool cSound::IsRelativeToListener() const {
+bool Sound::IsRelativeToListener() const {
 	ALint Relative;
 	ALCheck( alGetSourcei( mSource, AL_SOURCE_RELATIVE, &Relative ) );
 	return Relative != 0;
 }
 
-void cSound::ResetBuffer() {
+void Sound::ResetBuffer() {
 	// First stop the sound in case it is playing
 	Stop();
 
@@ -226,7 +226,7 @@ void cSound::ResetBuffer() {
 	}
 }
 
-cSound::Status cSound::State() const {
+Sound::Status Sound::State() const {
 	return GetState();
 }
 

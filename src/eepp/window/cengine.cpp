@@ -9,7 +9,7 @@
 #include <eepp/graphics/cframebuffermanager.hpp>
 #include <eepp/graphics/cvertexbuffermanager.hpp>
 #include <eepp/ui/cuimanager.hpp>
-#include <eepp/audio/caudiolistener.hpp>
+#include <eepp/audio/audiolistener.hpp>
 #include <eepp/helper/haikuttf/hkfontmanager.hpp>
 #include <eepp/physics/cphysicsmanager.hpp>
 #include <eepp/network/ssl/csslsocket.hpp>

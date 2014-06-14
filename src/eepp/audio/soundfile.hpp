@@ -6,18 +6,18 @@
 namespace EE { namespace Audio {
 
 /** @brief Provide read and write access to sound files */
-class EE_API cSoundFile {
+class EE_API SoundFile {
 	public:
 		/** @brief Open a sound file for reading */
-		static cSoundFile * CreateRead(const std::string& Filename);
+		static SoundFile * CreateRead(const std::string& Filename);
 
 		/** @brief Open a sound file from memory for reading */
-		static cSoundFile * CreateRead(const char* Data, std::size_t SizeInBytes);
+		static SoundFile * CreateRead(const char* Data, std::size_t SizeInBytes);
 
 		/**	@brief Open a sound file for writing */
-		static cSoundFile * CreateWrite(const std::string& Filename, unsigned int ChannelCount, unsigned int SampleRate);
+		static SoundFile * CreateWrite(const std::string& Filename, unsigned int ChannelCount, unsigned int SampleRate);
 
-		virtual ~cSoundFile();
+		virtual ~SoundFile();
 
 		/** @brief Get the total number of audio samples in the file */
 		std::size_t GetSamplesCount() const;
@@ -50,7 +50,7 @@ class EE_API cSoundFile {
 		**	@param timeOffset New playing position, from the beginning of the file */
 		virtual void Seek( cTime timeOffset );
 	protected :
-		cSoundFile();
+		SoundFile();
 
 		virtual bool OpenRead(const std::string& Filename, std::size_t& SamplesCount, unsigned int& ChannelCount, unsigned int& SampleRate);
 

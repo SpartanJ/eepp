@@ -1,5 +1,5 @@
-#include <eepp/audio/caudiodevice.hpp>
-#include <eepp/audio/caudiolistener.hpp>
+#include <eepp/audio/audiodevice.hpp>
+#include <eepp/audio/audiolistener.hpp>
 #include <eepp/audio/openal.hpp>
 
 namespace EE { namespace Audio {
@@ -7,7 +7,7 @@ namespace EE { namespace Audio {
 ALCdevice *		mDevice = NULL;
 ALCcontext *	mContext = NULL;
 
-cAudioDevice::cAudioDevice() {
+AudioDevice::AudioDevice() {
 	PrintInfo();
 
 	// Create the device
@@ -42,7 +42,7 @@ cAudioDevice::cAudioDevice() {
 	}
 }
 
-void cAudioDevice::PrintInfo() {
+void AudioDevice::PrintInfo() {
 	std::string log( "OpenAL devices detected:\n" );
 
 	if ( alcIsExtensionPresent( NULL, (const ALCchar *) "ALC_ENUMERATION_EXT" ) == AL_TRUE ) {
@@ -62,7 +62,7 @@ void cAudioDevice::PrintInfo() {
 	eePRINTL( log.c_str() );
 }
 
-cAudioDevice::~cAudioDevice() {
+AudioDevice::~AudioDevice() {
 	// Destroy the context
 	alcMakeContextCurrent( NULL );
 
@@ -74,7 +74,7 @@ cAudioDevice::~cAudioDevice() {
 		alcCloseDevice( mDevice );
 }
 
-bool cAudioDevice::IsExtensionSupported( const std::string& extension ) {
+bool AudioDevice::IsExtensionSupported( const std::string& extension ) {
 	EnsureALInit();
 
     if ( ( extension.length() > 2 ) && ( extension.substr(0, 3) == "ALC" ) )
@@ -83,7 +83,7 @@ bool cAudioDevice::IsExtensionSupported( const std::string& extension ) {
         return alIsExtensionPresent( extension.c_str() ) != AL_FALSE;
 }
 
-int cAudioDevice::GetFormatFromChannelCount( unsigned int ChannelCount ) {
+int AudioDevice::GetFormatFromChannelCount( unsigned int ChannelCount ) {
 	EnsureALInit();
 
 	int format = 0;
@@ -104,7 +104,7 @@ int cAudioDevice::GetFormatFromChannelCount( unsigned int ChannelCount ) {
 	return format;
 }
 
-bool cAudioDevice::IsAvailable() {
+bool AudioDevice::IsAvailable() {
 	return NULL != mDevice && NULL != mContext;
 }
 

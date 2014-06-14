@@ -1,29 +1,29 @@
-#include <eepp/audio/cmusic.hpp>
-#include <eepp/audio/csoundfile.hpp>
+#include <eepp/audio/music.hpp>
+#include <eepp/audio/soundfile.hpp>
 #include <eepp/system/cpackmanager.hpp>
 
 namespace EE { namespace Audio {
 
-cMusic::cMusic( std::size_t BufferSize ) :
+Music::Music( std::size_t BufferSize ) :
 	mFile ( NULL ),
 	mDuration( 0.f ),
 	mSamples( BufferSize )
 {
 }
 
-cMusic::~cMusic() {
+Music::~Music() {
 	Stop();
 	eeSAFE_DELETE( mFile );
 }
 
-bool cMusic::OpenFromPack( cPack* Pack, const std::string& FilePackPath ) {
+bool Music::OpenFromPack( cPack* Pack, const std::string& FilePackPath ) {
 	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, mData ) )
 		return OpenFromMemory( reinterpret_cast<const char*> ( mData.Data ), mData.DataSize );
 
 	return false;
 }
 
-bool cMusic::OpenFromFile( const std::string& Filename ) {
+bool Music::OpenFromFile( const std::string& Filename ) {
 	if ( !FileSystem::FileExists( Filename ) ) {
 		if ( cPackManager::instance()->FallbackToPacks() ) {
 			std::string tPath( Filename );
@@ -42,7 +42,7 @@ bool cMusic::OpenFromFile( const std::string& Filename ) {
 	Stop();
 	eeSAFE_DELETE( mFile );
 
-	mFile = cSoundFile::CreateRead( Filename );
+	mFile = SoundFile::CreateRead( Filename );
 
 	if ( NULL == mFile ) {
 		eePRINTL( "Failed to open %s for reading", Filename.c_str() );
@@ -60,12 +60,12 @@ bool cMusic::OpenFromFile( const std::string& Filename ) {
 	return true;
 }
 
-bool cMusic::OpenFromMemory( const char * Data, std::size_t SizeInBytes ) {
+bool Music::OpenFromMemory( const char * Data, std::size_t SizeInBytes ) {
 	Stop();
 	eeSAFE_DELETE( mFile );
 
 	// Create the sound file implementation, and open it in read mode
-	mFile = cSoundFile::CreateRead( Data, SizeInBytes );
+	mFile = SoundFile::CreateRead( Data, SizeInBytes );
 
 	if ( NULL == mFile ) {
 		eePRINTL( "Failed to open music from memory for reading" );
@@ -81,11 +81,11 @@ bool cMusic::OpenFromMemory( const char * Data, std::size_t SizeInBytes ) {
 	return true;
 }
 
-bool cMusic::OnStart() {
+bool Music::OnStart() {
 	return NULL != mFile && mFile->Restart();
 }
 
-bool cMusic::OnGetData( cSoundStream::Chunk& Data ) {
+bool Music::OnGetData( SoundStream::Chunk& Data ) {
 	if ( NULL != mFile ) {
 		// Fill the chunk parameters
 		Data.Samples   = &mSamples[0];
@@ -98,11 +98,11 @@ bool cMusic::OnGetData( cSoundStream::Chunk& Data ) {
 	return false;
 }
 
-cTime cMusic::GetDuration() const {
+cTime Music::GetDuration() const {
 	return Seconds( mDuration );
 }
 
-void cMusic::OnSeek( cTime timeOffset ) {
+void Music::OnSeek( cTime timeOffset ) {
 	if ( NULL != mFile ) {
 		mFile->Seek( timeOffset );
 	}

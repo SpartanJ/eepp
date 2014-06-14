@@ -1,14 +1,14 @@
-#include <eepp/audio/csoundbuffer.hpp>
-#include <eepp/audio/csound.hpp>
-#include <eepp/audio/csoundfile.hpp>
-#include <eepp/audio/caudiodevice.hpp>
+#include <eepp/audio/soundbuffer.hpp>
+#include <eepp/audio/sound.hpp>
+#include <eepp/audio/soundfile.hpp>
+#include <eepp/audio/audiodevice.hpp>
 #include <eepp/system/cpackmanager.hpp>
 #include <eepp/audio/openal.hpp>
 #include <memory>
 
 namespace EE { namespace Audio {
 
-cSoundBuffer::cSoundBuffer() :
+SoundBuffer::SoundBuffer() :
 	mBuffer(0),
 	mDuration()
 {
@@ -17,7 +17,7 @@ cSoundBuffer::cSoundBuffer() :
 	ALCheck( alGenBuffers( 1, &mBuffer ) );
 }
 
-cSoundBuffer::cSoundBuffer(const cSoundBuffer& Copy) :
+SoundBuffer::SoundBuffer(const SoundBuffer& Copy) :
 	mBuffer(0),
 	mSamples(Copy.mSamples),
 	mDuration(Copy.mDuration),
@@ -29,7 +29,7 @@ cSoundBuffer::cSoundBuffer(const cSoundBuffer& Copy) :
 	Update( Copy.GetChannelCount(), Copy.GetSampleRate() );
 }
 
-cSoundBuffer::~cSoundBuffer() {
+SoundBuffer::~SoundBuffer() {
 	for ( SoundList::const_iterator it = mSounds.begin(); it != mSounds.end(); ++it )
 		(*it)->ResetBuffer();
 
@@ -37,7 +37,7 @@ cSoundBuffer::~cSoundBuffer() {
 		ALCheck( alDeleteBuffers( 1, &mBuffer ) );
 }
 
-bool cSoundBuffer::LoadFromFile(const std::string& Filename) {
+bool SoundBuffer::LoadFromFile(const std::string& Filename) {
 	if ( !FileSystem::FileExists( Filename ) ) {
 		if ( cPackManager::instance()->FallbackToPacks() ) {
 			std::string tPath( Filename );
@@ -54,7 +54,7 @@ bool cSoundBuffer::LoadFromFile(const std::string& Filename) {
 	}
 
 	// Create the sound file
-	cSoundFile * File = cSoundFile::CreateRead( Filename );
+	SoundFile * File = SoundFile::CreateRead( Filename );
 
 	// Open the sound file
 	if ( NULL != File ) {
@@ -87,7 +87,7 @@ bool cSoundBuffer::LoadFromFile(const std::string& Filename) {
 	}
 }
 
-bool cSoundBuffer::LoadFromPack( cPack* Pack, const std::string& FilePackPath ) {
+bool SoundBuffer::LoadFromPack( cPack* Pack, const std::string& FilePackPath ) {
 	bool Ret = false;
 	SafeDataPointer PData;
 
@@ -97,9 +97,9 @@ bool cSoundBuffer::LoadFromPack( cPack* Pack, const std::string& FilePackPath ) 
 	return Ret;
 }
 
-bool cSoundBuffer::LoadFromMemory( const char* Data, std::size_t SizeInBytes ) {
+bool SoundBuffer::LoadFromMemory( const char* Data, std::size_t SizeInBytes ) {
 	// Create the sound file
-	cSoundFile * File = cSoundFile::CreateRead( Data, SizeInBytes );
+	SoundFile * File = SoundFile::CreateRead( Data, SizeInBytes );
 
 	// Open the sound file
 	if ( NULL != File ) {
@@ -131,7 +131,7 @@ bool cSoundBuffer::LoadFromMemory( const char* Data, std::size_t SizeInBytes ) {
 	}
 }
 
-bool cSoundBuffer::LoadFromSamples( const Int16 * Samples, std::size_t SamplesCount, unsigned int ChannelCount, unsigned int SampleRate ) {
+bool SoundBuffer::LoadFromSamples( const Int16 * Samples, std::size_t SamplesCount, unsigned int ChannelCount, unsigned int SampleRate ) {
 	if ( Samples && SamplesCount && ChannelCount && SampleRate ) {
 		// Copy the new audio samples
 		mSamples.assign( Samples, Samples + SamplesCount );
@@ -147,9 +147,9 @@ bool cSoundBuffer::LoadFromSamples( const Int16 * Samples, std::size_t SamplesCo
 	}
 }
 
-bool cSoundBuffer::SaveToFile(const std::string& Filename) const {
+bool SoundBuffer::SaveToFile(const std::string& Filename) const {
 	// Create the sound file in write mode
-	std::auto_ptr<cSoundFile> File( cSoundFile::CreateWrite( Filename, GetChannelCount(), GetSampleRate() ) );
+	std::auto_ptr<SoundFile> File( SoundFile::CreateWrite( Filename, GetChannelCount(), GetSampleRate() ) );
 
 	if ( File.get() ) {
 		// Write the samples to the opened file
@@ -162,32 +162,32 @@ bool cSoundBuffer::SaveToFile(const std::string& Filename) const {
 	}
 }
 
-const Int16* cSoundBuffer::GetSamples() const {
+const Int16* SoundBuffer::GetSamples() const {
 	return mSamples.empty() ? NULL : &mSamples[0];
 }
 
-std::size_t cSoundBuffer::GetSamplesCount() const {
+std::size_t SoundBuffer::GetSamplesCount() const {
 	return mSamples.size();
 }
 
-unsigned int cSoundBuffer::GetSampleRate() const {
+unsigned int SoundBuffer::GetSampleRate() const {
 	ALint SampleRate;
 	ALCheck( alGetBufferi( mBuffer, AL_FREQUENCY, &SampleRate ) );
 	return SampleRate;
 }
 
-unsigned int cSoundBuffer::GetChannelCount() const {
+unsigned int SoundBuffer::GetChannelCount() const {
 	ALint ChannelCount;
 	ALCheck( alGetBufferi( mBuffer, AL_CHANNELS, &ChannelCount ) );
 	return ChannelCount;
 }
 
-cTime cSoundBuffer::GetDuration() const {
+cTime SoundBuffer::GetDuration() const {
 	return mDuration;
 }
 
-cSoundBuffer& cSoundBuffer::operator =( const cSoundBuffer& Other ) {
-	cSoundBuffer Temp( Other );
+SoundBuffer& SoundBuffer::operator =( const SoundBuffer& Other ) {
+	SoundBuffer Temp( Other );
 
 	std::swap( mSamples	,	Temp.mSamples );
 	std::swap( mBuffer	,	Temp.mBuffer );
@@ -197,13 +197,13 @@ cSoundBuffer& cSoundBuffer::operator =( const cSoundBuffer& Other ) {
 	return *this;
 }
 
-bool cSoundBuffer::Update( unsigned int ChannelCount, unsigned int SampleRate ) {
+bool SoundBuffer::Update( unsigned int ChannelCount, unsigned int SampleRate ) {
 	// Check parameters
 	if ( !SampleRate || !ChannelCount || mSamples.empty() )
 		return false;
 
 	// Find the good format according to the number of channels
-	ALenum Format = cAudioDevice::GetFormatFromChannelCount( ChannelCount );
+	ALenum Format = AudioDevice::GetFormatFromChannelCount( ChannelCount );
 
 	// Check if the format is valid
 	if ( Format == 0 ) {
@@ -228,11 +228,11 @@ bool cSoundBuffer::Update( unsigned int ChannelCount, unsigned int SampleRate ) 
 	return true;
 }
 
-void cSoundBuffer::AttachSound( cSound* sound ) const {
+void SoundBuffer::AttachSound( Sound* sound ) const {
 	mSounds.insert(sound);
 }
 
-void cSoundBuffer::DetachSound( cSound* sound ) const {
+void SoundBuffer::DetachSound( Sound* sound ) const {
 	mSounds.erase(sound);
 }
 

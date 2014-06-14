@@ -2,7 +2,7 @@
 #define EE_AUDIOTSOUNDLOADER_HPP
 
 #include <eepp/audio/base.hpp>
-#include <eepp/audio/tsoundmanager.hpp>
+#include <eepp/audio/soundmanager.hpp>
 #include <eepp/system/cobjectloader.hpp>
 
 namespace EE { namespace Audio {
@@ -170,7 +170,7 @@ void tSoundLoader<T>::Unload() {
 	}
 }
 
-typedef tSoundLoader<std::string>	cSoundLoader;
+typedef tSoundLoader<std::string>	SoundLoader;
 
 }}
 

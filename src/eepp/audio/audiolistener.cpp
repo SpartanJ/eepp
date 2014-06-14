@@ -1,9 +1,9 @@
-#include <eepp/audio/caudiolistener.hpp>
+#include <eepp/audio/audiolistener.hpp>
 #include <eepp/audio/openal.hpp>
 
 namespace EE { namespace Audio {
 
-void cAudioListener::GlobalVolume( const float& Volume ) {
+void AudioListener::GlobalVolume( const float& Volume ) {
 	EnsureALInit();
 
 	#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
@@ -11,7 +11,7 @@ void cAudioListener::GlobalVolume( const float& Volume ) {
 	#endif
 }
 
-float cAudioListener::GlobalVolume() {
+float AudioListener::GlobalVolume() {
 	EnsureALInit();
 
 	float Volume = 0.f;
@@ -21,17 +21,17 @@ float cAudioListener::GlobalVolume() {
 	return Volume * 100.f;
 }
 
-void cAudioListener::Position( const float& X, const float& Y, const float& Z ) {
+void AudioListener::Position( const float& X, const float& Y, const float& Z ) {
 	EnsureALInit();
 
 	ALCheck( alListener3f( AL_POSITION, X, Y, Z ) );
 }
 
-void cAudioListener::Position(const eeVector3ff& Position) {
-	cAudioListener::Position( Position.x, Position.y, Position.z );
+void AudioListener::Position(const eeVector3ff& Position) {
+	AudioListener::Position( Position.x, Position.y, Position.z );
 }
 
-eeVector3ff cAudioListener::Position() {
+eeVector3ff AudioListener::Position() {
 	EnsureALInit();
 
 	eeVector3ff Position;
@@ -40,18 +40,18 @@ eeVector3ff cAudioListener::Position() {
 	return Position;
 }
 
-void cAudioListener::Target( const float& X, const float& Y, const float& Z ) {
+void AudioListener::Target( const float& X, const float& Y, const float& Z ) {
 	EnsureALInit();
 
 	float Orientation[] = {X, Y, Z, 0.f, 1.f, 0.f};
 	ALCheck( alListenerfv( AL_ORIENTATION, Orientation ) );
 }
 
-void cAudioListener::Target(const eeVector3ff& Target) {
-	cAudioListener::Target( Target.x, Target.y, Target.z );
+void AudioListener::Target(const eeVector3ff& Target) {
+	AudioListener::Target( Target.x, Target.y, Target.z );
 }
 
-eeVector3ff cAudioListener::Target() {
+eeVector3ff AudioListener::Target() {
 	EnsureALInit();
 
 	float Orientation[6];

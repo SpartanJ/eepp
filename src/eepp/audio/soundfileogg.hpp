@@ -2,16 +2,16 @@
 #define EE_AUDIOCSOUNDFILEOGG_H
 
 #include <eepp/audio/base.hpp>
-#include <eepp/audio/csoundfile.hpp>
+#include <eepp/audio/soundfile.hpp>
 
 struct stb_vorbis;
 
 namespace EE { namespace Audio {
 
-class EE_API cSoundFileOgg : public cSoundFile {
+class EE_API SoundFileOgg : public SoundFile {
 	public:
-		cSoundFileOgg();
-		~cSoundFileOgg();
+		SoundFileOgg();
+		~SoundFileOgg();
 
 		/** Check if a given file is supported by this loader. */
 		static bool IsFileSupported(const std::string& Filename, bool Read);

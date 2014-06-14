@@ -1,7 +1,7 @@
 #ifndef EE_AUDIOCAUDIODEVICE_H
 #define EE_AUDIOCAUDIODEVICE_H
 
-#include <eepp/audio/caudiolistener.hpp>
+#include <eepp/audio/audiolistener.hpp>
 
 namespace EE { namespace Audio {
 
@@ -10,11 +10,11 @@ namespace EE { namespace Audio {
 		the creation and destruction of the audio device and
 		context and stores the device capabilities
 */
-class EE_API cAudioDevice {
+class EE_API AudioDevice {
 	public :
-		cAudioDevice();
+		AudioDevice();
 
-		~cAudioDevice();
+		~AudioDevice();
 
 		/** Get the OpenAL format that matches the given number of channels */
 		static int GetFormatFromChannelCount( unsigned int ChannelCount );

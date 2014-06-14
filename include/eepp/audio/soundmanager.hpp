@@ -2,8 +2,8 @@
 #define EE_AUDIOTSOUNDMANAGER_H
 
 #include <eepp/audio/base.hpp>
-#include <eepp/audio/csound.hpp>
-#include <eepp/audio/csoundbuffer.hpp>
+#include <eepp/audio/sound.hpp>
+#include <eepp/audio/soundbuffer.hpp>
 
 namespace EE { namespace Audio {
 
@@ -38,7 +38,7 @@ class tSoundManager {
 		bool LoadFromPack( const T& id, cPack* Pack, const std::string& FilePackPath );
 
 		/** @return The sound buffer of the sound id */
-		cSoundBuffer& GetBuffer( const T& id );
+		SoundBuffer& GetBuffer( const T& id );
 
 		/** Play the sound. This method will open a new channel if the channel seted for the sound is already playing.
 		**	@param id The sound id to play */
@@ -49,17 +49,17 @@ class tSoundManager {
 		bool Remove( const T& id );
 
 		/** @return The sound id if exists */
-		cSound& operator[] ( const T& id );
+		Sound& operator[] ( const T& id );
 
 		/** @brief Search for the sound id, and return a sound that is not playing, if all the sounds are playing, creates a new sound.
 		**	@return The sound */
-		cSound& GetFreeSound( const T& id );
+		Sound& GetFreeSound( const T& id );
 
 		~tSoundManager();
 	private:
 		typedef struct sSound {
-			cSoundBuffer Buf;
-			std::vector<cSound> Snd;
+			SoundBuffer Buf;
+			std::vector<Sound> Snd;
 		} sSound;
 		std::map<T, sSound> tSounds;
 };
@@ -70,7 +70,7 @@ bool tSoundManager<T>::LoadFromPack( const T& id, cPack* Pack, const std::string
 		sSound * tSound = &tSounds[id];
 
 		if ( tSound->Buf.LoadFromPack( Pack, FilePackPath ) ) {
-			tSound->Snd.push_back( cSound( tSound->Buf ) );
+			tSound->Snd.push_back( Sound( tSound->Buf ) );
 			return true;
 		}
 	}
@@ -84,7 +84,7 @@ bool tSoundManager<T>::LoadFromFile( const T& id, const std::string& filepath ) 
 		sSound * tSound = &tSounds[id];
 
 		if ( tSound->Buf.LoadFromFile( filepath ) ) {
-			tSound->Snd.push_back( cSound( tSound->Buf ) );
+			tSound->Snd.push_back( Sound( tSound->Buf ) );
 			return true;
 		}
 	}
@@ -98,7 +98,7 @@ bool tSoundManager<T>::LoadFromMemory( const T& id, const char* Data, std::size_
 		sSound * tSound = &tSounds[id];
 
 		if ( tSound->Buf.LoadFromMemory( Data, SizeInBytes ) ) {
-			tSound->Snd.push_back( cSound( tSound->Buf ) );
+			tSound->Snd.push_back( Sound( tSound->Buf ) );
 			return true;
 		}
 	}
@@ -112,7 +112,7 @@ bool tSoundManager<T>::LoadFromSamples( const T& id, const Int16* Samples, std::
 		sSound * tSound = &tSounds[id];
 
 		if ( tSound->Buf.LoadFromSamples( Samples, SamplesCount, ChannelCount, SampleRate ) ) {
-			tSound->Snd.push_back( cSound( tSound->Buf ) );
+			tSound->Snd.push_back( Sound( tSound->Buf ) );
 			return true;
 		}
 	}
@@ -121,16 +121,16 @@ bool tSoundManager<T>::LoadFromSamples( const T& id, const Int16* Samples, std::
 }
 
 template <typename T>
-cSoundBuffer& tSoundManager<T>::GetBuffer( const T& id ) {
+SoundBuffer& tSoundManager<T>::GetBuffer( const T& id ) {
 	if ( tSounds.find( id ) != tSounds.end() )
 		return tSounds[id].Buf;
 
-	static cSoundBuffer soundBuf;
+	static SoundBuffer soundBuf;
 	return soundBuf;
 }
 
 template <typename T>
-cSound& tSoundManager<T>::GetFreeSound( const T& id ) {
+Sound& tSoundManager<T>::GetFreeSound( const T& id ) {
 	typename std::map<T, sSound>::iterator it = tSounds.find( id );
 
 	if ( it != tSounds.end() ) {
@@ -139,12 +139,12 @@ cSound& tSoundManager<T>::GetFreeSound( const T& id ) {
 
 		for ( Uint32 i = 0; i < tSize; i++ ) {
 			// If there is a free slot, use it.
-			if ( tSound->Snd[i].GetState() != cSound::Playing ) {
+			if ( tSound->Snd[i].GetState() != Sound::Playing ) {
 				return tSound->Snd[i];
 			}
 		}
 
-		tSound->Snd.push_back( cSound( tSound->Buf ) );
+		tSound->Snd.push_back( Sound( tSound->Buf ) );
 
 		return tSound->Snd[ tSound->Snd.size() - 1 ];
 	}
@@ -153,7 +153,7 @@ cSound& tSoundManager<T>::GetFreeSound( const T& id ) {
 }
 
 template <typename T>
-cSound& tSoundManager<T>::operator[] ( const T& id ) {
+Sound& tSoundManager<T>::operator[] ( const T& id ) {
 	if ( tSounds.find( id ) != tSounds.end() )
 		return tSounds[id].Snd[0];
 
@@ -170,14 +170,14 @@ void tSoundManager<T>::Play( const T& id ) {
 
 		for ( Uint32 i = 0; i < tSize; i++ ) {
 			// If there is a free slot, use it.
-			if ( tSound->Snd[i].GetState() != cSound::Playing ) {
+			if ( tSound->Snd[i].GetState() != Sound::Playing ) {
 				tSound->Snd[i].Play();
 				return;
 			}
 		}
 
 		// Otherwise create a new one and play it.
-		tSound->Snd.push_back( cSound( tSound->Buf ) );
+		tSound->Snd.push_back( Sound( tSound->Buf ) );
 		tSound->Snd[ tSize ].Play();
 	}
 }
@@ -202,7 +202,7 @@ bool tSoundManager<T>::Remove( const T& id ) {
 	return false;
 }
 
-typedef tSoundManager<std::string> cSoundManager;
+typedef tSoundManager<std::string> SoundManager;
 
 }}
 

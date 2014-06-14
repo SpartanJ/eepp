@@ -6,17 +6,17 @@
 
 namespace EE { namespace Audio {
 
-class cSound;
+class Sound;
 
 /** @brief Storage for audio samples defining a sound */
-class EE_API cSoundBuffer {
+class EE_API SoundBuffer {
 	public :
-		cSoundBuffer();
+		SoundBuffer();
 
-		~cSoundBuffer();
+		~SoundBuffer();
 
 		/** Copy constructor */
-		cSoundBuffer(const 	cSoundBuffer& Copy);
+		SoundBuffer(const 	SoundBuffer& Copy);
 
 		/** Load the Sound Buffer from a file */
 		bool LoadFromFile( const std::string& Filename );
@@ -49,23 +49,23 @@ class EE_API cSoundBuffer {
 		cTime GetDuration() const;
 
 		/** Assignment operator */
-		cSoundBuffer& operator =(const 	cSoundBuffer& Other);
+		SoundBuffer& operator =(const 	SoundBuffer& Other);
 	private :
-		friend class cSound;
+		friend class Sound;
 
 		unsigned int		mBuffer;   ///< OpenAL buffer identifier
 		std::vector<Int16>	mSamples;  ///< Samples buffer
 		cTime				mDuration; ///< Sound duration, in seconds
 
-		typedef std::set<cSound*> SoundList;
+		typedef std::set<Sound*> SoundList;
 		mutable SoundList	mSounds;
 
 		/** Update the internal buffer with the audio samples */
 		bool Update( unsigned int ChannelCount, unsigned int SampleRate );
 
-		void AttachSound( cSound* sound ) const;
+		void AttachSound( Sound* sound ) const;
 
-		void DetachSound( cSound* sound ) const;
+		void DetachSound( Sound* sound ) const;
 
 };
 

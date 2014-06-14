@@ -1,20 +1,20 @@
-#include <eepp/audio/csoundfiledefault.hpp>
+#include <eepp/audio/soundfiledefault.hpp>
 
 #ifdef EE_LIBSNDFILE_ENABLED
 
 namespace EE { namespace Audio {
 
-cSoundFileDefault::cSoundFileDefault() :
+SoundFileDefault::SoundFileDefault() :
 	mFile(NULL)
 {
 }
 
-cSoundFileDefault::~cSoundFileDefault() {
+SoundFileDefault::~SoundFileDefault() {
 	if ( NULL != mFile )
 		sf_close( mFile );
 }
 
-bool cSoundFileDefault::IsFileSupported( const std::string& Filename, bool Read ) {
+bool SoundFileDefault::IsFileSupported( const std::string& Filename, bool Read ) {
 	if ( Read ) {
 		// Open the sound file
 		SF_INFO fileInfos;
@@ -33,7 +33,7 @@ bool cSoundFileDefault::IsFileSupported( const std::string& Filename, bool Read 
 	}
 }
 
-bool cSoundFileDefault::IsFileSupported( const char* Data, std::size_t SizeInBytes ) {
+bool SoundFileDefault::IsFileSupported( const char* Data, std::size_t SizeInBytes ) {
 	// Define the I/O custom functions for reading from memory
 	MemoryIO tMemoryIO;
 	SF_VIRTUAL_IO io = tMemoryIO.Prepare( Data, SizeInBytes );
@@ -51,7 +51,7 @@ bool cSoundFileDefault::IsFileSupported( const char* Data, std::size_t SizeInByt
 	return false;
 }
 
-bool cSoundFileDefault::OpenRead( const std::string& Filename, std::size_t& SamplesCount, unsigned int& ChannelCount, unsigned int& SampleRate ) {
+bool SoundFileDefault::OpenRead( const std::string& Filename, std::size_t& SamplesCount, unsigned int& ChannelCount, unsigned int& SampleRate ) {
 	// If the file is already opened, first close it
 	if ( NULL != mFile )
 		sf_close( mFile );
@@ -78,7 +78,7 @@ bool cSoundFileDefault::OpenRead( const std::string& Filename, std::size_t& Samp
 	return true;
 }
 
-bool cSoundFileDefault::OpenRead( const char* Data, std::size_t SizeInBytes, std::size_t& SamplesCount, unsigned int& ChannelCount, unsigned int& SampleRate ) {
+bool SoundFileDefault::OpenRead( const char* Data, std::size_t SizeInBytes, std::size_t& SamplesCount, unsigned int& ChannelCount, unsigned int& SampleRate ) {
 	// If the file is already opened, first close it
 	if ( NULL != mFile )
 		sf_close( mFile );
@@ -108,7 +108,7 @@ bool cSoundFileDefault::OpenRead( const char* Data, std::size_t SizeInBytes, std
     return true;
 }
 
-bool cSoundFileDefault::OpenWrite( const std::string& Filename, unsigned int ChannelCount, unsigned int SampleRate ) {
+bool SoundFileDefault::OpenWrite( const std::string& Filename, unsigned int ChannelCount, unsigned int SampleRate ) {
 	// If the file is already opened, first close it
 	if ( NULL != mFile )
 		sf_close( mFile );
@@ -138,26 +138,26 @@ bool cSoundFileDefault::OpenWrite( const std::string& Filename, unsigned int Cha
 	return true;
 }
 
-std::size_t cSoundFileDefault::Read( Int16 * Data, std::size_t SamplesCount ) {
+std::size_t SoundFileDefault::Read( Int16 * Data, std::size_t SamplesCount ) {
 	if ( NULL != mFile && Data && SamplesCount )
 		return static_cast<std::size_t>( sf_read_short( mFile, Data, SamplesCount ) );
 	else
 		return 0;
 }
 
-void cSoundFileDefault::Write( const Int16 * Data, std::size_t SamplesCount ) {
+void SoundFileDefault::Write( const Int16 * Data, std::size_t SamplesCount ) {
 	if ( NULL != mFile && Data && SamplesCount )
 		sf_write_short( mFile, Data, SamplesCount );
 }
 
-void cSoundFileDefault::Seek( cTime timeOffset ) {
+void SoundFileDefault::Seek( cTime timeOffset ) {
 	if ( NULL != mFile ) {
 		sf_count_t frameOffset = static_cast<sf_count_t>( timeOffset.AsSeconds() * mSampleRate / 1000 );
 		sf_seek( mFile, frameOffset, SEEK_SET );
 	}
 }
 
-int cSoundFileDefault::GetFormatFromFilename(const std::string& Filename) {
+int SoundFileDefault::GetFormatFromFilename(const std::string& Filename) {
 	// Extract the extension
 	std::string ext = "wav";
 	std::string::size_type Pos = Filename.find_last_of(".");
@@ -194,14 +194,14 @@ int cSoundFileDefault::GetFormatFromFilename(const std::string& Filename) {
 	return -1;
 }
 
-SF_VIRTUAL_IO cSoundFileDefault::MemoryIO::Prepare( const void * data, std::size_t sizeInBytes ) {
+SF_VIRTUAL_IO SoundFileDefault::MemoryIO::Prepare( const void * data, std::size_t sizeInBytes ) {
     // Setup the I/O functions
     SF_VIRTUAL_IO io;
-    io.get_filelen = &cSoundFileDefault::MemoryIO::GetLength;
-    io.read        = &cSoundFileDefault::MemoryIO::Read;
-    io.seek        = &cSoundFileDefault::MemoryIO::Seek;
-    io.tell        = &cSoundFileDefault::MemoryIO::Tell;
-    io.write       = &cSoundFileDefault::MemoryIO::Write;
+    io.get_filelen = &SoundFileDefault::MemoryIO::GetLength;
+    io.read        = &SoundFileDefault::MemoryIO::Read;
+    io.seek        = &SoundFileDefault::MemoryIO::Seek;
+    io.tell        = &SoundFileDefault::MemoryIO::Tell;
+    io.write       = &SoundFileDefault::MemoryIO::Write;
 
     // Initialize the memory data
     mDataStart		= static_cast<const char*>(data);
@@ -211,13 +211,13 @@ SF_VIRTUAL_IO cSoundFileDefault::MemoryIO::Prepare( const void * data, std::size
     return io;
 }
 
-sf_count_t cSoundFileDefault::MemoryIO::GetLength( void* UserData ) {
+sf_count_t SoundFileDefault::MemoryIO::GetLength( void* UserData ) {
 	MemoryIO * self = static_cast<MemoryIO*>(UserData);
 
 	return self->mTotalSize;
 }
 
-sf_count_t cSoundFileDefault::MemoryIO::Read( void* Ptr, sf_count_t Count, void* UserData ) {
+sf_count_t SoundFileDefault::MemoryIO::Read( void* Ptr, sf_count_t Count, void* UserData ) {
 	MemoryIO * self = static_cast<MemoryIO*>(UserData);
 
 	sf_count_t Position = self->mDataPtr - self->mDataStart;
@@ -232,7 +232,7 @@ sf_count_t cSoundFileDefault::MemoryIO::Read( void* Ptr, sf_count_t Count, void*
 	return Count;
 }
 
-sf_count_t cSoundFileDefault::MemoryIO::Seek( sf_count_t Offset, int Whence, void* UserData ) {
+sf_count_t SoundFileDefault::MemoryIO::Seek( sf_count_t Offset, int Whence, void* UserData ) {
 	MemoryIO * self = static_cast<MemoryIO*>(UserData);
 
 	sf_count_t Position = 0;
@@ -262,13 +262,13 @@ sf_count_t cSoundFileDefault::MemoryIO::Seek( sf_count_t Offset, int Whence, voi
 	return Position;
 }
 
-sf_count_t cSoundFileDefault::MemoryIO::Tell( void* UserData ) {
+sf_count_t SoundFileDefault::MemoryIO::Tell( void* UserData ) {
 	MemoryIO * self = static_cast<MemoryIO*>(UserData);
 
 	return self->mDataPtr - self->mDataStart;
 }
 
-sf_count_t cSoundFileDefault::MemoryIO::Write( const void*, sf_count_t, void* ) {
+sf_count_t SoundFileDefault::MemoryIO::Write( const void*, sf_count_t, void* ) {
 	return 0;
 }
 

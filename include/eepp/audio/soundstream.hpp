@@ -2,21 +2,21 @@
 #define EE_AUDIOCSOUNDSTREAM_H
 
 #include <eepp/audio/base.hpp>
-#include <eepp/audio/csound.hpp>
+#include <eepp/audio/sound.hpp>
 
 namespace EE { namespace Audio {
 
 /** @brief Abstract base class for streamed audio sources */
-class EE_API cSoundStream : private cThread, private cSound {
+class EE_API SoundStream : private cThread, private Sound {
 	public:
-		using cSound::Pause;
-		using cSound::Pitch;
-		using cSound::Volume;
-		using cSound::Position;
-		using cSound::MinDistance;
-		using cSound::Attenuation;
-		using cSound::SetRelativeToListener;
-		using cSound::IsRelativeToListener;
+		using Sound::Pause;
+		using Sound::Pitch;
+		using Sound::Volume;
+		using Sound::Position;
+		using Sound::MinDistance;
+		using Sound::Attenuation;
+		using Sound::SetRelativeToListener;
+		using Sound::IsRelativeToListener;
 
 		/** @brief Structure defining a chunk of audio data to stream */
 		struct Chunk {
@@ -24,7 +24,7 @@ class EE_API cSoundStream : private cThread, private cSound {
 			std::size_t  SamplesCount; ///< Number of samples pointed by Samples
 		};
 
-		virtual ~cSoundStream();
+		virtual ~SoundStream();
 
 		/** \brief Start or resume playing the audio stream
 		**	This function starts the stream if it was stopped, resumes
@@ -86,7 +86,7 @@ class EE_API cSoundStream : private cThread, private cSound {
 		*/
 		bool Loop() const;
 	protected:
-		cSoundStream();
+		SoundStream();
 
 		void Initialize(unsigned int ChannelCount, unsigned int SampleRate);
 	private :

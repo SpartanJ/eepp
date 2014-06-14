@@ -91,7 +91,7 @@ void cEETest::Init() {
 		CreateShaders();
 
 		if ( mMusEnabled ) {
-			Mus = eeNew( cMusic, () );
+			Mus = eeNew( Music, () );
 
 			if ( Mus->OpenFromFile( MyPath + "sounds/music.ogg" ) ) {
 				Mus->Loop( true );
@@ -818,7 +818,7 @@ void cEETest::LoadTextures() {
 	}
 	#endif
 
-	mResLoad.Add( eeNew( cSoundLoader, ( &SndMng, "mysound", MyPath + "sounds/sound.ogg" ) ) );
+	mResLoad.Add( eeNew( SoundLoader, ( &SndMng, "mysound", MyPath + "sounds/sound.ogg" ) ) );
 
 	mResLoad.Load( cb::Make1( this, &cEETest::OnTextureLoaded ) );
 
@@ -1284,7 +1284,7 @@ void cEETest::Input() {
 
 		mWindow->FrameRateLimit( 10 );
 
-		if ( mMusEnabled && Mus->State() == cSound::Playing )
+		if ( mMusEnabled && Mus->State() == Sound::Playing )
 			Mus->Pause();
 
 	} else {
@@ -1300,7 +1300,7 @@ void cEETest::Input() {
 
 		mWindow->FrameRateLimit( mLastFPSLimit );
 
-		if ( mMusEnabled && Mus->State() == cSound::Paused )
+		if ( mMusEnabled && Mus->State() == Sound::Paused )
 			Mus->Play();
 	}
 

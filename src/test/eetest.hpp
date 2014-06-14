@@ -121,8 +121,8 @@ class cEETest : private cThread {
 		bool iL1, iL2;
 		Float HWidth, HHeight;
 
-		cMusic * Mus;
-		cSoundManager SndMng;
+		Music * Mus;
+		SoundManager SndMng;
 
 		bool DrawBack;
 

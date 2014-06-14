@@ -6,15 +6,15 @@
 #ifdef EE_LIBSNDFILE_ENABLED
 
 #include <sndfile.h>
-#include <eepp/audio/csoundfile.hpp>
+#include <eepp/audio/soundfile.hpp>
 
 namespace EE { namespace Audio {
 
-class EE_API cSoundFileDefault : public cSoundFile {
+class EE_API SoundFileDefault : public SoundFile {
 	public :
-		cSoundFileDefault();
+		SoundFileDefault();
 
-		~cSoundFileDefault();
+		~SoundFileDefault();
 
 		/** Check if a given file is supported by this loader. */
 		static bool IsFileSupported(const std::string& Filename, bool Read);

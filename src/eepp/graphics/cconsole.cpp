@@ -1,7 +1,7 @@
 #include <eepp/graphics/cconsole.hpp>
 #include <eepp/window/cengine.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
-#include <eepp/audio/caudiolistener.hpp>
+#include <eepp/audio/audiolistener.hpp>
 #include <eepp/window/cinput.hpp>
 #include <eepp/window/ccursormanager.hpp>
 #include <eepp/window/cwindow.hpp>
@@ -728,7 +728,7 @@ void cConsole::CmdSetVolume( const std::vector < String >& params ) {
 		bool Res = String::FromString<Float>( tFloat, params[1] );
 
 		if ( Res && ( tFloat >= 0.0f && tFloat <= 100.0f ) ) {
-			EE::Audio::cAudioListener::GlobalVolume( tFloat );
+			EE::Audio::AudioListener::GlobalVolume( tFloat );
 			PrivPushText( "setvolume " + String::ToStr( tFloat ) );
 			return;
 		}

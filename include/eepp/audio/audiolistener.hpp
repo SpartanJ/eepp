@@ -6,7 +6,7 @@
 namespace EE { namespace Audio {
 
 /** @brief Listener is a global interface for defining the audio listener properties. */
-class EE_API cAudioListener {
+class EE_API AudioListener {
 	public:
 		/** Change the global volume of all the sounds. ( default 100  )
 		* @param Volume New global volume, in the range [0, 100]

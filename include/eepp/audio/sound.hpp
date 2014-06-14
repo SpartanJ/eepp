@@ -2,13 +2,13 @@
 #define EE_AUDIOCSOUND_H
 
 #include <eepp/audio/base.hpp>
-#include <eepp/audio/caudiolistener.hpp>
-#include <eepp/audio/csoundbuffer.hpp>
+#include <eepp/audio/audiolistener.hpp>
+#include <eepp/audio/soundbuffer.hpp>
 
 namespace EE { namespace Audio {
 
 /** @brief Regular sound that can be played in the audio environment */
-class EE_API cSound {
+class EE_API Sound {
 	public :
 		/** @brief The state of the sound */
 		enum Status {
@@ -17,15 +17,15 @@ class EE_API cSound {
 			Playing
 		};
 
-		cSound();
+		Sound();
 
-		~cSound();
+		~Sound();
 
 		/** Construct the sound with a buffer. */
-		cSound( const cSoundBuffer& Buffer, const bool& Loop = false, const float& Pitch = 1.f, const float& Volume = 100.f, const eeVector3ff& Position = eeVector3ff(0, 0, 0) );
+		Sound( const SoundBuffer& Buffer, const bool& Loop = false, const float& Pitch = 1.f, const float& Volume = 100.f, const eeVector3ff& Position = eeVector3ff(0, 0, 0) );
 
 		/** Copy constructor */
-		cSound(const cSound& Copy);
+		Sound(const Sound& Copy);
 
 		/** Play the Sound */
 		void Play();
@@ -37,7 +37,7 @@ class EE_API cSound {
 		void Stop();
 
 		/** Set the Sound Source Buffer */
-		void Buffer( const cSoundBuffer& Buffer );
+		void Buffer( const SoundBuffer& Buffer );
 
 		/** Set the Sound Loop State */
 		void Loop( const bool& Loop );
@@ -61,7 +61,7 @@ class EE_API cSound {
 		void Attenuation( const float& Attenuation );
 
 		/** Get the Sound Source Buffer */
-		const cSoundBuffer* Buffer() const;
+		const SoundBuffer* Buffer() const;
 
 		/** Get the Sound Loop State */
 		bool Loop() const;
@@ -96,7 +96,7 @@ class EE_API cSound {
 		virtual void PlayingOffset( const cTime &TimeOffset );
 
 		/** Assignment operator */
-		cSound& operator =(const cSound& Other);
+		Sound& operator =(const Sound& Other);
 
 		/** Make the sound's position relative to the listener's position, or absolute. The default value is false (absolute)
 		* @param Relative : True to set the position relative, false to set it absolute
@@ -110,15 +110,15 @@ class EE_API cSound {
 
 		/** \brief Reset the internal buffer of the sound
 		* This function is for internal use only, you don't have
-		* to use it. It is called by the cSoundBuffer that
+		* to use it. It is called by the SoundBuffer that
 		* this sound uses, when it is destroyed in order to prevent
 		* the sound from using a dead buffer. */
 		void ResetBuffer();
 	private :
-		friend class cSoundStream;
+		friend class SoundStream;
 
 		unsigned int			mSource; 	///< OpenAL source identifier
-		const cSoundBuffer *	mBuffer; 	///< Sound buffer bound to the source
+		const SoundBuffer *	mBuffer; 	///< Sound buffer bound to the source
 };
 
 }}

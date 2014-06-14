@@ -2,19 +2,19 @@
 #define EE_AUDIOCMUSIC_H
 
 #include <eepp/audio/base.hpp>
-#include <eepp/audio/csoundstream.hpp>
+#include <eepp/audio/soundstream.hpp>
 
 namespace EE { namespace Audio {
 
-class cSoundFile;
+class SoundFile;
 
 /** @brief Streamed music played from an audio file */
-class EE_API cMusic : public cSoundStream {
+class EE_API Music : public SoundStream {
 	public :
 		/** Construct the music with a buffer size */
-		cMusic( std::size_t BufferSize = 48000 );
+		Music( std::size_t BufferSize = 48000 );
 
-		~cMusic();
+		~Music();
 
 		/** Open a Music file from a path */
 		bool OpenFromFile( const std::string& Filename );
@@ -34,7 +34,7 @@ class EE_API cMusic : public cSoundStream {
 
 		virtual void OnSeek( cTime timeOffset);
 
-		cSoundFile * 		mFile; 		///< Sound file
+		SoundFile * 		mFile; 		///< Sound file
 		float				mDuration; 	///< Music duration, in seconds
 		std::vector<Int16>	mSamples; 	///< Temporary buffer of samples
 		SafeDataPointer		mData;
