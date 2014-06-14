@@ -27,11 +27,11 @@ class EE_API cLightManager {
 
 		Uint32 Count();
 
-		const eeColorA * GetTileColor( const eeVector2i& TilePos );
+		const ColorA * GetTileColor( const eeVector2i& TilePos );
 
-		const eeColorA * GetTileColor( const eeVector2i& TilePos, const Uint32& Vertex );
+		const ColorA * GetTileColor( const eeVector2i& TilePos, const Uint32& Vertex );
 
-		eeColorA GetColorFromPos( const eeVector2f& Pos );
+		ColorA GetColorFromPos( const eeVector2f& Pos );
 
 		const bool& IsByVertex() const;
 
@@ -41,7 +41,7 @@ class EE_API cLightManager {
 	protected:
 		cMap *				mMap;
 		Int32				mNumVertex;
-		eeColorA****		mTileColors;
+		ColorA****		mTileColors;
 		LightsList			mLights;
 		bool				mIsByVertex;
 

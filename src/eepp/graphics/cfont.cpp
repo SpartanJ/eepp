@@ -32,19 +32,19 @@ void cFont::SetText( const String& Text ) {
 	mTextCache.Text( Text );
 }
 
-const eeColorA& cFont::Color() const {
+const ColorA& cFont::Color() const {
 	return mTextCache.Color();
 }
 
-void cFont::Color(const eeColorA& Color) {
+void cFont::Color(const ColorA& Color) {
 	mTextCache.Color( Color );
 }
 
-const eeColorA& cFont::ShadowColor() const {
+const ColorA& cFont::ShadowColor() const {
 	return mTextCache.ShadowColor();
 }
 
-void cFont::ShadowColor(const eeColorA& Color) {
+void cFont::ShadowColor(const ColorA& Color) {
 	mTextCache.ShadowColor( Color );
 }
 
@@ -116,12 +116,12 @@ void cFont::Draw( cTextCache& TextCache, const Float& X, const Float& Y, const U
 
 		f &= ~FONT_DRAW_SHADOW;
 
-		eeColorA Col = TextCache.Color();
+		ColorA Col = TextCache.Color();
 
 		SetText( TextCache.Text() );
 
 		if ( Col.A() != 255 ) {
-			eeColorA ShadowColor = TextCache.ShadowColor();
+			ColorA ShadowColor = TextCache.ShadowColor();
 
 			ShadowColor.Alpha = (Uint8)( (Float)ShadowColor.Alpha * ( (Float)Col.A() / (Float)255 ) );
 
@@ -156,7 +156,7 @@ void cFont::Draw( cTextCache& TextCache, const Float& X, const Float& Y, const U
 	}
 
 	std::vector<eeVertexCoords>& RenderCoords = TextCache.VertextCoords();
-	std::vector<eeColorA>& Colors = TextCache.Colors();
+	std::vector<ColorA>& Colors = TextCache.Colors();
 
 	if ( !TextCache.CachedCoords() ) {
 		if ( !( Flags & FONT_DRAW_VERTICAL ) ) {

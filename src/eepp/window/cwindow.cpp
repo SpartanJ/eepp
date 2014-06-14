@@ -14,7 +14,7 @@
 #include <eepp/version.hpp>
 
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
-
+/*
 #ifdef EE_GLEW_AVAILABLE
 	#if EE_PLATFORM == EE_PLATFORM_WIN
 		#include <eepp/helper/glew/wglew.h>
@@ -25,7 +25,7 @@
 		#include <AGL/agl.h>
 	#endif
 #endif
-
+*/
 #ifdef EE_GLES1_LATE_INCLUDE
 	#if EE_PLATFORM == EE_PLATFORM_IOS
 		#include <OpenGLES/ES1/gl.h>
@@ -182,12 +182,12 @@ const WindowInfo * cWindow::GetWindowInfo() const {
 	return &mWindow;
 }
 
-void cWindow::BackColor( const eeColor& Color ) {
+void cWindow::BackColor( const RGB& Color ) {
 	mWindow.BackgroundColor = Color;
 	GLi->ClearColor( static_cast<Float>( mWindow.BackgroundColor.R() ) / 255.0f, static_cast<Float>( mWindow.BackgroundColor.G() ) / 255.0f, static_cast<Float>( mWindow.BackgroundColor.B() ) / 255.0f, 255.0f );
 }
 
-const eeColor& cWindow::BackColor() const {
+const RGB& cWindow::BackColor() const {
 	return mWindow.BackgroundColor;
 }
 
@@ -431,7 +431,7 @@ eeWindowContex cWindow::GetContext() const {
 
 void cWindow::GetMainContext() {
 #ifdef EE_GLEW_AVAILABLE
-
+/*
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	mWindow.Context = wglGetCurrentContext();
 #elif defined( EE_X11_PLATFORM )
@@ -439,7 +439,7 @@ void cWindow::GetMainContext() {
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
 	mWindow.Context = aglGetCurrentContext();
 #endif
-
+*/
 #endif
 }
 

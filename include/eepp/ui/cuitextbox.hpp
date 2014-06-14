@@ -31,9 +31,9 @@ class EE_API cUITextBox : public cUIComplexControl {
 				inline ~CreateParams() {}
 
 				cFont * 	Font;
-				eeColorA 	FontColor;
-				eeColorA 	FontShadowColor;
-				eeColorA	FontSelectionBackColor;
+				ColorA 	FontColor;
+				ColorA 	FontShadowColor;
+				ColorA	FontSelectionBackColor;
 		};
 
 		cUITextBox( const cUITextBox::CreateParams& Params );
@@ -56,17 +56,17 @@ class EE_API cUITextBox : public cUIComplexControl {
 
 		virtual void Text( const String& text );
 
-		const eeColorA& Color() const;
+		const ColorA& Color() const;
 
-		void Color( const eeColorA& color );
+		void Color( const ColorA& color );
 
-		const eeColorA& ShadowColor() const;
+		const ColorA& ShadowColor() const;
 
-		void ShadowColor( const eeColorA& color );
+		void ShadowColor( const ColorA& color );
 
-		const eeColorA& SelectionBackColor() const;
+		const ColorA& SelectionBackColor() const;
 
-		void SelectionBackColor( const eeColorA& color );
+		void SelectionBackColor( const ColorA& color );
 
 		virtual void OnTextChanged();
 
@@ -94,9 +94,9 @@ class EE_API cUITextBox : public cUIComplexControl {
 	protected:
 		cTextCache *	mTextCache;
 		String			mString;
-		eeColorA 		mFontColor;
-		eeColorA 		mFontShadowColor;
-		eeColorA		mFontSelectionBackColor;
+		ColorA 		mFontColor;
+		ColorA 		mFontShadowColor;
+		ColorA		mFontSelectionBackColor;
 		eeVector2f 		mAlignOffset;
 		eeRecti			mPadding;
 		Int32			mSelCurInit;

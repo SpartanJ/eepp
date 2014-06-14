@@ -2,23 +2,14 @@
 
 #ifdef EE_BACKEND_SDL2
 
-#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_IOS
-	#if !defined( EE_COMPILER_MSVC ) && EE_PLATFORM != EE_PLATFORM_IOS && !defined( EE_SDL2_FROM_ROOTPATH )
-	#include <SDL2/SDL_syswm.h>
-	#else
-	#include <SDL_syswm.h>
-	#endif
-	#undef CreateWindow
-#endif
-
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
-
 #include <eepp/window/cengine.hpp>
 #include <eepp/window/platform/platformimpl.hpp>
 #include <eepp/window/backend/SDL2/cwindowsdl2.hpp>
 #include <eepp/window/backend/SDL2/cclipboardsdl2.hpp>
 #include <eepp/window/backend/SDL2/cinputsdl2.hpp>
 #include <eepp/window/backend/SDL2/ccursormanagersdl2.hpp>
+#include <eepp/window/backend/SDL2/wminfo.hpp>
 
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
 #include <eepp/graphics/cshaderprogrammanager.hpp>
@@ -74,11 +65,8 @@ cWindowSDL::cWindowSDL( WindowSettings Settings, ContextSettings Context ) :
 	cWindow( Settings, Context, eeNew( cClipboardSDL, ( this ) ), eeNew( cInputSDL, ( this ) ), eeNew( cCursorManagerSDL, ( this ) ) ),
 	mSDLWindow( NULL ),
 	mGLContext( NULL ),
-	mGLContextThread( NULL )
-#ifdef EE_USE_WMINFO
-	,
-	mWMinfo( eeNew( SDL_SysWMinfo, () ) )
-#endif
+	mGLContextThread( NULL ),
+	mWMinfo( NULL )
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	,
 	mZip( eeNew( Zip, () ) )
@@ -312,13 +300,13 @@ std::string cWindowSDL::GetVersion() {
 
 void cWindowSDL::CreatePlatform() {
 	eeSAFE_DELETE( mPlatform );
+
 #ifdef EE_USE_WMINFO
-	SDL_VERSION( &mWMinfo->version );
-	SDL_GetWindowWMInfo ( mSDLWindow, mWMinfo );
+	mWMinfo = eeNew( WMInfo, ( mSDLWindow ) );
 #endif
 
 #if defined( EE_X11_PLATFORM )
-	mPlatform = eeNew( Platform::cX11Impl, ( this, mWMinfo->info.x11.display, mWMinfo->info.x11.window, mWMinfo->info.x11.window, NULL, NULL ) );
+	mPlatform = eeNew( Platform::cX11Impl, ( this, mWMinfo->GetWindowHandler(), mWMinfo->GetWindow(), mWMinfo->GetWindow(), NULL, NULL ) );
 #elif EE_PLATFORM == EE_PLATFORM_WIN
 	mPlatform = eeNew( Platform::cWinImpl, ( this, GetWindowHandler() ) );
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
@@ -504,15 +492,11 @@ void cWindowSDL::SetGamma( Float Red, Float Green, Float Blue ) {
 }
 
 eeWindowHandle	cWindowSDL::GetWindowHandler() {
-#if EE_PLATFORM == EE_PLATFORM_WIN
-	return mWMinfo->info.win.window;
-#elif defined( EE_X11_PLATFORM )
-	return mWMinfo->info.x11.display;
-#elif EE_PLATFORM == EE_PLATFORM_MACOSX
-	return mWMinfo->info.cocoa.window;
-#else
+	if ( NULL != mWMinfo ) {
+		return mWMinfo->GetWindowHandler();
+	}
+
 	return 0;
-#endif
 }
 
 bool cWindowSDL::Icon( const std::string& Path ) {

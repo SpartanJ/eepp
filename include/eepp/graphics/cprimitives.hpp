@@ -42,7 +42,7 @@ class EE_API cPrimitives {
 		* @param Color2 Second Point Color
 		* @param Color3 Third Point Color
 		*/
-		void DrawTriangle( const eeTriangle2f& t, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3 );
+		void DrawTriangle( const eeTriangle2f& t, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3 );
 
 		/** Draw a rectangle on the screen
 		* @param R The Rectangle eeRectf
@@ -68,7 +68,7 @@ class EE_API cPrimitives {
 		* @param Angle Rectangle Angle
 		* @param Scale Rectangle Scale ( default 1.0f )
 		*/
-		void DrawRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const Float& Angle = 0, const eeVector2f& Scale = eeVector2f::One );
+		void DrawRectangle( const eeRectf& R, const ColorA& TopLeft, const ColorA& BottomLeft, const ColorA& BottomRight, const ColorA& TopRight, const Float& Angle = 0, const eeVector2f& Scale = eeVector2f::One );
 
 		/** Draw a rounded rectangle on the screen setting per vertex color
 		* @param R The Rectangle eeRectf
@@ -80,7 +80,7 @@ class EE_API cPrimitives {
 		* @param Scale Rectangle Scale ( default 1.0f )
 		* @param Corners Number of vertices per corner ( how rounded is each corner )
 		*/
-		void DrawRoundedRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const Float& Angle = 0, const eeVector2f& Scale = eeVector2f::One, const unsigned int& Corners = 8 );
+		void DrawRoundedRectangle( const eeRectf& R, const ColorA& TopLeft, const ColorA& BottomLeft, const ColorA& BottomRight, const ColorA& TopRight, const Float& Angle = 0, const eeVector2f& Scale = eeVector2f::One, const unsigned int& Corners = 8 );
 
 		/** Draw a four edges polygon on screen
 		* @param q The Quad
@@ -98,7 +98,7 @@ class EE_API cPrimitives {
 		* @param OffsetX X offset for the quad
 		* @param OffsetY Y offset for the quad
 		*/
-		void DrawQuad( const eeQuad2f& q, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const eeColorA& Color4, const Float& OffsetX = 0, const Float& OffsetY = 0 );
+		void DrawQuad( const eeQuad2f& q, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const ColorA& Color4, const Float& OffsetX = 0, const Float& OffsetY = 0 );
 
 		/** Draw a polygon on screen
 		* @param p The Polygon
@@ -106,7 +106,7 @@ class EE_API cPrimitives {
 		void DrawPolygon( const eePolygon2f& p );
 
 		/** Set the current color for drawing primitives */
-		void SetColor( const eeColorA& Color );
+		void SetColor( const ColorA& Color );
 
 		/** Forcing the draw, will force the batch renderer to draw the batched vertexs immediately ( active by default ). */
 		void ForceDraw( const bool& force );
@@ -134,7 +134,7 @@ class EE_API cPrimitives {
 		/** @return The line with to draw primitives */
 		const Float& LineWidth() const;
 	private:
-		eeColorA				mColor;
+		ColorA				mColor;
 		EE_FILL_MODE			mFillMode;
 		EE_BLEND_MODE			mBlendMode;
 		Float					mLineWidth;

@@ -11,6 +11,7 @@
 
 #include <eepp/window/platform/x11/ccursorx11.hpp>
 #include <eepp/window/platform/x11/cx11impl.hpp>
+#include <eepp/window/cwindow.hpp>
 
 namespace EE { namespace Window { namespace Platform {
 
@@ -55,7 +56,7 @@ void cCursorX11::Create() {
 	c = 0;
 	for ( iy = 0; iy < mImage->Height(); iy++ ) {
 		for ( ix = 0; ix < mImage->Width(); ix++ ) {
-			eeColorA C = mImage->GetPixel( ix, iy );
+			ColorA C = mImage->GetPixel( ix, iy );
 
 			image->pixels[c++] = ( C.A() << 24 ) | ( C.R() << 16 ) | ( C.G() <<8 ) | ( C.B() );
 		}

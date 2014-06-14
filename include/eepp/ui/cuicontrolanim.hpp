@@ -82,7 +82,7 @@ class EE_API cUIControlAnim : public cUIDragable {
 
 		virtual void BorderDraw();
 
-		eeColorA GetColor( const eeColorA& Col );
+		ColorA GetColor( const ColorA& Col );
 
 		virtual void UpdateQuad();
 

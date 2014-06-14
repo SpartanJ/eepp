@@ -520,7 +520,7 @@ void cTexturePacker::Save( const std::string& Filepath, const EE_SAVE_TYPE& Form
 
 	cImage Img( (Uint32)mWidth, (Uint32)mHeight, (Uint32)4 );
 
-	Img.FillWithColor( eeColorA(0,0,0,0) );
+	Img.FillWithColor( ColorA(0,0,0,0) );
 
 	cTexturePackerTex * t = NULL;
 	int w, h, c;

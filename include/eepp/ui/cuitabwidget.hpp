@@ -47,10 +47,10 @@ class EE_API cUITabWidget : public cUIComplexControl {
 				inline ~CreateParams() {}
 
 				cFont * 	Font;
-				eeColorA 	FontColor;
-				eeColorA	FontShadowColor;
-				eeColorA 	FontOverColor;
-				eeColorA	FontSelectedColor;
+				ColorA 	FontColor;
+				ColorA	FontShadowColor;
+				ColorA 	FontOverColor;
+				ColorA	FontSelectedColor;
 				Int32		TabSeparation;
 				Uint32		MaxTextLength;
 				Uint32		TabWidgetHeight;
@@ -60,7 +60,7 @@ class EE_API cUITabWidget : public cUIComplexControl {
 				bool		TabsClosable;
 				bool		SpecialBorderTabs; //! Indicates if the periferical tabs ( the left and right border tab ) are different from the central tabs.
 				bool		DrawLineBelowTabs;
-				eeColorA	LineBelowTabsColor;
+				ColorA	LineBelowTabsColor;
 				Int32		LineBewowTabsYOffset;
 
 		};
@@ -112,10 +112,10 @@ class EE_API cUITabWidget : public cUIComplexControl {
 		cUIComplexControl *		mCtrlContainer;
 		cUIComplexControl *		mTabContainer;
 		cFont *					mFont;
-		eeColorA				mFontColor;
-		eeColorA				mFontShadowColor;
-		eeColorA				mFontOverColor;
-		eeColorA				mFontSelectedColor;
+		ColorA				mFontColor;
+		ColorA				mFontShadowColor;
+		ColorA				mFontOverColor;
+		ColorA				mFontSelectedColor;
 		Int32					mTabSeparation;
 		Uint32					mMaxTextLength;
 		Uint32					mTabWidgetHeight;
@@ -124,7 +124,7 @@ class EE_API cUITabWidget : public cUIComplexControl {
 		bool					mTabsClosable;
 		bool					mSpecialBorderTabs;
 		bool					mDrawLineBelowTabs;
-		eeColorA				mLineBelowTabsColor;
+		ColorA				mLineBelowTabsColor;
 		Int32					mLineBewowTabsYOffset;
 
 		std::deque<cUITab*>		mTabs;

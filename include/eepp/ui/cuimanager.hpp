@@ -61,17 +61,17 @@ class EE_API cUIManager {
 
 		bool HighlightFocus() const;
 
-		void HighlightFocusColor( const eeColorA& Color );
+		void HighlightFocusColor( const ColorA& Color );
 
-		const eeColorA& HighlightFocusColor() const;
+		const ColorA& HighlightFocusColor() const;
 
 		void HighlightOver( bool Highlight );
 
 		bool HighlightOver() const;
 
-		void HighlightOverColor( const eeColorA& Color );
+		void HighlightOverColor( const ColorA& Color );
 
-		const eeColorA& HighlightOverColor() const;
+		const ColorA& HighlightOverColor() const;
 
 		void SendMouseClick( cUIControl * ToCtrl, const eeVector2i& Pos, const Uint32 Flags );
 
@@ -120,8 +120,8 @@ class EE_API cUIManager {
 		Uint32				mResizeCb;
 
 		Uint32				mFlags;
-		eeColorA			mHighlightFocusColor;
-		eeColorA			mHighlightOverColor;
+		ColorA			mHighlightFocusColor;
+		ColorA			mHighlightOverColor;
 		eeVector2i			mMouseDownPos;
 
 		bool				mInit;

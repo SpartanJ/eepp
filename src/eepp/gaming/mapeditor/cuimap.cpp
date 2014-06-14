@@ -29,8 +29,8 @@ cUIMap::cUIMap( const cUIComplexControl::CreateParams& Params, cUITheme * Theme,
 		mMap = eeNew( cMap, () );
 	}
 
-	mMap->BackColor( eeColorA( 100, 100, 100, 100 ) );
-	mMap->GridLinesColor( eeColorA( 150, 150, 150, 150 ) );
+	mMap->BackColor( ColorA( 100, 100, 100, 100 ) );
+	mMap->GridLinesColor( ColorA( 150, 150, 150, 150 ) );
 
 	mMap->SetDrawCallback( cb::Make0( this, &cUIMap::MapDraw ) );
 
@@ -366,7 +366,7 @@ void cUIMap::AddLight( cLight * Light ) {
 void cUIMap::MapDraw() {
 	if ( EDITING_LIGHT == mEditingMode ) {
 		if ( NULL != mSelLight ) {
-			mP.SetColor( eeColorA( 255, 0, 0, (Uint8)mAlpha ) );
+			mP.SetColor( ColorA( 255, 0, 0, (Uint8)mAlpha ) );
 
 			eeVector2f Pos( mSelLight->GetAABB().Left, mSelLight->GetAABB().Top );
 			eeAABB AB( mSelLight->GetAABB() );
@@ -380,11 +380,11 @@ void cUIMap::MapDraw() {
 			{
 				if ( mObjRECTEditing ) {
 					mP.FillMode( DRAW_FILL );
-					mP.SetColor( eeColorA( 100, 100, 100, 20 ) );
+					mP.SetColor( ColorA( 100, 100, 100, 20 ) );
 					mP.DrawRectangle( mObjRECT );
 
 					mP.FillMode( DRAW_LINE );
-					mP.SetColor( eeColorA( 255, 0, 0, 200 ) );
+					mP.SetColor( ColorA( 255, 0, 0, 200 ) );
 					mP.DrawRectangle( mObjRECT );
 				}
 
@@ -393,22 +393,22 @@ void cUIMap::MapDraw() {
 			case INSERT_POLYGON:
 			{
 				mP.FillMode( DRAW_FILL );
-				mP.SetColor( eeColorA( 50, 50, 50, 50 ) );
+				mP.SetColor( ColorA( 50, 50, 50, 50 ) );
 				mP.DrawPolygon( mObjPoly );
 
 				mP.FillMode( DRAW_LINE );
-				mP.SetColor( eeColorA( 255, 0, 0, 200 ) );
+				mP.SetColor( ColorA( 255, 0, 0, 200 ) );
 				mP.DrawPolygon( mObjPoly );
 
 				eePolygon2f polyN( mObjPoly );
 				polyN.PushBack( GetMouseMapPos() );
 
 				mP.FillMode( DRAW_FILL );
-				mP.SetColor( eeColorA( 100, 100, 100, 100 ) );
+				mP.SetColor( ColorA( 100, 100, 100, 100 ) );
 				mP.DrawPolygon( polyN );
 
 				mP.FillMode( DRAW_LINE );
-				mP.SetColor( eeColorA( 255, 255, 0, 200 ) );
+				mP.SetColor( ColorA( 255, 255, 0, 200 ) );
 				mP.DrawPolygon( polyN );
 
 				break;
@@ -416,14 +416,14 @@ void cUIMap::MapDraw() {
 			case INSERT_POLYLINE:
 			{
 				mP.FillMode( DRAW_LINE );
-				mP.SetColor( eeColorA( 255, 0, 0, 200 ) );
+				mP.SetColor( ColorA( 255, 0, 0, 200 ) );
 				mP.DrawPolygon( mObjPoly );
 
 				eePolygon2f polyN( mObjPoly );
 				polyN.PushBack( GetMouseMapPos() );
 
 				mP.FillMode( DRAW_LINE );
-				mP.SetColor( eeColorA( 255, 255, 0, 200 ) );
+				mP.SetColor( ColorA( 255, 255, 0, 200 ) );
 				mP.DrawPolygon( polyN );
 
 				break;
@@ -431,7 +431,7 @@ void cUIMap::MapDraw() {
 			case EDIT_POLYGONS:
 			{
 				if ( NULL != mSelObj && eeINDEX_NOT_FOUND != mSelPointIndex ) {
-					mP.SetColor( eeColorA( 255, 255, 100, 100 ) );
+					mP.SetColor( ColorA( 255, 255, 100, 100 ) );
 
 					mP.FillMode( DRAW_FILL );
 					mP.DrawRectangle( mSelPointRect );

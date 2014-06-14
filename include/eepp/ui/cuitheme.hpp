@@ -78,21 +78,21 @@ class EE_API cUITheme : protected ResourceManager<cUISkin> {
 
 		cFont * Font() const;
 
-		const eeColorA& FontColor() const;
+		const ColorA& FontColor() const;
 
-		const eeColorA& FontShadowColor() const;
+		const ColorA& FontShadowColor() const;
 
-		const eeColorA& FontOverColor() const;
+		const ColorA& FontOverColor() const;
 
-		const eeColorA& FontSelectedColor() const;
+		const ColorA& FontSelectedColor() const;
 
-		void FontColor( const eeColorA& Color );
+		void FontColor( const ColorA& Color );
 
-		void FontShadowColor( const eeColorA& Color );
+		void FontShadowColor( const ColorA& Color );
 
-		void FontOverColor( const eeColorA& Color );
+		void FontOverColor( const ColorA& Color );
 
-		void FontSelectedColor( const eeColorA& Color );
+		void FontSelectedColor( const ColorA& Color );
 
 		void UseDefaultThemeValues( const bool& Use );
 
@@ -102,7 +102,7 @@ class EE_API cUITheme : protected ResourceManager<cUISkin> {
 
 		cSubTexture * GetIconByName( const std::string& name );
 
-		virtual cUIGfx * CreateGfx( cSubTexture * SubTexture, cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, eeColorA SubTextureColor = eeColorA(255,255,255,255), EE_RENDER_MODE SubTextureRender = RN_NORMAL );
+		virtual cUIGfx * CreateGfx( cSubTexture * SubTexture, cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, ColorA SubTextureColor = ColorA(255,255,255,255), EE_RENDER_MODE SubTextureRender = RN_NORMAL );
 
 		virtual cUISprite * CreateSprite( cSprite * Sprite, cUIControl * Parent = NULL, const eeSize& Size = eeSize(), const eeVector2i& Pos = eeVector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, bool DeallocSprite = true, EE_RENDER_MODE SpriteRender = RN_NORMAL );
 
@@ -157,10 +157,10 @@ class EE_API cUITheme : protected ResourceManager<cUISkin> {
 		std::string				mAbbr;
 		cTextureAtlas *			mTextureAtlas;
 		cFont *					mFont;
-		eeColorA				mFontColor;
-		eeColorA				mFontShadowColor;
-		eeColorA				mFontOverColor;
-		eeColorA				mFontSelectedColor;
+		ColorA				mFontColor;
+		ColorA				mFontShadowColor;
+		ColorA				mFontOverColor;
+		ColorA				mFontSelectedColor;
 		bool					mUseDefaultThemeValues;
 		std::list<std::string>	mUIElements;
 		std::list<std::string>	mUIIcons;

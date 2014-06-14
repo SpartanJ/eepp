@@ -26,7 +26,7 @@ cTTFFont::~cTTFFont() {
 	hkFontManager::instance()->Destroy();
 }
 
-bool cTTFFont::LoadFromPack( Pack* Pack, const std::string& FilePackPath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) {
+bool cTTFFont::LoadFromPack( Pack* Pack, const std::string& FilePackPath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const RGB& FontColor, const Uint8& OutlineSize, const RGB& OutlineColor, const bool& AddPixelSeparator ) {
 	bool Ret = false;
 	SafeDataPointer PData;
 
@@ -39,7 +39,7 @@ bool cTTFFont::LoadFromPack( Pack* Pack, const std::string& FilePackPath, const 
 	return Ret;
 }
 
-bool cTTFFont::LoadFromMemory( Uint8* TTFData, const unsigned int& TTFDataSize, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) {
+bool cTTFFont::LoadFromMemory( Uint8* TTFData, const unsigned int& TTFDataSize, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const RGB& FontColor, const Uint8& OutlineSize, const RGB& OutlineColor, const bool& AddPixelSeparator ) {
 	if ( !mFilepath.size() )
 		mFilepath = "from memory";
 
@@ -55,7 +55,7 @@ bool cTTFFont::LoadFromMemory( Uint8* TTFData, const unsigned int& TTFDataSize, 
 	return iLoad( Size, Style, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
 }
 
-bool cTTFFont::Load( const std::string& Filepath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) {
+bool cTTFFont::Load( const std::string& Filepath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const RGB& FontColor, const Uint8& OutlineSize, const RGB& OutlineColor, const bool& AddPixelSeparator ) {
 	mFilepath			= Filepath;
 
 	if ( FileSystem::FileExists( Filepath ) ) {
@@ -80,7 +80,7 @@ bool cTTFFont::Load( const std::string& Filepath, const unsigned int& Size, EE_T
 	return false;
 }
 
-bool cTTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const eeColor& FontColor, Uint8 OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) {
+bool cTTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const RGB& FontColor, Uint8 OutlineSize, const RGB& OutlineColor, const bool& AddPixelSeparator ) {
 	eeRect CurrentPos;
 	eeSize GlyphRect;
 
@@ -148,7 +148,7 @@ bool cTTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const U
 		}
 	} while ( TexSize < ReqSize  );
 
-	mPixels = eeNewArray( eeColorA, TexSize );
+	mPixels = eeNewArray( ColorA, TexSize );
 	memset( mPixels, 0x00000000, TexSize * 4 );
 
 	CurrentPos.Left = OutSize;
@@ -157,7 +157,7 @@ bool cTTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const U
 	Uint32 * TexGlyph;
 	Uint32 w = (Uint32)mTexWidth;
 	//Uint32 h = (Uint32)mTexHeight;
-	eeColorA fFontColor( FontColor );
+	ColorA fFontColor( FontColor );
 
 	//Loop through all chars
 	for ( unsigned int i = 0; i < mNumChars; i++ ) {
@@ -175,7 +175,7 @@ bool cTTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const U
 
 		// Create the outline for the glyph and copy the outline to the texture
 		if ( OutlineSize && OutlineFreetype == OutlineMethod ) {
-			TempOutGlyphSurface = mFontOutline->GlyphRender( i, eeColorA( OutlineColor ).GetValue() );
+			TempOutGlyphSurface = mFontOutline->GlyphRender( i, ColorA( OutlineColor ).GetValue() );
 
 			mFontOutline->GlyphMetrics( i, &TempGlyph.MinX, &TempGlyph.MaxX, &TempGlyph.MinY, &TempGlyph.MaxY, &TempGlyph.Advance );
 
@@ -213,7 +213,7 @@ bool cTTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const U
 		// Copy the glyph to the texture
 		for (int y = 0; y < GlyphRect.y; ++y ) {
 			// Copy per row
-			memcpy( &mPixels[ CurrentPos.Left + (CurrentPos.Top + y) * w ], &TexGlyph[ y * GlyphRect.x ], GlyphRect.x * sizeof(eeColorA) );
+			memcpy( &mPixels[ CurrentPos.Left + (CurrentPos.Top + y) * w ], &TexGlyph[ y * GlyphRect.x ], GlyphRect.x * sizeof(ColorA) );
 		}
 
 		// Fixes the width and height of the current pos
@@ -280,7 +280,7 @@ bool cTTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const U
 						Pos		= x + y * nGlyphS.x;
 
 						// Blending the normal glyph color to the outline color
-						mPixels[ RPos ] = Color::Blend( eeColorA( FontColor, alpha_init[ Pos ] ), eeColorA( OutlineColor, alpha_final[ Pos ] ) );
+						mPixels[ RPos ] = Color::Blend( ColorA( FontColor, alpha_init[ Pos ] ), ColorA( OutlineColor, alpha_final[ Pos ] ) );
 					}
 				}
 

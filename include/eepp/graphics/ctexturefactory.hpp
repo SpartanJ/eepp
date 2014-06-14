@@ -24,7 +24,7 @@ class EE_API cTextureFactory : protected Mutex {
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return Internal Texture Id
 		*/
-		Uint32 CreateEmptyTexture( const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels = 4, const eeColorA& DefaultColor = eeColorA(0,0,0,255), const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 CreateEmptyTexture( const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels = 4, const ColorA& DefaultColor = ColorA(0,0,0,255), const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Loads a RAW Texture from Memory
 		* @param Pixels The Texture array

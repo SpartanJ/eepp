@@ -125,10 +125,10 @@ class EE_API cSprite {
 		void AnimPaused( const bool& Pause );
 
 		/** Set the sprite color */
-		void Color( const eeColorA& Color);
+		void Color( const ColorA& Color);
 
 		/** @return The sprite color */
-		const eeColorA& Color() const;
+		const ColorA& Color() const;
 
 		/** Set the sprite Color Alpha */
 		void Alpha( const Uint8& Alpha );
@@ -189,7 +189,7 @@ class EE_API cSprite {
 		* @param Color2 The Right - Bottom vertex color
 		* @param Color3 The Right - Top vertex color
 		*/
-		void UpdateVertexColors( const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3 );
+		void UpdateVertexColors( const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3 );
 
 		/** This will disable the vertex colors */
 		void DisableVertexColors();
@@ -365,8 +365,8 @@ class EE_API cSprite {
 		eeVector2f			mScale;
 		Float				mAnimSpeed;
 
-		eeColorA			mColor;
-		eeColorA *			mVertexColors;
+		ColorA			mColor;
+		ColorA *			mVertexColors;
 
 		int				mRepeations; //!< Number of repetions of the animation, default -1 that equals to loop.
 

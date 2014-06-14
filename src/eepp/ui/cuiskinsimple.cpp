@@ -60,7 +60,7 @@ cUISkinSimple * cUISkinSimple::Copy( const std::string& NewName, const bool& Cop
 	if ( CopyColorsState ) {
 		SkinS->mColorDefault = mColorDefault;
 
-		memcpy( &SkinS->mColor[0], &mColor[0], cUISkinState::StateCount * sizeof(eeColorA) );
+		memcpy( &SkinS->mColor[0], &mColor[0], cUISkinState::StateCount * sizeof(ColorA) );
 	}
 
 	memcpy( &SkinS->mSubTexture[0], &mSubTexture[0], cUISkinState::StateCount * sizeof(cSubTexture*) );

@@ -12,10 +12,10 @@ namespace EE { namespace UI {
 cUIDefaultTheme::cUIDefaultTheme( const std::string& Name, const std::string& Abbr, cFont * DefaultFont ) :
 	cUITheme( Name, Abbr, DefaultFont )
 {
-	FontColor( eeColorA( 230, 230, 230, 255 ) );
-	FontOverColor( eeColorA( 255, 255, 255, 255 ) );
-	FontSelectedColor( eeColorA( 255, 255, 255, 255 ) );
-	FontShadowColor( eeColorA( 50, 50, 50, 150 ) );
+	FontColor( ColorA( 230, 230, 230, 255 ) );
+	FontOverColor( ColorA( 255, 255, 255, 255 ) );
+	FontSelectedColor( ColorA( 255, 255, 255, 255 ) );
+	FontShadowColor( ColorA( 50, 50, 50, 150 ) );
 }
 
 cUIPopUpMenu * cUIDefaultTheme::CreatePopUpMenu( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 RowHeight, eeRecti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
@@ -34,7 +34,7 @@ cUIPopUpMenu * cUIDefaultTheme::CreatePopUpMenu( cUIControl * Parent, const eeSi
 		MenuParams.MinWidth = 100;
 		MenuParams.MinSpaceForIcons = 24;
 		MenuParams.MinRightMargin = 8;
-		MenuParams.FontColor = eeColorA( 230, 230, 230, 255 );
+		MenuParams.FontColor = ColorA( 230, 230, 230, 255 );
 	}
 
 	return eeNew( cUIPopUpMenu, ( MenuParams ) );
@@ -100,7 +100,7 @@ cUIWindow * cUIDefaultTheme::CreateWindow( cUIControl * Parent, const eeSize& Si
 		WinParams.Flags |= UI_DRAW_SHADOW;
 		WinParams.WinFlags |= UI_WIN_DRAW_SHADOW;
 		WinParams.ButtonsPositionFixer.x = -2;
-		WinParams.TitleFontColor = eeColorA( 230, 230, 230, 255 );
+		WinParams.TitleFontColor = ColorA( 230, 230, 230, 255 );
 	}
 
 	return eeNew( cUIWindow, ( WinParams ) );
@@ -123,7 +123,7 @@ cUICommonDialog * cUIDefaultTheme::CreateCommonDialog( cUIControl * Parent, cons
 		DLGParams.Flags |= UI_DRAW_SHADOW;
 		DLGParams.WinFlags |= UI_WIN_DRAW_SHADOW;
 		DLGParams.ButtonsPositionFixer.x = -2;
-		DLGParams.TitleFontColor = eeColorA( 230, 230, 230, 255 );
+		DLGParams.TitleFontColor = ColorA( 230, 230, 230, 255 );
 	}
 
 	return eeNew( cUICommonDialog, ( DLGParams ) );
@@ -145,7 +145,7 @@ cUIMessageBox * cUIDefaultTheme::CreateMessageBox( UI_MSGBOX_TYPE Type, const St
 		MsgBoxParams.Flags |= UI_DRAW_SHADOW;
 		MsgBoxParams.WinFlags |= UI_WIN_DRAW_SHADOW;
 		MsgBoxParams.ButtonsPositionFixer.x = -2;
-		MsgBoxParams.TitleFontColor = eeColorA( 230, 230, 230, 255 );
+		MsgBoxParams.TitleFontColor = ColorA( 230, 230, 230, 255 );
 	}
 
 	return eeNew( cUIMessageBox, ( MsgBoxParams ) );
@@ -208,9 +208,9 @@ cUITabWidget * cUIDefaultTheme::CreateTabWidget( cUIControl *Parent, const eeSiz
 
 	if ( UseDefaultThemeValues() ) {
 		TabWidgetParams.TabSeparation = -1;
-		TabWidgetParams.FontSelectedColor = eeColorA( 255, 255, 255, 255 );
+		TabWidgetParams.FontSelectedColor = ColorA( 255, 255, 255, 255 );
 		TabWidgetParams.DrawLineBelowTabs = true;
-		TabWidgetParams.LineBelowTabsColor = eeColorA( 0, 0, 0, 255 );
+		TabWidgetParams.LineBelowTabsColor = ColorA( 0, 0, 0, 255 );
 		TabWidgetParams.LineBewowTabsYOffset = -1;
 	}
 
@@ -229,7 +229,7 @@ cUITooltip * cUIDefaultTheme::CreateTooltip( cUIControl * TooltipOf, cUIControl 
 
 	if ( UseDefaultThemeValues() ) {
 		TooltipParams.Flags &= ~UI_AUTO_PADDING;
-		TooltipParams.FontColor = eeColorA( 0, 0, 0, 255 );
+		TooltipParams.FontColor = ColorA( 0, 0, 0, 255 );
 		TooltipParams.Padding = eeRecti( 4, 6, 4, 6 );
 	}
 

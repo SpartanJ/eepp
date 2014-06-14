@@ -8,7 +8,7 @@ cParticle::cParticle() {
 
 cParticle::~cParticle() {}
 
-void cParticle::Color(eeColorAf Color, Float AlphaDecay) {
+void cParticle::Color(ColorAf Color, Float AlphaDecay) {
 	mColor = Color;
 	mAlphaDecay = AlphaDecay;
 }
@@ -21,7 +21,7 @@ void cParticle::Reset(const Float &x, const Float &y, const Float &xspeed, const
 	mXAcc = xacc;
 	mYAcc = yacc;
 	mSize = size;
-	mColor = eeColorAf(1.0f,1.0f,1.0f,1.0f);
+	mColor = ColorAf(1.0f,1.0f,1.0f,1.0f);
 	mAlphaDecay = 0.01f;
 }
 

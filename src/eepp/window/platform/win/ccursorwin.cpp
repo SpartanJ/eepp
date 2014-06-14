@@ -8,6 +8,7 @@
 #include <windows.h>
 
 #include <eepp/window/platform/win/cwinimpl.hpp>
+#include <eepp/window/cwindow.hpp>
 
 #define WINDOWS_RGB(r,g,b)  ((COLORREF)(((BYTE)(r)|((WORD)((BYTE)(g))<<8))|(((DWORD)(BYTE)(b))<<16)))
 
@@ -81,7 +82,7 @@ static BYTE *get_dib_from_bitmap_32(cImage *bitmap) {
 		dst = pixels + y * pitch;
 
 		for (x = 0; x < w; x++) {
-			eeColorA C = bitmap->GetPixel( x, y );
+			ColorA C = bitmap->GetPixel( x, y );
 
 			/* BGR */
 			dst[0] = C.B();
@@ -175,7 +176,7 @@ void cCursorWin::Create() {
 	/* Make cursor background transparent */
 	for (y = 0; y < (int)mImage->Height(); y++) {
 		for (x = 0; x < (int)mImage->Width(); x++) {
-			eeColorA C = mImage->GetPixel( x, y );
+			ColorA C = mImage->GetPixel( x, y );
 
 			if ( C.A() != 0 ) {
 				/* Don't touch XOR value */

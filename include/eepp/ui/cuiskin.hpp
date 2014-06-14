@@ -32,9 +32,9 @@ class EE_API cUISkin {
 
 		virtual cSubTexture * GetSubTexture( const Uint32& State ) const = 0;
 
-		virtual void SetColor( const Uint32& State, const eeColorA& Color );
+		virtual void SetColor( const Uint32& State, const ColorA& Color );
 
-		virtual const eeColorA& GetColor( const Uint32& State ) const;
+		virtual const ColorA& GetColor( const Uint32& State ) const;
 
 		virtual void SetSkins();
 
@@ -59,7 +59,7 @@ class EE_API cUISkin {
 		std::string mName;
 		Uint32		mNameHash;
 		Uint32		mColorDefault;
-		eeColorA 	mColor[ cUISkinState::StateCount ];
+		ColorA 	mColor[ cUISkinState::StateCount ];
 		cUITheme * 	mTheme;
 
 		void StateBack( const Uint32& State );

@@ -34,7 +34,7 @@ cTextureAtlasSubTextureEditor::~cTextureAtlasSubTextureEditor() {
 
 void cTextureAtlasSubTextureEditor::Draw() {
 	cPrimitives P;
-	P.SetColor( eeColorA( 255, 0, 0, mAlpha ) );
+	P.SetColor( ColorA( 255, 0, 0, mAlpha ) );
 	P.DrawLine( eeLine2f( eeVector2f( mScreenPos.x, mScreenPos.y + mUICenter.y ), eeVector2f( mScreenPos.x + mSize.Width(), mScreenPos.y + mUICenter.y ) ) );
 	P.DrawLine( eeLine2f( eeVector2f( mScreenPos.x + mUICenter.x, mScreenPos.y ), eeVector2f( mScreenPos.x + mUICenter.x, mScreenPos.y + mSize.Height() ) ) );
 

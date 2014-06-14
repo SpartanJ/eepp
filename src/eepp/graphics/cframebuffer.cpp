@@ -4,7 +4,6 @@
 #include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/cframebufferfbo.hpp>
-#include <eepp/graphics/cframebufferpbuffer.hpp>
 #include <eepp/graphics/cframebuffermanager.hpp>
 #include <eepp/window/cwindow.hpp>
 using namespace EE::Graphics::Private;
@@ -14,9 +13,6 @@ namespace EE { namespace Graphics {
 cFrameBuffer * cFrameBuffer::New( const Uint32& Width, const Uint32& Height, bool DepthBuffer, Window::cWindow * window ) {
 	if ( cFrameBufferFBO::IsSupported() )
 		return eeNew( cFrameBufferFBO, ( Width, Height, DepthBuffer, window ) );
-
-	if ( cFrameBufferPBuffer::IsSupported() )
-		return eeNew( cFrameBufferPBuffer, ( Width, Height, DepthBuffer, window ) );
 
 	return NULL;
 }
@@ -48,11 +44,11 @@ cTexture * cFrameBuffer::GetTexture() const {
 	return mTexture;
 }
 
-void cFrameBuffer::ClearColor( eeColorAf Color ) {
+void cFrameBuffer::ClearColor( ColorAf Color ) {
 	mClearColor = Color;
 }
 
-eeColorAf cFrameBuffer::ClearColor() const {
+ColorAf cFrameBuffer::ClearColor() const {
 	return mClearColor;
 }
 

@@ -115,7 +115,7 @@ class WindowInfo {
 	eeSize				DesktopResolution;
 	eeSize				WindowSize;
 	Uint32				Flags;
-	eeColor				BackgroundColor;
+	RGB				BackgroundColor;
 	bool				Created;
 	bool				Maximized;
 	eeWindowContex		Context;
@@ -238,7 +238,7 @@ class EE_API cWindow {
 		virtual void Display( bool clear = false );
 
 		/** @return The elapsed time for the last frame rendered */
-		virtual Time Elapsed() const;
+		virtual System::Time Elapsed() const;
 
 		/** @return The current frames per second of the screen */
 		virtual Uint32 FPS() const;
@@ -294,10 +294,10 @@ class EE_API cWindow {
 		void SetViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height, const bool& UpdateProjectionMatrix = true );
 
 		/** Set the window background color */
-		void BackColor( const eeColor& Color );
+		void BackColor( const RGB& Color );
 
 		/** @return The background clear color */
-		const eeColor& BackColor() const;
+		const RGB& BackColor() const;
 
 		/** Captures the window front buffer and saves it to disk. \n
 		* You have to call it before Display, and after render all the objects. \n
@@ -481,8 +481,8 @@ class EE_API cWindow {
 				};
 
 				cFPSData		FPS;
-				Clock *		FrameElapsed;
-				Time			ElapsedTime;
+				Clock *			FrameElapsed;
+				System::Time	ElapsedTime;
 
 				cFrameData();
 

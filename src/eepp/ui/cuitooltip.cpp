@@ -128,20 +128,20 @@ void cUITooltip::Text( const String& text ) {
 	OnTextChanged();
 }
 
-const eeColorA& cUITooltip::Color() const {
+const ColorA& cUITooltip::Color() const {
 	return mFontColor;
 }
 
-void cUITooltip::Color( const eeColorA& color ) {
+void cUITooltip::Color( const ColorA& color ) {
 	mFontColor = color;
 	Alpha( color.A() );
 }
 
-const eeColorA& cUITooltip::ShadowColor() const {
+const ColorA& cUITooltip::ShadowColor() const {
 	return mFontShadowColor;
 }
 
-void cUITooltip::ShadowColor( const eeColorA& color ) {
+void cUITooltip::ShadowColor( const ColorA& color ) {
 	mFontShadowColor = color;
 	Alpha( color.A() );
 	mTextCache->ShadowColor( mFontColor );

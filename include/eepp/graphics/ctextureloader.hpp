@@ -67,7 +67,7 @@ class EE_API cTextureLoader : public ObjectLoader {
 		virtual ~cTextureLoader();
 
 		/** A color key can be set to be transparent in the texture. This must be set before the loading is done. */
-		void			SetColorKey( eeColor Color );
+		void			SetColorKey( RGB Color );
 
 		/** This must be called for the asynchronous mode to update the texture data to the GPU, the call must be done from the same thread that the GL context was created ( the main thread ).
 		** @see ObjectLoader::Update */
@@ -105,7 +105,7 @@ class EE_API cTextureLoader : public ObjectLoader {
 		const Uint8 *	mImagePtr;
 		Uint32			mSize;
 
-		eeColor *		mColorKey;
+		RGB *		mColorKey;
 
 		void 			Start();
 

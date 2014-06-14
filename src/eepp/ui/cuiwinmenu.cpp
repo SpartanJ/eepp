@@ -270,27 +270,27 @@ void cUIWinMenu::OnComplexControlFocusLoss() {
 }
 
 
-void cUIWinMenu::FontColor( const eeColorA& Color ) {
+void cUIWinMenu::FontColor( const ColorA& Color ) {
 	mFontColor = Color;
 }
 
-const eeColorA& cUIWinMenu::FontColor() const {
+const ColorA& cUIWinMenu::FontColor() const {
 	return mFontColor;
 }
 
-void cUIWinMenu::FontOverColor( const eeColorA& Color ) {
+void cUIWinMenu::FontOverColor( const ColorA& Color ) {
 	mFontOverColor = Color;
 }
 
-const eeColorA& cUIWinMenu::FontOverColor() const {
+const ColorA& cUIWinMenu::FontOverColor() const {
 	return mFontOverColor;
 }
 
-void cUIWinMenu::FontSelectedColor( const eeColorA& Color ) {
+void cUIWinMenu::FontSelectedColor( const ColorA& Color ) {
 	mFontSelectedColor = Color;
 }
 
-const eeColorA& cUIWinMenu::FontSelectedColor() const {
+const ColorA& cUIWinMenu::FontSelectedColor() const {
 	return mFontSelectedColor;
 }
 

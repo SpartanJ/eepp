@@ -120,7 +120,7 @@ cSprite& cSprite::operator =( const cSprite& Other ) {
 	mCb					= Other.mCb;
 
 	if ( NULL != Other.mVertexColors ) {
-		mVertexColors		= eeNewArray( eeColorA, 4 );
+		mVertexColors		= eeNewArray( ColorA, 4 );
 		mVertexColors[0]	= Other.mVertexColors[0];
 		mVertexColors[1]	= Other.mVertexColors[1];
 		mVertexColors[2]	= Other.mVertexColors[2];
@@ -153,7 +153,7 @@ cSprite * cSprite::Copy() {
 	Spr->mCb				= mCb;
 
 	if ( NULL != mVertexColors ) {
-		Spr->mVertexColors		= eeNewArray( eeColorA, 4 );
+		Spr->mVertexColors		= eeNewArray( ColorA, 4 );
 		Spr->mVertexColors[0]	= mVertexColors[0];
 		Spr->mVertexColors[1]	= mVertexColors[1];
 		Spr->mVertexColors[2]	= mVertexColors[2];
@@ -182,7 +182,7 @@ void cSprite::Reset() {
 	mRepeations			= -1;
 
 	mAngle				= 0;
-	mColor				= eeColorA(255, 255, 255, 255);
+	mColor				= ColorA(255, 255, 255, 255);
 
 	mBlend				= ALPHA_NORMAL;
 	mEffect				= RN_NORMAL;
@@ -316,9 +316,9 @@ void cSprite::Position( const eeVector2f& NewPos ) {
 	mPos = NewPos;
 }
 
-void cSprite::UpdateVertexColors( const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3 ) {
+void cSprite::UpdateVertexColors( const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3 ) {
 	if ( NULL == mVertexColors )
-		mVertexColors		= eeNewArray( eeColorA, 4 );
+		mVertexColors		= eeNewArray( ColorA, 4 );
 
 	mVertexColors[0]	= Color0;
 	mVertexColors[1]	= Color1;
@@ -758,11 +758,11 @@ void cSprite::AnimPaused( const bool& Pause )	{
 	}
 }
 
-void cSprite::Color( const eeColorA& Color) {
+void cSprite::Color( const ColorA& Color) {
 	mColor = Color;
 }
 
-const eeColorA& cSprite::Color() const {
+const ColorA& cSprite::Color() const {
 	return mColor;
 }
 

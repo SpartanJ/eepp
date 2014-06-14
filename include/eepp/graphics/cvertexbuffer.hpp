@@ -40,7 +40,7 @@ class EE_API cVertexBuffer {
 		/** @brief Adds a color to the buffer.
 		*	@param Color The color value.
 		*/
-		void AddColor( const eeColorA& Color );
+		void AddColor( const ColorA& Color );
 
 		/** @brief Adds an index to the buffer.
 		*	@param Index The index value.
@@ -83,7 +83,7 @@ class EE_API cVertexBuffer {
 		/** @return The color at the buffer position.
 		*	@param Index The position in the buffer.
 		*/
-		eeColorA GetColor( const Uint32& Index );
+		ColorA GetColor( const Uint32& Index );
 
 		/** @return The index at the buffer position.
 		*	@param Index The position in the buffer.
@@ -150,7 +150,7 @@ class EE_API cVertexBuffer {
 		// Upload the rounded rectangle data to the vertex buffer.
 		for ( Uint32 i = 0; i < Poly.Size(); i++ ) {
 			VBO->AddVertex( Poly[i] );	// Adds the vertex position
-			VBO->AddColor( eeColorA( 255, 255, 255, 255 ) ); // Adds the vertex color
+			VBO->AddColor( ColorA( 255, 255, 255, 255 ) ); // Adds the vertex color
 		}
 
 		// Compiles the buffered data

@@ -7,10 +7,9 @@
 #ifdef EE_BACKEND_SDL2
 
 #include <eepp/window/cwindow.hpp>
+#include <eepp/window/backend/SDL2/wminfo.hpp>
 
-struct SDL_SysWMinfo;
-
-#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
+#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_IOS
 #define EE_USE_WMINFO
 #endif
 
@@ -101,7 +100,7 @@ class EE_API cWindowSDL : public cWindow {
 		SDL_GLContext	mGLContextThread;
 
 		#ifdef EE_USE_WMINFO
-		SDL_SysWMinfo * mWMinfo;
+		WMInfo *		mWMinfo;
 		#endif
 
 		#if EE_PLATFORM == EE_PLATFORM_ANDROID

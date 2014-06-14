@@ -5,11 +5,11 @@ namespace EE { namespace UI {
 cUIBorder::cUIBorder() :  mColor( 0xFF404040 ), mWidth( 1 ) {}
 cUIBorder::cUIBorder( const cUIBorder& border ) : mColor( border.Color() ), mWidth( border.Width() ) {}
 
-const eeColorA& cUIBorder::Color() const	{
+const ColorA& cUIBorder::Color() const	{
 	return	mColor;
 }
 
-void cUIBorder::Color( const eeColorA& Col )	{
+void cUIBorder::Color( const ColorA& Col )	{
 	mColor = Col;
 }
 

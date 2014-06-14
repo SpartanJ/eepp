@@ -155,23 +155,23 @@ void cConsole::AddCommand( const String& Command, ConsoleCallback CB ) {
 
 void cConsole::Draw() {
 	if ( mEnabled && NULL != mFont ) {
-		eeColorA OldColor( mFont->Color() );
+		ColorA OldColor( mFont->Color() );
 
 		Fade();
 
 		if ( mY > 0.0f ) {
 			if ( mTexId == 0 ) {
-				mPri.SetColor( eeColorA( mConColor.R(), mConColor.G(), mConColor.B(), static_cast<Uint8>(mA) ) );
+				mPri.SetColor( ColorA( mConColor.R(), mConColor.G(), mConColor.B(), static_cast<Uint8>(mA) ) );
 				mPri.DrawRectangle( eeRectf( eeVector2f( 0.0f, 0.0f ), eeSizef( mWidth, mY ) ) );
 			} else {
-				eeColorA C( mConColor.R(), mConColor.G(), mConColor.B(), static_cast<Uint8>(mA) );
+				ColorA C( mConColor.R(), mConColor.G(), mConColor.B(), static_cast<Uint8>(mA) );
 
 				cTexture * Tex = cTextureFactory::instance()->GetTexture( mTexId );
 
 				if ( NULL != Tex )
 					Tex->DrawEx( 0.0f, 0.0f, mWidth, mY, 0.0f, eeVector2f::One, C, C, C, C );
 			}
-			mPri.SetColor( eeColorA( mConLineColor.R(), mConLineColor.G(), mConLineColor.B(), static_cast<Uint8>(mA) ) );
+			mPri.SetColor( ColorA( mConLineColor.R(), mConLineColor.G(), mConLineColor.B(), static_cast<Uint8>(mA) ) );
 			mPri.DrawRectangle( eeRectf( eeVector2f( 0.0f, mY ), eeSizef( mWidth, 4.0f ) ) );
 
 			Int32 linesInScreen = LinesInScreen();
@@ -188,7 +188,7 @@ void cConsole::Draw() {
 			mCon.ConMin = mEx;
 			mCon.ConMax = (int)mCmdLog.size() - 1;
 
-			mFont->Color( eeColorA ( mFontColor.R(), mFontColor.G(), mFontColor.B(), static_cast<Uint8>(mA) ) );
+			mFont->Color( ColorA ( mFontColor.R(), mFontColor.G(), mFontColor.B(), static_cast<Uint8>(mA) ) );
 
 			for (int i = mCon.ConMax - mCon.ConModif; i >= mCon.ConMin - mCon.ConModif; i-- ) {
 				if ( i < static_cast<Int16>( mCmdLog.size() ) && i >= 0 ) {
@@ -202,11 +202,11 @@ void cConsole::Draw() {
 
 			CurY = mTempY + mY + mCurHeight - mFontSize - 1;
 
-			mFont->Color( eeColorA ( mFontLineColor.R(), mFontLineColor.G(), mFontLineColor.B(), static_cast<Uint8>(mA) ) );
+			mFont->Color( ColorA ( mFontLineColor.R(), mFontLineColor.G(), mFontLineColor.B(), static_cast<Uint8>(mA) ) );
 			mFont->SetText( "> " + mTBuf->Buffer() );
 			mFont->Draw( mFontSize, CurY );
 
-			mFont->Color( eeColorA ( mFontLineColor.R(), mFontLineColor.G(), mFontLineColor.B(), static_cast<Uint8>(mCurAlpha) ) );
+			mFont->Color( ColorA ( mFontLineColor.R(), mFontLineColor.G(), mFontLineColor.B(), static_cast<Uint8>(mCurAlpha) ) );
 
 			if ( (unsigned int)mTBuf->CurPos() == mTBuf->Buffer().size() ) {
 				mFont->Draw( "_", mFontSize + mFont->GetTextWidth() , CurY );
@@ -220,8 +220,8 @@ void cConsole::Draw() {
 	}
 
 	if ( mShowFps && NULL != mFont ) {
-		eeColorA OldColor1( mFont->Color() );
-		mFont->Color( eeColorA () );
+		ColorA OldColor1( mFont->Color() );
+		mFont->Color( ColorA () );
 		mFont->SetText( "FPS: " + String::ToStr( mWindow->FPS() ) );
 		mFont->Draw( mWindow->GetWidth() - mFont->GetTextWidth() - 15, 6 );
 		mFont->Color( OldColor1 );

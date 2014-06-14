@@ -23,7 +23,7 @@ class EE_API cUISkinSimple : public cUISkin {
 		virtual cUISkin * Copy();
 	protected:
 		cSubTexture * 	mSubTexture[ cUISkinState::StateCount ];
-		eeColorA		mTempColor;
+		ColorA		mTempColor;
 
 		void StateNormalToState( const Uint32& State );
 };

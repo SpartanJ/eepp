@@ -61,7 +61,7 @@ class EE_API cParticleSystem {
 			const Float& PartSize = 16.0f,
 			const bool& AnimLoop = false,
 			const Uint32& NumLoops = 1,
-			const eeColorAf& Color = eeColorAf( 1.0f, 1.0f, 1.0f, 1.0f ),
+			const ColorAf& Color = ColorAf( 1.0f, 1.0f, 1.0f, 1.0f ),
 			const eeVector2f& Pos2 = eeVector2f( 0, 0 ),
 			const Float& AlphaDecay = 0.01f,
 			const eeVector2f& Speed = eeVector2f( 0.1f, 0.1f ),
@@ -128,10 +128,10 @@ class EE_API cParticleSystem {
 		void BlendMode( const EE_BLEND_MODE& mode );
 
 		/** @return The color of the effect */
-		const eeColorAf& Color() const;
+		const ColorAf& Color() const;
 
 		/** Set the color of the effect */
-		void Color( const eeColorAf& Col );
+		void Color( const ColorAf& Col );
 
 		/** @return The alpha decay of the effect */
 		const Float& AlphaDecay() const;
@@ -160,7 +160,7 @@ class EE_API cParticleSystem {
 		EE_PARTICLE_EFFECT	mEffect;
 		EE_BLEND_MODE	mBlend;
 
-		eeColorAf			mColor;
+		ColorAf			mColor;
 
 		int				mProgression;
 		int				mDirection;

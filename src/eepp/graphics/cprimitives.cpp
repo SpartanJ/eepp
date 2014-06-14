@@ -47,7 +47,7 @@ void cPrimitives::DrawLine( const eeLine2f& line ) {
 	DrawBatch();
 }
 
-void cPrimitives::DrawTriangle( const eeTriangle2f& t, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3 ) {
+void cPrimitives::DrawTriangle( const eeTriangle2f& t, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3 ) {
 	sBR->SetTexture( NULL );
 	sBR->SetBlendMode( mBlendMode );
 
@@ -128,7 +128,7 @@ void cPrimitives::DrawCircle( const eeVector2f& p, const Float& radius, Uint32 p
 
 		GLi->VertexPointer( 2, GL_FLOAT, 0, circleVAR, circleVAR_count * sizeof(float) * 2 );
 
-		std::vector<eeColorA> colors( circleVAR_count - 1 ,mColor );
+		std::vector<ColorA> colors( circleVAR_count - 1 ,mColor );
 
 		GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, &colors[0], circleVAR_count * 4 );
 
@@ -186,7 +186,7 @@ void cPrimitives::DrawCircle( const eeVector2f& p, const Float& radius, Uint32 p
 	DrawBatch();
 }
 
-void cPrimitives::DrawRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const Float& Angle, const eeVector2f& Scale ) {
+void cPrimitives::DrawRectangle( const eeRectf& R, const ColorA& TopLeft, const ColorA& BottomLeft, const ColorA& BottomRight, const ColorA& TopRight, const Float& Angle, const eeVector2f& Scale ) {
 	sBR->SetTexture( NULL );
 	sBR->SetBlendMode( mBlendMode );
 
@@ -235,7 +235,7 @@ void cPrimitives::DrawRectangle( const eeRectf& R, const Float& Angle, const eeV
 	DrawRectangle( R, mColor, mColor, mColor, mColor, Angle, Scale );
 }
 
-void cPrimitives::DrawRoundedRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const Float& Angle, const eeVector2f& Scale, const unsigned int& Corners ) {
+void cPrimitives::DrawRoundedRectangle( const eeRectf& R, const ColorA& TopLeft, const ColorA& BottomLeft, const ColorA& BottomRight, const ColorA& TopRight, const Float& Angle, const eeVector2f& Scale, const unsigned int& Corners ) {
 	sBR->SetTexture( NULL );
 	sBR->SetBlendMode( mBlendMode );
 
@@ -318,7 +318,7 @@ void cPrimitives::DrawRoundedRectangle( const eeRectf& R, const Float& Angle, co
 	DrawRoundedRectangle( R, mColor, mColor, mColor, mColor, Angle, Scale, Corners );
 }
 
-void cPrimitives::DrawQuad( const eeQuad2f& q, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const eeColorA& Color4, const Float& OffsetX, const Float& OffsetY ) {
+void cPrimitives::DrawQuad( const eeQuad2f& q, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const ColorA& Color4, const Float& OffsetX, const Float& OffsetY ) {
 	sBR->SetTexture( NULL );
 	sBR->SetBlendMode( mBlendMode );
 
@@ -396,7 +396,7 @@ const bool& cPrimitives::ForceDraw() const {
 	return mForceDraw;
 }
 
-void cPrimitives::SetColor( const eeColorA& Color ) {
+void cPrimitives::SetColor( const ColorA& Color ) {
 	mColor = Color;
 }
 

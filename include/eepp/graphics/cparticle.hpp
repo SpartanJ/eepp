@@ -12,8 +12,8 @@ class EE_API cParticle{
 		cParticle();
 		~cParticle();
 		
-		void Color(eeColorAf Color, Float AlphaDecay);
-		eeColorAf Color() const { return mColor; }
+		void Color(ColorAf Color, Float AlphaDecay);
+		ColorAf Color() const { return mColor; }
 		
 		Float R() { return mColor.R(); }
 		Float G() { return mColor.G(); }
@@ -54,7 +54,7 @@ class EE_API cParticle{
 		Uint32 Id() const { return cId; }
 	private:
 		Float mX, mY;
-		eeColorAf mColor;
+		ColorAf mColor;
 		
 		Float mXSpeed, mYSpeed, mXAcc, mYAcc, mAlphaDecay, mSize;
 		bool cUsed;

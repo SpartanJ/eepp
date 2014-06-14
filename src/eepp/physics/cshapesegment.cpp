@@ -97,7 +97,7 @@ void cShapeSegment::Draw( cSpace * space ) {
 		GLi->Disable( GL_TEXTURE_2D );
 		GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
 
-		std::vector<eeColorA> tcolors( pillVAR_count * 4 );
+		std::vector<ColorA> tcolors( pillVAR_count * 4 );
 
 		GLi->PushMatrix();
 
@@ -116,7 +116,7 @@ void cShapeSegment::Draw( cSpace * space ) {
 		GLi->VertexPointer( 3, GL_FLOAT, 0, pillVAR, pillVAR_count * sizeof(float) * 3 );
 
 		if( !seg->CP_PRIVATE(shape).sensor ) {
-			eeColorA C = ColorForShape( mShape, space->Space() );
+			ColorA C = ColorForShape( mShape, space->Space() );
 
 			tcolors.assign( tcolors.size(), C );
 
@@ -125,7 +125,7 @@ void cShapeSegment::Draw( cSpace * space ) {
 			GLi->DrawArrays( GL_TRIANGLE_FAN, 0, pillVAR_count );
 		}
 
-		tcolors.assign( tcolors.size(), eeColorA( 102, 102, 102, 255 ) );
+		tcolors.assign( tcolors.size(), ColorA( 102, 102, 102, 255 ) );
 
 		GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const void*>( &tcolors[0] ), pillVAR_count *  4 );
 

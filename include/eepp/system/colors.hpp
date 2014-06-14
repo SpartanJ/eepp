@@ -191,40 +191,69 @@ const tColorA<T> tColorA<T>::Transparent = tColorA<T>(0,0,0,0);
 template <typename T>
 const tColorA<T> tColorA<T>::Black = tColorA<T>(0,0,0,255);
 
-typedef tColor<Uint8> 		eeColor;
-typedef tColor<Float>		eeColorf;
-typedef tColorA<Uint8> 		eeColorA;
-typedef tColorA<Float>		eeColorAf;
-typedef tColorA<float>		eeColorAff;
+typedef tColor<Float>		Colorf;
+typedef tColorA<Uint8> 		ColorA;
+typedef tColorA<Float>		ColorAf;
+typedef tColorA<float>		ColorAff;
 
 //! @brief Small class to help in some color operations
-class Color {
+class Color : public tColor<Uint8> {
 public:
+	Color() : tColor<Uint8>()
+	{
+	}
+
+	/** Creates an RGB color from each component.
+	**	@param r Red component
+	**	@param g Green component
+	**	@param b Blue component
+	*/
+	Color(Uint8 r, Uint8 g, Uint8 b) : tColor<Uint8>( r, g, b )
+	{
+	}
+
+	Color( const tColor<Uint8>& color ) :
+		tColor<Uint8>( color.Red, color.Green, color.Blue )
+	{
+	}
+
+	Color( Uint32 Col )
+	{
+		Col		= BitOp::SwapLE32( Col );
+		Red		= static_cast<Uint8>( Col >> 16	);
+		Green	= static_cast<Uint8>( Col >> 8	);
+		Blue	= static_cast<Uint8>( Col >> 0	);
+	}
+
 	/** Blend a source color to destination color */
-	static inline eeColorAf Blend( eeColorAf srcf, eeColorAf dstf ) {
+	static inline ColorAf Blend( ColorAf srcf, ColorAf dstf ) {
 		Float alpha	= srcf.Alpha + dstf.Alpha * ( 1.f - srcf.Alpha );
 		Float red		= ( srcf.Red	* srcf.Alpha + dstf.Red		* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
 		Float green	= ( srcf.Green	* srcf.Alpha + dstf.Green	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
 		Float blue	= ( srcf.Blue	* srcf.Alpha + dstf.Blue	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
 
-		return eeColorAf( red, green, blue, alpha );
+		return ColorAf( red, green, blue, alpha );
 	}
 
 	#define EE_COLOR_BLEND_FTOU8(color) (Uint8)( color == 1.f ? 255 : (color * 255.99f))
 
 	/** Blend a source color to destination color */
-	static inline eeColorA Blend( eeColorA src, eeColorA dst ) {
-		eeColorAf srcf( (Float)src.Red / 255.f, (Float)src.Green / 255.f, (Float)src.Blue / 255.f, (Float)src.Alpha / 255.f );
-		eeColorAf dstf( (Float)dst.Red / 255.f, (Float)dst.Green / 255.f, (Float)dst.Blue / 255.f, (Float)dst.Alpha / 255.f );
+	static inline ColorA Blend( ColorA src, ColorA dst ) {
+		ColorAf srcf( (Float)src.Red / 255.f, (Float)src.Green / 255.f, (Float)src.Blue / 255.f, (Float)src.Alpha / 255.f );
+		ColorAf dstf( (Float)dst.Red / 255.f, (Float)dst.Green / 255.f, (Float)dst.Blue / 255.f, (Float)dst.Alpha / 255.f );
 		Float alpha	= srcf.Alpha + dstf.Alpha * ( 1.f - srcf.Alpha );
-		Float red		= ( srcf.Red	* srcf.Alpha + dstf.Red		* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
+		Float red	= ( srcf.Red	* srcf.Alpha + dstf.Red		* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
 		Float green	= ( srcf.Green	* srcf.Alpha + dstf.Green	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
 		Float blue	= ( srcf.Blue	* srcf.Alpha + dstf.Blue	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
 
-		return eeColorA( EE_COLOR_BLEND_FTOU8(red), EE_COLOR_BLEND_FTOU8(green), EE_COLOR_BLEND_FTOU8(blue), EE_COLOR_BLEND_FTOU8(alpha) );
+		return ColorA( EE_COLOR_BLEND_FTOU8(red), EE_COLOR_BLEND_FTOU8(green), EE_COLOR_BLEND_FTOU8(blue), EE_COLOR_BLEND_FTOU8(alpha) );
 	}
 };
 
+typedef Color				RGB;
+typedef Colorf				RGBf;
+typedef ColorA				RGBA;
+typedef ColorAf				RGBAf;
 
 }}
 

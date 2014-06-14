@@ -113,7 +113,7 @@ cTextureAtlasEditor::cTextureAtlasEditor( cUIWindow * AttatchTo, const TGEditorC
 	Params.Parent( mUIContainer );
 	Params.PosSet( 0, mWinMenu->Size().Height() );
 	Params.SizeSet( 800, 600 );
-	Params.Background.Color( eeColorA( 0, 0, 0, 50 ) );
+	Params.Background.Color( ColorA( 0, 0, 0, 50 ) );
 	Params.Flags |= UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT | UI_CLIP_ENABLE | UI_BORDER | UI_FILL_BACKGROUND;
 	mSubTextureEditor = eeNew( cTextureAtlasSubTextureEditor, ( Params, this ) );
 	mSubTextureEditor->Visible( true );

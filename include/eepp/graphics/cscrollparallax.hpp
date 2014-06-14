@@ -23,7 +23,7 @@ class EE_API cScrollParallax {
 		* @param Speed Speed of movement ( in Pixels Per Second )
 		* @param Color The Texture Color
 		* @param Blend The Blend Mode ( default ALPHA_NORMAL ) */
-		cScrollParallax( cSubTexture * SubTexture, const eeVector2f& Position = eeVector2f(), const eeSizef& Size = eeSizef(), const eeVector2f& Speed = eeVector2f(), const eeColorA& Color = eeColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
+		cScrollParallax( cSubTexture * SubTexture, const eeVector2f& Position = eeVector2f(), const eeSizef& Size = eeSizef(), const eeVector2f& Speed = eeVector2f(), const ColorA& Color = ColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
 
 		/** Create's the Scroll Parallax
 		* @param SubTexture The SubTexture to Draw
@@ -34,13 +34,13 @@ class EE_API cScrollParallax {
 		* @param Blend The Blend Mode ( default ALPHA_NORMAL )
 		* @return True if success
 		*/
-		bool Create( cSubTexture * SubTexture, const eeVector2f& Position = eeVector2f(), const eeSizef& Size = eeSizef(), const eeVector2f& Speed = eeVector2f(), const eeColorA& Color = eeColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
+		bool Create( cSubTexture * SubTexture, const eeVector2f& Position = eeVector2f(), const eeSizef& Size = eeSizef(), const eeVector2f& Speed = eeVector2f(), const ColorA& Color = ColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
 
 		/** Set the parallax texture color. */
-		void Color( const eeColorA& Color ) { mColor = Color; }
+		void Color( const ColorA& Color ) { mColor = Color; }
 
 		/** Get the parallax texture color. */
-		eeColorA Color() const { return mColor; }
+		ColorA Color() const { return mColor; }
 
 		/** Set the Blend Mode used. */
 		void BlendMode( const EE_BLEND_MODE& Blend ) { mBlend = Blend; }
@@ -79,7 +79,7 @@ class EE_API cScrollParallax {
 	private:
 		cSubTexture * 		mSubTexture;
 		EE_BLEND_MODE		mBlend;
-		eeColorA 			mColor;
+		ColorA 			mColor;
 		eeVector2f			mInitPos;
 		eeVector2f			mPos;
 		eeVector2f			mSpeed;

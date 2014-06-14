@@ -46,7 +46,7 @@ void cTileLayer::Draw( const eeVector2f& Offset ) {
 			for ( Int32 y = start.y; y < end.y; y++ ) {
 				if ( NULL != mTiles[x][y] ) {
 					if ( mTiles[x][y]->Blocked() ) {
-						Tex->Draw( x * mMap->TileSize().x, y * mMap->TileSize().y, 0 , eeVector2f::One, eeColorA( 255, 0, 0, 200 ) );
+						Tex->Draw( x * mMap->TileSize().x, y * mMap->TileSize().y, 0 , eeVector2f::One, ColorA( 255, 0, 0, 200 ) );
 					}
 				}
 			}

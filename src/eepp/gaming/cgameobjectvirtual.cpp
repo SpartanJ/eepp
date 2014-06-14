@@ -98,12 +98,12 @@ void cGameObjectVirtual::Draw() {
 				}
 			}
 		} else {
-			mSubTexture->Draw( mPos.x, mPos.y, eeColorA(), GetAngle(), eeVector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
+			mSubTexture->Draw( mPos.x, mPos.y, ColorA(), GetAngle(), eeVector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
 		}
 	} else {
 		cPrimitives P;
 
-		eeColorA C( mDataId );
+		ColorA C( mDataId );
 		C.Alpha = 255;
 
 		P.SetColor( C );

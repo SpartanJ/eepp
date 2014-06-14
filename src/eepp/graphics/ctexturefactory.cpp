@@ -26,7 +26,7 @@ cTextureFactory::~cTextureFactory() {
 	UnloadTextures();
 }
 
-Uint32 cTextureFactory::CreateEmptyTexture( const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const eeColorA& DefaultColor, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+Uint32 cTextureFactory::CreateEmptyTexture( const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const ColorA& DefaultColor, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
 	cImage TmpImg( Width, Height, Channels, DefaultColor );
 	return LoadFromPixels( TmpImg.GetPixelsPtr(), Width, Height, Channels, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
 }

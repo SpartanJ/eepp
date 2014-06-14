@@ -42,7 +42,7 @@ void cUIProgressBar::Draw() {
 	cUIControlAnim::Draw();
 
 	if ( NULL != mParallax && 0.f != mAlpha ) {
-		eeColorA C( mParallax->Color() );
+		ColorA C( mParallax->Color() );
 		C.Alpha = (Uint8)mAlpha;
 
 		mParallax->Color( C );

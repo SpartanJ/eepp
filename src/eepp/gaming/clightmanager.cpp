@@ -39,7 +39,7 @@ void cLightManager::UpdateByVertex() {
 	eeVector2i end		= mMap->EndTile();
 	eeAABB VisibleArea	= mMap->GetViewAreaAABB();
 	eeSize TileSize		= mMap->TileSize();
-	eeColorA BaseColor	= mMap->BaseColor();
+	ColorA BaseColor	= mMap->BaseColor();
 	bool firstLight		= true;
 	eeVector2i Pos;
 
@@ -92,7 +92,7 @@ void cLightManager::UpdateByTile() {
 	eeAABB VisibleArea	= mMap->GetViewAreaAABB();
 	eeSize TileSize		= mMap->TileSize();
 	eeSize HalfTileSize = mMap->TileSize() / 2;
-	eeColorA BaseColor	= mMap->BaseColor();
+	ColorA BaseColor	= mMap->BaseColor();
 	bool firstLight		= true;
 	eeVector2i Pos;
 
@@ -127,8 +127,8 @@ void cLightManager::UpdateByTile() {
 	}
 }
 
-eeColorA cLightManager::GetColorFromPos( const eeVector2f& Pos ) {
-	eeColorA Col( mMap->BaseColor() );
+ColorA cLightManager::GetColorFromPos( const eeVector2f& Pos ) {
+	ColorA Col( mMap->BaseColor() );
 
 	if ( !mLights.size() )
 		return Col;
@@ -167,7 +167,7 @@ void cLightManager::RemoveLight( const eeVector2f& OverPos ) {
 	}
 }
 
-const eeColorA * cLightManager::GetTileColor( const eeVector2i& TilePos ) {
+const ColorA * cLightManager::GetTileColor( const eeVector2i& TilePos ) {
 	eeASSERT( 1 == mNumVertex );
 
 	if ( !mLights.size() )
@@ -176,7 +176,7 @@ const eeColorA * cLightManager::GetTileColor( const eeVector2i& TilePos ) {
 	return mTileColors[ TilePos.x ][ TilePos.y ][0];
 }
 
-const eeColorA * cLightManager::GetTileColor( const eeVector2i& TilePos, const Uint32& Vertex ) {
+const ColorA * cLightManager::GetTileColor( const eeVector2i& TilePos, const Uint32& Vertex ) {
 	eeASSERT( 4 == mNumVertex );
 
 	if ( !mLights.size() )
@@ -187,16 +187,16 @@ const eeColorA * cLightManager::GetTileColor( const eeVector2i& TilePos, const U
 
 void cLightManager::AllocateColors() {
 	eeSize Size		= mMap->Size();
-	mTileColors		= eeNewArray( eeColorA***, Size.Width() );
+	mTileColors		= eeNewArray( ColorA***, Size.Width() );
 
 	for ( Int32 x = 0; x < Size.x; x++ ) {
-		mTileColors[x] = eeNewArray( eeColorA**, Size.Height() );
+		mTileColors[x] = eeNewArray( ColorA**, Size.Height() );
 
 		for ( Int32 y = 0; y < Size.y; y++ ) {
-			mTileColors[x][y] = eeNewArray( eeColorA*, mNumVertex );
+			mTileColors[x][y] = eeNewArray( ColorA*, mNumVertex );
 
 			for ( Int32 v = 0; v < mNumVertex; v++ ) {
-				mTileColors[x][y][v] = eeNew( eeColorA, (255,255,255,255) );
+				mTileColors[x][y][v] = eeNew( ColorA, (255,255,255,255) );
 			}
 		}
 	}

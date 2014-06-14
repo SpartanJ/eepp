@@ -15,19 +15,19 @@ class EE_API cLight {
 	public:
 		cLight();
 
-		cLight( const Float& Radius, const Float& x, const Float& y, const eeColor& Color = eeColor(255,255,255), LIGHT_TYPE Type = LIGHT_NORMAL );
+		cLight( const Float& Radius, const Float& x, const Float& y, const RGB& Color = RGB(255,255,255), LIGHT_TYPE Type = LIGHT_NORMAL );
 
 		virtual ~cLight();
 
-		void Create( const Float& Radius, const Float& x, const Float& y, const eeColor& Color = eeColor(255,255,255), LIGHT_TYPE Type = LIGHT_NORMAL );
+		void Create( const Float& Radius, const Float& x, const Float& y, const RGB& Color = RGB(255,255,255), LIGHT_TYPE Type = LIGHT_NORMAL );
 
-		virtual eeColor ProcessVertex( const Float& PointX, const Float& PointY, const eeColor& VertexColor, const eeColor& BaseColor );
+		virtual RGB ProcessVertex( const Float& PointX, const Float& PointY, const RGB& VertexColor, const RGB& BaseColor );
 
-		virtual eeColorA ProcessVertex( const Float& PointX, const Float& PointY, const eeColorA& VertexColor, const eeColorA& BaseColor );
+		virtual ColorA ProcessVertex( const Float& PointX, const Float& PointY, const ColorA& VertexColor, const ColorA& BaseColor );
 
-		eeColor ProcessVertex( const eeVector2f& Pos, const eeColor& VertexColor, const eeColor& BaseColor );
+		RGB ProcessVertex( const eeVector2f& Pos, const RGB& VertexColor, const RGB& BaseColor );
 
-		eeColorA ProcessVertex( const eeVector2f& Pos, const eeColorA& VertexColor, const eeColorA& BaseColor );
+		ColorA ProcessVertex( const eeVector2f& Pos, const ColorA& VertexColor, const ColorA& BaseColor );
 
 		void Move( const Float& addtox, const Float& addtoy );
 
@@ -45,9 +45,9 @@ class EE_API cLight {
 
 		void Active( const bool& active );
 
-		void Color( const eeColor& color );
+		void Color( const RGB& color );
 
-		const eeColor& Color() const;
+		const RGB& Color() const;
 
 		void Type( const LIGHT_TYPE& type );
 
@@ -59,7 +59,7 @@ class EE_API cLight {
 	protected:
 		Float		mRadius;
 		eeVector2f	mPos;
-		eeColor		mColor;
+		RGB		mColor;
 		LIGHT_TYPE	mType;
 		eeAABB		mAABB;
 		bool		mActive;

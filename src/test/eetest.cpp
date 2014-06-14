@@ -117,7 +117,7 @@ void cEETest::Init() {
 		mFBO = cFrameBuffer::New( 256, 256, false );
 
 		if ( NULL != mFBO )
-			mFBO->ClearColor( eeColorAf( 0, 0, 0, 0.5f ) );
+			mFBO->ClearColor( ColorAf( 0, 0, 0, 0.5f ) );
 
 		eePolygon2f Poly = eePolygon2f::CreateRoundedRectangle( 0, 0, 256, 50 );
 
@@ -126,7 +126,7 @@ void cEETest::Init() {
 		if ( NULL != mVBO ) {
 			for ( Uint32 i = 0; i < Poly.Size(); i++ ) {
 				mVBO->AddVertex( Poly[i] );
-				mVBO->AddColor( eeColorA( 100 + i, 255 - i, 150 + i, 200 ) );
+				mVBO->AddColor( ColorA( 100 + i, 255 - i, 150 + i, 200 ) );
 			}
 
 			mVBO->Compile();
@@ -168,12 +168,12 @@ void cEETest::LoadFonts() {
 	mFTE.Restart();
 
 	cTextureLoader * tl = eeNew( cTextureLoader, ( MyPath + "fonts/conchars.png" ) );
-	tl->SetColorKey( eeColor(0,0,0) );
+	tl->SetColorKey( RGB(0,0,0) );
 
 	mFontLoader.Add( eeNew( cTextureFontLoader, ( "conchars", tl, (unsigned int)32 ) ) );
 	mFontLoader.Add( eeNew( cTextureFontLoader, ( "ProggySquareSZ", eeNew( cTextureLoader, ( MyPath + "fonts/ProggySquareSZ.png" ) ), MyPath + "fonts/ProggySquareSZ.dat" ) ) );
-	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, eeColor(255,255,255) ) ) );
-	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arialb", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, eeColor(255,255,255), 1, eeColor(0,0,0), true ) ) );
+	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255) ) ) );
+	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arialb", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255), 1, RGB(0,0,0), true ) ) );
 
 	mFontLoader.Load( cb::Make1( this, &cEETest::OnFontLoaded ) );
 }
@@ -198,10 +198,10 @@ void cEETest::OnFontLoaded( ResourceLoader * ObjLoaded ) {
 
 	mEEText.Create( TTFB, "Entropia Engine++\nCTRL + Number to change Demo Screen\nRight click to see the PopUp Menu" );
 	mFBOText.Create( TTFB, "This is a VBO\nInside of a FBO" );
-	mFBOText.Color( eeColorA(255,255,0,255), mFBOText.Text().find( "VBO" ), mFBOText.Text().find( "VBO" ) + 2 );
-	mFBOText.Color( eeColorA(255,255,0,255), mFBOText.Text().find( "FBO" ), mFBOText.Text().find( "FBO" ) + 2 );
+	mFBOText.Color( ColorA(255,255,0,255), mFBOText.Text().find( "VBO" ), mFBOText.Text().find( "VBO" ) + 2 );
+	mFBOText.Color( ColorA(255,255,0,255), mFBOText.Text().find( "FBO" ), mFBOText.Text().find( "FBO" ) + 2 );
 
-	mInfoText.Create( FF, "", eeColorA(255,255,255,150) );
+	mInfoText.Create( FF, "", ColorA(255,255,255,150) );
 }
 
 void cEETest::CreateShaders() {
@@ -271,7 +271,7 @@ void cEETest::CreateUI() {
 
 	Params.Border.Width( 2 );
 	Params.Border.Color( 0x979797CC );
-	Params.Background.Colors( eeColorA( 0xEDEDED66 ), eeColorA( 0xEDEDEDCC ), eeColorA( 0xEDEDEDCC ), eeColorA( 0xEDEDED66 ) );
+	Params.Background.Colors( ColorA( 0xEDEDED66 ), ColorA( 0xEDEDEDCC ), ColorA( 0xEDEDEDCC ), ColorA( 0xEDEDED66 ) );
 
 	cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 530, 405 ), eeVector2i( 320, 240 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DRAGABLE_CONTAINER , eeSize( 530, 405 ), 200 );
 	C = tWin->Container();
@@ -283,7 +283,7 @@ void cEETest::CreateUI() {
 
 	Params.Flags &= ~UI_CLIP_ENABLE;
 	Params.Background.Corners(0);
-	Params.Background.Colors( eeColorA( 0x00FF0077 ), eeColorA( 0x00CC0077 ), eeColorA( 0x00CC0077 ), eeColorA( 0x00FF0077 ) );
+	Params.Background.Colors( ColorA( 0x00FF0077 ), ColorA( 0x00CC0077 ), ColorA( 0x00CC0077 ), ColorA( 0x00FF0077 ) );
 	Params.Parent( C );
 	Params.Size = eeSize( 50, 50 );
 	cUITest * Child = eeNew( cUITest, ( Params ) );
@@ -293,7 +293,7 @@ void cEETest::CreateUI() {
 	Child->StartRotation( 0.f, 360.f, Milliseconds( 5000.f ) );
 	Child->RotationInterpolation()->Loop( true );
 
-	Params.Background.Colors( eeColorA( 0xFFFF0077 ), eeColorA( 0xCCCC0077 ), eeColorA( 0xCCCC0077 ), eeColorA( 0xFFFF0077 ) );
+	Params.Background.Colors( ColorA( 0xFFFF0077 ), ColorA( 0xCCCC0077 ), ColorA( 0xCCCC0077 ), ColorA( 0xFFFF0077 ) );
 	Params.Parent( Child );
 	Params.Size = eeSize( 25, 25 );
 	cUITest * Child2 = eeNew( cUITest, ( Params ) );
@@ -766,9 +766,9 @@ void cEETest::SetScreen( Uint32 num ) {
 	if ( NULL != mTerrainBut ) mTerrainBut->Visible( 1 == num );
 
 	if ( 0 == num || 5 == num )
-		mWindow->BackColor( eeColor( 240, 240, 240 ) );
+		mWindow->BackColor( RGB( 240, 240, 240 ) );
 	else
-		mWindow->BackColor( eeColor( 0, 0, 0 ) );
+		mWindow->BackColor( RGB( 0, 0, 0 ) );
 
 	if ( num < 6 )
 		Screen = num;
@@ -844,11 +844,11 @@ void cEETest::LoadTextures() {
 
 		#ifdef EE_GLES
 		cImage tImg( MyPath + "sprites/objects/2.png", 4 );
-		tImg.CreateMaskFromColor( eeColorA(0,0,0,255), 0 );
+		tImg.CreateMaskFromColor( ColorA(0,0,0,255), 0 );
 		Tiles[7] = SG->Add( TF->LoadFromPixels( tImg.GetPixelsPtr(), tImg.Width(), tImg.Height(), tImg.Channels() ), "8" );
 		#else
 		Tiles[7] = SG->Add( TF->Load( MyPath + "sprites/objects/2.png" ), "8" );
-		Tiles[7]->GetTexture()->CreateMaskFromColor( eeColorA(0,0,0,255), 0 );
+		Tiles[7]->GetTexture()->CreateMaskFromColor( ColorA(0,0,0,255), 0 );
 		#endif
 	}
 
@@ -875,12 +875,12 @@ void cEETest::LoadTextures() {
 
 		for ( y = 0; y < h; y++) {
 			for ( x = 0; x < w; x++) {
-				eeColorA C = Tex->GetPixel(x, y);
+				ColorA C = Tex->GetPixel(x, y);
 
 				if ( C.R() > 200 && C.G() > 200 && C.B() > 200 )
-					Tex->SetPixel(x, y, eeColorA( Math::Randi(0, 255), Math::Randi(0, 255), Math::Randi(0, 255), C.A() ) );
+					Tex->SetPixel(x, y, ColorA( Math::Randi(0, 255), Math::Randi(0, 255), Math::Randi(0, 255), C.A() ) );
 				else
-					Tex->SetPixel(x, y, eeColorA( Math::Randi(200, 255), Math::Randi(200, 255), Math::Randi(200, 255), C.A() ) );
+					Tex->SetPixel(x, y, ColorA( Math::Randi(200, 255), Math::Randi(200, 255), Math::Randi(200, 255), C.A() ) );
 			}
 		}
 
@@ -902,7 +902,7 @@ void cEETest::LoadTextures() {
 	CL1.Scale( 0.5f );
 
 	CL2.AddFrame(TN[0], eeSizef(96, 96) );
-	CL2.Color( eeColorA( 255, 255, 255, 255 ) );
+	CL2.Color( ColorA( 255, 255, 255, 255 ) );
 
 	mTGL = eeNew( cTextureAtlasLoader, ( MyPath + "atlases/bnb" + EE_TEXTURE_ATLAS_EXTENSION ) );
 
@@ -961,7 +961,7 @@ void cEETest::Screen2() {
 
 	Batch.SetTexture( TNP[2] );
 	Batch.QuadsBegin();
-	Batch.QuadsSetColor( eeColorA(150,150,150,100) );
+	Batch.QuadsSetColor( ColorA(150,150,150,100) );
 	Batch.QuadsSetSubset( 0.0f, 0.0f, 0.5f, 0.5f );
 
 	Batch.BatchRotation( ang );
@@ -1019,10 +1019,10 @@ void cEETest::Screen2() {
 	if ( mUseShaders )
 		mShaderProgram->Unbind();
 
-	TNP[3]->Draw( HWidth - 128, HHeight, 0, eeVector2f::One, eeColorA(255,255,255,150), ALPHA_NORMAL, RN_ISOMETRIC);
-	TNP[3]->Draw( HWidth - 128, HHeight - 128, 0, eeVector2f::One, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRIC);
-	TNP[3]->Draw( HWidth - 128, HHeight, 0, eeVector2f::One, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICAL);
-	TNP[3]->Draw( HWidth, HHeight, 0, eeVector2f::One, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICALNEGATIVE);
+	TNP[3]->Draw( HWidth - 128, HHeight, 0, eeVector2f::One, ColorA(255,255,255,150), ALPHA_NORMAL, RN_ISOMETRIC);
+	TNP[3]->Draw( HWidth - 128, HHeight - 128, 0, eeVector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRIC);
+	TNP[3]->Draw( HWidth - 128, HHeight, 0, eeVector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICAL);
+	TNP[3]->Draw( HWidth, HHeight, 0, eeVector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICALNEGATIVE);
 
 	alpha = (!aside) ? alpha+et.AsMilliseconds() * 0.1f : alpha-et.AsMilliseconds() * 0.1f;
 	if (alpha>=255) {
@@ -1033,7 +1033,7 @@ void cEETest::Screen2() {
 		aside = false;
 	}
 
-	eeColorA Col(255,255,255,(int)alpha);
+	ColorA Col(255,255,255,(int)alpha);
 	TNP[1]->DrawEx( (Float)mWindow->GetWidth() - 128.f, (Float)mWindow->GetHeight() - 128.f, 128.f, 128.f, ang, eeVector2f::One, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
 
 	SP.Position( alpha, alpha );
@@ -1043,15 +1043,15 @@ void cEETest::Screen2() {
 	CL1.RenderMode( RN_ISOMETRIC );
 
 	if ( CL1.GetAABB().IntersectCircle( Mousef, 80.f ) )
-		CL1.Color( eeColorA(255, 0, 0, 200) );
+		CL1.Color( ColorA(255, 0, 0, 200) );
 	else
-		CL1.Color( eeColorA(255, 255, 255, 200) );
+		CL1.Color( ColorA(255, 255, 255, 200) );
 
 	if ( eePolygon2f::IntersectQuad2( CL1.GetQuad() , CL2.GetQuad() ) ) {
-		CL1.Color( eeColorA(0, 255, 0, 255) );
-		CL2.Color( eeColorA(0, 255, 0, 255) );
+		CL1.Color( ColorA(0, 255, 0, 255) );
+		CL2.Color( ColorA(0, 255, 0, 255) );
 	} else
-		CL2.Color( eeColorA(255, 255, 255, 255) );
+		CL2.Color( ColorA(255, 255, 255, 255) );
 
 	CL1.Angle(ang);
 	CL1.Scale(scale * 0.5f);
@@ -1074,7 +1074,7 @@ void cEETest::Screen2() {
 	if ( ShowParticles )
 		Particles();
 
-	PR.SetColor( eeColorA(0, 255, 0, 50) );
+	PR.SetColor( ColorA(0, 255, 0, 50) );
 
 	eeLine2f Line( eeVector2f(0.f, 0.f), eeVector2f( (Float)mWindow->GetWidth(), (Float)mWindow->GetHeight() ) );
 	eeLine2f Line2( eeVector2f(Mousef.x - 80.f, Mousef.y - 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y + 80.f) );
@@ -1092,11 +1092,11 @@ void cEETest::Screen2() {
 		iL2 = false;
 
 	if (iL1 && iL2)
-		PR.SetColor( eeColorA(255, 0, 0, 255) );
+		PR.SetColor( ColorA(255, 0, 0, 255) );
 	else if (iL1)
-		PR.SetColor( eeColorA(0, 0, 255, 255) );
+		PR.SetColor( ColorA(0, 0, 255, 255) );
 	else if (iL2)
-		PR.SetColor( eeColorA(255, 255, 0, 255) );
+		PR.SetColor( ColorA(255, 255, 0, 255) );
 
 	PR.FillMode( DRAW_LINE );
 	PR.DrawCircle( eeVector2f( Mousef.x, Mousef.y ), 80.f, (Uint32)(Ang/3) );
@@ -1105,15 +1105,15 @@ void cEETest::Screen2() {
 	PR.DrawLine( eeLine2f( eeVector2f(Mousef.x - 80.f, Mousef.y + 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y - 80.f) ) );
 	PR.DrawLine( eeLine2f( eeVector2f((Float)mWindow->GetWidth(), 0.f), eeVector2f( 0.f, (Float)mWindow->GetHeight() ) ) );
 	PR.FillMode( DRAW_FILL );
-	PR.DrawQuad( eeQuad2f( eeVector2f(0.f, 0.f), eeVector2f(0.f, 100.f), eeVector2f(150.f, 150.f), eeVector2f(200.f, 150.f) ), eeColorA(220, 240, 0, 125), eeColorA(100, 0, 240, 125), eeColorA(250, 50, 25, 125), eeColorA(50, 150, 150, 125) );
+	PR.DrawQuad( eeQuad2f( eeVector2f(0.f, 0.f), eeVector2f(0.f, 100.f), eeVector2f(150.f, 150.f), eeVector2f(200.f, 150.f) ), ColorA(220, 240, 0, 125), ColorA(100, 0, 240, 125), ColorA(250, 50, 25, 125), ColorA(50, 150, 150, 125) );
 	PR.FillMode( DRAW_LINE );
 	PR.DrawRectangle( eeRectf( eeVector2f( Mousef.x - 80.f, Mousef.y - 80.f ), eeSizef( 160.f, 160.f ) ), 45.f );
 	PR.DrawLine( eeLine2f( eeVector2f(0.f, 0.f), eeVector2f( (Float)mWindow->GetWidth(), (Float)mWindow->GetHeight() ) ) );
 
-	TNP[3]->DrawQuadEx( eeQuad2f( eeVector2f(0.f, 0.f), eeVector2f(0.f, 100.f), eeVector2f(150.f, 150.f), eeVector2f(200.f, 150.f) ), eeVector2f(), ang, eeVector2f(scale,scale), eeColorA(220, 240, 0, 125), eeColorA(100, 0, 240, 125), eeColorA(250, 50, 25, 125), eeColorA(50, 150, 150, 125) );
+	TNP[3]->DrawQuadEx( eeQuad2f( eeVector2f(0.f, 0.f), eeVector2f(0.f, 100.f), eeVector2f(150.f, 150.f), eeVector2f(200.f, 150.f) ), eeVector2f(), ang, eeVector2f(scale,scale), ColorA(220, 240, 0, 125), ColorA(100, 0, 240, 125), ColorA(250, 50, 25, 125), ColorA(50, 150, 150, 125) );
 
 	WP.Update( et );
-	PR.SetColor( eeColorA(0, 255, 0, 255) );
+	PR.SetColor( ColorA(0, 255, 0, 255) );
 	PR.DrawPoint( WP.GetPos(), 10.f );
 }
 
@@ -1218,14 +1218,14 @@ void cEETest::Render() {
 		mWindow->ClipDisable();
 	}
 
-	eeColorA ColRR1( 150, 150, 150, 220 );
-	eeColorA ColRR4( 150, 150, 150, 220 );
-	eeColorA ColRR2( 100, 100, 100, 220 );
-	eeColorA ColRR3( 100, 100, 100, 220 );
+	ColorA ColRR1( 150, 150, 150, 220 );
+	ColorA ColRR4( 150, 150, 150, 220 );
+	ColorA ColRR2( 100, 100, 100, 220 );
+	ColorA ColRR3( 100, 100, 100, 220 );
 
 	mEEText.Flags( FONT_DRAW_CENTER );
 
-	PR.SetColor( eeColorA(150, 150, 150, 220) );
+	PR.SetColor( ColorA(150, 150, 150, 220) );
 	PR.FillMode( DRAW_FILL );
 	PR.DrawRectangle(
 				eeRectf(
@@ -1526,7 +1526,7 @@ void cEETest::ParticlesCallback( cParticle * P, cParticleSystem * Me ) {
 	x = MePos.x + radio * cos( (Float)P->Id() );
 	y = MePos.y + radio * sin( (Float)P->Id() );
 	P->Reset(x, y, Math::Randf(-10.f, 10.f), Math::Randf(-10.f, 10.f), Math::Randf(-10.f, 10.f), Math::Randf(-10.f, 10.f));
-	P->Color( eeColorAf(1.f, 0.6f, 0.3f, 1.f), 0.02f + Math::Randf() * 0.3f );
+	P->Color( ColorAf(1.f, 0.6f, 0.3f, 1.f), 0.02f + Math::Randf() * 0.3f );
 }
 
 void cEETest::Particles() {

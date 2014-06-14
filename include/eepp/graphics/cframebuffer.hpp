@@ -48,10 +48,10 @@ class EE_API cFrameBuffer {
 		cTexture * GetTexture() const;
 
 		/** @brief Sets the frame buffer clear color. */
-		void ClearColor( eeColorAf Color );
+		void ClearColor( ColorAf Color );
 
 		/** @return The clear color used for the frame buffer. */
-		eeColorAf ClearColor() const;
+		ColorAf ClearColor() const;
 
 		/** @return The frame buffer width. */
 		const Int32& GetWidth() const;
@@ -67,7 +67,7 @@ class EE_API cFrameBuffer {
 		Int32		mHeight;
 		bool		mHasDepthBuffer;
 		cTexture *	mTexture;
-		eeColorAf	mClearColor;
+		ColorAf	mClearColor;
 		cView 		mPrevView;
 		float		mProjMat[16];
 

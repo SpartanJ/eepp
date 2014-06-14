@@ -22,7 +22,7 @@ cUISkin::cUISkin( const std::string& Name, const Uint32& Type ) :
 	mNameHash( String::Hash( mName ) ),
 	mTheme(NULL)
 {
-	eeColorA tColor( 255, 255, 255, 255 );
+	ColorA tColor( 255, 255, 255, 255 );
 
 	mColorDefault	= tColor.GetValue();
 
@@ -34,7 +34,7 @@ cUISkin::cUISkin( const std::string& Name, const Uint32& Type ) :
 cUISkin::~cUISkin() {
 }
 
-void cUISkin::SetColor( const Uint32& State, const eeColorA& Color ) {
+void cUISkin::SetColor( const Uint32& State, const ColorA& Color ) {
 	eeASSERT ( State < cUISkinState::StateCount );
 
 	BitOp::WriteBitKey( &mColorDefault, State, 0 );
@@ -42,7 +42,7 @@ void cUISkin::SetColor( const Uint32& State, const eeColorA& Color ) {
 	mColor[ State ] = Color;
 }
 
-const eeColorA& cUISkin::GetColor( const Uint32& State ) const {
+const ColorA& cUISkin::GetColor( const Uint32& State ) const {
 	eeASSERT ( State < cUISkinState::StateCount );
 
 	return mColor[ State ];

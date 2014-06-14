@@ -301,11 +301,11 @@ bool cUIManager::HighlightFocus() const {
 	return 0 != ( mFlags & UI_MANAGER_HIGHLIGHT_FOCUS );
 }
 
-void cUIManager::HighlightFocusColor( const eeColorA& Color ) {
+void cUIManager::HighlightFocusColor( const ColorA& Color ) {
 	mHighlightFocusColor = Color;
 }
 
-const eeColorA& cUIManager::HighlightFocusColor() const {
+const ColorA& cUIManager::HighlightFocusColor() const {
 	return mHighlightFocusColor;
 }
 
@@ -317,11 +317,11 @@ bool cUIManager::HighlightOver() const {
 	return 0 != ( mFlags & UI_MANAGER_HIGHLIGHT_OVER );
 }
 
-void cUIManager::HighlightOverColor( const eeColorA& Color ) {
+void cUIManager::HighlightOverColor( const ColorA& Color ) {
 	mHighlightOverColor = Color;
 }
 
-const eeColorA& cUIManager::HighlightOverColor() const {
+const ColorA& cUIManager::HighlightOverColor() const {
 	return mHighlightOverColor;
 }
 

@@ -4,7 +4,7 @@
 
 namespace EE { namespace Graphics {
 
-cTTFFontLoader::cTTFFontLoader( const std::string& FontName, const std::string& Filepath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) :
+cTTFFontLoader::cTTFFontLoader( const std::string& FontName, const std::string& Filepath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const RGB& FontColor, const Uint8& OutlineSize, const RGB& OutlineColor, const bool& AddPixelSeparator ) :
 	ObjectLoader( FontTTFLoader ),
 	mLoadType( TTF_LT_PATH ),
 	mFontName( FontName ),
@@ -21,7 +21,7 @@ cTTFFontLoader::cTTFFontLoader( const std::string& FontName, const std::string& 
 	Create();
 }
 
-cTTFFontLoader::cTTFFontLoader( const std::string& FontName, Pack * Pack, const std::string& FilePackPath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) :
+cTTFFontLoader::cTTFFontLoader( const std::string& FontName, Pack * Pack, const std::string& FilePackPath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const RGB& FontColor, const Uint8& OutlineSize, const RGB& OutlineColor, const bool& AddPixelSeparator ) :
 	ObjectLoader( FontTTFLoader ),
 	mLoadType( TTF_LT_PACK ),
 	mFontName( FontName ),
@@ -39,7 +39,7 @@ cTTFFontLoader::cTTFFontLoader( const std::string& FontName, Pack * Pack, const 
 	Create();
 }
 
-cTTFFontLoader::cTTFFontLoader( const std::string& FontName, Uint8* TTFData, const unsigned int& TTFDataSize, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) :
+cTTFFontLoader::cTTFFontLoader( const std::string& FontName, Uint8* TTFData, const unsigned int& TTFDataSize, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const RGB& FontColor, const Uint8& OutlineSize, const RGB& OutlineColor, const bool& AddPixelSeparator ) :
 	ObjectLoader( FontTTFLoader ),
 	mLoadType( TTF_LT_MEM ),
 	mFontName( FontName ),

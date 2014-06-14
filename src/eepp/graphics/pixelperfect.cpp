@@ -38,7 +38,7 @@ bool PixelPerfectCollide( cTexture * Tex1, const unsigned int& x1, const unsigne
 		inter_x1 = eemin(ax2,bx2);
 		inter_y0 = eemax(ay1,by1);
 		inter_y1 = eemin(ay2,by2);
-		eeColorA C1, C2;
+		ColorA C1, C2;
 
 		for(unsigned int y = inter_y0 ; y <= inter_y1 ; y++) {
 			for(unsigned int x = inter_x0 ; x <= inter_x1 ; x++) {
@@ -82,7 +82,7 @@ bool PixelPerfectCollide( cTexture * Tex, const unsigned int& x1, const unsigned
 	}
 
 	if ( !( ax1 >= x2 && ax2 <= x2 && ay1 >= y2 && ay2 <= y2 ) ) {
-		eeColorA C1;
+		ColorA C1;
 		
 		Tex->Lock();
 		

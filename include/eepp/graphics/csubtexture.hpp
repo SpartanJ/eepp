@@ -80,23 +80,23 @@ class EE_API cSubTexture {
 		/** Set the SubTexture offset. */
 		void Offset( const eeVector2i& offset );
 
-		void Draw( const Float& X, const Float& Y, const eeColorA& Color = eeColorA(), const Float& Angle = 0.f, const eeVector2f& Scale = eeVector2f::One, const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDER_MODE& Effect = RN_NORMAL, eeOriginPoint Center = eeOriginPoint(eeOriginPoint::OriginCenter) );
+		void Draw( const Float& X, const Float& Y, const ColorA& Color = ColorA(), const Float& Angle = 0.f, const eeVector2f& Scale = eeVector2f::One, const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDER_MODE& Effect = RN_NORMAL, eeOriginPoint Center = eeOriginPoint(eeOriginPoint::OriginCenter) );
 
-		void Draw( const Float& X, const Float& Y, const Float& Angle, const eeVector2f& Scale, const eeColorA& Color0 = eeColorA(), const eeColorA& Color1 = eeColorA(), const eeColorA& Color2 = eeColorA(), const eeColorA& Color3 = eeColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDER_MODE& Effect = RN_NORMAL, eeOriginPoint Center = eeOriginPoint(eeOriginPoint::OriginCenter) );
+		void Draw( const Float& X, const Float& Y, const Float& Angle, const eeVector2f& Scale, const ColorA& Color0 = ColorA(), const ColorA& Color1 = ColorA(), const ColorA& Color2 = ColorA(), const ColorA& Color3 = ColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDER_MODE& Effect = RN_NORMAL, eeOriginPoint Center = eeOriginPoint(eeOriginPoint::OriginCenter) );
 
-		void Draw( const eeQuad2f Q, const eeVector2f& Offset = eeVector2f(), const Float& Angle = 0.f, const eeVector2f& Scale = eeVector2f::One, const eeColorA& Color0 = eeColorA(), const eeColorA& Color1 = eeColorA(), const eeColorA& Color2 = eeColorA(), const eeColorA& Color3 = eeColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
+		void Draw( const eeQuad2f Q, const eeVector2f& Offset = eeVector2f(), const Float& Angle = 0.f, const eeVector2f& Scale = eeVector2f::One, const ColorA& Color0 = ColorA(), const ColorA& Color1 = ColorA(), const ColorA& Color2 = ColorA(), const ColorA& Color3 = ColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
 
 		/** @return The texture instance used by the SubTexture. */
 		cTexture * GetTexture();
 
 		/** Replaces a color in the SubTexture ( needs Lock() ) */
-		void ReplaceColor( eeColorA ColorKey, eeColorA NewColor );
+		void ReplaceColor( ColorA ColorKey, ColorA NewColor );
 
 		/** Creates a mask from a color.  */
-		void CreateMaskFromColor( eeColorA ColorKey, Uint8 Alpha );
+		void CreateMaskFromColor( ColorA ColorKey, Uint8 Alpha );
 
 		/** Creates a mask from a color. */
-		void CreateMaskFromColor( eeColor ColorKey, Uint8 Alpha );
+		void CreateMaskFromColor( RGB ColorKey, Uint8 Alpha );
 
 		/** Creates a copy of the alpha mask to memory from the texture loaded in VRAM. */
 		void CacheAlphaMask();
@@ -110,12 +110,12 @@ class EE_API cSubTexture {
 
 		/** @return The color that corresponds to the position indicated in the SubTexture.
 		*	If the SubTexture wasn't locked before this call, it will be locked automatically. */
-		eeColorA GetColorAt( const Int32& X, const Int32& Y );
+		ColorA GetColorAt( const Int32& X, const Int32& Y );
 
 		/** @brief Set a color to the position indicated in the SubTexture.
 		*	If the SubTexture wasn't locked before this call, it will be locked automatically.
 		*/
-		void SetColorAt( const Int32& X, const Int32& Y, const eeColorA& Color );
+		void SetColorAt( const Int32& X, const Int32& Y, const ColorA& Color );
 
 		/** Deletes the texture buffer from memory ( not from VRAM ) if it was cached before ( using Lock() ). */
 		void ClearCache();

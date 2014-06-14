@@ -633,7 +633,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	if ( mWindow->Created() ) {
 		KM = mWindow->GetInput();
 
-		mWindow->BackColor( eeColor( 255, 255, 255 ) );
+		mWindow->BackColor( RGB( 255, 255, 255 ) );
 
 		PhysicsCreate();
 

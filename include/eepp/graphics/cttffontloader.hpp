@@ -24,7 +24,7 @@ class EE_API cTTFFontLoader : public ObjectLoader {
 		* @param OutlineColor The Outline Color
 		* @param AddPixelSeparator Indicates if separates the glyphs by a pixel to avoid problems with font scaling
 		*/
-		cTTFFontLoader( const std::string& FontName, const std::string& Filepath, const unsigned int& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true );
+		cTTFFontLoader( const std::string& FontName, const std::string& Filepath, const unsigned int& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const Uint16& NumCharsToGen = 512, const RGB& FontColor = RGB(), const Uint8& OutlineSize = 0, const RGB& OutlineColor = RGB(0,0,0), const bool& AddPixelSeparator = true );
 
 		/** Load a True Type Font from a Pack
 		* @param FontName The font name
@@ -38,7 +38,7 @@ class EE_API cTTFFontLoader : public ObjectLoader {
 		* @param OutlineColor The Outline Color
 		* @param AddPixelSeparator Indicates if separates the glyphs by a pixel to avoid problems with font scaling
 		*/
-		cTTFFontLoader( const std::string& FontName, Pack * Pack, const std::string& FilePackPath, const unsigned int& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true );
+		cTTFFontLoader( const std::string& FontName, Pack * Pack, const std::string& FilePackPath, const unsigned int& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const Uint16& NumCharsToGen = 512, const RGB& FontColor = RGB(), const Uint8& OutlineSize = 0, const RGB& OutlineColor = RGB(0,0,0), const bool& AddPixelSeparator = true );
 
 		/** Loads a True Type Font from memory
 		* @param FontName The font name
@@ -52,7 +52,7 @@ class EE_API cTTFFontLoader : public ObjectLoader {
 		* @param OutlineColor The Outline Color
 		* @param AddPixelSeparator Indicates if separates the glyphs by a pixel to avoid problems with font scaling
 		*/
-		cTTFFontLoader( const std::string& FontName, Uint8* TTFData, const unsigned int& TTFDataSize, const unsigned int& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true );
+		cTTFFontLoader( const std::string& FontName, Uint8* TTFData, const unsigned int& TTFDataSize, const unsigned int& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const Uint16& NumCharsToGen = 512, const RGB& FontColor = RGB(), const Uint8& OutlineSize = 0, const RGB& OutlineColor = RGB(0,0,0), const bool& AddPixelSeparator = true );
 
 		virtual ~cTTFFontLoader();
 
@@ -86,9 +86,9 @@ class EE_API cTTFFontLoader : public ObjectLoader {
 		unsigned int				mSize;
 		EE_TTF_FONT_STYLE	mStyle;
 		Uint16				mNumCharsToGen;
-		eeColor				mFontColor;
+		RGB				mFontColor;
 		Uint8				mOutlineSize;
-		eeColor				mOutlineColor;
+		RGB				mOutlineColor;
 		bool				mAddPixelSeparator;
 		Pack *				mPack;
 		Uint8 *				mData;

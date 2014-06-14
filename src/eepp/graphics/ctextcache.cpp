@@ -18,7 +18,7 @@ cTextCache::cTextCache() :
 {
 }
 
-cTextCache::cTextCache( cFont * font, const String& text, eeColorA FontColor, eeColorA FontShadowColor ) :
+cTextCache::cTextCache( cFont * font, const String& text, ColorA FontColor, ColorA FontShadowColor ) :
 	mText( text ),
 	mFont( font ),
 	mCachedWidth(0.f),
@@ -37,7 +37,7 @@ cTextCache::cTextCache( cFont * font, const String& text, eeColorA FontColor, ee
 cTextCache::~cTextCache() {
 }
 
-void cTextCache::Create( cFont * font, const String& text, eeColorA FontColor, eeColorA FontShadowColor ) {
+void cTextCache::Create( cFont * font, const String& text, ColorA FontColor, ColorA FontShadowColor ) {
 	mFont = font;
 	mText = text;
 	UpdateCoords();
@@ -80,7 +80,7 @@ void cTextCache::Text( const String& text ) {
 	Cache();
 }
 
-const eeColorA& cTextCache::Color() const {
+const ColorA& cTextCache::Color() const {
 	return mFontColor;
 }
 
@@ -91,7 +91,7 @@ void cTextCache::Alpha( const Uint8& alpha ) {
 	}
 }
 
-void cTextCache::Color( const eeColorA& color ) {
+void cTextCache::Color( const ColorA& color ) {
 	if ( mFontColor != color ) {
 		mFontColor = color;
 
@@ -99,8 +99,8 @@ void cTextCache::Color( const eeColorA& color ) {
 	}
 }
 
-void cTextCache::Color( const eeColorA& color, Uint32 from, Uint32 to ) {
-	std::vector<eeColorA> colors( GLi->QuadVertexs(), color );
+void cTextCache::Color( const ColorA& color, Uint32 from, Uint32 to ) {
+	std::vector<ColorA> colors( GLi->QuadVertexs(), color );
 	std::size_t s = mText.size();
 
 	if ( to >= s ) {
@@ -112,7 +112,7 @@ void cTextCache::Color( const eeColorA& color, Uint32 from, Uint32 to ) {
 		Int32 rpos	= from;
 		Int32 lpos	= 0;
 		Uint32 i;
-		Uint32 qsize = sizeof(eeColorA) * GLi->QuadVertexs();
+		Uint32 qsize = sizeof(ColorA) * GLi->QuadVertexs();
 		String::StringBaseType curChar;
 
 		// New lines and tabs are not rendered, and not counted as a color
@@ -144,11 +144,11 @@ void cTextCache::Color( const eeColorA& color, Uint32 from, Uint32 to ) {
 	}
 }
 
-const eeColorA& cTextCache::ShadowColor() const {
+const ColorA& cTextCache::ShadowColor() const {
 	return mFontShadowColor;
 }
 
-void cTextCache::ShadowColor(const eeColorA& color) {
+void cTextCache::ShadowColor(const ColorA& color) {
 	mFontShadowColor = color;
 }
 
@@ -156,7 +156,7 @@ std::vector<eeVertexCoords>& cTextCache::VertextCoords() {
 	return mRenderCoords;
 }
 
-std::vector<eeColorA>& cTextCache::Colors() {
+std::vector<ColorA>& cTextCache::Colors() {
 	return mColors;
 }
 

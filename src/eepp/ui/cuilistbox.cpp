@@ -669,30 +669,30 @@ Uint32 cUIListBox::GetItemIndex( const String& Text ) {
 	return eeINDEX_NOT_FOUND;
 }
 
-void cUIListBox::FontColor( const eeColorA& Color ) {
+void cUIListBox::FontColor( const ColorA& Color ) {
 	mFontColor = Color;
 
 	for ( Uint32 i = 0; i < mItems.size(); i++ )
 		mItems[i]->Color( mFontColor );
 }
 
-const eeColorA& cUIListBox::FontColor() const {
+const ColorA& cUIListBox::FontColor() const {
 	return mFontColor;
 }
 
-void cUIListBox::FontOverColor( const eeColorA& Color ) {
+void cUIListBox::FontOverColor( const ColorA& Color ) {
 	mFontOverColor = Color;
 }
 
-const eeColorA& cUIListBox::FontOverColor() const {
+const ColorA& cUIListBox::FontOverColor() const {
 	return mFontOverColor;
 }
 
-void cUIListBox::FontSelectedColor( const eeColorA& Color ) {
+void cUIListBox::FontSelectedColor( const ColorA& Color ) {
 	mFontSelectedColor = Color;
 }
 
-const eeColorA& cUIListBox::FontSelectedColor() const {
+const ColorA& cUIListBox::FontSelectedColor() const {
 	return mFontSelectedColor;
 }
 

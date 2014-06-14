@@ -35,7 +35,7 @@ cMapProperties::cMapProperties( cMap * Map ) :
 		ComParams.PosSet( Txt->Pos().x, Txt->Pos().y + Txt->Size().Height() + 4 );
 		ComParams.SizeSet( 64, 64 );
 		ComParams.Background.Color( mMap->BaseColor() );
-		ComParams.Border.Color( eeColorA( 100, 100, 100, 200 ) );
+		ComParams.Border.Color( ColorA( 100, 100, 100, 200 ) );
 		ComParams.Flags |= UI_FILL_BACKGROUND | UI_BORDER;
 		mUIBaseColor = eeNew( cUIComplexControl, ( ComParams ) );
 		mUIBaseColor->Visible( true );
@@ -122,34 +122,34 @@ cMapProperties::~cMapProperties() {
 }
 
 void cMapProperties::OnRedChange( const cUIEvent * Event ) {
-	eeColorA Col = mUIBaseColor->Background()->Color();
+	ColorA Col = mUIBaseColor->Background()->Color();
 	Col.Red = (Uint8)mUIRedSlider->Value();
 	mUIBaseColor->Background()->Color( Col );
 	mUIRedTxt->Text( String::ToStr( (Int32)mUIRedSlider->Value() ) );
 
-	eeColorA MapCol = mMap->BaseColor();
+	ColorA MapCol = mMap->BaseColor();
 	MapCol.Red = Col.Red;
 	mMap->BaseColor( MapCol );
 }
 
 void cMapProperties::OnGreenChange( const cUIEvent * Event ) {
-	eeColorA Col = mUIBaseColor->Background()->Color();
+	ColorA Col = mUIBaseColor->Background()->Color();
 	Col.Green = (Uint8)mUIGreenSlider->Value();
 	mUIBaseColor->Background()->Color( Col );
 	mUIGreenTxt->Text( String::ToStr( (Uint32)mUIGreenSlider->Value() ) );
 
-	eeColorA MapCol = mMap->BaseColor();
+	ColorA MapCol = mMap->BaseColor();
 	MapCol.Green = Col.Green;
 	mMap->BaseColor( MapCol );
 }
 
 void cMapProperties::OnBlueChange( const cUIEvent * Event ) {
-	eeColorA Col = mUIBaseColor->Background()->Color();
+	ColorA Col = mUIBaseColor->Background()->Color();
 	Col.Blue = (Uint8)mUIBlueSlider->Value();
 	mUIBaseColor->Background()->Color( Col );
 	mUIBlueTxt->Text( String::ToStr( (Uint32)mUIBlueSlider->Value() ) );
 
-	eeColorA MapCol = mMap->BaseColor();
+	ColorA MapCol = mMap->BaseColor();
 	MapCol.Blue = Col.Blue;
 	mMap->BaseColor( MapCol );
 }

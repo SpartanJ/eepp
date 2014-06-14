@@ -57,11 +57,11 @@ void cGrooveJoint::Draw() {
 	BR->SetTexture( NULL );
 	BR->SetPointSize( mDrawPointSize );
 	BR->PointsBegin();
-	BR->PointSetColor( eeColorA( 128, 255, 128, 255 ) );
+	BR->PointSetColor( ColorA( 128, 255, 128, 255 ) );
 	BR->BatchPoint( c.x, c.y );
 	BR->Draw();
 	BR->LinesBegin();
-	BR->LinesSetColor( eeColorA( 128, 255, 128, 255 ) );
+	BR->LinesSetColor( ColorA( 128, 255, 128, 255 ) );
 	BR->BatchLine( a.x, a.y, b.x, b.y );
 	BR->Draw();
 	BR->SetPointSize( ps );

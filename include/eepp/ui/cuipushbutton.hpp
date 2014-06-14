@@ -45,9 +45,9 @@ class EE_API cUIPushButton : public cUIComplexControl {
 				}
 
 				cFont * 	Font;
-				eeColorA 	FontColor;
-				eeColorA	FontShadowColor;
-				eeColorA 	FontOverColor;
+				ColorA 	FontColor;
+				ColorA	FontShadowColor;
+				ColorA 	FontOverColor;
 				cSubTexture * 	Icon;
 				Int32 		IconHorizontalMargin;
 				bool 		IconAutoMargin;
@@ -82,16 +82,16 @@ class EE_API cUIPushButton : public cUIComplexControl {
 
 		cUITextBox * TextBox() const;
 
-		const eeColorA& FontColor() const;
+		const ColorA& FontColor() const;
 
-		void FontColor( const eeColorA& color );
+		void FontColor( const ColorA& color );
 
-		const eeColorA& FontOverColor() const;
+		const ColorA& FontOverColor() const;
 
-		void FontOverColor( const eeColorA& color );
+		void FontOverColor( const ColorA& color );
 	protected:
-		eeColorA		mFontColor;
-		eeColorA		mFontOverColor;
+		ColorA		mFontColor;
+		ColorA		mFontOverColor;
 		cUIGfx * 		mIcon;
 		cUITextBox * 	mTextBox;
 		Int32			mIconSpace;

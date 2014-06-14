@@ -10,13 +10,13 @@ class EE_API cUIBorder {
 		cUIBorder();
 		cUIBorder( const cUIBorder& border );
 
-		const eeColorA& Color() const;
-		void Color( const eeColorA& Col );
+		const ColorA& Color() const;
+		void Color( const ColorA& Col );
 
 		const unsigned int& Width() const;
 		void Width( const unsigned int& width );
 	protected:
-		eeColorA		mColor;
+		ColorA		mColor;
 		unsigned int			mWidth;
 };
 

@@ -108,11 +108,11 @@ cSubTexture * cUIGfx::SubTexture() const {
 	return mSubTexture;
 }
 
-const eeColorA& cUIGfx::Color() const {
+const ColorA& cUIGfx::Color() const {
 	return mColor;
 }
 
-void cUIGfx::Color( const eeColorA& color ) {
+void cUIGfx::Color( const ColorA& color ) {
 	mColor = color;
 	Alpha( color.A() );
 }

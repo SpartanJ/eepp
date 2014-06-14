@@ -51,7 +51,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	win = cEngine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - Fonts" ), ContextSettings( true ) );
 
 	// Set window background color
-	win->BackColor( eeColor(255,255,255) );
+	win->BackColor( RGB(255,255,255) );
 
 	// Check if created
 	if ( win->Created() ) {
@@ -66,15 +66,15 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		TexF2	= cTextureFont::New( "conchars" );
 
 		// Load the TTF font
-		TTF->Load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 18, TTF_STYLE_NORMAL, 128, eeColor(255,255,255), 3, eeColor(0,0,0), true );
+		TTF->Load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 18, TTF_STYLE_NORMAL, 128, RGB(255,255,255), 3, RGB(0,0,0), true );
 
 		// Change the default method to use for outlining the font glyphs
 		cTTFFont::OutlineMethod = cTTFFont::OutlineFreetype;
 
 		// Create the exact same font than before but using the new outlining method
-		TTFO->Load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 18, TTF_STYLE_NORMAL, 128, eeColor(255,255,255), 3, eeColor(0,0,0), true );
+		TTFO->Load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 18, TTF_STYLE_NORMAL, 128, RGB(255,255,255), 3, RGB(0,0,0), true );
 
-		TTF2->Load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 24, TTF_STYLE_NORMAL, 128, eeColor(255,255,255), 0, eeColor(0,0,0), true );
+		TTF2->Load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 24, TTF_STYLE_NORMAL, 128, RGB(255,255,255), 0, RGB(0,0,0), true );
 
 		// Save the TTF font so then it can be loaded as a cTextureFont
 		TTF->Save( AppPath + "assets/temp/DejaVuSansMono.png", AppPath + "assets/temp/DejaVuSansMono.fnt" );
@@ -86,7 +86,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 		// Load a monospaced texture font from image ( using the texture loader to set the color key )
 		cTextureLoader TexLoader( AppPath + "assets/fonts/conchars.png" );
-		TexLoader.SetColorKey( eeColor(0,0,0) );
+		TexLoader.SetColorKey( RGB(0,0,0) );
 		TexLoader.Load();;
 		TexF2->Load( TexLoader.Id(), 32 );
 
@@ -98,8 +98,8 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		TexF2->SetText( TTF->GetText() );
 
 		// Set the font color
-		TTF2->Color( eeColor(0,0,0) );
-		TexF->Color( eeColor(0,0,0) );
+		TTF2->Color( RGB(0,0,0) );
+		TexF->Color( RGB(0,0,0) );
 
 		// Create a new text string
 		String Txt( "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." );
@@ -109,7 +109,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 		// Create a new text cache to draw on screen
 		// The cached text will
-		TxtCache = eeNew( cTextCache, ( TTF2, Txt, eeColorA(0,0,0,255) ) );
+		TxtCache = eeNew( cTextCache, ( TTF2, Txt, ColorA(0,0,0,255) ) );
 
 		// Set the text cache to be centered
 		TxtCache->Flags( FONT_DRAW_CENTER );
@@ -120,7 +120,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		size_t size = TxtCache->Text().size();
 
 		for ( size_t i = 0; i < size; i++ ) {
-			TxtCache->Color( eeColorA(255*i/size,0,0,255), i, i+1 );
+			TxtCache->Color( ColorA(255*i/size,0,0,255), i, i+1 );
 		}
 
 		// Application loop

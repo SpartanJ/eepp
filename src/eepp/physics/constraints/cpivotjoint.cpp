@@ -57,7 +57,7 @@ void cPivotJoint::Draw() {
 	BR->SetTexture( NULL );
 	BR->SetPointSize( mDrawPointSize );
 	BR->PointsBegin();
-	BR->PointSetColor( eeColorA( 128, 255, 128, 255 ) );
+	BR->PointSetColor( ColorA( 128, 255, 128, 255 ) );
 	BR->BatchPoint( a.x, a.y );
 	BR->BatchPoint( b.x, b.y );
 	BR->Draw();

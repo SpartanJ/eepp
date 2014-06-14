@@ -1,7 +1,7 @@
 #ifndef EE_WINDOWBACKEND_BASE_SDL2_HPP
 #define EE_WINDOWBACKEND_BASE_SDL2_HPP
 
-#include <eepp/window/base.hpp>
+#include <eepp/core.hpp>
 
 #ifdef EE_BACKEND_SDL_ACTIVE
 

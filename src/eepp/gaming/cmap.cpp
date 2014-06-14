@@ -61,7 +61,7 @@ void cMap::Reset() {
 	mMaxLayers	= 0;
 	mMouseOver = false;
 	mViewSize = eeSize( 800, 600 );
-	mBaseColor = eeColorA( 255, 255, 255, 255 );
+	mBaseColor = ColorA( 255, 255, 255, 255 );
 }
 
 void cMap::ForceHeadersOnLoad( eeSize mapSize, eeSize tileSize, Uint32 numLayers, Uint32 flags ) {
@@ -125,11 +125,11 @@ void cMap::CreateEmptyTile() {
 
 	if ( NULL == Tex ) {
 		Uint32 x, y;
-		eeColorA Col( mGridLinesColor );
+		ColorA Col( mGridLinesColor );
 
 		cImage Img( mTileSize.Width(), mTileSize.Height(), 4 );
 
-		Img.FillWithColor( eeColorA( 0, 0, 0, 0 ) );
+		Img.FillWithColor( ColorA( 0, 0, 0, 0 ) );
 
 		for ( x = 0; x < Img.Width(); x++ ) {
 			Img.SetPixel( x, 0, Col );
@@ -222,9 +222,9 @@ void cMap::Draw() {
 
 		Uint8 Alpha = static_cast<Uint8>( (Float)mBackColor.A() * ( (Float)mBackAlpha / 255.f ) );
 
-		P.SetColor( eeColorA( mBackColor.R(), mBackColor.G(), mBackColor.B(), Alpha ) );
+		P.SetColor( ColorA( mBackColor.R(), mBackColor.G(), mBackColor.B(), Alpha ) );
 		P.DrawRectangle( eeRectf( eeVector2f( mScreenPos.x, mScreenPos.y ), eeSizef( mViewSize.x, mViewSize.y ) ), 0.f, eeVector2f::One );
-		P.SetColor( eeColorA( 255, 255, 255, 255 ) );
+		P.SetColor( ColorA( 255, 255, 255, 255 ) );
 	}
 
 	float oldM[16];
@@ -276,7 +276,7 @@ void cMap::GridDraw() {
 	eeVector2i end = EndTile();
 
 	Float tx, ty;
-	eeColorA TileTexCol( 255, 255, 255, mBackAlpha );
+	ColorA TileTexCol( 255, 255, 255, mBackAlpha );
 
 	for ( Int32 x = start.x; x < end.x; x++ ) {
 		for ( Int32 y = start.y; y < end.y; y++ ) {
@@ -288,10 +288,10 @@ void cMap::GridDraw() {
 				eeVector2i TPos( x, y );
 
 				if ( mLightManager->IsByVertex() ) {
-					eeColorA TileTexCol0( *mLightManager->GetTileColor( TPos, 0 ) );
-					eeColorA TileTexCol1( *mLightManager->GetTileColor( TPos, 1 ) );
-					eeColorA TileTexCol2( *mLightManager->GetTileColor( TPos, 2 ) );
-					eeColorA TileTexCol3( *mLightManager->GetTileColor( TPos, 3 ) );
+					ColorA TileTexCol0( *mLightManager->GetTileColor( TPos, 0 ) );
+					ColorA TileTexCol1( *mLightManager->GetTileColor( TPos, 1 ) );
+					ColorA TileTexCol2( *mLightManager->GetTileColor( TPos, 2 ) );
+					ColorA TileTexCol3( *mLightManager->GetTileColor( TPos, 3 ) );
 
 					TileTexCol0.Alpha = TileTexCol1.Alpha = TileTexCol2.Alpha = TileTexCol3.Alpha	= mBackAlpha;
 
@@ -519,11 +519,11 @@ const eeVector2i& cMap::ExtraTiles() const {
 	return mExtraTiles;
 }
 
-void cMap::BaseColor( const eeColorA& color ) {
+void cMap::BaseColor( const ColorA& color ) {
 	mBaseColor = color;
 }
 
-const eeColorA& cMap::BaseColor() const {
+const ColorA& cMap::BaseColor() const {
 	return mBaseColor;
 }
 
@@ -806,7 +806,7 @@ bool cMap::LoadFromStream( IOStream& IOS ) {
 				Create( mForcedHeaders->MapSize, mForcedHeaders->NumLayers, mForcedHeaders->TileSize, mForcedHeaders->Flags );
 			}
 
-			BaseColor( eeColorA( MapHdr.BaseColor ) );
+			BaseColor( ColorA( MapHdr.BaseColor ) );
 
 			//! Load Properties
 			if ( MapHdr.PropertyCount ) {
@@ -1009,8 +1009,11 @@ bool cMap::LoadFromStream( IOStream& IOS ) {
 					for ( i = 0; i < MapHdr.LightsCount; i++ ) {
 						tLightHdr = &( tLighsHdr[ i ] );
 
+						ColorA color( tLightHdr->Color );
+						RGB rgb( color.ToColor() );
+
 						mLightManager->AddLight(
-							eeNew( cLight, ( tLightHdr->Radius, tLightHdr->PosX, tLightHdr->PosY, eeColorA( tLightHdr->Color ).ToColor(), (LIGHT_TYPE)tLightHdr->Type ) )
+							eeNew( cLight, ( tLightHdr->Radius, tLightHdr->PosX, tLightHdr->PosY, rgb, (LIGHT_TYPE)tLightHdr->Type ) )
 						);
 					}
 
@@ -1349,7 +1352,7 @@ void cMap::SaveToStream( IOStream& IOS ) {
 				tLightHdr.Radius	= Light->Radius();
 				tLightHdr.PosX		= (Int32)Light->Position().x;
 				tLightHdr.PosY		= (Int32)Light->Position().y;
-				tLightHdr.Color		= eeColorA( Light->Color() ).GetValue();
+				tLightHdr.Color		= ColorA( Light->Color() ).GetValue();
 				tLightHdr.Type		= Light->Type();
 
 				IOS.Write( (const char*)&tLightHdr, sizeof(sMapLightHdr) );
@@ -1452,11 +1455,11 @@ void cMap::BackAlpha( const Uint8& alpha ) {
 	mBackAlpha = alpha;
 }
 
-const eeColorA& cMap::BackColor() const {
+const ColorA& cMap::BackColor() const {
 	return mBackColor;
 }
 
-void cMap::BackColor( const eeColorA& col ) {
+void cMap::BackColor( const ColorA& col ) {
 	mBackColor = col;
 }
 
@@ -1464,11 +1467,11 @@ Uint32 cMap::GetNewObjectId() {
 	return ++mLastObjId;
 }
 
-void cMap::GridLinesColor( const eeColorA& Col ) {
+void cMap::GridLinesColor( const ColorA& Col ) {
 	mGridLinesColor = Col;
 }
 
-const eeColorA& cMap::GridLinesColor() const {
+const ColorA& cMap::GridLinesColor() const {
 	return mGridLinesColor;
 }
 

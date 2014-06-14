@@ -1,7 +1,13 @@
 #ifndef EE_WINDOWCPLATFORMIMPL_HPP
 #define EE_WINDOWCPLATFORMIMPL_HPP
 
-#include <eepp/window/base.hpp>
+#include <eepp/core.hpp>
+
+#include <eepp/math/vector2.hpp>
+using namespace EE::Math;
+
+#include <eepp/window/windowhandle.hpp>
+#include <eepp/window/windowcontext.hpp>
 #include <eepp/window/cursorhelper.hpp>
 
 namespace EE {
@@ -21,6 +27,7 @@ class cCursor;
 namespace EE { namespace Window { namespace Platform {
 
 using namespace EE::Window;
+using namespace EE::Graphics;
 
 /** This is an abstraction of some platform specific implementations
 * It's not garanteed that everything is implemented in every platform.

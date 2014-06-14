@@ -12,7 +12,7 @@ cScrollParallax::cScrollParallax() :
 cScrollParallax::~cScrollParallax()
 {}
 
-cScrollParallax::cScrollParallax( cSubTexture * SubTexture, const eeVector2f& Position, const eeSizef& Size, const eeVector2f& Speed, const eeColorA& Color, const EE_BLEND_MODE& Blend ) {
+cScrollParallax::cScrollParallax( cSubTexture * SubTexture, const eeVector2f& Position, const eeSizef& Size, const eeVector2f& Speed, const ColorA& Color, const EE_BLEND_MODE& Blend ) {
 	Create( SubTexture, Position, Size, Speed, Color, Blend );
 }
 
@@ -40,7 +40,7 @@ void cScrollParallax::SetAABB() {
 	mAABB		= eeRectf( mInitPos.x, mInitPos.y, mInitPos.x + mSize.Width(), mInitPos.y + mSize.Height() );
 }
 
-bool cScrollParallax::Create( cSubTexture * SubTexture, const eeVector2f& Position, const eeSizef& Size, const eeVector2f& Speed, const eeColorA& Color, const EE_BLEND_MODE& Blend ) {
+bool cScrollParallax::Create( cSubTexture * SubTexture, const eeVector2f& Position, const eeSizef& Size, const eeVector2f& Speed, const ColorA& Color, const EE_BLEND_MODE& Blend ) {
 	mSubTexture		= SubTexture;
 	mPos		= Position;
 	mSize 		= Size;

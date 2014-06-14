@@ -369,35 +369,35 @@ cFont * cUITheme::Font() const {
 	return mFont;
 }
 
-const eeColorA& cUITheme::FontColor() const {
+const ColorA& cUITheme::FontColor() const {
 	return mFontColor;
 }
 
-const eeColorA& cUITheme::FontShadowColor() const {
+const ColorA& cUITheme::FontShadowColor() const {
 	return mFontShadowColor;
 }
 
-const eeColorA& cUITheme::FontOverColor() const {
+const ColorA& cUITheme::FontOverColor() const {
 	return mFontOverColor;
 }
 
-const eeColorA& cUITheme::FontSelectedColor() const {
+const ColorA& cUITheme::FontSelectedColor() const {
 	return mFontSelectedColor;
 }
 
-void cUITheme::FontColor( const eeColorA& Color ) {
+void cUITheme::FontColor( const ColorA& Color ) {
 	mFontColor = Color;
 }
 
-void cUITheme::FontShadowColor( const eeColorA& Color ) {
+void cUITheme::FontShadowColor( const ColorA& Color ) {
 	mFontShadowColor = Color;
 }
 
-void cUITheme::FontOverColor( const eeColorA& Color ) {
+void cUITheme::FontOverColor( const ColorA& Color ) {
 	mFontOverColor = Color;
 }
 
-void cUITheme::FontSelectedColor( const eeColorA& Color ) {
+void cUITheme::FontSelectedColor( const ColorA& Color ) {
 	mFontSelectedColor = Color;
 }
 
@@ -424,7 +424,7 @@ cSubTexture * cUITheme::GetIconByName( const std::string& name ) {
 	return NULL;
 }
 
-cUIGfx * cUITheme::CreateGfx( cSubTexture * SubTexture, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, eeColorA SubTextureColor, EE_RENDER_MODE SubTextureRender ) {
+cUIGfx * cUITheme::CreateGfx( cSubTexture * SubTexture, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, ColorA SubTextureColor, EE_RENDER_MODE SubTextureRender ) {
 	cUIGfx::CreateParams GfxParams;
 	GfxParams.Parent( Parent );
 	GfxParams.PosSet( Pos );

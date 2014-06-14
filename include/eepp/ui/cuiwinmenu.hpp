@@ -39,10 +39,10 @@ class EE_API cUIWinMenu : public cUIComplexControl {
 				}
 
 				cFont * 	Font;
-				eeColorA 	FontColor;
-				eeColorA	FontShadowColor;
-				eeColorA 	FontOverColor;
-				eeColorA	FontSelectedColor;
+				ColorA 	FontColor;
+				ColorA	FontShadowColor;
+				ColorA 	FontOverColor;
+				ColorA	FontSelectedColor;
 				Uint32		MarginBetweenButtons;
 				Uint32		ButtonMargin;
 				Uint32		MenuHeight;
@@ -63,17 +63,17 @@ class EE_API cUIWinMenu : public cUIComplexControl {
 
 		virtual void SetTheme( cUITheme * Theme );
 
-		void FontColor( const eeColorA& Color );
+		void FontColor( const ColorA& Color );
 
-		const eeColorA& FontColor() const;
+		const ColorA& FontColor() const;
 
-		void FontOverColor( const eeColorA& Color );
+		void FontOverColor( const ColorA& Color );
 
-		const eeColorA& FontOverColor() const;
+		const ColorA& FontOverColor() const;
 
-		void FontSelectedColor( const eeColorA& Color );
+		void FontSelectedColor( const ColorA& Color );
 
-		const eeColorA& FontSelectedColor() const;
+		const ColorA& FontSelectedColor() const;
 
 		cFont * Font() const;
 
@@ -84,10 +84,10 @@ class EE_API cUIWinMenu : public cUIComplexControl {
 		typedef std::list< std::pair< cUISelectButton *, cUIPopUpMenu * > > WinMenuList;
 
 		cFont *			mFont;
-		eeColorA		mFontColor;
-		eeColorA		mFontShadowColor;
-		eeColorA		mFontOverColor;
-		eeColorA		mFontSelectedColor;
+		ColorA		mFontColor;
+		ColorA		mFontShadowColor;
+		ColorA		mFontOverColor;
+		ColorA		mFontSelectedColor;
 		cUIPopUpMenu *	mCurrentMenu;
 		Uint32			mMarginBetweenButtons;
 		Uint32			mButtonMargin;

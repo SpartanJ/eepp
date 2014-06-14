@@ -426,14 +426,14 @@ void cBatchRenderer::BatchQuadFreeEx( const Float& x0, const Float& y0, const Fl
 void cBatchRenderer::QuadsBegin() {
 	SetBlendMode( DM_QUADS, true );
 	QuadsSetSubset( 0, 0, 1, 1 );
-	QuadsSetColor( eeColorA() );
+	QuadsSetColor( ColorA() );
 }
 
-void cBatchRenderer::QuadsSetColor( const eeColorA& Color ) {
+void cBatchRenderer::QuadsSetColor( const ColorA& Color ) {
 	mVerColor[0] = mVerColor[1] = mVerColor[2] = mVerColor[3] = Color;
 }
 
-void cBatchRenderer::QuadsSetColorFree( const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3 ) {
+void cBatchRenderer::QuadsSetColorFree( const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3 ) {
 	mVerColor[0] = Color0;
 	mVerColor[1] = Color1;
 	mVerColor[2] = Color2;
@@ -467,10 +467,10 @@ void cBatchRenderer::Rotate( const eeVector2f& center, eeVector2f* point, const 
 void cBatchRenderer::PointsBegin() {
 	SetBlendMode( DM_POINTS, true );
 	QuadsSetSubset( 0, 0, 1, 1 );
-	PointSetColor( eeColorA() );
+	PointSetColor( ColorA() );
 }
 
-void cBatchRenderer::PointSetColor( const eeColorA& Color ) {
+void cBatchRenderer::PointSetColor( const ColorA& Color ) {
 	QuadsSetColor( Color );
 }
 
@@ -492,14 +492,14 @@ void cBatchRenderer::BatchPoint( const Float& x, const Float& y ) {
 void cBatchRenderer::LinesBegin() {
 	SetBlendMode( DM_LINES, true );
 	QuadsSetSubset( 0, 0, 1, 1 );
-	PointSetColor( eeColorA() );
+	PointSetColor( ColorA() );
 }
 
-void cBatchRenderer::LinesSetColor( const eeColorA& Color ) {
+void cBatchRenderer::LinesSetColor( const ColorA& Color ) {
 	QuadsSetColor( Color );
 }
 
-void cBatchRenderer::LinesSetColorFree( const eeColorA& Color0, const eeColorA& Color1 ) {
+void cBatchRenderer::LinesSetColorFree( const ColorA& Color0, const ColorA& Color1 ) {
 	QuadsSetColorFree( Color0, Color1, Color0, Color0 );
 }
 
@@ -527,14 +527,14 @@ void cBatchRenderer::BatchLine( const Float& x0, const Float& y0, const Float& x
 void cBatchRenderer::LineLoopBegin() {
 	SetBlendMode( DM_LINE_LOOP, true );
 	QuadsSetSubset( 0, 0, 1, 1 );
-	PointSetColor( eeColorA() );
+	PointSetColor( ColorA() );
 }
 
-void cBatchRenderer::LineLoopSetColor( const eeColorA& Color ) {
+void cBatchRenderer::LineLoopSetColor( const ColorA& Color ) {
 	QuadsSetColor( Color );
 }
 
-void cBatchRenderer::LineLoopSetColorFree( const eeColorA& Color0, const eeColorA& Color1 ) {
+void cBatchRenderer::LineLoopSetColorFree( const ColorA& Color0, const ColorA& Color1 ) {
 	QuadsSetColorFree( Color0, Color1, Color0, Color0 );
 }
 
@@ -585,14 +585,14 @@ void cBatchRenderer::BatchLineLoop( const eeVector2f& vector1 ) {
 void cBatchRenderer::TriangleFanBegin() {
 	SetBlendMode( DM_TRIANGLE_FAN, true );
 	TriangleFanSetSubset( 0, 0, 0, 1, 1, 1 );
-	TriangleFanSetColor( eeColorA() );
+	TriangleFanSetColor( ColorA() );
 }
 
-void cBatchRenderer::TriangleFanSetColor( const eeColorA& Color ) {
+void cBatchRenderer::TriangleFanSetColor( const ColorA& Color ) {
 	QuadsSetColor( Color );
 }
 
-void cBatchRenderer::TriangleFanSetColorFree( const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2 ) {
+void cBatchRenderer::TriangleFanSetColorFree( const ColorA& Color0, const ColorA& Color1, const ColorA& Color2 ) {
 	QuadsSetColorFree( Color0, Color1, Color2, Color0 );
 }
 
@@ -648,14 +648,14 @@ void cBatchRenderer::BatchTriangleFan( const Float& x0, const Float& y0 ) {
 void cBatchRenderer::TrianglesBegin() {
 	SetBlendMode( DM_TRIANGLES, true );
 	TrianglesSetSubset( 0, 0, 0, 1, 1, 1 );
-	TrianglesSetColor( eeColorA() );
+	TrianglesSetColor( ColorA() );
 }
 
-void cBatchRenderer::TrianglesSetColor( const eeColorA& Color ) {
+void cBatchRenderer::TrianglesSetColor( const ColorA& Color ) {
 	QuadsSetColor( Color );
 }
 
-void cBatchRenderer::TrianglesSetColorFree( const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2 ) {
+void cBatchRenderer::TrianglesSetColorFree( const ColorA& Color0, const ColorA& Color1, const ColorA& Color2 ) {
 	QuadsSetColorFree( Color0, Color1, Color2, Color0 );
 }
 
@@ -693,7 +693,7 @@ void cBatchRenderer::BatchTriangle( const Float& x0, const Float& y0, const Floa
 	AddVertexs(3);
 }
 
-void cBatchRenderer::PolygonSetColor( const eeColorA& Color ) {
+void cBatchRenderer::PolygonSetColor( const ColorA& Color ) {
 	PointSetColor( Color );
 }
 

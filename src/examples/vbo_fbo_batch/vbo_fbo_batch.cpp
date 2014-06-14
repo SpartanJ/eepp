@@ -51,7 +51,7 @@ void MainLoop()
 	// Draw the frame buffer many times
 	for ( int y = 0; y < 5; y++ ) {
 		for ( int x = 0; x < 5; x++ ) {
-			FBO->GetTexture()->Draw( x * 200, y * 200, -ang, eeVector2f::One, eeColorA(255,255,255,100) );
+			FBO->GetTexture()->Draw( x * 200, y * 200, -ang, eeVector2f::One, ColorA(255,255,255,100) );
 		}
 	}
 
@@ -84,7 +84,7 @@ void MainLoop()
 			Float tmpy = (Float)y * 32.f;
 
 			// Add the quad to the batch
-			Batch->QuadsSetColor( eeColorA( z * 16, 255, 255, 150 ) );
+			Batch->QuadsSetColor( ColorA( z * 16, 255, 255, 150 ) );
 			Batch->BatchQuadFree( TmpQuad[0].x + tmpx, TmpQuad[0].y + tmpy, TmpQuad[1].x + tmpx, TmpQuad[1].y + tmpy, TmpQuad[2].x + tmpx, TmpQuad[2].y + tmpy, TmpQuad[3].x + tmpx, TmpQuad[3].y + tmpy );
 		}
 	}
@@ -116,7 +116,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	win = cEngine::instance()->CreateWindow( WindowSettings( 1024, 768, "eepp - VBO - FBO and Batch Rendering" ), ContextSettings( true ) );
 
 	// Set window background color
-	win->BackColor( eeColor( 50, 50, 50 ) );
+	win->BackColor( RGB( 50, 50, 50 ) );
 
 	// Check if created
 	if ( win->Created() ) {
@@ -131,14 +131,14 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		if ( NULL != VBO && NULL != VBO2 ) {
 			for ( Uint32 i = 0; i < Poly.Size(); i++ ) {
 				VBO->AddVertex( Poly[i] );
-				VBO->AddColor( eeColorA( 100 + i, 255 - i, 150 + i, 100 ) );
+				VBO->AddColor( ColorA( 100 + i, 255 - i, 150 + i, 100 ) );
 			}
 
 			Poly.Rotate( 90, Poly.ToAABB().Center() );
 
 			for ( Uint32 i = 0; i < Poly.Size(); i++ ) {
 				VBO2->AddVertex( Poly[i] );
-				VBO2->AddColor( eeColorA( 100 + i, 255 - i, 150 + i, 100 ) );
+				VBO2->AddColor( ColorA( 100 + i, 255 - i, 150 + i, 100 ) );
 			}
 
 			// Compile the Vertex Buffer, this uploads the data to the GPU

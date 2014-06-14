@@ -61,7 +61,7 @@ void cShapePoly::Draw( cSpace * space ) {
 
 	BR->SetTexture( NULL );
 
-	eeColorA Col = ColorForShape( (cpShape *)poly, space->Space() );
+	ColorA Col = ColorForShape( (cpShape *)poly, space->Space() );
 
 	if( !poly->CP_PRIVATE(shape).sensor ){
 		if ( 4 != poly->CP_PRIVATE(numVerts) ) {
@@ -91,7 +91,7 @@ void cShapePoly::DrawBorder( cSpace *space ) {
 
 	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
 
-	eeColorA Col = ColorForShape( (cpShape *)poly, space->Space() );
+	ColorA Col = ColorForShape( (cpShape *)poly, space->Space() );
 
 	BR->LineLoopBegin();
 	BR->LineLoopSetColor( Col );

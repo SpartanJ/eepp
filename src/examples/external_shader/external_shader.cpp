@@ -19,7 +19,7 @@ Float th;
 Float aspectRatio;
 eeVector3ff * vertices		= eeNewArray( eeVector3ff, ParticlesNum );
 eeVector3ff * velocities	= eeNewArray( eeVector3ff, ParticlesNum );
-eeColorAf * colors			= eeNewArray( eeColorAf, ParticlesNum );
+ColorAf * colors			= eeNewArray( ColorAf, ParticlesNum );
 
 void videoResize( cWindow * w ) {
 	/// Video Resize event will re-setup the 2D projection and states, so we must rebuild them.
@@ -189,7 +189,7 @@ void MainLoop()
 	GLi->VertexPointer( 3, GL_FLOAT, sizeof(eeVector3ff), reinterpret_cast<char*> ( &vertices[0] ), ParticlesNum * sizeof(float) * 3 );
 
 	/// ColorPointer to "dgl_FrontColor"
-	GLi->ColorPointer( 4, GL_FP, sizeof(eeColorAf), reinterpret_cast<char*> ( &colors[0] ), ParticlesNum * sizeof(Float) * 4 );
+	GLi->ColorPointer( 4, GL_FP, sizeof(ColorAf), reinterpret_cast<char*> ( &colors[0] ), ParticlesNum * sizeof(Float) * 4 );
 
 	/// Draw the lines
 	GLi->DrawArrays( DM_LINES, 0, ParticlesNum );
@@ -260,7 +260,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		{
 			vertices[i]		= eeVector3ff( 0, 0, 1.83 );
 			velocities[i]	= eeVector3ff( (Math::Randf() * 2 - 1)*.05, (Math::Randf() * 2 - 1)*.05, .93 + Math::Randf()*.02 );
-			colors[i]		= eeColorAf( Math::Randf() * 0.5, 0.1, 0.8, 0.5 );
+			colors[i]		= ColorAf( Math::Randf() * 0.5, 0.1, 0.8, 0.5 );
 		}
 
 		/** Optimized for ARM ( pre-cache sqrt ) */

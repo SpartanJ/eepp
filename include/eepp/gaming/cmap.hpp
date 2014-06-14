@@ -170,9 +170,9 @@ class EE_API cMap {
 
 		const std::string& Path() const;
 
-		void BaseColor( const eeColorA& color );
+		void BaseColor( const ColorA& color );
 
-		const eeColorA& BaseColor() const;
+		const ColorA& BaseColor() const;
 
 		const eeAABB& GetViewAreaAABB() const;
 
@@ -203,9 +203,9 @@ class EE_API cMap {
 
 		void BackAlpha( const Uint8& alpha );
 
-		const eeColorA& BackColor() const;
+		const ColorA& BackColor() const;
 
-		void BackColor( const eeColorA& col );
+		void BackColor( const ColorA& col );
 
 		const Float& Scale() const;
 
@@ -221,9 +221,9 @@ class EE_API cMap {
 
 		void DisableForcedHeaders();
 
-		void GridLinesColor( const eeColorA& Col );
+		void GridLinesColor( const ColorA& Col );
 
-		const eeColorA& GridLinesColor() const;
+		const ColorA& GridLinesColor() const;
 	protected:
 		friend class EE::Gaming::MapEditor::cUIMapNew;
 
@@ -262,7 +262,7 @@ class EE_API cMap {
 		eeVector2i		mMouseOverTile;
 		eeVector2i		mMouseOverTileFinal;
 		eeVector2i		mMouseMapPos;
-		eeColorA		mBaseColor;
+		ColorA		mBaseColor;
 		PropertiesMap	mProperties;
 		GOTypesList		mObjTypes;
 		CreateGOCb		mCreateGOCb;
@@ -272,9 +272,9 @@ class EE_API cMap {
 		MapDrawCb		mDrawCb;
 		MapUpdateCb		mUpdateCb;
 		void *			mData;
-		eeColorA		mTileOverColor;
-		eeColorA		mBackColor;
-		eeColorA		mGridLinesColor;
+		ColorA		mTileOverColor;
+		ColorA		mBackColor;
+		ColorA		mGridLinesColor;
 		Uint8			mBackAlpha;
 		bool			mMouseOver;
 		std::string		mPath;

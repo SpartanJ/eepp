@@ -30,7 +30,7 @@ cUIDropDownList::cUIDropDownList( cUIDropDownList::CreateParams& Params ) :
 			cUIListBox::CreateParams LBParams;
 			LBParams.Size 				= eeSize( mSize.Width(), mMinNumVisibleItems * mSize.Height() );
 			LBParams.Flags 				= flags;
-			LBParams.FontSelectedColor	= eeColorA( 255, 255, 255, 255 );
+			LBParams.FontSelectedColor	= ColorA( 255, 255, 255, 255 );
 			mListBox = eeNew( cUIListBox, ( LBParams ) );
 		}
 	}

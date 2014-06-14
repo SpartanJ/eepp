@@ -479,7 +479,6 @@
 ../../src/eepp/graphics/cimage.cpp
 ../../src/eepp/graphics/cglobaltextureatlas.cpp
 ../../src/eepp/graphics/cglobalbatchrenderer.cpp
-../../src/eepp/graphics/cframebufferpbuffer.cpp
 ../../src/eepp/graphics/cframebuffermanager.cpp
 ../../src/eepp/graphics/cframebufferfbo.cpp
 ../../src/eepp/graphics/cframebuffer.cpp
@@ -547,7 +546,6 @@
 ../../src/eepp/window/backend/SFML/ccursormanagersfml.cpp
 ../../src/eepp/window/backend/SFML/cclipboardsfml.cpp
 ../../src/eepp/window/cbackend.hpp
-../../src/eepp/graphics/cframebufferpbuffer.hpp
 ../../src/eepp/graphics/cframebufferfbo.hpp
 ../../src/eepp/graphics/renderer/rendererhelper.hpp
 ../../include/eepp/graphics/packerhelper.hpp
@@ -678,3 +676,5 @@
 ../../src/eepp/core/version.cpp
 ../../include/eepp/system/clock.hpp
 ../../include/eepp/system/clock.hpp
+../../src/eepp/window/backend/SDL2/wminfo.cpp
+../../src/eepp/window/backend/SDL2/wminfo.hpp

@@ -33,11 +33,11 @@ void cGameObjectPolygon::Draw() {
 
 	cPrimitives P;
 	P.FillMode( DRAW_FILL );
-	P.SetColor( eeColorA( colFill, colFill, colFill, colFill ) );
+	P.SetColor( ColorA( colFill, colFill, colFill, colFill ) );
 	P.DrawPolygon( mPoly );
 
 	P.FillMode( DRAW_LINE );
-	P.SetColor( eeColorA( 255, 255, 0, 200 ) );
+	P.SetColor( ColorA( 255, 255, 0, 200 ) );
 	P.DrawPolygon( mPoly );
 }
 

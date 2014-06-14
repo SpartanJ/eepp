@@ -6,7 +6,7 @@ cUIBackground::cUIBackground() :
 	mBlendMode( ALPHA_NORMAL ),
 	mCorners(0)
 {
-	mColor.push_back( eeColorA(0xFF404040) );
+	mColor.push_back( ColorA(0xFF404040) );
 }
 
 cUIBackground::cUIBackground( const cUIBackground& Back ) :
@@ -17,33 +17,33 @@ cUIBackground::cUIBackground( const cUIBackground& Back ) :
 	mColor = b->Colors();
 }
 
-cUIBackground::cUIBackground( const eeColorA& Color, const unsigned int& Corners, const EE_BLEND_MODE& BlendMode ) :
+cUIBackground::cUIBackground( const ColorA& Color, const unsigned int& Corners, const EE_BLEND_MODE& BlendMode ) :
 	mBlendMode( BlendMode ),
 	mCorners( Corners )
 {
 	mColor.push_back( Color );
 }
 
-cUIBackground::cUIBackground( const eeColorA& TopLeftColor, const eeColorA& BottomLeftColor, const eeColorA& BottomRightColor, const eeColorA& TopRightColor, const unsigned int& Corners, const EE_BLEND_MODE& BlendMode ) :
+cUIBackground::cUIBackground( const ColorA& TopLeftColor, const ColorA& BottomLeftColor, const ColorA& BottomRightColor, const ColorA& TopRightColor, const unsigned int& Corners, const EE_BLEND_MODE& BlendMode ) :
 	mBlendMode( BlendMode ),
 	mCorners( Corners )
 {
 	Colors( TopLeftColor, BottomLeftColor, BottomRightColor, TopRightColor );
 }
 
-eeColorA& cUIBackground::Color( const unsigned int& index  ) {
+ColorA& cUIBackground::Color( const unsigned int& index  ) {
 	if ( index < mColor.size() )
 		return	mColor[ index ];
 
 	return mColor[ 0 ];
 }
 
-void cUIBackground::ColorsTo( const eeColorA& Color ) {
+void cUIBackground::ColorsTo( const ColorA& Color ) {
 	for ( unsigned int i = 0; i < mColor.size(); i++ )
 		mColor[i] = Color;
 }
 
-void cUIBackground::Colors( const eeColorA& TopLeftColor, const eeColorA& BottomLeftColor, const eeColorA& BottomRightColor, const eeColorA& TopRightColor ) {
+void cUIBackground::Colors( const ColorA& TopLeftColor, const ColorA& BottomLeftColor, const ColorA& BottomRightColor, const ColorA& TopRightColor ) {
 	mColor[0] = TopLeftColor;
 
 	if ( mColor.size() < 2 )
@@ -62,11 +62,11 @@ void cUIBackground::Colors( const eeColorA& TopLeftColor, const eeColorA& Bottom
 		mColor[3] = TopRightColor;
 }
 
-const std::vector<eeColorA>& cUIBackground::Colors() {
+const std::vector<ColorA>& cUIBackground::Colors() {
 	return	mColor;
 }
 
-void cUIBackground::Color( const eeColorA& Col ) {
+void cUIBackground::Color( const ColorA& Col ) {
 	mColor[0] = Col;
 }
 

@@ -44,7 +44,7 @@ void cObjectLayer::Draw( const eeVector2f &Offset ) {
 	cTexture * Tex = mMap->GetBlankTileTexture();
 
 	if ( mMap->ShowBlocked() && NULL != Tex ) {
-		eeColorA Col( 255, 0, 0, 200 );
+		ColorA Col( 255, 0, 0, 200 );
 
 		for ( it = mObjects.begin(); it != mObjects.end(); it++ ) {
 			cGameObject * Obj = (*it);

@@ -13,13 +13,13 @@ cLight::cLight() :
 cLight::~cLight() {
 }
 
-cLight::cLight( const Float& Radius, const Float& x, const Float& y, const eeColor& Color, LIGHT_TYPE Type ) :
+cLight::cLight( const Float& Radius, const Float& x, const Float& y, const RGB& Color, LIGHT_TYPE Type ) :
 	mActive( true )
 {
 	Create( Radius, x, y, Color, Type );
 }
 
-void cLight::Create( const Float& Radius, const Float& x, const Float& y, const eeColor& Color, LIGHT_TYPE Type ) {
+void cLight::Create( const Float& Radius, const Float& x, const Float& y, const RGB& Color, LIGHT_TYPE Type ) {
 	mRadius	= Radius;
 	mColor	= Color;
 	mType	= Type;
@@ -27,7 +27,7 @@ void cLight::Create( const Float& Radius, const Float& x, const Float& y, const 
 	UpdatePos( x, y );
 }
 
-eeColor cLight::ProcessVertex( const Float& PointX, const Float& PointY, const eeColor& VertexColor, const eeColor& BaseColor ) {
+RGB cLight::ProcessVertex( const Float& PointX, const Float& PointY, const RGB& VertexColor, const RGB& BaseColor ) {
 	Float VertexDist;
 
 	if ( mActive ) {
@@ -40,7 +40,7 @@ eeColor cLight::ProcessVertex( const Float& PointX, const Float& PointY, const e
 		}
 
 		if ( VertexDist <= mRadius ) {
-			eeColor	TmpRGB;
+			RGB	TmpRGB;
 			Uint8	TmpColor;
 			Float	LightC;
 
@@ -67,7 +67,7 @@ eeColor cLight::ProcessVertex( const Float& PointX, const Float& PointY, const e
 	return BaseColor;
 }
 
-eeColorA cLight::ProcessVertex( const Float& PointX, const Float& PointY, const eeColorA& VertexColor, const eeColorA& BaseColor ) {
+ColorA cLight::ProcessVertex( const Float& PointX, const Float& PointY, const ColorA& VertexColor, const ColorA& BaseColor ) {
 	Float VertexDist;
 
 	if ( mActive ) {
@@ -80,7 +80,7 @@ eeColorA cLight::ProcessVertex( const Float& PointX, const Float& PointY, const 
 		}
 
 		if ( VertexDist <= mRadius ) {
-			eeColorA	TmpRGB;
+			ColorA	TmpRGB;
 			Uint8		TmpColor;
 			Float		LightC;
 
@@ -107,11 +107,11 @@ eeColorA cLight::ProcessVertex( const Float& PointX, const Float& PointY, const 
 	return BaseColor;
 }
 
-eeColor cLight::ProcessVertex( const eeVector2f& Pos, const eeColor& VertexColor, const eeColor& BaseColor ) {
+RGB cLight::ProcessVertex( const eeVector2f& Pos, const RGB& VertexColor, const RGB& BaseColor ) {
 	return ProcessVertex( Pos.x, Pos.y, VertexColor, BaseColor );
 }
 
-eeColorA cLight::ProcessVertex( const eeVector2f& Pos, const eeColorA& VertexColor, const eeColorA& BaseColor ) {
+ColorA cLight::ProcessVertex( const eeVector2f& Pos, const ColorA& VertexColor, const ColorA& BaseColor ) {
 	return ProcessVertex( Pos.x, Pos.y, VertexColor, BaseColor );
 }
 
@@ -163,11 +163,11 @@ void cLight::Active( const bool& active ) {
 	mActive = active;
 }
 
-void cLight::Color( const eeColor& color ) {
+void cLight::Color( const RGB& color ) {
 	mColor = color;
 }
 
-const eeColor& cLight::Color() const {
+const RGB& cLight::Color() const {
 	return mColor;
 }
 

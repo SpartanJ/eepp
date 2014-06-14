@@ -44,9 +44,9 @@ class EE_API cUISprite : public cUIComplexControl {
 
 		void Sprite( cSprite * sprite );
 
-		eeColorA Color() const;
+		ColorA Color() const;
 
-		void Color( const eeColorA& color );
+		void Color( const ColorA& color );
 
 		const EE_RENDER_MODE& RenderMode() const;
 

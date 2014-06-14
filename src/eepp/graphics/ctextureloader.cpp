@@ -450,7 +450,7 @@ void cTextureLoader::LoadFromPixels() {
 
 					cImage * tImg = eeNew ( cImage, ( mPixels, mImgWidth, mImgHeight, mChannels ) );
 
-					tImg->CreateMaskFromColor( eeColorA( mColorKey->R(), mColorKey->G(), mColorKey->B(), 255 ), 0 );
+					tImg->CreateMaskFromColor( ColorA( mColorKey->R(), mColorKey->G(), mColorKey->B(), 255 ), 0 );
 
 					tImg->AvoidFreeImage( true  );
 
@@ -536,9 +536,9 @@ const Uint32& cTextureLoader::Id() const {
 	return mTexId;
 }
 
-void cTextureLoader::SetColorKey( eeColor Color ) {
+void cTextureLoader::SetColorKey( RGB Color ) {
 	eeSAFE_DELETE( mColorKey );
-	mColorKey = eeNew( eeColor, ( Color.R(), Color.G(), Color.B() ) );
+	mColorKey = eeNew( RGB, ( Color.R(), Color.G(), Color.B() ) );
 }
 
 const std::string& cTextureLoader::Filepath() const {

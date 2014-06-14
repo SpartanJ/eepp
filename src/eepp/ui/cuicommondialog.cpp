@@ -96,7 +96,7 @@ cUICommonDialog::cUICommonDialog( const cUICommonDialog::CreateParams& Params ) 
 						);
 
 	LBParams.Flags = UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_BOTTOM | UI_CLIP_ENABLE;
-	LBParams.FontSelectedColor = eeColorA( 255, 255, 255, 255 );
+	LBParams.FontSelectedColor = ColorA( 255, 255, 255, 255 );
 
 	if ( NULL != cUIThemeManager::instance()->DefaultTheme() ) {
 		cUITheme * Theme = cUIThemeManager::instance()->DefaultTheme();

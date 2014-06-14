@@ -105,31 +105,31 @@ void cUITextBox::Text( const String& text ) {
 	OnTextChanged();
 }
 
-const eeColorA& cUITextBox::Color() const {
+const ColorA& cUITextBox::Color() const {
 	return mFontColor;
 }
 
-void cUITextBox::Color( const eeColorA& color ) {
+void cUITextBox::Color( const ColorA& color ) {
 	mFontColor = color;
 	mTextCache->Color( color );
 
 	Alpha( color.A() );
 }
 
-const eeColorA& cUITextBox::ShadowColor() const {
+const ColorA& cUITextBox::ShadowColor() const {
 	return mFontShadowColor;
 }
 
-void cUITextBox::ShadowColor( const eeColorA& color ) {
+void cUITextBox::ShadowColor( const ColorA& color ) {
 	mFontShadowColor = color;
 	mTextCache->ShadowColor( mFontColor );
 }
 
-const eeColorA& cUITextBox::SelectionBackColor() const {
+const ColorA& cUITextBox::SelectionBackColor() const {
 	return mFontSelectionBackColor;
 }
 
-void cUITextBox::SelectionBackColor( const eeColorA& color ) {
+void cUITextBox::SelectionBackColor( const ColorA& color ) {
 	mFontSelectionBackColor = color;
 }
 

@@ -316,7 +316,7 @@ void cMapEditor::CreateSubTextureContainer( Int32 Width ) {
 
 	mGfxPreview = mTheme->CreateGfx( NULL, mSGCont, eeSize( Width, Width ), eeVector2i( 0, mSubTextureList->Pos().y + mSubTextureList->Size().Height() + 4 ), UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP | UI_AUTO_FIT );
 	mGfxPreview->Border( true );
-	mGfxPreview->Border()->Color( eeColorA( 0, 0, 0, 200 ) );
+	mGfxPreview->Border()->Color( ColorA( 0, 0, 0, 200 ) );
 
 	cUIComplexControl::CreateParams DIParams;
 	DIParams.Parent( mSubTextureCont );
@@ -345,8 +345,8 @@ void cMapEditor::CreateLighContainer() {
 	ComParams.Parent( mLightCont );
 	ComParams.PosSet( Txt->Pos().x, Txt->Pos().y + Txt->Size().Height() + 4 );
 	ComParams.SizeSet( 58, 64 );
-	ComParams.Background.Color( eeColorA(255,255,255,255) );
-	ComParams.Border.Color( eeColorA( 100, 100, 100, 200 ) );
+	ComParams.Background.Color( ColorA(255,255,255,255) );
+	ComParams.Border.Color( ColorA( 100, 100, 100, 200 ) );
 	ComParams.Flags |= UI_FILL_BACKGROUND | UI_BORDER;
 	mUIBaseColor = eeNew( cUIComplexControl, ( ComParams ) );
 	mUIBaseColor->Visible( true );
@@ -530,7 +530,7 @@ void cMapEditor::OnLightRadiusChange( cLight * Light ) {
 }
 
 void cMapEditor::OnLightSelect( cLight * Light ) {
-	eeColorA Col( Light->Color() );
+	ColorA Col( Light->Color() );
 
 	mUIRedSlider->Value( Col.R() );
 	mUIGreenSlider->Value( Col.G() );
@@ -549,39 +549,39 @@ void cMapEditor::OnNewLight( const cUIEvent * Event ) {
 }
 
 void cMapEditor::OnRedChange( const cUIEvent * Event ) {
-	eeColorA Col = mUIBaseColor->Background()->Color();
+	ColorA Col = mUIBaseColor->Background()->Color();
 	Col.Red = (Uint8)mUIRedSlider->Value();
 	mUIBaseColor->Background()->Color( Col );
 	mUIRedTxt->Text( String::ToStr( (Int32)mUIRedSlider->Value() ) );
 
 	if ( NULL != mUIMap->GetSelectedLight() ) {
-		eeColor lCol( mUIMap->GetSelectedLight()->Color() );
+		RGB lCol( mUIMap->GetSelectedLight()->Color() );
 		lCol.Red = Col.R();
 		mUIMap->GetSelectedLight()->Color( lCol );
 	}
 }
 
 void cMapEditor::OnGreenChange( const cUIEvent * Event ) {
-	eeColorA Col = mUIBaseColor->Background()->Color();
+	ColorA Col = mUIBaseColor->Background()->Color();
 	Col.Green = (Uint8)mUIGreenSlider->Value();
 	mUIBaseColor->Background()->Color( Col );
 	mUIGreenTxt->Text( String::ToStr( (Uint32)mUIGreenSlider->Value() ) );
 
 	if ( NULL != mUIMap->GetSelectedLight() ) {
-		eeColor lCol( mUIMap->GetSelectedLight()->Color() );
+		RGB lCol( mUIMap->GetSelectedLight()->Color() );
 		lCol.Green = Col.G();
 		mUIMap->GetSelectedLight()->Color( lCol );
 	}
 }
 
 void cMapEditor::OnBlueChange( const cUIEvent * Event ) {
-	eeColorA Col = mUIBaseColor->Background()->Color();
+	ColorA Col = mUIBaseColor->Background()->Color();
 	Col.Blue = (Uint8)mUIBlueSlider->Value();
 	mUIBaseColor->Background()->Color( Col );
 	mUIBlueTxt->Text( String::ToStr( (Uint32)mUIBlueSlider->Value() ) );
 
 	if ( NULL != mUIMap->GetSelectedLight() ) {
-		eeColor lCol( mUIMap->GetSelectedLight()->Color() );
+		RGB lCol( mUIMap->GetSelectedLight()->Color() );
 		lCol.Blue = Col.B();
 		mUIMap->GetSelectedLight()->Color( lCol );
 	}

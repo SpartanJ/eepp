@@ -48,9 +48,9 @@ class EE_API cUIListBox : public cUIComplexControl {
 				eeRecti				HScrollPadding;
 				eeRecti				VScrollPadding;
 				cFont *				Font;
-				eeColorA			FontColor;
-				eeColorA			FontOverColor;
-				eeColorA			FontSelectedColor;
+				ColorA			FontColor;
+				ColorA			FontOverColor;
+				ColorA			FontSelectedColor;
 				Float				TouchDragDeceleration;
 		};
 
@@ -102,17 +102,17 @@ class EE_API cUIListBox : public cUIComplexControl {
 
 		std::list<cUIListBoxItem *> GetItemsSelected();
 
-		void FontColor( const eeColorA& Color );
+		void FontColor( const ColorA& Color );
 
-		const eeColorA& FontColor() const;
+		const ColorA& FontColor() const;
 
-		void FontOverColor( const eeColorA& Color );
+		void FontOverColor( const ColorA& Color );
 
-		const eeColorA& FontOverColor() const;
+		const ColorA& FontOverColor() const;
 
-		void FontSelectedColor( const eeColorA& Color );
+		void FontSelectedColor( const ColorA& Color );
 
-		const eeColorA& FontSelectedColor() const;
+		const ColorA& FontSelectedColor() const;
 
 		void Font( cFont * Font );
 
@@ -177,9 +177,9 @@ class EE_API cUIListBox : public cUIComplexControl {
 		cUIScrollBar * 		mVScrollBar;
 		cUIScrollBar * 		mHScrollBar;
 		cFont * 			mFont;
-		eeColorA 			mFontColor;
-		eeColorA 			mFontOverColor;
-		eeColorA 			mFontSelectedColor;
+		ColorA 			mFontColor;
+		ColorA 			mFontOverColor;
+		ColorA 			mFontSelectedColor;
 		Uint32 				mLastPos;
 		Uint32 				mMaxTextWidth;
 		Int32 				mHScrollInit;

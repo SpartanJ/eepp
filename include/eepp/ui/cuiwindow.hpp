@@ -32,7 +32,7 @@ class EE_API cUIWindow : public cUIComplexControl {
 				eeVector2i	ButtonsPositionFixer;
 				Uint32		ButtonsSeparation;
 				Int32		MinCornerDistance;
-				eeColorA	TitleFontColor;
+				ColorA	TitleFontColor;
 				Uint8		BaseAlpha;
 				bool		DecorationAutoSize;
 				bool		BorderAutoSize;
@@ -158,7 +158,7 @@ class EE_API cUIWindow : public cUIComplexControl {
 		UI_RESIZE_TYPE		mResizeType;
 		eeVector2i			mResizePos;
 
-		eeColorA			mTitleFontColor;
+		ColorA			mTitleFontColor;
 
 		KeyboardShortcuts	mKbShortcuts;
 

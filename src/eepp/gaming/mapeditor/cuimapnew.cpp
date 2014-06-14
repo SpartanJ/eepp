@@ -114,13 +114,13 @@ cUIMapNew::cUIMapNew( cUIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap
 	ComParams.Parent( mUIWindow->Container() );
 	ComParams.PosSet( Txt->Pos().x, Txt->Pos().y + Txt->Size().Height() + 4 );
 	ComParams.SizeSet( 64, 64 );
-	ComParams.Background.Color( eeColorA( 255, 255, 255, 255 ) );
+	ComParams.Background.Color( ColorA( 255, 255, 255, 255 ) );
 
 	if ( ResizeMap ) {
 		ComParams.Background.Color( mUIMap->Map()->BaseColor() );
 	}
 
-	ComParams.Border.Color( eeColorA( 100, 100, 100, 200 ) );
+	ComParams.Border.Color( ColorA( 100, 100, 100, 200 ) );
 	ComParams.Flags |= UI_FILL_BACKGROUND | UI_BORDER;
 	mUIBaseColor = eeNew( cUIComplexControl, ( ComParams ) );
 	mUIBaseColor->Visible( true );
@@ -183,21 +183,21 @@ cUIMapNew::~cUIMapNew() {
 }
 
 void cUIMapNew::OnRedChange( const cUIEvent * Event ) {
-	eeColorA Col = mUIBaseColor->Background()->Color();
+	ColorA Col = mUIBaseColor->Background()->Color();
 	Col.Red = (Uint8)mUIRedSlider->Value();
 	mUIBaseColor->Background()->Color( Col );
 	mUIRedTxt->Text( String::ToStr( (Int32)mUIRedSlider->Value() ) );
 }
 
 void cUIMapNew::OnGreenChange( const cUIEvent * Event ) {
-	eeColorA Col = mUIBaseColor->Background()->Color();
+	ColorA Col = mUIBaseColor->Background()->Color();
 	Col.Green = (Uint8)mUIGreenSlider->Value();
 	mUIBaseColor->Background()->Color( Col );
 	mUIGreenTxt->Text( String::ToStr( (Uint32)mUIGreenSlider->Value() ) );
 }
 
 void cUIMapNew::OnBlueChange( const cUIEvent * Event ) {
-	eeColorA Col = mUIBaseColor->Background()->Color();
+	ColorA Col = mUIBaseColor->Background()->Color();
 	Col.Blue = (Uint8)mUIBlueSlider->Value();
 	mUIBaseColor->Background()->Color( Col );
 	mUIBlueTxt->Text( String::ToStr( (Uint32)mUIBlueSlider->Value() ) );
@@ -234,8 +234,8 @@ void cUIMapNew::OKClick( const cUIEvent * Event ) {
 			mUIMap->Map()->Save( mapPath );
 
 			cMap * Map = eeNew( cMap, () );
-			Map->BackColor( eeColorA( 100, 100, 100, 100 ) );
-			Map->GridLinesColor( eeColorA( 150, 150, 150, 150 ) );
+			Map->BackColor( ColorA( 100, 100, 100, 100 ) );
+			Map->GridLinesColor( ColorA( 150, 150, 150, 150 ) );
 			Map->ForceHeadersOnLoad( eeSize( w, h ), eeSize( tw, th ), ml, Flags );
 			Map->Load( mapPath );
 			Map->DisableForcedHeaders();

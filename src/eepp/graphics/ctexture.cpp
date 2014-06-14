@@ -190,7 +190,7 @@ const Uint8 * cTexture::GetPixelsPtr() {
 	return cImage::GetPixelsPtr();
 }
 
-void cTexture::SetPixel( const unsigned int& x, const unsigned int& y, const eeColorA& Color ) {
+void cTexture::SetPixel( const unsigned int& x, const unsigned int& y, const ColorA& Color ) {
 	cImage::SetPixel( x, y, Color );
 
 	mFlags |= TEX_FLAG_MODIFIED;
@@ -239,7 +239,7 @@ const EE_TEX_FILTER& cTexture::Filter() const {
 	return mFilter;
 }
 
-void cTexture::ReplaceColor( const eeColorA& ColorKey, const eeColorA& NewColor ) {
+void cTexture::ReplaceColor( const ColorA& ColorKey, const ColorA& NewColor ) {
 	Lock();
 
 	cImage::ReplaceColor( ColorKey, NewColor );
@@ -247,15 +247,15 @@ void cTexture::ReplaceColor( const eeColorA& ColorKey, const eeColorA& NewColor 
 	Unlock( false, true );
 }
 
-void cTexture::CreateMaskFromColor( const eeColorA& ColorKey, Uint8 Alpha ) {
+void cTexture::CreateMaskFromColor( const ColorA& ColorKey, Uint8 Alpha ) {
 	Lock( true );
 
-	cImage::ReplaceColor( ColorKey, eeColorA( ColorKey.R(), ColorKey.G(), ColorKey.B(), Alpha ) );
+	cImage::ReplaceColor( ColorKey, ColorA( ColorKey.R(), ColorKey.G(), ColorKey.B(), Alpha ) );
 
 	Unlock( false, true );
 }
 
-void cTexture::FillWithColor( const eeColorA& Color ) {
+void cTexture::FillWithColor( const ColorA& Color ) {
 	Lock();
 
 	cImage::FillWithColor( Color );
@@ -428,11 +428,11 @@ bool cTexture::IsCompressed() const {
 	return 0 != ( mFlags & TEX_FLAG_COMPRESSED );
 }
 
-void cTexture::Draw( const Float &x, const Float &y, const Float &Angle, const eeVector2f &Scale, const eeColorA& Color, const EE_BLEND_MODE &Blend, const EE_RENDER_MODE &Effect, eeOriginPoint Center, const eeRecti& texSector) {
+void cTexture::Draw( const Float &x, const Float &y, const Float &Angle, const eeVector2f &Scale, const ColorA& Color, const EE_BLEND_MODE &Blend, const EE_RENDER_MODE &Effect, eeOriginPoint Center, const eeRecti& texSector) {
 	DrawEx( x, y, 0, 0, Angle, Scale, Color, Color, Color, Color, Blend, Effect, Center, texSector );
 }
 
-void cTexture::DrawFast( const Float& x, const Float& y, const Float& Angle, const eeVector2f& Scale, const eeColorA& Color, const EE_BLEND_MODE &Blend, const Float &width, const Float &height ) {
+void cTexture::DrawFast( const Float& x, const Float& y, const Float& Angle, const eeVector2f& Scale, const ColorA& Color, const EE_BLEND_MODE &Blend, const Float &width, const Float &height ) {
 	Float w = 0.f != width	? width		: (Float)ImgWidth();
 	Float h = 0.f != height	? height	: (Float)ImgHeight();
 
@@ -451,7 +451,7 @@ void cTexture::DrawFast( const Float& x, const Float& y, const Float& Angle, con
 	sBR->DrawOpt();
 }
 
-void cTexture::DrawEx( Float x, Float y, Float width, Float height, const Float &Angle, const eeVector2f &Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_BLEND_MODE &Blend, const EE_RENDER_MODE &Effect, eeOriginPoint Center, const eeRecti& texSector ) {
+void cTexture::DrawEx( Float x, Float y, Float width, Float height, const Float &Angle, const eeVector2f &Scale, const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const EE_BLEND_MODE &Blend, const EE_RENDER_MODE &Effect, eeOriginPoint Center, const eeRecti& texSector ) {
 	bool renderSector	= true;
 	eeRecti Sector		= texSector;
 	Float w			= (Float)ImgWidth();
@@ -618,11 +618,11 @@ void cTexture::DrawEx( Float x, Float y, Float width, Float height, const Float 
 	sBR->DrawOpt();
 }
 
-void cTexture::DrawQuad( const eeQuad2f& Q, const eeVector2f& Offset, const Float &Angle, const eeVector2f &Scale, const eeColorA& Color, const EE_BLEND_MODE &Blend, const eeRecti& texSector) {
+void cTexture::DrawQuad( const eeQuad2f& Q, const eeVector2f& Offset, const Float &Angle, const eeVector2f &Scale, const ColorA& Color, const EE_BLEND_MODE &Blend, const eeRecti& texSector) {
 	DrawQuadEx( Q, Offset, Angle, Scale, Color, Color, Color, Color, Blend, texSector );
 }
 
-void cTexture::DrawQuadEx( eeQuad2f Q, const eeVector2f& Offset, const Float &Angle, const eeVector2f &Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_BLEND_MODE &Blend, eeRecti texSector ) {
+void cTexture::DrawQuadEx( eeQuad2f Q, const eeVector2f& Offset, const Float &Angle, const eeVector2f &Scale, const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const EE_BLEND_MODE &Blend, eeRecti texSector ) {
 	bool renderSector = true;
 	Float w =	(Float)ImgWidth();
 	Float h = (Float)ImgHeight();

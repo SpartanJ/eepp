@@ -1,15 +1,17 @@
 #ifndef EE_WINDOWCCURSOR_HPP
 #define EE_WINDOWCCURSOR_HPP
 
-#include <eepp/window/base.hpp>
+#include <eepp/core.hpp>
 
 #include <eepp/graphics/cimage.hpp>
 #include <eepp/graphics/ctexture.hpp>
 using namespace EE::Graphics;
 
-#include <eepp/window/cwindow.hpp>
+#include <eepp/window/windowhandle.hpp>
 
 namespace EE { namespace Window {
+
+class cWindow;
 
 class EE_API cCursor {
 	public:

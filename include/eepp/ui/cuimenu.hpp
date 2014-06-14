@@ -48,10 +48,10 @@ class EE_API cUIMenu : public cUIComplexControl {
 				Uint32		MinSpaceForIcons;
 				Uint32		MinRightMargin;
 				cFont * 	Font;
-				eeColorA 	FontColor;
-				eeColorA	FontShadowColor;
-				eeColorA 	FontOverColor;
-				eeColorA	FontSelectedColor;
+				ColorA 	FontColor;
+				ColorA	FontShadowColor;
+				ColorA 	FontOverColor;
+				ColorA	FontSelectedColor;
 
 		};
 
@@ -108,10 +108,10 @@ class EE_API cUIMenu : public cUIComplexControl {
 		std::deque<cUIControl *> mItems;
 		eeRecti				mPadding;
 		cFont * 			mFont;
-		eeColorA 			mFontColor;
-		eeColorA			mFontShadowColor;
-		eeColorA 			mFontOverColor;
-		eeColorA			mFontSelectedColor;
+		ColorA 			mFontColor;
+		ColorA			mFontShadowColor;
+		ColorA 			mFontOverColor;
+		ColorA			mFontSelectedColor;
 		Uint32				mMinWidth;
 		Uint32				mMinSpaceForIcons;
 		Uint32				mMinRightMargin;

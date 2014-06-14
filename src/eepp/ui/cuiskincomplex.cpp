@@ -180,7 +180,7 @@ cUISkinComplex * cUISkinComplex::Copy( const std::string& NewName, const bool& C
 	if ( CopyColorsState ) {
 		SkinC->mColorDefault = mColorDefault;
 
-		memcpy( &SkinC->mColor[0], &mColor[0], cUISkinState::StateCount * sizeof(eeColorA) );
+		memcpy( &SkinC->mColor[0], &mColor[0], cUISkinState::StateCount * sizeof(ColorA) );
 	}
 
 	memcpy( &SkinC->mSubTexture[0], &mSubTexture[0], cUISkinState::StateCount * SideCount * sizeof(cSubTexture*) );

@@ -11,7 +11,7 @@ void MainLoop()
 	cPrimitives p;
 
 	// Change the color
-	p.SetColor( eeColorA( 0, 255, 0, 150 ) );
+	p.SetColor( ColorA( 0, 255, 0, 150 ) );
 
 	// Update the input
 	win->GetInput()->Update();
@@ -38,7 +38,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	// Check if created
 	if ( win->Created() ) {
 		// Set window background color
-		win->BackColor( eeColor( 50, 50, 50 ) );
+		win->BackColor( RGB( 50, 50, 50 ) );
 
 		// Set the MainLoop function and run it
 		// This is the application loop, it will loop until the window is closed.

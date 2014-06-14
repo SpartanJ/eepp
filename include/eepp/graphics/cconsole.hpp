@@ -39,28 +39,28 @@ class EE_API cConsole : protected LogReaderInterface {
 		Uint32 TextureId() const { return mTexId; }
 
 		/** Set the Console Background Color */
-		void BackgroundColor( const eeColorA& BackColor ) { mConColor = BackColor; }
+		void BackgroundColor( const ColorA& BackColor ) { mConColor = BackColor; }
 
 		/** Get the Console Background Color */
-		const eeColorA& BackgroundColor() const { return mConColor; }
+		const ColorA& BackgroundColor() const { return mConColor; }
 
 		/** Set the Console Border Line Background Color */
-		void BackgroundLineColor( const eeColorA& BackColor ) { mConLineColor = BackColor; }
+		void BackgroundLineColor( const ColorA& BackColor ) { mConLineColor = BackColor; }
 
 		/** Get the Console Border Line Background Color */
-		const eeColorA& BackgroundLineColor() const { return mConLineColor; }
+		const ColorA& BackgroundLineColor() const { return mConLineColor; }
 
 		/** Set the Console Font Color */
-		void FontColor( const eeColorA& FntColor ) { mFontColor = FntColor; }
+		void FontColor( const ColorA& FntColor ) { mFontColor = FntColor; }
 
 		/** Get the Console Font Color */
-		const eeColorA& FontColor() const { return mFontColor; }
+		const ColorA& FontColor() const { return mFontColor; }
 
 		/** Set the Console Client Input ( Writeable Line ) Font Color */
-		void FontLineColor( const eeColorA& FntColor ) { mFontLineColor = FntColor; }
+		void FontLineColor( const ColorA& FntColor ) { mFontLineColor = FntColor; }
 
 		/** Get the Console Client Input ( Writeable Line ) Font Color */
-		const eeColorA& FontLineColor() const { return mFontLineColor; }
+		const ColorA& FontLineColor() const { return mFontLineColor; }
 
 		/** Toogle the console between visible and hided with Fade In or Fade Out effect. */
 		void Toggle();
@@ -128,10 +128,10 @@ class EE_API cConsole : protected LogReaderInterface {
 
 		Window::cWindow * mWindow;
 
-		eeColorA mConColor;
-		eeColorA mConLineColor;
-		eeColorA mFontColor;
-		eeColorA mFontLineColor;
+		ColorA mConColor;
+		ColorA mConLineColor;
+		ColorA mFontColor;
+		ColorA mFontLineColor;
 
 		Float mWidth;
 		Float mHeight;

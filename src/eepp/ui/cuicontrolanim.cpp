@@ -325,8 +325,8 @@ void cUIControlAnim::BorderDraw() {
 	}
 }
 
-eeColorA cUIControlAnim::GetColor( const eeColorA& Col ) {
-	return eeColorA( Col.R(), Col.G(), Col.B(), static_cast<Uint8>( (Float)Col.A() * ( mAlpha / 255.f ) ) );
+ColorA cUIControlAnim::GetColor( const ColorA& Col ) {
+	return ColorA( Col.R(), Col.G(), Col.B(), static_cast<Uint8>( (Float)Col.A() * ( mAlpha / 255.f ) ) );
 }
 
 void cUIControlAnim::UpdateQuad() {

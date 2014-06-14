@@ -656,8 +656,8 @@ void cUIWindow::Draw() {
 		cPrimitives P;
 		P.ForceDraw( false );
 
-		eeColorA BeginC( 0, 0, 0, 25 * ( Alpha() / (Float)255 ) );
-		eeColorA EndC( 0, 0, 0, 0 );
+		ColorA BeginC( 0, 0, 0, 25 * ( Alpha() / (Float)255 ) );
+		ColorA EndC( 0, 0, 0, 0 );
 		Float SSize = 16.f;
 
 		eeVector2i ShadowPos = mScreenPos + eeVector2i( 0, 16 );

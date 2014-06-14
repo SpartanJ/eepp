@@ -77,11 +77,11 @@ void MainLoop()
 	Blindy->Draw();
 
 	// Draw the Rock Axis-Aligned Bounding Box
-	P.SetColor( eeColorA( 255, 255, 255, 255 ) );
+	P.SetColor( ColorA( 255, 255, 255, 255 ) );
 	P.DrawRectangle( Rock->GetAABB() );
 
 	// Draw the Rock Quad
-	P.SetColor( eeColorA( 255, 0, 0, 255 ) );
+	P.SetColor( ColorA( 255, 0, 0, 255 ) );
 	P.DrawQuad( Rock->GetQuad() );
 
 	// Draw frame
