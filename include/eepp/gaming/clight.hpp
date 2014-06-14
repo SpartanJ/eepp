@@ -15,31 +15,31 @@ class EE_API cLight {
 	public:
 		cLight();
 
-		cLight( const eeFloat& Radius, const eeFloat& x, const eeFloat& y, const eeColor& Color = eeColor(255,255,255), LIGHT_TYPE Type = LIGHT_NORMAL );
+		cLight( const Float& Radius, const Float& x, const Float& y, const eeColor& Color = eeColor(255,255,255), LIGHT_TYPE Type = LIGHT_NORMAL );
 
 		virtual ~cLight();
 
-		void Create( const eeFloat& Radius, const eeFloat& x, const eeFloat& y, const eeColor& Color = eeColor(255,255,255), LIGHT_TYPE Type = LIGHT_NORMAL );
+		void Create( const Float& Radius, const Float& x, const Float& y, const eeColor& Color = eeColor(255,255,255), LIGHT_TYPE Type = LIGHT_NORMAL );
 
-		virtual eeColor ProcessVertex( const eeFloat& PointX, const eeFloat& PointY, const eeColor& VertexColor, const eeColor& BaseColor );
+		virtual eeColor ProcessVertex( const Float& PointX, const Float& PointY, const eeColor& VertexColor, const eeColor& BaseColor );
 
-		virtual eeColorA ProcessVertex( const eeFloat& PointX, const eeFloat& PointY, const eeColorA& VertexColor, const eeColorA& BaseColor );
+		virtual eeColorA ProcessVertex( const Float& PointX, const Float& PointY, const eeColorA& VertexColor, const eeColorA& BaseColor );
 
 		eeColor ProcessVertex( const eeVector2f& Pos, const eeColor& VertexColor, const eeColor& BaseColor );
 
 		eeColorA ProcessVertex( const eeVector2f& Pos, const eeColorA& VertexColor, const eeColorA& BaseColor );
 
-		void Move( const eeFloat& addtox, const eeFloat& addtoy );
+		void Move( const Float& addtox, const Float& addtoy );
 
-		void UpdatePos( const eeFloat& x, const eeFloat& y );
+		void UpdatePos( const Float& x, const Float& y );
 
 		void UpdatePos( const eeVector2f& newPos );
 
 		eeAABB GetAABB() const;
 
-		const eeFloat& Radius() const;
+		const Float& Radius() const;
 
-		void Radius( const eeFloat& radio );
+		void Radius( const Float& radio );
 
 		const bool& Active() const;
 
@@ -57,7 +57,7 @@ class EE_API cLight {
 
 		void Position( const eeVector2f& newPos );
 	protected:
-		eeFloat		mRadius;
+		Float		mRadius;
 		eeVector2f	mPos;
 		eeColor		mColor;
 		LIGHT_TYPE	mType;

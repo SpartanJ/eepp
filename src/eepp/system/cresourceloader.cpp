@@ -171,8 +171,8 @@ void cResourceLoader::SetLoaded() {
 	}
 }
 
-eeFloat cResourceLoader::Progress() {
-	return ( (eeFloat)mObjsLoaded.size() / (eeFloat)( mObjs.size() + mObjsLoaded.size() ) ) * 100.f;
+Float cResourceLoader::Progress() {
+	return ( (Float)mObjsLoaded.size() / (Float)( mObjs.size() + mObjsLoaded.size() ) ) * 100.f;
 }
 
 }}

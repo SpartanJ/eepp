@@ -72,7 +72,7 @@ std::vector<DisplayMode> cWindowNull::GetDisplayModes() const {
 	return std::vector<DisplayMode>();
 }
 
-void cWindowNull::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {
+void cWindowNull::SetGamma( Float Red, Float Green, Float Blue ) {
 }
 
 eeWindowContex cWindowNull::GetContext() const {

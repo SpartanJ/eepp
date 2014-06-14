@@ -1,6 +1,7 @@
 #include <eepp/physics/constraints/cdampedspring.hpp>
 
 #ifdef PHYSICS_RENDERER_ENABLED
+#include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
 using namespace EE::Graphics;
@@ -104,18 +105,18 @@ void cDampedSpring::Draw() {
 	GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
 
 	std::vector<eeColorA> tcolors( springVAR_count * 4, eeColorA( 0, 255, 0, 255 ) );
-	GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const GLvoid*>( &tcolors[0] ), springVAR_count * 4 );
-	GLi->VertexPointer( 2, GL_FLOAT, 0, springVAR, springVAR_count * sizeof(GLfloat) * 2 );
+	GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const void*>( &tcolors[0] ), springVAR_count * 4 );
+	GLi->VertexPointer( 2, GL_FLOAT, 0, springVAR, springVAR_count * sizeof(float) * 2 );
 
 	GLi->PushMatrix();
 
-	GLfloat x = a.x;
-	GLfloat y = a.y;
-	GLfloat cos = delta.x;
-	GLfloat sin = delta.y;
-	GLfloat s = 1.0f / cpvlength( tocpv( delta ) );
+	float x = a.x;
+	float y = a.y;
+	float cos = delta.x;
+	float sin = delta.y;
+	float s = 1.0f / cpvlength( tocpv( delta ) );
 
-	const GLfloat matrix[] = {
+	const float matrix[] = {
 		cos		, sin		, 0.0f, 0.0f,
 		-sin * s, cos * s	, 0.0f, 0.0f,
 		0.0f	, 0.0f		, 1.0f, 0.0f,

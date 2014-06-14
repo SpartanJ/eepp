@@ -130,7 +130,7 @@ void cInputTextBuffer::EraseToPrevNoChar() {
 	String::StringBaseType c;
 
 	do {
-		if ( mPromptPos < (eeInt)mText.size() ) {
+		if ( mPromptPos < (int)mText.size() ) {
 			mText.erase( mPromptPos - 1, 1 );
 			mPromptPos--;
 		} else {
@@ -181,7 +181,7 @@ void cInputTextBuffer::EraseToNextNoChar() {
 
 bool cInputTextBuffer::IsIgnoredChar( const Uint32& c ) {
 	if ( mIgnoredChars.size() ) {
-		for ( eeUint i = 0; i < mIgnoredChars.size(); i++ ) {
+		for ( std::size_t i = 0; i < mIgnoredChars.size(); i++ ) {
 			if ( mIgnoredChars[i] == c )
 				return true;
 		}
@@ -219,7 +219,7 @@ void cInputTextBuffer::TryAddChar( const Uint32& c ) {
 
 			if ( AutoPrompt() ) {
 				mText += c;
-				mPromptPos = (eeInt)mText.size();
+				mPromptPos = (int)mText.size();
 			} else {
 				String::InsertChar( mText, mPromptPos, c );
 				mPromptPos++;
@@ -325,7 +325,7 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 								if ( mText.size() + txt.size() < mMaxLength ) {
 									if ( AutoPrompt() ) {
 										mText += txt;
-										mPromptPos = (eeInt)mText.size();
+										mPromptPos = (int)mText.size();
 									} else {
 										mText.insert( mPromptPos, txt );
 										mPromptPos += txt.size();
@@ -357,7 +357,7 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 						if ( mText.size() ) {
 							ChangedSinceLastUpdate( true );
 
-							if ( mPromptPos < (eeInt)mText.size() ) {
+							if ( mPromptPos < (int)mText.size() ) {
 								if ( c == KEY_BACKSPACE ) {
 									if ( mPromptPos > 0 ) {
 										mText.erase(mPromptPos-1,1);
@@ -394,11 +394,11 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 							ShiftSelection( mPromptPos + 1 );
 						}
 					} else if ( c == KEY_RIGHT ) {
-						if ( ( mPromptPos + 1 ) < (eeInt)mText.size() ) {
+						if ( ( mPromptPos + 1 ) < (int)mText.size() ) {
 							mPromptPos++;
 							AutoPrompt(false);
 							ShiftSelection( mPromptPos - 1 );
-						} else if ( ( mPromptPos + 1 ) == (eeInt)mText.size() ) {
+						} else if ( ( mPromptPos + 1 ) == (int)mText.size() ) {
 							AutoPrompt( true );
 						}
 					} else if ( c == KEY_UP ) {
@@ -418,7 +418,7 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 				case InputEvent::KeyUp:
 				{
 					if ( SupportNewLine() ) {
-						eeInt lPromtpPos = mPromptPos;
+						int lPromtpPos = mPromptPos;
 
 						if ( c == KEY_END ) {
 							for ( Uint32 i = mPromptPos; i < mText.size(); i++ )  {
@@ -458,7 +458,7 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 							ShiftSelection( lPromtpPos );
 						}
 					} else {
-						eeInt lPromtpPos = mPromptPos;
+						int lPromtpPos = mPromptPos;
 
 						if ( c == KEY_END ) {
 							AutoPrompt( true );
@@ -496,7 +496,7 @@ void cInputTextBuffer::Update( InputEvent* Event ) {
 	}
 }
 
-void cInputTextBuffer::ShiftSelection( const eeInt& lastPromtpPos ) {
+void cInputTextBuffer::ShiftSelection( const int& lastPromtpPos ) {
 	if ( !TextSelectionEnabled() )
 		return;
 
@@ -526,7 +526,7 @@ void cInputTextBuffer::ShiftSelection( const eeInt& lastPromtpPos ) {
 
 void cInputTextBuffer::MovePromptRowDown( const bool& breakit ) {
 	if ( SupportFreeEditing() && SupportNewLine() ) {
-		eeInt lPromtpPos = mPromptPos;
+		int lPromtpPos = mPromptPos;
 
 		Uint32 dNLPos	= 0;
 		GetCurPosLinePos( dNLPos );
@@ -571,7 +571,7 @@ void cInputTextBuffer::MovePromptRowDown( const bool& breakit ) {
 
 void cInputTextBuffer::MovePromptRowUp( const bool& breakit ) {
 	if ( SupportFreeEditing() && SupportNewLine() ) {
-		eeInt lPromtpPos = mPromptPos;
+		int lPromtpPos = mPromptPos;
 
 		Uint32 uNLPos	= 0;
 		Uint32 uLineNum	= GetCurPosLinePos( uNLPos );
@@ -625,7 +625,7 @@ void cInputTextBuffer::Buffer( const String& str ) {
 	}
 }
 
-eeInt cInputTextBuffer::CurPos() const {
+int cInputTextBuffer::CurPos() const {
 	return mPromptPos;
 }
 
@@ -644,7 +644,7 @@ Uint32 cInputTextBuffer::GetCurPosLinePos( Uint32& LastNewLinePos ) {
 	if ( SupportFreeEditing() ) {
 		Uint32 nl = 0;
 		LastNewLinePos = 0;
-		for ( eeInt i = 0; i < mPromptPos; i++ )  {
+		for ( int i = 0; i < mPromptPos; i++ )  {
 			if ( mText[i] == '\n' ) {
 				nl++;
 				LastNewLinePos = i + 1;
@@ -690,7 +690,7 @@ void cInputTextBuffer::AutoPrompt( const bool& set ) {
 	BitOp::WriteBitKey( &mFlags, INPUT_TB_PROMPT_AUTO_POS, set == true );
 
 	if ( set ) {
-		mPromptPos		= (eeInt)mText.size();
+		mPromptPos		= (int)mText.size();
 	}
 }
 

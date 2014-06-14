@@ -29,21 +29,21 @@ class EE_API cUIScrollBar : public cUIComplexControl {
 
 		virtual bool IsType( const Uint32& type ) const;
 
-		virtual void Value( eeFloat Val );
+		virtual void Value( Float Val );
 
-		const eeFloat& Value() const;
+		const Float& Value() const;
 
-		virtual void MinValue( const eeFloat& MinVal );
+		virtual void MinValue( const Float& MinVal );
 
-		const eeFloat& MinValue() const;
+		const Float& MinValue() const;
 
-		virtual void MaxValue( const eeFloat& MaxVal );
+		virtual void MaxValue( const Float& MaxVal );
 
-		const eeFloat& MaxValue() const;
+		const Float& MaxValue() const;
 
-		virtual void ClickStep( const eeFloat& step );
+		virtual void ClickStep( const Float& step );
 
-		const eeFloat& ClickStep() const;
+		const Float& ClickStep() const;
 
 		virtual void SetTheme( cUITheme * Theme );
 

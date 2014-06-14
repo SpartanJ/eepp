@@ -65,8 +65,8 @@ void cUIGfx::Draw() {
 			} else if ( mFlags & UI_AUTO_FIT ) {
 				mSubTexture->Offset( eeVector2i( 0, 0 ) );
 
-				eeFloat Scale1 = mSize.x / oDestSize.x;
-				eeFloat Scale2 = mSize.y / oDestSize.y;
+				Float Scale1 = mSize.x / oDestSize.x;
+				Float Scale2 = mSize.y / oDestSize.y;
 
 				if ( Scale1 < 1 || Scale2 < 1 ) {
 					if ( Scale2 < Scale1 )
@@ -96,10 +96,10 @@ void cUIGfx::Draw() {
 }
 
 void cUIGfx::DrawSubTexture() {
-	mSubTexture->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x, (eeFloat)mScreenPos.y + mAlignOffset.y, mColor, 0.f, eeVector2f::One, Blend(), mRender );
+	mSubTexture->Draw( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y, mColor, 0.f, eeVector2f::One, Blend(), mRender );
 }
 
-void cUIGfx::Alpha( const eeFloat& alpha ) {
+void cUIGfx::Alpha( const Float& alpha ) {
 	cUIControlAnim::Alpha( alpha );
 	mColor.Alpha = (Uint8)alpha;
 }

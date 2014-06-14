@@ -32,7 +32,7 @@ class EE_API cJoystick {
 		* @see EE_JOYAXIS to know the possible axis ( usually you will use AXIS_X and AXIS_Y
 		* Axis values goes from AXIS_MIN to AXIS_MAX
 		*/
-		virtual eeFloat		GetAxis( const Int32& axis ) = 0;
+		virtual Float		GetAxis( const Int32& axis ) = 0;
 
 		/** @return The ball motion position */
 		virtual eeVector2i	GetBallMotion( const Int32& ball ) = 0;

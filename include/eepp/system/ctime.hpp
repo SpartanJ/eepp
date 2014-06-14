@@ -18,12 +18,12 @@ class EE_API cTime
 		/** @brief Return the time value as a number of seconds
 		**	@return cTime in seconds
 		**	@see AsMilliseconds, AsMicroseconds */
-		eeDouble AsSeconds() const;
+		double AsSeconds() const;
 
 		/** @brief Return the time value as a number of milliseconds
 		**	@return cTime in milliseconds
 		**	@see AsSeconds, AsMicroseconds */
-		eeDouble AsMilliseconds() const;
+		double AsMilliseconds() const;
 
 		/** @brief Return the time value as a number of microseconds
 		**	@return cTime in microseconds
@@ -33,8 +33,8 @@ class EE_API cTime
 		static const cTime Zero; ///< Predefined "zero" time value
 	private :
 
-		friend EE_API cTime Seconds(eeDouble);
-		friend EE_API cTime Milliseconds(eeDouble);
+		friend EE_API cTime Seconds(double);
+		friend EE_API cTime Milliseconds(double);
 		friend EE_API cTime Microseconds(Int64);
 
 		/** @brief Construct from a number of microseconds
@@ -51,14 +51,14 @@ class EE_API cTime
 /// @param amount Number of seconds
 /// @return cTime value constructed from the amount of seconds
 /// @see Milliseconds, Microseconds
-EE_API cTime Seconds(eeDouble amount);
+EE_API cTime Seconds(double amount);
 
 /// @relates cTime
 /// @brief Construct a time value from a number of milliseconds
 /// @param amount Number of milliseconds
 /// @return cTime value constructed from the amount of milliseconds
 /// @see Seconds, Microseconds
-EE_API cTime Milliseconds(eeDouble amount);
+EE_API cTime Milliseconds(double amount);
 
 /// @relates cTime
 /// @brief Construct a time value from a number of microseconds
@@ -155,14 +155,14 @@ EE_API cTime operator *(cTime left, cTime right);
 /// @param left  Left operand (a time)
 /// @param right Right operand (a number)
 /// @return @a left multiplied by @a right
-EE_API cTime operator *(cTime left, eeDouble right);
+EE_API cTime operator *(cTime left, double right);
 
 /// @relates cTime
 /// @brief Overload of binary * operator to scale a time value
 /// @param left  Left operand (a number)
 /// @param right Right operand (a time)
 /// @return @a left multiplied by @a right
-EE_API cTime operator *(eeDouble left, cTime right);
+EE_API cTime operator *(double left, cTime right);
 
 /// @relates cTime
 /// @brief Overload of binary * operator to scale a time value
@@ -183,7 +183,7 @@ EE_API cTime operator *(cTime left, Int64 right);
 /// @param left  Left operand (a time)
 /// @param right Right operand (a number)
 /// @return @a left multiplied by @a right
-EE_API cTime& operator *=(cTime& left, eeDouble right);
+EE_API cTime& operator *=(cTime& left, double right);
 
 /// @relates cTime
 /// @brief Overload of binary *= operator to scale/assign a time value
@@ -211,7 +211,7 @@ EE_API cTime operator /(cTime left, cTime right);
 /// @param left  Left operand (a time)
 /// @param right Right operand (a number)
 /// @return @a left divided by @a right
-EE_API cTime operator /(cTime left, eeDouble right);
+EE_API cTime operator /(cTime left, double right);
 
 /// @relates cTime
 /// @brief Overload of binary / operator to scale a time value
@@ -276,13 +276,13 @@ value, times can also be negative.
 Usage example:
 @code
 cTime t1 = Seconds(0.1f);
-eeDouble milli = t1.AsMilliseconds(); // 100
+double milli = t1.AsMilliseconds(); // 100
 
 cTime t2 = Milliseconds(30);
 Int64 micro = t2.AsMicroseconds(); // 30000
 
 cTime t3 = Microseconds(-800000);
-eeDouble sec = t3.AsSeconds(); // -0.8
+double sec = t3.AsSeconds(); // -0.8
 @endcode
 
 @code

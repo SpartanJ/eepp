@@ -122,27 +122,27 @@ Uint32 cMTRand::Randi( const Uint32 n ) {
     return i;
 }
 
-eeDouble cMTRand::Rand() {
+double cMTRand::Rand() {
     return double( Randi() ) * ( 1.0 / 4294967295.0 );
 }
 
-eeDouble cMTRand::Rand( const eeDouble n ) {
+double cMTRand::Rand( const double n ) {
     return Rand() * n;
 }
 
-eeFloat	cMTRand::Randf() {
-	return (eeFloat)Rand();
+Float	cMTRand::Randf() {
+	return (Float)Rand();
 }
 
-eeFloat	cMTRand::Randf( const eeFloat n ) {
-	return (eeFloat)Rand(n);
+Float	cMTRand::Randf( const Float n ) {
+	return (Float)Rand(n);
 }
 
-eeInt cMTRand::RandRange( eeInt Min, eeInt Max ) {
+int cMTRand::RandRange( int Min, int Max ) {
 	return Min + Randi( Max - Min );
 }
 
-eeFloat	cMTRand::RandRange( eeFloat Min, eeFloat Max ) {
+Float	cMTRand::RandRange( Float Min, Float Max ) {
 	return Min + Randf( Max - Min );
 }
 

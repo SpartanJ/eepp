@@ -1,4 +1,5 @@
 #include <eepp/graphics/cvertexbuffervbo.hpp>
+#include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/renderer/crenderergl3.hpp>
 #include <eepp/graphics/renderer/crenderergl3cp.hpp>
@@ -20,12 +21,12 @@ cVertexBufferVBO::cVertexBufferVBO( const Uint32& VertexFlags, EE_DRAW_MODE Draw
 cVertexBufferVBO::~cVertexBufferVBO() {
 	for( Int32 i = 0; i < VERTEX_FLAGS_COUNT; i++ ) {
 		if( VERTEX_FLAG_QUERY( mVertexFlags, i ) && mArrayHandle[ i ] ) {
-			glDeleteBuffersARB( 1,(GLuint *)&mArrayHandle[ i ] );
+			glDeleteBuffersARB( 1,(unsigned int *)&mArrayHandle[ i ] );
 		}
 	}
 
 	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) && mElementHandle ) {
-		glDeleteBuffersARB( 1, (GLuint *)&mElementHandle );
+		glDeleteBuffersARB( 1, (unsigned int *)&mElementHandle );
 	}
 
 	if ( GLv_3CP == GLi->Version() && mVAO ) {
@@ -48,7 +49,7 @@ bool cVertexBufferVBO::Compile() {
 	if( mCompiled )
 		return false;
 
-	GLint curVAO = 0;
+	int curVAO = 0;
 	#ifndef EE_GLES
 	if ( GLv_3CP == GLi->Version() ) {
 		glGetIntegerv( GL_VERTEX_ARRAY_BINDING, &curVAO );
@@ -57,20 +58,20 @@ bool cVertexBufferVBO::Compile() {
 	}
 	#endif
 
-	GLenum usageType = GL_STATIC_DRAW;
+	unsigned int usageType = GL_STATIC_DRAW;
 	if( mUsageType== VBO_USAGE_TYPE_DYNAMIC ) usageType = GL_DYNAMIC_DRAW;
 	else if( mUsageType== VBO_USAGE_TYPE_STREAM ) usageType = GL_STREAM_DRAW;
 
 	//Create the VBO vertex arrays
 	for( Int32 i = 0; i < VERTEX_FLAGS_COUNT; i++ ) {
 		if( VERTEX_FLAG_QUERY( mVertexFlags, i ) ) {
-			glGenBuffersARB( 1,(GLuint *)&mArrayHandle[ i ] );
+			glGenBuffersARB( 1,(unsigned int *)&mArrayHandle[ i ] );
 
 			glBindBufferARB( GL_ARRAY_BUFFER, mArrayHandle[i] );
 
 			if ( mArrayHandle[i] ) {
 				if ( i != VERTEX_FLAG_COLOR )
-					glBufferDataARB( GL_ARRAY_BUFFER, mVertexArray[i].size() * sizeof(eeFloat), &( mVertexArray[i][0] ), usageType );
+					glBufferDataARB( GL_ARRAY_BUFFER, mVertexArray[i].size() * sizeof(Float), &( mVertexArray[i][0] ), usageType );
 				else
 					glBufferDataARB( GL_ARRAY_BUFFER, mColorArray.size(), &mColorArray[0], usageType );
 			} else {
@@ -85,7 +86,7 @@ bool cVertexBufferVBO::Compile() {
 
 	//Create the VBO index array
 	if( VERTEX_FLAG_QUERY( mVertexFlags, VERTEX_FLAG_USE_INDICES ) ) {
-		glGenBuffersARB( 1, (GLuint *)&mElementHandle );
+		glGenBuffersARB( 1, (unsigned int *)&mElementHandle );
 
 		glBindBufferARB( GL_ELEMENT_ARRAY_BUFFER, mElementHandle );
 
@@ -108,7 +109,7 @@ void cVertexBufferVBO::Draw() {
 	if ( !mCompiled )
 		return;
 
-	GLint curVAO = 0;
+	int curVAO = 0;
 	#ifndef EE_GLES
 	if ( GLv_3CP == GLi->Version() ) {
 		glGetIntegerv( GL_VERTEX_ARRAY_BINDING, &curVAO );
@@ -144,10 +145,10 @@ void cVertexBufferVBO::Draw() {
 
 void cVertexBufferVBO::SetVertexStates() {
 	#ifdef EE_GL3_ENABLED
-	GLint index;
+	int index;
 	#endif
 
-	GLint curVAO = 0;
+	int curVAO = 0;
 	#ifndef EE_GLES
 	if ( GLv_3CP == GLi->Version() ) {
 		if ( mBuffersSet ) {
@@ -281,7 +282,7 @@ void cVertexBufferVBO::SetVertexStates() {
 }
 
 void cVertexBufferVBO::Update( const Uint32& Types, bool Indices ) {
-	GLenum usageType = GL_STATIC_DRAW;
+	unsigned int usageType = GL_STATIC_DRAW;
 	if( mUsageType== VBO_USAGE_TYPE_DYNAMIC ) usageType = GL_DYNAMIC_DRAW;
 	else if( mUsageType== VBO_USAGE_TYPE_STREAM ) usageType = GL_STREAM_DRAW;
 
@@ -291,7 +292,7 @@ void cVertexBufferVBO::Update( const Uint32& Types, bool Indices ) {
 
 			if ( mArrayHandle[i] ) {
 				if ( i != VERTEX_FLAG_COLOR )
-					glBufferDataARB( GL_ARRAY_BUFFER, mVertexArray[i].size() * sizeof(eeFloat), &( mVertexArray[i][0] ), usageType );
+					glBufferDataARB( GL_ARRAY_BUFFER, mVertexArray[i].size() * sizeof(Float), &( mVertexArray[i][0] ), usageType );
 				else
 					glBufferDataARB( GL_ARRAY_BUFFER, mColorArray.size(), &mColorArray[0], usageType );
 			}

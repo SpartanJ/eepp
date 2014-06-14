@@ -33,7 +33,7 @@ class EE_API cUIGenericGrid : public cUIComplexControl {
 				Uint32				RowHeight;
 				Uint32				GridWidth;
 				eeRecti				PaddingContainer;
-				eeFloat				TouchDragDeceleration;
+				Float				TouchDragDeceleration;
 		};
 
 		cUIGenericGrid( const cUIGenericGrid::CreateParams& Params );
@@ -127,8 +127,8 @@ class EE_API cUIGenericGrid : public cUIComplexControl {
 		Int32						mSelected;
 
 		eeVector2i					mTouchDragPoint;
-		eeFloat						mTouchDragAcceleration;
-		eeFloat						mTouchDragDeceleration;
+		Float						mTouchDragAcceleration;
+		Float						mTouchDragDeceleration;
 
 		bool						mCollWidthAssigned;
 

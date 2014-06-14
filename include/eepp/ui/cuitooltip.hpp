@@ -55,7 +55,7 @@ class EE_API cUITooltip : public cUIControlAnim {
 
 		virtual void Draw();
 
-		virtual void Alpha( const eeFloat& alpha );
+		virtual void Alpha( const Float& alpha );
 
 		cFont * Font() const;
 
@@ -83,11 +83,11 @@ class EE_API cUITooltip : public cUIControlAnim {
 
 		cTextCache * GetTextCache();
 
-		eeFloat GetTextWidth();
+		Float GetTextWidth();
 
-		eeFloat GetTextHeight();
+		Float GetTextHeight();
 
-		const eeInt& GetNumLines() const;
+		const int& GetNumLines() const;
 
 		const eeVector2f& AlignOffset() const;
 

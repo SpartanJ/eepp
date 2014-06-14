@@ -73,7 +73,7 @@ class EE_API cGameObject {
 
 		void AssignTilePos();
 
-		eeFloat GetAngle();
+		Float GetAngle();
 };
 
 }}

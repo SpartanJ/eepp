@@ -1,4 +1,5 @@
 #include <eepp/graphics/cshader.hpp>
+#include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/renderer/crenderergl3.hpp>
 #include <eepp/graphics/renderer/crenderergl3cp.hpp>
@@ -233,7 +234,7 @@ bool cShader::Compile() {
 	mValid = 0 != Compiled;
 
 	if ( !mValid ) {
-		GLsizei logsize = 0, logarraysize = 0;
+		int logsize = 0, logarraysize = 0;
 		glGetShaderiv( GetId(), GL_INFO_LOG_LENGTH, &logarraysize );
 
 		if ( logarraysize > 0 ) {

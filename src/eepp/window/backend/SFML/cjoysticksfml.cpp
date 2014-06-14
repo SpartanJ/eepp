@@ -43,8 +43,8 @@ void cJoystickSFML::Update() {
 }
 
 void cJoystickSFML::CalcHat() {
-	eeFloat hatX = sf::Joystick::getAxisPosition( mIndex, sf::Joystick::PovX );
-	eeFloat hatY = sf::Joystick::getAxisPosition( mIndex, sf::Joystick::PovY );
+	Float hatX = sf::Joystick::getAxisPosition( mIndex, sf::Joystick::PovX );
+	Float hatY = sf::Joystick::getAxisPosition( mIndex, sf::Joystick::PovY );
 
 	mHat = HAT_CENTERED;
 
@@ -59,7 +59,7 @@ Uint8 cJoystickSFML::GetHat( const Int32& index ) {
 	return mHat;
 }
 
-eeFloat cJoystickSFML::GetAxis( const Int32& axis ) {
+Float cJoystickSFML::GetAxis( const Int32& axis ) {
 	sf::Joystick::Axis raxis = sf::Joystick::X;
 
 	switch ( axis )

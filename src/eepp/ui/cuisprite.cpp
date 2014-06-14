@@ -52,7 +52,7 @@ void cUISprite::Draw() {
 	if ( mVisible ) {
 		if ( NULL != mSprite && 0.f != mAlpha ) {
 			CheckSubTextureUpdate();
-			mSprite->Position( (eeFloat)( mScreenPos.x + mAlignOffset.x ), (eeFloat)( mScreenPos.y + mAlignOffset.y ) );
+			mSprite->Position( (Float)( mScreenPos.x + mAlignOffset.x ), (Float)( mScreenPos.y + mAlignOffset.y ) );
 			mSprite->Draw( Blend(), mRender );
 		}
 	}
@@ -66,7 +66,7 @@ void cUISprite::CheckSubTextureUpdate() {
 	}
 }
 
-void cUISprite::Alpha( const eeFloat& alpha ) {
+void cUISprite::Alpha( const Float& alpha ) {
 	cUIControlAnim::Alpha( alpha );
 	
 	if ( NULL != mSprite )

@@ -182,35 +182,35 @@ Uint32 cUIScrollBar::OnMessage( const cUIMessage * Msg ) {
 	return 0;
 }
 
-void cUIScrollBar::Value( eeFloat Val ) {
+void cUIScrollBar::Value( Float Val ) {
 	mSlider->Value( Val );
 }
 
-const eeFloat& cUIScrollBar::Value() const {
+const Float& cUIScrollBar::Value() const {
 	return mSlider->Value();
 }
 
-void cUIScrollBar::MinValue( const eeFloat& MinVal ) {
+void cUIScrollBar::MinValue( const Float& MinVal ) {
 	mSlider->MinValue( MinVal );
 }
 
-const eeFloat& cUIScrollBar::MinValue() const {
+const Float& cUIScrollBar::MinValue() const {
 	return mSlider->MinValue();
 }
 
-void cUIScrollBar::MaxValue( const eeFloat& MaxVal ) {
+void cUIScrollBar::MaxValue( const Float& MaxVal ) {
 	mSlider->MaxValue( MaxVal );
 }
 
-const eeFloat& cUIScrollBar::MaxValue() const {
+const Float& cUIScrollBar::MaxValue() const {
 	return mSlider->MaxValue();
 }
 
-void cUIScrollBar::ClickStep( const eeFloat& step ) {
+void cUIScrollBar::ClickStep( const Float& step ) {
 	mSlider->ClickStep( step );
 }
 
-const eeFloat& cUIScrollBar::ClickStep() const {
+const Float& cUIScrollBar::ClickStep() const {
 	return mSlider->ClickStep();
 }
 

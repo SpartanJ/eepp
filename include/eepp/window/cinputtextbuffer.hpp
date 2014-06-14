@@ -90,7 +90,7 @@ class EE_API cInputTextBuffer {
 		void ChangedSinceLastUpdate( const bool& Changed );
 
 		/** @return The Cursor Position (where is the cursor editing) */
-		eeInt CurPos() const;
+		int CurPos() const;
 
 		/** Set the cursor position */
 		void CurPos( const Uint32& pos );
@@ -135,7 +135,7 @@ class EE_API cInputTextBuffer {
 		String				mText;
 		Uint32				mFlags;
 		Uint32				mCallback;
-		eeInt				mPromptPos;
+		int				mPromptPos;
 		EnterCallback		mEnterCall;
 		Uint32				mMaxLength;
 		std::vector<Uint32>	mIgnoredChars;
@@ -166,7 +166,7 @@ class EE_API cInputTextBuffer {
 
 		void TryAddChar( const Uint32& c );
 
-		void ShiftSelection( const eeInt& lastPromtpPos );
+		void ShiftSelection( const int& lastPromtpPos );
 
 		void RemoveSelection();
 

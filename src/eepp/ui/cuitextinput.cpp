@@ -86,11 +86,11 @@ void cUITextInput::DrawWaitingCursor() {
 			cPrimitives P;
 			P.SetColor( mFontColor );
 
-			eeFloat CurPosX = mScreenPos.x + mAlignOffset.x + mCurPos.x + 1 + mPadding.Left;
-			eeFloat CurPosY = mScreenPos.y + mAlignOffset.y + mCurPos.y		+ mPadding.Top;
+			Float CurPosX = mScreenPos.x + mAlignOffset.x + mCurPos.x + 1 + mPadding.Left;
+			Float CurPosY = mScreenPos.y + mAlignOffset.y + mCurPos.y		+ mPadding.Top;
 
-			if ( CurPosX > (eeFloat)mScreenPos.x + (eeFloat)mSize.x )
-				CurPosX = (eeFloat)mScreenPos.x + (eeFloat)mSize.x;
+			if ( CurPosX > (Float)mScreenPos.x + (Float)mSize.x )
+				CurPosX = (Float)mScreenPos.x + (Float)mSize.x;
 
 			P.DrawLine( eeLine2f( eeVector2f( CurPosX, CurPosY ), eeVector2f( CurPosX, CurPosY + mTextCache->Font()->GetFontHeight() ) ) );
 
@@ -153,11 +153,11 @@ void cUITextInput::AlignFix() {
 
 		mTextCache->Font()->SetText( mTextBuffer.Buffer().substr( NLPos, mTextBuffer.CurPos() - NLPos ) );
 
-		eeFloat tW	= mTextCache->Font()->GetTextWidth();
-		eeFloat tX	= mAlignOffset.x + tW;
+		Float tW	= mTextCache->Font()->GetTextWidth();
+		Float tX	= mAlignOffset.x + tW;
 
 		mCurPos.x	= tW;
-		mCurPos.y	= (eeFloat)LineNum * (eeFloat)mTextCache->Font()->GetFontHeight();
+		mCurPos.y	= (Float)LineNum * (Float)mTextCache->Font()->GetFontHeight();
 
 		if ( !mTextBuffer.SupportNewLine() ) {
 			if ( tX < 0.f )

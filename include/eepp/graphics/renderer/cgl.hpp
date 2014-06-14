@@ -3,7 +3,7 @@
 
 #include <eepp/graphics/renderer/base.hpp>
 #include <eepp/graphics/cshaderprogram.hpp>
-#include <eepp/graphics/opengl.hpp>
+#include <eepp/graphics/glhelper.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -71,33 +71,33 @@ class EE_API cGL {
 
 		Uint32 GetTextureOpEnum( const EE_TEXTURE_OP& Type );
 
-		void Clear ( GLbitfield mask );
+		void Clear ( unsigned int mask );
 
-		void ClearColor ( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha );
+		void ClearColor ( float red, float green, float blue, float alpha );
 
-		void Scissor ( GLint x, GLint y, GLsizei width, GLsizei height );
+		void Scissor ( int x, int y, int width, int height );
 
-		void PolygonMode( GLenum face, GLenum mode );
+		void PolygonMode( unsigned int face, unsigned int mode );
 
 		std::string GetExtensions();
 
-		const char * GetString( GLenum name );
+		const char * GetString( unsigned int name );
 
-		void DrawArrays (GLenum mode, GLint first, GLsizei count);
+		void DrawArrays ( unsigned int mode, int first, int count );
 
-		void DrawElements( GLenum mode, GLsizei count, GLenum type, const GLvoid *indices );
+		void DrawElements( unsigned int mode, int count, unsigned int type, const void *indices );
 
-		void BindTexture ( GLenum target, GLuint texture );
+		void BindTexture ( unsigned int target, unsigned int texture );
 
-		void ActiveTexture( GLenum texture );
+		void ActiveTexture( unsigned int texture );
 
-		void BlendFunc ( GLenum sfactor, GLenum dfactor );
+		void BlendFunc ( unsigned int sfactor, unsigned int dfactor );
 
-		void Viewport ( GLint x, GLint y, GLsizei width, GLsizei height );
+		void Viewport ( int x, int y, int width, int height );
 
 		void LineSmooth( const bool& Enable );
 
-		void LineWidth ( GLfloat width );
+		void LineWidth ( float width );
 
 		/** Reapply the line smooth state */
 		void LineSmooth();
@@ -110,7 +110,7 @@ class EE_API cGL {
 		/** Reapply the polygon mode */
 		void PolygonMode();
 
-		void PixelStorei (GLenum pname, GLint param);
+		void PixelStorei (unsigned int pname, int param);
 
 		cRendererGL * GetRendererGL();
 
@@ -120,15 +120,15 @@ class EE_API cGL {
 
 		cRendererGLES2 * GetRendererGLES2();
 
-		virtual void PointSize( GLfloat size ) = 0;
+		virtual void PointSize( float size ) = 0;
 
-		virtual GLfloat PointSize() = 0;
+		virtual float PointSize() = 0;
 
-		virtual void ClientActiveTexture( GLenum texture ) = 0;
+		virtual void ClientActiveTexture( unsigned int texture ) = 0;
 
-		virtual void Disable ( GLenum cap );
+		virtual void Disable ( unsigned int cap );
 
-		virtual void Enable( GLenum cap );
+		virtual void Enable( unsigned int cap );
 
 		virtual EEGL_version Version() = 0;
 
@@ -140,29 +140,29 @@ class EE_API cGL {
 
 		virtual void LoadIdentity() = 0;
 
-		virtual void Translatef( GLfloat x, GLfloat y, GLfloat z ) = 0;
+		virtual void Translatef( float x, float y, float z ) = 0;
 
-		virtual void Rotatef( GLfloat angle, GLfloat x, GLfloat y, GLfloat z ) = 0;
+		virtual void Rotatef( float angle, float x, float y, float z ) = 0;
 
-		virtual void Scalef( GLfloat x, GLfloat y, GLfloat z ) = 0;
+		virtual void Scalef( float x, float y, float z ) = 0;
 
-		virtual void MatrixMode ( GLenum mode ) = 0;
+		virtual void MatrixMode ( unsigned int mode ) = 0;
 
-		virtual void Ortho ( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar ) = 0;
+		virtual void Ortho ( float left, float right, float bottom, float top, float zNear, float zFar ) = 0;
 
-		virtual void LookAt( GLfloat eyeX, GLfloat eyeY, GLfloat eyeZ, GLfloat centerX, GLfloat centerY, GLfloat centerZ, GLfloat upX, GLfloat upY, GLfloat upZ ) = 0;
+		virtual void LookAt( float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ ) = 0;
 
-		virtual void Perspective ( GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar ) = 0;
+		virtual void Perspective ( float fovy, float aspect, float zNear, float zFar ) = 0;
 
-		virtual void EnableClientState( GLenum array ) = 0;
+		virtual void EnableClientState( unsigned int array ) = 0;
 
-		virtual void DisableClientState( GLenum array ) = 0;
+		virtual void DisableClientState( unsigned int array ) = 0;
 
-		virtual void VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) = 0;
+		virtual void VertexPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) = 0;
 
-		virtual void ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) = 0;
+		virtual void ColorPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) = 0;
 
-		virtual void TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) = 0;
+		virtual void TexCoordPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) = 0;
 
 		virtual void SetShader( cShaderProgram * Shader );
 
@@ -170,43 +170,43 @@ class EE_API cGL {
 
 		virtual void Clip2DPlaneDisable() = 0;
 
-		virtual void MultMatrixf ( const GLfloat *m ) = 0;
+		virtual void MultMatrixf ( const float *m ) = 0;
 
-		virtual void ClipPlane( GLenum plane, const GLdouble *equation ) = 0;
+		virtual void ClipPlane( unsigned int plane, const double *equation ) = 0;
 
-		virtual void TexEnvi( GLenum target, GLenum pname, GLint param ) = 0;
+		virtual void TexEnvi( unsigned int target, unsigned int pname, int param ) = 0;
 
-		virtual void LoadMatrixf( const GLfloat *m ) = 0;
+		virtual void LoadMatrixf( const float *m ) = 0;
 
-		virtual void Frustum( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near_val, GLfloat far_val ) = 0;
+		virtual void Frustum( float left, float right, float bottom, float top, float near_val, float far_val ) = 0;
 
-		virtual void GetCurrentMatrix( GLenum mode, GLfloat * m ) = 0;
+		virtual void GetCurrentMatrix( unsigned int mode, float * m ) = 0;
 
-		virtual GLenum GetCurrentMatrixMode() = 0;
+		virtual unsigned int GetCurrentMatrixMode() = 0;
 
-		void GetViewport( GLint * viewport );
+		void GetViewport( int * viewport );
 
-		virtual GLint Project( GLfloat objx, GLfloat objy, GLfloat objz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *winx, GLfloat *winy, GLfloat *winz ) = 0;
+		virtual int Project( float objx, float objy, float objz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *winx, float *winy, float *winz ) = 0;
 
-		virtual GLint UnProject( GLfloat winx, GLfloat winy, GLfloat winz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *objx, GLfloat *objy, GLfloat *objz ) = 0;
+		virtual int UnProject( float winx, float winy, float winz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *objx, float *objy, float *objz ) = 0;
 
 		eeVector3f ProjectCurrent( const eeVector3f& point );
 
 		eeVector3f UnProjectCurrent( const eeVector3f& point );
 
-		void StencilFunc( GLenum func, GLint ref, GLuint mask );
+		void StencilFunc( unsigned int func, int ref, unsigned int mask );
 
-		void StencilOp( GLenum fail, GLenum zfail, GLenum zpass );
+		void StencilOp( unsigned int fail, unsigned int zfail, unsigned int zpass );
 
-		void StencilMask ( GLuint mask );
+		void StencilMask ( unsigned int mask );
 
-		void ColorMask ( GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha );
+		void ColorMask ( Uint8 red, Uint8 green, Uint8 blue, Uint8 alpha );
 
-		void BindVertexArray ( GLuint array );
+		void BindVertexArray ( unsigned int array );
 
-		void DeleteVertexArrays ( GLsizei n, const GLuint *arrays );
+		void DeleteVertexArrays ( int n, const unsigned int *arrays );
 
-		void GenVertexArrays ( GLsizei n, GLuint *arrays );
+		void GenVertexArrays ( int n, unsigned int *arrays );
 
 		const bool& QuadsSupported() const;
 
@@ -223,8 +223,8 @@ class EE_API cGL {
 		bool	mQuadsSupported;
 		bool	mBlendEnabled;
 		int		mQuadVertexs;
-		GLfloat mLineWidth;
-		GLuint	mCurVAO;
+		float mLineWidth;
+		unsigned int	mCurVAO;
 
 		std::list<eeRectf> mPlanesClipped;
 	private:

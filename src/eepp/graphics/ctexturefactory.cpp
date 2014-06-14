@@ -1,5 +1,6 @@
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/graphics/ctextureloader.hpp>
+#include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/ctexture.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
@@ -25,12 +26,12 @@ cTextureFactory::~cTextureFactory() {
 	UnloadTextures();
 }
 
-Uint32 cTextureFactory::CreateEmptyTexture( const eeUint& Width, const eeUint& Height, const eeUint& Channels, const eeColorA& DefaultColor, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+Uint32 cTextureFactory::CreateEmptyTexture( const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const eeColorA& DefaultColor, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
 	cImage TmpImg( Width, Height, Channels, DefaultColor );
 	return LoadFromPixels( TmpImg.GetPixelsPtr(), Width, Height, Channels, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
 }
 
-Uint32 cTextureFactory::LoadFromPixels( const unsigned char * Pixels, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy, const std::string& FileName ) {
+Uint32 cTextureFactory::LoadFromPixels( const unsigned char * Pixels, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy, const std::string& FileName ) {
 	cTextureLoader myTex( Pixels, Width, Height, Channels, Mipmap, ClampMode, CompressTexture, KeepLocalCopy, FileName );
 	myTex.Load();
 	return myTex.Id();
@@ -42,7 +43,7 @@ Uint32 cTextureFactory::LoadFromPack( cPack* Pack, const std::string& FilePackPa
 	return myTex.Id();
 }
 
-Uint32 cTextureFactory::LoadFromMemory( const unsigned char * ImagePtr, const eeUint& Size, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+Uint32 cTextureFactory::LoadFromMemory( const unsigned char * ImagePtr, const unsigned int& Size, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
 	cTextureLoader myTex( ImagePtr, Size, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
 	myTex.Load();
 	return myTex.Id();
@@ -60,7 +61,7 @@ Uint32 cTextureFactory::Load( const std::string& Filepath, const bool& Mipmap, c
 	return myTex.Id();
 }
 
-Uint32 cTextureFactory::PushTexture( const std::string& Filepath, const Uint32& TexId, const eeUint& Width, const eeUint& Height, const eeUint& ImgWidth, const eeUint& ImgHeight, const bool& Mipmap, const eeUint& Channels, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy, const Uint32& MemSize ) {
+Uint32 cTextureFactory::PushTexture( const std::string& Filepath, const Uint32& TexId, const unsigned int& Width, const unsigned int& Height, const unsigned int& ImgWidth, const unsigned int& ImgHeight, const bool& Mipmap, const unsigned int& Channels, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy, const Uint32& MemSize ) {
 	Lock();
 
 	cTexture * Tex 		= NULL;
@@ -152,7 +153,7 @@ bool cTextureFactory::Remove( Uint32 TexId ) {
 void cTextureFactory::RemoveReference( cTexture * Tex ) {
 	mMemSize -= Tex->MemSize();
 
-	GLint glTexId = Tex->Handle();
+	int glTexId = Tex->Handle();
 
 	mTextures[ Tex->Id() ] = NULL;
 
@@ -194,8 +195,8 @@ void cTextureFactory::GrabTextures() {
 		cTexture* Tex = GetTexture(i);
 
 		if ( Tex && !Tex->LocalCopy() ) {
-            Tex->Lock();
-            Tex->Grabed(true);
+			Tex->Lock();
+			Tex->Grabed(true);
 		}
 	}
 }
@@ -205,9 +206,9 @@ void cTextureFactory::UngrabTextures() {
 		cTexture* Tex = GetTexture(i);
 
 		if ( NULL != Tex && Tex->Grabed() ) {
-            Tex->Reload();
-            Tex->Unlock();
-            Tex->Grabed(false);
+			Tex->Reload();
+			Tex->Unlock();
+			Tex->Grabed(false);
 		}
 	}
 }
@@ -218,7 +219,7 @@ void cTextureFactory::SetActiveTextureUnit( const Uint32& Unit ) {
 
 void cTextureFactory::SetTextureEnv( const EE_TEXTURE_PARAM& Param, const Int32& Val ) {
 	#ifndef EE_GLES2
-	GLenum lParam = (GLenum)GLi->GetTextureParamEnum( Param );
+	unsigned int lParam = (unsigned int)GLi->GetTextureParamEnum( Param );
 
 	GLi->TexEnvi( GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE_ARB );
 
@@ -234,14 +235,14 @@ void cTextureFactory::SetTextureEnv( const EE_TEXTURE_PARAM& Param, const Int32&
 	#endif
 }
 
-eeUint cTextureFactory::GetValidTextureSize( const eeUint& Size ) {
+unsigned int cTextureFactory::GetValidTextureSize( const unsigned int& Size ) {
 	if ( GLi->IsExtension( EEGL_ARB_texture_non_power_of_two ) )
 		return Size;
 	else
 		return Math::NextPowOfTwo(Size);
 }
 
-bool cTextureFactory::SaveImage( const std::string& filepath, const EE_SAVE_TYPE& Format, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const unsigned char* data ) {
+bool cTextureFactory::SaveImage( const std::string& filepath, const EE_SAVE_TYPE& Format, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const unsigned char* data ) {
 	bool Res;
 
 	if ( SAVE_TYPE_JPG != Format ) {
@@ -263,11 +264,11 @@ cTexture * cTextureFactory::GetTexture( const Uint32& TexId ) {
 	return mTextures[TexId];
 }
 
-void cTextureFactory::Allocate( const eeUint& size ) {
+void cTextureFactory::Allocate( const unsigned int& size ) {
 	if ( size > mTextures.size() ) {
 		mTextures.resize( size + 1, NULL );
 
-		for ( eeUint i = 1; i < mTextures.size(); i++ )
+		for ( unsigned int i = 1; i < mTextures.size(); i++ )
 			mVectorFreeSlots.push_back( i );
 	}
 }

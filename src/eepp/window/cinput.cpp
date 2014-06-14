@@ -67,17 +67,17 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 				mMousePos.x = Event->motion.x;
 				mMousePos.y = Event->motion.y;
 			} else {
-				mMousePos.x += static_cast<Int32>( (eeFloat)Event->motion.xrel * mMouseSpeed );
-				mMousePos.y += static_cast<Int32>( (eeFloat)Event->motion.yrel * mMouseSpeed );
+				mMousePos.x += static_cast<Int32>( (Float)Event->motion.xrel * mMouseSpeed );
+				mMousePos.y += static_cast<Int32>( (Float)Event->motion.yrel * mMouseSpeed );
 			}
 
-			if ( mMousePos.x >= (eeInt)mWindow->GetWidth() ) {
+			if ( mMousePos.x >= (int)mWindow->GetWidth() ) {
 				mMousePos.x = mWindow->GetWidth();
 			} else if ( mMousePos.x < 0 ) {
 				mMousePos.x = 0;
 			}
 
-			if ( mMousePos.y >= (eeInt)mWindow->GetHeight() ) {
+			if ( mMousePos.y >= (int)mWindow->GetHeight() ) {
 				mMousePos.y = mWindow->GetHeight();
 			} else if ( mMousePos.y < 0 ) {
 				mMousePos.y = 0;
@@ -139,8 +139,8 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 			cInputFinger * Finger = GetFingerId( Event->finger.fingerId );
 
 			Finger->WriteLast();
-			Finger->x			= (Uint16)( Event->finger.x * (eeFloat)mWindow->GetWidth() );
-			Finger->y			= (Uint16)( Event->finger.y * (eeFloat)mWindow->GetHeight() );
+			Finger->x			= (Uint16)( Event->finger.x * (Float)mWindow->GetWidth() );
+			Finger->y			= (Uint16)( Event->finger.y * (Float)mWindow->GetHeight() );
 			Finger->pressure	= Event->finger.pressure;
 			Finger->down		= true;
 			Finger->xdelta		= Event->finger.dx;
@@ -153,8 +153,8 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 			cInputFinger * Finger = GetFingerId( Event->finger.fingerId );
 
 			Finger->WriteLast();
-			Finger->x			= (Uint16)( Event->finger.x * (eeFloat)mWindow->GetWidth() );
-			Finger->y			= (Uint16)( Event->finger.y * (eeFloat)mWindow->GetHeight() );
+			Finger->x			= (Uint16)( Event->finger.x * (Float)mWindow->GetWidth() );
+			Finger->y			= (Uint16)( Event->finger.y * (Float)mWindow->GetHeight() );
 			Finger->pressure	= Event->finger.pressure;
 			Finger->down		= false;
 			Finger->was_down	= true;
@@ -168,8 +168,8 @@ void cInput::ProcessEvent( InputEvent * Event ) {
 			cInputFinger * Finger = GetFingerId( Event->finger.fingerId );
 
 			Finger->WriteLast();
-			Finger->x			= (Uint16)( Event->finger.x * (eeFloat)mWindow->GetWidth() );
-			Finger->y			= (Uint16)( Event->finger.y * (eeFloat)mWindow->GetHeight() );
+			Finger->x			= (Uint16)( Event->finger.x * (Float)mWindow->GetWidth() );
+			Finger->y			= (Uint16)( Event->finger.y * (Float)mWindow->GetHeight() );
 			Finger->pressure	= Event->finger.pressure;
 			Finger->down		= true;
 			Finger->xdelta		= Event->finger.dx;
@@ -270,7 +270,7 @@ void cInput::SetMousePos( const eeVector2i& Pos ) {
 }
 
 eeVector2f cInput::GetMousePosf() {
-	return eeVector2f( (eeFloat)mMousePos.x, (eeFloat)mMousePos.y );
+	return eeVector2f( (Float)mMousePos.x, (Float)mMousePos.y );
 }
 
 eeVector2i cInput::GetMousePosFromView( const cView& View ) {
@@ -362,11 +362,11 @@ bool cInput::MouseWheelDown() const {
 	return ( mReleaseTrigger & EE_BUTTON_WDMASK ) != 0;
 }
 
-void cInput::MouseSpeed( const eeFloat& Speed ) {
+void cInput::MouseSpeed( const Float& Speed ) {
 	mMouseSpeed = Speed;
 }
 
-const eeFloat& cInput::MouseSpeed() const {
+const Float& cInput::MouseSpeed() const {
 	return mMouseSpeed;
 }
 

@@ -19,7 +19,7 @@ class EE_API cJoystickNull : public cJoystick {
 
 		Uint8		GetHat( const Int32& index );
 
-		eeFloat		GetAxis( const Int32& axis );
+		Float		GetAxis( const Int32& axis );
 
 		eeVector2i	GetBallMotion( const Int32& ball );
 

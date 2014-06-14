@@ -1,3 +1,4 @@
+#include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/crenderergles2.hpp>
 
 #ifdef EE_GL3_ENABLED
@@ -162,7 +163,7 @@ void cRendererGLES2::Init() {
 	mLoaded = true;
 }
 
-GLuint cRendererGLES2::BaseShaderId() {
+unsigned int cRendererGLES2::BaseShaderId() {
 	return mCurShader->Handler();
 }
 
@@ -244,7 +245,7 @@ void cRendererGLES2::SetShader( cShaderProgram * Shader ) {
 	if ( -1 != mTextureUnits[ mCurActiveTex ] )
 		EnableClientState( GL_TEXTURE_COORD_ARRAY );
 
-	GLenum CM = mCurrentMode;
+	unsigned int CM = mCurrentMode;
 
 	MatrixMode( GL_PROJECTION );
 	UpdateMatrix();
@@ -267,7 +268,7 @@ void cRendererGLES2::SetShader( cShaderProgram * Shader ) {
 	}
 }
 
-void cRendererGLES2::Enable( GLenum cap ) {
+void cRendererGLES2::Enable( unsigned int cap ) {
 	switch ( cap ) {
 		case GL_TEXTURE_2D:
 		{
@@ -286,7 +287,7 @@ void cRendererGLES2::Enable( GLenum cap ) {
 		case GL_CLIP_PLANE4:
 		case GL_CLIP_PLANE5:
 		{
-			GLint plane = cap - GL_CLIP_PLANE0;
+			int plane = cap - GL_CLIP_PLANE0;
 
 			SetShader( EEGLES2_SHADER_CLIPPED );
 
@@ -313,7 +314,7 @@ void cRendererGLES2::Enable( GLenum cap ) {
 	cGL::Enable( cap );
 }
 
-void cRendererGLES2::Disable ( GLenum cap ) {
+void cRendererGLES2::Disable ( unsigned int cap ) {
 	switch ( cap ) {
 		case GL_TEXTURE_2D:
 		{
@@ -332,7 +333,7 @@ void cRendererGLES2::Disable ( GLenum cap ) {
 		case GL_CLIP_PLANE4:
 		case GL_CLIP_PLANE5:
 		{
-			GLint plane = cap - GL_CLIP_PLANE0;
+			int plane = cap - GL_CLIP_PLANE0;
 
 			if ( mTexActive ) {
 				SetShader( EEGLES2_SHADER_BASE );
@@ -361,8 +362,8 @@ void cRendererGLES2::Disable ( GLenum cap ) {
 	cGL::Disable( cap );
 }
 
-void cRendererGLES2::EnableClientState( GLenum array ) {
-	GLint state;
+void cRendererGLES2::EnableClientState( unsigned int array ) {
+	int state;
 
 	if ( GL_TEXTURE_COORD_ARRAY == array ) {
 		if ( -1 != ( state = mTextureUnits[ mCurActiveTex ] ) ) {
@@ -381,8 +382,8 @@ void cRendererGLES2::EnableClientState( GLenum array ) {
 	}
 }
 
-void cRendererGLES2::DisableClientState( GLenum array ) {
-	GLint state;
+void cRendererGLES2::DisableClientState( unsigned int array ) {
+	int state;
 
 	if ( GL_TEXTURE_COORD_ARRAY == array ) {
 		if ( -1 != ( state = mTextureUnits[ mCurActiveTex ] ) ) {
@@ -401,8 +402,8 @@ void cRendererGLES2::DisableClientState( GLenum array ) {
 	}
 }
 
-void cRendererGLES2::VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid * pointer, GLuint allocate ) {
-	const GLint index = mAttribsLoc[ EEGL_VERTEX_ARRAY ];
+void cRendererGLES2::VertexPointer ( int size, unsigned int type, int stride, const void * pointer, unsigned int allocate ) {
+	const int index = mAttribsLoc[ EEGL_VERTEX_ARRAY ];
 
 	if ( -1 != index ) {
 		if ( 0 == mAttribsLocStates[ EEGL_VERTEX_ARRAY ] ) {
@@ -415,8 +416,8 @@ void cRendererGLES2::VertexPointer ( GLint size, GLenum type, GLsizei stride, co
 	}
 }
 
-void cRendererGLES2::ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
-	const GLint index = mAttribsLoc[ EEGL_COLOR_ARRAY ];
+void cRendererGLES2::ColorPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) {
+	const int index = mAttribsLoc[ EEGL_COLOR_ARRAY ];
 
 	if ( -1 != index ) {
 		if ( 0 == mAttribsLocStates[ EEGL_COLOR_ARRAY ] ) {
@@ -433,7 +434,7 @@ void cRendererGLES2::ColorPointer ( GLint size, GLenum type, GLsizei stride, con
 	}
 }
 
-void cRendererGLES2::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
+void cRendererGLES2::TexCoordPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) {
 	if ( mCurShaderLocal ) {
 		if ( 1 == mTexActive ) {
 			if ( mCurShader == mShaders[ EEGLES2_SHADER_PRIMITIVE ] ) {
@@ -448,7 +449,7 @@ void cRendererGLES2::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, 
 		}
 	}
 
-	const GLint index = mTextureUnits[ mCurActiveTex ];
+	const int index = mTextureUnits[ mCurActiveTex ];
 
 	if ( -1 != index ) {
 		if ( 0 == mTextureUnitsStates[ mCurActiveTex ] ) {
@@ -461,7 +462,7 @@ void cRendererGLES2::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, 
 	}
 }
 
-GLint cRendererGLES2::GetStateIndex( const Uint32& State ) {
+int cRendererGLES2::GetStateIndex( const Uint32& State ) {
 	eeASSERT( State < EEGL_ARRAY_STATES_COUNT );
 
 	if ( EEGL_TEXTURE_COORD_ARRAY == State )
@@ -471,7 +472,7 @@ GLint cRendererGLES2::GetStateIndex( const Uint32& State ) {
 }
 
 void cRendererGLES2::PlaneStateCheck( bool tryEnable ) {
-	GLint i;
+	int i;
 
 	if (  tryEnable  ) {
 		for ( i = 0; i < EE_MAX_PLANES; i++ ) {
@@ -530,52 +531,52 @@ void cRendererGLES2::LoadIdentity() {
 	UpdateMatrix();
 }
 
-void cRendererGLES2::MultMatrixf ( const GLfloat * m ) {
+void cRendererGLES2::MultMatrixf ( const float * m ) {
 	mStack->mCurMatrix->top() *= toGLMmat4( m );
 	UpdateMatrix();
 }
 
-void cRendererGLES2::Translatef( GLfloat x, GLfloat y, GLfloat z ) {
+void cRendererGLES2::Translatef( float x, float y, float z ) {
 	mStack->mCurMatrix->top() *= glm::translate( glm::vec3( x, y, z ) );
 	UpdateMatrix();
 }
 
-void cRendererGLES2::Rotatef( GLfloat angle, GLfloat x, GLfloat y, GLfloat z ) {
+void cRendererGLES2::Rotatef( float angle, float x, float y, float z ) {
 	mStack->mCurMatrix->top() *= glm::rotate( angle, glm::vec3( x, y, z ) );
 	UpdateMatrix();
 }
 
-void cRendererGLES2::Scalef( GLfloat x, GLfloat y, GLfloat z ) {
+void cRendererGLES2::Scalef( float x, float y, float z ) {
 	mStack->mCurMatrix->top() *= glm::scale( glm::vec3( x, y, z ) );
 	UpdateMatrix();
 }
 
-void cRendererGLES2::Ortho( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar ) {
+void cRendererGLES2::Ortho( float left, float right, float bottom, float top, float zNear, float zFar ) {
 	mStack->mCurMatrix->top() *= glm::ortho( left, right, bottom, top , zNear, zFar );
 	UpdateMatrix();
 }
 
-void cRendererGLES2::LookAt( GLfloat eyeX, GLfloat eyeY, GLfloat eyeZ, GLfloat centerX, GLfloat centerY, GLfloat centerZ, GLfloat upX, GLfloat upY, GLfloat upZ ) {
+void cRendererGLES2::LookAt( float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ ) {
 	mStack->mCurMatrix->top() *= glm::lookAt( glm::vec3(eyeX, eyeY, eyeZ), glm::vec3(centerX, centerY, centerZ), glm::vec3(upX, upY, upZ) );
 	UpdateMatrix();
 }
 
-void cRendererGLES2::Perspective ( GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar ) {
+void cRendererGLES2::Perspective ( float fovy, float aspect, float zNear, float zFar ) {
 	mStack->mCurMatrix->top() *= glm::perspective( fovy, aspect, zNear, zFar );
 	UpdateMatrix();
 }
 
-void cRendererGLES2::LoadMatrixf( const GLfloat * m ) {
+void cRendererGLES2::LoadMatrixf( const float * m ) {
 	mStack->mCurMatrix->top() = toGLMmat4( m );
 	UpdateMatrix();
 }
 
-void cRendererGLES2::Frustum( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near_val, GLfloat far_val ) {
+void cRendererGLES2::Frustum( float left, float right, float bottom, float top, float near_val, float far_val ) {
 	mStack->mCurMatrix->top() *= glm::frustum( left, right, bottom, top, near_val, far_val );
 	UpdateMatrix();
 }
 
-void cRendererGLES2::GetCurrentMatrix( GLenum mode, GLfloat * m ) {
+void cRendererGLES2::GetCurrentMatrix( unsigned int mode, float * m ) {
 	switch ( mode ) {
 		case GL_PROJECTION:
 		case GL_PROJECTION_MATRIX:
@@ -592,11 +593,11 @@ void cRendererGLES2::GetCurrentMatrix( GLenum mode, GLfloat * m ) {
 	}
 }
 
-GLenum cRendererGLES2::GetCurrentMatrixMode() {
+unsigned int cRendererGLES2::GetCurrentMatrixMode() {
 	return mCurrentMode;
 }
 
-void cRendererGLES2::MatrixMode(GLenum mode) {
+void cRendererGLES2::MatrixMode(unsigned int mode) {
 	mCurrentMode = mode;
 
 	switch ( mCurrentMode ) {
@@ -616,10 +617,10 @@ void cRendererGLES2::MatrixMode(GLenum mode) {
 }
 
 void cRendererGLES2::Clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
-	GLfloat tX = (GLfloat)x;
-	GLfloat tY = (GLfloat)y;
-	GLfloat tW = (GLfloat)Width;
-	GLfloat tH = (GLfloat)Height;
+	float tX = (float)x;
+	float tY = (float)y;
+	float tW = (float)Width;
+	float tH = (float)Height;
 
 	glm::vec4 vclip_left	( 1.0	, 0.0	, 0.0	, -tX		);
 	glm::vec4 vclip_right	( -1.0	, 0.0	, 0.0	, tX + tW	);
@@ -638,10 +639,10 @@ void cRendererGLES2::Clip2DPlaneEnable( const Int32& x, const Int32& y, const In
 	GLi->Enable(GL_CLIP_PLANE2);
 	GLi->Enable(GL_CLIP_PLANE3);
 
-	glUniform4fv( mPlanes[0], 1, static_cast<const GLfloat*>( &vclip_left[0]	)	);
-	glUniform4fv( mPlanes[1], 1, static_cast<const GLfloat*>( &vclip_right[0]	)	);
-	glUniform4fv( mPlanes[2], 1, static_cast<const GLfloat*>( &vclip_top[0]		)	);
-	glUniform4fv( mPlanes[3], 1, static_cast<const GLfloat*>( &vclip_bottom[0]	)	);
+	glUniform4fv( mPlanes[0], 1, static_cast<const float*>( &vclip_left[0]	)	);
+	glUniform4fv( mPlanes[1], 1, static_cast<const float*>( &vclip_right[0]	)	);
+	glUniform4fv( mPlanes[2], 1, static_cast<const float*>( &vclip_top[0]		)	);
+	glUniform4fv( mPlanes[3], 1, static_cast<const float*>( &vclip_bottom[0]	)	);
 
 	if ( mPushClip ) {
 		mPlanesClipped.push_back( eeRectf( x, y, Width, Height ) );
@@ -666,7 +667,7 @@ void cRendererGLES2::Clip2DPlaneDisable() {
 	}
 }
 
-void cRendererGLES2::PointSize( GLfloat size ) {
+void cRendererGLES2::PointSize( float size ) {
 	#if !defined( EE_GLES2 ) && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	glPointSize( size );
 	#endif
@@ -676,7 +677,7 @@ void cRendererGLES2::PointSize( GLfloat size ) {
 	mPointSize = size;
 }
 
-void cRendererGLES2::ClipPlane( GLenum plane, const GLdouble * equation ) {
+void cRendererGLES2::ClipPlane( unsigned int plane, const double * equation ) {
 	Int32 nplane	= plane - GL_CLIP_PLANE0;
 	Int32 location;
 
@@ -692,21 +693,21 @@ void cRendererGLES2::ClipPlane( GLenum plane, const GLdouble * equation ) {
 
 	teq = teq * glm::inverse( mStack->mModelViewMatrix.top() );		/// Apply the inverse of the model view matrix to the equation
 
-	glUniform4f( location, (GLfloat)teq[0], (GLfloat)teq[1], (GLfloat)teq[2], (GLfloat)teq[3] );
+	glUniform4f( location, (float)teq[0], (float)teq[1], (float)teq[2], (float)teq[3] );
 }
 
-GLfloat cRendererGLES2::PointSize() {
+float cRendererGLES2::PointSize() {
 	return mPointSize;
 }
 
-void cRendererGLES2::ClientActiveTexture( GLenum texture ) {
+void cRendererGLES2::ClientActiveTexture( unsigned int texture ) {
 	mCurActiveTex = texture - GL_TEXTURE0;
 
 	if ( mCurActiveTex >= EE_MAX_TEXTURE_UNITS )
 		mCurActiveTex = 0;
 }
 
-void cRendererGLES2::TexEnvi( GLenum target, GLenum pname, GLint param ) {
+void cRendererGLES2::TexEnvi( unsigned int target, unsigned int pname, int param ) {
 	//! @TODO: Implement TexEnvi
 }
 
@@ -714,7 +715,7 @@ std::string cRendererGLES2::GetBaseVertexShader() {
 	return mBaseVertexShader;
 }
 
-GLint cRendererGLES2::Project( GLfloat objx, GLfloat objy, GLfloat objz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *winx, GLfloat *winy, GLfloat *winz ) {
+int cRendererGLES2::Project( float objx, float objy, float objz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *winx, float *winy, float *winz ) {
 	glm::vec3 tv3( glm::project( glm::vec3( objx, objy, objz ), toGLMmat4( modelMatrix ), toGLMmat4( projMatrix ), glm::vec4( viewport[0], viewport[1], viewport[2], viewport[3] ) ) );
 
 	if ( NULL != winx )
@@ -729,7 +730,7 @@ GLint cRendererGLES2::Project( GLfloat objx, GLfloat objy, GLfloat objz, const G
 	return GL_TRUE;
 }
 
-GLint cRendererGLES2::UnProject( GLfloat winx, GLfloat winy, GLfloat winz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *objx, GLfloat *objy, GLfloat *objz ) {
+int cRendererGLES2::UnProject( float winx, float winy, float winz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *objx, float *objy, float *objz ) {
 	glm::vec3 tv3( glm::unProject( glm::vec3( winx, winy, winz ), toGLMmat4( modelMatrix ), toGLMmat4( projMatrix ), glm::vec4( viewport[0], viewport[1], viewport[2], viewport[3] ) ) );
 
 	if ( NULL != objx )

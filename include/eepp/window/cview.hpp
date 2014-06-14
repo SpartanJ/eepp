@@ -10,20 +10,20 @@ class EE_API cView {
 	public:
 		cView();
 
-		cView( const eeInt& X, const eeInt& Y, const eeInt& Width, const eeInt& Height );
+		cView( const int& X, const int& Y, const int& Width, const int& Height );
 
 		cView( const eeRecti& View );
 
 		~cView();
 
 		/** Offset the position */
-		void Move( const eeInt& OffsetX, const eeInt& OffsetY );
+		void Move( const int& OffsetX, const int& OffsetY );
 
 		/** Offset the position */
 		void Move( const eeVector2i& Offset );
 
 		/** Scale the current view (from center) */
-		void Scale( const eeFloat& Factor );
+		void Scale( const Float& Factor );
 
 		/** Scale the current view (from center) */
 		void Scale( const eeVector2f& Factor );
@@ -38,13 +38,13 @@ class EE_API cView {
 		eeRecti GetView() const { return mView; }
 
 		/** Set a new position to the view */
-		void SetPosition( const eeInt& X, const eeInt& Y );
+		void SetPosition( const int& X, const int& Y );
 
 		/** Set a new size to the view */
-		void SetSize( const eeInt& Width, const eeInt& Height );
+		void SetSize( const int& Width, const int& Height );
 
 		/** Creates a new view */
-		void SetView( const eeInt& X, const eeInt& Y, const eeInt& Width, const eeInt& Height );
+		void SetView( const int& X, const int& Y, const int& Width, const int& Height );
 	private:
 		friend class cWindow;
 

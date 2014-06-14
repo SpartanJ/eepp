@@ -39,7 +39,7 @@ void cUITextInputPassword::Draw() {
 			}
 
 			mPassCache->Flags( Flags() );
-			mPassCache->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x + (eeFloat)mPadding.Left, (eeFloat)mScreenPos.y + mAlignOffset.y + (eeFloat)mPadding.Top, eeVector2f::One, 0.f, Blend() );
+			mPassCache->Draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mPadding.Top, eeVector2f::One, 0.f, Blend() );
 
 			if ( mFlags & UI_CLIP_ENABLE ) {
 				cUIManager::instance()->ClipDisable();
@@ -63,11 +63,11 @@ void cUITextInputPassword::AlignFix() {
 
 		mPassCache->Font()->SetText( pasStr );
 
-		eeFloat tW	= mPassCache->Font()->GetTextWidth();
-		eeFloat tX	= mAlignOffset.x + tW;
+		Float tW	= mPassCache->Font()->GetTextWidth();
+		Float tX	= mAlignOffset.x + tW;
 
 		mCurPos.x	= tW;
-		mCurPos.y	= (eeFloat)LineNum * (eeFloat)mPassCache->Font()->GetFontHeight();
+		mCurPos.y	= (Float)LineNum * (Float)mPassCache->Font()->GetFontHeight();
 
 		if ( !mTextBuffer.SupportNewLine() ) {
 			if ( tX < 0.f )
@@ -81,10 +81,10 @@ void cUITextInputPassword::AlignFix() {
 void cUITextInputPassword::AutoAlign() {
 	switch ( FontHAlignGet( Flags() ) ) {
 		case UI_HALIGN_CENTER:
-			mAlignOffset.x = (eeFloat)( (Int32)( mSize.x - mPassCache->GetTextWidth() ) / 2 );
+			mAlignOffset.x = (Float)( (Int32)( mSize.x - mPassCache->GetTextWidth() ) / 2 );
 			break;
 		case UI_HALIGN_RIGHT:
-			mAlignOffset.x = ( (eeFloat)mSize.x - (eeFloat)mPassCache->GetTextWidth() );
+			mAlignOffset.x = ( (Float)mSize.x - (Float)mPassCache->GetTextWidth() );
 			break;
 		case UI_HALIGN_LEFT:
 			mAlignOffset.x = 0.f;
@@ -93,10 +93,10 @@ void cUITextInputPassword::AutoAlign() {
 
 	switch ( FontVAlignGet( Flags() ) ) {
 		case UI_VALIGN_CENTER:
-			mAlignOffset.y = (eeFloat)( ( (Int32)( mSize.y - mPassCache->GetTextHeight() ) ) / 2 ) - 1;
+			mAlignOffset.y = (Float)( ( (Int32)( mSize.y - mPassCache->GetTextHeight() ) ) / 2 ) - 1;
 			break;
 		case UI_VALIGN_BOTTOM:
-			mAlignOffset.y = ( (eeFloat)mSize.y - (eeFloat)mPassCache->GetTextHeight() );
+			mAlignOffset.y = ( (Float)mSize.y - (Float)mPassCache->GetTextHeight() );
 			break;
 		case UI_VALIGN_TOP:
 			mAlignOffset.y = 0.f;

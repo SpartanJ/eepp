@@ -220,7 +220,7 @@ void cUICommonDialog::RefreshFolder() {
 	mList->AddListBoxItems( files );
 
 	if ( NULL != mList->VerticalScrollBar() ) {
-		mList->VerticalScrollBar()->ClickStep( 1.f / ( ( mList->Count() * mList->RowHeight() ) / (eeFloat)mList->Size().Height() ) );
+		mList->VerticalScrollBar()->ClickStep( 1.f / ( ( mList->Count() * mList->RowHeight() ) / (Float)mList->Size().Height() ) );
 	}
 }
 

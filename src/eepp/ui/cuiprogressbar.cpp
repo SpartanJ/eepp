@@ -66,10 +66,10 @@ void cUIProgressBar::SetTheme( cUITheme * Theme ) {
 		if ( NULL != tSubTexture ) {
 			eeSAFE_DELETE( mParallax );
 
-			eeFloat Height = (eeFloat)GetSkinSize().Height();
+			Float Height = (Float)GetSkinSize().Height();
 
 			if ( !mVerticalExpand )
-				Height = (eeFloat)tSubTexture->RealSize().Height();
+				Height = (Float)tSubTexture->RealSize().Height();
 
 			if ( Height > mSize.Height() )
 				Height = mSize.Height();
@@ -89,10 +89,10 @@ Uint32 cUIProgressBar::OnValueChange() {
 
 void cUIProgressBar::OnSizeChange() {
 	if ( NULL != mParallax ) {
-		eeFloat Height = (eeFloat)mSize.Height();
+		Float Height = (Float)mSize.Height();
 
 		if ( !mVerticalExpand && mParallax->SubTexture() )
-			Height = (eeFloat)mParallax->SubTexture()->RealSize().Height();
+			Height = (Float)mParallax->SubTexture()->RealSize().Height();
 
 		if ( Height > mSize.Height() )
 			Height = mSize.Height();
@@ -103,25 +103,25 @@ void cUIProgressBar::OnSizeChange() {
 	UpdateTextBox();
 }
 
-void cUIProgressBar::Progress( eeFloat Val ) {
+void cUIProgressBar::Progress( Float Val ) {
 	mProgress = Val;
 
 	OnValueChange();
 	UpdateTextBox();
 }
 
-const eeFloat& cUIProgressBar::Progress() const {
+const Float& cUIProgressBar::Progress() const {
 	return mProgress;
 }
 
-void cUIProgressBar::TotalSteps( const eeFloat& Steps ) {
+void cUIProgressBar::TotalSteps( const Float& Steps ) {
 	mTotalSteps = Steps;
 
 	OnSizeChange();
 	UpdateTextBox();
 }
 
-const eeFloat& cUIProgressBar::TotalSteps() const {
+const Float& cUIProgressBar::TotalSteps() const {
 	return mTotalSteps;
 }
 

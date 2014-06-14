@@ -154,7 +154,7 @@ class EE_API cUIControl {
 
 		const UintPtr& Data() const;
 
-		cUIControl * ChildGetAt( eeVector2i CtrlPos, eeUint RecursiveLevel = 0 );
+		cUIControl * ChildGetAt( eeVector2i CtrlPos, unsigned int RecursiveLevel = 0 );
 
 		const Uint32& Flags() const;
 

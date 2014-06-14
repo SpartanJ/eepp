@@ -96,7 +96,7 @@ class cEETest : private cThread {
 		cInputTextBuffer InBuf;
 
 		bool side, aside;
-		eeFloat ang, scale, alpha, Ang;
+		Float ang, scale, alpha, Ang;
 		cTime et;
 		Int32 x, y;
 		Uint32 lasttick;
@@ -119,7 +119,7 @@ class cEETest : private cThread {
 
 		cPrimitives PR;
 		bool iL1, iL2;
-		eeFloat HWidth, HHeight;
+		Float HWidth, HHeight;
 
 		cMusic * Mus;
 		cSoundManager SndMng;
@@ -158,14 +158,14 @@ class cEETest : private cThread {
 		bool MultiViewportMode;
 
 		cBatchRenderer Batch;
-		eeFloat AnimVal;
+		Float AnimVal;
 		bool AnimSide;
 
 		cView Views[2];
 
 		cShaderProgram * mShaderProgram;
 
-		eeFloat mBlurFactor;
+		Float mBlurFactor;
 		bool mUseShaders;
 		bool mJoyEnabled;
 		bool mMusEnabled;
@@ -187,8 +187,8 @@ class cEETest : private cThread {
 		void OnFontLoaded( cResourceLoader * ObjLoaded );
 
 		cJoystickManager * JM;
-		eeFloat mAxisX;
-		eeFloat mAxisY;
+		Float mAxisX;
+		Float mAxisY;
 
 		cTextureAtlasLoader * mTGL;
 		cSprite mBlindy;

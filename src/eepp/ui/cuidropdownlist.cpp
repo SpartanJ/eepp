@@ -112,7 +112,7 @@ void cUIDropDownList::ShowListBox() {
 		if ( mListBox->Count() ) {
 			eeRecti tPadding = mListBox->PaddingContainer();
 
-			eeFloat sliderValue = mListBox->VerticalScrollBar()->Value();
+			Float sliderValue = mListBox->VerticalScrollBar()->Value();
 
 			if ( mMinNumVisibleItems < mListBox->Count() )
 				mListBox->Size( mSize.Width(), (Int32)( mMinNumVisibleItems * mListBox->RowHeight() ) + tPadding.Top + tPadding.Bottom );

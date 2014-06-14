@@ -88,7 +88,7 @@ class EE_API cMap {
 
 		void Move( const eeVector2f& offset );
 
-		void Move( const eeFloat& offsetx, const eeFloat& offsety );
+		void Move( const Float& offsetx, const Float& offsety );
 
 		const eeVector2i& StartTile() const;
 
@@ -207,9 +207,9 @@ class EE_API cMap {
 
 		void BackColor( const eeColorA& col );
 
-		const eeFloat& Scale() const;
+		const Float& Scale() const;
 
-		void Scale( const eeFloat& scale );
+		void Scale( const Float& scale );
 
 		eeVector2i GetMaxOffset();
 
@@ -278,7 +278,7 @@ class EE_API cMap {
 		Uint8			mBackAlpha;
 		bool			mMouseOver;
 		std::string		mPath;
-		eeFloat			mScale;
+		Float			mScale;
 		eeVector2f		mOffscale;
 		Uint32			mLastObjId;
 		PolyObjMap		mPolyObjs;

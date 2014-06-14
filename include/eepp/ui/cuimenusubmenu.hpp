@@ -21,7 +21,7 @@ class EE_API cUIMenuSubMenu : public cUIMenuItem {
 				inline ~CreateParams() {}
 
 				cUIMenu * SubMenu;
-				eeFloat MouseOverTimeShowMenu;
+				Float MouseOverTimeShowMenu;
 		};
 
 		cUIMenuSubMenu( cUIMenuSubMenu::CreateParams& Params );
@@ -47,8 +47,8 @@ class EE_API cUIMenuSubMenu : public cUIMenuItem {
 		cUIMenu *	mSubMenu;
 		cUISkin *	mSkinArrow;
 		cUIGfx	*	mArrow;
-		eeFloat		mTimeOver;
-		eeFloat		mMaxTime;
+		Float		mTimeOver;
+		Float		mMaxTime;
 		Uint32		mCbId;
 		Uint32		mCbId2;
 

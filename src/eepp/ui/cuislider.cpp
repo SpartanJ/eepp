@@ -159,9 +159,9 @@ void cUISlider::FixSliderPos() {
 			mSlider->CenterVertical();
 
 			if ( mAllowHalfSliderOut )
-				Value( mMinValue + (eeFloat)mSlider->Pos().x * ( mMaxValue - mMinValue ) / (eeFloat)mBackSlider->Size().Width() );
+				Value( mMinValue + (Float)mSlider->Pos().x * ( mMaxValue - mMinValue ) / (Float)mBackSlider->Size().Width() );
 			else
-				Value( mMinValue + (eeFloat)mSlider->Pos().x * ( mMaxValue - mMinValue ) / ( (eeFloat)mSize.Width() - mSlider->Size().Width() ) );
+				Value( mMinValue + (Float)mSlider->Pos().x * ( mMaxValue - mMinValue ) / ( (Float)mSize.Width() - mSlider->Size().Width() ) );
 		} else {
 			mSlider->Pos( 0, mSlider->Pos().y );
 
@@ -179,16 +179,16 @@ void cUISlider::FixSliderPos() {
 			mSlider->CenterHorizontal();
 
 			if ( mAllowHalfSliderOut )
-				Value( mMinValue + (eeFloat)mSlider->Pos().y * ( mMaxValue - mMinValue ) / (eeFloat)mBackSlider->Size().Height() );
+				Value( mMinValue + (Float)mSlider->Pos().y * ( mMaxValue - mMinValue ) / (Float)mBackSlider->Size().Height() );
 			else
-				Value( mMinValue + (eeFloat)mSlider->Pos().y * ( mMaxValue - mMinValue ) / ( (eeFloat)mSize.Height() - mSlider->Size().Height() ) );
+				Value( mMinValue + (Float)mSlider->Pos().y * ( mMaxValue - mMinValue ) / ( (Float)mSize.Height() - mSlider->Size().Height() ) );
 		}
 
 		mOnPosChange = false;
 	}
 }
 
-void cUISlider::Value( eeFloat Val ) {
+void cUISlider::Value( Float Val ) {
 	if ( Val < mMinValue ) Val = mMinValue;
 	if ( Val > mMaxValue ) Val = mMaxValue;
 
@@ -196,20 +196,20 @@ void cUISlider::Value( eeFloat Val ) {
 		mValue = Val;
 
 		if ( !mOnPosChange ) {
-			eeFloat Percent = ( Val - mMinValue ) / ( mMaxValue - mMinValue );
+			Float Percent = ( Val - mMinValue ) / ( mMaxValue - mMinValue );
 
 			mOnPosChange = true;
 
 			if ( !mVertical ) {
 				if ( mAllowHalfSliderOut )
-					mSlider->Pos( (Int32)( (eeFloat)mBackSlider->Size().Width() * Percent ), mSlider->Pos().y );
+					mSlider->Pos( (Int32)( (Float)mBackSlider->Size().Width() * Percent ), mSlider->Pos().y );
 				else
-					mSlider->Pos( (Int32)( ( (eeFloat)mSize.Width() - mSlider->Size().Width() ) * Percent ), mSlider->Pos().y );
+					mSlider->Pos( (Int32)( ( (Float)mSize.Width() - mSlider->Size().Width() ) * Percent ), mSlider->Pos().y );
 			} else {
 				if ( mAllowHalfSliderOut )
-					mSlider->Pos( mSlider->Pos().x, (Int32)( (eeFloat)mBackSlider->Size().Height() * Percent ) );
+					mSlider->Pos( mSlider->Pos().x, (Int32)( (Float)mBackSlider->Size().Height() * Percent ) );
 				else
-					mSlider->Pos( mSlider->Pos().x, (Int32)( ( (eeFloat)mSize.Height() - mSlider->Size().Height() ) * Percent ) );
+					mSlider->Pos( mSlider->Pos().x, (Int32)( ( (Float)mSize.Height() - mSlider->Size().Height() ) * Percent ) );
 			}
 
 			mOnPosChange = false;
@@ -219,11 +219,11 @@ void cUISlider::Value( eeFloat Val ) {
 	}
 }
 
-const eeFloat& cUISlider::Value() const {
+const Float& cUISlider::Value() const {
 	return mValue;
 }
 
-void cUISlider::MinValue( const eeFloat& MinVal ) {
+void cUISlider::MinValue( const Float& MinVal ) {
 	mMinValue = MinVal;
 
 	if ( mValue < mMinValue )
@@ -232,11 +232,11 @@ void cUISlider::MinValue( const eeFloat& MinVal ) {
 	FixSliderPos();
 }
 
-const eeFloat& cUISlider::MinValue() const {
+const Float& cUISlider::MinValue() const {
 	return mMinValue;
 }
 
-void cUISlider::MaxValue( const eeFloat& MaxVal ) {
+void cUISlider::MaxValue( const Float& MaxVal ) {
 	mMaxValue = MaxVal;
 
 	if ( mValue > mMaxValue )
@@ -245,15 +245,15 @@ void cUISlider::MaxValue( const eeFloat& MaxVal ) {
 	FixSliderPos();
 }
 
-const eeFloat& cUISlider::MaxValue() const {
+const Float& cUISlider::MaxValue() const {
 	return mMaxValue;
 }
 
-void cUISlider::ClickStep( const eeFloat& step ) {
+void cUISlider::ClickStep( const Float& step ) {
 	mClickStep = step;
 }
 
-const eeFloat& cUISlider::ClickStep() const {
+const Float& cUISlider::ClickStep() const {
 	return mClickStep;
 }
 

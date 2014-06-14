@@ -67,13 +67,13 @@ class EE_API String {
 	static Uint32 Hash( const String& str );
 
 	/** @return If the value passed is a character */
-	static bool IsCharacter( const eeInt& mValue );
+	static bool IsCharacter( const int& mValue );
 
 	/** @return If the value passed is a number */
-	static bool IsNumber( const eeInt& mValue, bool AllowDot = false );
+	static bool IsNumber( const int& mValue, bool AllowDot = false );
 
 	/** @return If the value passed is a letter */
-	static bool IsLetter( const eeInt& mValue );
+	static bool IsLetter( const int& mValue );
 
 	/** Split a String and hold it on a vector */
 	static std::vector < String > Split( const String& str, const Uint32& splitchar = '\n', const bool& pushEmptyString = false );
@@ -100,14 +100,14 @@ class EE_API String {
 	static std::string Uint8ToString( const std::vector<Uint8> v );
 
 	/** Insert a char into String on pos (added this function to avoid a bug on String) */
-	static void InsertChar( String& str, const eeUint& pos, const Uint32& tchar );
+	static void InsertChar( String& str, const unsigned int& pos, const Uint32& tchar );
 
 	/** Copy a string to another
 	* @param Dst Destination String
 	* @param Src Source String
 	* @param DstSize Destination Size
 	*/
-	static void StrCopy( char * Dst, const char * Src, eeUint DstSize );
+	static void StrCopy( char * Dst, const char * Src, unsigned int DstSize );
 
 	/** Compare two strings from its beginning.
 	* @param Start String start

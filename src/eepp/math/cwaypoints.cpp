@@ -68,7 +68,7 @@ void cWaypoints::ClearWaypoints() {
 	mPoints.clear();
 }
 
-void cWaypoints::AddWaypoint( const eeVector2f& Pos, const eeFloat& Time ) {
+void cWaypoints::AddWaypoint( const eeVector2f& Pos, const Float& Time ) {
 	mPoints.push_back( cWaypoint(Pos, Time) );
 
 	if ( mPoints.size() >= 2 )
@@ -77,7 +77,7 @@ void cWaypoints::AddWaypoint( const eeVector2f& Pos, const eeFloat& Time ) {
 	}
 }
 
-bool cWaypoints::EditWaypoint( const eeUint& PointNum, const eeVector2f& NewPos, const eeFloat& NewTime  ) {
+bool cWaypoints::EditWaypoint( const unsigned int& PointNum, const eeVector2f& NewPos, const Float& NewTime  ) {
 	if ( PointNum < mPoints.size() ) {
 		if ( 0 == PointNum )
 			mTotDist -= mPoints[ PointNum ].p.Distance( mPoints[ PointNum + 1 ].p );
@@ -87,7 +87,7 @@ bool cWaypoints::EditWaypoint( const eeUint& PointNum, const eeVector2f& NewPos,
 		mPoints[ PointNum ] = cWaypoint( NewPos, NewTime );
 
 		if ( 0 == PointNum ) {
-			if ( PointNum + (eeUint)1 < mPoints.size() )
+			if ( PointNum + (unsigned int)1 < mPoints.size() )
 				mTotDist += mPoints[ PointNum ].p.Distance( mPoints[ PointNum + 1 ].p );
 		} else
 			mTotDist += mPoints[ PointNum ].p.Distance( mPoints[ PointNum - 1 ].p );
@@ -97,7 +97,7 @@ bool cWaypoints::EditWaypoint( const eeUint& PointNum, const eeVector2f& NewPos,
 	return false;
 }
 
-bool cWaypoints::EraseWaypoint( const eeUint& PointNum ) {
+bool cWaypoints::EraseWaypoint( const unsigned int& PointNum ) {
 	if ( PointNum < mPoints.size() && !mEnable ) {
 		if ( 0 == PointNum )
 			mTotDist -= mPoints[ PointNum ].p.Distance( mPoints[ PointNum + 1 ].p );
@@ -111,10 +111,10 @@ bool cWaypoints::EraseWaypoint( const eeUint& PointNum ) {
 	return false;
 }
 
-void cWaypoints::Speed( const eeFloat& Speed ) {
-	eeFloat tdist = mTotDist;
+void cWaypoints::Speed( const Float& Speed ) {
+	Float tdist = mTotDist;
 	mSpeed = Speed;
-	eeFloat CurDist;
+	Float CurDist;
 
 	if ( mPoints.size() ) {
 		if ( tdist == 0.0f ) {
@@ -122,7 +122,7 @@ void cWaypoints::Speed( const eeFloat& Speed ) {
 			return;
 		}
 
-		eeFloat TotTime = tdist * ( 1000.f / mSpeed );
+		Float TotTime = tdist * ( 1000.f / mSpeed );
 
 		if ( mLoop ) {
 			CurDist = mPoints[ mPoints.size() - 1 ].p.Distance( mPoints[0].p );
@@ -132,7 +132,7 @@ void cWaypoints::Speed( const eeFloat& Speed ) {
 			TotTime = tdist * ( 1000.f / mSpeed );
 		}
 
-		for ( eeUint i = 0; i < mPoints.size() - 1; i++) {
+		for ( unsigned int i = 0; i < mPoints.size() - 1; i++) {
 			CurDist = mPoints[i].p.Distance( mPoints[i + 1].p );
 			mPoints[i].t = CurDist * TotTime / tdist;
 		}
@@ -196,8 +196,8 @@ void cWaypoints::Update( const cTime& Elapsed ) {
 }
 
 void cWaypoints::SetTotalTime( const cTime& TotTime ) {
-	eeUint i;
-	eeFloat tdist = mTotDist;
+	unsigned int i;
+	Float tdist = mTotDist;
 
 	if ( !mPoints.size() )
 		return;
@@ -220,7 +220,7 @@ void cWaypoints::Type( Ease::Interpolation InterpolationType ) {
 	mType = InterpolationType;
 }
 
-const eeInt& cWaypoints::Type() const {
+const int& cWaypoints::Type() const {
 	return mType;
 }
 
@@ -252,7 +252,7 @@ const std::vector<cWaypoint>& cWaypoints::GetWaypoints() const {
 	return mPoints;
 }
 
-const eeFloat& cWaypoints::Speed() const {
+const Float& cWaypoints::Speed() const {
 	return mSpeed;
 }
 

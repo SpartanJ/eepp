@@ -3,7 +3,7 @@
 
 namespace EE { namespace Graphics {
 
-cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, const eeUint& StartChar, const eeUint& Spacing, const eeUint& TexColumns, const eeUint& TexRows, const Uint16& NumChars ) :
+cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, const unsigned int& StartChar, const unsigned int& Spacing, const unsigned int& TexColumns, const unsigned int& TexRows, const Uint16& NumChars ) :
 	cObjectLoader( FontTexLoader ),
 	mLoadType( TEF_LT_TEX ),
 	mFontName( FontName ),

@@ -22,7 +22,7 @@ void MainLoop()
 		win->Close();
 	}
 
-	eeFloat YPos = 32;
+	Float YPos = 32;
 
 	// Draw the text on screen
 	TTF->Draw( win->GetWidth() * 0.5f - TTF->GetTextWidth() * 0.5f, YPos );

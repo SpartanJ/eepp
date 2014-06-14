@@ -147,7 +147,7 @@ void cGameObject::AssignTilePos() {
 	TilePos( TLayer->GetTilePosFromPos( Pos() ) );
 }
 
-eeFloat cGameObject::GetAngle() {
+Float cGameObject::GetAngle() {
 	return Rotated() ? 90 : 0;
 }
 

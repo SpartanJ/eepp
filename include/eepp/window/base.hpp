@@ -15,7 +15,7 @@ using namespace EE::Math;
 using namespace EE::System;
 
 #include <eepp/graphics/renders.hpp>
-#include <eepp/graphics/opengl.hpp>
+#include <eepp/graphics/glhelper.hpp>
 using namespace EE::Graphics;
 
 #include <eepp/window/windowhandle.hpp>

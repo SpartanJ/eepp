@@ -381,11 +381,11 @@ unsigned cIniFile::GetValueV ( std::string const keyname, std::string const valu
 	// nVals = vsscanf( value.c_str(), format, args);
 	// va_end( args);
 #ifdef EE_COMPILER_MSVC
-	nVals = (eeUint)sscanf_s( value.c_str(), format,
+	nVals = (unsigned int)sscanf_s( value.c_str(), format,
 					 v1, v2, v3, v4, v5, v6, v7, v8,
 					 v9, v10, v11, v12, v13, v14, v15, v16 );
 #else
-	nVals = (eeUint)sscanf ( value.c_str(), format,
+	nVals = (unsigned int)sscanf ( value.c_str(), format,
 					 v1, v2, v3, v4, v5, v6, v7, v8,
 					 v9, v10, v11, v12, v13, v14, v15, v16 );
 #endif

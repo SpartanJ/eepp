@@ -10,7 +10,6 @@
 #include <eepp/graphics/cvertexbuffermanager.hpp>
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/audio/caudiolistener.hpp>
-#include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/helper/haikuttf/hkfontmanager.hpp>
 #include <eepp/physics/cphysicsmanager.hpp>
 #include <eepp/network/ssl/csslsocket.hpp>
@@ -18,6 +17,7 @@
 #include <eepp/window/backend/SDL/cbackendsdl.hpp>
 #include <eepp/window/backend/SDL2/cbackendsdl2.hpp>
 #include <eepp/window/backend/SFML/cbackendsfml.hpp>
+#include <eepp/graphics/renderer/cgl.hpp>
 
 #define BACKEND_SDL			1
 #define BACKEND_SDL2		2

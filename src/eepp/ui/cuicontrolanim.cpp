@@ -43,7 +43,7 @@ void cUIControlAnim::Draw() {
 			BorderDraw();
 
 		if ( NULL != mSkinState )
-			mSkinState->Draw( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), (Uint32)mAlpha );
+			mSkinState->Draw( (Float)mScreenPos.x, (Float)mScreenPos.y, (Float)mSize.Width(), (Float)mSize.Height(), (Uint32)mAlpha );
 
 		if ( cUIManager::instance()->HighlightFocus() && cUIManager::instance()->FocusControl() == this ) {
 			cPrimitives P;
@@ -63,11 +63,11 @@ void cUIControlAnim::Draw() {
 	}
 }
 
-const eeFloat& cUIControlAnim::Angle() const {
+const Float& cUIControlAnim::Angle() const {
 	return mAngle;
 }
 
-void cUIControlAnim::Angle( const eeFloat& angle ) {
+void cUIControlAnim::Angle( const Float& angle ) {
 	mAngle = angle;
 	OnAngleChange();
 }
@@ -81,20 +81,20 @@ void cUIControlAnim::Scale( const eeVector2f& scale ) {
 	OnScaleChange();
 }
 
-void cUIControlAnim::Scale( const eeFloat& scale ) {
+void cUIControlAnim::Scale( const Float& scale ) {
 	Scale( eeVector2f( scale, scale ) );
 }
 
-const eeFloat& cUIControlAnim::Alpha() const {
+const Float& cUIControlAnim::Alpha() const {
 	return mAlpha;
 }
 
-void cUIControlAnim::Alpha( const eeFloat& alpha ) {
+void cUIControlAnim::Alpha( const Float& alpha ) {
 	mAlpha = alpha;
 	OnAlphaChange();
 }
 
-void cUIControlAnim::AlphaChilds( const eeFloat &alpha ) {
+void cUIControlAnim::AlphaChilds( const Float &alpha ) {
 	cUIControlAnim * AnimChild;
 	cUIControl * CurChild = mChild;
 
@@ -134,7 +134,7 @@ void cUIControlAnim::Update() {
 
 	if ( NULL != mMoveAnim && mMoveAnim->Enabled() ) {
 		mMoveAnim->Update( Elapsed() );
-		Pos( (eeInt)mMoveAnim->GetPos().x, (eeInt)mMoveAnim->GetPos().y );
+		Pos( (int)mMoveAnim->GetPos().x, (int)mMoveAnim->GetPos().y );
 
 		if ( mMoveAnim->Ended() )
 			eeSAFE_DELETE( mMoveAnim );
@@ -183,7 +183,7 @@ bool cUIControlAnim::Animating() {
 	return ( NULL != mAlphaAnim && mAlphaAnim->Enabled() ) || ( NULL != mAngleAnim && mAngleAnim->Enabled() ) || ( NULL != mScaleAnim && mScaleAnim->Enabled() ) || ( NULL != mMoveAnim && mMoveAnim->Enabled() );
 }
 
-void cUIControlAnim::StartAlphaAnim( const eeFloat& From, const eeFloat& To, const cTime& TotalTime, const bool& AlphaChilds, const Ease::Interpolation& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
+void cUIControlAnim::StartAlphaAnim( const Float& From, const Float& To, const cTime& TotalTime, const bool& AlphaChilds, const Ease::Interpolation& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mAlphaAnim )
 		mAlphaAnim = eeNew( cInterpolation, () );
 
@@ -226,7 +226,7 @@ void cUIControlAnim::StartScaleAnim( const eeVector2f& From, const eeVector2f& T
 	Scale( From );
 }
 
-void cUIControlAnim::StartScaleAnim( const eeFloat& From, const eeFloat& To, const cTime& TotalTime, const Ease::Interpolation& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
+void cUIControlAnim::StartScaleAnim( const Float& From, const Float& To, const cTime& TotalTime, const Ease::Interpolation& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
 	StartScaleAnim( eeVector2f( From, From ), eeVector2f( To, To ), TotalTime, Type, PathEndCallback );
 }
 
@@ -235,8 +235,8 @@ void cUIControlAnim::StartMovement( const eeVector2i& From, const eeVector2i& To
 		mMoveAnim = eeNew( cWaypoints, () );
 
 	mMoveAnim->ClearWaypoints();
-	mMoveAnim->AddWaypoint( eeVector2f( (eeFloat)From.x, (eeFloat)From.y ) );
-	mMoveAnim->AddWaypoint( eeVector2f( (eeFloat)To.x, (eeFloat)To.y ) );
+	mMoveAnim->AddWaypoint( eeVector2f( (Float)From.x, (Float)From.y ) );
+	mMoveAnim->AddWaypoint( eeVector2f( (Float)To.x, (Float)To.y ) );
 	mMoveAnim->SetTotalTime( TotalTime );
 	mMoveAnim->Start( PathEndCallback );
 	mMoveAnim->Type( Type );
@@ -244,7 +244,7 @@ void cUIControlAnim::StartMovement( const eeVector2i& From, const eeVector2i& To
 	Pos( From );
 }
 
-void cUIControlAnim::StartRotation( const eeFloat& From, const eeFloat& To, const cTime& TotalTime, const Ease::Interpolation& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
+void cUIControlAnim::StartRotation( const Float& From, const Float& To, const cTime& TotalTime, const Ease::Interpolation& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mAngleAnim )
 		mAngleAnim = eeNew( cInterpolation, () );
 
@@ -304,12 +304,12 @@ void cUIControlAnim::BorderDraw() {
 	cPrimitives P;
 	P.FillMode( DRAW_LINE );
 	P.BlendMode( Blend() );
-	P.LineWidth( (eeFloat)mBorder->Width() );
+	P.LineWidth( (Float)mBorder->Width() );
 	P.SetColor( GetColor( mBorder->Color() ) );
 
 	//! @TODO: Check why was this +0.1f -0.1f?
 	if ( mFlags & UI_CLIP_ENABLE ) {
-		eeRectf R( eeVector2f( (eeFloat)mScreenPos.x + 0.1f, (eeFloat)mScreenPos.y + 0.1f ), eeSizef( (eeFloat)mSize.Width() - 0.1f, (eeFloat)mSize.Height() - 0.1f ) );
+		eeRectf R( eeVector2f( (Float)mScreenPos.x + 0.1f, (Float)mScreenPos.y + 0.1f ), eeSizef( (Float)mSize.Width() - 0.1f, (Float)mSize.Height() - 0.1f ) );
 
 		if ( mBackground->Corners() ) {
 			P.DrawRoundedRectangle( GetRectf(), 0.f, eeVector2f::One, mBackground->Corners() );
@@ -326,12 +326,12 @@ void cUIControlAnim::BorderDraw() {
 }
 
 eeColorA cUIControlAnim::GetColor( const eeColorA& Col ) {
-	return eeColorA( Col.R(), Col.G(), Col.B(), static_cast<Uint8>( (eeFloat)Col.A() * ( mAlpha / 255.f ) ) );
+	return eeColorA( Col.R(), Col.G(), Col.B(), static_cast<Uint8>( (Float)Col.A() * ( mAlpha / 255.f ) ) );
 }
 
 void cUIControlAnim::UpdateQuad() {
-	mPoly 	= eePolygon2f( eeAABB( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mScreenPos.x + mSize.Width(), (eeFloat)mScreenPos.y + mSize.Height() ) );
-	mCenter = eeVector2f( (eeFloat)mScreenPos.x + (eeFloat)mSize.Width() * 0.5f, (eeFloat)mScreenPos.y + (eeFloat)mSize.Height() * 0.5f );
+	mPoly 	= eePolygon2f( eeAABB( (Float)mScreenPos.x, (Float)mScreenPos.y, (Float)mScreenPos.x + mSize.Width(), (Float)mScreenPos.y + mSize.Height() ) );
+	mCenter = eeVector2f( (Float)mScreenPos.x + (Float)mSize.Width() * 0.5f, (Float)mScreenPos.y + (Float)mSize.Height() * 0.5f );
 
 	mPoly.Rotate( mAngle, mCenter );
 	mPoly.Scale( mScale, mCenter );

@@ -1,4 +1,5 @@
 #include <eepp/graphics/cparticlesystem.hpp>
+#include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/graphics/cbatchrenderer.hpp>
@@ -38,7 +39,7 @@ cParticleSystem::~cParticleSystem() {
 	eeSAFE_DELETE_ARRAY( mParticle );
 }
 
-void cParticleSystem::Create( const EE_PARTICLE_EFFECT& Effect, const Uint32& NumParticles, const Uint32& TexId, const eeVector2f& Pos, const eeFloat& PartSize, const bool& AnimLoop, const Uint32& NumLoops, const eeColorAf& Color, const eeVector2f& Pos2, const eeFloat& AlphaDecay, const eeVector2f& Speed, const eeVector2f& Acc ) {
+void cParticleSystem::Create( const EE_PARTICLE_EFFECT& Effect, const Uint32& NumParticles, const Uint32& TexId, const eeVector2f& Pos, const Float& PartSize, const bool& AnimLoop, const Uint32& NumLoops, const eeColorAf& Color, const eeVector2f& Pos2, const Float& AlphaDecay, const eeVector2f& Speed, const eeVector2f& Acc ) {
 	mPointsSup		= GLi->PointSpriteSupported();
 	mEffect			= Effect;
 	mPos			= Pos;
@@ -93,7 +94,7 @@ void cParticleSystem::SetCallbackReset( const ParticleCallback& pc ) {
 }
 
 void cParticleSystem::Reset( cParticle * P ) {
-	eeFloat x, y, radio, q, z, w;
+	Float x, y, radio, q, z, w;
 
 	switch ( mEffect ) {
 		case PSE_Nofx:
@@ -163,7 +164,7 @@ void cParticleSystem::Reset( cParticle * P ) {
 		case PSE_WormHole:
 		{
 			int lo, la;
-			eeFloat VarB[4];
+			Float VarB[4];
 
 			for ( lo = 0; lo <= 3; lo++ ) {
 				VarB[lo]	= Math::Randf() * 5;
@@ -175,8 +176,8 @@ void cParticleSystem::Reset( cParticle * P ) {
 
 			mProgression	= (int) Math::Randf() * 10;
 			radio			= ( P->Id() * 0.125f ) * mProgression;
-			x				= mPos.x + ( radio * eecos( (eeFloat)P->Id() ) );
-			y				= mPos.y + ( radio * eesin( (eeFloat)P->Id() ) );
+			x				= mPos.x + ( radio * eecos( (Float)P->Id() ) );
+			y				= mPos.y + ( radio * eesin( (Float)P->Id() ) );
 
 			P->Reset( x, y, VarB[0], VarB[1], VarB[2], VarB[3] );
 			P->Color( eeColorAf( 1.f, 0.6f, 0.3f, 1.f ), 0.02f + Math::Randf() * 0.3f );
@@ -184,8 +185,8 @@ void cParticleSystem::Reset( cParticle * P ) {
 		}
 		case PSE_Twirl:
 		{
-			z		= 10.f + (eeFloat)mProgression;
-			w		= 10.f + (eeFloat)mProgression;
+			z		= 10.f + (Float)mProgression;
+			w		= 10.f + (Float)mProgression;
 
 			mProgression += mDirection;
 
@@ -204,9 +205,9 @@ void cParticleSystem::Reset( cParticle * P ) {
 		}
 		case PSE_Flower:
 		{
-			radio	= eecos( 2 * ( (eeFloat)P->Id() * 0.1f ) ) * 50;
-			x		= mPos.x + radio * eecos( (eeFloat)P->Id() * 0.1f );
-			y		= mPos.y + radio * eesin( (eeFloat)P->Id() * 0.1f );
+			radio	= eecos( 2 * ( (Float)P->Id() * 0.1f ) ) * 50;
+			x		= mPos.x + radio * eecos( (Float)P->Id() * 0.1f );
+			y		= mPos.y + radio * eesin( (Float)P->Id() * 0.1f );
 
 			P->Reset( x, y, 1, 1, 0, 0 );
 			P->Color( eeColorAf( 1.f, 0.25f, 0.1f, 0.1f ), 0.3f + ( 0.2f * Math::Randf()) + Math::Randf() * 0.3f );
@@ -214,9 +215,9 @@ void cParticleSystem::Reset( cParticle * P ) {
 		}
 		case PSE_Galaxy:
 		{
-			radio	= ( Math::Randf( 1.f, 1.2f ) + eesin( 20.f / (eeFloat)P->Id() ) ) * 60;
-			x		= mPos.x + radio * eecos( (eeFloat)P->Id() );
-			y		= mPos.y + radio * eesin( (eeFloat)P->Id() );
+			radio	= ( Math::Randf( 1.f, 1.2f ) + eesin( 20.f / (Float)P->Id() ) ) * 60;
+			x		= mPos.x + radio * eecos( (Float)P->Id() );
+			y		= mPos.y + radio * eesin( (Float)P->Id() );
 
 			P->Reset( x, y, 0, 0, 0, 0 );
 			P->Color( eeColorAf( 0.2f, 0.2f, 0.6f + 0.4f * Math::Randf(), 1.f ), Math::Randf( 0.05f, 0.15f ) );
@@ -237,19 +238,19 @@ void cParticleSystem::Reset( cParticle * P ) {
 			if ( P->Id() == 0 )
 				mProgression += 10;
 
-			radio	= atan( static_cast<eeFloat>( P->Id() % 12 ) );
-			x		= mPos.x + ( radio * eecos( (eeFloat)P->Id() / mProgression ) * 30 );
-			y		= mPos.y + ( radio * eesin( (eeFloat)P->Id() / mProgression ) * 30 );
+			radio	= atan( static_cast<Float>( P->Id() % 12 ) );
+			x		= mPos.x + ( radio * eecos( (Float)P->Id() / mProgression ) * 30 );
+			y		= mPos.y + ( radio * eesin( (Float)P->Id() / mProgression ) * 30 );
 
-			P->Reset(x, y, eecos( (eeFloat)P->Id() ), eesin( (eeFloat)P->Id() ), 0, 0 );
+			P->Reset(x, y, eecos( (Float)P->Id() ), eesin( (Float)P->Id() ), 0, 0 );
 			P->Color( eeColorAf( 0.3f, 0.6f, 1.f, 1.f ), 0.03f );
 			break;
 		}
 		case PSE_GP:
 		{
-			radio	= 50 + Math::Randf() * 15 * eecos( (eeFloat)P->Id() * 3.5f );
-			x		= mPos.x + ( radio * eecos( (eeFloat)P->Id() * (eeFloat)0.01428571428 ) );
-			y		= mPos.y + ( radio * eesin( (eeFloat)P->Id() * (eeFloat)0.01428571428 ) );
+			radio	= 50 + Math::Randf() * 15 * eecos( (Float)P->Id() * 3.5f );
+			x		= mPos.x + ( radio * eecos( (Float)P->Id() * (Float)0.01428571428 ) );
+			y		= mPos.y + ( radio * eesin( (Float)P->Id() * (Float)0.01428571428 ) );
 
 			P->Reset( x, y, 0, 0, 0, 0 );
 			P->Color( eeColorAf( 0.2f, 0.8f, 0.4f, 0.5f ), Math::Randf() * 0.3f );
@@ -257,7 +258,7 @@ void cParticleSystem::Reset( cParticle * P ) {
 		}
 		case PSE_BTwirl:
 		{
-			w		= 10.f + (eeFloat)mProgression;
+			w		= 10.f + (Float)mProgression;
 
 			mProgression += mDirection;
 
@@ -276,7 +277,7 @@ void cParticleSystem::Reset( cParticle * P ) {
 		}
 		case PSE_BT:
 		{
-			w		= 10.f + (eeFloat)mProgression;
+			w		= 10.f + (Float)mProgression;
 
 			mProgression += mDirection;
 
@@ -295,9 +296,9 @@ void cParticleSystem::Reset( cParticle * P ) {
 		}
 		case PSE_Atomic:
 		{
-			radio	= 10 + eesin( 2 * ( (eeFloat)P->Id() * 0.1f ) ) * 50;
-			x		= mPos.x + radio * eecos( (eeFloat)P->Id() * 0.033333 );
-			y		= mPos.y + radio * eesin( (eeFloat)P->Id() * 0.033333 );
+			radio	= 10 + eesin( 2 * ( (Float)P->Id() * 0.1f ) ) * 50;
+			x		= mPos.x + radio * eecos( (Float)P->Id() * 0.033333 );
+			y		= mPos.y + radio * eesin( (Float)P->Id() * 0.033333 );
 
 			P->Reset( x, y, 1, 1, 0, 0 );
 			P->Color( eeColorAf( 0.4f, 0.25f, 1.f, 1.f ), 0.3f + Math::Randf() * 0.2f + Math::Randf() * 0.3f );
@@ -329,10 +330,10 @@ void cParticleSystem::Draw() {
 
 		Uint32 alloc = mPCount * sizeof(cParticle);
 
-		GLi->ColorPointer	( 4, GL_FP, sizeof(cParticle), reinterpret_cast<char*>( &mParticle[0] ) + sizeof(eeFloat) * 2	, alloc	);
+		GLi->ColorPointer	( 4, GL_FP, sizeof(cParticle), reinterpret_cast<char*>( &mParticle[0] ) + sizeof(Float) * 2	, alloc	);
 		GLi->VertexPointer	( 2, GL_FP, sizeof(cParticle), reinterpret_cast<char*>( &mParticle[0] )							, alloc	);
 
-		GLi->DrawArrays( GL_POINTS, 0, (GLsizei)mPCount );
+		GLi->DrawArrays( GL_POINTS, 0, (int)mPCount );
 
 		GLi->Disable( GL_POINT_SPRITE );
 	} else {
@@ -428,7 +429,7 @@ const eeVector2f& cParticleSystem::Position() const {
 	return mPos;
 }
 
-void cParticleSystem::Position(const eeFloat& x, const eeFloat& y) {
+void cParticleSystem::Position(const Float& x, const Float& y) {
 	Position( eeVector2f( x, y ) );
 }
 
@@ -441,15 +442,15 @@ const eeVector2f& cParticleSystem::Position2() const {
 	return mPos2;
 }
 
-void cParticleSystem::Position2( const eeFloat& x, const eeFloat& y ) {
+void cParticleSystem::Position2( const Float& x, const Float& y ) {
 	Position( eeVector2f( x, y ) );
 }
 
-void cParticleSystem::Time( const eeFloat& time ) {
+void cParticleSystem::Time( const Float& time ) {
 	mTime = ( time >= 0 ) ? time : mTime;
 }
 
-eeFloat cParticleSystem::Time() const {
+Float cParticleSystem::Time() const {
 	return mTime;
 }
 
@@ -477,11 +478,11 @@ void cParticleSystem::Color( const eeColorAf& Col ) {
 	mColor = Col;
 }
 
-const eeFloat& cParticleSystem::AlphaDecay() const {
+const Float& cParticleSystem::AlphaDecay() const {
 	return mAlphaDecay;
 }
 
-void cParticleSystem::AlphaDecay( const eeFloat& Decay ) {
+void cParticleSystem::AlphaDecay( const Float& Decay ) {
 	mAlphaDecay = Decay;
 }
 

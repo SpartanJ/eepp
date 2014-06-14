@@ -485,7 +485,7 @@ bool FileSystem::FileExists( const std::string& Filepath ) {
 }
 
 std::string FileSystem::SizeToString( const Int64& Size ) {
-	eeDouble mem = static_cast<eeDouble>( Size );
+	double mem = static_cast<double>( Size );
 	std::string size;
 	Uint8 c = 0;
 

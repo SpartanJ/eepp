@@ -1,6 +1,7 @@
 #include <eepp/graphics/cfont.hpp>
 #include <eepp/graphics/cfontmanager.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
+#include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 
 namespace EE { namespace Graphics {
@@ -47,16 +48,16 @@ void cFont::ShadowColor(const eeColorA& Color) {
 	mTextCache.ShadowColor( Color );
 }
 
-eeInt cFont::GetNumLines() {
+int cFont::GetNumLines() {
 	return mTextCache.GetNumLines();
 }
 
-eeFloat cFont::GetTextWidth( const String& Text ) {
+Float cFont::GetTextWidth( const String& Text ) {
 	SetText( Text );
 	return mTextCache.GetTextWidth();
 }
 
-eeFloat cFont::GetTextWidth() {
+Float cFont::GetTextWidth() {
 	return mTextCache.GetTextWidth();
 }
 
@@ -84,25 +85,25 @@ String cFont::GetText() {
 	return mTextCache.Text();
 }
 
-eeFloat cFont::GetTextHeight() {
-	return (eeFloat)GetFontHeight() * (eeFloat)GetNumLines();
+Float cFont::GetTextHeight() {
+	return (Float)GetFontHeight() * (Float)GetNumLines();
 }
 
-const std::vector<eeFloat>& cFont::GetLinesWidth() {
+const std::vector<Float>& cFont::GetLinesWidth() {
 	return mTextCache.LinesWidth();
 }
 
-void cFont::Draw( const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeVector2f& Scale, const eeFloat& Angle, const EE_BLEND_MODE& Effect) {
+void cFont::Draw( const Float& X, const Float& Y, const Uint32& Flags, const eeVector2f& Scale, const Float& Angle, const EE_BLEND_MODE& Effect) {
 	Draw( mTextCache, X, Y, Flags, Scale, Angle, Effect );
 }
 
-void cFont::Draw( const String& Text, const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeVector2f& Scale, const eeFloat& Angle, const EE_BLEND_MODE& Effect ) {
+void cFont::Draw( const String& Text, const Float& X, const Float& Y, const Uint32& Flags, const eeVector2f& Scale, const Float& Angle, const EE_BLEND_MODE& Effect ) {
 	mTextCache.Text( Text );
 	mTextCache.Flags( Flags );
 	mTextCache.Draw( X, Y, Scale, Angle, Effect );
 }
 
-void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, const Uint32& Flags, const eeVector2f& Scale, const eeFloat& Angle, const EE_BLEND_MODE& Effect ) {
+void cFont::Draw( cTextCache& TextCache, const Float& X, const Float& Y, const Uint32& Flags, const eeVector2f& Scale, const Float& Angle, const EE_BLEND_MODE& Effect ) {
 	if ( !TextCache.Text().size() )
 		return;
 
@@ -122,7 +123,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 		if ( Col.A() != 255 ) {
 			eeColorA ShadowColor = TextCache.ShadowColor();
 
-			ShadowColor.Alpha = (Uint8)( (eeFloat)ShadowColor.Alpha * ( (eeFloat)Col.A() / (eeFloat)255 ) );
+			ShadowColor.Alpha = (Uint8)( (Float)ShadowColor.Alpha * ( (Float)Col.A() / (Float)255 ) );
 
 			Color( ShadowColor );
 		} else {
@@ -136,13 +137,13 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 		Color( Col );
 	}
 
-	eeFloat cX = (eeFloat) ( (Int32)X );
-	eeFloat cY = (eeFloat) ( (Int32)Y );
-	eeFloat nX = 0;
-	eeFloat nY = 0;
+	Float cX = (Float) ( (Int32)X );
+	Float cY = (Float) ( (Int32)Y );
+	Float nX = 0;
+	Float nY = 0;
 	Int16 Char = 0;
-	eeUint Line = 0;
-	eeUint numvert = 0;
+	unsigned int Line = 0;
+	unsigned int numvert = 0;
 
 	if ( Angle != 0.0f || Scale != 1.0f ) {
 		GLi->PushMatrix();
@@ -161,7 +162,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 		if ( !( Flags & FONT_DRAW_VERTICAL ) ) {
 			switch ( FontHAlignGet( Flags ) ) {
 				case FONT_DRAW_CENTER:
-					nX = (eeFloat)( (Int32)( ( TextCache.GetTextWidth() - TextCache.LinesWidth()[ Line ] ) * 0.5f ) );
+					nX = (Float)( (Int32)( ( TextCache.GetTextWidth() - TextCache.LinesWidth()[ Line ] ) * 0.5f ) );
 					Line++;
 					break;
 				case FONT_DRAW_RIGHT:
@@ -173,7 +174,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 
 		Int32 tGlyphSize = (Int32)mGlyphs.size();
 
-		for ( eeUint i = 0; i < TextCache.Text().size(); i++ ) {
+		for ( unsigned int i = 0; i < TextCache.Text().size(); i++ ) {
 			Char = static_cast<Int32>( TextCache.Text().at(i) );
 
 			if ( Char < 0 && Char > -128 )
@@ -208,7 +209,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 							if ( i + 1 < TextCache.Text().size() ) {
 								switch ( FontHAlignGet( Flags ) ) {
 									case FONT_DRAW_CENTER:
-										nX = (eeFloat)( (Int32)( ( TextCache.GetTextWidth() - TextCache.LinesWidth()[ Line ] ) * 0.5f ) );
+										nX = (Float)( (Int32)( ( TextCache.GetTextWidth() - TextCache.LinesWidth()[ Line ] ) * 0.5f ) );
 										break;
 									case FONT_DRAW_RIGHT:
 										nX = TextCache.GetTextWidth() - TextCache.LinesWidth()[ Line ];
@@ -292,7 +293,7 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 
 	GLi->ColorPointer	( 4, GL_UNSIGNED_BYTE	, 0						, reinterpret_cast<char*>( &Colors[0] )								, allocC	);
 	GLi->TexCoordPointer( 2, GL_FP				, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] )						, alloc		);
-	GLi->VertexPointer	( 2, GL_FP				, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] ) + sizeof(eeFloat) * 2	, alloc		);
+	GLi->VertexPointer	( 2, GL_FP				, sizeof(eeVertexCoords), reinterpret_cast<char*>( &RenderCoords[0] ) + sizeof(Float) * 2	, alloc		);
 
 	if ( GLi->QuadsSupported() ) {
 		GLi->DrawArrays( GL_QUADS, 0, numvert );
@@ -305,10 +306,10 @@ void cFont::Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, con
 	}
 }
 
-void cFont::CacheWidth( const String& Text, std::vector<eeFloat>& LinesWidth, eeFloat& CachedWidth, eeInt& NumLines , eeInt& LargestLineCharCount ) {
+void cFont::CacheWidth( const String& Text, std::vector<Float>& LinesWidth, Float& CachedWidth, int& NumLines , int& LargestLineCharCount ) {
 	LinesWidth.clear();
 
-	eeFloat Width = 0, MaxWidth = 0;
+	Float Width = 0, MaxWidth = 0;
 	Int32 CharID;
 	Int32 Lines = 1;
 	Int32 CharCount = 0;
@@ -331,7 +332,7 @@ void cFont::CacheWidth( const String& Text, std::vector<eeFloat>& LinesWidth, ee
 			if ( CharID == '\n' ) {
 				Lines++;
 
-				eeFloat lWidth = ( CharID == '\t' ) ? mGlyphs[CharID].Advance * 4.f : mGlyphs[CharID].Advance;
+				Float lWidth = ( CharID == '\t' ) ? mGlyphs[CharID].Advance * 4.f : mGlyphs[CharID].Advance;
 
 				LinesWidth.push_back( Width - lWidth );
 
@@ -357,7 +358,7 @@ void cFont::CacheWidth( const String& Text, std::vector<eeFloat>& LinesWidth, ee
 }
 
 Int32 cFont::FindClosestCursorPosFromPoint( const String& Text, const eeVector2i& pos ) {
-	eeFloat Width = 0, lWidth = 0, Height = GetFontHeight(), lHeight = 0;
+	Float Width = 0, lWidth = 0, Height = GetFontHeight(), lHeight = 0;
 	Int32 CharID;
 	Int32 tGlyphSize = (Int32)mGlyphs.size();
 	std::size_t tSize = Text.size();
@@ -411,7 +412,7 @@ Int32 cFont::FindClosestCursorPosFromPoint( const String& Text, const eeVector2i
 }
 
 eeVector2i cFont::GetCursorPos( const String& Text, const Uint32& Pos ) {
-	eeFloat Width = 0, Height = GetFontHeight();
+	Float Width = 0, Height = GetFontHeight();
 	Int32 CharID;
 	Int32 tGlyphSize = mGlyphs.size();
 	std::size_t tSize = ( Pos < Text.size() ) ? Pos : Text.size();
@@ -483,9 +484,9 @@ void cFont::ShrinkText( std::string& Str, const Uint32& MaxWidth ) {
 	if ( !Str.size() )
 		return;
 
-	eeFloat		tCurWidth		= 0.f;
-	eeFloat 	tWordWidth		= 0.f;
-	eeFloat 	tMaxWidth		= (eeFloat) MaxWidth;
+	Float		tCurWidth		= 0.f;
+	Float 	tWordWidth		= 0.f;
+	Float 	tMaxWidth		= (Float) MaxWidth;
 	char *		tStringLoop		= &Str[0];
 	char *		tLastSpace		= NULL;
 	Uint32 		tGlyphSize 		= (Uint32)mGlyphs.size();
@@ -493,7 +494,7 @@ void cFont::ShrinkText( std::string& Str, const Uint32& MaxWidth ) {
 	while ( *tStringLoop ) {
 		if ( (Uint32)( *tStringLoop ) < tGlyphSize ) {
 			eeGlyph * pChar = &mGlyphs[ ( *tStringLoop ) ];
-			eeFloat fCharWidth	= (eeFloat)pChar->Advance;
+			Float fCharWidth	= (Float)pChar->Advance;
 
 			if ( ( *tStringLoop ) == '\t' )
 				fCharWidth += pChar->Advance * 3;
@@ -540,16 +541,16 @@ void cFont::ShrinkText( String& Str, const Uint32& MaxWidth ) {
 	if ( !Str.size() )
 		return;
 
-	eeFloat		tCurWidth		= 0.f;
-	eeFloat 	tWordWidth		= 0.f;
-	eeFloat 	tMaxWidth		= (eeFloat) MaxWidth;
+	Float		tCurWidth		= 0.f;
+	Float 	tWordWidth		= 0.f;
+	Float 	tMaxWidth		= (Float) MaxWidth;
 	String::StringBaseType *	tStringLoop		= &Str[0];
 	String::StringBaseType *	tLastSpace		= NULL;
 
 	while ( *tStringLoop ) {
 		if ( (String::StringBaseType)( *tStringLoop ) < mGlyphs.size() ) {
 			eeGlyph * pChar = &mGlyphs[ ( *tStringLoop ) ];
-			eeFloat fCharWidth	= (eeFloat)pChar->Advance;
+			Float fCharWidth	= (Float)pChar->Advance;
 
 			if ( ( *tStringLoop ) == '\t' )
 				fCharWidth += pChar->Advance * 3;

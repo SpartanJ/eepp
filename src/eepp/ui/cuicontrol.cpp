@@ -250,7 +250,7 @@ void cUIControl::Draw() {
 			BorderDraw();
 
 		if ( NULL != mSkinState )
-			mSkinState->Draw( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mSize.Width(), (eeFloat)mSize.Height(), 255 );
+			mSkinState->Draw( (Float)mScreenPos.x, (Float)mScreenPos.y, (Float)mSize.Width(), (Float)mSize.Height(), 255 );
 
 		if ( cUIManager::instance()->HighlightFocus() && cUIManager::instance()->FocusControl() == this ) {
 			cPrimitives P;
@@ -518,7 +518,7 @@ void cUIControl::OnSizeChange() {
 }
 
 eeRectf cUIControl::GetRectf() {
-	return eeRectf( eeVector2f( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y ), eeSizef( (eeFloat)mSize.Width(), (eeFloat)mSize.Height() ) );
+	return eeRectf( eeVector2f( (Float)mScreenPos.x, (Float)mScreenPos.y ), eeSizef( (Float)mSize.Width(), (Float)mSize.Height() ) );
 }
 
 void cUIControl::BackgroundDraw() {
@@ -546,12 +546,12 @@ void cUIControl::BorderDraw() {
 	cPrimitives P;
 	P.FillMode( DRAW_LINE );
 	P.BlendMode( Blend() );
-	P.LineWidth( (eeFloat)mBorder->Width() );
+	P.LineWidth( (Float)mBorder->Width() );
 	P.SetColor( mBorder->Color() );
 
 	//! @TODO: Check why was this +0.1f -0.1f?
 	if ( mFlags & UI_CLIP_ENABLE ) {
-		eeRectf R( eeVector2f( (eeFloat)mScreenPos.x + 0.1f, (eeFloat)mScreenPos.y + 0.1f ), eeSizef( (eeFloat)mSize.Width() - 0.1f, (eeFloat)mSize.Height() - 0.1f ) );
+		eeRectf R( eeVector2f( (Float)mScreenPos.x + 0.1f, (Float)mScreenPos.y + 0.1f ), eeSizef( (Float)mSize.Width() - 0.1f, (Float)mSize.Height() - 0.1f ) );
 
 		if ( mBackground->Corners() ) {
 			P.DrawRoundedRectangle( GetRectf(), 0.f, eeVector2f::One, mBackground->Corners() );
@@ -826,7 +826,7 @@ cUIControl * cUIControl::OverFind( const eeVector2f& Point ) {
 	return pOver;
 }
 
-cUIControl * cUIControl::ChildGetAt( eeVector2i CtrlPos, eeUint RecursiveLevel ) {
+cUIControl * cUIControl::ChildGetAt( eeVector2i CtrlPos, unsigned int RecursiveLevel ) {
 	cUIControl * Ctrl = NULL;
 
 	for( cUIControl * pLoop = mChild; NULL != pLoop && NULL == Ctrl; pLoop = pLoop->mNext )
@@ -871,8 +871,8 @@ const eeVector2f& cUIControl::GetPolygonCenter() const {
 }
 
 void cUIControl::UpdateQuad() {
-	mPoly 	= eePolygon2f( eeAABB( (eeFloat)mScreenPos.x, (eeFloat)mScreenPos.y, (eeFloat)mScreenPos.x + mSize.Width(), (eeFloat)mScreenPos.y + mSize.Height() ) );
-	mCenter = eeVector2f( (eeFloat)mScreenPos.x + (eeFloat)mSize.Width() * 0.5f, (eeFloat)mScreenPos.y + (eeFloat)mSize.Height() * 0.5f );
+	mPoly 	= eePolygon2f( eeAABB( (Float)mScreenPos.x, (Float)mScreenPos.y, (Float)mScreenPos.x + mSize.Width(), (Float)mScreenPos.y + mSize.Height() ) );
+	mCenter = eeVector2f( (Float)mScreenPos.x + (Float)mSize.Width() * 0.5f, (Float)mScreenPos.y + (Float)mSize.Height() * 0.5f );
 
 	cUIControl * tParent = Parent();
 

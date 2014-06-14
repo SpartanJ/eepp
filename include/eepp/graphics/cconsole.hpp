@@ -22,15 +22,15 @@ class EE_API cConsole : protected iLogReader {
 		cConsole( Window::cWindow * window = NULL );
 
 		/** Creates the console */
-		cConsole( cFont* Font, const bool& MakeDefaultCommands = true, const bool& AttachToLog = true, const eeUint& MaxLogLines = 1024, const Uint32& TextureId = 0, Window::cWindow * window = NULL );
+		cConsole( cFont* Font, const bool& MakeDefaultCommands = true, const bool& AttachToLog = true, const unsigned int& MaxLogLines = 1024, const Uint32& TextureId = 0, Window::cWindow * window = NULL );
 
 		~cConsole();
 
 		/** Set the Console Height when it's Minimized ( Not Maximized ) */
-		void ConsoleMinimizedHeight( const eeFloat& MinHeight ) { mHeightMin = MinHeight; if (mVisible && !mExpand) mCurHeight = mHeightMin; }
+		void ConsoleMinimizedHeight( const Float& MinHeight ) { mHeightMin = MinHeight; if (mVisible && !mExpand) mCurHeight = mHeightMin; }
 
 		/** Get the Console Height when it's Minimized ( Not Maximized ) */
-		eeFloat ConsoleMinimizedHeight() const { return mHeightMin; }
+		Float ConsoleMinimizedHeight() const { return mHeightMin; }
 
 		/** Set the Texture Id for the Background, 0 will disable texture background */
 		void TextureId( const Uint32& TexId ) { mTexId = TexId; }
@@ -93,7 +93,7 @@ class EE_API cConsole : protected iLogReader {
 		* @param MaxLogLines Maximun number of lines stored on the console
 		* @param TextureId Background texture id ( 0 for no texture )
 		*/
-		void Create( cFont* Font, const bool& MakeDefaultCommands = true, const bool& AttachToLog = true, const eeUint& MaxLogLines = 1024, const Uint32& TextureId = 0 );
+		void Create( cFont* Font, const bool& MakeDefaultCommands = true, const bool& AttachToLog = true, const unsigned int& MaxLogLines = 1024, const Uint32& TextureId = 0 );
 
 		/** Add Text to Console */
 		void PushText( const String& str );
@@ -111,7 +111,7 @@ class EE_API cConsole : protected iLogReader {
 		void Draw();
 
 		/** Set the line height ( distance between lines ) */
-		void SetLineHeight( const eeFloat& LineHeight ) { mFontSize = LineHeight; }
+		void SetLineHeight( const Float& LineHeight ) { mFontSize = LineHeight; }
 
 		/** Use this if you need to ignore some char to activate the console, for example '~'. A common char to activate a console. */
 		void IgnoreCharOnPrompt( const Uint32& ch );
@@ -133,22 +133,22 @@ class EE_API cConsole : protected iLogReader {
 		eeColorA mFontColor;
 		eeColorA mFontLineColor;
 
-		eeFloat mWidth;
-		eeFloat mHeight;
-		eeFloat mHeightMin;
-		eeFloat mCurHeight;
-		eeFloat mY;
-		eeFloat mA;
-		eeFloat mMaxAlpha;
-		eeFloat mTempY;
-		eeFloat mFontSize;
+		Float mWidth;
+		Float mHeight;
+		Float mHeightMin;
+		Float mCurHeight;
+		Float mY;
+		Float mA;
+		Float mMaxAlpha;
+		Float mTempY;
+		Float mFontSize;
 		cTime	mFadeSpeed;
 
 		Uint32 mMyCallback;
 		Uint32 mVidCb;
 		Uint32 mEx;
 		Uint32 mMaxLogLines;
-		eeInt mLastLogPos;
+		int mLastLogPos;
 
 		cInputTextBuffer * mTBuf;
 
@@ -158,13 +158,13 @@ class EE_API cConsole : protected iLogReader {
 		Uint32 mTexId;
 
 		typedef struct {
-			eeInt ConMin;
-			eeInt ConMax;
-			eeInt ConModif;
+			int ConMin;
+			int ConMax;
+			int ConModif;
 		} sCon;
 		sCon mCon;
 
-		eeFloat mCurAlpha;
+		Float mCurAlpha;
 
 		bool mEnabled;
 		bool mVisible;

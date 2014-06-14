@@ -17,21 +17,21 @@ cUIBackground::cUIBackground( const cUIBackground& Back ) :
 	mColor = b->Colors();
 }
 
-cUIBackground::cUIBackground( const eeColorA& Color, const eeUint& Corners, const EE_BLEND_MODE& BlendMode ) :
+cUIBackground::cUIBackground( const eeColorA& Color, const unsigned int& Corners, const EE_BLEND_MODE& BlendMode ) :
 	mBlendMode( BlendMode ),
 	mCorners( Corners )
 {
 	mColor.push_back( Color );
 }
 
-cUIBackground::cUIBackground( const eeColorA& TopLeftColor, const eeColorA& BottomLeftColor, const eeColorA& BottomRightColor, const eeColorA& TopRightColor, const eeUint& Corners, const EE_BLEND_MODE& BlendMode ) :
+cUIBackground::cUIBackground( const eeColorA& TopLeftColor, const eeColorA& BottomLeftColor, const eeColorA& BottomRightColor, const eeColorA& TopRightColor, const unsigned int& Corners, const EE_BLEND_MODE& BlendMode ) :
 	mBlendMode( BlendMode ),
 	mCorners( Corners )
 {
 	Colors( TopLeftColor, BottomLeftColor, BottomRightColor, TopRightColor );
 }
 
-eeColorA& cUIBackground::Color( const eeUint& index  ) {
+eeColorA& cUIBackground::Color( const unsigned int& index  ) {
 	if ( index < mColor.size() )
 		return	mColor[ index ];
 
@@ -39,7 +39,7 @@ eeColorA& cUIBackground::Color( const eeUint& index  ) {
 }
 
 void cUIBackground::ColorsTo( const eeColorA& Color ) {
-	for ( eeUint i = 0; i < mColor.size(); i++ )
+	for ( unsigned int i = 0; i < mColor.size(); i++ )
 		mColor[i] = Color;
 }
 
@@ -78,11 +78,11 @@ void cUIBackground::Blend( const EE_BLEND_MODE& blend ) {
 	mBlendMode = blend;
 }
 
-const eeUint& cUIBackground::Corners() const {
+const unsigned int& cUIBackground::Corners() const {
 	return mCorners;
 }
 
-void cUIBackground::Corners( const eeUint& corners ) {
+void cUIBackground::Corners( const unsigned int& corners ) {
 	mCorners = corners;
 }
 

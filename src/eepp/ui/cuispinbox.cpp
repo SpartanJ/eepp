@@ -112,11 +112,11 @@ const eeRecti& cUISpinBox::Padding() const {
 	return mInput->Padding();
 }
 
-void cUISpinBox::ClickStep( const eeFloat& step ) {
+void cUISpinBox::ClickStep( const Float& step ) {
 	mClickStep = step;
 }
 
-const eeFloat& cUISpinBox::ClickStep() const {
+const Float& cUISpinBox::ClickStep() const {
 	return mClickStep;
 }
 
@@ -144,18 +144,18 @@ Uint32 cUISpinBox::OnMessage( const cUIMessage * Msg ) {
 	return 0;
 }
 
-void cUISpinBox::AddValue( const eeFloat& value ) {
+void cUISpinBox::AddValue( const Float& value ) {
 	if ( !mInput->Text().size() )
 		mInput->Text( String::ToStr( static_cast<Int32>( mMinValue ) ) );
 
 	Value( mValue + value );
 }
 
-void cUISpinBox::InternalValue( const eeFloat& Val, const bool& Force ) {
+void cUISpinBox::InternalValue( const Float& Val, const bool& Force ) {
 	if ( Force || Val != mValue ) {
 		if ( Val >= mMinValue && Val <= mMaxValue ) {
-			eeFloat iValN	= (eeFloat)(Int32) Val;
-			eeFloat fValN 	= (eeFloat)iValN;
+			Float iValN	= (Float)(Int32) Val;
+			Float fValN 	= (Float)iValN;
 
 			if ( fValN == Val ) {
 				mInput->Text( String::ToStr( iValN ) );
@@ -170,33 +170,33 @@ void cUISpinBox::InternalValue( const eeFloat& Val, const bool& Force ) {
 	}
 }
 
-void cUISpinBox::Value( const eeFloat& Val ) {
+void cUISpinBox::Value( const Float& Val ) {
 	InternalValue( Val, false );
 }
 
-const eeFloat& cUISpinBox::Value() const {
+const Float& cUISpinBox::Value() const {
 	return mValue;
 }
 
-void cUISpinBox::MinValue( const eeFloat& MinVal ) {
+void cUISpinBox::MinValue( const Float& MinVal ) {
 	mMinValue = MinVal;
 
 	if ( mValue < mMinValue )
 		mValue = mMinValue;
 }
 
-const eeFloat& cUISpinBox::MinValue() const {
+const Float& cUISpinBox::MinValue() const {
 	return mMinValue;
 }
 
-void cUISpinBox::MaxValue( const eeFloat& MaxVal ) {
+void cUISpinBox::MaxValue( const Float& MaxVal ) {
 	mMaxValue = MaxVal;
 
 	if ( mValue > mMaxValue )
 		mValue = mMaxValue;
 }
 
-const eeFloat& cUISpinBox::MaxValue() const {
+const Float& cUISpinBox::MaxValue() const {
 	return mMaxValue;
 }
 
@@ -209,7 +209,7 @@ void cUISpinBox::Update() {
 		if ( !mInput->Text().size() ) {
 			Value( 0 );
 		} else {
-			eeFloat Val = mValue;
+			Float Val = mValue;
 
 			if ( '.' == mInput->Text()[ mInput->Text().size() - 1 ] ) {
 				Uint32 pos = (Uint32)mInput->Text().find_first_of( "." );
@@ -217,7 +217,7 @@ void cUISpinBox::Update() {
 				if ( pos != mInput->Text().size() - 1 )
 					mInput->Text( mInput->Text().substr( 0, mInput->Text().size() - 1 ) );
 			} else {
-				bool Res 	= String::FromString<eeFloat>( Val, mInput->Text() );
+				bool Res 	= String::FromString<Float>( Val, mInput->Text() );
 
 				if ( Res )
 					Value( Val );

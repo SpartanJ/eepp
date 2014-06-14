@@ -125,10 +125,10 @@ class EE_API cInput {
 		Uint16 MouseY() const;
 
 		/** Set the mouse speed ( only affects grabed windows ) */
-		void MouseSpeed( const eeFloat& Speed );
+		void MouseSpeed( const Float& Speed );
 
 		/** @return The Mouse Speed */
-		const eeFloat& MouseSpeed() const;
+		const Float& MouseSpeed() const;
 
 		/** @return The bitflags of the last pressed trigger (before the current state of press trigger) */
 		const Uint32& LastPressTrigger() const;
@@ -206,7 +206,7 @@ class EE_API cInput {
 		Uint32		mTClick;
 		eeVector2i	mMousePos;
 		Uint32		mNumCallBacks;
-		eeFloat		mMouseSpeed;
+		Float		mMouseSpeed;
 		bool		mInputGrabed;
 		cInputFinger mFingers[ EE_MAX_FINGERS ];
 		

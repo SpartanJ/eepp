@@ -475,10 +475,10 @@ std::vector<DisplayMode> cWindowSDL::GetDisplayModes() const {
 	return result;
 }
 
-void cWindowSDL::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {
-	eeclamp( &Red	, (eeFloat)0.1f, (eeFloat)10.0f );
-	eeclamp( &Green	, (eeFloat)0.1f, (eeFloat)10.0f );
-	eeclamp( &Blue	, (eeFloat)0.1f, (eeFloat)10.0f );
+void cWindowSDL::SetGamma( Float Red, Float Green, Float Blue ) {
+	eeclamp( &Red	, (Float)0.1f, (Float)10.0f );
+	eeclamp( &Green	, (Float)0.1f, (Float)10.0f );
+	eeclamp( &Blue	, (Float)0.1f, (Float)10.0f );
 
 	Uint16 red_ramp[256];
 	Uint16 green_ramp[256];

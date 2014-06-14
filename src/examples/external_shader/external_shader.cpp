@@ -1,10 +1,11 @@
 #include <eepp/ee.hpp>
+#include <eepp/graphics/opengl.hpp>
 
 /// This example is based on the WebGL demo from http://minimal.be/lab/fluGL/
 namespace Demo_ExternalShader {
 
 #if defined( EE_ARM ) || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-static eeFloat sqrt_aprox[20001];
+static Float sqrt_aprox[20001];
 #endif
 
 Uint32 ParticlesNum	= 30000;
@@ -13,35 +14,35 @@ cWindow * win = NULL;
 cInput * imp = NULL;
 cShaderProgram * ShaderProgram = NULL;
 bool ShadersSupported = false;
-eeFloat tw;
-eeFloat th;
-eeFloat aspectRatio;
+Float tw;
+Float th;
+Float aspectRatio;
 eeVector3ff * vertices		= eeNewArray( eeVector3ff, ParticlesNum );
 eeVector3ff * velocities	= eeNewArray( eeVector3ff, ParticlesNum );
 eeColorAf * colors			= eeNewArray( eeColorAf, ParticlesNum );
 
 void videoResize( cWindow * w ) {
 	/// Video Resize event will re-setup the 2D projection and states, so we must rebuild them.
-	aspectRatio	= (eeFloat)win->GetWidth()	/ (eeFloat)win->GetHeight();
-	tw			= (eeFloat)win->GetWidth()	/ 2;
-	th			= (eeFloat)win->GetHeight()	/ 2;
+	aspectRatio	= (Float)win->GetWidth()	/ (Float)win->GetHeight();
+	tw			= (Float)win->GetWidth()	/ 2;
+	th			= (Float)win->GetHeight()	/ 2;
 
-	GLfloat fieldOfView	= 30.0;
-	GLfloat nearPlane	= 1.0;
-	GLfloat farPlane	= 10000.0;
-	GLfloat top			= nearPlane * eetan(fieldOfView * EE_PI_360);
-	GLfloat bottom		= -top;
-	GLfloat right		= top * aspectRatio;
-	GLfloat left		= -right;
+	float fieldOfView	= 30.0;
+	float nearPlane	= 1.0;
+	float farPlane	= 10000.0;
+	float top			= nearPlane * eetan(fieldOfView * EE_PI_360);
+	float bottom		= -top;
+	float right		= top * aspectRatio;
+	float left		= -right;
 
-	GLfloat a = (right + left) / (right - left);
-	GLfloat b = (top + bottom) / (top - bottom);
-	GLfloat c = (farPlane + nearPlane) / (farPlane - nearPlane);
-	GLfloat d = (2 * farPlane * nearPlane) / (farPlane - nearPlane);
-	GLfloat x = (2 * nearPlane) / (right - left);
-	GLfloat y = (2 * nearPlane) / (top - bottom);
+	float a = (right + left) / (right - left);
+	float b = (top + bottom) / (top - bottom);
+	float c = (farPlane + nearPlane) / (farPlane - nearPlane);
+	float d = (2 * farPlane * nearPlane) / (farPlane - nearPlane);
+	float x = (2 * nearPlane) / (right - left);
+	float y = (2 * nearPlane) / (top - bottom);
 
-	GLfloat perspectiveMatrix[16] = {
+	float perspectiveMatrix[16] = {
 		x, 0, a, 0,
 		0, y, b, 0,
 		0, 0, c, d,
@@ -78,7 +79,7 @@ void videoResize( cWindow * w ) {
 			ShaderProgram->SetUniformMatrix( "dgl_ProjectionMatrix", perspectiveMatrix );
 
 			/// Get the identity matrix and set it to the modelview matrix
-			GLfloat modelMatrix[16];
+			float modelMatrix[16];
 			GLi->LoadIdentity();
 			GLi->GetCurrentMatrix( GL_MODELVIEW_MATRIX, modelMatrix );
 
@@ -111,11 +112,11 @@ void MainLoop()
 		}
 	}
 
-	eeFloat p;
+	Float p;
 	eeVector2f mf	= imp->GetMousePosf();
-	eeFloat tratio	= tw / th;
-	eeFloat touchX	= ( mf.x / tw - 1 ) * tratio;
-	eeFloat touchY	= -( mf.y / th - 1 );
+	Float tratio	= tw / th;
+	Float touchX	= ( mf.x / tw - 1 ) * tratio;
+	Float touchY	= -( mf.y / th - 1 );
 	bool touch		= imp->MouseLeftPressed();
 
 	for( Uint32 i = 0; i < ParticlesNum; i+=2 )
@@ -155,14 +156,14 @@ void MainLoop()
 		vertices[i+1].y = p;
 
 		if ( touch ) {
-			eeFloat dx	= touchX - vertices[i].x;
-			eeFloat dy	= touchY - vertices[i].y;
-			eeFloat distance = dx * dx + dy * dy;
+			Float dx	= touchX - vertices[i].x;
+			Float dy	= touchY - vertices[i].y;
+			Float distance = dx * dx + dy * dy;
 
 			#if !defined( EE_ARM ) && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-			eeFloat d	= eesqrt( distance );
+			Float d	= eesqrt( distance );
 			#else
-			eeFloat d = sqrt_aprox[ (Int32)(distance * 1000) ];
+			Float d = sqrt_aprox[ (Int32)(distance * 1000) ];
 			#endif
 
 			if ( d < 2.f ) {
@@ -188,7 +189,7 @@ void MainLoop()
 	GLi->VertexPointer( 3, GL_FLOAT, sizeof(eeVector3ff), reinterpret_cast<char*> ( &vertices[0] ), ParticlesNum * sizeof(float) * 3 );
 
 	/// ColorPointer to "dgl_FrontColor"
-	GLi->ColorPointer( 4, GL_FP, sizeof(eeColorAf), reinterpret_cast<char*> ( &colors[0] ), ParticlesNum * sizeof(eeFloat) * 4 );
+	GLi->ColorPointer( 4, GL_FP, sizeof(eeColorAf), reinterpret_cast<char*> ( &colors[0] ), ParticlesNum * sizeof(Float) * 4 );
 
 	/// Draw the lines
 	GLi->DrawArrays( DM_LINES, 0, ParticlesNum );
@@ -264,7 +265,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 		/** Optimized for ARM ( pre-cache sqrt ) */
 		#if defined( EE_ARM ) || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-		eeFloat tFloat = 0;
+		Float tFloat = 0;
 		for ( int i = 0; i <= 20000; i++ ) {
 			sqrt_aprox[i] = eesqrt( tFloat );
 			tFloat += 0.001;

@@ -39,7 +39,7 @@ class EE_API cTextureLoader : public cObjectLoader {
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		*/
-		cTextureLoader( const unsigned char * ImagePtr, const eeUint& Size, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		cTextureLoader( const unsigned char * ImagePtr, const unsigned int& Size, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Load a texture from a Pack file
 		* @param Pack Pointer to the pack instance
@@ -62,7 +62,7 @@ class EE_API cTextureLoader : public cObjectLoader {
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @param FileName A filename to recognize the texture ( the path in case that was loaded from outside the texture factory ).
 		*/
-		cTextureLoader( const unsigned char * Pixels, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const std::string& FileName = std::string("") );
+		cTextureLoader( const unsigned char * Pixels, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const std::string& FileName = std::string("") );
 
 		virtual ~cTextureLoader();
 
@@ -92,8 +92,8 @@ class EE_API cTextureLoader : public cObjectLoader {
 		Int32			mImgHeight;
 
 		std::string 	mFilepath;
-		eeUint 			mWidth;
-		eeUint 			mHeight;
+		unsigned int 			mWidth;
+		unsigned int 			mHeight;
 		bool 			mMipmap;
 		Int32 			mChannels;
 		EE_CLAMP_MODE 	mClampMode;

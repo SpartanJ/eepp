@@ -15,11 +15,11 @@ template <typename T>
 class Waypoint {
 	public:
 		Waypoint() { p = Vector2<T>(0,0); t = 0; }
-		Waypoint( const Vector2<T>& Pos, const eeFloat& Time ) { p = Pos; t = Time; }
+		Waypoint( const Vector2<T>& Pos, const Float& Time ) { p = Pos; t = Time; }
 		Vector2<T> p;
-		eeFloat t;
+		Float t;
 };
-typedef Waypoint<eeFloat> cWaypoint;
+typedef Waypoint<Float> cWaypoint;
 
 /** @brief A waypoint manager, used for movement interpolations. */
 class EE_API cWaypoints {
@@ -33,13 +33,13 @@ class EE_API cWaypoints {
 		typedef cb::Callback0<void> OnStepCallback;
 
 		/** Add a new waypoint */
-		void AddWaypoint( const eeVector2f& Pos, const eeFloat& Time = 0.f );
+		void AddWaypoint( const eeVector2f& Pos, const Float& Time = 0.f );
 
 		/** Edit a waypoint */
-		bool EditWaypoint( const eeUint& PointNum, const eeVector2f& NewPos, const eeFloat& NewTime );
+		bool EditWaypoint( const unsigned int& PointNum, const eeVector2f& NewPos, const Float& NewTime );
 
 		/** Erase a waypoint */
-		bool EraseWaypoint( const eeUint& PointNum );
+		bool EraseWaypoint( const unsigned int& PointNum );
 
 		/** Start the animation ( will reset the current state, and start from the beginning )
 		*	@param PathEndCallback An optional callback fired when the animation ends.
@@ -93,10 +93,10 @@ class EE_API cWaypoints {
 		const std::vector<cWaypoint>& GetWaypoints() const;
 
 		/** Set the current interpolation speed ( This will destroy the time of the interpolation and create one depending on the speed ) ( pixels per second ) */
-		void Speed( const eeFloat& Speed );
+		void Speed( const Float& Speed );
 
 		/** Get the current interpolation speed */
-		const eeFloat& Speed() const;
+		const Float& Speed() const;
 
 		/** @return If enabled */
 		const bool& Enabled() const;
@@ -108,19 +108,19 @@ class EE_API cWaypoints {
 		void Type( Ease::Interpolation InterpolationType );
 
 		/** @return The type of the interpolation */
-		const eeInt& Type() const;
+		const int& Type() const;
 	protected:
-		eeInt mType;
+		int mType;
 		bool mEnable;
 		bool mUpdate;
 		bool mLoop;
 		bool mEnded;
 
-		eeFloat mTotDist;
+		Float mTotDist;
 		eeVector2f mCurPos;
 		Uint32 mCurPoint;
-		eeDouble mCurTime;
-		eeFloat mSpeed;
+		double mCurTime;
+		Float mSpeed;
 
 		cWaypoint* mActP;
 		cWaypoint* mNexP;

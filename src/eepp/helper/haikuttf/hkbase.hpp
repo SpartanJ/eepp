@@ -1,17 +1,13 @@
 #ifndef HAIKUTTF_HKBASE_HPP
 #define HAIKUTTF_HKBASE_HPP
 
-#include <cmath>
-
-#include "sophist.h"
-
 namespace HaikuTTF {
-typedef SOPHIST_int8		s8;
-typedef SOPHIST_uint8		u8;
-typedef SOPHIST_int16		s16;
-typedef SOPHIST_uint16		u16;
-typedef SOPHIST_int32		s32;
-typedef SOPHIST_uint32		u32;
+typedef signed char			s8;
+typedef unsigned char		u8;
+typedef signed short		s16;
+typedef unsigned short		u16;
+typedef signed int			s32;
+typedef unsigned int		u32;
 }
 
 #define HK_PLATFORM_WIN 	(1)

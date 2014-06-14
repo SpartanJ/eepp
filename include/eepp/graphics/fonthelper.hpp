@@ -42,13 +42,13 @@ struct eeGlyph {
 };
 
 struct eeVertexCoords {
-	eeFloat TexCoords[2];
-	eeFloat Vertex[2];
+	Float TexCoords[2];
+	Float Vertex[2];
 };
 
 struct eeTexCoords {
-	eeFloat TexCoords[8];
-	eeFloat Vertex[8];
+	Float TexCoords[8];
+	Float Vertex[8];
 };
 
 typedef struct sFntHdrS {

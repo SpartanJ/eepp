@@ -11,7 +11,7 @@ cFrameBuffer * FBO		= NULL;
 // The engine uses the singleton class cGlobalBatchRenderer instance to render textures and primitives.
 cBatchRenderer * Batch = eeNew( cBatchRenderer, () );
 
-eeFloat ang = 0, scale = 1;
+Float ang = 0, scale = 1;
 bool side = false;
 
 void MainLoop()
@@ -55,8 +55,8 @@ void MainLoop()
 		}
 	}
 
-	eeFloat HWidth	= win->GetWidth() * 0.5f;
-	eeFloat HHeight	= win->GetHeight() * 0.5f;
+	Float HWidth	= win->GetWidth() * 0.5f;
+	Float HHeight	= win->GetHeight() * 0.5f;
 
 	// The batch can be rotated, scale and moved
 	Batch->BatchRotation( ang );
@@ -64,8 +64,8 @@ void MainLoop()
 	Batch->BatchCenter( eeVector2f( HWidth, HHeight ) );
 
 	// Create a quad to render
-	eeFloat aX = HWidth - 256.f;
-	eeFloat aY = HHeight - 256.f;
+	Float aX = HWidth - 256.f;
+	Float aY = HHeight - 256.f;
 	eeQuad2f TmpQuad(
 		eeVector2f( aX	   , aY 		),
 		eeVector2f( aX	   , aY + 32.f  ),
@@ -80,8 +80,8 @@ void MainLoop()
 	// Add some quads to the batch renderer
 	for ( Uint32 z = 0; z < 16; z++ ) {
 		for ( Uint32 y = 0; y < 16; y++ ) {
-			eeFloat tmpx = (eeFloat)z * 32.f;
-			eeFloat tmpy = (eeFloat)y * 32.f;
+			Float tmpx = (Float)z * 32.f;
+			Float tmpy = (Float)y * 32.f;
 
 			// Add the quad to the batch
 			Batch->QuadsSetColor( eeColorA( z * 16, 255, 255, 150 ) );

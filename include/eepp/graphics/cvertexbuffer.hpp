@@ -60,7 +60,7 @@ class EE_API cVertexBuffer {
 
 		/** @return the pointer to the array of the type indicated.
 		*	@param Type The type must be one of the vertex flags ( EE_VERTEX_FLAGS ). */
-		eeFloat * GetArray( const Uint32& Type );
+		Float * GetArray( const Uint32& Type );
 
 		/** @return The color array pointer. */
 		Uint8 * GetColorArray();
@@ -123,7 +123,7 @@ class EE_API cVertexBuffer {
 		EE_DRAW_MODE			mDrawType;
 		EE_VBO_USAGE_TYPE		mUsageType;
 		Int32					mElemDraw;
-		std::vector<eeFloat>	mVertexArray[ VERTEX_FLAGS_COUNT - 1 ];
+		std::vector<Float>	mVertexArray[ VERTEX_FLAGS_COUNT - 1 ];
 		std::vector<Uint8>		mColorArray;
 		std::vector<Uint32>		mIndexArray;
 

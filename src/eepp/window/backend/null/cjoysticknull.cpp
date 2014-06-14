@@ -23,7 +23,7 @@ Uint8 cJoystickNull::GetHat( const Int32& index ) {
 	return 0;
 }
 
-eeFloat cJoystickNull::GetAxis( const Int32& axis ) {
+Float cJoystickNull::GetAxis( const Int32& axis ) {
 	return 0;
 }
 

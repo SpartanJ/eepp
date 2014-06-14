@@ -38,7 +38,7 @@ class EE_API cUISprite : public cUIComplexControl {
 
 		virtual void Draw();
 
-		virtual void Alpha( const eeFloat& alpha );
+		virtual void Alpha( const Float& alpha );
 
 		cSprite * Sprite() const;
 

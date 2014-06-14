@@ -35,21 +35,21 @@ class EE_API cUISlider : public cUIComplexControl {
 
 		virtual void SetTheme( cUITheme * Theme );
 
-		virtual void Value( eeFloat Val );
+		virtual void Value( Float Val );
 
-		const eeFloat& Value() const;
+		const Float& Value() const;
 
-		virtual void MinValue( const eeFloat& MinVal );
+		virtual void MinValue( const Float& MinVal );
 
-		const eeFloat& MinValue() const;
+		const Float& MinValue() const;
 
-		virtual void MaxValue( const eeFloat& MaxVal );
+		virtual void MaxValue( const Float& MaxVal );
 
-		const eeFloat& MaxValue() const;
+		const Float& MaxValue() const;
 
-		virtual void ClickStep( const eeFloat& step );
+		virtual void ClickStep( const Float& step );
 
-		const eeFloat& ClickStep() const;
+		const Float& ClickStep() const;
 
 		const bool& IsVertical() const;
 
@@ -74,10 +74,10 @@ class EE_API cUISlider : public cUIComplexControl {
 		bool				mExpandBackground;
 		cUIControlAnim *	mBackSlider;
 		cUIControlAnim * 	mSlider;
-		eeFloat				mMinValue;
-		eeFloat				mMaxValue;
-		eeFloat				mValue;
-		eeFloat				mClickStep;
+		Float				mMinValue;
+		Float				mMaxValue;
+		Float				mValue;
+		Float				mClickStep;
 
 		bool				mOnPosChange;
 

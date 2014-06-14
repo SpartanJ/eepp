@@ -13,11 +13,11 @@ void cUIBorder::Color( const eeColorA& Col )	{
 	mColor = Col;
 }
 
-const eeUint& cUIBorder::Width() const {
+const unsigned int& cUIBorder::Width() const {
 	return	mWidth;
 }
 
-void cUIBorder::Width( const eeUint& width )	{
+void cUIBorder::Width( const unsigned int& width )	{
 	mWidth = width;
 }
 

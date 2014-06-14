@@ -67,9 +67,9 @@ Uint8 cJoystickSDL::GetHat( const Int32& index ) {
 	return HAT_CENTERED;
 }
 
-eeFloat cJoystickSDL::GetAxis( const Int32& axis ) {
+Float cJoystickSDL::GetAxis( const Int32& axis ) {
 	if ( axis >= 0 && axis < mAxes ) {
-		return (eeFloat)SDL_JoystickGetAxis( mJoystick, axis ) / 32768.f;
+		return (Float)SDL_JoystickGetAxis( mJoystick, axis ) / 32768.f;
 	}
 
 	return 0;

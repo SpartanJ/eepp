@@ -36,18 +36,18 @@ Uint32 String::Hash( const String& str ) {
 	return String::Hash( reinterpret_cast<const Uint8*>( &(str.mString[0]) ) );
 }
 
-bool String::IsCharacter( const eeInt& mValue ) {
+bool String::IsCharacter( const int& mValue ) {
 	return (mValue >= 32 && mValue <= 126) || (mValue >= 161 && mValue <= 255) || (mValue == 9);
 }
 
-bool String::IsNumber( const eeInt& mValue, bool AllowDot ) {
+bool String::IsNumber( const int& mValue, bool AllowDot ) {
 	if ( AllowDot )
 		return ( mValue >= 48 && mValue <= 57 ) || mValue == 46;
 
 	return mValue >= 48 && mValue <= 57;
 }
 
-bool String::IsLetter( const eeInt& mValue ) {
+bool String::IsLetter( const int& mValue ) {
 	return ( ( (mValue >= 65 && mValue <= 90) || (mValue >= 97 && mValue <= 122) || (mValue >= 192 && mValue <= 255) ) && (mValue != 215) && (mValue != 247) );
 }
 
@@ -55,7 +55,7 @@ std::vector < String > String::Split ( const String& str, const Uint32& splitcha
 	std::vector < String > tmp;
 	String tmpstr;
 
-	for ( eeUint i = 0; i < str.size(); i++ ) {
+	for ( unsigned int i = 0; i < str.size(); i++ ) {
 		if ( str[i] == splitchar ) {
 			if ( pushEmptyString || tmpstr.size() ) {
 				tmp.push_back(tmpstr);
@@ -76,7 +76,7 @@ std::vector < std::string > String::Split ( const std::string& str, const Int8& 
 	std::vector < std::string > tmp;
 	std::string tmpstr;
 
-	for ( eeUint i = 0; i < str.size(); i++ ) {
+	for ( unsigned int i = 0; i < str.size(); i++ ) {
 		if ( str[i] == splitchar ) {
 			if ( pushEmptyString || tmpstr.size() ) {
 				tmp.push_back(tmpstr);
@@ -121,7 +121,7 @@ std::string String::Uint8ToString( const std::vector<Uint8> v ) {
 	return std::string( v.begin(), v.end() );
 }
 
-void String::StrCopy( char * Dst, const char * Src, eeUint DstSize ) {
+void String::StrCopy( char * Dst, const char * Src, unsigned int DstSize ) {
 	char * DstEnd = Dst + DstSize - 1;
 
 	while ( Dst < DstEnd && *Src ) {
@@ -186,7 +186,7 @@ std::string String::RemoveNumbersAtEnd( std::string txt ) {
 	return txt;
 }
 
-void String::InsertChar( String& str, const eeUint& pos, const Uint32& tchar ) {
+void String::InsertChar( String& str, const unsigned int& pos, const Uint32& tchar ) {
 	str.insert( str.begin() + pos, tchar );
 }
 

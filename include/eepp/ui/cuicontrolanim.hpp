@@ -19,33 +19,33 @@ class EE_API cUIControlAnim : public cUIDragable {
 
  		virtual void Update();
 
- 		const eeFloat& Angle() const;
+ 		const Float& Angle() const;
 
- 		void Angle( const eeFloat& angle );
+ 		void Angle( const Float& angle );
 
 		const eeVector2f& Scale() const;
 
 		void Scale( const eeVector2f& scale );
 
-		void Scale( const eeFloat& scale );
+		void Scale( const Float& scale );
 
- 		const eeFloat& Alpha() const;
+ 		const Float& Alpha() const;
 
- 		virtual void Alpha( const eeFloat& alpha );
+ 		virtual void Alpha( const Float& alpha );
 
-		virtual void AlphaChilds( const eeFloat& alpha );
+		virtual void AlphaChilds( const Float& alpha );
 
  		bool Animating();
 
-		void StartAlphaAnim( const eeFloat& From, const eeFloat& To, const cTime& TotalTime, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
+		void StartAlphaAnim( const Float& From, const Float& To, const cTime& TotalTime, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
 
 		void StartScaleAnim( const eeVector2f& From, const eeVector2f& To, const cTime& TotalTime, const Ease::Interpolation& Type = Ease::Linear, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
 
-		void StartScaleAnim( const eeFloat& From, const eeFloat& To, const cTime& TotalTime, const Ease::Interpolation& Type = Ease::Linear, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
+		void StartScaleAnim( const Float& From, const Float& To, const cTime& TotalTime, const Ease::Interpolation& Type = Ease::Linear, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
 
 		void StartMovement( const eeVector2i& From, const eeVector2i& To, const cTime& TotalTime, const Ease::Interpolation& Type = Ease::Linear, cWaypoints::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
 
-		void StartRotation( const eeFloat& From, const eeFloat& To, const cTime& TotalTime, const Ease::Interpolation& Type = Ease::Linear, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
+		void StartRotation( const Float& From, const Float& To, const cTime& TotalTime, const Ease::Interpolation& Type = Ease::Linear, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
 
 		void CreateFadeIn( const cTime& Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
 
@@ -69,9 +69,9 @@ class EE_API cUIControlAnim : public cUIDragable {
     protected:
     	friend class cUIManager;
 
-		eeFloat 			mAngle;
+		Float 			mAngle;
 		eeVector2f 			mScale;
-		eeFloat 			mAlpha;
+		Float 			mAlpha;
 
 		cInterpolation * 	mAngleAnim;
 		cWaypoints *		mScaleAnim;

@@ -250,7 +250,7 @@ cImage::cImage( cImage * image ) :
 	SetPixels( image->GetPixelsPtr() );
 }
 
-cImage::cImage( const Uint8* data, const eeUint& Width, const eeUint& Height, const eeUint& Channels ) :
+cImage::cImage( const Uint8* data, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels ) :
 	mPixels(NULL),
 	mWidth(Width),
 	mHeight(Height),
@@ -274,7 +274,7 @@ cImage::cImage( const Uint32& Width, const Uint32& Height, const Uint32& Channel
 	Create( Width, Height, Channels, DefaultColor, initWithDefaultColor );
 }
 
-cImage::cImage( Uint8* data, const eeUint& Width, const eeUint& Height, const eeUint& Channels ) :
+cImage::cImage( Uint8* data, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels ) :
 	mPixels( data ),
 	mWidth(Width),
 	mHeight(Height),
@@ -285,7 +285,7 @@ cImage::cImage( Uint8* data, const eeUint& Width, const eeUint& Height, const ee
 {
 }
 
-cImage::cImage( std::string Path, const eeUint& forceChannels ) :
+cImage::cImage( std::string Path, const unsigned int& forceChannels ) :
 	mPixels(NULL),
 	mWidth(0),
 	mHeight(0),
@@ -304,11 +304,11 @@ cImage::cImage( std::string Path, const eeUint& forceChannels ) :
 
 	if ( NULL != data ) {
 		mPixels		= data;
-		mWidth		= (eeUint)w;
-		mHeight		= (eeUint)h;
+		mWidth		= (unsigned int)w;
+		mHeight		= (unsigned int)h;
 
 		if ( STBI_default == mChannels )
-			mChannels	= (eeUint)c;
+			mChannels	= (unsigned int)c;
 
 		mSize	= mWidth * mHeight * mChannels;
 
@@ -326,7 +326,7 @@ cImage::cImage( std::string Path, const eeUint& forceChannels ) :
 	}
 }
 
-cImage::cImage( cPack * Pack, std::string FilePackPath, const eeUint& forceChannels ) :
+cImage::cImage( cPack * Pack, std::string FilePackPath, const unsigned int& forceChannels ) :
 	mPixels(NULL),
 	mWidth(0),
 	mHeight(0),
@@ -354,11 +354,11 @@ void cImage::LoadFromPack( cPack * Pack, const std::string& FilePackPath ) {
 
 		if ( NULL != data ) {
 			mPixels		= data;
-			mWidth		= (eeUint)w;
-			mHeight		= (eeUint)h;
+			mWidth		= (unsigned int)w;
+			mHeight		= (unsigned int)h;
 
 			if ( STBI_default == mChannels )
-				mChannels	= (eeUint)c;
+				mChannels	= (unsigned int)c;
 
 			mSize	= mWidth * mHeight * mChannels;
 
@@ -383,14 +383,14 @@ const Uint8* cImage::GetPixelsPtr() {
 	return reinterpret_cast<const Uint8*> (&mPixels[0]);
 }
 
-eeColorA cImage::GetPixel( const eeUint& x, const eeUint& y ) {
+eeColorA cImage::GetPixel( const unsigned int& x, const unsigned int& y ) {
 	eeASSERT( !( mPixels == NULL || x > mWidth || y > mHeight ) );
 	eeColorA dst;
 	memcpy( &dst, &mPixels[ ( ( x + y * mWidth ) * mChannels ) ], mChannels );
 	return dst;
 }
 
-void cImage::SetPixel(const eeUint& x, const eeUint& y, const eeColorA& Color) {
+void cImage::SetPixel(const unsigned int& x, const unsigned int& y, const eeColorA& Color) {
 	eeASSERT( !( mPixels == NULL || x > mWidth || y > mHeight ) );
 	memcpy( &mPixels[ ( ( x + y * mWidth ) * mChannels ) ], &Color, mChannels );
 }
@@ -418,7 +418,7 @@ void cImage::Allocate( const Uint32& size, eeColorA DefaultColor, bool memsetDat
 	}
 }
 
-eeUint cImage::MemSize() const {
+unsigned int cImage::MemSize() const {
 	return mSize;
 }
 
@@ -435,27 +435,27 @@ void cImage::ClearCache() {
 	}
 }
 
-void cImage::Width( const eeUint& width ) {
+void cImage::Width( const unsigned int& width ) {
 	mWidth = width;
 }
 
-eeUint cImage::Width() const {
+unsigned int cImage::Width() const {
 	return mWidth;
 }
 
-void cImage::Height( const eeUint& height ) {
+void cImage::Height( const unsigned int& height ) {
 	mHeight = height;
 }
 
-eeUint cImage::Height() const {
+unsigned int cImage::Height() const {
 	return mHeight;
 }
 
-void cImage::Channels( const eeUint& channels ) {
+void cImage::Channels( const unsigned int& channels ) {
 	mChannels = channels;
 }
 
-eeUint cImage::Channels() const {
+unsigned int cImage::Channels() const {
 	return mChannels;
 }
 
@@ -481,14 +481,14 @@ bool cImage::SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format
 }
 
 void cImage::ReplaceColor( const eeColorA& ColorKey, const eeColorA& NewColor ) {
-	eeUint Pos = 0;
+	unsigned int Pos = 0;
 
 	if ( NULL == mPixels )
 		return;
 
-	eeUint size = mWidth * mHeight;
+	unsigned int size = mWidth * mHeight;
 
-	for ( eeUint i = 0; i < size; i++ ) {
+	for ( unsigned int i = 0; i < size; i++ ) {
 		Pos = i * mChannels;
 
 		if ( 4 == mChannels ) {
@@ -529,10 +529,10 @@ void cImage::FillWithColor( const eeColorA& Color ) {
 	if ( NULL == mPixels )
 		return;
 
-	eeUint z;
-	eeUint size = mWidth * mHeight;
+	unsigned int z;
+	unsigned int size = mWidth * mHeight;
 
-	for ( eeUint i = 0; i < size; i += mChannels ) {
+	for ( unsigned int i = 0; i < size; i += mChannels ) {
 		for ( z = 0; z < mChannels; z++ ) {
 			if ( 0 == z )
 				mPixels[ i + z ] = Color.R();
@@ -548,18 +548,18 @@ void cImage::FillWithColor( const eeColorA& Color ) {
 
 void cImage::CopyImage( cImage * image, const Uint32& x, const Uint32& y ) {
 	if ( NULL != mPixels && NULL != image->GetPixels() && mWidth >= x + image->Width() && mHeight >= y + image->Height() ) {
-		eeUint dWidth 	= image->Width();
-		eeUint dHeight 	= image->Height();
+		unsigned int dWidth 	= image->Width();
+		unsigned int dHeight 	= image->Height();
 
 		if ( mChannels != image->Channels() ) {
-			for ( eeUint ty = 0; ty < dHeight; ty++ ) {
-				for ( eeUint tx = 0; tx < dWidth; tx++ ) {
+			for ( unsigned int ty = 0; ty < dHeight; ty++ ) {
+				for ( unsigned int tx = 0; tx < dWidth; tx++ ) {
 					SetPixel( x + tx, y + ty, image->GetPixel( tx, ty ) );
 				}
 			}
 		} else {
 			// Copy per row
-			for ( eeUint ty = 0; ty < dHeight; ty++ ) {
+			for ( unsigned int ty = 0; ty < dHeight; ty++ ) {
 				Uint8 *			pDst	= &mPixels[ ( x + ( ( ty + y ) * mWidth ) ) * mChannels ];
 				const Uint8 *	pSrc	= &( ( image->GetPixelsPtr() )[ ( ty * dWidth ) * mChannels  ] );
 
@@ -584,23 +584,23 @@ void cImage::Resize( const Uint32 &newWidth, const Uint32 &newHeight , EE_RESAMP
 	}
 }
 
-void cImage::Scale( const eeFloat& scale , EE_RESAMPLER_FILTER filter ) {
+void cImage::Scale( const Float& scale , EE_RESAMPLER_FILTER filter ) {
 	if ( 1.f == scale )
 		return;
 
-	Int32 new_width 	= (Int32)( (eeFloat)mWidth * scale );
-	Int32 new_height 	= (Int32)( (eeFloat)mHeight * scale );
+	Int32 new_width 	= (Int32)( (Float)mWidth * scale );
+	Int32 new_height 	= (Int32)( (Float)mHeight * scale );
 
 	Resize( new_width, new_height, filter );
 }
 
 cImage * cImage::Thumbnail( const Uint32& maxWidth, const Uint32& maxHeight, EE_RESAMPLER_FILTER filter ) {
 	if ( NULL != mPixels ) {
-		eeFloat iScaleX 	= ( (eeFloat)maxWidth / (eeFloat)mWidth );
-		eeFloat iScaleY 	= ( (eeFloat)maxHeight / (eeFloat)mHeight );
-		eeFloat iScale		= ( iScaleY < iScaleX ) ? iScaleY : iScaleX;
-		Int32 new_width 	= (Int32)( (eeFloat)mWidth * iScale );
-		Int32 new_height 	= (Int32)( (eeFloat)mHeight * iScale );
+		Float iScaleX 	= ( (Float)maxWidth / (Float)mWidth );
+		Float iScaleY 	= ( (Float)maxHeight / (Float)mHeight );
+		Float iScale		= ( iScaleY < iScaleX ) ? iScaleY : iScaleX;
+		Int32 new_width 	= (Int32)( (Float)mWidth * iScale );
+		Int32 new_height 	= (Int32)( (Float)mHeight * iScale );
 
 		unsigned char * resampled = resample_image( mPixels, mWidth, mHeight, mChannels, new_width, new_height, filter );
 
@@ -617,7 +617,7 @@ cImage * cImage::Crop( eeRecti rect ) {
 		cImage * img = eeNew( cImage, ( rect.Size().Width(), rect.Size().Height(), mChannels ) );
 
 		// Copy per row
-		for ( eeUint ty = 0; ty < img->mHeight; ty++ ) {
+		for ( unsigned int ty = 0; ty < img->mHeight; ty++ ) {
 			Uint8 *			pDst	= &img->mPixels[ ( ty * img->mWidth ) * mChannels ];
 			const Uint8 *	pSrc	= &mPixels[ ( rect.Left + ( ( ty + rect.Top ) * mWidth ) ) * mChannels  ];
 
@@ -634,8 +634,8 @@ void cImage::Flip() {
 	if ( NULL != mPixels ) {
 		cImage tImg( mHeight, mWidth, mChannels );
 
-		for ( eeUint y = 0; y < mHeight; y++ )
-			for ( eeUint x = 0; x < mWidth; x++ )
+		for ( unsigned int y = 0; y < mHeight; y++ )
+			for ( unsigned int x = 0; x < mWidth; x++ )
 				tImg.SetPixel( y, x, GetPixel( x, mHeight - 1 - y ) );
 
 		ClearCache();
@@ -654,11 +654,11 @@ void cImage::AvoidFreeImage( const bool& AvoidFree ) {
 
 void cImage::Blit( cImage * image, const Uint32& x, const Uint32& y ) {
 	if ( NULL != image && NULL != image->GetPixelsPtr() && x < mWidth && y < mHeight ) {
-		eeUint dh = eemin( mHeight	, y	+ image->Height() );
-		eeUint dw = eemin( mWidth	, x	+ image->Width() );
+		unsigned int dh = eemin( mHeight	, y	+ image->Height() );
+		unsigned int dw = eemin( mWidth	, x	+ image->Width() );
 
-		for ( eeUint ty = y; ty < dh; ty++ ) {
-			for ( eeUint tx = x; tx < dw; tx++ ) {
+		for ( unsigned int ty = y; ty < dh; ty++ ) {
+			for ( unsigned int tx = x; tx < dw; tx++ ) {
 				eeColorA ts( image->GetPixel( tx - x, ty - y ) );
 				eeColorA td( GetPixel( tx, ty ) );
 

@@ -2,6 +2,7 @@
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
+#include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/math/polygon2.hpp>
 #include <eepp/graphics/ctexturesaver.hpp>
@@ -56,7 +57,7 @@ cTexture::~cTexture() {
 
 void cTexture::DeleteTexture() {
 	if ( mTexture ) {
-		GLuint Texture = static_cast<GLuint>(mTexture);
+		unsigned int Texture = static_cast<unsigned int>(mTexture);
 		glDeleteTextures(1, &Texture);
 
 		mTexture = 0;
@@ -66,11 +67,11 @@ void cTexture::DeleteTexture() {
 	}
 }
 
-cTexture::cTexture( const Uint32& texture, const eeUint& width, const eeUint& height, const eeUint& imgwidth, const eeUint& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) {
+cTexture::cTexture( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& Channels, const std::string& filepath, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) {
 	Create( texture, width, height, imgwidth, imgheight, UseMipmap, Channels, filepath, ClampMode, CompressedTexture, MemSize, data );
 }
 
-void cTexture::Create( const Uint32& texture, const eeUint& width, const eeUint& height, const eeUint& imgwidth, const eeUint& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) {
+void cTexture::Create( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& Channels, const std::string& filepath, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) {
 	mFilepath 	= filepath;
 	mId 		= String::Hash( mFilepath );
 	mTexture 	= texture;
@@ -104,16 +105,16 @@ Uint8 * cTexture::iLock( const bool& ForceRGBA, const bool& KeepFormat ) {
 		glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width );
 		glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height );
 
-		mWidth = (eeUint)width;
-		mHeight = (eeUint)height;
-		GLint size = mWidth * mHeight * mChannels;
+		mWidth = (unsigned int)width;
+		mHeight = (unsigned int)height;
+		int size = mWidth * mHeight * mChannels;
 
 		if ( KeepFormat && ( mFlags & TEX_FLAG_COMPRESSED ) ) {
 			glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &mInternalFormat );
 			glGetTexLevelParameteriv( GL_TEXTURE_2D, 0, GL_TEXTURE_COMPRESSED_IMAGE_SIZE, &size );
 		}
 
-		Allocate( (eeUint)size );
+		Allocate( (unsigned int)size );
 
 		if ( KeepFormat && ( mFlags & TEX_FLAG_COMPRESSED ) ) {
 			glGetCompressedTexImage( GL_TEXTURE_2D, 0, reinterpret_cast<Uint8*> (&mPixels[0]) );
@@ -147,7 +148,7 @@ bool cTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 	#ifndef EE_GLES
 	if ( ( mFlags & TEX_FLAG_LOCKED ) ) {
 		Int32 width = mWidth, height = mHeight;
-		GLuint NTexId = 0;
+		unsigned int NTexId = 0;
 
 		if ( Modified || ( mFlags & TEX_FLAG_MODIFIED ) )	{
 			cTextureSaver saver( mTexture );
@@ -170,7 +171,7 @@ bool cTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 
 		mFlags &= ~TEX_FLAG_LOCKED;
 
-		if ( (eeInt)NTexId == mTexture || !Modified )
+		if ( (int)NTexId == mTexture || !Modified )
 			return true;
 	}
 
@@ -189,7 +190,7 @@ const Uint8 * cTexture::GetPixelsPtr() {
 	return cImage::GetPixelsPtr();
 }
 
-void cTexture::SetPixel( const eeUint& x, const eeUint& y, const eeColorA& Color ) {
+void cTexture::SetPixel( const unsigned int& x, const unsigned int& y, const eeColorA& Color ) {
 	cImage::SetPixel( x, y, Color );
 
 	mFlags |= TEX_FLAG_MODIFIED;
@@ -270,7 +271,7 @@ void cTexture::Resize( const Uint32& newWidth, const Uint32& newHeight , EE_RESA
 	Unlock( false, true );
 }
 
-void cTexture::Scale( const eeFloat& scale, EE_RESAMPLER_FILTER filter ) {
+void cTexture::Scale( const Float& scale, EE_RESAMPLER_FILTER filter ) {
 	Lock();
 
 	cImage::Scale( scale, filter );
@@ -379,7 +380,7 @@ void cTexture::Update( const Uint8* pixels, Uint32 width, Uint32 height, Uint32 
 	if ( NULL != pixels && mTexture && x + width <= mWidth && y + height <= mHeight ) {
 		cTextureSaver saver( mTexture );
 
-		glTexSubImage2D( GL_TEXTURE_2D, 0, x, y, width, height, (GLenum)pf, GL_UNSIGNED_BYTE, pixels );
+		glTexSubImage2D( GL_TEXTURE_2D, 0, x, y, width, height, (unsigned int)pf, GL_UNSIGNED_BYTE, pixels );
 	}
 }
 
@@ -427,13 +428,13 @@ bool cTexture::IsCompressed() const {
 	return 0 != ( mFlags & TEX_FLAG_COMPRESSED );
 }
 
-void cTexture::Draw( const eeFloat &x, const eeFloat &y, const eeFloat &Angle, const eeVector2f &Scale, const eeColorA& Color, const EE_BLEND_MODE &Blend, const EE_RENDER_MODE &Effect, eeOriginPoint Center, const eeRecti& texSector) {
+void cTexture::Draw( const Float &x, const Float &y, const Float &Angle, const eeVector2f &Scale, const eeColorA& Color, const EE_BLEND_MODE &Blend, const EE_RENDER_MODE &Effect, eeOriginPoint Center, const eeRecti& texSector) {
 	DrawEx( x, y, 0, 0, Angle, Scale, Color, Color, Color, Color, Blend, Effect, Center, texSector );
 }
 
-void cTexture::DrawFast( const eeFloat& x, const eeFloat& y, const eeFloat& Angle, const eeVector2f& Scale, const eeColorA& Color, const EE_BLEND_MODE &Blend, const eeFloat &width, const eeFloat &height ) {
-	eeFloat w = 0.f != width	? width		: (eeFloat)ImgWidth();
-	eeFloat h = 0.f != height	? height	: (eeFloat)ImgHeight();
+void cTexture::DrawFast( const Float& x, const Float& y, const Float& Angle, const eeVector2f& Scale, const eeColorA& Color, const EE_BLEND_MODE &Blend, const Float &width, const Float &height ) {
+	Float w = 0.f != width	? width		: (Float)ImgWidth();
+	Float h = 0.f != height	? height	: (Float)ImgHeight();
 
 	sBR->SetTexture( this );
 	sBR->SetBlendMode( Blend );
@@ -450,11 +451,11 @@ void cTexture::DrawFast( const eeFloat& x, const eeFloat& y, const eeFloat& Angl
 	sBR->DrawOpt();
 }
 
-void cTexture::DrawEx( eeFloat x, eeFloat y, eeFloat width, eeFloat height, const eeFloat &Angle, const eeVector2f &Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_BLEND_MODE &Blend, const EE_RENDER_MODE &Effect, eeOriginPoint Center, const eeRecti& texSector ) {
+void cTexture::DrawEx( Float x, Float y, Float width, Float height, const Float &Angle, const eeVector2f &Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_BLEND_MODE &Blend, const EE_RENDER_MODE &Effect, eeOriginPoint Center, const eeRecti& texSector ) {
 	bool renderSector	= true;
 	eeRecti Sector		= texSector;
-	eeFloat w			= (eeFloat)ImgWidth();
-	eeFloat h			= (eeFloat)ImgHeight();
+	Float w			= (Float)ImgWidth();
+	Float h			= (Float)ImgHeight();
 
 	if ( Sector.Right == 0 && Sector.Bottom == 0 ) {
 		Sector.Left		= 0;
@@ -464,8 +465,8 @@ void cTexture::DrawEx( eeFloat x, eeFloat y, eeFloat width, eeFloat height, cons
 	}
 
 	if ( 0.f == width && 0.f == height ) {
-		width	= static_cast<eeFloat> (Sector.Right - Sector.Left);
-		height	= static_cast<eeFloat> (Sector.Bottom - Sector.Top);
+		width	= static_cast<Float> (Sector.Right - Sector.Left);
+		height	= static_cast<Float> (Sector.Bottom - Sector.Top);
 	}
 
 	renderSector = !( Sector.Left == 0 && Sector.Top == 0 && Sector.Right == w && Sector.Bottom == h );
@@ -482,10 +483,10 @@ void cTexture::DrawEx( eeFloat x, eeFloat y, eeFloat width, eeFloat height, cons
 				if ( renderSector ) {
 					sBR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
 
-					eeFloat sw = (eeFloat)( Sector.Right - Sector.Left );
-					eeFloat sh = (eeFloat)( Sector.Bottom - Sector.Top );
-					eeFloat tx = width / sw;
-					eeFloat ty = height / sh;
+					Float sw = (Float)( Sector.Right - Sector.Left );
+					Float sh = (Float)( Sector.Bottom - Sector.Top );
+					Float tx = width / sw;
+					Float ty = height / sh;
 					Int32 ttx = (Int32)tx;
 					Int32 tty = (Int32)ty;
 					Int32 tmpY;
@@ -493,7 +494,7 @@ void cTexture::DrawEx( eeFloat x, eeFloat y, eeFloat width, eeFloat height, cons
 
 					sBR->Draw();
 					eeVector2f oCenter( sBR->BatchCenter() );
-					eeFloat oAngle = sBR->BatchRotation();
+					Float oAngle = sBR->BatchRotation();
 					eeVector2f oScale = sBR->BatchScale();
 
 					if ( Center.OriginType == eeOriginPoint::OriginCenter ) {
@@ -517,9 +518,9 @@ void cTexture::DrawEx( eeFloat x, eeFloat y, eeFloat width, eeFloat height, cons
 						}
 					}
 
-					if ( (eeFloat)ttx != tx ) {
-						eeFloat swn = ( Sector.Right - Sector.Left ) * ( tx - (eeFloat)ttx );
-						eeFloat tor = Sector.Left + swn ;
+					if ( (Float)ttx != tx ) {
+						Float swn = ( Sector.Right - Sector.Left ) * ( tx - (Float)ttx );
+						Float tor = Sector.Left + swn ;
 
 						sBR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, tor / w, Sector.Bottom / h, tor / w, Sector.Top / h );
 
@@ -528,9 +529,9 @@ void cTexture::DrawEx( eeFloat x, eeFloat y, eeFloat width, eeFloat height, cons
 						}
 					}
 
-					if ( (eeFloat)tty != ty ) {
-						eeFloat shn = ( Sector.Bottom - Sector.Top ) * ( ty - (eeFloat)tty );
-						eeFloat tob = Sector.Top + shn;
+					if ( (Float)tty != ty ) {
+						Float shn = ( Sector.Bottom - Sector.Top ) * ( ty - (Float)tty );
+						Float tob = Sector.Top + shn;
 
 						sBR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, tob / h, Sector.Right / w, tob / h, Sector.Right / w, Sector.Top / h );
 
@@ -617,14 +618,14 @@ void cTexture::DrawEx( eeFloat x, eeFloat y, eeFloat width, eeFloat height, cons
 	sBR->DrawOpt();
 }
 
-void cTexture::DrawQuad( const eeQuad2f& Q, const eeVector2f& Offset, const eeFloat &Angle, const eeVector2f &Scale, const eeColorA& Color, const EE_BLEND_MODE &Blend, const eeRecti& texSector) {
+void cTexture::DrawQuad( const eeQuad2f& Q, const eeVector2f& Offset, const Float &Angle, const eeVector2f &Scale, const eeColorA& Color, const EE_BLEND_MODE &Blend, const eeRecti& texSector) {
 	DrawQuadEx( Q, Offset, Angle, Scale, Color, Color, Color, Color, Blend, texSector );
 }
 
-void cTexture::DrawQuadEx( eeQuad2f Q, const eeVector2f& Offset, const eeFloat &Angle, const eeVector2f &Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_BLEND_MODE &Blend, eeRecti texSector ) {
+void cTexture::DrawQuadEx( eeQuad2f Q, const eeVector2f& Offset, const Float &Angle, const eeVector2f &Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_BLEND_MODE &Blend, eeRecti texSector ) {
 	bool renderSector = true;
-	eeFloat w =	(eeFloat)ImgWidth();
-	eeFloat h = (eeFloat)ImgHeight();
+	Float w =	(Float)ImgWidth();
+	Float h = (Float)ImgHeight();
 
 	if ( texSector.Right == 0 && texSector.Bottom == 0 ) {
 		texSector.Left		= 0;

@@ -58,10 +58,10 @@ class EE_API cImage {
 		cImage( cImage * image );
 
 		/** Use an existing image ( and appropriates the data passed ) */
-		cImage( Uint8* data, const eeUint& Width, const eeUint& Height, const eeUint& Channels );
+		cImage( Uint8* data, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels );
 
 		/** Copy a image data to create the image */
-		cImage( const Uint8* data, const eeUint& Width, const eeUint& Height, const eeUint& Channels );
+		cImage( const Uint8* data, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels );
 
 		/** Create an empty image */
 		cImage( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const eeColorA& DefaultColor = eeColorA(0,0,0,0), const bool& initWithDefaultColor = true );
@@ -70,14 +70,14 @@ class EE_API cImage {
 		* @param Path The path to the file.
 		* @param forceChannels Number of channels to use for the image, default 0 means that it use the default image channels.
 		*/
-		cImage( std::string Path, const eeUint& forceChannels = 0 );
+		cImage( std::string Path, const unsigned int& forceChannels = 0 );
 
 		/** Load an image from pack
 		* @param Pack The pack file to use to load the image.
 		* @param FilePackPath The path of the file inside the pack file.
 		* @param forceChannels Number of channels to use for the image, default 0 means that it use the default image channels.
 		*/
-		cImage( cPack * Pack, std::string FilePackPath, const eeUint& forceChannels = 0 );
+		cImage( cPack * Pack, std::string FilePackPath, const unsigned int& forceChannels = 0 );
 
 		virtual ~cImage();
 
@@ -85,10 +85,10 @@ class EE_API cImage {
 		void Create( const Uint32& Width, const Uint32& Height, const Uint32& Channels, const eeColorA &DefaultColor = eeColorA(0,0,0,0), const bool& initWithDefaultColor = true );
 
 		/** Return the pixel color from the image. \n You must have a copy of the image on local memory. For that you need to Lock the image first. */
-		virtual eeColorA GetPixel(const eeUint& x, const eeUint& y);
+		virtual eeColorA GetPixel(const unsigned int& x, const unsigned int& y);
 
 		/** Set the pixel color to the image. \n You must have a copy of the image on local memory. For that you need to Lock the image first. */
-		virtual void SetPixel(const eeUint& x, const eeUint& y, const eeColorA& Color);
+		virtual void SetPixel(const unsigned int& x, const unsigned int& y, const eeColorA& Color);
 
 		/** Assign a new array of pixels to the image in local memory ( it has to be exactly of the same size of the image ) */
 		virtual void SetPixels( const Uint8* data );
@@ -100,28 +100,28 @@ class EE_API cImage {
 		Uint8 * GetPixels() const;
 
 		/** Set the image Width */
-		void Width( const eeUint& width );
+		void Width( const unsigned int& width );
 
 		/** @return The image Width */
-		eeUint Width() const;
+		unsigned int Width() const;
 
 		/** Set the image Height */
-		void Height( const eeUint& height );
+		void Height( const unsigned int& height );
 
 		/** @return The image Height */
-		eeUint Height() const;
+		unsigned int Height() const;
 
 		/** @return The number of channels used by the image */
-		eeUint Channels() const;
+		unsigned int Channels() const;
 
 		/** Set the number of channels of the image */
-		void Channels( const eeUint& channels );
+		void Channels( const unsigned int& channels );
 
 		/** Clears the current image cache if exists */
 		void ClearCache();
 
 		/** @return The Image Size on Memory (in bytes) */
-		eeUint MemSize() const;
+		unsigned int MemSize() const;
 
 		/** @return The image dimensions */
 		eeSize Size();
@@ -145,7 +145,7 @@ class EE_API cImage {
 		virtual void CopyImage( cImage * image, const Uint32& x = 0, const Uint32& y = 0 );
 
 		/** Scale the image */
-		virtual void Scale( const eeFloat& scale, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
+		virtual void Scale( const Float& scale, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
 
 		/** Resize the image */
 		virtual void Resize( const Uint32& newWidth, const Uint32& newHeight, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
@@ -177,9 +177,9 @@ class EE_API cImage {
 		static Uint32 sJpegQuality;
 
 		Uint8 *			mPixels;
-		eeUint 			mWidth;
-		eeUint 			mHeight;
-		eeUint 			mChannels;
+		unsigned int 			mWidth;
+		unsigned int 			mHeight;
+		unsigned int 			mChannels;
 		Uint32			mSize;
 		bool			mAvoidFree;
 		bool			mLoadedFromStbi;

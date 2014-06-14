@@ -1,4 +1,5 @@
 #include <eepp/graphics/blendmode.hpp>
+#include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 
 namespace EE { namespace Graphics {
@@ -58,7 +59,7 @@ void BlendMode::SetMode( const EE_BLEND_MODE& blend, bool force ) {
 void BlendMode::SetBlendFunc( const EE_BLEND_FUNC& SrcFactor, const EE_BLEND_FUNC& DestFactor ) {
 	GLi->Enable( GL_BLEND );
 
-	GLi->BlendFunc( (GLenum)SrcFactor, (GLenum)DestFactor );
+	GLi->BlendFunc( (unsigned int)SrcFactor, (unsigned int)DestFactor );
 
 	sLastBlend = ALPHA_CUSTOM;
 }

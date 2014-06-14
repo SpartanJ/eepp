@@ -42,7 +42,7 @@ class EE_API cWindowSFML : public cWindow {
 
 		std::vector<DisplayMode> GetDisplayModes() const;
 
-		void SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue );
+		void SetGamma( Float Red, Float Green, Float Blue );
 
 		eeWindowContex GetContext() const;
 

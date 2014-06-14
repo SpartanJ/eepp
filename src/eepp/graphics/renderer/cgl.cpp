@@ -1,3 +1,4 @@
+#include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/renderer/crenderergl.hpp>
 #include <eepp/graphics/renderer/crenderergl3.hpp>
@@ -7,7 +8,7 @@
 
 namespace EE { namespace Graphics {
 
-typedef const GLubyte *( * pglGetStringiFunc) (GLenum, GLuint);
+typedef const GLubyte *( * pglGetStringiFunc) (unsigned int, unsigned int);
 
 cGL * GLi = NULL;
 
@@ -335,8 +336,8 @@ std::string cGL::GetExtensions() {
 	if ( GLv_3 == Version() || GLv_3CP == Version() ) {
 		static pglGetStringiFunc eeglGetStringiFunc = NULL;
 
-		GLint num_exts = 0;
-		GLint i;
+		int num_exts = 0;
+		int i;
 
 		if ( NULL == eeglGetStringiFunc ) {
 			eeglGetStringiFunc = (pglGetStringiFunc)SOIL_GL_GetProcAddress("glGetStringi");
@@ -370,11 +371,11 @@ std::string cGL::GetExtensions() {
 	return exts;
 }
 
-void cGL::Viewport( GLint x, GLint y, GLsizei width, GLsizei height ) {
+void cGL::Viewport( int x, int y, int width, int height ) {
 	glViewport( x, y, width, height );
 }
 
-void cGL::Disable ( GLenum cap ) {
+void cGL::Disable ( unsigned int cap ) {
 	switch ( cap )
 	{
 		case GL_BLEND:
@@ -392,7 +393,7 @@ void cGL::Disable ( GLenum cap ) {
 	glDisable( cap );
 }
 
-void cGL::Enable( GLenum cap ) {
+void cGL::Enable( unsigned int cap ) {
 	switch ( cap )
 	{
 		case GL_BLEND:
@@ -410,46 +411,46 @@ void cGL::Enable( GLenum cap ) {
 	glEnable( cap );
 }
 
-const char * cGL::GetString( GLenum name ) {
+const char * cGL::GetString( unsigned int name ) {
 	return (const char*)glGetString( name );
 }
 
-void cGL::Clear ( GLbitfield mask ) {
+void cGL::Clear ( unsigned int mask ) {
 	glClear( mask );
 }
 
-void cGL::ClearColor( GLclampf red, GLclampf green, GLclampf blue, GLclampf alpha ) {
+void cGL::ClearColor( float red, float green, float blue, float alpha ) {
 	glClearColor( red, green, blue, alpha );
 }
 
-void cGL::Scissor ( GLint x, GLint y, GLsizei width, GLsizei height ) {
+void cGL::Scissor ( int x, int y, int width, int height ) {
 	glScissor( x, y, width, height );
 }
 
-void cGL::PolygonMode( GLenum face, GLenum mode ) {
+void cGL::PolygonMode( unsigned int face, unsigned int mode ) {
 	#ifndef EE_GLES
 	glPolygonMode( face, mode );
 	#endif
 }
 
-void cGL::DrawArrays (GLenum mode, GLint first, GLsizei count) {
+void cGL::DrawArrays (unsigned int mode, int first, int count) {
 	glDrawArrays( mode, first, count );
 }
 
-void cGL::DrawElements( GLenum mode, GLsizei count, GLenum type, const GLvoid *indices ) {
+void cGL::DrawElements( unsigned int mode, int count, unsigned int type, const void *indices ) {
 	glDrawElements( mode, count, type, indices );
 }
 
-void cGL::BindTexture ( GLenum target, GLuint texture ) {
+void cGL::BindTexture ( unsigned int target, unsigned int texture ) {
 	if ( GLv_3CP == Version() && 0 == texture ) return;
 	glBindTexture( target, texture );
 }
 
-void cGL::ActiveTexture( GLenum texture ) {
+void cGL::ActiveTexture( unsigned int texture ) {
 	glActiveTexture( texture );
 }
 
-void cGL::BlendFunc ( GLenum sfactor, GLenum dfactor ) {
+void cGL::BlendFunc ( unsigned int sfactor, unsigned int dfactor ) {
 	glBlendFunc( sfactor, dfactor );
 }
 
@@ -483,7 +484,7 @@ void cGL::LineSmooth( const bool& Enable ) {
 	#endif
 }
 
-void cGL::LineWidth(GLfloat width) {
+void cGL::LineWidth(float width) {
 	if ( width != mLineWidth ) {
 		#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 		if ( GLv_3CP != Version() )
@@ -505,7 +506,7 @@ void cGL::PolygonMode() {
 	PolygonMode( Mode );
 }
 
-void cGL::PixelStorei(GLenum pname, GLint param) {
+void cGL::PixelStorei(unsigned int pname, int param) {
 	glPixelStorei( pname, param );
 }
 
@@ -558,63 +559,63 @@ std::string cGL::GetShadingLanguageVersion() {
 	return std::string( "Shaders not supported" );
 }
 
-void cGL::GetViewport( GLint * viewport ) {
+void cGL::GetViewport( int * viewport ) {
 	glGetIntegerv( GL_VIEWPORT, viewport );
 }
 
 eeVector3f cGL::ProjectCurrent( const eeVector3f& point ) {
-	GLfloat projMat[16];
+	float projMat[16];
 	GetCurrentMatrix( GL_PROJECTION_MATRIX, projMat );
 
-	GLfloat modelMat[16];
+	float modelMat[16];
 	GetCurrentMatrix( GL_MODELVIEW_MATRIX, modelMat );
 
-	GLint viewPort[4];
+	int viewPort[4];
 	GetViewport( viewPort );
 
 	eeVector3f fPoint( point );
 	fPoint.y = viewPort[3] - point.y;
 
-	Vector3<GLfloat> tv3;
+	Vector3<float> tv3;
 
-	Project( (GLfloat)fPoint.x, (GLfloat)fPoint.y, (GLfloat)fPoint.z, projMat, modelMat, viewPort, &tv3.x, &tv3.y, &tv3.z );
+	Project( (float)fPoint.x, (float)fPoint.y, (float)fPoint.z, projMat, modelMat, viewPort, &tv3.x, &tv3.y, &tv3.z );
 
 	return eeVector3f( tv3.x, tv3.y, tv3.z );
 }
 
 eeVector3f cGL::UnProjectCurrent( const eeVector3f& point ) {
-	GLfloat projMat[16];
+	float projMat[16];
 	GetCurrentMatrix( GL_PROJECTION_MATRIX, projMat );
 
-	GLfloat modelMat[16];
+	float modelMat[16];
 	GetCurrentMatrix( GL_MODELVIEW_MATRIX, modelMat );
 
-	GLint viewPort[4];
+	int viewPort[4];
 	GetViewport( viewPort );
 
 	eeVector3f fPoint( point );
 	fPoint.y = viewPort[3] - point.y;
 
-	Vector3<GLfloat> tv3;
+	Vector3<float> tv3;
 
-	UnProject( (GLfloat)fPoint.x, (GLfloat)fPoint.y, (GLfloat)fPoint.z, projMat, modelMat, viewPort, &tv3.x, &tv3.y, &tv3.z );
+	UnProject( (float)fPoint.x, (float)fPoint.y, (float)fPoint.z, projMat, modelMat, viewPort, &tv3.x, &tv3.y, &tv3.z );
 
 	return eeVector3f( tv3.x, tv3.y, tv3.z );
 }
 
-void cGL::StencilFunc( GLenum func, GLint ref, GLuint mask ) {
+void cGL::StencilFunc( unsigned int func, int ref, unsigned int mask ) {
 	glStencilFunc( func, ref, mask );
 }
 
-void cGL::StencilOp( GLenum fail, GLenum zfail, GLenum zpass ) {
+void cGL::StencilOp( unsigned int fail, unsigned int zfail, unsigned int zpass ) {
 	glStencilOp( fail, zfail, zpass );
 }
 
-void cGL::StencilMask ( GLuint mask ) {
+void cGL::StencilMask ( unsigned int mask ) {
 	glStencilMask( mask );
 }
 
-void cGL::ColorMask ( GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha ) {
+void cGL::ColorMask ( Uint8 red, Uint8 green, Uint8 blue, Uint8 alpha ) {
 	glColorMask( red, green, blue, alpha );
 }
 
@@ -622,7 +623,7 @@ const int& cGL::QuadVertexs() const {
 	return mQuadVertexs;
 }
 
-void cGL::BindVertexArray ( GLuint array ) {
+void cGL::BindVertexArray ( unsigned int array ) {
 #if !defined( EE_GLES )
 	if ( mCurVAO != array ) {
 		glBindVertexArray( array );
@@ -632,13 +633,13 @@ void cGL::BindVertexArray ( GLuint array ) {
 #endif
 }
 
-void cGL::DeleteVertexArrays ( GLsizei n, const GLuint *arrays ) {
+void cGL::DeleteVertexArrays ( int n, const unsigned int *arrays ) {
 #if !defined( EE_GLES )
 	glDeleteVertexArrays( n, arrays );
 #endif
 }
 
-void cGL::GenVertexArrays ( GLsizei n, GLuint *arrays ) {
+void cGL::GenVertexArrays ( int n, unsigned int *arrays ) {
 #if !defined( EE_GLES )
 	glGenVertexArrays( n, arrays );
 #endif

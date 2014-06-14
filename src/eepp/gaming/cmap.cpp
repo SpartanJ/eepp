@@ -10,7 +10,7 @@
 #include <eepp/gaming/cobjectlayer.hpp>
 
 #include <eepp/system/cpackmanager.hpp>
-
+#include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/cprimitives.hpp>
 #include <eepp/graphics/ctextureatlasmanager.hpp>
@@ -220,18 +220,18 @@ void cMap::Draw() {
 	if ( DrawBackground() ) {
 		cPrimitives P;
 
-		Uint8 Alpha = static_cast<Uint8>( (eeFloat)mBackColor.A() * ( (eeFloat)mBackAlpha / 255.f ) );
+		Uint8 Alpha = static_cast<Uint8>( (Float)mBackColor.A() * ( (Float)mBackAlpha / 255.f ) );
 
 		P.SetColor( eeColorA( mBackColor.R(), mBackColor.G(), mBackColor.B(), Alpha ) );
 		P.DrawRectangle( eeRectf( eeVector2f( mScreenPos.x, mScreenPos.y ), eeSizef( mViewSize.x, mViewSize.y ) ), 0.f, eeVector2f::One );
 		P.SetColor( eeColorA( 255, 255, 255, 255 ) );
 	}
 
-	GLfloat oldM[16];
+	float oldM[16];
 	GLi->GetCurrentMatrix( GL_MODELVIEW_MATRIX, oldM );
 	GLi->LoadIdentity();
 	GLi->PushMatrix();
-	GLi->Translatef( (eeFloat)static_cast<Int32>( mScreenPos.x + mOffset.x ), (eeFloat)static_cast<Int32>( mScreenPos.y + mOffset.y ), 0 );
+	GLi->Translatef( (Float)static_cast<Int32>( mScreenPos.x + mOffset.x ), (Float)static_cast<Int32>( mScreenPos.y + mOffset.y ), 0 );
 	GLi->Scalef( mScale, mScale, 0 );
 
 	GridDraw();
@@ -275,7 +275,7 @@ void cMap::GridDraw() {
 	eeVector2i start = StartTile();
 	eeVector2i end = EndTile();
 
-	eeFloat tx, ty;
+	Float tx, ty;
 	eeColorA TileTexCol( 255, 255, 255, mBackAlpha );
 
 	for ( Int32 x = start.x; x < end.x; x++ ) {
@@ -318,7 +318,7 @@ const bool& cMap::IsMouseOver() const {
 void cMap::GetMouseOverTile() {
 	eeVector2i mouse = mWindow->GetInput()->GetMousePos();
 
-	eeVector2i MapPos( static_cast<eeFloat>( mouse.x - mScreenPos.x - mOffset.x ) / mScale, static_cast<eeFloat>( mouse.y - mScreenPos.y - mOffset.y ) / mScale );
+	eeVector2i MapPos( static_cast<Float>( mouse.x - mScreenPos.x - mOffset.x ) / mScale, static_cast<Float>( mouse.y - mScreenPos.y - mOffset.y ) / mScale );
 
 	mMouseOver = !( MapPos.x < 0 || MapPos.y < 0 || MapPos.x > mPixelSize.x || MapPos.y > mPixelSize.y );
 
@@ -353,8 +353,8 @@ void cMap::CalcTilesClip() {
 		if ( mStartTile.y < 0 )
 			mStartTile.y = 0;
 
-		mEndTile.x		= mStartTile.x + Math::RoundUp( (eeFloat)mViewSize.x / ( (eeFloat)mTileSize.x * mScale ) ) + 1 + mExtraTiles.x;
-		mEndTile.y		= mStartTile.y + Math::RoundUp( (eeFloat)mViewSize.y / ( (eeFloat)mTileSize.y * mScale ) ) + 1 + mExtraTiles.y;
+		mEndTile.x		= mStartTile.x + Math::RoundUp( (Float)mViewSize.x / ( (Float)mTileSize.x * mScale ) ) + 1 + mExtraTiles.x;
+		mEndTile.y		= mStartTile.y + Math::RoundUp( (Float)mViewSize.y / ( (Float)mTileSize.y * mScale ) ) + 1 + mExtraTiles.y;
 
 		if ( mEndTile.x > mSize.x )
 			mEndTile.x = mSize.x;
@@ -388,8 +388,8 @@ void cMap::Clamp() {
 	if ( totSize.y < mViewSize.y )
 		mOffset.y = 0;
 
-	totSize.x = (Int32)( (eeFloat)( mTileSize.x * mSize.x ) * mScale );
-	totSize.y = (Int32)( (eeFloat)( mTileSize.y * mSize.y ) * mScale );
+	totSize.x = (Int32)( (Float)( mTileSize.x * mSize.x ) * mScale );
+	totSize.y = (Int32)( (Float)( mTileSize.y * mSize.y ) * mScale );
 
 	if ( -mOffset.x + mViewSize.x > totSize.x )
 		mOffset.x = -( totSize.x - mViewSize.x );
@@ -422,11 +422,11 @@ eeVector2i cMap::GetMaxOffset() {
 	return v;
 }
 
-const eeFloat& cMap::Scale() const {
+const Float& cMap::Scale() const {
 	return mScale;
 }
 
-void cMap::Scale( const eeFloat& scale ) {
+void cMap::Scale( const Float& scale ) {
 	mScale = scale;
 
 	Offset( mOffset );
@@ -472,7 +472,7 @@ const eeVector2i& cMap::GetMouseMapPos() const {
 }
 
 eeVector2f cMap::GetMouseMapPosf() const {
-	return eeVector2f( (eeFloat)mMouseMapPos.x, (eeFloat)mMouseMapPos.y );
+	return eeVector2f( (Float)mMouseMapPos.x, (Float)mMouseMapPos.y );
 }
 
 eeVector2i cMap::GetMouseTilePosCoords() {
@@ -591,7 +591,7 @@ void cMap::Move( const eeVector2f& offset )  {
 	Move( offset.x, offset.y );
 }
 
-void cMap::Move( const eeFloat& offsetx, const eeFloat& offsety ) {
+void cMap::Move( const Float& offsetx, const Float& offsety ) {
 	Offset( eeVector2f( mOffset.x + offsetx, mOffset.y + offsety ) );
 }
 
@@ -875,7 +875,7 @@ bool cMap::LoadFromStream( cIOStream& IOS ) {
 					cLayer * tLayer = AddLayer( tLayerHdr->Type, tLayerHdr->Flags, std::string( tLayerHdr->Name ) );
 
 					if ( NULL != tLayer ) {
-						tLayer->Offset( eeVector2f( (eeFloat)tLayerHdr->OffsetX, (eeFloat)tLayerHdr->OffsetY ) );
+						tLayer->Offset( eeVector2f( (Float)tLayerHdr->OffsetX, (Float)tLayerHdr->OffsetY ) );
 
 						sPropertyHdr * tProps = eeNewArray( sPropertyHdr, tLayerHdr->PropertyCount );
 

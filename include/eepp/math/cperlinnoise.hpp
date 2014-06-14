@@ -23,45 +23,45 @@ class EE_API cPerlinNoise {
 		void Init();
 
 		/** @return The noise value for the 2D coordinates */
-		eeFloat PerlinNoise2D(eeFloat x, eeFloat y);
+		Float PerlinNoise2D(Float x, Float y);
 
-		void Octaves( const eeInt& octaves ) { mOctaves = octaves; }
+		void Octaves( const int& octaves ) { mOctaves = octaves; }
 		
-		void Persistence( const eeFloat& pers)  { mPersistence = pers; }
+		void Persistence( const Float& pers)  { mPersistence = pers; }
 
-		void Frequency( const eeFloat& freq ) { mFrequency = freq; }
+		void Frequency( const Float& freq ) { mFrequency = freq; }
 
-		void Amplitude( const eeFloat& amp ) { mAmplitude = amp; }
+		void Amplitude( const Float& amp ) { mAmplitude = amp; }
 		
 		void FrequencyOctaveDep( const bool& dep ) { mFreqOctaveDep =  dep; }
 		
 		void AmplitudeOctaveDep( const bool& dep ) { mAmpOctaveDep = dep; }
 
-		eeInt Octaves() const { return mOctaves; }
+		int Octaves() const { return mOctaves; }
 		
-		eeFloat Persistence() const { return mPersistence; }
+		Float Persistence() const { return mPersistence; }
 		
-		eeFloat Frequency() const { return mFrequency; }
+		Float Frequency() const { return mFrequency; }
 		
-		eeFloat Amplitude() const { return mAmplitude; }
+		Float Amplitude() const { return mAmplitude; }
 		
 		bool FrequencyOctaveDep() const { return mFreqOctaveDep; }
 		
 		bool AmplitudeOctaveDep() const { return mAmpOctaveDep; }
 	protected:
-		eeFloat Noise2D(Int32 x, Int32 y);
+		Float Noise2D(Int32 x, Int32 y);
 		
-		eeFloat SmoothedNoise2D(eeFloat x, eeFloat y);
+		Float SmoothedNoise2D(Float x, Float y);
 		
-		eeFloat Interpolate(eeFloat a, eeFloat b, eeFloat x);
+		Float Interpolate(Float a, Float b, Float x);
 		
-		eeFloat InterpolatedNoise2D(eeFloat x, eeFloat y);
+		Float InterpolatedNoise2D(Float x, Float y);
 
-		eeFloat	mCurrSeed;
-		eeFloat	mPersistence;
-		eeInt	mOctaves;
-		eeFloat	mFrequency;
-		eeFloat	mAmplitude;
+		Float	mCurrSeed;
+		Float	mPersistence;
+		int	mOctaves;
+		Float	mFrequency;
+		Float	mAmplitude;
 
 		bool	mFreqOctaveDep;
 		bool	mAmpOctaveDep;

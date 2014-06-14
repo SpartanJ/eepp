@@ -15,7 +15,7 @@ cUISkinSimple::cUISkinSimple( const std::string& Name ) :
 cUISkinSimple::~cUISkinSimple() {
 }
 
-void cUISkinSimple::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Width, const eeFloat& Height, const Uint32& Alpha, const Uint32& State ) {
+void cUISkinSimple::Draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State ) {
 	if ( 0 == Alpha )
 		return;
 
@@ -26,7 +26,7 @@ void cUISkinSimple::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Wid
 		tSubTexture->DestSize( eeSizef( Width, Height ) );
 
 		if ( mTempColor.Alpha != Alpha ) {
-			mTempColor.Alpha = (Uint8)( (eeFloat)mTempColor.Alpha * ( (eeFloat)Alpha / 255.f ) );
+			mTempColor.Alpha = (Uint8)( (Float)mTempColor.Alpha * ( (Float)Alpha / 255.f ) );
 		}
 
 		tSubTexture->Draw( X, Y, mTempColor );

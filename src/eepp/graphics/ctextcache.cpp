@@ -170,23 +170,23 @@ void cTextCache::Cache() {
 	mCachedCoords = false;
 }
 
-eeFloat cTextCache::GetTextWidth() {
-	return ( mFlags & FONT_DRAW_VERTICAL ) ? (eeFloat)mFont->GetFontHeight() * (eeFloat)mNumLines : mCachedWidth;
+Float cTextCache::GetTextWidth() {
+	return ( mFlags & FONT_DRAW_VERTICAL ) ? (Float)mFont->GetFontHeight() * (Float)mNumLines : mCachedWidth;
 }
 
-eeFloat cTextCache::GetTextHeight() {
-	return ( mFlags & FONT_DRAW_VERTICAL ) ? mLargestLineCharCount * (eeFloat)mFont->GetFontHeight() : (eeFloat)mFont->GetFontHeight() * (eeFloat)mNumLines;
+Float cTextCache::GetTextHeight() {
+	return ( mFlags & FONT_DRAW_VERTICAL ) ? mLargestLineCharCount * (Float)mFont->GetFontHeight() : (Float)mFont->GetFontHeight() * (Float)mNumLines;
 }
 
-const eeInt& cTextCache::GetNumLines() const {
+const int& cTextCache::GetNumLines() const {
 	return mNumLines;
 }
 
-const std::vector<eeFloat>& cTextCache::LinesWidth() {
+const std::vector<Float>& cTextCache::LinesWidth() {
 	return mLinesWidth;
 }
 
-void cTextCache::Draw( const eeFloat& X, const eeFloat& Y, const eeVector2f& Scale, const eeFloat& Angle, EE_BLEND_MODE Effect ) {
+void cTextCache::Draw( const Float& X, const Float& Y, const eeVector2f& Scale, const Float& Angle, EE_BLEND_MODE Effect ) {
 	if ( NULL != mFont ) {
 		cGlobalBatchRenderer::instance()->Draw();
 
@@ -210,11 +210,11 @@ void cTextCache::CachedCoords( const bool& cached ) {
 	mCachedCoords = cached;
 }
 
-const eeUint& cTextCache::CachedVerts() const {
+const unsigned int& cTextCache::CachedVerts() const {
 	return mVertexNumCached;
 }
 
-void cTextCache::CachedVerts( const eeUint& num ) {
+void cTextCache::CachedVerts( const unsigned int& num ) {
 	mVertexNumCached = num;
 }
 

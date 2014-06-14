@@ -15,7 +15,7 @@ struct physicDemo {
 };
 
 std::vector<physicDemo> mDemo;
-eeInt mCurDemo = eeINDEX_NOT_FOUND;
+int mCurDemo = eeINDEX_NOT_FOUND;
 cSpace * mSpace;
 cBody * mMouseBody;
 cVect mMousePoint;
@@ -128,8 +128,8 @@ void Demo1Create() {
 	cBody * body;
 	cShape * shape;
 
-	eeFloat pX = mWindow->GetWidth()	/ 2 - ( image_width		* 4 ) / 2;
-	eeFloat pY = mWindow->GetHeight()	/ 2 - ( image_height	* 4 ) / 2;
+	Float pX = mWindow->GetWidth()	/ 2 - ( image_width		* 4 ) / 2;
+	Float pY = mWindow->GetHeight()	/ 2 - ( image_height	* 4 ) / 2;
 
 	for(int y=0; y<image_height; y++){
 		for(int x=0; x<image_width; x++){
@@ -199,7 +199,7 @@ void Demo2Create() {
 	shape->u( 1.0f );
 	shape->Layers( NOT_GRABABLE_MASK );
 
-	eeFloat hw = mWindow->GetWidth() / 2;
+	Float hw = mWindow->GetWidth() / 2;
 
 	for(int i=0; i<14; i++){
 		for(int j=0; j<=i; j++){
@@ -381,8 +381,8 @@ cpBool StickyPreSolve( cArbiter *arb, cSpace *space, void *data )
 		// collision to allow them to overlap more.
 		// This value is used only for fixing the positions of overlapping shapes.
 		cpFloat dist = contacts.points[i].dist + 2.0f*STICK_SENSOR_THICKNESS;
-		contacts.points[i].dist = eemin<eeFloat>(0.0f, dist);
-		deepest = eemin<eeFloat>(deepest, dist);
+		contacts.points[i].dist = eemin<Float>(0.0f, dist);
+		deepest = eemin<Float>(deepest, dist);
 	}
 
 	// Set the new contact point data.
@@ -527,9 +527,9 @@ void Demo4Destroy() {
 	DestroyDemo();
 }
 
-void ChangeDemo( eeInt num ) {
-	if ( num >= 0 && num < (eeInt)mDemo.size() && num != mCurDemo ) {
-		if ( (eeInt)eeINDEX_NOT_FOUND != mCurDemo )
+void ChangeDemo( int num ) {
+	if ( num >= 0 && num < (int)mDemo.size() && num != mCurDemo ) {
+		if ( (int)eeINDEX_NOT_FOUND != mCurDemo )
 			mDemo[ mCurDemo ].destroy();
 
 		mCurDemo = num;

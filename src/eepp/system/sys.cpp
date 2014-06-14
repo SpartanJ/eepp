@@ -461,7 +461,7 @@ std::string Sys::GetProcessPath() {
 	return path;
 }
 
-eeDouble Sys::GetSystemTime() {
+double Sys::GetSystemTime() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	static LARGE_INTEGER Frequency;
 	static BOOL          UseHighPerformanceTimer = QueryPerformanceFrequency(&Frequency);
@@ -620,14 +620,14 @@ std::string Sys::GetTempPath() {
 	return rpath;
 }
 
-eeInt Sys::GetCPUCount() {
-	eeInt nprocs = -1;
+int Sys::GetCPUCount() {
+	int nprocs = -1;
 
 	#if EE_PLATFORM == EE_PLATFORM_WIN
 		SYSTEM_INFO info;
 		GetSystemInfo(&info);
 
-		nprocs = (eeInt) info.dwNumberOfProcessors;
+		nprocs = (int) info.dwNumberOfProcessors;
 	#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_SOLARIS || EE_PLATFORM == EE_PLATFORM_ANDROID
 		nprocs = sysconf(_SC_NPROCESSORS_ONLN);
 	#elif EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD || EE_PLATFORM == EE_PLATFORM_IOS

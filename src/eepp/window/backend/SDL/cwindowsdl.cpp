@@ -391,10 +391,10 @@ std::vector<DisplayMode> cWindowSDL::GetDisplayModes() const {
 	return result;
 }
 
-void cWindowSDL::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {
-	eeclamp<eeFloat>( &Red		, 0.1f, 10.0f );
-	eeclamp<eeFloat>( &Green	, 0.1f, 10.0f );
-	eeclamp<eeFloat>( &Blue		, 0.1f, 10.0f );
+void cWindowSDL::SetGamma( Float Red, Float Green, Float Blue ) {
+	eeclamp<Float>( &Red		, 0.1f, 10.0f );
+	eeclamp<Float>( &Green	, 0.1f, 10.0f );
+	eeclamp<Float>( &Blue		, 0.1f, 10.0f );
 	SDL_SetGamma( Red, Green, Blue );
 }
 

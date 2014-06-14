@@ -9,31 +9,22 @@
 #define GL_FP	GL_FLOAT
 #endif
 
-#if ( EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM ) ) && !defined( EE_GLES )
-	#define EE_GLEW_AVAILABLE
-#endif
-
 #ifndef EE_GLES
 	//! GL2 and GL3 ( PC platform )
-
-	#ifdef EE_GLEW_AVAILABLE
-		#define GLEW_STATIC
-		#define GLEW_NO_GLU
-		#include <eepp/helper/glew/glew.h>
-	#else
-		#ifndef GL_GLEXT_PROTOTYPES
-			#define GL_GLEXT_PROTOTYPES
-		#endif
-	#endif
 
 	#if EE_PLATFORM == EE_PLATFORM_MACOSX
 		#include <OpenGL/gl.h>
 	#else
+		#if EE_PLATFORM == EE_PLATFORM_WIN
+			#define APIENTRY __stdcall
+			#define WINGDIAPI __declspec(dllimport)
+		#endif
+
 		#include <GL/gl.h>
 	#endif
 
 	#ifndef EE_GLEW_AVAILABLE
-		#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN
+		#if defined( EE_X11_PLATFORM )
 			#include <GL/glext.h>
 		#elif EE_PLATFORM == EE_PLATFORM_MACOSX
 			#include <OpenGL/glext.h>
@@ -82,7 +73,6 @@
 #endif
 
 #ifdef EE_GLES
-	typedef GLfloat		GLdouble;
 	typedef char		GLchar;
 
 	#define glDeleteBuffersARB glDeleteBuffers

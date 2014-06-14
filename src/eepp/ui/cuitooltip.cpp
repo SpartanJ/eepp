@@ -97,7 +97,7 @@ void cUITooltip::Draw() {
 
 		if ( mTextCache->GetTextWidth() ) {
 			mTextCache->Flags( Flags() );
-			mTextCache->Draw( (eeFloat)mScreenPos.x + mAlignOffset.x, (eeFloat)mScreenPos.y + mAlignOffset.y, eeVector2f::One, 0.f, Blend() );
+			mTextCache->Draw( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y, eeVector2f::One, 0.f, Blend() );
 		}
 	}
 }
@@ -147,7 +147,7 @@ void cUITooltip::ShadowColor( const eeColorA& color ) {
 	mTextCache->ShadowColor( mFontColor );
 }
 
-void cUITooltip::Alpha( const eeFloat& alpha ) {
+void cUITooltip::Alpha( const Float& alpha ) {
 	cUIControlAnim::Alpha( alpha );
 	mFontColor.Alpha = (Uint8)alpha;
 	mFontShadowColor.Alpha = (Uint8)alpha;
@@ -157,8 +157,8 @@ void cUITooltip::Alpha( const eeFloat& alpha ) {
 
 void cUITooltip::AutoSize() {
 	if ( mFlags & UI_AUTO_SIZE ) {
-		mSize.Width( (eeInt)mTextCache->GetTextWidth() + mPadding.Left + mPadding.Right );
-		mSize.Height( (eeInt)mTextCache->GetTextHeight() + mPadding.Top + mPadding.Bottom );
+		mSize.Width( (int)mTextCache->GetTextWidth() + mPadding.Left + mPadding.Right );
+		mSize.Height( (int)mTextCache->GetTextHeight() + mPadding.Top + mPadding.Bottom );
 	}
 }
 
@@ -168,10 +168,10 @@ void cUITooltip::AutoAlign() {
 
 	switch ( FontHAlignGet( Flags() ) ) {
 		case UI_HALIGN_CENTER:
-			mAlignOffset.x = mPadding.Left + (eeFloat)( (Int32)( Width - mTextCache->GetTextWidth() ) / 2 );
+			mAlignOffset.x = mPadding.Left + (Float)( (Int32)( Width - mTextCache->GetTextWidth() ) / 2 );
 			break;
 		case UI_HALIGN_RIGHT:
-			mAlignOffset.x = ( (eeFloat)Width - (eeFloat)mTextCache->GetTextWidth() ) - mPadding.Right;
+			mAlignOffset.x = ( (Float)Width - (Float)mTextCache->GetTextWidth() ) - mPadding.Right;
 			break;
 		case UI_HALIGN_LEFT:
 			mAlignOffset.x = mPadding.Left;
@@ -180,10 +180,10 @@ void cUITooltip::AutoAlign() {
 
 	switch ( FontVAlignGet( Flags() ) ) {
 		case UI_VALIGN_CENTER:
-			mAlignOffset.y = mPadding.Top + (eeFloat)( ( (Int32)( Height - mTextCache->GetTextHeight() ) ) / 2 );
+			mAlignOffset.y = mPadding.Top + (Float)( ( (Int32)( Height - mTextCache->GetTextHeight() ) ) / 2 );
 			break;
 		case UI_VALIGN_BOTTOM:
-			mAlignOffset.y = ( (eeFloat)Height - (eeFloat)mTextCache->GetTextHeight() ) - mPadding.Bottom;
+			mAlignOffset.y = ( (Float)Height - (Float)mTextCache->GetTextHeight() ) - mPadding.Bottom;
 			break;
 		case UI_VALIGN_TOP:
 			mAlignOffset.y = mPadding.Top;
@@ -221,15 +221,15 @@ cTextCache * cUITooltip::GetTextCache() {
 	return mTextCache;
 }
 
-eeFloat cUITooltip::GetTextWidth() {
+Float cUITooltip::GetTextWidth() {
 	return mTextCache->GetTextWidth();
 }
 
-eeFloat cUITooltip::GetTextHeight() {
+Float cUITooltip::GetTextHeight() {
 	return mTextCache->GetTextHeight();
 }
 
-const eeInt& cUITooltip::GetNumLines() const {
+const int& cUITooltip::GetNumLines() const {
 	return mTextCache->GetNumLines();
 }
 

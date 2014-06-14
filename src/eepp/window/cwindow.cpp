@@ -5,7 +5,7 @@
 #include <eepp/window/platform/null/cnullimpl.hpp>
 #include <eepp/window/cplatformimpl.hpp>
 #include <eepp/window/cengine.hpp>
-
+#include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
@@ -20,7 +20,7 @@
 		#include <eepp/helper/glew/wglew.h>
 		#undef GetDiskFreeSpace
 	#elif defined( EE_X11_PLATFORM )
-		#include <eepp/helper/glew/glxew.h>
+		#include <GL/glx.h>
 	#elif EE_PLATFORM == EE_PLATFORM_MACOSX
 		#include <AGL/agl.h>
 	#endif
@@ -184,7 +184,7 @@ const WindowInfo * cWindow::GetWindowInfo() const {
 
 void cWindow::BackColor( const eeColor& Color ) {
 	mWindow.BackgroundColor = Color;
-	GLi->ClearColor( static_cast<eeFloat>( mWindow.BackgroundColor.R() ) / 255.0f, static_cast<eeFloat>( mWindow.BackgroundColor.G() ) / 255.0f, static_cast<eeFloat>( mWindow.BackgroundColor.B() ) / 255.0f, 255.0f );
+	GLi->ClearColor( static_cast<Float>( mWindow.BackgroundColor.R() ) / 255.0f, static_cast<Float>( mWindow.BackgroundColor.G() ) / 255.0f, static_cast<Float>( mWindow.BackgroundColor.B() ) / 255.0f, 255.0f );
 }
 
 const eeColor& cWindow::BackColor() const {
@@ -254,7 +254,7 @@ void cWindow::Close() {
 }
 
 void cWindow::FrameRateLimit( const Uint32& FrameRateLimit ) {
-	mFrameData.FPS.Limit = (eeFloat)FrameRateLimit;
+	mFrameData.FPS.Limit = (Float)FrameRateLimit;
 }
 
 Uint32 cWindow::FrameRateLimit() {
@@ -290,7 +290,7 @@ void cWindow::CalculateFps() {
 void cWindow::LimitFps() {
 	if ( mFrameData.FPS.Limit > 0 ) {
 		mFrameData.FPS.Error = 0;
-		eeDouble RemainT = 1000.0 / mFrameData.FPS.Limit - ( mFrameData.ElapsedTime.AsMilliseconds() * 0.1f );
+		double RemainT = 1000.0 / mFrameData.FPS.Limit - ( mFrameData.ElapsedTime.AsMilliseconds() * 0.1f );
 
 		if ( RemainT < 0 ) {
 			mFrameData.FPS.Error = 0;

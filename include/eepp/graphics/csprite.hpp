@@ -52,29 +52,29 @@ class EE_API cSprite {
 		cSprite& operator =( const cSprite& Other );
 
 		/** Set the x axis position */
-		void X( const eeFloat& X );
+		void X( const Float& X );
 
 		/** @return The x axis position */
-		eeFloat X() const;
+		Float X() const;
 
 		/** Set the y axis position */
-		void Y( const eeFloat& Y );
+		void Y( const Float& Y );
 
 		/** @return The y axis position */
-		eeFloat Y() const;
+		Float Y() const;
 
 		/** Set the Angle for the rendered sprite */
-		void Angle( const eeFloat& Angle );
+		void Angle( const Float& Angle );
 
 		/** @return The Angle for the rendered sprite */
-		eeFloat Angle() const;
+		Float Angle() const;
 
 		/** Rotates the sprite. Adds the new angle to the current rotation. Same as:
 		**	@code sprite.Angle( sprite.Angle() + angle ); @endcode */
-		void Rotate( const eeFloat& angle );
+		void Rotate( const Float& angle );
 
 		/** Set the Scale for the rendered sprite */
-		void Scale( const eeFloat& Scale );
+		void Scale( const Float& Scale );
 
 		/** Set the Scale for the rendered sprite */
 		void Scale( const eeVector2f& Scale );
@@ -98,7 +98,7 @@ class EE_API cSprite {
 		* @param FrameNum If the Frame Number is 0 it will use the Current Frame Number
 		* @param SubFrame If the Sub Frame Number is 0 it will use the Current Sub Frame Number
 		*/
-		void Size( const eeSizef& Size, const eeUint& FrameNum, const eeUint& SubFrame );
+		void Size( const eeSizef& Size, const unsigned int& FrameNum, const unsigned int& SubFrame );
 
 		/** Set the current SubTexture Size ( destination size ) */
 		void Size( const eeSizef& Size );
@@ -107,16 +107,16 @@ class EE_API cSprite {
 		* @param FrameNum If the Frame Number is 0 it will use the Current Frame Number
 		* @param SubFrame If the Sub Frame Number is 0 it will use the Current Sub Frame Number
 		*/
-		eeSizef Size( const eeUint& FrameNum, const eeUint& SubFrame );
+		eeSizef Size( const unsigned int& FrameNum, const unsigned int& SubFrame );
 
 		/** @return The current Frame Size */
 		eeSizef Size();
 
 		/** Set the sprite animation speed ( AnimSpeed equals to Animation Frames per Second ) */
-		void AnimSpeed( const eeFloat& AnimSpeed );
+		void AnimSpeed( const Float& AnimSpeed );
 
 		/** @return The sprite animation speed ( AnimSpeed equals to Animation Frames per Second ) */
-		eeFloat AnimSpeed() const;
+		Float AnimSpeed() const;
 
 		/** @return If the animation is paused */
 		bool AnimPaused() const;
@@ -137,24 +137,24 @@ class EE_API cSprite {
 		const Uint8& Alpha() const;
 
 		/** Set the Current Frame */
-		void CurrentFrame( eeUint CurFrame );
+		void CurrentFrame( unsigned int CurFrame );
 
 		/** @return The Current Frame */
-		const eeUint& CurrentFrame() const;
+		const unsigned int& CurrentFrame() const;
 
 		/** @return The Exact Current FrameData
-		* @return The eeFloat fpoint of the current frame, the exact position of the interpolation.
+		* @return The Float fpoint of the current frame, the exact position of the interpolation.
 		*/
-		const eeFloat& ExactCurrentFrame() const;
+		const Float& ExactCurrentFrame() const;
 
 		/** Set the exact current FrameData */
-		void ExactCurrentFrame( const eeFloat& CurrentFrame );
+		void ExactCurrentFrame( const Float& CurrentFrame );
 
 		/** Set the Current Sub Frame */
-		void CurrentSubFrame( const eeUint &CurSubFrame );
+		void CurrentSubFrame( const unsigned int &CurSubFrame );
 
 		/** @return The Current Sub Frame */
-		const eeUint& CurrentSubFrame() const;
+		const unsigned int& CurrentSubFrame() const;
 
 		/** Set the Render Type */
 		void RenderMode( const EE_RENDER_MODE& Effect );
@@ -175,7 +175,7 @@ class EE_API cSprite {
 		eeAABB GetAABB();
 
 		/** Set the sprite position */
-		void Position( const eeFloat& x, const eeFloat& y );
+		void Position( const Float& x, const Float& y );
 
 		/** Set the sprite position from a Vector */
 		void Position( const eeVector2f& NewPos );
@@ -212,7 +212,7 @@ class EE_API cSprite {
 		/** Creates an animated sprite
 		* @param SubFramesNum The number of subframes of the sprite
 		*/
-		void CreateAnimation( const eeUint& SubFramesNum = 1 );
+		void CreateAnimation( const unsigned int& SubFramesNum = 1 );
 
 		/** Add a frame to the sprite (on the current sub frame)
 		* @param TexId The internal Texture Id
@@ -221,13 +221,13 @@ class EE_API cSprite {
 		* @param TexSector The texture sector to be rendered ( default all the texture )
 		* @return The frame position or 0 if fails
 		*/
-		eeUint AddFrame( const Uint32& TexId, const eeSizef& DestSize = eeSizef(0,0), const eeVector2i& Offset = eeVector2i(0,0), const eeRecti& TexSector = eeRecti(0,0,0,0) );
+		unsigned int AddFrame( const Uint32& TexId, const eeSizef& DestSize = eeSizef(0,0), const eeVector2i& Offset = eeVector2i(0,0), const eeRecti& TexSector = eeRecti(0,0,0,0) );
 
 		/** Add a frame to the sprite (on the current sub frame)
 		* @param SubTexture The SubTexture used in the frame
 		* @return The frame position or 0 if fails
 		*/
-		eeUint AddFrame( cSubTexture * SubTexture );
+		unsigned int AddFrame( cSubTexture * SubTexture );
 
 		/** Add a vector of SubTexture as an animation.
 		* @param SubTextures The Frames
@@ -248,7 +248,7 @@ class EE_API cSprite {
 		* @param TexSector The texture sector to be rendered ( default all the texture )
 		* @return True if success
 		*/
-		bool AddSubFrame( const Uint32& TexId, const eeUint& NumFrame, const eeUint& NumSubFrame, const eeSizef& DestSize = eeSizef(0,0), const eeVector2i& Offset = eeVector2i(0,0), const eeRecti& TexSector = eeRecti(0,0,0,0) );
+		bool AddSubFrame( const Uint32& TexId, const unsigned int& NumFrame, const unsigned int& NumSubFrame, const eeSizef& DestSize = eeSizef(0,0), const eeVector2i& Offset = eeVector2i(0,0), const eeRecti& TexSector = eeRecti(0,0,0,0) );
 
 		/** Add a frame on an specific subframe to the sprite
 		* @param SubTexture The SubTexture used in the frame
@@ -256,7 +256,7 @@ class EE_API cSprite {
 		* @param NumSubFrame The Sub Frame Number
 		* @return True if success
 		*/
-		bool AddSubFrame( cSubTexture * SubTexture, const eeUint& NumFrame, const eeUint& NumSubFrame );
+		bool AddSubFrame( cSubTexture * SubTexture, const unsigned int& NumFrame, const unsigned int& NumSubFrame );
 
 		/** Draw the sprite to the screen */
 		void Draw();
@@ -302,7 +302,7 @@ class EE_API cSprite {
 		bool ReverseAnim() const;
 
 		/** @return The current last frame */
-		eeUint GetEndFrame();
+		unsigned int GetEndFrame();
 
 		/** @return The number of frames */
 		Uint32 GetNumFrames();
@@ -314,10 +314,10 @@ class EE_API cSprite {
 		cSubTexture * GetCurrentSubTexture();
 
 		/** @return The SubTexture Frame from the current sub frame */
-		cSubTexture * GetSubTexture( const eeUint& frame );
+		cSubTexture * GetSubTexture( const unsigned int& frame );
 
 		/** @return The SubTexture Frame from the SubFrame */
-		cSubTexture * GetSubTexture( const eeUint& frame, const eeUint& SubFrame );
+		cSubTexture * GetSubTexture( const unsigned int& frame, const unsigned int& SubFrame );
 
 		/** Start playing from
 		** @param GoTo Frame that goes from 1 to Number of Frames
@@ -361,23 +361,23 @@ class EE_API cSprite {
 		Uint32				mFlags;
 		eeVector2f			mPos;
 		eeOriginPoint		mOrigin;
-		eeFloat				mAngle;
+		Float				mAngle;
 		eeVector2f			mScale;
-		eeFloat				mAnimSpeed;
+		Float				mAnimSpeed;
 
 		eeColorA			mColor;
 		eeColorA *			mVertexColors;
 
-		eeInt				mRepeations; //!< Number of repetions of the animation, default -1 that equals to loop.
+		int				mRepeations; //!< Number of repetions of the animation, default -1 that equals to loop.
 
 		EE_BLEND_MODE		mBlend;
 		EE_RENDER_MODE		mEffect;
 
-		eeUint				mCurrentFrame;
-		eeFloat				mfCurrentFrame;
-		eeUint				mCurrentSubFrame;
-		eeUint				mSubFrames;
-		eeUint				mAnimTo;
+		unsigned int				mCurrentFrame;
+		Float				mfCurrentFrame;
+		unsigned int				mCurrentSubFrame;
+		unsigned int				mSubFrames;
+		unsigned int				mAnimTo;
 
 		SpriteCallback		mCb;
 		void *				mUserData;
@@ -388,13 +388,13 @@ class EE_API cSprite {
 		};
 		std::vector<cFrame> mFrames;
 
-		eeUint FramePos();
+		unsigned int FramePos();
 
 		void ClearFrame();
 
-		eeUint GetFrame( const eeUint& FrameNum );
+		unsigned int GetFrame( const unsigned int& FrameNum );
 
-		eeUint GetSubFrame( const eeUint& SubFrame );
+		unsigned int GetSubFrame( const unsigned int& SubFrame );
 };
 
 }}

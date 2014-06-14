@@ -166,7 +166,7 @@ cSprite * cSprite::Copy() {
 }
 
 void cSprite::ClearFrame() {
-	for ( eeUint i = 0; i < mFrames.size(); i++ )
+	for ( unsigned int i = 0; i < mFrames.size(); i++ )
 		mFrames[i].Spr.clear();
 
 	mFrames.clear();
@@ -196,16 +196,16 @@ void cSprite::Reset() {
 	DisableVertexColors();
 }
 
-void cSprite::CurrentFrame ( eeUint CurFrame ) {
+void cSprite::CurrentFrame ( unsigned int CurFrame ) {
 	if ( CurFrame )
 		CurFrame--;
 
 	mfCurrentFrame = CurFrame;
-	mCurrentFrame = (eeUint)CurFrame;
+	mCurrentFrame = (unsigned int)CurFrame;
 
 	if ( mfCurrentFrame >= mFrames.size() ) {
-		mfCurrentFrame = (eeFloat)mFrames.size() - 1;
-		mCurrentFrame = (eeUint)mFrames.size() - 1;
+		mfCurrentFrame = (Float)mFrames.size() - 1;
+		mCurrentFrame = (unsigned int)mFrames.size() - 1;
 	}
 
 	if ( mfCurrentFrame < 0 ) {
@@ -214,7 +214,7 @@ void cSprite::CurrentFrame ( eeUint CurFrame ) {
 	}
 }
 
-void cSprite::CurrentSubFrame( const eeUint& CurSubFrame ) {
+void cSprite::CurrentSubFrame( const unsigned int& CurSubFrame ) {
 	if ( CurSubFrame < mSubFrames )
 		mCurrentSubFrame = CurSubFrame;
 }
@@ -307,7 +307,7 @@ const eeVector2f cSprite::Position() const {
 	return mPos;
 }
 
-void cSprite::Position(const eeFloat& x, const eeFloat& y) {
+void cSprite::Position(const Float& x, const Float& y) {
 	mPos.x = x;
 	mPos.y = y;
 }
@@ -330,9 +330,9 @@ void cSprite::DisableVertexColors() {
 	eeSAFE_DELETE_ARRAY( mVertexColors );
 }
 
-eeUint cSprite::FramePos() {
+unsigned int cSprite::FramePos() {
 	mFrames.push_back( cFrame() );
-	return (eeUint)mFrames.size() - 1;
+	return (unsigned int)mFrames.size() - 1;
 }
 
 bool cSprite::CreateStatic( cSubTexture * SubTexture ) {
@@ -355,7 +355,7 @@ bool cSprite::CreateStatic( const Uint32& TexId, const eeSizef& DestSize, const 
 	return false;
 }
 
-void cSprite::CreateAnimation( const eeUint& SubFramesNum ) {
+void cSprite::CreateAnimation( const unsigned int& SubFramesNum ) {
 	Reset();
 
 	if ( SubFramesNum < 1 )
@@ -366,7 +366,7 @@ void cSprite::CreateAnimation( const eeUint& SubFramesNum ) {
 
 bool cSprite::AddFrames( const std::vector<cSubTexture*> SubTextures ) {
 	if ( SubTextures.size() ) {
-		for ( eeUint i = 0; i < SubTextures.size(); i++ ) {
+		for ( unsigned int i = 0; i < SubTextures.size(); i++ ) {
 			if ( NULL != SubTextures[i] ) {
 				AddFrame( SubTextures[i] );
 			}
@@ -406,8 +406,8 @@ bool cSprite::AddFramesByPattern( const std::string& name, const std::string& ex
 	return false;
 }
 
-bool cSprite::AddSubFrame( cSubTexture * SubTexture, const eeUint& NumFrame, const eeUint& NumSubFrame ) {
-	eeUint NF, NSF;
+bool cSprite::AddSubFrame( cSubTexture * SubTexture, const unsigned int& NumFrame, const unsigned int& NumSubFrame ) {
+	unsigned int NF, NSF;
 
 	if ( NumFrame >= mFrames.size() )
 		NF = 0;
@@ -420,7 +420,7 @@ bool cSprite::AddSubFrame( cSubTexture * SubTexture, const eeUint& NumFrame, con
 		NSF = NumSubFrame;
 
 	if ( NF <= mFrames.size() ) {
-		if ( mFrames[NF].Spr.size() != (eeUint)mSubFrames )
+		if ( mFrames[NF].Spr.size() != (unsigned int)mSubFrames )
 			mFrames[NF].Spr.resize( mSubFrames );
 
 		mFrames[NF].Spr[NSF] = SubTexture;
@@ -431,16 +431,16 @@ bool cSprite::AddSubFrame( cSubTexture * SubTexture, const eeUint& NumFrame, con
 	return false;
 }
 
-eeUint cSprite::AddFrame( cSubTexture * SubTexture ) {
-	eeUint id = FramePos();
+unsigned int cSprite::AddFrame( cSubTexture * SubTexture ) {
+	unsigned int id = FramePos();
 
 	AddSubFrame( SubTexture, id, mCurrentSubFrame );
 
 	return id;
 }
 
-eeUint cSprite::AddFrame( const Uint32& TexId, const eeSizef& DestSize, const eeVector2i& Offset, const eeRecti& TexSector ) {
-	eeUint id = FramePos();
+unsigned int cSprite::AddFrame( const Uint32& TexId, const eeSizef& DestSize, const eeVector2i& Offset, const eeRecti& TexSector ) {
+	unsigned int id = FramePos();
 
 	if ( AddSubFrame( TexId, id, mCurrentSubFrame, DestSize, Offset, TexSector ) )
 		return id;
@@ -448,7 +448,7 @@ eeUint cSprite::AddFrame( const Uint32& TexId, const eeSizef& DestSize, const ee
 	return 0;
 }
 
-bool cSprite::AddSubFrame(const Uint32& TexId, const eeUint& NumFrame, const eeUint& NumSubFrame, const eeSizef& DestSize, const eeVector2i& Offset, const eeRecti& TexSector) {
+bool cSprite::AddSubFrame(const Uint32& TexId, const unsigned int& NumFrame, const unsigned int& NumSubFrame, const eeSizef& DestSize, const eeVector2i& Offset, const eeRecti& TexSector) {
 	if ( !cTextureFactory::instance()->TextureIdExists( TexId ) )
 		return false;
 
@@ -465,11 +465,11 @@ bool cSprite::AddSubFrame(const Uint32& TexId, const eeUint& NumFrame, const eeU
 	eeSizef destSize( DestSize );
 
 	if ( destSize.x <= 0 ) {
-		destSize.x = static_cast<eeFloat> ( S->SrcRect().Right - S->SrcRect().Left );
+		destSize.x = static_cast<Float> ( S->SrcRect().Right - S->SrcRect().Left );
 	}
 
 	if ( destSize.y <= 0 ) {
-		destSize.y = static_cast<eeFloat> ( S->SrcRect().Bottom - S->SrcRect().Top );
+		destSize.y = static_cast<Float> ( S->SrcRect().Bottom - S->SrcRect().Top );
 	}
 
 	S->DestSize( destSize );
@@ -486,7 +486,7 @@ void cSprite::Update() {
 
 void cSprite::Update( const cTime& ElapsedTime ) {
 	if ( mFrames.size() > 1 && !SPR_FGET( SPRITE_FLAG_ANIM_PAUSED ) && cTime::Zero != ElapsedTime ) {
-		eeUint Size		= (eeUint)mFrames.size() - 1;
+		unsigned int Size		= (unsigned int)mFrames.size() - 1;
 
 		if ( mRepeations == 0 )
 			return;
@@ -496,7 +496,7 @@ void cSprite::Update( const cTime& ElapsedTime ) {
 		else
 			mfCurrentFrame -= mAnimSpeed * ElapsedTime.AsSeconds();
 
-		mCurrentFrame = (eeUint)mfCurrentFrame;
+		mCurrentFrame = (unsigned int)mfCurrentFrame;
 
 		if ( SPR_FGET( SPRITE_FLAG_ANIM_TO_FRAME_AND_STOP ) ) {
 			if ( mAnimTo == mCurrentFrame ) {
@@ -517,7 +517,7 @@ void cSprite::Update( const cTime& ElapsedTime ) {
 				FireEvent( SPRITE_EVENT_FIRST_FRAME );
 			} else {
 				if ( mRepeations == 0 ) {
-					mfCurrentFrame = (eeFloat)Size;
+					mfCurrentFrame = (Float)Size;
 					mCurrentFrame = Size;
 					FireEvent( SPRITE_EVENT_LAST_FRAME );
 				} else {
@@ -552,7 +552,7 @@ void cSprite::Update( const cTime& ElapsedTime ) {
 				mCurrentFrame = 0;
 				FireEvent( SPRITE_EVENT_FIRST_FRAME );
 			} else {
-				mfCurrentFrame = (eeFloat)Size;
+				mfCurrentFrame = (Float)Size;
 				mCurrentFrame = Size;
 				FireEvent( SPRITE_EVENT_LAST_FRAME );
 			}
@@ -560,11 +560,11 @@ void cSprite::Update( const cTime& ElapsedTime ) {
 	}
 }
 
-eeUint cSprite::GetEndFrame() {
+unsigned int cSprite::GetEndFrame() {
 	if ( SPR_FGET( SPRITE_FLAG_REVERSE_ANIM ) ) {
 		return 0;
 	} else {
-		return (eeUint)mFrames.size() - 1;
+		return (unsigned int)mFrames.size() - 1;
 	}
 }
 
@@ -572,9 +572,9 @@ void cSprite::SetReverseFromStart() {
 	if ( !SPR_FGET( SPRITE_FLAG_REVERSE_ANIM ) )
 		mFlags |= SPRITE_FLAG_REVERSE_ANIM;
 
-	eeUint Size = (eeUint)mFrames.size() - 1;
+	unsigned int Size = (unsigned int)mFrames.size() - 1;
 
-	mfCurrentFrame = (eeFloat)Size;
+	mfCurrentFrame = (Float)Size;
 	mCurrentFrame = Size;
 }
 
@@ -605,8 +605,8 @@ void cSprite::Draw( const EE_RENDER_MODE& Effect ) {
 	Draw( mBlend, Effect );
 }
 
-eeUint cSprite::GetFrame( const eeUint& FrameNum ) {
-	eeUint FN;
+unsigned int cSprite::GetFrame( const unsigned int& FrameNum ) {
+	unsigned int FN;
 
 	if ( FrameNum >= mFrames.size() )
 		FN = mCurrentFrame;
@@ -616,8 +616,8 @@ eeUint cSprite::GetFrame( const eeUint& FrameNum ) {
 	return FN;
 }
 
-eeUint cSprite::GetSubFrame( const eeUint& SubFrame ) {
-	eeUint SFN;
+unsigned int cSprite::GetSubFrame( const unsigned int& SubFrame ) {
+	unsigned int SFN;
 
 	if ( SubFrame >= mSubFrames )
 		SFN = mCurrentSubFrame;
@@ -644,7 +644,7 @@ void cSprite::Offset( const eeVector2i& offset ) {
 	}
 }
 
-void cSprite::Size( const eeSizef& Size, const eeUint& FrameNum, const eeUint& SubFrame ) {
+void cSprite::Size( const eeSizef& Size, const unsigned int& FrameNum, const unsigned int& SubFrame ) {
 	mFrames[ GetFrame(FrameNum) ].Spr[ GetSubFrame(SubFrame) ]->DestSize( Size );
 }
 
@@ -652,7 +652,7 @@ void cSprite::Size( const eeSizef& Size ) {
 	mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ]->DestSize( Size );
 }
 
-eeSizef cSprite::Size( const eeUint& FrameNum, const eeUint& SubFrame ) {
+eeSizef cSprite::Size( const unsigned int& FrameNum, const unsigned int& SubFrame ) {
 	return mFrames[ GetFrame(FrameNum) ].Spr[ GetSubFrame(SubFrame) ]->DestSize();
 }
 
@@ -686,45 +686,45 @@ cSubTexture* cSprite::GetCurrentSubTexture() {
 	return NULL;
 }
 
-cSubTexture * cSprite::GetSubTexture( const eeUint& frame ) {
+cSubTexture * cSprite::GetSubTexture( const unsigned int& frame ) {
 	if ( frame < mFrames.size() )
 		return mFrames[ frame ].Spr[ mCurrentSubFrame ];
 
 	return NULL;
 }
 
-cSubTexture * cSprite::GetSubTexture( const eeUint& frame, const eeUint& SubFrame ) {
+cSubTexture * cSprite::GetSubTexture( const unsigned int& frame, const unsigned int& SubFrame ) {
 	if ( frame < mFrames.size() )
 		return mFrames[ frame ].Spr[ SubFrame ];
 
 	return NULL;
 }
 
-void cSprite::X( const eeFloat& X ) {
+void cSprite::X( const Float& X ) {
 	mPos.x = X;
 }
 
-eeFloat cSprite::X() const {
+Float cSprite::X() const {
 	return mPos.x;
 }
 
-void cSprite::Y( const eeFloat& Y ) {
+void cSprite::Y( const Float& Y ) {
 	mPos.y = Y;
 }
 
-eeFloat cSprite::Y() const {
+Float cSprite::Y() const {
 	return mPos.y;
 }
 
-void cSprite::Angle( const eeFloat& Angle) {
+void cSprite::Angle( const Float& Angle) {
 	mAngle = Angle;
 }
 
-eeFloat cSprite::Angle() const {
+Float cSprite::Angle() const {
 	return mAngle;
 }
 
-void cSprite::Scale( const eeFloat& Scale ) {
+void cSprite::Scale( const Float& Scale ) {
 	this->Scale( eeVector2f( Scale, Scale ) );
 }
 
@@ -736,11 +736,11 @@ const eeVector2f& cSprite::Scale() const {
 	return mScale;
 }
 
-void cSprite::AnimSpeed( const eeFloat& AnimSpeed ) {
+void cSprite::AnimSpeed( const Float& AnimSpeed ) {
 	mAnimSpeed = AnimSpeed;
 }
 
-eeFloat cSprite::AnimSpeed() const {
+Float cSprite::AnimSpeed() const {
 	return mAnimSpeed;
 }
 
@@ -774,19 +774,19 @@ const Uint8& cSprite::Alpha() const {
 	return mColor.Alpha;
 }
 
-const eeUint& cSprite::CurrentFrame() const {
+const unsigned int& cSprite::CurrentFrame() const {
 	return mCurrentFrame;
 }
 
-const eeFloat& cSprite::ExactCurrentFrame() const {
+const Float& cSprite::ExactCurrentFrame() const {
 	return mfCurrentFrame;
 }
 
-void cSprite::ExactCurrentFrame( const eeFloat& CurrentFrame ) {
+void cSprite::ExactCurrentFrame( const Float& CurrentFrame ) {
 	mfCurrentFrame = CurrentFrame;
 }
 
-const eeUint& cSprite::CurrentSubFrame() const {
+const unsigned int& cSprite::CurrentSubFrame() const {
 	return mCurrentSubFrame;
 }
 
@@ -830,7 +830,7 @@ void cSprite::GoToAndPlay( Uint32 GoTo ) {
 
 	if ( GoTo < mFrames.size() ) {
 		mCurrentFrame	= GoTo;
-		mfCurrentFrame	= (eeFloat)GoTo;
+		mfCurrentFrame	= (Float)GoTo;
 
 		AnimPaused( false );
 	}
@@ -877,7 +877,7 @@ const eeOriginPoint& cSprite:: Origin() const {
 	return mOrigin;
 }
 
-void cSprite::Rotate( const eeFloat& angle ) {
+void cSprite::Rotate( const Float& angle ) {
 	mAngle += angle;
 }
 

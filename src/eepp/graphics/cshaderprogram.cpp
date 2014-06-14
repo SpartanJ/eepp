@@ -1,6 +1,7 @@
 #include <eepp/graphics/cshaderprogram.hpp>
 #include <eepp/graphics/cshaderprogrammanager.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
+#include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 
 namespace EE { namespace Graphics {
@@ -142,14 +143,14 @@ cShaderProgram::cShaderProgram( const char ** VertexShaderData, const Uint32& Nu
 cShaderProgram::~cShaderProgram() {
 	if ( Handler() > 0 ) {
 		#ifdef EE_SHADERS_SUPPORTED
-    	glDeleteProgram( Handler() );
+		glDeleteProgram( Handler() );
 		#endif
 	}
 
-    mUniformLocations.clear();
-    mAttributeLocations.clear();
+	mUniformLocations.clear();
+	mAttributeLocations.clear();
 
-	for ( eeUint i = 0; i < mShaders.size(); i++ )
+	for ( unsigned int i = 0; i < mShaders.size(); i++ )
 		eeSAFE_DELETE( mShaders[i] );
 
 	if ( !cShaderProgramManager::instance()->IsDestroying() ) {
@@ -189,10 +190,10 @@ void cShaderProgram::Reload() {
 
 	mShaders.clear();
 
-	for ( eeUint i = 0; i < tmpShader.size(); i++ ) {
-	    tmpShader[i]->Reload();
+	for ( unsigned int i = 0; i < tmpShader.size(); i++ ) {
+		tmpShader[i]->Reload();
 		AddShader( tmpShader[i] );
-    }
+	}
 
 	Link();
 
@@ -229,7 +230,7 @@ bool cShaderProgram::Link() {
 	glGetProgramiv( Handler(), GL_LINK_STATUS, &linked );
 	mValid = 0 != linked;
 
-	GLsizei logsize = 0, logarraysize = 0;
+	int logsize = 0, logarraysize = 0;
 	glGetProgramiv( Handler(), GL_INFO_LOG_LENGTH, &logarraysize );
 
 	if ( logarraysize > 0 ) {

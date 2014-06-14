@@ -3,7 +3,7 @@
 
 namespace EE { namespace Graphics { namespace Private {
 
-cTextureSaver::cTextureSaver( GLint textureBind ) :
+cTextureSaver::cTextureSaver( int textureBind ) :
 	mTextureBinded( 0 ),
 	mTextureToBind( textureBind )
 {

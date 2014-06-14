@@ -51,7 +51,7 @@ class EE_API cUIListBox : public cUIComplexControl {
 				eeColorA			FontColor;
 				eeColorA			FontOverColor;
 				eeColorA			FontSelectedColor;
-				eeFloat				TouchDragDeceleration;
+				Float				TouchDragDeceleration;
 		};
 
 		cUIListBox( cUIListBox::CreateParams& Params );
@@ -190,8 +190,8 @@ class EE_API cUIListBox : public cUIComplexControl {
 		Uint32				mVisibleLast;
 
 		eeVector2i			mTouchDragPoint;
-		eeFloat				mTouchDragAcceleration;
-		eeFloat				mTouchDragDeceleration;
+		Float				mTouchDragAcceleration;
+		Float				mTouchDragDeceleration;
 
 		std::list<Uint32>				mSelected;
 		std::vector<cUIListBoxItem *> 	mItems;

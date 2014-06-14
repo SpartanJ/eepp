@@ -40,7 +40,7 @@ class EE_API cWindowSDL : public cWindow {
 
 		std::vector<DisplayMode> GetDisplayModes() const;
 
-		void SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue );
+		void SetGamma( Float Red, Float Green, Float Blue );
 
 		eeWindowHandle	GetWindowHandler();
 

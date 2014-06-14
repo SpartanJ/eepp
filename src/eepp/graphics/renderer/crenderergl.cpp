@@ -1,3 +1,4 @@
+#include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/crenderergl.hpp>
 
 /*
@@ -89,30 +90,30 @@ void cRendererGL::LoadIdentity() {
 	glLoadIdentity();
 }
 
-void cRendererGL::Translatef( GLfloat x, GLfloat y, GLfloat z ) {
+void cRendererGL::Translatef( float x, float y, float z ) {
 	glTranslatef( x, y, z );
 }
 
-void cRendererGL::Rotatef( GLfloat angle, GLfloat x, GLfloat y, GLfloat z ) {
+void cRendererGL::Rotatef( float angle, float x, float y, float z ) {
 	glRotatef( angle, x, y, z );
 }
 
-void cRendererGL::Scalef( GLfloat x, GLfloat y, GLfloat z ) {
+void cRendererGL::Scalef( float x, float y, float z ) {
 	glScalef( x,y, z );
 }
 
-void cRendererGL::MatrixMode(GLenum mode) {
+void cRendererGL::MatrixMode(unsigned int mode) {
 	glMatrixMode( mode );
 }
 
-void cRendererGL::Ortho( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar ) {
+void cRendererGL::Ortho( float left, float right, float bottom, float top, float zNear, float zFar ) {
 	glOrtho( left, right, bottom, top, zNear, zFar );
 }
 
-void cRendererGL::LookAt( GLfloat eyeX, GLfloat eyeY, GLfloat eyeZ, GLfloat centerX, GLfloat centerY, GLfloat centerZ, GLfloat upX, GLfloat upY, GLfloat upZ ) {
-	GLfloat m[16];
-	GLfloat x[3], y[3], z[3];
-	GLfloat mag;
+void cRendererGL::LookAt( float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ ) {
+	float m[16];
+	float x[3], y[3], z[3];
+	float mag;
 
 	/* Make rotation matrix */
 
@@ -186,8 +187,8 @@ void cRendererGL::LookAt( GLfloat eyeX, GLfloat eyeY, GLfloat eyeZ, GLfloat cent
 	glTranslatef(-eyeX, -eyeY, -eyeZ);
 }
 
-void cRendererGL::Perspective ( GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar ) {
-	GLdouble xmin, xmax, ymin, ymax;
+void cRendererGL::Perspective ( float fovy, float aspect, float zNear, float zFar ) {
+	double xmin, xmax, ymin, ymax;
 
 	ymax = zNear * eetan(fovy * EE_360_PI);
 	ymin = -ymax;
@@ -197,46 +198,46 @@ void cRendererGL::Perspective ( GLfloat fovy, GLfloat aspect, GLfloat zNear, GLf
 	Frustum( xmin, xmax, ymin, ymax, zNear, zFar );
 }
 
-void cRendererGL::EnableClientState( GLenum array ) {
+void cRendererGL::EnableClientState( unsigned int array ) {
 	glEnableClientState( array );
 }
 
-void cRendererGL::DisableClientState( GLenum array ) {
+void cRendererGL::DisableClientState( unsigned int array ) {
 	glDisableClientState( array );
 }
 
-void cRendererGL::VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
+void cRendererGL::VertexPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) {
 	glVertexPointer( size, type, stride, pointer );
 }
 
-void cRendererGL::ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
+void cRendererGL::ColorPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) {
 	glColorPointer( size, type, stride, pointer );
 }
 
-void cRendererGL::TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate ) {
+void cRendererGL::TexCoordPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate ) {
 	glTexCoordPointer( size, type, stride, pointer );
 }
 
-void cRendererGL::ClientActiveTexture( GLenum texture ) {
+void cRendererGL::ClientActiveTexture( unsigned int texture ) {
 	glClientActiveTexture( texture );
 }
 
-void cRendererGL::PointSize( GLfloat size ) {
+void cRendererGL::PointSize( float size ) {
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	glPointSize( size );
 #endif
 }
 
 void cRendererGL::Clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
-	GLdouble tX = (GLdouble)x;
-	GLdouble tY = (GLdouble)y;
-	GLdouble tW = (GLdouble)Width;
-	GLdouble tH = (GLdouble)Height;
+	double tX = (double)x;
+	double tY = (double)y;
+	double tW = (double)Width;
+	double tH = (double)Height;
 
-	GLdouble clip_left[] 	= { 1.0	, 0.0	, 0.0, -tX 		};
-	GLdouble clip_right[] 	= { -1.0, 0.0	, 0.0, tX + tW 	};
-	GLdouble clip_top[] 	= { 0.0	, 1.0	, 0.0, -tY 		};
-	GLdouble clip_bottom[] 	= { 0.0	, -1.0	, 0.0, tY + tH 	};
+	double clip_left[] 	= { 1.0	, 0.0	, 0.0, -tX 		};
+	double clip_right[] 	= { -1.0, 0.0	, 0.0, tX + tW 	};
+	double clip_top[] 	= { 0.0	, 1.0	, 0.0, -tY 		};
+	double clip_bottom[] 	= { 0.0	, -1.0	, 0.0, tY + tH 	};
 
 	GLi->Enable(GL_CLIP_PLANE0);
 	GLi->Enable(GL_CLIP_PLANE1);
@@ -271,9 +272,9 @@ void cRendererGL::Clip2DPlaneDisable() {
 	}
 }
 
-void cRendererGL::ClipPlane( GLenum plane, const GLdouble *equation ) {
+void cRendererGL::ClipPlane( unsigned int plane, const double *equation ) {
 #ifdef EE_GLES1
-	GLfloat clip[] 	= { (GLfloat)equation[0], (GLfloat)equation[1], (GLfloat)equation[2], (GLfloat)equation[3] };
+	float clip[] 	= { (float)equation[0], (float)equation[1], (float)equation[2], (float)equation[3] };
 
 	glClipPlane( plane, clip );
 #else
@@ -281,19 +282,19 @@ void cRendererGL::ClipPlane( GLenum plane, const GLdouble *equation ) {
 #endif
 }
 
-void cRendererGL::MultMatrixf ( const GLfloat *m ) {
+void cRendererGL::MultMatrixf ( const float *m ) {
 	glMultMatrixf( m );
 }
 
-void cRendererGL::LoadMatrixf( const GLfloat *m ) {
+void cRendererGL::LoadMatrixf( const float *m ) {
 	glLoadMatrixf( m );
 }
 
-void cRendererGL::TexEnvi( GLenum target, GLenum pname, GLint param ) {
+void cRendererGL::TexEnvi( unsigned int target, unsigned int pname, int param ) {
 	glTexEnvi( target, pname, param );
 }
 
-GLfloat cRendererGL::PointSize() {
+float cRendererGL::PointSize() {
 	float ps = 1;
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
@@ -303,24 +304,24 @@ GLfloat cRendererGL::PointSize() {
 	return ps;
 }
 
-void cRendererGL::Frustum( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near_val, GLfloat far_val ) {
+void cRendererGL::Frustum( float left, float right, float bottom, float top, float near_val, float far_val ) {
 	glFrustum( left, right, bottom, top, near_val, far_val );
 }
 
-void cRendererGL::GetCurrentMatrix( GLenum mode, GLfloat * m ) {
+void cRendererGL::GetCurrentMatrix( unsigned int mode, float * m ) {
 	glGetFloatv( mode, m );
 }
 
-GLenum cRendererGL::GetCurrentMatrixMode() {
-	GLint mode;
+unsigned int cRendererGL::GetCurrentMatrixMode() {
+	int mode;
 
 	glGetIntegerv( GL_MATRIX_MODE, &mode );
 
-	return (GLenum)mode;
+	return (unsigned int)mode;
 }
 
 
-static int __gluInvertMatrixd( const GLfloat m[16], GLfloat invOut[16] ) {
+static int __gluInvertMatrixd( const float m[16], float invOut[16] ) {
 	float inv[16], det;
 	int i;
 
@@ -369,7 +370,7 @@ static int __gluInvertMatrixd( const GLfloat m[16], GLfloat invOut[16] ) {
 	return GL_TRUE;
 }
 
-static void __gluMultMatricesd(const GLfloat a[16], const GLfloat b[16], GLfloat r[16] ) {
+static void __gluMultMatricesd(const float a[16], const float b[16], float r[16] ) {
 	int i, j;
 	for (i = 0; i < 4; i++) {
 		for (j = 0; j < 4; j++) {
@@ -382,7 +383,7 @@ static void __gluMultMatricesd(const GLfloat a[16], const GLfloat b[16], GLfloat
 	}
 }
 
-static void __gluMultMatrixVecd( const GLfloat matrix[16], const GLfloat in[4], GLfloat out[4] ) {
+static void __gluMultMatrixVecd( const float matrix[16], const float in[4], float out[4] ) {
 	int i;
 	for (i=0; i<4; i++) {
 		out[i] =
@@ -393,7 +394,7 @@ static void __gluMultMatrixVecd( const GLfloat matrix[16], const GLfloat in[4], 
 	}
 }
 
-GLint cRendererGL::Project( GLfloat objx, GLfloat objy, GLfloat objz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *winx, GLfloat *winy, GLfloat *winz ) {
+int cRendererGL::Project( float objx, float objy, float objz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *winx, float *winy, float *winz ) {
 	float in[4];
 	float out[4];
 
@@ -422,7 +423,7 @@ GLint cRendererGL::Project( GLfloat objx, GLfloat objy, GLfloat objz, const GLfl
 	return GL_TRUE;
 }
 
-GLint cRendererGL::UnProject( GLfloat winx, GLfloat winy, GLfloat winz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *objx, GLfloat *objy, GLfloat *objz ) {
+int cRendererGL::UnProject( float winx, float winy, float winz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *objx, float *objy, float *objz ) {
 	float finalMatrix[16];
 	float in[4];
 	float out[4];

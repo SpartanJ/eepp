@@ -192,9 +192,9 @@ template <typename T>
 const tColorA<T> tColorA<T>::Black = tColorA<T>(0,0,0,255);
 
 typedef tColor<Uint8> 		eeColor;
-typedef tColor<eeFloat> 	eeColorf;
+typedef tColor<Float> 	eeColorf;
 typedef tColorA<Uint8> 		eeColorA;
-typedef tColorA<eeFloat> 	eeColorAf;
+typedef tColorA<Float> 	eeColorAf;
 typedef tColorA<float>		eeColorAff;
 
 //! @brief Small class to help in some color operations
@@ -202,10 +202,10 @@ class Color {
 public:
 	/** Blend a source color to destination color */
 	static inline eeColorAf Blend( eeColorAf srcf, eeColorAf dstf ) {
-		eeFloat alpha	= srcf.Alpha + dstf.Alpha * ( 1.f - srcf.Alpha );
-		eeFloat red		= ( srcf.Red	* srcf.Alpha + dstf.Red		* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
-		eeFloat green	= ( srcf.Green	* srcf.Alpha + dstf.Green	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
-		eeFloat blue	= ( srcf.Blue	* srcf.Alpha + dstf.Blue	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
+		Float alpha	= srcf.Alpha + dstf.Alpha * ( 1.f - srcf.Alpha );
+		Float red		= ( srcf.Red	* srcf.Alpha + dstf.Red		* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
+		Float green	= ( srcf.Green	* srcf.Alpha + dstf.Green	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
+		Float blue	= ( srcf.Blue	* srcf.Alpha + dstf.Blue	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
 
 		return eeColorAf( red, green, blue, alpha );
 	}
@@ -214,12 +214,12 @@ public:
 
 	/** Blend a source color to destination color */
 	static inline eeColorA Blend( eeColorA src, eeColorA dst ) {
-		eeColorAf srcf( (eeFloat)src.Red / 255.f, (eeFloat)src.Green / 255.f, (eeFloat)src.Blue / 255.f, (eeFloat)src.Alpha / 255.f );
-		eeColorAf dstf( (eeFloat)dst.Red / 255.f, (eeFloat)dst.Green / 255.f, (eeFloat)dst.Blue / 255.f, (eeFloat)dst.Alpha / 255.f );
-		eeFloat alpha	= srcf.Alpha + dstf.Alpha * ( 1.f - srcf.Alpha );
-		eeFloat red		= ( srcf.Red	* srcf.Alpha + dstf.Red		* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
-		eeFloat green	= ( srcf.Green	* srcf.Alpha + dstf.Green	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
-		eeFloat blue	= ( srcf.Blue	* srcf.Alpha + dstf.Blue	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
+		eeColorAf srcf( (Float)src.Red / 255.f, (Float)src.Green / 255.f, (Float)src.Blue / 255.f, (Float)src.Alpha / 255.f );
+		eeColorAf dstf( (Float)dst.Red / 255.f, (Float)dst.Green / 255.f, (Float)dst.Blue / 255.f, (Float)dst.Alpha / 255.f );
+		Float alpha	= srcf.Alpha + dstf.Alpha * ( 1.f - srcf.Alpha );
+		Float red		= ( srcf.Red	* srcf.Alpha + dstf.Red		* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
+		Float green	= ( srcf.Green	* srcf.Alpha + dstf.Green	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
+		Float blue	= ( srcf.Blue	* srcf.Alpha + dstf.Blue	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
 
 		return eeColorA( EE_COLOR_BLEND_FTOU8(red), EE_COLOR_BLEND_FTOU8(green), EE_COLOR_BLEND_FTOU8(blue), EE_COLOR_BLEND_FTOU8(alpha) );
 	}

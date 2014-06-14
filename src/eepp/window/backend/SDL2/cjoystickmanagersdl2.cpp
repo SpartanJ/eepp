@@ -17,19 +17,19 @@ void cJoystickManagerSDL::Update() {
 	if ( mInit ) {
 		SDL_JoystickUpdate();
 
-		for ( eeUint i = 0; i < mCount; i++ )
+		for ( Uint32 i = 0; i < mCount; i++ )
 			if ( NULL != mJoysticks[i] )
 				mJoysticks[i]->Update();
 	}
 }
 
 void cJoystickManagerSDL::Open() {
-	eeInt error = SDL_InitSubSystem( SDL_INIT_JOYSTICK );
+	int error = SDL_InitSubSystem( SDL_INIT_JOYSTICK );
 
 	if ( !error ) {
 		mCount = SDL_NumJoysticks();
 
-		for ( eeUint i = 0; i < mCount; i++ )
+		for ( Uint32 i = 0; i < mCount; i++ )
 			Create(i);
 
 		mInit = true;

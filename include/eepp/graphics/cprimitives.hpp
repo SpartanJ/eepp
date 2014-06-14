@@ -17,7 +17,7 @@ class EE_API cPrimitives {
 		* @param p The coordinates
 		* @param pointSize Point Size (default 1.0f )
 		*/
-		void DrawPoint( const eeVector2f& p, const eeFloat& pointSize = 1.0f );
+		void DrawPoint( const eeVector2f& p, const Float& pointSize = 1.0f );
 
 		/** Draw a Line on screen
 		* @param line The line
@@ -29,7 +29,7 @@ class EE_API cPrimitives {
 		* @param radius The Circle Radius
 		* @param points Number of points to represent the circle. If points is equal to 0 by default will use an optimized circle rendering ( precached coordinates ).
 		*/
-		void DrawCircle( const eeVector2f& p, const eeFloat& radius, Uint32 points = 0 );
+		void DrawCircle( const eeVector2f& p, const Float& radius, Uint32 points = 0 );
 
 		/** Draw a triangle on the screen
 		* @param t The Triangle (eeTriangle2f)
@@ -49,7 +49,7 @@ class EE_API cPrimitives {
 		* @param Angle Rectangle Angle
 		* @param Scale Rectangle Scale ( default 1.0f )
 		*/
-		void DrawRectangle( const eeRectf& R, const eeFloat& Angle = 0, const eeVector2f& Scale = eeVector2f::One );
+		void DrawRectangle( const eeRectf& R, const Float& Angle = 0, const eeVector2f& Scale = eeVector2f::One );
 
 		/** Draw a rounded rectangle on the screen
 		* @param R The Rectangle eeRectf
@@ -57,7 +57,7 @@ class EE_API cPrimitives {
 		* @param Scale Rectangle Scale ( default 1.0f )
 		* @param Corners Number of vertices per corner ( how rounded is each corner )
 		*/
-		void DrawRoundedRectangle( const eeRectf& R, const eeFloat& Angle = 0, const eeVector2f& Scale = eeVector2f::One, const eeUint& Corners = 8 );
+		void DrawRoundedRectangle( const eeRectf& R, const Float& Angle = 0, const eeVector2f& Scale = eeVector2f::One, const unsigned int& Corners = 8 );
 
 		/** Draw a rectangle on the screen setting per vertex color
 		* @param R The Rectangle eeRectf
@@ -68,7 +68,7 @@ class EE_API cPrimitives {
 		* @param Angle Rectangle Angle
 		* @param Scale Rectangle Scale ( default 1.0f )
 		*/
-		void DrawRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle = 0, const eeVector2f& Scale = eeVector2f::One );
+		void DrawRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const Float& Angle = 0, const eeVector2f& Scale = eeVector2f::One );
 
 		/** Draw a rounded rectangle on the screen setting per vertex color
 		* @param R The Rectangle eeRectf
@@ -80,14 +80,14 @@ class EE_API cPrimitives {
 		* @param Scale Rectangle Scale ( default 1.0f )
 		* @param Corners Number of vertices per corner ( how rounded is each corner )
 		*/
-		void DrawRoundedRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const eeFloat& Angle = 0, const eeVector2f& Scale = eeVector2f::One, const eeUint& Corners = 8 );
+		void DrawRoundedRectangle( const eeRectf& R, const eeColorA& TopLeft, const eeColorA& BottomLeft, const eeColorA& BottomRight, const eeColorA& TopRight, const Float& Angle = 0, const eeVector2f& Scale = eeVector2f::One, const unsigned int& Corners = 8 );
 
 		/** Draw a four edges polygon on screen
 		* @param q The Quad
 		* @param OffsetX X offset for the quad
 		* @param OffsetY Y offset for the quad
 		*/
-		void DrawQuad( const eeQuad2f& q, const eeFloat& OffsetX = 0, const eeFloat& OffsetY = 0 );
+		void DrawQuad( const eeQuad2f& q, const Float& OffsetX = 0, const Float& OffsetY = 0 );
 
 		/** Draw a four edges polygon on screen
 		* @param q The Quad
@@ -98,7 +98,7 @@ class EE_API cPrimitives {
 		* @param OffsetX X offset for the quad
 		* @param OffsetY Y offset for the quad
 		*/
-		void DrawQuad( const eeQuad2f& q, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const eeColorA& Color4, const eeFloat& OffsetX = 0, const eeFloat& OffsetY = 0 );
+		void DrawQuad( const eeQuad2f& q, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const eeColorA& Color4, const Float& OffsetX = 0, const Float& OffsetY = 0 );
 
 		/** Draw a polygon on screen
 		* @param p The Polygon
@@ -129,15 +129,15 @@ class EE_API cPrimitives {
 		const EE_BLEND_MODE& BlendMode() const;
 
 		/** Set the line width to draw primitives */
-		void LineWidth( const eeFloat& width );
+		void LineWidth( const Float& width );
 
 		/** @return The line with to draw primitives */
-		const eeFloat& LineWidth() const;
+		const Float& LineWidth() const;
 	private:
 		eeColorA				mColor;
 		EE_FILL_MODE			mFillMode;
 		EE_BLEND_MODE			mBlendMode;
-		eeFloat					mLineWidth;
+		Float					mLineWidth;
 		bool					mForceDraw;
 };
 

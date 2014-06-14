@@ -3,6 +3,11 @@ Entropia Engine++
 
 **Entropia Engine++** is a C++ 2D game engine designed for an easy cross-platform game development.
 
+**Development fork**
+--------------------
+Don't expect this to even compile. This is just a work in progress. Experimental stuff, broken API and functionality is expected.
+Also the fun things happen here.
+
 **eepp provides:**
 ------------------
 

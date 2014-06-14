@@ -29,7 +29,7 @@ class EE_API cUISkinState {
 
 		cUISkin * GetSkin() const;
 
-		void Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Width, const eeFloat& Height, const Uint32& Alpha );
+		void Draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha );
 
 		bool StateExists( const Uint32& State );
 

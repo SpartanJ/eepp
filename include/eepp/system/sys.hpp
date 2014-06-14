@@ -30,7 +30,7 @@ class EE_API Sys {
 		static std::string GetProcessPath();
 
 		/** @return The System Time */
-		static eeDouble GetSystemTime();
+		static double GetSystemTime();
 
 		/** @return The OS Name */
 		static std::string GetOSName();
@@ -39,7 +39,7 @@ class EE_API Sys {
 		static std::string GetOSArchitecture();
 
 		/** @return The Number of CPUs of the system. */
-		static eeInt GetCPUCount();
+		static int GetCPUCount();
 
 		/** @return Returns free disk space for a given path in bytes */
 		static Int64 GetDiskFreeSpace(const std::string& path);

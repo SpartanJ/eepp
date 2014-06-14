@@ -20,7 +20,7 @@ class EE_API cUISpinBox : public cUIComplexControl {
 
 				inline ~CreateParams() {}
 
-				eeFloat DefaultValue;
+				Float DefaultValue;
 				bool AllowDotsInNumbers;
 		};
 
@@ -38,25 +38,25 @@ class EE_API cUISpinBox : public cUIComplexControl {
 
 		const eeRecti& Padding() const;
 
-		virtual void ClickStep( const eeFloat& step );
+		virtual void ClickStep( const Float& step );
 
-		const eeFloat& ClickStep() const;
+		const Float& ClickStep() const;
 
 		virtual Uint32 OnMessage( const cUIMessage * Msg );
 
-		void AddValue( const eeFloat& value );
+		void AddValue( const Float& value );
 
-		virtual void MinValue( const eeFloat& MinVal );
+		virtual void MinValue( const Float& MinVal );
 
-		const eeFloat& MinValue() const;
+		const Float& MinValue() const;
 
-		virtual void MaxValue( const eeFloat& MaxVal );
+		virtual void MaxValue( const Float& MaxVal );
 
-		const eeFloat& MaxValue() const;
+		const Float& MaxValue() const;
 
-		virtual void Value( const eeFloat& Val );
+		virtual void Value( const Float& Val );
 
-		const eeFloat& Value() const;
+		const Float& Value() const;
 
 		virtual void Update();
 
@@ -69,14 +69,14 @@ class EE_API cUISpinBox : public cUIComplexControl {
 		cUITextInput * 		mInput;
 		cUIControlAnim * 	mPushUp;
 		cUIControlAnim * 	mPushDown;
-		eeFloat				mMinValue;
-		eeFloat				mMaxValue;
-		eeFloat				mValue;
-		eeFloat				mClickStep;
+		Float				mMinValue;
+		Float				mMaxValue;
+		Float				mValue;
+		Float				mClickStep;
 
 		void AdjustChilds();
 
-		void InternalValue( const eeFloat& Val, const bool& Force = false );
+		void InternalValue( const Float& Val, const bool& Force = false );
 		
 		virtual void OnAlphaChange();
 };

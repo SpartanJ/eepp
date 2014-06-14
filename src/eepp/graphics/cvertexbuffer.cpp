@@ -77,7 +77,7 @@ void cVertexBuffer::ResizeIndices( const Uint32& Size ) {
 	mIndexArray.resize( Size );
 }
 
-eeFloat * cVertexBuffer::GetArray( const Uint32& Type ) {
+Float * cVertexBuffer::GetArray( const Uint32& Type ) {
 	if ( Type < VERTEX_FLAGS_COUNT_ARR && mVertexArray[ Type ].size() )
 		return &mVertexArray[ Type - 1 ][0];
 

@@ -326,8 +326,8 @@ void cInputSDL::Init() {
 
 	SDL_GetMouseState( &mTempMouse.x, &mTempMouse.y );
 
-	mMousePos.x = (eeInt)mTempMouse.x;
-	mMousePos.y = (eeInt)mTempMouse.y;
+	mMousePos.x = (int)mTempMouse.x;
+	mMousePos.y = (int)mTempMouse.y;
 
 	InitializeTables();
 

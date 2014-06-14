@@ -20,7 +20,7 @@ cTextureFont::cTextureFont( const std::string FontName ) :
 cTextureFont::~cTextureFont() {
 }
 
-bool cTextureFont::Load( const Uint32& TexId, const eeUint& StartChar, const eeUint& Spacing, const eeUint& TexColumns, const eeUint& TexRows, const Uint16& NumChars ) {
+bool cTextureFont::Load( const Uint32& TexId, const unsigned int& StartChar, const unsigned int& Spacing, const unsigned int& TexColumns, const unsigned int& TexRows, const Uint16& NumChars ) {
 	cTexture * Tex = cTextureFactory::instance()->GetTexture( TexId );
 
 	mTexId = TexId;
@@ -31,15 +31,15 @@ bool cTextureFont::Load( const Uint32& TexId, const eeUint& StartChar, const eeU
 		mStartChar		= StartChar;
 		mNumChars		= NumChars;
 
-		mtX				= ( 1 / static_cast<eeFloat>( mTexColumns ) );
-		mtY				= ( 1 / static_cast<eeFloat>( mTexRows ) );
+		mtX				= ( 1 / static_cast<Float>( mTexColumns ) );
+		mtY				= ( 1 / static_cast<Float>( mTexRows ) );
 
-		mFWidth			= (eeFloat)( Tex->Width() / mTexColumns );
-		mFHeight		= (eeFloat)( Tex->Height() / mTexRows );
-		mHeight			= mSize = mLineSkip = (eeUint)mFHeight;
+		mFWidth			= (Float)( Tex->Width() / mTexColumns );
+		mFHeight		= (Float)( Tex->Height() / mTexRows );
+		mHeight			= mSize = mLineSkip = (unsigned int)mFHeight;
 
 		if ( Spacing == 0 )
-			mSpacing = static_cast<eeUint>( mFWidth );
+			mSpacing = static_cast<unsigned int>( mFWidth );
 		else
 			mSpacing = Spacing;
 
@@ -56,7 +56,7 @@ bool cTextureFont::Load( const Uint32& TexId, const eeUint& StartChar, const eeU
 }
 
 void cTextureFont::BuildFont() {
-	eeFloat cX = 0, cY = 0;
+	Float cX = 0, cY = 0;
 
 	mTexCoords.resize( mNumChars );
 	mGlyphs.resize( mNumChars );
@@ -65,7 +65,7 @@ void cTextureFont::BuildFont() {
 
 	int c = 0;
 
-	for (eeUint i = 0; i < mNumChars; i++) {
+	for (unsigned int i = 0; i < mNumChars; i++) {
 		if ( i >= mStartChar || ( mStartChar <= 32 && i == 9 ) ) {
 			c = i;
 
@@ -74,8 +74,8 @@ void cTextureFont::BuildFont() {
 				c = 32;
 			}
 
-			cX = (eeFloat)( (c-mStartChar) % mTexColumns ) / (eeFloat)mTexColumns;
-			cY = (eeFloat)( (c-mStartChar) / mTexColumns ) / (eeFloat)mTexRows;
+			cX = (Float)( (c-mStartChar) % mTexColumns ) / (Float)mTexColumns;
+			cY = (Float)( (c-mStartChar) / mTexColumns ) / (Float)mTexRows;
 
 			mGlyphs[i].Advance = mSpacing;
 
@@ -100,7 +100,7 @@ void cTextureFont::BuildFont() {
 }
 
 void cTextureFont::BuildFromGlyphs() {
-	eeFloat Top, Bottom;
+	Float Top, Bottom;
 	eeRectf tR;
 
 	mTexCoords.resize( mNumChars );
@@ -111,14 +111,14 @@ void cTextureFont::BuildFromGlyphs() {
 
 	eeGlyph tGlyph;
 
-	for (eeUint i = 0; i < mNumChars; i++) {
+	for (unsigned int i = 0; i < mNumChars; i++) {
 		tGlyph		= mGlyphs[i];
 
-		tR.Left		= (eeFloat)tGlyph.CurX / Tex->Width();
-		tR.Top		= (eeFloat)tGlyph.CurY / Tex->Height();
+		tR.Left		= (Float)tGlyph.CurX / Tex->Width();
+		tR.Top		= (Float)tGlyph.CurY / Tex->Height();
 
-		tR.Right	= (eeFloat)(tGlyph.CurX + tGlyph.CurW) / Tex->Width();
-		tR.Bottom	= (eeFloat)(tGlyph.CurY + tGlyph.CurH) / Tex->Height();
+		tR.Right	= (Float)(tGlyph.CurX + tGlyph.CurW) / Tex->Width();
+		tR.Bottom	= (Float)(tGlyph.CurY + tGlyph.CurH) / Tex->Height();
 
 		Top = 		mHeight + mDescent 	- tGlyph.GlyphH - tGlyph.MinY;
 		Bottom = 	mHeight + mDescent 	+ tGlyph.GlyphH - tGlyph.MaxY;
@@ -131,13 +131,13 @@ void cTextureFont::BuildFromGlyphs() {
 		mTexCoords[i].TexCoords[5] = tR.Bottom;
 		mTexCoords[i].TexCoords[6] = tR.Right;
 		mTexCoords[i].TexCoords[7] = tR.Top;
-		mTexCoords[i].Vertex[0] = (eeFloat) tGlyph.MinX;
+		mTexCoords[i].Vertex[0] = (Float) tGlyph.MinX;
 		mTexCoords[i].Vertex[1] = Top;
-		mTexCoords[i].Vertex[2] = (eeFloat) tGlyph.MinX;
+		mTexCoords[i].Vertex[2] = (Float) tGlyph.MinX;
 		mTexCoords[i].Vertex[3] = Bottom;
-		mTexCoords[i].Vertex[4] = (eeFloat) tGlyph.MaxX;
+		mTexCoords[i].Vertex[4] = (Float) tGlyph.MaxX;
 		mTexCoords[i].Vertex[5] = Bottom;
-		mTexCoords[i].Vertex[6] = (eeFloat) tGlyph.MaxX;
+		mTexCoords[i].Vertex[6] = (Float) tGlyph.MaxX;
 		mTexCoords[i].Vertex[7] = Top;
 	}
 }

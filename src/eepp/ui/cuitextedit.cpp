@@ -125,14 +125,14 @@ void cUITextEdit::OnAlphaChange() {
 }
 
 void cUITextEdit::FixScroll() {
-	eeInt Width		= mSize.Width()		- mPadding.Left - mPadding.Right;
-	eeInt Height	= mSize.Height()	- mPadding.Top	- mPadding.Bottom;
+	int Width		= mSize.Width()		- mPadding.Left - mPadding.Right;
+	int Height	= mSize.Height()	- mPadding.Top	- mPadding.Bottom;
 
 	if ( mHScrollBar->Visible() )
 		Height -= mHScrollBar->Size().Height();
 
-	eeInt diff;
-	eeFloat pos;
+	int diff;
+	Float pos;
 
 	if ( mTextInput->Size().Height() - Height >= 0 ) {
 		diff = mTextInput->Size().Height() - Height;
@@ -193,7 +193,7 @@ void cUITextEdit::ScrollbarsSet() {
 		}
 		case UI_SCROLLBAR_AUTO:
 		{
-			eeInt extraH = 0;
+			int extraH = 0;
 
 			if ( mHScrollBar->Visible() )
 				extraH = mHScrollBar->Size().Height();
@@ -269,8 +269,8 @@ void cUITextEdit::Text( const String& Txt ) {
 }
 
 void cUITextEdit::OnInputSizeChange( const cUIEvent * Event ) {
-	eeInt Width		= mSize.Width()		- mPadding.Left - mPadding.Right;
-	eeInt Height	= mSize.Height()	- mPadding.Top	- mPadding.Bottom;
+	int Width		= mSize.Width()		- mPadding.Left - mPadding.Right;
+	int Height	= mSize.Height()	- mPadding.Top	- mPadding.Bottom;
 
 	if ( NULL != Event ) {
 		if ( Event->EventType() == cUIEvent::EventOnPressEnter ) {
@@ -328,8 +328,8 @@ void cUITextEdit::OnCursorPosChange( const cUIEvent * Event ) {
 }
 
 void cUITextEdit::FixScrollToCursor() {
-	eeInt Width		= mSize.Width()		- mPadding.Left - mPadding.Right;
-	eeInt Height	= mSize.Height()	- mPadding.Top	- mPadding.Bottom;
+	int Width		= mSize.Width()		- mPadding.Left - mPadding.Right;
+	int Height	= mSize.Height()	- mPadding.Top	- mPadding.Bottom;
 
 	if ( mVScrollBar->Visible() )
 		Width -= mVScrollBar->Size().Width();
@@ -349,8 +349,8 @@ void cUITextEdit::FixScrollToCursor() {
 
 		mSkipValueChange = true;
 
-		eeFloat tW	= mTextInput->GetTextCache()->Font()->GetTextWidth();
-		eeFloat tH	= (eeFloat)(LineNum + 1) * (eeFloat)mTextInput->GetTextCache()->Font()->GetFontHeight();
+		Float tW	= mTextInput->GetTextCache()->Font()->GetTextWidth();
+		Float tH	= (Float)(LineNum + 1) * (Float)mTextInput->GetTextCache()->Font()->GetFontHeight();
 
 		if ( tW > Width ) {
 			mTextInput->Pos( mPadding.Left + Width - tW, mTextInput->Pos().y );

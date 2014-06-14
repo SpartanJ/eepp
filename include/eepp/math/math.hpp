@@ -18,8 +18,8 @@ inline Uint32 SetRandomSeed( Uint32 seed ) {
 * @param fMax the maximun value
 * @return The random number generated
 */
-inline eeFloat Randf( const eeFloat& fMin = 0.0f, const eeFloat& fMax = 1.0f ) {
-	return (fMin + (fMax - fMin) * ( rand() / ( (eeFloat) RAND_MAX + 1) ) );
+inline Float Randf( const Float& fMin = 0.0f, const Float& fMax = 1.0f ) {
+	return (fMin + (fMax - fMin) * ( rand() / ( (Float) RAND_MAX + 1) ) );
 }
 
 /** Generate a integer random number
@@ -27,31 +27,31 @@ inline eeFloat Randf( const eeFloat& fMin = 0.0f, const eeFloat& fMax = 1.0f ) {
 * @param fMax the maximun value
 * @return The random number generated
 */
-inline eeInt Randi( const eeInt& fMin = 0, const eeInt& fMax = 1 ) {
-	return (eeInt)(fMin + (fMax - fMin + 1) * ( rand() / ( (eeFloat) RAND_MAX + 1) ) );
+inline int Randi( const int& fMin = 0, const int& fMax = 1 ) {
+	return (int)(fMin + (fMax - fMin + 1) * ( rand() / ( (Float) RAND_MAX + 1) ) );
 }
 
 /** Cosine from an Angle in Degress */
-inline eeFloat cosAng( const eeFloat& Ang ) {
+inline Float cosAng( const Float& Ang ) {
 	return eecos(Ang * EE_PI_180);
 }
 /** Sinus from an Angle in Degress */
-inline eeFloat sinAng( const eeFloat& Ang ) {
+inline Float sinAng( const Float& Ang ) {
 	return eesin(Ang * EE_PI_180);
 }
 
 /** Tangen from an Angle in Degress */
-inline eeFloat tanAng( const eeFloat& Ang ) {
+inline Float tanAng( const Float& Ang ) {
 	return tan(Ang * EE_PI_180);
 }
 
 /** Convert an Angle from Degrees to Radians */
-inline eeFloat Radians( const eeFloat& Ang ) {
+inline Float Radians( const Float& Ang ) {
 	return Ang * EE_PI_180;
 }
 
 /** Convert an Angle from Math::Radians to Degrees */
-inline eeFloat Degrees( const eeFloat& Radians ) {
+inline Float Degrees( const Float& Radians ) {
 	return Radians * EE_180_PI;
 }
 

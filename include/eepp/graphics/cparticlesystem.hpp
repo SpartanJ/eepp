@@ -58,12 +58,12 @@ class EE_API cParticleSystem {
 			const Uint32& NumParticles,
 			const Uint32& TexId,
 			const eeVector2f& Pos,
-			const eeFloat& PartSize = 16.0f,
+			const Float& PartSize = 16.0f,
 			const bool& AnimLoop = false,
 			const Uint32& NumLoops = 1,
 			const eeColorAf& Color = eeColorAf( 1.0f, 1.0f, 1.0f, 1.0f ),
 			const eeVector2f& Pos2 = eeVector2f( 0, 0 ),
-			const eeFloat& AlphaDecay = 0.01f,
+			const Float& AlphaDecay = 0.01f,
 			const eeVector2f& Speed = eeVector2f( 0.1f, 0.1f ),
 			const eeVector2f& Acc = eeVector2f( 0.1f, 0.1f )
 		);
@@ -89,10 +89,10 @@ class EE_API cParticleSystem {
 		void Kill();
 
 		/** Change the default time modifier. Default 0.01f */
-		void Time( const eeFloat& time );
+		void Time( const Float& time );
 
 		/** Get the time modifier */
-		eeFloat Time() const;
+		Float Time() const;
 
 		/** Set if the effect it's in use */
 		void Using( const bool& inuse );
@@ -101,7 +101,7 @@ class EE_API cParticleSystem {
 		bool Using() const;
 
 		/** Update the effect position */
-		void Position( const eeFloat& x, const eeFloat& y );
+		void Position( const Float& x, const Float& y );
 
 		/** Update the effect position */
 		void Position( const eeVector2f& Pos );
@@ -110,7 +110,7 @@ class EE_API cParticleSystem {
 		const eeVector2f& Position() const;
 
 		/** Update the effect position 2 */
-		void Position2( const eeFloat& x, const eeFloat& y );
+		void Position2( const Float& x, const Float& y );
 
 		/** Update the effect position 2 */
 		void Position2( const eeVector2f& Pos );
@@ -134,10 +134,10 @@ class EE_API cParticleSystem {
 		void Color( const eeColorAf& Col );
 
 		/** @return The alpha decay of the effect */
-		const eeFloat& AlphaDecay() const;
+		const Float& AlphaDecay() const;
 
 		/** Set the alpha decay of the effect */
-		void AlphaDecay( const eeFloat& Decay );
+		void AlphaDecay( const Float& Decay );
 
 		/** @return The Speed of the effect */
 		const eeVector2f& Speed() const;
@@ -162,17 +162,17 @@ class EE_API cParticleSystem {
 
 		eeColorAf			mColor;
 
-		eeInt				mProgression;
-		eeInt				mDirection;
+		int				mProgression;
+		int				mDirection;
 
 		eeVector2f			mPos;
 		eeVector2f			mPos2;
 		eeVector2f			mAcc;
 		eeVector2f			mSpeed;
-		eeFloat				mAlphaDecay;
-		eeFloat				mSize;
-		eeFloat				mHSize;
-		eeFloat				mTime;
+		Float				mAlphaDecay;
+		Float				mSize;
+		Float				mHSize;
+		Float				mTime;
 
 		bool				mLoop;
 		bool				mUsed;

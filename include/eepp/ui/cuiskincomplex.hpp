@@ -27,7 +27,7 @@ class EE_API cUISkinComplex : public cUISkin {
 
 		virtual ~cUISkinComplex();
 
-		virtual void Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Width, const eeFloat& Height, const Uint32& Alpha, const Uint32& State );
+		virtual void Draw( const Float& X, const Float& Y, const Float& Width, const Float& Height, const Uint32& Alpha, const Uint32& State );
 
 		void SetSkin( const Uint32& State );
 

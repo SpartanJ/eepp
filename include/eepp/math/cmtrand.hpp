@@ -90,10 +90,10 @@ class EE_API cMTRand {
 		Uint32				Randi( const Uint32 n );
 
 		/** @return real number in [0,1] */
-		eeDouble			Rand();
+		double			Rand();
 
 		/** @return real number in [0,n] */
-		eeDouble			Rand( const eeDouble n );
+		double			Rand( const double n );
 
 		/** Set a new seed */
 		void				Seed( const Uint32 oneSeed );
@@ -102,16 +102,16 @@ class EE_API cMTRand {
 		void				Seed();
 
 		/** @return float number in [0,1] */
-		eeFloat				Randf();
+		Float				Randf();
 
 		/** @return float number in [0,n] */
-		eeFloat				Randf( const eeFloat n );
+		Float				Randf( const Float n );
 
 		/** @return int number in [Min,Max] */
-		eeInt				RandRange( eeInt Min, eeInt Max );
+		int				RandRange( int Min, int Max );
 
 		/** @return float number in [Min,Max] */
-		eeFloat				RandRange( eeFloat Min, eeFloat Max );
+		Float				RandRange( Float Min, Float Max );
 
 		/** Save the state to an allocated array */
 		void 				Save( Uint32* saveArray ) const;
@@ -121,7 +121,7 @@ class EE_API cMTRand {
 	protected:
 		Uint32				mState[N];
 		Uint32 *			mNext;
-		eeInt				mLeft;
+		int				mLeft;
 
 		void				Initialize( const Uint32 oneSeed );
 

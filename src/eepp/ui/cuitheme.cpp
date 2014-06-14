@@ -546,7 +546,7 @@ cUITextInputPassword * cUITheme::CreateTextInputPassword( cUIControl * Parent, c
 	return Ctrl;
 }
 
-cUISpinBox * cUITheme::CreateSpinBox( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, eeFloat DefaultValue, bool AllowDotsInNumbers ) {
+cUISpinBox * cUITheme::CreateSpinBox( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Float DefaultValue, bool AllowDotsInNumbers ) {
 	cUISpinBox::CreateParams SpinBoxParams;
 	SpinBoxParams.Parent( Parent );
 	SpinBoxParams.PosSet( Pos );

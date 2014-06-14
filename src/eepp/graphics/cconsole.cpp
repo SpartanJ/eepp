@@ -1,8 +1,8 @@
 #include <eepp/graphics/cconsole.hpp>
+#include <eepp/window/cengine.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/audio/caudiolistener.hpp>
 #include <eepp/window/cinput.hpp>
-#include <eepp/window/cengine.hpp>
 #include <eepp/window/ccursormanager.hpp>
 #include <eepp/window/cwindow.hpp>
 #include <algorithm>
@@ -46,7 +46,7 @@ cConsole::cConsole( Window::cWindow * window ) :
 	}
 }
 
-cConsole::cConsole( cFont* Font, const bool& MakeDefaultCommands, const bool& AttachToLog, const eeUint& MaxLogLines, const Uint32& TextureId, Window::cWindow * window ) :
+cConsole::cConsole( cFont* Font, const bool& MakeDefaultCommands, const bool& AttachToLog, const unsigned int& MaxLogLines, const Uint32& TextureId, Window::cWindow * window ) :
 	mWindow( window ),
 	mConColor(35, 47, 73, 230),
 	mConLineColor(55, 67, 93, 230),
@@ -99,14 +99,14 @@ cConsole::~cConsole() {
 	}
 }
 
-void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const bool& AttachToLog, const eeUint& MaxLogLines, const Uint32& TextureId ) {
+void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const bool& AttachToLog, const unsigned int& MaxLogLines, const Uint32& TextureId ) {
 	if ( NULL == mWindow ) {
 		mWindow = cEngine::instance()->GetCurrentWindow();
 	}
 
 	mFont = Font;
 
-	mFontSize = (eeFloat)( mFont->GetFontSize() * 1.25 );
+	mFontSize = (Float)( mFont->GetFontSize() * 1.25 );
 
 	if ( mFont->GetFontHeight() < mFontSize && ( mFont->GetFontHeight() != mFont->GetFontSize() || mFont->GetLineSkip() != (Int32)mFont->GetFontHeight() ) )
 		mFontSize = mFont->GetFontHeight();
@@ -115,16 +115,16 @@ void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const bool&
 		mTexId = TextureId;
 
 	mMaxLogLines = MaxLogLines;
-	mMaxAlpha = (eeFloat)mConColor.A();
+	mMaxAlpha = (Float)mConColor.A();
 
 	mEnabled = true;
 
 	if ( MakeDefaultCommands )
 		CreateDefaultCommands();
 
-	mWidth = (eeFloat) mWindow->GetWidth();
-	mHeight = (eeFloat) mWindow->GetHeight();
-	mHeightMin = (eeFloat) ( mWindow->GetHeight() / 2 );
+	mWidth = (Float) mWindow->GetWidth();
+	mHeight = (Float) mWindow->GetHeight();
+	mHeightMin = (Float) ( mWindow->GetHeight() / 2 );
 
 	if ( NULL != cEngine::ExistsSingleton() &&
 		cEngine::instance()->ExistsWindow( mWindow ) )
@@ -183,14 +183,14 @@ void cConsole::Draw() {
 			mTempY = -mCurHeight;
 
 			Uint16 Pos = 0;
-			eeFloat CurY;
+			Float CurY;
 
 			mCon.ConMin = mEx;
-			mCon.ConMax = (eeInt)mCmdLog.size() - 1;
+			mCon.ConMax = (int)mCmdLog.size() - 1;
 
 			mFont->Color( eeColorA ( mFontColor.R(), mFontColor.G(), mFontColor.B(), static_cast<Uint8>(mA) ) );
 
-			for (eeInt i = mCon.ConMax - mCon.ConModif; i >= mCon.ConMin - mCon.ConModif; i-- ) {
+			for (int i = mCon.ConMax - mCon.ConModif; i >= mCon.ConMin - mCon.ConModif; i-- ) {
 				if ( i < static_cast<Int16>( mCmdLog.size() ) && i >= 0 ) {
 					CurY = mTempY + mY + mCurHeight - Pos * mFontSize - mFontSize * 2;
 
@@ -208,7 +208,7 @@ void cConsole::Draw() {
 
 			mFont->Color( eeColorA ( mFontLineColor.R(), mFontLineColor.G(), mFontLineColor.B(), static_cast<Uint8>(mCurAlpha) ) );
 
-			if ( (eeUint)mTBuf->CurPos() == mTBuf->Buffer().size() ) {
+			if ( (unsigned int)mTBuf->CurPos() == mTBuf->Buffer().size() ) {
 				mFont->Draw( "_", mFontSize + mFont->GetTextWidth() , CurY );
 			} else {
 				mFont->SetText( "> " + mTBuf->Buffer().substr( 0, mTBuf->CurPos() ) );
@@ -252,7 +252,7 @@ void cConsole::ProcessLine() {
 	std::vector < String > params = String::Split( str, ' ' );
 
 	mLastCommands.push_back( str );
-	mLastLogPos = (eeInt)mLastCommands.size();
+	mLastLogPos = (int)mLastCommands.size();
 
 	if ( mLastCommands.size() > 20 )
 		mLastCommands.pop_front();
@@ -441,8 +441,8 @@ void cConsole::PrintCommandsStartingWith( const String& start ) {
 }
 
 void cConsole::PrivVideoResize( cWindow * win ) {
-	mWidth		= (eeFloat) mWindow->GetWidth();
-	mHeight		= (eeFloat) mWindow->GetHeight();
+	mWidth		= (Float) mWindow->GetWidth();
+	mHeight		= (Float) mWindow->GetHeight();
 
 	if ( mVisible ) {
 		if ( mExpand )
@@ -507,7 +507,7 @@ void cConsole::PrivInputCallback( InputEvent * Event ) {
 		Uint32 Button	= Event->button.button;
 
 		if ( InputEvent::KeyDown == etype ) {
-			if ( ( KeyCode == KEY_TAB ) && (eeUint)mTBuf->CurPos() == mTBuf->Buffer().size() ) {
+			if ( ( KeyCode == KEY_TAB ) && (unsigned int)mTBuf->CurPos() == mTBuf->Buffer().size() ) {
 				PrintCommandsStartingWith( mTBuf->Buffer() );
 				GetFilesFrom( mTBuf->Buffer().ToUtf8(), mTBuf->CurPos() );
 			}
@@ -551,12 +551,12 @@ void cConsole::PrivInputCallback( InputEvent * Event ) {
 						mLastLogPos--;
 					}
 
-					if ( KeyCode == KEY_DOWN && mLastLogPos < static_cast<eeInt>( mLastCommands.size() ) ) {
+					if ( KeyCode == KEY_DOWN && mLastLogPos < static_cast<int>( mLastCommands.size() ) ) {
 						mLastLogPos++;
 					}
 
 					if ( KeyCode == KEY_UP || KeyCode == KEY_DOWN ) {
-						if ( mLastLogPos == static_cast<eeInt>( mLastCommands.size() ) ) {
+						if ( mLastLogPos == static_cast<int>( mLastCommands.size() ) ) {
 							mTBuf->Buffer( "" );
 						} else {
 							mTBuf->Buffer( mLastCommands[mLastLogPos] );
@@ -684,7 +684,7 @@ void cConsole::CmdFrameLimit ( const std::vector < String >& params ) {
 void cConsole::CmdGetLog() {
 	std::vector < String > tvec = String::Split( String( String::ToStr( cLog::instance()->Buffer() ) ) );
 	if ( tvec.size() > 0 ) {
-		for ( eeUint i = 0; i < tvec.size(); i++ )
+		for ( unsigned int i = 0; i < tvec.size(); i++ )
 			PrivPushText( tvec[i] );
 	}
 }
@@ -696,7 +696,7 @@ void cConsole::CmdGetLog( const std::vector < String >& params ) {
 void cConsole::CmdGetGpuExtensions() {
 	std::vector < String > tvec = String::Split( String( GLi->GetExtensions() ), ' ' );
 	if ( tvec.size() > 0 ) {
-		for ( eeUint i = 0; i < tvec.size(); i++ )
+		for ( unsigned int i = 0; i < tvec.size(); i++ )
 			PrivPushText( tvec[i] );
 	}
 }
@@ -707,9 +707,9 @@ void cConsole::CmdGetGpuExtensions( const std::vector < String >& params ) {
 
 void cConsole::CmdSetGamma( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
-		eeFloat tFloat = 0.f;
+		Float tFloat = 0.f;
 
-		bool Res = String::FromString<eeFloat>( tFloat, params[1] );
+		bool Res = String::FromString<Float>( tFloat, params[1] );
 
 		if ( Res && ( tFloat > 0.1f && tFloat <= 10.0f ) ) {
 			mWindow->SetGamma( tFloat, tFloat, tFloat );
@@ -723,9 +723,9 @@ void cConsole::CmdSetGamma( const std::vector < String >& params ) {
 
 void cConsole::CmdSetVolume( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
-		eeFloat tFloat = 0.f;
+		Float tFloat = 0.f;
 
-		bool Res = String::FromString<eeFloat>( tFloat, params[1] );
+		bool Res = String::FromString<Float>( tFloat, params[1] );
 
 		if ( Res && ( tFloat >= 0.0f && tFloat <= 100.0f ) ) {
 			EE::Audio::cAudioListener::GlobalVolume( tFloat );
@@ -744,7 +744,7 @@ void cConsole::CmdDir( const std::vector < String >& params ) {
 		String myOrder;
 
 		if ( params.size() > 2 ) {
-			for ( eeUint i = 2; i < params.size(); i++ ) {
+			for ( unsigned int i = 2; i < params.size(); i++ ) {
 				if ( i + 1 == params.size() ) {
 					if ( params[i] == "ff" )
 						myOrder = params[i];
@@ -757,7 +757,7 @@ void cConsole::CmdDir( const std::vector < String >& params ) {
 		}
 
 		if ( FileSystem::IsDirectory( myPath ) ) {
-			eeUint i;
+			unsigned int i;
 
 			std::vector<String> mFiles = FileSystem::FilesGetInPath( myPath );
 			std::sort( mFiles.begin(), mFiles.end() );

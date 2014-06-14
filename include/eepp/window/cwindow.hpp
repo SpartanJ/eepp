@@ -216,7 +216,7 @@ class EE_API cWindow {
 		virtual std::vector<DisplayMode> GetDisplayModes() const = 0;
 
 		/** Set the Screen Gamma. Default is (1,1,1). Accept values between 0.1 and 10. */
-		virtual void SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) = 0;
+		virtual void SetGamma( Float Red, Float Green, Float Blue ) = 0;
 
 		/** The the OpenGL context as the current context */
 		virtual void SetCurrentContext( eeWindowContex Context );
@@ -476,7 +476,7 @@ class EE_API cWindow {
 					Uint32 LastCheck;
 					Uint32 Current;
 					Uint32 Count;
-					eeFloat Limit;
+					Float Limit;
 					Int32 Error;
 				};
 

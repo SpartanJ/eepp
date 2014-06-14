@@ -109,9 +109,9 @@ std::vector<cSubTexture*> cTextureAtlasManager::GetSubTexturesByPattern( const s
 	bool 					found 	= true;
 	cSubTexture *				tSubTexture 	= NULL;
 	std::string				realext = "";
-	eeInt 					c 		= 0;
-	eeInt					t		= 0;
-	eeInt i;
+	int 					c 		= 0;
+	int					t		= 0;
+	int i;
 
 	if ( extension.size() )
 		realext = "." + extension;

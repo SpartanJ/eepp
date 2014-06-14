@@ -3,6 +3,7 @@
 #include <eepp/helper/chipmunk/chipmunk_unsafe.h>
 
 #ifdef PHYSICS_RENDERER_ENABLED
+#include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/cprimitives.hpp>
 using namespace EE::Graphics;
@@ -103,30 +104,30 @@ void cShapeSegment::Draw( cSpace * space ) {
 		cVect d = b - a;
 		cVect r = d * ( seg->CP_PRIVATE(r) / cpvlength( tocpv( d ) ) );
 
-		const GLfloat matrix[] = {
-			(GLfloat)r.x	, (GLfloat)r.y, 0.0f, 0.0f,
-			(GLfloat)-r.y	, (GLfloat)r.x, 0.0f, 0.0f,
-			(GLfloat)d.x	, (GLfloat)d.y, 0.0f, 0.0f,
-			(GLfloat)a.x	, (GLfloat)a.y, 0.0f, 1.0f,
+		const float matrix[] = {
+			(float)r.x	, (float)r.y, 0.0f, 0.0f,
+			(float)-r.y	, (float)r.x, 0.0f, 0.0f,
+			(float)d.x	, (float)d.y, 0.0f, 0.0f,
+			(float)a.x	, (float)a.y, 0.0f, 1.0f,
 		};
 
 		GLi->MultMatrixf( matrix );
 
-		GLi->VertexPointer( 3, GL_FLOAT, 0, pillVAR, pillVAR_count * sizeof(GLfloat) * 3 );
+		GLi->VertexPointer( 3, GL_FLOAT, 0, pillVAR, pillVAR_count * sizeof(float) * 3 );
 
 		if( !seg->CP_PRIVATE(shape).sensor ) {
 			eeColorA C = ColorForShape( mShape, space->Space() );
 
 			tcolors.assign( tcolors.size(), C );
 
-			GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const GLvoid*>( &tcolors[0] ), pillVAR_count * 4 );
+			GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const void*>( &tcolors[0] ), pillVAR_count * 4 );
 
 			GLi->DrawArrays( GL_TRIANGLE_FAN, 0, pillVAR_count );
 		}
 
 		tcolors.assign( tcolors.size(), eeColorA( 102, 102, 102, 255 ) );
 
-		GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const GLvoid*>( &tcolors[0] ), pillVAR_count *  4 );
+		GLi->ColorPointer( 4, GL_UNSIGNED_BYTE, 0, reinterpret_cast<const void*>( &tcolors[0] ), pillVAR_count *  4 );
 
 		GLi->DrawArrays( GL_LINE_LOOP, 0, pillVAR_count );
 

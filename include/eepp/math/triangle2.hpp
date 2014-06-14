@@ -35,7 +35,7 @@ Triangle2<T>::Triangle2( const Vector2<T>& v1, const Vector2<T>& v2, const Vecto
 	V[2] = v3;
 }
 
-typedef Triangle2<eeFloat> eeTriangle2f;
+typedef Triangle2<Float> eeTriangle2f;
 
 }}
 

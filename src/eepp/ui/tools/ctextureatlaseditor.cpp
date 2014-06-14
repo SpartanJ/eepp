@@ -307,7 +307,7 @@ void cTextureAtlasEditor::FillSubTextureList() {
 		mSubTextureList->SetSelected( 0 );
 	}
 
-	mSubTextureList->VerticalScrollBar()->ClickStep( 8.f / (eeFloat)mSubTextureList->Count() );
+	mSubTextureList->VerticalScrollBar()->ClickStep( 8.f / (Float)mSubTextureList->Count() );
 }
 
 void cTextureAtlasEditor::OnSubTextureChange( const cUIEvent * Event ) {

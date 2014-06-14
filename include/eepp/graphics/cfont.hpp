@@ -19,16 +19,16 @@ class EE_API cFont {
 		void SetText( const String& Text );
 
 		/** @return The width of the string rendered */
-		eeFloat GetTextWidth();
+		Float GetTextWidth();
 
 		/** @return Assign a new text and then returns his width */
-		eeFloat GetTextWidth( const String& Text );
+		Float GetTextWidth( const String& Text );
 
 		/** @return The current text height */
-		eeFloat GetTextHeight();
+		Float GetTextHeight();
 
 		/** @return The number of lines of the current text */
-		virtual eeInt GetNumLines();
+		virtual int GetNumLines();
 
 		/** @return The Font Color */
 		const eeColorA& Color() const;
@@ -61,7 +61,7 @@ class EE_API cFont {
 		String GetText();
 
 		/** @return The last text rendered or setted lines width */
-		const std::vector<eeFloat>& GetLinesWidth();
+		const std::vector<Float>& GetLinesWidth();
 
 		/** Draw a String on the screen
 		* @param Text The text to draw
@@ -72,7 +72,7 @@ class EE_API cFont {
 		* @param Angle The angle of the string rendered
 		* @param Effect Set the Blend Mode ( default ALPHA_NORMAL )
 		*/
-		void Draw( const String& Text, const eeFloat& X, const eeFloat& Y, const Uint32& Flags = FONT_DRAW_LEFT, const eeVector2f& Scale = eeVector2f::One, const eeFloat& Angle = 0, const EE_BLEND_MODE& Effect = ALPHA_NORMAL );
+		void Draw( const String& Text, const Float& X, const Float& Y, const Uint32& Flags = FONT_DRAW_LEFT, const eeVector2f& Scale = eeVector2f::One, const Float& Angle = 0, const EE_BLEND_MODE& Effect = ALPHA_NORMAL );
 
 		/** Draw the string seted on the screen
 		* @param X The start x position
@@ -82,7 +82,7 @@ class EE_API cFont {
 		* @param Angle The angle of the string rendered
 		* @param Effect Set the Blend Mode ( default ALPHA_NORMAL )
 		*/
-		void Draw( const eeFloat& X, const eeFloat& Y, const Uint32& Flags = FONT_DRAW_LEFT, const eeVector2f& Scale = eeVector2f::One, const eeFloat& Angle = 0, const EE_BLEND_MODE& Effect = ALPHA_NORMAL );
+		void Draw( const Float& X, const Float& Y, const Uint32& Flags = FONT_DRAW_LEFT, const eeVector2f& Scale = eeVector2f::One, const Float& Angle = 0, const EE_BLEND_MODE& Effect = ALPHA_NORMAL );
 
 		/** Draw a string on the screen from a cached text
 		* @param TextCache The cached text
@@ -93,7 +93,7 @@ class EE_API cFont {
 		* @param Angle The angle of the string rendered
 		* @param Effect Set the Blend Mode ( default ALPHA_NORMAL )
 		*/
-		void Draw( cTextCache& TextCache, const eeFloat& X, const eeFloat& Y, const Uint32& Flags = FONT_DRAW_LEFT, const eeVector2f& Scale = eeVector2f::One, const eeFloat& Angle = 0, const EE_BLEND_MODE& Effect = ALPHA_NORMAL );
+		void Draw( cTextCache& TextCache, const Float& X, const Float& Y, const Uint32& Flags = FONT_DRAW_LEFT, const eeVector2f& Scale = eeVector2f::One, const Float& Angle = 0, const EE_BLEND_MODE& Effect = ALPHA_NORMAL );
 
 		/** Shrink the String to a max width
 		* @param Str The string to shrink
@@ -108,7 +108,7 @@ class EE_API cFont {
 		void ShrinkText( std::string& Str, const Uint32& MaxWidth );
 
 		/** Cache the with of the current text */
-		void CacheWidth( const String& Text, std::vector<eeFloat>& LinesWidth, eeFloat& CachedWidth, eeInt& NumLines, eeInt& LargestLineCharCount );
+		void CacheWidth( const String& Text, std::vector<Float>& LinesWidth, Float& CachedWidth, int& NumLines, int& LargestLineCharCount );
 
 		/** @return The font texture id */
 		const Uint32& GetTexId() const;

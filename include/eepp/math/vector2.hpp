@@ -406,9 +406,9 @@ Vector2<T> Vector2<T>::Copy() {
 }
 
 typedef Vector2<Int32>		eeVector2if;
-typedef Vector2<eeInt>		eeVector2i;
-typedef Vector2<eeFloat>	eeVector2f;
-typedef Vector2<eeDouble>	eeVector2d;
+typedef Vector2<int>		eeVector2i;
+typedef Vector2<Float>		eeVector2f;
+typedef Vector2<double>		eeVector2d;
 typedef Vector2<float>		eeVector2ff;
 typedef Vector2<Uint32>		eeVector2u;
 

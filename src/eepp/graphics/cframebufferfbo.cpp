@@ -1,6 +1,7 @@
 #include <eepp/graphics/cframebufferfbo.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/window/cengine.hpp>
+#include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
 
@@ -32,19 +33,19 @@ cFrameBufferFBO::~cFrameBufferFBO() {
 	if ( !IsSupported() )
 		return;
 
-	GLint curFB;
+	int curFB;
 	glGetIntegerv( GL_FRAMEBUFFER_BINDING, &curFB );
 
 	if ( curFB == mFrameBuffer )
 		Unbind();
 
 	if ( mDepthBuffer ) {
-		GLuint depthBuffer = static_cast<GLuint>( mDepthBuffer );
+		unsigned int depthBuffer = static_cast<unsigned int>( mDepthBuffer );
 		glDeleteFramebuffersEXT( 1, &depthBuffer );
 	}
 
 	if ( mFrameBuffer ) {
-		GLuint frameBuffer = static_cast<GLuint>( mFrameBuffer );
+		unsigned int frameBuffer = static_cast<unsigned int>( mFrameBuffer );
 		glDeleteFramebuffersEXT( 1, &frameBuffer );
 	}
 }
@@ -65,7 +66,7 @@ bool cFrameBufferFBO::Create( const Uint32& Width, const Uint32& Height, bool De
 	mHeight 		= Height;
 	mHasDepthBuffer = DepthBuffer;
 
-	GLuint frameBuffer = 0;
+	unsigned int frameBuffer = 0;
 
 	glGenFramebuffersEXT( 1, &frameBuffer );
 
@@ -77,7 +78,7 @@ bool cFrameBufferFBO::Create( const Uint32& Width, const Uint32& Height, bool De
 	BindFrameBuffer();
 
 	if ( DepthBuffer ) {
-		GLuint depth = 0;
+		unsigned int depth = 0;
 
 		glGenRenderbuffersEXT( 1, &depth );
 
@@ -144,7 +145,7 @@ void cFrameBufferFBO::Reload() {
 }
 
 void cFrameBufferFBO::BindFrameBuffer() {
-	GLint curFB;
+	int curFB;
 	glGetIntegerv( GL_FRAMEBUFFER_BINDING, &curFB );
 
 	mLastFB = (Int32)curFB;
@@ -154,7 +155,7 @@ void cFrameBufferFBO::BindFrameBuffer() {
 
 void cFrameBufferFBO::BindRenderBuffer() {
 	if ( mDepthBuffer ) {
-		GLint curRB;
+		int curRB;
 		glGetIntegerv( GL_RENDERBUFFER_BINDING, &curRB );
 
 		mLastRB = (Int32)curRB;

@@ -796,7 +796,7 @@ void cUIListBox::SelectPrev() {
 				CreateItemIndex( SelIndex );
 
 			if ( mItems[ SelIndex ]->Pos().y < 0 ) {
-				mVScrollBar->Value( (eeFloat)( SelIndex * mRowHeight ) / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) );
+				mVScrollBar->Value( (Float)( SelIndex * mRowHeight ) / (Float)( ( mItems.size() - 1 ) * mRowHeight ) );
 
 				mItems[ SelIndex ]->SetFocus();
 			}
@@ -818,7 +818,7 @@ void cUIListBox::SelectNext() {
 				CreateItemIndex( SelIndex );
 
 			if ( mItems[ SelIndex ]->Pos().y + (Int32)RowHeight() > mContainer->Size().Height() ) {
-				mVScrollBar->Value( (eeFloat)( SelIndex * mRowHeight ) / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) );
+				mVScrollBar->Value( (Float)( SelIndex * mRowHeight ) / (Float)( ( mItems.size() - 1 ) * mRowHeight ) );
 
 				mItems[ SelIndex ]->SetFocus();
 			}
@@ -971,7 +971,7 @@ void cUIListBox::Update() {
 				if ( mTouchDragPoint != Pos ) {
 					eeVector2i diff = -( mTouchDragPoint - Pos );
 
-					mVScrollBar->Value( mVScrollBar->Value() + ( -diff.y / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) ) );
+					mVScrollBar->Value( mVScrollBar->Value() + ( -diff.y / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
 
 					mTouchDragAcceleration += Elapsed().AsMilliseconds() * diff.y * mTouchDragDeceleration;
 
@@ -1000,7 +1000,7 @@ void cUIListBox::Update() {
 
 				// Deaccelerate
 				if ( mTouchDragAcceleration > 0.01f || mTouchDragAcceleration < -0.01f ) {
-					mVScrollBar->Value( mVScrollBar->Value() + ( -mTouchDragAcceleration / (eeFloat)( ( mItems.size() - 1 ) * mRowHeight ) ) );
+					mVScrollBar->Value( mVScrollBar->Value() + ( -mTouchDragAcceleration / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
 
 					mTouchDragAcceleration -= mTouchDragAcceleration * mTouchDragDeceleration * Elapsed().AsMilliseconds();
 				}

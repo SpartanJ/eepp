@@ -73,14 +73,14 @@ void cInterpolation::ClearWaypoints() {
 	mPoints.clear();
 }
 
-void cInterpolation::AddWaypoint( const eeFloat Pos, const eeFloat Time ) {
+void cInterpolation::AddWaypoint( const Float Pos, const Float Time ) {
 	mPoints.push_back( cPoint1df( Pos, Time ) );
 
 	if ( mPoints.size() >= 2 )
 		mTotDist += eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[ mPoints.size() - 2 ].p );
 }
 
-bool cInterpolation::EditWaypoint( const eeUint PointNum, const eeFloat NewPos, const eeFloat NewTime ) {
+bool cInterpolation::EditWaypoint( const unsigned int& PointNum, const Float& NewPos, const Float NewTime ) {
 	if ( PointNum < mPoints.size() ) {
 		if ( 0 == PointNum )
 			mTotDist -= eeabs( mPoints[ PointNum ].p - mPoints[ PointNum + 1 ].p );
@@ -90,7 +90,7 @@ bool cInterpolation::EditWaypoint( const eeUint PointNum, const eeFloat NewPos, 
 		mPoints[ PointNum ] = cPoint1df( NewPos, NewTime );
 
 		if ( 0 == PointNum ) {
-			if ( PointNum + (eeUint)1 < mPoints.size() )
+			if ( PointNum + 1 < mPoints.size() )
 				mTotDist += eeabs( mPoints[ PointNum ].p - mPoints[ PointNum + 1 ].p );
 		}
 		else
@@ -101,7 +101,7 @@ bool cInterpolation::EditWaypoint( const eeUint PointNum, const eeFloat NewPos, 
 	return false;
 }
 
-bool cInterpolation::EraseWaypoint( const eeUint PointNum ) {
+bool cInterpolation::EraseWaypoint( const unsigned int& PointNum ) {
 	if ( PointNum < mPoints.size() && !mEnable ) {
 		if ( 0 == PointNum )
 			mTotDist -= eeabs( mPoints[ PointNum ].p - mPoints[ PointNum + 1 ].p );
@@ -115,15 +115,15 @@ bool cInterpolation::EraseWaypoint( const eeUint PointNum ) {
 	return false;
 }
 
-const eeFloat& cInterpolation::GetEndPos() {
+const Float& cInterpolation::GetEndPos() {
 	return mPoints[ mPoints.size() - 1 ].p;
 }
 
-const eeFloat& cInterpolation::GetPos() {
+const Float& cInterpolation::GetPos() {
 	return mCurPos;
 }
 
-const eeFloat& cInterpolation::GetRealPos() const {
+const Float& cInterpolation::GetRealPos() const {
 	return mCurPos;
 }
 
@@ -133,7 +133,7 @@ void cInterpolation::Update( const cTime& Elapsed ) {
 			mCurTime = 0;
 			mActP = &mPoints[ mCurPoint ];
 
-			if ( mCurPoint + (eeUint)1 < mPoints.size() ) {
+			if ( mCurPoint + 1 < mPoints.size() ) {
 				mNexP = &mPoints[ mCurPoint + 1 ];
 
 				if ( mOnStepCallback.IsSet() )
@@ -179,7 +179,7 @@ void cInterpolation::Update( const cTime& Elapsed ) {
 }
 
 void cInterpolation::SetTotalTime( const cTime & TotTime ) {
-	eeFloat tdist = mTotDist;
+	Float tdist = mTotDist;
 
 	if ( tdist == 0.0f ) {
 		mPoints.clear();
@@ -191,16 +191,16 @@ void cInterpolation::SetTotalTime( const cTime & TotTime ) {
 		mPoints[ mPoints.size() - 1 ].t = eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p ) * TotTime.AsMilliseconds() / tdist;
 	}
 
-	for ( eeUint i = 0; i < mPoints.size() - 1; i++) {
-		eeFloat CurDist = eeabs( mPoints[i].p - mPoints[i + 1].p );
+	for ( unsigned int i = 0; i < mPoints.size() - 1; i++) {
+		Float CurDist = eeabs( mPoints[i].p - mPoints[i + 1].p );
 		mPoints[i].t = CurDist * TotTime.AsMilliseconds() / tdist;
 	}
 }
 
-void cInterpolation::Speed( const eeFloat Speed ) {
-	eeFloat tdist = mTotDist;
+void cInterpolation::Speed( const Float Speed ) {
+	Float tdist = mTotDist;
 	mSpeed = Speed;
-	eeFloat CurDist;
+	Float CurDist;
 
 	if ( mPoints.size() ) {
 		if ( tdist == 0.0f ) {
@@ -208,7 +208,7 @@ void cInterpolation::Speed( const eeFloat Speed ) {
 			return;
 		}
 
-		eeFloat TotTime = tdist * ( 1000.f / mSpeed );
+		Float TotTime = tdist * ( 1000.f / mSpeed );
 
 		if ( mLoop ) {
 			CurDist = eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p );
@@ -218,7 +218,7 @@ void cInterpolation::Speed( const eeFloat Speed ) {
 			TotTime = tdist * ( 1000.f / mSpeed );
 		}
 
-		for ( eeUint i = 0; i < mPoints.size() - 1; i++) {
+		for ( unsigned int i = 0; i < mPoints.size() - 1; i++) {
 			CurDist = eeabs( mPoints[i].p - mPoints[i + 1].p );
 			mPoints[i].t = CurDist * TotTime / tdist;
 		}
@@ -229,7 +229,7 @@ void cInterpolation::Type( Ease::Interpolation InterpolationType ) {
 	mType = InterpolationType;
 }
 
-const eeInt& cInterpolation::Type() const {
+const int& cInterpolation::Type() const {
 	return mType;
 }
 
@@ -261,7 +261,7 @@ const std::vector<cPoint1df>& cInterpolation::GetPoints() const {
 	return mPoints;
 }
 
-const eeFloat& cInterpolation::Speed() const {
+const Float& cInterpolation::Speed() const {
 	return mSpeed;
 }
 

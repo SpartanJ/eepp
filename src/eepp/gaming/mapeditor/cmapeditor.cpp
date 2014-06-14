@@ -439,8 +439,8 @@ void cMapEditor::CreateUIMap() {
 	cUISkin * HScrollSkin = mTheme->GetByName( mTheme->Abbr() + "_" + "hscrollbar_bg" );
 	cUISkin * VScrollSkin = mTheme->GetByName( mTheme->Abbr() + "_" + "vscrollbar_bg" );
 
-	eeFloat ScrollH = 16;
-	eeFloat ScrollV = 16;
+	Float ScrollH = 16;
+	Float ScrollV = 16;
 
 	if ( NULL != HScrollSkin ) {
 		cSubTexture * tTex = HScrollSkin->GetSubTexture( cUISkinState::StateNormal );
@@ -756,7 +756,7 @@ void cMapEditor::FillSubTextureList() {
 		}
 	}
 
-	mSubTextureList->VerticalScrollBar()->ClickStep( 8.f / (eeFloat)mSubTextureList->Count() );
+	mSubTextureList->VerticalScrollBar()->ClickStep( 8.f / (Float)mSubTextureList->Count() );
 }
 
 void cMapEditor::OnSubTextureChange( const cUIEvent * Event ) {
@@ -948,7 +948,7 @@ void cMapEditor::ViewMenuClick( const cUIEvent * Event ) {
 
 void cMapEditor::ZoomIn() {
 	cMap * Map = mUIMap->Map();
-	eeFloat S = mUIMap->Map()->Scale();
+	Float S = mUIMap->Map()->Scale();
 
 	if ( S < 4 ) {
 		if ( 0.0625f == S ) {
@@ -977,7 +977,7 @@ void cMapEditor::ZoomIn() {
 
 void cMapEditor::ZoomOut() {
 	cMap * Map = mUIMap->Map();
-	eeFloat S = mUIMap->Map()->Scale();
+	Float S = mUIMap->Map()->Scale();
 
 	if ( S > 0.0625f ) {
 		if ( 0.125f == S ) {

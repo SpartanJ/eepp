@@ -50,8 +50,8 @@ OriginPoint<T>& OriginPoint<T>::operator=(const Vector2<T>& v) {
 	return *this;
 }
 
-typedef OriginPoint<eeFloat>	eeOriginPoint;
-typedef OriginPoint<eeInt>		eeOriginPointi;
+typedef OriginPoint<Float>	eeOriginPoint;
+typedef OriginPoint<int>		eeOriginPointi;
 
 }}
 

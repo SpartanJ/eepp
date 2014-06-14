@@ -6,7 +6,7 @@
 
 namespace EE { namespace Math { namespace easing {
 
-typedef eeDouble( *easingCbFunc )( eeDouble, eeDouble, eeDouble, eeDouble );
+typedef double( *easingCbFunc )( double, double, double, double );
 
 extern EE_API easingCbFunc easingCb[];
 
@@ -19,7 +19,7 @@ extern EE_API easingCbFunc easingCb[];
 *  @param d Specifies the duration of the motion.
 *  @return The value of the interpolated property at the specified time.
 */
-inline eeDouble LinearInterpolation( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double LinearInterpolation( double t, double b, double c, double d ) {
 	return b + t * c / d;
 }
 
@@ -32,7 +32,7 @@ inline eeDouble LinearInterpolation( eeDouble t, eeDouble b, eeDouble c, eeDoubl
 *  @param d Specifies the duration of the motion.
 *  @return The value of the interpolated property at the specified time.
 */
-inline eeDouble QuadraticIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double QuadraticIn( double t, double b, double c, double d ) {
 	t /= d;
 
 	return c * t * t + b;
@@ -48,7 +48,7 @@ inline eeDouble QuadraticIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 *  @param d Specifies the duration of the motion.
 *  @return The value of the interpolated property at the specified time.
 */
-inline eeDouble QuadraticOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double QuadraticOut( double t, double b, double c, double d ) {
 	t /= d;
 
 	return -c * t * ( t - 2 ) + b;
@@ -66,7 +66,7 @@ inline eeDouble QuadraticOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 *  @param d Specifies the duration of the motion.
 *  @return The value of the interpolated property at the specified time.
 */
-inline eeDouble QuadraticInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double QuadraticInOut( double t, double b, double c, double d ) {
 	t /= d / 2;
 
 	if ( t < 1 )
@@ -87,7 +87,7 @@ inline eeDouble QuadraticInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d )
 *  @param d Specifies the duration of the motion.
 *  @return The value of the interpolated property at the specified time.
 */
-inline eeDouble SineIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double SineIn( double t, double b, double c, double d ) {
 	return -c * eecos( t / d * ( EE_PI / 2 ) ) + c + b;
 }
 
@@ -101,7 +101,7 @@ inline eeDouble SineIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 *  @param d Specifies the duration of the motion.
 *  @return The value of the interpolated property at the specified time.
 */
-inline eeDouble SineOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double SineOut( double t, double b, double c, double d ) {
 	return c * eesin( t / d * ( EE_PI / 2 ) ) + b;
 }
 
@@ -117,7 +117,7 @@ inline eeDouble SineOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 *  @param d Specifies the duration of the motion.
 *  @return The value of the interpolated property at the specified time.
 */
-inline eeDouble SineInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double SineInOut( double t, double b, double c, double d ) {
 	return -c / 2 * ( eecos( EE_PI * t / d ) - 1 ) + b;
 }
 
@@ -131,7 +131,7 @@ inline eeDouble SineInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 *  @param d Specifies the duration of the effect, in milliseconds.
 *  @return Number corresponding to the position of the component.
 */
-inline eeDouble ExponentialIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double ExponentialIn( double t, double b, double c, double d ) {
 	return t == 0 ? b : c * eepow( 2, 10 * ( t / d - 1 ) ) + b;
 }
 
@@ -145,7 +145,7 @@ inline eeDouble ExponentialIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) 
 *  @param d Specifies the duration of the motion.
 *  @return The value of the interpolated property at the specified time.
 */
-inline eeDouble ExponentialOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double ExponentialOut( double t, double b, double c, double d ) {
 	return t == d ? b + c : c * ( -eepow( 2, -10 * t / d ) + 1 ) + b;
 }
 
@@ -161,7 +161,7 @@ inline eeDouble ExponentialOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d )
 *  @param d Specifies the duration of the motion.
 *  @return The value of the interpolated property at the specified time.
 */
-inline eeDouble ExponentialInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double ExponentialInOut( double t, double b, double c, double d ) {
 	if (t == 0)
 		return b;
 
@@ -174,19 +174,19 @@ inline eeDouble ExponentialInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d
 	return c / 2 * ( -eepow( 2, -10 * --t ) + 2 ) + b;
 }
 
-inline eeDouble QuarticIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double QuarticIn( double t, double b, double c, double d ) {
 	t /= d;
 
 	return c * t * t * t * t + b;
 }
 
-inline eeDouble QuarticOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double QuarticOut( double t, double b, double c, double d ) {
 	t = t / d - 1;
 
 	return -c * ( t * t * t * t - 1 ) + b;
 }
 
-inline eeDouble QuarticInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double QuarticInOut( double t, double b, double c, double d ) {
 	t /= d / 2;
 
 	if ( t < 1)
@@ -197,19 +197,19 @@ inline eeDouble QuarticInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	return -c / 2 * ( t * t * t * t - 2 ) + b;
 }
 
-inline eeDouble QuinticIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double QuinticIn( double t, double b, double c, double d ) {
 	t /= d;
 
 	return c * t * t * t * t * t + b;
 }
 
-inline eeDouble QuinticOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double QuinticOut( double t, double b, double c, double d ) {
 	t = t / d - 1;
 
 	return c * ( t * t * t * t * t + 1) + b;
 }
 
-inline eeDouble QuinticInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double QuinticInOut( double t, double b, double c, double d ) {
 	t /= d / 2;
 
 	if ( t < 1 )
@@ -220,19 +220,19 @@ inline eeDouble QuinticInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	return c / 2 * ( t * t * t * t * t + 2) + b;
 }
 
-inline eeDouble CircularIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double CircularIn( double t, double b, double c, double d ) {
 	t /= d;
 
 	return -c * ( eesqrt( 1 - t * t ) - 1) + b;
 }
 
-inline eeDouble CircularOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double CircularOut( double t, double b, double c, double d ) {
 	t = t / d - 1;
 
 	return c * eesqrt( 1 - t * t ) + b;
 }
 
-inline eeDouble CircularInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double CircularInOut( double t, double b, double c, double d ) {
 	t /= d / 2;
 
 	if ( t < 1 )
@@ -243,19 +243,19 @@ inline eeDouble CircularInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) 
 	return c / 2 * ( eesqrt( 1 - t * t ) + 1) + b;
 }
 
-inline eeDouble CubicIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double CubicIn( double t, double b, double c, double d ) {
 	t /= d;
 
 	return c * t * t * t + b;
 }
 
-inline eeDouble CubicOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double CubicOut( double t, double b, double c, double d ) {
 	t = t / d - 1;
 
 	return c * ( t * t * t + 1) + b;
 }
 
-inline eeDouble CubicInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double CubicInOut( double t, double b, double c, double d ) {
 	t /= d / 2;
 
 	if ( t < 1 )
@@ -266,23 +266,23 @@ inline eeDouble CubicInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	return c / 2 * ( t * t * t + 2 ) + b;
 }
 
-inline eeDouble BackIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
-	eeDouble s = 1.70158f;
+inline double BackIn( double t, double b, double c, double d ) {
+	double s = 1.70158f;
 
 	t /= d;
 
 	return c * t * t * ( ( s + 1 ) * t - s) + b;
 }
 
-inline eeDouble BackOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
-	eeDouble	s = 1.70158f;
+inline double BackOut( double t, double b, double c, double d ) {
+	double	s = 1.70158f;
 
 	t = t / d - 1;
 
 	return c * ( t * t * ( ( s + 1 ) * t + s ) + 1 ) + b;
 }
 
-inline eeDouble BackInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double BackInOut( double t, double b, double c, double d ) {
 	float s = 1.70158f;
 
 	t /= d / 2;
@@ -296,7 +296,7 @@ inline eeDouble BackInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	return c / 2 * ( t * t * ( ( s + 1 ) * t + s ) + 2) + b;
 }
 
-inline eeDouble BounceOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double BounceOut( double t, double b, double c, double d ) {
 	t /= d;
 
 	if ( t < ( 1.f / 2.75f ) ) {
@@ -316,18 +316,18 @@ inline eeDouble BounceOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	}
 }
 
-inline eeDouble BounceIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double BounceIn( double t, double b, double c, double d ) {
 	return c - BounceOut( d - t, 0, c, d ) + b;
 }
 
-inline eeDouble BounceInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double BounceInOut( double t, double b, double c, double d ) {
 	if ( t < d * 0.5f )
 		return BounceIn( t * 2.f, 0.f, c, d ) * 0.5f + b;
 
 	return BounceOut( t * 2.f - d, 0.f, c, d ) * 0.5f + c * 0.5f + b;
 }
 
-inline eeDouble ElasticIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double ElasticIn( double t, double b, double c, double d ) {
 	if ( t == 0.f )
 		return b;
 
@@ -336,16 +336,16 @@ inline eeDouble ElasticIn( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	if ( t == 1.f )
 		return b + c;
 
-	eeDouble p = d * 0.3f;
-	eeDouble s = p / 4.f;
-	eeDouble a = c;
+	double p = d * 0.3f;
+	double s = p / 4.f;
+	double a = c;
 
 	t -= 1.f;
 
 	return -( a * eepow( 2.f , 10.f * t ) * eesin( ( t * d - s ) * ( 2.f * EE_PI ) / p ) ) + b;
 }
 
-inline eeDouble ElasticOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double ElasticOut( double t, double b, double c, double d ) {
 	if ( t == 0.f )
 		return b;
 
@@ -354,14 +354,14 @@ inline eeDouble ElasticOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	if ( t ==1 )
 		return b + c;
 
-	eeDouble p = d * 0.3f;
-	eeDouble s = p / 4.f;
-	eeDouble a = c;
+	double p = d * 0.3f;
+	double s = p / 4.f;
+	double a = c;
 
 	return ( a * eepow( 2.f, -10.f * t ) * eesin( ( t * d - s ) * ( 2.f * EE_PI ) / p ) + c + b );
 }
 
-inline eeDouble ElasticInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
+inline double ElasticInOut( double t, double b, double c, double d ) {
 	if ( t == 0 )
 		return b;
 
@@ -370,9 +370,9 @@ inline eeDouble ElasticInOut( eeDouble t, eeDouble b, eeDouble c, eeDouble d ) {
 	if ( t == 2 )
 		return b + c;
 
-	eeDouble p = d * ( 0.3f * 1.5f );
-	eeDouble a = c;
-	eeDouble s = p / 4.f;
+	double p = d * ( 0.3f * 1.5f );
+	double a = c;
+	double s = p / 4.f;
 
 	if ( t < 1 ) {
 		t -= 1.f;

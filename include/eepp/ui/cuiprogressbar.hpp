@@ -37,13 +37,13 @@ class EE_API cUIProgressBar : public cUIComplexControl {
 
 		virtual void SetTheme( cUITheme * Theme );
 
-		virtual void Progress( eeFloat Val );
+		virtual void Progress( Float Val );
 
-		const eeFloat& Progress() const;
+		const Float& Progress() const;
 
-		virtual void TotalSteps( const eeFloat& Steps );
+		virtual void TotalSteps( const Float& Steps );
 
-		const eeFloat& TotalSteps() const;
+		const Float& TotalSteps() const;
 
 		virtual void Draw();
 
@@ -71,8 +71,8 @@ class EE_API cUIProgressBar : public cUIComplexControl {
 		eeRectf 			mFillerMargin;
 		bool				mDisplayPercent;
 
-		eeFloat				mProgress;
-		eeFloat				mTotalSteps;
+		Float				mProgress;
+		Float				mTotalSteps;
 
 		cScrollParallax *	mParallax;
 

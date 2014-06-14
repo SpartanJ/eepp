@@ -14,11 +14,11 @@ template <typename T>
 class Point1d {
 	public:
 		Point1d() { p = 0; t = 0.f; }
-		Point1d( const T& Pos, const eeFloat& Time ) { p = Pos; t = Time; }
+		Point1d( const T& Pos, const Float& Time ) { p = Pos; t = Time; }
 		T p;
-		eeFloat t;
+		Float t;
 };
-typedef Point1d<eeFloat> cPoint1df;
+typedef Point1d<Float> cPoint1df;
 
 /** @brief A interpolation movement manager, used for movement interpolations. */
 class EE_API cInterpolation {
@@ -32,13 +32,13 @@ class EE_API cInterpolation {
 		typedef cb::Callback0<void> OnStepCallback;
 
 		/** Add a new point */
-		void AddWaypoint( const eeFloat Pos, const eeFloat Time = 0 );
+		void AddWaypoint( const Float Pos, const Float Time = 0 );
 
 		/** Edit a point */
-		bool EditWaypoint( const eeUint PointNum, const eeFloat NewPos, const eeFloat NewTime = 0 );
+		bool EditWaypoint( const unsigned int& PointNum, const Float& NewPos, const Float NewTime = 0 );
 
 		/** Erase a point */
-		bool EraseWaypoint( const eeUint PointNum );
+		bool EraseWaypoint( const unsigned int& PointNum );
 
 		/** Start the animation */
 		void Start( OnPathEndCallback PathEndCallback = OnPathEndCallback(), OnStepCallback StepCallback = OnStepCallback() );
@@ -59,10 +59,10 @@ class EE_API cInterpolation {
 		void Reset();
 
 		/** @return The Current Position */
-		const eeFloat& GetPos();
+		const Float& GetPos();
 
 		/** @return The Current Real Position */
-		const eeFloat& GetRealPos() const;
+		const Float& GetRealPos() const;
 
 		/** @return If movement interpolation is a loop */
 		const bool&	Loop() const;
@@ -77,10 +77,10 @@ class EE_API cInterpolation {
 		const bool& Ended() const;
 
 		/** Set the current interpolation speed */
-		void Speed( const eeFloat Speed );
+		void Speed( const Float Speed );
 
 		/** Get the current interpolation speed */
-		const eeFloat& Speed() const;
+		const Float& Speed() const;
 
 		/** @return If enabled */
 		const bool& Enabled() const;
@@ -100,29 +100,29 @@ class EE_API cInterpolation {
 		cPoint1df* GetCurrentNext() const;
 
 		/** @return The Current Position in the vector */
-		const eeUint& GetCurrentPos() const;
+		const unsigned int& GetCurrentPos() const;
 
 		/** @return The path end position */
-		const eeFloat& GetEndPos();
+		const Float& GetEndPos();
 
 		/** Set the type of interpolation to be used */
 		void Type( Ease::Interpolation InterpolationType );
 
 		/** @return The type of the interpolation */
-		const eeInt& Type() const;
+		const int& Type() const;
 	protected:
-		eeInt mType;
+		int mType;
 		bool mEnable;
 		bool mUpdate;
 		bool mLoop;
 		bool mEnded;
 
-		eeFloat mTotDist;
-		eeFloat mCurPos;
-		eeUint mCurPoint;
-		eeDouble mCurTime;
+		Float mTotDist;
+		Float mCurPos;
+		unsigned int mCurPoint;
+		double mCurTime;
 
-		eeFloat mSpeed;
+		Float mSpeed;
 
 		std::vector<cPoint1df> mPoints;
 

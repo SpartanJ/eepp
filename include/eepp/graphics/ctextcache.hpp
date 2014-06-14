@@ -34,13 +34,13 @@ class EE_API cTextCache {
 		void Text( const String& text );
 
 		/** @return The cached text width */
-		eeFloat GetTextWidth();
+		Float GetTextWidth();
 
 		/** @return The cached text height */
-		eeFloat GetTextHeight();
+		Float GetTextHeight();
 
 		/** @return Every cached text line width */
-		const std::vector<eeFloat>& LinesWidth();
+		const std::vector<Float>& LinesWidth();
 
 		/** @return The vertex coordinates cached */
 		std::vector<eeVertexCoords>& VertextCoords();
@@ -49,7 +49,7 @@ class EE_API cTextCache {
 		std::vector<eeColorA>& Colors();
 
 		/** Draw the cached text on screen */
-		void Draw( const eeFloat& X, const eeFloat& Y, const eeVector2f& Scale = eeVector2f::One, const eeFloat& Angle = 0, EE_BLEND_MODE Effect = ALPHA_NORMAL );
+		void Draw( const Float& X, const Float& Y, const eeVector2f& Scale = eeVector2f::One, const Float& Angle = 0, EE_BLEND_MODE Effect = ALPHA_NORMAL );
 
 		/** @return The Font Color */
 		const eeColorA& Color() const;
@@ -75,7 +75,7 @@ class EE_API cTextCache {
 		void ShadowColor(const eeColorA& color);
 
 		/** @return The number of lines that the cached text contains */
-		const eeInt& GetNumLines() const;
+		const int& GetNumLines() const;
 
 		/** Set the font draw flags */
 		void Flags( const Uint32& flags );
@@ -91,9 +91,9 @@ class EE_API cTextCache {
 		String						mText;
 		cFont * 					mFont;
 
-		eeFloat 					mCachedWidth;
-		eeInt 						mNumLines;
-		eeInt						mLargestLineCharCount;
+		Float 					mCachedWidth;
+		int 						mNumLines;
+		int						mLargestLineCharCount;
 
 		eeColorA					mFontColor;
 		eeColorA					mFontShadowColor;
@@ -103,7 +103,7 @@ class EE_API cTextCache {
 
 		bool						mCachedCoords;
 
-		std::vector<eeFloat> 		mLinesWidth;
+		std::vector<Float> 		mLinesWidth;
 		std::vector<eeVertexCoords>	mRenderCoords;
 		std::vector<eeColorA>		mColors;
 
@@ -113,9 +113,9 @@ class EE_API cTextCache {
 
 		void CachedCoords( const bool& cached );
 		
-		const eeUint& CachedVerts() const;
+		const unsigned int& CachedVerts() const;
 
-		void CachedVerts( const eeUint& num );
+		void CachedVerts( const unsigned int& num );
 };
 
 }}

@@ -170,7 +170,7 @@ void cEETest::LoadFonts() {
 	cTextureLoader * tl = eeNew( cTextureLoader, ( MyPath + "fonts/conchars.png" ) );
 	tl->SetColorKey( eeColor(0,0,0) );
 
-	mFontLoader.Add( eeNew( cTextureFontLoader, ( "conchars", tl, (eeUint)32 ) ) );
+	mFontLoader.Add( eeNew( cTextureFontLoader, ( "conchars", tl, (unsigned int)32 ) ) );
 	mFontLoader.Add( eeNew( cTextureFontLoader, ( "ProggySquareSZ", eeNew( cTextureLoader, ( MyPath + "fonts/ProggySquareSZ.png" ) ), MyPath + "fonts/ProggySquareSZ.dat" ) ) );
 	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, eeColor(255,255,255) ) ) );
 	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arialb", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, eeColor(255,255,255), 1, eeColor(0,0,0), true ) ) );
@@ -852,7 +852,7 @@ void cEETest::LoadTextures() {
 		#endif
 	}
 
-	eeInt w, h;
+	int w, h;
 
 	for ( Int32 my = 0; my < 4; my++ )
 		for( Int32 mx = 0; mx < 8; mx++ )
@@ -870,8 +870,8 @@ void cEETest::LoadTextures() {
 	cTexture * Tex = TNP[2];
 
 	if ( NULL != Tex && Tex->Lock() ) {
-		w = (eeInt)Tex->Width();
-		h = (eeInt)Tex->Height();
+		w = (int)Tex->Width();
+		h = (int)Tex->Height();
 
 		for ( y = 0; y < h; y++) {
 			for ( x = 0; x < w; x++) {
@@ -957,7 +957,7 @@ void cEETest::Screen2() {
 	}
 
 	if ( KM->MouseLeftPressed() )
-		TNP[3]->DrawEx( 0.f, 0.f, (eeFloat)mWindow->GetWidth(), (eeFloat)mWindow->GetHeight() );
+		TNP[3]->DrawEx( 0.f, 0.f, (Float)mWindow->GetWidth(), (Float)mWindow->GetHeight() );
 
 	Batch.SetTexture( TNP[2] );
 	Batch.QuadsBegin();
@@ -968,8 +968,8 @@ void cEETest::Screen2() {
 	Batch.BatchScale( scale );
 	Batch.BatchCenter( eeVector2f( HWidth, HHeight ) );
 
-	eeFloat aX = HWidth - 256.f;
-	eeFloat aY = HHeight - 256.f;
+	Float aX = HWidth - 256.f;
+	Float aY = HHeight - 256.f;
 	eeQuad2f TmpQuad(
 		eeVector2f( aX	   , aY 		),
 		eeVector2f( aX	   , aY + 32.f  ),
@@ -980,8 +980,8 @@ void cEETest::Screen2() {
 
 	for ( Uint32 z = 0; z < 16; z++ ) {
 		for ( Uint32 y = 0; y < 16; y++ ) {
-			eeFloat tmpx = (eeFloat)z * 32.f;
-			eeFloat tmpy = (eeFloat)y * 32.f;
+			Float tmpx = (Float)z * 32.f;
+			Float tmpy = (Float)y * 32.f;
 
 			Batch.BatchQuadFree( TmpQuad[0].x + tmpx, TmpQuad[0].y + tmpy, TmpQuad[1].x + tmpx, TmpQuad[1].y + tmpy, TmpQuad[2].x + tmpx, TmpQuad[2].y + tmpy, TmpQuad[3].x + tmpx, TmpQuad[3].y + tmpy );
 		}
@@ -993,8 +993,8 @@ void cEETest::Screen2() {
 	Batch.BatchScale( 1.0f );
 	Batch.BatchCenter( eeVector2f( 0, 0 ) );
 
-	eeFloat PlanetX = HWidth  - TNP[6]->Width() * 0.5f;
-	eeFloat PlanetY = HHeight - TNP[6]->Height() * 0.5f;
+	Float PlanetX = HWidth  - TNP[6]->Width() * 0.5f;
+	Float PlanetY = HHeight - TNP[6]->Height() * 0.5f;
 
 	ang+=et.AsMilliseconds() * 0.1f;
 	ang = (ang>=360) ? 0 : ang;
@@ -1034,7 +1034,7 @@ void cEETest::Screen2() {
 	}
 
 	eeColorA Col(255,255,255,(int)alpha);
-	TNP[1]->DrawEx( (eeFloat)mWindow->GetWidth() - 128.f, (eeFloat)mWindow->GetHeight() - 128.f, 128.f, 128.f, ang, eeVector2f::One, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
+	TNP[1]->DrawEx( (Float)mWindow->GetWidth() - 128.f, (Float)mWindow->GetHeight() - 128.f, 128.f, 128.f, ang, eeVector2f::One, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
 
 	SP.Position( alpha, alpha );
 	SP.Draw();
@@ -1056,7 +1056,7 @@ void cEETest::Screen2() {
 	CL1.Angle(ang);
 	CL1.Scale(scale * 0.5f);
 
-	CL2.Position( (eeFloat)Mousef.x - 64.f, (eeFloat)Mousef.y + 128.f );
+	CL2.Position( (Float)Mousef.x - 64.f, (Float)Mousef.y + 128.f );
 	CL2.Angle(-ang);
 
 	CL1.Draw();
@@ -1076,9 +1076,9 @@ void cEETest::Screen2() {
 
 	PR.SetColor( eeColorA(0, 255, 0, 50) );
 
-	eeLine2f Line( eeVector2f(0.f, 0.f), eeVector2f( (eeFloat)mWindow->GetWidth(), (eeFloat)mWindow->GetHeight() ) );
+	eeLine2f Line( eeVector2f(0.f, 0.f), eeVector2f( (Float)mWindow->GetWidth(), (Float)mWindow->GetHeight() ) );
 	eeLine2f Line2( eeVector2f(Mousef.x - 80.f, Mousef.y - 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y + 80.f) );
-	eeLine2f Line3( eeVector2f((eeFloat)mWindow->GetWidth(), 0.f), eeVector2f( 0.f, (eeFloat)mWindow->GetHeight() ) );
+	eeLine2f Line3( eeVector2f((Float)mWindow->GetWidth(), 0.f), eeVector2f( 0.f, (Float)mWindow->GetHeight() ) );
 	eeLine2f Line4( eeVector2f(Mousef.x - 80.f, Mousef.y + 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y - 80.f) );
 
 	if ( Line.Intersect( Line2 ) )
@@ -1103,12 +1103,12 @@ void cEETest::Screen2() {
 	PR.DrawTriangle( eeTriangle2f( eeVector2f( Mousef.x, Mousef.y - 10.f ), eeVector2f( Mousef.x - 10.f, Mousef.y + 10.f ), eeVector2f( Mousef.x + 10.f, Mousef.y + 10.f ) ) );
 	PR.DrawLine( eeLine2f( eeVector2f(Mousef.x - 80.f, Mousef.y - 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y + 80.f) ) );
 	PR.DrawLine( eeLine2f( eeVector2f(Mousef.x - 80.f, Mousef.y + 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y - 80.f) ) );
-	PR.DrawLine( eeLine2f( eeVector2f((eeFloat)mWindow->GetWidth(), 0.f), eeVector2f( 0.f, (eeFloat)mWindow->GetHeight() ) ) );
+	PR.DrawLine( eeLine2f( eeVector2f((Float)mWindow->GetWidth(), 0.f), eeVector2f( 0.f, (Float)mWindow->GetHeight() ) ) );
 	PR.FillMode( DRAW_FILL );
 	PR.DrawQuad( eeQuad2f( eeVector2f(0.f, 0.f), eeVector2f(0.f, 100.f), eeVector2f(150.f, 150.f), eeVector2f(200.f, 150.f) ), eeColorA(220, 240, 0, 125), eeColorA(100, 0, 240, 125), eeColorA(250, 50, 25, 125), eeColorA(50, 150, 150, 125) );
 	PR.FillMode( DRAW_LINE );
 	PR.DrawRectangle( eeRectf( eeVector2f( Mousef.x - 80.f, Mousef.y - 80.f ), eeSizef( 160.f, 160.f ) ), 45.f );
-	PR.DrawLine( eeLine2f( eeVector2f(0.f, 0.f), eeVector2f( (eeFloat)mWindow->GetWidth(), (eeFloat)mWindow->GetHeight() ) ) );
+	PR.DrawLine( eeLine2f( eeVector2f(0.f, 0.f), eeVector2f( (Float)mWindow->GetWidth(), (Float)mWindow->GetHeight() ) ) );
 
 	TNP[3]->DrawQuadEx( eeQuad2f( eeVector2f(0.f, 0.f), eeVector2f(0.f, 100.f), eeVector2f(150.f, 150.f), eeVector2f(200.f, 150.f) ), eeVector2f(), ang, eeVector2f(scale,scale), eeColorA(220, 240, 0, 125), eeColorA(100, 0, 240, 125), eeColorA(250, 50, 25, 125), eeColorA(50, 150, 150, 125) );
 
@@ -1129,7 +1129,7 @@ void cEETest::Screen3() {
 
 	Batch.SetTexture( TNP[3] );
 	Batch.LineLoopBegin();
-	for ( eeFloat j = 0; j < 360; j++ ) {
+	for ( Float j = 0; j < 360; j++ ) {
 		Batch.BatchLineLoop( HWidth + 350 * Math::sinAng(j), HHeight + 350 * Math::cosAng(j), HWidth + AnimVal * Math::sinAng(j+1), HHeight + AnimVal * Math::cosAng(j+1) );
 	}
 	Batch.Draw();
@@ -1150,14 +1150,14 @@ void cEETest::Screen4() {
 		mVBO->Unbind();
 
 		mFBOText.Flags( FONT_DRAW_CENTER );
-		mFBOText.Draw( 128.f - (eeFloat)(Int32)( mFBOText.GetTextWidth() * 0.5f ), 25.f - (eeFloat)(Int32)( mFBOText.GetTextHeight() * 0.5f ) );
+		mFBOText.Draw( 128.f - (Float)(Int32)( mFBOText.GetTextWidth() * 0.5f ), 25.f - (Float)(Int32)( mFBOText.GetTextHeight() * 0.5f ) );
 	}
 
 	if ( NULL != mFBO ) {
 		mFBO->Unbind();
 
 		if ( NULL != mFBO->GetTexture() ) {
-			mFBO->GetTexture()->Draw( (eeFloat)mWindow->GetWidth() * 0.5f - (eeFloat)mFBO->GetWidth() * 0.5f, (eeFloat)mWindow->GetHeight() * 0.5f - (eeFloat)mFBO->GetHeight() * 0.5f, Ang );
+			mFBO->GetTexture()->Draw( (Float)mWindow->GetWidth() * 0.5f - (Float)mFBO->GetWidth() * 0.5f, (Float)mWindow->GetHeight() * 0.5f - (Float)mFBO->GetHeight() * 0.5f, Ang );
 			cGlobalBatchRenderer::instance()->Draw();
 		}
 	}
@@ -1204,12 +1204,12 @@ void cEETest::Render() {
 
 		mWindow->SetView( Views[1] );
 		Mouse = KM->GetMousePosFromView( Views[1] );
-		Mousef = eeVector2f( (eeFloat)Mouse.x, (eeFloat)Mouse.y );
+		Mousef = eeVector2f( (Float)Mouse.x, (Float)Mouse.y );
 		Screen2();
 
 		mWindow->SetView( Views[0] );
 		Mouse = KM->GetMousePosFromView( Views[0] );
-		Mousef = eeVector2f( (eeFloat)Mouse.x, (eeFloat)Mouse.y );
+		Mousef = eeVector2f( (Float)Mouse.x, (Float)Mouse.y );
 		Screen1();
 
 		mWindow->SetView( mWindow->GetDefaultView() );
@@ -1231,7 +1231,7 @@ void cEETest::Render() {
 				eeRectf(
 					eeVector2f(
 						0.f,
-						(eeFloat)mWindow->GetHeight() - mEEText.GetTextHeight()
+						(Float)mWindow->GetHeight() - mEEText.GetTextHeight()
 					),
 					eeVector2f(
 						mEEText.GetTextWidth(),
@@ -1241,18 +1241,18 @@ void cEETest::Render() {
 				ColRR1, ColRR2, ColRR3, ColRR4
 	);
 
-	mEEText.Draw( 0.f, (eeFloat)mWindow->GetHeight() - mEEText.GetTextHeight() );
+	mEEText.Draw( 0.f, (Float)mWindow->GetHeight() - mEEText.GetTextHeight() );
 
 	mInfoText.Draw( 6.f, 6.f );
 
 	if ( InBuf.Active() ) {
 		Uint32 NLPos = 0;
 		Uint32 LineNum = InBuf.GetCurPosLinePos( NLPos );
-		if ( InBuf.CurPos() == (eeInt)InBuf.Buffer().size() && !LineNum ) {
+		if ( InBuf.CurPos() == (int)InBuf.Buffer().size() && !LineNum ) {
 			FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f );
 		} else {
 			FF2->SetText( InBuf.Buffer().substr( NLPos, InBuf.CurPos() - NLPos ) );
-			FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f + (eeFloat)LineNum * (eeFloat)FF2->GetFontHeight() );
+			FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f + (Float)LineNum * (Float)FF2->GetFontHeight() );
 		}
 
 		FF2->SetText( "FPS: " + String::ToStr( mWindow->FPS() ) );
@@ -1274,7 +1274,7 @@ void cEETest::Input() {
 	JM->Update();
 
 	Mouse = KM->GetMousePos();
-	Mousef = eeVector2f( (eeFloat)Mouse.x, (eeFloat)Mouse.y );
+	Mousef = eeVector2f( (Float)Mouse.x, (Float)Mouse.y );
 
 	if ( KM->IsKeyUp( KEY_F1 ) )
 		Graphics::cShaderProgramManager::instance()->Reload();
@@ -1379,23 +1379,23 @@ void cEETest::Input() {
 		if ( Joy->IsButtonUp(5) )		SetScreen( 1 );
 		if ( Joy->IsButtonUp(6) )		SetScreen( 2 );
 
-		eeFloat aX = Joy->GetAxis( AXIS_X );
-		eeFloat aY = Joy->GetAxis( AXIS_Y );
+		Float aX = Joy->GetAxis( AXIS_X );
+		Float aY = Joy->GetAxis( AXIS_Y );
 
 		if ( 0 != aX || 0 != aY ) {
-			eeDouble rE = mWindow->Elapsed().AsMilliseconds();
+			double rE = mWindow->Elapsed().AsMilliseconds();
 			mAxisX += aX * rE;
 			mAxisY += aY * rE;
 		}
 
 		if ( ( mAxisX != 0 && ( mAxisX >= 1.f || mAxisX <= -1.f ) ) || ( mAxisY != 0 && ( mAxisY >= 1.f || mAxisY <= -1.f )  ) ) {
-			eeFloat nmX = Mousef.x + mAxisX;
-			eeFloat nmY = Mousef.y + mAxisY;
+			Float nmX = Mousef.x + mAxisX;
+			Float nmY = Mousef.y + mAxisY;
 
-			nmX = eemax<eeFloat>( nmX, 0 );
-			nmY = eemax<eeFloat>( nmY, 0 );
-			nmX = eemin( nmX, (eeFloat)EE->GetWidth() );
-			nmY = eemin( nmY, (eeFloat)EE->GetHeight() );
+			nmX = eemax<Float>( nmX, 0 );
+			nmY = eemax<Float>( nmY, 0 );
+			nmX = eemin( nmX, (Float)EE->GetWidth() );
+			nmY = eemin( nmY, (Float)EE->GetHeight() );
 
 			KM->InjectMousePos( (Int32)nmX, (Int32)nmY );
 
@@ -1519,12 +1519,12 @@ void cEETest::Process() {
 }
 
 void cEETest::ParticlesCallback( cParticle * P, cParticleSystem * Me ) {
-	eeFloat x, y, radio;
+	Float x, y, radio;
 	eeVector2f MePos( Me->Position() );
 
 	radio = (Math::Randf(1.f, 1.2f) + sin( 20.0f / P->Id() )) * 24;
-	x = MePos.x + radio * cos( (eeFloat)P->Id() );
-	y = MePos.y + radio * sin( (eeFloat)P->Id() );
+	x = MePos.x + radio * cos( (Float)P->Id() );
+	y = MePos.y + radio * sin( (Float)P->Id() );
 	P->Reset(x, y, Math::Randf(-10.f, 10.f), Math::Randf(-10.f, 10.f), Math::Randf(-10.f, 10.f), Math::Randf(-10.f, 10.f));
 	P->Color( eeColorAf(1.f, 0.6f, 0.3f, 1.f), 0.02f + Math::Randf() * 0.3f );
 }
@@ -1590,7 +1590,7 @@ void cEETest::Demo1Create() {
 	shape->u( 1.0f );
 	shape->Layers( NOT_GRABABLE_MASK );
 
-	eeFloat hw = mWindow->GetWidth() / 2;
+	Float hw = mWindow->GetWidth() / 2;
 
 	for(int i=0; i<14; i++){
 		for(int j=0; j<=i; j++){

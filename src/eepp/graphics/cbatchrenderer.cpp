@@ -2,6 +2,7 @@
 #include <eepp/graphics/ctexture.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
+#include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 
 namespace EE { namespace Graphics {
@@ -26,7 +27,7 @@ cBatchRenderer::cBatchRenderer() :
 	Init();
 }
 
-cBatchRenderer::cBatchRenderer( const eeUint& Prealloc ) :
+cBatchRenderer::cBatchRenderer( const unsigned int& Prealloc ) :
 	mVertex( NULL ),
 	mVertexSize( 0 ),
 	mTVertex( NULL ),
@@ -54,7 +55,7 @@ void cBatchRenderer::Init() {
 	QuadsBegin();
 }
 
-void cBatchRenderer::AllocVertexs( const eeUint& size ) {
+void cBatchRenderer::AllocVertexs( const unsigned int& size ) {
 	eeSAFE_DELETE_ARRAY( mVertex );
 	mVertex		= eeNewArray( eeVertex, size );
 	mVertexSize = size;
@@ -84,7 +85,7 @@ void cBatchRenderer::SetBlendMode( const EE_BLEND_MODE& Blend ) {
 	mBlend = Blend;
 }
 
-void cBatchRenderer::AddVertexs( const eeUint& num ) {
+void cBatchRenderer::AddVertexs( const unsigned int& num ) {
 	mNumVertex += num;
 
 	if ( ( mNumVertex + num ) >= mVertexSize )
@@ -114,7 +115,7 @@ void cBatchRenderer::Flush() {
 
 	if ( mCurrentMode == DM_POINTS && NULL != mTexture ) {
 		GLi->Enable( GL_POINT_SPRITE );
-		GLi->PointSize( (GLfloat)mTexture->Width() );
+		GLi->PointSize( (float)mTexture->Width() );
 	}
 
 	if ( CreateMatrix ) {
@@ -166,11 +167,11 @@ void cBatchRenderer::Flush() {
 	}
 }
 
-void cBatchRenderer::BatchQuad( const eeFloat& x, const eeFloat& y, const eeFloat& width, const eeFloat& height, const eeFloat& angle ) {
+void cBatchRenderer::BatchQuad( const Float& x, const Float& y, const Float& width, const Float& height, const Float& angle ) {
 	BatchQuadEx( x, y, width, height, angle );
 }
 
-void cBatchRenderer::BatchQuadEx( eeFloat x, eeFloat y, eeFloat width, eeFloat height, eeFloat angle, eeVector2f scale, eeOriginPoint originPoint ) {
+void cBatchRenderer::BatchQuadEx( Float x, Float y, Float width, Float height, Float angle, eeVector2f scale, eeOriginPoint originPoint ) {
 	if ( mNumVertex + ( GLi->QuadsSupported() ? 3 : 5 ) >= mVertexSize )
 		return;
 
@@ -265,7 +266,7 @@ void cBatchRenderer::BatchQuadEx( eeFloat x, eeFloat y, eeFloat width, eeFloat h
 	}
 }
 
-void cBatchRenderer::BatchQuadFree( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3 ) {
+void cBatchRenderer::BatchQuadFree( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2, const Float& x3, const Float& y3 ) {
 	if ( mNumVertex + ( GLi->QuadsSupported() ? 3 : 5 ) >= mVertexSize )
 		return;
 
@@ -338,7 +339,7 @@ void cBatchRenderer::BatchQuadFree( const eeFloat& x0, const eeFloat& y0, const 
 	}
 }
 
-void cBatchRenderer::BatchQuadFreeEx( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3, const eeFloat& Angle, const eeFloat& Scale ) {
+void cBatchRenderer::BatchQuadFreeEx( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2, const Float& x3, const Float& y3, const Float& Angle, const Float& Scale ) {
 	if ( mNumVertex + ( GLi->QuadsSupported() ? 3 : 5 ) >= mVertexSize )
 		return;
 
@@ -439,7 +440,7 @@ void cBatchRenderer::QuadsSetColorFree( const eeColorA& Color0, const eeColorA& 
 	mVerColor[3] = Color3;
 }
 
-void cBatchRenderer::QuadsSetSubset( const eeFloat& tl_u, const eeFloat& tl_v, const eeFloat& br_u, const eeFloat& br_v ) {
+void cBatchRenderer::QuadsSetSubset( const Float& tl_u, const Float& tl_v, const Float& br_u, const Float& br_v ) {
 	mTexCoord[0].u = tl_u;	mTexCoord[1].u = tl_u;
 	mTexCoord[0].v = tl_v;	mTexCoord[1].v = br_v;
 
@@ -447,17 +448,17 @@ void cBatchRenderer::QuadsSetSubset( const eeFloat& tl_u, const eeFloat& tl_v, c
 	mTexCoord[2].v = br_v;	mTexCoord[3].v = tl_v;
 }
 
-void cBatchRenderer::QuadsSetSubsetFree( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2, const eeFloat& x3, const eeFloat& y3 ) {
+void cBatchRenderer::QuadsSetSubsetFree( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2, const Float& x3, const Float& y3 ) {
 	mTexCoord[0].u = x0; mTexCoord[0].v = y0;
 	mTexCoord[1].u = x1; mTexCoord[1].v = y1;
 	mTexCoord[2].u = x2; mTexCoord[2].v = y2;
 	mTexCoord[3].u = x3; mTexCoord[3].v = y3;
 }
 
-void cBatchRenderer::Rotate( const eeVector2f& center, eeVector2f* point, const eeFloat& angle ) {
+void cBatchRenderer::Rotate( const eeVector2f& center, eeVector2f* point, const Float& angle ) {
 	if ( angle ) {
-		eeFloat x = point->x - center.x;
-		eeFloat y = point->y - center.y;
+		Float x = point->x - center.x;
+		Float y = point->y - center.y;
 		point->x = x * Math::cosAng(angle) - y * Math::sinAng(angle) + center.x;
 		point->y = x * Math::sinAng(angle) + y * Math::cosAng(angle) + center.y;
 	}
@@ -473,7 +474,7 @@ void cBatchRenderer::PointSetColor( const eeColorA& Color ) {
 	QuadsSetColor( Color );
 }
 
-void cBatchRenderer::BatchPoint( const eeFloat& x, const eeFloat& y ) {
+void cBatchRenderer::BatchPoint( const Float& x, const Float& y ) {
 	if ( mNumVertex + 1 >= mVertexSize )
 		return;
 
@@ -502,7 +503,7 @@ void cBatchRenderer::LinesSetColorFree( const eeColorA& Color0, const eeColorA& 
 	QuadsSetColorFree( Color0, Color1, Color0, Color0 );
 }
 
-void cBatchRenderer::BatchLine( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1 ) {
+void cBatchRenderer::BatchLine( const Float& x0, const Float& y0, const Float& x1, const Float& y1 ) {
 	if ( mNumVertex + 1 >= mVertexSize )
 		return;
 
@@ -537,7 +538,7 @@ void cBatchRenderer::LineLoopSetColorFree( const eeColorA& Color0, const eeColor
 	QuadsSetColorFree( Color0, Color1, Color0, Color0 );
 }
 
-void cBatchRenderer::BatchLineLoop( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1 ) {
+void cBatchRenderer::BatchLineLoop( const Float& x0, const Float& y0, const Float& x1, const Float& y1 ) {
 	if ( mNumVertex + 1 >= mVertexSize )
 		return;
 
@@ -562,7 +563,7 @@ void cBatchRenderer::BatchLineLoop( const eeVector2f& vector1, const eeVector2f&
 	BatchLineLoop( vector1.x, vector1.y, vector2.x, vector2.y );
 }
 
-void cBatchRenderer::BatchLineLoop( const eeFloat& x0, const eeFloat& y0 ) {
+void cBatchRenderer::BatchLineLoop( const Float& x0, const Float& y0 ) {
 	if ( mNumVertex + 1 >= mVertexSize )
 		return;
 
@@ -595,13 +596,13 @@ void cBatchRenderer::TriangleFanSetColorFree( const eeColorA& Color0, const eeCo
 	QuadsSetColorFree( Color0, Color1, Color2, Color0 );
 }
 
-void cBatchRenderer::TriangleFanSetSubset( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2 ) {
+void cBatchRenderer::TriangleFanSetSubset( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 ) {
 	mTexCoord[0].u = x0; mTexCoord[0].v = y0;
 	mTexCoord[1].u = x1; mTexCoord[1].v = y1;
 	mTexCoord[2].u = x2; mTexCoord[2].v = y2;
 }
 
-void cBatchRenderer::BatchTriangleFan( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2 ) {
+void cBatchRenderer::BatchTriangleFan( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 ) {
 
 	if ( mNumVertex + 3 >= mVertexSize )
 		return;
@@ -629,7 +630,7 @@ void cBatchRenderer::BatchTriangleFan( const eeFloat& x0, const eeFloat& y0, con
 	AddVertexs(3);
 }
 
-void cBatchRenderer::BatchTriangleFan( const eeFloat& x0, const eeFloat& y0 ) {
+void cBatchRenderer::BatchTriangleFan( const Float& x0, const Float& y0 ) {
 	if ( mNumVertex + 1 >= mVertexSize )
 		return;
 
@@ -658,13 +659,13 @@ void cBatchRenderer::TrianglesSetColorFree( const eeColorA& Color0, const eeColo
 	QuadsSetColorFree( Color0, Color1, Color2, Color0 );
 }
 
-void cBatchRenderer::TrianglesSetSubset( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2 ) {
+void cBatchRenderer::TrianglesSetSubset( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 ) {
 	mTexCoord[0].u = x0; mTexCoord[0].v = y0;
 	mTexCoord[1].u = x1; mTexCoord[1].v = y1;
 	mTexCoord[2].u = x2; mTexCoord[2].v = y2;
 }
 
-void cBatchRenderer::BatchTriangle( const eeFloat& x0, const eeFloat& y0, const eeFloat& x1, const eeFloat& y1, const eeFloat& x2, const eeFloat& y2 ) {
+void cBatchRenderer::BatchTriangle( const Float& x0, const Float& y0, const Float& x1, const Float& y1, const Float& x2, const Float& y2 ) {
 
 	if ( mNumVertex + 2 >= mVertexSize )
 		return;
@@ -714,7 +715,7 @@ void cBatchRenderer::BatchPolygon( const eePolygon2f& Polygon ) {
 	}
 }
 
-void cBatchRenderer::BatchPolygonByPoint( const eeFloat& x, const eeFloat& y ) {
+void cBatchRenderer::BatchPolygonByPoint( const Float& x, const Float& y ) {
 	if ( mNumVertex + 1 >= mVertexSize )
 		return;
 
@@ -733,11 +734,11 @@ void cBatchRenderer::BatchPolygonByPoint( const eeVector2f& Vector ) {
 	BatchPolygonByPoint( Vector.x, Vector.y );
 }
 
-void cBatchRenderer::SetLineWidth( const eeFloat& lineWidth ) {
+void cBatchRenderer::SetLineWidth( const Float& lineWidth ) {
 	GLi->LineWidth( lineWidth );
 }
 
-eeFloat cBatchRenderer::GetLineWidth() {
+Float cBatchRenderer::GetLineWidth() {
 	float lw = 1;
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
@@ -747,11 +748,11 @@ eeFloat cBatchRenderer::GetLineWidth() {
 	return lw;
 }
 
-void cBatchRenderer::SetPointSize( const eeFloat& pointSize ) {
+void cBatchRenderer::SetPointSize( const Float& pointSize ) {
 	GLi->PointSize( pointSize );
 }
 
-eeFloat cBatchRenderer::GetPointSize() {
+Float cBatchRenderer::GetPointSize() {
 	return GLi->PointSize();
 }
 

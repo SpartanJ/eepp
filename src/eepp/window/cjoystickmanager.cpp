@@ -6,14 +6,14 @@ cJoystickManager::cJoystickManager() :
 	mInit(false),
 	mCount(0)
 {
-	for ( eeUint i = 0; i < MAX_JOYSTICKS; i++ )
+	for ( Uint32 i = 0; i < MAX_JOYSTICKS; i++ )
 		mJoysticks[i] = NULL;
 
 	Open();
 }
 
 cJoystickManager::~cJoystickManager() {
-	for ( eeUint i = 0; i < Count(); i++ )
+	for ( Uint32 i = 0; i < Count(); i++ )
 		eeSAFE_DELETE( mJoysticks[i] );
 
 	Close();

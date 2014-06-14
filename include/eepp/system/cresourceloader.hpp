@@ -56,7 +56,7 @@ class EE_API cResourceLoader {
 		bool			Clear( const bool& ClearObjectsLoaded = true );
 
 		/** @return The aproximate percent of progress ( between 0 and 100 ) */
-		eeFloat			Progress();
+		Float			Progress();
 
 		/** @returns The number of resources added to load. */
 		Uint32			Count() const;

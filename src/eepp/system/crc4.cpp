@@ -19,7 +19,7 @@ void cRC4::Swap( Uint8& a, Uint8& b ) {
 
 void cRC4::SetKey( const Uint8 * key, Uint32 size ) {
 	Uint8 a = 0;
-	eeInt i;
+	int i;
 
 	for( i = 0; i < 256; i++)
 		mKey.state[i] = i;

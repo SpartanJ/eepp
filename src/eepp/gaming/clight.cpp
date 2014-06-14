@@ -13,13 +13,13 @@ cLight::cLight() :
 cLight::~cLight() {
 }
 
-cLight::cLight( const eeFloat& Radius, const eeFloat& x, const eeFloat& y, const eeColor& Color, LIGHT_TYPE Type ) :
+cLight::cLight( const Float& Radius, const Float& x, const Float& y, const eeColor& Color, LIGHT_TYPE Type ) :
 	mActive( true )
 {
 	Create( Radius, x, y, Color, Type );
 }
 
-void cLight::Create( const eeFloat& Radius, const eeFloat& x, const eeFloat& y, const eeColor& Color, LIGHT_TYPE Type ) {
+void cLight::Create( const Float& Radius, const Float& x, const Float& y, const eeColor& Color, LIGHT_TYPE Type ) {
 	mRadius	= Radius;
 	mColor	= Color;
 	mType	= Type;
@@ -27,33 +27,33 @@ void cLight::Create( const eeFloat& Radius, const eeFloat& x, const eeFloat& y, 
 	UpdatePos( x, y );
 }
 
-eeColor cLight::ProcessVertex( const eeFloat& PointX, const eeFloat& PointY, const eeColor& VertexColor, const eeColor& BaseColor ) {
-	eeFloat VertexDist;
+eeColor cLight::ProcessVertex( const Float& PointX, const Float& PointY, const eeColor& VertexColor, const eeColor& BaseColor ) {
+	Float VertexDist;
 
 	if ( mActive ) {
 		if ( mType == LIGHT_NORMAL )
 			VertexDist = eeabs( mPos.Distance( eeVector2f( PointX, PointY ) ) );
 		else {
-			eeFloat XDist = eeabs(mPos.x - PointX) * 0.5f;
-			eeFloat YDist = eeabs(mPos.y - PointY);
+			Float XDist = eeabs(mPos.x - PointX) * 0.5f;
+			Float YDist = eeabs(mPos.y - PointY);
 			VertexDist = eesqrt( XDist * XDist + YDist * YDist ) * 2.0f;
 		}
 
 		if ( VertexDist <= mRadius ) {
 			eeColor	TmpRGB;
 			Uint8	TmpColor;
-			eeFloat	LightC;
+			Float	LightC;
 
-			LightC			= eeabs( static_cast<eeFloat> ( mColor.R() - BaseColor.R() ) ) / mRadius;
-			TmpColor		= Uint8( (eeFloat)mColor.R() - (VertexDist * LightC) );
+			LightC			= eeabs( static_cast<Float> ( mColor.R() - BaseColor.R() ) ) / mRadius;
+			TmpColor		= Uint8( (Float)mColor.R() - (VertexDist * LightC) );
 			TmpRGB.Red		= VertexColor.R() + ( TmpColor - VertexColor.R() );
 
-			LightC			= eeabs( static_cast<eeFloat> ( mColor.G() - BaseColor.G() ) ) / mRadius;
-			TmpColor		= Uint8( (eeFloat)mColor.G() - (VertexDist * LightC) );
+			LightC			= eeabs( static_cast<Float> ( mColor.G() - BaseColor.G() ) ) / mRadius;
+			TmpColor		= Uint8( (Float)mColor.G() - (VertexDist * LightC) );
 			TmpRGB.Green	= VertexColor.G() + ( TmpColor - VertexColor.G() );
 
-			LightC			= eeabs( static_cast<eeFloat> ( mColor.B() - BaseColor.B() ) ) / mRadius;
-			TmpColor		= Uint8( (eeFloat)mColor.B() - (VertexDist * LightC) );
+			LightC			= eeabs( static_cast<Float> ( mColor.B() - BaseColor.B() ) ) / mRadius;
+			TmpColor		= Uint8( (Float)mColor.B() - (VertexDist * LightC) );
 			TmpRGB.Blue		= VertexColor.B() + ( TmpColor - VertexColor.B() );
 
 			if ( TmpRGB.R() < VertexColor.R() ) TmpRGB.Red		= VertexColor.R();
@@ -67,33 +67,33 @@ eeColor cLight::ProcessVertex( const eeFloat& PointX, const eeFloat& PointY, con
 	return BaseColor;
 }
 
-eeColorA cLight::ProcessVertex( const eeFloat& PointX, const eeFloat& PointY, const eeColorA& VertexColor, const eeColorA& BaseColor ) {
-	eeFloat VertexDist;
+eeColorA cLight::ProcessVertex( const Float& PointX, const Float& PointY, const eeColorA& VertexColor, const eeColorA& BaseColor ) {
+	Float VertexDist;
 
 	if ( mActive ) {
 		if ( mType == LIGHT_NORMAL )
 			VertexDist = eeabs( mPos.Distance( eeVector2f( PointX, PointY ) ) );
 		else {
-			eeFloat XDist = eeabs(mPos.x - PointX) * 0.5f;
-			eeFloat YDist = eeabs(mPos.y - PointY);
+			Float XDist = eeabs(mPos.x - PointX) * 0.5f;
+			Float YDist = eeabs(mPos.y - PointY);
 			VertexDist = eesqrt( XDist * XDist + YDist * YDist ) * 2.0f;
 		}
 
 		if ( VertexDist <= mRadius ) {
 			eeColorA	TmpRGB;
 			Uint8		TmpColor;
-			eeFloat		LightC;
+			Float		LightC;
 
-			LightC			= eeabs( static_cast<eeFloat> ( mColor.R() - BaseColor.R() ) ) / mRadius;
-			TmpColor		= Uint8( (eeFloat)mColor.R() - (VertexDist * LightC) );
+			LightC			= eeabs( static_cast<Float> ( mColor.R() - BaseColor.R() ) ) / mRadius;
+			TmpColor		= Uint8( (Float)mColor.R() - (VertexDist * LightC) );
 			TmpRGB.Red		= VertexColor.R() + ( TmpColor - VertexColor.R() );
 
-			LightC			= eeabs( static_cast<eeFloat> ( mColor.G() - BaseColor.G() ) ) / mRadius;
-			TmpColor		= Uint8( (eeFloat)mColor.G() - (VertexDist * LightC) );
+			LightC			= eeabs( static_cast<Float> ( mColor.G() - BaseColor.G() ) ) / mRadius;
+			TmpColor		= Uint8( (Float)mColor.G() - (VertexDist * LightC) );
 			TmpRGB.Green	= VertexColor.G() + ( TmpColor - VertexColor.G() );
 
-			LightC			= eeabs( static_cast<eeFloat> ( mColor.B() - BaseColor.B() ) ) / mRadius;
-			TmpColor		= Uint8( (eeFloat)mColor.B() - (VertexDist * LightC) );
+			LightC			= eeabs( static_cast<Float> ( mColor.B() - BaseColor.B() ) ) / mRadius;
+			TmpColor		= Uint8( (Float)mColor.B() - (VertexDist * LightC) );
 			TmpRGB.Blue		= VertexColor.B() + ( TmpColor - VertexColor.B() );
 
 			if ( TmpRGB.R() < VertexColor.R() ) TmpRGB.Red		= VertexColor.R();
@@ -115,7 +115,7 @@ eeColorA cLight::ProcessVertex( const eeVector2f& Pos, const eeColorA& VertexCol
 	return ProcessVertex( Pos.x, Pos.y, VertexColor, BaseColor );
 }
 
-void cLight::UpdatePos( const eeFloat& x, const eeFloat& y ) {
+void cLight::UpdatePos( const Float& x, const Float& y ) {
 	mPos.x = x;
 	mPos.y = y;
 	UpdateAABB();
@@ -129,7 +129,7 @@ void cLight::UpdatePos( const eeVector2f& newPos ) {
 	UpdatePos( newPos.x, newPos.y );
 }
 
-void cLight::Move( const eeFloat& addtox, const eeFloat& addtoy ) {
+void cLight::Move( const Float& addtox, const Float& addtoy ) {
 	UpdatePos( mPos.x + addtox, mPos.y + addtoy );
 }
 
@@ -144,11 +144,11 @@ void cLight::UpdateAABB() {
 		mAABB = eeAABB( mPos.x - mRadius, mPos.y - mRadius * 0.5f, mPos.x + mRadius, mPos.y + mRadius * 0.5f );
 }
 
-const eeFloat& cLight::Radius() const {
+const Float& cLight::Radius() const {
 	return mRadius;
 }
 
-void cLight::Radius( const eeFloat& radius ) {
+void cLight::Radius( const Float& radius ) {
 	if ( radius > 0 ) {
 		mRadius = radius;
 		UpdateAABB();

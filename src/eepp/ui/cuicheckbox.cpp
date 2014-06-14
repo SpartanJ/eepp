@@ -82,7 +82,7 @@ void cUICheckBox::AutoSize() {
 		mActiveButton->CenterVertical();
 		mInactiveButton->CenterVertical();
 
-		mSize.Width( (eeInt)mTextCache->GetTextWidth() + mActiveButton->Size().Width() );
+		mSize.Width( (int)mTextCache->GetTextWidth() + mActiveButton->Size().Width() );
 	}
 }
 

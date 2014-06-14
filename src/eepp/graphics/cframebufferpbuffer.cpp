@@ -1,12 +1,11 @@
 #include <eepp/graphics/cframebufferpbuffer.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/window/cengine.hpp>
-#include <eepp/graphics/renderer/cgl.hpp>
-#include <eepp/graphics/renderer/crenderergl3.hpp>
-#include <eepp/graphics/renderer/crenderergles2.hpp>
-#include <eepp/graphics/cglobalbatchrenderer.hpp>
 
 #ifdef EE_GLEW_AVAILABLE
+
+#include <eepp/graphics/glextensions.hpp>
+#include <eepp/graphics/renderer/cgl.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
 #include <eepp/helper/glew/wglew.h>
@@ -18,6 +17,10 @@
 #endif
 
 #endif
+
+#include <eepp/graphics/renderer/crenderergl3.hpp>
+#include <eepp/graphics/renderer/crenderergles2.hpp>
+#include <eepp/graphics/cglobalbatchrenderer.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -291,10 +294,10 @@ void cFrameBufferPBuffer::Bind() {
 void cFrameBufferPBuffer::Unbind() {
 	RecoverView();
 
-	GLint previousTexture;
+	int previousTexture;
 	glGetIntegerv( GL_TEXTURE_BINDING_2D, &previousTexture );
 
-	GLi->BindTexture( GL_TEXTURE_2D, (GLint)mTexture->Handle() );
+	GLi->BindTexture( GL_TEXTURE_2D, (int)mTexture->Handle() );
 
 	glCopyTexSubImage2D( GL_TEXTURE_2D, 0, 0, 0, 0, 0, mWidth, mHeight );
 

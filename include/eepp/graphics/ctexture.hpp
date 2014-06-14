@@ -27,10 +27,10 @@ class EE_API cTexture : public cImage, private NonCopyable {
 		std::string Filepath() const { return mFilepath; }
 
 		/** @return The Image Width */
-		eeUint ImgWidth() const { return mImgWidth; }
+		unsigned int ImgWidth() const { return mImgWidth; }
 
 		/** @return The Image Height */
-		eeUint ImgHeight() const { return mImgHeight; }
+		unsigned int ImgHeight() const { return mImgHeight; }
 
 		/** Set if the Texture use Mipmaps */
 		void Mipmap( const bool& UseMipmap );
@@ -80,7 +80,7 @@ class EE_API cTexture : public cImage, private NonCopyable {
 		void Resize( const Uint32& newWidth, const Uint32& newHeight, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
 
 		/** Scale the texture */
-		void Scale( const eeFloat& scale, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
+		void Scale( const Float& scale, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
 
 		/** Copy an image inside the texture */
 		void CopyImage( cImage * image, const Uint32& x, const Uint32& y );
@@ -152,7 +152,7 @@ class EE_API cTexture : public cImage, private NonCopyable {
 		* @param width The width of the texture rendered
 		* @param height The height of the texture rendered
 		*/
-		void DrawFast( const eeFloat& x, const eeFloat& y, const eeFloat& Angle = 0.0f, const eeVector2f& Scale = eeVector2f::One, const eeColorA& Color = eeColorA(), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const eeFloat &width = 0, const eeFloat &height = 0 );
+		void DrawFast( const Float& x, const Float& y, const Float& Angle = 0.0f, const eeVector2f& Scale = eeVector2f::One, const eeColorA& Color = eeColorA(), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const Float &width = 0, const Float &height = 0 );
 
 		/** Render the texture on screen
 		* @param x The x position on screen
@@ -165,7 +165,7 @@ class EE_API cTexture : public cImage, private NonCopyable {
 		* @param Center The rotation and scaling center. The center point is relative to the top-left corner of the object.
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
-		void Draw( const eeFloat &x, const eeFloat &y, const eeFloat &Angle = 0, const eeVector2f &Scale = eeVector2f::One, const eeColorA& Color = eeColorA(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const EE_RENDER_MODE &Effect = RN_NORMAL, eeOriginPoint Center = eeOriginPoint(eeOriginPoint::OriginCenter), const eeRecti& texSector = eeRecti(0,0,0,0) );
+		void Draw( const Float &x, const Float &y, const Float &Angle = 0, const eeVector2f &Scale = eeVector2f::One, const eeColorA& Color = eeColorA(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const EE_RENDER_MODE &Effect = RN_NORMAL, eeOriginPoint Center = eeOriginPoint(eeOriginPoint::OriginCenter), const eeRecti& texSector = eeRecti(0,0,0,0) );
 
 		/** Render the texture on screen. Extended because can set the vertex colors individually
 		* @param x The x position on screen
@@ -183,7 +183,7 @@ class EE_API cTexture : public cImage, private NonCopyable {
 		* @param Center The rotation and scaling center. The center point is relative to the top-left corner of the object.
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
-		void DrawEx( eeFloat x, eeFloat y, eeFloat width = 0.0f, eeFloat height = 0.0f, const eeFloat &Angle = 0, const eeVector2f &Scale = eeVector2f::One, const eeColorA& Color0 = eeColorA(255,255,255,255), const eeColorA& Color1 = eeColorA(255,255,255,255), const eeColorA& Color2 = eeColorA(255,255,255,255), const eeColorA& Color3 = eeColorA(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const EE_RENDER_MODE &Effect = RN_NORMAL, eeOriginPoint Center = eeOriginPoint(eeOriginPoint::OriginCenter), const eeRecti& texSector = eeRecti(0,0,0,0) );
+		void DrawEx( Float x, Float y, Float width = 0.0f, Float height = 0.0f, const Float &Angle = 0, const eeVector2f &Scale = eeVector2f::One, const eeColorA& Color0 = eeColorA(255,255,255,255), const eeColorA& Color1 = eeColorA(255,255,255,255), const eeColorA& Color2 = eeColorA(255,255,255,255), const eeColorA& Color3 = eeColorA(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const EE_RENDER_MODE &Effect = RN_NORMAL, eeOriginPoint Center = eeOriginPoint(eeOriginPoint::OriginCenter), const eeRecti& texSector = eeRecti(0,0,0,0) );
 
 		/** Render a quad on Screen
 		* @param Q The eeQuad2f
@@ -194,7 +194,7 @@ class EE_API cTexture : public cImage, private NonCopyable {
 		* @param Blend Set the Blend Mode ( default ALPHA_NORMAL )
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
-		void DrawQuad( const eeQuad2f& Q, const eeVector2f& Offset = eeVector2f(), const eeFloat &Angle = 0.0f, const eeVector2f &Scale = eeVector2f::One, const eeColorA& Color = eeColorA(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const eeRecti& texSector = eeRecti(0,0,0,0) );
+		void DrawQuad( const eeQuad2f& Q, const eeVector2f& Offset = eeVector2f(), const Float &Angle = 0.0f, const eeVector2f &Scale = eeVector2f::One, const eeColorA& Color = eeColorA(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, const eeRecti& texSector = eeRecti(0,0,0,0) );
 
 		/** Render a quad on Screen
 		* @param Q The eeQuad2f
@@ -208,7 +208,7 @@ class EE_API cTexture : public cImage, private NonCopyable {
 		* @param Blend Set the Blend Mode ( default ALPHA_NORMAL )
 		* @param texSector The texture sector to render. You can render only a part of the texture. ( default render all the texture )
 		*/
-		void DrawQuadEx( eeQuad2f Q, const eeVector2f& Offset = eeVector2f(), const eeFloat &Angle = 0.0f, const eeVector2f &Scale = eeVector2f::One, const eeColorA& Color0 = eeColorA(255,255,255,255), const eeColorA& Color1 = eeColorA(255,255,255,255), const eeColorA& Color2 = eeColorA(255,255,255,255), const eeColorA& Color3 = eeColorA(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, eeRecti texSector = eeRecti(0,0,0,0) );
+		void DrawQuadEx( eeQuad2f Q, const eeVector2f& Offset = eeVector2f(), const Float &Angle = 0.0f, const eeVector2f &Scale = eeVector2f::One, const eeColorA& Color0 = eeColorA(255,255,255,255), const eeColorA& Color1 = eeColorA(255,255,255,255), const eeColorA& Color2 = eeColorA(255,255,255,255), const eeColorA& Color3 = eeColorA(255,255,255,255), const EE_BLEND_MODE &Blend = ALPHA_NORMAL, eeRecti texSector = eeRecti(0,0,0,0) );
 
 		/** Set the texture factory internal id of the texture */
 		void Id( const Uint32& id );
@@ -220,7 +220,7 @@ class EE_API cTexture : public cImage, private NonCopyable {
 		void Reload();
 
 		/** Set a pixel to the locked texture. */
-		void SetPixel( const eeUint& x, const eeUint& y, const eeColorA& Color );
+		void SetPixel( const unsigned int& x, const unsigned int& y, const eeColorA& Color );
 
 		/** Bind the texture. Activate the texture for rendering. */
 		void Bind();
@@ -240,11 +240,11 @@ class EE_API cTexture : public cImage, private NonCopyable {
 
 		cTexture();
 
-		cTexture( const Uint32& texture, const eeUint& width, const eeUint& height, const eeUint& imgwidth, const eeUint& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize = 0, const Uint8* data = NULL );
+		cTexture( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& Channels, const std::string& filepath, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize = 0, const Uint8* data = NULL );
 
 		cTexture( const cTexture& Copy );
 
-		void Create( const Uint32& texture, const eeUint& width, const eeUint& height, const eeUint& imgwidth, const eeUint& imgheight, const bool& UseMipmap, const eeUint& Channels, const std::string& filepath, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize = 0, const Uint8* data = NULL );
+		void Create( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& Channels, const std::string& filepath, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize = 0, const Uint8* data = NULL );
 
 		std::string 	mFilepath;
 
@@ -252,8 +252,8 @@ class EE_API cTexture : public cImage, private NonCopyable {
 		Uint32 			mTexId;
 		int 			mTexture;
 
-		eeUint 			mImgWidth;
-		eeUint 			mImgHeight;
+		unsigned int 			mImgWidth;
+		unsigned int 			mImgHeight;
 
 		Uint32			mFlags;
 

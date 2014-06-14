@@ -18,11 +18,11 @@ class EE_API cRendererGL : public cGL {
 
 		std::string VersionStr();
 
-		void ClientActiveTexture( GLenum texture );
+		void ClientActiveTexture( unsigned int texture );
 
-		void PointSize( GLfloat size );
+		void PointSize( float size );
 
-		GLfloat PointSize();
+		float PointSize();
 
 		void PushMatrix();
 
@@ -30,51 +30,51 @@ class EE_API cRendererGL : public cGL {
 
 		void LoadIdentity();
 
-		void Translatef( GLfloat x, GLfloat y, GLfloat z );
+		void Translatef( float x, float y, float z );
 
-		void Rotatef( GLfloat angle, GLfloat x, GLfloat y, GLfloat z );
+		void Rotatef( float angle, float x, float y, float z );
 
-		void Scalef( GLfloat x, GLfloat y, GLfloat z );
+		void Scalef( float x, float y, float z );
 
-		void MatrixMode (GLenum mode);
+		void MatrixMode (unsigned int mode);
 
-		void Ortho ( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar );
+		void Ortho ( float left, float right, float bottom, float top, float zNear, float zFar );
 
-		void LookAt( GLfloat eyeX, GLfloat eyeY, GLfloat eyeZ, GLfloat centerX, GLfloat centerY, GLfloat centerZ, GLfloat upX, GLfloat upY, GLfloat upZ );
+		void LookAt( float eyeX, float eyeY, float eyeZ, float centerX, float centerY, float centerZ, float upX, float upY, float upZ );
 
-		void Perspective ( GLfloat fovy, GLfloat aspect, GLfloat zNear, GLfloat zFar );
+		void Perspective ( float fovy, float aspect, float zNear, float zFar );
 
-		void EnableClientState( GLenum array );
+		void EnableClientState( unsigned int array );
 
-		void DisableClientState( GLenum array );
+		void DisableClientState( unsigned int array );
 
-		void VertexPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate );
+		void VertexPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate );
 
-		void ColorPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate );
+		void ColorPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate );
 
-		void TexCoordPointer ( GLint size, GLenum type, GLsizei stride, const GLvoid *pointer, GLuint allocate );
+		void TexCoordPointer ( int size, unsigned int type, int stride, const void *pointer, unsigned int allocate );
 
-		void ClipPlane( GLenum plane, const GLdouble *equation );
+		void ClipPlane( unsigned int plane, const double *equation );
 
 		void Clip2DPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height );
 
 		void Clip2DPlaneDisable();
 
-		void TexEnvi( GLenum target, GLenum pname, GLint param );
+		void TexEnvi( unsigned int target, unsigned int pname, int param );
 
-		void MultMatrixf ( const GLfloat *m );
+		void MultMatrixf ( const float *m );
 
-		void LoadMatrixf( const GLfloat *m );
+		void LoadMatrixf( const float *m );
 
-		void Frustum( GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat near_val, GLfloat far_val );
+		void Frustum( float left, float right, float bottom, float top, float near_val, float far_val );
 
-		void GetCurrentMatrix( GLenum mode, GLfloat * m );
+		void GetCurrentMatrix( unsigned int mode, float * m );
 
-		GLenum GetCurrentMatrixMode();
+		unsigned int GetCurrentMatrixMode();
 
-		GLint Project( GLfloat objx, GLfloat objy, GLfloat objz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *winx, GLfloat *winy, GLfloat *winz );
+		int Project( float objx, float objy, float objz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *winx, float *winy, float *winz );
 
-		GLint UnProject( GLfloat winx, GLfloat winy, GLfloat winz, const GLfloat modelMatrix[16], const GLfloat projMatrix[16], const GLint viewport[4], GLfloat *objx, GLfloat *objy, GLfloat *objz );
+		int UnProject( float winx, float winy, float winz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *objx, float *objy, float *objz );
 	protected:	
 		
 };

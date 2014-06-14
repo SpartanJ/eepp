@@ -24,7 +24,7 @@ class EE_API cTextureFactory : protected cMutex {
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return Internal Texture Id
 		*/
-		Uint32 CreateEmptyTexture( const eeUint& Width, const eeUint& Height, const eeUint& Channels = 4, const eeColorA& DefaultColor = eeColorA(0,0,0,255), const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 CreateEmptyTexture( const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels = 4, const eeColorA& DefaultColor = eeColorA(0,0,0,255), const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Loads a RAW Texture from Memory
 		* @param Pixels The Texture array
@@ -38,7 +38,7 @@ class EE_API cTextureFactory : protected cMutex {
 		* @param FileName A filename to recognize the texture ( the path in case that was loaded from outside the texture factory ).
 		* @return Internal Texture Id
 		*/
-		Uint32 LoadFromPixels( const unsigned char * Pixels, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const std::string& FileName = std::string("") );
+		Uint32 LoadFromPixels( const unsigned char * Pixels, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false, const std::string& FileName = std::string("") );
 
 		/** Load a texture from Pack file
 		* @param Pack Pointer to the pack instance
@@ -60,7 +60,7 @@ class EE_API cTextureFactory : protected cMutex {
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return The internal Texture Id
 		*/
-		Uint32 LoadFromMemory( const unsigned char* ImagePtr, const eeUint& Size, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 LoadFromMemory( const unsigned char* ImagePtr, const unsigned int& Size, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Load a Texture from stream
 		* @param Stream The cIOStream instance
@@ -137,12 +137,12 @@ class EE_API cTextureFactory : protected cMutex {
 		* @param Size
 		* @return A valid texture size for the video card (checks if support non power of two textures)
 		*/
-		eeUint GetValidTextureSize( const eeUint& Size );
+		unsigned int GetValidTextureSize( const unsigned int& Size );
 
 		/**	Saves an image from an array of unsigned chars to disk
 		* @return False if failed, otherwise returns True
 		*/
-		bool SaveImage( const std::string& filepath, const EE_SAVE_TYPE& Format, const eeUint& Width, const eeUint& Height, const eeUint& Channels, const unsigned char* data );
+		bool SaveImage( const std::string& filepath, const EE_SAVE_TYPE& Format, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const unsigned char* data );
 
 		/** Determine if the TextureId passed exists */
 		bool TextureIdExists( const Uint32& TexId );
@@ -157,10 +157,10 @@ class EE_API cTextureFactory : protected cMutex {
 		void UngrabTextures();
 
 		/** Allocate space for Textures (only works if EE_ALLOC_TEXTURES_ON_VECTOR is defined) */
-		void Allocate( const eeUint& size );
+		void Allocate( const unsigned int& size );
 
 		/** @return The memory used by the textures (in bytes) */
-		eeUint MemorySize() { return mMemSize; }
+		unsigned int MemorySize() { return mMemSize; }
 
 		/** It's possible to create textures outside the texture factory loader, but the library will need to know of this texture, so it's necessary to push the texture to the factory.
 		* @param Filepath The Texture path ( if exists )
@@ -176,7 +176,7 @@ class EE_API cTextureFactory : protected cMutex {
 		* @param LocalCopy If keep a local copy in memory of the texture
 		* @param MemSize The size of the texture in memory ( just if you need to specify the real size in memory, just useful to calculate the total texture memory ).
 		*/
-		Uint32 PushTexture( const std::string& Filepath, const Uint32& TexId, const eeUint& Width, const eeUint& Height, const eeUint& ImgWidth, const eeUint& ImgHeight, const bool& Mipmap, const eeUint& Channels, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy = false, const Uint32& MemSize = 0 );
+		Uint32 PushTexture( const std::string& Filepath, const Uint32& TexId, const unsigned int& Width, const unsigned int& Height, const unsigned int& ImgWidth, const unsigned int& ImgHeight, const bool& Mipmap, const unsigned int& Channels, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy = false, const Uint32& MemSize = 0 );
 
 		/** Return a texture by it file path name
 		* @param Name File path name
@@ -202,7 +202,7 @@ class EE_API cTextureFactory : protected cMutex {
 
 		std::vector<cTexture*> mTextures;
 
-		eeUint mMemSize;
+		unsigned int mMemSize;
 
 		std::list<Uint32> mVectorFreeSlots;
 

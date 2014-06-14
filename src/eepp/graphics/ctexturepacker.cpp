@@ -503,7 +503,7 @@ Int32 cTexturePacker::PackTextures() { // pack the textures, the return code is 
 			mTotalArea -= (*it)->Area();
 	}
 
-	eePRINTL( "Total Area Used: %d. This represents the %4.3f percent", mTotalArea, ( (eeDouble)mTotalArea / (eeDouble)( mWidth * mHeight ) ) * 100.0 );
+	eePRINTL( "Total Area Used: %d. This represents the %4.3f percent", mTotalArea, ( (double)mTotalArea / (double)( mWidth * mHeight ) ) * 100.0 );
 
 	return ( mWidth * mHeight ) - mTotalArea;
 }

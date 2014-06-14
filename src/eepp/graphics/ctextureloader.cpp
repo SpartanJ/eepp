@@ -1,12 +1,13 @@
 #include <eepp/graphics/ctextureloader.hpp>
 #include <eepp/graphics/ctexture.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
+#include <eepp/window/cengine.hpp>
+#include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/system/ciostreamfile.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
 #include <eepp/helper/jpeg-compressor/jpgd.h>
-#include <eepp/window/cengine.hpp>
 using namespace EE::Window;
 
 #define TEX_LT_PATH 	(1)
@@ -120,7 +121,7 @@ cTextureLoader::cTextureLoader( const std::string& Filepath,
 }
 
 cTextureLoader::cTextureLoader( const unsigned char * ImagePtr,
-	const eeUint& Size,
+	const unsigned int& Size,
 	const bool& Mipmap,
 	const EE_CLAMP_MODE& ClampMode,
 	const bool& CompressTexture,
@@ -184,9 +185,9 @@ cTextureLoader::cTextureLoader( cPack * Pack,
 }
 
 cTextureLoader::cTextureLoader( const unsigned char * Pixels,
-	const eeUint& Width,
-	const eeUint& Height,
-	const eeUint& Channels,
+	const unsigned int& Width,
+	const unsigned int& Height,
+	const unsigned int& Channels,
 	const bool& Mipmap,
 	const EE_CLAMP_MODE& ClampMode,
 	const bool& CompressTexture,
@@ -432,7 +433,7 @@ void cTextureLoader::LoadFromPixels() {
 				cEngine::instance()->GetCurrentWindow()->SetGLContextThread();
 			}
 
-			GLint PreviousTexture;
+			int PreviousTexture;
 			glGetIntegerv(GL_TEXTURE_BINDING_2D, &PreviousTexture);
 
 			if ( mDirectUpload ) {

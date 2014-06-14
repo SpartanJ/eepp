@@ -12,40 +12,40 @@ class EE_API cParticle{
 		cParticle();
 		~cParticle();
 		
-		void Color(eeColorAf Color, eeFloat AlphaDecay);
+		void Color(eeColorAf Color, Float AlphaDecay);
 		eeColorAf Color() const { return mColor; }
 		
-		eeFloat R() { return mColor.R(); }
-		eeFloat G() { return mColor.G(); }
-		eeFloat B() { return mColor.B(); }
-		eeFloat A() { return mColor.A(); }
+		Float R() { return mColor.R(); }
+		Float G() { return mColor.G(); }
+		Float B() { return mColor.B(); }
+		Float A() { return mColor.A(); }
 		
-		void Reset(const eeFloat &x, const eeFloat &y, const eeFloat &xspeed, const eeFloat &yspeed, const eeFloat &xacc, const eeFloat &yacc, const eeFloat size = 16);
-		void Update(const eeFloat &pTime);
+		void Reset(const Float &x, const Float &y, const Float &xspeed, const Float &yspeed, const Float &xacc, const Float &yacc, const Float size = 16);
+		void Update(const Float &pTime);
 		
-		void X(const eeFloat x) { mX = x; }
-		eeFloat X() const { return mX; }
+		void X(const Float x) { mX = x; }
+		Float X() const { return mX; }
 		
-		void Y(const eeFloat y) { mY = y; }
-		eeFloat Y() const { return mY; }
+		void Y(const Float y) { mY = y; }
+		Float Y() const { return mY; }
 		
-		void Speed(const eeFloat xspeed) { mXSpeed = xspeed; }
-		eeFloat XSpeed() const { return mXSpeed; }
+		void Speed(const Float xspeed) { mXSpeed = xspeed; }
+		Float XSpeed() const { return mXSpeed; }
 		
-		void YSpeed(const eeFloat yspeed) { mYSpeed = yspeed; }
-		eeFloat YSpeed() const { return mYSpeed; }
+		void YSpeed(const Float yspeed) { mYSpeed = yspeed; }
+		Float YSpeed() const { return mYSpeed; }
 		
-		void XAcc(const eeFloat xacc) { mXAcc = xacc; }
-		eeFloat XAcc() const { return mXAcc; }
+		void XAcc(const Float xacc) { mXAcc = xacc; }
+		Float XAcc() const { return mXAcc; }
 		
-		void YAcc(const eeFloat yacc) { mYAcc = yacc; }
-		eeFloat YAcc() const { return mYAcc; }
+		void YAcc(const Float yacc) { mYAcc = yacc; }
+		Float YAcc() const { return mYAcc; }
 		
-		void AlphaDecay(const eeFloat alphadecay) { mAlphaDecay = alphadecay; }
-		eeFloat AlphaDecay() const { return mAlphaDecay; }
+		void AlphaDecay(const Float alphadecay) { mAlphaDecay = alphadecay; }
+		Float AlphaDecay() const { return mAlphaDecay; }
 		
-		void Size(const eeFloat size) { if (size>0) mSize = size; }
-		eeFloat Size() const { return mSize; }
+		void Size(const Float size) { if (size>0) mSize = size; }
+		Float Size() const { return mSize; }
 		
 		void Used(const bool used) { cUsed = used; }
 		bool Used() const { return cUsed; }
@@ -53,10 +53,10 @@ class EE_API cParticle{
 		void Id(const Uint32 Id) { cId = Id; }
 		Uint32 Id() const { return cId; }
 	private:
-		eeFloat mX, mY;
+		Float mX, mY;
 		eeColorAf mColor;
 		
-		eeFloat mXSpeed, mYSpeed, mXAcc, mYAcc, mAlphaDecay, mSize;
+		Float mXSpeed, mYSpeed, mXAcc, mYAcc, mAlphaDecay, mSize;
 		bool cUsed;
 		Uint32 cId;
 };

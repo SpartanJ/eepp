@@ -203,7 +203,7 @@ std::vector<DisplayMode> cWindowSFML::GetDisplayModes() const {
 	return result;
 }
 
-void cWindowSFML::SetGamma( eeFloat Red, eeFloat Green, eeFloat Blue ) {
+void cWindowSFML::SetGamma( Float Red, Float Green, Float Blue ) {
 }
 
 eeWindowContex cWindowSFML::GetContext() const {

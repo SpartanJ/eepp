@@ -24,7 +24,7 @@ void cJoystickManagerSFML::Update() {
 void cJoystickManagerSFML::Open() {
 	mCount = sf::Joystick::Count;
 
-	for ( eeUint i = 0; i < mCount; i++ )
+	for ( unsigned int i = 0; i < mCount; i++ )
 		Create(i);
 
 	mInit = true;

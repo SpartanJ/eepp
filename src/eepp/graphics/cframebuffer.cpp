@@ -1,6 +1,7 @@
 #include <eepp/graphics/cframebuffer.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
 #include <eepp/window/cengine.hpp>
+#include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/cframebufferfbo.hpp>
 #include <eepp/graphics/cframebufferpbuffer.hpp>

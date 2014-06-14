@@ -34,7 +34,7 @@ class EE_API cUIGfx : public cUIComplexControl {
 
 		virtual void Draw();
 
-		virtual void Alpha( const eeFloat& alpha );
+		virtual void Alpha( const Float& alpha );
 
 		cSubTexture * SubTexture() const;
 

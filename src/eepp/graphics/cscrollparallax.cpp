@@ -29,7 +29,7 @@ void cScrollParallax::SubTexture( cSubTexture * subTexture ) {
 void cScrollParallax::SetSubTexture() {
 	if ( NULL != mSubTexture ) {
 		mRect		= mSubTexture->SrcRect();
-		mRealSize	= eeVector2f( (eeFloat)mSubTexture->RealSize().Width(), (eeFloat)mSubTexture->RealSize().Height() );
+		mRealSize	= eeVector2f( (Float)mSubTexture->RealSize().Width(), (Float)mSubTexture->RealSize().Height() );
 
 		mTiles.x	= ( (Int32)mSize.Width() / mSubTexture->RealSize().Width() ) + 1;
 		mTiles.y	= ( (Int32)mSize.Height() / mSubTexture->RealSize().Height() ) + 1;
@@ -82,7 +82,7 @@ const eeVector2f& cScrollParallax::Position() const {
 
 void cScrollParallax::Draw() {
 	if ( NULL != mSubTexture && mAABB.Left != mAABB.Right && mAABB.Top != mAABB.Bottom && 0 != mColor.Alpha ) {
-		mPos += mSpeed * (eeFloat)mElapsed.Elapsed().AsSeconds();
+		mPos += mSpeed * (Float)mElapsed.Elapsed().AsSeconds();
 
 		if ( mPos.x > mAABB.Left + mRealSize.Width() || mPos.x < mAABB.Left - mRealSize.Width() )
 			mPos.x = mAABB.Left;
@@ -92,8 +92,8 @@ void cScrollParallax::Draw() {
 
 		eeVector2f Pos 	= mPos;
 
-		Pos.x = (eeFloat)(Int32)Pos.x;
-		Pos.y = (eeFloat)(Int32)Pos.y;
+		Pos.x = (Float)(Int32)Pos.x;
+		Pos.y = (Float)(Int32)Pos.y;
 
 		if ( mSpeed.x > 0.f )
 			Pos.x -= mRealSize.Width();
@@ -135,7 +135,7 @@ void cScrollParallax::Draw() {
 				Pos.x += mRealSize.Width();
 			}
 
-			Pos.x = (eeFloat)(Int32)mPos.x;
+			Pos.x = (Float)(Int32)mPos.x;
 
 			if ( mSpeed.x > 0.f )
 				Pos.x -= mRealSize.Width();

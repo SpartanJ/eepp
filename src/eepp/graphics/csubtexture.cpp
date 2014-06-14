@@ -29,7 +29,7 @@ cSubTexture::cSubTexture( const Uint32& TexId, const std::string& Name ) :
 	mTexId( TexId ),
 	mTexture( cTextureFactory::instance()->GetTexture( TexId ) ),
 	mSrcRect( eeRecti( 0, 0, NULL != mTexture ? mTexture->ImgWidth() : 0, NULL != mTexture ? mTexture->ImgHeight() : 0 ) ),
-	mDestSize( (eeFloat)mSrcRect.Size().Width(), (eeFloat)mSrcRect.Size().Height() ),
+	mDestSize( (Float)mSrcRect.Size().Width(), (Float)mSrcRect.Size().Height() ),
 	mOffset(0,0)
 {
 	CreateUnnamed();
@@ -43,7 +43,7 @@ cSubTexture::cSubTexture( const Uint32& TexId, const eeRecti& SrcRect, const std
 	mTexId( TexId ),
 	mTexture( cTextureFactory::instance()->GetTexture( TexId ) ),
 	mSrcRect( SrcRect ),
-	mDestSize( (eeFloat)( mSrcRect.Right - mSrcRect.Left ), (eeFloat)( mSrcRect.Bottom - mSrcRect.Top ) ),
+	mDestSize( (Float)( mSrcRect.Right - mSrcRect.Left ), (Float)( mSrcRect.Bottom - mSrcRect.Top ) ),
 	mOffset(0,0)
 {
 	CreateUnnamed();
@@ -138,17 +138,17 @@ void cSubTexture::Offset( const eeVector2i& offset ) {
 	mOffset = offset;
 }
 
-void cSubTexture::Draw( const eeFloat& X, const eeFloat& Y, const eeColorA& Color, const eeFloat& Angle, const eeVector2f& Scale, const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect, eeOriginPoint Center ) {
+void cSubTexture::Draw( const Float& X, const Float& Y, const eeColorA& Color, const Float& Angle, const eeVector2f& Scale, const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect, eeOriginPoint Center ) {
 	if ( NULL != mTexture )
 		mTexture->DrawEx( X + mOffset.x, Y + mOffset.y, mDestSize.x, mDestSize.y, Angle, Scale, Color, Color, Color, Color, Blend, Effect, Center, mSrcRect );
 }
 
-void cSubTexture::Draw( const eeFloat& X, const eeFloat& Y, const eeFloat& Angle, const eeVector2f& Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect, eeOriginPoint Center ) {
+void cSubTexture::Draw( const Float& X, const Float& Y, const Float& Angle, const eeVector2f& Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect, eeOriginPoint Center ) {
 	if ( NULL != mTexture )
 		mTexture->DrawEx( X + mOffset.x, Y + mOffset.y, mDestSize.x, mDestSize.y, Angle, Scale, Color0, Color1, Color2, Color3, Blend, Effect, Center, mSrcRect );
 }
 
-void cSubTexture::Draw( const eeQuad2f Q, const eeVector2f& Offset, const eeFloat& Angle, const eeVector2f& Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_BLEND_MODE& Blend ) {
+void cSubTexture::Draw( const eeQuad2f Q, const eeVector2f& Offset, const Float& Angle, const eeVector2f& Scale, const eeColorA& Color0, const eeColorA& Color1, const eeColorA& Color2, const eeColorA& Color3, const EE_BLEND_MODE& Blend ) {
 	if ( NULL != mTexture )
 		mTexture->DrawQuadEx( Q, Offset, Angle, Scale, Color0, Color1, Color2, Color3, Blend, mSrcRect );
 }
@@ -160,8 +160,8 @@ cTexture * cSubTexture::GetTexture() {
 void cSubTexture::ReplaceColor( eeColorA ColorKey, eeColorA NewColor ) {
 	mTexture->Lock();
 
-	for ( eeInt y = mSrcRect.Top; y < mSrcRect.Bottom; y++ ) {
-		for ( eeInt x = mSrcRect.Left; x < mSrcRect.Right; x++ ) {
+	for ( int y = mSrcRect.Top; y < mSrcRect.Bottom; y++ ) {
+		for ( int x = mSrcRect.Left; x < mSrcRect.Right; x++ ) {
 			if ( mTexture->GetPixel( x, y ) == ColorKey )
 				mTexture->SetPixel( x, y, NewColor );
 		}
@@ -186,14 +186,14 @@ void cSubTexture::CacheAlphaMask() {
 
 	mTexture->Lock();
 
-	eeInt rY = 0;
-	eeInt rX = 0;
-	eeInt rW = mSrcRect.Right - mSrcRect.Left;
+	int rY = 0;
+	int rX = 0;
+	int rW = mSrcRect.Right - mSrcRect.Left;
 
-	for ( eeInt y = mSrcRect.Top; y < mSrcRect.Bottom; y++ ) {
+	for ( int y = mSrcRect.Top; y < mSrcRect.Bottom; y++ ) {
 		rY = y - mSrcRect.Top;
 
-		for ( eeInt x = mSrcRect.Left; x < mSrcRect.Right; x++ ) {
+		for ( int x = mSrcRect.Left; x < mSrcRect.Right; x++ ) {
 			rX = x - mSrcRect.Left;
 
 			mAlpha[ rX + rY * rW ] = mTexture->GetPixel( x, y ).A();
@@ -212,17 +212,17 @@ void cSubTexture::CacheColors() {
 
 	mPixels = eeNewArray( Uint8, size );
 
-	eeInt rY = 0;
-	eeInt rX = 0;
-	eeInt rW = mSrcRect.Right - mSrcRect.Left;
+	int rY = 0;
+	int rX = 0;
+	int rW = mSrcRect.Right - mSrcRect.Left;
 	eeColorA tColor;
 	Uint32 Channels = mTexture->Channels();
-	eeInt Pos;
+	int Pos;
 
-	for ( eeInt y = mSrcRect.Top; y < mSrcRect.Bottom; y++ ) {
+	for ( int y = mSrcRect.Top; y < mSrcRect.Bottom; y++ ) {
 		rY = y - mSrcRect.Top;
 
-		for ( eeInt x = mSrcRect.Left; x < mSrcRect.Right; x++ ) {
+		for ( int x = mSrcRect.Left; x < mSrcRect.Right; x++ ) {
 			rX = x - mSrcRect.Left;
 
 			tColor = mTexture->GetPixel( x, y );
@@ -260,7 +260,7 @@ eeColorA cSubTexture::GetColorAt( const Int32& X, const Int32& Y ) {
 
 	if ( NULL != mPixels ) {
 		Uint32 Channels = mTexture->Channels();
-		eeUint Pos = ( X + Y * ( mSrcRect.Right - mSrcRect.Left ) ) * Channels;
+		unsigned int Pos = ( X + Y * ( mSrcRect.Right - mSrcRect.Left ) ) * Channels;
 
 		if ( 4 == Channels )
 			return eeColorA( mPixels[ Pos ], mPixels[ Pos + 1 ], mPixels[ Pos + 2 ], mPixels[ Pos + 3 ] );
@@ -280,7 +280,7 @@ eeColorA cSubTexture::GetColorAt( const Int32& X, const Int32& Y ) {
 void cSubTexture::SetColorAt( const Int32& X, const Int32& Y, const eeColorA& Color ) {
 	if ( NULL != mPixels ) {
 		Uint32 Channels = mTexture->Channels();
-		eeUint Pos = ( X + Y * ( mSrcRect.Right - mSrcRect.Left ) ) * Channels;
+		unsigned int Pos = ( X + Y * ( mSrcRect.Right - mSrcRect.Left ) ) * Channels;
 
 		if ( Channels >= 1 ) mPixels[ Pos ]		= Color.R();
 		if ( Channels >= 2 ) mPixels[ Pos + 1 ]	= Color.G();
@@ -370,8 +370,8 @@ bool cSubTexture::SaveToFile(const std::string& filepath, const EE_SAVE_TYPE& Fo
 
 void cSubTexture::ResetDestSize() {
 	eeSize Size = mSrcRect.Size();
-	mDestSize.x	= (eeFloat)Size.Width();
-	mDestSize.y = (eeFloat)Size.Height();
+	mDestSize.x	= (Float)Size.Width();
+	mDestSize.y = (Float)Size.Height();
 }
 
 }}
