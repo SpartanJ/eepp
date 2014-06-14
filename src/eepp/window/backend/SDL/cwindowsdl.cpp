@@ -72,7 +72,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 
 	const SDL_VideoInfo * videoInfo = SDL_GetVideoInfo();
 
-	mWindow.DesktopResolution = eeSize( videoInfo->current_w, videoInfo->current_h );
+	mWindow.DesktopResolution = Sizei( videoInfo->current_w, videoInfo->current_h );
 
 	if ( mWindow.WindowConfig.Style & WindowStyle::UseDesktopResolution ) {
 		mWindow.WindowConfig.Width	= mWindow.DesktopResolution.Width();
@@ -107,7 +107,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 		return false;
 	}
 
-	mWindow.WindowSize = eeSize( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
+	mWindow.WindowSize = Sizei( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 
 	if ( NULL == mSurface ) {
 		eePRINTL( "Unable to set video mode: %s", SDL_GetError() );
@@ -314,9 +314,9 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	mWindow.WindowConfig.Height   = Height;
 
 	if ( Windowed ) {
-		mWindow.WindowSize = eeSize( Width, Height );
+		mWindow.WindowSize = Sizei( Width, Height );
 	} else {
-		mWindow.WindowSize = eeSize( oldWidth, oldHeight );
+		mWindow.WindowSize = Sizei( oldWidth, oldHeight );
 	}
 
 	if ( this->Windowed() && !Windowed ) {

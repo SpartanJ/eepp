@@ -117,7 +117,7 @@ void cUIWindow::CreateModalControl() {
 	cUIControl * Ctrl = cUIManager::instance()->MainControl();
 
 	if ( NULL == mModalCtrl ) {
-		mModalCtrl = eeNew( cUIControlAnim, ( cUIControlAnim::CreateParams( Ctrl , eeVector2i(0,0), Ctrl->Size(), UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) );
+		mModalCtrl = eeNew( cUIControlAnim, ( cUIControlAnim::CreateParams( Ctrl , Vector2i(0,0), Ctrl->Size(), UI_ANCHOR_LEFT | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM ) ) );
 	} else {
 		mModalCtrl->Pos( 0, 0 );
 		mModalCtrl->Size( Ctrl->Size() );
@@ -173,7 +173,7 @@ bool cUIWindow::IsType( const Uint32& type ) const {
 }
 
 void cUIWindow::ContainerPosChange( const cUIEvent * Event ) {
-	eeVector2i PosDiff = mContainer->Pos() - eeVector2i( mBorderLeft->Size().Width(), mWindowDecoration->Size().Height() );
+	Vector2i PosDiff = mContainer->Pos() - Vector2i( mBorderLeft->Size().Width(), mWindowDecoration->Size().Height() );
 
 	if ( PosDiff.x != 0 || PosDiff.y != 0 ) {
 		mContainer->Pos( mBorderLeft->Size().Width(), mWindowDecoration->Size().Height() );
@@ -262,7 +262,7 @@ void cUIWindow::GetMinWinSize() {
 	if ( NULL == mWindowDecoration || ( mMinWindowSize.x != 0 && mMinWindowSize.y != 0 ) )
 		return;
 
-	eeSize tSize;
+	Sizei tSize;
 
 	tSize.x = mBorderLeft->Size().Width() + mBorderRight->Size().Width() - mButtonsPositionFixer.x;
 	tSize.y = mWindowDecoration->Size().Height() + mBorderBottom->Size().Height();
@@ -288,9 +288,9 @@ void cUIWindow::OnSizeChange() {
 		if ( mSize.x < mMinWindowSize.x && mSize.y < mMinWindowSize.y ) {
 			Size( mMinWindowSize );
 		} else if ( mSize.x < mMinWindowSize.x ) {
-			Size( eeSize( mMinWindowSize.x, mSize.y ) );
+			Size( Sizei( mMinWindowSize.x, mSize.y ) );
 		} else {
-			Size( eeSize( mSize.x, mMinWindowSize.y ) );
+			Size( Sizei( mSize.x, mMinWindowSize.y ) );
 		}
 	} else {
 		FixChildsSize();
@@ -299,9 +299,9 @@ void cUIWindow::OnSizeChange() {
 	}
 }
 
-void cUIWindow::Size( const eeSize& Size ) {
+void cUIWindow::Size( const Sizei& Size ) {
 	if ( NULL != mWindowDecoration ) {
-		eeSize size = Size;
+		Sizei size = Size;
 
 		size.x += mBorderLeft->Size().Width() + mBorderRight->Size().Width();
 		size.y += mWindowDecoration->Size().Height() + mBorderBottom->Size().Height();
@@ -313,10 +313,10 @@ void cUIWindow::Size( const eeSize& Size ) {
 }
 
 void cUIWindow::Size( const Int32& Width, const Int32& Height ) {
-	Size( eeSize( Width, Height ) );
+	Size( Sizei( Width, Height ) );
 }
 
-const eeSize& cUIWindow::Size() {
+const Sizei& cUIWindow::Size() {
 	return cUIComplexControl::Size();
 }
 
@@ -327,7 +327,7 @@ void cUIWindow::FixChildsSize() {
 	}
 
 	if ( mDecoAutoSize ) {
-		mDecoSize = eeSize( mSize.Width(), mWindowDecoration->GetSkinSize().Height() );
+		mDecoSize = Sizei( mSize.Width(), mWindowDecoration->GetSkinSize().Height() );
 	}
 
 	mWindowDecoration->Size( mDecoSize );
@@ -445,7 +445,7 @@ void cUIWindow::DoResize ( const cUIMessage * Msg ) {
 }
 
 void cUIWindow::DecideResizeType( cUIControl * Control ) {
-	eeVector2i Pos = cUIManager::instance()->GetMousePos();
+	Vector2i Pos = cUIManager::instance()->GetMousePos();
 
 	WorldToControl( Pos );
 
@@ -492,7 +492,7 @@ void cUIWindow::TryResize( const UI_RESIZE_TYPE& Type ) {
 
 	DragEnable( false );
 
-	eeVector2i Pos = cUIManager::instance()->GetMousePos();
+	Vector2i Pos = cUIManager::instance()->GetMousePos();
 
 	WorldToControl( Pos );
 	
@@ -564,7 +564,7 @@ void cUIWindow::UpdateResize() {
 		return;
 	}
 
-	eeVector2i Pos = cUIManager::instance()->GetMousePos();
+	Vector2i Pos = cUIManager::instance()->GetMousePos();
 
 	WorldToControl( Pos );
 
@@ -629,10 +629,10 @@ void cUIWindow::UpdateResize() {
 }
 
 void cUIWindow::InternalSize( const Int32& w, const Int32& h ) {
-	InternalSize( eeSize( w, h ) );
+	InternalSize( Sizei( w, h ) );
 }
 
-void cUIWindow::InternalSize( eeSize Size ) {
+void cUIWindow::InternalSize( Sizei Size ) {
 	if ( Size.x < mMinWindowSize.x || Size.y < mMinWindowSize.y ) {
 		if ( Size.x < mMinWindowSize.x && Size.y < mMinWindowSize.y ) {
 			Size = mMinWindowSize;
@@ -660,25 +660,25 @@ void cUIWindow::Draw() {
 		ColorA EndC( 0, 0, 0, 0 );
 		Float SSize = 16.f;
 
-		eeVector2i ShadowPos = mScreenPos + eeVector2i( 0, 16 );
+		Vector2i ShadowPos = mScreenPos + Vector2i( 0, 16 );
 
-		P.DrawRectangle( eeRectf( eeVector2f( ShadowPos.x, ShadowPos.y ), eeSizef( mSize.Width(), mSize.Height() ) ), BeginC, BeginC, BeginC, BeginC );
+		P.DrawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y ), Sizef( mSize.Width(), mSize.Height() ) ), BeginC, BeginC, BeginC, BeginC );
 
-		P.DrawRectangle( eeRectf( eeVector2f( ShadowPos.x, ShadowPos.y - SSize ), eeSizef( mSize.Width(), SSize ) ), EndC, BeginC, BeginC, EndC );
+		P.DrawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y - SSize ), Sizef( mSize.Width(), SSize ) ), EndC, BeginC, BeginC, EndC );
 
-		P.DrawRectangle( eeRectf( eeVector2f( ShadowPos.x - SSize, ShadowPos.y ), eeSizef( SSize, mSize.Height() ) ), EndC, EndC, BeginC, BeginC );
+		P.DrawRectangle( Rectf( Vector2f( ShadowPos.x - SSize, ShadowPos.y ), Sizef( SSize, mSize.Height() ) ), EndC, EndC, BeginC, BeginC );
 
-		P.DrawRectangle( eeRectf( eeVector2f( ShadowPos.x + mSize.Width(), ShadowPos.y ), eeSizef( SSize, mSize.Height() ) ), BeginC, BeginC, EndC, EndC );
+		P.DrawRectangle( Rectf( Vector2f( ShadowPos.x + mSize.Width(), ShadowPos.y ), Sizef( SSize, mSize.Height() ) ), BeginC, BeginC, EndC, EndC );
 
-		P.DrawRectangle( eeRectf( eeVector2f( ShadowPos.x, ShadowPos.y + mSize.Height() ), eeSizef( mSize.Width(), SSize ) ), BeginC, EndC, EndC, BeginC );
+		P.DrawRectangle( Rectf( Vector2f( ShadowPos.x, ShadowPos.y + mSize.Height() ), Sizef( mSize.Width(), SSize ) ), BeginC, EndC, EndC, BeginC );
 
-		P.DrawTriangle( eeTriangle2f( eeVector2f( ShadowPos.x + mSize.Width(), ShadowPos.y ), eeVector2f( ShadowPos.x + mSize.Width(), ShadowPos.y - SSize ), eeVector2f( ShadowPos.x + mSize.Width() + SSize, ShadowPos.y ) ), BeginC, EndC, EndC );
+		P.DrawTriangle( Triangle2f( Vector2f( ShadowPos.x + mSize.Width(), ShadowPos.y ), Vector2f( ShadowPos.x + mSize.Width(), ShadowPos.y - SSize ), Vector2f( ShadowPos.x + mSize.Width() + SSize, ShadowPos.y ) ), BeginC, EndC, EndC );
 
-		P.DrawTriangle( eeTriangle2f( eeVector2f( ShadowPos.x, ShadowPos.y ), eeVector2f( ShadowPos.x, ShadowPos.y - SSize ), eeVector2f( ShadowPos.x - SSize, ShadowPos.y ) ), BeginC, EndC, EndC );
+		P.DrawTriangle( Triangle2f( Vector2f( ShadowPos.x, ShadowPos.y ), Vector2f( ShadowPos.x, ShadowPos.y - SSize ), Vector2f( ShadowPos.x - SSize, ShadowPos.y ) ), BeginC, EndC, EndC );
 
-		P.DrawTriangle( eeTriangle2f( eeVector2f( ShadowPos.x + mSize.Width(), ShadowPos.y + mSize.Height() ), eeVector2f( ShadowPos.x + mSize.Width(), ShadowPos.y + mSize.Height() + SSize ), eeVector2f( ShadowPos.x + mSize.Width() + SSize, ShadowPos.y + mSize.Height() ) ), BeginC, EndC, EndC );
+		P.DrawTriangle( Triangle2f( Vector2f( ShadowPos.x + mSize.Width(), ShadowPos.y + mSize.Height() ), Vector2f( ShadowPos.x + mSize.Width(), ShadowPos.y + mSize.Height() + SSize ), Vector2f( ShadowPos.x + mSize.Width() + SSize, ShadowPos.y + mSize.Height() ) ), BeginC, EndC, EndC );
 
-		P.DrawTriangle( eeTriangle2f( eeVector2f( ShadowPos.x, ShadowPos.y + mSize.Height() ), eeVector2f( ShadowPos.x - SSize, ShadowPos.y + mSize.Height() ), eeVector2f( ShadowPos.x, ShadowPos.y + mSize.Height() + SSize ) ), BeginC, EndC, EndC );
+		P.DrawTriangle( Triangle2f( Vector2f( ShadowPos.x, ShadowPos.y + mSize.Height() ), Vector2f( ShadowPos.x - SSize, ShadowPos.y + mSize.Height() ), Vector2f( ShadowPos.x, ShadowPos.y + mSize.Height() + SSize ) ), BeginC, EndC, EndC );
 
 		P.ForceDraw( true );
 	}
@@ -845,7 +845,7 @@ void cUIWindow::Maximize() {
 	}
 }
 
-Uint32 cUIWindow::OnMouseDoubleClick( const eeVector2i &Pos, const Uint32 Flags ) {
+Uint32 cUIWindow::OnMouseDoubleClick( const Vector2i &Pos, const Uint32 Flags ) {
 	if ( ( mWinFlags & UI_WIN_RESIZEABLE ) && ( NULL != mButtonMaximize ) && ( Flags & EE_BUTTON_LMASK ) ) {
 		ButtonMaximizeClick( NULL );
 	}
@@ -864,8 +864,8 @@ void cUIWindow::CheckShortcuts( const Uint32& KeyCode, const Uint32& Mod ) {
 		KeyboardShortcut kb = (*it);
 
 		if ( KeyCode == kb.KeyCode && ( Mod & kb.Mod ) ) {
-			cUIManager::instance()->SendMouseUp( kb.Button, eeVector2i(0,0), EE_BUTTON_LMASK );
-			cUIManager::instance()->SendMouseClick( kb.Button, eeVector2i(0,0), EE_BUTTON_LMASK );
+			cUIManager::instance()->SendMouseUp( kb.Button, Vector2i(0,0), EE_BUTTON_LMASK );
+			cUIManager::instance()->SendMouseClick( kb.Button, Vector2i(0,0), EE_BUTTON_LMASK );
 		}
 	}
 }
@@ -919,7 +919,7 @@ void cUIWindow::ResizeCursor() {
 	if ( !IsMouseOverMeOrChilds() || !Man->UseGlobalCursors() || ( mWinFlags & UI_WIN_NO_BORDER ) || !( mWinFlags & UI_WIN_RESIZEABLE ) )
 		return;
 
-	eeVector2i Pos = Man->GetMousePos();
+	Vector2i Pos = Man->GetMousePos();
 
 	WorldToControl( Pos );
 

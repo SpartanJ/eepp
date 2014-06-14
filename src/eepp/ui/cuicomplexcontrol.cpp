@@ -29,14 +29,14 @@ bool cUIComplexControl::IsType( const Uint32& type ) const {
 
 void cUIComplexControl::UpdateAnchorsDistances() {
 	if ( NULL != mParentCtrl ) {
-		mDistToBorder	= eeRecti( mPos.x, mPos.y, mParentCtrl->Size().x - ( mPos.x + mSize.x ), mParentCtrl->Size().y - ( mPos.y + mSize.y ) );
+		mDistToBorder	= Recti( mPos.x, mPos.y, mParentCtrl->Size().x - ( mPos.x + mSize.x ), mParentCtrl->Size().y - ( mPos.y + mSize.y ) );
 	}
 }
 
 void cUIComplexControl::Update() {
 	if ( mVisible && NULL != mTooltip && mTooltip->Text().size() ) {
 		if ( IsMouseOverMeOrChilds() ) {
-			eeVector2i Pos = cUIManager::instance()->GetMousePos();
+			Vector2i Pos = cUIManager::instance()->GetMousePos();
 			Pos.x += cUIThemeManager::instance()->CursorSize().x;
 			Pos.y += cUIThemeManager::instance()->CursorSize().y;
 
@@ -124,8 +124,8 @@ void cUIComplexControl::TooltipRemove() {
 	mTooltip = NULL;
 }
 
-void cUIComplexControl::Size( const eeSize &Size ) {
-	eeSize s( Size );
+void cUIComplexControl::Size( const Sizei &Size ) {
+	Sizei s( Size );
 
 	if ( s.x < mMinControlSize.x )
 		s.x = mMinControlSize.x;
@@ -140,12 +140,12 @@ void cUIComplexControl::Size( const Int32& Width, const Int32& Height ) {
 	cUIControlAnim::Size( Width, Height );
 }
 
-const eeSize& cUIComplexControl::Size() {
+const Sizei& cUIComplexControl::Size() {
 	return cUIControlAnim::Size();
 }
 
-void cUIComplexControl::OnParentSizeChange( const eeVector2i& SizeChange ) {
-	eeSize newSize( mSize );
+void cUIComplexControl::OnParentSizeChange( const Vector2i& SizeChange ) {
+	Sizei newSize( mSize );
 
 	if ( mFlags & UI_ANCHOR_LEFT ) {
 		// Nothing ?

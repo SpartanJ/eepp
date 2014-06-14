@@ -30,7 +30,7 @@ class EE_API cTextureAtlas : public ResourceManager<cSubTexture> {
 		*	@param SrcRect The texture part that will be used as the SubTexture.
 		*	@param Name The texture name ( if any )
 		*/
-		cSubTexture * Add( const Uint32& TexId, const eeRecti& SrcRect, const std::string& Name = "" );
+		cSubTexture * Add( const Uint32& TexId, const Recti& SrcRect, const std::string& Name = "" );
 
 		/** Creates and add to the texture atlas a SubTexture of the indicated part of the texture.
 		*	@param TexId The texture id
@@ -38,7 +38,7 @@ class EE_API cTextureAtlas : public ResourceManager<cSubTexture> {
 		*	@param DestSize The destination size that the SubTexture will have when rendered.
 		*	@param Name The texture name ( if any )
 		*/
-		cSubTexture * Add( const Uint32& TexId, const eeRecti& SrcRect, const eeSizef& DestSize, const std::string& Name = "" );
+		cSubTexture * Add( const Uint32& TexId, const Recti& SrcRect, const Sizef& DestSize, const std::string& Name = "" );
 
 		/** Creates and add to the texture atlas a SubTexture of the indicated part of the texture.
 		*	@param TexId The texture id
@@ -47,7 +47,7 @@ class EE_API cTextureAtlas : public ResourceManager<cSubTexture> {
 		*	@param Offset The offset that will be added to the position passed when any Draw call is used.
 		*	@param Name The texture name ( if any )
 		*/
-		cSubTexture * Add( const Uint32& TexId, const eeRecti& SrcRect, const eeSizef& DestSize, const eeVector2i& Offset, const std::string& Name = "" );
+		cSubTexture * Add( const Uint32& TexId, const Recti& SrcRect, const Sizef& DestSize, const Vector2i& Offset, const std::string& Name = "" );
 
 		/** @return The texture atlas name. */
 		const std::string& Name() const;

@@ -61,7 +61,7 @@ void cUITextBox::Draw() {
 			}
 
 			mTextCache->Flags( Flags() );
-			mTextCache->Draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mPadding.Top, eeVector2f::One, 0.f, Blend() );
+			mTextCache->Draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mPadding.Top, Vector2f::One, 0.f, Blend() );
 
 			if ( mFlags & UI_CLIP_ENABLE ) {
 				cUIManager::instance()->ClipDisable();
@@ -213,11 +213,11 @@ void cUITextBox::OnFontChanged() {
 	SendCommonEvent( cUIEvent::EventOnFontChanged );
 }
 
-void cUITextBox::Padding( const eeRecti& padding ) {
+void cUITextBox::Padding( const Recti& padding ) {
 	mPadding = padding;
 }
 
-const eeRecti& cUITextBox::Padding() const {
+const Recti& cUITextBox::Padding() const {
 	return mPadding;
 }
 
@@ -245,13 +245,13 @@ const int& cUITextBox::GetNumLines() const {
 	return mTextCache->GetNumLines();
 }
 
-const eeVector2f& cUITextBox::AlignOffset() const {
+const Vector2f& cUITextBox::AlignOffset() const {
 	return mAlignOffset;
 }
 
-Uint32 cUITextBox::OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags ) {
+Uint32 cUITextBox::OnMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( IsTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
-		eeVector2i controlPos( Pos );
+		Vector2i controlPos( Pos );
 		WorldToControl( controlPos );
 
 		Int32 curPos = mTextCache->Font()->FindClosestCursorPosFromPoint( mTextCache->Text(), controlPos );
@@ -271,7 +271,7 @@ Uint32 cUITextBox::OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags
 	return cUIComplexControl::OnMouseDoubleClick( Pos, Flags );
 }
 
-Uint32 cUITextBox::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
+Uint32 cUITextBox::OnMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( IsTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
 		if ( SelCurInit() == SelCurEnd() ) {
 			SelCurInit( -1 );
@@ -284,9 +284,9 @@ Uint32 cUITextBox::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
 	return 1;
 }
 
-Uint32 cUITextBox::OnMouseDown( const eeVector2i& Pos, const Uint32 Flags ) {
+Uint32 cUITextBox::OnMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( IsTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) ) {
-		eeVector2i controlPos( Pos );
+		Vector2i controlPos( Pos );
 		WorldToControl( controlPos );
 
 		Int32 curPos = mTextCache->Font()->FindClosestCursorPosFromPoint( mTextCache->Text(), controlPos );
@@ -316,7 +316,7 @@ void cUITextBox::DrawSelection() {
 		}
 
 		Int32 lastEnd;
-		eeVector2i initPos, endPos;
+		Vector2i initPos, endPos;
 
 		cPrimitives P;
 		P.SetColor( mFontSelectionBackColor );
@@ -333,7 +333,7 @@ void cUITextBox::DrawSelection() {
 				lastEnd = end;
 			}
 
-			P.DrawRectangle( eeRectf( mScreenPos.x + initPos.x + mAlignOffset.x + mPadding.Left,
+			P.DrawRectangle( Rectf( mScreenPos.x + initPos.x + mAlignOffset.x + mPadding.Left,
 									  mScreenPos.y + initPos.y - mTextCache->Font()->GetFontHeight() + mAlignOffset.y + mPadding.Top,
 									  mScreenPos.x + endPos.x + mAlignOffset.x + mPadding.Left,
 									  mScreenPos.y + endPos.y + mAlignOffset.y + mPadding.Top )

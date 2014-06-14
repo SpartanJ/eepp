@@ -29,13 +29,13 @@ cUIMessageBox::cUIMessageBox( const cUIMessageBox::CreateParams& Params ) :
 	else
 	{
 		mButtonOK = Theme->CreatePushButton( Container(),
-								 eeSize( 90, 22 ),
-								 eeVector2i( Container()->Size().Width() - 96, Container()->Size().Height() - 22 - 8 ),
+								 Sizei( 90, 22 ),
+								 Vector2i( Container()->Size().Width() - 96, Container()->Size().Height() - 22 - 8 ),
 								 UI_HALIGN_CENTER | UI_ANCHOR_RIGHT | UI_VALIGN_CENTER | UI_AUTO_SIZE );
 
 		mButtonCancel = Theme->CreatePushButton( Container(),
 								 mButtonOK->Size(),
-								 eeVector2i( mButtonOK->Pos().x - mButtonOK->Size().Width() - 8, mButtonOK->Pos().y ),
+								 Vector2i( mButtonOK->Pos().x - mButtonOK->Size().Width() - 8, mButtonOK->Pos().y ),
 								 mButtonOK->Flags() );
 	}
 
@@ -113,8 +113,8 @@ Uint32 cUIMessageBox::OnMessage( const cUIMessage * Msg ) {
 		case cUIMessage::MsgClick:
 		{
 			if ( Msg->Flags() & EE_BUTTON_LMASK ) {
-				eeVector2i mousei( cUIManager::instance()->GetMousePos() );
-				eeVector2f mouse( mousei.x, mousei.y );
+				Vector2i mousei( cUIManager::instance()->GetMousePos() );
+				Vector2f mouse( mousei.x, mousei.y );
 
 				if ( Msg->Sender() == mButtonOK && mButtonOK->GetPolygon().PointInside( mouse ) ) {
 					SendCommonEvent( cUIEvent::EventMsgBoxConfirmClick );
@@ -145,7 +145,7 @@ cUIPushButton * cUIMessageBox::ButtonCancel() const {
 }
 
 void cUIMessageBox::AutoSize() {
-	eeSize nSize( mTextBox->GetTextWidth() + 48, mTextBox->GetTextHeight() + mButtonOK->Size().Height() + mDecoSize.Height() + 8 );
+	Sizei nSize( mTextBox->GetTextWidth() + 48, mTextBox->GetTextHeight() + mButtonOK->Size().Height() + mDecoSize.Height() + 8 );
 
 	if ( !( nSize.Width() > Container()->Size().Width() ) ) {
 		nSize.x = Container()->Size().Width();

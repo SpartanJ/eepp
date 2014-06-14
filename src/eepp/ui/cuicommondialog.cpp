@@ -51,7 +51,7 @@ cUICommonDialog::cUICommonDialog( const cUICommonDialog::CreateParams& Params ) 
 	mButtonCancel->Visible( true );
 	mButtonCancel->Enabled( true );
 	mButtonCancel->Text( "Cancel" );
-	mButtonCancel->Pos( eeVector2i( mButtonCancel->Pos().x, Container()->Size().Height() - mButtonCancel->Size().Height() - 2 ) );
+	mButtonCancel->Pos( Vector2i( mButtonCancel->Pos().x, Container()->Size().Height() - mButtonCancel->Size().Height() - 2 ) );
 	mButtonCancel->UpdateAnchorsDistances();
 
 	ButtonParams.PosSet( mButtonCancel->Pos().x, mButtonCancel->Pos().y - mButtonCancel->Size().Height() );
@@ -86,7 +86,7 @@ cUICommonDialog::cUICommonDialog( const cUICommonDialog::CreateParams& Params ) 
 	cUIListBox::CreateParams LBParams;
 	LBParams.Parent( Container() );
 	LBParams.PosSet( 6, mButtonUp->Pos().y + mButtonUp->Size().Height() + 4 );
-	LBParams.Size = eeSize( Container()->Size().Width() - 12,
+	LBParams.Size = Sizei( Container()->Size().Width() - 12,
 							Container()->Size().Height() -
 								mButtonUp->Size().Height() -
 								mButtonUp->Pos().y -

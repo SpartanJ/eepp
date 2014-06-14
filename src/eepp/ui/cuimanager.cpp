@@ -54,8 +54,8 @@ void cUIManager::Init( Uint32 Flags, Window::cWindow * window ) {
 	Params.SizeSet( cEngine::instance()->GetWidth(), cEngine::instance()->GetHeight() );
 	Params.Flags = UI_CONTROL_DEFAULT_FLAGS | UI_REPORT_SIZE_CHANGE_TO_CHILDS;
 	Params.WinFlags = UI_WIN_NO_BORDER | UI_WIN_RESIZEABLE;
-	Params.MinWindowSize = eeSize( 0, 0 );
-	Params.DecorationSize = eeSize( 0, 0 );
+	Params.MinWindowSize = Sizei( 0, 0 );
+	Params.DecorationSize = Sizei( 0, 0 );
 	Params.DecorationAutoSize = false;
 
 	mControl		= eeNew( cUIWindow, ( Params ) );
@@ -269,7 +269,7 @@ const Time& cUIManager::Elapsed() const {
 	return mElapsed;
 }
 
-eeVector2i cUIManager::GetMousePos() {
+Vector2i cUIManager::GetMousePos() {
 	return mKM->GetMousePos();
 }
 
@@ -336,17 +336,17 @@ void cUIManager::CheckTabPress( const Uint32& KeyCode ) {
 	}
 }
 
-void cUIManager::SendMouseClick( cUIControl * ToCtrl, const eeVector2i& Pos, const Uint32 Flags ) {
+void cUIManager::SendMouseClick( cUIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
 	SendMsg( ToCtrl, cUIMessage::MsgClick, Flags );
 	ToCtrl->OnMouseClick( Pos, Flags );
 }
 
-void cUIManager::SendMouseUp( cUIControl * ToCtrl, const eeVector2i& Pos, const Uint32 Flags ) {
+void cUIManager::SendMouseUp( cUIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
 	SendMsg( ToCtrl, cUIMessage::MsgMouseUp, Flags );
 	ToCtrl->OnMouseUp( Pos, Flags );
 }
 
-void cUIManager::SendMouseDown( cUIControl * ToCtrl, const eeVector2i& Pos, const Uint32 Flags ) {
+void cUIManager::SendMouseDown( cUIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags ) {
 	SendMsg( ToCtrl, cUIMessage::MsgMouseDown, Flags );
 	ToCtrl->OnMouseDown( Pos, Flags );
 }
@@ -385,7 +385,7 @@ const bool& cUIManager::IsShootingDown() const {
 	return mShootingDown;
 }
 
-const eeVector2i &cUIManager::GetMouseDownPos() const {
+const Vector2i &cUIManager::GetMouseDownPos() const {
 	return mMouseDownPos;
 }
 

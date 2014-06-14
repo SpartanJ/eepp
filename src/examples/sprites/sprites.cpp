@@ -3,9 +3,9 @@
 cWindow * win = NULL;
 
 // Define a interpolation to control the Rock sprite angle
-cInterpolation RockAngle;
+Interpolation RockAngle;
 
-cInterpolation PlanetAngle;
+Interpolation PlanetAngle;
 
 // Create a primitive drawer instance to draw the AABB of the Rock
 cPrimitives P;
@@ -24,7 +24,7 @@ void spriteCallback( Uint32 Event, cSprite * Sprite, void * UserData ) {
 		Sprite->FireEvent( USER_SPRITE_EVENT );
 	} else if ( Event == USER_SPRITE_EVENT ) {
 		// Create an interpolation to change the angle of the sprite
-		cInterpolation * RotationInterpolation = reinterpret_cast<cInterpolation*>( UserData );
+		Interpolation * RotationInterpolation = reinterpret_cast<Interpolation*>( UserData );
 		RotationInterpolation->ClearWaypoints();
 		RotationInterpolation->AddWaypoint( Sprite->Angle() );
 		RotationInterpolation->AddWaypoint( Sprite->Angle() + 45.f );
@@ -112,7 +112,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		for ( Int32 my = 0; my < 4; my++ ) {
 			for( Int32 mx = 0; mx < 8; mx++ ) {
 				// DestSize as 0,0 will use the SubTexture size
-				Rock->AddFrame( RockId, eeSizef( 0, 0 ), eeVector2i( 0, 0 ), eeRecti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
+				Rock->AddFrame( RockId, Sizef( 0, 0 ), Vector2i( 0, 0 ), Recti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
 			}
 		}
 
@@ -140,7 +140,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		P.FillMode( DRAW_LINE );
 
 		// Set the sprites position to the screen center
-		eeVector2i ScreenCenter( cEngine::instance()->GetWidth() / 2, cEngine::instance()->GetHeight() / 2 );
+		Vector2i ScreenCenter( cEngine::instance()->GetWidth() / 2, cEngine::instance()->GetHeight() / 2 );
 
 		Planet->Position( ScreenCenter.x - Planet->GetAABB().Size().Width() / 2, ScreenCenter.y - Planet->GetAABB().Size().Height() / 2 );
 

@@ -12,8 +12,8 @@ cUICheckBox::cUICheckBox( const cUITextBox::CreateParams& Params ) :
 	cUIControlAnim::CreateParams ButtonParams( Params );
 
 	ButtonParams.Parent( this );
-	ButtonParams.PosSet( eeVector2i( 0, 0 ) );
-	ButtonParams.Size = eeSize( 16, 16 );
+	ButtonParams.PosSet( Vector2i( 0, 0 ) );
+	ButtonParams.Size = Sizei( 16, 16 );
 
 	mActiveButton 	= eeNew( cUIControlAnim, ( ButtonParams ) );
 	mActiveButton->Visible( false );
@@ -23,7 +23,7 @@ cUICheckBox::cUICheckBox( const cUITextBox::CreateParams& Params ) :
 	mInactiveButton->Visible( true );
 	mInactiveButton->Enabled( true );
 
-	Padding( eeRecti(0,0,0,0) );
+	Padding( Recti(0,0,0,0) );
 
 	ApplyDefaultTheme();
 }
@@ -72,7 +72,7 @@ void cUICheckBox::DoAfterSetTheme() {
 		}
 	}
 
-	Padding( eeRecti(0,0,0,0) );
+	Padding( Recti(0,0,0,0) );
 }
 
 void cUICheckBox::AutoSize() {
@@ -139,7 +139,7 @@ const bool& cUICheckBox::IsActive() const {
 	return Active();
 }
 
-void cUICheckBox::Padding( const eeRecti& padding ) {
+void cUICheckBox::Padding( const Recti& padding ) {
 	mPadding = padding;
 	mPadding.Left = mPadding.Left + mActiveButton->Size().Width();
 }

@@ -51,7 +51,7 @@ void MainLoop()
 	// Draw the frame buffer many times
 	for ( int y = 0; y < 5; y++ ) {
 		for ( int x = 0; x < 5; x++ ) {
-			FBO->GetTexture()->Draw( x * 200, y * 200, -ang, eeVector2f::One, ColorA(255,255,255,100) );
+			FBO->GetTexture()->Draw( x * 200, y * 200, -ang, Vector2f::One, ColorA(255,255,255,100) );
 		}
 	}
 
@@ -61,18 +61,18 @@ void MainLoop()
 	// The batch can be rotated, scale and moved
 	Batch->BatchRotation( ang );
 	Batch->BatchScale( scale );
-	Batch->BatchCenter( eeVector2f( HWidth, HHeight ) );
+	Batch->BatchCenter( Vector2f( HWidth, HHeight ) );
 
 	// Create a quad to render
 	Float aX = HWidth - 256.f;
 	Float aY = HHeight - 256.f;
-	eeQuad2f TmpQuad(
-		eeVector2f( aX	   , aY 		),
-		eeVector2f( aX	   , aY + 32.f  ),
-		eeVector2f( aX + 32.f, aY + 32.f  ),
-		eeVector2f( aX + 32.f, aY 		)
+	Quad2f TmpQuad(
+		Vector2f( aX	   , aY 		),
+		Vector2f( aX	   , aY + 32.f  ),
+		Vector2f( aX + 32.f, aY + 32.f  ),
+		Vector2f( aX + 32.f, aY 		)
 	);
-	TmpQuad.Rotate( ang, eeVector2f( aX + 16.f, aY + 16.f ) );
+	TmpQuad.Rotate( ang, Vector2f( aX + 16.f, aY + 16.f ) );
 
 	// Begin drawing quads
 	Batch->QuadsBegin();
@@ -120,7 +120,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 	// Check if created
 	if ( win->Created() ) {
-		eePolygon2f Poly( eePolygon2f::CreateRoundedRectangle( 0, 0, 200, 50 ) );
+		Polygon2f Poly( Polygon2f::CreateRoundedRectangle( 0, 0, 200, 50 ) );
 
 		// Create the Vertex Buffer, the vertex buffer stores the vertex data in the GPU, making the rendering much faster
 		// In the case that Vertex Buffer Object is not supported by the GPU, it will fallback to a inmediate-mode vertex buffer

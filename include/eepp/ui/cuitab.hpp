@@ -29,7 +29,7 @@ class EE_API cUITab : public cUISelectButton {
 	protected:
 		cUIControl *	mCtrlOwned;
 
-		virtual Uint32 OnMouseClick( const eeVector2i &Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseClick( const Vector2i &Pos, const Uint32 Flags );
 
 		virtual void OnStateChange();
 

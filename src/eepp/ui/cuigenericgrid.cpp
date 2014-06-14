@@ -31,7 +31,7 @@ cUIGenericGrid::cUIGenericGrid( const cUIGenericGrid::CreateParams& Params ) :
 	cUIComplexControl::CreateParams CParams;
 	CParams.Parent( this );
 	CParams.PosSet( mPadding.Left, mPadding.Top );
-	CParams.Size = eeSize( mSize.Width() - mPadding.Right - mPadding.Left, mSize.Height() - mPadding.Top - mPadding.Bottom );
+	CParams.Size = Sizei( mSize.Width() - mPadding.Right - mPadding.Left, mSize.Height() - mPadding.Top - mPadding.Bottom );
 	CParams.Flags = Params.Flags;
 	mContainer = eeNew( tUIItemContainer<cUIGenericGrid> , ( CParams ) );
 	mContainer->Visible( true );
@@ -45,11 +45,11 @@ cUIGenericGrid::cUIGenericGrid( const cUIGenericGrid::CreateParams& Params ) :
 	ScrollBarP.PosSet				( mSize.Width() - 15, 0 );
 	ScrollBarP.Flags				= UI_AUTO_SIZE;
 	ScrollBarP.VerticalScrollBar	= true;
-	ScrollBarP.Size					= eeSize( 15, mSize.Height() );
+	ScrollBarP.Size					= Sizei( 15, mSize.Height() );
 	mVScrollBar						= eeNew( cUIScrollBar, ( ScrollBarP ) );
 
 	ScrollBarP.PosSet				( 0, mSize.Height() - 15 );
-	ScrollBarP.Size					= eeSize( mSize.Width() - mVScrollBar->Size().Width(), 15 );
+	ScrollBarP.Size					= Sizei( mSize.Width() - mVScrollBar->Size().Width(), 15 );
 	ScrollBarP.VerticalScrollBar	= false;
 	mHScrollBar						= eeNew( cUIScrollBar, ( ScrollBarP ) );
 
@@ -572,10 +572,10 @@ void cUIGenericGrid::Update() {
 					return;
 				}
 
-				eeVector2i Pos( cUIManager::instance()->GetMousePos() );
+				Vector2i Pos( cUIManager::instance()->GetMousePos() );
 
 				if ( mTouchDragPoint != Pos ) {
-					eeVector2i diff = -( mTouchDragPoint - Pos );
+					Vector2i diff = -( mTouchDragPoint - Pos );
 
 					mVScrollBar->Value( mVScrollBar->Value() + ( -diff.y / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
 

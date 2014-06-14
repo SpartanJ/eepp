@@ -72,17 +72,17 @@ void cUIControlAnim::Angle( const Float& angle ) {
 	OnAngleChange();
 }
 
-const eeVector2f& cUIControlAnim::Scale() const {
+const Vector2f& cUIControlAnim::Scale() const {
 	return mScale;
 }
 
-void cUIControlAnim::Scale( const eeVector2f& scale ) {
+void cUIControlAnim::Scale( const Vector2f& scale ) {
 	mScale = scale;
 	OnScaleChange();
 }
 
 void cUIControlAnim::Scale( const Float& scale ) {
-	Scale( eeVector2f( scale, scale ) );
+	Scale( Vector2f( scale, scale ) );
 }
 
 const Float& cUIControlAnim::Alpha() const {
@@ -114,7 +114,7 @@ void cUIControlAnim::MatrixSet() {
 	if ( mScale != 1.f || mAngle != 0.f ) {
 		cGlobalBatchRenderer::instance()->Draw();
 		GLi->PushMatrix();
-		eeVector2f Center( mScreenPos.x + mSize.Width() * 0.5f, mScreenPos.y + mSize.Height() * 0.5f );
+		Vector2f Center( mScreenPos.x + mSize.Width() * 0.5f, mScreenPos.y + mSize.Height() * 0.5f );
 		GLi->Translatef( Center.x , Center.y, 0.f );
 		GLi->Rotatef( mAngle, 0.0f, 0.0f, 1.0f );
 		GLi->Scalef( mScale.x, mScale.y, 1.0f );
@@ -183,9 +183,9 @@ bool cUIControlAnim::Animating() {
 	return ( NULL != mAlphaAnim && mAlphaAnim->Enabled() ) || ( NULL != mAngleAnim && mAngleAnim->Enabled() ) || ( NULL != mScaleAnim && mScaleAnim->Enabled() ) || ( NULL != mMoveAnim && mMoveAnim->Enabled() );
 }
 
-void cUIControlAnim::StartAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& AlphaChilds, const Ease::Interpolation& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
+void cUIControlAnim::StartAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& AlphaChilds, const Ease::Interpolation& Type, Interpolation::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mAlphaAnim )
-		mAlphaAnim = eeNew( cInterpolation, () );
+		mAlphaAnim = eeNew( Interpolation, () );
 
 	mAlphaAnim->ClearWaypoints();
 	mAlphaAnim->AddWaypoint( From );
@@ -212,9 +212,9 @@ void cUIControlAnim::StartAlphaAnim( const Float& From, const Float& To, const T
 	}
 }
 
-void cUIControlAnim::StartScaleAnim( const eeVector2f& From, const eeVector2f& To, const Time& TotalTime, const Ease::Interpolation& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
+void cUIControlAnim::StartScaleAnim( const Vector2f& From, const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mScaleAnim )
-		mScaleAnim = eeNew( cWaypoints, () );
+		mScaleAnim = eeNew( Waypoints, () );
 
 	mScaleAnim->ClearWaypoints();
 	mScaleAnim->AddWaypoint( From );
@@ -226,17 +226,17 @@ void cUIControlAnim::StartScaleAnim( const eeVector2f& From, const eeVector2f& T
 	Scale( From );
 }
 
-void cUIControlAnim::StartScaleAnim( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
-	StartScaleAnim( eeVector2f( From, From ), eeVector2f( To, To ), TotalTime, Type, PathEndCallback );
+void cUIControlAnim::StartScaleAnim( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation::OnPathEndCallback PathEndCallback ) {
+	StartScaleAnim( Vector2f( From, From ), Vector2f( To, To ), TotalTime, Type, PathEndCallback );
 }
 
-void cUIControlAnim::StartMovement( const eeVector2i& From, const eeVector2i& To, const Time& TotalTime, const Ease::Interpolation& Type, cWaypoints::OnPathEndCallback PathEndCallback ) {
+void cUIControlAnim::StartMovement( const Vector2i& From, const Vector2i& To, const Time& TotalTime, const Ease::Interpolation& Type, Waypoints::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mMoveAnim )
-		mMoveAnim = eeNew( cWaypoints, () );
+		mMoveAnim = eeNew( Waypoints, () );
 
 	mMoveAnim->ClearWaypoints();
-	mMoveAnim->AddWaypoint( eeVector2f( (Float)From.x, (Float)From.y ) );
-	mMoveAnim->AddWaypoint( eeVector2f( (Float)To.x, (Float)To.y ) );
+	mMoveAnim->AddWaypoint( Vector2f( (Float)From.x, (Float)From.y ) );
+	mMoveAnim->AddWaypoint( Vector2f( (Float)To.x, (Float)To.y ) );
 	mMoveAnim->SetTotalTime( TotalTime );
 	mMoveAnim->Start( PathEndCallback );
 	mMoveAnim->Type( Type );
@@ -244,9 +244,9 @@ void cUIControlAnim::StartMovement( const eeVector2i& From, const eeVector2i& To
 	Pos( From );
 }
 
-void cUIControlAnim::StartRotation( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
+void cUIControlAnim::StartRotation( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type, Interpolation::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mAngleAnim )
-		mAngleAnim = eeNew( cInterpolation, () );
+		mAngleAnim = eeNew( Interpolation, () );
 
 	mAngleAnim->ClearWaypoints();
 	mAngleAnim->AddWaypoint( From );
@@ -281,7 +281,7 @@ void cUIControlAnim::DisableFadeOut( const Time& Time, const bool& AlphaChilds, 
 
 void cUIControlAnim::BackgroundDraw() {
 	cPrimitives P;
-	eeRectf R = GetRectf();
+	Rectf R = GetRectf();
 	P.BlendMode( mBackground->Blend() );
 	P.SetColor( GetColor( mBackground->Color() ) );
 
@@ -293,7 +293,7 @@ void cUIControlAnim::BackgroundDraw() {
 		}
 	} else {
 		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( R, 0.f, eeVector2f::One, mBackground->Corners() );
+			P.DrawRoundedRectangle( R, 0.f, Vector2f::One, mBackground->Corners() );
 		} else {
 			P.DrawRectangle( R );
 		}
@@ -309,16 +309,16 @@ void cUIControlAnim::BorderDraw() {
 
 	//! @TODO: Check why was this +0.1f -0.1f?
 	if ( mFlags & UI_CLIP_ENABLE ) {
-		eeRectf R( eeVector2f( (Float)mScreenPos.x + 0.1f, (Float)mScreenPos.y + 0.1f ), eeSizef( (Float)mSize.Width() - 0.1f, (Float)mSize.Height() - 0.1f ) );
+		Rectf R( Vector2f( (Float)mScreenPos.x + 0.1f, (Float)mScreenPos.y + 0.1f ), Sizef( (Float)mSize.Width() - 0.1f, (Float)mSize.Height() - 0.1f ) );
 
 		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( GetRectf(), 0.f, eeVector2f::One, mBackground->Corners() );
+			P.DrawRoundedRectangle( GetRectf(), 0.f, Vector2f::One, mBackground->Corners() );
 		} else {
 			P.DrawRectangle( R );
 		}
 	} else {
 		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( GetRectf(), 0.f, eeVector2f::One, mBackground->Corners() );
+			P.DrawRoundedRectangle( GetRectf(), 0.f, Vector2f::One, mBackground->Corners() );
 		} else {
 			P.DrawRectangle( GetRectf() );
 		}
@@ -330,8 +330,8 @@ ColorA cUIControlAnim::GetColor( const ColorA& Col ) {
 }
 
 void cUIControlAnim::UpdateQuad() {
-	mPoly 	= eePolygon2f( eeAABB( (Float)mScreenPos.x, (Float)mScreenPos.y, (Float)mScreenPos.x + mSize.Width(), (Float)mScreenPos.y + mSize.Height() ) );
-	mCenter = eeVector2f( (Float)mScreenPos.x + (Float)mSize.Width() * 0.5f, (Float)mScreenPos.y + (Float)mSize.Height() * 0.5f );
+	mPoly 	= Polygon2f( eeAABB( (Float)mScreenPos.x, (Float)mScreenPos.y, (Float)mScreenPos.x + mSize.Width(), (Float)mScreenPos.y + mSize.Height() ) );
+	mCenter = Vector2f( (Float)mScreenPos.x + (Float)mSize.Width() * 0.5f, (Float)mScreenPos.y + (Float)mSize.Height() * 0.5f );
 
 	mPoly.Rotate( mAngle, mCenter );
 	mPoly.Scale( mScale, mCenter );
@@ -350,30 +350,30 @@ void cUIControlAnim::UpdateQuad() {
 	};
 }
 
-cInterpolation * cUIControlAnim::RotationInterpolation() {
+Interpolation * cUIControlAnim::RotationInterpolation() {
 	if ( NULL == mAngleAnim )
-		mAngleAnim = eeNew( cInterpolation, () );
+		mAngleAnim = eeNew( Interpolation, () );
 
 	return mAngleAnim;
 }
 
-cWaypoints * cUIControlAnim::ScaleInterpolation() {
+Waypoints * cUIControlAnim::ScaleInterpolation() {
 	if ( NULL == mScaleAnim )
-		mScaleAnim = eeNew( cWaypoints, () );
+		mScaleAnim = eeNew( Waypoints, () );
 
 	return mScaleAnim;
 }
 
-cInterpolation * cUIControlAnim::AlphaInterpolation() {
+Interpolation * cUIControlAnim::AlphaInterpolation() {
 	if ( NULL == mAlphaAnim )
-		mAlphaAnim = eeNew( cInterpolation, () );
+		mAlphaAnim = eeNew( Interpolation, () );
 
 	return mAlphaAnim;
 }
 
-cWaypoints * cUIControlAnim::MovementInterpolation() {
+Waypoints * cUIControlAnim::MovementInterpolation() {
 	if ( NULL == mMoveAnim )
-		mMoveAnim = eeNew( cWaypoints, () );
+		mMoveAnim = eeNew( Waypoints, () );
 
 	return mMoveAnim;
 }

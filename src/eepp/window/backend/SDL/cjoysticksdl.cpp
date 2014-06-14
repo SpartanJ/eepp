@@ -67,8 +67,8 @@ Float cJoystickSDL::GetAxis( const Int32& axis ) {
 	return 0;
 }
 
-eeVector2i cJoystickSDL::GetBallMotion( const Int32& ball ) {
-	eeVector2i v;
+Vector2i cJoystickSDL::GetBallMotion( const Int32& ball ) {
+	Vector2i v;
 
 	if ( ball >= 0 && ball < mBalls )
 		SDL_JoystickGetBall( mJoystick, ball, &v.x, &v.y );

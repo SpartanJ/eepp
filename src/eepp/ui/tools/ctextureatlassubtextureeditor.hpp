@@ -29,7 +29,7 @@ class EE_API cTextureAtlasSubTextureEditor : public cUIComplexControl {
 		cUITheme *				mTheme;
 		cUIGfx *				mGfx;
 		cUIDragable *			mDrag;
-		eeVector2i				mUICenter;
+		Vector2i				mUICenter;
 		cTextureAtlasEditor *	mEditor;
 
 		virtual void OnSizeChange();

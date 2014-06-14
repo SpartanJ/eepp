@@ -65,23 +65,23 @@
 
 namespace EE { namespace Math {
 
-class EE_API cMTRand {
+class EE_API MTRand {
 	public:
 		static const Uint32 M		= 397;
 		static const Int32 N		= 624;
 		static const Uint32 SAVE	= N + 1;
 
 		/** Initialize with a defined user seed */
-		cMTRand( const Uint32 oneSeed );
+		MTRand( const Uint32 oneSeed );
 
 		/** Initialize with a predefined seed */
-		cMTRand();
+		MTRand();
 
 		/** Initialize with a copy of another MTRand object */
-		cMTRand( const cMTRand& o );
+		MTRand( const MTRand& o );
 
 		/** Copy MTRand object */
-		cMTRand& operator=( const cMTRand& o );
+		MTRand& operator=( const MTRand& o );
 
 		/** @return integer in [0,2^32-1] */
 		Uint32				Randi();

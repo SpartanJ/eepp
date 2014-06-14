@@ -101,7 +101,7 @@ void cTextureFont::BuildFont() {
 
 void cTextureFont::BuildFromGlyphs() {
 	Float Top, Bottom;
-	eeRectf tR;
+	Rectf tR;
 
 	mTexCoords.resize( mNumChars );
 

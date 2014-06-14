@@ -72,9 +72,9 @@ class EE_API cUITextBox : public cUIComplexControl {
 
 		virtual void OnFontChanged();
 
-		virtual void Padding( const eeRecti& padding );
+		virtual void Padding( const Recti& padding );
 
-		const eeRecti& Padding() const;
+		const Recti& Padding() const;
 
 		virtual void SetTheme( cUITheme * Theme );
 
@@ -86,7 +86,7 @@ class EE_API cUITextBox : public cUIComplexControl {
 
 		const int& GetNumLines() const;
 
-		const eeVector2f& AlignOffset() const;
+		const Vector2f& AlignOffset() const;
 
 		virtual void ShrinkText( const Uint32& MaxWidth );
 
@@ -97,8 +97,8 @@ class EE_API cUITextBox : public cUIComplexControl {
 		ColorA 		mFontColor;
 		ColorA 		mFontShadowColor;
 		ColorA		mFontSelectionBackColor;
-		eeVector2f 		mAlignOffset;
-		eeRecti			mPadding;
+		Vector2f 		mAlignOffset;
+		Recti			mPadding;
 		Int32			mSelCurInit;
 		Int32			mSelCurEnd;
 
@@ -114,11 +114,11 @@ class EE_API cUITextBox : public cUIComplexControl {
 
 		virtual Uint32 OnFocusLoss();
 
-		virtual Uint32 OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags );
 
-		virtual Uint32 OnMouseClick( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseClick( const Vector2i& Pos, const Uint32 Flags );
 
-		virtual Uint32 OnMouseDown( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseDown( const Vector2i& Pos, const Uint32 Flags );
 
 		virtual void SelCurInit( const Int32& init );
 

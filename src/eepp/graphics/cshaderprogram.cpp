@@ -313,7 +313,7 @@ bool cShaderProgram::SetUniform( const std::string& Name, float Value ) {
 	return ( Location >= 0 );
 }
 
-bool cShaderProgram::SetUniform( const std::string& Name, eeVector2ff Value ) {
+bool cShaderProgram::SetUniform( const std::string& Name, Vector2ff Value ) {
 	Int32 Location = UniformLocation( Name );
 
 	if ( Location >= 0 ) {
@@ -325,7 +325,7 @@ bool cShaderProgram::SetUniform( const std::string& Name, eeVector2ff Value ) {
 	return ( Location >= 0 );
 }
 
-bool cShaderProgram::SetUniform( const std::string& Name, eeVector3ff Value ) {
+bool cShaderProgram::SetUniform( const std::string& Name, Vector3ff Value ) {
 	Int32 Location = UniformLocation( Name );
 
 	if ( Location >= 0 ) {
@@ -385,7 +385,7 @@ bool cShaderProgram::SetUniform( const Int32& Location, float Value ) {
 	return false;
 }
 
-bool cShaderProgram::SetUniform( const Int32& Location, eeVector2ff Value ) {
+bool cShaderProgram::SetUniform( const Int32& Location, Vector2ff Value ) {
 	if ( -1 != Location ) {
 		#ifdef EE_SHADERS_SUPPORTED
 		glUniform2fv( Location, 1, reinterpret_cast<float*>( &Value ) );
@@ -397,7 +397,7 @@ bool cShaderProgram::SetUniform( const Int32& Location, eeVector2ff Value ) {
 	return false;
 }
 
-bool cShaderProgram::SetUniform( const Int32& Location, eeVector3ff Value ) {
+bool cShaderProgram::SetUniform( const Int32& Location, Vector3ff Value ) {
 	if ( -1 != Location ) {
 		#ifdef EE_SHADERS_SUPPORTED
 		glUniform3fv( Location, 1, reinterpret_cast<float*>( &Value ) );

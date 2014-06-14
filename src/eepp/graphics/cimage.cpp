@@ -422,8 +422,8 @@ unsigned int cImage::MemSize() const {
 	return mSize;
 }
 
-eeSize cImage::Size() {
-	return eeSize( mWidth, mHeight );
+Sizei cImage::Size() {
+	return Sizei( mWidth, mHeight );
 }
 
 void cImage::ClearCache() {
@@ -612,7 +612,7 @@ cImage * cImage::Thumbnail( const Uint32& maxWidth, const Uint32& maxHeight, EE_
 	return NULL;
 }
 
-cImage * cImage::Crop( eeRecti rect ) {
+cImage * cImage::Crop( Recti rect ) {
 	if ( rect.Left >= 0 && rect.Right <= (Int32)mWidth && rect.Top >= 0 && rect.Bottom <= (Int32)mHeight ) {
 		cImage * img = eeNew( cImage, ( rect.Size().Width(), rect.Size().Height(), mChannels ) );
 

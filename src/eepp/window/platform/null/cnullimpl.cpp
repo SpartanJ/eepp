@@ -35,8 +35,8 @@ void cNullImpl::MoveWindow( int left, int top ) {
 void cNullImpl::SetContext( eeWindowContex Context ) {
 }
 
-eeVector2i cNullImpl::Position() {
-	return eeVector2i(0,0);
+Vector2i cNullImpl::Position() {
+	return Vector2i(0,0);
 }
 
 void cNullImpl::ShowMouseCursor() {
@@ -45,15 +45,15 @@ void cNullImpl::ShowMouseCursor() {
 void cNullImpl::HideMouseCursor() {
 }
 
-cCursor * cNullImpl::CreateMouseCursor( cTexture * tex, const eeVector2i& hotspot, const std::string& name ) {
+cCursor * cNullImpl::CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-cCursor * cNullImpl::CreateMouseCursor( cImage * img, const eeVector2i& hotspot, const std::string& name ) {
+cCursor * cNullImpl::CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-cCursor * cNullImpl::CreateMouseCursor( const std::string& path, const eeVector2i& hotspot, const std::string& name ) {
+cCursor * cNullImpl::CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 

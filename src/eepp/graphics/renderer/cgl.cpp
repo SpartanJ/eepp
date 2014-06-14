@@ -563,7 +563,7 @@ void cGL::GetViewport( int * viewport ) {
 	glGetIntegerv( GL_VIEWPORT, viewport );
 }
 
-eeVector3f cGL::ProjectCurrent( const eeVector3f& point ) {
+Vector3f cGL::ProjectCurrent( const Vector3f& point ) {
 	float projMat[16];
 	GetCurrentMatrix( GL_PROJECTION_MATRIX, projMat );
 
@@ -573,17 +573,17 @@ eeVector3f cGL::ProjectCurrent( const eeVector3f& point ) {
 	int viewPort[4];
 	GetViewport( viewPort );
 
-	eeVector3f fPoint( point );
+	Vector3f fPoint( point );
 	fPoint.y = viewPort[3] - point.y;
 
 	Vector3<float> tv3;
 
 	Project( (float)fPoint.x, (float)fPoint.y, (float)fPoint.z, projMat, modelMat, viewPort, &tv3.x, &tv3.y, &tv3.z );
 
-	return eeVector3f( tv3.x, tv3.y, tv3.z );
+	return Vector3f( tv3.x, tv3.y, tv3.z );
 }
 
-eeVector3f cGL::UnProjectCurrent( const eeVector3f& point ) {
+Vector3f cGL::UnProjectCurrent( const Vector3f& point ) {
 	float projMat[16];
 	GetCurrentMatrix( GL_PROJECTION_MATRIX, projMat );
 
@@ -593,14 +593,14 @@ eeVector3f cGL::UnProjectCurrent( const eeVector3f& point ) {
 	int viewPort[4];
 	GetViewport( viewPort );
 
-	eeVector3f fPoint( point );
+	Vector3f fPoint( point );
 	fPoint.y = viewPort[3] - point.y;
 
 	Vector3<float> tv3;
 
 	UnProject( (float)fPoint.x, (float)fPoint.y, (float)fPoint.z, projMat, modelMat, viewPort, &tv3.x, &tv3.y, &tv3.z );
 
-	return eeVector3f( tv3.x, tv3.y, tv3.z );
+	return Vector3f( tv3.x, tv3.y, tv3.z );
 }
 
 void cGL::StencilFunc( unsigned int func, int ref, unsigned int mask ) {

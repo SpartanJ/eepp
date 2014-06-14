@@ -67,7 +67,7 @@ class cPlatformImpl {
 		virtual void SetContext( eeWindowContex Context ) = 0;
 
 		/** @return The current window position */
-		virtual eeVector2i Position() = 0;
+		virtual Vector2i Position() = 0;
 
 		/** Force to show the mouse cursor */
 		virtual void ShowMouseCursor() = 0;
@@ -80,21 +80,21 @@ class cPlatformImpl {
 		* @param hotspot The hotspot where the mouse click is taken
 		* @param name The name of the cursor
 		*/
-		virtual cCursor * CreateMouseCursor( cTexture * tex, const eeVector2i& hotspot, const std::string& name ) = 0;
+		virtual cCursor * CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name ) = 0;
 
 		/** Creates a cursor from a image
 		* @param img The image path
 		* @param hotspot The hotspot where the mouse click is taken
 		* @param name The name of the cursor
 		*/
-		virtual cCursor * CreateMouseCursor( cImage * img, const eeVector2i& hotspot, const std::string& name ) = 0;
+		virtual cCursor * CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name ) = 0;
 
 		/** Creates a cursor from a image path
 		* @param path The image pointer to use as cursor
 		* @param hotspot The hotspot where the mouse click is taken
 		* @param name The name of the cursor
 		*/
-		virtual cCursor * CreateMouseCursor( const std::string& path, const eeVector2i& hotspot, const std::string& name ) = 0;
+		virtual cCursor * CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) = 0;
 
 		/** Set the the current cursor by its cursor pointer */
 		virtual void SetMouseCursor( cCursor * cursor ) = 0;

@@ -11,21 +11,21 @@ namespace EE { namespace Math {
 
 /** @brief The basic 1d point template. */
 template <typename T>
-class Point1d {
+class tPoint1d {
 	public:
-		Point1d() { p = 0; t = 0.f; }
-		Point1d( const T& Pos, const Float& Time ) { p = Pos; t = Time; }
+		tPoint1d() { p = 0; t = 0.f; }
+		tPoint1d( const T& Pos, const Float& Time ) { p = Pos; t = Time; }
 		T p;
 		Float t;
 };
-typedef Point1d<Float> cPoint1df;
+typedef tPoint1d<Float> Point1d;
 
 /** @brief A interpolation movement manager, used for movement interpolations. */
-class EE_API cInterpolation {
+class EE_API Interpolation {
 	public:
-		cInterpolation();
+		Interpolation();
 
-		~cInterpolation();
+		~Interpolation();
 
 		typedef cb::Callback0<void> OnPathEndCallback;
 
@@ -91,13 +91,13 @@ class EE_API cInterpolation {
 		void SetTotalTime( const Time& TotTime );
 
 		/** @return the vector of points */
-		const std::vector<cPoint1df>& GetPoints() const;
+		const std::vector<Point1d>& GetPoints() const;
 
 		/** @return The Current Node */
-		cPoint1df* GetCurrentActual() const;
+		Point1d* GetCurrentActual() const;
 
 		/** @return The Next Node */
-		cPoint1df* GetCurrentNext() const;
+		Point1d* GetCurrentNext() const;
 
 		/** @return The Current Position in the vector */
 		const unsigned int& GetCurrentPos() const;
@@ -124,10 +124,10 @@ class EE_API cInterpolation {
 
 		Float mSpeed;
 
-		std::vector<cPoint1df> mPoints;
+		std::vector<Point1d> mPoints;
 
-		cPoint1df* mActP;
-		cPoint1df* mNexP;
+		Point1d* mActP;
+		Point1d* mNexP;
 
 		OnPathEndCallback		mOnPathEndCallback;
 

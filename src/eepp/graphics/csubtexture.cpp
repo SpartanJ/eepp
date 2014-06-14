@@ -14,7 +14,7 @@ cSubTexture::cSubTexture() :
 	mId(0),
 	mTexId(0),
 	mTexture(NULL),
-	mSrcRect( eeRecti(0,0,0,0) ),
+	mSrcRect( Recti(0,0,0,0) ),
 	mDestSize(0,0),
 	mOffset(0,0)
 {
@@ -28,14 +28,14 @@ cSubTexture::cSubTexture( const Uint32& TexId, const std::string& Name ) :
 	mId( String::Hash( mName ) ),
 	mTexId( TexId ),
 	mTexture( cTextureFactory::instance()->GetTexture( TexId ) ),
-	mSrcRect( eeRecti( 0, 0, NULL != mTexture ? mTexture->ImgWidth() : 0, NULL != mTexture ? mTexture->ImgHeight() : 0 ) ),
+	mSrcRect( Recti( 0, 0, NULL != mTexture ? mTexture->ImgWidth() : 0, NULL != mTexture ? mTexture->ImgHeight() : 0 ) ),
 	mDestSize( (Float)mSrcRect.Size().Width(), (Float)mSrcRect.Size().Height() ),
 	mOffset(0,0)
 {
 	CreateUnnamed();
 }
 
-cSubTexture::cSubTexture( const Uint32& TexId, const eeRecti& SrcRect, const std::string& Name ) :
+cSubTexture::cSubTexture( const Uint32& TexId, const Recti& SrcRect, const std::string& Name ) :
 	mPixels(NULL),
 	mAlpha(NULL),
 	mName( Name ),
@@ -49,7 +49,7 @@ cSubTexture::cSubTexture( const Uint32& TexId, const eeRecti& SrcRect, const std
 	CreateUnnamed();
 }
 
-cSubTexture::cSubTexture( const Uint32& TexId, const eeRecti& SrcRect, const eeSizef& DestSize, const std::string& Name ) :
+cSubTexture::cSubTexture( const Uint32& TexId, const Recti& SrcRect, const Sizef& DestSize, const std::string& Name ) :
 	mPixels(NULL),
 	mAlpha(NULL),
 	mName( Name ),
@@ -63,7 +63,7 @@ cSubTexture::cSubTexture( const Uint32& TexId, const eeRecti& SrcRect, const eeS
 	CreateUnnamed();
 }
 
-cSubTexture::cSubTexture( const Uint32& TexId, const eeRecti& SrcRect, const eeSizef& DestSize, const eeVector2i &Offset, const std::string& Name ) :
+cSubTexture::cSubTexture( const Uint32& TexId, const Recti& SrcRect, const Sizef& DestSize, const Vector2i &Offset, const std::string& Name ) :
 	mPixels(NULL),
 	mAlpha(NULL),
 	mName( Name ),
@@ -108,11 +108,11 @@ void cSubTexture::Texture( const Uint32& TexId ) {
 	mTexture	= cTextureFactory::instance()->GetTexture( TexId );
 }
 
-const eeRecti& cSubTexture::SrcRect() const {
+const Recti& cSubTexture::SrcRect() const {
 	return mSrcRect;
 }
 
-void cSubTexture::SrcRect( const eeRecti& Rect ) {
+void cSubTexture::SrcRect( const Recti& Rect ) {
 	mSrcRect = Rect;
 
 	if ( NULL != mPixels )
@@ -122,33 +122,33 @@ void cSubTexture::SrcRect( const eeRecti& Rect ) {
 		CacheAlphaMask();
 }
 
-const eeSizef& cSubTexture::DestSize() const {
+const Sizef& cSubTexture::DestSize() const {
 	return mDestSize;
 }
 
-void cSubTexture::DestSize( const eeSizef& destSize ) {
+void cSubTexture::DestSize( const Sizef& destSize ) {
 	mDestSize = destSize;
 }
 
-const eeVector2i& cSubTexture::Offset() const {
+const Vector2i& cSubTexture::Offset() const {
 	return mOffset;
 }
 
-void cSubTexture::Offset( const eeVector2i& offset ) {
+void cSubTexture::Offset( const Vector2i& offset ) {
 	mOffset = offset;
 }
 
-void cSubTexture::Draw( const Float& X, const Float& Y, const ColorA& Color, const Float& Angle, const eeVector2f& Scale, const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect, eeOriginPoint Center ) {
+void cSubTexture::Draw( const Float& X, const Float& Y, const ColorA& Color, const Float& Angle, const Vector2f& Scale, const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect, OriginPoint Center ) {
 	if ( NULL != mTexture )
 		mTexture->DrawEx( X + mOffset.x, Y + mOffset.y, mDestSize.x, mDestSize.y, Angle, Scale, Color, Color, Color, Color, Blend, Effect, Center, mSrcRect );
 }
 
-void cSubTexture::Draw( const Float& X, const Float& Y, const Float& Angle, const eeVector2f& Scale, const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect, eeOriginPoint Center ) {
+void cSubTexture::Draw( const Float& X, const Float& Y, const Float& Angle, const Vector2f& Scale, const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const EE_BLEND_MODE& Blend, const EE_RENDER_MODE& Effect, OriginPoint Center ) {
 	if ( NULL != mTexture )
 		mTexture->DrawEx( X + mOffset.x, Y + mOffset.y, mDestSize.x, mDestSize.y, Angle, Scale, Color0, Color1, Color2, Color3, Blend, Effect, Center, mSrcRect );
 }
 
-void cSubTexture::Draw( const eeQuad2f Q, const eeVector2f& Offset, const Float& Angle, const eeVector2f& Scale, const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const EE_BLEND_MODE& Blend ) {
+void cSubTexture::Draw( const Quad2f Q, const Vector2f& Offset, const Float& Angle, const Vector2f& Scale, const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const EE_BLEND_MODE& Blend ) {
 	if ( NULL != mTexture )
 		mTexture->DrawQuadEx( Q, Offset, Angle, Scale, Color0, Color1, Color2, Color3, Blend, mSrcRect );
 }
@@ -331,12 +331,12 @@ bool cSubTexture::Unlock( const bool& KeepData, const bool& Modified ) {
 	return false;
 }
 
-eeSize cSubTexture::RealSize() {
+Sizei cSubTexture::RealSize() {
 	return mSrcRect.Size();
 }
 
-eeSize cSubTexture::Size() {
-	return eeSize( (Int32)mDestSize.x, (Int32)mDestSize.y );
+Sizei cSubTexture::Size() {
+	return Sizei( (Int32)mDestSize.x, (Int32)mDestSize.y );
 }
 
 const Uint8* cSubTexture::GetPixelsPtr() {
@@ -369,7 +369,7 @@ bool cSubTexture::SaveToFile(const std::string& filepath, const EE_SAVE_TYPE& Fo
 }
 
 void cSubTexture::ResetDestSize() {
-	eeSize Size = mSrcRect.Size();
+	Sizei Size = mSrcRect.Size();
 	mDestSize.x	= (Float)Size.Width();
 	mDestSize.y = (Float)Size.Height();
 }

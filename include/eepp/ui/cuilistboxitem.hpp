@@ -32,9 +32,9 @@ class EE_API cUIListBoxItem : public cUITextBox {
 
 		virtual void OnStateChange();
 
-		virtual Uint32 OnMouseClick( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseClick( const Vector2i& Pos, const Uint32 Flags );
 
-		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseExit( const Vector2i& Pos, const Uint32 Flags );
 };
 
 }}

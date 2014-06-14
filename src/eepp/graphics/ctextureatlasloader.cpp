@@ -228,9 +228,9 @@ void cTextureAtlasLoader::CreateSubTextures() {
 					if ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_REMOVE_EXTENSION )
 						SubTextureName = FileSystem::FileRemoveExtension( SubTextureName );
 
-					eeRecti tRect( tSh->X, tSh->Y, tSh->X + tSh->Width, tSh->Y + tSh->Height );
+					Recti tRect( tSh->X, tSh->Y, tSh->X + tSh->Width, tSh->Y + tSh->Height );
 
-					cSubTexture * tSubTexture = eeNew( cSubTexture, ( tTex->Id(), tRect, eeSizef( (Float)tSh->DestWidth, (Float)tSh->DestHeight ), eeVector2i( tSh->OffsetX, tSh->OffsetY ), SubTextureName ) );
+					cSubTexture * tSubTexture = eeNew( cSubTexture, ( tTex->Id(), tRect, Sizef( (Float)tSh->DestWidth, (Float)tSh->DestHeight ), Vector2i( tSh->OffsetX, tSh->OffsetY ), SubTextureName ) );
 
 					//if ( tSh->Flags & HDR_SUBTEXTURE_FLAG_FLIPED )
 						// Should rotate the sub texture, but.. sub texture rotation is not stored.

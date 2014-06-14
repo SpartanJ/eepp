@@ -7,7 +7,7 @@ namespace EE { namespace Gaming {
 
 class EE_API cGameObjectPolyline : public cGameObjectPolygon {
 	public:
-		cGameObjectPolyline( Uint32 DataId, eePolygon2f poly, cLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC );
+		cGameObjectPolyline( Uint32 DataId, Polygon2f poly, cLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC );
 
 		virtual ~cGameObjectPolyline();
 

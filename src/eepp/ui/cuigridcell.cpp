@@ -119,7 +119,7 @@ bool cUIGridCell::Selected() const {
 	return 0 != ( mControlFlags & UI_CTRL_FLAG_SELECTED );
 }
 
-Uint32 cUIGridCell::OnMouseExit( const eeVector2i& Pos, const Uint32 Flags ) {
+Uint32 cUIGridCell::OnMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 	cUIControl::OnMouseExit( Pos, Flags );
 
 	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )
@@ -132,12 +132,12 @@ Uint32 cUIGridCell::OnMessage( const cUIMessage * Msg ) {
 	switch( Msg->Msg() ) {
 		case cUIMessage::MsgMouseEnter:
 		{
-			OnMouseEnter( eeVector2i(), Msg->Flags() );
+			OnMouseEnter( Vector2i(), Msg->Flags() );
 			break;
 		}
 		case cUIMessage::MsgMouseExit:
 		{
-			OnMouseExit( eeVector2i(), Msg->Flags() );
+			OnMouseExit( Vector2i(), Msg->Flags() );
 			break;
 		}
 		case cUIMessage::MsgClick:

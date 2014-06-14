@@ -73,8 +73,8 @@ Float cJoystickSFML::GetAxis( const Int32& axis ) {
 	return sf::Joystick::getAxisPosition( mIndex, raxis ) * 0.01;
 }
 
-eeVector2i cJoystickSFML::GetBallMotion( const Int32& ball ) {
-	return eeVector2i();
+Vector2i cJoystickSFML::GetBallMotion( const Int32& ball ) {
+	return Vector2i();
 }
 
 bool cJoystickSFML::Plugged() const {

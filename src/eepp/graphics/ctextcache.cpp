@@ -186,7 +186,7 @@ const std::vector<Float>& cTextCache::LinesWidth() {
 	return mLinesWidth;
 }
 
-void cTextCache::Draw( const Float& X, const Float& Y, const eeVector2f& Scale, const Float& Angle, EE_BLEND_MODE Effect ) {
+void cTextCache::Draw( const Float& X, const Float& Y, const Vector2f& Scale, const Float& Angle, EE_BLEND_MODE Effect ) {
 	if ( NULL != mFont ) {
 		cGlobalBatchRenderer::instance()->Draw();
 

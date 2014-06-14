@@ -70,7 +70,7 @@ class EE_API cTextureAtlasEditor {
 
 		void OnSubTextureChange( const cUIEvent * Event );
 
-		cUITextBox * CreateTxtBox( eeVector2i Pos, const String& Text );
+		cUITextBox * CreateTxtBox( Vector2i Pos, const String& Text );
 
 		void UpdateControls();
 

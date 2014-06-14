@@ -81,8 +81,8 @@ bool cTTFFont::Load( const std::string& Filepath, const unsigned int& Size, EE_T
 }
 
 bool cTTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const RGB& FontColor, Uint8 OutlineSize, const RGB& OutlineColor, const bool& AddPixelSeparator ) {
-	eeRect CurrentPos;
-	eeSize GlyphRect;
+	Rect CurrentPos;
+	Sizei GlyphRect;
 
 	unsigned char * TempGlyphSurface = NULL;
 	unsigned char * TempOutGlyphSurface = NULL;
@@ -245,13 +245,13 @@ bool cTTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const U
 
 		// Create the outline for the glyph and copy the outline to the texture
 		if ( OutlineSize && OutlineEntropia == OutlineMethod ) {
-			eeRecti nGlyphR(
+			Recti nGlyphR(
 				TempGlyph.CurX,
 				TempGlyph.CurY,
 				TempGlyph.CurX + TempGlyph.CurW,
 				TempGlyph.CurY + TempGlyph.CurH
 			);
-			eeSize nGlyphS( nGlyphR.Size() );
+			Sizei nGlyphS( nGlyphR.Size() );
 
 			if ( nGlyphS.x > 0 && nGlyphS.y > 0 ) {
 				Uint32 Pos			= 0;
@@ -327,7 +327,7 @@ void cTTFFont::UpdateLoading() {
 
 void cTTFFont::RebuildFromGlyphs() {
 	Float Top, Bottom;
-	eeRectf tR;
+	Rectf tR;
 
 	mTexCoords.resize( mNumChars );
 

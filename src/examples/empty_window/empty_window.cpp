@@ -23,7 +23,7 @@ void MainLoop()
 	}
 
 	// Draw a circle
-	p.DrawCircle( eeVector2f( win->GetWidth() * 0.5f, win->GetHeight() * 0.5f ), 200, 50 );
+	p.DrawCircle( Vector2f( win->GetWidth() * 0.5f, win->GetHeight() * 0.5f ), 200, 50 );
 
 	// Draw frame
 	win->Display();

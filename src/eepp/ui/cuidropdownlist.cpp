@@ -25,10 +25,10 @@ cUIDropDownList::cUIDropDownList( cUIDropDownList::CreateParams& Params ) :
 		cUITheme * Theme = cUIThemeManager::instance()->DefaultTheme();
 
 		if ( NULL != Theme ) {
-			mListBox = Theme->CreateListBox( NULL, eeSize( mSize.Width(), mMinNumVisibleItems * mSize.Height() ),eeVector2i(), flags );
+			mListBox = Theme->CreateListBox( NULL, Sizei( mSize.Width(), mMinNumVisibleItems * mSize.Height() ),Vector2i(), flags );
 		} else {
 			cUIListBox::CreateParams LBParams;
-			LBParams.Size 				= eeSize( mSize.Width(), mMinNumVisibleItems * mSize.Height() );
+			LBParams.Size 				= Sizei( mSize.Width(), mMinNumVisibleItems * mSize.Height() );
 			LBParams.Flags 				= flags;
 			LBParams.FontSelectedColor	= ColorA( 255, 255, 255, 255 );
 			mListBox = eeNew( cUIListBox, ( LBParams ) );
@@ -85,7 +85,7 @@ cUIListBox * cUIDropDownList::ListBox() const {
 	return mListBox;
 }
 
-Uint32 cUIDropDownList::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
+Uint32 cUIDropDownList::OnMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( Flags & EE_BUTTON_LMASK )
 		ShowListBox();
 
@@ -101,7 +101,7 @@ void cUIDropDownList::ShowListBox() {
 
 		mListBox->ToFront();
 
-		eeVector2i Pos( mPos.x, mPos.y + mSize.Height() );
+		Vector2i Pos( mPos.x, mPos.y + mSize.Height() );
 
 		if ( mPopUpToMainControl ) {
 			Parent()->ControlToWorld( Pos );
@@ -110,7 +110,7 @@ void cUIDropDownList::ShowListBox() {
 		mListBox->Pos( Pos );
 
 		if ( mListBox->Count() ) {
-			eeRecti tPadding = mListBox->PaddingContainer();
+			Recti tPadding = mListBox->PaddingContainer();
 
 			Float sliderValue = mListBox->VerticalScrollBar()->Value();
 
@@ -122,11 +122,11 @@ void cUIDropDownList::ShowListBox() {
 
 			mListBox->UpdateQuad();
 
-			eeRectf aabb( mListBox->GetPolygon().ToAABB() );
-			eeRecti aabbi( aabb.Left, aabb.Top, aabb.Right, aabb.Bottom );
+			Rectf aabb( mListBox->GetPolygon().ToAABB() );
+			Recti aabbi( aabb.Left, aabb.Top, aabb.Right, aabb.Bottom );
 
 			if ( !cUIManager::instance()->MainControl()->GetScreenRect().Contains( aabbi ) ) {
-				Pos = eeVector2i( mPos.x, mPos.y );
+				Pos = Vector2i( mPos.x, mPos.y );
 
 				if ( mPopUpToMainControl ) {
 					Parent()->ControlToWorld( Pos );

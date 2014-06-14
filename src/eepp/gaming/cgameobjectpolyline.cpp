@@ -6,7 +6,7 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {
 
-cGameObjectPolyline::cGameObjectPolyline( Uint32 DataId, eePolygon2f poly, cLayer * Layer, const Uint32& Flags ) :
+cGameObjectPolyline::cGameObjectPolyline( Uint32 DataId, Polygon2f poly, cLayer * Layer, const Uint32& Flags ) :
 	cGameObjectPolygon( DataId, poly, Layer, Flags )
 {
 }

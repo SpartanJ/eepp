@@ -13,7 +13,7 @@ class EE_API cLayer {
 
 		virtual ~cLayer();
 
-		virtual void Draw( const eeVector2f& Offset = eeVector2f(0,0) ) = 0;
+		virtual void Draw( const Vector2f& Offset = Vector2f(0,0) ) = 0;
 
 		virtual void Update() = 0;
 
@@ -29,9 +29,9 @@ class EE_API cLayer {
 
 		cMap * Map() const;
 
-		const eeVector2f& Offset() const;
+		const Vector2f& Offset() const;
 
-		void Offset( const eeVector2f& offset );
+		void Offset( const Vector2f& offset );
 
 		void Name( const std::string& name );
 
@@ -62,12 +62,12 @@ class EE_API cLayer {
 		cMap *			mMap;
 		Uint32			mType;
 		Uint32			mFlags;
-		eeVector2f		mOffset;
+		Vector2f		mOffset;
 		Uint32			mNameHash;
 		std::string		mName;
 		PropertiesMap	mProperties;
 
-		cLayer( cMap * map, Uint32 type, Uint32 flags, std::string name = "", eeVector2f offset = eeVector2f(0,0) );
+		cLayer( cMap * map, Uint32 type, Uint32 flags, std::string name = "", Vector2f offset = Vector2f(0,0) );
 };
 
 }}

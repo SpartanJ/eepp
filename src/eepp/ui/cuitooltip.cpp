@@ -97,7 +97,7 @@ void cUITooltip::Draw() {
 
 		if ( mTextCache->GetTextWidth() ) {
 			mTextCache->Flags( Flags() );
-			mTextCache->Draw( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y, eeVector2f::One, 0.f, Blend() );
+			mTextCache->Draw( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y, Vector2f::One, 0.f, Blend() );
 		}
 	}
 }
@@ -209,11 +209,11 @@ void cUITooltip::OnFontChanged() {
 	SendCommonEvent( cUIEvent::EventOnFontChanged );
 }
 
-void cUITooltip::Padding( const eeRecti& padding ) {
+void cUITooltip::Padding( const Recti& padding ) {
 	mPadding = padding;
 }
 
-const eeRecti& cUITooltip::Padding() const {
+const Recti& cUITooltip::Padding() const {
 	return mPadding;
 }
 
@@ -233,7 +233,7 @@ const int& cUITooltip::GetNumLines() const {
 	return mTextCache->GetNumLines();
 }
 
-const eeVector2f& cUITooltip::AlignOffset() const {
+const Vector2f& cUITooltip::AlignOffset() const {
 	return mAlignOffset;
 }
 

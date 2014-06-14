@@ -34,7 +34,7 @@ class EE_API cTextureAtlasNew {
 
 		void OKClick( const cUIEvent * Event );
 
-		cUITextBox * CreateTxtBox( eeVector2i Pos, const String& Text );
+		cUITextBox * CreateTxtBox( Vector2i Pos, const String& Text );
 
 		void OnDialogFolderSelect( const cUIEvent * Event );
 

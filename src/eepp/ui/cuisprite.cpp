@@ -131,7 +131,7 @@ void cUISprite::AutoAlign() {
 	}
 }
 
-const eeVector2i& cUISprite::AlignOffset() const {
+const Vector2i& cUISprite::AlignOffset() const {
 	return mAlignOffset;
 }
 

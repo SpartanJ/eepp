@@ -228,7 +228,7 @@ void tRECT<T>::Scale( Vector2<T> scale, const Vector2<T>& center ) {
 
 template <typename T>
 void tRECT<T>::Scale( T scale, const Vector2<T>& center ) {
-	Scale( eeVector2f( scale, scale ), center );
+	Scale( Vector2f( scale, scale ), center );
 }
 
 template <typename T>
@@ -241,11 +241,11 @@ void tRECT<T>::Scale( Vector2<T> scale ) {
 	Scale( scale, Center() );
 }
 
-typedef tRECT<unsigned int>		eeRectu;
-typedef tRECT<Float>		eeRectf;
+typedef tRECT<unsigned int>	Rectu;
+typedef tRECT<Float>		Rectf;
 typedef tRECT<Float>		eeAABB; // Axis-Aligned Bounding Box
-typedef tRECT<int>		eeRecti;
-typedef tRECT<Int32>		eeRect;
+typedef tRECT<int>			Recti;
+typedef tRECT<Int32>		Rect;
 
 }}
 

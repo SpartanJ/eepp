@@ -9,7 +9,7 @@ class cUITest : public cUIControlAnim {
 	public:
 		cUITest( cUIControlAnim::CreateParams& Params ) : cUIControlAnim( Params ) 	{ mOldColor = mBackground->Colors(); }
 
-		virtual Uint32 OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags )	{
+		virtual Uint32 OnMouseEnter( const Vector2i& Pos, const Uint32 Flags )	{
 			if ( 4 == mOldColor.size() ) {
 				mBackground->Colors( ColorA( mOldColor[0].R(), mOldColor[0].G(), mOldColor[0].B(), 200 ),
 									ColorA( mOldColor[1].R(), mOldColor[1].G(), mOldColor[1].B(), 200 ),
@@ -23,7 +23,7 @@ class cUITest : public cUIControlAnim {
 			return 1;
 		}
 
-		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags )	{
+		virtual Uint32 OnMouseExit( const Vector2i& Pos, const Uint32 Flags )	{
 			if ( 4 == mOldColor.size() ) {
 				mBackground->Colors( mOldColor[0], mOldColor[1], mOldColor[2], mOldColor[3] );
 			} else {
@@ -33,7 +33,7 @@ class cUITest : public cUIControlAnim {
 			return 1;
 		}
 
-		virtual Uint32 OnMouseUp( const eeVector2i& Pos, const Uint32 Flags ) {
+		virtual Uint32 OnMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
 			cUIDragable::OnMouseUp( Pos, Flags );
 
 			if ( cEngine::instance()->GetCurrentWindow()->GetInput()->MouseWheelUp() )
@@ -107,8 +107,8 @@ class cEETest : private Thread {
 		std::vector<cSubTexture*> Tiles;
 		std::vector<cParticleSystem> PS;
 
-		eeVector2i Mouse;
-		eeVector2f Mousef;
+		Vector2i Mouse;
+		Vector2f Mousef;
 
 		cSprite SP;
 		cSprite CL1, CL2;
@@ -129,7 +129,7 @@ class cEETest : private Thread {
 		cConsole Con;
 		virtual void Run();
 
-		eeVector2f Point;
+		Vector2f Point;
 
 		std::string MyPath;
 		bool ShowParticles;
@@ -149,7 +149,7 @@ class cEETest : private Thread {
 		std::vector<Uint8> tmpv;
 		std::vector<Uint8> MySong;
 
-		cWaypoints WP;
+		Waypoints WP;
 		Int32 PartsNum;
 		Uint32 Cursor[1];
 		cTexture * CursorP[1];

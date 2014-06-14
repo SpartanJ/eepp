@@ -57,15 +57,15 @@ class EE_API cParticleSystem {
 			const EE_PARTICLE_EFFECT& Effect,
 			const Uint32& NumParticles,
 			const Uint32& TexId,
-			const eeVector2f& Pos,
+			const Vector2f& Pos,
 			const Float& PartSize = 16.0f,
 			const bool& AnimLoop = false,
 			const Uint32& NumLoops = 1,
 			const ColorAf& Color = ColorAf( 1.0f, 1.0f, 1.0f, 1.0f ),
-			const eeVector2f& Pos2 = eeVector2f( 0, 0 ),
+			const Vector2f& Pos2 = Vector2f( 0, 0 ),
 			const Float& AlphaDecay = 0.01f,
-			const eeVector2f& Speed = eeVector2f( 0.1f, 0.1f ),
-			const eeVector2f& Acc = eeVector2f( 0.1f, 0.1f )
+			const Vector2f& Speed = Vector2f( 0.1f, 0.1f ),
+			const Vector2f& Acc = Vector2f( 0.1f, 0.1f )
 		);
 
 		/** Draw the particles effect */
@@ -104,19 +104,19 @@ class EE_API cParticleSystem {
 		void Position( const Float& x, const Float& y );
 
 		/** Update the effect position */
-		void Position( const eeVector2f& Pos );
+		void Position( const Vector2f& Pos );
 
 		/** @return The effect position */
-		const eeVector2f& Position() const;
+		const Vector2f& Position() const;
 
 		/** Update the effect position 2 */
 		void Position2( const Float& x, const Float& y );
 
 		/** Update the effect position 2 */
-		void Position2( const eeVector2f& Pos );
+		void Position2( const Vector2f& Pos );
 
 		/** @return The effect position 2 */
-		const eeVector2f& Position2() const;
+		const Vector2f& Position2() const;
 
 		/** Set a callback function for the reset effect of the particles. \n The reset it's where do you create the effect for every single particle. */
 		void SetCallbackReset( const ParticleCallback& pc );
@@ -140,16 +140,16 @@ class EE_API cParticleSystem {
 		void AlphaDecay( const Float& Decay );
 
 		/** @return The Speed of the effect */
-		const eeVector2f& Speed() const;
+		const Vector2f& Speed() const;
 
 		/** Set the Speed of the effect */
-		void Speed( const eeVector2f& speed );
+		void Speed( const Vector2f& speed );
 
 		/** @return The Acceleration of the effect */
-		const eeVector2f& Acceleration() const;
+		const Vector2f& Acceleration() const;
 
 		/** Set The Acceleration of the effect */
-		void Acceleration( const eeVector2f& acc );
+		void Acceleration( const Vector2f& acc );
 	private:
 		cParticle *			mParticle;
 		Uint32				mPCount;
@@ -165,10 +165,10 @@ class EE_API cParticleSystem {
 		int				mProgression;
 		int				mDirection;
 
-		eeVector2f			mPos;
-		eeVector2f			mPos2;
-		eeVector2f			mAcc;
-		eeVector2f			mSpeed;
+		Vector2f			mPos;
+		Vector2f			mPos2;
+		Vector2f			mAcc;
+		Vector2f			mSpeed;
 		Float				mAlphaDecay;
 		Float				mSize;
 		Float				mHSize;

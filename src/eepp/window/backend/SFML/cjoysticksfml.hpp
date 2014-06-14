@@ -23,7 +23,7 @@ class EE_API cJoystickSFML : public cJoystick {
 
 		Float		GetAxis( const Int32& axis );
 
-		eeVector2i	GetBallMotion( const Int32& ball );
+		Vector2i	GetBallMotion( const Int32& ball );
 
 		bool		Plugged() const;
 	protected:

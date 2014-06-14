@@ -124,7 +124,7 @@ class EE_API cImage {
 		unsigned int MemSize() const;
 
 		/** @return The image dimensions */
-		eeSize Size();
+		Sizei Size();
 
 		/** Save the Image to a new File in a specific format */
 		virtual bool SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format );
@@ -157,7 +157,7 @@ class EE_API cImage {
 		cImage * Thumbnail( const Uint32& maxWidth, const Uint32& maxHeight, EE_RESAMPLER_FILTER filter = RESAMPLER_LANCZOS4 );
 
 		/** Creates a cropped image from the current image */
-		cImage * Crop( eeRecti rect );
+		cImage * Crop( Recti rect );
 
 		/** Set as true if you dont want to free the image data in the cImage destruction ( false as default ). */
 		void AvoidFreeImage( const bool& AvoidFree );

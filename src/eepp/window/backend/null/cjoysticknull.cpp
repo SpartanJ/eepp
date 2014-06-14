@@ -27,8 +27,8 @@ Float cJoystickNull::GetAxis( const Int32& axis ) {
 	return 0;
 }
 
-eeVector2i cJoystickNull::GetBallMotion( const Int32& ball ) {
-	return eeVector2i();
+Vector2i cJoystickNull::GetBallMotion( const Int32& ball ) {
+	return Vector2i();
 }
 
 bool cJoystickNull::Plugged() const {

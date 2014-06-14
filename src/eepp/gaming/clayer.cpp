@@ -3,7 +3,7 @@
 
 namespace EE { namespace Gaming {
 
-cLayer::cLayer( cMap * map, Uint32 type, Uint32 flags, std::string name, eeVector2f offset ) :
+cLayer::cLayer( cMap * map, Uint32 type, Uint32 flags, std::string name, Vector2f offset ) :
 	mMap( map ),
 	mType( type ),
 	mFlags( flags ),
@@ -45,11 +45,11 @@ cMap * cLayer::Map() const {
 	return mMap;
 }
 
-const eeVector2f& cLayer::Offset() const {
+const Vector2f& cLayer::Offset() const {
 	return mOffset;
 }
 
-void cLayer::Offset( const eeVector2f& offset ) {
+void cLayer::Offset( const Vector2f& offset ) {
 	mOffset = offset;
 }
 

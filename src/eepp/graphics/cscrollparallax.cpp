@@ -12,7 +12,7 @@ cScrollParallax::cScrollParallax() :
 cScrollParallax::~cScrollParallax()
 {}
 
-cScrollParallax::cScrollParallax( cSubTexture * SubTexture, const eeVector2f& Position, const eeSizef& Size, const eeVector2f& Speed, const ColorA& Color, const EE_BLEND_MODE& Blend ) {
+cScrollParallax::cScrollParallax( cSubTexture * SubTexture, const Vector2f& Position, const Sizef& Size, const Vector2f& Speed, const ColorA& Color, const EE_BLEND_MODE& Blend ) {
 	Create( SubTexture, Position, Size, Speed, Color, Blend );
 }
 
@@ -29,7 +29,7 @@ void cScrollParallax::SubTexture( cSubTexture * subTexture ) {
 void cScrollParallax::SetSubTexture() {
 	if ( NULL != mSubTexture ) {
 		mRect		= mSubTexture->SrcRect();
-		mRealSize	= eeVector2f( (Float)mSubTexture->RealSize().Width(), (Float)mSubTexture->RealSize().Height() );
+		mRealSize	= Vector2f( (Float)mSubTexture->RealSize().Width(), (Float)mSubTexture->RealSize().Height() );
 
 		mTiles.x	= ( (Int32)mSize.Width() / mSubTexture->RealSize().Width() ) + 1;
 		mTiles.y	= ( (Int32)mSize.Height() / mSubTexture->RealSize().Height() ) + 1;
@@ -37,10 +37,10 @@ void cScrollParallax::SetSubTexture() {
 }
 
 void cScrollParallax::SetAABB() {
-	mAABB		= eeRectf( mInitPos.x, mInitPos.y, mInitPos.x + mSize.Width(), mInitPos.y + mSize.Height() );
+	mAABB		= Rectf( mInitPos.x, mInitPos.y, mInitPos.x + mSize.Width(), mInitPos.y + mSize.Height() );
 }
 
-bool cScrollParallax::Create( cSubTexture * SubTexture, const eeVector2f& Position, const eeSizef& Size, const eeVector2f& Speed, const ColorA& Color, const EE_BLEND_MODE& Blend ) {
+bool cScrollParallax::Create( cSubTexture * SubTexture, const Vector2f& Position, const Sizef& Size, const Vector2f& Speed, const ColorA& Color, const EE_BLEND_MODE& Blend ) {
 	mSubTexture		= SubTexture;
 	mPos		= Position;
 	mSize 		= Size;
@@ -55,15 +55,15 @@ bool cScrollParallax::Create( cSubTexture * SubTexture, const eeVector2f& Positi
 	return true;
 }
 
-void cScrollParallax::Size( const eeSizef& size ) {
+void cScrollParallax::Size( const Sizef& size ) {
 	mSize = size;
 
 	SetSubTexture();
 	SetAABB();
 }
 
-void cScrollParallax::Position( const eeVector2f& Pos ) {
-	eeVector2f Diff = mPos - mInitPos;
+void cScrollParallax::Position( const Vector2f& Pos ) {
+	Vector2f Diff = mPos - mInitPos;
 
 	mInitPos = Pos;
 
@@ -72,11 +72,11 @@ void cScrollParallax::Position( const eeVector2f& Pos ) {
 	SetAABB();
 }
 
-const eeSizef& cScrollParallax::Size() const {
+const Sizef& cScrollParallax::Size() const {
 	return mSize;
 }
 
-const eeVector2f& cScrollParallax::Position() const {
+const Vector2f& cScrollParallax::Position() const {
 	return mInitPos;
 }
 
@@ -90,7 +90,7 @@ void cScrollParallax::Draw() {
 		if ( mPos.y > mAABB.Top + mRealSize.Height() || mPos.y < mAABB.Top - mRealSize.Height() )
 			mPos.y = mAABB.Top;
 
-		eeVector2f Pos 	= mPos;
+		Vector2f Pos 	= mPos;
 
 		Pos.x = (Float)(Int32)Pos.x;
 		Pos.y = (Float)(Int32)Pos.y;
@@ -103,8 +103,8 @@ void cScrollParallax::Draw() {
 
 		for ( Int32 y = -1; y < mTiles.y; y++ ) {
 			for ( Int32 x = -1; x < mTiles.x; x++ ) {
-				eeRecti Rect 	= mRect;
-				eeRectf AABB( Pos.x, Pos.y, Pos.x + mRealSize.Width(), Pos.y + mRealSize.Height() );
+				Recti Rect 	= mRect;
+				Rectf AABB( Pos.x, Pos.y, Pos.x + mRealSize.Width(), Pos.y + mRealSize.Height() );
 
 				if ( AABB.Intersect( mAABB ) ) {
 					if ( Pos.x < mAABB.Left ) {
@@ -129,7 +129,7 @@ void cScrollParallax::Draw() {
 					mSubTexture->ResetDestSize();
 
 					if ( !( Rect.Right == 0 || Rect.Bottom == 0 ) )
-						mSubTexture->Draw( AABB.Left, AABB.Top, mColor, 0.f, eeVector2f::One, mBlend );
+						mSubTexture->Draw( AABB.Left, AABB.Top, mColor, 0.f, Vector2f::One, mBlend );
 				}
 
 				Pos.x += mRealSize.Width();
@@ -148,11 +148,11 @@ void cScrollParallax::Draw() {
 	}
 }
 
-void cScrollParallax::Speed( const eeVector2f& speed ) {
+void cScrollParallax::Speed( const Vector2f& speed ) {
 	mSpeed = speed;
 }
 
-const eeVector2f& cScrollParallax::Speed() const {
+const Vector2f& cScrollParallax::Speed() const {
 	return mSpeed;
 }
 

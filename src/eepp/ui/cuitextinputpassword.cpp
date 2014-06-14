@@ -39,7 +39,7 @@ void cUITextInputPassword::Draw() {
 			}
 
 			mPassCache->Flags( Flags() );
-			mPassCache->Draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mPadding.Top, eeVector2f::One, 0.f, Blend() );
+			mPassCache->Draw( (Float)mScreenPos.x + mAlignOffset.x + (Float)mPadding.Left, (Float)mScreenPos.y + mAlignOffset.y + (Float)mPadding.Top, Vector2f::One, 0.f, Blend() );
 
 			if ( mFlags & UI_CLIP_ENABLE ) {
 				cUIManager::instance()->ClipDisable();

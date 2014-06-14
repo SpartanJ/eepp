@@ -23,7 +23,7 @@ cPrimitives::cPrimitives() :
 cPrimitives::~cPrimitives() {
 }
 
-void cPrimitives::DrawPoint( const eeVector2f& p, const Float& pointSize ) {
+void cPrimitives::DrawPoint( const Vector2f& p, const Float& pointSize ) {
 	sBR->SetPointSize( pointSize );
 
 	sBR->SetTexture( NULL );
@@ -35,7 +35,7 @@ void cPrimitives::DrawPoint( const eeVector2f& p, const Float& pointSize ) {
 	DrawBatch();
 }
 
-void cPrimitives::DrawLine( const eeLine2f& line ) {
+void cPrimitives::DrawLine( const Line2f& line ) {
 	sBR->SetLineWidth( mLineWidth );
 
 	sBR->SetTexture( NULL );
@@ -47,7 +47,7 @@ void cPrimitives::DrawLine( const eeLine2f& line ) {
 	DrawBatch();
 }
 
-void cPrimitives::DrawTriangle( const eeTriangle2f& t, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3 ) {
+void cPrimitives::DrawTriangle( const Triangle2f& t, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3 ) {
 	sBR->SetTexture( NULL );
 	sBR->SetBlendMode( mBlendMode );
 
@@ -79,11 +79,11 @@ void cPrimitives::DrawTriangle( const eeTriangle2f& t, const ColorA& Color1, con
 	DrawBatch();
 }
 
-void cPrimitives::DrawTriangle( const eeTriangle2f& t ) {
+void cPrimitives::DrawTriangle( const Triangle2f& t ) {
 	DrawTriangle( t, mColor, mColor, mColor );
 }
 
-void cPrimitives::DrawCircle( const eeVector2f& p, const Float& radius, Uint32 points ) {
+void cPrimitives::DrawCircle( const Vector2f& p, const Float& radius, Uint32 points ) {
 	if ( 0 == points ) {
 		// Optimized circle rendering
 		static const float circleVAR[] = {
@@ -186,7 +186,7 @@ void cPrimitives::DrawCircle( const eeVector2f& p, const Float& radius, Uint32 p
 	DrawBatch();
 }
 
-void cPrimitives::DrawRectangle( const eeRectf& R, const ColorA& TopLeft, const ColorA& BottomLeft, const ColorA& BottomRight, const ColorA& TopRight, const Float& Angle, const eeVector2f& Scale ) {
+void cPrimitives::DrawRectangle( const Rectf& R, const ColorA& TopLeft, const ColorA& BottomLeft, const ColorA& BottomRight, const ColorA& TopRight, const Float& Angle, const Vector2f& Scale ) {
 	sBR->SetTexture( NULL );
 	sBR->SetBlendMode( mBlendMode );
 
@@ -196,7 +196,7 @@ void cPrimitives::DrawRectangle( const eeRectf& R, const ColorA& TopLeft, const 
 			sBR->QuadsBegin();
 			sBR->QuadsSetColorFree( TopLeft, BottomLeft, BottomRight, TopRight );
 
-			eeSizef size = const_cast<eeRectf*>(&R)->Size();
+			Sizef size = const_cast<Rectf*>(&R)->Size();
 
 			sBR->BatchQuadEx( R.Left, R.Top, size.Width(), size.Height(), Angle, Scale );
 			break;
@@ -209,11 +209,11 @@ void cPrimitives::DrawRectangle( const eeRectf& R, const ColorA& TopLeft, const 
 			sBR->LineLoopSetColorFree( TopLeft, BottomLeft );
 
 			if ( Scale != 1.0f || Angle != 0.0f ) {
-				eeQuad2f Q( R );
-				eeSizef size = const_cast<eeRectf*>(&R)->Size();
+				Quad2f Q( R );
+				Sizef size = const_cast<Rectf*>(&R)->Size();
 
 				Q.Scale( Scale );
-				Q.Rotate( Angle, eeVector2f( R.Left + size.Width() * 0.5f, R.Top + size.Height() * 0.5f ) );
+				Q.Rotate( Angle, Vector2f( R.Left + size.Width() * 0.5f, R.Top + size.Height() * 0.5f ) );
 
 				sBR->BatchLineLoop( Q[0].x, Q[0].y, Q[1].x, Q[1].y );
 				sBR->LineLoopSetColorFree( BottomRight, TopRight );
@@ -231,21 +231,21 @@ void cPrimitives::DrawRectangle( const eeRectf& R, const ColorA& TopLeft, const 
 	DrawBatch();
 }
 
-void cPrimitives::DrawRectangle( const eeRectf& R, const Float& Angle, const eeVector2f& Scale ) {
+void cPrimitives::DrawRectangle( const Rectf& R, const Float& Angle, const Vector2f& Scale ) {
 	DrawRectangle( R, mColor, mColor, mColor, mColor, Angle, Scale );
 }
 
-void cPrimitives::DrawRoundedRectangle( const eeRectf& R, const ColorA& TopLeft, const ColorA& BottomLeft, const ColorA& BottomRight, const ColorA& TopRight, const Float& Angle, const eeVector2f& Scale, const unsigned int& Corners ) {
+void cPrimitives::DrawRoundedRectangle( const Rectf& R, const ColorA& TopLeft, const ColorA& BottomLeft, const ColorA& BottomRight, const ColorA& TopRight, const Float& Angle, const Vector2f& Scale, const unsigned int& Corners ) {
 	sBR->SetTexture( NULL );
 	sBR->SetBlendMode( mBlendMode );
 
 	unsigned int i;
-	eeSizef size		= const_cast<eeRectf*>( &R )->Size();
+	Sizef size		= const_cast<Rectf*>( &R )->Size();
 	Float xscalediff	= size.Width()	* Scale.x - size.Width();
 	Float yscalediff	= size.Height()	* Scale.y - size.Height();
-	eeVector2f Center( R.Left + size.Width() * 0.5f + xscalediff, R.Top + size.Height() * 0.5f + yscalediff );
-	eePolygon2f Poly	= eePolygon2f::CreateRoundedRectangle( R.Left - xscalediff, R.Top - yscalediff, size.Width() + xscalediff, size.Height() + yscalediff, Corners );
-	eeVector2f poly;
+	Vector2f Center( R.Left + size.Width() * 0.5f + xscalediff, R.Top + size.Height() * 0.5f + yscalediff );
+	Polygon2f Poly	= Polygon2f::CreateRoundedRectangle( R.Left - xscalediff, R.Top - yscalediff, size.Width() + xscalediff, size.Height() + yscalediff, Corners );
+	Vector2f poly;
 
 	Poly.Rotate( Angle, Center );
 
@@ -314,11 +314,11 @@ void cPrimitives::DrawRoundedRectangle( const eeRectf& R, const ColorA& TopLeft,
 	DrawBatch();
 }
 
-void cPrimitives::DrawRoundedRectangle( const eeRectf& R, const Float& Angle, const eeVector2f& Scale, const unsigned int& Corners ) {
+void cPrimitives::DrawRoundedRectangle( const Rectf& R, const Float& Angle, const Vector2f& Scale, const unsigned int& Corners ) {
 	DrawRoundedRectangle( R, mColor, mColor, mColor, mColor, Angle, Scale, Corners );
 }
 
-void cPrimitives::DrawQuad( const eeQuad2f& q, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const ColorA& Color4, const Float& OffsetX, const Float& OffsetY ) {
+void cPrimitives::DrawQuad( const Quad2f& q, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const ColorA& Color4, const Float& OffsetX, const Float& OffsetY ) {
 	sBR->SetTexture( NULL );
 	sBR->SetBlendMode( mBlendMode );
 
@@ -346,11 +346,11 @@ void cPrimitives::DrawQuad( const eeQuad2f& q, const ColorA& Color1, const Color
 	DrawBatch();
 }
 
-void cPrimitives::DrawQuad( const eeQuad2f& q, const Float& OffsetX, const Float& OffsetY ) {
+void cPrimitives::DrawQuad( const Quad2f& q, const Float& OffsetX, const Float& OffsetY ) {
 	DrawQuad( q, mColor, mColor, mColor, mColor, OffsetX, OffsetY );
 }
 
-void cPrimitives::DrawPolygon( const eePolygon2f& p ) {
+void cPrimitives::DrawPolygon( const Polygon2f& p ) {
 	sBR->SetTexture( NULL );
 	sBR->SetBlendMode( mBlendMode );
 

@@ -22,7 +22,7 @@ class EE_API Sound {
 		~Sound();
 
 		/** Construct the sound with a buffer. */
-		Sound( const SoundBuffer& Buffer, const bool& Loop = false, const float& Pitch = 1.f, const float& Volume = 100.f, const eeVector3ff& Position = eeVector3ff(0, 0, 0) );
+		Sound( const SoundBuffer& Buffer, const bool& Loop = false, const float& Pitch = 1.f, const float& Volume = 100.f, const Vector3ff& Position = Vector3ff(0, 0, 0) );
 
 		/** Copy constructor */
 		Sound(const Sound& Copy);
@@ -52,7 +52,7 @@ class EE_API Sound {
 		void Position( const float& X, const float& Y, const float& Z );
 
 		/** Set the Sound Position from a 3D Vector. The default position is (0, 0, 0) */
-		void Position( const eeVector3ff& Position );
+		void Position( const Vector3ff& Position );
 
 		/** Set the minimum distance - closer than this distance, \n the listener will hear the sound at its maximum volume. \n The default minimum distance is 1.0. */
 		void MinDistance( const float& MinDistance );
@@ -73,7 +73,7 @@ class EE_API Sound {
 		float Volume() const;
 
 		/** Get the Sound Position */
-		eeVector3ff Position() const;
+		Vector3ff Position() const;
 
 		/** Get the Minimun Distance */
 		float MinDistance() const;

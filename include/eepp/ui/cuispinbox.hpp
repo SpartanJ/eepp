@@ -34,9 +34,9 @@ class EE_API cUISpinBox : public cUIComplexControl {
 
 		virtual void SetTheme( cUITheme * Theme );
 
-		virtual void Padding( const eeRecti& padding );
+		virtual void Padding( const Recti& padding );
 
-		const eeRecti& Padding() const;
+		const Recti& Padding() const;
 
 		virtual void ClickStep( const Float& step );
 

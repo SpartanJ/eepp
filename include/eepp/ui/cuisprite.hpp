@@ -52,11 +52,11 @@ class EE_API cUISprite : public cUIComplexControl {
 
 		void RenderMode( const EE_RENDER_MODE& render );
 
-		const eeVector2i& AlignOffset() const;
+		const Vector2i& AlignOffset() const;
 	protected:
 		cSprite * 			mSprite;
 		EE_RENDER_MODE 		mRender;
-		eeVector2i			mAlignOffset;
+		Vector2i			mAlignOffset;
 		cSubTexture *			mSubTextureLast;
 		bool				mDealloc;
 

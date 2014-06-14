@@ -52,14 +52,14 @@ cUITextEdit::cUITextEdit( cUITextEdit::CreateParams& Params ) :
 	cUIScrollBar::CreateParams ScrollBarP;
 	ScrollBarP.Parent( this );
 	ScrollBarP.PosSet( mSize.Width() - 15, 0 );
-	ScrollBarP.Size					= eeSize( 15, mSize.Height() );
+	ScrollBarP.Size					= Sizei( 15, mSize.Height() );
 	ScrollBarP.Flags				= UI_AUTO_SIZE;
 	ScrollBarP.VerticalScrollBar	= true;
 	mVScrollBar = eeNew( cUIScrollBar, ( ScrollBarP ) );
 	mVScrollBar->Value( 1 );
 
 	ScrollBarP.PosSet( 0, mSize.Height() - 15 );
-	ScrollBarP.Size					= eeSize( mSize.Width() - mVScrollBar->Size().Width(), 15 );
+	ScrollBarP.Size					= Sizei( mSize.Width() - mVScrollBar->Size().Width(), 15 );
 	ScrollBarP.VerticalScrollBar	= false;
 	mHScrollBar = eeNew( cUIScrollBar, ( ScrollBarP ) );
 
@@ -72,7 +72,7 @@ cUITextEdit::cUITextEdit( cUITextEdit::CreateParams& Params ) :
 
 	ApplyDefaultTheme();
 
-	mTextInput->Size( mSize - eeSize( mPadding.Left + mPadding.Right, mPadding.Top + mPadding.Bottom ) );
+	mTextInput->Size( mSize - Sizei( mPadding.Left + mPadding.Right, mPadding.Top + mPadding.Bottom ) );
 }
 
 cUITextEdit::~cUITextEdit() {
@@ -110,7 +110,7 @@ void cUITextEdit::OnSizeChange() {
 	FixScroll();
 }
 
-void cUITextEdit::OnParentSizeChange( const eeVector2i& SizeChange ) {
+void cUITextEdit::OnParentSizeChange( const Vector2i& SizeChange ) {
 	cUIComplexControl::OnParentSizeChange( SizeChange );
 
 	OnInputSizeChange( NULL );

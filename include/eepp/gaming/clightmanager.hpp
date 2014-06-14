@@ -21,23 +21,23 @@ class EE_API cLightManager {
 
 		void AddLight( cLight * Light );
 
-		void RemoveLight( const eeVector2f& OverPos );
+		void RemoveLight( const Vector2f& OverPos );
 
 		void RemoveLight( cLight * Light );
 
 		Uint32 Count();
 
-		const ColorA * GetTileColor( const eeVector2i& TilePos );
+		const ColorA * GetTileColor( const Vector2i& TilePos );
 
-		const ColorA * GetTileColor( const eeVector2i& TilePos, const Uint32& Vertex );
+		const ColorA * GetTileColor( const Vector2i& TilePos, const Uint32& Vertex );
 
-		ColorA GetColorFromPos( const eeVector2f& Pos );
+		ColorA GetColorFromPos( const Vector2f& Pos );
 
 		const bool& IsByVertex() const;
 
 		LightsList& GetLights();
 
-		cLight * GetLightOver( const eeVector2f& OverPos, cLight * LightCurrent = NULL );
+		cLight * GetLightOver( const Vector2f& OverPos, cLight * LightCurrent = NULL );
 	protected:
 		cMap *				mMap;
 		Int32				mNumVertex;

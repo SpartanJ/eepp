@@ -13,7 +13,7 @@ Sound::Sound() :
 	ALCheck( alSourcei( mSource, AL_BUFFER, 0 ) );
 }
 
-Sound::Sound( const SoundBuffer& Buffer, const bool& Loop, const float& Pitch, const float& Volume, const eeVector3ff& Position ) :
+Sound::Sound( const SoundBuffer& Buffer, const bool& Loop, const float& Pitch, const float& Volume, const Vector3ff& Position ) :
 	mBuffer(&Buffer)
 {
 	EnsureALInit();
@@ -92,7 +92,7 @@ void Sound::Position( const float& X, const float& Y, const float& Z ) {
 	ALCheck( alSource3f( mSource, AL_POSITION, X, Y, Z ) );
 }
 
-void Sound::Position( const eeVector3ff& Position ) {
+void Sound::Position( const Vector3ff& Position ) {
 	this->Position( Position.x, Position.y, Position.z );
 }
 
@@ -129,8 +129,8 @@ float Sound::Volume() const {
 	return Gain * 100.f;
 }
 
-eeVector3ff Sound::Position() const {
-	eeVector3ff Position;
+Vector3ff Sound::Position() const {
+	Vector3ff Position;
 
 	#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	ALCheck( alGetSource3f( mSource, AL_POSITION, &Position.x, &Position.y, &Position.z ) );

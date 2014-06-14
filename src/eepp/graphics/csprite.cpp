@@ -75,7 +75,7 @@ cSprite::cSprite( cSubTexture * SubTexture ) :
 	CreateStatic( SubTexture );
 }
 
-cSprite::cSprite( const Uint32& TexId, const eeSizef &DestSize, const eeVector2i &Offset, const eeRecti& TexSector ) :
+cSprite::cSprite( const Uint32& TexId, const Sizef &DestSize, const Vector2i &Offset, const Recti& TexSector ) :
 	mFlags( SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED ),
 	mPos(),
 	mAngle( 0.f ),
@@ -178,7 +178,7 @@ void cSprite::Reset() {
 	mFlags				= SPRITE_FLAG_AUTO_ANIM | SPRITE_FLAG_EVENTS_ENABLED;
 
 	mAnimSpeed			= 16.f;
-	mScale				= eeVector2f::One;
+	mScale				= Vector2f::One;
 	mRepeations			= -1;
 
 	mAngle				= 0;
@@ -219,27 +219,27 @@ void cSprite::CurrentSubFrame( const unsigned int& CurSubFrame ) {
 		mCurrentSubFrame = CurSubFrame;
 }
 
-eeQuad2f cSprite::GetQuad() {
+Quad2f cSprite::GetQuad() {
 	cSubTexture * S;
 
 	if ( mFrames.size() && ( S = GetCurrentSubTexture() ) ) {
-		eeRectf TmpR( mPos.x,
+		Rectf TmpR( mPos.x,
 					  mPos.y,
 					  mPos.x + S->DestSize().x,
 					  mPos.y + S->DestSize().y
 					);
 
-		eeQuad2f Q = eeQuad2f( eeVector2f( TmpR.Left, TmpR.Top ),
-							   eeVector2f( TmpR.Left, TmpR.Bottom ),
-							   eeVector2f( TmpR.Right, TmpR.Bottom ),
-							   eeVector2f( TmpR.Right, TmpR.Top )
+		Quad2f Q = Quad2f( Vector2f( TmpR.Left, TmpR.Top ),
+							   Vector2f( TmpR.Left, TmpR.Bottom ),
+							   Vector2f( TmpR.Right, TmpR.Bottom ),
+							   Vector2f( TmpR.Right, TmpR.Top )
 					);
 
-		eeVector2f Center;
+		Vector2f Center;
 
-		if ( mOrigin.OriginType == eeOriginPoint::OriginCenter ) {
+		if ( mOrigin.OriginType == OriginPoint::OriginCenter ) {
 			Center	= TmpR.Center();
-		} else if ( mOrigin.OriginType == eeOriginPoint::OriginTopLeft ) {
+		} else if ( mOrigin.OriginType == OriginPoint::OriginTopLeft ) {
 			Center	= mPos;
 		} else {
 			Center	+= mPos;
@@ -273,7 +273,7 @@ eeQuad2f cSprite::GetQuad() {
 		return Q;
 	}
 
-	return eeQuad2f();
+	return Quad2f();
 }
 
 eeAABB cSprite::GetAABB() {
@@ -284,13 +284,13 @@ eeAABB cSprite::GetAABB() {
 		if ( mAngle != 0 || mEffect >= 4 ) {
 			return GetQuad().ToAABB();
 		} else { // The method used if mAngle != 0 works for mAngle = 0, but i prefer to use the faster way
-			TmpR = eeRectf( mPos.x, mPos.y, mPos.x + S->DestSize().x, mPos.y + S->DestSize().y );
+			TmpR = Rectf( mPos.x, mPos.y, mPos.x + S->DestSize().x, mPos.y + S->DestSize().y );
 
-			eeVector2f Center;
+			Vector2f Center;
 
-			if ( mOrigin.OriginType == eeOriginPoint::OriginCenter ) {
+			if ( mOrigin.OriginType == OriginPoint::OriginCenter ) {
 				Center	= TmpR.Center();
-			} else if ( mOrigin.OriginType == eeOriginPoint::OriginTopLeft ) {
+			} else if ( mOrigin.OriginType == OriginPoint::OriginTopLeft ) {
 				Center	= mPos;
 			} else {
 				Center	= mPos + mOrigin;
@@ -303,7 +303,7 @@ eeAABB cSprite::GetAABB() {
 	return TmpR;
 }
 
-const eeVector2f cSprite::Position() const {
+const Vector2f cSprite::Position() const {
 	return mPos;
 }
 
@@ -312,7 +312,7 @@ void cSprite::Position(const Float& x, const Float& y) {
 	mPos.y = y;
 }
 
-void cSprite::Position( const eeVector2f& NewPos ) {
+void cSprite::Position( const Vector2f& NewPos ) {
 	mPos = NewPos;
 }
 
@@ -343,7 +343,7 @@ bool cSprite::CreateStatic( cSubTexture * SubTexture ) {
 	return true;
 }
 
-bool cSprite::CreateStatic( const Uint32& TexId, const eeSizef& DestSize, const eeVector2i& Offset, const eeRecti& TexSector ) {
+bool cSprite::CreateStatic( const Uint32& TexId, const Sizef& DestSize, const Vector2i& Offset, const Recti& TexSector ) {
 	if ( cTextureFactory::instance()->TextureIdExists( TexId ) ) {
 		Reset();
 
@@ -439,7 +439,7 @@ unsigned int cSprite::AddFrame( cSubTexture * SubTexture ) {
 	return id;
 }
 
-unsigned int cSprite::AddFrame( const Uint32& TexId, const eeSizef& DestSize, const eeVector2i& Offset, const eeRecti& TexSector ) {
+unsigned int cSprite::AddFrame( const Uint32& TexId, const Sizef& DestSize, const Vector2i& Offset, const Recti& TexSector ) {
 	unsigned int id = FramePos();
 
 	if ( AddSubFrame( TexId, id, mCurrentSubFrame, DestSize, Offset, TexSector ) )
@@ -448,7 +448,7 @@ unsigned int cSprite::AddFrame( const Uint32& TexId, const eeSizef& DestSize, co
 	return 0;
 }
 
-bool cSprite::AddSubFrame(const Uint32& TexId, const unsigned int& NumFrame, const unsigned int& NumSubFrame, const eeSizef& DestSize, const eeVector2i& Offset, const eeRecti& TexSector) {
+bool cSprite::AddSubFrame(const Uint32& TexId, const unsigned int& NumFrame, const unsigned int& NumSubFrame, const Sizef& DestSize, const Vector2i& Offset, const Recti& TexSector) {
 	if ( !cTextureFactory::instance()->TextureIdExists( TexId ) )
 		return false;
 
@@ -460,9 +460,9 @@ bool cSprite::AddSubFrame(const Uint32& TexId, const unsigned int& NumFrame, con
 	if ( TexSector.Right > 0 && TexSector.Bottom > 0 )
 		S->SrcRect( TexSector );
 	else
-		S->SrcRect( eeRecti( 0, 0, (Int32)Tex->ImgWidth(), (Int32)Tex->ImgHeight() ) );
+		S->SrcRect( Recti( 0, 0, (Int32)Tex->ImgWidth(), (Int32)Tex->ImgHeight() ) );
 
-	eeSizef destSize( DestSize );
+	Sizef destSize( DestSize );
 
 	if ( destSize.x <= 0 ) {
 		destSize.x = static_cast<Float> ( S->SrcRect().Right - S->SrcRect().Left );
@@ -627,16 +627,16 @@ unsigned int cSprite::GetSubFrame( const unsigned int& SubFrame ) {
 	return SFN;
 }
 
-eeVector2i cSprite::Offset() {
+Vector2i cSprite::Offset() {
 	cSubTexture* S = GetCurrentSubTexture();
 
 	if ( S != NULL )
 		return S->Offset();
 
-	return eeVector2i();
+	return Vector2i();
 }
 
-void cSprite::Offset( const eeVector2i& offset ) {
+void cSprite::Offset( const Vector2i& offset ) {
 	cSubTexture* S = GetCurrentSubTexture();
 
 	if ( S != NULL ) {
@@ -644,19 +644,19 @@ void cSprite::Offset( const eeVector2i& offset ) {
 	}
 }
 
-void cSprite::Size( const eeSizef& Size, const unsigned int& FrameNum, const unsigned int& SubFrame ) {
+void cSprite::Size( const Sizef& Size, const unsigned int& FrameNum, const unsigned int& SubFrame ) {
 	mFrames[ GetFrame(FrameNum) ].Spr[ GetSubFrame(SubFrame) ]->DestSize( Size );
 }
 
-void cSprite::Size( const eeSizef& Size ) {
+void cSprite::Size( const Sizef& Size ) {
 	mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ]->DestSize( Size );
 }
 
-eeSizef cSprite::Size( const unsigned int& FrameNum, const unsigned int& SubFrame ) {
+Sizef cSprite::Size( const unsigned int& FrameNum, const unsigned int& SubFrame ) {
 	return mFrames[ GetFrame(FrameNum) ].Spr[ GetSubFrame(SubFrame) ]->DestSize();
 }
 
-eeSizef cSprite::Size() {
+Sizef cSprite::Size() {
 	return mFrames[ mCurrentFrame ].Spr[ mCurrentSubFrame ]->DestSize();
 }
 
@@ -725,14 +725,14 @@ Float cSprite::Angle() const {
 }
 
 void cSprite::Scale( const Float& Scale ) {
-	this->Scale( eeVector2f( Scale, Scale ) );
+	this->Scale( Vector2f( Scale, Scale ) );
 }
 
-void cSprite::Scale( const eeVector2f& Scale ) {
+void cSprite::Scale( const Vector2f& Scale ) {
 	mScale = Scale;
 }
 
-const eeVector2f& cSprite::Scale() const {
+const Vector2f& cSprite::Scale() const {
 	return mScale;
 }
 
@@ -869,11 +869,11 @@ void cSprite::FireEvent( const Uint32& Event ) {
 	}
 }
 
-void cSprite::Origin( const eeOriginPoint& origin ) {
+void cSprite::Origin( const OriginPoint& origin ) {
 	mOrigin = origin;
 }
 
-const eeOriginPoint& cSprite:: Origin() const {
+const OriginPoint& cSprite:: Origin() const {
 	return mOrigin;
 }
 

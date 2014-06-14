@@ -41,7 +41,7 @@ void cUIGfx::AutoSize() {
 		if ( NULL != mSubTexture ) {
 			Size( mSubTexture->Size() );
 		} else {
-			Size( eeSize( 0, 0 ) );
+			Size( Sizei( 0, 0 ) );
 		}
 	}
 }
@@ -51,19 +51,19 @@ void cUIGfx::Draw() {
 
 	if ( mVisible ) {
 		if ( NULL != mSubTexture && 0.f != mAlpha ) {
-			eeSizef oDestSize	= mSubTexture->DestSize();
-			eeVector2i oOff		= mSubTexture->Offset();
+			Sizef oDestSize	= mSubTexture->DestSize();
+			Vector2i oOff		= mSubTexture->Offset();
 
 			if ( mFlags & UI_FIT_TO_CONTROL ) {
-				mSubTexture->Offset( eeVector2i( 0, 0 ) );
-				mSubTexture->DestSize( eeVector2f( mSize.x, mSize.y ) );
+				mSubTexture->Offset( Vector2i( 0, 0 ) );
+				mSubTexture->DestSize( Vector2f( mSize.x, mSize.y ) );
 
 				DrawSubTexture();
 
 				mSubTexture->DestSize( oDestSize );
 				mSubTexture->Offset( oOff );
 			} else if ( mFlags & UI_AUTO_FIT ) {
-				mSubTexture->Offset( eeVector2i( 0, 0 ) );
+				mSubTexture->Offset( Vector2i( 0, 0 ) );
 
 				Float Scale1 = mSize.x / oDestSize.x;
 				Float Scale2 = mSize.y / oDestSize.y;
@@ -72,7 +72,7 @@ void cUIGfx::Draw() {
 					if ( Scale2 < Scale1 )
 						Scale1 = Scale2;
 
-					mSubTexture->DestSize( eeSizef( oDestSize.x * Scale1, oDestSize.y * Scale1 ) );
+					mSubTexture->DestSize( Sizef( oDestSize.x * Scale1, oDestSize.y * Scale1 ) );
 
 					AutoAlign();
 
@@ -96,7 +96,7 @@ void cUIGfx::Draw() {
 }
 
 void cUIGfx::DrawSubTexture() {
-	mSubTexture->Draw( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y, mColor, 0.f, eeVector2f::One, Blend(), mRender );
+	mSubTexture->Draw( (Float)mScreenPos.x + mAlignOffset.x, (Float)mScreenPos.y + mAlignOffset.y, mColor, 0.f, Vector2f::One, Blend(), mRender );
 }
 
 void cUIGfx::Alpha( const Float& alpha ) {
@@ -152,7 +152,7 @@ void cUIGfx::OnSizeChange() {
 	cUIControlAnim::OnSizeChange();
 }
 
-const eeVector2i& cUIGfx::AlignOffset() const {
+const Vector2i& cUIGfx::AlignOffset() const {
 	return mAlignOffset;
 }
 

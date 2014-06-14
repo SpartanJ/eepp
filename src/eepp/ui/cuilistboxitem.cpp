@@ -30,7 +30,7 @@ void cUIListBoxItem::SetTheme( cUITheme * Theme ) {
 	cUIControl::SetThemeControl( Theme, "listboxitem" );
 }
 
-Uint32 cUIListBoxItem::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
+Uint32 cUIListBoxItem::OnMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( Flags & EE_BUTTONS_LRM ) {
 		reinterpret_cast<cUIListBox*> ( Parent()->Parent() )->ItemClicked( this );
 
@@ -88,7 +88,7 @@ void cUIListBoxItem::Update() {
 	}
 }
 
-Uint32 cUIListBoxItem::OnMouseExit( const eeVector2i& Pos, const Uint32 Flags ) {
+Uint32 cUIListBoxItem::OnMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 	cUIControl::OnMouseExit( Pos, Flags );
 
 	if ( mControlFlags & UI_CTRL_FLAG_SELECTED )

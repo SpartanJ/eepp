@@ -84,7 +84,7 @@ cUIMenu * cUIMenuSubMenu::SubMenu() const {
 	return mSubMenu;
 }
 
-Uint32 cUIMenuSubMenu::OnMouseMove( const eeVector2i &Pos, const Uint32 Flags ) {
+Uint32 cUIMenuSubMenu::OnMouseMove( const Vector2i &Pos, const Uint32 Flags ) {
 	cUIMenuItem::OnMouseMove( Pos, Flags );
 
 	if ( NULL != mSubMenu && !mSubMenu->Visible() ) {
@@ -101,7 +101,7 @@ Uint32 cUIMenuSubMenu::OnMouseMove( const eeVector2i &Pos, const Uint32 Flags ) 
 void cUIMenuSubMenu::ShowSubMenu() {
 	mSubMenu->Parent( Parent()->Parent() );
 
-	eeVector2i Pos = this->Pos();
+	Vector2i Pos = this->Pos();
 	ControlToScreen( Pos );
 	Pos.x += mSize.Width() + reinterpret_cast<cUIMenu*> ( Parent() )->Padding().Right;
 
@@ -115,7 +115,7 @@ void cUIMenuSubMenu::ShowSubMenu() {
 	}
 }
 
-Uint32 cUIMenuSubMenu::OnMouseExit( const eeVector2i &Pos, const Uint32 Flags ) {
+Uint32 cUIMenuSubMenu::OnMouseExit( const Vector2i &Pos, const Uint32 Flags ) {
 	cUIMenuItem::OnMouseExit( Pos, Flags );
 
 	mTimeOver = 0;

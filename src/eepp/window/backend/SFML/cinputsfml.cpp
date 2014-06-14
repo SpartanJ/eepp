@@ -66,7 +66,7 @@ void cInputSFML::Update() {
 			case sf::Event::MouseMoved:
 			{
 				EEEvent.Type = InputEvent::MouseMotion;
-				eeVector2i mp( win->GetInput()->GetMousePos() );
+				Vector2i mp( win->GetInput()->GetMousePos() );
 				EEEvent.motion.xrel = mp.x - event.mouseMove.x;
 				EEEvent.motion.yrel = mp.y - event.mouseMove.y;
 				EEEvent.motion.x = event.mouseMove.x;

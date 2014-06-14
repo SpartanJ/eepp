@@ -47,7 +47,7 @@ class EE_API cWindowSDL : public cWindow {
 		SDL_SysWMinfo *	mWMinfo;
 		#endif
 
-		eeVector2i		mWinPos;
+		Vector2i		mWinPos;
 
 		void CreatePlatform();
 

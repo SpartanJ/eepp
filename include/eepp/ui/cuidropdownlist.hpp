@@ -53,7 +53,7 @@ class EE_API cUIDropDownList : public cUITextInput {
 
 		virtual void Hide();
 
-		Uint32 OnMouseClick( const eeVector2i& Pos, const Uint32 Flags );
+		Uint32 OnMouseClick( const Vector2i& Pos, const Uint32 Flags );
 
 		virtual void OnItemClicked( const cUIEvent * Event );
 

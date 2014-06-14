@@ -26,10 +26,10 @@ class EE_API cUIWindow : public cUIComplexControl {
 				inline ~CreateParams() {}
 
 				Uint32		WinFlags;
-				eeSize		DecorationSize;
-				eeSize		BorderSize;
-				eeSize		MinWindowSize;
-				eeVector2i	ButtonsPositionFixer;
+				Sizei		DecorationSize;
+				Sizei		BorderSize;
+				Sizei		MinWindowSize;
+				Vector2i	ButtonsPositionFixer;
 				Uint32		ButtonsSeparation;
 				Int32		MinCornerDistance;
 				ColorA	TitleFontColor;
@@ -46,11 +46,11 @@ class EE_API cUIWindow : public cUIComplexControl {
 
 		virtual bool IsType( const Uint32& type ) const;
 
-		virtual void Size( const eeSize& Size );
+		virtual void Size( const Sizei& Size );
 
 		void Size( const Int32& Width, const Int32& Height );
 
-		const eeSize& Size();
+		const Sizei& Size();
 
 		virtual void SetTheme( cUITheme * Theme );
 
@@ -146,17 +146,17 @@ class EE_API cUIWindow : public cUIComplexControl {
 
 		cUIControlAnim *	mModalCtrl;
 
-		eeSize				mDecoSize;
-		eeSize				mBorderSize;
-		eeSize				mMinWindowSize;
-		eeVector2i			mNonMaxPos;
-		eeSize				mNonMaxSize;
-		eeVector2i			mButtonsPositionFixer;
+		Sizei				mDecoSize;
+		Sizei				mBorderSize;
+		Sizei				mMinWindowSize;
+		Vector2i			mNonMaxPos;
+		Sizei				mNonMaxSize;
+		Vector2i			mButtonsPositionFixer;
 		Uint32				mButtonsSeparation;
 		Int32				mMinCornerDistance;
 
 		UI_RESIZE_TYPE		mResizeType;
-		eeVector2i			mResizePos;
+		Vector2i			mResizePos;
 
 		ColorA			mTitleFontColor;
 
@@ -193,7 +193,7 @@ class EE_API cUIWindow : public cUIComplexControl {
 
 		void UpdateResize();
 
-		void InternalSize( eeSize Size );
+		void InternalSize( Sizei Size );
 
 		void InternalSize( const Int32& w, const Int32& h );
 
@@ -201,7 +201,7 @@ class EE_API cUIWindow : public cUIComplexControl {
 
 		void FixTitleSize();
 
-		Uint32 OnMouseDoubleClick( const eeVector2i &Pos, const Uint32 Flags );
+		Uint32 OnMouseDoubleClick( const Vector2i &Pos, const Uint32 Flags );
 
 		void CheckShortcuts( const Uint32& KeyCode, const Uint32& Mod );
 

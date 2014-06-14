@@ -35,21 +35,21 @@ cTextureAtlasSubTextureEditor::~cTextureAtlasSubTextureEditor() {
 void cTextureAtlasSubTextureEditor::Draw() {
 	cPrimitives P;
 	P.SetColor( ColorA( 255, 0, 0, mAlpha ) );
-	P.DrawLine( eeLine2f( eeVector2f( mScreenPos.x, mScreenPos.y + mUICenter.y ), eeVector2f( mScreenPos.x + mSize.Width(), mScreenPos.y + mUICenter.y ) ) );
-	P.DrawLine( eeLine2f( eeVector2f( mScreenPos.x + mUICenter.x, mScreenPos.y ), eeVector2f( mScreenPos.x + mUICenter.x, mScreenPos.y + mSize.Height() ) ) );
+	P.DrawLine( Line2f( Vector2f( mScreenPos.x, mScreenPos.y + mUICenter.y ), Vector2f( mScreenPos.x + mSize.Width(), mScreenPos.y + mUICenter.y ) ) );
+	P.DrawLine( Line2f( Vector2f( mScreenPos.x + mUICenter.x, mScreenPos.y ), Vector2f( mScreenPos.x + mUICenter.x, mScreenPos.y + mSize.Height() ) ) );
 
 	cUIComplexControl::Draw();
 }
 
 void cTextureAtlasSubTextureEditor::Update() {
-	eeVector2i Pos = mDrag->Pos();
+	Vector2i Pos = mDrag->Pos();
 
 	cUIComplexControl::Update();
 
 	if ( NULL != mGfx->SubTexture() && mDrag->DragEnable() && mDrag->Dragging() && Pos != mDrag->Pos() ) {
-		eeVector2i Diff = -( Pos - mDrag->Pos() );
+		Vector2i Diff = -( Pos - mDrag->Pos() );
 
-		mGfx->SubTexture()->Offset( eeVector2i( mGfx->SubTexture()->Offset().x + Diff.x, mGfx->SubTexture()->Offset().y + Diff.y ) );
+		mGfx->SubTexture()->Offset( Vector2i( mGfx->SubTexture()->Offset().x + Diff.x, mGfx->SubTexture()->Offset().y + Diff.y ) );
 
 		mEditor->SpinOffX()->Value( mGfx->SubTexture()->Offset().x );
 		mEditor->SpinOffY()->Value( mGfx->SubTexture()->Offset().y );
@@ -75,7 +75,7 @@ cUIGfx * cTextureAtlasSubTextureEditor::Gfx() const {
 }
 
 void cTextureAtlasSubTextureEditor::GetCenter() {
-	mUICenter = eeVector2i( mSize.Width() / 2, mSize.Height() / 2 );
+	mUICenter = Vector2i( mSize.Width() / 2, mSize.Height() / 2 );
 }
 
 }}}

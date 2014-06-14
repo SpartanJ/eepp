@@ -2,7 +2,7 @@
 
 namespace EE { namespace Window {
 
-cCursor::cCursor( cTexture * tex, const eeVector2i& hotspot, const std::string& name, Window::cWindow * window ) :
+cCursor::cCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
 	mId( String::Hash( name ) ),
 	mName( name ),
 	mImage( NULL ),
@@ -18,7 +18,7 @@ cCursor::cCursor( cTexture * tex, const eeVector2i& hotspot, const std::string& 
 	}
 }
 
-cCursor::cCursor( cImage * img, const eeVector2i& hotspot, const std::string& name, Window::cWindow * window ) :
+cCursor::cCursor( cImage * img, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
 	mId( String::Hash( name ) ),
 	mName( name ),
 	mImage( NULL ),
@@ -32,7 +32,7 @@ cCursor::cCursor( cImage * img, const eeVector2i& hotspot, const std::string& na
 	}
 }
 
-cCursor::cCursor( const std::string& path, const eeVector2i& hotspot, const std::string& name, Window::cWindow * window ) :
+cCursor::cCursor( const std::string& path, const Vector2i& hotspot, const std::string& name, Window::cWindow * window ) :
 	mId( String::Hash( name ) ),
 	mName( name ),
 	mImage( NULL ),
@@ -50,7 +50,7 @@ cCursor::~cCursor() {
 	eeSAFE_DELETE( mImage );
 }
 
-const eeVector2i& cCursor::HotSpot() const {
+const Vector2i& cCursor::HotSpot() const {
 	return mHotSpot;
 }
 

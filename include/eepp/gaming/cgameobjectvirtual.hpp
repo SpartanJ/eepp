@@ -12,19 +12,19 @@ class cLayer;
 
 class EE_API cGameObjectVirtual : public cGameObject {
 	public:
-		cGameObjectVirtual( Uint32 DataId, cLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC, Uint32 RealType = GAMEOBJECT_TYPE_VIRTUAL, const eeVector2f& Pos = eeVector2f() );
+		cGameObjectVirtual( Uint32 DataId, cLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC, Uint32 RealType = GAMEOBJECT_TYPE_VIRTUAL, const Vector2f& Pos = Vector2f() );
 
-		cGameObjectVirtual( cSubTexture * SubTexture, cLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC, Uint32 RealType = GAMEOBJECT_TYPE_VIRTUAL, const eeVector2f& Pos = eeVector2f() );
+		cGameObjectVirtual( cSubTexture * SubTexture, cLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC, Uint32 RealType = GAMEOBJECT_TYPE_VIRTUAL, const Vector2f& Pos = Vector2f() );
 
 		virtual ~cGameObjectVirtual();
 
 		virtual void Draw();
 
-		virtual eeVector2f Pos() const;
+		virtual Vector2f Pos() const;
 
-		virtual eeSize Size();
+		virtual Sizei Size();
 
-		virtual void Pos( eeVector2f pos );
+		virtual void Pos( Vector2f pos );
 
 		virtual Uint32 Type() const;
 
@@ -40,7 +40,7 @@ class EE_API cGameObjectVirtual : public cGameObject {
 	protected:
 		Uint32		mType;
 		Uint32		mDataId;
-		eeVector2f	mPos;
+		Vector2f	mPos;
 		cLayer *	mLayer;
 		cSubTexture *	mSubTexture;
 };

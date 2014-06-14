@@ -37,7 +37,7 @@ class EE_API cUIMapNew {
 
 		cb::Callback0<void> mNewMapCb;
 
-		eeSize				mNewSize;
+		Sizei				mNewSize;
 		bool				mResizeMap;
 
 		void WindowClose( const cUIEvent * Event );

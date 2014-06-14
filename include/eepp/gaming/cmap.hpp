@@ -36,7 +36,7 @@ class EE_API cMap {
 
 		virtual ~cMap();
 
-		virtual void Create( eeSize Size, Uint32 MaxLayers, eeSize TileSize, Uint32 Flags = 0, eeSize viewSize = eeSize( 800, 600 ), Window::cWindow * Window = NULL );
+		virtual void Create( Sizei Size, Uint32 MaxLayers, Sizei TileSize, Uint32 Flags = 0, Sizei viewSize = Sizei( 800, 600 ), Window::cWindow * Window = NULL );
 
 		virtual cLayer * AddLayer( Uint32 Type, Uint32 flags, std::string name );
 
@@ -64,35 +64,35 @@ class EE_API cMap {
 
 		virtual void Update();
 
-		const eeSize& TileSize() const;
+		const Sizei& TileSize() const;
 
-		const eeSize& Size() const;
+		const Sizei& Size() const;
 
 		const Uint32& LayerCount() const;
 
 		const Uint32& MaxLayers() const;
 
-		const eeSize& ViewSize() const;
+		const Sizei& ViewSize() const;
 
-		void ViewSize( const eeSize& viewSize );
+		void ViewSize( const Sizei& viewSize );
 
-		const eeVector2f& Offset() const;
+		const Vector2f& Offset() const;
 
-		const eeVector2f& OffsetFixed() const;
+		const Vector2f& OffsetFixed() const;
 
-		void Offset( const eeVector2f& offset );
+		void Offset( const Vector2f& offset );
 
-		const eeVector2i& Position() const;
+		const Vector2i& Position() const;
 
-		void Position( const eeVector2i& position );
+		void Position( const Vector2i& position );
 
-		void Move( const eeVector2f& offset );
+		void Move( const Vector2f& offset );
 
 		void Move( const Float& offsetx, const Float& offsety );
 
-		const eeVector2i& StartTile() const;
+		const Vector2i& StartTile() const;
 
-		const eeVector2i& EndTile() const;
+		const Vector2i& EndTile() const;
 
 		const Uint32& Flags() const;
 
@@ -134,19 +134,19 @@ class EE_API cMap {
 
 		bool RemoveLayer( cLayer * Layer );
 
-		const eeVector2i& GetMouseTilePos() const;
+		const Vector2i& GetMouseTilePos() const;
 
-		eeVector2i GetMouseTilePosCoords();
+		Vector2i GetMouseTilePosCoords();
 
-		eeVector2i GetTileCoords( const eeVector2i& TilePos );
+		Vector2i GetTileCoords( const Vector2i& TilePos );
 
-		const eeVector2i& GetRealMouseTilePos() const;
+		const Vector2i& GetRealMouseTilePos() const;
 
-		const eeVector2i& GetMouseMapPos() const;
+		const Vector2i& GetMouseMapPos() const;
 
-		eeVector2f GetMouseMapPosf() const;
+		Vector2f GetMouseMapPosf() const;
 
-		const eeSize& TotalSize() const;
+		const Sizei& TotalSize() const;
 
 		void AddProperty( std::string Text, std::string Value );
 
@@ -179,9 +179,9 @@ class EE_API cMap {
 		cLightManager * GetLightManager() const;
 
 		/** Tiles to add or subtract from the real values of StartTile and EndTile ( so it will loop over more/less tiles than the required to render every tile on screen ). */
-		void ExtraTiles( const eeVector2i& extra );
+		void ExtraTiles( const Vector2i& extra );
 
-		const eeVector2i& ExtraTiles() const;
+		const Vector2i& ExtraTiles() const;
 
 		void SetDrawCallback( MapDrawCb Cb );
 
@@ -189,7 +189,7 @@ class EE_API cMap {
 
 		cTexture * GetBlankTileTexture();
 
-		bool IsTileBlocked( const eeVector2i& TilePos );
+		bool IsTileBlocked( const Vector2i& TilePos );
 
 		void Data( void * value );
 
@@ -197,7 +197,7 @@ class EE_API cMap {
 
 		const bool& IsMouseOver() const;
 
-		cGameObject * IsTypeInTilePos( const Uint32& Type, const eeVector2i& TilePos );
+		cGameObject * IsTypeInTilePos( const Uint32& Type, const Vector2i& TilePos );
 
 		const Uint8& BackAlpha() const;
 
@@ -211,13 +211,13 @@ class EE_API cMap {
 
 		void Scale( const Float& scale );
 
-		eeVector2i GetMaxOffset();
+		Vector2i GetMaxOffset();
 
 		Uint32 GetNewObjectId();
 
 		cGameObjectPolyData& GetPolyObjData( Uint32 Id );
 
-		void ForceHeadersOnLoad( eeSize mapSize, eeSize tileSize, Uint32 numLayers, Uint32 flags );
+		void ForceHeadersOnLoad( Sizei mapSize, Sizei tileSize, Uint32 numLayers, Uint32 flags );
 
 		void DisableForcedHeaders();
 
@@ -230,15 +230,15 @@ class EE_API cMap {
 		class cForcedHeaders
 		{
 			public:
-				cForcedHeaders( eeSize mapSize, eeSize tileSize, Uint32 numLayers, Uint32 flags ) :
+				cForcedHeaders( Sizei mapSize, Sizei tileSize, Uint32 numLayers, Uint32 flags ) :
 					MapSize( mapSize ),
 					TileSize( tileSize ),
 					NumLayers( numLayers ),
 					Flags( flags )
 				{}
 
-				eeSize MapSize;
-				eeSize TileSize;
+				Sizei MapSize;
+				Sizei TileSize;
 				Uint32 NumLayers;
 				Uint32 Flags;
 		};
@@ -250,18 +250,18 @@ class EE_API cMap {
 		Uint32			mFlags;
 		Uint32			mMaxLayers;
 		Uint32			mLayerCount;
-		eeSize			mSize;
-		eeSize			mPixelSize;
-		eeSize			mTileSize;
-		eeSize			mViewSize;
-		eeVector2f		mOffset;
-		eeVector2i		mScreenPos;
-		eeVector2i		mStartTile;
-		eeVector2i		mEndTile;
-		eeVector2i		mExtraTiles;
-		eeVector2i		mMouseOverTile;
-		eeVector2i		mMouseOverTileFinal;
-		eeVector2i		mMouseMapPos;
+		Sizei			mSize;
+		Sizei			mPixelSize;
+		Sizei			mTileSize;
+		Sizei			mViewSize;
+		Vector2f		mOffset;
+		Vector2i		mScreenPos;
+		Vector2i		mStartTile;
+		Vector2i		mEndTile;
+		Vector2i		mExtraTiles;
+		Vector2i		mMouseOverTile;
+		Vector2i		mMouseOverTileFinal;
+		Vector2i		mMouseMapPos;
 		ColorA		mBaseColor;
 		PropertiesMap	mProperties;
 		GOTypesList		mObjTypes;
@@ -279,7 +279,7 @@ class EE_API cMap {
 		bool			mMouseOver;
 		std::string		mPath;
 		Float			mScale;
-		eeVector2f		mOffscale;
+		Vector2f		mOffscale;
 		Uint32			mLastObjId;
 		PolyObjMap		mPolyObjs;
 		cForcedHeaders*	mForcedHeaders;

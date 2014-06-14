@@ -132,14 +132,14 @@ void cBatchRenderer::Flush() {
 
 	if ( NULL != mTexture ) {
 		mTF->Bind( mTexture );
-		GLi->TexCoordPointer( 2, GL_FP			, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f)						, alloc		);
+		GLi->TexCoordPointer( 2, GL_FP			, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(Vector2f)						, alloc		);
 	} else {
 		GLi->Disable( GL_TEXTURE_2D );
 		GLi->DisableClientState( GL_TEXTURE_COORD_ARRAY );
 	}
 
 	GLi->VertexPointer	( 2, GL_FP				, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] )												, alloc		);
-	GLi->ColorPointer	( 4, GL_UNSIGNED_BYTE	, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(eeVector2f) + sizeof(eeTexCoord)	, alloc		);
+	GLi->ColorPointer	( 4, GL_UNSIGNED_BYTE	, sizeof(eeVertex), reinterpret_cast<char*> ( &mVertex[0] ) + sizeof(Vector2f) + sizeof(eeTexCoord)	, alloc		);
 
 	if ( !GLi->QuadsSupported() ) {
 		if ( DM_QUADS == mCurrentMode ) {
@@ -171,11 +171,11 @@ void cBatchRenderer::BatchQuad( const Float& x, const Float& y, const Float& wid
 	BatchQuadEx( x, y, width, height, angle );
 }
 
-void cBatchRenderer::BatchQuadEx( Float x, Float y, Float width, Float height, Float angle, eeVector2f scale, eeOriginPoint originPoint ) {
+void cBatchRenderer::BatchQuadEx( Float x, Float y, Float width, Float height, Float angle, Vector2f scale, OriginPoint originPoint ) {
 	if ( mNumVertex + ( GLi->QuadsSupported() ? 3 : 5 ) >= mVertexSize )
 		return;
 
-	if ( originPoint.OriginType == eeOriginPoint::OriginCenter ) {
+	if ( originPoint.OriginType == OriginPoint::OriginCenter ) {
 		originPoint.x = width  * 0.5f;
 		originPoint.y = height * 0.5f;
 	}
@@ -343,8 +343,8 @@ void cBatchRenderer::BatchQuadFreeEx( const Float& x0, const Float& y0, const Fl
 	if ( mNumVertex + ( GLi->QuadsSupported() ? 3 : 5 ) >= mVertexSize )
 		return;
 
-	eeQuad2f mQ;
-	eeVector2f QCenter;
+	Quad2f mQ;
+	Vector2f QCenter;
 	mQ.V[0].x = x0; mQ.V[1].x = x1; mQ.V[2].x = x2; mQ.V[3].x = x3;
 	mQ.V[0].y = y0; mQ.V[1].y = y1; mQ.V[2].y = y2; mQ.V[3].y = y3;
 
@@ -455,7 +455,7 @@ void cBatchRenderer::QuadsSetSubsetFree( const Float& x0, const Float& y0, const
 	mTexCoord[3].u = x3; mTexCoord[3].v = y3;
 }
 
-void cBatchRenderer::Rotate( const eeVector2f& center, eeVector2f* point, const Float& angle ) {
+void cBatchRenderer::Rotate( const Vector2f& center, Vector2f* point, const Float& angle ) {
 	if ( angle ) {
 		Float x = point->x - center.x;
 		Float y = point->y - center.y;
@@ -559,7 +559,7 @@ void cBatchRenderer::BatchLineLoop( const Float& x0, const Float& y0, const Floa
 	AddVertexs(2);
 }
 
-void cBatchRenderer::BatchLineLoop( const eeVector2f& vector1, const eeVector2f& vector2 ) {
+void cBatchRenderer::BatchLineLoop( const Vector2f& vector1, const Vector2f& vector2 ) {
 	BatchLineLoop( vector1.x, vector1.y, vector2.x, vector2.y );
 }
 
@@ -578,7 +578,7 @@ void cBatchRenderer::BatchLineLoop( const Float& x0, const Float& y0 ) {
 	AddVertexs(1);
 }
 
-void cBatchRenderer::BatchLineLoop( const eeVector2f& vector1 ) {
+void cBatchRenderer::BatchLineLoop( const Vector2f& vector1 ) {
 	BatchLineLoop( vector1.x, vector1.y );
 }
 
@@ -697,7 +697,7 @@ void cBatchRenderer::PolygonSetColor( const ColorA& Color ) {
 	PointSetColor( Color );
 }
 
-void cBatchRenderer::BatchPolygon( const eePolygon2f& Polygon ) {
+void cBatchRenderer::BatchPolygon( const Polygon2f& Polygon ) {
 	if ( Polygon.Size() > mVertexSize )
 		return;
 
@@ -730,7 +730,7 @@ void cBatchRenderer::BatchPolygonByPoint( const Float& x, const Float& y ) {
 	AddVertexs(1);
 }
 
-void cBatchRenderer::BatchPolygonByPoint( const eeVector2f& Vector ) {
+void cBatchRenderer::BatchPolygonByPoint( const Vector2f& Vector ) {
 	BatchPolygonByPoint( Vector.x, Vector.y );
 }
 

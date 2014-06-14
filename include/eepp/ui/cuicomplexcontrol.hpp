@@ -18,13 +18,13 @@ class EE_API cUIComplexControl : public cUIControlAnim {
 
 				inline CreateParams(
 					cUIControl * parentCtrl,
-					const eeVector2i& pos = eeVector2i( 0, 0 ),
-					const eeSize& size = eeSize( -1, -1 ),
+					const Vector2i& pos = Vector2i( 0, 0 ),
+					const Sizei& size = Sizei( -1, -1 ),
 					const Uint32& flags = UI_CONTROL_DEFAULT_FLAGS,
 					const EE_BLEND_MODE& blend = ALPHA_NORMAL,
 					const cUIBackground& Back = cUIBackground(),
 					const cUIBorder& Bord = cUIBorder(),
-					const eeSize& MinCtrlSize = eeSize(0,0)
+					const Sizei& MinCtrlSize = Sizei(0,0)
 				) :
 					cUIControlAnim::CreateParams( parentCtrl, pos, size, flags, blend, Back, Bord ),
 					MinControlSize( MinCtrlSize )
@@ -34,7 +34,7 @@ class EE_API cUIComplexControl : public cUIControlAnim {
 				inline ~CreateParams() {}
 
 				String	TooltipText;
-				eeSize	MinControlSize;
+				Sizei	MinControlSize;
 		};
 
 		cUIComplexControl( const cUIComplexControl::CreateParams& Params );
@@ -47,11 +47,11 @@ class EE_API cUIComplexControl : public cUIControlAnim {
 
 		virtual void Update();
 
-		virtual void Size( const eeSize &Size );
+		virtual void Size( const Sizei &Size );
 
 		void Size( const Int32& Width, const Int32& Height );
 
-		const eeSize& Size();
+		const Sizei& Size();
 
 		cUITooltip * Tooltip();
 
@@ -64,12 +64,12 @@ class EE_API cUIComplexControl : public cUIControlAnim {
 		void UpdateAnchorsDistances();
 	protected:
 		cUITooltip *	mTooltip;
-		eeSize			mMinControlSize;
-		eeRecti			mDistToBorder;
+		Sizei			mMinControlSize;
+		Recti			mDistToBorder;
 
 		void CreateTooltip();
 
-		virtual void OnParentSizeChange( const eeVector2i& SizeChange );
+		virtual void OnParentSizeChange( const Vector2i& SizeChange );
 };
 
 }}

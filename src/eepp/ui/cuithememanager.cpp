@@ -109,11 +109,11 @@ const bool& cUIThemeManager::TooltipFollowMouse() const {
 	return mTooltipFollowMouse;
 }
 
-void cUIThemeManager::CursorSize( const eeSize& Size ) {
+void cUIThemeManager::CursorSize( const Sizei& Size ) {
 	mCursorSize = Size;
 }
 
-const eeSize& cUIThemeManager::CursorSize() const {
+const Sizei& cUIThemeManager::CursorSize() const {
 	return mCursorSize;
 }
 

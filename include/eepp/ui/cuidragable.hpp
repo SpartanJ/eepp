@@ -16,8 +16,8 @@ class EE_API cUIDragable : public cUIControl {
 		bool				Dragging() const;
 		void				Dragging( const bool& dragging );
 
-		const eeVector2i&	DragPoint() const;
-		void				DragPoint( const eeVector2i& Point );
+		const Vector2i&	DragPoint() const;
+		void				DragPoint( const Vector2i& Point );
 
 		virtual void		Update();
 
@@ -29,18 +29,18 @@ class EE_API cUIDragable : public cUIControl {
 	protected:
 		virtual ~cUIDragable();
 
-		eeVector2i 	mDragPoint;
+		Vector2i 	mDragPoint;
 		Uint32 		mDragButton;
 
-		virtual Uint32 OnMouseDown( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseDown( const Vector2i& Pos, const Uint32 Flags );
 
-		virtual Uint32 OnMouseUp( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseUp( const Vector2i& Pos, const Uint32 Flags );
 
-		virtual Uint32 OnDrag( const eeVector2i& Pos );
+		virtual Uint32 OnDrag( const Vector2i& Pos );
 
-		virtual Uint32 OnDragStart( const eeVector2i& Pos );
+		virtual Uint32 OnDragStart( const Vector2i& Pos );
 
-		virtual Uint32 OnDragEnd( const eeVector2i& Pos );
+		virtual Uint32 OnDragEnd( const Vector2i& Pos );
 };
 
 }}

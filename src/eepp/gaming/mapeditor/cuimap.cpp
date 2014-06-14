@@ -44,7 +44,7 @@ cUIMap::~cUIMap() {
 	eeSAFE_DELETE( mMap );
 }
 
-Uint32 cUIMap::OnDrag( const eeVector2i& Pos ) {
+Uint32 cUIMap::OnDrag( const Vector2i& Pos ) {
 
 	if (	( EDITING_OBJECT == mEditingMode && NULL != mSelObj ) ||
 			( EDITING_LIGHT == mEditingMode && NULL != mSelLight ) ) {
@@ -52,8 +52,8 @@ Uint32 cUIMap::OnDrag( const eeVector2i& Pos ) {
 		return 0;
 	}
 
-	eeVector2i nPos( -( mDragPoint - Pos ) );
-	eeVector2f nPosf( nPos.x, nPos.y );
+	Vector2i nPos( -( mDragPoint - Pos ) );
+	Vector2f nPosf( nPos.x, nPos.y );
 
 	mMap->Move( nPosf );
 
@@ -151,12 +151,12 @@ void cUIMap::Update() {
 	}
 }
 
-eeVector2f cUIMap::GetMouseMapPos() {
-	eeVector2f mp( mMap->GetMouseMapPosf() );
+Vector2f cUIMap::GetMouseMapPos() {
+	Vector2f mp( mMap->GetMouseMapPosf() );
 
 	if ( mClampToTile ) {
-		eeVector2i mpc( mMap->GetTileCoords( mMap->GetMouseTilePos() + 1 ) );
-		mp = eeVector2f( mpc.x, mpc.y );
+		Vector2i mpc( mMap->GetTileCoords( mMap->GetMouseTilePos() + 1 ) );
+		mp = Vector2f( mpc.x, mpc.y );
 	}
 
 	return mp;
@@ -214,7 +214,7 @@ void cUIMap::DragPoly( Uint32 Flags, Uint32 PFlags ) {
 	} else if ( Flags & EE_BUTTON_MMASK ) {
 		if ( mObjDragging ) {
 			mObjDragging = false;
-			mObjDragDist = eeVector2f(0,0);
+			mObjDragDist = Vector2f(0,0);
 		}
 	}
 }
@@ -228,21 +228,21 @@ void cUIMap::ManageObject( Uint32 Flags ) {
 		case INSERT_OBJECT:
 		{
 			if ( PFlags & EE_BUTTON_LMASK ) {
-				eeVector2f mp( GetMouseMapPos() );
+				Vector2f mp( GetMouseMapPos() );
 
 				if ( !mObjRECTEditing ) {
 					mObjRECTEditing = true;
-					mObjRECT		= eeRectf( mp, eeSizef(0,0) );
+					mObjRECT		= Rectf( mp, Sizef(0,0) );
 				} else {
 					if ( mObjRECT.Pos().x < mp.x && mObjRECT.Pos().y < mp.y ) {
-						mObjRECT		= eeRectf( mObjRECT.Pos(), eeSizef( mp - mObjRECT.Pos() ) );
+						mObjRECT		= Rectf( mObjRECT.Pos(), Sizef( mp - mObjRECT.Pos() ) );
 					}
 				}
 			}
 
 			if ( Flags & EE_BUTTON_LMASK ){
 				if ( mObjRECTEditing ) {
-					mAddObjectCallback( GAMEOBJECT_TYPE_OBJECT, eePolygon2f( mObjRECT ) );
+					mAddObjectCallback( GAMEOBJECT_TYPE_OBJECT, Polygon2f( mObjRECT ) );
 					mObjRECTEditing = false;
 				}
 			}
@@ -302,8 +302,8 @@ void cUIMap::ManageObject( Uint32 Flags ) {
 	}
 }
 
-void cUIMap::SetPointRect( eeVector2f p ) {
-	mSelPointRect = eeRectf( eeVector2f( p.x - 10, p.y - 10 ), eeSizef( 20, 20 ) );
+void cUIMap::SetPointRect( Vector2f p ) {
+	mSelPointRect = Rectf( Vector2f( p.x - 10, p.y - 10 ), Sizef( 20, 20 ) );
 }
 
 void cUIMap::TryToSelectLight() {
@@ -325,7 +325,7 @@ void cUIMap::OnSizeChange() {
 	cUIComplexControl::OnSizeChange();
 }
 
-Uint32 cUIMap::OnMouseMove( const eeVector2i& Pos, const Uint32 Flags ) {
+Uint32 cUIMap::OnMouseMove( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( NULL != mMap ) {
 		if ( EDITING_LIGHT == mEditingMode && NULL != mAddLight ) {
 			mAddLight->Position( mMap->GetMouseMapPosf() );
@@ -333,7 +333,7 @@ Uint32 cUIMap::OnMouseMove( const eeVector2i& Pos, const Uint32 Flags ) {
 	}
 
 	if ( NULL != mTileBox ) {
-		eeVector2i mp( mMap->GetMouseTilePos() );
+		Vector2i mp( mMap->GetMouseTilePos() );
 
 		if ( mLastMouseTilePos != mp ) {
 			mLastMouseTilePos = mp;
@@ -368,11 +368,11 @@ void cUIMap::MapDraw() {
 		if ( NULL != mSelLight ) {
 			mP.SetColor( ColorA( 255, 0, 0, (Uint8)mAlpha ) );
 
-			eeVector2f Pos( mSelLight->GetAABB().Left, mSelLight->GetAABB().Top );
+			Vector2f Pos( mSelLight->GetAABB().Left, mSelLight->GetAABB().Top );
 			eeAABB AB( mSelLight->GetAABB() );
 
 			mP.FillMode( DRAW_LINE );
-			mP.DrawRectangle( eeRectf( Pos, AB.Size() ) );
+			mP.DrawRectangle( Rectf( Pos, AB.Size() ) );
 		}
 	} else if ( EDITING_OBJECT == mEditingMode ) {
 		switch ( mEditingObjMode ) {
@@ -400,7 +400,7 @@ void cUIMap::MapDraw() {
 				mP.SetColor( ColorA( 255, 0, 0, 200 ) );
 				mP.DrawPolygon( mObjPoly );
 
-				eePolygon2f polyN( mObjPoly );
+				Polygon2f polyN( mObjPoly );
 				polyN.PushBack( GetMouseMapPos() );
 
 				mP.FillMode( DRAW_FILL );
@@ -419,7 +419,7 @@ void cUIMap::MapDraw() {
 				mP.SetColor( ColorA( 255, 0, 0, 200 ) );
 				mP.DrawPolygon( mObjPoly );
 
-				eePolygon2f polyN( mObjPoly );
+				Polygon2f polyN( mObjPoly );
 				polyN.PushBack( GetMouseMapPos() );
 
 				mP.FillMode( DRAW_LINE );
@@ -574,7 +574,7 @@ void cUIMap::CreateObjPopUpMenu() {
 	Menu->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cUIMap::ObjItemClick ) );
 
 	if ( Menu->Show() ) {
-		eeVector2i Pos = cUIManager::instance()->GetInput()->GetMousePos();
+		Vector2i Pos = cUIManager::instance()->GetInput()->GetMousePos();
 		cUIMenu::FixMenuPos( Pos , Menu );
 		Menu->Pos( Pos );
 	}

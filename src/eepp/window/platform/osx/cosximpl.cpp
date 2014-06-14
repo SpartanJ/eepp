@@ -40,8 +40,8 @@ void cOSXImpl::SetContext( eeWindowContex Context ) {
 	aglSetCurrentContext( Context );
 }
 
-eeVector2i cOSXImpl::Position() {
-	return eeVector2i(0,0);
+Vector2i cOSXImpl::Position() {
+	return Vector2i(0,0);
 }
 
 void cOSXImpl::ShowMouseCursor() {
@@ -50,15 +50,15 @@ void cOSXImpl::ShowMouseCursor() {
 void cOSXImpl::HideMouseCursor() {
 }
 
-cCursor * cOSXImpl::CreateMouseCursor( cTexture * tex, const eeVector2i& hotspot, const std::string& name ) {
+cCursor * cOSXImpl::CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-cCursor * cOSXImpl::CreateMouseCursor( cImage * img, const eeVector2i& hotspot, const std::string& name ) {
+cCursor * cOSXImpl::CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-cCursor * cOSXImpl::CreateMouseCursor( const std::string& path, const eeVector2i& hotspot, const std::string& name ) {
+cCursor * cOSXImpl::CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 

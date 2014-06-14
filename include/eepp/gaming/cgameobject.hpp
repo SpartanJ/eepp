@@ -20,15 +20,15 @@ class EE_API cGameObject {
 
 		virtual void Update();
 
-		virtual eeVector2f Pos() const;
+		virtual Vector2f Pos() const;
 
-		virtual void Pos( eeVector2f pos );
+		virtual void Pos( Vector2f pos );
 
-		virtual eeVector2i TilePos() const;
+		virtual Vector2i TilePos() const;
 
-		virtual void TilePos( eeVector2i pos );
+		virtual void TilePos( Vector2i pos );
 
-		virtual eeSize Size();
+		virtual Sizei Size();
 
 		virtual Uint32 Type() const;
 

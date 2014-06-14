@@ -72,7 +72,7 @@ class EE_API cFont {
 		* @param Angle The angle of the string rendered
 		* @param Effect Set the Blend Mode ( default ALPHA_NORMAL )
 		*/
-		void Draw( const String& Text, const Float& X, const Float& Y, const Uint32& Flags = FONT_DRAW_LEFT, const eeVector2f& Scale = eeVector2f::One, const Float& Angle = 0, const EE_BLEND_MODE& Effect = ALPHA_NORMAL );
+		void Draw( const String& Text, const Float& X, const Float& Y, const Uint32& Flags = FONT_DRAW_LEFT, const Vector2f& Scale = Vector2f::One, const Float& Angle = 0, const EE_BLEND_MODE& Effect = ALPHA_NORMAL );
 
 		/** Draw the string seted on the screen
 		* @param X The start x position
@@ -82,7 +82,7 @@ class EE_API cFont {
 		* @param Angle The angle of the string rendered
 		* @param Effect Set the Blend Mode ( default ALPHA_NORMAL )
 		*/
-		void Draw( const Float& X, const Float& Y, const Uint32& Flags = FONT_DRAW_LEFT, const eeVector2f& Scale = eeVector2f::One, const Float& Angle = 0, const EE_BLEND_MODE& Effect = ALPHA_NORMAL );
+		void Draw( const Float& X, const Float& Y, const Uint32& Flags = FONT_DRAW_LEFT, const Vector2f& Scale = Vector2f::One, const Float& Angle = 0, const EE_BLEND_MODE& Effect = ALPHA_NORMAL );
 
 		/** Draw a string on the screen from a cached text
 		* @param TextCache The cached text
@@ -93,7 +93,7 @@ class EE_API cFont {
 		* @param Angle The angle of the string rendered
 		* @param Effect Set the Blend Mode ( default ALPHA_NORMAL )
 		*/
-		void Draw( cTextCache& TextCache, const Float& X, const Float& Y, const Uint32& Flags = FONT_DRAW_LEFT, const eeVector2f& Scale = eeVector2f::One, const Float& Angle = 0, const EE_BLEND_MODE& Effect = ALPHA_NORMAL );
+		void Draw( cTextCache& TextCache, const Float& X, const Float& Y, const Uint32& Flags = FONT_DRAW_LEFT, const Vector2f& Scale = Vector2f::One, const Float& Angle = 0, const EE_BLEND_MODE& Effect = ALPHA_NORMAL );
 
 		/** Shrink the String to a max width
 		* @param Str The string to shrink
@@ -126,13 +126,13 @@ class EE_API cFont {
 		const Uint32& Id();
 
 		/** Finds the closest cursor position to the point position */
-		Int32 FindClosestCursorPosFromPoint( const String & Text, const eeVector2i& pos );
+		Int32 FindClosestCursorPosFromPoint( const String & Text, const Vector2i& pos );
 
 		/** Simulates a selection request and return the initial and end cursor position when the selection worked. Otherwise both parameters will be -1. */
 		void SelectSubStringFromCursor( const String& Text, const Int32& CurPos, Int32& InitCur, Int32& EndCur );
 
 		/** @return The cursor position inside the string */
-		eeVector2i GetCursorPos( const String& Text, const Uint32& Pos );
+		Vector2i GetCursorPos( const String& Text, const Uint32& Pos );
 	protected:
 		Uint32 						mType;
 		std::string					mFontName;

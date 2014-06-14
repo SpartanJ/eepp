@@ -12,7 +12,7 @@ class EE_API cView {
 
 		cView( const int& X, const int& Y, const int& Width, const int& Height );
 
-		cView( const eeRecti& View );
+		cView( const Recti& View );
 
 		~cView();
 
@@ -20,22 +20,22 @@ class EE_API cView {
 		void Move( const int& OffsetX, const int& OffsetY );
 
 		/** Offset the position */
-		void Move( const eeVector2i& Offset );
+		void Move( const Vector2i& Offset );
 
 		/** Scale the current view (from center) */
 		void Scale( const Float& Factor );
 
 		/** Scale the current view (from center) */
-		void Scale( const eeVector2f& Factor );
+		void Scale( const Vector2f& Factor );
 
 		/** @return The center position of the view */
-		eeVector2i Center() const;
+		Vector2i Center() const;
 
 		/** Set the center position of the view ( will move it if is needed ) */
-		void Center( const eeVector2i& Center );
+		void Center( const Vector2i& Center );
 
 		/** @return The current view ( Left = X, Right = Width, Top = Y, Bottom = Height ) */
-		eeRecti GetView() const { return mView; }
+		Recti GetView() const { return mView; }
 
 		/** Set a new position to the view */
 		void SetPosition( const int& X, const int& Y );
@@ -49,8 +49,8 @@ class EE_API cView {
 		friend class cWindow;
 
 		bool mNeedUpdate;
-		eeRecti mView;
-		eeVector2f mCenter;
+		Recti mView;
+		Vector2f mCenter;
 
 		void CalcCenter();
 

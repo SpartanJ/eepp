@@ -32,7 +32,7 @@ class EE_API cUIGenericGrid : public cUIComplexControl {
 				Uint32				CollumnsCount;
 				Uint32				RowHeight;
 				Uint32				GridWidth;
-				eeRecti				PaddingContainer;
+				Recti				PaddingContainer;
 				Float				TouchDragDeceleration;
 		};
 
@@ -105,7 +105,7 @@ class EE_API cUIGenericGrid : public cUIComplexControl {
 		friend class tUIItemContainer<cUIGenericGrid>;
 		friend class cUIGridCell;
 
-		eeRecti						mPadding;
+		Recti						mPadding;
 		bool						mSmoothScroll;
 		tUIItemContainer<cUIGenericGrid> *	mContainer;
 		cUIScrollBar *				mVScrollBar;
@@ -126,7 +126,7 @@ class EE_API cUIGenericGrid : public cUIComplexControl {
 		Int32						mItemsNotVisible;
 		Int32						mSelected;
 
-		eeVector2i					mTouchDragPoint;
+		Vector2i					mTouchDragPoint;
 		Float						mTouchDragAcceleration;
 		Float						mTouchDragDeceleration;
 

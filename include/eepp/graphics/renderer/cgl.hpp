@@ -190,9 +190,9 @@ class EE_API cGL {
 
 		virtual int UnProject( float winx, float winy, float winz, const float modelMatrix[16], const float projMatrix[16], const int viewport[4], float *objx, float *objy, float *objz ) = 0;
 
-		eeVector3f ProjectCurrent( const eeVector3f& point );
+		Vector3f ProjectCurrent( const Vector3f& point );
 
-		eeVector3f UnProjectCurrent( const eeVector3f& point );
+		Vector3f UnProjectCurrent( const Vector3f& point );
 
 		void StencilFunc( unsigned int func, int ref, unsigned int mask );
 
@@ -226,7 +226,7 @@ class EE_API cGL {
 		float mLineWidth;
 		unsigned int	mCurVAO;
 
-		std::list<eeRectf> mPlanesClipped;
+		std::list<Rectf> mPlanesClipped;
 	private:
 		void WriteExtension( Uint8 Pos, Uint32 BitWrite );
 };

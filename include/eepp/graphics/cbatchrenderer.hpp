@@ -13,7 +13,7 @@ struct eeTexCoord {
 };
 
 struct eeVertex {
-	eeVector2f pos;
+	Vector2f pos;
 	eeTexCoord tex;
 	ColorA color;
 };
@@ -59,28 +59,28 @@ class EE_API cBatchRenderer {
 		Float BatchRotation() const { return mRotation; }
 
 		/** Set the scale of the rendered vertex. */
-		void BatchScale( const eeVector2f& Scale ) { mScale = Scale; }
+		void BatchScale( const Vector2f& Scale ) { mScale = Scale; }
 
 		/** Set the scale of the rendered vertex. */
-		void BatchScale( const Float& Scale ) { mScale = eeVector2f( Scale, Scale ); }
+		void BatchScale( const Float& Scale ) { mScale = Vector2f( Scale, Scale ); }
 
 		/** Get the scale of the rendered vertex. */
-		eeVector2f BatchScale() const { return mScale; }
+		Vector2f BatchScale() const { return mScale; }
 
 		/** The batch position */
-		void BatchPosition( const eeVector2f Pos ) { mPosition = Pos; }
+		void BatchPosition( const Vector2f Pos ) { mPosition = Pos; }
 
 		/** @return The batch position */
-		eeVector2f BatchPosition() const { return mPosition; }
+		Vector2f BatchPosition() const { return mPosition; }
 
 		/** This will set a center position for rotating and scaling the batched vertex. */
-		void BatchCenter( const eeVector2f Pos ) { mCenter = Pos; }
+		void BatchCenter( const Vector2f Pos ) { mCenter = Pos; }
 
 		/** @return The batch center position */
-		eeVector2f BatchCenter() const { return mCenter; }
+		Vector2f BatchCenter() const { return mCenter; }
 
 		/** Add to the batch a quad ( this will change your batch rendering method to DM_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchQuadEx( Float x, Float y, Float width, Float height, Float angle = 0.0f, eeVector2f scale = eeVector2f::One, eeOriginPoint originPoint = eeOriginPoint(eeOriginPoint::OriginCenter) );
+		void BatchQuadEx( Float x, Float y, Float width, Float height, Float angle = 0.0f, Vector2f scale = Vector2f::One, OriginPoint originPoint = OriginPoint(OriginPoint::OriginCenter) );
 
 		/** Add to the batch a quad ( this will change your batch rendering method to DM_QUADS, so if you were using another one will Draw all the batched vertexs first ) */
 		void BatchQuad( const Float& x, const Float& y, const Float& width, const Float& height, const Float& angle = 0.0f );
@@ -143,10 +143,10 @@ class EE_API cBatchRenderer {
 		void BatchLineLoop( const Float& x0, const Float& y0 );
 
 		/** Add to the batch a line ( this will change your batch rendering method to DM_LINE_LOOP, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchLineLoop( const eeVector2f& vector1, const eeVector2f& vector2 );
+		void BatchLineLoop( const Vector2f& vector1, const Vector2f& vector2 );
 
 		/** Add to the batch a point to the line loop batch ( this will change your batch rendering method to DM_LINE_LOOP, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchLineLoop( const eeVector2f& vector1 );
+		void BatchLineLoop( const Vector2f& vector1 );
 
 		/** This will set as the default batch rendering to DM_TRIANGLE_FAN. And will reset the line color to ColorA(255,255,255,255). */
 		void TriangleFanBegin();
@@ -185,7 +185,7 @@ class EE_API cBatchRenderer {
 		void PolygonSetColor( const ColorA& Color );
 
 		/** Add to the batch a polygon ( this will change your batch rendering method to DM_POLYGON, so if you were using another one will Draw all the batched vertexs first ) */
-		void BatchPolygon( const eePolygon2f& Polygon );
+		void BatchPolygon( const Polygon2f& Polygon );
 
 		/** Set the line width */
 		void SetLineWidth( const Float& lineWidth );
@@ -203,7 +203,7 @@ class EE_API cBatchRenderer {
 		void BatchPolygonByPoint( const Float& x, const Float& y );
 
 		/** Batch a poligon adding one by one vector */
-		void BatchPolygonByPoint( const eeVector2f& Vector );
+		void BatchPolygonByPoint( const Vector2f& Vector );
 
 		/** Foce the blending mode change, ignoring if it's the same that before ( so you can change the blend mode and restore it without problems ) */
 		void ForceBlendModeChange( const bool& Force );
@@ -226,9 +226,9 @@ class EE_API cBatchRenderer {
 		EE_DRAW_MODE		mCurrentMode;
 
 		Float				mRotation;
-		eeVector2f			mScale;
-		eeVector2f			mPosition;
-		eeVector2f			mCenter;
+		Vector2f			mScale;
+		Vector2f			mPosition;
+		Vector2f			mCenter;
 
 		bool				mForceRendering;
 		bool				mForceBlendMode;
@@ -239,7 +239,7 @@ class EE_API cBatchRenderer {
 
 		void AddVertexs( const unsigned int& num );
 
-		void Rotate( const eeVector2f& center, eeVector2f* point, const Float& angle );
+		void Rotate( const Vector2f& center, Vector2f* point, const Float& angle );
 
 		void SetBlendMode( EE_DRAW_MODE Mode, const bool& Force );
 };

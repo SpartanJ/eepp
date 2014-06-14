@@ -14,8 +14,8 @@ cUIRadioButton::cUIRadioButton( const cUITextBox::CreateParams& Params ) :
 	cUIControlAnim::CreateParams ButtonParams( Params );
 
 	ButtonParams.Parent( this );
-	ButtonParams.PosSet( eeVector2i( 0, 0 ) );
-	ButtonParams.Size = eeSize( 16, 16 );
+	ButtonParams.PosSet( Vector2i( 0, 0 ) );
+	ButtonParams.Size = Sizei( 16, 16 );
 
 	mActiveButton 	= eeNew( cUIControlAnim, ( ButtonParams ) );
 	mActiveButton->Visible( false );
@@ -25,7 +25,7 @@ cUIRadioButton::cUIRadioButton( const cUITextBox::CreateParams& Params ) :
 	mInactiveButton->Visible( true );
 	mInactiveButton->Enabled( true );
 
-	Padding( eeRecti(0,0,0,0) );
+	Padding( Recti(0,0,0,0) );
 
 	AutoActivate();
 
@@ -72,7 +72,7 @@ void cUIRadioButton::SetTheme( cUITheme * Theme ) {
 		}
 	}
 
-	Padding( eeRecti(0,0,0,0) );
+	Padding( Recti(0,0,0,0) );
 }
 
 void cUIRadioButton::AutoSize() {
@@ -205,7 +205,7 @@ const bool& cUIRadioButton::IsActive() const {
 	return Active();
 }
 
-void cUIRadioButton::Padding( const eeRecti& padding ) {
+void cUIRadioButton::Padding( const Recti& padding ) {
 	mPadding = padding;
 	mPadding.Left = mPadding.Left + mActiveButton->Size().Width();
 }

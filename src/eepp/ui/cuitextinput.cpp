@@ -43,7 +43,7 @@ void cUITextInput::Update() {
 	cUITextBox::Update();
 
 	if ( mTextBuffer.ChangedSinceLastUpdate() ) {
-		eeVector2f offSet = mAlignOffset;
+		Vector2f offSet = mAlignOffset;
 
 		cUITextBox::Text( mTextBuffer.Buffer() );
 
@@ -92,7 +92,7 @@ void cUITextInput::DrawWaitingCursor() {
 			if ( CurPosX > (Float)mScreenPos.x + (Float)mSize.x )
 				CurPosX = (Float)mScreenPos.x + (Float)mSize.x;
 
-			P.DrawLine( eeLine2f( eeVector2f( CurPosX, CurPosY ), eeVector2f( CurPosX, CurPosY + mTextCache->Font()->GetFontHeight() ) ) );
+			P.DrawLine( Line2f( Vector2f( CurPosX, CurPosY ), Vector2f( CurPosX, CurPosY + mTextCache->Font()->GetFontHeight() ) ) );
 
 			if ( disableSmooth )
 				GLi->LineSmooth( true );
@@ -227,9 +227,9 @@ void cUITextInput::ShrinkText( const Uint32& MaxWidth ) {
 void cUITextInput::UpdateText() {
 }
 
-Uint32 cUITextInput::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
+Uint32 cUITextInput::OnMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( Flags & EE_BUTTON_LMASK ) {
-		eeVector2i controlPos( Pos );
+		Vector2i controlPos( Pos );
 		WorldToControl( controlPos );
 
 		Int32 curPos = mTextCache->Font()->FindClosestCursorPosFromPoint( mTextCache->Text(), controlPos );
@@ -243,7 +243,7 @@ Uint32 cUITextInput::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
 	return cUITextBox::OnMouseClick( Pos, Flags );
 }
 
-Uint32 cUITextInput::OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags ) {
+Uint32 cUITextInput::OnMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
 	cUITextBox::OnMouseDoubleClick( Pos, Flags );
 
 	if ( IsTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && SelCurEnd() != -1 ) {
@@ -254,7 +254,7 @@ Uint32 cUITextInput::OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Fla
 	return 1;
 }
 
-Uint32 cUITextInput::OnMouseExit( const eeVector2i& Pos, const Uint32 Flags ) {
+Uint32 cUITextInput::OnMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 	cUIControl::OnMouseExit( Pos, Flags );
 
 	cUIManager::instance()->SetCursor( EE_CURSOR_ARROW );

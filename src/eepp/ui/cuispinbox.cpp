@@ -26,7 +26,7 @@ cUISpinBox::cUISpinBox( const cUISpinBox::CreateParams& Params ) :
 
 	cUIControlAnim::CreateParams BtnParams( Params );
 	BtnParams.Parent( this );
-	BtnParams.Size = eeSize( 16, 16 );
+	BtnParams.Size = Sizei( 16, 16 );
 
 	if ( BtnParams.Flags & UI_CLIP_ENABLE )
 		BtnParams.Flags &= ~UI_CLIP_ENABLE;
@@ -104,11 +104,11 @@ void cUISpinBox::AdjustChilds() {
 	mInput->Size( mSize.Width() - mPushUp->Size().Width(), mSize.Height() );
 }
 
-void cUISpinBox::Padding( const eeRecti& padding ) {
+void cUISpinBox::Padding( const Recti& padding ) {
 	mInput->Padding( padding );
 }
 
-const eeRecti& cUISpinBox::Padding() const {
+const Recti& cUISpinBox::Padding() const {
 	return mInput->Padding();
 }
 

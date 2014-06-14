@@ -40,15 +40,15 @@ cSubTexture * cTextureAtlas::Add( const Uint32& TexId, const std::string& Name )
 	return Add( eeNew( cSubTexture, ( TexId, Name ) ) );
 }
 
-cSubTexture * cTextureAtlas::Add( const Uint32& TexId, const eeRecti& SrcRect, const std::string& Name ) {
+cSubTexture * cTextureAtlas::Add( const Uint32& TexId, const Recti& SrcRect, const std::string& Name ) {
 	return Add( eeNew( cSubTexture, ( TexId, SrcRect, Name ) ) );
 }
 
-cSubTexture * cTextureAtlas::Add( const Uint32& TexId, const eeRecti& SrcRect, const eeSizef& DestSize, const std::string& Name ) {
+cSubTexture * cTextureAtlas::Add( const Uint32& TexId, const Recti& SrcRect, const Sizef& DestSize, const std::string& Name ) {
 	return Add( eeNew ( cSubTexture, ( TexId, SrcRect, DestSize, Name ) ) );
 }
 
-cSubTexture * cTextureAtlas::Add( const Uint32& TexId, const eeRecti& SrcRect, const eeSizef& DestSize, const eeVector2i& Offset, const std::string& Name ) {
+cSubTexture * cTextureAtlas::Add( const Uint32& TexId, const Recti& SrcRect, const Sizef& DestSize, const Vector2i& Offset, const std::string& Name ) {
 	return Add( eeNew ( cSubTexture, ( TexId, SrcRect, DestSize, Offset, Name ) ) );
 }
 

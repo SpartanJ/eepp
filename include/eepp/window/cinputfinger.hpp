@@ -31,7 +31,7 @@ class cInputFinger {
 		bool WasDown();
 
 		/** @return The current position of the finger */
-		eeVector2i Pos();
+		Vector2i Pos();
 	protected:
 		friend class cInput;
 

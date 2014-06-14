@@ -41,7 +41,7 @@ class EE_API cUIManager {
 
 		void SendMsg( cUIControl * Ctrl, const Uint32& Msg, const Uint32& Flags = 0 );
 
-		eeVector2i GetMousePos();
+		Vector2i GetMousePos();
 
 		cInput * GetInput() const;
 
@@ -73,11 +73,11 @@ class EE_API cUIManager {
 
 		const ColorA& HighlightOverColor() const;
 
-		void SendMouseClick( cUIControl * ToCtrl, const eeVector2i& Pos, const Uint32 Flags );
+		void SendMouseClick( cUIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
 
-		void SendMouseUp( cUIControl * ToCtrl, const eeVector2i& Pos, const Uint32 Flags );
+		void SendMouseUp( cUIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
 
-		void SendMouseDown( cUIControl * ToCtrl, const eeVector2i& Pos, const Uint32 Flags );
+		void SendMouseDown( cUIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
 
 		Window::cWindow * GetWindow() const;
 
@@ -90,7 +90,7 @@ class EE_API cUIManager {
 
 		/** @return The position of the mouse when the event MouseDown was fired last time.
 		**	Useful to compare the mouse position of the MouseClick event */
-		const eeVector2i& GetMouseDownPos() const;
+		const Vector2i& GetMouseDownPos() const;
 
 		void SetControlDragging( bool dragging );
 
@@ -122,7 +122,7 @@ class EE_API cUIManager {
 		Uint32				mFlags;
 		ColorA			mHighlightFocusColor;
 		ColorA			mHighlightOverColor;
-		eeVector2i			mMouseDownPos;
+		Vector2i			mMouseDownPos;
 
 		bool				mInit;
 		bool 				mFirstPress;

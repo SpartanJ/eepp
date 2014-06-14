@@ -39,7 +39,7 @@ cParticleSystem::~cParticleSystem() {
 	eeSAFE_DELETE_ARRAY( mParticle );
 }
 
-void cParticleSystem::Create( const EE_PARTICLE_EFFECT& Effect, const Uint32& NumParticles, const Uint32& TexId, const eeVector2f& Pos, const Float& PartSize, const bool& AnimLoop, const Uint32& NumLoops, const ColorAf& Color, const eeVector2f& Pos2, const Float& AlphaDecay, const eeVector2f& Speed, const eeVector2f& Acc ) {
+void cParticleSystem::Create( const EE_PARTICLE_EFFECT& Effect, const Uint32& NumParticles, const Uint32& TexId, const Vector2f& Pos, const Float& PartSize, const bool& AnimLoop, const Uint32& NumLoops, const ColorAf& Color, const Vector2f& Pos2, const Float& AlphaDecay, const Vector2f& Speed, const Vector2f& Acc ) {
 	mPointsSup		= GLi->PointSpriteSupported();
 	mEffect			= Effect;
 	mPos			= Pos;
@@ -56,7 +56,7 @@ void cParticleSystem::Create( const EE_PARTICLE_EFFECT& Effect, const Uint32& Nu
 	mDirection		= 1;
 	mProgression	= 1;
 
-	if ( mPos2 == eeVector2f( 0, 0 ) ) {
+	if ( mPos2 == Vector2f( 0, 0 ) ) {
 		mPos2.x	= mPos.x + 10;
 		mPos2.y	= mPos.y + 10;
 	} else {
@@ -418,32 +418,32 @@ void cParticleSystem::Kill() {
 	mUsed = false;
 }
 
-void cParticleSystem::Position( const eeVector2f& Pos ) {
+void cParticleSystem::Position( const Vector2f& Pos ) {
 	mPos2.x	= Pos.x + ( mPos2.x - mPos.x );
 	mPos2.y	= Pos.y + ( mPos2.y - mPos.y );
 	mPos.x	= Pos.x;
 	mPos.y	= Pos.y;
 }
 
-const eeVector2f& cParticleSystem::Position() const {
+const Vector2f& cParticleSystem::Position() const {
 	return mPos;
 }
 
 void cParticleSystem::Position(const Float& x, const Float& y) {
-	Position( eeVector2f( x, y ) );
+	Position( Vector2f( x, y ) );
 }
 
-void cParticleSystem::Position2( const eeVector2f& Pos ) {
+void cParticleSystem::Position2( const Vector2f& Pos ) {
 	mPos2.x = Pos.x + ( Pos.x - mPos.x );
 	mPos2.y = Pos.y + ( Pos.y - mPos.y );
 }
 
-const eeVector2f& cParticleSystem::Position2() const {
+const Vector2f& cParticleSystem::Position2() const {
 	return mPos2;
 }
 
 void cParticleSystem::Position2( const Float& x, const Float& y ) {
-	Position( eeVector2f( x, y ) );
+	Position( Vector2f( x, y ) );
 }
 
 void cParticleSystem::Time( const Float& time ) {
@@ -486,19 +486,19 @@ void cParticleSystem::AlphaDecay( const Float& Decay ) {
 	mAlphaDecay = Decay;
 }
 
-const eeVector2f& cParticleSystem::Speed() const {
+const Vector2f& cParticleSystem::Speed() const {
 	return mSpeed;
 }
 
-void cParticleSystem::Speed( const eeVector2f& speed ) {
+void cParticleSystem::Speed( const Vector2f& speed ) {
 	mSpeed = speed;
 }
 
-const eeVector2f& cParticleSystem::Acceleration() const {
+const Vector2f& cParticleSystem::Acceleration() const {
 	return mAcc;
 }
 
-void cParticleSystem::Acceleration( const eeVector2f& acc ) {
+void cParticleSystem::Acceleration( const Vector2f& acc ) {
 	mAcc = acc;
 }
 

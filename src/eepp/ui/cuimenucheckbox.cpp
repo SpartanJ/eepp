@@ -69,7 +69,7 @@ void cUIMenuCheckBox::Active( const bool& active ) {
 
 		if ( !Menu->CheckControlSize( this ) ) {
 			if ( NULL != Icon()->SubTexture() ) {
-				Padding( eeRecti( 0, 0, 0, 0 ) );
+				Padding( Recti( 0, 0, 0, 0 ) );
 			}
 		}
 
@@ -81,7 +81,7 @@ void cUIMenuCheckBox::SwitchActive() {
 	Active( !mActive );
 }
 
-Uint32 cUIMenuCheckBox::OnMouseUp( const eeVector2i &Pos, const Uint32 Flags ) {
+Uint32 cUIMenuCheckBox::OnMouseUp( const Vector2i &Pos, const Uint32 Flags ) {
 	cUIMenuItem::OnMouseUp( Pos, Flags );
 
 	if ( Parent()->Visible() && ( Flags & EE_BUTTONS_LRM ) )

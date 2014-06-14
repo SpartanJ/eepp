@@ -225,7 +225,7 @@ void cInputSDL::InjectMousePos( const Uint16& x, const Uint16& y ) {
 }
 
 void cInputSDL::Init() {
-	eeVector2if mTempMouse;
+	Vector2if mTempMouse;
 	SDL_GetMouseState( &mTempMouse.x, &mTempMouse.y );
 	mMousePos.x = (int)mTempMouse.x;
 	mMousePos.y = (int)mTempMouse.y;

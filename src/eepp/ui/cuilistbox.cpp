@@ -38,7 +38,7 @@ cUIListBox::cUIListBox( cUIListBox::CreateParams& Params ) :
 	cUIControl::CreateParams CParams;
 	CParams.Parent( this );
 	CParams.PosSet( mPaddingContainer.Left, mPaddingContainer.Top );
-	CParams.Size = eeSize( mSize.Width() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.Height() - mPaddingContainer.Top - mPaddingContainer.Bottom );
+	CParams.Size = Sizei( mSize.Width() - mPaddingContainer.Right - mPaddingContainer.Left, mSize.Height() - mPaddingContainer.Top - mPaddingContainer.Bottom );
 	CParams.Flags = Params.Flags;
 	mContainer = eeNew( tUIItemContainer<cUIListBox>, ( CParams ) );
 	mContainer->Visible( true );
@@ -49,13 +49,13 @@ cUIListBox::cUIListBox( cUIListBox::CreateParams& Params ) :
 
 	cUIScrollBar::CreateParams ScrollBarP;
 	ScrollBarP.Parent( this );
-	ScrollBarP.Size = eeSize( 15, mSize.Height() );
+	ScrollBarP.Size = Sizei( 15, mSize.Height() );
 	ScrollBarP.PosSet( mSize.Width() - 15, 0 );
 	ScrollBarP.Flags = UI_AUTO_SIZE;
 	ScrollBarP.VerticalScrollBar = true;
 	mVScrollBar = eeNew( cUIScrollBar, ( ScrollBarP ) );
 
-	ScrollBarP.Size = eeSize( mSize.Width() - mVScrollBar->Size().Width(), 15 );
+	ScrollBarP.Size = Sizei( mSize.Width() - mVScrollBar->Size().Width(), 15 );
 	ScrollBarP.PosSet( 0, mSize.Height() - 15 );
 	ScrollBarP.VerticalScrollBar = false;
 	mHScrollBar = eeNew( cUIScrollBar, ( ScrollBarP ) );
@@ -711,7 +711,7 @@ cFont * cUIListBox::Font() const {
 	return mFont;
 }
 
-void cUIListBox::PaddingContainer( const eeRecti& Padding ) {
+void cUIListBox::PaddingContainer( const Recti& Padding ) {
 	if ( Padding != mPaddingContainer ) {
 		mPaddingContainer = Padding;
 
@@ -720,7 +720,7 @@ void cUIListBox::PaddingContainer( const eeRecti& Padding ) {
 	}
 }
 
-const eeRecti& cUIListBox::PaddingContainer() const {
+const Recti& cUIListBox::PaddingContainer() const {
 	return mPaddingContainer;
 }
 
@@ -966,10 +966,10 @@ void cUIListBox::Update() {
 					return;
 				}
 
-				eeVector2i Pos( cUIManager::instance()->GetMousePos() );
+				Vector2i Pos( cUIManager::instance()->GetMousePos() );
 
 				if ( mTouchDragPoint != Pos ) {
-					eeVector2i diff = -( mTouchDragPoint - Pos );
+					Vector2i diff = -( mTouchDragPoint - Pos );
 
 					mVScrollBar->Value( mVScrollBar->Value() + ( -diff.y / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
 

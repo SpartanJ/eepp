@@ -3,7 +3,7 @@
 
 namespace EE { namespace UI {
 
-cUIEventMouse::cUIEventMouse( cUIControl * Ctrl, const Uint32& EventNum, const eeVector2i& Pos, const Uint32& Flags ) :
+cUIEventMouse::cUIEventMouse( cUIControl * Ctrl, const Uint32& EventNum, const Vector2i& Pos, const Uint32& Flags ) :
 	cUIEvent( Ctrl, EventNum ),
 	mPos( Pos ),
 	mFlags( Flags )
@@ -14,7 +14,7 @@ cUIEventMouse::~cUIEventMouse()
 {
 }
 
-const eeVector2i& cUIEventMouse::Pos() const {
+const Vector2i& cUIEventMouse::Pos() const {
 	return mPos;
 }
 

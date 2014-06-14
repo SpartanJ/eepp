@@ -10,31 +10,31 @@ class EE_API cTileLayer : public cLayer {
 	public:
 		virtual ~cTileLayer();
 
-		virtual void Draw( const eeVector2f &Offset = eeVector2f(0,0) );
+		virtual void Draw( const Vector2f &Offset = Vector2f(0,0) );
 
 		virtual void Update();
 
-		virtual void AddGameObject( cGameObject * obj, const eeVector2i& TilePos );
+		virtual void AddGameObject( cGameObject * obj, const Vector2i& TilePos );
 
-		virtual void RemoveGameObject( const eeVector2i& TilePos );
+		virtual void RemoveGameObject( const Vector2i& TilePos );
 
-		virtual void MoveTileObject( const eeVector2i& FromPos, const eeVector2i& ToPos );
+		virtual void MoveTileObject( const Vector2i& FromPos, const Vector2i& ToPos );
 
-		virtual cGameObject * GetGameObject( const eeVector2i& TilePos );
+		virtual cGameObject * GetGameObject( const Vector2i& TilePos );
 
-		const eeVector2i& GetCurrentTile() const;
+		const Vector2i& GetCurrentTile() const;
 
-		eeVector2i GetTilePosFromPos( const eeVector2f& Pos );
+		Vector2i GetTilePosFromPos( const Vector2f& Pos );
 
-		eeVector2f GetPosFromTilePos( const eeVector2i& TilePos );
+		Vector2f GetPosFromTilePos( const Vector2i& TilePos );
 	protected:
 		friend class cMap;
 
 		cGameObject***	mTiles;
-		eeSize			mSize;
-		eeVector2i		mCurTile;
+		Sizei			mSize;
+		Vector2i		mCurTile;
 
-		cTileLayer( cMap * map, eeSize size, Uint32 flags, std::string name = "", eeVector2f offset = eeVector2f(0,0) );
+		cTileLayer( cMap * map, Sizei size, Uint32 flags, std::string name = "", Vector2f offset = Vector2f(0,0) );
 
 		void AllocateLayer();
 

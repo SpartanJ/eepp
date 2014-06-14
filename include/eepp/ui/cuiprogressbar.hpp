@@ -23,8 +23,8 @@ class EE_API cUIProgressBar : public cUIComplexControl {
 
 				bool DisplayPercent;
 				bool VerticalExpand;
-				eeVector2f MovementSpeed;
-				eeRectf FillerMargin;
+				Vector2f MovementSpeed;
+				Rectf FillerMargin;
 		};
 
 		cUIProgressBar( const cUIProgressBar::CreateParams& Params );
@@ -47,17 +47,17 @@ class EE_API cUIProgressBar : public cUIComplexControl {
 
 		virtual void Draw();
 
-		void MovementSpeed( const eeVector2f& Speed );
+		void MovementSpeed( const Vector2f& Speed );
 
-		const eeVector2f& MovementSpeed() const;
+		const Vector2f& MovementSpeed() const;
 
 		void VerticalExpand( const bool& VerticalExpand );
 
 		const bool& VerticalExpand() const;
 
-		void FillerMargin( const eeRectf& margin );
+		void FillerMargin( const Rectf& margin );
 
-		const eeRectf& FillerMargin() const;
+		const Rectf& FillerMargin() const;
 
 		void DisplayPercent( const bool& DisplayPercent );
 
@@ -67,8 +67,8 @@ class EE_API cUIProgressBar : public cUIComplexControl {
 		
 	protected:
 		bool				mVerticalExpand;
-		eeVector2f			mSpeed;
-		eeRectf 			mFillerMargin;
+		Vector2f			mSpeed;
+		Rectf 			mFillerMargin;
 		bool				mDisplayPercent;
 
 		Float				mProgress;

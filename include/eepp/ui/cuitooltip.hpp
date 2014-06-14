@@ -36,7 +36,7 @@ class EE_API cUITooltip : public cUIControlAnim {
 				cFont * 	Font;
 				ColorA 	FontColor;
 				ColorA 	FontShadowColor;
-				eeRecti		Padding;
+				Recti		Padding;
 		};
 
 		cUITooltip( cUITooltip::CreateParams& Params, cUIControl * TooltipOf );
@@ -77,9 +77,9 @@ class EE_API cUITooltip : public cUIControlAnim {
 
 		virtual void OnFontChanged();
 
-		virtual void Padding( const eeRecti& padding );
+		virtual void Padding( const Recti& padding );
 
-		const eeRecti& Padding() const;
+		const Recti& Padding() const;
 
 		cTextCache * GetTextCache();
 
@@ -89,7 +89,7 @@ class EE_API cUITooltip : public cUIControlAnim {
 
 		const int& GetNumLines() const;
 
-		const eeVector2f& AlignOffset() const;
+		const Vector2f& AlignOffset() const;
 
 		void TooltipTime( const Time& Time );
 
@@ -100,8 +100,8 @@ class EE_API cUITooltip : public cUIControlAnim {
 		cTextCache *	mTextCache;
 		ColorA 		mFontColor;
 		ColorA 		mFontShadowColor;
-		eeVector2f 		mAlignOffset;
-		eeRecti			mPadding;
+		Vector2f 		mAlignOffset;
+		Recti			mPadding;
 		Time			mTooltipTime;
 		cUIControl *	mTooltipOf;
 

@@ -83,10 +83,10 @@ void cWinImpl::SetContext( eeWindowContex Context ) {
 	wglMakeCurrent( (HDC)GetDC( mHandler ), (HGLRC)Context );
 }
 
-eeVector2i cWinImpl::Position() {
+Vector2i cWinImpl::Position() {
 	RECT r;
 	GetWindowRect( mHandler, &r );
-	return eeVector2i( r.left, r.top );
+	return Vector2i( r.left, r.top );
 }
 
 void cWinImpl::ShowMouseCursor() {
@@ -113,15 +113,15 @@ void cWinImpl::HideMouseCursor() {
 	PostMessage( mHandler, WM_SETCURSOR, 0, 0 );
 }
 
-cCursor * cWinImpl::CreateMouseCursor( cTexture * tex, const eeVector2i& hotspot, const std::string& name ) {
+cCursor * cWinImpl::CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( cCursorWin, ( tex, hotspot, name, mWindow ) );
 }
 
-cCursor * cWinImpl::CreateMouseCursor( cImage * img, const eeVector2i& hotspot, const std::string& name ) {
+cCursor * cWinImpl::CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( cCursorWin, ( img, hotspot, name, mWindow ) );
 }
 
-cCursor * cWinImpl::CreateMouseCursor( const std::string& path, const eeVector2i& hotspot, const std::string& name ) {
+cCursor * cWinImpl::CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( cCursorWin, ( path, hotspot, name, mWindow ) );
 }
 

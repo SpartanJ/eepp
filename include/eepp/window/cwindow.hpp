@@ -112,8 +112,8 @@ class WindowInfo {
 	WindowSettings		WindowConfig;
 	ContextSettings		ContextConfig;
 	Uint32				Backend;
-	eeSize				DesktopResolution;
-	eeSize				WindowSize;
+	Sizei				DesktopResolution;
+	Sizei				WindowSize;
 	Uint32				Flags;
 	RGB				BackgroundColor;
 	bool				Created;
@@ -188,7 +188,7 @@ class EE_API cWindow {
 		virtual void Position( Int16 Left, Int16 Top );
 
 		/** @return The Current Window Position */
-		virtual eeVector2i Position();
+		virtual Vector2i Position();
 
 		/** Set as current context the default context ( the context used for the window creation ) */
 		virtual void SetDefaultContext();
@@ -250,7 +250,7 @@ class EE_API cWindow {
 		virtual bool Resizeable() const;
 
 		/** @return The window size */
-		virtual eeSize Size();
+		virtual Sizei Size();
 
 		/** @return The Window Width */
 		virtual const Uint32& GetWidth() const;
@@ -259,7 +259,7 @@ class EE_API cWindow {
 		virtual const Uint32& GetHeight() const;
 
 		/** @return The current desktop resolution */
-		virtual const eeSize& GetDesktopResolution();
+		virtual const Sizei& GetDesktopResolution();
 
 		/** Center the window to the desktop ( if windowed ) */
 		virtual void Center();
@@ -381,7 +381,7 @@ class EE_API cWindow {
 		*
 		* @sa StartTextInput()
 		*/
-		virtual void SetTextInputRect( eeRecti& rect );
+		virtual void SetTextInputRect( Recti& rect );
 
 		/**
 		* @brief Returns whether the platform has some screen keyboard support.

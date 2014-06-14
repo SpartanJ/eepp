@@ -645,7 +645,7 @@ void cRendererGLES2::Clip2DPlaneEnable( const Int32& x, const Int32& y, const In
 	glUniform4fv( mPlanes[3], 1, static_cast<const float*>( &vclip_bottom[0]	)	);
 
 	if ( mPushClip ) {
-		mPlanesClipped.push_back( eeRectf( x, y, Width, Height ) );
+		mPlanesClipped.push_back( Rectf( x, y, Width, Height ) );
 	}
 }
 
@@ -660,7 +660,7 @@ void cRendererGLES2::Clip2DPlaneDisable() {
 		GLi->Disable(GL_CLIP_PLANE2);
 		GLi->Disable(GL_CLIP_PLANE3);
 	} else {
-		eeRectf R( mPlanesClipped.back() );
+		Rectf R( mPlanesClipped.back() );
 		mPushClip = false;
 		Clip2DPlaneEnable( R.Left, R.Top, R.Right, R.Bottom );
 		mPushClip = true;

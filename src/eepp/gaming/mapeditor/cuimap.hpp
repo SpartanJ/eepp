@@ -30,7 +30,7 @@ class EE_API cUIMap : public cUIComplexControl {
 
 		typedef cb::Callback1<void, cLight *> LightSelectCb;
 		typedef cb::Callback1<void, cLight *> LightRadiusChangeCb;
-		typedef cb::Callback2<void, Uint32, eePolygon2f> ObjAddCb;
+		typedef cb::Callback2<void, Uint32, Polygon2f> ObjAddCb;
 		typedef cb::Callback2<cUIMessageBox*, const String&, const String&> AlertCb;
 		typedef cb::Callback0<void> OnMapLoadCb;
 		typedef cb::Callback0<void> UpdateScrollCb;
@@ -109,31 +109,31 @@ class EE_API cUIMap : public cUIComplexControl {
 		bool				mClampToTile;
 
 		bool				mObjRECTEditing;
-		eeRectf				mObjRECT;
+		Rectf				mObjRECT;
 
 		bool				mObjPolyEditing;
-		eePolygon2f			mObjPoly;
+		Polygon2f			mObjPoly;
 
 		bool				mObjDragging;
 
 		cGameObjectObject *	mSelObj;
-		eeVector2f			mObjDragDist;
+		Vector2f			mObjDragDist;
 
 		AlertCb				mAlertCb;
 		cUITheme *			mTheme;
 
 		Uint32				mSelPointIndex;
-		eeRectf				mSelPointRect;
+		Rectf				mSelPointRect;
 		bool				mSelPoint;
 
 		cUITextBox *		mTileBox;
-		eeVector2i			mLastMouseTilePos;
+		Vector2i			mLastMouseTilePos;
 
 		UpdateScrollCb		mUpdateScrollCb;
 
 		virtual Uint32 OnMessage( const cUIMessage * Msg );
 
-		virtual Uint32 OnMouseMove( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseMove( const Vector2i& Pos, const Uint32 Flags );
 
 		virtual void OnSizeChange();
 
@@ -141,7 +141,7 @@ class EE_API cUIMap : public cUIComplexControl {
 
 		virtual void OnAlphaChange();
 
-		virtual Uint32 OnDrag( const eeVector2i& Pos );
+		virtual Uint32 OnDrag( const Vector2i& Pos );
 
 		void ObjItemClick( const cUIEvent * Event );
 
@@ -151,13 +151,13 @@ class EE_API cUIMap : public cUIComplexControl {
 
 		void ManageObject( Uint32 Flags );
 
-		eeVector2f GetMouseMapPos();
+		Vector2f GetMouseMapPos();
 
 		void SelectPolyObj();
 
 		void SelectPolyPoint();
 
-		void SetPointRect( eeVector2f p );
+		void SetPointRect( Vector2f p );
 
 		void DragPoly( Uint32 Flags, Uint32 PFlags );
 };

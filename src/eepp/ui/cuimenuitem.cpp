@@ -25,7 +25,7 @@ void cUIMenuItem::SetTheme( cUITheme * Theme ) {
 	DoAfterSetTheme();
 }
 
-Uint32 cUIMenuItem::OnMouseEnter( const eeVector2i &Pos, const Uint32 Flags ) {
+Uint32 cUIMenuItem::OnMouseEnter( const Vector2i &Pos, const Uint32 Flags ) {
 	cUIPushButton::OnMouseEnter( Pos, Flags );
 
 	reinterpret_cast<cUIMenu*> ( Parent() )->SetItemSelected( this );

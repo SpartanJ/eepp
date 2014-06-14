@@ -20,19 +20,19 @@ class EE_API AudioListener {
 		static void Position( const float& X, const float& Y, const float& Z );
 
 		/** Change the position of the listener from a 3D vector. */
-		static void Position(const eeVector3ff& Position);
+		static void Position(const Vector3ff& Position);
 
 		/** Get the current position of the listener */
-		static eeVector3ff Position();
+		static Vector3ff Position();
 
 		/** Change the orientation of the listener (the point he must look at). \n The default target is (0, 0, -1). */
 		static void Target( const float& X, const float& Y, const float& Z );
 
 		/** Change the orientation of the listener from a 3D vector. */
-		static void Target(const eeVector3ff& Target);
+		static void Target(const Vector3ff& Target);
 
 		/** Get the current orientation of the listener (the point he's looking at) */
-		static eeVector3ff Target();
+		static Vector3ff Target();
 };
 
 }}

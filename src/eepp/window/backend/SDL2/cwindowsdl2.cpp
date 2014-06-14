@@ -115,7 +115,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	SDL_DisplayMode dpm;
 	SDL_GetDesktopDisplayMode( 0, &dpm );
 
-	mWindow.DesktopResolution = eeSize( dpm.w, dpm.h );
+	mWindow.DesktopResolution = Sizei( dpm.w, dpm.h );
 
 	#if EE_PLATFORM == EE_PLATFORM_ANDROID
 		mWindow.WindowConfig.Style = WindowStyle::Fullscreen | WindowStyle::UseDesktopResolution;
@@ -160,7 +160,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 
 	mWindow.WindowConfig.Width	= w;
 	mWindow.WindowConfig.Height	= h;
-	mWindow.WindowSize			= eeSize( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
+	mWindow.WindowSize			= Sizei( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 
 	#if EE_PLATFORM == EE_PLATFORM_ANDROID || EE_PLATFORM == EE_PLATFORM_IOS
 		eePRINTL( "Choosing GL Version from: %d", Context.Version );
@@ -390,9 +390,9 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	mWindow.WindowConfig.Height   = Height;
 
 	if ( Windowed ) {
-		mWindow.WindowSize = eeSize( Width, Height );
+		mWindow.WindowSize = Sizei( Width, Height );
 	} else {
-		mWindow.WindowSize = eeSize( oldWidth, oldHeight );
+		mWindow.WindowSize = Sizei( oldWidth, oldHeight );
 	}
 
 	if ( this->Windowed() && !Windowed ) {
@@ -570,8 +570,8 @@ void cWindowSDL::Position( Int16 Left, Int16 Top ) {
 	SDL_SetWindowPosition( mSDLWindow, Left, Top );
 }
 
-eeVector2i cWindowSDL::Position() {
-	eeVector2i p;
+Vector2i cWindowSDL::Position() {
+	Vector2i p;
 
 	SDL_GetWindowPosition( mSDLWindow, &p.x, &p.y );
 
@@ -582,10 +582,10 @@ void cWindowSDL::UpdateDesktopResolution() {
 	SDL_DisplayMode dpm;
 	SDL_GetDesktopDisplayMode( SDL_GetWindowDisplayIndex( mSDLWindow ), &dpm );
 
-	mWindow.DesktopResolution = eeSize( dpm.w, dpm.h );
+	mWindow.DesktopResolution = Sizei( dpm.w, dpm.h );
 }
 
-const eeSize& cWindowSDL::GetDesktopResolution() {
+const Sizei& cWindowSDL::GetDesktopResolution() {
 	UpdateDesktopResolution();
 	return cWindow::GetDesktopResolution();
 }
@@ -606,7 +606,7 @@ void cWindowSDL::StopTextInput() {
 	SDL_StopTextInput();
 }
 
-void cWindowSDL::SetTextInputRect( eeRecti& rect ) {
+void cWindowSDL::SetTextInputRect( Recti& rect ) {
 	SDL_Rect r;
 
 	r.x = rect.Left;

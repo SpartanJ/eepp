@@ -8,7 +8,7 @@ cUIScrollBar::cUIScrollBar( const cUIScrollBar::CreateParams& Params ) :
 	cUIComplexControl( Params )
 {
 	cUIControlAnim::CreateParams CParams = Params;
-	CParams.Size = eeSize( 16, 16 );
+	CParams.Size = Sizei( 16, 16 );
 	CParams.Parent( this );
 
 	mBtnDown	= eeNew( cUIControlAnim, ( CParams ) );

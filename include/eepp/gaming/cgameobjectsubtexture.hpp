@@ -11,21 +11,21 @@ namespace EE { namespace Gaming {
 
 class EE_API cGameObjectSubTexture : public cGameObject {
 	public:
-		cGameObjectSubTexture( const Uint32& Flags, cLayer * Layer, cSubTexture * SubTexture = NULL, const eeVector2f& Pos = eeVector2f() );
+		cGameObjectSubTexture( const Uint32& Flags, cLayer * Layer, cSubTexture * SubTexture = NULL, const Vector2f& Pos = Vector2f() );
 
 		virtual ~cGameObjectSubTexture();
 
 		virtual void Draw();
 
-		virtual eeVector2f Pos() const;
+		virtual Vector2f Pos() const;
 
-		virtual void Pos( eeVector2f pos );
+		virtual void Pos( Vector2f pos );
 
-		virtual eeVector2i TilePos() const;
+		virtual Vector2i TilePos() const;
 
-		virtual void TilePos( eeVector2i pos );
+		virtual void TilePos( Vector2i pos );
 
-		virtual eeSize Size();
+		virtual Sizei Size();
 
 		cSubTexture * SubTexture() const;
 
@@ -40,8 +40,8 @@ class EE_API cGameObjectSubTexture : public cGameObject {
 		virtual void DataId( Uint32 Id );
 	protected:
 		cSubTexture *	mSubTexture;
-		eeVector2f	mPos;
-		eeVector2i	mTilePos;
+		Vector2f	mPos;
+		Vector2i	mTilePos;
 };
 
 }}

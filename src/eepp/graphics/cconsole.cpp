@@ -162,17 +162,17 @@ void cConsole::Draw() {
 		if ( mY > 0.0f ) {
 			if ( mTexId == 0 ) {
 				mPri.SetColor( ColorA( mConColor.R(), mConColor.G(), mConColor.B(), static_cast<Uint8>(mA) ) );
-				mPri.DrawRectangle( eeRectf( eeVector2f( 0.0f, 0.0f ), eeSizef( mWidth, mY ) ) );
+				mPri.DrawRectangle( Rectf( Vector2f( 0.0f, 0.0f ), Sizef( mWidth, mY ) ) );
 			} else {
 				ColorA C( mConColor.R(), mConColor.G(), mConColor.B(), static_cast<Uint8>(mA) );
 
 				cTexture * Tex = cTextureFactory::instance()->GetTexture( mTexId );
 
 				if ( NULL != Tex )
-					Tex->DrawEx( 0.0f, 0.0f, mWidth, mY, 0.0f, eeVector2f::One, C, C, C, C );
+					Tex->DrawEx( 0.0f, 0.0f, mWidth, mY, 0.0f, Vector2f::One, C, C, C, C );
 			}
 			mPri.SetColor( ColorA( mConLineColor.R(), mConLineColor.G(), mConLineColor.B(), static_cast<Uint8>(mA) ) );
-			mPri.DrawRectangle( eeRectf( eeVector2f( 0.0f, mY ), eeSizef( mWidth, 4.0f ) ) );
+			mPri.DrawRectangle( Rectf( Vector2f( 0.0f, mY ), Sizef( mWidth, 4.0f ) ) );
 
 			Int32 linesInScreen = LinesInScreen();
 

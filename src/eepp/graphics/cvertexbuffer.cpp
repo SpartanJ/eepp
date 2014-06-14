@@ -38,18 +38,18 @@ cVertexBuffer::~cVertexBuffer() {
 	cVertexBufferManager::instance()->Remove( this );
 }
 
-void cVertexBuffer::AddVertex( const Uint32& Type, const eeVector2f& Vertex ) {
+void cVertexBuffer::AddVertex( const Uint32& Type, const Vector2f& Vertex ) {
 	if ( Type < VERTEX_FLAGS_COUNT_ARR ) {
 		mVertexArray[ Type ].push_back( Vertex.x );
 		mVertexArray[ Type ].push_back( Vertex.y );
 	}
 }
 
-void cVertexBuffer::AddVertex( const eeVector2f& Vertex ) {
+void cVertexBuffer::AddVertex( const Vector2f& Vertex ) {
 	AddVertex( VERTEX_FLAG_POSITION, Vertex );
 }
 
-void cVertexBuffer::AddVertexCoord( const eeVector2f& VertexCoord, const Uint32& TextureLevel ) {
+void cVertexBuffer::AddVertexCoord( const Vector2f& VertexCoord, const Uint32& TextureLevel ) {
 	AddVertex( VERTEX_FLAG_TEXTURE0 + TextureLevel, VertexCoord );
 }
 
@@ -106,12 +106,12 @@ Uint32 cVertexBuffer::GetIndexCount() {
 	return (Uint32)mIndexArray.size();
 }
 
-eeVector2f cVertexBuffer::GetVector2( const Uint32& Type, const Uint32& Index ) {
+Vector2f cVertexBuffer::GetVector2( const Uint32& Type, const Uint32& Index ) {
 	eeASSERT( Type < VERTEX_FLAGS_COUNT_ARR && !VERTEX_FLAG_QUERY( mVertexFlags, Type ) )
 
 	Int32 pos = Index * eeVertexElements[ Type ];
 
-	return eeVector2f( mVertexArray[ Type ][ pos ], mVertexArray[ Type ][ pos + 1 ] );
+	return Vector2f( mVertexArray[ Type ][ pos ], mVertexArray[ Type ][ pos + 1 ] );
 }
 
 ColorA cVertexBuffer::GetColor( const Uint32& Index ) {

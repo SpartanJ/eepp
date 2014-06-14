@@ -55,9 +55,9 @@ class EE_API cWindowSDL : public cWindow {
 
 		virtual void Position( Int16 Left, Int16 Top );
 
-		virtual eeVector2i Position();
+		virtual Vector2i Position();
 
-		const eeSize& GetDesktopResolution();
+		const Sizei& GetDesktopResolution();
 
 		SDL_Window *	GetSDLWindow() const;
 
@@ -67,7 +67,7 @@ class EE_API cWindowSDL : public cWindow {
 
 		void StopTextInput();
 
-		void SetTextInputRect( eeRecti& rect );
+		void SetTextInputRect( Recti& rect );
 
 		bool HasScreenKeyboardSupport();
 
@@ -107,7 +107,7 @@ class EE_API cWindowSDL : public cWindow {
 		Zip *			mZip;
 		#endif
 
-		eeVector2i		mWinPos;
+		Vector2i		mWinPos;
 
 		void CreatePlatform();
 

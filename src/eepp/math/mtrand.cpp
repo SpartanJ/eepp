@@ -1,16 +1,16 @@
-#include <eepp/math/cmtrand.hpp>
+#include <eepp/math/mtrand.hpp>
 
 namespace EE { namespace Math {
 
-cMTRand::cMTRand( const Uint32 oneSeed ) {
+MTRand::MTRand( const Uint32 oneSeed ) {
     Seed( oneSeed );
 }
 
-cMTRand::cMTRand() {
+MTRand::MTRand() {
     Seed();
 }
 
-cMTRand::cMTRand( const cMTRand& o ) {
+MTRand::MTRand( const MTRand& o ) {
     register const Uint32 *t	= o.mState;
 	register Uint32	* s			= mState;
     register int	i			= N;
@@ -24,7 +24,7 @@ cMTRand::cMTRand( const cMTRand& o ) {
     mNext = &mState[ N - mLeft ];
 }
 
-void cMTRand::Initialize( const Uint32 seed ) {
+void MTRand::Initialize( const Uint32 seed ) {
     register Uint32 *s = mState;
 
     register Uint32 *r = mState;
@@ -39,7 +39,7 @@ void cMTRand::Initialize( const Uint32 seed ) {
     }
 }
 
-void cMTRand::Reload() {
+void MTRand::Reload() {
     static const int MmN = int(M) - int(N);
 
     register Uint32 *p = mState;
@@ -57,40 +57,40 @@ void cMTRand::Reload() {
     mLeft = N, mNext = mState;
 }
 
-void cMTRand::Seed( const Uint32 oneSeed ) {
+void MTRand::Seed( const Uint32 oneSeed ) {
     Initialize( oneSeed );
     Reload();
 }
 
-void cMTRand::Seed() {
+void MTRand::Seed() {
     Seed( 0xFEDCBA09 );
 }
 
-Uint32 cMTRand::hiBit( const Uint32 u ) const {
+Uint32 MTRand::hiBit( const Uint32 u ) const {
 	return u & 0x80000000UL;
 }
 
-Uint32 cMTRand::loBit( const Uint32 u ) const {
+Uint32 MTRand::loBit( const Uint32 u ) const {
 	return u & 0x00000001UL;
 }
 
-Uint32 cMTRand::loBits( const Uint32 u ) const {
+Uint32 MTRand::loBits( const Uint32 u ) const {
 	return u & 0x7fffffffUL;
 }
 
-Uint32 cMTRand::MixBits( const Uint32 u, const Uint32 v ) const {
+Uint32 MTRand::MixBits( const Uint32 u, const Uint32 v ) const {
 	return hiBit(u) | loBits(v);
 }
 
-Uint32 cMTRand::Magic( const Uint32 u ) const {
+Uint32 MTRand::Magic( const Uint32 u ) const {
 	return loBit(u) ? 0x9908b0dfUL : 0x0UL;
 }
 
-Uint32 cMTRand::Twist( const Uint32 m, const Uint32 s0, const Uint32 s1 ) const {
+Uint32 MTRand::Twist( const Uint32 m, const Uint32 s0, const Uint32 s1 ) const {
 	return m ^ ( MixBits( s0, s1 )>>1 ) ^ Magic(s1);
 }
 
-Uint32 cMTRand::Randi() {
+Uint32 MTRand::Randi() {
     if ( mLeft == 0 )
 		Reload();
 
@@ -105,7 +105,7 @@ Uint32 cMTRand::Randi() {
     return ( s1 ^ (s1 >> 18) );
 }
 
-Uint32 cMTRand::Randi( const Uint32 n ) {
+Uint32 MTRand::Randi( const Uint32 n ) {
     Uint32 used = n;
     used |= used >> 1;
     used |= used >> 2;
@@ -122,31 +122,31 @@ Uint32 cMTRand::Randi( const Uint32 n ) {
     return i;
 }
 
-double cMTRand::Rand() {
+double MTRand::Rand() {
     return double( Randi() ) * ( 1.0 / 4294967295.0 );
 }
 
-double cMTRand::Rand( const double n ) {
+double MTRand::Rand( const double n ) {
     return Rand() * n;
 }
 
-Float	cMTRand::Randf() {
+Float	MTRand::Randf() {
 	return (Float)Rand();
 }
 
-Float	cMTRand::Randf( const Float n ) {
+Float	MTRand::Randf( const Float n ) {
 	return (Float)Rand(n);
 }
 
-int cMTRand::RandRange( int Min, int Max ) {
+int MTRand::RandRange( int Min, int Max ) {
 	return Min + Randi( Max - Min );
 }
 
-Float	cMTRand::RandRange( Float Min, Float Max ) {
+Float	MTRand::RandRange( Float Min, Float Max ) {
 	return Min + Randf( Max - Min );
 }
 
-cMTRand& cMTRand::operator=( const cMTRand& o ) {
+MTRand& MTRand::operator=( const MTRand& o ) {
 	if ( this == &o )
 		return (*this);
 
@@ -164,7 +164,7 @@ cMTRand& cMTRand::operator=( const cMTRand& o ) {
     return (*this);
 }
 
-void cMTRand::Save( Uint32* saveArray ) const {
+void MTRand::Save( Uint32* saveArray ) const {
 	register const Uint32 *s = mState;
 	register Uint32 *sa = saveArray;
 	register int i = N;
@@ -172,7 +172,7 @@ void cMTRand::Save( Uint32* saveArray ) const {
 	*sa = mLeft;
 }
 
-void cMTRand::Load( Uint32 *const loadArray ) {
+void MTRand::Load( Uint32 *const loadArray ) {
 	register Uint32 *s = mState;
 	register Uint32 *la = loadArray;
 	register int i = N;

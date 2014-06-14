@@ -62,8 +62,8 @@ cWindow::~cWindow() {
 	eeSAFE_DELETE( mPlatform );
 }
 
-eeSize cWindow::Size() {
-	return eeSize( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
+Sizei cWindow::Size() {
+	return Sizei( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 }
 
 const Uint32& cWindow::GetWidth() const {
@@ -74,7 +74,7 @@ const Uint32& cWindow::GetHeight() const {
 	return mWindow.WindowConfig.Height;
 }
 
-const eeSize& cWindow::GetDesktopResolution() {
+const Sizei& cWindow::GetDesktopResolution() {
 	return mWindow.DesktopResolution;
 }
 
@@ -111,7 +111,7 @@ void cWindow::SetViewport( const Int32& x, const Int32& y, const Uint32& Width, 
 void cWindow::SetView( const cView& View ) {
 	mCurrentView = &View;
 
-	eeRecti RView = mCurrentView->GetView();
+	Recti RView = mCurrentView->GetView();
 	SetViewport( RView.Left, RView.Top, RView.Right, RView.Bottom );
 }
 
@@ -466,11 +466,11 @@ void cWindow::Position( Int16 Left, Int16 Top ) {
 		mPlatform->MoveWindow( Left, Top );
 }
 
-eeVector2i cWindow::Position() {
+Vector2i cWindow::Position() {
 	if ( NULL != mPlatform )
 		return mPlatform->Position();
 
-	return eeVector2i();
+	return Vector2i();
 }
 
 void cWindow::SetCurrentContext( eeWindowContex Context ) {
@@ -506,7 +506,7 @@ bool cWindow::IsTextInputActive() {
 void cWindow::StopTextInput() {
 }
 
-void cWindow::SetTextInputRect( eeRecti& rect ) {
+void cWindow::SetTextInputRect( Recti& rect ) {
 }
 
 bool cWindow::HasScreenKeyboardSupport()

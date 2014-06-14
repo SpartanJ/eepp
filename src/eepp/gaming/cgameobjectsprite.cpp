@@ -36,7 +36,7 @@ void cGameObjectSprite::Draw() {
 			cLightManager * LM = mLayer->Map()->GetLightManager();
 
 			if ( MAP_LAYER_TILED == mLayer->Type() ) {
-				eeVector2i Tile = reinterpret_cast<cTileLayer*> ( mLayer )->GetCurrentTile();
+				Vector2i Tile = reinterpret_cast<cTileLayer*> ( mLayer )->GetCurrentTile();
 
 				if ( LM->IsByVertex() ) {
 					mSprite->UpdateVertexColors(
@@ -50,7 +50,7 @@ void cGameObjectSprite::Draw() {
 				}
 			} else {
 				if ( LM->IsByVertex() ) {
-					eeQuad2f Q = mSprite->GetQuad();
+					Quad2f Q = mSprite->GetQuad();
 
 					mSprite->UpdateVertexColors(
 						LM->GetColorFromPos( Q.V[0] ),
@@ -68,33 +68,33 @@ void cGameObjectSprite::Draw() {
 	}
 }
 
-eeVector2f cGameObjectSprite::Pos() const {
+Vector2f cGameObjectSprite::Pos() const {
 	if ( NULL != mSprite )
 		return mSprite->Position();
 
-	return eeVector2f();
+	return Vector2f();
 }
 
-void cGameObjectSprite::Pos( eeVector2f pos ) {
+void cGameObjectSprite::Pos( Vector2f pos ) {
 	if ( NULL != mSprite ) {
 		mSprite->Position( pos );
 		cGameObject::Pos( pos );
 	}
 }
 
-eeVector2i cGameObjectSprite::TilePos() const {
+Vector2i cGameObjectSprite::TilePos() const {
 	return mTilePos;
 }
 
-void cGameObjectSprite::TilePos( eeVector2i pos ) {
+void cGameObjectSprite::TilePos( Vector2i pos ) {
 	mTilePos = pos;
 }
 
-eeSize cGameObjectSprite::Size() {
+Sizei cGameObjectSprite::Size() {
 	if ( NULL != mSprite )
 		return mSprite->GetSubTexture(0)->RealSize();
 
-	return eeSize();
+	return Sizei();
 }
 
 cSprite * cGameObjectSprite::Sprite() const {

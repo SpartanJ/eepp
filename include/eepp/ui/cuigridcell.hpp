@@ -41,7 +41,7 @@ class EE_API cUIGridCell : public cUIComplexControl {
 
 		void FixCell();
 
-		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseExit( const Vector2i& Pos, const Uint32 Flags );
 
 		virtual void OnStateChange();
 };

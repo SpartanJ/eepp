@@ -20,29 +20,29 @@ cLayerProperties::cLayerProperties( cLayer * Map, RefreshLayerListCb Cb ) :
 	if ( NULL == mUITheme )
 		return;
 
-	mUIWindow	= mUITheme->CreateWindow( NULL, eeSize( 500, 500 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL, eeSize( 500, 500 ) );
+	mUIWindow	= mUITheme->CreateWindow( NULL, Sizei( 500, 500 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL, Sizei( 500, 500 ) );
 	mUIWindow->AddEventListener( cUIEvent::EventOnWindowClose, cb::Make1( this, &cLayerProperties::WindowClose ) );
 	mUIWindow->Title( "Layer Properties" );
 
 	Int32 InitialY		= 16;
 	Int32 DistFromTitle	= 18;
 
-	cUITextBox * Txt = mUITheme->CreateTextBox( "Layer name:", mUIWindow->Container(), eeSize(), eeVector2i( 50, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
-	mUIInput = mUITheme->CreateTextInput( mUIWindow->Container(), eeSize( 120, 22 ), eeVector2i( Txt->Pos().x + DistFromTitle, Txt->Pos().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE, true, 64 );
+	cUITextBox * Txt = mUITheme->CreateTextBox( "Layer name:", mUIWindow->Container(), Sizei(), Vector2i( 50, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	mUIInput = mUITheme->CreateTextInput( mUIWindow->Container(), Sizei( 120, 22 ), Vector2i( Txt->Pos().x + DistFromTitle, Txt->Pos().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE, true, 64 );
 	mUIInput->Text( mLayer->Name() );
 	mUIInput->AddEventListener( cUIEvent::EventOnPressEnter, cb::Make1( this, &cLayerProperties::OKClick ) );
 
 	Uint32 TxtBoxFlags = UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
-	mUITheme->CreateTextBox( "Property Name", mUIWindow->Container(), eeSize(192, 24), eeVector2i( 50, mUIInput->Pos().y + mUIInput->Size().Height() + 12 ), TxtBoxFlags );
-	cUITextBox * TxtBox = mUITheme->CreateTextBox( "Property Value", mUIWindow->Container(), eeSize(192, 24), eeVector2i( 50+192, mUIInput->Pos().y + mUIInput->Size().Height() + 12 ), TxtBoxFlags );
+	mUITheme->CreateTextBox( "Property Name", mUIWindow->Container(), Sizei(192, 24), Vector2i( 50, mUIInput->Pos().y + mUIInput->Size().Height() + 12 ), TxtBoxFlags );
+	cUITextBox * TxtBox = mUITheme->CreateTextBox( "Property Value", mUIWindow->Container(), Sizei(192, 24), Vector2i( 50+192, mUIInput->Pos().y + mUIInput->Size().Height() + 12 ), TxtBoxFlags );
 
-	cUIPushButton * OKButton = mUITheme->CreatePushButton( mUIWindow->Container(), eeSize( 80, 22 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->GetIconByName( "ok" ) );
+	cUIPushButton * OKButton = mUITheme->CreatePushButton( mUIWindow->Container(), Sizei( 80, 22 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->GetIconByName( "ok" ) );
 	OKButton->Pos( mUIWindow->Container()->Size().Width() - OKButton->Size().Width() - 4, mUIWindow->Container()->Size().Height() - OKButton->Size().Height() - 4 );
 	OKButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cLayerProperties::OKClick ) );
 
 	OKButton->Text( "OK" );
 
-	cUIPushButton * CancelButton = mUITheme->CreatePushButton( mUIWindow->Container(), OKButton->Size(), eeVector2i( OKButton->Pos().x - OKButton->Size().Width() - 4, OKButton->Pos().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->GetIconByName( "cancel" ) );
+	cUIPushButton * CancelButton = mUITheme->CreatePushButton( mUIWindow->Container(), OKButton->Size(), Vector2i( OKButton->Pos().x - OKButton->Size().Width() - 4, OKButton->Pos().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->GetIconByName( "cancel" ) );
 	CancelButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cLayerProperties::CancelClick ) );
 	CancelButton->Text( "Cancel" );
 
@@ -62,9 +62,9 @@ cLayerProperties::cLayerProperties( cLayer * Map, RefreshLayerListCb Cb ) :
 	mGenGrid->CollumnWidth( 3, 175 );
 	mGenGrid->CollumnWidth( 4, 10 );
 
-	eeVector2i Pos( mGenGrid->Pos().x + mGenGrid->Size().Width() + 10, mGenGrid->Pos().y );
+	Vector2i Pos( mGenGrid->Pos().x + mGenGrid->Size().Width() + 10, mGenGrid->Pos().y );
 
-	cUIPushButton * AddButton = mUITheme->CreatePushButton( mUIWindow->Container(), eeSize(24,21), Pos, UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mUITheme->GetIconByName( "add" ) );
+	cUIPushButton * AddButton = mUITheme->CreatePushButton( mUIWindow->Container(), Sizei(24,21), Pos, UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mUITheme->GetIconByName( "add" ) );
 	AddButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cLayerProperties::AddCellClick ) );
 
 	if ( NULL == AddButton->Icon()->SubTexture() )
@@ -72,7 +72,7 @@ cLayerProperties::cLayerProperties( cLayer * Map, RefreshLayerListCb Cb ) :
 
 	Pos.y += AddButton->Size().Height() + 5;
 
-	cUIPushButton * RemoveButton = mUITheme->CreatePushButton( mUIWindow->Container(), eeSize(24,21), Pos, UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mUITheme->GetIconByName( "remove" )  );
+	cUIPushButton * RemoveButton = mUITheme->CreatePushButton( mUIWindow->Container(), Sizei(24,21), Pos, UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mUITheme->GetIconByName( "remove" )  );
 	RemoveButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cLayerProperties::RemoveCellClick ) );
 
 	if ( NULL == RemoveButton->Icon()->SubTexture() )

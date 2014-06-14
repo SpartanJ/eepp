@@ -14,17 +14,17 @@ class EE_API cGameObjectObject : public cGameObject {
 	public:
 		typedef std::map<std::string, std::string> PropertiesMap;
 
-		cGameObjectObject( Uint32 DataId, const eeRectf& rect, cLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC );
+		cGameObjectObject( Uint32 DataId, const Rectf& rect, cLayer * Layer, const Uint32& Flags = GObjFlags::GAMEOBJECT_STATIC );
 
 		virtual ~cGameObjectObject();
 
 		virtual void Draw();
 
-		virtual eeVector2f Pos() const;
+		virtual Vector2f Pos() const;
 
-		virtual eeSize Size();
+		virtual Sizei Size();
 
-		virtual void Pos( eeVector2f pos );
+		virtual void Pos( Vector2f pos );
 
 		virtual Uint32 Type() const;
 
@@ -56,21 +56,21 @@ class EE_API cGameObjectObject : public cGameObject {
 
 		void TypeName( const std::string& type );
 
-		virtual bool PointInside( const eeVector2f& p );
+		virtual bool PointInside( const Vector2f& p );
 
-		eePolygon2f& GetPolygon();
+		Polygon2f& GetPolygon();
 
 		const bool& Selected() const;
 
 		void Selected( const bool& sel );
 
-		virtual void SetPolygonPoint( Uint32 index, eeVector2f p );
+		virtual void SetPolygonPoint( Uint32 index, Vector2f p );
 
 		virtual cGameObjectObject * Copy();
 	protected:
-		eeRectf			mRect;
-		eePolygon2f		mPoly;
-		eeVector2f		mPos;
+		Rectf			mRect;
+		Polygon2f		mPoly;
+		Vector2f		mPos;
 		Uint32			mDataId;
 		bool			mSelected;
 		std::string		mName;
@@ -83,7 +83,7 @@ class cGameObjectPolyData {
 		std::string		Name;
 		std::string		Type;
 		cGameObjectObject::PropertiesMap	Properties;
-		eePolygon2f		Poly;
+		Polygon2f		Poly;
 };
 
 }}

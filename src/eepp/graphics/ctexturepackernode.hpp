@@ -11,7 +11,7 @@ class cTexturePackerNode {
 
 		bool 					Fits( Int32 wid, Int32 hit, Int32 &edgeCount, const bool& AllowFlipping = false ) const;
 
-		void 					GetRect( eeRecti &r ) const;
+		void 					GetRect( Recti &r ) const;
 
 		void 					Validate( cTexturePackerNode * n );
 

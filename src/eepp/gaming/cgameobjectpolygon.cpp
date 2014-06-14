@@ -6,10 +6,10 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {
 
-cGameObjectPolygon::cGameObjectPolygon( Uint32 DataId, eePolygon2f poly, cLayer * Layer, const Uint32& Flags ) :
+cGameObjectPolygon::cGameObjectPolygon( Uint32 DataId, Polygon2f poly, cLayer * Layer, const Uint32& Flags ) :
 	cGameObjectObject( DataId, poly.ToAABB(), Layer, Flags )
 {
-	mPoly = eePolygon2f( poly );
+	mPoly = Polygon2f( poly );
 }
 
 cGameObjectPolygon::~cGameObjectPolygon() {
@@ -23,8 +23,8 @@ bool cGameObjectPolygon::IsType( const Uint32& type ) {
 	return ( cGameObjectPolygon::Type() == type ) ? true : cGameObjectObject::IsType( type );
 }
 
-eeSize cGameObjectPolygon::Size() {
-	return eeSize( mRect.Size().x, mRect.Size().y );
+Sizei cGameObjectPolygon::Size() {
+	return Sizei( mRect.Size().x, mRect.Size().y );
 }
 
 void cGameObjectPolygon::Draw() {
@@ -41,13 +41,13 @@ void cGameObjectPolygon::Draw() {
 	P.DrawPolygon( mPoly );
 }
 
-void cGameObjectPolygon::SetPolygonPoint( Uint32 index, eeVector2f p ) {
+void cGameObjectPolygon::SetPolygonPoint( Uint32 index, Vector2f p ) {
 	mPoly.SetAt( index, p );
 	mRect	= mPoly.ToAABB();
-	mPos	= eeVector2f( mRect.Left, mRect.Top );
+	mPos	= Vector2f( mRect.Left, mRect.Top );
 }
 
-bool cGameObjectPolygon::PointInside( const eeVector2f& p ) {
+bool cGameObjectPolygon::PointInside( const Vector2f& p ) {
 	if ( cGameObjectObject::PointInside( p ) ) {
 		return mPoly.PointInside( p );
 	}

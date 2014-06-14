@@ -56,7 +56,7 @@ class EE_API cUITextInput : public cUITextBox {
 	protected:
 		cInputTextBuffer	mTextBuffer;
 		Float				mWaitCursorTime;
-		eeVector2f			mCurPos;
+		Vector2f			mCurPos;
 		int				mCursorPos;
 		bool				mAllowEditing;
 		bool				mShowingWait;
@@ -71,11 +71,11 @@ class EE_API cUITextInput : public cUITextBox {
 
 		void AutoPadding();
 
-		virtual Uint32 OnMouseClick( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseClick( const Vector2i& Pos, const Uint32 Flags );
 
-		virtual Uint32 OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags );
 
-		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseExit( const Vector2i& Pos, const Uint32 Flags );
 
 		virtual Uint32 OnFocus();
 

@@ -21,15 +21,15 @@ cCursorManagerSDL::cCursorManagerSDL( cWindow * window ) :
 {
 }
 
-cCursor * cCursorManagerSDL::Create( cTexture * tex, const eeVector2i& hotspot, const std::string& name ) {
+cCursor * cCursorManagerSDL::Create( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( cCursorSDL, ( tex, hotspot, name, mWindow ) );
 }
 
-cCursor * cCursorManagerSDL::Create( cImage * img, const eeVector2i& hotspot, const std::string& name ) {
+cCursor * cCursorManagerSDL::Create( cImage * img, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( cCursorSDL, ( img, hotspot, name, mWindow ) );
 }
 
-cCursor * cCursorManagerSDL::Create( const std::string& path, const eeVector2i& hotspot, const std::string& name ) {
+cCursor * cCursorManagerSDL::Create( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( cCursorSDL, ( path, hotspot, name, mWindow ) );
 }
 

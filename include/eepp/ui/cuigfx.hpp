@@ -48,12 +48,12 @@ class EE_API cUIGfx : public cUIComplexControl {
 
 		void RenderMode( const EE_RENDER_MODE& render );
 
-		const eeVector2i& AlignOffset() const;
+		const Vector2i& AlignOffset() const;
 	protected:
 		cSubTexture * 	mSubTexture;
 		ColorA 		mColor;
 		EE_RENDER_MODE 	mRender;
-		eeVector2i		mAlignOffset;
+		Vector2i		mAlignOffset;
 
 		virtual void OnSizeChange();
 

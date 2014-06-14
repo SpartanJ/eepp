@@ -62,14 +62,14 @@ cUIControl::~cUIControl() {
 	}
 }
 
-void cUIControl::ScreenToControl( eeVector2i& Pos ) const {
+void cUIControl::ScreenToControl( Vector2i& Pos ) const {
 	cUIControl * ParentLoop = mParentCtrl;
 
 	Pos.x -= mPos.x;
 	Pos.y -= mPos.y;
 
 	while ( NULL != ParentLoop ) {
-		const eeVector2i& ParentPos = ParentLoop->Pos();
+		const Vector2i& ParentPos = ParentLoop->Pos();
 
 		Pos.x -= ParentPos.x;
 		Pos.y -= ParentPos.y;
@@ -78,11 +78,11 @@ void cUIControl::ScreenToControl( eeVector2i& Pos ) const {
 	}
 }
 
-void cUIControl::ControlToScreen( eeVector2i& Pos ) const {
+void cUIControl::ControlToScreen( Vector2i& Pos ) const {
 	cUIControl * ParentLoop = mParentCtrl;
 
 	while ( NULL != ParentLoop ) {
-		const eeVector2i& ParentPos = ParentLoop->Pos();
+		const Vector2i& ParentPos = ParentLoop->Pos();
 
 		Pos.x += ParentPos.x;
 		Pos.y += ParentPos.y;
@@ -114,27 +114,27 @@ Uint32 cUIControl::OnMessage( const cUIMessage * Msg ) {
 	return 0;
 }
 
-bool cUIControl::IsInside( const eeVector2i& Pos ) const {
+bool cUIControl::IsInside( const Vector2i& Pos ) const {
 	return ( Pos.x >= 0 && Pos.y >= 0 && Pos.x < mSize.Width() && Pos.y < mSize.Height() );
 }
 
-void cUIControl::Pos( const eeVector2i& Pos ) {
+void cUIControl::Pos( const Vector2i& Pos ) {
 	mPos = Pos;
 	OnPosChange();
 }
 
 void cUIControl::Pos( const Int32& x, const Int32& y ) {
-	mPos = eeVector2i( x, y );
+	mPos = Vector2i( x, y );
 	OnPosChange();
 }
 
-const eeVector2i& cUIControl::Pos() const {
+const Vector2i& cUIControl::Pos() const {
 	return mPos;
 }
 
-void cUIControl::Size( const eeSize& Size ) {
+void cUIControl::Size( const Sizei& Size ) {
 	if ( Size != mSize ) {
-		eeVector2i sizeChange( Size.x - mSize.x, Size.y - mSize.y );
+		Vector2i sizeChange( Size.x - mSize.x, Size.y - mSize.y );
 
 		mSize = Size;
 
@@ -147,14 +147,14 @@ void cUIControl::Size( const eeSize& Size ) {
 }
 
 void cUIControl::Size( const Int32& Width, const Int32& Height ) {
-	Size( eeSize( Width, Height ) );
+	Size( Sizei( Width, Height ) );
 }
 
-eeRecti cUIControl::Rect() const {
-	return eeRecti( mPos, mSize );
+Recti cUIControl::Rect() const {
+	return Recti( mPos, mSize );
 }
 
-const eeSize& cUIControl::Size() {
+const Sizei& cUIControl::Size() {
 	return mSize;
 }
 
@@ -220,14 +220,14 @@ void cUIControl::CenterHorizontal() {
 	cUIControl * Ctrl = Parent();
 
 	if ( NULL != Ctrl )
-		Pos( eeVector2i( ( Ctrl->Size().Width() / 2 ) - ( mSize.Width() / 2 ), mPos.y ) );
+		Pos( Vector2i( ( Ctrl->Size().Width() / 2 ) - ( mSize.Width() / 2 ), mPos.y ) );
 }
 
 void cUIControl::CenterVertical(){
 	cUIControl * Ctrl = Parent();
 
 	if ( NULL != Ctrl )
-		Pos( eeVector2i( mPos.x, ( Ctrl->Size().Height() / 2 ) - ( mSize.Height() / 2 ) ) );
+		Pos( Vector2i( mPos.x, ( Ctrl->Size().Height() / 2 ) - ( mSize.Height() / 2 ) ) );
 }
 
 void cUIControl::Center() {
@@ -282,7 +282,7 @@ void cUIControl::Update() {
 		WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD, 0 );
 }
 
-void cUIControl::SendMouseEvent( const Uint32& Event, const eeVector2i& Pos, const Uint32& Flags ) {
+void cUIControl::SendMouseEvent( const Uint32& Event, const Vector2i& Pos, const Uint32& Flags ) {
 	cUIEventMouse MouseEvent( this, Event, Pos, Flags );
 	SendEvent( &MouseEvent );
 }
@@ -302,12 +302,12 @@ Uint32 cUIControl::OnKeyUp( const cUIEventKey& Event ) {
 	return 0;
 }
 
-Uint32 cUIControl::OnMouseMove( const eeVector2i& Pos, const Uint32 Flags ) {
+Uint32 cUIControl::OnMouseMove( const Vector2i& Pos, const Uint32 Flags ) {
 	SendMouseEvent( cUIEvent::EventMouseMove, Pos, Flags );
 	return 1;
 }
 
-Uint32 cUIControl::OnMouseDown( const eeVector2i& Pos, const Uint32 Flags ) {
+Uint32 cUIControl::OnMouseDown( const Vector2i& Pos, const Uint32 Flags ) {
 	SendMouseEvent( cUIEvent::EventMouseDown, Pos, Flags );
 
 	SetSkinState( cUISkinState::StateMouseDown );
@@ -315,7 +315,7 @@ Uint32 cUIControl::OnMouseDown( const eeVector2i& Pos, const Uint32 Flags ) {
 	return 1;
 }
 
-Uint32 cUIControl::OnMouseUp( const eeVector2i& Pos, const Uint32 Flags ) {
+Uint32 cUIControl::OnMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
 	SendMouseEvent( cUIEvent::EventMouseUp, Pos, Flags );
 
 	SetPrevSkinState();
@@ -323,7 +323,7 @@ Uint32 cUIControl::OnMouseUp( const eeVector2i& Pos, const Uint32 Flags ) {
 	return 1;
 }
 
-Uint32 cUIControl::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
+Uint32 cUIControl::OnMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	SendMouseEvent( cUIEvent::EventMouseClick, Pos, Flags );
 	return 1;
 }
@@ -336,12 +336,12 @@ bool cUIControl::IsMouseOverMeOrChilds() {
 	return 0 != ( mControlFlags & UI_CTRL_FLAG_MOUSEOVER_ME_OR_CHILD );
 }
 
-Uint32 cUIControl::OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags ) {
+Uint32 cUIControl::OnMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags ) {
 	SendMouseEvent( cUIEvent::EventMouseDoubleClick, Pos, Flags );
 	return 1;
 }
 
-Uint32 cUIControl::OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags ) {
+Uint32 cUIControl::OnMouseEnter( const Vector2i& Pos, const Uint32 Flags ) {
 	WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER, 1 );
 
 	SendMouseEvent( cUIEvent::EventMouseEnter, Pos, Flags );
@@ -351,7 +351,7 @@ Uint32 cUIControl::OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags ) {
 	return 1;
 }
 
-Uint32 cUIControl::OnMouseExit( const eeVector2i& Pos, const Uint32 Flags ) {
+Uint32 cUIControl::OnMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 	WriteCtrlFlag( UI_CTRL_FLAG_MOUSEOVER, 0 );
 
 	SendMouseEvent( cUIEvent::EventMouseExit, Pos, Flags );
@@ -517,13 +517,13 @@ void cUIControl::OnSizeChange() {
 	SendCommonEvent( cUIEvent::EventOnSizeChange );
 }
 
-eeRectf cUIControl::GetRectf() {
-	return eeRectf( eeVector2f( (Float)mScreenPos.x, (Float)mScreenPos.y ), eeSizef( (Float)mSize.Width(), (Float)mSize.Height() ) );
+Rectf cUIControl::GetRectf() {
+	return Rectf( Vector2f( (Float)mScreenPos.x, (Float)mScreenPos.y ), Sizef( (Float)mSize.Width(), (Float)mSize.Height() ) );
 }
 
 void cUIControl::BackgroundDraw() {
 	cPrimitives P;
-	eeRectf R = GetRectf();
+	Rectf R = GetRectf();
 	P.BlendMode( mBackground->Blend() );
 	P.SetColor( mBackground->Color() );
 
@@ -535,7 +535,7 @@ void cUIControl::BackgroundDraw() {
 		}
 	} else {
 		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( R, 0.f, eeVector2f::One, mBackground->Corners() );
+			P.DrawRoundedRectangle( R, 0.f, Vector2f::One, mBackground->Corners() );
 		} else {
 			P.DrawRectangle( R );
 		}
@@ -551,16 +551,16 @@ void cUIControl::BorderDraw() {
 
 	//! @TODO: Check why was this +0.1f -0.1f?
 	if ( mFlags & UI_CLIP_ENABLE ) {
-		eeRectf R( eeVector2f( (Float)mScreenPos.x + 0.1f, (Float)mScreenPos.y + 0.1f ), eeSizef( (Float)mSize.Width() - 0.1f, (Float)mSize.Height() - 0.1f ) );
+		Rectf R( Vector2f( (Float)mScreenPos.x + 0.1f, (Float)mScreenPos.y + 0.1f ), Sizef( (Float)mSize.Width() - 0.1f, (Float)mSize.Height() - 0.1f ) );
 
 		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( GetRectf(), 0.f, eeVector2f::One, mBackground->Corners() );
+			P.DrawRoundedRectangle( GetRectf(), 0.f, Vector2f::One, mBackground->Corners() );
 		} else {
 			P.DrawRectangle( R );
 		}
 	} else {
 		if ( mBackground->Corners() ) {
-			P.DrawRoundedRectangle( GetRectf(), 0.f, eeVector2f::One, mBackground->Corners() );
+			P.DrawRoundedRectangle( GetRectf(), 0.f, Vector2f::One, mBackground->Corners() );
 		} else {
 			P.DrawRectangle( GetRectf() );
 		}
@@ -794,7 +794,7 @@ cUIControl * cUIControl::ChildGetLast() const {
 	return mChildLast;
 }
 
-cUIControl * cUIControl::OverFind( const eeVector2f& Point ) {
+cUIControl * cUIControl::OverFind( const Vector2f& Point ) {
 	cUIControl * pOver = NULL;
 
 	if ( mEnabled && mVisible ) {
@@ -826,7 +826,7 @@ cUIControl * cUIControl::OverFind( const eeVector2f& Point ) {
 	return pOver;
 }
 
-cUIControl * cUIControl::ChildGetAt( eeVector2i CtrlPos, unsigned int RecursiveLevel ) {
+cUIControl * cUIControl::ChildGetAt( Vector2i CtrlPos, unsigned int RecursiveLevel ) {
 	cUIControl * Ctrl = NULL;
 
 	for( cUIControl * pLoop = mChild; NULL != pLoop && NULL == Ctrl; pLoop = pLoop->mNext )
@@ -862,17 +862,17 @@ Uint32 cUIControl::IsClipped() {
 	return mFlags & UI_CLIP_ENABLE;
 }
 
-eePolygon2f& cUIControl::GetPolygon() {
+Polygon2f& cUIControl::GetPolygon() {
 	return mPoly;
 }
 
-const eeVector2f& cUIControl::GetPolygonCenter() const {
+const Vector2f& cUIControl::GetPolygonCenter() const {
 	return mCenter;
 }
 
 void cUIControl::UpdateQuad() {
-	mPoly 	= eePolygon2f( eeAABB( (Float)mScreenPos.x, (Float)mScreenPos.y, (Float)mScreenPos.x + mSize.Width(), (Float)mScreenPos.y + mSize.Height() ) );
-	mCenter = eeVector2f( (Float)mScreenPos.x + (Float)mSize.Width() * 0.5f, (Float)mScreenPos.y + (Float)mSize.Height() * 0.5f );
+	mPoly 	= Polygon2f( eeAABB( (Float)mScreenPos.x, (Float)mScreenPos.y, (Float)mScreenPos.x + mSize.Width(), (Float)mScreenPos.y + mSize.Height() ) );
+	mCenter = Vector2f( (Float)mScreenPos.x + (Float)mSize.Width() * 0.5f, (Float)mScreenPos.y + (Float)mSize.Height() * 0.5f );
 
 	cUIControl * tParent = Parent();
 
@@ -1026,7 +1026,7 @@ void cUIControl::UpdateChildsScreenPos() {
 }
 
 void cUIControl::UpdateScreenPos() {
-	eeVector2i Pos( mPos );
+	Vector2i Pos( mPos );
 
 	ControlToScreen( Pos );
 
@@ -1057,12 +1057,12 @@ void cUIControl::ApplyDefaultTheme() {
 	cUIThemeManager::instance()->ApplyDefaultTheme( this );
 }
 
-eeRecti cUIControl::GetScreenRect() {
-	return eeRecti( mScreenPos, mSize );
+Recti cUIControl::GetScreenRect() {
+	return Recti( mScreenPos, mSize );
 }
 
-eeRecti cUIControl::MakePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBottom, bool SkipFlags ) {
-	eeRecti tPadding( 0, 0, 0, 0 );
+Recti cUIControl::MakePadding( bool PadLeft, bool PadRight, bool PadTop, bool PadBottom, bool SkipFlags ) {
+	Recti tPadding( 0, 0, 0, 0 );
 
 	if ( mFlags & UI_AUTO_PADDING || SkipFlags ) {
 		if ( NULL != mSkinState && NULL != mSkinState->GetSkin() ) {
@@ -1109,7 +1109,7 @@ void cUIControl::SetFocus() {
 	cUIManager::instance()->FocusControl( this );
 }
 
-void cUIControl::SendParentSizeChange( const eeVector2i& SizeChange ) {
+void cUIControl::SendParentSizeChange( const Vector2i& SizeChange ) {
 	if ( mFlags & UI_REPORT_SIZE_CHANGE_TO_CHILDS )	{
 		cUIControl * ChildLoop = mChild;
 
@@ -1120,12 +1120,12 @@ void cUIControl::SendParentSizeChange( const eeVector2i& SizeChange ) {
 	}
 }
 
-void cUIControl::OnParentSizeChange( const eeVector2i& SizeChange ) {
+void cUIControl::OnParentSizeChange( const Vector2i& SizeChange ) {
 	SendCommonEvent( cUIEvent::EventOnParentSizeChange );
 }
 
-eeSize cUIControl::GetSkinSize( cUISkin * Skin, const Uint32& State ) {
-	eeSize		tSize;
+Sizei cUIControl::GetSkinSize( cUISkin * Skin, const Uint32& State ) {
+	Sizei		tSize;
 
 	if ( NULL != Skin ) {
 		cSubTexture * tSubTexture = Skin->GetSubTexture( State );
@@ -1166,7 +1166,7 @@ eeSize cUIControl::GetSkinSize( cUISkin * Skin, const Uint32& State ) {
 	return tSize;
 }
 
-eeSize cUIControl::GetSkinSize() {
+Sizei cUIControl::GetSkinSize() {
 	return GetSkinSize( GetSkin(), cUISkinState::StateNormal );
 }
 
@@ -1218,8 +1218,8 @@ cUIControl * cUIControl::NextComplexControl() {
 void cUIControl::DoAfterSetTheme() {
 }
 
-void cUIControl::WorldToControl( eeVector2i& pos ) const {
-	eeVector2f Pos( pos.x, pos.y );
+void cUIControl::WorldToControl( Vector2i& pos ) const {
+	Vector2f Pos( pos.x, pos.y );
 
 	std::list<cUIControl*> parents;
 
@@ -1232,13 +1232,13 @@ void cUIControl::WorldToControl( eeVector2i& pos ) const {
 
 	parents.push_back( const_cast<cUIControl*>( reinterpret_cast<const cUIControl*>( this ) ) );
 
-	eeVector2f scale(1,1);
+	Vector2f scale(1,1);
 
 	for ( std::list<cUIControl*>::iterator it = parents.begin(); it != parents.end(); it++ ) {
 		cUIControl * tParent	= (*it);
 		cUIControlAnim * tP		= tParent->IsAnimated() ? reinterpret_cast<cUIControlAnim *> ( tParent ) : NULL;
-		eeVector2f pPos			( tParent->mPos.x * scale.x			, tParent->mPos.y * scale.y			);
-		eeVector2f Center		( tParent->mSize.x * 0.5f * scale.x	, tParent->mSize.y * 0.5f * scale.y	);
+		Vector2f pPos			( tParent->mPos.x * scale.x			, tParent->mPos.y * scale.y			);
+		Vector2f Center		( tParent->mSize.x * 0.5f * scale.x	, tParent->mSize.y * 0.5f * scale.y	);
 
 		if ( NULL != tP && 1.f != tP->Scale() ) {
 			scale *= tP->Scale();
@@ -1249,16 +1249,16 @@ void cUIControl::WorldToControl( eeVector2i& pos ) const {
 		Pos -= pPos;
 
 		if ( NULL != tP && 0.f != tP->Angle() ) {
-			Center = eeVector2f( tParent->mSize.x * 0.5f * scale.x	, tParent->mSize.y * 0.5f * scale.y	);
+			Center = Vector2f( tParent->mSize.x * 0.5f * scale.x	, tParent->mSize.y * 0.5f * scale.y	);
 			Pos.Rotate( -tP->Angle(), Center );
 		}
 	}
 
-	pos = eeVector2i( Pos.x / scale.x, Pos.y / scale.y );
+	pos = Vector2i( Pos.x / scale.x, Pos.y / scale.y );
 }
 
-void cUIControl::ControlToWorld( eeVector2i& pos ) const {
-	eeVector2f Pos( pos.x, pos.y );
+void cUIControl::ControlToWorld( Vector2i& pos ) const {
+	Vector2f Pos( pos.x, pos.y );
 
 	std::list<cUIControl*> parents;
 
@@ -1274,8 +1274,8 @@ void cUIControl::ControlToWorld( eeVector2i& pos ) const {
 	for ( std::list<cUIControl*>::iterator it = parents.begin(); it != parents.end(); it++ ) {
 		cUIControl * tParent	= (*it);
 		cUIControlAnim * tP		= tParent->IsAnimated() ? reinterpret_cast<cUIControlAnim *> ( tParent ) : NULL;
-		eeVector2f pPos			( tParent->mPos.x					, tParent->mPos.y					);
-		eeVector2f Center		( pPos.x + tParent->mSize.x * 0.5f	, pPos.y + tParent->mSize.y	* 0.5f	);
+		Vector2f pPos			( tParent->mPos.x					, tParent->mPos.y					);
+		Vector2f Center		( pPos.x + tParent->mSize.x * 0.5f	, pPos.y + tParent->mSize.y	* 0.5f	);
 
 		Pos += pPos;
 
@@ -1285,7 +1285,7 @@ void cUIControl::ControlToWorld( eeVector2i& pos ) const {
 		}
 	}
 
-	pos = eeVector2i( eeceil( Pos.x ), eeceil( Pos.y ) );
+	pos = Vector2i( eeceil( Pos.x ), eeceil( Pos.y ) );
 }
 
 }}

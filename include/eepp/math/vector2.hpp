@@ -405,12 +405,12 @@ Vector2<T> Vector2<T>::Copy() {
 	return Vector2<T>( x, y );
 }
 
-typedef Vector2<Int32>		eeVector2if;
-typedef Vector2<int>		eeVector2i;
-typedef Vector2<Float>		eeVector2f;
-typedef Vector2<double>		eeVector2d;
-typedef Vector2<float>		eeVector2ff;
-typedef Vector2<Uint32>		eeVector2u;
+typedef Vector2<Int32>		Vector2if;
+typedef Vector2<int>		Vector2i;
+typedef Vector2<Float>		Vector2f;
+typedef Vector2<double>		Vector2d;
+typedef Vector2<float>		Vector2ff;
+typedef Vector2<Uint32>		Vector2u;
 
 }}
 

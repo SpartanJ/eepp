@@ -23,7 +23,7 @@ class EE_API cScrollParallax {
 		* @param Speed Speed of movement ( in Pixels Per Second )
 		* @param Color The Texture Color
 		* @param Blend The Blend Mode ( default ALPHA_NORMAL ) */
-		cScrollParallax( cSubTexture * SubTexture, const eeVector2f& Position = eeVector2f(), const eeSizef& Size = eeSizef(), const eeVector2f& Speed = eeVector2f(), const ColorA& Color = ColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
+		cScrollParallax( cSubTexture * SubTexture, const Vector2f& Position = Vector2f(), const Sizef& Size = Sizef(), const Vector2f& Speed = Vector2f(), const ColorA& Color = ColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
 
 		/** Create's the Scroll Parallax
 		* @param SubTexture The SubTexture to Draw
@@ -34,7 +34,7 @@ class EE_API cScrollParallax {
 		* @param Blend The Blend Mode ( default ALPHA_NORMAL )
 		* @return True if success
 		*/
-		bool Create( cSubTexture * SubTexture, const eeVector2f& Position = eeVector2f(), const eeSizef& Size = eeSizef(), const eeVector2f& Speed = eeVector2f(), const ColorA& Color = ColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
+		bool Create( cSubTexture * SubTexture, const Vector2f& Position = Vector2f(), const Sizef& Size = Sizef(), const Vector2f& Speed = Vector2f(), const ColorA& Color = ColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
 
 		/** Set the parallax texture color. */
 		void Color( const ColorA& Color ) { mColor = Color; }
@@ -53,17 +53,17 @@ class EE_API cScrollParallax {
 		
 		/** Change the size of the current parallax
 		* @param size The new size */
-		void Size( const eeSizef& size );
+		void Size( const Sizef& size );
 		
 		/** @return Size */
-		const eeSizef& Size() const;
+		const Sizef& Size() const;
 		
 		/** Change the Parallax position
 		* @param Pos The new parallax position */
-		void Position( const eeVector2f& Pos );
+		void Position( const Vector2f& Pos );
 		
 		/** @return The parallax position */
-		const eeVector2f& Position() const;
+		const Vector2f& Position() const;
 		
 		/** @return The SubTexture used for the parallax.*/
 		cSubTexture * SubTexture() const;
@@ -72,23 +72,23 @@ class EE_API cScrollParallax {
 		void SubTexture( cSubTexture * subTexture );
 		
 		/** Set the parallax speed movement. */
-		void Speed( const eeVector2f& speed );
+		void Speed( const Vector2f& speed );
 		
 		/** @return The parallax movement speed. */
-		const eeVector2f& Speed() const;
+		const Vector2f& Speed() const;
 	private:
 		cSubTexture * 		mSubTexture;
 		EE_BLEND_MODE		mBlend;
 		ColorA 			mColor;
-		eeVector2f			mInitPos;
-		eeVector2f			mPos;
-		eeVector2f			mSpeed;
-		eeSizef				mSize;
-		eeRecti				mRect;
+		Vector2f			mInitPos;
+		Vector2f			mPos;
+		Vector2f			mSpeed;
+		Sizef				mSize;
+		Recti				mRect;
 		Clock		mElapsed;
-		eeVector2i			mTiles;
-		eeRectf				mAABB;
-		eeSizef				mRealSize;
+		Vector2i			mTiles;
+		Rectf				mAABB;
+		Sizef				mRealSize;
 		
 		void SetSubTexture();
 		

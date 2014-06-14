@@ -100,12 +100,12 @@ void cEETest::Init() {
 		}
 
 		WP.Type( Ease::QuarticInOut );
-		WP.AddWaypoint( eeVector2f(0,0), 100 );
-		WP.AddWaypoint( eeVector2f(800,0), 100 );
-		WP.AddWaypoint( eeVector2f(0,0), 100 );
-		WP.AddWaypoint( eeVector2f(1024,768), 100 );
-		WP.AddWaypoint( eeVector2f(0,600), 100 );
-		WP.EditWaypoint( 2, eeVector2f(800,600), 100 );
+		WP.AddWaypoint( Vector2f(0,0), 100 );
+		WP.AddWaypoint( Vector2f(800,0), 100 );
+		WP.AddWaypoint( Vector2f(0,0), 100 );
+		WP.AddWaypoint( Vector2f(1024,768), 100 );
+		WP.AddWaypoint( Vector2f(0,600), 100 );
+		WP.EditWaypoint( 2, Vector2f(800,600), 100 );
 		WP.EraseWaypoint( 3 );
 		WP.Loop(true);
 		WP.SetTotalTime( Milliseconds( 5000 ) );
@@ -119,7 +119,7 @@ void cEETest::Init() {
 		if ( NULL != mFBO )
 			mFBO->ClearColor( ColorAf( 0, 0, 0, 0.5f ) );
 
-		eePolygon2f Poly = eePolygon2f::CreateRoundedRectangle( 0, 0, 256, 50 );
+		Polygon2f Poly = Polygon2f::CreateRoundedRectangle( 0, 0, 256, 50 );
 
 		mVBO = cVertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
 
@@ -237,7 +237,7 @@ void cEETest::OnShowMenu( const cUIEvent * Event ) {
 	cUIPushButton * PB = static_cast<cUIPushButton*>( Event->Ctrl() );
 
 	if ( Menu->Show() ) {
-		eeVector2i Pos = eeVector2i( (Int32)PB->GetPolygon()[0].x, (Int32)PB->GetPolygon()[0].y - 2 );
+		Vector2i Pos = Vector2i( (Int32)PB->GetPolygon()[0].x, (Int32)PB->GetPolygon()[0].y - 2 );
 		cUIMenu::FixMenuPos( Pos , Menu );
 		Menu->Pos( Pos );
 	}
@@ -267,13 +267,13 @@ void cEETest::CreateUI() {
 	cUIThemeManager::instance()->DefaultFont( TTF );
 	cUIThemeManager::instance()->DefaultTheme( "uitheme" );
 
-	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
+	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), Vector2i(0,0), Sizei( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
 	Params.Border.Width( 2 );
 	Params.Border.Color( 0x979797CC );
 	Params.Background.Colors( ColorA( 0xEDEDED66 ), ColorA( 0xEDEDEDCC ), ColorA( 0xEDEDEDCC ), ColorA( 0xEDEDED66 ) );
 
-	cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 530, 405 ), eeVector2i( 320, 240 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DRAGABLE_CONTAINER , eeSize( 530, 405 ), 200 );
+	cUIWindow * tWin = mTheme->CreateWindow( NULL, Sizei( 530, 405 ), Vector2i( 320, 240 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DRAGABLE_CONTAINER , Sizei( 530, 405 ), 200 );
 	C = tWin->Container();
 
 	tWin->Title( "Controls Test" );
@@ -285,7 +285,7 @@ void cEETest::CreateUI() {
 	Params.Background.Corners(0);
 	Params.Background.Colors( ColorA( 0x00FF0077 ), ColorA( 0x00CC0077 ), ColorA( 0x00CC0077 ), ColorA( 0x00FF0077 ) );
 	Params.Parent( C );
-	Params.Size = eeSize( 50, 50 );
+	Params.Size = Sizei( 50, 50 );
 	cUITest * Child = eeNew( cUITest, ( Params ) );
 	Child->Pos( 240, 130 );
 	Child->Visible( true );
@@ -295,7 +295,7 @@ void cEETest::CreateUI() {
 
 	Params.Background.Colors( ColorA( 0xFFFF0077 ), ColorA( 0xCCCC0077 ), ColorA( 0xCCCC0077 ), ColorA( 0xFFFF0077 ) );
 	Params.Parent( Child );
-	Params.Size = eeSize( 25, 25 );
+	Params.Size = Sizei( 25, 25 );
 	cUITest * Child2 = eeNew( cUITest, ( Params ) );
 	Child2->Pos( 15, 15 );
 	Child2->Visible( true );
@@ -303,12 +303,12 @@ void cEETest::CreateUI() {
 	Child2->StartRotation( 0.f, 360.f, Milliseconds( 5000.f ) );
 	Child2->RotationInterpolation()->Loop( true );
 
-	mTheme->CreateSprite( eeNew( cSprite, ( "gn" ) ), C, eeSize(), eeVector2i( 160, 100 ) );
+	mTheme->CreateSprite( eeNew( cSprite, ( "gn" ) ), C, Sizei(), Vector2i( 160, 100 ) );
 
 	cUITextBox::CreateParams TextParams;
 	TextParams.Parent( C );
 	TextParams.PosSet( 0, 0 );
-	TextParams.Size = eeSize( 320, 240 );
+	TextParams.Size = Sizei( 320, 240 );
 	TextParams.Flags = UI_VALIGN_TOP | UI_HALIGN_RIGHT;
 	cUITextBox * Text = eeNew( cUITextBox, ( TextParams ) );
 	Text->Visible( true );
@@ -318,7 +318,7 @@ void cEETest::CreateUI() {
 	cUITextInput::CreateParams InputParams;
 	InputParams.Parent( C );
 	InputParams.PosSet( 20, 216 );
-	InputParams.Size = eeSize( 200, 22 );
+	InputParams.Size = Sizei( 200, 22 );
 	InputParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED;
 	cUITextInput * Input = eeNew( cUITextInput, ( InputParams ) );
 	Input->Visible( true );
@@ -328,7 +328,7 @@ void cEETest::CreateUI() {
 	ButtonParams.Parent( C );
 	ButtonParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE;
 	ButtonParams.PosSet( 225, 216 );
-	ButtonParams.Size = eeSize( 90, 0 );
+	ButtonParams.Size = Sizei( 90, 0 );
 	ButtonParams.SetIcon( mTheme->GetIconByName( "ok" ) );
 	cUIPushButton * Button = eeNew( cUIPushButton, ( ButtonParams ) );
 	Button->Visible( true );
@@ -338,7 +338,7 @@ void cEETest::CreateUI() {
 	Button->TooltipText( "Click and see what happens..." );
 
 	TextParams.PosSet( 130, 20 );
-	TextParams.Size = eeSize( 80, 22 );
+	TextParams.Size = Sizei( 80, 22 );
 	TextParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT;
 	cUICheckBox * Checkbox = eeNew( cUICheckBox, ( TextParams ) );
 	Checkbox->Visible( true );
@@ -360,14 +360,14 @@ void cEETest::CreateUI() {
 	cUISlider::CreateParams SliderParams;
 	SliderParams.Parent( C );
 	SliderParams.PosSet( 220, 80 );
-	SliderParams.Size = eeSize( 80, 24 );
+	SliderParams.Size = Sizei( 80, 24 );
 	mSlider = eeNew( cUISlider, ( SliderParams ) );
 	mSlider->Visible( true );
 	mSlider->Enabled( true );
 	mSlider->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cEETest::OnSliderValueChange ) );
 
 	SliderParams.PosSet( 40, 110 );
-	SliderParams.Size = eeSize( 24, 80 );
+	SliderParams.Size = Sizei( 24, 80 );
 	SliderParams.VerticalSlider = true;
 	mSlider = eeNew( cUISlider, ( SliderParams ) );
 	mSlider->Visible( true );
@@ -381,7 +381,7 @@ void cEETest::CreateUI() {
 	cUISpinBox::CreateParams SpinBoxParams;
 	SpinBoxParams.Parent( C );
 	SpinBoxParams.PosSet( 80, 150 );
-	SpinBoxParams.Size = eeSize( 80, 24 );
+	SpinBoxParams.Size = Sizei( 80, 24 );
 	SpinBoxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE;
 	SpinBoxParams.AllowDotsInNumbers = true;
 	cUISpinBox * mSpinBox = eeNew( cUISpinBox, ( SpinBoxParams ) );
@@ -391,7 +391,7 @@ void cEETest::CreateUI() {
 	cUIScrollBar::CreateParams ScrollBarP;
 	ScrollBarP.Parent( C );
 	ScrollBarP.PosSet( 0, 0 );
-	ScrollBarP.Size = eeSize( 15, 240 );
+	ScrollBarP.Size = Sizei( 15, 240 );
 	ScrollBarP.Flags = UI_AUTO_SIZE;
 	ScrollBarP.VerticalScrollBar = true;
 	mScrollBar = eeNew( cUIScrollBar, ( ScrollBarP ) );
@@ -399,7 +399,7 @@ void cEETest::CreateUI() {
 	mScrollBar->Enabled( true );
 	mScrollBar->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cEETest::OnValueChange ) );
 
-	mProgressBar = mTheme->CreateProgressBar( C, eeSize( 200, 20 ), eeVector2i( 20, 190 ) );
+	mProgressBar = mTheme->CreateProgressBar( C, Sizei( 200, 20 ), Vector2i( 20, 190 ) );
 
 	TextParams.PosSet( 20, 5 );
 	mTextBoxValue = eeNew( cUITextBox, ( TextParams ) );
@@ -409,7 +409,7 @@ void cEETest::CreateUI() {
 	cUIListBox::CreateParams LBParams;
 	LBParams.Parent( C );
 	LBParams.PosSet( 325, 8 );
-	LBParams.Size = eeSize( 200, 240-16 );
+	LBParams.Size = Sizei( 200, 240-16 );
 	LBParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_TOUCH_DRAG_ENABLED; // | UI_MULTI_SELECT
 	mListBox = eeNew( cUIListBox, ( LBParams ) );
 	mListBox->Visible( true );
@@ -429,7 +429,7 @@ void cEETest::CreateUI() {
 	cUIDropDownList::CreateParams DDLParams;
 	DDLParams.Parent( C );
 	DDLParams.PosSet( 20, 55 );
-	DDLParams.Size = eeSize( 100, 21 );
+	DDLParams.Size = Sizei( 100, 21 );
 	DDLParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_TOUCH_DRAG_ENABLED;
 	cUIDropDownList * mDropDownList = eeNew( cUIDropDownList, ( DDLParams ) );
 	mDropDownList->Visible( true );
@@ -451,7 +451,7 @@ void cEETest::CreateUI() {
 	cUIComboBox::CreateParams ComboParams;
 	ComboParams.Parent( C );
 	ComboParams.PosSet( 20, 80 );
-	ComboParams.Size = eeSize( 100, 1 );
+	ComboParams.Size = Sizei( 100, 1 );
 	ComboParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_AUTO_SIZE | UI_TOUCH_DRAG_ENABLED | UI_TEXT_SELECTION_ENABLED;
 	cUIComboBox * mComboBox = eeNew( cUIComboBox, ( ComboParams ) );
 	mComboBox->Visible( true );
@@ -507,7 +507,7 @@ void cEETest::CreateUI() {
 	cUITextEdit::CreateParams TEParams;
 	TEParams.Parent( C );
 	TEParams.PosSet( 5, 245 );
-	TEParams.Size	= eeSize( 315, 130 );
+	TEParams.Size	= Sizei( 315, 130 );
 	TEParams.Flags = UI_AUTO_PADDING | UI_CLIP_ENABLE | UI_TEXT_SELECTION_ENABLED;
 	cUITextEdit * TextEdit = eeNew( cUITextEdit, ( TEParams ) );
 	TextEdit->Visible( true );
@@ -564,7 +564,7 @@ void cEETest::CreateMapEditor() {
 	if ( NULL != mMapEditor )
 		return;
 
-	cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 1024, 768 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, eeSize( 1024, 768 ) );
+	cUIWindow * tWin = mTheme->CreateWindow( NULL, Sizei( 1024, 768 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, Sizei( 1024, 768 ) );
 	mMapEditor = eeNew( cMapEditor, ( tWin, cb::Make0( this, &cEETest::OnMapEditorClose ) ) );
 	tWin->Center();
 	tWin->Show();
@@ -575,7 +575,7 @@ void cEETest::OnMapEditorClose() {
 }
 
 void cEETest::CreateETGEditor() {
-	cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 1024, 768 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, eeSize( 1024, 768 ) );
+	cUIWindow * tWin = mTheme->CreateWindow( NULL, Sizei( 1024, 768 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, Sizei( 1024, 768 ) );
 	mETGEditor = eeNew ( Tools::cTextureAtlasEditor, ( tWin, cb::Make0( this, &cEETest::OnETGEditorClose ) ) );
 	tWin->Center();
 	tWin->Show();
@@ -586,7 +586,7 @@ void cEETest::OnETGEditorClose() {
 }
 
 void cEETest::CreateCommonDialog() {
-	cUICommonDialog * CDialog = mTheme->CreateCommonDialog( NULL, eeSize(), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON );
+	cUICommonDialog * CDialog = mTheme->CreateCommonDialog( NULL, Sizei(), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON );
 	CDialog->AddFilePattern( "*.hpp;*.cpp", true );
 	CDialog->Center();
 	CDialog->Show();
@@ -612,29 +612,29 @@ void cEETest::CreateWinMenu() {
 }
 
 void cEETest::CreateDecoratedWindow() {
-	mUIWindow = mTheme->CreateWindow( NULL, eeSize( 530, 350 ), eeVector2i( 200, 50 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, eeSize( 100, 200 ) );
+	mUIWindow = mTheme->CreateWindow( NULL, Sizei( 530, 350 ), Vector2i( 200, 50 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, Sizei( 100, 200 ) );
 
 	mUIWindow->AddEventListener( cUIEvent::EventOnWindowCloseClick, cb::Make1( this, &cEETest::CloseClick ) );
 	mUIWindow->Title( "Test Window" );
 	mUIWindow->ToBack();
 
-	cUIPushButton * Button = mTheme->CreatePushButton( mUIWindow->Container(), eeSize( 510, 22 ), eeVector2i( 10, 28 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_ANCHOR_RIGHT );
+	cUIPushButton * Button = mTheme->CreatePushButton( mUIWindow->Container(), Sizei( 510, 22 ), Vector2i( 10, 28 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_ANCHOR_RIGHT );
 	Button->Text( "Click Me" );
 	Button->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::ButtonClick ) );
 
 	mUIWindow->AddShortcut( KEY_C, KEYMOD_ALT, Button );
 
-	cUITabWidget * TabWidget = mTheme->CreateTabWidget( mUIWindow->Container(), eeSize( 510, 250 ), eeVector2i( 10, 55 ), UI_HALIGN_CENTER | UI_VALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_TOP );
+	cUITabWidget * TabWidget = mTheme->CreateTabWidget( mUIWindow->Container(), Sizei( 510, 250 ), Vector2i( 10, 55 ), UI_HALIGN_CENTER | UI_VALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_TOP );
 
-	cUITextEdit * TEdit = mTheme->CreateTextEdit( TabWidget, eeSize(), eeVector2i() );
+	cUITextEdit * TEdit = mTheme->CreateTextEdit( TabWidget, Sizei(), Vector2i() );
 	TEdit->Text( mBuda );
 	TabWidget->Add( "TextEdit", TEdit );
 
-	cUITextInput * Txt = mTheme->CreateTextInput( TabWidget, eeSize(), eeVector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT | UI_TEXT_SELECTION_ENABLED );
+	cUITextInput * Txt = mTheme->CreateTextInput( TabWidget, Sizei(), Vector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT | UI_TEXT_SELECTION_ENABLED );
 	Txt->Text( mBuda );
 	TabWidget->Add( "TextInput", Txt );
 
-	TabWidget->Add( "TextBox", mTheme->CreateTextBox( mBuda, TabWidget, eeSize(), eeVector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT | UI_TEXT_SELECTION_ENABLED ) );
+	TabWidget->Add( "TextBox", mTheme->CreateTextBox( mBuda, TabWidget, Sizei(), Vector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT | UI_TEXT_SELECTION_ENABLED ) );
 
 	CreateWinMenu();
 }
@@ -678,11 +678,11 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 
 		if ( Chk->Active() ) {
 			if ( C->Scale() == 1.f ) C->Scale( 0.f );
-			C->StartScaleAnim( C->Scale(), eeVector2f::One, Milliseconds( 500.f ), Ease::SineOut );
+			C->StartScaleAnim( C->Scale(), Vector2f::One, Milliseconds( 500.f ), Ease::SineOut );
 			C->StartAlphaAnim( C->Alpha(), 255.f, Milliseconds( 500.f ) );
 			C->StartRotation( 0, 360, Milliseconds( 500.f ), Ease::SineOut );
 		} else {
-			C->StartScaleAnim( C->Scale(), eeVector2f::Zero, Milliseconds( 500.f ), Ease::SineIn );
+			C->StartScaleAnim( C->Scale(), Vector2f::Zero, Milliseconds( 500.f ), Ease::SineIn );
 			C->StartAlphaAnim( C->Alpha(), 0.f, Milliseconds( 500.f ) );
 			C->StartRotation( 0, 360, Milliseconds( 500.f ), Ease::SineIn );
 		}
@@ -729,7 +729,7 @@ void cEETest::QuitClick( const cUIEvent * Event ) {
 
 void cEETest::ShowMenu() {
 	if ( Menu->Show() ) {
-		eeVector2i Pos = mWindow->GetInput()->GetMousePos();
+		Vector2i Pos = mWindow->GetInput()->GetMousePos();
 		cUIMenu::FixMenuPos( Pos , Menu );
 		Menu->Pos( Pos );
 	}
@@ -755,7 +755,7 @@ void cEETest::ButtonClick( const cUIEvent * Event ) {
 		Gfx->Enabled( false );
 
 		Gfx->StartRotation( 0, 2500, Milliseconds( 2500 ) );
-		Gfx->StartMovement( eeVector2i( Math::Randi( 0, mWindow->GetWidth() ), -64 ), eeVector2i( Math::Randi( 0, mWindow->GetWidth() ), mWindow->GetHeight() + 64 ), Milliseconds( 2500 ) );
+		Gfx->StartMovement( Vector2i( Math::Randi( 0, mWindow->GetWidth() ), -64 ), Vector2i( Math::Randi( 0, mWindow->GetWidth() ), mWindow->GetHeight() + 64 ), Milliseconds( 2500 ) );
 		Gfx->CloseFadeOut( Milliseconds( 3500 ) );
 
 		mListBox->AddListBoxItem( "Test ListBox " + String::ToStr( mListBox->Count() + 1 ) + " testing it right now!" );
@@ -781,7 +781,7 @@ void cEETest::CmdSetPartsNum ( const std::vector < String >& params ) {
 		bool Res = String::FromString<Int32>( tInt, params[1] );
 
 		if ( Res && ( tInt >= 0 && tInt <= 100000 ) ) {
-			PS[2].Create( PSE_WormHole, tInt, TN[5], eeVector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 32, true );
+			PS[2].Create( PSE_WormHole, tInt, TN[5], Vector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 32, true );
 			Con.PushText( "Wormhole Particles Number Changed to: " + String::ToStr(tInt) );
 		} else
 			Con.PushText( "Valid parameters are between 0 and 100000 (0 = no limit)." );
@@ -856,14 +856,14 @@ void cEETest::LoadTextures() {
 
 	for ( Int32 my = 0; my < 4; my++ )
 		for( Int32 mx = 0; mx < 8; mx++ )
-			SP.AddFrame( TN[4], eeSizef( 0, 0 ), eeVector2i( 0, 0 ), eeRecti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
+			SP.AddFrame( TN[4], Sizef( 0, 0 ), Vector2i( 0, 0 ), Recti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
 
 	PS[0].SetCallbackReset( cb::Make2( this, &cEETest::ParticlesCallback ) );
-	PS[0].Create( PSE_Callback, 500, TN[5], eeVector2f( 0, 0 ), 16, true );
-	PS[1].Create( PSE_Heal, 250, TN[5], eeVector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 16, true );
-	PS[2].Create( PSE_WormHole, PartsNum, TN[5], eeVector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 32, true );
-	PS[3].Create( PSE_Fire, 350, TN[5], eeVector2f( -50.f, -50.f ), 32, true );
-	PS[4].Create( PSE_Fire, 350, TN[5], eeVector2f( -50.f, -50.f ), 32, true );
+	PS[0].Create( PSE_Callback, 500, TN[5], Vector2f( 0, 0 ), 16, true );
+	PS[1].Create( PSE_Heal, 250, TN[5], Vector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 16, true );
+	PS[2].Create( PSE_WormHole, PartsNum, TN[5], Vector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 32, true );
+	PS[3].Create( PSE_Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
+	PS[4].Create( PSE_Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
 
 	Con.AddCommand( "setparticlesnum", cb::Make1( this, &cEETest::CmdSetPartsNum ) );
 
@@ -894,14 +894,14 @@ void cEETest::LoadTextures() {
 	CurMan->Visible( false );
 	CurMan->Visible( true );
 	CurMan->Set( Window::Cursor::SYS_CURSOR_HAND );
-	CurMan->SetGlobalCursor( EE_CURSOR_ARROW, CurMan->Add( CurMan->Create( CursorP[0], eeVector2i( 1, 1 ), "cursor_special" ) ) );
+	CurMan->SetGlobalCursor( EE_CURSOR_ARROW, CurMan->Add( CurMan->Create( CursorP[0], Vector2i( 1, 1 ), "cursor_special" ) ) );
 	CurMan->Set( EE_CURSOR_ARROW );
 
 	CL1.AddFrame( TN[2] );
 	CL1.Position( 500, 400 );
 	CL1.Scale( 0.5f );
 
-	CL2.AddFrame(TN[0], eeSizef(96, 96) );
+	CL2.AddFrame(TN[0], Sizef(96, 96) );
 	CL2.Color( ColorA( 255, 255, 255, 255 ) );
 
 	mTGL = eeNew( cTextureAtlasLoader, ( MyPath + "atlases/bnb" + EE_TEXTURE_ATLAS_EXTENSION ) );
@@ -966,17 +966,17 @@ void cEETest::Screen2() {
 
 	Batch.BatchRotation( ang );
 	Batch.BatchScale( scale );
-	Batch.BatchCenter( eeVector2f( HWidth, HHeight ) );
+	Batch.BatchCenter( Vector2f( HWidth, HHeight ) );
 
 	Float aX = HWidth - 256.f;
 	Float aY = HHeight - 256.f;
-	eeQuad2f TmpQuad(
-		eeVector2f( aX	   , aY 		),
-		eeVector2f( aX	   , aY + 32.f  ),
-		eeVector2f( aX + 32.f, aY + 32.f  ),
-		eeVector2f( aX + 32.f, aY 		)
+	Quad2f TmpQuad(
+		Vector2f( aX	   , aY 		),
+		Vector2f( aX	   , aY + 32.f  ),
+		Vector2f( aX + 32.f, aY + 32.f  ),
+		Vector2f( aX + 32.f, aY 		)
 	);
-	TmpQuad.Rotate( ang, eeVector2f( aX + 16.f, aY + 16.f ) );
+	TmpQuad.Rotate( ang, Vector2f( aX + 16.f, aY + 16.f ) );
 
 	for ( Uint32 z = 0; z < 16; z++ ) {
 		for ( Uint32 y = 0; y < 16; y++ ) {
@@ -991,7 +991,7 @@ void cEETest::Screen2() {
 
 	Batch.BatchRotation( 0.0f );
 	Batch.BatchScale( 1.0f );
-	Batch.BatchCenter( eeVector2f( 0, 0 ) );
+	Batch.BatchCenter( Vector2f( 0, 0 ) );
 
 	Float PlanetX = HWidth  - TNP[6]->Width() * 0.5f;
 	Float PlanetY = HHeight - TNP[6]->Height() * 0.5f;
@@ -1014,15 +1014,15 @@ void cEETest::Screen2() {
 		mShaderProgram->SetUniform( "blurfactor" , (float)mBlurFactor );
 	}
 
-	TNP[6]->DrawFast( PlanetX, PlanetY, ang, eeVector2f(scale,scale));
+	TNP[6]->DrawFast( PlanetX, PlanetY, ang, Vector2f(scale,scale));
 
 	if ( mUseShaders )
 		mShaderProgram->Unbind();
 
-	TNP[3]->Draw( HWidth - 128, HHeight, 0, eeVector2f::One, ColorA(255,255,255,150), ALPHA_NORMAL, RN_ISOMETRIC);
-	TNP[3]->Draw( HWidth - 128, HHeight - 128, 0, eeVector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRIC);
-	TNP[3]->Draw( HWidth - 128, HHeight, 0, eeVector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICAL);
-	TNP[3]->Draw( HWidth, HHeight, 0, eeVector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICALNEGATIVE);
+	TNP[3]->Draw( HWidth - 128, HHeight, 0, Vector2f::One, ColorA(255,255,255,150), ALPHA_NORMAL, RN_ISOMETRIC);
+	TNP[3]->Draw( HWidth - 128, HHeight - 128, 0, Vector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRIC);
+	TNP[3]->Draw( HWidth - 128, HHeight, 0, Vector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICAL);
+	TNP[3]->Draw( HWidth, HHeight, 0, Vector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICALNEGATIVE);
 
 	alpha = (!aside) ? alpha+et.AsMilliseconds() * 0.1f : alpha-et.AsMilliseconds() * 0.1f;
 	if (alpha>=255) {
@@ -1034,7 +1034,7 @@ void cEETest::Screen2() {
 	}
 
 	ColorA Col(255,255,255,(int)alpha);
-	TNP[1]->DrawEx( (Float)mWindow->GetWidth() - 128.f, (Float)mWindow->GetHeight() - 128.f, 128.f, 128.f, ang, eeVector2f::One, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
+	TNP[1]->DrawEx( (Float)mWindow->GetWidth() - 128.f, (Float)mWindow->GetHeight() - 128.f, 128.f, 128.f, ang, Vector2f::One, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
 
 	SP.Position( alpha, alpha );
 	SP.Draw();
@@ -1047,7 +1047,7 @@ void cEETest::Screen2() {
 	else
 		CL1.Color( ColorA(255, 255, 255, 200) );
 
-	if ( eePolygon2f::IntersectQuad2( CL1.GetQuad() , CL2.GetQuad() ) ) {
+	if ( Polygon2f::IntersectQuad2( CL1.GetQuad() , CL2.GetQuad() ) ) {
 		CL1.Color( ColorA(0, 255, 0, 255) );
 		CL2.Color( ColorA(0, 255, 0, 255) );
 	} else
@@ -1076,10 +1076,10 @@ void cEETest::Screen2() {
 
 	PR.SetColor( ColorA(0, 255, 0, 50) );
 
-	eeLine2f Line( eeVector2f(0.f, 0.f), eeVector2f( (Float)mWindow->GetWidth(), (Float)mWindow->GetHeight() ) );
-	eeLine2f Line2( eeVector2f(Mousef.x - 80.f, Mousef.y - 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y + 80.f) );
-	eeLine2f Line3( eeVector2f((Float)mWindow->GetWidth(), 0.f), eeVector2f( 0.f, (Float)mWindow->GetHeight() ) );
-	eeLine2f Line4( eeVector2f(Mousef.x - 80.f, Mousef.y + 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y - 80.f) );
+	Line2f Line( Vector2f(0.f, 0.f), Vector2f( (Float)mWindow->GetWidth(), (Float)mWindow->GetHeight() ) );
+	Line2f Line2( Vector2f(Mousef.x - 80.f, Mousef.y - 80.f), Vector2f(Mousef.x + 80.f, Mousef.y + 80.f) );
+	Line2f Line3( Vector2f((Float)mWindow->GetWidth(), 0.f), Vector2f( 0.f, (Float)mWindow->GetHeight() ) );
+	Line2f Line4( Vector2f(Mousef.x - 80.f, Mousef.y + 80.f), Vector2f(Mousef.x + 80.f, Mousef.y - 80.f) );
 
 	if ( Line.Intersect( Line2 ) )
 		iL1 = true;
@@ -1099,18 +1099,18 @@ void cEETest::Screen2() {
 		PR.SetColor( ColorA(255, 255, 0, 255) );
 
 	PR.FillMode( DRAW_LINE );
-	PR.DrawCircle( eeVector2f( Mousef.x, Mousef.y ), 80.f, (Uint32)(Ang/3) );
-	PR.DrawTriangle( eeTriangle2f( eeVector2f( Mousef.x, Mousef.y - 10.f ), eeVector2f( Mousef.x - 10.f, Mousef.y + 10.f ), eeVector2f( Mousef.x + 10.f, Mousef.y + 10.f ) ) );
-	PR.DrawLine( eeLine2f( eeVector2f(Mousef.x - 80.f, Mousef.y - 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y + 80.f) ) );
-	PR.DrawLine( eeLine2f( eeVector2f(Mousef.x - 80.f, Mousef.y + 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y - 80.f) ) );
-	PR.DrawLine( eeLine2f( eeVector2f((Float)mWindow->GetWidth(), 0.f), eeVector2f( 0.f, (Float)mWindow->GetHeight() ) ) );
+	PR.DrawCircle( Vector2f( Mousef.x, Mousef.y ), 80.f, (Uint32)(Ang/3) );
+	PR.DrawTriangle( Triangle2f( Vector2f( Mousef.x, Mousef.y - 10.f ), Vector2f( Mousef.x - 10.f, Mousef.y + 10.f ), Vector2f( Mousef.x + 10.f, Mousef.y + 10.f ) ) );
+	PR.DrawLine( Line2f( Vector2f(Mousef.x - 80.f, Mousef.y - 80.f), Vector2f(Mousef.x + 80.f, Mousef.y + 80.f) ) );
+	PR.DrawLine( Line2f( Vector2f(Mousef.x - 80.f, Mousef.y + 80.f), Vector2f(Mousef.x + 80.f, Mousef.y - 80.f) ) );
+	PR.DrawLine( Line2f( Vector2f((Float)mWindow->GetWidth(), 0.f), Vector2f( 0.f, (Float)mWindow->GetHeight() ) ) );
 	PR.FillMode( DRAW_FILL );
-	PR.DrawQuad( eeQuad2f( eeVector2f(0.f, 0.f), eeVector2f(0.f, 100.f), eeVector2f(150.f, 150.f), eeVector2f(200.f, 150.f) ), ColorA(220, 240, 0, 125), ColorA(100, 0, 240, 125), ColorA(250, 50, 25, 125), ColorA(50, 150, 150, 125) );
+	PR.DrawQuad( Quad2f( Vector2f(0.f, 0.f), Vector2f(0.f, 100.f), Vector2f(150.f, 150.f), Vector2f(200.f, 150.f) ), ColorA(220, 240, 0, 125), ColorA(100, 0, 240, 125), ColorA(250, 50, 25, 125), ColorA(50, 150, 150, 125) );
 	PR.FillMode( DRAW_LINE );
-	PR.DrawRectangle( eeRectf( eeVector2f( Mousef.x - 80.f, Mousef.y - 80.f ), eeSizef( 160.f, 160.f ) ), 45.f );
-	PR.DrawLine( eeLine2f( eeVector2f(0.f, 0.f), eeVector2f( (Float)mWindow->GetWidth(), (Float)mWindow->GetHeight() ) ) );
+	PR.DrawRectangle( Rectf( Vector2f( Mousef.x - 80.f, Mousef.y - 80.f ), Sizef( 160.f, 160.f ) ), 45.f );
+	PR.DrawLine( Line2f( Vector2f(0.f, 0.f), Vector2f( (Float)mWindow->GetWidth(), (Float)mWindow->GetHeight() ) ) );
 
-	TNP[3]->DrawQuadEx( eeQuad2f( eeVector2f(0.f, 0.f), eeVector2f(0.f, 100.f), eeVector2f(150.f, 150.f), eeVector2f(200.f, 150.f) ), eeVector2f(), ang, eeVector2f(scale,scale), ColorA(220, 240, 0, 125), ColorA(100, 0, 240, 125), ColorA(250, 50, 25, 125), ColorA(50, 150, 150, 125) );
+	TNP[3]->DrawQuadEx( Quad2f( Vector2f(0.f, 0.f), Vector2f(0.f, 100.f), Vector2f(150.f, 150.f), Vector2f(200.f, 150.f) ), Vector2f(), ang, Vector2f(scale,scale), ColorA(220, 240, 0, 125), ColorA(100, 0, 240, 125), ColorA(250, 50, 25, 125), ColorA(50, 150, 150, 125) );
 
 	WP.Update( et );
 	PR.SetColor( ColorA(0, 255, 0, 255) );
@@ -1204,12 +1204,12 @@ void cEETest::Render() {
 
 		mWindow->SetView( Views[1] );
 		Mouse = KM->GetMousePosFromView( Views[1] );
-		Mousef = eeVector2f( (Float)Mouse.x, (Float)Mouse.y );
+		Mousef = Vector2f( (Float)Mouse.x, (Float)Mouse.y );
 		Screen2();
 
 		mWindow->SetView( Views[0] );
 		Mouse = KM->GetMousePosFromView( Views[0] );
-		Mousef = eeVector2f( (Float)Mouse.x, (Float)Mouse.y );
+		Mousef = Vector2f( (Float)Mouse.x, (Float)Mouse.y );
 		Screen1();
 
 		mWindow->SetView( mWindow->GetDefaultView() );
@@ -1228,12 +1228,12 @@ void cEETest::Render() {
 	PR.SetColor( ColorA(150, 150, 150, 220) );
 	PR.FillMode( DRAW_FILL );
 	PR.DrawRectangle(
-				eeRectf(
-					eeVector2f(
+				Rectf(
+					Vector2f(
 						0.f,
 						(Float)mWindow->GetHeight() - mEEText.GetTextHeight()
 					),
-					eeVector2f(
+					Vector2f(
 						mEEText.GetTextWidth(),
 						mEEText.GetTextHeight()
 					)
@@ -1274,7 +1274,7 @@ void cEETest::Input() {
 	JM->Update();
 
 	Mouse = KM->GetMousePos();
-	Mousef = eeVector2f( (Float)Mouse.x, (Float)Mouse.y );
+	Mousef = Vector2f( (Float)Mouse.x, (Float)Mouse.y );
 
 	if ( KM->IsKeyUp( KEY_F1 ) )
 		Graphics::cShaderProgramManager::instance()->Reload();
@@ -1520,7 +1520,7 @@ void cEETest::Process() {
 
 void cEETest::ParticlesCallback( cParticle * P, cParticleSystem * Me ) {
 	Float x, y, radio;
-	eeVector2f MePos( Me->Position() );
+	Vector2f MePos( Me->Position() );
 
 	radio = (Math::Randf(1.f, 1.2f) + sin( 20.0f / P->Id() )) * 24;
 	x = MePos.x + radio * cos( (Float)P->Id() );

@@ -56,7 +56,7 @@ class EE_API cUITextEdit : public cUIComplexControl {
 		cUIScrollBar *		mVScrollBar;
 		UI_SCROLLBAR_MODE	mHScrollBarMode;
 		UI_SCROLLBAR_MODE	mVScrollBarMode;
-		eeRecti				mPadding;
+		Recti				mPadding;
 		String				mText;
 		bool				mSkipValueChange;
 
@@ -64,7 +64,7 @@ class EE_API cUITextEdit : public cUIComplexControl {
 
 		virtual void OnAlphaChange();
 
-		virtual void OnParentSizeChange( const eeVector2i& SizeChange );
+		virtual void OnParentSizeChange( const Vector2i& SizeChange );
 
 		void OnVScrollValueChange( const cUIEvent * Event );
 

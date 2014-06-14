@@ -60,11 +60,11 @@ void cMap::Reset() {
 	mFlags	= 0;
 	mMaxLayers	= 0;
 	mMouseOver = false;
-	mViewSize = eeSize( 800, 600 );
+	mViewSize = Sizei( 800, 600 );
 	mBaseColor = ColorA( 255, 255, 255, 255 );
 }
 
-void cMap::ForceHeadersOnLoad( eeSize mapSize, eeSize tileSize, Uint32 numLayers, Uint32 flags ) {
+void cMap::ForceHeadersOnLoad( Sizei mapSize, Sizei tileSize, Uint32 numLayers, Uint32 flags ) {
 	DisableForcedHeaders();
 	mForcedHeaders = eeNew( cForcedHeaders, ( mapSize, tileSize, numLayers, flags ) );
 }
@@ -84,7 +84,7 @@ void cMap::DeleteLayers() {
 	mLayerCount = 0;
 }
 
-void cMap::Create( eeSize Size, Uint32 MaxLayers, eeSize TileSize, Uint32 Flags, eeSize viewSize, Window::cWindow * Window ) {
+void cMap::Create( Sizei Size, Uint32 MaxLayers, Sizei TileSize, Uint32 Flags, Sizei viewSize, Window::cWindow * Window ) {
 	Reset();
 
 	mWindow		= Window;
@@ -223,7 +223,7 @@ void cMap::Draw() {
 		Uint8 Alpha = static_cast<Uint8>( (Float)mBackColor.A() * ( (Float)mBackAlpha / 255.f ) );
 
 		P.SetColor( ColorA( mBackColor.R(), mBackColor.G(), mBackColor.B(), Alpha ) );
-		P.DrawRectangle( eeRectf( eeVector2f( mScreenPos.x, mScreenPos.y ), eeSizef( mViewSize.x, mViewSize.y ) ), 0.f, eeVector2f::One );
+		P.DrawRectangle( Rectf( Vector2f( mScreenPos.x, mScreenPos.y ), Sizef( mViewSize.x, mViewSize.y ) ), 0.f, Vector2f::One );
 		P.SetColor( ColorA( 255, 255, 255, 255 ) );
 	}
 
@@ -260,7 +260,7 @@ void cMap::MouseOverDraw() {
 	if ( !DrawTileOver() || NULL == mTileTex )
 		return;
 
-	mTileTex->Draw( mMouseOverTileFinal.x * mTileSize.x, mMouseOverTileFinal.y * mTileSize.y, 0, eeVector2f::One, mTileOverColor );
+	mTileTex->Draw( mMouseOverTileFinal.x * mTileSize.x, mMouseOverTileFinal.y * mTileSize.y, 0, Vector2f::One, mTileOverColor );
 }
 
 void cMap::GridDraw() {
@@ -272,8 +272,8 @@ void cMap::GridDraw() {
 
 	cGlobalBatchRenderer::instance()->Draw();
 
-	eeVector2i start = StartTile();
-	eeVector2i end = EndTile();
+	Vector2i start = StartTile();
+	Vector2i end = EndTile();
 
 	Float tx, ty;
 	ColorA TileTexCol( 255, 255, 255, mBackAlpha );
@@ -285,7 +285,7 @@ void cMap::GridDraw() {
 			ty = y * mTileSize.y;
 
 			if ( LightsEnabled() ) {
-				eeVector2i TPos( x, y );
+				Vector2i TPos( x, y );
 
 				if ( mLightManager->IsByVertex() ) {
 					ColorA TileTexCol0( *mLightManager->GetTileColor( TPos, 0 ) );
@@ -295,15 +295,15 @@ void cMap::GridDraw() {
 
 					TileTexCol0.Alpha = TileTexCol1.Alpha = TileTexCol2.Alpha = TileTexCol3.Alpha	= mBackAlpha;
 
-					mTileTex->DrawEx( tx, ty, 0, 0, 0, eeVector2f::One, TileTexCol0, TileTexCol1, TileTexCol2, TileTexCol3 );
+					mTileTex->DrawEx( tx, ty, 0, 0, 0, Vector2f::One, TileTexCol0, TileTexCol1, TileTexCol2, TileTexCol3 );
 				} else {
 					TileTexCol			= *mLightManager->GetTileColor( TPos );
 					TileTexCol.Alpha	= mBackAlpha;
 
-					mTileTex->Draw( tx, ty, 0, eeVector2f::One, TileTexCol );
+					mTileTex->Draw( tx, ty, 0, Vector2f::One, TileTexCol );
 				}
 			} else {
-				mTileTex->Draw( tx, ty, 0, eeVector2f::One, TileTexCol );
+				mTileTex->Draw( tx, ty, 0, Vector2f::One, TileTexCol );
 			}
 		}
 	}
@@ -316,9 +316,9 @@ const bool& cMap::IsMouseOver() const {
 }
 
 void cMap::GetMouseOverTile() {
-	eeVector2i mouse = mWindow->GetInput()->GetMousePos();
+	Vector2i mouse = mWindow->GetInput()->GetMousePos();
 
-	eeVector2i MapPos( static_cast<Float>( mouse.x - mScreenPos.x - mOffset.x ) / mScale, static_cast<Float>( mouse.y - mScreenPos.y - mOffset.y ) / mScale );
+	Vector2i MapPos( static_cast<Float>( mouse.x - mScreenPos.x - mOffset.x ) / mScale, static_cast<Float>( mouse.y - mScreenPos.y - mOffset.y ) / mScale );
 
 	mMouseOver = !( MapPos.x < 0 || MapPos.y < 0 || MapPos.x > mPixelSize.x || MapPos.y > mPixelSize.y );
 
@@ -341,8 +341,8 @@ void cMap::GetMouseOverTile() {
 
 void cMap::CalcTilesClip() {
 	if ( mTileSize.x > 0 && mTileSize.y > 0 ) {
-		eeVector2f ffoff( mOffset );
-		eeVector2i foff( (Int32)ffoff.x, (Int32)ffoff.y );
+		Vector2f ffoff( mOffset );
+		Vector2i foff( (Int32)ffoff.x, (Int32)ffoff.y );
 
 		mStartTile.x	= -foff.x / ( mTileSize.x * mScale ) - mExtraTiles.x;
 		mStartTile.y	= -foff.y / ( mTileSize.y * mScale ) - mExtraTiles.y;
@@ -374,7 +374,7 @@ void cMap::Clamp() {
 	if ( mOffset.y > 0 )
 		mOffset.y = 0;
 
-	eeVector2f totSize( mTileSize.x * mSize.x * mScale, mTileSize.y * mSize.y * mScale );
+	Vector2f totSize( mTileSize.x * mSize.x * mScale, mTileSize.y * mSize.y * mScale );
 
 	if ( -mOffset.x + mViewSize.x > totSize.x )
 		mOffset.x = -( totSize.x - mViewSize.x );
@@ -404,7 +404,7 @@ void cMap::Clamp() {
 		mOffset.y = 0;
 }
 
-void cMap::Offset( const eeVector2f& offset ) {
+void cMap::Offset( const Vector2f& offset ) {
 	mOffset			= offset;
 
 	Clamp();
@@ -412,8 +412,8 @@ void cMap::Offset( const eeVector2f& offset ) {
 	CalcTilesClip();
 }
 
-eeVector2i cMap::GetMaxOffset() {
-	eeVector2i v(  ( mTileSize.x * mSize.x * mScale ) - mViewSize.x,
+Vector2i cMap::GetMaxOffset() {
+	Vector2i v(  ( mTileSize.x * mSize.x * mScale ) - mViewSize.x,
 				   ( mTileSize.y * mSize.y * mScale ) - mViewSize.y );
 
 	eemax( 0, v.x );
@@ -455,35 +455,35 @@ void cMap::Update() {
 		mUpdateCb();
 }
 
-const eeSize& cMap::ViewSize() const {
+const Sizei& cMap::ViewSize() const {
 	return mViewSize;
 }
 
-const eeVector2i& cMap::GetMouseTilePos() const {
+const Vector2i& cMap::GetMouseTilePos() const {
 	return mMouseOverTileFinal;
 }
 
-const eeVector2i& cMap::GetRealMouseTilePos() const {
+const Vector2i& cMap::GetRealMouseTilePos() const {
 	return mMouseOverTile;
 }
 
-const eeVector2i& cMap::GetMouseMapPos() const {
+const Vector2i& cMap::GetMouseMapPos() const {
 	return mMouseMapPos;
 }
 
-eeVector2f cMap::GetMouseMapPosf() const {
-	return eeVector2f( (Float)mMouseMapPos.x, (Float)mMouseMapPos.y );
+Vector2f cMap::GetMouseMapPosf() const {
+	return Vector2f( (Float)mMouseMapPos.x, (Float)mMouseMapPos.y );
 }
 
-eeVector2i cMap::GetMouseTilePosCoords() {
+Vector2i cMap::GetMouseTilePosCoords() {
 	return GetTileCoords( GetMouseTilePos() );
 }
 
-eeVector2i cMap::GetTileCoords( const eeVector2i& TilePos ) {
+Vector2i cMap::GetTileCoords( const Vector2i& TilePos ) {
 	return ( TilePos * mTileSize );
 }
 
-void cMap::ViewSize( const eeSize& viewSize ) {
+void cMap::ViewSize( const Sizei& viewSize ) {
 	mViewSize = viewSize;
 
 	Clamp();
@@ -491,31 +491,31 @@ void cMap::ViewSize( const eeSize& viewSize ) {
 	CalcTilesClip();
 }
 
-const eeVector2i& cMap::Position() const {
+const Vector2i& cMap::Position() const {
 	return mScreenPos;
 }
 
-void cMap::Position( const eeVector2i& position ) {
+void cMap::Position( const Vector2i& position ) {
 	mScreenPos = position;
 }
 
-const eeVector2f& cMap::Offset() const {
+const Vector2f& cMap::Offset() const {
 	return mOffset;
 }
 
-const eeVector2i& cMap::StartTile() const {
+const Vector2i& cMap::StartTile() const {
 	return mStartTile;
 }
 
-const eeVector2i& cMap::EndTile() const {
+const Vector2i& cMap::EndTile() const {
 	return mEndTile;
 }
 
-void cMap::ExtraTiles( const eeVector2i& extra ) {
+void cMap::ExtraTiles( const Vector2i& extra ) {
 	mExtraTiles = extra;
 }
 
-const eeVector2i& cMap::ExtraTiles() const {
+const Vector2i& cMap::ExtraTiles() const {
 	return mExtraTiles;
 }
 
@@ -587,12 +587,12 @@ bool cMap::LightsByVertex() {
 	return 0 != ( mFlags & MAP_FLAG_LIGHTS_BYVERTEX );
 }
 
-void cMap::Move( const eeVector2f& offset )  {
+void cMap::Move( const Vector2f& offset )  {
 	Move( offset.x, offset.y );
 }
 
 void cMap::Move( const Float& offsetx, const Float& offsety ) {
-	Offset( eeVector2f( mOffset.x + offsetx, mOffset.y + offsety ) );
+	Offset( Vector2f( mOffset.x + offsetx, mOffset.y + offsety ) );
 }
 
 cGameObjectPolyData& cMap::GetPolyObjData( Uint32 Id ) {
@@ -675,15 +675,15 @@ cLightManager * cMap::GetLightManager() const {
 	return mLightManager;
 }
 
-const eeSize& cMap::TotalSize() const {
+const Sizei& cMap::TotalSize() const {
 	return mPixelSize;
 }
 
-const eeSize& cMap::TileSize() const {
+const Sizei& cMap::TileSize() const {
 	return mTileSize;
 }
 
-const eeSize& cMap::Size() const {
+const Sizei& cMap::Size() const {
 	return mSize;
 }
 
@@ -801,7 +801,7 @@ bool cMap::LoadFromStream( IOStream& IOS ) {
 
 		if ( MapHdr.Magic == EE_MAP_MAGIC ) {
 			if ( NULL == mForcedHeaders ) {
-				Create( eeSize( MapHdr.SizeX, MapHdr.SizeY ), MapHdr.MaxLayers, eeSize( MapHdr.TileSizeX, MapHdr.TileSizeY ), MapHdr.Flags );
+				Create( Sizei( MapHdr.SizeX, MapHdr.SizeY ), MapHdr.MaxLayers, Sizei( MapHdr.TileSizeX, MapHdr.TileSizeY ), MapHdr.Flags );
 			} else {
 				Create( mForcedHeaders->MapSize, mForcedHeaders->NumLayers, mForcedHeaders->TileSize, mForcedHeaders->Flags );
 			}
@@ -875,7 +875,7 @@ bool cMap::LoadFromStream( IOStream& IOS ) {
 					cLayer * tLayer = AddLayer( tLayerHdr->Type, tLayerHdr->Flags, std::string( tLayerHdr->Name ) );
 
 					if ( NULL != tLayer ) {
-						tLayer->Offset( eeVector2f( (Float)tLayerHdr->OffsetX, (Float)tLayerHdr->OffsetY ) );
+						tLayer->Offset( Vector2f( (Float)tLayerHdr->OffsetX, (Float)tLayerHdr->OffsetY ) );
 
 						sPropertyHdr * tProps = eeNewArray( sPropertyHdr, tLayerHdr->PropertyCount );
 
@@ -903,7 +903,7 @@ bool cMap::LoadFromStream( IOStream& IOS ) {
 				cGameObject * tGO;
 
 				if ( NULL != mForcedHeaders ) {
-					mSize = eeSize( MapHdr.SizeX, MapHdr.SizeY );
+					mSize = Sizei( MapHdr.SizeX, MapHdr.SizeY );
 				}
 
 				if ( ThereIsTiled ) {
@@ -925,7 +925,7 @@ bool cMap::LoadFromStream( IOStream& IOS ) {
 
 									tGO = CreateGameObject( tTGOHdr.Type, tTGOHdr.Flags, mLayers[i], tTGOHdr.Id );
 
-									tTLayer->AddGameObject( tGO, eeVector2i( x, y ) );
+									tTLayer->AddGameObject( tGO, Vector2i( x, y ) );
 								}
 							}
 						}
@@ -975,11 +975,11 @@ bool cMap::LoadFromStream( IOStream& IOS ) {
 
 								//! Reads the polygon points
 								for ( Uint32 iPoint = 0; iPoint < tObjObjHdr.PointCount; iPoint++ ) {
-									eeVector2if p;
+									Vector2if p;
 
-									IOS.Read( (char*)&p, sizeof(eeVector2if) );
+									IOS.Read( (char*)&p, sizeof(Vector2if) );
 
-									tObjData.Poly.PushBack( eeVector2f( p.x, p.y ) );
+									tObjData.Poly.PushBack( Vector2f( p.x, p.y ) );
 								}
 
 								mPolyObjs[ tOGOHdr.Id ] = tObjData;
@@ -990,7 +990,7 @@ bool cMap::LoadFromStream( IOStream& IOS ) {
 
 							tGO = CreateGameObject( tOGOHdr.Type, tOGOHdr.Flags, mLayers[i], tOGOHdr.Id );
 
-							tGO->Pos( eeVector2f( tOGOHdr.PosX, tOGOHdr.PosY ) );
+							tGO->Pos( Vector2f( tOGOHdr.PosX, tOGOHdr.PosY ) );
 
 							tOLayer->AddGameObject( tGO );
 						}
@@ -1215,7 +1215,7 @@ void cMap::SaveToStream( IOStream& IOS ) {
 						if ( NULL != tLayer && tLayer->Type() == MAP_LAYER_TILED ) {
 							tTLayer = reinterpret_cast<cTileLayer*> ( tLayer );
 
-							tObj = tTLayer->GetGameObject( eeVector2i( x, y ) );
+							tObj = tTLayer->GetGameObject( Vector2i( x, y ) );
 
 							if ( NULL != tObj ) {
 								tReadFlag |= 1 << i;
@@ -1299,7 +1299,7 @@ void cMap::SaveToStream( IOStream& IOS ) {
 							tObj->Type() == GAMEOBJECT_TYPE_POLYLINE )
 					{
 						cGameObjectObject * tObjObj						= reinterpret_cast<cGameObjectObject*>( tObj );
-						eePolygon2f tPoly								= tObjObj->GetPolygon();
+						Polygon2f tPoly								= tObjObj->GetPolygon();
 						cGameObjectObject::PropertiesMap tObjObjProp	= tObjObj->GetProperties();
 						sMapObjObjHdr tObjObjHdr;
 
@@ -1330,10 +1330,10 @@ void cMap::SaveToStream( IOStream& IOS ) {
 
 						//! Writes the polygon points
 						for ( Uint32 tPoint = 0; tPoint < tPoly.Size(); tPoint++ ) {
-							eeVector2f pf( tPoly.GetAt( tPoint ) );
-							eeVector2if p( pf.x, pf.y );	//! Convert it to Int32
+							Vector2f pf( tPoly.GetAt( tPoint ) );
+							Vector2if p( pf.x, pf.y );	//! Convert it to Int32
 
-							IOS.Write( (const char*)&p, sizeof(eeVector2if) );
+							IOS.Write( (const char*)&p, sizeof(Vector2if) );
 						}
 					}
 				}
@@ -1401,7 +1401,7 @@ cTexture * cMap::GetBlankTileTexture() {
 	return mTileTex;
 }
 
-bool cMap::IsTileBlocked( const eeVector2i& TilePos ) {
+bool cMap::IsTileBlocked( const Vector2i& TilePos ) {
 	cTileLayer * TLayer;
 	cGameObject * TObj;
 
@@ -1430,7 +1430,7 @@ void * cMap::Data() const {
 void cMap::OnMapLoaded() {
 }
 
-cGameObject * cMap::IsTypeInTilePos( const Uint32& Type, const eeVector2i& TilePos ) {
+cGameObject * cMap::IsTypeInTilePos( const Uint32& Type, const Vector2i& TilePos ) {
 	for ( Uint32 i = 0; i < mLayerCount; i++ ) {
 		if ( mLayers[i]->Type() == MAP_LAYER_TILED ) {
 			cTileLayer * tLayer = reinterpret_cast<cTileLayer*> ( mLayers[i] );

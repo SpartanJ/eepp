@@ -36,7 +36,7 @@ bool cWindowSFML::Create( WindowSettings Settings, ContextSettings Context ) {
 	sf::VideoMode mode			= sf::VideoMode::getDesktopMode();
 	mWindow.WindowConfig		= Settings;
 	mWindow.ContextConfig		= Context;
-	mWindow.DesktopResolution	= eeSize( mode.width, mode.height );
+	mWindow.DesktopResolution	= Sizei( mode.width, mode.height );
 
 	if ( mWindow.WindowConfig.Style & WindowStyle::Titlebar )
 		mWindow.Flags |= sf::Style::Titlebar;
@@ -153,9 +153,9 @@ bool cWindowSFML::Visible() {
 	return mVisible;
 }
 
-eeVector2i cWindowSFML::Position() {
+Vector2i cWindowSFML::Position() {
 	sf::Vector2i v( mSFMLWindow.getPosition() );
-	return eeVector2i( v.x, v.y );
+	return Vector2i( v.x, v.y );
 }
 
 void cWindowSFML::Size( Uint32 Width, Uint32 Height, bool Windowed ) {

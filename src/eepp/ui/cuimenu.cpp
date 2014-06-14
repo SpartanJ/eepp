@@ -61,9 +61,9 @@ cUIMenuItem * cUIMenu::CreateMenuItem( const String& Text, cSubTexture * Icon ) 
 	Params.Icon				= Icon;
 
 	if ( mRowHeight < mMinSpaceForIcons )
-		Params.IconMinSize		= eeSize( mMinSpaceForIcons, mRowHeight );
+		Params.IconMinSize		= Sizei( mMinSpaceForIcons, mRowHeight );
 	else
-		Params.IconMinSize		= eeSize( mMinSpaceForIcons, mMinSpaceForIcons );
+		Params.IconMinSize		= Sizei( mMinSpaceForIcons, mMinSpaceForIcons );
 
 	if ( mFlags & UI_AUTO_SIZE ) {
 		Params.Flags		= UI_VALIGN_CENTER | UI_HALIGN_LEFT;
@@ -91,12 +91,12 @@ cUIMenuCheckBox * cUIMenu::CreateMenuCheckBox( const String& Text, const bool &A
 	Params.FontColor 		= mFontColor;
 	Params.FontShadowColor 	= mFontShadowColor;
 	Params.FontOverColor	= mFontOverColor;
-	Params.Size				= eeSize( 0, mRowHeight );
+	Params.Size				= Sizei( 0, mRowHeight );
 
 	if ( mRowHeight < mMinSpaceForIcons )
-		Params.IconMinSize		= eeSize( mMinSpaceForIcons, mRowHeight );
+		Params.IconMinSize		= Sizei( mMinSpaceForIcons, mRowHeight );
 	else
-		Params.IconMinSize		= eeSize( mMinSpaceForIcons, mMinSpaceForIcons );
+		Params.IconMinSize		= Sizei( mMinSpaceForIcons, mMinSpaceForIcons );
 
 	if ( mFlags & UI_AUTO_SIZE ) {
 		Params.Flags		= UI_VALIGN_CENTER | UI_HALIGN_LEFT;
@@ -131,9 +131,9 @@ cUIMenuSubMenu * cUIMenu::CreateSubMenu( const String& Text, cSubTexture * Icon,
 	Params.Icon				= Icon;
 
 	if ( mRowHeight < mMinSpaceForIcons )
-		Params.IconMinSize		= eeSize( mMinSpaceForIcons, mRowHeight );
+		Params.IconMinSize		= Sizei( mMinSpaceForIcons, mRowHeight );
 	else
-		Params.IconMinSize		= eeSize( mMinSpaceForIcons, mMinSpaceForIcons );
+		Params.IconMinSize		= Sizei( mMinSpaceForIcons, mMinSpaceForIcons );
 
 	if ( mFlags & UI_AUTO_SIZE ) {
 		Params.Flags		= UI_VALIGN_CENTER | UI_HALIGN_LEFT;
@@ -224,7 +224,7 @@ Uint32 cUIMenu::AddSeparator() {
 	cUISeparator::CreateParams Params;
 	Params.Parent( this );
 	Params.PosSet( mPadding.Left, mPadding.Top + mNextPosY );
-	Params.Size = eeSize( mSize.Width() - mPadding.Left - mPadding.Right, 3 );
+	Params.Size = Sizei( mSize.Width() - mPadding.Left - mPadding.Right, 3 );
 
 	cUISeparator * Control = eeNew( cUISeparator, ( Params ) );
 
@@ -555,25 +555,25 @@ Uint32 cUIMenu::OnKeyDown( const cUIEventKey& Event ) {
 	return cUIComplexControl::OnKeyDown( Event );
 }
 
-const eeRecti& cUIMenu::Padding() const {
+const Recti& cUIMenu::Padding() const {
 	return mPadding;
 }
 
-void cUIMenu::FixMenuPos( eeVector2i& Pos, cUIMenu * Menu, cUIMenu * Parent, cUIMenuSubMenu * SubMenu ) {
+void cUIMenu::FixMenuPos( Vector2i& Pos, cUIMenu * Menu, cUIMenu * Parent, cUIMenuSubMenu * SubMenu ) {
 	eeAABB qScreen( 0.f, 0.f, cUIManager::instance()->MainControl()->Size().Width(), cUIManager::instance()->MainControl()->Size().Height() );
 	eeAABB qPos( Pos.x, Pos.y, Pos.x + Menu->Size().Width(), Pos.y + Menu->Size().Height() );
 
 	if ( NULL != Parent && NULL != SubMenu ) {
-		eeVector2i addToPos( 0, 0 );
+		Vector2i addToPos( 0, 0 );
 
 		if ( NULL != SubMenu ) {
 			addToPos.y = SubMenu->Size().Height();
 		}
 
-		eeVector2i sPos = SubMenu->Pos();
+		Vector2i sPos = SubMenu->Pos();
 		SubMenu->ControlToScreen( sPos );
 
-		eeVector2i pPos = Parent->Pos();
+		Vector2i pPos = Parent->Pos();
 		Parent->ControlToScreen( pPos );
 
 		eeAABB qParent( pPos.x, pPos.y, pPos.x + Parent->Size().Width(), pPos.y + Parent->Size().Height() );

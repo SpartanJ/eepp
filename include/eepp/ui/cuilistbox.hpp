@@ -44,9 +44,9 @@ class EE_API cUIListBox : public cUIComplexControl {
 				bool				SmoothScroll;
 				UI_SCROLLBAR_MODE	VScrollMode;
 				UI_SCROLLBAR_MODE	HScrollMode;
-				eeRecti				PaddingContainer;
-				eeRecti				HScrollPadding;
-				eeRecti				VScrollPadding;
+				Recti				PaddingContainer;
+				Recti				HScrollPadding;
+				Recti				VScrollPadding;
 				cFont *				Font;
 				ColorA			FontColor;
 				ColorA			FontOverColor;
@@ -118,9 +118,9 @@ class EE_API cUIListBox : public cUIComplexControl {
 
 		cFont * Font() const;
 
-		void PaddingContainer( const eeRecti& Padding );
+		void PaddingContainer( const Recti& Padding );
 
-		const eeRecti& PaddingContainer() const;
+		const Recti& PaddingContainer() const;
 
 		void SmoothScroll( const bool& soft );
 
@@ -170,9 +170,9 @@ class EE_API cUIListBox : public cUIComplexControl {
 		UI_SCROLLBAR_MODE	mVScrollMode;
 		UI_SCROLLBAR_MODE	mHScrollMode;
 		bool 				mSmoothScroll;
-		eeRecti 			mPaddingContainer;
-		eeRecti				mHScrollPadding;
-		eeRecti				mVScrollPadding;
+		Recti 			mPaddingContainer;
+		Recti				mHScrollPadding;
+		Recti				mVScrollPadding;
 		tUIItemContainer<cUIListBox> * mContainer;
 		cUIScrollBar * 		mVScrollBar;
 		cUIScrollBar * 		mHScrollBar;
@@ -189,7 +189,7 @@ class EE_API cUIListBox : public cUIComplexControl {
 		Uint32				mVisibleFirst;
 		Uint32				mVisibleLast;
 
-		eeVector2i			mTouchDragPoint;
+		Vector2i			mTouchDragPoint;
 		Float				mTouchDragAcceleration;
 		Float				mTouchDragDeceleration;
 

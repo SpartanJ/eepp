@@ -428,11 +428,11 @@ bool cTexture::IsCompressed() const {
 	return 0 != ( mFlags & TEX_FLAG_COMPRESSED );
 }
 
-void cTexture::Draw( const Float &x, const Float &y, const Float &Angle, const eeVector2f &Scale, const ColorA& Color, const EE_BLEND_MODE &Blend, const EE_RENDER_MODE &Effect, eeOriginPoint Center, const eeRecti& texSector) {
+void cTexture::Draw( const Float &x, const Float &y, const Float &Angle, const Vector2f &Scale, const ColorA& Color, const EE_BLEND_MODE &Blend, const EE_RENDER_MODE &Effect, OriginPoint Center, const Recti& texSector) {
 	DrawEx( x, y, 0, 0, Angle, Scale, Color, Color, Color, Color, Blend, Effect, Center, texSector );
 }
 
-void cTexture::DrawFast( const Float& x, const Float& y, const Float& Angle, const eeVector2f& Scale, const ColorA& Color, const EE_BLEND_MODE &Blend, const Float &width, const Float &height ) {
+void cTexture::DrawFast( const Float& x, const Float& y, const Float& Angle, const Vector2f& Scale, const ColorA& Color, const EE_BLEND_MODE &Blend, const Float &width, const Float &height ) {
 	Float w = 0.f != width	? width		: (Float)ImgWidth();
 	Float h = 0.f != height	? height	: (Float)ImgHeight();
 
@@ -451,9 +451,9 @@ void cTexture::DrawFast( const Float& x, const Float& y, const Float& Angle, con
 	sBR->DrawOpt();
 }
 
-void cTexture::DrawEx( Float x, Float y, Float width, Float height, const Float &Angle, const eeVector2f &Scale, const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const EE_BLEND_MODE &Blend, const EE_RENDER_MODE &Effect, eeOriginPoint Center, const eeRecti& texSector ) {
+void cTexture::DrawEx( Float x, Float y, Float width, Float height, const Float &Angle, const Vector2f &Scale, const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const EE_BLEND_MODE &Blend, const EE_RENDER_MODE &Effect, OriginPoint Center, const Recti& texSector ) {
 	bool renderSector	= true;
-	eeRecti Sector		= texSector;
+	Recti Sector		= texSector;
 	Float w			= (Float)ImgWidth();
 	Float h			= (Float)ImgHeight();
 
@@ -493,14 +493,14 @@ void cTexture::DrawEx( Float x, Float y, Float width, Float height, const Float 
 					Int32 tmpX;
 
 					sBR->Draw();
-					eeVector2f oCenter( sBR->BatchCenter() );
+					Vector2f oCenter( sBR->BatchCenter() );
 					Float oAngle = sBR->BatchRotation();
-					eeVector2f oScale = sBR->BatchScale();
+					Vector2f oScale = sBR->BatchScale();
 
-					if ( Center.OriginType == eeOriginPoint::OriginCenter ) {
+					if ( Center.OriginType == OriginPoint::OriginCenter ) {
 						Center.x = x + width  * 0.5f;
 						Center.y = y + height * 0.5f;
-					} else if ( Center.OriginType == eeOriginPoint::OriginTopLeft ) {
+					} else if ( Center.OriginType == OriginPoint::OriginTopLeft ) {
 						Center.x = x;
 						Center.y = y;
 					} else {
@@ -583,8 +583,8 @@ void cTexture::DrawEx( Float x, Float y, Float width, Float height, const Float 
 		if ( renderSector )
 			sBR->QuadsSetSubsetFree( Sector.Left / w, Sector.Top / h, Sector.Left / w, Sector.Bottom / h, Sector.Right / w, Sector.Bottom / h, Sector.Right / w, Sector.Top / h );
 
-		eeRectf TmpR( x, y, x + width, y + height );
-		eeQuad2f Q = eeQuad2f( eeVector2f( TmpR.Left, TmpR.Top ), eeVector2f( TmpR.Left, TmpR.Bottom ), eeVector2f( TmpR.Right, TmpR.Bottom ), eeVector2f( TmpR.Right, TmpR.Top ) );
+		Rectf TmpR( x, y, x + width, y + height );
+		Quad2f Q = Quad2f( Vector2f( TmpR.Left, TmpR.Top ), Vector2f( TmpR.Left, TmpR.Bottom ), Vector2f( TmpR.Right, TmpR.Bottom ), Vector2f( TmpR.Right, TmpR.Top ) );
 
 		if ( Effect == RN_ISOMETRIC ) {
 			Q.V[0].x += ( TmpR.Right - TmpR.Left );
@@ -600,9 +600,9 @@ void cTexture::DrawEx( Float x, Float y, Float width, Float height, const Float 
 		}
 
 		if ( Angle != 0.f || Scale != 1.f ) {
-			if ( Center.OriginType == eeOriginPoint::OriginCenter ) {
+			if ( Center.OriginType == OriginPoint::OriginCenter ) {
 				Center = TmpR.Center();
-			} else if ( Center.OriginType == eeOriginPoint::OriginTopLeft ) {
+			} else if ( Center.OriginType == OriginPoint::OriginTopLeft ) {
 				Center = TmpR.Pos();
 			} else {
 				Center += TmpR.Pos();
@@ -618,11 +618,11 @@ void cTexture::DrawEx( Float x, Float y, Float width, Float height, const Float 
 	sBR->DrawOpt();
 }
 
-void cTexture::DrawQuad( const eeQuad2f& Q, const eeVector2f& Offset, const Float &Angle, const eeVector2f &Scale, const ColorA& Color, const EE_BLEND_MODE &Blend, const eeRecti& texSector) {
+void cTexture::DrawQuad( const Quad2f& Q, const Vector2f& Offset, const Float &Angle, const Vector2f &Scale, const ColorA& Color, const EE_BLEND_MODE &Blend, const Recti& texSector) {
 	DrawQuadEx( Q, Offset, Angle, Scale, Color, Color, Color, Color, Blend, texSector );
 }
 
-void cTexture::DrawQuadEx( eeQuad2f Q, const eeVector2f& Offset, const Float &Angle, const eeVector2f &Scale, const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const EE_BLEND_MODE &Blend, eeRecti texSector ) {
+void cTexture::DrawQuadEx( Quad2f Q, const Vector2f& Offset, const Float &Angle, const Vector2f &Scale, const ColorA& Color0, const ColorA& Color1, const ColorA& Color2, const ColorA& Color3, const EE_BLEND_MODE &Blend, Recti texSector ) {
 	bool renderSector = true;
 	Float w =	(Float)ImgWidth();
 	Float h = (Float)ImgHeight();
@@ -643,7 +643,7 @@ void cTexture::DrawQuadEx( eeQuad2f Q, const eeVector2f& Offset, const Float &An
 	sBR->QuadsSetColorFree( Color0, Color1, Color2, Color3 );
 
 	if ( Angle != 0 ||  Scale != 1.0f ) {
-		eeVector2f QCenter( Q.GetCenter() );
+		Vector2f QCenter( Q.GetCenter() );
 		Q.Rotate( Angle, QCenter );
 		Q.Scale( Scale, QCenter );
 	}

@@ -35,13 +35,13 @@ const bool& cLightManager::IsByVertex() const {
 }
 
 void cLightManager::UpdateByVertex() {
-	eeVector2i start	= mMap->StartTile();
-	eeVector2i end		= mMap->EndTile();
+	Vector2i start	= mMap->StartTile();
+	Vector2i end		= mMap->EndTile();
 	eeAABB VisibleArea	= mMap->GetViewAreaAABB();
-	eeSize TileSize		= mMap->TileSize();
+	Sizei TileSize		= mMap->TileSize();
 	ColorA BaseColor	= mMap->BaseColor();
 	bool firstLight		= true;
-	eeVector2i Pos;
+	Vector2i Pos;
 
 	if ( !mLights.size() )
 		return;
@@ -87,14 +87,14 @@ void cLightManager::UpdateByVertex() {
 }
 
 void cLightManager::UpdateByTile() {
-	eeVector2i start	= mMap->StartTile();
-	eeVector2i end		= mMap->EndTile();
+	Vector2i start	= mMap->StartTile();
+	Vector2i end		= mMap->EndTile();
 	eeAABB VisibleArea	= mMap->GetViewAreaAABB();
-	eeSize TileSize		= mMap->TileSize();
-	eeSize HalfTileSize = mMap->TileSize() / 2;
+	Sizei TileSize		= mMap->TileSize();
+	Sizei HalfTileSize = mMap->TileSize() / 2;
 	ColorA BaseColor	= mMap->BaseColor();
 	bool firstLight		= true;
-	eeVector2i Pos;
+	Vector2i Pos;
 
 	if ( !mLights.size() )
 		return;
@@ -127,7 +127,7 @@ void cLightManager::UpdateByTile() {
 	}
 }
 
-ColorA cLightManager::GetColorFromPos( const eeVector2f& Pos ) {
+ColorA cLightManager::GetColorFromPos( const Vector2f& Pos ) {
 	ColorA Col( mMap->BaseColor() );
 
 	if ( !mLights.size() )
@@ -155,7 +155,7 @@ void cLightManager::RemoveLight( cLight * Light ) {
 	mLights.remove( Light );
 }
 
-void cLightManager::RemoveLight( const eeVector2f& OverPos ) {
+void cLightManager::RemoveLight( const Vector2f& OverPos ) {
 	for ( LightsList::reverse_iterator it = mLights.rbegin(); it != mLights.rend(); it++ ) {
 		cLight * Light = (*it);
 
@@ -167,7 +167,7 @@ void cLightManager::RemoveLight( const eeVector2f& OverPos ) {
 	}
 }
 
-const ColorA * cLightManager::GetTileColor( const eeVector2i& TilePos ) {
+const ColorA * cLightManager::GetTileColor( const Vector2i& TilePos ) {
 	eeASSERT( 1 == mNumVertex );
 
 	if ( !mLights.size() )
@@ -176,7 +176,7 @@ const ColorA * cLightManager::GetTileColor( const eeVector2i& TilePos ) {
 	return mTileColors[ TilePos.x ][ TilePos.y ][0];
 }
 
-const ColorA * cLightManager::GetTileColor( const eeVector2i& TilePos, const Uint32& Vertex ) {
+const ColorA * cLightManager::GetTileColor( const Vector2i& TilePos, const Uint32& Vertex ) {
 	eeASSERT( 4 == mNumVertex );
 
 	if ( !mLights.size() )
@@ -186,7 +186,7 @@ const ColorA * cLightManager::GetTileColor( const eeVector2i& TilePos, const Uin
 }
 
 void cLightManager::AllocateColors() {
-	eeSize Size		= mMap->Size();
+	Sizei Size		= mMap->Size();
 	mTileColors		= eeNewArray( ColorA***, Size.Width() );
 
 	for ( Int32 x = 0; x < Size.x; x++ ) {
@@ -203,7 +203,7 @@ void cLightManager::AllocateColors() {
 }
 
 void cLightManager::DeallocateColors() {
-	eeSize Size		= mMap->Size();
+	Sizei Size		= mMap->Size();
 
 	for ( Int32 x = 0; x < Size.x; x++ ) {
 		for ( Int32 y = 0; y < Size.y; y++ ) {
@@ -235,7 +235,7 @@ cLightManager::LightsList& cLightManager::GetLights() {
 	return mLights;
 }
 
-cLight * cLightManager::GetLightOver( const eeVector2f& OverPos, cLight * LightCurrent ) {
+cLight * cLightManager::GetLightOver( const Vector2f& OverPos, cLight * LightCurrent ) {
 	cLight * PivotLight = NULL;
 	cLight * LastLight	= NULL;
 	cLight * FirstLight = NULL;

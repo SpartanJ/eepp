@@ -184,7 +184,7 @@ class EE_API cMapEditor {
 
 		void OnNewGOTypeAdded( std::string name, Uint32 hash );
 
-		void OnAddObject( Uint32 Type, eePolygon2f poly );
+		void OnAddObject( Uint32 Type, Polygon2f poly );
 
 		void UpdateGfx();
 

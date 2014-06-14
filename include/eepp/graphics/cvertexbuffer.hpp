@@ -25,17 +25,17 @@ class EE_API cVertexBuffer {
 		/** @brief Adds a vertex of the type indicated to the buffer
 		*	@param Type Can be the position or texture coordinates.
 		*	@param Vertex The vexter data */
-		void AddVertex( const Uint32& Type, const eeVector2f& Vertex );
+		void AddVertex( const Uint32& Type, const Vector2f& Vertex );
 
 		/** @brief Adds a vertex position to the buffer
 		*	@param Vertex The vexter data */
-		void AddVertex( const eeVector2f& Vertex );
+		void AddVertex( const Vector2f& Vertex );
 
 		/** @brief Adds a vertex texture coordinate.
 		*	@param VertexCoord The vertex texture coordinate.
 		*	@param TextureLevel Indicates the texture level if it's using multitextures.
 		*/
-		void AddVertexCoord( const eeVector2f& VertexCoord, const Uint32& TextureLevel = 0 );
+		void AddVertexCoord( const Vector2f& VertexCoord, const Uint32& TextureLevel = 0 );
 
 		/** @brief Adds a color to the buffer.
 		*	@param Color The color value.
@@ -78,7 +78,7 @@ class EE_API cVertexBuffer {
 		*	@param Type Can be the position or texture coordinates.
 		*	@param Index The position in the buffer.
 		*/
-		eeVector2f GetVector2( const Uint32& Type, const Uint32& Index );
+		Vector2f GetVector2( const Uint32& Type, const Uint32& Index );
 
 		/** @return The color at the buffer position.
 		*	@param Index The position in the buffer.
@@ -142,7 +142,7 @@ class EE_API cVertexBuffer {
 *	Some example usage of this class:
 *	@code
 	// Creates a rounded rectangle.
-	eePolygon2f Poly = eePolygon2f::CreateRoundedRectangle( 0, 0, 256, 50 );
+	Polygon2f Poly = Polygon2f::CreateRoundedRectangle( 0, 0, 256, 50 );
 
 	cVertexBuffer * VBO = cVertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
 

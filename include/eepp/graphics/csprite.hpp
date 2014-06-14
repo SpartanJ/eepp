@@ -45,7 +45,7 @@ class EE_API cSprite {
 		*	@param Offset The offset added to the position of the frame ( the SubTexture )
 		*	@param TexSector The sector of the texture used by the SubTexture to be rendered
 		*/
-		cSprite( const Uint32& TexId, const eeSizef &DestSize = eeSizef(0,0), const eeVector2i &Offset = eeVector2i(0,0), const eeRecti& TexSector = eeRecti(0,0,0,0) );
+		cSprite( const Uint32& TexId, const Sizef &DestSize = Sizef(0,0), const Vector2i &Offset = Vector2i(0,0), const Recti& TexSector = Recti(0,0,0,0) );
 
 		virtual ~cSprite();
 
@@ -77,10 +77,10 @@ class EE_API cSprite {
 		void Scale( const Float& Scale );
 
 		/** Set the Scale for the rendered sprite */
-		void Scale( const eeVector2f& Scale );
+		void Scale( const Vector2f& Scale );
 
 		/** @return The Scale for the rendered sprite */
-		const eeVector2f& Scale() const;
+		const Vector2f& Scale() const;
 
 		/**	@brief Set the local origin of the sprite
 		**	The origin of an object defines the center point for
@@ -88,29 +88,29 @@ class EE_API cSprite {
 		**	The coordinates of this point must be relative to the
 		**	top-left corner of the sprite.
 		**	The default origin point is the center of the sprite. */
-		void Origin( const eeOriginPoint& origin );
+		void Origin( const OriginPoint& origin );
 
 		/** @return The local origin of the sprite */
-		const eeOriginPoint& Origin() const;
+		const OriginPoint& Origin() const;
 
 		/** Set the Frame Number Sprite Size
 		* @param Size The new size
 		* @param FrameNum If the Frame Number is 0 it will use the Current Frame Number
 		* @param SubFrame If the Sub Frame Number is 0 it will use the Current Sub Frame Number
 		*/
-		void Size( const eeSizef& Size, const unsigned int& FrameNum, const unsigned int& SubFrame );
+		void Size( const Sizef& Size, const unsigned int& FrameNum, const unsigned int& SubFrame );
 
 		/** Set the current SubTexture Size ( destination size ) */
-		void Size( const eeSizef& Size );
+		void Size( const Sizef& Size );
 
 		/** @return the Frame Number Sprite Size
 		* @param FrameNum If the Frame Number is 0 it will use the Current Frame Number
 		* @param SubFrame If the Sub Frame Number is 0 it will use the Current Sub Frame Number
 		*/
-		eeSizef Size( const unsigned int& FrameNum, const unsigned int& SubFrame );
+		Sizef Size( const unsigned int& FrameNum, const unsigned int& SubFrame );
 
 		/** @return The current Frame Size */
-		eeSizef Size();
+		Sizef Size();
 
 		/** Set the sprite animation speed ( AnimSpeed equals to Animation Frames per Second ) */
 		void AnimSpeed( const Float& AnimSpeed );
@@ -178,10 +178,10 @@ class EE_API cSprite {
 		void Position( const Float& x, const Float& y );
 
 		/** Set the sprite position from a Vector */
-		void Position( const eeVector2f& NewPos );
+		void Position( const Vector2f& NewPos );
 
 		/** @return The Position of the sprite */
-		const eeVector2f Position() const;
+		const Vector2f Position() const;
 
 		/** Update the colors of every vertex rendered of the sprite ( this will override the default color )
 		* @param Color0 The Left - Top vertex color
@@ -207,7 +207,7 @@ class EE_API cSprite {
 		* @param TexSector The texture sector to be rendered ( default all the texture )
 		* @return True if success
 		*/
-		bool CreateStatic(const Uint32& TexId, const eeSizef &DestSize = eeSizef(0,0), const eeVector2i &Offset = eeVector2i(0,0), const eeRecti& TexSector = eeRecti(0,0,0,0) );
+		bool CreateStatic(const Uint32& TexId, const Sizef &DestSize = Sizef(0,0), const Vector2i &Offset = Vector2i(0,0), const Recti& TexSector = Recti(0,0,0,0) );
 
 		/** Creates an animated sprite
 		* @param SubFramesNum The number of subframes of the sprite
@@ -221,7 +221,7 @@ class EE_API cSprite {
 		* @param TexSector The texture sector to be rendered ( default all the texture )
 		* @return The frame position or 0 if fails
 		*/
-		unsigned int AddFrame( const Uint32& TexId, const eeSizef& DestSize = eeSizef(0,0), const eeVector2i& Offset = eeVector2i(0,0), const eeRecti& TexSector = eeRecti(0,0,0,0) );
+		unsigned int AddFrame( const Uint32& TexId, const Sizef& DestSize = Sizef(0,0), const Vector2i& Offset = Vector2i(0,0), const Recti& TexSector = Recti(0,0,0,0) );
 
 		/** Add a frame to the sprite (on the current sub frame)
 		* @param SubTexture The SubTexture used in the frame
@@ -248,7 +248,7 @@ class EE_API cSprite {
 		* @param TexSector The texture sector to be rendered ( default all the texture )
 		* @return True if success
 		*/
-		bool AddSubFrame( const Uint32& TexId, const unsigned int& NumFrame, const unsigned int& NumSubFrame, const eeSizef& DestSize = eeSizef(0,0), const eeVector2i& Offset = eeVector2i(0,0), const eeRecti& TexSector = eeRecti(0,0,0,0) );
+		bool AddSubFrame( const Uint32& TexId, const unsigned int& NumFrame, const unsigned int& NumSubFrame, const Sizef& DestSize = Sizef(0,0), const Vector2i& Offset = Vector2i(0,0), const Recti& TexSector = Recti(0,0,0,0) );
 
 		/** Add a frame on an specific subframe to the sprite
 		* @param SubTexture The SubTexture used in the frame
@@ -287,13 +287,13 @@ class EE_API cSprite {
 		bool AutoAnimate() const;
 
 		/** @return The four vertex position of the Sprite */
-		eeQuad2f GetQuad();
+		Quad2f GetQuad();
 
 		/** @return The Offset of the current frame */
-		eeVector2i Offset();
+		Vector2i Offset();
 
 		/** Set the Offset of the current frame */
-		void Offset( const eeVector2i& offset );
+		void Offset( const Vector2i& offset );
 
 		/** Reverse the animation from last frame to first mFrames. */
 		void ReverseAnim( const bool& Reverse );
@@ -359,10 +359,10 @@ class EE_API cSprite {
 		};
 
 		Uint32				mFlags;
-		eeVector2f			mPos;
-		eeOriginPoint		mOrigin;
+		Vector2f			mPos;
+		OriginPoint		mOrigin;
 		Float				mAngle;
-		eeVector2f			mScale;
+		Vector2f			mScale;
 		Float				mAnimSpeed;
 
 		ColorA			mColor;

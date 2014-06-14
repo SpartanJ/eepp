@@ -25,8 +25,8 @@ bool cInputFinger::WasDown() {
 	return was_down;
 }
 
-eeVector2i cInputFinger::Pos() {
-	return eeVector2i( x, y );
+Vector2i cInputFinger::Pos() {
+	return Vector2i( x, y );
 }
 
 void cInputFinger::WriteLast() {

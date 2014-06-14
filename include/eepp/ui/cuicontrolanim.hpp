@@ -23,9 +23,9 @@ class EE_API cUIControlAnim : public cUIDragable {
 
  		void Angle( const Float& angle );
 
-		const eeVector2f& Scale() const;
+		const Vector2f& Scale() const;
 
-		void Scale( const eeVector2f& scale );
+		void Scale( const Vector2f& scale );
 
 		void Scale( const Float& scale );
 
@@ -37,15 +37,15 @@ class EE_API cUIControlAnim : public cUIDragable {
 
  		bool Animating();
 
-		void StartAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
+		void StartAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
 
-		void StartScaleAnim( const eeVector2f& From, const eeVector2f& To, const Time& TotalTime, const Ease::Interpolation& Type = Ease::Linear, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
+		void StartScaleAnim( const Vector2f& From, const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& Type = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
 
-		void StartScaleAnim( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type = Ease::Linear, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
+		void StartScaleAnim( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
 
-		void StartMovement( const eeVector2i& From, const eeVector2i& To, const Time& TotalTime, const Ease::Interpolation& Type = Ease::Linear, cWaypoints::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
+		void StartMovement( const Vector2i& From, const Vector2i& To, const Time& TotalTime, const Ease::Interpolation& Type = Ease::Linear, Waypoints::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
 
-		void StartRotation( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type = Ease::Linear, cInterpolation::OnPathEndCallback PathEndCallback = cInterpolation::OnPathEndCallback() );
+		void StartRotation( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
 
 		void CreateFadeIn( const Time& Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
 
@@ -55,13 +55,13 @@ class EE_API cUIControlAnim : public cUIDragable {
 
 		void DisableFadeOut( const Time & Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
 
-		cInterpolation * RotationInterpolation();
+		Interpolation * RotationInterpolation();
 
-		cWaypoints * ScaleInterpolation();
+		Waypoints * ScaleInterpolation();
 
-		cInterpolation * AlphaInterpolation();
+		Interpolation * AlphaInterpolation();
 
-		cWaypoints * MovementInterpolation();
+		Waypoints * MovementInterpolation();
 
 		virtual void Draw();
 
@@ -70,13 +70,13 @@ class EE_API cUIControlAnim : public cUIDragable {
     	friend class cUIManager;
 
 		Float 			mAngle;
-		eeVector2f 			mScale;
+		Vector2f 			mScale;
 		Float 			mAlpha;
 
-		cInterpolation * 	mAngleAnim;
-		cWaypoints *		mScaleAnim;
-		cInterpolation * 	mAlphaAnim;
-		cWaypoints * 		mMoveAnim;
+		Interpolation * 	mAngleAnim;
+		Waypoints *		mScaleAnim;
+		Interpolation * 	mAlphaAnim;
+		Waypoints * 		mMoveAnim;
 
 		virtual void BackgroundDraw();
 

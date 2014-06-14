@@ -169,13 +169,13 @@ void cX11Impl::SetContext( eeWindowContex Context ) {
 	Unlock();
 }
 
-eeVector2i cX11Impl::Position() {
+Vector2i cX11Impl::Position() {
 	int x, y;
 	X11Window child_return;
 
 	XTranslateCoordinates ( mDisplay, mX11Window, DefaultRootWindow( mDisplay ), 0, 0, &x, &y, &child_return );
 
-	return eeVector2i( x, y );
+	return Vector2i( x, y );
 }
 
 void cX11Impl::ShowMouseCursor() {
@@ -229,15 +229,15 @@ void cX11Impl::HideMouseCursor() {
 	Unlock();
 }
 
-cCursor * cX11Impl::CreateMouseCursor( cTexture * tex, const eeVector2i& hotspot, const std::string& name ) {
+cCursor * cX11Impl::CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( cCursorX11, ( tex, hotspot, name, mWindow ) );
 }
 
-cCursor * cX11Impl::CreateMouseCursor( cImage * img, const eeVector2i& hotspot, const std::string& name ) {
+cCursor * cX11Impl::CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( cCursorX11, ( img, hotspot, name, mWindow ) );
 }
 
-cCursor * cX11Impl::CreateMouseCursor( const std::string& path, const eeVector2i& hotspot, const std::string& name ) {
+cCursor * cX11Impl::CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( cCursorX11, ( path, hotspot, name, mWindow ) );
 }
 

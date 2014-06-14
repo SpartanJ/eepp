@@ -18,15 +18,15 @@ class EE_API cGameObjectSprite : public cGameObject {
 
 		virtual void Draw();
 
-		eeVector2f Pos() const;
+		Vector2f Pos() const;
 
-		virtual void Pos( eeVector2f pos );
+		virtual void Pos( Vector2f pos );
 
-		virtual eeVector2i TilePos() const;
+		virtual Vector2i TilePos() const;
 
-		virtual void TilePos( eeVector2i pos );
+		virtual void TilePos( Vector2i pos );
 
-		virtual eeSize Size();
+		virtual Sizei Size();
 
 		cSprite * Sprite() const;
 
@@ -43,7 +43,7 @@ class EE_API cGameObjectSprite : public cGameObject {
 		virtual void DataId( Uint32 Id );
 	protected:
 		cSprite *	mSprite;
-		eeVector2i	mTilePos;
+		Vector2i	mTilePos;
 };
 
 }}

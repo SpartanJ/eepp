@@ -53,7 +53,7 @@ void cUIComboBox::CreateButton() {
 
 	cUIControl::CreateParams Params;
 	Params.Parent( this ),
-	Params.Size = eeSize( btnWidth, mSize.Height() );
+	Params.Size = Sizei( btnWidth, mSize.Height() );
 	Params.PosSet( mSize.Width() - btnWidth, 0 );
 	mButton = eeNew( cUIControl, ( Params ) );
 	mButton->Visible( true );
@@ -79,7 +79,7 @@ void cUIComboBox::OnButtonExit( const cUIEvent * Event ) {
 	SetSkinState( cUISkinState::StateMouseExit );
 }
 
-Uint32 cUIComboBox::OnMouseClick( const eeVector2i& Pos, const Uint32 Flags ) {
+Uint32 cUIComboBox::OnMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 	if ( Flags & EE_BUTTON_LMASK ) {
 		cUITextInput::OnMouseClick( Pos, Flags );
 

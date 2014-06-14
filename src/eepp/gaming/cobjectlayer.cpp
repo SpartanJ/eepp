@@ -10,7 +10,7 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {
 
-cObjectLayer::cObjectLayer( cMap * map, Uint32 flags, std::string name, eeVector2f offset ) :
+cObjectLayer::cObjectLayer( cMap * map, Uint32 flags, std::string name, Vector2f offset ) :
 	cLayer( map, MAP_LAYER_OBJECT, flags, name, offset )
 {
 }
@@ -29,7 +29,7 @@ void cObjectLayer::DeallocateLayer() {
 	}
 }
 
-void cObjectLayer::Draw( const eeVector2f &Offset ) {
+void cObjectLayer::Draw( const Vector2f &Offset ) {
 	cGlobalBatchRenderer::instance()->Draw();
 
 	ObjList::iterator it;
@@ -50,7 +50,7 @@ void cObjectLayer::Draw( const eeVector2f &Offset ) {
 			cGameObject * Obj = (*it);
 
 			if ( Obj->Blocked() ) {
-				Tex->DrawEx( Obj->Pos().x, Obj->Pos().y, Obj->Size().Width(), Obj->Size().Height(), 0, eeVector2f::One, Col, Col, Col, Col );
+				Tex->DrawEx( Obj->Pos().x, Obj->Pos().y, Obj->Size().Width(), Obj->Size().Height(), 0, Vector2f::One, Col, Col, Col, Col );
 			}
 		}
 	}
@@ -80,7 +80,7 @@ void cObjectLayer::RemoveGameObject( cGameObject * obj ) {
 	eeSAFE_DELETE( obj );
 }
 
-void cObjectLayer::RemoveGameObject( const eeVector2i& pos ) {
+void cObjectLayer::RemoveGameObject( const Vector2i& pos ) {
 	cGameObject * tObj = GetObjectOver( pos, SEARCH_OBJECT );
 
 	if ( NULL != tObj ) {
@@ -88,10 +88,10 @@ void cObjectLayer::RemoveGameObject( const eeVector2i& pos ) {
 	}
 }
 
-cGameObject * cObjectLayer::GetObjectOver( const eeVector2i& pos, SEARCH_TYPE type ) {
+cGameObject * cObjectLayer::GetObjectOver( const Vector2i& pos, SEARCH_TYPE type ) {
 	cGameObject * tObj;
-	eeVector2f tPos;
-	eeSize tSize;
+	Vector2f tPos;
+	Sizei tSize;
 
 	for ( ObjList::reverse_iterator it = mObjects.rbegin(); it != mObjects.rend(); it++ ) {
 		tObj = (*it);
@@ -100,7 +100,7 @@ cGameObject * cObjectLayer::GetObjectOver( const eeVector2i& pos, SEARCH_TYPE ty
 			if ( tObj->IsType( GAMEOBJECT_TYPE_OBJECT ) ) {
 				cGameObjectObject * tObjObj = reinterpret_cast<cGameObjectObject*> ( tObj );
 
-				if ( tObjObj->PointInside( eeVector2f( pos.x, pos.y ) ) )
+				if ( tObjObj->PointInside( Vector2f( pos.x, pos.y ) ) )
 					return tObj;
 			}
 		} else if ( type & SEARCH_OBJECT ) {
@@ -108,7 +108,7 @@ cGameObject * cObjectLayer::GetObjectOver( const eeVector2i& pos, SEARCH_TYPE ty
 				tPos = tObj->Pos();
 				tSize = tObj->Size();
 
-				eeRecti objR( tPos.x, tPos.y, tPos.x + tSize.x, tPos.y + tSize.y );
+				Recti objR( tPos.x, tPos.y, tPos.x + tSize.x, tPos.y + tSize.y );
 
 				if ( objR.Contains( pos ) )
 					return tObj;
@@ -117,13 +117,13 @@ cGameObject * cObjectLayer::GetObjectOver( const eeVector2i& pos, SEARCH_TYPE ty
 			if ( tObj->IsType( GAMEOBJECT_TYPE_OBJECT ) ) {
 				cGameObjectObject * tObjObj = reinterpret_cast<cGameObjectObject*> ( tObj );
 
-				if ( tObjObj->PointInside( eeVector2f( pos.x, pos.y ) ) )
+				if ( tObjObj->PointInside( Vector2f( pos.x, pos.y ) ) )
 					return tObj;
 			} else {
 				tPos = tObj->Pos();
 				tSize = tObj->Size();
 
-				eeRecti objR( tPos.x, tPos.y, tPos.x + tSize.x, tPos.y + tSize.y );
+				Recti objR( tPos.x, tPos.y, tPos.x + tSize.x, tPos.y + tSize.y );
 
 				if ( objR.Contains( pos ) )
 					return tObj;

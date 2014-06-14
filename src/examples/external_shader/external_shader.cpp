@@ -17,8 +17,8 @@ bool ShadersSupported = false;
 Float tw;
 Float th;
 Float aspectRatio;
-eeVector3ff * vertices		= eeNewArray( eeVector3ff, ParticlesNum );
-eeVector3ff * velocities	= eeNewArray( eeVector3ff, ParticlesNum );
+Vector3ff * vertices		= eeNewArray( Vector3ff, ParticlesNum );
+Vector3ff * velocities	= eeNewArray( Vector3ff, ParticlesNum );
 ColorAf * colors			= eeNewArray( ColorAf, ParticlesNum );
 
 void videoResize( cWindow * w ) {
@@ -113,7 +113,7 @@ void MainLoop()
 	}
 
 	Float p;
-	eeVector2f mf	= imp->GetMousePosf();
+	Vector2f mf	= imp->GetMousePosf();
 	Float tratio	= tw / th;
 	Float touchX	= ( mf.x / tw - 1 ) * tratio;
 	Float touchY	= -( mf.y / th - 1 );
@@ -186,7 +186,7 @@ void MainLoop()
 
 	/// VertexPointer assigns values by default to the attribute "dgl_Vertex"
 	/// TextureCoordPointer to "dgl_MultiTexCoord0"
-	GLi->VertexPointer( 3, GL_FLOAT, sizeof(eeVector3ff), reinterpret_cast<char*> ( &vertices[0] ), ParticlesNum * sizeof(float) * 3 );
+	GLi->VertexPointer( 3, GL_FLOAT, sizeof(Vector3ff), reinterpret_cast<char*> ( &vertices[0] ), ParticlesNum * sizeof(float) * 3 );
 
 	/// ColorPointer to "dgl_FrontColor"
 	GLi->ColorPointer( 4, GL_FP, sizeof(ColorAf), reinterpret_cast<char*> ( &colors[0] ), ParticlesNum * sizeof(Float) * 4 );
@@ -258,8 +258,8 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 		for (i = 0; i < ParticlesNum; i++ )
 		{
-			vertices[i]		= eeVector3ff( 0, 0, 1.83 );
-			velocities[i]	= eeVector3ff( (Math::Randf() * 2 - 1)*.05, (Math::Randf() * 2 - 1)*.05, .93 + Math::Randf()*.02 );
+			vertices[i]		= Vector3ff( 0, 0, 1.83 );
+			velocities[i]	= Vector3ff( (Math::Randf() * 2 - 1)*.05, (Math::Randf() * 2 - 1)*.05, .93 + Math::Randf()*.02 );
 			colors[i]		= ColorAf( Math::Randf() * 0.5, 0.1, 0.8, 0.5 );
 		}
 

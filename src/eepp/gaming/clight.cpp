@@ -32,7 +32,7 @@ RGB cLight::ProcessVertex( const Float& PointX, const Float& PointY, const RGB& 
 
 	if ( mActive ) {
 		if ( mType == LIGHT_NORMAL )
-			VertexDist = eeabs( mPos.Distance( eeVector2f( PointX, PointY ) ) );
+			VertexDist = eeabs( mPos.Distance( Vector2f( PointX, PointY ) ) );
 		else {
 			Float XDist = eeabs(mPos.x - PointX) * 0.5f;
 			Float YDist = eeabs(mPos.y - PointY);
@@ -72,7 +72,7 @@ ColorA cLight::ProcessVertex( const Float& PointX, const Float& PointY, const Co
 
 	if ( mActive ) {
 		if ( mType == LIGHT_NORMAL )
-			VertexDist = eeabs( mPos.Distance( eeVector2f( PointX, PointY ) ) );
+			VertexDist = eeabs( mPos.Distance( Vector2f( PointX, PointY ) ) );
 		else {
 			Float XDist = eeabs(mPos.x - PointX) * 0.5f;
 			Float YDist = eeabs(mPos.y - PointY);
@@ -107,11 +107,11 @@ ColorA cLight::ProcessVertex( const Float& PointX, const Float& PointY, const Co
 	return BaseColor;
 }
 
-RGB cLight::ProcessVertex( const eeVector2f& Pos, const RGB& VertexColor, const RGB& BaseColor ) {
+RGB cLight::ProcessVertex( const Vector2f& Pos, const RGB& VertexColor, const RGB& BaseColor ) {
 	return ProcessVertex( Pos.x, Pos.y, VertexColor, BaseColor );
 }
 
-ColorA cLight::ProcessVertex( const eeVector2f& Pos, const ColorA& VertexColor, const ColorA& BaseColor ) {
+ColorA cLight::ProcessVertex( const Vector2f& Pos, const ColorA& VertexColor, const ColorA& BaseColor ) {
 	return ProcessVertex( Pos.x, Pos.y, VertexColor, BaseColor );
 }
 
@@ -121,11 +121,11 @@ void cLight::UpdatePos( const Float& x, const Float& y ) {
 	UpdateAABB();
 }
 
-void cLight::Position( const eeVector2f& newPos ) {
+void cLight::Position( const Vector2f& newPos ) {
 	UpdatePos( newPos.x, newPos.y );
 }
 
-void cLight::UpdatePos( const eeVector2f& newPos ) {
+void cLight::UpdatePos( const Vector2f& newPos ) {
 	UpdatePos( newPos.x, newPos.y );
 }
 
@@ -180,7 +180,7 @@ const LIGHT_TYPE& cLight::Type() const {
 	return mType;
 }
 
-const eeVector2f& cLight::Position() const {
+const Vector2f& cLight::Position() const {
 	return mPos;
 }
 

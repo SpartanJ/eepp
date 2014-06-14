@@ -196,7 +196,7 @@ void Quad2<T>::Move( Vector2<T> dist ) {
 	}
 }
 
-typedef Quad2<Float> eeQuad2f;
+typedef Quad2<Float> Quad2f;
 
 }}
 

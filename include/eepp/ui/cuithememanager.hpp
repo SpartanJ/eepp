@@ -54,9 +54,9 @@ class EE_API cUIThemeManager : public ResourceManager<cUITheme> {
 
 		const bool& TooltipFollowMouse() const;
 
-		void CursorSize( const eeSize& Size );
+		void CursorSize( const Sizei& Size );
 
-		const eeSize& CursorSize() const;
+		const Sizei& CursorSize() const;
 	protected:
 		cFont * 			mFont;
 		cUITheme * 			mThemeDefault;
@@ -69,7 +69,7 @@ class EE_API cUIThemeManager : public ResourceManager<cUITheme> {
 		Time				mTooltipTimeToShow;
 		bool				mTooltipFollowMouse;
 
-		eeSize				mCursorSize;
+		Sizei				mCursorSize;
 
 		cUIThemeManager();
 };

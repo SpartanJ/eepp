@@ -4,7 +4,7 @@
 
 namespace EE { namespace Gaming {
 
-cGameObjectSubTextureEx::cGameObjectSubTextureEx( const Uint32& Flags, cLayer * Layer, cSubTexture * SubTexture, const eeVector2f& Pos, EE_BLEND_MODE Blend, EE_RENDER_MODE Render, Float Angle, eeVector2f Scale, ColorA Color ) :
+cGameObjectSubTextureEx::cGameObjectSubTextureEx( const Uint32& Flags, cLayer * Layer, cSubTexture * SubTexture, const Vector2f& Pos, EE_BLEND_MODE Blend, EE_RENDER_MODE Render, Float Angle, Vector2f Scale, ColorA Color ) :
 	cGameObjectSubTexture( Flags, Layer, SubTexture, Pos ),
 	mBlend( Blend ),
 	mRender( Render ),
@@ -37,7 +37,7 @@ void cGameObjectSubTextureEx::Draw() {
 			cLightManager * LM = mLayer->Map()->GetLightManager();
 
 			if ( MAP_LAYER_TILED == mLayer->Type() ) {
-				eeVector2i Tile = reinterpret_cast<cTileLayer*> ( mLayer )->GetCurrentTile();
+				Vector2i Tile = reinterpret_cast<cTileLayer*> ( mLayer )->GetCurrentTile();
 
 				if ( LM->IsByVertex() ) {
 					mSubTexture->Draw(
@@ -62,15 +62,15 @@ void cGameObjectSubTextureEx::Draw() {
 						mPos.y,
 						mAngle,
 						mScale,
-						LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y ) ),
-						LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y + mSubTexture->DestSize().y ) ),
-						LM->GetColorFromPos( eeVector2f( mPos.x + mSubTexture->DestSize().x, mPos.y + mSubTexture->DestSize().y ) ),
-						LM->GetColorFromPos( eeVector2f( mPos.x + mSubTexture->DestSize().x, mPos.y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y + mSubTexture->DestSize().y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->DestSize().x, mPos.y + mSubTexture->DestSize().y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->DestSize().x, mPos.y ) ),
 						mBlend,
 						mRender
 					);
 				} else {
-					mSubTexture->Draw( mPos.x, mPos.y, LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y ) ), mAngle, mScale, mBlend, mRender );
+					mSubTexture->Draw( mPos.x, mPos.y, LM->GetColorFromPos( Vector2f( mPos.x, mPos.y ) ), mAngle, mScale, mBlend, mRender );
 				}
 			}
 		} else {

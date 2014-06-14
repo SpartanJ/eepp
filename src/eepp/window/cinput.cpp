@@ -261,22 +261,22 @@ void cInput::InjectButtonRelease( const Uint32& Button ) {
 	}
 }
 
-eeVector2i cInput::GetMousePos() const {
+Vector2i cInput::GetMousePos() const {
 	return mMousePos;
 }
 
-void cInput::SetMousePos( const eeVector2i& Pos ) {
+void cInput::SetMousePos( const Vector2i& Pos ) {
 	mMousePos = Pos;
 }
 
-eeVector2f cInput::GetMousePosf() {
-	return eeVector2f( (Float)mMousePos.x, (Float)mMousePos.y );
+Vector2f cInput::GetMousePosf() {
+	return Vector2f( (Float)mMousePos.x, (Float)mMousePos.y );
 }
 
-eeVector2i cInput::GetMousePosFromView( const cView& View ) {
-	eeVector2i RealMousePos = GetMousePos();
-	eeRecti RView = View.GetView();
-	return eeVector2i( RealMousePos.x - RView.Left, RealMousePos.y - RView.Top );
+Vector2i cInput::GetMousePosFromView( const cView& View ) {
+	Vector2i RealMousePos = GetMousePos();
+	Recti RView = View.GetView();
+	return Vector2i( RealMousePos.x - RView.Left, RealMousePos.y - RView.Top );
 }
 
 Uint16 cInput::MouseX() const {
@@ -298,7 +298,7 @@ void cInput::PopCallback( const Uint32& CallbackId ) {
 	mCallbacks.erase( mCallbacks.find(CallbackId) );
 }
 
-void cInput::InjectMousePos( const eeVector2i& Pos ) {
+void cInput::InjectMousePos( const Vector2i& Pos ) {
 	InjectMousePos( Pos.x, Pos.y );
 }
 

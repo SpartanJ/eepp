@@ -24,7 +24,7 @@ class EE_API cSubTexture {
 		*	@param SrcRect The texture part that will be used as the SubTexture.
 		*	@param Name The texture name ( if any )
 		*/
-		cSubTexture( const Uint32& TexId, const eeRecti& SrcRect, const std::string& Name = "" );
+		cSubTexture( const Uint32& TexId, const Recti& SrcRect, const std::string& Name = "" );
 
 		/** Creates a SubTexture of the indicated part of the texture.
 		*	@param TexId The texture id
@@ -32,7 +32,7 @@ class EE_API cSubTexture {
 		*	@param DestSize The destination size that the SubTexture will have when rendered.
 		*	@param Name The texture name ( if any )
 		*/
-		cSubTexture( const Uint32& TexId, const eeRecti& SrcRect, const eeSizef& DestSize, const std::string& Name = "" );
+		cSubTexture( const Uint32& TexId, const Recti& SrcRect, const Sizef& DestSize, const std::string& Name = "" );
 
 		/** Creates a SubTexture of the indicated part of the texture.
 		*	@param TexId The texture id
@@ -41,7 +41,7 @@ class EE_API cSubTexture {
 		*	@param Offset The offset that will be added to the position passed when any Draw call is used.
 		*	@param Name The texture name ( if any )
 		*/
-		cSubTexture( const Uint32& TexId, const eeRecti& SrcRect, const eeSizef& DestSize, const eeVector2i& Offset, const std::string& Name = "" );
+		cSubTexture( const Uint32& TexId, const Recti& SrcRect, const Sizef& DestSize, const Vector2i& Offset, const std::string& Name = "" );
 
 		virtual ~cSubTexture();
 
@@ -61,30 +61,30 @@ class EE_API cSubTexture {
 		void Texture( const Uint32& TexId );
 
 		/** @return The Texture sector that represents the SubTexture */
-		const eeRecti& SrcRect() const;
+		const Recti& SrcRect() const;
 
 		/** Sets the Texture sector that represents the SubTexture */
-		void SrcRect( const eeRecti& Rect );
+		void SrcRect( const Recti& Rect );
 
 		/** @return The Destination Size of the SubTexture. */
-		const eeSizef& DestSize() const;
+		const Sizef& DestSize() const;
 
 		/** Sets the Destination Size of the SubTexture.
 		*	The size can be different from the original size of the SubTexture.
 		*	For example if the SubTexture width is 32 pixels, by default the destination width is 32 pixels, but it can be changed to anything wanted. */
-		void DestSize( const eeSizef& destSize );
+		void DestSize( const Sizef& destSize );
 
 		/** @return The SubTexture default offset. The offset is added to the position passed when is drawed. */
-		const eeVector2i& Offset() const;
+		const Vector2i& Offset() const;
 
 		/** Set the SubTexture offset. */
-		void Offset( const eeVector2i& offset );
+		void Offset( const Vector2i& offset );
 
-		void Draw( const Float& X, const Float& Y, const ColorA& Color = ColorA(), const Float& Angle = 0.f, const eeVector2f& Scale = eeVector2f::One, const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDER_MODE& Effect = RN_NORMAL, eeOriginPoint Center = eeOriginPoint(eeOriginPoint::OriginCenter) );
+		void Draw( const Float& X, const Float& Y, const ColorA& Color = ColorA(), const Float& Angle = 0.f, const Vector2f& Scale = Vector2f::One, const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDER_MODE& Effect = RN_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter) );
 
-		void Draw( const Float& X, const Float& Y, const Float& Angle, const eeVector2f& Scale, const ColorA& Color0 = ColorA(), const ColorA& Color1 = ColorA(), const ColorA& Color2 = ColorA(), const ColorA& Color3 = ColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDER_MODE& Effect = RN_NORMAL, eeOriginPoint Center = eeOriginPoint(eeOriginPoint::OriginCenter) );
+		void Draw( const Float& X, const Float& Y, const Float& Angle, const Vector2f& Scale, const ColorA& Color0 = ColorA(), const ColorA& Color1 = ColorA(), const ColorA& Color2 = ColorA(), const ColorA& Color3 = ColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL, const EE_RENDER_MODE& Effect = RN_NORMAL, OriginPoint Center = OriginPoint(OriginPoint::OriginCenter) );
 
-		void Draw( const eeQuad2f Q, const eeVector2f& Offset = eeVector2f(), const Float& Angle = 0.f, const eeVector2f& Scale = eeVector2f::One, const ColorA& Color0 = ColorA(), const ColorA& Color1 = ColorA(), const ColorA& Color2 = ColorA(), const ColorA& Color3 = ColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
+		void Draw( const Quad2f Q, const Vector2f& Offset = Vector2f(), const Float& Angle = 0.f, const Vector2f& Scale = Vector2f::One, const ColorA& Color0 = ColorA(), const ColorA& Color1 = ColorA(), const ColorA& Color2 = ColorA(), const ColorA& Color3 = ColorA(), const EE_BLEND_MODE& Blend = ALPHA_NORMAL );
 
 		/** @return The texture instance used by the SubTexture. */
 		cTexture * GetTexture();
@@ -129,10 +129,10 @@ class EE_API cSubTexture {
 		bool Unlock( const bool& KeepData = false, const bool& Modified = false );
 
 		/** @return The SubTexture size in the texture. This is the source rect size. */
-		eeSize RealSize();
+		Sizei RealSize();
 
 		/** @return This is the same as Destination Size but with the values rounded as integers. */
-		eeSize Size();
+		Sizei Size();
 
 		/** @return A pixel pointer to the texture loaded in memory ( downloaded from VRAM doing Lock()/Unlock() ). */
 		const Uint8* GetPixelsPtr();
@@ -150,9 +150,9 @@ class EE_API cSubTexture {
 		Uint32		mId;
 		Uint32 		mTexId;
 		cTexture * 	mTexture;
-		eeRecti		mSrcRect;
-		eeSizef		mDestSize;
-		eeVector2i	mOffset;
+		Recti		mSrcRect;
+		Sizef		mDestSize;
+		Vector2i	mOffset;
 
 		void CreateUnnamed();
 };

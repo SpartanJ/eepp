@@ -98,7 +98,7 @@ void cUIPushButton::OnSizeChange() {
 	/**
 	if ( mFlags & UI_AUTO_SIZE ) {
 		if ( NULL != mTextBox ) {
-			eeRecti P = MakePadding();
+			Recti P = MakePadding();
 
 			mSize.Height( mIcon->Size().Height()	+ P.Top		+ P.Bottom );
 
@@ -132,7 +132,7 @@ void cUIPushButton::DoAfterSetTheme() {
 		mTextBox->Font( mSkinState->GetSkin()->Theme()->Font() );
 
 	if ( mControlFlags & UI_CTRL_FLAG_FREE_USE ) {
-		eeRecti RMargin = MakePadding( true, false, false, false, true );
+		Recti RMargin = MakePadding( true, false, false, false, true );
 		mIconSpace = RMargin.Left;
 	}
 
@@ -169,11 +169,11 @@ const String& cUIPushButton::Text() {
 	return mTextBox->Text();
 }
 
-void cUIPushButton::Padding( const eeRecti& padding ) {
+void cUIPushButton::Padding( const Recti& padding ) {
 	mTextBox->Padding( padding );
 }
 
-const eeRecti& cUIPushButton::Padding() const {
+const Recti& cUIPushButton::Padding() const {
 	return mTextBox->Padding();
 }
 
@@ -211,7 +211,7 @@ Uint32 cUIPushButton::OnKeyDown( const cUIEventKey& Event ) {
 	if ( Event.KeyCode() == KEY_RETURN ) {
 		cUIMessage Msg( this, cUIMessage::MsgClick, EE_BUTTON_LMASK );
 		MessagePost( &Msg );
-		OnMouseClick( eeVector2i(0,0), EE_BUTTON_LMASK );
+		OnMouseClick( Vector2i(0,0), EE_BUTTON_LMASK );
 
 		SetSkinState( cUISkinState::StateMouseDown );
 	}

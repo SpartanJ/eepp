@@ -453,7 +453,7 @@ Uint32 Polygon2<T>::ClosestPoint( const Vector2<T>& to, T * distance ) {
 	return Index;
 }
 
-typedef Polygon2<Float> eePolygon2f;
+typedef Polygon2<Float> Polygon2f;
 
 }}
 

@@ -18,7 +18,7 @@ cUIDefaultTheme::cUIDefaultTheme( const std::string& Name, const std::string& Ab
 	FontShadowColor( ColorA( 50, 50, 50, 150 ) );
 }
 
-cUIPopUpMenu * cUIDefaultTheme::CreatePopUpMenu( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 RowHeight, eeRecti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
+cUIPopUpMenu * cUIDefaultTheme::CreatePopUpMenu( cUIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 RowHeight, Recti PaddingContainer, Uint32 MinWidth, Uint32 MinSpaceForIcons, Uint32 MinRightMargin ) {
 	cUIPopUpMenu::CreateParams MenuParams;
 	MenuParams.Parent( Parent );
 	MenuParams.PosSet( Pos );
@@ -40,7 +40,7 @@ cUIPopUpMenu * cUIDefaultTheme::CreatePopUpMenu( cUIControl * Parent, const eeSi
 	return eeNew( cUIPopUpMenu, ( MenuParams ) );
 }
 
-cUIProgressBar * cUIDefaultTheme::CreateProgressBar( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, bool DisplayPercent, bool VerticalExpand, eeVector2f MovementSpeed, eeRectf FillerMargin ) {
+cUIProgressBar * cUIDefaultTheme::CreateProgressBar( cUIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool DisplayPercent, bool VerticalExpand, Vector2f MovementSpeed, Rectf FillerMargin ) {
 	cUIProgressBar::CreateParams PBParams;
 	PBParams.Parent( Parent );
 	PBParams.PosSet( Pos );
@@ -55,8 +55,8 @@ cUIProgressBar * cUIDefaultTheme::CreateProgressBar( cUIControl * Parent, const 
 		PBParams.Flags |= UI_AUTO_SIZE;
 		PBParams.DisplayPercent = true;
 		PBParams.VerticalExpand = true;
-		PBParams.FillerMargin = eeRectf( 2, 2, 2, 2 );
-		PBParams.MovementSpeed = eeVector2f( 32, 0 );
+		PBParams.FillerMargin = Rectf( 2, 2, 2, 2 );
+		PBParams.MovementSpeed = Vector2f( 32, 0 );
 	}
 
 	cUIProgressBar * Ctrl = eeNew( cUIProgressBar, ( PBParams ) );
@@ -65,7 +65,7 @@ cUIProgressBar * cUIDefaultTheme::CreateProgressBar( cUIControl * Parent, const 
 	return Ctrl;
 }
 
-cUIWinMenu * cUIDefaultTheme::CreateWinMenu( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 MarginBetweenButtons, Uint32 ButtonMargin, Uint32 MenuHeight, Uint32 FirstButtonMargin ) {
+cUIWinMenu * cUIDefaultTheme::CreateWinMenu( cUIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MarginBetweenButtons, Uint32 ButtonMargin, Uint32 MenuHeight, Uint32 FirstButtonMargin ) {
 	cUIWinMenu::CreateParams WinMenuParams;
 	WinMenuParams.Parent( Parent );
 	WinMenuParams.PosSet( Pos );
@@ -86,7 +86,7 @@ cUIWinMenu * cUIDefaultTheme::CreateWinMenu( cUIControl * Parent, const eeSize& 
 	return Ctrl;
 }
 
-cUIWindow * cUIDefaultTheme::CreateWindow( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 WinFlags, eeSize MinWindowSize, Uint8 BaseAlpha ) {
+cUIWindow * cUIDefaultTheme::CreateWindow( cUIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
 	cUIWindow::CreateParams WinParams;
 	WinParams.Parent( Parent );
 	WinParams.PosSet( Pos );
@@ -106,7 +106,7 @@ cUIWindow * cUIDefaultTheme::CreateWindow( cUIControl * Parent, const eeSize& Si
 	return eeNew( cUIWindow, ( WinParams ) );
 }
 
-cUICommonDialog * cUIDefaultTheme::CreateCommonDialog( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 WinFlags, eeSize MinWindowSize, Uint8 BaseAlpha, Uint32 CDLFlags, std::string DefaultFilePattern, std::string DefaultDirectory ) {
+cUICommonDialog * cUIDefaultTheme::CreateCommonDialog( cUIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 WinFlags, Sizei MinWindowSize, Uint8 BaseAlpha, Uint32 CDLFlags, std::string DefaultFilePattern, std::string DefaultDirectory ) {
 	cUICommonDialog::CreateParams DLGParams;
 	DLGParams.Parent( Parent );
 	DLGParams.PosSet( Pos );
@@ -129,7 +129,7 @@ cUICommonDialog * cUIDefaultTheme::CreateCommonDialog( cUIControl * Parent, cons
 	return eeNew( cUICommonDialog, ( DLGParams ) );
 }
 
-cUIMessageBox * cUIDefaultTheme::CreateMessageBox( UI_MSGBOX_TYPE Type, const String& Message, Uint32 WinFlags, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, eeSize MinWindowSize, Uint8 BaseAlpha ) {
+cUIMessageBox * cUIDefaultTheme::CreateMessageBox( UI_MSGBOX_TYPE Type, const String& Message, Uint32 WinFlags, cUIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Sizei MinWindowSize, Uint8 BaseAlpha ) {
 	cUIMessageBox::CreateParams MsgBoxParams;
 	MsgBoxParams.Parent( Parent );
 	MsgBoxParams.PosSet( Pos );
@@ -151,7 +151,7 @@ cUIMessageBox * cUIDefaultTheme::CreateMessageBox( UI_MSGBOX_TYPE Type, const St
 	return eeNew( cUIMessageBox, ( MsgBoxParams ) );
 }
 
-cUIComboBox * cUIDefaultTheme::CreateComboBox( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, cUIListBox * ListBox ) {
+cUIComboBox * cUIDefaultTheme::CreateComboBox( cUIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, cUIListBox * ListBox ) {
 	cUIComboBox::CreateParams ComboParams;
 	ComboParams.Parent( Parent );
 	ComboParams.PosSet( Pos );
@@ -171,7 +171,7 @@ cUIComboBox * cUIDefaultTheme::CreateComboBox( cUIControl * Parent, const eeSize
 	return Ctrl;
 }
 
-cUIDropDownList * cUIDefaultTheme::CreateDropDownList( cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, cUIListBox * ListBox ) {
+cUIDropDownList * cUIDefaultTheme::CreateDropDownList( cUIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, Uint32 MinNumVisibleItems, bool PopUpToMainControl, cUIListBox * ListBox ) {
 	cUIDropDownList::CreateParams DDLParams;
 	DDLParams.Parent( Parent );
 	DDLParams.PosSet( Pos );
@@ -191,7 +191,7 @@ cUIDropDownList * cUIDefaultTheme::CreateDropDownList( cUIControl * Parent, cons
 	return Ctrl;
 }
 
-cUITabWidget * cUIDefaultTheme::CreateTabWidget( cUIControl *Parent, const eeSize &Size, const eeVector2i &Pos, const Uint32 &Flags, const bool &TabsClosable, const bool &SpecialBorderTabs, const Int32 &TabSeparation, const Uint32 &MaxTextLength, const Uint32 &TabWidgetHeight, const Uint32 &TabTextAlign, const Uint32 &MinTabWidth, const Uint32 &MaxTabWidth ) {
+cUITabWidget * cUIDefaultTheme::CreateTabWidget( cUIControl *Parent, const Sizei &Size, const Vector2i &Pos, const Uint32 &Flags, const bool &TabsClosable, const bool &SpecialBorderTabs, const Int32 &TabSeparation, const Uint32 &MaxTextLength, const Uint32 &TabWidgetHeight, const Uint32 &TabTextAlign, const Uint32 &MinTabWidth, const Uint32 &MaxTabWidth ) {
 	cUITabWidget::CreateParams TabWidgetParams;
 	TabWidgetParams.Parent( Parent );
 	TabWidgetParams.PosSet( Pos );
@@ -220,7 +220,7 @@ cUITabWidget * cUIDefaultTheme::CreateTabWidget( cUIControl *Parent, const eeSiz
 	return Ctrl;
 }
 
-cUITooltip * cUIDefaultTheme::CreateTooltip( cUIControl * TooltipOf, cUIControl * Parent, const eeSize& Size, const eeVector2i& Pos, const Uint32& Flags ) {
+cUITooltip * cUIDefaultTheme::CreateTooltip( cUIControl * TooltipOf, cUIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags ) {
 	cUITooltip::CreateParams TooltipParams;
 	TooltipParams.Parent( Parent );
 	TooltipParams.PosSet( Pos );
@@ -230,7 +230,7 @@ cUITooltip * cUIDefaultTheme::CreateTooltip( cUIControl * TooltipOf, cUIControl 
 	if ( UseDefaultThemeValues() ) {
 		TooltipParams.Flags &= ~UI_AUTO_PADDING;
 		TooltipParams.FontColor = ColorA( 0, 0, 0, 255 );
-		TooltipParams.Padding = eeRecti( 4, 6, 4, 6 );
+		TooltipParams.Padding = Recti( 4, 6, 4, 6 );
 	}
 
 	cUITooltip * Ctrl = eeNew( cUITooltip, ( TooltipParams, TooltipOf ) );

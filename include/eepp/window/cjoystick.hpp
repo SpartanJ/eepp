@@ -35,7 +35,7 @@ class EE_API cJoystick {
 		virtual Float		GetAxis( const Int32& axis ) = 0;
 
 		/** @return The ball motion position */
-		virtual eeVector2i	GetBallMotion( const Int32& ball ) = 0;
+		virtual Vector2i	GetBallMotion( const Int32& ball ) = 0;
 
 		/** @return True if the joystick is plugged in */
 		virtual bool		Plugged() const = 0;

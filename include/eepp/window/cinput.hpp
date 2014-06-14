@@ -45,7 +45,7 @@ class EE_API cInput {
 		void InjectKeyDown( const EE_KEY& Key );
 
 		/** Inject the mouse position given */
-		void InjectMousePos( const eeVector2i& Pos );
+		void InjectMousePos( const Vector2i& Pos );
 
 		/** Inject the mouse button as pressed */
 		void InjectButtonPress( const Uint32& Button );
@@ -107,16 +107,16 @@ class EE_API cInput {
 		void PopCallback( const Uint32& CallbackId );
 
 		/** @return The Mouse position vector */
-		eeVector2i GetMousePos() const;
+		Vector2i GetMousePos() const;
 
 		/** @return The position vector converted to float */
-		eeVector2f GetMousePosf();
+		Vector2f GetMousePosf();
 
 		/** This will change the value of the mouse pos, will not REALLY move the mouse ( for that is InjectMousePos ). */
-		void SetMousePos( const eeVector2i& Pos );
+		void SetMousePos( const Vector2i& Pos );
 
 		/** @return The mouse position over the current view */
-		eeVector2i GetMousePosFromView( const cView& View );
+		Vector2i GetMousePosFromView( const cView& View );
 
 		/** @return The Mouse X axis position */
 		Uint16 MouseX() const;
@@ -204,7 +204,7 @@ class EE_API cInput {
 		Uint32		mLastButtonRightClick;
 		Uint32		mLastButtonMiddleClick;
 		Uint32		mTClick;
-		eeVector2i	mMousePos;
+		Vector2i	mMousePos;
 		Uint32		mNumCallBacks;
 		Float		mMouseSpeed;
 		bool		mInputGrabed;

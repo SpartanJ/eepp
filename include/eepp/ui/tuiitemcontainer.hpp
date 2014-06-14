@@ -16,7 +16,7 @@ class tUIItemContainer : public cUIControl {
 
 		void DrawChilds();
 	protected:
-		cUIControl * OverFind( const eeVector2f& Point );
+		cUIControl * OverFind( const Vector2f& Point );
 };
 
 template<class TContainer>
@@ -54,7 +54,7 @@ void tUIItemContainer<TContainer>::DrawChilds() {
 }
 
 template<class TContainer>
-cUIControl * tUIItemContainer<TContainer>::OverFind( const eeVector2f& Point ) {
+cUIControl * tUIItemContainer<TContainer>::OverFind( const Vector2f& Point ) {
 	TContainer * tParent = reinterpret_cast<TContainer*> ( Parent() );
 
 	cUIControl * pOver = NULL;

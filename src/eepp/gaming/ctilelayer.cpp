@@ -8,7 +8,7 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {
 
-cTileLayer::cTileLayer( cMap * map, eeSize size, Uint32 flags, std::string name, eeVector2f offset ) :
+cTileLayer::cTileLayer( cMap * map, Sizei size, Uint32 flags, std::string name, Vector2f offset ) :
 	cLayer( map, MAP_LAYER_TILED, flags, name, offset ),
 	mSize( size )
 {
@@ -19,14 +19,14 @@ cTileLayer::~cTileLayer() {
 	DeallocateLayer();
 }
 
-void cTileLayer::Draw( const eeVector2f& Offset ) {
+void cTileLayer::Draw( const Vector2f& Offset ) {
 	cGlobalBatchRenderer::instance()->Draw();
 
 	GLi->PushMatrix();
 	GLi->Translatef( mOffset.x, mOffset.y, 0.0f );
 
-	eeVector2i start = mMap->StartTile();
-	eeVector2i end = mMap->EndTile();
+	Vector2i start = mMap->StartTile();
+	Vector2i end = mMap->EndTile();
 
 	for ( Int32 x = start.x; x < end.x; x++ ) {
 		for ( Int32 y = start.y; y < end.y; y++ ) {
@@ -46,7 +46,7 @@ void cTileLayer::Draw( const eeVector2f& Offset ) {
 			for ( Int32 y = start.y; y < end.y; y++ ) {
 				if ( NULL != mTiles[x][y] ) {
 					if ( mTiles[x][y]->Blocked() ) {
-						Tex->Draw( x * mMap->TileSize().x, y * mMap->TileSize().y, 0 , eeVector2f::One, ColorA( 255, 0, 0, 200 ) );
+						Tex->Draw( x * mMap->TileSize().x, y * mMap->TileSize().y, 0 , Vector2f::One, ColorA( 255, 0, 0, 200 ) );
 					}
 				}
 			}
@@ -59,8 +59,8 @@ void cTileLayer::Draw( const eeVector2f& Offset ) {
 }
 
 void cTileLayer::Update() {
-	eeVector2i start = mMap->StartTile();
-	eeVector2i end = mMap->EndTile();
+	Vector2i start = mMap->StartTile();
+	Vector2i end = mMap->EndTile();
 
 	for ( Int32 x = start.x; x < end.x; x++ ) {
 		for ( Int32 y = start.y; y < end.y; y++ ) {
@@ -98,7 +98,7 @@ void cTileLayer::DeallocateLayer() {
 	eeSAFE_DELETE_ARRAY( mTiles );
 }
 
-void cTileLayer::AddGameObject( cGameObject * obj, const eeVector2i& TilePos ) {
+void cTileLayer::AddGameObject( cGameObject * obj, const Vector2i& TilePos ) {
 	eeASSERT( TilePos.x >= 0 && TilePos.y >= 0 );
 
 	if ( TilePos.x < mSize.x && TilePos.y < mSize.y ) {
@@ -106,11 +106,11 @@ void cTileLayer::AddGameObject( cGameObject * obj, const eeVector2i& TilePos ) {
 
 		mTiles[ TilePos.x ][ TilePos.y ] = obj;
 
-		obj->Pos( eeVector2f( TilePos.x * mMap->TileSize().x, TilePos.y * mMap->TileSize().y ) );
+		obj->Pos( Vector2f( TilePos.x * mMap->TileSize().x, TilePos.y * mMap->TileSize().y ) );
 	}
 }
 
-void cTileLayer::RemoveGameObject( const eeVector2i& TilePos ) {
+void cTileLayer::RemoveGameObject( const Vector2i& TilePos ) {
 	eeASSERT( TilePos.x >= 0 && TilePos.y >= 0 );
 
 	if ( TilePos.x < mSize.x && TilePos.y < mSize.y ) {
@@ -120,7 +120,7 @@ void cTileLayer::RemoveGameObject( const eeVector2i& TilePos ) {
 	}
 }
 
-void cTileLayer::MoveTileObject( const eeVector2i& FromPos, const eeVector2i& ToPos ) {
+void cTileLayer::MoveTileObject( const Vector2i& FromPos, const Vector2i& ToPos ) {
 	RemoveGameObject( ToPos );
 
 	cGameObject * tObj = mTiles[ FromPos.x ][ FromPos.y ];
@@ -130,20 +130,20 @@ void cTileLayer::MoveTileObject( const eeVector2i& FromPos, const eeVector2i& To
 	mTiles[ ToPos.x ][ ToPos.y ] = tObj;
 }
 
-cGameObject * cTileLayer::GetGameObject( const eeVector2i& TilePos ) {
+cGameObject * cTileLayer::GetGameObject( const Vector2i& TilePos ) {
 	return mTiles[ TilePos.x ][ TilePos.y ];
 }
 
-const eeVector2i& cTileLayer::GetCurrentTile() const {
+const Vector2i& cTileLayer::GetCurrentTile() const {
 	return mCurTile;
 }
 
-eeVector2i cTileLayer::GetTilePosFromPos( const eeVector2f& Pos ) {
-	return eeVector2i( ( (Int32)Pos.x + mOffset.x ) / mMap->TileSize().Width(), ( (Int32)Pos.y + mOffset.y ) / mMap->TileSize().Height() );
+Vector2i cTileLayer::GetTilePosFromPos( const Vector2f& Pos ) {
+	return Vector2i( ( (Int32)Pos.x + mOffset.x ) / mMap->TileSize().Width(), ( (Int32)Pos.y + mOffset.y ) / mMap->TileSize().Height() );
 }
 
-eeVector2f cTileLayer::GetPosFromTilePos( const eeVector2i& TilePos ) {
-	return eeVector2f( TilePos.x * mMap->TileSize().Width() + mOffset.x, TilePos.y * mMap->TileSize().Height() + mOffset.y );
+Vector2f cTileLayer::GetPosFromTilePos( const Vector2i& TilePos ) {
+	return Vector2f( TilePos.x * mMap->TileSize().Width() + mOffset.x, TilePos.y * mMap->TileSize().Height() + mOffset.y );
 }
 
 }}

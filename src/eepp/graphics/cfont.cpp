@@ -93,17 +93,17 @@ const std::vector<Float>& cFont::GetLinesWidth() {
 	return mTextCache.LinesWidth();
 }
 
-void cFont::Draw( const Float& X, const Float& Y, const Uint32& Flags, const eeVector2f& Scale, const Float& Angle, const EE_BLEND_MODE& Effect) {
+void cFont::Draw( const Float& X, const Float& Y, const Uint32& Flags, const Vector2f& Scale, const Float& Angle, const EE_BLEND_MODE& Effect) {
 	Draw( mTextCache, X, Y, Flags, Scale, Angle, Effect );
 }
 
-void cFont::Draw( const String& Text, const Float& X, const Float& Y, const Uint32& Flags, const eeVector2f& Scale, const Float& Angle, const EE_BLEND_MODE& Effect ) {
+void cFont::Draw( const String& Text, const Float& X, const Float& Y, const Uint32& Flags, const Vector2f& Scale, const Float& Angle, const EE_BLEND_MODE& Effect ) {
 	mTextCache.Text( Text );
 	mTextCache.Flags( Flags );
 	mTextCache.Draw( X, Y, Scale, Angle, Effect );
 }
 
-void cFont::Draw( cTextCache& TextCache, const Float& X, const Float& Y, const Uint32& Flags, const eeVector2f& Scale, const Float& Angle, const EE_BLEND_MODE& Effect ) {
+void cFont::Draw( cTextCache& TextCache, const Float& X, const Float& Y, const Uint32& Flags, const Vector2f& Scale, const Float& Angle, const EE_BLEND_MODE& Effect ) {
 	if ( !TextCache.Text().size() )
 		return;
 
@@ -148,7 +148,7 @@ void cFont::Draw( cTextCache& TextCache, const Float& X, const Float& Y, const U
 	if ( Angle != 0.0f || Scale != 1.0f ) {
 		GLi->PushMatrix();
 
-		eeVector2f Center( cX + TextCache.GetTextWidth() * 0.5f, cY + TextCache.GetTextHeight() * 0.5f );
+		Vector2f Center( cX + TextCache.GetTextWidth() * 0.5f, cY + TextCache.GetTextHeight() * 0.5f );
 		GLi->Translatef( Center.x , Center.y, 0.f );
 		GLi->Rotatef( Angle, 0.0f, 0.0f, 1.0f );
 		GLi->Scalef( Scale.x, Scale.y, 1.0f );
@@ -357,7 +357,7 @@ void cFont::CacheWidth( const String& Text, std::vector<Float>& LinesWidth, Floa
 	NumLines = Lines;
 }
 
-Int32 cFont::FindClosestCursorPosFromPoint( const String& Text, const eeVector2i& pos ) {
+Int32 cFont::FindClosestCursorPosFromPoint( const String& Text, const Vector2i& pos ) {
 	Float Width = 0, lWidth = 0, Height = GetFontHeight(), lHeight = 0;
 	Int32 CharID;
 	Int32 tGlyphSize = (Int32)mGlyphs.size();
@@ -411,7 +411,7 @@ Int32 cFont::FindClosestCursorPosFromPoint( const String& Text, const eeVector2i
 	return -1;
 }
 
-eeVector2i cFont::GetCursorPos( const String& Text, const Uint32& Pos ) {
+Vector2i cFont::GetCursorPos( const String& Text, const Uint32& Pos ) {
 	Float Width = 0, Height = GetFontHeight();
 	Int32 CharID;
 	Int32 tGlyphSize = mGlyphs.size();
@@ -434,7 +434,7 @@ eeVector2i cFont::GetCursorPos( const String& Text, const Uint32& Pos ) {
 		}
 	}
 
-	return eeVector2i( Width, Height );
+	return Vector2i( Width, Height );
 }
 
 static bool IsStopSelChar( Uint32 c ) {

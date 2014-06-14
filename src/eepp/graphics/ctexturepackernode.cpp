@@ -45,13 +45,13 @@ bool cTexturePackerNode::Fits( Int32 width, Int32 height, Int32 &edgeCount, cons
 	return ret;
 }
 
-void cTexturePackerNode::GetRect( eeRecti &r ) const {
-	r = eeRecti( mX, mY, mX + mWidth - 1, mY + mHeight - 1 );
+void cTexturePackerNode::GetRect( Recti &r ) const {
+	r = Recti( mX, mY, mX + mWidth - 1, mY + mHeight - 1 );
 }
 
 void cTexturePackerNode::Validate( cTexturePackerNode * n ) {
-	eeRecti r1;
-	eeRecti r2;
+	Recti r1;
+	Recti r2;
 	GetRect( r1 );
 	n->GetRect( r2 );
 	eeASSERT( !r1.Intersect(r2) );
@@ -60,8 +60,8 @@ void cTexturePackerNode::Validate( cTexturePackerNode * n ) {
 bool cTexturePackerNode::Merge( const cTexturePackerNode& n ) {
 	bool ret = false;
 
-	eeRecti r1;
-	eeRecti r2;
+	Recti r1;
+	Recti r2;
 
 	GetRect( r1 );
 	n.GetRect( r2 );

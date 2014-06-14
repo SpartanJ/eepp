@@ -27,21 +27,21 @@ class EE_API cCursorManager {
 		* @param hotspot The hotspot where the mouse click is taken
 		* @param name The name of the cursor
 		*/
-		virtual cCursor *		Create( cTexture * tex, const eeVector2i& hotspot, const std::string& name ) = 0;
+		virtual cCursor *		Create( cTexture * tex, const Vector2i& hotspot, const std::string& name ) = 0;
 
 		/** Creates a cursor from a image
 		* @param img The image path
 		* @param hotspot The hotspot where the mouse click is taken
 		* @param name The name of the cursor
 		*/
-		virtual cCursor *		Create( cImage * img, const eeVector2i& hotspot, const std::string& name ) = 0;
+		virtual cCursor *		Create( cImage * img, const Vector2i& hotspot, const std::string& name ) = 0;
 
 		/** Creates a cursor from a image path
 		* @param path The image pointer to use as cursor
 		* @param hotspot The hotspot where the mouse click is taken
 		* @param name The name of the cursor
 		*/
-		virtual cCursor *		Create( const std::string& path, const eeVector2i& hotspot, const std::string& name ) = 0;
+		virtual cCursor *		Create( const std::string& path, const Vector2i& hotspot, const std::string& name ) = 0;
 
 		/** Adds the cursor to the cursor manager */
 		virtual cCursor *		Add( cCursor * cursor );

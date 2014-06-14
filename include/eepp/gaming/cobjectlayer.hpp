@@ -21,7 +21,7 @@ class EE_API cObjectLayer : public cLayer {
 
 		virtual ~cObjectLayer();
 
-		virtual void Draw( const eeVector2f &Offset = eeVector2f(0,0) );
+		virtual void Draw( const Vector2f &Offset = Vector2f(0,0) );
 
 		virtual void Update();
 
@@ -29,9 +29,9 @@ class EE_API cObjectLayer : public cLayer {
 
 		virtual void RemoveGameObject( cGameObject * obj );
 
-		virtual void RemoveGameObject( const eeVector2i& pos );
+		virtual void RemoveGameObject( const Vector2i& pos );
 
-		virtual cGameObject * GetObjectOver( const eeVector2i& pos, SEARCH_TYPE type = SEARCH_ALL );
+		virtual cGameObject * GetObjectOver( const Vector2i& pos, SEARCH_TYPE type = SEARCH_ALL );
 
 		virtual Uint32 GetObjectCount() const;
 	protected:
@@ -39,7 +39,7 @@ class EE_API cObjectLayer : public cLayer {
 
 		ObjList		mObjects;
 
-		cObjectLayer( cMap * map, Uint32 flags, std::string name = "", eeVector2f offset = eeVector2f(0,0) );
+		cObjectLayer( cMap * map, Uint32 flags, std::string name = "", Vector2f offset = Vector2f(0,0) );
 
 		void AllocateLayer();
 

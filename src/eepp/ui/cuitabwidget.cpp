@@ -69,8 +69,8 @@ void cUITabWidget::SetTheme( cUITheme * Theme ) {
 	if ( 0 == mTabWidgetHeight ) {
 		cUISkin * tSkin		= Theme->GetByName( Theme->Abbr() + "_" + "tab" );
 
-		eeSize tSize1		= GetSkinSize( tSkin );
-		eeSize tSize2		= GetSkinSize( tSkin, cUISkinState::StateSelected );
+		Sizei tSize1		= GetSkinSize( tSkin );
+		Sizei tSize2		= GetSkinSize( tSkin, cUISkinState::StateSelected );
 
 		mTabWidgetHeight	= eemax( tSize1.Height(), tSize2.Height() );
 
@@ -97,23 +97,23 @@ void cUITabWidget::Draw() {
 		if ( smooth ) GLi->LineSmooth( false );
 
 		cPrimitives P;
-		eeVector2i p1( mPos.x, mPos.y + mTabContainer->Size().Height() + mLineBewowTabsYOffset );
-		eeVector2i p2( mPos.x + mTabContainer->Pos().x, p1.y );
+		Vector2i p1( mPos.x, mPos.y + mTabContainer->Size().Height() + mLineBewowTabsYOffset );
+		Vector2i p2( mPos.x + mTabContainer->Pos().x, p1.y );
 
 		ControlToScreen( p1 );
 		ControlToScreen( p2 );
 
 		P.LineWidth( 1 );
 		P.SetColor( mLineBelowTabsColor );
-		P.DrawLine( eeLine2f( eeVector2f( p1.x, p1.y ), eeVector2f( p2.x, p2.y ) ) );
+		P.DrawLine( Line2f( Vector2f( p1.x, p1.y ), Vector2f( p2.x, p2.y ) ) );
 
-		eeVector2i p3( mPos.x + mTabContainer->Pos().x + mTabContainer->Size().Width(), mPos.y + mTabContainer->Size().Height() + mLineBewowTabsYOffset );
-		eeVector2i p4( mPos.x + mSize.Width(), p3.y );
+		Vector2i p3( mPos.x + mTabContainer->Pos().x + mTabContainer->Size().Width(), mPos.y + mTabContainer->Size().Height() + mLineBewowTabsYOffset );
+		Vector2i p4( mPos.x + mSize.Width(), p3.y );
 
 		ControlToScreen( p3 );
 		ControlToScreen( p4 );
 
-		P.DrawLine( eeLine2f( eeVector2f( p3.x, p3.y ), eeVector2f( p4.x, p4.y ) ) );
+		P.DrawLine( Line2f( Vector2f( p3.x, p3.y ), Vector2f( p4.x, p4.y ) ) );
 
 		if ( smooth ) GLi->LineSmooth( true );
 	}

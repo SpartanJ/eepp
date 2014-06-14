@@ -27,14 +27,14 @@ void AudioListener::Position( const float& X, const float& Y, const float& Z ) {
 	ALCheck( alListener3f( AL_POSITION, X, Y, Z ) );
 }
 
-void AudioListener::Position(const eeVector3ff& Position) {
+void AudioListener::Position(const Vector3ff& Position) {
 	AudioListener::Position( Position.x, Position.y, Position.z );
 }
 
-eeVector3ff AudioListener::Position() {
+Vector3ff AudioListener::Position() {
 	EnsureALInit();
 
-	eeVector3ff Position;
+	Vector3ff Position;
 	ALCheck( alGetListener3f( AL_POSITION, &Position.x, &Position.y, &Position.z ) );
 
 	return Position;
@@ -47,17 +47,17 @@ void AudioListener::Target( const float& X, const float& Y, const float& Z ) {
 	ALCheck( alListenerfv( AL_ORIENTATION, Orientation ) );
 }
 
-void AudioListener::Target(const eeVector3ff& Target) {
+void AudioListener::Target(const Vector3ff& Target) {
 	AudioListener::Target( Target.x, Target.y, Target.z );
 }
 
-eeVector3ff AudioListener::Target() {
+Vector3ff AudioListener::Target() {
 	EnsureALInit();
 
 	float Orientation[6];
 	ALCheck( alGetListenerfv( AL_ORIENTATION, Orientation ) );
 
-	return eeVector3ff( Orientation[0], Orientation[1], Orientation[2] );
+	return Vector3ff( Orientation[0], Orientation[1], Orientation[2] );
 }
 
 }}

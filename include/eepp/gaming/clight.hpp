@@ -25,15 +25,15 @@ class EE_API cLight {
 
 		virtual ColorA ProcessVertex( const Float& PointX, const Float& PointY, const ColorA& VertexColor, const ColorA& BaseColor );
 
-		RGB ProcessVertex( const eeVector2f& Pos, const RGB& VertexColor, const RGB& BaseColor );
+		RGB ProcessVertex( const Vector2f& Pos, const RGB& VertexColor, const RGB& BaseColor );
 
-		ColorA ProcessVertex( const eeVector2f& Pos, const ColorA& VertexColor, const ColorA& BaseColor );
+		ColorA ProcessVertex( const Vector2f& Pos, const ColorA& VertexColor, const ColorA& BaseColor );
 
 		void Move( const Float& addtox, const Float& addtoy );
 
 		void UpdatePos( const Float& x, const Float& y );
 
-		void UpdatePos( const eeVector2f& newPos );
+		void UpdatePos( const Vector2f& newPos );
 
 		eeAABB GetAABB() const;
 
@@ -53,12 +53,12 @@ class EE_API cLight {
 
 		const LIGHT_TYPE& Type() const;
 
-		const eeVector2f& Position() const;
+		const Vector2f& Position() const;
 
-		void Position( const eeVector2f& newPos );
+		void Position( const Vector2f& newPos );
 	protected:
 		Float		mRadius;
-		eeVector2f	mPos;
+		Vector2f	mPos;
 		RGB		mColor;
 		LIGHT_TYPE	mType;
 		eeAABB		mAABB;

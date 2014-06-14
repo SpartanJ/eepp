@@ -1,15 +1,15 @@
-#include <eepp/math/cperlinnoise.hpp>
+#include <eepp/math/perlinnoise.hpp>
 #include <cmath>
 
 namespace EE { namespace Math {
 
-cPerlinNoise::cPerlinNoise() {
+PerlinNoise::PerlinNoise() {
 	Init();
 }
 
-cPerlinNoise::~cPerlinNoise() {}
+PerlinNoise::~PerlinNoise() {}
 
-void cPerlinNoise::Init() {
+void PerlinNoise::Init() {
 	mPersistence	= 0.25f;
 	mOctaves		= 4;
 	mFrequency		= 0.015f;
@@ -18,7 +18,7 @@ void cPerlinNoise::Init() {
 	mAmpOctaveDep	= false;
 }
 
-Float cPerlinNoise::PerlinNoise2D(Float x, Float y) {
+Float PerlinNoise::PerlinNoise2D(Float x, Float y) {
 	Float total	= 0;
 	Float p		= mPersistence;
 	Float n		= static_cast<Float>( mOctaves - 1 );
@@ -41,7 +41,7 @@ Float cPerlinNoise::PerlinNoise2D(Float x, Float y) {
 	return total;
 }
 
-Float cPerlinNoise::Noise2D( Int32 x, Int32 y ) {
+Float PerlinNoise::Noise2D( Int32 x, Int32 y ) {
 	Int32 n = x + y * 57;
 
 	n = ( n << 13 ) ^ n;
@@ -51,7 +51,7 @@ Float cPerlinNoise::Noise2D( Int32 x, Int32 y ) {
 	return static_cast<Float>( 1.0 - static_cast<Float>( n ) / 1073741824.0);
 }
 
-Float cPerlinNoise::SmoothedNoise2D(Float x, Float y) {
+Float PerlinNoise::SmoothedNoise2D(Float x, Float y) {
 	register Int32	tx	= static_cast<Int32>( x );
 	register Int32	ty	= static_cast<Int32>( y );
 
@@ -62,14 +62,14 @@ Float cPerlinNoise::SmoothedNoise2D(Float x, Float y) {
 	return corners + sides + center;
 }
 
-Float cPerlinNoise::Interpolate( Float a, Float b, Float x ) {
+Float PerlinNoise::Interpolate( Float a, Float b, Float x ) {
 	Float fac1 = 3 * eepow( 1 - x, 2	) - 2 * eepow( 1 - x, 3 );
 	Float fac2 = 3 * eepow( x, 2		) - 2 * eepow( x, 3		);
 
 	return a * fac1 + b * fac2; //add the weighted factors
 }
 
-Float cPerlinNoise::InterpolatedNoise2D(Float x, Float y) {
+Float PerlinNoise::InterpolatedNoise2D(Float x, Float y) {
 	Int32 eger_X    = static_cast<Int32>( x );
 	Int32 eger_Y    = static_cast<Int32>( y );
 

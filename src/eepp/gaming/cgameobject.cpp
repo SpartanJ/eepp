@@ -79,23 +79,23 @@ void cGameObject::Draw() {
 void cGameObject::Update() {
 }
 
-eeVector2f cGameObject::Pos() const {
-	return eeVector2f();
+Vector2f cGameObject::Pos() const {
+	return Vector2f();
 }
 
-void cGameObject::Pos( eeVector2f pos ) {
+void cGameObject::Pos( Vector2f pos ) {
 	AutoFixTilePos();
 }
 
-eeVector2i cGameObject::TilePos() const {
-	return eeVector2i();
+Vector2i cGameObject::TilePos() const {
+	return Vector2i();
 }
 
-void cGameObject::TilePos( eeVector2i pos ) {
+void cGameObject::TilePos( Vector2i pos ) {
 }
 
-eeSize cGameObject::Size() {
-	return eeSize();
+Sizei cGameObject::Size() {
+	return Sizei();
 }
 
 Uint32 cGameObject::DataId() {
@@ -125,11 +125,11 @@ cLayer * cGameObject::Layer() const {
 
 void cGameObject::AutoFixTilePos() {
 	if ( ( mFlags & GObjFlags::GAMEOBJECT_AUTO_FIX_TILE_POS ) && NULL != mLayer && mLayer->Type() == MAP_LAYER_TILED ) {
-		eeVector2i CurPos = TilePos();
+		Vector2i CurPos = TilePos();
 
 		AssignTilePos();
 
-		eeVector2i NewPos = TilePos();
+		Vector2i NewPos = TilePos();
 
 		if ( CurPos != NewPos ) {
 			cTileLayer * TLayer = static_cast<cTileLayer *> ( mLayer );

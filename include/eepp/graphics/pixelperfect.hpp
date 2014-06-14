@@ -17,7 +17,7 @@ namespace EE { namespace Graphics {
 * @warning Stress the CPU easily. \n Creates a copy of the texture on the app contex. \n It will not work with scaled or rotated textures.
 * @return True if collided
 */
-bool EE_API PixelPerfectCollide( cTexture * Tex1, const unsigned int& x1, const unsigned int& y1, cTexture * Tex2, const unsigned int& x2, const unsigned int& y2, const eeRectu& Tex1_SrcRECT = eeRectu(0,0,0,0), const eeRectu& Tex2_SrcRECT = eeRectu(0,0,0,0) );
+bool EE_API PixelPerfectCollide( cTexture * Tex1, const unsigned int& x1, const unsigned int& y1, cTexture * Tex2, const unsigned int& x2, const unsigned int& y2, const Rectu& Tex1_SrcRECT = Rectu(0,0,0,0), const Rectu& Tex2_SrcRECT = Rectu(0,0,0,0) );
 
 /** Pixel Perfect Collition implementation between texture and a point
 * @param Tex First Texture Id
@@ -28,7 +28,7 @@ bool EE_API PixelPerfectCollide( cTexture * Tex1, const unsigned int& x1, const 
 * @param Tex1_SrcRECT The sector of the texture from TexId_1 that you are rendering, the sector you want to collide ( on cSprite the SprSrcRECT )
 * @return True if collided
 */
-bool EE_API PixelPerfectCollide( cTexture * Tex, const unsigned int& x1, const unsigned int& y1, const unsigned int& x2, const unsigned int& y2, const eeRectu& Tex1_SrcRECT = eeRectu(0,0,0,0) );
+bool EE_API PixelPerfectCollide( cTexture * Tex, const unsigned int& x1, const unsigned int& y1, const unsigned int& x2, const unsigned int& y2, const Rectu& Tex1_SrcRECT = Rectu(0,0,0,0) );
 
 }}
 

@@ -21,9 +21,9 @@ cUISlider::cUISlider( const cUISlider::CreateParams& Params ) :
 	BgParams.Parent( this );
 
 	if ( !mVertical )
-		BgParams.Size = eeSize( mSize.Width() - 16, 8 );
+		BgParams.Size = Sizei( mSize.Width() - 16, 8 );
 	else
-		BgParams.Size = eeSize( 8, mSize.Width() - 16 );
+		BgParams.Size = Sizei( 8, mSize.Width() - 16 );
 
 	mBackSlider = eeNew( cUIControlAnim, ( BgParams ) );
 	mBackSlider->Visible( true );
@@ -32,8 +32,8 @@ cUISlider::cUISlider( const cUISlider::CreateParams& Params ) :
 
 	cUIDragable::CreateParams SlideParams;
 	SlideParams.Parent( this );
-	SlideParams.Size = eeSize( 16, 16 );
-	SlideParams.PosSet( eeVector2i( 0, 0 ) );
+	SlideParams.Size = Sizei( 16, 16 );
+	SlideParams.PosSet( Vector2i( 0, 0 ) );
 
 	mSlider = eeNew( Private::cUISliderButton, ( SlideParams ) );
 	mSlider->Enabled( true );
@@ -116,9 +116,9 @@ void cUISlider::AdjustChilds() {
 					Height = tSubTexture->RealSize().Height();
 
 				if ( mAllowHalfSliderOut )
-					mBackSlider->Size( eeSize( mSize.Width() - mSlider->Size().Width(), Height ) );
+					mBackSlider->Size( Sizei( mSize.Width() - mSlider->Size().Width(), Height ) );
 				else
-					mBackSlider->Size( eeSize( mSize.Width(), Height ) );
+					mBackSlider->Size( Sizei( mSize.Width(), Height ) );
 			} else {
 				Int32 Width;
 
@@ -128,9 +128,9 @@ void cUISlider::AdjustChilds() {
 					Width = tSubTexture->RealSize().Width();
 
 				if ( mAllowHalfSliderOut )
-					mBackSlider->Size( eeSize( Width, mSize.Height() - mSlider->Size().Height() ) );
+					mBackSlider->Size( Sizei( Width, mSize.Height() - mSlider->Size().Height() ) );
 				else
-					mBackSlider->Size( eeSize( Width, mSize.Height() ) );
+					mBackSlider->Size( Sizei( Width, mSize.Height() ) );
 			}
 
 			mBackSlider->Center();
@@ -295,7 +295,7 @@ Uint32 cUISlider::OnKeyDown( const cUIEventKey &Event ) {
 
 void cUISlider::ManageClick( const Uint32& Flags ) {
 	if ( Flags ) {
-		eeVector2i ControlPos = cUIManager::instance()->GetMousePos();
+		Vector2i ControlPos = cUIManager::instance()->GetMousePos();
 		mSlider->WorldToControl( ControlPos );
 
 		if ( Flags & EE_BUTTON_LMASK && !mSlider->IsMouseOver()  ) {

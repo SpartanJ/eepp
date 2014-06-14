@@ -70,10 +70,10 @@ class EE_API cShaderProgram {
 		bool SetUniform( const std::string& Name, float Value );
 
 		/** @overload */
-		bool SetUniform( const std::string& Name, eeVector2ff Value );
+		bool SetUniform( const std::string& Name, Vector2ff Value );
 
 		/** @overload */
-		bool SetUniform( const std::string& Name, eeVector3ff Value );
+		bool SetUniform( const std::string& Name, Vector3ff Value );
 
 		/** @overload */
 		bool SetUniform( const std::string& Name, float x, float y, float z, float w );
@@ -88,10 +88,10 @@ class EE_API cShaderProgram {
 		bool SetUniform( const Int32& Location, float Value );
 
 		/** @overload */
-		bool SetUniform( const Int32& Location, eeVector2ff Value );
+		bool SetUniform( const Int32& Location, Vector2ff Value );
 
 		/** @overload */
-		bool SetUniform( const Int32& Location, eeVector3ff Value );
+		bool SetUniform( const Int32& Location, Vector3ff Value );
 
 		/** @overload */
 		bool SetUniform( const Int32& Location, float x, float y, float z, float w );

@@ -174,7 +174,7 @@ Uint32 cUIWinMenu::OnMessage( const cUIMessage * Msg ) {
 				cUISelectButton * tbut	= reinterpret_cast<cUISelectButton*> ( Msg->Sender() );
 				cUIPopUpMenu * tpop		= GetMenuFromButton( tbut );
 
-				eeVector2i pos( tbut->Pos().x, tbut->Pos().y + tbut->Size().Height() );
+				Vector2i pos( tbut->Pos().x, tbut->Pos().y + tbut->Size().Height() );
 				tpop->Pos( pos );
 
 				if ( Msg->Msg() == cUIMessage::MsgMouseEnter ) {

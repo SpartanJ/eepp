@@ -14,19 +14,19 @@
 
 namespace EE { namespace Window { namespace Platform {
 
-cCursorWin::cCursorWin( cTexture * tex, const eeVector2i& hotspot, const std::string& name, cWindow * window ) :
+cCursorWin::cCursorWin( cTexture * tex, const Vector2i& hotspot, const std::string& name, cWindow * window ) :
 	cCursor( tex, hotspot, name, window )
 {
 	Create();
 }
 
-cCursorWin::cCursorWin( cImage * img, const eeVector2i& hotspot, const std::string& name, cWindow * window ) :
+cCursorWin::cCursorWin( cImage * img, const Vector2i& hotspot, const std::string& name, cWindow * window ) :
 	cCursor( img, hotspot, name, window )
 {
 	Create();
 }
 
-cCursorWin::cCursorWin( const std::string& path, const eeVector2i& hotspot, const std::string& name, cWindow * window ) :
+cCursorWin::cCursorWin( const std::string& path, const Vector2i& hotspot, const std::string& name, cWindow * window ) :
 	cCursor( path, hotspot, name, window )
 {
 	Create();

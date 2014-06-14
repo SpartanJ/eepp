@@ -58,8 +58,8 @@ bool cWindowNull::Visible() {
 	return true;
 }
 
-eeVector2i cWindowNull::Position() {
-	return eeVector2i();
+Vector2i cWindowNull::Position() {
+	return Vector2i();
 }
 
 void cWindowNull::Size( Uint32 Width, Uint32 Height, bool Windowed ) {

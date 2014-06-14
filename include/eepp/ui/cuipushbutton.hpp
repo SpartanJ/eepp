@@ -51,7 +51,7 @@ class EE_API cUIPushButton : public cUIComplexControl {
 				cSubTexture * 	Icon;
 				Int32 		IconHorizontalMargin;
 				bool 		IconAutoMargin;
-				eeSize		IconMinSize;
+				Sizei		IconMinSize;
 		};
 
 		cUIPushButton( const cUIPushButton::CreateParams& Params );
@@ -72,9 +72,9 @@ class EE_API cUIPushButton : public cUIComplexControl {
 
 		virtual const String& Text();
 
-		void Padding( const eeRecti& padding );
+		void Padding( const Recti& padding );
 
-		const eeRecti& Padding() const;
+		const Recti& Padding() const;
 
 		void IconHorizontalMargin( Int32 margin );
 

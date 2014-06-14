@@ -46,7 +46,7 @@ void cUIProgressBar::Draw() {
 		C.Alpha = (Uint8)mAlpha;
 
 		mParallax->Color( C );
-		mParallax->Position( eeVector2f( mScreenPos.x + mFillerMargin.Left, mScreenPos.y + mFillerMargin.Top ) );
+		mParallax->Position( Vector2f( mScreenPos.x + mFillerMargin.Left, mScreenPos.y + mFillerMargin.Top ) );
 		mParallax->Draw();
 	}
 }
@@ -74,7 +74,7 @@ void cUIProgressBar::SetTheme( cUITheme * Theme ) {
 			if ( Height > mSize.Height() )
 				Height = mSize.Height();
 
-			mParallax = eeNew( cScrollParallax, ( tSubTexture, eeVector2f( mScreenPos.x + mFillerMargin.Left, mScreenPos.y + mFillerMargin.Top ), eeSizef( ( ( mSize.Width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom ), mSpeed ) );
+			mParallax = eeNew( cScrollParallax, ( tSubTexture, Vector2f( mScreenPos.x + mFillerMargin.Left, mScreenPos.y + mFillerMargin.Top ), Sizef( ( ( mSize.Width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom ), mSpeed ) );
 		}
 	}
 }
@@ -97,7 +97,7 @@ void cUIProgressBar::OnSizeChange() {
 		if ( Height > mSize.Height() )
 			Height = mSize.Height();
 
-		mParallax->Size( eeSizef( ( ( mSize.Width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom ) );
+		mParallax->Size( Sizef( ( ( mSize.Width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom ) );
 	}
 
 	UpdateTextBox();
@@ -125,14 +125,14 @@ const Float& cUIProgressBar::TotalSteps() const {
 	return mTotalSteps;
 }
 
-void cUIProgressBar::MovementSpeed( const eeVector2f& Speed ) {
+void cUIProgressBar::MovementSpeed( const Vector2f& Speed ) {
 	mSpeed = Speed;
 
 	if ( NULL != mParallax )
 		mParallax->Speed( mSpeed );
 }
 
-const eeVector2f& cUIProgressBar::MovementSpeed() const {
+const Vector2f& cUIProgressBar::MovementSpeed() const {
 	return mSpeed;
 }
 
@@ -148,14 +148,14 @@ const bool& cUIProgressBar::VerticalExpand() const {
 	return mVerticalExpand;
 }
 
-void cUIProgressBar::FillerMargin( const eeRectf& margin ) {
+void cUIProgressBar::FillerMargin( const Rectf& margin ) {
 	mFillerMargin = margin;
 
 	OnPosChange();
 	OnSizeChange();
 }
 
-const eeRectf& cUIProgressBar::FillerMargin() const {
+const Rectf& cUIProgressBar::FillerMargin() const {
 	return mFillerMargin;
 }
 

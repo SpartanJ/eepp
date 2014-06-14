@@ -8,7 +8,7 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {
 
-cGameObjectObject::cGameObjectObject( Uint32 DataId, const eeRectf& rect, cLayer * Layer, const Uint32& Flags ) :
+cGameObjectObject::cGameObjectObject( Uint32 DataId, const Rectf& rect, cLayer * Layer, const Uint32& Flags ) :
 	cGameObject( Flags, Layer ),
 	mRect( rect ),
 	mPoly( rect ),
@@ -29,9 +29,9 @@ bool cGameObjectObject::IsType( const Uint32& type ) {
 	return ( cGameObjectObject::Type() == type ) ? true : cGameObject::IsType( type );
 }
 
-eeSize cGameObjectObject::Size() {
-	eeSizef size( mRect.Size() );
-	return eeSize( size.x, size.y );
+Sizei cGameObjectObject::Size() {
+	Sizef size( mRect.Size() );
+	return Sizei( size.x, size.y );
 }
 
 void cGameObjectObject::Draw() {
@@ -48,48 +48,48 @@ void cGameObjectObject::Draw() {
 	P.DrawRectangle( mRect );
 }
 
-eeVector2f cGameObjectObject::Pos() const {
+Vector2f cGameObjectObject::Pos() const {
 	return mPos;
 }
 
-void cGameObjectObject::Pos( eeVector2f pos ) {
+void cGameObjectObject::Pos( Vector2f pos ) {
 	mPoly.Move( pos - mPos );
 	mPos	= pos;
-	mRect	= eeRectf( pos, eeSizef( Size().x, Size().y ) );
+	mRect	= Rectf( pos, Sizef( Size().x, Size().y ) );
 }
 
-void cGameObjectObject::SetPolygonPoint( Uint32 index, eeVector2f p ) {
+void cGameObjectObject::SetPolygonPoint( Uint32 index, Vector2f p ) {
 	switch ( index ) {
 		case 0:
 		{
-			mPoly.SetAt( 1, eeVector2f( p.x, mPoly[1].y ) );
-			mPoly.SetAt( 3, eeVector2f( mPoly[3].x, p.y ) );
+			mPoly.SetAt( 1, Vector2f( p.x, mPoly[1].y ) );
+			mPoly.SetAt( 3, Vector2f( mPoly[3].x, p.y ) );
 			break;
 		}
 		case 1:
 		{
-			mPoly.SetAt( 0, eeVector2f( p.x, mPoly[0].y ) );
-			mPoly.SetAt( 2, eeVector2f( mPoly[2].x, p.y ) );
+			mPoly.SetAt( 0, Vector2f( p.x, mPoly[0].y ) );
+			mPoly.SetAt( 2, Vector2f( mPoly[2].x, p.y ) );
 			break;
 		}
 		case 2:
 		{
-			mPoly.SetAt( 3, eeVector2f( p.x, mPoly[3].y ) );
-			mPoly.SetAt( 1, eeVector2f( mPoly[1].x, p.y ) );
+			mPoly.SetAt( 3, Vector2f( p.x, mPoly[3].y ) );
+			mPoly.SetAt( 1, Vector2f( mPoly[1].x, p.y ) );
 			break;
 		}
 		case 3:
 		default:
 		{
-			mPoly.SetAt( 2, eeVector2f( p.x, mPoly[2].y ) );
-			mPoly.SetAt( 0, eeVector2f( mPoly[0].x, p.y ) );
+			mPoly.SetAt( 2, Vector2f( p.x, mPoly[2].y ) );
+			mPoly.SetAt( 0, Vector2f( mPoly[0].x, p.y ) );
 			break;
 		}
 	}
 
 	mPoly.SetAt( index, p );
 	mRect	= mPoly.ToAABB();
-	mPos	= eeVector2f( mRect.Left, mRect.Top );
+	mPos	= Vector2f( mRect.Left, mRect.Top );
 	mPoly	= mRect;
 }
 
@@ -141,11 +141,11 @@ void cGameObjectObject::TypeName( const std::string& type ) {
 	mType = type;
 }
 
-eePolygon2f& cGameObjectObject::GetPolygon() {
+Polygon2f& cGameObjectObject::GetPolygon() {
 	return mPoly;
 }
 
-bool cGameObjectObject::PointInside( const eeVector2f& p ) {
+bool cGameObjectObject::PointInside( const Vector2f& p ) {
 	return mRect.Contains( p );
 }
 

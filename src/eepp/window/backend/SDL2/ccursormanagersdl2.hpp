@@ -14,11 +14,11 @@ class cCursorManagerSDL : public cCursorManager {
 	public:
 		cCursorManagerSDL( Window::cWindow * window );
 
-		cCursor * Create( cTexture * tex, const eeVector2i& hotspot, const std::string& name );
+		cCursor * Create( cTexture * tex, const Vector2i& hotspot, const std::string& name );
 
-		cCursor * Create( cImage * img, const eeVector2i& hotspot, const std::string& name );
+		cCursor * Create( cImage * img, const Vector2i& hotspot, const std::string& name );
 
-		cCursor * Create( const std::string& path, const eeVector2i& hotspot, const std::string& name );
+		cCursor * Create( const std::string& path, const Vector2i& hotspot, const std::string& name );
 
 		void Set( cCursor * cursor );
 

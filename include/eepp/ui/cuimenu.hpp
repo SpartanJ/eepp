@@ -43,7 +43,7 @@ class EE_API cUIMenu : public cUIComplexControl {
 				inline ~CreateParams() {}
 
 				Uint32		RowHeight;
-				eeRecti		PaddingContainer;
+				Recti		PaddingContainer;
 				Uint32		MinWidth;
 				Uint32		MinSpaceForIcons;
 				Uint32		MinRightMargin;
@@ -55,7 +55,7 @@ class EE_API cUIMenu : public cUIComplexControl {
 
 		};
 
-		static void FixMenuPos( eeVector2i& Pos, cUIMenu * Menu, cUIMenu * Parent = NULL, cUIMenuSubMenu * SubMenu = NULL );
+		static void FixMenuPos( Vector2i& Pos, cUIMenu * Menu, cUIMenu * Parent = NULL, cUIMenuSubMenu * SubMenu = NULL );
 
 		cUIMenu( cUIMenu::CreateParams& Params );
 
@@ -99,14 +99,14 @@ class EE_API cUIMenu : public cUIComplexControl {
 
 		virtual bool Hide();
 
-		const eeRecti& Padding() const;
+		const Recti& Padding() const;
 	protected:
 		friend class cUIMenuItem;
 		friend class cUIMenuCheckBox;
 		friend class cUIMenuSubMenu;
 
 		std::deque<cUIControl *> mItems;
-		eeRecti				mPadding;
+		Recti				mPadding;
 		cFont * 			mFont;
 		ColorA 			mFontColor;
 		ColorA			mFontShadowColor;

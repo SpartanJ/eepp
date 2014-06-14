@@ -6,7 +6,7 @@
 
 namespace EE { namespace Gaming {
 
-cGameObjectSubTexture::cGameObjectSubTexture( const Uint32& Flags, cLayer * Layer, cSubTexture * SubTexture, const eeVector2f& Pos ) :
+cGameObjectSubTexture::cGameObjectSubTexture( const Uint32& Flags, cLayer * Layer, cSubTexture * SubTexture, const Vector2f& Pos ) :
 	cGameObject( Flags, Layer ),
 	mSubTexture( SubTexture ),
 	mPos( Pos )
@@ -31,14 +31,14 @@ void cGameObjectSubTexture::Draw() {
 			cLightManager * LM = mLayer->Map()->GetLightManager();
 
 			if ( MAP_LAYER_TILED == mLayer->Type() ) {
-				eeVector2i Tile = reinterpret_cast<cTileLayer*> ( mLayer )->GetCurrentTile();
+				Vector2i Tile = reinterpret_cast<cTileLayer*> ( mLayer )->GetCurrentTile();
 
 				if ( LM->IsByVertex() ) {
 					mSubTexture->Draw(
 						mPos.x,
 						mPos.y,
 						GetAngle(),
-						eeVector2f::One,
+						Vector2f::One,
 						*LM->GetTileColor( Tile, 0 ),
 						*LM->GetTileColor( Tile, 1 ),
 						*LM->GetTileColor( Tile, 2 ),
@@ -47,7 +47,7 @@ void cGameObjectSubTexture::Draw() {
 						RenderModeFromFlags()
 					);
 				} else {
-					mSubTexture->Draw( mPos.x, mPos.y, *LM->GetTileColor( Tile ), GetAngle(), eeVector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
+					mSubTexture->Draw( mPos.x, mPos.y, *LM->GetTileColor( Tile ), GetAngle(), Vector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
 				}
 			} else {
 				if ( LM->IsByVertex() ) {
@@ -55,46 +55,46 @@ void cGameObjectSubTexture::Draw() {
 						mPos.x,
 						mPos.y,
 						GetAngle(),
-						eeVector2f::One,
-						LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y ) ),
-						LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y + mSubTexture->DestSize().y ) ),
-						LM->GetColorFromPos( eeVector2f( mPos.x + mSubTexture->DestSize().x, mPos.y + mSubTexture->DestSize().y ) ),
-						LM->GetColorFromPos( eeVector2f( mPos.x + mSubTexture->DestSize().y, mPos.y ) ),
+						Vector2f::One,
+						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x, mPos.y + mSubTexture->DestSize().y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->DestSize().x, mPos.y + mSubTexture->DestSize().y ) ),
+						LM->GetColorFromPos( Vector2f( mPos.x + mSubTexture->DestSize().y, mPos.y ) ),
 						ALPHA_NORMAL,
 						RenderModeFromFlags()
 					);
 				} else {
-					mSubTexture->Draw( mPos.x, mPos.y, LM->GetColorFromPos( eeVector2f( mPos.x, mPos.y ) ), GetAngle(), eeVector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
+					mSubTexture->Draw( mPos.x, mPos.y, LM->GetColorFromPos( Vector2f( mPos.x, mPos.y ) ), GetAngle(), Vector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
 				}
 			}
 		} else {
-			mSubTexture->Draw( mPos.x, mPos.y, ColorA(), GetAngle(), eeVector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
+			mSubTexture->Draw( mPos.x, mPos.y, ColorA(), GetAngle(), Vector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
 		}
 	}
 }
 
-eeVector2f cGameObjectSubTexture::Pos() const {
+Vector2f cGameObjectSubTexture::Pos() const {
 	return mPos;
 }
 
-void cGameObjectSubTexture::Pos( eeVector2f pos ) {
+void cGameObjectSubTexture::Pos( Vector2f pos ) {
 	mPos = pos;
 	cGameObject::Pos( pos );
 }
 
-eeVector2i cGameObjectSubTexture::TilePos() const {
+Vector2i cGameObjectSubTexture::TilePos() const {
 	return mTilePos;
 }
 
-void cGameObjectSubTexture::TilePos( eeVector2i pos ) {
+void cGameObjectSubTexture::TilePos( Vector2i pos ) {
 	mTilePos = pos;
 }
 
-eeSize cGameObjectSubTexture::Size() {
+Sizei cGameObjectSubTexture::Size() {
 	if ( NULL != mSubTexture )
 		return mSubTexture->RealSize();
 
-	return eeSize();
+	return Sizei();
 }
 
 cSubTexture * cGameObjectSubTexture::SubTexture() const {

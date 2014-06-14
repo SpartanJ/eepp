@@ -171,10 +171,10 @@ void cShape::DrawBB() {
 	cPrimitives P;
 	P.SetColor( ColorA( 76, 128, 76, 255 ) );
 	P.ForceDraw( false );
-	P.DrawLine( eeLine2f( eeVector2f( mShape->bb.l, mShape->bb.t ), eeVector2f( mShape->bb.r, mShape->bb.t ) ) );
-	P.DrawLine( eeLine2f( eeVector2f( mShape->bb.l, mShape->bb.t ), eeVector2f( mShape->bb.l, mShape->bb.b ) ) );
-	P.DrawLine( eeLine2f( eeVector2f( mShape->bb.l, mShape->bb.b ), eeVector2f( mShape->bb.r, mShape->bb.b ) ) );
-	P.DrawLine( eeLine2f( eeVector2f( mShape->bb.r, mShape->bb.t ), eeVector2f( mShape->bb.r, mShape->bb.b ) ) );
+	P.DrawLine( Line2f( Vector2f( mShape->bb.l, mShape->bb.t ), Vector2f( mShape->bb.r, mShape->bb.t ) ) );
+	P.DrawLine( Line2f( Vector2f( mShape->bb.l, mShape->bb.t ), Vector2f( mShape->bb.l, mShape->bb.b ) ) );
+	P.DrawLine( Line2f( Vector2f( mShape->bb.l, mShape->bb.b ), Vector2f( mShape->bb.r, mShape->bb.b ) ) );
+	P.DrawLine( Line2f( Vector2f( mShape->bb.r, mShape->bb.t ), Vector2f( mShape->bb.r, mShape->bb.b ) ) );
 	#endif
 }
 

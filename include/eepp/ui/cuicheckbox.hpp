@@ -24,7 +24,7 @@ class EE_API cUICheckBox : public cUITextBox {
 
 		const bool& Active() const;
 
-		virtual void Padding( const eeRecti& padding );
+		virtual void Padding( const Recti& padding );
 
 		cUIControlAnim * ActiveButton() const;
 

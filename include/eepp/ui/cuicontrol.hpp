@@ -28,8 +28,8 @@ class EE_API cUIControl {
 			public:
 				CreateParams(
 					cUIControl * parentCtrl,
-					const eeVector2i& pos = eeVector2i( 0, 0 ),
-					const eeSize& size = eeSize( -1, -1 ),
+					const Vector2i& pos = Vector2i( 0, 0 ),
+					const Sizei& size = Sizei( -1, -1 ),
 					const Uint32& flags = UI_CONTROL_DEFAULT_FLAGS,
 					const EE_BLEND_MODE& blend = ALPHA_NORMAL,
 					const cUIBackground& Back = cUIBackground(),
@@ -47,23 +47,23 @@ class EE_API cUIControl {
 
 				CreateParams() {
 					ParentCtrl		= NULL;
-					Pos				= eeVector2i( 0, 0 );
-					Size			= eeSize( -1, -1 );
+					Pos				= Vector2i( 0, 0 );
+					Size			= Sizei( -1, -1 );
 					Flags			= UI_CONTROL_DEFAULT_FLAGS;
 					Blend			= ALPHA_NORMAL;
 				}
 
 				~CreateParams() {}
 
-				void PosSet( const eeVector2i& pos )						{ Pos.x = pos.x; Pos.y = pos.y; }
+				void PosSet( const Vector2i& pos )						{ Pos.x = pos.x; Pos.y = pos.y; }
 				void PosSet( const Int32& X, const Int32& Y )				{ Pos.x = X; Pos.y = Y; }
 				void Parent( cUIControl * Ctrl )							{ ParentCtrl = Ctrl; }
-				void SizeSet( const eeSize& size )							{ Size.x = size.x; Size.y = size.y;	}
+				void SizeSet( const Sizei& size )							{ Size.x = size.x; Size.y = size.y;	}
 				void SizeSet( const Int32& Width, const Int32& Height )		{ Size.x = Width; Size.y = Height;	}
 
 				cUIControl *		ParentCtrl;
-				eeVector2i			Pos;
-				eeSize				Size;
+				Vector2i			Pos;
+				Sizei				Size;
 				Uint32				Flags;
 				cUIBackground		Background;
 				cUIBorder			Border;
@@ -74,13 +74,13 @@ class EE_API cUIControl {
 
 		virtual ~cUIControl();
 
-		void ScreenToControl( eeVector2i& Pos ) const;
+		void ScreenToControl( Vector2i& Pos ) const;
 
-		void ControlToScreen( eeVector2i& Pos ) const;
+		void ControlToScreen( Vector2i& Pos ) const;
 
-		void WorldToControl( eeVector2i& pos ) const;
+		void WorldToControl( Vector2i& pos ) const;
 
-		void ControlToWorld( eeVector2i& pos ) const;
+		void ControlToWorld( Vector2i& pos ) const;
 
 		virtual Uint32 Type() const;
 
@@ -88,21 +88,21 @@ class EE_API cUIControl {
 
 		virtual void MessagePost( const cUIMessage * Msg );
 
-		bool IsInside( const eeVector2i& Pos ) const;
+		bool IsInside( const Vector2i& Pos ) const;
 
-		void Pos( const eeVector2i& Pos );
+		void Pos( const Vector2i& Pos );
 
 		void Pos( const Int32& x, const Int32& y );
 
-		const eeVector2i& Pos() const;
+		const Vector2i& Pos() const;
 
-		virtual void Size( const eeSize& Size );
+		virtual void Size( const Sizei& Size );
 
 		void Size( const Int32& Width, const Int32& Height );
 
-		const eeSize& Size();
+		const Sizei& Size();
 
-		eeRecti Rect() const;
+		Recti Rect() const;
 
 		void Visible( const bool& visible );
 
@@ -154,7 +154,7 @@ class EE_API cUIControl {
 
 		const UintPtr& Data() const;
 
-		cUIControl * ChildGetAt( eeVector2i CtrlPos, unsigned int RecursiveLevel = 0 );
+		cUIControl * ChildGetAt( Vector2i CtrlPos, unsigned int RecursiveLevel = 0 );
 
 		const Uint32& Flags() const;
 
@@ -213,9 +213,9 @@ class EE_API cUIControl {
 
 		bool IsMouseOverMeOrChilds();
 
-		eePolygon2f &GetPolygon();
+		Polygon2f &GetPolygon();
 
-		const eeVector2f& GetPolygonCenter() const;
+		const Vector2f& GetPolygonCenter() const;
 
 		void SetSkinState( const Uint32& State );
 
@@ -227,17 +227,17 @@ class EE_API cUIControl {
 
 		void SendEvent( const cUIEvent * Event );
 
-		void SendMouseEvent( const Uint32& Event, const eeVector2i& Pos, const Uint32& Flags );
+		void SendMouseEvent( const Uint32& Event, const Vector2i& Pos, const Uint32& Flags );
 
 		void SendCommonEvent( const Uint32& Event );
 
-		eeSize GetSkinSize();
+		Sizei GetSkinSize();
 
 		cUIControl * NextComplexControl();
 
 		void ApplyDefaultTheme();
 
-		eeRecti GetScreenRect();
+		Recti GetScreenRect();
 
 		void ChildsCloseAll();
 	protected:
@@ -245,9 +245,9 @@ class EE_API cUIControl {
 		friend class cUIManager;
 		friend class cUIWindow;
 
-		eeVector2i		mPos;
-		eeVector2i		mScreenPos;
-		eeSize			mSize;
+		Vector2i		mPos;
+		Vector2i		mScreenPos;
+		Sizei			mSize;
 
 		Uint32			mFlags;
 		UintPtr			mData;
@@ -266,8 +266,8 @@ class EE_API cUIControl {
 		Uint16			mBlend;
 		Uint16			mNumCallBacks;
 
-		eePolygon2f 	mPoly;
-		eeVector2f 		mCenter;
+		Polygon2f 	mPoly;
+		Vector2f 		mCenter;
 
 		UIEventsMap		mEvents;
 
@@ -280,19 +280,19 @@ class EE_API cUIControl {
 
 		virtual Uint32 OnKeyUp( const cUIEventKey& Event );
 
-		virtual Uint32 OnMouseMove( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseMove( const Vector2i& Pos, const Uint32 Flags );
 
-		virtual Uint32 OnMouseDown( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseDown( const Vector2i& Pos, const Uint32 Flags );
 
-		virtual Uint32 OnMouseClick( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseClick( const Vector2i& Pos, const Uint32 Flags );
 
-		virtual Uint32 OnMouseDoubleClick( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags );
 
-		virtual Uint32 OnMouseUp( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseUp( const Vector2i& Pos, const Uint32 Flags );
 
-		virtual Uint32 OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseEnter( const Vector2i& Pos, const Uint32 Flags );
 
-		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags );
+		virtual Uint32 OnMouseExit( const Vector2i& Pos, const Uint32 Flags );
 
 		virtual Uint32 OnFocus();
 
@@ -310,7 +310,7 @@ class EE_API cUIControl {
 
 		virtual void OnSizeChange();
 
-		virtual void OnParentSizeChange( const eeVector2i& SizeChange );
+		virtual void OnParentSizeChange( const Vector2i& SizeChange );
 
 		virtual void OnStateChange();
 		
@@ -330,7 +330,7 @@ class EE_API cUIControl {
 
 		virtual void DoAfterSetTheme();
 
-		virtual cUIControl * OverFind( const eeVector2f& Point );
+		virtual cUIControl * OverFind( const Vector2f& Point );
 
 		void ClipMe();
 
@@ -372,17 +372,17 @@ class EE_API cUIControl {
 
 		void WriteFlag( const Uint32& Flag, const Uint32& Val );
 
-		void SendParentSizeChange( const eeVector2i& SizeChange );
+		void SendParentSizeChange( const Vector2i& SizeChange );
 
 		Time Elapsed();
 
-		eeRecti MakePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
+		Recti MakePadding( bool PadLeft = true, bool PadRight = true, bool PadTop = true, bool PadBottom = true, bool SkipFlags = false );
 
 		void SafeDeleteSkinState();
 
-		eeSize GetSkinSize( cUISkin * Skin, const Uint32& State = cUISkinState::StateNormal );
+		Sizei GetSkinSize( cUISkin * Skin, const Uint32& State = cUISkinState::StateNormal );
 
-		eeRectf GetRectf();
+		Rectf GetRectf();
 };
 
 }}

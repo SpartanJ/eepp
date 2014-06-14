@@ -12,31 +12,31 @@ namespace EE { namespace Math {
 
 /** @brief The basic waypoint class. */
 template <typename T>
-class Waypoint {
+class tWaypoint {
 	public:
-		Waypoint() { p = Vector2<T>(0,0); t = 0; }
-		Waypoint( const Vector2<T>& Pos, const Float& Time ) { p = Pos; t = Time; }
+		tWaypoint() { p = Vector2<T>(0,0); t = 0; }
+		tWaypoint( const Vector2<T>& Pos, const Float& Time ) { p = Pos; t = Time; }
 		Vector2<T> p;
 		Float t;
 };
-typedef Waypoint<Float> cWaypoint;
+typedef tWaypoint<Float> Waypoint;
 
 /** @brief A waypoint manager, used for movement interpolations. */
-class EE_API cWaypoints {
+class EE_API Waypoints {
 	public:
-		cWaypoints();
+		Waypoints();
 
-		~cWaypoints();
+		~Waypoints();
 
 		typedef cb::Callback0<void> OnPathEndCallback;
 
 		typedef cb::Callback0<void> OnStepCallback;
 
 		/** Add a new waypoint */
-		void AddWaypoint( const eeVector2f& Pos, const Float& Time = 0.f );
+		void AddWaypoint( const Vector2f& Pos, const Float& Time = 0.f );
 
 		/** Edit a waypoint */
-		bool EditWaypoint( const unsigned int& PointNum, const eeVector2f& NewPos, const Float& NewTime );
+		bool EditWaypoint( const unsigned int& PointNum, const Vector2f& NewPos, const Float& NewTime );
 
 		/** Erase a waypoint */
 		bool EraseWaypoint( const unsigned int& PointNum );
@@ -63,7 +63,7 @@ class EE_API cWaypoints {
 		void Reset();
 
 		/** @return The Current Position */
-		const eeVector2f& GetPos();
+		const Vector2f& GetPos();
 
 		/** @return If movement interpolation is a loop */
 		bool Loop() const;
@@ -81,16 +81,16 @@ class EE_API cWaypoints {
 		void SetTotalTime( const Time & TotTime );
 
 		/** @return The Current Node */
-		cWaypoint * GetCurrentActual() const;
+		Waypoint * GetCurrentActual() const;
 
 		/** @return The Next Node */
-		cWaypoint * GetCurrentNext() const;
+		Waypoint * GetCurrentNext() const;
 
 		/** @return The Current Position in the vector */
 		const Uint32& GetCurrentPos() const;
 
 		/** @return the vector of waypoints */
-		const std::vector<cWaypoint>& GetWaypoints() const;
+		const std::vector<Waypoint>& GetWaypoints() const;
 
 		/** Set the current interpolation speed ( This will destroy the time of the interpolation and create one depending on the speed ) ( pixels per second ) */
 		void Speed( const Float& Speed );
@@ -117,15 +117,15 @@ class EE_API cWaypoints {
 		bool mEnded;
 
 		Float mTotDist;
-		eeVector2f mCurPos;
+		Vector2f mCurPos;
 		Uint32 mCurPoint;
 		double mCurTime;
 		Float mSpeed;
 
-		cWaypoint* mActP;
-		cWaypoint* mNexP;
+		Waypoint* mActP;
+		Waypoint* mNexP;
 
-		std::vector<cWaypoint> mPoints;
+		std::vector<Waypoint> mPoints;
 
 		OnPathEndCallback mOnPathEndCallback;
 

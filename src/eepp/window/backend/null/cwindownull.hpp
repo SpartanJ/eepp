@@ -37,7 +37,7 @@ class EE_API cWindowNull : public cWindow {
 
 		bool Visible();
 
-		eeVector2i Position();
+		Vector2i Position();
 
 		void Size( Uint32 Width, Uint32 Height, bool Windowed );
 
