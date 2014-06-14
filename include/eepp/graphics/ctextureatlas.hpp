@@ -9,7 +9,7 @@ namespace EE { namespace Graphics {
 /** @brief The texture atlas class represents a large image containing a collection of sub-images, or "atlas" which contains many smaller sub-images.
 * The texture atlas in eepp can represent more than one texture or image, but the common use should be a image with sub-images.
 * More information about Texture Atlases: http://en.wikipedia.org/wiki/Texture_atlas */
-class EE_API cTextureAtlas : public tResourceManager<cSubTexture> {
+class EE_API cTextureAtlas : public ResourceManager<cSubTexture> {
 	public:
 		/** Creates a new texture atlas with the given name. */
 		cTextureAtlas( const std::string& name = "" );

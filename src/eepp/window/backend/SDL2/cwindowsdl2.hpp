@@ -14,7 +14,7 @@ struct SDL_SysWMinfo;
 #define EE_USE_WMINFO
 #endif
 
-namespace EE { namespace System { class cZip; } }
+namespace EE { namespace System { class Zip; } }
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
@@ -105,7 +105,7 @@ class EE_API cWindowSDL : public cWindow {
 		#endif
 
 		#if EE_PLATFORM == EE_PLATFORM_ANDROID
-		cZip *			mZip;
+		Zip *			mZip;
 		#endif
 
 		eeVector2i		mWinPos;

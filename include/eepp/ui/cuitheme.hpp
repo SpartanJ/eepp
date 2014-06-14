@@ -4,7 +4,7 @@
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/uihelper.hpp>
 #include <eepp/ui/cuiskin.hpp>
-#include <eepp/system/tresourcemanager.hpp>
+#include <eepp/system/resourcemanager.hpp>
 
 namespace EE { namespace Graphics {
 class cSprite;
@@ -41,12 +41,12 @@ class cUICommonDialog;
 class cUIMessageBox;
 class cUITabWidget;
 
-class EE_API cUITheme : protected tResourceManager<cUISkin> {
+class EE_API cUITheme : protected ResourceManager<cUISkin> {
 	public:
-		using tResourceManager<cUISkin>::GetById;
-		using tResourceManager<cUISkin>::GetByName;
-		using tResourceManager<cUISkin>::Exists;
-		using tResourceManager<cUISkin>::ExistsId;
+		using ResourceManager<cUISkin>::GetById;
+		using ResourceManager<cUISkin>::GetByName;
+		using ResourceManager<cUISkin>::Exists;
+		using ResourceManager<cUISkin>::ExistsId;
 
 		static cUITheme * LoadFromTextureAtlas( cUITheme * tTheme, cTextureAtlas * TextureAtlas );
 

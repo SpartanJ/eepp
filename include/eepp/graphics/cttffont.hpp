@@ -54,7 +54,7 @@ class EE_API cTTFFont : public cFont {
 		* @param AddPixelSeparator Indicates if separates the glyphs by a pixel to avoid problems with font scaling
 		* @return If success
 		*/
-		bool LoadFromPack( cPack* Pack, const std::string& FilePackPath, const unsigned int& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true  );
+		bool LoadFromPack( Pack* Pack, const std::string& FilePackPath, const unsigned int& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true  );
 
 		/** Loads a True Type Font from memory
 		* @param TTFData The pointer to the data

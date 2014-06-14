@@ -2,7 +2,7 @@
 #define EE_NETWORKCTCPSOCKET_HPP
 
 #include <eepp/network/socket.hpp>
-#include <eepp/system/ctime.hpp>
+#include <eepp/system/time.hpp>
 using namespace EE::System;
 
 namespace EE { namespace Network {
@@ -48,7 +48,7 @@ class EE_API TcpSocket : public Socket {
 	**  @param timeout	   Optional maximum time to wait
 	**  @return Status code
 	**  @see Disconnect */
-	virtual Status Connect(const IpAddress& remoteAddress, unsigned short remotePort, cTime timeout = cTime::Zero);
+	virtual Status Connect(const IpAddress& remoteAddress, unsigned short remotePort, Time timeout = Time::Zero);
 
 	/** @brief Disconnect the socket from its remote peer
 	**  This function gracefully closes the connection. If the

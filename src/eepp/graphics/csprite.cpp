@@ -484,8 +484,8 @@ void cSprite::Update() {
 	Update( cEngine::instance()->Elapsed() );
 }
 
-void cSprite::Update( const cTime& ElapsedTime ) {
-	if ( mFrames.size() > 1 && !SPR_FGET( SPRITE_FLAG_ANIM_PAUSED ) && cTime::Zero != ElapsedTime ) {
+void cSprite::Update( const Time& ElapsedTime ) {
+	if ( mFrames.size() > 1 && !SPR_FGET( SPRITE_FLAG_ANIM_PAUSED ) && Time::Zero != ElapsedTime ) {
 		unsigned int Size		= (unsigned int)mFrames.size() - 1;
 
 		if ( mRepeations == 0 )

@@ -143,7 +143,7 @@ const eeVector2f& cWaypoints::GetPos() {
 	return mCurPos;
 }
 
-void cWaypoints::Update( const cTime& Elapsed ) {
+void cWaypoints::Update( const Time& Elapsed ) {
 	if ( mEnable && mPoints.size() > 1 && mCurPoint != mPoints.size() ) {
 		if ( mUpdate ) {
 			mCurTime = 0;
@@ -195,7 +195,7 @@ void cWaypoints::Update( const cTime& Elapsed ) {
 	}
 }
 
-void cWaypoints::SetTotalTime( const cTime& TotTime ) {
+void cWaypoints::SetTotalTime( const Time& TotTime ) {
 	unsigned int i;
 	Float tdist = mTotDist;
 

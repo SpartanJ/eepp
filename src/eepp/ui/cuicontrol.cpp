@@ -888,7 +888,7 @@ void cUIControl::UpdateQuad() {
 	};
 }
 
-cTime cUIControl::Elapsed() {
+Time cUIControl::Elapsed() {
 	return cUIManager::instance()->Elapsed();
 }
 

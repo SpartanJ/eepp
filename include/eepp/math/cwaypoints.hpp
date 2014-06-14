@@ -3,7 +3,7 @@
 
 #include <eepp/math/base.hpp>
 #include <eepp/math/vector2.hpp>
-#include <eepp/system/ctime.hpp>
+#include <eepp/system/time.hpp>
 #include <vector>
 
 using namespace EE::System;
@@ -57,7 +57,7 @@ class EE_API cWaypoints {
 		void SetStepCallback( OnStepCallback StepCallback );
 
 		/** Update the movement interpolation */
-		void Update( const cTime& Elapsed );
+		void Update( const Time& Elapsed );
 
 		/** Reset the class */
 		void Reset();
@@ -78,7 +78,7 @@ class EE_API cWaypoints {
 		bool Ended() const;
 
 		/** Instead if setting the time between every waypoing, this set a total time for all the movement interpolation. */
-		void SetTotalTime( const cTime & TotTime );
+		void SetTotalTime( const Time & TotTime );
 
 		/** @return The Current Node */
 		cWaypoint * GetCurrentActual() const;

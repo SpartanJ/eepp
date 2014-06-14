@@ -2,10 +2,10 @@
 #include <sstream>
 #include <eepp/core/memorymanager.hpp>
 #include <eepp/core/debug.hpp>
-#include <eepp/system/clog.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/filesystem.hpp>
-#include <eepp/system/cmutex.hpp>
-#include <eepp/system/clock.hpp>
+#include <eepp/system/mutex.hpp>
+#include <eepp/system/lock.hpp>
 
 using namespace EE::System;
 
@@ -15,7 +15,7 @@ static AllocatedPointerMap sMapPointers;
 static size_t sTotalMemoryUsage = 0;
 static size_t sPeakMemoryUsage = 0;
 static AllocatedPointer sBiggestAllocation = AllocatedPointer( NULL, "", 0, 0 );
-static cMutex sAllocMutex;
+static Mutex sAlloMutex;
 
 AllocatedPointer::AllocatedPointer( void * Data, const std::string& File, int Line, size_t Memory ) {
 	mData 		= Data;
@@ -35,7 +35,7 @@ void * MemoryManager::AddPointerInPlace( void * Place, const AllocatedPointer& a
 }
 
 void * MemoryManager::AddPointer( const AllocatedPointer& aAllocatedPointer ) {
-	cLock l( sAllocMutex );
+	Lock l( sAlloMutex );
 
 	sMapPointers.insert( AllocatedPointerMap::value_type( aAllocatedPointer.mData, aAllocatedPointer ) );
 
@@ -53,7 +53,7 @@ void * MemoryManager::AddPointer( const AllocatedPointer& aAllocatedPointer ) {
 }
 
 bool MemoryManager::RemovePointer( void * Data ) {
-	cLock l( sAllocMutex );
+	Lock l( sAlloMutex );
 
 	AllocatedPointerMapIt it = sMapPointers.find( Data );
 
@@ -86,7 +86,7 @@ void MemoryManager::ShowResults() {
 	#ifdef EE_MEMORY_MANAGER
 
 	if ( EE::PrintDebugInLog ) {
-		cLog::DestroySingleton();
+		Log::DestroySingleton();
 		EE::PrintDebugInLog = false;
 	}
 

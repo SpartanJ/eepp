@@ -28,7 +28,7 @@
 #include <eepp/graphics/renderer/cgl.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
-#include <eepp/system/czip.hpp>
+#include <eepp/system/zip.hpp>
 #include <jni.h>
 
 static std::string SDL_AndroidGetApkPath() {
@@ -81,7 +81,7 @@ cWindowSDL::cWindowSDL( WindowSettings Settings, ContextSettings Context ) :
 #endif
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	,
-	mZip( eeNew( cZip, () ) )
+	mZip( eeNew( Zip, () ) )
 #endif
 {
 	Create( Settings, Context );
@@ -446,7 +446,7 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	#ifdef EE_SUPPORT_EXCEPTIONS
 	} catch (...) {
 		eePRINTL( "Unable to change resolution: %s", SDL_GetError() );
-		cLog::instance()->Save();
+		Log::instance()->Save();
 		mWindow.Created = false;
 	}
 	#endif

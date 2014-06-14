@@ -1,6 +1,6 @@
 #include <eepp/graphics/ctexturepacker.hpp>
 #include <eepp/graphics/cimage.hpp>
-#include <eepp/system/ciostreamfile.hpp>
+#include <eepp/system/iostreamfile.hpp>
 #include <eepp/graphics/ctexturepackernode.hpp>
 #include <eepp/graphics/ctexturepackertex.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
@@ -627,7 +627,7 @@ void cTexturePacker::SaveSubTextures() {
 	std::vector<sSubTextureHdr> tSubTexturesHdr;
 
 	std::string path = FileSystem::FileRemoveExtension( mFilepath ) + EE_TEXTURE_ATLAS_EXTENSION;
-	cIOStreamFile fs ( path , std::ios::out | std::ios::binary );
+	IOStreamFile fs ( path , std::ios::out | std::ios::binary );
 
 	if ( fs.IsOpen() ) {
 		fs.Write( reinterpret_cast<const char*> (&TexGrHdr), sizeof(sTextureAtlasHdr) );

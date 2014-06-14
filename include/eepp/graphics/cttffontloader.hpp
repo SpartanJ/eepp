@@ -4,14 +4,14 @@
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/cfont.hpp>
 #include <eepp/graphics/cttffont.hpp>
-#include <eepp/system/cobjectloader.hpp>
+#include <eepp/system/objectloader.hpp>
 
 namespace EE { namespace Graphics {
 
 /** @brief The TTF Font loader loads a true type font to memory in synchronous or asynchronous mode.
-@see cObjectLoader
+@see ObjectLoader
 */
-class EE_API cTTFFontLoader : public cObjectLoader {
+class EE_API cTTFFontLoader : public ObjectLoader {
 	public:
 		/** Load a True Type Font from path
 		* @param FontName The font name
@@ -38,7 +38,7 @@ class EE_API cTTFFontLoader : public cObjectLoader {
 		* @param OutlineColor The Outline Color
 		* @param AddPixelSeparator Indicates if separates the glyphs by a pixel to avoid problems with font scaling
 		*/
-		cTTFFontLoader( const std::string& FontName, cPack * Pack, const std::string& FilePackPath, const unsigned int& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true );
+		cTTFFontLoader( const std::string& FontName, Pack * Pack, const std::string& FilePackPath, const unsigned int& Size, EE_TTF_FONT_STYLE Style = TTF_STYLE_NORMAL, const Uint16& NumCharsToGen = 512, const eeColor& FontColor = eeColor(), const Uint8& OutlineSize = 0, const eeColor& OutlineColor = eeColor(0,0,0), const bool& AddPixelSeparator = true );
 
 		/** Loads a True Type Font from memory
 		* @param FontName The font name
@@ -58,7 +58,7 @@ class EE_API cTTFFontLoader : public cObjectLoader {
 
 		/** This must be called for the asynchronous mode to update the texture data to the GPU, the call must be done from the same thread that the GL Context was created ( the main thread ).
 		**	The TTF Font creates texture from the data obtained from the true type file.
-		** @see cObjectLoader::Update */
+		** @see ObjectLoader::Update */
 		void 				Update();
 
 		/** Releases the Font instance and the texture loaded ( if was already loaded ), it will destroy the font texture from memory */
@@ -90,7 +90,7 @@ class EE_API cTTFFontLoader : public cObjectLoader {
 		Uint8				mOutlineSize;
 		eeColor				mOutlineColor;
 		bool				mAddPixelSeparator;
-		cPack *				mPack;
+		Pack *				mPack;
 		Uint8 *				mData;
 		unsigned int				mDataSize;
 

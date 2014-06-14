@@ -1,6 +1,6 @@
 #include <eepp/graphics/cttffont.hpp>
 #include <eepp/graphics/ctexture.hpp>
-#include <eepp/system/ciostreamfile.hpp>
+#include <eepp/system/iostreamfile.hpp>
 #include <eepp/helper/haikuttf/haikuttf.hpp>
 using namespace HaikuTTF;
 
@@ -26,7 +26,7 @@ cTTFFont::~cTTFFont() {
 	hkFontManager::instance()->Destroy();
 }
 
-bool cTTFFont::LoadFromPack( cPack* Pack, const std::string& FilePackPath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) {
+bool cTTFFont::LoadFromPack( Pack* Pack, const std::string& FilePackPath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) {
 	bool Ret = false;
 	SafeDataPointer PData;
 
@@ -69,8 +69,8 @@ bool cTTFFont::Load( const std::string& Filepath, const unsigned int& Size, EE_T
 		}
 
 		return iLoad( Size, Style, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
-	} else if ( cPackManager::instance()->FallbackToPacks() ) {
-		cPack * tPack = cPackManager::instance()->Exists( mFilepath );
+	} else if ( PackManager::instance()->FallbackToPacks() ) {
+		Pack * tPack = PackManager::instance()->Exists( mFilepath );
 
 		if ( NULL != tPack ) {
 			return LoadFromPack( tPack, mFilepath, Size, Style, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
@@ -378,7 +378,7 @@ bool cTTFFont::SaveTexture( const std::string& Filepath, const EE_SAVE_TYPE& For
 }
 
 bool cTTFFont::SaveCoordinates( const std::string& Filepath ) {
-	cIOStreamFile fs( Filepath, std::ios::out | std::ios::binary );
+	IOStreamFile fs( Filepath, std::ios::out | std::ios::binary );
 
 	if ( fs.IsOpen() ) {
 		sFntHdr FntHdr;

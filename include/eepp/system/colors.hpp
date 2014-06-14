@@ -192,9 +192,9 @@ template <typename T>
 const tColorA<T> tColorA<T>::Black = tColorA<T>(0,0,0,255);
 
 typedef tColor<Uint8> 		eeColor;
-typedef tColor<Float> 	eeColorf;
+typedef tColor<Float>		eeColorf;
 typedef tColorA<Uint8> 		eeColorA;
-typedef tColorA<Float> 	eeColorAf;
+typedef tColorA<Float>		eeColorAf;
 typedef tColorA<float>		eeColorAff;
 
 //! @brief Small class to help in some color operations

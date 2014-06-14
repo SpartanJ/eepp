@@ -297,7 +297,7 @@ void Http::SetHost(const std::string& host, unsigned short port, bool useSSL) {
 	mHost = IpAddress(mHostName);
 }
 
-Http::Response Http::SendRequest(const Http::Request& request, cTime timeout) {
+Http::Response Http::SendRequest(const Http::Request& request, Time timeout) {
 	if ( NULL == mConnection ) {
 		TcpSocket * Conn	= mIsSSL ? eeNew( SSLSocket, ( mHostName, request.ValidateCertificate(), request.ValidateHostname() ) ) : eeNew( TcpSocket, () );
 		mConnection			= Conn;
@@ -364,7 +364,7 @@ Http::Response Http::SendRequest(const Http::Request& request, cTime timeout) {
 	return received;
 }
 
-Http::cAsyncRequest::cAsyncRequest(Http *http, AsyncResponseCallback cb, Http::Request request, cTime timeout) :
+Http::cAsyncRequest::cAsyncRequest(Http *http, AsyncResponseCallback cb, Http::Request request, Time timeout) :
 	mHttp( http ),
 	mCb( cb ),
 	mRequest( request ),
@@ -409,13 +409,13 @@ void Http::RemoveOldThreads() {
 	}
 }
 
-void Http::SendAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, cTime timeout ) {
+void Http::SendAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, Time timeout ) {
 	cAsyncRequest * thread = eeNew( cAsyncRequest, ( this, cb, request, timeout ) );
 
 	thread->Launch();
 
 	// Clean old threads
-	cLock l( mThreadsMutex );
+	Lock l( mThreadsMutex );
 
 	RemoveOldThreads();
 

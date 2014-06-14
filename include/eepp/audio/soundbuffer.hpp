@@ -22,7 +22,7 @@ class EE_API SoundBuffer {
 		bool LoadFromFile( const std::string& Filename );
 
 		/** Load the Sound Buffer from a file inside a pack file*/
-		bool LoadFromPack( cPack* Pack, const std::string& FilePackPath );
+		bool LoadFromPack( Pack* Pack, const std::string& FilePackPath );
 
 		/** Load the Sound Buffer from a file in memory */
 		bool LoadFromMemory( const char* Data, std::size_t SizeInBytes );
@@ -46,7 +46,7 @@ class EE_API SoundBuffer {
 		unsigned int GetChannelCount() const;
 
 		/** Get the Sound Duration */
-		cTime GetDuration() const;
+		Time GetDuration() const;
 
 		/** Assignment operator */
 		SoundBuffer& operator =(const 	SoundBuffer& Other);
@@ -55,7 +55,7 @@ class EE_API SoundBuffer {
 
 		unsigned int		mBuffer;   ///< OpenAL buffer identifier
 		std::vector<Int16>	mSamples;  ///< Samples buffer
-		cTime				mDuration; ///< Sound duration, in seconds
+		Time				mDuration; ///< Sound duration, in seconds
 
 		typedef std::set<Sound*> SoundList;
 		mutable SoundList	mSounds;

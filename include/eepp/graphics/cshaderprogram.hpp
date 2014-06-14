@@ -25,7 +25,7 @@ class EE_API cShaderProgram {
 		static cShaderProgram * New( const char * VertexShaderData, const Uint32& VertexShaderDataSize, const char * FragmentShaderData, const Uint32& FragmentShaderDataSize, const std::string& name = "" );
 
 		/** Creates the vertex shader and fragment shader from two files inside a pack */
-		static cShaderProgram * New( cPack * Pack, const std::string& VertexShaderPath, const std::string& FragmentShaderPath, const std::string& name = "" );
+		static cShaderProgram * New( Pack * Pack, const std::string& VertexShaderPath, const std::string& FragmentShaderPath, const std::string& name = "" );
 
 		/** Creates the vertex and fragment shader from an array of strings */
 		static cShaderProgram * New( const char ** VertexShaderData, const Uint32& NumLinesVS, const char ** FragmentShaderData, const Uint32& NumLinesFS, const std::string& name = "" );
@@ -164,7 +164,7 @@ class EE_API cShaderProgram {
 		cShaderProgram( const char * VertexShaderData, const Uint32& VertexShaderDataSize, const char * FragmentShaderData, const Uint32& FragmentShaderDataSize, const std::string& name = "" );
 
 		/** Constructor that creates the vertex shader and fragment shader from two files inside a pack */
-		cShaderProgram( cPack * Pack, const std::string& VertexShaderPath, const std::string& FragmentShaderPath, const std::string& name = "" );
+		cShaderProgram( Pack * Pack, const std::string& VertexShaderPath, const std::string& FragmentShaderPath, const std::string& name = "" );
 
 		/** Constructor that creates the vertex and fragment shader from an array of strings */
 		cShaderProgram( const char ** VertexShaderData, const Uint32& NumLinesVS, const char ** FragmentShaderData, const Uint32& NumLinesFS, const std::string& name = "" );

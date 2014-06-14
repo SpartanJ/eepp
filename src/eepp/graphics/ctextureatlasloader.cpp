@@ -3,8 +3,8 @@
 #include <eepp/graphics/ctextureatlasmanager.hpp>
 #include <eepp/graphics/ctexturepacker.hpp>
 #include <eepp/graphics/ctextureatlas.hpp>
-#include <eepp/system/ciostreamfile.hpp>
-#include <eepp/system/ciostreammemory.hpp>
+#include <eepp/system/iostreamfile.hpp>
+#include <eepp/system/iostreammemory.hpp>
 #include <eepp/graphics/packerhelper.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
 
@@ -48,7 +48,7 @@ cTextureAtlasLoader::cTextureAtlasLoader( const Uint8* Data, const Uint32& DataS
 	LoadFromMemory( Data, DataSize, TextureAtlasName );
 }
 
-cTextureAtlasLoader::cTextureAtlasLoader( cPack * Pack, const std::string& FilePackPath, const bool& Threaded, GLLoadCallback LoadCallback ) :
+cTextureAtlasLoader::cTextureAtlasLoader( Pack * Pack, const std::string& FilePackPath, const bool& Threaded, GLLoadCallback LoadCallback ) :
 	mTextureAtlasPath( FilePackPath ),
 	mThreaded( Threaded ),
 	mLoaded(false),
@@ -61,7 +61,7 @@ cTextureAtlasLoader::cTextureAtlasLoader( cPack * Pack, const std::string& FileP
 	LoadFromPack( Pack, FilePackPath );
 }
 
-cTextureAtlasLoader::cTextureAtlasLoader( cIOStream& IOS, const bool& Threaded, GLLoadCallback LoadCallback ) :
+cTextureAtlasLoader::cTextureAtlasLoader( IOStream& IOS, const bool& Threaded, GLLoadCallback LoadCallback ) :
 	mThreaded( Threaded ),
 	mLoaded(false),
 	mPack(NULL),
@@ -88,7 +88,7 @@ void cTextureAtlasLoader::Update() {
 		CreateSubTextures();
 }
 
-void cTextureAtlasLoader::LoadFromStream( cIOStream& IOS ) {
+void cTextureAtlasLoader::LoadFromStream( IOStream& IOS ) {
 	mRL.Threaded( mThreaded );
 
 	if ( IOS.IsOpen() ) {
@@ -139,13 +139,13 @@ void cTextureAtlasLoader::Load( const std::string& TextureAtlasPath ) {
 		mTextureAtlasPath = TextureAtlasPath;
 
 	if ( FileSystem::FileExists( mTextureAtlasPath ) ) {
-		cIOStreamFile IOS( mTextureAtlasPath, std::ios::in | std::ios::binary );
+		IOStreamFile IOS( mTextureAtlasPath, std::ios::in | std::ios::binary );
 
 		LoadFromStream( IOS );
-	} else if ( cPackManager::instance()->FallbackToPacks() ) {
+	} else if ( PackManager::instance()->FallbackToPacks() ) {
 		std::string tgPath( mTextureAtlasPath );
 
-		cPack * tPack = cPackManager::instance()->Exists( tgPath );
+		Pack * tPack = PackManager::instance()->Exists( tgPath );
 
 		if ( NULL != tPack ) {
 			LoadFromPack( tPack, tgPath );
@@ -153,7 +153,7 @@ void cTextureAtlasLoader::Load( const std::string& TextureAtlasPath ) {
 	}
 }
 
-void cTextureAtlasLoader::LoadFromPack( cPack * Pack, const std::string& FilePackPath ) {
+void cTextureAtlasLoader::LoadFromPack( Pack * Pack, const std::string& FilePackPath ) {
 	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( FilePackPath ) ) {
 		mPack = Pack;
 
@@ -169,7 +169,7 @@ void cTextureAtlasLoader::LoadFromMemory( const Uint8* Data, const Uint32& DataS
 	if ( TextureAtlasName.size() )
 		mTextureAtlasPath = TextureAtlasName;
 
-	cIOStreamMemory IOS( (const char*)Data, DataSize );
+	IOStreamMemory IOS( (const char*)Data, DataSize );
 
 	LoadFromStream( IOS );
 }
@@ -305,7 +305,7 @@ bool cTextureAtlasLoader::UpdateTextureAtlas() {
 		}
 	}
 
-	cIOStreamFile fs( mTextureAtlasPath, std::ios::out | std::ios::binary );
+	IOStreamFile fs( mTextureAtlasPath, std::ios::out | std::ios::binary );
 
 	if ( fs.IsOpen() ) {
 		fs.Write( reinterpret_cast<char*> (&mTexGrHdr), sizeof(sTextureAtlasHdr) );
@@ -443,7 +443,7 @@ bool cTextureAtlasLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std:
 		} else if ( 1 == NeedUpdate ) {
 			std::string etapath = FileSystem::FileRemoveExtension( tapath ) + EE_TEXTURE_ATLAS_EXTENSION;
 
-			cIOStreamFile fs( etapath , std::ios::out | std::ios::binary );
+			IOStreamFile fs( etapath , std::ios::out | std::ios::binary );
 
 			if ( !fs.IsOpen() )
 				return false;

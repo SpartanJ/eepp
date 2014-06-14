@@ -90,7 +90,7 @@ class EE_API cMapEditor {
 
 		void OnBlueChange( const cUIEvent * Event );
 
-		void CreateLightContainer();
+		void CreateLighContainer();
 
 		cUISelectButton * AddObjContButton( String text , Uint32 mode );
 

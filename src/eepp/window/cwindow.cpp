@@ -265,13 +265,13 @@ Uint32 cWindow::FPS() const {
 	return mFrameData.FPS.Current;
 }
 
-cTime cWindow::Elapsed() const {
+Time cWindow::Elapsed() const {
 	return mFrameData.ElapsedTime;
 }
 
 void cWindow::GetElapsedTime() {
 	if ( NULL == mFrameData.FrameElapsed ) {
-		mFrameData.FrameElapsed = eeNew( cClock, () );
+		mFrameData.FrameElapsed = eeNew( Clock, () );
 	}
 
 	mFrameData.ElapsedTime = mFrameData.FrameElapsed->Elapsed();
@@ -409,7 +409,7 @@ void cWindow::LogSuccessfulInit(const std::string& BackendName , const std::stri
 	#ifndef EE_SILENT
 	eePRINTL( msg.c_str() );
 	#else
-	cLog::instance()->Write( msg );
+	Log::instance()->Write( msg );
 	#endif
 }
 

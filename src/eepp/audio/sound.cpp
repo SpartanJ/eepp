@@ -167,7 +167,7 @@ Sound::Status Sound::GetState() const {
 	return Sound::Stopped;
 }
 
-cTime Sound::PlayingOffset() const {
+Time Sound::PlayingOffset() const {
 	float secs = 0.f;
 
 	ALCheck( alGetSourcef( mSource, AL_SEC_OFFSET, &secs ) );
@@ -175,7 +175,7 @@ cTime Sound::PlayingOffset() const {
 	return Seconds( secs );
 }
 
-void Sound::PlayingOffset( const cTime &TimeOffset ) {
+void Sound::PlayingOffset( const Time &TimeOffset ) {
 	ALCheck( alSourcef( mSource, AL_SEC_OFFSET, TimeOffset.AsSeconds() ) );
 }
 

@@ -5,7 +5,7 @@
 #include <eepp/window/cwindow.hpp>
 #include <list>
 
-namespace EE { namespace System { class cIniFile; } }
+namespace EE { namespace System { class IniFile; } }
 namespace EE { namespace Window { namespace Backend { class cBackend; } } }
 
 namespace EE { namespace Window {
@@ -40,7 +40,7 @@ class EE_API cEngine {
 		bool Running() const;
 
 		/** @return The current window elapsed time. */
-		cTime Elapsed() const;
+		Time Elapsed() const;
 
 		/** @return The current window width. */
 		const Uint32& GetWidth() const;
@@ -81,7 +81,7 @@ class EE_API cEngine {
 			@param ini The ini file instance
 			@param iniKeyName The ini key name to search the properties
 		*/
-		WindowSettings CreateWindowSettings( cIniFile * ini, std::string iniKeyName = "EEPP" );
+		WindowSettings CreateWindowSettings( IniFile * ini, std::string iniKeyName = "EEPP" );
 
 		/** Constructs ContextSettings from an ini file\n
 		It will search for the following properties:
@@ -107,7 +107,7 @@ class EE_API cEngine {
 			@param ini The ini file instance
 			@param iniKeyName The ini key name to search the properties
 		*/
-		ContextSettings CreateContextSettings( cIniFile * ini, std::string iniKeyName = "EEPP" );
+		ContextSettings CreateContextSettings( IniFile * ini, std::string iniKeyName = "EEPP" );
 
 		/** Enabling Shared GL Context allows asynchronous OpenGL resource loading ( only if is supported by the backend and the OS, SDL 2 backend is the only one supported ).
 		**	If the cTextureLoader is threaded, will upload the texture in another thread to the GPU. So, it will not block the main rendering thread.

@@ -1,0 +1,57 @@
+#include <eepp/system/packmanager.hpp>
+#include <eepp/system/filesystem.hpp>
+#include <eepp/system/log.hpp>
+
+namespace EE { namespace System {
+
+SINGLETON_DECLARE_IMPLEMENTATION(PackManager)
+
+PackManager::PackManager() :
+	mFallback( true )
+{
+}
+
+PackManager::~PackManager() {
+}
+
+Pack * PackManager::Exists( std::string& path ) {
+	std::string tpath( path );
+
+	FileSystem::FilePathRemoveProcessPath( tpath );
+
+	std::list<Pack*>::iterator it;
+
+	for ( it = mResources.begin(); it != mResources.end(); it++ ) {
+		if ( -1 != (*it)->Exists( tpath ) ) {
+			if ( path.size() != tpath.size() ) {
+				path = tpath;
+			}
+
+			return (*it);
+		}
+	}
+
+	return NULL;
+}
+
+Pack * PackManager::GetPackByPath( std::string path ) {
+	std::list<Pack*>::iterator it;
+
+	for ( it = mResources.begin(); it != mResources.end(); it++ ) {
+		if ( path == (*it)->GetPackPath() ) {
+			return (*it);
+		}
+	}
+
+	return NULL;
+}
+
+const bool& PackManager::FallbackToPacks() const {
+	return mFallback;
+}
+
+void PackManager::FallbackToPacks( const bool& fallback ) {
+	mFallback = fallback;
+}
+
+}}

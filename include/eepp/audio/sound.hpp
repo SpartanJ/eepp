@@ -88,12 +88,12 @@ class EE_API Sound {
 		Status State() const;
 
 		/** Get the current playing position of the sound */
-		virtual cTime PlayingOffset() const;
+		virtual Time PlayingOffset() const;
 
 		/** Set the current playing position of the sound
 		* @param TimeOffset : New playing position
 		*/
-		virtual void PlayingOffset( const cTime &TimeOffset );
+		virtual void PlayingOffset( const Time &TimeOffset );
 
 		/** Assignment operator */
 		Sound& operator =(const Sound& Other);

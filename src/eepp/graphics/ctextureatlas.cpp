@@ -3,7 +3,7 @@
 namespace EE { namespace Graphics {
 
 cTextureAtlas::cTextureAtlas( const std::string& name ) :
-	tResourceManager<cSubTexture> ( true )
+	ResourceManager<cSubTexture> ( true )
 {
 	Name( name );
 }
@@ -33,7 +33,7 @@ const Uint32& cTextureAtlas::Id() const {
 }
 
 cSubTexture * cTextureAtlas::Add( cSubTexture * subTexture ) {
-	return tResourceManager<cSubTexture>::Add( subTexture );
+	return ResourceManager<cSubTexture>::Add( subTexture );
 }
 
 cSubTexture * cTextureAtlas::Add( const Uint32& TexId, const std::string& Name ) {
@@ -53,7 +53,7 @@ cSubTexture * cTextureAtlas::Add( const Uint32& TexId, const eeRecti& SrcRect, c
 }
 
 Uint32 cTextureAtlas::Count() {
-	return tResourceManager<cSubTexture>::Count();
+	return ResourceManager<cSubTexture>::Count();
 }
 
 void cTextureAtlas::SetTextures( std::vector<cTexture*> textures ) {

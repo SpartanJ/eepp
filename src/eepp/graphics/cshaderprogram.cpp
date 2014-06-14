@@ -22,7 +22,7 @@ cShaderProgram * cShaderProgram::New( const char * VertexShaderData, const Uint3
 	return eeNew( cShaderProgram, ( VertexShaderData, VertexShaderDataSize, FragmentShaderData, FragmentShaderDataSize, name ) );
 }
 
-cShaderProgram * cShaderProgram::New( cPack * Pack, const std::string& VertexShaderPath, const std::string& FragmentShaderPath, const std::string& name ) {
+cShaderProgram * cShaderProgram::New( Pack * Pack, const std::string& VertexShaderPath, const std::string& FragmentShaderPath, const std::string& name ) {
 	return eeNew( cShaderProgram, ( Pack, VertexShaderPath, FragmentShaderPath, name ) );
 }
 
@@ -72,7 +72,7 @@ cShaderProgram::cShaderProgram( const std::string& VertexShaderFile, const std::
 	Link();
 }
 
-cShaderProgram::cShaderProgram( cPack * Pack, const std::string& VertexShaderPath, const std::string& FragmentShaderPath, const std::string& name ) :
+cShaderProgram::cShaderProgram( Pack * Pack, const std::string& VertexShaderPath, const std::string& FragmentShaderPath, const std::string& name ) :
 	mHandler(0),
 	mId(0)
 {

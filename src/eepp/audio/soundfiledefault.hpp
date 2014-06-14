@@ -26,7 +26,7 @@ class EE_API SoundFileDefault : public SoundFile {
 
 		virtual void Write(const Int16* Data, std::size_t SamplesCount);
 
-		virtual void Seek( cTime timeOffset );
+		virtual void Seek( Time timeOffset );
 	private :
 		virtual bool OpenRead( const std::string& Filename, std::size_t& SamplesCount, unsigned int& ChannelCount, unsigned int& SampleRate );
 

@@ -195,7 +195,7 @@ OpenSSLSocket::~OpenSSLSocket() {
 	Disconnect();
 }
 
-Socket::Status OpenSSLSocket::Connect( const IpAddress& remoteAddress, unsigned short remotePort, cTime timeout ) {
+Socket::Status OpenSSLSocket::Connect( const IpAddress& remoteAddress, unsigned short remotePort, Time timeout ) {
 	if ( mConnected ) {
 		Disconnect();
 	}

@@ -5,7 +5,7 @@
 namespace EE { namespace Graphics {
 
 cTTFFontLoader::cTTFFontLoader( const std::string& FontName, const std::string& Filepath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) :
-	cObjectLoader( FontTTFLoader ),
+	ObjectLoader( FontTTFLoader ),
 	mLoadType( TTF_LT_PATH ),
 	mFontName( FontName ),
 	mFilepath( Filepath ),
@@ -21,8 +21,8 @@ cTTFFontLoader::cTTFFontLoader( const std::string& FontName, const std::string& 
 	Create();
 }
 
-cTTFFontLoader::cTTFFontLoader( const std::string& FontName, cPack * Pack, const std::string& FilePackPath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) :
-	cObjectLoader( FontTTFLoader ),
+cTTFFontLoader::cTTFFontLoader( const std::string& FontName, Pack * Pack, const std::string& FilePackPath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) :
+	ObjectLoader( FontTTFLoader ),
 	mLoadType( TTF_LT_PACK ),
 	mFontName( FontName ),
 	mFilepath( FilePackPath ),
@@ -40,7 +40,7 @@ cTTFFontLoader::cTTFFontLoader( const std::string& FontName, cPack * Pack, const
 }
 
 cTTFFontLoader::cTTFFontLoader( const std::string& FontName, Uint8* TTFData, const unsigned int& TTFDataSize, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const eeColor& FontColor, const Uint8& OutlineSize, const eeColor& OutlineColor, const bool& AddPixelSeparator ) :
-	cObjectLoader( FontTTFLoader ),
+	ObjectLoader( FontTTFLoader ),
 	mLoadType( TTF_LT_MEM ),
 	mFontName( FontName ),
 	mSize( Size ),
@@ -65,7 +65,7 @@ void cTTFFontLoader::Create() {
 }
 
 void cTTFFontLoader::Start() {
-	cObjectLoader::Start();
+	ObjectLoader::Start();
 
 	mFont->ThreadedLoading( mThreaded );
 
@@ -121,7 +121,7 @@ void cTTFFontLoader::Unload() {
 }
 
 void cTTFFontLoader::Reset() {
-	cObjectLoader::Reset();
+	ObjectLoader::Reset();
 
 	mFontLoaded = false;
 }

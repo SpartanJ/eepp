@@ -2,7 +2,7 @@
 #define EE_NETWORKCIPADDRESS_HPP
 
 #include <eepp/network/base.hpp>
-#include <eepp/system/ctime.hpp>
+#include <eepp/system/time.hpp>
 using namespace EE::System;
 
 #include <istream>
@@ -96,7 +96,7 @@ class EE_API IpAddress
 		**  @param timeout Maximum time to wait
 		**  @return Public IP address of the computer
 		**  @see GetLocalAddress */
-		static IpAddress GetPublicAddress(cTime timeout = cTime::Zero);
+		static IpAddress GetPublicAddress(Time timeout = Time::Zero);
 
 		// Static member data
 		static const IpAddress None;	  ///< Value representing an empty/invalid address

@@ -68,14 +68,14 @@ unsigned short TcpSocket::GetRemotePort() const {
 	return 0;
 }
 
-Socket::Status TcpSocket::Connect(const IpAddress& remoteAddress, unsigned short remotePort, cTime timeout) {
+Socket::Status TcpSocket::Connect(const IpAddress& remoteAddress, unsigned short remotePort, Time timeout) {
 	// Create the internal socket if it doesn't exist
 	Create();
 
 	// Create the remote address
 	sockaddr_in address = Private::SocketImpl::CreateAddress(remoteAddress.ToInteger(), remotePort);
 
-	if (timeout <= cTime::Zero) {
+	if (timeout <= Time::Zero) {
 		// ----- We're not using a timeout: just try to connect -----
 
 		// Connect the socket

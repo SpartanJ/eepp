@@ -45,7 +45,7 @@ void SoundStream::Play() {
 		return;
 	}
 
-	OnSeek( cTime::Zero );
+	OnSeek( Time::Zero );
 
 	mSamplesProcessed = 0;
 	mIsStreaming = true; // Start updating the stream in a separate thread to avoid blocking the application
@@ -78,7 +78,7 @@ Sound::Status SoundStream::GetState() const {
 	return status;
 }
 
-cTime SoundStream::PlayingOffset() const {
+Time SoundStream::PlayingOffset() const {
 	if ( mSampleRate && mChannelCount ) {
 		float secs = 0.f;
 
@@ -87,10 +87,10 @@ cTime SoundStream::PlayingOffset() const {
 		return Seconds( secs + (float)mSamplesProcessed / (float)mSampleRate / (float)mChannelCount );
 	}
 
-	return cTime::Zero;
+	return Time::Zero;
 }
 
-void SoundStream::PlayingOffset( const cTime &timeOffset ) {
+void SoundStream::PlayingOffset( const Time &timeOffset ) {
 	Status oldStatus = State();
 
     // Stop the stream
@@ -211,7 +211,7 @@ bool SoundStream::FillAndPushBuffer( const unsigned int& Buffer ) {
 		// Check if the stream must loop or stop
 		if ( mLoop ) {
 			// Return to the beginning of the stream source
-			OnSeek( cTime::Zero );
+			OnSeek( Time::Zero );
 
 			// If we previously had no data, try to fill the buffer once again
 			if ( !Data.Samples || ( Data.SamplesCount == 0 ) ) {

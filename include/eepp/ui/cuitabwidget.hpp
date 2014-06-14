@@ -141,7 +141,7 @@ class EE_API cUITabWidget : public cUIComplexControl {
 
 		void SetTabContainerSize();
 
-		void SetContainerSize();
+		void SeContainerSize();
 
 		void PosTabs();
 

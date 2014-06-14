@@ -9,7 +9,7 @@ namespace EE { namespace Graphics {
 
 /** @brief The Texture Atlas Manager is a singleton class that manages all the instances of Texture Atlases instanciated.
 	Releases the Texture Atlases instances automatically. So the user doesn't need to release any Texture Atlas instance. */
-class EE_API cTextureAtlasManager : public tResourceManager<cTextureAtlas> {
+class EE_API cTextureAtlasManager : public ResourceManager<cTextureAtlas> {
 	SINGLETON_DECLARE_HEADERS(cTextureAtlasManager)
 
 	public:
@@ -19,13 +19,13 @@ class EE_API cTextureAtlasManager : public tResourceManager<cTextureAtlas> {
 		cTextureAtlas * Load( const std::string& TextureAtlasPath );
 
 		/** Loads a texture atlas from a io stream. */
-		cTextureAtlas * LoadFromStream( cIOStream& IOS );
+		cTextureAtlas * LoadFromStream( IOStream& IOS );
 
 		/** Loads a texture atlas from memory. */
 		cTextureAtlas * LoadFromMemory( const Uint8* Data, const Uint32& DataSize, const std::string& TextureAtlasName );
 
 		/** Loads a texture atlas from a pack file. */
-		cTextureAtlas * LoadFromPack( cPack * Pack, const std::string& FilePackPath );
+		cTextureAtlas * LoadFromPack( Pack * Pack, const std::string& FilePackPath );
 
 		/** It will search for a SubTexture Name in the texture atlases loaded.
 		*	@return The first SubTexture found with the given name in any atlas. */

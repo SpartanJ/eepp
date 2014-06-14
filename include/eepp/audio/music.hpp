@@ -23,16 +23,16 @@ class EE_API Music : public SoundStream {
 		bool OpenFromMemory( const char * Data, std::size_t SizeInBytes );
 
 		/** Open a Music file from a file inside a pack file */
-		bool OpenFromPack( cPack * Pack, const std::string& FilePackPath );
+		bool OpenFromPack( Pack * Pack, const std::string& FilePackPath );
 
 		/** Get the Music Duration */
-		cTime GetDuration() const;
+		Time GetDuration() const;
 	private :
 		virtual bool OnStart();
 
 		virtual bool OnGetData(Chunk& Data);
 
-		virtual void OnSeek( cTime timeOffset);
+		virtual void OnSeek( Time timeOffset);
 
 		SoundFile * 		mFile; 		///< Sound file
 		float				mDuration; 	///< Music duration, in seconds

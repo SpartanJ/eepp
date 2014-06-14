@@ -11,7 +11,7 @@ cUITooltip::cUITooltip( cUITooltip::CreateParams& Params, cUIControl * TooltipOf
 	mFontShadowColor( Params.FontShadowColor ),
 	mAlignOffset( 0.f, 0.f ),
 	mPadding( Params.Padding ),
-	mTooltipTime( cTime::Zero ),
+	mTooltipTime( Time::Zero ),
 	mTooltipOf( TooltipOf )
 {
 	mTextCache = eeNew( cTextCache, () );
@@ -237,15 +237,15 @@ const eeVector2f& cUITooltip::AlignOffset() const {
 	return mAlignOffset;
 }
 
-void cUITooltip::TooltipTime( const cTime& Time ) {
+void cUITooltip::TooltipTime( const Time& Time ) {
 	mTooltipTime = Time;
 }
 
-void cUITooltip::TooltipTimeAdd( const cTime& Time ) {
+void cUITooltip::TooltipTimeAdd( const Time& Time ) {
 	mTooltipTime += Time;
 }
 
-const cTime& cUITooltip::TooltipTime() const {
+const Time& cUITooltip::TooltipTime() const {
 	return mTooltipTime;
 }
 

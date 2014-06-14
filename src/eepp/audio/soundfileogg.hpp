@@ -21,7 +21,7 @@ class EE_API SoundFileOgg : public SoundFile {
 
 		virtual std::size_t Read(Int16* Data, std::size_t SamplesCount);
 
-		virtual void Seek( cTime timeOffset );
+		virtual void Seek( Time timeOffset );
 	private :
 		virtual bool OpenRead(const std::string& Filename, std::size_t& SamplesCount, unsigned int& ChannelCount, unsigned int& SampleRate);
 

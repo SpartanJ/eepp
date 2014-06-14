@@ -24,7 +24,7 @@ class EE_API cShader {
 		cShader( const Uint32& Type, const char * Data, const Uint32& DataSize );
 
 		/** Create a type of shader loaded from a pack file */
-		cShader( const Uint32& Type, cPack * Pack, const std::string& Filename );
+		cShader( const Uint32& Type, Pack * Pack, const std::string& Filename );
 
 		/** Create a type of shader from memory, and compile it. */
 		cShader( const Uint32& Type, const char ** Data, const Uint32& NumLines );
@@ -87,7 +87,7 @@ class EE_API cVertexShader : public cShader {
 		cVertexShader();
 		cVertexShader( const std::string& Filename );
 		cVertexShader( const char * Data, const Uint32& DataSize );
-		cVertexShader( cPack * Pack, const std::string& Filename );
+		cVertexShader( Pack * Pack, const std::string& Filename );
 		cVertexShader( const char ** Data, const Uint32& NumLines );
 };
 
@@ -97,7 +97,7 @@ class EE_API cFragmentShader : public cShader {
 		cFragmentShader();
 		cFragmentShader( const std::string& Filename );
 		cFragmentShader( const char * Data, const Uint32& DataSize );
-		cFragmentShader( cPack * Pack, const std::string& Filename );
+		cFragmentShader( Pack * Pack, const std::string& Filename );
 		cFragmentShader( const char ** Data, const Uint32& NumLines );
 };
 

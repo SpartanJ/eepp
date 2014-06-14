@@ -116,7 +116,7 @@ IpAddress IpAddress::GetLocalAddress() {
 	return localAddress;
 }
 
-IpAddress IpAddress::GetPublicAddress(cTime timeout) {
+IpAddress IpAddress::GetPublicAddress(Time timeout) {
 	// The trick here is more complicated, because the only way
 	// to get our public IP address is to get it from a distant computer.
 	// Here we get the web page from http://www.sfml-dev.org/ip-provider.php

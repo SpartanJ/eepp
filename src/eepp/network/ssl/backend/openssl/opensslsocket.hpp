@@ -33,7 +33,7 @@ class OpenSSLSocket : public SSLSocketImpl {
 
 		~OpenSSLSocket();
 
-		Socket::Status Connect(const IpAddress& remoteAddress, unsigned short remotePort, cTime timeout = cTime::Zero);
+		Socket::Status Connect(const IpAddress& remoteAddress, unsigned short remotePort, Time timeout = Time::Zero);
 
 		void Disconnect();
 

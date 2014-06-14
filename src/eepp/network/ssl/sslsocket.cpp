@@ -95,7 +95,7 @@ SSLSocket::~SSLSocket() {
 	eeSAFE_DELETE( mImpl );
 }
 
-Socket::Status SSLSocket::Connect( const IpAddress& remoteAddress, unsigned short remotePort, cTime timeout ) {
+Socket::Status SSLSocket::Connect( const IpAddress& remoteAddress, unsigned short remotePort, Time timeout ) {
 	Status status = Socket::Disconnected;
 	
 	if ( ( status = TcpSocket::Connect( remoteAddress, remotePort, timeout ) ) == Socket::Done ) {

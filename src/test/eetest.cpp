@@ -11,8 +11,8 @@ namespace Demo_Test {
 void cEETest::Init() {
 	EE = cEngine::instance();
 
-	cLog::instance()->LiveWrite( true );
-	cLog::instance()->ConsoleOutput( true );
+	Log::instance()->LiveWrite( true );
+	Log::instance()->ConsoleOutput( true );
 
 	DrawBack 			= false;
 	MultiViewportMode 	= false;
@@ -39,7 +39,7 @@ void cEETest::Init() {
 
 	MyPath 				= Sys::GetProcessPath() + "assets/";
 
-	cIniFile Ini( MyPath + "ee.ini" );
+	IniFile Ini( MyPath + "ee.ini" );
 
 	PartsNum			= Ini.GetValueI( "EEPP", "ParticlesNum", 1000 );
 	mUseShaders			= Ini.GetValueB( "EEPP", "UseShaders", false );
@@ -66,7 +66,7 @@ void cEETest::Init() {
 		TF = cTextureFactory::instance();
 		TF->Allocate(40);
 
-		Log		= cLog::instance();
+		Log		= Log::instance();
 		KM		= mWindow->GetInput();
 		JM		= KM->GetJoystickManager();
 
@@ -178,7 +178,7 @@ void cEETest::LoadFonts() {
 	mFontLoader.Load( cb::Make1( this, &cEETest::OnFontLoaded ) );
 }
 
-void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
+void cEETest::OnFontLoaded( ResourceLoader * ObjLoaded ) {
 	FF		= cFontManager::instance()->GetByName( "conchars" );
 	FF2		= cFontManager::instance()->GetByName( "ProggySquareSZ" );
 	TTF		= cFontManager::instance()->GetByName( "arial" );
@@ -248,7 +248,7 @@ void cEETest::OnWindowResize(cWindow * win) {
 }
 
 void cEETest::CreateUI() {
-	cClock TE;
+	Clock TE;
 
 	CreateUIThemeTextureAtlas();
 
@@ -788,16 +788,16 @@ void cEETest::CmdSetPartsNum ( const std::vector < String >& params ) {
 	}
 }
 
-void cEETest::OnTextureLoaded( cResourceLoader * ResLoaded ) {
+void cEETest::OnTextureLoaded( ResourceLoader * ResLoaded ) {
 	SndMng.Play( "mysound" );
 }
 
 void cEETest::LoadTextures() {
-	cClock TE;
+	Clock TE;
 
 	Uint32 i;
 
-	PakTest = eeNew( cZip, () );
+	PakTest = eeNew( Zip, () );
 
 	#ifndef EE_GLES
 
@@ -1865,7 +1865,7 @@ void cEETest::End() {
 	eeSAFE_DELETE( mCircleSprite );
 	eeSAFE_DELETE( PakTest );
 
-	cLog::instance()->Save();
+	Log::instance()->Save();
 
 	cEngine::DestroySingleton();
 }

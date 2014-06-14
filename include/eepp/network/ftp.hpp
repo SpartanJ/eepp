@@ -4,7 +4,7 @@
 #include <eepp/network/base.hpp>
 #include <eepp/network/tcpsocket.hpp>
 #include <eepp/core/noncopyable.hpp>
-#include <eepp/system/ctime.hpp>
+#include <eepp/system/time.hpp>
 #include <string>
 #include <vector>
 
@@ -174,14 +174,14 @@ public:
 	**  This function tries to connect to the server so it may take
 	**  a while to complete, especially if the server is not
 	**  reachable. To avoid blocking your application for too long,
-	**  you can use a timeout. The default value, cTime::Zero, means that the
+	**  you can use a timeout. The default value, Time::Zero, means that the
 	**  system timeout will be used (which is usually pretty long).
 	**  @param server  Name or address of the FTP server to connect to
 	**  @param port    Port used for the connection
 	**  @param timeout Maximum time to wait
 	**  @return Server response to the request
 	**  @see Disconnect */
-	Response Connect(const IpAddress& server, unsigned short port = 21, cTime timeout = cTime::Zero);
+	Response Connect(const IpAddress& server, unsigned short port = 21, Time timeout = Time::Zero);
 
 	/** @brief Close the connection with the server
 	**  @return Server response to the request

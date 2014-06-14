@@ -7,7 +7,7 @@ namespace EE { namespace UI {
 SINGLETON_DECLARE_IMPLEMENTATION(cUIThemeManager)
 
 cUIThemeManager::cUIThemeManager() :
-	tResourceManager<cUITheme>( true ),
+	ResourceManager<cUITheme>( true ),
 	mFont( NULL ),
 	mThemeDefault( NULL ),
 	mAutoApplyDefaultTheme( true ),
@@ -77,27 +77,27 @@ const bool& cUIThemeManager::DefaultEffectsEnabled() const {
 	return mEnableDefaultEffects;
 }
 
-const cTime& cUIThemeManager::ControlsFadeInTime() const {
+const Time& cUIThemeManager::ControlsFadeInTime() const {
 	return mFadeInTime;
 }
 
-void cUIThemeManager::ControlsFadeInTime( const cTime& Time ) {
+void cUIThemeManager::ControlsFadeInTime( const Time& Time ) {
 	mFadeInTime = Time;
 }
 
-const cTime& cUIThemeManager::ControlsFadeOutTime() const {
+const Time& cUIThemeManager::ControlsFadeOutTime() const {
 	return mFadeOutTime;
 }
 
-void cUIThemeManager::ControlsFadeOutTime( const cTime& Time ) {
+void cUIThemeManager::ControlsFadeOutTime( const Time& Time ) {
 	mFadeOutTime = Time;
 }
 
-void cUIThemeManager::TooltipTimeToShow( const cTime& Time ) {
+void cUIThemeManager::TooltipTimeToShow( const Time& Time ) {
 	mTooltipTimeToShow = Time;
 }
 
-const cTime& cUIThemeManager::TooltipTimeToShow() const {
+const Time& cUIThemeManager::TooltipTimeToShow() const {
 	return mTooltipTimeToShow;
 }
 

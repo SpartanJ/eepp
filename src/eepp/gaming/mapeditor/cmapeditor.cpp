@@ -190,7 +190,7 @@ void cMapEditor::CreateETGMenu() {
 	mTabWidget->AddEventListener( cUIEvent::EventOnTabSelected, cb::Make1( this, &cMapEditor::OnTabSelected ) );
 	CreateTabs();
 
-	CreateLightContainer();
+	CreateLighContainer();
 
 	CreateSubTextureContainer( Width );
 
@@ -334,7 +334,7 @@ void cMapEditor::CreateSubTextureContainer( Int32 Width ) {
 	FillSGCombo();
 }
 
-void cMapEditor::CreateLightContainer() {
+void cMapEditor::CreateLighContainer() {
 	cUIPushButton * NewLightBut = mTheme->CreatePushButton( mLightCont, eeSize( mLightCont->Size().Width() - TAB_CONT_X_DIST * 2, 22 ), eeVector2i( TAB_CONT_X_DIST, 0 ) );
 	NewLightBut->Text( "New Light" );
 	NewLightBut->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cMapEditor::OnNewLight ) );

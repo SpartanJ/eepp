@@ -7,7 +7,7 @@
 namespace EE { namespace Audio {
 
 /** @brief Abstract base class for streamed audio sources */
-class EE_API SoundStream : private cThread, private Sound {
+class EE_API SoundStream : private Thread, private Sound {
 	public:
 		using Sound::Pause;
 		using Sound::Pitch;
@@ -69,12 +69,12 @@ class EE_API SoundStream : private cThread, private Sound {
 
 		/**	@brief Get the current playing position of the stream
 		**	@return Current playing position, from the beginning of the stream. */
-		cTime PlayingOffset() const;
+		Time PlayingOffset() const;
 
 		/**	@brief Change the current playing position of the stream
 		**	The playing position can be changed when the stream is either paused or playing.
 		**	@param timeOffset New playing position, from the beginning of the stream. */
-		void PlayingOffset( const cTime &timeOffset );
+		void PlayingOffset( const Time &timeOffset );
 
 		/** Set the stream loop state. This parameter is disabled by default
 		* @param Loop True to play in loop, false to play once
@@ -94,7 +94,7 @@ class EE_API SoundStream : private cThread, private Sound {
 
 		virtual bool OnGetData( Chunk& Data ) = 0;
 
-		virtual void OnSeek( cTime timeOffset ) = 0;
+		virtual void OnSeek( Time timeOffset ) = 0;
 
 		/** Fill a new buffer with audio data, and push it to the playing queue
 		* @param Buffer Buffer to fill

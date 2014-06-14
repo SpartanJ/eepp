@@ -6,7 +6,7 @@
 
 namespace EE { namespace Graphics { namespace Private {
 
-class EE_API cFrameBufferManager : public tContainer<cFrameBuffer> {
+class EE_API cFrameBufferManager : public Container<cFrameBuffer> {
 	SINGLETON_DECLARE_HEADERS(cFrameBufferManager)
 
 	public:

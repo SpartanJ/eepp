@@ -6,7 +6,7 @@ namespace EE { namespace Graphics {
 SINGLETON_DECLARE_IMPLEMENTATION(cTextureAtlasManager)
 
 cTextureAtlasManager::cTextureAtlasManager() :
-	tResourceManager<cTextureAtlas>( false ),
+	ResourceManager<cTextureAtlas>( false ),
 	mWarnings( false )
 {
 	Add( cGlobalTextureAtlas::instance() );
@@ -21,7 +21,7 @@ cTextureAtlas * cTextureAtlasManager::Load( const std::string& TextureAtlasPath 
 	return loader.GetTextureAtlas();
 }
 
-cTextureAtlas * cTextureAtlasManager::LoadFromStream( cIOStream& IOS ) {
+cTextureAtlas * cTextureAtlasManager::LoadFromStream( IOStream& IOS ) {
 	cTextureAtlasLoader loader( IOS );
 
 	return loader.GetTextureAtlas();
@@ -33,7 +33,7 @@ cTextureAtlas * cTextureAtlasManager::LoadFromMemory( const Uint8* Data, const U
 	return loader.GetTextureAtlas();
 }
 
-cTextureAtlas * cTextureAtlasManager::LoadFromPack( cPack * Pack, const std::string& FilePackPath ) {
+cTextureAtlas * cTextureAtlasManager::LoadFromPack( Pack * Pack, const std::string& FilePackPath ) {
 	cTextureAtlasLoader loader( Pack, FilePackPath );
 
 	return loader.GetTextureAtlas();

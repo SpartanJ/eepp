@@ -74,7 +74,7 @@ void cUITabWidget::SetTheme( cUITheme * Theme ) {
 
 		mTabWidgetHeight	= eemax( tSize1.Height(), tSize2.Height() );
 
-		SetContainerSize();
+		SeContainerSize();
 		OrderTabs();
 	}
 
@@ -85,7 +85,7 @@ void cUITabWidget::DoAfterSetTheme() {
 	OnSizeChange();
 }
 
-void cUITabWidget::SetContainerSize() {
+void cUITabWidget::SeContainerSize() {
 	mTabContainer->Size( mSize.Width(), mTabWidgetHeight );
 	mCtrlContainer->Pos( 0, mTabWidgetHeight );
 	mCtrlContainer->Size( mSize.Width(), mSize.Height() - mTabWidgetHeight );
@@ -378,7 +378,7 @@ Uint32 cUITabWidget::GetSelectedTabIndex() const {
 }
 
 void cUITabWidget::OnSizeChange() {
-	SetContainerSize();
+	SeContainerSize();
 	SetTabContainerSize();
 	PosTabs();
 

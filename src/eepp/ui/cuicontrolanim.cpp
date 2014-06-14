@@ -183,7 +183,7 @@ bool cUIControlAnim::Animating() {
 	return ( NULL != mAlphaAnim && mAlphaAnim->Enabled() ) || ( NULL != mAngleAnim && mAngleAnim->Enabled() ) || ( NULL != mScaleAnim && mScaleAnim->Enabled() ) || ( NULL != mMoveAnim && mMoveAnim->Enabled() );
 }
 
-void cUIControlAnim::StartAlphaAnim( const Float& From, const Float& To, const cTime& TotalTime, const bool& AlphaChilds, const Ease::Interpolation& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
+void cUIControlAnim::StartAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& AlphaChilds, const Ease::Interpolation& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mAlphaAnim )
 		mAlphaAnim = eeNew( cInterpolation, () );
 
@@ -212,7 +212,7 @@ void cUIControlAnim::StartAlphaAnim( const Float& From, const Float& To, const c
 	}
 }
 
-void cUIControlAnim::StartScaleAnim( const eeVector2f& From, const eeVector2f& To, const cTime& TotalTime, const Ease::Interpolation& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
+void cUIControlAnim::StartScaleAnim( const eeVector2f& From, const eeVector2f& To, const Time& TotalTime, const Ease::Interpolation& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mScaleAnim )
 		mScaleAnim = eeNew( cWaypoints, () );
 
@@ -226,11 +226,11 @@ void cUIControlAnim::StartScaleAnim( const eeVector2f& From, const eeVector2f& T
 	Scale( From );
 }
 
-void cUIControlAnim::StartScaleAnim( const Float& From, const Float& To, const cTime& TotalTime, const Ease::Interpolation& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
+void cUIControlAnim::StartScaleAnim( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
 	StartScaleAnim( eeVector2f( From, From ), eeVector2f( To, To ), TotalTime, Type, PathEndCallback );
 }
 
-void cUIControlAnim::StartMovement( const eeVector2i& From, const eeVector2i& To, const cTime& TotalTime, const Ease::Interpolation& Type, cWaypoints::OnPathEndCallback PathEndCallback ) {
+void cUIControlAnim::StartMovement( const eeVector2i& From, const eeVector2i& To, const Time& TotalTime, const Ease::Interpolation& Type, cWaypoints::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mMoveAnim )
 		mMoveAnim = eeNew( cWaypoints, () );
 
@@ -244,7 +244,7 @@ void cUIControlAnim::StartMovement( const eeVector2i& From, const eeVector2i& To
 	Pos( From );
 }
 
-void cUIControlAnim::StartRotation( const Float& From, const Float& To, const cTime& TotalTime, const Ease::Interpolation& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
+void cUIControlAnim::StartRotation( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type, cInterpolation::OnPathEndCallback PathEndCallback ) {
 	if ( NULL == mAngleAnim )
 		mAngleAnim = eeNew( cInterpolation, () );
 
@@ -258,20 +258,20 @@ void cUIControlAnim::StartRotation( const Float& From, const Float& To, const cT
 	Angle( From );
 }
 
-void cUIControlAnim::CreateFadeIn( const cTime& Time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
+void cUIControlAnim::CreateFadeIn( const Time& Time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
 	StartAlphaAnim( mAlpha, 255.f, Time, AlphaChilds, Type );
 }
 
-void cUIControlAnim::CreateFadeOut( const cTime& Time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
+void cUIControlAnim::CreateFadeOut( const Time& Time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
 	StartAlphaAnim( 255.f, mAlpha, Time, AlphaChilds, Type );
 }
 
-void cUIControlAnim::CloseFadeOut( const cTime& Time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
+void cUIControlAnim::CloseFadeOut( const Time& Time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
 	StartAlphaAnim	( mAlpha, 0.f, Time, AlphaChilds, Type );
 	mControlFlags |= UI_CTRL_FLAG_CLOSE_FO;
 }
 
-void cUIControlAnim::DisableFadeOut( const cTime& Time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
+void cUIControlAnim::DisableFadeOut( const Time& Time, const bool& AlphaChilds, const Ease::Interpolation& Type ) {
 	Enabled( false );
 
 	StartAlphaAnim	( mAlpha, 0.f, Time, AlphaChilds, Type );

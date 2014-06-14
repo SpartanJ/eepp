@@ -1,7 +1,7 @@
 #include <eepp/graphics/ctexturefont.hpp>
 #include <eepp/graphics/ctexture.hpp>
-#include <eepp/system/ciostreamfile.hpp>
-#include <eepp/system/ciostreammemory.hpp>
+#include <eepp/system/iostreamfile.hpp>
+#include <eepp/system/iostreammemory.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -144,13 +144,13 @@ void cTextureFont::BuildFromGlyphs() {
 
 bool cTextureFont::Load( const Uint32& TexId, const std::string& CoordinatesDatPath ) {
 	if ( FileSystem::FileExists( CoordinatesDatPath ) ) {
-		cIOStreamFile IOS( CoordinatesDatPath, std::ios::in | std::ios::binary );
+		IOStreamFile IOS( CoordinatesDatPath, std::ios::in | std::ios::binary );
 
 		return LoadFromStream( TexId, IOS );
-	} else if ( cPackManager::instance()->FallbackToPacks() ) {
+	} else if ( PackManager::instance()->FallbackToPacks() ) {
 		std::string tPath( CoordinatesDatPath );
 
-		cPack * tPack = cPackManager::instance()->Exists( tPath );
+		Pack * tPack = PackManager::instance()->Exists( tPath );
 
 		if ( NULL != tPack ) {
 			return LoadFromPack( TexId, tPack, tPath );
@@ -160,7 +160,7 @@ bool cTextureFont::Load( const Uint32& TexId, const std::string& CoordinatesDatP
 	return false;
 }
 
-bool cTextureFont::LoadFromPack( const Uint32& TexId, cPack* Pack, const std::string& FilePackPath ) {
+bool cTextureFont::LoadFromPack( const Uint32& TexId, Pack* Pack, const std::string& FilePackPath ) {
 	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( FilePackPath ) ) {
 		SafeDataPointer PData;
 
@@ -173,12 +173,12 @@ bool cTextureFont::LoadFromPack( const Uint32& TexId, cPack* Pack, const std::st
 }
 
 bool cTextureFont::LoadFromMemory( const Uint32& TexId, const char* CoordData, const Uint32& CoordDataSize ) {
-	cIOStreamMemory IOS( CoordData, CoordDataSize );
+	IOStreamMemory IOS( CoordData, CoordDataSize );
 
 	return LoadFromStream( TexId, IOS );
 }
 
-bool cTextureFont::LoadFromStream( const Uint32& TexId, cIOStream& IOS ) {
+bool cTextureFont::LoadFromStream( const Uint32& TexId, IOStream& IOS ) {
 	mTexId = TexId;
 
 	if ( mTexId > 0 ) {

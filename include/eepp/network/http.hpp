@@ -5,11 +5,11 @@
 #include <eepp/network/ipaddress.hpp>
 #include <eepp/network/tcpsocket.hpp>
 #include <eepp/core/noncopyable.hpp>
-#include <eepp/system/ctime.hpp>
-#include <eepp/system/tthreadlocalptr.hpp>
-#include <eepp/system/cthread.hpp>
-#include <eepp/system/cmutex.hpp>
-#include <eepp/system/clock.hpp>
+#include <eepp/system/time.hpp>
+#include <eepp/system/threadlocalptr.hpp>
+#include <eepp/system/thread.hpp>
+#include <eepp/system/mutex.hpp>
+#include <eepp/system/lock.hpp>
 #include <eepp/helper/PlusCallback/callback.hpp>
 #include <map>
 #include <string>
@@ -265,12 +265,12 @@ class EE_API Http : NonCopyable {
 		**  Warning: this function waits for the server's response and may
 		**  not return instantly; use a thread if you don't want to block your
 		**  application, or use a timeout to limit the time to wait. A value
-		**  of cTime::Zero means that the client will use the system defaut timeout
+		**  of Time::Zero means that the client will use the system defaut timeout
 		**  (which is usually pretty long).
 		**  @param request Request to send
 		**  @param timeout Maximum time to wait
 		**  @return Server's response */
-		Response SendRequest(const Request& request, cTime timeout = cTime::Zero);
+		Response SendRequest(const Request& request, Time timeout = Time::Zero);
 
 		/** Definition of the async callback response */
 		typedef cb::Callback3<void, const Http&, Http::Request&, Http::Response&>		AsyncResponseCallback;
@@ -278,7 +278,7 @@ class EE_API Http : NonCopyable {
 		/** @brief Sends the request and creates a new thread, when got the response informs the result to the callback.
 		**	This function does not lock the caller thread.
 		**  @see SendRequest */
-		void SendAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, cTime timeout = cTime::Zero );
+		void SendAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, Time timeout = Time::Zero );
 
 		/** @return The host address */
 		const IpAddress& GetHost() const;
@@ -289,9 +289,9 @@ class EE_API Http : NonCopyable {
 		/** @return The host port */
 		const unsigned short& GetPort() const;
 	private:
-		class cAsyncRequest : public cThread {
+		class cAsyncRequest : public Thread {
 			public:
-				cAsyncRequest( Http * http, AsyncResponseCallback cb, Http::Request request, cTime timeout );
+				cAsyncRequest( Http * http, AsyncResponseCallback cb, Http::Request request, Time timeout );
 
 				void Run();
 			protected:
@@ -299,16 +299,16 @@ class EE_API Http : NonCopyable {
 				Http *					mHttp;
 				AsyncResponseCallback	mCb;
 				Http::Request			mRequest;
-				cTime					mTimeout;
+				Time					mTimeout;
 				bool					mRunning;
 		};
 		friend class cAsyncRequest;
-		tThreadLocalPtr<TcpSocket>		mConnection;	///< Connection to the host
+		ThreadLocalPtr<TcpSocket>		mConnection;	///< Connection to the host
 		IpAddress						mHost;			///< Web host address
 		std::string						mHostName;		///< Web host name
 		unsigned short					mPort;			///< Port used for connection with host
 		std::list<cAsyncRequest*>		mThreads;
-		cMutex							mThreadsMutex;
+		Mutex							mThreadsMutex;
 		bool							mIsSSL;
 
 		void RemoveOldThreads();

@@ -9,7 +9,7 @@
 #include <eepp/gaming/ctilelayer.hpp>
 #include <eepp/gaming/cobjectlayer.hpp>
 
-#include <eepp/system/cpackmanager.hpp>
+#include <eepp/system/packmanager.hpp>
 #include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/cprimitives.hpp>
@@ -792,7 +792,7 @@ void cMap::SetCreateGameObjectCallback( const CreateGOCb& Cb ) {
 	mCreateGOCb = Cb;
 }
 
-bool cMap::LoadFromStream( cIOStream& IOS ) {
+bool cMap::LoadFromStream( IOStream& IOS ) {
 	sMapHdr MapHdr;
 	Uint32 i, z;
 
@@ -1039,12 +1039,12 @@ bool cMap::Load( const std::string& path ) {
 	if ( FileSystem::FileExists( path ) ) {
 		mPath = path;
 
-		cIOStreamFile IOS( mPath, std::ios::in | std::ios::binary );
+		IOStreamFile IOS( mPath, std::ios::in | std::ios::binary );
 
 		return LoadFromStream( IOS );
-	} else if ( cPackManager::instance()->FallbackToPacks() ) {
+	} else if ( PackManager::instance()->FallbackToPacks() ) {
 		std::string tPath( path );
-		cPack * tPack = cPackManager::instance()->Exists( tPath ) ;
+		Pack * tPack = PackManager::instance()->Exists( tPath ) ;
 
 		if ( NULL != tPack ) {
 			mPath = tPath;
@@ -1055,7 +1055,7 @@ bool cMap::Load( const std::string& path ) {
 	return false;
 }
 
-bool cMap::LoadFromPack( cPack * Pack, const std::string& FilePackPath ) {
+bool cMap::LoadFromPack( Pack * Pack, const std::string& FilePackPath ) {
 	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( FilePackPath ) ) {
 		SafeDataPointer PData;
 
@@ -1068,12 +1068,12 @@ bool cMap::LoadFromPack( cPack * Pack, const std::string& FilePackPath ) {
 }
 
 bool cMap::LoadFromMemory( const char * Data, const Uint32& DataSize ) {
-	cIOStreamMemory IOS( Data, DataSize );
+	IOStreamMemory IOS( Data, DataSize );
 
 	return LoadFromStream( IOS );
 }
 
-void cMap::SaveToStream( cIOStream& IOS ) {
+void cMap::SaveToStream( IOStream& IOS ) {
 	Uint32 i;
 	sMapHdr MapHdr;
 	cLayer * tLayer;
@@ -1360,7 +1360,7 @@ void cMap::SaveToStream( cIOStream& IOS ) {
 
 void cMap::Save( const std::string& path ) {
 	if ( !FileSystem::IsDirectory( path ) ) {
-		cIOStreamFile IOS( path, std::ios::out | std::ios::binary );
+		IOStreamFile IOS( path, std::ios::out | std::ios::binary );
 
 		SaveToStream( IOS );
 

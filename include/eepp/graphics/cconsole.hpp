@@ -13,7 +13,7 @@ using namespace EE::Window;
 
 namespace EE { namespace Graphics {
 
-class EE_API cConsole : protected iLogReader {
+class EE_API cConsole : protected LogReaderInterface {
 	public:
 		//! The Console Callback return a vector of parameters ( String )
 		typedef cb::Callback1<void, const std::vector < String >& > ConsoleCallback;
@@ -81,15 +81,15 @@ class EE_API cConsole : protected iLogReader {
 		bool Expand() const { return mExpand; }
 
 		/** Set the fade time */
-		void FadeSpeed( const cTime& fadespeed ) { mFadeSpeed = fadespeed; }
+		void FadeSpeed( const Time& fadespeed ) { mFadeSpeed = fadespeed; }
 
 		/** @return The fading speed in ms */
-		const cTime& FadeSpeed() const { return mFadeSpeed; }
+		const Time& FadeSpeed() const { return mFadeSpeed; }
 
 		/** @brief Creates the new console
 		* @param Font The cFont pointer to class
 		* @param MakeDefaultCommands Register the default commands provided by the class?
-		* @param AttachToLog Attach the console to the cLog instance
+		* @param AttachToLog Attach the console to the Log instance
 		* @param MaxLogLines Maximun number of lines stored on the console
 		* @param TextureId Background texture id ( 0 for no texture )
 		*/
@@ -142,7 +142,7 @@ class EE_API cConsole : protected iLogReader {
 		Float mMaxAlpha;
 		Float mTempY;
 		Float mFontSize;
-		cTime	mFadeSpeed;
+		Time	mFadeSpeed;
 
 		Uint32 mMyCallback;
 		Uint32 mVidCb;

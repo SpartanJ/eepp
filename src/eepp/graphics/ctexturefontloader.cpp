@@ -4,7 +4,7 @@
 namespace EE { namespace Graphics {
 
 cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, const unsigned int& StartChar, const unsigned int& Spacing, const unsigned int& TexColumns, const unsigned int& TexRows, const Uint16& NumChars ) :
-	cObjectLoader( FontTexLoader ),
+	ObjectLoader( FontTexLoader ),
 	mLoadType( TEF_LT_TEX ),
 	mFontName( FontName ),
 	mStartChar( StartChar ),
@@ -19,7 +19,7 @@ cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoad
 }
 
 cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, const std::string& CoordinatesDatPath ) :
-	cObjectLoader( FontTexLoader ),
+	ObjectLoader( FontTexLoader ),
 	mLoadType( TEF_LT_PATH ),
 	mFontName( FontName ),
 	mFilepath( CoordinatesDatPath ),
@@ -29,8 +29,8 @@ cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoad
 	mTexLoader = TexLoader;
 }
 
-cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, cPack * Pack, const std::string& FilePackPath ) :
-	cObjectLoader( FontTexLoader ),
+cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, Pack * Pack, const std::string& FilePackPath ) :
+	ObjectLoader( FontTexLoader ),
 	mLoadType( TEF_LT_PACK ),
 	mFontName( FontName ),
 	mFilepath( FilePackPath ),
@@ -42,7 +42,7 @@ cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoad
 }
 
 cTextureFontLoader::cTextureFontLoader( const std::string FontName, cTextureLoader * TexLoader, const char* CoordData, const Uint32& CoordDataSize ) :
-	cObjectLoader( FontTexLoader ),
+	ObjectLoader( FontTexLoader ),
 	mLoadType( TEF_LT_MEM ),
 	mFontName( FontName ),
 	mData( CoordData ),
@@ -58,7 +58,7 @@ cTextureFontLoader::~cTextureFontLoader() {
 }
 
 void cTextureFontLoader::Start() {
-	cObjectLoader::Start();
+	ObjectLoader::Start();
 
 	mTexLoader->Threaded( false );
 
@@ -137,7 +137,7 @@ void cTextureFontLoader::Unload() {
 }
 
 void cTextureFontLoader::Reset() {
-	cObjectLoader::Reset();
+	ObjectLoader::Reset();
 
 	mFont			= NULL;
 	mTexLoaded		= false;

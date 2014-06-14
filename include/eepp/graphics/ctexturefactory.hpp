@@ -2,14 +2,14 @@
 #define EECTEXTUREFACTORY_H
 
 #include <eepp/graphics/base.hpp>
-#include <eepp/system/cmutex.hpp>
+#include <eepp/system/mutex.hpp>
 
 namespace EE { namespace Graphics {
 
 class cTexture;
 
 /** @brief The Texture Manager Class. Here we do all the textures stuff. (Singleton Class) */
-class EE_API cTextureFactory : protected cMutex {
+class EE_API cTextureFactory : protected Mutex {
 	SINGLETON_DECLARE_HEADERS(cTextureFactory)
 
 	public:
@@ -49,7 +49,7 @@ class EE_API cTextureFactory : protected cMutex {
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return Internal Texture Id
 		*/
-		Uint32 LoadFromPack( cPack* Pack, const std::string& FilePackPath, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 LoadFromPack( Pack* Pack, const std::string& FilePackPath, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Load a texture from memory
 		* @param ImagePtr The image data in RAM just as if it were still in a file
@@ -63,14 +63,14 @@ class EE_API cTextureFactory : protected cMutex {
 		Uint32 LoadFromMemory( const unsigned char* ImagePtr, const unsigned int& Size, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Load a Texture from stream
-		* @param Stream The cIOStream instance
+		* @param Stream The IOStream instance
 		* @param Mipmap Use mipmaps?
 		* @param ClampMode Defines the CLAMP MODE
 		* @param CompressTexture If use the DXT compression on the texture loading ( if the card can display them, will convert RGB to DXT1, RGBA to DXT5 )
 		* @param KeepLocalCopy Keep the array data copy. ( useful if want to reload the texture )
 		* @return The internal Texture Id
 		*/
-		Uint32 LoadFromStream( cIOStream& Stream, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
+		Uint32 LoadFromStream( IOStream& Stream, const bool& Mipmap = false, const EE_CLAMP_MODE& ClampMode = CLAMP_TO_EDGE, const bool& CompressTexture = false, const bool& KeepLocalCopy = false );
 
 		/** Load a Texture from a file path
 		* @param Filepath The path for the texture

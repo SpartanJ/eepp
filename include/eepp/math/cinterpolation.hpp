@@ -2,7 +2,7 @@
 #define EE_MATHCINTERPOLATION_H
 
 #include <eepp/math/base.hpp>
-#include <eepp/system/ctime.hpp>
+#include <eepp/system/time.hpp>
 #include <vector>
 
 using namespace EE::System;
@@ -53,7 +53,7 @@ class EE_API cInterpolation {
 		void SetStepCallback( OnStepCallback StepCallback );
 
 		/** Update the movement interpolation */
-		void Update( const cTime& Elapsed );
+		void Update( const Time& Elapsed );
 
 		/** Reset the class */
 		void Reset();
@@ -88,7 +88,7 @@ class EE_API cInterpolation {
 		void Enabled( const bool& Enabled );
 
 		/** Instead if setting the time between every waypoing, this set a total time for all the movement interpolation. */
-		void SetTotalTime( const cTime& TotTime );
+		void SetTotalTime( const Time& TotTime );
 
 		/** @return the vector of points */
 		const std::vector<cPoint1df>& GetPoints() const;

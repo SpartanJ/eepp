@@ -156,7 +156,7 @@ void SoundFile::Write(const Int16*, std::size_t) {
 	eePRINTL( "Failed to write to sound file (not supported)" );
 }
 
-void SoundFile::Seek( cTime timeOffset ) {
+void SoundFile::Seek( Time timeOffset ) {
 	eePRINTL( "Trying to seek a file that doesn't support seeking." );
 }
 

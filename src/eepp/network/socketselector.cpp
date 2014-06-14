@@ -54,7 +54,7 @@ void SocketSelector::Clear() {
 	mImpl->MaxSocket = 0;
 }
 
-bool SocketSelector::Wait(cTime timeout) {
+bool SocketSelector::Wait(Time timeout) {
 	// Setup the timeout
 	timeval time;
 	time.tv_sec  = static_cast<long>(timeout.AsMicroseconds() / 1000000);
@@ -64,7 +64,7 @@ bool SocketSelector::Wait(cTime timeout) {
 	mImpl->SocketsReady = mImpl->AllSockets;
 
 	// Wait until one of the sockets is ready for reading, or timeout is reached
-	int count = select(mImpl->MaxSocket + 1, &mImpl->SocketsReady, NULL, NULL, timeout != cTime::Zero ? &time : NULL);
+	int count = select(mImpl->MaxSocket + 1, &mImpl->SocketsReady, NULL, NULL, timeout != Time::Zero ? &time : NULL);
 
 	return count > 0;
 }

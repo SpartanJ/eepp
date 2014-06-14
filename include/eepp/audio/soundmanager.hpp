@@ -35,7 +35,7 @@ class tSoundManager {
 		**	@param id The id to use to identificate the sound
 		**	@param Pack The Pack file
 		**	@param FilePackPath The pack file path */
-		bool LoadFromPack( const T& id, cPack* Pack, const std::string& FilePackPath );
+		bool LoadFromPack( const T& id, Pack* Pack, const std::string& FilePackPath );
 
 		/** @return The sound buffer of the sound id */
 		SoundBuffer& GetBuffer( const T& id );
@@ -65,7 +65,7 @@ class tSoundManager {
 };
 
 template <typename T>
-bool tSoundManager<T>::LoadFromPack( const T& id, cPack* Pack, const std::string& FilePackPath ) {
+bool tSoundManager<T>::LoadFromPack( const T& id, Pack* Pack, const std::string& FilePackPath ) {
 	if ( tSounds.find( id ) == tSounds.end() ) { // if id doesn't exists
 		sSound * tSound = &tSounds[id];
 

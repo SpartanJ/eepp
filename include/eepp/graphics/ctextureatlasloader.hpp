@@ -5,8 +5,8 @@
 #include <eepp/graphics/packerhelper.hpp>
 #include <eepp/graphics/ctextureloader.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
-#include <eepp/system/cresourceloader.hpp>
-#include <eepp/system/ciostream.hpp>
+#include <eepp/system/resourceloader.hpp>
+#include <eepp/system/iostream.hpp>
 
 namespace EE { namespace Graphics {
 
@@ -47,7 +47,7 @@ class EE_API cTextureAtlasLoader {
 		*	@param Threaded Indicates if the loading is done in another thread.
 		*	@param LoadCallback The load notification callback.
 		*/
-		cTextureAtlasLoader( cPack * Pack, const std::string& FilePackPath, const bool& Threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
+		cTextureAtlasLoader( Pack * Pack, const std::string& FilePackPath, const bool& Threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
 
 		/** Loads a texture atlas from a io stream.
 		*	If the loader is not threaded, it will load the atlas immediately.
@@ -55,7 +55,7 @@ class EE_API cTextureAtlasLoader {
 		*	@param Threaded Indicates if the loading is done in another thread.
 		*	@param LoadCallback The load notification callback.
 		*/
-		cTextureAtlasLoader( cIOStream& IOS, const bool& Threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
+		cTextureAtlasLoader( IOStream& IOS, const bool& Threaded = false, GLLoadCallback LoadCallback = GLLoadCallback() );
 
 		~cTextureAtlasLoader();
 
@@ -72,7 +72,7 @@ class EE_API cTextureAtlasLoader {
 		*	If the loader is not threaded, it will load the atlas immediately.
 		*	@param IOS The io stream to use for the loading.
 		*/
-		void					LoadFromStream( cIOStream& IOS );
+		void					LoadFromStream( IOStream& IOS );
 
 		/** Loads a texture atlas from memory.
 		*	If the loader is not threaded, it will load the atlas immediately.
@@ -87,7 +87,7 @@ class EE_API cTextureAtlasLoader {
 		*	@param Pack The pointer of the pack instance to be used to load the file.
 		*	@param FilePackPath The path of the file inside the pack.
 		*/
-		void					LoadFromPack( cPack * Pack, const std::string& FilePackPath );
+		void					LoadFromPack( Pack * Pack, const std::string& FilePackPath );
 
 		/** @return If the loader is threaded ( asynchronous ). */
 		bool					Threaded() const;
@@ -123,11 +123,11 @@ class EE_API cTextureAtlasLoader {
 		/** Sets a load notification callback. */
 		void					SetLoadCallback( GLLoadCallback LoadCallback );
 	protected:
-		cResourceLoader			mRL;
+		ResourceLoader			mRL;
 		std::string				mTextureAtlasPath;
 		bool					mThreaded;
 		bool					mLoaded;
-		cPack *					mPack;
+		Pack *					mPack;
 		bool					mSkipResourceLoad;
 		bool					mIsLoading;
 		cTextureAtlas *			mTextureAtlas;

@@ -1,6 +1,6 @@
 #include <eepp/audio/music.hpp>
 #include <eepp/audio/soundfile.hpp>
-#include <eepp/system/cpackmanager.hpp>
+#include <eepp/system/packmanager.hpp>
 
 namespace EE { namespace Audio {
 
@@ -16,7 +16,7 @@ Music::~Music() {
 	eeSAFE_DELETE( mFile );
 }
 
-bool Music::OpenFromPack( cPack* Pack, const std::string& FilePackPath ) {
+bool Music::OpenFromPack( Pack* Pack, const std::string& FilePackPath ) {
 	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, mData ) )
 		return OpenFromMemory( reinterpret_cast<const char*> ( mData.Data ), mData.DataSize );
 
@@ -25,10 +25,10 @@ bool Music::OpenFromPack( cPack* Pack, const std::string& FilePackPath ) {
 
 bool Music::OpenFromFile( const std::string& Filename ) {
 	if ( !FileSystem::FileExists( Filename ) ) {
-		if ( cPackManager::instance()->FallbackToPacks() ) {
+		if ( PackManager::instance()->FallbackToPacks() ) {
 			std::string tPath( Filename );
 
-			cPack * tPack = cPackManager::instance()->Exists( tPath );
+			Pack * tPack = PackManager::instance()->Exists( tPath );
 
 			if ( NULL != tPack ) {
 				return OpenFromPack( tPack, tPath );
@@ -98,11 +98,11 @@ bool Music::OnGetData( SoundStream::Chunk& Data ) {
 	return false;
 }
 
-cTime Music::GetDuration() const {
+Time Music::GetDuration() const {
 	return Seconds( mDuration );
 }
 
-void Music::OnSeek( cTime timeOffset ) {
+void Music::OnSeek( Time timeOffset ) {
 	if ( NULL != mFile ) {
 		mFile->Seek( timeOffset );
 	}

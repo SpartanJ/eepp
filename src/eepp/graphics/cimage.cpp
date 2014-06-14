@@ -1,8 +1,8 @@
 #include <eepp/graphics/cimage.hpp>
 #include <eepp/system/filesystem.hpp>
-#include <eepp/system/clog.hpp>
-#include <eepp/system/cpack.hpp>
-#include <eepp/system/cpackmanager.hpp>
+#include <eepp/system/log.hpp>
+#include <eepp/system/pack.hpp>
+#include <eepp/system/packmanager.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/image_helper.h>
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
@@ -203,9 +203,9 @@ EE_PIXEL_FORMAT cImage::ChannelsToPixelFormat( const Uint32& channels ) {
 bool cImage::GetInfo( const std::string& path, int * width, int * height, int * channels ) {
 	bool res = stbi_info( path.c_str(), width, height, channels ) != 0;
 
-	if ( !res && cPackManager::instance()->FallbackToPacks() ) {
+	if ( !res && PackManager::instance()->FallbackToPacks() ) {
 		std::string npath( path );
-		cPack * tPack = cPackManager::instance()->Exists( npath );
+		Pack * tPack = PackManager::instance()->Exists( npath );
 
 		if ( NULL != tPack ) {
 			SafeDataPointer PData;
@@ -295,7 +295,7 @@ cImage::cImage( std::string Path, const unsigned int& forceChannels ) :
 	mLoadedFromStbi(false)
 {
 	int w, h, c;
-	cPack * tPack = NULL;
+	Pack * tPack = NULL;
 	Uint8 * data = stbi_load( Path.c_str(), &w, &h, &c, mChannels );
 
 	if ( NULL == data ) {
@@ -313,7 +313,7 @@ cImage::cImage( std::string Path, const unsigned int& forceChannels ) :
 		mSize	= mWidth * mHeight * mChannels;
 
 		mLoadedFromStbi = true;
-	} else if ( cPackManager::instance()->FallbackToPacks() && NULL != ( tPack = cPackManager::instance()->Exists( Path ) ) ) {
+	} else if ( PackManager::instance()->FallbackToPacks() && NULL != ( tPack = PackManager::instance()->Exists( Path ) ) ) {
 		LoadFromPack( tPack, Path );
 	} else {
 		std::string reason = ".";
@@ -326,7 +326,7 @@ cImage::cImage( std::string Path, const unsigned int& forceChannels ) :
 	}
 }
 
-cImage::cImage( cPack * Pack, std::string FilePackPath, const unsigned int& forceChannels ) :
+cImage::cImage( Pack * Pack, std::string FilePackPath, const unsigned int& forceChannels ) :
 	mPixels(NULL),
 	mWidth(0),
 	mHeight(0),
@@ -343,7 +343,7 @@ cImage::~cImage() {
 		ClearCache();
 }
 
-void cImage::LoadFromPack( cPack * Pack, const std::string& FilePackPath ) {
+void cImage::LoadFromPack( Pack * Pack, const std::string& FilePackPath ) {
 	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( FilePackPath ) ) {
 		SafeDataPointer PData;
 

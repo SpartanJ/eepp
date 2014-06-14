@@ -1,5 +1,5 @@
 #include <eepp/system/filesystem.hpp>
-#include <eepp/system/ciostreamfile.hpp>
+#include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/sys.hpp>
 #include <sys/stat.h>
 #include <list>
@@ -36,7 +36,7 @@ std::string FileSystem::GetOSlash() {
 
 bool FileSystem::FileGet( const std::string& path, SafeDataPointer& data ) {
 	if ( FileExists( path ) ) {
-		cIOStreamFile fs ( path , std::ios::in | std::ios::binary );
+		IOStreamFile fs ( path , std::ios::in | std::ios::binary );
 
 		eeSAFE_DELETE( data.Data );
 
@@ -53,7 +53,7 @@ bool FileSystem::FileGet( const std::string& path, SafeDataPointer& data ) {
 
 bool FileSystem::FileGet( const std::string& path, std::vector<Uint8>& data ) {
 	if ( FileExists( path ) ) {
-		cIOStreamFile fs ( path, std::ios::in | std::ios::binary );
+		IOStreamFile fs ( path, std::ios::in | std::ios::binary );
 		Uint32 fsize = FileSize( path );
 
 		data.clear();
@@ -80,8 +80,8 @@ bool FileSystem::FileCopy( const std::string& src, const std::string& dst ) {
 		data.Data		= eeNewArray( Uint8, ( data.DataSize ) );
 		char * buff		= (char*)data.Data;
 
-		cIOStreamFile in( src, std::ios::binary | std::ios::in );
-		cIOStreamFile out( dst, std::ios::binary | std::ios::out );
+		IOStreamFile in( src, std::ios::binary | std::ios::in );
+		IOStreamFile out( dst, std::ios::binary | std::ios::out );
 
 		if ( in.IsOpen() && out.IsOpen() && size > 0 ) {
 			do {
@@ -136,7 +136,7 @@ void FileSystem::FilePathRemoveProcessPath( std::string& path ) {
 
 
 bool FileSystem::FileWrite( const std::string& filepath, const Uint8* data, const Uint32& dataSize ) {
-	cIOStreamFile fs( filepath, std::ios::out | std::ios::binary );
+	IOStreamFile fs( filepath, std::ios::out | std::ios::binary );
 
 	if ( fs.IsOpen() ) {
 		if ( dataSize ) {

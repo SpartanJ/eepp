@@ -265,7 +265,7 @@ cUIWindow * cUIManager::MainControl() const {
 	return mControl;
 }
 
-const cTime& cUIManager::Elapsed() const {
+const Time& cUIManager::Elapsed() const {
 	return mElapsed;
 }
 

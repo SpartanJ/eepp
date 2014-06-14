@@ -327,7 +327,7 @@ void Sys::Sleep( const Uint32& ms ) {
 	Sleep( Milliseconds( ms ) );
 }
 
-void Sys::Sleep( const cTime& time ) {
+void Sys::Sleep( const Time& time ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	TIMECAPS tc;
 	timeGetDevCaps(&tc, sizeof(TIMECAPS));

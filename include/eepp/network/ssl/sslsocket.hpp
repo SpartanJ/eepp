@@ -22,7 +22,7 @@ class EE_API SSLSocket : public TcpSocket {
 
 		virtual ~SSLSocket();
 
-		Status Connect(const IpAddress& remoteAddress, unsigned short remotePort, cTime timeout = cTime::Zero);
+		Status Connect(const IpAddress& remoteAddress, unsigned short remotePort, Time timeout = Time::Zero);
 
 		void Disconnect();
 

@@ -127,7 +127,7 @@ const Float& cInterpolation::GetRealPos() const {
 	return mCurPos;
 }
 
-void cInterpolation::Update( const cTime& Elapsed ) {
+void cInterpolation::Update( const Time& Elapsed ) {
 	if ( mEnable && mPoints.size() > 1 && mCurPoint != mPoints.size() ) {
 		if ( mUpdate ) {
 			mCurTime = 0;
@@ -178,7 +178,7 @@ void cInterpolation::Update( const cTime& Elapsed ) {
 	}
 }
 
-void cInterpolation::SetTotalTime( const cTime & TotTime ) {
+void cInterpolation::SetTotalTime( const Time & TotTime ) {
 	Float tdist = mTotDist;
 
 	if ( tdist == 0.0f ) {

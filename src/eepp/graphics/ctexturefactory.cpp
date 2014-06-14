@@ -37,7 +37,7 @@ Uint32 cTextureFactory::LoadFromPixels( const unsigned char * Pixels, const unsi
 	return myTex.Id();
 }
 
-Uint32 cTextureFactory::LoadFromPack( cPack* Pack, const std::string& FilePackPath, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy  ) {
+Uint32 cTextureFactory::LoadFromPack( Pack* Pack, const std::string& FilePackPath, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy  ) {
 	cTextureLoader myTex( Pack, FilePackPath, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
 	myTex.Load();
 	return myTex.Id();
@@ -49,7 +49,7 @@ Uint32 cTextureFactory::LoadFromMemory( const unsigned char * ImagePtr, const un
 	return myTex.Id();
 }
 
-Uint32 cTextureFactory::LoadFromStream( cIOStream& Stream, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
+Uint32 cTextureFactory::LoadFromStream( IOStream& Stream, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
 	cTextureLoader myTex( Stream, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
 	myTex.Load();
 	return myTex.Id();

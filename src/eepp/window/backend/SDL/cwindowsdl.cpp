@@ -367,7 +367,7 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	#ifdef EE_SUPPORT_EXCEPTIONS
 	} catch (...) {
 		eePRINTL( "Unable to change resolution: %s", SDL_GetError() );
-		cLog::instance()->Save();
+		Log::instance()->Save();
 		mWindow.Created = false;
 	}
 	#endif

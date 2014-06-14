@@ -34,9 +34,9 @@ cShader::cShader( const Uint32& Type, const std::string& Filename ) {
 		SetSource( (const char*)PData.Data, PData.DataSize );
 	} else {
 		std::string tPath = Filename;
-		cPack * tPack = NULL;
+		Pack * tPack = NULL;
 
-		if ( cPackManager::instance()->FallbackToPacks() && NULL != ( tPack = cPackManager::instance()->Exists( tPath ) ) ) {
+		if ( PackManager::instance()->FallbackToPacks() && NULL != ( tPack = PackManager::instance()->Exists( tPath ) ) ) {
 			SafeDataPointer PData;
 
 			tPack->ExtractFileToMemory( tPath, PData );
@@ -58,7 +58,7 @@ cShader::cShader( const Uint32& Type, const char * Data, const Uint32& DataSize 
 	Compile();
 }
 
-cShader::cShader( const Uint32& Type, cPack * Pack, const std::string& Filename ) {
+cShader::cShader( const Uint32& Type, Pack * Pack, const std::string& Filename ) {
 	SafeDataPointer PData;
 
 	Init( Type );
@@ -290,7 +290,7 @@ cVertexShader::cVertexShader( const char * Data, const Uint32& DataSize ) :
 {
 }
 
-cVertexShader::cVertexShader( cPack * Pack, const std::string& Filename ) :
+cVertexShader::cVertexShader( Pack * Pack, const std::string& Filename ) :
 	cShader( GL_VERTEX_SHADER, Pack, Filename )
 {
 }
@@ -315,7 +315,7 @@ cFragmentShader::cFragmentShader( const char * Data, const Uint32& DataSize ) :
 {
 }
 
-cFragmentShader::cFragmentShader( cPack * Pack, const std::string& Filename ) :
+cFragmentShader::cFragmentShader( Pack * Pack, const std::string& Filename ) :
 	cShader( GL_FRAGMENT_SHADER, Pack, Filename )
 {
 }

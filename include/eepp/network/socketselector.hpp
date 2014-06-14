@@ -2,7 +2,7 @@
 #define EE_NETWORKCSOCKETSELECTOR_HPP
 
 #include <eepp/network/base.hpp>
-#include <eepp/system/ctime.hpp>
+#include <eepp/system/time.hpp>
 using namespace EE::System;
 
 namespace EE { namespace Network {
@@ -52,10 +52,10 @@ class EE_API SocketSelector
 		**  ready, use the isReady function.
 		**  If you use a timeout and no socket is ready before the timeout
 		**  is over, the function returns false.
-		**  @param timeout Maximum time to wait, (use cTime::Zero for infinity)
+		**  @param timeout Maximum time to wait, (use Time::Zero for infinity)
 		**  @return True if there are sockets ready, false otherwise
 		**  @see IsReady */
-		bool Wait(cTime timeout = cTime::Zero);
+		bool Wait(Time timeout = Time::Zero);
 
 		/** @brief Test a socket to know if it is ready to receive data
 		**  This function must be used after a call to Wait, to know

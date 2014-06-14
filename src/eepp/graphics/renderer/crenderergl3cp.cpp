@@ -92,7 +92,7 @@ cRendererGL3CP::~cRendererGL3CP() {
 	eeSAFE_DELETE( mStack );
 
 	#ifdef EE_DEBUG
-	cLog::instance()->Write( "Biggest VBO allocation on GL3 Renderer: " + FileSystem::SizeToString( mBiggestAlloc ) );
+	Log::instance()->Write( "Biggest VBO allocation on GL3 Renderer: " + FileSystem::SizeToString( mBiggestAlloc ) );
 	#endif
 }
 
@@ -752,7 +752,7 @@ void cRendererGL3CP::BindGlobalVAO() {
 
 void cRendererGL3CP::AllocateBuffers( const Uint32& size ) {
 	if ( mVBOSizeAlloc != size )
-		cLog::instance()->Write( "Allocating new VBO buffers size: " + String::ToStr( size ) );
+		Log::instance()->Write( "Allocating new VBO buffers size: " + String::ToStr( size ) );
 
 	mVBOSizeAlloc = size;
 

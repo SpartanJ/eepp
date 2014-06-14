@@ -13,7 +13,7 @@ class SSLSocketImpl {
 
 		virtual ~SSLSocketImpl() {}
 
-		virtual Socket::Status Connect(const IpAddress& remoteAddress, unsigned short remotePort, cTime timeout = cTime::Zero) = 0;
+		virtual Socket::Status Connect(const IpAddress& remoteAddress, unsigned short remotePort, Time timeout = Time::Zero) = 0;
 
 		virtual void Disconnect() = 0;
 

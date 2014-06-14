@@ -13,7 +13,7 @@ using namespace EE::System;
 #include <eepp/graphics/renders.hpp>
 
 namespace EE { namespace System {
-class cPack;
+class Pack;
 }}
 
 namespace EE { namespace Graphics {
@@ -77,7 +77,7 @@ class EE_API cImage {
 		* @param FilePackPath The path of the file inside the pack file.
 		* @param forceChannels Number of channels to use for the image, default 0 means that it use the default image channels.
 		*/
-		cImage( cPack * Pack, std::string FilePackPath, const unsigned int& forceChannels = 0 );
+		cImage( Pack * Pack, std::string FilePackPath, const unsigned int& forceChannels = 0 );
 
 		virtual ~cImage();
 
@@ -186,7 +186,7 @@ class EE_API cImage {
 
 		void 			Allocate( const Uint32& size, eeColorA DefaultColor = eeColorA(0,0,0,0), bool memsetData = true );
 
-		void			LoadFromPack( cPack * Pack, const std::string& FilePackPath );
+		void			LoadFromPack( Pack * Pack, const std::string& FilePackPath );
 };
 
 }}

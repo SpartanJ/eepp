@@ -94,8 +94,8 @@ cConsole::~cConsole() {
 
 	eeSAFE_DELETE( mTBuf );
 
-	if ( cLog::ExistsSingleton() ) {
-		cLog::instance()->RemoveLogReader( this );
+	if ( Log::ExistsSingleton() ) {
+		Log::instance()->RemoveLogReader( this );
 	}
 }
 
@@ -144,7 +144,7 @@ void cConsole::Create( cFont* Font, const bool& MakeDefaultCommands, const bool&
 	CmdGetLog();
 
 	if ( AttachToLog ) {
-		cLog::instance()->AddLogReader( this );
+		Log::instance()->AddLogReader( this );
 	}
 }
 
@@ -682,7 +682,7 @@ void cConsole::CmdFrameLimit ( const std::vector < String >& params ) {
 }
 
 void cConsole::CmdGetLog() {
-	std::vector < String > tvec = String::Split( String( String::ToStr( cLog::instance()->Buffer() ) ) );
+	std::vector < String > tvec = String::Split( String( String::ToStr( Log::instance()->Buffer() ) ) );
 	if ( tvec.size() > 0 ) {
 		for ( unsigned int i = 0; i < tvec.size(); i++ )
 			PrivPushText( tvec[i] );

@@ -2,7 +2,7 @@
 #include <eepp/audio/sound.hpp>
 #include <eepp/audio/soundfile.hpp>
 #include <eepp/audio/audiodevice.hpp>
-#include <eepp/system/cpackmanager.hpp>
+#include <eepp/system/packmanager.hpp>
 #include <eepp/audio/openal.hpp>
 #include <memory>
 
@@ -39,10 +39,10 @@ SoundBuffer::~SoundBuffer() {
 
 bool SoundBuffer::LoadFromFile(const std::string& Filename) {
 	if ( !FileSystem::FileExists( Filename ) ) {
-		if ( cPackManager::instance()->FallbackToPacks() ) {
+		if ( PackManager::instance()->FallbackToPacks() ) {
 			std::string tPath( Filename );
 
-			cPack * tPack = cPackManager::instance()->Exists( tPath );
+			Pack * tPack = PackManager::instance()->Exists( tPath );
 
 			if ( NULL != tPack ) {
 				return LoadFromPack( tPack, tPath );
@@ -87,7 +87,7 @@ bool SoundBuffer::LoadFromFile(const std::string& Filename) {
 	}
 }
 
-bool SoundBuffer::LoadFromPack( cPack* Pack, const std::string& FilePackPath ) {
+bool SoundBuffer::LoadFromPack( Pack* Pack, const std::string& FilePackPath ) {
 	bool Ret = false;
 	SafeDataPointer PData;
 
@@ -182,7 +182,7 @@ unsigned int SoundBuffer::GetChannelCount() const {
 	return ChannelCount;
 }
 
-cTime SoundBuffer::GetDuration() const {
+Time SoundBuffer::GetDuration() const {
 	return mDuration;
 }
 

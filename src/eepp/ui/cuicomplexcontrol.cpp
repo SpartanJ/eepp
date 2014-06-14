@@ -48,7 +48,7 @@ void cUIComplexControl::Update() {
 				Pos.y = cUIManager::instance()->GetMousePos().y - mTooltip->Size().Height();
 			}
 
-			if ( cTime::Zero == cUIThemeManager::instance()->TooltipTimeToShow() ) {
+			if ( Time::Zero == cUIThemeManager::instance()->TooltipTimeToShow() ) {
 				if ( !mTooltip->Visible() || cUIThemeManager::instance()->TooltipFollowMouse() )
 					mTooltip->Pos( Pos );
 

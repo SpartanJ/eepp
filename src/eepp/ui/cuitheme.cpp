@@ -130,7 +130,7 @@ cUITheme * cUITheme::LoadFromTextureAtlas( cUITheme * tTheme, cTextureAtlas * Te
 		TextureAtlas->GetTexture( tC )->Filter( TEX_FILTER_NEAREST );
 	}
 
-	cClock TE;
+	Clock TE;
 
 	LoadThemeElements( tTheme->mUIElements, tTheme->mUIIcons );
 
@@ -168,7 +168,7 @@ cUITheme * cUITheme::LoadFromTextureAtlas( cUITheme * tTheme, cTextureAtlas * Te
 }
 
 cUITheme * cUITheme::LoadFromPath( cUITheme * tTheme, const std::string& Path, const std::string ImgExt ) {
-	cClock TE;
+	Clock TE;
 
 	LoadThemeElements( tTheme->mUIElements, tTheme->mUIIcons );
 
@@ -320,7 +320,7 @@ bool cUITheme::SearchFilesOfElement( cTextureAtlas * SG, const std::string& Path
 }
 
 cUITheme::cUITheme( const std::string& Name, const std::string& Abbr, cFont * DefaultFont ) :
-	tResourceManager<cUISkin> ( false ),
+	ResourceManager<cUISkin> ( false ),
 	mName( Name ),
 	mNameHash( String::Hash( mName ) ),
 	mAbbr( Abbr ),
@@ -358,7 +358,7 @@ const std::string& cUITheme::Abbr() const {
 cUISkin * cUITheme::Add( cUISkin * Resource ) {
 	Resource->Theme( this );
 
-	return tResourceManager<cUISkin>::Add( Resource );
+	return ResourceManager<cUISkin>::Add( Resource );
 }
 
 void cUITheme::Font( cFont * Font ) {

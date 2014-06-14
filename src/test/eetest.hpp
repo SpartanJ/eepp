@@ -67,7 +67,7 @@ struct Emitter {
 	cVect position;
 };
 
-class cEETest : private cThread {
+class cEETest : private Thread {
 	public:
 		typedef cb::Callback0<void> SceneCb;
 
@@ -85,19 +85,19 @@ class cEETest : private cThread {
 		void LoadTextures();
 		void CmdSetPartsNum ( const std::vector < String >& params );
 
-		cClock cElapsed;
-		cTime PSElapsed;
+		Clock cElapsed;
+		Time PSElapsed;
 	private:
 		cEngine * EE;
 		Window::cWindow * mWindow;
 		cTextureFactory* TF;
-		cLog* Log;
+		System::Log* Log;
 		cInput* KM;
 		cInputTextBuffer InBuf;
 
 		bool side, aside;
 		Float ang, scale, alpha, Ang;
-		cTime et;
+		Time et;
 		Int32 x, y;
 		Uint32 lasttick;
 
@@ -144,7 +144,7 @@ class cEETest : private cThread {
 		void Screen4();
 		void Screen5();
 
-		cZip * PakTest;
+		Zip * PakTest;
 
 		std::vector<Uint8> tmpv;
 		std::vector<Uint8> MySong;
@@ -175,16 +175,16 @@ class cEETest : private cThread {
 
 		String mBuda;
 
-		cResourceLoader mResLoad;
-		void OnTextureLoaded( cResourceLoader * ObjLoaded );
+		ResourceLoader mResLoad;
+		void OnTextureLoaded( ResourceLoader * ObjLoaded );
 
 		void CreateUI();
 		void CreateShaders();
 
 		void LoadFonts();
 
-		cResourceLoader mFontLoader;
-		void OnFontLoaded( cResourceLoader * ObjLoaded );
+		ResourceLoader mFontLoader;
+		void OnFontLoaded( ResourceLoader * ObjLoaded );
 
 		cJoystickManager * JM;
 		Float mAxisX;
@@ -196,7 +196,7 @@ class cEETest : private cThread {
 		cFrameBuffer * mFBO;
 		cVertexBuffer * mVBO;
 
-		cClock	mFTE;
+		Clock	mFTE;
 
 		void CreateCommonDialog();
 		void ItemClick( const cUIEvent * Event );

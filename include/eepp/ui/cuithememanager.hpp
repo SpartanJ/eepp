@@ -8,7 +8,7 @@ namespace EE { namespace UI {
 
 class cUIControl;
 
-class EE_API cUIThemeManager : public tResourceManager<cUITheme> {
+class EE_API cUIThemeManager : public ResourceManager<cUITheme> {
 	SINGLETON_DECLARE_HEADERS(cUIThemeManager)
 
 	public:
@@ -38,17 +38,17 @@ class EE_API cUIThemeManager : public tResourceManager<cUITheme> {
 
 		const bool& DefaultEffectsEnabled() const;
 
-		const cTime& ControlsFadeInTime() const;
+		const Time& ControlsFadeInTime() const;
 
-		void ControlsFadeInTime( const cTime & Time );
+		void ControlsFadeInTime( const Time & Time );
 
-		const cTime& ControlsFadeOutTime() const;
+		const Time& ControlsFadeOutTime() const;
 
-		void ControlsFadeOutTime( const cTime& Time );
+		void ControlsFadeOutTime( const Time& Time );
 
-		void TooltipTimeToShow( const cTime & Time );
+		void TooltipTimeToShow( const Time & Time );
 
-		const cTime& TooltipTimeToShow() const;
+		const Time& TooltipTimeToShow() const;
 
 		void TooltipFollowMouse( const bool& Follow );
 
@@ -63,10 +63,10 @@ class EE_API cUIThemeManager : public tResourceManager<cUITheme> {
 		bool				mAutoApplyDefaultTheme;
 
 		bool				mEnableDefaultEffects;
-		cTime				mFadeInTime;
-		cTime				mFadeOutTime;
+		Time				mFadeInTime;
+		Time				mFadeOutTime;
 
-		cTime				mTooltipTimeToShow;
+		Time				mTooltipTimeToShow;
 		bool				mTooltipFollowMouse;
 
 		eeSize				mCursorSize;

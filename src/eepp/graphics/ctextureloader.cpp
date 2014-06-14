@@ -4,7 +4,7 @@
 #include <eepp/window/cengine.hpp>
 #include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
-#include <eepp/system/ciostreamfile.hpp>
+#include <eepp/system/iostreamfile.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/stb_image.h>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
 #include <eepp/helper/jpeg-compressor/jpgd.h>
@@ -20,22 +20,22 @@ namespace EE { namespace Graphics {
 
 namespace IOCb
 {
-	// stb_image callbacks that operate on a cIOStream
+	// stb_image callbacks that operate on a IOStream
 	int read(void* user, char* data, int size)
 	{
-		cIOStream * stream = static_cast<cIOStream*>(user);
+		IOStream * stream = static_cast<IOStream*>(user);
 		return static_cast<int>(stream->Read(data, size));
 	}
 
 	void skip(void* user, unsigned int size)
 	{
-		cIOStream * stream = static_cast<cIOStream*>(user);
+		IOStream * stream = static_cast<IOStream*>(user);
 		stream->Seek(stream->Tell() + size);
 	}
 
 	int eof(void* user)
 	{
-		cIOStream* stream = static_cast<cIOStream*>(user);
+		IOStream* stream = static_cast<IOStream*>(user);
 		return stream->Tell() >= stream->GetSize();
 	}
 }
@@ -44,9 +44,9 @@ namespace jpeg
 {
 	class jpeg_decoder_stream_steam : public jpgd::jpeg_decoder_stream {
 		public:
-			cIOStream * mStream;
+			IOStream * mStream;
 
-			jpeg_decoder_stream_steam( cIOStream * stream ) :
+			jpeg_decoder_stream_steam( IOStream * stream ) :
 				mStream( stream )
 			{}
 
@@ -58,12 +58,12 @@ namespace jpeg
 	};
 }
 
-cTextureLoader::cTextureLoader( cIOStream& Stream,
+cTextureLoader::cTextureLoader( IOStream& Stream,
 	const bool& Mipmap,
 	const EE_CLAMP_MODE& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
-) : cObjectLoader( cObjectLoader::TextureLoader ),
+) : ObjectLoader( ObjectLoader::TextureLoader ),
 	mLoadType(TEX_LT_STREAM),
 	mPixels(NULL),
 	mTexId(0),
@@ -94,7 +94,7 @@ cTextureLoader::cTextureLoader( const std::string& Filepath,
 	const EE_CLAMP_MODE& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
-) : cObjectLoader( cObjectLoader::TextureLoader ),
+) : ObjectLoader( ObjectLoader::TextureLoader ),
 	mLoadType(TEX_LT_PATH),
 	mPixels(NULL),
 	mTexId(0),
@@ -126,7 +126,7 @@ cTextureLoader::cTextureLoader( const unsigned char * ImagePtr,
 	const EE_CLAMP_MODE& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
-) : cObjectLoader( cObjectLoader::TextureLoader ),
+) : ObjectLoader( ObjectLoader::TextureLoader ),
 	mLoadType(TEX_LT_MEM),
 	mPixels(NULL),
 	mTexId(0),
@@ -152,13 +152,13 @@ cTextureLoader::cTextureLoader( const unsigned char * ImagePtr,
 {
 }
 
-cTextureLoader::cTextureLoader( cPack * Pack,
+cTextureLoader::cTextureLoader( Pack * Pack,
 	const std::string& FilePackPath,
 	const bool& Mipmap ,
 	const EE_CLAMP_MODE& ClampMode,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy
-) : cObjectLoader( cObjectLoader::TextureLoader ),
+) : ObjectLoader( ObjectLoader::TextureLoader ),
 	mLoadType(TEX_LT_PACK),
 	mPixels(NULL),
 	mTexId(0),
@@ -193,7 +193,7 @@ cTextureLoader::cTextureLoader( const unsigned char * Pixels,
 	const bool& CompressTexture,
 	const bool& KeepLocalCopy,
 	const std::string& FileName
-) : cObjectLoader( cObjectLoader::TextureLoader ),
+) : ObjectLoader( ObjectLoader::TextureLoader ),
 	mLoadType(TEX_LT_PIXELS),
 	mPixels( const_cast<unsigned char *> ( Pixels ) ),
 	mTexId(0),
@@ -227,7 +227,7 @@ cTextureLoader::~cTextureLoader() {
 }
 
 void cTextureLoader::Start() {
-	cObjectLoader::Start();
+	ObjectLoader::Start();
 
 	mTE.Restart();
 
@@ -248,7 +248,7 @@ void cTextureLoader::Start() {
 }
 
 void cTextureLoader::LoadFile() {
-	cIOStreamFile fs( mFilepath , std::ios::in | std::ios::binary );
+	IOStreamFile fs( mFilepath , std::ios::in | std::ios::binary );
 
 	mSize		= FileSystem::FileSize( mFilepath );
 	mPixels		= (Uint8*) eeMalloc( mSize );
@@ -294,8 +294,8 @@ void cTextureLoader::LoadFromPath() {
 				}
 			}
 		}
-	} else if ( cPackManager::instance()->FallbackToPacks() ) {
-		mPack = cPackManager::instance()->Exists( mFilepath );
+	} else if ( PackManager::instance()->FallbackToPacks() ) {
+		mPack = PackManager::instance()->Exists( mFilepath );
 
 		if ( NULL != mPack ) {
 			mLoadType = TEX_LT_PACK;
@@ -424,7 +424,7 @@ void cTextureLoader::LoadFromPixels() {
 			flags = ( mClampMode == CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 			flags = ( mCompressTexture ) ? ( flags | SOIL_FLAG_COMPRESS_TO_DXT ) : flags;
 
-			bool ForceGLThreaded = cThread::GetCurrentThreadId() != cEngine::instance()->GetMainThreadId();
+			bool ForceGLThreaded = Thread::GetCurrentThreadId() != cEngine::instance()->GetMainThreadId();
 
 			if ( ( mThreaded || ForceGLThreaded ) &&
 				 ( ForceGLThreaded || cEngine::instance()->IsSharedGLContextEnabled() ) &&
@@ -561,7 +561,7 @@ void cTextureLoader::Unload() {
 }
 
 void cTextureLoader::Reset() {
-	cObjectLoader::Reset();
+	ObjectLoader::Reset();
 
 	mPixels				= NULL;
 	mTexId				= 0;

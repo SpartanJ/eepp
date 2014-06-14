@@ -1,6 +1,6 @@
 #include <eepp/window/cengine.hpp>
-#include <eepp/system/cpackmanager.hpp>
-#include <eepp/system/cinifile.hpp>
+#include <eepp/system/packmanager.hpp>
+#include <eepp/system/inifile.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/graphics/cfontmanager.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
@@ -69,9 +69,9 @@ cEngine::~cEngine() {
 
 	cShaderProgramManager::DestroySingleton();
 
-	cPackManager::DestroySingleton();
+	PackManager::DestroySingleton();
 
-	cLog::DestroySingleton();
+	Log::DestroySingleton();
 
 	HaikuTTF::hkFontManager::DestroySingleton();
 
@@ -171,7 +171,7 @@ cWindow * cEngine::CreateWindow( WindowSettings Settings, ContextSettings Contex
 	if ( NULL != mWindow ) {
 		Settings.Backend	= mWindow->GetWindowInfo()->WindowConfig.Backend;
 	} else {
-		mMainThreadId	= cThread::GetCurrentThreadId();
+		mMainThreadId	= Thread::GetCurrentThreadId();
 	}
 
 	switch ( Settings.Backend ) {
@@ -240,7 +240,7 @@ bool cEngine::Running() const {
 	return NULL != mWindow;
 }
 
-cTime cEngine::Elapsed() const {
+Time cEngine::Elapsed() const {
 	eeASSERT( Running() );
 
 	return mWindow->Elapsed();
@@ -268,7 +268,7 @@ Uint32 cEngine::GetDefaultBackend() const {
 #endif
 }
 
-WindowSettings cEngine::CreateWindowSettings( cIniFile * ini, std::string iniKeyName ) {
+WindowSettings cEngine::CreateWindowSettings( IniFile * ini, std::string iniKeyName ) {
 	eeASSERT ( NULL != ini );
 
 	ini->ReadFile();
@@ -312,12 +312,12 @@ WindowSettings cEngine::CreateWindowSettings( cIniFile * ini, std::string iniKey
 }
 
 WindowSettings cEngine::CreateWindowSettings( std::string iniPath, std::string iniKeyName ) {
-	cIniFile Ini( iniPath );
+	IniFile Ini( iniPath );
 
 	return CreateWindowSettings( &Ini, iniKeyName );
 }
 
-ContextSettings cEngine::CreateContextSettings( cIniFile * ini, std::string iniKeyName ) {
+ContextSettings cEngine::CreateContextSettings( IniFile * ini, std::string iniKeyName ) {
 	eeASSERT ( NULL != ini );
 
 	ini->ReadFile();
@@ -346,7 +346,7 @@ ContextSettings cEngine::CreateContextSettings( cIniFile * ini, std::string iniK
 }
 
 ContextSettings cEngine::CreateContextSettings( std::string iniPath, std::string iniKeyName ) {
-	cIniFile Ini( iniPath );
+	IniFile Ini( iniPath );
 
 	return CreateContextSettings( &Ini );
 }
