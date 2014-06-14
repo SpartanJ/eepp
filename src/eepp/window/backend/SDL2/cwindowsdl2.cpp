@@ -381,63 +381,53 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	if ( this->Windowed() == Windowed && Width == mWindow.WindowConfig.Width && Height == mWindow.WindowConfig.Height )
 		return;
 
-	#ifdef EE_SUPPORT_EXCEPTIONS
-	try {
-	#endif
-		eePRINTL( "Switching from %s to %s. Width: %d Height %d.", this->Windowed() ? "windowed" : "fullscreen", Windowed ? "windowed" : "fullscreen", Width, Height );
+	eePRINTL( "Switching from %s to %s. Width: %d Height %d.", this->Windowed() ? "windowed" : "fullscreen", Windowed ? "windowed" : "fullscreen", Width, Height );
 
-		Uint32 oldWidth		= mWindow.WindowConfig.Width;
-		Uint32 oldHeight	= mWindow.WindowConfig.Height;
+	Uint32 oldWidth		= mWindow.WindowConfig.Width;
+	Uint32 oldHeight	= mWindow.WindowConfig.Height;
 
-		mWindow.WindowConfig.Width    = Width;
-		mWindow.WindowConfig.Height   = Height;
+	mWindow.WindowConfig.Width    = Width;
+	mWindow.WindowConfig.Height   = Height;
 
-		if ( Windowed ) {
-			mWindow.WindowSize = eeSize( Width, Height );
-		} else {
-			mWindow.WindowSize = eeSize( oldWidth, oldHeight );
-		}
-
-		if ( this->Windowed() && !Windowed ) {
-			mWinPos = Position();
-		} else {
-			SDL_SetWindowFullscreen( mSDLWindow, Windowed ? SDL_FALSE : SDL_TRUE );
-		}
-
-		SDL_SetWindowSize( mSDLWindow, Width, Height );
-
-		if ( this->Windowed() && !Windowed ) {
-			mWinPos = Position();
-
-			SetGLConfig();
-
-			SDL_SetWindowFullscreen( mSDLWindow, Windowed ? SDL_FALSE : SDL_TRUE );
-		}
-
-		if ( !this->Windowed() && Windowed ) {
-			Position( mWinPos.x, mWinPos.y );
-		}
-
-		BitOp::SetBitFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !Windowed );
-
-		mDefaultView.SetView( 0, 0, Width, Height );
-
-		Setup2D();
-
-		SDL_PumpEvents();
-
-		SDL_FlushEvent( SDL_WINDOWEVENT );
-
-		mCursorManager->Reload();
-
-		SendVideoResizeCb();
-	#ifdef EE_SUPPORT_EXCEPTIONS
-	} catch (...) {
-		eePRINTL( "Unable to change resolution: %s", SDL_GetError() );
-		Log::instance()->Save();
-		mWindow.Created = false;
+	if ( Windowed ) {
+		mWindow.WindowSize = eeSize( Width, Height );
+	} else {
+		mWindow.WindowSize = eeSize( oldWidth, oldHeight );
 	}
-	#endif
+
+	if ( this->Windowed() && !Windowed ) {
+		mWinPos = Position();
+	} else {
+		SDL_SetWindowFullscreen( mSDLWindow, Windowed ? SDL_FALSE : SDL_TRUE );
+	}
+
+	SDL_SetWindowSize( mSDLWindow, Width, Height );
+
+	if ( this->Windowed() && !Windowed ) {
+		mWinPos = Position();
+
+		SetGLConfig();
+
+		SDL_SetWindowFullscreen( mSDLWindow, Windowed ? SDL_FALSE : SDL_TRUE );
+	}
+
+	if ( !this->Windowed() && Windowed ) {
+		Position( mWinPos.x, mWinPos.y );
+	}
+
+	BitOp::SetBitFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !Windowed );
+
+	mDefaultView.SetView( 0, 0, Width, Height );
+
+	Setup2D();
+
+	SDL_PumpEvents();
+
+	SDL_FlushEvent( SDL_WINDOWEVENT );
+
+	mCursorManager->Reload();
+
+	SendVideoResizeCb();
 }
 
 void cWindowSDL::SwapBuffers() {	

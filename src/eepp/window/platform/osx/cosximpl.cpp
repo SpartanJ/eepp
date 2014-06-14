@@ -71,6 +71,10 @@ void cOSXImpl::SetSystemMouseCursor( Cursor::EE_SYSTEM_CURSOR syscursor ) {
 void cOSXImpl::RestoreCursor() {
 }
 
+eeWindowContex cOSXImpl::GetWindowContext() {
+	return aglGetCurrentContext();
+}
+
 }}}
 
 #endif

@@ -294,83 +294,73 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	if ( this->Windowed() == Windowed && Width == mWindow.WindowConfig.Width && Height == mWindow.WindowConfig.Height )
 		return;
 
-	#ifdef EE_SUPPORT_EXCEPTIONS
-	try {
+	eePRINTL( "Switching from %s to %s. Width: %d Height %d.", this->Windowed() ? "windowed" : "fullscreen", Windowed ? "windowed" : "fullscreen", Width, Height );
+
+	#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
+	#if EE_PLATFORM == EE_PLATFORM_WIN
+	bool Reload = this->Windowed() != Windowed;
+	#else
+	bool Reload = true;
 	#endif
-		eePRINTL( "Switching from %s to %s. Width: %d Height %d.", this->Windowed() ? "windowed" : "fullscreen", Windowed ? "windowed" : "fullscreen", Width, Height );
 
-		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
-		#if EE_PLATFORM == EE_PLATFORM_WIN
-		bool Reload = this->Windowed() != Windowed;
-		#else
-		bool Reload = true;
-		#endif
+	if ( Reload )
+		Graphics::cTextureFactory::instance()->GrabTextures();
+	#endif
 
-		if ( Reload )
-			Graphics::cTextureFactory::instance()->GrabTextures();
-		#endif
+	Uint32 oldWidth		= mWindow.WindowConfig.Width;
+	Uint32 oldHeight	= mWindow.WindowConfig.Height;
 
-		Uint32 oldWidth		= mWindow.WindowConfig.Width;
-		Uint32 oldHeight	= mWindow.WindowConfig.Height;
+	mWindow.WindowConfig.Width    = Width;
+	mWindow.WindowConfig.Height   = Height;
 
-		mWindow.WindowConfig.Width    = Width;
-		mWindow.WindowConfig.Height   = Height;
+	if ( Windowed ) {
+		mWindow.WindowSize = eeSize( Width, Height );
+	} else {
+		mWindow.WindowSize = eeSize( oldWidth, oldHeight );
+	}
 
-		if ( Windowed ) {
-			mWindow.WindowSize = eeSize( Width, Height );
-		} else {
-			mWindow.WindowSize = eeSize( oldWidth, oldHeight );
-		}
+	if ( this->Windowed() && !Windowed ) {
+		mWinPos = Position();
+	}
 
-		if ( this->Windowed() && !Windowed ) {
-			mWinPos = Position();
-		}
+	SetGLConfig();
 
-		SetGLConfig();
+	if ( Windowed ) {
+		mSurface = SDL_SetVideoMode( Width, Height, mWindow.WindowConfig.BitsPerPixel, mWindow.Flags );
+	} else {
+		mSurface = SDL_SetVideoMode( Width, Height, mWindow.WindowConfig.BitsPerPixel, mWindow.Flags | SDL_FULLSCREEN );
+	}
 
-		if ( Windowed ) {
-			mSurface = SDL_SetVideoMode( Width, Height, mWindow.WindowConfig.BitsPerPixel, mWindow.Flags );
-		} else {
-			mSurface = SDL_SetVideoMode( Width, Height, mWindow.WindowConfig.BitsPerPixel, mWindow.Flags | SDL_FULLSCREEN );
-		}
+	#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
+	if ( Reload ) {
+		cGL::instance()->Init();
 
-		#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
-		if ( Reload ) {
-			cGL::instance()->Init();
-
-			Graphics::cTextureFactory::instance()->UngrabTextures();		// Reload all textures
-			Graphics::cShaderProgramManager::instance()->Reload();			// Reload all shaders
-			Graphics::Private::cFrameBufferManager::instance()->Reload(); 	// Reload all frame buffers
-			Graphics::Private::cVertexBufferManager::instance()->Reload(); 	// Reload all vertex buffers
-			GetMainContext();												// Recover the context
-			CreatePlatform();
-		}
-		#endif
-
-		if ( !this->Windowed() && Windowed ) {
-			Position( mWinPos.x, mWinPos.y );
-		}
-
-		BitOp::SetBitFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !Windowed );
-
-		mDefaultView.SetView( 0, 0, Width, Height );
-
-		Setup2D();
-
-		mCursorManager->Reload();
-
-		SendVideoResizeCb();
-
-		if ( NULL == mSurface ) {
-			mWindow.Created = false;
-		}
-	#ifdef EE_SUPPORT_EXCEPTIONS
-	} catch (...) {
-		eePRINTL( "Unable to change resolution: %s", SDL_GetError() );
-		Log::instance()->Save();
-		mWindow.Created = false;
+		Graphics::cTextureFactory::instance()->UngrabTextures();		// Reload all textures
+		Graphics::cShaderProgramManager::instance()->Reload();			// Reload all shaders
+		Graphics::Private::cFrameBufferManager::instance()->Reload(); 	// Reload all frame buffers
+		Graphics::Private::cVertexBufferManager::instance()->Reload(); 	// Reload all vertex buffers
+		GetMainContext();												// Recover the context
+		CreatePlatform();
 	}
 	#endif
+
+	if ( !this->Windowed() && Windowed ) {
+		Position( mWinPos.x, mWinPos.y );
+	}
+
+	BitOp::SetBitFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !Windowed );
+
+	mDefaultView.SetView( 0, 0, Width, Height );
+
+	Setup2D();
+
+	mCursorManager->Reload();
+
+	SendVideoResizeCb();
+
+	if ( NULL == mSurface ) {
+		mWindow.Created = false;
+	}
 }
 
 void cWindowSDL::SwapBuffers() {

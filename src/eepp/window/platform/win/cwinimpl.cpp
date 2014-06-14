@@ -194,6 +194,10 @@ eeWindowHandle cWinImpl::GetHandler() const {
 	return mHandler;
 }
 
+eeWindowContex cWinImpl::GetWindowContext() {
+	return wglGetCurrentContext();
+}
+
 }}}
 
 #endif

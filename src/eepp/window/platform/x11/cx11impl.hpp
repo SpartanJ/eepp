@@ -59,6 +59,8 @@ class cX11Impl : public cPlatformImpl {
 		void Lock();
 
 		void Unlock();
+
+		eeWindowContex GetWindowContext();
 	protected:
 		eeWindowHandle	mDisplay;
 		X11Window		mX11Window;

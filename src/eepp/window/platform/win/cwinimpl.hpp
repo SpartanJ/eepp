@@ -52,6 +52,8 @@ class cWinImpl : public cPlatformImpl {
 		void RestoreCursor();
 
 		eeWindowHandle GetHandler() const;
+
+		eeWindowContex GetWindowContext();
 	protected:
 		eeWindowHandle	mHandler;
 		void *			mCursorCurrent;

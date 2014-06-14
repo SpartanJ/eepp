@@ -50,6 +50,8 @@ class cOSXImpl : public cPlatformImpl {
 		void SetSystemMouseCursor( Cursor::EE_SYSTEM_CURSOR syscursor );
 
 		void RestoreCursor();
+
+		eeWindowContex GetWindowContext();
 };
 
 }}}

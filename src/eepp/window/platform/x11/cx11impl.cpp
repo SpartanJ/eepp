@@ -314,6 +314,10 @@ void cX11Impl::Unlock() {
 		mUnlock();
 }
 
+eeWindowContex cX11Impl::GetWindowContext() {
+	return glXGetCurrentContext();
+}
+
 }}}
 
 #endif

@@ -104,6 +104,8 @@ class cPlatformImpl {
 
 		/** Force to reset the state of the current seted cursor */
 		virtual void RestoreCursor() = 0;
+
+		virtual eeWindowContex GetWindowContext() = 0;
 	protected:
 		cWindow *	mWindow;
 };

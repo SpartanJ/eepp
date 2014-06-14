@@ -66,4 +66,8 @@ void cNullImpl::SetSystemMouseCursor( Cursor::EE_SYSTEM_CURSOR syscursor ) {
 void cNullImpl::RestoreCursor() {
 }
 
+eeWindowContex cNullImpl::GetWindowContext() {
+	return 0;
+}
+
 }}}
