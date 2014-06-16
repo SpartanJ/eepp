@@ -1,6 +1,6 @@
 #include <eepp/ui/cuimanager.hpp>
-#include <eepp/window/cengine.hpp>
-#include <eepp/window/ccursormanager.hpp>
+#include <eepp/window/engine.hpp>
+#include <eepp/window/cursormanager.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
 #include <algorithm>
 

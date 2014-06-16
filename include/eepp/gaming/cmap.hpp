@@ -9,9 +9,9 @@
 #include <eepp/gaming/clightmanager.hpp>
 #include <eepp/gaming/clayer.hpp>
 
-#include <eepp/window/cinput.hpp>
-#include <eepp/window/cengine.hpp>
-#include <eepp/window/cwindow.hpp>
+#include <eepp/window/input.hpp>
+#include <eepp/window/engine.hpp>
+#include <eepp/window/window.hpp>
 using namespace EE::Window;
 
 #include <eepp/graphics/ctexture.hpp>

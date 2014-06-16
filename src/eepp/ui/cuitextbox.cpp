@@ -4,7 +4,7 @@
 #include <eepp/graphics/ctextcache.hpp>
 #include <eepp/graphics/cfont.hpp>
 #include <eepp/graphics/cprimitives.hpp>
-#include <eepp/window/cclipboard.hpp>
+#include <eepp/window/clipboard.hpp>
 
 namespace EE { namespace UI {
 

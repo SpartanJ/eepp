@@ -1,5 +1,5 @@
 #include <eepp/graphics/csprite.hpp>
-#include <eepp/window/cengine.hpp>
+#include <eepp/window/engine.hpp>
 #include <eepp/graphics/cglobaltextureatlas.hpp>
 #include <eepp/graphics/ctextureatlasmanager.hpp>
 #include <eepp/math/originpoint.hpp>

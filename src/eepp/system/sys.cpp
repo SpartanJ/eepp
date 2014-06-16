@@ -8,7 +8,7 @@
 
 // This taints the System module!
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
-#include <eepp/window/cengine.hpp>
+#include <eepp/window/engine.hpp>
 #endif
 
 #if defined( EE_PLATFORM_POSIX )

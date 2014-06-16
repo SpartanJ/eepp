@@ -3,8 +3,8 @@
 
 #include <eepp/ui/cuicontrol.hpp>
 #include <eepp/ui/cuiwindow.hpp>
-#include <eepp/window/cinput.hpp>
-#include <eepp/window/cwindow.hpp>
+#include <eepp/window/input.hpp>
+#include <eepp/window/window.hpp>
 #include <eepp/window/cursorhelper.hpp>
 
 namespace EE { namespace UI {

@@ -1,6 +1,6 @@
 #include <eepp/ui/cuitextinput.hpp>
 #include <eepp/ui/cuimanager.hpp>
-#include <eepp/window/cengine.hpp>
+#include <eepp/window/engine.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/cprimitives.hpp>
 #include <eepp/graphics/cfont.hpp>

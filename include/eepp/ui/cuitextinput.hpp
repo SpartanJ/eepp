@@ -3,7 +3,7 @@
 
 #include <eepp/ui/cuicontrolanim.hpp>
 #include <eepp/ui/cuitextbox.hpp>
-#include <eepp/window/cinputtextbuffer.hpp>
+#include <eepp/window/inputtextbuffer.hpp>
 
 namespace EE { namespace UI {
 

@@ -1,10 +1,10 @@
 #include <eepp/graphics/cconsole.hpp>
-#include <eepp/window/cengine.hpp>
+#include <eepp/window/engine.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/audio/audiolistener.hpp>
-#include <eepp/window/cinput.hpp>
-#include <eepp/window/ccursormanager.hpp>
-#include <eepp/window/cwindow.hpp>
+#include <eepp/window/input.hpp>
+#include <eepp/window/cursormanager.hpp>
+#include <eepp/window/window.hpp>
 #include <algorithm>
 #include <cstdarg>
 

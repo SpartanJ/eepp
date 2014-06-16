@@ -1,11 +1,11 @@
 #include <eepp/graphics/cframebuffer.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
-#include <eepp/window/cengine.hpp>
+#include <eepp/window/engine.hpp>
 #include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/cframebufferfbo.hpp>
 #include <eepp/graphics/cframebuffermanager.hpp>
-#include <eepp/window/cwindow.hpp>
+#include <eepp/window/window.hpp>
 using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {

@@ -2,7 +2,7 @@
 #define EE_GRAPHICSCCONSOLE_H
 
 #include <eepp/graphics/base.hpp>
-#include <eepp/window/cinputtextbuffer.hpp>
+#include <eepp/window/inputtextbuffer.hpp>
 #include <eepp/graphics/cprimitives.hpp>
 #include <eepp/graphics/cfont.hpp>
 #include <deque>

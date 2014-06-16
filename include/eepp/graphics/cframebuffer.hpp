@@ -3,7 +3,7 @@
 
 #include <eepp/graphics/base.hpp>
 #include <eepp/graphics/ctexture.hpp>
-#include <eepp/window/cview.hpp>
+#include <eepp/window/view.hpp>
 
 namespace EE { namespace Window { class Window; } }
 

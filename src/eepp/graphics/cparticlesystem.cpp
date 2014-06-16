@@ -4,7 +4,7 @@
 #include <eepp/graphics/ctexturefactory.hpp>
 #include <eepp/graphics/cbatchrenderer.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
-#include <eepp/window/cengine.hpp>
+#include <eepp/window/engine.hpp>
 
 using namespace EE::Window;
 

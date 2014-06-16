@@ -4,13 +4,13 @@
 #include <eepp/core.hpp>
 
 #if defined( EE_X11_PLATFORM )
-#include <eepp/window/platform/x11/cx11impl.hpp>
+#include <eepp/window/platform/x11/x11impl.hpp>
 #elif EE_PLATFORM == EE_PLATFORM_WIN
-#include <eepp/window/platform/win/cwinimpl.hpp>
+#include <eepp/window/platform/win/winimpl.hpp>
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
-#include <eepp/window/platform/osx/cosximpl.hpp>
+#include <eepp/window/platform/osx/osximpl.hpp>
 #else
-#include <eepp/window/platform/null/cnullimpl.hpp>
+#include <eepp/window/platform/null/nullimpl.hpp>
 #endif
 
 #endif

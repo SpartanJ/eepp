@@ -1,6 +1,6 @@
 #include <eepp/ui/cuidragable.hpp>
 #include <eepp/ui/cuimanager.hpp>
-#include <eepp/window/cinput.hpp>
+#include <eepp/window/input.hpp>
 
 namespace EE { namespace UI {
 

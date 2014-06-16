@@ -1,7 +1,7 @@
 #include <eepp/graphics/ctextureloader.hpp>
 #include <eepp/graphics/ctexture.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
-#include <eepp/window/cengine.hpp>
+#include <eepp/window/engine.hpp>
 #include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/system/iostreamfile.hpp>

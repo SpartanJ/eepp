@@ -2,7 +2,7 @@
 #include <eepp/physics/cphysicsmanager.hpp>
 
 #ifdef PHYSICS_RENDERER_ENABLED
-#include <eepp/window/cengine.hpp>
+#include <eepp/window/engine.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
 using namespace EE::Graphics;
 #endif

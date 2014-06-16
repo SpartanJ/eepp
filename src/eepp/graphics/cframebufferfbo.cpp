@@ -1,6 +1,6 @@
 #include <eepp/graphics/cframebufferfbo.hpp>
 #include <eepp/graphics/ctexturefactory.hpp>
-#include <eepp/window/cengine.hpp>
+#include <eepp/window/engine.hpp>
 #include <eepp/graphics/glextensions.hpp>
 #include <eepp/graphics/renderer/cgl.hpp>
 #include <eepp/graphics/cglobalbatchrenderer.hpp>
