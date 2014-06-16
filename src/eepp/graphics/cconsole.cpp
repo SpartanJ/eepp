@@ -12,7 +12,7 @@ using namespace EE::Window;
 
 namespace EE { namespace Graphics {
 
-cConsole::cConsole( Window::cWindow * window ) :
+cConsole::cConsole( EE::Window::Window * window ) :
 	mWindow( window ),
 	mConColor(35, 47, 73, 230),
 	mConLineColor(55, 67, 93, 230),
@@ -46,7 +46,7 @@ cConsole::cConsole( Window::cWindow * window ) :
 	}
 }
 
-cConsole::cConsole( cFont* Font, const bool& MakeDefaultCommands, const bool& AttachToLog, const unsigned int& MaxLogLines, const Uint32& TextureId, Window::cWindow * window ) :
+cConsole::cConsole( cFont* Font, const bool& MakeDefaultCommands, const bool& AttachToLog, const unsigned int& MaxLogLines, const Uint32& TextureId, EE::Window::Window * window ) :
 	mWindow( window ),
 	mConColor(35, 47, 73, 230),
 	mConLineColor(55, 67, 93, 230),
@@ -440,7 +440,7 @@ void cConsole::PrintCommandsStartingWith( const String& start ) {
 	}
 }
 
-void cConsole::PrivVideoResize( cWindow * win ) {
+void cConsole::PrivVideoResize( EE::Window::Window * win ) {
 	mWidth		= (Float) mWindow->GetWidth();
 	mHeight		= (Float) mWindow->GetHeight();
 

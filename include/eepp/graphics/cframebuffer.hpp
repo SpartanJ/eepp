@@ -5,7 +5,7 @@
 #include <eepp/graphics/ctexture.hpp>
 #include <eepp/window/cview.hpp>
 
-namespace EE { namespace Window { class cWindow; } }
+namespace EE { namespace Window { class Window; } }
 
 using namespace EE::Window;
 
@@ -20,7 +20,7 @@ class EE_API cFrameBuffer {
 		**	@param DepthBuffer Indicates if a depth buffer is used
 		**	@param window In case that the application is using more than one window, the user can indicate which one to use ( by default uses the current active window )
 		*/
-		static cFrameBuffer * New( const Uint32& Width, const Uint32& Height, bool DepthBuffer = false, Window::cWindow * window = NULL );
+		static cFrameBuffer * New( const Uint32& Width, const Uint32& Height, bool DepthBuffer = false, EE::Window::Window * window = NULL );
 
 		virtual ~cFrameBuffer();
 
@@ -62,7 +62,7 @@ class EE_API cFrameBuffer {
 		/** @return True if the frame buffer has a depth buffer. */
 		const bool& HasDepthBuffer() const;
 	protected:
-		Window::cWindow *	mWindow;
+		EE::Window::Window *	mWindow;
 		Int32		mWidth;
 		Int32		mHeight;
 		bool		mHasDepthBuffer;
@@ -71,7 +71,7 @@ class EE_API cFrameBuffer {
 		View 		mPrevView;
 		float		mProjMat[16];
 
-		cFrameBuffer( Window::cWindow * window );
+		cFrameBuffer( EE::Window::Window * window );
 
 		virtual bool Create( const Uint32& Width, const Uint32& Height ) = 0;
 

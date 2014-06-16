@@ -17,7 +17,7 @@ namespace EE { namespace Window {
 
 class EE_API CursorManager {
 	public:
-		CursorManager( Window::cWindow * window );
+		CursorManager( EE::Window::Window * window );
 
 		virtual ~CursorManager();
 
@@ -137,7 +137,7 @@ class EE_API CursorManager {
 				Cursor *			Cur;
 		};
 		GlobalCursor			mGlobalCursors[ EE_CURSOR_COUNT ];
-		cWindow *				mWindow;
+		EE::Window::Window *				mWindow;
 		Cursor *				mCurrent;
 		EE_SYSTEM_CURSOR		mSysCursor;
 		CursorsList				mCursors;

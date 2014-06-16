@@ -243,7 +243,7 @@ void cEETest::OnShowMenu( const cUIEvent * Event ) {
 	}
 }
 
-void cEETest::OnWindowResize(cWindow * win) {
+void cEETest::OnWindowResize(EE::Window::Window * win) {
 	Map.ViewSize( win->Size() );
 }
 

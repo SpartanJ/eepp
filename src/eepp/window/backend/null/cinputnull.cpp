@@ -3,7 +3,7 @@
 
 namespace EE { namespace Window { namespace Backend { namespace Null {
 
-InputNull::InputNull( cWindow * window ) :
+InputNull::InputNull( EE::Window::Window * window ) :
 	Input( window, eeNew( JoystickManagerNull, () ) )
 {
 }

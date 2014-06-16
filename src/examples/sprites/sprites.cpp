@@ -1,6 +1,6 @@
 #include <eepp/ee.hpp>
 
-cWindow * win = NULL;
+EE::Window::Window * win = NULL;
 
 // Define a interpolation to control the Rock sprite angle
 Interpolation RockAngle;

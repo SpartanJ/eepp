@@ -33,7 +33,7 @@ cUIManager::~cUIManager() {
 	Shutdown();
 }
 
-void cUIManager::Init( Uint32 Flags, Window::cWindow * window ) {
+void cUIManager::Init( Uint32 Flags, EE::Window::Window * window ) {
 	if ( mInit )
 		Shutdown();
 
@@ -110,7 +110,7 @@ void cUIManager::InputCallback( InputEvent * Event ) {
 	}
 }
 
-void cUIManager::ResizeControl( cWindow * win ) {
+void cUIManager::ResizeControl( EE::Window::Window * win ) {
 	mControl->Size( mWindow->GetWidth(), mWindow->GetHeight() );
 	SendMsg( mControl, cUIMessage::MsgWindowResize );
 
@@ -351,7 +351,7 @@ void cUIManager::SendMouseDown( cUIControl * ToCtrl, const Vector2i& Pos, const 
 	ToCtrl->OnMouseDown( Pos, Flags );
 }
 
-Window::cWindow * cUIManager::GetWindow() const {
+EE::Window::Window * cUIManager::GetWindow() const {
 	return mWindow;
 }
 

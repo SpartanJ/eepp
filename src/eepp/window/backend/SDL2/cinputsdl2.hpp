@@ -22,9 +22,9 @@ class EE_API InputSDL : public Input {
 
 		void InjectMousePos( const Uint16& x, const Uint16& y );
 	protected:
-		friend class cWindowSDL;
+		friend class WindowSDL;
 
-		InputSDL( Window::cWindow * window );
+		InputSDL( EE::Window::Window * window );
 		
 		virtual void Init();
 

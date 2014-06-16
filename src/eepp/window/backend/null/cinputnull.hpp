@@ -17,9 +17,9 @@ class EE_API InputNull : public Input {
 
 		void InjectMousePos( const Uint16& x, const Uint16& y );
 	protected:
-		friend class cWindowNull;
+		friend class WindowNull;
 
-		InputNull( Window::cWindow * window );
+		InputNull( EE::Window::Window * window );
 		
 		virtual void Init();
 };

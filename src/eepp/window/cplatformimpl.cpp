@@ -3,7 +3,7 @@
 
 namespace EE { namespace Window { namespace Platform {
 
-PlatformImpl::PlatformImpl( cWindow * window ) :
+PlatformImpl::PlatformImpl( EE::Window::Window * window ) :
 	mWindow( window )
 {
 }

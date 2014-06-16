@@ -3,7 +3,7 @@
 
 namespace EE { namespace Window {
 
-Input::Input( cWindow * window, JoystickManager * joystickmanager ) :
+Input::Input( EE::Window::Window * window, JoystickManager * joystickmanager ) :
 	mWindow( window ),
 	mJoystickManager( joystickmanager ),
 	mPressTrigger(0), mReleaseTrigger(0), mLastPressTrigger(0), mClickTrigger(0), mDoubleClickTrigger(0), mInputMod(0),

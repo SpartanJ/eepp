@@ -61,8 +61,8 @@ static std::string SDL_AndroidGetApkPath() {
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
-cWindowSDL::cWindowSDL( WindowSettings Settings, ContextSettings Context ) :
-	cWindow( Settings, Context, eeNew( ClipboardSDL, ( this ) ), eeNew( InputSDL, ( this ) ), eeNew( CursorManagerSDL, ( this ) ) ),
+WindowSDL::WindowSDL( WindowSettings Settings, ContextSettings Context ) :
+	Window( Settings, Context, eeNew( ClipboardSDL, ( this ) ), eeNew( InputSDL, ( this ) ), eeNew( CursorManagerSDL, ( this ) ) ),
 	mSDLWindow( NULL ),
 	mGLContext( NULL ),
 	mGLContextThread( NULL ),
@@ -75,7 +75,7 @@ cWindowSDL::cWindowSDL( WindowSettings Settings, ContextSettings Context ) :
 	Create( Settings, Context );
 }
 
-cWindowSDL::~cWindowSDL() {
+WindowSDL::~WindowSDL() {
 	if ( NULL != mGLContext ) {
 		SDL_GL_DeleteContext( mGLContext );
 	}
@@ -97,7 +97,7 @@ cWindowSDL::~cWindowSDL() {
 #endif
 }
 
-bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
+bool WindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	if ( mWindow.Created )
 		return false;
 
@@ -107,7 +107,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	if ( SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
 		eePRINTL( "Unable to initialize SDL: %s", SDL_GetError() );
 
-		LogFailureInit( "cWindowSDL", GetVersion() );
+		LogFailureInit( "WindowSDL", GetVersion() );
 
 		return false;
 	}
@@ -149,7 +149,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	if ( NULL == mSDLWindow ) {
 		eePRINTL( "Unable to create window: %s", SDL_GetError() );
 
-		LogFailureInit( "cWindowSDL", GetVersion() );
+		LogFailureInit( "WindowSDL", GetVersion() );
 
 		return false;
 	}
@@ -218,7 +218,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	{
 		eePRINTL( "Unable to create context: %s", SDL_GetError() );
 
-		LogFailureInit( "cWindowSDL", GetVersion() );
+		LogFailureInit( "WindowSDL", GetVersion() );
 
 		return false;
 	}
@@ -274,7 +274,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	return true;
 }
 
-bool cWindowSDL::IsThreadedGLContext() {
+bool WindowSDL::IsThreadedGLContext() {
 #ifdef SDL2_THREADED_GLCONTEXT
 	return true;
 #else
@@ -282,15 +282,15 @@ bool cWindowSDL::IsThreadedGLContext() {
 #endif
 }
 
-void cWindowSDL::SetGLContextThread() {
+void WindowSDL::SetGLContextThread() {
 	SDL_GL_MakeCurrent( mSDLWindow, mGLContextThread );
 }
 
-void cWindowSDL::UnsetGLContextThread() {
+void WindowSDL::UnsetGLContextThread() {
 	SDL_GL_MakeCurrent( mSDLWindow, NULL );
 }
 
-std::string cWindowSDL::GetVersion() {
+std::string WindowSDL::GetVersion() {
 	SDL_version ver;
 
 	SDL_GetVersion( &ver );
@@ -298,7 +298,7 @@ std::string cWindowSDL::GetVersion() {
 	return String::StrFormated( "SDL %d.%d.%d", ver.major, ver.minor, ver.patch );
 }
 
-void cWindowSDL::CreatePlatform() {
+void WindowSDL::CreatePlatform() {
 	eeSAFE_DELETE( mPlatform );
 
 #ifdef EE_USE_WMINFO
@@ -312,11 +312,11 @@ void cWindowSDL::CreatePlatform() {
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
 	mPlatform = eeNew( Platform::cOSXImpl, ( this ) );
 #else
-	cWindow::CreatePlatform();
+	Window::CreatePlatform();
 #endif
 }
 
-void cWindowSDL::SetGLConfig() {
+void WindowSDL::SetGLConfig() {
 	if ( mWindow.ContextConfig.DepthBufferSize ) SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE	, mWindow.ContextConfig.DepthBufferSize );				// Depth
 	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, ( mWindow.ContextConfig.DoubleBuffering ? 1 : 0 ) );	// Double Buffering
 	if ( mWindow.ContextConfig.StencilBufferSize ) SDL_GL_SetAttribute( SDL_GL_STENCIL_SIZE, mWindow.ContextConfig.StencilBufferSize );
@@ -334,7 +334,7 @@ void cWindowSDL::SetGLConfig() {
 	}
 }
 
-void cWindowSDL::ToggleFullscreen() {
+void WindowSDL::ToggleFullscreen() {
 	bool WasMaximized = mWindow.Maximized;
 
 	if ( Windowed() ) {
@@ -350,13 +350,13 @@ void cWindowSDL::ToggleFullscreen() {
 	GetCursorManager()->Reload();
 }
 
-void cWindowSDL::Caption( const std::string& Caption ) {
+void WindowSDL::Caption( const std::string& Caption ) {
 	mWindow.WindowConfig.Caption = Caption;
 
 	SDL_SetWindowTitle( mSDLWindow, Caption.c_str() );
 }
 
-bool cWindowSDL::Active() {
+bool WindowSDL::Active() {
 	Uint32 flags = 0;
 
 	flags = SDL_GetWindowFlags( mSDLWindow );
@@ -364,7 +364,7 @@ bool cWindowSDL::Active() {
 	return 0 != ( ( flags & SDL_WINDOW_INPUT_FOCUS ) && ( flags & SDL_WINDOW_MOUSE_FOCUS ) );
 }
 
-bool cWindowSDL::Visible() {
+bool WindowSDL::Visible() {
 	Uint32 flags = 0;
 
 	flags = SDL_GetWindowFlags( mSDLWindow );
@@ -372,7 +372,7 @@ bool cWindowSDL::Visible() {
 	return 0 != ( ( flags & SDL_WINDOW_SHOWN ) && !( flags & SDL_WINDOW_MINIMIZED ) );
 }
 
-void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
+void WindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	if ( ( !Width || !Height ) ) {
 		Width	= mWindow.DesktopResolution.Width();
 		Height	= mWindow.DesktopResolution.Height();
@@ -430,11 +430,11 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	SendVideoResizeCb();
 }
 
-void cWindowSDL::SwapBuffers() {	
+void WindowSDL::SwapBuffers() {	
 	SDL_GL_SwapWindow( mSDLWindow );
 }
 
-std::vector<DisplayMode> cWindowSDL::GetDisplayModes() const {
+std::vector<DisplayMode> WindowSDL::GetDisplayModes() const {
 	std::vector<DisplayMode> result;
 
 	int displays = SDL_GetNumVideoDisplays();
@@ -453,7 +453,7 @@ std::vector<DisplayMode> cWindowSDL::GetDisplayModes() const {
 	return result;
 }
 
-void cWindowSDL::SetGamma( Float Red, Float Green, Float Blue ) {
+void WindowSDL::SetGamma( Float Red, Float Green, Float Blue ) {
 	eeclamp( &Red	, (Float)0.1f, (Float)10.0f );
 	eeclamp( &Green	, (Float)0.1f, (Float)10.0f );
 	eeclamp( &Blue	, (Float)0.1f, (Float)10.0f );
@@ -481,7 +481,7 @@ void cWindowSDL::SetGamma( Float Red, Float Green, Float Blue ) {
 	SDL_SetWindowGammaRamp( mSDLWindow, red_ramp, green_ramp, blue_ramp );
 }
 
-eeWindowHandle	cWindowSDL::GetWindowHandler() {
+eeWindowHandle	WindowSDL::GetWindowHandler() {
 	if ( NULL != mWMinfo ) {
 		return mWMinfo->GetWindowHandler();
 	}
@@ -489,7 +489,7 @@ eeWindowHandle	cWindowSDL::GetWindowHandler() {
 	return 0;
 }
 
-bool cWindowSDL::Icon( const std::string& Path ) {
+bool WindowSDL::Icon( const std::string& Path ) {
 	int x, y, c;
 
 	if ( !mWindow.Created ) {
@@ -546,31 +546,31 @@ bool cWindowSDL::Icon( const std::string& Path ) {
 	return false;
 }
 
-void cWindowSDL::Minimize() {
+void WindowSDL::Minimize() {
 	SDL_MinimizeWindow( mSDLWindow );
 }
 
-void cWindowSDL::Maximize() {
+void WindowSDL::Maximize() {
 	SDL_MaximizeWindow( mSDLWindow );
 }
 
-void cWindowSDL::Hide() {
+void WindowSDL::Hide() {
 	SDL_HideWindow( mSDLWindow );
 }
 
-void cWindowSDL::Raise() {
+void WindowSDL::Raise() {
 	SDL_RaiseWindow( mSDLWindow );
 }
 
-void cWindowSDL::Show() {
+void WindowSDL::Show() {
 	SDL_ShowWindow( mSDLWindow );
 }
 
-void cWindowSDL::Position( Int16 Left, Int16 Top ) {
+void WindowSDL::Position( Int16 Left, Int16 Top ) {
 	SDL_SetWindowPosition( mSDLWindow, Left, Top );
 }
 
-Vector2i cWindowSDL::Position() {
+Vector2i WindowSDL::Position() {
 	Vector2i p;
 
 	SDL_GetWindowPosition( mSDLWindow, &p.x, &p.y );
@@ -578,35 +578,35 @@ Vector2i cWindowSDL::Position() {
 	return p;
 }
 
-void cWindowSDL::UpdateDesktopResolution() {
+void WindowSDL::UpdateDesktopResolution() {
 	SDL_DisplayMode dpm;
 	SDL_GetDesktopDisplayMode( SDL_GetWindowDisplayIndex( mSDLWindow ), &dpm );
 
 	mWindow.DesktopResolution = Sizei( dpm.w, dpm.h );
 }
 
-const Sizei& cWindowSDL::GetDesktopResolution() {
+const Sizei& WindowSDL::GetDesktopResolution() {
 	UpdateDesktopResolution();
-	return cWindow::GetDesktopResolution();
+	return Window::GetDesktopResolution();
 }
 
-SDL_Window * cWindowSDL::GetSDLWindow() const {
+SDL_Window * WindowSDL::GetSDLWindow() const {
 	return mSDLWindow;
 }
 
-void cWindowSDL::StartTextInput() {
+void WindowSDL::StartTextInput() {
 	SDL_StartTextInput();
 }
 
-bool cWindowSDL::IsTextInputActive() {
+bool WindowSDL::IsTextInputActive() {
 	return SDL_TRUE == SDL_IsTextInputActive();
 }
 
-void cWindowSDL::StopTextInput() {
+void WindowSDL::StopTextInput() {
 	SDL_StopTextInput();
 }
 
-void cWindowSDL::SetTextInputRect( Recti& rect ) {
+void WindowSDL::SetTextInputRect( Recti& rect ) {
 	SDL_Rect r;
 
 	r.x = rect.Left;
@@ -622,36 +622,36 @@ void cWindowSDL::SetTextInputRect( Recti& rect ) {
 	rect.Bottom	= rect.Top + r.h;
 }
 
-bool cWindowSDL::HasScreenKeyboardSupport() {
+bool WindowSDL::HasScreenKeyboardSupport() {
 	return SDL_TRUE == SDL_HasScreenKeyboardSupport();
 }
 
-bool cWindowSDL::IsScreenKeyboardShown() {
+bool WindowSDL::IsScreenKeyboardShown() {
 	return SDL_TRUE == SDL_IsScreenKeyboardShown( mSDLWindow );
 }
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
-void * cWindowSDL::GetJNIEnv() {
+void * WindowSDL::GetJNIEnv() {
 	return SDL_AndroidGetJNIEnv();
 }
 
-void * cWindowSDL::GetActivity() {
+void * WindowSDL::GetActivity() {
 	return SDL_AndroidGetActivity();
 }
 
-int cWindowSDL::GetExternalStorageState() {
+int WindowSDL::GetExternalStorageState() {
 	return SDL_AndroidGetExternalStorageState();
 }
 
-std::string cWindowSDL::GetInternalStoragePath() {
+std::string WindowSDL::GetInternalStoragePath() {
 	return std::string( SDL_AndroidGetInternalStoragePath() );
 }
 
-std::string cWindowSDL::GetExternalStoragePath() {
+std::string WindowSDL::GetExternalStoragePath() {
 	return std::string( SDL_AndroidGetExternalStoragePath() );
 }
 
-std::string cWindowSDL::GetApkPath() {
+std::string WindowSDL::GetApkPath() {
 	return SDL_AndroidGetApkPath();
 }
 #endif

@@ -46,7 +46,7 @@ class EE_API View {
 		/** Creates a new view */
 		void SetView( const int& X, const int& Y, const int& Width, const int& Height );
 	private:
-		friend class cWindow;
+		friend class Window;
 
 		bool mNeedUpdate;
 		Recti mView;

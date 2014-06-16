@@ -10,7 +10,7 @@ static Float sqrt_aprox[20001];
 
 Uint32 ParticlesNum	= 30000;
 
-cWindow * win = NULL;
+EE::Window::Window * win = NULL;
 Input * imp = NULL;
 cShaderProgram * ShaderProgram = NULL;
 bool ShadersSupported = false;
@@ -21,7 +21,7 @@ Vector3ff * vertices		= eeNewArray( Vector3ff, ParticlesNum );
 Vector3ff * velocities	= eeNewArray( Vector3ff, ParticlesNum );
 ColorAf * colors			= eeNewArray( ColorAf, ParticlesNum );
 
-void videoResize( cWindow * w ) {
+void videoResize( EE::Window::Window * w ) {
 	/// Video Resize event will re-setup the 2D projection and states, so we must rebuild them.
 	aspectRatio	= (Float)win->GetWidth()	/ (Float)win->GetHeight();
 	tw			= (Float)win->GetWidth()	/ 2;

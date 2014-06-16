@@ -4,7 +4,7 @@
 
 namespace EE { namespace Window {
 
-InputTextBuffer::InputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, Window::cWindow * window, const Uint32& maxLength ) :
+InputTextBuffer::InputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, EE::Window::Window * window, const Uint32& maxLength ) :
 	mWindow( window ),
 	mFlags(0),
 	mCallback(0),
@@ -30,7 +30,7 @@ InputTextBuffer::InputTextBuffer( const bool& active, const bool& supportNewLine
 	mMaxLength = maxLength;
 }
 
-InputTextBuffer::InputTextBuffer( cWindow * window ) :
+InputTextBuffer::InputTextBuffer( EE::Window::Window * window ) :
 	mWindow( window ),
 	mFlags(0),
 	mCallback(0),

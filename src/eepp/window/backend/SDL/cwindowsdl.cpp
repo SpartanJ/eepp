@@ -32,8 +32,8 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
-cWindowSDL::cWindowSDL( WindowSettings Settings, ContextSettings Context ) :
-	cWindow( Settings, Context, eeNew( ClipboardSDL, ( this ) ), eeNew( InputSDL, ( this ) ), eeNew( CursorManagerSDL, ( this ) ) ),
+WindowSDL::WindowSDL( WindowSettings Settings, ContextSettings Context ) :
+	Window( Settings, Context, eeNew( ClipboardSDL, ( this ) ), eeNew( InputSDL, ( this ) ), eeNew( CursorManagerSDL, ( this ) ) ),
 	mSurface( NULL )
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
 	,
@@ -43,13 +43,13 @@ cWindowSDL::cWindowSDL( WindowSettings Settings, ContextSettings Context ) :
 	Create( Settings, Context );
 }
 
-cWindowSDL::~cWindowSDL() {
+WindowSDL::~WindowSDL() {
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
 	eeSAFE_DELETE( mWMinfo );
 #endif
 }
 
-bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
+bool WindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	if ( mWindow.Created )
 		return false;
 
@@ -59,7 +59,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	if ( SDL_Init( SDL_INIT_VIDEO ) != 0 ) {
 		eePRINTL( "Unable to initialize SDL: %s", SDL_GetError() );
 
-		LogFailureInit( "cWindowSDL", GetVersion() );
+		LogFailureInit( "WindowSDL", GetVersion() );
 
 		return false;
 	}
@@ -102,7 +102,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	} else {
 		eePRINTL( "Video Mode Unsopported for this videocard: " );
 
-		LogFailureInit( "cWindowSDL", GetVersion() );
+		LogFailureInit( "WindowSDL", GetVersion() );
 
 		return false;
 	}
@@ -112,7 +112,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	if ( NULL == mSurface ) {
 		eePRINTL( "Unable to set video mode: %s", SDL_GetError() );
 
-		LogFailureInit( "cWindowSDL", GetVersion() );
+		LogFailureInit( "WindowSDL", GetVersion() );
 
 		return false;
 	}
@@ -159,7 +159,7 @@ bool cWindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 	return true;
 }
 
-std::string cWindowSDL::GetVersion() {
+std::string WindowSDL::GetVersion() {
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
 	SDL_version ver = mWMinfo->version;
 
@@ -169,7 +169,7 @@ std::string cWindowSDL::GetVersion() {
 #endif
 }
 
-void cWindowSDL::CreatePlatform() {
+void WindowSDL::CreatePlatform() {
 	eeSAFE_DELETE( mPlatform );
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
 	SDL_VERSION( &mWMinfo->version );
@@ -184,11 +184,11 @@ void cWindowSDL::CreatePlatform() {
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
 	mPlatform = eeNew( Platform::cOSXImpl, ( this ) );
 #else
-	cWindow::CreatePlatform();
+	Window::CreatePlatform();
 #endif
 }
 
-void cWindowSDL::SetGLConfig() {
+void WindowSDL::SetGLConfig() {
 	SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE	, mWindow.ContextConfig.DepthBufferSize );				// Depth
 	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, ( mWindow.ContextConfig.DoubleBuffering ? 1 : 0 ) );	// Double Buffering
 	SDL_GL_SetAttribute( SDL_GL_STENCIL_SIZE, mWindow.ContextConfig.StencilBufferSize );
@@ -198,7 +198,7 @@ void cWindowSDL::SetGLConfig() {
 	#endif
 }
 
-void cWindowSDL::ToggleFullscreen() {
+void WindowSDL::ToggleFullscreen() {
 	bool WasMaximized = mWindow.Maximized;
 
 	if ( Windowed() ) {
@@ -214,13 +214,13 @@ void cWindowSDL::ToggleFullscreen() {
 	GetCursorManager()->Reload();
 }
 
-void cWindowSDL::Caption( const std::string& Caption ) {
+void WindowSDL::Caption( const std::string& Caption ) {
 	mWindow.WindowConfig.Caption = Caption;
 
 	SDL_WM_SetCaption( Caption.c_str(), NULL );
 }
 
-bool cWindowSDL::Icon( const std::string& Path ) {
+bool WindowSDL::Icon( const std::string& Path ) {
 	int x, y, c;
 
 	if ( !mWindow.Created ) {
@@ -277,15 +277,15 @@ bool cWindowSDL::Icon( const std::string& Path ) {
 	return false;
 }
 
-bool cWindowSDL::Active() {
+bool WindowSDL::Active() {
 	return 0 != ( SDL_GetAppState() & SDL_APPINPUTFOCUS );
 }
 
-bool cWindowSDL::Visible() {
+bool WindowSDL::Visible() {
 	return 0 != ( SDL_GetAppState() & SDL_APPACTIVE );
 }
 
-void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
+void WindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	if ( ( !Width || !Height ) ) {
 		Width	= mWindow.DesktopResolution.Width();
 		Height	= mWindow.DesktopResolution.Height();
@@ -363,11 +363,11 @@ void cWindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	}
 }
 
-void cWindowSDL::SwapBuffers() {
+void WindowSDL::SwapBuffers() {
 	SDL_GL_SwapBuffers();
 }
 
-std::vector<DisplayMode> cWindowSDL::GetDisplayModes() const {
+std::vector<DisplayMode> WindowSDL::GetDisplayModes() const {
 	SDL_Rect **modes = SDL_ListModes( NULL, SDL_OPENGL | SDL_HWPALETTE | SDL_HWACCEL | SDL_FULLSCREEN );
 
 	if(modes == (SDL_Rect **)0)
@@ -381,14 +381,14 @@ std::vector<DisplayMode> cWindowSDL::GetDisplayModes() const {
 	return result;
 }
 
-void cWindowSDL::SetGamma( Float Red, Float Green, Float Blue ) {
+void WindowSDL::SetGamma( Float Red, Float Green, Float Blue ) {
 	eeclamp<Float>( &Red		, 0.1f, 10.0f );
 	eeclamp<Float>( &Green	, 0.1f, 10.0f );
 	eeclamp<Float>( &Blue		, 0.1f, 10.0f );
 	SDL_SetGamma( Red, Green, Blue );
 }
 
-eeWindowHandle	cWindowSDL::GetWindowHandler() {
+eeWindowHandle	WindowSDL::GetWindowHandler() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	return mWMinfo->window;
 #elif defined( EE_X11_PLATFORM )

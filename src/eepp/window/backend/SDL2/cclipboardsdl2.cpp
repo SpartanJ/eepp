@@ -5,7 +5,7 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
-ClipboardSDL::ClipboardSDL( cWindow * window ) :
+ClipboardSDL::ClipboardSDL( EE::Window::Window * window ) :
 	Clipboard( window )
 {
 }

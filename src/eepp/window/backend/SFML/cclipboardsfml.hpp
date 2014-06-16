@@ -18,9 +18,9 @@ class EE_API ClipboardSFML : public Clipboard {
 
 		void SetText( const std::string& Text );
 	protected:
-		friend class cWindowSFML;
+		friend class WindowSFML;
 
-		ClipboardSFML( Window::cWindow * window );
+		ClipboardSFML( EE::Window::Window * window );
 
 		void Init();
 };

@@ -146,13 +146,13 @@ class DisplayMode {
 #define EE_ANDROID_EXTERNAL_STORAGE_READ   0x01
 #define EE_ANDROID_EXTERNAL_STORAGE_WRITE  0x02
 
-class EE_API cWindow {
+class EE_API Window {
 	public:
-		typedef cb::Callback1<void, cWindow*>			WindowResizeCallback;
+		typedef cb::Callback1<void, Window*>			WindowResizeCallback;
 
-		cWindow( WindowSettings Settings, ContextSettings Context, Clipboard * Clipboard, Input * Input, CursorManager * CursorManager );
+		Window( WindowSettings Settings, ContextSettings Context, Clipboard * Clipboard, Input * Input, CursorManager * CursorManager );
 		
-		virtual ~cWindow();
+		virtual ~Window();
 		
 		/** Creates a new window and GL context */
 		virtual bool Create( WindowSettings Settings, ContextSettings Context ) = 0;
@@ -461,7 +461,7 @@ class EE_API cWindow {
 		Uint32						mNumCallBacks;
 		std::map<Uint32, WindowResizeCallback> mCallbacks;
 		
-		class cFrameData {
+		class FrameData {
 			public:
 				class cFPSData {
 					public:
@@ -484,12 +484,12 @@ class EE_API cWindow {
 				Clock *			FrameElapsed;
 				System::Time	ElapsedTime;
 
-				cFrameData();
+				FrameData();
 
-				~cFrameData();
+				~FrameData();
 		};
 
-		cFrameData mFrameData;
+		FrameData mFrameData;
 
 		/** Set the flag state to be the current window */
 		virtual void SetCurrent();

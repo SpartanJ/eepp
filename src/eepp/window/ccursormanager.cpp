@@ -2,7 +2,7 @@
 
 namespace EE { namespace Window {
 
-CursorManager::CursorManager( cWindow * window ) :
+CursorManager::CursorManager( EE::Window::Window * window ) :
 	mWindow( window ),
 	mCurrent( NULL ),
 	mSysCursor( SYS_CURSOR_NONE ),

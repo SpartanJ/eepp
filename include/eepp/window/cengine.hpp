@@ -20,18 +20,18 @@ class EE_API Engine {
 		/** Creates a new window.
 		* SDL2, SFML backends support more than one window creation, SDL 1.2 backend only 1 window.
 		*/
-		Window::cWindow * CreateWindow( WindowSettings Settings, ContextSettings Context = ContextSettings() );
+		EE::Window::Window * CreateWindow( WindowSettings Settings, ContextSettings Context = ContextSettings() );
 
 		/** Destroy the window instance, and set as current other window running ( if any ).
 		* This function is only useful for multi-window environment. Avoid using it with one window context.
 		*/
-		void DestroyWindow( Window::cWindow * window );
+		void DestroyWindow( EE::Window::Window * window );
 
 		/** @return The current Window context. */
-		Window::cWindow * GetCurrentWindow() const;
+		EE::Window::Window * GetCurrentWindow() const;
 
 		/** Set the window as the current. */
-		void SetCurrentWindow( Window::cWindow * window );
+		void SetCurrentWindow( EE::Window::Window * window );
 
 		/** @return The number of windows created. */
 		Uint32	GetWindowCount() const;
@@ -49,7 +49,7 @@ class EE_API Engine {
 		const Uint32& GetHeight() const;
 
 		/** @return If the window instance is inside the window list. */
-		bool ExistsWindow( Window::cWindow * window );
+		bool ExistsWindow( EE::Window::Window * window );
 
 		/** Constructs WindowSettings from an ini file
 		It will search for the following properties:
@@ -126,11 +126,11 @@ class EE_API Engine {
 		/** @return The id of the thread that was used to initialize the OpenGL Context. */
 		Uint32 GetMainThreadId();
 	protected:
-		friend class cWindow;
+		friend class Window;
 
 		Backend::WindowBackend *	mBackend;
-		std::list<cWindow*>	mWindows;
-		cWindow *			mWindow;
+		std::list<Window*>	mWindows;
+		EE::Window::Window *			mWindow;
 		bool				mSharedGLContext;
 		Uint32				mMainThreadId;
 
@@ -144,13 +144,13 @@ class EE_API Engine {
 
 		Backend::WindowBackend * CreateSFMLBackend( const WindowSettings& Settings );
 
-		cWindow * CreateSDLWindow( const WindowSettings& Settings, const ContextSettings& Context );
+		EE::Window::Window * CreateSDLWindow( const WindowSettings& Settings, const ContextSettings& Context );
 
-		cWindow * CreateSDL2Window( const WindowSettings& Settings, const ContextSettings& Context );
+		EE::Window::Window * CreateSDL2Window( const WindowSettings& Settings, const ContextSettings& Context );
 
-		cWindow * CreateSFMLWindow( const WindowSettings& Settings, const ContextSettings& Context );
+		EE::Window::Window * CreateSFMLWindow( const WindowSettings& Settings, const ContextSettings& Context );
 
-		cWindow * CreateDefaultWindow( const WindowSettings& Settings, const ContextSettings& Context );
+		EE::Window::Window * CreateDefaultWindow( const WindowSettings& Settings, const ContextSettings& Context );
 
 		Uint32 GetDefaultBackend() const;
 };

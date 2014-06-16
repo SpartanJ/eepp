@@ -18,7 +18,7 @@ class cImage;
 }
 
 namespace Window {
-class cWindow;
+class Window;
 class Cursor;
 }
 
@@ -35,7 +35,7 @@ using namespace EE::Graphics;
 */
 class PlatformImpl {
 	public:
-		PlatformImpl( Window::cWindow * window );
+		PlatformImpl( EE::Window::Window * window );
 		
 		virtual ~PlatformImpl();
 		
@@ -107,7 +107,7 @@ class PlatformImpl {
 
 		virtual eeWindowContex GetWindowContext() = 0;
 	protected:
-		cWindow *	mWindow;
+		EE::Window::Window *	mWindow;
 };
 
 }}}

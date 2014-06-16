@@ -11,7 +11,7 @@ bool cFrameBufferFBO::IsSupported() {
 	return 0 != GLi->IsExtension( EEGL_EXT_framebuffer_object );
 }
 
-cFrameBufferFBO::cFrameBufferFBO( Window::cWindow * window ) :
+cFrameBufferFBO::cFrameBufferFBO( EE::Window::Window * window ) :
 	cFrameBuffer( window ),
 	mFrameBuffer(0),
 	mDepthBuffer(0),
@@ -19,7 +19,7 @@ cFrameBufferFBO::cFrameBufferFBO( Window::cWindow * window ) :
 	mLastRB(0)
 {}
 
-cFrameBufferFBO::cFrameBufferFBO( const Uint32& Width, const Uint32& Height, bool DepthBuffer, Window::cWindow * window ) :
+cFrameBufferFBO::cFrameBufferFBO( const Uint32& Width, const Uint32& Height, bool DepthBuffer, EE::Window::Window * window ) :
 	cFrameBuffer( window ),
 	mFrameBuffer(0),
 	mDepthBuffer(0),

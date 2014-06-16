@@ -13,11 +13,11 @@ class CursorSFML : public Cursor {
 	protected:
 		friend class CursorManagerSFML;
 
-		CursorSFML( cTexture * tex, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
+		CursorSFML( cTexture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 
-		CursorSFML( cImage * img, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
+		CursorSFML( cImage * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 
-		CursorSFML( const std::string& path, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
+		CursorSFML( const std::string& path, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 
 		void Create();
 };

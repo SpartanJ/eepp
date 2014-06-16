@@ -11,7 +11,7 @@ namespace EE { namespace Window { namespace Backend { namespace SFML {
 
 class CursorManagerSFML : public CursorManager {
 	public:
-		CursorManagerSFML( Window::cWindow * window );
+		CursorManagerSFML( EE::Window::Window * window );
 
 		Cursor * Create( cTexture * tex, const Vector2i& hotspot, const std::string& name );
 

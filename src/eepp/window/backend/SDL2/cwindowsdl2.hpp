@@ -17,11 +17,11 @@ namespace EE { namespace System { class Zip; } }
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
-class EE_API cWindowSDL : public cWindow {
+class EE_API WindowSDL : public Window {
 	public:
-		cWindowSDL( WindowSettings Settings, ContextSettings Context );
+		WindowSDL( WindowSettings Settings, ContextSettings Context );
 		
-		virtual ~cWindowSDL();
+		virtual ~WindowSDL();
 		
 		bool Create( WindowSettings Settings, ContextSettings Context );
 		

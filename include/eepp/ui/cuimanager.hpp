@@ -25,7 +25,7 @@ class EE_API cUIManager {
 
 		void OverControl( cUIControl * Ctrl );
 
-		void Init( Uint32 Flags = 0, Window::cWindow * window = NULL );
+		void Init( Uint32 Flags = 0, EE::Window::Window * window = NULL );
 
 		void Shutdown();
 
@@ -35,7 +35,7 @@ class EE_API cUIManager {
 
 		const Time& Elapsed() const;
 
-		void ResizeControl( cWindow * win );
+		void ResizeControl( EE::Window::Window * win );
 
 		void SendMsg( cUIControl * Ctrl, const Uint32& Msg, const Uint32& Flags = 0 );
 
@@ -77,7 +77,7 @@ class EE_API cUIManager {
 
 		void SendMouseDown( cUIControl * ToCtrl, const Vector2i& Pos, const Uint32 Flags );
 
-		Window::cWindow * GetWindow() const;
+		EE::Window::Window * GetWindow() const;
 
 		/** Control where the mouse click started to be down */
 		cUIControl * DownControl() const;
@@ -103,7 +103,7 @@ class EE_API cUIManager {
 		friend class cUIControl;
 		friend class cUIWindow;
 
-		Window::cWindow *			mWindow;
+		EE::Window::Window *			mWindow;
 		Input *			mKM;
 		cUIWindow *			mControl;
 		cUIControl *		mFocusControl;

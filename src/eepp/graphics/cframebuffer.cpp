@@ -10,14 +10,14 @@ using namespace EE::Graphics::Private;
 
 namespace EE { namespace Graphics {
 
-cFrameBuffer * cFrameBuffer::New( const Uint32& Width, const Uint32& Height, bool DepthBuffer, Window::cWindow * window ) {
+cFrameBuffer * cFrameBuffer::New( const Uint32& Width, const Uint32& Height, bool DepthBuffer, EE::Window::Window * window ) {
 	if ( cFrameBufferFBO::IsSupported() )
 		return eeNew( cFrameBufferFBO, ( Width, Height, DepthBuffer, window ) );
 
 	return NULL;
 }
 
-cFrameBuffer::cFrameBuffer( Window::cWindow * window  ) :
+cFrameBuffer::cFrameBuffer( EE::Window::Window * window  ) :
 	mWindow( window ),
 	mWidth(0),
 	mHeight(0),

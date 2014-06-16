@@ -12,11 +12,11 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SFML {
 
-class EE_API cWindowSFML : public cWindow {
+class EE_API WindowSFML : public Window {
 	public:
-		cWindowSFML( WindowSettings Settings, ContextSettings Context );
+		WindowSFML( WindowSettings Settings, ContextSettings Context );
 		
-		virtual ~cWindowSFML();
+		virtual ~WindowSFML();
 		
 		bool Create( WindowSettings Settings, ContextSettings Context );
 		

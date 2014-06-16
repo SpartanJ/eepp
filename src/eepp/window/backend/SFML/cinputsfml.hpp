@@ -23,11 +23,11 @@ class EE_API InputSFML : public Input {
 
 		void InjectMousePos( const Uint16& x, const Uint16& y );
 	protected:
-		friend class cWindowSFML;
+		friend class WindowSFML;
 
 		bool mWinActive;
 
-		InputSFML( Window::cWindow * window );
+		InputSFML( EE::Window::Window * window );
 		
 		virtual void Init();
 

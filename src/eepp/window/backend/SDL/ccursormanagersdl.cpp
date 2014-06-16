@@ -13,7 +13,7 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
-CursorManagerSDL::CursorManagerSDL( cWindow * window ) :
+CursorManagerSDL::CursorManagerSDL( EE::Window::Window * window ) :
 	CursorManager( window )
 {
 }

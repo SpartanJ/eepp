@@ -3,7 +3,7 @@
 
 namespace EE { namespace Window { namespace Backend { namespace Null {
 
-CursorManagerNull::CursorManagerNull( cWindow * window ) :
+CursorManagerNull::CursorManagerNull( EE::Window::Window * window ) :
 	CursorManager( window )
 {
 }

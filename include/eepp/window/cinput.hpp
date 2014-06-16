@@ -180,13 +180,13 @@ class EE_API Input {
 		/** @return A list of the input finders that were down in the last update */
 		std::list<InputFinger *> GetFingersWasDown();
 	protected:
-		friend class cWindow;
+		friend class Window;
 		
-		Input( Window::cWindow * window, JoystickManager * joystickmanager );
+		Input( EE::Window::Window * window, JoystickManager * joystickmanager );
 		
 		virtual void Init() = 0;
 
-		cWindow *	mWindow;
+		EE::Window::Window *	mWindow;
 		JoystickManager * mJoystickManager;
 		Uint8 mKeysDown	[EE_KEYS_SPACE];
 		Uint8 mKeysUp	[EE_KEYS_SPACE];

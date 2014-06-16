@@ -16,7 +16,7 @@
 
 namespace EE { namespace Window { namespace Platform {
 
-cX11Impl::cX11Impl( cWindow * window, eeWindowHandle display, X11Window xwindow, X11Window mainwindow, LockFunc lock, UnlockFunc unlock ) :
+cX11Impl::cX11Impl( EE::Window::Window * window, eeWindowHandle display, X11Window xwindow, X11Window mainwindow, LockFunc lock, UnlockFunc unlock ) :
 	PlatformImpl( window ),
 	mDisplay( display ),
 	mX11Window( xwindow ),

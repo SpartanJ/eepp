@@ -16,7 +16,7 @@ class cX11Impl : public PlatformImpl {
 		typedef void (*LockFunc)(void);
 		typedef void (*UnlockFunc)(void);
 		
-		cX11Impl( Window::cWindow * window, eeWindowHandle display, X11Window xwindow, X11Window mainwindow, LockFunc lock, UnlockFunc unlock );
+		cX11Impl( EE::Window::Window * window, eeWindowHandle display, X11Window xwindow, X11Window mainwindow, LockFunc lock, UnlockFunc unlock );
 		
 		~cX11Impl();
 		

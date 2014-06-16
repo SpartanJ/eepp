@@ -16,9 +16,9 @@ class EE_API ClipboardNull : public Clipboard {
 
 		void SetText( const std::string& Text );
 	protected:
-		friend class cWindowNull;
+		friend class WindowNull;
 
-		ClipboardNull( Window::cWindow * window );
+		ClipboardNull( EE::Window::Window * window );
 
 		void Init();
 };

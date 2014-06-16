@@ -28,7 +28,7 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
-InputSDL::InputSDL( cWindow * window ) :
+InputSDL::InputSDL( EE::Window::Window * window ) :
 	Input( window, eeNew( JoystickManagerSDL, () ) )
 {
 	#if defined( EE_X11_PLATFORM )

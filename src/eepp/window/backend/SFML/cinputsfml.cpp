@@ -11,7 +11,7 @@ namespace EE { namespace Window { namespace Backend { namespace SFML {
 static Uint32	KeyCodesTable[ sf::Keyboard::KeyCount ];
 static bool		KeyCodesTableInit = false;
 
-InputSFML::InputSFML( cWindow * window ) :
+InputSFML::InputSFML( EE::Window::Window * window ) :
 	Input( window, eeNew( JoystickManagerSFML, () ) ),
 	mWinActive( true )
 {
@@ -24,7 +24,7 @@ void InputSFML::Update() {
 	sf::Event	event;
 	InputEvent 	EEEvent;
 
-	cWindowSFML * win = reinterpret_cast<cWindowSFML*>( mWindow );
+	WindowSFML * win = reinterpret_cast<WindowSFML*>( mWindow );
 	sf::Window * window = win->GetSFMLWindow();
 
 	CleanStates();
@@ -197,7 +197,7 @@ void InputSFML::GrabInput( const bool& Grab ) {
 }
 
 void InputSFML::InjectMousePos( const Uint16& x, const Uint16& y ) {
-	cWindowSFML * win = reinterpret_cast<cWindowSFML*>( mWindow );
+	WindowSFML * win = reinterpret_cast<WindowSFML*>( mWindow );
 	sf::Window * window = win->GetSFMLWindow();
 	sf::Mouse::setPosition( sf::Vector2i( x, y ), *window );
 }

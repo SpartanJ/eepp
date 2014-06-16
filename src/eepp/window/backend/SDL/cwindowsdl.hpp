@@ -13,11 +13,11 @@ struct SDL_SysWMinfo;
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
-class EE_API cWindowSDL : public cWindow {
+class EE_API WindowSDL : public Window {
 	public:
-		cWindowSDL( WindowSettings Settings, ContextSettings Context );
+		WindowSDL( WindowSettings Settings, ContextSettings Context );
 
-		virtual ~cWindowSDL();
+		virtual ~WindowSDL();
 
 		bool Create( WindowSettings Settings, ContextSettings Context );
 

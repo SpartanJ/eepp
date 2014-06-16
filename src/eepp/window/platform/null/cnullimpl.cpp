@@ -2,7 +2,7 @@
 
 namespace EE { namespace Window { namespace Platform {
 
-cNullImpl::cNullImpl( cWindow * window ) :
+cNullImpl::cNullImpl( EE::Window::Window * window ) :
 	PlatformImpl( window )
 {
 }

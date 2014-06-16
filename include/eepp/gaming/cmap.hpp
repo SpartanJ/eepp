@@ -36,7 +36,7 @@ class EE_API cMap {
 
 		virtual ~cMap();
 
-		virtual void Create( Sizei Size, Uint32 MaxLayers, Sizei TileSize, Uint32 Flags = 0, Sizei viewSize = Sizei( 800, 600 ), Window::cWindow * Window = NULL );
+		virtual void Create( Sizei Size, Uint32 MaxLayers, Sizei TileSize, Uint32 Flags = 0, Sizei viewSize = Sizei( 800, 600 ), EE::Window::Window * Window = NULL );
 
 		virtual cLayer * AddLayer( Uint32 Type, Uint32 flags, std::string name );
 
@@ -245,7 +245,7 @@ class EE_API cMap {
 
 		typedef std::map<Uint32, cGameObjectPolyData> PolyObjMap;
 
-		Window::cWindow *		mWindow;
+		EE::Window::Window *		mWindow;
 		cLayer**		mLayers;
 		Uint32			mFlags;
 		Uint32			mMaxLayers;

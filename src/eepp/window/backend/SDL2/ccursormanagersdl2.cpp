@@ -16,7 +16,7 @@ static SDL_Cursor * GetLoadCursor( const EE_SYSTEM_CURSOR& cursor ) {
 	return SDL_SYS_CURSORS[ cursor ];
 }
 
-CursorManagerSDL::CursorManagerSDL( cWindow * window ) :
+CursorManagerSDL::CursorManagerSDL( EE::Window::Window * window ) :
 	CursorManager( window )
 {
 }

@@ -32,9 +32,9 @@ class EE_API ClipboardSDL : public Clipboard {
 
 		void SetText( const std::string& Text );
 	protected:
-		friend class cWindowSDL;
+		friend class WindowSDL;
 
-		ClipboardSDL( Window::cWindow * window );
+		ClipboardSDL( EE::Window::Window * window );
 
 		void Init();
 

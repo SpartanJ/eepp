@@ -5,88 +5,88 @@
 
 namespace EE { namespace Window { namespace Backend { namespace Null {
 
-cWindowNull::cWindowNull( WindowSettings Settings, ContextSettings Context ) :
-	cWindow( Settings, Context, eeNew( ClipboardNull, ( this ) ), eeNew( InputNull, ( this ) ), eeNew( CursorManagerNull, ( this ) ) )
+WindowNull::WindowNull( WindowSettings Settings, ContextSettings Context ) :
+	Window( Settings, Context, eeNew( ClipboardNull, ( this ) ), eeNew( InputNull, ( this ) ), eeNew( CursorManagerNull, ( this ) ) )
 {
 	Create( Settings, Context );
 }
 
-cWindowNull::~cWindowNull() {
+WindowNull::~WindowNull() {
 }
 
-bool cWindowNull::Create( WindowSettings Settings, ContextSettings Context ) {
+bool WindowNull::Create( WindowSettings Settings, ContextSettings Context ) {
 	return false;
 }
 
-void cWindowNull::ToggleFullscreen() {
+void WindowNull::ToggleFullscreen() {
 }
 
-void cWindowNull::Caption( const std::string& Caption ) {
+void WindowNull::Caption( const std::string& Caption ) {
 }
 
-std::string cWindowNull::Caption() {
+std::string WindowNull::Caption() {
 	return std::string();
 }
 
-bool cWindowNull::Icon( const std::string& Path ) {
+bool WindowNull::Icon( const std::string& Path ) {
 	return false;
 }
 
-void cWindowNull::Minimize() {
+void WindowNull::Minimize() {
 }
 
-void cWindowNull::Maximize() {
+void WindowNull::Maximize() {
 }
 
-void cWindowNull::Hide() {
+void WindowNull::Hide() {
 }
 
-void cWindowNull::Raise() {
+void WindowNull::Raise() {
 }
 
-void cWindowNull::Show() {
+void WindowNull::Show() {
 }
 
-void cWindowNull::Position( Int16 Left, Int16 Top ) {
+void WindowNull::Position( Int16 Left, Int16 Top ) {
 }
 
-bool cWindowNull::Active() {
+bool WindowNull::Active() {
 	return true;
 }
 
-bool cWindowNull::Visible() {
+bool WindowNull::Visible() {
 	return true;
 }
 
-Vector2i cWindowNull::Position() {
+Vector2i WindowNull::Position() {
 	return Vector2i();
 }
 
-void cWindowNull::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
+void WindowNull::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 }
 
-void cWindowNull::SwapBuffers() {
+void WindowNull::SwapBuffers() {
 }
 
-std::vector<DisplayMode> cWindowNull::GetDisplayModes() const {
+std::vector<DisplayMode> WindowNull::GetDisplayModes() const {
 	return std::vector<DisplayMode>();
 }
 
-void cWindowNull::SetGamma( Float Red, Float Green, Float Blue ) {
+void WindowNull::SetGamma( Float Red, Float Green, Float Blue ) {
 }
 
-eeWindowContex cWindowNull::GetContext() const {
+eeWindowContex WindowNull::GetContext() const {
 	return 0;
 }
 
-void cWindowNull::GetMainContext() {
+void WindowNull::GetMainContext() {
 }
 
-eeWindowHandle	cWindowNull::GetWindowHandler() {
+eeWindowHandle	WindowNull::GetWindowHandler() {
 	return 0;
 }
 
-void cWindowNull::SetDefaultContext() {
+void WindowNull::SetDefaultContext() {
 }
 
 }}}}

@@ -19,16 +19,16 @@ class EE_API Clipboard {
 		virtual void SetText( const std::string& Text ) = 0;
 
 		/** @return The parent window of the clipboard */
-		Window::cWindow * GetWindow() const;
+		EE::Window::Window * GetWindow() const;
 	protected:
-		friend class cWindow;
+		friend class Window;
 
-		Clipboard( Window::cWindow * window );
+		Clipboard( EE::Window::Window * window );
 
 		/** Initialize the clipboard manager. This is needed because the backends first create the instance of the clipboard and then initialize the window context. */
 		virtual void Init() = 0;
 
-		Window::cWindow * mWindow;
+		EE::Window::Window * mWindow;
 };
 
 }}

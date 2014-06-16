@@ -7,7 +7,7 @@
 #include <eepp/graphics/cfont.hpp>
 #include <deque>
 
-namespace EE { namespace Window { class cWindow; class InputTextBuffer; class InputEvent; } }
+namespace EE { namespace Window { class Window; class InputTextBuffer; class InputEvent; } }
 
 using namespace EE::Window;
 
@@ -19,10 +19,10 @@ class EE_API cConsole : protected LogReaderInterface {
 		typedef cb::Callback1<void, const std::vector < String >& > ConsoleCallback;
 
 		/** Instances the console but doesn't create it, you must call Create to initialize the console. */
-		cConsole( Window::cWindow * window = NULL );
+		cConsole( EE::Window::Window * window = NULL );
 
 		/** Creates the console */
-		cConsole( cFont* Font, const bool& MakeDefaultCommands = true, const bool& AttachToLog = true, const unsigned int& MaxLogLines = 1024, const Uint32& TextureId = 0, Window::cWindow * window = NULL );
+		cConsole( cFont* Font, const bool& MakeDefaultCommands = true, const bool& AttachToLog = true, const unsigned int& MaxLogLines = 1024, const Uint32& TextureId = 0, EE::Window::Window * window = NULL );
 
 		~cConsole();
 
@@ -126,7 +126,7 @@ class EE_API cConsole : protected LogReaderInterface {
 		std::deque < String > mCmdLog;
 		std::deque < String > mLastCommands;
 
-		Window::cWindow * mWindow;
+		EE::Window::Window * mWindow;
 
 		ColorA mConColor;
 		ColorA mConLineColor;
@@ -243,7 +243,7 @@ class EE_API cConsole : protected LogReaderInterface {
 
 		void PrintCommandsStartingWith( const String& start );
 
-		void PrivVideoResize( cWindow * win );
+		void PrivVideoResize( EE::Window::Window * win );
 
 		void WriteLog( const std::string& Text );
 

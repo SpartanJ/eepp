@@ -5,11 +5,11 @@
 
 namespace EE { namespace Window { namespace Backend { namespace Null {
 
-class EE_API cWindowNull : public cWindow {
+class EE_API WindowNull : public Window {
 	public:
-		cWindowNull( WindowSettings Settings, ContextSettings Context );
+		WindowNull( WindowSettings Settings, ContextSettings Context );
 		
-		virtual ~cWindowNull();
+		virtual ~WindowNull();
 		
 		bool Create( WindowSettings Settings, ContextSettings Context );
 		

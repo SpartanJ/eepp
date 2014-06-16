@@ -5,7 +5,7 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SFML {
 
-ClipboardSFML::ClipboardSFML( cWindow * window ) :
+ClipboardSFML::ClipboardSFML( EE::Window::Window * window ) :
 	Clipboard( window )
 {
 }

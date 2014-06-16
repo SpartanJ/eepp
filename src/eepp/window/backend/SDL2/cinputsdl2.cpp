@@ -12,7 +12,7 @@ namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 static Uint32	KeyCodesTable[ SDL_NUM_SCANCODES ];
 static bool		KeyCodesTableInit = false;
 
-InputSDL::InputSDL( cWindow * window ) :
+InputSDL::InputSDL( EE::Window::Window * window ) :
 	Input( window, eeNew( JoystickManagerSDL, () ) )
 {
 	#if defined( EE_X11_PLATFORM )
@@ -310,15 +310,15 @@ void InputSDL::Update() {
 }
 
 bool InputSDL::GrabInput() {
-	return ( SDL_GetWindowGrab( reinterpret_cast<cWindowSDL*> ( mWindow )->GetSDLWindow() ) == SDL_TRUE ) ? true : false;
+	return ( SDL_GetWindowGrab( reinterpret_cast<WindowSDL*> ( mWindow )->GetSDLWindow() ) == SDL_TRUE ) ? true : false;
 }
 
 void InputSDL::GrabInput( const bool& Grab ) {
-	SDL_SetWindowGrab( reinterpret_cast<cWindowSDL*> ( mWindow )->GetSDLWindow(), Grab ? SDL_TRUE : SDL_FALSE );
+	SDL_SetWindowGrab( reinterpret_cast<WindowSDL*> ( mWindow )->GetSDLWindow(), Grab ? SDL_TRUE : SDL_FALSE );
 }
 
 void InputSDL::InjectMousePos( const Uint16& x, const Uint16& y ) {
-	SDL_WarpMouseInWindow( reinterpret_cast<cWindowSDL*>( mWindow )->GetSDLWindow(), x, y );
+	SDL_WarpMouseInWindow( reinterpret_cast<WindowSDL*>( mWindow )->GetSDLWindow(), x, y );
 }
 
 void InputSDL::Init() {

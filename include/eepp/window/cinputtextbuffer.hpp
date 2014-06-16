@@ -26,9 +26,9 @@ class EE_API InputTextBuffer {
 	public:
 		typedef cb::Callback0<void> EnterCallback;
 
-		InputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, Window::cWindow * window = NULL, const Uint32& maxLength = INPUT_LENGHT_MAX );
+		InputTextBuffer( const bool& active, const bool& supportNewLine, const bool& supportFreeEditing, EE::Window::Window * window = NULL, const Uint32& maxLength = INPUT_LENGHT_MAX );
 
-		InputTextBuffer( Window::cWindow * window = NULL );
+		InputTextBuffer( EE::Window::Window * window = NULL );
 
 		~InputTextBuffer();
 
@@ -131,7 +131,7 @@ class EE_API InputTextBuffer {
 		/** @return The selection cursor final position */
 		const Int32& SelCurEnd() const;
 	protected:
-		cWindow *			mWindow;
+		EE::Window::Window *			mWindow;
 		String				mText;
 		Uint32				mFlags;
 		Uint32				mCallback;

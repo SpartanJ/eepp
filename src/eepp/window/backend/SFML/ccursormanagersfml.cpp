@@ -12,7 +12,7 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SFML {
 
-CursorManagerSFML::CursorManagerSFML( cWindow * window ) :
+CursorManagerSFML::CursorManagerSFML( EE::Window::Window * window ) :
 	CursorManager( window )
 {
 }
@@ -59,13 +59,13 @@ void CursorManagerSFML::Hide() {
 
 void CursorManagerSFML::Visible( bool visible ) {
 	if ( visible ) {
-		reinterpret_cast<cWindowSFML*>(mWindow)->GetSFMLWindow()->setMouseCursorVisible( true );
+		reinterpret_cast<WindowSFML*>(mWindow)->GetSFMLWindow()->setMouseCursorVisible( true );
 
 		mWindow->GetPlatform()->ShowMouseCursor();
 
 		mVisible = true;
 	} else {
-		reinterpret_cast<cWindowSFML*>(mWindow)->GetSFMLWindow()->setMouseCursorVisible( false );
+		reinterpret_cast<WindowSFML*>(mWindow)->GetSFMLWindow()->setMouseCursorVisible( false );
 
 		mWindow->GetPlatform()->HideMouseCursor();
 

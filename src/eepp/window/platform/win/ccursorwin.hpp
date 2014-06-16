@@ -19,11 +19,11 @@ class CursorWin : public Cursor {
 
 		void *		mCursor;
 
-		CursorWin( cTexture * tex, const Vector2i& hotspot, const std::string& name, cWindow * window );
+		CursorWin( cTexture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 
-		CursorWin( cImage * img, const Vector2i& hotspot, const std::string& name, cWindow * window );
+		CursorWin( cImage * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 
-		CursorWin( const std::string& path, const Vector2i& hotspot, const std::string& name, cWindow * window );
+		CursorWin( const std::string& path, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 
 		~CursorWin();
 

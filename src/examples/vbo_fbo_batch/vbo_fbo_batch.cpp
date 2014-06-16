@@ -1,6 +1,6 @@
 #include <eepp/ee.hpp>
 
-cWindow * win			= NULL;
+EE::Window::Window * win			= NULL;
 cVertexBuffer * VBO		= NULL;
 cVertexBuffer * VBO2	= NULL;
 cFrameBuffer * FBO		= NULL;

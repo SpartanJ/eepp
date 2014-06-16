@@ -2,13 +2,13 @@
 
 namespace EE { namespace Window {
 
-Clipboard::Clipboard( cWindow * window ) :
+Clipboard::Clipboard( EE::Window::Window * window ) :
 	mWindow( window )
 {}
 
 Clipboard::~Clipboard() {}
 
-cWindow * Clipboard::GetWindow() const {
+EE::Window::Window * Clipboard::GetWindow() const {
 	return mWindow;
 }
 

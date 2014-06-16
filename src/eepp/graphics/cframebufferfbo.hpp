@@ -9,11 +9,11 @@ namespace EE { namespace Graphics {
 
 class EE_API cFrameBufferFBO : public cFrameBuffer {
 	public:
-		cFrameBufferFBO( Window::cWindow * window = NULL );
+		cFrameBufferFBO( EE::Window::Window * window = NULL );
 
 		~cFrameBufferFBO();
 
-		cFrameBufferFBO( const Uint32& Width, const Uint32& Height, bool DepthBuffer = false, Window::cWindow * window = NULL );
+		cFrameBufferFBO( const Uint32& Width, const Uint32& Height, bool DepthBuffer = false, EE::Window::Window * window = NULL );
 
 		void Bind();
 

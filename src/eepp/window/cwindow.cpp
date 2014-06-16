@@ -34,17 +34,17 @@
 
 namespace EE { namespace Window {
 
-cWindow::cFrameData::cFrameData() :
+Window::FrameData::FrameData() :
 	FrameElapsed(NULL),
 	ElapsedTime()
 {}
 
-cWindow::cFrameData::~cFrameData()
+Window::FrameData::~FrameData()
 {
 	eeSAFE_DELETE( FrameElapsed );
 }
 
-cWindow::cWindow( WindowSettings Settings, ContextSettings Context, Clipboard * Clipboard, Input * Input, CursorManager * CursorManager ) :
+Window::Window( WindowSettings Settings, ContextSettings Context, Clipboard * Clipboard, Input * Input, CursorManager * CursorManager ) :
 	mClipboard( Clipboard ),
 	mInput( Input ),
 	mCursorManager( CursorManager ),
@@ -55,42 +55,42 @@ cWindow::cWindow( WindowSettings Settings, ContextSettings Context, Clipboard * 
 	mWindow.ContextConfig	= Context;
 }
 
-cWindow::~cWindow() {
+Window::~Window() {
 	eeSAFE_DELETE( mClipboard );
 	eeSAFE_DELETE( mInput );
 	eeSAFE_DELETE( mCursorManager );
 	eeSAFE_DELETE( mPlatform );
 }
 
-Sizei cWindow::Size() {
+Sizei Window::Size() {
 	return Sizei( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 }
 
-const Uint32& cWindow::GetWidth() const {
+const Uint32& Window::GetWidth() const {
 	return mWindow.WindowConfig.Width;
 }
 
-const Uint32& cWindow::GetHeight() const {
+const Uint32& Window::GetHeight() const {
 	return mWindow.WindowConfig.Height;
 }
 
-const Sizei& cWindow::GetDesktopResolution() {
+const Sizei& Window::GetDesktopResolution() {
 	return mWindow.DesktopResolution;
 }
 
-void cWindow::Size( Uint32 Width, Uint32 Height ) {
+void Window::Size( Uint32 Width, Uint32 Height ) {
 	Size( Width, Height, Windowed() );
 }
 
-bool cWindow::Windowed() const {
+bool Window::Windowed() const {
 	return 0 != !( mWindow.WindowConfig.Style & WindowStyle::Fullscreen );
 }
 
-bool cWindow::Resizeable() const {
+bool Window::Resizeable() const {
 	return 0 != ( mWindow.WindowConfig.Style & WindowStyle::Resize );
 }
 
-void cWindow::Set2DProjection( const Uint32& Width, const Uint32& Height ) {
+void Window::Set2DProjection( const Uint32& Width, const Uint32& Height ) {
 	GLi->MatrixMode( GL_PROJECTION );
 	GLi->LoadIdentity();
 
@@ -100,7 +100,7 @@ void cWindow::Set2DProjection( const Uint32& Width, const Uint32& Height ) {
 	GLi->LoadIdentity();
 }
 
-void cWindow::SetViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height, const bool& UpdateProjectionMatrix ) {
+void Window::SetViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height, const bool& UpdateProjectionMatrix ) {
 	GLi->Viewport( x, GetHeight() - ( y + Height ), Width, Height );
 
 	if ( UpdateProjectionMatrix ) {
@@ -108,27 +108,27 @@ void cWindow::SetViewport( const Int32& x, const Int32& y, const Uint32& Width, 
 	}
 }
 
-void cWindow::SetView( const View& View ) {
+void Window::SetView( const View& View ) {
 	mCurrentView = &View;
 
 	Recti RView = mCurrentView->GetView();
 	SetViewport( RView.Left, RView.Top, RView.Right, RView.Bottom );
 }
 
-const View& cWindow::GetDefaultView() const {
+const View& Window::GetDefaultView() const {
 	return mDefaultView;
 }
 
-const View& cWindow::GetView() const {
+const View& Window::GetView() const {
     return *mCurrentView;
 }
 
-void cWindow::CreateView() {
+void Window::CreateView() {
 	mDefaultView.SetView( 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 	mCurrentView = &mDefaultView;
 }
 
-void cWindow::Setup2D( const bool& KeepView ) {
+void Window::Setup2D( const bool& KeepView ) {
 	GLi->PixelStorei( GL_UNPACK_ALIGNMENT, 1 );
 	GLi->PixelStorei( GL_PACK_ALIGNMENT, 1 );
 
@@ -165,20 +165,20 @@ void cWindow::Setup2D( const bool& KeepView ) {
 	}
 }
 
-const WindowInfo * cWindow::GetWindowInfo() const {
+const WindowInfo * Window::GetWindowInfo() const {
 	return &mWindow;
 }
 
-void cWindow::BackColor( const RGB& Color ) {
+void Window::BackColor( const RGB& Color ) {
 	mWindow.BackgroundColor = Color;
 	GLi->ClearColor( static_cast<Float>( mWindow.BackgroundColor.R() ) / 255.0f, static_cast<Float>( mWindow.BackgroundColor.G() ) / 255.0f, static_cast<Float>( mWindow.BackgroundColor.B() ) / 255.0f, 255.0f );
 }
 
-const RGB& cWindow::BackColor() const {
+const RGB& Window::BackColor() const {
 	return mWindow.BackgroundColor;
 }
 
-bool cWindow::TakeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format ) {
+bool Window::TakeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format ) {
 	cGlobalBatchRenderer::instance()->Draw();
 
 	bool CreateNewFile = false;
@@ -228,35 +228,35 @@ bool cWindow::TakeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format )
 	}
 }
 
-bool cWindow::Running() const {
+bool Window::Running() const {
 	return mWindow.Created;
 }
 
-bool cWindow::Created() const {
+bool Window::Created() const {
 	return mWindow.Created;
 }
 
-void cWindow::Close() {
+void Window::Close() {
 	mWindow.Created = false;
 }
 
-void cWindow::FrameRateLimit( const Uint32& FrameRateLimit ) {
+void Window::FrameRateLimit( const Uint32& FrameRateLimit ) {
 	mFrameData.FPS.Limit = (Float)FrameRateLimit;
 }
 
-Uint32 cWindow::FrameRateLimit() {
+Uint32 Window::FrameRateLimit() {
 	return static_cast<Uint32>( mFrameData.FPS.Limit );
 }
 
-Uint32 cWindow::FPS() const {
+Uint32 Window::FPS() const {
 	return mFrameData.FPS.Current;
 }
 
-Time cWindow::Elapsed() const {
+Time Window::Elapsed() const {
 	return mFrameData.ElapsedTime;
 }
 
-void cWindow::GetElapsedTime() {
+void Window::GetElapsedTime() {
 	if ( NULL == mFrameData.FrameElapsed ) {
 		mFrameData.FrameElapsed = eeNew( Clock, () );
 	}
@@ -264,7 +264,7 @@ void cWindow::GetElapsedTime() {
 	mFrameData.ElapsedTime = mFrameData.FrameElapsed->Elapsed();
 }
 
-void cWindow::CalculateFps() {
+void Window::CalculateFps() {
 	if ( Sys::GetTicks() - mFrameData.FPS.LastCheck >= 1000 ) {
 		mFrameData.FPS.Current = mFrameData.FPS.Count;
 		mFrameData.FPS.Count = 0;
@@ -274,7 +274,7 @@ void cWindow::CalculateFps() {
 	mFrameData.FPS.Count++;
 }
 
-void cWindow::LimitFps() {
+void Window::LimitFps() {
 	if ( mFrameData.FPS.Limit > 0 ) {
 		mFrameData.FPS.Error = 0;
 		double RemainT = 1000.0 / mFrameData.FPS.Limit - ( mFrameData.ElapsedTime.AsMilliseconds() * 0.1f );
@@ -296,17 +296,17 @@ void cWindow::LimitFps() {
 	}
 }
 
-void cWindow::ViewCheckUpdate() {
+void Window::ViewCheckUpdate() {
 	if ( mCurrentView->NeedUpdate() ) {
 		SetView( *mCurrentView );
 	}
 }
 
-void cWindow::Clear() {
+void Window::Clear() {
 	GLi->Clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 }
 
-void cWindow::Display( bool clear ) {
+void Window::Display( bool clear ) {
 	cGlobalBatchRenderer::instance()->Draw();
 
 	if ( mCurrentView->NeedUpdate() )
@@ -326,57 +326,57 @@ void cWindow::Display( bool clear ) {
 	LimitFps();
 }
 
-void cWindow::ClipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
+void Window::ClipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
 	cGlobalBatchRenderer::instance()->Draw();
 	GLi->Scissor( x, GetHeight() - ( y + Height ), Width, Height );
 	GLi->Enable( GL_SCISSOR_TEST );
 }
 
-void cWindow::ClipDisable() {
+void Window::ClipDisable() {
 	cGlobalBatchRenderer::instance()->Draw();
 	GLi->Disable( GL_SCISSOR_TEST );
 }
 
-void cWindow::ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
+void Window::ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
 	cGlobalBatchRenderer::instance()->Draw();
 	GLi->Clip2DPlaneEnable( x, y, Width, Height );
 }
 
-void cWindow::ClipPlaneDisable() {
+void Window::ClipPlaneDisable() {
 	cGlobalBatchRenderer::instance()->Draw();
 	GLi->Clip2DPlaneDisable();
 }
 
-Clipboard * cWindow::GetClipboard() const {
+Clipboard * Window::GetClipboard() const {
 	return mClipboard;
 }
 
-Input * cWindow::GetInput() const {
+Input * Window::GetInput() const {
 	return mInput;
 }
 
-CursorManager * cWindow::GetCursorManager() const {
+CursorManager * Window::GetCursorManager() const {
 	return mCursorManager;
 }
 
-Uint32 cWindow::PushResizeCallback( const WindowResizeCallback& cb ) {
+Uint32 Window::PushResizeCallback( const WindowResizeCallback& cb ) {
 	mNumCallBacks++;
 	mCallbacks[ mNumCallBacks ] = cb;
 	return mNumCallBacks;
 }
 
-void cWindow::PopResizeCallback( const Uint32& CallbackId ) {
+void Window::PopResizeCallback( const Uint32& CallbackId ) {
 	mCallbacks[ CallbackId ] = 0;
 	mCallbacks.erase( mCallbacks.find(CallbackId) );
 }
 
-void cWindow::SendVideoResizeCb() {
+void Window::SendVideoResizeCb() {
 	for ( std::map<Uint32, WindowResizeCallback>::iterator i = mCallbacks.begin(); i != mCallbacks.end(); i++ ) {
 		i->second( this );
 	}
 }
 
-void cWindow::LogSuccessfulInit(const std::string& BackendName , const std::string&ProcessPath ) {
+void Window::LogSuccessfulInit(const std::string& BackendName , const std::string&ProcessPath ) {
 	std::string msg( "Engine Initialized Succesfully.\n\tVersion: " + Version::GetVersionName() + " (codename: \"" + Version::GetCodename() + "\")" +
 							 "\n\tOS: " + Sys::GetOSName() +
 							 "\n\tArch: " + Sys::GetOSArchitecture() +
@@ -400,15 +400,15 @@ void cWindow::LogSuccessfulInit(const std::string& BackendName , const std::stri
 	#endif
 }
 
-void cWindow::LogFailureInit( const std::string& ClassName, const std::string& BackendName ) {
+void Window::LogFailureInit( const std::string& ClassName, const std::string& BackendName ) {
 	eePRINTL( "Error on %s::Init. Backend %s failed to start.", ClassName.c_str(), BackendName.c_str() );
 }
 
-std::string cWindow::Caption() {
+std::string Window::Caption() {
 	return mWindow.WindowConfig.Caption;
 }
 
-eeWindowContex cWindow::GetContext() const {
+eeWindowContex Window::GetContext() const {
 #if defined( EE_GLEW_AVAILABLE  ) && ( EE_PLATFORM == EE_PLATFORM_WIN || defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_MACOSX )
 	return mWindow.Context;
 #else
@@ -416,119 +416,119 @@ eeWindowContex cWindow::GetContext() const {
 #endif
 }
 
-void cWindow::GetMainContext() {
+void Window::GetMainContext() {
 #ifdef EE_GLEW_AVAILABLE
 	if ( NULL != mPlatform )
 		mWindow.Context = mPlatform->GetWindowContext();
 #endif
 }
 
-void cWindow::SetDefaultContext() {
+void Window::SetDefaultContext() {
 #if defined( EE_GLEW_AVAILABLE ) && ( EE_PLATFORM == EE_PLATFORM_WIN || defined( EE_X11_PLATFORM ) )
 	SetCurrentContext( mWindow.Context );
 #endif
 }
 
-void cWindow::Minimize() {
+void Window::Minimize() {
 	if ( NULL != mPlatform )
 		mPlatform->MinimizeWindow();
 }
 
-void cWindow::Maximize() {
+void Window::Maximize() {
 	if ( NULL != mPlatform )
 		mPlatform->MaximizeWindow();
 }
 
-bool cWindow::IsMaximized() {
+bool Window::IsMaximized() {
 	if ( NULL != mPlatform )
 		return mPlatform->IsWindowMaximized();
 
 	return false;
 }
 
-void cWindow::Hide() {
+void Window::Hide() {
 	if ( NULL != mPlatform )
 		mPlatform->HideWindow();
 }
 
-void cWindow::Raise() {
+void Window::Raise() {
 	if ( NULL != mPlatform )
 		mPlatform->RaiseWindow();
 }
 
-void cWindow::Show() {
+void Window::Show() {
 	if ( NULL != mPlatform )
 		mPlatform->ShowWindow();
 }
 
-void cWindow::Position( Int16 Left, Int16 Top ) {
+void Window::Position( Int16 Left, Int16 Top ) {
 	if ( NULL != mPlatform )
 		mPlatform->MoveWindow( Left, Top );
 }
 
-Vector2i cWindow::Position() {
+Vector2i Window::Position() {
 	if ( NULL != mPlatform )
 		return mPlatform->Position();
 
 	return Vector2i();
 }
 
-void cWindow::SetCurrentContext( eeWindowContex Context ) {
+void Window::SetCurrentContext( eeWindowContex Context ) {
 	if ( NULL != mPlatform )
 		mPlatform->SetContext( Context );
 }
 
-void cWindow::CreatePlatform() {
+void Window::CreatePlatform() {
 	eeSAFE_DELETE( mPlatform );
 	mPlatform = eeNew( Platform::cNullImpl, ( this ) );
 }
 
-void cWindow::SetCurrent() {
+void Window::SetCurrent() {
 }
 
-void cWindow::Center() {
+void Window::Center() {
 	if ( Windowed() ) {
 		Position( mWindow.DesktopResolution.Width() / 2 - mWindow.WindowConfig.Width / 2, mWindow.DesktopResolution.Height() / 2 - mWindow.WindowConfig.Height / 2 );
 	}
 }
 
-Platform::PlatformImpl * cWindow::GetPlatform() const {
+Platform::PlatformImpl * Window::GetPlatform() const {
 	return mPlatform;
 }
 
-void cWindow::StartTextInput() {
+void Window::StartTextInput() {
 }
 
-bool cWindow::IsTextInputActive() {
+bool Window::IsTextInputActive() {
 	return false;
 }
 
-void cWindow::StopTextInput() {
+void Window::StopTextInput() {
 }
 
-void cWindow::SetTextInputRect( Recti& rect ) {
+void Window::SetTextInputRect( Recti& rect ) {
 }
 
-bool cWindow::HasScreenKeyboardSupport()
+bool Window::HasScreenKeyboardSupport()
 {
 	return false;
 }
 
-bool cWindow::IsScreenKeyboardShown() {
+bool Window::IsScreenKeyboardShown() {
 	return false;
 }
 
-bool cWindow::IsThreadedGLContext() {
+bool Window::IsThreadedGLContext() {
 	return false;
 }
 
-void cWindow::SetGLContextThread() {
+void Window::SetGLContextThread() {
 }
 
-void cWindow::UnsetGLContextThread() {
+void Window::UnsetGLContextThread() {
 }
 
-void cWindow::RunMainLoop( void (*func)(), int fps ) {
+void Window::RunMainLoop( void (*func)(), int fps ) {
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	emscripten_set_main_loop(func, fps, 1);
 #else
@@ -541,27 +541,27 @@ void cWindow::RunMainLoop( void (*func)(), int fps ) {
 }
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
-void * cWindow::GetJNIEnv() {
+void * Window::GetJNIEnv() {
 	return NULL;
 }
 
-void * cWindow::GetActivity() {
+void * Window::GetActivity() {
 	return NULL;
 }
 
-int cWindow::GetExternalStorageState() {
+int Window::GetExternalStorageState() {
 	return 0;
 }
 
-std::string cWindow::GetInternalStoragePath() {
+std::string Window::GetInternalStoragePath() {
 	return std::string("");
 }
 
-std::string cWindow::GetExternalStoragePath() {
+std::string Window::GetExternalStoragePath() {
 	return std::string("");
 }
 
-std::string cWindow::GetApkPath() {
+std::string Window::GetApkPath() {
 	return std::string("");
 }
 #endif

@@ -3,7 +3,7 @@
 
 namespace EE { namespace Window { namespace Backend { namespace Null {
 
-ClipboardNull::ClipboardNull( cWindow * window ) :
+ClipboardNull::ClipboardNull( EE::Window::Window * window ) :
 	Clipboard( window )
 {
 }

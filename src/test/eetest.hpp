@@ -89,7 +89,7 @@ class cEETest : private Thread {
 		Time PSElapsed;
 	private:
 		Engine * EE;
-		Window::cWindow * mWindow;
+		EE::Window::Window * mWindow;
 		cTextureFactory* TF;
 		System::Log* Log;
 		Window::Input* KM;
@@ -296,7 +296,7 @@ class cEETest : private Thread {
 
 		void OnShowMenu( const cUIEvent * Event );
 
-		void OnWindowResize( cWindow * win );
+		void OnWindowResize( EE::Window::Window * win );
 };
 
 }

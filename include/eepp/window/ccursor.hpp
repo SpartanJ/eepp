@@ -11,7 +11,7 @@ using namespace EE::Graphics;
 
 namespace EE { namespace Window {
 
-class cWindow;
+class Window;
 
 class EE_API Cursor {
 	public:
@@ -35,13 +35,13 @@ class EE_API Cursor {
 		std::string		mName;
 		cImage *		mImage;
 		Vector2i		mHotSpot;
-		cWindow *		mWindow;
+		EE::Window::Window *		mWindow;
 
-		Cursor( cTexture * tex, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
+		Cursor( cTexture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 
-		Cursor( cImage * img, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
+		Cursor( cImage * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 
-		Cursor( const std::string& path, const Vector2i& hotspot, const std::string& name, Window::cWindow * window );
+		Cursor( const std::string& path, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 
 		virtual void Create() = 0;
 };

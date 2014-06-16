@@ -6,7 +6,7 @@
 
 namespace EE { namespace Window { namespace Platform {
 
-cOSXImpl::cOSXImpl( cWindow * window ) :
+cOSXImpl::cOSXImpl( EE::Window::Window * window ) :
 	PlatformImpl( window )
 {
 }

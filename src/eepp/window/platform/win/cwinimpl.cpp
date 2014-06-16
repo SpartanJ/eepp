@@ -31,7 +31,7 @@ static HCURSOR GetLoadCursor( const EE_SYSTEM_CURSOR& cursor, LPCSTR syscur ) {
 	return SYS_CURSORS[ cursor ];
 }
 
-cWinImpl::cWinImpl( cWindow * window, eeWindowHandle handler ) :
+cWinImpl::cWinImpl( EE::Window::Window * window, eeWindowHandle handler ) :
 	PlatformImpl( window ),
 	mHandler( handler ),
 	mCursorCurrent( NULL ),

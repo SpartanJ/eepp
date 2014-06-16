@@ -30,7 +30,7 @@ void CreateJointAndBody() {
 	mMouseBody	= eeNew( cBody, ( INFINITY, INFINITY ) );
 }
 
-cWindow * mWindow;
+EE::Window::Window * mWindow;
 Input * KM;
 
 void DefaultDrawOptions() {
