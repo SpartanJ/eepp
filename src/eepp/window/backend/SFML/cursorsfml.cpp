@@ -4,12 +4,12 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SFML {
 
-CursorSFML::CursorSFML( cTexture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
+CursorSFML::CursorSFML( Texture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
 	Cursor( tex, hotspot, name, window )
 {
 }
 
-CursorSFML::CursorSFML( cImage * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
+CursorSFML::CursorSFML( Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
 	Cursor( img, hotspot, name, window )
 {
 }

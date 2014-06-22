@@ -1,15 +1,15 @@
 #include <eepp/ui/cuitextinputpassword.hpp>
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/ui/cuithememanager.hpp>
-#include <eepp/graphics/ctextcache.hpp>
-#include <eepp/graphics/cfont.hpp>
+#include <eepp/graphics/textcache.hpp>
+#include <eepp/graphics/font.hpp>
 
 namespace EE { namespace UI {
 
 cUITextInputPassword::cUITextInputPassword( const cUITextInput::CreateParams& Params ) :
 	cUITextInput( Params )
 {
-	mPassCache = eeNew( cTextCache, () );
+	mPassCache = eeNew( TextCache, () );
 	mPassCache->Font( Params.Font );
 	mPassCache->Color( mFontColor );
 	mPassCache->ShadowColor( mFontShadowColor );
@@ -126,7 +126,7 @@ void cUITextInputPassword::Text( const String& text ) {
 	UpdatePass( text );
 }
 
-cTextCache *cUITextInputPassword::GetPassCache() const {
+TextCache *cUITextInputPassword::GetPassCache() const {
 	return mPassCache;
 }
 

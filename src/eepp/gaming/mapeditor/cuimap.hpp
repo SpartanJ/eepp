@@ -8,7 +8,7 @@
 #include <eepp/gaming/cmap.hpp>
 #include <eepp/gaming/clightmanager.hpp>
 #include <eepp/gaming/clight.hpp>
-#include <eepp/graphics/cprimitives.hpp>
+#include <eepp/graphics/primitives.hpp>
 
 using namespace EE::UI;
 
@@ -95,7 +95,7 @@ class EE_API cUIMap : public cUIComplexControl {
 		cMap *				mMap;
 		cLayer *			mCurLayer;
 		Uint32				mEditingMode;
-		cPrimitives			mP;
+		Primitives			mP;
 
 		Uint32				mEditingObjMode;
 

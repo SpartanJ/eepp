@@ -39,9 +39,9 @@ class cOSXImpl : public PlatformImpl {
 
 		void HideMouseCursor();
 
-		Cursor * CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name );
+		Cursor * CreateMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name );
 
-		Cursor * CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name );
+		Cursor * CreateMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name );
 
 		Cursor * CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name );
 

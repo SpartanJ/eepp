@@ -50,11 +50,11 @@ void cOSXImpl::ShowMouseCursor() {
 void cOSXImpl::HideMouseCursor() {
 }
 
-Cursor * cOSXImpl::CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
+Cursor * cOSXImpl::CreateMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-Cursor * cOSXImpl::CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name ) {
+Cursor * cOSXImpl::CreateMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 

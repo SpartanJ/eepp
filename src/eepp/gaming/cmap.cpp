@@ -11,11 +11,11 @@
 
 #include <eepp/system/packmanager.hpp>
 #include <eepp/graphics/glextensions.hpp>
-#include <eepp/graphics/renderer/cgl.hpp>
-#include <eepp/graphics/cprimitives.hpp>
-#include <eepp/graphics/ctextureatlasmanager.hpp>
-#include <eepp/graphics/ctextureatlasloader.hpp>
-#include <eepp/graphics/cglobalbatchrenderer.hpp>
+#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/primitives.hpp>
+#include <eepp/graphics/textureatlasmanager.hpp>
+#include <eepp/graphics/textureatlasloader.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
 using namespace EE::Graphics;
 
 #include <eepp/ui/cuithememanager.hpp>
@@ -117,17 +117,17 @@ void cMap::CreateLightManager() {
 
 void cMap::CreateEmptyTile() {
 	//! I create a texture representing an empty tile to render instead of rendering with primitives because is a lot faster, at least with NVIDIA GPUs.
-	cTextureFactory * TF = cTextureFactory::instance();
+	TextureFactory * TF = TextureFactory::instance();
 
 	std::string tileName( String::StrFormated( "maptile-%dx%d-%ul", mTileSize.Width(), mTileSize.Height(), mGridLinesColor.GetValue() ) );
 
-	cTexture * Tex = TF->GetByName( tileName );
+	Texture * Tex = TF->GetByName( tileName );
 
 	if ( NULL == Tex ) {
 		Uint32 x, y;
 		ColorA Col( mGridLinesColor );
 
-		cImage Img( mTileSize.Width(), mTileSize.Height(), 4 );
+		Image Img( mTileSize.Width(), mTileSize.Height(), 4 );
 
 		Img.FillWithColor( ColorA( 0, 0, 0, 0 ) );
 
@@ -211,14 +211,14 @@ cLayer* cMap::GetLayer( const std::string& name ) {
 }
 
 void cMap::Draw() {
-	cGlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->Draw();
 
 	if ( ClipedArea() ) {
 		mWindow->ClipEnable( mScreenPos.x, mScreenPos.y, mViewSize.x, mViewSize.y );
 	}
 
 	if ( DrawBackground() ) {
-		cPrimitives P;
+		Primitives P;
 
 		Uint8 Alpha = static_cast<Uint8>( (Float)mBackColor.A() * ( (Float)mBackAlpha / 255.f ) );
 
@@ -246,7 +246,7 @@ void cMap::Draw() {
 	if ( mDrawCb.IsSet() )
 		mDrawCb();
 
-	cGlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->Draw();
 
 	GLi->PopMatrix();
 	GLi->LoadMatrixf( oldM );
@@ -270,7 +270,7 @@ void cMap::GridDraw() {
 	if ( 0 == mSize.x || 0 == mSize.y || NULL == mTileTex )
 		return;
 
-	cGlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->Draw();
 
 	Vector2i start = StartTile();
 	Vector2i end = EndTile();
@@ -308,7 +308,7 @@ void cMap::GridDraw() {
 		}
 	}
 
-	cGlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->Draw();
 }
 
 const bool& cMap::IsMouseOver() const {
@@ -655,7 +655,7 @@ cGameObject * cMap::CreateGameObject( const Uint32& Type, const Uint32& Flags, c
 				return mCreateGOCb( Type, Flags, Layer, DataId );
 			} else {
 				cGameObjectVirtual * tVirtual;
-				cSubTexture * tIsSubTexture = cTextureAtlasManager::instance()->GetSubTextureById( DataId );
+				SubTexture * tIsSubTexture = TextureAtlasManager::instance()->GetSubTextureById( DataId );
 
 				if ( NULL != tIsSubTexture ) {
 					tVirtual = eeNew( cGameObjectVirtual, ( tIsSubTexture, Layer, Flags, Type ) );
@@ -837,8 +837,8 @@ bool cMap::LoadFromStream( IOStream& IOS ) {
 				for ( i = 0; i < TextureAtlases.size(); i++ ) {
 					std::string sgname = FileSystem::FileRemoveExtension( FileSystem::FileNameFromPath( TextureAtlases[i] ) );
 
-					if ( NULL == cTextureAtlasManager::instance()->GetByName( sgname ) ) {
-						cTextureAtlasLoader * tgl = eeNew( cTextureAtlasLoader, () );
+					if ( NULL == TextureAtlasManager::instance()->GetByName( sgname ) ) {
+						TextureAtlasLoader * tgl = eeNew( TextureAtlasLoader, () );
 
 						tgl->Load( Sys::GetProcessPath() + TextureAtlases[i] );
 
@@ -1372,8 +1372,8 @@ void cMap::Save( const std::string& path ) {
 }
 
 std::vector<std::string> cMap::GetTextureAtlases() {
-	cTextureAtlasManager * SGM = cTextureAtlasManager::instance();
-	std::list<cTextureAtlas*>& Res = SGM->GetResources();
+	TextureAtlasManager * SGM = TextureAtlasManager::instance();
+	std::list<TextureAtlas*>& Res = SGM->GetResources();
 
 	std::vector<std::string> items;
 
@@ -1381,7 +1381,7 @@ std::vector<std::string> cMap::GetTextureAtlases() {
 	Uint32 Restricted1 = String::Hash( std::string( "global" ) );
 	Uint32 Restricted2 = String::Hash( UI::cUIThemeManager::instance()->DefaultTheme()->TextureAtlas()->Name() );
 
-	for ( std::list<cTextureAtlas*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
+	for ( std::list<TextureAtlas*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
 		if ( (*it)->Id() != Restricted1 && (*it)->Id() != Restricted2 )
 			items.push_back( (*it)->Path() );
 	}
@@ -1397,7 +1397,7 @@ void cMap::SetUpdateCallback( MapUpdateCb Cb ) {
 	mUpdateCb = Cb;
 }
 
-cTexture * cMap::GetBlankTileTexture() {
+Texture * cMap::GetBlankTileTexture() {
 	return mTileTex;
 }
 

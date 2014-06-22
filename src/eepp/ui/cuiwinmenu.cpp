@@ -1,6 +1,6 @@
 #include <eepp/ui/cuiwinmenu.hpp>
 #include <eepp/ui/cuimanager.hpp>
-#include <eepp/graphics/csubtexture.hpp>
+#include <eepp/graphics/subtexture.hpp>
 
 namespace EE { namespace UI {
 
@@ -123,7 +123,7 @@ void cUIWinMenu::RefreshButtons() {
 	Int32 h = 0, th = 0, ycenter = 0;
 
 	if ( NULL != GetSkin() ) {
-		cSubTexture * subTexture = GetSkin()->GetSubTexture( cUISkinState::StateNormal );
+		SubTexture * subTexture = GetSkin()->GetSubTexture( cUISkinState::StateNormal );
 
 		if ( NULL != subTexture ) {
 			h = subTexture->Size().Height();
@@ -132,7 +132,7 @@ void cUIWinMenu::RefreshButtons() {
 				cUISelectButton * tbut = mButtons.begin()->first;
 
 				if ( NULL != tbut->GetSkin() ) {
-					cSubTexture * tSubTexture2 = tbut->GetSkin()->GetSubTexture( cUISkinState::StateSelected );
+					SubTexture * tSubTexture2 = tbut->GetSkin()->GetSubTexture( cUISkinState::StateSelected );
 
 					if ( NULL != tSubTexture2 )  {
 						th = tSubTexture2->Size().Height();
@@ -294,7 +294,7 @@ const ColorA& cUIWinMenu::FontSelectedColor() const {
 	return mFontSelectedColor;
 }
 
-cFont * cUIWinMenu::Font() const {
+Graphics::Font * cUIWinMenu::Font() const {
 	return mFont;
 }
 

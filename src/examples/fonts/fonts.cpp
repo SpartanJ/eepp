@@ -1,12 +1,12 @@
 #include <eepp/ee.hpp>
 
 EE::Window::Window * win			= NULL;
-cTTFFont * TTF			= NULL;
-cTTFFont * TTFO			= NULL;
-cTTFFont * TTF2			= NULL;
-cTextureFont * TexF		= NULL;
-cTextureFont * TexF2	= NULL;
-cTextCache * TxtCache	= NULL;
+TTFFont * TTF			= NULL;
+TTFFont * TTFO			= NULL;
+TTFFont * TTF2			= NULL;
+TextureFont * TexF		= NULL;
+TextureFont * TexF2	= NULL;
+TextCache * TxtCache	= NULL;
 
 void MainLoop()
 {
@@ -59,33 +59,33 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		std::string AppPath = Sys::GetProcessPath();
 
 		// Create a new True Type Font
-		TTF		= cTTFFont::New( "DejaVuSansMonoOutline" );
-		TTFO	= cTTFFont::New( "DejaVuSansMonoOutlineFreetype" );
-		TTF2	= cTTFFont::New( "DejaVuSansMono" );
-		TexF	= cTextureFont::New( "ProggySquareSZ" );
-		TexF2	= cTextureFont::New( "conchars" );
+		TTF		= TTFFont::New( "DejaVuSansMonoOutline" );
+		TTFO	= TTFFont::New( "DejaVuSansMonoOutlineFreetype" );
+		TTF2	= TTFFont::New( "DejaVuSansMono" );
+		TexF	= TextureFont::New( "ProggySquareSZ" );
+		TexF2	= TextureFont::New( "conchars" );
 
 		// Load the TTF font
 		TTF->Load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 18, TTF_STYLE_NORMAL, 128, RGB(255,255,255), 3, RGB(0,0,0), true );
 
 		// Change the default method to use for outlining the font glyphs
-		cTTFFont::OutlineMethod = cTTFFont::OutlineFreetype;
+		TTFFont::OutlineMethod = TTFFont::OutlineFreetype;
 
 		// Create the exact same font than before but using the new outlining method
 		TTFO->Load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 18, TTF_STYLE_NORMAL, 128, RGB(255,255,255), 3, RGB(0,0,0), true );
 
 		TTF2->Load( AppPath + "assets/fonts/DejaVuSansMono.ttf", 24, TTF_STYLE_NORMAL, 128, RGB(255,255,255), 0, RGB(0,0,0), true );
 
-		// Save the TTF font so then it can be loaded as a cTextureFont
+		// Save the TTF font so then it can be loaded as a TextureFont
 		TTF->Save( AppPath + "assets/temp/DejaVuSansMono.png", AppPath + "assets/temp/DejaVuSansMono.fnt" );
 
 		// Load the texture font, previusly generated from a True Type Font
 		// First load the texture
-		Uint32 TexFid = cTextureFactory::instance()->Load( AppPath + "assets/fonts/ProggySquareSZ.png" );
+		Uint32 TexFid = TextureFactory::instance()->Load( AppPath + "assets/fonts/ProggySquareSZ.png" );
 		TexF->Load( TexFid,  AppPath + "assets/fonts/ProggySquareSZ.dat" );
 
 		// Load a monospaced texture font from image ( using the texture loader to set the color key )
-		cTextureLoader TexLoader( AppPath + "assets/fonts/conchars.png" );
+		TextureLoader TexLoader( AppPath + "assets/fonts/conchars.png" );
 		TexLoader.SetColorKey( RGB(0,0,0) );
 		TexLoader.Load();;
 		TexF2->Load( TexLoader.Id(), 32 );
@@ -109,7 +109,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 		// Create a new text cache to draw on screen
 		// The cached text will
-		TxtCache = eeNew( cTextCache, ( TTF2, Txt, ColorA(0,0,0,255) ) );
+		TxtCache = eeNew( TextCache, ( TTF2, Txt, ColorA(0,0,0,255) ) );
 
 		// Set the text cache to be centered
 		TxtCache->Flags( FONT_DRAW_CENTER );

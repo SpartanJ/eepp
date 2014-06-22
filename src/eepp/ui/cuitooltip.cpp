@@ -1,7 +1,7 @@
 #include <eepp/ui/cuitooltip.hpp>
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/ui/cuicomplexcontrol.hpp>
-#include <eepp/graphics/ctextcache.hpp>
+#include <eepp/graphics/textcache.hpp>
 
 namespace EE { namespace UI {
 
@@ -14,7 +14,7 @@ cUITooltip::cUITooltip( cUITooltip::CreateParams& Params, cUIControl * TooltipOf
 	mTooltipTime( Time::Zero ),
 	mTooltipOf( TooltipOf )
 {
-	mTextCache = eeNew( cTextCache, () );
+	mTextCache = eeNew( TextCache, () );
 	mTextCache->Font( Params.Font );
 	mTextCache->Color( mFontColor );
 	mTextCache->ShadowColor( mFontShadowColor );
@@ -102,11 +102,11 @@ void cUITooltip::Draw() {
 	}
 }
 
-cFont * cUITooltip::Font() const {
+Graphics::Font * cUITooltip::Font() const {
 	return mTextCache->Font();
 }
 
-void cUITooltip::Font( cFont * font ) {
+void cUITooltip::Font( Graphics::Font * font ) {
 	if ( mTextCache->Font() != font ) {
 		mTextCache->Font( font );
 		AutoPadding();
@@ -217,7 +217,7 @@ const Recti& cUITooltip::Padding() const {
 	return mPadding;
 }
 
-cTextCache * cUITooltip::GetTextCache() {
+TextCache * cUITooltip::GetTextCache() {
 	return mTextCache;
 }
 

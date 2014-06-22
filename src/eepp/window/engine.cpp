@@ -1,13 +1,13 @@
 #include <eepp/window/engine.hpp>
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/inifile.hpp>
-#include <eepp/graphics/ctexturefactory.hpp>
-#include <eepp/graphics/cfontmanager.hpp>
-#include <eepp/graphics/cglobalbatchrenderer.hpp>
-#include <eepp/graphics/cshaderprogrammanager.hpp>
-#include <eepp/graphics/ctextureatlasmanager.hpp>
-#include <eepp/graphics/cframebuffermanager.hpp>
-#include <eepp/graphics/cvertexbuffermanager.hpp>
+#include <eepp/graphics/texturefactory.hpp>
+#include <eepp/graphics/fontmanager.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/graphics/shaderprogrammanager.hpp>
+#include <eepp/graphics/textureatlasmanager.hpp>
+#include <eepp/graphics/framebuffermanager.hpp>
+#include <eepp/graphics/vertexbuffermanager.hpp>
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/audio/audiolistener.hpp>
 #include <eepp/helper/haikuttf/hkfontmanager.hpp>
@@ -17,7 +17,7 @@
 #include <eepp/window/backend/SDL/backendsdl.hpp>
 #include <eepp/window/backend/SDL2/backendsdl2.hpp>
 #include <eepp/window/backend/SFML/backendsfml.hpp>
-#include <eepp/graphics/renderer/cgl.hpp>
+#include <eepp/graphics/renderer/gl.hpp>
 
 #define BACKEND_SDL			1
 #define BACKEND_SDL2		2
@@ -45,29 +45,29 @@ Engine::Engine() :
 	mSharedGLContext( false ),
 	mMainThreadId( 0 )
 {
-	cTextureAtlasManager::CreateSingleton();
+	TextureAtlasManager::CreateSingleton();
 }
 
 Engine::~Engine() {
 	Physics::cPhysicsManager::DestroySingleton();
 
-	Graphics::Private::cFrameBufferManager::DestroySingleton();
+	Graphics::Private::FrameBufferManager::DestroySingleton();
 
-	Graphics::Private::cVertexBufferManager::DestroySingleton();
+	Graphics::Private::VertexBufferManager::DestroySingleton();
 
-	cGlobalBatchRenderer::DestroySingleton();
+	GlobalBatchRenderer::DestroySingleton();
 
-	cTextureFactory::DestroySingleton();
+	TextureFactory::DestroySingleton();
 
-	cTextureAtlasManager::DestroySingleton();
+	TextureAtlasManager::DestroySingleton();
 
-	cFontManager::DestroySingleton();
+	FontManager::DestroySingleton();
 
 	UI::cUIManager::DestroySingleton();
 
 	Graphics::cGL::DestroySingleton();
 
-	cShaderProgramManager::DestroySingleton();
+	ShaderProgramManager::DestroySingleton();
 
 	PackManager::DestroySingleton();
 

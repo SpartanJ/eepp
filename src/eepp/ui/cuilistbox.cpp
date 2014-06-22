@@ -2,7 +2,7 @@
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/ui/cuilistboxitem.hpp>
 #include <eepp/ui/tuiitemcontainer.hpp>
-#include <eepp/graphics/cfont.hpp>
+#include <eepp/graphics/font.hpp>
 
 namespace EE { namespace UI {
 
@@ -696,7 +696,7 @@ const ColorA& cUIListBox::FontSelectedColor() const {
 	return mFontSelectedColor;
 }
 
-void cUIListBox::Font( cFont * Font ) {
+void cUIListBox::Font( Graphics::Font * Font ) {
 	mFont = Font;
 
 	for ( Uint32 i = 0; i < mItems.size(); i++ )
@@ -707,7 +707,7 @@ void cUIListBox::Font( cFont * Font ) {
 	UpdateScroll();
 }
 
-cFont * cUIListBox::Font() const {
+Graphics::Font * cUIListBox::Font() const {
 	return mFont;
 }
 

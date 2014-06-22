@@ -38,15 +38,15 @@ class EE_API cUIWinMenu : public cUIComplexControl {
 						Font = cUIThemeManager::instance()->DefaultFont();
 				}
 
-				cFont * 	Font;
-				ColorA 	FontColor;
-				ColorA	FontShadowColor;
-				ColorA 	FontOverColor;
-				ColorA	FontSelectedColor;
-				Uint32		MarginBetweenButtons;
-				Uint32		ButtonMargin;
-				Uint32		MenuHeight;
-				Uint32		FirstButtonMargin;
+				Graphics::Font * 	Font;
+				ColorA				FontColor;
+				ColorA				FontShadowColor;
+				ColorA				FontOverColor;
+				ColorA				FontSelectedColor;
+				Uint32				MarginBetweenButtons;
+				Uint32				ButtonMargin;
+				Uint32				MenuHeight;
+				Uint32				FirstButtonMargin;
 		};
 
 		cUIWinMenu( const cUIWinMenu::CreateParams& Params );
@@ -75,7 +75,7 @@ class EE_API cUIWinMenu : public cUIComplexControl {
 
 		const ColorA& FontSelectedColor() const;
 
-		cFont * Font() const;
+		Graphics::Font * Font() const;
 
 		cUISelectButton * GetButton( const String& ButtonText );
 
@@ -83,11 +83,11 @@ class EE_API cUIWinMenu : public cUIComplexControl {
 	protected:
 		typedef std::list< std::pair< cUISelectButton *, cUIPopUpMenu * > > WinMenuList;
 
-		cFont *			mFont;
-		ColorA		mFontColor;
-		ColorA		mFontShadowColor;
-		ColorA		mFontOverColor;
-		ColorA		mFontSelectedColor;
+		Graphics::Font *mFont;
+		ColorA			mFontColor;
+		ColorA			mFontShadowColor;
+		ColorA			mFontOverColor;
+		ColorA			mFontSelectedColor;
 		cUIPopUpMenu *	mCurrentMenu;
 		Uint32			mMarginBetweenButtons;
 		Uint32			mButtonMargin;

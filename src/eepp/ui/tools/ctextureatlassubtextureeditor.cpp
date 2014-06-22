@@ -1,11 +1,11 @@
 #include <eepp/ui/tools/ctextureatlassubtextureeditor.hpp>
 #include <eepp/ui/tools/ctextureatlaseditor.hpp>
-#include <eepp/graphics/cprimitives.hpp>
+#include <eepp/graphics/primitives.hpp>
 #include <eepp/ui/cuimanager.hpp>
 
 namespace EE { namespace UI { namespace Tools {
 
-cTextureAtlasSubTextureEditor::cTextureAtlasSubTextureEditor( const cUIComplexControl::CreateParams& Params, cTextureAtlasEditor * Editor ) :
+TextureAtlasSubTextureEditor::TextureAtlasSubTextureEditor( const cUIComplexControl::CreateParams& Params, TextureAtlasEditor * Editor ) :
 	cUIComplexControl( Params ),
 	mGfx( NULL ),
 	mEditor( Editor )
@@ -29,11 +29,11 @@ cTextureAtlasSubTextureEditor::cTextureAtlasSubTextureEditor( const cUIComplexCo
 	GetCenter();
 }
 
-cTextureAtlasSubTextureEditor::~cTextureAtlasSubTextureEditor() {
+TextureAtlasSubTextureEditor::~TextureAtlasSubTextureEditor() {
 }
 
-void cTextureAtlasSubTextureEditor::Draw() {
-	cPrimitives P;
+void TextureAtlasSubTextureEditor::Draw() {
+	Primitives P;
 	P.SetColor( ColorA( 255, 0, 0, mAlpha ) );
 	P.DrawLine( Line2f( Vector2f( mScreenPos.x, mScreenPos.y + mUICenter.y ), Vector2f( mScreenPos.x + mSize.Width(), mScreenPos.y + mUICenter.y ) ) );
 	P.DrawLine( Line2f( Vector2f( mScreenPos.x + mUICenter.x, mScreenPos.y ), Vector2f( mScreenPos.x + mUICenter.x, mScreenPos.y + mSize.Height() ) ) );
@@ -41,7 +41,7 @@ void cTextureAtlasSubTextureEditor::Draw() {
 	cUIComplexControl::Draw();
 }
 
-void cTextureAtlasSubTextureEditor::Update() {
+void TextureAtlasSubTextureEditor::Update() {
 	Vector2i Pos = mDrag->Pos();
 
 	cUIComplexControl::Update();
@@ -58,23 +58,23 @@ void cTextureAtlasSubTextureEditor::Update() {
 	mGfx->Pos( mUICenter );
 }
 
-void cTextureAtlasSubTextureEditor::OnSizeChange() {
+void TextureAtlasSubTextureEditor::OnSizeChange() {
 	GetCenter();
 }
 
-cSubTexture * cTextureAtlasSubTextureEditor::SubTexture() const {
+Graphics::SubTexture * TextureAtlasSubTextureEditor::SubTexture() const {
 	return mGfx->SubTexture();
 }
 
-void cTextureAtlasSubTextureEditor::SubTexture( cSubTexture * subTexture ) {
+void TextureAtlasSubTextureEditor::SubTexture( Graphics::SubTexture * subTexture ) {
 	mGfx->SubTexture( subTexture );
 }
 
-cUIGfx * cTextureAtlasSubTextureEditor::Gfx() const {
+cUIGfx * TextureAtlasSubTextureEditor::Gfx() const {
 	return mGfx;
 }
 
-void cTextureAtlasSubTextureEditor::GetCenter() {
+void TextureAtlasSubTextureEditor::GetCenter() {
 	mUICenter = Vector2i( mSize.Width() / 2, mSize.Height() / 2 );
 }
 

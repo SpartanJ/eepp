@@ -3,7 +3,7 @@
 #include <eepp/gaming/cmap.hpp>
 #include <eepp/gaming/clayer.hpp>
 #include <eepp/gaming/ctilelayer.hpp>
-#include <eepp/graphics/cprimitives.hpp>
+#include <eepp/graphics/primitives.hpp>
 using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {
@@ -18,7 +18,7 @@ cGameObjectVirtual::cGameObjectVirtual( Uint32 DataId, cLayer * Layer, const Uin
 {
 }
 
-cGameObjectVirtual::cGameObjectVirtual( cSubTexture * SubTexture, cLayer * Layer, const Uint32& Flags, Uint32 Type, const Vector2f& Pos ) :
+cGameObjectVirtual::cGameObjectVirtual( SubTexture * SubTexture, cLayer * Layer, const Uint32& Flags, Uint32 Type, const Vector2f& Pos ) :
 	cGameObject( Flags, Layer ),
 	mType( Type ),
 	mDataId( 0 ),
@@ -101,7 +101,7 @@ void cGameObjectVirtual::Draw() {
 			mSubTexture->Draw( mPos.x, mPos.y, ColorA(), GetAngle(), Vector2f::One, ALPHA_NORMAL, RenderModeFromFlags() );
 		}
 	} else {
-		cPrimitives P;
+		Primitives P;
 
 		ColorA C( mDataId );
 		C.Alpha = 255;

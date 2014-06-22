@@ -1,5 +1,5 @@
 #include <eepp/ui/cuiskinsimple.hpp>
-#include <eepp/graphics/ctextureatlasmanager.hpp>
+#include <eepp/graphics/textureatlasmanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -19,7 +19,7 @@ void cUISkinSimple::Draw( const Float& X, const Float& Y, const Float& Width, co
 	if ( 0 == Alpha )
 		return;
 
-	cSubTexture * tSubTexture = mSubTexture[ State ];
+	SubTexture * tSubTexture = mSubTexture[ State ];
 	mTempColor		= mColor[ State ];
 
 	if ( NULL != tSubTexture ) {
@@ -40,10 +40,10 @@ void cUISkinSimple::SetSkin( const Uint32& State ) {
 
 	std::string Name( mName + "_" + cUISkin::GetSkinStateName( State ) );
 
-	mSubTexture[ State ] = cTextureAtlasManager::instance()->GetSubTextureByName( Name );
+	mSubTexture[ State ] = TextureAtlasManager::instance()->GetSubTextureByName( Name );
 }
 
-cSubTexture * cUISkinSimple::GetSubTexture( const Uint32& State ) const {
+SubTexture * cUISkinSimple::GetSubTexture( const Uint32& State ) const {
 	eeASSERT ( State < cUISkinState::StateCount );
 
 	return mSubTexture[ State ];
@@ -63,7 +63,7 @@ cUISkinSimple * cUISkinSimple::Copy( const std::string& NewName, const bool& Cop
 		memcpy( &SkinS->mColor[0], &mColor[0], cUISkinState::StateCount * sizeof(ColorA) );
 	}
 
-	memcpy( &SkinS->mSubTexture[0], &mSubTexture[0], cUISkinState::StateCount * sizeof(cSubTexture*) );
+	memcpy( &SkinS->mSubTexture[0], &mSubTexture[0], cUISkinState::StateCount * sizeof(SubTexture*) );
 
 	return SkinS;
 }

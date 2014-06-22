@@ -151,7 +151,7 @@ void cUIPushButton::AutoPadding() {
 	}
 }
 
-void cUIPushButton::Icon( cSubTexture * Icon ) {
+void cUIPushButton::Icon( SubTexture * Icon ) {
 	mIcon->SubTexture( Icon );
 	OnSizeChange();
 }

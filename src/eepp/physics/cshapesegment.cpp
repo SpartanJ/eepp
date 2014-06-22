@@ -4,8 +4,8 @@
 
 #ifdef PHYSICS_RENDERER_ENABLED
 #include <eepp/graphics/glextensions.hpp>
-#include <eepp/graphics/renderer/cgl.hpp>
-#include <eepp/graphics/cprimitives.hpp>
+#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/primitives.hpp>
 using namespace EE::Graphics;
 #endif
 
@@ -136,7 +136,7 @@ void cShapeSegment::Draw( cSpace * space ) {
 		GLi->Enable( GL_TEXTURE_2D );
 		GLi->EnableClientState( GL_TEXTURE_COORD_ARRAY );
 	} else {
-		cPrimitives p;
+		Primitives p;
 		p.DrawLine( Line2f( Vector2f( a.x, a.y ), Vector2f( b.x, b.y ) ) );
 	}
 	#endif

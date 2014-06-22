@@ -14,13 +14,13 @@
 
 namespace EE { namespace Window { namespace Platform {
 
-CursorWin::CursorWin( cTexture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
+CursorWin::CursorWin( Texture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
 	Cursor( tex, hotspot, name, window )
 {
 	Create();
 }
 
-CursorWin::CursorWin( cImage * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
+CursorWin::CursorWin( Graphics::Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
 	Cursor( img, hotspot, name, window )
 {
 	Create();
@@ -37,7 +37,7 @@ CursorWin::~CursorWin() {
 		DestroyIcon( (HCURSOR)mCursor );
 }
 
-static BITMAPINFO *get_bitmap_info( cImage * bitmap ) {
+static BITMAPINFO *get_bitmap_info( Image * bitmap ) {
 	BITMAPINFO *bi;
 	int i;
 
@@ -63,7 +63,7 @@ static BITMAPINFO *get_bitmap_info( cImage * bitmap ) {
 	return bi;
 }
 
-static BYTE *get_dib_from_bitmap_32(cImage *bitmap) {
+static BYTE *get_dib_from_bitmap_32(Image *bitmap) {
 	int w, h;
 	int x, y;
 	int pitch;
@@ -97,7 +97,7 @@ static BYTE *get_dib_from_bitmap_32(cImage *bitmap) {
 	return pixels;
 }
 
-static void local_stretch_blit_to_hdc( cImage *bitmap, HDC dc, int src_x, int src_y, int src_w, int src_h, int dest_x, int dest_y, int dest_w, int dest_h) {
+static void local_stretch_blit_to_hdc( Image *bitmap, HDC dc, int src_x, int src_y, int src_w, int src_h, int dest_x, int dest_y, int dest_w, int dest_h) {
 	const int bitmap_h = (const int)bitmap->Height();
 	const int bottom_up_src_y = bitmap_h - src_y - src_h;
 	BYTE *pixels;
@@ -122,7 +122,7 @@ static void local_stretch_blit_to_hdc( cImage *bitmap, HDC dc, int src_x, int sr
 	eeFree(bi);
 }
 
-static void local_draw_to_hdc( HDC dc, cImage * bitmap, int x, int y ) {
+static void local_draw_to_hdc( HDC dc, Image * bitmap, int x, int y ) {
 	int w = bitmap->Width();
 	int h = bitmap->Height();
 	local_stretch_blit_to_hdc(bitmap, dc, 0, 0, w, h, x, y, w, h);

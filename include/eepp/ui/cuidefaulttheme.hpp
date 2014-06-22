@@ -7,7 +7,7 @@ namespace EE { namespace UI {
 
 class EE_API cUIDefaultTheme : public cUITheme {
 	public:
-		cUIDefaultTheme( const std::string& Name, const std::string& Abbr, cFont * DefaultFont = NULL );
+		cUIDefaultTheme( const std::string& Name, const std::string& Abbr, Graphics::Font * DefaultFont = NULL );
 
 		virtual cUIPopUpMenu * CreatePopUpMenu( cUIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE | UI_AUTO_PADDING, Uint32 RowHeight = 0, Recti PaddingContainer = Recti(), Uint32 MinWidth = 100, Uint32 MinSpaceForIcons = 16, Uint32 MinRightMargin = 8 );
 

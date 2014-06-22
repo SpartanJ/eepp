@@ -1,11 +1,11 @@
 #include <eepp/ui/cuitheme.hpp>
 #include <eepp/ui/cuiskinsimple.hpp>
 #include <eepp/ui/cuiskincomplex.hpp>
-#include <eepp/graphics/csprite.hpp>
-#include <eepp/graphics/ctextureatlas.hpp>
-#include <eepp/graphics/cfont.hpp>
-#include <eepp/graphics/ctexturefactory.hpp>
-#include <eepp/graphics/ctextureatlasmanager.hpp>
+#include <eepp/graphics/sprite.hpp>
+#include <eepp/graphics/textureatlas.hpp>
+#include <eepp/graphics/font.hpp>
+#include <eepp/graphics/texturefactory.hpp>
+#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/system/filesystem.hpp>
 
 #include <eepp/ui/cuicheckbox.hpp>
@@ -122,7 +122,7 @@ void cUITheme::AddThemeIcon( const std::string& Icon ) {
 	mUIIcons.push_back( Icon );
 }
 
-cUITheme * cUITheme::LoadFromTextureAtlas( cUITheme * tTheme, cTextureAtlas * TextureAtlas ) {
+cUITheme * cUITheme::LoadFromTextureAtlas( cUITheme * tTheme, Graphics::TextureAtlas * TextureAtlas ) {
 	eeASSERT( NULL != tTheme && NULL != TextureAtlas );
 
 	/** Themes use nearest filter by default, force the filter to the textures. */
@@ -186,7 +186,7 @@ cUITheme * cUITheme::LoadFromPath( cUITheme * tTheme, const std::string& Path, c
 	std::vector<std::string> 	ElemFound;
 	std::vector<Uint32> 		ElemType;
 
-	cTextureAtlas * tSG = eeNew( cTextureAtlas, ( tTheme->Abbr() ) );
+	Graphics::TextureAtlas * tSG = eeNew( Graphics::TextureAtlas, ( tTheme->Abbr() ) );
 
 	tTheme->TextureAtlas( tSG );
 
@@ -209,12 +209,12 @@ cUITheme * cUITheme::LoadFromPath( cUITheme * tTheme, const std::string& Path, c
 		Element		= RPath + ElemName + "." + ImgExt;
 
 		if ( FileSystem::FileExists( Element ) ) {
-			tSG->Add( eeNew( cSubTexture, ( cTextureFactory::instance()->Load( Element ), ElemName ) ) );
+			tSG->Add( eeNew( SubTexture, ( TextureFactory::instance()->Load( Element ), ElemName ) ) );
 		}
 	}
 
 	if ( tSG->Count() )
-		cTextureAtlasManager::instance()->Add( tSG );
+		TextureAtlasManager::instance()->Add( tSG );
 	else
 		eeSAFE_DELETE( tSG );
 
@@ -234,11 +234,11 @@ cUITheme * cUITheme::LoadFromPath( const std::string& Path, const std::string& N
 	return LoadFromPath( eeNew( cUITheme, ( Name, NameAbbr ) ), Path, ImgExt );
 }
 
-cUITheme * cUITheme::LoadFromTextureAtlas( cTextureAtlas * TextureAtlas, const std::string& Name, const std::string NameAbbr ) {
+cUITheme * cUITheme::LoadFromTextureAtlas( Graphics::TextureAtlas * TextureAtlas, const std::string& Name, const std::string NameAbbr ) {
 	return LoadFromTextureAtlas( eeNew( cUITheme, ( Name, NameAbbr ) ), TextureAtlas );
 }
 
-bool cUITheme::SearchFilesInAtlas( cTextureAtlas * SG, std::string Element, Uint32& IsComplex ) {
+bool cUITheme::SearchFilesInAtlas( Graphics::TextureAtlas * SG, std::string Element, Uint32& IsComplex ) {
 	bool Found = false;
 	Uint32 i = 0, s = 0;
 	std::string ElemName;
@@ -276,7 +276,7 @@ bool cUITheme::SearchFilesInAtlas( cTextureAtlas * SG, std::string Element, Uint
 	return Found;
 }
 
-bool cUITheme::SearchFilesOfElement( cTextureAtlas * SG, const std::string& Path, std::string Element, Uint32& IsComplex, const std::string ImgExt ) {
+bool cUITheme::SearchFilesOfElement( Graphics::TextureAtlas * SG, const std::string& Path, std::string Element, Uint32& IsComplex, const std::string ImgExt ) {
 	bool Found = false;
 	Uint32 i = 0, s = 0;
 	std::string ElemPath;
@@ -292,7 +292,7 @@ bool cUITheme::SearchFilesOfElement( cTextureAtlas * SG, const std::string& Path
 			ElemFullPath = ElemPath + "." + ImgExt;
 
 			if ( FileSystem::FileExists( ElemFullPath ) ) {
-				SG->Add( eeNew( cSubTexture, ( cTextureFactory::instance()->Load( ElemFullPath ), ElemName ) ) );
+				SG->Add( eeNew( SubTexture, ( TextureFactory::instance()->Load( ElemFullPath ), ElemName ) ) );
 
 				IsComplex = 1;
 				Found = true;
@@ -309,7 +309,7 @@ bool cUITheme::SearchFilesOfElement( cTextureAtlas * SG, const std::string& Path
 			ElemFullPath = ElemPath + "." + ImgExt;
 
 			if ( FileSystem::FileExists( ElemFullPath ) ) {
-				SG->Add( eeNew( cSubTexture, ( cTextureFactory::instance()->Load( ElemFullPath ), ElemName ) ) );
+				SG->Add( eeNew( SubTexture, ( TextureFactory::instance()->Load( ElemFullPath ), ElemName ) ) );
 
 				Found = true;
 			}
@@ -319,7 +319,7 @@ bool cUITheme::SearchFilesOfElement( cTextureAtlas * SG, const std::string& Path
 	return Found;
 }
 
-cUITheme::cUITheme( const std::string& Name, const std::string& Abbr, cFont * DefaultFont ) :
+cUITheme::cUITheme( const std::string& Name, const std::string& Abbr, Graphics::Font * DefaultFont ) :
 	ResourceManager<cUISkin> ( false ),
 	mName( Name ),
 	mNameHash( String::Hash( mName ) ),
@@ -361,11 +361,11 @@ cUISkin * cUITheme::Add( cUISkin * Resource ) {
 	return ResourceManager<cUISkin>::Add( Resource );
 }
 
-void cUITheme::Font( cFont * Font ) {
+void cUITheme::Font( Graphics::Font * Font ) {
 	mFont = Font;
 }
 
-cFont * cUITheme::Font() const {
+Graphics::Font * cUITheme::Font() const {
 	return mFont;
 }
 
@@ -409,22 +409,22 @@ const bool& cUITheme::UseDefaultThemeValues() const {
 	return mUseDefaultThemeValues;
 }
 
-cTextureAtlas * cUITheme::TextureAtlas() const {
+Graphics::TextureAtlas * cUITheme::TextureAtlas() const {
 	return mTextureAtlas;
 }
 
-void cUITheme::TextureAtlas( cTextureAtlas * SG ) {
+void cUITheme::TextureAtlas( Graphics::TextureAtlas * SG ) {
 	mTextureAtlas = SG;
 }
 
-cSubTexture * cUITheme::GetIconByName( const std::string& name ) {
+SubTexture * cUITheme::GetIconByName( const std::string& name ) {
 	if ( NULL != mTextureAtlas )
 		return mTextureAtlas->GetByName( mAbbr + "_icon_" + name );
 
 	return NULL;
 }
 
-cUIGfx * cUITheme::CreateGfx( cSubTexture * SubTexture, cUIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, ColorA SubTextureColor, EE_RENDER_MODE SubTextureRender ) {
+cUIGfx * cUITheme::CreateGfx( SubTexture * SubTexture, cUIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, ColorA SubTextureColor, EE_RENDER_MODE SubTextureRender ) {
 	cUIGfx::CreateParams GfxParams;
 	GfxParams.Parent( Parent );
 	GfxParams.PosSet( Pos );
@@ -439,7 +439,7 @@ cUIGfx * cUITheme::CreateGfx( cSubTexture * SubTexture, cUIControl * Parent, con
 	return Gfx;
 }
 
-cUISprite * cUITheme::CreateSprite( cSprite * Sprite, cUIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool DeallocSprite, EE_RENDER_MODE SpriteRender ) {
+cUISprite * cUITheme::CreateSprite( Sprite * Sprite, cUIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, bool DealloSprite, EE_RENDER_MODE SpriteRender ) {
 	cUISprite::CreateParams SpriteParams;
 	SpriteParams.Parent( Parent );
 	SpriteParams.PosSet( Pos );
@@ -447,7 +447,7 @@ cUISprite * cUITheme::CreateSprite( cSprite * Sprite, cUIControl * Parent, const
 	SpriteParams.Flags = Flags;
 	SpriteParams.Sprite = Sprite;
 	SpriteParams.SpriteRender = SpriteRender;
-	SpriteParams.DeallocSprite = DeallocSprite;
+	SpriteParams.DealloSprite = DealloSprite;
 	cUISprite * Spr = eeNew( cUISprite, ( SpriteParams ) );
 	Spr->Visible( true );
 	Spr->Enabled( true );
@@ -684,7 +684,7 @@ cUIProgressBar * cUITheme::CreateProgressBar( cUIControl * Parent, const Sizei& 
 	return Ctrl;
 }
 
-cUIPushButton * cUITheme::CreatePushButton( cUIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, cSubTexture * Icon, Int32 IconHorizontalMargin, bool IconAutoMargin ) {
+cUIPushButton * cUITheme::CreatePushButton( cUIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, SubTexture * Icon, Int32 IconHorizontalMargin, bool IconAutoMargin ) {
 	cUIPushButton::CreateParams ButtonParams;
 	ButtonParams.Parent( Parent );
 	ButtonParams.PosSet( Pos );
@@ -703,7 +703,7 @@ cUIPushButton * cUITheme::CreatePushButton( cUIControl * Parent, const Sizei& Si
 	return Ctrl;
 }
 
-cUISelectButton * cUITheme::CreateSelectButton( cUIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, cSubTexture * Icon, Int32 IconHorizontalMargin, bool IconAutoMargin ) {
+cUISelectButton * cUITheme::CreateSelectButton( cUIControl * Parent, const Sizei& Size, const Vector2i& Pos, const Uint32& Flags, SubTexture * Icon, Int32 IconHorizontalMargin, bool IconAutoMargin ) {
 	cUIPushButton::CreateParams ButtonParams;
 	ButtonParams.Parent( Parent );
 	ButtonParams.PosSet( Pos );

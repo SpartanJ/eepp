@@ -16,13 +16,13 @@ class EE_API cUISkinSimple : public cUISkin {
 
 		void SetSkin( const Uint32& State );
 
-		cSubTexture * GetSubTexture( const Uint32& State ) const;
+		SubTexture * GetSubTexture( const Uint32& State ) const;
 
 		cUISkinSimple * Copy( const std::string& NewName, const bool& CopyColorsState = true );
 
 		virtual cUISkin * Copy();
 	protected:
-		cSubTexture * 	mSubTexture[ cUISkinState::StateCount ];
+		SubTexture * 	mSubTexture[ cUISkinState::StateCount ];
 		ColorA		mTempColor;
 
 		void StateNormalToState( const Uint32& State );

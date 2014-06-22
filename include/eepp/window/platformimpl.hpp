@@ -13,8 +13,8 @@ using namespace EE::Math;
 namespace EE {
 
 namespace Graphics {
-class cTexture;
-class cImage;
+class Texture;
+class Image;
 }
 
 namespace Window {
@@ -80,14 +80,14 @@ class PlatformImpl {
 		* @param hotspot The hotspot where the mouse click is taken
 		* @param name The name of the cursor
 		*/
-		virtual Cursor * CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name ) = 0;
+		virtual Cursor * CreateMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name ) = 0;
 
 		/** Creates a cursor from a image
 		* @param img The image path
 		* @param hotspot The hotspot where the mouse click is taken
 		* @param name The name of the cursor
 		*/
-		virtual Cursor * CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name ) = 0;
+		virtual Cursor * CreateMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name ) = 0;
 
 		/** Creates a cursor from a image path
 		* @param path The image pointer to use as cursor

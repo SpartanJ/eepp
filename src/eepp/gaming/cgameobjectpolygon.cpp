@@ -1,7 +1,7 @@
 #include <eepp/gaming/cgameobjectpolygon.hpp>
 
 #include <eepp/gaming/clayer.hpp>
-#include <eepp/graphics/cprimitives.hpp>
+#include <eepp/graphics/primitives.hpp>
 using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {
@@ -31,7 +31,7 @@ void cGameObjectPolygon::Draw() {
 	Int32 selAdd	= mSelected ? 50 : 0;
 	Int32 colFill	= 100 + selAdd;
 
-	cPrimitives P;
+	Primitives P;
 	P.FillMode( DRAW_FILL );
 	P.SetColor( ColorA( colFill, colFill, colFill, colFill ) );
 	P.DrawPolygon( mPoly );

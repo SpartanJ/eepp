@@ -1,6 +1,6 @@
 #include <eepp/ui/cuislider.hpp>
 #include <eepp/ui/cuimanager.hpp>
-#include <eepp/graphics/csubtexture.hpp>
+#include <eepp/graphics/subtexture.hpp>
 
 namespace EE { namespace UI {
 
@@ -83,7 +83,7 @@ void cUISlider::OnSizeChange() {
 }
 
 void cUISlider::AdjustChilds() {
-	cSubTexture * tSubTexture = NULL;
+	SubTexture * tSubTexture = NULL;
 	cUISkin * tSkin = NULL;
 
 	tSkin = mSlider->GetSkin();

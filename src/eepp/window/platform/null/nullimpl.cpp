@@ -45,11 +45,11 @@ void cNullImpl::ShowMouseCursor() {
 void cNullImpl::HideMouseCursor() {
 }
 
-Cursor * cNullImpl::CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
+Cursor * cNullImpl::CreateMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-Cursor * cNullImpl::CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name ) {
+Cursor * cNullImpl::CreateMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 

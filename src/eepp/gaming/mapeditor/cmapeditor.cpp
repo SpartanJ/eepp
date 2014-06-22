@@ -25,10 +25,10 @@
 #include <eepp/ui/cuimessagebox.hpp>
 #include <eepp/ui/cuitabwidget.hpp>
 #include <eepp/ui/tools/ctextureatlaseditor.hpp>
-#include <eepp/graphics/csprite.hpp>
-#include <eepp/graphics/ctextureatlasmanager.hpp>
-#include <eepp/graphics/cglobaltextureatlas.hpp>
-#include <eepp/graphics/ctextureatlasloader.hpp>
+#include <eepp/graphics/sprite.hpp>
+#include <eepp/graphics/textureatlasmanager.hpp>
+#include <eepp/graphics/globaltextureatlas.hpp>
+#include <eepp/graphics/textureatlasloader.hpp>
 
 #include <algorithm>
 
@@ -443,7 +443,7 @@ void cMapEditor::CreateUIMap() {
 	Float ScrollV = 16;
 
 	if ( NULL != HScrollSkin ) {
-		cSubTexture * tTex = HScrollSkin->GetSubTexture( cUISkinState::StateNormal );
+		SubTexture * tTex = HScrollSkin->GetSubTexture( cUISkinState::StateNormal );
 
 		if ( NULL != tTex ) {
 			ScrollH = tTex->Size().Height();
@@ -451,7 +451,7 @@ void cMapEditor::CreateUIMap() {
 	}
 
 	if ( NULL != VScrollSkin ) {
-		cSubTexture * tTex = VScrollSkin->GetSubTexture( cUISkinState::StateNormal );
+		SubTexture * tTex = VScrollSkin->GetSubTexture( cUISkinState::StateNormal );
 
 		if ( NULL != tTex ) {
 			ScrollV = tTex->Size().Height();
@@ -710,8 +710,8 @@ void cMapEditor::OnNewGOTypeAdded( std::string name, Uint32 hash ) {
 }
 
 void cMapEditor::FillSGCombo() {
-	cTextureAtlasManager * SGM = cTextureAtlasManager::instance();
-	std::list<cTextureAtlas*>& Res = SGM->GetResources();
+	TextureAtlasManager * SGM = TextureAtlasManager::instance();
+	std::list<TextureAtlas*>& Res = SGM->GetResources();
 
 	mTextureAtlasesList->ListBox()->Clear();
 
@@ -720,7 +720,7 @@ void cMapEditor::FillSGCombo() {
 	Uint32 Restricted1 = String::Hash( std::string( "global" ) );
 	Uint32 Restricted2 = String::Hash( mTheme->TextureAtlas()->Name() );
 
-	for ( std::list<cTextureAtlas*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
+	for ( std::list<TextureAtlas*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
 		if ( (*it)->Id() != Restricted1 && (*it)->Id() != Restricted2 )
 			items.push_back( (*it)->Name() );
 	}
@@ -735,16 +735,16 @@ void cMapEditor::FillSGCombo() {
 }
 
 void cMapEditor::FillSubTextureList() {
-	cTextureAtlasManager * SGM = cTextureAtlasManager::instance();
+	TextureAtlasManager * SGM = TextureAtlasManager::instance();
 	mCurSG = SGM->GetByName( mTextureAtlasesList->Text() );
-	std::list<cSubTexture*>& Res = mCurSG->GetResources();
+	std::list<SubTexture*>& Res = mCurSG->GetResources();
 
 	mSubTextureList->Clear();
 
 	if ( NULL != mCurSG ) {
 		std::vector<String> items;
 
-		for ( std::list<cSubTexture*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
+		for ( std::list<SubTexture*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
 				items.push_back( (*it)->Name() );
 		}
 
@@ -761,7 +761,7 @@ void cMapEditor::FillSubTextureList() {
 
 void cMapEditor::OnSubTextureChange( const cUIEvent * Event ) {
 	if ( NULL != mCurSG ) {
-		cSubTexture * tSubTexture = mCurSG->GetByName( mSubTextureList->GetItemSelectedText() );
+		SubTexture * tSubTexture = mCurSG->GetByName( mSubTextureList->GetItemSelectedText() );
 
 		if ( NULL != tSubTexture ) {
 			mGfxPreview->SubTexture( tSubTexture );
@@ -1012,7 +1012,7 @@ void cMapEditor::MapMenuClick( const cUIEvent * Event ) {
 
 	if ( "New Texture Atlas..." == txt ) {
 		cUIWindow * tWin = mTheme->CreateWindow( NULL, Sizei( 1024, 768 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, Sizei( 1024, 768 ) );
-		eeNew ( Tools::cTextureAtlasEditor, ( tWin ) );
+		eeNew ( Tools::TextureAtlasEditor, ( tWin ) );
 		tWin->Center();
 		tWin->Show();
 	} else if ( "Add External Texture Atlas..." == txt ) {
@@ -1129,10 +1129,10 @@ void cMapEditor::TextureAtlasOpen( const cUIEvent * Event ) {
 
 	std::string sgname = FileSystem::FileRemoveExtension( FileSystem::FileNameFromPath( CDL->GetFullPath() ) );
 
-	cTextureAtlas * SG = cTextureAtlasManager::instance()->GetByName( sgname );
+	TextureAtlas * SG = TextureAtlasManager::instance()->GetByName( sgname );
 
 	if ( NULL == SG ) {
-		cTextureAtlasLoader tgl( CDL->GetFullPath() );
+		TextureAtlasLoader tgl( CDL->GetFullPath() );
 
 		if ( tgl.IsLoaded() ) {
 			mTextureAtlasesList->ListBox()->AddListBoxItem( sgname );
@@ -1194,13 +1194,13 @@ cGameObject * cMapEditor::CreateGameObject() {
 
 		if ( mChkAnim->Active() ) {
 
-			cSprite * tAnimSprite = eeNew( cSprite, ( String::RemoveNumbersAtEnd( mGfxPreview->SubTexture()->Name() ) ) );
+			Sprite * tAnimSprite = eeNew( Sprite, ( String::RemoveNumbersAtEnd( mGfxPreview->SubTexture()->Name() ) ) );
 			tObj = eeNew( cGameObjectSprite, ( mCurGOFlags, mCurLayer, tAnimSprite ) );
 
 		} else {
 
-			cSprite * tStaticSprite = eeNew( cSprite, ( mGfxPreview->SubTexture() ) );
-			tObj = eeNew( cGameObjectSprite, ( mCurGOFlags, mCurLayer, tStaticSprite ) );
+			Sprite * tStatiSprite = eeNew( Sprite, ( mGfxPreview->SubTexture() ) );
+			tObj = eeNew( cGameObjectSprite, ( mCurGOFlags, mCurLayer, tStatiSprite ) );
 
 		}
 	} else {

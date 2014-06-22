@@ -16,9 +16,9 @@ class cUITextInputPassword : public cUITextInput
 
 		virtual void Text( const String& text );
 
-		cTextCache * GetPassCache() const;
+		TextCache * GetPassCache() const;
 	protected:
-		cTextCache *	mPassCache;
+		TextCache *	mPassCache;
 
 		void AlignFix();
 

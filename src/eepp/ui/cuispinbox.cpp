@@ -1,5 +1,5 @@
 #include <eepp/ui/cuispinbox.hpp>
-#include <eepp/graphics/csubtexture.hpp>
+#include <eepp/graphics/subtexture.hpp>
 
 namespace EE { namespace UI {
 
@@ -68,7 +68,7 @@ void cUISpinBox::SetTheme( cUITheme * Theme ) {
 	mPushUp->SetThemeControl		( Theme, "spinbox_btnup" );
 	mPushDown->SetThemeControl	( Theme, "spinbox_btndown" );
 
-	cSubTexture * tSubTexture = NULL;
+	SubTexture * tSubTexture = NULL;
 	cUISkin * tSkin = NULL;
 
 	tSkin = mPushUp->GetSkin();

@@ -5,7 +5,7 @@
 #include <eepp/ui/cuiskinstate.hpp>
 
 namespace EE { namespace Graphics {
-class cSubTexture;
+class SubTexture;
 }}
 
 namespace EE { namespace UI {
@@ -30,7 +30,7 @@ class EE_API cUISkin {
 
 		virtual void SetSkin( const Uint32& State ) = 0;
 
-		virtual cSubTexture * GetSubTexture( const Uint32& State ) const = 0;
+		virtual SubTexture * GetSubTexture( const Uint32& State ) const = 0;
 
 		virtual void SetColor( const Uint32& State, const ColorA& Color );
 

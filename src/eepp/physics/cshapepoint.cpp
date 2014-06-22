@@ -3,8 +3,8 @@
 #include <eepp/helper/chipmunk/chipmunk_unsafe.h>
 
 #ifdef PHYSICS_RENDERER_ENABLED
-#include <eepp/graphics/cprimitives.hpp>
-#include <eepp/graphics/cglobalbatchrenderer.hpp>
+#include <eepp/graphics/primitives.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
 using namespace EE::Graphics;
 #endif
 
@@ -41,7 +41,7 @@ void cShapePoint::Radius( const cpFloat& radius ) {
 
 void cShapePoint::Draw( cSpace * space ) {
 	#ifdef PHYSICS_RENDERER_ENABLED
-	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
+	BatchRenderer * BR = GlobalBatchRenderer::instance();
 
 	BR->SetPointSize( mDrawRadius );
 

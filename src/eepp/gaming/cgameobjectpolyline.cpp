@@ -1,7 +1,7 @@
 #include <eepp/gaming/cgameobjectpolyline.hpp>
 
 #include <eepp/gaming/clayer.hpp>
-#include <eepp/graphics/cprimitives.hpp>
+#include <eepp/graphics/primitives.hpp>
 using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {
@@ -23,7 +23,7 @@ bool cGameObjectPolyline::IsType( const Uint32& type ) {
 }
 
 void cGameObjectPolyline::Draw() {
-	cPrimitives P;
+	Primitives P;
 
 	if ( mSelected ) {
 		P.FillMode( DRAW_FILL );

@@ -21,11 +21,11 @@ CursorManagerSDL::CursorManagerSDL( EE::Window::Window * window ) :
 {
 }
 
-Cursor * CursorManagerSDL::Create( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
+Cursor * CursorManagerSDL::Create( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( CursorSDL, ( tex, hotspot, name, mWindow ) );
 }
 
-Cursor * CursorManagerSDL::Create( cImage * img, const Vector2i& hotspot, const std::string& name ) {
+Cursor * CursorManagerSDL::Create( Image * img, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( CursorSDL, ( img, hotspot, name, mWindow ) );
 }
 

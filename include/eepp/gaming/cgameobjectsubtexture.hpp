@@ -4,14 +4,14 @@
 #include <eepp/gaming/base.hpp>
 #include <eepp/gaming/cgameobject.hpp>
 
-#include <eepp/graphics/csubtexture.hpp>
+#include <eepp/graphics/subtexture.hpp>
 using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {
 
 class EE_API cGameObjectSubTexture : public cGameObject {
 	public:
-		cGameObjectSubTexture( const Uint32& Flags, cLayer * Layer, cSubTexture * SubTexture = NULL, const Vector2f& Pos = Vector2f() );
+		cGameObjectSubTexture( const Uint32& Flags, cLayer * Layer, Graphics::SubTexture * SubTexture = NULL, const Vector2f& Pos = Vector2f() );
 
 		virtual ~cGameObjectSubTexture();
 
@@ -27,9 +27,9 @@ class EE_API cGameObjectSubTexture : public cGameObject {
 
 		virtual Sizei Size();
 
-		cSubTexture * SubTexture() const;
+		Graphics::SubTexture * SubTexture() const;
 
-		void SubTexture( cSubTexture * subTexture );
+		void SubTexture( Graphics::SubTexture * subTexture );
 
 		virtual Uint32 Type() const;
 
@@ -39,9 +39,9 @@ class EE_API cGameObjectSubTexture : public cGameObject {
 
 		virtual void DataId( Uint32 Id );
 	protected:
-		cSubTexture *	mSubTexture;
-		Vector2f	mPos;
-		Vector2i	mTilePos;
+		Graphics::SubTexture *	mSubTexture;
+		Vector2f				mPos;
+		Vector2i				mTilePos;
 };
 
 }}

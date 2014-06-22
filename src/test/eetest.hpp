@@ -77,7 +77,7 @@ class cEETest : private Thread {
 		void Process();
 		void Render();
 		void Input();
-		void ParticlesCallback(cParticle* P, cParticleSystem* Me);
+		void ParticlesCallback(Particle* P, ParticleSystem* Me);
 
 		void ParticlesThread();
 		void Particles();
@@ -90,7 +90,7 @@ class cEETest : private Thread {
 	private:
 		Engine * EE;
 		EE::Window::Window * mWindow;
-		cTextureFactory* TF;
+		TextureFactory* TF;
 		System::Log* Log;
 		Window::Input* KM;
 		InputTextBuffer InBuf;
@@ -102,22 +102,22 @@ class cEETest : private Thread {
 		Uint32 lasttick;
 
 		std::vector<Uint32> TN;
-		std::vector<cTexture *> TNP;
+		std::vector<Texture *> TNP;
 
-		std::vector<cSubTexture*> Tiles;
-		std::vector<cParticleSystem> PS;
+		std::vector<SubTexture*> Tiles;
+		std::vector<ParticleSystem> PS;
 
 		Vector2i Mouse;
 		Vector2f Mousef;
 
-		cSprite SP;
-		cSprite CL1, CL2;
-		cFont * FF;
-		cFont * FF2;
-		cFont * TTF;
-		cFont * TTFB;
+		Sprite SP;
+		Sprite CL1, CL2;
+		Font * FF;
+		Font * FF2;
+		Font * TTF;
+		Font * TTFB;
 
-		cPrimitives PR;
+		Primitives PR;
 		bool iL1, iL2;
 		Float HWidth, HHeight;
 
@@ -126,7 +126,7 @@ class cEETest : private Thread {
 
 		bool DrawBack;
 
-		cConsole Con;
+		Console Con;
 		virtual void Run();
 
 		Vector2f Point;
@@ -152,18 +152,18 @@ class cEETest : private Thread {
 		Waypoints WP;
 		Int32 PartsNum;
 		Uint32 Cursor[1];
-		cTexture * CursorP[1];
+		Texture * CursorP[1];
 		std::string mInfo;
 
 		bool MultiViewportMode;
 
-		cBatchRenderer Batch;
+		BatchRenderer Batch;
 		Float AnimVal;
 		bool AnimSide;
 
 		View Views[2];
 
-		cShaderProgram * mShaderProgram;
+		ShaderProgram * mShaderProgram;
 
 		Float mBlurFactor;
 		bool mUseShaders;
@@ -190,11 +190,11 @@ class cEETest : private Thread {
 		Float mAxisX;
 		Float mAxisY;
 
-		cTextureAtlasLoader * mTGL;
-		cSprite mBlindy;
+		TextureAtlasLoader * mTGL;
+		Sprite mBlindy;
 
-		cFrameBuffer * mFBO;
-		cVertexBuffer * mVBO;
+		FrameBuffer * mFBO;
+		VertexBuffer * mVBO;
 
 		Clock	mFTE;
 
@@ -220,11 +220,11 @@ class cEETest : private Thread {
 		cUIPopUpMenu * Menu;
 		cUIWindow * mUIWindow;
 		cMapEditor * mMapEditor;
-		cTextureAtlasEditor * mETGEditor;
+		TextureAtlasEditor * mETGEditor;
 
-		cTextCache mEEText;
-		cTextCache mFBOText;
-		cTextCache mInfoText;
+		TextCache mEEText;
+		TextCache mFBOText;
+		TextCache mInfoText;
 
 		cSpace * mSpace;
 
@@ -273,8 +273,8 @@ class cEETest : private Thread {
 
 		std::vector<physicDemo> mDemo;
 		Uint32					mCurDemo;
-		cSprite *				mBoxSprite;
-		cSprite *				mCircleSprite;
+		Sprite *				mBoxSprite;
+		Sprite *				mCircleSprite;
 
 		cUITheme *				mTheme;
 

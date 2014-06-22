@@ -2,7 +2,7 @@
 
 namespace EE { namespace Graphics {
 
-bool PixelPerfectCollide( cTexture * Tex1, const unsigned int& x1, const unsigned int& y1, cTexture * Tex2, const unsigned int& x2, const unsigned int& y2, const Rectu& Tex1_SrcRECT, const Rectu& Tex2_SrcRECT ) {
+bool PixelPerfectCollide( Texture * Tex1, const unsigned int& x1, const unsigned int& y1, Texture * Tex2, const unsigned int& x2, const unsigned int& y2, const Rectu& Tex1_SrcRECT, const Rectu& Tex2_SrcRECT ) {
 	eeASSERT( NULL != Tex1 && NULL != Tex2 );
 
 	unsigned int ax1, ay1, ax2, ay2, bx1, by1, bx2, by2;
@@ -65,7 +65,7 @@ bool PixelPerfectCollide( cTexture * Tex1, const unsigned int& x1, const unsigne
 	return Collide;
 }
 
-bool PixelPerfectCollide( cTexture * Tex, const unsigned int& x1, const unsigned int& y1, const unsigned int& x2, const unsigned int& y2, const Rectu& Tex1_SrcRECT) {
+bool PixelPerfectCollide( Texture * Tex, const unsigned int& x1, const unsigned int& y1, const unsigned int& x2, const unsigned int& y2, const Rectu& Tex1_SrcRECT) {
 	eeASSERT( NULL != Tex );
 
 	unsigned int ax1, ay1, ax2, ay2;

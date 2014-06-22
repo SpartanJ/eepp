@@ -5,14 +5,14 @@
 #include <eepp/gaming/cgameobject.hpp>
 
 namespace EE { namespace Graphics {
-class cSprite;
+class Sprite;
 }}
 
 namespace EE { namespace Gaming {
 
 class EE_API cGameObjectSprite : public cGameObject {
 	public:
-		cGameObjectSprite( const Uint32& Flags, cLayer * Layer, cSprite * Sprite = NULL );
+		cGameObjectSprite( const Uint32& Flags, cLayer * Layer, Graphics::Sprite * Sprite = NULL );
 
 		virtual ~cGameObjectSprite();
 
@@ -28,9 +28,9 @@ class EE_API cGameObjectSprite : public cGameObject {
 
 		virtual Sizei Size();
 
-		cSprite * Sprite() const;
+		Graphics::Sprite * Sprite() const;
 
-		void Sprite( cSprite * sprite );
+		void Sprite( Graphics::Sprite * sprite );
 
 		virtual Uint32 Type() const;
 
@@ -42,8 +42,8 @@ class EE_API cGameObjectSprite : public cGameObject {
 
 		virtual void DataId( Uint32 Id );
 	protected:
-		cSprite *	mSprite;
-		Vector2i	mTilePos;
+		Graphics::Sprite *	mSprite;
+		Vector2i			mTilePos;
 };
 
 }}

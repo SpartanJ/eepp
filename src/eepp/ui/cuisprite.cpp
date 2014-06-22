@@ -1,5 +1,5 @@
 #include <eepp/ui/cuisprite.hpp>
-#include <eepp/graphics/csprite.hpp>
+#include <eepp/graphics/sprite.hpp>
 
 namespace EE { namespace UI {
 
@@ -10,7 +10,7 @@ cUISprite::cUISprite( const cUISprite::CreateParams& Params ) :
 	mAlignOffset(0,0),
 	mSubTextureLast(NULL)
 {
-	if ( Params.DeallocSprite )
+	if ( Params.DealloSprite )
 		mControlFlags |= UI_CTRL_FLAG_FREE_USE;
 
 	if ( ( Flags() & UI_AUTO_SIZE ) || ( Params.Size.x == -1 && Params.Size.y == -1 ) ) {
@@ -21,7 +21,7 @@ cUISprite::cUISprite( const cUISprite::CreateParams& Params ) :
 }
 
 cUISprite::~cUISprite() {
-	if ( DeallocSprite() )
+	if ( DealloSprite() )
 		eeSAFE_DELETE( mSprite );
 }
 
@@ -33,12 +33,12 @@ bool cUISprite::IsType( const Uint32& type ) const {
 	return cUISprite::Type() == type ? true : cUIComplexControl::IsType( type );
 }
 
-Uint32 cUISprite::DeallocSprite() {
+Uint32 cUISprite::DealloSprite() {
 	return mControlFlags & UI_CTRL_FLAG_FREE_USE;
 }
 
-void cUISprite::Sprite( cSprite * sprite ) {
-	if ( DeallocSprite() )
+void cUISprite::Sprite( Graphics::Sprite * sprite ) {
+	if ( DealloSprite() )
 		eeSAFE_DELETE( mSprite );
 
 	mSprite = sprite;
@@ -73,7 +73,7 @@ void cUISprite::Alpha( const Float& alpha ) {
 		mSprite->Alpha( alpha );
 }
 
-cSprite * cUISprite::Sprite() const {
+Graphics::Sprite * cUISprite::Sprite() const {
 	return mSprite;
 }
 
@@ -112,7 +112,7 @@ void cUISprite::AutoAlign() {
 	if ( NULL == mSprite || NULL == mSprite->GetCurrentSubTexture() )
 		return;
 
-	cSubTexture * tSubTexture = mSprite->GetCurrentSubTexture();
+	SubTexture * tSubTexture = mSprite->GetCurrentSubTexture();
 
 	if ( HAlignGet( mFlags ) == UI_HALIGN_CENTER ) {
 		mAlignOffset.x = mSize.Width() / 2 - tSubTexture->Size().Width() / 2;

@@ -1,10 +1,10 @@
 #include <eepp/ui/cuitextinput.hpp>
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/window/engine.hpp>
-#include <eepp/graphics/renderer/cgl.hpp>
-#include <eepp/graphics/cprimitives.hpp>
-#include <eepp/graphics/cfont.hpp>
-#include <eepp/graphics/ctextcache.hpp>
+#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/primitives.hpp>
+#include <eepp/graphics/font.hpp>
+#include <eepp/graphics/textcache.hpp>
 
 namespace EE { namespace UI {
 
@@ -83,7 +83,7 @@ void cUITextInput::DrawWaitingCursor() {
 			if ( disableSmooth )
 				GLi->LineSmooth( false );
 
-			cPrimitives P;
+			Primitives P;
 			P.SetColor( mFontColor );
 
 			Float CurPosX = mScreenPos.x + mAlignOffset.x + mCurPos.x + 1 + mPadding.Left;

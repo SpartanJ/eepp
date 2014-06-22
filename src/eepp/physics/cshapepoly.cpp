@@ -3,7 +3,7 @@
 #include <eepp/helper/chipmunk/chipmunk_unsafe.h>
 
 #ifdef PHYSICS_RENDERER_ENABLED
-#include <eepp/graphics/cglobalbatchrenderer.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
 using namespace EE::Graphics;
 #endif
 
@@ -57,7 +57,7 @@ void cShapePoly::Draw( cSpace * space ) {
 	#ifdef PHYSICS_RENDERER_ENABLED
 	cpPolyShape * poly = (cpPolyShape*)mShape;
 
-	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
+	BatchRenderer * BR = GlobalBatchRenderer::instance();
 
 	BR->SetTexture( NULL );
 
@@ -89,7 +89,7 @@ void cShapePoly::DrawBorder( cSpace *space ) {
 #ifdef PHYSICS_RENDERER_ENABLED
 	cpPolyShape * poly = (cpPolyShape*)mShape;
 
-	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
+	BatchRenderer * BR = GlobalBatchRenderer::instance();
 
 	ColorA Col = ColorForShape( (cpShape *)poly, space->Space() );
 

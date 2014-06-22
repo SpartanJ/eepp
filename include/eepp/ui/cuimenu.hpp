@@ -42,16 +42,16 @@ class EE_API cUIMenu : public cUIComplexControl {
 
 				inline ~CreateParams() {}
 
-				Uint32		RowHeight;
-				Recti		PaddingContainer;
-				Uint32		MinWidth;
-				Uint32		MinSpaceForIcons;
-				Uint32		MinRightMargin;
-				cFont * 	Font;
-				ColorA 	FontColor;
-				ColorA	FontShadowColor;
-				ColorA 	FontOverColor;
-				ColorA	FontSelectedColor;
+				Uint32				RowHeight;
+				Recti				PaddingContainer;
+				Uint32				MinWidth;
+				Uint32				MinSpaceForIcons;
+				Uint32				MinRightMargin;
+				Graphics::Font * 	Font;
+				ColorA				FontColor;
+				ColorA				FontShadowColor;
+				ColorA				FontOverColor;
+				ColorA				FontSelectedColor;
 
 		};
 
@@ -65,7 +65,7 @@ class EE_API cUIMenu : public cUIComplexControl {
 
 		virtual bool IsType( const Uint32& type ) const;
 
-		Uint32 Add( const String& Text, cSubTexture * Icon = NULL );
+		Uint32 Add( const String& Text, SubTexture * Icon = NULL );
 
 		Uint32 Add( cUIControl * Control );
 
@@ -73,7 +73,7 @@ class EE_API cUIMenu : public cUIComplexControl {
 
 		Uint32 AddCheckBox( const String& Text, const bool& Active = false );
 
-		Uint32 AddSubMenu( const String& Text, cSubTexture * Icon = NULL, cUIMenu * SubMenu = NULL );
+		Uint32 AddSubMenu( const String& Text, SubTexture * Icon = NULL, cUIMenu * SubMenu = NULL );
 
 		cUIControl * GetItem( const Uint32& Index );
 		
@@ -89,7 +89,7 @@ class EE_API cUIMenu : public cUIComplexControl {
 
 		void RemoveAll();
 
-		void Insert( const String& Text, cSubTexture * Icon, const Uint32& Index );
+		void Insert( const String& Text, SubTexture * Icon, const Uint32& Index );
 
 		void Insert( cUIControl * Control, const Uint32& Index );
 
@@ -107,7 +107,7 @@ class EE_API cUIMenu : public cUIComplexControl {
 
 		std::deque<cUIControl *> mItems;
 		Recti				mPadding;
-		cFont * 			mFont;
+		Font * 			mFont;
 		ColorA 			mFontColor;
 		ColorA			mFontShadowColor;
 		ColorA 			mFontOverColor;
@@ -138,11 +138,11 @@ class EE_API cUIMenu : public cUIComplexControl {
 		
 		void ResizeMe();
 		
-		cUIMenuItem * CreateMenuItem( const String& Text, cSubTexture * Icon );
+		cUIMenuItem * CreateMenuItem( const String& Text, SubTexture * Icon );
 
 		cUIMenuCheckBox * CreateMenuCheckBox( const String& Text, const bool& Active );
 
-		cUIMenuSubMenu * CreateSubMenu( const String& Text, cSubTexture * Icon, cUIMenu * SubMenu );
+		cUIMenuSubMenu * CreateSubMenu( const String& Text, SubTexture * Icon, cUIMenu * SubMenu );
 		
 		void DoAfterSetTheme();
 

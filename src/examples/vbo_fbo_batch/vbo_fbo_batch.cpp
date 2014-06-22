@@ -1,15 +1,15 @@
 #include <eepp/ee.hpp>
 
 EE::Window::Window * win			= NULL;
-cVertexBuffer * VBO		= NULL;
-cVertexBuffer * VBO2	= NULL;
-cFrameBuffer * FBO		= NULL;
+VertexBuffer * VBO		= NULL;
+VertexBuffer * VBO2	= NULL;
+FrameBuffer * FBO		= NULL;
 
 // The batch renderer class is designed to take control of almost all the rendering needed by the engine.
 // Controls that the rendering is only done when is needed, preventing redundant OpenGL API calls
 // Usually the user will not need to use this class manually, since eepp controls this internally.
-// The engine uses the singleton class cGlobalBatchRenderer instance to render textures and primitives.
-cBatchRenderer * Batch = eeNew( cBatchRenderer, () );
+// The engine uses the singleton class GlobalBatchRenderer instance to render textures and primitives.
+BatchRenderer * Batch = eeNew( BatchRenderer, () );
 
 Float ang = 0, scale = 1;
 bool side = false;
@@ -124,8 +124,8 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 		// Create the Vertex Buffer, the vertex buffer stores the vertex data in the GPU, making the rendering much faster
 		// In the case that Vertex Buffer Object is not supported by the GPU, it will fallback to a inmediate-mode vertex buffer
-		VBO		= cVertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
-		VBO2	= cVertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
+		VBO		= VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
+		VBO2	= VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
 
 		// Add the vertex and vertex colors to the Vertex Buffer
 		if ( NULL != VBO && NULL != VBO2 ) {
@@ -147,7 +147,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		}
 
 		// Create a new frame buffer. It will use Framebuffer Objects if available, otherwise it will try to fallback to PBuffers.
-		FBO = cFrameBuffer::New( 200, 200 );
+		FBO = FrameBuffer::New( 200, 200 );
 
 		// Application loop
 		win->RunMainLoop( &MainLoop );

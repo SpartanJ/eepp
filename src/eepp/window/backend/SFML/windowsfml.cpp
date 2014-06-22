@@ -14,7 +14,7 @@
 #include <eepp/window/backend/SFML/cursormanagersfml.hpp>
 #include <eepp/window/platform/platformimpl.hpp>
 
-#include <eepp/graphics/renderer/cgl.hpp>
+#include <eepp/graphics/renderer/gl.hpp>
 
 namespace EE { namespace Window { namespace Backend { namespace SFML {
 
@@ -124,7 +124,7 @@ void WindowSFML::Caption( const std::string& Caption ) {
 bool WindowSFML::Icon( const std::string& Path ) {
 	mWindow.WindowConfig.Icon 	= Path;
 
-	cImage Img( Path );
+	Image Img( Path );
 
 	mSFMLWindow.setIcon( Img.Width(), Img.Height(), Img.GetPixelsPtr() );
 

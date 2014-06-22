@@ -1,7 +1,7 @@
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/window/cursormanager.hpp>
-#include <eepp/graphics/cglobalbatchrenderer.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
 #include <algorithm>
 
 namespace EE { namespace UI {
@@ -256,9 +256,9 @@ cUIControl * cUIManager::DownControl() const {
 }
 
 void cUIManager::Draw() {
-	cGlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->Draw();
 	mControl->InternalDraw();
-	cGlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->Draw();
 }
 
 cUIWindow * cUIManager::MainControl() const {

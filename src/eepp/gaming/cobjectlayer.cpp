@@ -3,9 +3,9 @@
 #include <eepp/gaming/cgameobjectpolygon.hpp>
 #include <eepp/gaming/cmap.hpp>
 
-#include <eepp/graphics/ctexture.hpp>
-#include <eepp/graphics/cglobalbatchrenderer.hpp>
-#include <eepp/graphics/renderer/cgl.hpp>
+#include <eepp/graphics/texture.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/graphics/renderer/gl.hpp>
 using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {
@@ -30,7 +30,7 @@ void cObjectLayer::DeallocateLayer() {
 }
 
 void cObjectLayer::Draw( const Vector2f &Offset ) {
-	cGlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->Draw();
 
 	ObjList::iterator it;
 
@@ -41,7 +41,7 @@ void cObjectLayer::Draw( const Vector2f &Offset ) {
 		(*it)->Draw();
 	}
 
-	cTexture * Tex = mMap->GetBlankTileTexture();
+	Texture * Tex = mMap->GetBlankTileTexture();
 
 	if ( mMap->ShowBlocked() && NULL != Tex ) {
 		ColorA Col( 255, 0, 0, 200 );
@@ -55,7 +55,7 @@ void cObjectLayer::Draw( const Vector2f &Offset ) {
 		}
 	}
 
-	cGlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->Draw();
 
 	GLi->PopMatrix();
 }

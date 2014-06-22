@@ -12,7 +12,7 @@ Uint32 ParticlesNum	= 30000;
 
 EE::Window::Window * win = NULL;
 Input * imp = NULL;
-cShaderProgram * ShaderProgram = NULL;
+ShaderProgram * shaderProgram = NULL;
 bool ShadersSupported = false;
 Float tw;
 Float th;
@@ -66,24 +66,24 @@ void videoResize( EE::Window::Window * w ) {
 	BlendMode::SetMode( ALPHA_BLENDONE );
 
 	/// Set the line width
-	cGlobalBatchRenderer::instance()->SetLineWidth( 2 );
+	GlobalBatchRenderer::instance()->SetLineWidth( 2 );
 
 	if ( ShadersSupported ) {
 		/// Rebind the Shader
-		ShaderProgram->Bind();
+		shaderProgram->Bind();
 
 		/// If you want to use the programmable-pipeline renderer you'll need to set up the projection and modelview matrix manually.
 		/// Or if you want to use another name to the projection matrix or the modelview matrix ( eepp programmable-pipeline use
 		/// dgl_ProjectionMatrix and dgl_ModelViewMatrix by default.
 		if ( GLv_2 == GLi->Version() ) {
-			ShaderProgram->SetUniformMatrix( "dgl_ProjectionMatrix", perspectiveMatrix );
+			shaderProgram->SetUniformMatrix( "dgl_ProjectionMatrix", perspectiveMatrix );
 
 			/// Get the identity matrix and set it to the modelview matrix
 			float modelMatrix[16];
 			GLi->LoadIdentity();
 			GLi->GetCurrentMatrix( GL_MODELVIEW_MATRIX, modelMatrix );
 
-			ShaderProgram->SetUniformMatrix( "dgl_ModelViewMatrix", modelMatrix );
+			shaderProgram->SetUniformMatrix( "dgl_ModelViewMatrix", modelMatrix );
 		}
 	}
 }
@@ -217,7 +217,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		/// We really don't need shaders for this, but the purpose of the example is to show how to work with external shaders
 		if ( ShadersSupported ) {
 			/// Disable the automatic shader conversion from fixed-pipeline to programmable-pipeline
-			cShader::Ensure( false );
+			Shader::Ensure( false );
 
 			std::string fs( "#ifdef GL_ES\n\
 				precision highp float;\n\
@@ -245,7 +245,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 			}
 
 			/// Create the new shader program
-			ShaderProgram = cShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
+			shaderProgram = ShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
 		}
 
 		/// Set the projection

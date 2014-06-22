@@ -3,7 +3,7 @@
 
 #include <eepp/ui/cuicontrolanim.hpp>
 #include <eepp/ui/cuitextbox.hpp>
-#include <eepp/graphics/cscrollparallax.hpp>
+#include <eepp/graphics/scrollparallax.hpp>
 
 namespace EE { namespace UI {
 
@@ -74,7 +74,7 @@ class EE_API cUIProgressBar : public cUIComplexControl {
 		Float				mProgress;
 		Float				mTotalSteps;
 
-		cScrollParallax *	mParallax;
+		ScrollParallax *	mParallax;
 
 		cUITextBox * 		mTextBox;
 

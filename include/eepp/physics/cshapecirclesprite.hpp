@@ -6,7 +6,7 @@
 #ifdef PHYSICS_RENDERER_ENABLED
 
 namespace EE { namespace Graphics {
-class cSprite;
+class Sprite;
 }}
 using namespace EE::Graphics;
 
@@ -14,9 +14,9 @@ CP_NAMESPACE_BEGIN
 
 class CP_API cShapeCircleSprite : public cShapeCircle {
 	public:
-		static cShapeCircleSprite * New( cBody * body, cpFloat radius, cVect offset, cSprite * Sprite, bool AutoDeleteSprite = false );
+		static cShapeCircleSprite * New( cBody * body, cpFloat radius, cVect offset, Sprite * Sprite, bool AutoDeleteSprite = false );
 
-		cShapeCircleSprite( cBody * body, cpFloat radius, cVect offset, cSprite * Sprite, bool AutoDeleteSprite = false );
+		cShapeCircleSprite( cBody * body, cpFloat radius, cVect offset, Sprite * Sprite, bool AutoDeleteSprite = false );
 
 		virtual ~cShapeCircleSprite();
 
@@ -26,9 +26,9 @@ class CP_API cShapeCircleSprite : public cShapeCircle {
 
 		virtual void Offset( const cVect &offset );
 
-		cSprite * GetSprite() const;
+		Sprite * GetSprite() const;
 	protected:
-		cSprite *	mSprite;
+		Sprite *	mSprite;
 		bool		mSpriteAutoDelete;
 
 		void OffsetSet();

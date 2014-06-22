@@ -4,7 +4,7 @@
 #include <eepp/ui/cuicomplexcontrol.hpp>
 
 namespace EE { namespace Graphics {
-class cSprite;
+class Sprite;
 }}
 
 namespace EE { namespace UI {
@@ -17,15 +17,15 @@ class EE_API cUISprite : public cUIComplexControl {
 					cUIComplexControl::CreateParams(),
 					Sprite( NULL ),
 					SpriteRender( RN_NORMAL ),
-					DeallocSprite( true )
+					DealloSprite( true )
 				{
 				}
 
 				inline ~CreateParams() {}
 
-				cSprite * 			Sprite;
+				Graphics::Sprite * 	Sprite;
 				EE_RENDER_MODE		SpriteRender;
-				bool				DeallocSprite;
+				bool				DealloSprite;
 		};
 
 		cUISprite( const cUISprite::CreateParams& Params );
@@ -40,9 +40,9 @@ class EE_API cUISprite : public cUIComplexControl {
 
 		virtual void Alpha( const Float& alpha );
 
-		cSprite * Sprite() const;
+		Graphics::Sprite * Sprite() const;
 
-		void Sprite( cSprite * sprite );
+		void Sprite( Graphics::Sprite * sprite );
 
 		ColorA Color() const;
 
@@ -54,10 +54,10 @@ class EE_API cUISprite : public cUIComplexControl {
 
 		const Vector2i& AlignOffset() const;
 	protected:
-		cSprite * 			mSprite;
+		Graphics::Sprite * 	mSprite;
 		EE_RENDER_MODE 		mRender;
 		Vector2i			mAlignOffset;
-		cSubTexture *			mSubTextureLast;
+		SubTexture *		mSubTextureLast;
 		bool				mDealloc;
 
 		void UpdateSize();
@@ -68,7 +68,7 @@ class EE_API cUISprite : public cUIComplexControl {
 
 		virtual void OnSizeChange();
 
-		Uint32 DeallocSprite();
+		Uint32 DealloSprite();
 };
 
 }}

@@ -4,7 +4,7 @@
 #include <eepp/ui/cuicontrolanim.hpp>
 
 namespace EE { namespace Graphics {
-class cTextCache;
+class TextCache;
 }}
 
 namespace EE { namespace UI {
@@ -33,10 +33,10 @@ class EE_API cUITooltip : public cUIControlAnim {
 
 				inline ~CreateParams() {}
 
-				cFont * 	Font;
-				ColorA 	FontColor;
-				ColorA 	FontShadowColor;
-				Recti		Padding;
+				Graphics::Font * 	Font;
+				ColorA				FontColor;
+				ColorA				FontShadowColor;
+				Recti				Padding;
 		};
 
 		cUITooltip( cUITooltip::CreateParams& Params, cUIControl * TooltipOf );
@@ -57,9 +57,9 @@ class EE_API cUITooltip : public cUIControlAnim {
 
 		virtual void Alpha( const Float& alpha );
 
-		cFont * Font() const;
+		Graphics::Font * Font() const;
 
-		void Font( cFont * font );
+		void Font( Graphics::Font * font );
 
 		virtual const String& Text();
 
@@ -81,7 +81,7 @@ class EE_API cUITooltip : public cUIControlAnim {
 
 		const Recti& Padding() const;
 
-		cTextCache * GetTextCache();
+		TextCache * GetTextCache();
 
 		Float GetTextWidth();
 
@@ -97,7 +97,7 @@ class EE_API cUITooltip : public cUIControlAnim {
 
 		const Time & TooltipTime() const;
 	protected:
-		cTextCache *	mTextCache;
+		TextCache *	mTextCache;
 		ColorA 		mFontColor;
 		ColorA 		mFontShadowColor;
 		Vector2f 		mAlignOffset;

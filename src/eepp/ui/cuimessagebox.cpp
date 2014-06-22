@@ -92,8 +92,8 @@ void cUIMessageBox::SetTheme( cUITheme * Theme ) {
 	cUIWindow::SetTheme( Theme );
 
 	if ( "Retry" != mButtonOK->Text() ) {
-		cSubTexture * OKIcon = Theme->GetIconByName( "ok" );
-		cSubTexture * CancelIcon = Theme->GetIconByName( "cancel" );
+		SubTexture * OKIcon = Theme->GetIconByName( "ok" );
+		SubTexture * CancelIcon = Theme->GetIconByName( "cancel" );
 
 		if ( NULL != OKIcon ) {
 			mButtonOK->Icon( OKIcon );

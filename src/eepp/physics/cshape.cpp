@@ -5,7 +5,7 @@
 #include <eepp/physics/cphysicsmanager.hpp>
 
 #ifdef PHYSICS_RENDERER_ENABLED
-#include <eepp/graphics/cprimitives.hpp>
+#include <eepp/graphics/primitives.hpp>
 using namespace EE::Graphics;
 #endif
 
@@ -168,7 +168,7 @@ cShapeSegment * cShape::GetAsSegment() {
 
 void cShape::DrawBB() {
 	#ifdef PHYSICS_RENDERER_ENABLED
-	cPrimitives P;
+	Primitives P;
 	P.SetColor( ColorA( 76, 128, 76, 255 ) );
 	P.ForceDraw( false );
 	P.DrawLine( Line2f( Vector2f( mShape->bb.l, mShape->bb.t ), Vector2f( mShape->bb.r, mShape->bb.t ) ) );

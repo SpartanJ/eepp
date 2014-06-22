@@ -1,8 +1,8 @@
 #include <eepp/ui/cuicontrolanim.hpp>
 #include <eepp/ui/cuimanager.hpp>
-#include <eepp/graphics/renderer/cgl.hpp>
-#include <eepp/graphics/cglobalbatchrenderer.hpp>
-#include <eepp/graphics/cprimitives.hpp>
+#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/graphics/primitives.hpp>
 
 namespace EE { namespace UI {
 
@@ -46,7 +46,7 @@ void cUIControlAnim::Draw() {
 			mSkinState->Draw( (Float)mScreenPos.x, (Float)mScreenPos.y, (Float)mSize.Width(), (Float)mSize.Height(), (Uint32)mAlpha );
 
 		if ( cUIManager::instance()->HighlightFocus() && cUIManager::instance()->FocusControl() == this ) {
-			cPrimitives P;
+			Primitives P;
 			P.FillMode( DRAW_LINE );
 			P.BlendMode( Blend() );
 			P.SetColor( cUIManager::instance()->HighlightFocusColor() );
@@ -54,7 +54,7 @@ void cUIControlAnim::Draw() {
 		}
 
 		if ( cUIManager::instance()->HighlightOver() && cUIManager::instance()->OverControl() == this ) {
-			cPrimitives P;
+			Primitives P;
 			P.FillMode( DRAW_LINE );
 			P.BlendMode( Blend() );
 			P.SetColor( cUIManager::instance()->HighlightOverColor() );
@@ -112,7 +112,7 @@ void cUIControlAnim::AlphaChilds( const Float &alpha ) {
 
 void cUIControlAnim::MatrixSet() {
 	if ( mScale != 1.f || mAngle != 0.f ) {
-		cGlobalBatchRenderer::instance()->Draw();
+		GlobalBatchRenderer::instance()->Draw();
 		GLi->PushMatrix();
 		Vector2f Center( mScreenPos.x + mSize.Width() * 0.5f, mScreenPos.y + mSize.Height() * 0.5f );
 		GLi->Translatef( Center.x , Center.y, 0.f );
@@ -124,7 +124,7 @@ void cUIControlAnim::MatrixSet() {
 
 void cUIControlAnim::MatrixUnset() {
 	if ( mScale != 1.f || mAngle != 0.f ) {
-		cGlobalBatchRenderer::instance()->Draw();
+		GlobalBatchRenderer::instance()->Draw();
 		GLi->PopMatrix();
 	}
 }
@@ -280,7 +280,7 @@ void cUIControlAnim::DisableFadeOut( const Time& Time, const bool& AlphaChilds, 
 }
 
 void cUIControlAnim::BackgroundDraw() {
-	cPrimitives P;
+	Primitives P;
 	Rectf R = GetRectf();
 	P.BlendMode( mBackground->Blend() );
 	P.SetColor( GetColor( mBackground->Color() ) );
@@ -301,7 +301,7 @@ void cUIControlAnim::BackgroundDraw() {
 }
 
 void cUIControlAnim::BorderDraw() {
-	cPrimitives P;
+	Primitives P;
 	P.FillMode( DRAW_LINE );
 	P.BlendMode( Blend() );
 	P.LineWidth( (Float)mBorder->Width() );

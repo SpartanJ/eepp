@@ -23,12 +23,12 @@
 #include <eepp/window/backend/SDL/cursormanagersdl.hpp>
 #include <eepp/window/platform/platformimpl.hpp>
 
-#include <eepp/graphics/renderer/cgl.hpp>
-#include <eepp/graphics/cglobalbatchrenderer.hpp>
-#include <eepp/graphics/cshaderprogrammanager.hpp>
-#include <eepp/graphics/cvertexbuffermanager.hpp>
-#include <eepp/graphics/cframebuffermanager.hpp>
-#include <eepp/graphics/ctexturefactory.hpp>
+#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/graphics/shaderprogrammanager.hpp>
+#include <eepp/graphics/vertexbuffermanager.hpp>
+#include <eepp/graphics/framebuffermanager.hpp>
+#include <eepp/graphics/texturefactory.hpp>
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
@@ -233,7 +233,7 @@ bool WindowSDL::Icon( const std::string& Path ) {
 		return false;
 	}
 
-	cImage Img( Path );
+	Image Img( Path );
 
 	if ( NULL != Img.GetPixelsPtr() ) {
 		const Uint8 * Ptr = Img.GetPixelsPtr();
@@ -304,7 +304,7 @@ void WindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	#endif
 
 	if ( Reload )
-		Graphics::cTextureFactory::instance()->GrabTextures();
+		Graphics::TextureFactory::instance()->GrabTextures();
 	#endif
 
 	Uint32 oldWidth		= mWindow.WindowConfig.Width;
@@ -335,10 +335,10 @@ void WindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	if ( Reload ) {
 		cGL::instance()->Init();
 
-		Graphics::cTextureFactory::instance()->UngrabTextures();		// Reload all textures
-		Graphics::cShaderProgramManager::instance()->Reload();			// Reload all shaders
-		Graphics::Private::cFrameBufferManager::instance()->Reload(); 	// Reload all frame buffers
-		Graphics::Private::cVertexBufferManager::instance()->Reload(); 	// Reload all vertex buffers
+		Graphics::TextureFactory::instance()->UngrabTextures();		// Reload all textures
+		Graphics::ShaderProgramManager::instance()->Reload();			// Reload all shaders
+		Graphics::Private::FrameBufferManager::instance()->Reload(); 	// Reload all frame buffers
+		Graphics::Private::VertexBufferManager::instance()->Reload(); 	// Reload all vertex buffers
 		GetMainContext();												// Recover the context
 		CreatePlatform();
 	}

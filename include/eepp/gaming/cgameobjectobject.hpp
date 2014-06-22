@@ -3,7 +3,7 @@
 
 #include <eepp/gaming/base.hpp>
 #include <eepp/gaming/cgameobject.hpp>
-#include <eepp/graphics/csubtexture.hpp>
+#include <eepp/graphics/subtexture.hpp>
 using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {

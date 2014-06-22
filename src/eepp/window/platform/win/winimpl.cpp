@@ -111,11 +111,11 @@ void cWinImpl::HideMouseCursor() {
 	PostMessage( mHandler, WM_SETCURSOR, 0, 0 );
 }
 
-Cursor * cWinImpl::CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
+Cursor * cWinImpl::CreateMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( CursorWin, ( tex, hotspot, name, mWindow ) );
 }
 
-Cursor * cWinImpl::CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name ) {
+Cursor * cWinImpl::CreateMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( CursorWin, ( img, hotspot, name, mWindow ) );
 }
 

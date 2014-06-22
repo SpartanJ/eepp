@@ -3,26 +3,26 @@
 
 #include <eepp/ui/base.hpp>
 #include <eepp/ui/cuicomplexcontrol.hpp>
-#include <eepp/graphics/csubtexture.hpp>
+#include <eepp/graphics/subtexture.hpp>
 #include <eepp/ui/cuigfx.hpp>
 
 namespace EE { namespace UI { namespace Tools {
 
-class cTextureAtlasEditor;
+class TextureAtlasEditor;
 
-class EE_API cTextureAtlasSubTextureEditor : public cUIComplexControl {
+class EE_API TextureAtlasSubTextureEditor : public cUIComplexControl {
 	public:
-		cTextureAtlasSubTextureEditor( const cUIComplexControl::CreateParams& Params, cTextureAtlasEditor * Editor );
+		TextureAtlasSubTextureEditor( const cUIComplexControl::CreateParams& Params, TextureAtlasEditor * Editor );
 
-		virtual ~cTextureAtlasSubTextureEditor();
+		virtual ~TextureAtlasSubTextureEditor();
 
 		virtual void Draw();
 
 		virtual void Update();
 
-		cSubTexture * SubTexture() const;
+		Graphics::SubTexture * SubTexture() const;
 
-		void SubTexture( cSubTexture * subTexture );
+		void SubTexture( Graphics::SubTexture * subTexture );
 
 		cUIGfx * Gfx() const;
 	protected:
@@ -30,7 +30,7 @@ class EE_API cTextureAtlasSubTextureEditor : public cUIComplexControl {
 		cUIGfx *				mGfx;
 		cUIDragable *			mDrag;
 		Vector2i				mUICenter;
-		cTextureAtlasEditor *	mEditor;
+		TextureAtlasEditor *	mEditor;
 
 		virtual void OnSizeChange();
 

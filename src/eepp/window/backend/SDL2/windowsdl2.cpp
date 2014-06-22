@@ -11,12 +11,12 @@
 #include <eepp/window/backend/SDL2/cursormanagersdl2.hpp>
 #include <eepp/window/backend/SDL2/wminfo.hpp>
 
-#include <eepp/graphics/cglobalbatchrenderer.hpp>
-#include <eepp/graphics/cshaderprogrammanager.hpp>
-#include <eepp/graphics/cvertexbuffermanager.hpp>
-#include <eepp/graphics/cframebuffermanager.hpp>
-#include <eepp/graphics/ctexturefactory.hpp>
-#include <eepp/graphics/renderer/cgl.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/graphics/shaderprogrammanager.hpp>
+#include <eepp/graphics/vertexbuffermanager.hpp>
+#include <eepp/graphics/framebuffermanager.hpp>
+#include <eepp/graphics/texturefactory.hpp>
+#include <eepp/graphics/renderer/gl.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 #include <eepp/system/zip.hpp>
@@ -502,7 +502,7 @@ bool WindowSDL::Icon( const std::string& Path ) {
 		return false;
 	}
 
-	cImage Img( Path );
+	Image Img( Path );
 
 	if ( NULL != Img.GetPixelsPtr() ) {
 		const Uint8 * Ptr = Img.GetPixelsPtr();

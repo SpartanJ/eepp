@@ -8,11 +8,11 @@ CursorManagerNull::CursorManagerNull( EE::Window::Window * window ) :
 {
 }
 
-Cursor * CursorManagerNull::Create( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
+Cursor * CursorManagerNull::Create( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( CursorNull, ( tex, hotspot, name, mWindow ) );
 }
 
-Cursor * CursorManagerNull::Create( cImage * img, const Vector2i& hotspot, const std::string& name ) {
+Cursor * CursorManagerNull::Create( Image * img, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( CursorNull, ( img, hotspot, name, mWindow ) );
 }
 

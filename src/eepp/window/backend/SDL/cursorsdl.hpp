@@ -14,9 +14,9 @@ class CursorSDL : public Cursor {
 	protected:
 		friend class CursorManagerSDL;
 
-		CursorSDL( cTexture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
+		CursorSDL( Texture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 
-		CursorSDL( cImage * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
+		CursorSDL( Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 
 		CursorSDL( const std::string& path, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 

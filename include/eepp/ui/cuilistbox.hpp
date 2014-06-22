@@ -47,10 +47,10 @@ class EE_API cUIListBox : public cUIComplexControl {
 				Recti				PaddingContainer;
 				Recti				HScrollPadding;
 				Recti				VScrollPadding;
-				cFont *				Font;
-				ColorA			FontColor;
-				ColorA			FontOverColor;
-				ColorA			FontSelectedColor;
+				Graphics::Font *	Font;
+				ColorA				FontColor;
+				ColorA				FontOverColor;
+				ColorA				FontSelectedColor;
 				Float				TouchDragDeceleration;
 		};
 
@@ -114,9 +114,9 @@ class EE_API cUIListBox : public cUIComplexControl {
 
 		const ColorA& FontSelectedColor() const;
 
-		void Font( cFont * Font );
+		void Font( Graphics::Font * Font );
 
-		cFont * Font() const;
+		Graphics::Font * Font() const;
 
 		void PaddingContainer( const Recti& Padding );
 
@@ -170,16 +170,16 @@ class EE_API cUIListBox : public cUIComplexControl {
 		UI_SCROLLBAR_MODE	mVScrollMode;
 		UI_SCROLLBAR_MODE	mHScrollMode;
 		bool 				mSmoothScroll;
-		Recti 			mPaddingContainer;
+		Recti				mPaddingContainer;
 		Recti				mHScrollPadding;
 		Recti				mVScrollPadding;
 		tUIItemContainer<cUIListBox> * mContainer;
 		cUIScrollBar * 		mVScrollBar;
 		cUIScrollBar * 		mHScrollBar;
-		cFont * 			mFont;
-		ColorA 			mFontColor;
-		ColorA 			mFontOverColor;
-		ColorA 			mFontSelectedColor;
+		Graphics::Font * 	mFont;
+		ColorA				mFontColor;
+		ColorA				mFontOverColor;
+		ColorA				mFontSelectedColor;
 		Uint32 				mLastPos;
 		Uint32 				mMaxTextWidth;
 		Int32 				mHScrollInit;

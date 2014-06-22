@@ -1,5 +1,5 @@
 #include <eepp/ui/cuicombobox.hpp>
-#include <eepp/graphics/csubtexture.hpp>
+#include <eepp/graphics/subtexture.hpp>
 
 namespace EE { namespace UI {
 
@@ -44,7 +44,7 @@ void cUIComboBox::CreateButton() {
 		if ( mSkinState->GetSkin()->GetType() == cUISkin::UISkinComplex ) {
 			cUISkinComplex * tComplex = reinterpret_cast<cUISkinComplex*> ( mSkinState->GetSkin() );
 
-			cSubTexture * tSubTexture = tComplex->GetSubTextureSide( cUISkinState::StateNormal, cUISkinComplex::Right );
+			SubTexture * tSubTexture = tComplex->GetSubTextureSide( cUISkinState::StateNormal, cUISkinComplex::Right );
 
 			if ( NULL != tSubTexture )
 				btnWidth = tSubTexture->RealSize().Width();

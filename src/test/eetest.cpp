@@ -63,7 +63,7 @@ void cEETest::Init() {
 		mWindow->Caption( "eepp - Test Application" );
 		mWindow->PushResizeCallback( cb::Make1( this, &cEETest::OnWindowResize ) );
 
-		TF = cTextureFactory::instance();
+		TF = TextureFactory::instance();
 		TF->Allocate(40);
 
 		Log		= Log::instance();
@@ -114,14 +114,14 @@ void cEETest::Init() {
 		Batch.AllocVertexs( 2048 );
 		Batch.SetBlendMode( ALPHA_BLENDONE );
 
-		mFBO = cFrameBuffer::New( 256, 256, false );
+		mFBO = FrameBuffer::New( 256, 256, false );
 
 		if ( NULL != mFBO )
 			mFBO->ClearColor( ColorAf( 0, 0, 0, 0.5f ) );
 
 		Polygon2f Poly = Polygon2f::CreateRoundedRectangle( 0, 0, 256, 50 );
 
-		mVBO = cVertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
+		mVBO = VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
 
 		if ( NULL != mVBO ) {
 			for ( Uint32 i = 0; i < Poly.Size(); i++ ) {
@@ -154,12 +154,12 @@ void cEETest::CreateUIThemeTextureAtlas() {
 	std::string Path( MyPath + "ui/uitheme" );
 
 	if ( !FileSystem::FileExists( tgpath + EE_TEXTURE_ATLAS_EXTENSION ) ) {
-		cTexturePacker tp( 256, 256, true, 2 );
+		TexturePacker tp( 256, 256, true, 2 );
 		tp.AddTexturesPath( Path );
 		tp.PackTextures();
 		tp.Save( tgpath + ".png", SAVE_TYPE_PNG );
 	} else {
-		cTextureAtlasLoader tgl;
+		TextureAtlasLoader tgl;
 		tgl.UpdateTextureAtlas( tgpath + EE_TEXTURE_ATLAS_EXTENSION, Path );
 	}
 }
@@ -167,22 +167,22 @@ void cEETest::CreateUIThemeTextureAtlas() {
 void cEETest::LoadFonts() {
 	mFTE.Restart();
 
-	cTextureLoader * tl = eeNew( cTextureLoader, ( MyPath + "fonts/conchars.png" ) );
+	TextureLoader * tl = eeNew( TextureLoader, ( MyPath + "fonts/conchars.png" ) );
 	tl->SetColorKey( RGB(0,0,0) );
 
-	mFontLoader.Add( eeNew( cTextureFontLoader, ( "conchars", tl, (unsigned int)32 ) ) );
-	mFontLoader.Add( eeNew( cTextureFontLoader, ( "ProggySquareSZ", eeNew( cTextureLoader, ( MyPath + "fonts/ProggySquareSZ.png" ) ), MyPath + "fonts/ProggySquareSZ.dat" ) ) );
-	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255) ) ) );
-	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arialb", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255), 1, RGB(0,0,0), true ) ) );
+	mFontLoader.Add( eeNew( TextureFontLoader, ( "conchars", tl, (unsigned int)32 ) ) );
+	mFontLoader.Add( eeNew( TextureFontLoader, ( "ProggySquareSZ", eeNew( TextureLoader, ( MyPath + "fonts/ProggySquareSZ.png" ) ), MyPath + "fonts/ProggySquareSZ.dat" ) ) );
+	mFontLoader.Add( eeNew( TTFFontLoader, ( "arial", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255) ) ) );
+	mFontLoader.Add( eeNew( TTFFontLoader, ( "arialb", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255), 1, RGB(0,0,0), true ) ) );
 
 	mFontLoader.Load( cb::Make1( this, &cEETest::OnFontLoaded ) );
 }
 
 void cEETest::OnFontLoaded( ResourceLoader * ObjLoaded ) {
-	FF		= cFontManager::instance()->GetByName( "conchars" );
-	FF2		= cFontManager::instance()->GetByName( "ProggySquareSZ" );
-	TTF		= cFontManager::instance()->GetByName( "arial" );
-	TTFB	= cFontManager::instance()->GetByName( "arialb" );
+	FF		= FontManager::instance()->GetByName( "conchars" );
+	FF2		= FontManager::instance()->GetByName( "ProggySquareSZ" );
+	TTF		= FontManager::instance()->GetByName( "arial" );
+	TTFB	= FontManager::instance()->GetByName( "arialb" );
 
 	eePRINTL( "Fonts loading time: %4.3f ms.", mFTE.Elapsed().AsMilliseconds() );
 
@@ -211,7 +211,7 @@ void cEETest::CreateShaders() {
 
 	if ( mUseShaders ) {
 		mBlurFactor = 0.01f;
-		mShaderProgram = cShaderProgram::New( MyPath + "shaders/blur.vert", MyPath + "shaders/blur.frag" );
+		mShaderProgram = ShaderProgram::New( MyPath + "shaders/blur.vert", MyPath + "shaders/blur.frag" );
 	}
 }
 
@@ -258,9 +258,9 @@ void cEETest::CreateUI() {
 
 	//mTheme = cUITheme::LoadFromPath( eeNew( cUIDefaultTheme, ( "uitheme", "uitheme" ) ), MyPath + "uitheme/" );
 
-	cTextureAtlasLoader tgl( MyPath + "ui/uitheme" + EE_TEXTURE_ATLAS_EXTENSION );
+	TextureAtlasLoader tgl( MyPath + "ui/uitheme" + EE_TEXTURE_ATLAS_EXTENSION );
 
-	mTheme = cUITheme::LoadFromTextureAtlas( eeNew( cUIDefaultTheme, ( "uitheme", "uitheme" ) ), cTextureAtlasManager::instance()->GetByName( "uitheme" ) );
+	mTheme = cUITheme::LoadFromTextureAtlas( eeNew( cUIDefaultTheme, ( "uitheme", "uitheme" ) ), TextureAtlasManager::instance()->GetByName( "uitheme" ) );
 
 	cUIThemeManager::instance()->Add( mTheme );
 	cUIThemeManager::instance()->DefaultEffectsEnabled( true );
@@ -303,7 +303,7 @@ void cEETest::CreateUI() {
 	Child2->StartRotation( 0.f, 360.f, Milliseconds( 5000.f ) );
 	Child2->RotationInterpolation()->Loop( true );
 
-	mTheme->CreateSprite( eeNew( cSprite, ( "gn" ) ), C, Sizei(), Vector2i( 160, 100 ) );
+	mTheme->CreateSprite( eeNew( Sprite, ( "gn" ) ), C, Sizei(), Vector2i( 160, 100 ) );
 
 	cUITextBox::CreateParams TextParams;
 	TextParams.Parent( C );
@@ -576,7 +576,7 @@ void cEETest::OnMapEditorClose() {
 
 void cEETest::CreateETGEditor() {
 	cUIWindow * tWin = mTheme->CreateWindow( NULL, Sizei( 1024, 768 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, Sizei( 1024, 768 ) );
-	mETGEditor = eeNew ( Tools::cTextureAtlasEditor, ( tWin, cb::Make0( this, &cEETest::OnETGEditorClose ) ) );
+	mETGEditor = eeNew ( Tools::TextureAtlasEditor, ( tWin, cb::Make0( this, &cEETest::OnETGEditorClose ) ) );
 	tWin->Center();
 	tWin->Show();
 }
@@ -813,7 +813,7 @@ void cEETest::LoadTextures() {
 		std::string name( files[i] );
 
 		if ( "jpg" == FileSystem::FileExtension( name ) ) {
-			mResLoad.Add( eeNew( cTextureLoader, ( PakTest, name ) ) );
+			mResLoad.Add( eeNew( TextureLoader, ( PakTest, name ) ) );
 		}
 	}
 	#endif
@@ -832,8 +832,8 @@ void cEETest::LoadTextures() {
 
 	Tiles.resize(10);
 
-	cTextureAtlasLoader tgl( MyPath + "atlases/tiles.eta" );
-	cTextureAtlas * SG = cTextureAtlasManager::instance()->GetByName( "tiles" );
+	TextureAtlasLoader tgl( MyPath + "atlases/tiles.eta" );
+	TextureAtlas * SG = TextureAtlasManager::instance()->GetByName( "tiles" );
 
 	if ( NULL != SG ) {
 		for ( i = 0; i < 6; i++ ) {
@@ -843,7 +843,7 @@ void cEETest::LoadTextures() {
 		Tiles[6] = SG->Add( TF->Load( MyPath + "sprites/objects/1.png" ), "7" );
 
 		#ifdef EE_GLES
-		cImage tImg( MyPath + "sprites/objects/2.png", 4 );
+		Image tImg( MyPath + "sprites/objects/2.png", 4 );
 		tImg.CreateMaskFromColor( ColorA(0,0,0,255), 0 );
 		Tiles[7] = SG->Add( TF->LoadFromPixels( tImg.GetPixelsPtr(), tImg.Width(), tImg.Height(), tImg.Channels() ), "8" );
 		#else
@@ -867,7 +867,7 @@ void cEETest::LoadTextures() {
 
 	Con.AddCommand( "setparticlesnum", cb::Make1( this, &cEETest::CmdSetPartsNum ) );
 
-	cTexture * Tex = TNP[2];
+	Texture * Tex = TNP[2];
 
 	if ( NULL != Tex && Tex->Lock() ) {
 		w = (int)Tex->Width();
@@ -904,13 +904,13 @@ void cEETest::LoadTextures() {
 	CL2.AddFrame(TN[0], Sizef(96, 96) );
 	CL2.Color( ColorA( 255, 255, 255, 255 ) );
 
-	mTGL = eeNew( cTextureAtlasLoader, ( MyPath + "atlases/bnb" + EE_TEXTURE_ATLAS_EXTENSION ) );
+	mTGL = eeNew( TextureAtlasLoader, ( MyPath + "atlases/bnb" + EE_TEXTURE_ATLAS_EXTENSION ) );
 
 	mBlindy.AddFramesByPattern( "rn" );
 	mBlindy.Position( 320.f, 0.f );
 
-	mBoxSprite = eeNew( cSprite, ( cGlobalTextureAtlas::instance()->Add( eeNew( cSubTexture, ( TN[3], "ilmare" ) ) ) ) );
-	mCircleSprite = eeNew( cSprite, ( cGlobalTextureAtlas::instance()->Add( eeNew( cSubTexture, ( TN[1], "thecircle" ) ) ) ) );
+	mBoxSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->Add( eeNew( SubTexture, ( TN[3], "ilmare" ) ) ) ) );
+	mCircleSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->Add( eeNew( SubTexture, ( TN[1], "thecircle" ) ) ) ) );
 
 	eePRINTL( "Textures loading time: %4.3f ms.", TE.Elapsed().AsMilliseconds() );
 
@@ -950,7 +950,7 @@ void cEETest::Screen1() {
 
 void cEETest::Screen2() {
 	if ( mResLoad.IsLoaded() ) {
-		cTexture * TexLoaded = TF->GetByName( "1.jpg" );
+		Texture * TexLoaded = TF->GetByName( "1.jpg" );
 
 		if ( NULL != TexLoaded )
 			TexLoaded->Draw( 0, 0 );
@@ -1158,7 +1158,7 @@ void cEETest::Screen4() {
 
 		if ( NULL != mFBO->GetTexture() ) {
 			mFBO->GetTexture()->Draw( (Float)mWindow->GetWidth() * 0.5f - (Float)mFBO->GetWidth() * 0.5f, (Float)mWindow->GetHeight() * 0.5f - (Float)mFBO->GetHeight() * 0.5f, Ang );
-			cGlobalBatchRenderer::instance()->Draw();
+			GlobalBatchRenderer::instance()->Draw();
 		}
 	}
 }
@@ -1277,7 +1277,7 @@ void cEETest::Input() {
 	Mousef = Vector2f( (Float)Mouse.x, (Float)Mouse.y );
 
 	if ( KM->IsKeyUp( KEY_F1 ) )
-		Graphics::cShaderProgramManager::instance()->Reload();
+		Graphics::ShaderProgramManager::instance()->Reload();
 
 	if ( !mWindow->Visible() ) {
 		mWasMinimized = true;
@@ -1518,7 +1518,7 @@ void cEETest::Process() {
 	End();
 }
 
-void cEETest::ParticlesCallback( cParticle * P, cParticleSystem * Me ) {
+void cEETest::ParticlesCallback( Particle * P, ParticleSystem * Me ) {
 	Float x, y, radio;
 	Vector2f MePos( Me->Position() );
 

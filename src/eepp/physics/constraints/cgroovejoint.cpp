@@ -1,7 +1,7 @@
 #include <eepp/physics/constraints/cgroovejoint.hpp>
 
 #ifdef PHYSICS_RENDERER_ENABLED
-#include <eepp/graphics/cglobalbatchrenderer.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
 using namespace EE::Graphics;
 #endif
 
@@ -51,7 +51,7 @@ void cGrooveJoint::Draw() {
 	cVect a				= tovect( cpvadd(body_a->p, cpvrotate(joint->grv_a, body_a->rot)) );
 	cVect b				= tovect( cpvadd(body_a->p, cpvrotate(joint->grv_b, body_a->rot)) );
 	cVect c				= tovect( cpvadd(body_b->p, cpvrotate(joint->anchr2, body_b->rot)) );
-	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
+	BatchRenderer * BR = GlobalBatchRenderer::instance();
 
 	cpFloat ps = BR->GetPointSize();
 	BR->SetTexture( NULL );

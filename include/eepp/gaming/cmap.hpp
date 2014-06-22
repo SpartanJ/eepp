@@ -14,7 +14,7 @@
 #include <eepp/window/window.hpp>
 using namespace EE::Window;
 
-#include <eepp/graphics/ctexture.hpp>
+#include <eepp/graphics/texture.hpp>
 using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {
@@ -187,7 +187,7 @@ class EE_API cMap {
 
 		void SetUpdateCallback( MapUpdateCb Cb );
 
-		cTexture * GetBlankTileTexture();
+		Texture * GetBlankTileTexture();
 
 		bool IsTileBlocked( const Vector2i& TilePos );
 
@@ -266,7 +266,7 @@ class EE_API cMap {
 		PropertiesMap	mProperties;
 		GOTypesList		mObjTypes;
 		CreateGOCb		mCreateGOCb;
-		cTexture *		mTileTex;
+		Texture *		mTileTex;
 		eeAABB			mScreenAABB;
 		cLightManager *	mLightManager;
 		MapDrawCb		mDrawCb;

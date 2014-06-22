@@ -95,7 +95,7 @@ class EE_API InputTextBuffer {
 		/** Set the cursor position */
 		void CurPos( const Uint32& pos );
 
-		/** This function it's for helping the cFont class to locate the cursor position for the correct rendering of it.
+		/** This function it's for helping the Font class to locate the cursor position for the correct rendering of it.
 		* @param LastNewLinePos This will return the position of the closest "\n" to the current Cursor Pos
 		* @return On which line it's the cursor
 		*/

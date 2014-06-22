@@ -1,6 +1,6 @@
 #include <eepp/ui/cuiscrollbar.hpp>
 #include <eepp/ui/cuimanager.hpp>
-#include <eepp/graphics/csubtexture.hpp>
+#include <eepp/graphics/subtexture.hpp>
 
 namespace EE { namespace UI {
 
@@ -70,7 +70,7 @@ void cUIScrollBar::SetTheme( cUITheme * Theme ) {
 		mBtnDown->SetThemeControl( Theme, "vscrollbar_btndown" );
 	}
 
-	cSubTexture * tSubTexture = NULL;
+	SubTexture * tSubTexture = NULL;
 	cUISkin * tSkin = NULL;
 
 	tSkin = mBtnUp->GetSkin();

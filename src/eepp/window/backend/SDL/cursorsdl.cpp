@@ -4,12 +4,12 @@
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
 
-CursorSDL::CursorSDL( cTexture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
+CursorSDL::CursorSDL( Texture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
 	Cursor( tex, hotspot, name, window )
 {
 }
 
-CursorSDL::CursorSDL( cImage * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
+CursorSDL::CursorSDL( Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
 	Cursor( img, hotspot, name, window )
 {
 }

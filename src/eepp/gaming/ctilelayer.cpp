@@ -1,9 +1,9 @@
 #include <eepp/gaming/ctilelayer.hpp>
 #include <eepp/gaming/cmap.hpp>
 
-#include <eepp/graphics/ctexture.hpp>
-#include <eepp/graphics/cglobalbatchrenderer.hpp>
-#include <eepp/graphics/renderer/cgl.hpp>
+#include <eepp/graphics/texture.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
+#include <eepp/graphics/renderer/gl.hpp>
 using namespace EE::Graphics;
 
 namespace EE { namespace Gaming {
@@ -20,7 +20,7 @@ cTileLayer::~cTileLayer() {
 }
 
 void cTileLayer::Draw( const Vector2f& Offset ) {
-	cGlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->Draw();
 
 	GLi->PushMatrix();
 	GLi->Translatef( mOffset.x, mOffset.y, 0.0f );
@@ -39,7 +39,7 @@ void cTileLayer::Draw( const Vector2f& Offset ) {
 		}
 	}
 
-	cTexture * Tex = mMap->GetBlankTileTexture();
+	Texture * Tex = mMap->GetBlankTileTexture();
 
 	if ( mMap->ShowBlocked() && NULL != Tex ) {
 		for ( Int32 x = start.x; x < end.x; x++ ) {
@@ -53,7 +53,7 @@ void cTileLayer::Draw( const Vector2f& Offset ) {
 		}
 	}
 
-	cGlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->Draw();
 
 	GLi->PopMatrix();
 }

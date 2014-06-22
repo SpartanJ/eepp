@@ -3,8 +3,8 @@
 
 #include <eepp/window/base.hpp>
 
-#include <eepp/graphics/cimage.hpp>
-#include <eepp/graphics/ctexture.hpp>
+#include <eepp/graphics/image.hpp>
+#include <eepp/graphics/texture.hpp>
 using namespace EE::Graphics;
 
 #include <eepp/window/window.hpp>
@@ -26,14 +26,14 @@ class EE_API CursorManager {
 		* @param hotspot The hotspot where the mouse click is taken
 		* @param name The name of the cursor
 		*/
-		virtual Cursor *		Create( cTexture * tex, const Vector2i& hotspot, const std::string& name ) = 0;
+		virtual Cursor *		Create( Texture * tex, const Vector2i& hotspot, const std::string& name ) = 0;
 
 		/** Creates a cursor from a image
 		* @param img The image path
 		* @param hotspot The hotspot where the mouse click is taken
 		* @param name The name of the cursor
 		*/
-		virtual Cursor *		Create( cImage * img, const Vector2i& hotspot, const std::string& name ) = 0;
+		virtual Cursor *		Create( Image * img, const Vector2i& hotspot, const std::string& name ) = 0;
 
 		/** Creates a cursor from a image path
 		* @param path The image pointer to use as cursor

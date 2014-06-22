@@ -6,9 +6,9 @@
 #include <eepp/window/platformimpl.hpp>
 #include <eepp/window/engine.hpp>
 #include <eepp/graphics/glextensions.hpp>
-#include <eepp/graphics/renderer/cgl.hpp>
-#include <eepp/graphics/ctexturefactory.hpp>
-#include <eepp/graphics/cglobalbatchrenderer.hpp>
+#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/texturefactory.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
 #include <eepp/system/filesystem.hpp>
 #include <eepp/version.hpp>
 #include <eepp/helper/SOIL2/src/SOIL2/SOIL2.h>
@@ -179,7 +179,7 @@ const RGB& Window::BackColor() const {
 }
 
 bool Window::TakeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format ) {
-	cGlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->Draw();
 
 	bool CreateNewFile = false;
 	std::string File, Ext;
@@ -203,7 +203,7 @@ bool Window::TakeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format ) 
 		if ( !FileSystem::IsDirectory( filepath ) )
 			FileSystem::MakeDir( filepath );
 
-		Ext = "." + cImage::SaveTypeToExtension( Format );
+		Ext = "." + Image::SaveTypeToExtension( Format );
 
 		while ( !find && FileNum < 10000 ) {
 			TmpPath = String::StrFormated( "%s%05d%s", filepath.c_str(), FileNum, Ext.c_str() );
@@ -307,7 +307,7 @@ void Window::Clear() {
 }
 
 void Window::Display( bool clear ) {
-	cGlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->Draw();
 
 	if ( mCurrentView->NeedUpdate() )
 		SetView( *mCurrentView );
@@ -327,23 +327,23 @@ void Window::Display( bool clear ) {
 }
 
 void Window::ClipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
-	cGlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->Draw();
 	GLi->Scissor( x, GetHeight() - ( y + Height ), Width, Height );
 	GLi->Enable( GL_SCISSOR_TEST );
 }
 
 void Window::ClipDisable() {
-	cGlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->Draw();
 	GLi->Disable( GL_SCISSOR_TEST );
 }
 
 void Window::ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
-	cGlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->Draw();
 	GLi->Clip2DPlaneEnable( x, y, Width, Height );
 }
 
 void Window::ClipPlaneDisable() {
-	cGlobalBatchRenderer::instance()->Draw();
+	GlobalBatchRenderer::instance()->Draw();
 	GLi->Clip2DPlaneDisable();
 }
 

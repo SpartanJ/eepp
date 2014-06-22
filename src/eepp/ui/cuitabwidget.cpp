@@ -1,7 +1,7 @@
 #include <eepp/ui/cuitabwidget.hpp>
 #include <eepp/ui/cuimanager.hpp>
-#include <eepp/graphics/renderer/cgl.hpp>
-#include <eepp/graphics/cprimitives.hpp>
+#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/primitives.hpp>
 
 namespace EE { namespace UI {
 
@@ -96,7 +96,7 @@ void cUITabWidget::Draw() {
 		bool smooth = GLi->IsLineSmooth();
 		if ( smooth ) GLi->LineSmooth( false );
 
-		cPrimitives P;
+		Primitives P;
 		Vector2i p1( mPos.x, mPos.y + mTabContainer->Size().Height() + mLineBewowTabsYOffset );
 		Vector2i p2( mPos.x + mTabContainer->Pos().x, p1.y );
 
@@ -191,7 +191,7 @@ void cUITabWidget::OrderTabs() {
 	PosTabs();
 }
 
-cUITab * cUITabWidget::CreateTab( const String& Text, cUIControl * CtrlOwned, cSubTexture * Icon ) {
+cUITab * cUITabWidget::CreateTab( const String& Text, cUIControl * CtrlOwned, SubTexture * Icon ) {
 	cUITab::CreateParams Params;
 	Params.Parent( mTabContainer );
 	Params.Font 			= mFont;
@@ -214,7 +214,7 @@ cUITab * cUITabWidget::CreateTab( const String& Text, cUIControl * CtrlOwned, cS
 	return tCtrl;
 }
 
-Uint32 cUITabWidget::Add( const String& Text, cUIControl * CtrlOwned, cSubTexture * Icon ) {
+Uint32 cUITabWidget::Add( const String& Text, cUIControl * CtrlOwned, SubTexture * Icon ) {
 	return Add( CreateTab( Text, CtrlOwned, Icon ) );
 }
 
@@ -313,7 +313,7 @@ void cUITabWidget::RemoveAll() {
 	OrderTabs();
 }
 
-void cUITabWidget::Insert( const String& Text, cUIControl * CtrlOwned, cSubTexture * Icon, const Uint32& Index ) {
+void cUITabWidget::Insert( const String& Text, cUIControl * CtrlOwned, SubTexture * Icon, const Uint32& Index ) {
 	Insert( CreateTab( Text, CtrlOwned, Icon ), Index );
 }
 

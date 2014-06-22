@@ -3,8 +3,8 @@
 #include <eepp/helper/chipmunk/chipmunk_unsafe.h>
 
 #ifdef PHYSICS_RENDERER_ENABLED
-#include <eepp/graphics/renderer/cgl.hpp>
-#include <eepp/graphics/cprimitives.hpp>
+#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/primitives.hpp>
 using namespace EE::Graphics;
 #endif
 
@@ -38,7 +38,7 @@ void cShapeCircle::Radius( const cpFloat& radius ) {
 
 void cShapeCircle::Draw( cSpace * space ) {
 	#ifdef PHYSICS_RENDERER_ENABLED
-	cPrimitives p;
+	Primitives p;
 
 	cpCircleShape * cs = (cpCircleShape*)mShape;
 	p.SetColor( ColorForShape( mShape, space->Space() ) );

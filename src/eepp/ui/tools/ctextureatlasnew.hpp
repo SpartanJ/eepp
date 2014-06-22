@@ -6,17 +6,17 @@
 #include <eepp/ui/cuicombobox.hpp>
 #include <eepp/ui/cuispinbox.hpp>
 #include <eepp/ui/cuipushbutton.hpp>
-#include <eepp/graphics/ctexturepacker.hpp>
+#include <eepp/graphics/texturepacker.hpp>
 
 namespace EE { namespace UI { namespace Tools {
 
-class EE_API cTextureAtlasNew {
+class EE_API TextureAtlasNew {
 	public:
-		typedef cb::Callback1<void, cTexturePacker *> TGCreateCb;
+		typedef cb::Callback1<void, TexturePacker *> TGCreateCb;
 
-		cTextureAtlasNew( TGCreateCb NewTGCb = TGCreateCb() );
+		TextureAtlasNew( TGCreateCb NewTGCb = TGCreateCb() );
 
-		virtual ~cTextureAtlasNew();
+		virtual ~TextureAtlasNew();
 	protected:
 		cUITheme *			mTheme;
 		cUIWindow *			mUIWindow;

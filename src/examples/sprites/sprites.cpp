@@ -8,18 +8,18 @@ Interpolation RockAngle;
 Interpolation PlanetAngle;
 
 // Create a primitive drawer instance to draw the AABB of the Rock
-cPrimitives P;
-cSprite * Rock		= NULL;
-cSprite * Planet	= NULL;
-cSprite * Blindy	= NULL;
+Primitives P;
+Sprite * Rock		= NULL;
+Sprite * Planet	= NULL;
+Sprite * Blindy	= NULL;
 
 // Define a user sprite event
-static const Uint32 USER_SPRITE_EVENT = cSprite::SPRITE_EVENT_USER + 1;
+static const Uint32 USER_SPRITE_EVENT = Sprite::SPRITE_EVENT_USER + 1;
 
 // Get the sprite event callback
-void spriteCallback( Uint32 Event, cSprite * Sprite, void * UserData ) {
+void spriteCallback( Uint32 Event, Sprite * Sprite, void * UserData ) {
 	// Sprite Animation entered the first frame?
-	if ( Event == cSprite::SPRITE_EVENT_FIRST_FRAME ) {
+	if ( Event == Sprite::SPRITE_EVENT_FIRST_FRAME ) {
 		// Fire a user Event
 		Sprite->FireEvent( USER_SPRITE_EVENT );
 	} else if ( Event == USER_SPRITE_EVENT ) {
@@ -99,14 +99,14 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		std::string AppPath = Sys::GetProcessPath();
 
 		// Load the rock texture
-		Uint32 PlanetId	= cTextureFactory::instance()->Load( AppPath + "assets/sprites/7.png" );
-		Uint32 RockId	= cTextureFactory::instance()->Load( AppPath + "assets/sprites/5.png" );
+		Uint32 PlanetId	= TextureFactory::instance()->Load( AppPath + "assets/sprites/7.png" );
+		Uint32 RockId	= TextureFactory::instance()->Load( AppPath + "assets/sprites/5.png" );
 
 		// Load a previously generated texture atlas that contains the SubTextures needed to load an animated sprite
-		cTextureAtlasLoader Blindies( AppPath + "assets/atlases/bnb.eta" );
+		TextureAtlasLoader Blindies( AppPath + "assets/atlases/bnb.eta" );
 
 		// Create the animated rock spriteR
-		Rock	= eeNew( cSprite, () );
+		Rock	= eeNew( Sprite, () );
 
 		// Load the rock frames from the texture, adding the frames manually
 		for ( Int32 my = 0; my < 4; my++ ) {
@@ -117,14 +117,14 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		}
 
 		// Create a static sprite
-		Planet	= eeNew( cSprite, ( PlanetId ) );
+		Planet	= eeNew( Sprite, ( PlanetId ) );
 
 		// This constructor is the same that creating sprite and calling Sprite.AddFramesByPattern.
 		// It will look for a SubTexture ( in any Texture Atlas loaded, or the GlobalTextureAtlas ) animation by its name, it will search
 		// for "gn00" to "gnXX" to create a new animation
-		// see cTextureAtlasManager::GetSubTexturesByPattern for more information.
+		// see TextureAtlasManager::GetSubTexturesByPattern for more information.
 		// This is the easiest way to load animated sprites.
-		Blindy	= eeNew( cSprite, ( "gn" ) );
+		Blindy	= eeNew( Sprite, ( "gn" ) );
 
 		// Set the sprite animation speed, set in Frames per Second
 		// Sprites are auto-animated by default.

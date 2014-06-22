@@ -7,9 +7,9 @@
 #include <eepp/system/resourcemanager.hpp>
 
 namespace EE { namespace Graphics {
-class cSprite;
-class cTextureAtlas;
-class cFont;
+class Sprite;
+class TextureAtlas;
+class Font;
 }}
 
 namespace EE { namespace UI {
@@ -48,11 +48,11 @@ class EE_API cUITheme : protected ResourceManager<cUISkin> {
 		using ResourceManager<cUISkin>::Exists;
 		using ResourceManager<cUISkin>::ExistsId;
 
-		static cUITheme * LoadFromTextureAtlas( cUITheme * tTheme, cTextureAtlas * TextureAtlas );
+		static cUITheme * LoadFromTextureAtlas( cUITheme * tTheme, Graphics::TextureAtlas * TextureAtlas );
 
 		static cUITheme * LoadFromPath( cUITheme * tTheme, const std::string& Path, const std::string ImgExt = "png" );
 
-		static cUITheme * LoadFromTextureAtlas( cTextureAtlas * TextureAtlas, const std::string& Name, const std::string NameAbbr );
+		static cUITheme * LoadFromTextureAtlas( Graphics::TextureAtlas * TextureAtlas, const std::string& Name, const std::string NameAbbr );
 
 		static cUITheme * LoadFromPath( const std::string& Path, const std::string& Name, const std::string& NameAbbr, const std::string ImgExt = "png" );
 
@@ -60,7 +60,7 @@ class EE_API cUITheme : protected ResourceManager<cUISkin> {
 
 		void AddThemeIcon( const std::string& Icon );
 
-		cUITheme( const std::string& Name, const std::string& Abbr, cFont * DefaultFont = NULL );
+		cUITheme( const std::string& Name, const std::string& Abbr, Graphics::Font * DefaultFont = NULL );
 
 		virtual ~cUITheme();
 
@@ -74,9 +74,9 @@ class EE_API cUITheme : protected ResourceManager<cUISkin> {
 
 		virtual cUISkin * Add( cUISkin * Resource );
 
-		void Font( cFont * Font );
+		void Font( Graphics::Font * Font );
 
-		cFont * Font() const;
+		Graphics::Font * Font() const;
 
 		const ColorA& FontColor() const;
 
@@ -98,13 +98,13 @@ class EE_API cUITheme : protected ResourceManager<cUISkin> {
 
 		const bool& UseDefaultThemeValues() const;
 
-		cTextureAtlas * TextureAtlas() const;
+		Graphics::TextureAtlas * TextureAtlas() const;
 
-		cSubTexture * GetIconByName( const std::string& name );
+		SubTexture * GetIconByName( const std::string& name );
 
-		virtual cUIGfx * CreateGfx( cSubTexture * SubTexture, cUIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, ColorA SubTextureColor = ColorA(255,255,255,255), EE_RENDER_MODE SubTextureRender = RN_NORMAL );
+		virtual cUIGfx * CreateGfx( SubTexture * SubTexture, cUIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, ColorA SubTextureColor = ColorA(255,255,255,255), EE_RENDER_MODE SubTextureRender = RN_NORMAL );
 
-		virtual cUISprite * CreateSprite( cSprite * Sprite, cUIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, bool DeallocSprite = true, EE_RENDER_MODE SpriteRender = RN_NORMAL );
+		virtual cUISprite * CreateSprite( Sprite * Sprite, cUIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, bool DealloSprite = true, EE_RENDER_MODE SpriteRender = RN_NORMAL );
 
 		virtual cUICheckBox * CreateCheckBox( cUIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS );
 
@@ -138,9 +138,9 @@ class EE_API cUITheme : protected ResourceManager<cUISkin> {
 
 		virtual cUIProgressBar * CreateProgressBar( cUIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS, bool DisplayPercent = false, bool VerticalExpand = false, Vector2f MovementSpeed = Vector2f( 64, 0 ), Rectf FillerMargin = Rectf() );
 
-		virtual cUIPushButton * CreatePushButton( cUIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, cSubTexture * Icon = NULL, Int32 IconHorizontalMargin = 0, bool IconAutoMargin = true );
+		virtual cUIPushButton * CreatePushButton( cUIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, SubTexture * Icon = NULL, Int32 IconHorizontalMargin = 0, bool IconAutoMargin = true );
 
-		virtual cUISelectButton * CreateSelectButton( cUIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, cSubTexture * Icon = NULL, Int32 IconHorizontalMargin = 0, bool IconAutoMargin = true );
+		virtual cUISelectButton * CreateSelectButton( cUIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, SubTexture * Icon = NULL, Int32 IconHorizontalMargin = 0, bool IconAutoMargin = true );
 
 		virtual cUIWinMenu * CreateWinMenu( cUIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS, Uint32 MarginBetweenButtons = 0, Uint32 ButtonMargin = 4, Uint32 MenuHeight = 0, Uint32 FirstButtonMargin = 1 );
 
@@ -155,8 +155,8 @@ class EE_API cUITheme : protected ResourceManager<cUISkin> {
 		std::string				mName;
 		Uint32					mNameHash;
 		std::string				mAbbr;
-		cTextureAtlas *			mTextureAtlas;
-		cFont *					mFont;
+		Graphics::TextureAtlas *			mTextureAtlas;
+		Graphics::Font *					mFont;
 		ColorA				mFontColor;
 		ColorA				mFontShadowColor;
 		ColorA				mFontOverColor;
@@ -165,11 +165,11 @@ class EE_API cUITheme : protected ResourceManager<cUISkin> {
 		std::list<std::string>	mUIElements;
 		std::list<std::string>	mUIIcons;
 
-		void TextureAtlas( cTextureAtlas * SG );
+		void TextureAtlas( Graphics::TextureAtlas * SG );
 
-		static bool SearchFilesOfElement( cTextureAtlas * SG, const std::string& Path, std::string Element, Uint32& IsComplex, const std::string ImgExt );
+		static bool SearchFilesOfElement( Graphics::TextureAtlas * SG, const std::string& Path, std::string Element, Uint32& IsComplex, const std::string ImgExt );
 
-		static bool SearchFilesInAtlas( cTextureAtlas * SG, std::string Element, Uint32& IsComplex );
+		static bool SearchFilesInAtlas( Graphics::TextureAtlas * SG, std::string Element, Uint32& IsComplex );
 };
 
 }}

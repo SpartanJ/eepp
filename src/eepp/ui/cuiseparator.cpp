@@ -1,5 +1,5 @@
 #include <eepp/ui/cuiseparator.hpp>
-#include <eepp/graphics/csubtexture.hpp>
+#include <eepp/graphics/subtexture.hpp>
 
 namespace EE { namespace UI {
 

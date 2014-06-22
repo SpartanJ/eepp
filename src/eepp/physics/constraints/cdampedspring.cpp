@@ -2,8 +2,8 @@
 
 #ifdef PHYSICS_RENDERER_ENABLED
 #include <eepp/graphics/glextensions.hpp>
-#include <eepp/graphics/renderer/cgl.hpp>
-#include <eepp/graphics/cglobalbatchrenderer.hpp>
+#include <eepp/graphics/renderer/gl.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
 using namespace EE::Graphics;
 #endif
 
@@ -92,7 +92,7 @@ void cDampedSpring::Draw() {
 
 	GLi->PointSize( mDrawPointSize );
 
-	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
+	BatchRenderer * BR = GlobalBatchRenderer::instance();
 	BR->SetTexture( NULL );
 	BR->PointsBegin();
 	BR->BatchPoint( a.x, a.y );

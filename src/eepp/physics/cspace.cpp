@@ -3,7 +3,7 @@
 
 #ifdef PHYSICS_RENDERER_ENABLED
 #include <eepp/window/engine.hpp>
-#include <eepp/graphics/cglobalbatchrenderer.hpp>
+#include <eepp/graphics/globalbatchrenderer.hpp>
 using namespace EE::Graphics;
 #endif
 
@@ -287,7 +287,7 @@ static void drawConstraint( cpConstraint *constraint ) {
 void cSpace::Draw() {
 	#ifdef PHYSICS_RENDERER_ENABLED
 
-	cBatchRenderer * BR = cGlobalBatchRenderer::instance();
+	BatchRenderer * BR = GlobalBatchRenderer::instance();
 	BR->SetBlendMode( ALPHA_NORMAL );
 
 	cPhysicsManager::cDrawSpaceOptions * options = cPhysicsManager::instance()->GetDrawOptions();

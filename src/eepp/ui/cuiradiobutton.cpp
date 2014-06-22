@@ -1,7 +1,7 @@
 #include <eepp/ui/cuiradiobutton.hpp>
 #include <eepp/ui/cuimanager.hpp>
-#include <eepp/graphics/csubtexture.hpp>
-#include <eepp/graphics/ctextcache.hpp>
+#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/textcache.hpp>
 
 namespace EE { namespace UI {
 
@@ -49,7 +49,7 @@ void cUIRadioButton::SetTheme( cUITheme * Theme ) {
 	mActiveButton->SetThemeControl	( Theme, "radiobutton_active" );
 	mInactiveButton->SetThemeControl( Theme, "radiobutton_inactive" );
 
-	cSubTexture * tSubTexture = NULL;
+	SubTexture * tSubTexture = NULL;
 	cUISkin * tSkin = mActiveButton->GetSkin();
 
 	if ( tSkin ) {

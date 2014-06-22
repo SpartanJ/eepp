@@ -23,11 +23,11 @@ cUIThemeManager::cUIThemeManager() :
 cUIThemeManager::~cUIThemeManager() {
 }
 
-void cUIThemeManager::DefaultFont( cFont * Font ) {
+void cUIThemeManager::DefaultFont( Font * Font ) {
 	mFont = Font;
 }
 
-cFont * cUIThemeManager::DefaultFont() const {
+Font * cUIThemeManager::DefaultFont() const {
 	return mFont;
 }
 

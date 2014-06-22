@@ -14,9 +14,9 @@ class EE_API cUIThemeManager : public ResourceManager<cUITheme> {
 	public:
 		virtual ~cUIThemeManager();
 
-		void DefaultFont( cFont * Font );
+		void DefaultFont( Font * Font );
 
-		cFont * DefaultFont() const;
+		Font * DefaultFont() const;
 
 		void SetTheme( const std::string& Theme );
 
@@ -58,7 +58,7 @@ class EE_API cUIThemeManager : public ResourceManager<cUITheme> {
 
 		const Sizei& CursorSize() const;
 	protected:
-		cFont * 			mFont;
+		Font * 			mFont;
 		cUITheme * 			mThemeDefault;
 		bool				mAutoApplyDefaultTheme;
 

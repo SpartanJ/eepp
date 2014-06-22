@@ -1,5 +1,5 @@
 #include <eepp/ui/cuiskincomplex.hpp>
-#include <eepp/graphics/ctextureatlasmanager.hpp>
+#include <eepp/graphics/textureatlasmanager.hpp>
 
 namespace EE { namespace UI {
 
@@ -31,7 +31,7 @@ void cUISkinComplex::Draw( const Float& X, const Float& Y, const Float& Width, c
 	if ( 0 == Alpha )
 		return;
 
-	cSubTexture * tSubTexture = mSubTexture[ State ][ UpLeft ];
+	SubTexture * tSubTexture = mSubTexture[ State ][ UpLeft ];
 	mTempColor		= mColor[ State ];
 
 	if ( mTempColor.Alpha != Alpha ) {
@@ -147,20 +147,20 @@ void cUISkinComplex::SetSkin( const Uint32& State ) {
 
 	for ( Uint32 Side = 0; Side < SideCount; Side++ ) {
 
-		cSubTexture * SubTexture = cTextureAtlasManager::instance()->GetSubTextureByName( std::string( mName + "_" + cUISkin::GetSkinStateName( State ) + "_" + SideSuffix[ Side ] ) );
+		SubTexture * SubTexture = TextureAtlasManager::instance()->GetSubTextureByName( std::string( mName + "_" + cUISkin::GetSkinStateName( State ) + "_" + SideSuffix[ Side ] ) );
 
 		if ( NULL != SubTexture )
 			mSubTexture[ State ][ Side ] = SubTexture;
 	}
 }
 
-cSubTexture * cUISkinComplex::GetSubTexture( const Uint32& State ) const {
+SubTexture * cUISkinComplex::GetSubTexture( const Uint32& State ) const {
 	eeASSERT ( State < cUISkinState::StateCount );
 
 	return mSubTexture[ State ][ Center ];
 }
 
-cSubTexture * cUISkinComplex::GetSubTextureSide( const Uint32& State, const Uint32& Side ) {
+SubTexture * cUISkinComplex::GetSubTextureSide( const Uint32& State, const Uint32& Side ) {
 	eeASSERT ( State < cUISkinState::StateCount && Side < cUISkinComplex::SideCount );
 
 	return mSubTexture[ State ][ Side ];
@@ -183,7 +183,7 @@ cUISkinComplex * cUISkinComplex::Copy( const std::string& NewName, const bool& C
 		memcpy( &SkinC->mColor[0], &mColor[0], cUISkinState::StateCount * sizeof(ColorA) );
 	}
 
-	memcpy( &SkinC->mSubTexture[0], &mSubTexture[0], cUISkinState::StateCount * SideCount * sizeof(cSubTexture*) );
+	memcpy( &SkinC->mSubTexture[0], &mSubTexture[0], cUISkinState::StateCount * SideCount * sizeof(SubTexture*) );
 
 	return SkinC;
 }

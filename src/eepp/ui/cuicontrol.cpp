@@ -1,9 +1,9 @@
 #include <eepp/ui/cuicontrol.hpp>
 #include <eepp/ui/cuitheme.hpp>
 #include <eepp/ui/cuimanager.hpp>
-#include <eepp/graphics/cprimitives.hpp>
-#include <eepp/graphics/csubtexture.hpp>
-#include <eepp/graphics/renderer/cgl.hpp>
+#include <eepp/graphics/primitives.hpp>
+#include <eepp/graphics/subtexture.hpp>
+#include <eepp/graphics/renderer/gl.hpp>
 
 namespace EE { namespace UI {
 
@@ -253,7 +253,7 @@ void cUIControl::Draw() {
 			mSkinState->Draw( (Float)mScreenPos.x, (Float)mScreenPos.y, (Float)mSize.Width(), (Float)mSize.Height(), 255 );
 
 		if ( cUIManager::instance()->HighlightFocus() && cUIManager::instance()->FocusControl() == this ) {
-			cPrimitives P;
+			Primitives P;
 			P.FillMode( DRAW_LINE );
 			P.BlendMode( Blend() );
 			P.SetColor( cUIManager::instance()->HighlightFocusColor() );
@@ -261,7 +261,7 @@ void cUIControl::Draw() {
 		}
 
 		if ( cUIManager::instance()->HighlightOver() && cUIManager::instance()->OverControl() == this ) {
-			cPrimitives P;
+			Primitives P;
 			P.FillMode( DRAW_LINE );
 			P.BlendMode( Blend() );
 			P.SetColor( cUIManager::instance()->HighlightOverColor() );
@@ -522,7 +522,7 @@ Rectf cUIControl::GetRectf() {
 }
 
 void cUIControl::BackgroundDraw() {
-	cPrimitives P;
+	Primitives P;
 	Rectf R = GetRectf();
 	P.BlendMode( mBackground->Blend() );
 	P.SetColor( mBackground->Color() );
@@ -543,7 +543,7 @@ void cUIControl::BackgroundDraw() {
 }
 
 void cUIControl::BorderDraw() {
-	cPrimitives P;
+	Primitives P;
 	P.FillMode( DRAW_LINE );
 	P.BlendMode( Blend() );
 	P.LineWidth( (Float)mBorder->Width() );
@@ -1069,7 +1069,7 @@ Recti cUIControl::MakePadding( bool PadLeft, bool PadRight, bool PadTop, bool Pa
 			if ( mSkinState->GetSkin()->GetType() == cUISkin::UISkinComplex ) {
 				cUISkinComplex * tComplex = reinterpret_cast<cUISkinComplex*> ( mSkinState->GetSkin() );
 
-				cSubTexture * tSubTexture = NULL;
+				SubTexture * tSubTexture = NULL;
 
 				if ( PadLeft ) {
 					tSubTexture = tComplex->GetSubTextureSide( cUISkinState::StateNormal, cUISkinComplex::Left );
@@ -1128,7 +1128,7 @@ Sizei cUIControl::GetSkinSize( cUISkin * Skin, const Uint32& State ) {
 	Sizei		tSize;
 
 	if ( NULL != Skin ) {
-		cSubTexture * tSubTexture = Skin->GetSubTexture( State );
+		SubTexture * tSubTexture = Skin->GetSubTexture( State );
 
 		if ( NULL != tSubTexture ) {
 			tSize = tSubTexture->RealSize();

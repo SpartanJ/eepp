@@ -227,11 +227,11 @@ void cX11Impl::HideMouseCursor() {
 	Unlock();
 }
 
-Cursor * cX11Impl::CreateMouseCursor( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
+Cursor * cX11Impl::CreateMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( CursorX11, ( tex, hotspot, name, mWindow ) );
 }
 
-Cursor * cX11Impl::CreateMouseCursor( cImage * img, const Vector2i& hotspot, const std::string& name ) {
+Cursor * cX11Impl::CreateMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( CursorX11, ( img, hotspot, name, mWindow ) );
 }
 

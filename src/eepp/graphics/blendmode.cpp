@@ -1,6 +1,6 @@
 #include <eepp/graphics/blendmode.hpp>
 #include <eepp/graphics/glextensions.hpp>
-#include <eepp/graphics/renderer/cgl.hpp>
+#include <eepp/graphics/renderer/gl.hpp>
 
 namespace EE { namespace Graphics {
 

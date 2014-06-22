@@ -2,7 +2,7 @@
 
 namespace EE { namespace Window {
 
-Cursor::Cursor( cTexture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
+Cursor::Cursor( Texture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
 	mId( String::Hash( name ) ),
 	mName( name ),
 	mImage( NULL ),
@@ -10,15 +10,15 @@ Cursor::Cursor( cTexture * tex, const Vector2i& hotspot, const std::string& name
 	mWindow( window )
 {
 	if ( NULL != tex && tex->Lock() ) {
-		mImage = eeNew( cImage, ( tex->GetPixelsPtr(), tex->Width(), tex->Height(), tex->Channels() ) );
+		mImage = eeNew( Graphics::Image, ( tex->GetPixelsPtr(), tex->Width(), tex->Height(), tex->Channels() ) );
 
 		tex->Unlock();
 	} else {
-		eePRINTL( "Cursor::Cursor: Error creating cursor from cTexture." );
+		eePRINTL( "Cursor::Cursor: Error creating cursor from Texture." );
 	}
 }
 
-Cursor::Cursor( cImage * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
+Cursor::Cursor( Graphics::Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
 	mId( String::Hash( name ) ),
 	mName( name ),
 	mImage( NULL ),
@@ -26,9 +26,9 @@ Cursor::Cursor( cImage * img, const Vector2i& hotspot, const std::string& name, 
 	mWindow( window )
 {
 	if ( img->MemSize() ) {
-		mImage = eeNew( cImage, ( img->GetPixelsPtr(), img->Width(), img->Height(), img->Channels() ) );
+		mImage = eeNew( Graphics::Image, ( img->GetPixelsPtr(), img->Width(), img->Height(), img->Channels() ) );
 	} else {
-		eePRINTL( "Cursor::Cursor: Error creating cursor from cImage." );
+		eePRINTL( "Cursor::Cursor: Error creating cursor from Image." );
 	}
 }
 
@@ -39,7 +39,7 @@ Cursor::Cursor( const std::string& path, const Vector2i& hotspot, const std::str
 	mHotSpot( hotspot ),
 	mWindow( window )
 {
-	mImage = eeNew( cImage, ( path ) );
+	mImage = eeNew( Graphics::Image, ( path ) );
 
 	if ( NULL == mImage->GetPixels() ) {
 		eePRINTL( "Cursor::Cursor: Error creating cursor from path." );
@@ -62,7 +62,7 @@ const std::string& Cursor::Name() const {
 	return mName;
 }
 
-cImage * Cursor::Image() const {
+Graphics::Image * Cursor::Image() const {
 	return mImage;
 }
 

@@ -1,12 +1,12 @@
 #include <eepp/gaming/cgameobjectsprite.hpp>
-#include <eepp/graphics/csprite.hpp>
-#include <eepp/graphics/ctextureatlasmanager.hpp>
+#include <eepp/graphics/sprite.hpp>
+#include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/gaming/cmap.hpp>
 #include <eepp/gaming/ctilelayer.hpp>
 
 namespace EE { namespace Gaming {
 
-cGameObjectSprite::cGameObjectSprite( const Uint32& Flags, cLayer * Layer, cSprite * Sprite ) :
+cGameObjectSprite::cGameObjectSprite( const Uint32& Flags, cLayer * Layer, Graphics::Sprite * Sprite ) :
 	cGameObject( Flags, Layer ),
 	mSprite( Sprite )
 {
@@ -97,11 +97,11 @@ Sizei cGameObjectSprite::Size() {
 	return Sizei();
 }
 
-cSprite * cGameObjectSprite::Sprite() const {
+Graphics::Sprite * cGameObjectSprite::Sprite() const {
 	return mSprite;
 }
 
-void cGameObjectSprite::Sprite( cSprite * sprite ) {
+void cGameObjectSprite::Sprite( Graphics::Sprite * sprite ) {
 	eeSAFE_DELETE( mSprite );
 	mSprite = sprite;
 	mSprite->RenderMode( RenderModeFromFlags() );
@@ -119,23 +119,23 @@ Uint32 cGameObjectSprite::DataId() {
 }
 
 void cGameObjectSprite::DataId( Uint32 Id ) {
-	cSprite * tSprite = NULL;
+	Graphics::Sprite * tSprite = NULL;
 
 	if ( mFlags & GObjFlags::GAMEOBJECT_ANIMATED ) {
-		std::vector<cSubTexture*> tSubTextureVec = cTextureAtlasManager::instance()->GetSubTexturesByPatternId( Id );
+		std::vector<SubTexture*> tSubTextureVec = TextureAtlasManager::instance()->GetSubTexturesByPatternId( Id );
 
 		if ( tSubTextureVec.size() ) {
-			tSprite = eeNew( cSprite, () );
+			tSprite = eeNew( Graphics::Sprite, () );
 			tSprite->CreateAnimation();
 			tSprite->AddFrames( tSubTextureVec );
 
 			Sprite( tSprite );
 		}
 	} else {
-		cSubTexture * tSubTexture = cTextureAtlasManager::instance()->GetSubTextureById( Id );
+		Graphics::SubTexture * tSubTexture = TextureAtlasManager::instance()->GetSubTextureById( Id );
 
 		if ( NULL != tSubTexture ) {
-			Sprite( eeNew( cSprite, ( tSubTexture ) ) );
+			Sprite( eeNew( Graphics::Sprite, ( tSubTexture ) ) );
 		}
 	}
 }

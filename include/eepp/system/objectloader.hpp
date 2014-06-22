@@ -14,11 +14,11 @@ class EE_API ObjectLoader : protected Thread {
 
 		/** @brief LoaderType Definition of the Object Loaders implemented by the engine. */
 		enum ObjLoaderType {
-			TextureLoader	= 1,
-			SoundLoader		= 2,
-			FontTTFLoader	= 3,
-			FontTexLoader	= 4,
-			UserObjLoader
+			TextureLoaderType	= 1,
+			SoundLoaderType		= 2,
+			FontTTFLoaderType	= 3,
+			FontTexLoaderType	= 4,
+			UserObjLoaderType
 		};
 
 		/** Creates an instance of an object loader of the type defined */

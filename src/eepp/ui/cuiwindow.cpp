@@ -1,6 +1,6 @@
 #include <eepp/ui/cuiwindow.hpp>
 #include <eepp/ui/cuimanager.hpp>
-#include <eepp/graphics/cprimitives.hpp>
+#include <eepp/graphics/primitives.hpp>
 
 namespace EE { namespace UI {
 
@@ -653,7 +653,7 @@ void cUIWindow::Draw() {
 	cUIComplexControl::Draw();
 
 	if ( mWinFlags & UI_WIN_DRAW_SHADOW ) {
-		cPrimitives P;
+		Primitives P;
 		P.ForceDraw( false );
 
 		ColorA BeginC( 0, 0, 0, 25 * ( Alpha() / (Float)255 ) );

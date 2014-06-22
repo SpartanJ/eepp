@@ -10,7 +10,7 @@
 
 namespace EE { namespace UI { namespace Tools {
 
-cTextureAtlasEditor::cTextureAtlasEditor( cUIWindow * AttatchTo, const TGEditorCloseCb& callback ) :
+TextureAtlasEditor::TextureAtlasEditor( cUIWindow * AttatchTo, const TGEditorCloseCb& callback ) :
 	mUIWindow( AttatchTo ),
 	mCloseCb( callback ),
 	mTexturePacker( NULL ),
@@ -18,7 +18,7 @@ cTextureAtlasEditor::cTextureAtlasEditor( cUIWindow * AttatchTo, const TGEditorC
 	mCurSubTexture( NULL )
 {
 	if ( NULL == cUIThemeManager::instance()->DefaultTheme() ) {
-		eePRINTL( "cTextureAtlasEditor needs a default theme assigned to work." );
+		eePRINTL( "TextureAtlasEditor needs a default theme assigned to work." );
 		return;
 	}
 
@@ -43,7 +43,7 @@ cTextureAtlasEditor::cTextureAtlasEditor( cUIWindow * AttatchTo, const TGEditorC
 
 	mSubTextureList = mTheme->CreateListBox( mUIContainer, Sizei( 200, 156 ), Vector2i( mUIContainer->Size().Width() - 205, 50 ), UI_CONTROL_DEFAULT_ALIGN | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP );
 	mSubTextureList->Size( mSubTextureList->Size().Width(), mSubTextureList->RowHeight() * 9 + mSubTextureList->PaddingContainer().Top + mSubTextureList->PaddingContainer().Bottom );
-	mSubTextureList->AddEventListener( cUIEvent::EventOnItemSelected, cb::Make1( this, &cTextureAtlasEditor::OnSubTextureChange ) );
+	mSubTextureList->AddEventListener( cUIEvent::EventOnItemSelected, cb::Make1( this, &TextureAtlasEditor::OnSubTextureChange ) );
 
 	CreateTxtBox( Vector2i( mUIContainer->Size().Width() - 205, InitY ), "Current SubTexture:" );
 
@@ -53,7 +53,7 @@ cTextureAtlasEditor::cTextureAtlasEditor( cUIWindow * AttatchTo, const TGEditorC
 	mSpinOffX->MinValue( -32000 );
 	mSpinOffX->MaxValue( 32000 );
 	mSpinOffX->Pos( mUIContainer->Size().Width() - mSpinOffX->Size().Width() - 10, InitY );
-	mSpinOffX->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cTextureAtlasEditor::OnOffXChange ) );
+	mSpinOffX->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::OnOffXChange ) );
 
 	TxtBox = CreateTxtBox( Vector2i(), "Offset X:" );
 	TxtBox->Pos( mSpinOffX->Pos().x - 10 - TxtBox->Size().Width(), InitY );
@@ -64,7 +64,7 @@ cTextureAtlasEditor::cTextureAtlasEditor( cUIWindow * AttatchTo, const TGEditorC
 	mSpinOffY->MinValue( -32000 );
 	mSpinOffY->MaxValue( 32000 );
 	mSpinOffY->Pos( mUIContainer->Size().Width() - mSpinOffY->Size().Width() - 10, InitY );
-	mSpinOffY->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cTextureAtlasEditor::OnOffYChange ) );
+	mSpinOffY->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::OnOffYChange ) );
 	TxtBox = CreateTxtBox( Vector2i(), "Offset Y:" );
 	TxtBox->Pos( mSpinOffY->Pos().x - 10 - TxtBox->Size().Width(), InitY );
 
@@ -73,7 +73,7 @@ cTextureAtlasEditor::cTextureAtlasEditor( cUIWindow * AttatchTo, const TGEditorC
 	mSpinDestW = mTheme->CreateSpinBox( mUIContainer, Sizei( 100, 22 ), Vector2i(), Flags, 0, false );
 	mSpinDestW->MaxValue( 32000 );
 	mSpinDestW->Pos( mUIContainer->Size().Width() - mSpinDestW->Size().Width() - 10, InitY );
-	mSpinDestW->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cTextureAtlasEditor::OnDestWChange ) );
+	mSpinDestW->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::OnDestWChange ) );
 	TxtBox = CreateTxtBox( Vector2i(), "Dest. Width:" );
 	TxtBox->Pos( mSpinDestW->Pos().x - 10 - TxtBox->Size().Width(), InitY );
 
@@ -82,7 +82,7 @@ cTextureAtlasEditor::cTextureAtlasEditor( cUIWindow * AttatchTo, const TGEditorC
 	mSpinDestH = mTheme->CreateSpinBox( mUIContainer, Sizei( 100, 22 ), Vector2i(), Flags, 0, false );
 	mSpinDestH->MaxValue( 32000 );
 	mSpinDestH->Pos( mUIContainer->Size().Width() - mSpinDestH->Size().Width() - 10, InitY );
-	mSpinDestH->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cTextureAtlasEditor::OnDestHChange ) );
+	mSpinDestH->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &TextureAtlasEditor::OnDestHChange ) );
 	TxtBox = CreateTxtBox( Vector2i(), "Dest. Height:" );
 	TxtBox->Pos( mSpinDestH->Pos().x - 10 - TxtBox->Size().Width(), InitY );
 
@@ -90,22 +90,22 @@ cTextureAtlasEditor::cTextureAtlasEditor( cUIWindow * AttatchTo, const TGEditorC
 
 	cUIPushButton * ResetButton = mTheme->CreatePushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( mUIContainer->Size().Width() - 120 - 5 , mSpinDestH->Pos().y + mSpinDestH->Size().Height() + 8 ), ButFlags );
 	ResetButton->Text( "Reset Dest. Size" );
-	ResetButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cTextureAtlasEditor::OnResetDestSize ) );
+	ResetButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::OnResetDestSize ) );
 
 	cUIPushButton * ResetOffsetButton = mTheme->CreatePushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( ResetButton->Pos().x, ResetButton->Pos().y + ResetButton->Size().Height() + 8 ), ButFlags );
-	ResetOffsetButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cTextureAtlasEditor::OnResetOffset ) );
+	ResetOffsetButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::OnResetOffset ) );
 	ResetOffsetButton->Text( "Reset Offset" );
 
 	cUIPushButton * CenterOffsetButton = mTheme->CreatePushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( ResetOffsetButton->Pos().x, ResetOffsetButton->Pos().y + ResetOffsetButton->Size().Height() + 8 ), ButFlags );
-	CenterOffsetButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cTextureAtlasEditor::OnCenterOffset ) );
+	CenterOffsetButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::OnCenterOffset ) );
 	CenterOffsetButton->Text( "Centered Offset" );
 
 	cUIPushButton * HBOffsetButton = mTheme->CreatePushButton( mUIContainer, Sizei( 120, 22 ), Vector2i( CenterOffsetButton->Pos().x, CenterOffsetButton->Pos().y + CenterOffsetButton->Size().Height() + 8 ), ButFlags );
-	HBOffsetButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cTextureAtlasEditor::OnHBOffset ) );
+	HBOffsetButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &TextureAtlasEditor::OnHBOffset ) );
 	HBOffsetButton->Text( "Half-Bottom Offset" );
 
 	mUIWindow->Title( "Texture Atlas Editor" );
-	mUIWindow->AddEventListener( cUIEvent::EventOnWindowClose, cb::Make1( this, &cTextureAtlasEditor::WindowClose ) );
+	mUIWindow->AddEventListener( cUIEvent::EventOnWindowClose, cb::Make1( this, &TextureAtlasEditor::WindowClose ) );
 
 	CreateTGEditor();
 
@@ -115,14 +115,14 @@ cTextureAtlasEditor::cTextureAtlasEditor( cUIWindow * AttatchTo, const TGEditorC
 	Params.SizeSet( 800, 600 );
 	Params.Background.Color( ColorA( 0, 0, 0, 50 ) );
 	Params.Flags |= UI_ANCHOR_BOTTOM | UI_ANCHOR_RIGHT | UI_CLIP_ENABLE | UI_BORDER | UI_FILL_BACKGROUND;
-	mSubTextureEditor = eeNew( cTextureAtlasSubTextureEditor, ( Params, this ) );
+	mSubTextureEditor = eeNew( TextureAtlasSubTextureEditor, ( Params, this ) );
 	mSubTextureEditor->Visible( true );
 	mSubTextureEditor->Enabled( true );
 
 	mTGEU = eeNew( cUITGEUpdater, ( cUITGEUpdater::CreateParams(), this ) );
 }
 
-cTextureAtlasEditor::~cTextureAtlasEditor() {
+TextureAtlasEditor::~TextureAtlasEditor() {
 	eeSAFE_DELETE( mTexturePacker );
 	eeSAFE_DELETE( mTextureAtlasLoader );
 
@@ -131,7 +131,7 @@ cTextureAtlasEditor::~cTextureAtlasEditor() {
 	}
 }
 
-void cTextureAtlasEditor::OnResetDestSize( const cUIEvent * Event ) {
+void TextureAtlasEditor::OnResetDestSize( const cUIEvent * Event ) {
 	const cUIEventMouse * MouseEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
 
 	if ( NULL != mCurSubTexture && MouseEvent->Flags() & EE_BUTTON_LMASK ) {
@@ -144,7 +144,7 @@ void cTextureAtlasEditor::OnResetDestSize( const cUIEvent * Event ) {
 	}
 }
 
-void cTextureAtlasEditor::OnResetOffset( const cUIEvent * Event ) {
+void TextureAtlasEditor::OnResetOffset( const cUIEvent * Event ) {
 	const cUIEventMouse * MouseEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
 
 	if ( NULL != mCurSubTexture && MouseEvent->Flags() & EE_BUTTON_LMASK ) {
@@ -153,7 +153,7 @@ void cTextureAtlasEditor::OnResetOffset( const cUIEvent * Event ) {
 	}
 }
 
-void cTextureAtlasEditor::OnCenterOffset( const cUIEvent * Event ) {
+void TextureAtlasEditor::OnCenterOffset( const cUIEvent * Event ) {
 	const cUIEventMouse * MouseEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
 
 	if ( NULL != mCurSubTexture && MouseEvent->Flags() & EE_BUTTON_LMASK ) {
@@ -164,7 +164,7 @@ void cTextureAtlasEditor::OnCenterOffset( const cUIEvent * Event ) {
 	}
 }
 
-void cTextureAtlasEditor::OnHBOffset( const cUIEvent * Event ) {
+void TextureAtlasEditor::OnHBOffset( const cUIEvent * Event ) {
 	const cUIEventMouse * MouseEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
 
 	if ( NULL != mCurSubTexture && MouseEvent->Flags() & EE_BUTTON_LMASK ) {
@@ -175,46 +175,46 @@ void cTextureAtlasEditor::OnHBOffset( const cUIEvent * Event ) {
 	}
 }
 
-void cTextureAtlasEditor::OnOffXChange( const cUIEvent * Event ) {
+void TextureAtlasEditor::OnOffXChange( const cUIEvent * Event ) {
 	if ( NULL != mCurSubTexture ) {
 		mCurSubTexture->Offset( Vector2i( (Int32)mSpinOffX->Value(), mCurSubTexture->Offset().y ) );
 	}
 }
 
-void cTextureAtlasEditor::OnOffYChange( const cUIEvent * Event ) {
+void TextureAtlasEditor::OnOffYChange( const cUIEvent * Event ) {
 	if ( NULL != mCurSubTexture ) {
 		mCurSubTexture->Offset( Vector2i( mCurSubTexture->Offset().x, (Int32)mSpinOffY->Value() ) );
 	}
 }
 
-void cTextureAtlasEditor::OnDestWChange( const cUIEvent * Event ) {
+void TextureAtlasEditor::OnDestWChange( const cUIEvent * Event ) {
 	if ( NULL != mCurSubTexture ) {
 		mCurSubTexture->DestSize( Sizef( (Int32)mSpinDestW->Value(), mCurSubTexture->DestSize().y ) );
 	}
 }
 
-void cTextureAtlasEditor::OnDestHChange( const cUIEvent * Event ) {
+void TextureAtlasEditor::OnDestHChange( const cUIEvent * Event ) {
 	if ( NULL != mCurSubTexture ) {
 		mCurSubTexture->DestSize( Sizef( mCurSubTexture->DestSize().x, (Int32)mSpinDestH->Value() ) );
 	}
 }
 
-cUITextBox * cTextureAtlasEditor::CreateTxtBox( Vector2i Pos, const String& Text ) {
+cUITextBox * TextureAtlasEditor::CreateTxtBox( Vector2i Pos, const String& Text ) {
 	return mTheme->CreateTextBox( Text, mUIContainer, Sizei(), Pos, UI_CONTROL_DEFAULT_ALIGN | UI_ANCHOR_TOP | UI_ANCHOR_RIGHT | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 }
 
-void cTextureAtlasEditor::WindowClose( const cUIEvent * Event ) {
+void TextureAtlasEditor::WindowClose( const cUIEvent * Event ) {
 	if ( mCloseCb.IsSet() )
 		mCloseCb();
 
 	eeDelete( this );
 }
 
-void cTextureAtlasEditor::CreateTGEditor() {
+void TextureAtlasEditor::CreateTGEditor() {
 	CreateWinMenu();
 }
 
-void cTextureAtlasEditor::CreateWinMenu() {
+void TextureAtlasEditor::CreateWinMenu() {
 	mWinMenu = mTheme->CreateWinMenu( mUIContainer );
 
 	cUIPopUpMenu * PU = mTheme->CreatePopUpMenu();
@@ -227,23 +227,23 @@ void cTextureAtlasEditor::CreateWinMenu() {
 	PU->AddSeparator();
 	PU->Add( "Quit", mTheme->GetIconByName( "quit" ) );
 
-	PU->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cTextureAtlasEditor::FileMenuClick ) );
+	PU->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &TextureAtlasEditor::FileMenuClick ) );
 	mWinMenu->AddMenuButton( "File", PU );
 }
 
-void cTextureAtlasEditor::FileMenuClick( const cUIEvent * Event ) {
+void TextureAtlasEditor::FileMenuClick( const cUIEvent * Event ) {
 	if ( !Event->Ctrl()->IsType( UI_TYPE_MENUITEM ) )
 		return;
 
 	const String& txt = reinterpret_cast<cUIMenuItem*> ( Event->Ctrl() )->Text();
 
 	if ( "New..." == txt ) {
-		eeNew( cTextureAtlasNew, ( cb::Make1( this, &cTextureAtlasEditor::OnTextureAtlasCreate ) ) );
+		eeNew( TextureAtlasNew, ( cb::Make1( this, &TextureAtlasEditor::OnTextureAtlasCreate ) ) );
 	} else if ( "Open..." == txt ) {
 		cUICommonDialog * TGDialog = mTheme->CreateCommonDialog( NULL, Sizei(), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, Sizei(), 255, UI_CDL_DEFAULT_FLAGS, std::string( "*" ) + EE_TEXTURE_ATLAS_EXTENSION );
 
 		TGDialog->Title( "Open Texture Atlas" );
-		TGDialog->AddEventListener( cUIEvent::EventOpenFile, cb::Make1( this, &cTextureAtlasEditor::OpenTextureAtlas ) );
+		TGDialog->AddEventListener( cUIEvent::EventOpenFile, cb::Make1( this, &TextureAtlasEditor::OpenTextureAtlas ) );
 		TGDialog->Center();
 		TGDialog->Show();
 	} else if ( "Save" == txt ) {
@@ -253,7 +253,7 @@ void cTextureAtlasEditor::FileMenuClick( const cUIEvent * Event ) {
 	} else if ( "Close" == txt ) {
 		if ( NULL != mTextureAtlasLoader && mTextureAtlasLoader->IsLoaded()  ) {
 			cUIMessageBox * MsgBox = mTheme->CreateMessageBox( MSGBOX_OKCANCEL, "Do you really want to close the current texture atlas?\nAll changes will be lost." );
-			MsgBox->AddEventListener( cUIEvent::EventMsgBoxConfirmClick, cb::Make1( this, &cTextureAtlasEditor::OnTextureAtlasClose ) );
+			MsgBox->AddEventListener( cUIEvent::EventMsgBoxConfirmClick, cb::Make1( this, &TextureAtlasEditor::OnTextureAtlasClose ) );
 			MsgBox->Title( "Close Texture Atlas?" );
 			MsgBox->Center();
 			MsgBox->Show();
@@ -269,7 +269,7 @@ void cTextureAtlasEditor::FileMenuClick( const cUIEvent * Event ) {
 	}
 }
 
-void cTextureAtlasEditor::OnTextureAtlasCreate( cTexturePacker * TexPacker ) {
+void TextureAtlasEditor::OnTextureAtlasCreate( TexturePacker * TexPacker ) {
 	eeSAFE_DELETE( mTexturePacker );
 	mTexturePacker = TexPacker;
 
@@ -277,26 +277,26 @@ void cTextureAtlasEditor::OnTextureAtlasCreate( cTexturePacker * TexPacker ) {
 
 	std::string FPath( FileSystem::FileRemoveExtension( mTexturePacker->GetFilepath() + EE_TEXTURE_ATLAS_EXTENSION ) );
 
-	mTextureAtlasLoader = eeNew( cTextureAtlasLoader, ( FPath, true, cb::Make1( this, &cTextureAtlasEditor::OnTextureAtlasLoaded ) ) );
+	mTextureAtlasLoader = eeNew( TextureAtlasLoader, ( FPath, true, cb::Make1( this, &TextureAtlasEditor::OnTextureAtlasLoaded ) ) );
 }
 
-void cTextureAtlasEditor::UpdateControls() {
+void TextureAtlasEditor::UpdateControls() {
 	if ( NULL != mTextureAtlasLoader && mTextureAtlasLoader->IsLoaded()  ) {
 		FillSubTextureList();
 	}
 }
 
-void cTextureAtlasEditor::FillSubTextureList() {
+void TextureAtlasEditor::FillSubTextureList() {
 	if ( NULL == mTextureAtlasLoader || NULL == mTextureAtlasLoader->GetTextureAtlas() || !mTextureAtlasLoader->IsLoaded()  )
 		return;
 
-	std::list<cSubTexture*>& Res = mTextureAtlasLoader->GetTextureAtlas()->GetResources();
+	std::list<SubTexture*>& Res = mTextureAtlasLoader->GetTextureAtlas()->GetResources();
 
 	mSubTextureList->Clear();
 
 	std::vector<String> items;
 
-	for ( std::list<cSubTexture*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
+	for ( std::list<SubTexture*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
 			items.push_back( (*it)->Name() );
 	}
 
@@ -310,7 +310,7 @@ void cTextureAtlasEditor::FillSubTextureList() {
 	mSubTextureList->VerticalScrollBar()->ClickStep( 8.f / (Float)mSubTextureList->Count() );
 }
 
-void cTextureAtlasEditor::OnSubTextureChange( const cUIEvent * Event ) {
+void TextureAtlasEditor::OnSubTextureChange( const cUIEvent * Event ) {
 	if ( NULL != mTextureAtlasLoader && NULL != mTextureAtlasLoader->GetTextureAtlas() ) {
 		mCurSubTexture = mTextureAtlasLoader->GetTextureAtlas()->GetByName( mSubTextureList->GetItemSelectedText() );
 
@@ -324,13 +324,13 @@ void cTextureAtlasEditor::OnSubTextureChange( const cUIEvent * Event ) {
 	}
 }
 
-void cTextureAtlasEditor::Update() {
+void TextureAtlasEditor::Update() {
 	if ( NULL != mTextureAtlasLoader && !mTextureAtlasLoader->IsLoaded() ) {
 		mTextureAtlasLoader->Update();
 	}
 }
 
-void cTextureAtlasEditor::OpenTextureAtlas( const cUIEvent * Event ) {
+void TextureAtlasEditor::OpenTextureAtlas( const cUIEvent * Event ) {
 	cUICommonDialog * CDL = reinterpret_cast<cUICommonDialog*> ( Event->Ctrl() );
 
 	eeSAFE_DELETE( mTextureAtlasLoader );
@@ -339,22 +339,22 @@ void cTextureAtlasEditor::OpenTextureAtlas( const cUIEvent * Event ) {
 	threaded = false;
 	#endif
 
-	mTextureAtlasLoader = eeNew( cTextureAtlasLoader, ( CDL->GetFullPath(), threaded, cb::Make1( this, &cTextureAtlasEditor::OnTextureAtlasLoaded ) ) );
+	mTextureAtlasLoader = eeNew( TextureAtlasLoader, ( CDL->GetFullPath(), threaded, cb::Make1( this, &TextureAtlasEditor::OnTextureAtlasLoaded ) ) );
 }
 
-void cTextureAtlasEditor::OnTextureAtlasLoaded( cTextureAtlasLoader * TGLoader ) {
+void TextureAtlasEditor::OnTextureAtlasLoaded( TextureAtlasLoader * TGLoader ) {
 	if ( NULL != mTextureAtlasLoader && mTextureAtlasLoader->IsLoaded() ) {
 		UpdateControls();
 	}
 }
 
-void cTextureAtlasEditor::SaveTextureAtlas( const cUIEvent * Event ) {
+void TextureAtlasEditor::SaveTextureAtlas( const cUIEvent * Event ) {
 	if ( NULL != mTextureAtlasLoader && mTextureAtlasLoader->IsLoaded() ) {
 		mTextureAtlasLoader->UpdateTextureAtlas();
 	}
 }
 
-void cTextureAtlasEditor::OnTextureAtlasClose( const cUIEvent * Event ) {
+void TextureAtlasEditor::OnTextureAtlasClose( const cUIEvent * Event ) {
 	eeSAFE_DELETE( mTextureAtlasLoader );
 	mSubTextureList->Clear();
 	mSpinOffX->Value( 0 );

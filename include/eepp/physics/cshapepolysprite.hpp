@@ -6,7 +6,7 @@
 #ifdef PHYSICS_RENDERER_ENABLED
 
 namespace EE { namespace Graphics {
-class cSprite;
+class Sprite;
 }}
 using namespace EE::Graphics;
 
@@ -14,21 +14,21 @@ CP_NAMESPACE_BEGIN
 
 class CP_API cShapePolySprite : public cShapePoly {
 	public:
-		static cShapePolySprite * New( cBody * body, int numVerts, cVect *verts, cVect offset, cSprite * Sprite, bool AutoDeleteSprite = false );
+		static cShapePolySprite * New( cBody * body, int numVerts, cVect *verts, cVect offset, Sprite * Sprite, bool AutoDeleteSprite = false );
 
-		static cShapePolySprite * New( cBody * body, cpFloat width, cpFloat height, cSprite * Sprite, bool AutoDeleteSprite = false );
+		static cShapePolySprite * New( cBody * body, cpFloat width, cpFloat height, Sprite * Sprite, bool AutoDeleteSprite = false );
 
-		cShapePolySprite( cBody * body, int numVerts, cVect *verts, cVect offset, cSprite * Sprite, bool AutoDeleteSprite = false );
+		cShapePolySprite( cBody * body, int numVerts, cVect *verts, cVect offset, Sprite * Sprite, bool AutoDeleteSprite = false );
 
-		cShapePolySprite( cBody * body, cpFloat width, cpFloat height, cSprite * Sprite, bool AutoDeleteSprite = false );
+		cShapePolySprite( cBody * body, cpFloat width, cpFloat height, Sprite * Sprite, bool AutoDeleteSprite = false );
 
 		virtual ~cShapePolySprite();
 
 		virtual void Draw( cSpace * space );
 
-		cSprite * GetSprite() const;
+		Sprite * GetSprite() const;
 	protected:
-		cSprite *	mSprite;
+		Sprite *	mSprite;
 		bool		mSpriteAutoDelete;
 		Vector2i	mOffset;
 

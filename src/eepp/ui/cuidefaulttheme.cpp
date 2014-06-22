@@ -9,7 +9,7 @@
 
 namespace EE { namespace UI {
 
-cUIDefaultTheme::cUIDefaultTheme( const std::string& Name, const std::string& Abbr, cFont * DefaultFont ) :
+cUIDefaultTheme::cUIDefaultTheme( const std::string& Name, const std::string& Abbr, Graphics::Font * DefaultFont ) :
 	cUITheme( Name, Abbr, DefaultFont )
 {
 	FontColor( ColorA( 230, 230, 230, 255 ) );

@@ -13,9 +13,9 @@ class CursorManagerSFML : public CursorManager {
 	public:
 		CursorManagerSFML( EE::Window::Window * window );
 
-		Cursor * Create( cTexture * tex, const Vector2i& hotspot, const std::string& name );
+		Cursor * Create( Texture * tex, const Vector2i& hotspot, const std::string& name );
 
-		Cursor * Create( cImage * img, const Vector2i& hotspot, const std::string& name );
+		Cursor * Create( Image * img, const Vector2i& hotspot, const std::string& name );
 
 		Cursor * Create( const std::string& path, const Vector2i& hotspot, const std::string& name );
 

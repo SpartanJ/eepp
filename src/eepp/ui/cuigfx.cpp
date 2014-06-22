@@ -1,5 +1,5 @@
 #include <eepp/ui/cuigfx.hpp>
-#include <eepp/graphics/csubtexture.hpp>
+#include <eepp/graphics/subtexture.hpp>
 
 namespace EE { namespace UI {
 
@@ -29,7 +29,7 @@ bool cUIGfx::IsType( const Uint32& type ) const {
 	return cUIGfx::Type() == type ? true : cUIComplexControl::IsType( type );
 }
 
-void cUIGfx::SubTexture( cSubTexture * subTexture ) {
+void cUIGfx::SubTexture( Graphics::SubTexture * subTexture ) {
 	mSubTexture = subTexture;
 
 	AutoSize();
@@ -104,7 +104,7 @@ void cUIGfx::Alpha( const Float& alpha ) {
 	mColor.Alpha = (Uint8)alpha;
 }
 
-cSubTexture * cUIGfx::SubTexture() const {
+Graphics::SubTexture * cUIGfx::SubTexture() const {
 	return mSubTexture;
 }
 

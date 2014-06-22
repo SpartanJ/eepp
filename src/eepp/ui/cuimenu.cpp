@@ -1,6 +1,6 @@
 #include <eepp/ui/cuimenu.hpp>
 #include <eepp/ui/cuimanager.hpp>
-#include <eepp/graphics/cfont.hpp>
+#include <eepp/graphics/font.hpp>
 
 namespace EE { namespace UI {
 
@@ -51,7 +51,7 @@ void cUIMenu::DoAfterSetTheme() {
 	OnSizeChange();
 }
 
-cUIMenuItem * cUIMenu::CreateMenuItem( const String& Text, cSubTexture * Icon ) {
+cUIMenuItem * cUIMenu::CreateMenuItem( const String& Text, SubTexture * Icon ) {
 	cUIMenuItem::CreateParams Params;
 	Params.Parent( this );
 	Params.Font 			= mFont;
@@ -80,7 +80,7 @@ cUIMenuItem * cUIMenu::CreateMenuItem( const String& Text, cSubTexture * Icon ) 
 	return tCtrl;
 }
 
-Uint32 cUIMenu::Add( const String& Text, cSubTexture * Icon ) {
+Uint32 cUIMenu::Add( const String& Text, SubTexture * Icon ) {
 	return Add( CreateMenuItem( Text, Icon ) );
 }
 
@@ -120,7 +120,7 @@ Uint32 cUIMenu::AddCheckBox( const String& Text, const bool& Active ) {
 	return Add( CreateMenuCheckBox( Text, Active ) );
 }
 
-cUIMenuSubMenu * cUIMenu::CreateSubMenu( const String& Text, cSubTexture * Icon, cUIMenu * SubMenu ) {
+cUIMenuSubMenu * cUIMenu::CreateSubMenu( const String& Text, SubTexture * Icon, cUIMenu * SubMenu ) {
 	cUIMenuSubMenu::CreateParams Params;
 	Params.Parent( this );
 	Params.Font 			= mFont;
@@ -150,7 +150,7 @@ cUIMenuSubMenu * cUIMenu::CreateSubMenu( const String& Text, cSubTexture * Icon,
 	return tCtrl;
 }
 
-Uint32 cUIMenu::AddSubMenu( const String& Text, cSubTexture * Icon, cUIMenu * SubMenu ) {
+Uint32 cUIMenu::AddSubMenu( const String& Text, SubTexture * Icon, cUIMenu * SubMenu ) {
 	return Add( CreateSubMenu( Text, Icon, SubMenu ) );
 }
 
@@ -303,7 +303,7 @@ void cUIMenu::RemoveAll() {
 	ResizeMe();
 }
 
-void cUIMenu::Insert( const String& Text, cSubTexture * Icon, const Uint32& Index ) {
+void cUIMenu::Insert( const String& Text, SubTexture * Icon, const Uint32& Index ) {
 	Insert( CreateMenuItem( Text, Icon ), Index );
 }
 

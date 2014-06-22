@@ -18,7 +18,7 @@ CursorManagerSDL::CursorManagerSDL( EE::Window::Window * window ) :
 {
 }
 
-Cursor * CursorManagerSDL::Create( cTexture * tex, const Vector2i& hotspot, const std::string& name ) {
+Cursor * CursorManagerSDL::Create( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
 	#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN
 	return mWindow->GetPlatform()->CreateMouseCursor( tex, hotspot, name );
 	#else
@@ -26,7 +26,7 @@ Cursor * CursorManagerSDL::Create( cTexture * tex, const Vector2i& hotspot, cons
 	#endif
 }
 
-Cursor * CursorManagerSDL::Create( cImage * img, const Vector2i& hotspot, const std::string& name ) {
+Cursor * CursorManagerSDL::Create( Image * img, const Vector2i& hotspot, const std::string& name ) {
 	#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN
 	return mWindow->GetPlatform()->CreateMouseCursor( img, hotspot, name );
 	#else

@@ -30,10 +30,10 @@ class EE_API cUITextBox : public cUIComplexControl {
 
 				inline ~CreateParams() {}
 
-				cFont * 	Font;
-				ColorA 	FontColor;
-				ColorA 	FontShadowColor;
-				ColorA	FontSelectionBackColor;
+				Graphics::Font * 	Font;
+				ColorA				FontColor;
+				ColorA				FontShadowColor;
+				ColorA				FontSelectionBackColor;
 		};
 
 		cUITextBox( const cUITextBox::CreateParams& Params );
@@ -48,9 +48,9 @@ class EE_API cUITextBox : public cUIComplexControl {
 
 		virtual void Alpha( const Float& alpha );
 
-		cFont * Font() const;
+		Graphics::Font * Font() const;
 
-		void Font( cFont * font );
+		void Font( Graphics::Font * font );
 
 		virtual const String& Text();
 
@@ -78,7 +78,7 @@ class EE_API cUITextBox : public cUIComplexControl {
 
 		virtual void SetTheme( cUITheme * Theme );
 
-		cTextCache * GetTextCache();
+		TextCache * GetTextCache();
 
 		Float GetTextWidth();
 
@@ -92,7 +92,7 @@ class EE_API cUITextBox : public cUIComplexControl {
 
 		bool IsTextSelectionEnabled() const;
 	protected:
-		cTextCache *	mTextCache;
+		TextCache *	mTextCache;
 		String			mString;
 		ColorA 		mFontColor;
 		ColorA 		mFontShadowColor;

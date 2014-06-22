@@ -12,16 +12,16 @@ namespace EE { namespace Window { namespace Platform {
 class cWinImpl;
 
 class CursorWin : public Cursor {
-    public:
+	public:
 		void *		GetCursor() const;
 	protected:
 		friend class cWinImpl;
 
 		void *		mCursor;
 
-		CursorWin( cTexture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
+		CursorWin( Texture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 
-		CursorWin( cImage * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
+		CursorWin( Graphics::Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 
 		CursorWin( const std::string& path, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 

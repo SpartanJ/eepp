@@ -8,7 +8,7 @@ void MainLoop()
 	win->Clear();
 
 	// Create an instance of the primitive renderer
-	cPrimitives p;
+	Primitives p;
 
 	// Change the color
 	p.SetColor( ColorA( 0, 255, 0, 150 ) );

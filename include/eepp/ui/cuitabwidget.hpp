@@ -46,11 +46,11 @@ class EE_API cUITabWidget : public cUIComplexControl {
 
 				inline ~CreateParams() {}
 
-				cFont * 	Font;
-				ColorA 	FontColor;
-				ColorA	FontShadowColor;
-				ColorA 	FontOverColor;
-				ColorA	FontSelectedColor;
+				Graphics::Font * 	Font;
+				ColorA				FontColor;
+				ColorA				FontShadowColor;
+				ColorA				FontOverColor;
+				ColorA				FontSelectedColor;
 				Int32		TabSeparation;
 				Uint32		MaxTextLength;
 				Uint32		TabWidgetHeight;
@@ -60,7 +60,7 @@ class EE_API cUITabWidget : public cUIComplexControl {
 				bool		TabsClosable;
 				bool		SpecialBorderTabs; //! Indicates if the periferical tabs ( the left and right border tab ) are different from the central tabs.
 				bool		DrawLineBelowTabs;
-				ColorA	LineBelowTabsColor;
+				ColorA		LineBelowTabsColor;
 				Int32		LineBewowTabsYOffset;
 
 		};
@@ -73,7 +73,7 @@ class EE_API cUITabWidget : public cUIComplexControl {
 
 		virtual bool IsType( const Uint32& type ) const;
 
-		Uint32 Add( const String& Text, cUIControl * CtrlOwned, cSubTexture * Icon = NULL );
+		Uint32 Add( const String& Text, cUIControl * CtrlOwned, SubTexture * Icon = NULL );
 
 		Uint32 Add( cUITab * Tab );
 
@@ -91,7 +91,7 @@ class EE_API cUITabWidget : public cUIComplexControl {
 
 		void RemoveAll();
 
-		void Insert( const String& Text, cUIControl * CtrlOwned, cSubTexture * Icon, const Uint32& Index );
+		void Insert( const String& Text, cUIControl * CtrlOwned, SubTexture * Icon, const Uint32& Index );
 
 		void Insert( cUITab * Tab, const Uint32& Index );
 
@@ -111,7 +111,7 @@ class EE_API cUITabWidget : public cUIComplexControl {
 
 		cUIComplexControl *		mCtrlContainer;
 		cUIComplexControl *		mTabContainer;
-		cFont *					mFont;
+		Font *					mFont;
 		ColorA				mFontColor;
 		ColorA				mFontShadowColor;
 		ColorA				mFontOverColor;
@@ -133,7 +133,7 @@ class EE_API cUITabWidget : public cUIComplexControl {
 
 		void DoAfterSetTheme();
 
-		cUITab * CreateTab( const String& Text, cUIControl * CtrlOwned, cSubTexture * Icon );
+		cUITab * CreateTab( const String& Text, cUIControl * CtrlOwned, SubTexture * Icon );
 
 		virtual void OnSizeChange();
 

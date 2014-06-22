@@ -61,7 +61,7 @@ void cUIProgressBar::SetTheme( cUITheme * Theme ) {
 	cUISkin * tSkin = Theme->GetByName( Theme->Abbr() + "_progressbar_filler" );
 
 	if ( tSkin ) {
-		cSubTexture * tSubTexture = tSkin->GetSubTexture( cUISkinState::StateNormal );
+		SubTexture * tSubTexture = tSkin->GetSubTexture( cUISkinState::StateNormal );
 
 		if ( NULL != tSubTexture ) {
 			eeSAFE_DELETE( mParallax );
@@ -74,7 +74,7 @@ void cUIProgressBar::SetTheme( cUITheme * Theme ) {
 			if ( Height > mSize.Height() )
 				Height = mSize.Height();
 
-			mParallax = eeNew( cScrollParallax, ( tSubTexture, Vector2f( mScreenPos.x + mFillerMargin.Left, mScreenPos.y + mFillerMargin.Top ), Sizef( ( ( mSize.Width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom ), mSpeed ) );
+			mParallax = eeNew( ScrollParallax, ( tSubTexture, Vector2f( mScreenPos.x + mFillerMargin.Left, mScreenPos.y + mFillerMargin.Top ), Sizef( ( ( mSize.Width() - mFillerMargin.Left - mFillerMargin.Right ) * mProgress ) / mTotalSteps, Height - mFillerMargin.Top - mFillerMargin.Bottom ), mSpeed ) );
 		}
 	}
 }

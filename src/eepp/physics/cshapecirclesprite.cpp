@@ -2,15 +2,15 @@
 
 #ifdef PHYSICS_RENDERER_ENABLED
 
-#include <eepp/graphics/csprite.hpp>
+#include <eepp/graphics/sprite.hpp>
 
 CP_NAMESPACE_BEGIN
 
-cShapeCircleSprite * cShapeCircleSprite::New( cBody * body, cpFloat radius, cVect offset, cSprite * Sprite, bool AutoDeleteSprite ) {
+cShapeCircleSprite * cShapeCircleSprite::New( cBody * body, cpFloat radius, cVect offset, Sprite * Sprite, bool AutoDeleteSprite ) {
 	return cpNew( cShapeCircleSprite, ( body, radius, offset, Sprite, AutoDeleteSprite ) );
 }
 
-cShapeCircleSprite::cShapeCircleSprite( cBody * body, cpFloat radius, cVect offset, cSprite * Sprite, bool AutoDeleteSprite ) :
+cShapeCircleSprite::cShapeCircleSprite( cBody * body, cpFloat radius, cVect offset, Sprite * Sprite, bool AutoDeleteSprite ) :
 	cShapeCircle( body, radius, offset ),
 	mSprite( Sprite ),
 	mSpriteAutoDelete( AutoDeleteSprite )
@@ -36,7 +36,7 @@ void cShapeCircleSprite::OffsetSet() {
 	mSprite->Offset( Vector2i( -cShapeCircle::Radius() + cShapeCircle::Offset().x, -cShapeCircle::Radius() + cShapeCircle::Offset().y ) );
 }
 
-cSprite * cShapeCircleSprite::GetSprite() const {
+Sprite * cShapeCircleSprite::GetSprite() const {
 	return mSprite;
 }
 

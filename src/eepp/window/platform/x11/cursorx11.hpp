@@ -19,9 +19,9 @@ class CursorX11 : public Cursor {
 
 		X11Cursor	mCursor;
 
-		CursorX11( cTexture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
+		CursorX11( Texture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 
-		CursorX11( cImage * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
+		CursorX11( Graphics::Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 
 		CursorX11( const std::string& path, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 

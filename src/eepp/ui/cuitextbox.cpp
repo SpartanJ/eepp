@@ -1,9 +1,9 @@
 #include <eepp/ui/cuitextbox.hpp>
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/ui/cuithememanager.hpp>
-#include <eepp/graphics/ctextcache.hpp>
-#include <eepp/graphics/cfont.hpp>
-#include <eepp/graphics/cprimitives.hpp>
+#include <eepp/graphics/textcache.hpp>
+#include <eepp/graphics/font.hpp>
+#include <eepp/graphics/primitives.hpp>
 #include <eepp/window/clipboard.hpp>
 
 namespace EE { namespace UI {
@@ -17,7 +17,7 @@ cUITextBox::cUITextBox( const cUITextBox::CreateParams& Params ) :
 	mSelCurInit( -1 ),
 	mSelCurEnd( -1 )
 {
-	mTextCache = eeNew( cTextCache, () );
+	mTextCache = eeNew( TextCache, () );
 	mTextCache->Font( Params.Font );
 	mTextCache->Color( mFontColor );
 	mTextCache->ShadowColor( mFontShadowColor );
@@ -70,11 +70,11 @@ void cUITextBox::Draw() {
 	}
 }
 
-cFont * cUITextBox::Font() const {
+Graphics::Font * cUITextBox::Font() const {
 	return mTextCache->Font();
 }
 
-void cUITextBox::Font( cFont * font ) {
+void cUITextBox::Font( Graphics::Font * font ) {
 	if ( mTextCache->Font() != font ) {
 		mTextCache->Font( font );
 		AutoShrink();
@@ -229,7 +229,7 @@ void cUITextBox::SetTheme( cUITheme * Theme ) {
 	}
 }
 
-cTextCache * cUITextBox::GetTextCache() {
+TextCache * cUITextBox::GetTextCache() {
 	return mTextCache;
 }
 
@@ -318,7 +318,7 @@ void cUITextBox::DrawSelection() {
 		Int32 lastEnd;
 		Vector2i initPos, endPos;
 
-		cPrimitives P;
+		Primitives P;
 		P.SetColor( mFontSelectionBackColor );
 
 		do {
