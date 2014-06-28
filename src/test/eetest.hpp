@@ -5,9 +5,9 @@
 
 namespace Demo_Test {
 
-class cUITest : public cUIControlAnim {
+class UITest : public UIControlAnim {
 	public:
-		cUITest( cUIControlAnim::CreateParams& Params ) : cUIControlAnim( Params ) 	{ mOldColor = mBackground->Colors(); }
+		UITest( UIControlAnim::CreateParams& Params ) : UIControlAnim( Params ) 	{ mOldColor = mBackground->Colors(); }
 
 		virtual Uint32 OnMouseEnter( const Vector2i& Pos, const Uint32 Flags )	{
 			if ( 4 == mOldColor.size() ) {
@@ -34,7 +34,7 @@ class cUITest : public cUIControlAnim {
 		}
 
 		virtual Uint32 OnMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
-			cUIDragable::OnMouseUp( Pos, Flags );
+			UIDragable::OnMouseUp( Pos, Flags );
 
 			if ( Engine::instance()->GetCurrentWindow()->GetInput()->MouseWheelUp() )
 				Scale( Scale() + 0.1f );
@@ -199,26 +199,26 @@ class cEETest : private Thread {
 		Clock	mFTE;
 
 		void CreateCommonDialog();
-		void ItemClick( const cUIEvent * Event );
-		void MainClick( const cUIEvent * Event );
-		void QuitClick( const cUIEvent * Event );
-		void CloseClick( const cUIEvent * Event );
-		void ButtonClick( const cUIEvent * Event );
-		void OnValueChange( const cUIEvent * Event );
-		void OnSliderValueChange( const cUIEvent * Event );
-		void OnWinMouseUp( const cUIEvent * Event );
+		void ItemClick( const UIEvent * Event );
+		void MainClick( const UIEvent * Event );
+		void QuitClick( const UIEvent * Event );
+		void CloseClick( const UIEvent * Event );
+		void ButtonClick( const UIEvent * Event );
+		void OnValueChange( const UIEvent * Event );
+		void OnSliderValueChange( const UIEvent * Event );
+		void OnWinMouseUp( const UIEvent * Event );
 		void CreateDecoratedWindow();
 		void CreateWinMenu();
 		void CreateUIThemeTextureAtlas();
 
-		cUIControlAnim * C;
-		cUIScrollBar * mScrollBar;
-		cUITextBox * mTextBoxValue;
-		cUISlider * mSlider;
-		cUIProgressBar * mProgressBar;
-		cUIListBox * mListBox;
-		cUIPopUpMenu * Menu;
-		cUIWindow * mUIWindow;
+		UIControlAnim * C;
+		UIScrollBar * mScrollBar;
+		UITextBox * mTextBoxValue;
+		UISlider * mSlider;
+		UIProgressBar * mProgressBar;
+		UIListBox * mListBox;
+		UIPopUpMenu * Menu;
+		UIWindow * mUIWindow;
 		MapEditor * mMapEditor;
 		TextureAtlasEditor * mETGEditor;
 
@@ -276,11 +276,11 @@ class cEETest : private Thread {
 		Sprite *				mBoxSprite;
 		Sprite *				mCircleSprite;
 
-		cUITheme *				mTheme;
+		UITheme *				mTheme;
 
 		bool					mTerrainUp;
-		cUIPushButton *			mShowMenu;
-		cUIPushButton *			mTerrainBut;
+		UIPushButton *			mShowMenu;
+		UIPushButton *			mTerrainBut;
 
 		void CreateMapEditor();
 
@@ -294,7 +294,7 @@ class cEETest : private Thread {
 
 		void DestroyBody();
 
-		void OnShowMenu( const cUIEvent * Event );
+		void OnShowMenu( const UIEvent * Event );
 
 		void OnWindowResize( EE::Window::Window * win );
 };

@@ -2,13 +2,13 @@
 #include <eepp/gaming/mapeditor/mapobjectproperties.hpp>
 #include <eepp/gaming/gameobjectobject.hpp>
 #include <eepp/gaming/mapobjectlayer.hpp>
-#include <eepp/ui/cuimanager.hpp>
-#include <eepp/ui/cuipopupmenu.hpp>
+#include <eepp/ui/uimanager.hpp>
+#include <eepp/ui/uipopupmenu.hpp>
 
 namespace EE { namespace Gaming { namespace Private {
 
-UIMap::UIMap( const cUIComplexControl::CreateParams& Params, cUITheme * Theme, TileMap * Map ) :
-	cUIComplexControl( Params ),
+UIMap::UIMap( const UIComplexControl::CreateParams& Params, UITheme * Theme, TileMap * Map ) :
+	UIComplexControl( Params ),
 	mMap( Map ),
 	mCurLayer( NULL ),
 	mEditingMode( 0 ),
@@ -77,7 +77,7 @@ TileMap * UIMap::Map() const {
 }
 
 void UIMap::Draw() {
-	cUIComplexControl::Draw();
+	UIComplexControl::Draw();
 
 	if ( NULL != mMap ) {
 		mMap->Draw();
@@ -85,7 +85,7 @@ void UIMap::Draw() {
 }
 
 void UIMap::UpdateScreenPos() {
-	cUIComplexControl::UpdateScreenPos();
+	UIComplexControl::UpdateScreenPos();
 
 	if ( NULL != mMap ) {
 		mMap->Position( mScreenPos );
@@ -93,13 +93,13 @@ void UIMap::UpdateScreenPos() {
 }
 
 void UIMap::Update() {
-	cUIComplexControl::Update();
+	UIComplexControl::Update();
 
 	if ( NULL != mMap ) {
 		mMap->Update();
 
 		if ( mEnabled && mVisible && IsMouseOver() ) {
-			Uint32 Flags 			= cUIManager::instance()->GetInput()->ClickTrigger();
+			Uint32 Flags 			= UIManager::instance()->GetInput()->ClickTrigger();
 
 			if ( EDITING_LIGHT == mEditingMode ) {
 				if ( NULL != mSelLight ) {
@@ -134,7 +134,7 @@ void UIMap::Update() {
 						}
 					}
 
-					Flags = cUIManager::instance()->GetInput()->PressTrigger();
+					Flags = UIManager::instance()->GetInput()->PressTrigger();
 
 					if ( Flags & EE_BUTTON_MMASK ) {
 						mSelLight->Position( mMap->GetMouseMapPosf() );
@@ -220,8 +220,8 @@ void UIMap::DragPoly( Uint32 Flags, Uint32 PFlags ) {
 }
 
 void UIMap::ManageObject( Uint32 Flags ) {
-	Uint32 PFlags	= cUIManager::instance()->GetInput()->PressTrigger();
-	Uint32 LPFlags	= cUIManager::instance()->GetInput()->LastPressTrigger();
+	Uint32 PFlags	= UIManager::instance()->GetInput()->PressTrigger();
+	Uint32 LPFlags	= UIManager::instance()->GetInput()->LastPressTrigger();
 
 	switch ( mEditingObjMode )
 	{
@@ -322,7 +322,7 @@ void UIMap::OnSizeChange() {
 		mMap->ViewSize( mSize );
 	}
 
-	cUIComplexControl::OnSizeChange();
+	UIComplexControl::OnSizeChange();
 }
 
 Uint32 UIMap::OnMouseMove( const Vector2i& Pos, const Uint32 Flags ) {
@@ -341,7 +341,7 @@ Uint32 UIMap::OnMouseMove( const Vector2i& Pos, const Uint32 Flags ) {
 		}
 	}
 
-	return cUIComplexControl::OnMouseMove( Pos, Flags );
+	return UIComplexControl::OnMouseMove( Pos, Flags );
 }
 
 void UIMap::AddLight( MapLight * Light ) {
@@ -498,7 +498,7 @@ void UIMap::ClearLights() {
 }
 
 void UIMap::OnAlphaChange() {
-	cUIComplexControl::OnAlphaChange();
+	UIComplexControl::OnAlphaChange();
 
 	if ( NULL != mMap ) {
 		mMap->BackAlpha( (Uint8)mAlpha );
@@ -532,8 +532,8 @@ void UIMap::SetUpdateScrollCb( UpdateScrollCb Cb ) {
 	mUpdateScrollCb = Cb;
 }
 
-Uint32 UIMap::OnMessage( const cUIMessage * Msg ) {
-	if ( Msg->Msg() == cUIMessage::MsgClick && Msg->Sender() == this && ( Msg->Flags() & EE_BUTTON_RMASK ) ) {
+Uint32 UIMap::OnMessage( const UIMessage * Msg ) {
+	if ( Msg->Msg() == UIMessage::MsgClick && Msg->Sender() == this && ( Msg->Flags() & EE_BUTTON_RMASK ) ) {
 		if ( SELECT_OBJECTS == mEditingObjMode && NULL != mSelObj && mSelObj->PointInside( mMap->GetMouseMapPosf() ) ) {
 			CreateObjPopUpMenu();
 		}
@@ -542,12 +542,12 @@ Uint32 UIMap::OnMessage( const cUIMessage * Msg ) {
 	return 0;
 }
 
-void UIMap::ObjItemClick( const cUIEvent * Event ) {
+void UIMap::ObjItemClick( const UIEvent * Event ) {
 	if ( !Event->Ctrl()->IsType( UI_TYPE_MENUITEM ) )
 		return;
 
 	if ( NULL != mSelObj && NULL != mCurLayer && mCurLayer->Type() == MAP_LAYER_OBJECT && mSelObj->Layer() == mCurLayer ) {
-		const String& txt = reinterpret_cast<cUIMenuItem*> ( Event->Ctrl() )->Text();
+		const String& txt = reinterpret_cast<UIMenuItem*> ( Event->Ctrl() )->Text();
 
 		MapObjectLayer * tLayer = reinterpret_cast<MapObjectLayer*>( mCurLayer );
 
@@ -565,22 +565,22 @@ void UIMap::ObjItemClick( const cUIEvent * Event ) {
 }
 
 void UIMap::CreateObjPopUpMenu() {
-	cUIPopUpMenu * Menu = mTheme->CreatePopUpMenu();
+	UIPopUpMenu * Menu = mTheme->CreatePopUpMenu();
 
 	Menu->Add( "Duplicate Object" );
 	Menu->Add( "Remove Object" );
 	Menu->AddSeparator();
 	Menu->Add( "Object Properties..." );
-	Menu->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &UIMap::ObjItemClick ) );
+	Menu->AddEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &UIMap::ObjItemClick ) );
 
 	if ( Menu->Show() ) {
-		Vector2i Pos = cUIManager::instance()->GetInput()->GetMousePos();
-		cUIMenu::FixMenuPos( Pos , Menu );
+		Vector2i Pos = UIManager::instance()->GetInput()->GetMousePos();
+		UIMenu::FixMenuPos( Pos , Menu );
 		Menu->Pos( Pos );
 	}
 }
 
-void UIMap::SetTileBox( cUITextBox * tilebox ) {
+void UIMap::SetTileBox( UITextBox * tilebox ) {
 	mTileBox = tilebox;
 }
 

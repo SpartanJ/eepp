@@ -2,7 +2,7 @@
 #define EE_GAMINGCUIMAPNEW_HPP
 
 #include <eepp/gaming/base.hpp>
-#include <eepp/ui/cuiwindow.hpp>
+#include <eepp/ui/uiwindow.hpp>
 #include <eepp/gaming/mapeditor/uimap.hpp>
 
 using namespace EE::UI;
@@ -15,42 +15,42 @@ class EE_API UIMapNew {
 
 		virtual ~UIMapNew();
 	protected:
-		cUITheme *			mTheme;
-		cUIWindow *			mUIWindow;
+		UITheme *			mTheme;
+		UIWindow *			mUIWindow;
 		UIMap *			mUIMap;
-		cUISpinBox *		mUIMapWidth;
-		cUISpinBox *		mUIMapHeight;
-		cUISpinBox *		mUIMapTWidth;
-		cUISpinBox *		mUIMapTHeight;
-		cUISpinBox *		mUIMapMaxLayers;
-		cUICheckBox *		mUILightsEnabled;
-		cUICheckBox *		mUILightsByVertex;
-		cUICheckBox *		mUIClampBorders;
-		cUICheckBox *		mUIClipArea;
-		cUIComplexControl *	mUIBaseColor;
-		cUISlider *			mUIRedSlider;
-		cUISlider *			mUIGreenSlider;
-		cUISlider *			mUIBlueSlider;
-		cUITextBox *		mUIRedTxt;
-		cUITextBox *		mUIGreenTxt;
-		cUITextBox *		mUIBlueTxt;
+		UISpinBox *		mUIMapWidth;
+		UISpinBox *		mUIMapHeight;
+		UISpinBox *		mUIMapTWidth;
+		UISpinBox *		mUIMapTHeight;
+		UISpinBox *		mUIMapMaxLayers;
+		UICheckBox *		mUILightsEnabled;
+		UICheckBox *		mUILightsByVertex;
+		UICheckBox *		mUIClampBorders;
+		UICheckBox *		mUIClipArea;
+		UIComplexControl *	mUIBaseColor;
+		UISlider *			mUIRedSlider;
+		UISlider *			mUIGreenSlider;
+		UISlider *			mUIBlueSlider;
+		UITextBox *		mUIRedTxt;
+		UITextBox *		mUIGreenTxt;
+		UITextBox *		mUIBlueTxt;
 
 		cb::Callback0<void> mNewMapCb;
 
 		Sizei				mNewSize;
 		bool				mResizeMap;
 
-		void WindowClose( const cUIEvent * Event );
+		void WindowClose( const UIEvent * Event );
 
-		void CancelClick( const cUIEvent * Event );
+		void CancelClick( const UIEvent * Event );
 
-		void OKClick( const cUIEvent * Event );
+		void OKClick( const UIEvent * Event );
 
-		void OnRedChange( const cUIEvent * Event );
+		void OnRedChange( const UIEvent * Event );
 
-		void OnGreenChange( const cUIEvent * Event );
+		void OnGreenChange( const UIEvent * Event );
 
-		void OnBlueChange( const cUIEvent * Event );
+		void OnBlueChange( const UIEvent * Event );
 };
 
 }}}

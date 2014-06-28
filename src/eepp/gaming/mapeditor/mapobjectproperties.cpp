@@ -14,50 +14,50 @@ MapObjectProperties::MapObjectProperties( GameObjectObject * Obj ) :
 		return;
 	}
 
-	mUITheme		= cUIThemeManager::instance()->DefaultTheme();
+	mUITheme		= UIThemeManager::instance()->DefaultTheme();
 
 	if ( NULL == mUITheme )
 		return;
 
 	mUIWindow	= mUITheme->CreateWindow( NULL, Sizei( 500, 500 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL, Sizei( 500, 500 ) );
-	mUIWindow->AddEventListener( cUIEvent::EventOnWindowClose, cb::Make1( this, &MapObjectProperties::WindowClose ) );
+	mUIWindow->AddEventListener( UIEvent::EventOnWindowClose, cb::Make1( this, &MapObjectProperties::WindowClose ) );
 	mUIWindow->Title( "Object Properties" );
 
 	Int32 InitialY		= 16;
 	Int32 DistFromTitle	= 18;
 
-	cUITextBox * Txt = mUITheme->CreateTextBox( "Object name:", mUIWindow->Container(), Sizei(), Vector2i( 50, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	UITextBox * Txt = mUITheme->CreateTextBox( "Object name:", mUIWindow->Container(), Sizei(), Vector2i( 50, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 	mUIInput = mUITheme->CreateTextInput( mUIWindow->Container(), Sizei( 120, 22 ), Vector2i( Txt->Pos().x + DistFromTitle, Txt->Pos().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE, true, 64 );
 	mUIInput->Text( mObj->Name() );
-	mUIInput->AddEventListener( cUIEvent::EventOnPressEnter, cb::Make1( this, &MapObjectProperties::OKClick ) );
+	mUIInput->AddEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &MapObjectProperties::OKClick ) );
 
-	cUITextBox * Txt2 = mUITheme->CreateTextBox( "Object type:", mUIWindow->Container(), Sizei(), Vector2i( 50+192, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	UITextBox * Txt2 = mUITheme->CreateTextBox( "Object type:", mUIWindow->Container(), Sizei(), Vector2i( 50+192, InitialY ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 	mUIInput2 = mUITheme->CreateTextInput( mUIWindow->Container(), Sizei( 120, 22 ), Vector2i( Txt2->Pos().x + DistFromTitle, Txt2->Pos().y + DistFromTitle ), UI_CONTROL_DEFAULT_FLAGS | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_AUTO_SIZE, true, 64 );
 	mUIInput2->Text( mObj->TypeName() );
-	mUIInput2->AddEventListener( cUIEvent::EventOnPressEnter, cb::Make1( this, &MapObjectProperties::OKClick ) );
+	mUIInput2->AddEventListener( UIEvent::EventOnPressEnter, cb::Make1( this, &MapObjectProperties::OKClick ) );
 
 	Uint32 TxtBoxFlags = UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_HALIGN_CENTER | UI_VALIGN_CENTER;
 	mUITheme->CreateTextBox( "Property Name", mUIWindow->Container(), Sizei(192, 24), Vector2i( 50, mUIInput->Pos().y + mUIInput->Size().Height() + 12 ), TxtBoxFlags );
-	cUITextBox * TxtBox = mUITheme->CreateTextBox( "Property Value", mUIWindow->Container(), Sizei(192, 24), Vector2i( 50+192, mUIInput->Pos().y + mUIInput->Size().Height() + 12 ), TxtBoxFlags );
+	UITextBox * TxtBox = mUITheme->CreateTextBox( "Property Value", mUIWindow->Container(), Sizei(192, 24), Vector2i( 50+192, mUIInput->Pos().y + mUIInput->Size().Height() + 12 ), TxtBoxFlags );
 
-	cUIPushButton * OKButton = mUITheme->CreatePushButton( mUIWindow->Container(), Sizei( 80, 22 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->GetIconByName( "ok" ) );
+	UIPushButton * OKButton = mUITheme->CreatePushButton( mUIWindow->Container(), Sizei( 80, 22 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->GetIconByName( "ok" ) );
 	OKButton->Pos( mUIWindow->Container()->Size().Width() - OKButton->Size().Width() - 4, mUIWindow->Container()->Size().Height() - OKButton->Size().Height() - 4 );
-	OKButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &MapObjectProperties::OKClick ) );
+	OKButton->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapObjectProperties::OKClick ) );
 
 	OKButton->Text( "OK" );
 
-	cUIPushButton * CancelButton = mUITheme->CreatePushButton( mUIWindow->Container(), OKButton->Size(), Vector2i( OKButton->Pos().x - OKButton->Size().Width() - 4, OKButton->Pos().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->GetIconByName( "cancel" ) );
-	CancelButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &MapObjectProperties::CancelClick ) );
+	UIPushButton * CancelButton = mUITheme->CreatePushButton( mUIWindow->Container(), OKButton->Size(), Vector2i( OKButton->Pos().x - OKButton->Size().Width() - 4, OKButton->Pos().y ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mUITheme->GetIconByName( "cancel" ) );
+	CancelButton->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapObjectProperties::CancelClick ) );
 	CancelButton->Text( "Cancel" );
 
-	cUIGenericGrid::CreateParams GridParams;
+	UIGenericGrid::CreateParams GridParams;
 	GridParams.Parent( mUIWindow->Container() );
 	GridParams.PosSet( 50, TxtBox->Pos().y + TxtBox->Size().Height() );
 	GridParams.SizeSet( 400, 350 );
 	GridParams.Flags = UI_AUTO_PADDING;
 	GridParams.RowHeight = 24;
 	GridParams.CollumnsCount = 5;
-	mGenGrid = eeNew( cUIGenericGrid, ( GridParams ) );
+	mGenGrid = eeNew( UIGenericGrid, ( GridParams ) );
 	mGenGrid->Visible( true );
 	mGenGrid->Enabled( true );
 	mGenGrid->CollumnWidth( 0, 10 );
@@ -68,16 +68,16 @@ MapObjectProperties::MapObjectProperties( GameObjectObject * Obj ) :
 
 	Vector2i Pos( mGenGrid->Pos().x + mGenGrid->Size().Width() + 10, mGenGrid->Pos().y );
 
-	cUIPushButton * AddButton = mUITheme->CreatePushButton( mUIWindow->Container(), Sizei(24,21), Pos, UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mUITheme->GetIconByName( "add" ) );
-	AddButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &MapObjectProperties::AddCellClick ) );
+	UIPushButton * AddButton = mUITheme->CreatePushButton( mUIWindow->Container(), Sizei(24,21), Pos, UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mUITheme->GetIconByName( "add" ) );
+	AddButton->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapObjectProperties::AddCellClick ) );
 
 	if ( NULL == AddButton->Icon()->SubTexture() )
 		AddButton->Text( "+" );
 
 	Pos.y += AddButton->Size().Height() + 5;
 
-	cUIPushButton * RemoveButton = mUITheme->CreatePushButton( mUIWindow->Container(), Sizei(24,21), Pos, UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mUITheme->GetIconByName( "remove" )  );
-	RemoveButton->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &MapObjectProperties::RemoveCellClick ) );
+	UIPushButton * RemoveButton = mUITheme->CreatePushButton( mUIWindow->Container(), Sizei(24,21), Pos, UI_CONTROL_ALIGN_CENTER | UI_AUTO_SIZE | UI_ANCHOR_RIGHT | UI_ANCHOR_TOP, mUITheme->GetIconByName( "remove" )  );
+	RemoveButton->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapObjectProperties::RemoveCellClick ) );
 
 	if ( NULL == RemoveButton->Icon()->SubTexture() )
 		RemoveButton->Text( "-" );
@@ -95,10 +95,10 @@ void MapObjectProperties::SaveProperties() {
 	mObj->ClearProperties();
 
 	for ( Uint32 i = 0; i < mGenGrid->Count(); i++ ) {
-		cUIGridCell * Cell = mGenGrid->GetCell( i );
+		UIGridCell * Cell = mGenGrid->GetCell( i );
 
-		cUITextInput * Input = reinterpret_cast<cUITextInput*>( Cell->Cell( 1 ) );
-		cUITextInput * Input2 = reinterpret_cast<cUITextInput*>( Cell->Cell( 3 ) );
+		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->Cell( 1 ) );
+		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->Cell( 3 ) );
 
 		if ( NULL != Cell && Input->Text().size() && Input2->Text().size() ) {
 			mObj->AddProperty(	Input->Text(), Input2->Text() );
@@ -110,10 +110,10 @@ void MapObjectProperties::LoadProperties() {
 	GameObjectObject::PropertiesMap& Proper = mObj->GetProperties();
 
 	for ( GameObjectObject::PropertiesMap::iterator it = Proper.begin(); it != Proper.end(); it++ ) {
-		cUIGridCell * Cell = CreateCell();
+		UIGridCell * Cell = CreateCell();
 
-		cUITextInput * Input = reinterpret_cast<cUITextInput*>( Cell->Cell( 1 ) );
-		cUITextInput * Input2 = reinterpret_cast<cUITextInput*>( Cell->Cell( 3 ) );
+		UITextInput * Input = reinterpret_cast<UITextInput*>( Cell->Cell( 1 ) );
+		UITextInput * Input2 = reinterpret_cast<UITextInput*>( Cell->Cell( 3 ) );
 
 		Input->Text( it->first );
 		Input2->Text( it->second );
@@ -122,7 +122,7 @@ void MapObjectProperties::LoadProperties() {
 	}
 }
 
-void MapObjectProperties::OKClick( const cUIEvent * Event ) {
+void MapObjectProperties::OKClick( const UIEvent * Event ) {
 	SaveProperties();
 
 	mObj->Name( mUIInput->Text().ToUtf8() );
@@ -131,15 +131,15 @@ void MapObjectProperties::OKClick( const cUIEvent * Event ) {
 	mUIWindow->CloseWindow();
 }
 
-void MapObjectProperties::CancelClick( const cUIEvent * Event ) {
+void MapObjectProperties::CancelClick( const UIEvent * Event ) {
 	mUIWindow->CloseWindow();
 }
 
-void MapObjectProperties::WindowClose( const cUIEvent * Event ) {
+void MapObjectProperties::WindowClose( const UIEvent * Event ) {
 	eeDelete( this );
 }
 
-void MapObjectProperties::AddCellClick( const cUIEvent * Event ) {
+void MapObjectProperties::AddCellClick( const UIEvent * Event ) {
 	mGenGrid->Add( CreateCell() );
 
 	Uint32 Index = mGenGrid->GetItemSelectedIndex();
@@ -149,7 +149,7 @@ void MapObjectProperties::AddCellClick( const cUIEvent * Event ) {
 	}
 }
 
-void MapObjectProperties::RemoveCellClick( const cUIEvent * Event ) {
+void MapObjectProperties::RemoveCellClick( const UIEvent * Event ) {
 	Uint32 Index = mGenGrid->GetItemSelectedIndex();
 
 	if ( eeINDEX_NOT_FOUND != Index ) {
@@ -176,29 +176,29 @@ void MapObjectProperties::CreateGridElems() {
 	}
 }
 
-cUIGridCell * MapObjectProperties::CreateCell() {
-	cUIGridCell::CreateParams CellParams;
+UIGridCell * MapObjectProperties::CreateCell() {
+	UIGridCell::CreateParams CellParams;
 	CellParams.Parent( mGenGrid->Container() );
 
-	cUITextInput::CreateParams TxtInputParams;
+	UITextInput::CreateParams TxtInputParams;
 	TxtInputParams.Flags = UI_CLIP_ENABLE | UI_VALIGN_CENTER | UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED;
 	TxtInputParams.MaxLength = LAYER_NAME_SIZE;
 
-	cUIComplexControl::CreateParams CControl;
+	UIComplexControl::CreateParams CControl;
 
-	cUIGridCell * Cell			= eeNew( cUIGridCell, ( CellParams ) );
-	cUITextInput * TxtInput		= eeNew( cUITextInput, ( TxtInputParams ) );
-	cUITextInput * TxtInput2	= eeNew( cUITextInput, ( TxtInputParams ) );
+	UIGridCell * Cell			= eeNew( UIGridCell, ( CellParams ) );
+	UITextInput * TxtInput		= eeNew( UITextInput, ( TxtInputParams ) );
+	UITextInput * TxtInput2	= eeNew( UITextInput, ( TxtInputParams ) );
 
-	Cell->Cell( 0, eeNew( cUIComplexControl, ( CControl ) ) );
+	Cell->Cell( 0, eeNew( UIComplexControl, ( CControl ) ) );
 
 	Cell->Cell( 1, TxtInput );
 
-	Cell->Cell( 2, eeNew( cUIComplexControl, ( CControl ) ) );
+	Cell->Cell( 2, eeNew( UIComplexControl, ( CControl ) ) );
 
 	Cell->Cell( 3, TxtInput2 );
 
-	Cell->Cell( 4, eeNew( cUIComplexControl, ( CControl ) ) );
+	Cell->Cell( 4, eeNew( UIComplexControl, ( CControl ) ) );
 
 	return Cell;
 }

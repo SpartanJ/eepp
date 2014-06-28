@@ -3,10 +3,10 @@
 
 #include <eepp/gaming/base.hpp>
 #include <eepp/gaming/tilemap.hpp>
-#include <eepp/ui/cuiwindow.hpp>
-#include <eepp/ui/cuigenericgrid.hpp>
-#include <eepp/ui/cuitextinput.hpp>
-#include <eepp/ui/cuislider.hpp>
+#include <eepp/ui/uiwindow.hpp>
+#include <eepp/ui/uigenericgrid.hpp>
+#include <eepp/ui/uitextinput.hpp>
+#include <eepp/ui/uislider.hpp>
 
 using namespace EE::UI;
 
@@ -19,33 +19,33 @@ class EE_API TileMapProperties {
 		virtual ~TileMapProperties();
 
 	protected:
-		cUITheme *			mUITheme;
-		cUIWindow *			mUIWindow;
-		cUIGenericGrid *	mGenGrid;
+		UITheme *			mUITheme;
+		UIWindow *			mUIWindow;
+		UIGenericGrid *	mGenGrid;
 		TileMap *				mMap;
-		cUIComplexControl *	mUIBaseColor;
-		cUISlider *			mUIRedSlider;
-		cUISlider *			mUIGreenSlider;
-		cUISlider *			mUIBlueSlider;
-		cUITextBox *		mUIRedTxt;
-		cUITextBox *		mUIGreenTxt;
-		cUITextBox *		mUIBlueTxt;
+		UIComplexControl *	mUIBaseColor;
+		UISlider *			mUIRedSlider;
+		UISlider *			mUIGreenSlider;
+		UISlider *			mUIBlueSlider;
+		UITextBox *		mUIRedTxt;
+		UITextBox *		mUIGreenTxt;
+		UITextBox *		mUIBlueTxt;
 
-		void WindowClose( const cUIEvent * Event );
+		void WindowClose( const UIEvent * Event );
 
-		void CancelClick( const cUIEvent * Event );
+		void CancelClick( const UIEvent * Event );
 
-		void OKClick( const cUIEvent * Event );
+		void OKClick( const UIEvent * Event );
 
-		void AddCellClick( const cUIEvent * Event );
+		void AddCellClick( const UIEvent * Event );
 
-		void RemoveCellClick( const cUIEvent * Event );
+		void RemoveCellClick( const UIEvent * Event );
 
-		void OnRedChange( const cUIEvent * Event );
+		void OnRedChange( const UIEvent * Event );
 
-		void OnGreenChange( const cUIEvent * Event );
+		void OnGreenChange( const UIEvent * Event );
 
-		void OnBlueChange( const cUIEvent * Event );
+		void OnBlueChange( const UIEvent * Event );
 
 		void CreateGridElems();
 
@@ -53,7 +53,7 @@ class EE_API TileMapProperties {
 
 		void LoadProperties();
 
-		cUIGridCell * CreateCell();
+		UIGridCell * CreateCell();
 };
 
 }}}

@@ -2,9 +2,9 @@
 #define EE_GAMINGCUIMAP_HPP
 
 #include <eepp/gaming/base.hpp>
-#include <eepp/ui/cuicomplexcontrol.hpp>
-#include <eepp/ui/cuitextbox.hpp>
-#include <eepp/ui/cuimessagebox.hpp>
+#include <eepp/ui/uicomplexcontrol.hpp>
+#include <eepp/ui/uitextbox.hpp>
+#include <eepp/ui/uimessagebox.hpp>
 #include <eepp/gaming/tilemap.hpp>
 #include <eepp/gaming/maplightmanager.hpp>
 #include <eepp/gaming/maplight.hpp>
@@ -18,7 +18,7 @@ class GameObjectObject;
 
 namespace Private {
 
-class EE_API UIMap : public cUIComplexControl {
+class EE_API UIMap : public UIComplexControl {
 	public:
 		enum EDITING_OBJ_MODE {
 			SELECT_OBJECTS,
@@ -31,11 +31,11 @@ class EE_API UIMap : public cUIComplexControl {
 		typedef cb::Callback1<void, MapLight *> LightSelectCb;
 		typedef cb::Callback1<void, MapLight *> LightRadiusChangeCb;
 		typedef cb::Callback2<void, Uint32, Polygon2f> ObjAddCb;
-		typedef cb::Callback2<cUIMessageBox*, const String&, const String&> AlertCb;
+		typedef cb::Callback2<UIMessageBox*, const String&, const String&> AlertCb;
 		typedef cb::Callback0<void> OnMapLoadCb;
 		typedef cb::Callback0<void> UpdateScrollCb;
 
-		UIMap( const cUIComplexControl::CreateParams& Params, cUITheme * Theme, TileMap * Map = NULL );
+		UIMap( const UIComplexControl::CreateParams& Params, UITheme * Theme, TileMap * Map = NULL );
 
 		virtual ~UIMap();
 
@@ -83,7 +83,7 @@ class EE_API UIMap : public cUIComplexControl {
 
 		void CreateObjPopUpMenu();
 
-		void SetTileBox( cUITextBox * tilebox );
+		void SetTileBox( UITextBox * tilebox );
 
 		void ReplaceMap( TileMap * newMap );
 	protected:		
@@ -120,18 +120,18 @@ class EE_API UIMap : public cUIComplexControl {
 		Vector2f			mObjDragDist;
 
 		AlertCb				mAlertCb;
-		cUITheme *			mTheme;
+		UITheme *			mTheme;
 
 		Uint32				mSelPointIndex;
 		Rectf				mSelPointRect;
 		bool				mSelPoint;
 
-		cUITextBox *		mTileBox;
+		UITextBox *		mTileBox;
 		Vector2i			mLastMouseTilePos;
 
 		UpdateScrollCb		mUpdateScrollCb;
 
-		virtual Uint32 OnMessage( const cUIMessage * Msg );
+		virtual Uint32 OnMessage( const UIMessage * Msg );
 
 		virtual Uint32 OnMouseMove( const Vector2i& Pos, const Uint32 Flags );
 
@@ -143,7 +143,7 @@ class EE_API UIMap : public cUIComplexControl {
 
 		virtual Uint32 OnDrag( const Vector2i& Pos );
 
-		void ObjItemClick( const cUIEvent * Event );
+		void ObjItemClick( const UIEvent * Event );
 
 		void MapDraw();
 

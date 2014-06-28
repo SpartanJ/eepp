@@ -2,7 +2,7 @@
 #define EE_GAMINGCUIGOTYPENEW_HPP
 
 #include <eepp/gaming/base.hpp>
-#include <eepp/ui/cuiwindow.hpp>
+#include <eepp/ui/uiwindow.hpp>
 
 using namespace EE::UI;
 
@@ -14,16 +14,16 @@ class EE_API UIGOTypeNew {
 
 		virtual ~UIGOTypeNew();
 	protected:
-		cUITheme *			mUITheme;
-		cUIWindow *			mUIWindow;
-		cUITextInput *		mUIInput;
+		UITheme *			mUITheme;
+		UIWindow *			mUIWindow;
+		UITextInput *		mUIInput;
 		cb::Callback2<void, std::string, Uint32>	mCb;
 
-		void WindowClose( const cUIEvent * Event );
+		void WindowClose( const UIEvent * Event );
 
-		void CancelClick( const cUIEvent * Event );
+		void CancelClick( const UIEvent * Event );
 
-		void OKClick( const cUIEvent * Event );
+		void OKClick( const UIEvent * Event );
 };
 
 }}}

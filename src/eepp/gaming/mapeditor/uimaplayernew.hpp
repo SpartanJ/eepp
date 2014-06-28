@@ -2,7 +2,7 @@
 #define EE_GAMINGCUILAYERNEW_HPP
 
 #include <eepp/gaming/base.hpp>
-#include <eepp/ui/cuiwindow.hpp>
+#include <eepp/ui/uiwindow.hpp>
 #include <eepp/gaming/mapeditor/uimap.hpp>
 
 using namespace EE::UI;
@@ -19,27 +19,27 @@ class EE_API UIMapLayerNew {
 
 		const EE_LAYER_TYPE& Type() const;
 
-		cUITextInput * UILayerName() const;
+		UITextInput * UILayerName() const;
 
 		const String& Name() const;
 
 		MapLayer * Layer() const;
 	protected:
-		cUITheme *			mTheme;
+		UITheme *			mTheme;
 		UIMap *			mUIMap;
 		EE_LAYER_TYPE		mType;
 		NewLayerCb			mNewLayerCb;
-		cUIWindow *			mUIWindow;
-		cUITextInput *		mUILayerName;
+		UIWindow *			mUIWindow;
+		UITextInput *		mUILayerName;
 		MapLayer *			mLayer;
 
-		void WindowClose( const cUIEvent * Event );
+		void WindowClose( const UIEvent * Event );
 
-		void CancelClick( const cUIEvent * Event );
+		void CancelClick( const UIEvent * Event );
 
-		void OKClick( const cUIEvent * Event );
+		void OKClick( const UIEvent * Event );
 
-		void OnKeyUp( const cUIEvent * Event );
+		void OnKeyUp( const UIEvent * Event );
 };
 
 }}}

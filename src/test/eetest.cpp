@@ -215,15 +215,15 @@ void cEETest::CreateShaders() {
 	}
 }
 
-void cEETest::OnWinMouseUp( const cUIEvent * Event ) {
-	const cUIEventMouse * MEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
+void cEETest::OnWinMouseUp( const UIEvent * Event ) {
+	const UIEventMouse * MEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
-	cUIControlAnim * CtrlAnim;
+	UIControlAnim * CtrlAnim;
 
 	if ( Event->Ctrl()->IsType( UI_TYPE_WINDOW ) ) {
-		CtrlAnim = reinterpret_cast<cUIControlAnim*>( Event->Ctrl() );
+		CtrlAnim = reinterpret_cast<UIControlAnim*>( Event->Ctrl() );
 	} else {
-		CtrlAnim = reinterpret_cast<cUIControlAnim*>( Event->Ctrl()->Parent() );
+		CtrlAnim = reinterpret_cast<UIControlAnim*>( Event->Ctrl()->Parent() );
 	}
 
 	if ( MEvent->Flags() & EE_BUTTON_WUMASK ) {
@@ -233,12 +233,12 @@ void cEETest::OnWinMouseUp( const cUIEvent * Event ) {
 	}
 }
 
-void cEETest::OnShowMenu( const cUIEvent * Event ) {
-	cUIPushButton * PB = static_cast<cUIPushButton*>( Event->Ctrl() );
+void cEETest::OnShowMenu( const UIEvent * Event ) {
+	UIPushButton * PB = static_cast<UIPushButton*>( Event->Ctrl() );
 
 	if ( Menu->Show() ) {
 		Vector2i Pos = Vector2i( (Int32)PB->GetPolygon()[0].x, (Int32)PB->GetPolygon()[0].y - 2 );
-		cUIMenu::FixMenuPos( Pos , Menu );
+		UIMenu::FixMenuPos( Pos , Menu );
 		Menu->Pos( Pos );
 	}
 }
@@ -254,39 +254,39 @@ void cEETest::CreateUI() {
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.Elapsed().AsMilliseconds() );
 
-	cUIManager::instance()->Init(); //UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
+	UIManager::instance()->Init(); //UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
 
-	//mTheme = cUITheme::LoadFromPath( eeNew( cUIDefaultTheme, ( "uitheme", "uitheme" ) ), MyPath + "uitheme/" );
+	//mTheme = UITheme::LoadFromPath( eeNew( UIDefaultTheme, ( "uitheme", "uitheme" ) ), MyPath + "uitheme/" );
 
 	TextureAtlasLoader tgl( MyPath + "ui/uitheme" + EE_TEXTURE_ATLAS_EXTENSION );
 
-	mTheme = cUITheme::LoadFromTextureAtlas( eeNew( cUIDefaultTheme, ( "uitheme", "uitheme" ) ), TextureAtlasManager::instance()->GetByName( "uitheme" ) );
+	mTheme = UITheme::LoadFromTextureAtlas( eeNew( UIDefaultTheme, ( "uitheme", "uitheme" ) ), TextureAtlasManager::instance()->GetByName( "uitheme" ) );
 
-	cUIThemeManager::instance()->Add( mTheme );
-	cUIThemeManager::instance()->DefaultEffectsEnabled( true );
-	cUIThemeManager::instance()->DefaultFont( TTF );
-	cUIThemeManager::instance()->DefaultTheme( "uitheme" );
+	UIThemeManager::instance()->Add( mTheme );
+	UIThemeManager::instance()->DefaultEffectsEnabled( true );
+	UIThemeManager::instance()->DefaultFont( TTF );
+	UIThemeManager::instance()->DefaultTheme( "uitheme" );
 
-	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), Vector2i(0,0), Sizei( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
+	UIControl::CreateParams Params( UIManager::instance()->MainControl(), Vector2i(0,0), Sizei( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
 	Params.Border.Width( 2 );
 	Params.Border.Color( 0x979797CC );
 	Params.Background.Colors( ColorA( 0xEDEDED66 ), ColorA( 0xEDEDEDCC ), ColorA( 0xEDEDEDCC ), ColorA( 0xEDEDED66 ) );
 
-	cUIWindow * tWin = mTheme->CreateWindow( NULL, Sizei( 530, 405 ), Vector2i( 320, 240 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DRAGABLE_CONTAINER , Sizei( 530, 405 ), 200 );
+	UIWindow * tWin = mTheme->CreateWindow( NULL, Sizei( 530, 405 ), Vector2i( 320, 240 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DRAGABLE_CONTAINER , Sizei( 530, 405 ), 200 );
 	C = tWin->Container();
 
 	tWin->Title( "Controls Test" );
 
-	tWin->AddEventListener( cUIEvent::EventMouseUp, cb::Make1( this, &cEETest::OnWinMouseUp ) );
-	C->AddEventListener( cUIEvent::EventMouseUp, cb::Make1( this, &cEETest::OnWinMouseUp ) );
+	tWin->AddEventListener( UIEvent::EventMouseUp, cb::Make1( this, &cEETest::OnWinMouseUp ) );
+	C->AddEventListener( UIEvent::EventMouseUp, cb::Make1( this, &cEETest::OnWinMouseUp ) );
 
 	Params.Flags &= ~UI_CLIP_ENABLE;
 	Params.Background.Corners(0);
 	Params.Background.Colors( ColorA( 0x00FF0077 ), ColorA( 0x00CC0077 ), ColorA( 0x00CC0077 ), ColorA( 0x00FF0077 ) );
 	Params.Parent( C );
 	Params.Size = Sizei( 50, 50 );
-	cUITest * Child = eeNew( cUITest, ( Params ) );
+	UITest * Child = eeNew( UITest, ( Params ) );
 	Child->Pos( 240, 130 );
 	Child->Visible( true );
 	Child->Enabled( true );
@@ -296,7 +296,7 @@ void cEETest::CreateUI() {
 	Params.Background.Colors( ColorA( 0xFFFF0077 ), ColorA( 0xCCCC0077 ), ColorA( 0xCCCC0077 ), ColorA( 0xFFFF0077 ) );
 	Params.Parent( Child );
 	Params.Size = Sizei( 25, 25 );
-	cUITest * Child2 = eeNew( cUITest, ( Params ) );
+	UITest * Child2 = eeNew( UITest, ( Params ) );
 	Child2->Pos( 15, 15 );
 	Child2->Visible( true );
 	Child2->Enabled( true );
@@ -305,113 +305,113 @@ void cEETest::CreateUI() {
 
 	mTheme->CreateSprite( eeNew( Sprite, ( "gn" ) ), C, Sizei(), Vector2i( 160, 100 ) );
 
-	cUITextBox::CreateParams TextParams;
+	UITextBox::CreateParams TextParams;
 	TextParams.Parent( C );
 	TextParams.PosSet( 0, 0 );
 	TextParams.Size = Sizei( 320, 240 );
 	TextParams.Flags = UI_VALIGN_TOP | UI_HALIGN_RIGHT;
-	cUITextBox * Text = eeNew( cUITextBox, ( TextParams ) );
+	UITextBox * Text = eeNew( UITextBox, ( TextParams ) );
 	Text->Visible( true );
 	Text->Enabled( false );
 	Text->Text( "Turn around\nJust Turn Around\nAround!" );
 
-	cUITextInput::CreateParams InputParams;
+	UITextInput::CreateParams InputParams;
 	InputParams.Parent( C );
 	InputParams.PosSet( 20, 216 );
 	InputParams.Size = Sizei( 200, 22 );
 	InputParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED;
-	cUITextInput * Input = eeNew( cUITextInput, ( InputParams ) );
+	UITextInput * Input = eeNew( UITextInput, ( InputParams ) );
 	Input->Visible( true );
 	Input->Enabled( true );
 
-	cUIPushButton::CreateParams ButtonParams;
+	UIPushButton::CreateParams ButtonParams;
 	ButtonParams.Parent( C );
 	ButtonParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE;
 	ButtonParams.PosSet( 225, 216 );
 	ButtonParams.Size = Sizei( 90, 0 );
 	ButtonParams.SetIcon( mTheme->GetIconByName( "ok" ) );
-	cUIPushButton * Button = eeNew( cUIPushButton, ( ButtonParams ) );
+	UIPushButton * Button = eeNew( UIPushButton, ( ButtonParams ) );
 	Button->Visible( true );
 	Button->Enabled( true );
 	Button->Text( "Click Me" );
-	Button->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::ButtonClick ) );
+	Button->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &cEETest::ButtonClick ) );
 	Button->TooltipText( "Click and see what happens..." );
 
 	TextParams.PosSet( 130, 20 );
 	TextParams.Size = Sizei( 80, 22 );
 	TextParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT;
-	cUICheckBox * Checkbox = eeNew( cUICheckBox, ( TextParams ) );
+	UICheckBox * Checkbox = eeNew( UICheckBox, ( TextParams ) );
 	Checkbox->Visible( true );
 	Checkbox->Text( "Check Me" );
 	Checkbox->Enabled( true );
 
 	TextParams.PosSet( 130, 40 );
-	cUIRadioButton * RadioButton = eeNew( cUIRadioButton, ( TextParams ) );
+	UIRadioButton * RadioButton = eeNew( UIRadioButton, ( TextParams ) );
 	RadioButton->Visible( true );
 	RadioButton->Text( "Check Me" );
 	RadioButton->Enabled( true );
 
 	TextParams.PosSet( 130, 60 );
-	RadioButton = eeNew( cUIRadioButton, ( TextParams ) );
+	RadioButton = eeNew( UIRadioButton, ( TextParams ) );
 	RadioButton->Visible( true );
 	RadioButton->Text( "Check Me 2" );
 	RadioButton->Enabled( true );
 
-	cUISlider::CreateParams SliderParams;
+	UISlider::CreateParams SliderParams;
 	SliderParams.Parent( C );
 	SliderParams.PosSet( 220, 80 );
 	SliderParams.Size = Sizei( 80, 24 );
-	mSlider = eeNew( cUISlider, ( SliderParams ) );
+	mSlider = eeNew( UISlider, ( SliderParams ) );
 	mSlider->Visible( true );
 	mSlider->Enabled( true );
-	mSlider->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cEETest::OnSliderValueChange ) );
+	mSlider->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &cEETest::OnSliderValueChange ) );
 
 	SliderParams.PosSet( 40, 110 );
 	SliderParams.Size = Sizei( 24, 80 );
 	SliderParams.VerticalSlider = true;
-	mSlider = eeNew( cUISlider, ( SliderParams ) );
+	mSlider = eeNew( UISlider, ( SliderParams ) );
 	mSlider->Visible( true );
 	mSlider->Enabled( true );
 
 	SliderParams.PosSet( 60, 110 );
-	mSlider = eeNew( cUISlider, ( SliderParams ) );
+	mSlider = eeNew( UISlider, ( SliderParams ) );
 	mSlider->Visible( true );
 	mSlider->Enabled( true );
 
-	cUISpinBox::CreateParams SpinBoxParams;
+	UISpinBox::CreateParams SpinBoxParams;
 	SpinBoxParams.Parent( C );
 	SpinBoxParams.PosSet( 80, 150 );
 	SpinBoxParams.Size = Sizei( 80, 24 );
 	SpinBoxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE;
 	SpinBoxParams.AllowDotsInNumbers = true;
-	cUISpinBox * mSpinBox = eeNew( cUISpinBox, ( SpinBoxParams ) );
+	UISpinBox * mSpinBox = eeNew( UISpinBox, ( SpinBoxParams ) );
 	mSpinBox->Visible( true );
 	mSpinBox->Enabled( true );
 
-	cUIScrollBar::CreateParams ScrollBarP;
+	UIScrollBar::CreateParams ScrollBarP;
 	ScrollBarP.Parent( C );
 	ScrollBarP.PosSet( 0, 0 );
 	ScrollBarP.Size = Sizei( 15, 240 );
 	ScrollBarP.Flags = UI_AUTO_SIZE;
 	ScrollBarP.VerticalScrollBar = true;
-	mScrollBar = eeNew( cUIScrollBar, ( ScrollBarP ) );
+	mScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
 	mScrollBar->Visible( true );
 	mScrollBar->Enabled( true );
-	mScrollBar->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cEETest::OnValueChange ) );
+	mScrollBar->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &cEETest::OnValueChange ) );
 
 	mProgressBar = mTheme->CreateProgressBar( C, Sizei( 200, 20 ), Vector2i( 20, 190 ) );
 
 	TextParams.PosSet( 20, 5 );
-	mTextBoxValue = eeNew( cUITextBox, ( TextParams ) );
+	mTextBoxValue = eeNew( UITextBox, ( TextParams ) );
 	mTextBoxValue->Visible( true );
 	OnValueChange( NULL );
 
-	cUIListBox::CreateParams LBParams;
+	UIListBox::CreateParams LBParams;
 	LBParams.Parent( C );
 	LBParams.PosSet( 325, 8 );
 	LBParams.Size = Sizei( 200, 240-16 );
 	LBParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_TOUCH_DRAG_ENABLED; // | UI_MULTI_SELECT
-	mListBox = eeNew( cUIListBox, ( LBParams ) );
+	mListBox = eeNew( UIListBox, ( LBParams ) );
 	mListBox->Visible( true );
 	mListBox->Enabled( true );
 
@@ -426,12 +426,12 @@ void cEETest::CreateUI() {
 		mListBox->AddListBoxItems( str );
 	}
 
-	cUIDropDownList::CreateParams DDLParams;
+	UIDropDownList::CreateParams DDLParams;
 	DDLParams.Parent( C );
 	DDLParams.PosSet( 20, 55 );
 	DDLParams.Size = Sizei( 100, 21 );
 	DDLParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_TOUCH_DRAG_ENABLED;
-	cUIDropDownList * mDropDownList = eeNew( cUIDropDownList, ( DDLParams ) );
+	UIDropDownList * mDropDownList = eeNew( UIDropDownList, ( DDLParams ) );
 	mDropDownList->Visible( true );
 	mDropDownList->Enabled( true );
 
@@ -448,12 +448,12 @@ void cEETest::CreateUI() {
 	mDropDownList->ListBox()->AddListBoxItems( combostrs );
 	mDropDownList->ListBox()->SetSelected( 0 );
 
-	cUIComboBox::CreateParams ComboParams;
+	UIComboBox::CreateParams ComboParams;
 	ComboParams.Parent( C );
 	ComboParams.PosSet( 20, 80 );
 	ComboParams.Size = Sizei( 100, 1 );
 	ComboParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_AUTO_SIZE | UI_TOUCH_DRAG_ENABLED | UI_TEXT_SELECTION_ENABLED;
-	cUIComboBox * mComboBox = eeNew( cUIComboBox, ( ComboParams ) );
+	UIComboBox * mComboBox = eeNew( UIComboBox, ( ComboParams ) );
 	mComboBox->Visible( true );
 	mComboBox->Enabled( true );
 
@@ -481,13 +481,13 @@ void cEETest::CreateUI() {
 	Menu->Add( "Show Window 2" );
 	Menu->AddCheckBox( "Multi Viewport" );
 
-	cUIPopUpMenu * Menu3 = mTheme->CreatePopUpMenu();
+	UIPopUpMenu * Menu3 = mTheme->CreatePopUpMenu();
 	Menu3->Add( "Hello World 1" );
 	Menu3->Add( "Hello World 2" );
 	Menu3->Add( "Hello World 3" );
 	Menu3->Add( "Hello World 4" );
 
-	cUIPopUpMenu * Menu2 = mTheme->CreatePopUpMenu();
+	UIPopUpMenu * Menu2 = mTheme->CreatePopUpMenu();
 	Menu2->Add( "Test 1" );
 	Menu2->Add( "Test 2" );
 	Menu2->Add( "Test 3" );
@@ -500,47 +500,47 @@ void cEETest::CreateUI() {
 	Menu->AddSeparator();
 	Menu->Add( "Quit" );
 
-	Menu->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cEETest::ItemClick ) );
-	Menu->GetItem( "Quit" )->AddEventListener( cUIEvent::EventMouseUp, cb::Make1( this, &cEETest::QuitClick ) );
-	cUIManager::instance()->MainControl()->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::MainClick ) );
+	Menu->AddEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &cEETest::ItemClick ) );
+	Menu->GetItem( "Quit" )->AddEventListener( UIEvent::EventMouseUp, cb::Make1( this, &cEETest::QuitClick ) );
+	UIManager::instance()->MainControl()->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &cEETest::MainClick ) );
 
-	cUITextEdit::CreateParams TEParams;
+	UITextEdit::CreateParams TEParams;
 	TEParams.Parent( C );
 	TEParams.PosSet( 5, 245 );
 	TEParams.Size	= Sizei( 315, 130 );
 	TEParams.Flags = UI_AUTO_PADDING | UI_CLIP_ENABLE | UI_TEXT_SELECTION_ENABLED;
-	cUITextEdit * TextEdit = eeNew( cUITextEdit, ( TEParams ) );
+	UITextEdit * TextEdit = eeNew( UITextEdit, ( TEParams ) );
 	TextEdit->Visible( true );
 	TextEdit->Enabled( true );
 	TextEdit->Text( mBuda );
 
-	cUIGenericGrid::CreateParams GridParams;
+	UIGenericGrid::CreateParams GridParams;
 	GridParams.Parent( C );
 	GridParams.PosSet( 325, 245 );
 	GridParams.SizeSet( 200, 130 );
 	GridParams.Flags = UI_AUTO_PADDING | UI_TOUCH_DRAG_ENABLED;
 	GridParams.RowHeight = 24;
 	GridParams.CollumnsCount = 3;
-	cUIGenericGrid * mGenGrid = eeNew( cUIGenericGrid, ( GridParams ) );
+	UIGenericGrid * mGenGrid = eeNew( UIGenericGrid, ( GridParams ) );
 	mGenGrid->Visible( true );
 	mGenGrid->Enabled( true );
 
-	cUIGridCell::CreateParams CellParams;
+	UIGridCell::CreateParams CellParams;
 	CellParams.Parent( mGenGrid->Container() );
 
-	cUITextBox::CreateParams TxtBoxParams;
-	cUITextInput::CreateParams TxtInputParams;
+	UITextBox::CreateParams TxtBoxParams;
+	UITextInput::CreateParams TxtInputParams;
 	TxtInputParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_TEXT_SELECTION_ENABLED;
 
-	cUIGfx::CreateParams TxtGfxParams;
+	UIGfx::CreateParams TxtGfxParams;
 	TxtGfxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
 	TxtGfxParams.SubTexture = mTheme->GetIconByName( "ok" );
 
 	for ( Uint32 i = 0; i < 100; i++ ) {
-		cUIGridCell * Cell			= eeNew( cUIGridCell, ( CellParams ) );
-		cUITextBox * TxtBox			= eeNew( cUITextBox, ( TxtBoxParams ) );
-		cUITextInput * TxtInput		= eeNew( cUITextInput, ( TxtInputParams ) );
-		cUIGfx * TxtGfx				= eeNew( cUIGfx, ( TxtGfxParams )  );
+		UIGridCell * Cell			= eeNew( UIGridCell, ( CellParams ) );
+		UITextBox * TxtBox			= eeNew( UITextBox, ( TxtBoxParams ) );
+		UITextInput * TxtInput		= eeNew( UITextInput, ( TxtInputParams ) );
+		UIGfx * TxtGfx				= eeNew( UIGfx, ( TxtGfxParams )  );
 
 		TxtBox->Text( "Test " + String::ToStr( i+1 ) );
 
@@ -555,7 +555,7 @@ void cEETest::CreateUI() {
 	mGenGrid->CollumnWidth( 1, 24 );
 	mGenGrid->CollumnWidth( 2, 100 );
 
-	C = reinterpret_cast<cUIControlAnim*> ( C->Parent() );
+	C = reinterpret_cast<UIControlAnim*> ( C->Parent() );
 
 	eePRINTL( "CreateUI time: %4.3f ms.", TE.Elapsed().AsMilliseconds() );
 }
@@ -564,7 +564,7 @@ void cEETest::CreateMapEditor() {
 	if ( NULL != mMapEditor )
 		return;
 
-	cUIWindow * tWin = mTheme->CreateWindow( NULL, Sizei( 1024, 768 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, Sizei( 1024, 768 ) );
+	UIWindow * tWin = mTheme->CreateWindow( NULL, Sizei( 1024, 768 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, Sizei( 1024, 768 ) );
 	mMapEditor = eeNew( MapEditor, ( tWin, cb::Make0( this, &cEETest::OnMapEditorClose ) ) );
 	tWin->Center();
 	tWin->Show();
@@ -575,7 +575,7 @@ void cEETest::OnMapEditorClose() {
 }
 
 void cEETest::CreateETGEditor() {
-	cUIWindow * tWin = mTheme->CreateWindow( NULL, Sizei( 1024, 768 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, Sizei( 1024, 768 ) );
+	UIWindow * tWin = mTheme->CreateWindow( NULL, Sizei( 1024, 768 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, Sizei( 1024, 768 ) );
 	mETGEditor = eeNew ( Tools::TextureAtlasEditor, ( tWin, cb::Make0( this, &cEETest::OnETGEditorClose ) ) );
 	tWin->Center();
 	tWin->Show();
@@ -586,22 +586,22 @@ void cEETest::OnETGEditorClose() {
 }
 
 void cEETest::CreateCommonDialog() {
-	cUICommonDialog * CDialog = mTheme->CreateCommonDialog( NULL, Sizei(), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON );
+	UICommonDialog * CDialog = mTheme->CreateCommonDialog( NULL, Sizei(), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON );
 	CDialog->AddFilePattern( "*.hpp;*.cpp", true );
 	CDialog->Center();
 	CDialog->Show();
 }
 
 void cEETest::CreateWinMenu() {
-	cUIWinMenu * WinMenu = mTheme->CreateWinMenu( mUIWindow->Container() );
+	UIWinMenu * WinMenu = mTheme->CreateWinMenu( mUIWindow->Container() );
 
-	cUIPopUpMenu * PopMenu = mTheme->CreatePopUpMenu();
+	UIPopUpMenu * PopMenu = mTheme->CreatePopUpMenu();
 	PopMenu->Add( "File" );
 	PopMenu->Add( "Open" );
 	PopMenu->Add( "Close" );
 	PopMenu->Add( "Quit" );
 
-	cUIPopUpMenu * PopMenu2 = mTheme->CreatePopUpMenu();
+	UIPopUpMenu * PopMenu2 = mTheme->CreatePopUpMenu();
 	PopMenu2->Add( "Bla" );
 	PopMenu2->Add( "Bla 2" );
 	PopMenu2->Add( "Bla 3" );
@@ -614,23 +614,23 @@ void cEETest::CreateWinMenu() {
 void cEETest::CreateDecoratedWindow() {
 	mUIWindow = mTheme->CreateWindow( NULL, Sizei( 530, 350 ), Vector2i( 200, 50 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, Sizei( 100, 200 ) );
 
-	mUIWindow->AddEventListener( cUIEvent::EventOnWindowCloseClick, cb::Make1( this, &cEETest::CloseClick ) );
+	mUIWindow->AddEventListener( UIEvent::EventOnWindowCloseClick, cb::Make1( this, &cEETest::CloseClick ) );
 	mUIWindow->Title( "Test Window" );
 	mUIWindow->ToBack();
 
-	cUIPushButton * Button = mTheme->CreatePushButton( mUIWindow->Container(), Sizei( 510, 22 ), Vector2i( 10, 28 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_ANCHOR_RIGHT );
+	UIPushButton * Button = mTheme->CreatePushButton( mUIWindow->Container(), Sizei( 510, 22 ), Vector2i( 10, 28 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_ANCHOR_RIGHT );
 	Button->Text( "Click Me" );
-	Button->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::ButtonClick ) );
+	Button->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &cEETest::ButtonClick ) );
 
 	mUIWindow->AddShortcut( KEY_C, KEYMOD_ALT, Button );
 
-	cUITabWidget * TabWidget = mTheme->CreateTabWidget( mUIWindow->Container(), Sizei( 510, 250 ), Vector2i( 10, 55 ), UI_HALIGN_CENTER | UI_VALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_TOP );
+	UITabWidget * TabWidget = mTheme->CreateTabWidget( mUIWindow->Container(), Sizei( 510, 250 ), Vector2i( 10, 55 ), UI_HALIGN_CENTER | UI_VALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_TOP );
 
-	cUITextEdit * TEdit = mTheme->CreateTextEdit( TabWidget, Sizei(), Vector2i() );
+	UITextEdit * TEdit = mTheme->CreateTextEdit( TabWidget, Sizei(), Vector2i() );
 	TEdit->Text( mBuda );
 	TabWidget->Add( "TextEdit", TEdit );
 
-	cUITextInput * Txt = mTheme->CreateTextInput( TabWidget, Sizei(), Vector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT | UI_TEXT_SELECTION_ENABLED );
+	UITextInput * Txt = mTheme->CreateTextInput( TabWidget, Sizei(), Vector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT | UI_TEXT_SELECTION_ENABLED );
 	Txt->Text( mBuda );
 	TabWidget->Add( "TextInput", Txt );
 
@@ -639,15 +639,15 @@ void cEETest::CreateDecoratedWindow() {
 	CreateWinMenu();
 }
 
-void cEETest::CloseClick( const cUIEvent * Event ) {
+void cEETest::CloseClick( const UIEvent * Event ) {
 	mUIWindow = NULL;
 }
 
-void cEETest::ItemClick( const cUIEvent * Event ) {
+void cEETest::ItemClick( const UIEvent * Event ) {
 	if ( !Event->Ctrl()->IsType( UI_TYPE_MENUITEM ) )
 		return;
 
-	const String& txt = reinterpret_cast<cUIMenuItem*> ( Event->Ctrl() )->Text();
+	const String& txt = reinterpret_cast<UIMenuItem*> ( Event->Ctrl() )->Text();
 
 	if ( "Show Screen 1" == txt ) {
 		SetScreen( 0 );
@@ -671,7 +671,7 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 			mWindow->StopTextInput();
 		}
 	} else if ( "Show Window" == txt ) {
-		cUIMenuCheckBox * Chk = reinterpret_cast<cUIMenuCheckBox*> ( Event->Ctrl() );
+		UIMenuCheckBox * Chk = reinterpret_cast<UIMenuCheckBox*> ( Event->Ctrl() );
 
 		C->Visible( true );
 		C->Enabled( true );
@@ -707,20 +707,20 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 	}
 }
 
-void cEETest::OnValueChange( const cUIEvent * Event ) {
+void cEETest::OnValueChange( const UIEvent * Event ) {
 	mTextBoxValue->Text( "Scroll Value:\n" + String::ToStr( mScrollBar->Value() ) );
 
 	mProgressBar->Progress( mScrollBar->Value() * 100.f );
 }
 
-void cEETest::OnSliderValueChange( const cUIEvent * Event ) {
-	cUISlider * slider = static_cast<cUISlider*>( Event->Ctrl() );
+void cEETest::OnSliderValueChange( const UIEvent * Event ) {
+	UISlider * slider = static_cast<UISlider*>( Event->Ctrl() );
 
 	C->Angle( slider->Value() * 90.f );
 }
 
-void cEETest::QuitClick( const cUIEvent * Event ) {
-	const cUIEventMouse * MouseEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
+void cEETest::QuitClick( const UIEvent * Event ) {
+	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	if ( MouseEvent->Flags() & EE_BUTTON_LMASK ) {
 		mWindow->Close();
@@ -730,27 +730,27 @@ void cEETest::QuitClick( const cUIEvent * Event ) {
 void cEETest::ShowMenu() {
 	if ( Menu->Show() ) {
 		Vector2i Pos = mWindow->GetInput()->GetMousePos();
-		cUIMenu::FixMenuPos( Pos , Menu );
+		UIMenu::FixMenuPos( Pos , Menu );
 		Menu->Pos( Pos );
 	}
 }
 
-void cEETest::MainClick( const cUIEvent * Event ) {
-	const cUIEventMouse * MouseEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
+void cEETest::MainClick( const UIEvent * Event ) {
+	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	if ( MouseEvent->Flags() & EE_BUTTON_RMASK ) {
 		ShowMenu();
 	}
 }
 
-void cEETest::ButtonClick( const cUIEvent * Event ) {
-	const cUIEventMouse * MouseEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
+void cEETest::ButtonClick( const UIEvent * Event ) {
+	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	if ( MouseEvent->Flags() & EE_BUTTONS_LRM ) {
-		cUIGfx::CreateParams GfxParams;
-		GfxParams.Parent( cUIManager::instance()->MainControl() );
+		UIGfx::CreateParams GfxParams;
+		GfxParams.Parent( UIManager::instance()->MainControl() );
 		GfxParams.SubTexture = mTheme->GetIconByName( "ok" );
-		cUIGfx * Gfx = eeNew( cUIGfx, ( GfxParams ) );
+		UIGfx * Gfx = eeNew( UIGfx, ( GfxParams ) );
 		Gfx->Visible( true );
 		Gfx->Enabled( false );
 
@@ -1262,8 +1262,8 @@ void cEETest::Render() {
 		FF2->Draw( 6, 180, FONT_DRAW_SHADOW );
 	}
 
-	cUIManager::instance()->Draw();
-	cUIManager::instance()->Update();
+	UIManager::instance()->Draw();
+	UIManager::instance()->Update();
 
 
 	Con.Draw();

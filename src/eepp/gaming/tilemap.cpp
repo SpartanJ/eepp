@@ -18,7 +18,7 @@
 #include <eepp/graphics/globalbatchrenderer.hpp>
 using namespace EE::Graphics;
 
-#include <eepp/ui/cuithememanager.hpp>
+#include <eepp/ui/uithememanager.hpp>
 
 namespace EE { namespace Gaming {
 
@@ -1379,7 +1379,7 @@ std::vector<std::string> TileMap::GetTextureAtlases() {
 
 	//! Ugly ugly ugly, but i don't see another way
 	Uint32 Restricted1 = String::Hash( std::string( "global" ) );
-	Uint32 Restricted2 = String::Hash( UI::cUIThemeManager::instance()->DefaultTheme()->TextureAtlas()->Name() );
+	Uint32 Restricted2 = String::Hash( UI::UIThemeManager::instance()->DefaultTheme()->TextureAtlas()->Name() );
 
 	for ( std::list<TextureAtlas*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
 		if ( (*it)->Id() != Restricted1 && (*it)->Id() != Restricted2 )

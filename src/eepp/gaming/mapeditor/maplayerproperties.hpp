@@ -4,9 +4,9 @@
 #include <eepp/gaming/base.hpp>
 #include <eepp/gaming/maphelper.hpp>
 #include <eepp/gaming/maplayer.hpp>
-#include <eepp/ui/cuiwindow.hpp>
-#include <eepp/ui/cuigenericgrid.hpp>
-#include <eepp/ui/cuitextinput.hpp>
+#include <eepp/ui/uiwindow.hpp>
+#include <eepp/ui/uigenericgrid.hpp>
+#include <eepp/ui/uitextinput.hpp>
 
 using namespace EE::UI;
 
@@ -23,22 +23,22 @@ class EE_API MapLayerProperties {
 		virtual ~MapLayerProperties();
 
 	protected:
-		cUITheme *			mUITheme;
-		cUIWindow *			mUIWindow;
-		cUIGenericGrid *	mGenGrid;
+		UITheme *			mUITheme;
+		UIWindow *			mUIWindow;
+		UIGenericGrid *	mGenGrid;
 		MapLayer *			mLayer;
-		cUITextInput *		mUIInput;
+		UITextInput *		mUIInput;
 		RefreshLayerListCb	mRefreshCb;
 
-		void WindowClose( const cUIEvent * Event );
+		void WindowClose( const UIEvent * Event );
 
-		void CancelClick( const cUIEvent * Event );
+		void CancelClick( const UIEvent * Event );
 
-		void OKClick( const cUIEvent * Event );
+		void OKClick( const UIEvent * Event );
 
-		void AddCellClick( const cUIEvent * Event );
+		void AddCellClick( const UIEvent * Event );
 
-		void RemoveCellClick( const cUIEvent * Event );
+		void RemoveCellClick( const UIEvent * Event );
 
 		void CreateGridElems();
 
@@ -46,7 +46,7 @@ class EE_API MapLayerProperties {
 
 		void LoadProperties();
 
-		cUIGridCell * CreateCell();
+		UIGridCell * CreateCell();
 };
 
 }}}

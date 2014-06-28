@@ -8,7 +8,7 @@
 #include <eepp/graphics/textureatlasmanager.hpp>
 #include <eepp/graphics/framebuffermanager.hpp>
 #include <eepp/graphics/vertexbuffermanager.hpp>
-#include <eepp/ui/cuimanager.hpp>
+#include <eepp/ui/uimanager.hpp>
 #include <eepp/audio/audiolistener.hpp>
 #include <eepp/helper/haikuttf/hkfontmanager.hpp>
 #include <eepp/physics/physicsmanager.hpp>
@@ -63,7 +63,7 @@ Engine::~Engine() {
 
 	FontManager::DestroySingleton();
 
-	UI::cUIManager::DestroySingleton();
+	UI::UIManager::DestroySingleton();
 
 	Graphics::cGL::DestroySingleton();
 
