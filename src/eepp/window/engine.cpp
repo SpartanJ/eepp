@@ -11,7 +11,7 @@
 #include <eepp/ui/cuimanager.hpp>
 #include <eepp/audio/audiolistener.hpp>
 #include <eepp/helper/haikuttf/hkfontmanager.hpp>
-#include <eepp/physics/cphysicsmanager.hpp>
+#include <eepp/physics/physicsmanager.hpp>
 #include <eepp/network/ssl/sslsocket.hpp>
 #include <eepp/window/backend.hpp>
 #include <eepp/window/backend/SDL/backendsdl.hpp>
@@ -49,7 +49,7 @@ Engine::Engine() :
 }
 
 Engine::~Engine() {
-	Physics::cPhysicsManager::DestroySingleton();
+	Physics::PhysicsManager::DestroySingleton();
 
 	Graphics::Private::FrameBufferManager::DestroySingleton();
 

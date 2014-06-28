@@ -226,18 +226,18 @@ class cEETest : private Thread {
 		TextCache mFBOText;
 		TextCache mInfoText;
 
-		cSpace * mSpace;
+		Space * mSpace;
 
 		#ifndef EE_PLATFORM_TOUCH
-		cBody * mMouseBody;
+		Body * mMouseBody;
 		cVect mMousePoint;
 		cVect mMousePoint_last;
-		cConstraint * mMouseJoint;
+		Constraint * mMouseJoint;
 		#else
-		cBody * mMouseBody[ EE_MAX_FINGERS ];
+		Body * mMouseBody[ EE_MAX_FINGERS ];
 		cVect mMousePoint[ EE_MAX_FINGERS ];
 		cVect mMousePoint_last[ EE_MAX_FINGERS ];
-		cConstraint * mMouseJoint[ EE_MAX_FINGERS ];
+		Constraint * mMouseJoint[ EE_MAX_FINGERS ];
 		#endif
 
 		void PhysicsCreate();
@@ -246,10 +246,10 @@ class cEETest : private Thread {
 
 		void SetScreen( Uint32 num );
 
-		cpBool blockerBegin( cArbiter *arb, cSpace *space, void *unused );
-		void blockerSeparate( cArbiter *arb, cSpace *space, void *unused );
-		void postStepRemove( cSpace *space, void * tshape, void *unused );
-		cpBool catcherBarBegin( cArbiter *arb, cSpace *space, void *unused );
+		cpBool blockerBegin( Arbiter *arb, Space *space, void *unused );
+		void blockerSeparate( Arbiter *arb, Space *space, void *unused );
+		void postStepRemove( Space *space, void * tshape, void *unused );
+		cpBool catcherBarBegin( Arbiter *arb, Space *space, void *unused );
 
 		void Demo1Create();
 		void Demo1Update();
