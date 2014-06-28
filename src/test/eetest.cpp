@@ -565,7 +565,7 @@ void cEETest::CreateMapEditor() {
 		return;
 
 	cUIWindow * tWin = mTheme->CreateWindow( NULL, Sizei( 1024, 768 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, Sizei( 1024, 768 ) );
-	mMapEditor = eeNew( cMapEditor, ( tWin, cb::Make0( this, &cEETest::OnMapEditorClose ) ) );
+	mMapEditor = eeNew( MapEditor, ( tWin, cb::Make0( this, &cEETest::OnMapEditorClose ) ) );
 	tWin->Center();
 	tWin->Show();
 }

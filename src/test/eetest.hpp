@@ -134,7 +134,7 @@ class cEETest : private Thread {
 		std::string MyPath;
 		bool ShowParticles;
 
-		cMap Map;
+		TileMap Map;
 
 		Uint8 Screen;
 		SceneCb Scenes[6];
@@ -219,7 +219,7 @@ class cEETest : private Thread {
 		cUIListBox * mListBox;
 		cUIPopUpMenu * Menu;
 		cUIWindow * mUIWindow;
-		cMapEditor * mMapEditor;
+		MapEditor * mMapEditor;
 		TextureAtlasEditor * mETGEditor;
 
 		TextCache mEEText;

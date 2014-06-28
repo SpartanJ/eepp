@@ -97,7 +97,6 @@
 	// Gaming
 	#include <eepp/gaming.hpp>
 	using namespace EE::Gaming;
-	using namespace EE::Gaming::MapEditor;
 
 	// Physics
 	#include <eepp/physics.hpp>
