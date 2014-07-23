@@ -67,7 +67,7 @@ struct Emitter {
 	cVect position;
 };
 
-class cEETest : private Thread {
+class EETest : private Thread {
 	public:
 		typedef cb::Callback0<void> SceneCb;
 

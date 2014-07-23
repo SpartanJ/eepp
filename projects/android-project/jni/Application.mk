@@ -19,3 +19,6 @@ APP_CFLAGS			:= -fno-strict-aliasing -O3 -s -DNDEBUG -ffast-math
 APP_PLATFORM		:= android-10
 APP_MODULES			:= main
 APP_ABI				:= armeabi-v7a x86
+
+APP_CPPFLAGS		+= -Wno-error=format-security
+APP_CFLAGS			+= -Wno-error=format-security

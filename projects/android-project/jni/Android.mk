@@ -55,7 +55,7 @@ CODE_SRCS :=  \
 	system/platform/posix/*.cpp \
 	network/*.cpp \
 	network/platform/unix/*.cpp \
-	base/*.cpp \
+	core/*.cpp \
 	math/*.cpp \
 	audio/*.cpp \
 	window/*.cpp \
