@@ -3,7 +3,6 @@
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 	#include <android/log.h>
-	#define ANDROID_LOGI(...) __android_log_print(ANDROID_LOG_INFO   , "eepp", __VA_ARGS__)
 #endif
 
 #if defined( EE_COMPILER_MSVC )
@@ -64,7 +63,7 @@ void Log::Write( std::string Text, const bool& newLine ) {
 
 	if ( mConsoleOutput ) {
 	#if EE_PLATFORM == EE_PLATFORM_ANDROID
-		ANDROID_LOGI( Text.c_str() );
+		__android_log_print( ANDROID_LOG_INFO, "eepp", "%s", Text.c_str() );
 	#elif defined( EE_COMPILER_MSVC )
 		OutputDebugString( Text.c_str() );
 	#else
@@ -122,7 +121,7 @@ void Log::Writef( const char* format, ... ) {
 
 			if ( mConsoleOutput ) {
 			#if EE_PLATFORM == EE_PLATFORM_ANDROID
-				ANDROID_LOGI( tstr.c_str() );
+				__android_log_print( ANDROID_LOG_INFO, "eepp", "%s", tstr.c_str() );
 			#elif defined( EE_COMPILER_MSVC )
 				OutputDebugString( tstr.c_str() );
 			#else

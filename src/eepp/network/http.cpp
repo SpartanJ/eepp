@@ -164,7 +164,7 @@ void Http::Response::Parse(const std::string& data) {
 	}
 
 	// Extract the status code from the first line
-	int status;
+	int status = InvalidResponse;
 
 	if (in >> status) {
 		mStatus = static_cast<Status>(status);

@@ -378,6 +378,7 @@ void Window::SendVideoResizeCb() {
 
 void Window::LogSuccessfulInit(const std::string& BackendName , const std::string&ProcessPath ) {
 	std::string msg( "Engine Initialized Succesfully.\n\tVersion: " + Version::GetVersionName() + " (codename: \"" + Version::GetCodename() + "\")" +
+							 "\n\tBuild time: " + Version::GetBuildTime() +
 							 "\n\tOS: " + Sys::GetOSName() +
 							 "\n\tArch: " + Sys::GetOSArchitecture() +
 							 "\n\tCPU Cores: " + String::ToStr( Sys::GetCPUCount() ) +

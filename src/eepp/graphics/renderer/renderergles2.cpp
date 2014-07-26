@@ -303,11 +303,11 @@ void RendererGLES2::Enable( unsigned int cap ) {
 		{
 			mPointSpriteEnabled = 1;
 
-			cGL::Enable( GL_VERTEX_PROGRAM_POINT_SIZE );
+			//cGL::Enable( GL_VERTEX_PROGRAM_POINT_SIZE );
 
 			SetShader( EEGLES2_SHADER_POINTSPRITE );
 
-			break;
+			return;
 		}
 	}
 
@@ -351,11 +351,11 @@ void RendererGLES2::Disable ( unsigned int cap ) {
 		{
 			mPointSpriteEnabled = 0;
 
-			cGL::Disable( GL_VERTEX_PROGRAM_POINT_SIZE );
+			//cGL::Disable( GL_VERTEX_PROGRAM_POINT_SIZE );
 
 			SetShader( EEGLES2_SHADER_BASE );
 
-			break;
+			return;
 		}
 	}
 

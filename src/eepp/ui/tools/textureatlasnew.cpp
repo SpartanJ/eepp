@@ -121,7 +121,7 @@ void TextureAtlasNew::TextureAtlasSave( const UIEvent * Event ) {
 	std::string FPath( CDL->GetFullPath() );
 
 	if ( !FileSystem::IsDirectory( FPath ) ) {
-		Int32 w,h,b;
+		Int32 w = 0, h = 0, b;
 		bool Res1 = String::FromString<Int32>( w, mComboWidth->Text() );
 		bool Res2 = String::FromString<Int32>( h, mComboHeight->Text() );
 		b = static_cast<Int32>( mPixelSpace->Value() );

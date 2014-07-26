@@ -42,6 +42,9 @@ class EE_API Version {
 
 		/** @return The version codename */
 		static std::string GetCodename();
+
+		/** @return The build time of the library */
+		static std::string GetBuildTime();
 };
 
 }

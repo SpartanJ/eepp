@@ -23,4 +23,8 @@ std::string Version::GetCodename() {
 	return std::string( EEPP_CODENAME );
 }
 
+std::string Version::GetBuildTime() {
+	return std::string( __DATE__ ) + " " + std::string( __TIME__ );
+}
+
 } 

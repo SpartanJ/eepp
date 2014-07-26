@@ -33,7 +33,10 @@ X11Window WMInfo::GetWindow() {
 #endif
 
 eeWindowHandle WMInfo::GetWindowHandler() {
+#if EE_PLATFORM == EE_PLATFORM_WIN || defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_MACOSX
 	SDL_SysWMinfo * info = static_cast<SDL_SysWMinfo*> ( mWMInfo );
+#endif
+
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	return info->info.win.window;
 #elif defined( EE_X11_PLATFORM )
@@ -44,7 +47,6 @@ eeWindowHandle WMInfo::GetWindowHandler() {
 	return 0;
 #endif
 }
-
 
 }}}}
 
