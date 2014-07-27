@@ -282,7 +282,7 @@ WindowSettings Engine::CreateWindowSettings( IniFile * ini, std::string iniKeyNa
 	std::string Backend = ini->GetValue( iniKeyName, "Backend", "" );
 	Uint32 WinBackend	= GetDefaultBackend();
 
-	String::ToLower( Backend );
+	String::ToLowerInPlace( Backend );
 
 	if ( "sdl2" == Backend )		WinBackend	= WindowBackend::SDL2;
 	else if ( "sdl" == Backend )	WinBackend	= WindowBackend::SDL;
@@ -325,7 +325,7 @@ ContextSettings Engine::CreateContextSettings( IniFile * ini, std::string iniKey
 	bool VSync					= ini->GetValueB( iniKeyName, "VSync", true );
 	std::string GLVersion		= ini->GetValue( iniKeyName, "GLVersion", "0" );
 
-	String::ToLower( GLVersion );
+	String::ToLowerInPlace( GLVersion );
 
 	EEGL_version GLVer;
 	if (		"3" == GLVersion || "opengl 3" == GLVersion || "gl3" == GLVersion || "opengl3" == GLVersion )									GLVer = GLv_3;

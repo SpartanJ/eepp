@@ -415,7 +415,7 @@ void Console::PrintCommandsStartingWith( const String& start ) {
 	std::map < String, ConsoleCallback >::iterator it;
 
 	for ( it = mCallbacks.begin(); it != mCallbacks.end(); it++ ) {
-		if ( -1 != String::StartsWith( start, it->first ) ) {
+		if ( String::StartsWith( it->first, start ) ) {
 			cmds.push_back( it->first );
 		}
 	}
@@ -470,7 +470,7 @@ void Console::GetFilesFrom( std::string txt, const Uint32& curPos ) {
 			String res;
 
 			for ( size_t i = 0; i < files.size(); i++ ) {
-				if ( !file.size() || -1 != String::StartsWith( file, files[i] ) ) {
+				if ( !file.size() || String::StartsWith( files[i], file ) ) {
 					res += "\t" + files[i] + "\n";
 					count++;
 					lasti = i;

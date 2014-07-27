@@ -241,7 +241,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 			/// Since fixed-pipeline OpenGL use gl_FrontColor for glColorPointer, we need to replace the color attribute
 			/// This is all to show how it works, in a real world scenario, you will choose to work fixed-pipeline or programmable-pipeline.
 			if ( GLi->Version() == GLv_2 ) {
-				String::ReplaceSubStr( fs, "gl_FragColor = dgl_Color", "gl_FragColor = gl_FrontColor" );
+				String::ReplaceAll( fs, "gl_FragColor = dgl_Color", "gl_FragColor = gl_FrontColor" );
 			}
 
 			/// Create the new shader program

@@ -108,7 +108,7 @@ std::string FileSystem::FileExtension( const std::string& filepath, const bool& 
 	std::string tstr( filepath.substr( filepath.find_last_of(".") + 1 ) );
 
 	if ( lowerExt )
-		String::ToLower( tstr );
+		String::ToLowerInPlace( tstr );
 
 	return tstr;
 }
@@ -128,10 +128,9 @@ std::string FileSystem::FileRemoveFileName( const std::string& filepath ) {
 void FileSystem::FilePathRemoveProcessPath( std::string& path ) {
 	static std::string ProcessPath = Sys::GetProcessPath();
 
-	Int32 pos = String::StartsWith( ProcessPath, path );
-
-	if ( -1 != pos && (Uint32)(pos + 1) < path.size() )
-		path = path.substr( pos + 1 );
+	if ( String::StartsWith( path, ProcessPath ) && ProcessPath.length() < path.size() ) {
+		path = path.substr( ProcessPath.length() );
+	}
 }
 
 

@@ -155,12 +155,12 @@ void Shader::EnsureVersion() {
 					mSource = "#version 330\nin	vec4		gl_Color;\nin	vec4		gl_TexCoord[ 1 ];\nout		vec4		gl_FragColor;\n" + mSource;
 				}
 
-				String::ReplaceSubStr( mSource, "gl_Color"		, "dgl_Color"		);
-				String::ReplaceSubStr( mSource, "gl_TexCoord"	, "dgl_TexCoord"	);
+				String::ReplaceAll( mSource, "gl_Color"		, "dgl_Color"		);
+				String::ReplaceAll( mSource, "gl_TexCoord"	, "dgl_TexCoord"	);
 
 				if ( GLi->Version() == GLv_3CP ) {
 					#ifndef EE_GLES
-					String::ReplaceSubStr( mSource, "gl_FragColor"	, "dgl_FragColor"	);
+					String::ReplaceAll( mSource, "gl_FragColor"	, "dgl_FragColor"	);
 					#endif
 				}
 			}
@@ -169,7 +169,7 @@ void Shader::EnsureVersion() {
 
 	if ( GLi->Version() == GLv_3CP ) {
 		#ifndef EE_GLES
-		String::ReplaceSubStr( mSource, "texture2D"	, "texture"	);
+		String::ReplaceAll( mSource, "texture2D"	, "texture"	);
 		#endif
 	}
 	#endif

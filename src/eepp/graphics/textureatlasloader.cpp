@@ -329,7 +329,7 @@ static bool IsImage( std::string path ) {
 	if ( FileSystem::FileSize( path ) ) {
 		std::string File	= path.substr( path.find_last_of("/\\") + 1 );
 		std::string Ext		= File.substr( File.find_last_of(".") + 1 );
-		String::ToLower( Ext );
+		String::ToLowerInPlace( Ext );
 
 		if ( Ext == "png" ||
 			 Ext == "tga" ||

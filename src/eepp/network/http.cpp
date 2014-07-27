@@ -8,15 +8,6 @@
 
 using namespace EE::Network::SSL;
 
-namespace {
-	// Convert a string to lower case
-	std::string toLower(std::string str) {
-		for (std::string::iterator i = str.begin(); i != str.end(); ++i)
-			*i = static_cast<char>(std::tolower(*i));
-		return str;
-	}
-}
-
 namespace EE { namespace Network {
 
 Http::Request::Request(const std::string& uri, Method method, const std::string& body, bool validateCertificate, bool validateHostname ) :
@@ -30,7 +21,7 @@ Http::Request::Request(const std::string& uri, Method method, const std::string&
 }
 
 void Http::Request::SetField(const std::string& field, const std::string& value) {
-	mFields[toLower(field)] = value;
+	mFields[String::ToLower(field)] = value;
 }
 
 void Http::Request::SetMethod(Http::Request::Method method) {
@@ -107,7 +98,7 @@ std::string Http::Request::Prepare() const {
 }
 
 bool Http::Request::HasField(const std::string& field) const {
-	return mFields.find(toLower(field)) != mFields.end();
+	return mFields.find(String::ToLower(field)) != mFields.end();
 }
 
 Http::Response::Response() :
@@ -118,7 +109,7 @@ Http::Response::Response() :
 }
 
 const std::string& Http::Response::GetField(const std::string& field) const {
-	FieldTable::const_iterator it = mFields.find(toLower(field));
+	FieldTable::const_iterator it = mFields.find(String::ToLower(field));
 	if (it != mFields.end()) {
 		return it->second;
 	} else {
@@ -152,7 +143,7 @@ void Http::Response::Parse(const std::string& data) {
 	if (in >> version) {
 		std::locale loc;
 		if ((version.size() >= 8) && (version[6] == '.') &&
-			(toLower(version.substr(0, 5)) == "http/")   &&
+			(String::ToLower(version.substr(0, 5)) == "http/")   &&
 			 std::isdigit(version[5],loc) && std::isdigit(version[7],loc)) {
 			mMajorVersion = version[5] - '0';
 			mMinorVersion = version[7] - '0';
@@ -184,7 +175,7 @@ void Http::Response::Parse(const std::string& data) {
 	mBody.clear();
 
 	// Determine whether the transfer is chunked
-	if (toLower(GetField("transfer-encoding")) != "chunked") {
+	if (String::ToLower(GetField("transfer-encoding")) != "chunked") {
 		// Not chunked - everything at once
 		std::copy(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>(), std::back_inserter(mBody));
 	} else {
@@ -225,7 +216,7 @@ void Http::Response::ParseFields(std::istream &in) {
 				value.erase(value.size() - 1);
 
 			// Add the field
-			mFields[toLower(field)] = value;
+			mFields[String::ToLower(field)] = value;
 		}
 	}
 }
@@ -265,11 +256,11 @@ Http::~Http() {
 
 void Http::SetHost(const std::string& host, unsigned short port, bool useSSL) {
 	// Check the protocol
-	if (toLower(host.substr(0, 7)) == "http://") {
+	if (String::ToLower(host.substr(0, 7)) == "http://") {
 		// HTTP protocol
 		mHostName = host.substr(7);
 		mPort	 = (port != 0 ? port : 80);
-	} else if (toLower(host.substr(0, 8)) == "https://") {
+	} else if (String::ToLower(host.substr(0, 8)) == "https://") {
 		// HTTPS protocol
 		#ifdef EE_SSL_SUPPORT
 		mIsSSL		= true;

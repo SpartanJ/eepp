@@ -89,7 +89,7 @@ void TextureAtlasNew::OKClick( const UIEvent * Event ) {
 
 	if ( MouseEvent->Flags() & EE_BUTTON_LMASK ) {
 		std::string ext( mSaveFileType->Text() );
-		String::ToLower( ext );
+		String::ToLowerInPlace( ext );
 
 		UICommonDialog * TGDialog = mTheme->CreateCommonDialog( NULL, Sizei(), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, Sizei(), 255, UI_CDL_DEFAULT_FLAGS | CDL_FLAG_SAVE_DIALOG, "*." + ext );
 
@@ -140,7 +140,7 @@ void TextureAtlasNew::TextureAtlasSave( const UIEvent * Event ) {
 
 				ext = mSaveFileType->Text();
 
-				String::ToLower( ext );
+				String::ToLowerInPlace( ext );
 
 				FPath += "." + ext;
 			}
