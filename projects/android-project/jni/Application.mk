@@ -18,6 +18,6 @@ APP_CFLAGS				:= -fno-strict-aliasing -O3 -s -DNDEBUG -ffast-math
 
 APP_PLATFORM			:= android-10
 APP_MODULES				:= main
-APP_ABI					:= armeabi-v7a
+APP_ABI					:= armeabi-v7a x86
 
 NDK_TOOLCHAIN_VERSION	:= 4.8

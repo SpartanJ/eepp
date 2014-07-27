@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -19,7 +19,7 @@
   3. This notice may not be removed or altered from any source distribution.
 */
 
-#include "SDL_config.h"
+#include "../../SDL_internal.h"
 
 #ifdef SDL_JOYSTICK_ANDROID
 
@@ -35,6 +35,7 @@
 #include "SDL_hints.h"
 #include "SDL_assert.h"
 #include "SDL_timer.h"
+#include "SDL_log.h"
 #include "SDL_sysjoystick_c.h"
 #include "../SDL_joystick_c.h"
 #include "../../core/android/SDL_android.h"
@@ -84,35 +85,70 @@ keycode_to_SDL(int keycode)
     int button = 0;
     switch(keycode) 
     {
-        /* D-Pad key codes (API 1), these get mapped to 0...4 */
-        case AKEYCODE_DPAD_UP:
-        case AKEYCODE_DPAD_DOWN:
-        case AKEYCODE_DPAD_LEFT:
-        case AKEYCODE_DPAD_RIGHT:
-        case AKEYCODE_DPAD_CENTER:
-            button = keycode - AKEYCODE_DPAD_UP;
-            break;
-        
-        /* Some gamepad buttons (API 9), these get mapped to 5...19*/
+        /* Some gamepad buttons (API 9) */
         case AKEYCODE_BUTTON_A:
-        case AKEYCODE_BUTTON_B:
-        case AKEYCODE_BUTTON_C:
-        case AKEYCODE_BUTTON_X:
-        case AKEYCODE_BUTTON_Y:
-        case AKEYCODE_BUTTON_Z:
-        case AKEYCODE_BUTTON_L1:
-        case AKEYCODE_BUTTON_L2:
-        case AKEYCODE_BUTTON_R1:
-        case AKEYCODE_BUTTON_R2:
-        case AKEYCODE_BUTTON_THUMBL:
-        case AKEYCODE_BUTTON_THUMBR:
-        case AKEYCODE_BUTTON_START:
-        case AKEYCODE_BUTTON_SELECT:
-        case AKEYCODE_BUTTON_MODE:
-            button = keycode - AKEYCODE_BUTTON_A + 5;
+            button = SDL_CONTROLLER_BUTTON_A;
             break;
-            
-        
+        case AKEYCODE_BUTTON_B:
+            button = SDL_CONTROLLER_BUTTON_B;
+            break;
+        case AKEYCODE_BUTTON_X:
+            button = SDL_CONTROLLER_BUTTON_X;
+            break;
+        case AKEYCODE_BUTTON_Y:
+            button = SDL_CONTROLLER_BUTTON_Y;
+            break;
+        case AKEYCODE_BUTTON_L1:
+            button = SDL_CONTROLLER_BUTTON_LEFTSHOULDER;
+            break;
+        case AKEYCODE_BUTTON_R1:
+            button = SDL_CONTROLLER_BUTTON_RIGHTSHOULDER;
+            break;
+        case AKEYCODE_BUTTON_THUMBL:
+            button = SDL_CONTROLLER_BUTTON_LEFTSTICK;
+            break;
+        case AKEYCODE_BUTTON_THUMBR:
+            button = SDL_CONTROLLER_BUTTON_RIGHTSTICK;
+            break;
+        case AKEYCODE_BUTTON_START:
+            button = SDL_CONTROLLER_BUTTON_START;
+            break;
+        case AKEYCODE_BUTTON_SELECT:
+            button = SDL_CONTROLLER_BUTTON_BACK;
+            break;
+        case AKEYCODE_BUTTON_MODE:
+            button = SDL_CONTROLLER_BUTTON_GUIDE;
+            break;
+        case AKEYCODE_BUTTON_L2:
+            button = SDL_CONTROLLER_BUTTON_MAX; /* Not supported by GameController */
+            break;
+        case AKEYCODE_BUTTON_R2:
+            button = SDL_CONTROLLER_BUTTON_MAX+1; /* Not supported by GameController */
+            break;
+        case AKEYCODE_BUTTON_C:
+            button = SDL_CONTROLLER_BUTTON_MAX+2; /* Not supported by GameController */
+            break;
+        case AKEYCODE_BUTTON_Z:
+            button = SDL_CONTROLLER_BUTTON_MAX+3; /* Not supported by GameController */
+            break;
+                        
+        /* D-Pad key codes (API 1) */
+        case AKEYCODE_DPAD_UP:
+            button = SDL_CONTROLLER_BUTTON_DPAD_UP;
+            break;
+        case AKEYCODE_DPAD_DOWN:
+            button = SDL_CONTROLLER_BUTTON_DPAD_DOWN;
+            break;
+        case AKEYCODE_DPAD_LEFT:
+            button = SDL_CONTROLLER_BUTTON_DPAD_LEFT;
+            break;
+        case AKEYCODE_DPAD_RIGHT:
+            button = SDL_CONTROLLER_BUTTON_DPAD_RIGHT;
+            break;
+        case AKEYCODE_DPAD_CENTER:
+            button = SDL_CONTROLLER_BUTTON_MAX+4; /* Not supported by GameController */
+            break;
+
         /* More gamepad buttons (API 12), these get mapped to 20...35*/
         case AKEYCODE_BUTTON_1:
         case AKEYCODE_BUTTON_2:
@@ -130,7 +166,7 @@ keycode_to_SDL(int keycode)
         case AKEYCODE_BUTTON_14:
         case AKEYCODE_BUTTON_15:
         case AKEYCODE_BUTTON_16:
-            button = keycode - AKEYCODE_BUTTON_1 + 20;
+            button = keycode - AKEYCODE_BUTTON_1 + SDL_CONTROLLER_BUTTON_MAX + 5;
             break;
             
         default:
@@ -188,6 +224,26 @@ Android_OnJoy(int device_id, int axis, float value)
     }
     
     return 0;
+}
+
+int
+Android_OnHat(int device_id, int hat_id, int x, int y)
+{
+    const Uint8 position_map[3][3] = {
+        {SDL_HAT_LEFTUP, SDL_HAT_UP, SDL_HAT_RIGHTUP},
+        {SDL_HAT_LEFT, SDL_HAT_CENTERED, SDL_HAT_RIGHT},
+        {SDL_HAT_LEFTDOWN, SDL_HAT_DOWN, SDL_HAT_RIGHTDOWN}
+    };
+
+    if (x >= -1 && x <=1 && y >= -1 && y <= 1) {
+        SDL_joylist_item *item = JoystickByDeviceId(device_id);
+        if (item && item->joystick) {
+            SDL_PrivateJoystickHat(item->joystick, hat_id, position_map[y+1][x+1] );
+        }
+        return 0;
+    }
+
+    return -1;
 }
 
 
@@ -283,6 +339,10 @@ Android_RemoveJoystick(int device_id)
     }
 
     const int retval = item->device_instance;
+    if (item->joystick) {
+        item->joystick->hwdata = NULL;
+    }
+        
     if (prev != NULL) {
         prev->next = item->next;
     } else {
@@ -319,11 +379,11 @@ Android_RemoveJoystick(int device_id)
 int
 SDL_SYS_JoystickInit(void)
 {
-    const char *env;
+    const char *hint;
     SDL_SYS_JoystickDetect();
     
-    env = SDL_GetHint(SDL_HINT_ACCEL_AS_JOY);
-    if (!env || SDL_atoi(env)) {
+    hint = SDL_GetHint(SDL_HINT_ACCELEROMETER_AS_JOYSTICK);
+    if (!hint || SDL_atoi(hint)) {
         /* Default behavior, accelerometer as joystick */
         Android_AddJoystick(ANDROID_ACCELEROMETER_DEVICE_ID, ANDROID_ACCELEROMETER_NAME, SDL_TRUE, 0, 3, 0, 0);
     }
@@ -420,7 +480,6 @@ int
 SDL_SYS_JoystickOpen(SDL_Joystick * joystick, int device_index)
 {
     SDL_joylist_item *item = JoystickByDevIndex(device_index);
-    char *fname = NULL;
 
     if (item == NULL ) {
         return SDL_SetError("No such device");
@@ -458,10 +517,11 @@ SDL_SYS_JoystickUpdate(SDL_Joystick * joystick)
     while (item) {
         if (item->is_accelerometer) {
             if (item->joystick) {
-                Android_JNI_GetAccelerometerValues(values);
-                for ( i = 0; i < 3; i++ ) {
-                    value = (Sint16)(values[i] * 32767.0f);
-                    SDL_PrivateJoystickAxis(item->joystick, i, value);
+                if (Android_JNI_GetAccelerometerValues(values)) {
+                    for ( i = 0; i < 3; i++ ) {
+                        value = (Sint16)(values[i] * 32767.0f);
+                        SDL_PrivateJoystickAxis(item->joystick, i, value);
+                    }
                 }
             }
             break;
@@ -507,7 +567,14 @@ SDL_JoystickGUID SDL_SYS_JoystickGetDeviceGUID( int device_index )
 
 SDL_JoystickGUID SDL_SYS_JoystickGetGUID(SDL_Joystick * joystick)
 {
-    return ((SDL_joylist_item*)joystick->hwdata)->guid;
+    SDL_JoystickGUID guid;
+    
+    if (joystick->hwdata != NULL) {
+        return ((SDL_joylist_item*)joystick->hwdata)->guid;
+    }
+    
+    SDL_zero(guid);
+    return guid;
 }
 
 #endif /* SDL_JOYSTICK_ANDROID */

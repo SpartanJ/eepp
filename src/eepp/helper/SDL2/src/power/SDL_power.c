@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -18,7 +18,7 @@
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 */
-#include "SDL_config.h"
+#include "../SDL_internal.h"
 #include "SDL_power.h"
 
 /*
@@ -37,6 +37,7 @@ SDL_bool SDL_GetPowerInfo_Haiku(SDL_PowerState *, int *, int *);
 SDL_bool SDL_GetPowerInfo_UIKit(SDL_PowerState *, int *, int *);
 SDL_bool SDL_GetPowerInfo_Android(SDL_PowerState *, int *, int *);
 SDL_bool SDL_GetPowerInfo_PSP(SDL_PowerState *, int *, int *);
+SDL_bool SDL_GetPowerInfo_WinRT(SDL_PowerState *, int *, int *);
 
 #ifndef SDL_POWER_DISABLED
 #ifdef SDL_POWER_HARDWIRED
@@ -76,6 +77,9 @@ static SDL_GetPowerInfo_Impl implementations[] = {
 #endif
 #ifdef SDL_POWER_PSP        /* handles PSP. */
     SDL_GetPowerInfo_PSP,
+#endif
+#ifdef SDL_POWER_WINRT          /* handles WinRT */
+    SDL_GetPowerInfo_WinRT,
 #endif
 
 #ifdef SDL_POWER_HARDWIRED
