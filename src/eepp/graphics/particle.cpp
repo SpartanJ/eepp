@@ -27,11 +27,11 @@ void Particle::Reset(const Float &x, const Float &y, const Float &xspeed, const 
 
 void Particle::Update(const Float &pTime) {
 	mX = mX + mXSpeed * pTime;
-    mY = mY + mYSpeed * pTime;
-    mXSpeed = mXSpeed + mXAcc * pTime;
-    mYSpeed = mYSpeed + mYAcc * pTime;
-    mColor.Alpha -= mAlphaDecay * pTime;
-    if (mColor.Alpha < 0) mColor.Alpha = 0;
+	mY = mY + mYSpeed * pTime;
+	mXSpeed = mXSpeed + mXAcc * pTime;
+	mYSpeed = mYSpeed + mYAcc * pTime;
+	mColor.Alpha -= mAlphaDecay * pTime;
+	if (mColor.Alpha < 0) mColor.Alpha = 0;
 }
 
 }}

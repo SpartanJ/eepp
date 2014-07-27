@@ -113,13 +113,13 @@ class EE_API SoundStream : private Thread, private Sound {
 			BuffersCount = 3
 		};
 
-		bool			mIsStreaming;		   		///< Streaming state (true = playing, false = stopped)
-		unsigned int	mBuffers[BuffersCount]; 	///< Sound buffers used to store temporary audio data
-		unsigned int	mChannelCount;		 		///< Number of channels (1 = mono, 2 = stereo, ...)
+		bool			mIsStreaming;				///< Streaming state (true = playing, false = stopped)
+		unsigned int	mBuffers[BuffersCount];		///< Sound buffers used to store temporary audio data
+		unsigned int	mChannelCount;				///< Number of channels (1 = mono, 2 = stereo, ...)
 		unsigned int	mSampleRate;				///< Frequency (samples / second)
 		unsigned long	mFormat;					///< Format of the internal sound buffers
-		bool			mLoop;                  	///< Loop flag (true to loop, false to play once)
-		Uint32			mSamplesProcessed;      	///< Number of buffers processed since beginning of the stream
+		bool			mLoop;						///< Loop flag (true to loop, false to play once)
+		Uint32			mSamplesProcessed;			///< Number of buffers processed since beginning of the stream
 		bool			mEndBuffers[BuffersCount];	///< Each buffer is marked as "end buffer" or not, for proper duration calculation
 };
 

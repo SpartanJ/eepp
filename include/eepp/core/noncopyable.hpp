@@ -50,7 +50,7 @@ class EE_API NonCopyable {
 ** @code
 **	class MyNonCopyableClass : EE::NonCopyable
 **	{
-**	    ...
+**
 **	};
 ** @endcode
 **

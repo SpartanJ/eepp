@@ -116,7 +116,7 @@ class EE_API Thread : NonCopyable {
 		/** The virtual function to run in the thread */
 		virtual void	Run();
 
-		Platform::ThreadImpl *		mThreadImpl;       ///< OS-specific implementation of the thread
+		Platform::ThreadImpl *		mThreadImpl; ///< OS-specific implementation of the thread
 		Private::ThreadFunc *		mEntryPoint; ///< Abstraction of the function to run
 };
 

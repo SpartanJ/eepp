@@ -27,9 +27,9 @@ namespace EE {
 
 class EE_API Version {
 	public:
-		Uint8 major;        /**< major version */
-		Uint8 minor;        /**< minor version */
-		Uint8 patch;        /**< update version */
+		Uint8 major; /**< major version */
+		Uint8 minor; /**< minor version */
+		Uint8 patch; /**< update version */
 		
 		/** @return The linked version of the library */
 		static Version GetVersion();

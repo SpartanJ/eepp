@@ -102,10 +102,10 @@ std::size_t SoundFileOgg::Read( Int16 * Data, std::size_t SamplesCount ) {
 }
 
 void SoundFileOgg::Seek( Time timeOffset ) {
-    if ( NULL != mStream ) {
+	if ( NULL != mStream ) {
 		Uint32 frameOffset = static_cast<Uint32>( timeOffset.AsSeconds() * mSampleRate / 1000 );
-        stb_vorbis_seek( mStream, frameOffset );
-    }
+		stb_vorbis_seek( mStream, frameOffset );
+	}
 }
 
 }}

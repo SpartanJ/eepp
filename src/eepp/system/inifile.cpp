@@ -423,7 +423,7 @@ bool IniFile::DeleteKey ( std::string const keyname ) {
 	//mKeys[keyID].values.clear();
 
 	std::vector<std::string>::iterator npos = mNames.begin() + keyID;
-	std::vector<key>::iterator    kpos = mKeys.begin() + keyID;
+	std::vector<key>::iterator kpos = mKeys.begin() + keyID;
 	mNames.erase ( npos, npos + 1 );
 	mKeys.erase ( kpos, kpos + 1 );
 

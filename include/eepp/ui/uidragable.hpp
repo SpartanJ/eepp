@@ -7,7 +7,7 @@ namespace EE { namespace UI {
 
 class EE_API UIDragable : public UIControl {
 	public:
-    	UIDragable( const UIControl::CreateParams& Params );
+		UIDragable( const UIControl::CreateParams& Params );
 
 		virtual Uint32 Type() const;
 

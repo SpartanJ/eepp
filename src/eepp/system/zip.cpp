@@ -104,7 +104,7 @@ bool Zip::AddFiles( std::map<std::string, std::string> paths ) {
 	for( std::map<std::string, std::string>::iterator itr = paths.begin(); itr != paths.end(); itr++)
 		if ( !AddFile( itr->first, itr->second ) )
 			return false;
-    return true;
+	return true;
 }
 
 bool Zip::EraseFile( const std::string& path ) {

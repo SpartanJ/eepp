@@ -93,18 +93,18 @@ Time SoundStream::PlayingOffset() const {
 void SoundStream::PlayingOffset( const Time &timeOffset ) {
 	Status oldStatus = State();
 
-    // Stop the stream
-    Stop();
+	// Stop the stream
+	Stop();
 
-    // Let the derived class update the current position
-    OnSeek( timeOffset );
+	// Let the derived class update the current position
+	OnSeek( timeOffset );
 
-    // Restart streaming
+	// Restart streaming
 	mSamplesProcessed = static_cast<Uint32>( timeOffset.AsSeconds() ) * mSampleRate * mChannelCount;
 
-    mIsStreaming = true;
+	mIsStreaming = true;
 
-    Launch();
+	Launch();
 
 	// Recover old status
 	if ( oldStatus == Stopped ) {
@@ -123,13 +123,13 @@ bool SoundStream::Loop() const {
 }
 
 void SoundStream::Run() {
-    ALCheck( alGenBuffers( BuffersCount, mBuffers ) );
+	ALCheck( alGenBuffers( BuffersCount, mBuffers ) );
 
 	for ( int i = 0; i < BuffersCount; ++i )
 		mEndBuffers[i] = false;
 
-    // Fill the queue
-    bool RequestStop = FillQueue();
+	// Fill the queue
+	bool RequestStop = FillQueue();
 
 	Sound::Play();
 
@@ -240,26 +240,26 @@ bool SoundStream::FillAndPushBuffer( const unsigned int& Buffer ) {
 }
 
 bool SoundStream::FillQueue() {
-    // Fill and enqueue all the available buffers
-    bool RequestStop = false;
+	// Fill and enqueue all the available buffers
+	bool RequestStop = false;
 
-    for ( int i = 0; (i < BuffersCount) && !RequestStop; ++i ) {
+	for ( int i = 0; (i < BuffersCount) && !RequestStop; ++i ) {
 		if ( FillAndPushBuffer( i ) )
-            RequestStop = true;
-    }
+			RequestStop = true;
+	}
 
-    return RequestStop;
+	return RequestStop;
 }
 
 void SoundStream::ClearQueue() {
-    // Get the number of buffers still in the queue
-    ALint  NbQueued;
-    ALCheck( alGetSourcei( Sound::mSource, AL_BUFFERS_QUEUED, &NbQueued ) );
+	// Get the number of buffers still in the queue
+	ALint  NbQueued;
+	ALCheck( alGetSourcei( Sound::mSource, AL_BUFFERS_QUEUED, &NbQueued ) );
 
-    // Unqueue them all
-    ALuint Buffer;
-    for ( ALint i = 0; i < NbQueued; ++i )
-        ALCheck( alSourceUnqueueBuffers( Sound::mSource, 1, &Buffer ) );
+	// Unqueue them all
+	ALuint Buffer;
+	for ( ALint i = 0; i < NbQueued; ++i )
+		ALCheck( alSourceUnqueueBuffers( Sound::mSource, 1, &Buffer ) );
 }
 
 Sound::Status SoundStream::State() const {

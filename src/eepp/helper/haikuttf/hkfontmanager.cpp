@@ -64,10 +64,10 @@ void hkFontManager::CloseFont( hkFont * Font ) {
 }
 
 hkFont * hkFontManager::OpenFromMemory( const u8* data, unsigned long size, int ptsize, long index, unsigned int glyphCacheSize ) {
-    if ( Init() != 0 )
+	if ( Init() != 0 )
 		return NULL;
 
-    FT_Face face = NULL;
+	FT_Face face = NULL;
 
 	MutexLock();
 
@@ -83,21 +83,21 @@ hkFont * hkFontManager::OpenFromMemory( const u8* data, unsigned long size, int 
 
 	Font->Face( face );
 
-    return FontPrepare( Font, ptsize );
+	return FontPrepare( Font, ptsize );
 }
 
 hkFont * hkFontManager::OpenFromFile( const char* filename, int ptsize, long index, unsigned int glyphCacheSize ) {
 	if ( Init() != 0 )
 		return NULL;
 
-    FT_Face face;
+	FT_Face face;
 
 	MutexLock();
 
-    if ( FT_New_Face( mLibrary, filename, index, &face ) != 0 )
+	if ( FT_New_Face( mLibrary, filename, index, &face ) != 0 )
 		return NULL;
 
-    if ( FT_Select_Charmap(face, FT_ENCODING_UNICODE) != 0 )
+	if ( FT_Select_Charmap(face, FT_ENCODING_UNICODE) != 0 )
 		return NULL;
 
 	MutexUnlock();
@@ -106,7 +106,7 @@ hkFont * hkFontManager::OpenFromFile( const char* filename, int ptsize, long ind
 
 	Font->Face( face );
 
-    return FontPrepare( Font, ptsize );
+	return FontPrepare( Font, ptsize );
 }
 
 hkFont * hkFontManager::FontPrepare( hkFont * font, int ptsize ) {
@@ -122,17 +122,17 @@ hkFont * hkFontManager::FontPrepare( hkFont * font, int ptsize ) {
 		error = FT_Set_Char_Size( font->Face(), 0, ptsize * 64, 0, 0 );
 
 		if( error ) {
-	    	CloseFont( font );
+			CloseFont( font );
 
-	    	MutexUnlock();
+			MutexUnlock();
 
-	    	return NULL;
-	  	}
+			return NULL;
+		}
 
-	  	MutexUnlock();
+		MutexUnlock();
 
-	  	scale = face->size->metrics.y_scale;
-	  	font->Ascent( FT_CEIL( FT_MulFix( face->ascender, scale) ) );
+		scale = face->size->metrics.y_scale;
+		font->Ascent( FT_CEIL( FT_MulFix( face->ascender, scale) ) );
 		font->Descent( FT_CEIL( FT_MulFix( face->descender, scale ) ) );
 		font->Height( font->Ascent() - font->Descent() + 1 );
 		font->LineSkip( FT_CEIL( FT_MulFix( face->height, scale ) ) );
@@ -145,12 +145,12 @@ hkFont * hkFontManager::FontPrepare( hkFont * font, int ptsize ) {
 		font->FontSizeFamily( ptsize );
 		error = FT_Set_Pixel_Sizes( face, face->available_sizes[ptsize].height, face->available_sizes[ptsize].width );
 
-	  	font->Ascent( face->available_sizes[ptsize].height );
-	  	font->Descent( 0 );
-	  	font->Height( face->available_sizes[ptsize].height );
-	  	font->LineSkip( FT_CEIL( font->Ascent() ) );
-	  	font->UnderlineOffset( FT_FLOOR( face->underline_position ) );
-	  	font->UnderlineHeight( FT_FLOOR( face->underline_thickness ) );
+		font->Ascent( face->available_sizes[ptsize].height );
+		font->Descent( 0 );
+		font->Height( face->available_sizes[ptsize].height );
+		font->LineSkip( FT_CEIL( font->Ascent() ) );
+		font->UnderlineOffset( FT_FLOOR( face->underline_position ) );
+		font->UnderlineHeight( FT_FLOOR( face->underline_thickness ) );
 	}
 
 	if ( font->UnderlineHeight() < 1 )

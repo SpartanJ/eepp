@@ -36,7 +36,7 @@ void CursorManagerNull::Visible( bool visible ) {
 }
 
 void CursorManagerNull::Remove( Cursor * cursor, bool Delete ) {
-    CursorManager::Remove( cursor, Delete );
+	CursorManager::Remove( cursor, Delete );
 }
 
 void CursorManagerNull::Reload() {

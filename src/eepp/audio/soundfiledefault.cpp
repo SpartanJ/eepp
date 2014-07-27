@@ -67,9 +67,9 @@ bool SoundFileDefault::OpenRead( const std::string& Filename, std::size_t& Sampl
 	}
 
 	// Set the sound parameters
-    mChannelCount	= fileInfos.channels;
-    mSampleRate		= fileInfos.samplerate;
-    mSamplesCount		= static_cast<std::size_t>(fileInfos.frames) * mChannelCount;
+	mChannelCount	= fileInfos.channels;
+	mSampleRate		= fileInfos.samplerate;
+	mSamplesCount		= static_cast<std::size_t>(fileInfos.frames) * mChannelCount;
 
 	ChannelCount	= mChannelCount;
 	SampleRate		= mSampleRate;
@@ -105,7 +105,7 @@ bool SoundFileDefault::OpenRead( const char* Data, std::size_t SizeInBytes, std:
 	SampleRate		= mSampleRate;
 	SamplesCount		= mSamplesCount;
 
-    return true;
+	return true;
 }
 
 bool SoundFileDefault::OpenWrite( const std::string& Filename, unsigned int ChannelCount, unsigned int SampleRate ) {
@@ -195,20 +195,20 @@ int SoundFileDefault::GetFormatFromFilename(const std::string& Filename) {
 }
 
 SF_VIRTUAL_IO SoundFileDefault::MemoryIO::Prepare( const void * data, std::size_t sizeInBytes ) {
-    // Setup the I/O functions
-    SF_VIRTUAL_IO io;
-    io.get_filelen = &SoundFileDefault::MemoryIO::GetLength;
-    io.read        = &SoundFileDefault::MemoryIO::Read;
-    io.seek        = &SoundFileDefault::MemoryIO::Seek;
-    io.tell        = &SoundFileDefault::MemoryIO::Tell;
-    io.write       = &SoundFileDefault::MemoryIO::Write;
+	// Setup the I/O functions
+	SF_VIRTUAL_IO io;
+	io.get_filelen = &SoundFileDefault::MemoryIO::GetLength;
+	io.read		= &SoundFileDefault::MemoryIO::Read;
+	io.seek		= &SoundFileDefault::MemoryIO::Seek;
+	io.tell		= &SoundFileDefault::MemoryIO::Tell;
+	io.write	   = &SoundFileDefault::MemoryIO::Write;
 
-    // Initialize the memory data
-    mDataStart		= static_cast<const char*>(data);
-    mDataPtr		= mDataStart;
-    mTotalSize		= sizeInBytes;
+	// Initialize the memory data
+	mDataStart		= static_cast<const char*>(data);
+	mDataPtr		= mDataStart;
+	mTotalSize		= sizeInBytes;
 
-    return io;
+	return io;
 }
 
 sf_count_t SoundFileDefault::MemoryIO::GetLength( void* UserData ) {

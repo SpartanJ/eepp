@@ -111,11 +111,11 @@ class EE_API TexturePacker {
 
 		std::list<TexturePackerTex*>	mTextures;
 
-    	Int32 							mLongestEdge;
-    	Int32							mTotalArea;
+		Int32 							mLongestEdge;
+		Int32							mTotalArea;
 		TexturePackerNode *			mFreeList;
-    	Int32							mWidth;
-    	Int32							mHeight;
+		Int32							mWidth;
+		Int32							mHeight;
 		bool							mPacked;
 		bool							mAllowFlipping;
 		TexturePacker * 				mChild;
@@ -139,23 +139,23 @@ class EE_API TexturePacker {
 
 		void							SaveSubTextures();
 
-    	void 							NewFree( Int32 x, Int32 y, Int32 width, Int32 height );
+		void 							NewFree( Int32 x, Int32 y, Int32 width, Int32 height );
 
-    	bool 							MergeNodes();
+		bool 							MergeNodes();
 
-    	void 							Validate();
+		void 							Validate();
 
 		TexturePackerTex *				GetLonguestEdge();
 
 		TexturePackerTex *				GetShortestEdge();
 
-    	Int32							GetChildCount();
+		Int32							GetChildCount();
 
-    	const Int32&					GetWidth() const;
+		const Int32&					GetWidth() const;
 
-    	const Int32&					GetHeight() const;
+		const Int32&					GetHeight() const;
 
-    	const Int32&					GetPlacedCount() const;
+		const Int32&					GetPlacedCount() const;
 
 		sTextureHdr						CreateTextureHdr( TexturePacker * Packer );
 
@@ -163,11 +163,11 @@ class EE_API TexturePacker {
 
 		TexturePackerNode *			GetBestFit( TexturePackerTex * t, TexturePackerNode ** prevBestFit, Int32 * EdgeCount );
 
-    	void							InsertTexture( TexturePackerTex * t, TexturePackerNode * bestFit, Int32 edgeCount, TexturePackerNode * previousBestFit );
+		void							InsertTexture( TexturePackerTex * t, TexturePackerNode * bestFit, Int32 edgeCount, TexturePackerNode * previousBestFit );
 
-    	void							AddBorderToTextures( const Int32& BorderSize );
+		void							AddBorderToTextures( const Int32& BorderSize );
 
-    	void							CreateChild();
+		void							CreateChild();
 
 		bool							AddPackerTex( TexturePackerTex * TPack );
 };

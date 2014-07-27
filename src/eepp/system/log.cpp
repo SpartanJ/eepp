@@ -173,7 +173,7 @@ void Log::ConsoleOutput( const bool& output ) {
 }
 
 const bool& Log::LiveWrite() const {
-    return mLiveWrite;
+	return mLiveWrite;
 }
 
 void Log::LiveWrite( const bool& lw ) {

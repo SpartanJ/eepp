@@ -386,8 +386,8 @@ void WindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	Uint32 oldWidth		= mWindow.WindowConfig.Width;
 	Uint32 oldHeight	= mWindow.WindowConfig.Height;
 
-	mWindow.WindowConfig.Width    = Width;
-	mWindow.WindowConfig.Height   = Height;
+	mWindow.WindowConfig.Width	= Width;
+	mWindow.WindowConfig.Height	= Height;
 
 	if ( Windowed ) {
 		mWindow.WindowSize = Sizei( Width, Height );

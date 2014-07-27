@@ -70,7 +70,7 @@ class EE_API Shader {
 		Uint32 				mType;
 		std::string			mFilename;
 		std::string 		mCompileLog;
-		std::string         mSource;
+		std::string			mSource;
 		bool 				mValid;
 		bool 				mCompiled;
 

@@ -120,7 +120,7 @@ const View& Window::GetDefaultView() const {
 }
 
 const View& Window::GetView() const {
-    return *mCurrentView;
+	return *mCurrentView;
 }
 
 void Window::CreateView() {

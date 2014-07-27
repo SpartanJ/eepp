@@ -73,7 +73,7 @@ bool Pak::Open( const std::string& path ) {
 		}
 	}
 
-    return false;
+	return false;
 }
 
 bool Pak::Close() {
@@ -93,13 +93,13 @@ bool Pak::Close() {
 Int8 Pak::CheckPack() {
 	if ( NULL != mPak.fs && mPak.fs->IsOpen() ) {
 		if ( mPak.header.head[0] != 'P' || mPak.header.head[1] != 'A' || mPak.header.head[2] != 'C' || mPak.header.head[3] != 'K')
-    		return -1;	// Ident corrupt
+			return -1;	// Ident corrupt
 
 		if ( mPak.header.dir_offset < (sizeof(mPak.header.head) + 1) || mPak.header.dir_length < 1)
-    		return -2;	// Header corrupt
+			return -2;	// Header corrupt
 	}
 
-  	return 0;
+	return 0;
 }
 
 Int32 Pak::Exists( const std::string& path ) {
@@ -281,7 +281,7 @@ bool Pak::AddFiles( std::map<std::string, std::string> paths ) {
 	for( std::map<std::string, std::string>::iterator itr = paths.begin(); itr != paths.end(); itr++)
 		if ( !AddFile( itr->first, itr->second ) )
 			return false;
-    return true;
+	return true;
 }
 
 bool Pak::EraseFile( const std::string& path ) {

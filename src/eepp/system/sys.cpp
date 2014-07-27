@@ -464,7 +464,7 @@ std::string Sys::GetProcessPath() {
 double Sys::GetSystemTime() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	static LARGE_INTEGER Frequency;
-	static BOOL          UseHighPerformanceTimer = QueryPerformanceFrequency(&Frequency);
+	static BOOL UseHighPerformanceTimer = QueryPerformanceFrequency(&Frequency);
 
 	if (UseHighPerformanceTimer) {
 		// High performance counter available : use it
@@ -583,7 +583,7 @@ std::string Sys::GetConfigPath( std::string appname ) {
 		}
 
 		snprintf(path, EE_MAX_CFG_PATH_LEN, "%s/.%s", home, appname.c_str() );
-    #endif
+	#endif
 
 	return std::string( path );
 }

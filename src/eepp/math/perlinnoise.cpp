@@ -70,8 +70,8 @@ Float PerlinNoise::Interpolate( Float a, Float b, Float x ) {
 }
 
 Float PerlinNoise::InterpolatedNoise2D(Float x, Float y) {
-	Int32 eger_X    = static_cast<Int32>( x );
-	Int32 eger_Y    = static_cast<Int32>( y );
+	Int32 eger_X = static_cast<Int32>( x );
+	Int32 eger_Y = static_cast<Int32>( y );
 
 	Float fractional_X = x - eger_X;
 	Float fractional_Y = y - eger_Y;

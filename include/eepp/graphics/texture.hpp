@@ -120,8 +120,8 @@ class EE_API Texture : public Image, private NonCopyable {
 		**	This function does nothing if the texture was not
 		**	previously created.
 		**	@param image Image to copy to the texture
-		**	@param x     X offset in the texture where to copy the source image
-		**	@param y     Y offset in the texture where to copy the source image */
+		**	@param x X offset in the texture where to copy the source image
+		**	@param y Y offset in the texture where to copy the source image */
 		void Update( Image * image, Uint32 x = 0, Uint32 y = 0 );
 
 		/** Flip the texture ( rotate the texture 90º ). Warning: This is flipped in memory, a real flipping. */

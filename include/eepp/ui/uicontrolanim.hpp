@@ -9,9 +9,9 @@ namespace EE { namespace UI {
 
 class EE_API UIControlAnim : public UIDragable {
 	public:
-    	UIControlAnim( const CreateParams& Params );
+		UIControlAnim( const CreateParams& Params );
 
-    	virtual ~UIControlAnim();
+		virtual ~UIControlAnim();
 
 		virtual Uint32 Type() const;
 
@@ -66,8 +66,8 @@ class EE_API UIControlAnim : public UIDragable {
 		virtual void Draw();
 
 		bool FadingOut();
-    protected:
-    	friend class UIManager;
+	protected:
+		friend class UIManager;
 
 		Float 			mAngle;
 		Vector2f 			mScale;

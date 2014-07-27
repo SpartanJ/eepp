@@ -22,7 +22,7 @@ Shader::Shader( const Uint32& Type ) {
 }
 
 Shader::Shader( const Uint32& Type, const std::string& Filename ) {
-    Init( Type );
+	Init( Type );
 
 	mFilename = FileSystem::FileNameFromPath( Filename );
 
@@ -213,9 +213,9 @@ void Shader::SetSource( const char * Data, const Uint32& DataSize ) {
 void Shader::SetSource( const std::vector<Uint8>& Source ) {
 	std::string _dst( Source.size(), 0 );
 
-    memcpy( reinterpret_cast<void*>( &_dst[0] ), reinterpret_cast<const void*>( &Source[0] ), Source.size() );
+	memcpy( reinterpret_cast<void*>( &_dst[0] ), reinterpret_cast<const void*>( &Source[0] ), Source.size() );
 
-    SetSource( _dst );
+	SetSource( _dst );
 }
 
 bool Shader::Compile() {

@@ -62,7 +62,7 @@ void CursorManagerSDL::Visible( bool visible ) {
 	if ( visible ) {
 		SDL_ShowCursor( SDL_ENABLE );
 
-        mWindow->GetPlatform()->ShowMouseCursor();
+		mWindow->GetPlatform()->ShowMouseCursor();
 
 		mVisible = true;
 	} else {
@@ -75,7 +75,7 @@ void CursorManagerSDL::Visible( bool visible ) {
 }
 
 void CursorManagerSDL::Remove( Cursor * cursor, bool Delete ) {
-    CursorManager::Remove( cursor, Delete );
+	CursorManager::Remove( cursor, Delete );
 }
 
 void CursorManagerSDL::Reload() {

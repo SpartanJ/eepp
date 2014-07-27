@@ -173,8 +173,8 @@ void WindowSFML::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 }
 
 void WindowSFML::VideoResize( Uint32 Width, Uint32 Height ) {
-	mWindow.WindowConfig.Width    = Width;
-	mWindow.WindowConfig.Height   = Height;
+	mWindow.WindowConfig.Width	= Width;
+	mWindow.WindowConfig.Height	= Height;
 
 	mDefaultView.SetView( 0, 0, Width, Height );
 
