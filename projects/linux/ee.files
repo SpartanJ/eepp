@@ -678,3 +678,5 @@
 ../../include/eepp/system/clock.hpp
 ../../src/eepp/window/backend/SDL2/wminfo.cpp
 ../../src/eepp/window/backend/SDL2/wminfo.hpp
+../../include/eepp/network/uri.hpp
+../../src/eepp/network/uri.cpp

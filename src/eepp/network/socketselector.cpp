@@ -34,11 +34,17 @@ void SocketSelector::Add(Socket& socket) {
 	SocketHandle handle = socket.GetHandle();
 
 	if (handle != Private::SocketImpl::InvalidSocket()) {
-		FD_SET(handle, &mImpl->AllSockets);
+		if (handle < FD_SETSIZE) {
+			FD_SET(handle, &mImpl->AllSockets);
 
-		int size = static_cast<int>(handle);
-		if (size > mImpl->MaxSocket)
-			mImpl->MaxSocket = size;
+			int size = static_cast<int>(handle);
+			if (size > mImpl->MaxSocket)
+				mImpl->MaxSocket = size;
+		} else {
+			eePRINT( "The socket can't be added to the selector because its " );
+			eePRINT( "ID is too high. This is a limitation of your operating " );
+			eePRINT( "system's FD_SETSIZE setting." );
+		}
 	}
 }
 

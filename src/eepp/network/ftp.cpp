@@ -14,9 +14,9 @@ class Ftp::DataChannel : NonCopyable {
 
 		Ftp::Response Open(Ftp::TransferMode mode);
 
-		void Send(const std::vector<char>& data);
+		void Send(std::istream& stream);
 
-		void Receive(std::vector<char>& data);
+		void Receive(std::ostream& stream);
 	private:
 		// Member data
 		Ftp&		mFtp;		///< Reference to the owner Ftp instance
@@ -56,22 +56,20 @@ const std::string& Ftp::DirectoryResponse::GetDirectory() const {
 	return mDirectory;
 }
 
-Ftp::ListingResponse::ListingResponse(const Ftp::Response& response, const std::vector<char>& data) :
+Ftp::ListingResponse::ListingResponse(const Ftp::Response& response, const std::string& data) :
 	Ftp::Response(response)
 {
 	if ( IsOk() ) {
 		// Fill the array of strings
-		std::string paths(data.begin(), data.end());
 		std::string::size_type lastPos = 0;
-
-		for (std::string::size_type pos = paths.find("\r\n"); pos != std::string::npos; pos = paths.find("\r\n", lastPos)) {
-			mListing.push_back(paths.substr(lastPos, pos - lastPos));
+		for (std::string::size_type pos = data.find("\r\n"); pos != std::string::npos; pos = data.find("\r\n", lastPos)) {
+			mListing.push_back(data.substr(lastPos, pos - lastPos));
 			lastPos = pos + 2;
 		}
 	}
 }
 
-const std::vector<std::string>& Ftp::ListingResponse::getListing() const {
+const std::vector<std::string>& Ftp::ListingResponse::GetListing() const {
 	return mListing;
 }
 
@@ -119,7 +117,7 @@ Ftp::DirectoryResponse Ftp::GetWorkingDirectory() {
 
 Ftp::ListingResponse Ftp::GetDirectoryListing(const std::string& directory) {
 	// Open a data channel on default port (20) using ASCII transfer mode
-	std::vector<char> directoryData;
+	std::ostringstream directoryData;
 	DataChannel data(*this);
 	Response response = data.Open(Ascii);
 
@@ -135,7 +133,7 @@ Ftp::ListingResponse Ftp::GetDirectoryListing(const std::string& directory) {
 		}
 	}
 
-	return ListingResponse(response, directoryData);
+	return ListingResponse(response, directoryData.str());
 }
 
 Ftp::Response Ftp::ChangeDirectory(const std::string& directory) {
@@ -171,37 +169,40 @@ Ftp::Response Ftp::Download(const std::string& remoteFile, const std::string& lo
 	DataChannel data(*this);
 	Response response = data.Open(mode);
 
-	if (response.IsOk()) {
+	if ( response.IsOk() ) {
 		// Tell the server to start the transfer
 		response = SendCommand("RETR", remoteFile);
 
-		if (response.IsOk()) {
+		if ( response.IsOk() )
+		{
+			// Extract the filename from the file path
+			std::string filename = remoteFile;
+			std::string::size_type pos = filename.find_last_of("/\\");
+			if (pos != std::string::npos)
+				filename = filename.substr(pos + 1);
+
+			// Make sure the destination path ends with a slash
+			std::string path = localPath;
+			if (!path.empty() && (path[path.size() - 1] != '\\') && (path[path.size() - 1] != '/'))
+				path += "/";
+
+			// Create the file and truncate it if necessary
+			std::ofstream file((path + filename).c_str(), std::ios_base::binary | std::ios_base::trunc);
+			if (!file)
+				return Response(Response::InvalidFile);
+
 			// Receive the file data
-			std::vector<char> fileData;
-			data.Receive(fileData);
+			data.Receive(file);
+
+			// Close the file
+			file.close();
 
 			// Get the response from the server
 			response = GetResponse();
-			if (response.IsOk()) {
-				// Extract the filename from the file path
-				std::string filename = remoteFile;
-				std::string::size_type pos = filename.find_last_of("/\\");
-				if (pos != std::string::npos)
-					filename = filename.substr(pos + 1);
 
-				// Make sure the destination path ends with a slash
-				std::string path = localPath;
-				if (!path.empty() && (path[path.size() - 1] != '\\') && (path[path.size() - 1] != '/'))
-					path += "/";
-
-				// Create the file and copy the received data into it
-				std::ofstream file((path + filename).c_str(), std::ios_base::binary);
-				if (!file)
-					return Response(Response::InvalidFile);
-
-				if (!fileData.empty())
-					file.write(&fileData[0], static_cast<std::streamsize>(fileData.size()));
-			}
+			// If the download was unsuccessful, delete the partial file
+			if (!response.IsOk())
+				std::remove((path + filename).c_str());
 		}
 	}
 
@@ -213,13 +214,6 @@ Ftp::Response Ftp::Upload(const std::string& localFile, const std::string& remot
 	std::ifstream file(localFile.c_str(), std::ios_base::binary);
 	if (!file)
 		return Response(Response::InvalidFile);
-
-	file.seekg(0, std::ios::end);
-	std::size_t length = static_cast<std::size_t>(file.tellg());
-	file.seekg(0, std::ios::beg);
-	std::vector<char> fileData(length);
-	if (length > 0)
-		file.read(&fileData[0], static_cast<std::streamsize>(length));
 
 	// Extract the filename from the file path
 	std::string filename = localFile;
@@ -240,7 +234,7 @@ Ftp::Response Ftp::Upload(const std::string& localFile, const std::string& remot
 		response = SendCommand("STOR", path + filename);
 		if (response.IsOk()) {
 			// Send the file data
-			data.Send(fileData);
+			data.Send(file);
 
 			// Get the response from the server
 			response = GetResponse();
@@ -434,24 +428,49 @@ Ftp::Response Ftp::DataChannel::Open(Ftp::TransferMode mode) {
 	return response;
 }
 
-void Ftp::DataChannel::Receive(std::vector<char>& data) {
+void Ftp::DataChannel::Receive(std::ostream& stream) {
 	// Receive data
-	data.clear();
 	char buffer[1024];
 	std::size_t received;
 
 	while (mDataSocket.Receive(buffer, sizeof(buffer), received) == Socket::Done) {
-		std::copy(buffer, buffer + received, std::back_inserter(data));
+		stream.write(buffer, static_cast<std::streamsize>(received));
+
+		if (!stream.good()) {
+			eePRINTL( "FTP Error: Writing to the file has failed" );
+			break;
+		}
 	}
 
 	// Close the data socket
 	mDataSocket.Disconnect();
 }
 
-void Ftp::DataChannel::Send(const std::vector<char>& data) {
+void Ftp::DataChannel::Send( std::istream& stream ) {
 	// Send data
-	if (!data.empty())
-		mDataSocket.Send(&data[0], data.size());
+	char buffer[1024];
+	std::size_t count;
+
+	for (;;) {
+		// read some data from the stream
+		stream.read(buffer, sizeof(buffer));
+
+		if (!stream.good() && !stream.eof()) {
+			eePRINTL( "FTP Error: Reading from the file has failed" );
+			break;
+		}
+
+		count = stream.gcount();
+
+		if (count > 0) {
+			// we could read more data from the stream: send them
+			if (mDataSocket.Send(buffer, count) != Socket::Done)
+				break;
+		} else {
+			// no more data: exit the loop
+			break;
+		}
+	}
 
 	// Close the data socket
 	mDataSocket.Disconnect();

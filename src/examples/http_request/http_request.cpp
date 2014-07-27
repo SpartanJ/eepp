@@ -14,16 +14,33 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 	{
 		// Create a new HTTP client
 		Http http;
+		Http::Request request;
 
-		// We'll work on http://en.wikipedia.org
-		if ( SSLSocket::IsSupported() ) {
-			http.SetHost("https://en.wikipedia.org");
+		if ( argc < 2 ) {
+			// We'll work on http://en.wikipedia.org
+			if ( SSLSocket::IsSupported() ) {
+				http.SetHost("https://en.wikipedia.org");
+			} else {
+				http.SetHost("http://en.wikipedia.org");
+			}
+
+			// Prepare a request to get the wikipedia main page
+			request.SetUri("/wiki/Main_Page");
+
+			// Creates an async http request
+			Http::Request asyncRequest( "/wiki/" + Version::GetCodename() );
+
+			http.SendAsyncRequest( cb::Make3( AsyncRequestCallback ), asyncRequest, Seconds( 5 ) );
 		} else {
-			http.SetHost("http://en.wikipedia.org");
-		}
+			// If the user provided the URI, creates an instance of URI to parse it.
+			URI uri( argv[1] );
 
-		// Prepare a request to get the wikipedia main page
-		Http::Request request("/wiki/Main_Page");
+			// Set the host and port from the URI
+			http.SetHost( uri.GetHost(), uri.GetPort() );
+
+			// Set the path and query parts for the request
+			request.SetUri( uri.GetPathAndQuery() );
+		}
 
 		// Send the request
 		Http::Response response = http.SendRequest(request);
@@ -36,10 +53,6 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		} else {
 			std::cout << "Error " << status << std::endl;
 		}
-
-		Http::Request asyncRequest( "/wiki/" + Version::GetCodename() );
-
-		http.SendAsyncRequest( cb::Make3( AsyncRequestCallback ), asyncRequest, Seconds( 5 ) );
 	}
 
 	MemoryManager::ShowResults();

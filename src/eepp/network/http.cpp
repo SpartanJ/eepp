@@ -277,7 +277,7 @@ void Http::SetHost(const std::string& host, unsigned short port, bool useSSL) {
 
 		#ifdef EE_SSL_SUPPORT
 		mPort		= useSSL ? (port != 0 ? port : 443) : mPort;
-		mIsSSL		= useSSL;
+		mIsSSL		= useSSL || mPort == 443;
 		#endif
 	}
 
@@ -289,6 +289,10 @@ void Http::SetHost(const std::string& host, unsigned short port, bool useSSL) {
 }
 
 Http::Response Http::SendRequest(const Http::Request& request, Time timeout) {
+	if ( 0 == mHost.ToInteger() ) {
+		return Response();
+	}
+
 	if ( NULL == mConnection ) {
 		TcpSocket * Conn	= mIsSSL ? eeNew( SSLSocket, ( mHostName, request.ValidateCertificate(), request.ValidateHostname() ) ) : eeNew( TcpSocket, () );
 		mConnection			= Conn;

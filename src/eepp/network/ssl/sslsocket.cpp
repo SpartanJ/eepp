@@ -1,18 +1,25 @@
 #include <eepp/network/ssl/sslsocket.hpp>
 #include <eepp/network/ssl/sslsocketimpl.hpp>
 #include <eepp/system/filesystem.hpp>
+#include <eepp/system/mutex.hpp>
+#include <eepp/system/lock.hpp>
 
 #ifdef EE_OPENSSL
 #include <eepp/network/ssl/backend/openssl/opensslsocket.hpp>
 #endif
 
+using namespace EE::System;
+
 namespace EE { namespace Network { namespace SSL {
 
 static bool ssl_initialized = false;
 
-std::string SSLSocket::CertificatesPath = "";
+std::string SSLSocket::CertificatesPath	= "";
+static Mutex sMutex;
 
 bool SSLSocket::Init() {
+	Lock l( sMutex );
+
 	bool ret = false;
 
 	if ( !ssl_initialized ) {
@@ -57,6 +64,8 @@ bool SSLSocket::Init() {
 }
 
 bool SSLSocket::End() {
+	Lock l( sMutex );
+
 	bool ret = false;
 
 	if ( ssl_initialized ) {

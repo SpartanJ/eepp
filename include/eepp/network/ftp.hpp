@@ -149,13 +149,13 @@ public:
 		**
 		** @param response  Source response
 		** @param data      Data containing the raw listing */
-		ListingResponse(const Response& response, const std::vector<char>& data);
+		ListingResponse(const Response& response, const std::string & data);
 
 
 		/** @brief Return the array of directory/file names
 		**
 		** @return Array containing the requested listing */
-		const std::vector<std::string>& getListing() const;
+		const std::vector<std::string>& GetListing() const;
 	private:
 		// Member data
 		std::vector<std::string> mListing; ///< Directory/file names extracted from the data
@@ -283,6 +283,9 @@ public:
 	**  current working directory of the server, and the local
 	**  destination path is relative to the current directory
 	**  of your application.
+	**  If a file with the same filename as the distant file
+	**  already exists in the local destination path, it will
+	**  be overwritten.
 	**  @param remoteFile Filename of the distant file to download
 	**  @param localPath  Where to put to file on the local computer
 	**  @param mode       Transfer mode

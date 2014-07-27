@@ -1,6 +1,7 @@
 #ifndef EEPP_NETWORK_HPP
 #define EEPP_NETWORK_HPP
 
+#include <eepp/network/uri.hpp>
 #include <eepp/network/ftp.hpp>
 #include <eepp/network/http.hpp>
 #include <eepp/network/ipaddress.hpp>

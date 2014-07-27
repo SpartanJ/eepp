@@ -37,7 +37,7 @@ class EE_API SSLSocket : public TcpSocket {
 		friend class SSLSocketImpl;
 		friend class OpenSSLSocket;
 		
-		SSLSocketImpl *		mImpl;
+		SSLSocketImpl *			mImpl;
 		std::string				mHostName;
 		bool					mValidateCertificate;
 		bool					mValidateHostname;
