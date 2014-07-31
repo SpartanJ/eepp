@@ -94,7 +94,7 @@ bool Base64::Encode(const std::string & in, std::string & out) {
 
 	int len = Encode( in.size(), (const unsigned char*)in.c_str(), out.size(), (char*)&out[0] );
 
-	if ( -1 != len ) {
+	if ( -1 != len && (size_t)len != out.size() ) {
 		out.resize( len );
 	}
 
@@ -110,7 +110,7 @@ bool Base64::Decode(const std::string & in, std::string & out) {
 
 	int len = Decode( in.size(), in.c_str(), out.size(), (unsigned char*)&out[0] );
 
-	if ( -1 != len && (size_t)len != d64len ) {
+	if ( -1 != len && (size_t)len != out.size() ) {
 		out.resize( len );
 	}
 
