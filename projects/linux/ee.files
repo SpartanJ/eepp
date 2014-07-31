@@ -680,3 +680,5 @@
 ../../src/eepp/window/backend/SDL2/wminfo.hpp
 ../../include/eepp/network/uri.hpp
 ../../src/eepp/network/uri.cpp
+../../include/eepp/system/base64.hpp
+../../src/eepp/system/base64.cpp

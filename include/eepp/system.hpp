@@ -24,5 +24,6 @@
 #include <eepp/system/packmanager.hpp>
 #include <eepp/system/threadlocal.hpp>
 #include <eepp/system/threadlocalptr.hpp>
+#include <eepp/system/base64.hpp>
 
 #endif
