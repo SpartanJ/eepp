@@ -682,3 +682,5 @@
 ../../src/eepp/network/uri.cpp
 ../../include/eepp/system/base64.hpp
 ../../src/eepp/system/base64.cpp
+../../include/eepp/system/md5.hpp
+../../src/eepp/system/md5.cpp
