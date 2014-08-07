@@ -184,10 +184,7 @@ void UIDropDownList::Show() {
 	mListBox->Visible( true );
 
 	if ( UIThemeManager::instance()->DefaultEffectsEnabled() ) {
-		if ( 255.f == mListBox->Alpha() )
-			mListBox->StartAlphaAnim( 0.f, 255.f, UIThemeManager::instance()->ControlsFadeInTime() );
-		else
-			mListBox->CreateFadeIn( UIThemeManager::instance()->ControlsFadeInTime() );
+		mListBox->StartAlphaAnim( 255.f == mListBox->Alpha() ? 0.f : mListBox->Alpha(), 255.f, UIThemeManager::instance()->ControlsFadeInTime() );
 	}
 }
 

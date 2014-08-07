@@ -483,29 +483,17 @@ double Sys::GetSystemTime() {
 }
 
 std::string Sys::GetDateTimeStr() {
-	std::string str;
-
 	time_t rawtime;
 	time ( &rawtime );
 
-#ifdef EE_COMPILER_MSVC
-	char buf[256];
-	struct tm timeinfo;
-	localtime_s ( &timeinfo, &rawtime );
-	asctime_s( &buf[0], 256, &timeinfo );
-	str =  std::string( buf );
-#else
+	char buf[64];
+
 	struct tm * timeinfo;
 	timeinfo = localtime ( &rawtime );
-	str = std::string( asctime (timeinfo) );
-#endif
 
-	if ( str[ str.length() - 1 ] == '\n' )
-	{
-		str = str.substr( 0, str.length() - 1 );
-	}
+	strftime(buf, sizeof(buf), "%Y-%m-%d %X", timeinfo);
 
-	return str;
+	return std::string( buf );
 }
 
 #define EE_MAX_CFG_PATH_LEN 1024

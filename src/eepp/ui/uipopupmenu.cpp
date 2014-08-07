@@ -38,10 +38,7 @@ bool UIPopUpMenu::Show() {
 		ToFront();
 
 		if ( UIThemeManager::instance()->DefaultEffectsEnabled() ) {
-			if ( 255.f == Alpha() )
-				StartAlphaAnim( 0.f, 255.f, UIThemeManager::instance()->ControlsFadeInTime() );
-			else
-				CreateFadeIn( UIThemeManager::instance()->ControlsFadeInTime() );
+			StartAlphaAnim( 255.f == mAlpha ? 0.f : mAlpha, 255.f, UIThemeManager::instance()->ControlsFadeInTime() );
 		}
 
 		SetFocus();

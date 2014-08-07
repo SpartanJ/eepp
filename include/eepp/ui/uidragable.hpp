@@ -13,19 +13,19 @@ class EE_API UIDragable : public UIControl {
 
 		virtual bool IsType( const Uint32& type ) const;
 
-		bool				Dragging() const;
-		void				Dragging( const bool& dragging );
+		bool Dragging() const;
+		void Dragging( const bool& dragging );
 
-		const Vector2i&	DragPoint() const;
-		void				DragPoint( const Vector2i& Point );
+		const Vector2i& DragPoint() const;
+		void DragPoint( const Vector2i& Point );
 
-		virtual void		Update();
+		virtual void Update();
 
-		bool				DragEnable() const;
-		void 				DragEnable( const bool& enable );
+		bool DragEnable() const;
+		void DragEnable( const bool& enable );
 
-		void 				DragButton( const Uint32& Button );
-		const Uint32& 		DragButton() const;
+		void DragButton( const Uint32& Button );
+		const Uint32& DragButton() const;
 	protected:
 		virtual ~UIDragable();
 

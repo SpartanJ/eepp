@@ -715,11 +715,7 @@ bool UIWindow::Show() {
 
 		SetFocus();
 
-		if ( mBaseAlpha == Alpha() ) {
-			StartAlphaAnim( 0.f, mBaseAlpha, UIThemeManager::instance()->ControlsFadeInTime() );
-		} else {
-			StartAlphaAnim( mAlpha, mBaseAlpha, UIThemeManager::instance()->ControlsFadeInTime() );
-		}
+		StartAlphaAnim( mBaseAlpha == Alpha() ? 0.f : mAlpha, mBaseAlpha, UIThemeManager::instance()->ControlsFadeInTime() );
 
 		if ( IsModal() ) {
 			CreateModalControl();

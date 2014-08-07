@@ -17,11 +17,11 @@ class EE_API UIControlAnim : public UIDragable {
 
 		virtual bool IsType( const Uint32& type ) const;
 
- 		virtual void Update();
+		virtual void Update();
 
- 		const Float& Angle() const;
+		const Float& Angle() const;
 
- 		void Angle( const Float& angle );
+		void Angle( const Float& angle );
 
 		const Vector2f& Scale() const;
 
@@ -29,31 +29,31 @@ class EE_API UIControlAnim : public UIDragable {
 
 		void Scale( const Float& scale );
 
- 		const Float& Alpha() const;
+		const Float& Alpha() const;
 
- 		virtual void Alpha( const Float& alpha );
+		virtual void Alpha( const Float& alpha );
 
 		virtual void AlphaChilds( const Float& alpha );
 
- 		bool Animating();
+		bool Animating();
 
-		void StartAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
+		Interpolation * StartAlphaAnim( const Float& From, const Float& To, const Time& TotalTime, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
 
-		void StartScaleAnim( const Vector2f& From, const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& Type = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
+		Waypoints * StartScaleAnim( const Vector2f& From, const Vector2f& To, const Time& TotalTime, const Ease::Interpolation& Type = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
 
-		void StartScaleAnim( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
+		Waypoints * StartScaleAnim( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
 
-		void StartMovement( const Vector2i& From, const Vector2i& To, const Time& TotalTime, const Ease::Interpolation& Type = Ease::Linear, Waypoints::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
+		Waypoints * StartMovement( const Vector2i& From, const Vector2i& To, const Time& TotalTime, const Ease::Interpolation& Type = Ease::Linear, Waypoints::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
 
-		void StartRotation( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
+		Interpolation * StartRotation( const Float& From, const Float& To, const Time& TotalTime, const Ease::Interpolation& Type = Ease::Linear, Interpolation::OnPathEndCallback PathEndCallback = Interpolation::OnPathEndCallback() );
 
-		void CreateFadeIn( const Time& Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
+		Interpolation * CreateFadeIn( const Time& Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
 
-		void CreateFadeOut( const Time& Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
+		Interpolation * CreateFadeOut( const Time& Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
 
-		void CloseFadeOut( const Time& Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
+		Interpolation * CloseFadeOut( const Time& Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
 
-		void DisableFadeOut( const Time & Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
+		Interpolation * DisableFadeOut( const Time & Time, const bool& AlphaChilds = true, const Ease::Interpolation& Type = Ease::Linear );
 
 		Interpolation * RotationInterpolation();
 
@@ -69,12 +69,12 @@ class EE_API UIControlAnim : public UIDragable {
 	protected:
 		friend class UIManager;
 
-		Float 			mAngle;
+		Float				mAngle;
 		Vector2f 			mScale;
-		Float 			mAlpha;
+		Float				mAlpha;
 
 		Interpolation * 	mAngleAnim;
-		Waypoints *		mScaleAnim;
+		Waypoints *			mScaleAnim;
 		Interpolation * 	mAlphaAnim;
 		Waypoints * 		mMoveAnim;
 
