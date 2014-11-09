@@ -4,10 +4,10 @@
 #include <eepp/config.hpp>
 #include <string>
 
-#define EEPP_MAJOR_VERSION	0
-#define EEPP_MINOR_VERSION	9
-#define EEPP_PATCHLEVEL		5
-#define EEPP_CODENAME		"Makyo"
+#define EEPP_MAJOR_VERSION	1
+#define EEPP_MINOR_VERSION	0
+#define EEPP_PATCHLEVEL		0
+#define EEPP_CODENAME		"Bodhisattva"
 
 /** The compiled version of the library */
 #define EEPP_VERSION(x)						\

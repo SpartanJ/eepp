@@ -2,6 +2,7 @@
 
 #if defined( EE_X11_PLATFORM )
 
+#define GLEW_NO_GLU
 #include <eepp/helper/glew/glxew.h>
 #include <X11/Xcursor/Xcursor.h>
 #include <X11/cursorfont.h>

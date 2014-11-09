@@ -32,8 +32,10 @@ class EE_API Sys {
 		/** @return The System Time */
 		static double GetSystemTime();
 
-		/** @return The OS Name */
-		static std::string GetOSName();
+		/** @return The OS Name
+		 *  @param showReleaseName Instead of returning only the OS Name, it will append the release name or number. For Windows instead of "Windows" it will be "Windows 7", for "Linux" it will be "Linux 3.15" and so on.
+		*/
+		static std::string GetOSName( bool showReleaseName = false );
 
 		/** @return The OS Architecture */
 		static std::string GetOSArchitecture();

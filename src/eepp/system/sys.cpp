@@ -236,17 +236,17 @@ static struct timeval start;
 
 #endif
 
-std::string Sys::GetOSName() {
+std::string Sys::GetOSName( bool showReleaseName ) {
 #if defined( EE_PLATFORM_POSIX )
 	struct utsname os;
 
 	if ( -1 != uname( &os ) ) {
-		return std::string( os.sysname ) + " " + std::string( os.release );
+		return std::string( os.sysname ) + ( showReleaseName ? " " + std::string( os.release ) : "" );
 	}
 
 	return "Unknown";
 #elif EE_PLATFORM == EE_PLATFORM_WIN
-	return GetWindowsVersion();
+	return showReleaseName ? GetWindowsVersion() : "Windows";
 #else
 	return "Unknown";
 #endif
