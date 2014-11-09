@@ -217,7 +217,7 @@ bool FileSystem::IsDirectory( const std::string& path ) {
 
 	return isdir;
 #else
-	return GetFileAttributes( (LPCTSTR) path.c_str() ) == FILE_ATTRIBUTE_DIRECTORY;
+	return 0 != ( GetFileAttributes( (LPCTSTR) path.c_str() ) & FILE_ATTRIBUTE_DIRECTORY );
 #endif
 }
 
