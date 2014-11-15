@@ -1,8 +1,10 @@
-#include <eepp/window/platform/osx/osximpl.hpp>
+#include <eepp/config.hpp>
 
 #if EE_PLATFORM == EE_PLATFORM_MACOSX
 
 #include <AGL/agl.h>
+
+#include <eepp/window/platform/osx/osximpl.hpp>
 
 namespace EE { namespace Window { namespace Platform {
 

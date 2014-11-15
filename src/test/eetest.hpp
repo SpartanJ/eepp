@@ -92,7 +92,7 @@ class EETest : private Thread {
 		EE::Window::Window * mWindow;
 		TextureFactory* TF;
 		System::Log* Log;
-		Window::Input* KM;
+		EE::Window::Input* KM;
 		InputTextBuffer InBuf;
 
 		bool side, aside;

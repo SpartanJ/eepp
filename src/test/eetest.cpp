@@ -909,7 +909,7 @@ void EETest::LoadTextures() {
 	CursorManager * CurMan = mWindow->GetCursorManager();
 	CurMan->Visible( false );
 	CurMan->Visible( true );
-	CurMan->Set( Window::SYS_CURSOR_HAND );
+	CurMan->Set( EE::Window::SYS_CURSOR_HAND );
 	CurMan->SetGlobalCursor( EE_CURSOR_ARROW, CurMan->Add( CurMan->Create( CursorP[0], Vector2i( 1, 1 ), "cursor_special" ) ) );
 	CurMan->Set( EE_CURSOR_ARROW );
 
