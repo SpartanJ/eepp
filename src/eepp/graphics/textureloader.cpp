@@ -27,7 +27,7 @@ namespace IOCb
 		return static_cast<int>(stream->Read(data, size));
 	}
 
-	void skip(void* user, unsigned int size)
+	void skip(void* user, int size)
 	{
 		IOStream * stream = static_cast<IOStream*>(user);
 		stream->Seek(stream->Tell() + size);
@@ -262,9 +262,9 @@ void TextureLoader::LoadFromPath() {
 		if ( STBI_dds == mImgType && GLi->IsExtension( EEGL_EXT_texture_compression_s3tc ) ) {
 			LoadFile();
 			mDirectUpload = true;
-			stbi_dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed );
+			stbi__dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed );
 		} else if ( STBI_pvr == mImgType &&
-					stbi_pvr_info_from_path( mFilepath.c_str(), &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed ) &&
+					stbi__pvr_info_from_path( mFilepath.c_str(), &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed ) &&
 					( !mIsCompressed || GLi->IsExtension( EEGL_IMG_texture_compression_pvrtc ) ) )
 		{
 			// If the PVR is valid, and the pvrtc extension is present or it's not compressed ( so it doesn't need the extension )
@@ -274,7 +274,7 @@ void TextureLoader::LoadFromPath() {
 		} else if ( STBI_pkm == mImgType && GLi->IsExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) ) {
 			LoadFile();
 			mIsCompressed =  mDirectUpload = true;
-			stbi_pkm_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels );
+			stbi__pkm_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels );
 		} else {
 			if ( mCompressTexture ) {
 				mSize		= FileSystem::FileSize( mFilepath );
@@ -322,10 +322,10 @@ void TextureLoader::LoadFromMemory() {
 	if ( STBI_dds == mImgType && GLi->IsExtension( EEGL_EXT_texture_compression_s3tc ) ) {
 		mPixels = (Uint8*) eeMalloc( mSize );
 		memcpy( mPixels, mImagePtr, mSize );
-		stbi_dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed );
+		stbi__dds_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed );
 		mDirectUpload = true;
 	} else if ( STBI_pvr == mImgType &&
-				stbi_pvr_info_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed ) &&
+				stbi__pvr_info_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed ) &&
 				( !mIsCompressed || GLi->IsExtension( EEGL_IMG_texture_compression_pvrtc ) ) )
 	{
 		mPixels = (Uint8*) eeMalloc( mSize );
@@ -334,7 +334,7 @@ void TextureLoader::LoadFromMemory() {
 	} else if ( STBI_pkm == mImgType && GLi->IsExtension( EEGL_OES_compressed_ETC1_RGB8_texture ) ) {
 		mPixels = (Uint8*) eeMalloc( mSize );
 		memcpy( mPixels, mImagePtr, mSize );
-		stbi_pkm_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels );
+		stbi__pkm_info_from_memory( mPixels, mSize, &mImgWidth, &mImgHeight, &mChannels );
 		mIsCompressed = mDirectUpload = true;
 	} else {
 		mPixels = stbi_load_from_memory( mImagePtr, mSize, &mImgWidth, &mImgHeight, &mChannels, ( NULL != mColorKey ) ? STBI_rgb_alpha : STBI_default );
@@ -370,11 +370,11 @@ void TextureLoader::LoadFromStream() {
 			mStream->Seek( 0 );
 			mStream->Read( reinterpret_cast<char*> ( mPixels ), mSize );
 			mStream->Seek( 0 );
-			stbi_dds_info_from_callbacks( &callbacks, mStream, &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed );
+			stbi__dds_info_from_callbacks( &callbacks, mStream, &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed );
 			mStream->Seek( 0 );
 			mDirectUpload = true;
 		} else if ( STBI_pvr == mImgType &&
-					stbi_pvr_info_from_callbacks( &callbacks, mStream, &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed ) &&
+					stbi__pvr_info_from_callbacks( &callbacks, mStream, &mImgWidth, &mImgHeight, &mChannels, &mIsCompressed ) &&
 					( !mIsCompressed || GLi->IsExtension( EEGL_IMG_texture_compression_pvrtc ) ) )
 		{
 			mSize	= mStream->GetSize();
@@ -389,7 +389,7 @@ void TextureLoader::LoadFromStream() {
 			mStream->Seek( 0 );
 			mStream->Read( reinterpret_cast<char*> ( mPixels ), mSize );
 			mStream->Seek( 0 );
-			stbi_pkm_info_from_callbacks( &callbacks, mStream, &mImgWidth, &mImgHeight, &mChannels );
+			stbi__pkm_info_from_callbacks( &callbacks, mStream, &mImgWidth, &mImgHeight, &mChannels );
 			mStream->Seek( 0 );
 			mIsCompressed = mDirectUpload = true;
 		} else {
