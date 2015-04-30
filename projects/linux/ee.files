@@ -588,8 +588,6 @@
 ../../src/eepp/helper/SOIL2/src/SOIL2/image_DXT.h
 ../../src/eepp/helper/SOIL2/src/SOIL2/etc1_utils.h
 ../../src/eepp/helper/SOIL2/src/SOIL2/SOIL2.h
-../../src/eepp/helper/SOIL2/src/SOIL2/stb_image_write.c
-../../src/eepp/helper/SOIL2/src/SOIL2/stb_image.c
 ../../src/eepp/helper/SOIL2/src/SOIL2/image_helper.c
 ../../src/eepp/helper/SOIL2/src/SOIL2/image_DXT.c
 ../../src/eepp/helper/SOIL2/src/SOIL2/etc1_utils.c
