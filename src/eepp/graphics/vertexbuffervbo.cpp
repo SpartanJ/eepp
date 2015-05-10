@@ -15,7 +15,7 @@ VertexBufferVBO::VertexBufferVBO( const Uint32& VertexFlags, EE_DRAW_MODE DrawTy
 	mVAO( 0 ),
 	mElementHandle( 0 )
 {
-	memset( mArrayHandle, VERTEX_FLAGS_COUNT, 0 );
+	memset( mArrayHandle, 0, VERTEX_FLAGS_COUNT );
 }
 
 VertexBufferVBO::~VertexBufferVBO() {

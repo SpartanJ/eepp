@@ -10,6 +10,7 @@ namespace EE { namespace Network {
 
 Packet::Packet() :
 	mReadPos(0),
+	mSendPos(0),
 	mIsValid(true)
 {
 }

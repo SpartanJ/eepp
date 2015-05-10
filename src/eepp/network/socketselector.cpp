@@ -1,6 +1,7 @@
 #include <eepp/network/socketselector.hpp>
 #include <eepp/network/socket.hpp>
 #include <eepp/network/platform/platformimpl.hpp>
+#include <algorithm>
 #include <utility>
 
 #ifdef _MSC_VER
@@ -12,7 +13,8 @@ namespace EE { namespace Network {
 struct SocketSelector::SocketSelectorImpl {
 	fd_set AllSockets;   ///< Set containing all the sockets handles
 	fd_set SocketsReady; ///< Set containing handles of the sockets that are ready
-	int	MaxSocket;	///< Maximum socket handle
+	int MaxSocket;	///< Maximum socket handle
+	int SocketCount;  ///< Number of socket handles
 };
 
 SocketSelector::SocketSelector() :
@@ -34,23 +36,51 @@ void SocketSelector::Add(Socket& socket) {
 	SocketHandle handle = socket.GetHandle();
 
 	if (handle != Private::SocketImpl::InvalidSocket()) {
-		if (handle < FD_SETSIZE) {
-			FD_SET(handle, &mImpl->AllSockets);
-
-			int size = static_cast<int>(handle);
-			if (size > mImpl->MaxSocket)
-				mImpl->MaxSocket = size;
-		} else {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		if (mImpl->SocketCount >= FD_SETSIZE) {
 			eePRINT( "The socket can't be added to the selector because its " );
 			eePRINT( "ID is too high. This is a limitation of your operating " );
 			eePRINT( "system's FD_SETSIZE setting." );
+			return;
 		}
+
+		if (FD_ISSET(handle, &mImpl->AllSockets))
+			return;
+
+		mImpl->SocketCount++;
+#else
+		if (handle >= FD_SETSIZE) {
+			eePRINT( "The socket can't be added to the selector because its " );
+			eePRINT( "ID is too high. This is a limitation of your operating " );
+			eePRINT( "system's FD_SETSIZE setting." );
+			return;
+		}
+
+		// SocketHandle is an int in POSIX
+		mImpl->MaxSocket = std::max(mImpl->MaxSocket, handle);
+#endif
+
+		FD_SET(handle, &mImpl->AllSockets);
 	}
 }
 
 void SocketSelector::Remove(Socket& socket) {
-	FD_CLR(socket.GetHandle(), &mImpl->AllSockets);
-	FD_CLR(socket.GetHandle(), &mImpl->SocketsReady);
+	SocketHandle handle = socket.GetHandle();
+
+	if (handle != Private::SocketImpl::InvalidSocket()) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		if (!FD_ISSET(handle, &mImpl->AllSockets))
+			return;
+
+		mImpl->SocketCount--;
+#else
+		if (handle >= FD_SETSIZE)
+			return;
+#endif
+
+		FD_CLR(handle, &mImpl->AllSockets);
+		FD_CLR(handle, &mImpl->SocketsReady);
+	}
 }
 
 void SocketSelector::Clear() {
@@ -58,6 +88,7 @@ void SocketSelector::Clear() {
 	FD_ZERO(&mImpl->SocketsReady);
 
 	mImpl->MaxSocket = 0;
+	mImpl->SocketCount = 0;
 }
 
 bool SocketSelector::Wait(Time timeout) {
@@ -70,13 +101,25 @@ bool SocketSelector::Wait(Time timeout) {
 	mImpl->SocketsReady = mImpl->AllSockets;
 
 	// Wait until one of the sockets is ready for reading, or timeout is reached
+	// The first parameter is ignored on Windows
 	int count = select(mImpl->MaxSocket + 1, &mImpl->SocketsReady, NULL, NULL, timeout != Time::Zero ? &time : NULL);
 
 	return count > 0;
 }
 
 bool SocketSelector::IsReady(Socket& socket) const {
-	return FD_ISSET(socket.GetHandle(), &mImpl->SocketsReady) != 0;
+	SocketHandle handle = socket.GetHandle();
+
+	if (handle != Private::SocketImpl::InvalidSocket()) {
+#if EE_PLATFORM == EE_PLATFORM_WIN
+		if (handle >= FD_SETSIZE)
+			return false;
+#endif
+
+		return FD_ISSET(handle, &mImpl->SocketsReady) != 0;
+	}
+
+	return false;
 }
 
 SocketSelector& SocketSelector::operator =(const SocketSelector& right) {

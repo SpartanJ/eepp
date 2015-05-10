@@ -169,6 +169,7 @@ private:
 	// Member data
 	std::vector<char>	mData;	///< Data stored in the packet
 	std::size_t			mReadPos; ///< Current reading position in the packet
+	std::size_t			mSendPos; ///< Current send position in the packet (for handling partial sends)
 	bool				mIsValid; ///< Reading state of the packet
 };
 

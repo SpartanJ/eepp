@@ -153,6 +153,15 @@ void TcpSocket::Disconnect() {
 }
 
 Socket::Status TcpSocket::Send(const void* data, std::size_t size) {
+	if ( !IsBlocking() )
+		eePRINTL( "Warning: Partial sends might not be handled properly." );
+
+	std::size_t sent;
+
+	return Send(data, size, sent);
+}
+
+Socket::Status TcpSocket::Send(const void* data, std::size_t size, std::size_t& sent) {
 	// Check the parameters
 	if (!data || (size == 0)) {
 		eePRINTL( "Cannot send data over the network (no data to send)" );
@@ -160,15 +169,21 @@ Socket::Status TcpSocket::Send(const void* data, std::size_t size) {
 	}
 
 	// Loop until every byte has been sent
-	int sent = 0;
-	int sizeToSend = static_cast<int>(size);
-	for (int length = 0; length < sizeToSend; length += sent) {
+	int result = 0;
+	for (sent = 0; sent < size; sent += result) {
 		// Send a chunk of data
-		sent = ::send(GetHandle(), static_cast<const char*>(data) + length, sizeToSend - length, flags);
+		result = ::send(GetHandle(), static_cast<const char*>(data) + sent, size - sent, flags);
 
 		// Check for errors
-		if (sent < 0)
-			return Private::SocketImpl::GetErrorStatus();
+		if (result < 0) {
+			Status status = Private::SocketImpl::GetErrorStatus();
+
+			if ((status == NotReady) && sent) {
+				return Partial;
+			}
+
+			return status;
+		}
 	}
 
 	return Done;
@@ -224,7 +239,17 @@ Socket::Status TcpSocket::Send(Packet& packet) {
 		std::memcpy(&blockToSend[0] + sizeof(packetSize), data, size);
 
 	// Send the data block
-	return Send(&blockToSend[0], blockToSend.size());
+	std::size_t sent;
+	Status status = Send(&blockToSend[0] + packet.mSendPos, blockToSend.size() - packet.mSendPos, sent );
+
+	// In the case of a partial send, record the location to resume from
+	if (status == Partial) {
+		packet.mSendPos += sent;
+	} else if (status == Done) {
+		packet.mSendPos = 0;
+	}
+
+	return status;
 }
 
 Socket::Status TcpSocket::Receive(Packet& packet) {

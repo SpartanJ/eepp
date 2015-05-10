@@ -57,12 +57,26 @@ class EE_API TcpSocket : public Socket {
 	virtual void Disconnect();
 
 	/** @brief Send raw data to the remote peer
+	**  To be able to handle partial sends over non-blocking
+	**  sockets, use the send(const void*, std::size_t, std::size_t&)
+	**  overload instead.
+	**
 	**  This function will fail if the socket is not connected.
+	**
 	**  @param data Pointer to the sequence of bytes to send
 	**  @param size Number of bytes to send
 	**  @return Status code
 	**  @see Receive */
 	virtual Status Send(const void* data, std::size_t size);
+
+	/** @brief Send raw data to the remote peer
+	**  This function will fail if the socket is not connected.
+	**  @param data Pointer to the sequence of bytes to send
+	**  @param size Number of bytes to send
+	**  @param sent The number of bytes sent will be written here
+	**  @return Status code
+	**  @see receive */
+	virtual Status Send(const void* data, std::size_t size, std::size_t& sent);
 
 	/** @brief Receive raw data from the remote peer
 	**  In blocking mode, this function will wait until some
@@ -76,6 +90,12 @@ class EE_API TcpSocket : public Socket {
 	virtual Status Receive(void* data, std::size_t size, std::size_t& received);
 
 	/** @brief Send a formatted packet of data to the remote peer
+	 *
+	**  In non-blocking mode, if this function returns sf::Socket::Partial,
+	**  you \em must retry sending the same unmodified packet before sending
+	**  anything else in order to guarantee the packet arrives at the remote
+	**  peer uncorrupted.
+	**
 	**  This function will fail if the socket is not connected.
 	**  @param packet Packet to send
 	**  @return Status code
