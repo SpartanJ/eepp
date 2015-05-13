@@ -637,10 +637,10 @@
 ../../src/eepp/network/ipaddress.cpp
 ../../src/eepp/network/http.cpp
 ../../src/eepp/network/ftp.cpp
-../../src/eepp/network/platform/unix/csocketimpl.hpp
-../../src/eepp/network/platform/unix/csocketimpl.cpp
-../../src/eepp/network/platform/win/csocketimpl.hpp
-../../src/eepp/network/platform/win/csocketimpl.cpp
+../../src/eepp/network/platform/unix/socketimpl.hpp
+../../src/eepp/network/platform/unix/socketimpl.cpp
+../../src/eepp/network/platform/win/socketimpl.hpp
+../../src/eepp/network/platform/win/socketimpl.cpp
 ../../src/eepp/network/platform/platformimpl.hpp
 ../../Makefile.base
 ../../Makefile

@@ -57,8 +57,8 @@ ShaderProgram::ShaderProgram( const std::string& VertexShaderFile, const std::st
 	AddToManager( name );
 	Init();
 
-	cVertexShader * vs = eeNew( cVertexShader, ( VertexShaderFile ) );
-	cFragmentShader * fs = eeNew( cFragmentShader, ( FragmentShaderFile ) );
+	VertexShader * vs = eeNew( VertexShader, ( VertexShaderFile ) );
+	FragmentShader * fs = eeNew( FragmentShader, ( FragmentShaderFile ) );
 
 	if ( !vs->IsValid() || !fs->IsValid() ) {
 		eeSAFE_DELETE( vs );
@@ -80,8 +80,8 @@ ShaderProgram::ShaderProgram( Pack * Pack, const std::string& VertexShaderPath, 
 	Init();
 
 	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( VertexShaderPath ) && -1 != Pack->Exists( FragmentShaderPath ) ) {
-		cVertexShader * vs = eeNew( cVertexShader, ( Pack, VertexShaderPath ) );
-		cFragmentShader * fs = eeNew( cFragmentShader, ( Pack, FragmentShaderPath ) );
+		VertexShader * vs = eeNew( VertexShader, ( Pack, VertexShaderPath ) );
+		FragmentShader * fs = eeNew( FragmentShader, ( Pack, FragmentShaderPath ) );
 
 		if ( !vs->IsValid() || !fs->IsValid() ) {
 			eeSAFE_DELETE( vs );
@@ -103,8 +103,8 @@ ShaderProgram::ShaderProgram( const char * VertexShaderData, const Uint32& Verte
 	AddToManager( name );
 	Init();
 
-	cVertexShader * vs = eeNew( cVertexShader, ( VertexShaderData, VertexShaderDataSize ) );
-	cFragmentShader * fs = eeNew( cFragmentShader, ( FragmentShaderData, FragmentShaderDataSize ) );
+	VertexShader * vs = eeNew( VertexShader, ( VertexShaderData, VertexShaderDataSize ) );
+	FragmentShader * fs = eeNew( FragmentShader, ( FragmentShaderData, FragmentShaderDataSize ) );
 
 	if ( !vs->IsValid() || !fs->IsValid() ) {
 		eeSAFE_DELETE( vs );
@@ -125,8 +125,8 @@ ShaderProgram::ShaderProgram( const char ** VertexShaderData, const Uint32& NumL
 	AddToManager( name );
 	Init();
 
-	cVertexShader * vs = eeNew( cVertexShader, ( VertexShaderData, NumLinesVS ) );
-	cFragmentShader * fs = eeNew( cFragmentShader, ( FragmentShaderData, NumLinesFS ) );
+	VertexShader * vs = eeNew( VertexShader, ( VertexShaderData, NumLinesVS ) );
+	FragmentShader * fs = eeNew( FragmentShader, ( FragmentShaderData, NumLinesFS ) );
 
 	if ( !vs->IsValid() || !fs->IsValid() ) {
 		eeSAFE_DELETE( vs );

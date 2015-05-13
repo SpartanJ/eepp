@@ -82,23 +82,23 @@ class EE_API Shader {
 };
 
 /** @brief Prebuild Vertex Shader class */
-class EE_API cVertexShader : public Shader {
+class EE_API VertexShader : public Shader {
 	public:
-		cVertexShader();
-		cVertexShader( const std::string& Filename );
-		cVertexShader( const char * Data, const Uint32& DataSize );
-		cVertexShader( Pack * Pack, const std::string& Filename );
-		cVertexShader( const char ** Data, const Uint32& NumLines );
+		VertexShader();
+		VertexShader( const std::string& Filename );
+		VertexShader( const char * Data, const Uint32& DataSize );
+		VertexShader( Pack * Pack, const std::string& Filename );
+		VertexShader( const char ** Data, const Uint32& NumLines );
 };
 
 /** @brief Prebuild Fragment Shader class */
-class EE_API cFragmentShader : public Shader {
+class EE_API FragmentShader : public Shader {
 	public:
-		cFragmentShader();
-		cFragmentShader( const std::string& Filename );
-		cFragmentShader( const char * Data, const Uint32& DataSize );
-		cFragmentShader( Pack * Pack, const std::string& Filename );
-		cFragmentShader( const char ** Data, const Uint32& NumLines );
+		FragmentShader();
+		FragmentShader( const std::string& Filename );
+		FragmentShader( const char * Data, const Uint32& DataSize );
+		FragmentShader( Pack * Pack, const std::string& Filename );
+		FragmentShader( const char ** Data, const Uint32& NumLines );
 };
 
 }}

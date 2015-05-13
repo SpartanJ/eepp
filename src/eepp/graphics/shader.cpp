@@ -275,52 +275,52 @@ Uint32 Shader::GetId() const {
 	return mGLId;
 }
 
-cVertexShader::cVertexShader() :
+VertexShader::VertexShader() :
 	Shader( GL_VERTEX_SHADER )
 {
 }
 
-cVertexShader::cVertexShader( const std::string& Filename ) :
+VertexShader::VertexShader( const std::string& Filename ) :
 	Shader( GL_VERTEX_SHADER, Filename )
 {
 }
 
-cVertexShader::cVertexShader( const char * Data, const Uint32& DataSize ) :
+VertexShader::VertexShader( const char * Data, const Uint32& DataSize ) :
 	Shader( GL_VERTEX_SHADER, Data, DataSize )
 {
 }
 
-cVertexShader::cVertexShader( Pack * Pack, const std::string& Filename ) :
+VertexShader::VertexShader( Pack * Pack, const std::string& Filename ) :
 	Shader( GL_VERTEX_SHADER, Pack, Filename )
 {
 }
 
-cVertexShader::cVertexShader( const char ** Data, const Uint32& NumLines ) :
+VertexShader::VertexShader( const char ** Data, const Uint32& NumLines ) :
 	Shader( GL_VERTEX_SHADER, Data, NumLines )
 {
 }
 
-cFragmentShader::cFragmentShader() :
+FragmentShader::FragmentShader() :
 	Shader( GL_FRAGMENT_SHADER )
 {
 }
 
-cFragmentShader::cFragmentShader( const std::string& Filename ) :
+FragmentShader::FragmentShader( const std::string& Filename ) :
 	Shader( GL_FRAGMENT_SHADER, Filename )
 {
 }
 
-cFragmentShader::cFragmentShader( const char * Data, const Uint32& DataSize ) :
+FragmentShader::FragmentShader( const char * Data, const Uint32& DataSize ) :
 	Shader( GL_FRAGMENT_SHADER, Data, DataSize )
 {
 }
 
-cFragmentShader::cFragmentShader( Pack * Pack, const std::string& Filename ) :
+FragmentShader::FragmentShader( Pack * Pack, const std::string& Filename ) :
 	Shader( GL_FRAGMENT_SHADER, Pack, Filename )
 {
 }
 
-cFragmentShader::cFragmentShader( const char ** Data, const Uint32& NumLines ) :
+FragmentShader::FragmentShader( const char ** Data, const Uint32& NumLines ) :
 	Shader( GL_FRAGMENT_SHADER, Data, NumLines )
 {
 }
