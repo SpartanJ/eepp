@@ -468,14 +468,56 @@ void Console::GetFilesFrom( std::string txt, const Uint32& curPos ) {
 			size_t count = 0, lasti = 0;
 			std::vector<std::string> files = FileSystem::FilesGetInPath( dir, true, true );
 			String res;
+			bool again = false;
 
-			for ( size_t i = 0; i < files.size(); i++ ) {
-				if ( !file.size() || String::StartsWith( files[i], file ) ) {
-					res += "\t" + files[i] + "\n";
-					count++;
-					lasti = i;
+			do {
+				std::vector <std::string> foundFiles;
+				res = "";
+				count = 0;
+				again = false;
+
+				for ( size_t i = 0; i < files.size(); i++ ) {
+					if ( !file.size() || String::StartsWith( files[i], file ) ) {
+						res += "\t" + files[i] + "\n";
+						count++;
+						lasti = i;
+						foundFiles.push_back( files[i] );
+					}
 				}
-			}
+
+				if ( count > 1 ) {
+					bool allBigger = true;
+					bool allStartsWith = true;
+
+					do {
+						allBigger = true;
+
+						for ( size_t i = 0; i < foundFiles.size(); i++ ) {
+							if ( foundFiles[i].size() < file.size() + 1 ) {
+								allBigger = false;
+								break;
+							}
+						}
+
+						if ( allBigger ) {
+							std::string tfile = foundFiles[0].substr( 0, file.size() + 1 );
+							allStartsWith = true;
+
+							for ( size_t i = 0; i < foundFiles.size(); i++ ) {
+								if ( !String::StartsWith( foundFiles[i], tfile ) ) {
+									allStartsWith = false;
+									break;
+								}
+							}
+
+							if ( allStartsWith ) {
+								file = tfile;
+								again = true;
+							}
+						}
+					} while ( allBigger && allStartsWith );
+				}
+			} while ( again );
 
 			if ( count == 1 ) {
 				std::string slash = "";
@@ -489,6 +531,9 @@ void Console::GetFilesFrom( std::string txt, const Uint32& curPos ) {
 			} else if ( count > 1 ) {
 				PrivPushText( "Directory file list:" );
 				PushText( res );
+
+				mTBuf->Buffer( mTBuf->Buffer().substr( 0, pos + 1 ) + file );
+				mTBuf->CursorToEnd();
 			}
 		}
 	}
