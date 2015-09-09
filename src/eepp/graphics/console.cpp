@@ -247,9 +247,41 @@ void Console::FadeOut() {
 	}
 }
 
+static std::vector< String > SplitCommandParams( String str ) {
+	std::vector < String > params = String::Split( str, ' ' );
+	std::vector < String > rparams;
+	String tstr;
+
+	for ( size_t i = 0; i < params.size(); i++ ) {
+		String tparam = params[i];
+
+		if ( !tparam.empty() ) {
+			if ( '"' == tparam[0] ) {
+				tstr += tparam;
+			} else if ( '"' == tparam[ tparam.size() - 1 ] ) {
+				tstr += " " + tparam;
+
+				rparams.push_back( String::Trim( tstr, '"' ) );
+
+				tstr = "";
+			} else if ( !tstr.empty() ) {
+				tstr += " " + tparam;
+			} else {
+				rparams.push_back( tparam );
+			}
+		}
+	}
+
+	if ( !tstr.empty() ) {
+		rparams.push_back( String::Trim( tstr, '"' ) );
+	}
+
+	return rparams;
+}
+
 void Console::ProcessLine() {
 	String str = mTBuf->Buffer();
-	std::vector < String > params = String::Split( str, ' ' );
+	std::vector < String > params = SplitCommandParams( str );
 
 	mLastCommands.push_back( str );
 	mLastLogPos = (int)mLastCommands.size();
@@ -258,7 +290,7 @@ void Console::ProcessLine() {
 		mLastCommands.pop_front();
 
 	if ( str.size() > 0 ) {
-		PrivPushText( "> " + params[0] );
+		PrivPushText( "> " + str );
 
 		if ( mCallbacks.find( params[0] ) != mCallbacks.end() ) {
 			mCallbacks[ params[0] ]( params );
@@ -702,7 +734,6 @@ void Console::CmdShowCursor ( const std::vector < String >& params ) {
 
 		if ( Res && ( tInt == 0 || tInt == 1 ) ) {
 			mWindow->GetCursorManager()->Visible( 0 != tInt );
-			PrivPushText( "showcursor " + String::ToStr( tInt ) );
 		} else
 			PrivPushText( "Valid parameters are 0 or 1." );
 	} else {
@@ -718,7 +749,6 @@ void Console::CmdFrameLimit ( const std::vector < String >& params ) {
 
 		if ( Res && ( tInt >= 0 && tInt <= 10000 ) ) {
 			mWindow->FrameRateLimit( tInt );
-			PrivPushText( "setfpslimit " + String::ToStr( tInt ) );
 			return;
 		}
 	}
@@ -758,7 +788,6 @@ void Console::CmdSetGamma( const std::vector < String >& params ) {
 
 		if ( Res && ( tFloat > 0.1f && tFloat <= 10.0f ) ) {
 			mWindow->SetGamma( tFloat, tFloat, tFloat );
-			PrivPushText( "setgamma " + String::ToStr( tFloat ) );
 			return;
 		}
 	}
@@ -774,7 +803,6 @@ void Console::CmdSetVolume( const std::vector < String >& params ) {
 
 		if ( Res && ( tFloat >= 0.0f && tFloat <= 100.0f ) ) {
 			EE::Audio::AudioListener::GlobalVolume( tFloat );
-			PrivPushText( "setvolume " + String::ToStr( tFloat ) );
 			return;
 		}
 	}
@@ -789,16 +817,7 @@ void Console::CmdDir( const std::vector < String >& params ) {
 		String myOrder;
 
 		if ( params.size() > 2 ) {
-			for ( unsigned int i = 2; i < params.size(); i++ ) {
-				if ( i + 1 == params.size() ) {
-					if ( params[i] == "ff" )
-						myOrder = params[i];
-					else
-						myPath += " " + params[i];
-				} else {
-					myPath += " " + params[i];
-				}
-			}
+			myOrder = params[2];
 		}
 
 		if ( FileSystem::IsDirectory( myPath ) ) {
@@ -841,7 +860,7 @@ void Console::CmdDir( const std::vector < String >& params ) {
 			if ( myPath == "help" )
 				PrivPushText( "You can use a third parameter to show folders first, the parameter is ff." );
 			else
-				PrivPushText( "Path is not a directory." );
+				PrivPushText( "Path \"" + myPath + "\" is not a directory." );
 		}
 	} else {
 		PrivPushText( "Expected a path to list. Example of usage: ls /home" );
@@ -856,7 +875,6 @@ void Console::CmdShowFps( const std::vector < String >& params ) {
 
 		if ( Res && ( tInt == 0 || tInt == 1 ) ) {
 			mShowFps = 0 != tInt;
-			PrivPushText( "showfps " + String::ToStr( tInt ) );
 			return;
 		}
 	}

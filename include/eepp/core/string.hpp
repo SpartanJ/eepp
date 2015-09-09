@@ -81,11 +81,17 @@ class EE_API String {
 	/** Split a string and hold it on a vector */
 	static std::vector < std::string > Split( const std::string& str, const Int8& splitchar = '\n', const bool& pushEmptyString = false );
 
-	/** Remove the first space on the string */
-	static std::string LTrim( const std::string & str );
+	/** Remove the first space ( or the specified character ) on the string */
+	static std::string LTrim( const std::string & str, char character = ' ' );
 
-	/** Removes all spaces on the string */
-	static std::string Trim( const std::string & str );
+	/** Removes all spaces ( or the specified character ) on the string */
+	static std::string Trim( const std::string & str, char character = ' ' );
+
+	/** Remove the first space ( or the specified character ) on the string */
+	static String LTrim(const String & str, char character = ' ' );
+
+	/** Removes all spaces ( or the specified character ) on the string */
+	static String Trim( const String & str, char character = ' ' );
 
 	/** Convert the string into upper case string */
 	static void ToUpperInPlace( std::string & str );

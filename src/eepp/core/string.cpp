@@ -93,15 +93,26 @@ std::vector < std::string > String::Split ( const std::string& str, const Int8& 
 	return tmp;
 }
 
-std::string String::LTrim( const std::string & str ) {
-	std::string::size_type pos1 = str.find_first_not_of(' ');
+std::string String::LTrim(const std::string & str , char character) {
+	std::string::size_type pos1 = str.find_first_not_of(character);
 	return ( pos1 == std::string::npos ) ? str : str.substr( pos1 );
 }
 
-std::string String::Trim( const std::string & str ) {
-	std::string::size_type pos1 = str.find_first_not_of(' ');
-	std::string::size_type pos2 = str.find_last_not_of(' ');
+std::string String::Trim(const std::string & str , char character) {
+	std::string::size_type pos1 = str.find_first_not_of(character);
+	std::string::size_type pos2 = str.find_last_not_of(character);
 	return str.substr(pos1 == std::string::npos ? 0 : pos1, pos2 == std::string::npos ? str.length() - 1 : pos2 - pos1 + 1);
+}
+
+String String::LTrim(const String & str , char character) {
+	StringType::size_type pos1 = str.find_first_not_of(character);
+	return ( pos1 == String::InvalidPos ) ? str : str.substr( pos1 );
+}
+
+String String::Trim(const String & str , char character) {
+	StringType::size_type pos1 = str.find_first_not_of(character);
+	StringType::size_type pos2 = str.find_last_not_of(character);
+	return str.substr(pos1 == String::InvalidPos ? 0 : pos1, pos2 == String::InvalidPos ? str.length() - 1 : pos2 - pos1 + 1);
 }
 
 void String::ToUpperInPlace( std::string & str ) {
