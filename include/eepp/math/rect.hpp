@@ -55,6 +55,10 @@ class tRECT {
 
 		tSize<T> Size();
 
+		T Width();
+
+		T Height();
+
 		void Scale( T scale, const Vector2<T>& center );
 
 		void Scale( T scale );
@@ -122,7 +126,17 @@ Vector2<T> tRECT<T>::Center() {
 
 template <typename T>
 tSize<T> tRECT<T>::Size() {
-	return tSize<T>( Right - Left, Bottom - Top );
+	return tSize<T>( eeabs( Right - Left ), eeabs( Bottom - Top ) );
+}
+
+template <typename T>
+T tRECT<T>::Width() {
+	return eeabs( Right - Left );
+}
+
+template <typename T>
+T tRECT<T>::Height() {
+	return eeabs( Bottom - Top );
 }
 
 template <typename T>
