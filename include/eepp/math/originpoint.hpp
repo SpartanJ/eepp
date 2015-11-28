@@ -8,7 +8,7 @@ namespace EE { namespace Math {
 
 /** @brief Helper class to define the origin point of a translation/rotation/scaling */
 template <typename T>
-class OriginPoint : public Vector2<T> {
+class tOriginPoint : public Vector2<T> {
 	public:
 		enum OriginTypes
 		{
@@ -20,38 +20,38 @@ class OriginPoint : public Vector2<T> {
 		OriginTypes OriginType;
 
 		/** By default creates a origin point centered */
-		OriginPoint() :
+		tOriginPoint() :
 			Vector2<T>(),
 			OriginType( OriginCenter )
 		{
 		}
 
 		/** Creates a custom origin point */
-		OriginPoint(T X, T Y) :
+		tOriginPoint(T X, T Y) :
 			Vector2<T>( X, Y ),
 			OriginType( OriginCustom )
 		{
 		}
 
 		/** Creates a origin point type */
-		OriginPoint( OriginTypes type ) :
+		tOriginPoint( OriginTypes type ) :
 			Vector2<T>( (T)0, (T)0 ),
 			OriginType( type )
 		{
 		}
 
-		OriginPoint<T>& operator=(const Vector2<T>& v);
+		tOriginPoint<T>& operator=(const Vector2<T>& v);
 };
 
 template<typename T>
-OriginPoint<T>& OriginPoint<T>::operator=(const Vector2<T>& v) {
+tOriginPoint<T>& tOriginPoint<T>::operator=(const Vector2<T>& v) {
 	this->x = v.x;
 	this->y = v.y;
 	return *this;
 }
 
-typedef OriginPoint<eeFloat>	eeOriginPoint;
-typedef OriginPoint<eeInt>		eeOriginPointi;
+typedef tOriginPoint<Float>		OriginPoint;
+typedef tOriginPoint<int>		OriginPointi;
 
 }}
 

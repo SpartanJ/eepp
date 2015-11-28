@@ -1,5 +1,5 @@
 #include <eepp/core/debug.hpp>
-#include <eepp/system/clog.hpp>
+#include <eepp/system/log.hpp>
 #include <cassert>
 #include <cstdarg>
 
@@ -29,9 +29,9 @@ void eeREPORT_ASSERT( const char * File, int Line, const char * Exp ) {
 	#else
 
 	if ( PrintDebugInLog ) {
-		cLog::instance()->Writef( "ASSERT: %s file:%s line:%d", Exp, File, Line );
+		Log::instance()->Writef( "ASSERT: %s file:%s line:%d", Exp, File, Line );
 
-		if ( !cLog::instance()->ConsoleOutput() )
+		if ( !Log::instance()->ConsoleOutput() )
 			printf( "ASSERT: %s file:%s line:%d", Exp, File, Line );
 	} else {
 		printf( "ASSERT: %s file:%s line:%d", Exp, File, Line );
@@ -57,8 +57,8 @@ static void print_buffer( std::string& buf, bool newLine ) {
 	#ifdef EE_COMPILER_MSVC
 		OutputDebugStringA( buf.c_str() );
 	#else
-		if ( PrintDebugInLog && cLog::instance()->ConsoleOutput() ) {
-			cLog::instance()->Write( buf, false );
+		if ( PrintDebugInLog && Log::instance()->ConsoleOutput() ) {
+			Log::instance()->Write( buf, false );
 			return;
 		} else {
 			printf("%s", buf.c_str() );
@@ -66,7 +66,7 @@ static void print_buffer( std::string& buf, bool newLine ) {
 	#endif
 
 	if ( PrintDebugInLog )
-		cLog::instance()->Write( buf, false );
+		Log::instance()->Write( buf, false );
 }
 
 void eePRINT( const char * format, ... ) {

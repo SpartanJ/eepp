@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -18,7 +18,7 @@
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 */
-#include "SDL_config.h"
+#include "../../SDL_internal.h"
 
 #ifdef SDL_JOYSTICK_LINUX
 
@@ -26,7 +26,7 @@
 #error SDL now requires a Linux 2.4+ kernel with /dev/input/event support.
 #endif
 
-/* This is the system specific header for the SDL joystick API */
+/* This is the Linux implementation of the SDL joystick API */
 
 #include <sys/stat.h>
 #include <unistd.h>

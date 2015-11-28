@@ -93,7 +93,7 @@ bool Line2<T>::Intersect( Line2<T>& line, T* X, T* Y ) {
 	return true;
 }
 
-typedef Line2<eeFloat> eeLine2f;
+typedef Line2<Float> Line2f;
 
 }}
 

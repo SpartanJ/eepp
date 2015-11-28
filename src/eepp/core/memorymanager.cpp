@@ -2,30 +2,30 @@
 #include <sstream>
 #include <eepp/core/memorymanager.hpp>
 #include <eepp/core/debug.hpp>
-#include <eepp/system/clog.hpp>
+#include <eepp/system/log.hpp>
 #include <eepp/system/filesystem.hpp>
-#include <eepp/system/cmutex.hpp>
-#include <eepp/system/clock.hpp>
+#include <eepp/system/mutex.hpp>
+#include <eepp/system/lock.hpp>
 
 using namespace EE::System;
 
 namespace EE {
 
-static tAllocatedPointerMap sMapPointers;
+static AllocatedPointerMap sMapPointers;
 static size_t sTotalMemoryUsage = 0;
 static size_t sPeakMemoryUsage = 0;
-static cAllocatedPointer sBiggestAllocation = cAllocatedPointer( NULL, "", 0, 0 );
-static cMutex sAllocMutex;
+static AllocatedPointer sBiggestAllocation = AllocatedPointer( NULL, "", 0, 0 );
+static Mutex sAlloMutex;
 
-cAllocatedPointer::cAllocatedPointer( void * Data, const std::string& File, int Line, size_t Memory ) {
+AllocatedPointer::AllocatedPointer( void * Data, const std::string& File, int Line, size_t Memory ) {
 	mData 		= Data;
 	mFile 		= File;
 	mLine 		= Line;
 	mMemory 	= Memory;
 }
 
-void * MemoryManager::AddPointerInPlace( void * Place, const cAllocatedPointer& aAllocatedPointer ) {
-	tAllocatedPointerMapIt it = sMapPointers.find( Place );
+void * MemoryManager::AddPointerInPlace( void * Place, const AllocatedPointer& aAllocatedPointer ) {
+	AllocatedPointerMapIt it = sMapPointers.find( Place );
 
 	if ( it != sMapPointers.end() ) {
 		RemovePointer( Place );
@@ -34,10 +34,10 @@ void * MemoryManager::AddPointerInPlace( void * Place, const cAllocatedPointer& 
 	return AddPointer( aAllocatedPointer );
 }
 
-void * MemoryManager::AddPointer( const cAllocatedPointer& aAllocatedPointer ) {
-	cLock l( sAllocMutex );
+void * MemoryManager::AddPointer( const AllocatedPointer& aAllocatedPointer ) {
+	Lock l( sAlloMutex );
 
-	sMapPointers.insert( tAllocatedPointerMap::value_type( aAllocatedPointer.mData, aAllocatedPointer ) );
+	sMapPointers.insert( AllocatedPointerMap::value_type( aAllocatedPointer.mData, aAllocatedPointer ) );
 
 	sTotalMemoryUsage += aAllocatedPointer.mMemory;
 
@@ -53,9 +53,9 @@ void * MemoryManager::AddPointer( const cAllocatedPointer& aAllocatedPointer ) {
 }
 
 bool MemoryManager::RemovePointer( void * Data ) {
-	cLock l( sAllocMutex );
+	Lock l( sAlloMutex );
 
-	tAllocatedPointerMapIt it = sMapPointers.find( Data );
+	AllocatedPointerMapIt it = sMapPointers.find( Data );
 
 	if ( it == sMapPointers.end() ) {
 		eePRINTL( "Trying to delete pointer %p created that does not exist!", Data );
@@ -78,7 +78,7 @@ size_t MemoryManager::GetTotalMemoryUsage() {
 	return sTotalMemoryUsage;
 }
 
-const cAllocatedPointer& MemoryManager::GetBiggestAllocation() {
+const AllocatedPointer& MemoryManager::GetBiggestAllocation() {
 	return sBiggestAllocation;
 }
 
@@ -86,7 +86,7 @@ void MemoryManager::ShowResults() {
 	#ifdef EE_MEMORY_MANAGER
 
 	if ( EE::PrintDebugInLog ) {
-		cLog::DestroySingleton();
+		Log::DestroySingleton();
 		EE::PrintDebugInLog = false;
 	}
 
@@ -102,10 +102,10 @@ void MemoryManager::ShowResults() {
 
 		//Get max length of file name
 		int lMax =0;
-		tAllocatedPointerMapIt it = sMapPointers.begin();
+		AllocatedPointerMapIt it = sMapPointers.begin();
 
 		for( ; it != sMapPointers.end(); ++it ){
-			cAllocatedPointer &ap = it->second;
+			AllocatedPointer &ap = it->second;
 
 			if( (int)ap.mFile.length() > lMax )
 				lMax = (int)ap.mFile.length();
@@ -123,7 +123,7 @@ void MemoryManager::ShowResults() {
 		it = sMapPointers.begin();
 
 		for( ; it != sMapPointers.end(); ++it ) {
-			cAllocatedPointer &ap = it->second;
+			AllocatedPointer &ap = it->second;
 
 			eePRINT( "| %p\t %s", ap.mData, ap.mFile.c_str() );
 

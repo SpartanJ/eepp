@@ -24,7 +24,7 @@
 	
 		struct __AGLContextRec;
 
-		typedef struct __AGLContextRec       *AGLContext;
+		typedef struct __AGLContextRec *AGLContext;
 
 		typedef AGLContext	eeWindowContex;
 		

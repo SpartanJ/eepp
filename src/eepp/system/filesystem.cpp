@@ -1,5 +1,5 @@
 #include <eepp/system/filesystem.hpp>
-#include <eepp/system/ciostreamfile.hpp>
+#include <eepp/system/iostreamfile.hpp>
 #include <eepp/system/sys.hpp>
 #include <sys/stat.h>
 #include <list>
@@ -36,7 +36,7 @@ std::string FileSystem::GetOSlash() {
 
 bool FileSystem::FileGet( const std::string& path, SafeDataPointer& data ) {
 	if ( FileExists( path ) ) {
-		cIOStreamFile fs ( path , std::ios::in | std::ios::binary );
+		IOStreamFile fs ( path , std::ios::in | std::ios::binary );
 
 		eeSAFE_DELETE( data.Data );
 
@@ -53,7 +53,7 @@ bool FileSystem::FileGet( const std::string& path, SafeDataPointer& data ) {
 
 bool FileSystem::FileGet( const std::string& path, std::vector<Uint8>& data ) {
 	if ( FileExists( path ) ) {
-		cIOStreamFile fs ( path, std::ios::in | std::ios::binary );
+		IOStreamFile fs ( path, std::ios::in | std::ios::binary );
 		Uint32 fsize = FileSize( path );
 
 		data.clear();
@@ -80,8 +80,8 @@ bool FileSystem::FileCopy( const std::string& src, const std::string& dst ) {
 		data.Data		= eeNewArray( Uint8, ( data.DataSize ) );
 		char * buff		= (char*)data.Data;
 
-		cIOStreamFile in( src, std::ios::binary | std::ios::in );
-		cIOStreamFile out( dst, std::ios::binary | std::ios::out );
+		IOStreamFile in( src, std::ios::binary | std::ios::in );
+		IOStreamFile out( dst, std::ios::binary | std::ios::out );
 
 		if ( in.IsOpen() && out.IsOpen() && size > 0 ) {
 			do {
@@ -108,7 +108,7 @@ std::string FileSystem::FileExtension( const std::string& filepath, const bool& 
 	std::string tstr( filepath.substr( filepath.find_last_of(".") + 1 ) );
 
 	if ( lowerExt )
-		String::ToLower( tstr );
+		String::ToLowerInPlace( tstr );
 
 	return tstr;
 }
@@ -128,15 +128,14 @@ std::string FileSystem::FileRemoveFileName( const std::string& filepath ) {
 void FileSystem::FilePathRemoveProcessPath( std::string& path ) {
 	static std::string ProcessPath = Sys::GetProcessPath();
 
-	Int32 pos = String::StartsWith( ProcessPath, path );
-
-	if ( -1 != pos && (Uint32)(pos + 1) < path.size() )
-		path = path.substr( pos + 1 );
+	if ( String::StartsWith( path, ProcessPath ) && ProcessPath.length() < path.size() ) {
+		path = path.substr( ProcessPath.length() );
+	}
 }
 
 
 bool FileSystem::FileWrite( const std::string& filepath, const Uint8* data, const Uint32& dataSize ) {
-	cIOStreamFile fs( filepath, std::ios::out | std::ios::binary );
+	IOStreamFile fs( filepath, std::ios::out | std::ios::binary );
 
 	if ( fs.IsOpen() ) {
 		if ( dataSize ) {
@@ -218,7 +217,7 @@ bool FileSystem::IsDirectory( const std::string& path ) {
 
 	return isdir;
 #else
-	return GetFileAttributes( (LPCTSTR) path.c_str() ) == FILE_ATTRIBUTE_DIRECTORY;
+	return 0 != ( GetFileAttributes( (LPCTSTR) path.c_str() ) & FILE_ATTRIBUTE_DIRECTORY );
 #endif
 }
 
@@ -485,7 +484,7 @@ bool FileSystem::FileExists( const std::string& Filepath ) {
 }
 
 std::string FileSystem::SizeToString( const Int64& Size ) {
-	eeDouble mem = static_cast<eeDouble>( Size );
+	double mem = static_cast<double>( Size );
 	std::string size;
 	Uint8 c = 0;
 

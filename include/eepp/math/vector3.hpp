@@ -93,10 +93,10 @@ bool operator !=(const Vector3<T>& V1, const Vector3<T>& V2) {
 }
 
 // Define the most common types
-typedef Vector3<eeInt>   eeVector3i;
-typedef Vector3<eeFloat> eeVector3f;
-typedef Vector3<eeDouble> eeVector3d;
-typedef Vector3<float> eeVector3ff;
+typedef Vector3<int>   Vector3i;
+typedef Vector3<Float> Vector3f;
+typedef Vector3<double> Vector3d;
+typedef Vector3<float> Vector3ff;
 
 }}
 

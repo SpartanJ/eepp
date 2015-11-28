@@ -1,6 +1,6 @@
 #include <eepp/ee.hpp>
 
-cWindow * win = NULL;
+EE::Window::Window * win = NULL;
 
 void MainLoop()
 {
@@ -8,10 +8,10 @@ void MainLoop()
 	win->Clear();
 
 	// Create an instance of the primitive renderer
-	cPrimitives p;
+	Primitives p;
 
 	// Change the color
-	p.SetColor( eeColorA( 0, 255, 0, 150 ) );
+	p.SetColor( ColorA( 0, 255, 0, 150 ) );
 
 	// Update the input
 	win->GetInput()->Update();
@@ -23,7 +23,7 @@ void MainLoop()
 	}
 
 	// Draw a circle
-	p.DrawCircle( eeVector2f( win->GetWidth() * 0.5f, win->GetHeight() * 0.5f ), 200, 50 );
+	p.DrawCircle( Vector2f( win->GetWidth() * 0.5f, win->GetHeight() * 0.5f ), 200, 50 );
 
 	// Draw frame
 	win->Display();
@@ -33,12 +33,12 @@ void MainLoop()
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	// Create a new window with vsync enabled
-	win = cEngine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - Empty Window" ), ContextSettings( true ) );
+	win = Engine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - Empty Window" ), ContextSettings( true ) );
 
 	// Check if created
 	if ( win->Created() ) {
 		// Set window background color
-		win->BackColor( eeColor( 50, 50, 50 ) );
+		win->BackColor( RGB( 50, 50, 50 ) );
 
 		// Set the MainLoop function and run it
 		// This is the application loop, it will loop until the window is closed.
@@ -52,7 +52,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	}
 
 	// Destroy the engine instance. Destroys all the windows and engine singletons.
-	cEngine::DestroySingleton();
+	Engine::DestroySingleton();
 
 	// If was compiled in debug mode it will print the memory manager report
 	MemoryManager::ShowResults();

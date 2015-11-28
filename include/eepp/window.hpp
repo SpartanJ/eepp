@@ -3,15 +3,15 @@
 
 #include <eepp/window/windowhandle.hpp>
 #include <eepp/window/windowcontext.hpp>
-#include <eepp/window/cinput.hpp>
-#include <eepp/window/cinputtextbuffer.hpp>
-#include <eepp/window/cview.hpp>
-#include <eepp/window/cwindow.hpp>
-#include <eepp/window/cclipboard.hpp>
-#include <eepp/window/ccursor.hpp>
-#include <eepp/window/ccursormanager.hpp>
-#include <eepp/window/cjoystick.hpp>
-#include <eepp/window/cjoystickmanager.hpp>
-#include <eepp/window/cengine.hpp>
+#include <eepp/window/input.hpp>
+#include <eepp/window/inputtextbuffer.hpp>
+#include <eepp/window/view.hpp>
+#include <eepp/window/window.hpp>
+#include <eepp/window/clipboard.hpp>
+#include <eepp/window/cursor.hpp>
+#include <eepp/window/cursormanager.hpp>
+#include <eepp/window/joystick.hpp>
+#include <eepp/window/joystickmanager.hpp>
+#include <eepp/window/engine.hpp>
 
 #endif

@@ -1,30 +1,30 @@
 #include <eepp/ee.hpp>
 
-cWindow * win = NULL;
+EE::Window::Window * win = NULL;
 
 // Define a interpolation to control the Rock sprite angle
-cInterpolation RockAngle;
+Interpolation RockAngle;
 
-cInterpolation PlanetAngle;
+Interpolation PlanetAngle;
 
 // Create a primitive drawer instance to draw the AABB of the Rock
-cPrimitives P;
-cSprite * Rock		= NULL;
-cSprite * Planet	= NULL;
-cSprite * Blindy	= NULL;
+Primitives P;
+Sprite * Rock		= NULL;
+Sprite * Planet	= NULL;
+Sprite * Blindy	= NULL;
 
 // Define a user sprite event
-static const Uint32 USER_SPRITE_EVENT = cSprite::SPRITE_EVENT_USER + 1;
+static const Uint32 USER_SPRITE_EVENT = Sprite::SPRITE_EVENT_USER + 1;
 
 // Get the sprite event callback
-void spriteCallback( Uint32 Event, cSprite * Sprite, void * UserData ) {
+void spriteCallback( Uint32 Event, Sprite * Sprite, void * UserData ) {
 	// Sprite Animation entered the first frame?
-	if ( Event == cSprite::SPRITE_EVENT_FIRST_FRAME ) {
+	if ( Event == Sprite::SPRITE_EVENT_FIRST_FRAME ) {
 		// Fire a user Event
 		Sprite->FireEvent( USER_SPRITE_EVENT );
 	} else if ( Event == USER_SPRITE_EVENT ) {
 		// Create an interpolation to change the angle of the sprite
-		cInterpolation * RotationInterpolation = reinterpret_cast<cInterpolation*>( UserData );
+		Interpolation * RotationInterpolation = reinterpret_cast<Interpolation*>( UserData );
 		RotationInterpolation->ClearWaypoints();
 		RotationInterpolation->AddWaypoint( Sprite->Angle() );
 		RotationInterpolation->AddWaypoint( Sprite->Angle() + 45.f );
@@ -77,11 +77,11 @@ void MainLoop()
 	Blindy->Draw();
 
 	// Draw the Rock Axis-Aligned Bounding Box
-	P.SetColor( eeColorA( 255, 255, 255, 255 ) );
+	P.SetColor( ColorA( 255, 255, 255, 255 ) );
 	P.DrawRectangle( Rock->GetAABB() );
 
 	// Draw the Rock Quad
-	P.SetColor( eeColorA( 255, 0, 0, 255 ) );
+	P.SetColor( ColorA( 255, 0, 0, 255 ) );
 	P.DrawQuad( Rock->GetQuad() );
 
 	// Draw frame
@@ -91,7 +91,7 @@ void MainLoop()
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	// Create a new window
-	win = cEngine::instance()->CreateWindow( WindowSettings( 640, 480, "eepp - Sprites" ), ContextSettings( true ) );
+	win = Engine::instance()->CreateWindow( WindowSettings( 640, 480, "eepp - Sprites" ), ContextSettings( true ) );
 
 	// Check if created
 	if ( win->Created() ) {
@@ -99,32 +99,32 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		std::string AppPath = Sys::GetProcessPath();
 
 		// Load the rock texture
-		Uint32 PlanetId	= cTextureFactory::instance()->Load( AppPath + "assets/sprites/7.png" );
-		Uint32 RockId	= cTextureFactory::instance()->Load( AppPath + "assets/sprites/5.png" );
+		Uint32 PlanetId	= TextureFactory::instance()->Load( AppPath + "assets/sprites/7.png" );
+		Uint32 RockId	= TextureFactory::instance()->Load( AppPath + "assets/sprites/5.png" );
 
 		// Load a previously generated texture atlas that contains the SubTextures needed to load an animated sprite
-		cTextureAtlasLoader Blindies( AppPath + "assets/atlases/bnb.eta" );
+		TextureAtlasLoader Blindies( AppPath + "assets/atlases/bnb.eta" );
 
 		// Create the animated rock spriteR
-		Rock	= eeNew( cSprite, () );
+		Rock	= eeNew( Sprite, () );
 
 		// Load the rock frames from the texture, adding the frames manually
 		for ( Int32 my = 0; my < 4; my++ ) {
 			for( Int32 mx = 0; mx < 8; mx++ ) {
 				// DestSize as 0,0 will use the SubTexture size
-				Rock->AddFrame( RockId, eeSizef( 0, 0 ), eeVector2i( 0, 0 ), eeRecti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
+				Rock->AddFrame( RockId, Sizef( 0, 0 ), Vector2i( 0, 0 ), Recti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
 			}
 		}
 
 		// Create a static sprite
-		Planet	= eeNew( cSprite, ( PlanetId ) );
+		Planet	= eeNew( Sprite, ( PlanetId ) );
 
 		// This constructor is the same that creating sprite and calling Sprite.AddFramesByPattern.
 		// It will look for a SubTexture ( in any Texture Atlas loaded, or the GlobalTextureAtlas ) animation by its name, it will search
 		// for "gn00" to "gnXX" to create a new animation
-		// see cTextureAtlasManager::GetSubTexturesByPattern for more information.
+		// see TextureAtlasManager::GetSubTexturesByPattern for more information.
 		// This is the easiest way to load animated sprites.
-		Blindy	= eeNew( cSprite, ( "gn" ) );
+		Blindy	= eeNew( Sprite, ( "gn" ) );
 
 		// Set the sprite animation speed, set in Frames per Second
 		// Sprites are auto-animated by default.
@@ -140,7 +140,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		P.FillMode( DRAW_LINE );
 
 		// Set the sprites position to the screen center
-		eeVector2i ScreenCenter( cEngine::instance()->GetWidth() / 2, cEngine::instance()->GetHeight() / 2 );
+		Vector2i ScreenCenter( Engine::instance()->GetWidth() / 2, Engine::instance()->GetHeight() / 2 );
 
 		Planet->Position( ScreenCenter.x - Planet->GetAABB().Size().Width() / 2, ScreenCenter.y - Planet->GetAABB().Size().Height() / 2 );
 
@@ -167,7 +167,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	eeSAFE_DELETE( Blindy );
 
 	// Destroy the engine instance. Destroys all the windows and engine singletons.
-	cEngine::DestroySingleton();
+	Engine::DestroySingleton();
 
 	// If was compiled in debug mode it will print the memory manager report
 	MemoryManager::ShowResults();

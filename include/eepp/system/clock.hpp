@@ -1,28 +1,33 @@
-#ifndef EE_SYSTEM_CLOCK_HPP
-#define EE_SYSTEM_CLOCK_HPP
+#ifndef EE_SYSTEMCTIMER_H
+#define EE_SYSTEMCTIMER_H
 
-#include <eepp/config.hpp>
-#include <eepp/core/noncopyable.hpp>
+#include <eepp/system/base.hpp>
+#include <eepp/system/time.hpp>
 
 namespace EE { namespace System {
 
-class cMutex;
+namespace Platform { class ClockImpl; }
 
-/** @brief Automatic wrapper for locking and unlocking mutexes */
-class EE_API cLock : NonCopyable {
-	public :
-		/** @brief Construct the lock with a target mutex
-		*	The mutex passed to cLock is automatically locked.
-		*	@param mutex Mutex to lock */
-		explicit cLock( cMutex& mutex );
+class EE_API Clock {
+	public:
+		/** Clock constructor. Must be called from the same thread that calls GetElapsedTime() */
+		Clock();
 
-		/**	@brief Destructor
-		*	The destructor of cLock automatically unlocks its mutex. */
-		~cLock();
-	private :
-		cMutex& mMutex; ///< Mutex to lock / unlock
+		~Clock();
+
+		/** Restarts the timer */
+		void Restart();
+
+		/** @returns time since initialisation or last reset */
+		Time GetElapsedTime() const;
+
+		/** Time in time elapsed between this call and the last call to Elapsed()
+		* This is the equivalent to call GetElapsedTime() and then Restart().
+		*/
+		Time Elapsed();
+	private:
+		Platform::ClockImpl *	mClockImpl;
 };
 
 }}
-
-#endif 
+#endif

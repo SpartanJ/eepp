@@ -7,7 +7,7 @@
 namespace EE {
 
 template<typename T>
-class eeAllocator {
+class Allocator {
 	public:
 		typedef T				value_type;
 		typedef T *				pointer;
@@ -17,13 +17,13 @@ class eeAllocator {
 		typedef ptrdiff_t		difference_type;
 		typedef size_t			size_type;
 
-		eeAllocator() {
+		Allocator() {
 		}
 
-		eeAllocator( const eeAllocator& ) {
+		Allocator( const Allocator& ) {
 		}
 
-		virtual ~eeAllocator() {
+		virtual ~Allocator() {
 		}
 
 		T * allocate( size_t cnt, typename std::allocator<void>::const_pointer ptr = 0 ) {
@@ -59,18 +59,18 @@ class eeAllocator {
 			return &x;
 		}
 
-		eeAllocator<T>&  operator=(const eeAllocator&) { return *this; }
+		Allocator<T>&  operator=(const Allocator&) { return *this; }
 
 		template <class U>
 		struct rebind {
-			typedef eeAllocator<U> other;
+			typedef Allocator<U> other;
 		};
 
 		template <class U>
-		eeAllocator( const eeAllocator<U>& ) {}
+		Allocator( const Allocator<U>& ) {}
 
 		template <class U>
-		eeAllocator& operator=(const eeAllocator<U>&) { return *this; }
+		Allocator& operator=(const Allocator<U>&) { return *this; }
 	protected:
 
 };

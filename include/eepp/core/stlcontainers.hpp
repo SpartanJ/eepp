@@ -8,7 +8,7 @@
 
 namespace EE {
 	template <typename T, typename A = eeAllocator<T> >
-	struct eeStack {
+	struct Stack {
 		#ifdef EE_MEMORY_MANAGER
 		typedef typename std::stack<T, A> type;
 		#else
@@ -17,7 +17,7 @@ namespace EE {
 	};
 
 	template <typename T, typename A = eeAllocator<T> >
-	struct eeDeque {
+	struct Deque {
 		#ifdef EE_MEMORY_MANAGER
 		typedef typename std::deque<T, A> type;
 		#else
@@ -26,7 +26,7 @@ namespace EE {
 	};
 
 	template <typename T, typename A = eeAllocator<T> >
-	struct eeVector {
+	struct Vector {
 		#ifdef EE_MEMORY_MANAGER
 		typedef typename std::vector<T, A> type;
 		#else
@@ -35,7 +35,7 @@ namespace EE {
 	};
 
 	template <typename T, typename A = eeAllocator<T> >
-	struct eeList {
+	struct List {
 		#ifdef EE_MEMORY_MANAGER
 		typedef typename std::list<T, A> type;
 		#else
@@ -44,7 +44,7 @@ namespace EE {
 	};
 
 	template <typename T, typename P = std::less<T>, typename A = eeAllocator<T> >
-	struct eeSet {
+	struct Set {
 		#ifdef EE_MEMORY_MANAGER
 		typedef typename std::set<T, P, A> type;
 		#else
@@ -53,7 +53,7 @@ namespace EE {
 	};
 
 	template <typename K, typename V, typename P = std::less<K>, typename A = eeAllocator< std::pair<const K, V> > >
-	struct eeMap {
+	struct Map {
 		#ifdef EE_MEMORY_MANAGER
 		typedef typename std::map<K, V, P, A> type;
 		#else
@@ -62,7 +62,7 @@ namespace EE {
 	};
 
 	template <typename K, typename V, typename P = std::less<K>, typename A = eeAllocator< std::pair<const K, V> > >
-	struct eeMultimap {
+	struct Multimap {
 		#ifdef EE_MEMORY_MANAGER
 		typedef typename std::multimap<K, V, P, A> type;
 		#else

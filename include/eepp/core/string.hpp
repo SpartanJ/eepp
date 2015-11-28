@@ -67,13 +67,13 @@ class EE_API String {
 	static Uint32 Hash( const String& str );
 
 	/** @return If the value passed is a character */
-	static bool IsCharacter( const eeInt& mValue );
+	static bool IsCharacter( const int& mValue );
 
 	/** @return If the value passed is a number */
-	static bool IsNumber( const eeInt& mValue, bool AllowDot = false );
+	static bool IsNumber( const int& mValue, bool AllowDot = false );
 
 	/** @return If the value passed is a letter */
-	static bool IsLetter( const eeInt& mValue );
+	static bool IsLetter( const int& mValue );
 
 	/** Split a String and hold it on a vector */
 	static std::vector < String > Split( const String& str, const Uint32& splitchar = '\n', const bool& pushEmptyString = false );
@@ -81,50 +81,65 @@ class EE_API String {
 	/** Split a string and hold it on a vector */
 	static std::vector < std::string > Split( const std::string& str, const Int8& splitchar = '\n', const bool& pushEmptyString = false );
 
-	/** Remove the first space on the string */
-	static std::string LTrim( const std::string & str );
+	/** Remove the first space ( or the specified character ) on the string */
+	static std::string LTrim( const std::string & str, char character = ' ' );
 
-	/** Removes all spaces on the string */
-	static std::string Trim( const std::string & str );
+	/** Removes all spaces ( or the specified character ) on the string */
+	static std::string Trim( const std::string & str, char character = ' ' );
+
+	/** Remove the first space ( or the specified character ) on the string */
+	static String LTrim(const String & str, char character = ' ' );
+
+	/** Removes all spaces ( or the specified character ) on the string */
+	static String Trim( const String & str, char character = ' ' );
 
 	/** Convert the string into upper case string */
-	static void ToUpper( std::string & str );
+	static void ToUpperInPlace( std::string & str );
 
-	/** Convert the string into lower case string */
-	static void ToLower( std::string & str );
+	/** Convert a string to lower case */
+	static std::string ToUpper( std::string str );
+
+	/** Convert the reference of a string into lower case string */
+	static void ToLowerInPlace( std::string & str );
+
+	/** Convert a string to lower case */
+	static std::string ToLower( std::string str );
 
 	/** Convert the string to an std::vector<Uint8> */
 	static std::vector<Uint8> StringToUint8( const std::string& str );
 
 	/** Convert the std::vector<Uint8> to an string */
-	static std::string Uint8ToString( const std::vector<Uint8> v );
+	static std::string Uint8ToString( const std::vector<Uint8> & v );
 
 	/** Insert a char into String on pos (added this function to avoid a bug on String) */
-	static void InsertChar( String& str, const eeUint& pos, const Uint32& tchar );
+	static void InsertChar( String& str, const unsigned int& pos, const Uint32& tchar );
 
 	/** Copy a string to another
 	* @param Dst Destination String
 	* @param Src Source String
 	* @param DstSize Destination Size
 	*/
-	static void StrCopy( char * Dst, const char * Src, eeUint DstSize );
+	static void StrCopy( char * Dst, const char * Src, unsigned int DstSize );
 
 	/** Compare two strings from its beginning.
-	* @param Start String start
-	* @param Str String to compare
-	* @return The position of the last char compared ( -1 if fails )
+	* @param haystack The string to search in.
+	* @param needle The searched string.
+	* @return true if string starts with the substring
 	*/
-	static Int32 StartsWith( const std::string& Start, const std::string Str );
+	static bool StartsWith( const std::string& haystack, const std::string& needle );
 
 	/** Compare two strings from its beginning.
-	* @param Start String start
-	* @param Str String to compare
-	* @return The position of the last char compared ( -1 if fails )
+	* @param haystack The string to search in.
+	* @param needle The searched string.
+	* @return true if string starts with the substring
 	*/
-	static Int32 StartsWith( const String& Start, const String Str );
+	static bool StartsWith( const String& haystack, const String& needle );
 
-	/** Replaces a substring by another string inside a string */
-	static void ReplaceSubStr(std::string &target, const std::string& that, const std::string& with );
+	/** Replace all occurrences of the search string with the replacement string. */
+	static void ReplaceAll( std::string &target, const std::string& that, const std::string& with );
+
+	/** Replace the first ocurrence of the search string with the replacement string. */
+	static void Replace( std::string& target, const std::string& that, const std::string& with );
 
 	/** Removes the numbers at the end of the string */
 	static std::string RemoveNumbersAtEnd( std::string txt );

@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -18,7 +18,7 @@
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 */
-#include "SDL_config.h"
+#include "../../SDL_internal.h"
 
 #if SDL_VIDEO_DRIVER_WINDOWS
 
@@ -604,8 +604,9 @@ WIN_GL_CreateContext(_THIS, SDL_Window * window)
         
         return WIN_GLES_CreateContext(_this, window);
 #else
-        return SDL_SetError("SDL not configured with EGL support");
-#endif        
+        SDL_SetError("SDL not configured with EGL support");
+        return NULL;
+#endif
     }
 
     if (_this->gl_config.share_with_current_context) {
@@ -615,13 +616,13 @@ WIN_GL_CreateContext(_THIS, SDL_Window * window)
     }
 
     if (_this->gl_config.major_version < 3 &&
-    _this->gl_config.profile_mask == 0 &&
-    _this->gl_config.flags == 0) {
+        _this->gl_config.profile_mask == 0 &&
+        _this->gl_config.flags == 0) {
         /* Create legacy context */
         context = _this->gl_data->wglCreateContext(hdc);
-    if( share_context != 0 ) {
+        if( share_context != 0 ) {
             _this->gl_data->wglShareLists(share_context, context);
-    }
+        }
     } else {
         PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB;
         HGLRC temp_context = _this->gl_data->wglCreateContext(hdc);
@@ -756,6 +757,26 @@ WIN_GL_DeleteContext(_THIS, SDL_GLContext context)
         return;
     }
     _this->gl_data->wglDeleteContext((HGLRC) context);
+}
+
+
+SDL_bool
+WIN_GL_SetPixelFormatFrom(_THIS, SDL_Window * fromWindow, SDL_Window * toWindow)
+{
+    HDC hfromdc = ((SDL_WindowData *) fromWindow->driverdata)->hdc;
+    HDC htodc = ((SDL_WindowData *) toWindow->driverdata)->hdc;
+    BOOL result;
+
+    /* get the pixel format of the fromWindow */
+    int pixel_format = GetPixelFormat(hfromdc);
+    PIXELFORMATDESCRIPTOR pfd;
+    SDL_memset(&pfd, 0, sizeof(pfd));
+    DescribePixelFormat(hfromdc, pixel_format, sizeof(pfd), &pfd);
+
+    /* set the pixel format of the toWindow */
+    result = SetPixelFormat(htodc, pixel_format, &pfd);
+
+    return result ? SDL_TRUE : SDL_FALSE;
 }
 
 #endif /* SDL_VIDEO_OPENGL_WGL */

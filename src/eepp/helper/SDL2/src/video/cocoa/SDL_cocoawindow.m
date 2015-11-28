@@ -1,6 +1,6 @@
 /*
   Simple DirectMedia Layer
-  Copyright (C) 1997-2013 Sam Lantinga <slouken@libsdl.org>
+  Copyright (C) 1997-2014 Sam Lantinga <slouken@libsdl.org>
 
   This software is provided 'as-is', without any express or implied
   warranty.  In no event will the authors be held liable for any damages
@@ -18,9 +18,13 @@
      misrepresented as being the original software.
   3. This notice may not be removed or altered from any source distribution.
 */
-#include "SDL_config.h"
+#include "../../SDL_internal.h"
 
 #if SDL_VIDEO_DRIVER_COCOA
+
+#if MAC_OS_X_VERSION_MAX_ALLOWED < 1070
+# error SDL for Mac OS X must be built with a 10.7 SDK or above.
+#endif /* MAC_OS_X_VERSION_MAX_ALLOWED < 1070 */
 
 #include "SDL_syswm.h"
 #include "SDL_timer.h"  /* For SDL_GetTicks() */
@@ -34,14 +38,54 @@
 #include "SDL_cocoashape.h"
 #include "SDL_cocoamouse.h"
 #include "SDL_cocoaopengl.h"
+#include "SDL_assert.h"
 
-#if MAC_OS_X_VERSION_MAX_ALLOWED < 1070
-/* Taken from AppKit/NSOpenGLView.h in 10.8 SDK. */
-@interface NSView (NSOpenGLSurfaceResolution)
-- (BOOL)wantsBestResolutionOpenGLSurface;
-- (void)setWantsBestResolutionOpenGLSurface:(BOOL)flag;
-@end
+/* #define DEBUG_COCOAWINDOW */
+
+#ifdef DEBUG_COCOAWINDOW
+#define DLog(fmt, ...) printf("%s: " fmt "\n", __func__, ##__VA_ARGS__)
+#else
+#define DLog(...) do { } while (0)
 #endif
+
+
+@interface SDLWindow : NSWindow
+/* These are needed for borderless/fullscreen windows */
+- (BOOL)canBecomeKeyWindow;
+- (BOOL)canBecomeMainWindow;
+- (void)sendEvent:(NSEvent *)event;
+@end
+
+@implementation SDLWindow
+- (BOOL)canBecomeKeyWindow
+{
+    return YES;
+}
+
+- (BOOL)canBecomeMainWindow
+{
+    return YES;
+}
+
+- (void)sendEvent:(NSEvent *)event
+{
+  [super sendEvent:event];
+
+  if ([event type] != NSLeftMouseUp) {
+      return;
+  }
+
+  id delegate = [self delegate];
+  if (![delegate isKindOfClass:[Cocoa_WindowListener class]]) {
+      return;
+  }
+
+  if ([delegate isMoving]) {
+      [delegate windowDidFinishMoving];
+  }
+}
+@end
+
 
 static Uint32 s_moveHack;
 
@@ -53,10 +97,15 @@ static void ConvertNSRect(NSRect *r)
 static void
 ScheduleContextUpdates(SDL_WindowData *data)
 {
+    NSOpenGLContext *currentContext = [NSOpenGLContext currentContext];
     NSMutableArray *contexts = data->nscontexts;
     @synchronized (contexts) {
         for (SDLOpenGLContext *context in contexts) {
-            [context scheduleUpdate];
+            if (context == currentContext) {
+                [context update];
+            } else {
+                [context scheduleUpdate];
+            }
         }
     }
 }
@@ -129,6 +178,7 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
     isFullscreenSpace = NO;
     inFullscreenTransition = NO;
     pendingWindowOperation = PENDING_OPERATION_NONE;
+    isMoving = NO;
 
     center = [NSNotificationCenter defaultCenter];
 
@@ -140,12 +190,10 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
         [center addObserver:self selector:@selector(windowDidDeminiaturize:) name:NSWindowDidDeminiaturizeNotification object:window];
         [center addObserver:self selector:@selector(windowDidBecomeKey:) name:NSWindowDidBecomeKeyNotification object:window];
         [center addObserver:self selector:@selector(windowDidResignKey:) name:NSWindowDidResignKeyNotification object:window];
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= 1070
         [center addObserver:self selector:@selector(windowWillEnterFullScreen:) name:NSWindowWillEnterFullScreenNotification object:window];
         [center addObserver:self selector:@selector(windowDidEnterFullScreen:) name:NSWindowDidEnterFullScreenNotification object:window];
         [center addObserver:self selector:@selector(windowWillExitFullScreen:) name:NSWindowWillExitFullScreenNotification object:window];
         [center addObserver:self selector:@selector(windowDidExitFullScreen:) name:NSWindowDidExitFullScreenNotification object:window];
-#endif /* Mac OS X 10.7+ */
     } else {
         [window setDelegate:self];
     }
@@ -209,21 +257,18 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
     }
 }
 
--(BOOL) setFullscreenSpace:(BOOL) state;
+-(BOOL) setFullscreenSpace:(BOOL) state
 {
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= 1070
     SDL_Window *window = _data->window;
     NSWindow *nswindow = _data->nswindow;
+    SDL_VideoData *videodata = ((SDL_WindowData *) window->driverdata)->videodata;
 
-    if (![nswindow respondsToSelector: @selector(collectionBehavior)]) {
-        return NO;
-    }
-    if ([nswindow collectionBehavior] != NSWindowCollectionBehaviorFullScreenPrimary) {
-        return NO;
-    }
-
-    if (state == isFullscreenSpace) {
-        return YES;
+    if (!videodata->allow_spaces) {
+        return NO;  /* Spaces are forcibly disabled. */
+    } else if (state && ((window->flags & SDL_WINDOW_FULLSCREEN_DESKTOP) != SDL_WINDOW_FULLSCREEN_DESKTOP)) {
+        return NO;  /* we only allow you to make a Space on FULLSCREEN_DESKTOP windows. */
+    } else if (state == isFullscreenSpace) {
+        return YES;  /* already there. */
     }
 
     if (inFullscreenTransition) {
@@ -236,18 +281,10 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
     }
     inFullscreenTransition = YES;
 
-    /* Update the flags here so the state change is available immediately */
-    if (state) {
-        window->flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-    } else {
-        window->flags &= ~SDL_WINDOW_FULLSCREEN_DESKTOP;
-    }
-
+    /* you need to be FullScreenPrimary, or toggleFullScreen doesn't work. Unset it again in windowDidExitFullScreen. */
+    [nswindow setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
     [nswindow performSelectorOnMainThread: @selector(toggleFullScreen:) withObject:nswindow waitUntilDone:NO];
     return YES;
-#else
-    return NO;
-#endif /* SDK >= 10.7 */
 }
 
 -(BOOL) isInFullscreenSpace
@@ -282,12 +319,10 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
         [center removeObserver:self name:NSWindowDidDeminiaturizeNotification object:window];
         [center removeObserver:self name:NSWindowDidBecomeKeyNotification object:window];
         [center removeObserver:self name:NSWindowDidResignKeyNotification object:window];
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= 1070
         [center removeObserver:self name:NSWindowWillEnterFullScreenNotification object:window];
         [center removeObserver:self name:NSWindowDidEnterFullScreenNotification object:window];
         [center removeObserver:self name:NSWindowWillExitFullScreenNotification object:window];
         [center removeObserver:self name:NSWindowDidExitFullScreenNotification object:window];
-#endif /* Mac OS X 10.7+ */
     } else {
         [window setDelegate:nil];
     }
@@ -311,9 +346,42 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
        !!! FIXME:   http://bugzilla.libsdl.org/show_bug.cgi?id=1825
     */
     windows = [NSApp orderedWindows];
-    if ([windows count] > 0) {
-        NSWindow *win = (NSWindow *) [windows objectAtIndex:0];
+    for (NSWindow *win in windows)
+    {
+        if (win == window) {
+            continue;
+        }
+
         [win makeKeyAndOrderFront:self];
+        break;
+    }
+}
+
+- (BOOL)isMoving
+{
+    return isMoving;
+}
+
+-(void) setPendingMoveX:(int)x Y:(int)y
+{
+    pendingWindowWarpX = x;
+    pendingWindowWarpY = y;
+}
+
+- (void)windowDidFinishMoving
+{
+    if ([self isMoving])
+    {
+        isMoving = NO;
+
+        SDL_Mouse *mouse = SDL_GetMouse();
+        if (pendingWindowWarpX >= 0 && pendingWindowWarpY >= 0) {
+            mouse->WarpMouse(_data->window, pendingWindowWarpX, pendingWindowWarpY);
+            pendingWindowWarpX = pendingWindowWarpY = -1;
+        }
+        if (mouse->relative_mode && SDL_GetMouseFocus() == _data->window) {
+            mouse->SetRelativeMouseMode(SDL_TRUE);
+        }
     }
 }
 
@@ -326,6 +394,14 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
 - (void)windowDidExpose:(NSNotification *)aNotification
 {
     SDL_SendWindowEvent(_data->window, SDL_WINDOWEVENT_EXPOSED, 0, 0);
+}
+
+- (void)windowWillMove:(NSNotification *)aNotification
+{
+    if ([_data->nswindow isKindOfClass:[SDLWindow class]]) {
+        pendingWindowWarpX = pendingWindowWarpY = -1;
+        isMoving = YES;
+    }
 }
 
 - (void)windowDidMove:(NSNotification *)aNotification
@@ -361,6 +437,11 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
 
 - (void)windowDidResize:(NSNotification *)aNotification
 {
+    if (inFullscreenTransition) {
+        /* We'll take care of this at the end of the transition */
+        return;
+    }
+
     SDL_Window *window = _data->window;
     NSWindow *nswindow = _data->nswindow;
     int x, y, w, h;
@@ -370,11 +451,6 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
     y = (int)rect.origin.y;
     w = (int)rect.size.width;
     h = (int)rect.size.height;
-
-    if (inFullscreenTransition) {
-        /* We'll take care of this at the end of the transition */
-        return;
-    }
 
     if (SDL_IsShapedWindow(window)) {
         Cocoa_ResizeWindowShape(window);
@@ -409,6 +485,9 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
 {
     SDL_Window *window = _data->window;
     SDL_Mouse *mouse = SDL_GetMouse();
+    if (mouse->relative_mode && ![self isMoving]) {
+        mouse->SetRelativeMouseMode(SDL_TRUE);
+    }
 
     /* We're going to get keyboard events, since we're key. */
     SDL_SetKeyboardFocus(window);
@@ -429,10 +508,19 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
 
     /* Check to see if someone updated the clipboard */
     Cocoa_CheckClipboardUpdate(_data->videodata);
+
+    if ((isFullscreenSpace) && ((window->flags & SDL_WINDOW_FULLSCREEN_DESKTOP) == SDL_WINDOW_FULLSCREEN_DESKTOP)) {
+        [NSMenu setMenuBarVisible:NO];
+    }
 }
 
 - (void)windowDidResignKey:(NSNotification *)aNotification
 {
+    SDL_Mouse *mouse = SDL_GetMouse();
+    if (mouse->relative_mode) {
+        mouse->SetRelativeMouseMode(SDL_FALSE);
+    }
+
     /* Some other window will get mouse events, since we're not key. */
     if (SDL_GetMouseFocus() == _data->window) {
         SDL_SetMouseFocus(NULL);
@@ -442,13 +530,16 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
     if (SDL_GetKeyboardFocus() == _data->window) {
         SDL_SetKeyboardFocus(NULL);
     }
+
+    if (isFullscreenSpace) {
+        [NSMenu setMenuBarVisible:YES];
+    }
 }
 
 - (void)windowWillEnterFullScreen:(NSNotification *)aNotification
 {
     SDL_Window *window = _data->window;
 
-    window->flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
     SetWindowStyle(window, (NSTitledWindowMask|NSClosableWindowMask|NSMiniaturizableWindowMask|NSResizableWindowMask));
 
     isFullscreenSpace = YES;
@@ -465,6 +556,10 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
         pendingWindowOperation = PENDING_OPERATION_NONE;
         [self setFullscreenSpace:NO];
     } else {
+        if ((window->flags & SDL_WINDOW_FULLSCREEN_DESKTOP) == SDL_WINDOW_FULLSCREEN_DESKTOP) {
+            [NSMenu setMenuBarVisible:NO];
+        }
+
         pendingWindowOperation = PENDING_OPERATION_NONE;
         /* Force the size change event in case it was delivered earlier
            while the window was still animating into place.
@@ -479,7 +574,6 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
 {
     SDL_Window *window = _data->window;
 
-    window->flags &= ~SDL_WINDOW_FULLSCREEN_DESKTOP;
     SetWindowStyle(window, GetWindowStyle(window));
 
     isFullscreenSpace = NO;
@@ -493,6 +587,8 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
 
     inFullscreenTransition = NO;
 
+    [nswindow setLevel:kCGNormalWindowLevel];
+
     if (pendingWindowOperation == PENDING_OPERATION_ENTER_FULLSCREEN) {
         pendingWindowOperation = PENDING_OPERATION_NONE;
         [self setFullscreenSpace:YES];
@@ -500,6 +596,15 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
         pendingWindowOperation = PENDING_OPERATION_NONE;
         [nswindow miniaturize:nil];
     } else {
+        /* Adjust the fullscreen toggle button and readd menu now that we're here. */
+        if (window->flags & SDL_WINDOW_RESIZABLE) {
+            /* resizable windows are Spaces-friendly: they get the "go fullscreen" toggle button on their titlebar. */
+            [nswindow setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
+        } else {
+            [nswindow setCollectionBehavior:NSWindowCollectionBehaviorManaged];
+        }
+        [NSMenu setMenuBarVisible:YES];
+
         pendingWindowOperation = PENDING_OPERATION_NONE;
         /* Force the size change event in case it was delivered earlier
            while the window was still animating into place.
@@ -507,8 +612,23 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
         window->w = 0;
         window->h = 0;
         [self windowDidResize:aNotification];
+
+        /* FIXME: Why does the window get hidden? */
+        if (window->flags & SDL_WINDOW_SHOWN) {
+            Cocoa_ShowWindow(SDL_GetVideoDevice(), window);
+        }
     }
 }
+
+-(NSApplicationPresentationOptions)window:(NSWindow *)window willUseFullScreenPresentationOptions:(NSApplicationPresentationOptions)proposedOptions
+{
+    if ((_data->window->flags & SDL_WINDOW_FULLSCREEN_DESKTOP) == SDL_WINDOW_FULLSCREEN_DESKTOP) {
+        return NSApplicationPresentationFullScreen | NSApplicationPresentationHideDock | NSApplicationPresentationHideMenuBar;
+    } else {
+        return proposedOptions;
+    }
+}
+
 
 /* We'll respond to key events by doing nothing so we don't beep.
  * We could handle key messages here, but we lose some in the NSApp dispatch,
@@ -626,8 +746,6 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
 
     if (x < 0 || x >= window->w || y < 0 || y >= window->h) {
         if (window->flags & SDL_WINDOW_INPUT_GRABBED) {
-            CGPoint cgpoint;
-
             if (x < 0) {
                 x = 0;
             } else if (x >= window->w) {
@@ -640,6 +758,8 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
             }
 
 #if !SDL_MAC_NO_SANDBOX
+            CGPoint cgpoint;
+
             /* When SDL_MAC_NO_SANDBOX is set, this is handled by
              * SDL_cocoamousetap.m.
              */
@@ -654,6 +774,8 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
             CGSetLocalEventsSuppressionInterval(0.0);
             CGDisplayMoveCursorToPoint(kCGDirectMainDisplay, cgpoint);
             CGSetLocalEventsSuppressionInterval(0.25);
+
+            Cocoa_HandleMouseWarp(cgpoint.x, cgpoint.y);
 #endif
         }
     }
@@ -711,8 +833,10 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
             touches = [event touchesMatchingPhase:NSTouchPhaseBegan inView:nil];
             break;
         case COCOA_TOUCH_UP:
-        case COCOA_TOUCH_CANCELLED:
             touches = [event touchesMatchingPhase:NSTouchPhaseEnded inView:nil];
+            break;
+        case COCOA_TOUCH_CANCELLED:
+            touches = [event touchesMatchingPhase:NSTouchPhaseCancelled inView:nil];
             break;
         case COCOA_TOUCH_MOVE:
             touches = [event touchesMatchingPhase:NSTouchPhaseMoved inView:nil];
@@ -752,24 +876,6 @@ SetWindowStyle(SDL_Window * window, unsigned int style)
     }
 }
 
-@end
-
-@interface SDLWindow : NSWindow
-/* These are needed for borderless/fullscreen windows */
-- (BOOL)canBecomeKeyWindow;
-- (BOOL)canBecomeMainWindow;
-@end
-
-@implementation SDLWindow
-- (BOOL)canBecomeKeyWindow
-{
-    return YES;
-}
-
-- (BOOL)canBecomeMainWindow
-{
-    return YES;
-}
 @end
 
 @interface SDLView : NSView
@@ -888,6 +994,7 @@ SetupWindowData(_THIS, SDL_Window * window, NSWindow *nswindow, SDL_bool created
 int
 Cocoa_CreateWindow(_THIS, SDL_Window * window)
 {
+    SDL_VideoData *videodata = (SDL_VideoData *) _this->driverdata;
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     NSWindow *nswindow;
     SDL_VideoDisplay *display = SDL_GetDisplayForWindow(window);
@@ -931,14 +1038,16 @@ Cocoa_CreateWindow(_THIS, SDL_Window * window)
         return -1;
     }
     [nswindow setBackgroundColor:[NSColor blackColor]];
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= 1070
-    if ([nswindow respondsToSelector:@selector(setCollectionBehavior:)]) {
-        const char *hint = SDL_GetHint(SDL_HINT_VIDEO_FULLSCREEN_SPACES);
-        if (hint && SDL_atoi(hint) > 0) {
+
+    if (videodata->allow_spaces) {
+        SDL_assert(videodata->osversion >= 0x1070);
+        SDL_assert([nswindow respondsToSelector:@selector(toggleFullScreen:)]);
+        /* we put FULLSCREEN_DESKTOP windows in their own Space, without a toggle button or menubar, later */
+        if (window->flags & SDL_WINDOW_RESIZABLE) {
+            /* resizable windows are Spaces-friendly: they get the "go fullscreen" toggle button on their titlebar. */
             [nswindow setCollectionBehavior:NSWindowCollectionBehaviorFullScreenPrimary];
         }
     }
-#endif
 
     /* Create a default view for this window */
     rect = [nswindow contentRectForFrameRect:[nswindow frame]];
@@ -1340,13 +1449,18 @@ void
 Cocoa_SetWindowGrab(_THIS, SDL_Window * window, SDL_bool grabbed)
 {
     /* Move the cursor to the nearest point in the window */
-    if (grabbed) {
+    SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
+    if (grabbed && data && ![data->listener isMoving]) {
         int x, y;
         CGPoint cgpoint;
 
         SDL_GetMouseState(&x, &y);
         cgpoint.x = window->x + x;
         cgpoint.y = window->y + y;
+
+        Cocoa_HandleMouseWarp(cgpoint.x, cgpoint.y);
+
+        DLog("Returning cursor to (%g, %g)", cgpoint.x, cgpoint.y);
         CGDisplayMoveCursorToPoint(kCGDirectMainDisplay, cgpoint);
     }
 
@@ -1419,7 +1533,6 @@ SDL_bool
 Cocoa_SetWindowFullscreenSpace(SDL_Window * window, SDL_bool state)
 {
     SDL_bool succeeded = SDL_FALSE;
-#if MAC_OS_X_VERSION_MAX_ALLOWED >= 1070
     NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
     SDL_WindowData *data = (SDL_WindowData *) window->driverdata;
 
@@ -1428,7 +1541,6 @@ Cocoa_SetWindowFullscreenSpace(SDL_Window * window, SDL_bool state)
     }
 
     [pool release];
-#endif /* SDK 10.7+ */
 
     return succeeded;
 }

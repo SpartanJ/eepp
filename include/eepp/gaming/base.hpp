@@ -10,10 +10,10 @@ using namespace EE::Math;
 
 #include <eepp/system/bitop.hpp>
 #include <eepp/system/colors.hpp>
-#include <eepp/system/cpack.hpp>
-#include <eepp/system/ciostream.hpp>
-#include <eepp/system/ciostreamfile.hpp>
-#include <eepp/system/ciostreammemory.hpp>
+#include <eepp/system/pack.hpp>
+#include <eepp/system/iostream.hpp>
+#include <eepp/system/iostreamfile.hpp>
+#include <eepp/system/iostreammemory.hpp>
 #include <eepp/system/filesystem.hpp>
 using namespace EE::System;
 

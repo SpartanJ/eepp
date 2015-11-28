@@ -1,16 +1,17 @@
 #ifndef EEPP_NETWORK_HPP
 #define EEPP_NETWORK_HPP
 
-#include <eepp/network/cftp.hpp>
-#include <eepp/network/chttp.hpp>
-#include <eepp/network/cipaddress.hpp>
-#include <eepp/network/cpacket.hpp>
-#include <eepp/network/csocket.hpp>
+#include <eepp/network/uri.hpp>
+#include <eepp/network/ftp.hpp>
+#include <eepp/network/http.hpp>
+#include <eepp/network/ipaddress.hpp>
+#include <eepp/network/packet.hpp>
+#include <eepp/network/socket.hpp>
 #include <eepp/network/sockethandle.hpp>
-#include <eepp/network/csocketselector.hpp>
-#include <eepp/network/ctcplistener.hpp>
-#include <eepp/network/ctcpsocket.hpp>
-#include <eepp/network/cudpsocket.hpp>
-#include <eepp/network/ssl/csslsocket.hpp>
+#include <eepp/network/socketselector.hpp>
+#include <eepp/network/tcplistener.hpp>
+#include <eepp/network/tcpsocket.hpp>
+#include <eepp/network/udpsocket.hpp>
+#include <eepp/network/ssl/sslsocket.hpp>
 
 #endif

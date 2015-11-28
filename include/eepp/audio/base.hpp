@@ -3,11 +3,11 @@
 
 #include <eepp/core.hpp>
 
-#include <eepp/system/clog.hpp>
-#include <eepp/system/cpack.hpp>
-#include <eepp/system/cthread.hpp>
+#include <eepp/system/log.hpp>
+#include <eepp/system/pack.hpp>
+#include <eepp/system/thread.hpp>
 #include <eepp/system/filesystem.hpp>
-#include <eepp/system/ctime.hpp>
+#include <eepp/system/time.hpp>
 using namespace EE::System;
 
 #include <eepp/math/vector3.hpp>

@@ -1,6 +1,6 @@
 #include "eetest.hpp"
 
-Demo_Test::cEETest * TestInstance = NULL;
+Demo_Test::EETest * TestInstance = NULL;
 
 static void MainLoop() {
 	TestInstance->Update();
@@ -8,11 +8,11 @@ static void MainLoop() {
 
 namespace Demo_Test {
 
-void cEETest::Init() {
-	EE = cEngine::instance();
+void EETest::Init() {
+	EE = Engine::instance();
 
-	cLog::instance()->LiveWrite( true );
-	cLog::instance()->ConsoleOutput( true );
+	Log::instance()->LiveWrite( true );
+	Log::instance()->ConsoleOutput( true );
 
 	DrawBack 			= false;
 	MultiViewportMode 	= false;
@@ -39,7 +39,7 @@ void cEETest::Init() {
 
 	MyPath 				= Sys::GetProcessPath() + "assets/";
 
-	cIniFile Ini( MyPath + "ee.ini" );
+	IniFile Ini( MyPath + "ee.ini" );
 
 	PartsNum			= Ini.GetValueI( "EEPP", "ParticlesNum", 1000 );
 	mUseShaders			= Ini.GetValueB( "EEPP", "UseShaders", false );
@@ -61,23 +61,23 @@ void cEETest::Init() {
 		SetScreen( StartScreen );
 
 		mWindow->Caption( "eepp - Test Application" );
-		mWindow->PushResizeCallback( cb::Make1( this, &cEETest::OnWindowResize ) );
+		mWindow->PushResizeCallback( cb::Make1( this, &EETest::OnWindowResize ) );
 
-		TF = cTextureFactory::instance();
+		TF = TextureFactory::instance();
 		TF->Allocate(40);
 
-		Log		= cLog::instance();
+		Log		= Log::instance();
 		KM		= mWindow->GetInput();
 		JM		= KM->GetJoystickManager();
 
 		PS.resize(5);
 
-		Scenes[0] = cb::Make0( this, &cEETest::PhysicsUpdate );
-		Scenes[1] = cb::Make0( this, &cEETest::Screen1 );
-		Scenes[2] = cb::Make0( this, &cEETest::Screen2 );
-		Scenes[3] = cb::Make0( this, &cEETest::Screen3 );
-		Scenes[4] = cb::Make0( this, &cEETest::Screen4 );
-		Scenes[5] = cb::Make0( this, &cEETest::Screen5 );
+		Scenes[0] = cb::Make0( this, &EETest::PhysicsUpdate );
+		Scenes[1] = cb::Make0( this, &EETest::Screen1 );
+		Scenes[2] = cb::Make0( this, &EETest::Screen2 );
+		Scenes[3] = cb::Make0( this, &EETest::Screen3 );
+		Scenes[4] = cb::Make0( this, &EETest::Screen4 );
+		Scenes[5] = cb::Make0( this, &EETest::Screen5 );
 
 		//InBuf.Start();
 		InBuf.SupportNewLine( true );
@@ -91,7 +91,7 @@ void cEETest::Init() {
 		CreateShaders();
 
 		if ( mMusEnabled ) {
-			Mus = eeNew( cMusic, () );
+			Mus = eeNew( Music, () );
 
 			if ( Mus->OpenFromFile( MyPath + "sounds/music.ogg" ) ) {
 				Mus->Loop( true );
@@ -100,12 +100,12 @@ void cEETest::Init() {
 		}
 
 		WP.Type( Ease::QuarticInOut );
-		WP.AddWaypoint( eeVector2f(0,0), 100 );
-		WP.AddWaypoint( eeVector2f(800,0), 100 );
-		WP.AddWaypoint( eeVector2f(0,0), 100 );
-		WP.AddWaypoint( eeVector2f(1024,768), 100 );
-		WP.AddWaypoint( eeVector2f(0,600), 100 );
-		WP.EditWaypoint( 2, eeVector2f(800,600), 100 );
+		WP.AddWaypoint( Vector2f(0,0), 100 );
+		WP.AddWaypoint( Vector2f(800,0), 100 );
+		WP.AddWaypoint( Vector2f(0,0), 100 );
+		WP.AddWaypoint( Vector2f(1024,768), 100 );
+		WP.AddWaypoint( Vector2f(0,600), 100 );
+		WP.EditWaypoint( 2, Vector2f(800,600), 100 );
 		WP.EraseWaypoint( 3 );
 		WP.Loop(true);
 		WP.SetTotalTime( Milliseconds( 5000 ) );
@@ -114,19 +114,19 @@ void cEETest::Init() {
 		Batch.AllocVertexs( 2048 );
 		Batch.SetBlendMode( ALPHA_BLENDONE );
 
-		mFBO = cFrameBuffer::New( 256, 256, false );
+		mFBO = FrameBuffer::New( 256, 256, false );
 
 		if ( NULL != mFBO )
-			mFBO->ClearColor( eeColorAf( 0, 0, 0, 0.5f ) );
+			mFBO->ClearColor( ColorAf( 0, 0, 0, 0.5f ) );
 
-		eePolygon2f Poly = eePolygon2f::CreateRoundedRectangle( 0, 0, 256, 50 );
+		Polygon2f Poly = Polygon2f::CreateRoundedRectangle( 0, 0, 256, 50 );
 
-		mVBO = cVertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
+		mVBO = VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
 
 		if ( NULL != mVBO ) {
 			for ( Uint32 i = 0; i < Poly.Size(); i++ ) {
 				mVBO->AddVertex( Poly[i] );
-				mVBO->AddColor( eeColorA( 100 + i, 255 - i, 150 + i, 200 ) );
+				mVBO->AddColor( ColorA( 100 + i, 255 - i, 150 + i, 200 ) );
 			}
 
 			mVBO->Compile();
@@ -139,13 +139,13 @@ void cEETest::Init() {
 #endif
 
 	} else {
-		cEngine::DestroySingleton();
+		Engine::DestroySingleton();
 
 		exit(0);
 	}
 }
 
-void cEETest::CreateUIThemeTextureAtlas() {
+void EETest::CreateUIThemeTextureAtlas() {
 	#if !defined( EE_DEBUG ) || defined( EE_GLES )
 	return;
 	#endif
@@ -154,35 +154,35 @@ void cEETest::CreateUIThemeTextureAtlas() {
 	std::string Path( MyPath + "ui/uitheme" );
 
 	if ( !FileSystem::FileExists( tgpath + EE_TEXTURE_ATLAS_EXTENSION ) ) {
-		cTexturePacker tp( 256, 256, true, 2 );
+		TexturePacker tp( 256, 256, true, 2 );
 		tp.AddTexturesPath( Path );
 		tp.PackTextures();
 		tp.Save( tgpath + ".png", SAVE_TYPE_PNG );
 	} else {
-		cTextureAtlasLoader tgl;
+		TextureAtlasLoader tgl;
 		tgl.UpdateTextureAtlas( tgpath + EE_TEXTURE_ATLAS_EXTENSION, Path );
 	}
 }
 
-void cEETest::LoadFonts() {
+void EETest::LoadFonts() {
 	mFTE.Restart();
 
-	cTextureLoader * tl = eeNew( cTextureLoader, ( MyPath + "fonts/conchars.png" ) );
-	tl->SetColorKey( eeColor(0,0,0) );
+	TextureLoader * tl = eeNew( TextureLoader, ( MyPath + "fonts/conchars.png" ) );
+	tl->SetColorKey( RGB(0,0,0) );
 
-	mFontLoader.Add( eeNew( cTextureFontLoader, ( "conchars", tl, (eeUint)32 ) ) );
-	mFontLoader.Add( eeNew( cTextureFontLoader, ( "ProggySquareSZ", eeNew( cTextureLoader, ( MyPath + "fonts/ProggySquareSZ.png" ) ), MyPath + "fonts/ProggySquareSZ.dat" ) ) );
-	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arial", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, eeColor(255,255,255) ) ) );
-	mFontLoader.Add( eeNew( cTTFFontLoader, ( "arialb", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, eeColor(255,255,255), 1, eeColor(0,0,0), true ) ) );
+	mFontLoader.Add( eeNew( TextureFontLoader, ( "conchars", tl, (unsigned int)32 ) ) );
+	mFontLoader.Add( eeNew( TextureFontLoader, ( "ProggySquareSZ", eeNew( TextureLoader, ( MyPath + "fonts/ProggySquareSZ.png" ) ), MyPath + "fonts/ProggySquareSZ.dat" ) ) );
+	mFontLoader.Add( eeNew( TTFFontLoader, ( "arial", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255) ) ) );
+	mFontLoader.Add( eeNew( TTFFontLoader, ( "arialb", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255), 1, RGB(0,0,0), true ) ) );
 
-	mFontLoader.Load( cb::Make1( this, &cEETest::OnFontLoaded ) );
+	mFontLoader.Load( cb::Make1( this, &EETest::OnFontLoaded ) );
 }
 
-void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
-	FF		= cFontManager::instance()->GetByName( "conchars" );
-	FF2		= cFontManager::instance()->GetByName( "ProggySquareSZ" );
-	TTF		= cFontManager::instance()->GetByName( "arial" );
-	TTFB	= cFontManager::instance()->GetByName( "arialb" );
+void EETest::OnFontLoaded( ResourceLoader * ObjLoaded ) {
+	FF		= FontManager::instance()->GetByName( "conchars" );
+	FF2		= FontManager::instance()->GetByName( "ProggySquareSZ" );
+	TTF		= FontManager::instance()->GetByName( "arial" );
+	TTFB	= FontManager::instance()->GetByName( "arialb" );
 
 	eePRINTL( "Fonts loading time: %4.3f ms.", mFTE.Elapsed().AsMilliseconds() );
 
@@ -198,32 +198,32 @@ void cEETest::OnFontLoaded( cResourceLoader * ObjLoaded ) {
 
 	mEEText.Create( TTFB, "Entropia Engine++\nCTRL + Number to change Demo Screen\nRight click to see the PopUp Menu" );
 	mFBOText.Create( TTFB, "This is a VBO\nInside of a FBO" );
-	mFBOText.Color( eeColorA(255,255,0,255), mFBOText.Text().find( "VBO" ), mFBOText.Text().find( "VBO" ) + 2 );
-	mFBOText.Color( eeColorA(255,255,0,255), mFBOText.Text().find( "FBO" ), mFBOText.Text().find( "FBO" ) + 2 );
+	mFBOText.Color( ColorA(255,255,0,255), mFBOText.Text().find( "VBO" ), mFBOText.Text().find( "VBO" ) + 2 );
+	mFBOText.Color( ColorA(255,255,0,255), mFBOText.Text().find( "FBO" ), mFBOText.Text().find( "FBO" ) + 2 );
 
-	mInfoText.Create( FF, "", eeColorA(255,255,255,150) );
+	mInfoText.Create( FF, "", ColorA(255,255,255,150) );
 }
 
-void cEETest::CreateShaders() {
+void EETest::CreateShaders() {
 	mUseShaders = mUseShaders && GLi->ShadersSupported();
 
 	mShaderProgram = NULL;
 
 	if ( mUseShaders ) {
 		mBlurFactor = 0.01f;
-		mShaderProgram = cShaderProgram::New( MyPath + "shaders/blur.vert", MyPath + "shaders/blur.frag" );
+		mShaderProgram = ShaderProgram::New( MyPath + "shaders/blur.vert", MyPath + "shaders/blur.frag" );
 	}
 }
 
-void cEETest::OnWinMouseUp( const cUIEvent * Event ) {
-	const cUIEventMouse * MEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
+void EETest::OnWinMouseUp( const UIEvent * Event ) {
+	const UIEventMouse * MEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
-	cUIControlAnim * CtrlAnim;
+	UIControlAnim * CtrlAnim;
 
 	if ( Event->Ctrl()->IsType( UI_TYPE_WINDOW ) ) {
-		CtrlAnim = reinterpret_cast<cUIControlAnim*>( Event->Ctrl() );
+		CtrlAnim = reinterpret_cast<UIControlAnim*>( Event->Ctrl() );
 	} else {
-		CtrlAnim = reinterpret_cast<cUIControlAnim*>( Event->Ctrl()->Parent() );
+		CtrlAnim = reinterpret_cast<UIControlAnim*>( Event->Ctrl()->Parent() );
 	}
 
 	if ( MEvent->Flags() & EE_BUTTON_WUMASK ) {
@@ -233,185 +233,185 @@ void cEETest::OnWinMouseUp( const cUIEvent * Event ) {
 	}
 }
 
-void cEETest::OnShowMenu( const cUIEvent * Event ) {
-	cUIPushButton * PB = static_cast<cUIPushButton*>( Event->Ctrl() );
+void EETest::OnShowMenu( const UIEvent * Event ) {
+	UIPushButton * PB = static_cast<UIPushButton*>( Event->Ctrl() );
 
 	if ( Menu->Show() ) {
-		eeVector2i Pos = eeVector2i( (Int32)PB->GetPolygon()[0].x, (Int32)PB->GetPolygon()[0].y - 2 );
-		cUIMenu::FixMenuPos( Pos , Menu );
+		Vector2i Pos = Vector2i( (Int32)PB->GetPolygon()[0].x, (Int32)PB->GetPolygon()[0].y - 2 );
+		UIMenu::FixMenuPos( Pos , Menu );
 		Menu->Pos( Pos );
 	}
 }
 
-void cEETest::OnWindowResize(cWindow * win) {
+void EETest::OnWindowResize(EE::Window::Window * win) {
 	Map.ViewSize( win->Size() );
 }
 
-void cEETest::CreateUI() {
-	cClock TE;
+void EETest::CreateUI() {
+	Clock TE;
 
 	CreateUIThemeTextureAtlas();
 
 	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.Elapsed().AsMilliseconds() );
 
-	cUIManager::instance()->Init(); //UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
+	UIManager::instance()->Init(); //UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
 
-	//mTheme = cUITheme::LoadFromPath( eeNew( cUIDefaultTheme, ( "uitheme", "uitheme" ) ), MyPath + "uitheme/" );
+	//mTheme = UITheme::LoadFromPath( eeNew( UIDefaultTheme, ( "uitheme", "uitheme" ) ), MyPath + "uitheme/" );
 
-	cTextureAtlasLoader tgl( MyPath + "ui/uitheme" + EE_TEXTURE_ATLAS_EXTENSION );
+	TextureAtlasLoader tgl( MyPath + "ui/uitheme" + EE_TEXTURE_ATLAS_EXTENSION );
 
-	mTheme = cUITheme::LoadFromTextureAtlas( eeNew( cUIDefaultTheme, ( "uitheme", "uitheme" ) ), cTextureAtlasManager::instance()->GetByName( "uitheme" ) );
+	mTheme = UITheme::LoadFromTextureAtlas( eeNew( UIDefaultTheme, ( "uitheme", "uitheme" ) ), TextureAtlasManager::instance()->GetByName( "uitheme" ) );
 
-	cUIThemeManager::instance()->Add( mTheme );
-	cUIThemeManager::instance()->DefaultEffectsEnabled( true );
-	cUIThemeManager::instance()->DefaultFont( TTF );
-	cUIThemeManager::instance()->DefaultTheme( "uitheme" );
+	UIThemeManager::instance()->Add( mTheme );
+	UIThemeManager::instance()->DefaultEffectsEnabled( true );
+	UIThemeManager::instance()->DefaultFont( TTF );
+	UIThemeManager::instance()->DefaultTheme( "uitheme" );
 
-	cUIControl::CreateParams Params( cUIManager::instance()->MainControl(), eeVector2i(0,0), eeSize( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
+	UIControl::CreateParams Params( UIManager::instance()->MainControl(), Vector2i(0,0), Sizei( 530, 380 ), UI_FILL_BACKGROUND | UI_CLIP_ENABLE | UI_BORDER );
 
 	Params.Border.Width( 2 );
 	Params.Border.Color( 0x979797CC );
-	Params.Background.Colors( eeColorA( 0xEDEDED66 ), eeColorA( 0xEDEDEDCC ), eeColorA( 0xEDEDEDCC ), eeColorA( 0xEDEDED66 ) );
+	Params.Background.Colors( ColorA( 0xEDEDED66 ), ColorA( 0xEDEDEDCC ), ColorA( 0xEDEDEDCC ), ColorA( 0xEDEDED66 ) );
 
-	cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 530, 405 ), eeVector2i( 320, 240 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DRAGABLE_CONTAINER , eeSize( 530, 405 ), 200 );
+	UIWindow * tWin = mTheme->CreateWindow( NULL, Sizei( 530, 405 ), Vector2i( 320, 240 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DRAGABLE_CONTAINER , Sizei( 530, 405 ), 200 );
 	C = tWin->Container();
 
 	tWin->Title( "Controls Test" );
 
-	tWin->AddEventListener( cUIEvent::EventMouseUp, cb::Make1( this, &cEETest::OnWinMouseUp ) );
-	C->AddEventListener( cUIEvent::EventMouseUp, cb::Make1( this, &cEETest::OnWinMouseUp ) );
+	tWin->AddEventListener( UIEvent::EventMouseUp, cb::Make1( this, &EETest::OnWinMouseUp ) );
+	C->AddEventListener( UIEvent::EventMouseUp, cb::Make1( this, &EETest::OnWinMouseUp ) );
 
 	Params.Flags &= ~UI_CLIP_ENABLE;
 	Params.Background.Corners(0);
-	Params.Background.Colors( eeColorA( 0x00FF0077 ), eeColorA( 0x00CC0077 ), eeColorA( 0x00CC0077 ), eeColorA( 0x00FF0077 ) );
+	Params.Background.Colors( ColorA( 0x00FF0077 ), ColorA( 0x00CC0077 ), ColorA( 0x00CC0077 ), ColorA( 0x00FF0077 ) );
 	Params.Parent( C );
-	Params.Size = eeSize( 50, 50 );
-	cUITest * Child = eeNew( cUITest, ( Params ) );
+	Params.Size = Sizei( 50, 50 );
+	UITest * Child = eeNew( UITest, ( Params ) );
 	Child->Pos( 240, 130 );
 	Child->Visible( true );
 	Child->Enabled( true );
 	Child->StartRotation( 0.f, 360.f, Milliseconds( 5000.f ) );
 	Child->RotationInterpolation()->Loop( true );
 
-	Params.Background.Colors( eeColorA( 0xFFFF0077 ), eeColorA( 0xCCCC0077 ), eeColorA( 0xCCCC0077 ), eeColorA( 0xFFFF0077 ) );
+	Params.Background.Colors( ColorA( 0xFFFF0077 ), ColorA( 0xCCCC0077 ), ColorA( 0xCCCC0077 ), ColorA( 0xFFFF0077 ) );
 	Params.Parent( Child );
-	Params.Size = eeSize( 25, 25 );
-	cUITest * Child2 = eeNew( cUITest, ( Params ) );
+	Params.Size = Sizei( 25, 25 );
+	UITest * Child2 = eeNew( UITest, ( Params ) );
 	Child2->Pos( 15, 15 );
 	Child2->Visible( true );
 	Child2->Enabled( true );
 	Child2->StartRotation( 0.f, 360.f, Milliseconds( 5000.f ) );
 	Child2->RotationInterpolation()->Loop( true );
 
-	mTheme->CreateSprite( eeNew( cSprite, ( "gn" ) ), C, eeSize(), eeVector2i( 160, 100 ) );
+	mTheme->CreateSprite( eeNew( Sprite, ( "gn" ) ), C, Sizei(), Vector2i( 160, 100 ) );
 
-	cUITextBox::CreateParams TextParams;
+	UITextBox::CreateParams TextParams;
 	TextParams.Parent( C );
 	TextParams.PosSet( 0, 0 );
-	TextParams.Size = eeSize( 320, 240 );
+	TextParams.Size = Sizei( 320, 240 );
 	TextParams.Flags = UI_VALIGN_TOP | UI_HALIGN_RIGHT;
-	cUITextBox * Text = eeNew( cUITextBox, ( TextParams ) );
+	UITextBox * Text = eeNew( UITextBox, ( TextParams ) );
 	Text->Visible( true );
 	Text->Enabled( false );
 	Text->Text( "Turn around\nJust Turn Around\nAround!" );
 
-	cUITextInput::CreateParams InputParams;
+	UITextInput::CreateParams InputParams;
 	InputParams.Parent( C );
 	InputParams.PosSet( 20, 216 );
-	InputParams.Size = eeSize( 200, 22 );
+	InputParams.Size = Sizei( 200, 22 );
 	InputParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_TEXT_SELECTION_ENABLED;
-	cUITextInput * Input = eeNew( cUITextInput, ( InputParams ) );
+	UITextInput * Input = eeNew( UITextInput, ( InputParams ) );
 	Input->Visible( true );
 	Input->Enabled( true );
 
-	cUIPushButton::CreateParams ButtonParams;
+	UIPushButton::CreateParams ButtonParams;
 	ButtonParams.Parent( C );
 	ButtonParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER | UI_AUTO_SIZE;
 	ButtonParams.PosSet( 225, 216 );
-	ButtonParams.Size = eeSize( 90, 0 );
+	ButtonParams.Size = Sizei( 90, 0 );
 	ButtonParams.SetIcon( mTheme->GetIconByName( "ok" ) );
-	cUIPushButton * Button = eeNew( cUIPushButton, ( ButtonParams ) );
+	UIPushButton * Button = eeNew( UIPushButton, ( ButtonParams ) );
 	Button->Visible( true );
 	Button->Enabled( true );
 	Button->Text( "Click Me" );
-	Button->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::ButtonClick ) );
+	Button->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::ButtonClick ) );
 	Button->TooltipText( "Click and see what happens..." );
 
 	TextParams.PosSet( 130, 20 );
-	TextParams.Size = eeSize( 80, 22 );
+	TextParams.Size = Sizei( 80, 22 );
 	TextParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT;
-	cUICheckBox * Checkbox = eeNew( cUICheckBox, ( TextParams ) );
+	UICheckBox * Checkbox = eeNew( UICheckBox, ( TextParams ) );
 	Checkbox->Visible( true );
 	Checkbox->Text( "Check Me" );
 	Checkbox->Enabled( true );
 
 	TextParams.PosSet( 130, 40 );
-	cUIRadioButton * RadioButton = eeNew( cUIRadioButton, ( TextParams ) );
+	UIRadioButton * RadioButton = eeNew( UIRadioButton, ( TextParams ) );
 	RadioButton->Visible( true );
 	RadioButton->Text( "Check Me" );
 	RadioButton->Enabled( true );
 
 	TextParams.PosSet( 130, 60 );
-	RadioButton = eeNew( cUIRadioButton, ( TextParams ) );
+	RadioButton = eeNew( UIRadioButton, ( TextParams ) );
 	RadioButton->Visible( true );
 	RadioButton->Text( "Check Me 2" );
 	RadioButton->Enabled( true );
 
-	cUISlider::CreateParams SliderParams;
+	UISlider::CreateParams SliderParams;
 	SliderParams.Parent( C );
 	SliderParams.PosSet( 220, 80 );
-	SliderParams.Size = eeSize( 80, 24 );
-	mSlider = eeNew( cUISlider, ( SliderParams ) );
+	SliderParams.Size = Sizei( 80, 24 );
+	mSlider = eeNew( UISlider, ( SliderParams ) );
 	mSlider->Visible( true );
 	mSlider->Enabled( true );
-	mSlider->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cEETest::OnSliderValueChange ) );
+	mSlider->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &EETest::OnSliderValueChange ) );
 
 	SliderParams.PosSet( 40, 110 );
-	SliderParams.Size = eeSize( 24, 80 );
+	SliderParams.Size = Sizei( 24, 80 );
 	SliderParams.VerticalSlider = true;
-	mSlider = eeNew( cUISlider, ( SliderParams ) );
+	mSlider = eeNew( UISlider, ( SliderParams ) );
 	mSlider->Visible( true );
 	mSlider->Enabled( true );
 
 	SliderParams.PosSet( 60, 110 );
-	mSlider = eeNew( cUISlider, ( SliderParams ) );
+	mSlider = eeNew( UISlider, ( SliderParams ) );
 	mSlider->Visible( true );
 	mSlider->Enabled( true );
 
-	cUISpinBox::CreateParams SpinBoxParams;
+	UISpinBox::CreateParams SpinBoxParams;
 	SpinBoxParams.Parent( C );
 	SpinBoxParams.PosSet( 80, 150 );
-	SpinBoxParams.Size = eeSize( 80, 24 );
+	SpinBoxParams.Size = Sizei( 80, 24 );
 	SpinBoxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_CLIP_ENABLE;
 	SpinBoxParams.AllowDotsInNumbers = true;
-	cUISpinBox * mSpinBox = eeNew( cUISpinBox, ( SpinBoxParams ) );
+	UISpinBox * mSpinBox = eeNew( UISpinBox, ( SpinBoxParams ) );
 	mSpinBox->Visible( true );
 	mSpinBox->Enabled( true );
 
-	cUIScrollBar::CreateParams ScrollBarP;
+	UIScrollBar::CreateParams ScrollBarP;
 	ScrollBarP.Parent( C );
 	ScrollBarP.PosSet( 0, 0 );
-	ScrollBarP.Size = eeSize( 15, 240 );
+	ScrollBarP.Size = Sizei( 15, 240 );
 	ScrollBarP.Flags = UI_AUTO_SIZE;
 	ScrollBarP.VerticalScrollBar = true;
-	mScrollBar = eeNew( cUIScrollBar, ( ScrollBarP ) );
+	mScrollBar = eeNew( UIScrollBar, ( ScrollBarP ) );
 	mScrollBar->Visible( true );
 	mScrollBar->Enabled( true );
-	mScrollBar->AddEventListener( cUIEvent::EventOnValueChange, cb::Make1( this, &cEETest::OnValueChange ) );
+	mScrollBar->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &EETest::OnValueChange ) );
 
-	mProgressBar = mTheme->CreateProgressBar( C, eeSize( 200, 20 ), eeVector2i( 20, 190 ) );
+	mProgressBar = mTheme->CreateProgressBar( C, Sizei( 200, 20 ), Vector2i( 20, 190 ) );
 
 	TextParams.PosSet( 20, 5 );
-	mTextBoxValue = eeNew( cUITextBox, ( TextParams ) );
+	mTextBoxValue = eeNew( UITextBox, ( TextParams ) );
 	mTextBoxValue->Visible( true );
 	OnValueChange( NULL );
 
-	cUIListBox::CreateParams LBParams;
+	UIListBox::CreateParams LBParams;
 	LBParams.Parent( C );
 	LBParams.PosSet( 325, 8 );
-	LBParams.Size = eeSize( 200, 240-16 );
+	LBParams.Size = Sizei( 200, 240-16 );
 	LBParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_TOUCH_DRAG_ENABLED; // | UI_MULTI_SELECT
-	mListBox = eeNew( cUIListBox, ( LBParams ) );
+	mListBox = eeNew( UIListBox, ( LBParams ) );
 	mListBox->Visible( true );
 	mListBox->Enabled( true );
 
@@ -426,12 +426,12 @@ void cEETest::CreateUI() {
 		mListBox->AddListBoxItems( str );
 	}
 
-	cUIDropDownList::CreateParams DDLParams;
+	UIDropDownList::CreateParams DDLParams;
 	DDLParams.Parent( C );
 	DDLParams.PosSet( 20, 55 );
-	DDLParams.Size = eeSize( 100, 21 );
+	DDLParams.Size = Sizei( 100, 21 );
 	DDLParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_TOUCH_DRAG_ENABLED;
-	cUIDropDownList * mDropDownList = eeNew( cUIDropDownList, ( DDLParams ) );
+	UIDropDownList * mDropDownList = eeNew( UIDropDownList, ( DDLParams ) );
 	mDropDownList->Visible( true );
 	mDropDownList->Enabled( true );
 
@@ -448,12 +448,12 @@ void cEETest::CreateUI() {
 	mDropDownList->ListBox()->AddListBoxItems( combostrs );
 	mDropDownList->ListBox()->SetSelected( 0 );
 
-	cUIComboBox::CreateParams ComboParams;
+	UIComboBox::CreateParams ComboParams;
 	ComboParams.Parent( C );
 	ComboParams.PosSet( 20, 80 );
-	ComboParams.Size = eeSize( 100, 1 );
+	ComboParams.Size = Sizei( 100, 1 );
 	ComboParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_HALIGN_LEFT | UI_AUTO_SIZE | UI_TOUCH_DRAG_ENABLED | UI_TEXT_SELECTION_ENABLED;
-	cUIComboBox * mComboBox = eeNew( cUIComboBox, ( ComboParams ) );
+	UIComboBox * mComboBox = eeNew( UIComboBox, ( ComboParams ) );
 	mComboBox->Visible( true );
 	mComboBox->Enabled( true );
 
@@ -481,13 +481,13 @@ void cEETest::CreateUI() {
 	Menu->Add( "Show Window 2" );
 	Menu->AddCheckBox( "Multi Viewport" );
 
-	cUIPopUpMenu * Menu3 = mTheme->CreatePopUpMenu();
+	UIPopUpMenu * Menu3 = mTheme->CreatePopUpMenu();
 	Menu3->Add( "Hello World 1" );
 	Menu3->Add( "Hello World 2" );
 	Menu3->Add( "Hello World 3" );
 	Menu3->Add( "Hello World 4" );
 
-	cUIPopUpMenu * Menu2 = mTheme->CreatePopUpMenu();
+	UIPopUpMenu * Menu2 = mTheme->CreatePopUpMenu();
 	Menu2->Add( "Test 1" );
 	Menu2->Add( "Test 2" );
 	Menu2->Add( "Test 3" );
@@ -500,47 +500,47 @@ void cEETest::CreateUI() {
 	Menu->AddSeparator();
 	Menu->Add( "Quit" );
 
-	Menu->AddEventListener( cUIEvent::EventOnItemClicked, cb::Make1( this, &cEETest::ItemClick ) );
-	Menu->GetItem( "Quit" )->AddEventListener( cUIEvent::EventMouseUp, cb::Make1( this, &cEETest::QuitClick ) );
-	cUIManager::instance()->MainControl()->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::MainClick ) );
+	Menu->AddEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &EETest::ItemClick ) );
+	Menu->GetItem( "Quit" )->AddEventListener( UIEvent::EventMouseUp, cb::Make1( this, &EETest::QuitClick ) );
+	UIManager::instance()->MainControl()->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::MainClick ) );
 
-	cUITextEdit::CreateParams TEParams;
+	UITextEdit::CreateParams TEParams;
 	TEParams.Parent( C );
 	TEParams.PosSet( 5, 245 );
-	TEParams.Size	= eeSize( 315, 130 );
+	TEParams.Size	= Sizei( 315, 130 );
 	TEParams.Flags = UI_AUTO_PADDING | UI_CLIP_ENABLE | UI_TEXT_SELECTION_ENABLED;
-	cUITextEdit * TextEdit = eeNew( cUITextEdit, ( TEParams ) );
+	UITextEdit * TextEdit = eeNew( UITextEdit, ( TEParams ) );
 	TextEdit->Visible( true );
 	TextEdit->Enabled( true );
 	TextEdit->Text( mBuda );
 
-	cUIGenericGrid::CreateParams GridParams;
+	UIGenericGrid::CreateParams GridParams;
 	GridParams.Parent( C );
 	GridParams.PosSet( 325, 245 );
 	GridParams.SizeSet( 200, 130 );
 	GridParams.Flags = UI_AUTO_PADDING | UI_TOUCH_DRAG_ENABLED;
 	GridParams.RowHeight = 24;
 	GridParams.CollumnsCount = 3;
-	cUIGenericGrid * mGenGrid = eeNew( cUIGenericGrid, ( GridParams ) );
+	UIGenericGrid * mGenGrid = eeNew( UIGenericGrid, ( GridParams ) );
 	mGenGrid->Visible( true );
 	mGenGrid->Enabled( true );
 
-	cUIGridCell::CreateParams CellParams;
+	UIGridCell::CreateParams CellParams;
 	CellParams.Parent( mGenGrid->Container() );
 
-	cUITextBox::CreateParams TxtBoxParams;
-	cUITextInput::CreateParams TxtInputParams;
+	UITextBox::CreateParams TxtBoxParams;
+	UITextInput::CreateParams TxtInputParams;
 	TxtInputParams.Flags = UI_CLIP_ENABLE | UI_AUTO_PADDING | UI_VALIGN_CENTER | UI_TEXT_SELECTION_ENABLED;
 
-	cUIGfx::CreateParams TxtGfxParams;
+	UIGfx::CreateParams TxtGfxParams;
 	TxtGfxParams.Flags = UI_VALIGN_CENTER | UI_HALIGN_CENTER;
 	TxtGfxParams.SubTexture = mTheme->GetIconByName( "ok" );
 
 	for ( Uint32 i = 0; i < 100; i++ ) {
-		cUIGridCell * Cell			= eeNew( cUIGridCell, ( CellParams ) );
-		cUITextBox * TxtBox			= eeNew( cUITextBox, ( TxtBoxParams ) );
-		cUITextInput * TxtInput		= eeNew( cUITextInput, ( TxtInputParams ) );
-		cUIGfx * TxtGfx				= eeNew( cUIGfx, ( TxtGfxParams )  );
+		UIGridCell * Cell			= eeNew( UIGridCell, ( CellParams ) );
+		UITextBox * TxtBox			= eeNew( UITextBox, ( TxtBoxParams ) );
+		UITextInput * TxtInput		= eeNew( UITextInput, ( TxtInputParams ) );
+		UIGfx * TxtGfx				= eeNew( UIGfx, ( TxtGfxParams )  );
 
 		TxtBox->Text( "Test " + String::ToStr( i+1 ) );
 
@@ -555,53 +555,69 @@ void cEETest::CreateUI() {
 	mGenGrid->CollumnWidth( 1, 24 );
 	mGenGrid->CollumnWidth( 2, 100 );
 
-	C = reinterpret_cast<cUIControlAnim*> ( C->Parent() );
+#ifdef EE_PLATFORM_TOUCH
+	TextureAtlas * SG = GlobalTextureAtlas::instance();
+
+	Texture * butTex = TF->GetTexture( TF->Load( MyPath + "sprites/button-te_normal.png" ) );
+
+	SG->Add( butTex->Id(), "button-te_normal" );
+	SG->Add( TF->Load( MyPath + "sprites/button-te_mdown.png" ), "button-te_mdown" );
+
+	UISkinSimple nSkin( "button-te" );
+
+	mShowMenu = mTheme->CreatePushButton( NULL, butTex->Size(), Vector2i( mWindow->GetWidth() - butTex->Width() - 20, mWindow->GetHeight() - butTex->Height() - 10 ), UI_CONTROL_ALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM );
+	mShowMenu->SetSkin( nSkin );
+	mShowMenu->Text( "Show Menu" );
+	mShowMenu->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::OnShowMenu ) );
+#endif
+
+	C = reinterpret_cast<UIControlAnim*> ( C->Parent() );
 
 	eePRINTL( "CreateUI time: %4.3f ms.", TE.Elapsed().AsMilliseconds() );
 }
 
-void cEETest::CreateMapEditor() {
+void EETest::CreateMapEditor() {
 	if ( NULL != mMapEditor )
 		return;
 
-	cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 1024, 768 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, eeSize( 1024, 768 ) );
-	mMapEditor = eeNew( cMapEditor, ( tWin, cb::Make0( this, &cEETest::OnMapEditorClose ) ) );
+	UIWindow * tWin = mTheme->CreateWindow( NULL, Sizei( 1024, 768 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, Sizei( 1024, 768 ) );
+	mMapEditor = eeNew( MapEditor, ( tWin, cb::Make0( this, &EETest::OnMapEditorClose ) ) );
 	tWin->Center();
 	tWin->Show();
 }
 
-void cEETest::OnMapEditorClose() {
+void EETest::OnMapEditorClose() {
 	mMapEditor = NULL;
 }
 
-void cEETest::CreateETGEditor() {
-	cUIWindow * tWin = mTheme->CreateWindow( NULL, eeSize( 1024, 768 ), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, eeSize( 1024, 768 ) );
-	mETGEditor = eeNew ( Tools::cTextureAtlasEditor, ( tWin, cb::Make0( this, &cEETest::OnETGEditorClose ) ) );
+void EETest::CreateETGEditor() {
+	UIWindow * tWin = mTheme->CreateWindow( NULL, Sizei( 1024, 768 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_DRAGABLE_CONTAINER, Sizei( 1024, 768 ) );
+	mETGEditor = eeNew ( Tools::TextureAtlasEditor, ( tWin, cb::Make0( this, &EETest::OnETGEditorClose ) ) );
 	tWin->Center();
 	tWin->Show();
 }
 
-void cEETest::OnETGEditorClose() {
+void EETest::OnETGEditorClose() {
 	mETGEditor = NULL;
 }
 
-void cEETest::CreateCommonDialog() {
-	cUICommonDialog * CDialog = mTheme->CreateCommonDialog( NULL, eeSize(), eeVector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON );
+void EETest::CreateCommonDialog() {
+	UICommonDialog * CDialog = mTheme->CreateCommonDialog( NULL, Sizei(), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON );
 	CDialog->AddFilePattern( "*.hpp;*.cpp", true );
 	CDialog->Center();
 	CDialog->Show();
 }
 
-void cEETest::CreateWinMenu() {
-	cUIWinMenu * WinMenu = mTheme->CreateWinMenu( mUIWindow->Container() );
+void EETest::CreateWinMenu() {
+	UIWinMenu * WinMenu = mTheme->CreateWinMenu( mUIWindow->Container() );
 
-	cUIPopUpMenu * PopMenu = mTheme->CreatePopUpMenu();
+	UIPopUpMenu * PopMenu = mTheme->CreatePopUpMenu();
 	PopMenu->Add( "File" );
 	PopMenu->Add( "Open" );
 	PopMenu->Add( "Close" );
 	PopMenu->Add( "Quit" );
 
-	cUIPopUpMenu * PopMenu2 = mTheme->CreatePopUpMenu();
+	UIPopUpMenu * PopMenu2 = mTheme->CreatePopUpMenu();
 	PopMenu2->Add( "Bla" );
 	PopMenu2->Add( "Bla 2" );
 	PopMenu2->Add( "Bla 3" );
@@ -611,43 +627,43 @@ void cEETest::CreateWinMenu() {
 	WinMenu->AddMenuButton( "Edit", PopMenu2 );
 }
 
-void cEETest::CreateDecoratedWindow() {
-	mUIWindow = mTheme->CreateWindow( NULL, eeSize( 530, 350 ), eeVector2i( 200, 50 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, eeSize( 100, 200 ) );
+void EETest::CreateDecoratedWindow() {
+	mUIWindow = mTheme->CreateWindow( NULL, Sizei( 530, 350 ), Vector2i( 200, 50 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, Sizei( 100, 200 ) );
 
-	mUIWindow->AddEventListener( cUIEvent::EventOnWindowCloseClick, cb::Make1( this, &cEETest::CloseClick ) );
+	mUIWindow->AddEventListener( UIEvent::EventOnWindowCloseClick, cb::Make1( this, &EETest::CloseClick ) );
 	mUIWindow->Title( "Test Window" );
 	mUIWindow->ToBack();
 
-	cUIPushButton * Button = mTheme->CreatePushButton( mUIWindow->Container(), eeSize( 510, 22 ), eeVector2i( 10, 28 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_ANCHOR_RIGHT );
+	UIPushButton * Button = mTheme->CreatePushButton( mUIWindow->Container(), Sizei( 510, 22 ), Vector2i( 10, 28 ), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_ANCHOR_RIGHT );
 	Button->Text( "Click Me" );
-	Button->AddEventListener( cUIEvent::EventMouseClick, cb::Make1( this, &cEETest::ButtonClick ) );
+	Button->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &EETest::ButtonClick ) );
 
 	mUIWindow->AddShortcut( KEY_C, KEYMOD_ALT, Button );
 
-	cUITabWidget * TabWidget = mTheme->CreateTabWidget( mUIWindow->Container(), eeSize( 510, 250 ), eeVector2i( 10, 55 ), UI_HALIGN_CENTER | UI_VALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_TOP );
+	UITabWidget * TabWidget = mTheme->CreateTabWidget( mUIWindow->Container(), Sizei( 510, 250 ), Vector2i( 10, 55 ), UI_HALIGN_CENTER | UI_VALIGN_CENTER | UI_ANCHOR_RIGHT | UI_ANCHOR_BOTTOM | UI_ANCHOR_LEFT | UI_ANCHOR_TOP );
 
-	cUITextEdit * TEdit = mTheme->CreateTextEdit( TabWidget, eeSize(), eeVector2i() );
+	UITextEdit * TEdit = mTheme->CreateTextEdit( TabWidget, Sizei(), Vector2i() );
 	TEdit->Text( mBuda );
 	TabWidget->Add( "TextEdit", TEdit );
 
-	cUITextInput * Txt = mTheme->CreateTextInput( TabWidget, eeSize(), eeVector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT | UI_TEXT_SELECTION_ENABLED );
+	UITextInput * Txt = mTheme->CreateTextInput( TabWidget, Sizei(), Vector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT | UI_TEXT_SELECTION_ENABLED );
 	Txt->Text( mBuda );
 	TabWidget->Add( "TextInput", Txt );
 
-	TabWidget->Add( "TextBox", mTheme->CreateTextBox( mBuda, TabWidget, eeSize(), eeVector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT | UI_TEXT_SELECTION_ENABLED ) );
+	TabWidget->Add( "TextBox", mTheme->CreateTextBox( mBuda, TabWidget, Sizei(), Vector2i(), UI_AUTO_PADDING | UI_AUTO_SHRINK_TEXT | UI_TEXT_SELECTION_ENABLED ) );
 
 	CreateWinMenu();
 }
 
-void cEETest::CloseClick( const cUIEvent * Event ) {
+void EETest::CloseClick( const UIEvent * Event ) {
 	mUIWindow = NULL;
 }
 
-void cEETest::ItemClick( const cUIEvent * Event ) {
+void EETest::ItemClick( const UIEvent * Event ) {
 	if ( !Event->Ctrl()->IsType( UI_TYPE_MENUITEM ) )
 		return;
 
-	const String& txt = reinterpret_cast<cUIMenuItem*> ( Event->Ctrl() )->Text();
+	const String& txt = reinterpret_cast<UIMenuItem*> ( Event->Ctrl() )->Text();
 
 	if ( "Show Screen 1" == txt ) {
 		SetScreen( 0 );
@@ -671,18 +687,18 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 			mWindow->StopTextInput();
 		}
 	} else if ( "Show Window" == txt ) {
-		cUIMenuCheckBox * Chk = reinterpret_cast<cUIMenuCheckBox*> ( Event->Ctrl() );
+		UIMenuCheckBox * Chk = reinterpret_cast<UIMenuCheckBox*> ( Event->Ctrl() );
 
 		C->Visible( true );
 		C->Enabled( true );
 
 		if ( Chk->Active() ) {
 			if ( C->Scale() == 1.f ) C->Scale( 0.f );
-			C->StartScaleAnim( C->Scale(), eeVector2f::One, Milliseconds( 500.f ), Ease::SineOut );
+			C->StartScaleAnim( C->Scale(), Vector2f::One, Milliseconds( 500.f ), Ease::SineOut );
 			C->StartAlphaAnim( C->Alpha(), 255.f, Milliseconds( 500.f ) );
 			C->StartRotation( 0, 360, Milliseconds( 500.f ), Ease::SineOut );
 		} else {
-			C->StartScaleAnim( C->Scale(), eeVector2f::Zero, Milliseconds( 500.f ), Ease::SineIn );
+			C->StartScaleAnim( C->Scale(), Vector2f::Zero, Milliseconds( 500.f ), Ease::SineIn );
 			C->StartAlphaAnim( C->Alpha(), 0.f, Milliseconds( 500.f ) );
 			C->StartRotation( 0, 360, Milliseconds( 500.f ), Ease::SineIn );
 		}
@@ -707,102 +723,102 @@ void cEETest::ItemClick( const cUIEvent * Event ) {
 	}
 }
 
-void cEETest::OnValueChange( const cUIEvent * Event ) {
+void EETest::OnValueChange( const UIEvent * Event ) {
 	mTextBoxValue->Text( "Scroll Value:\n" + String::ToStr( mScrollBar->Value() ) );
 
 	mProgressBar->Progress( mScrollBar->Value() * 100.f );
 }
 
-void cEETest::OnSliderValueChange( const cUIEvent * Event ) {
-	cUISlider * slider = static_cast<cUISlider*>( Event->Ctrl() );
+void EETest::OnSliderValueChange( const UIEvent * Event ) {
+	UISlider * slider = static_cast<UISlider*>( Event->Ctrl() );
 
 	C->Angle( slider->Value() * 90.f );
 }
 
-void cEETest::QuitClick( const cUIEvent * Event ) {
-	const cUIEventMouse * MouseEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
+void EETest::QuitClick( const UIEvent * Event ) {
+	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	if ( MouseEvent->Flags() & EE_BUTTON_LMASK ) {
 		mWindow->Close();
 	}
 }
 
-void cEETest::ShowMenu() {
+void EETest::ShowMenu() {
 	if ( Menu->Show() ) {
-		eeVector2i Pos = mWindow->GetInput()->GetMousePos();
-		cUIMenu::FixMenuPos( Pos , Menu );
+		Vector2i Pos = mWindow->GetInput()->GetMousePos();
+		UIMenu::FixMenuPos( Pos , Menu );
 		Menu->Pos( Pos );
 	}
 }
 
-void cEETest::MainClick( const cUIEvent * Event ) {
-	const cUIEventMouse * MouseEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
+void EETest::MainClick( const UIEvent * Event ) {
+	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	if ( MouseEvent->Flags() & EE_BUTTON_RMASK ) {
 		ShowMenu();
 	}
 }
 
-void cEETest::ButtonClick( const cUIEvent * Event ) {
-	const cUIEventMouse * MouseEvent = reinterpret_cast<const cUIEventMouse*> ( Event );
+void EETest::ButtonClick( const UIEvent * Event ) {
+	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	if ( MouseEvent->Flags() & EE_BUTTONS_LRM ) {
-		cUIGfx::CreateParams GfxParams;
-		GfxParams.Parent( cUIManager::instance()->MainControl() );
+		UIGfx::CreateParams GfxParams;
+		GfxParams.Parent( UIManager::instance()->MainControl() );
 		GfxParams.SubTexture = mTheme->GetIconByName( "ok" );
-		cUIGfx * Gfx = eeNew( cUIGfx, ( GfxParams ) );
+		UIGfx * Gfx = eeNew( UIGfx, ( GfxParams ) );
 		Gfx->Visible( true );
 		Gfx->Enabled( false );
 
 		Gfx->StartRotation( 0, 2500, Milliseconds( 2500 ) );
-		Gfx->StartMovement( eeVector2i( Math::Randi( 0, mWindow->GetWidth() ), -64 ), eeVector2i( Math::Randi( 0, mWindow->GetWidth() ), mWindow->GetHeight() + 64 ), Milliseconds( 2500 ) );
+		Gfx->StartMovement( Vector2i( Math::Randi( 0, mWindow->GetWidth() ), -64 ), Vector2i( Math::Randi( 0, mWindow->GetWidth() ), mWindow->GetHeight() + 64 ), Milliseconds( 2500 ) );
 		Gfx->CloseFadeOut( Milliseconds( 3500 ) );
 
 		mListBox->AddListBoxItem( "Test ListBox " + String::ToStr( mListBox->Count() + 1 ) + " testing it right now!" );
 	}
 }
 
-void cEETest::SetScreen( Uint32 num ) {
+void EETest::SetScreen( Uint32 num ) {
 	if ( NULL != mTerrainBut ) mTerrainBut->Visible( 1 == num );
 
 	if ( 0 == num || 5 == num )
-		mWindow->BackColor( eeColor( 240, 240, 240 ) );
+		mWindow->BackColor( RGB( 240, 240, 240 ) );
 	else
-		mWindow->BackColor( eeColor( 0, 0, 0 ) );
+		mWindow->BackColor( RGB( 0, 0, 0 ) );
 
 	if ( num < 6 )
 		Screen = num;
 }
 
-void cEETest::CmdSetPartsNum ( const std::vector < String >& params ) {
+void EETest::CmdSetPartsNum ( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
 		bool Res = String::FromString<Int32>( tInt, params[1] );
 
 		if ( Res && ( tInt >= 0 && tInt <= 100000 ) ) {
-			PS[2].Create( PSE_WormHole, tInt, TN[5], eeVector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 32, true );
+			PS[2].Create( PSE_WormHole, tInt, TN[5], Vector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 32, true );
 			Con.PushText( "Wormhole Particles Number Changed to: " + String::ToStr(tInt) );
 		} else
 			Con.PushText( "Valid parameters are between 0 and 100000 (0 = no limit)." );
 	}
 }
 
-void cEETest::OnTextureLoaded( cResourceLoader * ResLoaded ) {
+void EETest::OnTextureLoaded( ResourceLoader * ResLoaded ) {
 	SndMng.Play( "mysound" );
 }
 
-void cEETest::LoadTextures() {
-	cClock TE;
+void EETest::LoadTextures() {
+	Clock TE;
 
 	Uint32 i;
 
-	PakTest = eeNew( cZip, () );
+	PakTest = eeNew( Zip, () );
 
 	#ifndef EE_GLES
 
 	#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
-	cEngine::instance()->EnableSharedGLContext();
+	Engine::instance()->EnableSharedGLContext();
 	#endif
 
 	PakTest->Open( MyPath + "test.zip" );
@@ -813,14 +829,14 @@ void cEETest::LoadTextures() {
 		std::string name( files[i] );
 
 		if ( "jpg" == FileSystem::FileExtension( name ) ) {
-			mResLoad.Add( eeNew( cTextureLoader, ( PakTest, name ) ) );
+			mResLoad.Add( eeNew( TextureLoader, ( PakTest, name ) ) );
 		}
 	}
 	#endif
 
-	mResLoad.Add( eeNew( cSoundLoader, ( &SndMng, "mysound", MyPath + "sounds/sound.ogg" ) ) );
+	mResLoad.Add( eeNew( SoundLoader, ( &SndMng, "mysound", MyPath + "sounds/sound.ogg" ) ) );
 
-	mResLoad.Load( cb::Make1( this, &cEETest::OnTextureLoaded ) );
+	mResLoad.Load( cb::Make1( this, &EETest::OnTextureLoaded ) );
 
 	TN.resize(12);
 	TNP.resize(12);
@@ -832,8 +848,8 @@ void cEETest::LoadTextures() {
 
 	Tiles.resize(10);
 
-	cTextureAtlasLoader tgl( MyPath + "atlases/tiles.eta" );
-	cTextureAtlas * SG = cTextureAtlasManager::instance()->GetByName( "tiles" );
+	TextureAtlasLoader tgl( MyPath + "atlases/tiles.eta" );
+	TextureAtlas * SG = TextureAtlasManager::instance()->GetByName( "tiles" );
 
 	if ( NULL != SG ) {
 		for ( i = 0; i < 6; i++ ) {
@@ -843,44 +859,44 @@ void cEETest::LoadTextures() {
 		Tiles[6] = SG->Add( TF->Load( MyPath + "sprites/objects/1.png" ), "7" );
 
 		#ifdef EE_GLES
-		cImage tImg( MyPath + "sprites/objects/2.png", 4 );
-		tImg.CreateMaskFromColor( eeColorA(0,0,0,255), 0 );
+		Image tImg( MyPath + "sprites/objects/2.png", 4 );
+		tImg.CreateMaskFromColor( ColorA(0,0,0,255), 0 );
 		Tiles[7] = SG->Add( TF->LoadFromPixels( tImg.GetPixelsPtr(), tImg.Width(), tImg.Height(), tImg.Channels() ), "8" );
 		#else
 		Tiles[7] = SG->Add( TF->Load( MyPath + "sprites/objects/2.png" ), "8" );
-		Tiles[7]->GetTexture()->CreateMaskFromColor( eeColorA(0,0,0,255), 0 );
+		Tiles[7]->GetTexture()->CreateMaskFromColor( ColorA(0,0,0,255), 0 );
 		#endif
 	}
 
-	eeInt w, h;
+	int w, h;
 
 	for ( Int32 my = 0; my < 4; my++ )
 		for( Int32 mx = 0; mx < 8; mx++ )
-			SP.AddFrame( TN[4], eeSizef( 0, 0 ), eeVector2i( 0, 0 ), eeRecti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
+			SP.AddFrame( TN[4], Sizef( 0, 0 ), Vector2i( 0, 0 ), Recti( mx * 64, my * 64, mx * 64 + 64, my * 64 + 64 ) );
 
-	PS[0].SetCallbackReset( cb::Make2( this, &cEETest::ParticlesCallback ) );
-	PS[0].Create( PSE_Callback, 500, TN[5], eeVector2f( 0, 0 ), 16, true );
-	PS[1].Create( PSE_Heal, 250, TN[5], eeVector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 16, true );
-	PS[2].Create( PSE_WormHole, PartsNum, TN[5], eeVector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 32, true );
-	PS[3].Create( PSE_Fire, 350, TN[5], eeVector2f( -50.f, -50.f ), 32, true );
-	PS[4].Create( PSE_Fire, 350, TN[5], eeVector2f( -50.f, -50.f ), 32, true );
+	PS[0].SetCallbackReset( cb::Make2( this, &EETest::ParticlesCallback ) );
+	PS[0].Create( PSE_Callback, 500, TN[5], Vector2f( 0, 0 ), 16, true );
+	PS[1].Create( PSE_Heal, 250, TN[5], Vector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 16, true );
+	PS[2].Create( PSE_WormHole, PartsNum, TN[5], Vector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 32, true );
+	PS[3].Create( PSE_Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
+	PS[4].Create( PSE_Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
 
-	Con.AddCommand( "setparticlesnum", cb::Make1( this, &cEETest::CmdSetPartsNum ) );
+	Con.AddCommand( "setparticlesnum", cb::Make1( this, &EETest::CmdSetPartsNum ) );
 
-	cTexture * Tex = TNP[2];
+	Texture * Tex = TNP[2];
 
 	if ( NULL != Tex && Tex->Lock() ) {
-		w = (eeInt)Tex->Width();
-		h = (eeInt)Tex->Height();
+		w = (int)Tex->Width();
+		h = (int)Tex->Height();
 
 		for ( y = 0; y < h; y++) {
 			for ( x = 0; x < w; x++) {
-				eeColorA C = Tex->GetPixel(x, y);
+				ColorA C = Tex->GetPixel(x, y);
 
 				if ( C.R() > 200 && C.G() > 200 && C.B() > 200 )
-					Tex->SetPixel(x, y, eeColorA( Math::Randi(0, 255), Math::Randi(0, 255), Math::Randi(0, 255), C.A() ) );
+					Tex->SetPixel(x, y, ColorA( Math::Randi(0, 255), Math::Randi(0, 255), Math::Randi(0, 255), C.A() ) );
 				else
-					Tex->SetPixel(x, y, eeColorA( Math::Randi(200, 255), Math::Randi(200, 255), Math::Randi(200, 255), C.A() ) );
+					Tex->SetPixel(x, y, ColorA( Math::Randi(200, 255), Math::Randi(200, 255), Math::Randi(200, 255), C.A() ) );
 			}
 		}
 
@@ -890,27 +906,27 @@ void cEETest::LoadTextures() {
 	Cursor[0] = TF->Load( MyPath + "cursors/cursor.tga" );
 	CursorP[0] = TF->GetTexture( Cursor[0] );
 
-	cCursorManager * CurMan = mWindow->GetCursorManager();
+	CursorManager * CurMan = mWindow->GetCursorManager();
 	CurMan->Visible( false );
 	CurMan->Visible( true );
-	CurMan->Set( Window::Cursor::SYS_CURSOR_HAND );
-	CurMan->SetGlobalCursor( EE_CURSOR_ARROW, CurMan->Add( CurMan->Create( CursorP[0], eeVector2i( 1, 1 ), "cursor_special" ) ) );
+	CurMan->Set( EE::Window::SYS_CURSOR_HAND );
+	CurMan->SetGlobalCursor( EE_CURSOR_ARROW, CurMan->Add( CurMan->Create( CursorP[0], Vector2i( 1, 1 ), "cursor_special" ) ) );
 	CurMan->Set( EE_CURSOR_ARROW );
 
 	CL1.AddFrame( TN[2] );
 	CL1.Position( 500, 400 );
 	CL1.Scale( 0.5f );
 
-	CL2.AddFrame(TN[0], eeSizef(96, 96) );
-	CL2.Color( eeColorA( 255, 255, 255, 255 ) );
+	CL2.AddFrame(TN[0], Sizef(96, 96) );
+	CL2.Color( ColorA( 255, 255, 255, 255 ) );
 
-	mTGL = eeNew( cTextureAtlasLoader, ( MyPath + "atlases/bnb" + EE_TEXTURE_ATLAS_EXTENSION ) );
+	mTGL = eeNew( TextureAtlasLoader, ( MyPath + "atlases/bnb" + EE_TEXTURE_ATLAS_EXTENSION ) );
 
 	mBlindy.AddFramesByPattern( "rn" );
 	mBlindy.Position( 320.f, 0.f );
 
-	mBoxSprite = eeNew( cSprite, ( cGlobalTextureAtlas::instance()->Add( eeNew( cSubTexture, ( TN[3], "ilmare" ) ) ) ) );
-	mCircleSprite = eeNew( cSprite, ( cGlobalTextureAtlas::instance()->Add( eeNew( cSubTexture, ( TN[1], "thecircle" ) ) ) ) );
+	mBoxSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->Add( eeNew( SubTexture, ( TN[3], "ilmare" ) ) ) ) );
+	mCircleSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->Add( eeNew( SubTexture, ( TN[1], "thecircle" ) ) ) ) );
 
 	eePRINTL( "Textures loading time: %4.3f ms.", TE.Elapsed().AsMilliseconds() );
 
@@ -923,18 +939,18 @@ void cEETest::LoadTextures() {
 	eePRINTL( "Map creation time: %4.3f ms.", TE.Elapsed().AsMilliseconds() );
 }
 
-void cEETest::Run() {
+void EETest::Run() {
 	ParticlesThread();
 }
 
-void cEETest::ParticlesThread() {
+void EETest::ParticlesThread() {
 	while ( mWindow->Running() ) {
 		UpdateParticles();
 		Sys::Sleep(10);
 	}
 }
 
-void cEETest::UpdateParticles() {
+void EETest::UpdateParticles() {
 	if ( MultiViewportMode || Screen == 2 ) {
 		PSElapsed = cElapsed.Elapsed();
 
@@ -943,45 +959,45 @@ void cEETest::UpdateParticles() {
 	}
 }
 
-void cEETest::Screen1() {
+void EETest::Screen1() {
 	Map.Update();
 	Map.Draw();
 }
 
-void cEETest::Screen2() {
+void EETest::Screen2() {
 	if ( mResLoad.IsLoaded() ) {
-		cTexture * TexLoaded = TF->GetByName( "1.jpg" );
+		Texture * TexLoaded = TF->GetByName( "1.jpg" );
 
 		if ( NULL != TexLoaded )
 			TexLoaded->Draw( 0, 0 );
 	}
 
 	if ( KM->MouseLeftPressed() )
-		TNP[3]->DrawEx( 0.f, 0.f, (eeFloat)mWindow->GetWidth(), (eeFloat)mWindow->GetHeight() );
+		TNP[3]->DrawEx( 0.f, 0.f, (Float)mWindow->GetWidth(), (Float)mWindow->GetHeight() );
 
 	Batch.SetTexture( TNP[2] );
 	Batch.QuadsBegin();
-	Batch.QuadsSetColor( eeColorA(150,150,150,100) );
+	Batch.QuadsSetColor( ColorA(150,150,150,100) );
 	Batch.QuadsSetSubset( 0.0f, 0.0f, 0.5f, 0.5f );
 
 	Batch.BatchRotation( ang );
 	Batch.BatchScale( scale );
-	Batch.BatchCenter( eeVector2f( HWidth, HHeight ) );
+	Batch.BatchCenter( Vector2f( HWidth, HHeight ) );
 
-	eeFloat aX = HWidth - 256.f;
-	eeFloat aY = HHeight - 256.f;
-	eeQuad2f TmpQuad(
-		eeVector2f( aX	   , aY 		),
-		eeVector2f( aX	   , aY + 32.f  ),
-		eeVector2f( aX + 32.f, aY + 32.f  ),
-		eeVector2f( aX + 32.f, aY 		)
+	Float aX = HWidth - 256.f;
+	Float aY = HHeight - 256.f;
+	Quad2f TmpQuad(
+		Vector2f( aX	   , aY 		),
+		Vector2f( aX	   , aY + 32.f  ),
+		Vector2f( aX + 32.f, aY + 32.f  ),
+		Vector2f( aX + 32.f, aY 		)
 	);
-	TmpQuad.Rotate( ang, eeVector2f( aX + 16.f, aY + 16.f ) );
+	TmpQuad.Rotate( ang, Vector2f( aX + 16.f, aY + 16.f ) );
 
 	for ( Uint32 z = 0; z < 16; z++ ) {
 		for ( Uint32 y = 0; y < 16; y++ ) {
-			eeFloat tmpx = (eeFloat)z * 32.f;
-			eeFloat tmpy = (eeFloat)y * 32.f;
+			Float tmpx = (Float)z * 32.f;
+			Float tmpy = (Float)y * 32.f;
 
 			Batch.BatchQuadFree( TmpQuad[0].x + tmpx, TmpQuad[0].y + tmpy, TmpQuad[1].x + tmpx, TmpQuad[1].y + tmpy, TmpQuad[2].x + tmpx, TmpQuad[2].y + tmpy, TmpQuad[3].x + tmpx, TmpQuad[3].y + tmpy );
 		}
@@ -991,10 +1007,10 @@ void cEETest::Screen2() {
 
 	Batch.BatchRotation( 0.0f );
 	Batch.BatchScale( 1.0f );
-	Batch.BatchCenter( eeVector2f( 0, 0 ) );
+	Batch.BatchCenter( Vector2f( 0, 0 ) );
 
-	eeFloat PlanetX = HWidth  - TNP[6]->Width() * 0.5f;
-	eeFloat PlanetY = HHeight - TNP[6]->Height() * 0.5f;
+	Float PlanetX = HWidth  - TNP[6]->Width() * 0.5f;
+	Float PlanetY = HHeight - TNP[6]->Height() * 0.5f;
 
 	ang+=et.AsMilliseconds() * 0.1f;
 	ang = (ang>=360) ? 0 : ang;
@@ -1014,15 +1030,15 @@ void cEETest::Screen2() {
 		mShaderProgram->SetUniform( "blurfactor" , (float)mBlurFactor );
 	}
 
-	TNP[6]->DrawFast( PlanetX, PlanetY, ang, eeVector2f(scale,scale));
+	TNP[6]->DrawFast( PlanetX, PlanetY, ang, Vector2f(scale,scale));
 
 	if ( mUseShaders )
 		mShaderProgram->Unbind();
 
-	TNP[3]->Draw( HWidth - 128, HHeight, 0, eeVector2f::One, eeColorA(255,255,255,150), ALPHA_NORMAL, RN_ISOMETRIC);
-	TNP[3]->Draw( HWidth - 128, HHeight - 128, 0, eeVector2f::One, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRIC);
-	TNP[3]->Draw( HWidth - 128, HHeight, 0, eeVector2f::One, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICAL);
-	TNP[3]->Draw( HWidth, HHeight, 0, eeVector2f::One, eeColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICALNEGATIVE);
+	TNP[3]->Draw( HWidth - 128, HHeight, 0, Vector2f::One, ColorA(255,255,255,150), ALPHA_NORMAL, RN_ISOMETRIC);
+	TNP[3]->Draw( HWidth - 128, HHeight - 128, 0, Vector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRIC);
+	TNP[3]->Draw( HWidth - 128, HHeight, 0, Vector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICAL);
+	TNP[3]->Draw( HWidth, HHeight, 0, Vector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICALNEGATIVE);
 
 	alpha = (!aside) ? alpha+et.AsMilliseconds() * 0.1f : alpha-et.AsMilliseconds() * 0.1f;
 	if (alpha>=255) {
@@ -1033,8 +1049,8 @@ void cEETest::Screen2() {
 		aside = false;
 	}
 
-	eeColorA Col(255,255,255,(int)alpha);
-	TNP[1]->DrawEx( (eeFloat)mWindow->GetWidth() - 128.f, (eeFloat)mWindow->GetHeight() - 128.f, 128.f, 128.f, ang, eeVector2f::One, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
+	ColorA Col(255,255,255,(int)alpha);
+	TNP[1]->DrawEx( (Float)mWindow->GetWidth() - 128.f, (Float)mWindow->GetHeight() - 128.f, 128.f, 128.f, ang, Vector2f::One, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
 
 	SP.Position( alpha, alpha );
 	SP.Draw();
@@ -1043,20 +1059,20 @@ void cEETest::Screen2() {
 	CL1.RenderMode( RN_ISOMETRIC );
 
 	if ( CL1.GetAABB().IntersectCircle( Mousef, 80.f ) )
-		CL1.Color( eeColorA(255, 0, 0, 200) );
+		CL1.Color( ColorA(255, 0, 0, 200) );
 	else
-		CL1.Color( eeColorA(255, 255, 255, 200) );
+		CL1.Color( ColorA(255, 255, 255, 200) );
 
-	if ( eePolygon2f::IntersectQuad2( CL1.GetQuad() , CL2.GetQuad() ) ) {
-		CL1.Color( eeColorA(0, 255, 0, 255) );
-		CL2.Color( eeColorA(0, 255, 0, 255) );
+	if ( Polygon2f::IntersectQuad2( CL1.GetQuad() , CL2.GetQuad() ) ) {
+		CL1.Color( ColorA(0, 255, 0, 255) );
+		CL2.Color( ColorA(0, 255, 0, 255) );
 	} else
-		CL2.Color( eeColorA(255, 255, 255, 255) );
+		CL2.Color( ColorA(255, 255, 255, 255) );
 
 	CL1.Angle(ang);
 	CL1.Scale(scale * 0.5f);
 
-	CL2.Position( (eeFloat)Mousef.x - 64.f, (eeFloat)Mousef.y + 128.f );
+	CL2.Position( (Float)Mousef.x - 64.f, (Float)Mousef.y + 128.f );
 	CL2.Angle(-ang);
 
 	CL1.Draw();
@@ -1074,12 +1090,12 @@ void cEETest::Screen2() {
 	if ( ShowParticles )
 		Particles();
 
-	PR.SetColor( eeColorA(0, 255, 0, 50) );
+	PR.SetColor( ColorA(0, 255, 0, 50) );
 
-	eeLine2f Line( eeVector2f(0.f, 0.f), eeVector2f( (eeFloat)mWindow->GetWidth(), (eeFloat)mWindow->GetHeight() ) );
-	eeLine2f Line2( eeVector2f(Mousef.x - 80.f, Mousef.y - 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y + 80.f) );
-	eeLine2f Line3( eeVector2f((eeFloat)mWindow->GetWidth(), 0.f), eeVector2f( 0.f, (eeFloat)mWindow->GetHeight() ) );
-	eeLine2f Line4( eeVector2f(Mousef.x - 80.f, Mousef.y + 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y - 80.f) );
+	Line2f Line( Vector2f(0.f, 0.f), Vector2f( (Float)mWindow->GetWidth(), (Float)mWindow->GetHeight() ) );
+	Line2f Line2( Vector2f(Mousef.x - 80.f, Mousef.y - 80.f), Vector2f(Mousef.x + 80.f, Mousef.y + 80.f) );
+	Line2f Line3( Vector2f((Float)mWindow->GetWidth(), 0.f), Vector2f( 0.f, (Float)mWindow->GetHeight() ) );
+	Line2f Line4( Vector2f(Mousef.x - 80.f, Mousef.y + 80.f), Vector2f(Mousef.x + 80.f, Mousef.y - 80.f) );
 
 	if ( Line.Intersect( Line2 ) )
 		iL1 = true;
@@ -1092,32 +1108,32 @@ void cEETest::Screen2() {
 		iL2 = false;
 
 	if (iL1 && iL2)
-		PR.SetColor( eeColorA(255, 0, 0, 255) );
+		PR.SetColor( ColorA(255, 0, 0, 255) );
 	else if (iL1)
-		PR.SetColor( eeColorA(0, 0, 255, 255) );
+		PR.SetColor( ColorA(0, 0, 255, 255) );
 	else if (iL2)
-		PR.SetColor( eeColorA(255, 255, 0, 255) );
+		PR.SetColor( ColorA(255, 255, 0, 255) );
 
 	PR.FillMode( DRAW_LINE );
-	PR.DrawCircle( eeVector2f( Mousef.x, Mousef.y ), 80.f, (Uint32)(Ang/3) );
-	PR.DrawTriangle( eeTriangle2f( eeVector2f( Mousef.x, Mousef.y - 10.f ), eeVector2f( Mousef.x - 10.f, Mousef.y + 10.f ), eeVector2f( Mousef.x + 10.f, Mousef.y + 10.f ) ) );
-	PR.DrawLine( eeLine2f( eeVector2f(Mousef.x - 80.f, Mousef.y - 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y + 80.f) ) );
-	PR.DrawLine( eeLine2f( eeVector2f(Mousef.x - 80.f, Mousef.y + 80.f), eeVector2f(Mousef.x + 80.f, Mousef.y - 80.f) ) );
-	PR.DrawLine( eeLine2f( eeVector2f((eeFloat)mWindow->GetWidth(), 0.f), eeVector2f( 0.f, (eeFloat)mWindow->GetHeight() ) ) );
+	PR.DrawCircle( Vector2f( Mousef.x, Mousef.y ), 80.f, (Uint32)(Ang/3) );
+	PR.DrawTriangle( Triangle2f( Vector2f( Mousef.x, Mousef.y - 10.f ), Vector2f( Mousef.x - 10.f, Mousef.y + 10.f ), Vector2f( Mousef.x + 10.f, Mousef.y + 10.f ) ) );
+	PR.DrawLine( Line2f( Vector2f(Mousef.x - 80.f, Mousef.y - 80.f), Vector2f(Mousef.x + 80.f, Mousef.y + 80.f) ) );
+	PR.DrawLine( Line2f( Vector2f(Mousef.x - 80.f, Mousef.y + 80.f), Vector2f(Mousef.x + 80.f, Mousef.y - 80.f) ) );
+	PR.DrawLine( Line2f( Vector2f((Float)mWindow->GetWidth(), 0.f), Vector2f( 0.f, (Float)mWindow->GetHeight() ) ) );
 	PR.FillMode( DRAW_FILL );
-	PR.DrawQuad( eeQuad2f( eeVector2f(0.f, 0.f), eeVector2f(0.f, 100.f), eeVector2f(150.f, 150.f), eeVector2f(200.f, 150.f) ), eeColorA(220, 240, 0, 125), eeColorA(100, 0, 240, 125), eeColorA(250, 50, 25, 125), eeColorA(50, 150, 150, 125) );
+	PR.DrawQuad( Quad2f( Vector2f(0.f, 0.f), Vector2f(0.f, 100.f), Vector2f(150.f, 150.f), Vector2f(200.f, 150.f) ), ColorA(220, 240, 0, 125), ColorA(100, 0, 240, 125), ColorA(250, 50, 25, 125), ColorA(50, 150, 150, 125) );
 	PR.FillMode( DRAW_LINE );
-	PR.DrawRectangle( eeRectf( eeVector2f( Mousef.x - 80.f, Mousef.y - 80.f ), eeSizef( 160.f, 160.f ) ), 45.f );
-	PR.DrawLine( eeLine2f( eeVector2f(0.f, 0.f), eeVector2f( (eeFloat)mWindow->GetWidth(), (eeFloat)mWindow->GetHeight() ) ) );
+	PR.DrawRectangle( Rectf( Vector2f( Mousef.x - 80.f, Mousef.y - 80.f ), Sizef( 160.f, 160.f ) ), 45.f );
+	PR.DrawLine( Line2f( Vector2f(0.f, 0.f), Vector2f( (Float)mWindow->GetWidth(), (Float)mWindow->GetHeight() ) ) );
 
-	TNP[3]->DrawQuadEx( eeQuad2f( eeVector2f(0.f, 0.f), eeVector2f(0.f, 100.f), eeVector2f(150.f, 150.f), eeVector2f(200.f, 150.f) ), eeVector2f(), ang, eeVector2f(scale,scale), eeColorA(220, 240, 0, 125), eeColorA(100, 0, 240, 125), eeColorA(250, 50, 25, 125), eeColorA(50, 150, 150, 125) );
+	TNP[3]->DrawQuadEx( Quad2f( Vector2f(0.f, 0.f), Vector2f(0.f, 100.f), Vector2f(150.f, 150.f), Vector2f(200.f, 150.f) ), Vector2f(), ang, Vector2f(scale,scale), ColorA(220, 240, 0, 125), ColorA(100, 0, 240, 125), ColorA(250, 50, 25, 125), ColorA(50, 150, 150, 125) );
 
 	WP.Update( et );
-	PR.SetColor( eeColorA(0, 255, 0, 255) );
+	PR.SetColor( ColorA(0, 255, 0, 255) );
 	PR.DrawPoint( WP.GetPos(), 10.f );
 }
 
-void cEETest::Screen3() {
+void EETest::Screen3() {
 	if (AnimVal>=300.0f) {
 		AnimVal = 300.0f;
 		AnimSide = true;
@@ -1129,13 +1145,13 @@ void cEETest::Screen3() {
 
 	Batch.SetTexture( TNP[3] );
 	Batch.LineLoopBegin();
-	for ( eeFloat j = 0; j < 360; j++ ) {
+	for ( Float j = 0; j < 360; j++ ) {
 		Batch.BatchLineLoop( HWidth + 350 * Math::sinAng(j), HHeight + 350 * Math::cosAng(j), HWidth + AnimVal * Math::sinAng(j+1), HHeight + AnimVal * Math::cosAng(j+1) );
 	}
 	Batch.Draw();
 }
 
-void cEETest::Screen4() {
+void EETest::Screen4() {
 	if ( NULL != mFBO ) {
 		mFBO->Bind();
 		mFBO->Clear();
@@ -1150,24 +1166,24 @@ void cEETest::Screen4() {
 		mVBO->Unbind();
 
 		mFBOText.Flags( FONT_DRAW_CENTER );
-		mFBOText.Draw( 128.f - (eeFloat)(Int32)( mFBOText.GetTextWidth() * 0.5f ), 25.f - (eeFloat)(Int32)( mFBOText.GetTextHeight() * 0.5f ) );
+		mFBOText.Draw( 128.f - (Float)(Int32)( mFBOText.GetTextWidth() * 0.5f ), 25.f - (Float)(Int32)( mFBOText.GetTextHeight() * 0.5f ) );
 	}
 
 	if ( NULL != mFBO ) {
 		mFBO->Unbind();
 
 		if ( NULL != mFBO->GetTexture() ) {
-			mFBO->GetTexture()->Draw( (eeFloat)mWindow->GetWidth() * 0.5f - (eeFloat)mFBO->GetWidth() * 0.5f, (eeFloat)mWindow->GetHeight() * 0.5f - (eeFloat)mFBO->GetHeight() * 0.5f, Ang );
-			cGlobalBatchRenderer::instance()->Draw();
+			mFBO->GetTexture()->Draw( (Float)mWindow->GetWidth() * 0.5f - (Float)mFBO->GetWidth() * 0.5f, (Float)mWindow->GetHeight() * 0.5f - (Float)mFBO->GetHeight() * 0.5f, Ang );
+			GlobalBatchRenderer::instance()->Draw();
 		}
 	}
 }
 
-void cEETest::Screen5() {
+void EETest::Screen5() {
 
 }
 
-void cEETest::Render() {
+void EETest::Render() {
 	HWidth = mWindow->GetWidth() * 0.5f;
 	HHeight = mWindow->GetHeight() * 0.5f;
 
@@ -1204,12 +1220,12 @@ void cEETest::Render() {
 
 		mWindow->SetView( Views[1] );
 		Mouse = KM->GetMousePosFromView( Views[1] );
-		Mousef = eeVector2f( (eeFloat)Mouse.x, (eeFloat)Mouse.y );
+		Mousef = Vector2f( (Float)Mouse.x, (Float)Mouse.y );
 		Screen2();
 
 		mWindow->SetView( Views[0] );
 		Mouse = KM->GetMousePosFromView( Views[0] );
-		Mousef = eeVector2f( (eeFloat)Mouse.x, (eeFloat)Mouse.y );
+		Mousef = Vector2f( (Float)Mouse.x, (Float)Mouse.y );
 		Screen1();
 
 		mWindow->SetView( mWindow->GetDefaultView() );
@@ -1218,22 +1234,22 @@ void cEETest::Render() {
 		mWindow->ClipDisable();
 	}
 
-	eeColorA ColRR1( 150, 150, 150, 220 );
-	eeColorA ColRR4( 150, 150, 150, 220 );
-	eeColorA ColRR2( 100, 100, 100, 220 );
-	eeColorA ColRR3( 100, 100, 100, 220 );
+	ColorA ColRR1( 150, 150, 150, 220 );
+	ColorA ColRR4( 150, 150, 150, 220 );
+	ColorA ColRR2( 100, 100, 100, 220 );
+	ColorA ColRR3( 100, 100, 100, 220 );
 
 	mEEText.Flags( FONT_DRAW_CENTER );
 
-	PR.SetColor( eeColorA(150, 150, 150, 220) );
+	PR.SetColor( ColorA(150, 150, 150, 220) );
 	PR.FillMode( DRAW_FILL );
 	PR.DrawRectangle(
-				eeRectf(
-					eeVector2f(
+				Rectf(
+					Vector2f(
 						0.f,
-						(eeFloat)mWindow->GetHeight() - mEEText.GetTextHeight()
+						(Float)mWindow->GetHeight() - mEEText.GetTextHeight()
 					),
-					eeVector2f(
+					Vector2f(
 						mEEText.GetTextWidth(),
 						mEEText.GetTextHeight()
 					)
@@ -1241,18 +1257,18 @@ void cEETest::Render() {
 				ColRR1, ColRR2, ColRR3, ColRR4
 	);
 
-	mEEText.Draw( 0.f, (eeFloat)mWindow->GetHeight() - mEEText.GetTextHeight() );
+	mEEText.Draw( 0.f, (Float)mWindow->GetHeight() - mEEText.GetTextHeight() );
 
 	mInfoText.Draw( 6.f, 6.f );
 
 	if ( InBuf.Active() ) {
 		Uint32 NLPos = 0;
 		Uint32 LineNum = InBuf.GetCurPosLinePos( NLPos );
-		if ( InBuf.CurPos() == (eeInt)InBuf.Buffer().size() && !LineNum ) {
+		if ( InBuf.CurPos() == (int)InBuf.Buffer().size() && !LineNum ) {
 			FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f );
 		} else {
 			FF2->SetText( InBuf.Buffer().substr( NLPos, InBuf.CurPos() - NLPos ) );
-			FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f + (eeFloat)LineNum * (eeFloat)FF2->GetFontHeight() );
+			FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f + (Float)LineNum * (Float)FF2->GetFontHeight() );
 		}
 
 		FF2->SetText( "FPS: " + String::ToStr( mWindow->FPS() ) );
@@ -1262,29 +1278,29 @@ void cEETest::Render() {
 		FF2->Draw( 6, 180, FONT_DRAW_SHADOW );
 	}
 
-	cUIManager::instance()->Draw();
-	cUIManager::instance()->Update();
+	UIManager::instance()->Draw();
+	UIManager::instance()->Update();
 
 
 	Con.Draw();
 }
 
-void cEETest::Input() {
+void EETest::Input() {
 	KM->Update();
 	JM->Update();
 
 	Mouse = KM->GetMousePos();
-	Mousef = eeVector2f( (eeFloat)Mouse.x, (eeFloat)Mouse.y );
+	Mousef = Vector2f( (Float)Mouse.x, (Float)Mouse.y );
 
 	if ( KM->IsKeyUp( KEY_F1 ) )
-		Graphics::cShaderProgramManager::instance()->Reload();
+		Graphics::ShaderProgramManager::instance()->Reload();
 
 	if ( !mWindow->Visible() ) {
 		mWasMinimized = true;
 
 		mWindow->FrameRateLimit( 10 );
 
-		if ( mMusEnabled && Mus->State() == cSound::Playing )
+		if ( mMusEnabled && Mus->State() == Sound::Playing )
 			Mus->Pause();
 
 	} else {
@@ -1300,7 +1316,7 @@ void cEETest::Input() {
 
 		mWindow->FrameRateLimit( mLastFPSLimit );
 
-		if ( mMusEnabled && Mus->State() == cSound::Paused )
+		if ( mMusEnabled && Mus->State() == Sound::Paused )
 			Mus->Play();
 	}
 
@@ -1364,7 +1380,7 @@ void cEETest::Input() {
 	if ( KM->IsKeyUp(KEY_6) && KM->ControlPressed() )
 		SetScreen( 5 );
 
-	cJoystick * Joy = JM->GetJoystick(0);
+	Joystick * Joy = JM->GetJoystick(0);
 
 	if ( mJoyEnabled && NULL != Joy ) {
 		if ( Joy->IsButtonDown(0) )		KM->InjectButtonPress(EE_BUTTON_LEFT);
@@ -1379,23 +1395,23 @@ void cEETest::Input() {
 		if ( Joy->IsButtonUp(5) )		SetScreen( 1 );
 		if ( Joy->IsButtonUp(6) )		SetScreen( 2 );
 
-		eeFloat aX = Joy->GetAxis( AXIS_X );
-		eeFloat aY = Joy->GetAxis( AXIS_Y );
+		Float aX = Joy->GetAxis( AXIS_X );
+		Float aY = Joy->GetAxis( AXIS_Y );
 
 		if ( 0 != aX || 0 != aY ) {
-			eeDouble rE = mWindow->Elapsed().AsMilliseconds();
+			double rE = mWindow->Elapsed().AsMilliseconds();
 			mAxisX += aX * rE;
 			mAxisY += aY * rE;
 		}
 
 		if ( ( mAxisX != 0 && ( mAxisX >= 1.f || mAxisX <= -1.f ) ) || ( mAxisY != 0 && ( mAxisY >= 1.f || mAxisY <= -1.f )  ) ) {
-			eeFloat nmX = Mousef.x + mAxisX;
-			eeFloat nmY = Mousef.y + mAxisY;
+			Float nmX = Mousef.x + mAxisX;
+			Float nmY = Mousef.y + mAxisY;
 
-			nmX = eemax<eeFloat>( nmX, 0 );
-			nmY = eemax<eeFloat>( nmY, 0 );
-			nmX = eemin( nmX, (eeFloat)EE->GetWidth() );
-			nmY = eemin( nmY, (eeFloat)EE->GetHeight() );
+			nmX = eemax<Float>( nmX, 0 );
+			nmY = eemax<Float>( nmY, 0 );
+			nmX = eemin( nmX, (Float)EE->GetWidth() );
+			nmY = eemin( nmY, (Float)EE->GetHeight() );
 
 			KM->InjectMousePos( (Int32)nmX, (Int32)nmY );
 
@@ -1482,7 +1498,7 @@ void cEETest::Input() {
 	}
 }
 
-void cEETest::Update() {
+void EETest::Update() {
 	mWindow->Clear();
 
 	et = mWindow->Elapsed();
@@ -1506,7 +1522,7 @@ void cEETest::Update() {
 	mWindow->Display(false);
 }
 
-void cEETest::Process() {
+void EETest::Process() {
 	Init();
 
 	if ( NULL != mWindow && mWindow->Created() ) {
@@ -1518,18 +1534,18 @@ void cEETest::Process() {
 	End();
 }
 
-void cEETest::ParticlesCallback( cParticle * P, cParticleSystem * Me ) {
-	eeFloat x, y, radio;
-	eeVector2f MePos( Me->Position() );
+void EETest::ParticlesCallback( Particle * P, ParticleSystem * Me ) {
+	Float x, y, radio;
+	Vector2f MePos( Me->Position() );
 
 	radio = (Math::Randf(1.f, 1.2f) + sin( 20.0f / P->Id() )) * 24;
-	x = MePos.x + radio * cos( (eeFloat)P->Id() );
-	y = MePos.y + radio * sin( (eeFloat)P->Id() );
+	x = MePos.x + radio * cos( (Float)P->Id() );
+	y = MePos.y + radio * sin( (Float)P->Id() );
 	P->Reset(x, y, Math::Randf(-10.f, 10.f), Math::Randf(-10.f, 10.f), Math::Randf(-10.f, 10.f), Math::Randf(-10.f, 10.f));
-	P->Color( eeColorAf(1.f, 0.6f, 0.3f, 1.f), 0.02f + Math::Randf() * 0.3f );
+	P->Color( ColorAf(1.f, 0.6f, 0.3f, 1.f), 0.02f + Math::Randf() * 0.3f );
 }
 
-void cEETest::Particles() {
+void EETest::Particles() {
 	PS[0].Position( Mousef );
 
 	if ( DrawBack )
@@ -1546,59 +1562,59 @@ void cEETest::Particles() {
 #define GRABABLE_MASK_BIT (1<<31)
 #define NOT_GRABABLE_MASK (~GRABABLE_MASK_BIT)
 
-void cEETest::CreateJointAndBody() {
+void EETest::CreateJointAndBody() {
 	#ifndef EE_PLATFORM_TOUCH
 	mMouseJoint	= NULL;
-	mMouseBody	= eeNew( cBody, ( INFINITY, INFINITY ) );
+	mMouseBody	= eeNew( Body, ( INFINITY, INFINITY ) );
 	#else
 	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
 		mMouseJoint[i] = NULL;
-		mMouseBody[i] = eeNew( cBody, ( INFINITY, INFINITY ) );
+		mMouseBody[i] = eeNew( Body, ( INFINITY, INFINITY ) );
 	}
 	#endif
 }
 
-void cEETest::Demo1Create() {
+void EETest::Demo1Create() {
 	CreateJointAndBody();
 
-	cShape::ResetShapeIdCounter();
+	Shape::ResetShapeIdCounter();
 
-	mSpace = Physics::cSpace::New();
+	mSpace = Physics::Space::New();
 	mSpace->Gravity( cVectNew( 0, 100 ) );
 	mSpace->SleepTimeThreshold( 0.5f );
 
-	cBody *body, *staticBody = mSpace->StaticBody();
-	cShape * shape;
+	Body *body, *statiBody = mSpace->StatiBody();
+	Shape * shape;
 
-	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( 0, mWindow->GetHeight() ), cVectNew( mWindow->GetWidth(), mWindow->GetHeight() ), 0.0f ) );
+	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( 0, mWindow->GetHeight() ), cVectNew( mWindow->GetWidth(), mWindow->GetHeight() ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
 	shape->Layers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( mWindow->GetWidth(), 0 ), cVectNew( mWindow->GetWidth(), mWindow->GetHeight() ), 0.0f ) );
+	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( mWindow->GetWidth(), 0 ), cVectNew( mWindow->GetWidth(), mWindow->GetHeight() ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
 	shape->Layers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( 0, 0 ), cVectNew( 0, mWindow->GetHeight() ), 0.0f ) );
+	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ), cVectNew( 0, mWindow->GetHeight() ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
 	shape->Layers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew( 0, 0 ), cVectNew( mWindow->GetWidth(), 0 ), 0.0f ) );
+	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ), cVectNew( mWindow->GetWidth(), 0 ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
 	shape->Layers( NOT_GRABABLE_MASK );
 
-	eeFloat hw = mWindow->GetWidth() / 2;
+	Float hw = mWindow->GetWidth() / 2;
 
 	for(int i=0; i<14; i++){
 		for(int j=0; j<=i; j++){
-			body = mSpace->AddBody( cBody::New( 1.0f, Moment::ForBox( 1.0f, 30.0f, 30.0f ) ) );
+			body = mSpace->AddBody( Body::New( 1.0f, Moment::ForBox( 1.0f, 30.0f, 30.0f ) ) );
 			body->Pos( cVectNew( hw + j * 32 - i * 16, 100 + i * 32 ) );
 
-			//shape = mSpace->AddShape( cShapePolySprite::New( body, 30.f, 30.f, mBoxSprite ) );
-			shape = mSpace->AddShape( cShapePoly::New( body, 30.f, 30.f ) );
+			//shape = mSpace->AddShape( ShapePolySprite::New( body, 30.f, 30.f, mBoxSprite ) );
+			shape = mSpace->AddShape( ShapePoly::New( body, 30.f, 30.f ) );
 			shape->e( 0.0f );
 			shape->u( 0.8f );
 		}
@@ -1606,20 +1622,20 @@ void cEETest::Demo1Create() {
 
 	cpFloat radius = 15.0f;
 
-	body = mSpace->AddBody( cBody::New( 10.0f, Moment::ForCircle( 10.0f, 0.0f, radius, cVectZero ) ) );
+	body = mSpace->AddBody( Body::New( 10.0f, Moment::ForCircle( 10.0f, 0.0f, radius, cVectZero ) ) );
 	body->Pos( cVectNew( hw, mWindow->GetHeight() - radius - 5 ) );
 
-	//shape = mSpace->AddShape( cShapeCircleSprite::New( body, radius, cVectZero, mCircleSprite ) );
-	shape = mSpace->AddShape( cShapeCircle::New( body, radius, cVectZero ) );
+	//shape = mSpace->AddShape( ShapeCircleSprite::New( body, radius, cVectZero, mCircleSprite ) );
+	shape = mSpace->AddShape( ShapeCircle::New( body, radius, cVectZero ) );
 	shape->e( 0.0f );
 	shape->u( 0.9f );
 }
 
-void cEETest::Demo1Update() {
+void EETest::Demo1Update() {
 
 }
 
-void cEETest::DestroyBody() {
+void EETest::DestroyBody() {
 	#ifndef EE_PLATFORM_TOUCH
 	eeSAFE_DELETE( mMouseBody );
 	#else
@@ -1629,14 +1645,14 @@ void cEETest::DestroyBody() {
 	#endif
 }
 
-void cEETest::Demo1Destroy() {
+void EETest::Demo1Destroy() {
 	DestroyBody();
 
 	eeSAFE_DELETE( mSpace );
 }
 
-cpBool cEETest::blockerBegin( cArbiter *arb, cSpace *space, void *unused ) {
-	cShape * a, * b;
+cpBool EETest::blockerBegin( Arbiter *arb, Space *space, void *unused ) {
+	Shape * a, * b;
 	arb->GetShapes( &a, &b );
 
 	Emitter *emitter = (Emitter *) a->Data();
@@ -1646,8 +1662,8 @@ cpBool cEETest::blockerBegin( cArbiter *arb, cSpace *space, void *unused ) {
 	return cpFalse; // Return values from sensors callbacks are ignored,
 }
 
-void cEETest::blockerSeparate( cArbiter *arb, cSpace * space, void *unused ) {
-	cShape * a, * b;
+void EETest::blockerSeparate( Arbiter *arb, Space * space, void *unused ) {
+	Shape * a, * b;
 	arb->GetShapes( &a, &b );
 
 	Emitter *emitter = (Emitter *) a->Data();
@@ -1655,8 +1671,8 @@ void cEETest::blockerSeparate( cArbiter *arb, cSpace * space, void *unused ) {
 	emitter->blocked--;
 }
 
-void cEETest::postStepRemove( cSpace *space, void * tshape, void * unused ) {
-	cShape * shape = reinterpret_cast<cShape*>( tshape );
+void EETest::postStepRemove( Space *space, void * tshape, void * unused ) {
+	Shape * shape = reinterpret_cast<Shape*>( tshape );
 
 	#ifndef EE_PLATFORM_TOUCH
 	if ( NULL != mMouseJoint && ( mMouseJoint->A() == shape->Body() || mMouseJoint->B() == shape->Body() ) ) {
@@ -1674,83 +1690,83 @@ void cEETest::postStepRemove( cSpace *space, void * tshape, void * unused ) {
 
 	mSpace->RemoveBody( shape->Body() );
 	mSpace->RemoveShape( shape );
-	cShape::Free( shape, true );
+	Shape::Free( shape, true );
 }
 
-cpBool cEETest::catcherBarBegin(cArbiter *arb, Physics::cSpace *space, void *unused) {
-	cShape * a, * b;
+cpBool EETest::catcherBarBegin(Arbiter *arb, Physics::Space *space, void *unused) {
+	Shape * a, * b;
 	arb->GetShapes( &a, &b );
 
 	Emitter *emitter = (Emitter *) a->Data();
 
 	emitter->queue++;
 
-	mSpace->AddPostStepCallback( cb::Make3( this, &cEETest::postStepRemove ), b, NULL );
+	mSpace->AddPostStepCallback( cb::Make3( this, &EETest::postStepRemove ), b, NULL );
 
 	return cpFalse;
 }
 
-void cEETest::Demo2Create() {
+void EETest::Demo2Create() {
 	CreateJointAndBody();
 
-	cShape::ResetShapeIdCounter();
+	Shape::ResetShapeIdCounter();
 
-	mSpace = Physics::cSpace::New();
+	mSpace = Physics::Space::New();
 	mSpace->Iterations( 10 );
 	mSpace->Gravity( cVectNew( 0, 100 ) );
 
-	cBody * staticBody = mSpace->StaticBody();
-	cShape * shape;
+	Body * statiBody = mSpace->StatiBody();
+	Shape * shape;
 
 	emitterInstance.queue = 5;
 	emitterInstance.blocked = 0;
 	emitterInstance.position = cVectNew( mWindow->GetWidth() / 2 , 150);
 
-	shape = mSpace->AddShape( cShapeCircle::New( staticBody, 15.0f, emitterInstance.position ) );
+	shape = mSpace->AddShape( ShapeCircle::New( statiBody, 15.0f, emitterInstance.position ) );
 	shape->Sensor( 1 );
 	shape->CollisionType( BLOCKING_SENSOR_TYPE );
 	shape->Data( &emitterInstance );
 
 	// Create our catch sensor to requeue the balls when they reach the bottom of the screen
-	shape = mSpace->AddShape( cShapeSegment::New( staticBody, cVectNew(-4000, 600), cVectNew(4000, 600), 15.0f ) );
+	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew(-4000, 600), cVectNew(4000, 600), 15.0f ) );
 	shape->Sensor( 1 );
 	shape->CollisionType( CATCH_SENSOR_TYPE );
 	shape->Data( &emitterInstance );
 
-	cSpace::cCollisionHandler handler;
+	Space::cCollisionHandler handler;
 	handler.a			= BLOCKING_SENSOR_TYPE;
 	handler.b			= BALL_TYPE;
-	handler.begin		= cb::Make3( this, &cEETest::blockerBegin );
-	handler.separate	= cb::Make3( this, &cEETest::blockerSeparate );
+	handler.begin		= cb::Make3( this, &EETest::blockerBegin );
+	handler.separate	= cb::Make3( this, &EETest::blockerSeparate );
 	mSpace->AddCollisionHandler( handler );
 
 	handler.Reset(); // Reset all the values and the callbacks ( set the callbacks as !IsSet()
 
 	handler.a			= CATCH_SENSOR_TYPE;
 	handler.b			= BALL_TYPE;
-	handler.begin		= cb::Make3( this, &cEETest::catcherBarBegin );
+	handler.begin		= cb::Make3( this, &EETest::catcherBarBegin );
 	mSpace->AddCollisionHandler( handler );
 }
 
-void cEETest::Demo2Update() {
+void EETest::Demo2Update() {
 	if( !emitterInstance.blocked && emitterInstance.queue ){
 		emitterInstance.queue--;
 
-		cBody * body = mSpace->AddBody( cBody::New( 1.0f, Moment::ForCircle(1.0f, 15.0f, 0.0f, cVectZero ) ) );
+		Body * body = mSpace->AddBody( Body::New( 1.0f, Moment::ForCircle(1.0f, 15.0f, 0.0f, cVectZero ) ) );
 		body->Pos( emitterInstance.position );
 		body->Vel( cVectNew( Math::Randf(-1,1), Math::Randf(-1,1) ) * (cpFloat)100 );
 
-		cShape *shape = mSpace->AddShape( cShapeCircle::New( body, 15.0f, cVectZero ) );
+		Shape *shape = mSpace->AddShape( ShapeCircle::New( body, 15.0f, cVectZero ) );
 		shape->CollisionType( BALL_TYPE );
 	}
 }
 
-void cEETest::Demo2Destroy() {
+void EETest::Demo2Destroy() {
 	DestroyBody();
 	eeSAFE_DELETE( mSpace );
 }
 
-void cEETest::ChangeDemo( Uint32 num ) {
+void EETest::ChangeDemo( Uint32 num ) {
 	if ( num < mDemo.size() ) {
 		if ( eeINDEX_NOT_FOUND != mCurDemo )
 			mDemo[ mCurDemo ].destroy();
@@ -1761,10 +1777,10 @@ void cEETest::ChangeDemo( Uint32 num ) {
 	}
 }
 
-void cEETest::PhysicsCreate() {
-	cPhysicsManager::CreateSingleton();
-	cPhysicsManager * PM = cPhysicsManager::instance();
-	cPhysicsManager::cDrawSpaceOptions * DSO = PM->GetDrawOptions();
+void EETest::PhysicsCreate() {
+	PhysicsManager::CreateSingleton();
+	PhysicsManager * PM = PhysicsManager::instance();
+	PhysicsManager::cDrawSpaceOptions * DSO = PM->GetDrawOptions();
 
 	DSO->DrawBBs			= false;
 	DSO->DrawShapes			= true;
@@ -1776,20 +1792,20 @@ void cEETest::PhysicsCreate() {
 
 	physicDemo demo;
 
-	demo.init		= cb::Make0( this, &cEETest::Demo1Create );
-	demo.update		= cb::Make0( this, &cEETest::Demo1Update );
-	demo.destroy	= cb::Make0( this, &cEETest::Demo1Destroy );
+	demo.init		= cb::Make0( this, &EETest::Demo1Create );
+	demo.update		= cb::Make0( this, &EETest::Demo1Update );
+	demo.destroy	= cb::Make0( this, &EETest::Demo1Destroy );
 	mDemo.push_back( demo );
 
-	demo.init		= cb::Make0( this, &cEETest::Demo2Create );
-	demo.update		= cb::Make0( this, &cEETest::Demo2Update );
-	demo.destroy	= cb::Make0( this, &cEETest::Demo2Destroy );
+	demo.init		= cb::Make0( this, &EETest::Demo2Create );
+	demo.update		= cb::Make0( this, &EETest::Demo2Update );
+	demo.destroy	= cb::Make0( this, &EETest::Demo2Destroy );
 	mDemo.push_back( demo );
 
 	ChangeDemo( 0 );
 }
 
-void cEETest::PhysicsUpdate() {	
+void EETest::PhysicsUpdate() {
 	#ifndef EE_PLATFORM_TOUCH
 	mMousePoint = cVectNew( KM->GetMousePosf().x, KM->GetMousePosf().y );
 	cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last ), tocpv( mMousePoint ), 0.25 ) );
@@ -1801,10 +1817,10 @@ void cEETest::PhysicsUpdate() {
 		if ( NULL == mMouseJoint ) {
 			cVect point = cVectNew( KM->GetMousePosf().x, KM->GetMousePosf().y );
 
-			cShape * shape = mSpace->PointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
+			Shape * shape = mSpace->PointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
 
 			if( NULL != shape ){
-				mMouseJoint = eeNew( cPivotJoint, ( mMouseBody, shape->Body(), cVectZero, shape->Body()->World2Local( point ) ) );
+				mMouseJoint = eeNew( PivotJoint, ( mMouseBody, shape->Body(), cVectZero, shape->Body()->World2Local( point ) ) );
 
 				mMouseJoint->MaxForce( 50000.0f );
 				mSpace->AddConstraint( mMouseJoint );
@@ -1816,7 +1832,7 @@ void cEETest::PhysicsUpdate() {
 	}
 	#else
 	for ( Uint32 i = 0; i < EE_MAX_FINGERS; i++ ) {
-		cInputFinger * Finger = KM->GetFingerIndex(i);
+		InputFinger * Finger = KM->GetFingerIndex(i);
 		mMousePoint[i] = cVectNew( Finger->x, Finger->y );
 		cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last[i] ), tocpv( mMousePoint[i] ), 0.25 ) );
 		mMouseBody[i]->Pos( newPoint );
@@ -1827,10 +1843,10 @@ void cEETest::PhysicsUpdate() {
 			if ( NULL == mMouseJoint[i] ) {
 				cVect point = cVectNew( Finger->x, Finger->y );
 
-				cShape * shape = mSpace->PointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
+				Shape * shape = mSpace->PointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
 
 				if( NULL != shape ){
-					mMouseJoint[i] = eeNew( cPivotJoint, ( mMouseBody[i], shape->Body(), cVectZero, shape->Body()->World2Local( point ) ) );
+					mMouseJoint[i] = eeNew( PivotJoint, ( mMouseBody[i], shape->Body(), cVectZero, shape->Body()->World2Local( point ) ) );
 
 					mMouseJoint[i]->MaxForce( 50000.0f );
 					mSpace->AddConstraint( mMouseJoint[i] );
@@ -1848,11 +1864,11 @@ void cEETest::PhysicsUpdate() {
 	mSpace->Draw();
 }
 
-void cEETest::PhysicsDestroy() {
+void EETest::PhysicsDestroy() {
 	mDemo[ mCurDemo ].destroy();
 }
 
-void cEETest::End() {
+void EETest::End() {
 	Wait();
 
 	PhysicsDestroy();
@@ -1865,15 +1881,15 @@ void cEETest::End() {
 	eeSAFE_DELETE( mCircleSprite );
 	eeSAFE_DELETE( PakTest );
 
-	cLog::instance()->Save();
+	Log::instance()->Save();
 
-	cEngine::DestroySingleton();
+	Engine::DestroySingleton();
 }
 
 }
 
 EE_MAIN_FUNC int main (int argc, char * argv []) {
-	Demo_Test::cEETest * Test = eeNew( Demo_Test::cEETest, () );
+	Demo_Test::EETest * Test = eeNew( Demo_Test::EETest, () );
 
 	Test->Process();
 

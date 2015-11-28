@@ -1,16 +1,30 @@
-#include <eepp/system/clock.hpp> 
-#include <eepp/system/cmutex.hpp>
+#include <eepp/system/clock.hpp>
+#include <eepp/system/platform/platformimpl.hpp>
 
 namespace EE { namespace System {
 
-cLock::cLock( cMutex& mutex ) :
-	mMutex( mutex )
+Clock::Clock() :
+	mClockImpl( new Platform::ClockImpl() )
 {
-	mMutex.Lock();
+	Restart();
 }
 
-cLock::~cLock() {
-	mMutex.Unlock();
+Clock::~Clock() {
+	delete mClockImpl;
+}
+
+void Clock::Restart() {
+	mClockImpl->Restart();
+}
+
+Time Clock::GetElapsedTime() const {
+	return Microseconds( mClockImpl->GetElapsedTime() );
+}
+
+Time Clock::Elapsed() {
+	Time r = GetElapsedTime();
+	Restart();
+	return r;
 }
 
 }}

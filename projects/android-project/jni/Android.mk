@@ -1,12 +1,12 @@
-LOCAL_PATH := $(call my-dir)
-MY_PATH := $(LOCAL_PATH)/../../../src/eepp
-INC_PATH := $(LOCAL_PATH)/../../../include
-BASE_PATH := $(LOCAL_PATH)/../../../src
+LOCAL_PATH				:= $(call my-dir)
+MY_PATH					:= $(LOCAL_PATH)/../../../src/eepp
+INC_PATH				:= $(LOCAL_PATH)/../../../include
+BASE_PATH				:= $(LOCAL_PATH)/../../../src
 
-MY_SDL_PATH			:= $(MY_PATH)/helper/SDL2
-MY_SDL_MAIN_PATH	:= helper/SDL2/src/main/android/*.c
+MY_SDL_PATH				:= $(MY_PATH)/helper/SDL2
+MY_SDL_MAIN_PATH		:= helper/SDL2/src/main/android/*.c
 
-MY_C_INCLUDES := \
+MY_C_INCLUDES			:= \
 	$(MY_PATH)/helper/openal-soft/include/ \
 	$(MY_PATH)/helper/freetype2/include \
 	$(MY_SDL_PATH)/include \
@@ -16,34 +16,33 @@ MY_C_INCLUDES := \
 	$(MY_PATH)/helper/stb_vorbis \
 	$(INC_PATH)/eepp/helper/chipmunk
 
-MY_C_FLAGS	:=	-Wl,--undefined=Java_org_libsdl_app_SDLActivity_nativeInit \
-				-DANDROID \
-				-DANDROID_NDK \
-				-DDISABLE_IMPORTGL \
-				-Wall \
-				-Wno-unknown-pragmas \
-				$(EE_GLES_VERSION) \
-				-DEE_NO_SNDFILE \
-				-D$(EE_SDL_VERSION) \
-				-I$(INC_PATH) \
-				-I$(BASE_PATH)
+MY_C_FLAGS				:= \
+	-Wl,--undefined=Java_org_libsdl_app_SDLActivity_nativeInit \
+	-DANDROID \
+	-DANDROID_NDK \
+	-DDISABLE_IMPORTGL \
+	-Wall \
+	-Wno-unknown-pragmas \
+	$(EE_GLES_VERSION) \
+	-DEE_NO_SNDFILE \
+	-D$(EE_SDL_VERSION) \
+	-I$(INC_PATH) \
+	-I$(BASE_PATH)
 
-MY_LDLIBS 	:= $(APP_LDLIBS)
+MY_LDLIBS				:= $(APP_LDLIBS)
 
 include $(call all-subdir-makefiles) 
 
 #*************** EEPP ***************
 include $(CLEAR_VARS)
 
-LOCAL_PATH := $(MY_PATH)
+LOCAL_PATH				:= $(MY_PATH)
 
-LOCAL_MODULE := eepp
+LOCAL_MODULE			:= eepp
 
-LOCAL_LDLIBS 	:= $(MY_LDLIBS)
+LOCAL_CFLAGS			:= $(MY_C_FLAGS)
 
-LOCAL_CFLAGS	:= $(MY_C_FLAGS)
-
-CODE_SRCS :=  \
+CODE_SRCS				:=  \
 	helper/SOIL2/src/SOIL2/*.c \
 	helper/stb_vorbis/*.c \
 	helper/zlib/*.c \
@@ -54,13 +53,14 @@ CODE_SRCS :=  \
 	system/*.cpp \
 	system/platform/posix/*.cpp \
 	network/*.cpp \
+	network/ssl/*.cpp \
+	network/ssl/backend/openssl/*.cpp \
 	network/platform/unix/*.cpp \
-	base/*.cpp \
+	core/*.cpp \
 	math/*.cpp \
 	audio/*.cpp \
 	window/*.cpp \
 	window/backend/SDL2/*.cpp \
-	window/backend/allegro5/*.cpp \
 	window/platform/null/*.cpp \
 	graphics/*.cpp \
 	graphics/renderer/*.cpp \
@@ -69,13 +69,13 @@ CODE_SRCS :=  \
 	ui/*.cpp \
 	ui/tools/*.cpp \
 	gaming/*.cpp \
-	gaming/mapeditor/*.cpp \
-	
-LOCAL_C_INCLUDES := $(MY_C_INCLUDES)
+	gaming/mapeditor/*.cpp
 
-LOCAL_SRC_FILES := $(foreach F, $(CODE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+LOCAL_C_INCLUDES		:= $(MY_C_INCLUDES)
 
-LOCAL_STATIC_LIBRARIES := openal SDL2 chipmunk freetype
+LOCAL_SRC_FILES			:= $(foreach F, $(CODE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+
+LOCAL_STATIC_LIBRARIES	:= openal SDL2 chipmunk freetype
 
 include $(BUILD_STATIC_LIBRARY) 
 #*************** EEPP ***************
@@ -83,25 +83,24 @@ include $(BUILD_STATIC_LIBRARY)
 #*************** CHIPMUNK ***************
 include $(CLEAR_VARS)
 
-LOCAL_PATH := $(MY_PATH)
+LOCAL_PATH				:= $(MY_PATH)
 
-LOCAL_MODULE := chipmunk
+LOCAL_MODULE			:= chipmunk
 
-LOCAL_CFLAGS := -DANDROID_NDK \
-                -DDISABLE_IMPORTGL \
-                -std=gnu99 \
-                -Wall \
-                -Wno-unknown-pragmas
+LOCAL_CFLAGS			:= \
+	-DANDROID_NDK \
+	-DDISABLE_IMPORTGL \
+	-std=gnu99 \
+	-Wall \
+	-Wno-unknown-pragmas
 
-CHIPMUNK_SRCS :=  \
+CHIPMUNK_SRCS			:=  \
 	helper/chipmunk/*.c \
-	helper/chipmunk/constraints/*.c \
+	helper/chipmunk/constraints/*.c
 
-LOCAL_C_INCLUDES := $(MY_C_INCLUDES)
+LOCAL_C_INCLUDES		:= $(MY_C_INCLUDES)
 
-LOCAL_SRC_FILES := $(foreach F, $(CHIPMUNK_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
-
-LOCAL_LDLIBS := -lm
+LOCAL_SRC_FILES			:= $(foreach F, $(CHIPMUNK_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
 include $(BUILD_STATIC_LIBRARY)
 #*************** CHIPMUNK ***************
@@ -109,16 +108,16 @@ include $(BUILD_STATIC_LIBRARY)
 #*************** FREETYPE ***************
 include $(CLEAR_VARS)
 
-LOCAL_PATH := $(MY_PATH)/helper/freetype2
+LOCAL_PATH				:= $(MY_PATH)/helper/freetype2
 
-LOCAL_MODULE := freetype
+LOCAL_MODULE			:= freetype
 
-APP_SUBDIRS := $(patsubst $(LOCAL_PATH)/%, %, $(shell find $(LOCAL_PATH)/src -type d))
+APP_SUBDIRS				:= $(patsubst $(LOCAL_PATH)/%, %, $(shell find $(LOCAL_PATH)/src -type d))
 
-LOCAL_C_INCLUDES := $(foreach D, $(APP_SUBDIRS), $(LOCAL_PATH)/$(D)) $(LOCAL_PATH)/include
-LOCAL_CFLAGS := -Os -DFT2_BUILD_LIBRARY
+LOCAL_C_INCLUDES		:= $(foreach D, $(APP_SUBDIRS), $(LOCAL_PATH)/$(D)) $(LOCAL_PATH)/include
+LOCAL_CFLAGS			:= -Os -DFT2_BUILD_LIBRARY
 
-LOCAL_SRC_FILES += $(foreach F, $(APP_SUBDIRS), $(addprefix $(F)/,$(notdir $(wildcard $(LOCAL_PATH)/$(F)/*.c))))
+LOCAL_SRC_FILES			+= $(foreach F, $(APP_SUBDIRS), $(addprefix $(F)/,$(notdir $(wildcard $(LOCAL_PATH)/$(F)/*.c))))
 
 include $(BUILD_STATIC_LIBRARY)
 #*************** FREETYPE ***************
@@ -126,17 +125,15 @@ include $(BUILD_STATIC_LIBRARY)
 #*************** OPENAL *****************
 include $(CLEAR_VARS)
 
-LOCAL_PATH := $(MY_PATH)/helper/openal-soft
+LOCAL_PATH				:= $(MY_PATH)/helper/openal-soft
 
-LOCAL_MODULE := openal
+LOCAL_MODULE			:= openal
 
-LOCAL_CFLAGS := -O3 -DHAVE_CONFIG_H -DAL_ALEXT_PROTOTYPES -DHAVE_OPENSL
+LOCAL_CFLAGS			:= -O3 -DHAVE_CONFIG_H -DAL_ALEXT_PROTOTYPES -DHAVE_OPENSL
 
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/ \
-	$(LOCAL_PATH)/include \
-	$(LOCAL_PATH)/OpenAL32/Include
+LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/ $(LOCAL_PATH)/include $(LOCAL_PATH)/OpenAL32/Include
 
-LOCAL_SRC_FILES := \
+LOCAL_SRC_FILES			:= \
 	$(subst $(LOCAL_PATH)/,, \
 	$(wildcard $(LOCAL_PATH)/OpenAL32/*.c) \
 	$(wildcard $(LOCAL_PATH)/Alc/AL*.c) \
@@ -153,7 +150,7 @@ LOCAL_SRC_FILES := \
 	$(LOCAL_PATH)/Alc/backends/null.c \
 	$(wildcard $(LOCAL_PATH)/src/video/android/*.c))
 
-LOCAL_LDLIBS := -llog -lOpenSLES
+LOCAL_LDLIBS			:= -llog -lOpenSLES
 
 include $(BUILD_SHARED_LIBRARY)
 #*************** OPENAL *****************
@@ -161,16 +158,15 @@ include $(BUILD_SHARED_LIBRARY)
 #**************** SDL 2 ***************
 include $(CLEAR_VARS)
 
-LOCAL_PATH := $(MY_SDL_PATH)
+LOCAL_PATH				:= $(MY_SDL_PATH)
 
-LOCAL_MODULE := SDL2
+LOCAL_MODULE			:= SDL2
 
-LOCAL_C_INCLUDES := $(LOCAL_PATH)/include
+LOCAL_C_INCLUDES		:= $(LOCAL_PATH)/include
 
-LOCAL_CFLAGS := -D__ANDROID__ -DANDROID -DGL_GLEXT_PROTOTYPES \
-	$(EE_GLES_VERSION)
+LOCAL_CFLAGS			:= -D__ANDROID__ -DANDROID -DGL_GLEXT_PROTOTYPES $(EE_GLES_VERSION)
 
-LOCAL_SRC_FILES := \
+LOCAL_SRC_FILES			:= \
 	$(subst $(LOCAL_PATH)/,, \
 	$(wildcard $(LOCAL_PATH)/src/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/audio/*.c) \
@@ -180,6 +176,7 @@ LOCAL_SRC_FILES := \
 	$(LOCAL_PATH)/src/atomic/SDL_spinlock.c.arm \
 	$(wildcard $(LOCAL_PATH)/src/core/android/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/cpuinfo/*.c) \
+	$(wildcard $(LOCAL_PATH)/src/dynapi/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/events/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/file/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/haptic/*.c) \
@@ -198,9 +195,8 @@ LOCAL_SRC_FILES := \
 	$(wildcard $(LOCAL_PATH)/src/timer/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/timer/unix/*.c) \
 	$(wildcard $(LOCAL_PATH)/src/video/*.c) \
-	$(wildcard $(LOCAL_PATH)/src/video/android/*.c))
-
-LOCAL_LDLIBS := $(EE_GLES_LINK) -ldl -llog -landroid
+	$(wildcard $(LOCAL_PATH)/src/video/android/*.c) \
+    $(wildcard $(LOCAL_PATH)/src/test/*.c))
 
 include $(BUILD_STATIC_LIBRARY)
 #**************** SDL 2 ***************
@@ -208,23 +204,23 @@ include $(BUILD_STATIC_LIBRARY)
 #************* empty_window *************
 include $(CLEAR_VARS)
 
-LOCAL_PATH := $(MY_PATH)
+LOCAL_PATH				:= $(MY_PATH)
 
-LOCAL_MODULE := empty_window
+LOCAL_MODULE			:= empty_window
 
-LOCAL_LDLIBS 	:= $(MY_LDLIBS)
+LOCAL_LDLIBS			:= $(MY_LDLIBS)
 
-LOCAL_CFLAGS 	:= $(MY_C_FLAGS)
+LOCAL_CFLAGS			:= $(MY_C_FLAGS)
 
-LOCAL_C_INCLUDES := $(MY_C_INCLUDES)
+LOCAL_C_INCLUDES		:= $(MY_C_INCLUDES)
 
-CORE_SRCS :=  \
+CORE_SRCS				:=  \
 	$(MY_SDL_MAIN_PATH) \
 	../examples/empty_window/*.cpp
 
-LOCAL_SRC_FILES := $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+LOCAL_SRC_FILES			:= $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
-LOCAL_STATIC_LIBRARIES := eepp
+LOCAL_STATIC_LIBRARIES	:= eepp
 
 include $(BUILD_SHARED_LIBRARY)
 #************ empty_window ************
@@ -232,23 +228,23 @@ include $(BUILD_SHARED_LIBRARY)
 #************* external_shader *************
 include $(CLEAR_VARS)
 
-LOCAL_PATH := $(MY_PATH)
+LOCAL_PATH				:= $(MY_PATH)
 
-LOCAL_MODULE := external_shader
+LOCAL_MODULE			:= external_shader
 
-LOCAL_LDLIBS 	:= $(MY_LDLIBS)
+LOCAL_LDLIBS			:= $(MY_LDLIBS)
 
-LOCAL_CFLAGS 	:= $(MY_C_FLAGS)
+LOCAL_CFLAGS			:= $(MY_C_FLAGS)
 
-LOCAL_C_INCLUDES := $(MY_C_INCLUDES)
+LOCAL_C_INCLUDES		:= $(MY_C_INCLUDES)
 
-CORE_SRCS :=  \
+CORE_SRCS				:=  \
 	$(MY_SDL_MAIN_PATH) \
 	../examples/external_shader/*.cpp
 
-LOCAL_SRC_FILES := $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+LOCAL_SRC_FILES			:= $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
-LOCAL_STATIC_LIBRARIES := eepp
+LOCAL_STATIC_LIBRARIES	:= eepp
 
 include $(BUILD_SHARED_LIBRARY)
 #************ external_shader ************
@@ -256,23 +252,23 @@ include $(BUILD_SHARED_LIBRARY)
 #************* full_test *************
 include $(CLEAR_VARS)
 
-LOCAL_PATH := $(MY_PATH)
+LOCAL_PATH				:= $(MY_PATH)
 
-LOCAL_MODULE := main
+LOCAL_MODULE			:= main
 
-LOCAL_LDLIBS 	:= $(MY_LDLIBS)
+LOCAL_LDLIBS			:= $(MY_LDLIBS)
 
-LOCAL_CFLAGS 	:= $(MY_C_FLAGS)
+LOCAL_CFLAGS			:= $(MY_C_FLAGS)
 
-LOCAL_C_INCLUDES := $(MY_C_INCLUDES)
+LOCAL_C_INCLUDES		:= $(MY_C_INCLUDES)
 
-CORE_SRCS :=  \
+CORE_SRCS				:=  \
 	$(MY_SDL_MAIN_PATH) \
 	../test/*.cpp
 
-LOCAL_SRC_FILES := $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
+LOCAL_SRC_FILES			:= $(foreach F, $(CORE_SRCS), $(addprefix $(dir $(F)),$(notdir $(wildcard $(LOCAL_PATH)/$(F)))))
 
-LOCAL_STATIC_LIBRARIES := eepp
+LOCAL_STATIC_LIBRARIES	:= eepp
 
 include $(BUILD_SHARED_LIBRARY)
 #************ full_test ************

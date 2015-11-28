@@ -9,12 +9,12 @@
 #include <eepp/math/quad2.hpp>
 #include <eepp/math/polygon2.hpp>
 #include <eepp/math/rect.hpp>
-#include <eepp/math/cwaypoints.hpp>
-#include <eepp/math/cinterpolation.hpp>
-#include <eepp/math/cperlinnoise.hpp>
+#include <eepp/math/waypoints.hpp>
+#include <eepp/math/interpolation.hpp>
+#include <eepp/math/perlinnoise.hpp>
 #include <eepp/math/easing.hpp>
 #include <eepp/math/math.hpp>
-#include <eepp/math/cmtrand.hpp>
+#include <eepp/math/mtrand.hpp>
 #include <eepp/math/easing.hpp>
 
 #endif

@@ -1,5 +1,5 @@
 #include <eepp/audio/openal.hpp>
-#include <eepp/audio/caudiodevice.hpp>
+#include <eepp/audio/audiodevice.hpp>
 #include <iostream>
 
 namespace EE { namespace Audio {
@@ -41,7 +41,7 @@ void ALCheckError(const std::string& File, unsigned int Line) {
 }
 
 void EnsureALInit() {
-	static cAudioDevice GlobalDevice;
+	static AudioDevice GlobalDevice;
 }
 
 }}

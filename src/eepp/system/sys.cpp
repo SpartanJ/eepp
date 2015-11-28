@@ -8,7 +8,7 @@
 
 // This taints the System module!
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
-#include <eepp/window/cengine.hpp>
+#include <eepp/window/engine.hpp>
 #endif
 
 #if defined( EE_PLATFORM_POSIX )
@@ -236,17 +236,17 @@ static struct timeval start;
 
 #endif
 
-std::string Sys::GetOSName() {
+std::string Sys::GetOSName( bool showReleaseName ) {
 #if defined( EE_PLATFORM_POSIX )
 	struct utsname os;
 
 	if ( -1 != uname( &os ) ) {
-		return std::string( os.sysname ) + " " + std::string( os.release );
+		return std::string( os.sysname ) + ( showReleaseName ? " " + std::string( os.release ) : "" );
 	}
 
 	return "Unknown";
 #elif EE_PLATFORM == EE_PLATFORM_WIN
-	return GetWindowsVersion();
+	return showReleaseName ? GetWindowsVersion() : "Windows";
 #else
 	return "Unknown";
 #endif
@@ -327,7 +327,7 @@ void Sys::Sleep( const Uint32& ms ) {
 	Sleep( Milliseconds( ms ) );
 }
 
-void Sys::Sleep( const cTime& time ) {
+void Sys::Sleep( const Time& time ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	TIMECAPS tc;
 	timeGetDevCaps(&tc, sizeof(TIMECAPS));
@@ -446,8 +446,8 @@ static std::string sGetProcessPath() {
 
 	return FileSystem::FileRemoveFileName( std::string( info.name ) );
 #elif EE_PLATFORM == EE_PLATFORM_ANDROID
-	if ( NULL != Window::cEngine::instance() && NULL != Window::cEngine::instance()->GetCurrentWindow() )
-		return Window::cEngine::instance()->GetCurrentWindow()->GetExternalStoragePath();
+	if ( NULL != Window::Engine::instance() && NULL != Window::Engine::instance()->GetCurrentWindow() )
+		return Window::Engine::instance()->GetCurrentWindow()->GetExternalStoragePath();
 
 	return "/sdcard/";
 #else
@@ -461,10 +461,10 @@ std::string Sys::GetProcessPath() {
 	return path;
 }
 
-eeDouble Sys::GetSystemTime() {
+double Sys::GetSystemTime() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	static LARGE_INTEGER Frequency;
-	static BOOL          UseHighPerformanceTimer = QueryPerformanceFrequency(&Frequency);
+	static BOOL UseHighPerformanceTimer = QueryPerformanceFrequency(&Frequency);
 
 	if (UseHighPerformanceTimer) {
 		// High performance counter available : use it
@@ -483,29 +483,17 @@ eeDouble Sys::GetSystemTime() {
 }
 
 std::string Sys::GetDateTimeStr() {
-	std::string str;
-
 	time_t rawtime;
 	time ( &rawtime );
 
-#ifdef EE_COMPILER_MSVC
-	char buf[256];
-	struct tm timeinfo;
-	localtime_s ( &timeinfo, &rawtime );
-	asctime_s( &buf[0], 256, &timeinfo );
-	str =  std::string( buf );
-#else
+	char buf[64];
+
 	struct tm * timeinfo;
 	timeinfo = localtime ( &rawtime );
-	str = std::string( asctime (timeinfo) );
-#endif
 
-	if ( str[ str.length() - 1 ] == '\n' )
-	{
-		str = str.substr( 0, str.length() - 1 );
-	}
+	strftime(buf, sizeof(buf), "%Y-%m-%d %X", timeinfo);
 
-	return str;
+	return std::string( buf );
 }
 
 #define EE_MAX_CFG_PATH_LEN 1024
@@ -569,8 +557,8 @@ std::string Sys::GetConfigPath( std::string appname ) {
 	#elif EE_PLATFORM == EE_PLATFORM_IOS
 		return GetProcessPath() + "config";
 	#elif EE_PLATFORM == EE_PLATFORM_ANDROID
-		if ( NULL != Window::cEngine::instance() )
-			return Window::cEngine::instance()->GetCurrentWindow()->GetInternalStoragePath();
+		if ( NULL != Window::Engine::instance() )
+			return Window::Engine::instance()->GetCurrentWindow()->GetInternalStoragePath();
 
 		return std::string();
 	#else
@@ -583,7 +571,7 @@ std::string Sys::GetConfigPath( std::string appname ) {
 		}
 
 		snprintf(path, EE_MAX_CFG_PATH_LEN, "%s/.%s", home, appname.c_str() );
-    #endif
+	#endif
 
 	return std::string( path );
 }
@@ -598,8 +586,8 @@ std::string Sys::GetTempPath() {
 			return std::string( "C:\\WINDOWS\\TEMP\\" );
 		}
 	#elif EE_PLATFORM == EE_PLATFORM_ANDROID
-		if ( NULL != Window::cEngine::instance() ) {
-			String::StrCopy( path, Window::cEngine::instance()->GetCurrentWindow()->GetInternalStoragePath().c_str(), EE_MAX_CFG_PATH_LEN );
+		if ( NULL != Window::Engine::instance() ) {
+			String::StrCopy( path, Window::Engine::instance()->GetCurrentWindow()->GetInternalStoragePath().c_str(), EE_MAX_CFG_PATH_LEN );
 		} else {
 			String::StrCopy( path, "/tmp", EE_MAX_CFG_PATH_LEN );
 		}
@@ -620,14 +608,14 @@ std::string Sys::GetTempPath() {
 	return rpath;
 }
 
-eeInt Sys::GetCPUCount() {
-	eeInt nprocs = -1;
+int Sys::GetCPUCount() {
+	int nprocs = -1;
 
 	#if EE_PLATFORM == EE_PLATFORM_WIN
 		SYSTEM_INFO info;
 		GetSystemInfo(&info);
 
-		nprocs = (eeInt) info.dwNumberOfProcessors;
+		nprocs = (int) info.dwNumberOfProcessors;
 	#elif EE_PLATFORM == EE_PLATFORM_LINUX || EE_PLATFORM == EE_PLATFORM_SOLARIS || EE_PLATFORM == EE_PLATFORM_ANDROID
 		nprocs = sysconf(_SC_NPROCESSORS_ONLN);
 	#elif EE_PLATFORM == EE_PLATFORM_MACOSX || EE_PLATFORM == EE_PLATFORM_BSD || EE_PLATFORM == EE_PLATFORM_IOS

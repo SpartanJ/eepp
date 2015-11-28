@@ -78,7 +78,7 @@ typedef cpBB					cBB;
 
 #ifdef PHYSICS_RENDERER_ENABLED
 
-inline eeColorA ColorFromPointer(void *ptr) {
+inline ColorA ColorFromPointer(void *ptr) {
 	unsigned long val = (long)ptr;
 
 	// hash the pointer up nicely
@@ -101,10 +101,10 @@ inline eeColorA ColorFromPointer(void *ptr) {
 	g = (g*mult)/max + add;
 	b = (b*mult)/max + add;
 
-	return eeColorA(r, g, b, 255);
+	return ColorA(r, g, b, 255);
 }
 
-inline eeColorA ColorForShape( cpShape *shape, cpSpace *space ) {
+inline ColorA ColorForShape( cpShape *shape, cpSpace *space ) {
 	cpBody *body = shape->body;
 	int nc;
 
@@ -112,11 +112,11 @@ inline eeColorA ColorForShape( cpShape *shape, cpSpace *space ) {
 		if(cpBodyIsSleeping(body)){
 			float v = 0.25f;
 			nc = (int)( v * 255 );
-			return eeColorA( nc, nc, nc, 255 );
+			return ColorA( nc, nc, nc, 255 );
 		} else if(body->CP_PRIVATE(node).idleTime > space->sleepTimeThreshold) {
 			float v = 0.9f;
 			nc = (int)( v * 255 );
-			return eeColorA( nc, nc, nc, 255 );
+			return ColorA( nc, nc, nc, 255 );
 		}
 	}
 

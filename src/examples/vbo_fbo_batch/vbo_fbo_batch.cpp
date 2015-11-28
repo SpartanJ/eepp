@@ -1,17 +1,17 @@
 #include <eepp/ee.hpp>
 
-cWindow * win			= NULL;
-cVertexBuffer * VBO		= NULL;
-cVertexBuffer * VBO2	= NULL;
-cFrameBuffer * FBO		= NULL;
+EE::Window::Window * win			= NULL;
+VertexBuffer * VBO		= NULL;
+VertexBuffer * VBO2	= NULL;
+FrameBuffer * FBO		= NULL;
 
 // The batch renderer class is designed to take control of almost all the rendering needed by the engine.
 // Controls that the rendering is only done when is needed, preventing redundant OpenGL API calls
 // Usually the user will not need to use this class manually, since eepp controls this internally.
-// The engine uses the singleton class cGlobalBatchRenderer instance to render textures and primitives.
-cBatchRenderer * Batch = eeNew( cBatchRenderer, () );
+// The engine uses the singleton class GlobalBatchRenderer instance to render textures and primitives.
+BatchRenderer * Batch = eeNew( BatchRenderer, () );
 
-eeFloat ang = 0, scale = 1;
+Float ang = 0, scale = 1;
 bool side = false;
 
 void MainLoop()
@@ -51,28 +51,28 @@ void MainLoop()
 	// Draw the frame buffer many times
 	for ( int y = 0; y < 5; y++ ) {
 		for ( int x = 0; x < 5; x++ ) {
-			FBO->GetTexture()->Draw( x * 200, y * 200, -ang, eeVector2f::One, eeColorA(255,255,255,100) );
+			FBO->GetTexture()->Draw( x * 200, y * 200, -ang, Vector2f::One, ColorA(255,255,255,100) );
 		}
 	}
 
-	eeFloat HWidth	= win->GetWidth() * 0.5f;
-	eeFloat HHeight	= win->GetHeight() * 0.5f;
+	Float HWidth	= win->GetWidth() * 0.5f;
+	Float HHeight	= win->GetHeight() * 0.5f;
 
 	// The batch can be rotated, scale and moved
 	Batch->BatchRotation( ang );
 	Batch->BatchScale( scale );
-	Batch->BatchCenter( eeVector2f( HWidth, HHeight ) );
+	Batch->BatchCenter( Vector2f( HWidth, HHeight ) );
 
 	// Create a quad to render
-	eeFloat aX = HWidth - 256.f;
-	eeFloat aY = HHeight - 256.f;
-	eeQuad2f TmpQuad(
-		eeVector2f( aX	   , aY 		),
-		eeVector2f( aX	   , aY + 32.f  ),
-		eeVector2f( aX + 32.f, aY + 32.f  ),
-		eeVector2f( aX + 32.f, aY 		)
+	Float aX = HWidth - 256.f;
+	Float aY = HHeight - 256.f;
+	Quad2f TmpQuad(
+		Vector2f( aX	   , aY 		),
+		Vector2f( aX	   , aY + 32.f  ),
+		Vector2f( aX + 32.f, aY + 32.f  ),
+		Vector2f( aX + 32.f, aY 		)
 	);
-	TmpQuad.Rotate( ang, eeVector2f( aX + 16.f, aY + 16.f ) );
+	TmpQuad.Rotate( ang, Vector2f( aX + 16.f, aY + 16.f ) );
 
 	// Begin drawing quads
 	Batch->QuadsBegin();
@@ -80,11 +80,11 @@ void MainLoop()
 	// Add some quads to the batch renderer
 	for ( Uint32 z = 0; z < 16; z++ ) {
 		for ( Uint32 y = 0; y < 16; y++ ) {
-			eeFloat tmpx = (eeFloat)z * 32.f;
-			eeFloat tmpy = (eeFloat)y * 32.f;
+			Float tmpx = (Float)z * 32.f;
+			Float tmpy = (Float)y * 32.f;
 
 			// Add the quad to the batch
-			Batch->QuadsSetColor( eeColorA( z * 16, 255, 255, 150 ) );
+			Batch->QuadsSetColor( ColorA( z * 16, 255, 255, 150 ) );
 			Batch->BatchQuadFree( TmpQuad[0].x + tmpx, TmpQuad[0].y + tmpy, TmpQuad[1].x + tmpx, TmpQuad[1].y + tmpy, TmpQuad[2].x + tmpx, TmpQuad[2].y + tmpy, TmpQuad[3].x + tmpx, TmpQuad[3].y + tmpy );
 		}
 	}
@@ -113,32 +113,32 @@ void MainLoop()
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	// Create a new window
-	win = cEngine::instance()->CreateWindow( WindowSettings( 1024, 768, "eepp - VBO - FBO and Batch Rendering" ), ContextSettings( true ) );
+	win = Engine::instance()->CreateWindow( WindowSettings( 1024, 768, "eepp - VBO - FBO and Batch Rendering" ), ContextSettings( true ) );
 
 	// Set window background color
-	win->BackColor( eeColor( 50, 50, 50 ) );
+	win->BackColor( RGB( 50, 50, 50 ) );
 
 	// Check if created
 	if ( win->Created() ) {
-		eePolygon2f Poly( eePolygon2f::CreateRoundedRectangle( 0, 0, 200, 50 ) );
+		Polygon2f Poly( Polygon2f::CreateRoundedRectangle( 0, 0, 200, 50 ) );
 
 		// Create the Vertex Buffer, the vertex buffer stores the vertex data in the GPU, making the rendering much faster
 		// In the case that Vertex Buffer Object is not supported by the GPU, it will fallback to a inmediate-mode vertex buffer
-		VBO		= cVertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
-		VBO2	= cVertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
+		VBO		= VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
+		VBO2	= VertexBuffer::New( VERTEX_FLAGS_PRIMITIVE, DM_TRIANGLE_FAN );
 
 		// Add the vertex and vertex colors to the Vertex Buffer
 		if ( NULL != VBO && NULL != VBO2 ) {
 			for ( Uint32 i = 0; i < Poly.Size(); i++ ) {
 				VBO->AddVertex( Poly[i] );
-				VBO->AddColor( eeColorA( 100 + i, 255 - i, 150 + i, 100 ) );
+				VBO->AddColor( ColorA( 100 + i, 255 - i, 150 + i, 100 ) );
 			}
 
 			Poly.Rotate( 90, Poly.ToAABB().Center() );
 
 			for ( Uint32 i = 0; i < Poly.Size(); i++ ) {
 				VBO2->AddVertex( Poly[i] );
-				VBO2->AddColor( eeColorA( 100 + i, 255 - i, 150 + i, 100 ) );
+				VBO2->AddColor( ColorA( 100 + i, 255 - i, 150 + i, 100 ) );
 			}
 
 			// Compile the Vertex Buffer, this uploads the data to the GPU
@@ -147,7 +147,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		}
 
 		// Create a new frame buffer. It will use Framebuffer Objects if available, otherwise it will try to fallback to PBuffers.
-		FBO = cFrameBuffer::New( 200, 200 );
+		FBO = FrameBuffer::New( 200, 200 );
 
 		// Application loop
 		win->RunMainLoop( &MainLoop );
@@ -160,7 +160,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	}
 
 	// Destroy the engine instance. Destroys all the windows and engine singletons.
-	cEngine::DestroySingleton();
+	Engine::DestroySingleton();
 
 	// If was compiled in debug mode it will print the memory manager report
 	MemoryManager::ShowResults();

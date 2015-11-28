@@ -140,7 +140,7 @@ void Quad2<T>::Scale( const T& scale ) {
 
 template <typename T>
 Vector2<T> Quad2<T>::GetCenter() {
-	eeFloat MinX = V[0].x, MaxX = V[0].x, MinY = V[0].y, MaxY = V[0].y;
+	Float MinX = V[0].x, MaxX = V[0].x, MinY = V[0].y, MaxY = V[0].y;
 
 	for (Uint8 i = 1; i < 4; i++ ) {
 		if ( MinX > V[i].x ) MinX = V[i].x;
@@ -161,7 +161,7 @@ template <typename T>
 tRECT<T> Quad2<T>::ToAABB( const T& OffsetX, const T& OffsetY ) {
 	tRECT<T> TmpR;
 
-	eeFloat MinX = V[0].x, MaxX = V[0].x, MinY = V[0].y, MaxY = V[0].y;
+	Float MinX = V[0].x, MaxX = V[0].x, MinY = V[0].y, MaxY = V[0].y;
 
 	for (Uint8 i = 1; i < 4; i++ ) {
 		if ( MinX > V[i].x ) MinX = V[i].x;
@@ -196,7 +196,7 @@ void Quad2<T>::Move( Vector2<T> dist ) {
 	}
 }
 
-typedef Quad2<eeFloat> eeQuad2f;
+typedef Quad2<Float> Quad2f;
 
 }}
 

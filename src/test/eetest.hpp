@@ -5,25 +5,25 @@
 
 namespace Demo_Test {
 
-class cUITest : public cUIControlAnim {
+class UITest : public UIControlAnim {
 	public:
-		cUITest( cUIControlAnim::CreateParams& Params ) : cUIControlAnim( Params ) 	{ mOldColor = mBackground->Colors(); }
+		UITest( UIControlAnim::CreateParams& Params ) : UIControlAnim( Params ) 	{ mOldColor = mBackground->Colors(); }
 
-		virtual Uint32 OnMouseEnter( const eeVector2i& Pos, const Uint32 Flags )	{
+		virtual Uint32 OnMouseEnter( const Vector2i& Pos, const Uint32 Flags )	{
 			if ( 4 == mOldColor.size() ) {
-				mBackground->Colors( eeColorA( mOldColor[0].R(), mOldColor[0].G(), mOldColor[0].B(), 200 ),
-									eeColorA( mOldColor[1].R(), mOldColor[1].G(), mOldColor[1].B(), 200 ),
-									eeColorA( mOldColor[2].R(), mOldColor[2].G(), mOldColor[2].B(), 200 ),
-									eeColorA( mOldColor[3].R(), mOldColor[3].G(), mOldColor[3].B(), 200 )
+				mBackground->Colors( ColorA( mOldColor[0].R(), mOldColor[0].G(), mOldColor[0].B(), 200 ),
+									ColorA( mOldColor[1].R(), mOldColor[1].G(), mOldColor[1].B(), 200 ),
+									ColorA( mOldColor[2].R(), mOldColor[2].G(), mOldColor[2].B(), 200 ),
+									ColorA( mOldColor[3].R(), mOldColor[3].G(), mOldColor[3].B(), 200 )
 								);
 			} else {
-				mBackground->Color( eeColorA( mOldColor[0].R(), mOldColor[0].G(), mOldColor[0].B(), 200 ) );
+				mBackground->Color( ColorA( mOldColor[0].R(), mOldColor[0].G(), mOldColor[0].B(), 200 ) );
 			}
 
 			return 1;
 		}
 
-		virtual Uint32 OnMouseExit( const eeVector2i& Pos, const Uint32 Flags )	{
+		virtual Uint32 OnMouseExit( const Vector2i& Pos, const Uint32 Flags )	{
 			if ( 4 == mOldColor.size() ) {
 				mBackground->Colors( mOldColor[0], mOldColor[1], mOldColor[2], mOldColor[3] );
 			} else {
@@ -33,12 +33,12 @@ class cUITest : public cUIControlAnim {
 			return 1;
 		}
 
-		virtual Uint32 OnMouseUp( const eeVector2i& Pos, const Uint32 Flags ) {
-			cUIDragable::OnMouseUp( Pos, Flags );
+		virtual Uint32 OnMouseUp( const Vector2i& Pos, const Uint32 Flags ) {
+			UIDragable::OnMouseUp( Pos, Flags );
 
-			if ( cEngine::instance()->GetCurrentWindow()->GetInput()->MouseWheelUp() )
+			if ( Engine::instance()->GetCurrentWindow()->GetInput()->MouseWheelUp() )
 				Scale( Scale() + 0.1f );
-			else if ( cEngine::instance()->GetCurrentWindow()->GetInput()->MouseWheelDown() )
+			else if ( Engine::instance()->GetCurrentWindow()->GetInput()->MouseWheelDown() )
 				Scale( Scale() - 0.1f );
 
 			return 1;
@@ -50,9 +50,9 @@ class cUITest : public cUIControlAnim {
 			return 1;
 		}
 
-		const std::vector<eeColorA>& OldColor() { return mOldColor; }
+		const std::vector<ColorA>& OldColor() { return mOldColor; }
 	protected:
-		std::vector<eeColorA> mOldColor;
+		std::vector<ColorA> mOldColor;
 };
 
 enum CollisionTypes {
@@ -67,7 +67,7 @@ struct Emitter {
 	cVect position;
 };
 
-class cEETest : private cThread {
+class EETest : private Thread {
 	public:
 		typedef cb::Callback0<void> SceneCb;
 
@@ -77,7 +77,7 @@ class cEETest : private cThread {
 		void Process();
 		void Render();
 		void Input();
-		void ParticlesCallback(cParticle* P, cParticleSystem* Me);
+		void ParticlesCallback(Particle* P, ParticleSystem* Me);
 
 		void ParticlesThread();
 		void Particles();
@@ -85,56 +85,56 @@ class cEETest : private cThread {
 		void LoadTextures();
 		void CmdSetPartsNum ( const std::vector < String >& params );
 
-		cClock cElapsed;
-		cTime PSElapsed;
+		Clock cElapsed;
+		Time PSElapsed;
 	private:
-		cEngine * EE;
-		Window::cWindow * mWindow;
-		cTextureFactory* TF;
-		cLog* Log;
-		cInput* KM;
-		cInputTextBuffer InBuf;
+		Engine * EE;
+		EE::Window::Window * mWindow;
+		TextureFactory* TF;
+		System::Log* Log;
+		EE::Window::Input* KM;
+		InputTextBuffer InBuf;
 
 		bool side, aside;
-		eeFloat ang, scale, alpha, Ang;
-		cTime et;
+		Float ang, scale, alpha, Ang;
+		Time et;
 		Int32 x, y;
 		Uint32 lasttick;
 
 		std::vector<Uint32> TN;
-		std::vector<cTexture *> TNP;
+		std::vector<Texture *> TNP;
 
-		std::vector<cSubTexture*> Tiles;
-		std::vector<cParticleSystem> PS;
+		std::vector<SubTexture*> Tiles;
+		std::vector<ParticleSystem> PS;
 
-		eeVector2i Mouse;
-		eeVector2f Mousef;
+		Vector2i Mouse;
+		Vector2f Mousef;
 
-		cSprite SP;
-		cSprite CL1, CL2;
-		cFont * FF;
-		cFont * FF2;
-		cFont * TTF;
-		cFont * TTFB;
+		Sprite SP;
+		Sprite CL1, CL2;
+		Font * FF;
+		Font * FF2;
+		Font * TTF;
+		Font * TTFB;
 
-		cPrimitives PR;
+		Primitives PR;
 		bool iL1, iL2;
-		eeFloat HWidth, HHeight;
+		Float HWidth, HHeight;
 
-		cMusic * Mus;
-		cSoundManager SndMng;
+		Music * Mus;
+		SoundManager SndMng;
 
 		bool DrawBack;
 
-		cConsole Con;
+		Console Con;
 		virtual void Run();
 
-		eeVector2f Point;
+		Vector2f Point;
 
 		std::string MyPath;
 		bool ShowParticles;
 
-		cMap Map;
+		TileMap Map;
 
 		Uint8 Screen;
 		SceneCb Scenes[6];
@@ -144,28 +144,28 @@ class cEETest : private cThread {
 		void Screen4();
 		void Screen5();
 
-		cZip * PakTest;
+		Zip * PakTest;
 
 		std::vector<Uint8> tmpv;
 		std::vector<Uint8> MySong;
 
-		cWaypoints WP;
+		Waypoints WP;
 		Int32 PartsNum;
 		Uint32 Cursor[1];
-		cTexture * CursorP[1];
+		Texture * CursorP[1];
 		std::string mInfo;
 
 		bool MultiViewportMode;
 
-		cBatchRenderer Batch;
-		eeFloat AnimVal;
+		BatchRenderer Batch;
+		Float AnimVal;
 		bool AnimSide;
 
-		cView Views[2];
+		View Views[2];
 
-		cShaderProgram * mShaderProgram;
+		ShaderProgram * mShaderProgram;
 
-		eeFloat mBlurFactor;
+		Float mBlurFactor;
 		bool mUseShaders;
 		bool mJoyEnabled;
 		bool mMusEnabled;
@@ -175,69 +175,69 @@ class cEETest : private cThread {
 
 		String mBuda;
 
-		cResourceLoader mResLoad;
-		void OnTextureLoaded( cResourceLoader * ObjLoaded );
+		ResourceLoader mResLoad;
+		void OnTextureLoaded( ResourceLoader * ObjLoaded );
 
 		void CreateUI();
 		void CreateShaders();
 
 		void LoadFonts();
 
-		cResourceLoader mFontLoader;
-		void OnFontLoaded( cResourceLoader * ObjLoaded );
+		ResourceLoader mFontLoader;
+		void OnFontLoaded( ResourceLoader * ObjLoaded );
 
-		cJoystickManager * JM;
-		eeFloat mAxisX;
-		eeFloat mAxisY;
+		JoystickManager * JM;
+		Float mAxisX;
+		Float mAxisY;
 
-		cTextureAtlasLoader * mTGL;
-		cSprite mBlindy;
+		TextureAtlasLoader * mTGL;
+		Sprite mBlindy;
 
-		cFrameBuffer * mFBO;
-		cVertexBuffer * mVBO;
+		FrameBuffer * mFBO;
+		VertexBuffer * mVBO;
 
-		cClock	mFTE;
+		Clock	mFTE;
 
 		void CreateCommonDialog();
-		void ItemClick( const cUIEvent * Event );
-		void MainClick( const cUIEvent * Event );
-		void QuitClick( const cUIEvent * Event );
-		void CloseClick( const cUIEvent * Event );
-		void ButtonClick( const cUIEvent * Event );
-		void OnValueChange( const cUIEvent * Event );
-		void OnSliderValueChange( const cUIEvent * Event );
-		void OnWinMouseUp( const cUIEvent * Event );
+		void ItemClick( const UIEvent * Event );
+		void MainClick( const UIEvent * Event );
+		void QuitClick( const UIEvent * Event );
+		void CloseClick( const UIEvent * Event );
+		void ButtonClick( const UIEvent * Event );
+		void OnValueChange( const UIEvent * Event );
+		void OnSliderValueChange( const UIEvent * Event );
+		void OnWinMouseUp( const UIEvent * Event );
 		void CreateDecoratedWindow();
 		void CreateWinMenu();
 		void CreateUIThemeTextureAtlas();
 
-		cUIControlAnim * C;
-		cUIScrollBar * mScrollBar;
-		cUITextBox * mTextBoxValue;
-		cUISlider * mSlider;
-		cUIProgressBar * mProgressBar;
-		cUIListBox * mListBox;
-		cUIPopUpMenu * Menu;
-		cUIWindow * mUIWindow;
-		cMapEditor * mMapEditor;
-		cTextureAtlasEditor * mETGEditor;
+		UIControlAnim * C;
+		UIScrollBar * mScrollBar;
+		UITextBox * mTextBoxValue;
+		UISlider * mSlider;
+		UIProgressBar * mProgressBar;
+		UIListBox * mListBox;
+		UIPopUpMenu * Menu;
+		UIWindow * mUIWindow;
+		MapEditor * mMapEditor;
+		TextureAtlasEditor * mETGEditor;
 
-		cTextCache mEEText;
-		cTextCache mFBOText;
-		cTextCache mInfoText;
+		TextCache mEEText;
+		TextCache mFBOText;
+		TextCache mInfoText;
 
-		cSpace * mSpace;
+		Space * mSpace;
 
 		#ifndef EE_PLATFORM_TOUCH
-		cBody * mMouseBody;
+		Body * mMouseBody;
 		cVect mMousePoint;
 		cVect mMousePoint_last;
-		cConstraint * mMouseJoint;
+		Constraint * mMouseJoint;
 		#else
-		cBody * mMouseBody[ EE_MAX_FINGERS ];
+		Body * mMouseBody[ EE_MAX_FINGERS ];
 		cVect mMousePoint[ EE_MAX_FINGERS ];
 		cVect mMousePoint_last[ EE_MAX_FINGERS ];
-		cConstraint * mMouseJoint[ EE_MAX_FINGERS ];
+		Constraint * mMouseJoint[ EE_MAX_FINGERS ];
 		#endif
 
 		void PhysicsCreate();
@@ -246,10 +246,10 @@ class cEETest : private cThread {
 
 		void SetScreen( Uint32 num );
 
-		cpBool blockerBegin( cArbiter *arb, cSpace *space, void *unused );
-		void blockerSeparate( cArbiter *arb, cSpace *space, void *unused );
-		void postStepRemove( cSpace *space, void * tshape, void *unused );
-		cpBool catcherBarBegin( cArbiter *arb, cSpace *space, void *unused );
+		cpBool blockerBegin( Arbiter *arb, Space *space, void *unused );
+		void blockerSeparate( Arbiter *arb, Space *space, void *unused );
+		void postStepRemove( Space *space, void * tshape, void *unused );
+		cpBool catcherBarBegin( Arbiter *arb, Space *space, void *unused );
 
 		void Demo1Create();
 		void Demo1Update();
@@ -273,14 +273,14 @@ class cEETest : private cThread {
 
 		std::vector<physicDemo> mDemo;
 		Uint32					mCurDemo;
-		cSprite *				mBoxSprite;
-		cSprite *				mCircleSprite;
+		Sprite *				mBoxSprite;
+		Sprite *				mCircleSprite;
 
-		cUITheme *				mTheme;
+		UITheme *				mTheme;
 
 		bool					mTerrainUp;
-		cUIPushButton *			mShowMenu;
-		cUIPushButton *			mTerrainBut;
+		UIPushButton *			mShowMenu;
+		UIPushButton *			mTerrainBut;
 
 		void CreateMapEditor();
 
@@ -294,9 +294,9 @@ class cEETest : private cThread {
 
 		void DestroyBody();
 
-		void OnShowMenu( const cUIEvent * Event );
+		void OnShowMenu( const UIEvent * Event );
 
-		void OnWindowResize( cWindow * win );
+		void OnWindowResize( EE::Window::Window * win );
 };
 
 }

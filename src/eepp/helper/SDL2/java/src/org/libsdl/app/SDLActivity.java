@@ -2,6 +2,9 @@ package org.libsdl.app;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 import android.app.*;
 import android.content.*;
@@ -25,7 +28,7 @@ public class SDLActivity extends Activity {
     private static final String TAG = "SDL";
 
     // Keep track of the paused state
-    public static boolean mIsPaused = false, mIsSurfaceReady = false, mHasFocus = true;
+    public static boolean mIsPaused, mIsSurfaceReady, mHasFocus;
     public static boolean mExitCalledFromJava;
 
     // Main components
@@ -39,7 +42,6 @@ public class SDLActivity extends Activity {
     protected static Thread mSDLThread;
     
     // Audio
-    protected static Thread mAudioThread;
     protected static AudioTrack mAudioTrack;
 
     // Load the .so
@@ -51,21 +53,36 @@ public class SDLActivity extends Activity {
         //System.loadLibrary("SDL2_ttf");
         System.loadLibrary("main");
     }
+    
+    
+    public static void initialize() {
+        // The static nature of the singleton and Android quirkyness force us to initialize everything here
+        // Otherwise, when exiting the app and returning to it, these variables *keep* their pre exit values
+        mSingleton = null;
+        mSurface = null;
+        mTextEdit = null;
+        mLayout = null;
+        mJoystickHandler = null;
+        mSDLThread = null;
+        mAudioTrack = null;
+        mExitCalledFromJava = false;
+        mIsPaused = false;
+        mIsSurfaceReady = false;
+        mHasFocus = true;
+    }
 
     // Setup
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        //Log.v("SDL", "onCreate()");
+        Log.v("SDL", "onCreate():" + mSingleton);
         super.onCreate(savedInstanceState);
         
+        SDLActivity.initialize();
         // So we can call stuff from static callbacks
         mSingleton = this;
 
         // Set up the surface
         mSurface = new SDLSurface(getApplication());
-        
-        // Make sure this variable is initialized here!
-        mExitCalledFromJava = false;
         
         if(Build.VERSION.SDK_INT >= 12) {
             mJoystickHandler = new SDLJoystickHandler_API12();
@@ -116,7 +133,6 @@ public class SDLActivity extends Activity {
 
     @Override
     protected void onDestroy() {
-        super.onDestroy();
         Log.v("SDL", "onDestroy()");
         // Send a quit message to the application
         SDLActivity.mExitCalledFromJava = true;
@@ -133,6 +149,10 @@ public class SDLActivity extends Activity {
 
             //Log.v("SDL", "Finished waiting for SDL thread");
         }
+            
+        super.onDestroy();
+        // Reset everything in case the user re opens the app
+        SDLActivity.initialize();
     }
 
     @Override
@@ -260,6 +280,8 @@ public class SDLActivity extends Activity {
     public static native int onNativePadUp(int device_id, int keycode);
     public static native void onNativeJoy(int device_id, int axis,
                                           float value);
+    public static native void onNativeHat(int device_id, int hat_id,
+                                          int x, int y);
     public static native void onNativeKeyDown(int keycode);
     public static native void onNativeKeyUp(int keycode);
     public static native void onNativeKeyboardFocusLost();
@@ -621,6 +643,7 @@ class SDLSurface extends SurfaceView implements SurfaceHolder.Callback,
             
             // Set up a listener thread to catch when the native thread ends
             new Thread(new Runnable(){
+                @Override
                 public void run(){
                     try {
                         SDLActivity.mSDLThread.join();
@@ -920,6 +943,14 @@ class SDLJoystickHandler_API12 extends SDLJoystickHandler {
         public int device_id;
         public String name;
         public ArrayList<InputDevice.MotionRange> axes;
+        public ArrayList<InputDevice.MotionRange> hats;
+    }
+    class RangeComparator implements Comparator<InputDevice.MotionRange>
+    {
+        @Override
+        public int compare(InputDevice.MotionRange arg0, InputDevice.MotionRange arg1) {
+            return arg0.getAxis() - arg1.getAxis();
+        }
     }
     
     private ArrayList<SDLJoystick> mJoysticks;
@@ -946,15 +977,25 @@ class SDLJoystickHandler_API12 extends SDLJoystickHandler {
                     joystick.device_id = deviceIds[i];
                     joystick.name = joystickDevice.getName();
                     joystick.axes = new ArrayList<InputDevice.MotionRange>();
+                    joystick.hats = new ArrayList<InputDevice.MotionRange>();
                     
-                    for (InputDevice.MotionRange range : joystickDevice.getMotionRanges()) {
-                         if ( (range.getSource() & InputDevice.SOURCE_CLASS_JOYSTICK) != 0) {
-                            joystick.axes.add(range);
-                         }
+                    List<InputDevice.MotionRange> ranges = joystickDevice.getMotionRanges();
+                    Collections.sort(ranges, new RangeComparator());
+                    for (InputDevice.MotionRange range : ranges ) {
+                        if ((range.getSource() & InputDevice.SOURCE_CLASS_JOYSTICK) != 0 ) {
+                            if (range.getAxis() == MotionEvent.AXIS_HAT_X ||
+                                range.getAxis() == MotionEvent.AXIS_HAT_Y) {
+                                joystick.hats.add(range);
+                            }
+                            else {
+                                joystick.axes.add(range);
+                            }
+                        }
                     }
                     
                     mJoysticks.add(joystick);
-                    SDLActivity.nativeAddJoystick(joystick.device_id, joystick.name, 0, -1, joystick.axes.size(), 0, 0);
+                    SDLActivity.nativeAddJoystick(joystick.device_id, joystick.name, 0, -1, 
+                                                  joystick.axes.size(), joystick.hats.size()/2, 0);
                 }
             }
         }
@@ -1007,7 +1048,12 @@ class SDLJoystickHandler_API12 extends SDLJoystickHandler {
                             /* Normalize the value to -1...1 */
                             float value = ( event.getAxisValue( range.getAxis(), actionPointerIndex) - range.getMin() ) / range.getRange() * 2.0f - 1.0f;
                             SDLActivity.onNativeJoy(joystick.device_id, i, value );
-                        }                       
+                        }          
+                        for (int i = 0; i < joystick.hats.size(); i+=2) {
+                            int hatX = Math.round(event.getAxisValue( joystick.hats.get(i).getAxis(), actionPointerIndex ) );
+                            int hatY = Math.round(event.getAxisValue( joystick.hats.get(i+1).getAxis(), actionPointerIndex ) );
+                            SDLActivity.onNativeHat(joystick.device_id, i/2, hatX, hatY );
+                        }
                     }
                     break;
                 default:

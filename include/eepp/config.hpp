@@ -1,8 +1,6 @@
 #ifndef EE_CONFIG_HPP
 #define EE_CONFIG_HPP
 
-#include <eepp/helper/sophist/sophist.h>
-
 #define EE_PLATFORM_WIN			1
 #define EE_PLATFORM_LINUX		2
 #define EE_PLATFORM_MACOSX		3
@@ -77,6 +75,15 @@
 
 #endif
 
+#if (defined(linux) || defined(__linux__)) && (defined(__alpha)||defined(__alpha__)||defined(__x86_64__)||defined(_M_X64))
+	#define EE_LINUX_64
+#endif
+
+#if (defined(__sparc__) || defined(__sparc)) && (defined(__arch64__) || defined(__sparcv9) || defined(__sparc_v9__))
+	#define EE_SPARC_64
+#endif
+
+
 //! Since EE just use basic POSIX stuff, declare as POSIX some OS that are mostly POSIX-compliant
 #if defined ( linux ) || defined( __linux__ ) || defined( __FreeBSD__ ) || defined(__OpenBSD__) || defined( __NetBSD__ ) || defined( __DragonFly__ ) || defined( __SVR4 ) || defined( __sun ) || defined( __APPLE_CC__ ) || defined ( __APPLE__ ) || defined( __HAIKU__ ) || defined( __BEOS__ ) || defined( __emscripten__ ) || defined( EMSCRIPTEN )
 	#define EE_PLATFORM_POSIX
@@ -111,7 +118,6 @@
 #define EE_MAIN_FUNC
 #endif
 
-
 #if EE_PLATFORM != EE_PLATFORM_ANDROID
 	#define EE_SUPPORT_EXCEPTIONS
 #endif
@@ -122,16 +128,18 @@
 	#endif
 #endif
 
-#if 1 == SOPHIST_pointer64
-	#define EE_64BIT
-#else
-	#define EE_32BIT
-#endif
-
 #define EE_LITTLE_ENDIAN	1
 #define EE_BIG_ENDIAN		2
 
-#if SOPHIST_little_endian == SOPHIST_endian
+#if	   defined(__386__) || defined(i386)    || defined(__i386__)  \
+	|| defined(__X86)   || defined(_M_IX86)                       \
+	|| defined(_M_X64)  || defined(__x86_64__)                    \
+	|| defined(alpha)   || defined(__alpha) || defined(__alpha__) \
+	|| defined(_M_ALPHA)                                          \
+	|| defined(ARM)     || defined(_ARM)    || defined(__arm__)   \
+	|| defined(WIN32)   || defined(_WIN32)  || defined(__WIN32__) \
+	|| defined(_WIN32_WCE) || defined(__NT__)                     \
+	|| defined(__MIPSEL__)
 	#define EE_ENDIAN EE_LITTLE_ENDIAN
 #else
 	#define EE_ENDIAN EE_BIG_ENDIAN
@@ -170,6 +178,10 @@
 	#define EE_SHADERS_SUPPORTED
 #endif
 
+#if ( EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM ) ) && !defined( EE_GLES )
+	#define EE_GLEW_AVAILABLE
+#endif
+
 #define eeCOMMA ,
 #define eeARRAY_SIZE(__array)	( sizeof(__array) / sizeof(__array[0]) )
 #define eeSAFE_DELETE(p)		{ if(p) { eeDelete (p);			(p)=NULL; } }
@@ -179,7 +191,7 @@
 
 namespace EE {
 #ifdef EE_USE_DOUBLES
-	typedef double eeFloat;
+	typedef double Float;
 	#define eesqrt sqrt
 	#define eesin sin
 	#define eecos cos
@@ -193,7 +205,7 @@ namespace EE {
 	#define eeceil ceil
 	#define eeabs abs
 #else
-	typedef float eeFloat; //! The internal floating point used on EE++. \n This can help to improve compatibility with some platforms. \n And helps for an easy change from single precision to double precision.
+	typedef float Float; //! The internal floating point used on EE++. \n This can help to improve compatibility with some platforms. \n And helps for an easy change from single precision to double precision.
 	#define eesqrt sqrtf
 	#define eesin sinf
 	#define eecos cosf
@@ -239,33 +251,40 @@ namespace EE {
 		( *val < min ) ? *val = min : ( ( *val > max ) ? *val = max : *val );
 	}
 
-	typedef SOPHIST_int8	Int8;
-	typedef SOPHIST_uint8	Uint8;
-	typedef SOPHIST_int16	Int16;
-	typedef SOPHIST_uint16	Uint16;
-	typedef SOPHIST_int32	Int32;
-	typedef SOPHIST_uint32	Uint32;
-	typedef double			eeDouble; 	//! The internal double floating point. It's only used when the engine needs some very high precision floating point ( for example the timer )
-	typedef unsigned int	eeUint;
-	typedef signed int		eeInt;
-	typedef SOPHIST_intptr	IntPtr;
-	typedef SOPHIST_uintptr	UintPtr;
+	typedef signed char			Int8;
+	typedef unsigned char		Uint8;
+	typedef signed short		Int16;
+	typedef unsigned short		Uint16;
+	typedef signed int			Int32;
+	typedef unsigned int		Uint32;
 
-	#if SOPHIST_has_64
-	typedef SOPHIST_uint64	Uint64;
-	typedef SOPHIST_int64	Int64;
+	// 64 bits integer types
+	#if defined(_MSC_VER)
+	typedef signed   __int64	Int64;
+	typedef unsigned __int64	Uint64;
 	#else
-	typedef SOPHIST_uint32	Uint64;	// Fallback to a 32 bit int
-	typedef SOPHIST_int32	Int64;	// All the desktop platforms support 64bit ints, so this shouldn't happen.
+	typedef signed   long long	Int64;
+	typedef unsigned long long	Uint64;
 	#endif
 
-	#define EE_PI			3.14159265358979323846
-	#define EE_PI2			6.28318530717958647692
-	const eeFloat EE_PI_180	= (eeFloat)EE_PI / 180;
-	const eeFloat EE_PI_360	= (eeFloat)EE_PI / 360;
-	const eeFloat EE_180_PI	= 180 / (eeFloat)EE_PI;
-	const eeFloat EE_360_PI	= 360 / (eeFloat)EE_PI;
+#if	   defined(EE_LINUX_64) || defined(EE_SPARC_64)      \
+	|| defined(__osf__) || (defined(_WIN64) && !defined(_XBOX))  \
+	|| defined(__64BIT__)                                        \
+	|| defined(__LP64)  || defined(__LP64__) || defined(_LP64)   \
+	|| defined(_ADDR64) || defined(_CRAYC)
+	typedef Int64				IntPtr;
+	typedef Uint64				UintPtr;
+#else
+	typedef Int32				IntPtr;
+	typedef Uint32				UintPtr;
+#endif
 
+	#define EE_PI		( 3.14159265358979323846 )
+	#define EE_PI2		( 6.28318530717958647692 )
+	#define EE_PI_180	((Float)EE_PI / 180.f)
+	#define EE_PI_360	((Float)EE_PI / 360.f)
+	#define EE_180_PI	(180.f / (Float)EE_PI)
+	#define EE_360_PI	(360.f / (Float)EE_PI)
 	#define EE_1B		( 1 )
 	#define EE_1KB		( 1024 )
 	#define EE_1MB		( 1048576 )

@@ -36,18 +36,18 @@ Uint32 String::Hash( const String& str ) {
 	return String::Hash( reinterpret_cast<const Uint8*>( &(str.mString[0]) ) );
 }
 
-bool String::IsCharacter( const eeInt& mValue ) {
+bool String::IsCharacter( const int& mValue ) {
 	return (mValue >= 32 && mValue <= 126) || (mValue >= 161 && mValue <= 255) || (mValue == 9);
 }
 
-bool String::IsNumber( const eeInt& mValue, bool AllowDot ) {
+bool String::IsNumber( const int& mValue, bool AllowDot ) {
 	if ( AllowDot )
 		return ( mValue >= 48 && mValue <= 57 ) || mValue == 46;
 
 	return mValue >= 48 && mValue <= 57;
 }
 
-bool String::IsLetter( const eeInt& mValue ) {
+bool String::IsLetter( const int& mValue ) {
 	return ( ( (mValue >= 65 && mValue <= 90) || (mValue >= 97 && mValue <= 122) || (mValue >= 192 && mValue <= 255) ) && (mValue != 215) && (mValue != 247) );
 }
 
@@ -55,7 +55,7 @@ std::vector < String > String::Split ( const String& str, const Uint32& splitcha
 	std::vector < String > tmp;
 	String tmpstr;
 
-	for ( eeUint i = 0; i < str.size(); i++ ) {
+	for ( unsigned int i = 0; i < str.size(); i++ ) {
 		if ( str[i] == splitchar ) {
 			if ( pushEmptyString || tmpstr.size() ) {
 				tmp.push_back(tmpstr);
@@ -76,7 +76,7 @@ std::vector < std::string > String::Split ( const std::string& str, const Int8& 
 	std::vector < std::string > tmp;
 	std::string tmpstr;
 
-	for ( eeUint i = 0; i < str.size(); i++ ) {
+	for ( unsigned int i = 0; i < str.size(); i++ ) {
 		if ( str[i] == splitchar ) {
 			if ( pushEmptyString || tmpstr.size() ) {
 				tmp.push_back(tmpstr);
@@ -93,82 +93,69 @@ std::vector < std::string > String::Split ( const std::string& str, const Int8& 
 	return tmp;
 }
 
-
-std::string String::LTrim( const std::string & str ) {
-	std::string::size_type pos1 = str.find_first_not_of(' ');
+std::string String::LTrim(const std::string & str , char character) {
+	std::string::size_type pos1 = str.find_first_not_of(character);
 	return ( pos1 == std::string::npos ) ? str : str.substr( pos1 );
 }
 
-std::string String::Trim( const std::string & str ) {
-	std::string::size_type pos1 = str.find_first_not_of(' ');
-	std::string::size_type pos2 = str.find_last_not_of(' ');
+std::string String::Trim(const std::string & str , char character) {
+	std::string::size_type pos1 = str.find_first_not_of(character);
+	std::string::size_type pos2 = str.find_last_not_of(character);
 	return str.substr(pos1 == std::string::npos ? 0 : pos1, pos2 == std::string::npos ? str.length() - 1 : pos2 - pos1 + 1);
 }
 
-void String::ToUpper( std::string & str ) {
+String String::LTrim(const String & str , char character) {
+	StringType::size_type pos1 = str.find_first_not_of(character);
+	return ( pos1 == String::InvalidPos ) ? str : str.substr( pos1 );
+}
+
+String String::Trim(const String & str , char character) {
+	StringType::size_type pos1 = str.find_first_not_of(character);
+	StringType::size_type pos2 = str.find_last_not_of(character);
+	return str.substr(pos1 == String::InvalidPos ? 0 : pos1, pos2 == String::InvalidPos ? str.length() - 1 : pos2 - pos1 + 1);
+}
+
+void String::ToUpperInPlace( std::string & str ) {
 	std::transform(str.begin(), str.end(), str.begin(), (int(*)(int)) std::toupper);
 }
 
-void String::ToLower( std::string & str ) {
+std::string String::ToUpper( std::string str ) {
+	for (std::string::iterator i = str.begin(); i != str.end(); ++i)
+		*i = static_cast<char>(std::toupper(*i));
+	return str;
+}
+
+void String::ToLowerInPlace( std::string & str ) {
 	std::transform(str.begin(), str.end(), str.begin(), (int(*)(int)) std::tolower);
+}
+
+std::string String::ToLower( std::string str ) {
+	for (std::string::iterator i = str.begin(); i != str.end(); ++i)
+		*i = static_cast<char>(std::tolower(*i));
+	return str;
 }
 
 std::vector<Uint8> String::StringToUint8( const std::string& str ) {
 	return std::vector<Uint8>( str.begin(), str.end() );
 }
 
-std::string String::Uint8ToString( const std::vector<Uint8> v ) {
+std::string String::Uint8ToString( const std::vector<Uint8>& v ) {
 	return std::string( v.begin(), v.end() );
 }
 
-void String::StrCopy( char * Dst, const char * Src, eeUint DstSize ) {
-	char * DstEnd = Dst + DstSize - 1;
-
-	while ( Dst < DstEnd && *Src ) {
-		*Dst = *Src;
-		Dst++;
-		Src++;
-	}
-
-	*Dst = 0;
+void String::StrCopy( char * Dst, const char * Src, unsigned int DstSize ) {
+	strncpy( Dst, Src, DstSize );
 }
 
-Int32 String::StartsWith( const std::string& Start, const std::string Str ) {
-	Int32 Pos	= -1;
-	Int32 s		= (Int32)Start.size();
-
-	if ( (Int32)Str.size() >= s ) {
-		for ( Int32 i = 0; i < s; i++ ) {
-			if ( Start[i] == Str[i] ) {
-				Pos = i;
-			} else {
-				Pos = -1;
-				break;
-			}
-		}
-	}
-
-	return Pos;
+bool String::StartsWith( const std::string& haystack, const std::string & needle ) {
+	return needle.length() <= haystack.length() && std::equal(needle.begin(), needle.end(), haystack.begin() );
 }
 
-Int32 String::StartsWith( const String& Start, const String Str ) {
-	Int32 Pos = -1;
-
-	if ( Str.size() >= Start.size() ) {
-		for ( Uint32 i = 0; i < Start.size(); i++ ) {
-			if ( Start[i] == Str[i] ) {
-				Pos = (Int32)i;
-			} else {
-				Pos = -1;
-				break;
-			}
-		}
-	}
-
-	return Pos;
+bool String::StartsWith( const String& haystack, const String & needle ) {
+	return needle.length() <= haystack.length() && std::equal(needle.begin(), needle.end(), haystack.begin() );
 }
 
-void String::ReplaceSubStr( std::string &target, const std::string& that, const std::string& with ) {
+void String::ReplaceAll( std::string &target, const std::string& that, const std::string& with ) {
 	std::string::size_type pos=0;
 
 	while( ( pos = target.find( that, pos ) ) != std::string::npos ) {
@@ -176,6 +163,15 @@ void String::ReplaceSubStr( std::string &target, const std::string& that, const 
 		target.insert( pos, with );
 		pos += with.length();
 	}
+}
+
+void String::Replace( std::string& target, const std::string& that, const std::string& with ) {
+	std::size_t start_pos = target.find( that );
+
+	if( start_pos == std::string::npos )
+		return;
+
+	target.replace( start_pos, that.length(), with );
 }
 
 std::string String::RemoveNumbersAtEnd( std::string txt ) {
@@ -186,7 +182,7 @@ std::string String::RemoveNumbersAtEnd( std::string txt ) {
 	return txt;
 }
 
-void String::InsertChar( String& str, const eeUint& pos, const Uint32& tchar ) {
+void String::InsertChar( String& str, const unsigned int& pos, const Uint32& tchar ) {
 	str.insert( str.begin() + pos, tchar );
 }
 

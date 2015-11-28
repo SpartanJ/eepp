@@ -1,5 +1,6 @@
 #include "hkfont.hpp"
 #include "hkfontmanager.hpp"
+#include <cmath>
 
 namespace HaikuTTF {
 

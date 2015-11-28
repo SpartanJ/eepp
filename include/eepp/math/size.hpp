@@ -79,8 +79,8 @@ void tSize<T>::Height( const T& height ) {
 	this->y = height;
 }
 
-typedef tSize<eeInt> eeSize;
-typedef tSize<eeFloat> eeSizef;
+typedef tSize<int>		Sizei;
+typedef tSize<Float>	Sizef;
 
 }}
 

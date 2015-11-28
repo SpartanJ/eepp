@@ -12,7 +12,7 @@ using namespace EE::Math;
 
 #include <eepp/core.hpp>
 #include <eepp/system/colors.hpp>
-#include <eepp/system/tsingleton.hpp>
+#include <eepp/system/singleton.hpp>
 using namespace EE::System;
 
 //! Default settings are defined here

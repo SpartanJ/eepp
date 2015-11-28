@@ -1,47 +1,48 @@
 #include <eepp/ee.hpp>
+#include <eepp/graphics/opengl.hpp>
 
 /// This example is based on the WebGL demo from http://minimal.be/lab/fluGL/
 namespace Demo_ExternalShader {
 
 #if defined( EE_ARM ) || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-static eeFloat sqrt_aprox[20001];
+static Float sqrt_aprox[20001];
 #endif
 
 Uint32 ParticlesNum	= 30000;
 
-cWindow * win = NULL;
-cInput * imp = NULL;
-cShaderProgram * ShaderProgram = NULL;
+EE::Window::Window * win = NULL;
+Input * imp = NULL;
+ShaderProgram * shaderProgram = NULL;
 bool ShadersSupported = false;
-eeFloat tw;
-eeFloat th;
-eeFloat aspectRatio;
-eeVector3ff * vertices		= eeNewArray( eeVector3ff, ParticlesNum );
-eeVector3ff * velocities	= eeNewArray( eeVector3ff, ParticlesNum );
-eeColorAf * colors			= eeNewArray( eeColorAf, ParticlesNum );
+Float tw;
+Float th;
+Float aspectRatio;
+Vector3ff * vertices		= eeNewArray( Vector3ff, ParticlesNum );
+Vector3ff * velocities	= eeNewArray( Vector3ff, ParticlesNum );
+ColorAf * colors			= eeNewArray( ColorAf, ParticlesNum );
 
-void videoResize( cWindow * w ) {
+void videoResize( EE::Window::Window * w ) {
 	/// Video Resize event will re-setup the 2D projection and states, so we must rebuild them.
-	aspectRatio	= (eeFloat)win->GetWidth()	/ (eeFloat)win->GetHeight();
-	tw			= (eeFloat)win->GetWidth()	/ 2;
-	th			= (eeFloat)win->GetHeight()	/ 2;
+	aspectRatio	= (Float)win->GetWidth()	/ (Float)win->GetHeight();
+	tw			= (Float)win->GetWidth()	/ 2;
+	th			= (Float)win->GetHeight()	/ 2;
 
-	GLfloat fieldOfView	= 30.0;
-	GLfloat nearPlane	= 1.0;
-	GLfloat farPlane	= 10000.0;
-	GLfloat top			= nearPlane * eetan(fieldOfView * EE_PI_360);
-	GLfloat bottom		= -top;
-	GLfloat right		= top * aspectRatio;
-	GLfloat left		= -right;
+	float fieldOfView	= 30.0;
+	float nearPlane	= 1.0;
+	float farPlane	= 10000.0;
+	float top			= nearPlane * eetan(fieldOfView * EE_PI_360);
+	float bottom		= -top;
+	float right		= top * aspectRatio;
+	float left		= -right;
 
-	GLfloat a = (right + left) / (right - left);
-	GLfloat b = (top + bottom) / (top - bottom);
-	GLfloat c = (farPlane + nearPlane) / (farPlane - nearPlane);
-	GLfloat d = (2 * farPlane * nearPlane) / (farPlane - nearPlane);
-	GLfloat x = (2 * nearPlane) / (right - left);
-	GLfloat y = (2 * nearPlane) / (top - bottom);
+	float a = (right + left) / (right - left);
+	float b = (top + bottom) / (top - bottom);
+	float c = (farPlane + nearPlane) / (farPlane - nearPlane);
+	float d = (2 * farPlane * nearPlane) / (farPlane - nearPlane);
+	float x = (2 * nearPlane) / (right - left);
+	float y = (2 * nearPlane) / (top - bottom);
 
-	GLfloat perspectiveMatrix[16] = {
+	float perspectiveMatrix[16] = {
 		x, 0, a, 0,
 		0, y, b, 0,
 		0, 0, c, d,
@@ -65,24 +66,24 @@ void videoResize( cWindow * w ) {
 	BlendMode::SetMode( ALPHA_BLENDONE );
 
 	/// Set the line width
-	cGlobalBatchRenderer::instance()->SetLineWidth( 2 );
+	GlobalBatchRenderer::instance()->SetLineWidth( 2 );
 
 	if ( ShadersSupported ) {
 		/// Rebind the Shader
-		ShaderProgram->Bind();
+		shaderProgram->Bind();
 
 		/// If you want to use the programmable-pipeline renderer you'll need to set up the projection and modelview matrix manually.
 		/// Or if you want to use another name to the projection matrix or the modelview matrix ( eepp programmable-pipeline use
 		/// dgl_ProjectionMatrix and dgl_ModelViewMatrix by default.
 		if ( GLv_2 == GLi->Version() ) {
-			ShaderProgram->SetUniformMatrix( "dgl_ProjectionMatrix", perspectiveMatrix );
+			shaderProgram->SetUniformMatrix( "dgl_ProjectionMatrix", perspectiveMatrix );
 
 			/// Get the identity matrix and set it to the modelview matrix
-			GLfloat modelMatrix[16];
+			float modelMatrix[16];
 			GLi->LoadIdentity();
 			GLi->GetCurrentMatrix( GL_MODELVIEW_MATRIX, modelMatrix );
 
-			ShaderProgram->SetUniformMatrix( "dgl_ModelViewMatrix", modelMatrix );
+			shaderProgram->SetUniformMatrix( "dgl_ModelViewMatrix", modelMatrix );
 		}
 	}
 }
@@ -111,11 +112,11 @@ void MainLoop()
 		}
 	}
 
-	eeFloat p;
-	eeVector2f mf	= imp->GetMousePosf();
-	eeFloat tratio	= tw / th;
-	eeFloat touchX	= ( mf.x / tw - 1 ) * tratio;
-	eeFloat touchY	= -( mf.y / th - 1 );
+	Float p;
+	Vector2f mf	= imp->GetMousePosf();
+	Float tratio	= tw / th;
+	Float touchX	= ( mf.x / tw - 1 ) * tratio;
+	Float touchY	= -( mf.y / th - 1 );
 	bool touch		= imp->MouseLeftPressed();
 
 	for( Uint32 i = 0; i < ParticlesNum; i+=2 )
@@ -155,14 +156,14 @@ void MainLoop()
 		vertices[i+1].y = p;
 
 		if ( touch ) {
-			eeFloat dx	= touchX - vertices[i].x;
-			eeFloat dy	= touchY - vertices[i].y;
-			eeFloat distance = dx * dx + dy * dy;
+			Float dx	= touchX - vertices[i].x;
+			Float dy	= touchY - vertices[i].y;
+			Float distance = dx * dx + dy * dy;
 
 			#if !defined( EE_ARM ) && EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-			eeFloat d	= eesqrt( distance );
+			Float d	= eesqrt( distance );
 			#else
-			eeFloat d = sqrt_aprox[ (Int32)(distance * 1000) ];
+			Float d = sqrt_aprox[ (Int32)(distance * 1000) ];
 			#endif
 
 			if ( d < 2.f ) {
@@ -185,10 +186,10 @@ void MainLoop()
 
 	/// VertexPointer assigns values by default to the attribute "dgl_Vertex"
 	/// TextureCoordPointer to "dgl_MultiTexCoord0"
-	GLi->VertexPointer( 3, GL_FLOAT, sizeof(eeVector3ff), reinterpret_cast<char*> ( &vertices[0] ), ParticlesNum * sizeof(float) * 3 );
+	GLi->VertexPointer( 3, GL_FLOAT, sizeof(Vector3ff), reinterpret_cast<char*> ( &vertices[0] ), ParticlesNum * sizeof(float) * 3 );
 
 	/// ColorPointer to "dgl_FrontColor"
-	GLi->ColorPointer( 4, GL_FP, sizeof(eeColorAf), reinterpret_cast<char*> ( &colors[0] ), ParticlesNum * sizeof(eeFloat) * 4 );
+	GLi->ColorPointer( 4, GL_FP, sizeof(ColorAf), reinterpret_cast<char*> ( &colors[0] ), ParticlesNum * sizeof(Float) * 4 );
 
 	/// Draw the lines
 	GLi->DrawArrays( DM_LINES, 0, ParticlesNum );
@@ -204,7 +205,7 @@ void MainLoop()
 
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
-	win = cEngine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - External Shaders" ), ContextSettings( true ) );
+	win = Engine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - External Shaders" ), ContextSettings( true ) );
 
 	if ( win->Created() )
 	{
@@ -216,7 +217,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		/// We really don't need shaders for this, but the purpose of the example is to show how to work with external shaders
 		if ( ShadersSupported ) {
 			/// Disable the automatic shader conversion from fixed-pipeline to programmable-pipeline
-			cShader::Ensure( false );
+			Shader::Ensure( false );
 
 			std::string fs( "#ifdef GL_ES\n\
 				precision highp float;\n\
@@ -240,11 +241,11 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 			/// Since fixed-pipeline OpenGL use gl_FrontColor for glColorPointer, we need to replace the color attribute
 			/// This is all to show how it works, in a real world scenario, you will choose to work fixed-pipeline or programmable-pipeline.
 			if ( GLi->Version() == GLv_2 ) {
-				String::ReplaceSubStr( fs, "gl_FragColor = dgl_Color", "gl_FragColor = gl_FrontColor" );
+				String::ReplaceAll( fs, "gl_FragColor = dgl_Color", "gl_FragColor = gl_FrontColor" );
 			}
 
 			/// Create the new shader program
-			ShaderProgram = cShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
+			shaderProgram = ShaderProgram::New( vs.c_str(), vs.size(), fs.c_str(), fs.size() );
 		}
 
 		/// Set the projection
@@ -257,14 +258,14 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 		for (i = 0; i < ParticlesNum; i++ )
 		{
-			vertices[i]		= eeVector3ff( 0, 0, 1.83 );
-			velocities[i]	= eeVector3ff( (Math::Randf() * 2 - 1)*.05, (Math::Randf() * 2 - 1)*.05, .93 + Math::Randf()*.02 );
-			colors[i]		= eeColorAf( Math::Randf() * 0.5, 0.1, 0.8, 0.5 );
+			vertices[i]		= Vector3ff( 0, 0, 1.83 );
+			velocities[i]	= Vector3ff( (Math::Randf() * 2 - 1)*.05, (Math::Randf() * 2 - 1)*.05, .93 + Math::Randf()*.02 );
+			colors[i]		= ColorAf( Math::Randf() * 0.5, 0.1, 0.8, 0.5 );
 		}
 
 		/** Optimized for ARM ( pre-cache sqrt ) */
 		#if defined( EE_ARM ) || EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
-		eeFloat tFloat = 0;
+		Float tFloat = 0;
 		for ( int i = 0; i <= 20000; i++ ) {
 			sqrt_aprox[i] = eesqrt( tFloat );
 			tFloat += 0.001;
@@ -278,7 +279,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		eeSAFE_DELETE_ARRAY( colors );
 	}
 
-	cEngine::DestroySingleton();
+	Engine::DestroySingleton();
 
 	MemoryManager::ShowResults();
 

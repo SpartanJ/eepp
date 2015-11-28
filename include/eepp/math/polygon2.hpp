@@ -102,7 +102,7 @@ class Polygon2 {
 		tRECT<T> ToAABB();
 
 		/** Creates a rounded rectangle polygon */
-		static Polygon2<T> CreateRoundedRectangle( const T& x, const T& y, const T& width, const T& height, const eeUint& Radius = 8 );
+		static Polygon2<T> CreateRoundedRectangle( const T& x, const T& y, const T& width, const T& height, const unsigned int& Radius = 8 );
 
 		/** @brief Intersect to Quads
 		**	Convert the two quads in two polygons, and execute a polygon to polygon collition.
@@ -201,7 +201,7 @@ void Polygon2<T>::Rotate( const T& Angle, const Vector2<T>& Center ) {
 	if ( Angle == 0.f )
 		return;
 
-	for ( eeUint i = 0; i < Vector.size(); i++ )
+	for ( unsigned int i = 0; i < Vector.size(); i++ )
 		Vector[ i ].Rotate( Angle, Center );
 }
 
@@ -229,7 +229,7 @@ void Polygon2<T>::Scale( const T& scale, const Vector2<T>& Center ) {
 }
 
 template<typename T>
-Polygon2<T> Polygon2<T>::CreateRoundedRectangle( const T& x, const T& y, const T& width, const T& height, const eeUint& Radius ) {
+Polygon2<T> Polygon2<T>::CreateRoundedRectangle( const T& x, const T& y, const T& width, const T& height, const unsigned int& Radius ) {
 	T PI05 = (T)EE_PI * 0.5f;
 	T PI15 = (T)EE_PI * 1.5f;
 	T PI20 = (T)EE_PI2;
@@ -242,8 +242,8 @@ Polygon2<T> Polygon2<T>::CreateRoundedRectangle( const T& x, const T& y, const T
 	Poly.PushBack( Vector2<T>( x, y + Radius ) );
 
 	for( t = (T)EE_PI; t < PI15; t += 0.1f ) {
-		sx = x + Radius + (eeFloat)cosf(t) * Radius;
-		sy = y + Radius + (eeFloat)sinf(t) * Radius;
+		sx = x + Radius + (Float)cosf(t) * Radius;
+		sy = y + Radius + (Float)sinf(t) * Radius;
 
 		Poly.PushBack( Vector2<T> (sx, sy) );
 	}
@@ -252,8 +252,8 @@ Polygon2<T> Polygon2<T>::CreateRoundedRectangle( const T& x, const T& y, const T
 	Poly.PushBack( Vector2<T>( x + width - Radius, y ) );
 
 	for( t = PI15; t < PI20; t += 0.1f ) {
-		sx = x + width - Radius + (eeFloat)cosf(t) * Radius;
-		sy = y + Radius + (eeFloat)sinf(t) * Radius;
+		sx = x + width - Radius + (Float)cosf(t) * Radius;
+		sy = y + Radius + (Float)sinf(t) * Radius;
 
 		Poly.PushBack( Vector2<T> (sx, sy) );
 	}
@@ -262,8 +262,8 @@ Polygon2<T> Polygon2<T>::CreateRoundedRectangle( const T& x, const T& y, const T
 	Poly.PushBack( Vector2<T> ( x + width, y + height - Radius ) );
 
 	for( t = 0; t < PI05; t += 0.1f ){
-		sx = x + width - Radius + (eeFloat)cosf(t) * Radius;
-		sy = y + height -Radius + (eeFloat)sinf(t) * Radius;
+		sx = x + width - Radius + (Float)cosf(t) * Radius;
+		sy = y + height -Radius + (Float)sinf(t) * Radius;
 
 		Poly.PushBack( Vector2<T> (sx, sy) );
 	}
@@ -272,8 +272,8 @@ Polygon2<T> Polygon2<T>::CreateRoundedRectangle( const T& x, const T& y, const T
 	Poly.PushBack( Vector2<T> ( x + Radius, y + height ) );
 
 	for( t = PI05; t < (T)EE_PI; t += 0.1f ) {
-		sx = x + Radius + (eeFloat)cosf(t) * Radius;
-		sy = y + height - Radius + (eeFloat)sinf(t) * Radius;
+		sx = x + Radius + (Float)cosf(t) * Radius;
+		sy = y + height - Radius + (Float)sinf(t) * Radius;
 
 		Poly.PushBack( Vector2<T> (sx, sy) );
 	}
@@ -313,7 +313,7 @@ template <typename T>
 bool Polygon2<T>::Intersect( const Polygon2<T>& p1 ) {
 	T min0, max0, min1, max1, sOffset, t;
 	Vector2<T> vAxis, vOffset;
-	eeUint i = 0, j = 0, n, size = Size();
+	unsigned int i = 0, j = 0, n, size = Size();
 
 	vOffset = Vector2<T>( X() - p1.X(), Y() - p1.Y() );
 
@@ -403,7 +403,7 @@ tRECT<T> Polygon2<T>::ToAABB() {
 		return TmpR;
 	}
 
-	eeFloat MinX = Vector[0].x, MaxX = Vector[0].x, MinY = Vector[0].y, MaxY = Vector[0].y;
+	Float MinX = Vector[0].x, MaxX = Vector[0].x, MinY = Vector[0].y, MaxY = Vector[0].y;
 
 	for (Uint32 i = 1; i < Vector.size(); i++ ) {
 		if ( MinX > Vector[i].x ) MinX = Vector[i].x;
@@ -453,7 +453,7 @@ Uint32 Polygon2<T>::ClosestPoint( const Vector2<T>& to, T * distance ) {
 	return Index;
 }
 
-typedef Polygon2<eeFloat> eePolygon2f;
+typedef Polygon2<Float> Polygon2f;
 
 }}
 

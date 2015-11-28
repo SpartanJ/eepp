@@ -2,7 +2,7 @@
 #define EE_SYSTEM_SYSTEM_HPP
 
 #include <eepp/system/base.hpp>
-#include <eepp/system/ctime.hpp>
+#include <eepp/system/time.hpp>
 
 namespace EE { namespace System {
 
@@ -24,22 +24,24 @@ class EE_API Sys {
 		static void Sleep( const Uint32& ms );
 
 		/** Wait the time defined before returning. */
-		static void Sleep( const cTime& time );
+		static void Sleep( const Time& time );
 
 		/** @return The application path ( the executable path ) */
 		static std::string GetProcessPath();
 
 		/** @return The System Time */
-		static eeDouble GetSystemTime();
+		static double GetSystemTime();
 
-		/** @return The OS Name */
-		static std::string GetOSName();
+		/** @return The OS Name
+		 *  @param showReleaseName Instead of returning only the OS Name, it will append the release name or number. For Windows instead of "Windows" it will be "Windows 7", for "Linux" it will be "Linux 3.15" and so on.
+		*/
+		static std::string GetOSName( bool showReleaseName = false );
 
 		/** @return The OS Architecture */
 		static std::string GetOSArchitecture();
 
 		/** @return The Number of CPUs of the system. */
-		static eeInt GetCPUCount();
+		static int GetCPUCount();
 
 		/** @return Returns free disk space for a given path in bytes */
 		static Int64 GetDiskFreeSpace(const std::string& path);

@@ -10,9 +10,9 @@
 
 namespace EE {
 
-class EE_API cAllocatedPointer {
+class EE_API AllocatedPointer {
 	public:
-		cAllocatedPointer( void * Data, const std::string& File, int Line, size_t Memory );
+		AllocatedPointer( void * Data, const std::string& File, int Line, size_t Memory );
 
 		std::string 	mFile;
 		int 			mLine;
@@ -20,14 +20,14 @@ class EE_API cAllocatedPointer {
 		void *			mData;
 };
 
-typedef std::map<void*, cAllocatedPointer> 	tAllocatedPointerMap;
-typedef tAllocatedPointerMap::iterator 		tAllocatedPointerMapIt;
+typedef std::map<void*, AllocatedPointer> 	AllocatedPointerMap;
+typedef AllocatedPointerMap::iterator 		AllocatedPointerMapIt;
 
 class EE_API MemoryManager {
 	public:
-		static void * AddPointer( const cAllocatedPointer& aAllocatedPointer );
+		static void * AddPointer( const AllocatedPointer& aAllocatedPointer );
 
-		static void * AddPointerInPlace( void * Place, const cAllocatedPointer& aAllocatedPointer );
+		static void * AddPointerInPlace( void * Place, const AllocatedPointer& aAllocatedPointer );
 
 		static bool RemovePointer( void * Data );
 
@@ -59,21 +59,21 @@ class EE_API MemoryManager {
 
 		static size_t GetTotalMemoryUsage();
 
-		static const cAllocatedPointer&	GetBiggestAllocation();
+		static const AllocatedPointer&	GetBiggestAllocation();
 };
 
 #ifdef EE_MEMORY_MANAGER
 	#define eeNew( classType, constructor ) \
-			( classType *)EE::MemoryManager::AddPointer( EE::cAllocatedPointer( new classType constructor ,__FILE__,__LINE__, sizeof(classType) ) )
+			( classType *)EE::MemoryManager::AddPointer( EE::AllocatedPointer( new classType constructor ,__FILE__,__LINE__, sizeof(classType) ) )
 
 	#define eeNewInPlace( place, classType, constructor ) \
-			( classType *)EE::MemoryManager::AddPointerInPlace( place, EE::cAllocatedPointer( new place classType constructor ,__FILE__,__LINE__, sizeof(classType) ) )
+			( classType *)EE::MemoryManager::AddPointerInPlace( place, EE::AllocatedPointer( new place classType constructor ,__FILE__,__LINE__, sizeof(classType) ) )
 
 	#define eeNewArray( classType, amount ) \
-			( classType *) EE::MemoryManager::AddPointer( EE::cAllocatedPointer( new classType [ amount ], __FILE__, __LINE__, amount * sizeof( classType ) ) )
+			( classType *) EE::MemoryManager::AddPointer( EE::AllocatedPointer( new classType [ amount ], __FILE__, __LINE__, amount * sizeof( classType ) ) )
 
 	#define eeMalloc(amount) \
-			EE::MemoryManager::AddPointer( EE::cAllocatedPointer( EE::MemoryManager::Allocate( amount ), __FILE__, __LINE__, amount ) )
+			EE::MemoryManager::AddPointer( EE::AllocatedPointer( EE::MemoryManager::Allocate( amount ), __FILE__, __LINE__, amount ) )
 
 	#define eeDelete( data ){ \
 			if( EE::MemoryManager::RemovePointer( EE::MemoryManager::Delete( data ) ) == false ) printf( "Deleting at '%s' %d\n", __FILE__, __LINE__ ); \
