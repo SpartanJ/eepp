@@ -6,7 +6,8 @@
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
 JoystickManagerSDL::JoystickManagerSDL() :
-	JoystickManager()
+	JoystickManager(),
+	mAsyncInit( &JoystickManagerSDL::OpenAsync, this )
 {
 }
 
@@ -23,7 +24,7 @@ void JoystickManagerSDL::Update() {
 	}
 }
 
-void JoystickManagerSDL::Open() {
+void JoystickManagerSDL::OpenAsync() {
 	int error = SDL_InitSubSystem( SDL_INIT_JOYSTICK );
 
 	if ( !error ) {
@@ -34,6 +35,10 @@ void JoystickManagerSDL::Open() {
 
 		mInit = true;
 	}
+}
+
+void JoystickManagerSDL::Open() {
+	mAsyncInit.Launch();
 }
 
 void JoystickManagerSDL::Close() {

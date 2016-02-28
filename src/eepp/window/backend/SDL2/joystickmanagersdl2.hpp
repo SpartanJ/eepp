@@ -7,6 +7,7 @@
 #ifdef EE_BACKEND_SDL2
 
 #include <eepp/window/joystickmanager.hpp>
+#include <eepp/system/thread.hpp>
 
 namespace EE { namespace Window { namespace Backend { namespace SDL2 {
 
@@ -23,6 +24,10 @@ class EE_API JoystickManagerSDL : public JoystickManager {
 		void Open();
 	protected:
 		void Create( const Uint32& index );
+
+		void OpenAsync();
+
+		Thread mAsyncInit;
 };
 
 }}}}
