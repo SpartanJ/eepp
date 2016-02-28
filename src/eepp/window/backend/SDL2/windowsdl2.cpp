@@ -398,7 +398,7 @@ void WindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 	if ( this->Windowed() && !Windowed ) {
 		mWinPos = Position();
 	} else {
-		SDL_SetWindowFullscreen( mSDLWindow, Windowed ? SDL_FALSE : SDL_TRUE );
+		SDL_SetWindowFullscreen( mSDLWindow, Windowed ? 0 : SDL_WINDOW_FULLSCREEN );
 	}
 
 	SDL_SetWindowSize( mSDLWindow, Width, Height );
@@ -408,7 +408,7 @@ void WindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 
 		SetGLConfig();
 
-		SDL_SetWindowFullscreen( mSDLWindow, Windowed ? SDL_FALSE : SDL_TRUE );
+		SDL_SetWindowFullscreen( mSDLWindow, Windowed ? 0 : SDL_WINDOW_FULLSCREEN );
 	}
 
 	if ( !this->Windowed() && Windowed ) {
