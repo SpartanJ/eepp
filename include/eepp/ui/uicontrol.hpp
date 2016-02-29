@@ -247,6 +247,7 @@ class EE_API UIControl {
 
 		Vector2i		mPos;
 		Vector2i		mScreenPos;
+		Vector2f		mScreenPosf;
 		Sizei			mSize;
 
 		Uint32			mFlags;
@@ -321,6 +322,8 @@ class EE_API UIControl {
 		virtual void BorderDraw();
 
 		virtual void UpdateQuad();
+
+		virtual void UpdateCenter();
 
 		virtual void MatrixSet();
 

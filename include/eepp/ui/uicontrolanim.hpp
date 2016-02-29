@@ -23,11 +23,27 @@ class EE_API UIControlAnim : public UIDragable {
 
 		void Angle( const Float& angle );
 
+		void Angle( const Float& angle, const OriginPoint& center );
+
+		const OriginPoint& AngleOriginPoint() const;
+
+		void AngleOriginPoint( const OriginPoint& center );
+
+		Vector2f AngleCenter();
+
 		const Vector2f& Scale() const;
 
 		void Scale( const Vector2f& scale );
 
-		void Scale( const Float& scale );
+		void Scale( const Vector2f& scale, const OriginPoint& center );
+
+		void Scale( const Float& scale , const OriginPoint & center = OriginPoint::OriginCenter );
+
+		const OriginPoint& ScaleOriginPoint() const;
+
+		void ScaleOriginPoint( const OriginPoint& center );
+
+		Vector2f ScaleCenter();
 
 		const Float& Alpha() const;
 
@@ -68,9 +84,12 @@ class EE_API UIControlAnim : public UIDragable {
 		bool FadingOut();
 	protected:
 		friend class UIManager;
+		friend class UIControl;
 
 		Float				mAngle;
+		OriginPoint			mAngleOriginPoint;
 		Vector2f 			mScale;
+		OriginPoint			mScaleOriginPoint;
 		Float				mAlpha;
 
 		Interpolation * 	mAngleAnim;
@@ -86,6 +105,8 @@ class EE_API UIControlAnim : public UIDragable {
 
 		virtual void UpdateQuad();
 
+		virtual void OnSizeChange();
+
 		virtual void OnAngleChange();
 
 		virtual void OnScaleChange();
@@ -95,6 +116,8 @@ class EE_API UIControlAnim : public UIDragable {
 		virtual void MatrixSet();
 
 		virtual void MatrixUnset();
+
+		void UpdateOriginPoint();
 };
 
 }}

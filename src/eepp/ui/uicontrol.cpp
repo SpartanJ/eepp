@@ -120,11 +120,13 @@ bool UIControl::IsInside( const Vector2i& Pos ) const {
 
 void UIControl::Pos( const Vector2i& Pos ) {
 	mPos = Pos;
+
 	OnPosChange();
 }
 
 void UIControl::Pos( const Int32& x, const Int32& y ) {
 	mPos = Vector2i( x, y );
+
 	OnPosChange();
 }
 
@@ -250,7 +252,7 @@ void UIControl::Draw() {
 			BorderDraw();
 
 		if ( NULL != mSkinState )
-			mSkinState->Draw( (Float)mScreenPos.x, (Float)mScreenPos.y, (Float)mSize.Width(), (Float)mSize.Height(), 255 );
+			mSkinState->Draw( mScreenPosf.x, mScreenPosf.y, (Float)mSize.Width(), (Float)mSize.Height(), 255 );
 
 		if ( UIManager::instance()->HighlightFocus() && UIManager::instance()->FocusControl() == this ) {
 			Primitives P;
@@ -514,11 +516,13 @@ void UIControl::OnPosChange() {
 }
 
 void UIControl::OnSizeChange() {
+	UpdateCenter();
+
 	SendCommonEvent( UIEvent::EventOnSizeChange );
 }
 
 Rectf UIControl::GetRectf() {
-	return Rectf( Vector2f( (Float)mScreenPos.x, (Float)mScreenPos.y ), Sizef( (Float)mSize.Width(), (Float)mSize.Height() ) );
+	return Rectf( mScreenPosf, Sizef( (Float)mSize.Width(), (Float)mSize.Height() ) );
 }
 
 void UIControl::BackgroundDraw() {
@@ -551,7 +555,7 @@ void UIControl::BorderDraw() {
 
 	//! @TODO: Check why was this +0.1f -0.1f?
 	if ( mFlags & UI_CLIP_ENABLE ) {
-		Rectf R( Vector2f( (Float)mScreenPos.x + 0.1f, (Float)mScreenPos.y + 0.1f ), Sizef( (Float)mSize.Width() - 0.1f, (Float)mSize.Height() - 0.1f ) );
+		Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mSize.Width() - 0.1f, (Float)mSize.Height() - 0.1f ) );
 
 		if ( mBackground->Corners() ) {
 			P.DrawRoundedRectangle( GetRectf(), 0.f, Vector2f::One, mBackground->Corners() );
@@ -871,8 +875,7 @@ const Vector2f& UIControl::GetPolygonCenter() const {
 }
 
 void UIControl::UpdateQuad() {
-	mPoly 	= Polygon2f( eeAABB( (Float)mScreenPos.x, (Float)mScreenPos.y, (Float)mScreenPos.x + mSize.Width(), (Float)mScreenPos.y + mSize.Height() ) );
-	mCenter = Vector2f( (Float)mScreenPos.x + (Float)mSize.Width() * 0.5f, (Float)mScreenPos.y + (Float)mSize.Height() * 0.5f );
+	mPoly 	= Polygon2f( eeAABB( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mSize.Width(), mScreenPosf.y + mSize.Height() ) );
 
 	UIControl * tParent = Parent();
 
@@ -880,12 +883,16 @@ void UIControl::UpdateQuad() {
 		if ( tParent->IsAnimated() ) {
 			UIControlAnim * tP = reinterpret_cast<UIControlAnim *> ( tParent );
 
-			mPoly.Rotate( tP->Angle(), tP->GetPolygonCenter() );
-			mPoly.Scale( tP->Scale(), tP->GetPolygonCenter() );
+			mPoly.Rotate( tP->Angle(), tP->AngleCenter() );
+			mPoly.Scale( tP->Scale(), tP->ScaleCenter() );
 		}
 
 		tParent = tParent->Parent();
 	};
+}
+
+void UIControl::UpdateCenter() {
+	mCenter = Vector2f( mScreenPosf.x + (Float)mSize.Width() * 0.5f, mScreenPosf.y + (Float)mSize.Height() * 0.5f );
 }
 
 Time UIControl::Elapsed() {
@@ -1031,6 +1038,9 @@ void UIControl::UpdateScreenPos() {
 	ControlToScreen( Pos );
 
 	mScreenPos = Pos;
+	mScreenPosf = Vector2f( Pos.x, Pos.y );
+
+	UpdateCenter();
 }
 
 UISkin * UIControl::GetSkin() {
@@ -1238,9 +1248,10 @@ void UIControl::WorldToControl( Vector2i& pos ) const {
 		UIControl * tParent	= (*it);
 		UIControlAnim * tP		= tParent->IsAnimated() ? reinterpret_cast<UIControlAnim *> ( tParent ) : NULL;
 		Vector2f pPos			( tParent->mPos.x * scale.x			, tParent->mPos.y * scale.y			);
-		Vector2f Center		( tParent->mSize.x * 0.5f * scale.x	, tParent->mSize.y * 0.5f * scale.y	);
+		Vector2f Center;
 
 		if ( NULL != tP && 1.f != tP->Scale() ) {
+			Center = tP->ScaleOriginPoint() * scale;
 			scale *= tP->Scale();
 
 			pPos.Scale( scale, pPos + Center );
@@ -1249,7 +1260,7 @@ void UIControl::WorldToControl( Vector2i& pos ) const {
 		Pos -= pPos;
 
 		if ( NULL != tP && 0.f != tP->Angle() ) {
-			Center = Vector2f( tParent->mSize.x * 0.5f * scale.x	, tParent->mSize.y * 0.5f * scale.y	);
+			Center = tP->AngleOriginPoint() * scale;
 			Pos.Rotate( -tP->Angle(), Center );
 		}
 	}
@@ -1275,13 +1286,15 @@ void UIControl::ControlToWorld( Vector2i& pos ) const {
 		UIControl * tParent	= (*it);
 		UIControlAnim * tP		= tParent->IsAnimated() ? reinterpret_cast<UIControlAnim *> ( tParent ) : NULL;
 		Vector2f pPos			( tParent->mPos.x					, tParent->mPos.y					);
-		Vector2f Center		( pPos.x + tParent->mSize.x * 0.5f	, pPos.y + tParent->mSize.y	* 0.5f	);
 
 		Pos += pPos;
 
 		if ( NULL != tP ) {
-			Pos.Rotate( tP->Angle(), Center );
-			Pos.Scale( tP->Scale(), Center );
+			Vector2f CenterAngle( pPos.x + tP->mAngleOriginPoint.x, pPos.y + tP->mAngleOriginPoint.y );
+			Vector2f CenterScale( pPos.x + tP->mScaleOriginPoint.x, pPos.y + tP->mScaleOriginPoint.y );
+
+			Pos.Rotate( tP->Angle(), CenterAngle );
+			Pos.Scale( tP->Scale(), CenterScale );
 		}
 	}
 

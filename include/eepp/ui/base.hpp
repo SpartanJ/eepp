@@ -10,6 +10,7 @@
 #include <eepp/math/interpolation.hpp>
 #include <eepp/math/waypoints.hpp>
 #include <eepp/math/math.hpp>
+#include <eepp/math/originpoint.hpp>
 using namespace EE::Math;
 
 #include <eepp/system/bitop.hpp>

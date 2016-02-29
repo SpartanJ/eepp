@@ -17,6 +17,8 @@ UIControlAnim::UIControlAnim( const CreateParams& Params ) :
 	mMoveAnim(NULL)
 {
 	mControlFlags |= UI_CTRL_FLAG_ANIM;
+
+	UpdateOriginPoint();
 }
 
 UIControlAnim::~UIControlAnim() {
@@ -43,7 +45,7 @@ void UIControlAnim::Draw() {
 			BorderDraw();
 
 		if ( NULL != mSkinState )
-			mSkinState->Draw( (Float)mScreenPos.x, (Float)mScreenPos.y, (Float)mSize.Width(), (Float)mSize.Height(), (Uint32)mAlpha );
+			mSkinState->Draw( mScreenPosf.x, mScreenPosf.y, (Float)mSize.Width(), (Float)mSize.Height(), (Uint32)mAlpha );
 
 		if ( UIManager::instance()->HighlightFocus() && UIManager::instance()->FocusControl() == this ) {
 			Primitives P;
@@ -67,22 +69,68 @@ const Float& UIControlAnim::Angle() const {
 	return mAngle;
 }
 
+const OriginPoint& UIControlAnim::AngleOriginPoint() const {
+	return mAngleOriginPoint;
+}
+
+void UIControlAnim::AngleOriginPoint( const OriginPoint & center ) {
+	mAngleOriginPoint = center;
+	UpdateOriginPoint();
+}
+
+Vector2f UIControlAnim::AngleCenter() {
+	switch ( mAngleOriginPoint.OriginType ) {
+		case OriginPoint::OriginCenter: return mCenter;
+		case OriginPoint::OriginTopLeft: return mScreenPosf;
+		case OriginPoint::OriginCustom: default: return mScreenPosf + mAngleOriginPoint;
+	}
+}
+
 void UIControlAnim::Angle( const Float& angle ) {
 	mAngle = angle;
 	OnAngleChange();
+}
+
+void UIControlAnim::Angle( const Float& angle , const OriginPoint & center ) {
+	mAngleOriginPoint = center;
+	UpdateOriginPoint();
+	Angle( angle );
 }
 
 const Vector2f& UIControlAnim::Scale() const {
 	return mScale;
 }
 
-void UIControlAnim::Scale( const Vector2f& scale ) {
+void UIControlAnim::Scale( const Vector2f & scale ) {
 	mScale = scale;
 	OnScaleChange();
 }
 
-void UIControlAnim::Scale( const Float& scale ) {
-	Scale( Vector2f( scale, scale ) );
+const OriginPoint& UIControlAnim::ScaleOriginPoint() const {
+	return mScaleOriginPoint;
+}
+
+void UIControlAnim::ScaleOriginPoint( const OriginPoint & center ) {
+	mScaleOriginPoint = center;
+	UpdateOriginPoint();
+}
+
+Vector2f UIControlAnim::ScaleCenter() {
+	switch ( mScaleOriginPoint.OriginType ) {
+		case OriginPoint::OriginCenter: return mCenter;
+		case OriginPoint::OriginTopLeft: return mScreenPosf;
+		case OriginPoint::OriginCustom: default: return mScreenPosf + mScaleOriginPoint;
+	}
+}
+
+void UIControlAnim::Scale( const Vector2f& scale, const OriginPoint& center ) {
+	mScaleOriginPoint = center;
+	UpdateOriginPoint();
+	Scale( scale );
+}
+
+void UIControlAnim::Scale( const Float& scale, const OriginPoint& center ) {
+	Scale( Vector2f( scale, scale ), center );
 }
 
 const Float& UIControlAnim::Alpha() const {
@@ -113,18 +161,25 @@ void UIControlAnim::AlphaChilds( const Float &alpha ) {
 void UIControlAnim::MatrixSet() {
 	if ( mScale != 1.f || mAngle != 0.f ) {
 		GlobalBatchRenderer::instance()->Draw();
+
 		GLi->PushMatrix();
-		Vector2f Center( mScreenPos.x + mSize.Width() * 0.5f, mScreenPos.y + mSize.Height() * 0.5f );
-		GLi->Translatef( Center.x , Center.y, 0.f );
-		GLi->Rotatef( mAngle, 0.0f, 0.0f, 1.0f );
+
+		Vector2f scaleCenter = ScaleCenter();
+		GLi->Translatef( scaleCenter.x , scaleCenter.y, 0.f );
 		GLi->Scalef( mScale.x, mScale.y, 1.0f );
-		GLi->Translatef( -Center.x, -Center.y, 0.f );
+		GLi->Translatef( -scaleCenter.x, -scaleCenter.y, 0.f );
+
+		Vector2f angleCenter = AngleCenter();
+		GLi->Translatef( angleCenter.x , angleCenter.y, 0.f );
+		GLi->Rotatef( mAngle, 0.0f, 0.0f, 1.0f );
+		GLi->Translatef( -angleCenter.x, -angleCenter.y, 0.f );
 	}
 }
 
 void UIControlAnim::MatrixUnset() {
 	if ( mScale != 1.f || mAngle != 0.f ) {
 		GlobalBatchRenderer::instance()->Draw();
+
 		GLi->PopMatrix();
 	}
 }
@@ -320,7 +375,7 @@ void UIControlAnim::BorderDraw() {
 
 	//! @TODO: Check why was this +0.1f -0.1f?
 	if ( mFlags & UI_CLIP_ENABLE ) {
-		Rectf R( Vector2f( (Float)mScreenPos.x + 0.1f, (Float)mScreenPos.y + 0.1f ), Sizef( (Float)mSize.Width() - 0.1f, (Float)mSize.Height() - 0.1f ) );
+		Rectf R( Vector2f( mScreenPosf.x + 0.1f, mScreenPosf.y + 0.1f ), Sizef( (Float)mSize.Width() - 0.1f, (Float)mSize.Height() - 0.1f ) );
 
 		if ( mBackground->Corners() ) {
 			P.DrawRoundedRectangle( GetRectf(), 0.f, Vector2f::One, mBackground->Corners() );
@@ -341,11 +396,10 @@ ColorA UIControlAnim::GetColor( const ColorA& Col ) {
 }
 
 void UIControlAnim::UpdateQuad() {
-	mPoly 	= Polygon2f( eeAABB( (Float)mScreenPos.x, (Float)mScreenPos.y, (Float)mScreenPos.x + mSize.Width(), (Float)mScreenPos.y + mSize.Height() ) );
-	mCenter = Vector2f( (Float)mScreenPos.x + (Float)mSize.Width() * 0.5f, (Float)mScreenPos.y + (Float)mSize.Height() * 0.5f );
+	mPoly		= Polygon2f( eeAABB( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mSize.Width(), mScreenPosf.y + mSize.Height() ) );
 
-	mPoly.Rotate( mAngle, mCenter );
-	mPoly.Scale( mScale, mCenter );
+	mPoly.Rotate( mAngle, AngleCenter() );
+	mPoly.Scale( mScale, ScaleCenter() );
 
 	UIControl * tParent = Parent();
 
@@ -353,12 +407,40 @@ void UIControlAnim::UpdateQuad() {
 		if ( tParent->IsAnimated() ) {
 			UIControlAnim * tP = reinterpret_cast<UIControlAnim *> ( tParent );
 
-			mPoly.Rotate( tP->Angle(), tP->GetPolygonCenter() );
-			mPoly.Scale( tP->Scale(), tP->GetPolygonCenter() );
+			mPoly.Rotate( tP->Angle(), tP->AngleCenter() );
+			mPoly.Scale( tP->Scale(), tP->ScaleCenter() );
 		}
 
 		tParent = tParent->Parent();
 	};
+}
+
+void UIControlAnim::OnSizeChange() {
+	UpdateOriginPoint();
+}
+
+void UIControlAnim::UpdateOriginPoint() {
+	switch ( mAngleOriginPoint.OriginType ) {
+		case OriginPoint::OriginCenter:
+			mAngleOriginPoint.x = mSize.x * 0.5f;
+			mAngleOriginPoint.y = mSize.y * 0.5f;
+			break;
+		case OriginPoint::OriginTopLeft:
+			mAngleOriginPoint.x = mAngleOriginPoint.y = 0;
+			break;
+		default: {}
+	}
+
+	switch ( mScaleOriginPoint.OriginType ) {
+		case OriginPoint::OriginCenter:
+			mScaleOriginPoint.x = mSize.x * 0.5f;
+			mScaleOriginPoint.y = mSize.y * 0.5f;
+			break;
+		case OriginPoint::OriginTopLeft:
+			mScaleOriginPoint.x = mScaleOriginPoint.y = 0;
+			break;
+		default: {}
+	}
 }
 
 Interpolation * UIControlAnim::RotationInterpolation() {
