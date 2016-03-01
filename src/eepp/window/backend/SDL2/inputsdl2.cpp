@@ -331,7 +331,9 @@ void InputSDL::Init() {
 
 	InitializeTables();
 
+	#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	mJoystickManager->Open();
+	#endif
 }
 
 void InputSDL::InitializeTables() {
