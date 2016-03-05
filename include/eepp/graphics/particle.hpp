@@ -47,18 +47,18 @@ class EE_API Particle{
 		void Size(const Float size) { if (size>0) mSize = size; }
 		Float Size() const { return mSize; }
 		
-		void Used(const bool used) { cUsed = used; }
-		bool Used() const { return cUsed; }
+		void Used(const bool used) { mUsed = used; }
+		bool Used() const { return mUsed; }
 		
-		void Id(const Uint32 Id) { cId = Id; }
-		Uint32 Id() const { return cId; }
+		void Id(const Uint32 Id) { mId = Id; }
+		Uint32 Id() const { return mId; }
 	private:
 		Float mX, mY;
 		ColorAf mColor;
 		
 		Float mXSpeed, mYSpeed, mXAcc, mYAcc, mAlphaDecay, mSize;
-		bool cUsed;
-		Uint32 cId;
+		bool mUsed;
+		Uint32 mId;
 };
 
 }}

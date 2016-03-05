@@ -75,7 +75,7 @@ RendererGL3CP::RendererGL3CP() :
 	mQuadsSupported		= false;
 	mQuadVertexs		= 6;
 
-	mStack = eeNew( cMatrixStack, () );
+	mStack = eeNew( MatrixStack, () );
 	mStack->mProjectionMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
 	mStack->mModelViewMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
 }

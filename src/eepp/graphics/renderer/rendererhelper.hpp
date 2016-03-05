@@ -20,7 +20,7 @@ static glm::mat4 toGLMmat4( const float * m ) {
 	return Result;
 }
 
-class cMatrixStack
+class MatrixStack
 {
 	public:
 		std::stack<glm::mat4>	mProjectionMatrix;		// cpu-side

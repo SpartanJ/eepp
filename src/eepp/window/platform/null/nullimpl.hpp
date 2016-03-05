@@ -1,5 +1,5 @@
-#ifndef EE_WINDOWcNullImpl_HPP
-#define EE_WINDOWcNullImpl_HPP
+#ifndef EE_WINDOWNULLIMPL_HPP
+#define EE_WINDOWNULLIMPL_HPP
 
 #include <eepp/window/base.hpp>
 #include <eepp/window/platformimpl.hpp>
@@ -8,11 +8,11 @@ namespace EE { namespace Window { namespace Platform {
 
 using namespace EE::Window;
 
-class cNullImpl : public PlatformImpl {
+class NullImpl : public PlatformImpl {
 	public:
-		cNullImpl( EE::Window::Window * window );
+		NullImpl( EE::Window::Window * window );
 
-		~cNullImpl();
+		~NullImpl();
 
 		void MinimizeWindow();
 

@@ -331,7 +331,7 @@ void Sprite::DisableVertexColors() {
 }
 
 unsigned int Sprite::FramePos() {
-	mFrames.push_back( cFrame() );
+	mFrames.push_back( Frame() );
 	return (unsigned int)mFrames.size() - 1;
 }
 

@@ -63,7 +63,7 @@ const GLchar * EEGLES2_SHADER_PRIMITIVE_FS =
 #include "shaders/primitive.frag"
 
 RendererGLES2::RendererGLES2() :
-	mStack( eeNew( cMatrixStack, () ) ),
+	mStack( eeNew( MatrixStack, () ) ),
 	mProjectionMatrix_id(0),
 	mModelViewMatrix_id(0),
 	mCurrentMode(0),

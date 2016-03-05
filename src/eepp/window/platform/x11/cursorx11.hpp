@@ -9,13 +9,13 @@ using namespace EE::Window;
 
 namespace EE { namespace Window { namespace Platform {
 
-class cX11Impl;
+class X11Impl;
 
 class CursorX11 : public Cursor {
 	public:
 		X11Cursor	GetCursor() const;
 	protected:
-		friend class cX11Impl;
+		friend class X11Impl;
 
 		X11Cursor	mCursor;
 
@@ -29,7 +29,7 @@ class CursorX11 : public Cursor {
 
 		void Create();
 
-		cX11Impl * GetPlatform();
+		X11Impl * GetPlatform();
 };
 
 }}}

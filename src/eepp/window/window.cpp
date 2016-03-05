@@ -481,7 +481,7 @@ void Window::SetCurrentContext( eeWindowContex Context ) {
 
 void Window::CreatePlatform() {
 	eeSAFE_DELETE( mPlatform );
-	mPlatform = eeNew( Platform::cNullImpl, ( this ) );
+	mPlatform = eeNew( Platform::NullImpl, ( this ) );
 }
 
 void Window::SetCurrent() {

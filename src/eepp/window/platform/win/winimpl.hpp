@@ -11,11 +11,11 @@ namespace EE { namespace Window { namespace Platform {
 
 using namespace EE::Window;
 
-class cWinImpl : public PlatformImpl {
+class WinImpl : public PlatformImpl {
 	public:
-		cWinImpl( EE::Window::Window * window, eeWindowHandle handler );
+		WinImpl( EE::Window::Window * window, eeWindowHandle handler );
 
-		~cWinImpl();
+		~WinImpl();
 
 		void MinimizeWindow();
 

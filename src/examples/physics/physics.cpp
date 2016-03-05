@@ -34,7 +34,7 @@ EE::Window::Window * mWindow;
 Input * KM;
 
 void DefaultDrawOptions() {
-	PhysicsManager::cDrawSpaceOptions * DSO = PhysicsManager::instance()->GetDrawOptions();
+	PhysicsManager::DrawSpaceOptions * DSO = PhysicsManager::instance()->GetDrawOptions();
 	DSO->DrawBBs			= false;
 	DSO->DrawShapes			= true;
 	DSO->DrawShapesBorders	= true;
@@ -450,7 +450,7 @@ void StickySeparate(Arbiter *arb, Space *space, void *data)
 }
 
 void Demo4Create() {
-	PhysicsManager::cDrawSpaceOptions * DSO = PhysicsManager::instance()->GetDrawOptions();
+	PhysicsManager::DrawSpaceOptions * DSO = PhysicsManager::instance()->GetDrawOptions();
 	DSO->DrawBBs			= false;
 	DSO->DrawShapes			= true;
 	DSO->DrawShapesBorders	= false;

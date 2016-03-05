@@ -99,14 +99,14 @@ std::string WindowSFML::GetVersion() {
 void WindowSFML::CreatePlatform() {
 #if defined( EE_X11_PLATFORM )
 	if ( 0 != GetWindowHandler() ) {
-		mPlatform = eeNew( Platform::cX11Impl, ( this, GetWindowHandler(), mSFMLWindow.getSystemHandle(), mSFMLWindow.getSystemHandle(), NULL, NULL ) );
+		mPlatform = eeNew( Platform::X11Impl, ( this, GetWindowHandler(), mSFMLWindow.getSystemHandle(), mSFMLWindow.getSystemHandle(), NULL, NULL ) );
 	} else {
 		Window::CreatePlatform();
 	}
 #elif EE_PLATFORM == EE_PLATFORM_WIN
-	mPlatform = eeNew( Platform::cWinImpl, ( this, GetWindowHandler() ) );
+	mPlatform = eeNew( Platform::WinImpl, ( this, GetWindowHandler() ) );
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
-	mPlatform = eeNew( Platform::cOSXImpl, ( this ) );
+	mPlatform = eeNew( Platform::OSXImpl, ( this ) );
 #else
 	Window::CreatePlatform();
 #endif

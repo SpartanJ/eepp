@@ -16,7 +16,7 @@ enum EEGLES2_SHADERS {
 };
 
 namespace Private {
-class cMatrixStack;
+class MatrixStack;
 }
 
 class EE_API RendererGLES2 : public cGL {
@@ -105,7 +105,7 @@ class EE_API RendererGLES2 : public cGL {
 
 		void ReloadCurrentShader();
 	protected:
-		Private::cMatrixStack *	mStack;
+		Private::MatrixStack *	mStack;
 		int					mProjectionMatrix_id;	// cpu-side hook to shader uniform
 		int					mModelViewMatrix_id;	// cpu-side hook to shader uniform
 		unsigned int					mCurrentMode;

@@ -63,7 +63,7 @@ RendererGL3::RendererGL3() :
 	mQuadVertexs		= 6;
 #endif
 
-	mStack = eeNew( cMatrixStack, () );
+	mStack = eeNew( MatrixStack, () );
 	mStack->mProjectionMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
 	mStack->mModelViewMatrix.push	( glm::mat4( 1.0f ) ); // identity matrix
 

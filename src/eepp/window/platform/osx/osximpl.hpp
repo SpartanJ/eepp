@@ -11,11 +11,11 @@ namespace EE { namespace Window { namespace Platform {
 
 using namespace EE::Window;
 
-class cOSXImpl : public PlatformImpl {
+class OSXImpl : public PlatformImpl {
 	public:
-		cOSXImpl( EE::Window::Window * window );
+		OSXImpl( EE::Window::Window * window );
 
-		~cOSXImpl();
+		~OSXImpl();
 
 		void MinimizeWindow();
 

@@ -290,7 +290,7 @@ void Space::Draw() {
 	BatchRenderer * BR = GlobalBatchRenderer::instance();
 	BR->SetBlendMode( ALPHA_NORMAL );
 
-	PhysicsManager::cDrawSpaceOptions * options = PhysicsManager::instance()->GetDrawOptions();
+	PhysicsManager::DrawSpaceOptions * options = PhysicsManager::instance()->GetDrawOptions();
 
 	cpFloat lw = BR->GetLineWidth();
 	cpFloat ps = BR->GetPointSize();

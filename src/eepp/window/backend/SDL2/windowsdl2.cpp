@@ -306,11 +306,11 @@ void WindowSDL::CreatePlatform() {
 #endif
 
 #if defined( EE_X11_PLATFORM )
-	mPlatform = eeNew( Platform::cX11Impl, ( this, mWMinfo->GetWindowHandler(), mWMinfo->GetWindow(), mWMinfo->GetWindow(), NULL, NULL ) );
+	mPlatform = eeNew( Platform::X11Impl, ( this, mWMinfo->GetWindowHandler(), mWMinfo->GetWindow(), mWMinfo->GetWindow(), NULL, NULL ) );
 #elif EE_PLATFORM == EE_PLATFORM_WIN
-	mPlatform = eeNew( Platform::cWinImpl, ( this, GetWindowHandler() ) );
+	mPlatform = eeNew( Platform::WinImpl, ( this, GetWindowHandler() ) );
 #elif EE_PLATFORM == EE_PLATFORM_MACOSX
-	mPlatform = eeNew( Platform::cOSXImpl, ( this ) );
+	mPlatform = eeNew( Platform::OSXImpl, ( this ) );
 #else
 	Window::CreatePlatform();
 #endif

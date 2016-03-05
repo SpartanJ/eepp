@@ -14,9 +14,9 @@ class CP_API PhysicsManager {
 	SINGLETON_DECLARE_HEADERS(PhysicsManager)
 
 	public:
-		class cDrawSpaceOptions {
+		class DrawSpaceOptions {
 			public:
-				cDrawSpaceOptions() :
+				DrawSpaceOptions() :
 					DrawBBs( false ),
 					DrawShapes( true ),
 	#ifdef EE_GLES
@@ -47,9 +47,9 @@ class CP_API PhysicsManager {
 
 		const bool& MemoryManager() const;
 
-		PhysicsManager::cDrawSpaceOptions * GetDrawOptions();
+		PhysicsManager::DrawSpaceOptions * GetDrawOptions();
 	protected:
-		cDrawSpaceOptions	mOptions;
+		DrawSpaceOptions	mOptions;
 
 		friend class Body;
 		friend class Shape;

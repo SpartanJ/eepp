@@ -74,8 +74,8 @@ void CursorX11::Create() {
 	XcursorImageDestroy( image );
 }
 
-cX11Impl * CursorX11::GetPlatform() {
-	return reinterpret_cast<cX11Impl*>( mWindow->GetPlatform() );
+X11Impl * CursorX11::GetPlatform() {
+	return reinterpret_cast<X11Impl*>( mWindow->GetPlatform() );
 }
 
 X11Cursor CursorX11::GetCursor() const {

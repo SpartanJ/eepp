@@ -12,12 +12,12 @@ class Mutex;
 class EE_API Lock : NonCopyable {
 	public :
 		/** @brief Construct the lock with a target mutex
-		*	The mutex passed to cLock is automatically locked.
+		*	The mutex passed to Lock is automatically locked.
 		*	@param mutex Mutex to lock */
 		explicit Lock( Mutex& mutex );
 
 		/**	@brief Destructor
-		*	The destructor of cLock automatically unlocks its mutex. */
+		*	The destructor of Lock automatically unlocks its mutex. */
 		~Lock();
 	private :
 		Mutex& mMutex; ///< Mutex to lock / unlock

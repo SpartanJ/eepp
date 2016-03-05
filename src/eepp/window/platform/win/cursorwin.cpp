@@ -208,8 +208,8 @@ void CursorWin::Create() {
 	mCursor = (void*)icon;
 }
 
-cWinImpl * CursorWin::GetPlatform() {
-	return reinterpret_cast<cWinImpl*>( mWindow->GetPlatform() );
+WinImpl * CursorWin::GetPlatform() {
+	return reinterpret_cast<WinImpl*>( mWindow->GetPlatform() );
 }
 
 void * CursorWin::GetCursor() const {

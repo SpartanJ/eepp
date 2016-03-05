@@ -31,7 +31,7 @@ static HCURSOR GetLoadCursor( const EE_SYSTEM_CURSOR& cursor, LPCSTR syscur ) {
 	return SYS_CURSORS[ cursor ];
 }
 
-cWinImpl::cWinImpl( EE::Window::Window * window, eeWindowHandle handler ) :
+WinImpl::WinImpl( EE::Window::Window * window, eeWindowHandle handler ) :
 	PlatformImpl( window ),
 	mHandler( handler ),
 	mCursorCurrent( NULL ),
@@ -39,26 +39,26 @@ cWinImpl::cWinImpl( EE::Window::Window * window, eeWindowHandle handler ) :
 {
 }
 
-cWinImpl::~cWinImpl() {
+WinImpl::~WinImpl() {
 }
 
-void cWinImpl::MinimizeWindow() {
+void WinImpl::MinimizeWindow() {
 	WIN_ShowWindow( mHandler, SW_MINIMIZE );
 }
 
-void cWinImpl::MaximizeWindow() {
+void WinImpl::MaximizeWindow() {
 	WIN_ShowWindow( mHandler, SW_MAXIMIZE );
 }
 
-bool cWinImpl::IsWindowMaximized() {
+bool WinImpl::IsWindowMaximized() {
 	return 0 != IsZoomed( mHandler );
 }
 
-void cWinImpl::HideWindow() {
+void WinImpl::HideWindow() {
 	WIN_ShowWindow( mHandler, SW_HIDE );
 }
 
-void cWinImpl::RaiseWindow() {
+void WinImpl::RaiseWindow() {
 	HWND top;
 
 	if ( !mWindow->Windowed() )
@@ -69,25 +69,25 @@ void cWinImpl::RaiseWindow() {
 	SetWindowPos( mHandler, top, 0, 0, 0, 0, (SWP_NOMOVE | SWP_NOSIZE) );
 }
 
-void cWinImpl::ShowWindow() {
+void WinImpl::ShowWindow() {
 	WIN_ShowWindow( mHandler, SW_SHOW );
 }
 
-void cWinImpl::MoveWindow( int left, int top ) {
+void WinImpl::MoveWindow( int left, int top ) {
 	SetWindowPos( mHandler, NULL, left, top, 0, 0, SWP_NOSIZE | SWP_NOZORDER );
 }
 
-void cWinImpl::SetContext( eeWindowContex Context ) {
+void WinImpl::SetContext( eeWindowContex Context ) {
 	wglMakeCurrent( (HDC)GetDC( mHandler ), (HGLRC)Context );
 }
 
-Vector2i cWinImpl::Position() {
+Vector2i WinImpl::Position() {
 	RECT r;
 	GetWindowRect( mHandler, &r );
 	return Vector2i( r.left, r.top );
 }
 
-void cWinImpl::ShowMouseCursor() {
+void WinImpl::ShowMouseCursor() {
 	mCursorHidden = false;
 
 	if ( !mCursorCurrent ) {
@@ -102,7 +102,7 @@ void cWinImpl::ShowMouseCursor() {
 	}
 }
 
-void cWinImpl::HideMouseCursor() {
+void WinImpl::HideMouseCursor() {
 	if ( mCursorHidden )
 		return;
 
@@ -111,19 +111,19 @@ void cWinImpl::HideMouseCursor() {
 	PostMessage( mHandler, WM_SETCURSOR, 0, 0 );
 }
 
-Cursor * cWinImpl::CreateMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
+Cursor * WinImpl::CreateMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( CursorWin, ( tex, hotspot, name, mWindow ) );
 }
 
-Cursor * cWinImpl::CreateMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name ) {
+Cursor * WinImpl::CreateMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( CursorWin, ( img, hotspot, name, mWindow ) );
 }
 
-Cursor * cWinImpl::CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
+Cursor * WinImpl::CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( CursorWin, ( path, hotspot, name, mWindow ) );
 }
 
-void cWinImpl::SetMouseCursor( Cursor * cursor ) {
+void WinImpl::SetMouseCursor( Cursor * cursor ) {
 	mCursorCurrent = reinterpret_cast<CursorWin*> ( cursor )->GetCursor();
 
 	if ( !mCursorHidden ) {
@@ -136,7 +136,7 @@ void cWinImpl::SetMouseCursor( Cursor * cursor ) {
 	}
 }
 
-void cWinImpl::SetSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) {
+void WinImpl::SetSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) {
 	HCURSOR mc;
 
 	switch ( syscursor ) {
@@ -180,7 +180,7 @@ void cWinImpl::SetSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) {
 	}
 }
 
-void cWinImpl::RestoreCursor() {
+void WinImpl::RestoreCursor() {
 	if ( !mCursorHidden ) {
 		ShowMouseCursor();
 	} else {
@@ -188,11 +188,11 @@ void cWinImpl::RestoreCursor() {
 	}
 }
 
-eeWindowHandle cWinImpl::GetHandler() const {
+eeWindowHandle WinImpl::GetHandler() const {
 	return mHandler;
 }
 
-eeWindowContex cWinImpl::GetWindowContext() {
+eeWindowContex WinImpl::GetWindowContext() {
 	return wglGetCurrentContext();
 }
 

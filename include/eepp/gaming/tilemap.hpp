@@ -227,10 +227,10 @@ class EE_API TileMap {
 	protected:
 		friend class EE::Gaming::Private::UIMapNew;
 
-		class cForcedHeaders
+		class ForcedHeaders
 		{
 			public:
-				cForcedHeaders( Sizei mapSize, Sizei tileSize, Uint32 numLayers, Uint32 flags ) :
+				ForcedHeaders( Sizei mapSize, Sizei tileSize, Uint32 numLayers, Uint32 flags ) :
 					MapSize( mapSize ),
 					TileSize( tileSize ),
 					NumLayers( numLayers ),
@@ -282,7 +282,7 @@ class EE_API TileMap {
 		Vector2f		mOffscale;
 		Uint32			mLastObjId;
 		PolyObjMap		mPolyObjs;
-		cForcedHeaders*	mForcedHeaders;
+		ForcedHeaders*	mForcedHeaders;
 
 		virtual GameObject *	CreateGameObject( const Uint32& Type, const Uint32& Flags, MapLayer * Layer, const Uint32& DataId = 0 );
 

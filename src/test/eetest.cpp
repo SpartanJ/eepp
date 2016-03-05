@@ -1780,7 +1780,7 @@ void EETest::ChangeDemo( Uint32 num ) {
 void EETest::PhysicsCreate() {
 	PhysicsManager::CreateSingleton();
 	PhysicsManager * PM = PhysicsManager::instance();
-	PhysicsManager::cDrawSpaceOptions * DSO = PM->GetDrawOptions();
+	PhysicsManager::DrawSpaceOptions * DSO = PM->GetDrawOptions();
 
 	DSO->DrawBBs			= false;
 	DSO->DrawShapes			= true;

@@ -2,71 +2,71 @@
 
 namespace EE { namespace Window { namespace Platform {
 
-cNullImpl::cNullImpl( EE::Window::Window * window ) :
+NullImpl::NullImpl( EE::Window::Window * window ) :
 	PlatformImpl( window )
 {
 }
 
-cNullImpl::~cNullImpl() {
+NullImpl::~NullImpl() {
 }
 
-void cNullImpl::MinimizeWindow() {
+void NullImpl::MinimizeWindow() {
 }
 
-void cNullImpl::MaximizeWindow() {
+void NullImpl::MaximizeWindow() {
 }
 
-bool cNullImpl::IsWindowMaximized() {
+bool NullImpl::IsWindowMaximized() {
 	return false;
 }
 
-void cNullImpl::HideWindow() {
+void NullImpl::HideWindow() {
 }
 
-void cNullImpl::RaiseWindow() {
+void NullImpl::RaiseWindow() {
 }
 
-void cNullImpl::ShowWindow() {
+void NullImpl::ShowWindow() {
 }
 
-void cNullImpl::MoveWindow( int left, int top ) {
+void NullImpl::MoveWindow( int left, int top ) {
 }
 
-void cNullImpl::SetContext( eeWindowContex Context ) {
+void NullImpl::SetContext( eeWindowContex Context ) {
 }
 
-Vector2i cNullImpl::Position() {
+Vector2i NullImpl::Position() {
 	return Vector2i(0,0);
 }
 
-void cNullImpl::ShowMouseCursor() {
+void NullImpl::ShowMouseCursor() {
 }
 
-void cNullImpl::HideMouseCursor() {
+void NullImpl::HideMouseCursor() {
 }
 
-Cursor * cNullImpl::CreateMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
+Cursor * NullImpl::CreateMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-Cursor * cNullImpl::CreateMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name ) {
+Cursor * NullImpl::CreateMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-Cursor * cNullImpl::CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
+Cursor * NullImpl::CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-void cNullImpl::SetMouseCursor( Cursor * cursor ) {
+void NullImpl::SetMouseCursor( Cursor * cursor ) {
 }
 
-void cNullImpl::SetSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) {
+void NullImpl::SetSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) {
 }
 
-void cNullImpl::RestoreCursor() {
+void NullImpl::RestoreCursor() {
 }
 
-eeWindowContex cNullImpl::GetWindowContext() {
+eeWindowContex NullImpl::GetWindowContext() {
 	return 0;
 }
 

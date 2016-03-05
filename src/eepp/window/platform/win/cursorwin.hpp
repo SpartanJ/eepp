@@ -9,13 +9,13 @@ using namespace EE::Window;
 
 namespace EE { namespace Window { namespace Platform {
 
-class cWinImpl;
+class WinImpl;
 
 class CursorWin : public Cursor {
 	public:
 		void *		GetCursor() const;
 	protected:
-		friend class cWinImpl;
+		friend class WinImpl;
 
 		void *		mCursor;
 
@@ -29,7 +29,7 @@ class CursorWin : public Cursor {
 
 		void Create();
 
-		cWinImpl * GetPlatform();
+		WinImpl * GetPlatform();
 };
 
 }}}

@@ -36,7 +36,7 @@ PhysicsManager::~PhysicsManager() {
 	}
 }
 
-PhysicsManager::cDrawSpaceOptions * PhysicsManager::GetDrawOptions() {
+PhysicsManager::DrawSpaceOptions * PhysicsManager::GetDrawOptions() {
 	return &mOptions;
 }
 

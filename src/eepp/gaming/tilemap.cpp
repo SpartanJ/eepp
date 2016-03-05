@@ -66,7 +66,7 @@ void TileMap::Reset() {
 
 void TileMap::ForceHeadersOnLoad( Sizei mapSize, Sizei tileSize, Uint32 numLayers, Uint32 flags ) {
 	DisableForcedHeaders();
-	mForcedHeaders = eeNew( cForcedHeaders, ( mapSize, tileSize, numLayers, flags ) );
+	mForcedHeaders = eeNew( ForcedHeaders, ( mapSize, tileSize, numLayers, flags ) );
 }
 
 void TileMap::DisableForcedHeaders() {

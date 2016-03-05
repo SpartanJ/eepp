@@ -63,25 +63,25 @@ class Polygon2 {
 		std::size_t Size() const;
 
 		/** @return The position of the polygon ( also known as the offset of the polygon ) */
-		Vector2<T> Position() { return Vector2<T>(cOffsetX, cOffsetY); }
+		Vector2<T> Position() { return Vector2<T>(OffsetX, OffsetY); }
 
 		/** Move the polygon Vector2s, add to every point the distance specified  */
 		void Move( Vector2<T> dist );
 
 		/** @return The X position of the polygon ( the X-axis Offset ) */
-		T X() const { return cOffsetX; }
+		T X() const { return OffsetX; }
 
 		/** @return The Y position of the polygon ( the Y-axis Offset ) */
-		T Y() const { return cOffsetY; }
+		T Y() const { return OffsetY; }
 
 		/** @return The position of the polygon  ( the offset )*/
-		void Position( const Vector2<T>& V ) { cOffsetX = V.x; cOffsetY = V.y; }
+		void Position( const Vector2<T>& V ) { OffsetX = V.x; OffsetY = V.y; }
 
 		/** Set the new position of the x-axis ( the x-axis offset ) */
-		T X( const T& x ) { cOffsetX = x; }
+		T X( const T& x ) { OffsetX = x; }
 
 		/** Set the new position of the y-axis ( the y-axis offset ) */
-		T Y( const T& y ) { cOffsetY = y; }
+		T Y( const T& y ) { OffsetY = y; }
 
 		/** @return True if the polygons intersect */
 		bool Intersect( const Polygon2<T>& p1 );
@@ -118,13 +118,13 @@ class Polygon2 {
 		Uint32 ClosestPoint( const Vector2<T> &to, T * distance = NULL );
 	private:
 		std::vector< Vector2<T> > Vector;
-		T cOffsetX, cOffsetY;
+		T OffsetX, OffsetY;
 };
 
 template <typename T>
 Polygon2<T>::Polygon2() :
-	cOffsetX(0),
-	cOffsetY(0)
+	OffsetX(0),
+	OffsetY(0)
 {
 	Clear();
 }
@@ -132,31 +132,31 @@ Polygon2<T>::Polygon2() :
 template <typename T>
 Polygon2<T>::Polygon2( const Polygon2<T>& fromPoly ) :
 	Vector( fromPoly.Vector ),
-	cOffsetX( fromPoly.cOffsetX ),
-	cOffsetY( fromPoly.cOffsetY )
+	OffsetX( fromPoly.OffsetX ),
+	OffsetY( fromPoly.OffsetY )
 {
 }
 
 template <typename T>
-Polygon2<T>::Polygon2( const std::vector< Vector2<T> >& theVecs ) : cOffsetX(0), cOffsetY(0) {
+Polygon2<T>::Polygon2( const std::vector< Vector2<T> >& theVecs ) : OffsetX(0), OffsetY(0) {
 	for (Uint32 i = 0; i < theVecs.size(); i++)
 		PushBack ( theVecs[i] );
 }
 
 template <typename T>
-Polygon2<T>::Polygon2( const Triangle2<T>& fromTrig ) : cOffsetX(0), cOffsetY(0) {
+Polygon2<T>::Polygon2( const Triangle2<T>& fromTrig ) : OffsetX(0), OffsetY(0) {
 	for (Uint8 i = 0; i < 3; i++)
 		PushBack ( fromTrig.V[i] );
 }
 
 template <typename T>
-Polygon2<T>::Polygon2( const Quad2<T>& fromQuad ) : cOffsetX(0), cOffsetY(0) {
+Polygon2<T>::Polygon2( const Quad2<T>& fromQuad ) : OffsetX(0), OffsetY(0) {
 	for (Uint8 i = 0; i < 4; i++)
 		PushBack ( fromQuad.V[i] );
 }
 
 template<typename T>
-Polygon2<T>::Polygon2( const tRECT<T>& fromRect ) : cOffsetX(0), cOffsetY(0) {
+Polygon2<T>::Polygon2( const tRECT<T>& fromRect ) : OffsetX(0), OffsetY(0) {
 	Vector.push_back( Vector2<T>( fromRect.Left, fromRect.Top ) );
 	Vector.push_back( Vector2<T>( fromRect.Left, fromRect.Bottom ) );
 	Vector.push_back( Vector2<T>( fromRect.Right, fromRect.Bottom ) );
@@ -412,10 +412,10 @@ tRECT<T> Polygon2<T>::ToAABB() {
 		if ( MaxY < Vector[i].y ) MaxY = Vector[i].y;
 	}
 
-	TmpR.Left	= MinX + cOffsetX;
-	TmpR.Right	= MaxX + cOffsetX;
-	TmpR.Top	= MinY + cOffsetY;
-	TmpR.Bottom	= MaxY + cOffsetY;
+	TmpR.Left	= MinX + OffsetX;
+	TmpR.Right	= MaxX + OffsetX;
+	TmpR.Top	= MinY + OffsetY;
+	TmpR.Bottom	= MaxY + OffsetY;
 
 	return TmpR;
 }

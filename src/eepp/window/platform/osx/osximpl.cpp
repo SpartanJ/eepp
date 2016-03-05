@@ -8,72 +8,72 @@
 
 namespace EE { namespace Window { namespace Platform {
 
-cOSXImpl::cOSXImpl( EE::Window::Window * window ) :
+OSXImpl::OSXImpl( EE::Window::Window * window ) :
 	PlatformImpl( window )
 {
 }
 
-cOSXImpl::~cOSXImpl() {
+OSXImpl::~OSXImpl() {
 }
 
-void cOSXImpl::MinimizeWindow() {
+void OSXImpl::MinimizeWindow() {
 }
 
-void cOSXImpl::MaximizeWindow() {
+void OSXImpl::MaximizeWindow() {
 }
 
-bool cOSXImpl::IsWindowMaximized() {
+bool OSXImpl::IsWindowMaximized() {
 	return false;
 }
 
-void cOSXImpl::HideWindow() {
+void OSXImpl::HideWindow() {
 }
 
-void cOSXImpl::RaiseWindow() {
+void OSXImpl::RaiseWindow() {
 }
 
-void cOSXImpl::ShowWindow() {
+void OSXImpl::ShowWindow() {
 }
 
-void cOSXImpl::MoveWindow( int left, int top ) {
+void OSXImpl::MoveWindow( int left, int top ) {
 }
 
-void cOSXImpl::SetContext( eeWindowContex Context ) {
+void OSXImpl::SetContext( eeWindowContex Context ) {
 	aglSetCurrentContext( Context );
 }
 
-Vector2i cOSXImpl::Position() {
+Vector2i OSXImpl::Position() {
 	return Vector2i(0,0);
 }
 
-void cOSXImpl::ShowMouseCursor() {
+void OSXImpl::ShowMouseCursor() {
 }
 
-void cOSXImpl::HideMouseCursor() {
+void OSXImpl::HideMouseCursor() {
 }
 
-Cursor * cOSXImpl::CreateMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
+Cursor * OSXImpl::CreateMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-Cursor * cOSXImpl::CreateMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name ) {
+Cursor * OSXImpl::CreateMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-Cursor * cOSXImpl::CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
+Cursor * OSXImpl::CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-void cOSXImpl::SetMouseCursor( Cursor * cursor ) {
+void OSXImpl::SetMouseCursor( Cursor * cursor ) {
 }
 
-void cOSXImpl::SetSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) {
+void OSXImpl::SetSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) {
 }
 
-void cOSXImpl::RestoreCursor() {
+void OSXImpl::RestoreCursor() {
 }
 
-eeWindowContex cOSXImpl::GetWindowContext() {
+eeWindowContex OSXImpl::GetWindowContext() {
 	return aglGetCurrentContext();
 }
 

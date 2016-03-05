@@ -382,11 +382,11 @@ class EE_API Sprite {
 		SpriteCallback		mCb;
 		void *				mUserData;
 
-		class cFrame {
+		class Frame {
 			public:
 				std::vector<SubTexture *> Spr;
 		};
-		std::vector<cFrame> mFrames;
+		std::vector<Frame> mFrames;
 
 		unsigned int FramePos();
 

@@ -237,7 +237,7 @@ Http::Http(const std::string& host, unsigned short port, bool useSSL) :
 }
 
 Http::~Http() {
-	std::list<cAsyncRequest*>::iterator itt;
+	std::list<AsyncRequest*>::iterator itt;
 
 	// First we wait to finish any request pending
 	for ( itt = mThreads.begin(); itt != mThreads.end(); itt++ ) {
@@ -359,7 +359,7 @@ Http::Response Http::SendRequest(const Http::Request& request, Time timeout) {
 	return received;
 }
 
-Http::cAsyncRequest::cAsyncRequest(Http *http, AsyncResponseCallback cb, Http::Request request, Time timeout) :
+Http::AsyncRequest::AsyncRequest(Http *http, AsyncResponseCallback cb, Http::Request request, Time timeout) :
 	mHttp( http ),
 	mCb( cb ),
 	mRequest( request ),
@@ -368,7 +368,7 @@ Http::cAsyncRequest::cAsyncRequest(Http *http, AsyncResponseCallback cb, Http::R
 {
 }
 
-void Http::cAsyncRequest::Run() {
+void Http::AsyncRequest::Run() {
 	Http::Response response = mHttp->SendRequest( mRequest, mTimeout );
 
 	mCb( *mHttp, mRequest, response );
@@ -382,12 +382,12 @@ void Http::cAsyncRequest::Run() {
 }
 
 void Http::RemoveOldThreads() {
-	std::list<cAsyncRequest*> remove;
+	std::list<AsyncRequest*> remove;
 
-	std::list<cAsyncRequest*>::iterator it = mThreads.begin();
+	std::list<AsyncRequest*>::iterator it = mThreads.begin();
 
 	for ( ; it != mThreads.end(); it++ ) {
-		cAsyncRequest * ar = (*it);
+		AsyncRequest * ar = (*it);
 
 		if ( !ar->mRunning ) {
 			// We need to be sure, since the state is set in the thread, this will not block the thread anyway
@@ -405,7 +405,7 @@ void Http::RemoveOldThreads() {
 }
 
 void Http::SendAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, Time timeout ) {
-	cAsyncRequest * thread = eeNew( cAsyncRequest, ( this, cb, request, timeout ) );
+	AsyncRequest * thread = eeNew( AsyncRequest, ( this, cb, request, timeout ) );
 
 	thread->Launch();
 

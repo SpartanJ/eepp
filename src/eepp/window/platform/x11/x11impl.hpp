@@ -11,14 +11,14 @@ namespace EE { namespace Window { namespace Platform {
 
 using namespace EE::Window;
 
-class cX11Impl : public PlatformImpl {
+class X11Impl : public PlatformImpl {
 	public:
 		typedef void (*LockFunc)(void);
 		typedef void (*UnlockFunc)(void);
 		
-		cX11Impl( EE::Window::Window * window, eeWindowHandle display, X11Window xwindow, X11Window mainwindow, LockFunc lock, UnlockFunc unlock );
+		X11Impl( EE::Window::Window * window, eeWindowHandle display, X11Window xwindow, X11Window mainwindow, LockFunc lock, UnlockFunc unlock );
 		
-		~cX11Impl();
+		~X11Impl();
 		
 		void MinimizeWindow();
 

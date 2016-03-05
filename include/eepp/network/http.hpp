@@ -289,9 +289,9 @@ class EE_API Http : NonCopyable {
 		/** @return The host port */
 		const unsigned short& GetPort() const;
 	private:
-		class cAsyncRequest : public Thread {
+		class AsyncRequest : public Thread {
 			public:
-				cAsyncRequest( Http * http, AsyncResponseCallback cb, Http::Request request, Time timeout );
+				AsyncRequest( Http * http, AsyncResponseCallback cb, Http::Request request, Time timeout );
 
 				void Run();
 			protected:
@@ -302,12 +302,12 @@ class EE_API Http : NonCopyable {
 				Time					mTimeout;
 				bool					mRunning;
 		};
-		friend class cAsyncRequest;
+		friend class AsyncRequest;
 		ThreadLocalPtr<TcpSocket>		mConnection;	///< Connection to the host
 		IpAddress						mHost;			///< Web host address
 		std::string						mHostName;		///< Web host name
 		unsigned short					mPort;			///< Port used for connection with host
-		std::list<cAsyncRequest*>		mThreads;
+		std::list<AsyncRequest*>		mThreads;
 		Mutex							mThreadsMutex;
 		bool							mIsSSL;
 
