@@ -202,10 +202,13 @@ void Primitives::DrawArc( const Vector2f& p, const Float& radius, Uint32 segment
 			sBR->TriangleFanBegin();
 			sBR->TriangleFanSetColor( mColor );
 
-			for( Float i = 0; i < arcAngle; i+= ( angle_shift + angle_shift + angle_shift ) )
-				sBR->BatchTriangleFan( p.x + radius * Math::sinAng(i), p.y + radius * Math::cosAng(i),
-									   p.x + radius * Math::sinAng( i + angle_shift ), p.y + radius * Math::cosAng( i + angle_shift ),
-									   p.x + radius * Math::sinAng( i + angle_shift + angle_shift ), p.y + radius * Math::cosAng( i + angle_shift + angle_shift ) );
+			for( Float i = 0; i < arcAngle; i+= angle_shift ) {
+				Float startAngle = arcStartAngle + i;
+
+				sBR->BatchTriangleFan( p.x , p.y,
+									   p.x + radius * Math::sinAng( startAngle ), p.y + radius * Math::cosAng( startAngle ),
+									   p.x + radius * Math::sinAng( startAngle + angle_shift ), p.y + radius * Math::cosAng( startAngle + angle_shift ) );
+			}
 
 			break;
 		}
