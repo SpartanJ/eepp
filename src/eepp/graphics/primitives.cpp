@@ -83,8 +83,8 @@ void Primitives::DrawTriangle( const Triangle2f& t ) {
 	DrawTriangle( t, mColor, mColor, mColor );
 }
 
-void Primitives::DrawCircle( const Vector2f& p, const Float& radius, Uint32 points ) {
-	if ( 0 == points ) {
+void Primitives::DrawCircle( const Vector2f& p, const Float& radius, Uint32 segmentsCount ) {
+	if ( 0 == segmentsCount ) {
 		// Optimized circle rendering
 		static const float circleVAR[] = {
 			 0.0000f,  1.0000f,
@@ -154,8 +154,14 @@ void Primitives::DrawCircle( const Vector2f& p, const Float& radius, Uint32 poin
 		return;
 	}
 
-	if(points < 6) points = 6;
-	Float angle_shift =  360 / static_cast<Float>(points);
+	DrawArc( p, radius, segmentsCount, 360 );
+}
+
+void Primitives::DrawArc( const Vector2f& p, const Float& radius, Uint32 segmentsCount, const Float& arcAngle, const Float& arcStartAngle ) {
+	if(segmentsCount < 6) segmentsCount = 6;
+	segmentsCount = segmentsCount > 360 ? 360 : segmentsCount;
+
+	Float angle_shift =  360 / static_cast<Float>(segmentsCount);
 
 	sBR->SetTexture( NULL );
 
@@ -163,11 +169,31 @@ void Primitives::DrawCircle( const Vector2f& p, const Float& radius, Uint32 poin
 		case DRAW_LINE:
 		{
 			sBR->SetLineWidth( mLineWidth );
-			sBR->LineLoopBegin();
-			sBR->LineLoopSetColor( mColor );
 
-			for( Float i = 0; i < 360; i+= ( angle_shift + angle_shift ) )
-				sBR->BatchLineLoop( p.x + radius * Math::sinAng(i), p.y + radius * Math::cosAng(i), p.x + radius * Math::sinAng( i + angle_shift ), p.y + radius * Math::cosAng( i + angle_shift ) );
+			Float arcAngleA = arcAngle > 360 ? arcAngle - 360 * std::floor( arcAngle / 360 ) : arcAngle;
+			segmentsCount = Uint32( (Float)segmentsCount * (Float)eeabs( arcAngleA ) / 360 );
+			Float startAngle = Math::Radians(arcStartAngle);
+			Float theta = Math::Radians(arcAngleA) / Float(segmentsCount - 1);
+			Float tangetialFactor = eetan(theta);
+			Float radialFactor = eecos(theta);
+			Float x = radius * eecos(startAngle);
+			Float y = radius * eesin(startAngle);
+
+			sBR->LineStripBegin();
+			sBR->LineStripSetColor( mColor );
+
+			for( Uint32 ii = 0; ii < segmentsCount; ii++ ) {
+				sBR->BatchLineStrip(x + p.x, y + p.y);
+
+				Float tx = -y;
+				Float ty = x;
+
+				x += tx * tangetialFactor;
+				y += ty * tangetialFactor;
+
+				x *= radialFactor;
+				y *= radialFactor;
+			}
 
 			break;
 		}
@@ -176,8 +202,10 @@ void Primitives::DrawCircle( const Vector2f& p, const Float& radius, Uint32 poin
 			sBR->TriangleFanBegin();
 			sBR->TriangleFanSetColor( mColor );
 
-			for( Float i = 0; i < 360; i+= ( angle_shift + angle_shift + angle_shift ) )
-				sBR->BatchTriangleFan( p.x + radius * Math::sinAng(i), p.y + radius * Math::cosAng(i), p.x + radius * Math::sinAng( i + angle_shift ), p.y + radius * Math::cosAng( i + angle_shift ), p.x + radius * Math::sinAng( i + angle_shift + angle_shift ), p.y + radius * Math::cosAng( i + angle_shift + angle_shift ) );
+			for( Float i = 0; i < arcAngle; i+= ( angle_shift + angle_shift + angle_shift ) )
+				sBR->BatchTriangleFan( p.x + radius * Math::sinAng(i), p.y + radius * Math::cosAng(i),
+									   p.x + radius * Math::sinAng( i + angle_shift ), p.y + radius * Math::cosAng( i + angle_shift ),
+									   p.x + radius * Math::sinAng( i + angle_shift + angle_shift ), p.y + radius * Math::cosAng( i + angle_shift + angle_shift ) );
 
 			break;
 		}

@@ -582,6 +582,64 @@ void BatchRenderer::BatchLineLoop( const Vector2f& vector1 ) {
 	BatchLineLoop( vector1.x, vector1.y );
 }
 
+void BatchRenderer::LineStripBegin() {
+	SetBlendMode( DM_LINE_STRIP, true );
+	QuadsSetSubset( 0, 0, 1, 1 );
+	PointSetColor( ColorA() );
+}
+
+void BatchRenderer::LineStripSetColor( const ColorA& Color ) {
+	QuadsSetColor( Color );
+}
+
+void BatchRenderer::LineStripSetColorFree( const ColorA& Color0, const ColorA& Color1 ) {
+	QuadsSetColorFree( Color0, Color1, Color0, Color0 );
+}
+
+void BatchRenderer::BatchLineStrip( const Float& x0, const Float& y0, const Float& x1, const Float& y1 ) {
+	if ( mNumVertex + 1 >= mVertexSize )
+		return;
+
+	SetBlendMode( DM_LINE_STRIP, mForceBlendMode );
+
+	mTVertex 		= &mVertex[ mNumVertex ];
+	mTVertex->pos.x = x0;
+	mTVertex->pos.y = y0;
+	mTVertex->tex 	= mTexCoord[0];
+	mTVertex->color = mVerColor[0];
+
+	mTVertex 		= &mVertex[ mNumVertex + 1 ];
+	mTVertex->pos.x = x1;
+	mTVertex->pos.y = y1;
+	mTVertex->tex 	= mTexCoord[1];
+	mTVertex->color = mVerColor[1];
+
+	AddVertexs(2);
+}
+
+void BatchRenderer::BatchLineStrip( const Vector2f& vector1, const Vector2f& vector2 ) {
+	BatchLineStrip( vector1.x, vector1.y, vector2.x, vector2.y );
+}
+
+void BatchRenderer::BatchLineStrip( const Float& x0, const Float& y0 ) {
+	if ( mNumVertex + 1 >= mVertexSize )
+		return;
+
+	SetBlendMode( DM_LINE_STRIP, mForceBlendMode );
+
+	mTVertex 		= &mVertex[ mNumVertex ];
+	mTVertex->pos.x = x0;
+	mTVertex->pos.y = y0;
+	mTVertex->tex 	= mTexCoord[0];
+	mTVertex->color = mVerColor[0];
+
+	AddVertexs(1);
+}
+
+void BatchRenderer::BatchLineStrip( const Vector2f& vector1 ) {
+	BatchLineStrip( vector1.x, vector1.y );
+}
+
 void BatchRenderer::TriangleFanBegin() {
 	SetBlendMode( DM_TRIANGLE_FAN, true );
 	TriangleFanSetSubset( 0, 0, 0, 1, 1, 1 );

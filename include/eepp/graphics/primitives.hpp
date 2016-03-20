@@ -24,12 +24,20 @@ class EE_API Primitives {
 		*/
 		void DrawLine( const Line2f& line );
 
+
+		/** Draw an arc on the screen
+		* @param p The coordinates ( x and y represents the center of the circle )
+		* @param radius The Circle Radius
+		* @param segmentsCount Number of segments to represent the circle.
+		*/
+		void DrawArc( const Vector2f& p, const Float& radius, Uint32 segmentsCount = 0, const Float& arcAngle = 360.f , const Float& arcStartAngle = 0.f );
+
 		/** Draw a circle on the screen
 		* @param p The coordinates ( x and y represents the center of the circle )
 		* @param radius The Circle Radius
-		* @param points Number of points to represent the circle. If points is equal to 0 by default will use an optimized circle rendering ( precached coordinates ).
+		* @param segmentsCount Number of segments to represent the circle. If segmentsCount is equal to 0 by default will use an optimized circle rendering ( precached coordinates ).
 		*/
-		void DrawCircle( const Vector2f& p, const Float& radius, Uint32 points = 0 );
+		void DrawCircle( const Vector2f& p, const Float& radius, Uint32 segmentsCount = 0 );
 
 		/** Draw a triangle on the screen
 		* @param t The Triangle (Triangle2f)

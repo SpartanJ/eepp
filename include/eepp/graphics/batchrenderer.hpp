@@ -148,6 +148,27 @@ class EE_API BatchRenderer {
 		/** Add to the batch a point to the line loop batch ( this will change your batch rendering method to DM_LINE_LOOP, so if you were using another one will Draw all the batched vertexs first ) */
 		void BatchLineLoop( const Vector2f& vector1 );
 
+		/** This will set as the default batch rendering to DM_LINE_STRIP. And will reset the line color to ColorA(255,255,255,255). */
+		void LineStripBegin();
+
+		/** Set the line color */
+		void LineStripSetColor( const ColorA& Color );
+
+		/** Set the line color, per vertex */
+		void LineStripSetColorFree( const ColorA& Color0, const ColorA& Color1 );
+
+		/** Add to the batch a line ( this will change your batch rendering method to DM_LINE_STRIP, so if you were using another one will Draw all the batched vertexs first ) */
+		void BatchLineStrip( const Float& x0, const Float& y0, const Float& x1, const Float& y1 );
+
+		/** Add to the batch a point to the line strip batch ( this will change your batch rendering method to DM_LINE_STRIP, so if you were using another one will Draw all the batched vertexs first ) */
+		void BatchLineStrip( const Float& x0, const Float& y0 );
+
+		/** Add to the batch a line ( this will change your batch rendering method to DM_LINE_STRIP, so if you were using another one will Draw all the batched vertexs first ) */
+		void BatchLineStrip( const Vector2f& vector1, const Vector2f& vector2 );
+
+		/** Add to the batch a point to the line strip batch ( this will change your batch rendering method to DM_LINE_STRIP, so if you were using another one will Draw all the batched vertexs first ) */
+		void BatchLineStrip( const Vector2f& vector1 );
+
 		/** This will set as the default batch rendering to DM_TRIANGLE_FAN. And will reset the line color to ColorA(255,255,255,255). */
 		void TriangleFanBegin();
 
