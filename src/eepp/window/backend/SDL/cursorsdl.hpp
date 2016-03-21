@@ -16,7 +16,7 @@ class CursorSDL : public Cursor {
 
 		CursorSDL( Texture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 
-		CursorSDL( Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
+		CursorSDL( Graphics::Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 
 		CursorSDL( const std::string& path, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 

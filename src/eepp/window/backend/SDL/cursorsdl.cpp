@@ -9,7 +9,7 @@ CursorSDL::CursorSDL( Texture * tex, const Vector2i& hotspot, const std::string&
 {
 }
 
-CursorSDL::CursorSDL( Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
+CursorSDL::CursorSDL( Graphics::Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
 	Cursor( img, hotspot, name, window )
 {
 }
