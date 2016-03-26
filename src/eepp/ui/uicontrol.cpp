@@ -883,7 +883,7 @@ void UIControl::UpdateQuad() {
 		if ( tParent->IsAnimated() ) {
 			UIControlAnim * tP = reinterpret_cast<UIControlAnim *> ( tParent );
 
-			mPoly.Rotate( tP->Angle(), tP->AngleCenter() );
+			mPoly.Rotate( tP->Angle(), tP->RotationCenter() );
 			mPoly.Scale( tP->Scale(), tP->ScaleCenter() );
 		}
 
@@ -1260,7 +1260,7 @@ void UIControl::WorldToControl( Vector2i& pos ) const {
 		Pos -= pPos;
 
 		if ( NULL != tP && 0.f != tP->Angle() ) {
-			Center = tP->AngleOriginPoint() * scale;
+			Center = tP->RotationOriginPoint() * scale;
 			Pos.Rotate( -tP->Angle(), Center );
 		}
 	}
@@ -1290,7 +1290,7 @@ void UIControl::ControlToWorld( Vector2i& pos ) const {
 		Pos += pPos;
 
 		if ( NULL != tP ) {
-			Vector2f CenterAngle( pPos.x + tP->mAngleOriginPoint.x, pPos.y + tP->mAngleOriginPoint.y );
+			Vector2f CenterAngle( pPos.x + tP->mRotationOriginPoint.x, pPos.y + tP->mRotationOriginPoint.y );
 			Vector2f CenterScale( pPos.x + tP->mScaleOriginPoint.x, pPos.y + tP->mScaleOriginPoint.y );
 
 			Pos.Rotate( tP->Angle(), CenterAngle );

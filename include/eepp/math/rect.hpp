@@ -79,6 +79,48 @@ bool operator !=(const tRECT<T>& R1, const tRECT<T>& R2) {
 }
 
 template <typename T>
+tRECT<T> operator +(const tRECT<T>& R, T X) {
+	return tRECT<T>(R.Left + X, R.Top + X, R.Right + X, R.Bottom + X);
+}
+
+template <typename T>
+tRECT<T>& operator +=(tRECT<T>& R, T X) {
+	R.Left += X;
+	R.Top += X;
+	R.Right += X;
+	R.Bottom += X;
+	return R;
+}
+
+template <typename T>
+tRECT<T> operator -(const tRECT<T>& R, T X) {
+	return tRECT<T>(R.Left - X, R.Top - X, R.Right - X, R.Bottom - X);
+}
+
+template <typename T>
+tRECT<T>& operator -=(tRECT<T>& R, T X) {
+	R.Left -= X;
+	R.Top -= X;
+	R.Right -= X;
+	R.Bottom -= X;
+	return R;
+}
+
+template <typename T>
+tRECT<T> operator *(const tRECT<T>& R, T X) {
+	return tRECT<T>(R.Left * X, R.Top * X, R.Right * X, R.Bottom * X);
+}
+
+template <typename T>
+tRECT<T>& operator *=(tRECT<T>& R, T X) {
+	R.Left *= X;
+	R.Top *= X;
+	R.Right *= X;
+	R.Bottom *= X;
+	return R;
+}
+
+template <typename T>
 tRECT<T>::tRECT(T left, T top, T right, T bottom) {
 	Left = left; Right = right; Top = top; Bottom = bottom;
 }

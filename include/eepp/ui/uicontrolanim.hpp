@@ -25,11 +25,11 @@ class EE_API UIControlAnim : public UIDragable {
 
 		void Angle( const Float& angle, const OriginPoint& center );
 
-		const OriginPoint& AngleOriginPoint() const;
+		const OriginPoint& RotationOriginPoint() const;
 
-		void AngleOriginPoint( const OriginPoint& center );
+		void RotationOriginPoint( const OriginPoint& center );
 
-		Vector2f AngleCenter();
+		Vector2f RotationCenter();
 
 		const Vector2f& Scale() const;
 
@@ -87,7 +87,7 @@ class EE_API UIControlAnim : public UIDragable {
 		friend class UIControl;
 
 		Float				mAngle;
-		OriginPoint			mAngleOriginPoint;
+		OriginPoint			mRotationOriginPoint;
 		Vector2f 			mScale;
 		OriginPoint			mScaleOriginPoint;
 		Float				mAlpha;

@@ -69,20 +69,20 @@ const Float& UIControlAnim::Angle() const {
 	return mAngle;
 }
 
-const OriginPoint& UIControlAnim::AngleOriginPoint() const {
-	return mAngleOriginPoint;
+const OriginPoint& UIControlAnim::RotationOriginPoint() const {
+	return mRotationOriginPoint;
 }
 
-void UIControlAnim::AngleOriginPoint( const OriginPoint & center ) {
-	mAngleOriginPoint = center;
+void UIControlAnim::RotationOriginPoint( const OriginPoint & center ) {
+	mRotationOriginPoint = center;
 	UpdateOriginPoint();
 }
 
-Vector2f UIControlAnim::AngleCenter() {
-	switch ( mAngleOriginPoint.OriginType ) {
+Vector2f UIControlAnim::RotationCenter() {
+	switch ( mRotationOriginPoint.OriginType ) {
 		case OriginPoint::OriginCenter: return mCenter;
 		case OriginPoint::OriginTopLeft: return mScreenPosf;
-		case OriginPoint::OriginCustom: default: return mScreenPosf + mAngleOriginPoint;
+		case OriginPoint::OriginCustom: default: return mScreenPosf + mRotationOriginPoint;
 	}
 }
 
@@ -92,7 +92,7 @@ void UIControlAnim::Angle( const Float& angle ) {
 }
 
 void UIControlAnim::Angle( const Float& angle , const OriginPoint & center ) {
-	mAngleOriginPoint = center;
+	mRotationOriginPoint = center;
 	UpdateOriginPoint();
 	Angle( angle );
 }
@@ -169,10 +169,10 @@ void UIControlAnim::MatrixSet() {
 		GLi->Scalef( mScale.x, mScale.y, 1.0f );
 		GLi->Translatef( -scaleCenter.x, -scaleCenter.y, 0.f );
 
-		Vector2f angleCenter = AngleCenter();
-		GLi->Translatef( angleCenter.x , angleCenter.y, 0.f );
+		Vector2f rotationCenter = RotationCenter();
+		GLi->Translatef( rotationCenter.x , rotationCenter.y, 0.f );
 		GLi->Rotatef( mAngle, 0.0f, 0.0f, 1.0f );
-		GLi->Translatef( -angleCenter.x, -angleCenter.y, 0.f );
+		GLi->Translatef( -rotationCenter.x, -rotationCenter.y, 0.f );
 	}
 }
 
@@ -398,7 +398,7 @@ ColorA UIControlAnim::GetColor( const ColorA& Col ) {
 void UIControlAnim::UpdateQuad() {
 	mPoly		= Polygon2f( eeAABB( mScreenPosf.x, mScreenPosf.y, mScreenPosf.x + mSize.Width(), mScreenPosf.y + mSize.Height() ) );
 
-	mPoly.Rotate( mAngle, AngleCenter() );
+	mPoly.Rotate( mAngle, RotationCenter() );
 	mPoly.Scale( mScale, ScaleCenter() );
 
 	UIControl * tParent = Parent();
@@ -407,7 +407,7 @@ void UIControlAnim::UpdateQuad() {
 		if ( tParent->IsAnimated() ) {
 			UIControlAnim * tP = reinterpret_cast<UIControlAnim *> ( tParent );
 
-			mPoly.Rotate( tP->Angle(), tP->AngleCenter() );
+			mPoly.Rotate( tP->Angle(), tP->RotationCenter() );
 			mPoly.Scale( tP->Scale(), tP->ScaleCenter() );
 		}
 
@@ -420,13 +420,13 @@ void UIControlAnim::OnSizeChange() {
 }
 
 void UIControlAnim::UpdateOriginPoint() {
-	switch ( mAngleOriginPoint.OriginType ) {
+	switch ( mRotationOriginPoint.OriginType ) {
 		case OriginPoint::OriginCenter:
-			mAngleOriginPoint.x = mSize.x * 0.5f;
-			mAngleOriginPoint.y = mSize.y * 0.5f;
+			mRotationOriginPoint.x = mSize.x * 0.5f;
+			mRotationOriginPoint.y = mSize.y * 0.5f;
 			break;
 		case OriginPoint::OriginTopLeft:
-			mAngleOriginPoint.x = mAngleOriginPoint.y = 0;
+			mRotationOriginPoint.x = mRotationOriginPoint.y = 0;
 			break;
 		default: {}
 	}
