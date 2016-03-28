@@ -93,7 +93,7 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	}
 
 	mUIClampBorders = mTheme->CreateCheckBox( mUIWindow->Container(), Sizei(), Vector2i( Txt->Pos().x + DistFromTitle, mUILightsEnabled->Pos().y + mUILightsEnabled->Size().Height() + 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
-	mUIClampBorders->Text( "Clamp Boders" );
+	mUIClampBorders->Text( "Clamp Borders" );
 	mUIClampBorders->Active( true );
 
 	if ( ResizeMap ) {
