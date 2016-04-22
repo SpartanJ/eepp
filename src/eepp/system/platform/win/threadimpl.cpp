@@ -17,6 +17,13 @@ ThreadImpl::ThreadImpl( Thread * owner ) {
 		std::cerr << "Failed to create thread" << std::endl;
 }
 
+ThreadImpl::~ThreadImpl()
+{
+	if ( mThread ) {
+		CloseHandle( mThread );
+	}
+}
+
 void ThreadImpl::Wait() {
 	if ( mThread ) { // Wait for the thread to finish, no timeout
 	

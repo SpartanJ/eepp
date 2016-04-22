@@ -21,6 +21,8 @@ class ThreadImpl {
 		static UintPtr GetCurrentThreadId();
 
 		ThreadImpl( Thread * owner );
+
+		~ThreadImpl();
 		
 		void Wait();
 		
