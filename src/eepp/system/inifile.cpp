@@ -72,7 +72,7 @@ bool IniFile::LoadFromFile( const std::string& iniPath ) {
 	Path ( iniPath );
 
 	if ( FileSystem::FileExists( iniPath ) ) {
-		IOStreamFile f( mPath, std::ios::in );
+		IOStreamFile f( mPath );
 
 		if ( !f.IsOpen() )
 			return false;

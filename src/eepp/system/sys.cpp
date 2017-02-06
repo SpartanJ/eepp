@@ -59,6 +59,57 @@ namespace EE { namespace System {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 
 typedef void (WINAPI *PGNSI)(LPSYSTEM_INFO);
+typedef void (WINAPI * RtlGetVersion_FUNC) (OSVERSIONINFOEXW *);
+
+BOOL GetWindowsVersion(OSVERSIONINFOEX * os) {
+	HMODULE hMod;
+	RtlGetVersion_FUNC func;
+#ifdef UNICODE
+	OSVERSIONINFOEXW* osw=os;
+#else
+	OSVERSIONINFOEXW o;
+	OSVERSIONINFOEXW* osw=&o;
+#endif
+
+	hMod= LoadLibrary(TEXT("ntdll.dll"));
+	if(hMod){
+		func=(RtlGetVersion_FUNC)GetProcAddress(hMod,"RtlGetVersion");
+
+		if(func==NULL){
+			FreeLibrary(hMod);
+			return FALSE;
+		}
+
+		ZeroMemory(osw,sizeof(*osw));
+		osw->dwOSVersionInfoSize=sizeof(*osw);
+		func(osw);
+
+#ifndef	UNICODE
+		os->dwBuildNumber=osw->dwBuildNumber;
+		os->dwMajorVersion=osw->dwMajorVersion;
+		os->dwMinorVersion=osw->dwMinorVersion;
+		os->dwOSVersionInfoSize=sizeof(*os);
+		os->dwPlatformId=osw->dwPlatformId;
+		WCHAR* src=osw->szCSDVersion;
+		unsigned char* dtc=(unsigned char*)os->szCSDVersion;
+		while(*src)
+			*dtc++ =(unsigned char) *src++;
+		*dtc='\0';
+		os->wProductType=osw->wProductType;
+		os->wReserved=osw->wReserved;
+		os->wServicePackMajor=osw->wServicePackMajor;
+		os->wServicePackMinor=osw->wServicePackMinor;
+		os->wSuiteMask=osw->wSuiteMask;
+#endif
+
+	} else {
+		return FALSE;
+	}
+
+	FreeLibrary(hMod);
+
+	return TRUE;
+}
 
 static std::string GetWindowsArch() {
 	std::string arch = "Unknown";
@@ -71,7 +122,10 @@ static std::string GetWindowsArch() {
 	ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
 
 	osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-	bOsVersionInfoEx = GetVersionEx( (OSVERSIONINFO*) &osvi );
+
+	if ( !GetWindowsVersion( &osvi ) ) {
+		bOsVersionInfoEx = GetVersionEx( (OSVERSIONINFO*) &osvi );
+	}
 
 	if( bOsVersionInfoEx == FALSE ) return arch;
 
@@ -100,30 +154,33 @@ static std::string GetWindowsArch() {
 static std::string GetWindowsVersion() {
 	std::string os;
 	OSVERSIONINFOEX osvi;
-	SYSTEM_INFO si;
 	PGNSI pGNSI;
 	BOOL bOsVersionInfoEx;
 
-	ZeroMemory(&si, sizeof(SYSTEM_INFO));
 	ZeroMemory(&osvi, sizeof(OSVERSIONINFOEX));
 
 	osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
-	bOsVersionInfoEx = GetVersionEx( (OSVERSIONINFO*) &osvi );
+
+	bOsVersionInfoEx = GetWindowsVersion( &osvi );
+	if ( !bOsVersionInfoEx ) {
+		bOsVersionInfoEx = GetVersionEx( (OSVERSIONINFO*) &osvi );
+	}
 
 	if( bOsVersionInfoEx == FALSE ) return os;
-
-	// Call GetNativeSystemInfo if supported or GetSystemInfo otherwise.
-	pGNSI = (PGNSI) GetProcAddress( GetModuleHandle( TEXT( "kernel32.dll" ) ), "GetNativeSystemInfo" );
-
-	if( NULL != pGNSI ) {
-		pGNSI(&si);
-	} else {
-		GetSystemInfo(&si);
-	}
 
 	os = "Microsoft ";
 
 	if ( VER_PLATFORM_WIN32_NT == osvi.dwPlatformId && osvi.dwMajorVersion > 4 ) {
+		if ( osvi.dwMajorVersion == 10 ) {
+			if ( osvi.dwMinorVersion == 0 ) {
+				if( osvi.wProductType == VER_NT_WORKSTATION ) {
+					os += "Windows 10";
+				} else {
+					os += "Windows Server 2016";
+				}
+			}
+		}
+
 		if ( osvi.dwMajorVersion == 6 ) {
 			if( osvi.dwMinorVersion == 0 ) {
 				if( osvi.wProductType == VER_NT_WORKSTATION ) {
@@ -159,6 +216,18 @@ static std::string GetWindowsVersion() {
 		}
 
 		if ( osvi.dwMajorVersion == 5 && osvi.dwMinorVersion == 2 ) {
+			// Call GetNativeSystemInfo if supported or GetSystemInfo otherwise.
+			pGNSI = (PGNSI) GetProcAddress( GetModuleHandle( TEXT( "kernel32.dll" ) ), "GetNativeSystemInfo" );
+
+			SYSTEM_INFO si;
+			ZeroMemory(&si, sizeof(SYSTEM_INFO));
+
+			if( NULL != pGNSI ) {
+				pGNSI(&si);
+			} else {
+				GetSystemInfo(&si);
+			}
+
 			if ( GetSystemMetrics(SM_SERVERR2) ) {
 				os += "Windows Server 2003 R2, ";
 			} else if ( osvi.wSuiteMask & VER_SUITE_STORAGE_SERVER ) {
