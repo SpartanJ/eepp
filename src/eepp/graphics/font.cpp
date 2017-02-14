@@ -17,14 +17,14 @@ Font::Font( const Uint32& Type, const std::string& Name ) :
 	mTextCache( this )
 {
 	this->Name( Name );
-	FontManager::instance()->Add( this );
+	FontManager::instance()->add( this );
 }
 
 Font::~Font() {
 	mGlyphs.clear();
 
-	if ( !FontManager::instance()->IsDestroying() ) {
-		FontManager::instance()->Remove( this, false );
+	if ( !FontManager::instance()->isDestroying() ) {
+		FontManager::instance()->remove( this, false );
 	}
 }
 
@@ -120,10 +120,10 @@ void Font::Draw( TextCache& TextCache, const Float& X, const Float& Y, const Uin
 
 		SetText( TextCache.Text() );
 
-		if ( Col.A() != 255 ) {
+		if ( Col.a() != 255 ) {
 			ColorA ShadowColor = TextCache.ShadowColor();
 
-			ShadowColor.Alpha = (Uint8)( (Float)ShadowColor.Alpha * ( (Float)Col.A() / (Float)255 ) );
+			ShadowColor.Alpha = (Uint8)( (Float)ShadowColor.Alpha * ( (Float)Col.a() / (Float)255 ) );
 
 			Color( ShadowColor );
 		} else {
@@ -438,7 +438,7 @@ Vector2i Font::GetCursorPos( const String& Text, const Uint32& Pos ) {
 }
 
 static bool IsStopSelChar( Uint32 c ) {
-	return ( !String::IsCharacter( c ) && !String::IsNumber( c ) ) ||
+	return ( !String::isCharacter( c ) && !String::isNumber( c ) ) ||
 			' ' == c ||
 			'.' == c ||
 			',' == c ||
@@ -616,7 +616,7 @@ const std::string& Font::Name() const {
 
 void Font::Name( const std::string& name ) {
 	mFontName = name;
-	mFontHash = String::Hash( mFontName );
+	mFontHash = String::hash( mFontName );
 }
 
 const Uint32& Font::Id() {

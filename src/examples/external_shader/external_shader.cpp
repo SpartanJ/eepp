@@ -197,7 +197,7 @@ void MainLoop()
 	/// Stop the simulation if the window is not visible
 	while ( !win->Visible() ) {
 		imp->Update();	/// To get the real state of the window you need to update the window input
-		Sys::Sleep( 100 ); /// Sleep 100 ms
+		Sys::sleep( 100 ); /// Sleep 100 ms
 	}
 
 	win->Display();
@@ -241,7 +241,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 			/// Since fixed-pipeline OpenGL use gl_FrontColor for glColorPointer, we need to replace the color attribute
 			/// This is all to show how it works, in a real world scenario, you will choose to work fixed-pipeline or programmable-pipeline.
 			if ( GLi->Version() == GLv_2 ) {
-				String::ReplaceAll( fs, "gl_FragColor = dgl_Color", "gl_FragColor = gl_FrontColor" );
+				String::replaceAll( fs, "gl_FragColor = dgl_Color", "gl_FragColor = gl_FrontColor" );
 			}
 
 			/// Create the new shader program
@@ -279,9 +279,9 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		eeSAFE_DELETE_ARRAY( colors );
 	}
 
-	Engine::DestroySingleton();
+	Engine::destroySingleton();
 
-	MemoryManager::ShowResults();
+	MemoryManager::showResults();
 
 	return EXIT_SUCCESS;
 }

@@ -19,13 +19,13 @@ class EE_API Mutex : NonCopyable {
 		**	If the mutex is already locked in another thread,
 		**	this call will block the execution until the mutex
 		**	is released. */
-		void Lock();
+		void lock();
 
 		/** @brief Unlock the mutex */
-		void Unlock();
+		void unlock();
 
 		/** @brief Tries to lock de mutex if possible */
-		int TryLock();
+		int tryLock();
 	private:
 		Platform::MutexImpl *		mMutexImpl;
 };

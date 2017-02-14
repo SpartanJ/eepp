@@ -38,11 +38,11 @@ SoundBuffer::~SoundBuffer() {
 }
 
 bool SoundBuffer::LoadFromFile(const std::string& Filename) {
-	if ( !FileSystem::FileExists( Filename ) ) {
-		if ( PackManager::instance()->FallbackToPacks() ) {
+	if ( !FileSystem::fileExists( Filename ) ) {
+		if ( PackManager::instance()->fallbackToPacks() ) {
 			std::string tPath( Filename );
 
-			Pack * tPack = PackManager::instance()->Exists( tPath );
+			Pack * tPack = PackManager::instance()->exists( tPath );
 
 			if ( NULL != tPack ) {
 				return LoadFromPack( tPack, tPath );
@@ -91,7 +91,7 @@ bool SoundBuffer::LoadFromPack( Pack* Pack, const std::string& FilePackPath ) {
 	bool Ret = false;
 	SafeDataPointer PData;
 
-	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, PData ) )
+	if ( Pack->isOpen() && Pack->extractFileToMemory( FilePackPath, PData ) )
 		Ret = LoadFromMemory( reinterpret_cast<const char*> ( PData.Data ), PData.DataSize );
 
 	return Ret;
@@ -149,7 +149,7 @@ bool SoundBuffer::LoadFromSamples( const Int16 * Samples, std::size_t SamplesCou
 
 bool SoundBuffer::SaveToFile(const std::string& Filename) const {
 	// Create the sound file in write mode
-	std::auto_ptr<SoundFile> File( SoundFile::CreateWrite( Filename, GetChannelCount(), GetSampleRate() ) );
+	std::unique_ptr<SoundFile> File( SoundFile::CreateWrite( Filename, GetChannelCount(), GetSampleRate() ) );
 
 	if ( File.get() ) {
 		// Write the samples to the opened file

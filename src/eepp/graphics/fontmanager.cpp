@@ -10,9 +10,9 @@ FontManager::FontManager() {
 FontManager::~FontManager() {
 }
 
-Graphics::Font * FontManager::Add( Graphics::Font * Font ) {
+Graphics::Font * FontManager::add( Graphics::Font * Font ) {
 	eeASSERT( NULL != Font );
-	return ResourceManager<Graphics::Font>::Add( Font );
+	return ResourceManager<Graphics::Font>::add( Font );
 }
 
 }}

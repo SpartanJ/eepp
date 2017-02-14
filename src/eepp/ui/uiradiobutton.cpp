@@ -220,8 +220,8 @@ UIControlAnim * UIRadioButton::InactiveButton() const {
 
 Uint32 UIRadioButton::OnKeyDown( const UIEventKey& Event ) {
 	if ( Event.KeyCode() == KEY_SPACE ) {
-		if ( Sys::GetTicks() - mLastTick > 250 ) {
-			mLastTick = Sys::GetTicks();
+		if ( Sys::getTicks() - mLastTick > 250 ) {
+			mLastTick = Sys::getTicks();
 
 			Active( true );
 		}

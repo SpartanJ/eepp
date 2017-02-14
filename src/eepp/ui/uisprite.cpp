@@ -88,7 +88,7 @@ void UISprite::Color( const ColorA& color ) {
 	if ( NULL != mSprite )
 		mSprite->Color( color );
 	
-	Alpha( color.A() );
+	Alpha( color.a() );
 }
 
 const EE_RENDER_MODE& UISprite::RenderMode() const {

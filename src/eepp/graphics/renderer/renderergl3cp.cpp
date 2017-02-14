@@ -92,7 +92,7 @@ RendererGL3CP::~RendererGL3CP() {
 	eeSAFE_DELETE( mStack );
 
 	#ifdef EE_DEBUG
-	Log::instance()->Write( "Biggest VBO allocation on GL3 Renderer: " + FileSystem::SizeToString( mBiggestAlloc ) );
+	Log::instance()->write( "Biggest VBO allocation on GL3 Renderer: " + FileSystem::sizeToString( mBiggestAlloc ) );
 	#endif
 }
 
@@ -677,7 +677,7 @@ void RendererGL3CP::ClipPlane( unsigned int plane, const double * equation ) {
 	if ( nplane < EE_MAX_PLANES ) {
 		location = mPlanes[ nplane ];
 	} else {
-		std::string planeNum( "dgl_ClipPlane[" + String::ToStr( nplane ) + "]" );
+		std::string planeNum( "dgl_ClipPlane[" + String::toStr( nplane ) + "]" );
 
 		location = glGetUniformLocation( mCurShader->Handler(), (GLchar*)&planeNum[0] );
 	}
@@ -752,7 +752,7 @@ void RendererGL3CP::BindGlobalVAO() {
 
 void RendererGL3CP::AllocateBuffers( const Uint32& size ) {
 	if ( mVBOSizeAlloc != size )
-		Log::instance()->Write( "Allocating new VBO buffers size: " + String::ToStr( size ) );
+		Log::instance()->write( "Allocating new VBO buffers size: " + String::toStr( size ) );
 
 	mVBOSizeAlloc = size;
 

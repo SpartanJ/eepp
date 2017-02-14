@@ -6,20 +6,20 @@ namespace EE { namespace System { namespace Platform {
 
 #if defined( EE_PLATFORM_POSIX )
 
-UintPtr ThreadImpl::GetCurrentThreadId() {
+UintPtr ThreadImpl::getCurrentThreadId() {
 	return (UintPtr)pthread_self();
 }
 
 ThreadImpl::ThreadImpl( Thread * owner ) :
 	mIsActive(false)
 {
-	mIsActive = pthread_create( &mThread, NULL, &ThreadImpl::EntryPoint, owner ) == 0;
+	mIsActive = pthread_create( &mThread, NULL, &ThreadImpl::entryPoint, owner ) == 0;
 
 	if ( !mIsActive )
 		std::cerr << "Failed to create thread" << std::endl;
 }
 
-void ThreadImpl::Wait() {
+void ThreadImpl::wait() {
 	if ( mIsActive ) { // Wait for the thread to finish, no timeout
 
 		eeASSERT( pthread_equal( pthread_self(), mThread ) == 0 );
@@ -30,7 +30,7 @@ void ThreadImpl::Wait() {
 	}
 }
 
-void ThreadImpl::Terminate() {
+void ThreadImpl::terminate() {
 	if ( mIsActive ) {
 		#if EE_PLATFORM != EE_PLATFORM_ANDROID
 			pthread_cancel( mThread );
@@ -42,11 +42,11 @@ void ThreadImpl::Terminate() {
 	}
 }
 
-UintPtr ThreadImpl::Id() {
+UintPtr ThreadImpl::id() {
 	return (UintPtr)mThread;
 }
 
-void * ThreadImpl::EntryPoint( void * userData ) {
+void * ThreadImpl::entryPoint( void * userData ) {
 	// The Thread instance is stored in the user data
 	Thread * owner = static_cast<Thread*>( userData );
 
@@ -56,7 +56,7 @@ void * ThreadImpl::EntryPoint( void * userData ) {
 	#endif
 
 	// Forward to the owner
-	owner->Run();
+	owner->run();
 
 	return NULL;
 }

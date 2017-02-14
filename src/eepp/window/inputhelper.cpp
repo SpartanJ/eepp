@@ -9,7 +9,7 @@ Uint32 eeConvertKeyCharacter( const Uint32& KeyCode, const Uint16& Unicode, cons
 		value = Unicode;
 	}
 
-	if ( String::IsCharacter( value ) ) {
+	if ( String::isCharacter( value ) ) {
 		return value;
 	}
 

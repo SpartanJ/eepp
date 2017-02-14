@@ -52,7 +52,7 @@ bool PixelPerfectCollide( Texture * Tex1, const unsigned int& x1, const unsigned
 				else
 					C2 = Tex2->GetPixel( x - x2, y - y2 );
 
-				if ( C1.A() > 0 && C2.A() > 0 ) {
+				if ( C1.a() > 0 && C2.a() > 0 ) {
 					Collide = true;
 					break;
 				}
@@ -91,7 +91,7 @@ bool PixelPerfectCollide( Texture * Tex, const unsigned int& x1, const unsigned 
 		else
 			C1 = Tex->GetPixel( x2 - ax1, y2 - ay1 );
 
-		if ( C1.A() > 0 )
+		if ( C1.a() > 0 )
 			Collide = true;
 		
 		Tex->Unlock(true);

@@ -28,7 +28,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 			request.SetUri("/wiki/Main_Page");
 
 			// Creates an async http request
-			Http::Request asyncRequest( "/wiki/" + Version::GetCodename() );
+			Http::Request asyncRequest( "/wiki/" + Version::getCodename() );
 
 			http.SendAsyncRequest( cb::Make3( AsyncRequestCallback ), asyncRequest, Seconds( 5 ) );
 		} else {
@@ -55,7 +55,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 		}
 	}
 
-	MemoryManager::ShowResults();
+	MemoryManager::showResults();
 
 	return EXIT_SUCCESS;
 }

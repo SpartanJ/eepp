@@ -33,7 +33,7 @@ void CursorManager::Remove( Cursor * cursor, bool Delete ) {
 }
 
 void CursorManager::Remove( const std::string& name, bool Delete ) {
-	Remove( String::Hash( name ), Delete );
+	Remove( String::hash( name ), Delete );
 }
 
 void CursorManager::Remove( const Uint32& id, bool Delete ) {
@@ -46,7 +46,7 @@ void CursorManager::Remove( const Uint32& id, bool Delete ) {
 }
 
 Cursor * CursorManager::Get( const std::string& name ) {
-	return GetById( String::Hash( name ) );
+	return GetById( String::hash( name ) );
 }
 
 Cursor * CursorManager::GetById( const Uint32& id ) {
@@ -60,7 +60,7 @@ Cursor * CursorManager::GetById( const Uint32& id ) {
 }
 
 void CursorManager::Set( const std::string& name ) {
-	SetById( String::Hash( name ) );
+	SetById( String::hash( name ) );
 }
 
 void CursorManager::SetById( const Uint32& id ) {

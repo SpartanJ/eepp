@@ -32,7 +32,7 @@ class tSoundLoader : public ObjectLoader {
 		~tSoundLoader();
 
 		/** Unload the sound if was already loaded. */
-		void					Unload();
+		void					unload();
 
 		/** @return The sound id */
 		const T&				Id() const;
@@ -49,7 +49,7 @@ class tSoundLoader : public ObjectLoader {
 		Uint32					mSampleRate;
 		Pack *					mPack;
 
-		void 					Start();
+		void 					start();
 	private:
 		void 					LoadFromPath();
 		void					LoadFromMemory();
@@ -119,9 +119,9 @@ tSoundLoader<T>::~tSoundLoader() {
 }
 
 template <typename T>
-void tSoundLoader<T>::Start() {
+void tSoundLoader<T>::start() {
 	if ( NULL != mSndMngr ) {
-		ObjectLoader::Start();
+		ObjectLoader::start();
 
 		if ( SND_LT_PATH == mLoadType )
 			LoadFromPath();
@@ -132,7 +132,7 @@ void tSoundLoader<T>::Start() {
 		else if ( SND_LT_SAMPLES == mLoadType )
 			LoadFromSamples();
 
-		SetLoaded();
+		setLoaded();
 	}
 }
 
@@ -162,11 +162,11 @@ const T& tSoundLoader<T>::Id() const {
 }
 
 template <typename T>
-void tSoundLoader<T>::Unload() {
+void tSoundLoader<T>::unload() {
 	if ( mLoaded ) {
 		mSndMngr->Remove( mId );
 
-		Reset();
+		reset();
 	}
 }
 

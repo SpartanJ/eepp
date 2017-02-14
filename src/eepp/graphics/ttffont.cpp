@@ -30,7 +30,7 @@ bool TTFFont::LoadFromPack( Pack* Pack, const std::string& FilePackPath, const u
 	bool Ret = false;
 	SafeDataPointer PData;
 
-	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, PData ) ) {
+	if ( Pack->isOpen() && Pack->extractFileToMemory( FilePackPath, PData ) ) {
 		mFilepath = FilePackPath;
 
 		Ret = LoadFromMemory( PData.Data, PData.DataSize, Size, Style, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
@@ -58,7 +58,7 @@ bool TTFFont::LoadFromMemory( Uint8* TTFData, const unsigned int& TTFDataSize, c
 bool TTFFont::Load( const std::string& Filepath, const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Uint16& NumCharsToGen, const RGB& FontColor, const Uint8& OutlineSize, const RGB& OutlineColor, const bool& AddPixelSeparator ) {
 	mFilepath			= Filepath;
 
-	if ( FileSystem::FileExists( Filepath ) ) {
+	if ( FileSystem::fileExists( Filepath ) ) {
 		mLoadedFromMemory	= false;
 
 		mFont = hkFontManager::instance()->OpenFromFile( Filepath.c_str(), Size, 0, NumCharsToGen );
@@ -69,8 +69,8 @@ bool TTFFont::Load( const std::string& Filepath, const unsigned int& Size, EE_TT
 		}
 
 		return iLoad( Size, Style, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
-	} else if ( PackManager::instance()->FallbackToPacks() ) {
-		Pack * tPack = PackManager::instance()->Exists( mFilepath );
+	} else if ( PackManager::instance()->fallbackToPacks() ) {
+		Pack * tPack = PackManager::instance()->exists( mFilepath );
 
 		if ( NULL != tPack ) {
 			return LoadFromPack( tPack, mFilepath, Size, Style, NumCharsToGen, FontColor, OutlineSize, OutlineColor, AddPixelSeparator );
@@ -161,7 +161,7 @@ bool TTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Ui
 
 	//Loop through all chars
 	for ( unsigned int i = 0; i < mNumChars; i++ ) {
-		TempGlyphSurface = mFont->GlyphRender( i, fFontColor.GetValue() );
+		TempGlyphSurface = mFont->GlyphRender( i, fFontColor.getValue() );
 
 		//New temp glyph
 		eeGlyph TempGlyph;
@@ -175,7 +175,7 @@ bool TTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Ui
 
 		// Create the outline for the glyph and copy the outline to the texture
 		if ( OutlineSize && OutlineFreetype == OutlineMethod ) {
-			TempOutGlyphSurface = mFontOutline->GlyphRender( i, ColorA( OutlineColor ).GetValue() );
+			TempOutGlyphSurface = mFontOutline->GlyphRender( i, ColorA( OutlineColor ).getValue() );
 
 			mFontOutline->GlyphMetrics( i, &TempGlyph.MinX, &TempGlyph.MaxX, &TempGlyph.MinY, &TempGlyph.MaxY, &TempGlyph.Advance );
 
@@ -266,7 +266,7 @@ bool TTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Ui
 						RPos	= ( nGlyphR.Left + x ) + ( nGlyphR.Top + y ) * w;
 						Pos		= x + y * nGlyphS.x;
 
-						alpha_init[ Pos ] = mPixels[ RPos ].A();
+						alpha_init[ Pos ] = mPixels[ RPos ].a();
 						alpha_final[ Pos ] = 0;
 					}
 				}
@@ -280,7 +280,7 @@ bool TTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Ui
 						Pos		= x + y * nGlyphS.x;
 
 						// Blending the normal glyph color to the outline color
-						mPixels[ RPos ] = Color::Blend( ColorA( FontColor, alpha_init[ Pos ] ), ColorA( OutlineColor, alpha_final[ Pos ] ) );
+						mPixels[ RPos ] = Color::blend( ColorA( FontColor, alpha_init[ Pos ] ), ColorA( OutlineColor, alpha_final[ Pos ] ) );
 					}
 				}
 
@@ -313,7 +313,7 @@ bool TTFFont::iLoad( const unsigned int& Size, EE_TTF_FONT_STYLE Style, const Ui
 
 void TTFFont::UpdateLoading() {
 	if ( mTexReady && NULL != mPixels ) {
-		std::string name( FileSystem::FileRemoveExtension( FileSystem::FileNameFromPath( mFilepath ) ) );
+		std::string name( FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( mFilepath ) ) );
 
 		mTexId = TextureFactory::instance()->LoadFromPixels( reinterpret_cast<unsigned char *> ( &mPixels[0] ), (Uint32)mTexWidth, (Uint32)mTexHeight, 4, false, CLAMP_TO_EDGE, false, false, name );
 
@@ -380,7 +380,7 @@ bool TTFFont::SaveTexture( const std::string& Filepath, const EE_SAVE_TYPE& Form
 bool TTFFont::SaveCoordinates( const std::string& Filepath ) {
 	IOStreamFile fs( Filepath, std::ios::out | std::ios::binary );
 
-	if ( fs.IsOpen() ) {
+	if ( fs.isOpen() ) {
 		sFntHdr FntHdr;
 
 		FntHdr.Magic		= EE_TTF_FONT_MAGIC;
@@ -393,10 +393,10 @@ bool TTFFont::SaveCoordinates( const std::string& Filepath ) {
 		FntHdr.Descent		= mDescent;
 
 		// Write the header
-		fs.Write( reinterpret_cast<const char*>( &FntHdr ), sizeof(sFntHdr) );
+		fs.write( reinterpret_cast<const char*>( &FntHdr ), sizeof(sFntHdr) );
 
 		// Write the glyphs
-		fs.Write( reinterpret_cast<const char*> (&mGlyphs[0]), sizeof(eeGlyph) * mGlyphs.size() );
+		fs.write( reinterpret_cast<const char*> (&mGlyphs[0]), sizeof(eeGlyph) * mGlyphs.size() );
 
 		RebuildFromGlyphs();
 

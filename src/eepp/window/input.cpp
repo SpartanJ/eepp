@@ -49,7 +49,7 @@ void Input::ProcessEvent( InputEvent * Event ) {
 			if ( Event->key.keysym.mod != eeINDEX_NOT_FOUND )
 				mInputMod = Event->key.keysym.mod;
 
-			BitOp::WriteBitKey( &mKeysDown	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, 1 );
+			BitOp::writeBitKey( &mKeysDown	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, 1 );
 			break;
 		}
 		case InputEvent::KeyUp:
@@ -57,8 +57,8 @@ void Input::ProcessEvent( InputEvent * Event ) {
 			if ( Event->key.keysym.sym > EE_KEYS_NUM )
 				break;
 
-			BitOp::WriteBitKey( &mKeysDown	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, 0 );
-			BitOp::WriteBitKey( &mKeysUp	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, 1 );
+			BitOp::writeBitKey( &mKeysDown	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, 0 );
+			BitOp::writeBitKey( &mKeysUp	[ Event->key.keysym.sym / 8 ], Event->key.keysym.sym % 8, 1 );
 			break;
 		}
 		case InputEvent::MouseMotion:
@@ -99,7 +99,7 @@ void Input::ProcessEvent( InputEvent * Event ) {
 			// I know this is ugly, but i'm too lazy to fix it, it works...
 			if ( Event->button.button == EE_BUTTON_LEFT ) {
 				mLastButtonLeftClicked		= mLastButtonLeftClick;
-				mLastButtonLeftClick		= Sys::GetTicks();
+				mLastButtonLeftClick		= Sys::getTicks();
 
 				mTClick = mLastButtonLeftClick - mLastButtonLeftClicked;
 
@@ -110,7 +110,7 @@ void Input::ProcessEvent( InputEvent * Event ) {
 				}
 			} else if ( Event->button.button == EE_BUTTON_RIGHT ) {
 				mLastButtonRightClicked		= mLastButtonRightClick;
-				mLastButtonRightClick		= Sys::GetTicks();
+				mLastButtonRightClick		= Sys::getTicks();
 
 				mTClick = mLastButtonRightClick - mLastButtonRightClicked;
 
@@ -121,7 +121,7 @@ void Input::ProcessEvent( InputEvent * Event ) {
 				}
 			} else if( Event->button.button == EE_BUTTON_MIDDLE ) {
 				mLastButtonMiddleClicked	= mLastButtonMiddleClick;
-				mLastButtonMiddleClick		= Sys::GetTicks();
+				mLastButtonMiddleClick		= Sys::getTicks();
 
 				mTClick = mLastButtonMiddleClick - mLastButtonMiddleClicked;
 
@@ -227,19 +227,19 @@ void Input::ResetFingerWasDown() {
 }
 
 bool Input::IsKeyDown( const EE_KEY& Key ) {
-	return 0 != BitOp::ReadBitKey( &mKeysDown[ Key / 8 ], Key % 8 );
+	return 0 != BitOp::readBitKey( &mKeysDown[ Key / 8 ], Key % 8 );
 }
 
 bool Input::IsKeyUp( const EE_KEY& Key ) {
-	return 0 != BitOp::ReadBitKey( &mKeysUp[ Key / 8 ], Key % 8 );
+	return 0 != BitOp::readBitKey( &mKeysUp[ Key / 8 ], Key % 8 );
 }
 
 void Input::InjectKeyDown( const EE_KEY& Key ) {
-	BitOp::WriteBitKey( &mKeysDown	[ Key / 8 ], Key % 8, 1 );
+	BitOp::writeBitKey( &mKeysDown	[ Key / 8 ], Key % 8, 1 );
 }
 
 void Input::InjectKeyUp( const EE_KEY& Key ) {
-	BitOp::WriteBitKey( &mKeysUp	[ Key / 8 ], Key % 8, 1 );
+	BitOp::writeBitKey( &mKeysUp	[ Key / 8 ], Key % 8, 1 );
 }
 
 void Input::InjectButtonPress( const Uint32& Button ) {

@@ -12,7 +12,7 @@ ClockImpl::ClockImpl() :
 ClockImpl::~ClockImpl() {
 }
 
-void ClockImpl::Restart() {
+void ClockImpl::restart() {
 	// Get the current process core mask
 	DWORD procMask;
 	DWORD sysMask;
@@ -51,7 +51,7 @@ void ClockImpl::Restart() {
 	mLastTime	= 0;
 }
 
-unsigned long ClockImpl::GetElapsedTime() {
+unsigned long ClockImpl::getElapsedTime() {
 	LARGE_INTEGER curTime;
 
 	HANDLE thread = GetCurrentThread();

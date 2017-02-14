@@ -156,8 +156,8 @@ Uint32 UICheckBox::OnKeyDown( const UIEventKey& Event ) {
 	UITextBox::OnKeyDown( Event );
 
 	if ( Event.KeyCode() == KEY_SPACE ) {
-		if ( Sys::GetTicks() - mLastTick > 250 ) {
-			mLastTick = Sys::GetTicks();
+		if ( Sys::getTicks() - mLastTick > 250 ) {
+			mLastTick = Sys::getTicks();
 
 			Active( !mActive );
 		}

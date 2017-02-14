@@ -24,17 +24,17 @@ AllocatedPointer::AllocatedPointer( void * Data, const std::string& File, int Li
 	mMemory 	= Memory;
 }
 
-void * MemoryManager::AddPointerInPlace( void * Place, const AllocatedPointer& aAllocatedPointer ) {
+void * MemoryManager::addPointerInPlace( void * Place, const AllocatedPointer& aAllocatedPointer ) {
 	AllocatedPointerMapIt it = sMapPointers.find( Place );
 
 	if ( it != sMapPointers.end() ) {
-		RemovePointer( Place );
+		removePointer( Place );
 	}
 
-	return AddPointer( aAllocatedPointer );
+	return addPointer( aAllocatedPointer );
 }
 
-void * MemoryManager::AddPointer( const AllocatedPointer& aAllocatedPointer ) {
+void * MemoryManager::addPointer( const AllocatedPointer& aAllocatedPointer ) {
 	Lock l( sAlloMutex );
 
 	sMapPointers.insert( AllocatedPointerMap::value_type( aAllocatedPointer.mData, aAllocatedPointer ) );
@@ -52,7 +52,7 @@ void * MemoryManager::AddPointer( const AllocatedPointer& aAllocatedPointer ) {
 	return aAllocatedPointer.mData;
 }
 
-bool MemoryManager::RemovePointer( void * Data ) {
+bool MemoryManager::removePointer( void * Data ) {
 	Lock l( sAlloMutex );
 
 	AllocatedPointerMapIt it = sMapPointers.find( Data );
@@ -70,23 +70,23 @@ bool MemoryManager::RemovePointer( void * Data ) {
 	return true;
 }
 
-size_t MemoryManager::GetPeakMemoryUsage() {
+size_t MemoryManager::getPeakMemoryUsage() {
 	return sPeakMemoryUsage;
 }
 
-size_t MemoryManager::GetTotalMemoryUsage() {
+size_t MemoryManager::getTotalMemoryUsage() {
 	return sTotalMemoryUsage;
 }
 
-const AllocatedPointer& MemoryManager::GetBiggestAllocation() {
+const AllocatedPointer& MemoryManager::getBiggestAllocation() {
 	return sBiggestAllocation;
 }
 
-void MemoryManager::ShowResults() {
+void MemoryManager::showResults() {
 	#ifdef EE_MEMORY_MANAGER
 
 	if ( EE::PrintDebugInLog ) {
-		Log::DestroySingleton();
+		Log::destroySingleton();
 		EE::PrintDebugInLog = false;
 	}
 
@@ -135,10 +135,10 @@ void MemoryManager::ShowResults() {
 	}
 
 	eePRINTL( "|" );
-	eePRINTL( "| Memory left: %s", FileSystem::SizeToString( static_cast<Int64>( sTotalMemoryUsage ) ).c_str() );
+	eePRINTL( "| Memory left: %s", FileSystem::sizeToString( static_cast<Int64>( sTotalMemoryUsage ) ).c_str() );
 	eePRINTL( "| Biggest allocation:" );
-	eePRINTL( "| %s in file: %s at line: %d", FileSystem::SizeToString( sBiggestAllocation.mMemory ).c_str(), sBiggestAllocation.mFile.c_str(), sBiggestAllocation.mLine );
-	eePRINTL( "| Peak Memory Usage: %s", FileSystem::SizeToString( sPeakMemoryUsage ).c_str() );
+	eePRINTL( "| %s in file: %s at line: %d", FileSystem::sizeToString( sBiggestAllocation.mMemory ).c_str(), sBiggestAllocation.mFile.c_str(), sBiggestAllocation.mLine );
+	eePRINTL( "| Peak Memory Usage: %s", FileSystem::sizeToString( sPeakMemoryUsage ).c_str() );
 	eePRINTL( "|------------------------------------------------------------|\n" );
 
 	#endif

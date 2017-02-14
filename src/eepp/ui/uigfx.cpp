@@ -114,7 +114,7 @@ const ColorA& UIGfx::Color() const {
 
 void UIGfx::Color( const ColorA& color ) {
 	mColor = color;
-	Alpha( color.A() );
+	Alpha( color.a() );
 }
 
 const EE_RENDER_MODE& UIGfx::RenderMode() const {

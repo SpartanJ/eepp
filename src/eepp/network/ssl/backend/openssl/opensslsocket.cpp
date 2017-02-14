@@ -140,9 +140,9 @@ bool OpenSSLSocket::Init() {
 	OpenSSL_add_all_algorithms(); // Load all available encryption algorithms
 
 	//! Load the certificates and config
-	if ( FileSystem::FileExists( SSLSocket::CertificatesPath ) ) {
+	if ( FileSystem::fileExists( SSLSocket::CertificatesPath ) ) {
 		SafeDataPointer data;
-		FileSystem::FileGet( SSLSocket::CertificatesPath, data );
+		FileSystem::fileGet( SSLSocket::CertificatesPath, data );
 
 		if ( data.DataSize > 0 ) {
 			BIO* mem = BIO_new(BIO_s_mem());

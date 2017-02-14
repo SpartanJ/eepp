@@ -16,7 +16,7 @@ hkFontManager * hkFontManager::instance() {
 	return mSingleton;
 }
 
-void hkFontManager::DestroySingleton() {
+void hkFontManager::destroySingleton() {
 	hkSAFE_DELETE( mSingleton );
 }
 

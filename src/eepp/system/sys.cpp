@@ -251,7 +251,7 @@ static std::string GetWindowsVersion() {
 
 		// Include service pack (if any) and build number.
 		#if defined( EE_COMPILER_MSVC ) && defined( UNICODE )
-		std::string CSDVer( EE::String( osvi.szCSDVersion ).ToUtf8() );
+		std::string CSDVer( EE::String( osvi.szCSDVersion ).toUtf8() );
 		#else
 		std::string CSDVer( osvi.szCSDVersion );
 		#endif
@@ -305,7 +305,7 @@ static struct timeval start;
 
 #endif
 
-std::string Sys::GetOSName( bool showReleaseName ) {
+std::string Sys::getOSName( bool showReleaseName ) {
 #if defined( EE_PLATFORM_POSIX )
 	struct utsname os;
 
@@ -321,7 +321,7 @@ std::string Sys::GetOSName( bool showReleaseName ) {
 #endif
 }
 
-std::string Sys::GetOSArchitecture() {
+std::string Sys::getOSArchitecture() {
 #if defined( EE_PLATFORM_POSIX )
 	struct utsname os;
 
@@ -356,7 +356,7 @@ static void eeStartTicks() {
 	}
 }
 
-Uint32 Sys::GetTicks() {
+Uint32 Sys::getTicks() {
 	eeStartTicks();
 
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -392,22 +392,22 @@ Uint32 Sys::GetTicks() {
 #endif
 }
 
-void Sys::Sleep( const Uint32& ms ) {
-	Sleep( Milliseconds( ms ) );
+void Sys::sleep( const Uint32& ms ) {
+	sleep( Milliseconds( ms ) );
 }
 
-void Sys::Sleep( const Time& time ) {
+void Sys::sleep( const Time& time ) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	TIMECAPS tc;
 	timeGetDevCaps(&tc, sizeof(TIMECAPS));
 
 	timeBeginPeriod(tc.wPeriodMin);
 
-	::Sleep( time.AsMilliseconds() );
+	::Sleep( time.asMilliseconds() );
 
 	timeEndPeriod(tc.wPeriodMin);
 #elif defined( EE_PLATFORM_POSIX )
-	Uint64 usecs = time.AsMicroseconds();
+	Uint64 usecs = time.asMicroseconds();
 
 	// Construct the time to wait
 	timespec ti;
@@ -465,7 +465,7 @@ static std::string sGetProcessPath() {
 
 		GetModuleFileName(0, &dllName[0], _MAX_PATH);
 
-		std::string dllstrName( String( dllName ).ToUtf8() );
+		std::string dllstrName( String( dllName ).toUtf8() );
 
 		#ifdef EE_COMPILER_MSVC
 		_splitpath_s( dllstrName.c_str(), szDrive, _MAX_DRIVE, szDir, _MAX_DIR, szFilename, _MAX_DIR, szExt, _MAX_DIR );
@@ -525,12 +525,12 @@ static std::string sGetProcessPath() {
 #endif
 }
 
-std::string Sys::GetProcessPath() {
+std::string Sys::getProcessPath() {
 	static std::string path = sGetProcessPath();
 	return path;
 }
 
-double Sys::GetSystemTime() {
+double Sys::getSystemTime() {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	static LARGE_INTEGER Frequency;
 	static BOOL UseHighPerformanceTimer = QueryPerformanceFrequency(&Frequency);
@@ -551,7 +551,7 @@ double Sys::GetSystemTime() {
 #endif
 }
 
-std::string Sys::GetDateTimeStr() {
+std::string Sys::getDateTimeStr() {
 	time_t rawtime;
 	time ( &rawtime );
 
@@ -566,7 +566,7 @@ std::string Sys::GetDateTimeStr() {
 }
 
 #define EE_MAX_CFG_PATH_LEN 1024
-std::string Sys::GetConfigPath( std::string appname ) {
+std::string Sys::getConfigPath( std::string appname ) {
 	char path[EE_MAX_CFG_PATH_LEN];
 
 	#if EE_PLATFORM == EE_PLATFORM_WIN
@@ -645,7 +645,7 @@ std::string Sys::GetConfigPath( std::string appname ) {
 	return std::string( path );
 }
 
-std::string Sys::GetTempPath() {
+std::string Sys::getTempPath() {
 	char path[EE_MAX_CFG_PATH_LEN];
 
 	#if EE_PLATFORM == EE_PLATFORM_WIN
@@ -664,20 +664,20 @@ std::string Sys::GetTempPath() {
 		char * tmpdir = getenv("TMPDIR");
 
 		if ( NULL != tmpdir ) {
-			String::StrCopy( path, tmpdir, EE_MAX_CFG_PATH_LEN );
+			String::strCopy( path, tmpdir, EE_MAX_CFG_PATH_LEN );
 		} else {
-			String::StrCopy( path, "/tmp", EE_MAX_CFG_PATH_LEN );
+			String::strCopy( path, "/tmp", EE_MAX_CFG_PATH_LEN );
 		}
 	#endif
 
 	std::string rpath( path );
 
-	FileSystem::DirPathAddSlashAtEnd( rpath );
+	FileSystem::dirPathAddSlashAtEnd( rpath );
 
 	return rpath;
 }
 
-int Sys::GetCPUCount() {
+int Sys::getCPUCount() {
 	int nprocs = -1;
 
 	#if EE_PLATFORM == EE_PLATFORM_WIN
@@ -716,7 +716,7 @@ int Sys::GetCPUCount() {
 	return nprocs;
 }
 
-Int64 Sys::GetDiskFreeSpace(const std::string& path) {
+Int64 Sys::getDiskFreeSpace(const std::string& path) {
 #if defined( EE_PLATFORM_POSIX )
 	struct statvfs data;
 	statvfs(path.c_str(),  &data);
@@ -751,7 +751,7 @@ int WIN_SetError( std::string prefix = "" ) {
 }
 #endif
 
-void * Sys::LoadObject( const std::string& sofile ) {
+void * Sys::loadObject( const std::string& sofile ) {
 #if defined( EE_PLATFORM_POSIX )
 	void * handle = dlopen( sofile.c_str(), RTLD_NOW | RTLD_LOCAL );
 
@@ -776,7 +776,7 @@ void * Sys::LoadObject( const std::string& sofile ) {
 #endif
 }
 
-void Sys::UnloadObject( void * handle ) {
+void Sys::unloadObject( void * handle ) {
 #if defined( EE_PLATFORM_POSIX )
 	if ( handle != NULL ) {
 		dlclose(handle);
@@ -790,7 +790,7 @@ void Sys::UnloadObject( void * handle ) {
 #endif
 }
 
-void * Sys::LoadFunction( void * handle, const std::string& name ) {
+void * Sys::loadFunction( void * handle, const std::string& name ) {
 #if defined( EE_PLATFORM_POSIX )
 	void *symbol = dlsym( handle, name.c_str() );
 

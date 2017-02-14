@@ -9,7 +9,7 @@ namespace EE {
 
 const std::size_t String::InvalidPos = StringType::npos;
 
-Uint32 String::Hash( const Uint8 * str ) {
+Uint32 String::hash( const Uint8 * str ) {
 	//! djb2
 	if ( NULL != str ) {
 		Uint32 hash = 5381;
@@ -24,34 +24,34 @@ Uint32 String::Hash( const Uint8 * str ) {
 	return 0;
 }
 
-Uint32 String::Hash( const char * str ) {
-	return String::Hash( reinterpret_cast<const Uint8*>( str ) );
+Uint32 String::hash( const char * str ) {
+	return String::hash( reinterpret_cast<const Uint8*>( str ) );
 }
 
-Uint32 String::Hash( const std::string& str ) {
-	return String::Hash( reinterpret_cast<const Uint8*>( &str[0] ) );
+Uint32 String::hash( const std::string& str ) {
+	return String::hash( reinterpret_cast<const Uint8*>( &str[0] ) );
 }
 
-Uint32 String::Hash( const String& str ) {
-	return String::Hash( reinterpret_cast<const Uint8*>( &(str.mString[0]) ) );
+Uint32 String::hash( const String& str ) {
+	return String::hash( reinterpret_cast<const Uint8*>( &(str.mString[0]) ) );
 }
 
-bool String::IsCharacter( const int& mValue ) {
+bool String::isCharacter( const int& mValue ) {
 	return (mValue >= 32 && mValue <= 126) || (mValue >= 161 && mValue <= 255) || (mValue == 9);
 }
 
-bool String::IsNumber( const int& mValue, bool AllowDot ) {
+bool String::isNumber( const int& mValue, bool AllowDot ) {
 	if ( AllowDot )
 		return ( mValue >= 48 && mValue <= 57 ) || mValue == 46;
 
 	return mValue >= 48 && mValue <= 57;
 }
 
-bool String::IsLetter( const int& mValue ) {
+bool String::isLetter( const int& mValue ) {
 	return ( ( (mValue >= 65 && mValue <= 90) || (mValue >= 97 && mValue <= 122) || (mValue >= 192 && mValue <= 255) ) && (mValue != 215) && (mValue != 247) );
 }
 
-std::vector < String > String::Split ( const String& str, const Uint32& splitchar, const bool& pushEmptyString ) {
+std::vector < String > String::split ( const String& str, const Uint32& splitchar, const bool& pushEmptyString ) {
 	std::vector < String > tmp;
 	String tmpstr;
 
@@ -72,7 +72,7 @@ std::vector < String > String::Split ( const String& str, const Uint32& splitcha
 	return tmp;
 }
 
-std::vector < std::string > String::Split ( const std::string& str, const Int8& splitchar, const bool& pushEmptyString ) {
+std::vector < std::string > String::split ( const std::string& str, const Int8& splitchar, const bool& pushEmptyString ) {
 	std::vector < std::string > tmp;
 	std::string tmpstr;
 
@@ -93,49 +93,49 @@ std::vector < std::string > String::Split ( const std::string& str, const Int8& 
 	return tmp;
 }
 
-std::string String::LTrim(const std::string & str , char character) {
+std::string String::lTrim(const std::string & str , char character) {
 	std::string::size_type pos1 = str.find_first_not_of(character);
 	return ( pos1 == std::string::npos ) ? str : str.substr( pos1 );
 }
 
-std::string String::Trim(const std::string & str , char character) {
+std::string String::trim(const std::string & str , char character) {
 	std::string::size_type pos1 = str.find_first_not_of(character);
 	std::string::size_type pos2 = str.find_last_not_of(character);
 	return str.substr(pos1 == std::string::npos ? 0 : pos1, pos2 == std::string::npos ? str.length() - 1 : pos2 - pos1 + 1);
 }
 
-String String::LTrim(const String & str , char character) {
+String String::lTrim(const String & str , char character) {
 	StringType::size_type pos1 = str.find_first_not_of(character);
 	return ( pos1 == String::InvalidPos ) ? str : str.substr( pos1 );
 }
 
-String String::Trim(const String & str , char character) {
+String String::trim(const String & str , char character) {
 	StringType::size_type pos1 = str.find_first_not_of(character);
 	StringType::size_type pos2 = str.find_last_not_of(character);
 	return str.substr(pos1 == String::InvalidPos ? 0 : pos1, pos2 == String::InvalidPos ? str.length() - 1 : pos2 - pos1 + 1);
 }
 
-void String::ToUpperInPlace( std::string & str ) {
+void String::toUpperInPlace( std::string & str ) {
 	std::transform(str.begin(), str.end(), str.begin(), (int(*)(int)) std::toupper);
 }
 
-std::string String::ToUpper( std::string str ) {
+std::string String::toUpper( std::string str ) {
 	for (std::string::iterator i = str.begin(); i != str.end(); ++i)
 		*i = static_cast<char>(std::toupper(*i));
 	return str;
 }
 
-void String::ToLowerInPlace( std::string & str ) {
+void String::toLowerInPlace( std::string & str ) {
 	std::transform(str.begin(), str.end(), str.begin(), (int(*)(int)) std::tolower);
 }
 
-std::string String::ToLower( std::string str ) {
+std::string String::toLower( std::string str ) {
 	for (std::string::iterator i = str.begin(); i != str.end(); ++i)
 		*i = static_cast<char>(std::tolower(*i));
 	return str;
 }
 
-std::vector<Uint8> String::StringToUint8( const std::string& str ) {
+std::vector<Uint8> String::stringToUint8( const std::string& str ) {
 	return std::vector<Uint8>( str.begin(), str.end() );
 }
 
@@ -143,19 +143,19 @@ std::string String::Uint8ToString( const std::vector<Uint8>& v ) {
 	return std::string( v.begin(), v.end() );
 }
 
-void String::StrCopy( char * Dst, const char * Src, unsigned int DstSize ) {
+void String::strCopy( char * Dst, const char * Src, unsigned int DstSize ) {
 	strncpy( Dst, Src, DstSize );
 }
 
-bool String::StartsWith( const std::string& haystack, const std::string & needle ) {
+bool String::startsWith( const std::string& haystack, const std::string & needle ) {
 	return needle.length() <= haystack.length() && std::equal(needle.begin(), needle.end(), haystack.begin() );
 }
 
-bool String::StartsWith( const String& haystack, const String & needle ) {
+bool String::startsWith( const String& haystack, const String & needle ) {
 	return needle.length() <= haystack.length() && std::equal(needle.begin(), needle.end(), haystack.begin() );
 }
 
-void String::ReplaceAll( std::string &target, const std::string& that, const std::string& with ) {
+void String::replaceAll( std::string &target, const std::string& that, const std::string& with ) {
 	std::string::size_type pos=0;
 
 	while( ( pos = target.find( that, pos ) ) != std::string::npos ) {
@@ -165,7 +165,7 @@ void String::ReplaceAll( std::string &target, const std::string& that, const std
 	}
 }
 
-void String::Replace( std::string& target, const std::string& that, const std::string& with ) {
+void String::replace( std::string& target, const std::string& that, const std::string& with ) {
 	std::size_t start_pos = target.find( that );
 
 	if( start_pos == std::string::npos )
@@ -174,7 +174,7 @@ void String::Replace( std::string& target, const std::string& that, const std::s
 	target.replace( start_pos, that.length(), with );
 }
 
-std::string String::RemoveNumbersAtEnd( std::string txt ) {
+std::string String::removeNumbersAtEnd( std::string txt ) {
 	while ( txt.size() && txt[ txt.size() - 1 ] >= '0' && txt[ txt.size() - 1 ] <= '9' ) {
 		txt.resize( txt.size() - 1 );
 	}
@@ -182,11 +182,11 @@ std::string String::RemoveNumbersAtEnd( std::string txt ) {
 	return txt;
 }
 
-void String::InsertChar( String& str, const unsigned int& pos, const Uint32& tchar ) {
+void String::insertChar( String& str, const unsigned int& pos, const Uint32& tchar ) {
 	str.insert( str.begin() + pos, tchar );
 }
 
-void String::StrFormat( char * Buffer, int BufferSize, const char * format, ... ) {
+void String::strFormat( char * Buffer, int BufferSize, const char * format, ... ) {
 	va_list	args;
 	va_start( args, format );
 #ifdef EE_COMPILER_MSVC
@@ -197,7 +197,7 @@ void String::StrFormat( char * Buffer, int BufferSize, const char * format, ... 
 	va_end( args );
 }
 
-std::string String::StrFormated( const char * format, ... ) {
+std::string String::strFormated( const char * format, ... ) {
 	int n, size = 256;
 	std::string tstr( size, '\0' );
 
@@ -231,13 +231,13 @@ String::String()
 
 String::String(char ansiChar, const std::locale& locale)
 {
-	mString += Utf32::DecodeAnsi(ansiChar, locale);
+	mString += Utf32::decodeAnsi(ansiChar, locale);
 }
 
 #ifndef EE_NO_WIDECHAR
 String::String(wchar_t wideChar)
 {
-	mString += Utf32::DecodeWide(wideChar);
+	mString += Utf32::decodeWide(wideChar);
 }
 #endif
 
@@ -255,7 +255,7 @@ String::String( const char* uf8String ) {
 		{
 			mString.reserve(length + 1);
 
-			Utf8::ToUtf32(uf8String, uf8String + length, std::back_inserter(mString));
+			Utf8::toUtf32(uf8String, uf8String + length, std::back_inserter(mString));
 		}
 	}
 }
@@ -263,7 +263,7 @@ String::String( const char* uf8String ) {
 String::String( const std::string& utf8String ) {
 	mString.reserve( utf8String.length() + 1 );
 
-	Utf8::ToUtf32( utf8String.begin(), utf8String.end(), std::back_inserter( mString ) );
+	Utf8::toUtf32( utf8String.begin(), utf8String.end(), std::back_inserter( mString ) );
 }
 
 String::String(const char* ansiString, const std::locale& locale)
@@ -274,7 +274,7 @@ String::String(const char* ansiString, const std::locale& locale)
 		if (length > 0)
 		{
 			mString.reserve(length + 1);
-			Utf32::FromAnsi(ansiString, ansiString + length, std::back_inserter(mString), locale);
+			Utf32::fromAnsi(ansiString, ansiString + length, std::back_inserter(mString), locale);
 		}
 	}
 }
@@ -282,7 +282,7 @@ String::String(const char* ansiString, const std::locale& locale)
 String::String(const std::string& ansiString, const std::locale& locale)
 {
 	mString.reserve(ansiString.length() + 1);
-	Utf32::FromAnsi(ansiString.begin(), ansiString.end(), std::back_inserter(mString), locale);
+	Utf32::fromAnsi(ansiString.begin(), ansiString.end(), std::back_inserter(mString), locale);
 }
 
 #ifndef EE_NO_WIDECHAR
@@ -294,7 +294,7 @@ String::String(const wchar_t* wideString)
 		if (length > 0)
 		{
 			mString.reserve(length + 1);
-			Utf32::FromWide(wideString, wideString + length, std::back_inserter(mString));
+			Utf32::fromWide(wideString, wideString + length, std::back_inserter(mString));
 		}
 	}
 }
@@ -302,7 +302,7 @@ String::String(const wchar_t* wideString)
 String::String(const std::wstring& wideString)
 {
 	mString.reserve(wideString.length() + 1);
-	Utf32::FromWide(wideString.begin(), wideString.end(), std::back_inserter(mString));
+	Utf32::fromWide(wideString.begin(), wideString.end(), std::back_inserter(mString));
 }
 #endif
 
@@ -322,73 +322,73 @@ mString(str.mString)
 {
 }
 
-String String::FromUtf8( const std::string& utf8String )
+String String::fromUtf8( const std::string& utf8String )
 {
 	String::StringType utf32;
 
 	utf32.reserve( utf8String.length() + 1 );
 
-	Utf8::ToUtf32( utf8String.begin(), utf8String.end(), std::back_inserter( utf32 ) );
+	Utf8::toUtf32( utf8String.begin(), utf8String.end(), std::back_inserter( utf32 ) );
 
 	return String( utf32 );
 }
 
 String::operator std::string() const
 {
-	return ToAnsiString();
+	return toAnsiString();
 }
 
-std::string String::ToAnsiString(const std::locale& locale) const
+std::string String::toAnsiString(const std::locale& locale) const
 {
 	// Prepare the output string
 	std::string output;
 	output.reserve(mString.length() + 1);
 
 	// Convert
-	Utf32::ToAnsi(mString.begin(), mString.end(), std::back_inserter(output), 0, locale);
+	Utf32::toAnsi(mString.begin(), mString.end(), std::back_inserter(output), 0, locale);
 
 	return output;
 }
 
 #ifndef EE_NO_WIDECHAR
-std::wstring String::ToWideString() const
+std::wstring String::toWideString() const
 {
 	// Prepare the output string
 	std::wstring output;
 	output.reserve(mString.length() + 1);
 
 	// Convert
-	Utf32::ToWide(mString.begin(), mString.end(), std::back_inserter(output), 0);
+	Utf32::toWide(mString.begin(), mString.end(), std::back_inserter(output), 0);
 
 	return output;
 }
 #endif
 
-std::string String::ToUtf8() const {
+std::string String::toUtf8() const {
 	// Prepare the output string
 	std::string output;
 	output.reserve(mString.length() + 1);
 
 	// Convert
-	Utf32::ToUtf8(mString.begin(), mString.end(), std::back_inserter(output) );
+	Utf32::toUtf8(mString.begin(), mString.end(), std::back_inserter(output) );
 
 	return output;
 }
 
-std::basic_string<Uint16> String::ToUtf16() const {
+std::basic_string<Uint16> String::toUtf16() const {
 	// Prepare the output string
 	std::basic_string<Uint16> output;
 	output.reserve(mString.length());
 
 	// Convert
-	Utf32::ToUtf16(mString.begin(), mString.end(), std::back_inserter(output));
+	Utf32::toUtf16(mString.begin(), mString.end(), std::back_inserter(output));
 
 	return output;
 }
 
-Uint32 String::GetHash() const
+Uint32 String::getHash() const
 {
-	return String::Hash( *this );
+	return String::hash( *this );
 }
 
 String& String::operator =(const String& right)

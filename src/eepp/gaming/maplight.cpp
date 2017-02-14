@@ -44,21 +44,21 @@ RGB MapLight::ProcessVertex( const Float& PointX, const Float& PointY, const RGB
 			Uint8	TmpColor;
 			Float	LightC;
 
-			LightC			= eeabs( static_cast<Float> ( mColor.R() - BaseColor.R() ) ) / mRadius;
-			TmpColor		= Uint8( (Float)mColor.R() - (VertexDist * LightC) );
-			TmpRGB.Red		= VertexColor.R() + ( TmpColor - VertexColor.R() );
+			LightC			= eeabs( static_cast<Float> ( mColor.r() - BaseColor.r() ) ) / mRadius;
+			TmpColor		= Uint8( (Float)mColor.r() - (VertexDist * LightC) );
+			TmpRGB.Red		= VertexColor.r() + ( TmpColor - VertexColor.r() );
 
-			LightC			= eeabs( static_cast<Float> ( mColor.G() - BaseColor.G() ) ) / mRadius;
-			TmpColor		= Uint8( (Float)mColor.G() - (VertexDist * LightC) );
-			TmpRGB.Green	= VertexColor.G() + ( TmpColor - VertexColor.G() );
+			LightC			= eeabs( static_cast<Float> ( mColor.g() - BaseColor.g() ) ) / mRadius;
+			TmpColor		= Uint8( (Float)mColor.g() - (VertexDist * LightC) );
+			TmpRGB.Green	= VertexColor.g() + ( TmpColor - VertexColor.g() );
 
-			LightC			= eeabs( static_cast<Float> ( mColor.B() - BaseColor.B() ) ) / mRadius;
-			TmpColor		= Uint8( (Float)mColor.B() - (VertexDist * LightC) );
-			TmpRGB.Blue		= VertexColor.B() + ( TmpColor - VertexColor.B() );
+			LightC			= eeabs( static_cast<Float> ( mColor.b() - BaseColor.b() ) ) / mRadius;
+			TmpColor		= Uint8( (Float)mColor.b() - (VertexDist * LightC) );
+			TmpRGB.Blue		= VertexColor.b() + ( TmpColor - VertexColor.b() );
 
-			if ( TmpRGB.R() < VertexColor.R() ) TmpRGB.Red		= VertexColor.R();
-			if ( TmpRGB.G() < VertexColor.G() ) TmpRGB.Green	= VertexColor.G();
-			if ( TmpRGB.B() < VertexColor.B() ) TmpRGB.Blue		= VertexColor.B();
+			if ( TmpRGB.r() < VertexColor.r() ) TmpRGB.Red		= VertexColor.r();
+			if ( TmpRGB.g() < VertexColor.g() ) TmpRGB.Green	= VertexColor.g();
+			if ( TmpRGB.b() < VertexColor.b() ) TmpRGB.Blue		= VertexColor.b();
 			
 			return TmpRGB;
 		}
@@ -84,21 +84,21 @@ ColorA MapLight::ProcessVertex( const Float& PointX, const Float& PointY, const 
 			Uint8		TmpColor;
 			Float		LightC;
 
-			LightC			= eeabs( static_cast<Float> ( mColor.R() - BaseColor.R() ) ) / mRadius;
-			TmpColor		= Uint8( (Float)mColor.R() - (VertexDist * LightC) );
-			TmpRGB.Red		= VertexColor.R() + ( TmpColor - VertexColor.R() );
+			LightC			= eeabs( static_cast<Float> ( mColor.r() - BaseColor.r() ) ) / mRadius;
+			TmpColor		= Uint8( (Float)mColor.r() - (VertexDist * LightC) );
+			TmpRGB.Red		= VertexColor.r() + ( TmpColor - VertexColor.r() );
 
-			LightC			= eeabs( static_cast<Float> ( mColor.G() - BaseColor.G() ) ) / mRadius;
-			TmpColor		= Uint8( (Float)mColor.G() - (VertexDist * LightC) );
-			TmpRGB.Green	= VertexColor.G() + ( TmpColor - VertexColor.G() );
+			LightC			= eeabs( static_cast<Float> ( mColor.g() - BaseColor.g() ) ) / mRadius;
+			TmpColor		= Uint8( (Float)mColor.g() - (VertexDist * LightC) );
+			TmpRGB.Green	= VertexColor.g() + ( TmpColor - VertexColor.g() );
 
-			LightC			= eeabs( static_cast<Float> ( mColor.B() - BaseColor.B() ) ) / mRadius;
-			TmpColor		= Uint8( (Float)mColor.B() - (VertexDist * LightC) );
-			TmpRGB.Blue		= VertexColor.B() + ( TmpColor - VertexColor.B() );
+			LightC			= eeabs( static_cast<Float> ( mColor.b() - BaseColor.b() ) ) / mRadius;
+			TmpColor		= Uint8( (Float)mColor.b() - (VertexDist * LightC) );
+			TmpRGB.Blue		= VertexColor.b() + ( TmpColor - VertexColor.b() );
 
-			if ( TmpRGB.R() < VertexColor.R() ) TmpRGB.Red		= VertexColor.R();
-			if ( TmpRGB.G() < VertexColor.G() ) TmpRGB.Green	= VertexColor.G();
-			if ( TmpRGB.B() < VertexColor.B() ) TmpRGB.Blue		= VertexColor.B();
+			if ( TmpRGB.r() < VertexColor.r() ) TmpRGB.Red		= VertexColor.r();
+			if ( TmpRGB.g() < VertexColor.g() ) TmpRGB.Green	= VertexColor.g();
+			if ( TmpRGB.b() < VertexColor.b() ) TmpRGB.Blue		= VertexColor.b();
 
 			return TmpRGB;
 		}

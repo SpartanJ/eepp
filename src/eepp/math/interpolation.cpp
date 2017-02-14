@@ -161,7 +161,7 @@ void Interpolation::Update( const Time& Elapsed ) {
 			mUpdate = false;
 		}
 
-		mCurTime += Elapsed.AsMilliseconds();
+		mCurTime += Elapsed.asMilliseconds();
 
 		mCurPos = easingCb[ mType ]( mCurTime, mActP->p, ( mNexP->p - mActP->p ), mActP->t );
 
@@ -188,12 +188,12 @@ void Interpolation::SetTotalTime( const Time & TotTime ) {
 
 	if ( mLoop ) {
 		tdist += eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p );
-		mPoints[ mPoints.size() - 1 ].t = eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p ) * TotTime.AsMilliseconds() / tdist;
+		mPoints[ mPoints.size() - 1 ].t = eeabs( mPoints[ mPoints.size() - 1 ].p - mPoints[0].p ) * TotTime.asMilliseconds() / tdist;
 	}
 
 	for ( unsigned int i = 0; i < mPoints.size() - 1; i++) {
 		Float CurDist = eeabs( mPoints[i].p - mPoints[i + 1].p );
-		mPoints[i].t = CurDist * TotTime.AsMilliseconds() / tdist;
+		mPoints[i].t = CurDist * TotTime.asMilliseconds() / tdist;
 	}
 }
 

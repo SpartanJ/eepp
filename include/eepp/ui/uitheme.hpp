@@ -43,10 +43,10 @@ class UITabWidget;
 
 class EE_API UITheme : protected ResourceManager<UISkin> {
 	public:
-		using ResourceManager<UISkin>::GetById;
-		using ResourceManager<UISkin>::GetByName;
-		using ResourceManager<UISkin>::Exists;
-		using ResourceManager<UISkin>::ExistsId;
+		using ResourceManager<UISkin>::getById;
+		using ResourceManager<UISkin>::getByName;
+		using ResourceManager<UISkin>::exists;
+		using ResourceManager<UISkin>::existsId;
 
 		static UITheme * LoadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtlas * TextureAtlas );
 
@@ -72,7 +72,7 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		const std::string& Abbr() const;
 
-		virtual UISkin * Add( UISkin * Resource );
+		virtual UISkin * add( UISkin * Resource );
 
 		void Font( Graphics::Font * Font );
 
@@ -146,7 +146,7 @@ class EE_API UITheme : protected ResourceManager<UISkin> {
 
 		virtual UIWindow * CreateWindow( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED, Uint32 WinFlags = UI_WIN_DEFAULT_FLAGS, Sizei MinWindowSize = Sizei(0,0), Uint8 BaseAlpha = 255 );
 
-		virtual UICommonDialog * CreateCommonDialog( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED, Uint32 WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, Sizei MinWindowSize = Sizei(0,0), Uint8 BaseAlpha = 255, Uint32 CDLFlags = UI_CDL_DEFAULT_FLAGS, std::string DefaultFilePattern = "*", std::string DefaultDirectory = Sys::GetProcessPath() );
+		virtual UICommonDialog * CreateCommonDialog( UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED, Uint32 WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON, Sizei MinWindowSize = Sizei(0,0), Uint8 BaseAlpha = 255, Uint32 CDLFlags = UI_CDL_DEFAULT_FLAGS, std::string DefaultFilePattern = "*", std::string DefaultDirectory = Sys::getProcessPath() );
 
 		virtual UIMessageBox * CreateMessageBox( UI_MSGBOX_TYPE Type = MSGBOX_OKCANCEL, const String& Message = String(), Uint32 WinFlags = UI_WIN_DEFAULT_FLAGS | UI_WIN_MODAL, UIControl * Parent = NULL, const Sizei& Size = Sizei(), const Vector2i& Pos = Vector2i(), const Uint32& Flags = UI_CONTROL_DEFAULT_FLAGS_CENTERED, Sizei MinWindowSize = Sizei(0,0), Uint8 BaseAlpha = 255 );
 

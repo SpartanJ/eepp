@@ -337,7 +337,7 @@ Uint32 UIMap::OnMouseMove( const Vector2i& Pos, const Uint32 Flags ) {
 
 		if ( mLastMouseTilePos != mp ) {
 			mLastMouseTilePos = mp;
-			mTileBox->Text( String::ToStr( mp.x ) + "," + String::ToStr( mp.y ) );
+			mTileBox->Text( String::toStr( mp.x ) + "," + String::toStr( mp.y ) );
 		}
 	}
 

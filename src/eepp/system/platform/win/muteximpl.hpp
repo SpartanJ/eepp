@@ -21,11 +21,11 @@ class MutexImpl {
 
 		~MutexImpl();
 
-		void Lock();
+		void lock();
 
-		void Unlock();
+		void unlock();
 
-		int TryLock();
+		int tryLock();
 	private:
 		CRITICAL_SECTION mMutex;
 };

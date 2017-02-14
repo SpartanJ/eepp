@@ -1,7 +1,7 @@
 #include <eepp/ee.hpp>
 
 // Get the process path to be used to load the sounds ( it is safer )
-std::string AppPath = Sys::GetProcessPath();
+std::string AppPath = Sys::getProcessPath();
 
 /// Play a sound
 void PlaySound() {
@@ -15,7 +15,7 @@ void PlaySound() {
 
 		// Display sound informations
 		std::cout << "sound.ogg :" << std::endl;
-		std::cout << " " << buffer.GetDuration().AsSeconds()	<< " seconds"		<< std::endl;
+		std::cout << " " << buffer.GetDuration().asSeconds()	<< " seconds"		<< std::endl;
 		std::cout << " " << buffer.GetSampleRate()				<< " samples / sec"	<< std::endl;
 		std::cout << " " << buffer.GetChannelCount()			<< " channels"		<< std::endl;
 
@@ -34,7 +34,7 @@ void PlayMusic() {
 
 	// Display music informations
 	std::cout << "music.ogg :" << std::endl;
-	std::cout << " " << music.GetDuration().AsSeconds()		<< " seconds"		<< std::endl;
+	std::cout << " " << music.GetDuration().asSeconds()		<< " seconds"		<< std::endl;
 	std::cout << " " << music.GetSampleRate()				<< " samples / sec"	<< std::endl;
 	std::cout << " " << music.GetChannelCount()				<< " channels"		<< std::endl;
 
@@ -44,10 +44,10 @@ void PlayMusic() {
 	// Loop while the music is playing
 	while ( music.State() == Sound::Playing ) {
 		// Leave some CPU time for other processes
-		Sys::Sleep( 100 );
+		Sys::sleep( 100 );
 
 		// Display the playing position
-		std::cout << "\rPlaying... " << music.PlayingOffset().AsSeconds() << " sec   ";
+		std::cout << "\rPlaying... " << music.PlayingOffset().asSeconds() << " sec   ";
 		std::cout << std::flush;
 	}
 
@@ -68,7 +68,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	std::cin.ignore(10000, '\n');
 
 	// If was compiled in debug mode it will print the memory manager report
-	MemoryManager::ShowResults();
+	MemoryManager::showResults();
 
 	return EXIT_SUCCESS;
 }

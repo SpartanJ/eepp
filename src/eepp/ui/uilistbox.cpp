@@ -834,17 +834,17 @@ Uint32 UIListBox::OnKeyDown( const UIEventKey &Event ) {
 	if ( !mSelected.size() || mFlags & UI_MULTI_SELECT )
 		return 0;
 
-	if ( Sys::GetTicks() - mLastTickMove > 100 ) {
+	if ( Sys::getTicks() - mLastTickMove > 100 ) {
 		if ( KEY_DOWN == Event.KeyCode() ) {
-			mLastTickMove = Sys::GetTicks();
+			mLastTickMove = Sys::getTicks();
 
 			SelectNext();
 		} else if ( KEY_UP == Event.KeyCode() ) {
-			mLastTickMove = Sys::GetTicks();
+			mLastTickMove = Sys::getTicks();
 
 			SelectPrev();
 		} else if ( KEY_HOME == Event.KeyCode() ) {
-			mLastTickMove = Sys::GetTicks();
+			mLastTickMove = Sys::getTicks();
 
 			if ( mSelected.front() != 0 ) {
 				mVScrollBar->Value( 0 );
@@ -854,7 +854,7 @@ Uint32 UIListBox::OnKeyDown( const UIEventKey &Event ) {
 				SetSelected( 0 );
 			}
 		} else if ( KEY_END == Event.KeyCode() ) {
-			mLastTickMove = Sys::GetTicks();
+			mLastTickMove = Sys::getTicks();
 
 			if ( mSelected.front() != Count() - 1 ) {
 				mVScrollBar->Value( 1 );
@@ -973,13 +973,13 @@ void UIListBox::Update() {
 
 					mVScrollBar->Value( mVScrollBar->Value() + ( -diff.y / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
 
-					mTouchDragAcceleration += Elapsed().AsMilliseconds() * diff.y * mTouchDragDeceleration;
+					mTouchDragAcceleration += Elapsed().asMilliseconds() * diff.y * mTouchDragDeceleration;
 
 					mTouchDragPoint = Pos;
 
 					UIManager::instance()->SetControlDragging( true );
 				} else {
-					mTouchDragAcceleration -= Elapsed().AsMilliseconds() * mTouchDragAcceleration * 0.01f;
+					mTouchDragAcceleration -= Elapsed().asMilliseconds() * mTouchDragAcceleration * 0.01f;
 				}
 			} else {
 				// Mouse Down
@@ -1002,7 +1002,7 @@ void UIListBox::Update() {
 				if ( mTouchDragAcceleration > 0.01f || mTouchDragAcceleration < -0.01f ) {
 					mVScrollBar->Value( mVScrollBar->Value() + ( -mTouchDragAcceleration / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
 
-					mTouchDragAcceleration -= mTouchDragAcceleration * mTouchDragDeceleration * Elapsed().AsMilliseconds();
+					mTouchDragAcceleration -= mTouchDragAcceleration * mTouchDragDeceleration * Elapsed().asMilliseconds();
 				}
 			}
 		}

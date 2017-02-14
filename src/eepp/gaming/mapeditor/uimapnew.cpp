@@ -133,10 +133,10 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	mUIRedSlider->Value( 255 );
 	mUIRedSlider->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIMapNew::OnRedChange ) );
 
-	mUIRedTxt = mTheme->CreateTextBox( String::ToStr( 255 ), mUIWindow->Container(), Sizei(), Vector2i( mUIRedSlider->Pos().x + mUIRedSlider->Size().Width() + 4, mUIRedSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	mUIRedTxt = mTheme->CreateTextBox( String::toStr( 255 ), mUIWindow->Container(), Sizei(), Vector2i( mUIRedSlider->Pos().x + mUIRedSlider->Size().Width() + 4, mUIRedSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	if ( ResizeMap ) {
-		mUIRedSlider->Value( mUIMap->Map()->BaseColor().R() );
+		mUIRedSlider->Value( mUIMap->Map()->BaseColor().r() );
 	}
 
 	Txt = mTheme->CreateTextBox( "Green Color:", mUIWindow->Container(), Sizei(), Vector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIRedSlider->Pos().y + mUIRedSlider->Size().Height() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
@@ -147,10 +147,10 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 
 	mUIGreenSlider->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIMapNew::OnGreenChange ) );
 
-	mUIGreenTxt = mTheme->CreateTextBox( String::ToStr( 255 ), mUIWindow->Container(), Sizei(), Vector2i( mUIGreenSlider->Pos().x + mUIGreenSlider->Size().Width() + 4, mUIGreenSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	mUIGreenTxt = mTheme->CreateTextBox( String::toStr( 255 ), mUIWindow->Container(), Sizei(), Vector2i( mUIGreenSlider->Pos().x + mUIGreenSlider->Size().Width() + 4, mUIGreenSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	if ( ResizeMap ) {
-		mUIGreenSlider->Value( mUIMap->Map()->BaseColor().G() );
+		mUIGreenSlider->Value( mUIMap->Map()->BaseColor().g() );
 	}
 
 	Txt = mTheme->CreateTextBox( "Blue Color:", mUIWindow->Container(), Sizei(), Vector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIGreenSlider->Pos().y + mUIGreenSlider->Size().Height() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
@@ -160,10 +160,10 @@ UIMapNew::UIMapNew( UIMap * Map, cb::Callback0<void> NewMapCb, bool ResizeMap ) 
 	mUIBlueSlider->Value( 255 );
 	mUIBlueSlider->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &UIMapNew::OnBlueChange ) );
 
-	mUIBlueTxt = mTheme->CreateTextBox( String::ToStr( 255 ), mUIWindow->Container(), Sizei(), Vector2i( mUIBlueSlider->Pos().x + mUIBlueSlider->Size().Width() + 4, mUIBlueSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	mUIBlueTxt = mTheme->CreateTextBox( String::toStr( 255 ), mUIWindow->Container(), Sizei(), Vector2i( mUIBlueSlider->Pos().x + mUIBlueSlider->Size().Width() + 4, mUIBlueSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	if ( ResizeMap ) {
-		mUIBlueSlider->Value( mUIMap->Map()->BaseColor().B() );
+		mUIBlueSlider->Value( mUIMap->Map()->BaseColor().b() );
 	}
 
 	UIPushButton * OKButton = mTheme->CreatePushButton( mUIWindow->Container(), Sizei( 80, 22 ), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED | UI_AUTO_SIZE, mTheme->GetIconByName( "ok" ) );
@@ -186,21 +186,21 @@ void UIMapNew::OnRedChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->Background()->Color();
 	Col.Red = (Uint8)mUIRedSlider->Value();
 	mUIBaseColor->Background()->Color( Col );
-	mUIRedTxt->Text( String::ToStr( (Int32)mUIRedSlider->Value() ) );
+	mUIRedTxt->Text( String::toStr( (Int32)mUIRedSlider->Value() ) );
 }
 
 void UIMapNew::OnGreenChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->Background()->Color();
 	Col.Green = (Uint8)mUIGreenSlider->Value();
 	mUIBaseColor->Background()->Color( Col );
-	mUIGreenTxt->Text( String::ToStr( (Uint32)mUIGreenSlider->Value() ) );
+	mUIGreenTxt->Text( String::toStr( (Uint32)mUIGreenSlider->Value() ) );
 }
 
 void UIMapNew::OnBlueChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->Background()->Color();
 	Col.Blue = (Uint8)mUIBlueSlider->Value();
 	mUIBaseColor->Background()->Color( Col );
-	mUIBlueTxt->Text( String::ToStr( (Uint32)mUIBlueSlider->Value() ) );
+	mUIBlueTxt->Text( String::toStr( (Uint32)mUIBlueSlider->Value() ) );
 }
 
 void UIMapNew::OKClick( const UIEvent * Event ) {
@@ -230,7 +230,7 @@ void UIMapNew::OKClick( const UIEvent * Event ) {
 			mUIMap->Map()->BaseColor( mUIBaseColor->Background()->Color() );
 		} else {
 			std::string oldPath( mUIMap->Map()->Path() );
-			std::string mapPath( Sys::GetTempPath() + "temp.eepp.map.eem" );
+			std::string mapPath( Sys::getTempPath() + "temp.eepp.map.eem" );
 			mUIMap->Map()->Save( mapPath );
 
 			TileMap * Map = eeNew( TileMap, () );
@@ -243,7 +243,7 @@ void UIMapNew::OKClick( const UIEvent * Event ) {
 
 			mUIMap->ReplaceMap( Map );
 
-			FileSystem::FileRemove( mapPath );
+			FileSystem::fileRemove( mapPath );
 		}
 
 		if ( mNewMapCb.IsSet() )

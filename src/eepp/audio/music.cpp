@@ -17,18 +17,18 @@ Music::~Music() {
 }
 
 bool Music::OpenFromPack( Pack* Pack, const std::string& FilePackPath ) {
-	if ( Pack->IsOpen() && Pack->ExtractFileToMemory( FilePackPath, mData ) )
+	if ( Pack->isOpen() && Pack->extractFileToMemory( FilePackPath, mData ) )
 		return OpenFromMemory( reinterpret_cast<const char*> ( mData.Data ), mData.DataSize );
 
 	return false;
 }
 
 bool Music::OpenFromFile( const std::string& Filename ) {
-	if ( !FileSystem::FileExists( Filename ) ) {
-		if ( PackManager::instance()->FallbackToPacks() ) {
+	if ( !FileSystem::fileExists( Filename ) ) {
+		if ( PackManager::instance()->fallbackToPacks() ) {
 			std::string tPath( Filename );
 
-			Pack * tPack = PackManager::instance()->Exists( tPath );
+			Pack * tPack = PackManager::instance()->exists( tPath );
 
 			if ( NULL != tPack ) {
 				return OpenFromPack( tPack, tPath );

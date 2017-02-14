@@ -67,7 +67,7 @@ void UITabWidget::SetTheme( UITheme * Theme ) {
 	mCtrlContainer->SetThemeControl( Theme, "tabcontainer" );
 
 	if ( 0 == mTabWidgetHeight ) {
-		UISkin * tSkin		= Theme->GetByName( Theme->Abbr() + "_" + "tab" );
+		UISkin * tSkin		= Theme->getByName( Theme->Abbr() + "_" + "tab" );
 
 		Sizei tSize1		= GetSkinSize( tSkin );
 		Sizei tSize2		= GetSkinSize( tSkin, UISkinState::StateSelected );

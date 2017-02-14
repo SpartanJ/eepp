@@ -21,7 +21,7 @@ Http::Request::Request(const std::string& uri, Method method, const std::string&
 }
 
 void Http::Request::SetField(const std::string& field, const std::string& value) {
-	mFields[String::ToLower(field)] = value;
+	mFields[String::toLower(field)] = value;
 }
 
 void Http::Request::SetMethod(Http::Request::Method method) {
@@ -98,7 +98,7 @@ std::string Http::Request::Prepare() const {
 }
 
 bool Http::Request::HasField(const std::string& field) const {
-	return mFields.find(String::ToLower(field)) != mFields.end();
+	return mFields.find(String::toLower(field)) != mFields.end();
 }
 
 Http::Response::Response() :
@@ -109,7 +109,7 @@ Http::Response::Response() :
 }
 
 const std::string& Http::Response::GetField(const std::string& field) const {
-	FieldTable::const_iterator it = mFields.find(String::ToLower(field));
+	FieldTable::const_iterator it = mFields.find(String::toLower(field));
 	if (it != mFields.end()) {
 		return it->second;
 	} else {
@@ -143,7 +143,7 @@ void Http::Response::Parse(const std::string& data) {
 	if (in >> version) {
 		std::locale loc;
 		if ((version.size() >= 8) && (version[6] == '.') &&
-			(String::ToLower(version.substr(0, 5)) == "http/")   &&
+			(String::toLower(version.substr(0, 5)) == "http/")   &&
 			 std::isdigit(version[5],loc) && std::isdigit(version[7],loc)) {
 			mMajorVersion = version[5] - '0';
 			mMinorVersion = version[7] - '0';
@@ -175,7 +175,7 @@ void Http::Response::Parse(const std::string& data) {
 	mBody.clear();
 
 	// Determine whether the transfer is chunked
-	if (String::ToLower(GetField("transfer-encoding")) != "chunked") {
+	if (String::toLower(GetField("transfer-encoding")) != "chunked") {
 		// Not chunked - everything at once
 		std::copy(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>(), std::back_inserter(mBody));
 	} else {
@@ -216,7 +216,7 @@ void Http::Response::ParseFields(std::istream &in) {
 				value.erase(value.size() - 1);
 
 			// Add the field
-			mFields[String::ToLower(field)] = value;
+			mFields[String::toLower(field)] = value;
 		}
 	}
 }
@@ -241,7 +241,7 @@ Http::~Http() {
 
 	// First we wait to finish any request pending
 	for ( itt = mThreads.begin(); itt != mThreads.end(); itt++ ) {
-		(*itt)->Wait();
+		(*itt)->wait();
 	}
 
 	for ( itt = mThreads.begin(); itt != mThreads.end(); itt++ ) {
@@ -256,11 +256,11 @@ Http::~Http() {
 
 void Http::SetHost(const std::string& host, unsigned short port, bool useSSL) {
 	// Check the protocol
-	if (String::ToLower(host.substr(0, 7)) == "http://") {
+	if (String::toLower(host.substr(0, 7)) == "http://") {
 		// HTTP protocol
 		mHostName = host.substr(7);
 		mPort	 = (port != 0 ? port : 80);
-	} else if (String::ToLower(host.substr(0, 8)) == "https://") {
+	} else if (String::toLower(host.substr(0, 8)) == "https://") {
 		// HTTPS protocol
 		#ifdef EE_SSL_SUPPORT
 		mIsSSL		= true;
@@ -368,7 +368,7 @@ Http::AsyncRequest::AsyncRequest(Http *http, AsyncResponseCallback cb, Http::Req
 {
 }
 
-void Http::AsyncRequest::Run() {
+void Http::AsyncRequest::run() {
 	Http::Response response = mHttp->SendRequest( mRequest, mTimeout );
 
 	mCb( *mHttp, mRequest, response );
@@ -391,7 +391,7 @@ void Http::RemoveOldThreads() {
 
 		if ( !ar->mRunning ) {
 			// We need to be sure, since the state is set in the thread, this will not block the thread anyway
-			ar->Wait();
+			ar->wait();
 
 			eeDelete( ar );
 
@@ -407,7 +407,7 @@ void Http::RemoveOldThreads() {
 void Http::SendAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, Time timeout ) {
 	AsyncRequest * thread = eeNew( AsyncRequest, ( this, cb, request, timeout ) );
 
-	thread->Launch();
+	thread->launch();
 
 	// Clean old threads
 	Lock l( mThreadsMutex );

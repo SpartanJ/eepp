@@ -14,15 +14,15 @@ PackManager::PackManager() :
 PackManager::~PackManager() {
 }
 
-Pack * PackManager::Exists( std::string& path ) {
+Pack * PackManager::exists( std::string& path ) {
 	std::string tpath( path );
 
-	FileSystem::FilePathRemoveProcessPath( tpath );
+	FileSystem::filePathRemoveProcessPath( tpath );
 
 	std::list<Pack*>::iterator it;
 
 	for ( it = mResources.begin(); it != mResources.end(); it++ ) {
-		if ( -1 != (*it)->Exists( tpath ) ) {
+		if ( -1 != (*it)->exists( tpath ) ) {
 			if ( path.size() != tpath.size() ) {
 				path = tpath;
 			}
@@ -34,11 +34,11 @@ Pack * PackManager::Exists( std::string& path ) {
 	return NULL;
 }
 
-Pack * PackManager::GetPackByPath( std::string path ) {
+Pack * PackManager::getPackByPath( std::string path ) {
 	std::list<Pack*>::iterator it;
 
 	for ( it = mResources.begin(); it != mResources.end(); it++ ) {
-		if ( path == (*it)->GetPackPath() ) {
+		if ( path == (*it)->getPackPath() ) {
 			return (*it);
 		}
 	}
@@ -46,11 +46,11 @@ Pack * PackManager::GetPackByPath( std::string path ) {
 	return NULL;
 }
 
-const bool& PackManager::FallbackToPacks() const {
+const bool& PackManager::fallbackToPacks() const {
 	return mFallback;
 }
 
-void PackManager::FallbackToPacks( const bool& fallback ) {
+void PackManager::fallbackToPacks( const bool& fallback ) {
 	mFallback = fallback;
 }
 

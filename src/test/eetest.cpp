@@ -11,8 +11,8 @@ namespace Demo_Test {
 void EETest::Init() {
 	EE = Engine::instance();
 
-	Log::instance()->LiveWrite( true );
-	Log::instance()->ConsoleOutput( true );
+	Log::instance()->liveWrite( true );
+	Log::instance()->consoleOutput( true );
 
 	DrawBack 			= false;
 	MultiViewportMode 	= false;
@@ -37,20 +37,20 @@ void EETest::Init() {
 	mShowMenu			= NULL;
 	mTerrainUp			= true;
 
-	MyPath 				= Sys::GetProcessPath() + "assets/";
+	MyPath 				= Sys::getProcessPath() + "assets/";
 
 	IniFile Ini( MyPath + "ee.ini" );
 
-	PartsNum			= Ini.GetValueI( "EEPP", "ParticlesNum", 1000 );
-	mUseShaders			= Ini.GetValueB( "EEPP", "UseShaders", false );
-	mJoyEnabled			= Ini.GetValueB( "EEPP", "JoystickEnabled", false );
+	PartsNum			= Ini.getValueI( "EEPP", "ParticlesNum", 1000 );
+	mUseShaders			= Ini.getValueB( "EEPP", "UseShaders", false );
+	mJoyEnabled			= Ini.getValueB( "EEPP", "JoystickEnabled", false );
 
 #if defined( EE_PLATFORM_TOUCH )
 	mJoyEnabled = false;
 #endif
 
-	mMusEnabled			= Ini.GetValueB( "EEPP", "Music", false );
-	Int32 StartScreen	= Ini.GetValueI( "EEPP", "StartScreen", 0 );
+	mMusEnabled			= Ini.getValueB( "EEPP", "Music", false );
+	Int32 StartScreen	= Ini.getValueI( "EEPP", "StartScreen", 0 );
 
 	WindowSettings WinSettings	= EE->CreateWindowSettings( &Ini );
 	ContextSettings ConSettings	= EE->CreateContextSettings( &Ini );
@@ -82,7 +82,7 @@ void EETest::Init() {
 		//InBuf.Start();
 		InBuf.SupportNewLine( true );
 
-		SetRandomSeed( static_cast<Uint32>( Sys::GetSystemTime() * 1000 ) );
+		SetRandomSeed( static_cast<Uint32>( Sys::getSystemTime() * 1000 ) );
 
 		LoadTextures();
 
@@ -135,11 +135,11 @@ void EETest::Init() {
 		PhysicsCreate();
 
 #if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
-		Launch();
+		launch();
 #endif
 
 	} else {
-		Engine::DestroySingleton();
+		Engine::destroySingleton();
 
 		exit(0);
 	}
@@ -153,7 +153,7 @@ void EETest::CreateUIThemeTextureAtlas() {
 	std::string tgpath( MyPath + "ui/uitheme" );
 	std::string Path( MyPath + "ui/uitheme" );
 
-	if ( !FileSystem::FileExists( tgpath + EE_TEXTURE_ATLAS_EXTENSION ) ) {
+	if ( !FileSystem::fileExists( tgpath + EE_TEXTURE_ATLAS_EXTENSION ) ) {
 		TexturePacker tp( 256, 256, true, 2 );
 		tp.AddTexturesPath( Path );
 		tp.PackTextures();
@@ -165,26 +165,26 @@ void EETest::CreateUIThemeTextureAtlas() {
 }
 
 void EETest::LoadFonts() {
-	mFTE.Restart();
+	mFTE.restart();
 
 	TextureLoader * tl = eeNew( TextureLoader, ( MyPath + "fonts/conchars.png" ) );
 	tl->SetColorKey( RGB(0,0,0) );
 
-	mFontLoader.Add( eeNew( TextureFontLoader, ( "conchars", tl, (unsigned int)32 ) ) );
-	mFontLoader.Add( eeNew( TextureFontLoader, ( "ProggySquareSZ", eeNew( TextureLoader, ( MyPath + "fonts/ProggySquareSZ.png" ) ), MyPath + "fonts/ProggySquareSZ.dat" ) ) );
-	mFontLoader.Add( eeNew( TTFFontLoader, ( "arial", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255) ) ) );
-	mFontLoader.Add( eeNew( TTFFontLoader, ( "arialb", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255), 1, RGB(0,0,0), true ) ) );
+	mFontLoader.add( eeNew( TextureFontLoader, ( "conchars", tl, (unsigned int)32 ) ) );
+	mFontLoader.add( eeNew( TextureFontLoader, ( "ProggySquareSZ", eeNew( TextureLoader, ( MyPath + "fonts/ProggySquareSZ.png" ) ), MyPath + "fonts/ProggySquareSZ.dat" ) ) );
+	mFontLoader.add( eeNew( TTFFontLoader, ( "arial", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255) ) ) );
+	mFontLoader.add( eeNew( TTFFontLoader, ( "arialb", MyPath + "fonts/arial.ttf", 12, TTF_STYLE_NORMAL, 256, RGB(255,255,255), 1, RGB(0,0,0), true ) ) );
 
-	mFontLoader.Load( cb::Make1( this, &EETest::OnFontLoaded ) );
+	mFontLoader.load( cb::Make1( this, &EETest::OnFontLoaded ) );
 }
 
 void EETest::OnFontLoaded( ResourceLoader * ObjLoaded ) {
-	FF		= FontManager::instance()->GetByName( "conchars" );
-	FF2		= FontManager::instance()->GetByName( "ProggySquareSZ" );
-	TTF		= FontManager::instance()->GetByName( "arial" );
-	TTFB	= FontManager::instance()->GetByName( "arialb" );
+	FF		= FontManager::instance()->getByName( "conchars" );
+	FF2		= FontManager::instance()->getByName( "ProggySquareSZ" );
+	TTF		= FontManager::instance()->getByName( "arial" );
+	TTFB	= FontManager::instance()->getByName( "arialb" );
 
-	eePRINTL( "Fonts loading time: %4.3f ms.", mFTE.Elapsed().AsMilliseconds() );
+	eePRINTL( "Fonts loading time: %4.3f ms.", mFTE.elapsed().asMilliseconds() );
 
 	eeASSERT( TTF != NULL );
 	eeASSERT( TTFB != NULL );
@@ -192,7 +192,7 @@ void EETest::OnFontLoaded( ResourceLoader * ObjLoaded ) {
 	Con.Create( FF, true );
 	Con.IgnoreCharOnPrompt( 186 ); // 'º'
 
-	mBuda = String::FromUtf8( "El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde." );
+	mBuda = String::fromUtf8( "El mono ve el pez en el agua y sufre. Piensa que su mundo es el único que existe, el mejor, el real. Sufre porque es bueno y tiene compasión, lo ve y piensa: \"Pobre se está ahogando no puede respirar\". Y lo saca, lo saca y se queda tranquilo, por fin lo salvé. Pero el pez se retuerce de dolor y muere. Por eso te mostré el sueño, es imposible meter el mar en tu cabeza, que es un balde." );
 
 	CreateUI();
 
@@ -252,7 +252,7 @@ void EETest::CreateUI() {
 
 	CreateUIThemeTextureAtlas();
 
-	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.Elapsed().AsMilliseconds() );
+	eePRINTL( "Texture Atlas Loading Time: %4.3f ms.", TE.elapsed().asMilliseconds() );
 
 	UIManager::instance()->Init(); //UI_MANAGER_HIGHLIGHT_FOCUS | UI_MANAGER_HIGHLIGHT_OVER
 
@@ -260,9 +260,9 @@ void EETest::CreateUI() {
 
 	TextureAtlasLoader tgl( MyPath + "ui/uitheme" + EE_TEXTURE_ATLAS_EXTENSION );
 
-	mTheme = UITheme::LoadFromTextureAtlas( eeNew( UIDefaultTheme, ( "uitheme", "uitheme" ) ), TextureAtlasManager::instance()->GetByName( "uitheme" ) );
+	mTheme = UITheme::LoadFromTextureAtlas( eeNew( UIDefaultTheme, ( "uitheme", "uitheme" ) ), TextureAtlasManager::instance()->getByName( "uitheme" ) );
 
-	UIThemeManager::instance()->Add( mTheme );
+	UIThemeManager::instance()->add( mTheme );
 	UIThemeManager::instance()->DefaultEffectsEnabled( true );
 	UIThemeManager::instance()->DefaultFont( TTF );
 	UIThemeManager::instance()->DefaultTheme( "uitheme" );
@@ -421,7 +421,7 @@ void EETest::CreateUI() {
 		std::vector<String> str(wsize);
 
 		for ( Int32 i = 1; i <= wsize; i++ )
-			str[i-1] = "Test ListBox " + String::ToStr(i) + " testing it right now!";
+			str[i-1] = "Test ListBox " + String::toStr(i) + " testing it right now!";
 
 		mListBox->AddListBoxItems( str );
 	}
@@ -542,7 +542,7 @@ void EETest::CreateUI() {
 		UITextInput * TxtInput		= eeNew( UITextInput, ( TxtInputParams ) );
 		UIGfx * TxtGfx				= eeNew( UIGfx, ( TxtGfxParams )  );
 
-		TxtBox->Text( "Test " + String::ToStr( i+1 ) );
+		TxtBox->Text( "Test " + String::toStr( i+1 ) );
 
 		Cell->Cell( 0, TxtBox );
 		Cell->Cell( 1, TxtGfx );
@@ -573,7 +573,7 @@ void EETest::CreateUI() {
 
 	C = reinterpret_cast<UIControlAnim*> ( C->Parent() );
 
-	eePRINTL( "CreateUI time: %4.3f ms.", TE.Elapsed().AsMilliseconds() );
+	eePRINTL( "CreateUI time: %4.3f ms.", TE.elapsed().asMilliseconds() );
 }
 
 void EETest::CreateMapEditor() {
@@ -724,7 +724,7 @@ void EETest::ItemClick( const UIEvent * Event ) {
 }
 
 void EETest::OnValueChange( const UIEvent * Event ) {
-	mTextBoxValue->Text( "Scroll Value:\n" + String::ToStr( mScrollBar->Value() ) );
+	mTextBoxValue->Text( "Scroll Value:\n" + String::toStr( mScrollBar->Value() ) );
 
 	mProgressBar->Progress( mScrollBar->Value() * 100.f );
 }
@@ -774,7 +774,7 @@ void EETest::ButtonClick( const UIEvent * Event ) {
 		Gfx->StartMovement( Vector2i( Math::Randi( 0, mWindow->GetWidth() ), -64 ), Vector2i( Math::Randi( 0, mWindow->GetWidth() ), mWindow->GetHeight() + 64 ), Milliseconds( 2500 ) );
 		Gfx->CloseFadeOut( Milliseconds( 3500 ) );
 
-		mListBox->AddListBoxItem( "Test ListBox " + String::ToStr( mListBox->Count() + 1 ) + " testing it right now!" );
+		mListBox->AddListBoxItem( "Test ListBox " + String::toStr( mListBox->Count() + 1 ) + " testing it right now!" );
 	}
 }
 
@@ -794,11 +794,11 @@ void EETest::CmdSetPartsNum ( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
-		bool Res = String::FromString<Int32>( tInt, params[1] );
+		bool Res = String::fromString<Int32>( tInt, params[1] );
 
 		if ( Res && ( tInt >= 0 && tInt <= 100000 ) ) {
 			PS[2].Create( PSE_WormHole, tInt, TN[5], Vector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 32, true );
-			Con.PushText( "Wormhole Particles Number Changed to: " + String::ToStr(tInt) );
+			Con.PushText( "Wormhole Particles Number Changed to: " + String::toStr(tInt) );
 		} else
 			Con.PushText( "Valid parameters are between 0 and 100000 (0 = no limit)." );
 	}
@@ -821,49 +821,49 @@ void EETest::LoadTextures() {
 	Engine::instance()->EnableSharedGLContext();
 	#endif
 
-	PakTest->Open( MyPath + "test.zip" );
+	PakTest->open( MyPath + "test.zip" );
 
-	std::vector<std::string> files = PakTest->GetFileList();
+	std::vector<std::string> files = PakTest->getFileList();
 
 	for ( i = 0; i < files.size(); i++ ) {
 		std::string name( files[i] );
 
-		if ( "jpg" == FileSystem::FileExtension( name ) ) {
-			mResLoad.Add( eeNew( TextureLoader, ( PakTest, name ) ) );
+		if ( "jpg" == FileSystem::fileExtension( name ) ) {
+			mResLoad.add( eeNew( TextureLoader, ( PakTest, name ) ) );
 		}
 	}
 	#endif
 
-	mResLoad.Add( eeNew( SoundLoader, ( &SndMng, "mysound", MyPath + "sounds/sound.ogg" ) ) );
+	mResLoad.add( eeNew( SoundLoader, ( &SndMng, "mysound", MyPath + "sounds/sound.ogg" ) ) );
 
-	mResLoad.Load( cb::Make1( this, &EETest::OnTextureLoaded ) );
+	mResLoad.load( cb::Make1( this, &EETest::OnTextureLoaded ) );
 
 	TN.resize(12);
 	TNP.resize(12);
 
 	for ( i = 0; i <= 6; i++ ) {
-		TN[i] = TF->Load( MyPath + "sprites/" + String::ToStr(i+1) + ".png", (i+1) == 7 ? true : false, ( (i+1) == 4 ) ? CLAMP_REPEAT : CLAMP_TO_EDGE );
+		TN[i] = TF->Load( MyPath + "sprites/" + String::toStr(i+1) + ".png", (i+1) == 7 ? true : false, ( (i+1) == 4 ) ? CLAMP_REPEAT : CLAMP_TO_EDGE );
 		TNP[i] = TF->GetTexture( TN[i] );
 	}
 
 	Tiles.resize(10);
 
 	TextureAtlasLoader tgl( MyPath + "atlases/tiles.eta" );
-	TextureAtlas * SG = TextureAtlasManager::instance()->GetByName( "tiles" );
+	TextureAtlas * SG = TextureAtlasManager::instance()->getByName( "tiles" );
 
 	if ( NULL != SG ) {
 		for ( i = 0; i < 6; i++ ) {
-			Tiles[i] = SG->GetByName( String::ToStr( i+1 ) );
+			Tiles[i] = SG->getByName( String::toStr( i+1 ) );
 		}
 
-		Tiles[6] = SG->Add( TF->Load( MyPath + "sprites/objects/1.png" ), "7" );
+		Tiles[6] = SG->add( TF->Load( MyPath + "sprites/objects/1.png" ), "7" );
 
 		#ifdef EE_GLES
 		Image tImg( MyPath + "sprites/objects/2.png", 4 );
 		tImg.CreateMaskFromColor( ColorA(0,0,0,255), 0 );
 		Tiles[7] = SG->Add( TF->LoadFromPixels( tImg.GetPixelsPtr(), tImg.Width(), tImg.Height(), tImg.Channels() ), "8" );
 		#else
-		Tiles[7] = SG->Add( TF->Load( MyPath + "sprites/objects/2.png" ), "8" );
+		Tiles[7] = SG->add( TF->Load( MyPath + "sprites/objects/2.png" ), "8" );
 		Tiles[7]->GetTexture()->CreateMaskFromColor( ColorA(0,0,0,255), 0 );
 		#endif
 	}
@@ -893,10 +893,10 @@ void EETest::LoadTextures() {
 			for ( x = 0; x < w; x++) {
 				ColorA C = Tex->GetPixel(x, y);
 
-				if ( C.R() > 200 && C.G() > 200 && C.B() > 200 )
-					Tex->SetPixel(x, y, ColorA( Math::Randi(0, 255), Math::Randi(0, 255), Math::Randi(0, 255), C.A() ) );
+				if ( C.r() > 200 && C.g() > 200 && C.b() > 200 )
+					Tex->SetPixel(x, y, ColorA( Math::Randi(0, 255), Math::Randi(0, 255), Math::Randi(0, 255), C.a() ) );
 				else
-					Tex->SetPixel(x, y, ColorA( Math::Randi(200, 255), Math::Randi(200, 255), Math::Randi(200, 255), C.A() ) );
+					Tex->SetPixel(x, y, ColorA( Math::Randi(200, 255), Math::Randi(200, 255), Math::Randi(200, 255), C.a() ) );
 			}
 		}
 
@@ -925,10 +925,10 @@ void EETest::LoadTextures() {
 	mBlindy.AddFramesByPattern( "rn" );
 	mBlindy.Position( 320.f, 0.f );
 
-	mBoxSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->Add( eeNew( SubTexture, ( TN[3], "ilmare" ) ) ) ) );
-	mCircleSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->Add( eeNew( SubTexture, ( TN[1], "thecircle" ) ) ) ) );
+	mBoxSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->add( eeNew( SubTexture, ( TN[3], "ilmare" ) ) ) ) );
+	mCircleSprite = eeNew( Sprite, ( GlobalTextureAtlas::instance()->add( eeNew( SubTexture, ( TN[1], "thecircle" ) ) ) ) );
 
-	eePRINTL( "Textures loading time: %4.3f ms.", TE.Elapsed().AsMilliseconds() );
+	eePRINTL( "Textures loading time: %4.3f ms.", TE.elapsed().asMilliseconds() );
 
 	Map.Load( MyPath + "maps/test.eem" );
 	Map.DrawGrid( false );
@@ -936,23 +936,23 @@ void EETest::LoadTextures() {
 	Map.DrawBackground( false );
 	Map.ViewSize( mWindow->Size() );
 
-	eePRINTL( "Map creation time: %4.3f ms.", TE.Elapsed().AsMilliseconds() );
+	eePRINTL( "Map creation time: %4.3f ms.", TE.elapsed().asMilliseconds() );
 }
 
-void EETest::Run() {
+void EETest::run() {
 	ParticlesThread();
 }
 
 void EETest::ParticlesThread() {
 	while ( mWindow->Running() ) {
 		UpdateParticles();
-		Sys::Sleep(10);
+		Sys::sleep(10);
 	}
 }
 
 void EETest::UpdateParticles() {
 	if ( MultiViewportMode || Screen == 2 ) {
-		PSElapsed = cElapsed.Elapsed();
+		PSElapsed = cElapsed.elapsed();
 
 		for ( Uint8 i = 0; i < PS.size(); i++ )
 			PS[i].Update( PSElapsed );
@@ -965,7 +965,7 @@ void EETest::Screen1() {
 }
 
 void EETest::Screen2() {
-	if ( mResLoad.IsLoaded() ) {
+	if ( mResLoad.isLoaded() ) {
 		Texture * TexLoaded = TF->GetByName( "1.jpg" );
 
 		if ( NULL != TexLoaded )
@@ -1012,7 +1012,7 @@ void EETest::Screen2() {
 	Float PlanetX = HWidth  - TNP[6]->Width() * 0.5f;
 	Float PlanetY = HHeight - TNP[6]->Height() * 0.5f;
 
-	ang+=et.AsMilliseconds() * 0.1f;
+	ang+=et.asMilliseconds() * 0.1f;
 	ang = (ang>=360) ? 0 : ang;
 
 	if (scale>=1.5f) {
@@ -1022,7 +1022,7 @@ void EETest::Screen2() {
 		side = false;
 		scale = 0.5f;
 	}
-	scale = (!side) ? scale+et.AsMilliseconds() * 0.00025f : scale-et.AsMilliseconds() * 0.00025f;
+	scale = (!side) ? scale+et.asMilliseconds() * 0.00025f : scale-et.asMilliseconds() * 0.00025f;
 
 	if ( mUseShaders ) {
 		mBlurFactor = ( 1.5f * 0.01f ) - ( scale * 0.01f );
@@ -1040,7 +1040,7 @@ void EETest::Screen2() {
 	TNP[3]->Draw( HWidth - 128, HHeight, 0, Vector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICAL);
 	TNP[3]->Draw( HWidth, HHeight, 0, Vector2f::One, ColorA(255,255,255,50), ALPHA_NORMAL, RN_ISOMETRICVERTICALNEGATIVE);
 
-	alpha = (!aside) ? alpha+et.AsMilliseconds() * 0.1f : alpha-et.AsMilliseconds() * 0.1f;
+	alpha = (!aside) ? alpha+et.asMilliseconds() * 0.1f : alpha-et.asMilliseconds() * 0.1f;
 	if (alpha>=255) {
 		aside = true;
 		alpha = 255;
@@ -1084,7 +1084,7 @@ void EETest::Screen2() {
 	PR.DrawQuad( CL1.GetQuad() );
 	#endif
 
-	Ang = Ang + mWindow->Elapsed().AsMilliseconds() * 0.1f;
+	Ang = Ang + mWindow->Elapsed().asMilliseconds() * 0.1f;
 	if (Ang > 360.f) Ang = 1.f;
 
 	if ( ShowParticles )
@@ -1141,7 +1141,7 @@ void EETest::Screen3() {
 		AnimVal = 0.5f;
 		AnimSide = false;
 	}
-	AnimVal = (!AnimSide) ? AnimVal+et.AsMilliseconds() * 0.1f : AnimVal-et.AsMilliseconds() * 0.1f;
+	AnimVal = (!AnimSide) ? AnimVal+et.asMilliseconds() * 0.1f : AnimVal-et.asMilliseconds() * 0.1f;
 
 	Batch.SetTexture( TNP[3] );
 	Batch.LineLoopBegin();
@@ -1187,25 +1187,25 @@ void EETest::Render() {
 	HWidth = mWindow->GetWidth() * 0.5f;
 	HHeight = mWindow->GetHeight() * 0.5f;
 
-	if ( Sys::GetTicks() - lasttick >= 50 ) {
-		lasttick = Sys::GetTicks();
+	if ( Sys::getTicks() - lasttick >= 50 ) {
+		lasttick = Sys::getTicks();
 		#ifdef EE_DEBUG
-		mInfo = String::StrFormated( "EE - FPS: %d Elapsed Time: %4.2f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s\nApp Memory Usage: %s\nApp Peak Memory Usage: %s",
+		mInfo = String::strFormated( "EE - FPS: %d Elapsed Time: %4.2f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s\nApp Memory Usage: %s\nApp Peak Memory Usage: %s",
 							mWindow->FPS(),
-							et.AsMilliseconds(),
+							et.asMilliseconds(),
 							(Int32)Mouse.x,
 							(Int32)Mouse.y,
-							FileSystem::SizeToString( TF->MemorySize() ).c_str(),
-							FileSystem::SizeToString( (Uint32)MemoryManager::GetTotalMemoryUsage() ).c_str(),
-							FileSystem::SizeToString( (Uint32)MemoryManager::GetPeakMemoryUsage() ).c_str()
+							FileSystem::sizeToString( TF->MemorySize() ).c_str(),
+							FileSystem::sizeToString( (Uint32)MemoryManager::getTotalMemoryUsage() ).c_str(),
+							FileSystem::sizeToString( (Uint32)MemoryManager::getPeakMemoryUsage() ).c_str()
 						);
 		#else
-		mInfo = String::StrFormated( "EE - FPS: %d Elapsed Time: %4.2f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s",
+		mInfo = String::strFormated( "EE - FPS: %d Elapsed Time: %4.2f\nMouse X: %d Mouse Y: %d\nTexture Memory Usage: %s",
 							mWindow->FPS(),
 							et.AsMilliseconds(),
 							(Int32)Mouse.x,
 							(Int32)Mouse.y,
-							FileSystem::SizeToString( TF->MemorySize() ).c_str()
+							FileSystem::sizeToString( TF->MemorySize() ).c_str()
 						);
 		#endif
 
@@ -1271,7 +1271,7 @@ void EETest::Render() {
 			FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f + (Float)LineNum * (Float)FF2->GetFontHeight() );
 		}
 
-		FF2->SetText( "FPS: " + String::ToStr( mWindow->FPS() ) );
+		FF2->SetText( "FPS: " + String::toStr( mWindow->FPS() ) );
 		FF2->Draw( mWindow->GetWidth() - FF2->GetTextWidth() - 15, 0 );
 
 		FF2->SetText( InBuf.Buffer() );
@@ -1399,7 +1399,7 @@ void EETest::Input() {
 		Float aY = Joy->GetAxis( AXIS_Y );
 
 		if ( 0 != aX || 0 != aY ) {
-			double rE = mWindow->Elapsed().AsMilliseconds();
+			double rE = mWindow->Elapsed().asMilliseconds();
 			mAxisX += aX * rE;
 			mAxisY += aY * rE;
 		}
@@ -1440,32 +1440,32 @@ void EETest::Input() {
 				Uint8 hat = Joy->GetHat();
 
 				if ( HAT_LEFT == hat || HAT_LEFTDOWN == hat || HAT_LEFTUP == hat )
-					Map.Move( (mWindow->Elapsed().AsMilliseconds() * 0.2f), 0 );
+					Map.Move( (mWindow->Elapsed().asMilliseconds() * 0.2f), 0 );
 
 				if ( HAT_RIGHT == hat || HAT_RIGHTDOWN == hat || HAT_RIGHTUP == hat )
-					Map.Move( -mWindow->Elapsed().AsMilliseconds() * 0.2f, 0 );
+					Map.Move( -mWindow->Elapsed().asMilliseconds() * 0.2f, 0 );
 
 				if ( HAT_UP == hat || HAT_LEFTUP == hat || HAT_RIGHTUP == hat )
-					Map.Move( 0, (mWindow->Elapsed().AsMilliseconds() * 0.2f) );
+					Map.Move( 0, (mWindow->Elapsed().asMilliseconds() * 0.2f) );
 
 				if ( HAT_DOWN == hat || HAT_LEFTDOWN == hat || HAT_RIGHTDOWN == hat )
-					Map.Move( 0, -mWindow->Elapsed().AsMilliseconds() * 0.2f );
+					Map.Move( 0, -mWindow->Elapsed().asMilliseconds() * 0.2f );
 			}
 
 			if ( KM->IsKeyDown(KEY_LEFT) ) {
-				Map.Move( mWindow->Elapsed().AsMilliseconds() * 0.2f, 0 );
+				Map.Move( mWindow->Elapsed().asMilliseconds() * 0.2f, 0 );
 			}
 
 			if ( KM->IsKeyDown(KEY_RIGHT) ) {
-				Map.Move( -mWindow->Elapsed().AsMilliseconds() * 0.2f, 0 );
+				Map.Move( -mWindow->Elapsed().asMilliseconds() * 0.2f, 0 );
 			}
 
 			if ( KM->IsKeyDown(KEY_UP) ) {
-				Map.Move( 0, mWindow->Elapsed().AsMilliseconds() * 0.2f );
+				Map.Move( 0, mWindow->Elapsed().asMilliseconds() * 0.2f );
 			}
 
 			if ( KM->IsKeyDown(KEY_DOWN) ) {
-				Map.Move( 0, -mWindow->Elapsed().AsMilliseconds() * 0.2f );
+				Map.Move( 0, -mWindow->Elapsed().asMilliseconds() * 0.2f );
 			}
 
 			if ( KM->IsKeyUp(KEY_F8) )
@@ -1505,12 +1505,12 @@ void EETest::Update() {
 
 	Input();
 
-	mResLoad.Update();
+	mResLoad.update();
 
-	if ( mFontLoader.IsLoaded() ) {
+	if ( mFontLoader.isLoaded() ) {
 		Render();
 	} else {
-		mFontLoader.Update();
+		mFontLoader.update();
 	}
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
@@ -1778,7 +1778,7 @@ void EETest::ChangeDemo( Uint32 num ) {
 }
 
 void EETest::PhysicsCreate() {
-	PhysicsManager::CreateSingleton();
+	PhysicsManager::createSingleton();
 	PhysicsManager * PM = PhysicsManager::instance();
 	PhysicsManager::DrawSpaceOptions * DSO = PM->GetDrawOptions();
 
@@ -1869,7 +1869,7 @@ void EETest::PhysicsDestroy() {
 }
 
 void EETest::End() {
-	Wait();
+	wait();
 
 	PhysicsDestroy();
 
@@ -1881,9 +1881,9 @@ void EETest::End() {
 	eeSAFE_DELETE( mCircleSprite );
 	eeSAFE_DELETE( PakTest );
 
-	Log::instance()->Save();
+	Log::instance()->save();
 
-	Engine::DestroySingleton();
+	Engine::destroySingleton();
 }
 
 }
@@ -1895,7 +1895,7 @@ EE_MAIN_FUNC int main (int argc, char * argv []) {
 
 	eeDelete( Test );
 
-	MemoryManager::ShowResults();
+	MemoryManager::showResults();
 
 	return EXIT_SUCCESS;
 }

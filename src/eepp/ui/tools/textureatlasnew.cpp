@@ -43,7 +43,7 @@ TextureAtlasNew::TextureAtlasNew( TGCreateCb NewTGCb ) :
 	std::vector<String> Sizes;
 
 	for ( Uint32 i = 6; i < 14; i++ ) {
-		Sizes.push_back( String::ToStr( 1 << i ) );
+		Sizes.push_back( String::toStr( 1 << i ) );
 	}
 
 	mComboWidth->ListBox()->AddListBoxItems( Sizes );
@@ -89,7 +89,7 @@ void TextureAtlasNew::OKClick( const UIEvent * Event ) {
 
 	if ( MouseEvent->Flags() & EE_BUTTON_LMASK ) {
 		std::string ext( mSaveFileType->Text() );
-		String::ToLowerInPlace( ext );
+		String::toLowerInPlace( ext );
 
 		UICommonDialog * TGDialog = mTheme->CreateCommonDialog( NULL, Sizei(), Vector2i(), UI_CONTROL_DEFAULT_FLAGS_CENTERED, UI_WIN_DEFAULT_FLAGS | UI_WIN_MAXIMIZE_BUTTON | UI_WIN_MODAL, Sizei(), 255, UI_CDL_DEFAULT_FLAGS | CDL_FLAG_SAVE_DIALOG, "*." + ext );
 
@@ -120,10 +120,10 @@ void TextureAtlasNew::TextureAtlasSave( const UIEvent * Event ) {
 	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( Event->Ctrl() );
 	std::string FPath( CDL->GetFullPath() );
 
-	if ( !FileSystem::IsDirectory( FPath ) ) {
+	if ( !FileSystem::isDirectory( FPath ) ) {
 		Int32 w = 0, h = 0, b;
-		bool Res1 = String::FromString<Int32>( w, mComboWidth->Text() );
-		bool Res2 = String::FromString<Int32>( h, mComboHeight->Text() );
+		bool Res1 = String::fromString<Int32>( w, mComboWidth->Text() );
+		bool Res2 = String::fromString<Int32>( h, mComboHeight->Text() );
 		b = static_cast<Int32>( mPixelSpace->Value() );
 
 		if ( Res1 && Res2 ) {
@@ -133,14 +133,14 @@ void TextureAtlasNew::TextureAtlasSave( const UIEvent * Event ) {
 
 			TexturePacker->PackTextures();
 
-			std::string ext = FileSystem::FileExtension( FPath, true );
+			std::string ext = FileSystem::fileExtension( FPath, true );
 
 			if ( !IsValidExtension( ext ) ) {
-				FPath = FileSystem::FileRemoveExtension( FPath );
+				FPath = FileSystem::fileRemoveExtension( FPath );
 
 				ext = mSaveFileType->Text();
 
-				String::ToLowerInPlace( ext );
+				String::toLowerInPlace( ext );
 
 				FPath += "." + ext;
 			}
@@ -172,21 +172,21 @@ void TextureAtlasNew::OnSelectFolder( const UIEvent * Event ) {
 	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( Event->Ctrl() );
 	UIMessageBox * MsgBox;
 	std::string FPath( CDL->GetFullPath() );
-	FileSystem::DirPathAddSlashAtEnd( FPath );
+	FileSystem::dirPathAddSlashAtEnd( FPath );
 
-	if ( !FileSystem::IsDirectory( FPath ) ) {
+	if ( !FileSystem::isDirectory( FPath ) ) {
 		FPath = CDL->GetCurPath();
-		FileSystem::DirPathAddSlashAtEnd( FPath );
+		FileSystem::dirPathAddSlashAtEnd( FPath );
 	}
 
-	if ( FileSystem::IsDirectory( FPath ) ) {
-		std::vector<std::string> files = FileSystem::FilesGetInPath( FPath );
+	if ( FileSystem::isDirectory( FPath ) ) {
+		std::vector<std::string> files = FileSystem::filesGetInPath( FPath );
 
 		int x,y,c, count = 0;
 		for ( Uint32 i = 0; i < files.size(); i++ ) {
 			std::string ImgPath( FPath + files[i] );
 
-			if ( !FileSystem::IsDirectory( ImgPath ) ) {
+			if ( !FileSystem::isDirectory( ImgPath ) ) {
 				int res = stbi_info( ImgPath.c_str(), &x, &y, &c );
 
 				if ( res ) {

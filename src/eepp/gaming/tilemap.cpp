@@ -119,7 +119,7 @@ void TileMap::CreateEmptyTile() {
 	//! I create a texture representing an empty tile to render instead of rendering with primitives because is a lot faster, at least with NVIDIA GPUs.
 	TextureFactory * TF = TextureFactory::instance();
 
-	std::string tileName( String::StrFormated( "maptile-%dx%d-%ul", mTileSize.Width(), mTileSize.Height(), mGridLinesColor.GetValue() ) );
+	std::string tileName( String::strFormated( "maptile-%dx%d-%ul", mTileSize.Width(), mTileSize.Height(), mGridLinesColor.getValue() ) );
 
 	Texture * Tex = TF->GetByName( tileName );
 
@@ -207,7 +207,7 @@ Uint32 TileMap::GetLayerIndex( MapLayer * Layer ) {
 }
 
 MapLayer* TileMap::GetLayer( const std::string& name ) {
-	return GetLayerByHash( String::Hash( name ) );
+	return GetLayerByHash( String::hash( name ) );
 }
 
 void TileMap::Draw() {
@@ -220,9 +220,9 @@ void TileMap::Draw() {
 	if ( DrawBackground() ) {
 		Primitives P;
 
-		Uint8 Alpha = static_cast<Uint8>( (Float)mBackColor.A() * ( (Float)mBackAlpha / 255.f ) );
+		Uint8 Alpha = static_cast<Uint8>( (Float)mBackColor.a() * ( (Float)mBackAlpha / 255.f ) );
 
-		P.SetColor( ColorA( mBackColor.R(), mBackColor.G(), mBackColor.B(), Alpha ) );
+		P.SetColor( ColorA( mBackColor.r(), mBackColor.g(), mBackColor.b(), Alpha ) );
 		P.DrawRectangle( Rectf( Vector2f( mScreenPos.x, mScreenPos.y ), Sizef( mViewSize.x, mViewSize.y ) ), 0.f, Vector2f::One );
 		P.SetColor( ColorA( 255, 255, 255, 255 ) );
 	}
@@ -528,7 +528,7 @@ const ColorA& TileMap::BaseColor() const {
 }
 
 void TileMap::DrawGrid( const bool& draw ) {
-	BitOp::SetBitFlagValue( &mFlags, MAP_FLAG_DRAW_GRID, draw ? 1 : 0 );
+	BitOp::setBitFlagValue( &mFlags, MAP_FLAG_DRAW_GRID, draw ? 1 : 0 );
 }
 
 Uint32 TileMap::DrawGrid() const {
@@ -536,11 +536,11 @@ Uint32 TileMap::DrawGrid() const {
 }
 
 void TileMap::DrawBackground( const bool& draw ) {
-	BitOp::SetBitFlagValue( &mFlags, MAP_FLAG_DRAW_BACKGROUND, draw ? 1 : 0 );
+	BitOp::setBitFlagValue( &mFlags, MAP_FLAG_DRAW_BACKGROUND, draw ? 1 : 0 );
 }
 
 void TileMap::ShowBlocked( const bool& show ) {
-	BitOp::SetBitFlagValue( &mFlags, MAP_FLAG_SHOW_BLOCKED, show ? 1 : 0 );
+	BitOp::setBitFlagValue( &mFlags, MAP_FLAG_SHOW_BLOCKED, show ? 1 : 0 );
 }
 
 Uint32 TileMap::ShowBlocked() const {
@@ -556,7 +556,7 @@ bool TileMap::ClipedArea() const {
 }
 
 void TileMap::ClipedArea( const bool& clip ) {
-	BitOp::SetBitFlagValue( &mFlags, MAP_FLAG_CLIP_AREA, clip ? 1 : 0 );
+	BitOp::setBitFlagValue( &mFlags, MAP_FLAG_CLIP_AREA, clip ? 1 : 0 );
 }
 
 bool TileMap::ClampBorders() const {
@@ -564,7 +564,7 @@ bool TileMap::ClampBorders() const {
 }
 
 void TileMap::ClampBorders( const bool& clamp ) {
-	BitOp::SetBitFlagValue( &mFlags, MAP_FLAG_CLAMP_BORDERS, clamp ? 1 : 0 );
+	BitOp::setBitFlagValue( &mFlags, MAP_FLAG_CLAMP_BORDERS, clamp ? 1 : 0 );
 }
 
 Uint32 TileMap::DrawTileOver() const {
@@ -572,7 +572,7 @@ Uint32 TileMap::DrawTileOver() const {
 }
 
 void TileMap::DrawTileOver( const bool& draw ) {
-	BitOp::SetBitFlagValue( &mFlags, MAP_FLAG_DRAW_TILE_OVER, draw ? 1 : 0 );
+	BitOp::setBitFlagValue( &mFlags, MAP_FLAG_DRAW_TILE_OVER, draw ? 1 : 0 );
 }
 
 bool TileMap::LightsEnabled() {
@@ -580,7 +580,7 @@ bool TileMap::LightsEnabled() {
 }
 
 void TileMap::LightsEnabled( const bool& enabled ) {
-	BitOp::SetBitFlagValue( &mFlags, MAP_FLAG_LIGHTS_ENABLED, enabled ? 1 : 0 );
+	BitOp::setBitFlagValue( &mFlags, MAP_FLAG_LIGHTS_ENABLED, enabled ? 1 : 0 );
 }
 
 bool TileMap::LightsByVertex() {
@@ -796,8 +796,8 @@ bool TileMap::LoadFromStream( IOStream& IOS ) {
 	sMapHdr MapHdr;
 	Uint32 i, z;
 
-	if ( IOS.IsOpen() ) {
-		IOS.Read( (char*)&MapHdr, sizeof(sMapHdr) );
+	if ( IOS.isOpen() ) {
+		IOS.read( (char*)&MapHdr, sizeof(sMapHdr) );
 
 		if ( MapHdr.Magic == EE_MAP_MAGIC ) {
 			if ( NULL == mForcedHeaders ) {
@@ -812,7 +812,7 @@ bool TileMap::LoadFromStream( IOStream& IOS ) {
 			if ( MapHdr.PropertyCount ) {
 				sPropertyHdr * tProp = eeNewArray( sPropertyHdr, MapHdr.PropertyCount );
 
-				IOS.Read( (char*)&tProp[0], sizeof(sPropertyHdr) * MapHdr.PropertyCount );
+				IOS.read( (char*)&tProp[0], sizeof(sPropertyHdr) * MapHdr.PropertyCount );
 
 				for ( i = 0; i < MapHdr.PropertyCount; i++ ) {
 					AddProperty( std::string( tProp[i].Name ), std::string( tProp[i].Value ) );
@@ -825,7 +825,7 @@ bool TileMap::LoadFromStream( IOStream& IOS ) {
 			if ( MapHdr.TextureAtlasCount ) {
 				sMapTextureAtlas * tSG = eeNewArray( sMapTextureAtlas, MapHdr.TextureAtlasCount );
 
-				IOS.Read( (char*)&tSG[0], sizeof(sMapTextureAtlas) * MapHdr.TextureAtlasCount );
+				IOS.read( (char*)&tSG[0], sizeof(sMapTextureAtlas) * MapHdr.TextureAtlasCount );
 
 				std::vector<std::string> TextureAtlases;
 
@@ -835,12 +835,12 @@ bool TileMap::LoadFromStream( IOStream& IOS ) {
 
 				//! Load the Texture Atlases if needed
 				for ( i = 0; i < TextureAtlases.size(); i++ ) {
-					std::string sgname = FileSystem::FileRemoveExtension( FileSystem::FileNameFromPath( TextureAtlases[i] ) );
+					std::string sgname = FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( TextureAtlases[i] ) );
 
-					if ( NULL == TextureAtlasManager::instance()->GetByName( sgname ) ) {
+					if ( NULL == TextureAtlasManager::instance()->getByName( sgname ) ) {
 						TextureAtlasLoader * tgl = eeNew( TextureAtlasLoader, () );
 
-						tgl->Load( Sys::GetProcessPath() + TextureAtlases[i] );
+						tgl->Load( Sys::getProcessPath() + TextureAtlases[i] );
 
 						eeSAFE_DELETE( tgl );
 					}
@@ -853,7 +853,7 @@ bool TileMap::LoadFromStream( IOStream& IOS ) {
 			if ( MapHdr.VirtualObjectTypesCount ) {
 				sVirtualObj * tVObj = eeNewArray( sVirtualObj, MapHdr.VirtualObjectTypesCount );
 
-				IOS.Read( (char*)&tVObj[0], sizeof(sVirtualObj) * MapHdr.VirtualObjectTypesCount );
+				IOS.read( (char*)&tVObj[0], sizeof(sVirtualObj) * MapHdr.VirtualObjectTypesCount );
 
 				for ( i = 0; i < MapHdr.VirtualObjectTypesCount; i++ ) {
 					AddVirtualObjectType( std::string( tVObj[i].Name ) );
@@ -868,7 +868,7 @@ bool TileMap::LoadFromStream( IOStream& IOS ) {
 				sLayerHdr * tLayerHdr;
 
 				for ( i = 0; i < MapHdr.LayerCount; i++ ) {
-					IOS.Read( (char*)&tLayersHdr[i], sizeof(sLayerHdr) );
+					IOS.read( (char*)&tLayersHdr[i], sizeof(sLayerHdr) );
 
 					tLayerHdr = &(tLayersHdr[i]);
 
@@ -879,7 +879,7 @@ bool TileMap::LoadFromStream( IOStream& IOS ) {
 
 						sPropertyHdr * tProps = eeNewArray( sPropertyHdr, tLayerHdr->PropertyCount );
 
-						IOS.Read( (char*)&tProps[0], sizeof(sPropertyHdr) * tLayerHdr->PropertyCount );
+						IOS.read( (char*)&tProps[0], sizeof(sPropertyHdr) * tLayerHdr->PropertyCount );
 
 						for ( z = 0; z < tLayerHdr->PropertyCount; z++ ) {
 							tLayer->AddProperty( std::string( tProps[z].Name ), std::string( tProps[z].Value ) );
@@ -912,7 +912,7 @@ bool TileMap::LoadFromStream( IOStream& IOS ) {
 						for ( x = 0; x < mSize.x; x++ ) {
 
 							//! Read the current tile flags
-							IOS.Read( (char*)&tReadFlag, sizeof(Uint32) );
+							IOS.read( (char*)&tReadFlag, sizeof(Uint32) );
 
 							//! Read every game object header corresponding to this tile
 							for ( i = 0; i < mLayerCount; i++ ) {
@@ -921,7 +921,7 @@ bool TileMap::LoadFromStream( IOStream& IOS ) {
 
 									sMapTileGOHdr tTGOHdr;
 
-									IOS.Read( (char*)&tTGOHdr, sizeof(sMapTileGOHdr) );
+									IOS.read( (char*)&tTGOHdr, sizeof(sMapTileGOHdr) );
 
 									tGO = CreateGameObject( tTGOHdr.Type, tTGOHdr.Flags, mLayers[i], tTGOHdr.Id );
 
@@ -947,7 +947,7 @@ bool TileMap::LoadFromStream( IOStream& IOS ) {
 						for ( Uint32 objCount = 0; objCount < tLayerHdr->ObjectCount; objCount++ ) {
 							sMapObjGOHdr tOGOHdr;
 
-							IOS.Read( (char*)&tOGOHdr, sizeof(sMapObjGOHdr) );
+							IOS.read( (char*)&tOGOHdr, sizeof(sMapObjGOHdr) );
 
 							//! For the polygon objects wee need to read the polygon points, the Name, the TypeName and the Properties.
 							if (	tOGOHdr.Type == GAMEOBJECT_TYPE_OBJECT		||
@@ -959,7 +959,7 @@ bool TileMap::LoadFromStream( IOStream& IOS ) {
 								//! First we read the poly obj header
 								sMapObjObjHdr tObjObjHdr;
 
-								IOS.Read( (char*)&tObjObjHdr, sizeof(sMapObjObjHdr) );
+								IOS.read( (char*)&tObjObjHdr, sizeof(sMapObjObjHdr) );
 
 								tObjData.Name = std::string( tObjObjHdr.Name );
 								tObjData.Type = std::string( tObjObjHdr.Type );
@@ -968,7 +968,7 @@ bool TileMap::LoadFromStream( IOStream& IOS ) {
 								for ( Uint32 iProp = 0; iProp < tObjObjHdr.PropertyCount; iProp++ ) {
 									sPropertyHdr tObjProp;
 
-									IOS.Read( (char*)&tObjProp, sizeof(sPropertyHdr) );
+									IOS.read( (char*)&tObjProp, sizeof(sPropertyHdr) );
 
 									tObjData.Properties[ std::string( tObjProp.Name ) ] = std::string( tObjProp.Value );
 								}
@@ -977,7 +977,7 @@ bool TileMap::LoadFromStream( IOStream& IOS ) {
 								for ( Uint32 iPoint = 0; iPoint < tObjObjHdr.PointCount; iPoint++ ) {
 									Vector2if p;
 
-									IOS.Read( (char*)&p, sizeof(Vector2if) );
+									IOS.read( (char*)&p, sizeof(Vector2if) );
 
 									tObjData.Poly.PushBack( Vector2f( p.x, p.y ) );
 								}
@@ -1004,7 +1004,7 @@ bool TileMap::LoadFromStream( IOStream& IOS ) {
 					sMapLightHdr * tLighsHdr = eeNewArray( sMapLightHdr, MapHdr.LightsCount );
 					sMapLightHdr * tLightHdr;
 
-					IOS.Read( (char*)tLighsHdr, sizeof(sMapLightHdr) * MapHdr.LightsCount );
+					IOS.read( (char*)tLighsHdr, sizeof(sMapLightHdr) * MapHdr.LightsCount );
 
 					for ( i = 0; i < MapHdr.LightsCount; i++ ) {
 						tLightHdr = &( tLighsHdr[ i ] );
@@ -1039,15 +1039,15 @@ const std::string& TileMap::Path() const {
 }
 
 bool TileMap::Load( const std::string& path ) {
-	if ( FileSystem::FileExists( path ) ) {
+	if ( FileSystem::fileExists( path ) ) {
 		mPath = path;
 
 		IOStreamFile IOS( mPath, std::ios::in | std::ios::binary );
 
 		return LoadFromStream( IOS );
-	} else if ( PackManager::instance()->FallbackToPacks() ) {
+	} else if ( PackManager::instance()->fallbackToPacks() ) {
 		std::string tPath( path );
-		Pack * tPack = PackManager::instance()->Exists( tPath ) ;
+		Pack * tPack = PackManager::instance()->exists( tPath ) ;
 
 		if ( NULL != tPack ) {
 			mPath = tPath;
@@ -1059,10 +1059,10 @@ bool TileMap::Load( const std::string& path ) {
 }
 
 bool TileMap::LoadFromPack( Pack * Pack, const std::string& FilePackPath ) {
-	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( FilePackPath ) ) {
+	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( FilePackPath ) ) {
 		SafeDataPointer PData;
 
-		Pack->ExtractFileToMemory( FilePackPath, PData );
+		Pack->extractFileToMemory( FilePackPath, PData );
 
 		return LoadFromMemory( reinterpret_cast<const char*> ( PData.Data ), PData.DataSize );
 	}
@@ -1094,16 +1094,16 @@ void TileMap::SaveToStream( IOStream& IOS ) {
 	MapHdr.PropertyCount			= mProperties.size();
 	MapHdr.TextureAtlasCount		= TextureAtlases.size();
 	MapHdr.VirtualObjectTypesCount	= mObjTypes.size();	//! This is only useful for the Map Editor, to auto add on the load the virtual object types that where used to create the map.
-	MapHdr.BaseColor				= mBaseColor.GetValue();
+	MapHdr.BaseColor				= mBaseColor.getValue();
 
 	if ( LightsEnabled() && NULL != mLightManager )
 		MapHdr.LightsCount = mLightManager->Count();
 	else
 		MapHdr.LightsCount = 0;
 
-	if ( IOS.IsOpen() ) {
+	if ( IOS.isOpen() ) {
 		//! Writes the map header
-		IOS.Write( (const char*)&MapHdr, sizeof(sMapHdr) );
+		IOS.write( (const char*)&MapHdr, sizeof(sMapHdr) );
 
 		//! Writes the properties of the map
 		for ( TileMap::PropertiesMap::iterator it = mProperties.begin(); it != mProperties.end(); it++ ) {
@@ -1112,10 +1112,10 @@ void TileMap::SaveToStream( IOStream& IOS ) {
 			memset( tProp.Name, 0, MAP_PROPERTY_SIZE );
 			memset( tProp.Value, 0, MAP_PROPERTY_SIZE );
 
-			String::StrCopy( tProp.Name, it->first.c_str(), MAP_PROPERTY_SIZE );
-			String::StrCopy( tProp.Value, it->second.c_str(), MAP_PROPERTY_SIZE );
+			String::strCopy( tProp.Name, it->first.c_str(), MAP_PROPERTY_SIZE );
+			String::strCopy( tProp.Value, it->second.c_str(), MAP_PROPERTY_SIZE );
 
-			IOS.Write( (const char*)&tProp, sizeof(sPropertyHdr) );
+			IOS.write( (const char*)&tProp, sizeof(sPropertyHdr) );
 		}
 
 		//! Writes the texture atlases that the map will need and load
@@ -1124,9 +1124,9 @@ void TileMap::SaveToStream( IOStream& IOS ) {
 
 			memset( tSG.Path, 0, MAP_TEXTUREATLAS_PATH_SIZE );
 
-			String::StrCopy( tSG.Path, TextureAtlases[i].c_str(), MAP_TEXTUREATLAS_PATH_SIZE );
+			String::strCopy( tSG.Path, TextureAtlases[i].c_str(), MAP_TEXTUREATLAS_PATH_SIZE );
 
-			IOS.Write( (const char*)&tSG, sizeof(sMapTextureAtlas) );
+			IOS.write( (const char*)&tSG, sizeof(sMapTextureAtlas) );
 		}
 
 		//! Writes the names of the virtual object types created in the map editor
@@ -1135,9 +1135,9 @@ void TileMap::SaveToStream( IOStream& IOS ) {
 
 			memset( tVObjH.Name, 0, MAP_PROPERTY_SIZE );
 
-			String::StrCopy( tVObjH.Name, (*votit).c_str(), MAP_PROPERTY_SIZE );
+			String::strCopy( tVObjH.Name, (*votit).c_str(), MAP_PROPERTY_SIZE );
 
-			IOS.Write( (const char*)&tVObjH, sizeof(sVirtualObj) );
+			IOS.write( (const char*)&tVObjH, sizeof(sVirtualObj) );
 		}
 
 		//! Writes every layer header
@@ -1147,7 +1147,7 @@ void TileMap::SaveToStream( IOStream& IOS ) {
 
 			memset( tLayerH.Name, 0, LAYER_NAME_SIZE );
 
-			String::StrCopy( tLayerH.Name, tLayer->Name().c_str(), LAYER_NAME_SIZE );
+			String::strCopy( tLayerH.Name, tLayer->Name().c_str(), LAYER_NAME_SIZE );
 
 			tLayerH.Type			= tLayer->Type();
 			tLayerH.Flags			= tLayer->Flags();
@@ -1164,7 +1164,7 @@ void TileMap::SaveToStream( IOStream& IOS ) {
 			tLayerH.PropertyCount	= tLayerProp.size();
 
 			//! Writes the layer header
-			IOS.Write( (const char*)&tLayerH, sizeof(sLayerHdr) );
+			IOS.write( (const char*)&tLayerH, sizeof(sLayerHdr) );
 
 			//! Writes the properties of the current layer
 			for ( MapLayer::PropertiesMap::iterator lit = tLayerProp.begin(); lit != tLayerProp.end(); lit++ ) {
@@ -1173,10 +1173,10 @@ void TileMap::SaveToStream( IOStream& IOS ) {
 				memset( tProp.Name, 0, MAP_PROPERTY_SIZE );
 				memset( tProp.Value, 0, MAP_PROPERTY_SIZE );
 
-				String::StrCopy( tProp.Name, (*lit).first.c_str(), MAP_PROPERTY_SIZE );
-				String::StrCopy( tProp.Value, (*lit).second.c_str(), MAP_PROPERTY_SIZE );
+				String::strCopy( tProp.Name, (*lit).first.c_str(), MAP_PROPERTY_SIZE );
+				String::strCopy( tProp.Value, (*lit).second.c_str(), MAP_PROPERTY_SIZE );
 
-				IOS.Write( (const char*)&tProp, sizeof(sPropertyHdr) );
+				IOS.write( (const char*)&tProp, sizeof(sPropertyHdr) );
 			}
 		}
 
@@ -1226,7 +1226,7 @@ void TileMap::SaveToStream( IOStream& IOS ) {
 					}
 
 					//! Writes the current tile flags
-					IOS.Write( (const char*)&tReadFlag, sizeof(Uint32) );
+					IOS.write( (const char*)&tReadFlag, sizeof(Uint32) );
 
 					//! Writes every game object header corresponding to this tile
 					for ( i = 0; i < mLayerCount; i++ ) {
@@ -1249,7 +1249,7 @@ void TileMap::SaveToStream( IOStream& IOS ) {
 
 							tTGOHdr.Flags	= tObj->Flags();
 
-							IOS.Write( (const char*)&tTGOHdr, sizeof(sMapTileGOHdr) );
+							IOS.write( (const char*)&tTGOHdr, sizeof(sMapTileGOHdr) );
 						}
 					}
 				}
@@ -1291,7 +1291,7 @@ void TileMap::SaveToStream( IOStream& IOS ) {
 
 					tOGOHdr.PosY	= (Int32)tObj->Pos().y;
 
-					IOS.Write( (const char*)&tOGOHdr, sizeof(sMapObjGOHdr) );
+					IOS.write( (const char*)&tOGOHdr, sizeof(sMapObjGOHdr) );
 
 					//! For the polygon objects wee need to write the polygon points, the Name, the TypeName and the Properties.
 					if (	tObj->Type() == GAMEOBJECT_TYPE_OBJECT		||
@@ -1306,14 +1306,14 @@ void TileMap::SaveToStream( IOStream& IOS ) {
 						memset( tObjObjHdr.Name, 0, MAP_PROPERTY_SIZE );
 						memset( tObjObjHdr.Type, 0, MAP_PROPERTY_SIZE );
 
-						String::StrCopy( tObjObjHdr.Name, tObjObj->Name().c_str(), MAP_PROPERTY_SIZE );
-						String::StrCopy( tObjObjHdr.Type, tObjObj->TypeName().c_str(), MAP_PROPERTY_SIZE );
+						String::strCopy( tObjObjHdr.Name, tObjObj->Name().c_str(), MAP_PROPERTY_SIZE );
+						String::strCopy( tObjObjHdr.Type, tObjObj->TypeName().c_str(), MAP_PROPERTY_SIZE );
 
 						tObjObjHdr.PointCount		= tPoly.Size();
 						tObjObjHdr.PropertyCount	= tObjObjProp.size();
 
 						//! Writes the ObjObj header
-						IOS.Write( (const char*)&tObjObjHdr, sizeof(sMapObjObjHdr) );
+						IOS.write( (const char*)&tObjObjHdr, sizeof(sMapObjObjHdr) );
 
 						//! Writes the properties of the current polygon object
 						for ( GameObjectObject::PropertiesMap::iterator ooit = tObjObjProp.begin(); ooit != tObjObjProp.end(); ooit++ ) {
@@ -1322,10 +1322,10 @@ void TileMap::SaveToStream( IOStream& IOS ) {
 							memset( tProp.Name, 0, MAP_PROPERTY_SIZE );
 							memset( tProp.Value, 0, MAP_PROPERTY_SIZE );
 
-							String::StrCopy( tProp.Name, ooit->first.c_str(), MAP_PROPERTY_SIZE );
-							String::StrCopy( tProp.Value, ooit->second.c_str(), MAP_PROPERTY_SIZE );
+							String::strCopy( tProp.Name, ooit->first.c_str(), MAP_PROPERTY_SIZE );
+							String::strCopy( tProp.Value, ooit->second.c_str(), MAP_PROPERTY_SIZE );
 
-							IOS.Write( (const char*)&tProp, sizeof(sPropertyHdr) );
+							IOS.write( (const char*)&tProp, sizeof(sPropertyHdr) );
 						}
 
 						//! Writes the polygon points
@@ -1333,7 +1333,7 @@ void TileMap::SaveToStream( IOStream& IOS ) {
 							Vector2f pf( tPoly.GetAt( tPoint ) );
 							Vector2if p( pf.x, pf.y );	//! Convert it to Int32
 
-							IOS.Write( (const char*)&p, sizeof(Vector2if) );
+							IOS.write( (const char*)&p, sizeof(Vector2if) );
 						}
 					}
 				}
@@ -1352,17 +1352,17 @@ void TileMap::SaveToStream( IOStream& IOS ) {
 				tLightHdr.Radius	= Light->Radius();
 				tLightHdr.PosX		= (Int32)Light->Position().x;
 				tLightHdr.PosY		= (Int32)Light->Position().y;
-				tLightHdr.Color		= ColorA( Light->Color() ).GetValue();
+				tLightHdr.Color		= ColorA( Light->Color() ).getValue();
 				tLightHdr.Type		= Light->Type();
 
-				IOS.Write( (const char*)&tLightHdr, sizeof(sMapLightHdr) );
+				IOS.write( (const char*)&tLightHdr, sizeof(sMapLightHdr) );
 			}
 		}
 	}
 }
 
 void TileMap::Save( const std::string& path ) {
-	if ( !FileSystem::IsDirectory( path ) ) {
+	if ( !FileSystem::isDirectory( path ) ) {
 		IOStreamFile IOS( path, std::ios::out | std::ios::binary );
 
 		SaveToStream( IOS );
@@ -1373,13 +1373,13 @@ void TileMap::Save( const std::string& path ) {
 
 std::vector<std::string> TileMap::GetTextureAtlases() {
 	TextureAtlasManager * SGM = TextureAtlasManager::instance();
-	std::list<TextureAtlas*>& Res = SGM->GetResources();
+	std::list<TextureAtlas*>& Res = SGM->getResources();
 
 	std::vector<std::string> items;
 
 	//! Ugly ugly ugly, but i don't see another way
-	Uint32 Restricted1 = String::Hash( std::string( "global" ) );
-	Uint32 Restricted2 = String::Hash( UI::UIThemeManager::instance()->DefaultTheme()->TextureAtlas()->Name() );
+	Uint32 Restricted1 = String::hash( std::string( "global" ) );
+	Uint32 Restricted2 = String::hash( UI::UIThemeManager::instance()->DefaultTheme()->TextureAtlas()->Name() );
 
 	for ( std::list<TextureAtlas*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
 		if ( (*it)->Id() != Restricted1 && (*it)->Id() != Restricted2 )

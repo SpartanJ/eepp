@@ -36,22 +36,22 @@ class tColor {
 		/** From 32 bits value with RGB(A) byte order */
 		tColor( Uint32 Col )
 		{
-			Col		= BitOp::SwapLE32( Col );
+			Col		= BitOp::swapLE32( Col );
 			Red		= static_cast<T>( Col >> 16	);
 			Green	= static_cast<T>( Col >> 8	);
 			Blue	= static_cast<T>( Col >> 0	);
 		}
 
-		T R() const { return Red;	}	//! @return the Red component
-		T G() const { return Green;	}	//! @return the Green component
-		T B() const { return Blue;	}	//! @return the Blue component
+		T r() const { return Red;	}	//! @return the Red component
+		T g() const { return Green;	}	//! @return the Green component
+		T b() const { return Blue;	}	//! @return the Blue component
 
 		bool operator==(tColor<T>& Col) {
-			return ( Red == Col.R() && Green == Col.G() && Blue == Col.B() );
+			return ( Red == Col.r() && Green == Col.g() && Blue == Col.b() );
 		}
 
 		bool operator!=(tColor<T>& Col) {
-			return !( Red == Col.R() && Green == Col.G() && Blue == Col.B() );
+			return !( Red == Col.r() && Green == Col.g() && Blue == Col.b() );
 		}
 };
 
@@ -124,27 +124,27 @@ class tColorA {
 
 		/** From a 32 bits value with RGBA byte order */
 		tColorA( const Uint32& Col ) :
-			Value( BitOp::SwapBE32( Col ) )
+			Value( BitOp::swapBE32( Col ) )
 		{
 		}
 
-		T R() const { return Red;	}	//! @return the Red component
-		T G() const { return Green;	}	//! @return the Green component
-		T B() const { return Blue;	}	//! @return the Blue component
-		T A() const { return Alpha;	}	//! @return the Alpha component
+		T r() const { return Red;	}	//! @return the Red component
+		T g() const { return Green;	}	//! @return the Green component
+		T b() const { return Blue;	}	//! @return the Blue component
+		T a() const { return Alpha;	}	//! @return the Alpha component
 
 		 //! @return The color represented as an Uint32 ( as 0xAABBGGRR for Little Endian )
-		Uint32 GetValue() const {
+		Uint32 getValue() const {
 			return Value;
 		}
 
 		/** @brief Assign the RGBA colors, from each component. */
-		void Assign( T r, T g, T b, T a ) {
+		void assign( T r, T g, T b, T a ) {
 			Red = r; Green = g; Blue = b; Alpha = a;
 		}
 
 		/** @brief Assign the color value from other RGBA color. */
-		void Assign( const tColorA<T>& Col ) {
+		void assign( const tColorA<T>& Col ) {
 			Value = Col.Value;
 		}
 
@@ -219,14 +219,14 @@ public:
 
 	Color( Uint32 Col )
 	{
-		Col		= BitOp::SwapLE32( Col );
+		Col		= BitOp::swapLE32( Col );
 		Red		= static_cast<Uint8>( Col >> 16	);
 		Green	= static_cast<Uint8>( Col >> 8	);
 		Blue	= static_cast<Uint8>( Col >> 0	);
 	}
 
 	/** Blend a source color to destination color */
-	static inline ColorAf Blend( ColorAf srcf, ColorAf dstf ) {
+	static inline ColorAf blend( ColorAf srcf, ColorAf dstf ) {
 		Float alpha	= srcf.Alpha + dstf.Alpha * ( 1.f - srcf.Alpha );
 		Float red		= ( srcf.Red	* srcf.Alpha + dstf.Red		* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
 		Float green	= ( srcf.Green	* srcf.Alpha + dstf.Green	* dstf.Alpha * ( 1.f - srcf.Alpha ) ) / alpha;
@@ -238,7 +238,7 @@ public:
 	#define EE_COLOR_BLEND_FTOU8(color) (Uint8)( color == 1.f ? 255 : (color * 255.99f))
 
 	/** Blend a source color to destination color */
-	static inline ColorA Blend( ColorA src, ColorA dst ) {
+	static inline ColorA blend( ColorA src, ColorA dst ) {
 		ColorAf srcf( (Float)src.Red / 255.f, (Float)src.Green / 255.f, (Float)src.Blue / 255.f, (Float)src.Alpha / 255.f );
 		ColorAf dstf( (Float)dst.Red / 255.f, (Float)dst.Green / 255.f, (Float)dst.Blue / 255.f, (Float)dst.Alpha / 255.f );
 		Float alpha	= srcf.Alpha + dstf.Alpha * ( 1.f - srcf.Alpha );

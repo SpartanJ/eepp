@@ -59,10 +59,10 @@ class EE_API TTFFontLoader : public ObjectLoader {
 		/** This must be called for the asynchronous mode to update the texture data to the GPU, the call must be done from the same thread that the GL Context was created ( the main thread ).
 		**	The TTF Font creates texture from the data obtained from the true type file.
 		** @see ObjectLoader::Update */
-		void 				Update();
+		void 				update();
 
 		/** Releases the Font instance and the texture loaded ( if was already loaded ), it will destroy the font texture from memory */
-		void				Unload();
+		void				unload();
 
 		/** @return The font name. */
 		const std::string&	Id() const;
@@ -94,9 +94,9 @@ class EE_API TTFFontLoader : public ObjectLoader {
 		Uint8 *				mData;
 		unsigned int				mDataSize;
 
-		void 				Start();
+		void 				start();
 
-		void				Reset();
+		void				reset();
 	private:
 		bool				mFontLoaded;
 

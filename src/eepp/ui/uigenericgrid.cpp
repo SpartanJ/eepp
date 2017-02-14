@@ -579,13 +579,13 @@ void UIGenericGrid::Update() {
 
 					mVScrollBar->Value( mVScrollBar->Value() + ( -diff.y / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
 
-					mTouchDragAcceleration += Elapsed().AsMilliseconds() * diff.y * mTouchDragDeceleration;
+					mTouchDragAcceleration += Elapsed().asMilliseconds() * diff.y * mTouchDragDeceleration;
 
 					mTouchDragPoint = Pos;
 
 					UIManager::instance()->SetControlDragging( true );
 				} else {
-					mTouchDragAcceleration -= Elapsed().AsMilliseconds() * mTouchDragAcceleration * 0.01f;
+					mTouchDragAcceleration -= Elapsed().asMilliseconds() * mTouchDragAcceleration * 0.01f;
 				}
 			} else {
 				// Mouse Down
@@ -608,7 +608,7 @@ void UIGenericGrid::Update() {
 				if ( mTouchDragAcceleration > 0.01f || mTouchDragAcceleration < -0.01f ) {
 					mVScrollBar->Value( mVScrollBar->Value() + ( -mTouchDragAcceleration / (Float)( ( mItems.size() - 1 ) * mRowHeight ) ) );
 
-					mTouchDragAcceleration -= mTouchDragAcceleration * mTouchDragDeceleration * Elapsed().AsMilliseconds();
+					mTouchDragAcceleration -= mTouchDragAcceleration * mTouchDragDeceleration * Elapsed().asMilliseconds();
 				}
 			}
 		}

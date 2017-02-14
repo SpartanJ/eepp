@@ -512,15 +512,15 @@ void UIMenu::PrevSel() {
 }
 
 Uint32 UIMenu::OnKeyDown( const UIEventKey& Event ) {
-	if ( Sys::GetTicks() - mLastTickMove > 50 ) {
+	if ( Sys::getTicks() - mLastTickMove > 50 ) {
 		switch ( Event.KeyCode() ) {
 			case KEY_DOWN:
-				mLastTickMove = Sys::GetTicks();
+				mLastTickMove = Sys::getTicks();
 				NextSel();
 
 				break;
 			case KEY_UP:
-				mLastTickMove = Sys::GetTicks();
+				mLastTickMove = Sys::getTicks();
 				PrevSel();
 
 				break;

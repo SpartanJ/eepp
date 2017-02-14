@@ -65,18 +65,18 @@ void MapLightManager::UpdateByVertex() {
 
 					if ( TileAABB.Intersect( Light->GetAABB() ) ) {
 						if ( y > 0 )
-							mTileColors[x][y][0]->Assign( *mTileColors[x][y - 1][1] );
+							mTileColors[x][y][0]->assign( *mTileColors[x][y - 1][1] );
 						else
-							mTileColors[x][y][0]->Assign( Light->ProcessVertex( Pos.x, Pos.y, *(mTileColors[x][y][0]), *(mTileColors[x][y][0]) ) );
+							mTileColors[x][y][0]->assign( Light->ProcessVertex( Pos.x, Pos.y, *(mTileColors[x][y][0]), *(mTileColors[x][y][0]) ) );
 
-						mTileColors[x][y][1]->Assign( Light->ProcessVertex( Pos.x, Pos.y + TileSize.Height(), *(mTileColors[x][y][1]), *(mTileColors[x][y][1]) ) );
+						mTileColors[x][y][1]->assign( Light->ProcessVertex( Pos.x, Pos.y + TileSize.Height(), *(mTileColors[x][y][1]), *(mTileColors[x][y][1]) ) );
 
-						mTileColors[x][y][2]->Assign( Light->ProcessVertex( Pos.x + TileSize.Width(), Pos.y + TileSize.Height(), *(mTileColors[x][y][2]), *(mTileColors[x][y][2]) ) );
+						mTileColors[x][y][2]->assign( Light->ProcessVertex( Pos.x + TileSize.Width(), Pos.y + TileSize.Height(), *(mTileColors[x][y][2]), *(mTileColors[x][y][2]) ) );
 
 						if ( y > 0 )
-							mTileColors[x][y][3]->Assign( *mTileColors[x][y - 1][2] );
+							mTileColors[x][y][3]->assign( *mTileColors[x][y - 1][2] );
 						else
-							mTileColors[x][y][3]->Assign( Light->ProcessVertex( Pos.x + TileSize.Width(), Pos.y, *(mTileColors[x][y][3]), *(mTileColors[x][y][3]) ) );
+							mTileColors[x][y][3]->assign( Light->ProcessVertex( Pos.x + TileSize.Width(), Pos.y, *(mTileColors[x][y][3]), *(mTileColors[x][y][3]) ) );
 					}
 				}
 			}
@@ -117,7 +117,7 @@ void MapLightManager::UpdateByTile() {
 					eeAABB TileAABB( Pos.x, Pos.y, Pos.x + TileSize.x, Pos.y + TileSize.y );
 
 					if ( TileAABB.Intersect( Light->GetAABB() ) ) {
-						mTileColors[x][y][0]->Assign( Light->ProcessVertex( Pos.x + HalfTileSize.Width(), Pos.y + HalfTileSize.Height(), *(mTileColors[x][y][0]), *(mTileColors[x][y][0]) ) );
+						mTileColors[x][y][0]->assign( Light->ProcessVertex( Pos.x + HalfTileSize.Width(), Pos.y + HalfTileSize.Height(), *(mTileColors[x][y][0]), *(mTileColors[x][y][0]) ) );
 					}
 				}
 			}

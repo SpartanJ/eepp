@@ -146,7 +146,7 @@ Uint32 UISpinBox::OnMessage( const UIMessage * Msg ) {
 
 void UISpinBox::AddValue( const Float& value ) {
 	if ( !mInput->Text().size() )
-		mInput->Text( String::ToStr( static_cast<Int32>( mMinValue ) ) );
+		mInput->Text( String::toStr( static_cast<Int32>( mMinValue ) ) );
 
 	Value( mValue + value );
 }
@@ -158,9 +158,9 @@ void UISpinBox::InternalValue( const Float& Val, const bool& Force ) {
 			Float fValN 	= (Float)iValN;
 
 			if ( fValN == Val ) {
-				mInput->Text( String::ToStr( iValN ) );
+				mInput->Text( String::toStr( iValN ) );
 			} else {
-				mInput->Text( String::ToStr( Val ) );
+				mInput->Text( String::toStr( Val ) );
 			}
 
 			mValue = Val;
@@ -217,7 +217,7 @@ void UISpinBox::Update() {
 				if ( pos != mInput->Text().size() - 1 )
 					mInput->Text( mInput->Text().substr( 0, mInput->Text().size() - 1 ) );
 			} else {
-				bool Res 	= String::FromString<Float>( Val, mInput->Text() );
+				bool Res 	= String::fromString<Float>( Val, mInput->Text() );
 
 				if ( Res )
 					Value( Val );

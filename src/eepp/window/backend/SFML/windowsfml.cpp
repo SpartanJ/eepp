@@ -61,8 +61,8 @@ bool WindowSFML::Create( WindowSettings Settings, ContextSettings Context ) {
 
 	mSFMLWindow.setVerticalSyncEnabled( Context.VSync );
 
-	if ( NULL == cGL::ExistsSingleton() ) {
-		cGL::CreateSingleton( mWindow.ContextConfig.Version );
+	if ( NULL == cGL::existsSingleton() ) {
+		cGL::createSingleton( mWindow.ContextConfig.Version );
 		cGL::instance()->Init();
 	}
 

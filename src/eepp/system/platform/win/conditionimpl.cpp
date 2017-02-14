@@ -21,66 +21,66 @@ ConditionImpl::~ConditionImpl() {
 	CloseHandle( mCond );
 }
 
-void ConditionImpl::Lock() {
-	mMutex.Lock();
+void ConditionImpl::lock() {
+	mMutex.lock();
 }
 
-void ConditionImpl::Unlock() {
-	mMutex.Unlock();
+void ConditionImpl::unlock() {
+	mMutex.unlock();
 }
 
-bool ConditionImpl::WaitAndRetain(int value) {
-	mMutex.Lock();
+bool ConditionImpl::waitAndRetain(int value) {
+	mMutex.lock();
 	
 	while ( mConditionnedVar != value && mIsValid ) {
-		mMutex.Unlock();
+		mMutex.unlock();
 		
 		WaitForSingleObject( mCond, INFINITE );
 		
-		mMutex.Lock();
+		mMutex.lock();
 	}
 	
 	if ( mIsValid ) {
 		return true;
 	}
 	
-	mMutex.Unlock();
+	mMutex.unlock();
 	return false;
 }
 
-void ConditionImpl::Release( int value ) {
+void ConditionImpl::release( int value ) {
 	mConditionnedVar = value;
-	mMutex.Unlock();
+	mMutex.unlock();
 	
-	Signal();
+	signal();
 }
 
-void ConditionImpl::SetValue( int value ) {
+void ConditionImpl::setValue( int value ) {
 	// Make sure the Condition's value is not modified while retained
-	mMutex.Lock();
+	mMutex.lock();
 	mConditionnedVar = value;
-	mMutex.Unlock();
+	mMutex.unlock();
 	
-	Signal();
+	signal();
 }
 
-int ConditionImpl::Value() const {
+int ConditionImpl::value() const {
 	return mConditionnedVar;
 }
 
-void ConditionImpl::Signal() {
+void ConditionImpl::signal() {
 	SetEvent( mCond );
 }
 
-void ConditionImpl::Invalidate() {
+void ConditionImpl::invalidate() {
 	if ( mIsValid ) {
 		mIsValid = false;
 		
-		Signal();
+		signal();
 	}
 }
 
-void ConditionImpl::Restore() {
+void ConditionImpl::restore() {
 	if ( !mIsValid ) {
 		mIsValid = true;
 	}

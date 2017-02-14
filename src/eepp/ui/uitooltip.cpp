@@ -131,7 +131,7 @@ const ColorA& UITooltip::Color() const {
 
 void UITooltip::Color( const ColorA& color ) {
 	mFontColor = color;
-	Alpha( color.A() );
+	Alpha( color.a() );
 }
 
 const ColorA& UITooltip::ShadowColor() const {
@@ -140,7 +140,7 @@ const ColorA& UITooltip::ShadowColor() const {
 
 void UITooltip::ShadowColor( const ColorA& color ) {
 	mFontShadowColor = color;
-	Alpha( color.A() );
+	Alpha( color.a() );
 	mTextCache->ShadowColor( mFontColor );
 }
 

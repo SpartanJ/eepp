@@ -75,7 +75,7 @@ void UITextInput::OnCursorPosChange() {
 
 void UITextInput::DrawWaitingCursor() {
 	if ( mVisible && mTextBuffer.Active() && mTextBuffer.SupportFreeEditing() ) {
-		mWaitCursorTime += UIManager::instance()->Elapsed().AsMilliseconds();
+		mWaitCursorTime += UIManager::instance()->Elapsed().asMilliseconds();
 
 		if ( mShowingWait ) {
 			bool disableSmooth = mShowingWait && GLi->IsLineSmooth();

@@ -58,7 +58,7 @@ InputTextBuffer::InputTextBuffer( EE::Window::Window * window ) :
 
 InputTextBuffer::~InputTextBuffer() {
 	if ( 0 != mCallback &&
-		Engine::ExistsSingleton() &&
+		Engine::existsSingleton() &&
 		Engine::instance()->ExistsWindow( mWindow ) )
 	{
 		mWindow->GetInput()->PopCallback( mCallback );
@@ -83,7 +83,7 @@ void InputTextBuffer::PromptToLeftFirstNoChar() {
 
 	if ( mPromptPos - 2 > 0 ) {
 		for ( Int32 i = mPromptPos - 2; i > 0; i-- ) {
-			if ( !String::IsLetter( mText[i] ) && !String::IsNumber( mText[i] ) && '\n' != mText[i] ) {
+			if ( !String::isLetter( mText[i] ) && !String::isNumber( mText[i] ) && '\n' != mText[i] ) {
 				mPromptPos = i + 1;
 				break;
 			} else if ( i - 1 == 0 ) {
@@ -105,7 +105,7 @@ void InputTextBuffer::PromptToRightFirstNoChar() {
 		return;
 
 	for ( Int32 i = mPromptPos; i < s; i++ ) {
-		if ( !String::IsLetter( mText[i] ) && !String::IsNumber( mText[i] ) && '\n' != mText[i] ) {
+		if ( !String::isLetter( mText[i] ) && !String::isNumber( mText[i] ) && '\n' != mText[i] ) {
 			mPromptPos = i + 1;
 			break;
 		} else if ( i + 1 == s ) {
@@ -144,7 +144,7 @@ void InputTextBuffer::EraseToPrevNoChar() {
 		}
 
 		c = mText[ mPromptPos - 1 ];
-	} while  ( String::IsLetter( c ) || String::IsNumber( c ) );
+	} while  ( String::isLetter( c ) || String::isNumber( c ) );
 
 	ResetSelection();
 
@@ -167,7 +167,7 @@ void InputTextBuffer::EraseToNextNoChar() {
 		} else {
 			break;
 		}
-	} while ( String::IsLetter( c ) || String::IsNumber( c ) );
+	} while ( String::isLetter( c ) || String::isNumber( c ) );
 
 	if ( tPromptPos <= size ) {
 		String iniStr( mText.substr( 0, mPromptPos ) );
@@ -191,10 +191,10 @@ bool InputTextBuffer::IsIgnoredChar( const Uint32& c ) {
 }
 
 bool InputTextBuffer::ValidChar( const Uint32& c ) {
-	if ( CanAdd() && String::IsCharacter( c ) ) {
+	if ( CanAdd() && String::isCharacter( c ) ) {
 		bool Ignored = false;
 
-		if ( AllowOnlyNumbers() && !String::IsNumber( c, AllowDotsInNumbers() ) ) {
+		if ( AllowOnlyNumbers() && !String::isNumber( c, AllowDotsInNumbers() ) ) {
 			Ignored = true;
 		}
 
@@ -221,16 +221,16 @@ void InputTextBuffer::TryAddChar( const Uint32& c ) {
 				mText += c;
 				mPromptPos = (int)mText.size();
 			} else {
-				String::InsertChar( mText, mPromptPos, c );
+				String::insertChar( mText, mPromptPos, c );
 				mPromptPos++;
 			}
 		}
 	} else {
-		if ( CanAdd() && String::IsCharacter(c) ) {
+		if ( CanAdd() && String::isCharacter(c) ) {
 			Input * Input = mWindow->GetInput();
 
 			if ( !Input->MetaPressed() && !Input->AltPressed() && !Input->ControlPressed() ) {
-				if ( !( AllowOnlyNumbers() && !String::IsNumber( c, AllowDotsInNumbers() ) ) ) {
+				if ( !( AllowOnlyNumbers() && !String::isNumber( c, AllowDotsInNumbers() ) ) ) {
 					mText += c;
 				}
 			}
@@ -279,7 +279,7 @@ void InputTextBuffer::Update( InputEvent* Event ) {
 							if ( ( Event->key.keysym.mod & KEYMOD_CTRL ) && ( Event->key.keysym.sym == KEY_C || Event->key.keysym.sym == KEY_X ) ) {
 								Int32 init		= eemin( mSelCurInit, mSelCurEnd );
 								Int32 end		= eemax( mSelCurInit, mSelCurEnd );
-								std::string clipStr( mText.substr( init, end - init ).ToUtf8() );
+								std::string clipStr( mText.substr( init, end - init ).toUtf8() );
 								mWindow->GetClipboard()->SetText( clipStr );
 							} else if (	( Event->key.keysym.sym >= KEY_UP && Event->key.keysym.sym <= KEY_END ) &&
 										!( Event->key.keysym.sym >= KEY_NUMLOCK && Event->key.keysym.sym <= KEY_COMPOSE )
@@ -375,7 +375,7 @@ void InputTextBuffer::Update( InputEvent* Event ) {
 						}
 					} else if ( ( c == KEY_RETURN || c == KEY_KP_ENTER ) ) {
 						if ( SupportNewLine() && CanAdd() ) {
-							String::InsertChar( mText, mPromptPos, '\n' );
+							String::insertChar( mText, mPromptPos, '\n' );
 
 							mPromptPos++;
 
@@ -683,11 +683,11 @@ bool InputTextBuffer::ChangedSinceLastUpdate() {
 }
 
 void InputTextBuffer::ChangedSinceLastUpdate( const bool& Changed ) {
-	BitOp::WriteBitKey( &mFlags, INPUT_TB_CHANGE_SINCE_LAST_UPDATE, Changed == true );
+	BitOp::writeBitKey( &mFlags, INPUT_TB_CHANGE_SINCE_LAST_UPDATE, Changed == true );
 }
 
 void InputTextBuffer::AutoPrompt( const bool& set ) {
-	BitOp::WriteBitKey( &mFlags, INPUT_TB_PROMPT_AUTO_POS, set == true );
+	BitOp::writeBitKey( &mFlags, INPUT_TB_PROMPT_AUTO_POS, set == true );
 
 	if ( set ) {
 		mPromptPos		= (int)mText.size();
@@ -703,7 +703,7 @@ bool InputTextBuffer::Active() const {
 }
 
 void InputTextBuffer::Active( const bool& Active ) {
-	BitOp::WriteBitKey( &mFlags, INPUT_TB_ACTIVE, Active == true );
+	BitOp::writeBitKey( &mFlags, INPUT_TB_ACTIVE, Active == true );
 }
 
 bool InputTextBuffer::SupportNewLine() {
@@ -711,12 +711,12 @@ bool InputTextBuffer::SupportNewLine() {
 }
 
 void InputTextBuffer::SupportNewLine( const bool& SupportNewLine ) {
-	BitOp::WriteBitKey( &mFlags, INPUT_TB_SUPPORT_NEW_LINE, SupportNewLine == true );
+	BitOp::writeBitKey( &mFlags, INPUT_TB_SUPPORT_NEW_LINE, SupportNewLine == true );
 }
 
 void InputTextBuffer::AllowOnlyNumbers( const bool& onlynums, const bool& allowdots ) {
-	BitOp::WriteBitKey( &mFlags, INPUT_TB_ALLOW_ONLY_NUMBERS, onlynums == true );
-	BitOp::WriteBitKey( &mFlags, INPUT_TB_ALLOW_DOT_IN_NUMBERS, allowdots == true );
+	BitOp::writeBitKey( &mFlags, INPUT_TB_ALLOW_ONLY_NUMBERS, onlynums == true );
+	BitOp::writeBitKey( &mFlags, INPUT_TB_ALLOW_DOT_IN_NUMBERS, allowdots == true );
 }
 
 bool InputTextBuffer::AllowOnlyNumbers() {
@@ -732,11 +732,11 @@ bool InputTextBuffer::SupportFreeEditing() const {
 }
 
 void InputTextBuffer::SupportFreeEditing( const bool& Support ) {
-	BitOp::WriteBitKey( &mFlags, INPUT_TB_FREE_EDITING, Support == true );
+	BitOp::writeBitKey( &mFlags, INPUT_TB_FREE_EDITING, Support == true );
 }
 
 void InputTextBuffer::SupportCopyPaste( const bool& support ) {
-	BitOp::WriteBitKey( &mFlags, INPUT_TB_SUPPORT_COPY_PASTE, support == true );
+	BitOp::writeBitKey( &mFlags, INPUT_TB_SUPPORT_COPY_PASTE, support == true );
 }
 
 bool InputTextBuffer::SupportCopyPaste() {
@@ -748,7 +748,7 @@ bool InputTextBuffer::TextSelectionEnabled() {
 }
 
 void InputTextBuffer::TextSelectionEnabled( const bool& enabled ) {
-	BitOp::WriteBitKey( &mFlags, INPUT_TB_TEXT_SELECTION_ENABLED, enabled == true );
+	BitOp::writeBitKey( &mFlags, INPUT_TB_TEXT_SELECTION_ENABLED, enabled == true );
 }
 
 void InputTextBuffer::CursorToEnd() {

@@ -95,7 +95,7 @@ void InputSDL::Update() {
 			}
 			case SDL_TEXTINPUT:
 			{
-				String txt = String::FromUtf8( SDLEvent.text.text );
+				String txt = String::fromUtf8( SDLEvent.text.text );
 
 				EEEvent.Type = InputEvent::TextInput;
 				EEEvent.text.timestamp = SDLEvent.text.timestamp;

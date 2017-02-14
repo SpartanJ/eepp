@@ -376,7 +376,7 @@ void ParticleSystem::Update( const System::Time& time ) {
 		P = &mParticle[i];
 
 		if ( P->Used() || P->A() > 0.f ) {
-			P->Update( time.AsMilliseconds() * mTime );
+			P->Update( time.asMilliseconds() * mTime );
 
 			// If not alive
 			if ( P->A() <= 0.f ) {

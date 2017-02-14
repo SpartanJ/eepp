@@ -38,7 +38,7 @@ void JoystickManagerSDL::OpenAsync() {
 }
 
 void JoystickManagerSDL::Open() {
-	mAsyncInit.Launch();
+	mAsyncInit.launch();
 }
 
 void JoystickManagerSDL::Close() {

@@ -117,8 +117,8 @@ Socket::Status TcpSocket::Connect(const IpAddress& remoteAddress, unsigned short
 
 			// Setup the timeout
 			timeval time;
-			time.tv_sec  = static_cast<long>(timeout.AsMicroseconds() / 1000000);
-			time.tv_usec = static_cast<long>(timeout.AsMicroseconds() % 1000000);
+			time.tv_sec  = static_cast<long>(timeout.asMicroseconds() / 1000000);
+			time.tv_usec = static_cast<long>(timeout.asMicroseconds() % 1000000);
 
 			// Wait for something to write on our socket (which means that the connection request has returned)
 			if (select(static_cast<int>(GetHandle() + 1), NULL, &selector, NULL, &time) > 0) {

@@ -25,15 +25,15 @@ class RendererGLES2;
 class EE_API cGL {
 	static cGL * ms_singleton;
 	public:
-		static cGL * CreateSingleton( EEGL_version ver );
+		static cGL * createSingleton( EEGL_version ver );
 
-		static cGL * CreateSingleton();
+		static cGL * createSingleton();
 
-		static cGL * ExistsSingleton();
+		static cGL * existsSingleton();
 
 		static cGL * instance();
 
-		static void DestroySingleton();
+		static void destroySingleton();
 
 		cGL();
 

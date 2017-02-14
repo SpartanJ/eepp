@@ -3,8 +3,8 @@
 
 namespace EE { namespace System {
 
-Uint32 Thread::GetCurrentThreadId() {
-	return Platform::ThreadImpl::GetCurrentThreadId();
+Uint32 Thread::getCurrentThreadId() {
+	return Platform::ThreadImpl::getCurrentThreadId();
 }
 
 Thread::Thread() :
@@ -14,39 +14,39 @@ Thread::Thread() :
 }
 
 Thread::~Thread() {
-	Wait();
+	wait();
 
 	if ( NULL != mEntryPoint )
 		delete mEntryPoint;
 }
 
-void Thread::Launch() {
-	Wait();
+void Thread::launch() {
+	wait();
 
 	mThreadImpl = eeNew( Platform::ThreadImpl, ( this ) );
 }
 
-void Thread::Wait() {
+void Thread::wait() {
 	if ( mThreadImpl ) {
-		mThreadImpl->Wait();
+		mThreadImpl->wait();
 
 		eeSAFE_DELETE( mThreadImpl );
 	}
 }
 
-void Thread::Terminate() {
+void Thread::terminate() {
 	if ( mThreadImpl ) {
-		mThreadImpl->Terminate();
+		mThreadImpl->terminate();
 
 		eeSAFE_DELETE( mThreadImpl );
 	}
 }
 
 Uint32 Thread::Id() {
-	return mThreadImpl->Id();
+	return mThreadImpl->id();
 }
 
-void Thread::Run() {
+void Thread::run() {
 	mEntryPoint->Run();
 }
 

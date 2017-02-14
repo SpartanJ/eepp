@@ -27,39 +27,39 @@ class EE_API ObjectLoader : protected Thread {
 		virtual ~ObjectLoader();
 
 		/** @brief Starts loading the resource */
-		void 			Load();
+		void 			load();
 
 		/** @brief Starts loading the resource.
 		**	@param Cb A callback that is called when the resource finished loading. */
-		void 			Load( ObjLoadCallback Cb );
+		void 			load( ObjLoadCallback Cb );
 
 		/** @brief Force to unload the resource from memory in case that it was already loaded. */
-		virtual void	Unload() = 0;
+		virtual void	unload() = 0;
 
 		/** @brief Update the state of the current loading resource.
 		**	This is needed by some loaders to know if the resource was loaded.
 		**	The loaders that need to load a texture to the GPU, will upload the data to the GPU only from the OpenGL context thread ( the main application thread )
 		*/
-		virtual void 	Update();
+		virtual void 	update();
 
 		/** @brief Starts the loading. */
-		void 			Launch();
+		void 			launch();
 
 		/** @returns If the resource was loaded. */
-		virtual bool	IsLoaded();
+		virtual bool	isLoaded();
 
 		/** @returns If the resource is loading. */
-		virtual bool	IsLoading();
+		virtual bool	isLoading();
 
 		/** @returns If the loader is asynchronous */
-		bool			Threaded() const;
+		bool			threaded() const;
 
 		/** @brief Sets if the loader is asynchronous.
 		**	This must be called before the load starts. */
-		void			Threaded( const bool& threaded );
+		void			threaded( const bool& threaded );
 
 		/** @return The object loader type */
-		const Uint32&	Type() const;
+		const Uint32&	type() const;
 	protected:
 		Uint32			mObjType;	// Texture Loader Object Type
 		bool			mLoaded;
@@ -68,13 +68,13 @@ class EE_API ObjectLoader : protected Thread {
 
 		std::list<ObjLoadCallback>	mLoadCbs;
 
-		virtual void 	Start();
+		virtual void 	start();
 
-		virtual void	SetLoaded();
+		virtual void	setLoaded();
 
-		virtual void	Reset();
+		virtual void	reset();
 	private:
-		virtual void 	Run();
+		virtual void 	run();
 };
 
 }}

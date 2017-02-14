@@ -8,7 +8,7 @@ MapLayer::MapLayer( TileMap * map, Uint32 type, Uint32 flags, std::string name, 
 	mType( type ),
 	mFlags( flags ),
 	mOffset( offset ),
-	mNameHash( String::Hash( name ) ),
+	mNameHash( String::hash( name ) ),
 	mName( name )
 {
 }
@@ -55,7 +55,7 @@ void MapLayer::Offset( const Vector2f& offset ) {
 
 void MapLayer::Name( const std::string& name ) {
 	mName		= name;
-	mNameHash	= String::Hash( mName );
+	mNameHash	= String::hash( mName );
 }
 
 const std::string& MapLayer::Name() const {

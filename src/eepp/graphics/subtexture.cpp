@@ -25,7 +25,7 @@ SubTexture::SubTexture( const Uint32& TexId, const std::string& Name ) :
 	mPixels(NULL),
 	mAlpha(NULL),
 	mName( Name ),
-	mId( String::Hash( mName ) ),
+	mId( String::hash( mName ) ),
 	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->GetTexture( TexId ) ),
 	mSrcRect( Recti( 0, 0, NULL != mTexture ? mTexture->ImgWidth() : 0, NULL != mTexture ? mTexture->ImgHeight() : 0 ) ),
@@ -39,7 +39,7 @@ SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const std::st
 	mPixels(NULL),
 	mAlpha(NULL),
 	mName( Name ),
-	mId( String::Hash( mName ) ),
+	mId( String::hash( mName ) ),
 	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->GetTexture( TexId ) ),
 	mSrcRect( SrcRect ),
@@ -53,7 +53,7 @@ SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const Sizef& 
 	mPixels(NULL),
 	mAlpha(NULL),
 	mName( Name ),
-	mId( String::Hash( mName ) ),
+	mId( String::hash( mName ) ),
 	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->GetTexture( TexId ) ),
 	mSrcRect(SrcRect),
@@ -67,7 +67,7 @@ SubTexture::SubTexture( const Uint32& TexId, const Recti& SrcRect, const Sizef& 
 	mPixels(NULL),
 	mAlpha(NULL),
 	mName( Name ),
-	mId( String::Hash( mName ) ),
+	mId( String::hash( mName ) ),
 	mTexId( TexId ),
 	mTexture( TextureFactory::instance()->GetTexture( TexId ) ),
 	mSrcRect(SrcRect),
@@ -96,7 +96,7 @@ const std::string SubTexture::Name() const {
 
 void SubTexture::Name( const std::string& name ) {
 	mName = name;
-	mId = String::Hash( mName );
+	mId = String::hash( mName );
 }
 
 const Uint32& SubTexture::Texture() {
@@ -171,11 +171,11 @@ void SubTexture::ReplaceColor( ColorA ColorKey, ColorA NewColor ) {
 }
 
 void SubTexture::CreateMaskFromColor(ColorA ColorKey, Uint8 Alpha) {
-	ReplaceColor( ColorKey, ColorA( ColorKey.R(), ColorKey.G(), ColorKey.B(), Alpha ) );
+	ReplaceColor( ColorKey, ColorA( ColorKey.r(), ColorKey.g(), ColorKey.b(), Alpha ) );
 }
 
 void SubTexture::CreateMaskFromColor(RGB ColorKey, Uint8 Alpha) {
-	CreateMaskFromColor( ColorA( ColorKey.R(), ColorKey.G(), ColorKey.B(), 255 ), Alpha );
+	CreateMaskFromColor( ColorA( ColorKey.r(), ColorKey.g(), ColorKey.b(), 255 ), Alpha );
 }
 
 void SubTexture::CacheAlphaMask() {
@@ -196,7 +196,7 @@ void SubTexture::CacheAlphaMask() {
 		for ( int x = mSrcRect.Left; x < mSrcRect.Right; x++ ) {
 			rX = x - mSrcRect.Left;
 
-			mAlpha[ rX + rY * rW ] = mTexture->GetPixel( x, y ).A();
+			mAlpha[ rX + rY * rW ] = mTexture->GetPixel( x, y ).a();
 		}
 	}
 
@@ -229,10 +229,10 @@ void SubTexture::CacheColors() {
 
 			Pos = ( rX + rY * rW ) * Channels;
 
-			if ( Channels >= 1 ) mPixels[ Pos ]		= tColor.R();
-			if ( Channels >= 2 ) mPixels[ Pos + 1 ]	= tColor.G();
-			if ( Channels >= 3 ) mPixels[ Pos + 2 ]	= tColor.B();
-			if ( Channels >= 4 ) mPixels[ Pos + 3 ]	= tColor.A();
+			if ( Channels >= 1 ) mPixels[ Pos ]		= tColor.r();
+			if ( Channels >= 2 ) mPixels[ Pos + 1 ]	= tColor.g();
+			if ( Channels >= 3 ) mPixels[ Pos + 2 ]	= tColor.b();
+			if ( Channels >= 4 ) mPixels[ Pos + 3 ]	= tColor.a();
 		}
 	}
 
@@ -241,7 +241,7 @@ void SubTexture::CacheColors() {
 
 Uint8 SubTexture::GetAlphaAt( const Int32& X, const Int32& Y ) {
 	if ( mTexture->LocalCopy() )
-		return mTexture->GetPixel( mSrcRect.Left + X, mSrcRect.Right + Y ).A();
+		return mTexture->GetPixel( mSrcRect.Left + X, mSrcRect.Right + Y ).a();
 
 	if ( NULL != mAlpha )
 		return mAlpha[ X + Y * ( mSrcRect.Right - mSrcRect.Left ) ];
@@ -282,10 +282,10 @@ void SubTexture::SetColorAt( const Int32& X, const Int32& Y, const ColorA& Color
 		Uint32 Channels = mTexture->Channels();
 		unsigned int Pos = ( X + Y * ( mSrcRect.Right - mSrcRect.Left ) ) * Channels;
 
-		if ( Channels >= 1 ) mPixels[ Pos ]		= Color.R();
-		if ( Channels >= 2 ) mPixels[ Pos + 1 ]	= Color.G();
-		if ( Channels >= 3 ) mPixels[ Pos + 2 ]	= Color.B();
-		if ( Channels >= 4 ) mPixels[ Pos + 3 ]	= Color.A();
+		if ( Channels >= 1 ) mPixels[ Pos ]		= Color.r();
+		if ( Channels >= 2 ) mPixels[ Pos + 1 ]	= Color.g();
+		if ( Channels >= 3 ) mPixels[ Pos + 2 ]	= Color.b();
+		if ( Channels >= 4 ) mPixels[ Pos + 3 ]	= Color.a();
 	} else {
 		CacheColors();
 		SetColorAt( X, Y, Color );

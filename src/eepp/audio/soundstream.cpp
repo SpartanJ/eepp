@@ -49,7 +49,7 @@ void SoundStream::Play() {
 
 	mSamplesProcessed = 0;
 	mIsStreaming = true; // Start updating the stream in a separate thread to avoid blocking the application
-	Launch();
+	launch();
 }
 
 void SoundStream::Pause() {
@@ -58,7 +58,7 @@ void SoundStream::Pause() {
 
 void SoundStream::Stop() {
 	mIsStreaming = false; // Wait for the thread to terminate
-	Wait();
+	wait();
 }
 
 unsigned int SoundStream::GetChannelCount() const {
@@ -100,11 +100,11 @@ void SoundStream::PlayingOffset( const Time &timeOffset ) {
 	OnSeek( timeOffset );
 
 	// Restart streaming
-	mSamplesProcessed = static_cast<Uint32>( timeOffset.AsSeconds() ) * mSampleRate * mChannelCount;
+	mSamplesProcessed = static_cast<Uint32>( timeOffset.asSeconds() ) * mSampleRate * mChannelCount;
 
 	mIsStreaming = true;
 
-	Launch();
+	launch();
 
 	// Recover old status
 	if ( oldStatus == Stopped ) {
@@ -122,7 +122,7 @@ bool SoundStream::Loop() const {
 	return mLoop;
 }
 
-void SoundStream::Run() {
+void SoundStream::run() {
 	ALCheck( alGenBuffers( BuffersCount, mBuffers ) );
 
 	for ( int i = 0; i < BuffersCount; ++i )
@@ -184,7 +184,7 @@ void SoundStream::Run() {
 
 		// Leave some time for the other threads if the stream is still playing
 		if ( Sound::GetState() != Sound::Stopped )
-			Sys::Sleep(10);
+			Sys::sleep(10);
 	}
 
 	// Stop the playback

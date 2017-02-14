@@ -82,53 +82,53 @@ void TextureAtlasLoader::SetLoadCallback( GLLoadCallback LoadCallback ) {
 }
 
 void TextureAtlasLoader::Update() {
-	mRL.Update();
+	mRL.update();
 
-	if ( mRL.IsLoaded() && !mLoaded )
+	if ( mRL.isLoaded() && !mLoaded )
 		CreateSubTextures();
 }
 
 void TextureAtlasLoader::LoadFromStream( IOStream& IOS ) {
-	mRL.Threaded( mThreaded );
+	mRL.threaded( mThreaded );
 
-	if ( IOS.IsOpen() ) {
-		IOS.Read( (char*)&mTexGrHdr, sizeof(sTextureAtlasHdr) );
+	if ( IOS.isOpen() ) {
+		IOS.read( (char*)&mTexGrHdr, sizeof(sTextureAtlasHdr) );
 
 		if ( mTexGrHdr.Magic == EE_TEXTURE_ATLAS_MAGIC || mTexGrHdr.Magic == EE_TEXTURE_ATLAS_MAGIC_OLD ) {
 			for ( Uint32 i = 0; i < mTexGrHdr.TextureCount; i++ ) {
 				sTextureHdr tTextureHdr;
 				sTempTexAtlas tTexAtlas;
 
-				IOS.Read( (char*)&tTextureHdr, sizeof(sTextureHdr) );
+				IOS.read( (char*)&tTextureHdr, sizeof(sTextureHdr) );
 
 				tTexAtlas.Texture = tTextureHdr;
 				tTexAtlas.SubTextures.resize( tTextureHdr.SubTextureCount );
 
 				std::string name( &tTextureHdr.Name[0] );
-				std::string path( FileSystem::FileRemoveFileName( mTextureAtlasPath ) + name );
+				std::string path( FileSystem::fileRemoveFileName( mTextureAtlasPath ) + name );
 
 				//! Checks if the texture is already loaded
 				Texture * tTex = TextureFactory::instance()->GetByName( path );
 
 				if ( !mSkipResourceLoad && NULL == tTex ) {
 					if ( NULL != mPack ) {
-						mRL.Add( eeNew( TextureLoader, ( mPack, path ) ) );
+						mRL.add( eeNew( TextureLoader, ( mPack, path ) ) );
 					} else {
-						mRL.Add( eeNew( TextureLoader, ( path ) ) );
+						mRL.add( eeNew( TextureLoader, ( path ) ) );
 					}
 				}
 
-				IOS.Read( (char*)&tTexAtlas.SubTextures[0], sizeof(sSubTextureHdr) * tTextureHdr.SubTextureCount );
+				IOS.read( (char*)&tTexAtlas.SubTextures[0], sizeof(sSubTextureHdr) * tTextureHdr.SubTextureCount );
 
 				mTempAtlass.push_back( tTexAtlas );
 			}
 		}
 
-		if ( !mSkipResourceLoad || ( !mSkipResourceLoad && 0 == mRL.Count() ) ) {
+		if ( !mSkipResourceLoad || ( !mSkipResourceLoad && 0 == mRL.count() ) ) {
 			mIsLoading = true;
-			mRL.Load();
+			mRL.load();
 
-			if ( !mThreaded || ( !mSkipResourceLoad && 0 == mRL.Count() ) )
+			if ( !mThreaded || ( !mSkipResourceLoad && 0 == mRL.count() ) )
 				CreateSubTextures();
 		}
 	}
@@ -138,14 +138,14 @@ void TextureAtlasLoader::Load( const std::string& TextureAtlasPath ) {
 	if ( TextureAtlasPath.size() )
 		mTextureAtlasPath = TextureAtlasPath;
 
-	if ( FileSystem::FileExists( mTextureAtlasPath ) ) {
+	if ( FileSystem::fileExists( mTextureAtlasPath ) ) {
 		IOStreamFile IOS( mTextureAtlasPath, std::ios::in | std::ios::binary );
 
 		LoadFromStream( IOS );
-	} else if ( PackManager::instance()->FallbackToPacks() ) {
+	} else if ( PackManager::instance()->fallbackToPacks() ) {
 		std::string tgPath( mTextureAtlasPath );
 
-		Pack * tPack = PackManager::instance()->Exists( tgPath );
+		Pack * tPack = PackManager::instance()->exists( tgPath );
 
 		if ( NULL != tPack ) {
 			LoadFromPack( tPack, tgPath );
@@ -154,12 +154,12 @@ void TextureAtlasLoader::Load( const std::string& TextureAtlasPath ) {
 }
 
 void TextureAtlasLoader::LoadFromPack( Pack * Pack, const std::string& FilePackPath ) {
-	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( FilePackPath ) ) {
+	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( FilePackPath ) ) {
 		mPack = Pack;
 
 		SafeDataPointer PData;
 
-		Pack->ExtractFileToMemory( FilePackPath, PData );
+		Pack->extractFileToMemory( FilePackPath, PData );
 
 		LoadFromMemory( reinterpret_cast<const Uint8*> ( PData.Data ), PData.DataSize, FilePackPath );
 	}
@@ -187,9 +187,9 @@ void TextureAtlasLoader::CreateSubTextures() {
 		sTextureHdr * tTexHdr 		= &tTexAtlas->Texture;
 
 		std::string name( &tTexHdr->Name[0] );
-		std::string path( FileSystem::FileRemoveFileName( mTextureAtlasPath ) + name );
+		std::string path( FileSystem::fileRemoveFileName( mTextureAtlasPath ) + name );
 
-		FileSystem::FilePathRemoveProcessPath( path );
+		FileSystem::filePathRemoveProcessPath( path );
 
 		Texture * tTex 			= TextureFactory::instance()->GetByName( path );
 
@@ -199,11 +199,11 @@ void TextureAtlasLoader::CreateSubTextures() {
 		// Create the Texture Atlas with the name of the real texture, not the Childs ( example load 1.png and not 1_ch1.png )
 		if ( 0 == z ) {
 			if ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_REMOVE_EXTENSION )
-				name = FileSystem::FileRemoveExtension( name );
+				name = FileSystem::fileRemoveExtension( name );
 
-			std::string etapath = FileSystem::FileRemoveExtension( path ) + EE_TEXTURE_ATLAS_EXTENSION;
+			std::string etapath = FileSystem::fileRemoveExtension( path ) + EE_TEXTURE_ATLAS_EXTENSION;
 
-			TextureAtlas * tTextureAtlas = TextureAtlasManager::instance()->GetByName( name );
+			TextureAtlas * tTextureAtlas = TextureAtlasManager::instance()->getByName( name );
 
 			if ( NULL != tTextureAtlas && tTextureAtlas->Path() == etapath ) {
 				mTextureAtlas = tTextureAtlas;
@@ -214,7 +214,7 @@ void TextureAtlasLoader::CreateSubTextures() {
 
 				mTextureAtlas->Path( etapath );
 
-				TextureAtlasManager::instance()->Add( mTextureAtlas );
+				TextureAtlasManager::instance()->add( mTextureAtlas );
 			}
 		}
 
@@ -226,7 +226,7 @@ void TextureAtlasLoader::CreateSubTextures() {
 					std::string SubTextureName( &tSh->Name[0] );
 
 					if ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_REMOVE_EXTENSION )
-						SubTextureName = FileSystem::FileRemoveExtension( SubTextureName );
+						SubTextureName = FileSystem::fileRemoveExtension( SubTextureName );
 
 					Recti tRect( tSh->X, tSh->Y, tSh->X + tSh->Width, tSh->Y + tSh->Height );
 
@@ -235,7 +235,7 @@ void TextureAtlasLoader::CreateSubTextures() {
 					//if ( tSh->Flags & HDR_SUBTEXTURE_FLAG_FLIPED )
 						// Should rotate the sub texture, but.. sub texture rotation is not stored.
 
-					mTextureAtlas->Add( tSubTexture );
+					mTextureAtlas->add( tSubTexture );
 				}
 			}
 		} else {
@@ -294,7 +294,7 @@ bool TextureAtlasLoader::UpdateTextureAtlas() {
 
 		for ( Int32 i = 0; i < tTexHdr->SubTextureCount; i++ ) {
 			sSubTextureHdr * tSh = &tTexAtlas->SubTextures[i];
-			SubTexture * tSubTexture = mTextureAtlas->GetById( tSh->ResourceID );
+			SubTexture * tSubTexture = mTextureAtlas->getById( tSh->ResourceID );
 
 			if ( NULL != tSubTexture ) {
 				tSh->OffsetX = tSubTexture->Offset().x;
@@ -307,16 +307,16 @@ bool TextureAtlasLoader::UpdateTextureAtlas() {
 
 	IOStreamFile fs( mTextureAtlasPath, std::ios::out | std::ios::binary );
 
-	if ( fs.IsOpen() ) {
-		fs.Write( reinterpret_cast<char*> (&mTexGrHdr), sizeof(sTextureAtlasHdr) );
+	if ( fs.isOpen() ) {
+		fs.write( reinterpret_cast<char*> (&mTexGrHdr), sizeof(sTextureAtlasHdr) );
 
 		for ( Uint32 z = 0; z < mTempAtlass.size(); z++ ) {
 			sTempTexAtlas * tTexAtlas 	= &mTempAtlass[z];
 			sTextureHdr * tTexHdr 		= &tTexAtlas->Texture;
 
-			fs.Write( reinterpret_cast<char*> ( tTexHdr ), sizeof(sTextureHdr) );
+			fs.write( reinterpret_cast<char*> ( tTexHdr ), sizeof(sTextureHdr) );
 
-			fs.Write( reinterpret_cast<char*> ( &tTexAtlas->SubTextures[0] ), sizeof(sSubTextureHdr) * (std::streamsize)tTexAtlas->SubTextures.size() );
+			fs.write( reinterpret_cast<char*> ( &tTexAtlas->SubTextures[0] ), sizeof(sSubTextureHdr) * (std::streamsize)tTexAtlas->SubTextures.size() );
 		}
 
 		return true;
@@ -326,10 +326,10 @@ bool TextureAtlasLoader::UpdateTextureAtlas() {
 }
 
 static bool IsImage( std::string path ) {
-	if ( FileSystem::FileSize( path ) ) {
+	if ( FileSystem::fileSize( path ) ) {
 		std::string File	= path.substr( path.find_last_of("/\\") + 1 );
 		std::string Ext		= File.substr( File.find_last_of(".") + 1 );
-		String::ToLowerInPlace( Ext );
+		String::toLowerInPlace( Ext );
 
 		if ( Ext == "png" ||
 			 Ext == "tga" ||
@@ -354,7 +354,7 @@ static bool IsImage( std::string path ) {
 }
 
 bool TextureAtlasLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std::string ImagesPath ) {
-	if ( !TextureAtlasPath.size() || !ImagesPath.size() || !FileSystem::FileExists( TextureAtlasPath ) || !FileSystem::IsDirectory( ImagesPath ) )
+	if ( !TextureAtlasPath.size() || !ImagesPath.size() || !FileSystem::fileExists( TextureAtlasPath ) || !FileSystem::isDirectory( ImagesPath ) )
 		return false;
 
 	mSkipResourceLoad = true;
@@ -368,7 +368,7 @@ bool TextureAtlasLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std::
 
 	Int32 NeedUpdate = 0;
 
-	FileSystem::DirPathAddSlashAtEnd( ImagesPath );
+	FileSystem::dirPathAddSlashAtEnd( ImagesPath );
 
 	Uint32 z;
 
@@ -377,7 +377,7 @@ bool TextureAtlasLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std::
 		totalSubTextures += mTempAtlass[z].Texture.SubTextureCount;
 
 	Uint32 totalImages = 0;
-	std::vector<std::string> PathFiles = FileSystem::FilesGetInPath( ImagesPath );
+	std::vector<std::string> PathFiles = FileSystem::filesGetInPath( ImagesPath );
 
 	for ( z = 0; z < PathFiles.size(); z++ ) {
 		std::string realpath( ImagesPath + PathFiles[z] );
@@ -400,8 +400,8 @@ bool TextureAtlasLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std::
 
 					std::string path( ImagesPath + tSh->Name );
 
-					if ( FileSystem::FileSize( path ) ) {
-						if ( tSh->Date != FileSystem::FileGetModificationDate( path ) ) {
+					if ( FileSystem::fileSize( path ) ) {
+						if ( tSh->Date != FileSystem::fileGetModificationDate( path ) ) {
 							if ( stbi_info( path.c_str(), &x, &y, &c ) ) {
 								if ( 	( !( tSh->Flags & HDR_SUBTEXTURE_FLAG_FLIPED ) && tSh->Width == x && tSh->Height == y ) || // If size or channels changed, the image need update
 										( ( tSh->Flags & HDR_SUBTEXTURE_FLAG_FLIPED ) && tSh->Width == y && tSh->Height == x ) ||
@@ -430,7 +430,7 @@ bool TextureAtlasLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std::
 	}
 
 	if ( NeedUpdate ) {
-		std::string tapath( FileSystem::FileRemoveExtension( TextureAtlasPath ) + "." + Image::SaveTypeToExtension( mTexGrHdr.Format ) );
+		std::string tapath( FileSystem::fileRemoveExtension( TextureAtlasPath ) + "." + Image::SaveTypeToExtension( mTexGrHdr.Format ) );
 
 		if ( 2 == NeedUpdate ) {
 			TexturePacker tp( mTexGrHdr.Width, mTexGrHdr.Height, 0 != ( mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_POW_OF_TWO ), mTexGrHdr.PixelBorder, mTexGrHdr.Flags & HDR_TEXTURE_ATLAS_ALLOW_FLIPPING );
@@ -441,18 +441,18 @@ bool TextureAtlasLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std::
 
 			tp.Save( tapath, (EE_SAVE_TYPE)mTexGrHdr.Format );
 		} else if ( 1 == NeedUpdate ) {
-			std::string etapath = FileSystem::FileRemoveExtension( tapath ) + EE_TEXTURE_ATLAS_EXTENSION;
+			std::string etapath = FileSystem::fileRemoveExtension( tapath ) + EE_TEXTURE_ATLAS_EXTENSION;
 
 			IOStreamFile fs( etapath , std::ios::out | std::ios::binary );
 
-			if ( !fs.IsOpen() )
+			if ( !fs.isOpen() )
 				return false;
 
-			fs.Write( reinterpret_cast<const char*> (&mTexGrHdr), sizeof(sTextureAtlasHdr) );
+			fs.write( reinterpret_cast<const char*> (&mTexGrHdr), sizeof(sTextureAtlasHdr) );
 
 			for ( Uint32 z = 0; z < mTempAtlass.size(); z++ ) {
 				if ( z != 0 ) {
-					tapath = FileSystem::FileRemoveExtension( TextureAtlasPath ) + "_ch" + String::ToStr( z ) + "." + Image::SaveTypeToExtension( mTexGrHdr.Format );
+					tapath = FileSystem::fileRemoveExtension( TextureAtlasPath ) + "_ch" + String::toStr( z ) + "." + Image::SaveTypeToExtension( mTexGrHdr.Format );
 				}
 
 				unsigned char * imgPtr = stbi_load( tapath.c_str(), &x, &y, &c, 0 );
@@ -464,14 +464,14 @@ bool TextureAtlasLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std::
 					sTempTexAtlas * tTexAtlas 	= &mTempAtlass[z];
 					sTextureHdr * tTexHdr 		= &tTexAtlas->Texture;
 
-					fs.Write( reinterpret_cast<const char*> (tTexHdr), sizeof(sTextureHdr) );
+					fs.write( reinterpret_cast<const char*> (tTexHdr), sizeof(sTextureHdr) );
 
 					for ( Int32 i = 0; i < tTexHdr->SubTextureCount; i++ ) {
 						sSubTextureHdr * tSh = &tTexAtlas->SubTextures[i];
 
 						std::string imgcopypath( ImagesPath + tSh->Name );
 
-						Uint32 ModifDate = FileSystem::FileGetModificationDate( imgcopypath );
+						Uint32 ModifDate = FileSystem::fileGetModificationDate( imgcopypath );
 
 						if ( tSh->Date != ModifDate ) {
 							tSh->Date = ModifDate;	// Update the sub texture hdr
@@ -491,7 +491,7 @@ bool TextureAtlasLoader::UpdateTextureAtlas( std::string TextureAtlasPath, std::
 						}
 					}
 
-					fs.Write( reinterpret_cast<const char*> (&tTexAtlas->SubTextures[0]), sizeof(sSubTextureHdr) * tTexHdr->SubTextureCount );
+					fs.write( reinterpret_cast<const char*> (&tTexAtlas->SubTextures[0]), sizeof(sSubTextureHdr) * tTexHdr->SubTextureCount );
 
 					Img.SaveToFile( tapath, (EE_SAVE_TYPE)mTexGrHdr.Format );
 

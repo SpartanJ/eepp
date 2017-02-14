@@ -29,7 +29,7 @@ FrameBuffer::FrameBuffer( EE::Window::Window * window  ) :
 		mWindow = Engine::instance()->GetCurrentWindow();
 	}
 
-	FrameBufferManager::instance()->Add( this );
+	FrameBufferManager::instance()->add( this );
 }
 
 FrameBuffer::~FrameBuffer() {
@@ -37,7 +37,7 @@ FrameBuffer::~FrameBuffer() {
 		eeSAFE_DELETE( mTexture );
 	}
 
-	FrameBufferManager::instance()->Remove( this );
+	FrameBufferManager::instance()->remove( this );
 }
 
 Texture * FrameBuffer::GetTexture() const {
@@ -53,7 +53,7 @@ ColorAf FrameBuffer::ClearColor() const {
 }
 
 void FrameBuffer::Clear() {
-	GLi->ClearColor( mClearColor.R(), mClearColor.G(), mClearColor.B(), mClearColor.A() );
+	GLi->ClearColor( mClearColor.r(), mClearColor.g(), mClearColor.b(), mClearColor.a() );
 	GLi->Clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	mWindow->BackColor( mWindow->BackColor() );
 }

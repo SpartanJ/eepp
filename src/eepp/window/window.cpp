@@ -171,7 +171,7 @@ const WindowInfo * Window::GetWindowInfo() const {
 
 void Window::BackColor( const RGB& Color ) {
 	mWindow.BackgroundColor = Color;
-	GLi->ClearColor( static_cast<Float>( mWindow.BackgroundColor.R() ) / 255.0f, static_cast<Float>( mWindow.BackgroundColor.G() ) / 255.0f, static_cast<Float>( mWindow.BackgroundColor.B() ) / 255.0f, 255.0f );
+	GLi->ClearColor( static_cast<Float>( mWindow.BackgroundColor.r() ) / 255.0f, static_cast<Float>( mWindow.BackgroundColor.g() ) / 255.0f, static_cast<Float>( mWindow.BackgroundColor.b() ) / 255.0f, 255.0f );
 }
 
 const RGB& Window::BackColor() const {
@@ -188,10 +188,10 @@ bool Window::TakeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format ) 
 		File = filepath.substr( filepath.find_last_of("/\\") + 1 );
 		Ext = File.substr( File.find_last_of(".") + 1 );
 
-		if ( FileSystem::IsDirectory( filepath ) || !Ext.size() )
+		if ( FileSystem::isDirectory( filepath ) || !Ext.size() )
 			CreateNewFile = true;
 	} else {
-		filepath = Sys::GetProcessPath();
+		filepath = Sys::getProcessPath();
 		CreateNewFile = true;
 	}
 
@@ -200,17 +200,17 @@ bool Window::TakeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format ) 
 		Int32 FileNum = 1;
 		std::string TmpPath = filepath, Ext;
 
-		if ( !FileSystem::IsDirectory( filepath ) )
-			FileSystem::MakeDir( filepath );
+		if ( !FileSystem::isDirectory( filepath ) )
+			FileSystem::makeDir( filepath );
 
 		Ext = "." + Image::SaveTypeToExtension( Format );
 
 		while ( !find && FileNum < 10000 ) {
-			TmpPath = String::StrFormated( "%s%05d%s", filepath.c_str(), FileNum, Ext.c_str() );
+			TmpPath = String::strFormated( "%s%05d%s", filepath.c_str(), FileNum, Ext.c_str() );
 
 			FileNum++;
 
-			if ( !FileSystem::FileExists( TmpPath ) )
+			if ( !FileSystem::fileExists( TmpPath ) )
 				find = true;
 
 			if ( FileNum == 10000 && find == false )
@@ -219,10 +219,10 @@ bool Window::TakeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format ) 
 
 		return 0 != SOIL_save_screenshot(TmpPath.c_str(), Format, 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 	} else {
-		std::string Direc = FileSystem::FileRemoveFileName( filepath );
+		std::string Direc = FileSystem::fileRemoveFileName( filepath );
 
-		if ( !FileSystem::IsDirectory( Direc ) )
-			FileSystem::MakeDir( Direc );
+		if ( !FileSystem::isDirectory( Direc ) )
+			FileSystem::makeDir( Direc );
 
 		return 0 != SOIL_save_screenshot(filepath.c_str(), Format, 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 	}
@@ -261,14 +261,14 @@ void Window::GetElapsedTime() {
 		mFrameData.FrameElapsed = eeNew( Clock, () );
 	}
 
-	mFrameData.ElapsedTime = mFrameData.FrameElapsed->Elapsed();
+	mFrameData.ElapsedTime = mFrameData.FrameElapsed->elapsed();
 }
 
 void Window::CalculateFps() {
-	if ( Sys::GetTicks() - mFrameData.FPS.LastCheck >= 1000 ) {
+	if ( Sys::getTicks() - mFrameData.FPS.LastCheck >= 1000 ) {
 		mFrameData.FPS.Current = mFrameData.FPS.Count;
 		mFrameData.FPS.Count = 0;
-		mFrameData.FPS.LastCheck =	Sys::GetTicks();
+		mFrameData.FPS.LastCheck =	Sys::getTicks();
 	}
 
 	mFrameData.FPS.Count++;
@@ -277,7 +277,7 @@ void Window::CalculateFps() {
 void Window::LimitFps() {
 	if ( mFrameData.FPS.Limit > 0 ) {
 		mFrameData.FPS.Error = 0;
-		double RemainT = 1000.0 / mFrameData.FPS.Limit - ( mFrameData.ElapsedTime.AsMilliseconds() * 0.1f );
+		double RemainT = 1000.0 / mFrameData.FPS.Limit - ( mFrameData.ElapsedTime.asMilliseconds() * 0.1f );
 
 		if ( RemainT < 0 ) {
 			mFrameData.FPS.Error = 0;
@@ -290,7 +290,7 @@ void Window::LimitFps() {
 			}
 
 			if ( RemainT > 0 ) {
-				Sys::Sleep( (Uint32) RemainT );
+				Sys::sleep( (Uint32) RemainT );
 			}
 		}
 	}
@@ -377,27 +377,27 @@ void Window::SendVideoResizeCb() {
 }
 
 void Window::LogSuccessfulInit(const std::string& BackendName , const std::string&ProcessPath ) {
-	std::string msg( "Engine Initialized Succesfully.\n\tVersion: " + Version::GetVersionName() + " (codename: \"" + Version::GetCodename() + "\")" +
-							 "\n\tBuild time: " + Version::GetBuildTime() +
-							 "\n\tOS: " + Sys::GetOSName(true) +
-							 "\n\tArch: " + Sys::GetOSArchitecture() +
-							 "\n\tCPU Cores: " + String::ToStr( Sys::GetCPUCount() ) +
-							 "\n\tProcess Path: " + ( !ProcessPath.empty() ? ProcessPath : Sys::GetProcessPath() ) +
-							 "\n\tDisk Free Space: " + String::ToStr( FileSystem::SizeToString( Sys::GetDiskFreeSpace( Sys::GetProcessPath() ) ) ) +
+	std::string msg( "Engine Initialized Succesfully.\n\tVersion: " + Version::getVersionName() + " (codename: \"" + Version::getCodename() + "\")" +
+							 "\n\tBuild time: " + Version::getBuildTime() +
+							 "\n\tOS: " + Sys::getOSName(true) +
+							 "\n\tArch: " + Sys::getOSArchitecture() +
+							 "\n\tCPU Cores: " + String::toStr( Sys::getCPUCount() ) +
+							 "\n\tProcess Path: " + ( !ProcessPath.empty() ? ProcessPath : Sys::getProcessPath() ) +
+							 "\n\tDisk Free Space: " + String::toStr( FileSystem::sizeToString( Sys::getDiskFreeSpace( Sys::getProcessPath() ) ) ) +
 							 "\n\tWindow/Input Backend: " + BackendName +
 							 "\n\tGL Backend: " + GLi->VersionStr() +
 							 "\n\tGL Vendor: " + GLi->GetVendor() +
 							 "\n\tGL Renderer: " + GLi->GetRenderer() +
 							 "\n\tGL Version: " + GLi->GetVersion() +
 							 "\n\tGL Shading Language Version: " + GLi->GetShadingLanguageVersion() +
-							 "\n\tResolution: " + String::ToStr( GetWidth() ) + "x" + String::ToStr( GetHeight() ) +
+							 "\n\tResolution: " + String::toStr( GetWidth() ) + "x" + String::toStr( GetHeight() ) +
 							 "\n\tGL extensions supported:\n\t\t" + GLi->GetExtensions()
 	);
 
 	#ifndef EE_SILENT
 	eePRINTL( msg.c_str() );
 	#else
-	Log::instance()->Write( msg );
+	Log::instance()->write( msg );
 	#endif
 }
 

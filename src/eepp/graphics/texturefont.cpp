@@ -143,14 +143,14 @@ void TextureFont::BuildFromGlyphs() {
 }
 
 bool TextureFont::Load( const Uint32& TexId, const std::string& CoordinatesDatPath ) {
-	if ( FileSystem::FileExists( CoordinatesDatPath ) ) {
+	if ( FileSystem::fileExists( CoordinatesDatPath ) ) {
 		IOStreamFile IOS( CoordinatesDatPath, std::ios::in | std::ios::binary );
 
 		return LoadFromStream( TexId, IOS );
-	} else if ( PackManager::instance()->FallbackToPacks() ) {
+	} else if ( PackManager::instance()->fallbackToPacks() ) {
 		std::string tPath( CoordinatesDatPath );
 
-		Pack * tPack = PackManager::instance()->Exists( tPath );
+		Pack * tPack = PackManager::instance()->exists( tPath );
 
 		if ( NULL != tPack ) {
 			return LoadFromPack( TexId, tPack, tPath );
@@ -161,10 +161,10 @@ bool TextureFont::Load( const Uint32& TexId, const std::string& CoordinatesDatPa
 }
 
 bool TextureFont::LoadFromPack( const Uint32& TexId, Pack* Pack, const std::string& FilePackPath ) {
-	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( FilePackPath ) ) {
+	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( FilePackPath ) ) {
 		SafeDataPointer PData;
 
-		Pack->ExtractFileToMemory( FilePackPath, PData );
+		Pack->extractFileToMemory( FilePackPath, PData );
 
 		return LoadFromMemory( TexId, reinterpret_cast<const char*> ( PData.Data ), PData.DataSize );
 	}
@@ -182,10 +182,10 @@ bool TextureFont::LoadFromStream( const Uint32& TexId, IOStream& IOS ) {
 	mTexId = TexId;
 
 	if ( mTexId > 0 ) {
-		if ( IOS.IsOpen() ) {
+		if ( IOS.isOpen() ) {
 			sFntHdr FntHdr;
 
-			IOS.Read( (char*)&FntHdr, sizeof(sFntHdr) );
+			IOS.read( (char*)&FntHdr, sizeof(sFntHdr) );
 
 			if ( EE_TTF_FONT_MAGIC != FntHdr.Magic )
 				return false;
@@ -201,7 +201,7 @@ bool TextureFont::LoadFromStream( const Uint32& TexId, IOStream& IOS ) {
 			mGlyphs.resize( mNumChars );
 
 			// Read the glyphs
-			IOS.Read( (char*)&mGlyphs[0], sizeof(eeGlyph) * mNumChars );
+			IOS.read( (char*)&mGlyphs[0], sizeof(eeGlyph) * mNumChars );
 
 			BuildFromGlyphs();
 

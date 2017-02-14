@@ -57,24 +57,24 @@ TextureFontLoader::~TextureFontLoader() {
 	eeSAFE_DELETE( mTexLoader );
 }
 
-void TextureFontLoader::Start() {
-	ObjectLoader::Start();
+void TextureFontLoader::start() {
+	ObjectLoader::start();
 
-	mTexLoader->Threaded( false );
+	mTexLoader->threaded( false );
 
 	if ( !mThreaded ) {
-		Update();
+		update();
 	}
 }
 
-void TextureFontLoader::Update() {
+void TextureFontLoader::update() {
 	if ( !mLoaded ) {
 		if ( !mTexLoaded ) {
-			mTexLoader->Load();
+			mTexLoader->load();
 
-			mTexLoader->Update();
+			mTexLoader->update();
 
-			mTexLoaded = mTexLoader->IsLoaded();
+			mTexLoaded = mTexLoader->isLoaded();
 		}
 
 		if ( mTexLoaded && !mFontLoaded ) {
@@ -82,7 +82,7 @@ void TextureFontLoader::Update() {
 		}
 
 		if ( mFontLoaded ) {
-			SetLoaded();
+			setLoaded();
 		}
 	}
 }
@@ -126,18 +126,18 @@ Graphics::Font * TextureFontLoader::Font() const {
 	return mFont;
 }
 
-void TextureFontLoader::Unload() {
+void TextureFontLoader::unload() {
 	if ( mLoaded ) {
-		mTexLoader->Unload();
+		mTexLoader->unload();
 
-		FontManager::instance()->Remove( mFont );
+		FontManager::instance()->remove( mFont );
 
-		Reset();
+		reset();
 	}
 }
 
-void TextureFontLoader::Reset() {
-	ObjectLoader::Reset();
+void TextureFontLoader::reset() {
+	ObjectLoader::reset();
 
 	mFont			= NULL;
 	mTexLoaded		= false;

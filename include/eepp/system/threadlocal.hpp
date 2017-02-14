@@ -21,11 +21,11 @@ class EE_API ThreadLocal : NonCopyable {
 
 		/** @brief Set the thread-specific value of the variable
 		**  @param value Value of the variable for the current thread */
-		void Value(void* value);
+		void value(void* value);
 
 		/** @brief Retrieve the thread-specific value of the variable
 		**  @return Value of the variable for the current thread */
-		void* Value() const;
+		void* value() const;
 	private :
 		Private::ThreadLocalImpl* mImpl; ///< Pointer to the OS specific implementation
 };

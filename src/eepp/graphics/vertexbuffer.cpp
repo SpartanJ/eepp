@@ -31,11 +31,11 @@ VertexBuffer::VertexBuffer( const Uint32& VertexFlags, EE_DRAW_MODE DrawType, co
 		}
 	}
 
-	VertexBufferManager::instance()->Add( this );
+	VertexBufferManager::instance()->add( this );
 }
 
 VertexBuffer::~VertexBuffer() {
-	VertexBufferManager::instance()->Remove( this );
+	VertexBufferManager::instance()->remove( this );
 }
 
 void VertexBuffer::AddVertex( const Uint32& Type, const Vector2f& Vertex ) {
@@ -54,10 +54,10 @@ void VertexBuffer::AddVertexCoord( const Vector2f& VertexCoord, const Uint32& Te
 }
 
 void VertexBuffer::AddColor( const ColorA& Color ) {
-	mColorArray.push_back( Color.R() );
-	mColorArray.push_back( Color.G() );
-	mColorArray.push_back( Color.B() );
-	mColorArray.push_back( Color.A() );
+	mColorArray.push_back( Color.r() );
+	mColorArray.push_back( Color.g() );
+	mColorArray.push_back( Color.b() );
+	mColorArray.push_back( Color.a() );
 }
 
 void VertexBuffer::AddIndex( const Uint32& Index ) {

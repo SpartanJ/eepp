@@ -540,7 +540,7 @@ void ChangeDemo( int num ) {
 
 void PhysicsCreate() {
 	// Initialize the physics engine
-	PhysicsManager::CreateSingleton();
+	PhysicsManager::createSingleton();
 
 	mDemo.clear();
 
@@ -642,9 +642,9 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		PhysicsDestroy();
 	}
 
-	Engine::DestroySingleton();
+	Engine::destroySingleton();
 
-	MemoryManager::ShowResults();
+	MemoryManager::showResults();
 
 	return EXIT_SUCCESS;
 }

@@ -203,14 +203,14 @@ EE_PIXEL_FORMAT Image::ChannelsToPixelFormat( const Uint32& channels ) {
 bool Image::GetInfo( const std::string& path, int * width, int * height, int * channels ) {
 	bool res = stbi_info( path.c_str(), width, height, channels ) != 0;
 
-	if ( !res && PackManager::instance()->FallbackToPacks() ) {
+	if ( !res && PackManager::instance()->fallbackToPacks() ) {
 		std::string npath( path );
-		Pack * tPack = PackManager::instance()->Exists( npath );
+		Pack * tPack = PackManager::instance()->exists( npath );
 
 		if ( NULL != tPack ) {
 			SafeDataPointer PData;
 
-			tPack->ExtractFileToMemory( npath, PData );
+			tPack->extractFileToMemory( npath, PData );
 
 			res = 0 != stbi_info_from_memory( PData.Data, PData.DataSize, width, height, channels );
 		}
@@ -299,7 +299,7 @@ Image::Image( std::string Path, const unsigned int& forceChannels ) :
 	Uint8 * data = stbi_load( Path.c_str(), &w, &h, &c, mChannels );
 
 	if ( NULL == data ) {
-		data = stbi_load( ( Sys::GetProcessPath() + Path ).c_str(), &w, &h, &c, mChannels );
+		data = stbi_load( ( Sys::getProcessPath() + Path ).c_str(), &w, &h, &c, mChannels );
 	}
 
 	if ( NULL != data ) {
@@ -313,7 +313,7 @@ Image::Image( std::string Path, const unsigned int& forceChannels ) :
 		mSize	= mWidth * mHeight * mChannels;
 
 		mLoadedFromStbi = true;
-	} else if ( PackManager::instance()->FallbackToPacks() && NULL != ( tPack = PackManager::instance()->Exists( Path ) ) ) {
+	} else if ( PackManager::instance()->fallbackToPacks() && NULL != ( tPack = PackManager::instance()->exists( Path ) ) ) {
 		LoadFromPack( tPack, Path );
 	} else {
 		std::string reason = ".";
@@ -344,10 +344,10 @@ Image::~Image() {
 }
 
 void Image::LoadFromPack( Pack * Pack, const std::string& FilePackPath ) {
-	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( FilePackPath ) ) {
+	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( FilePackPath ) ) {
 		SafeDataPointer PData;
 
-		Pack->ExtractFileToMemory( FilePackPath, PData );
+		Pack->extractFileToMemory( FilePackPath, PData );
 
 		int w, h, c;
 		Uint8 * data = stbi_load_from_memory( PData.Data, PData.DataSize, &w, &h, &c, mChannels );
@@ -414,7 +414,7 @@ void Image::Allocate( const Uint32& size, ColorA DefaultColor, bool memsetData )
 	mSize 	= size;
 
 	if ( memsetData ) {
-		memset( mPixels, (int)DefaultColor.GetValue(), size );
+		memset( mPixels, (int)DefaultColor.getValue(), size );
 	}
 }
 
@@ -462,10 +462,10 @@ unsigned int Image::Channels() const {
 bool Image::SaveToFile( const std::string& filepath, const EE_SAVE_TYPE& Format ) {
 	bool Res = false;
 
-	std::string fpath( FileSystem::FileRemoveFileName( filepath ));
+	std::string fpath( FileSystem::fileRemoveFileName( filepath ));
 
-	if ( !FileSystem::IsDirectory( fpath ) )
-		FileSystem::MakeDir( fpath );
+	if ( !FileSystem::isDirectory( fpath ) )
+		FileSystem::makeDir( fpath );
 
 	if ( NULL != mPixels && 0 != mWidth && 0 != mHeight && 0 != mChannels ) {
 		if ( SAVE_TYPE_JPG != Format ) {
@@ -492,37 +492,37 @@ void Image::ReplaceColor( const ColorA& ColorKey, const ColorA& NewColor ) {
 		Pos = i * mChannels;
 
 		if ( 4 == mChannels ) {
-			if ( mPixels[ Pos ] == ColorKey.R() && mPixels[ Pos + 1 ] == ColorKey.G() && mPixels[ Pos + 2 ] == ColorKey.B() && mPixels[ Pos + 3 ] == ColorKey.A() ) {
-				mPixels[ Pos ] 		= NewColor.R();
-				mPixels[ Pos + 1 ]	= NewColor.G();
-				mPixels[ Pos + 2 ]	= NewColor.B();
-				mPixels[ Pos + 3 ]	= NewColor.A();
+			if ( mPixels[ Pos ] == ColorKey.r() && mPixels[ Pos + 1 ] == ColorKey.g() && mPixels[ Pos + 2 ] == ColorKey.b() && mPixels[ Pos + 3 ] == ColorKey.a() ) {
+				mPixels[ Pos ] 		= NewColor.r();
+				mPixels[ Pos + 1 ]	= NewColor.g();
+				mPixels[ Pos + 2 ]	= NewColor.b();
+				mPixels[ Pos + 3 ]	= NewColor.a();
 			}
 		} else if ( 3 == mChannels ) {
-			if ( mPixels[ Pos ] == ColorKey.R() && mPixels[ Pos + 1 ] == ColorKey.G() && mPixels[ Pos + 2 ] == ColorKey.B() ) {
-				mPixels[ Pos ] 		= NewColor.R();
-				mPixels[ Pos + 1 ]	= NewColor.G();
-				mPixels[ Pos + 2 ]	= NewColor.B();
+			if ( mPixels[ Pos ] == ColorKey.r() && mPixels[ Pos + 1 ] == ColorKey.g() && mPixels[ Pos + 2 ] == ColorKey.b() ) {
+				mPixels[ Pos ] 		= NewColor.r();
+				mPixels[ Pos + 1 ]	= NewColor.g();
+				mPixels[ Pos + 2 ]	= NewColor.b();
 			}
 		} else if ( 2 == mChannels ) {
-			if ( mPixels[ Pos ] == ColorKey.R() && mPixels[ Pos + 1 ] == ColorKey.G() ) {
-				mPixels[ Pos ] 		= NewColor.R();
-				mPixels[ Pos + 1 ]	= NewColor.G();
+			if ( mPixels[ Pos ] == ColorKey.r() && mPixels[ Pos + 1 ] == ColorKey.g() ) {
+				mPixels[ Pos ] 		= NewColor.r();
+				mPixels[ Pos + 1 ]	= NewColor.g();
 			}
 		} else if ( 1 == mChannels ) {
-			if ( mPixels[ Pos ] == ColorKey.R() ) {
-				mPixels[ Pos ] 		= NewColor.R();
+			if ( mPixels[ Pos ] == ColorKey.r() ) {
+				mPixels[ Pos ] 		= NewColor.r();
 			}
 		}
 	}
 }
 
 void Image::CreateMaskFromColor( const ColorA& ColorKey, Uint8 Alpha ) {
-	ReplaceColor( ColorKey, ColorA( ColorKey.R(), ColorKey.G(), ColorKey.B(), Alpha ) );
+	ReplaceColor( ColorKey, ColorA( ColorKey.r(), ColorKey.g(), ColorKey.b(), Alpha ) );
 }
 
 void Image::CreateMaskFromColor( const RGB& ColorKey, Uint8 Alpha ) {
-	CreateMaskFromColor( ColorA( ColorKey.R(), ColorKey.G(), ColorKey.B(), 255 ), Alpha );
+	CreateMaskFromColor( ColorA( ColorKey.r(), ColorKey.g(), ColorKey.b(), 255 ), Alpha );
 }
 
 void Image::FillWithColor( const ColorA& Color ) {
@@ -535,13 +535,13 @@ void Image::FillWithColor( const ColorA& Color ) {
 	for ( unsigned int i = 0; i < size; i += mChannels ) {
 		for ( z = 0; z < mChannels; z++ ) {
 			if ( 0 == z )
-				mPixels[ i + z ] = Color.R();
+				mPixels[ i + z ] = Color.r();
 			else if ( 1 == z )
-				mPixels[ i + z ] = Color.G();
+				mPixels[ i + z ] = Color.g();
 			else if ( 2 == z )
-				mPixels[ i + z ] = Color.B();
+				mPixels[ i + z ] = Color.b();
 			else if ( 3 == z )
-				mPixels[ i + z ] = Color.A();
+				mPixels[ i + z ] = Color.a();
 		}
 	}
 }
@@ -662,7 +662,7 @@ void Image::Blit( Graphics::Image * image, const Uint32& x, const Uint32& y ) {
 				ColorA ts( image->GetPixel( tx - x, ty - y ) );
 				ColorA td( GetPixel( tx, ty ) );
 
-				SetPixel( tx, ty, Color::Blend( ts, td ) );
+				SetPixel( tx, ty, Color::blend( ts, td ) );
 			}
 		}
 	}

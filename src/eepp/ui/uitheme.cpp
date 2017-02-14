@@ -157,12 +157,12 @@ UITheme * UITheme::LoadFromTextureAtlas( UITheme * tTheme, Graphics::TextureAtla
 
 	for ( i = 0; i < ElemFound.size(); i++ ) {
 		if ( ElemType[i] )
-			tTheme->Add( eeNew( UISkinComplex, ( ElemFound[i] ) ) );
+			tTheme->add( eeNew( UISkinComplex, ( ElemFound[i] ) ) );
 		else
-			tTheme->Add( eeNew( UISkinSimple, ( ElemFound[i] ) ) );
+			tTheme->add( eeNew( UISkinSimple, ( ElemFound[i] ) ) );
 	}
 
-	eePRINTL( "UI Theme Loaded in: %4.3f ms ( from TextureAtlas )", TE.Elapsed().AsMilliseconds() );
+	eePRINTL( "UI Theme Loaded in: %4.3f ms ( from TextureAtlas )", TE.elapsed().asMilliseconds() );
 
 	return tTheme;
 }
@@ -178,9 +178,9 @@ UITheme * UITheme::LoadFromPath( UITheme * tTheme, const std::string& Path, cons
 	std::string ElemName;
 	std::string RPath( Path );
 
-	FileSystem::DirPathAddSlashAtEnd( RPath );
+	FileSystem::dirPathAddSlashAtEnd( RPath );
 
-	if ( !FileSystem::IsDirectory( RPath ) )
+	if ( !FileSystem::isDirectory( RPath ) )
 		return NULL;
 
 	std::vector<std::string> 	ElemFound;
@@ -208,24 +208,24 @@ UITheme * UITheme::LoadFromPath( UITheme * tTheme, const std::string& Path, cons
 		ElemName	= tTheme->Abbr() + "_icon_" + *it;
 		Element		= RPath + ElemName + "." + ImgExt;
 
-		if ( FileSystem::FileExists( Element ) ) {
-			tSG->Add( eeNew( SubTexture, ( TextureFactory::instance()->Load( Element ), ElemName ) ) );
+		if ( FileSystem::fileExists( Element ) ) {
+			tSG->add( eeNew( SubTexture, ( TextureFactory::instance()->Load( Element ), ElemName ) ) );
 		}
 	}
 
-	if ( tSG->Count() )
-		TextureAtlasManager::instance()->Add( tSG );
+	if ( tSG->count() )
+		TextureAtlasManager::instance()->add( tSG );
 	else
 		eeSAFE_DELETE( tSG );
 
 	for ( i = 0; i < ElemFound.size(); i++ ) {
 		if ( ElemType[i] )
-			tTheme->Add( eeNew( UISkinComplex, ( ElemFound[i] ) ) );
+			tTheme->add( eeNew( UISkinComplex, ( ElemFound[i] ) ) );
 		else
-			tTheme->Add( eeNew( UISkinSimple, ( ElemFound[i] ) ) );
+			tTheme->add( eeNew( UISkinSimple, ( ElemFound[i] ) ) );
 	}
 
-	eePRINTL( "UI Theme Loaded in: %4.3f ms ( from path )", TE.Elapsed().AsMilliseconds() );
+	eePRINTL( "UI Theme Loaded in: %4.3f ms ( from path )", TE.elapsed().asMilliseconds() );
 
 	return tTheme;
 }
@@ -249,7 +249,7 @@ bool UITheme::SearchFilesInAtlas( Graphics::TextureAtlas * SG, std::string Eleme
 		for ( s = 0; s < UISkinComplex::SideCount; s++ ) {
 			ElemName = Element + "_" + UISkin::GetSkinStateName( i ) + "_" + UISkinComplex::GetSideSuffix( s );
 
-			if ( SG->GetByName( ElemName ) ) {
+			if ( SG->getByName( ElemName ) ) {
 				IsComplex = 1;
 				Found = true;
 				break;
@@ -266,7 +266,7 @@ bool UITheme::SearchFilesInAtlas( Graphics::TextureAtlas * SG, std::string Eleme
 		for ( i = 0; i < UISkinState::StateCount; i++ ) {
 			ElemName = Element + "_" + UISkin::GetSkinStateName( i );
 
-			if ( SG->GetByName( ElemName ) ) {
+			if ( SG->getByName( ElemName ) ) {
 				Found = true;
 				break;
 			}
@@ -291,8 +291,8 @@ bool UITheme::SearchFilesOfElement( Graphics::TextureAtlas * SG, const std::stri
 			ElemPath = Path + ElemName;
 			ElemFullPath = ElemPath + "." + ImgExt;
 
-			if ( FileSystem::FileExists( ElemFullPath ) ) {
-				SG->Add( eeNew( SubTexture, ( TextureFactory::instance()->Load( ElemFullPath ), ElemName ) ) );
+			if ( FileSystem::fileExists( ElemFullPath ) ) {
+				SG->add( eeNew( SubTexture, ( TextureFactory::instance()->Load( ElemFullPath ), ElemName ) ) );
 
 				IsComplex = 1;
 				Found = true;
@@ -308,8 +308,8 @@ bool UITheme::SearchFilesOfElement( Graphics::TextureAtlas * SG, const std::stri
 			ElemPath = Path + ElemName;
 			ElemFullPath = ElemPath + "." + ImgExt;
 
-			if ( FileSystem::FileExists( ElemFullPath ) ) {
-				SG->Add( eeNew( SubTexture, ( TextureFactory::instance()->Load( ElemFullPath ), ElemName ) ) );
+			if ( FileSystem::fileExists( ElemFullPath ) ) {
+				SG->add( eeNew( SubTexture, ( TextureFactory::instance()->Load( ElemFullPath ), ElemName ) ) );
 
 				Found = true;
 			}
@@ -322,7 +322,7 @@ bool UITheme::SearchFilesOfElement( Graphics::TextureAtlas * SG, const std::stri
 UITheme::UITheme( const std::string& Name, const std::string& Abbr, Graphics::Font * DefaultFont ) :
 	ResourceManager<UISkin> ( false ),
 	mName( Name ),
-	mNameHash( String::Hash( mName ) ),
+	mNameHash( String::hash( mName ) ),
 	mAbbr( Abbr ),
 	mTextureAtlas( NULL ),
 	mFont( DefaultFont ),
@@ -344,7 +344,7 @@ const std::string& UITheme::Name() const {
 
 void UITheme::Name( const std::string& name ) {
 	mName = name;
-	mNameHash = String::Hash( mName );
+	mNameHash = String::hash( mName );
 }
 
 const Uint32& UITheme::Id() const {
@@ -355,10 +355,10 @@ const std::string& UITheme::Abbr() const {
 	return mAbbr;
 }
 
-UISkin * UITheme::Add( UISkin * Resource ) {
+UISkin * UITheme::add( UISkin * Resource ) {
 	Resource->Theme( this );
 
-	return ResourceManager<UISkin>::Add( Resource );
+	return ResourceManager<UISkin>::add( Resource );
 }
 
 void UITheme::Font( Graphics::Font * Font ) {
@@ -419,7 +419,7 @@ void UITheme::TextureAtlas( Graphics::TextureAtlas * SG ) {
 
 SubTexture * UITheme::GetIconByName( const std::string& name ) {
 	if ( NULL != mTextureAtlas )
-		return mTextureAtlas->GetByName( mAbbr + "_icon_" + name );
+		return mTextureAtlas->getByName( mAbbr + "_icon_" + name );
 
 	return NULL;
 }

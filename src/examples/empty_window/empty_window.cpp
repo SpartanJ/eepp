@@ -1,6 +1,8 @@
 #include <eepp/ee.hpp>
-
+#include <GL/gl.h>
 EE::Window::Window * win = NULL;
+float circ = 0, circ2 = 0;
+int op = 1;
 
 void MainLoop()
 {
@@ -22,8 +24,55 @@ void MainLoop()
 		win->Close();
 	}
 
+	circ += win->Elapsed().asMilliseconds() * 0.5f * op;
+	circ2 += win->Elapsed().asMilliseconds() * 0.75f;
+
+	if ( op == 1 && circ > 340 )
+	{
+		op = -1;
+	}
+	else if ( op == -1 && circ < 20 )
+	{
+		op = 1;
+	}
+
+	Vector2f winCenter( win->GetWidth() * 0.5f, win->GetHeight() * 0.5f );
+
+
+	GLi->Enable(GL_STENCIL_TEST);
+	GLi->StencilMask(0xFF);
+	GLi->StencilFunc(GL_NEVER, 1, 0xFF);
+	GLi->StencilOp(GL_REPLACE, GL_KEEP, GL_KEEP);
+
+	p.DrawCircle( winCenter, 150, 40 );
+
+	GLi->StencilFunc(GL_EQUAL, 0, 0xFF);
+
 	// Draw a circle
-	p.DrawCircle( Vector2f( win->GetWidth() * 0.5f, win->GetHeight() * 0.5f ), 200, 50 );
+	p.DrawArc( winCenter, 200, 40, circ, circ2 );
+
+	GLi->Disable(GL_STENCIL_TEST);
+
+/*
+	GLi->Enable(GL_STENCIL_TEST);
+
+	GLi->StencilFunc(GL_ALWAYS, 1, 1);
+	GLi->ColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+	GLi->StencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+
+	p.SetColor( ColorA( 255, 255, 255, 255 ) );
+	p.DrawCircle( winCenter, 150, 40 );
+
+	GLi->StencilFunc(GL_NOTEQUAL, 1, 1);
+	GLi->StencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	GLi->ColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+	// Draw a circle
+	p.SetColor( ColorA( 0, 255, 0, 150 ) );
+	p.DrawArc( winCenter, 200, 40, circ, circ2 );
+
+	GLi->Disable(GL_STENCIL_TEST);
+*/
 
 	// Draw frame
 	win->Display();
@@ -40,6 +89,8 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		// Set window background color
 		win->BackColor( RGB( 50, 50, 50 ) );
 
+		GLi->PolygonMode( );
+
 		// Set the MainLoop function and run it
 		// This is the application loop, it will loop until the window is closed.
 		// This is only a requirement if you want to support Emscripten builds ( WebGL + Canvas ).
@@ -52,10 +103,10 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	}
 
 	// Destroy the engine instance. Destroys all the windows and engine singletons.
-	Engine::DestroySingleton();
+	Engine::destroySingleton();
 
 	// If was compiled in debug mode it will print the memory manager report
-	MemoryManager::ShowResults();
+	MemoryManager::showResults();
 
 	return EXIT_SUCCESS;
 }

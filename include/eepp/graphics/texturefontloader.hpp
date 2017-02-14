@@ -51,10 +51,10 @@ class EE_API TextureFontLoader : public ObjectLoader {
 
 		/** Updates the current state of the loading in progress ( must be called from the instancer thread, usually the main thread ).
 		* @see ObjectLoader::Update */
-		void 				Update();
+		void 				update();
 
 		/** @brief Releases the font loaded ( if was already loaded ) */
-		void				Unload();
+		void				unload();
 
 		/** @return The font name */
 		const std::string&	Id() const;
@@ -90,9 +90,9 @@ class EE_API TextureFontLoader : public ObjectLoader {
 		const char *		mData;
 		Uint32				mDataSize;
 
-		void 				Start();
+		void 				start();
 
-		void				Reset();
+		void				reset();
 	private:
 		bool				mTexLoaded;
 		bool				mFontLoaded;

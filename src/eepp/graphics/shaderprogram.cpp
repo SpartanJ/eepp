@@ -79,7 +79,7 @@ ShaderProgram::ShaderProgram( Pack * Pack, const std::string& VertexShaderPath, 
 	AddToManager( name );
 	Init();
 
-	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( VertexShaderPath ) && -1 != Pack->Exists( FragmentShaderPath ) ) {
+	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( VertexShaderPath ) && -1 != Pack->exists( FragmentShaderPath ) ) {
 		VertexShader * vs = eeNew( VertexShader, ( Pack, VertexShaderPath ) );
 		FragmentShader * fs = eeNew( FragmentShader, ( Pack, FragmentShaderPath ) );
 
@@ -153,7 +153,7 @@ ShaderProgram::~ShaderProgram() {
 	for ( unsigned int i = 0; i < mShaders.size(); i++ )
 		eeSAFE_DELETE( mShaders[i] );
 
-	if ( !ShaderProgramManager::instance()->IsDestroying() ) {
+	if ( !ShaderProgramManager::instance()->isDestroying() ) {
 		RemoveFromManager();
 	}
 }
@@ -161,11 +161,11 @@ ShaderProgram::~ShaderProgram() {
 void ShaderProgram::AddToManager( const std::string& name ) {
 	Name( name );
 
-	ShaderProgramManager::instance()->Add( this );
+	ShaderProgramManager::instance()->add( this );
 }
 
 void ShaderProgram::RemoveFromManager() {
-	ShaderProgramManager::instance()->Remove( this, false );
+	ShaderProgramManager::instance()->remove( this, false );
 }
 
 void ShaderProgram::Init() {
@@ -451,12 +451,12 @@ const std::string& ShaderProgram::Name() const {
 
 void ShaderProgram::Name( const std::string& name ) {
 	mName = name;
-	mId = String::Hash( mName );
+	mId = String::hash( mName );
 
-	Uint32 NameCount = ShaderProgramManager::instance()->Exists( mName );
+	Uint32 NameCount = ShaderProgramManager::instance()->exists( mName );
 
 	if ( 0 != NameCount || 0 == name.size() ) {
-		Name( name + String::ToStr( NameCount + 1 ) );
+		Name( name + String::toStr( NameCount + 1 ) );
 	}
 }
 

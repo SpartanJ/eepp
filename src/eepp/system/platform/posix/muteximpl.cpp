@@ -19,15 +19,15 @@ MutexImpl::~MutexImpl() {
 		std::cerr << "MutexImpl::~MutexImpl(): pthread_mutex_destroy() error\n";
 }
 
-void MutexImpl::Lock() {
+void MutexImpl::lock() {
 	pthread_mutex_lock(&mMutex);
 }
 
-void MutexImpl::Unlock() {
+void MutexImpl::unlock() {
 	pthread_mutex_unlock(&mMutex);
 }
 
-int MutexImpl::TryLock() {
+int MutexImpl::tryLock() {
 	return pthread_mutex_trylock(&mMutex);
 }
 

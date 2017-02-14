@@ -6,11 +6,11 @@ namespace EE { namespace System {
 Lock::Lock( Mutex& mutex ) :
 	mMutex( mutex )
 {
-	mMutex.Lock();
+	mMutex.lock();
 }
 
 Lock::~Lock() {
-	mMutex.Unlock();
+	mMutex.unlock();
 }
 
 }}

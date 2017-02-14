@@ -14,7 +14,7 @@ cGL * GLi = NULL;
 
 cGL * cGL::ms_singleton = NULL;
 
-cGL * cGL::CreateSingleton( EEGL_version ver ) {
+cGL * cGL::createSingleton( EEGL_version ver ) {
 	#if !defined( EE_GLES1 ) && !defined( EE_GLES2 )
 	if ( GLv_default == ver )
 		ver = GLv_2;
@@ -76,7 +76,7 @@ cGL * cGL::CreateSingleton( EEGL_version ver ) {
 	return ms_singleton;
 }
 
-cGL * cGL::CreateSingleton() {
+cGL * cGL::createSingleton() {
 	if ( ms_singleton == 0 ) {
 		#if defined( EE_GLES_BOTH )
 			ms_singleton = eeNew( RendererGL, () );
@@ -92,15 +92,15 @@ cGL * cGL::CreateSingleton() {
 	return ms_singleton;
 }
 
-cGL * cGL::ExistsSingleton() {
+cGL * cGL::existsSingleton() {
 	return ms_singleton;
 }
 
 cGL * cGL::instance() {
-	return CreateSingleton();
+	return createSingleton();
 }
 
-void cGL::DestroySingleton() {
+void cGL::destroySingleton() {
 	if( ms_singleton != 0 ) {
 		eeDelete( ms_singleton );
 		ms_singleton = 0;
@@ -141,7 +141,7 @@ RendererGLES2 * cGL::GetRendererGLES2() {
 }
 
 void cGL::WriteExtension( Uint8 Pos, Uint32 BitWrite ) {
-	BitOp::WriteBitKey( &mExtensions, Pos, BitWrite );
+	BitOp::writeBitKey( &mExtensions, Pos, BitWrite );
 }
 
 void cGL::Init() {
@@ -465,7 +465,7 @@ void cGL::SetShader( ShaderProgram * Shader ) {
 }
 
 bool cGL::IsLineSmooth() {
-	return BitOp::ReadBitKey( &mStateFlags, GLSF_LINE_SMOOTH );
+	return BitOp::readBitKey( &mStateFlags, GLSF_LINE_SMOOTH );
 }
 
 void cGL::LineSmooth() {
@@ -480,7 +480,7 @@ void cGL::LineSmooth( const bool& Enable ) {
 		GLi->Disable( GL_LINE_SMOOTH );
 	}
 
-	BitOp::WriteBitKey( &mStateFlags, GLSF_LINE_SMOOTH, Enable ? 1 : 0 );
+	BitOp::writeBitKey( &mStateFlags, GLSF_LINE_SMOOTH, Enable ? 1 : 0 );
 	#endif
 }
 
@@ -500,7 +500,7 @@ void cGL::LineWidth(float width) {
 void cGL::PolygonMode() {
 	EE_FILL_MODE Mode = DRAW_FILL;
 
-	if ( BitOp::ReadBitKey( &mStateFlags, GLSF_POLYGON_MODE ) )
+	if ( BitOp::readBitKey( &mStateFlags, GLSF_POLYGON_MODE ) )
 		Mode = DRAW_LINE;
 
 	PolygonMode( Mode );
@@ -516,7 +516,7 @@ void cGL::PolygonMode( const EE_FILL_MODE& Mode ) {
 	else
 		PolygonMode( GL_FRONT_AND_BACK, GL_LINE );
 
-	BitOp::WriteBitKey( &mStateFlags, GLSF_POLYGON_MODE, Mode == DRAW_LINE ? 1 : 0 );
+	BitOp::writeBitKey( &mStateFlags, GLSF_POLYGON_MODE, Mode == DRAW_LINE ? 1 : 0 );
 }
 
 std::string cGL::GetVendor() {

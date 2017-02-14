@@ -74,7 +74,7 @@ void UIManager::Init( Uint32 Flags, EE::Window::Window * window ) {
 void UIManager::Shutdown() {
 	if ( mInit ) {
 		if ( -1 != mCbId &&
-			NULL != Engine::ExistsSingleton() &&
+			NULL != Engine::existsSingleton() &&
 			Engine::instance()->ExistsWindow( mWindow )
 		)
 		{
@@ -94,7 +94,7 @@ void UIManager::Shutdown() {
 		mInit = false;
 	}
 
-	UIThemeManager::DestroySingleton();
+	UIThemeManager::destroySingleton();
 }
 
 void UIManager::InputCallback( InputEvent * Event ) {
@@ -294,7 +294,7 @@ void UIManager::ClipDisable() {
 }
 
 void UIManager::HighlightFocus( bool Highlight ) {
-	BitOp::SetBitFlagValue( &mFlags, UI_MANAGER_HIGHLIGHT_FOCUS, Highlight ? 1 : 0 );
+	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_HIGHLIGHT_FOCUS, Highlight ? 1 : 0 );
 }
 
 bool UIManager::HighlightFocus() const {
@@ -310,7 +310,7 @@ const ColorA& UIManager::HighlightFocusColor() const {
 }
 
 void UIManager::HighlightOver( bool Highlight ) {
-	BitOp::SetBitFlagValue( &mFlags, UI_MANAGER_HIGHLIGHT_OVER, Highlight ? 1 : 0 );
+	BitOp::setBitFlagValue( &mFlags, UI_MANAGER_HIGHLIGHT_OVER, Highlight ? 1 : 0 );
 }
 
 bool UIManager::HighlightOver() const {

@@ -27,15 +27,15 @@ ConditionImpl::~ConditionImpl() {
 		std::cerr << "ConditionImpl::~ConditionImpl(): pthread_mutex_destroy() error\n";
 }
 
-void ConditionImpl::Lock() {
+void ConditionImpl::lock() {
 	pthread_mutex_lock( &mMutex );
 }
 
-void ConditionImpl::Unlock() {
+void ConditionImpl::unlock() {
 	pthread_mutex_unlock( &mMutex );
 }
 
-bool ConditionImpl::WaitAndRetain( int value ) {
+bool ConditionImpl::waitAndRetain( int value ) {
 	pthread_mutex_lock(&mMutex);
 	
 	while ( mConditionnedVar != value && mIsInvalid ) {
@@ -51,15 +51,15 @@ bool ConditionImpl::WaitAndRetain( int value ) {
 	return false;
 }
 
-void ConditionImpl::Release( int value ) {
+void ConditionImpl::release( int value ) {
 	mConditionnedVar = value;
 	
 	pthread_mutex_unlock( &mMutex );
 	
-	Signal();
+	signal();
 }
 
-void ConditionImpl::SetValue( int value ) {
+void ConditionImpl::setValue( int value ) {
 	// Make sure the Condition's value is not modified while retained
 	pthread_mutex_lock( &mMutex );
 	
@@ -67,25 +67,25 @@ void ConditionImpl::SetValue( int value ) {
 	
 	pthread_mutex_unlock(&mMutex);
 	
-	Signal();
+	signal();
 }
 
-int ConditionImpl::Value() const {
+int ConditionImpl::value() const {
 	return mConditionnedVar;
 }
 
-void ConditionImpl::Signal() {
+void ConditionImpl::signal() {
 	pthread_cond_signal( &mCond );
 }
 
-void ConditionImpl::Invalidate() {
+void ConditionImpl::invalidate() {
 	if (mIsInvalid) {
 		mIsInvalid = false;
-		Signal();
+		signal();
 	}
 }
 
-void ConditionImpl::Restore() {
+void ConditionImpl::restore() {
 	if ( !mIsInvalid ) {
 		mIsInvalid = true;
 	}

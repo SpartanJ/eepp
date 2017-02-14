@@ -121,7 +121,7 @@ void MapLayerProperties::LoadProperties() {
 void MapLayerProperties::OKClick( const UIEvent * Event ) {
 	SaveProperties();
 
-	mLayer->Name( mUIInput->Text().ToUtf8() );
+	mLayer->Name( mUIInput->Text().toUtf8() );
 
 	if ( mRefreshCb.IsSet() ) {
 		mRefreshCb();

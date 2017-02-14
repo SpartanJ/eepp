@@ -17,7 +17,7 @@ class EE_API UICommonDialog : public UIWindow {
 			public:
 				inline CreateParams() :
 					UIWindow::CreateParams(),
-					DefaultDirectory( Sys::GetProcessPath() ),
+					DefaultDirectory( Sys::getProcessPath() ),
 					DefaultFilePattern( "*" ),
 					CDLFlags( UI_CDL_DEFAULT_FLAGS )
 				{

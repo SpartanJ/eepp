@@ -33,43 +33,43 @@ Uint32 TextureFactory::CreateEmptyTexture( const unsigned int& Width, const unsi
 
 Uint32 TextureFactory::LoadFromPixels( const unsigned char * Pixels, const unsigned int& Width, const unsigned int& Height, const unsigned int& Channels, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy, const std::string& FileName ) {
 	TextureLoader myTex( Pixels, Width, Height, Channels, Mipmap, ClampMode, CompressTexture, KeepLocalCopy, FileName );
-	myTex.Load();
+	myTex.load();
 	return myTex.Id();
 }
 
 Uint32 TextureFactory::LoadFromPack( Pack* Pack, const std::string& FilePackPath, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy  ) {
 	TextureLoader myTex( Pack, FilePackPath, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
-	myTex.Load();
+	myTex.load();
 	return myTex.Id();
 }
 
 Uint32 TextureFactory::LoadFromMemory( const unsigned char * ImagePtr, const unsigned int& Size, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
 	TextureLoader myTex( ImagePtr, Size, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
-	myTex.Load();
+	myTex.load();
 	return myTex.Id();
 }
 
 Uint32 TextureFactory::LoadFromStream( IOStream& Stream, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
 	TextureLoader myTex( Stream, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
-	myTex.Load();
+	myTex.load();
 	return myTex.Id();
 }
 
 Uint32 TextureFactory::Load( const std::string& Filepath, const bool& Mipmap, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& KeepLocalCopy ) {
 	TextureLoader myTex( Filepath, Mipmap, ClampMode, CompressTexture, KeepLocalCopy );
-	myTex.Load();
+	myTex.load();
 	return myTex.Id();
 }
 
 Uint32 TextureFactory::PushTexture( const std::string& Filepath, const Uint32& TexId, const unsigned int& Width, const unsigned int& Height, const unsigned int& ImgWidth, const unsigned int& ImgHeight, const bool& Mipmap, const unsigned int& Channels, const EE_CLAMP_MODE& ClampMode, const bool& CompressTexture, const bool& LocalCopy, const Uint32& MemSize ) {
-	Lock();
+	lock();
 
 	Texture * Tex 		= NULL;
 	Uint32 Pos;
 
 	std::string FPath( Filepath );
 
-	FileSystem::FilePathRemoveProcessPath( FPath );
+	FileSystem::filePathRemoveProcessPath( FPath );
 
 	Pos = FindFreeSlot();
 	Tex = mTextures[ Pos ] = eeNew( Texture, () );
@@ -84,7 +84,7 @@ Uint32 TextureFactory::PushTexture( const std::string& Filepath, const Uint32& T
 
 	mMemSize += MemSize;
 
-	Unlock();
+	unlock();
 
 	return Pos;
 }
@@ -274,7 +274,7 @@ void TextureFactory::Allocate( const unsigned int& size ) {
 }
 
 Texture * TextureFactory::GetByName( const std::string& Name ) {
-	return GetByHash( String::Hash( Name ) );
+	return GetByHash( String::hash( Name ) );
 }
 
 Texture * TextureFactory::GetByHash( const Uint32& Hash ) {

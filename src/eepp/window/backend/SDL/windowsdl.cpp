@@ -129,8 +129,8 @@ bool WindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 		SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE	, 8 );
 	}
 
-	if ( NULL == cGL::ExistsSingleton() ) {
-		cGL::CreateSingleton( mWindow.ContextConfig.Version );
+	if ( NULL == cGL::existsSingleton() ) {
+		cGL::createSingleton( mWindow.ContextConfig.Version );
 		cGL::instance()->Init();
 	}
 

@@ -54,12 +54,12 @@ void UIComplexControl::Update() {
 
 				mTooltip->Show();
 			} else {
-				if ( -1.f != mTooltip->TooltipTime().AsMilliseconds() ) {
+				if ( -1.f != mTooltip->TooltipTime().asMilliseconds() ) {
 					mTooltip->TooltipTimeAdd( UIManager::instance()->Elapsed() );
 				}
 
 				if ( mTooltip->TooltipTime() >= UIThemeManager::instance()->TooltipTimeToShow() ) {
-					if ( mTooltip->TooltipTime().AsMilliseconds() != -1.f ) {
+					if ( mTooltip->TooltipTime().asMilliseconds() != -1.f ) {
 						mTooltip->Pos( Pos );
 
 						mTooltip->Show();

@@ -49,7 +49,7 @@ UIGOTypeNew::~UIGOTypeNew() {
 void UIGOTypeNew::OKClick( const UIEvent * Event ) {
 	if ( mUIInput->Text().size() ) {
 		if ( mCb.IsSet() )
-			mCb( mUIInput->Text().ToUtf8(), String::Hash( mUIInput->Text().ToUtf8() ) );
+			mCb( mUIInput->Text().toUtf8(), String::hash( mUIInput->Text().toUtf8() ) );
 	}
 
 	mUIWindow->CloseWindow();

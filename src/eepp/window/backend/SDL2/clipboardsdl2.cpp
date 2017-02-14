@@ -29,7 +29,7 @@ std::string ClipboardSDL::GetText() {
 
 String ClipboardSDL::GetWideText() {
 	char * text = SDL_GetClipboardText();
-	String str( String::FromUtf8( text ) );
+	String str( String::fromUtf8( text ) );
 	SDL_free(text);
 	return str;
 }

@@ -176,7 +176,7 @@ Time Sound::PlayingOffset() const {
 }
 
 void Sound::PlayingOffset( const Time &TimeOffset ) {
-	ALCheck( alSourcef( mSource, AL_SEC_OFFSET, TimeOffset.AsSeconds() ) );
+	ALCheck( alSourcef( mSource, AL_SEC_OFFSET, TimeOffset.asSeconds() ) );
 }
 
 Sound& Sound::operator =( const Sound& Other ) {

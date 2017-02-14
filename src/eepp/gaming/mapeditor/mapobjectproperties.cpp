@@ -125,8 +125,8 @@ void MapObjectProperties::LoadProperties() {
 void MapObjectProperties::OKClick( const UIEvent * Event ) {
 	SaveProperties();
 
-	mObj->Name( mUIInput->Text().ToUtf8() );
-	mObj->TypeName( mUIInput2->Text().ToUtf8() );
+	mObj->Name( mUIInput->Text().toUtf8() );
+	mObj->TypeName( mUIInput2->Text().toUtf8() );
 
 	mUIWindow->CloseWindow();
 }

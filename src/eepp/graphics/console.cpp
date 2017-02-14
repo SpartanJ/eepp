@@ -84,7 +84,7 @@ Console::Console( Font* Font, const bool& MakeDefaultCommands, const bool& Attac
 
 Console::~Console() {
 	if ( mMyCallback &&
-		NULL != Engine::ExistsSingleton() &&
+		NULL != Engine::existsSingleton() &&
 		Engine::instance()->ExistsWindow( mWindow )
 	)
 	{
@@ -94,8 +94,8 @@ Console::~Console() {
 
 	eeSAFE_DELETE( mTBuf );
 
-	if ( Log::ExistsSingleton() ) {
-		Log::instance()->RemoveLogReader( this );
+	if ( Log::existsSingleton() ) {
+		Log::instance()->removeLogReader( this );
 	}
 }
 
@@ -115,7 +115,7 @@ void Console::Create( Font* Font, const bool& MakeDefaultCommands, const bool& A
 		mTexId = TextureId;
 
 	mMaxLogLines = MaxLogLines;
-	mMaxAlpha = (Float)mConColor.A();
+	mMaxAlpha = (Float)mConColor.a();
 
 	mEnabled = true;
 
@@ -126,7 +126,7 @@ void Console::Create( Font* Font, const bool& MakeDefaultCommands, const bool& A
 	mHeight = (Float) mWindow->GetHeight();
 	mHeightMin = (Float) ( mWindow->GetHeight() / 2 );
 
-	if ( NULL != Engine::ExistsSingleton() &&
+	if ( NULL != Engine::existsSingleton() &&
 		Engine::instance()->ExistsWindow( mWindow ) )
 	{
 		mMyCallback = mWindow->GetInput()->PushCallback( cb::Make1( this, &Console::PrivInputCallback ) );
@@ -144,7 +144,7 @@ void Console::Create( Font* Font, const bool& MakeDefaultCommands, const bool& A
 	CmdGetLog();
 
 	if ( AttachToLog ) {
-		Log::instance()->AddLogReader( this );
+		Log::instance()->addLogReader( this );
 	}
 }
 
@@ -161,17 +161,17 @@ void Console::Draw() {
 
 		if ( mY > 0.0f ) {
 			if ( mTexId == 0 ) {
-				mPri.SetColor( ColorA( mConColor.R(), mConColor.G(), mConColor.B(), static_cast<Uint8>(mA) ) );
+				mPri.SetColor( ColorA( mConColor.r(), mConColor.g(), mConColor.b(), static_cast<Uint8>(mA) ) );
 				mPri.DrawRectangle( Rectf( Vector2f( 0.0f, 0.0f ), Sizef( mWidth, mY ) ) );
 			} else {
-				ColorA C( mConColor.R(), mConColor.G(), mConColor.B(), static_cast<Uint8>(mA) );
+				ColorA C( mConColor.r(), mConColor.g(), mConColor.b(), static_cast<Uint8>(mA) );
 
 				Texture * Tex = TextureFactory::instance()->GetTexture( mTexId );
 
 				if ( NULL != Tex )
 					Tex->DrawEx( 0.0f, 0.0f, mWidth, mY, 0.0f, Vector2f::One, C, C, C, C );
 			}
-			mPri.SetColor( ColorA( mConLineColor.R(), mConLineColor.G(), mConLineColor.B(), static_cast<Uint8>(mA) ) );
+			mPri.SetColor( ColorA( mConLineColor.r(), mConLineColor.g(), mConLineColor.b(), static_cast<Uint8>(mA) ) );
 			mPri.DrawRectangle( Rectf( Vector2f( 0.0f, mY ), Sizef( mWidth, 4.0f ) ) );
 
 			Int32 linesInScreen = LinesInScreen();
@@ -188,7 +188,7 @@ void Console::Draw() {
 			mCon.ConMin = mEx;
 			mCon.ConMax = (int)mCmdLog.size() - 1;
 
-			mFont->Color( ColorA ( mFontColor.R(), mFontColor.G(), mFontColor.B(), static_cast<Uint8>(mA) ) );
+			mFont->Color( ColorA ( mFontColor.r(), mFontColor.g(), mFontColor.b(), static_cast<Uint8>(mA) ) );
 
 			for (int i = mCon.ConMax - mCon.ConModif; i >= mCon.ConMin - mCon.ConModif; i-- ) {
 				if ( i < static_cast<Int16>( mCmdLog.size() ) && i >= 0 ) {
@@ -202,11 +202,11 @@ void Console::Draw() {
 
 			CurY = mTempY + mY + mCurHeight - mFontSize - 1;
 
-			mFont->Color( ColorA ( mFontLineColor.R(), mFontLineColor.G(), mFontLineColor.B(), static_cast<Uint8>(mA) ) );
+			mFont->Color( ColorA ( mFontLineColor.r(), mFontLineColor.g(), mFontLineColor.b(), static_cast<Uint8>(mA) ) );
 			mFont->SetText( "> " + mTBuf->Buffer() );
 			mFont->Draw( mFontSize, CurY );
 
-			mFont->Color( ColorA ( mFontLineColor.R(), mFontLineColor.G(), mFontLineColor.B(), static_cast<Uint8>(mCurAlpha) ) );
+			mFont->Color( ColorA ( mFontLineColor.r(), mFontLineColor.g(), mFontLineColor.b(), static_cast<Uint8>(mCurAlpha) ) );
 
 			if ( (unsigned int)mTBuf->CurPos() == mTBuf->Buffer().size() ) {
 				mFont->Draw( "_", mFontSize + mFont->GetTextWidth() , CurY );
@@ -222,7 +222,7 @@ void Console::Draw() {
 	if ( mShowFps && NULL != mFont ) {
 		ColorA OldColor1( mFont->Color() );
 		mFont->Color( ColorA () );
-		mFont->SetText( "FPS: " + String::ToStr( mWindow->FPS() ) );
+		mFont->SetText( "FPS: " + String::toStr( mWindow->FPS() ) );
 		mFont->Draw( mWindow->GetWidth() - mFont->GetTextWidth() - 15, 6 );
 		mFont->Color( OldColor1 );
 	}
@@ -248,7 +248,7 @@ void Console::FadeOut() {
 }
 
 static std::vector< String > SplitCommandParams( String str ) {
-	std::vector < String > params = String::Split( str, ' ' );
+	std::vector < String > params = String::split( str, ' ' );
 	std::vector < String > rparams;
 	String tstr;
 
@@ -261,7 +261,7 @@ static std::vector< String > SplitCommandParams( String str ) {
 			} else if ( '"' == tparam[ tparam.size() - 1 ] ) {
 				tstr += " " + tparam;
 
-				rparams.push_back( String::Trim( tstr, '"' ) );
+				rparams.push_back( String::trim( tstr, '"' ) );
 
 				tstr = "";
 			} else if ( !tstr.empty() ) {
@@ -273,7 +273,7 @@ static std::vector< String > SplitCommandParams( String str ) {
 	}
 
 	if ( !tstr.empty() ) {
-		rparams.push_back( String::Trim( tstr, '"' ) );
+		rparams.push_back( String::trim( tstr, '"' ) );
 	}
 
 	return rparams;
@@ -310,7 +310,7 @@ void Console::PrivPushText( const String& str ) {
 
 void Console::PushText( const String& str ) {
 	if ( std::string::npos != str.find_first_of( '\n' ) ) {
-		std::vector<String> Strings = String::Split( String( str ) );
+		std::vector<String> Strings = String::split( String( str ) );
 
 		for ( Uint32 i = 0; i < Strings.size(); i++ ) {
 			PrivPushText( Strings[i] );
@@ -359,13 +359,13 @@ void Console::Toggle() {
 
 void Console::Fade() {
 	if (mCurSide) {
-		mCurAlpha -= 255.f * mWindow->Elapsed().AsMilliseconds() / mFadeSpeed.AsMilliseconds();
+		mCurAlpha -= 255.f * mWindow->Elapsed().asMilliseconds() / mFadeSpeed.asMilliseconds();
 		if ( mCurAlpha <= 0.0f ) {
 			mCurAlpha = 0.0f;
 			mCurSide = !mCurSide;
 		}
 	} else {
-		mCurAlpha += 255.f * mWindow->Elapsed().AsMilliseconds() / mFadeSpeed.AsMilliseconds();
+		mCurAlpha += 255.f * mWindow->Elapsed().asMilliseconds() / mFadeSpeed.asMilliseconds();
 		if ( mCurAlpha >= 255.f ) {
 			mCurAlpha = 255.f;
 			mCurSide = !mCurSide;
@@ -379,7 +379,7 @@ void Console::Fade() {
 
 	if ( mFadeIn ) {
 		mFadeOut = false;
-		mY += mCurHeight * mWindow->Elapsed().AsMilliseconds() / mFadeSpeed.AsMilliseconds();
+		mY += mCurHeight * mWindow->Elapsed().asMilliseconds() / mFadeSpeed.asMilliseconds();
 
 		mA = ( mY * mMaxAlpha / mCurHeight ) ;
 		if ( mY > mCurHeight ) {
@@ -391,7 +391,7 @@ void Console::Fade() {
 
 	if ( mFadeOut ) {
 		mFadeIn = false;
-		mY -= mCurHeight * mWindow->Elapsed().AsMilliseconds() / mFadeSpeed.AsMilliseconds();
+		mY -= mCurHeight * mWindow->Elapsed().asMilliseconds() / mFadeSpeed.asMilliseconds();
 
 		mA = ( mY * mMaxAlpha / mCurHeight ) ;
 		if ( mY <= 0.0f ) {
@@ -447,7 +447,7 @@ void Console::PrintCommandsStartingWith( const String& start ) {
 	std::map < String, ConsoleCallback >::iterator it;
 
 	for ( it = mCallbacks.begin(); it != mCallbacks.end(); it++ ) {
-		if ( String::StartsWith( it->first, start ) ) {
+		if ( String::startsWith( it->first, start ) ) {
 			cmds.push_back( it->first );
 		}
 	}
@@ -487,7 +487,7 @@ void Console::PrivVideoResize( EE::Window::Window * win ) {
 }
 
 void Console::GetFilesFrom( std::string txt, const Uint32& curPos ) {
-	static char OSSlash = FileSystem::GetOSlash().at(0);
+	static char OSSlash = FileSystem::getOSlash().at(0);
 	size_t pos;
 
 	if ( std::string::npos != ( pos = txt.find_last_of( OSSlash ) ) && pos <= curPos ) {
@@ -496,9 +496,9 @@ void Console::GetFilesFrom( std::string txt, const Uint32& curPos ) {
 		std::string dir( txt.substr( fpos, pos - fpos + 1 ) );
 		std::string file( txt.substr( pos + 1 ) );
 
-		if ( FileSystem::IsDirectory( dir ) ) {
+		if ( FileSystem::isDirectory( dir ) ) {
 			size_t count = 0, lasti = 0;
-			std::vector<std::string> files = FileSystem::FilesGetInPath( dir, true, true );
+			std::vector<std::string> files = FileSystem::filesGetInPath( dir, true, true );
 			String res;
 			bool again = false;
 
@@ -509,7 +509,7 @@ void Console::GetFilesFrom( std::string txt, const Uint32& curPos ) {
 				again = false;
 
 				for ( size_t i = 0; i < files.size(); i++ ) {
-					if ( !file.size() || String::StartsWith( files[i], file ) ) {
+					if ( !file.size() || String::startsWith( files[i], file ) ) {
 						res += "\t" + files[i] + "\n";
 						count++;
 						lasti = i;
@@ -536,7 +536,7 @@ void Console::GetFilesFrom( std::string txt, const Uint32& curPos ) {
 							allStartsWith = true;
 
 							for ( size_t i = 0; i < foundFiles.size(); i++ ) {
-								if ( !String::StartsWith( foundFiles[i], tfile ) ) {
+								if ( !String::startsWith( foundFiles[i], tfile ) ) {
 									allStartsWith = false;
 									break;
 								}
@@ -554,8 +554,8 @@ void Console::GetFilesFrom( std::string txt, const Uint32& curPos ) {
 			if ( count == 1 ) {
 				std::string slash = "";
 
-				if ( FileSystem::IsDirectory( dir + files[lasti] ) ) {
-					slash = FileSystem::GetOSlash();
+				if ( FileSystem::isDirectory( dir + files[lasti] ) ) {
+					slash = FileSystem::getOSlash();
 				}
 
 				mTBuf->Buffer( mTBuf->Buffer().substr( 0, pos + 1 ) + files[lasti] + slash );
@@ -586,7 +586,7 @@ void Console::PrivInputCallback( InputEvent * Event ) {
 		if ( InputEvent::KeyDown == etype ) {
 			if ( ( KeyCode == KEY_TAB ) && (unsigned int)mTBuf->CurPos() == mTBuf->Buffer().size() ) {
 				PrintCommandsStartingWith( mTBuf->Buffer() );
-				GetFilesFrom( mTBuf->Buffer().ToUtf8(), mTBuf->CurPos() );
+				GetFilesFrom( mTBuf->Buffer().toUtf8(), mTBuf->CurPos() );
 			}
 
 			if ( KeyMod & KEYMOD_SHIFT ) {
@@ -716,7 +716,7 @@ void Console::CmdQuit ( const std::vector < String >& params ) {
 }
 
 void Console::CmdGetTextureMemory ( const std::vector < String >& params ) {
-	PrivPushText( "Total texture memory used: " + FileSystem::SizeToString( TextureFactory::instance()->MemorySize() ) );
+	PrivPushText( "Total texture memory used: " + FileSystem::sizeToString( TextureFactory::instance()->MemorySize() ) );
 }
 
 void Console::CmdCmdList ( const std::vector < String >& params ) {
@@ -730,7 +730,7 @@ void Console::CmdShowCursor ( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
-		bool Res = String::FromString<Int32>( tInt, params[1] );
+		bool Res = String::fromString<Int32>( tInt, params[1] );
 
 		if ( Res && ( tInt == 0 || tInt == 1 ) ) {
 			mWindow->GetCursorManager()->Visible( 0 != tInt );
@@ -745,7 +745,7 @@ void Console::CmdFrameLimit ( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
-		bool Res = String::FromString<Int32>( tInt, params[1] );
+		bool Res = String::fromString<Int32>( tInt, params[1] );
 
 		if ( Res && ( tInt >= 0 && tInt <= 10000 ) ) {
 			mWindow->FrameRateLimit( tInt );
@@ -757,7 +757,7 @@ void Console::CmdFrameLimit ( const std::vector < String >& params ) {
 }
 
 void Console::CmdGetLog() {
-	std::vector < String > tvec = String::Split( String( String::ToStr( Log::instance()->Buffer() ) ) );
+	std::vector < String > tvec = String::split( String( String::toStr( Log::instance()->buffer() ) ) );
 	if ( tvec.size() > 0 ) {
 		for ( unsigned int i = 0; i < tvec.size(); i++ )
 			PrivPushText( tvec[i] );
@@ -769,7 +769,7 @@ void Console::CmdGetLog( const std::vector < String >& params ) {
 }
 
 void Console::CmdGetGpuExtensions() {
-	std::vector < String > tvec = String::Split( String( GLi->GetExtensions() ), ' ' );
+	std::vector < String > tvec = String::split( String( GLi->GetExtensions() ), ' ' );
 	if ( tvec.size() > 0 ) {
 		for ( unsigned int i = 0; i < tvec.size(); i++ )
 			PrivPushText( tvec[i] );
@@ -784,7 +784,7 @@ void Console::CmdSetGamma( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		Float tFloat = 0.f;
 
-		bool Res = String::FromString<Float>( tFloat, params[1] );
+		bool Res = String::fromString<Float>( tFloat, params[1] );
 
 		if ( Res && ( tFloat > 0.1f && tFloat <= 10.0f ) ) {
 			mWindow->SetGamma( tFloat, tFloat, tFloat );
@@ -799,7 +799,7 @@ void Console::CmdSetVolume( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		Float tFloat = 0.f;
 
-		bool Res = String::FromString<Float>( tFloat, params[1] );
+		bool Res = String::fromString<Float>( tFloat, params[1] );
 
 		if ( Res && ( tFloat >= 0.0f && tFloat <= 100.0f ) ) {
 			EE::Audio::AudioListener::GlobalVolume( tFloat );
@@ -812,7 +812,7 @@ void Console::CmdSetVolume( const std::vector < String >& params ) {
 
 void Console::CmdDir( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
-		String Slash( FileSystem::GetOSlash() );
+		String Slash( FileSystem::getOSlash() );
 		String myPath = params[1];
 		String myOrder;
 
@@ -820,10 +820,10 @@ void Console::CmdDir( const std::vector < String >& params ) {
 			myOrder = params[2];
 		}
 
-		if ( FileSystem::IsDirectory( myPath ) ) {
+		if ( FileSystem::isDirectory( myPath ) ) {
 			unsigned int i;
 
-			std::vector<String> mFiles = FileSystem::FilesGetInPath( myPath );
+			std::vector<String> mFiles = FileSystem::filesGetInPath( myPath );
 			std::sort( mFiles.begin(), mFiles.end() );
 
 			PrivPushText( "Directory: " + myPath );
@@ -833,7 +833,7 @@ void Console::CmdDir( const std::vector < String >& params ) {
 				std::vector<String> mFile;
 
 				for ( i = 0; i < mFiles.size(); i++ ) {
-					if ( FileSystem::IsDirectory( myPath + Slash + mFiles[i] ) ) {
+					if ( FileSystem::isDirectory( myPath + Slash + mFiles[i] ) ) {
 						mFolders.push_back( mFiles[i] );
 					} else {
 						mFile.push_back( mFiles[i] );
@@ -871,7 +871,7 @@ void Console::CmdShowFps( const std::vector < String >& params ) {
 	if ( params.size() >= 2 ) {
 		Int32 tInt = 0;
 
-		bool Res = String::FromString<Int32>( tInt, params[1] );
+		bool Res = String::fromString<Int32>( tInt, params[1] );
 
 		if ( Res && ( tInt == 0 || tInt == 1 ) ) {
 			mShowFps = 0 != tInt;
@@ -899,7 +899,7 @@ void Console::ShowFps( const bool& Show ) {
 }
 
 void Console::WriteLog( const std::string& Text ) {
-	std::vector<String> Strings = String::Split( String( Text ) );
+	std::vector<String> Strings = String::split( String( Text ) );
 
 	for ( Uint32 i = 0; i < Strings.size(); i++ ) {
 		PrivPushText( Strings[i] );

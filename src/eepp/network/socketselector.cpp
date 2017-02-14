@@ -94,8 +94,8 @@ void SocketSelector::Clear() {
 bool SocketSelector::Wait(Time timeout) {
 	// Setup the timeout
 	timeval time;
-	time.tv_sec  = static_cast<long>(timeout.AsMicroseconds() / 1000000);
-	time.tv_usec = static_cast<long>(timeout.AsMicroseconds() % 1000000);
+	time.tv_sec  = static_cast<long>(timeout.asMicroseconds() / 1000000);
+	time.tv_usec = static_cast<long>(timeout.asMicroseconds() % 1000000);
 
 	// Initialize the set that will contain the sockets that are ready
 	mImpl->SocketsReady = mImpl->AllSockets;

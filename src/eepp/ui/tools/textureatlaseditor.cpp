@@ -275,7 +275,7 @@ void TextureAtlasEditor::OnTextureAtlasCreate( TexturePacker * TexPacker ) {
 
 	eeSAFE_DELETE( mTextureAtlasLoader );
 
-	std::string FPath( FileSystem::FileRemoveExtension( mTexturePacker->GetFilepath() + EE_TEXTURE_ATLAS_EXTENSION ) );
+	std::string FPath( FileSystem::fileRemoveExtension( mTexturePacker->GetFilepath() + EE_TEXTURE_ATLAS_EXTENSION ) );
 
 	mTextureAtlasLoader = eeNew( TextureAtlasLoader, ( FPath, true, cb::Make1( this, &TextureAtlasEditor::OnTextureAtlasLoaded ) ) );
 }
@@ -290,7 +290,7 @@ void TextureAtlasEditor::FillSubTextureList() {
 	if ( NULL == mTextureAtlasLoader || NULL == mTextureAtlasLoader->GetTextureAtlas() || !mTextureAtlasLoader->IsLoaded()  )
 		return;
 
-	std::list<SubTexture*>& Res = mTextureAtlasLoader->GetTextureAtlas()->GetResources();
+	std::list<SubTexture*>& Res = mTextureAtlasLoader->GetTextureAtlas()->getResources();
 
 	mSubTextureList->Clear();
 
@@ -312,7 +312,7 @@ void TextureAtlasEditor::FillSubTextureList() {
 
 void TextureAtlasEditor::OnSubTextureChange( const UIEvent * Event ) {
 	if ( NULL != mTextureAtlasLoader && NULL != mTextureAtlasLoader->GetTextureAtlas() ) {
-		mCurSubTexture = mTextureAtlasLoader->GetTextureAtlas()->GetByName( mSubTextureList->GetItemSelectedText() );
+		mCurSubTexture = mTextureAtlasLoader->GetTextureAtlas()->getByName( mSubTextureList->GetItemSelectedText() );
 
 		if ( NULL != mCurSubTexture ) {
 			mSubTextureEditor->SubTexture( mCurSubTexture );

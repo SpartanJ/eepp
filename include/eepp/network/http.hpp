@@ -293,7 +293,7 @@ class EE_API Http : NonCopyable {
 			public:
 				AsyncRequest( Http * http, AsyncResponseCallback cb, Http::Request request, Time timeout );
 
-				void Run();
+				void run();
 			protected:
 				friend class Http;
 				Http *					mHttp;

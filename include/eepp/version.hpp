@@ -32,19 +32,19 @@ class EE_API Version {
 		Uint8 patch; /**< update version */
 		
 		/** @return The linked version of the library */
-		static Version GetVersion();
+		static Version getVersion();
 		
 		/** @return The linked version number of the library */
-		static Uint32 GetVersionNum();
+		static Uint32 getVersionNum();
 		
 		/** @return The library version name: "eepp version major.minor.patch" */
-		static std::string GetVersionName();
+		static std::string getVersionName();
 
 		/** @return The version codename */
-		static std::string GetCodename();
+		static std::string getCodename();
 
 		/** @return The build time of the library */
-		static std::string GetBuildTime();
+		static std::string getBuildTime();
 };
 
 }

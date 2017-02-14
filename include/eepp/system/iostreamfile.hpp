@@ -18,21 +18,21 @@ class EE_API IOStreamFile : public IOStream {
 
 		virtual ~IOStreamFile();
 
-		ios_size Read( char * data, ios_size size );
+		ios_size read( char * data, ios_size size );
 
-		ios_size Write( const char * data, ios_size size );
+		ios_size write( const char * data, ios_size size );
 
-		ios_size Seek( ios_size position );
+		ios_size seek( ios_size position );
 
-		ios_size Tell();
+		ios_size tell();
 
-		ios_size GetSize();
+		ios_size getSize();
 
-		bool IsOpen();
+		bool isOpen();
 
 		/** @brief Synchronizes the buffer associated with the stream to its controlled output sequence.
 		** This effectively means that all unwritten characters in the buffer are written to its controlled output sequence as soon as possible. */
-		void Flush();
+		void flush();
 	protected:
 		std::fstream	mFS;
 		ios_size		mSize;

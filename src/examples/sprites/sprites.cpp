@@ -96,7 +96,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	// Check if created
 	if ( win->Created() ) {
 		// Get the application path
-		std::string AppPath = Sys::GetProcessPath();
+		std::string AppPath = Sys::getProcessPath();
 
 		// Load the rock texture
 		Uint32 PlanetId	= TextureFactory::instance()->Load( AppPath + "assets/sprites/7.png" );
@@ -167,10 +167,10 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	eeSAFE_DELETE( Blindy );
 
 	// Destroy the engine instance. Destroys all the windows and engine singletons.
-	Engine::DestroySingleton();
+	Engine::destroySingleton();
 
 	// If was compiled in debug mode it will print the memory manager report
-	MemoryManager::ShowResults();
+	MemoryManager::showResults();
 
 	return EXIT_SUCCESS;
 }

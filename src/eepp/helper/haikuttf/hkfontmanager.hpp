@@ -15,7 +15,7 @@ class hkFontManager : private hkMutex {
 
 		static hkFontManager * instance();
 
-		static void DestroySingleton();
+		static void destroySingleton();
 
 		hkFontManager();
 

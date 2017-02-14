@@ -14,47 +14,47 @@ Condition::~Condition() {
 	delete mCondImpl;
 }
 
-void Condition::Lock() {
-	mCondImpl->Lock();
+void Condition::lock() {
+	mCondImpl->lock();
 }
 
-bool Condition::WaitAndLock( int awaitedValue, int autorelease ) {
-	bool flag = mCondImpl->WaitAndRetain( awaitedValue );
+bool Condition::waitAndLock( int awaitedValue, int autorelease ) {
+	bool flag = mCondImpl->waitAndRetain( awaitedValue );
 	
 	if ( autorelease ) {
-		mCondImpl->Release( awaitedValue );
+		mCondImpl->release( awaitedValue );
 	}
 	
 	return flag;
 }
 
-void Condition::Unlock( int value ) {
-	mCondImpl->Release(value);
+void Condition::unlock( int value ) {
+	mCondImpl->release(value);
 }
 
-void Condition::Unlock() {
-	mCondImpl->Unlock();
+void Condition::unlock() {
+	mCondImpl->unlock();
 }
 
 int Condition::operator=( int value ) {
-	mCondImpl->SetValue( value );
+	mCondImpl->setValue( value );
 	return value;
 }
 
-int Condition::Value() const {
-	return mCondImpl->Value();
+int Condition::value() const {
+	return mCondImpl->value();
 }
 
-void Condition::Signal() {
-	mCondImpl->Signal();
+void Condition::signal() {
+	mCondImpl->signal();
 }
 
-void Condition::Invalidate() {
-	mCondImpl->Invalidate();
+void Condition::invalidate() {
+	mCondImpl->invalidate();
 }
 
-void Condition::Restore() {
-	mCondImpl->Restore();
+void Condition::restore() {
+	mCondImpl->restore();
 }
 
 }}

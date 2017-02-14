@@ -11,13 +11,13 @@ class UITest : public UIControlAnim {
 
 		virtual Uint32 OnMouseEnter( const Vector2i& Pos, const Uint32 Flags )	{
 			if ( 4 == mOldColor.size() ) {
-				mBackground->Colors( ColorA( mOldColor[0].R(), mOldColor[0].G(), mOldColor[0].B(), 200 ),
-									ColorA( mOldColor[1].R(), mOldColor[1].G(), mOldColor[1].B(), 200 ),
-									ColorA( mOldColor[2].R(), mOldColor[2].G(), mOldColor[2].B(), 200 ),
-									ColorA( mOldColor[3].R(), mOldColor[3].G(), mOldColor[3].B(), 200 )
+				mBackground->Colors( ColorA( mOldColor[0].r(), mOldColor[0].g(), mOldColor[0].b(), 200 ),
+									ColorA( mOldColor[1].r(), mOldColor[1].g(), mOldColor[1].b(), 200 ),
+									ColorA( mOldColor[2].r(), mOldColor[2].g(), mOldColor[2].b(), 200 ),
+									ColorA( mOldColor[3].r(), mOldColor[3].g(), mOldColor[3].b(), 200 )
 								);
 			} else {
-				mBackground->Color( ColorA( mOldColor[0].R(), mOldColor[0].G(), mOldColor[0].B(), 200 ) );
+				mBackground->Color( ColorA( mOldColor[0].r(), mOldColor[0].g(), mOldColor[0].b(), 200 ) );
 			}
 
 			return 1;
@@ -127,7 +127,7 @@ class EETest : private Thread {
 		bool DrawBack;
 
 		Console Con;
-		virtual void Run();
+		virtual void run();
 
 		Vector2f Point;
 

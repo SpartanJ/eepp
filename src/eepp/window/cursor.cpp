@@ -3,7 +3,7 @@
 namespace EE { namespace Window {
 
 Cursor::Cursor( Texture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
-	mId( String::Hash( name ) ),
+	mId( String::hash( name ) ),
 	mName( name ),
 	mImage( NULL ),
 	mHotSpot( hotspot ),
@@ -19,7 +19,7 @@ Cursor::Cursor( Texture * tex, const Vector2i& hotspot, const std::string& name,
 }
 
 Cursor::Cursor( Graphics::Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
-	mId( String::Hash( name ) ),
+	mId( String::hash( name ) ),
 	mName( name ),
 	mImage( NULL ),
 	mHotSpot( hotspot ),
@@ -33,7 +33,7 @@ Cursor::Cursor( Graphics::Image * img, const Vector2i& hotspot, const std::strin
 }
 
 Cursor::Cursor( const std::string& path, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
-	mId( String::Hash( name ) ),
+	mId( String::hash( name ) ),
 	mName( name ),
 	mImage( NULL ),
 	mHotSpot( hotspot ),

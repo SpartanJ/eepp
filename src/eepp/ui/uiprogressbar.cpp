@@ -58,7 +58,7 @@ void UIProgressBar::SetTheme( UITheme * Theme ) {
 		Size( mSize.x, GetSkinSize().Height() );
 	}
 
-	UISkin * tSkin = Theme->GetByName( Theme->Abbr() + "_progressbar_filler" );
+	UISkin * tSkin = Theme->getByName( Theme->Abbr() + "_progressbar_filler" );
 
 	if ( tSkin ) {
 		SubTexture * tSubTexture = tSkin->GetSubTexture( UISkinState::StateNormal );
@@ -172,7 +172,7 @@ const bool& UIProgressBar::DisplayPercent() const {
 void UIProgressBar::UpdateTextBox() {
 	mTextBox->Visible( mDisplayPercent );
 	mTextBox->Size( mSize );
-	mTextBox->Text( String::ToStr( (Int32)( ( mProgress / mTotalSteps ) * 100.f ) ) + "%" );
+	mTextBox->Text( String::toStr( (Int32)( ( mProgress / mTotalSteps ) * 100.f ) ) + "%" );
 }
 
 UITextBox * UIProgressBar::TextBox() const {

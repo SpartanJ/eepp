@@ -24,22 +24,22 @@ Shader::Shader( const Uint32& Type ) {
 Shader::Shader( const Uint32& Type, const std::string& Filename ) {
 	Init( Type );
 
-	mFilename = FileSystem::FileNameFromPath( Filename );
+	mFilename = FileSystem::fileNameFromPath( Filename );
 
-	if ( FileSystem::FileExists( Filename ) ) {
+	if ( FileSystem::fileExists( Filename ) ) {
 		SafeDataPointer PData;
 
-		FileSystem::FileGet( Filename, PData );
+		FileSystem::fileGet( Filename, PData );
 
 		SetSource( (const char*)PData.Data, PData.DataSize );
 	} else {
 		std::string tPath = Filename;
 		Pack * tPack = NULL;
 
-		if ( PackManager::instance()->FallbackToPacks() && NULL != ( tPack = PackManager::instance()->Exists( tPath ) ) ) {
+		if ( PackManager::instance()->fallbackToPacks() && NULL != ( tPack = PackManager::instance()->exists( tPath ) ) ) {
 			SafeDataPointer PData;
 
-			tPack->ExtractFileToMemory( tPath, PData );
+			tPack->extractFileToMemory( tPath, PData );
 
 			SetSource( reinterpret_cast<char*> ( PData.Data ), PData.DataSize );
 		} else {
@@ -63,10 +63,10 @@ Shader::Shader( const Uint32& Type, Pack * Pack, const std::string& Filename ) {
 
 	Init( Type );
 
-	mFilename = FileSystem::FileNameFromPath( Filename );
+	mFilename = FileSystem::fileNameFromPath( Filename );
 
-	if ( NULL != Pack && Pack->IsOpen() && -1 != Pack->Exists( Filename ) ) {
-		Pack->ExtractFileToMemory( Filename, PData );
+	if ( NULL != Pack && Pack->isOpen() && -1 != Pack->exists( Filename ) ) {
+		Pack->extractFileToMemory( Filename, PData );
 
 		SetSource( reinterpret_cast<char*> ( PData.Data ), PData.DataSize );
 	}
@@ -115,7 +115,7 @@ std::string Shader::GetName() {
 	if ( mFilename.size() ) {
 		name = mFilename;
 	} else {
-		name = String::ToStr( mGLId );
+		name = String::toStr( mGLId );
 	}
 
 	return name;
@@ -155,12 +155,12 @@ void Shader::EnsureVersion() {
 					mSource = "#version 330\nin	vec4		gl_Color;\nin	vec4		gl_TexCoord[ 1 ];\nout		vec4		gl_FragColor;\n" + mSource;
 				}
 
-				String::ReplaceAll( mSource, "gl_Color"		, "dgl_Color"		);
-				String::ReplaceAll( mSource, "gl_TexCoord"	, "dgl_TexCoord"	);
+				String::replaceAll( mSource, "gl_Color"		, "dgl_Color"		);
+				String::replaceAll( mSource, "gl_TexCoord"	, "dgl_TexCoord"	);
 
 				if ( GLi->Version() == GLv_3CP ) {
 					#ifndef EE_GLES
-					String::ReplaceAll( mSource, "gl_FragColor"	, "dgl_FragColor"	);
+					String::replaceAll( mSource, "gl_FragColor"	, "dgl_FragColor"	);
 					#endif
 				}
 			}
@@ -169,7 +169,7 @@ void Shader::EnsureVersion() {
 
 	if ( GLi->Version() == GLv_3CP ) {
 		#ifndef EE_GLES
-		String::ReplaceAll( mSource, "texture2D"	, "texture"	);
+		String::replaceAll( mSource, "texture2D"	, "texture"	);
 		#endif
 	}
 	#endif

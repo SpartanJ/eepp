@@ -71,10 +71,10 @@ class EE_API TextureLoader : public ObjectLoader {
 
 		/** This must be called for the asynchronous mode to update the texture data to the GPU, the call must be done from the same thread that the GL context was created ( the main thread ).
 		** @see ObjectLoader::Update */
-		void 			Update();
+		void 			update();
 
 		/** @brief Releases the texture loaded ( if was already loaded ), it will destroy the texture from memory. */
-		void			Unload();
+		void			unload();
 
 		/** @return The file path to the texture ( if any ) */
 		const std::string&	Filepath() const;
@@ -107,9 +107,9 @@ class EE_API TextureLoader : public ObjectLoader {
 
 		RGB *		mColorKey;
 
-		void 			Start();
+		void 			start();
 
-		void			Reset();
+		void			reset();
 	private:
 		bool			mTexLoaded;
 		bool			mDirectUpload;

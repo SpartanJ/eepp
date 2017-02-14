@@ -45,35 +45,35 @@ Engine::Engine() :
 	mSharedGLContext( false ),
 	mMainThreadId( 0 )
 {
-	TextureAtlasManager::CreateSingleton();
+	TextureAtlasManager::createSingleton();
 }
 
 Engine::~Engine() {
-	Physics::PhysicsManager::DestroySingleton();
+	Physics::PhysicsManager::destroySingleton();
 
-	Graphics::Private::FrameBufferManager::DestroySingleton();
+	Graphics::Private::FrameBufferManager::destroySingleton();
 
-	Graphics::Private::VertexBufferManager::DestroySingleton();
+	Graphics::Private::VertexBufferManager::destroySingleton();
 
-	GlobalBatchRenderer::DestroySingleton();
+	GlobalBatchRenderer::destroySingleton();
 
-	TextureFactory::DestroySingleton();
+	TextureFactory::destroySingleton();
 
-	TextureAtlasManager::DestroySingleton();
+	TextureAtlasManager::destroySingleton();
 
-	FontManager::DestroySingleton();
+	FontManager::destroySingleton();
 
-	UI::UIManager::DestroySingleton();
+	UI::UIManager::destroySingleton();
 
-	Graphics::cGL::DestroySingleton();
+	Graphics::cGL::destroySingleton();
 
-	ShaderProgramManager::DestroySingleton();
+	ShaderProgramManager::destroySingleton();
 
-	PackManager::DestroySingleton();
+	PackManager::destroySingleton();
 
-	Log::DestroySingleton();
+	Log::destroySingleton();
 
-	HaikuTTF::hkFontManager::DestroySingleton();
+	HaikuTTF::hkFontManager::destroySingleton();
 
 	#ifdef EE_SSL_SUPPORT
 	Network::SSL::SSLSocket::End();
@@ -171,7 +171,7 @@ EE::Window::Window * Engine::CreateWindow( WindowSettings Settings, ContextSetti
 	if ( NULL != mWindow ) {
 		Settings.Backend	= mWindow->GetWindowInfo()->WindowConfig.Backend;
 	} else {
-		mMainThreadId	= Thread::GetCurrentThreadId();
+		mMainThreadId	= Thread::getCurrentThreadId();
 	}
 
 	switch ( Settings.Backend ) {
@@ -271,18 +271,18 @@ Uint32 Engine::GetDefaultBackend() const {
 WindowSettings Engine::CreateWindowSettings( IniFile * ini, std::string iniKeyName ) {
 	eeASSERT ( NULL != ini );
 
-	ini->ReadFile();
+	ini->readFile();
 
-	int Width 			= ini->GetValueI( iniKeyName, "Width", 800 );
-	int Height			= ini->GetValueI( iniKeyName, "Height", 600 );
-	int BitColor		= ini->GetValueI( iniKeyName, "BitColor", 32);
-	bool Windowed		= ini->GetValueB( iniKeyName, "Windowed", true );
-	bool Resizeable		= ini->GetValueB( iniKeyName, "Resizeable", true );
+	int Width 			= ini->getValueI( iniKeyName, "Width", 800 );
+	int Height			= ini->getValueI( iniKeyName, "Height", 600 );
+	int BitColor		= ini->getValueI( iniKeyName, "BitColor", 32);
+	bool Windowed		= ini->getValueB( iniKeyName, "Windowed", true );
+	bool Resizeable		= ini->getValueB( iniKeyName, "Resizeable", true );
 
-	std::string Backend = ini->GetValue( iniKeyName, "Backend", "" );
+	std::string Backend = ini->getValue( iniKeyName, "Backend", "" );
 	Uint32 WinBackend	= GetDefaultBackend();
 
-	String::ToLowerInPlace( Backend );
+	String::toLowerInPlace( Backend );
 
 	if ( "sdl2" == Backend )		WinBackend	= WindowBackend::SDL2;
 	else if ( "sdl" == Backend )	WinBackend	= WindowBackend::SDL;
@@ -296,8 +296,8 @@ WindowSettings Engine::CreateWindowSettings( IniFile * ini, std::string iniKeyNa
 	if ( Resizeable )
 		Style |= WindowStyle::Resize;
 
-	std::string Icon	= ini->GetValue( iniKeyName, "WinIcon", "" );
-	std::string Caption	= ini->GetValue( iniKeyName, "WinCaption", "" );
+	std::string Icon	= ini->getValue( iniKeyName, "WinIcon", "" );
+	std::string Caption	= ini->getValue( iniKeyName, "WinCaption", "" );
 
 	WindowSettings WinSettings( Width, Height, Caption, Style, WinBackend, BitColor, Icon );
 
@@ -320,12 +320,12 @@ WindowSettings Engine::CreateWindowSettings( std::string iniPath, std::string in
 ContextSettings Engine::CreateContextSettings( IniFile * ini, std::string iniKeyName ) {
 	eeASSERT ( NULL != ini );
 
-	ini->ReadFile();
+	ini->readFile();
 
-	bool VSync					= ini->GetValueB( iniKeyName, "VSync", true );
-	std::string GLVersion		= ini->GetValue( iniKeyName, "GLVersion", "0" );
+	bool VSync					= ini->getValueB( iniKeyName, "VSync", true );
+	std::string GLVersion		= ini->getValue( iniKeyName, "GLVersion", "0" );
 
-	String::ToLowerInPlace( GLVersion );
+	String::toLowerInPlace( GLVersion );
 
 	EEGL_version GLVer;
 	if (		"3" == GLVersion || "opengl 3" == GLVersion || "gl3" == GLVersion || "opengl3" == GLVersion )									GLVer = GLv_3;
@@ -338,9 +338,9 @@ ContextSettings Engine::CreateContextSettings( IniFile * ini, std::string iniKey
 	else if (	"2" == GLVersion || "opengl 2" == GLVersion || "gl2" == GLVersion || "gl 2" == GLVersion )										GLVer = GLv_2;
 	else																																		GLVer = GLv_default;
 
-	bool doubleBuffering 		= ini->GetValueB( iniKeyName, "DoubleBuffering", true );
-	int depthBufferSize 		= ini->GetValueI( iniKeyName, "DepthBufferSize", 24 );
-	int stencilBufferSize 		= ini->GetValueI( iniKeyName, "StencilBufferSize", 1 );
+	bool doubleBuffering 		= ini->getValueB( iniKeyName, "DoubleBuffering", true );
+	int depthBufferSize 		= ini->getValueI( iniKeyName, "DepthBufferSize", 24 );
+	int stencilBufferSize 		= ini->getValueI( iniKeyName, "StencilBufferSize", 1 );
 
 	return ContextSettings( VSync, GLVer, doubleBuffering, depthBufferSize, stencilBufferSize );
 }

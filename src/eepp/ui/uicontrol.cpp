@@ -939,7 +939,7 @@ UIBorder * UIControl::Border() {
 }
 
 void UIControl::SetThemeByName( const std::string& Theme ) {
-	SetTheme( UIThemeManager::instance()->GetByName( Theme ) );
+	SetTheme( UIThemeManager::instance()->getByName( Theme ) );
 }
 
 void UIControl::SetTheme( UITheme * Theme ) {
@@ -958,7 +958,7 @@ void UIControl::SafeDeleteSkinState() {
 
 void UIControl::SetThemeControl( UITheme * Theme, const std::string& ControlName ) {
 	if ( NULL != Theme ) {
-		UISkin * tSkin = Theme->GetByName( Theme->Abbr() + "_" + ControlName );
+		UISkin * tSkin = Theme->getByName( Theme->Abbr() + "_" + ControlName );
 
 		if ( NULL != tSkin ) {
 			Uint32 InitialState = UISkinState::StateNormal;
@@ -1051,7 +1051,7 @@ UISkin * UIControl::GetSkin() {
 }
 
 void UIControl::WriteCtrlFlag( const Uint32& Flag, const Uint32& Val ) {
-	BitOp::SetBitFlagValue( &mControlFlags, Flag, Val );
+	BitOp::setBitFlagValue( &mControlFlags, Flag, Val );
 }
 
 void UIControl::WriteFlag( const Uint32& Flag, const Uint32& Val ) {

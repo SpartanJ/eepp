@@ -32,7 +32,7 @@ Font * UIThemeManager::DefaultFont() const {
 }
 
 void UIThemeManager::SetTheme( const std::string& Theme ) {
-	SetTheme( GetByName( Theme ) );
+	SetTheme( getByName( Theme ) );
 }
 
 void UIThemeManager::SetTheme( UITheme * Theme ) {
@@ -49,7 +49,7 @@ void UIThemeManager::DefaultTheme( UITheme * Theme ) {
 }
 
 void UIThemeManager::DefaultTheme( const std::string& Theme ) {
-	DefaultTheme( UIThemeManager::instance()->GetByName( Theme ) );
+	DefaultTheme( UIThemeManager::instance()->getByName( Theme ) );
 }
 
 UITheme * UIThemeManager::DefaultTheme() const {

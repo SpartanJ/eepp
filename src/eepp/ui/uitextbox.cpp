@@ -113,7 +113,7 @@ void UITextBox::Color( const ColorA& color ) {
 	mFontColor = color;
 	mTextCache->Color( color );
 
-	Alpha( color.A() );
+	Alpha( color.a() );
 }
 
 const ColorA& UITextBox::ShadowColor() const {

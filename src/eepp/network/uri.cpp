@@ -44,7 +44,7 @@ URI::URI(const std::string& scheme, const std::string& pathEtc):
 	mScheme(scheme),
 	mPort(0)
 {
-	String::ToLowerInPlace(mScheme);
+	String::toLowerInPlace(mScheme);
 	mPort = GetWellKnownPort();
 	std::string::const_iterator beg = pathEtc.begin();
 	std::string::const_iterator end = pathEtc.end();
@@ -54,7 +54,7 @@ URI::URI(const std::string& scheme, const std::string& pathEtc):
 URI::URI(const std::string& scheme, const std::string& authority, const std::string& pathEtc):
 	mScheme(scheme)
 {
-	String::ToLowerInPlace(mScheme);
+	String::toLowerInPlace(mScheme);
 	std::string::const_iterator beg = authority.begin();
 	std::string::const_iterator end = authority.end();
 	ParseAuthority(beg, end);
@@ -68,7 +68,7 @@ URI::URI(const std::string& scheme, const std::string& authority, const std::str
 	mPath(path),
 	mQuery(query)
 {
-	String::ToLowerInPlace(mScheme);
+	String::toLowerInPlace(mScheme);
 	std::string::const_iterator beg = authority.begin();
 	std::string::const_iterator end = authority.end();
 	ParseAuthority(beg, end);
@@ -80,7 +80,7 @@ URI::URI(const std::string& scheme, const std::string& authority, const std::str
 	mQuery(query),
 	mFragment(fragment)
 {
-	String::ToLowerInPlace(mScheme);
+	String::toLowerInPlace(mScheme);
 	std::string::const_iterator beg = authority.begin();
 	std::string::const_iterator end = authority.end();
 	ParseAuthority(beg, end);
@@ -208,7 +208,7 @@ std::string URI::ToString() const
 void URI::SetScheme(const std::string& scheme)
 {
 	mScheme = scheme;
-	String::ToLowerInPlace(mScheme);
+	String::toLowerInPlace(mScheme);
 	if (mPort == 0)
 		mPort = GetWellKnownPort();
 }
@@ -256,7 +256,7 @@ std::string URI::GetAuthority() const
 	if (mPort && !IsWellKnownPort())
 	{
 		auth += ':';
-		auth += String::ToStr( mPort );
+		auth += String::toStr( mPort );
 	}
 	return auth;
 }
@@ -689,7 +689,7 @@ void URI::ParseHostAndPort(std::string::const_iterator& it, const std::string::c
 		{
 			int nport = 0;
 			
-			if ( String::FromString<int>( nport, port ) && nport > 0 && nport < 65536)
+			if ( String::fromString<int>( nport, port ) && nport > 0 && nport < 65536)
 				mPort = (unsigned short) nport;
 			else {
 				return; //throw SyntaxException("bad or invalid port number", port);
@@ -699,7 +699,7 @@ void URI::ParseHostAndPort(std::string::const_iterator& it, const std::string::c
 	}
 	else mPort = GetWellKnownPort();
 	mHost = host;
-	String::ToLowerInPlace(mHost);
+	String::toLowerInPlace(mHost);
 }
 
 void URI::ParsePath(std::string::const_iterator& it, const std::string::const_iterator& end)

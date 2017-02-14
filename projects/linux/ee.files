@@ -682,3 +682,5 @@
 ../../src/eepp/system/base64.cpp
 ../../include/eepp/system/md5.hpp
 ../../src/eepp/system/md5.cpp
+../../src/examples/strobe/strobe.cpp
+../../../eeiv/src/capp.hpp

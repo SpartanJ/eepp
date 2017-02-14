@@ -22,17 +22,17 @@ class EE_API IOStreamMemory : public IOStream {
 
 		virtual ~IOStreamMemory();
 
-		ios_size Read( char * data, ios_size size );
+		ios_size read( char * data, ios_size size );
 
-		ios_size Write( const char * data, ios_size size );
+		ios_size write( const char * data, ios_size size );
 
-		ios_size Seek( ios_size position );
+		ios_size seek( ios_size position );
 
-		ios_size Tell();
+		ios_size tell();
 
-		ios_size GetSize();
+		ios_size getSize();
 
-		bool IsOpen();
+		bool isOpen();
 	protected:
 		const char *	mReadPtr;
 		char *			mWritePtr;

@@ -227,8 +227,8 @@ bool WindowSDL::Create( WindowSettings Settings, ContextSettings Context ) {
 
 	SDL_GL_MakeCurrent( mSDLWindow, mGLContext );
 
-	if ( NULL == cGL::ExistsSingleton() ) {
-		cGL::CreateSingleton( mWindow.ContextConfig.Version );
+	if ( NULL == cGL::existsSingleton() ) {
+		cGL::createSingleton( mWindow.ContextConfig.Version );
 		cGL::instance()->Init();
 	}
 
@@ -295,7 +295,7 @@ std::string WindowSDL::GetVersion() {
 
 	SDL_GetVersion( &ver );
 
-	return String::StrFormated( "SDL %d.%d.%d", ver.major, ver.minor, ver.patch );
+	return String::strFormated( "SDL %d.%d.%d", ver.major, ver.minor, ver.patch );
 }
 
 void WindowSDL::CreatePlatform() {
@@ -415,7 +415,7 @@ void WindowSDL::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
 		Position( mWinPos.x, mWinPos.y );
 	}
 
-	BitOp::SetBitFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !Windowed );
+	BitOp::setBitFlagValue( &mWindow.WindowConfig.Style, WindowStyle::Fullscreen, !Windowed );
 
 	mDefaultView.SetView( 0, 0, Width, Height );
 

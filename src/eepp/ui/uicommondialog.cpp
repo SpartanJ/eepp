@@ -170,7 +170,7 @@ void UICommonDialog::SetTheme( UITheme * Theme ) {
 }
 
 void UICommonDialog::RefreshFolder() {
-	std::vector<String>			flist = FileSystem::FilesGetInPath( String( mCurPath ) );
+	std::vector<String>			flist = FileSystem::filesGetInPath( String( mCurPath ) );
 	std::vector<String>			files;
 	std::vector<String>			folders;
 	std::vector<std::string>	patterns;
@@ -178,21 +178,21 @@ void UICommonDialog::RefreshFolder() {
 	Uint32 i, z;
 
 	if ( "*" != mFiletype->Text() ) {
-		patterns = String::Split( mFiletype->Text().ToUtf8(), ';' );
+		patterns = String::split( mFiletype->Text().toUtf8(), ';' );
 
 		for ( i = 0; i < patterns.size(); i++ )
-			patterns[i] = FileSystem::FileExtension( patterns[i] );
+			patterns[i] = FileSystem::fileExtension( patterns[i] );
 	}
 
 	for ( i = 0; i < flist.size(); i++ ) {
-		if ( FoldersFirst() && FileSystem::IsDirectory( mCurPath + flist[i] ) ) {
+		if ( FoldersFirst() && FileSystem::isDirectory( mCurPath + flist[i] ) ) {
 			folders.push_back( flist[i] );
 		} else {
 			accepted = false;
 
 			if ( patterns.size() ) {
 				for ( z = 0; z < patterns.size(); z++ ) {
-					if ( patterns[z] == FileSystem::FileExtension( flist[i] ) ) {
+					if ( patterns[z] == FileSystem::fileExtension( flist[i] ) ) {
 						accepted = true;
 						break;
 					}
@@ -263,7 +263,7 @@ Uint32 UICommonDialog::OnMessage( const UIMessage * Msg ) {
 
 					CloseWindow();
 				} else if ( Msg->Sender() == mButtonUp ) {
-					mCurPath = FileSystem::RemoveLastFolderFromPath( mCurPath );
+					mCurPath = FileSystem::removeLastFolderFromPath( mCurPath );
 					mPath->Text( mCurPath );
 					RefreshFolder();
 				}
@@ -277,8 +277,8 @@ Uint32 UICommonDialog::OnMessage( const UIMessage * Msg ) {
 				if ( Msg->Sender()->IsType( UI_TYPE_LISTBOXITEM ) ) {
 					std::string newPath = mCurPath + mList->GetItemSelectedText();
 
-					if ( FileSystem::IsDirectory( newPath ) ) {
-						mCurPath = newPath + FileSystem::GetOSlash();
+					if ( FileSystem::isDirectory( newPath ) ) {
+						mCurPath = newPath + FileSystem::getOSlash();
 						mPath->Text( mCurPath );
 						RefreshFolder();
 					} else {
@@ -296,12 +296,12 @@ Uint32 UICommonDialog::OnMessage( const UIMessage * Msg ) {
 					if ( AllowFolderSelect() ) {
 						mFile->Text( mList->GetItemSelectedText() );
 					} else {
-						if ( !FileSystem::IsDirectory( GetTempFullPath() ) ) {
+						if ( !FileSystem::isDirectory( GetTempFullPath() ) ) {
 							mFile->Text( mList->GetItemSelectedText() );
 						}
 					}
 				} else {
-					if ( !FileSystem::IsDirectory( GetTempFullPath() ) ) {
+					if ( !FileSystem::isDirectory( GetTempFullPath() ) ) {
 						mFile->Text( mList->GetItemSelectedText() );
 					}
 				}
@@ -327,10 +327,10 @@ void UICommonDialog::Save() {
 void UICommonDialog::Open() {
 	if ( "" != mList->GetItemSelectedText() || AllowFolderSelect() ) {
 		if ( !AllowFolderSelect() ) {
-			if ( FileSystem::IsDirectory( GetFullPath() ) )
+			if ( FileSystem::isDirectory( GetFullPath() ) )
 				return;
 		} else {
-			if ( !FileSystem::IsDirectory( GetFullPath() ) && !FileSystem::IsDirectory( GetCurPath() ) )
+			if ( !FileSystem::isDirectory( GetFullPath() ) && !FileSystem::isDirectory( GetCurPath() ) )
 				return;
 		}
 
@@ -343,9 +343,9 @@ void UICommonDialog::Open() {
 }
 
 void UICommonDialog::OnPressEnter( const UIEvent * Event ) {
-	if ( FileSystem::IsDirectory( mPath->Text() ) ) {
+	if ( FileSystem::isDirectory( mPath->Text() ) ) {
 		std::string tpath = mPath->Text();
-		FileSystem::DirPathAddSlashAtEnd( tpath );
+		FileSystem::dirPathAddSlashAtEnd( tpath );
 		mPath->Text( tpath );
 		mCurPath = mPath->Text();
 		RefreshFolder();
@@ -379,23 +379,23 @@ bool UICommonDialog::AllowFolderSelect() {
 }
 
 void UICommonDialog::SortAlphabetically( const bool& sortAlphabetically ) {
-	BitOp::SetBitFlagValue( &mCDLFlags, CDL_FLAG_SORT_ALPHABETICALLY, sortAlphabetically ? 1 : 0 );
+	BitOp::setBitFlagValue( &mCDLFlags, CDL_FLAG_SORT_ALPHABETICALLY, sortAlphabetically ? 1 : 0 );
 	RefreshFolder();
 }
 
 void UICommonDialog::FoldersFirst( const bool& foldersFirst ) {
-	BitOp::SetBitFlagValue( &mCDLFlags, CDL_FLAG_FOLDERS_FISRT , foldersFirst ? 1 : 0 );
+	BitOp::setBitFlagValue( &mCDLFlags, CDL_FLAG_FOLDERS_FISRT , foldersFirst ? 1 : 0 );
 	RefreshFolder();
 }
 
 void UICommonDialog::AllowFolderSelect( const bool& allowFolderSelect ) {
-	BitOp::SetBitFlagValue( &mCDLFlags, CDL_FLAG_ALLOW_FOLDER_SELECT, allowFolderSelect ? 1 : 0 );
+	BitOp::setBitFlagValue( &mCDLFlags, CDL_FLAG_ALLOW_FOLDER_SELECT, allowFolderSelect ? 1 : 0 );
 }
 
 std::string UICommonDialog::GetFullPath() {
 	std::string tPath = mCurPath;
 
-	FileSystem::DirPathAddSlashAtEnd( tPath );
+	FileSystem::dirPathAddSlashAtEnd( tPath );
 
 	tPath += GetCurFile();
 
@@ -405,9 +405,9 @@ std::string UICommonDialog::GetFullPath() {
 std::string	UICommonDialog::GetTempFullPath() {
 	std::string tPath = mCurPath;
 
-	FileSystem::DirPathAddSlashAtEnd( tPath );
+	FileSystem::dirPathAddSlashAtEnd( tPath );
 
-	tPath += mList->GetItemSelectedText().ToUtf8();
+	tPath += mList->GetItemSelectedText().toUtf8();
 
 	return tPath;
 }
@@ -420,7 +420,7 @@ std::string UICommonDialog::GetCurFile() const {
 	if ( mCDLFlags & CDL_FLAG_SAVE_DIALOG )
 		return mFile->Text();
 
-	return mList->GetItemSelectedText().ToUtf8();
+	return mList->GetItemSelectedText().toUtf8();
 }
 
 UIPushButton *	UICommonDialog::GetButtonOpen() const {

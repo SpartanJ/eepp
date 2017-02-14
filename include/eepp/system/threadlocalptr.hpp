@@ -49,28 +49,28 @@ ThreadLocalPtr<T>::ThreadLocalPtr(T* value) :
 
 template <typename T>
 T& ThreadLocalPtr<T>::operator *() const {
-	return *static_cast<T*>(Value());
+	return *static_cast<T*>(value());
 }
 
 template <typename T>
 T* ThreadLocalPtr<T>::operator ->() const {
-	return static_cast<T*>(Value());
+	return static_cast<T*>(value());
 }
 
 template <typename T>
 ThreadLocalPtr<T>::operator T*() const {
-	return static_cast<T*>(Value());
+	return static_cast<T*>(value());
 }
 
 template <typename T>
-ThreadLocalPtr<T>& ThreadLocalPtr<T>::operator =(T* value) {
-	Value(value);
+ThreadLocalPtr<T>& ThreadLocalPtr<T>::operator =(T* val) {
+	value(val);
 	return *this;
 }
 
 template <typename T>
 ThreadLocalPtr<T>& ThreadLocalPtr<T>::operator =(const ThreadLocalPtr<T>& right) {
-	Value(right.Value());
+	value(right.value());
 	return *this;
 }
 

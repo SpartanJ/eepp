@@ -282,7 +282,7 @@ void MapEditor::CreateSubTextureContainer( Int32 Width ) {
 	mChkAnim->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickAnimated ) );
 
 	mChkRot90 = mTheme->CreateCheckBox( mSubTextureCont, Sizei(), Vector2i( mChkBlocked->Pos().x, mChkBlocked->Pos().y + mChkBlocked->Size().Height() + 4 ), ChkFlags );
-	mChkRot90->Text( String::FromUtf8( "Rotate 90º" ) );
+	mChkRot90->Text( String::fromUtf8( "Rotate 90º" ) );
 	mChkRot90->AddEventListener( UIEvent::EventMouseClick, cb::Make1( this, &MapEditor::ChkClickRot90 ) );
 
 	mChkAutoFix = mTheme->CreateCheckBox( mSubTextureCont, Sizei(), Vector2i( mChkAnim->Pos().x, mChkAnim->Pos().y + mChkAnim->Size().Height() + 4 ), ChkFlags );
@@ -359,7 +359,7 @@ void MapEditor::CreateLighContainer() {
 	mUIRedSlider->Value( 255 );
 	mUIRedSlider->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::OnRedChange ) );
 
-	mUIRedTxt = mTheme->CreateTextBox( String::ToStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIRedSlider->Pos().x + mUIRedSlider->Size().Width() + 4, mUIRedSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	mUIRedTxt = mTheme->CreateTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIRedSlider->Pos().x + mUIRedSlider->Size().Width() + 4, mUIRedSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	Txt = mTheme->CreateTextBox( "G:", mLightCont, Sizei(), Vector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIRedSlider->Pos().y + mUIRedSlider->Size().Height() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 	mUIGreenSlider = mTheme->CreateSlider( mLightCont, Sizei( 100, 20 ), Vector2i( mUIRedSlider->Pos().x, Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
@@ -367,7 +367,7 @@ void MapEditor::CreateLighContainer() {
 	mUIGreenSlider->Value( 255 );
 	mUIGreenSlider->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::OnGreenChange ) );
 
-	mUIGreenTxt = mTheme->CreateTextBox( String::ToStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIGreenSlider->Pos().x + mUIGreenSlider->Size().Width() + 4, mUIGreenSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	mUIGreenTxt = mTheme->CreateTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIGreenSlider->Pos().x + mUIGreenSlider->Size().Width() + 4, mUIGreenSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	Txt = mTheme->CreateTextBox( "B:", mLightCont, Sizei(), Vector2i( mUIBaseColor->Pos().x + mUIBaseColor->Size().Width() + 4, mUIGreenSlider->Pos().y + mUIGreenSlider->Size().Height() + 4 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 	mUIBlueSlider = mTheme->CreateSlider( mLightCont, Sizei( 100, 20 ), Vector2i( mUIRedSlider->Pos().x, Txt->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_AUTO_SIZE );
@@ -375,7 +375,7 @@ void MapEditor::CreateLighContainer() {
 	mUIBlueSlider->Value( 255 );
 	mUIBlueSlider->AddEventListener( UIEvent::EventOnValueChange, cb::Make1( this, &MapEditor::OnBlueChange ) );
 
-	mUIBlueTxt = mTheme->CreateTextBox( String::ToStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIBlueSlider->Pos().x + mUIBlueSlider->Size().Width() + 4, mUIBlueSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
+	mUIBlueTxt = mTheme->CreateTextBox( String::toStr( (Uint32)255 ), mLightCont, Sizei(), Vector2i( mUIBlueSlider->Pos().x + mUIBlueSlider->Size().Width() + 4, mUIBlueSlider->Pos().y ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
 	Txt = mTheme->CreateTextBox( "Light Radius:", mLightCont, Sizei(), Vector2i( TAB_CONT_X_DIST, mUIBlueTxt->Pos().y + mUIBlueTxt->Size().Height() + 16 ), UI_CONTROL_DEFAULT_FLAGS | UI_DRAW_SHADOW | UI_AUTO_SIZE );
 
@@ -437,8 +437,8 @@ void MapEditor::OnObjectModeSel( const UIEvent * Event ) {
 }
 
 void MapEditor::CreateUIMap() {
-	UISkin * HScrollSkin = mTheme->GetByName( mTheme->Abbr() + "_" + "hscrollbar_bg" );
-	UISkin * VScrollSkin = mTheme->GetByName( mTheme->Abbr() + "_" + "vscrollbar_bg" );
+	UISkin * HScrollSkin = mTheme->getByName( mTheme->Abbr() + "_" + "hscrollbar_bg" );
+	UISkin * VScrollSkin = mTheme->getByName( mTheme->Abbr() + "_" + "vscrollbar_bg" );
 
 	Float ScrollH = 16;
 	Float ScrollV = 16;
@@ -533,9 +533,9 @@ void MapEditor::OnLightRadiusChange( MapLight * Light ) {
 void MapEditor::OnLightSelect( MapLight * Light ) {
 	ColorA Col( Light->Color() );
 
-	mUIRedSlider->Value( Col.R() );
-	mUIGreenSlider->Value( Col.G() );
-	mUIBlueSlider->Value( Col.B() );
+	mUIRedSlider->Value( Col.r() );
+	mUIGreenSlider->Value( Col.g() );
+	mUIBlueSlider->Value( Col.b() );
 	mLightRadius->Value( Light->Radius() );
 	mLightTypeChk->Active( Light->Type() == LIGHT_ISOMETRIC ? true : false );
 }
@@ -553,11 +553,11 @@ void MapEditor::OnRedChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->Background()->Color();
 	Col.Red = (Uint8)mUIRedSlider->Value();
 	mUIBaseColor->Background()->Color( Col );
-	mUIRedTxt->Text( String::ToStr( (Int32)mUIRedSlider->Value() ) );
+	mUIRedTxt->Text( String::toStr( (Int32)mUIRedSlider->Value() ) );
 
 	if ( NULL != mUIMap->GetSelectedLight() ) {
 		RGB lCol( mUIMap->GetSelectedLight()->Color() );
-		lCol.Red = Col.R();
+		lCol.Red = Col.r();
 		mUIMap->GetSelectedLight()->Color( lCol );
 	}
 }
@@ -566,11 +566,11 @@ void MapEditor::OnGreenChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->Background()->Color();
 	Col.Green = (Uint8)mUIGreenSlider->Value();
 	mUIBaseColor->Background()->Color( Col );
-	mUIGreenTxt->Text( String::ToStr( (Uint32)mUIGreenSlider->Value() ) );
+	mUIGreenTxt->Text( String::toStr( (Uint32)mUIGreenSlider->Value() ) );
 
 	if ( NULL != mUIMap->GetSelectedLight() ) {
 		RGB lCol( mUIMap->GetSelectedLight()->Color() );
-		lCol.Green = Col.G();
+		lCol.Green = Col.g();
 		mUIMap->GetSelectedLight()->Color( lCol );
 	}
 }
@@ -579,11 +579,11 @@ void MapEditor::OnBlueChange( const UIEvent * Event ) {
 	ColorA Col = mUIBaseColor->Background()->Color();
 	Col.Blue = (Uint8)mUIBlueSlider->Value();
 	mUIBaseColor->Background()->Color( Col );
-	mUIBlueTxt->Text( String::ToStr( (Uint32)mUIBlueSlider->Value() ) );
+	mUIBlueTxt->Text( String::toStr( (Uint32)mUIBlueSlider->Value() ) );
 
 	if ( NULL != mUIMap->GetSelectedLight() ) {
 		RGB lCol( mUIMap->GetSelectedLight()->Color() );
-		lCol.Blue = Col.B();
+		lCol.Blue = Col.b();
 		mUIMap->GetSelectedLight()->Color( lCol );
 	}
 }
@@ -652,7 +652,7 @@ void MapEditor::OnTypeChange( const UIEvent * Event ) {
 	else if ( mGOTypeList->Text() == "Sprite" )
 		mCurGOType = GAMEOBJECT_TYPE_SPRITE;
 	else
-		mCurGOType = String::Hash( mGOTypeList->Text().ToUtf8() );
+		mCurGOType = String::hash( mGOTypeList->Text().toUtf8() );
 
 	if ( NULL != mChkAnim && NULL != mGOTypeList && mChkAnim->Active() && mGOTypeList->Text() != "Sprite" ) {
 		if ( mGOTypeList->Text() == "SubTexture" || mGOTypeList->Text() == "SubTextureEx" ) {
@@ -712,14 +712,14 @@ void MapEditor::OnNewGOTypeAdded( std::string name, Uint32 hash ) {
 
 void MapEditor::FillSGCombo() {
 	TextureAtlasManager * SGM = TextureAtlasManager::instance();
-	std::list<TextureAtlas*>& Res = SGM->GetResources();
+	std::list<TextureAtlas*>& Res = SGM->getResources();
 
 	mTextureAtlasesList->ListBox()->Clear();
 
 	std::vector<String> items;
 
-	Uint32 Restricted1 = String::Hash( std::string( "global" ) );
-	Uint32 Restricted2 = String::Hash( mTheme->TextureAtlas()->Name() );
+	Uint32 Restricted1 = String::hash( std::string( "global" ) );
+	Uint32 Restricted2 = String::hash( mTheme->TextureAtlas()->Name() );
 
 	for ( std::list<TextureAtlas*>::iterator it = Res.begin(); it != Res.end(); it++ ) {
 		if ( (*it)->Id() != Restricted1 && (*it)->Id() != Restricted2 )
@@ -737,8 +737,8 @@ void MapEditor::FillSGCombo() {
 
 void MapEditor::FillSubTextureList() {
 	TextureAtlasManager * SGM = TextureAtlasManager::instance();
-	mCurSG = SGM->GetByName( mTextureAtlasesList->Text() );
-	std::list<SubTexture*>& Res = mCurSG->GetResources();
+	mCurSG = SGM->getByName( mTextureAtlasesList->Text() );
+	std::list<SubTexture*>& Res = mCurSG->getResources();
 
 	mSubTextureList->Clear();
 
@@ -762,7 +762,7 @@ void MapEditor::FillSubTextureList() {
 
 void MapEditor::OnSubTextureChange( const UIEvent * Event ) {
 	if ( NULL != mCurSG ) {
-		SubTexture * tSubTexture = mCurSG->GetByName( mSubTextureList->GetItemSelectedText() );
+		SubTexture * tSubTexture = mCurSG->getByName( mSubTextureList->GetItemSelectedText() );
 
 		if ( NULL != tSubTexture ) {
 			mGfxPreview->SubTexture( tSubTexture );
@@ -1128,9 +1128,9 @@ void MapEditor::RefreshLayersList() {
 void MapEditor::TextureAtlasOpen( const UIEvent * Event ) {
 	UICommonDialog * CDL = reinterpret_cast<UICommonDialog*> ( Event->Ctrl() );
 
-	std::string sgname = FileSystem::FileRemoveExtension( FileSystem::FileNameFromPath( CDL->GetFullPath() ) );
+	std::string sgname = FileSystem::fileRemoveExtension( FileSystem::fileNameFromPath( CDL->GetFullPath() ) );
 
-	TextureAtlas * SG = TextureAtlasManager::instance()->GetByName( sgname );
+	TextureAtlas * SG = TextureAtlasManager::instance()->getByName( sgname );
 
 	if ( NULL == SG ) {
 		TextureAtlasLoader tgl( CDL->GetFullPath() );
@@ -1195,7 +1195,7 @@ GameObject * MapEditor::CreateGameObject() {
 
 		if ( mChkAnim->Active() ) {
 
-			Sprite * tAnimSprite = eeNew( Sprite, ( String::RemoveNumbersAtEnd( mGfxPreview->SubTexture()->Name() ) ) );
+			Sprite * tAnimSprite = eeNew( Sprite, ( String::removeNumbersAtEnd( mGfxPreview->SubTexture()->Name() ) ) );
 			tObj = eeNew( GameObjectSprite, ( mCurGOFlags, mCurLayer, tAnimSprite ) );
 
 		} else {
@@ -1208,7 +1208,7 @@ GameObject * MapEditor::CreateGameObject() {
 		//! Creates an empty game object. The client will interpret the GameObject Type, and instanciate the corresponding class.
 
 		if ( mChkDI->Active() )
-			tObj = eeNew( GameObjectVirtual, ( String::Hash( mDataIdInput->Text().ToUtf8() ), mCurLayer, mCurGOFlags, mCurGOType ) );
+			tObj = eeNew( GameObjectVirtual, ( String::hash( mDataIdInput->Text().toUtf8() ), mCurLayer, mCurGOFlags, mCurGOType ) );
 		else
 			tObj = eeNew( GameObjectVirtual, ( mGfxPreview->SubTexture(), mCurLayer, mCurGOFlags, mCurGOType ) );
 	}

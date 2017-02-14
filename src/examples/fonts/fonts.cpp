@@ -56,7 +56,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 	// Check if created
 	if ( win->Created() ) {
 		// Get the application path
-		std::string AppPath = Sys::GetProcessPath();
+		std::string AppPath = Sys::getProcessPath();
 
 		// Create a new True Type Font
 		TTF		= TTFFont::New( "DejaVuSansMonoOutline" );
@@ -87,7 +87,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		// Load a monospaced texture font from image ( using the texture loader to set the color key )
 		TextureLoader TexLoader( AppPath + "assets/fonts/conchars.png" );
 		TexLoader.SetColorKey( RGB(0,0,0) );
-		TexLoader.Load();;
+		TexLoader.load();;
 		TexF2->Load( TexLoader.Id(), 32 );
 
 		// Set a text to render
@@ -131,10 +131,10 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 
 	// Destroy the engine instance. Destroys all the windows and engine singletons.
 	// Fonts are autoreleased by the engine
-	Engine::DestroySingleton();
+	Engine::destroySingleton();
 
 	// If was compiled in debug mode it will print the memory manager report
-	MemoryManager::ShowResults();
+	MemoryManager::showResults();
 
 	return EXIT_SUCCESS;
 }

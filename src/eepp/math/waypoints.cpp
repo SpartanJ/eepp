@@ -177,7 +177,7 @@ void Waypoints::Update( const Time& Elapsed ) {
 			mUpdate = false;
 		}
 
-		mCurTime += Elapsed.AsMilliseconds();
+		mCurTime += Elapsed.asMilliseconds();
 
 		mCurPos.x = easingCb[ mType ]( mCurTime, mActP->p.x, ( mNexP->p.x - mActP->p.x ), mActP->t );
 		mCurPos.y = easingCb[ mType ]( mCurTime, mActP->p.y, ( mNexP->p.y - mActP->p.y ), mActP->t );
@@ -209,11 +209,11 @@ void Waypoints::SetTotalTime( const Time& TotTime ) {
 
 	if ( mLoop ) {
 		tdist += mPoints[ mPoints.size() - 1 ].p.Distance( mPoints[0].p );
-		mPoints[ mPoints.size() - 1 ].t = mPoints[ mPoints.size() - 1 ].p.Distance( mPoints[0].p ) * TotTime.AsMilliseconds() / tdist;
+		mPoints[ mPoints.size() - 1 ].t = mPoints[ mPoints.size() - 1 ].p.Distance( mPoints[0].p ) * TotTime.asMilliseconds() / tdist;
 	}
 
 	for (i = 0; i < mPoints.size() - 1; i++)
-		mPoints[i].t = mPoints[i].p.Distance( mPoints[i + 1].p ) * TotTime.AsMilliseconds() / tdist;
+		mPoints[i].t = mPoints[i].p.Distance( mPoints[i + 1].p ) * TotTime.asMilliseconds() / tdist;
 }
 
 void Waypoints::Type( Ease::Interpolation InterpolationType ) {

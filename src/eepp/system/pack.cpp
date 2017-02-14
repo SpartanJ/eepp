@@ -7,14 +7,14 @@ Pack::Pack() :
 	Mutex(),
 	mIsOpen(false)
 {
-	PackManager::instance()->Add( this );
+	PackManager::instance()->add( this );
 }
 
 Pack::~Pack() {
-	PackManager::instance()->Remove( this );
+	PackManager::instance()->remove( this );
 }
 
-bool Pack::IsOpen() const {
+bool Pack::isOpen() const {
 	return mIsOpen;
 }
 

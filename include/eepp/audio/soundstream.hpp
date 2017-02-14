@@ -90,7 +90,7 @@ class EE_API SoundStream : private Thread, private Sound {
 
 		void Initialize(unsigned int ChannelCount, unsigned int SampleRate);
 	private :
-		virtual void Run();
+		virtual void run();
 
 		virtual bool OnGetData( Chunk& Data ) = 0;
 

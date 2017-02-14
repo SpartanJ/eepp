@@ -64,8 +64,8 @@ void TTFFontLoader::Create() {
 	mFont = TTFFont::New( mFontName );
 }
 
-void TTFFontLoader::Start() {
-	ObjectLoader::Start();
+void TTFFontLoader::start() {
+	ObjectLoader::start();
 
 	mFont->ThreadedLoading( mThreaded );
 
@@ -79,14 +79,14 @@ void TTFFontLoader::Start() {
 	mFontLoaded = true;
 
 	if ( !mThreaded )
-		Update();
+		update();
 }
 
-void TTFFontLoader::Update() {
+void TTFFontLoader::update() {
 	if ( !mLoaded && mFontLoaded ) {
 		mFont->UpdateLoading();
 
-		SetLoaded();
+		setLoaded();
 	}
 }
 
@@ -110,18 +110,18 @@ Graphics::Font * TTFFontLoader::Font() const {
 	return mFont;
 }
 
-void TTFFontLoader::Unload() {
+void TTFFontLoader::unload() {
 	if ( mLoaded ) {
 		TextureFactory::instance()->Remove( mFont->GetTexId() );
 
-		FontManager::instance()->Remove( mFont );
+		FontManager::instance()->remove( mFont );
 
-		Reset();
+		reset();
 	}
 }
 
-void TTFFontLoader::Reset() {
-	ObjectLoader::Reset();
+void TTFFontLoader::reset() {
+	ObjectLoader::reset();
 
 	mFontLoaded = false;
 }

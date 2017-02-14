@@ -270,21 +270,21 @@ void UISlider::Update() {
 }
 
 Uint32 UISlider::OnKeyDown( const UIEventKey &Event ) {
-	if ( Sys::GetTicks() - mLastTickMove > 100 ) {
+	if ( Sys::getTicks() - mLastTickMove > 100 ) {
 		if ( Event.KeyCode() == KEY_DOWN ) {
-			mLastTickMove = Sys::GetTicks();
+			mLastTickMove = Sys::getTicks();
 
 			Value( mValue + mClickStep );
 		} else if ( Event.KeyCode() == KEY_UP ) {
-			mLastTickMove = Sys::GetTicks();
+			mLastTickMove = Sys::getTicks();
 
 			Value( mValue - mClickStep );
 		} else if ( Event.KeyCode() == KEY_PAGEUP ) {
-			mLastTickMove = Sys::GetTicks();
+			mLastTickMove = Sys::getTicks();
 
 			Value( mMinValue );
 		} else if ( Event.KeyCode() == KEY_PAGEDOWN ) {
-			mLastTickMove = Sys::GetTicks();
+			mLastTickMove = Sys::getTicks();
 
 			Value( mMaxValue );
 		}

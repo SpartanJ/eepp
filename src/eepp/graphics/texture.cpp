@@ -73,7 +73,7 @@ Texture::Texture( const Uint32& texture, const unsigned int& width, const unsign
 
 void Texture::Create( const Uint32& texture, const unsigned int& width, const unsigned int& height, const unsigned int& imgwidth, const unsigned int& imgheight, const bool& UseMipmap, const unsigned int& Channels, const std::string& filepath, const EE_CLAMP_MODE& ClampMode, const bool& CompressedTexture, const Uint32& MemSize, const Uint8* data ) {
 	mFilepath 	= filepath;
-	mId 		= String::Hash( mFilepath );
+	mId 		= String::hash( mFilepath );
 	mTexture 	= texture;
 	mWidth 		= width;
 	mHeight 	= height;
@@ -250,7 +250,7 @@ void Texture::ReplaceColor( const ColorA& ColorKey, const ColorA& NewColor ) {
 void Texture::CreateMaskFromColor( const ColorA& ColorKey, Uint8 Alpha ) {
 	Lock( true );
 
-	Image::ReplaceColor( ColorKey, ColorA( ColorKey.R(), ColorKey.G(), ColorKey.B(), Alpha ) );
+	Image::ReplaceColor( ColorKey, ColorA( ColorKey.r(), ColorKey.g(), ColorKey.b(), Alpha ) );
 
 	Unlock( false, true );
 }

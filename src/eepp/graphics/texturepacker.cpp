@@ -374,16 +374,16 @@ void TexturePacker::CreateChild() {
 }
 
 bool TexturePacker::AddTexturesPath( std::string TexturesPath ) {
-	if ( FileSystem::IsDirectory( TexturesPath ) ) {
+	if ( FileSystem::isDirectory( TexturesPath ) ) {
 
-		FileSystem::DirPathAddSlashAtEnd( TexturesPath );
+		FileSystem::dirPathAddSlashAtEnd( TexturesPath );
 
-		std::vector<std::string > files = FileSystem::FilesGetInPath( TexturesPath );
+		std::vector<std::string > files = FileSystem::filesGetInPath( TexturesPath );
 		std::sort( files.begin(), files.end() );
 
 		for ( Uint32 i = 0; i < files.size(); i++ ) {
 			std::string path( TexturesPath + files[i] );
-			if ( !FileSystem::IsDirectory( path ) )
+			if ( !FileSystem::isDirectory( path ) )
 				AddTexture( path );
 		}
 
@@ -432,7 +432,7 @@ bool TexturePacker::AddImage( Image * Img, const std::string& Name ) {
 }
 
 bool TexturePacker::AddTexture( const std::string& TexturePath ) {
-	if ( FileSystem::FileExists( TexturePath ) ) {
+	if ( FileSystem::fileExists( TexturePath ) ) {
 		TexturePackerTex * TPack = eeNew( TexturePackerTex, ( TexturePath ) );
 		return AddPackerTex( TPack );
 	}
@@ -626,29 +626,29 @@ void TexturePacker::SaveSubTextures() {
 
 	std::vector<sSubTextureHdr> tSubTexturesHdr;
 
-	std::string path = FileSystem::FileRemoveExtension( mFilepath ) + EE_TEXTURE_ATLAS_EXTENSION;
+	std::string path = FileSystem::fileRemoveExtension( mFilepath ) + EE_TEXTURE_ATLAS_EXTENSION;
 	IOStreamFile fs ( path , std::ios::out | std::ios::binary );
 
-	if ( fs.IsOpen() ) {
-		fs.Write( reinterpret_cast<const char*> (&TexGrHdr), sizeof(sTextureAtlasHdr) );
+	if ( fs.isOpen() ) {
+		fs.write( reinterpret_cast<const char*> (&TexGrHdr), sizeof(sTextureAtlasHdr) );
 
-		fs.Write( reinterpret_cast<const char*> (&TexHdr[ 0 ]), sizeof(sTextureHdr) );
+		fs.write( reinterpret_cast<const char*> (&TexHdr[ 0 ]), sizeof(sTextureHdr) );
 
 		CreateSubTexturesHdr( this, tSubTexturesHdr );
 
 		if ( tSubTexturesHdr.size() )
-			fs.Write( reinterpret_cast<const char*> (&tSubTexturesHdr[ 0 ]), sizeof(sSubTextureHdr) * (std::streamsize)tSubTexturesHdr.size() );
+			fs.write( reinterpret_cast<const char*> (&tSubTexturesHdr[ 0 ]), sizeof(sSubTextureHdr) * (std::streamsize)tSubTexturesHdr.size() );
 
 		Int32 HdrPos 				= 1;
 		TexturePacker * Child 		= mChild;
 
 		while ( NULL != Child ) {
-			fs.Write( reinterpret_cast<const char*> (&TexHdr[ HdrPos ]), sizeof(sTextureHdr) );
+			fs.write( reinterpret_cast<const char*> (&TexHdr[ HdrPos ]), sizeof(sTextureHdr) );
 
 			CreateSubTexturesHdr( Child, tSubTexturesHdr );
 
 			if ( tSubTexturesHdr.size() )
-				fs.Write( reinterpret_cast<const char*> (&tSubTexturesHdr[ 0 ]), sizeof(sSubTextureHdr) * (std::streamsize)tSubTexturesHdr.size() );
+				fs.write( reinterpret_cast<const char*> (&tSubTexturesHdr[ 0 ]), sizeof(sSubTextureHdr) * (std::streamsize)tSubTexturesHdr.size() );
 
 			Child 				= Child->GetChild();
 
@@ -673,16 +673,16 @@ void TexturePacker::CreateSubTexturesHdr( TexturePacker * Packer, std::vector<sS
 		tTex = (*it);
 
 		if ( tTex->Placed() ) {
-			std::string name = FileSystem::FileNameFromPath( tTex->Name() );
+			std::string name = FileSystem::fileNameFromPath( tTex->Name() );
 
 			memset( tSubTextureHdr.Name, 0, HDR_NAME_SIZE );
 
-			String::StrCopy( tSubTextureHdr.Name, name.c_str(), HDR_NAME_SIZE );
+			String::strCopy( tSubTextureHdr.Name, name.c_str(), HDR_NAME_SIZE );
 
 			if ( !mSaveExtensions )
-				name = FileSystem::FileRemoveExtension( name );
+				name = FileSystem::fileRemoveExtension( name );
 
-			tSubTextureHdr.ResourceID	= String::Hash( name );
+			tSubTextureHdr.ResourceID	= String::hash( name );
 			tSubTextureHdr.Width 		= tTex->Width();
 			tSubTextureHdr.Height 		= tTex->Height();
 			tSubTextureHdr.Channels		= tTex->Channels();
@@ -692,7 +692,7 @@ void TexturePacker::CreateSubTexturesHdr( TexturePacker * Packer, std::vector<sS
 			tSubTextureHdr.OffsetY		= 0;
 			tSubTextureHdr.X			= tTex->X();
 			tSubTextureHdr.Y			= tTex->Y();
-			tSubTextureHdr.Date			= FileSystem::FileGetModificationDate( tTex->Name() );
+			tSubTextureHdr.Date			= FileSystem::fileGetModificationDate( tTex->Name() );
 			tSubTextureHdr.Flags		= 0;
 
 			if ( tTex->Flipped() )
@@ -708,14 +708,14 @@ void TexturePacker::CreateSubTexturesHdr( TexturePacker * Packer, std::vector<sS
 sTextureHdr	TexturePacker::CreateTextureHdr( TexturePacker * Packer ) {
 	sTextureHdr TexHdr;
 
-	std::string name( FileSystem::FileNameFromPath( Packer->GetFilepath() ) );
+	std::string name( FileSystem::fileNameFromPath( Packer->GetFilepath() ) );
 
 	memset( TexHdr.Name, 0, HDR_NAME_SIZE );
 
-	String::StrCopy( TexHdr.Name, name.c_str(), HDR_NAME_SIZE );
+	String::strCopy( TexHdr.Name, name.c_str(), HDR_NAME_SIZE );
 
-	TexHdr.ResourceID 	= String::Hash( name );
-	TexHdr.Size			= FileSystem::FileSize( Packer->GetFilepath() );
+	TexHdr.ResourceID 	= String::hash( name );
+	TexHdr.Size			= FileSystem::fileSize( Packer->GetFilepath() );
 	TexHdr.SubTextureCount 	= Packer->GetPlacedCount();
 
 	return TexHdr;
@@ -735,9 +735,9 @@ void TexturePacker::ChildSave( const EE_SAVE_TYPE& Format ) {
 		}
 
 		if ( NULL != LastParent ) {
-			std::string fFpath	= FileSystem::FileRemoveExtension( LastParent->GetFilepath() );
-			std::string fExt	= FileSystem::FileExtension( LastParent->GetFilepath() );
-			std::string fName	= fFpath + "_ch" + String::ToStr( ParentCount ) + "." + fExt;
+			std::string fFpath	= FileSystem::fileRemoveExtension( LastParent->GetFilepath() );
+			std::string fExt	= FileSystem::fileExtension( LastParent->GetFilepath() );
+			std::string fName	= fFpath + "_ch" + String::toStr( ParentCount ) + "." + fExt;
 
 			mChild->Save( fName, Format, mSaveExtensions );
 		}

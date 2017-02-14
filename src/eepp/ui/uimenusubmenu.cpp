@@ -41,7 +41,7 @@ bool UIMenuSubMenu::IsType( const Uint32& type ) const {
 void UIMenuSubMenu::SetTheme( UITheme * Theme ) {
 	UIMenuItem::SetTheme( Theme );
 
-	mSkinArrow		= Theme->GetByName( Theme->Abbr() + "_" + "menuarrow" );
+	mSkinArrow		= Theme->getByName( Theme->Abbr() + "_" + "menuarrow" );
 
 	OnStateChange();
 }
@@ -88,7 +88,7 @@ Uint32 UIMenuSubMenu::OnMouseMove( const Vector2i &Pos, const Uint32 Flags ) {
 	UIMenuItem::OnMouseMove( Pos, Flags );
 
 	if ( NULL != mSubMenu && !mSubMenu->Visible() ) {
-		mTimeOver += UIManager::instance()->Elapsed().AsMilliseconds();
+		mTimeOver += UIManager::instance()->Elapsed().asMilliseconds();
 
 		if ( mTimeOver >= mMaxTime ) {
 			ShowSubMenu();

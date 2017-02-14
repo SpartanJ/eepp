@@ -453,7 +453,7 @@ bool Sprite::AddSubFrame(const Uint32& TexId, const unsigned int& NumFrame, cons
 		return false;
 
 	Texture * Tex = TextureFactory::instance()->GetTexture( TexId );
-	SubTexture * S = GlobalTextureAtlas::instance()->Add( eeNew( SubTexture, () ) );
+	SubTexture * S = GlobalTextureAtlas::instance()->add( eeNew( SubTexture, () ) );
 
 	S->Texture( TexId );
 
@@ -492,9 +492,9 @@ void Sprite::Update( const Time& ElapsedTime ) {
 			return;
 
 		if ( !SPR_FGET( SPRITE_FLAG_REVERSE_ANIM ) )
-			mfCurrentFrame += mAnimSpeed * ElapsedTime.AsSeconds();
+			mfCurrentFrame += mAnimSpeed * ElapsedTime.asSeconds();
 		else
-			mfCurrentFrame -= mAnimSpeed * ElapsedTime.AsSeconds();
+			mfCurrentFrame -= mAnimSpeed * ElapsedTime.asSeconds();
 
 		mCurrentFrame = (unsigned int)mfCurrentFrame;
 
