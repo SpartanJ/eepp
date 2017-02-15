@@ -35,7 +35,7 @@ SocketSelector::~SocketSelector() {
 void SocketSelector::add(Socket& socket) {
 	SocketHandle handle = socket.getHandle();
 
-	if (handle != Private::SocketImpl::InvalidSocket()) {
+	if (handle != Private::SocketImpl::invalidSocket()) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 		if (mImpl->SocketCount >= FD_SETSIZE) {
 			eePRINT( "The socket can't be added to the selector because its " );
@@ -67,7 +67,7 @@ void SocketSelector::add(Socket& socket) {
 void SocketSelector::remove(Socket& socket) {
 	SocketHandle handle = socket.getHandle();
 
-	if (handle != Private::SocketImpl::InvalidSocket()) {
+	if (handle != Private::SocketImpl::invalidSocket()) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 		if (!FD_ISSET(handle, &mImpl->AllSockets))
 			return;
@@ -110,7 +110,7 @@ bool SocketSelector::wait(Time timeout) {
 bool SocketSelector::isReady(Socket& socket) const {
 	SocketHandle handle = socket.getHandle();
 
-	if (handle != Private::SocketImpl::InvalidSocket()) {
+	if (handle != Private::SocketImpl::invalidSocket()) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
 		if (handle >= FD_SETSIZE)
 			return false;

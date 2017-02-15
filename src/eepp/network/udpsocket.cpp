@@ -13,7 +13,7 @@ UdpSocket::UdpSocket() :
 }
 
 unsigned short UdpSocket::getLocalPort() const {
-	if (getHandle() != Private::SocketImpl::InvalidSocket()) {
+	if (getHandle() != Private::SocketImpl::invalidSocket()) {
 		// Retrieve informations about the local end of the socket
 		sockaddr_in address;
 		Private::SocketImpl::AddrLength size = sizeof(address);
@@ -31,7 +31,7 @@ Socket::Status UdpSocket::bind(unsigned short port) {
 	create();
 
 	// Bind the socket
-	sockaddr_in address = Private::SocketImpl::CreateAddress(INADDR_ANY, port);
+	sockaddr_in address = Private::SocketImpl::createAddress(INADDR_ANY, port);
 	if (::bind(getHandle(), reinterpret_cast<sockaddr*>(&address), sizeof(address)) == -1) {
 		eePRINTL( "Failed to bind socket to port %d", port );
 		return Error;
@@ -57,14 +57,14 @@ Socket::Status UdpSocket::send(const void* data, std::size_t size, const IpAddre
 	}
 
 	// Build the target address
-	sockaddr_in address = Private::SocketImpl::CreateAddress(remoteAddress.toInteger(), remotePort);
+	sockaddr_in address = Private::SocketImpl::createAddress(remoteAddress.toInteger(), remotePort);
 
 	// Send the data (unlike TCP, all the data is always sent in one call)
 	int sent = sendto(getHandle(), static_cast<const char*>(data), static_cast<int>(size), 0, reinterpret_cast<sockaddr*>(&address), sizeof(address));
 
 	// Check for errors
 	if (sent < 0)
-		return Private::SocketImpl::GetErrorStatus();
+		return Private::SocketImpl::getErrorStatus();
 
 	return Done;
 }
@@ -82,7 +82,7 @@ Socket::Status UdpSocket::receive(void* data, std::size_t size, std::size_t& rec
 	}
 
 	// Data that will be filled with the other computer's address
-	sockaddr_in address = Private::SocketImpl::CreateAddress(INADDR_ANY, 0);
+	sockaddr_in address = Private::SocketImpl::createAddress(INADDR_ANY, 0);
 
 	// Receive a chunk of bytes
 	Private::SocketImpl::AddrLength addressSize = sizeof(address);
@@ -90,7 +90,7 @@ Socket::Status UdpSocket::receive(void* data, std::size_t size, std::size_t& rec
 
 	// Check for errors
 	if (sizeReceived < 0)
-		return Private::SocketImpl::GetErrorStatus();
+		return Private::SocketImpl::getErrorStatus();
 
 	// Fill the sender informations
 	received	  = static_cast<std::size_t>(sizeReceived);

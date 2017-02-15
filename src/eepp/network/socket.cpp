@@ -5,7 +5,7 @@ namespace EE { namespace Network {
 
 Socket::Socket(Type type) :
 	mType(type),
-	mSocket	(Private::SocketImpl::InvalidSocket()),
+	mSocket	(Private::SocketImpl::invalidSocket()),
 	mIsBlocking(true)
 {
 }
@@ -17,8 +17,8 @@ Socket::~Socket() {
 
 void Socket::setBlocking(bool blocking) {
 	// Apply if the socket is already created
-	if (mSocket != Private::SocketImpl::InvalidSocket())
-		Private::SocketImpl::SetBlocking(mSocket, blocking);
+	if (mSocket != Private::SocketImpl::invalidSocket())
+		Private::SocketImpl::setBlocking(mSocket, blocking);
 
 	mIsBlocking = blocking;
 }
@@ -33,7 +33,7 @@ SocketHandle Socket::getHandle() const {
 
 void Socket::create() {
 	// Don't create the socket if it already exists
-	if (mSocket == Private::SocketImpl::InvalidSocket()) {
+	if (mSocket == Private::SocketImpl::invalidSocket()) {
 		SocketHandle handle = socket(PF_INET, mType == Tcp ? SOCK_STREAM : SOCK_DGRAM, 0);
 		create(handle);
 	}
@@ -41,7 +41,7 @@ void Socket::create() {
 
 void Socket::create(SocketHandle handle) {
 	// Don't create the socket if it already exists
-	if (mSocket == Private::SocketImpl::InvalidSocket()) {
+	if (mSocket == Private::SocketImpl::invalidSocket()) {
 		// Assign the new handle
 		mSocket = handle;
 
@@ -75,9 +75,9 @@ void Socket::create(SocketHandle handle) {
 
 void Socket::close() {
 	// Close the socket
-	if (mSocket != Private::SocketImpl::InvalidSocket()) {
-		Private::SocketImpl::Close(mSocket);
-		mSocket = Private::SocketImpl::InvalidSocket();
+	if (mSocket != Private::SocketImpl::invalidSocket()) {
+		Private::SocketImpl::close(mSocket);
+		mSocket = Private::SocketImpl::invalidSocket();
 	}
 }
 

@@ -5,7 +5,7 @@
 
 namespace EE { namespace Network { namespace Private {
 
-sockaddr_in SocketImpl::CreateAddress(Uint32 address, unsigned short port) {
+sockaddr_in SocketImpl::createAddress(Uint32 address, unsigned short port) {
 	sockaddr_in addr;
 	std::memset(&addr, 0, sizeof(addr));
 	addr.sin_addr.s_addr	= htonl(address);
@@ -15,20 +15,20 @@ sockaddr_in SocketImpl::CreateAddress(Uint32 address, unsigned short port) {
 	return addr;
 }
 
-SocketHandle SocketImpl::InvalidSocket() {
+SocketHandle SocketImpl::invalidSocket() {
 	return INVALID_SOCKET;
 }
 
-void SocketImpl::Close(SocketHandle sock) {
+void SocketImpl::close(SocketHandle sock) {
 	closesocket(sock);
 }
 
-void SocketImpl::SetBlocking(SocketHandle sock, bool block) {
+void SocketImpl::setBlocking(SocketHandle sock, bool block) {
 	u_long blocking = block ? 0 : 1;
 	ioctlsocket(sock, FIONBIO, &blocking);
 }
 
-Socket::Status SocketImpl::GetErrorStatus() {
+Socket::Status SocketImpl::getErrorStatus() {
 	switch (WSAGetLastError()) {
 		case WSAEWOULDBLOCK:	return Socket::NotReady;
 		case WSAEALREADY:		return Socket::NotReady;

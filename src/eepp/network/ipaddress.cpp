@@ -90,25 +90,25 @@ IpAddress IpAddress::getLocalAddress() {
 
 	// Create the socket
 	SocketHandle sock = socket(PF_INET, SOCK_DGRAM, 0);
-	if (sock == Private::SocketImpl::InvalidSocket())
+	if (sock == Private::SocketImpl::invalidSocket())
 		return localAddress;
 
 	// Connect the socket to localhost on any port
-	sockaddr_in address = Private::SocketImpl::CreateAddress(ntohl(INADDR_LOOPBACK), 9);
+	sockaddr_in address = Private::SocketImpl::createAddress(ntohl(INADDR_LOOPBACK), 9);
 	if (connect(sock, reinterpret_cast<sockaddr*>(&address), sizeof(address)) == -1) {
-		Private::SocketImpl::Close(sock);
+		Private::SocketImpl::close(sock);
 		return localAddress;
 	}
 
 	// Get the local address of the socket connection
 	Private::SocketImpl::AddrLength size = sizeof(address);
 	if (getsockname(sock, reinterpret_cast<sockaddr*>(&address), &size) == -1) {
-		Private::SocketImpl::Close(sock);
+		Private::SocketImpl::close(sock);
 		return localAddress;
 	}
 
 	// Close the socket
-	Private::SocketImpl::Close(sock);
+	Private::SocketImpl::close(sock);
 
 	// Finally build the IP address
 	localAddress = IpAddress(ntohl(address.sin_addr.s_addr));

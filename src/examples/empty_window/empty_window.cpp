@@ -1,5 +1,11 @@
 #include <eepp/ee.hpp>
-#include <GL/gl.h>
+
+#define GL_STENCIL_TEST				0x0B90
+#define GL_EQUAL				0x0202
+#define GL_NEVER				0x0200
+#define GL_KEEP					0x1E00
+#define GL_REPLACE				0x1E01
+
 EE::Window::Window * win = NULL;
 float circ = 0, circ2 = 0;
 int op = 1;

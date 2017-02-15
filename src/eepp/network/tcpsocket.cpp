@@ -27,7 +27,7 @@ TcpSocket::TcpSocket() :
 }
 
 unsigned short TcpSocket::getLocalPort() const {
-	if (getHandle() != Private::SocketImpl::InvalidSocket()) {
+	if (getHandle() != Private::SocketImpl::invalidSocket()) {
 		// Retrieve informations about the local end of the socket
 		sockaddr_in address;
 		Private::SocketImpl::AddrLength size = sizeof(address);
@@ -41,7 +41,7 @@ unsigned short TcpSocket::getLocalPort() const {
 }
 
 IpAddress TcpSocket::getRemoteAddress() const {
-	if (getHandle() != Private::SocketImpl::InvalidSocket()) {
+	if (getHandle() != Private::SocketImpl::invalidSocket()) {
 		// Retrieve informations about the remote end of the socket
 		sockaddr_in address;
 		Private::SocketImpl::AddrLength size = sizeof(address);
@@ -55,7 +55,7 @@ IpAddress TcpSocket::getRemoteAddress() const {
 }
 
 unsigned short TcpSocket::getRemotePort() const {
-	if (getHandle() != Private::SocketImpl::InvalidSocket()) {
+	if (getHandle() != Private::SocketImpl::invalidSocket()) {
 		// Retrieve informations about the remote end of the socket
 		sockaddr_in address;
 		Private::SocketImpl::AddrLength size = sizeof(address);
@@ -73,14 +73,14 @@ Socket::Status TcpSocket::connect(const IpAddress& remoteAddress, unsigned short
 	create();
 
 	// Create the remote address
-	sockaddr_in address = Private::SocketImpl::CreateAddress(remoteAddress.toInteger(), remotePort);
+	sockaddr_in address = Private::SocketImpl::createAddress(remoteAddress.toInteger(), remotePort);
 
 	if (timeout <= Time::Zero) {
 		// ----- We're not using a timeout: just try to connect -----
 
 		// Connect the socket
 		if (::connect(getHandle(), reinterpret_cast<sockaddr*>(&address), sizeof(address)) == -1)
-			return Private::SocketImpl::GetErrorStatus();
+			return Private::SocketImpl::getErrorStatus();
 
 		// Connection succeeded
 		return Done;
@@ -102,7 +102,7 @@ Socket::Status TcpSocket::connect(const IpAddress& remoteAddress, unsigned short
 		}
 
 		// Get the error status
-		Status status = Private::SocketImpl::GetErrorStatus();
+		Status status = Private::SocketImpl::getErrorStatus();
 
 		// If we were in non-blocking mode, return immediatly
 		if (!blocking)
@@ -129,11 +129,11 @@ Socket::Status TcpSocket::connect(const IpAddress& remoteAddress, unsigned short
 					status = Done;
 				} else {
 					// Connection refused
-					status = Private::SocketImpl::GetErrorStatus();
+					status = Private::SocketImpl::getErrorStatus();
 				}
 			} else {
 				// Failed to connect before timeout is over
-				status = Private::SocketImpl::GetErrorStatus();
+				status = Private::SocketImpl::getErrorStatus();
 			}
 		}
 
@@ -176,7 +176,7 @@ Socket::Status TcpSocket::send(const void* data, std::size_t size, std::size_t& 
 
 		// Check for errors
 		if (result < 0) {
-			Status status = Private::SocketImpl::GetErrorStatus();
+			Status status = Private::SocketImpl::getErrorStatus();
 
 			if ((status == NotReady) && sent) {
 				return Partial;
@@ -209,7 +209,7 @@ Socket::Status TcpSocket::receive(void* data, std::size_t size, std::size_t& rec
 	} else if (sizeReceived == 0) {
 		return Socket::Disconnected;
 	} else {
-		return Private::SocketImpl::GetErrorStatus();
+		return Private::SocketImpl::getErrorStatus();
 	}
 }
 

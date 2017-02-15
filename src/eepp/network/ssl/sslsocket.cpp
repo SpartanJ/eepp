@@ -54,7 +54,7 @@ bool SSLSocket::init() {
 		}
 
 		#ifdef EE_OPENSSL
-		ret = OpenSSLSocket::Init();
+		ret = OpenSSLSocket::init();
 		#endif
 
 		ssl_initialized = true;
@@ -70,7 +70,7 @@ bool SSLSocket::end() {
 
 	if ( ssl_initialized ) {
 		#ifdef EE_OPENSSL
-		ret = OpenSSLSocket::End();
+		ret = OpenSSLSocket::end();
 		#endif
 		
 		ssl_initialized = false;
@@ -108,23 +108,23 @@ Socket::Status SSLSocket::connect( const IpAddress& remoteAddress, unsigned shor
 	Status status = Socket::Disconnected;
 	
 	if ( ( status = TcpSocket::connect( remoteAddress, remotePort, timeout ) ) == Socket::Done ) {
-		status = mImpl->Connect( remoteAddress, remotePort, timeout );
+		status = mImpl->connect( remoteAddress, remotePort, timeout );
 	}
 	
 	return status;
 }
 
 void SSLSocket::disconnect() {
-	mImpl->Disconnect();
+	mImpl->disconnect();
 	TcpSocket::disconnect();
 }
 
 Socket::Status SSLSocket::send(const void* data, std::size_t size) {
-	return mImpl->Send( data, size );
+	return mImpl->send( data, size );
 }
 
 Socket::Status SSLSocket::receive(void* data, std::size_t size, std::size_t& received) {
-	return mImpl->Receive( data, size, received );
+	return mImpl->receive( data, size, received );
 }
 
 Socket::Status SSLSocket::send(Packet& packet) {
