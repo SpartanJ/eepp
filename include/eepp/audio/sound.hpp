@@ -22,78 +22,78 @@ class EE_API Sound {
 		~Sound();
 
 		/** Construct the sound with a buffer. */
-		Sound( const SoundBuffer& Buffer, const bool& Loop = false, const float& Pitch = 1.f, const float& Volume = 100.f, const Vector3ff& Position = Vector3ff(0, 0, 0) );
+		Sound( const SoundBuffer& buffer, const bool& loop = false, const float& pitch = 1.f, const float& volume = 100.f, const Vector3ff& position = Vector3ff(0, 0, 0) );
 
 		/** Copy constructor */
 		Sound(const Sound& Copy);
 
 		/** Play the Sound */
-		void Play();
+		void play();
 
 		/** Pause the Sound */
-		void Pause();
+		void pause();
 
 		/** Stop the Sound */
-		void Stop();
+		void stop();
 
 		/** Set the Sound Source Buffer */
-		void Buffer( const SoundBuffer& Buffer );
+		void buffer( const SoundBuffer& buffer );
 
 		/** Set the Sound Loop State */
-		void Loop( const bool& Loop );
+		void loop( const bool& loop );
 
 		/** Set the Sound Pitch */
-		void Pitch( const float& Pitch );
+		void pitch( const float& pitch );
 
 		/** Set the Sound Volume */
-		void Volume( const float& Volume );
+		void volume( const float& volume );
 
 		/** Set the Sound Position. The default position is (0, 0, 0) */
-		void Position( const float& X, const float& Y, const float& Z );
+		void position( const float& X, const float& Y, const float& Z );
 
 		/** Set the Sound Position from a 3D Vector. The default position is (0, 0, 0) */
-		void Position( const Vector3ff& Position );
+		void position( const Vector3ff& position );
 
 		/** Set the minimum distance - closer than this distance, \n the listener will hear the sound at its maximum volume. \n The default minimum distance is 1.0. */
-		void MinDistance( const float& MinDistance );
+		void minDistance( const float& minDistance );
 
 		/** Set the attenuation factor. \n The higher the attenuation, the more the sound will be attenuated with distance from listener. \n The default attenuation factor 1.0. */
-		void Attenuation( const float& Attenuation );
+		void attenuation( const float& attenuation );
 
 		/** Get the Sound Source Buffer */
-		const SoundBuffer* Buffer() const;
+		const SoundBuffer* buffer() const;
 
 		/** Get the Sound Loop State */
-		bool Loop() const;
+		bool loop() const;
 
 		/** Get the Sound Pitch */
-		float Pitch() const;
+		float pitch() const;
 
 		/** Get the Sound Volume */
-		float Volume() const;
+		float volume() const;
 
 		/** Get the Sound Position */
-		Vector3ff Position() const;
+		Vector3ff position() const;
 
 		/** Get the Minimun Distance */
-		float MinDistance() const;
+		float minDistance() const;
 
 		/** Get the Sound Attenuation */
-		float Attenuation() const;
+		float attenuation() const;
 
 		/** Get the Sound State */
-		Status GetState() const;
+		Status getState() const;
 
 		/** Get the Sound State */
-		Status State() const;
+		Status state() const;
 
 		/** Get the current playing position of the sound */
-		virtual Time PlayingOffset() const;
+		virtual Time playingOffset() const;
 
 		/** Set the current playing position of the sound
 		* @param TimeOffset : New playing position
 		*/
-		virtual void PlayingOffset( const Time &TimeOffset );
+		virtual void playingOffset( const Time &TimeOffset );
 
 		/** Assignment operator */
 		Sound& operator =(const Sound& Other);
@@ -101,19 +101,19 @@ class EE_API Sound {
 		/** Make the sound's position relative to the listener's position, or absolute. The default value is false (absolute)
 		* @param Relative : True to set the position relative, false to set it absolute
 		*/
-		void SetRelativeToListener( const bool& Relative );
+		void setRelativeToListener( const bool& Relative );
 
 		/** Tell if the sound's position is relative to the listener's position, or if it's absolute
 		* @return True if the position is relative, false if it's absolute
 		*/
-		bool IsRelativeToListener() const;
+		bool isRelativeToListener() const;
 
 		/** \brief Reset the internal buffer of the sound
 		* This function is for internal use only, you don't have
 		* to use it. It is called by the SoundBuffer that
 		* this sound uses, when it is destroyed in order to prevent
 		* the sound from using a dead buffer. */
-		void ResetBuffer();
+		void resetBuffer();
 	private :
 		friend class SoundStream;
 

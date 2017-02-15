@@ -8,7 +8,7 @@ ALCdevice *		mDevice = NULL;
 ALCcontext *	mContext = NULL;
 
 AudioDevice::AudioDevice() {
-	PrintInfo();
+	printInfo();
 
 	// Create the device
 	mDevice = alcOpenDevice( NULL );
@@ -42,7 +42,7 @@ AudioDevice::AudioDevice() {
 	}
 }
 
-void AudioDevice::PrintInfo() {
+void AudioDevice::printInfo() {
 	std::string log( "OpenAL devices detected:\n" );
 
 	if ( alcIsExtensionPresent( NULL, (const ALCchar *) "ALC_ENUMERATION_EXT" ) == AL_TRUE ) {
@@ -74,7 +74,7 @@ AudioDevice::~AudioDevice() {
 		alcCloseDevice( mDevice );
 }
 
-bool AudioDevice::IsExtensionSupported( const std::string& extension ) {
+bool AudioDevice::isExtensionSupported( const std::string& extension ) {
 	EnsureALInit();
 
 	if ( ( extension.length() > 2 ) && ( extension.substr(0, 3) == "ALC" ) )
@@ -83,7 +83,7 @@ bool AudioDevice::IsExtensionSupported( const std::string& extension ) {
 		return alIsExtensionPresent( extension.c_str() ) != AL_FALSE;
 }
 
-int AudioDevice::GetFormatFromChannelCount( unsigned int ChannelCount ) {
+int AudioDevice::getFormatFromChannelCount( unsigned int ChannelCount ) {
 	EnsureALInit();
 
 	int format = 0;
@@ -104,7 +104,7 @@ int AudioDevice::GetFormatFromChannelCount( unsigned int ChannelCount ) {
 	return format;
 }
 
-bool AudioDevice::IsAvailable() {
+bool AudioDevice::isAvailable() {
 	return NULL != mDevice && NULL != mContext;
 }
 

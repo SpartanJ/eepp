@@ -93,9 +93,9 @@ void EETest::Init() {
 		if ( mMusEnabled ) {
 			Mus = eeNew( Music, () );
 
-			if ( Mus->OpenFromFile( MyPath + "sounds/music.ogg" ) ) {
-				Mus->Loop( true );
-				Mus->Play();
+			if ( Mus->openFromFile( MyPath + "sounds/music.ogg" ) ) {
+				Mus->loop( true );
+				Mus->play();
 			}
 		}
 
@@ -805,7 +805,7 @@ void EETest::CmdSetPartsNum ( const std::vector < String >& params ) {
 }
 
 void EETest::OnTextureLoaded( ResourceLoader * ResLoaded ) {
-	SndMng.Play( "mysound" );
+	SndMng.play( "mysound" );
 }
 
 void EETest::LoadTextures() {
@@ -1300,8 +1300,8 @@ void EETest::Input() {
 
 		mWindow->FrameRateLimit( 10 );
 
-		if ( mMusEnabled && Mus->State() == Sound::Playing )
-			Mus->Pause();
+		if ( mMusEnabled && Mus->state() == Sound::Playing )
+			Mus->pause();
 
 	} else {
 		if ( mLastFPSLimit != mWindow->FrameRateLimit() && !mWasMinimized )
@@ -1316,8 +1316,8 @@ void EETest::Input() {
 
 		mWindow->FrameRateLimit( mLastFPSLimit );
 
-		if ( mMusEnabled && Mus->State() == Sound::Paused )
-			Mus->Play();
+		if ( mMusEnabled && Mus->state() == Sound::Paused )
+			Mus->play();
 	}
 
 	if ( KM->IsKeyDown( KEY_ESCAPE ) )
@@ -1488,7 +1488,7 @@ void EETest::Input() {
 				DrawBack = false;
 
 			if ( KM->IsKeyUp( KEY_P ) )
-				SndMng.Play( "mysound" );
+				SndMng.play( "mysound" );
 
 			if ( KM->ControlPressed() && KM->IsKeyUp(KEY_P) ) {
 				ShowParticles = !ShowParticles;

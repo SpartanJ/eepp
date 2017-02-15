@@ -35,7 +35,7 @@ class tSoundLoader : public ObjectLoader {
 		void					unload();
 
 		/** @return The sound id */
-		const T&				Id() const;
+		const T&				id() const;
 	protected:
 		Uint32					mLoadType;
 		tSoundManager<T> *		mSndMngr;
@@ -51,10 +51,10 @@ class tSoundLoader : public ObjectLoader {
 
 		void 					start();
 	private:
-		void 					LoadFromPath();
-		void					LoadFromMemory();
-		void					LoadFromPack();
-		void 					LoadFromSamples();
+		void 					loadFromPath();
+		void					loadFromMemory();
+		void					loadFromPack();
+		void 					loadFromSamples();
 };
 
 template <typename T>
@@ -124,47 +124,47 @@ void tSoundLoader<T>::start() {
 		ObjectLoader::start();
 
 		if ( SND_LT_PATH == mLoadType )
-			LoadFromPath();
+			loadFromPath();
 		else if ( SND_LT_MEM == mLoadType )
-			LoadFromMemory();
+			loadFromMemory();
 		else if ( SND_LT_PACK == mLoadType )
-			LoadFromPack();
+			loadFromPack();
 		else if ( SND_LT_SAMPLES == mLoadType )
-			LoadFromSamples();
+			loadFromSamples();
 
 		setLoaded();
 	}
 }
 
 template <typename T>
-void tSoundLoader<T>::LoadFromPath() {
-	mSndMngr->LoadFromFile( mId, mFilepath );
+void tSoundLoader<T>::loadFromPath() {
+	mSndMngr->loadFromFile( mId, mFilepath );
 }
 
 template <typename T>
-void tSoundLoader<T>::LoadFromMemory() {
-	mSndMngr->LoadFromMemory( mId, mData, mDataSize );
+void tSoundLoader<T>::loadFromMemory() {
+	mSndMngr->loadFromMemory( mId, mData, mDataSize );
 }
 
 template <typename T>
-void tSoundLoader<T>::LoadFromPack() {
-	mSndMngr->LoadFromPack( mId, mPack, mFilepath );
+void tSoundLoader<T>::loadFromPack() {
+	mSndMngr->loadFromPack( mId, mPack, mFilepath );
 }
 
 template <typename T>
-void tSoundLoader<T>::LoadFromSamples() {
-	mSndMngr->LoadFromSamples( mId, mSamples, mSamplesCount, mChannelCount, mSampleRate );
+void tSoundLoader<T>::loadFromSamples() {
+	mSndMngr->loadFromSamples( mId, mSamples, mSamplesCount, mChannelCount, mSampleRate );
 }
 
 template <typename T>
-const T& tSoundLoader<T>::Id() const {
+const T& tSoundLoader<T>::id() const {
 	return mId;
 }
 
 template <typename T>
 void tSoundLoader<T>::unload() {
 	if ( mLoaded ) {
-		mSndMngr->Remove( mId );
+		mSndMngr->remove( mId );
 
 		reset();
 	}

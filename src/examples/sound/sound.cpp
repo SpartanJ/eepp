@@ -9,18 +9,18 @@ void PlaySound() {
 	// It manages the sound playing, if the sound channel is already playing, it will open a new channel to play the sound
 	SoundManager SoundManager;
 
-	if ( SoundManager.LoadFromFile( "sound", AppPath + "assets/sounds/sound.ogg" ) ) {
+	if ( SoundManager.loadFromFile( "sound", AppPath + "assets/sounds/sound.ogg" ) ) {
 		// Get the sound buffer to display the buffer information
-		SoundBuffer& buffer = SoundManager.GetBuffer( "sound" );
+		SoundBuffer& buffer = SoundManager.getBuffer( "sound" );
 
 		// Display sound informations
 		std::cout << "sound.ogg :" << std::endl;
-		std::cout << " " << buffer.GetDuration().asSeconds()	<< " seconds"		<< std::endl;
-		std::cout << " " << buffer.GetSampleRate()				<< " samples / sec"	<< std::endl;
-		std::cout << " " << buffer.GetChannelCount()			<< " channels"		<< std::endl;
+		std::cout << " " << buffer.getDuration().asSeconds()	<< " seconds"		<< std::endl;
+		std::cout << " " << buffer.getSampleRate()				<< " samples / sec"	<< std::endl;
+		std::cout << " " << buffer.getChannelCount()			<< " channels"		<< std::endl;
 
 		// Play the sound
-		SoundManager.Play( "sound" );
+		SoundManager.play( "sound" );
 	}
 }
 
@@ -29,25 +29,25 @@ void PlayMusic() {
 	// Load an ogg music file
 	Music music;
 
-	if (!music.OpenFromFile( AppPath + "assets/sounds/music.ogg" ) )
+	if (!music.openFromFile( AppPath + "assets/sounds/music.ogg" ) )
 		return;
 
 	// Display music informations
 	std::cout << "music.ogg :" << std::endl;
-	std::cout << " " << music.GetDuration().asSeconds()		<< " seconds"		<< std::endl;
-	std::cout << " " << music.GetSampleRate()				<< " samples / sec"	<< std::endl;
-	std::cout << " " << music.GetChannelCount()				<< " channels"		<< std::endl;
+	std::cout << " " << music.getDuration().asSeconds()		<< " seconds"		<< std::endl;
+	std::cout << " " << music.getSampleRate()				<< " samples / sec"	<< std::endl;
+	std::cout << " " << music.getChannelCount()				<< " channels"		<< std::endl;
 
 	// Play it
-	music.Play();
+	music.play();
 
 	// Loop while the music is playing
-	while ( music.State() == Sound::Playing ) {
+	while ( music.state() == Sound::Playing ) {
 		// Leave some CPU time for other processes
 		Sys::sleep( 100 );
 
 		// Display the playing position
-		std::cout << "\rPlaying... " << music.PlayingOffset().asSeconds() << " sec   ";
+		std::cout << "\rPlaying... " << music.playingOffset().asSeconds() << " sec   ";
 		std::cout << std::flush;
 	}
 

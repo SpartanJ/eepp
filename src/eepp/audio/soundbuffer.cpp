@@ -26,18 +26,18 @@ SoundBuffer::SoundBuffer(const SoundBuffer& Copy) :
 	EnsureALInit();
 
 	ALCheck( alGenBuffers( 1, &mBuffer ) );
-	Update( Copy.GetChannelCount(), Copy.GetSampleRate() );
+	update( Copy.getChannelCount(), Copy.getSampleRate() );
 }
 
 SoundBuffer::~SoundBuffer() {
 	for ( SoundList::const_iterator it = mSounds.begin(); it != mSounds.end(); ++it )
-		(*it)->ResetBuffer();
+		(*it)->resetBuffer();
 
 	if ( mBuffer )
 		ALCheck( alDeleteBuffers( 1, &mBuffer ) );
 }
 
-bool SoundBuffer::LoadFromFile(const std::string& Filename) {
+bool SoundBuffer::loadFromFile(const std::string& Filename) {
 	if ( !FileSystem::fileExists( Filename ) ) {
 		if ( PackManager::instance()->fallbackToPacks() ) {
 			std::string tPath( Filename );
@@ -45,7 +45,7 @@ bool SoundBuffer::LoadFromFile(const std::string& Filename) {
 			Pack * tPack = PackManager::instance()->exists( tPath );
 
 			if ( NULL != tPack ) {
-				return LoadFromPack( tPack, tPath );
+				return loadFromPack( tPack, tPath );
 			}
 		}
 
@@ -54,25 +54,25 @@ bool SoundBuffer::LoadFromFile(const std::string& Filename) {
 	}
 
 	// Create the sound file
-	SoundFile * File = SoundFile::CreateRead( Filename );
+	SoundFile * File = SoundFile::createRead( Filename );
 
 	// Open the sound file
 	if ( NULL != File ) {
 		// Get the sound parameters
-		std::size_t  SamplesCount	= File->GetSamplesCount();
-		unsigned int ChannelCount	= File->GetChannelCount();
-		unsigned int SampleRate		= File->GetSampleRate();
+		std::size_t  SamplesCount	= File->getSamplesCount();
+		unsigned int ChannelCount	= File->getChannelCount();
+		unsigned int SampleRate		= File->getSampleRate();
 
 		// Read the samples from the opened file
 		mSamples.resize( SamplesCount );
 
-		if ( File->Read( &mSamples[0], SamplesCount ) == SamplesCount ) {
+		if ( File->read( &mSamples[0], SamplesCount ) == SamplesCount ) {
 			eePRINTL( "Sound file %s loaded.", Filename.c_str() );
 
 			// Update the internal buffer with the new samples
 			eeDelete( File );
 
-			return Update( ChannelCount, SampleRate );
+			return update( ChannelCount, SampleRate );
 		} else {
 			eePRINTL( "Failed to read audio data from file %s", Filename.c_str() );
 
@@ -87,37 +87,37 @@ bool SoundBuffer::LoadFromFile(const std::string& Filename) {
 	}
 }
 
-bool SoundBuffer::LoadFromPack( Pack* Pack, const std::string& FilePackPath ) {
+bool SoundBuffer::loadFromPack( Pack* Pack, const std::string& FilePackPath ) {
 	bool Ret = false;
 	SafeDataPointer PData;
 
 	if ( Pack->isOpen() && Pack->extractFileToMemory( FilePackPath, PData ) )
-		Ret = LoadFromMemory( reinterpret_cast<const char*> ( PData.Data ), PData.DataSize );
+		Ret = loadFromMemory( reinterpret_cast<const char*> ( PData.Data ), PData.DataSize );
 
 	return Ret;
 }
 
-bool SoundBuffer::LoadFromMemory( const char* Data, std::size_t SizeInBytes ) {
+bool SoundBuffer::loadFromMemory( const char* Data, std::size_t SizeInBytes ) {
 	// Create the sound file
-	SoundFile * File = SoundFile::CreateRead( Data, SizeInBytes );
+	SoundFile * File = SoundFile::createRead( Data, SizeInBytes );
 
 	// Open the sound file
 	if ( NULL != File ) {
 		// Get the sound parameters
-		std::size_t  SamplesCount	= File->GetSamplesCount();
-		unsigned int ChannelCount	= File->GetChannelCount();
-		unsigned int SampleRate		= File->GetSampleRate();
+		std::size_t  SamplesCount	= File->getSamplesCount();
+		unsigned int ChannelCount	= File->getChannelCount();
+		unsigned int SampleRate		= File->getSampleRate();
 
 		// Read the samples from the opened file
 		mSamples.resize( SamplesCount );
 
-		if ( File->Read( &mSamples[0], SamplesCount ) == SamplesCount ) {
+		if ( File->read( &mSamples[0], SamplesCount ) == SamplesCount ) {
 			eePRINTL( "Sound file loaded from memory." );
 
 			// Update the internal buffer with the new samples
 			eeDelete( File );
 
-			return Update( ChannelCount, SampleRate );
+			return update( ChannelCount, SampleRate );
 		} else {
 			eePRINTL( "Failed to read audio data from file in memory" );
 
@@ -131,7 +131,7 @@ bool SoundBuffer::LoadFromMemory( const char* Data, std::size_t SizeInBytes ) {
 	}
 }
 
-bool SoundBuffer::LoadFromSamples( const Int16 * Samples, std::size_t SamplesCount, unsigned int ChannelCount, unsigned int SampleRate ) {
+bool SoundBuffer::loadFromSamples( const Int16 * Samples, std::size_t SamplesCount, unsigned int ChannelCount, unsigned int SampleRate ) {
 	if ( Samples && SamplesCount && ChannelCount && SampleRate ) {
 		// Copy the new audio samples
 		mSamples.assign( Samples, Samples + SamplesCount );
@@ -139,7 +139,7 @@ bool SoundBuffer::LoadFromSamples( const Int16 * Samples, std::size_t SamplesCou
 		eePRINTL( "Sound file loaded from memory samples." );
 
 		// Update the internal buffer with the new samples
-		return Update( ChannelCount, SampleRate );
+		return update( ChannelCount, SampleRate );
 	} else {
 		// Error...
 		eePRINTL( "Failed to load sound buffer from memory Samples" );
@@ -147,13 +147,13 @@ bool SoundBuffer::LoadFromSamples( const Int16 * Samples, std::size_t SamplesCou
 	}
 }
 
-bool SoundBuffer::SaveToFile(const std::string& Filename) const {
+bool SoundBuffer::saveToFile(const std::string& Filename) const {
 	// Create the sound file in write mode
-	std::unique_ptr<SoundFile> File( SoundFile::CreateWrite( Filename, GetChannelCount(), GetSampleRate() ) );
+	std::unique_ptr<SoundFile> File( SoundFile::createWrite( Filename, getChannelCount(), getSampleRate() ) );
 
 	if ( File.get() ) {
 		// Write the samples to the opened file
-		File->Write( &mSamples[0], mSamples.size() );
+		File->write( &mSamples[0], mSamples.size() );
 		return true;
 	} else {
 		// Error...
@@ -162,27 +162,27 @@ bool SoundBuffer::SaveToFile(const std::string& Filename) const {
 	}
 }
 
-const Int16* SoundBuffer::GetSamples() const {
+const Int16* SoundBuffer::getSamples() const {
 	return mSamples.empty() ? NULL : &mSamples[0];
 }
 
-std::size_t SoundBuffer::GetSamplesCount() const {
+std::size_t SoundBuffer::getSamplesCount() const {
 	return mSamples.size();
 }
 
-unsigned int SoundBuffer::GetSampleRate() const {
+unsigned int SoundBuffer::getSampleRate() const {
 	ALint SampleRate;
 	ALCheck( alGetBufferi( mBuffer, AL_FREQUENCY, &SampleRate ) );
 	return SampleRate;
 }
 
-unsigned int SoundBuffer::GetChannelCount() const {
+unsigned int SoundBuffer::getChannelCount() const {
 	ALint ChannelCount;
 	ALCheck( alGetBufferi( mBuffer, AL_CHANNELS, &ChannelCount ) );
 	return ChannelCount;
 }
 
-Time SoundBuffer::GetDuration() const {
+Time SoundBuffer::getDuration() const {
 	return mDuration;
 }
 
@@ -197,13 +197,13 @@ SoundBuffer& SoundBuffer::operator =( const SoundBuffer& Other ) {
 	return *this;
 }
 
-bool SoundBuffer::Update( unsigned int ChannelCount, unsigned int SampleRate ) {
+bool SoundBuffer::update( unsigned int ChannelCount, unsigned int SampleRate ) {
 	// Check parameters
 	if ( !SampleRate || !ChannelCount || mSamples.empty() )
 		return false;
 
 	// Find the good format according to the number of channels
-	ALenum Format = AudioDevice::GetFormatFromChannelCount( ChannelCount );
+	ALenum Format = AudioDevice::getFormatFromChannelCount( ChannelCount );
 
 	// Check if the format is valid
 	if ( Format == 0 ) {
@@ -216,7 +216,7 @@ bool SoundBuffer::Update( unsigned int ChannelCount, unsigned int SampleRate ) {
 
 	// Detach the buffer from the sounds that use it (to avoid OpenAL errors)
 	for (SoundList::const_iterator it = sounds.begin(); it != sounds.end(); ++it)
-		(*it)->ResetBuffer();
+		(*it)->resetBuffer();
 
 	// Fill the buffer
 	ALsizei Size = static_cast<ALsizei>( mSamples.size() ) * sizeof(Int16);
@@ -228,11 +228,11 @@ bool SoundBuffer::Update( unsigned int ChannelCount, unsigned int SampleRate ) {
 	return true;
 }
 
-void SoundBuffer::AttachSound( Sound* sound ) const {
+void SoundBuffer::attachSound( Sound* sound ) const {
 	mSounds.insert(sound);
 }
 
-void SoundBuffer::DetachSound( Sound* sound ) const {
+void SoundBuffer::detachSound( Sound* sound ) const {
 	mSounds.erase(sound);
 }
 

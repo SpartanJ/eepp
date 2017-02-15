@@ -802,7 +802,7 @@ void Console::CmdSetVolume( const std::vector < String >& params ) {
 		bool Res = String::fromString<Float>( tFloat, params[1] );
 
 		if ( Res && ( tFloat >= 0.0f && tFloat <= 100.0f ) ) {
-			EE::Audio::AudioListener::GlobalVolume( tFloat );
+			EE::Audio::AudioListener::globalVolume( tFloat );
 			return;
 		}
 	}

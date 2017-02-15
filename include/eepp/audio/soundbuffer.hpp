@@ -19,34 +19,34 @@ class EE_API SoundBuffer {
 		SoundBuffer(const 	SoundBuffer& Copy);
 
 		/** Load the Sound Buffer from a file */
-		bool LoadFromFile( const std::string& Filename );
+		bool loadFromFile( const std::string& Filename );
 
 		/** Load the Sound Buffer from a file inside a pack file*/
-		bool LoadFromPack( Pack* Pack, const std::string& FilePackPath );
+		bool loadFromPack( Pack* Pack, const std::string& FilePackPath );
 
 		/** Load the Sound Buffer from a file in memory */
-		bool LoadFromMemory( const char* Data, std::size_t SizeInBytes );
+		bool loadFromMemory( const char* Data, std::size_t SizeInBytes );
 
 		/** Load the Sound Buffer from an array of samples. Assumed format for samples is 16 bits signed integer */
-		bool LoadFromSamples( const Int16* Samples, std::size_t SamplesCount, unsigned int ChannelCount, unsigned int SampleRate );
+		bool loadFromSamples( const Int16* Samples, std::size_t SamplesCount, unsigned int ChannelCount, unsigned int SampleRate );
 
 		/** Save the Sound Buffer to a file */
-		bool SaveToFile( const std::string& Filename ) const;
+		bool saveToFile( const std::string& Filename ) const;
 
 		/** @return The Sound Samples */
-		const Int16* GetSamples() const;
+		const Int16* getSamples() const;
 
 		/** @return The Samples Count */
-		std::size_t GetSamplesCount() const;
+		std::size_t getSamplesCount() const;
 
 		/** Get the Sample Rate */
-		unsigned int GetSampleRate() const;
+		unsigned int getSampleRate() const;
 
 		/** Return the number of Channels */
-		unsigned int GetChannelCount() const;
+		unsigned int getChannelCount() const;
 
 		/** Get the Sound Duration */
-		Time GetDuration() const;
+		Time getDuration() const;
 
 		/** Assignment operator */
 		SoundBuffer& operator =(const 	SoundBuffer& Other);
@@ -61,11 +61,11 @@ class EE_API SoundBuffer {
 		mutable SoundList	mSounds;
 
 		/** Update the internal buffer with the audio samples */
-		bool Update( unsigned int ChannelCount, unsigned int SampleRate );
+		bool update( unsigned int ChannelCount, unsigned int SampleRate );
 
-		void AttachSound( Sound* sound ) const;
+		void attachSound( Sound* sound ) const;
 
-		void DetachSound( Sound* sound ) const;
+		void detachSound( Sound* sound ) const;
 
 };
 
