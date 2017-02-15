@@ -11,16 +11,16 @@ JoystickManagerNull::JoystickManagerNull() :
 JoystickManagerNull::~JoystickManagerNull() {
 }
 
-void JoystickManagerNull::Update() {
+void JoystickManagerNull::update() {
 }
 
-void JoystickManagerNull::Open() {
+void JoystickManagerNull::open() {
 }
 
-void JoystickManagerNull::Close() {
+void JoystickManagerNull::close() {
 }
 
-void JoystickManagerNull::Create( const Uint32& index ) {
+void JoystickManagerNull::create( const Uint32& index ) {
 }
 
 }}}}

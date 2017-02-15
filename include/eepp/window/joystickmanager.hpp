@@ -14,25 +14,25 @@ class EE_API JoystickManager {
 		virtual ~JoystickManager();
 
 		/** @return The number of joysticks attached to the system */
-		virtual Uint32 Count();
+		virtual Uint32 count();
 
 		/** Update the states of all joysticks */
-		virtual void 	Update() = 0;
+		virtual void 	update() = 0;
 
 		/** @return The joystick instante of the joystick index */
-		Joystick * 	GetJoystick( const Uint32& index );
+		Joystick * 	getJoystick( const Uint32& index );
 
 		/** Rescan all joysticks to look for new joystick connected.
 		* This could be slow on some backends, and unnecessary on others.
 		* Is slow in SDL. SFML and SDL2 shouldn't need this.
 		*/
-		virtual void	Rescan();
+		virtual void	rescan();
 
 		/** Close all the joysticks */
-		virtual void 	Close();
+		virtual void 	close();
 
 		/** Open all the joysticks */
-		virtual void 	Open();
+		virtual void 	open();
 	protected:
 		friend class Joystick;
 		
@@ -42,7 +42,7 @@ class EE_API JoystickManager {
 
 		Uint32			mCount;
 
-		virtual void 	Create( const Uint32& index ) = 0;
+		virtual void 	create( const Uint32& index ) = 0;
 };
 
 }}

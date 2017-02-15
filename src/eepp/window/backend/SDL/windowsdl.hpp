@@ -19,25 +19,25 @@ class EE_API WindowSDL : public Window {
 
 		virtual ~WindowSDL();
 
-		bool Create( WindowSettings Settings, ContextSettings Context );
+		bool create( WindowSettings Settings, ContextSettings Context );
 
-		void ToggleFullscreen();
+		void toggleFullscreen();
 
-		void Caption( const std::string& Caption );
+		void caption( const std::string& caption );
 
-		bool Icon( const std::string& Path );
+		bool icon( const std::string& Path );
 
-		bool Active();
+		bool active();
 
-		bool Visible();
+		bool visible();
 
-		void Size( Uint32 Width, Uint32 Height, bool Windowed );
+		void size( Uint32 Width, Uint32 Height, bool Windowed );
 
-		std::vector<DisplayMode> GetDisplayModes() const;
+		std::vector<DisplayMode> getDisplayModes() const;
 
-		void SetGamma( Float Red, Float Green, Float Blue );
+		void setGamma( Float Red, Float Green, Float Blue );
 
-		eeWindowHandle	GetWindowHandler();
+		eeWindowHandle	getWindowHandler();
 	protected:
 		friend class ClipboardSDL;
 
@@ -49,13 +49,13 @@ class EE_API WindowSDL : public Window {
 
 		Vector2i		mWinPos;
 
-		void CreatePlatform();
+		void createPlatform();
 
-		void SwapBuffers();
+		void swapBuffers();
 
-		void SetGLConfig();
+		void setGLConfig();
 
-		std::string GetVersion();
+		std::string getVersion();
 };
 
 }}}}

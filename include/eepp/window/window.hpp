@@ -155,149 +155,149 @@ class EE_API Window {
 		virtual ~Window();
 		
 		/** Creates a new window and GL context */
-		virtual bool Create( WindowSettings Settings, ContextSettings Context ) = 0;
+		virtual bool create( WindowSettings Settings, ContextSettings Context ) = 0;
 		
 		/** Toogle the screen to Fullscreen, if it's in fullscreen toogle to windowed mode. */
-		virtual void ToggleFullscreen() = 0;
+		virtual void toggleFullscreen() = 0;
 		
 		/** Set the window caption */
-		virtual void Caption( const std::string& Caption ) = 0;
+		virtual void caption( const std::string& caption ) = 0;
 		
 		/** Set the Window icon */
-		virtual bool Icon( const std::string& Path ) = 0;
+		virtual bool icon( const std::string& Path ) = 0;
 
 		/** This will attempt to iconify/minimize the window. */
-		virtual void Minimize();
+		virtual void minimize();
 
 		/** Maximize the Window */
-		virtual void Maximize();
+		virtual void maximize();
 
 		/** @return true if the window is maximized */
-		virtual bool IsMaximized();
+		virtual bool isMaximized();
 
 		/** This will attempt to hide the window */
-		virtual void Hide();
+		virtual void hide();
 
 		/** This will attempt to raise the window */
-		virtual void Raise();
+		virtual void raise();
 
 		/** This will attempt to show the window */
-		virtual void Show();
+		virtual void show();
 
 		/** This will attemp to move the window over the desktop to the position */
-		virtual void Position( Int16 Left, Int16 Top );
+		virtual void position( Int16 Left, Int16 Top );
 
 		/** @return The Current Window Position */
-		virtual Vector2i Position();
+		virtual Vector2i position();
 
 		/** Set as current context the default context ( the context used for the window creation ) */
-		virtual void SetDefaultContext();
+		virtual void setDefaultContext();
 
 		/** @return If the current window is active */
-		virtual bool Active() = 0;
+		virtual bool active() = 0;
 
 		/** @return If the current window is visible */
-		virtual bool Visible() = 0;
+		virtual bool visible() = 0;
 
 		/** Set the size of the window for a windowed window */
-		virtual void Size( Uint32 Width, Uint32 Height );
+		virtual void size( Uint32 Width, Uint32 Height );
 
 		/** @return The caption of the titlebar */
-		virtual std::string Caption();
+		virtual std::string caption();
 
 		/** Change the window size or the screen resolution
 		* @param Width New screen width
 		* @param Height New screen height
 		* @param Windowed Windowed or Fullscreen
 		*/
-		virtual void Size( Uint32 Width, Uint32 Height, bool Windowed ) = 0;
+		virtual void size( Uint32 Width, Uint32 Height, bool isWindowed ) = 0;
 
 		/** @return The resolutions that support the video card */
-		virtual std::vector<DisplayMode> GetDisplayModes() const = 0;
+		virtual std::vector<DisplayMode> getDisplayModes() const = 0;
 
 		/** Set the Screen Gamma. Default is (1,1,1). Accept values between 0.1 and 10. */
-		virtual void SetGamma( Float Red, Float Green, Float Blue ) = 0;
+		virtual void setGamma( Float Red, Float Green, Float Blue ) = 0;
 
 		/** The the OpenGL context as the current context */
-		virtual void SetCurrentContext( eeWindowContex Context );
+		virtual void setCurrentContext( eeWindowContex Context );
 
 		/** @return The current OpenGL context */
-		virtual eeWindowContex GetContext() const;
+		virtual eeWindowContex getContext() const;
 
 		/** @return The window handler */
-		virtual eeWindowHandle	GetWindowHandler() = 0;
+		virtual eeWindowHandle	getWindowHandler() = 0;
 
 		/** @brief Clear the window back buffer
 		This function is usually called once every frame, to clear the previous frame content.
 		*/
-		virtual void Clear();
+		virtual void clear();
 
 		/** Render the Scene to Screen
 		@param clear Clear after swapping buffers? It will not work if the target platform is Emscripten. Since there's no swap buffers.
 		*/
-		virtual void Display( bool clear = false );
+		virtual void display( bool clear = false );
 
 		/** @return The elapsed time for the last frame rendered */
-		virtual System::Time Elapsed() const;
+		virtual System::Time elapsed() const;
 
 		/** @return The current frames per second of the screen */
 		virtual Uint32 FPS() const;
 
 		/** @return If the screen is windowed */
-		virtual bool Windowed() const;
+		virtual bool isWindowed() const;
 
 		/** @return If the main window is resizeable */
-		virtual bool Resizeable() const;
+		virtual bool isResizeable() const;
 
 		/** @return The window size */
-		virtual Sizei Size();
+		virtual Sizei size();
 
 		/** @return The Window Width */
-		virtual const Uint32& GetWidth() const;
+		virtual const Uint32& getWidth() const;
 
 		/** @return The Window Height */
-		virtual const Uint32& GetHeight() const;
+		virtual const Uint32& getHeight() const;
 
 		/** @return The current desktop resolution */
-		virtual const Sizei& GetDesktopResolution();
+		virtual const Sizei& getDesktopResolution();
 
 		/** Center the window to the desktop ( if windowed ) */
-		virtual void Center();
+		virtual void center();
 
 		/** @return If the aplication is running returns true ( If you Init correctly the window and is running ). */
-		bool Running() const;
+		bool isRunning() const;
 
 		/** @return If the window was created */
-		bool Created() const;
+		bool created() const;
 
 		/** Close the window if is running */
-		virtual void Close();
+		virtual void close();
 
 		/** Set the current active view
 		@param View New view to use (pass GetDefaultView() to set the default view)
 		*/
-		void SetView( const View& View );
+		void setView( const View& View );
 
 		/** Get the current view */
-		const View& GetView() const;
+		const View& getView() const;
 
 		/** Get the default view of the window */
-		const View& GetDefaultView() const;
+		const View& getDefaultView() const;
 
 		/** This will set the default rendering states and view to render in 2D mode */
-		void Setup2D( const bool& KeepView = false );
+		void setup2D( const bool& KeepView = false );
 
 		/** Set a new 2D projection matrix */
-		void Set2DProjection( const Uint32& Width, const Uint32& Height );
+		void set2DProjection( const Uint32& Width, const Uint32& Height );
 
 		/** Set the current Viewport ( and creates a new ortho proyection if needed ) */
-		void SetViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height, const bool& UpdateProjectionMatrix = true );
+		void setViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height, const bool& UpdateProjectionMatrix = true );
 
 		/** Set the window background color */
-		void BackColor( const RGB& Color );
+		void backColor( const RGB& Color );
 
 		/** @return The background clear color */
-		const RGB& BackColor() const;
+		const RGB& backColor() const;
 
 		/** Captures the window front buffer and saves it to disk. \n
 		* You have to call it before Display, and after render all the objects. \n
@@ -305,149 +305,149 @@ class EE_API Window {
 		* You can set only the path to save the files, like "screenshots/"
 		* @return False if failed, otherwise returns True
 		*/
-		bool TakeScreenshot( std::string filepath = "", const EE_SAVE_TYPE& Format = SAVE_TYPE_PNG );
+		bool takeScreenshot( std::string filepath = "", const EE_SAVE_TYPE& Format = SAVE_TYPE_PNG );
 
 		/** @return The pointer to the Window Info ( read only ) */
-		const WindowInfo * GetWindowInfo() const;
+		const WindowInfo * getWindowInfo() const;
 
 		/** Set a frame per second limit. It's not 100 % accurate. */
-		void FrameRateLimit( const Uint32& FrameRateLimit );
+		void frameRateLimit( const Uint32& frameRateLimit );
 
 		/** Get a frame per second limit. */
-		Uint32 FrameRateLimit();
+		Uint32 frameRateLimit();
 
 		/** Set the current Clipping area ( default the entire window, SCISSOR TEST ). */
-		void ClipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
+		void clipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height );
 
 		/** Disable the Clipping area */
-		void ClipDisable();
+		void clipDisable();
 
 		/** Clip the area with a plane. */
-		void ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height );
+		void clipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height );
 
 		/** Disable the clip plane area. */
-		void ClipPlaneDisable();
+		void clipPlaneDisable();
 
 		/** @return The clipboard manager */
-		Clipboard * GetClipboard() const;
+		Clipboard * getClipboard() const;
 		
 		/** @return The input manager */
-		Input * GetInput() const;
+		Input * getInput() const;
 
 		/** @return The cursor manager */
-		CursorManager * GetCursorManager() const;
+		CursorManager * getCursorManager() const;
 
 		/** Push a new window resize callback.
 		* @return The Callback Id
 		*/
-		Uint32 PushResizeCallback( const WindowResizeCallback& cb );
+		Uint32 pushResizeCallback( const WindowResizeCallback& cb );
 
 		/** Pop the callback id indicated. */
-		void PopResizeCallback( const Uint32& CallbackId );
+		void popResizeCallback( const Uint32& CallbackId );
 
 		/** @return The pointer to the instance of the platform implementation functions. */
-		Platform::PlatformImpl * GetPlatform() const;
+		Platform::PlatformImpl * getPlatform() const;
 
 		/**
 		* @brief Start accepting Unicode text input events.
 		*        This function will show the on-screen keyboard if supported.
 		*
-		* @sa StopTextInput()
-		* @sa SetTextInputRect()
-		* @sa HasScreenKeyboardSupport()
+		* @sa stopTextInput()
+		* @sa setTextInputRect()
+		* @sa hasScreenKeyboardSupport()
 		*/
-		virtual void StartTextInput();
+		virtual void startTextInput();
 
 		/**
 		* @brief Return whether or not Unicode text input events are enabled.
 		*
-		* @sa StartTextInput()
-		* @sa StopTextInput()
+		* @sa startTextInput()
+		* @sa stopTextInput()
 		*/
-		virtual bool IsTextInputActive();
+		virtual bool isTextInputActive();
 
 		/**
 		* @brief Stop receiving any text input events.
 		*        This function will hide the on-screen keyboard if supported.
 		*
-		* @sa StartTextInput()
-		* @sa HasScreenKeyboardSupport()
+		* @sa startTextInput()
+		* @sa hasScreenKeyboardSupport()
 		*/
-		virtual void StopTextInput();
+		virtual void stopTextInput();
 
 		/**
 		* @brief Set the rectangle used to type Unicode text inputs.
 		*        This is used as a hint for IME and on-screen keyboard placement.
 		*
-		* @sa StartTextInput()
+		* @sa startTextInput()
 		*/
-		virtual void SetTextInputRect( Recti& rect );
+		virtual void setTextInputRect( Recti& rect );
 
 		/**
 		* @brief Returns whether the platform has some screen keyboard support.
 		* @return true if some keyboard support is available else false.
 		* @note Not all screen keyboard functions are supported on all platforms.
 		*
-		* @sa IsScreenKeyboardShown()
+		* @sa isScreenKeyboardShown()
 		*/
-		virtual bool HasScreenKeyboardSupport();
+		virtual bool hasScreenKeyboardSupport();
 
 		/**
 		* @brief Returns whether the screen keyboard is shown for given window.
 		* @return true if screen keyboard is shown else false.
 		*
-		* @sa HasScreenKeyboardSupport()
+		* @sa hasScreenKeyboardSupport()
 		*/
-		virtual bool IsScreenKeyboardShown();
+		virtual bool isScreenKeyboardShown();
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
 		/** @return The JNI environment for the current thread
 		* This returns JNIEnv*, but the prototype is void* so we don't need jni.h
 		*/
-		virtual void * GetJNIEnv();
+		virtual void * getJNIEnv();
 
 		/** @return The SDL Activity object for the application
 		* This returns jobject, but the prototype is void* so we don't need jni.h
 		*/
-		virtual void * GetActivity();
+		virtual void * getActivity();
 
 		/** @return The current state of external storage, a bitmask of these values:
 		* EE_ANDROID_EXTERNAL_STORAGE_READ
 		* EE_ANDROID_EXTERNAL_STORAGE_WRITE
 		* If external storage is currently unavailable, this will return 0.
 		*/
-		virtual int GetExternalStorageState();
+		virtual int getExternalStorageState();
 
 		/** @return The path used for internal storage for this application.
 		* This path is unique to your application and cannot be written to
 		* by other applications.
 		*/
-		virtual std::string GetInternalStoragePath();
+		virtual std::string getInternalStoragePath();
 
 		/** @return The path used for external storage for this application.
 		* This path is unique to your application, but is public and can be
 		* written to by other applications.
 		*/
-		virtual std::string GetExternalStoragePath();
+		virtual std::string getExternalStoragePath();
 
 		/** @return The application APK file path */
-		virtual std::string GetApkPath();
+		virtual std::string getApkPath();
 #endif
 
 		/** @return True if the current window support a threaded GL Context. This means that supports OpenGL Shared Contexts ( multithreaded opengl contexts ).
 		**	Only supported with SDL2 backend.*/
-		virtual bool IsThreadedGLContext();
+		virtual bool isThreadedGLContext();
 
 		/** Activates the shared GL context in the current thread. */
-		virtual void SetGLContextThread();
+		virtual void setGLContextThread();
 
 		/** Deactviates the shared GL context in the current thread. */
-		virtual void UnsetGLContextThread();
+		virtual void unsetGLContextThread();
 
 		/** Runs the main loop function passed as parameter
 		**	@param func The main loop function
 		**	@param fps The desired FPS ( 0 = infinite ) */
-		void RunMainLoop( void (*func)(), int fps = 0 );
+		void runMainLoop( void (*func)(), int fps = 0 );
 	protected:
 		friend class Engine;
 
@@ -492,31 +492,31 @@ class EE_API Window {
 		FrameData mFrameData;
 
 		/** Set the flag state to be the current window */
-		virtual void SetCurrent();
+		virtual void setCurrent();
 
 		/** Swap Buffers call */
-		virtual void SwapBuffers() = 0;
+		virtual void swapBuffers() = 0;
 
 		/** Obtain the Main Context, this is called after the OpenGL context creation. */
-		virtual void GetMainContext();
+		virtual void getMainContext();
 
-		virtual void CreatePlatform();
+		virtual void createPlatform();
 
-		void SendVideoResizeCb();
+		void sendVideoResizeCb();
 
-		void CreateView();
+		void createView();
 
-		void CalculateFps();
+		void calculateFps();
 
-		void LimitFps();
+		void limitFps();
 
-		void GetElapsedTime();
+		void getElapsedTime();
 
-		void ViewCheckUpdate();
+		void viewCheckUpdate();
 
-		void LogSuccessfulInit( const std::string& BackendName, const std::string& ProcessPath = "" );
+		void logSuccessfulInit( const std::string& BackendName, const std::string& ProcessPath = "" );
 
-		void LogFailureInit( const std::string& ClassName, const std::string& BackendName );
+		void logFailureInit( const std::string& ClassName, const std::string& BackendName );
 };
 
 }}

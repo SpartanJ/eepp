@@ -265,7 +265,7 @@ void UISlider::Update() {
 	UIControlAnim::Update();
 
 	if ( IsMouseOver() || mBackSlider->IsMouseOver() || mSlider->IsMouseOver() ) {
-		ManageClick( UIManager::instance()->GetInput()->ClickTrigger() );
+		ManageClick( UIManager::instance()->GetInput()->clickTrigger() );
 	}
 }
 

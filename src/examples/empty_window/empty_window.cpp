@@ -13,7 +13,7 @@ int op = 1;
 void MainLoop()
 {
 	// Clear the screen buffer
-	win->Clear();
+	win->clear();
 
 	// Create an instance of the primitive renderer
 	Primitives p;
@@ -22,16 +22,16 @@ void MainLoop()
 	p.SetColor( ColorA( 0, 255, 0, 150 ) );
 
 	// Update the input
-	win->GetInput()->Update();
+	win->getInput()->update();
 
 	// Check if ESCAPE key is pressed
-	if ( win->GetInput()->IsKeyDown( KEY_ESCAPE ) ) {
+	if ( win->getInput()->isKeyDown( KEY_ESCAPE ) ) {
 		// Close the window
-		win->Close();
+		win->close();
 	}
 
-	circ += win->Elapsed().asMilliseconds() * 0.5f * op;
-	circ2 += win->Elapsed().asMilliseconds() * 0.75f;
+	circ += win->elapsed().asMilliseconds() * 0.5f * op;
+	circ2 += win->elapsed().asMilliseconds() * 0.75f;
 
 	if ( op == 1 && circ > 340 )
 	{
@@ -42,7 +42,7 @@ void MainLoop()
 		op = 1;
 	}
 
-	Vector2f winCenter( win->GetWidth() * 0.5f, win->GetHeight() * 0.5f );
+	Vector2f winCenter( win->getWidth() * 0.5f, win->getHeight() * 0.5f );
 
 
 	GLi->Enable(GL_STENCIL_TEST);
@@ -81,19 +81,19 @@ void MainLoop()
 */
 
 	// Draw frame
-	win->Display();
+	win->display();
 }
 
 // EE_MAIN_FUNC is needed by some platforms to be able to find the real application main
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	// Create a new window with vsync enabled
-	win = Engine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - Empty Window" ), ContextSettings( true ) );
+	win = Engine::instance()->createWindow( WindowSettings( 960, 640, "eepp - Empty Window" ), ContextSettings( true ) );
 
 	// Check if created
-	if ( win->Created() ) {
+	if ( win->created() ) {
 		// Set window background color
-		win->BackColor( RGB( 50, 50, 50 ) );
+		win->backColor( RGB( 50, 50, 50 ) );
 
 		GLi->PolygonMode( );
 
@@ -105,7 +105,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		// {
 		//		MainLoop();
 		// }
-		win->RunMainLoop( &MainLoop );
+		win->runMainLoop( &MainLoop );
 	}
 
 	// Destroy the engine instance. Destroys all the windows and engine singletons.

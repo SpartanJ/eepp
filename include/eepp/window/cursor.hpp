@@ -16,16 +16,16 @@ class Window;
 class EE_API Cursor {
 	public:
 		/** @return The cursor id */
-		const Uint32& Id() const;
+		const Uint32& getId() const;
 
 		/** @return The cursor name */
-		const std::string& Name() const;
+		const std::string& getName() const;
 
 		/** @return The cursor hotspot, this means, the position inside the cursor image, where the click is taken */
-		const Vector2i& HotSpot() const;
+		const Vector2i& getHotSpot() const;
 
 		/** @return The pointer to the image that represents the cursor */
-		Graphics::Image * Image() const;
+		Graphics::Image * getImage() const;
 		
 		virtual ~Cursor();
 	protected:
@@ -37,13 +37,13 @@ class EE_API Cursor {
 		Vector2i		mHotSpot;
 		EE::Window::Window *		mWindow;
 
-		Cursor( Texture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
+		Cursor( Texture * tex, const Vector2i& hotspot, const std::string& getName, EE::Window::Window * window );
 
-		Cursor( Graphics::Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
+		Cursor( Graphics::Image * img, const Vector2i& hotspot, const std::string& getName, EE::Window::Window * window );
 
-		Cursor( const std::string& path, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
+		Cursor( const std::string& path, const Vector2i& hotspot, const std::string& getName, EE::Window::Window * window );
 
-		virtual void Create() = 0;
+		virtual void create() = 0;
 };
 
 }}

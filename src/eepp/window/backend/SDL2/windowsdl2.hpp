@@ -23,75 +23,75 @@ class EE_API WindowSDL : public Window {
 		
 		virtual ~WindowSDL();
 		
-		bool Create( WindowSettings Settings, ContextSettings Context );
+		bool create( WindowSettings Settings, ContextSettings Context );
 		
-		void ToggleFullscreen();
+		void toggleFullscreen();
 		
-		void Caption( const std::string& Caption );
+		void caption( const std::string& caption );
 
-		bool Icon( const std::string& Path );
+		bool icon( const std::string& Path );
 
-		bool Active();
+		bool active();
 
-		bool Visible();
+		bool visible();
 
-		void Size( Uint32 Width, Uint32 Height, bool Windowed );
+		void size( Uint32 Width, Uint32 Height, bool isWindowed );
 
-		std::vector<DisplayMode> GetDisplayModes() const;
+		std::vector<DisplayMode> getDisplayModes() const;
 
-		void SetGamma( Float Red, Float Green, Float Blue );
+		void setGamma( Float Red, Float Green, Float Blue );
 
-		eeWindowHandle	GetWindowHandler();
+		eeWindowHandle	getWindowHandler();
 
-		virtual void Minimize();
+		virtual void minimize();
 
-		virtual void Maximize();
+		virtual void maximize();
 
-		virtual void Hide();
+		virtual void hide();
 
-		virtual void Raise();
+		virtual void raise();
 
-		virtual void Show();
+		virtual void show();
 
-		virtual void Position( Int16 Left, Int16 Top );
+		virtual void position( Int16 Left, Int16 Top );
 
-		virtual Vector2i Position();
+		virtual Vector2i position();
 
-		const Sizei& GetDesktopResolution();
+		const Sizei& getDesktopResolution();
 
 		SDL_Window *	GetSDLWindow() const;
 
-		void StartTextInput();
+		void startTextInput();
 
-		bool IsTextInputActive();
+		bool isTextInputActive();
 
-		void StopTextInput();
+		void stopTextInput();
 
-		void SetTextInputRect( Recti& rect );
+		void setTextInputRect( Recti& rect );
 
-		bool HasScreenKeyboardSupport();
+		bool hasScreenKeyboardSupport();
 
-		bool IsScreenKeyboardShown();
+		bool isScreenKeyboardShown();
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
-		void * GetJNIEnv();
+		void * getJNIEnv();
 
-		void * GetActivity();
+		void * getActivity();
 
-		int GetExternalStorageState();
+		int getExternalStorageState();
 
-		std::string GetInternalStoragePath();
+		std::string getInternalStoragePath();
 
-		std::string GetExternalStoragePath();
+		std::string getExternalStoragePath();
 
-		std::string GetApkPath();
+		std::string getApkPath();
 #endif
 
-		bool IsThreadedGLContext();
+		bool isThreadedGLContext();
 
-		void SetGLContextThread();
+		void setGLContextThread();
 
-		void UnsetGLContextThread();
+		void unsetGLContextThread();
 	protected:
 		friend class ClipboardSDL;
 
@@ -109,9 +109,9 @@ class EE_API WindowSDL : public Window {
 
 		Vector2i		mWinPos;
 
-		void CreatePlatform();
+		void createPlatform();
 
-		void SwapBuffers();
+		void swapBuffers();
 
 		void SetGLConfig();
 

@@ -17,15 +17,15 @@ bool side = false;
 void MainLoop()
 {
 	// Clear the screen buffer
-	win->Clear();
+	win->clear();
 
 	// Update the input
-	win->GetInput()->Update();
+	win->getInput()->update();
 
 	// Check if ESCAPE key is pressed
-	if ( win->GetInput()->IsKeyDown( KEY_ESCAPE ) ) {
+	if ( win->getInput()->isKeyDown( KEY_ESCAPE ) ) {
 		// Close the window
-		win->Close();
+		win->close();
 	}
 
 	// Bind the Frame Buffer, everything rendered from here will be rendered in the frame buffer
@@ -55,8 +55,8 @@ void MainLoop()
 		}
 	}
 
-	Float HWidth	= win->GetWidth() * 0.5f;
-	Float HHeight	= win->GetHeight() * 0.5f;
+	Float HWidth	= win->getWidth() * 0.5f;
+	Float HHeight	= win->getHeight() * 0.5f;
 
 	// The batch can be rotated, scale and moved
 	Batch->BatchRotation( ang );
@@ -93,7 +93,7 @@ void MainLoop()
 	Batch->Draw();
 
 	// Add the rotation angle
-	ang+=win->Elapsed().asMilliseconds() * 0.1f;
+	ang+=win->elapsed().asMilliseconds() * 0.1f;
 	ang = (ang>=360) ? 0 : ang;
 
 	// Change the scale value
@@ -104,22 +104,22 @@ void MainLoop()
 		side = false;
 		scale = 0.5f;
 	}
-	scale = (!side) ? scale+win->Elapsed().asMilliseconds() * 0.00025f : scale-win->Elapsed().asMilliseconds() * 0.00025f;
+	scale = (!side) ? scale+win->elapsed().asMilliseconds() * 0.00025f : scale-win->elapsed().asMilliseconds() * 0.00025f;
 
 	// Draw frame
-	win->Display();
+	win->display();
 }
 
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	// Create a new window
-	win = Engine::instance()->CreateWindow( WindowSettings( 1024, 768, "eepp - VBO - FBO and Batch Rendering" ), ContextSettings( true ) );
+	win = Engine::instance()->createWindow( WindowSettings( 1024, 768, "eepp - VBO - FBO and Batch Rendering" ), ContextSettings( true ) );
 
 	// Set window background color
-	win->BackColor( RGB( 50, 50, 50 ) );
+	win->backColor( RGB( 50, 50, 50 ) );
 
 	// Check if created
-	if ( win->Created() ) {
+	if ( win->created() ) {
 		Polygon2f Poly( Polygon2f::createRoundedRectangle( 0, 0, 200, 50 ) );
 
 		// Create the Vertex Buffer, the vertex buffer stores the vertex data in the GPU, making the rendering much faster
@@ -150,7 +150,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		FBO = FrameBuffer::New( 200, 200 );
 
 		// Application loop
-		win->RunMainLoop( &MainLoop );
+		win->runMainLoop( &MainLoop );
 
 		// Release the allocated objects ( VBOs and FBOs need to be released manually )
 		eeSAFE_DELETE( VBO );

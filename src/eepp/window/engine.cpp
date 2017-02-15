@@ -79,12 +79,12 @@ Engine::~Engine() {
 	Network::SSL::SSLSocket::end();
 	#endif
 
-	Destroy();
+	destroy();
 
 	eeSAFE_DELETE( mBackend );
 }
 
-void Engine::Destroy() {
+void Engine::destroy() {
 	std::list<Window*>::iterator it;
 
 	for ( it = mWindows.begin(); it != mWindows.end(); it++ ) {
@@ -94,7 +94,7 @@ void Engine::Destroy() {
 	mWindow = NULL;
 }
 
-Backend::WindowBackend * Engine::CreateSDLBackend( const WindowSettings &Settings ) {
+Backend::WindowBackend * Engine::createSDLBackend( const WindowSettings &Settings ) {
 #if defined( EE_SDL_VERSION_1_2 )
 	return eeNew( Backend::SDL::WindowBackendSDL, () );
 #else
@@ -102,7 +102,7 @@ Backend::WindowBackend * Engine::CreateSDLBackend( const WindowSettings &Setting
 #endif
 }
 
-Backend::WindowBackend * Engine::CreateSDL2Backend( const WindowSettings &Settings ) {
+Backend::WindowBackend * Engine::createSDL2Backend( const WindowSettings &Settings ) {
 #if defined( EE_SDL_VERSION_2 )
 	return eeNew( Backend::SDL2::WindowBackendSDL2, () );
 #else
@@ -110,7 +110,7 @@ Backend::WindowBackend * Engine::CreateSDL2Backend( const WindowSettings &Settin
 #endif
 }
 
-Backend::WindowBackend * Engine::CreateSFMLBackend( const WindowSettings &Settings ) {
+Backend::WindowBackend * Engine::createSFMLBackend( const WindowSettings &Settings ) {
 #if defined( EE_BACKEND_SFML_ACTIVE )
 	return eeNew( Backend::SFML::WindowBackendSFML, () );
 #else
@@ -118,10 +118,10 @@ Backend::WindowBackend * Engine::CreateSFMLBackend( const WindowSettings &Settin
 #endif
 }
 
-EE::Window::Window * Engine::CreateSDLWindow( const WindowSettings& Settings, const ContextSettings& Context ) {
+EE::Window::Window * Engine::createSDLWindow( const WindowSettings& Settings, const ContextSettings& Context ) {
 #if defined( EE_SDL_VERSION_1_2 )
 	if ( NULL == mBackend ) {
-		mBackend	= CreateSDLBackend( Settings );
+		mBackend	= createSDLBackend( Settings );
 	}
 
 	return eeNew( Backend::SDL::WindowSDL, ( Settings, Context ) );
@@ -130,10 +130,10 @@ EE::Window::Window * Engine::CreateSDLWindow( const WindowSettings& Settings, co
 #endif
 }
 
-EE::Window::Window * Engine::CreateSDL2Window( const WindowSettings& Settings, const ContextSettings& Context ) {
+EE::Window::Window * Engine::createSDL2Window( const WindowSettings& Settings, const ContextSettings& Context ) {
 #if defined( EE_SDL_VERSION_2 )
 	if ( NULL == mBackend ) {
-		mBackend	= CreateSDL2Backend( Settings );
+		mBackend	= createSDL2Backend( Settings );
 	}
 
 	return eeNew( Backend::SDL2::WindowSDL, ( Settings, Context ) );
@@ -142,7 +142,7 @@ EE::Window::Window * Engine::CreateSDL2Window( const WindowSettings& Settings, c
 #endif
 }
 
-EE::Window::Window * Engine::CreateSFMLWindow( const WindowSettings& Settings, const ContextSettings& Context ) {
+EE::Window::Window * Engine::createSFMLWindow( const WindowSettings& Settings, const ContextSettings& Context ) {
 #if defined( EE_BACKEND_SFML_ACTIVE )
 
 	if ( NULL == mBackend ) {
@@ -155,35 +155,35 @@ EE::Window::Window * Engine::CreateSFMLWindow( const WindowSettings& Settings, c
 #endif
 }
 
-EE::Window::Window * Engine::CreateDefaultWindow( const WindowSettings& Settings, const ContextSettings& Context ) {
+EE::Window::Window * Engine::createDefaultWindow( const WindowSettings& Settings, const ContextSettings& Context ) {
 #if DEFAULT_BACKEND == BACKEND_SDL
-	return CreateSDLWindow( Settings, Context );
+	return createSDLWindow( Settings, Context );
 #elif DEFAULT_BACKEND == BACKEND_SDL2
-	return CreateSDL2Window( Settings, Context );
+	return createSDL2Window( Settings, Context );
 #elif DEFAULT_BACKEND == BACKEND_SFML
 	return CreateSFMLWindow( Settings, Context );
 #endif
 }
 
-EE::Window::Window * Engine::CreateWindow( WindowSettings Settings, ContextSettings Context ) {
+EE::Window::Window * Engine::createWindow( WindowSettings Settings, ContextSettings Context ) {
 	EE::Window::Window * window = NULL;
 
 	if ( NULL != mWindow ) {
-		Settings.Backend	= mWindow->GetWindowInfo()->WindowConfig.Backend;
+		Settings.Backend	= mWindow->getWindowInfo()->WindowConfig.Backend;
 	} else {
 		mMainThreadId	= Thread::getCurrentThreadId();
 	}
 
 	switch ( Settings.Backend ) {
-		case WindowBackend::SDL:		window = CreateSDLWindow( Settings, Context );		break;
-		case WindowBackend::SDL2:		window = CreateSDL2Window( Settings, Context );		break;
-		case WindowBackend::SFML:		window = CreateSFMLWindow( Settings, Context );		break;
+		case WindowBackend::SDL:		window = createSDLWindow( Settings, Context );		break;
+		case WindowBackend::SDL2:		window = createSDL2Window( Settings, Context );		break;
+		case WindowBackend::SFML:		window = createSFMLWindow( Settings, Context );		break;
 		case WindowBackend::Default:
-		default:						window = CreateDefaultWindow( Settings, Context );	break;
+		default:						window = createDefaultWindow( Settings, Context );	break;
 	}
 
 	if ( NULL == window ) {
-		window = CreateDefaultWindow( Settings, Context );
+		window = createDefaultWindow( Settings, Context );
 	}
 
 	if ( NULL == mWindow ) {
@@ -195,7 +195,7 @@ EE::Window::Window * Engine::CreateWindow( WindowSettings Settings, ContextSetti
 	return window;
 }
 
-void Engine::DestroyWindow( EE::Window::Window * window ) {
+void Engine::destroyWindow( EE::Window::Window * window ) {
 	mWindows.remove( window );
 
 	if ( window == mWindow ) {
@@ -209,7 +209,7 @@ void Engine::DestroyWindow( EE::Window::Window * window ) {
 	eeSAFE_DELETE( window );
 }
 
-bool Engine::ExistsWindow( EE::Window::Window * window ) {
+bool Engine::existsWindow( EE::Window::Window * window ) {
 	std::list<Window*>::iterator it;
 
 	for ( it = mWindows.begin(); it != mWindows.end(); it++ ) {
@@ -220,45 +220,45 @@ bool Engine::ExistsWindow( EE::Window::Window * window ) {
 	return false;
 }
 
-EE::Window::Window * Engine::GetCurrentWindow() const {
+EE::Window::Window * Engine::getCurrentWindow() const {
 	return mWindow;
 }
 
-void Engine::SetCurrentWindow( EE::Window::Window * window ) {
+void Engine::setCurrentWindow( EE::Window::Window * window ) {
 	if ( NULL != window && window != mWindow ) {
 		mWindow = window;
 
-		mWindow->SetCurrent();
+		mWindow->setCurrent();
 	}
 }
 
-Uint32 Engine::GetWindowCount() const {
+Uint32 Engine::getWindowCount() const {
 	return mWindows.size();
 }
 
-bool Engine::Running() const {
+bool Engine::isRunning() const {
 	return NULL != mWindow;
 }
 
-Time Engine::Elapsed() const {
-	eeASSERT( Running() );
+Time Engine::elapsed() const {
+	eeASSERT( isRunning() );
 
-	return mWindow->Elapsed();
+	return mWindow->elapsed();
 }
 
-const Uint32& Engine::GetWidth() const {
-	eeASSERT( Running() );
+const Uint32& Engine::getWidth() const {
+	eeASSERT( isRunning() );
 
-	return mWindow->GetWidth();
+	return mWindow->getWidth();
 }
 
-const Uint32& Engine::GetHeight() const {
-	eeASSERT( Running() );
+const Uint32& Engine::getHeight() const {
+	eeASSERT( isRunning() );
 
-	return mWindow->GetHeight();
+	return mWindow->getHeight();
 }
 
-Uint32 Engine::GetDefaultBackend() const {
+Uint32 Engine::getDefaultBackend() const {
 #if DEFAULT_BACKEND == BACKEND_SDL
 	return WindowBackend::SDL;
 #elif DEFAULT_BACKEND == BACKEND_SDL2
@@ -268,7 +268,7 @@ Uint32 Engine::GetDefaultBackend() const {
 #endif
 }
 
-WindowSettings Engine::CreateWindowSettings( IniFile * ini, std::string iniKeyName ) {
+WindowSettings Engine::createWindowSettings( IniFile * ini, std::string iniKeyName ) {
 	eeASSERT ( NULL != ini );
 
 	ini->readFile();
@@ -280,7 +280,7 @@ WindowSettings Engine::CreateWindowSettings( IniFile * ini, std::string iniKeyNa
 	bool Resizeable		= ini->getValueB( iniKeyName, "Resizeable", true );
 
 	std::string Backend = ini->getValue( iniKeyName, "Backend", "" );
-	Uint32 WinBackend	= GetDefaultBackend();
+	Uint32 WinBackend	= getDefaultBackend();
 
 	String::toLowerInPlace( Backend );
 
@@ -311,13 +311,13 @@ WindowSettings Engine::CreateWindowSettings( IniFile * ini, std::string iniKeyNa
 	return WinSettings;
 }
 
-WindowSettings Engine::CreateWindowSettings( std::string iniPath, std::string iniKeyName ) {
+WindowSettings Engine::createWindowSettings( std::string iniPath, std::string iniKeyName ) {
 	IniFile Ini( iniPath );
 
-	return CreateWindowSettings( &Ini, iniKeyName );
+	return createWindowSettings( &Ini, iniKeyName );
 }
 
-ContextSettings Engine::CreateContextSettings( IniFile * ini, std::string iniKeyName ) {
+ContextSettings Engine::createContextSettings( IniFile * ini, std::string iniKeyName ) {
 	eeASSERT ( NULL != ini );
 
 	ini->readFile();
@@ -345,25 +345,25 @@ ContextSettings Engine::CreateContextSettings( IniFile * ini, std::string iniKey
 	return ContextSettings( VSync, GLVer, doubleBuffering, depthBufferSize, stencilBufferSize );
 }
 
-ContextSettings Engine::CreateContextSettings( std::string iniPath, std::string iniKeyName ) {
+ContextSettings Engine::createContextSettings( std::string iniPath, std::string iniKeyName ) {
 	IniFile Ini( iniPath );
 
-	return CreateContextSettings( &Ini );
+	return createContextSettings( &Ini );
 }
 
-void Engine::EnableSharedGLContext() {
+void Engine::enableSharedGLContext() {
 	mSharedGLContext = true;
 }
 
-void Engine::DisableSharedGLContext() {
+void Engine::disableSharedGLContext() {
 	mSharedGLContext = false;
 }
 
-bool Engine::IsSharedGLContextEnabled() {
+bool Engine::isSharedGLContextEnabled() {
 	return mSharedGLContext;
 }
 
-Uint32 Engine::GetMainThreadId() {
+Uint32 Engine::getMainThreadId() {
 	return mMainThreadId;
 }
 

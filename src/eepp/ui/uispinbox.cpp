@@ -41,7 +41,7 @@ UISpinBox::UISpinBox( const UISpinBox::CreateParams& Params ) :
 	mPushDown->Visible	( true );
 	mPushDown->Enabled	( true );
 
-	mInput->GetInputTextBuffer()->AllowOnlyNumbers( true, Params.AllowDotsInNumbers );
+	mInput->GetInputTextBuffer()->allowOnlyNumbers( true, Params.AllowDotsInNumbers );
 
 	InternalValue( mValue, true );
 
@@ -201,7 +201,7 @@ const Float& UISpinBox::MaxValue() const {
 }
 
 void UISpinBox::Update() {
-	bool Changed = mInput->GetInputTextBuffer()->ChangedSinceLastUpdate();
+	bool Changed = mInput->GetInputTextBuffer()->changedSinceLastUpdate();
 
 	UIControlAnim::Update();
 

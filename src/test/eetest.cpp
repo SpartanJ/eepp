@@ -52,23 +52,23 @@ void EETest::Init() {
 	mMusEnabled			= Ini.getValueB( "EEPP", "Music", false );
 	Int32 StartScreen	= Ini.getValueI( "EEPP", "StartScreen", 0 );
 
-	WindowSettings WinSettings	= EE->CreateWindowSettings( &Ini );
-	ContextSettings ConSettings	= EE->CreateContextSettings( &Ini );
+	WindowSettings WinSettings	= EE->createWindowSettings( &Ini );
+	ContextSettings ConSettings	= EE->createContextSettings( &Ini );
 
-	mWindow = EE->CreateWindow( WinSettings, ConSettings );
+	mWindow = EE->createWindow( WinSettings, ConSettings );
 
-	if ( NULL != mWindow && mWindow->Created() ) {
+	if ( NULL != mWindow && mWindow->created() ) {
 		SetScreen( StartScreen );
 
-		mWindow->Caption( "eepp - Test Application" );
-		mWindow->PushResizeCallback( cb::Make1( this, &EETest::OnWindowResize ) );
+		mWindow->caption( "eepp - Test Application" );
+		mWindow->pushResizeCallback( cb::Make1( this, &EETest::OnWindowResize ) );
 
 		TF = TextureFactory::instance();
 		TF->Allocate(40);
 
 		Log		= Log::instance();
-		KM		= mWindow->GetInput();
-		JM		= KM->GetJoystickManager();
+		KM		= mWindow->getInput();
+		JM		= KM->getJoystickManager();
 
 		PS.resize(5);
 
@@ -80,7 +80,7 @@ void EETest::Init() {
 		Scenes[5] = cb::Make0( this, &EETest::Screen5 );
 
 		//InBuf.Start();
-		InBuf.SupportNewLine( true );
+		InBuf.supportNewLine( true );
 
 		setRandomSeed( static_cast<Uint32>( Sys::getSystemTime() * 1000 ) );
 
@@ -244,7 +244,7 @@ void EETest::OnShowMenu( const UIEvent * Event ) {
 }
 
 void EETest::OnWindowResize(EE::Window::Window * win) {
-	Map.ViewSize( win->Size() );
+	Map.ViewSize( win->size() );
 }
 
 void EETest::CreateUI() {
@@ -679,12 +679,12 @@ void EETest::ItemClick( const UIEvent * Event ) {
 		SetScreen( 5 );
 	} else if ( "Show Console" == txt ) {
 		Con.Toggle();
-		InBuf.Active( !Con.Active() );
+		InBuf.active( !Con.Active() );
 
 		if ( Con.Active() ) {
-			mWindow->StartTextInput();
+			mWindow->startTextInput();
 		} else {
-			mWindow->StopTextInput();
+			mWindow->stopTextInput();
 		}
 	} else if ( "Show Window" == txt ) {
 		UIMenuCheckBox * Chk = reinterpret_cast<UIMenuCheckBox*> ( Event->Ctrl() );
@@ -739,13 +739,13 @@ void EETest::QuitClick( const UIEvent * Event ) {
 	const UIEventMouse * MouseEvent = reinterpret_cast<const UIEventMouse*> ( Event );
 
 	if ( MouseEvent->Flags() & EE_BUTTON_LMASK ) {
-		mWindow->Close();
+		mWindow->close();
 	}
 }
 
 void EETest::ShowMenu() {
 	if ( Menu->Show() ) {
-		Vector2i Pos = mWindow->GetInput()->GetMousePos();
+		Vector2i Pos = mWindow->getInput()->getMousePos();
 		UIMenu::FixMenuPos( Pos , Menu );
 		Menu->Pos( Pos );
 	}
@@ -771,7 +771,7 @@ void EETest::ButtonClick( const UIEvent * Event ) {
 		Gfx->Enabled( false );
 
 		Gfx->StartRotation( 0, 2500, Milliseconds( 2500 ) );
-		Gfx->StartMovement( Vector2i( Math::randi( 0, mWindow->GetWidth() ), -64 ), Vector2i( Math::randi( 0, mWindow->GetWidth() ), mWindow->GetHeight() + 64 ), Milliseconds( 2500 ) );
+		Gfx->StartMovement( Vector2i( Math::randi( 0, mWindow->getWidth() ), -64 ), Vector2i( Math::randi( 0, mWindow->getWidth() ), mWindow->getHeight() + 64 ), Milliseconds( 2500 ) );
 		Gfx->CloseFadeOut( Milliseconds( 3500 ) );
 
 		mListBox->AddListBoxItem( "Test ListBox " + String::toStr( mListBox->Count() + 1 ) + " testing it right now!" );
@@ -782,9 +782,9 @@ void EETest::SetScreen( Uint32 num ) {
 	if ( NULL != mTerrainBut ) mTerrainBut->Visible( 1 == num );
 
 	if ( 0 == num || 5 == num )
-		mWindow->BackColor( RGB( 240, 240, 240 ) );
+		mWindow->backColor( RGB( 240, 240, 240 ) );
 	else
-		mWindow->BackColor( RGB( 0, 0, 0 ) );
+		mWindow->backColor( RGB( 0, 0, 0 ) );
 
 	if ( num < 6 )
 		Screen = num;
@@ -797,7 +797,7 @@ void EETest::CmdSetPartsNum ( const std::vector < String >& params ) {
 		bool Res = String::fromString<Int32>( tInt, params[1] );
 
 		if ( Res && ( tInt >= 0 && tInt <= 100000 ) ) {
-			PS[2].Create( PSE_WormHole, tInt, TN[5], Vector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 32, true );
+			PS[2].Create( PSE_WormHole, tInt, TN[5], Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 32, true );
 			Con.PushText( "Wormhole Particles Number Changed to: " + String::toStr(tInt) );
 		} else
 			Con.PushText( "Valid parameters are between 0 and 100000 (0 = no limit)." );
@@ -818,7 +818,7 @@ void EETest::LoadTextures() {
 	#ifndef EE_GLES
 
 	#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX
-	Engine::instance()->EnableSharedGLContext();
+	Engine::instance()->enableSharedGLContext();
 	#endif
 
 	PakTest->open( MyPath + "test.zip" );
@@ -876,8 +876,8 @@ void EETest::LoadTextures() {
 
 	PS[0].SetCallbackReset( cb::Make2( this, &EETest::ParticlesCallback ) );
 	PS[0].Create( PSE_Callback, 500, TN[5], Vector2f( 0, 0 ), 16, true );
-	PS[1].Create( PSE_Heal, 250, TN[5], Vector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 16, true );
-	PS[2].Create( PSE_WormHole, PartsNum, TN[5], Vector2f( mWindow->GetWidth() * 0.5f, mWindow->GetHeight() * 0.5f ), 32, true );
+	PS[1].Create( PSE_Heal, 250, TN[5], Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 16, true );
+	PS[2].Create( PSE_WormHole, PartsNum, TN[5], Vector2f( mWindow->getWidth() * 0.5f, mWindow->getHeight() * 0.5f ), 32, true );
 	PS[3].Create( PSE_Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
 	PS[4].Create( PSE_Fire, 350, TN[5], Vector2f( -50.f, -50.f ), 32, true );
 
@@ -906,12 +906,12 @@ void EETest::LoadTextures() {
 	Cursor[0] = TF->Load( MyPath + "cursors/cursor.tga" );
 	CursorP[0] = TF->GetTexture( Cursor[0] );
 
-	CursorManager * CurMan = mWindow->GetCursorManager();
-	CurMan->Visible( false );
-	CurMan->Visible( true );
-	CurMan->Set( EE::Window::SYS_CURSOR_HAND );
-	CurMan->SetGlobalCursor( EE_CURSOR_ARROW, CurMan->Add( CurMan->Create( CursorP[0], Vector2i( 1, 1 ), "cursor_special" ) ) );
-	CurMan->Set( EE_CURSOR_ARROW );
+	CursorManager * CurMan = mWindow->getCursorManager();
+	CurMan->visible( false );
+	CurMan->visible( true );
+	CurMan->set( EE::Window::SYS_CURSOR_HAND );
+	CurMan->setGlobalCursor( EE_CURSOR_ARROW, CurMan->add( CurMan->create( CursorP[0], Vector2i( 1, 1 ), "cursor_special" ) ) );
+	CurMan->set( EE_CURSOR_ARROW );
 
 	CL1.AddFrame( TN[2] );
 	CL1.Position( 500, 400 );
@@ -934,7 +934,7 @@ void EETest::LoadTextures() {
 	Map.DrawGrid( false );
 	Map.ClipedArea( false );
 	Map.DrawBackground( false );
-	Map.ViewSize( mWindow->Size() );
+	Map.ViewSize( mWindow->size() );
 
 	eePRINTL( "Map creation time: %4.3f ms.", TE.elapsed().asMilliseconds() );
 }
@@ -944,7 +944,7 @@ void EETest::run() {
 }
 
 void EETest::ParticlesThread() {
-	while ( mWindow->Running() ) {
+	while ( mWindow->isRunning() ) {
 		UpdateParticles();
 		Sys::sleep(10);
 	}
@@ -972,8 +972,8 @@ void EETest::Screen2() {
 			TexLoaded->Draw( 0, 0 );
 	}
 
-	if ( KM->MouseLeftPressed() )
-		TNP[3]->DrawEx( 0.f, 0.f, (Float)mWindow->GetWidth(), (Float)mWindow->GetHeight() );
+	if ( KM->mouseLeftPressed() )
+		TNP[3]->DrawEx( 0.f, 0.f, (Float)mWindow->getWidth(), (Float)mWindow->getHeight() );
 
 	Batch.SetTexture( TNP[2] );
 	Batch.QuadsBegin();
@@ -1050,7 +1050,7 @@ void EETest::Screen2() {
 	}
 
 	ColorA Col(255,255,255,(int)alpha);
-	TNP[1]->DrawEx( (Float)mWindow->GetWidth() - 128.f, (Float)mWindow->GetHeight() - 128.f, 128.f, 128.f, ang, Vector2f::One, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
+	TNP[1]->DrawEx( (Float)mWindow->getWidth() - 128.f, (Float)mWindow->getHeight() - 128.f, 128.f, 128.f, ang, Vector2f::One, Col, Col, Col, Col, ALPHA_BLENDONE, RN_FLIPMIRROR);
 
 	SP.Position( alpha, alpha );
 	SP.Draw();
@@ -1084,7 +1084,7 @@ void EETest::Screen2() {
 	PR.DrawQuad( CL1.GetQuad() );
 	#endif
 
-	Ang = Ang + mWindow->Elapsed().asMilliseconds() * 0.1f;
+	Ang = Ang + mWindow->elapsed().asMilliseconds() * 0.1f;
 	if (Ang > 360.f) Ang = 1.f;
 
 	if ( ShowParticles )
@@ -1092,9 +1092,9 @@ void EETest::Screen2() {
 
 	PR.SetColor( ColorA(0, 255, 0, 50) );
 
-	Line2f Line( Vector2f(0.f, 0.f), Vector2f( (Float)mWindow->GetWidth(), (Float)mWindow->GetHeight() ) );
+	Line2f Line( Vector2f(0.f, 0.f), Vector2f( (Float)mWindow->getWidth(), (Float)mWindow->getHeight() ) );
 	Line2f Line2( Vector2f(Mousef.x - 80.f, Mousef.y - 80.f), Vector2f(Mousef.x + 80.f, Mousef.y + 80.f) );
-	Line2f Line3( Vector2f((Float)mWindow->GetWidth(), 0.f), Vector2f( 0.f, (Float)mWindow->GetHeight() ) );
+	Line2f Line3( Vector2f((Float)mWindow->getWidth(), 0.f), Vector2f( 0.f, (Float)mWindow->getHeight() ) );
 	Line2f Line4( Vector2f(Mousef.x - 80.f, Mousef.y + 80.f), Vector2f(Mousef.x + 80.f, Mousef.y - 80.f) );
 
 	if ( Line.intersect( Line2 ) )
@@ -1119,12 +1119,12 @@ void EETest::Screen2() {
 	PR.DrawTriangle( Triangle2f( Vector2f( Mousef.x, Mousef.y - 10.f ), Vector2f( Mousef.x - 10.f, Mousef.y + 10.f ), Vector2f( Mousef.x + 10.f, Mousef.y + 10.f ) ) );
 	PR.DrawLine( Line2f( Vector2f(Mousef.x - 80.f, Mousef.y - 80.f), Vector2f(Mousef.x + 80.f, Mousef.y + 80.f) ) );
 	PR.DrawLine( Line2f( Vector2f(Mousef.x - 80.f, Mousef.y + 80.f), Vector2f(Mousef.x + 80.f, Mousef.y - 80.f) ) );
-	PR.DrawLine( Line2f( Vector2f((Float)mWindow->GetWidth(), 0.f), Vector2f( 0.f, (Float)mWindow->GetHeight() ) ) );
+	PR.DrawLine( Line2f( Vector2f((Float)mWindow->getWidth(), 0.f), Vector2f( 0.f, (Float)mWindow->getHeight() ) ) );
 	PR.FillMode( DRAW_FILL );
 	PR.DrawQuad( Quad2f( Vector2f(0.f, 0.f), Vector2f(0.f, 100.f), Vector2f(150.f, 150.f), Vector2f(200.f, 150.f) ), ColorA(220, 240, 0, 125), ColorA(100, 0, 240, 125), ColorA(250, 50, 25, 125), ColorA(50, 150, 150, 125) );
 	PR.FillMode( DRAW_LINE );
 	PR.DrawRectangle( Rectf( Vector2f( Mousef.x - 80.f, Mousef.y - 80.f ), Sizef( 160.f, 160.f ) ), 45.f );
-	PR.DrawLine( Line2f( Vector2f(0.f, 0.f), Vector2f( (Float)mWindow->GetWidth(), (Float)mWindow->GetHeight() ) ) );
+	PR.DrawLine( Line2f( Vector2f(0.f, 0.f), Vector2f( (Float)mWindow->getWidth(), (Float)mWindow->getHeight() ) ) );
 
 	TNP[3]->DrawQuadEx( Quad2f( Vector2f(0.f, 0.f), Vector2f(0.f, 100.f), Vector2f(150.f, 150.f), Vector2f(200.f, 150.f) ), Vector2f(), ang, Vector2f(scale,scale), ColorA(220, 240, 0, 125), ColorA(100, 0, 240, 125), ColorA(250, 50, 25, 125), ColorA(50, 150, 150, 125) );
 
@@ -1173,7 +1173,7 @@ void EETest::Screen4() {
 		mFBO->Unbind();
 
 		if ( NULL != mFBO->GetTexture() ) {
-			mFBO->GetTexture()->Draw( (Float)mWindow->GetWidth() * 0.5f - (Float)mFBO->GetWidth() * 0.5f, (Float)mWindow->GetHeight() * 0.5f - (Float)mFBO->GetHeight() * 0.5f, Ang );
+			mFBO->GetTexture()->Draw( (Float)mWindow->getWidth() * 0.5f - (Float)mFBO->GetWidth() * 0.5f, (Float)mWindow->getHeight() * 0.5f - (Float)mFBO->GetHeight() * 0.5f, Ang );
 			GlobalBatchRenderer::instance()->Draw();
 		}
 	}
@@ -1184,8 +1184,8 @@ void EETest::Screen5() {
 }
 
 void EETest::Render() {
-	HWidth = mWindow->GetWidth() * 0.5f;
-	HHeight = mWindow->GetHeight() * 0.5f;
+	HWidth = mWindow->getWidth() * 0.5f;
+	HHeight = mWindow->getHeight() * 0.5f;
 
 	if ( Sys::getTicks() - lasttick >= 50 ) {
 		lasttick = Sys::getTicks();
@@ -1215,23 +1215,23 @@ void EETest::Render() {
 	if ( !MultiViewportMode ) {
 		Scenes[ Screen ]();
 	} else {
-		Views[0].SetView( 0, 0, mWindow->GetWidth(), static_cast<Uint32>( HHeight ) );
-		Views[1].SetView( 0, static_cast<Int32> ( HHeight ), mWindow->GetWidth(), static_cast<Uint32>( HHeight ) );
+		Views[0].setView( 0, 0, mWindow->getWidth(), static_cast<Uint32>( HHeight ) );
+		Views[1].setView( 0, static_cast<Int32> ( HHeight ), mWindow->getWidth(), static_cast<Uint32>( HHeight ) );
 
-		mWindow->SetView( Views[1] );
-		Mouse = KM->GetMousePosFromView( Views[1] );
+		mWindow->setView( Views[1] );
+		Mouse = KM->getMousePosFromView( Views[1] );
 		Mousef = Vector2f( (Float)Mouse.x, (Float)Mouse.y );
 		Screen2();
 
-		mWindow->SetView( Views[0] );
-		Mouse = KM->GetMousePosFromView( Views[0] );
+		mWindow->setView( Views[0] );
+		Mouse = KM->getMousePosFromView( Views[0] );
 		Mousef = Vector2f( (Float)Mouse.x, (Float)Mouse.y );
 		Screen1();
 
-		mWindow->SetView( mWindow->GetDefaultView() );
-		mWindow->ClipEnable( (Int32)HWidth - 320, (Int32)HHeight - 240, 640, 480 );
+		mWindow->setView( mWindow->getDefaultView() );
+		mWindow->clipEnable( (Int32)HWidth - 320, (Int32)HHeight - 240, 640, 480 );
 		Screen3();
-		mWindow->ClipDisable();
+		mWindow->clipDisable();
 	}
 
 	ColorA ColRR1( 150, 150, 150, 220 );
@@ -1247,7 +1247,7 @@ void EETest::Render() {
 				Rectf(
 					Vector2f(
 						0.f,
-						(Float)mWindow->GetHeight() - mEEText.GetTextHeight()
+						(Float)mWindow->getHeight() - mEEText.GetTextHeight()
 					),
 					Vector2f(
 						mEEText.GetTextWidth(),
@@ -1257,24 +1257,24 @@ void EETest::Render() {
 				ColRR1, ColRR2, ColRR3, ColRR4
 	);
 
-	mEEText.Draw( 0.f, (Float)mWindow->GetHeight() - mEEText.GetTextHeight() );
+	mEEText.Draw( 0.f, (Float)mWindow->getHeight() - mEEText.GetTextHeight() );
 
 	mInfoText.Draw( 6.f, 6.f );
 
-	if ( InBuf.Active() ) {
+	if ( InBuf.active() ) {
 		Uint32 NLPos = 0;
-		Uint32 LineNum = InBuf.GetCurPosLinePos( NLPos );
-		if ( InBuf.CurPos() == (int)InBuf.Buffer().size() && !LineNum ) {
+		Uint32 LineNum = InBuf.getCurPosLinePos( NLPos );
+		if ( InBuf.curPos() == (int)InBuf.buffer().size() && !LineNum ) {
 			FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f );
 		} else {
-			FF2->SetText( InBuf.Buffer().substr( NLPos, InBuf.CurPos() - NLPos ) );
+			FF2->SetText( InBuf.buffer().substr( NLPos, InBuf.curPos() - NLPos ) );
 			FF2->Draw( "_", 6.f + FF2->GetTextWidth(), 180.f + (Float)LineNum * (Float)FF2->GetFontHeight() );
 		}
 
 		FF2->SetText( "FPS: " + String::toStr( mWindow->FPS() ) );
-		FF2->Draw( mWindow->GetWidth() - FF2->GetTextWidth() - 15, 0 );
+		FF2->Draw( mWindow->getWidth() - FF2->GetTextWidth() - 15, 0 );
 
-		FF2->SetText( InBuf.Buffer() );
+		FF2->SetText( InBuf.buffer() );
 		FF2->Draw( 6, 180, FONT_DRAW_SHADOW );
 	}
 
@@ -1286,120 +1286,120 @@ void EETest::Render() {
 }
 
 void EETest::Input() {
-	KM->Update();
-	JM->Update();
+	KM->update();
+	JM->update();
 
-	Mouse = KM->GetMousePos();
+	Mouse = KM->getMousePos();
 	Mousef = Vector2f( (Float)Mouse.x, (Float)Mouse.y );
 
-	if ( KM->IsKeyUp( KEY_F1 ) )
+	if ( KM->isKeyUp( KEY_F1 ) )
 		Graphics::ShaderProgramManager::instance()->Reload();
 
-	if ( !mWindow->Visible() ) {
+	if ( !mWindow->visible() ) {
 		mWasMinimized = true;
 
-		mWindow->FrameRateLimit( 10 );
+		mWindow->frameRateLimit( 10 );
 
 		if ( mMusEnabled && Mus->state() == Sound::Playing )
 			Mus->pause();
 
 	} else {
-		if ( mLastFPSLimit != mWindow->FrameRateLimit() && !mWasMinimized )
-			mLastFPSLimit = mWindow->FrameRateLimit();
+		if ( mLastFPSLimit != mWindow->frameRateLimit() && !mWasMinimized )
+			mLastFPSLimit = mWindow->frameRateLimit();
 
 		if ( mWasMinimized ) {
 			mWasMinimized = false;
 
-			if ( !mWindow->Windowed() )
-				KM->GrabInput( true );
+			if ( !mWindow->isWindowed() )
+				KM->grabInput( true );
 		}
 
-		mWindow->FrameRateLimit( mLastFPSLimit );
+		mWindow->frameRateLimit( mLastFPSLimit );
 
 		if ( mMusEnabled && Mus->state() == Sound::Paused )
 			Mus->play();
 	}
 
-	if ( KM->IsKeyDown( KEY_ESCAPE ) )
-		mWindow->Close();
+	if ( KM->isKeyDown( KEY_ESCAPE ) )
+		mWindow->close();
 
-	if ( KM->IsKeyUp( KEY_F1 ) )
+	if ( KM->isKeyUp( KEY_F1 ) )
 		MultiViewportMode = !MultiViewportMode;
 
-	if ( KM->AltPressed() && KM->IsKeyUp( KEY_C ) )
-		mWindow->Center();
+	if ( KM->altPressed() && KM->isKeyUp( KEY_C ) )
+		mWindow->center();
 
-	if ( KM->AltPressed() && KM->IsKeyUp( KEY_M ) && !Con.Active() ) {
-		if ( !mWindow->IsMaximized() )
-			mWindow->Maximize();
+	if ( KM->altPressed() && KM->isKeyUp( KEY_M ) && !Con.Active() ) {
+		if ( !mWindow->isMaximized() )
+			mWindow->maximize();
 	}
 
-	if ( KM->IsKeyUp(KEY_F4) )
+	if ( KM->isKeyUp(KEY_F4) )
 		TF->ReloadAllTextures();
 
-	if ( KM->AltPressed() && KM->IsKeyUp( KEY_RETURN ) ) {
-		if ( mWindow->Windowed() ) {
-			mWindow->Size( mWindow->GetDesktopResolution().width(), mWindow->GetDesktopResolution().height(), false );
+	if ( KM->altPressed() && KM->isKeyUp( KEY_RETURN ) ) {
+		if ( mWindow->isWindowed() ) {
+			mWindow->size( mWindow->getDesktopResolution().width(), mWindow->getDesktopResolution().height(), false );
 		} else {
-			mWindow->ToggleFullscreen();
+			mWindow->toggleFullscreen();
 		}
 	}
 
-	if ( KM->GrabInput() ) {
-		if ( KM->AltPressed() && KM->IsKeyDown( KEY_TAB ) ) {
-			mWindow->Minimize();
+	if ( KM->grabInput() ) {
+		if ( KM->altPressed() && KM->isKeyDown( KEY_TAB ) ) {
+			mWindow->minimize();
 
-			if ( KM->GrabInput() )
-				KM->GrabInput( false );
+			if ( KM->grabInput() )
+				KM->grabInput( false );
 		}
 	}
 
-	if ( KM->ControlPressed() && KM->IsKeyUp(KEY_G) )
-		KM->GrabInput(  !KM->GrabInput() );
+	if ( KM->controlPressed() && KM->isKeyUp(KEY_G) )
+		KM->grabInput(  !KM->grabInput() );
 
-	if ( KM->IsKeyUp( KEY_F3 ) || KM->IsKeyUp( KEY_WORLD_26 ) || KM->IsKeyUp( KEY_BACKSLASH ) ) {
+	if ( KM->isKeyUp( KEY_F3 ) || KM->isKeyUp( KEY_WORLD_26 ) || KM->isKeyUp( KEY_BACKSLASH ) ) {
 		Con.Toggle();
-		InBuf.Active( !Con.Active() );
+		InBuf.active( !Con.Active() );
 	}
 
-	if ( KM->IsKeyUp(KEY_1) && KM->ControlPressed() )
+	if ( KM->isKeyUp(KEY_1) && KM->controlPressed() )
 		SetScreen( 0 );
 
-	if ( KM->IsKeyUp(KEY_2) && KM->ControlPressed() )
+	if ( KM->isKeyUp(KEY_2) && KM->controlPressed() )
 		SetScreen( 1 );
 
-	if ( KM->IsKeyUp(KEY_3) && KM->ControlPressed() )
+	if ( KM->isKeyUp(KEY_3) && KM->controlPressed() )
 		SetScreen( 2 );
 
-	if ( KM->IsKeyUp(KEY_4) && KM->ControlPressed() )
+	if ( KM->isKeyUp(KEY_4) && KM->controlPressed() )
 		SetScreen( 3 );
 
-	if ( KM->IsKeyUp(KEY_5) && KM->ControlPressed() )
+	if ( KM->isKeyUp(KEY_5) && KM->controlPressed() )
 		SetScreen( 4 );
 
-	if ( KM->IsKeyUp(KEY_6) && KM->ControlPressed() )
+	if ( KM->isKeyUp(KEY_6) && KM->controlPressed() )
 		SetScreen( 5 );
 
-	Joystick * Joy = JM->GetJoystick(0);
+	Joystick * Joy = JM->getJoystick(0);
 
 	if ( mJoyEnabled && NULL != Joy ) {
-		if ( Joy->IsButtonDown(0) )		KM->InjectButtonPress(EE_BUTTON_LEFT);
-		if ( Joy->IsButtonDown(1) )		KM->InjectButtonPress(EE_BUTTON_RIGHT);
-		if ( Joy->IsButtonDown(2) )		KM->InjectButtonPress(EE_BUTTON_MIDDLE);
-		if ( Joy->IsButtonUp(0) )		KM->InjectButtonRelease(EE_BUTTON_LEFT);
-		if ( Joy->IsButtonUp(1) )		KM->InjectButtonRelease(EE_BUTTON_RIGHT);
-		if ( Joy->IsButtonUp(2) )		KM->InjectButtonRelease(EE_BUTTON_MIDDLE);
-		if ( Joy->IsButtonUp(3) )		KM->InjectButtonRelease(EE_BUTTON_WHEELUP);
-		if ( Joy->IsButtonUp(7) )		KM->InjectButtonRelease(EE_BUTTON_WHEELDOWN);
-		if ( Joy->IsButtonUp(4) )		SetScreen( 0 );
-		if ( Joy->IsButtonUp(5) )		SetScreen( 1 );
-		if ( Joy->IsButtonUp(6) )		SetScreen( 2 );
+		if ( Joy->isButtonDown(0) )		KM->injectButtonPress(EE_BUTTON_LEFT);
+		if ( Joy->isButtonDown(1) )		KM->injectButtonPress(EE_BUTTON_RIGHT);
+		if ( Joy->isButtonDown(2) )		KM->injectButtonPress(EE_BUTTON_MIDDLE);
+		if ( Joy->isButtonUp(0) )		KM->injectButtonRelease(EE_BUTTON_LEFT);
+		if ( Joy->isButtonUp(1) )		KM->injectButtonRelease(EE_BUTTON_RIGHT);
+		if ( Joy->isButtonUp(2) )		KM->injectButtonRelease(EE_BUTTON_MIDDLE);
+		if ( Joy->isButtonUp(3) )		KM->injectButtonRelease(EE_BUTTON_WHEELUP);
+		if ( Joy->isButtonUp(7) )		KM->injectButtonRelease(EE_BUTTON_WHEELDOWN);
+		if ( Joy->isButtonUp(4) )		SetScreen( 0 );
+		if ( Joy->isButtonUp(5) )		SetScreen( 1 );
+		if ( Joy->isButtonUp(6) )		SetScreen( 2 );
 
-		Float aX = Joy->GetAxis( AXIS_X );
-		Float aY = Joy->GetAxis( AXIS_Y );
+		Float aX = Joy->getAxis( AXIS_X );
+		Float aY = Joy->getAxis( AXIS_Y );
 
 		if ( 0 != aX || 0 != aY ) {
-			double rE = mWindow->Elapsed().asMilliseconds();
+			double rE = mWindow->elapsed().asMilliseconds();
 			mAxisX += aX * rE;
 			mAxisY += aY * rE;
 		}
@@ -1410,10 +1410,10 @@ void EETest::Input() {
 
 			nmX = eemax<Float>( nmX, 0 );
 			nmY = eemax<Float>( nmY, 0 );
-			nmX = eemin( nmX, (Float)EE->GetWidth() );
-			nmY = eemin( nmY, (Float)EE->GetHeight() );
+			nmX = eemin( nmX, (Float)EE->getWidth() );
+			nmY = eemin( nmY, (Float)EE->getHeight() );
 
-			KM->InjectMousePos( (Int32)nmX, (Int32)nmY );
+			KM->injectMousePos( (Int32)nmX, (Int32)nmY );
 
 			nmX -= (Int32)nmX;
 			nmY -= (Int32)nmY;
@@ -1425,72 +1425,72 @@ void EETest::Input() {
 
 	switch (Screen) {
 		case 0:
-			if ( KM->IsKeyUp( KEY_R ) ) {
+			if ( KM->isKeyUp( KEY_R ) ) {
 				PhysicsDestroy();
 				PhysicsCreate();
 			}
 
-			if ( KM->IsKeyUp( KEY_1 ) )
+			if ( KM->isKeyUp( KEY_1 ) )
 				ChangeDemo( 0 );
 
-			if ( KM->IsKeyUp( KEY_2 ) )
+			if ( KM->isKeyUp( KEY_2 ) )
 				ChangeDemo( 1 );
 		case 1:
 			if ( NULL != Joy ) {
-				Uint8 hat = Joy->GetHat();
+				Uint8 hat = Joy->getHat();
 
 				if ( HAT_LEFT == hat || HAT_LEFTDOWN == hat || HAT_LEFTUP == hat )
-					Map.Move( (mWindow->Elapsed().asMilliseconds() * 0.2f), 0 );
+					Map.Move( (mWindow->elapsed().asMilliseconds() * 0.2f), 0 );
 
 				if ( HAT_RIGHT == hat || HAT_RIGHTDOWN == hat || HAT_RIGHTUP == hat )
-					Map.Move( -mWindow->Elapsed().asMilliseconds() * 0.2f, 0 );
+					Map.Move( -mWindow->elapsed().asMilliseconds() * 0.2f, 0 );
 
 				if ( HAT_UP == hat || HAT_LEFTUP == hat || HAT_RIGHTUP == hat )
-					Map.Move( 0, (mWindow->Elapsed().asMilliseconds() * 0.2f) );
+					Map.Move( 0, (mWindow->elapsed().asMilliseconds() * 0.2f) );
 
 				if ( HAT_DOWN == hat || HAT_LEFTDOWN == hat || HAT_RIGHTDOWN == hat )
-					Map.Move( 0, -mWindow->Elapsed().asMilliseconds() * 0.2f );
+					Map.Move( 0, -mWindow->elapsed().asMilliseconds() * 0.2f );
 			}
 
-			if ( KM->IsKeyDown(KEY_LEFT) ) {
-				Map.Move( mWindow->Elapsed().asMilliseconds() * 0.2f, 0 );
+			if ( KM->isKeyDown(KEY_LEFT) ) {
+				Map.Move( mWindow->elapsed().asMilliseconds() * 0.2f, 0 );
 			}
 
-			if ( KM->IsKeyDown(KEY_RIGHT) ) {
-				Map.Move( -mWindow->Elapsed().asMilliseconds() * 0.2f, 0 );
+			if ( KM->isKeyDown(KEY_RIGHT) ) {
+				Map.Move( -mWindow->elapsed().asMilliseconds() * 0.2f, 0 );
 			}
 
-			if ( KM->IsKeyDown(KEY_UP) ) {
-				Map.Move( 0, mWindow->Elapsed().asMilliseconds() * 0.2f );
+			if ( KM->isKeyDown(KEY_UP) ) {
+				Map.Move( 0, mWindow->elapsed().asMilliseconds() * 0.2f );
 			}
 
-			if ( KM->IsKeyDown(KEY_DOWN) ) {
-				Map.Move( 0, -mWindow->Elapsed().asMilliseconds() * 0.2f );
+			if ( KM->isKeyDown(KEY_DOWN) ) {
+				Map.Move( 0, -mWindow->elapsed().asMilliseconds() * 0.2f );
 			}
 
-			if ( KM->IsKeyUp(KEY_F8) )
+			if ( KM->isKeyUp(KEY_F8) )
 				Map.Reset();
 
 			break;
 		case 2:
-			if ( KM->IsKeyUp(KEY_S) )
+			if ( KM->isKeyUp(KEY_S) )
 				SP.SetRepeations(1);
 
-			if ( KM->IsKeyUp(KEY_A) )
+			if ( KM->isKeyUp(KEY_A) )
 				SP.SetRepeations(-1);
 
-			if ( KM->IsKeyUp(KEY_D) )
+			if ( KM->isKeyUp(KEY_D) )
 				SP.ReverseAnim( !SP.ReverseAnim() );
 
-			if ( KM->MouseRightPressed() )
+			if ( KM->mouseRightPressed() )
 				DrawBack = true;
 			else
 				DrawBack = false;
 
-			if ( KM->IsKeyUp( KEY_P ) )
+			if ( KM->isKeyUp( KEY_P ) )
 				SndMng.play( "mysound" );
 
-			if ( KM->ControlPressed() && KM->IsKeyUp(KEY_P) ) {
+			if ( KM->controlPressed() && KM->isKeyUp(KEY_P) ) {
 				ShowParticles = !ShowParticles;
 			}
 
@@ -1499,9 +1499,9 @@ void EETest::Input() {
 }
 
 void EETest::Update() {
-	mWindow->Clear();
+	mWindow->clear();
 
-	et = mWindow->Elapsed();
+	et = mWindow->elapsed();
 
 	Input();
 
@@ -1517,18 +1517,18 @@ void EETest::Update() {
 	UpdateParticles();
 #endif
 
-	if ( KM->IsKeyUp(KEY_F12) ) mWindow->TakeScreenshot( MyPath + "screenshots/" ); //After render and before Display
+	if ( KM->isKeyUp(KEY_F12) ) mWindow->takeScreenshot( MyPath + "screenshots/" ); //After render and before Display
 
-	mWindow->Display(false);
+	mWindow->display(false);
 }
 
 void EETest::Process() {
 	Init();
 
-	if ( NULL != mWindow && mWindow->Created() ) {
+	if ( NULL != mWindow && mWindow->created() ) {
 		TestInstance = this;
 
-		mWindow->RunMainLoop( &MainLoop );
+		mWindow->runMainLoop( &MainLoop );
 	}
 
 	End();
@@ -1586,27 +1586,27 @@ void EETest::Demo1Create() {
 	Body *body, *statiBody = mSpace->StatiBody();
 	Shape * shape;
 
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( 0, mWindow->GetHeight() ), cVectNew( mWindow->GetWidth(), mWindow->GetHeight() ), 0.0f ) );
+	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( 0, mWindow->getHeight() ), cVectNew( mWindow->getWidth(), mWindow->getHeight() ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
 	shape->Layers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( mWindow->GetWidth(), 0 ), cVectNew( mWindow->GetWidth(), mWindow->GetHeight() ), 0.0f ) );
+	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( mWindow->getWidth(), 0 ), cVectNew( mWindow->getWidth(), mWindow->getHeight() ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
 	shape->Layers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ), cVectNew( 0, mWindow->GetHeight() ), 0.0f ) );
+	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ), cVectNew( 0, mWindow->getHeight() ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
 	shape->Layers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ), cVectNew( mWindow->GetWidth(), 0 ), 0.0f ) );
+	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ), cVectNew( mWindow->getWidth(), 0 ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
 	shape->Layers( NOT_GRABABLE_MASK );
 
-	Float hw = mWindow->GetWidth() / 2;
+	Float hw = mWindow->getWidth() / 2;
 
 	for(int i=0; i<14; i++){
 		for(int j=0; j<=i; j++){
@@ -1623,7 +1623,7 @@ void EETest::Demo1Create() {
 	cpFloat radius = 15.0f;
 
 	body = mSpace->AddBody( Body::New( 10.0f, Moment::ForCircle( 10.0f, 0.0f, radius, cVectZero ) ) );
-	body->Pos( cVectNew( hw, mWindow->GetHeight() - radius - 5 ) );
+	body->Pos( cVectNew( hw, mWindow->getHeight() - radius - 5 ) );
 
 	//shape = mSpace->AddShape( ShapeCircleSprite::New( body, radius, cVectZero, mCircleSprite ) );
 	shape = mSpace->AddShape( ShapeCircle::New( body, radius, cVectZero ) );
@@ -1720,7 +1720,7 @@ void EETest::Demo2Create() {
 
 	emitterInstance.queue = 5;
 	emitterInstance.blocked = 0;
-	emitterInstance.position = cVectNew( mWindow->GetWidth() / 2 , 150);
+	emitterInstance.position = cVectNew( mWindow->getWidth() / 2 , 150);
 
 	shape = mSpace->AddShape( ShapeCircle::New( statiBody, 15.0f, emitterInstance.position ) );
 	shape->Sensor( 1 );
@@ -1807,15 +1807,15 @@ void EETest::PhysicsCreate() {
 
 void EETest::PhysicsUpdate() {
 	#ifndef EE_PLATFORM_TOUCH
-	mMousePoint = cVectNew( KM->GetMousePosf().x, KM->GetMousePosf().y );
+	mMousePoint = cVectNew( KM->getMousePosf().x, KM->getMousePosf().y );
 	cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last ), tocpv( mMousePoint ), 0.25 ) );
 	mMouseBody->Pos( newPoint );
 	mMouseBody->Vel( ( newPoint - mMousePoint_last ) * (cpFloat)mWindow->FPS() );
 	mMousePoint_last = newPoint;
 
-	if ( KM->MouseLeftPressed() ) {
+	if ( KM->mouseLeftPressed() ) {
 		if ( NULL == mMouseJoint ) {
-			cVect point = cVectNew( KM->GetMousePosf().x, KM->GetMousePosf().y );
+			cVect point = cVectNew( KM->getMousePosf().x, KM->getMousePosf().y );
 
 			Shape * shape = mSpace->PointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
 

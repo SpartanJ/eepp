@@ -7,7 +7,7 @@ CursorNull::CursorNull( Texture * tex, const Vector2i& hotspot, const std::strin
 {
 }
 
-CursorNull::CursorNull( Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
+CursorNull::CursorNull( getImage * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
 	Cursor( img, hotspot, name, window )
 {
 }
@@ -17,7 +17,7 @@ CursorNull::CursorNull( const std::string& path, const Vector2i& hotspot, const 
 {
 }
 
-void CursorNull::Create() {
+void CursorNull::create() {
 }
 
 }}}}

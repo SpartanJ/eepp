@@ -9,37 +9,37 @@ JoystickManager::JoystickManager() :
 	for ( Uint32 i = 0; i < MAX_JOYSTICKS; i++ )
 		mJoysticks[i] = NULL;
 
-	Open();
+	open();
 }
 
 JoystickManager::~JoystickManager() {
-	for ( Uint32 i = 0; i < Count(); i++ )
+	for ( Uint32 i = 0; i < count(); i++ )
 		eeSAFE_DELETE( mJoysticks[i] );
 
-	Close();
+	close();
 }
 
-Uint32 JoystickManager::Count() {
+Uint32 JoystickManager::count() {
 	return mCount;
 }
 
-Joystick * JoystickManager::GetJoystick( const Uint32& index ) {
+Joystick * JoystickManager::getJoystick( const Uint32& index ) {
 	if ( index < MAX_JOYSTICKS )
 		return mJoysticks[ index ];
 
 	return NULL;
 }
 
-void JoystickManager::Rescan() {
-	Close();
+void JoystickManager::rescan() {
+	close();
 
-	Open();
+	open();
 }
 
-void JoystickManager::Close() {
+void JoystickManager::close() {
 }
 
-void JoystickManager::Open() {
+void JoystickManager::open() {
 }
 
 }}

@@ -1,14 +1,10 @@
-#include <eepp/window/backend/SDL/clipboardsdl.hpp>
+#include <eepp/config.hpp>
 
 #ifdef EE_BACKEND_SDL_1_2
 
-#include <eepp/window/backend/SDL/windowsdl.hpp>
-#include <climits>
-
-#if !defined( EE_COMPILER_MSVC )
-#include <SDL/SDL.h>
-#else
-#include <SDL.h>
+#if defined( EE_X11_PLATFORM )
+	#include <X11/Xlib.h>
+	#include <X11/Xatom.h>
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
@@ -19,6 +15,16 @@
 	#endif
 #endif
 
+#include <eepp/window/backend/SDL/clipboardsdl.hpp>
+#include <eepp/window/backend/SDL/windowsdl.hpp>
+#include <climits>
+
+#if !defined( EE_COMPILER_MSVC )
+#include <SDL/SDL.h>
+#else
+#include <SDL.h>
+#endif
+
 #if EE_PLATFORM == EE_PLATFORM_WIN
 	#ifndef WIN32_LEAN_AND_MEAN
 		#define WIN32_LEAN_AND_MEAN
@@ -27,9 +33,6 @@
 		#define NOMINMAX
 	#endif
 	#include <windows.h>
-#elif defined( EE_X11_PLATFORM )
-	#include <X11/Xlib.h>
-	#include <X11/Xatom.h>
 #endif
 
 namespace EE { namespace Window { namespace Backend { namespace SDL {
@@ -105,13 +108,13 @@ ClipboardSDL::ClipboardSDL( EE::Window::Window * window ) :
 ClipboardSDL::~ClipboardSDL() {
 }
 
-void ClipboardSDL::Init() {
+void ClipboardSDL::init() {
 	#if defined( EE_X11_PLATFORM )
 	/// Enable the special window hook events
 	SDL_EventState( SDL_SYSWMEVENT, SDL_ENABLE );
 	SDL_SetEventFilter( clipboard_filter );
 
-	CurrentHandler = (void*)mWindow->GetWindowHandler();
+	CurrentHandler = (void*)mWindow->getWindowHandler();
 	#endif
 
 	#if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
@@ -127,7 +130,7 @@ void ClipboardSDL::Init() {
 #endif
 #endif
 
-void ClipboardSDL::SetText( const std::string& Text ) {
+void ClipboardSDL::setText( const std::string& Text ) {
 	#if defined( EE_X11_PLATFORM )
 	eeWindowHandle display	= mInfo->info.x11.display;
 	X11Window window		= mInfo->info.x11.wmwindow;
@@ -206,7 +209,7 @@ eeScrapType ClipboardSDL::clipboard_convert_format( int type ) {
 			#endif
 		default: {
 			char format[ sizeof(FORMAT_PREFIX)+8+1 ];
-			String::StrFormat(format, sizeof(FORMAT_PREFIX)+8+1, "%s%08lx", FORMAT_PREFIX, (unsigned long)type);
+			String::strFormat(format, sizeof(FORMAT_PREFIX)+8+1, "%s%08lx", FORMAT_PREFIX, (unsigned long)type);
 
 			#if defined( EE_X11_PLATFORM )
 			return XInternAtom( mInfo->info.x11.display, format, False );
@@ -300,7 +303,7 @@ void ClipboardSDL::clipboard_get_scrap( int type, int *dstlen, char **dst ) {
 #endif
 }
 
-std::string ClipboardSDL::GetText() {
+std::string ClipboardSDL::getText() {
 	std::string tStr;
 
 	#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN
@@ -329,7 +332,7 @@ std::string ClipboardSDL::GetText() {
 	return tStr;
 }
 
-String ClipboardSDL::GetWideText() {
+String ClipboardSDL::getWideText() {
 	String tStr;
 
 	#if defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_WIN

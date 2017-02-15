@@ -909,7 +909,7 @@ void MapEditor::FileMenuClick( const UIEvent * Event ) {
 		MsgBox->Show();
 	} else if ( "Quit" == txt ) {
 		if ( mUIWindow == UIManager::instance()->MainControl() ) {
-			UIManager::instance()->GetWindow()->Close();
+			UIManager::instance()->GetWindow()->close();
 		} else {
 			mUIWindow->CloseWindow();
 		}
@@ -1247,7 +1247,7 @@ void MapEditor::AddGameObject() {
 
 		Vector2i p( tMap->GetMouseMapPos() );
 
-		if ( UIManager::instance()->GetInput()->IsKeyDown( KEY_LCTRL ) ) {
+		if ( UIManager::instance()->GetInput()->isKeyDown( KEY_LCTRL ) ) {
 			p = tMap->GetMouseTilePosCoords();
 		}
 

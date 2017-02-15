@@ -17,19 +17,19 @@ namespace EE { namespace Window { namespace Platform {
 CursorWin::CursorWin( Texture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
 	Cursor( tex, hotspot, name, window )
 {
-	Create();
+	create();
 }
 
 CursorWin::CursorWin( Graphics::Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
 	Cursor( img, hotspot, name, window )
 {
-	Create();
+	create();
 }
 
 CursorWin::CursorWin( const std::string& path, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
 	Cursor( path, hotspot, name, window )
 {
-	Create();
+	create();
 }
 
 CursorWin::~CursorWin() {
@@ -128,7 +128,7 @@ static void local_draw_to_hdc( HDC dc, Image * bitmap, int x, int y ) {
 	local_stretch_blit_to_hdc(bitmap, dc, 0, 0, w, h, x, y, w, h);
 }
 
-void CursorWin::Create() {
+void CursorWin::create() {
 	if ( NULL == mImage && mImage->MemSize() )
 		return;
 
@@ -153,7 +153,7 @@ void CursorWin::Create() {
 	}
 
 	/* Create bitmap */
-	h_dc = GetDC( GetPlatform()->GetHandler() );
+	h_dc = GetDC( getPlatform()->getHandler() );
 	h_xor_dc = CreateCompatibleDC(h_dc);
 	h_and_dc = CreateCompatibleDC(h_dc);
 
@@ -192,7 +192,7 @@ void CursorWin::Create() {
 	SelectObject(h_xor_dc, hOldXorMaskBitmap);
 	DeleteDC(h_and_dc);
 	DeleteDC(h_xor_dc);
-	ReleaseDC( GetPlatform()->GetHandler() , h_dc );
+	ReleaseDC( getPlatform()->getHandler() , h_dc );
 
 	iconinfo.fIcon = false;
 	iconinfo.xHotspot = mHotSpot.x;
@@ -208,11 +208,11 @@ void CursorWin::Create() {
 	mCursor = (void*)icon;
 }
 
-WinImpl * CursorWin::GetPlatform() {
-	return reinterpret_cast<WinImpl*>( mWindow->GetPlatform() );
+WinImpl * CursorWin::getPlatform() {
+	return reinterpret_cast<WinImpl*>( mWindow->getPlatform() );
 }
 
-void * CursorWin::GetCursor() const {
+void * CursorWin::getCursor() const {
 	return mCursor;
 }
 

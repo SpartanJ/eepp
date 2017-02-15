@@ -1,11 +1,18 @@
-#include <eepp/window/backend/SFML/windowsfml.hpp>
+#include <eepp/config.hpp>
 
 #ifdef EE_BACKEND_SFML_ACTIVE
 
 #if defined( EE_X11_PLATFORM )
 	#include <X11/Xlib.h>
 #endif
+
 #undef None
+
+#endif
+
+#include <eepp/window/backend/SFML/windowsfml.hpp>
+
+#ifdef EE_BACKEND_SFML_ACTIVE
 
 #include <SFML/Graphics.hpp>
 

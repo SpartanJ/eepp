@@ -20,36 +20,36 @@ class EE_API Engine {
 		/** Creates a new window.
 		* SDL2, SFML backends support more than one window creation, SDL 1.2 backend only 1 window.
 		*/
-		EE::Window::Window * CreateWindow( WindowSettings Settings, ContextSettings Context = ContextSettings() );
+		EE::Window::Window * createWindow( WindowSettings Settings, ContextSettings Context = ContextSettings() );
 
 		/** Destroy the window instance, and set as current other window running ( if any ).
 		* This function is only useful for multi-window environment. Avoid using it with one window context.
 		*/
-		void DestroyWindow( EE::Window::Window * window );
+		void destroyWindow( EE::Window::Window * window );
 
 		/** @return The current Window context. */
-		EE::Window::Window * GetCurrentWindow() const;
+		EE::Window::Window * getCurrentWindow() const;
 
 		/** Set the window as the current. */
-		void SetCurrentWindow( EE::Window::Window * window );
+		void setCurrentWindow( EE::Window::Window * window );
 
 		/** @return The number of windows created. */
-		Uint32	GetWindowCount() const;
+		Uint32	getWindowCount() const;
 
 		/** @return If any window is created. */
-		bool Running() const;
+		bool isRunning() const;
 
 		/** @return The current window elapsed time. */
-		Time Elapsed() const;
+		Time elapsed() const;
 
 		/** @return The current window width. */
-		const Uint32& GetWidth() const;
+		const Uint32& getWidth() const;
 
 		/** @return The current window height */
-		const Uint32& GetHeight() const;
+		const Uint32& getHeight() const;
 
 		/** @return If the window instance is inside the window list. */
-		bool ExistsWindow( EE::Window::Window * window );
+		bool existsWindow( EE::Window::Window * window );
 
 		/** Constructs WindowSettings from an ini file
 		It will search for the following properties:
@@ -65,7 +65,7 @@ class EE_API Engine {
 			@param iniPath The ini file path
 			@param iniKeyName The ini key name to search the properties
 		*/
-		WindowSettings CreateWindowSettings( std::string iniPath, std::string iniKeyName = "EEPP" );
+		WindowSettings createWindowSettings( std::string iniPath, std::string iniKeyName = "EEPP" );
 
 		/** Constructs WindowSettings from an ini file instance
 		It will search for the following properties:
@@ -81,7 +81,7 @@ class EE_API Engine {
 			@param ini The ini file instance
 			@param iniKeyName The ini key name to search the properties
 		*/
-		WindowSettings CreateWindowSettings( IniFile * ini, std::string iniKeyName = "EEPP" );
+		WindowSettings createWindowSettings( IniFile * ini, std::string iniKeyName = "EEPP" );
 
 		/** Constructs ContextSettings from an ini file\n
 		It will search for the following properties:
@@ -94,7 +94,7 @@ class EE_API Engine {
 			@param iniPath The ini file path
 			@param iniKeyName The ini key name to search the properties
 		*/
-		ContextSettings CreateContextSettings( std::string iniPath, std::string iniKeyName = "EEPP" );
+		ContextSettings createContextSettings( std::string iniPath, std::string iniKeyName = "EEPP" );
 
 		/** Constructs ContextSettings from an ini file instance\n
 		It will search for the following properties:
@@ -107,24 +107,24 @@ class EE_API Engine {
 			@param ini The ini file instance
 			@param iniKeyName The ini key name to search the properties
 		*/
-		ContextSettings CreateContextSettings( IniFile * ini, std::string iniKeyName = "EEPP" );
+		ContextSettings createContextSettings( IniFile * ini, std::string iniKeyName = "EEPP" );
 
 		/** Enabling Shared GL Context allows asynchronous OpenGL resource loading ( only if is supported by the backend and the OS, SDL 2 backend is the only one supported ).
 		**	If the TextureLoader is threaded, will upload the texture in another thread to the GPU. So, it will not block the main rendering thread.
 		**	Shared GL Context is disabled by default.
 		*/
-		void EnableSharedGLContext();
+		void enableSharedGLContext();
 
 		/** Disable the Shared GL Context
 		**	@see EnableSharedGLContext()
 		*/
-		void DisableSharedGLContext();
+		void disableSharedGLContext();
 
 		/** @return If the Shared GL Context is enabled and ready to use. */
-		bool IsSharedGLContextEnabled();
+		bool isSharedGLContextEnabled();
 
 		/** @return The id of the thread that was used to initialize the OpenGL Context. */
-		Uint32 GetMainThreadId();
+		Uint32 getMainThreadId();
 	protected:
 		friend class Window;
 
@@ -136,23 +136,23 @@ class EE_API Engine {
 
 		Engine();
 
-		void Destroy();
+		void destroy();
 
-		Backend::WindowBackend * CreateSDLBackend( const WindowSettings& Settings );
+		Backend::WindowBackend * createSDLBackend( const WindowSettings& Settings );
 
-		Backend::WindowBackend * CreateSDL2Backend( const WindowSettings& Settings );
+		Backend::WindowBackend * createSDL2Backend( const WindowSettings& Settings );
 
-		Backend::WindowBackend * CreateSFMLBackend( const WindowSettings& Settings );
+		Backend::WindowBackend * createSFMLBackend( const WindowSettings& Settings );
 
-		EE::Window::Window * CreateSDLWindow( const WindowSettings& Settings, const ContextSettings& Context );
+		EE::Window::Window * createSDLWindow( const WindowSettings& Settings, const ContextSettings& Context );
 
-		EE::Window::Window * CreateSDL2Window( const WindowSettings& Settings, const ContextSettings& Context );
+		EE::Window::Window * createSDL2Window( const WindowSettings& Settings, const ContextSettings& Context );
 
-		EE::Window::Window * CreateSFMLWindow( const WindowSettings& Settings, const ContextSettings& Context );
+		EE::Window::Window * createSFMLWindow( const WindowSettings& Settings, const ContextSettings& Context );
 
-		EE::Window::Window * CreateDefaultWindow( const WindowSettings& Settings, const ContextSettings& Context );
+		EE::Window::Window * createDefaultWindow( const WindowSettings& Settings, const ContextSettings& Context );
 
-		Uint32 GetDefaultBackend() const;
+		Uint32 getDefaultBackend() const;
 };
 
 }}

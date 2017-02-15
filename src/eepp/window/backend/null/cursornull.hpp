@@ -11,13 +11,13 @@ class CursorNull : public Cursor {
 	protected:
 		friend class CursorManagerNull;
 
-		CursorNull( Texture * tex, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
+		CursorNull( Texture * tex, const Vector2i& hotspot, const std::string& getName, EE::Window::Window * window );
 
-		CursorNull( Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
+		CursorNull( getImage * img, const Vector2i& hotspot, const std::string& getName, EE::Window::Window * window );
 
-		CursorNull( const std::string& path, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
+		CursorNull( const std::string& path, const Vector2i& hotspot, const std::string& getName, EE::Window::Window * window );
 
-		void Create();
+		void create();
 };
 
 }}}}

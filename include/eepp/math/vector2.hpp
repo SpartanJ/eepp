@@ -72,7 +72,7 @@ class Vector2 {
 		T distanceSq( const Vector2<T>& Vec );
 
 		/** @return True if the distance between the two vectors is less than Dist */
-		bool near( const Vector2<T>& Vec, T Dist );
+		bool nearDist( const Vector2<T>& Vec, T Dist );
 
 		/** @return The spherical linear interpolation between two 2D vectors. */
 		Vector2<T> sphericalLerp( const Vector2<T>& Vec, T Time );
@@ -396,7 +396,7 @@ void Vector2<T>::clamp( T len ) {
 }
 
 template <typename T>
-bool Vector2<T>::near( const Vector2<T>& Vec, T Dist ) {
+bool Vector2<T>::nearDist( const Vector2<T>& Vec, T Dist ) {
 	return 0 != ( distanceSq( Vec ) < Dist * Dist );
 }
 

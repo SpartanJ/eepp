@@ -23,7 +23,7 @@ using namespace EE::Graphics;
 namespace EE { namespace Gaming {
 
 TileMap::TileMap() :
-	mWindow( Engine::instance()->GetCurrentWindow() ),
+	mWindow( Engine::instance()->getCurrentWindow() ),
 	mLayers( NULL ),
 	mFlags( 0 ),
 	mMaxLayers( 0 ),
@@ -90,7 +90,7 @@ void TileMap::Create( Sizei Size, Uint32 MaxLayers, Sizei TileSize, Uint32 Flags
 	mWindow		= Window;
 
 	if ( NULL == mWindow )
-		mWindow	= Engine::instance()->GetCurrentWindow();
+		mWindow	= Engine::instance()->getCurrentWindow();
 
 	mFlags		= Flags;
 	mMaxLayers	= MaxLayers;
@@ -214,7 +214,7 @@ void TileMap::Draw() {
 	GlobalBatchRenderer::instance()->Draw();
 
 	if ( ClipedArea() ) {
-		mWindow->ClipEnable( mScreenPos.x, mScreenPos.y, mViewSize.x, mViewSize.y );
+		mWindow->clipEnable( mScreenPos.x, mScreenPos.y, mViewSize.x, mViewSize.y );
 	}
 
 	if ( DrawBackground() ) {
@@ -252,7 +252,7 @@ void TileMap::Draw() {
 	GLi->LoadMatrixf( oldM );
 
 	if ( ClipedArea() ) {
-		mWindow->ClipDisable();
+		mWindow->clipDisable();
 	}
 }
 
@@ -316,7 +316,7 @@ const bool& TileMap::IsMouseOver() const {
 }
 
 void TileMap::GetMouseOverTile() {
-	Vector2i mouse = mWindow->GetInput()->GetMousePos();
+	Vector2i mouse = mWindow->getInput()->getMousePos();
 
 	Vector2i MapPos( static_cast<Float>( mouse.x - mScreenPos.x - mOffset.x ) / mScale, static_cast<Float>( mouse.y - mScreenPos.y - mOffset.y ) / mScale );
 

@@ -21,117 +21,117 @@ class EE_API Input {
 		virtual ~Input();
 
 		/** Update the Input */
-		virtual void Update() = 0;
+		virtual void update() = 0;
 
 		/** @return If the mouse and keyboard are grabed. */
-		virtual bool GrabInput() = 0;
+		virtual bool grabInput() = 0;
 
 		/** Grab or Ungrab the mouse and keyboard. */
-		virtual void GrabInput( const bool& Grab ) = 0;
+		virtual void grabInput( const bool& Grab ) = 0;
 
 		/** Inject the mouse position given */
-		virtual void InjectMousePos( const Uint16& x, const Uint16& y ) = 0;
+		virtual void injectMousePos( const Uint16& x, const Uint16& y ) = 0;
 
 		/** @return If keyboard key was released */
-		bool IsKeyUp( const EE_KEY& Key );
+		bool isKeyUp( const EE_KEY& Key );
 
 		/** @return If keyboard key it's pressed */
-		bool IsKeyDown( const EE_KEY& Key );
+		bool isKeyDown( const EE_KEY& Key );
 
 		/** Inject the key state of a key as KEY UP or RELEASE */
-		void InjectKeyUp( const EE_KEY& Key );
+		void injectKeyUp( const EE_KEY& Key );
 
 		/** Inject the key state of a key as KEY DOWN or PRESSED */
-		void InjectKeyDown( const EE_KEY& Key );
+		void injectKeyDown( const EE_KEY& Key );
 
 		/** Inject the mouse position given */
-		void InjectMousePos( const Vector2i& Pos );
+		void injectMousePos( const Vector2i& Pos );
 
 		/** Inject the mouse button as pressed */
-		void InjectButtonPress( const Uint32& Button );
+		void injectButtonPress( const Uint32& Button );
 
 		/** Inject the mouse button as released */
-		void InjectButtonRelease( const Uint32& Button );
+		void injectButtonRelease( const Uint32& Button );
 
 		/** @return If the Control Key is pressed */
-		bool ControlPressed() const;
+		bool controlPressed() const;
 
 		/** @return If the Shift Key is pressed */
-		bool ShiftPressed() const;
+		bool shiftPressed() const;
 
 		/** @return If the Alt Key is pressed */
-		bool AltPressed() const;
+		bool altPressed() const;
 
 		/** @return If the Meta Key is pressed */
-		bool MetaPressed() const;
+		bool metaPressed() const;
 
 		/** @return If mouse left button it's pressed */
-		bool MouseLeftPressed() const;
+		bool mouseLeftPressed() const;
 
 		/** @return If mouse right button it's pressed */
-		bool MouseRightPressed() const;
+		bool mouseRightPressed() const;
 
 		/** @return If mouse middle button it's pressed */
-		bool MouseMiddlePressed() const;
+		bool mouseMiddlePressed() const;
 
 		/** @return If mouse left click was clicked */
-		bool MouseLeftClick() const;
+		bool mouseLeftClick() const;
 
 		/** @return If mouse right click was clicked */
-		bool MouseRightClick() const;
+		bool mouseRightClick() const;
 
 		/** @return If mouse middle button (scroll button) was clicked. */
-		bool MouseMiddleClick() const;
+		bool mouseMiddleClick() const;
 
 		/** @return If mouse left click was double clicked */
-		bool MouseLeftDoubleClick() const;
+		bool mouseLeftDoubleClick() const;
 
 		/** @return If mouse right click was double clicked */
-		bool MouseRightDoubleClick() const;
+		bool mouseRightDoubleClick() const;
 
 		/** @return If mouse middle button (scroll button) was double clicked. */
-		bool MouseMiddleDoubleClick() const;
+		bool mouseMiddleDoubleClick() const;
 
 		/** @return If mouse wheel up scrolled */
-		bool MouseWheelUp() const;
+		bool mouseWheelUp() const;
 
 		/** @return If mouse wheel down scrolled */
-		bool MouseWheelDown() const;
+		bool mouseWheelDown() const;
 
 		/** Push a new input callback.
 		* @return The Callback Id
 		*/
-		Uint32 PushCallback( const InputCallback& cb );
+		Uint32 pushCallback( const InputCallback& cb );
 
 		/** Pop the callback id indicated. */
-		void PopCallback( const Uint32& CallbackId );
+		void popCallback( const Uint32& CallbackId );
 
 		/** @return The Mouse position vector */
-		Vector2i GetMousePos() const;
+		Vector2i getMousePos() const;
 
 		/** @return The position vector converted to float */
-		Vector2f GetMousePosf();
+		Vector2f getMousePosf();
 
 		/** This will change the value of the mouse pos, will not REALLY move the mouse ( for that is InjectMousePos ). */
-		void SetMousePos( const Vector2i& Pos );
+		void setMousePos( const Vector2i& Pos );
 
 		/** @return The mouse position over the current view */
-		Vector2i GetMousePosFromView( const View& View );
+		Vector2i getMousePosFromView( const View& View );
 
 		/** @return The Mouse X axis position */
-		Uint16 MouseX() const;
+		Uint16 mouseX() const;
 
 		/** @return The Mouse Y axis position */
-		Uint16 MouseY() const;
+		Uint16 mouseY() const;
 
 		/** Set the mouse speed ( only affects grabed windows ) */
-		void MouseSpeed( const Float& Speed );
+		void mouseSpeed( const Float& Speed );
 
 		/** @return The Mouse Speed */
-		const Float& MouseSpeed() const;
+		const Float& mouseSpeed() const;
 
 		/** @return The bitflags of the last pressed trigger (before the current state of press trigger) */
-		const Uint32& LastPressTrigger() const;
+		const Uint32& lastPressTrigger() const;
 
 		/** @return The current state as flags of the mouse press trigger
 			@brief 	Triggers are used mostly for the UI components. They are simple to manage.
@@ -139,52 +139,52 @@ class EE_API Input {
 			For Example The usage is simple, to know if the left mouse click is pressed you need to check against the left mouse flag mask
 					 if ( myInput->PressTrigger() & EE_BUTTON_LMASK ) ...
 		*/
-		const Uint32& PressTrigger() const;
+		const Uint32& pressTrigger() const;
 
 		/** @return The current state as flags of the mouse release trigger */
-		const Uint32& ReleaseTrigger() const;
+		const Uint32& releaseTrigger() const;
 
 		/** @return The current state as flags of the mouse click trigger */
-		const Uint32& ClickTrigger() const;
+		const Uint32& clickTrigger() const;
 
 		/** @return The current state as flags of the mouse double click trigger */
-		const Uint32& DoubleClickTrigger() const;
+		const Uint32& doubleClickTrigger() const;
 
 		/** @return The double click interval in milliseconds ( default 500 ms ) */
-		const Uint32& DoubleClickInterval() const;
+		const Uint32& doubleClickInterval() const;
 
 		/** Set the double click interval in milliseconds */
-		void DoubleClickInterval( const Uint32& Interval );
+		void doubleClickInterval( const Uint32& Interval );
 
 		/** Clean the keyboard and mouse states */
-		void CleanStates();
+		void cleanStates();
 		
 		/** Send an input event to the window */
-		void SendEvent( InputEvent * Event );
+		void sendEvent( InputEvent * Event );
 		
 		/** @return The joystick manager */
-		JoystickManager * GetJoystickManager() const;
+		JoystickManager * getJoystickManager() const;
 
 		/** @return The maximun number of fingers */
-		Uint32 GetFingerCount();
+		Uint32 getFingerCount();
 
 		/** @return The input finger from it's index */
-		InputFinger * GetFingerIndex( const Uint32& Index );
+		InputFinger * getFingerIndex( const Uint32& Index );
 
 		/** @return The Input Finder from it's id */
-		InputFinger * GetFinger( const Int64& fingerId );
+		InputFinger * getFinger( const Int64& fingerId );
 
 		/** @return A list of the input finders that are currently down */
-		std::list<InputFinger *> GetFingersDown();
+		std::list<InputFinger *> getFingersDown();
 
 		/** @return A list of the input finders that were down in the last update */
-		std::list<InputFinger *> GetFingersWasDown();
+		std::list<InputFinger *> getFingersWasDown();
 	protected:
 		friend class Window;
 		
 		Input( EE::Window::Window * window, JoystickManager * joystickmanager );
 		
-		virtual void Init() = 0;
+		virtual void init() = 0;
 
 		EE::Window::Window *	mWindow;
 		JoystickManager * mJoystickManager;
@@ -212,11 +212,11 @@ class EE_API Input {
 		
 		std::map<Uint32, InputCallback> mCallbacks;
 		
-		void ProcessEvent( InputEvent * Event );
+		void processEvent( InputEvent * Event );
 
-		InputFinger * GetFingerId( const Int64& fingerId );
+		InputFinger * getFingerId( const Int64& fingerId );
 
-		void ResetFingerWasDown();
+		void resetFingerWasDown();
 };
 
 }}

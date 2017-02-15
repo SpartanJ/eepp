@@ -23,9 +23,9 @@ ColorAf * colors			= eeNewArray( ColorAf, ParticlesNum );
 
 void videoResize( EE::Window::Window * w ) {
 	/// Video Resize event will re-setup the 2D projection and states, so we must rebuild them.
-	aspectRatio	= (Float)win->GetWidth()	/ (Float)win->GetHeight();
-	tw			= (Float)win->GetWidth()	/ 2;
-	th			= (Float)win->GetHeight()	/ 2;
+	aspectRatio	= (Float)win->getWidth()	/ (Float)win->getHeight();
+	tw			= (Float)win->getWidth()	/ 2;
+	th			= (Float)win->getHeight()	/ 2;
 
 	float fieldOfView	= 30.0;
 	float nearPlane	= 1.0;
@@ -93,31 +93,31 @@ using namespace Demo_ExternalShader;
 
 void MainLoop()
 {
-	win->Clear();
+	win->clear();
 
-	imp->Update();
+	imp->update();
 
-	if ( imp->IsKeyDown( KEY_ESCAPE ) )
+	if ( imp->isKeyDown( KEY_ESCAPE ) )
 	{
-		win->Close();
+		win->close();
 	}
 
-	if ( imp->IsKeyUp( KEY_F ) )
+	if ( imp->isKeyUp( KEY_F ) )
 	{
-		if ( win->Windowed() ) {
-			win->Size( win->GetDesktopResolution().width(), win->GetDesktopResolution().height(), false );
+		if ( win->isWindowed() ) {
+			win->size( win->getDesktopResolution().width(), win->getDesktopResolution().height(), false );
 		} else {
-			win->Size( 960, 640, true );
-			win->Center();
+			win->size( 960, 640, true );
+			win->center();
 		}
 	}
 
 	Float p;
-	Vector2f mf	= imp->GetMousePosf();
+	Vector2f mf	= imp->getMousePosf();
 	Float tratio	= tw / th;
 	Float touchX	= ( mf.x / tw - 1 ) * tratio;
 	Float touchY	= -( mf.y / th - 1 );
-	bool touch		= imp->MouseLeftPressed();
+	bool touch		= imp->mouseLeftPressed();
 
 	for( Uint32 i = 0; i < ParticlesNum; i+=2 )
 	{
@@ -195,24 +195,24 @@ void MainLoop()
 	GLi->DrawArrays( DM_LINES, 0, ParticlesNum );
 
 	/// Stop the simulation if the window is not visible
-	while ( !win->Visible() ) {
-		imp->Update();	/// To get the real state of the window you need to update the window input
+	while ( !win->visible() ) {
+		imp->update();	/// To get the real state of the window you need to update the window input
 		Sys::sleep( 100 ); /// Sleep 100 ms
 	}
 
-	win->Display();
+	win->display();
 }
 
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
-	win = Engine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - External Shaders" ), ContextSettings( true ) );
+	win = Engine::instance()->createWindow( WindowSettings( 960, 640, "eepp - External Shaders" ), ContextSettings( true ) );
 
-	if ( win->Created() )
+	if ( win->created() )
 	{
 		/// This will work without shaders too
 		ShadersSupported = GLi->ShadersSupported();
 
-		imp = win->GetInput();
+		imp = win->getInput();
 
 		/// We really don't need shaders for this, but the purpose of the example is to show how to work with external shaders
 		if ( ShadersSupported ) {
@@ -252,7 +252,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		videoResize( win );
 
 		/// Push a window resize callback the reset the projection when needed
-		win->PushResizeCallback( cb::Make1( &videoResize ) );
+		win->pushResizeCallback( cb::Make1( &videoResize ) );
 
 		Uint32 i;
 
@@ -272,7 +272,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		}
 		#endif
 
-		win->RunMainLoop( &MainLoop );
+		win->runMainLoop( &MainLoop );
 
 		eeSAFE_DELETE_ARRAY( vertices );
 		eeSAFE_DELETE_ARRAY( velocities );

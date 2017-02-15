@@ -20,7 +20,7 @@ class CursorSDL : public Cursor {
 
 		CursorSDL( const std::string& path, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window );
 
-		void Create();
+		void create();
 };
 
 }}}}

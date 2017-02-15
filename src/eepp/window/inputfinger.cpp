@@ -17,19 +17,19 @@ InputFinger::InputFinger() :
 {	
 }
 
-bool InputFinger::IsDown() {
+bool InputFinger::isDown() {
 	return down;
 }
 
-bool InputFinger::WasDown() {
+bool InputFinger::wasDown() {
 	return was_down;
 }
 
-Vector2i InputFinger::Pos() {
+Vector2i InputFinger::pos() {
 	return Vector2i( x, y );
 }
 
-void InputFinger::WriteLast() {
+void InputFinger::writeLast() {
 	last_x = x;
 	last_y = y;
 	last_pressure = pressure;

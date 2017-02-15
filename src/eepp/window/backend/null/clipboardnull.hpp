@@ -10,17 +10,17 @@ class EE_API ClipboardNull : public Clipboard {
 	public:
 		virtual ~ClipboardNull();
 
-		std::string GetText();
+		std::string getText();
 
-		String GetWideText();
+		String getWideText();
 
-		void SetText( const std::string& Text );
+		void setText( const std::string& Text );
 	protected:
 		friend class WindowNull;
 
 		ClipboardNull( EE::Window::Window * window );
 
-		void Init();
+		void init();
 };
 
 }}}}

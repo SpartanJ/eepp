@@ -262,7 +262,7 @@ void TextureAtlasEditor::FileMenuClick( const UIEvent * Event ) {
 		}
 	} else if ( "Quit" == txt ) {
 		if ( mUIWindow == UIManager::instance()->MainControl() ) {
-			UIManager::instance()->GetWindow()->Close();
+			UIManager::instance()->GetWindow()->close();
 		} else {
 			mUIWindow->CloseWindow();
 		}

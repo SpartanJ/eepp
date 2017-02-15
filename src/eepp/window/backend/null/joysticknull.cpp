@@ -10,28 +10,28 @@ JoystickNull::JoystickNull( const Uint32& index ) :
 JoystickNull::~JoystickNull() {
 }
 
-void JoystickNull::Open() {
+void JoystickNull::open() {
 }
 
-void JoystickNull::Close() {
+void JoystickNull::close() {
 }
 
-void JoystickNull::Update() {
+void JoystickNull::update() {
 }
 
-Uint8 JoystickNull::GetHat( const Int32& index ) {
+Uint8 JoystickNull::getHat( const Int32& index ) {
 	return 0;
 }
 
-Float JoystickNull::GetAxis( const Int32& axis ) {
+Float JoystickNull::getAxis( const Int32& axis ) {
 	return 0;
 }
 
-Vector2i JoystickNull::GetBallMotion( const Int32& ball ) {
+Vector2i JoystickNull::getBallMotion( const Int32& ball ) {
 	return Vector2i();
 }
 
-bool JoystickNull::Plugged() const {
+bool JoystickNull::isPlugged() const {
 	return false;
 }
 

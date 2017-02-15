@@ -8,21 +8,21 @@ CursorSDL::CursorSDL( Texture * tex, const Vector2i& hotspot, const std::string&
 	Cursor( tex, hotspot, name, window ),
 	mCursor( NULL )
 {
-	Create();
+	create();
 }
 
 CursorSDL::CursorSDL( Graphics::Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
 	Cursor( img, hotspot, name, window ),
 	mCursor( NULL )
 {
-	Create();
+	create();
 }
 
 CursorSDL::CursorSDL( const std::string& path, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
 	Cursor( path, hotspot, name, window ),
 	mCursor( NULL )
 {
-	Create();
+	create();
 }
 
 CursorSDL::~CursorSDL() {
@@ -30,7 +30,7 @@ CursorSDL::~CursorSDL() {
 		SDL_FreeCursor( mCursor );
 }
 
-void CursorSDL::Create() {
+void CursorSDL::create() {
 	if ( NULL == mImage )
 		return;
 

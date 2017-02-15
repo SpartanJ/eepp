@@ -19,7 +19,7 @@ CursorSDL::CursorSDL( const std::string& path, const Vector2i& hotspot, const st
 {
 }
 
-void CursorSDL::Create() {
+void CursorSDL::create() {
 }
 
 }}}}

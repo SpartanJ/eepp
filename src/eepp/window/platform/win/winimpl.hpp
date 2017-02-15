@@ -17,43 +17,43 @@ class WinImpl : public PlatformImpl {
 
 		~WinImpl();
 
-		void MinimizeWindow();
+		void minimizeWindow();
 
-		void MaximizeWindow();
+		void maximizeWindow();
 
-		bool IsWindowMaximized();
+		bool isWindowMaximized();
 
-		void HideWindow();
+		void hideWindow();
 
-		void RaiseWindow();
+		void raiseWindow();
 
-		void ShowWindow();
+		void showWindow();
 
-		void MoveWindow( int left, int top );
+		void moveWindow( int left, int top );
 
-		void SetContext( eeWindowContex Context );
+		void setContext( eeWindowContex Context );
 
-		Vector2i Position();
+		Vector2i getPosition();
 
-		void ShowMouseCursor();
+		void showMouseCursor();
 
-		void HideMouseCursor();
+		void hideMouseCursor();
 
-		Cursor * CreateMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name );
+		Cursor * createMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name );
 
-		Cursor * CreateMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name );
+		Cursor * createMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name );
 
-		Cursor * CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name );
+		Cursor * createMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name );
 
-		void SetMouseCursor( Cursor * cursor );
+		void setMouseCursor( Cursor * cursor );
 
-		void SetSystemMouseCursor( EE_SYSTEM_CURSOR syscursor );
+		void setSystemMouseCursor( EE_SYSTEM_CURSOR syscursor );
 
-		void RestoreCursor();
+		void restoreCursor();
 
-		eeWindowHandle GetHandler() const;
+		eeWindowHandle getHandler() const;
 
-		eeWindowContex GetWindowContext();
+		eeWindowContex getWindowContext();
 	protected:
 		eeWindowHandle	mHandler;
 		void *			mCursorCurrent;

@@ -242,7 +242,7 @@ void TextureLoader::start() {
 
 	mTexLoaded = true;
 
-	if ( !mThreaded || ( Engine::instance()->IsSharedGLContextEnabled() && Engine::instance()->GetCurrentWindow()->IsThreadedGLContext() ) ) {
+	if ( !mThreaded || ( Engine::instance()->isSharedGLContextEnabled() && Engine::instance()->getCurrentWindow()->isThreadedGLContext() ) ) {
 		LoadFromPixels();
 	}
 }
@@ -424,13 +424,13 @@ void TextureLoader::LoadFromPixels() {
 			flags = ( mClampMode == CLAMP_REPEAT) ? (flags | SOIL_FLAG_TEXTURE_REPEATS) : flags;
 			flags = ( mCompressTexture ) ? ( flags | SOIL_FLAG_COMPRESS_TO_DXT ) : flags;
 
-			bool ForceGLThreaded = Thread::getCurrentThreadId() != Engine::instance()->GetMainThreadId();
+			bool ForceGLThreaded = Thread::getCurrentThreadId() != Engine::instance()->getMainThreadId();
 
 			if ( ( mThreaded || ForceGLThreaded ) &&
-				 ( ForceGLThreaded || Engine::instance()->IsSharedGLContextEnabled() ) &&
-				 Engine::instance()->GetCurrentWindow()->IsThreadedGLContext() )
+				 ( ForceGLThreaded || Engine::instance()->isSharedGLContextEnabled() ) &&
+				 Engine::instance()->getCurrentWindow()->isThreadedGLContext() )
 			{
-				Engine::instance()->GetCurrentWindow()->SetGLContextThread();
+				Engine::instance()->getCurrentWindow()->setGLContextThread();
 			}
 
 			int PreviousTexture;
@@ -463,10 +463,10 @@ void TextureLoader::LoadFromPixels() {
 			GLi->BindTexture( GL_TEXTURE_2D, PreviousTexture );
 
 			if ( ( mThreaded || ForceGLThreaded ) &&
-				 ( ForceGLThreaded || Engine::instance()->IsSharedGLContextEnabled() ) &&
-				 Engine::instance()->GetCurrentWindow()->IsThreadedGLContext() )
+				 ( ForceGLThreaded || Engine::instance()->isSharedGLContextEnabled() ) &&
+				 Engine::instance()->getCurrentWindow()->isThreadedGLContext() )
 			{
-				Engine::instance()->GetCurrentWindow()->UnsetGLContextThread();
+				Engine::instance()->getCurrentWindow()->unsetGLContextThread();
 			}
 
 			if ( tTexId ) {
@@ -527,7 +527,7 @@ void TextureLoader::LoadFromPixels() {
 }
 
 void TextureLoader::update() {
-	if ( !( Engine::instance()->IsSharedGLContextEnabled() && Engine::instance()->GetCurrentWindow()->IsThreadedGLContext() ) ) {
+	if ( !( Engine::instance()->isSharedGLContextEnabled() && Engine::instance()->getCurrentWindow()->isThreadedGLContext() ) ) {
 		LoadFromPixels();
 	}
 }

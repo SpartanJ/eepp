@@ -1,12 +1,6 @@
-#include <eepp/window/backend/SDL/base.hpp>
+#include <eepp/config.hpp>
 
 #ifdef EE_BACKEND_SDL_1_2
-
-#if !defined( EE_COMPILER_MSVC )
-#include <SDL/SDL.h>
-#else
-#include <SDL.h>
-#endif
 
 #if EE_PLATFORM == EE_PLATFORM_WIN || EE_PLATFORM == EE_PLATFORM_MACOSX || defined( EE_X11_PLATFORM )
 	#if !defined( EE_COMPILER_MSVC )
@@ -14,6 +8,14 @@
 	#else
 		#include <SDL_syswm.h>
 	#endif
+#endif
+
+#include <eepp/window/backend/SDL/base.hpp>
+
+#if !defined( EE_COMPILER_MSVC )
+#include <SDL/SDL.h>
+#else
+#include <SDL.h>
 #endif
 
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
@@ -39,11 +41,11 @@ InputSDL::InputSDL( EE::Window::Window * window ) :
 InputSDL::~InputSDL() {
 }
 
-void InputSDL::Update() {
+void InputSDL::update() {
 	SDL_Event 	SDLEvent;
 	InputEvent 	EEEvent;
 
-	CleanStates();
+	cleanStates();
 
 	while ( SDL_PollEvent( &SDLEvent ) ) {
 		switch( SDLEvent.type ) {
@@ -56,12 +58,12 @@ void InputSDL::Update() {
 			}
 			case SDL_KEYDOWN:
 			{
-				if ( String::IsCharacter( SDLEvent.key.keysym.unicode ) && KEY_TAB != SDLEvent.key.keysym.unicode ) {
+				if ( String::isCharacter( SDLEvent.key.keysym.unicode ) && KEY_TAB != SDLEvent.key.keysym.unicode ) {
 					EEEvent.Type = InputEvent::TextInput;
-					EEEvent.text.timestamp = Sys::GetTicks();
+					EEEvent.text.timestamp = Sys::getTicks();
 					EEEvent.text.text = SDLEvent.key.keysym.unicode;
 
-					ProcessEvent( &EEEvent );
+					processEvent( &EEEvent );
 				}
 
 				EEEvent.Type = InputEvent::KeyDown;
@@ -204,27 +206,27 @@ void InputSDL::Update() {
 		}
 
 		if ( InputEvent::NoEvent != EEEvent.Type ) {
-			ProcessEvent( &EEEvent );
+			processEvent( &EEEvent );
 		}
 	}
 }
 
-bool InputSDL::GrabInput() {
+bool InputSDL::grabInput() {
 	return ( SDL_WM_GrabInput( SDL_GRAB_QUERY ) == SDL_GRAB_ON ) ? true : false;
 }
 
-void InputSDL::GrabInput( const bool& Grab ) {
+void InputSDL::grabInput( const bool& Grab ) {
 	if ( Grab )
 		SDL_WM_GrabInput(SDL_GRAB_ON);
 	else
 		SDL_WM_GrabInput(SDL_GRAB_OFF);
 }
 
-void InputSDL::InjectMousePos( const Uint16& x, const Uint16& y ) {
+void InputSDL::injectMousePos( const Uint16& x, const Uint16& y ) {
 	SDL_WarpMouse( x, y );
 }
 
-void InputSDL::Init() {
+void InputSDL::init() {
 	Vector2if mTempMouse;
 	SDL_GetMouseState( &mTempMouse.x, &mTempMouse.y );
 	mMousePos.x = (int)mTempMouse.x;
@@ -234,7 +236,7 @@ void InputSDL::Init() {
 
 	SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
 
-	mJoystickManager->Open();
+	mJoystickManager->open();
 }
 
 }}}}

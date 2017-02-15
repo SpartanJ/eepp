@@ -26,7 +26,7 @@ class CursorSDL : public Cursor {
 
 		virtual ~CursorSDL();
 
-		void Create();
+		void create();
 };
 
 }}}}

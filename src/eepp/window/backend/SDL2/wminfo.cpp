@@ -26,13 +26,13 @@ WMInfo::~WMInfo() {
 }
 
 #if defined( EE_X11_PLATFORM )
-X11Window WMInfo::GetWindow() {
+X11Window WMInfo::getWindow() {
 	SDL_SysWMinfo * info = static_cast<SDL_SysWMinfo*> ( mWMInfo );
 	return info->info.x11.window;
 }
 #endif
 
-eeWindowHandle WMInfo::GetWindowHandler() {
+eeWindowHandle WMInfo::getWindowHandler() {
 #if EE_PLATFORM == EE_PLATFORM_WIN || defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_MACOSX
 	SDL_SysWMinfo * info = static_cast<SDL_SysWMinfo*> ( mWMInfo );
 #endif

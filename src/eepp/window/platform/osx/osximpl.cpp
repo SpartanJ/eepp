@@ -16,64 +16,64 @@ OSXImpl::OSXImpl( EE::Window::Window * window ) :
 OSXImpl::~OSXImpl() {
 }
 
-void OSXImpl::MinimizeWindow() {
+void OSXImpl::minimizeWindow() {
 }
 
-void OSXImpl::MaximizeWindow() {
+void OSXImpl::maximizeWindow() {
 }
 
-bool OSXImpl::IsWindowMaximized() {
+bool OSXImpl::isWindowMaximized() {
 	return false;
 }
 
-void OSXImpl::HideWindow() {
+void OSXImpl::hideWindow() {
 }
 
-void OSXImpl::RaiseWindow() {
+void OSXImpl::raiseWindow() {
 }
 
-void OSXImpl::ShowWindow() {
+void OSXImpl::showWindow() {
 }
 
-void OSXImpl::MoveWindow( int left, int top ) {
+void OSXImpl::moveWindow( int left, int top ) {
 }
 
-void OSXImpl::SetContext( eeWindowContex Context ) {
+void OSXImpl::setContext( eeWindowContex Context ) {
 	aglSetCurrentContext( Context );
 }
 
-Vector2i OSXImpl::Position() {
+Vector2i OSXImpl::getPosition() {
 	return Vector2i(0,0);
 }
 
-void OSXImpl::ShowMouseCursor() {
+void OSXImpl::showMouseCursor() {
 }
 
-void OSXImpl::HideMouseCursor() {
+void OSXImpl::hideMouseCursor() {
 }
 
-Cursor * OSXImpl::CreateMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
+Cursor * OSXImpl::createMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-Cursor * OSXImpl::CreateMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name ) {
+Cursor * OSXImpl::createMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-Cursor * OSXImpl::CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
+Cursor * OSXImpl::createMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
 	return NULL;
 }
 
-void OSXImpl::SetMouseCursor( Cursor * cursor ) {
+void OSXImpl::setMouseCursor( Cursor * cursor ) {
 }
 
-void OSXImpl::SetSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) {
+void OSXImpl::setSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) {
 }
 
-void OSXImpl::RestoreCursor() {
+void OSXImpl::restoreCursor() {
 }
 
-eeWindowContex OSXImpl::GetWindowContext() {
+eeWindowContex OSXImpl::getWindowContext() {
 	return aglGetCurrentContext();
 }
 

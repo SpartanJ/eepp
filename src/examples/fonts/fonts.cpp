@@ -11,50 +11,50 @@ TextCache * TxtCache	= NULL;
 void MainLoop()
 {
 	// Clear the screen buffer
-	win->Clear();
+	win->clear();
 
 	// Update the input
-	win->GetInput()->Update();
+	win->getInput()->update();
 
 	// Check if ESCAPE key is pressed
-	if ( win->GetInput()->IsKeyDown( KEY_ESCAPE ) ) {
+	if ( win->getInput()->isKeyDown( KEY_ESCAPE ) ) {
 		// Close the window
-		win->Close();
+		win->close();
 	}
 
 	Float YPos = 32;
 
 	// Draw the text on screen
-	TTF->Draw( win->GetWidth() * 0.5f - TTF->GetTextWidth() * 0.5f, YPos );
+	TTF->Draw( win->getWidth() * 0.5f - TTF->GetTextWidth() * 0.5f, YPos );
 
-	TTFO->Draw( win->GetWidth() * 0.5f - TTFO->GetTextWidth() * 0.5f, ( YPos += TTF->GetTextHeight() + 24 ) );
+	TTFO->Draw( win->getWidth() * 0.5f - TTFO->GetTextWidth() * 0.5f, ( YPos += TTF->GetTextHeight() + 24 ) );
 
-	TTF2->Draw( win->GetWidth() * 0.5f - TTF2->GetTextWidth() * 0.5f, ( YPos += TTF->GetTextHeight() + 24 ) );
+	TTF2->Draw( win->getWidth() * 0.5f - TTF2->GetTextWidth() * 0.5f, ( YPos += TTF->GetTextHeight() + 24 ) );
 
-	TexF->Draw( win->GetWidth() * 0.5f - TexF->GetTextWidth() * 0.5f, ( YPos += TTF2->GetTextHeight() + 24 ) );
+	TexF->Draw( win->getWidth() * 0.5f - TexF->GetTextWidth() * 0.5f, ( YPos += TTF2->GetTextHeight() + 24 ) );
 
-	TexF2->Draw( win->GetWidth() * 0.5f - TexF2->GetTextWidth() * 0.5f, ( YPos += TexF->GetTextHeight() + 24 ) );
+	TexF2->Draw( win->getWidth() * 0.5f - TexF2->GetTextWidth() * 0.5f, ( YPos += TexF->GetTextHeight() + 24 ) );
 
 	// Draw the cached text
 	TxtCache->Draw( 48, ( YPos += TexF2->GetTextHeight() + 24 ) );
 
 	// Text rotated and scaled
-	TTF->Draw( win->GetWidth() * 0.5f - TTF->GetTextWidth() * 0.5f, 512, FONT_DRAW_LEFT, Vector2f( 0.75f, 0.75f ), 12.5f );
+	TTF->Draw( win->getWidth() * 0.5f - TTF->GetTextWidth() * 0.5f, 512, FONT_DRAW_LEFT, Vector2f( 0.75f, 0.75f ), 12.5f );
 
 	// Draw frame
-	win->Display();
+	win->display();
 }
 
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	// Create a new window
-	win = Engine::instance()->CreateWindow( WindowSettings( 960, 640, "eepp - Fonts" ), ContextSettings( true ) );
+	win = Engine::instance()->createWindow( WindowSettings( 960, 640, "eepp - Fonts" ), ContextSettings( true ) );
 
 	// Set window background color
-	win->BackColor( RGB(255,255,255) );
+	win->backColor( RGB(255,255,255) );
 
 	// Check if created
-	if ( win->Created() ) {
+	if ( win->created() ) {
 		// Get the application path
 		std::string AppPath = Sys::getProcessPath();
 
@@ -105,7 +105,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		String Txt( "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum." );
 
 		// Make the text fit the screen width ( wrap the text )
-		TTF2->ShrinkText( Txt, win->GetWidth() - 96 );
+		TTF2->ShrinkText( Txt, win->getWidth() - 96 );
 
 		// Create a new text cache to draw on screen
 		// The cached text will
@@ -124,7 +124,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		}
 
 		// Application loop
-		win->RunMainLoop( &MainLoop );
+		win->runMainLoop( &MainLoop );
 	}
 
 	eeSAFE_DELETE( TxtCache );

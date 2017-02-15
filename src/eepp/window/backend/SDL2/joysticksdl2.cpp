@@ -14,14 +14,14 @@ JoystickSDL::JoystickSDL( const Uint32& index ) :
 	Joystick( index ),
 	mJoystick( NULL )
 {
-	Open();
+	open();
 }
 
 JoystickSDL::~JoystickSDL() {
-	Close();
+	close();
 }
 
-void JoystickSDL::Open() {
+void JoystickSDL::open() {
 	mJoystick 	= SDL_JoystickOpen( mIndex );
 
 	if ( NULL != mJoystick ) {
@@ -40,7 +40,7 @@ void JoystickSDL::Open() {
 	}
 }
 
-void JoystickSDL::Close() {
+void JoystickSDL::close() {
 	if( NULL != mJoystick )
 		SDL_JoystickClose( mJoystick );
 
@@ -49,25 +49,25 @@ void JoystickSDL::Close() {
 	mHats = mButtons = mAxes = mBalls = 0;
 }
 
-void JoystickSDL::Update() {
+void JoystickSDL::update() {
 	if ( NULL != mJoystick ) {
-		ClearStates();
+		clearStates();
 
 		for ( Int32 i = 0; i < mButtons; i++ ) {
-			UpdateButton( i, 0 != SDL_JoystickGetButton( mJoystick, i ) );
+			updateButton( i, 0 != SDL_JoystickGetButton( mJoystick, i ) );
 		}
 
 	}
 }
 
-Uint8 JoystickSDL::GetHat( const Int32& index ) {
+Uint8 JoystickSDL::getHat( const Int32& index ) {
 	if ( index >= 0 && index < mHats )
 		return SDL_JoystickGetHat( mJoystick, index );
 
 	return HAT_CENTERED;
 }
 
-Float JoystickSDL::GetAxis( const Int32& axis ) {
+Float JoystickSDL::getAxis( const Int32& axis ) {
 	if ( axis >= 0 && axis < mAxes ) {
 		return (Float)SDL_JoystickGetAxis( mJoystick, axis ) / 32768.f;
 	}
@@ -75,7 +75,7 @@ Float JoystickSDL::GetAxis( const Int32& axis ) {
 	return 0;
 }
 
-Vector2i JoystickSDL::GetBallMotion( const Int32& ball ) {
+Vector2i JoystickSDL::getBallMotion( const Int32& ball ) {
 	Vector2i v;
 
 	if ( ball >= 0 && ball < mBalls )
@@ -84,7 +84,7 @@ Vector2i JoystickSDL::GetBallMotion( const Int32& ball ) {
 	return v;
 }
 
-bool JoystickSDL::Plugged() const {
+bool JoystickSDL::isPlugged() const {
 	return NULL != mJoystick;
 }
 

@@ -8,7 +8,7 @@ Clipboard::Clipboard( EE::Window::Window * window ) :
 
 Clipboard::~Clipboard() {}
 
-EE::Window::Window * Clipboard::GetWindow() const {
+EE::Window::Window * Clipboard::getWindow() const {
 	return mWindow;
 }
 

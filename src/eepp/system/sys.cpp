@@ -515,8 +515,8 @@ static std::string sGetProcessPath() {
 
 	return FileSystem::FileRemoveFileName( std::string( info.name ) );
 #elif EE_PLATFORM == EE_PLATFORM_ANDROID
-	if ( NULL != Window::Engine::instance() && NULL != Window::Engine::instance()->GetCurrentWindow() )
-		return Window::Engine::instance()->GetCurrentWindow()->GetExternalStoragePath();
+	if ( NULL != Window::Engine::instance() && NULL != Window::Engine::instance()->getCurrentWindow() )
+		return Window::Engine::instance()->getCurrentWindow()->getExternalStoragePath();
 
 	return "/sdcard/";
 #else
@@ -627,7 +627,7 @@ std::string Sys::getConfigPath( std::string appname ) {
 		return GetProcessPath() + "config";
 	#elif EE_PLATFORM == EE_PLATFORM_ANDROID
 		if ( NULL != Window::Engine::instance() )
-			return Window::Engine::instance()->GetCurrentWindow()->GetInternalStoragePath();
+			return Window::Engine::instance()->getCurrentWindow()->getInternalStoragePath();
 
 		return std::string();
 	#else
@@ -656,7 +656,7 @@ std::string Sys::getTempPath() {
 		}
 	#elif EE_PLATFORM == EE_PLATFORM_ANDROID
 		if ( NULL != Window::Engine::instance() ) {
-			String::StrCopy( path, Window::Engine::instance()->GetCurrentWindow()->GetInternalStoragePath().c_str(), EE_MAX_CFG_PATH_LEN );
+			String::StrCopy( path, Window::Engine::instance()->getCurrentWindow()->getInternalStoragePath().c_str(), EE_MAX_CFG_PATH_LEN );
 		} else {
 			String::StrCopy( path, "/tmp", EE_MAX_CFG_PATH_LEN );
 		}

@@ -11,17 +11,17 @@ ClipboardNull::ClipboardNull( EE::Window::Window * window ) :
 ClipboardNull::~ClipboardNull() {
 }
 
-void ClipboardNull::Init() {
+void ClipboardNull::init() {
 }
 
-void ClipboardNull::SetText( const std::string& Text ) {
+void ClipboardNull::setText( const std::string& Text ) {
 }
 
-std::string ClipboardNull::GetText() {
+std::string ClipboardNull::getText() {
 	return std::string();
 }
 
-String ClipboardNull::GetWideText() {
+String ClipboardNull::getWideText() {
 	return String();
 }
 

@@ -40,72 +40,72 @@ class PlatformImpl {
 		virtual ~PlatformImpl();
 		
 		/** Minimize the window */
-		virtual void MinimizeWindow() = 0;
+		virtual void minimizeWindow() = 0;
 
 		/** Maximize the window */
-		virtual void MaximizeWindow() = 0;
+		virtual void maximizeWindow() = 0;
 
 		/** @return true if the window is maximized */
-		virtual bool IsWindowMaximized() = 0;
+		virtual bool isWindowMaximized() = 0;
 
 		/** Hide the window */
-		virtual void HideWindow() = 0;
+		virtual void hideWindow() = 0;
 
 		/** Raise the window */
-		virtual void RaiseWindow() = 0;
+		virtual void raiseWindow() = 0;
 
 		/** Show the window */
-		virtual void ShowWindow() = 0;
+		virtual void showWindow() = 0;
 
 		/** Move the window to the desired position
 		* @param left Move to the x-axis position
 		* @param top Move to the y-axis position
 		*/
-		virtual void MoveWindow( int left, int top ) = 0;
+		virtual void moveWindow( int left, int top ) = 0;
 		
 		/** Set the GL context as the current context */
-		virtual void SetContext( eeWindowContex Context ) = 0;
+		virtual void setContext( eeWindowContex Context ) = 0;
 
 		/** @return The current window position */
-		virtual Vector2i Position() = 0;
+		virtual Vector2i getPosition() = 0;
 
 		/** Force to show the mouse cursor */
-		virtual void ShowMouseCursor() = 0;
+		virtual void showMouseCursor() = 0;
 
 		/** Hide the mouse cursor */
-		virtual void HideMouseCursor() = 0;
+		virtual void hideMouseCursor() = 0;
 
 		/** Creates a cursor from a texture
 		* @param tex The texture pointer to use as cursor
 		* @param hotspot The hotspot where the mouse click is taken
 		* @param name The name of the cursor
 		*/
-		virtual Cursor * CreateMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name ) = 0;
+		virtual Cursor * createMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name ) = 0;
 
 		/** Creates a cursor from a image
 		* @param img The image path
 		* @param hotspot The hotspot where the mouse click is taken
 		* @param name The name of the cursor
 		*/
-		virtual Cursor * CreateMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name ) = 0;
+		virtual Cursor * createMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name ) = 0;
 
 		/** Creates a cursor from a image path
 		* @param path The image pointer to use as cursor
 		* @param hotspot The hotspot where the mouse click is taken
 		* @param name The name of the cursor
 		*/
-		virtual Cursor * CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) = 0;
+		virtual Cursor * createMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) = 0;
 
 		/** Set the the current cursor by its cursor pointer */
-		virtual void SetMouseCursor( Cursor * cursor ) = 0;
+		virtual void setMouseCursor( Cursor * cursor ) = 0;
 
 		/** Set the cursor using a system cursor */
-		virtual void SetSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) = 0;
+		virtual void setSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) = 0;
 
 		/** Force to reset the state of the current seted cursor */
-		virtual void RestoreCursor() = 0;
+		virtual void restoreCursor() = 0;
 
-		virtual eeWindowContex GetWindowContext() = 0;
+		virtual eeWindowContex getWindowContext() = 0;
 	protected:
 		EE::Window::Window *	mWindow;
 };

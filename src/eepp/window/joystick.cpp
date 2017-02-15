@@ -13,25 +13,25 @@ Joystick::Joystick( const Uint32& index ) :
 	mButtonDownLast(0),
 	mButtonUp(0)
 {
-	Open();
+	open();
 }
 
 Joystick::~Joystick() {
-	Close();
+	close();
 }
 
-void Joystick::ReOpen() {
-	Close();
+void Joystick::reOpen() {
+	close();
 
-	Open();
+	open();
 }
 
-void Joystick::ClearStates() {
+void Joystick::clearStates() {
 	mButtonUp		= 0;
 	mButtonDownLast = mButtonDown;
 }
 
-void Joystick::UpdateButton( const Uint32& index, const bool& down ) {
+void Joystick::updateButton( const Uint32& index, const bool& down ) {
 	if ( down ) {
 		mButtonDown |= ( 1 << index );
 	} else {
@@ -44,48 +44,48 @@ void Joystick::UpdateButton( const Uint32& index, const bool& down ) {
 	}
 }
 
-const Int32& Joystick::GetNumHats() const {
+const Int32& Joystick::getNumHats() const {
 	return mHats;
 }
 
-const Int32& Joystick::GetNumButtons() const {
+const Int32& Joystick::getNumButtons() const {
 	return mButtons;
 }
 
-const Int32& Joystick::GetNumAxes() const {
+const Int32& Joystick::getNumAxes() const {
 	return mAxes;
 }
 
-const Int32& Joystick::GetNumBalls() const {
+const Int32& Joystick::getNumBalls() const {
 	return mBalls;
 }
 
-const Uint32& Joystick::GetButtonTrigger() const {
+const Uint32& Joystick::getButtonTrigger() const {
 	return mButtonDown;
 }
 
-const Uint32& Joystick::GetButtonUpTrigger() const {
+const Uint32& Joystick::getButtonUpTrigger() const {
 	return mButtonUp;
 }
 
-bool Joystick::IsButtonDown( const Int32& index ) {
+bool Joystick::isButtonDown( const Int32& index ) {
 	if ( index >= 0 && index < mButtons )
 		return 0 != ( mButtonDown & ( 1 << index ) );
 
 	return false;
 }
 
-bool Joystick::IsButtonUp( const Int32& index ) {
+bool Joystick::isButtonUp( const Int32& index ) {
 	if ( index >= 0 && index < mButtons )
 		return 0 != ( mButtonUp & ( 1 << index ) );
 
 	return false;
 }
 
-void Joystick::Close() {
+void Joystick::close() {
 }
 
-void Joystick::Open() {
+void Joystick::open() {
 }
 
 }}

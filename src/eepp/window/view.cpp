@@ -8,41 +8,41 @@ View::View() : mNeedUpdate(true) {
 	mView.Top = 0;
 	mView.Bottom = 0;
 
-	CalcCenter();
+	calcCenter();
 }
 
 View::View( const int& X, const int& Y, const int& Width, const int& Height ) : mNeedUpdate(true) {
-	SetView( X, Y, Width, Height );
+	setView( X, Y, Width, Height );
 }
 
 View::View( const Recti& View ) : mNeedUpdate(true) {
 	mView = View;
 
-	CalcCenter();
+	calcCenter();
 }
 
 View::~View() {
 }
 
-void View::SetView( const int& X, const int& Y, const int& Width, const int& Height ) {
+void View::setView( const int& X, const int& Y, const int& Width, const int& Height ) {
 	mView.Left = X;
 	mView.Top = Y;
 	mView.Right = Width;
 	mView.Bottom = Height;
-	CalcCenter();
+	calcCenter();
 	mNeedUpdate = true;
 }
 
-void View::CalcCenter() {
+void View::calcCenter() {
 	mCenter.x = ( ( mView.Left + mView.Right ) - mView.Left ) * 0.5f;
 	mCenter.y = ( ( mView.Top + mView.Bottom ) - mView.Top ) * 0.5f;
 }
 
-Vector2i View::Center() const {
+Vector2i View::center() const {
 	return Vector2i( (int)mCenter.x, (Int32)mCenter.y );
 }
 
-void View::Center( const Vector2i& Center ) {
+void View::center( const Vector2i& Center ) {
 	mCenter.x = (Float)Center.x;
 	mCenter.y = (Float)Center.y;
 	mView.Left = static_cast<int> ( mCenter.x - (Float)mView.Right * 0.5f );
@@ -51,19 +51,19 @@ void View::Center( const Vector2i& Center ) {
 	mNeedUpdate = true;
 }
 
-void View::Move( const int& OffsetX, const int& OffsetY ) {
+void View::move( const int& OffsetX, const int& OffsetY ) {
 	mView.Left += OffsetX;
 	mView.Top += OffsetY;
 
-	CalcCenter();
+	calcCenter();
 	mNeedUpdate = true;
 }
 
-void View::Move( const Vector2i& Offset ) {
-	Move( Offset.x, Offset.y );
+void View::move( const Vector2i& Offset ) {
+	move( Offset.x, Offset.y );
 }
 
-void View::Scale( const Vector2f& Factor ) {
+void View::scale( const Vector2f& Factor ) {
 	Vector2f v( mView.Right * 0.5f, mView.Bottom * 0.5f );
 
 	mView.Left = mView.Left + static_cast<int> ( v.x - v.x * Factor.x );
@@ -71,31 +71,31 @@ void View::Scale( const Vector2f& Factor ) {
 	mView.Right = static_cast<Int32>( (Float)mView.Right * Factor.x );
 	mView.Bottom = static_cast<Int32>( (Float)mView.Bottom * Factor.y );
 
-	CalcCenter();
+	calcCenter();
 	mNeedUpdate = true;
 }
 
-void View::Scale( const Float& Factor ) {
-	Scale( Vector2f( Factor, Factor ) );
+void View::scale( const Float& Factor ) {
+	scale( Vector2f( Factor, Factor ) );
 }
 
-void View::SetPosition( const int& X, const int& Y ) {
+void View::setPosition( const int& X, const int& Y ) {
 	mView.Left = X;
 	mView.Top = Y;
 
-	CalcCenter();
+	calcCenter();
 	mNeedUpdate = true;
 }
 
-void View::SetSize( const int& Width, const int& Height ) {
+void View::setSize( const int& Width, const int& Height ) {
 	mView.Right = Width;
 	mView.Bottom = Height;
 
-	CalcCenter();
+	calcCenter();
 	mNeedUpdate = true;
 }
 
-bool View::NeedUpdate() const {
+bool View::needUpdate() const {
 	bool Need = mNeedUpdate;
 
 	if ( Need )

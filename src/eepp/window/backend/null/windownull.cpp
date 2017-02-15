@@ -8,85 +8,85 @@ namespace EE { namespace Window { namespace Backend { namespace Null {
 WindowNull::WindowNull( WindowSettings Settings, ContextSettings Context ) :
 	Window( Settings, Context, eeNew( ClipboardNull, ( this ) ), eeNew( InputNull, ( this ) ), eeNew( CursorManagerNull, ( this ) ) )
 {
-	Create( Settings, Context );
+	create( Settings, Context );
 }
 
 WindowNull::~WindowNull() {
 }
 
-bool WindowNull::Create( WindowSettings Settings, ContextSettings Context ) {
+bool WindowNull::create( WindowSettings Settings, ContextSettings Context ) {
 	return false;
 }
 
-void WindowNull::ToggleFullscreen() {
+void WindowNull::toggleFullscreen() {
 }
 
-void WindowNull::Caption( const std::string& Caption ) {
+void WindowNull::caption( const std::string& Caption ) {
 }
 
-std::string WindowNull::Caption() {
+std::string WindowNull::caption() {
 	return std::string();
 }
 
-bool WindowNull::Icon( const std::string& Path ) {
+bool WindowNull::icon( const std::string& Path ) {
 	return false;
 }
 
-void WindowNull::Minimize() {
+void WindowNull::minimize() {
 }
 
-void WindowNull::Maximize() {
+void WindowNull::maximize() {
 }
 
-void WindowNull::Hide() {
+void WindowNull::hide() {
 }
 
-void WindowNull::Raise() {
+void WindowNull::raise() {
 }
 
-void WindowNull::Show() {
+void WindowNull::show() {
 }
 
-void WindowNull::Position( Int16 Left, Int16 Top ) {
+void WindowNull::position( Int16 Left, Int16 Top ) {
 }
 
-bool WindowNull::Active() {
+bool WindowNull::active() {
 	return true;
 }
 
-bool WindowNull::Visible() {
+bool WindowNull::visible() {
 	return true;
 }
 
-Vector2i WindowNull::Position() {
+Vector2i WindowNull::position() {
 	return Vector2i();
 }
 
-void WindowNull::Size( Uint32 Width, Uint32 Height, bool Windowed ) {
+void WindowNull::size( Uint32 Width, Uint32 Height, bool Windowed ) {
 }
 
-void WindowNull::SwapBuffers() {
+void WindowNull::swapBuffers() {
 }
 
-std::vector<DisplayMode> WindowNull::GetDisplayModes() const {
+std::vector<DisplayMode> WindowNull::getDisplayModes() const {
 	return std::vector<DisplayMode>();
 }
 
-void WindowNull::SetGamma( Float Red, Float Green, Float Blue ) {
+void WindowNull::setGamma( Float Red, Float Green, Float Blue ) {
 }
 
-eeWindowContex WindowNull::GetContext() const {
+eeWindowContex WindowNull::getContext() const {
 	return 0;
 }
 
-void WindowNull::GetMainContext() {
+void WindowNull::getMainContext() {
 }
 
-eeWindowHandle	WindowNull::GetWindowHandler() {
+eeWindowHandle	WindowNull::getWindowHandler() {
 	return 0;
 }
 
-void WindowNull::SetDefaultContext() {
+void WindowNull::setDefaultContext() {
 }
 
 }}}}

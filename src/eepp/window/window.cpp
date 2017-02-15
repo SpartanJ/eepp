@@ -62,35 +62,35 @@ Window::~Window() {
 	eeSAFE_DELETE( mPlatform );
 }
 
-Sizei Window::Size() {
+Sizei Window::size() {
 	return Sizei( mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 }
 
-const Uint32& Window::GetWidth() const {
+const Uint32& Window::getWidth() const {
 	return mWindow.WindowConfig.Width;
 }
 
-const Uint32& Window::GetHeight() const {
+const Uint32& Window::getHeight() const {
 	return mWindow.WindowConfig.Height;
 }
 
-const Sizei& Window::GetDesktopResolution() {
+const Sizei& Window::getDesktopResolution() {
 	return mWindow.DesktopResolution;
 }
 
-void Window::Size( Uint32 Width, Uint32 Height ) {
-	Size( Width, Height, Windowed() );
+void Window::size( Uint32 Width, Uint32 Height ) {
+	size( Width, Height, isWindowed() );
 }
 
-bool Window::Windowed() const {
+bool Window::isWindowed() const {
 	return 0 != !( mWindow.WindowConfig.Style & WindowStyle::Fullscreen );
 }
 
-bool Window::Resizeable() const {
+bool Window::isResizeable() const {
 	return 0 != ( mWindow.WindowConfig.Style & WindowStyle::Resize );
 }
 
-void Window::Set2DProjection( const Uint32& Width, const Uint32& Height ) {
+void Window::set2DProjection( const Uint32& Width, const Uint32& Height ) {
 	GLi->MatrixMode( GL_PROJECTION );
 	GLi->LoadIdentity();
 
@@ -100,39 +100,39 @@ void Window::Set2DProjection( const Uint32& Width, const Uint32& Height ) {
 	GLi->LoadIdentity();
 }
 
-void Window::SetViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height, const bool& UpdateProjectionMatrix ) {
-	GLi->Viewport( x, GetHeight() - ( y + Height ), Width, Height );
+void Window::setViewport( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height, const bool& UpdateProjectionMatrix ) {
+	GLi->Viewport( x, getHeight() - ( y + Height ), Width, Height );
 
 	if ( UpdateProjectionMatrix ) {
-		Set2DProjection( Width, Height );
+		set2DProjection( Width, Height );
 	}
 }
 
-void Window::SetView( const View& View ) {
+void Window::setView( const View& View ) {
 	mCurrentView = &View;
 
-	Recti RView = mCurrentView->GetView();
-	SetViewport( RView.Left, RView.Top, RView.Right, RView.Bottom );
+	Recti RView = mCurrentView->getView();
+	setViewport( RView.Left, RView.Top, RView.Right, RView.Bottom );
 }
 
-const View& Window::GetDefaultView() const {
+const View& Window::getDefaultView() const {
 	return mDefaultView;
 }
 
-const View& Window::GetView() const {
+const View& Window::getView() const {
 	return *mCurrentView;
 }
 
-void Window::CreateView() {
-	mDefaultView.SetView( 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
+void Window::createView() {
+	mDefaultView.setView( 0, 0, mWindow.WindowConfig.Width, mWindow.WindowConfig.Height );
 	mCurrentView = &mDefaultView;
 }
 
-void Window::Setup2D( const bool& KeepView ) {
+void Window::setup2D( const bool& KeepView ) {
 	GLi->PixelStorei( GL_UNPACK_ALIGNMENT, 1 );
 	GLi->PixelStorei( GL_PACK_ALIGNMENT, 1 );
 
-	BackColor( mWindow.BackgroundColor );
+	backColor( mWindow.BackgroundColor );
 
 	GLi->LineSmooth();
 
@@ -144,9 +144,9 @@ void Window::Setup2D( const bool& KeepView ) {
 	}
 
 	if ( !KeepView ) {
-		SetView( mDefaultView );
+		setView( mDefaultView );
 
-		mCurrentView->NeedUpdate();
+		mCurrentView->needUpdate();
 	}
 
 	BlendMode::SetMode( ALPHA_NORMAL, true );
@@ -165,20 +165,20 @@ void Window::Setup2D( const bool& KeepView ) {
 	}
 }
 
-const WindowInfo * Window::GetWindowInfo() const {
+const WindowInfo * Window::getWindowInfo() const {
 	return &mWindow;
 }
 
-void Window::BackColor( const RGB& Color ) {
+void Window::backColor( const RGB& Color ) {
 	mWindow.BackgroundColor = Color;
 	GLi->ClearColor( static_cast<Float>( mWindow.BackgroundColor.r() ) / 255.0f, static_cast<Float>( mWindow.BackgroundColor.g() ) / 255.0f, static_cast<Float>( mWindow.BackgroundColor.b() ) / 255.0f, 255.0f );
 }
 
-const RGB& Window::BackColor() const {
+const RGB& Window::backColor() const {
 	return mWindow.BackgroundColor;
 }
 
-bool Window::TakeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format ) {
+bool Window::takeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format ) {
 	GlobalBatchRenderer::instance()->Draw();
 
 	bool CreateNewFile = false;
@@ -228,23 +228,23 @@ bool Window::TakeScreenshot( std::string filepath, const EE_SAVE_TYPE& Format ) 
 	}
 }
 
-bool Window::Running() const {
+bool Window::isRunning() const {
 	return mWindow.Created;
 }
 
-bool Window::Created() const {
+bool Window::created() const {
 	return mWindow.Created;
 }
 
-void Window::Close() {
+void Window::close() {
 	mWindow.Created = false;
 }
 
-void Window::FrameRateLimit( const Uint32& FrameRateLimit ) {
+void Window::frameRateLimit( const Uint32& FrameRateLimit ) {
 	mFrameData.FPS.Limit = (Float)FrameRateLimit;
 }
 
-Uint32 Window::FrameRateLimit() {
+Uint32 Window::frameRateLimit() {
 	return static_cast<Uint32>( mFrameData.FPS.Limit );
 }
 
@@ -252,11 +252,11 @@ Uint32 Window::FPS() const {
 	return mFrameData.FPS.Current;
 }
 
-Time Window::Elapsed() const {
+Time Window::elapsed() const {
 	return mFrameData.ElapsedTime;
 }
 
-void Window::GetElapsedTime() {
+void Window::getElapsedTime() {
 	if ( NULL == mFrameData.FrameElapsed ) {
 		mFrameData.FrameElapsed = eeNew( Clock, () );
 	}
@@ -264,7 +264,7 @@ void Window::GetElapsedTime() {
 	mFrameData.ElapsedTime = mFrameData.FrameElapsed->elapsed();
 }
 
-void Window::CalculateFps() {
+void Window::calculateFps() {
 	if ( Sys::getTicks() - mFrameData.FPS.LastCheck >= 1000 ) {
 		mFrameData.FPS.Current = mFrameData.FPS.Count;
 		mFrameData.FPS.Count = 0;
@@ -274,7 +274,7 @@ void Window::CalculateFps() {
 	mFrameData.FPS.Count++;
 }
 
-void Window::LimitFps() {
+void Window::limitFps() {
 	if ( mFrameData.FPS.Limit > 0 ) {
 		mFrameData.FPS.Error = 0;
 		double RemainT = 1000.0 / mFrameData.FPS.Limit - ( mFrameData.ElapsedTime.asMilliseconds() * 0.1f );
@@ -296,87 +296,87 @@ void Window::LimitFps() {
 	}
 }
 
-void Window::ViewCheckUpdate() {
-	if ( mCurrentView->NeedUpdate() ) {
-		SetView( *mCurrentView );
+void Window::viewCheckUpdate() {
+	if ( mCurrentView->needUpdate() ) {
+		setView( *mCurrentView );
 	}
 }
 
-void Window::Clear() {
+void Window::clear() {
 	GLi->Clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 }
 
-void Window::Display( bool clear ) {
+void Window::display( bool clear ) {
 	GlobalBatchRenderer::instance()->Draw();
 
-	if ( mCurrentView->NeedUpdate() )
-		SetView( *mCurrentView );
+	if ( mCurrentView->needUpdate() )
+		setView( *mCurrentView );
 
-	SwapBuffers();
+	swapBuffers();
 
 	#if EE_PLATFORM != EE_PLATFORM_EMSCRIPTEN
 	if ( clear )
-		Clear();
+		this->clear();
 	#endif
 
-	GetElapsedTime();
+	getElapsedTime();
 
-	CalculateFps();
+	calculateFps();
 
-	LimitFps();
+	limitFps();
 }
 
-void Window::ClipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
+void Window::clipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
 	GlobalBatchRenderer::instance()->Draw();
-	GLi->Scissor( x, GetHeight() - ( y + Height ), Width, Height );
+	GLi->Scissor( x, getHeight() - ( y + Height ), Width, Height );
 	GLi->Enable( GL_SCISSOR_TEST );
 }
 
-void Window::ClipDisable() {
+void Window::clipDisable() {
 	GlobalBatchRenderer::instance()->Draw();
 	GLi->Disable( GL_SCISSOR_TEST );
 }
 
-void Window::ClipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
+void Window::clipPlaneEnable( const Int32& x, const Int32& y, const Int32& Width, const Int32& Height ) {
 	GlobalBatchRenderer::instance()->Draw();
 	GLi->Clip2DPlaneEnable( x, y, Width, Height );
 }
 
-void Window::ClipPlaneDisable() {
+void Window::clipPlaneDisable() {
 	GlobalBatchRenderer::instance()->Draw();
 	GLi->Clip2DPlaneDisable();
 }
 
-Clipboard * Window::GetClipboard() const {
+Clipboard * Window::getClipboard() const {
 	return mClipboard;
 }
 
-Input * Window::GetInput() const {
+Input * Window::getInput() const {
 	return mInput;
 }
 
-CursorManager * Window::GetCursorManager() const {
+CursorManager * Window::getCursorManager() const {
 	return mCursorManager;
 }
 
-Uint32 Window::PushResizeCallback( const WindowResizeCallback& cb ) {
+Uint32 Window::pushResizeCallback( const WindowResizeCallback& cb ) {
 	mNumCallBacks++;
 	mCallbacks[ mNumCallBacks ] = cb;
 	return mNumCallBacks;
 }
 
-void Window::PopResizeCallback( const Uint32& CallbackId ) {
+void Window::popResizeCallback( const Uint32& CallbackId ) {
 	mCallbacks[ CallbackId ] = 0;
 	mCallbacks.erase( mCallbacks.find(CallbackId) );
 }
 
-void Window::SendVideoResizeCb() {
+void Window::sendVideoResizeCb() {
 	for ( std::map<Uint32, WindowResizeCallback>::iterator i = mCallbacks.begin(); i != mCallbacks.end(); i++ ) {
 		i->second( this );
 	}
 }
 
-void Window::LogSuccessfulInit(const std::string& BackendName , const std::string&ProcessPath ) {
+void Window::logSuccessfulInit(const std::string& BackendName , const std::string&ProcessPath ) {
 	std::string msg( "Engine Initialized Succesfully.\n\tVersion: " + Version::getVersionName() + " (codename: \"" + Version::getCodename() + "\")" +
 							 "\n\tBuild time: " + Version::getBuildTime() +
 							 "\n\tOS: " + Sys::getOSName(true) +
@@ -390,7 +390,7 @@ void Window::LogSuccessfulInit(const std::string& BackendName , const std::strin
 							 "\n\tGL Renderer: " + GLi->GetRenderer() +
 							 "\n\tGL Version: " + GLi->GetVersion() +
 							 "\n\tGL Shading Language Version: " + GLi->GetShadingLanguageVersion() +
-							 "\n\tResolution: " + String::toStr( GetWidth() ) + "x" + String::toStr( GetHeight() ) +
+							 "\n\tResolution: " + String::toStr( getWidth() ) + "x" + String::toStr( getHeight() ) +
 							 "\n\tGL extensions supported:\n\t\t" + GLi->GetExtensions()
 	);
 
@@ -401,15 +401,15 @@ void Window::LogSuccessfulInit(const std::string& BackendName , const std::strin
 	#endif
 }
 
-void Window::LogFailureInit( const std::string& ClassName, const std::string& BackendName ) {
+void Window::logFailureInit( const std::string& ClassName, const std::string& BackendName ) {
 	eePRINTL( "Error on %s::Init. Backend %s failed to start.", ClassName.c_str(), BackendName.c_str() );
 }
 
-std::string Window::Caption() {
+std::string Window::caption() {
 	return mWindow.WindowConfig.Caption;
 }
 
-eeWindowContex Window::GetContext() const {
+eeWindowContex Window::getContext() const {
 #if defined( EE_GLEW_AVAILABLE  ) && ( EE_PLATFORM == EE_PLATFORM_WIN || defined( EE_X11_PLATFORM ) || EE_PLATFORM == EE_PLATFORM_MACOSX )
 	return mWindow.Context;
 #else
@@ -417,152 +417,152 @@ eeWindowContex Window::GetContext() const {
 #endif
 }
 
-void Window::GetMainContext() {
+void Window::getMainContext() {
 #ifdef EE_GLEW_AVAILABLE
 	if ( NULL != mPlatform )
-		mWindow.Context = mPlatform->GetWindowContext();
+		mWindow.Context = mPlatform->getWindowContext();
 #endif
 }
 
-void Window::SetDefaultContext() {
+void Window::setDefaultContext() {
 #if defined( EE_GLEW_AVAILABLE ) && ( EE_PLATFORM == EE_PLATFORM_WIN || defined( EE_X11_PLATFORM ) )
-	SetCurrentContext( mWindow.Context );
+	setCurrentContext( mWindow.Context );
 #endif
 }
 
-void Window::Minimize() {
+void Window::minimize() {
 	if ( NULL != mPlatform )
-		mPlatform->MinimizeWindow();
+		mPlatform->minimizeWindow();
 }
 
-void Window::Maximize() {
+void Window::maximize() {
 	if ( NULL != mPlatform )
-		mPlatform->MaximizeWindow();
+		mPlatform->maximizeWindow();
 }
 
-bool Window::IsMaximized() {
+bool Window::isMaximized() {
 	if ( NULL != mPlatform )
-		return mPlatform->IsWindowMaximized();
+		return mPlatform->isWindowMaximized();
 
 	return false;
 }
 
-void Window::Hide() {
+void Window::hide() {
 	if ( NULL != mPlatform )
-		mPlatform->HideWindow();
+		mPlatform->hideWindow();
 }
 
-void Window::Raise() {
+void Window::raise() {
 	if ( NULL != mPlatform )
-		mPlatform->RaiseWindow();
+		mPlatform->raiseWindow();
 }
 
-void Window::Show() {
+void Window::show() {
 	if ( NULL != mPlatform )
-		mPlatform->ShowWindow();
+		mPlatform->showWindow();
 }
 
-void Window::Position( Int16 Left, Int16 Top ) {
+void Window::position( Int16 Left, Int16 Top ) {
 	if ( NULL != mPlatform )
-		mPlatform->MoveWindow( Left, Top );
+		mPlatform->moveWindow( Left, Top );
 }
 
-Vector2i Window::Position() {
+Vector2i Window::position() {
 	if ( NULL != mPlatform )
-		return mPlatform->Position();
+		return mPlatform->getPosition();
 
 	return Vector2i();
 }
 
-void Window::SetCurrentContext( eeWindowContex Context ) {
+void Window::setCurrentContext( eeWindowContex Context ) {
 	if ( NULL != mPlatform )
-		mPlatform->SetContext( Context );
+		mPlatform->setContext( Context );
 }
 
-void Window::CreatePlatform() {
+void Window::createPlatform() {
 	eeSAFE_DELETE( mPlatform );
 	mPlatform = eeNew( Platform::NullImpl, ( this ) );
 }
 
-void Window::SetCurrent() {
+void Window::setCurrent() {
 }
 
-void Window::Center() {
-	if ( Windowed() ) {
-		Position( mWindow.DesktopResolution.width() / 2 - mWindow.WindowConfig.Width / 2, mWindow.DesktopResolution.height() / 2 - mWindow.WindowConfig.Height / 2 );
+void Window::center() {
+	if ( isWindowed() ) {
+		position( mWindow.DesktopResolution.width() / 2 - mWindow.WindowConfig.Width / 2, mWindow.DesktopResolution.height() / 2 - mWindow.WindowConfig.Height / 2 );
 	}
 }
 
-Platform::PlatformImpl * Window::GetPlatform() const {
+Platform::PlatformImpl * Window::getPlatform() const {
 	return mPlatform;
 }
 
-void Window::StartTextInput() {
+void Window::startTextInput() {
 }
 
-bool Window::IsTextInputActive() {
+bool Window::isTextInputActive() {
 	return false;
 }
 
-void Window::StopTextInput() {
+void Window::stopTextInput() {
 }
 
-void Window::SetTextInputRect( Recti& rect ) {
+void Window::setTextInputRect( Recti& rect ) {
 }
 
-bool Window::HasScreenKeyboardSupport()
+bool Window::hasScreenKeyboardSupport()
 {
 	return false;
 }
 
-bool Window::IsScreenKeyboardShown() {
+bool Window::isScreenKeyboardShown() {
 	return false;
 }
 
-bool Window::IsThreadedGLContext() {
+bool Window::isThreadedGLContext() {
 	return false;
 }
 
-void Window::SetGLContextThread() {
+void Window::setGLContextThread() {
 }
 
-void Window::UnsetGLContextThread() {
+void Window::unsetGLContextThread() {
 }
 
-void Window::RunMainLoop( void (*func)(), int fps ) {
+void Window::runMainLoop( void (*func)(), int fps ) {
 #if EE_PLATFORM == EE_PLATFORM_EMSCRIPTEN
 	emscripten_set_main_loop(func, fps, 1);
 #else
-	FrameRateLimit( fps );
+	frameRateLimit( fps );
 
-	while ( Running() ) {
+	while ( isRunning() ) {
 		func();
 	}
 #endif
 }
 
 #if EE_PLATFORM == EE_PLATFORM_ANDROID
-void * Window::GetJNIEnv() {
+void * Window::getJNIEnv() {
 	return NULL;
 }
 
-void * Window::GetActivity() {
+void * Window::getActivity() {
 	return NULL;
 }
 
-int Window::GetExternalStorageState() {
+int Window::getExternalStorageState() {
 	return 0;
 }
 
-std::string Window::GetInternalStoragePath() {
+std::string Window::getInternalStoragePath() {
 	return std::string("");
 }
 
-std::string Window::GetExternalStoragePath() {
+std::string Window::getExternalStoragePath() {
 	return std::string("");
 }
 
-std::string Window::GetApkPath() {
+std::string Window::getApkPath() {
 	return std::string("");
 }
 #endif

@@ -19,30 +19,30 @@ JoystickManagerSDL::JoystickManagerSDL() :
 JoystickManagerSDL::~JoystickManagerSDL() {
 }
 
-void JoystickManagerSDL::Update() {
+void JoystickManagerSDL::update() {
 	if ( mInit ) {
 		SDL_JoystickUpdate();
 
 		for ( Uint32 i = 0; i < mCount; i++ )
 			if ( NULL != mJoysticks[i] )
-				mJoysticks[i]->Update();
+				mJoysticks[i]->update();
 	}
 }
 
-void JoystickManagerSDL::Open() {
+void JoystickManagerSDL::open() {
 	int error = SDL_InitSubSystem( SDL_INIT_JOYSTICK );
 
 	if ( !error ) {
 		mCount = SDL_NumJoysticks();
 
 		for ( Uint32 i = 0; i < mCount; i++ )
-			Create(i);
+			create(i);
 
 		mInit = true;
 	}
 }
 
-void JoystickManagerSDL::Close() {
+void JoystickManagerSDL::close() {
 	if ( SDL_WasInit( SDL_INIT_JOYSTICK ) ) {
 		SDL_QuitSubSystem( SDL_INIT_JOYSTICK );
 
@@ -50,9 +50,9 @@ void JoystickManagerSDL::Close() {
 	}
 }
 
-void JoystickManagerSDL::Create( const Uint32& index ) {
+void JoystickManagerSDL::create( const Uint32& index ) {
 	if ( NULL != mJoysticks[ index ] )
-		mJoysticks[ index ]->ReOpen();
+		mJoysticks[ index ]->reOpen();
 	else
 		mJoysticks[ index ] = eeNew( JoystickSDL, ( index ) );
 }

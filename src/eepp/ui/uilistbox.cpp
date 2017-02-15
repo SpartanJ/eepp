@@ -576,7 +576,7 @@ void UIListBox::ItemClicked( UIListBoxItem * Item ) {
 	UIEvent ItemEvent( Item, UIEvent::EventOnItemClicked );
 	SendEvent( &ItemEvent );
 
-	if ( !( IsMultiSelect() && UIManager::instance()->GetInput()->IsKeyDown( KEY_LCTRL ) ) )
+	if ( !( IsMultiSelect() && UIManager::instance()->GetInput()->isKeyDown( KEY_LCTRL ) ) )
 		ResetItemsStates();
 }
 

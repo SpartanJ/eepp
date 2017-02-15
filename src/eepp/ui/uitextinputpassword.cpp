@@ -53,9 +53,9 @@ void UITextInputPassword::Draw() {
 void UITextInputPassword::AlignFix() {
 	if ( FontHAlignGet( Flags() ) == UI_HALIGN_LEFT ) {
 		Uint32 NLPos	= 0;
-		Uint32 LineNum	= mTextBuffer.GetCurPosLinePos( NLPos );
+		Uint32 LineNum	= mTextBuffer.getCurPosLinePos( NLPos );
 
-		String curStr( mTextBuffer.Buffer().substr( NLPos, mTextBuffer.CurPos() - NLPos ) );
+		String curStr( mTextBuffer.buffer().substr( NLPos, mTextBuffer.curPos() - NLPos ) );
 		String pasStr;
 
 		for ( size_t i = 0; i < curStr.size(); i++ )
@@ -69,7 +69,7 @@ void UITextInputPassword::AlignFix() {
 		mCurPos.x	= tW;
 		mCurPos.y	= (Float)LineNum * (Float)mPassCache->Font()->GetFontHeight();
 
-		if ( !mTextBuffer.SupportNewLine() ) {
+		if ( !mTextBuffer.supportNewLine() ) {
 			if ( tX < 0.f )
 				mAlignOffset.x = -( mAlignOffset.x + ( tW - mAlignOffset.x ) );
 			else if ( tX > mSize.width() - mPadding.Left - mPadding.Right )

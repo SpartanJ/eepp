@@ -25,17 +25,17 @@ class InputFinger {
 		bool was_down;
 
 		/** @return If is currently pressed */
-		bool IsDown();
+		bool isDown();
 
 		/** @return If was down in the last update */
-		bool WasDown();
+		bool wasDown();
 
 		/** @return The current position of the finger */
-		Vector2i Pos();
+		Vector2i pos();
 	protected:
 		friend class Input;
 
-		void WriteLast();
+		void writeLast();
 };
 
 }}

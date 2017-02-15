@@ -50,19 +50,19 @@ Cursor::~Cursor() {
 	eeSAFE_DELETE( mImage );
 }
 
-const Vector2i& Cursor::HotSpot() const {
+const Vector2i& Cursor::getHotSpot() const {
 	return mHotSpot;
 }
 
-const Uint32& Cursor::Id() const {
+const Uint32& Cursor::getId() const {
 	return mId;
 }
 
-const std::string& Cursor::Name() const {
+const std::string& Cursor::getName() const {
 	return mName;
 }
 
-Graphics::Image * Cursor::Image() const {
+Graphics::Image * Cursor::getImage() const {
 	return mImage;
 }
 

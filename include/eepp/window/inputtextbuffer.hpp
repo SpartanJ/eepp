@@ -33,103 +33,103 @@ class EE_API InputTextBuffer {
 		~InputTextBuffer();
 
 		/** @return The current buffer */
-		String Buffer() const;
+		String buffer() const;
 
 		/** Set a new current buffer */
-		void Buffer( const String& str );
+		void buffer( const String& str );
 
 		/** @return If input buffer is active */
-		bool Active() const;
+		bool active() const;
 
 		/** Set the state of the input buffer */
-		void Active( const bool& Active );
+		void active( const bool& active );
 
 		/** @return If new line is supported */
-		bool SupportNewLine();
+		bool supportNewLine();
 
 		/** Support new line consist of allowing to add a new line when key return is pressed. */
-		void SupportNewLine( const bool& SupportNewLine );
+		void supportNewLine( const bool& supportNewLine );
 
 		/** @return If Free Editing is enabled */
-		bool SupportFreeEditing() const;
+		bool supportFreeEditing() const;
 
 		/** Free editing consist on the capability of moving the cursor position over the buffer, to write over the buffer, and not only after the last character. */
-		void SupportFreeEditing( const bool& Support);
+		void supportFreeEditing( const bool& Support);
 
 		/** Block all the inserts, allow only numeric characters. */
-		void AllowOnlyNumbers( const bool& onlynums, const bool& allowdots = false );
+		void allowOnlyNumbers( const bool& onlynums, const bool& allowdots = false );
 
 		/** @return If is only allowing numbers */
-		bool AllowOnlyNumbers();
+		bool allowOnlyNumbers();
 
 		/** @return If is only allowing numbers, it allow floating point numbers? */
-		bool AllowDotsInNumbers();
+		bool allowDotsInNumbers();
 
 		/** @return If text selection feature is enabled */
-		bool TextSelectionEnabled();
+		bool textSelectionEnabled();
 
 		/** Enable text selection */
-		void TextSelectionEnabled( const bool& enabled );
+		void textSelectionEnabled( const bool& enabled );
 
 		/** Start the input buffer */
-		void Start();
+		void start();
 
 		/** Clear the buffer */
-		void Clear();
+		void clear();
 
 		/** Internal callback, don't call it */
-		void Update( InputEvent * Event );
+		void update( InputEvent * Event );
 
 		/** A callback for the key return */
-		void SetReturnCallback( EnterCallback EC );
+		void setReturnCallback( EnterCallback EC );
 
 		/** @return If something changed since last update */
-		bool ChangedSinceLastUpdate();
+		bool changedSinceLastUpdate();
 
 		/** Set if changed since last update */
-		void ChangedSinceLastUpdate( const bool& Changed );
+		void changedSinceLastUpdate( const bool& Changed );
 
 		/** @return The Cursor Position (where is the cursor editing) */
-		int CurPos() const;
+		int curPos() const;
 
 		/** Set the cursor position */
-		void CurPos( const Uint32& pos );
+		void curPos( const Uint32& pos );
 
 		/** This function it's for helping the Font class to locate the cursor position for the correct rendering of it.
 		* @param LastNewLinePos This will return the position of the closest "\n" to the current Cursor Pos
 		* @return On which line it's the cursor
 		*/
-		Uint32 GetCurPosLinePos( Uint32& LastNewLinePos );
+		Uint32 getCurPosLinePos( Uint32& LastNewLinePos );
 
 		/** Push the char you want to ignore */
-		void PushIgnoredChar( const Uint32& ch );
+		void pushIgnoredChar( const Uint32& ch );
 
 		/** Set the new max length */
-		void MaxLength( const Uint32& Max );
+		void maxLength( const Uint32& Max );
 
 		/** @return The Max Length */
-		const Uint32& MaxLength() const;
+		const Uint32& maxLength() const;
 
 		/** Support copy paste */
-		void SupportCopyPaste( const bool& support );
+		void supportCopyPaste( const bool& support );
 
 		/** @return Support copy paste */
-		bool SupportCopyPaste();
+		bool supportCopyPaste();
 
 		/** Set the cursor to the last character of the buffer. */
-		void CursorToEnd();
+		void cursorToEnd();
 
 		/** Set the selection cursor initial position */
-		void SelCurInit( const Int32& init );
+		void selCurInit( const Int32& init );
 
 		/** Set the selection cursor final position */
-		void SelCurEnd( const Int32& end );
+		void selCurEnd( const Int32& end );
 
 		/** @return The selection cursor initial position */
-		const Int32& SelCurInit() const;
+		const Int32& selCurInit() const;
 
 		/** @return The selection cursor final position */
-		const Int32& SelCurEnd() const;
+		const Int32& selCurEnd() const;
 	protected:
 		EE::Window::Window *			mWindow;
 		String				mText;
@@ -142,35 +142,35 @@ class EE_API InputTextBuffer {
 		Int32				mSelCurInit;
 		Int32				mSelCurEnd;
 
-		void AutoPrompt( const bool& set );
+		void autoPrompt( const bool& set );
 
-		bool AutoPrompt();
+		bool autoPrompt();
 
-		bool CanAdd();
+		bool canAdd();
 
-		void MovePromptRowDown( const bool& breakit );
+		void movePromptRowDown( const bool& breakit );
 
-		void MovePromptRowUp( const bool& breakit );
+		void movePromptRowUp( const bool& breakit );
 
-		void PromptToLeftFirstNoChar();
+		void promptToLeftFirstNoChar();
 
-		void PromptToRightFirstNoChar();
+		void promptToRightFirstNoChar();
 
-		void EraseToPrevNoChar();
+		void eraseToPrevNoChar();
 
-		void EraseToNextNoChar();
+		void eraseToNextNoChar();
 
-		bool IsIgnoredChar( const Uint32& c );
+		bool isIgnoredChar( const Uint32& c );
 
-		bool ValidChar( const Uint32& c );
+		bool validChar( const Uint32& c );
 
-		void TryAddChar( const Uint32& c );
+		void tryAddChar( const Uint32& c );
 
-		void ShiftSelection( const int& lastPromtpPos );
+		void shiftSelection( const int& lastPromtpPos );
 
-		void RemoveSelection();
+		void removeSelection();
 
-		void ResetSelection();
+		void resetSelection();
 };
 
 }}

@@ -11,20 +11,20 @@ InputNull::InputNull( EE::Window::Window * window ) :
 InputNull::~InputNull() {
 }
 
-void InputNull::Update() {
+void InputNull::update() {
 }
 
-bool InputNull::GrabInput() {
+bool InputNull::grabInput() {
 	return false;
 }
 
-void InputNull::GrabInput( const bool& Grab ) {
+void InputNull::grabInput( const bool& Grab ) {
 }
 
-void InputNull::InjectMousePos( const Uint16& x, const Uint16& y ) {
+void InputNull::injectMousePos( const Uint16& x, const Uint16& y ) {
 }
 
-void InputNull::Init() {
+void InputNull::init() {
 }
 
 }}}}

@@ -147,7 +147,7 @@ newoption { trigger = "with-gles1", description = "Compile with GLES1 support" }
 newoption { trigger = "use-frameworks", description = "In Mac OS X it will try to link the external libraries from its frameworks. For example, instead of linking against SDL2 it will link agains SDL2.framework." }
 newoption { 
 	trigger = "with-backend", 
-	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.\n\t\t\tIt's possible to build with more than one backend support.\n\t\t\t\tUse comma to separate the backends to build ( you can't mix SDL and SDL2, you'll get random crashes ).\n\t\t\t\tExample: --with-backend=SDL2,SFML",
+	description = "Select the backend to use for window and input handling.\n\t\t\tIf no backend is selected or if the selected is not installed the script will search for a backend present in the system, and will use it.\n\t\t\tIt's possible to build with more than one backend support.\n\t\t\t\tUse comma to separate the backends to build ( you can't mix SDL and SDL2, you'll get random crashes ).\n\t\t\t\tExample: --with-backend=SDL2+SFML",
 	allowed = {
 		{ "SDL",    "SDL 1.2" },
 		{ "SDL2",  "SDL2 (default and recommended)" },
@@ -521,6 +521,7 @@ function insert_static_backend( name )
 end
 
 function add_sdl2()
+	print("Using SDL2 backend");
 	files { "src/eepp/window/backend/SDL2/*.cpp" }
 	defines { "EE_BACKEND_SDL_ACTIVE", "EE_SDL_VERSION_2" }
 	
@@ -532,6 +533,7 @@ function add_sdl2()
 end
 
 function add_sdl()
+	print("Using SDL backend");
 	--- SDL is LGPL. It can't be build as static library
 	table.insert( link_list, get_backend_link_name( "SDL" ) )
 	files { "src/eepp/window/backend/SDL/*.cpp" }
@@ -539,6 +541,7 @@ function add_sdl()
 end
 
 function add_sfml()
+	print("Using SFML backend");
 	files { "src/eepp/window/backend/SFML/*.cpp" }
 	defines { "EE_BACKEND_SFML_ACTIVE" }
 	

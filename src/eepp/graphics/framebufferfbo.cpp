@@ -59,7 +59,7 @@ bool FrameBufferFBO::Create( const Uint32& Width, const Uint32& Height, bool Dep
 		return false;
 
 	if ( NULL == mWindow ) {
-		mWindow = Engine::instance()->GetCurrentWindow();
+		mWindow = Engine::instance()->getCurrentWindow();
 	}
 
 	mWidth 			= Width;

@@ -8,38 +8,38 @@ CursorManagerNull::CursorManagerNull( EE::Window::Window * window ) :
 {
 }
 
-Cursor * CursorManagerNull::Create( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
+Cursor * CursorManagerNull::create( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( CursorNull, ( tex, hotspot, name, mWindow ) );
 }
 
-Cursor * CursorManagerNull::Create( Image * img, const Vector2i& hotspot, const std::string& name ) {
+Cursor * CursorManagerNull::create( Image * img, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( CursorNull, ( img, hotspot, name, mWindow ) );
 }
 
-Cursor * CursorManagerNull::Create( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
+Cursor * CursorManagerNull::create( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( CursorNull, ( path, hotspot, name, mWindow ) );
 }
 
-void CursorManagerNull::Set( Cursor * cursor ) {
+void CursorManagerNull::set( Cursor * cursor ) {
 }
 
-void CursorManagerNull::Set( EE_SYSTEM_CURSOR syscurid ) {
+void CursorManagerNull::set( EE_SYSTEM_CURSOR syscurid ) {
 }
 
-void CursorManagerNull::Show() {
+void CursorManagerNull::show() {
 }
 
-void CursorManagerNull::Hide() {
+void CursorManagerNull::hide() {
 }
 
-void CursorManagerNull::Visible( bool visible ) {
+void CursorManagerNull::visible( bool visible ) {
 }
 
-void CursorManagerNull::Remove( Cursor * cursor, bool Delete ) {
-	CursorManager::Remove( cursor, Delete );
+void CursorManagerNull::remove( Cursor * cursor, bool Delete ) {
+	CursorManager::remove( cursor, Delete );
 }
 
-void CursorManagerNull::Reload() {
+void CursorManagerNull::reload() {
 }
 
 }}}}

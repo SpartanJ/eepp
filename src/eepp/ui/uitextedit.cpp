@@ -41,7 +41,7 @@ UITextEdit::UITextEdit( UITextEdit::CreateParams& Params ) :
 		mFlags |= UI_AUTO_SHRINK_TEXT;
 
 	mTextInput	= eeNew( UITextInput, ( TIParams ) );
-	mTextInput->GetInputTextBuffer()->SupportNewLine( true );
+	mTextInput->GetInputTextBuffer()->supportNewLine( true );
 	mTextInput->Visible( true );
 	mTextInput->Enabled( true );
 	mTextInput->AddEventListener( UIEvent::EventOnSizeChange		, cb::Make1( this, &UITextEdit::OnInputSizeChange ) );
@@ -339,11 +339,11 @@ void UITextEdit::FixScrollToCursor() {
 
 	if ( FontHAlignGet( mTextInput->Flags() ) == UI_HALIGN_LEFT ) {
 		Uint32 NLPos	= 0;
-		Uint32 LineNum = mTextInput->GetInputTextBuffer()->GetCurPosLinePos( NLPos );
+		Uint32 LineNum = mTextInput->GetInputTextBuffer()->getCurPosLinePos( NLPos );
 
 		mTextInput->GetTextCache()->Font()->SetText(
-			mTextInput->GetInputTextBuffer()->Buffer().substr(
-				NLPos, mTextInput->GetInputTextBuffer()->CurPos() - NLPos
+			mTextInput->GetInputTextBuffer()->buffer().substr(
+				NLPos, mTextInput->GetInputTextBuffer()->curPos() - NLPos
 			)
 		);
 
@@ -381,7 +381,7 @@ void UITextEdit::Update() {
 	UIControlAnim::Update();
 
 	if ( mTextInput->Enabled() && mTextInput->Visible() && mTextInput->IsMouseOver() && mVScrollBar->Visible() ) {
-		Uint32 Flags 			= UIManager::instance()->GetInput()->ClickTrigger();
+		Uint32 Flags 			= UIManager::instance()->GetInput()->clickTrigger();
 
 		if ( Flags & EE_BUTTONS_WUWD )
 			mVScrollBar->Slider()->ManageClick( Flags );

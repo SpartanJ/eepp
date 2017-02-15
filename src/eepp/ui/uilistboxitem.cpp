@@ -78,7 +78,7 @@ void UIListBoxItem::Update() {
 
 	if ( mEnabled && mVisible ) {
 		UIListBox * LBParent 	= reinterpret_cast<UIListBox*> ( Parent()->Parent() );
-		Uint32 Flags 			= UIManager::instance()->GetInput()->ClickTrigger();
+		Uint32 Flags 			= UIManager::instance()->GetInput()->clickTrigger();
 
 		if ( IsMouseOver() ) {
 			if ( Flags & EE_BUTTONS_WUWD && LBParent->VerticalScrollBar()->Visible() ) {

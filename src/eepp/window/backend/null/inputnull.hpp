@@ -9,19 +9,19 @@ class EE_API InputNull : public Input {
 	public:
 		virtual ~InputNull();
 		
-		void Update();
+		void update();
 
-		bool GrabInput();
+		bool grabInput();
 
-		void GrabInput( const bool& Grab );
+		void grabInput( const bool& Grab );
 
-		void InjectMousePos( const Uint16& x, const Uint16& y );
+		void injectMousePos( const Uint16& x, const Uint16& y );
 	protected:
 		friend class WindowNull;
 
 		InputNull( EE::Window::Window * window );
 		
-		virtual void Init();
+		virtual void init();
 };
 
 }}}}

@@ -11,13 +11,13 @@ class EE_API JoystickManagerNull : public JoystickManager {
 		
 		virtual ~JoystickManagerNull();
 		
-		void Update();
+		void update();
 
-		void Close();
+		void close();
 
-		void Open();
+		void open();
 	protected:
-		void Create( const Uint32& index );
+		void create( const Uint32& index );
 };
 
 }}}}

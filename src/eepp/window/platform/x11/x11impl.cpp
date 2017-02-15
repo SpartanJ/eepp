@@ -39,7 +39,7 @@ X11Impl::~X11Impl() {
 		XFreeCursor( mDisplay, mCursorSystemLast );
 }
 
-void X11Impl::MinimizeWindow() {
+void X11Impl::minimizeWindow() {
 	Lock();
 
 	XIconifyWindow( mDisplay, mX11Window, 0 );
@@ -49,7 +49,7 @@ void X11Impl::MinimizeWindow() {
 	Unlock();
 }
 
-void X11Impl::MaximizeWindow() {
+void X11Impl::maximizeWindow() {
 	// coded by Rafał Maj, idea from Måns Rullgård http://tinyurl.com/68mvk3
 	Lock();
 
@@ -74,7 +74,7 @@ void X11Impl::MaximizeWindow() {
 	Unlock();
 }
 
-bool X11Impl::IsWindowMaximized() {
+bool X11Impl::isWindowMaximized() {
 	Lock();
 
 	//bool minimized = false;
@@ -126,7 +126,7 @@ bool X11Impl::IsWindowMaximized() {
 	return false;
 }
 
-void X11Impl::HideWindow() {
+void X11Impl::hideWindow() {
 	Lock();
 
 	XUnmapWindow( mDisplay, mX11Window );
@@ -134,7 +134,7 @@ void X11Impl::HideWindow() {
 	Unlock();
 }
 
-void X11Impl::RaiseWindow() {
+void X11Impl::raiseWindow() {
 	Lock();
 
 	XRaiseWindow( mDisplay, mX11Window );
@@ -142,7 +142,7 @@ void X11Impl::RaiseWindow() {
 	Unlock();
 }
 
-void X11Impl::ShowWindow() {
+void X11Impl::showWindow() {
 	Lock();
 
 	XMapRaised( mDisplay, mX11Window );
@@ -150,7 +150,7 @@ void X11Impl::ShowWindow() {
 	Unlock();
 }
 
-void X11Impl::MoveWindow( int left, int top ) {
+void X11Impl::moveWindow( int left, int top ) {
 	Lock();
 
 	XMoveWindow( mDisplay, mX11Window, left, top );
@@ -160,7 +160,7 @@ void X11Impl::MoveWindow( int left, int top ) {
 	Unlock();
 }
 
-void X11Impl::SetContext( eeWindowContex Context ) {
+void X11Impl::setContext( eeWindowContex Context ) {
 	Lock();
 
 	glXMakeCurrent( mDisplay, mX11Window, Context );
@@ -168,7 +168,7 @@ void X11Impl::SetContext( eeWindowContex Context ) {
 	Unlock();
 }
 
-Vector2i X11Impl::Position() {
+Vector2i X11Impl::getPosition() {
 	int x, y;
 	X11Window child_return;
 
@@ -177,7 +177,7 @@ Vector2i X11Impl::Position() {
 	return Vector2i( x, y );
 }
 
-void X11Impl::ShowMouseCursor() {
+void X11Impl::showMouseCursor() {
 	if ( !mCursorHidden )
 	  return;
 
@@ -190,7 +190,7 @@ void X11Impl::ShowMouseCursor() {
 	Unlock();
 }
 
-void X11Impl::HideMouseCursor() {
+void X11Impl::hideMouseCursor() {
 	if ( mCursorHidden )
 		return;
 
@@ -228,19 +228,19 @@ void X11Impl::HideMouseCursor() {
 	Unlock();
 }
 
-Cursor * X11Impl::CreateMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
+Cursor * X11Impl::createMouseCursor( Texture * tex, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( CursorX11, ( tex, hotspot, name, mWindow ) );
 }
 
-Cursor * X11Impl::CreateMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name ) {
+Cursor * X11Impl::createMouseCursor( Image * img, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( CursorX11, ( img, hotspot, name, mWindow ) );
 }
 
-Cursor * X11Impl::CreateMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
+Cursor * X11Impl::createMouseCursor( const std::string& path, const Vector2i& hotspot, const std::string& name ) {
 	return eeNew( CursorX11, ( path, hotspot, name, mWindow ) );
 }
 
-void X11Impl::SetMouseCursor( Cursor * cursor ) {
+void X11Impl::setMouseCursor( Cursor * cursor ) {
 	mCursorCurrent = reinterpret_cast<CursorX11*>( cursor )->GetCursor();
 
 	if ( !mCursorHidden ) {
@@ -252,7 +252,7 @@ void X11Impl::SetMouseCursor( Cursor * cursor ) {
 	}
 }
 
-void X11Impl::RestoreCursor() {
+void X11Impl::restoreCursor() {
 	if ( !mCursorHidden ) {
 		Lock();
 
@@ -260,11 +260,11 @@ void X11Impl::RestoreCursor() {
 
 		Unlock();
 	} else {
-		HideMouseCursor();
+		hideMouseCursor();
 	}
 }
 
-void X11Impl::SetSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) {
+void X11Impl::setSystemMouseCursor( EE_SYSTEM_CURSOR syscursor ) {
 	unsigned int cursor_shape;
 
 	switch ( syscursor ) {
@@ -313,7 +313,7 @@ void X11Impl::Unlock() {
 		mUnlock();
 }
 
-eeWindowContex X11Impl::GetWindowContext() {
+eeWindowContex X11Impl::getWindowContext() {
 	return glXGetCurrentContext();
 }
 

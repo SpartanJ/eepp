@@ -13,21 +13,21 @@ ClipboardSDL::ClipboardSDL( EE::Window::Window * window ) :
 ClipboardSDL::~ClipboardSDL() {
 }
 
-void ClipboardSDL::Init() {
+void ClipboardSDL::init() {
 }
 
-void ClipboardSDL::SetText( const std::string& Text ) {
+void ClipboardSDL::setText( const std::string& Text ) {
 	SDL_SetClipboardText( Text.c_str() );
 }
 
-std::string ClipboardSDL::GetText() {
+std::string ClipboardSDL::getText() {
 	char * text = SDL_GetClipboardText();
 	std::string str( text );
 	SDL_free(text);
 	return str;
 }
 
-String ClipboardSDL::GetWideText() {
+String ClipboardSDL::getWideText() {
 	char * text = SDL_GetClipboardText();
 	String str( String::fromUtf8( text ) );
 	SDL_free(text);

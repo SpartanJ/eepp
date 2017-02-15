@@ -15,17 +15,17 @@ class EE_API ClipboardSDL : public Clipboard {
 	public:
 		virtual ~ClipboardSDL();
 
-		std::string GetText();
+		std::string getText();
 
-		String GetWideText();
+		String getWideText();
 
-		void SetText( const std::string& Text );
+		void setText( const std::string& Text );
 	protected:
 		friend class WindowSDL;
 
 		ClipboardSDL( EE::Window::Window * window );
 
-		void Init();
+		void init();
 };
 
 }}}}

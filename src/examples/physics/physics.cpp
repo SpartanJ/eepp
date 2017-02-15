@@ -113,7 +113,7 @@ void Demo1Create() {
 
 	CreateJointAndBody();
 
-	mWindow->Caption( "eepp - Physics - Logo Smash" );
+	mWindow->caption( "eepp - Physics - Logo Smash" );
 
 	mSpace = Physics::Space::New();
 	mSpace->Iterations( 1 );
@@ -128,8 +128,8 @@ void Demo1Create() {
 	Body * body;
 	Shape * shape;
 
-	Float pX = mWindow->GetWidth()	/ 2 - ( image_width		* 4 ) / 2;
-	Float pY = mWindow->GetHeight()	/ 2 - ( image_height	* 4 ) / 2;
+	Float pX = mWindow->getWidth()	/ 2 - ( image_width		* 4 ) / 2;
+	Float pY = mWindow->getHeight()	/ 2 - ( image_height	* 4 ) / 2;
 
 	for(int y=0; y<image_height; y++){
 		for(int x=0; x<image_width; x++){
@@ -145,7 +145,7 @@ void Demo1Create() {
 	}
 
 	body = mSpace->AddBody( Body::New( INFINITY, INFINITY ) );
-	body->Pos( cVectNew( 0, mWindow->GetHeight() / 2 + 16 ) );
+	body->Pos( cVectNew( 0, mWindow->getHeight() / 2 + 16 ) );
 	body->Vel( cVectNew( 400, 0 ) );
 
 	shape = mSpace->AddShape( ShapeCircle::New( body, 8.0f, cVectZero ) );
@@ -168,7 +168,7 @@ void Demo2Create() {
 
 	CreateJointAndBody();
 
-	mWindow->Caption( "eepp - Physics - Pyramid Stack" );
+	mWindow->caption( "eepp - Physics - Pyramid Stack" );
 
 	Shape::ResetShapeIdCounter();
 
@@ -179,27 +179,27 @@ void Demo2Create() {
 	Body *body, *statiBody = mSpace->StatiBody();
 	Shape * shape;
 
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( 0, mWindow->GetHeight() ), cVectNew( mWindow->GetWidth(), mWindow->GetHeight() ), 0.0f ) );
+	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( 0, mWindow->getHeight() ), cVectNew( mWindow->getWidth(), mWindow->getHeight() ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
 	shape->Layers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( mWindow->GetWidth(), 0 ), cVectNew( mWindow->GetWidth(), mWindow->GetHeight() ), 0.0f ) );
+	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( mWindow->getWidth(), 0 ), cVectNew( mWindow->getWidth(), mWindow->getHeight() ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
 	shape->Layers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ), cVectNew( 0, mWindow->GetHeight() ), 0.0f ) );
+	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ), cVectNew( 0, mWindow->getHeight() ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
 	shape->Layers( NOT_GRABABLE_MASK );
 
-	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ), cVectNew( mWindow->GetWidth(), 0 ), 0.0f ) );
+	shape = mSpace->AddShape( ShapeSegment::New( statiBody, cVectNew( 0, 0 ), cVectNew( mWindow->getWidth(), 0 ), 0.0f ) );
 	shape->e( 1.0f );
 	shape->u( 1.0f );
 	shape->Layers( NOT_GRABABLE_MASK );
 
-	Float hw = mWindow->GetWidth() / 2;
+	Float hw = mWindow->getWidth() / 2;
 
 	for(int i=0; i<14; i++){
 		for(int j=0; j<=i; j++){
@@ -215,7 +215,7 @@ void Demo2Create() {
 	cpFloat radius = 15.0f;
 
 	body = mSpace->AddBody( Body::New( 10.0f, Moment::ForCircle( 10.0f, 0.0f, radius, cVectZero ) ) );
-	body->Pos( cVectNew( hw, mWindow->GetHeight() - radius - 5 ) );
+	body->Pos( cVectNew( hw, mWindow->getHeight() - radius - 5 ) );
 
 	shape = mSpace->AddShape( ShapeCircle::New( body, radius, cVectZero ) );
 	shape->e( 0.0f );
@@ -294,7 +294,7 @@ void Demo3Create() {
 
 	CreateJointAndBody();
 
-	mWindow->Caption( "eepp - Physics - Sensor" );
+	mWindow->caption( "eepp - Physics - Sensor" );
 
 	Shape::ResetShapeIdCounter();
 
@@ -307,7 +307,7 @@ void Demo3Create() {
 
 	emitterInstance.queue = 5;
 	emitterInstance.blocked = 0;
-	emitterInstance.position = cVectNew( mWindow->GetWidth() / 2 , 150);
+	emitterInstance.position = cVectNew( mWindow->getWidth() / 2 , 150);
 
 	shape = mSpace->AddShape( ShapeCircle::New( statiBody, 15.0f, emitterInstance.position ) );
 	shape->Sensor( 1 );
@@ -460,7 +460,7 @@ void Demo4Create() {
 
 	CreateJointAndBody();
 
-	mWindow->Caption( "eepp - Physics - Sticky collisions using the Arbiter data pointer." );
+	mWindow->caption( "eepp - Physics - Sticky collisions using the Arbiter data pointer." );
 
 	mSpace = Space::New();
 	mSpace->Iterations( 10 );
@@ -572,15 +572,15 @@ void PhysicsCreate() {
 
 void PhysicsUpdate() {
 	// Creates a joint to drag any grabable object on the scene
-	mMousePoint = cVectNew( KM->GetMousePosf().x, KM->GetMousePosf().y );
+	mMousePoint = cVectNew( KM->getMousePosf().x, KM->getMousePosf().y );
 	cVect newPoint = tovect( cpvlerp( tocpv( mMousePoint_last ), tocpv( mMousePoint ), 0.25 ) );
 	mMouseBody->Pos( newPoint );
 	mMouseBody->Vel( ( newPoint - mMousePoint_last ) * (cpFloat)mWindow->FPS() );
 	mMousePoint_last = newPoint;
 
-	if ( KM->MouseLeftPressed() ) {
+	if ( KM->mouseLeftPressed() ) {
 		if ( NULL == mMouseJoint ) {
-			cVect point = cVectNew( KM->GetMousePosf().x, KM->GetMousePosf().y );
+			cVect point = cVectNew( KM->getMousePosf().x, KM->getMousePosf().y );
 
 			Shape * shape = mSpace->PointQueryFirst( point, GRABABLE_MASK_BIT, CP_NO_GROUP );
 
@@ -607,37 +607,37 @@ void PhysicsDestroy() {
 
 void MainLoop()
 {
-	mWindow->Clear();
+	mWindow->clear();
 
-	KM->Update();
+	KM->update();
 
-	if ( KM->IsKeyDown( KEY_ESCAPE ) ) {
-		mWindow->Close();
+	if ( KM->isKeyDown( KEY_ESCAPE ) ) {
+		mWindow->close();
 	}
 
 	PhysicsUpdate();
 
-	if ( KM->IsKeyUp( KEY_LEFT ) || KM->IsKeyUp( KEY_A ) ) {
+	if ( KM->isKeyUp( KEY_LEFT ) || KM->isKeyUp( KEY_A ) ) {
 		ChangeDemo( mCurDemo - 1 );
-	} else if ( KM->IsKeyUp( KEY_RIGHT ) || KM->IsKeyUp( KEY_D ) ) {
+	} else if ( KM->isKeyUp( KEY_RIGHT ) || KM->isKeyUp( KEY_D ) ) {
 		ChangeDemo( mCurDemo + 1 );
 	}
 
-	mWindow->Display();
+	mWindow->display();
 }
 
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
-	mWindow = Engine::instance()->CreateWindow( WindowSettings( 1024, 768, "eepp - Physics" ), ContextSettings( true ) );
+	mWindow = Engine::instance()->createWindow( WindowSettings( 1024, 768, "eepp - Physics" ), ContextSettings( true ) );
 
-	if ( mWindow->Created() ) {
-		KM = mWindow->GetInput();
+	if ( mWindow->created() ) {
+		KM = mWindow->getInput();
 
-		mWindow->BackColor( RGB( 255, 255, 255 ) );
+		mWindow->backColor( RGB( 255, 255, 255 ) );
 
 		PhysicsCreate();
 
-		mWindow->RunMainLoop( &MainLoop );
+		mWindow->runMainLoop( &MainLoop );
 
 		PhysicsDestroy();
 	}

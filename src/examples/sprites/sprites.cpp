@@ -42,26 +42,26 @@ void spriteCallback( Uint32 Event, Sprite * Sprite, void * UserData ) {
 void MainLoop()
 {
 	// Clear the screen buffer
-	win->Clear();
+	win->clear();
 
 	// Update the input
-	win->GetInput()->Update();
+	win->getInput()->update();
 
 	// Check if ESCAPE key is pressed
-	if ( win->GetInput()->IsKeyDown( KEY_ESCAPE ) ) {
+	if ( win->getInput()->isKeyDown( KEY_ESCAPE ) ) {
 		// Close the window
-		win->Close();
+		win->close();
 	}
 
 	// Check if the D key was pressed
-	if ( win->GetInput()->IsKeyUp( KEY_D ) ) {
+	if ( win->getInput()->isKeyUp( KEY_D ) ) {
 		// Reverse the Rock animation
 		Rock->ReverseAnim( !Rock->ReverseAnim() );
 	}
 
 	// Update the angle interpolation
-	PlanetAngle.update( win->Elapsed() );
-	RockAngle.update( win->Elapsed() );
+	PlanetAngle.update( win->elapsed() );
+	RockAngle.update( win->elapsed() );
 
 	// Set the Planet and Rock angle from the interpolation
 	Planet->Angle( PlanetAngle.getPos() );
@@ -85,16 +85,16 @@ void MainLoop()
 	P.DrawQuad( Rock->GetQuad() );
 
 	// Draw frame
-	win->Display();
+	win->display();
 }
 
 EE_MAIN_FUNC int main (int argc, char * argv [])
 {
 	// Create a new window
-	win = Engine::instance()->CreateWindow( WindowSettings( 640, 480, "eepp - Sprites" ), ContextSettings( true ) );
+	win = Engine::instance()->createWindow( WindowSettings( 640, 480, "eepp - Sprites" ), ContextSettings( true ) );
 
 	// Check if created
-	if ( win->Created() ) {
+	if ( win->created() ) {
 		// Get the application path
 		std::string AppPath = Sys::getProcessPath();
 
@@ -140,7 +140,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		P.FillMode( DRAW_LINE );
 
 		// Set the sprites position to the screen center
-		Vector2i ScreenCenter( Engine::instance()->GetWidth() / 2, Engine::instance()->GetHeight() / 2 );
+		Vector2i ScreenCenter( Engine::instance()->getWidth() / 2, Engine::instance()->getHeight() / 2 );
 
 		Planet->Position( ScreenCenter.x - Planet->GetAABB().size().width() / 2, ScreenCenter.y - Planet->GetAABB().size().height() / 2 );
 
@@ -159,7 +159,7 @@ EE_MAIN_FUNC int main (int argc, char * argv [])
 		Rock->SetEventsCallback( cb::Make3( &spriteCallback ), &RockAngle );
 
 		// Application loop
-		win->RunMainLoop( &MainLoop );
+		win->runMainLoop( &MainLoop );
 	}
 
 	eeSAFE_DELETE( Rock );

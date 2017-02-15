@@ -14,21 +14,21 @@ class EE_API InputSDL : public Input {
 	public:
 		virtual ~InputSDL();
 		
-		void Update();
+		void update();
 
-		bool GrabInput();
+		bool grabInput();
 
-		void GrabInput( const bool& Grab );
+		void grabInput( const bool& Grab );
 
-		void InjectMousePos( const Uint16& x, const Uint16& y );
+		void injectMousePos( const Uint16& x, const Uint16& y );
 	protected:
 		friend class WindowSDL;
 
 		InputSDL( EE::Window::Window * window );
 		
-		virtual void Init();
+		virtual void init();
 
-		void InitializeTables();
+		void initializeTables();
 };
 
 }}}}

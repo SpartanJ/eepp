@@ -150,7 +150,7 @@ void UIScrollBar::Update() {
 	UIControlAnim::Update();
 
 	if ( mBtnUp->IsMouseOver() || mBtnDown->IsMouseOver() ) {
-		ManageClick( UIManager::instance()->GetInput()->ClickTrigger() );
+		ManageClick( UIManager::instance()->GetInput()->clickTrigger() );
 	}
 }
 

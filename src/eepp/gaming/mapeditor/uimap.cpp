@@ -99,7 +99,7 @@ void UIMap::Update() {
 		mMap->Update();
 
 		if ( mEnabled && mVisible && IsMouseOver() ) {
-			Uint32 Flags 			= UIManager::instance()->GetInput()->ClickTrigger();
+			Uint32 Flags 			= UIManager::instance()->GetInput()->clickTrigger();
 
 			if ( EDITING_LIGHT == mEditingMode ) {
 				if ( NULL != mSelLight ) {
@@ -134,7 +134,7 @@ void UIMap::Update() {
 						}
 					}
 
-					Flags = UIManager::instance()->GetInput()->PressTrigger();
+					Flags = UIManager::instance()->GetInput()->pressTrigger();
 
 					if ( Flags & EE_BUTTON_MMASK ) {
 						mSelLight->Position( mMap->GetMouseMapPosf() );
@@ -220,8 +220,8 @@ void UIMap::DragPoly( Uint32 Flags, Uint32 PFlags ) {
 }
 
 void UIMap::ManageObject( Uint32 Flags ) {
-	Uint32 PFlags	= UIManager::instance()->GetInput()->PressTrigger();
-	Uint32 LPFlags	= UIManager::instance()->GetInput()->LastPressTrigger();
+	Uint32 PFlags	= UIManager::instance()->GetInput()->pressTrigger();
+	Uint32 LPFlags	= UIManager::instance()->GetInput()->lastPressTrigger();
 
 	switch ( mEditingObjMode )
 	{
@@ -574,7 +574,7 @@ void UIMap::CreateObjPopUpMenu() {
 	Menu->AddEventListener( UIEvent::EventOnItemClicked, cb::Make1( this, &UIMap::ObjItemClick ) );
 
 	if ( Menu->Show() ) {
-		Vector2i Pos = UIManager::instance()->GetInput()->GetMousePos();
+		Vector2i Pos = UIManager::instance()->GetInput()->getMousePos();
 		UIMenu::FixMenuPos( Pos , Menu );
 		Menu->Pos( Pos );
 	}

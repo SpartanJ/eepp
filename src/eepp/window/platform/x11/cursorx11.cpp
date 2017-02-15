@@ -19,29 +19,29 @@ CursorX11::CursorX11( Texture * tex, const Vector2i& hotspot, const std::string&
 	Cursor( tex, hotspot, name, window ),
 	mCursor( None )
 {
-	Create();
+	create();
 }
 
 CursorX11::CursorX11( Graphics::Image * img, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
 	Cursor( img, hotspot, name, window ),
 	mCursor( None )
 {
-	Create();
+	create();
 }
 
 CursorX11::CursorX11( const std::string& path, const Vector2i& hotspot, const std::string& name, EE::Window::Window * window ) :
 	Cursor( path, hotspot, name, window ),
 	mCursor( None )
 {
-	Create();
+	create();
 }
 
 CursorX11::~CursorX11() {
 	if ( None != mCursor )
-		XFreeCursor( GetPlatform()->GetDisplay(), mCursor );
+		XFreeCursor( getPlatform()->GetDisplay(), mCursor );
 }
 
-void CursorX11::Create() {
+void CursorX11::create() {
 	if ( NULL == mImage || 0 == mImage->MemSize() )
 		return;
 
@@ -65,17 +65,17 @@ void CursorX11::Create() {
 	image->xhot = mHotSpot.x;
 	image->yhot = mHotSpot.y;
 
-	GetPlatform()->Lock();
+	getPlatform()->Lock();
 
-	mCursor = XcursorImageLoadCursor( GetPlatform()->GetDisplay(), image );
+	mCursor = XcursorImageLoadCursor( getPlatform()->GetDisplay(), image );
 
-	GetPlatform()->Unlock();
+	getPlatform()->Unlock();
 
 	XcursorImageDestroy( image );
 }
 
-X11Impl * CursorX11::GetPlatform() {
-	return reinterpret_cast<X11Impl*>( mWindow->GetPlatform() );
+X11Impl * CursorX11::getPlatform() {
+	return reinterpret_cast<X11Impl*>( mWindow->getPlatform() );
 }
 
 X11Cursor CursorX11::GetCursor() const {

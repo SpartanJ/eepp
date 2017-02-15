@@ -41,17 +41,17 @@ void UIManager::Init( Uint32 Flags, EE::Window::Window * window ) {
 	mFlags		= Flags;
 
 	if ( NULL == mWindow ) {
-		mWindow = Engine::instance()->GetCurrentWindow();
+		mWindow = Engine::instance()->getCurrentWindow();
 	}
 
-	mKM				= mWindow->GetInput();
+	mKM				= mWindow->getInput();
 
 	mInit			= true;
 
 	UIWindow::CreateParams Params;
 	Params.Parent( NULL );
 	Params.PosSet( 0, 0 );
-	Params.SizeSet( Engine::instance()->GetWidth(), Engine::instance()->GetHeight() );
+	Params.SizeSet( Engine::instance()->getWidth(), Engine::instance()->getHeight() );
 	Params.Flags = UI_CONTROL_DEFAULT_FLAGS | UI_REPORT_SIZE_CHANGE_TO_CHILDS;
 	Params.WinFlags = UI_WIN_NO_BORDER | UI_WIN_RESIZEABLE;
 	Params.MinWindowSize = Sizei( 0, 0 );
@@ -67,19 +67,19 @@ void UIManager::Init( Uint32 Flags, EE::Window::Window * window ) {
 	mFocusControl	= mControl;
 	mOverControl	= mControl;
 
-	mCbId = mKM->PushCallback( cb::Make1( this, &UIManager::InputCallback ) );
-	mResizeCb = mWindow->PushResizeCallback( cb::Make1( this, &UIManager::ResizeControl ) );
+	mCbId = mKM->pushCallback( cb::Make1( this, &UIManager::InputCallback ) );
+	mResizeCb = mWindow->pushResizeCallback( cb::Make1( this, &UIManager::ResizeControl ) );
 }
 
 void UIManager::Shutdown() {
 	if ( mInit ) {
 		if ( -1 != mCbId &&
 			NULL != Engine::existsSingleton() &&
-			Engine::instance()->ExistsWindow( mWindow )
+			Engine::instance()->existsWindow( mWindow )
 		)
 		{
-			mKM->PopCallback( mCbId );
-			mWindow->PopResizeCallback( mResizeCb );
+			mKM->popCallback( mCbId );
+			mWindow->popResizeCallback( mResizeCb );
 		}
 
 		mShootingDown = true;
@@ -111,7 +111,7 @@ void UIManager::InputCallback( InputEvent * Event ) {
 }
 
 void UIManager::ResizeControl( EE::Window::Window * win ) {
-	mControl->Size( mWindow->GetWidth(), mWindow->GetHeight() );
+	mControl->Size( mWindow->getWidth(), mWindow->getHeight() );
 	SendMsg( mControl, UIMessage::MsgWindowResize );
 
 	std::list<UIWindow*>::iterator it;
@@ -182,64 +182,64 @@ void UIManager::SendMsg( UIControl * Ctrl, const Uint32& Msg, const Uint32& Flag
 }
 
 void UIManager::Update() {
-	mElapsed = mWindow->Elapsed();
+	mElapsed = mWindow->elapsed();
 
 	bool wasDraggingControl = IsControlDragging();
 
 	mControl->Update();
 
-	UIControl * pOver = mControl->OverFind( mKM->GetMousePosf() );
+	UIControl * pOver = mControl->OverFind( mKM->getMousePosf() );
 
 	if ( pOver != mOverControl ) {
 		if ( NULL != mOverControl ) {
 			SendMsg( mOverControl, UIMessage::MsgMouseExit );
-			mOverControl->OnMouseExit( mKM->GetMousePos(), 0 );
+			mOverControl->OnMouseExit( mKM->getMousePos(), 0 );
 		}
 
 		mOverControl = pOver;
 
 		if ( NULL != mOverControl ) {
 			SendMsg( mOverControl, UIMessage::MsgMouseEnter );
-			mOverControl->OnMouseEnter( mKM->GetMousePos(), 0 );
+			mOverControl->OnMouseEnter( mKM->getMousePos(), 0 );
 		}
 	} else {
 		if ( NULL != mOverControl )
-			mOverControl->OnMouseMove( mKM->GetMousePos(), mKM->PressTrigger() );
+			mOverControl->OnMouseMove( mKM->getMousePos(), mKM->pressTrigger() );
 	}
 
-	if ( mKM->PressTrigger() ) {
+	if ( mKM->pressTrigger() ) {
 		/*if ( !wasDraggingControl && mOverControl != mFocusControl )
 			FocusControl( mOverControl );*/
 
 		if ( NULL != mOverControl ) {
-			mOverControl->OnMouseDown( mKM->GetMousePos(), mKM->PressTrigger() );
-			SendMsg( mOverControl, UIMessage::MsgMouseDown, mKM->PressTrigger() );
+			mOverControl->OnMouseDown( mKM->getMousePos(), mKM->pressTrigger() );
+			SendMsg( mOverControl, UIMessage::MsgMouseDown, mKM->pressTrigger() );
 		}
 
 		if ( !mFirstPress ) {
 			mDownControl = mOverControl;
-			mMouseDownPos = mKM->GetMousePos();
+			mMouseDownPos = mKM->getMousePos();
 
 			mFirstPress = true;
 		}
 	}
 
-	if ( mKM->ReleaseTrigger() ) {
+	if ( mKM->releaseTrigger() ) {
 		if ( NULL != mFocusControl ) {
 			if ( !wasDraggingControl ) {
 				if ( mOverControl != mFocusControl )
 					FocusControl( mOverControl );
 
-				mFocusControl->OnMouseUp( mKM->GetMousePos(), mKM->ReleaseTrigger() );
-				SendMsg( mFocusControl, UIMessage::MsgMouseUp, mKM->ReleaseTrigger() );
+				mFocusControl->OnMouseUp( mKM->getMousePos(), mKM->releaseTrigger() );
+				SendMsg( mFocusControl, UIMessage::MsgMouseUp, mKM->releaseTrigger() );
 
-				if ( mKM->ClickTrigger() ) { // mDownControl == mOverControl &&
-					SendMsg( mFocusControl, UIMessage::MsgClick, mKM->ClickTrigger() );
-					mFocusControl->OnMouseClick( mKM->GetMousePos(), mKM->ClickTrigger() );
+				if ( mKM->clickTrigger() ) { // mDownControl == mOverControl &&
+					SendMsg( mFocusControl, UIMessage::MsgClick, mKM->clickTrigger() );
+					mFocusControl->OnMouseClick( mKM->getMousePos(), mKM->clickTrigger() );
 
-					if ( mKM->DoubleClickTrigger() ) {
-						SendMsg( mFocusControl, UIMessage::MsgDoubleClick, mKM->DoubleClickTrigger() );
-						mFocusControl->OnMouseDoubleClick( mKM->GetMousePos(), mKM->DoubleClickTrigger() );
+					if ( mKM->doubleClickTrigger() ) {
+						SendMsg( mFocusControl, UIMessage::MsgDoubleClick, mKM->doubleClickTrigger() );
+						mFocusControl->OnMouseDoubleClick( mKM->getMousePos(), mKM->doubleClickTrigger() );
 					}
 				}
 			}
@@ -270,7 +270,7 @@ const Time& UIManager::Elapsed() const {
 }
 
 Vector2i UIManager::GetMousePos() {
-	return mKM->GetMousePos();
+	return mKM->getMousePos();
 }
 
 Input * UIManager::GetInput() const {
@@ -278,19 +278,19 @@ Input * UIManager::GetInput() const {
 }
 
 const Uint32& UIManager::PressTrigger() const {
-	return mKM->PressTrigger();
+	return mKM->pressTrigger();
 }
 
 const Uint32& UIManager::LastPressTrigger() const {
-	return mKM->LastPressTrigger();
+	return mKM->lastPressTrigger();
 }
 
 void UIManager::ClipEnable( const Int32& x, const Int32& y, const Uint32& Width, const Uint32& Height ) {
-	mWindow->ClipPlaneEnable( x, y, Width, Height );
+	mWindow->clipPlaneEnable( x, y, Width, Height );
 }
 
 void UIManager::ClipDisable() {
-	mWindow->ClipPlaneDisable();
+	mWindow->clipPlaneDisable();
 }
 
 void UIManager::HighlightFocus( bool Highlight ) {
@@ -460,7 +460,7 @@ const bool& UIManager::UseGlobalCursors() {
 
 void UIManager::SetCursor( EE_CURSOR_TYPE cursor ) {
 	if ( mUseGlobalCursors ) {
-		mWindow->GetCursorManager()->Set( cursor );
+		mWindow->getCursorManager()->set( cursor );
 	}
 }
 

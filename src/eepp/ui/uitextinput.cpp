@@ -14,12 +14,12 @@ UITextInput::UITextInput( const UITextInput::CreateParams& Params ) :
 	mAllowEditing( true ),
 	mShowingWait( true )
 {
-	mTextBuffer.Start();
-	mTextBuffer.Active( false );
-	mTextBuffer.SupportFreeEditing( Params.SupportFreeEditing );
-	mTextBuffer.TextSelectionEnabled( IsTextSelectionEnabled() );
-	mTextBuffer.MaxLength( Params.MaxLength );
-	mTextBuffer.SetReturnCallback( cb::Make0( this, &UITextInput::PrivOnPressEnter ) );
+	mTextBuffer.start();
+	mTextBuffer.active( false );
+	mTextBuffer.supportFreeEditing( Params.SupportFreeEditing );
+	mTextBuffer.textSelectionEnabled( IsTextSelectionEnabled() );
+	mTextBuffer.maxLength( Params.MaxLength );
+	mTextBuffer.setReturnCallback( cb::Make0( this, &UITextInput::PrivOnPressEnter ) );
 
 	ApplyDefaultTheme();
 }
@@ -42,10 +42,10 @@ void UITextInput::Update() {
 
 	UITextBox::Update();
 
-	if ( mTextBuffer.ChangedSinceLastUpdate() ) {
+	if ( mTextBuffer.changedSinceLastUpdate() ) {
 		Vector2f offSet = mAlignOffset;
 
-		UITextBox::Text( mTextBuffer.Buffer() );
+		UITextBox::Text( mTextBuffer.buffer() );
 
 		UpdateText();
 
@@ -55,16 +55,16 @@ void UITextInput::Update() {
 
 		AlignFix();
 
-		mCursorPos = mTextBuffer.CurPos();
+		mCursorPos = mTextBuffer.curPos();
 
-		mTextBuffer.ChangedSinceLastUpdate( false );
+		mTextBuffer.changedSinceLastUpdate( false );
 
 		return;
 	}
 
-	if ( mCursorPos != mTextBuffer.CurPos() ) {
+	if ( mCursorPos != mTextBuffer.curPos() ) {
 		AlignFix();
-		mCursorPos = mTextBuffer.CurPos();
+		mCursorPos = mTextBuffer.curPos();
 		OnCursorPosChange();
 	}
 }
@@ -74,7 +74,7 @@ void UITextInput::OnCursorPosChange() {
 }
 
 void UITextInput::DrawWaitingCursor() {
-	if ( mVisible && mTextBuffer.Active() && mTextBuffer.SupportFreeEditing() ) {
+	if ( mVisible && mTextBuffer.active() && mTextBuffer.supportFreeEditing() ) {
 		mWaitCursorTime += UIManager::instance()->Elapsed().asMilliseconds();
 
 		if ( mShowingWait ) {
@@ -115,7 +115,7 @@ Uint32 UITextInput::OnFocus() {
 	UIControlAnim::OnFocus();
 
 	if ( mAllowEditing ) {
-		mTextBuffer.Active( true );
+		mTextBuffer.active( true );
 
 		ResetWaitCursor();
 	}
@@ -124,7 +124,7 @@ Uint32 UITextInput::OnFocus() {
 }
 
 Uint32 UITextInput::OnFocusLoss() {
-	mTextBuffer.Active( false );
+	mTextBuffer.active( false );
 	return UITextBox::OnFocusLoss();
 }
 
@@ -138,7 +138,7 @@ void UITextInput::PrivOnPressEnter() {
 }
 
 void UITextInput::PushIgnoredChar( const Uint32& ch ) {
-	mTextBuffer.PushIgnoredChar( ch );
+	mTextBuffer.pushIgnoredChar( ch );
 }
 
 void UITextInput::ResetWaitCursor() {
@@ -149,9 +149,9 @@ void UITextInput::ResetWaitCursor() {
 void UITextInput::AlignFix() {
 	if ( FontHAlignGet( Flags() ) == UI_HALIGN_LEFT ) {
 		Uint32 NLPos	= 0;
-		Uint32 LineNum	= mTextBuffer.GetCurPosLinePos( NLPos );
+		Uint32 LineNum	= mTextBuffer.getCurPosLinePos( NLPos );
 
-		mTextCache->Font()->SetText( mTextBuffer.Buffer().substr( NLPos, mTextBuffer.CurPos() - NLPos ) );
+		mTextCache->Font()->SetText( mTextBuffer.buffer().substr( NLPos, mTextBuffer.curPos() - NLPos ) );
 
 		Float tW	= mTextCache->Font()->GetTextWidth();
 		Float tX	= mAlignOffset.x + tW;
@@ -159,7 +159,7 @@ void UITextInput::AlignFix() {
 		mCurPos.x	= tW;
 		mCurPos.y	= (Float)LineNum * (Float)mTextCache->Font()->GetFontHeight();
 
-		if ( !mTextBuffer.SupportNewLine() ) {
+		if ( !mTextBuffer.supportNewLine() ) {
 			if ( tX < 0.f )
 				mAlignOffset.x = -( mAlignOffset.x + ( tW - mAlignOffset.x ) );
 			else if ( tX > mSize.width() - mPadding.Left - mPadding.Right )
@@ -194,8 +194,8 @@ InputTextBuffer * UITextInput::GetInputTextBuffer() {
 void UITextInput::AllowEditing( const bool& allow ) {
 	mAllowEditing = allow;
 
-	if ( !mAllowEditing && mTextBuffer.Active() )
-		mTextBuffer.Active( false );
+	if ( !mAllowEditing && mTextBuffer.active() )
+		mTextBuffer.active( false );
 }
 
 const bool& UITextInput::AllowEditing() const {
@@ -205,9 +205,9 @@ const bool& UITextInput::AllowEditing() const {
 void UITextInput::Text( const String& text ) {
 	UITextBox::Text( text );
 
-	mTextBuffer.Buffer( text );
+	mTextBuffer.buffer( text );
 
-	mTextBuffer.CursorToEnd();
+	mTextBuffer.cursorToEnd();
 }
 
 const String& UITextInput::Text() {
@@ -215,11 +215,11 @@ const String& UITextInput::Text() {
 }
 
 void UITextInput::ShrinkText( const Uint32& MaxWidth ) {
-	mTextCache->Text( mTextBuffer.Buffer() );
+	mTextCache->Text( mTextBuffer.buffer() );
 
 	UITextBox::ShrinkText( MaxWidth );
 
-	mTextBuffer.Buffer( mTextCache->Text() );
+	mTextBuffer.buffer( mTextCache->Text() );
 
 	AlignFix();
 }
@@ -235,7 +235,7 @@ Uint32 UITextInput::OnMouseClick( const Vector2i& Pos, const Uint32 Flags ) {
 		Int32 curPos = mTextCache->Font()->FindClosestCursorPosFromPoint( mTextCache->Text(), controlPos );
 
 		if ( -1 != curPos ) {
-			mTextBuffer.CurPos( curPos );
+			mTextBuffer.curPos( curPos );
 			ResetWaitCursor();
 		}
 	}
@@ -247,7 +247,7 @@ Uint32 UITextInput::OnMouseDoubleClick( const Vector2i& Pos, const Uint32 Flags 
 	UITextBox::OnMouseDoubleClick( Pos, Flags );
 
 	if ( IsTextSelectionEnabled() && ( Flags & EE_BUTTON_LMASK ) && SelCurEnd() != -1 ) {
-		mTextBuffer.CurPos( SelCurEnd() );
+		mTextBuffer.curPos( SelCurEnd() );
 		ResetWaitCursor();
 	}
 
@@ -263,23 +263,23 @@ Uint32 UITextInput::OnMouseExit( const Vector2i& Pos, const Uint32 Flags ) {
 }
 
 void UITextInput::SelCurInit( const Int32& init ) {
-	mTextBuffer.SelCurInit( init );
+	mTextBuffer.selCurInit( init );
 }
 
 void UITextInput::SelCurEnd( const Int32& end ) {
-	mTextBuffer.SelCurEnd( end );
+	mTextBuffer.selCurEnd( end );
 
-	if ( mTextBuffer.SelCurEnd() != mTextBuffer.SelCurInit() ) {
-		mTextBuffer.CurPos( end );
+	if ( mTextBuffer.selCurEnd() != mTextBuffer.selCurInit() ) {
+		mTextBuffer.curPos( end );
 	}
 }
 
 Int32 UITextInput::SelCurInit() {
-	return mTextBuffer.SelCurInit();
+	return mTextBuffer.selCurInit();
 }
 
 Int32 UITextInput::SelCurEnd() {
-	return mTextBuffer.SelCurEnd();
+	return mTextBuffer.selCurEnd();
 }
 
 }}

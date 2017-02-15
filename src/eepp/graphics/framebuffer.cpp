@@ -26,7 +26,7 @@ FrameBuffer::FrameBuffer( EE::Window::Window * window  ) :
 	mClearColor(0,0,0,0)
 {
 	if ( NULL == mWindow ) {
-		mWindow = Engine::instance()->GetCurrentWindow();
+		mWindow = Engine::instance()->getCurrentWindow();
 	}
 
 	FrameBufferManager::instance()->add( this );
@@ -55,11 +55,11 @@ ColorAf FrameBuffer::ClearColor() const {
 void FrameBuffer::Clear() {
 	GLi->ClearColor( mClearColor.r(), mClearColor.g(), mClearColor.b(), mClearColor.a() );
 	GLi->Clear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-	mWindow->BackColor( mWindow->BackColor() );
+	mWindow->backColor( mWindow->backColor() );
 }
 
 void FrameBuffer::SetBufferView() {
-	mPrevView = mWindow->GetView();
+	mPrevView = mWindow->getView();
 
 	// Get the user projection matrix
 	GLi->GetCurrentMatrix( GL_PROJECTION_MATRIX, mProjMat );
@@ -75,7 +75,7 @@ void FrameBuffer::SetBufferView() {
 void FrameBuffer::RecoverView() {
 	GlobalBatchRenderer::instance()->Draw();
 
-	mWindow->SetView( mPrevView );
+	mWindow->setView( mPrevView );
 
 	// Recover the user projection matrix
 	GLi->LoadIdentity();
