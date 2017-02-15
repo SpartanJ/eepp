@@ -76,7 +76,7 @@ Engine::~Engine() {
 	HaikuTTF::hkFontManager::destroySingleton();
 
 	#ifdef EE_SSL_SUPPORT
-	Network::SSL::SSLSocket::End();
+	Network::SSL::SSLSocket::end();
 	#endif
 
 	Destroy();

@@ -17,7 +17,7 @@ static bool ssl_initialized = false;
 std::string SSLSocket::CertificatesPath	= "";
 static Mutex sMutex;
 
-bool SSLSocket::Init() {
+bool SSLSocket::init() {
 	Lock l( sMutex );
 
 	bool ret = false;
@@ -63,7 +63,7 @@ bool SSLSocket::Init() {
 	return ret;
 }
 
-bool SSLSocket::End() {
+bool SSLSocket::end() {
 	Lock l( sMutex );
 
 	bool ret = false;
@@ -79,7 +79,7 @@ bool SSLSocket::End() {
 	return ret;
 }
 
-bool SSLSocket::IsSupported() {
+bool SSLSocket::isSupported() {
 #ifdef EE_SSL_SUPPORT
 	return true;
 #else
@@ -97,50 +97,50 @@ SSLSocket::SSLSocket( std::string hostname , bool validateCertificate, bool vali
 	mValidateCertificate( validateCertificate ),
 	mValidateHostname( validateHostname )
 {
-	Init();
+	init();
 }
 
 SSLSocket::~SSLSocket() {
 	eeSAFE_DELETE( mImpl );
 }
 
-Socket::Status SSLSocket::Connect( const IpAddress& remoteAddress, unsigned short remotePort, Time timeout ) {
+Socket::Status SSLSocket::connect( const IpAddress& remoteAddress, unsigned short remotePort, Time timeout ) {
 	Status status = Socket::Disconnected;
 	
-	if ( ( status = TcpSocket::Connect( remoteAddress, remotePort, timeout ) ) == Socket::Done ) {
+	if ( ( status = TcpSocket::connect( remoteAddress, remotePort, timeout ) ) == Socket::Done ) {
 		status = mImpl->Connect( remoteAddress, remotePort, timeout );
 	}
 	
 	return status;
 }
 
-void SSLSocket::Disconnect() {
+void SSLSocket::disconnect() {
 	mImpl->Disconnect();
-	TcpSocket::Disconnect();
+	TcpSocket::disconnect();
 }
 
-Socket::Status SSLSocket::Send(const void* data, std::size_t size) {
+Socket::Status SSLSocket::send(const void* data, std::size_t size) {
 	return mImpl->Send( data, size );
 }
 
-Socket::Status SSLSocket::Receive(void* data, std::size_t size, std::size_t& received) {
+Socket::Status SSLSocket::receive(void* data, std::size_t size, std::size_t& received) {
 	return mImpl->Receive( data, size, received );
 }
 
-Socket::Status SSLSocket::Send(Packet& packet) {
-	return TcpSocket::Send( packet );
+Socket::Status SSLSocket::send(Packet& packet) {
+	return TcpSocket::send( packet );
 }
 
-Socket::Status SSLSocket::Receive(Packet& packet) {
-	return TcpSocket::Receive( packet );
+Socket::Status SSLSocket::receive(Packet& packet) {
+	return TcpSocket::receive( packet );
 }
 
-Socket::Status SSLSocket::TcpSend(const void* data, std::size_t size) {
-	return TcpSocket::Send( data, size );
+Socket::Status SSLSocket::tcpSend(const void* data, std::size_t size) {
+	return TcpSocket::send( data, size );
 }
 
-Socket::Status SSLSocket::TcpReceive(void* data, std::size_t size, std::size_t& received) {
-	return TcpSocket::Receive( data, size, received );
+Socket::Status SSLSocket::tcpReceive(void* data, std::size_t size, std::size_t& received) {
+	return TcpSocket::receive( data, size, received );
 }
 
 }}}

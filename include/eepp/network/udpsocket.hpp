@@ -26,7 +26,7 @@ class EE_API UdpSocket : public Socket {
 	**  returns 0.
 	**  @return Port to which the socket is bound
 	**  @see Bind */
-	unsigned short GetLocalPort() const;
+	unsigned short getLocalPort() const;
 
 	/** @brief Bind the socket to a specific port
 	**  Binding the socket to a port is necessary for being
@@ -37,14 +37,14 @@ class EE_API UdpSocket : public Socket {
 	**  @param port Port to Bind the socket to
 	**  @return Status code
 	**  @see Unbind, GetLocalPort */
-	Status Bind(unsigned short port);
+	Status bind(unsigned short port);
 
 	/** @brief Unbind the socket from the local port to which it is bound
 	**  The port that the socket was previously using is immediately
 	**  available after this function is called. If the
 	**  socket is not bound to a port, this function has no effect.
 	**  @see Bind */
-	void Unbind();
+	void unbind();
 
 	/** @brief Send raw data to a remote peer
 	**  Make sure that @a size is not greater than
@@ -56,7 +56,7 @@ class EE_API UdpSocket : public Socket {
 	**  @param remotePort	Port of the receiver to send the data to
 	**  @return Status code
 	**  @see Receive */
-	Status Send(const void* data, std::size_t size, const IpAddress& remoteAddress, unsigned short remotePort);
+	Status send(const void* data, std::size_t size, const IpAddress& remoteAddress, unsigned short remotePort);
 
 	/** @brief Receive raw data from a remote peer
 	**  In blocking mode, this function will wait until some
@@ -72,7 +72,7 @@ class EE_API UdpSocket : public Socket {
 	**  @param remotePort	Port of the peer that sent the data
 	**  @return Status code
 	**  @see Send */
-	Status Receive(void* data, std::size_t size, std::size_t& received, IpAddress& remoteAddress, unsigned short& remotePort);
+	Status receive(void* data, std::size_t size, std::size_t& received, IpAddress& remoteAddress, unsigned short& remotePort);
 
 	/** @brief Send a formatted packet of data to a remote peer
 	**  Make sure that the packet size is not greater than
@@ -83,7 +83,7 @@ class EE_API UdpSocket : public Socket {
 	**  @param remotePort	Port of the receiver to send the data to
 	**  @return Status code
 	**  @see Receive */
-	Status Send(Packet& packet, const IpAddress& remoteAddress, unsigned short remotePort);
+	Status send(Packet& packet, const IpAddress& remoteAddress, unsigned short remotePort);
 
 	/** @brief Receive a formatted packet of data from a remote peer
 	**  In blocking mode, this function will wait until the whole packet
@@ -93,7 +93,7 @@ class EE_API UdpSocket : public Socket {
 	**  @param remotePort	Port of the peer that sent the data
 	**  @return Status code
 	**  @see Send */
-	Status Receive(Packet& packet, IpAddress& remoteAddress, unsigned short& remotePort);
+	Status receive(Packet& packet, IpAddress& remoteAddress, unsigned short& remotePort);
 private:
 	// Member data
 	std::vector<char> mBuffer; ///< Temporary buffer holding the received data in Receive(Packet)
@@ -157,7 +157,7 @@ UdpSocket socket;
 socket.Bind(55001);
 
 // Send a message to 192.168.1.50 on port 55002
-std::string message = "Hi, I am " + IpAddress::GetLocalAddress().ToString();
+std::string message = "Hi, I am " + IpAddress::getLocalAddress().toString();
 socket.Send(message.c_str(), message.size() + 1, "192.168.1.50", 55002);
 
 // Receive an answer (most likely from 192.168.1.50, but could be anyone else)
@@ -165,26 +165,26 @@ char buffer[1024];
 std::size_t received = 0;
 IpAddress sender;
 unsigned short port;
-socket.Receive(buffer, sizeof(buffer), received, sender, port);
-std::cout << sender.ToString() << " said: " << buffer << std::endl;
+socket.receive(buffer, sizeof(buffer), received, sender, port);
+std::cout << sender.toString() << " said: " << buffer << std::endl;
 
 // ----- The server -----
 
 // Create a socket and bind it to the port 55002
 UdpSocket socket;
-socket.Bind(55002);
+socket.bind(55002);
 
 // Receive a message from anyone
 char buffer[1024];
 std::size_t received = 0;
 IpAddress sender;
 unsigned short port;
-socket.Receive(buffer, sizeof(buffer), received, sender, port);
-std::cout << sender.ToString() << " said: " << buffer << std::endl;
+socket.receive(buffer, sizeof(buffer), received, sender, port);
+std::cout << sender.toString() << " said: " << buffer << std::endl;
 
 // Send an answer
-std::string message = "Welcome " + sender.ToString();
-socket.Send(message.c_str(), message.size() + 1, sender, port);
+std::string message = "Welcome " + sender.toString();
+socket.send(message.c_str(), message.size() + 1, sender, port);
 @endcode
 
 @see Socket, TcpSocket, Packet

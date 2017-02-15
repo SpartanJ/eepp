@@ -108,17 +108,17 @@ public:
 			** equivalent to testing if the status code is < 400.
 			**
 			** @return True if the status is a success, false if it is a failure */
-			bool IsOk() const;
+			bool isOk() const;
 
 
 			/** @brief Get the status code of the response
 			**
 			** @return Status code */
-			Status GetStatus() const;
+			Status getStatus() const;
 
 			/** @brief Get the full message contained in the response
 			**  @return The response message */
-			const std::string& GetMessage() const;
+			const std::string& getMessage() const;
 		private:
 			// Member data
 			Status		mStatus;  ///< Status code returned from the server
@@ -135,7 +135,7 @@ public:
 
 			/** @brief Get the directory returned in the response
 			** @return Directory name */
-			const std::string& GetDirectory() const;
+			const std::string& getDirectory() const;
 		private:
 			// Member data
 			std::string mDirectory; ///< Directory extracted from the response message
@@ -155,7 +155,7 @@ public:
 		/** @brief Return the array of directory/file names
 		**
 		** @return Array containing the requested listing */
-		const std::vector<std::string>& GetListing() const;
+		const std::vector<std::string>& getListing() const;
 	private:
 		// Member data
 		std::vector<std::string> mListing; ///< Directory/file names extracted from the data
@@ -181,19 +181,18 @@ public:
 	**  @param timeout Maximum time to wait
 	**  @return Server response to the request
 	**  @see Disconnect */
-	Response Connect(const IpAddress& server, unsigned short port = 21, Time timeout = Time::Zero);
+	Response connect(const IpAddress& server, unsigned short port = 21, Time timeout = Time::Zero);
 
 	/** @brief Close the connection with the server
 	**  @return Server response to the request
 	**  @see Connect */
-	Response Disconnect();
+	Response disconnect();
 
 	/** @brief Log in using an anonymous account
 	**  Logging in is mandatory after connecting to the server.
 	**  Users that are not logged in cannot perform any operation.
 	**  @return Server response to the request */
-	Response Login();
-
+	Response login();
 
 	/** @brief Log in using a username and a password
 	**  Logging in is mandatory after connecting to the server.
@@ -201,21 +200,21 @@ public:
 	**  @param name     User name
 	**  @param password Password
 	**  @return Server response to the request */
-	Response Login(const std::string& name, const std::string& password);
+	Response login(const std::string& name, const std::string& password);
 
 
 	/** @brief Send a null command to keep the connection alive
 	**  This command is useful because the server may close the
 	**  connection automatically if no command is sent.
 	**  @return Server response to the request */
-	Response KeepAlive();
+	Response keepAlive();
 
 	/** @brief Get the current working directory
 	**  The working directory is the root path for subsequent
 	**  operations involving directories and/or filenames.
 	**  @return Server response to the request
 	**  @see GetDirectoryListing, ChangeDirectory, ParentDirectory */
-	DirectoryResponse GetWorkingDirectory();
+	DirectoryResponse getWorkingDirectory();
 
 	/** @brief Get the contents of the given directory
 	**  This function retrieves the sub-directories and files
@@ -225,20 +224,20 @@ public:
 	**  @param directory Directory to list
 	**  @return Server response to the request
 	**  @see GetWorkingDirectory, ChangeDirectory, ParentDirectory */
-	ListingResponse GetDirectoryListing(const std::string& directory = "");
+	ListingResponse getDirectoryListing(const std::string& directory = "");
 
 	/**  @brief Change the current working directory
 	**  The new directory must be relative to the current one.
 	**  @param directory New working directory
 	**  @return Server response to the request
 	**  @see GetWorkingDirectory, GetDirectoryListing, ParentDirectory */
-	Response ChangeDirectory(const std::string& directory);
+	Response changeDirectory(const std::string& directory);
 
 
 	/** @brief Go to the parent directory of the current one
 	**  @return Server response to the request
 	**  @see GetWorkingDirectory, GetDirectoryListing, ChangeDirectory */
-	Response ParentDirectory();
+	Response parentDirectory();
 
 	/**  @brief Create a new directory
 	**  The new directory is created as a child of the current
@@ -246,8 +245,7 @@ public:
 	**  @param name Name of the directory to create
 	**  @return Server response to the request
 	**  @see DeleteDirectory */
-	Response CreateDirectory(const std::string& name);
-
+	Response createDirectory(const std::string& name);
 
 	/**  @brief Remove an existing directory
 	**  The directory to remove must be relative to the
@@ -257,7 +255,7 @@ public:
 	**  @param name Name of the directory to remove
 	**  @return Server response to the request
 	**  @see CreateDirectory */
-	Response DeleteDirectory(const std::string& name);
+	Response deleteDirectory(const std::string& name);
 
 	/** @brief Rename an existing file
 	**  The filenames must be relative to the current working
@@ -266,7 +264,7 @@ public:
 	**  @param newName New name of the file
 	**  @return Server response to the request
 	**  @see DeleteFile */
-	Response RenameFile(const std::string& file, const std::string& newName);
+	Response renameFile(const std::string& file, const std::string& newName);
 
 	/** @brief Remove an existing file
 	**  The file name must be relative to the current working
@@ -276,7 +274,7 @@ public:
 	**  @param name File to remove
 	**  @return Server response to the request
 	**  @see RenameFile */
-	Response DeleteFile(const std::string& name);
+	Response deleteFile(const std::string& name);
 
 	/**  @brief Download a file from the server
 	**  The filename of the distant file is relative to the
@@ -291,7 +289,7 @@ public:
 	**  @param mode       Transfer mode
 	**  @return Server response to the request
 	**  @see Upload */
-	Response Download(const std::string& remoteFile, const std::string& localPath, TransferMode mode = Binary);
+	Response download(const std::string& remoteFile, const std::string& localPath, TransferMode mode = Binary);
 
 	/**  @brief Upload a file to the server
 	**  The name of the local file is relative to the current
@@ -303,19 +301,19 @@ public:
 	**  @param mode       Transfer mode
 	**  @return Server response to the request
 	**  @see Download */
-	Response Upload(const std::string& localFile, const std::string& remotePath, TransferMode mode = Binary);
+	Response upload(const std::string& localFile, const std::string& remotePath, TransferMode mode = Binary);
 private :
 	/** @brief Send a command to the FTP server
 	**  @param command   Command to send
 	**  @param parameter Command parameter
 	**  @return Server response to the request */
-	Response SendCommand(const std::string& command, const std::string& parameter = "");
+	Response sendCommand(const std::string& command, const std::string& parameter = "");
 
 	/** @brief Receive a response from the server
 	**  This function must be called after each call to
 	**  SendCommand that expects a response.
 	**  @return Server response to the request */
-	Response GetResponse();
+	Response getResponse();
 
 	/**  @brief Utility class for exchanging datas with the server on the data channel */
 	class DataChannel;
@@ -358,30 +356,30 @@ Ftp ftp;
 
 // Connect to the server
 Ftp::Response response = ftp.Connect("ftp://ftp.myserver.com");
-if (response.IsOk())
+if (response.isOk())
 	std::cout << "Connected" << std::endl;
 
 // Log in
-response = ftp.Login("laurent", "dF6Zm89D");
-if (response.IsOk())
+response = ftp.login("laurent", "dF6Zm89D");
+if (response.isOk())
 	std::cout << "Logged in" << std::endl;
 
 // Print the working directory
-Ftp::DirectoryResponse directory = ftp.GetWorkingDirectory();
-if (directory.IsOk())
-	std::cout << "Working directory: " << directory.GetDirectory() << std::endl;
+Ftp::DirectoryResponse directory = ftp.getWorkingDirectory();
+if (directory.isOk())
+	std::cout << "Working directory: " << directory.getDirectory() << std::endl;
 
 // Create a new directory
-response = ftp.CreateDirectory("files");
-if (response.IsOk())
+response = ftp.createDirectory("files");
+if (response.isOk())
 	std::cout << "Created new directory" << std::endl;
 
 // Upload a file to this new directory
-response = ftp.Upload("local-path/file.txt", "files", Ftp::Ascii);
-if (response.IsOk())
+response = ftp.upload("local-path/file.txt", "files", Ftp::Ascii);
+if (response.isOk())
 	std::cout << "File uploaded" << std::endl;
 
 // Disconnect from the server (optional)
-ftp.Disconnect();
+ftp.disconnect();
 @endcode
 */

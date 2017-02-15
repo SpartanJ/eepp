@@ -29,37 +29,37 @@ Ftp::Response::Response(Status code, const std::string& message) :
 {
 }
 
-bool Ftp::Response::IsOk() const {
+bool Ftp::Response::isOk() const {
 	return mStatus < 400;
 }
 
-Ftp::Response::Status Ftp::Response::GetStatus() const {
+Ftp::Response::Status Ftp::Response::getStatus() const {
 	return mStatus;
 }
 
-const std::string& Ftp::Response::GetMessage() const {
+const std::string& Ftp::Response::getMessage() const {
 	return mMessage;
 }
 
 Ftp::DirectoryResponse::DirectoryResponse(const Ftp::Response& response) :
 	Ftp::Response(response)
 {
-	if ( IsOk() ) {
+	if ( isOk() ) {
 		// Extract the directory from the server response
-		std::string::size_type begin = GetMessage().find('"', 0);
-		std::string::size_type end   = GetMessage().find('"', begin + 1);
-		mDirectory = GetMessage().substr(begin + 1, end - begin - 1);
+		std::string::size_type begin = getMessage().find('"', 0);
+		std::string::size_type end   = getMessage().find('"', begin + 1);
+		mDirectory = getMessage().substr(begin + 1, end - begin - 1);
 	}
 }
 
-const std::string& Ftp::DirectoryResponse::GetDirectory() const {
+const std::string& Ftp::DirectoryResponse::getDirectory() const {
 	return mDirectory;
 }
 
 Ftp::ListingResponse::ListingResponse(const Ftp::Response& response, const std::string& data) :
 	Ftp::Response(response)
 {
-	if ( IsOk() ) {
+	if ( isOk() ) {
 		// Fill the array of strings
 		std::string::size_type lastPos = 0;
 		for (std::string::size_type pos = data.find("\r\n"); pos != std::string::npos; pos = data.find("\r\n", lastPos)) {
@@ -69,111 +69,111 @@ Ftp::ListingResponse::ListingResponse(const Ftp::Response& response, const std::
 	}
 }
 
-const std::vector<std::string>& Ftp::ListingResponse::GetListing() const {
+const std::vector<std::string>& Ftp::ListingResponse::getListing() const {
 	return mListing;
 }
 
 Ftp::~Ftp() {
-	Disconnect();
+	disconnect();
 }
 
-Ftp::Response Ftp::Connect(const IpAddress& server, unsigned short port, Time timeout) {
+Ftp::Response Ftp::connect(const IpAddress& server, unsigned short port, Time timeout) {
 	// Connect to the server
-	if (mCommandSocket.Connect(server, port, timeout) != Socket::Done)
+	if (mCommandSocket.connect(server, port, timeout) != Socket::Done)
 		return Response(Response::ConnectionFailed);
 
 	// Get the response to the connection
-	return GetResponse();
+	return getResponse();
 }
 
-Ftp::Response Ftp::Login() {
-	return Login("anonymous", "user@eepp.com.ar");
+Ftp::Response Ftp::login() {
+	return login("anonymous", "user@eepp.com.ar");
 }
 
-Ftp::Response Ftp::Login(const std::string& name, const std::string& password) {
-	Response response = SendCommand("USER", name);
-	if (response.IsOk())
-		response = SendCommand("PASS", password);
+Ftp::Response Ftp::login(const std::string& name, const std::string& password) {
+	Response response = sendCommand("USER", name);
+	if (response.isOk())
+		response = sendCommand("PASS", password);
 
 	return response;
 }
 
-Ftp::Response Ftp::Disconnect() {
+Ftp::Response Ftp::disconnect() {
 	// Send the exit command
-	Response response = SendCommand("QUIT");
-	if (response.IsOk())
-		mCommandSocket.Disconnect();
+	Response response = sendCommand("QUIT");
+	if (response.isOk())
+		mCommandSocket.disconnect();
 
 	return response;
 }
 
-Ftp::Response Ftp::KeepAlive() {
-	return SendCommand("NOOP");
+Ftp::Response Ftp::keepAlive() {
+	return sendCommand("NOOP");
 }
 
-Ftp::DirectoryResponse Ftp::GetWorkingDirectory() {
-	return DirectoryResponse(SendCommand("PWD"));
+Ftp::DirectoryResponse Ftp::getWorkingDirectory() {
+	return DirectoryResponse(sendCommand("PWD"));
 }
 
-Ftp::ListingResponse Ftp::GetDirectoryListing(const std::string& directory) {
+Ftp::ListingResponse Ftp::getDirectoryListing(const std::string& directory) {
 	// Open a data channel on default port (20) using ASCII transfer mode
 	std::ostringstream directoryData;
 	DataChannel data(*this);
 	Response response = data.Open(Ascii);
 
-	if (response.IsOk()) {
+	if (response.isOk()) {
 		// Tell the server to send us the listing
-		response = SendCommand("NLST", directory);
-		if (response.IsOk()) {
+		response = sendCommand("NLST", directory);
+		if (response.isOk()) {
 			// Receive the listing
 			data.Receive(directoryData);
 
 			// Get the response from the server
-			response = GetResponse();
+			response = getResponse();
 		}
 	}
 
 	return ListingResponse(response, directoryData.str());
 }
 
-Ftp::Response Ftp::ChangeDirectory(const std::string& directory) {
-	return SendCommand("CWD", directory);
+Ftp::Response Ftp::changeDirectory(const std::string& directory) {
+	return sendCommand("CWD", directory);
 }
 
-Ftp::Response Ftp::ParentDirectory() {
-	return SendCommand("CDUP");
+Ftp::Response Ftp::parentDirectory() {
+	return sendCommand("CDUP");
 }
 
-Ftp::Response Ftp::CreateDirectory(const std::string& name) {
-	return SendCommand("MKD", name);
+Ftp::Response Ftp::createDirectory(const std::string& name) {
+	return sendCommand("MKD", name);
 }
 
-Ftp::Response Ftp::DeleteDirectory(const std::string& name) {
-	return SendCommand("RMD", name);
+Ftp::Response Ftp::deleteDirectory(const std::string& name) {
+	return sendCommand("RMD", name);
 }
 
-Ftp::Response Ftp::RenameFile(const std::string& file, const std::string& newName) {
-	Response response = SendCommand("RNFR", file);
-	if (response.IsOk())
-		response = SendCommand("RNTO", newName);
+Ftp::Response Ftp::renameFile(const std::string& file, const std::string& newName) {
+	Response response = sendCommand("RNFR", file);
+	if (response.isOk())
+		response = sendCommand("RNTO", newName);
 
 	return response;
 }
 
-Ftp::Response Ftp::DeleteFile(const std::string& name) {
-	return SendCommand("DELE", name);
+Ftp::Response Ftp::deleteFile(const std::string& name) {
+	return sendCommand("DELE", name);
 }
 
-Ftp::Response Ftp::Download(const std::string& remoteFile, const std::string& localPath, TransferMode mode) {
+Ftp::Response Ftp::download(const std::string& remoteFile, const std::string& localPath, TransferMode mode) {
 	// Open a data channel using the given transfer mode
 	DataChannel data(*this);
 	Response response = data.Open(mode);
 
-	if ( response.IsOk() ) {
+	if ( response.isOk() ) {
 		// Tell the server to start the transfer
-		response = SendCommand("RETR", remoteFile);
+		response = sendCommand("RETR", remoteFile);
 
-		if ( response.IsOk() )
+		if ( response.isOk() )
 		{
 			// Extract the filename from the file path
 			std::string filename = remoteFile;
@@ -198,10 +198,10 @@ Ftp::Response Ftp::Download(const std::string& remoteFile, const std::string& lo
 			file.close();
 
 			// Get the response from the server
-			response = GetResponse();
+			response = getResponse();
 
 			// If the download was unsuccessful, delete the partial file
-			if (!response.IsOk())
+			if (!response.isOk())
 				std::remove((path + filename).c_str());
 		}
 	}
@@ -209,7 +209,7 @@ Ftp::Response Ftp::Download(const std::string& remoteFile, const std::string& lo
 	return response;
 }
 
-Ftp::Response Ftp::Upload(const std::string& localFile, const std::string& remotePath, TransferMode mode) {
+Ftp::Response Ftp::upload(const std::string& localFile, const std::string& remotePath, TransferMode mode) {
 	// Get the contents of the file to send
 	std::ifstream file(localFile.c_str(), std::ios_base::binary);
 	if (!file)
@@ -229,22 +229,22 @@ Ftp::Response Ftp::Upload(const std::string& localFile, const std::string& remot
 	// Open a data channel using the given transfer mode
 	DataChannel data(*this);
 	Response response = data.Open(mode);
-	if (response.IsOk()) {
+	if (response.isOk()) {
 		// Tell the server to start the transfer
-		response = SendCommand("STOR", path + filename);
-		if (response.IsOk()) {
+		response = sendCommand("STOR", path + filename);
+		if (response.isOk()) {
 			// Send the file data
 			data.Send(file);
 
 			// Get the response from the server
-			response = GetResponse();
+			response = getResponse();
 		}
 	}
 
 	return response;
 }
 
-Ftp::Response Ftp::SendCommand(const std::string& command, const std::string& parameter) {
+Ftp::Response Ftp::sendCommand(const std::string& command, const std::string& parameter) {
 	// Build the command string
 	std::string commandStr;
 	if (parameter != "")
@@ -253,14 +253,14 @@ Ftp::Response Ftp::SendCommand(const std::string& command, const std::string& pa
 		commandStr = command + "\r\n";
 
 	// Send it to the server
-	if (mCommandSocket.Send(commandStr.c_str(), commandStr.length()) != Socket::Done)
+	if (mCommandSocket.send(commandStr.c_str(), commandStr.length()) != Socket::Done)
 		return Response(Response::ConnectionClosed);
 
 	// Get the response
-	return GetResponse();
+	return getResponse();
 }
 
-Ftp::Response Ftp::GetResponse() {
+Ftp::Response Ftp::getResponse() {
 	// We'll use a variable to keep track of the last valid code.
 	// It is useful in case of multi-lines responses, because the end of such a response
 	// will start by the same code
@@ -272,7 +272,7 @@ Ftp::Response Ftp::GetResponse() {
 		// Receive the response from the server
 		char buffer[1024];
 		std::size_t length;
-		if (mCommandSocket.Receive(buffer, sizeof(buffer), length) != Socket::Done)
+		if (mCommandSocket.receive(buffer, sizeof(buffer), length) != Socket::Done)
 			return Response(Response::ConnectionClosed);
 
 		// There can be several lines inside the received buffer, extract them all
@@ -376,15 +376,15 @@ Ftp::DataChannel::DataChannel(Ftp& owner) :
 
 Ftp::Response Ftp::DataChannel::Open(Ftp::TransferMode mode) {
 	// Open a data connection in active mode (we connect to the server)
-	Ftp::Response response = mFtp.SendCommand("PASV");
+	Ftp::Response response = mFtp.sendCommand("PASV");
 
-	if (response.IsOk()) {
+	if (response.isOk()) {
 		// Extract the connection address and port from the response
-		std::string::size_type begin = response.GetMessage().find_first_of("0123456789");
+		std::string::size_type begin = response.getMessage().find_first_of("0123456789");
 
 		if (begin != std::string::npos) {
 			Uint8 data[6] = {0, 0, 0, 0, 0, 0};
-			std::string str = response.GetMessage().substr(begin);
+			std::string str = response.getMessage().substr(begin);
 			std::size_t index = 0;
 			std::locale loc;
 
@@ -407,7 +407,7 @@ Ftp::Response Ftp::DataChannel::Open(Ftp::TransferMode mode) {
 							  static_cast<Uint8>(data[3]));
 
 			// Connect the data channel to the server
-			if (mDataSocket.Connect(address, port) == Socket::Done) {
+			if (mDataSocket.connect(address, port) == Socket::Done) {
 				// Translate the transfer mode to the corresponding FTP parameter
 				std::string modeStr;
 				switch (mode) {
@@ -417,7 +417,7 @@ Ftp::Response Ftp::DataChannel::Open(Ftp::TransferMode mode) {
 				}
 
 				// Set the transfer mode
-				response = mFtp.SendCommand("TYPE", modeStr);
+				response = mFtp.sendCommand("TYPE", modeStr);
 			} else {
 				// Failed to connect to the server
 				response = Ftp::Response(Ftp::Response::ConnectionFailed);
@@ -433,7 +433,7 @@ void Ftp::DataChannel::Receive(std::ostream& stream) {
 	char buffer[1024];
 	std::size_t received;
 
-	while (mDataSocket.Receive(buffer, sizeof(buffer), received) == Socket::Done) {
+	while (mDataSocket.receive(buffer, sizeof(buffer), received) == Socket::Done) {
 		stream.write(buffer, static_cast<std::streamsize>(received));
 
 		if (!stream.good()) {
@@ -443,7 +443,7 @@ void Ftp::DataChannel::Receive(std::ostream& stream) {
 	}
 
 	// Close the data socket
-	mDataSocket.Disconnect();
+	mDataSocket.disconnect();
 }
 
 void Ftp::DataChannel::Send( std::istream& stream ) {
@@ -464,7 +464,7 @@ void Ftp::DataChannel::Send( std::istream& stream ) {
 
 		if (count > 0) {
 			// we could read more data from the stream: send them
-			if (mDataSocket.Send(buffer, count) != Socket::Done)
+			if (mDataSocket.send(buffer, count) != Socket::Done)
 				break;
 		} else {
 			// no more data: exit the loop
@@ -473,7 +473,7 @@ void Ftp::DataChannel::Send( std::istream& stream ) {
 	}
 
 	// Close the data socket
-	mDataSocket.Disconnect();
+	mDataSocket.disconnect();
 }
 
 }}

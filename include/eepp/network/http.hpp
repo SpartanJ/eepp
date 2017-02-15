@@ -52,49 +52,49 @@ class EE_API Http : NonCopyable {
 			**  sending the request).
 			**  @param field Name of the field to set
 			**  @param value Value of the field */
-			void SetField(const std::string& field, const std::string& value);
+			void setField(const std::string& field, const std::string& value);
 
 			/** @brief Set the request method
 			**  See the Method enumeration for a complete list of all
 			**  the availale methods.
 			**  The method is Http::Request::Get by default.
 			**  @param method Method to use for the request */
-			void SetMethod(Method method);
+			void setMethod(Method method);
 
 			/** @brief Set the requested URI
 			**  The URI is the resource (usually a web page or a file)
 			**  that you want to get or post.
 			**  The URI is "/" (the root page) by default.
 			**  @param uri URI to request, relative to the host */
-			void SetUri(const std::string& uri);
+			void setUri(const std::string& uri);
 
 			/** @brief Set the HTTP version for the request
 			**  The HTTP version is 1.0 by default.
 			**  @param major Major HTTP version number
 			**  @param minor Minor HTTP version number */
-			void SetHttpVersion(unsigned int major, unsigned int minor);
+			void setHttpVersion(unsigned int major, unsigned int minor);
 
 			/** @brief Set the body of the request
 			**  The body of a request is optional and only makes sense
 			**  for POST requests. It is ignored for all other methods.
 			**  The body is empty by default.
 			**  @param body Content of the body */
-			void SetBody(const std::string& body);
+			void setBody(const std::string& body);
 
 			/** @return The request Uri */
-			const std::string& GetUri() const;
+			const std::string& getUri() const;
 
 			/** @return If SSL certificate validation is enabled */
-			const bool& ValidateCertificate() const;
+			const bool& validateCertificate() const;
 
 			/** Enable/disable SSL certificate validation */
-			void ValidateCertificate( bool enable );
+			void validateCertificate( bool enable );
 
 			/** @return If SSL hostname validation is enabled */
-			const bool& ValidateHostname() const;
+			const bool& validateHostname() const;
 
 			/** Enable/disable SSL hostname validation */
-			void ValidateHostname( bool enable );
+			void validateHostname( bool enable );
 		private:
 			friend class Http;
 
@@ -102,13 +102,13 @@ class EE_API Http : NonCopyable {
 			**  This is used internally by Http before sending the
 			**  request to the web server.
 			**  @return String containing the request, ready to be sent */
-			std::string Prepare() const;
+			std::string prepare() const;
 
 			/** @brief Check if the request defines a field
 			**  This function uses case-insensitive comparisons.
 			**  @param field Name of the field to test
 			**  @return True if the field exists, false otherwise */
-			bool HasField(const std::string& field) const;
+			bool hasField(const std::string& field) const;
 
 			// Types
 			typedef std::map<std::string, std::string> FieldTable;
@@ -174,7 +174,7 @@ class EE_API Http : NonCopyable {
 			**  case-insensitive comparisons.
 			**  @param field Name of the field to get
 			**  @return Value of the field, or empty string if not found */
-			const std::string& GetField(const std::string& field) const;
+			const std::string& getField(const std::string& field) const;
 
 			/** @brief Get the response status code
 			**  The status code should be the first thing to be checked
@@ -182,17 +182,17 @@ class EE_API Http : NonCopyable {
 			**  success, a failure or anything else (see the Status
 			**  enumeration).
 			**  @return Status code of the response */
-			Status GetStatus() const;
+			Status getStatus() const;
 
 			/** @brief Get the major HTTP version number of the response
 			**  @return Major HTTP version number
 			**  @see GetMinorHttpVersion */
-			unsigned int GetMajorHttpVersion() const;
+			unsigned int getMajorHttpVersion() const;
 
 			/** @brief Get the minor HTTP version number of the response
 			**  @return Minor HTTP version number
 			**  @see GetMajorHttpVersion */
-			unsigned int GetMinorHttpVersion() const;
+			unsigned int getMinorHttpVersion() const;
 
 			/** @brief Get the body of the response
 			**  The body of a response may contain:
@@ -201,7 +201,7 @@ class EE_API Http : NonCopyable {
 			**  @li nothing (for HEAD requests)
 			**  @li an error message (in case of an error)
 			**  @return The response body */
-			const std::string& GetBody() const;
+			const std::string& getBody() const;
 			private :
 			friend class Http;
 
@@ -209,13 +209,13 @@ class EE_API Http : NonCopyable {
 			**  This function is used by Http to build the response
 			**  of a request.
 			**  @param data Content of the response to parse */
-			void Parse(const std::string& data);
+			void parse(const std::string& data);
 
 			/** @brief Read values passed in the answer header
 			**  This function is used by Http to extract values passed
 			**  in the response.
 			**  @param in String stream containing the header values */
-			void ParseFields(std::istream &in);
+			void parseFields(std::istream &in);
 
 			// Types
 			typedef std::map<std::string, std::string> FieldTable;
@@ -256,7 +256,7 @@ class EE_API Http : NonCopyable {
 		**  @param host Web server to connect to
 		**  @param port Port to use for connection
 		**	@param useSSL force the SSL usage ( if compiled with the support of it ). If the host starts with https:// it will use it by default. */
-		void SetHost(const std::string& host, unsigned short port = 0, bool useSSL = false);
+		void setHost(const std::string& host, unsigned short port = 0, bool useSSL = false);
 
 		/** @brief Send a HTTP request and return the server's response.
 		**  You must have a valid host before sending a request (see SetHost).
@@ -270,7 +270,7 @@ class EE_API Http : NonCopyable {
 		**  @param request Request to send
 		**  @param timeout Maximum time to wait
 		**  @return Server's response */
-		Response SendRequest(const Request& request, Time timeout = Time::Zero);
+		Response sendRequest(const Request& request, Time timeout = Time::Zero);
 
 		/** Definition of the async callback response */
 		typedef cb::Callback3<void, const Http&, Http::Request&, Http::Response&>		AsyncResponseCallback;
@@ -278,16 +278,16 @@ class EE_API Http : NonCopyable {
 		/** @brief Sends the request and creates a new thread, when got the response informs the result to the callback.
 		**	This function does not lock the caller thread.
 		**  @see SendRequest */
-		void SendAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, Time timeout = Time::Zero );
+		void sendAsyncRequest( AsyncResponseCallback cb, const Http::Request& request, Time timeout = Time::Zero );
 
 		/** @return The host address */
-		const IpAddress& GetHost() const;
+		const IpAddress& getHost() const;
 
 		/** @return The host name */
-		const std::string& GetHostName() const;
+		const std::string& getHostName() const;
 
 		/** @return The host port */
-		const unsigned short& GetPort() const;
+		const unsigned short& getPort() const;
 	private:
 		class AsyncRequest : public Thread {
 			public:
@@ -311,7 +311,7 @@ class EE_API Http : NonCopyable {
 		Mutex							mThreadsMutex;
 		bool							mIsSSL;
 
-		void RemoveOldThreads();
+		void removeOldThreads();
 };
 
 }}
@@ -349,19 +349,19 @@ Usage example:
 Http http;
 
 // We'll work on http://www.google.com
-http.SetHost("http://www.google.com");
+http.setHost("http://www.google.com");
 
 // Prepare a request to get the 'features.php' page
 Http::Request request("features.php");
 
 // Send the request
-Http::Response response = http.SendRequest(request);
+Http::Response response = http.sendRequest(request);
 
 // Check the status code and display the result
-Http::Response::Status status = response.GetStatus();
+Http::Response::Status status = response.getStatus();
 if (status == Http::Response::Ok)
 {
-	std::cout << response.GetBody() << std::endl;
+	std::cout << response.getBody() << std::endl;
 }
 else
 {

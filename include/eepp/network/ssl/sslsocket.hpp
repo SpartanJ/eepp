@@ -11,28 +11,28 @@ class EE_API SSLSocket : public TcpSocket {
 	public:
 		static std::string CertificatesPath;
 
-		static bool Init();
+		static bool init();
 		
-		static bool End();
+		static bool end();
 
 		/** @return True when the library was compiled with SSL support. */
-		static bool IsSupported();
+		static bool isSupported();
 
 		SSLSocket( std::string hostname, bool validateCertificate, bool validateHostname );
 
 		virtual ~SSLSocket();
 
-		Status Connect(const IpAddress& remoteAddress, unsigned short remotePort, Time timeout = Time::Zero);
+		Status connect(const IpAddress& remoteAddress, unsigned short remotePort, Time timeout = Time::Zero);
 
-		void Disconnect();
+		void disconnect();
 
-		Status Send(const void* data, std::size_t size);
+		Status send(const void* data, std::size_t size);
 
-		Status Receive(void* data, std::size_t size, std::size_t& received);
+		Status receive(void* data, std::size_t size, std::size_t& received);
 
-		Status Send(Packet& packet);
+		Status send(Packet& packet);
 
-		Status Receive(Packet& packet);
+		Status receive(Packet& packet);
 	protected:
 		friend class SSLSocketImpl;
 		friend class OpenSSLSocket;
@@ -42,9 +42,9 @@ class EE_API SSLSocket : public TcpSocket {
 		bool					mValidateCertificate;
 		bool					mValidateHostname;
 		
-		Status TcpSend(const void* data, std::size_t size);
+		Status tcpSend(const void* data, std::size_t size);
 
-		Status TcpReceive(void* data, std::size_t size, std::size_t& received);
+		Status tcpReceive(void* data, std::size_t size, std::size_t& received);
 };
 
 }}}

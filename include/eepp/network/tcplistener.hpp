@@ -20,7 +20,7 @@ public :
 	**  returns 0.
 	**  @return Port to which the socket is bound
 	**  @see Listen */
-	unsigned short GetLocalPort() const;
+	unsigned short getLocalPort() const;
 
 	/** @brief Start listening for connections
 	**  This functions makes the socket listen to the specified
@@ -30,13 +30,13 @@ public :
 	**  @param port Port to listen for new connections
 	**  @return Status code
 	**  @see Accept, Close */
-	Status Listen(unsigned short port);
+	Status listen(unsigned short port);
 
 	/** @brief Stop listening and close the socket
 	**  This function gracefully stops the listener. If the
 	**  socket is not listening, this function has no effect.
 	**  @see Listen */
-	void Close();
+	void close();
 
 	/** @brief Accept a new connection
 	**  If the socket is in blocking mode, this function will
@@ -44,7 +44,7 @@ public :
 	**  @param socket Socket that will hold the new connection
 	**  @return Status code
 	**  @see Listen */
-	Status Accept(TcpSocket& socket);
+	Status accept(TcpSocket& socket);
 };
 
 }}
@@ -79,16 +79,16 @@ Usage example:
 // Create a listener socket and make it wait for new
 // connections on port 55001
 TcpListener listener;
-listener.Listen(55001);
+listener.listen(55001);
 
 // Endless loop that waits for new connections
 while (running)
 {
 	 TcpSocket client;
-	 if (listener.Accept(client) == Socket::Done)
+	 if (listener.accept(client) == Socket::Done)
 	 {
 		 // A new client just connected!
-		 std::cout << "New connection received from " << client.GetRemoteAddress() << std::endl;
+		 std::cout << "New connection received from " << client.getRemoteAddress() << std::endl;
 		 doSomethingWith(client);
 	 }
 }

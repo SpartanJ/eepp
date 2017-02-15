@@ -69,7 +69,7 @@ IpAddress::IpAddress(Uint32 address) :
 {
 }
 
-std::string IpAddress::ToString() const {
+std::string IpAddress::toString() const {
 	in_addr address;
 	address.s_addr = mAddress;
 
@@ -77,11 +77,11 @@ std::string IpAddress::ToString() const {
 }
 
 
-Uint32 IpAddress::ToInteger() const {
+Uint32 IpAddress::toInteger() const {
 	return ntohl(mAddress);
 }
 
-IpAddress IpAddress::GetLocalAddress() {
+IpAddress IpAddress::getLocalAddress() {
 	// The method here is to connect a UDP socket to anyone (here to localhost),
 	// and get the local socket address with the getsockname function.
 	// UDP connection will not send anything to the network, so this function won't cause any overhead.
@@ -116,7 +116,7 @@ IpAddress IpAddress::GetLocalAddress() {
 	return localAddress;
 }
 
-IpAddress IpAddress::GetPublicAddress(Time timeout) {
+IpAddress IpAddress::getPublicAddress(Time timeout) {
 	// The trick here is more complicated, because the only way
 	// to get our public IP address is to get it from a distant computer.
 	// Here we get the web page from http://www.sfml-dev.org/ip-provider.php
@@ -124,16 +124,16 @@ IpAddress IpAddress::GetPublicAddress(Time timeout) {
 	// (not very hard: the web page contains only our IP address).
 	Http server("www.sfml-dev.org");
 	Http::Request request("/ip-provider.php", Http::Request::Get);
-	Http::Response page = server.SendRequest(request, timeout);
-	if (page.GetStatus() == Http::Response::Ok)
-		return IpAddress(page.GetBody());
+	Http::Response page = server.sendRequest(request, timeout);
+	if (page.getStatus() == Http::Response::Ok)
+		return IpAddress(page.getBody());
 
 	// Something failed: return an invalid address
 	return IpAddress();
 }
 
 bool operator ==(const IpAddress& left, const IpAddress& right) {
-	return left.ToInteger() == right.ToInteger();
+	return left.toInteger() == right.toInteger();
 }
 
 bool operator !=(const IpAddress& left, const IpAddress& right) {
@@ -141,7 +141,7 @@ bool operator !=(const IpAddress& left, const IpAddress& right) {
 }
 
 bool operator <(const IpAddress& left, const IpAddress& right) {
-	return left.ToInteger() < right.ToInteger();
+	return left.toInteger() < right.toInteger();
 }
 
 bool operator >(const IpAddress& left, const IpAddress& right) {
@@ -165,7 +165,7 @@ std::istream& operator >>(std::istream& stream, IpAddress& address) {
 }
 
 std::ostream& operator <<(std::ostream& stream, const IpAddress& address) {
-	return stream << address.ToString();
+	return stream << address.toString();
 }
 
 }}

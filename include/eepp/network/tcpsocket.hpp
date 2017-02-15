@@ -22,21 +22,21 @@ class EE_API TcpSocket : public Socket {
 	**  If the socket is not connected, this function returns 0.
 	**  @return Port to which the socket is bound
 	**  @see Connect, GetRemotePort */
-	unsigned short GetLocalPort() const;
+	unsigned short getLocalPort() const;
 
 	/** @brief Get the address of the connected peer
 	**  It the socket is not connected, this function returns
 	**  IpAddress::None.
 	**  @return Address of the remote peer
 	**  @see GetRemotePort */
-	IpAddress GetRemoteAddress() const;
+	IpAddress getRemoteAddress() const;
 
 	/** @brief Get the port of the connected peer to which
 			the socket is connected
 	**  If the socket is not connected, this function returns 0.
 	**  @return Remote port to which the socket is connected
 	**  @see GetRemoteAddress */
-	unsigned short GetRemotePort() const;
+	unsigned short getRemotePort() const;
 
 	/** @brief Connect the socket to a remote peer
 	**  In blocking mode, this function may take a while, especially
@@ -48,13 +48,13 @@ class EE_API TcpSocket : public Socket {
 	**  @param timeout	   Optional maximum time to wait
 	**  @return Status code
 	**  @see Disconnect */
-	virtual Status Connect(const IpAddress& remoteAddress, unsigned short remotePort, Time timeout = Time::Zero);
+	virtual Status connect(const IpAddress& remoteAddress, unsigned short remotePort, Time timeout = Time::Zero);
 
 	/** @brief Disconnect the socket from its remote peer
 	**  This function gracefully closes the connection. If the
 	**  socket is not connected, this function has no effect.
 	**  @see Connect */
-	virtual void Disconnect();
+	virtual void disconnect();
 
 	/** @brief Send raw data to the remote peer
 	**  To be able to handle partial sends over non-blocking
@@ -67,7 +67,7 @@ class EE_API TcpSocket : public Socket {
 	**  @param size Number of bytes to send
 	**  @return Status code
 	**  @see Receive */
-	virtual Status Send(const void* data, std::size_t size);
+	virtual Status send(const void* data, std::size_t size);
 
 	/** @brief Send raw data to the remote peer
 	**  This function will fail if the socket is not connected.
@@ -76,7 +76,7 @@ class EE_API TcpSocket : public Socket {
 	**  @param sent The number of bytes sent will be written here
 	**  @return Status code
 	**  @see receive */
-	virtual Status Send(const void* data, std::size_t size, std::size_t& sent);
+	virtual Status send(const void* data, std::size_t size, std::size_t& sent);
 
 	/** @brief Receive raw data from the remote peer
 	**  In blocking mode, this function will wait until some
@@ -87,7 +87,7 @@ class EE_API TcpSocket : public Socket {
 	**  @param received This variable is filled with the actual number of bytes received
 	**  @return Status code
 	**  @see Send */
-	virtual Status Receive(void* data, std::size_t size, std::size_t& received);
+	virtual Status receive(void* data, std::size_t size, std::size_t& received);
 
 	/** @brief Send a formatted packet of data to the remote peer
 	 *
@@ -100,7 +100,7 @@ class EE_API TcpSocket : public Socket {
 	**  @param packet Packet to send
 	**  @return Status code
 	**  @see Receive */
-	virtual Status Send(Packet& packet);
+	virtual Status send(Packet& packet);
 
 	/** @brief Receive a formatted packet of data from the remote peer
 	**  In blocking mode, this function will wait until the whole packet
@@ -109,7 +109,7 @@ class EE_API TcpSocket : public Socket {
 	**  @param packet Packet to fill with the received data
 	**  @return Status code
 	**  @see Send */
-	virtual Status Receive(Packet& packet);
+	virtual Status receive(Packet& packet);
 
 	private:
 
@@ -172,38 +172,38 @@ Usage example:
 
 // Create a socket and connect it to 192.168.1.50 on port 55001
 TcpSocket socket;
-socket.Connect("192.168.1.50", 55001);
+socket.connect("192.168.1.50", 55001);
 
 // Send a message to the connected host
 std::string message = "Hi, I am a client";
-socket.Send(message.c_str(), message.size() + 1);
+socket.send(message.c_str(), message.size() + 1);
 
 // Receive an answer from the server
 char buffer[1024];
 std::size_t received = 0;
-socket.Receive(buffer, sizeof(buffer), received);
+socket.receive(buffer, sizeof(buffer), received);
 std::cout << "The server said: " << buffer << std::endl;
 
 // ----- The server -----
 
 // Create a listener to wait for incoming connections on port 55001
 TcpListener listener;
-listener.Listen(55001);
+listener.listen(55001);
 
 // Wait for a connection
 TcpSocket socket;
-listener.Accept(socket);
-std::cout << "New client connected: " << socket.GetRemoteAddress() << std::endl;
+listener.accept(socket);
+std::cout << "New client connected: " << socket.getRemoteAddress() << std::endl;
 
 // Receive a message from the client
 char buffer[1024];
 std::size_t received = 0;
-socket.Receive(buffer, sizeof(buffer), received);
+socket.receive(buffer, sizeof(buffer), received);
 std::cout << "The client said: " << buffer << std::endl;
 
 // Send an answer
 std::string message = "Welcome, client";
-socket.Send(message.c_str(), message.size() + 1);
+socket.send(message.c_str(), message.size() + 1);
 @endcode
 
 @see Socket, UdpSocket, Packet

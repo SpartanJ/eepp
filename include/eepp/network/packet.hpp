@@ -27,12 +27,12 @@ class EE_API Packet {
 	**  @param data		Pointer to the sequence of bytes to append
 	**  @param sizeInBytes Number of bytes to append
 	**  @see Clear */
-	void Append(const void* data, std::size_t sizeInBytes);
+	void append(const void* data, std::size_t sizeInBytes);
 
 	/** @brief Clear the packet
 	**  After calling Clear, the packet is empty.
 	**  @see Append */
-	void Clear();
+	void clear();
 
 	/** @brief Get a pointer to the data contained in the packet
 	**  Warning: the returned pointer may become invalid after
@@ -41,14 +41,14 @@ class EE_API Packet {
 	**  The return pointer is NULL if the packet is empty.
 	**  @return Pointer to the data
 	**  @see GetDataSize */
-	const void* GetData() const;
+	const void* getData() const;
 
 	/** @brief Get the size of the data contained in the packet
 	**  This function returns the number of bytes pointed to by
 	**  what GetData returns.
 	**  @return Data size, in bytes
 	**  @see GetData */
-	std::size_t GetDataSize() const;
+	std::size_t getDataSize() const;
 
 	/** @brief Tell if the reading position has reached the
 	///		end of the packet
@@ -56,7 +56,7 @@ class EE_API Packet {
 	**  left to be read, without actually reading it.
 	**  @return True if all data was read, false otherwise
 	**  @see operator bool */
-	bool EndOfPacket() const;
+	bool endOfPacket() const;
 
 	/** @brief Test the validity of the packet, for reading
 	**  This operator allows to test the packet as a boolean
@@ -141,7 +141,7 @@ protected:
 	**  @param size Variable to fill with the size of data to send
 	**  @return Pointer to the array of bytes to send
 	**  @see OnReceive */
-	virtual const void* OnSend(std::size_t& size);
+	virtual const void* onSend(std::size_t& size);
 
 	/** @brief Called after the packet is received over the network
 	**  This function can be defined by derived classes to
@@ -154,7 +154,7 @@ protected:
 	**  @param data Pointer to the received bytes
 	**  @param size Number of bytes
 	**  @see OnSend */
-	virtual void OnReceive(const void* data, std::size_t size);
+	virtual void onReceive(const void* data, std::size_t size);
 private:
 	/**  Disallow comparisons between packets */
 	bool operator ==(const Packet& right) const;
@@ -164,7 +164,7 @@ private:
 	**  This function updates accordingly the state of the packet.
 	**  @param size Size to check
 	**  @return True if @a size bytes can be read from the packet */
-	bool CheckSize(std::size_t size);
+	bool checkSize(std::size_t size);
 
 	// Member data
 	std::vector<char>	mData;	///< Data stored in the packet
@@ -210,13 +210,13 @@ Packet packet;
 packet << x << s << d;
 
 // Send it over the network (socket is a valid TcpSocket)
-socket.Send(packet);
+socket.send(packet);
 
 -----------------------------------------------------------------
 
 // Receive the packet at the other end
 Packet packet;
-socket.Receive(packet);
+socket.receive(packet);
 
 // Extract the variables contained in the packet
 Uint32 x;
@@ -269,15 +269,15 @@ Here is an example:
 @code
 class ZipPacket : public Packet
 {
-	 virtual const void* OnSend(std::size_t& size)
+	 virtual const void* onSend(std::size_t& size)
 	 {
-		 const void* srcData = GetData();
-		 std::size_t srcSize = GetDataSize();
+		 const void* srcData = getData();
+		 std::size_t srcSize = getDataSize();
 
 		 return MySuperZipFunction(srcData, srcSize, &size);
 	 }
 
-	 virtual void OnReceive(const void* data, std::size_t size)
+	 virtual void onReceive(const void* data, std::size_t size)
 	 {
 		 std::size_t dstSize;
 		 const void* dstData = MySuperUnzipFunction(data, size, &dstSize);

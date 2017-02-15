@@ -12,10 +12,10 @@ Socket::Socket(Type type) :
 
 Socket::~Socket() {
 	// Close the socket before it gets destructed
-	Close();
+	close();
 }
 
-void Socket::SetBlocking(bool blocking) {
+void Socket::setBlocking(bool blocking) {
 	// Apply if the socket is already created
 	if (mSocket != Private::SocketImpl::InvalidSocket())
 		Private::SocketImpl::SetBlocking(mSocket, blocking);
@@ -23,30 +23,30 @@ void Socket::SetBlocking(bool blocking) {
 	mIsBlocking = blocking;
 }
 
-bool Socket::IsBlocking() const {
+bool Socket::isBlocking() const {
 	return mIsBlocking;
 }
 
-SocketHandle Socket::GetHandle() const {
+SocketHandle Socket::getHandle() const {
 	return mSocket;
 }
 
-void Socket::Create() {
+void Socket::create() {
 	// Don't create the socket if it already exists
 	if (mSocket == Private::SocketImpl::InvalidSocket()) {
 		SocketHandle handle = socket(PF_INET, mType == Tcp ? SOCK_STREAM : SOCK_DGRAM, 0);
-		Create(handle);
+		create(handle);
 	}
 }
 
-void Socket::Create(SocketHandle handle) {
+void Socket::create(SocketHandle handle) {
 	// Don't create the socket if it already exists
 	if (mSocket == Private::SocketImpl::InvalidSocket()) {
 		// Assign the new handle
 		mSocket = handle;
 
 		// Set the current blocking state
-		SetBlocking(mIsBlocking);
+		setBlocking(mIsBlocking);
 
 		if (mType == Tcp) {
 			// Disable the Nagle algorithm (ie. removes buffering of TCP packets)
@@ -73,7 +73,7 @@ void Socket::Create(SocketHandle handle) {
 	}
 }
 
-void Socket::Close() {
+void Socket::close() {
 	// Close the socket
 	if (mSocket != Private::SocketImpl::InvalidSocket()) {
 		Private::SocketImpl::Close(mSocket);

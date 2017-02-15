@@ -20,7 +20,7 @@ struct SocketSelector::SocketSelectorImpl {
 SocketSelector::SocketSelector() :
 	mImpl( eeNew( SocketSelectorImpl, () ) )
 {
-	Clear();
+	clear();
 }
 
 SocketSelector::SocketSelector(const SocketSelector& copy) :
@@ -32,8 +32,8 @@ SocketSelector::~SocketSelector() {
 	eeSAFE_DELETE( mImpl );
 }
 
-void SocketSelector::Add(Socket& socket) {
-	SocketHandle handle = socket.GetHandle();
+void SocketSelector::add(Socket& socket) {
+	SocketHandle handle = socket.getHandle();
 
 	if (handle != Private::SocketImpl::InvalidSocket()) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -64,8 +64,8 @@ void SocketSelector::Add(Socket& socket) {
 	}
 }
 
-void SocketSelector::Remove(Socket& socket) {
-	SocketHandle handle = socket.GetHandle();
+void SocketSelector::remove(Socket& socket) {
+	SocketHandle handle = socket.getHandle();
 
 	if (handle != Private::SocketImpl::InvalidSocket()) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
@@ -83,7 +83,7 @@ void SocketSelector::Remove(Socket& socket) {
 	}
 }
 
-void SocketSelector::Clear() {
+void SocketSelector::clear() {
 	FD_ZERO(&mImpl->AllSockets);
 	FD_ZERO(&mImpl->SocketsReady);
 
@@ -91,7 +91,7 @@ void SocketSelector::Clear() {
 	mImpl->SocketCount = 0;
 }
 
-bool SocketSelector::Wait(Time timeout) {
+bool SocketSelector::wait(Time timeout) {
 	// Setup the timeout
 	timeval time;
 	time.tv_sec  = static_cast<long>(timeout.asMicroseconds() / 1000000);
@@ -107,8 +107,8 @@ bool SocketSelector::Wait(Time timeout) {
 	return count > 0;
 }
 
-bool SocketSelector::IsReady(Socket& socket) const {
-	SocketHandle handle = socket.GetHandle();
+bool SocketSelector::isReady(Socket& socket) const {
+	SocketHandle handle = socket.getHandle();
 
 	if (handle != Private::SocketImpl::InvalidSocket()) {
 #if EE_PLATFORM == EE_PLATFORM_WIN
